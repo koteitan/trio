@@ -13,5 +13,5 @@
 - [x] 経路補題 le1 ⟺ chain 窓（無条件）✅（スパイン⊆D は不要と判明）
 - [x] Gcopy/Goper: translate_gseg・cnf_gcopiesFrom・cnf_oper・**cnf_ST_TS** ✅（不変量も窓仮説も不要）
 - [ ] Column.lean 不変量保存（r1ok / z0ok / noninc、ガード対応；後続章向け）
-- [ ] 共終性（2 次元上昇の核）
+- [ ] 共終性（2 次元上昇の核）: Part 0-2 ✅（seqlex 配管・還元・self 枝）; 核は z=0 制限で probe 済（53757 例 0 違反）
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）

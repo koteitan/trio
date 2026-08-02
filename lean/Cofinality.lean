@@ -1,0 +1,153 @@
+/-
+Cofinality.lean: トリオ数列の Bachmann 共終性（基本列は標準形の中で共終）
+への還元機構。
+
+目標: `SeqlexCofinality : seqlex N M → ∃ n ≥ 1, sle N (M⟦n⟧)`（標準形上）。
+`olt_ST_iff_seqlex` により translate 側の共終性
+`tr N <o tr M → ∃ n, tr N ≤o tr (M⟦n⟧)` が従う（probe: 15038 対 0 失敗、
+crux レベル 28010 対 0 失敗）。この章は yapss Cofinality.lean の 3 行版。
+-/
+import Goper
+
+namespace TRIO
+
+open Three
+open Classical
+
+/-! ## Part 0 — `seqlex` の配管 -/
+
+theorem collt_trans {p q r : ℕ × ℕ × ℕ} (h1 : collt p q) (h2 : collt q r) :
+    collt p r := by
+  unfold collt at *
+  omega
+
+/-- `seqlex` is transitive. -/
+theorem seqlex_trans : ∀ {A B C : TrioSeq}, seqlex A B → seqlex B C →
+    seqlex A C := by
+  intro A
+  induction A with
+  | nil =>
+    intro B C _ h2
+    rcases C with _ | ⟨c, C'⟩
+    · rcases B with _ | ⟨b, B'⟩
+      · exact absurd h2 (by simp)
+      · exact absurd h2 (by simp)
+    · simp
+  | cons a A' ih =>
+    intro B C h1 h2
+    rcases B with _ | ⟨b, B'⟩
+    · exact absurd h1 (by simp)
+    rcases C with _ | ⟨c, C'⟩
+    · exact absurd h2 (by simp)
+    rw [seqlex_cons_cons] at h1 h2 ⊢
+    rcases h1 with p1 | ⟨rfl, s1⟩ <;> rcases h2 with p2 | ⟨rfl, s2⟩
+    · exact Or.inl (collt_trans p1 p2)
+    · exact Or.inl p1
+    · exact Or.inl p2
+    · exact Or.inr ⟨rfl, ih s1 s2⟩
+
+/-- `≤` version of `seqlex`. -/
+def sle (M N : TrioSeq) : Prop := M = N ∨ seqlex M N
+
+theorem sle_refl (M : TrioSeq) : sle M M := Or.inl rfl
+
+theorem seqlex_sle_trans {A B C : TrioSeq} (h1 : seqlex A B) (h2 : sle B C) :
+    seqlex A C := by
+  rcases h2 with rfl | h2
+  · exact h1
+  · exact seqlex_trans h1 h2
+
+theorem sle_trans {A B C : TrioSeq} (h1 : sle A B) (h2 : sle B C) :
+    sle A C := by
+  rcases h1 with rfl | h1
+  · exact h2
+  · exact Or.inr (seqlex_sle_trans h1 h2)
+
+/-- `seqlex` is monotone under extending the *larger* side on the right. -/
+theorem seqlex_append_mono : ∀ {A B : TrioSeq}, seqlex A B → ∀ (C : TrioSeq),
+    seqlex A (B ++ C) := by
+  intro A
+  induction A with
+  | nil =>
+    intro B h C
+    rcases B with _ | ⟨b, B'⟩
+    · exact absurd h (by simp)
+    · simp
+  | cons a A' ih =>
+    intro B h C
+    rcases B with _ | ⟨b, B'⟩
+    · exact absurd h (by simp)
+    · rw [seqlex_cons_cons] at h
+      rcases h with hp | ⟨rfl, hs⟩
+      · exact Or.inl hp
+      · exact Or.inr ⟨rfl, ih hs C⟩
+
+/-- `sle` version of `seqlex_append_mono`. -/
+theorem sle_append_mono {A B : TrioSeq} (h : sle A B) (C : TrioSeq) :
+    sle A (B ++ C) := by
+  rcases h with rfl | h
+  · rcases C with _ | ⟨c, C'⟩
+    · exact Or.inl (by simp)
+    · exact Or.inr (seqlex_prefix (by simp) A)
+  · exact Or.inr (seqlex_append_mono h C)
+
+/-- **Snoc case analysis.**  A sequence below `D ++ [lp]` either stays `≤ D`,
+or extends `D` by a first column strictly below `lp`. -/
+theorem seqlex_snoc_cases : ∀ {D : TrioSeq} {lp : ℕ × ℕ × ℕ} {N : TrioSeq},
+    seqlex N (D ++ [lp]) →
+    sle N D ∨ ∃ q S, N = D ++ q :: S ∧ collt q lp := by
+  intro D
+  induction D with
+  | nil =>
+    intro lp N h
+    rcases N with _ | ⟨q, S⟩
+    · exact Or.inl (sle_refl _)
+    · rw [List.nil_append, seqlex_cons_cons] at h
+      rcases h with h | ⟨rfl, h⟩
+      · exact Or.inr ⟨q, S, rfl, h⟩
+      · exact absurd h (by cases S <;> simp)
+  | cons d D' ih =>
+    intro lp N h
+    rcases N with _ | ⟨q, S⟩
+    · exact Or.inl (Or.inr (by simp))
+    rw [List.cons_append, seqlex_cons_cons] at h
+    rcases h with h | ⟨rfl, h⟩
+    · exact Or.inl (Or.inr (Or.inl h))
+    · rcases ih h with hle | ⟨q', S', rfl, hq'⟩
+      · refine Or.inl ?_
+        rcases hle with rfl | hle
+        · exact Or.inl rfl
+        · exact Or.inr (Or.inr ⟨rfl, hle⟩)
+      · exact Or.inr ⟨q', S', by simp, hq'⟩
+
+/-! ## Part 1 — 共終性の `seqlex` 形への還元 -/
+
+/-- The `seqlex` form of trio Bachmann cofinality. -/
+def SeqlexCofinality : Prop :=
+  ∀ {M N : TrioSeq}, ST_TS M → ST_TS N → seqlex N M →
+    ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧)
+
+theorem ts_cofinality_of_seqlex (H : SeqlexCofinality)
+    {M N : TrioSeq} (hM : ST_TS M) (hN : ST_TS N)
+    (h : translate N <o translate M) :
+    ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧) := by
+  have hne : N ≠ M := by
+    rintro rfl
+    exact olt_irrefl _ h
+  have hsl : seqlex N M := (olt_ST_iff_seqlex hN hM hne).1 h
+  obtain ⟨n, hn, hres⟩ := H hM hN hsl
+  refine ⟨n, hn, ?_⟩
+  rcases hres with rfl | hlt
+  · exact Or.inr rfl
+  · by_cases he : N = M⟦n⟧
+    · exact Or.inr (by rw [he])
+    · exact Or.inl ((olt_ST_iff_seqlex hN (ST_TS.oper hM hn) he).2 hlt)
+
+/-! ## Part 2 — `oper` の退化枝 -/
+
+/-- **Branch `self`**: `M` has length `≤ 1`, so `M⟦n⟧ = M`. -/
+theorem seqlex_cof_short {M N : TrioSeq} (hL : M.length - 1 = 0)
+    (h : seqlex N M) : ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧) :=
+  ⟨1, le_rfl, by rw [oper_eq_self_of_short 1 hL]; exact Or.inr h⟩
+
+end TRIO
