@@ -302,4 +302,248 @@ theorem cnf_replicate_block {v0 w1 w2 : ℕ} {R : TrioSeq}
       rw [← tT]
       exact ih
 
+/-! ## CNF context congruence -/
+
+/-- **CNF context congruence.**  If `Z1 = z1 :: T1`, `Z2 = z2 :: T2` share
+their leading row-0 (`z1.1 = z2.1`), `translate Z1 <o translate Z2`, and
+`translate Z1` is CNF, then a common good part `G` preserves CNF. -/
+theorem cnf_ctx_cong {z1 z2 : ℕ × ℕ × ℕ} {T1 T2 : TrioSeq}
+    (cZ1 : cnf (translate (z1 :: T1)))
+    (decr : translate (z1 :: T1) <o translate (z2 :: T2))
+    (root : z1.1 = z2.1)
+    (leadle : ∃ p1 p2 b1 c1 q1 q2 b2 c2, translate (z1 :: T1) = P p1 p2 b1 c1
+        ∧ translate (z2 :: T2) = P q1 q2 b2 c2 ∧ P p1 p2 b1 Z ≤o P q1 q2 b2 Z)
+    (r1 : ∀ x ∈ T1, z1.1 ≤ x.1) (r2 : ∀ x ∈ T2, z2.1 ≤ x.1)
+    (G : TrioSeq) (hG2 : cnf (translate (G ++ z2 :: T2))) :
+    cnf (translate (G ++ z1 :: T1)) := by
+  obtain ⟨p1, p2, b1, c1, q1, q2, b2, c2, lZ1, lZ2, lle⟩ := leadle
+  match G with
+  | [] => simpa using cZ1
+  | g :: G' =>
+    by_cases allG : ∀ x ∈ G', g.1 < x.1
+    · have allG' : ∀ x ∈ G', (fun q : ℕ × ℕ × ℕ => decide (g.1 < q.1)) x = true := by
+        intro x hx; simpa using allG x hx
+      by_cases hPg : g.1 < z1.1
+      · -- the whole tail nests under `g`; pass to `G'`
+        have aZ1 : ∀ x ∈ z1 :: T1, g.1 < x.1 := by
+          intro x hx
+          rcases List.mem_cons.1 hx with rfl | hx
+          · exact hPg
+          · exact lt_of_lt_of_le hPg (r1 _ hx)
+        have aZ2 : ∀ x ∈ z2 :: T2, g.1 < x.1 := by
+          intro x hx
+          rcases List.mem_cons.1 hx with rfl | hx
+          · exact root ▸ hPg
+          · exact lt_of_lt_of_le (root ▸ hPg) (r2 _ hx)
+        have all1 : ∀ x ∈ G' ++ z1 :: T1, g.1 < x.1 := by
+          intro x hx; rcases List.mem_append.1 hx with h | h
+          exacts [allG x h, aZ1 x h]
+        have all2 : ∀ x ∈ G' ++ z2 :: T2, g.1 < x.1 := by
+          intro x hx; rcases List.mem_append.1 hx with h | h
+          exacts [allG x h, aZ2 x h]
+        have e1 : translate (g :: (G' ++ z1 :: T1))
+            = P g.2.1 g.2.2 (translate (G' ++ z1 :: T1)) Z := by
+          rw [translate, List.takeWhile_eq_self_iff.2 (by simpa using all1),
+            List.dropWhile_eq_nil_iff.2 (by simpa using all1), translate]
+        have e2 : translate (g :: (G' ++ z2 :: T2))
+            = P g.2.1 g.2.2 (translate (G' ++ z2 :: T2)) Z := by
+          rw [translate, List.takeWhile_eq_self_iff.2 (by simpa using all2),
+            List.dropWhile_eq_nil_iff.2 (by simpa using all2), translate]
+        rw [List.cons_append] at hG2 ⊢
+        rw [e2] at hG2
+        rw [e1]
+        exact cnf_P_Z.2 (cnf_ctx_cong cZ1 decr root
+          ⟨p1, p2, b1, c1, q1, q2, b2, c2, lZ1, lZ2, lle⟩ r1 r2 G' (cnf_P_Z.1 hG2))
+      · -- the tail is a sibling after `g`'s subtree
+        have hPg2 : ¬ g.1 < z2.1 := root ▸ hPg
+        have tw1 : (G' ++ z1 :: T1).takeWhile (fun q => g.1 < q.1) = G' := by
+          rw [takeWhile_append_all allG']
+          simp [hPg]
+        have dw1 : (G' ++ z1 :: T1).dropWhile (fun q => g.1 < q.1) = z1 :: T1 := by
+          rw [dropWhile_append_all allG']
+          simp [hPg]
+        have tw2 : (G' ++ z2 :: T2).takeWhile (fun q => g.1 < q.1) = G' := by
+          rw [takeWhile_append_all allG']
+          simp [hPg2]
+        have dw2 : (G' ++ z2 :: T2).dropWhile (fun q => g.1 < q.1) = z2 :: T2 := by
+          rw [dropWhile_append_all allG']
+          simp [hPg2]
+        have e1 : translate (g :: (G' ++ z1 :: T1))
+            = P g.2.1 g.2.2 (translate G') (P p1 p2 b1 c1) := by
+          rw [translate, tw1, dw1, lZ1]
+        have e2 : translate (g :: (G' ++ z2 :: T2))
+            = P g.2.1 g.2.2 (translate G') (P q1 q2 b2 c2) := by
+          rw [translate, tw2, dw2, lZ2]
+        rw [List.cons_append] at hG2 ⊢
+        rw [e2] at hG2
+        obtain ⟨ctg, bnd2, -⟩ := cnf_P_P.1 hG2
+        have bnd1 : ¬ (P g.2.1 g.2.2 (translate G') Z <o P p1 p2 b1 Z) := by
+          intro hlt
+          exact bnd2 (olt_ole_trans hlt lle)
+        rw [e1]
+        exact cnf_P_P.2 ⟨ctg, bnd1, lZ1 ▸ cZ1⟩
+    · -- `G'` already drops to/below `g`; recurse on the shorter tail
+      push Not at allG
+      obtain ⟨x, hx, hnx⟩ := allG
+      have hnx' : ¬ (fun q : ℕ × ℕ × ℕ => decide (g.1 < q.1)) x = true := by
+        simpa using hnx
+      have tw1 : (G' ++ z1 :: T1).takeWhile (fun q => g.1 < q.1)
+          = G'.takeWhile (fun q => g.1 < q.1) := takeWhile_append_not hx hnx'
+      have dw1 : (G' ++ z1 :: T1).dropWhile (fun q => g.1 < q.1)
+          = G'.dropWhile (fun q => g.1 < q.1) ++ z1 :: T1 := dropWhile_append_not hx hnx'
+      have tw2 : (G' ++ z2 :: T2).takeWhile (fun q => g.1 < q.1)
+          = G'.takeWhile (fun q => g.1 < q.1) := takeWhile_append_not hx hnx'
+      have dw2 : (G' ++ z2 :: T2).dropWhile (fun q => g.1 < q.1)
+          = G'.dropWhile (fun q => g.1 < q.1) ++ z2 :: T2 := dropWhile_append_not hx hnx'
+      have Dne : G'.dropWhile (fun q => g.1 < q.1) ≠ [] := by
+        intro he
+        exact hnx' (List.dropWhile_eq_nil_iff.1 he x hx)
+      obtain ⟨d, D', hD⟩ : ∃ d D', G'.dropWhile (fun q => g.1 < q.1) = d :: D' := by
+        rcases hD : G'.dropWhile (fun q => g.1 < q.1) with - | ⟨d, D'⟩
+        · exact absurd hD Dne
+        · exact ⟨d, D', hD⟩
+      have e1 : translate (g :: (G' ++ z1 :: T1))
+          = P g.2.1 g.2.2 (translate (G'.takeWhile fun q => g.1 < q.1))
+              (translate ((d :: D') ++ z1 :: T1)) := by
+        rw [translate, tw1, dw1, hD]
+      have e2 : translate (g :: (G' ++ z2 :: T2))
+          = P g.2.1 g.2.2 (translate (G'.takeWhile fun q => g.1 < q.1))
+              (translate ((d :: D') ++ z2 :: T2)) := by
+        rw [translate, tw2, dw2, hD]
+      have p1' : translate ((d :: D') ++ z1 :: T1)
+          = P d.2.1 d.2.2 (translate ((D' ++ z1 :: T1).takeWhile fun y => d.1 < y.1))
+              (translate ((D' ++ z1 :: T1).dropWhile fun y => d.1 < y.1)) := by
+        rw [List.cons_append, translate]
+      have p2' : translate ((d :: D') ++ z2 :: T2)
+          = P d.2.1 d.2.2 (translate ((D' ++ z2 :: T2).takeWhile fun y => d.1 < y.1))
+              (translate ((D' ++ z2 :: T2).dropWhile fun y => d.1 < y.1)) := by
+        rw [List.cons_append, translate]
+      have decrD : translate ((d :: D') ++ z1 :: T1)
+          <o translate ((d :: D') ++ z2 :: T2) :=
+        translate_ctx_cong decr root r1 r2 (d :: D')
+      have argle : translate ((D' ++ z1 :: T1).takeWhile fun y => d.1 < y.1)
+            <o translate ((D' ++ z2 :: T2).takeWhile fun y => d.1 < y.1)
+          ∨ translate ((D' ++ z1 :: T1).takeWhile fun y => d.1 < y.1)
+            = translate ((D' ++ z2 :: T2).takeWhile fun y => d.1 < y.1) := by
+        rw [p1', p2', olt_P_P] at decrD
+        rcases decrD with h | ⟨-, h⟩ | ⟨-, -, h⟩ | ⟨-, -, h, -⟩
+        · omega
+        · omega
+        · exact Or.inl h
+        · exact Or.inr h
+      rw [List.cons_append] at hG2 ⊢
+      rw [e2, p2'] at hG2
+      obtain ⟨ctw, bnd2, cD2⟩ := cnf_P_P.1 hG2
+      have cD2' : cnf (translate ((d :: D') ++ z2 :: T2)) := by
+        rw [p2']
+        exact cD2
+      have cD1 : cnf (translate ((d :: D') ++ z1 :: T1)) :=
+        cnf_ctx_cong cZ1 decr root
+          ⟨p1, p2, b1, c1, q1, q2, b2, c2, lZ1, lZ2, lle⟩ r1 r2 (d :: D') cD2'
+      -- the boundary transfers from the appended argument
+      have bnd1 : ¬ (P g.2.1 g.2.2 (translate (G'.takeWhile fun q => g.1 < q.1)) Z
+          <o P d.2.1 d.2.2
+              (translate ((D' ++ z1 :: T1).takeWhile fun y => d.1 < y.1)) Z) := by
+        intro hlt
+        rw [olt_P_P] at hlt
+        rcases hlt with h | ⟨heq, h⟩ | ⟨heq1, heq2, h⟩ | ⟨-, -, -, h⟩
+        · exact bnd2 (olt_P_P.2 (Or.inl h))
+        · exact bnd2 (olt_P_P.2 (Or.inr (Or.inl ⟨heq, h⟩)))
+        · rcases argle with ha | ha
+          · exact bnd2 (olt_P_P.2 (Or.inr (Or.inr (Or.inl ⟨heq1, heq2, olt_trans h ha⟩))))
+          · exact bnd2 (olt_P_P.2 (Or.inr (Or.inr (Or.inl ⟨heq1, heq2, ha ▸ h⟩))))
+        · exact not_olt_Z Z h
+      rw [e1, p1']
+      refine cnf_P_P.2 ⟨ctw, bnd1, ?_⟩
+      rw [← p1']
+      exact cD1
+  termination_by G.length
+  decreasing_by
+  · simp only [List.length_cons]
+    omega
+  · have hle : (d :: D').length ≤ G'.length := by
+      rw [← hD]
+      exact List.length_dropWhile_le _ G'
+    simp only [List.length_cons] at hle ⊢
+    omega
+
+/-- CNF is inherited by a re-opening tail. -/
+theorem cnf_tail {t : ℕ × ℕ × ℕ} {T' : TrioSeq}
+    (rT : ∀ x ∈ T', t.1 ≤ x.1)
+    (G : TrioSeq) (hGT : cnf (translate (G ++ t :: T'))) :
+    cnf (translate (t :: T')) := by
+  match G with
+  | [] => simpa using hGT
+  | g :: G' =>
+    by_cases allG : ∀ x ∈ G', g.1 < x.1
+    · have allG' : ∀ x ∈ G', (fun q : ℕ × ℕ × ℕ => decide (g.1 < q.1)) x = true := by
+        intro x hx; simpa using allG x hx
+      by_cases hPg : g.1 < t.1
+      · have aT : ∀ x ∈ t :: T', g.1 < x.1 := by
+          intro x hx
+          rcases List.mem_cons.1 hx with rfl | hx
+          · exact hPg
+          · exact lt_of_lt_of_le hPg (rT _ hx)
+        have all : ∀ x ∈ G' ++ t :: T', g.1 < x.1 := by
+          intro x hx; rcases List.mem_append.1 hx with h | h
+          exacts [allG x h, aT x h]
+        have e : translate (g :: (G' ++ t :: T'))
+            = P g.2.1 g.2.2 (translate (G' ++ t :: T')) Z := by
+          rw [translate, List.takeWhile_eq_self_iff.2 (by simpa using all),
+            List.dropWhile_eq_nil_iff.2 (by simpa using all), translate]
+        rw [List.cons_append] at hGT
+        rw [e] at hGT
+        exact cnf_tail rT G' (cnf_P_Z.1 hGT)
+      · have tw : (G' ++ t :: T').takeWhile (fun q => g.1 < q.1) = G' := by
+          rw [takeWhile_append_all allG']
+          simp [hPg]
+        have dw : (G' ++ t :: T').dropWhile (fun q => g.1 < q.1) = t :: T' := by
+          rw [dropWhile_append_all allG']
+          simp [hPg]
+        have e : translate (g :: (G' ++ t :: T'))
+            = P g.2.1 g.2.2 (translate G') (translate (t :: T')) := by
+          rw [translate, tw, dw]
+        rw [List.cons_append] at hGT
+        rw [e, translate] at hGT
+        rw [translate]
+        exact (cnf_P_P.1 hGT).2.2
+    · push Not at allG
+      obtain ⟨x, hx, hnx⟩ := allG
+      have hnx' : ¬ (fun q : ℕ × ℕ × ℕ => decide (g.1 < q.1)) x = true := by
+        simpa using hnx
+      have tw : (G' ++ t :: T').takeWhile (fun q => g.1 < q.1)
+          = G'.takeWhile (fun q => g.1 < q.1) := takeWhile_append_not hx hnx'
+      have dw : (G' ++ t :: T').dropWhile (fun q => g.1 < q.1)
+          = G'.dropWhile (fun q => g.1 < q.1) ++ t :: T' := dropWhile_append_not hx hnx'
+      have Dne : G'.dropWhile (fun q => g.1 < q.1) ≠ [] := by
+        intro he
+        exact hnx' (List.dropWhile_eq_nil_iff.1 he x hx)
+      obtain ⟨d, D', hD⟩ : ∃ d D', G'.dropWhile (fun q => g.1 < q.1) = d :: D' := by
+        rcases hD : G'.dropWhile (fun q => g.1 < q.1) with - | ⟨d, D'⟩
+        · exact absurd hD Dne
+        · exact ⟨d, D', hD⟩
+      have e : translate (g :: (G' ++ t :: T'))
+          = P g.2.1 g.2.2 (translate (G'.takeWhile fun q => g.1 < q.1))
+              (translate ((d :: D') ++ t :: T')) := by
+        rw [translate, tw, dw, hD]
+      have p : translate ((d :: D') ++ t :: T')
+          = P d.2.1 d.2.2 (translate ((D' ++ t :: T').takeWhile fun y => d.1 < y.1))
+              (translate ((D' ++ t :: T').dropWhile fun y => d.1 < y.1)) := by
+        rw [List.cons_append, translate]
+      rw [List.cons_append] at hGT
+      rw [e, p] at hGT
+      have hD1 : cnf (translate ((d :: D') ++ t :: T')) := by
+        rw [p]
+        exact (cnf_P_P.1 hGT).2.2
+      exact cnf_tail rT (d :: D') hD1
+  termination_by G.length
+  decreasing_by
+  · simp only [List.length_cons]
+    omega
+  · have hle : (d :: D').length ≤ G'.length := by
+      rw [← hD]
+      exact List.length_dropWhile_le _ G'
+    simp only [List.length_cons] at hle ⊢
+    omega
+
 end TRIO
