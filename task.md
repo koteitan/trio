@@ -7,7 +7,7 @@
 - [x] Decrease.lean 測度の減少 m_step_decreases ✅ build 緑
 - [x] Reduction.lean 停止性への還元（条件付き停止性）✅
 - [x] Seqlex.lean 列辞書式順序との同型 olt_ST_iff_seqlex ✅
-- [ ] Cnf.lean（cnf・閉包・ctx_cong・一様コピーで cnf_oper）← 次
+- [~] Cnf.lean 前半 ✅（cnf 定義・対角列・snoc/take 閉包・複製ブロック）/ 後半（ctx_cong・tail・コピー塔・cnf_oper）🤖
 - [ ] Column.lean 不変量（z0ok / y0ok / r1ok / r2ok / 窓の下界 → A≡1）
 - [ ] 共終性（2 次元上昇の核）
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）
