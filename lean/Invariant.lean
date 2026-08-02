@@ -596,4 +596,243 @@ theorem noninc_ST_TS {M : TrioSeq} (h : ST_TS M) : noninc M := by
   | diag v => exact noninc_diagSeqT v
   | oper hN hn ih => exact noninc_oper ih
 
+/-! ## 親の存在と一意性（標準形の最終列） -/
+
+theorem blockok_head_zero {M : TrioSeq} (hb : blockok 0 M)
+    (hne : 0 < M.length) : (M.getD 0 (0, 0, 0)).1 = 0 := by
+  obtain ⟨m0, M', rfl⟩ : ∃ m0 M', M = m0 :: M' := by
+    cases M with
+    | nil => simp at hne
+    | cons m0 M' => exact ⟨m0, M', rfl⟩
+  rw [List.getD_cons_zero]
+  have := hb.1 (by simp)
+  rw [List.headI_cons] at this
+  exact this
+
+theorem parent0_exists {M : TrioSeq} (hb : blockok 0 M) {j : ℕ}
+    (hj : j < M.length) (h0 : 0 < entry M 0 j) :
+    ∃ k, nextrel0 M k j := by
+  have hj0 : 0 < j := by
+    by_contra hc
+    push Not at hc
+    have : j = 0 := by omega
+    subst this
+    have := blockok_head_zero hb (by omega)
+    have e : entry M 0 0 = (M.getD 0 (0, 0, 0)).1 := rfl
+    omega
+  set P : ℕ → Prop := fun k => entry M 0 k < entry M 0 j with hP
+  have hP0 : P 0 := by
+    show entry M 0 0 < entry M 0 j
+    have e : entry M 0 0 = (M.getD 0 (0, 0, 0)).1 := rfl
+    have := blockok_head_zero hb (by omega)
+    omega
+  refine ⟨Nat.findGreatest P (j - 1), ?_, hj, ?_, ?_, ?_⟩
+  · have := Nat.findGreatest_le (P := P) (j - 1)
+    omega
+  · have := Nat.findGreatest_le (P := P) (j - 1)
+    omega
+  · exact Nat.findGreatest_spec (Nat.zero_le _) hP0
+  · intro l hl
+    have hnl := Nat.findGreatest_is_greatest (P := P) hl.1 (by omega)
+    rw [hP] at hnl
+    push Not at hnl
+    exact hnl
+
+theorem chain_to_zero {M : TrioSeq} (hb : blockok 0 M) :
+    ∀ lev j, entry M 0 j = lev → j < M.length →
+      ∃ r, r ≤ j ∧ entry M 0 r = 0
+        ∧ Relation.ReflTransGen (nextrel0 M) r j := by
+  intro lev
+  induction lev using Nat.strong_induction_on with
+  | _ lev IH =>
+    intro j he hj
+    by_cases h0 : entry M 0 j = 0
+    · exact ⟨j, le_rfl, h0, Relation.ReflTransGen.refl⟩
+    · obtain ⟨k, hk⟩ := parent0_exists hb hj (by omega)
+      have hklt : entry M 0 k < entry M 0 j := hk.2.2.2.1
+      have hkj : k < j := hk.2.2.1
+      obtain ⟨r, hr1, hr2, hr3⟩ :=
+        IH (entry M 0 k) (by omega) k rfl hk.1
+      exact ⟨r, by omega, hr2, hr3.tail hk⟩
+
+theorem parent1_exists {M : TrioSeq} (hb : blockok 0 M) (hz : z0ok M)
+    {j : ℕ} (hj : j < M.length) (h1 : 0 < entry M 1 j) :
+    ∃ k, nextrel1 M k j := by
+  obtain ⟨r, hrle, hr0, hchain⟩ := chain_to_zero hb (entry M 0 j) j rfl hj
+  have hre1 : entry M 1 r = 0 := by
+    have hz' := hz r (by omega)
+    have e0 : entry M 0 r = (M.getD r (0, 0, 0)).1 := rfl
+    have e1 : entry M 1 r = (M.getD r (0, 0, 0)).2.1 := rfl
+    omega
+  have hrj : r < j := by
+    rcases Nat.eq_or_lt_of_le hrle with rfl | h
+    · omega
+    · exact h
+  set P : ℕ → Prop := fun k => le0 M k j ∧ entry M 1 k < entry M 1 j with hP
+  have hPr : P r := by
+    refine ⟨⟨by omega, hj, hchain⟩, ?_⟩
+    rw [hre1]
+    exact h1
+  have hspec := Nat.findGreatest_spec (P := P) (show r ≤ j - 1 by omega) hPr
+  have hle := Nat.findGreatest_le (P := P) (j - 1)
+  refine ⟨Nat.findGreatest P (j - 1), ?_, hj, by omega, hspec.2, hspec.1, ?_⟩
+  · omega
+  · intro j' hj'
+    rcases Nat.eq_or_lt_of_le (nextrel0_rtrancl_index_le hj'.2.2.2) with rfl | hlt
+    · exact le_rfl
+    · by_contra hcon
+      push Not at hcon
+      exact Nat.findGreatest_is_greatest (P := P) hj'.1 (by omega)
+        ⟨hj'.2, hcon⟩
+
+/-- Iterated row-1 parents reach a zero-row-1 ancestor. -/
+theorem le1_to_row1_zero {M : TrioSeq} (hb : blockok 0 M) (hz : z0ok M) :
+    ∀ lev j, entry M 1 j = lev → j < M.length →
+      ∃ c, le1 M c j ∧ entry M 1 c = 0 := by
+  intro lev
+  induction lev using Nat.strong_induction_on with
+  | _ lev IH =>
+    intro j he hj
+    by_cases h1 : entry M 1 j = 0
+    · exact ⟨j, le1_refl hj, h1⟩
+    · obtain ⟨k, hk⟩ := parent1_exists hb hz hj (by omega)
+      have hklt : entry M 1 k < entry M 1 j := hk.2.2.2.1
+      obtain ⟨c, hc1, hc2⟩ := IH (entry M 1 k) (by omega) k rfl hk.1
+      exact ⟨c, ⟨hc1.1, hj, hc1.2.2.tail hk⟩, hc2⟩
+
+theorem parent2_exists {M : TrioSeq} (hb : blockok 0 M) (hz : z0ok M)
+    (hni : noninc M) {j : ℕ} (hj : j < M.length) (h2 : 0 < entry M 2 j) :
+    ∃ k, nextrel2 M k j := by
+  have h1 : 0 < entry M 1 j := by
+    have := hni j hj
+    have e1 : entry M 1 j = (M.getD j (0, 0, 0)).2.1 := rfl
+    have e2 : entry M 2 j = (M.getD j (0, 0, 0)).2.2 := rfl
+    omega
+  obtain ⟨c, hc, hc1⟩ := le1_to_row1_zero hb hz (entry M 1 j) j rfl hj
+  have hc2 : entry M 2 c = 0 := by
+    have := hni c hc.1
+    have e1 : entry M 1 c = (M.getD c (0, 0, 0)).2.1 := rfl
+    have e2 : entry M 2 c = (M.getD c (0, 0, 0)).2.2 := rfl
+    omega
+  have hcj : c < j := by
+    rcases Nat.eq_or_lt_of_le (rtg1_index_le hc.2.2) with rfl | h
+    · omega
+    · exact h
+  set P : ℕ → Prop := fun k => le1 M k j ∧ entry M 2 k < entry M 2 j with hP
+  have hPc : P c := ⟨hc, by omega⟩
+  have hspec := Nat.findGreatest_spec (P := P) (show c ≤ j - 1 by omega) hPc
+  have hle := Nat.findGreatest_le (P := P) (j - 1)
+  refine ⟨Nat.findGreatest P (j - 1), ?_, hj, by omega, hspec.2, hspec.1, ?_⟩
+  · omega
+  · intro j' hj'
+    rcases Nat.eq_or_lt_of_le (rtg1_index_le hj'.2.2.2) with rfl | hlt
+    · exact le_rfl
+    · by_contra hcon
+      push Not at hcon
+      exact Nat.findGreatest_is_greatest (P := P) hj'.1 (by omega)
+        ⟨hj'.2, hcon⟩
+
+theorem nextrel1_unique {M : TrioSeq} {k1 k2 j : ℕ}
+    (h1 : nextrel1 M k1 j) (h2 : nextrel1 M k2 j) : k1 = k2 := by
+  rcases Nat.lt_trichotomy k1 k2 with h | h | h
+  · have := h1.2.2.2.2.2 k2 ⟨h, h2.2.2.2.2.1⟩
+    have := h2.2.2.2.1
+    omega
+  · exact h
+  · have := h2.2.2.2.2.2 k1 ⟨h, h1.2.2.2.2.1⟩
+    have := h1.2.2.2.1
+    omega
+
+theorem nextrel2_unique {M : TrioSeq} {k1 k2 j : ℕ}
+    (h1 : nextrel2 M k1 j) (h2 : nextrel2 M k2 j) : k1 = k2 := by
+  rcases Nat.lt_trichotomy k1 k2 with h | h | h
+  · have := h1.2.2.2.2.2 k2 ⟨h, h2.2.2.2.2.1⟩
+    have := h2.2.2.2.1
+    omega
+  · exact h
+  · have := h2.2.2.2.2.2 k1 ⟨h, h1.2.2.2.2.1⟩
+    have := h1.2.2.2.1
+    omega
+
+/-- **The last column of a standard-shaped host has a unique parent.** -/
+theorem hp_last {M : TrioSeq} (hb : blockok 0 M) (hz : z0ok M)
+    (hni : noninc M) (hlen : 0 < M.length)
+    (hzz : ¬ M.getD (M.length - 1) (0, 0, 0) = (0, 0, 0)) :
+    hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+  have e0 : entry M 0 (M.length - 1) = (M.getD (M.length - 1) (0, 0, 0)).1 := rfl
+  have e1 : entry M 1 (M.length - 1) = (M.getD (M.length - 1) (0, 0, 0)).2.1 := rfl
+  have e2 : entry M 2 (M.length - 1) = (M.getD (M.length - 1) (0, 0, 0)).2.2 := rfl
+  by_cases h2 : 0 < entry M 2 (M.length - 1)
+  · have hs : srow M (M.length - 1) = 2 := by
+      unfold srow
+      rw [if_pos h2]
+    obtain ⟨k, hk⟩ := parent2_exists hb hz hni (by omega) h2
+    refine ⟨k, ?_, ?_⟩
+    · show nextR M (srow M (M.length - 1)) k (M.length - 1)
+      unfold nextR
+      rw [hs, if_neg (show ¬(2 : ℕ) = 0 by omega),
+        if_neg (show ¬(2 : ℕ) = 1 by omega)]
+      exact hk
+    · intro y hy
+      show y = k
+      have hy' : nextR M (srow M (M.length - 1)) y (M.length - 1) := hy
+      unfold nextR at hy'
+      rw [hs, if_neg (show ¬(2 : ℕ) = 0 by omega),
+        if_neg (show ¬(2 : ℕ) = 1 by omega)] at hy'
+      exact nextrel2_unique hy' hk
+  · by_cases h1 : 0 < entry M 1 (M.length - 1)
+    · have hs : srow M (M.length - 1) = 1 := by
+        unfold srow
+        rw [if_neg h2, if_pos h1]
+      obtain ⟨k, hk⟩ := parent1_exists hb hz (by omega) h1
+      refine ⟨k, ?_, ?_⟩
+      · show nextR M (srow M (M.length - 1)) k (M.length - 1)
+        unfold nextR
+        rw [hs, if_neg (show ¬(1 : ℕ) = 0 by omega), if_pos rfl]
+        exact hk
+      · intro y hy
+        have hy' : nextR M (srow M (M.length - 1)) y (M.length - 1) := hy
+        unfold nextR at hy'
+        rw [hs, if_neg (show ¬(1 : ℕ) = 0 by omega), if_pos rfl] at hy'
+        exact nextrel1_unique hy' hk
+    · have h0 : 0 < entry M 0 (M.length - 1) := by
+        by_contra hc
+        push Not at hc
+        have hz' := hz (M.length - 1) (by omega) (by omega)
+        refine hzz ?_
+        refine Prod.ext (by omega) (Prod.ext ?_ ?_)
+        · have := hz'.1
+          omega
+        · have := hz'.2
+          omega
+      have hs : srow M (M.length - 1) = 0 := by
+        unfold srow
+        rw [if_neg h2, if_neg h1]
+      obtain ⟨k, hk⟩ := parent0_exists hb (by omega) h0
+      refine ⟨k, ?_, ?_⟩
+      · show nextR M (srow M (M.length - 1)) k (M.length - 1)
+        unfold nextR
+        rw [hs, if_pos rfl]
+        exact hk
+      · intro y hy
+        have hy' : nextR M (srow M (M.length - 1)) y (M.length - 1) := hy
+        unfold nextR at hy'
+        rw [hs, if_pos rfl] at hy'
+        exact nextrel0_src_unique hy' hk
+
+/-- **The `noparent` branch is empty on standard forms.** -/
+theorem hasParent_last_ST_TS {M : TrioSeq} (hM : ST_TS M) (hlen : 0 < M.length)
+    (hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0)) :
+    hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+  refine hp_last (blockok_ST_TS hM) (z0ok_ST_TS hM) (noninc_ST_TS hM) hlen ?_
+  intro he
+  refine hzz ⟨?_, ?_, ?_⟩
+  · show (M.getD (M.length - 1) (0, 0, 0)).1 = 0
+    rw [he]
+  · show (M.getD (M.length - 1) (0, 0, 0)).2.1 = 0
+    rw [he]
+  · show (M.getD (M.length - 1) (0, 0, 0)).2.2 = 0
+    rw [he]
+
 end TRIO
