@@ -418,6 +418,171 @@ theorem gexp_guard_transport {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
   · intro hg
     exact gexp_le1_mir hlen hk hq hup hd0pos hd0e hd1pos hle1lp hg
 
+/-! ## 隣接タワーの尾部鏡映（bad_A1 用） -/
+
+section TailMirror
+
+/-- Tail values of consecutive towers correspond by one guarded lift. -/
+theorem gexp_tail_getD {p : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (hp0 : j0 + Lb ≤ p) (hp1 : p < j0 + (n + 1) * Lb) :
+    (gexp M j0 Lb d0 d1 (n + 1)).getD p (0, 0, 0)
+      = (((gexp M j0 Lb d0 d1 n).getD (p - Lb) (0, 0, 0)).1 + d0,
+         ((gexp M j0 Lb d0 d1 n).getD (p - Lb) (0, 0, 0)).2.1
+           + (if le1 M j0 (j0 + ((p - j0) % Lb)) then d1 else 0),
+         ((gexp M j0 Lb d0 d1 n).getD (p - Lb) (0, 0, 0)).2.2) := by
+  obtain ⟨k, q, hk, hq, hpe⟩ := gexp_pos_decomp (n := n + 1) hLb (by omega) hp1
+  have hk1 : 1 ≤ k := by
+    rcases Nat.eq_zero_or_pos k with rfl | h
+    · omega
+    · exact h
+  have hpm : p - Lb = j0 + ((k - 1) * Lb + q) := by
+    have hsm : k * Lb = (k - 1) * Lb + Lb := by
+      have h2 : (k - 1 + 1) * Lb = (k - 1) * Lb + Lb := Nat.succ_mul (k - 1) Lb
+      rw [show k - 1 + 1 = k from by omega] at h2
+      exact h2
+    omega
+  have hmod : (p - j0) % Lb = q := by
+    have : p - j0 = k * Lb + q := by omega
+    rw [this, Nat.add_comm, Nat.add_mul_mod_self_right]
+    exact Nat.mod_eq_of_lt hq
+  rw [hpm, hmod, hpe, gexp_getD_mir hlen hk hq,
+    gexp_getD_mir hlen (show k - 1 < n from by omega) hq]
+  have hsm0 : k * d0 = (k - 1) * d0 + d0 := by
+    have h2 : (k - 1 + 1) * d0 = (k - 1) * d0 + d0 := Nat.succ_mul (k - 1) d0
+    rw [show k - 1 + 1 = k from by omega] at h2
+    exact h2
+  have hsm1 : k * d1 = (k - 1) * d1 + d1 := by
+    have h2 : (k - 1 + 1) * d1 = (k - 1) * d1 + d1 := Nat.succ_mul (k - 1) d1
+    rw [show k - 1 + 1 = k from by omega] at h2
+    exact h2
+  by_cases hg : le1 M j0 (j0 + q)
+  · simp only [if_pos hg]
+    refine Prod.ext ?_ (Prod.ext ?_ ?_)
+    · dsimp only
+      omega
+    · dsimp only
+      omega
+    · dsimp only
+  · simp only [if_neg hg]
+    refine Prod.ext ?_ (Prod.ext ?_ ?_)
+    · dsimp only
+      omega
+    · dsimp only
+    · dsimp only
+
+/-- Row-0 parent steps mirror between consecutive tower tails. -/
+theorem nextrel0_tail_mirror {a b : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (ha : j0 + Lb ≤ a) (hb : b < j0 + (n + 1) * Lb) :
+    (nextrel0 (gexp M j0 Lb d0 d1 (n + 1)) a b ↔
+      nextrel0 (gexp M j0 Lb d0 d1 n) (a - Lb) (b - Lb)) := by
+  have hlN : (gexp M j0 Lb d0 d1 (n + 1)).length = j0 + (n + 1) * Lb :=
+    gexp_length hlen
+  have hlM : (gexp M j0 Lb d0 d1 n).length = j0 + n * Lb :=
+    gexp_length hlen
+  have hsm : (n + 1) * Lb = n * Lb + Lb := Nat.succ_mul n Lb
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · show ((gexp M j0 Lb d0 d1 n).getD (a - Lb) (0, 0, 0)).1
+        < ((gexp M j0 Lb d0 d1 n).getD (b - Lb) (0, 0, 0)).1
+      have hva := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := a)
+        hlen hLb ha (by omega)
+      have hvb := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := b)
+        hlen hLb (by omega) (by omega)
+      have h4' : ((gexp M j0 Lb d0 d1 (n + 1)).getD a (0, 0, 0)).1
+          < ((gexp M j0 Lb d0 d1 (n + 1)).getD b (0, 0, 0)).1 := h4
+      rw [hva, hvb] at h4'
+      dsimp only at h4'
+      omega
+    · intro l hl
+      have hvb := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := b)
+        hlen hLb (by omega) (by omega)
+      have hvl := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := l + Lb)
+        hlen hLb (by omega) (by omega)
+      have h5' := h5 (l + Lb) ⟨by omega, by omega⟩
+      show ((gexp M j0 Lb d0 d1 n).getD (b - Lb) (0, 0, 0)).1
+        ≤ ((gexp M j0 Lb d0 d1 n).getD l (0, 0, 0)).1
+      have h5'' : ((gexp M j0 Lb d0 d1 (n + 1)).getD b (0, 0, 0)).1
+          ≤ ((gexp M j0 Lb d0 d1 (n + 1)).getD (l + Lb) (0, 0, 0)).1 := h5'
+      rw [hvb, hvl] at h5''
+      dsimp only at h5''
+      rw [show l + Lb - Lb = l from by omega] at h5''
+      omega
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · show ((gexp M j0 Lb d0 d1 (n + 1)).getD a (0, 0, 0)).1
+        < ((gexp M j0 Lb d0 d1 (n + 1)).getD b (0, 0, 0)).1
+      have hva := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := a)
+        hlen hLb ha (by omega)
+      have hvb := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := b)
+        hlen hLb (by omega) (by omega)
+      rw [hva, hvb]
+      dsimp only
+      have h4' : ((gexp M j0 Lb d0 d1 n).getD (a - Lb) (0, 0, 0)).1
+          < ((gexp M j0 Lb d0 d1 n).getD (b - Lb) (0, 0, 0)).1 := h4
+      omega
+    · intro l hl
+      have hvb := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := b)
+        hlen hLb (by omega) (by omega)
+      have hvl := gexp_tail_getD (n := n) (d0 := d0) (d1 := d1) (p := l)
+        hlen hLb (by omega) (by omega)
+      have h5' := h5 (l - Lb) ⟨by omega, by omega⟩
+      show ((gexp M j0 Lb d0 d1 (n + 1)).getD b (0, 0, 0)).1
+        ≤ ((gexp M j0 Lb d0 d1 (n + 1)).getD l (0, 0, 0)).1
+      rw [hvb, hvl]
+      dsimp only
+      have h5'' : ((gexp M j0 Lb d0 d1 n).getD (b - Lb) (0, 0, 0)).1
+          ≤ ((gexp M j0 Lb d0 d1 n).getD (l - Lb) (0, 0, 0)).1 := h5'
+      omega
+
+/-- Chains mirror between consecutive tower tails. -/
+theorem rtg0_tail_mirror {a b : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (ha : j0 + Lb ≤ a) (hb : b < j0 + (n + 1) * Lb)
+    (hab : a ≤ b) :
+    (Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) a b ↔
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+        (a - Lb) (b - Lb)) := by
+  constructor
+  · intro h
+    clear hab hb
+    induction h with
+    | refl => exact .refl
+    | @tail y z hay hyz ih =>
+      have hz1 : z < j0 + (n + 1) * Lb := by
+        have h2 := hyz.2.1
+        rwa [gexp_length hlen] at h2
+      have hy0 : a ≤ y := nextrel0_rtrancl_index_le hay
+      exact ih.tail ((nextrel0_tail_mirror hlen hLb (by omega) hz1).1 hyz)
+  · intro h
+    have h' : ∀ {c : ℕ}, Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+        (a - Lb) c → c ≤ b - Lb →
+        Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) a (c + Lb) := by
+      intro c hc
+      induction hc with
+      | refl =>
+        intro _
+        rw [show a - Lb + Lb = a from by omega]
+      | @tail y z hay hyz ih =>
+        intro hcb
+        have hy0 : a - Lb ≤ y := nextrel0_rtrancl_index_le hay
+        have hyz' : y < z := nextrel0_index_less hyz
+        refine (ih (by omega)).tail ?_
+        have hzb : z + Lb < j0 + (n + 1) * Lb := by
+          have hz1 : z < j0 + n * Lb := by
+            have h2 := hyz.2.1
+            rwa [gexp_length hlen] at h2
+          have hsm : (n + 1) * Lb = n * Lb + Lb := Nat.succ_mul n Lb
+          omega
+        have hmir := (nextrel0_tail_mirror (n := n) (d0 := d0) (d1 := d1)
+          (a := y + Lb) (b := z + Lb) hlen hLb (by omega) hzb).2
+        rw [show y + Lb - Lb = y from by omega,
+          show z + Lb - Lb = z from by omega] at hmir
+        exact hmir hyz
+    have hres := h' h le_rfl
+    rwa [show b - Lb + Lb = b from by omega] at hres
+
+end TailMirror
+
 /-! ## 一致転送（`le1` は前置と行 0/1 だけで決まる） -/
 
 section Agree
