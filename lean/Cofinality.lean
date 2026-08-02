@@ -714,4 +714,41 @@ theorem badCrux_of_asc (H : TrioAscCrux) : TrioBadCrux := by
     rw [hsegL]
     exact hsle
 
+/-- With a zero row-1 lift every guarded copy is the uniformly shifted
+segment. -/
+theorem gcopy_d1zero (M : TrioSeq) (r L d0 k : ℕ) :
+    gcopy M r L d0 0 k = shiftr01 (k * d0) 0 (seg M r L) := by
+  unfold gcopy seg shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro j hj
+  simp only [Function.comp_apply, Nat.mul_zero, ite_self, Nat.add_zero]
+
+/-- The tail of a `d1 = 0` tower is one further uniform shift of the copies. -/
+theorem gcopiesFrom_d1zero (M : TrioSeq) (r L d0 : ℕ) :
+    ∀ m k0, gcopiesFrom M r L d0 0 (k0 + 1) m
+      = shiftr01 d0 0 (shiftr01 (k0 * d0) 0 (copies d0 0 (seg M r L) m)) := by
+  intro m
+  induction m with
+  | zero =>
+    intro k0
+    rw [gcopiesFrom_zero, copies_zero]
+    rfl
+  | succ m ih =>
+    intro k0
+    rw [gcopiesFrom_succ, ih (k0 + 1), gcopy_d1zero, copies_succ_front]
+    unfold shiftr01
+    simp only [List.map_append, List.map_map]
+    congr 1
+    · refine List.map_congr_left ?_
+      intro p hp
+      have h1 : (k0 + 1) * d0 = k0 * d0 + d0 := Nat.succ_mul k0 d0
+      simp only [Function.comp_apply, Prod.mk.injEq, and_true]
+      omega
+    · refine List.map_congr_left ?_
+      intro p hp
+      have h1 : (k0 + 1) * d0 = k0 * d0 + d0 := Nat.succ_mul k0 d0
+      simp only [Function.comp_apply, Prod.mk.injEq, and_true]
+      omega
+
 end TRIO
