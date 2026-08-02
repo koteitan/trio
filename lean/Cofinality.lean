@@ -572,4 +572,24 @@ theorem crux_zero {G R S : TrioSeq} {v0 w1 w2 : ℕ} {q : ℕ × ℕ × ℕ}
       simp only [List.headI]
       omega
 
+/-- With both shifts zero, every guarded copy is the plain segment. -/
+theorem gcopy_zero_shift (M : TrioSeq) (r L k : ℕ) :
+    gcopy M r L 0 0 k = seg M r L := by
+  unfold gcopy seg
+  refine List.map_congr_left ?_
+  intro j hj
+  simp only [Nat.mul_zero, ite_self, Nat.add_zero]
+
+/-- With both shifts zero, the guarded copies are the verbatim copies of the
+segment (in the `copies` form over the cons-shape of the block). -/
+theorem gcopiesFrom_zero_shift (M : TrioSeq) (r L k0 : ℕ) :
+    ∀ m, gcopiesFrom M r L 0 0 k0 m
+      = copies 0 0 (seg M r L) m := by
+  intro m
+  induction m generalizing k0 with
+  | zero => rfl
+  | succ m ih =>
+    rw [gcopiesFrom_succ, gcopy_zero_shift, ih (k0 + 1), copies_succ_front,
+      shiftr01_zero]
+
 end TRIO
