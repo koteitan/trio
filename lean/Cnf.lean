@@ -546,4 +546,278 @@ theorem cnf_tail {t : ℕ × ℕ × ℕ} {T' : TrioSeq}
     simp only [List.length_cons] at hle ⊢
     omega
 
+/-! ## The subscript-1 shift on terms
+
+`shiftr01 d0 d1` shifts row 0 and row 1 of a sequence.  On terms this becomes
+a uniform shift `tshift1 d1` of every first subscript, under which both the
+order and `cnf` are invariant.  This is what replaces the two-row fact
+"row-0 shifts do not change the translation". -/
+
+def tshift1 (d : ℕ) : Three → Three
+  | Z => Z
+  | P a1 a2 b c => P (a1 + d) a2 (tshift1 d b) (tshift1 d c)
+
+@[simp] theorem tshift1_Z (d : ℕ) : tshift1 d Z = Z := rfl
+@[simp] theorem tshift1_P (d a1 a2 : ℕ) (b c : Three) :
+    tshift1 d (P a1 a2 b c) = P (a1 + d) a2 (tshift1 d b) (tshift1 d c) := rfl
+
+theorem tshift1_inj {d : ℕ} : ∀ {x y : Three}, tshift1 d x = tshift1 d y → x = y := by
+  intro x
+  induction x with
+  | Z =>
+    intro y h
+    cases y with
+    | Z => rfl
+    | P e1 e2 f g => exact absurd h (by simp)
+  | P a1 a2 b c ihb ihc =>
+    intro y h
+    cases y with
+    | Z => exact absurd h (by simp)
+    | P e1 e2 f g =>
+      simp only [tshift1_P, P.injEq] at h
+      obtain ⟨h1, h2, h3, h4⟩ := h
+      simp only [P.injEq]
+      exact ⟨by omega, h2, ihb h3, ihc h4⟩
+
+theorem olt_tshift1 {d : ℕ} : ∀ {x y : Three},
+    (tshift1 d x <o tshift1 d y) ↔ x <o y := by
+  intro x
+  induction x with
+  | Z =>
+    intro y
+    cases y with
+    | Z => simp
+    | P e1 e2 f g => simp
+  | P a1 a2 b c ihb ihc =>
+    intro y
+    cases y with
+    | Z => simp
+    | P e1 e2 f g =>
+      simp only [tshift1_P, olt_P_P]
+      constructor
+      · rintro (h | ⟨h, h2⟩ | ⟨h, h2, h3⟩ | ⟨h, h2, h3, h4⟩)
+        · exact Or.inl (by omega)
+        · exact Or.inr (Or.inl ⟨by omega, h2⟩)
+        · exact Or.inr (Or.inr (Or.inl ⟨by omega, h2, ihb.1 h3⟩))
+        · exact Or.inr (Or.inr (Or.inr ⟨by omega, h2, tshift1_inj h3, ihc.1 h4⟩))
+      · rintro (h | ⟨h, h2⟩ | ⟨h, h2, h3⟩ | ⟨h, h2, h3, h4⟩)
+        · exact Or.inl (by omega)
+        · exact Or.inr (Or.inl ⟨by omega, h2⟩)
+        · exact Or.inr (Or.inr (Or.inl ⟨by omega, h2, ihb.2 h3⟩))
+        · exact Or.inr (Or.inr (Or.inr ⟨by omega, h2, by rw [h3], ihc.2 h4⟩))
+
+theorem cnf_tshift1 (d : ℕ) : ∀ {t : Three}, cnf t → cnf (tshift1 d t) := by
+  intro t
+  induction t with
+  | Z => intro _; trivial
+  | P a1 a2 b c ihb ihc =>
+    intro h
+    cases c with
+    | Z => exact cnf_P_Z.2 (ihb (cnf_P_Z.1 h))
+    | P e1 e2 f g =>
+      obtain ⟨cb, sib, cc⟩ := cnf_P_P.1 h
+      refine cnf_P_P.2 ⟨ihb cb, ?_, ihc cc⟩
+      intro hlt
+      exact sib (olt_tshift1.1 hlt)
+
+/-! ## The double shift and the copy towers -/
+
+/-- Shift row 0 by `d0` and row 1 by `d1`. -/
+def shiftr01 (d0 d1 : ℕ) : TrioSeq → TrioSeq :=
+  List.map fun p => (p.1 + d0, p.2.1 + d1, p.2.2)
+
+@[simp] theorem shiftr01_zero (M : TrioSeq) : shiftr01 0 0 M = M := by
+  unfold shiftr01
+  simp
+
+@[simp] theorem shiftr01_nil (d0 d1 : ℕ) : shiftr01 d0 d1 [] = [] := rfl
+
+theorem shiftr01_cons (d0 d1 : ℕ) (p : ℕ × ℕ × ℕ) (M : TrioSeq) :
+    shiftr01 d0 d1 (p :: M) = (p.1 + d0, p.2.1 + d1, p.2.2) :: shiftr01 d0 d1 M := rfl
+
+theorem mem_shiftr01 {d0 d1 : ℕ} {M : TrioSeq} {x : ℕ × ℕ × ℕ} :
+    x ∈ shiftr01 d0 d1 M ↔ ∃ p ∈ M, (p.1 + d0, p.2.1 + d1, p.2.2) = x := by
+  unfold shiftr01
+  simp
+
+/-- The translation of a double shift is the subscript-1 shift of the
+translation. -/
+theorem translate_shiftr01 (d0 d1 : ℕ) (M : TrioSeq) :
+    translate (shiftr01 d0 d1 M) = tshift1 d1 (translate M) := by
+  induction M using translate.induct with
+  | case1 => simp [translate, shiftr01]
+  | case2 p rest ih1 ih2 =>
+    have hpred : ((fun q : ℕ × ℕ × ℕ => decide (p.1 + d0 < q.1))
+          ∘ fun r : ℕ × ℕ × ℕ => (r.1 + d0, r.2.1 + d1, r.2.2))
+        = fun r : ℕ × ℕ × ℕ => decide (p.1 < r.1) := by
+      funext r
+      simp only [Function.comp_apply]
+      rw [decide_eq_decide]
+      omega
+    show translate ((p.1 + d0, p.2.1 + d1, p.2.2)
+        :: (rest.map fun r => (r.1 + d0, r.2.1 + d1, r.2.2))) = _
+    rw [translate]
+    show P (p.2.1 + d1) p.2.2
+        (translate ((rest.map fun r => (r.1 + d0, r.2.1 + d1, r.2.2)).takeWhile
+          fun q => p.1 + d0 < q.1))
+        (translate ((rest.map fun r => (r.1 + d0, r.2.1 + d1, r.2.2)).dropWhile
+          fun q => p.1 + d0 < q.1)) = _
+    rw [List.takeWhile_map, List.dropWhile_map, hpred]
+    show P (p.2.1 + d1) p.2.2
+        (translate (shiftr01 d0 d1 (rest.takeWhile fun q => p.1 < q.1)))
+        (translate (shiftr01 d0 d1 (rest.dropWhile fun q => p.1 < q.1))) = _
+    rw [ih1, ih2, translate]
+    rfl
+
+/-- Ascending copies with lifts `d0` (row 0) and `d1` (row 1). -/
+def copies (d0 d1 : ℕ) (blk : TrioSeq) (n : ℕ) : TrioSeq :=
+  (List.range n).flatMap fun k => shiftr01 (k * d0) (k * d1) blk
+
+@[simp] theorem copies_zero (d0 d1 : ℕ) (blk : TrioSeq) : copies d0 d1 blk 0 = [] := rfl
+
+theorem copies_succ_front (d0 d1 : ℕ) (blk : TrioSeq) (n : ℕ) :
+    copies d0 d1 blk (n + 1) = blk ++ shiftr01 d0 d1 (copies d0 d1 blk n) := by
+  unfold copies
+  rw [List.range_succ_eq_map, List.flatMap_cons, Nat.zero_mul, Nat.zero_mul,
+    shiftr01_zero]
+  congr 1
+  rw [List.flatMap_map]
+  unfold shiftr01
+  rw [List.map_flatMap]
+  congr 1
+  funext k
+  rw [List.map_map]
+  congr 1
+  funext p
+  simp only [Function.comp_apply, Nat.succ_mul, Prod.mk.injEq, and_true]
+  omega
+
+@[simp] theorem copies_one (d0 d1 : ℕ) (blk : TrioSeq) : copies d0 d1 blk 1 = blk := by
+  rw [copies_succ_front]
+  simp
+
+theorem copies_succ_cons (d0 d1 v0 w1 w2 : ℕ) (R : TrioSeq) (n : ℕ) :
+    copies d0 d1 ((v0, w1, w2) :: R) (n + 1)
+      = (v0, w1, w2) :: (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) n)) := by
+  rw [copies_succ_front, List.cons_append]
+
+theorem copies_v0_le {v0 w1 w2 : ℕ} {R : TrioSeq}
+    (Rle : ∀ x ∈ R, v0 ≤ x.1) (d0 d1 n : ℕ) :
+    ∀ x ∈ copies d0 d1 ((v0, w1, w2) :: R) n, v0 ≤ x.1 := by
+  intro x hx
+  unfold copies at hx
+  obtain ⟨k, -, hk⟩ := List.mem_flatMap.1 hx
+  obtain ⟨p, hp, rfl⟩ := mem_shiftr01.1 hk
+  have hvp : v0 ≤ p.1 := by
+    rcases List.mem_cons.1 hp with rfl | hp'
+    · simp
+    · exact Rle p hp'
+  simp only []
+  omega
+
+theorem copies_tl_gt {v0 w1 w2 : ℕ} {R : TrioSeq}
+    (hR : ∀ x ∈ R, v0 < x.1) {d0 : ℕ} (dpos : 0 < d0) (d1 : ℕ) {n : ℕ} (_n1 : 1 ≤ n) :
+    ∀ x ∈ R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) (n - 1)), v0 < x.1 := by
+  intro x hx
+  rcases List.mem_append.1 hx with hx | hx
+  · exact hR x hx
+  · obtain ⟨p, hp, rfl⟩ := mem_shiftr01.1 hx
+    have hvp : v0 ≤ p.1 :=
+      copies_v0_le (fun x hx => (hR x hx).le) d0 d1 (n - 1) p hp
+    simp only []
+    omega
+
+/-- `n` ascending copies of a CNF block translate to a CNF term.  The lead
+condition covers both ascending branches: `i1 = 1` gives the first
+disjunct (`d1 = 0`, row 1 decides) and `i1 = 2` the second (rows 1 meet,
+row 2 decides). -/
+theorem cnf_copies {v0 w1 w2 d0 d1 : ℕ} {R : TrioSeq} {lp : ℕ × ℕ × ℕ}
+    (hR : ∀ x ∈ R, v0 < x.1)
+    (d0pos : 0 < d0)
+    (lead_lt : w1 + d1 < lp.2.1 ∨ (w1 + d1 = lp.2.1 ∧ w2 < lp.2.2))
+    (lphd : lp.1 = v0 + d0)
+    (cBlp : cnf (translate (((v0, w1, w2) :: R) ++ [lp])))
+    (n : ℕ) :
+    cnf (translate (copies d0 d1 ((v0, w1, w2) :: R) n)) := by
+  induction n with
+  | zero => simp [translate]
+  | succ n ih =>
+    cases n with
+    | zero =>
+      rw [copies_one]
+      have h0 : translate ((v0, w1, w2) :: R)
+          = translate ((((v0, w1, w2) :: R) ++ [lp]).dropLast) := by
+        rw [List.dropLast_concat]
+      rw [h0]
+      exact cnf_dropLast (by simp) cBlp
+    | succ m =>
+      have cpcons := copies_succ_cons d0 d1 v0 w1 w2 R m
+      have z1cons : shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) (m + 1))
+          = (v0 + d0, w1 + d1, w2)
+            :: shiftr01 d0 d1
+                (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)) := by
+        rw [copies_succ_cons, shiftr01_cons]
+      have tlgt : ∀ x ∈ R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m),
+          v0 < x.1 := by
+        have h := copies_tl_gt (w1 := w1) (w2 := w2) hR d0pos d1 (n := m + 1) (by omega)
+        simpa using h
+      have st1 : translate (copies d0 d1 ((v0, w1, w2) :: R) (m + 1))
+          = P w1 w2
+              (translate (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))
+              Z := by
+        rw [cpcons]
+        exact translate_single_tree tlgt
+      have tZ1 : translate ((v0 + d0, w1 + d1, w2)
+            :: shiftr01 d0 d1
+                (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))
+          = P (w1 + d1) w2
+              (tshift1 d1
+                (translate (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m))))
+              Z := by
+        rw [← z1cons, translate_shiftr01, st1]
+        rfl
+      have tlp : translate ([lp] : TrioSeq) = P lp.2.1 lp.2.2 Z Z := by
+        rw [translate]
+        simp [translate]
+      have decr : translate ((v0 + d0, w1 + d1, w2)
+            :: shiftr01 d0 d1
+                (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))
+          <o translate ([lp] : TrioSeq) := by
+        rw [tZ1, tlp, olt_P_P]
+        rcases lead_lt with h | ⟨h1, h2⟩
+        · exact Or.inl h
+        · exact Or.inr (Or.inl ⟨h1, h2⟩)
+      have cZ1 : cnf (translate ((v0 + d0, w1 + d1, w2)
+          :: shiftr01 d0 d1
+              (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))) := by
+        rw [← z1cons, translate_shiftr01]
+        exact cnf_tshift1 d1 ih
+      have r1 : ∀ x ∈ shiftr01 d0 d1
+            (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)),
+          ((v0 + d0, w1 + d1, w2) : ℕ × ℕ × ℕ).1 ≤ x.1 := by
+        intro x hx
+        obtain ⟨p, hp, rfl⟩ := mem_shiftr01.1 hx
+        have : v0 ≤ p.1 := (tlgt p hp).le
+        simp only []
+        omega
+      have root : ((v0 + d0, w1 + d1, w2) : ℕ × ℕ × ℕ).1 = lp.1 := lphd.symm
+      have leadle : ∃ p1 p2 b1 c1 q1 q2 b2 c2,
+          translate ((v0 + d0, w1 + d1, w2)
+            :: shiftr01 d0 d1
+                (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))
+            = P p1 p2 b1 c1
+          ∧ translate ([lp] : TrioSeq) = P q1 q2 b2 c2
+          ∧ P p1 p2 b1 Z ≤o P q1 q2 b2 Z := by
+        refine ⟨w1 + d1, w2,
+          tshift1 d1
+            (translate (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m))),
+          Z, lp.2.1, lp.2.2, Z, Z, tZ1, tlp, Or.inl (olt_P_P.2 ?_)⟩
+        rcases lead_lt with h | ⟨h1, h2⟩
+        · exact Or.inl h
+        · exact Or.inr (Or.inl ⟨h1, h2⟩)
+      have key := cnf_ctx_cong cZ1 decr root leadle r1 (by simp)
+        ((v0, w1, w2) :: R) (by simpa using cBlp)
+      rw [copies_succ_front, z1cons]
+      exact key
+
 end TRIO
