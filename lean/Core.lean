@@ -291,4 +291,319 @@ theorem bad_B_key {M P A1 D : TrioSeq} {u w1 z e f : ℕ} {lp : ℕ × ℕ × �
     rw [List.length_map, List.length_range']
     omega)
 
+set_option maxHeartbeats 4000000 in
+/-- **Case B** — both marked columns lie inside `G ++ blk`. -/
+theorem argDomCoreOn_bad_B {M G R : TrioSeq} {v0 w10 z0 d0 d1 n : ℕ}
+    {lp : ℕ × ℕ × ℕ}
+    (hMon : ArgDomCoreOn M)
+    (hMeq : M = G ++ ((v0, w10, z0) :: R) ++ [lp])
+    (hqlt : collt (v0 + d0, w10 + d1, z0) lp)
+    (hn : 1 ≤ n)
+    {X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : G ++ gcopies M G.length (R.length + 1) d0 d1 n
+      = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (he : 0 < e) (hzf : f = 0 ∨ z = 0)
+    (h1 : ∀ x ∈ A1, u < x.1) (h2 : ∀ x ∈ B, u + e < x.1)
+    (h3 : ∀ x ∈ A2, u < x.1) (h4 : A2 = [] ∨ (A2.headI).1 ≤ u + e)
+    (h5 : Z = [] ∨ (Z.headI).1 ≤ u) (h6 : SpineOK A1 (u + e) w1)
+    (hcase : X.length + (A1.length + 1) < G.length + (R.length + 1)) :
+    sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  set j0 := G.length with hj0def
+  set Lb := R.length + 1 with hLbdef
+  set p0 := j0 + Lb with hp0def
+  set ipos := X.length with hiposdef
+  set jpos := X.length + (A1.length + 1) with hjposdef
+  -- block identification and copy-0 peel
+  have hblk : seg M j0 Lb = (v0, w10, z0) :: R := by
+    have h := seg_append_context G (((v0, w10, z0) :: R) ++ [lp])
+      (l := Lb) (by
+        simp only [List.length_append, List.length_cons, List.length_nil]
+        omega)
+    have hM2 : M = G ++ (((v0, w10, z0) :: R) ++ [lp]) := by
+      rw [hMeq]
+      simp
+    rw [hj0def, hM2, h]
+    rw [show Lb = ((v0, w10, z0) :: R).length from by
+      simp only [List.length_cons]; omega]
+    exact List.take_left
+  have hTsplit : G ++ gcopies M j0 Lb d0 d1 (m + 1)
+      = (G ++ ((v0, w10, z0) :: R)) ++ gcopiesFrom M j0 Lb d0 d1 1 m := by
+    rw [gcopies_eq_from, gcopiesFrom_succ, gcopy_zero, hblk]
+    simp
+  -- host coordinates
+  have hMlen : M.length = p0 + 1 := by
+    rw [hMeq]
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    omega
+  have hPlen : (G ++ ((v0, w10, z0) :: R)).length = p0 := by
+    simp only [List.length_append, List.length_cons]
+    omega
+  have hagree : ∀ x, x < p0 →
+      (G ++ gcopies M j0 Lb d0 d1 (m + 1)).getD x (0, 0, 0)
+        = M.getD x (0, 0, 0) := by
+    intro x hx
+    rw [hTsplit,
+      getD_append_left (G := G ++ ((v0, w10, z0) :: R)) (by rw [hPlen]; omega),
+      hMeq,
+      show G ++ ((v0, w10, z0) :: R) ++ [lp]
+        = (G ++ ((v0, w10, z0) :: R)) ++ [lp] from by simp,
+      getD_append_left (G := G ++ ((v0, w10, z0) :: R)) (by rw [hPlen]; omega)]
+  -- the instance prefix sits inside the shared part
+  have hNsplit : (G ++ ((v0, w10, z0) :: R)) ++ gcopiesFrom M j0 Lb d0 d1 1 m
+      = (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])) ++ (B ++ (A2 ++ Z)) := by
+    rw [← hTsplit, heq]
+    simp [List.append_assoc]
+  have hClen : (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])).length ≤ p0 := by
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    omega
+  obtain ⟨hPD, hBAZ⟩ := split_prefix_left hNsplit (by rw [hPlen]; exact hClen)
+  set D := (G ++ ((v0, w10, z0) :: R)).drop
+    (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])).length with hDdef
+  have hDlen : D.length = p0 - (jpos + 1) := by
+    rw [hDdef, List.length_drop, hPlen]
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    omega
+  have hMsplit : M = (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)]))
+      ++ (D ++ [lp]) := by
+    rw [hMeq, ← List.append_assoc, hPD, List.append_assoc]
+  -- the two anchored maps agree strictly below the host end
+  have hguardeq : ∀ p, p < p0 →
+      (le1 (G ++ gcopies M j0 Lb d0 d1 (m + 1)) ipos p ↔ le1 M ipos p) := by
+    intro p hp
+    have hlenT : p < (G ++ gcopies M j0 Lb d0 d1 (m + 1)).length := by
+      rw [List.length_append, gcopies_length]
+      have : (m + 1) * Lb = m * Lb + Lb := Nat.succ_mul m Lb
+      omega
+    constructor
+    · intro h
+      exact le1_of_agree (X := M) (M := G ++ gcopies M j0 Lb d0 d1 (m + 1))
+        (by omega) hlenT (fun x hx => (hagree x (by omega)).symm) h
+    · intro h
+      exact le1_of_agree (X := G ++ gcopies M j0 Lb d0 d1 (m + 1)) (M := M)
+        hlenT (by omega) (fun x hx => hagree x (by omega)) h
+  have hmapeq : ∀ a l, ipos ≤ a → a + l ≤ p0 →
+      (List.range' a l).map (fun p => ((entry
+          (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 0 p + e,
+        entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 1 p
+          + (if le1 (G ++ gcopies M j0 Lb d0 d1 (m + 1)) ipos p then f else 0),
+        entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 2 p) : ℕ × ℕ × ℕ))
+      = (List.range' a l).map (fun p => ((entry M 0 p + e,
+        entry M 1 p + (if le1 M ipos p then f else 0),
+        entry M 2 p) : ℕ × ℕ × ℕ)) := by
+    intro a l ha hl
+    refine List.map_congr_left ?_
+    intro p hp
+    obtain ⟨hp1, hp2⟩ := List.mem_range'_1.1 hp
+    have hplt : p < p0 := by omega
+    have he0 : entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 0 p = entry M 0 p := by
+      unfold entry
+      rw [hagree p hplt]
+    have he1 : entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 1 p = entry M 1 p := by
+      unfold entry
+      rw [hagree p hplt]
+    have he2 : entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 2 p = entry M 2 p := by
+      unfold entry
+      rw [hagree p hplt]
+    rw [he0, he1, he2]
+    by_cases hg : le1 M ipos p
+    · rw [if_pos hg, if_pos ((hguardeq p hplt).2 hg)]
+    · rw [if_neg hg, if_neg (fun hc => hg ((hguardeq p hplt).1 hc))]
+  -- goal in map form
+  rw [instance_bridge heq he h1 h2 h3]
+  -- split off the A2 part of the goal comparator
+  have hgsp : A1.length + (1 + (B.length + A2.length))
+      = (A1.length + 1 + B.length) + A2.length := by
+    omega
+  rw [hgsp, ← List.range'_append_1, List.map_append]
+  refine sle_append_mono ?_ _
+  rcases Nat.lt_or_ge B.length D.length with hBD | hBD
+  · -- #### `B` stops strictly inside the shared part
+    obtain ⟨hDr, hArest⟩ := split_prefix_right hBAZ (le_of_lt hBD)
+    set Dr := D.drop B.length with hDrdef
+    have hDrne : Dr ≠ [] := by
+      intro hnil
+      have := congrArg List.length hnil
+      rw [hDrdef, List.length_drop] at this
+      simp at this
+      omega
+    obtain ⟨A2', Z', hsp, hA2'gt, hZ'hd⟩ := arg_split u (Dr ++ [lp])
+    have hA2'hd : A2' = [] ∨ (A2'.headI).1 ≤ u + e := by
+      by_cases hA2e : A2' = []
+      · exact Or.inl hA2e
+      · refine Or.inr ?_
+        have hh1 : (Dr ++ [lp]).headI = A2'.headI := by
+          rw [hsp, headI_append_left hA2e]
+        have hDrhd : (Dr.headI).1 ≤ u + e := by
+          have hhd : (A2 ++ Z).headI = Dr.headI := by
+            rw [hArest, headI_append_left hDrne]
+          have hne : A2 ++ Z ≠ [] := by
+            rw [hArest]
+            rcases hdd : Dr with _ | ⟨dr, Dr'⟩
+            · exact absurd hdd hDrne
+            · simp
+          by_cases hA2n : A2 = []
+          · rw [hA2n, List.nil_append] at hhd
+            have hZne : Z ≠ [] := by
+              rw [hA2n, List.nil_append] at hne
+              exact hne
+            rcases h5 with hc | hc
+            · exact absurd hc hZne
+            · rw [← hhd]
+              omega
+          · rw [headI_append_left hA2n] at hhd
+            rcases h4 with hc | hc
+            · exact absurd hc hA2n
+            · rw [← hhd]
+              exact hc
+        rw [← hh1, headI_append_left hDrne]
+        exact hDrhd
+    have hverd := bad_B_key (B' := B) (A2' := A2') (Z' := Z')
+      hMon hMsplit he hzf h1 h6
+      (by rw [hDr, List.append_assoc, ← hsp]) h2 hA2'gt hA2'hd hZ'hd
+    rw [← hmapeq (ipos + 1) (A1.length + 1 + B.length) (by omega) (by
+      rw [hDlen] at hBD
+      omega)] at hverd
+    exact hverd
+  · -- #### `B` reaches the end of the shared part
+    obtain ⟨hB2, hT⟩ := split_prefix_left hBAZ hBD
+    set B2 := B.drop D.length with hB2def
+    have hDgt : ∀ x ∈ D, u + e < x.1 := by
+      intro x hx
+      refine h2 x ?_
+      rw [hB2]
+      exact List.mem_append_left _ hx
+    -- the head of the next copy is the lifted block root
+    have hhead : ∀ (q : ℕ × ℕ × ℕ) (B2' : TrioSeq), B2 = q :: B2' →
+        q = (v0 + d0, w10 + d1, z0) := by
+      intro q B2' hB2'
+      obtain ⟨m', rfl⟩ : ∃ m', m = m' + 1 := by
+        rcases m with _ | m'
+        · exfalso
+          rw [gcopiesFrom_zero, hB2'] at hT
+          simp at hT
+        · exact ⟨m', rfl⟩
+      rw [gcopiesFrom_succ,
+        gcopy_root_cons M j0 Lb d0 d1 1 (by omega) (by rw [hMlen]; omega),
+        hB2', List.cons_append] at hT
+      have hqe := (List.cons_eq_cons.1 hT).1
+      have hm0 : M.getD j0 (0, 0, 0) = (v0, w10, z0) := by
+        rw [hMeq, show G ++ ((v0, w10, z0) :: R) ++ [lp]
+          = G ++ (((v0, w10, z0) :: R) ++ [lp]) from by simp,
+          getD_app_right _ _ le_rfl, Nat.sub_self]
+        rfl
+      have he0 : entry M 0 j0 = v0 := by
+        show (M.getD j0 (0, 0, 0)).1 = v0
+        rw [hm0]
+      have he1 : entry M 1 j0 = w10 := by
+        show (M.getD j0 (0, 0, 0)).2.1 = w10
+        rw [hm0]
+      have he2 : entry M 2 j0 = z0 := by
+        show (M.getD j0 (0, 0, 0)).2.2 = z0
+        rw [hm0]
+      rw [← hqe, he0, he1, he2, Nat.one_mul, Nat.one_mul]
+    by_cases hlpg : u + e < lp.1
+    · -- the host's argument is `D ++ [lp]`
+      have hB'gt : ∀ x ∈ D ++ [lp], u + e < x.1 := by
+        intro x hx
+        rcases List.mem_append.1 hx with hx | hx
+        · exact hDgt x hx
+        · rw [List.mem_singleton.1 hx]
+          exact hlpg
+      have hverd := bad_B_key (B' := D ++ [lp]) (A2' := []) (Z' := [])
+        hMon hMsplit he hzf h1 h6
+        (by simp) hB'gt (by simp) (Or.inl rfl) (Or.inl rfl)
+      -- split the comparator into the shared prefix and the lp image
+      have hsp2 : A1.length + 1 + (D ++ [lp]).length
+          = (A1.length + 1 + D.length) + 1 := by
+        simp only [List.length_append, List.length_cons, List.length_nil]
+        omega
+      rw [hsp2, ← List.range'_append_1, List.map_append] at hverd
+      rcases hB2e : B2 with _ | ⟨q, B2'⟩
+      · -- `B` is exactly the shared part
+        have hBeq : B = D := by
+          rw [hB2, hB2e, List.append_nil]
+        have hshort := sle_take_of_short (sle_of_append_left hverd) (by
+          rw [List.length_map, List.length_range']
+          omega)
+        rw [hBeq]
+        rw [← hmapeq (ipos + 1) (A1.length + 1 + D.length) (by omega) (by
+          rw [hDlen] at hBD
+          omega)] at hshort
+        exact hshort
+      · -- `B` runs into the next copy: replace `lp` by the copy root
+        refine Or.inr ?_
+        have hqval := hhead q B2' hB2e
+        have hgB : B = D ++ q :: B2' := by
+          rw [hB2, hB2e]
+        have hVlen : (((List.range' (ipos + 1) (A1.length + 1 + D.length)).map
+            (fun p => ((entry M 0 p + e,
+              entry M 1 p + (if le1 M ipos p then f else 0),
+              entry M 2 p) : ℕ × ℕ × ℕ)))).length
+            = A1.length + 1 + D.length := by
+          rw [List.length_map, List.length_range']
+        have hres := seqlex_of_sle_snoc' (q := q) hverd (by
+            rw [hqval]
+            exact hqlt) (by
+            rw [hVlen]
+            omega) B2'
+          (((List.range' (ipos + 1 + (A1.length + 1 + D.length))
+              (B2'.length + 1)).map
+            (fun p => ((entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 0 p + e,
+              entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 1 p
+                + (if le1 (G ++ gcopies M j0 Lb d0 d1 (m + 1)) ipos p
+                  then f else 0),
+              entry (G ++ gcopies M j0 Lb d0 d1 (m + 1)) 2 p) : ℕ × ℕ × ℕ))))
+        have hgsp2 : A1.length + 1 + B.length
+            = (A1.length + 1 + D.length) + (B2'.length + 1) := by
+          rw [hgB]
+          simp only [List.length_append, List.length_cons]
+          omega
+        rw [hgsp2, ← List.range'_append_1, List.map_append, hgB]
+        rw [← hmapeq (ipos + 1) (A1.length + 1 + D.length) (by omega) (by
+          rw [hDlen] at hBD ⊢
+          omega)] at hres
+        exact hres
+    · -- the dropped column is at or below the deeper marked level
+      have hqle : v0 + d0 ≤ lp.1 := by
+        rcases hqlt with h | ⟨h, -⟩
+        · exact le_of_lt h
+        · omega
+      have hB2nil : B2 = [] := by
+        rcases hB2e : B2 with _ | ⟨q, B2'⟩
+        · rfl
+        · exfalso
+          have hqval := hhead q B2' hB2e
+          have hqmem : q ∈ B := by
+            rw [hB2, hB2e]
+            exact List.mem_append_right _ (by simp)
+          have := h2 q hqmem
+          rw [hqval] at this
+          dsimp only at this
+          omega
+      have hBeq : B = D := by
+        rw [hB2, hB2nil, List.append_nil]
+      by_cases hu : u < lp.1
+      · have hverd := bad_B_key (B' := B) (A2' := [lp]) (Z' := [])
+          hMon hMsplit he hzf h1 h6
+          (by rw [hBeq]; simp) h2
+          (by
+            intro x hx
+            rw [List.mem_singleton.1 hx]
+            exact hu)
+          (Or.inr (by simp only [List.headI]; omega))
+          (Or.inl rfl)
+        rw [← hmapeq (ipos + 1) (A1.length + 1 + B.length) (by omega) (by
+          rw [hBeq, hDlen]
+          omega)] at hverd
+        exact hverd
+      · have hverd := bad_B_key (B' := B) (A2' := []) (Z' := [lp])
+          hMon hMsplit he hzf h1 h6
+          (by rw [hBeq]; simp) h2 (by simp) (Or.inl rfl)
+          (Or.inr (by simp only [List.headI]; omega))
+        rw [← hmapeq (ipos + 1) (A1.length + 1 + B.length) (by omega) (by
+          rw [hBeq, hDlen]
+          omega)] at hverd
+        exact hverd
+
 end TRIO
