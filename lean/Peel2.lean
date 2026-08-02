@@ -926,4 +926,229 @@ theorem ascArgDom2_of_core (H : ArgDomCore) : AscArgDom2 := by
   rw [← hsubj]
   exact hm
 
+/-! ## 第二上昇枝の完結（one extra copy） -/
+
+theorem gmap_cons (N : TrioSeq) (r d0 d1 j a : ℕ) {l : ℕ} (hl : 0 < l) :
+    gmap N r d0 d1 j a l
+      = (entry N 0 a + j * d0,
+         entry N 1 a + (if le1 N r a then j * d1 else 0),
+         entry N 2 a) :: gmap N r d0 d1 j (a + 1) (l - 1) := by
+  unfold gmap
+  rw [show l = (l - 1) + 1 from by omega, List.range'_succ, List.map_cons]
+  simp only [Nat.add_sub_cancel]
+
+theorem gcopy_root_cons (M : TrioSeq) (r Lb d0 d1 k : ℕ) (hLb : 0 < Lb)
+    (hr : r < M.length) :
+    gcopy M r Lb d0 d1 k
+      = (entry M 0 r + k * d0, entry M 1 r + k * d1, entry M 2 r)
+        :: gmap M r d0 d1 k (r + 1) (Lb - 1) := by
+  unfold gcopy gmap
+  rw [show Lb = (Lb - 1) + 1 from by omega, List.range'_succ, List.map_cons,
+    if_pos (le1_refl hr)]
+  simp only [Nat.add_sub_cancel]
+
+set_option maxHeartbeats 2000000 in
+/-- **The second ascending branch closes with one extra copy.** -/
+theorem asc_crux2 (H : AscArgDom2) {G R S : TrioSeq} {v0 w1 d0 d1 : ℕ}
+    (hM : ST_TS ((G ++ ((v0, w1, 0) :: R)) ++ [(v0 + d0, w1 + d1, 1)]))
+    (hN : ST_TS ((G ++ ((v0, w1, 0) :: R)) ++ (v0 + d0, w1 + d1, 0) :: S))
+    (hRgt : ∀ x ∈ R, v0 < x.1) (hd0 : 0 < d0) (hd1 : 0 < d1)
+    (hle1 : le1 ((G ++ ((v0, w1, 0) :: R)) ++ [(v0 + d0, w1 + d1, 1)])
+      G.length (G ++ ((v0, w1, 0) :: R)).length) :
+    ∃ n, 1 ≤ n ∧ sle ((v0 + d0, w1 + d1, 0) :: S)
+      (gcopiesFrom ((G ++ ((v0, w1, 0) :: R)) ++ [(v0 + d0, w1 + d1, 1)])
+        G.length (R.length + 1) d0 d1 1 n) := by
+  obtain ⟨m, hm1, hdom⟩ := H hM hN hRgt hd0 hd1 hle1
+  set N := (G ++ ((v0, w1, 0) :: R)) ++ (v0 + d0, w1 + d1, 0) :: S with hNdef
+  set Mf := (G ++ ((v0, w1, 0) :: R)) ++ [(v0 + d0, w1 + d1, 1)] with hMfdef
+  set r := G.length with hrdef
+  set Lb := R.length + 1 with hLbdef
+  set Shi := S.takeWhile (fun p => v0 + d0 < p.1) with hShidef
+  set Slo := S.dropWhile (fun p => v0 + d0 < p.1) with hSlodef
+  have hSsplit : Shi ++ Slo = S := List.takeWhile_append_dropWhile
+  have hqpos : (G ++ ((v0, w1, 0) :: R)).length = r + Lb := by
+    simp only [List.length_append, List.length_cons]
+    omega
+  have hNlen2 : N.length = r + Lb + 1 + S.length := by
+    rw [hNdef]
+    simp only [List.length_append, List.length_cons]
+    omega
+  have hMflen : Mf.length = r + Lb + 1 := by
+    rw [hMfdef]
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    omega
+  have hgrN : N.getD r (0, 0, 0) = (v0, w1, 0) := by
+    rw [hNdef]
+    rw [show (G ++ ((v0, w1, 0) :: R)) ++ (v0 + d0, w1 + d1, 0) :: S
+      = G ++ ((v0, w1, 0) :: (R ++ (v0 + d0, w1 + d1, 0) :: S)) from by simp]
+    rw [getD_app_right _ _ le_rfl, Nat.sub_self]
+    rfl
+  have hgrM : Mf.getD r (0, 0, 0) = (v0, w1, 0) := by
+    rw [hMfdef]
+    rw [show (G ++ ((v0, w1, 0) :: R)) ++ [(v0 + d0, w1 + d1, 1)]
+      = G ++ ((v0, w1, 0) :: (R ++ [(v0 + d0, w1 + d1, 1)])) from by simp]
+    rw [getD_app_right _ _ le_rfl, Nat.sub_self]
+    rfl
+  have hgqN : N.getD (r + Lb) (0, 0, 0) = (v0 + d0, w1 + d1, 0) := by
+    rw [hNdef, ← hqpos, getD_app_right _ _ le_rfl, Nat.sub_self]
+    rfl
+  have hagree : ∀ x, x < r + Lb → N.getD x (0, 0, 0) = Mf.getD x (0, 0, 0) := by
+    intro x hx
+    rw [hNdef, hMfdef,
+      getD_append_left (G := G ++ ((v0, w1, 0) :: R)) (by rw [hqpos]; omega),
+      getD_append_left (G := G ++ ((v0, w1, 0) :: R)) (by rw [hqpos]; omega)]
+  have hSloHd : Slo = [] ∨ (Slo.headI).1 ≤ v0 + d0 := by
+    rcases hdd : Slo with _ | ⟨z', Z'⟩
+    · exact Or.inl rfl
+    · refine Or.inr ?_
+      have h := List.head?_dropWhile_not
+        (fun p : ℕ × ℕ × ℕ => decide (v0 + d0 < p.1)) S
+      rw [← hSlodef, hdd] at h
+      simp only [List.head?_cons] at h
+      have : ¬ (v0 + d0 < z'.1) := by simpa using h
+      simp only [List.headI]
+      omega
+  -- the boundary guard in the crux host
+  have hle1qN : le1 N r (r + Lb) := by
+    rw [hqpos] at hle1
+    have hlp : Mf.getD (r + Lb) (0, 0, 0) = (v0 + d0, w1 + d1, 1) := by
+      rw [hMfdef, ← hqpos, getD_app_right _ _ le_rfl, Nat.sub_self]
+      rfl
+    refine le1_of_agree_last (X := N) (M := Mf)
+      (by omega) (by omega) hagree ?_ ?_ hle1
+    · rw [hgqN, hlp]
+    · rw [hgqN, hlp]
+  -- window facts
+  have hdictR : ∀ i, i < R.length →
+      N.getD (r + 1 + i) (0, 0, 0) = R.getD i (0, 0, 0) := by
+    intro i hi
+    rw [hNdef,
+      getD_append_left (G := G ++ ((v0, w1, 0) :: R)) (by rw [hqpos]; omega)]
+    rw [show G ++ ((v0, w1, 0) :: R) = (G ++ [(v0, w1, 0)]) ++ R from by simp]
+    rw [getD_app_right (G ++ [(v0, w1, 0)]) R (by
+      simp only [List.length_append, List.length_cons, List.length_nil]
+      omega)]
+    congr 1
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    omega
+  have hupN : ∀ p, r < p → p ≤ r + Lb → v0 < entry N 0 p := by
+    intro p h1 h2
+    rcases Nat.eq_or_lt_of_le h2 with heq | h2'
+    · show (N.getD p (0, 0, 0)).1 > v0
+      rw [heq, hgqN]
+      dsimp only
+      omega
+    · have hi : p - r - 1 < R.length := by omega
+      show (N.getD p (0, 0, 0)).1 > v0
+      rw [show p = r + 1 + (p - r - 1) from by omega, hdictR _ hi]
+      exact hRgt _ (getD_mem_of_lt (by omega))
+  -- entry dictionaries
+  have he0rM : entry Mf 0 r = v0 := by
+    show (Mf.getD r (0, 0, 0)).1 = v0
+    rw [hgrM]
+  have he1rM : entry Mf 1 r = w1 := by
+    show (Mf.getD r (0, 0, 0)).2.1 = w1
+    rw [hgrM]
+  have he2rM : entry Mf 2 r = 0 := by
+    show (Mf.getD r (0, 0, 0)).2.2 = 0
+    rw [hgrM]
+  have hq0 : entry N 0 (r + Lb) = entry Mf 0 r + d0 := by
+    show (N.getD (r + Lb) (0, 0, 0)).1 = _
+    rw [hgqN, he0rM]
+  have hq1 : entry N 1 (r + Lb) = entry Mf 1 r + d1 := by
+    show (N.getD (r + Lb) (0, 0, 0)).2.1 = _
+    rw [hgqN, he1rM]
+  have hq2 : entry N 2 (r + Lb) = entry Mf 2 r := by
+    show (N.getD (r + Lb) (0, 0, 0)).2.2 = _
+    rw [hgqN, he2rM]
+  have hLb0 : 0 < Lb := by omega
+  have hbN : r + Lb < N.length := by omega
+  have hbM : r + Lb < Mf.length := by omega
+  -- the bridge at m + 1
+  have hbr := gtow_gcopiesFrom (N := N) (M := Mf) hLb0 hagree hbN hbM
+    hle1qN hq0 hq1 hq2 (m + 1) 1 le_rfl
+  rw [he0rM, he1rM, he2rM, Nat.one_mul, Nat.one_mul] at hbr
+  -- decompose the target copies
+  have htgt : gcopiesFrom Mf r Lb d0 d1 1 (m + 2)
+      = ((v0 + d0, w1 + d1, 0) :: gtow N r d0 d1 Lb 1 (m + 1))
+        ++ gmap Mf r d0 d1 (1 + (m + 1)) (r + 1) (Lb - 1) := by
+    rw [gcopiesFrom_succ_back, gcopy_root_cons Mf r Lb d0 d1 _ hLb0 (by omega),
+      he0rM, he1rM, he2rM,
+      show gcopiesFrom Mf r Lb d0 d1 1 (m + 1)
+          ++ ((v0 + (1 + (m + 1)) * d0, w1 + (1 + (m + 1)) * d1, 0)
+            :: gmap Mf r d0 d1 (1 + (m + 1)) (r + 1) (Lb - 1))
+        = (gcopiesFrom Mf r Lb d0 d1 1 (m + 1)
+            ++ [((v0 + (1 + (m + 1)) * d0,
+                 w1 + (1 + (m + 1)) * d1, 0) : ℕ × ℕ × ℕ)])
+          ++ gmap Mf r d0 d1 (1 + (m + 1)) (r + 1) (Lb - 1) from by simp,
+      ← hbr]
+  refine ⟨m + 2, by omega, ?_⟩
+  rw [htgt]
+  show sle ([((v0 + d0 : ℕ), (w1 + d1 : ℕ), (0 : ℕ))] ++ S)
+    (([((v0 + d0 : ℕ), (w1 + d1 : ℕ), (0 : ℕ))]
+      ++ gtow N r d0 d1 Lb 1 (m + 1))
+      ++ gmap Mf r d0 d1 (1 + (m + 1)) (r + 1) (Lb - 1))
+  rw [List.append_assoc]
+  rw [sle_append_cancel]
+  -- S against the extended tower
+  rw [gtow_succ_back, List.append_assoc]
+  conv_lhs => rw [← hSsplit]
+  have hgmapN_gt : ∀ x ∈ gmap N r d0 d1 (1 + m) (r + 1) Lb, v0 + d0 < x.1 := by
+    intro x hx
+    unfold gmap at hx
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.1 hx
+    obtain ⟨hp1, hp2⟩ := List.mem_range'_1.1 hp
+    have := hupN p (by omega) (by omega)
+    have hmd : d0 ≤ (1 + m) * d0 := by
+      have : 1 * d0 ≤ (1 + m) * d0 := Nat.mul_le_mul_right _ (by omega)
+      omega
+    dsimp only
+    omega
+  rcases hdom with heq | hlt
+  · -- the tower is exhausted exactly: the next level decides
+    rw [heq]
+    rw [sle_append_cancel]
+    rcases hSloHd with hslo | hslo
+    · rw [hslo]
+      refine Or.inr ?_
+      show (gmap N r d0 d1 (1 + m) (r + 1) Lb
+        ++ gmap Mf r d0 d1 (1 + (m + 1)) (r + 1) (Lb - 1)) ≠ []
+      intro hc
+      have := congrArg List.length hc
+      simp only [List.length_append, gmap_length, List.length_nil] at this
+      omega
+    · rcases hdd : Slo with _ | ⟨s0, Slo'⟩
+      · refine Or.inr ?_
+        show (gmap N r d0 d1 (1 + m) (r + 1) Lb
+          ++ gmap Mf r d0 d1 (1 + (m + 1)) (r + 1) (Lb - 1)) ≠ []
+        intro hc
+        have := congrArg List.length hc
+        simp only [List.length_append, gmap_length, List.length_nil] at this
+        omega
+      · refine Or.inr ?_
+        rw [gmap_cons N r d0 d1 (1 + m) (r + 1) hLb0, List.cons_append]
+        refine Or.inl (Or.inl ?_)
+        have hhead := hupN (r + 1) (by omega) (by omega)
+        have hmd : d0 ≤ (1 + m) * d0 := by
+          have : 1 * d0 ≤ (1 + m) * d0 := Nat.mul_le_mul_right _ (by omega)
+          omega
+        rw [hdd] at hslo
+        simp only [List.headI] at hslo
+        dsimp only
+        omega
+  · -- strict divergence inside the tower: splice
+    refine Or.inr ?_
+    refine seqlex_splice hlt ?_ _
+    rcases hSloHd with hslo | hslo
+    · exact Or.inl hslo
+    · refine Or.inr (fun x hx => ?_)
+      obtain ⟨j, p, hj1, hj2, hp1, hp2, rfl⟩ := gtow_mem hx
+      have := hupN p (by omega) (by omega)
+      have hmd : d0 ≤ j * d0 := by
+        have : 1 * d0 ≤ j * d0 := Nat.mul_le_mul_right _ (by omega)
+        omega
+      refine Or.inl ?_
+      dsimp only
+      omega
+
 end TRIO
