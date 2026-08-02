@@ -865,4 +865,65 @@ theorem nextrel1_snd_succ {M : TrioSeq} (hr : r1ok M) {j0 j1 : ℕ}
     omega
   omega
 
+/-! ## `z < 2` 断片の不変量: 行 2 は高々 1 -/
+
+def z2ok (M : TrioSeq) : Prop :=
+  ∀ j, j < M.length → (M.getD j (0, 0, 0)).2.2 ≤ 1
+
+theorem z2ok_mem {M : TrioSeq} (h : z2ok M) {x : ℕ × ℕ × ℕ} (hx : x ∈ M) :
+    x.2.2 ≤ 1 := by
+  obtain ⟨i, hi, hxe⟩ := List.getElem_of_mem hx
+  have := h i (by omega)
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), hxe] at this
+  exact this
+
+theorem z2ok_of_mem {M : TrioSeq} (h : ∀ x ∈ M, x.2.2 ≤ 1) : z2ok M := by
+  intro j hj
+  exact h _ (getD_mem_of_lt hj)
+
+theorem z2ok_dropLast {M : TrioSeq} (h : z2ok M) : z2ok M.dropLast :=
+  z2ok_of_mem fun x hx => z2ok_mem h (List.dropLast_subset _ hx)
+
+theorem z2ok_diagSeqT (v : ℕ) : z2ok (diagSeqT 0 v) := by
+  refine z2ok_of_mem ?_
+  intro x hx
+  unfold diagSeqT at hx
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+  show min j 1 ≤ 1
+  omega
+
+theorem z2ok_oper {M : TrioSeq} {n : ℕ} (h : z2ok M) : z2ok (M⟦n⟧) := by
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]
+    exact h
+  by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz]
+    unfold Pred
+    split_ifs
+    · exact h
+    · exact z2ok_dropLast h
+  by_cases hp : hasParent M (srow M (M.length - 1)) (M.length - 1)
+  case neg =>
+    rw [oper_eq_pred_of_noParent n hL hz hp]
+    unfold Pred
+    split_ifs
+    · exact h
+    · exact z2ok_dropLast h
+  case pos =>
+    rw [oper_gcopies n hL hz hp]
+    refine z2ok_of_mem ?_
+    intro x hx
+    rcases List.mem_append.1 hx with hm | hm
+    · exact z2ok_mem h (List.mem_of_mem_take hm)
+    · obtain ⟨l, k, h1, h2, h3, rfl⟩ := mem_gcopies hm
+      have hl : l < M.length := by omega
+      have := z2ok_mem h (entry_triple_mem hl)
+      simpa using this
+
+theorem z2ok_ST_TS {M : TrioSeq} (h : ST_TS M) : z2ok M := by
+  induction h with
+  | diag v => exact z2ok_diagSeqT v
+  | oper hN hn ih => exact z2ok_oper ih
+
 end TRIO
