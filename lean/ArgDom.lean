@@ -408,4 +408,93 @@ theorem peel_aux (d w z : ℕ) : ∀ (n : ℕ) (X Q A2 : TrioSeq) (a : ℕ),
       have := seqlex_of_sle_not_prefix hW hnp (shiftr01 d 0 Q)
       simpa using this
 
+/-! ## スパイン条件の導出 -/
+
+theorem getD_append_right' (A B : TrioSeq) (i : ℕ) :
+    (A ++ B).getD (A.length + i) (0, 0, 0) = B.getD i (0, 0, 0) := by
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_append_right (Nat.le_add_right _ _)]
+  simp
+
+/-- **The spine condition from a row-1 ancestry to the dropped column.**
+Right-visible columns of `R` are row-0 ancestors of the dropped column
+(window pivot), hence chain nodes of the `le1`-ancestry; the path lemma
+bounds their row 1 strictly above the root. -/
+theorem spineOK_of_le1 {G R : TrioSeq} {v0 w1 w2 : ℕ} {lp : ℕ × ℕ × ℕ}
+    (hle1 : le1 ((G ++ ((v0, w1, w2) :: R)) ++ [lp]) G.length
+      (G ++ ((v0, w1, w2) :: R)).length) :
+    SpineOK R lp.1 w1 := by
+  intro U V x hR hxlt hV
+  set M := (G ++ ((v0, w1, w2) :: R)) ++ [lp] with hMdef
+  set A := G ++ ((v0, w1, w2) :: U) with hAdef
+  have hMeq : M = A ++ (x :: (V ++ [lp])) := by
+    rw [hMdef, hAdef, hR]
+    simp
+  have hAlen : A.length = G.length + 1 + U.length := by
+    rw [hAdef]
+    simp
+    omega
+  have hj1 : (G ++ ((v0, w1, w2) :: R)).length = A.length + 1 + V.length := by
+    rw [hR, hAlen]
+    simp
+    omega
+  have hMlen : M.length = (G ++ ((v0, w1, w2) :: R)).length + 1 := by
+    rw [hMdef]
+    simp
+    omega
+  have hgx : M.getD A.length (0, 0, 0) = x := by
+    have h := getD_append_right' A (x :: (V ++ [lp])) 0
+    rw [Nat.add_zero] at h
+    rw [hMeq]
+    exact h
+  -- window: everything after `x` up to the dropped column is strictly above it
+  have hwin : ∀ y, A.length < y → y ≤ (G ++ ((v0, w1, w2) :: R)).length →
+      entry M 0 A.length < entry M 0 y := by
+    intro y hy1 hy2
+    obtain ⟨t, rfl⟩ : ∃ t, y = A.length + (t + 1) := ⟨y - A.length - 1, by omega⟩
+    have hgy : M.getD (A.length + (t + 1)) (0, 0, 0)
+        = (V ++ [lp]).getD t (0, 0, 0) := by
+      conv_lhs => rw [hMeq]
+      rw [getD_append_right' A (x :: (V ++ [lp])) (t + 1), List.getD_cons_succ]
+    show (M.getD A.length (0, 0, 0)).1 < (M.getD (A.length + (t + 1)) (0, 0, 0)).1
+    rw [hgx, hgy]
+    rcases Nat.lt_or_ge t V.length with ht | ht
+    · have hmem : (V ++ [lp]).getD t (0, 0, 0) ∈ V := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_append_left ht,
+          List.getElem?_eq_getElem ht]
+        exact List.getElem_mem _
+      exact hV _ hmem
+    · have htv : t = V.length := by omega
+      subst htv
+      have he : (V ++ [lp]).getD V.length (0, 0, 0) = lp := by
+        have h := getD_append_right' V [lp] 0
+        rw [Nat.add_zero] at h
+        exact h
+      rw [he]
+      exact hxlt
+  -- `x` is a row-0 chain node of the ancestry
+  have hxrtg : Relation.ReflTransGen (nextrel0 M) A.length
+      (G ++ ((v0, w1, w2) :: R)).length := by
+    refine rtg0_of_window (by omega) (by omega) ?_
+    intro l hl1 hl2
+    exact hwin l hl1 hl2
+  have hrootx : Relation.ReflTransGen (nextrel0 M) G.length A.length :=
+    rtg0_comparable (rtg1_to_rtg0 hle1.2.2) hxrtg (by omega)
+  have hbound := le1_chain_window hle1.2.2 A.length hrootx hxrtg (by omega)
+  -- read the two row-1 values
+  have hgr : M.getD G.length (0, 0, 0) = (v0, w1, w2) := by
+    have h := getD_append_right' G (((v0, w1, w2) :: R) ++ [lp]) 0
+    rw [Nat.add_zero] at h
+    rw [hMdef, List.append_assoc]
+    rw [h]
+    rfl
+  have e1 : entry M 1 G.length = w1 := by
+    show (M.getD G.length (0, 0, 0)).2.1 = w1
+    rw [hgr]
+  have e2 : entry M 1 A.length = x.2.1 := by
+    show (M.getD A.length (0, 0, 0)).2.1 = x.2.1
+    rw [hgx]
+  rw [e1, e2] at hbound
+  omega
+
 end TRIO
