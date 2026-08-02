@@ -150,4 +150,41 @@ theorem seqlex_cof_short {M N : TrioSeq} (hL : M.length - 1 = 0)
     (h : seqlex N M) : ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧) :=
   ⟨1, le_rfl, by rw [oper_eq_self_of_short 1 hL]; exact Or.inr h⟩
 
+theorem dropLast_snoc_getD {M : TrioSeq} (hne : M ≠ []) :
+    M.dropLast ++ [M.getD (M.length - 1) (0, 0, 0)] = M := by
+  conv_rhs => rw [← List.dropLast_append_getLast hne]
+  congr 1
+  rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+    List.getElem?_eq_getElem (by
+      have := List.length_pos_iff.2 hne
+      omega)]
+  rfl
+
+/-- **Branch `zero`**: the last column is `(0,0,0)`, so `M⟦n⟧ = M.dropLast`.
+Nothing squeezes strictly between `M.dropLast` and `M` because `(0,0,0)` is
+the `collt`-minimum. -/
+theorem seqlex_cof_zero {M N : TrioSeq} (hL : 1 < M.length)
+    (hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0)
+    (h : seqlex N M) : ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧) := by
+  have hne : M ≠ [] := by
+    intro he
+    rw [he] at hL
+    simp at hL
+  have hlpz : M.getD (M.length - 1) (0, 0, 0) = (0, 0, 0) :=
+    Prod.ext hz.1 (Prod.ext hz.2.1 hz.2.2)
+  have hMsplit : M.dropLast ++ [M.getD (M.length - 1) (0, 0, 0)] = M :=
+    dropLast_snoc_getD hne
+  have hop : M⟦1⟧ = M.dropLast := by
+    rw [oper_eq_pred_of_zero 1 (by omega) hz]
+    unfold Pred
+    rw [if_neg (by omega)]
+  refine ⟨1, le_rfl, ?_⟩
+  rw [hop]
+  rcases seqlex_snoc_cases (D := M.dropLast) (lp := M.getD (M.length - 1) (0, 0, 0))
+      (N := N) (by rw [hMsplit]; exact h) with hle | ⟨q, S, -, hq⟩
+  · exact hle
+  · rw [hlpz] at hq
+    simp [collt] at hq
+
 end TRIO
