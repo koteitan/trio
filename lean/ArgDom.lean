@@ -263,4 +263,88 @@ def ArgDomCore : Prop :=
     SpineOK A1 (u + e) w1 →
     sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2)))
 
+/-! ## 一様シフトの道具（`i1 = 1`, `f = 0` の鎖） -/
+
+theorem shiftr01_append (d0 d1 : ℕ) (A B : TrioSeq) :
+    shiftr01 d0 d1 (A ++ B) = shiftr01 d0 d1 A ++ shiftr01 d0 d1 B :=
+  List.map_append
+
+theorem shiftr01_injective (d0 d1 : ℕ) {X Y : TrioSeq}
+    (h : shiftr01 d0 d1 X = shiftr01 d0 d1 Y) : X = Y := by
+  induction X generalizing Y with
+  | nil =>
+    rcases Y with - | ⟨y, Y'⟩
+    · rfl
+    · exact absurd h (by simp [shiftr01])
+  | cons x X' ih =>
+    rcases Y with - | ⟨y, Y'⟩
+    · exact absurd h (by simp [shiftr01])
+    · rw [shiftr01_cons, shiftr01_cons] at h
+      obtain ⟨h1, h2⟩ := List.cons_eq_cons.1 h
+      have hxy : x = y := by
+        obtain ⟨x1, x2, x3⟩ := x
+        obtain ⟨y1, y2, y3⟩ := y
+        simp only [Prod.mk.injEq] at h1 ⊢
+        omega
+      rw [hxy, ih h2]
+
+theorem collt_shiftr01 (d0 d1 : ℕ) {p q : ℕ × ℕ × ℕ} :
+    collt ((p.1 + d0, p.2.1 + d1, p.2.2)) ((q.1 + d0, q.2.1 + d1, q.2.2))
+      ↔ collt p q := by
+  unfold collt
+  dsimp only
+  omega
+
+theorem seqlex_shiftr01 (d0 d1 : ℕ) : ∀ {X Y : TrioSeq},
+    seqlex (shiftr01 d0 d1 X) (shiftr01 d0 d1 Y) ↔ seqlex X Y := by
+  intro X
+  induction X with
+  | nil =>
+    intro Y
+    rcases Y with - | ⟨y, Y'⟩
+    · simp [shiftr01]
+    · simp [shiftr01]
+  | cons x X' ih =>
+    intro Y
+    rcases Y with - | ⟨y, Y'⟩
+    · simp [shiftr01]
+    · rw [shiftr01_cons, shiftr01_cons, seqlex_cons_cons, seqlex_cons_cons]
+      constructor
+      · rintro (hp | ⟨he, hs⟩)
+        · exact Or.inl ((collt_shiftr01 d0 d1).1 hp)
+        · refine Or.inr ⟨?_, ih.1 hs⟩
+          obtain ⟨x1, x2, x3⟩ := x
+          obtain ⟨y1, y2, y3⟩ := y
+          simp only [Prod.mk.injEq] at he ⊢
+          omega
+      · rintro (hp | ⟨rfl, hs⟩)
+        · exact Or.inl ((collt_shiftr01 d0 d1).2 hp)
+        · exact Or.inr ⟨rfl, ih.2 hs⟩
+
+theorem sle_shiftr01 (d0 d1 : ℕ) {X Y : TrioSeq} :
+    sle (shiftr01 d0 d1 X) (shiftr01 d0 d1 Y) ↔ sle X Y := by
+  unfold sle
+  rw [seqlex_shiftr01]
+  constructor
+  · rintro (he | hs)
+    · exact Or.inl (shiftr01_injective d0 d1 he)
+    · exact Or.inr hs
+  · rintro (rfl | hs)
+    · exact Or.inl rfl
+    · exact Or.inr hs
+
+/-- `shiftr01` commutes with the copy tower. -/
+theorem shiftr01_copies (d0 d1 : ℕ) (blk : TrioSeq) (n : ℕ) :
+    shiftr01 d0 d1 (copies d0 d1 blk n) = copies d0 d1 (shiftr01 d0 d1 blk) n := by
+  unfold copies shiftr01
+  rw [List.map_flatMap]
+  congr 1
+  funext k
+  rw [List.map_map, List.map_map]
+  congr 1
+  funext p
+  dsimp only [Function.comp_apply]
+  simp only [Prod.mk.injEq]
+  exact ⟨by omega, by omega, trivial⟩
+
 end TRIO
