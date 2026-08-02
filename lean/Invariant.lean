@@ -1058,4 +1058,314 @@ theorem markP1_diagSeqT (v : ℕ) : markP1 (diagSeqT 0 v) := by
     show j - 1 < j
     omega
 
+/-- Blocker extraction: a failed guard yields a chain node at or below the
+root's row 1. -/
+theorem blocker_of_not_le1 {M : TrioSeq} {r j : ℕ}
+    (hch : Relation.ReflTransGen (nextrel0 M) r j) (hb : j < M.length)
+    (hne : ¬ le1 M r j) :
+    ∃ b, Relation.ReflTransGen (nextrel0 M) r b ∧
+      Relation.ReflTransGen (nextrel0 M) b j ∧ b ≠ r ∧
+      entry M 1 b ≤ entry M 1 r := by
+  by_contra hcon
+  push Not at hcon
+  refine hne ((le1_iff_chain_window hb hch).2 ?_)
+  intro x hrx hxj hxne
+  by_contra hcon2
+  push Not at hcon2
+  exact absurd (hcon x hrx hxj hxne) (by omega)
+
+/-- Agreement transfer: a chain step is determined by entries up to `b`. -/
+theorem nextrel0_of_agree {M X : TrioSeq} {a b : ℕ} (hb : b < X.length)
+    (hag : ∀ x, x ≤ b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (h : nextrel0 M a b) : nextrel0 X a b := by
+  obtain ⟨h1, h2, h3, h4, h5⟩ := h
+  refine ⟨by omega, hb, h3, ?_, ?_⟩
+  · show entry X 0 a < entry X 0 b
+    unfold entry
+    rw [hag a (by omega), hag b le_rfl]
+    exact h4
+  · intro l hl
+    show entry X 0 b ≤ entry X 0 l
+    unfold entry
+    rw [hag l (by omega), hag b le_rfl]
+    exact h5 l hl
+
+theorem rtg0_of_agree {M X : TrioSeq} {b : ℕ} (hb : b < X.length)
+    (hag : ∀ x, x ≤ b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0)) :
+    ∀ {a c : ℕ}, c ≤ b → Relation.ReflTransGen (nextrel0 M) a c →
+    Relation.ReflTransGen (nextrel0 X) a c := by
+  intro a c hcb h
+  induction h with
+  | refl => exact .refl
+  | @tail y z hay hyz ih =>
+    have hy : y ≤ b := by
+      have := nextrel0_index_less hyz
+      omega
+    exact (ih hy).tail (nextrel0_of_agree (by omega) (fun x hx => hag x (by omega)) hyz)
+
+
+/-- **The marked-column row-1 parent survives the expansion.** -/
+theorem markP1_oper {M : TrioSeq} {n : ℕ} (hn : 1 ≤ n)
+    (hmp : markP1 M) : markP1 (M⟦n⟧) := by
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]
+    exact hmp
+  by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz]
+    unfold Pred
+    split_ifs
+    · exact hmp
+    · exact markP1_dropLast hmp
+  by_cases hp : hasParent M (srow M (M.length - 1)) (M.length - 1)
+  case neg =>
+    rw [oper_eq_pred_of_noParent n hL hz hp]
+    unfold Pred
+    split_ifs
+    · exact hmp
+    · exact markP1_dropLast hmp
+  case pos =>
+    have np := parent_nextR hp
+    have j0lt : parent M (srow M (M.length - 1)) (M.length - 1)
+        < M.length - 1 := nextR_index_lt np
+    have chain := nextR_chain0 np
+    have iv : ∀ k, parent M (srow M (M.length - 1)) (M.length - 1) < k →
+        k ≤ M.length - 1 →
+        entry M 0 (parent M (srow M (M.length - 1)) (M.length - 1))
+          < entry M 0 k :=
+      fun k h1 h2 => le0_interval_gt chain k ⟨h1, h2⟩
+    set j0 := parent M (srow M (M.length - 1)) (M.length - 1) with hj0
+    set L := M.length - 1 - j0 with hLdef
+    set d0i := (if 0 < srow M (M.length - 1)
+      then entry M 0 (M.length - 1) - entry M 0 j0 else 0) with hd0i
+    set d1i := (if 1 < srow M (M.length - 1)
+      then entry M 1 (M.length - 1) - entry M 1 j0 else 0) with hd1i
+    have hLpos : 0 < L := by omega
+    have hj0b : j0 < M.length := by omega
+    have htklen : (M.take j0).length = j0 := by
+      rw [List.length_take]
+      omega
+    rw [oper_gcopies n hL hz hp, ← hj0, ← hLdef, ← hd0i, ← hd1i]
+    set X := M.take j0 ++ gcopies M j0 L d0i d1i n with hX
+    have hXlen : X.length = j0 + n * L := by
+      rw [hX, List.length_append, htklen, gcopies_length]
+    have egG : ∀ x, x < j0 → X.getD x (0, 0, 0) = M.getD x (0, 0, 0) := by
+      intro x hx
+      rw [hX, getD_append_left (by rw [htklen]; exact hx), getD_take hx]
+    have egC : ∀ k' q', k' < n → q' < L →
+        X.getD (j0 + (k' * L + q')) (0, 0, 0)
+          = (entry M 0 (j0 + q') + k' * d0i,
+             entry M 1 (j0 + q')
+               + (if le1 M j0 (j0 + q') then k' * d1i else 0),
+             entry M 2 (j0 + q')) := by
+      intro k' q' hk' hq'
+      rw [hX, getD_app_right _ _ (by rw [htklen]; omega), htklen,
+        show j0 + (k' * L + q') - j0 = k' * L + q' from by omega,
+        gcopies_getD hk' hq']
+    -- the zero-copy agreement extends to `j0` itself
+    have egG0 : ∀ x, x ≤ j0 → X.getD x (0, 0, 0) = M.getD x (0, 0, 0) := by
+      intro x hx
+      rcases Nat.eq_or_lt_of_le hx with rfl | hlt
+      · have h := egC 0 0 (by omega) (by omega)
+        rw [Nat.add_zero, Nat.zero_mul, Nat.add_zero] at h
+        rw [h, if_pos (le1_refl hj0b), Nat.zero_mul, Nat.zero_mul,
+          Nat.add_zero, Nat.add_zero, getD_eq_entries]
+      · exact egG x hlt
+    -- the in-copy chain transfer
+    have hcopychain : ∀ k', k' < n → ∀ {a b : ℕ}, j0 ≤ a →
+        Relation.ReflTransGen (nextrel0 M) a b → b < j0 + L →
+        Relation.ReflTransGen (nextrel0 X)
+          (j0 + (k' * L + (a - j0))) (j0 + (k' * L + (b - j0))) := by
+      intro k' hk' a b ha h
+      induction h with
+      | refl => exact fun _ => .refl
+      | @tail y z hay hyz ih =>
+        intro hb
+        have hyb : j0 ≤ y := by
+          have h1 := nextrel0_rtrancl_index_le hay
+          omega
+        have hyz' : y < z := nextrel0_index_less hyz
+        have hmul1 : (k' + 1) * L ≤ n * L := Nat.mul_le_mul_right L (by omega)
+        have hmul2 : (k' + 1) * L = k' * L + L := Nat.succ_mul k' L
+        refine (ih (by omega)).tail ?_
+        obtain ⟨e1', e2', e3', e4', e5'⟩ := hyz
+        refine ⟨by rw [hXlen]; omega, by rw [hXlen]; omega, by omega, ?_, ?_⟩
+        · show entry X 0 (j0 + (k' * L + (y - j0)))
+            < entry X 0 (j0 + (k' * L + (z - j0)))
+          unfold entry
+          rw [egC k' (y - j0) hk' (by omega), egC k' (z - j0) hk' (by omega)]
+          show entry M 0 (j0 + (y - j0)) + k' * d0i
+            < entry M 0 (j0 + (z - j0)) + k' * d0i
+          rw [show j0 + (y - j0) = y from by omega,
+            show j0 + (z - j0) = z from by omega]
+          omega
+        · intro l ⟨hl1, hl2⟩
+          have hlq : ∃ q'', y - j0 < q'' ∧ q'' < z - j0
+              ∧ l = j0 + (k' * L + q'') :=
+            ⟨l - j0 - k' * L, by omega, by omega, by omega⟩
+          obtain ⟨q'', hq1, hq2, rfl⟩ := hlq
+          show entry X 0 (j0 + (k' * L + (z - j0)))
+            ≤ entry X 0 (j0 + (k' * L + q''))
+          unfold entry
+          rw [egC k' (z - j0) hk' (by omega), egC k' q'' hk' (by omega)]
+          show entry M 0 (j0 + (z - j0)) + k' * d0i
+            ≤ entry M 0 (j0 + q'') + k' * d0i
+          have := e5' (j0 + q'') ⟨by omega, by omega⟩
+          rw [show j0 + (z - j0) = z from by omega]
+          omega
+    intro pj hpj hmark
+    rw [hXlen] at hpj
+    by_cases hG : pj < j0
+    · -- take part: the host witness transfers by agreement
+      rw [egG pj hG] at hmark ⊢
+      obtain ⟨c, hc1, hc2⟩ := hmp pj (by omega) hmark
+      have hcpj : c ≤ pj := nextrel0_rtrancl_index_le hc1
+      refine ⟨c, rtg0_of_agree (b := pj) (by rw [hXlen]; omega)
+        (fun x hx => egG x (by omega)) le_rfl hc1, ?_⟩
+      rw [egG c (by omega)]
+      exact hc2
+    · push Not at hG
+      obtain ⟨k, q, hkn, hqL, hpe⟩ :=
+        index_decomp hLpos (show pj - j0 < n * L by omega)
+      have hpeq : pj = j0 + (k * L + q) := by omega
+      rw [hpeq, egC k q hkn hqL] at hmark
+      simp only [] at hmark
+      -- the marked base column
+      have hjm : (M.getD (j0 + q) (0, 0, 0)).2.2 = 1 := by
+        have e2 : entry M 2 (j0 + q) = (M.getD (j0 + q) (0, 0, 0)).2.2 := rfl
+        omega
+      obtain ⟨c, hc1, hc2⟩ := hmp (j0 + q) (by omega) hjm
+      by_cases hcG : c < j0
+      · -- crossing witness: comparability to `j0`, hop below, then the window
+        have hrtgj0q : Relation.ReflTransGen (nextrel0 M) j0 (j0 + q) :=
+          le0_interval_desc chain (by omega) (j0 + q) (by omega) (by omega)
+        have hcj0 : Relation.ReflTransGen (nextrel0 M) c j0 :=
+          rtg0_comparable hc1 hrtgj0q (by omega)
+        obtain ⟨pp, hcpp, hppj0⟩ : ∃ pp,
+            Relation.ReflTransGen (nextrel0 M) c pp ∧ nextrel0 M pp j0 := by
+          rcases hcj0.cases_tail with he | h
+          · exact absurd he (by omega)
+          · exact h
+        have hppv : entry M 0 pp < entry M 0 j0 := hppj0.2.2.2.1
+        have hppG : pp < j0 := nextrel0_index_less hppj0
+        have hwin : Relation.ReflTransGen (nextrel0 X) pp (j0 + (k * L + q)) := by
+          refine rtg0_of_window (by rw [hXlen]; omega) (by omega) ?_
+          intro l hl1 hl2
+          show entry X 0 pp < entry X 0 l
+          unfold entry
+          rw [egG pp hppG]
+          by_cases hlG : l < j0
+          · rw [egG l hlG]
+            show entry M 0 pp < entry M 0 l
+            have := hppj0.2.2.2.2 l ⟨by omega, by omega⟩
+            omega
+          · push Not at hlG
+            obtain ⟨k'', q'', hk''n, hq''L, hle⟩ :=
+              index_decomp hLpos (show l - j0 < n * L by omega)
+            have hleq : l = j0 + (k'' * L + q'') := by omega
+            rw [hleq, egC k'' q'' hk''n hq''L]
+            show entry M 0 pp < entry M 0 (j0 + q'') + k'' * d0i
+            have hbase : entry M 0 j0 ≤ entry M 0 (j0 + q'') := by
+              rcases Nat.eq_zero_or_pos q'' with rfl | hq''pos
+              · rw [Nat.add_zero]
+              · exact (iv (j0 + q'') (by omega) (by omega)).le
+            omega
+        rw [hpeq]
+        refine ⟨c, ?_, ?_⟩
+        · exact (rtg0_of_agree (b := pp) (by rw [hXlen]; omega)
+            (fun x hx => egG x (by omega)) le_rfl hcpp).trans hwin
+        · rw [egG c (by omega), egC k q hkn hqL]
+          show (M.getD c (0, 0, 0)).2.1
+            < entry M 1 (j0 + q) + (if le1 M j0 (j0 + q) then k * d1i else 0)
+          have e1 : entry M 1 (j0 + q) = (M.getD (j0 + q) (0, 0, 0)).2.1 := rfl
+          split_ifs <;> omega
+      · -- in-block witness: shift both, or swap to the blocker
+        push Not at hcG
+        have hrtgj0q : Relation.ReflTransGen (nextrel0 M) j0 (j0 + q) :=
+          le0_interval_desc chain (by omega) (j0 + q) (by omega) (by omega)
+        have hrtgj0c : Relation.ReflTransGen (nextrel0 M) j0 c :=
+          rtg0_comparable hrtgj0q hc1 hcG
+        have hcb : c < j0 + q := by
+          rcases Nat.eq_or_lt_of_le (nextrel0_rtrancl_index_le hc1) with rfl | h'
+          · exfalso
+            have e := hc2
+            omega
+          · exact h'
+        rw [hpeq]
+        by_cases hDj : le1 M j0 (j0 + q)
+        · -- the target is lifted; so is the whole chain
+          have hDc : le1 M j0 c :=
+            le1_of_chain_le1 hDj hrtgj0c hc1
+          refine ⟨j0 + (k * L + (c - j0)), ?_, ?_⟩
+          · have := hcopychain k hkn hcG hc1 (by omega)
+            rwa [show j0 + (k * L + ((j0 + q) - j0)) = j0 + (k * L + q)
+              from by omega] at this
+          · rw [egC k (c - j0) hkn (by omega), egC k q hkn hqL,
+              show j0 + (c - j0) = c from by omega]
+            show (entry M 1 c + (if le1 M j0 c then k * d1i else 0), entry M 2 c).1
+              < entry M 1 (j0 + q) + (if le1 M j0 (j0 + q) then k * d1i else 0)
+            rw [if_pos hDc, if_pos hDj]
+            have e1 : entry M 1 c = (M.getD c (0, 0, 0)).2.1 := rfl
+            have e2 : entry M 1 (j0 + q) = (M.getD (j0 + q) (0, 0, 0)).2.1 := rfl
+            show entry M 1 c + k * d1i < entry M 1 (j0 + q) + k * d1i
+            omega
+        · -- unlifted target
+          by_cases hDc : le1 M j0 c
+          · -- swap to the blocker
+            have hw1c : entry M 1 j0 ≤ entry M 1 c := by
+              rcases Nat.eq_or_lt_of_le hcG with rfl | h'
+              · exact le_rfl
+              · exact (rtg1_entry1_lt hDc.2.2 (by omega)).le
+            obtain ⟨b, hb1, hb2, hb3, hb4⟩ :=
+              blocker_of_not_le1 hrtgj0q (by omega) hDj
+            have hbq : b < j0 + q ∨ b = j0 + q := by
+              rcases Nat.eq_or_lt_of_le (nextrel0_rtrancl_index_le hb2) with rfl | h'
+              · exact Or.inr rfl
+              · exact Or.inl h'
+            rcases hbq with hbq | rfl
+            · have hbj0 : j0 < b := by
+                have := nextrel0_rtrancl_index_le hb1
+                omega
+              have hbD : ¬ le1 M j0 b := by
+                intro hle
+                have := rtg1_entry1_lt hle.2.2 (by omega)
+                omega
+              refine ⟨j0 + (k * L + (b - j0)), ?_, ?_⟩
+              · have := hcopychain k hkn (by omega : j0 ≤ b) hb2 (by omega)
+                rwa [show j0 + (k * L + ((j0 + q) - j0)) = j0 + (k * L + q)
+                  from by omega] at this
+              · rw [egC k (b - j0) hkn (by omega), egC k q hkn hqL,
+                  show j0 + (b - j0) = b from by omega]
+                rw [if_neg hbD, if_neg hDj]
+                show entry M 1 b + 0 < entry M 1 (j0 + q) + 0
+                have e1 : entry M 1 b = (M.getD b (0, 0, 0)).2.1 := rfl
+                have e2 : entry M 1 (j0 + q) = (M.getD (j0 + q) (0, 0, 0)).2.1 := rfl
+                have e3 : entry M 1 c = (M.getD c (0, 0, 0)).2.1 := rfl
+                have e4 : entry M 1 j0 = (M.getD j0 (0, 0, 0)).2.1 := rfl
+                omega
+            · -- the blocker is the target itself: contradiction with the lift
+              exfalso
+              have e2 : entry M 1 (j0 + q) = (M.getD (j0 + q) (0, 0, 0)).2.1 := rfl
+              have e3 : entry M 1 c = (M.getD c (0, 0, 0)).2.1 := rfl
+              have e4 : entry M 1 j0 = (M.getD j0 (0, 0, 0)).2.1 := rfl
+              omega
+          · -- both unlifted
+            refine ⟨j0 + (k * L + (c - j0)), ?_, ?_⟩
+            · have := hcopychain k hkn hcG hc1 (by omega)
+              rwa [show j0 + (k * L + ((j0 + q) - j0)) = j0 + (k * L + q)
+                from by omega] at this
+            · rw [egC k (c - j0) hkn (by omega), egC k q hkn hqL,
+                show j0 + (c - j0) = c from by omega]
+              rw [if_neg hDc, if_neg hDj]
+              show entry M 1 c + 0 < entry M 1 (j0 + q) + 0
+              have e1 : entry M 1 c = (M.getD c (0, 0, 0)).2.1 := rfl
+              have e2 : entry M 1 (j0 + q) = (M.getD (j0 + q) (0, 0, 0)).2.1 := rfl
+              omega
+
+
+theorem markP1_ST_TS {M : TrioSeq} (h : ST_TS M) : markP1 M := by
+  induction h with
+  | diag v => exact markP1_diagSeqT v
+  | oper hN hn ih => exact markP1_oper hn ih
+
 end TRIO
