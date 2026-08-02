@@ -820,4 +820,399 @@ theorem cnf_copies {v0 w1 w2 d0 d1 : ℕ} {R : TrioSeq} {lp : ℕ × ℕ × ℕ}
       rw [copies_succ_front, z1cons]
       exact key
 
+/-! ## CNF preservation by one expansion step -/
+
+/-- **CNF preservation, the exact-copy (`i1 = 0`) case.** -/
+theorem cnf_oper_i1eq0 {v0 w1 w2 : ℕ} {R : TrioSeq} {lp : ℕ × ℕ × ℕ} {G : TrioSeq}
+    {n : ℕ}
+    (hR : ∀ x ∈ R, v0 < x.1) (lpv : v0 < lp.1) (n1 : 1 ≤ n)
+    (cM : cnf (translate (G ++ ((v0, w1, w2) :: R) ++ [lp]))) :
+    cnf (translate (G ++ (List.replicate n ((v0, w1, w2) :: R)).flatten)) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have RlpV : ∀ x ∈ R ++ [lp], v0 < x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with hx | hx
+    · exact hR x hx
+    · simp at hx
+      simpa [hx] using lpv
+  have tZ2 : translate ((v0, w1, w2) :: (R ++ [lp]))
+      = P w1 w2 (translate (R ++ [lp])) Z := translate_single_tree RlpV
+  have Tcond : (List.replicate m ((v0, w1, w2) :: R)).flatten = []
+      ∨ ¬ v0 < (((List.replicate m ((v0, w1, w2) :: R)).flatten).headI).1 := by
+    cases m with
+    | zero => left; rfl
+    | succ m' =>
+      right
+      rw [List.replicate_succ, List.flatten_cons]
+      simp
+  have e1n : (List.replicate (m + 1) ((v0, w1, w2) :: R)).flatten
+      = (v0, w1, w2) :: (R ++ (List.replicate m ((v0, w1, w2) :: R)).flatten) := by
+    rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+  have tZ1 : translate ((v0, w1, w2)
+        :: (R ++ (List.replicate m ((v0, w1, w2) :: R)).flatten))
+      = P w1 w2 (translate R)
+          (translate (List.replicate m ((v0, w1, w2) :: R)).flatten) := by
+    rw [← List.cons_append]
+    exact translate_block_append hR Tcond
+  have rT : ∀ x ∈ R ++ [lp], ((v0, w1, w2) : ℕ × ℕ × ℕ).1 ≤ x.1 :=
+    fun x hx => (RlpV x hx).le
+  have cM' : cnf (translate (G ++ (v0, w1, w2) :: (R ++ [lp]))) := by
+    have h : G ++ ((v0, w1, w2) :: R) ++ [lp] = G ++ (v0, w1, w2) :: (R ++ [lp]) := by
+      simp
+    rwa [h] at cM
+  have cblk : cnf (translate ((v0, w1, w2) :: (R ++ [lp]))) := cnf_tail rT G cM'
+  have cRlp : cnf (translate (R ++ [lp])) := by
+    rw [tZ2] at cblk
+    exact cnf_P_Z.1 cblk
+  have cR : cnf (translate R) := cnf_snoc cRlp
+  have cZ1 : cnf (translate (List.replicate (m + 1) ((v0, w1, w2) :: R)).flatten) :=
+    cnf_replicate_block hR cR (m + 1)
+  have RltRlp : translate R <o translate (R ++ [lp]) := translate_snoc_increase R lp
+  have decr : translate ((v0, w1, w2)
+        :: (R ++ (List.replicate m ((v0, w1, w2) :: R)).flatten))
+      <o translate ((v0, w1, w2) :: (R ++ [lp])) := by
+    rw [tZ1, tZ2]
+    exact olt_P_b _ _ _ _ RltRlp
+  have sub : ∀ x ∈ (List.replicate m ((v0, w1, w2) :: R)).flatten,
+      x ∈ (v0, w1, w2) :: R := by
+    intro x hx
+    obtain ⟨l, hl, hxl⟩ := List.mem_flatten.1 hx
+    rwa [List.eq_of_mem_replicate hl] at hxl
+  have r1 : ∀ x ∈ R ++ (List.replicate m ((v0, w1, w2) :: R)).flatten,
+      ((v0, w1, w2) : ℕ × ℕ × ℕ).1 ≤ x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with hx | hx
+    · exact (hR x hx).le
+    · rcases List.mem_cons.1 (sub x hx) with rfl | hx'
+      · exact le_rfl
+      · exact (hR x hx').le
+  have key : cnf (translate (G ++ (v0, w1, w2)
+      :: (R ++ (List.replicate m ((v0, w1, w2) :: R)).flatten))) := by
+    refine cnf_ctx_cong ?_ decr rfl ?_ r1 rT G cM'
+    · rw [← e1n]
+      exact cZ1
+    · exact ⟨w1, w2, translate R,
+        translate (List.replicate m ((v0, w1, w2) :: R)).flatten,
+        w1, w2, translate (R ++ [lp]), Z, tZ1, tZ2,
+        Or.inl (olt_P_b _ _ _ _ RltRlp)⟩
+  rw [e1n]
+  exact key
+
+theorem copies_replicate (blk : TrioSeq) (n : ℕ) :
+    copies 0 0 blk n = (List.replicate n blk).flatten := by
+  unfold copies
+  have h : (fun k : ℕ => shiftr01 (k * 0) (k * 0) blk) = fun _ : ℕ => blk := by
+    funext k
+    rw [Nat.mul_zero, shiftr01_zero]
+  rw [h, List.flatMap_def, List.map_const', List.length_range]
+
+/-- **CNF preservation, the ascending cases (`i1 ∈ {1, 2}`).**  Wraps
+`cnf_copies` in the good part via the context congruence. -/
+theorem cnf_oper_asc {v0 w1 w2 d0 d1 : ℕ} {R : TrioSeq} {lp : ℕ × ℕ × ℕ}
+    {G : TrioSeq} {n : ℕ}
+    (hR : ∀ x ∈ R, v0 < x.1)
+    (d0pos : 0 < d0)
+    (lead_lt : w1 + d1 < lp.2.1 ∨ (w1 + d1 = lp.2.1 ∧ w2 < lp.2.2))
+    (lphd : lp.1 = v0 + d0)
+    (n1 : 1 ≤ n)
+    (cM : cnf (translate (G ++ ((v0, w1, w2) :: R) ++ [lp]))) :
+    cnf (translate (G ++ copies d0 d1 ((v0, w1, w2) :: R) n)) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have lpv : v0 < lp.1 := by omega
+  have Rlp_gt : ∀ x ∈ R ++ [lp], v0 < x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with hx | hx
+    · exact hR x hx
+    · simp at hx
+      simp [hx]
+      omega
+  -- the decrease of the copies against the original tail
+  have decr : translate (copies d0 d1 ((v0, w1, w2) :: R) (m + 1))
+      <o translate (((v0, w1, w2) :: R) ++ [lp]) := by
+    cases m with
+    | zero =>
+      rw [copies_one]
+      exact translate_snoc_increase _ _
+    | succ m' =>
+      have z1cons : shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) (m' + 1))
+          = (v0 + d0, w1 + d1, w2)
+            :: shiftr01 d0 d1
+                (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m')) := by
+        rw [copies_succ_cons, shiftr01_cons]
+      have tlgt' : ∀ x ∈ R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m'),
+          v0 < x.1 := by
+        have h := copies_tl_gt (w1 := w1) (w2 := w2) hR d0pos d1 (n := m' + 1) (by omega)
+        simpa using h
+      have Cge : ∀ x ∈ shiftr01 d0 d1
+            (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m')),
+          ((v0 + d0, w1 + d1, w2) : ℕ × ℕ × ℕ).1 ≤ x.1 := by
+        intro x hx
+        obtain ⟨p, hp, rfl⟩ := mem_shiftr01.1 hx
+        have : v0 ≤ p.1 := (tlgt' p hp).le
+        simp only []
+        omega
+      have Croot : ((v0 + d0, w1 + d1, w2) : ℕ × ℕ × ℕ).1 = lp.1 := lphd.symm
+      have core := core_asc (w1 := w1) (w2 := w2) hR Cge Croot lpv
+        (by simpa using lead_lt)
+      have e : copies d0 d1 ((v0, w1, w2) :: R) (m' + 1 + 1)
+          = ((v0, w1, w2) :: R) ++ ((v0 + d0, w1 + d1, w2)
+              :: shiftr01 d0 d1
+                  (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m'))) := by
+        rw [copies_succ_front, z1cons]
+      rw [e]
+      exact core
+  -- cons form and single-tree shapes
+  have cpcons := copies_succ_cons d0 d1 v0 w1 w2 R m
+  have tlgt : ∀ x ∈ R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m),
+      v0 < x.1 := by
+    have h := copies_tl_gt (w1 := w1) (w2 := w2) hR d0pos d1 (n := m + 1) (by omega)
+    simpa using h
+  have st1 : translate (copies d0 d1 ((v0, w1, w2) :: R) (m + 1))
+      = P w1 w2
+          (translate (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m))) Z := by
+    rw [cpcons]
+    exact translate_single_tree tlgt
+  have st2 : translate (((v0, w1, w2) :: R) ++ [lp])
+      = P w1 w2 (translate (R ++ [lp])) Z := by
+    rw [List.cons_append]
+    exact translate_single_tree Rlp_gt
+  have rT : ∀ x ∈ R ++ [lp], ((v0, w1, w2) : ℕ × ℕ × ℕ).1 ≤ x.1 :=
+    fun x hx => (Rlp_gt x hx).le
+  have cM' : cnf (translate (G ++ (v0, w1, w2) :: (R ++ [lp]))) := by
+    have h : G ++ ((v0, w1, w2) :: R) ++ [lp] = G ++ (v0, w1, w2) :: (R ++ [lp]) := by
+      simp
+    rwa [h] at cM
+  have cBlp : cnf (translate (((v0, w1, w2) :: R) ++ [lp])) := by
+    rw [List.cons_append]
+    exact cnf_tail rT G cM'
+  have cCopies : cnf (translate (copies d0 d1 ((v0, w1, w2) :: R) (m + 1))) :=
+    cnf_copies hR d0pos lead_lt lphd cBlp (m + 1)
+  have argA : translate (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m))
+      <o translate (R ++ [lp]) := by
+    have d := decr
+    rw [st1, st2, olt_P_P] at d
+    rcases d with h | ⟨-, h⟩ | ⟨-, -, h⟩ | ⟨-, -, -, h⟩
+    · omega
+    · omega
+    · exact h
+    · exact absurd h (not_olt_Z Z)
+  have leadle : ∃ p1 p2 b1 c1 q1 q2 b2 c2,
+      translate ((v0, w1, w2)
+        :: (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))
+        = P p1 p2 b1 c1
+      ∧ translate ((v0, w1, w2) :: (R ++ [lp])) = P q1 q2 b2 c2
+      ∧ P p1 p2 b1 Z ≤o P q1 q2 b2 Z := by
+    refine ⟨w1, w2,
+      translate (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)), Z,
+      w1, w2, translate (R ++ [lp]), Z, ?_, ?_, Or.inl (olt_P_b _ _ _ _ argA)⟩
+    · rw [← cpcons]
+      exact st1
+    · rw [← List.cons_append]
+      exact st2
+  have decr' : translate ((v0, w1, w2)
+      :: (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))
+      <o translate ((v0, w1, w2) :: (R ++ [lp])) := by
+    rw [← cpcons, ← List.cons_append]
+    exact decr
+  have cCopies' : cnf (translate ((v0, w1, w2)
+      :: (R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m)))) := by
+    rw [← cpcons]
+    exact cCopies
+  have r1 : ∀ x ∈ R ++ shiftr01 d0 d1 (copies d0 d1 ((v0, w1, w2) :: R) m),
+      ((v0, w1, w2) : ℕ × ℕ × ℕ).1 ≤ x.1 := fun x hx => (tlgt x hx).le
+  have key := cnf_ctx_cong cCopies' decr' rfl leadle r1 rT G cM'
+  rw [cpcons]
+  exact key
+
+/-- **The uniform bad-branch decomposition.**  Under the row-1 descendance
+hypothesis, `M` splits as `G ++ blk ++ [lp]` and `M⟦n⟧` as `G ++ copies`,
+with the shift data of the three branches. -/
+theorem oper_bad_blocks {M : TrioSeq} {n : ℕ} (L : 1 < M.length)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (_hn : 1 ≤ n)
+    (hA : ∀ j, parent M (srow M (M.length - 1)) (M.length - 1) ≤ j →
+      j < M.length - 1 →
+      le1 M (parent M (srow M (M.length - 1)) (M.length - 1)) j ∨
+      (if 1 < srow M (M.length - 1)
+        then entry M 1 (M.length - 1)
+          - entry M 1 (parent M (srow M (M.length - 1)) (M.length - 1))
+        else 0) = 0) :
+    ∃ (G : TrioSeq) (v0 w1 w2 : ℕ) (R : TrioSeq) (d0 d1 : ℕ) (lp : ℕ × ℕ × ℕ),
+      M = G ++ ((v0, w1, w2) :: R) ++ [lp] ∧
+      M⟦n⟧ = G ++ copies d0 d1 ((v0, w1, w2) :: R) n ∧
+      (∀ x ∈ R, v0 < x.1) ∧
+      v0 < lp.1 ∧
+      ((d0 = 0 ∧ d1 = 0)
+        ∨ (0 < d0 ∧ lp.1 = v0 + d0 ∧
+            (w1 + d1 < lp.2.1 ∨ (w1 + d1 = lp.2.1 ∧ w2 < lp.2.2)))) := by
+  have np : nextR M (srow M (M.length - 1))
+      (parent M (srow M (M.length - 1)) (M.length - 1)) (M.length - 1) :=
+    parent_nextR hp
+  set j1 := M.length - 1 with hj1
+  set i1 := srow M j1 with hi1
+  set j0 := parent M i1 j1 with hj0
+  have j0lt : j0 < j1 := nextR_index_lt np
+  have chain : Relation.ReflTransGen (nextrel0 M) j0 j1 := nextR_chain0 np
+  have iv : ∀ k, j0 < k → k ≤ j1 → entry M 0 j0 < entry M 0 k :=
+    fun k h1 h2 => le0_interval_gt chain k ⟨h1, h2⟩
+  set d0 := (if 0 < i1 then entry M 0 j1 - entry M 0 j0 else 0) with hd0
+  set d1 := (if 1 < i1 then entry M 1 j1 - entry M 1 j0 else 0) with hd1
+  set R := (List.range' (j0 + 1) (j1 - (j0 + 1))).map (fun j => M.getD j (0, 0, 0))
+    with hRdef
+  set lp := M.getD j1 (0, 0, 0) with hlp
+  have hsplit : List.range' j0 (j1 - j0) = j0 :: List.range' (j0 + 1) (j1 - (j0 + 1)) := by
+    have h : j1 - j0 = (j1 - (j0 + 1)) + 1 := by omega
+    rw [h, List.range'_succ]
+  -- `M = take j0 ++ blk ++ [lp]`
+  have hM' : M = M.take j0 ++ (((entry M 0 j0, entry M 1 j0, entry M 2 j0) :: R)
+      ++ [lp]) := by
+    have dropM : M.drop j0 = (((entry M 0 j0, entry M 1 j0, entry M 2 j0) :: R)
+        ++ [lp]) := by
+      rw [drop_eq_map_getD M j0 (0, 0, 0)]
+      have hlen' : M.length - j0 = (j1 - j0) + 1 := by omega
+      have hras : List.range' j0 ((j1 - j0) + 1)
+          = List.range' j0 (j1 - j0) ++ [j1] := by
+        have h := List.range'_append (s := j0) (m := j1 - j0) (n := 1) (step := 1)
+        rw [List.range'_one] at h
+        rw [show j0 + 1 * (j1 - j0) = j1 by omega] at h
+        exact h.symm
+      rw [hlen', hras, List.map_append, hsplit, List.map_cons, hRdef, hlp,
+        getD_eq_entries]
+      simp
+    conv_lhs => rw [← List.take_append_drop j0 M]
+    rw [dropM]
+  -- `M⟦n⟧ = take j0 ++ copies`
+  have hMn : M⟦n⟧ = M.take j0
+      ++ copies d0 d1 ((entry M 0 j0, entry M 1 j0, entry M 2 j0) :: R) n := by
+    rw [oper_bad_uniform n (by omega) hz hp hi1 hj0 hd0 hd1 (by
+      intro j h1 h2
+      exact hA j h1 h2)]
+    congr 1
+    unfold copies
+    congr 1
+    funext k
+    show (List.range' j0 (j1 - j0)).map (fun j =>
+        (entry M 0 j + k * d0, entry M 1 j + k * d1, entry M 2 j))
+      = shiftr01 (k * d0) (k * d1)
+          ((entry M 0 j0, entry M 1 j0, entry M 2 j0) :: R)
+    rw [hsplit, List.map_cons, hRdef]
+    unfold shiftr01
+    rw [List.map_cons, List.map_map]
+    rfl
+  have R_gt : ∀ x ∈ R, entry M 0 j0 < x.1 := by
+    intro x hx
+    rw [hRdef] at hx
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_range'.1 hj
+    rw [getD_eq_entries]
+    exact iv _ (by omega) (by omega)
+  have lp_gt : entry M 0 j0 < lp.1 := by
+    rw [hlp, getD_eq_entries]
+    exact iv j1 j0lt le_rfl
+  refine ⟨M.take j0, entry M 0 j0, entry M 1 j0, entry M 2 j0, R, d0, d1, lp,
+    by conv_lhs => rw [hM']
+       simp, hMn, R_gt, lp_gt, ?_⟩
+  -- the shift disjunction
+  by_cases hi : 0 < i1
+  · right
+    have d0pos : 0 < d0 := by
+      rw [hd0, if_pos hi]
+      have := iv j1 j0lt le_rfl
+      omega
+    have hd0eq : entry M 0 j1 = entry M 0 j0 + d0 := by
+      rw [hd0, if_pos hi]
+      have := iv j1 j0lt le_rfl
+      omega
+    refine ⟨d0pos, by rw [hlp, getD_eq_entries]; simpa using hd0eq, ?_⟩
+    rw [hlp, getD_eq_entries]
+    by_cases hi2 : 1 < i1
+    · right
+      have np2 : nextrel2 M j0 j1 := by
+        have np' := np
+        unfold nextR at np'
+        rw [if_neg (by omega : ¬ i1 = 0), if_neg (by omega : ¬ i1 = 1)] at np'
+        exact np'
+      have h1lt : entry M 1 j0 < entry M 1 j1 :=
+        rtg1_entry1_lt np2.2.2.2.2.1.2.2 (by omega)
+      have hd1eq : d1 = entry M 1 j1 - entry M 1 j0 := by
+        rw [hd1, if_pos hi2]
+      constructor
+      · simp only []
+        omega
+      · simpa using np2.2.2.2.1
+    · left
+      have i1eq : i1 = 1 := by omega
+      have np1 : nextrel1 M j0 j1 := by
+        have np' := np
+        unfold nextR at np'
+        rw [if_neg (by omega : ¬ i1 = 0), if_pos i1eq] at np'
+        exact np'
+      have hd1z : d1 = 0 := by
+        rw [hd1, if_neg hi2]
+      simp only [hd1z, Nat.add_zero]
+      simpa using np1.2.2.2.1
+  · left
+    constructor
+    · rw [hd0, if_neg hi]
+    · rw [hd1, if_neg (by omega : ¬ 1 < i1)]
+
+/-- **CNF is preserved by one expansion step, under the row-1 window bound**
+(discharged on standard forms in the Column chapter). -/
+theorem cnf_oper_of_window {M : TrioSeq} {n : ℕ} (hn : 1 ≤ n)
+    (cM : cnf (translate M))
+    (hwin : hasParent M (srow M (M.length - 1)) (M.length - 1) →
+      1 < srow M (M.length - 1) →
+      ∀ j, parent M (srow M (M.length - 1)) (M.length - 1) < j → j < M.length - 1 →
+        entry M 1 (parent M (srow M (M.length - 1)) (M.length - 1)) < entry M 1 j) :
+    cnf (translate (M⟦n⟧)) := by
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]
+    exact cM
+  · have L1 : 1 < M.length := by omega
+    have Mne : M ≠ [] := by
+      intro he
+      rw [he] at L1
+      simp at L1
+    have hPred : Pred M = M.dropLast := by
+      unfold Pred
+      rw [if_neg (by omega)]
+    by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+        entry M 2 (M.length - 1) = 0
+    · rw [oper_eq_pred_of_zero n hL hz, hPred]
+      exact cnf_dropLast Mne cM
+    · by_cases hp : hasParent M (srow M (M.length - 1)) (M.length - 1)
+      · -- the row-1 descendance from the window bound
+        have np := parent_nextR hp
+        have j0lt : parent M (srow M (M.length - 1)) (M.length - 1) < M.length - 1 :=
+          nextR_index_lt np
+        have chain := nextR_chain0 np
+        have hA : ∀ j, parent M (srow M (M.length - 1)) (M.length - 1) ≤ j →
+            j < M.length - 1 →
+            le1 M (parent M (srow M (M.length - 1)) (M.length - 1)) j ∨
+            (if 1 < srow M (M.length - 1)
+              then entry M 1 (M.length - 1)
+                - entry M 1 (parent M (srow M (M.length - 1)) (M.length - 1))
+              else 0) = 0 := by
+          intro j h1 h2
+          by_cases hi2 : 1 < srow M (M.length - 1)
+          · left
+            exact ⟨by omega, by omega,
+              le1_window_desc (by omega) chain (hwin hp hi2) j h1 h2⟩
+          · right
+            rw [if_neg hi2]
+        obtain ⟨G, v0, w1, w2, R, d0, d1, lp, Meq, Mneq, hR, lpv, disj⟩ :=
+          oper_bad_blocks L1 hz hp hn hA
+        have cM' : cnf (translate (G ++ ((v0, w1, w2) :: R) ++ [lp])) := Meq ▸ cM
+        rw [Mneq]
+        rcases disj with ⟨d0z, d1z⟩ | ⟨d0pos, lphd, lead_lt⟩
+        · subst d0z
+          subst d1z
+          rw [copies_replicate]
+          exact cnf_oper_i1eq0 hR lpv hn cM'
+        · exact cnf_oper_asc hR d0pos lead_lt lphd hn cM'
+      · rw [oper_eq_pred_of_noParent n hL hz hp, hPred]
+        exact cnf_dropLast Mne cM
+
 end TRIO
