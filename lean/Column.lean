@@ -473,4 +473,207 @@ theorem oper_append_right (A T : TrioSeq) (n : ℕ) (hT : 2 ≤ T.length)
       rw [if_pos hp, if_pos hpAT]
       exact Pred_append_right A T hT
 
+/-! ## 位置的不変量の定義と基底 -/
+
+/-- 行 1 の規律: 行 0 が正の列には行 0 の親（ちょうど 1 段下、間に谷なし）が
+あり、行 1 は親より高々 1 大きい。 -/
+def r1ok (M : TrioSeq) : Prop :=
+  ∀ j, j < M.length → 0 < (M.getD j (0, 0, 0)).1 →
+    ∃ k, k < j ∧ (M.getD k (0, 0, 0)).1 + 1 = (M.getD j (0, 0, 0)).1
+      ∧ (∀ l, k < l → l < j → (M.getD j (0, 0, 0)).1 ≤ (M.getD l (0, 0, 0)).1)
+      ∧ (M.getD j (0, 0, 0)).2.1 ≤ (M.getD k (0, 0, 0)).2.1 + 1
+
+/-- 行 0 が 0 の列はラベルも 0。 -/
+def z0ok (M : TrioSeq) : Prop :=
+  ∀ j, j < M.length → (M.getD j (0, 0, 0)).1 = 0 →
+    (M.getD j (0, 0, 0)).2.1 = 0 ∧ (M.getD j (0, 0, 0)).2.2 = 0
+
+/-- ラベル対は非増加（行 1 ≥ 行 2、BMOCF の Idx 条件）。 -/
+def noninc (M : TrioSeq) : Prop :=
+  ∀ j, j < M.length → (M.getD j (0, 0, 0)).2.2 ≤ (M.getD j (0, 0, 0)).2.1
+
+/-- **行 2 の窓の下界**: すべての `nextrel2` 対の窓の内部で、行 1 は
+バッドルートを真に超える。`i1 = 2` の悪い分岐のガードを潰す不変量。 -/
+def W2ok (M : TrioSeq) : Prop :=
+  ∀ j0 j1, nextrel2 M j0 j1 → ∀ j, j0 < j → j < j1 → entry M 1 j0 < entry M 1 j
+
+theorem diagSeqT_length (v : ℕ) : (diagSeqT 0 v).length = v + 1 := by
+  unfold diagSeqT
+  rw [List.length_map, List.length_range']
+  omega
+
+theorem diagSeqT_getD {v i : ℕ} (hi : i < v + 1) :
+    (diagSeqT 0 v).getD i (0, 0, 0) = (i, i, min i 1) := by
+  unfold diagSeqT
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+    List.getElem?_range' (by simpa using hi)]
+  simp
+
+theorem r1ok_diagSeqT (v : ℕ) : r1ok (diagSeqT 0 v) := by
+  intro j hj hpos
+  rw [diagSeqT_length] at hj
+  rw [diagSeqT_getD hj] at hpos
+  have hj0 : 0 < j := by simpa using hpos
+  refine ⟨j - 1, by omega, ?_, ?_, ?_⟩
+  · rw [diagSeqT_getD hj, diagSeqT_getD (show j - 1 < v + 1 by omega)]
+    show j - 1 + 1 = j
+    omega
+  · intro l hl1 hl2
+    omega
+  · rw [diagSeqT_getD hj, diagSeqT_getD (show j - 1 < v + 1 by omega)]
+    show j ≤ (j - 1) + 1
+    omega
+
+theorem z0ok_diagSeqT (v : ℕ) : z0ok (diagSeqT 0 v) := by
+  intro j hj h0
+  rw [diagSeqT_length] at hj
+  rw [diagSeqT_getD hj] at h0 ⊢
+  simp at h0
+  subst h0
+  simp
+
+theorem noninc_diagSeqT (v : ℕ) : noninc (diagSeqT 0 v) := by
+  intro j hj
+  rw [diagSeqT_length] at hj
+  rw [diagSeqT_getD hj]
+  show min j 1 ≤ j
+  omega
+
+/-! ## take / dropLast への遺伝 -/
+
+theorem getD_take {M : TrioSeq} {m j : ℕ} (h : j < m) :
+    (M.take m).getD j (0, 0, 0) = M.getD j (0, 0, 0) := by
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_take, if_pos h]
+
+theorem r1ok_take {M : TrioSeq} (h : r1ok M) (m : ℕ) : r1ok (M.take m) := by
+  intro j hj hpos
+  rw [List.length_take] at hj
+  have hjm : j < m := lt_of_lt_of_le hj (min_le_left _ _)
+  have hjM : j < M.length := lt_of_lt_of_le hj (min_le_right _ _)
+  rw [getD_take hjm] at hpos
+  obtain ⟨k, hk, he, hbetween, hsnd⟩ := h j hjM hpos
+  refine ⟨k, hk, ?_, ?_, ?_⟩
+  · rw [getD_take (lt_trans hk hjm), getD_take hjm]
+    exact he
+  · intro l hl1 hl2
+    rw [getD_take hjm, getD_take (lt_trans hl2 hjm)]
+    exact hbetween l hl1 hl2
+  · rw [getD_take hjm, getD_take (lt_trans hk hjm)]
+    exact hsnd
+
+theorem r1ok_dropLast {M : TrioSeq} (h : r1ok M) : r1ok M.dropLast := by
+  rw [List.dropLast_eq_take]
+  exact r1ok_take h _
+
+theorem z0ok_take {M : TrioSeq} (h : z0ok M) (m : ℕ) : z0ok (M.take m) := by
+  intro j hj h0
+  rw [List.length_take] at hj
+  have hjm : j < m := lt_of_lt_of_le hj (min_le_left _ _)
+  have hjM : j < M.length := lt_of_lt_of_le hj (min_le_right _ _)
+  rw [getD_take hjm] at h0 ⊢
+  exact h j hjM h0
+
+theorem z0ok_dropLast {M : TrioSeq} (h : z0ok M) : z0ok M.dropLast := by
+  rw [List.dropLast_eq_take]
+  exact z0ok_take h _
+
+theorem noninc_take {M : TrioSeq} (h : noninc M) (m : ℕ) : noninc (M.take m) := by
+  intro j hj
+  rw [List.length_take] at hj
+  have hjm : j < m := lt_of_lt_of_le hj (min_le_left _ _)
+  have hjM : j < M.length := lt_of_lt_of_le hj (min_le_right _ _)
+  rw [getD_take hjm]
+  exact h j hjM
+
+theorem noninc_dropLast {M : TrioSeq} (h : noninc M) : noninc M.dropLast := by
+  rw [List.dropLast_eq_take]
+  exact noninc_take h _
+
+/-! ## コピー分解の添字計算 -/
+
+theorem getD_append_left {G X : TrioSeq} {i : ℕ} (h : i < G.length) :
+    (G ++ X).getD i (0, 0, 0) = G.getD i (0, 0, 0) := by
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_append_left h]
+
+theorem index_decomp {i L n : ℕ} (hL : 0 < L) (hi : i < n * L) :
+    ∃ k q, k < n ∧ q < L ∧ i = k * L + q := by
+  refine ⟨i / L, i % L, ?_, Nat.mod_lt _ hL, ?_⟩
+  · exact (Nat.div_lt_iff_lt_mul hL).2 hi
+  · calc i = L * (i / L) + i % L := (Nat.div_add_mod i L).symm
+    _ = i / L * L + i % L := by rw [Nat.mul_comm]
+
+theorem copies_map_length (B : TrioSeq) (f : ℕ → ℕ × ℕ × ℕ → ℕ × ℕ × ℕ) (n : ℕ) :
+    ((List.range n).flatMap fun k => B.map (f k)).length = n * B.length := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [List.range_succ, List.flatMap_append]
+    simp [ih, Nat.succ_mul]
+
+theorem copies_map_getD {B : TrioSeq} {n k q : ℕ} {f : ℕ → ℕ × ℕ × ℕ → ℕ × ℕ × ℕ}
+    (hk : k < n) (hq : q < B.length) :
+    ((List.range n).flatMap fun k => B.map (f k)).getD (k * B.length + q) (0, 0, 0)
+      = f k (B.getD q (0, 0, 0)) := by
+  induction n with
+  | zero => omega
+  | succ n ih =>
+    rw [List.range_succ, List.flatMap_append]
+    by_cases hkn : k < n
+    · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left,
+        ← List.getD_eq_getElem?_getD]
+      · exact ih hkn
+      · rw [copies_map_length]
+        calc k * B.length + q < k * B.length + B.length := by omega
+        _ = (k + 1) * B.length := (Nat.succ_mul k B.length).symm
+        _ ≤ n * B.length := Nat.mul_le_mul_right _ hkn
+    · have hk_eq : k = n := by omega
+      subst hk_eq
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right
+          (by rw [copies_map_length]; exact Nat.le_add_right _ _),
+        copies_map_length, Nat.add_sub_cancel_left]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      rw [List.getElem?_map, List.getElem?_eq_getElem hq]
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hq]
+      rfl
+
+/-- 一様コピー展開（悪い分岐の形、両行のシフト付き）。 -/
+def copyExp (G B : TrioSeq) (d0 d1 n : ℕ) : TrioSeq :=
+  G ++ (List.range n).flatMap fun k =>
+    B.map fun p => (p.1 + k * d0, p.2.1 + k * d1, p.2.2)
+
+theorem copyExp_length (G B : TrioSeq) (d0 d1 n : ℕ) :
+    (copyExp G B d0 d1 n).length = G.length + n * B.length := by
+  unfold copyExp
+  rw [List.length_append, copies_map_length]
+
+theorem copyExp_getD_pre {G B : TrioSeq} {d0 d1 n i : ℕ} (h : i < G.length) :
+    (copyExp G B d0 d1 n).getD i (0, 0, 0) = G.getD i (0, 0, 0) :=
+  getD_append_left h
+
+theorem copyExp_getD_copy {G B : TrioSeq} {d0 d1 n k q : ℕ}
+    (hk : k < n) (hq : q < B.length) :
+    (copyExp G B d0 d1 n).getD (G.length + (k * B.length + q)) (0, 0, 0)
+      = ((B.getD q (0, 0, 0)).1 + k * d0,
+         (B.getD q (0, 0, 0)).2.1 + k * d1,
+         (B.getD q (0, 0, 0)).2.2) := by
+  unfold copyExp
+  rw [getD_app_right _ _ (Nat.le_add_right _ _), Nat.add_sub_cancel_left,
+    copies_map_getD hk hq]
+
+theorem hostM_getD_pre {G B : TrioSeq} {lp : ℕ × ℕ × ℕ} {i : ℕ} (h : i < G.length) :
+    (G ++ B ++ [lp]).getD i (0, 0, 0) = G.getD i (0, 0, 0) := by
+  rw [getD_append_left (by simp; omega), getD_append_left h]
+
+theorem hostM_getD_blk {G B : TrioSeq} {lp : ℕ × ℕ × ℕ} {q : ℕ} (hq : q < B.length) :
+    (G ++ B ++ [lp]).getD (G.length + q) (0, 0, 0) = B.getD q (0, 0, 0) := by
+  rw [getD_append_left (by simp; omega),
+    getD_app_right _ _ (Nat.le_add_right _ _), Nat.add_sub_cancel_left]
+
+theorem hostM_length (G B : TrioSeq) (lp : ℕ × ℕ × ℕ) :
+    (G ++ B ++ [lp]).length = G.length + B.length + 1 := by
+  simp
+  omega
+
 end TRIO
