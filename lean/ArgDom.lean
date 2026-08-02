@@ -153,4 +153,114 @@ theorem hshift_gseg {M : TrioSeq} {r e f : ℕ} :
         rw [if_neg (hnog j hjb.1 (by omega))]
       rw [hsub, htail]
 
+/-! ## seqlex の道具 -/
+
+theorem seqlex_of_sle_not_prefix : ∀ {W X Y : TrioSeq}, sle X (W ++ Y) →
+    (∀ X', X ≠ W ++ X') → ∀ (Y' : TrioSeq), seqlex X (W ++ Y') := by
+  intro W
+  induction W with
+  | nil =>
+    intro X Y _ hnp _
+    exact absurd (by simp : X = [] ++ X) (hnp X)
+  | cons w W' ih =>
+    intro X Y h hnp Y'
+    rcases X with _ | ⟨x, X''⟩
+    · simp
+    · rw [List.cons_append] at h ⊢
+      rcases h with he | hs
+      · exact absurd he (by
+          have := hnp Y
+          rw [List.cons_append] at this
+          exact this)
+      · rw [seqlex_cons_cons] at hs
+        rcases hs with hp | ⟨rfl, hs'⟩
+        · exact Or.inl hp
+        · refine Or.inr ⟨rfl, ih (Y := Y) (Or.inr hs') ?_ Y'⟩
+          intro Z hZ
+          exact hnp Z (by rw [hZ, List.cons_append])
+
+/-- A comparison that is already over by the end of `P` does not see `Y`. -/
+theorem sle_take_of_short : ∀ {P X Y : TrioSeq}, sle X (P ++ Y) →
+    X.length ≤ P.length → sle X P := by
+  intro P
+  induction P with
+  | nil =>
+    intro X Y _ hlen
+    have : X = [] := List.eq_nil_of_length_eq_zero (by simpa using hlen)
+    exact Or.inl this
+  | cons p P' ih =>
+    intro X Y h hlen
+    rcases X with _ | ⟨x, X''⟩
+    · exact Or.inr (by simp)
+    · simp only [List.length_cons] at hlen
+      rw [List.cons_append] at h
+      rcases h with he | hs
+      · have hx : x = p := by simpa using congrArg List.headI he
+        have hX'' : X'' = P' ++ Y := by simpa using congrArg List.tail he
+        have hY : Y = [] := by
+          have : X''.length = P'.length + Y.length := by
+            rw [hX'']
+            simp
+          exact List.eq_nil_of_length_eq_zero (by omega)
+        rw [hY, List.append_nil] at hX''
+        exact Or.inl (by rw [hx, hX''])
+      · rw [seqlex_cons_cons] at hs
+        rcases hs with hp | ⟨rfl, hs'⟩
+        · exact Or.inr (Or.inl hp)
+        · rcases ih (Or.inr hs') (by omega) with he' | hs''
+          · exact Or.inl (by rw [he'])
+          · exact Or.inr (Or.inr ⟨rfl, hs''⟩)
+
+/-- Truncating the smaller side on the right keeps it below. -/
+theorem sle_of_append_left {X Y W : TrioSeq} (h : sle (X ++ Y) W) : sle X W := by
+  refine sle_trans ?_ h
+  rcases Y with _ | ⟨y, Y'⟩
+  · exact Or.inl (by simp)
+  · exact Or.inr (seqlex_prefix (by simp) X)
+
+/-! ## 統一核の定義 -/
+
+/-- `hshift` with a zero row-1 lift is the uniform row-0 shift. -/
+theorem hshift_f0 (w1 e : ℕ) : ∀ A : TrioSeq, hshift w1 e 0 A = shiftr01 e 0 A
+  | [] => by
+    rw [hshift_nil]
+    rfl
+  | p :: rest => by
+    rw [hshift_cons]
+    have h1 := hshift_f0 w1 e (rest.takeWhile fun q => p.1 < q.1)
+    have h2 := hshift_f0 w1 e (rest.dropWhile fun q => p.1 < q.1)
+    have hsplit : shiftr01 e 0 rest
+        = shiftr01 e 0 (rest.takeWhile fun q => p.1 < q.1)
+          ++ shiftr01 e 0 (rest.dropWhile fun q => p.1 < q.1) := by
+      unfold shiftr01
+      rw [← List.map_append, List.takeWhile_append_dropWhile]
+    split_ifs with h
+    · rw [h1, h2, shiftr01_cons, ← hsplit, Nat.add_zero]
+    · rw [h2, shiftr01_cons, ← hsplit, Nat.add_zero]
+  termination_by A => A.length
+  decreasing_by
+  · exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+  · exact Nat.lt_succ_of_le (List.length_dropWhile_le _ rest)
+
+/-- Right-visible columns of `A` below level `L` carry row 1 at least `w`. -/
+def SpineOK (A : TrioSeq) (L w : ℕ) : Prop :=
+  ∀ (U V : TrioSeq) (x : ℕ × ℕ × ℕ), A = U ++ x :: V → x.1 < L →
+    (∀ y ∈ V, x.1 < y.1) → w ≤ x.2.1
+
+/-- **The host-free core of trio Bachmann cofinality** (probe: 57549
+instances, 0 violations).  Two columns with the *same* label rows `(w1+·, z)`
+at depths `u` and `u+e`, row-1 siblings via `SpineOK`; the deeper argument
+`B` is dominated by the heartwood shift of the shallower argument. -/
+def ArgDomCore : Prop :=
+  ∀ {X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ},
+    ST_TS ((X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z) →
+    0 < e → (f = 0 ∨ z = 0) →
+    (∀ x ∈ A1, u < x.1) →
+    (∀ x ∈ B, u + e < x.1) →
+    (∀ x ∈ A2, u < x.1) →
+    (A2 = [] ∨ (A2.headI).1 ≤ u + e) →
+    (Z = [] ∨ (Z.headI).1 ≤ u) →
+    SpineOK A1 (u + e) w1 →
+    sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2)))
+
 end TRIO
