@@ -5,6 +5,7 @@
 - [x] Trio.lean 定義（TrioSeq / 親子 / oper / ST_TS / step）✅ build 緑
 - [x] Term.lean 記法（添字対 p_{a1,a2}(b)+c）・順序 olt（推移律まで）・翻訳 tr ✅
 - [x] Decrease.lean 測度の減少 m_step_decreases ✅ build 緑
+- [x] Reduction.lean 停止性への還元（条件付き停止性）✅
 - [ ] 列辞書式順序との同型
 - [ ] 不変量（z0ok / r1ok / r2ok / A≡1 予想）
 - [ ] 共終性（2 次元上昇の核）
