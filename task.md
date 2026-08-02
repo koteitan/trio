@@ -13,5 +13,5 @@
 - [x] 経路補題 le1 ⟺ chain 窓（無条件）✅（スパイン⊆D は不要と判明）
 - [x] Gcopy/Goper: translate_gseg・cnf_gcopiesFrom・cnf_oper・**cnf_ST_TS** ✅（不変量も窓仮説も不要）
 - [x] 不変量保存 r1ok/z0ok/noninc_oper（ガード対応・climb・スパイン補題）＋ ST_TS 版 ✅ Invariant.lean
-- [ ] 共終性（2 次元上昇の核）: Part 0-2 ✅（seqlex 配管・還元・self 枝）; 核は z=0 制限で probe 済（53757 例 0 違反）
+- [ ] 共終性: Part 0-3 ✅（配管・退化枝・bad 枝の crux 還元・親存在）; 残り TrioBadCrux（d0=0 の複写支配＋上昇核; z=0 制限核 probe 済 53757/0）
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）

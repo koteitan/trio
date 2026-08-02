@@ -7,7 +7,7 @@ Cofinality.lean: トリオ数列の Bachmann 共終性（基本列は標準形�
 `tr N <o tr M → ∃ n, tr N ≤o tr (M⟦n⟧)` が従う（probe: 15038 対 0 失敗、
 crux レベル 28010 対 0 失敗）。この章は yapss Cofinality.lean の 3 行版。
 -/
-import Goper
+import Invariant
 
 namespace TRIO
 
@@ -186,5 +186,99 @@ theorem seqlex_cof_zero {M N : TrioSeq} (hL : 1 < M.length)
   · exact hle
   · rw [hlpz] at hq
     simp [collt] at hq
+
+/-! ## Part 3 — bad 枝の crux への還元 -/
+
+/-- **The bad-branch crux** (to be discharged by the copy-domination
+machinery): a standard `N` extending the good prefix `M.dropLast` with a
+column strictly below the dropped one is caught by some expansion. -/
+def TrioBadCrux : Prop :=
+  ∀ {M N : TrioSeq} {q : ℕ × ℕ × ℕ} {S : TrioSeq},
+    ST_TS M → ST_TS N → 1 < M.length →
+    ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) →
+    N = M.dropLast ++ q :: S →
+    collt q (M.getD (M.length - 1) (0, 0, 0)) →
+    ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧)
+
+/-- The good prefix plus the zeroth copy is exactly `M.dropLast`. -/
+theorem take_gcopy_zero {M : TrioSeq} (hL : 1 < M.length)
+    (_hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1)) :
+    M.take (parent M (srow M (M.length - 1)) (M.length - 1))
+      ++ seg M (parent M (srow M (M.length - 1)) (M.length - 1))
+        (M.length - 1 - parent M (srow M (M.length - 1)) (M.length - 1))
+      = M.dropLast := by
+  have j0lt := nextR_index_lt (parent_nextR hp)
+  set j0 := parent M (srow M (M.length - 1)) (M.length - 1) with hj0
+  have hdl : M.dropLast = M.take (M.length - 1) := List.dropLast_eq_take
+  rw [hdl]
+  have htk : (M.take (M.length - 1)).take j0 = M.take j0 := by
+    rw [List.take_take]
+    congr 1
+    omega
+  conv_rhs => rw [← List.take_append_drop j0 (M.take (M.length - 1))]
+  rw [htk]
+  congr 1
+  rw [drop_seg]
+  have hlen : (M.take (M.length - 1)).length = M.length - 1 := by
+    rw [List.length_take]
+    omega
+  rw [hlen]
+  unfold seg
+  refine List.map_congr_left ?_
+  intro j hj
+  have hjb := List.mem_range'_1.1 hj
+  have e0 : entry (M.take (M.length - 1)) 0 j = entry M 0 j := by
+    unfold entry
+    rw [getD_take (by omega)]
+  have e1 : entry (M.take (M.length - 1)) 1 j = entry M 1 j := by
+    unfold entry
+    rw [getD_take (by omega)]
+  have e2 : entry (M.take (M.length - 1)) 2 j = entry M 2 j := by
+    unfold entry
+    rw [getD_take (by omega)]
+  rw [e0, e1, e2]
+
+/-- **Branch `bad`, modulo the crux.** -/
+theorem seqlex_cof_bad (H : TrioBadCrux) {M N : TrioSeq}
+    (hM : ST_TS M) (hN : ST_TS N) (L : 1 < M.length)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (h : seqlex N M) : ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧) := by
+  have hp := hasParent_last_ST_TS hM (by omega) hz
+  have hne : M ≠ [] := by
+    intro he
+    rw [he] at L
+    simp at L
+  rcases seqlex_snoc_cases (D := M.dropLast)
+      (lp := M.getD (M.length - 1) (0, 0, 0)) (N := N)
+      (by rw [dropLast_snoc_getD hne]; exact h) with hle | ⟨q, S, hNeq, hq⟩
+  · -- `N` stays within the good part: the first expansion already contains it
+    refine ⟨1, le_rfl, ?_⟩
+    have hsplit : M⟦1⟧ = M.dropLast := by
+      rw [oper_gcopies 1 (by omega) hz hp, gcopies_eq_from,
+        show (1 : ℕ) = 0 + 1 from rfl, gcopiesFrom_succ, gcopiesFrom_zero,
+        List.append_nil, gcopy_zero, take_gcopy_zero L hz hp]
+    rw [hsplit]
+    exact hle
+  · exact H hM hN L hz hNeq hq
+
+/-- **Trio Bachmann cofinality, modulo the crux.** -/
+theorem seqlex_cofinality_of_crux (H : TrioBadCrux) : SeqlexCofinality := by
+  intro M N hM hN h
+  by_cases hL : M.length - 1 = 0
+  · exact seqlex_cof_short hL h
+  · by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+        entry M 2 (M.length - 1) = 0
+    · exact seqlex_cof_zero (by omega) hz h
+    · exact seqlex_cof_bad H hM hN (by omega) hz h
+
+/-- Translate-side cofinality, modulo the crux. -/
+theorem ts_cofinality_of_crux (H : TrioBadCrux) {M N : TrioSeq}
+    (hM : ST_TS M) (hN : ST_TS N) (h : translate N <o translate M) :
+    ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧) :=
+  ts_cofinality_of_seqlex (seqlex_cofinality_of_crux H) hM hN h
 
 end TRIO
