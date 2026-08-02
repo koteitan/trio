@@ -583,6 +583,428 @@ theorem rtg0_tail_mirror {a b : ℕ} (hlen : j0 + Lb + 1 = M.length)
 
 end TailMirror
 
+/-! ## 尾部 `le1` 同値の補助層 -/
+
+theorem rtg1_rtg0 {H : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 H) a b) :
+    Relation.ReflTransGen (nextrel0 H) a b := by
+  induction h with
+  | refl => exact .refl
+  | @tail y z hay hyz ih => exact ih.trans hyz.2.2.2.2.1.2.2
+
+section TailEquiv
+
+theorem gexp_e1_mir {x k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hk : k < n) (hq : q < Lb) (hx : x = j0 + (k * Lb + q)) :
+    entry (gexp M j0 Lb d0 d1 n) 1 x
+      = entry M 1 (j0 + q) + (if le1 M j0 (j0 + q) then k * d1 else 0) := by
+  subst hx
+  show ((gexp M j0 Lb d0 d1 n).getD (j0 + (k * Lb + q)) (0, 0, 0)).2.1 = _
+  rw [gexp_getD_mir hlen hk hq]
+
+theorem mir_decomp_unique {k q k' q' : ℕ} (hq : q < Lb) (hq' : q' < Lb)
+    (h : j0 + (k * Lb + q) = j0 + (k' * Lb + q')) : k = k' ∧ q = q' := by
+  have hk : k = k' := by
+    by_contra hc
+    push Not at hc
+    rcases Nat.lt_or_ge k k' with hlt | hge
+    · have h2 : (k + 1) * Lb ≤ k' * Lb := Nat.mul_le_mul_right _ (by omega)
+      have h3 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul _ _
+      omega
+    · have hgt : k' < k := by omega
+      have h2 : (k' + 1) * Lb ≤ k * Lb := Nat.mul_le_mul_right _ (by omega)
+      have h3 : (k' + 1) * Lb = k' * Lb + Lb := Nat.succ_mul _ _
+      omega
+  subst hk
+  exact ⟨rfl, by omega⟩
+
+/-- A guarded non-root offset carries row 1 strictly above the root. -/
+theorem guard_self_gt {q : ℕ}
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hq : q ≤ Lb) (hqpos : 0 < q) (hg : le1 M j0 (j0 + q)) :
+    entry M 1 j0 < entry M 1 (j0 + q) := by
+  refine le1_chain_window hg.2.2 (j0 + q) ?_ .refl (by omega)
+  refine rtg0_of_window (by
+      have := hg.2.1
+      omega) (by omega) ?_
+  intro l h1 h2
+  exact hup l h1 (by omega)
+
+/-- A blocker value refutes the guard. -/
+theorem not_guard_of_le {q : ℕ}
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hq : q ≤ Lb) (hqpos : 0 < q)
+    (hle : entry M 1 (j0 + q) ≤ entry M 1 j0) : ¬ le1 M j0 (j0 + q) := by
+  intro hg
+  exact absurd (guard_self_gt hup hq hqpos hg) (by omega)
+
+/-- The root-to-offset chain inside the block. -/
+theorem rtg0_block {q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hq : q ≤ Lb) :
+    Relation.ReflTransGen (nextrel0 M) j0 (j0 + q) := by
+  rcases Nat.eq_zero_or_pos q with rfl | hqpos
+  · exact .refl
+  · refine rtg0_of_window (by omega) (by omega) ?_
+    intro l h1 h2
+    exact hup l h1 (by omega)
+
+/-- Offsets on the `lp`-chain are guarded. -/
+theorem guard_of_lp_chain {q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hle1lp : le1 M j0 (j0 + Lb)) (hq : q ≤ Lb)
+    (h : Relation.ReflTransGen (nextrel0 M) (j0 + q) (j0 + Lb)) :
+    le1 M j0 (j0 + q) :=
+  le1_of_chain_le1 hle1lp (rtg0_block hlen hup hq) h
+
+/-- Downward closure of guards along block chains. -/
+theorem guard_down {qa qb : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hqa : qa ≤ Lb)
+    (hab : Relation.ReflTransGen (nextrel0 M) (j0 + qa) (j0 + qb))
+    (hg : le1 M j0 (j0 + qb)) : le1 M j0 (j0 + qa) :=
+  le1_of_chain_le1 hg (rtg0_block hlen hup hqa) hab
+
+end TailEquiv
+
+section TailEquiv2
+
+variable {M : TrioSeq} {j0 Lb d0 d1 n : ℕ}
+
+set_option maxHeartbeats 4000000 in
+/-- **The hard window transfer**: the smaller tower's window forces the
+bigger tower's window (the `(gi, gx) = (T, F)` gap is killed by the
+blocker's mirror violating the given window). -/
+theorem window_transfer_T1 {i p : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hd1pos : 0 < d1) (hle1lp : le1 M j0 (j0 + Lb))
+    (hi : j0 + Lb ≤ i) (hp : p < j0 + (n + 1) * Lb) (hip : i ≤ p)
+    (hwin0 : ∀ x', Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+        (i - Lb) x' →
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) x' (p - Lb) →
+      x' ≠ i - Lb →
+      entry (gexp M j0 Lb d0 d1 n) 1 (i - Lb)
+        < entry (gexp M j0 Lb d0 d1 n) 1 x') :
+    ∀ x, Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) i x →
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) x p →
+      x ≠ i →
+      entry (gexp M j0 Lb d0 d1 (n + 1)) 1 i
+        < entry (gexp M j0 Lb d0 d1 (n + 1)) 1 x := by
+  have hsm : (n + 1) * Lb = n * Lb + Lb := Nat.succ_mul n Lb
+  obtain ⟨ki, qi, hki, hqi, hie⟩ := gexp_pos_decomp (n := n + 1) hLb
+    (show j0 ≤ i from by omega) (by omega)
+  have hki1 : 1 ≤ ki := by
+    rcases Nat.eq_zero_or_pos ki with rfl | h
+    · omega
+    · exact h
+  have hie' : i - Lb = j0 + ((ki - 1) * Lb + qi) := by
+    have h2 : ki * Lb = (ki - 1) * Lb + Lb := by
+      have h3 : (ki - 1 + 1) * Lb = (ki - 1) * Lb + Lb := Nat.succ_mul _ _
+      rw [show ki - 1 + 1 = ki from by omega] at h3
+      exact h3
+    omega
+  have hval_i := gexp_e1_mir (n := n + 1) (d0 := d0) (d1 := d1)
+    hlen hki hqi hie
+  have hval_i' := gexp_e1_mir (n := n) (d0 := d0) (d1 := d1)
+    hlen (show ki - 1 < n from by omega) hqi hie'
+  intro x hx1 hx2 hxne
+  have hxlo : i ≤ x := nextrel0_rtrancl_index_le hx1
+  have hxhi : x ≤ p := nextrel0_rtrancl_index_le hx2
+  obtain ⟨kx, qx, hkx, hqx, hxe⟩ := gexp_pos_decomp (n := n + 1) hLb
+    (show j0 ≤ x from by omega) (by omega)
+  have hkx1 : 1 ≤ kx := by
+    rcases Nat.eq_zero_or_pos kx with rfl | h
+    · omega
+    · exact h
+  have hxe' : x - Lb = j0 + ((kx - 1) * Lb + qx) := by
+    have h2 : kx * Lb = (kx - 1) * Lb + Lb := by
+      have h3 : (kx - 1 + 1) * Lb = (kx - 1) * Lb + Lb := Nat.succ_mul _ _
+      rw [show kx - 1 + 1 = kx from by omega] at h3
+      exact h3
+    omega
+  have hval_x := gexp_e1_mir (n := n + 1) (d0 := d0) (d1 := d1)
+    hlen hkx hqx hxe
+  have hval_x' := gexp_e1_mir (n := n) (d0 := d0) (d1 := d1)
+    hlen (show kx - 1 < n from by omega) hqx hxe'
+  -- the mirrored node inequality from the given window
+  have hx1m : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+      (i - Lb) (x - Lb) :=
+    (rtg0_tail_mirror hlen hLb hi (by omega) hxlo).1 hx1
+  have hx2m : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+      (x - Lb) (p - Lb) :=
+    (rtg0_tail_mirror hlen hLb (by omega) hp hxhi).1 hx2
+  have hineq0 := hwin0 (x - Lb) hx1m hx2m (by omega)
+  rw [hval_i', hval_x'] at hineq0
+  rw [hval_i, hval_x]
+  by_cases hgx : le1 M j0 (j0 + qx)
+  · by_cases hgi : le1 M j0 (j0 + qi)
+    · rw [if_pos hgx, if_pos hgi] at *
+      have hsx : kx * d1 = (kx - 1) * d1 + d1 := by
+        have h3 : (kx - 1 + 1) * d1 = (kx - 1) * d1 + d1 := Nat.succ_mul _ _
+        rw [show kx - 1 + 1 = kx from by omega] at h3
+        exact h3
+      have hsi : ki * d1 = (ki - 1) * d1 + d1 := by
+        have h3 : (ki - 1 + 1) * d1 = (ki - 1) * d1 + d1 := Nat.succ_mul _ _
+        rw [show ki - 1 + 1 = ki from by omega] at h3
+        exact h3
+      omega
+    · rw [if_pos hgx, if_neg hgi] at *
+      have hsx : kx * d1 = (kx - 1) * d1 + d1 := by
+        have h3 : (kx - 1 + 1) * d1 = (kx - 1) * d1 + d1 := Nat.succ_mul _ _
+        rw [show kx - 1 + 1 = kx from by omega] at h3
+        exact h3
+      omega
+  · by_cases hgi : le1 M j0 (j0 + qi)
+    · -- the gap case: refute via the blocker's mirror
+      exfalso
+      have hqxpos : 0 < qx := by
+        rcases Nat.eq_zero_or_pos qx with rfl | h
+        · exact absurd (by
+            rw [Nat.add_zero]
+            exact le1_refl (show j0 < M.length from by omega) : le1 M j0 (j0 + 0)) hgx
+        · exact h
+      obtain ⟨b, hj0b, hbq, hbne, hb1⟩ := blocker_of_not_le1
+        (rtg0_block hlen hup (by omega)) (by omega) hgx
+      have hb0 : j0 ≤ b := nextrel0_rtrancl_index_le hj0b
+      have hbub : b ≤ j0 + qx := nextrel0_rtrancl_index_le hbq
+      set qb := b - j0 with hqbdef
+      have hbe : b = j0 + qb := by omega
+      have hqbpos : 0 < qb := by omega
+      have hgb : ¬ le1 M j0 (j0 + qb) := by
+        refine not_guard_of_le hup (by omega) hqbpos ?_
+        rw [← hbe]
+        exact hb1
+      -- classification of `i` under `x`
+      obtain ⟨k', q', hk', hq', hxeq, hcase⟩ :=
+        gexp_chain_inversion (n := n + 1) (k := kx) (q := qx)
+          hlen hkx hqx hup hd0e i (by rw [← hxe]; exact hx1) (by omega)
+      rw [hie] at hxeq
+      obtain ⟨rfl, rfl⟩ := mir_decomp_unique (j0 := j0) hqi hq' hxeq
+      -- the blocker's mirror in copy `kx`
+      set y := j0 + (kx * Lb + qb) with hydef
+      have hymir : Relation.ReflTransGen
+          (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) y x := by
+        rw [hxe, hydef]
+        refine gexp_rtg0_mir hlen hkx ?_ qx rfl hqx
+        rw [← hbe]
+        exact hbq
+      -- `y` is at or after `i` unless the blocker sits below `i`'s offset
+      have hclose : entry M 1 (j0 + qi) + (if le1 M j0 (j0 + qi)
+          then (ki - 1) * d1 else 0) < entry M 1 j0 → False := by
+        intro hcon
+        have hgt : entry M 1 j0 ≤ entry M 1 (j0 + qi) := by
+          rcases Nat.eq_zero_or_pos qi with rfl | hqip
+          · rw [Nat.add_zero]
+          · exact (guard_self_gt hup (by omega) hqip hgi).le
+        rw [if_pos hgi] at hcon
+        omega
+      have hkill : i ≤ y → y ≠ i → False := by
+        intro hyi hyne
+        have hiy : Relation.ReflTransGen
+            (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) i y :=
+          rtg0_comparable hx1 hymir hyi
+        have hyp : Relation.ReflTransGen
+            (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) y p := hymir.trans hx2
+        have hybnd : y ≤ x := nextrel0_rtrancl_index_le hymir
+        have hiym : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+            (i - Lb) (y - Lb) :=
+          (rtg0_tail_mirror hlen hLb hi (by omega) hyi).1 hiy
+        have hypm : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+            (y - Lb) (p - Lb) :=
+          (rtg0_tail_mirror hlen hLb (by omega) hp
+            (le_trans hybnd hxhi)).1 hyp
+        have hwy := hwin0 (y - Lb) hiym hypm (by omega)
+        have hye' : y - Lb = j0 + ((kx - 1) * Lb + qb) := by
+          have h2 : kx * Lb = (kx - 1) * Lb + Lb := by
+            have h3 : (kx - 1 + 1) * Lb = (kx - 1) * Lb + Lb := Nat.succ_mul _ _
+            rw [show kx - 1 + 1 = kx from by omega] at h3
+            exact h3
+          omega
+        have hval_y' := gexp_e1_mir (n := n) (d0 := d0) (d1 := d1)
+          hlen (show kx - 1 < n from by omega) (by omega) hye'
+        rw [hval_i', hval_y', if_neg hgb] at hwy
+        rw [hbe] at hb1
+        refine hclose ?_
+        omega
+      rcases hcase with ⟨heqk, hMch⟩ | ⟨hltk, hMch⟩
+      · -- same copy: compare the blocker with `i`'s offset
+        rcases Nat.lt_or_ge qb qi with hlt | hge
+        · -- blocker below `i`'s offset: it sits on `i`'s chain window
+          have hbchain : Relation.ReflTransGen (nextrel0 M) b (j0 + qi) :=
+            rtg0_comparable hbq hMch (by omega)
+          have := le1_chain_window hgi.2.2 b
+            (by rw [hbe]; exact rtg0_block hlen hup (by omega)) hbchain
+            (by omega)
+          omega
+        · -- blocker at or above: its mirror violates the window
+          refine hkill ?_ ?_
+          · rw [hydef, hie, heqk]
+            omega
+          · intro hc
+            rw [hydef, hie, heqk] at hc
+            have hqbe : qb = qi := by
+              have := (mir_decomp_unique (j0 := j0) (by omega) hqi hc).2
+              omega
+            rcases Nat.eq_zero_or_pos qi with rfl | hqip
+            · omega
+            · refine absurd hgi (not_guard_of_le hup (by omega) hqip ?_)
+              rw [hbe, hqbe] at hb1
+              exact hb1
+      · -- cross copy: `y` is beyond `i`'s whole copy
+        refine hkill ?_ ?_
+        · rw [hydef, hie]
+          have h2 : (ki + 1) * Lb ≤ kx * Lb := Nat.mul_le_mul_right _ (by omega)
+          have h3 : (ki + 1) * Lb = ki * Lb + Lb := Nat.succ_mul _ _
+          omega
+        · intro hc
+          rw [hydef, hie] at hc
+          obtain ⟨hk2, -⟩ := mir_decomp_unique (j0 := j0) (by omega) hqi hc
+          omega
+    · rw [if_neg hgx, if_neg hgi] at *
+      omega
+
+set_option maxHeartbeats 4000000 in
+/-- The easy window transfer: downward closure kills the only gap case. -/
+theorem window_transfer_T0 {i p : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hd1pos : 0 < d1) (hle1lp : le1 M j0 (j0 + Lb))
+    (hi : j0 + Lb ≤ i) (hp : p < j0 + (n + 1) * Lb) (hip : i ≤ p)
+    (hwin1 : ∀ x, Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) i x →
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) x p →
+      x ≠ i →
+      entry (gexp M j0 Lb d0 d1 (n + 1)) 1 i
+        < entry (gexp M j0 Lb d0 d1 (n + 1)) 1 x) :
+    ∀ x', Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) (i - Lb) x' →
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) x' (p - Lb) →
+      x' ≠ i - Lb →
+      entry (gexp M j0 Lb d0 d1 n) 1 (i - Lb)
+        < entry (gexp M j0 Lb d0 d1 n) 1 x' := by
+  have hsm : (n + 1) * Lb = n * Lb + Lb := Nat.succ_mul n Lb
+  obtain ⟨ki, qi, hki, hqi, hie⟩ := gexp_pos_decomp (n := n + 1) hLb
+    (show j0 ≤ i from by omega) (by omega)
+  have hki1 : 1 ≤ ki := by
+    rcases Nat.eq_zero_or_pos ki with rfl | h
+    · omega
+    · exact h
+  have hie' : i - Lb = j0 + ((ki - 1) * Lb + qi) := by
+    have h2 : ki * Lb = (ki - 1) * Lb + Lb := by
+      have h3 : (ki - 1 + 1) * Lb = (ki - 1) * Lb + Lb := Nat.succ_mul _ _
+      rw [show ki - 1 + 1 = ki from by omega] at h3
+      exact h3
+    omega
+  have hval_i := gexp_e1_mir (n := n + 1) (d0 := d0) (d1 := d1)
+    hlen hki hqi hie
+  have hval_i' := gexp_e1_mir (n := n) (d0 := d0) (d1 := d1)
+    hlen (show ki - 1 < n from by omega) hqi hie'
+  intro x' hx1 hx2 hxne
+  have hx'lo : i - Lb ≤ x' := nextrel0_rtrancl_index_le hx1
+  have hx'hi : x' ≤ p - Lb := nextrel0_rtrancl_index_le hx2
+  set x := x' + Lb with hxdef
+  have hxe0 : x' = x - Lb := by omega
+  have hx1' : Relation.ReflTransGen
+      (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) i x := by
+    have h := (rtg0_tail_mirror (n := n) (d0 := d0) (d1 := d1)
+      (a := i) (b := x) hlen hLb hi (by omega) (by omega)).2
+    rw [← hxe0] at h
+    exact h hx1
+  have hx2' : Relation.ReflTransGen
+      (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) x p := by
+    have h := (rtg0_tail_mirror (n := n) (d0 := d0) (d1 := d1)
+      (a := x) (b := p) hlen hLb (by omega) hp (by omega)).2
+    rw [← hxe0] at h
+    exact h hx2
+  have hineq1 := hwin1 x hx1' hx2' (by omega)
+  obtain ⟨kx, qx, hkx, hqx, hxe⟩ := gexp_pos_decomp (n := n + 1) hLb
+    (show j0 ≤ x from by omega) (by omega)
+  have hkx1 : 1 ≤ kx := by
+    rcases Nat.eq_zero_or_pos kx with rfl | h
+    · omega
+    · exact h
+  have hxe' : x' = j0 + ((kx - 1) * Lb + qx) := by
+    have h2 : kx * Lb = (kx - 1) * Lb + Lb := by
+      have h3 : (kx - 1 + 1) * Lb = (kx - 1) * Lb + Lb := Nat.succ_mul _ _
+      rw [show kx - 1 + 1 = kx from by omega] at h3
+      exact h3
+    omega
+  have hval_x := gexp_e1_mir (n := n + 1) (d0 := d0) (d1 := d1)
+    hlen hkx hqx hxe
+  have hval_x' := gexp_e1_mir (n := n) (d0 := d0) (d1 := d1)
+    hlen (show kx - 1 < n from by omega) hqx hxe'
+  rw [hval_i, hval_x] at hineq1
+  rw [hval_i', hval_x']
+  by_cases hgx : le1 M j0 (j0 + qx)
+  · by_cases hgi : le1 M j0 (j0 + qi)
+    · rw [if_pos hgx, if_pos hgi] at *
+      have hsx : kx * d1 = (kx - 1) * d1 + d1 := by
+        have h3 : (kx - 1 + 1) * d1 = (kx - 1) * d1 + d1 := Nat.succ_mul _ _
+        rw [show kx - 1 + 1 = kx from by omega] at h3
+        exact h3
+      have hsi : ki * d1 = (ki - 1) * d1 + d1 := by
+        have h3 : (ki - 1 + 1) * d1 = (ki - 1) * d1 + d1 := Nat.succ_mul _ _
+        rw [show ki - 1 + 1 = ki from by omega] at h3
+        exact h3
+      omega
+    · -- (T,F): impossible by downward closure
+      exfalso
+      obtain ⟨k', q', hk', hq', hxeq, hcase⟩ :=
+        gexp_chain_inversion (n := n + 1) (k := kx) (q := qx)
+          hlen hkx hqx hup hd0e i (by rw [← hxe]; exact hx1') (by omega)
+      rw [hie] at hxeq
+      obtain ⟨rfl, rfl⟩ := mir_decomp_unique (j0 := j0) hqi hq' hxeq
+      rcases hcase with ⟨heqk, hMch⟩ | ⟨hltk, hMch⟩
+      · exact hgi (guard_down hlen hup (by omega) hMch hgx)
+      · exact hgi (guard_of_lp_chain hlen hup hle1lp (by omega) hMch)
+  · by_cases hgi : le1 M j0 (j0 + qi)
+    · rw [if_neg hgx, if_pos hgi] at *
+      have hsi : ki * d1 = (ki - 1) * d1 + d1 := by
+        have h3 : (ki - 1 + 1) * d1 = (ki - 1) * d1 + d1 := Nat.succ_mul _ _
+        rw [show ki - 1 + 1 = ki from by omega] at h3
+        exact h3
+      omega
+    · rw [if_neg hgx, if_neg hgi] at *
+      omega
+
+set_option maxHeartbeats 4000000 in
+/-- **The tail `le1` equivalence** (probe: 780362 pairs, 0 violations). -/
+theorem le1_tail_equiv {i p : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hd1pos : 0 < d1) (hle1lp : le1 M j0 (j0 + Lb))
+    (hi : j0 + Lb ≤ i) (hp : p < j0 + (n + 1) * Lb) (hip : i ≤ p) :
+    (le1 (gexp M j0 Lb d0 d1 (n + 1)) i p ↔
+      le1 (gexp M j0 Lb d0 d1 n) (i - Lb) (p - Lb)) := by
+  have hsm : (n + 1) * Lb = n * Lb + Lb := Nat.succ_mul n Lb
+  have hl1 : (gexp M j0 Lb d0 d1 (n + 1)).length = j0 + (n + 1) * Lb :=
+    gexp_length hlen
+  have hl0 : (gexp M j0 Lb d0 d1 n).length = j0 + n * Lb :=
+    gexp_length hlen
+  constructor
+  · intro h
+    have hch1 : Relation.ReflTransGen
+        (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) i p := rtg1_rtg0 h.2.2
+    have hch0 : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+        (i - Lb) (p - Lb) := (rtg0_tail_mirror hlen hLb hi hp hip).1 hch1
+    refine (le1_iff_chain_window (by omega) hch0).2 ?_
+    exact window_transfer_T0 hlen hLb hup hd0pos hd0e hd1pos hle1lp hi hp hip
+      ((le1_iff_chain_window (by omega) hch1).1 h)
+  · intro h
+    have hch0 : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+        (i - Lb) (p - Lb) := rtg1_rtg0 h.2.2
+    have hch1 : Relation.ReflTransGen
+        (nextrel0 (gexp M j0 Lb d0 d1 (n + 1))) i p :=
+      (rtg0_tail_mirror hlen hLb hi hp hip).2 hch0
+    refine (le1_iff_chain_window (by omega) hch1).2 ?_
+    exact window_transfer_T1 hlen hLb hup hd0pos hd0e hd1pos hle1lp hi hp hip
+      ((le1_iff_chain_window (by omega) hch0).1 h)
+
+end TailEquiv2
+
+
 /-! ## 一致転送（`le1` は前置と行 0/1 だけで決まる） -/
 
 section Agree
