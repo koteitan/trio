@@ -1200,4 +1200,230 @@ theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
       omega
   · omega
 
+/-! ## bad_A2 の交差ケース (c) -/
+
+/-- Positional form of the `A1` row-0 condition. -/
+theorem argdom_A1_pos {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : N = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (h1 : ∀ x ∈ A1, u < x.1) :
+    ∀ p, X.length < p → p < X.length + (A1.length + 1) → u < entry N 0 p := by
+  have hN : N = X ++ ((u, w1, z)
+      :: (A1 ++ ((u + e, w1 + f, z) :: ((B ++ A2) ++ Z)))) := by
+    rw [heq]
+    simp [List.append_assoc]
+  intro p hp1 hp2
+  obtain ⟨t, rfl⟩ : ∃ t, p = X.length + 1 + t := ⟨p - X.length - 1, by omega⟩
+  have ht : t < A1.length := by omega
+  have hget : N.getD (X.length + 1 + t) (0, 0, 0) = A1.getD t (0, 0, 0) := by
+    rw [hN, getD_app_right _ _ (by omega),
+      show X.length + 1 + t - X.length = t + 1 from by omega,
+      List.getD_cons_succ, getD_append_left ht]
+  show u < (N.getD (X.length + 1 + t) (0, 0, 0)).1
+  rw [hget]
+  exact h1 _ (getD_mem_of_lt ht)
+
+set_option maxHeartbeats 4000000 in
+/-- **Case A2 (c)** in tower coordinates: the shallower marked column sits
+strictly inside copy 0 and the deeper one is the copy-1 mirror of an
+*earlier* block position.  Empty by `caseC_absurd`. -/
+theorem argDomCoreOn_bad_A2_c {M : TrioSeq} (hM : ST_TS M) {j0 Lb d0 d1 n : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLbpos : 0 < Lb)
+    (np2 : nextrel2 M j0 (j0 + Lb))
+    (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hd1e : entry M 1 (j0 + Lb) = entry M 1 j0 + d1)
+    {X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : gexp M j0 Lb d0 d1 n
+      = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (he : 0 < e) (hzf : f = 0 ∨ z = 0)
+    (h1 : ∀ x ∈ A1, u < x.1) (h6 : SpineOK A1 (u + e) w1)
+    (hcaseL : X.length < j0 + Lb)
+    (hcaseR : j0 + Lb ≤ X.length + (A1.length + 1))
+    (hcaseC : X.length + (A1.length + 1) - Lb < X.length) :
+    False := by
+  classical
+  obtain ⟨hpi, hpj, hjlt⟩ := argdom_pos heq
+  have hTlen : (gexp M j0 Lb d0 d1 n).length = j0 + n * Lb := gexp_length hlen
+  have hjlt' : X.length + (A1.length + 1) < j0 + n * Lb := by
+    rw [← hTlen]
+    exact hjlt
+  have hn2 : 2 ≤ n := by
+    by_contra hc
+    have hmul : n * Lb ≤ 1 * Lb := Nat.mul_le_mul_right _ (by omega)
+    rw [Nat.one_mul] at hmul
+    omega
+  -- the deeper column sits in copy 1
+  obtain ⟨k, q, hk, hq, hjeq⟩ := gexp_pos_decomp (j0 := j0) (Lb := Lb)
+    (n := n) hLbpos (by omega) hjlt'
+  have hkeq : k = 1 := by
+    rcases Nat.lt_or_ge k 2 with hk2 | hk2
+    · rcases Nat.eq_zero_or_pos k with rfl | hpos
+      · rw [Nat.zero_mul] at hjeq
+        omega
+      · omega
+    · exfalso
+      have hmul : 2 * Lb ≤ k * Lb := Nat.mul_le_mul_right _ hk2
+      omega
+  rw [hkeq, Nat.one_mul] at hjeq
+  -- values of the two marked columns
+  have hagree : ∀ p, p < j0 + Lb →
+      (gexp M j0 Lb d0 d1 n).getD p (0, 0, 0) = M.getD p (0, 0, 0) := by
+    intro p hp
+    rcases Nat.lt_or_ge p j0 with h | h
+    · exact gexp_getD_low hlen h
+    · have h2 := gexp_getD_mir (M := M) (d0 := d0) (d1 := d1) (n := n) hlen
+        (k := 0) (q := p - j0) (by omega) (by omega)
+      rw [Nat.zero_mul, Nat.zero_add, show j0 + (p - j0) = p from by omega] at h2
+      rw [h2]
+      simp only [Nat.zero_mul, ite_self, Nat.add_zero]
+      rfl
+  have hentry : ∀ r p, p < j0 + Lb →
+      entry (gexp M j0 Lb d0 d1 n) r p = entry M r p := by
+    intro r p hp
+    unfold entry
+    rw [hagree p hp]
+  have hmir : ∀ q', q' < Lb →
+      (gexp M j0 Lb d0 d1 n).getD (j0 + (Lb + q')) (0, 0, 0)
+        = (entry M 0 (j0 + q') + d0,
+           entry M 1 (j0 + q') + (if le1 M j0 (j0 + q') then d1 else 0),
+           entry M 2 (j0 + q')) := by
+    intro q' hq'
+    have h2 := gexp_getD_mir (M := M) (d0 := d0) (d1 := d1) (n := n) hlen
+      (k := 1) (q := q') (by omega) hq'
+    simp only [Nat.one_mul] at h2
+    exact h2
+  have hvi : M.getD X.length (0, 0, 0) = (u, w1, z) := by
+    rw [← hagree X.length hcaseL]
+    exact hpi
+  have hvj := hpj
+  rw [hjeq, hmir q hq] at hvj
+  -- host-side readings
+  have hu0 : entry M 0 X.length = u := by
+    show (M.getD X.length (0, 0, 0)).1 = u
+    rw [hvi]
+  have hu1 : entry M 1 X.length = w1 := by
+    show (M.getD X.length (0, 0, 0)).2.1 = w1
+    rw [hvi]
+  have hu2 : entry M 2 X.length = z := by
+    show (M.getD X.length (0, 0, 0)).2.2 = z
+    rw [hvi]
+  have hj0v : entry M 0 (j0 + q) + d0 = u + e := congrArg Prod.fst hvj
+  have hj1v : entry M 1 (j0 + q)
+      + (if le1 M j0 (j0 + q) then d1 else 0) = w1 + f :=
+    congrArg (fun p => p.2.1) hvj
+  have hj2v : entry M 2 (j0 + q) = z := congrArg (fun p => p.2.2) hvj
+  -- host chain window
+  have hch0 : Relation.ReflTransGen (nextrel0 M) j0 (j0 + Lb) :=
+    rtg1_rtg0 np2.2.2.2.2.1.2.2
+  have hwin0 : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l :=
+    fun l ha hb => le0_interval_gt hch0 l ⟨ha, hb⟩
+  have hqge : entry M 0 j0 ≤ entry M 0 (j0 + q) := by
+    rcases Nat.eq_zero_or_pos q with rfl | hqp
+    · rw [Nat.add_zero]
+    · exact (hwin0 (j0 + q) (by omega) (by omega)).le
+  -- the shallower column is below the copy level
+  have hulow : entry M 0 X.length < entry M 0 j0 + d0 := by
+    rcases Nat.eq_zero_or_pos q with rfl | hqp
+    · rw [Nat.add_zero] at hj0v
+      omega
+    · have hA1p := argdom_A1_pos heq h1 (j0 + Lb) (by omega) (by omega)
+      have hval : (gexp M j0 Lb d0 d1 n).getD (j0 + (Lb + 0)) (0, 0, 0)
+          = (entry M 0 (j0 + 0) + d0,
+             entry M 1 (j0 + 0) + (if le1 M j0 (j0 + 0) then d1 else 0),
+             entry M 2 (j0 + 0)) := hmir 0 hLbpos
+      rw [Nat.add_zero, Nat.add_zero] at hval
+      have : entry (gexp M j0 Lb d0 d1 n) 0 (j0 + Lb) = entry M 0 j0 + d0 := by
+        show ((gexp M j0 Lb d0 d1 n).getD (j0 + Lb) (0, 0, 0)).1 = _
+        rw [hval]
+      omega
+  -- the block part of `A1`
+  have hA1blk : ∀ l, X.length < l → l < j0 + Lb →
+      entry M 0 X.length < entry M 0 l := by
+    intro l ha hb
+    have h := argdom_A1_pos heq h1 l ha (by omega)
+    have he0 := hentry 0 l hb
+    omega
+  -- the spine on the block part
+  have hspblk : ∀ p, X.length < p → p < j0 + Lb →
+      entry M 0 p < entry M 0 (j0 + Lb) →
+      (∀ p', p < p' → p' < j0 + Lb → entry M 0 p < entry M 0 p') →
+      entry M 1 X.length ≤ entry M 1 p := by
+    intro p ha hb hc hd
+    have hep0 := hentry 0 p hb
+    have hep1 := hentry 1 p hb
+    have hlt : entry (gexp M j0 Lb d0 d1 n) 0 p < u + e := by
+      rw [hep0]
+      omega
+    have hvis : ∀ p', p < p' → p' < X.length + (A1.length + 1) →
+        entry (gexp M j0 Lb d0 d1 n) 0 p
+          < entry (gexp M j0 Lb d0 d1 n) 0 p' := by
+      intro p' h1' h2'
+      rcases Nat.lt_or_ge p' (j0 + Lb) with hlow | hhigh
+      · have hep0' := hentry 0 p' hlow
+        rw [hep0, hep0']
+        exact hd p' h1' hlow
+      · obtain ⟨q'', hq''⟩ : ∃ q'', p' = j0 + (Lb + q'') ∧ q'' < Lb :=
+          ⟨p' - j0 - Lb, by omega, by omega⟩
+        have hep0' : entry (gexp M j0 Lb d0 d1 n) 0 p'
+            = entry M 0 (j0 + q'') + d0 := by
+          show ((gexp M j0 Lb d0 d1 n).getD p' (0, 0, 0)).1 = _
+          rw [hq''.1, hmir q'' hq''.2]
+        have hge : entry M 0 j0 ≤ entry M 0 (j0 + q'') := by
+          rcases Nat.eq_zero_or_pos q'' with hz | hp
+          · rw [hz, Nat.add_zero]
+          · exact (hwin0 (j0 + q'') (by omega) (by omega)).le
+        rw [hep0, hep0']
+        omega
+    have hsp := spineOK_pos heq h6 p ha (by omega) hlt hvis
+    rw [hep1] at hsp
+    omega
+  -- the spine on the copy-1 part
+  have hspcpy : ∀ c, j0 ≤ c → c < j0 + q → entry M 0 c < entry M 0 (j0 + q) →
+      (∀ c', c < c' → c' < j0 + q → entry M 0 c < entry M 0 c') →
+      entry M 1 X.length ≤ entry M 1 c + (if le1 M j0 c then d1 else 0) := by
+    intro c ha hb hc hd
+    have hcq : c - j0 < Lb := by omega
+    have hce : j0 + (c - j0) = c := by omega
+    have hval := hmir (c - j0) hcq
+    rw [hce] at hval
+    have hep0 : entry (gexp M j0 Lb d0 d1 n) 0 (j0 + (Lb + (c - j0)))
+        = entry M 0 c + d0 := by
+      show ((gexp M j0 Lb d0 d1 n).getD (j0 + (Lb + (c - j0))) (0, 0, 0)).1 = _
+      rw [hval]
+    have hep1 : entry (gexp M j0 Lb d0 d1 n) 1 (j0 + (Lb + (c - j0)))
+        = entry M 1 c + (if le1 M j0 c then d1 else 0) := by
+      show ((gexp M j0 Lb d0 d1 n).getD (j0 + (Lb + (c - j0))) (0, 0, 0)).2.1 = _
+      rw [hval]
+    have hlt : entry (gexp M j0 Lb d0 d1 n) 0 (j0 + (Lb + (c - j0))) < u + e := by
+      rw [hep0]
+      omega
+    have hvis : ∀ p', j0 + (Lb + (c - j0)) < p' →
+        p' < X.length + (A1.length + 1) →
+        entry (gexp M j0 Lb d0 d1 n) 0 (j0 + (Lb + (c - j0)))
+          < entry (gexp M j0 Lb d0 d1 n) 0 p' := by
+      intro p' h1' h2'
+      obtain ⟨q'', hq''⟩ : ∃ q'', p' = j0 + (Lb + q'') ∧ q'' < Lb :=
+        ⟨p' - j0 - Lb, by omega, by omega⟩
+      have hep0' : entry (gexp M j0 Lb d0 d1 n) 0 p'
+          = entry M 0 (j0 + q'') + d0 := by
+        show ((gexp M j0 Lb d0 d1 n).getD p' (0, 0, 0)).1 = _
+        rw [hq''.1, hmir q'' hq''.2]
+      have := hd (j0 + q'') (by omega) (by omega)
+      rw [hep0, hep0']
+      omega
+    have hsp := spineOK_pos heq h6 (j0 + (Lb + (c - j0)))
+      (by omega) (by omega) hlt hvis
+    rw [hep1] at hsp
+    omega
+  refine caseC_absurd hM np2 hd0e hd1e (i := X.length) (qj := j0 + q)
+    (by omega) hcaseL (by omega) (by omega) hulow ?_ ?_ ?_
+    hA1blk hspblk hspcpy
+  · rw [hu1]
+    omega
+  · rw [hu2, hj2v]
+  · rcases hzf with rfl | hz0
+    · refine Or.inl ?_
+      rw [hu1]
+      omega
+    · exact Or.inr (by rw [hu2]; exact hz0)
+
 end TRIO

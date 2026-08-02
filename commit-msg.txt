@@ -1,5 +1,6 @@
-v0.51.0/positional form of SpineOK
+v0.52.0/bad_A2 case (c) in tower coordinates
 
-- Add spineOK_pos: a right-visible column strictly between the two marked
-  positions and below the deeper level carries row 1 at least w1, stated
-  by index instead of by list decomposition
+- Add argdom_A1_pos: positional form of the A1 row-0 condition
+- Add argDomCoreOn_bad_A2_c: the cross case is empty — copy index forced
+  to 1, host readings via the gexp low/mirror formulas, and the block and
+  copy-1 spines fed to caseC_absurd
