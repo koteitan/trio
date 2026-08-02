@@ -9,9 +9,9 @@
 - [x] Seqlex.lean 列辞書式順序との同型 olt_ST_iff_seqlex ✅
 - [x] Cnf.lean cnf・閉包・ctx_cong・コピー塔・cnf_oper_of_window ✅（cnf_ST_TS は Column 後）
 - [x] ピボット: A_x1≡1・W2ok は ST_TS 上で反証（HOST 系列）→ ガード付きコピーが実挙動 ✅probe
-- [ ] Lift.lean 心材リフト lsub（単調性・cnf 保存）
-- [ ] 経路補題 le1 ⟺ chain 窓（無条件）＋スパイン⊆D
-- [ ] ガード付きコピーの translate 分解と cnf_oper（窓仮説なし）
-- [ ] Column.lean 不変量保存（r1ok / z0ok / noninc、ガード対応）→ cnf_ST_TS
+- [x] Lift.lean 心材リフト lsub（単調性・cnf 保存）✅
+- [x] 経路補題 le1 ⟺ chain 窓（無条件）✅（スパイン⊆D は不要と判明）
+- [x] Gcopy/Goper: translate_gseg・cnf_gcopiesFrom・cnf_oper・**cnf_ST_TS** ✅（不変量も窓仮説も不要）
+- [ ] Column.lean 不変量保存（r1ok / z0ok / noninc、ガード対応；後続章向け）
 - [ ] 共終性（2 次元上昇の核）
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）
