@@ -979,4 +979,83 @@ theorem zjump_diagSeqT (v : ℕ) : zjump (diagSeqT 0 v) := by
   rw [ei, ej] at heq
   omega
 
+/-! ## マーク列の行 1 親の存在 -/
+
+/-- `markP1`: every marked column has a row-0 chain ancestor with strictly
+smaller row 1 (hence a row-1 parent). -/
+def markP1 (M : TrioSeq) : Prop :=
+  ∀ j, j < M.length → (M.getD j (0, 0, 0)).2.2 = 1 →
+    ∃ c, Relation.ReflTransGen (nextrel0 M) c j ∧
+      (M.getD c (0, 0, 0)).2.1 < (M.getD j (0, 0, 0)).2.1
+
+theorem nextrel0_take {M : TrioSeq} {m a b : ℕ} (hb : b < m)
+    (h : nextrel0 M a b) : nextrel0 (M.take m) a b := by
+  obtain ⟨h1, h2, h3, h4, h5⟩ := h
+  refine ⟨?_, ?_, h3, ?_, ?_⟩
+  · rw [List.length_take]
+    omega
+  · rw [List.length_take]
+    omega
+  · show entry (M.take m) 0 a < entry (M.take m) 0 b
+    unfold entry
+    rw [getD_take (by omega), getD_take (by omega)]
+    exact h4
+  · intro l hl
+    show entry (M.take m) 0 b ≤ entry (M.take m) 0 l
+    unfold entry
+    rw [getD_take (by omega), getD_take (by omega)]
+    exact h5 l hl
+
+theorem rtg0_take {M : TrioSeq} {m a b : ℕ} (hb : b < m)
+    (h : Relation.ReflTransGen (nextrel0 M) a b) :
+    Relation.ReflTransGen (nextrel0 (M.take m)) a b := by
+  induction h with
+  | refl => exact .refl
+  | @tail y z hay hyz ih =>
+    have hy : y < m := by
+      have := nextrel0_index_less hyz
+      omega
+    exact (ih hy).tail (nextrel0_take hb hyz)
+  
+theorem markP1_take {M : TrioSeq} (h : markP1 M) (m : ℕ) : markP1 (M.take m) := by
+  intro j hj hm
+  rw [List.length_take] at hj
+  have hjm : j < m := lt_of_lt_of_le hj (min_le_left _ _)
+  have hjM : j < M.length := lt_of_lt_of_le hj (min_le_right _ _)
+  rw [getD_take hjm] at hm ⊢
+  obtain ⟨c, hc1, hc2⟩ := h j hjM hm
+  refine ⟨c, rtg0_take hjm hc1, ?_⟩
+  have hcj : c ≤ j := nextrel0_rtrancl_index_le hc1
+  rw [getD_take (by omega : c < m)]
+  exact hc2
+
+theorem markP1_dropLast {M : TrioSeq} (h : markP1 M) : markP1 M.dropLast := by
+  rw [List.dropLast_eq_take]
+  exact markP1_take h _
+
+theorem markP1_diagSeqT (v : ℕ) : markP1 (diagSeqT 0 v) := by
+  intro j hj hm
+  rw [diagSeqT_length] at hj
+  rw [diagSeqT_getD hj] at hm ⊢
+  have hj1 : 1 ≤ j := by
+    by_contra hc
+    push Not at hc
+    have hj0 : j = 0 := by omega
+    subst hj0
+    simp at hm
+  refine ⟨j - 1, ?_, ?_⟩
+  · refine Relation.ReflTransGen.single ?_
+    refine ⟨by rw [diagSeqT_length]; omega, by rw [diagSeqT_length]; omega,
+      by omega, ?_, ?_⟩
+    · show entry (diagSeqT 0 v) 0 (j - 1) < entry (diagSeqT 0 v) 0 j
+      unfold entry
+      rw [diagSeqT_getD (by omega), diagSeqT_getD hj]
+      show j - 1 < j
+      omega
+    · intro l hl
+      omega
+  · rw [diagSeqT_getD (show j - 1 < v + 1 by omega)]
+    show j - 1 < j
+    omega
+
 end TRIO
