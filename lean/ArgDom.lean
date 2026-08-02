@@ -599,4 +599,114 @@ theorem ascArgDom1_of_core (H : ArgDomCore) : AscArgDom1 := by
   rw [hgoal]
   exact hm
 
+theorem copies_succ_back (d0 d1 : ℕ) (blk : TrioSeq) (n : ℕ) :
+    copies d0 d1 blk (n + 1) = copies d0 d1 blk n ++ shiftr01 (n * d0) (n * d1) blk := by
+  unfold copies
+  rw [List.range_succ, List.flatMap_append]
+  simp
+
+theorem shiftr01_length (d0 d1 : ℕ) (X : TrioSeq) :
+    (shiftr01 d0 d1 X).length = X.length := by
+  unfold shiftr01
+  simp
+
+theorem mem_shiftr01_le {d : ℕ} (e : ℕ) {X : TrioSeq} (h : ∀ x ∈ X, d ≤ x.1) :
+    ∀ x ∈ shiftr01 e 0 X, d + e ≤ x.1 := by
+  intro x hx
+  obtain ⟨p, hp, rfl⟩ := mem_shiftr01.1 hx
+  have := h p hp
+  dsimp only
+  omega
+
+/-- **The first ascending branch closes with one extra copy.** -/
+theorem asc_crux1 (H : AscArgDom1) {G R S : TrioSeq} {v0 w1 w2 d0 : ℕ}
+    (hM : ST_TS ((G ++ ((v0, w1, w2) :: R)) ++ [(v0 + d0, w1 + 1, 0)]))
+    (hN : ST_TS ((G ++ ((v0, w1, w2) :: R)) ++ (v0 + d0, w1, w2) :: S))
+    (hRgt : ∀ x ∈ R, v0 < x.1) (hd : 0 < d0)
+    (hle1 : le1 ((G ++ ((v0, w1, w2) :: R)) ++ [(v0 + d0, w1 + 1, 0)]) G.length
+      (G ++ ((v0, w1, w2) :: R)).length) :
+    ∃ m, 1 ≤ m ∧ sle ((v0 + d0, w1, w2) :: S)
+      (shiftr01 d0 0 (copies d0 0 ((v0, w1, w2) :: R) m)) := by
+  obtain ⟨m, hdom⟩ := H hM hN hRgt hd hle1
+  set Shi := S.takeWhile (fun p => v0 + d0 < p.1) with hShidef
+  set Slo := S.dropWhile (fun p => v0 + d0 < p.1) with hSlodef
+  have hSsplit : Shi ++ Slo = S := List.takeWhile_append_dropWhile
+  set blk' := shiftr01 d0 0 ((v0, w1, w2) :: R) with hblk'
+  have hblk'cons : blk' = (v0 + d0, w1, w2) :: shiftr01 d0 0 R := by
+    rw [hblk', shiftr01_cons]
+    dsimp only
+    rw [Nat.add_zero]
+  have hDmGt : ∀ x ∈ R ++ copies d0 0 blk' m, v0 < x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with hx | hx
+    · exact hRgt x hx
+    · rw [hblk'cons] at hx
+      have := copies_v0_le (v0 := v0 + d0) (w1 := w1) (w2 := w2)
+        (R := shiftr01 d0 0 R)
+        (mem_shiftr01_le d0 (fun y hy => (hRgt y hy).le)) d0 0 m x hx
+      omega
+  have hSloHd : Slo = [] ∨ (Slo.headI).1 ≤ v0 + d0 := by
+    rcases hdd : Slo with _ | ⟨z', Z'⟩
+    · exact Or.inl rfl
+    · refine Or.inr ?_
+      have h := List.head?_dropWhile_not
+        (fun p : ℕ × ℕ × ℕ => decide (v0 + d0 < p.1)) S
+      rw [← hSlodef, hdd] at h
+      simp only [List.head?_cons] at h
+      have : ¬ (v0 + d0 < z'.1) := by simpa using h
+      simp only [List.headI]
+      omega
+  refine ⟨m + 2, by omega, ?_⟩
+  have hinner : shiftr01 d0 0 (copies d0 0 blk' (m + 1))
+      = shiftr01 d0 0 (copies d0 0 blk' m)
+        ++ shiftr01 d0 0 (shiftr01 (m * d0) (m * 0) blk') := by
+    rw [copies_succ_back, shiftr01_append]
+  have htgt : shiftr01 d0 0 (copies d0 0 ((v0, w1, w2) :: R) (m + 2))
+      = (v0 + d0, w1, w2) :: (shiftr01 d0 0 (R ++ copies d0 0 blk' m)
+          ++ shiftr01 d0 0 (shiftr01 (m * d0) (m * 0) blk')) := by
+    rw [shiftr01_copies, ← hblk', copies_succ_front, hinner, shiftr01_append,
+      List.append_assoc]
+    conv_lhs => rw [hblk'cons]
+    rw [List.cons_append, ← hblk'cons]
+  rw [htgt]
+  have hEne : shiftr01 d0 0 (shiftr01 (m * d0) (m * 0) blk') ≠ [] := by
+    rw [hblk'cons]
+    simp [shiftr01]
+  have hEhd : ((shiftr01 d0 0 (shiftr01 (m * d0) (m * 0) blk')).headI).1
+      = v0 + d0 + m * d0 + d0 := by
+    rw [hblk'cons, shiftr01_cons, shiftr01_cons]
+    show v0 + d0 + m * d0 + d0 = v0 + d0 + m * d0 + d0
+    rfl
+  show sle ([((v0 + d0 : ℕ), (w1 : ℕ), (w2 : ℕ))] ++ S)
+    ([((v0 + d0 : ℕ), (w1 : ℕ), (w2 : ℕ))] ++ _)
+  rw [sle_append_cancel]
+  rcases hdom with heq | hlt
+  · have hS : S = shiftr01 d0 0 (R ++ copies d0 0 blk' m) ++ Slo := by
+      rw [← hSsplit, heq]
+    rw [hS]
+    refine (sle_append_cancel _).2 ?_
+    rcases hSloHd with h | h
+    · rw [h]
+      exact Or.inr (by simpa using hEne)
+    · rcases hdd : Slo with _ | ⟨z', Z'⟩
+      · exact Or.inr (by simpa using hEne)
+      · rcases hb : shiftr01 d0 0 (shiftr01 (m * d0) (m * 0) blk') with _ | ⟨b, B⟩
+        · exact absurd hb hEne
+        · refine Or.inr (Or.inl ?_)
+          rw [hdd] at h
+          rw [hb] at hEhd
+          simp only [List.headI] at h hEhd
+          exact Or.inl (by omega)
+  · refine Or.inr ?_
+    rw [← hSsplit]
+    refine seqlex_splice hlt ?_ _
+    rcases hSloHd with h | h
+    · exact Or.inl h
+    · refine Or.inr (fun x hx => ?_)
+      obtain ⟨y, hy, rfl⟩ := mem_shiftr01.1 hx
+      have := hDmGt y hy
+      refine Or.inl ?_
+      dsimp only
+      omega
+
 end TRIO
