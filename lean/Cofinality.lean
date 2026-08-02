@@ -474,4 +474,102 @@ theorem copy_dom_zero : ∀ (d : ℕ) (Y : TrioSeq) (v0 w1 w2 : ℕ) (R : TrioSe
           have h1 := hRgt x hx
           exact Or.inl (by omega)
 
+/-- **The `d0 = 0` crux.**  When the dropped column is `(v0+1, 0, 0)`, the
+continuation of `N` below it re-opens at or below `v0` and is dominated by
+finitely many verbatim copies of the block. -/
+theorem crux_zero {G R S : TrioSeq} {v0 w1 w2 : ℕ} {q : ℕ × ℕ × ℕ}
+    (hN : ST_TS ((G ++ ((v0, w1, w2) :: R)) ++ q :: S))
+    (hRgt : ∀ x ∈ R, v0 < x.1)
+    (hq : collt q (v0 + 1, 0, 0)) :
+    ∃ m, 1 ≤ m ∧ sle (q :: S) (copies 0 0 ((v0, w1, w2) :: R) m) := by
+  have hqv : q.1 ≤ v0 := by
+    rcases hq with h | ⟨h1, h | ⟨h2, h3⟩⟩
+    · have h' : q.1 < v0 + 1 := h
+      omega
+    · have h' : q.2.1 < 0 := h
+      omega
+    · have h' : q.2.2 < 0 := h3
+      omega
+  rcases Nat.lt_or_ge q.1 v0 with hlt | hge
+  · exact ⟨1, le_rfl, Or.inr (by
+      rw [copies_one]
+      exact Or.inl (Or.inl (by omega)))⟩
+  have hqv0 : q.1 = v0 := by omega
+  set Y := (q :: S).takeWhile (fun p => v0 ≤ p.1) with hYdef
+  set V := (q :: S).dropWhile (fun p => v0 ≤ p.1) with hVdef
+  have hYV : Y ++ V = q :: S := List.takeWhile_append_dropWhile
+  have hYcons : Y = q :: S.takeWhile (fun p => v0 ≤ p.1) := by
+    rw [hYdef, List.takeWhile_cons_of_pos (by simpa using hqv0.ge)]
+  have hYge : ∀ x ∈ Y, v0 ≤ x.1 := by
+    intro x hx
+    have := List.mem_takeWhile_imp hx
+    simpa using this
+  have hVhd : V = [] ∨ ∃ z Z, V = z :: Z ∧ z.1 < v0 := by
+    rcases hd : V with _ | ⟨z, Z⟩
+    · exact Or.inl rfl
+    · refine Or.inr ⟨z, Z, rfl, ?_⟩
+      have h := List.head?_dropWhile_not
+        (fun p : ℕ × ℕ × ℕ => decide (v0 ≤ p.1)) (q :: S)
+      rw [← hVdef, hd] at h
+      simp only [List.head?_cons] at h
+      have : ¬ (v0 ≤ z.1) := by simpa using h
+      omega
+  have hNsplit : (G ++ ((v0, w1, w2) :: R)) ++ q :: S
+      = (G ++ (((v0, w1, w2) :: R) ++ Y)) ++ V := by
+    rw [← hYV]
+    simp
+  have hstN : steps1 ((G ++ ((v0, w1, w2) :: R)) ++ q :: S) :=
+    (blockok_ST_TS hN).2.2
+  have hstBY : steps1 (((v0, w1, w2) :: R) ++ Y) := by
+    rw [hNsplit] at hstN
+    exact (steps1_append.1 (steps1_append.1 hstN).1).2.1
+  have hallBY : ∀ x ∈ ((v0, w1, w2) :: R) ++ Y, v0 ≤ x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with hx | hx
+    · rcases List.mem_cons.1 hx with rfl | hx
+      · exact le_rfl
+      · exact (hRgt x hx).le
+    · exact hYge x hx
+  have hbo : blockok v0 (((v0, w1, w2) :: R) ++ Y) := ⟨by intro _; rfl, hallBY, hstBY⟩
+  have hcnfN : cnf (translate ((G ++ ((v0, w1, w2) :: R)) ++ q :: S)) :=
+    cnf_ST_TS hN
+  have hcnfW : cnf (translate ((v0, w1, w2) :: (R ++ Y))) := by
+    have h1 : cnf (translate ((G ++ (((v0, w1, w2) :: R) ++ Y)) ++ V)) := by
+      rw [← hNsplit]
+      exact hcnfN
+    have h2 : cnf (translate (G ++ (((v0, w1, w2) :: R) ++ Y))) := by
+      have := cnf_take h1 (G ++ (((v0, w1, w2) :: R) ++ Y)).length
+      rwa [List.take_left] at this
+    have h3 : cnf (translate (G ++ ((v0, w1, w2) :: (R ++ Y)))) := by
+      rwa [List.cons_append] at h2
+    exact cnf_tail (t := (v0, w1, w2)) (T' := R ++ Y)
+      (fun x hx => hallBY x (by
+        rcases List.mem_append.1 hx with h | h
+        · exact List.mem_append_left _ (List.mem_cons_of_mem _ h)
+        · exact List.mem_append_right _ h)) G h3
+  obtain ⟨m, hm, hsle⟩ := copy_dom_zero Y.length Y v0 w1 w2 R le_rfl
+    (by rwa [List.cons_append] at hbo) hRgt
+    (Or.inr (by
+      rw [hYcons]
+      show ¬ v0 < q.1
+      omega)) hcnfW
+  refine ⟨m + 1, by omega, Or.inr ?_⟩
+  rw [← hYV, copies_zero_succ]
+  rcases hsle with heq | hlt
+  · rw [← heq, seqlex_append_cancel]
+    rcases hVhd with hV | ⟨z, Z, hV, hz⟩
+    · rw [hV]
+      simp
+    · rw [hV]
+      exact Or.inl (Or.inl (by omega))
+  · refine seqlex_splice hlt ?_ _
+    rcases hVhd with hV | ⟨z, Z, hV, hz⟩
+    · exact Or.inl hV
+    · refine Or.inr (fun x hx => ?_)
+      have := copies_v0_le (fun y hy => (hRgt y hy).le) 0 0 m x hx
+      rw [hV]
+      refine Or.inl ?_
+      simp only [List.headI]
+      omega
+
 end TRIO
