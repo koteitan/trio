@@ -16,7 +16,7 @@
   標準形 3556 個で A 行列は一様上昇と一致（A ≡ 1 予想、2 行の場合の類推）。
 
 # git rule
-- git commit は自由（緑のマイルストーンで自動的に）。git push はリモート設定後にユーザーの指示で。
+- git commit と git push は自由（緑のマイルストーンで自動的に）。リモート: git@github.com:koteitan/trio.git
 - git add -A / git add . は禁止。
 
 # 注意事項
