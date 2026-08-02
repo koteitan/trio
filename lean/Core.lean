@@ -817,6 +817,75 @@ theorem hkey_aligned {T : TrioSeq} {r ipos jpos s e f : ℕ}
           rw [hv1, ← htx] at hwx
           exact hwx
 
+/-! ## `SpineOK` の位置形 -/
+
+/-- **Positional form of `SpineOK`**: a column strictly between the two
+marked positions which is right-visible up to the deeper one and sits below
+its level carries row 1 at least `w1`. -/
+theorem spineOK_pos {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : N = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (h6 : SpineOK A1 (u + e) w1) :
+    ∀ p, X.length < p → p < X.length + (A1.length + 1) →
+      entry N 0 p < u + e →
+      (∀ p', p < p' → p' < X.length + (A1.length + 1) →
+        entry N 0 p < entry N 0 p') →
+      w1 ≤ entry N 1 p := by
+  have hN : N = X ++ ((u, w1, z)
+      :: (A1 ++ ((u + e, w1 + f, z) :: ((B ++ A2) ++ Z)))) := by
+    rw [heq]
+    simp [List.append_assoc]
+  have hget : ∀ t, t < A1.length →
+      N.getD (X.length + 1 + t) (0, 0, 0) = A1.getD t (0, 0, 0) := by
+    intro t ht
+    rw [hN, getD_app_right _ _ (by omega),
+      show X.length + 1 + t - X.length = t + 1 from by omega,
+      List.getD_cons_succ, getD_append_left ht]
+  intro p hp1 hp2 hp3 hp4
+  obtain ⟨t, rfl⟩ : ∃ t, p = X.length + 1 + t := ⟨p - X.length - 1, by omega⟩
+  have ht : t < A1.length := by omega
+  have hsplit : A1 = A1.take t ++ A1.drop t := (List.take_append_drop t A1).symm
+  have htlen : (A1.take t).length = t := by
+    rw [List.length_take]
+    omega
+  rcases hd : A1.drop t with _ | ⟨x, V⟩
+  · exfalso
+    have hh := congrArg List.length hd
+    rw [List.length_drop] at hh
+    simp only [List.length_nil] at hh
+    omega
+  have hA1 : A1 = A1.take t ++ x :: V := by
+    rw [← hd]
+    exact hsplit
+  have hx : A1.getD t (0, 0, 0) = x := by
+    conv_lhs => rw [hA1]
+    rw [getD_app_right _ _ (le_of_eq htlen), htlen, Nat.sub_self,
+      List.getD_cons_zero]
+  have hVlen : t + 1 + V.length = A1.length := by
+    have hh := congrArg List.length hA1
+    simp only [List.length_append, List.length_cons, htlen] at hh
+    omega
+  have hxlt : x.1 < u + e := by
+    have hh : (N.getD (X.length + 1 + t) (0, 0, 0)).1 < u + e := hp3
+    rw [hget t ht, hx] at hh
+    exact hh
+  have hV : ∀ y ∈ V, x.1 < y.1 := by
+    intro y hy
+    obtain ⟨s, hs, rfl⟩ := List.getElem_of_mem hy
+    have hVget : V.getD s (0, 0, 0) = V[s] := by
+      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hs]
+    have hidx : A1.getD (t + 1 + s) (0, 0, 0) = V[s] := by
+      conv_lhs => rw [hA1]
+      rw [getD_app_right _ _ (by omega), htlen,
+        show t + 1 + s - t = s + 1 from by omega, List.getD_cons_succ, hVget]
+    have hh : (N.getD (X.length + 1 + t) (0, 0, 0)).1
+        < (N.getD (X.length + 1 + (t + 1 + s)) (0, 0, 0)).1 :=
+      hp4 (X.length + 1 + (t + 1 + s)) (by omega) (by omega)
+    rw [hget t ht, hget (t + 1 + s) (by omega), hx, hidx] at hh
+    exact hh
+  show w1 ≤ (N.getD (X.length + 1 + t) (0, 0, 0)).2.1
+  rw [hget t ht, hx]
+  exact h6 (A1.take t) V x hA1 hxlt hV
+
 /-! ## ガード付き持ち上げの `sle` 輸送 -/
 
 /-- Pointwise guarded lift of a list, guards read at absolute positions. -/

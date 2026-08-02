@@ -1,8 +1,5 @@
-v0.50.0/guarded-lift transport of sle
+v0.51.0/positional form of SpineOK
 
-- Add gliftAt: pointwise guarded lift with guards read at absolute
-  positions (+ nil/cons/length lemmas)
-- Add sle_cons_cons: head-splitting form of sle
-- Add sle_gliftAt: the lift preserves sle given the hkey interface
-  (guard implication at indices with equal row 0 and non-exceeding
-  row 1); the (F,T) mismatch wins early, (T,F) is what hkey excludes
+- Add spineOK_pos: a right-visible column strictly between the two marked
+  positions and below the deeper level carries row 1 at least w1, stated
+  by index instead of by list decomposition
