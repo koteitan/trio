@@ -1151,4 +1151,202 @@ theorem asc_crux2 (H : AscArgDom2) {G R S : TrioSeq} {v0 w1 d0 d1 : ℕ}
       dsimp only
       omega
 
+/-! ## `srow = 2` の派遣 -/
+
+set_option maxHeartbeats 2000000 in
+/-- The `srow = 2` half of the ascending crux, from the core. -/
+theorem trioAsc_srow2 (Hc : ArgDomCore) {M N : TrioSeq} {q : ℕ × ℕ × ℕ}
+    {S : TrioSeq} (hM : ST_TS M) (hN : ST_TS N) (L1 : 1 < M.length)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hsr2 : srow M (M.length - 1) = 2)
+    (hNeq : N = M.dropLast ++ q :: S)
+    (hq : collt q (M.getD (M.length - 1) (0, 0, 0))) :
+    ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧) := by
+  have hp := hasParent_last_ST_TS hM (by omega) hz
+  have np := parent_nextR hp
+  have j0lt : parent M (srow M (M.length - 1)) (M.length - 1)
+      < M.length - 1 := nextR_index_lt np
+  have chain := nextR_chain0 np
+  have iv : ∀ k, parent M (srow M (M.length - 1)) (M.length - 1) < k →
+      k ≤ M.length - 1 →
+      entry M 0 (parent M (srow M (M.length - 1)) (M.length - 1))
+        < entry M 0 k :=
+    fun k h1 h2 => le0_interval_gt chain k ⟨h1, h2⟩
+  have np2 : nextrel2 M (parent M (srow M (M.length - 1)) (M.length - 1))
+      (M.length - 1) := by
+    have np' := np
+    unfold nextR at np'
+    rw [if_neg (by omega : ¬ srow M (M.length - 1) = 0),
+      if_neg (by omega : ¬ srow M (M.length - 1) = 1)] at np'
+    exact np'
+  set j0 := parent M (srow M (M.length - 1)) (M.length - 1) with hj0
+  set L := M.length - 1 - j0 with hLdef
+  have hLpos : 0 < L := by omega
+  have hj0b : j0 < M.length := by omega
+  -- pin the dropped column
+  have hlp2 : entry M 2 (M.length - 1) = 1 := by
+    have h1 := np2.2.2.2.1
+    have h2 := z2ok_ST_TS hM (M.length - 1) (by omega)
+    have e2 : entry M 2 (M.length - 1)
+        = (M.getD (M.length - 1) (0, 0, 0)).2.2 := rfl
+    have e2' : entry M 2 j0 = (M.getD j0 (0, 0, 0)).2.2 := rfl
+    omega
+  have hj02 : entry M 2 j0 = 0 := by
+    have h1 := np2.2.2.2.1
+    omega
+  have hle1c : le1 M j0 (M.length - 1) := np2.2.2.2.2.1
+  set d0i := entry M 0 (M.length - 1) - entry M 0 j0 with hd0i
+  set d1i := entry M 1 (M.length - 1) - entry M 1 j0 with hd1i
+  have hd0pos : 0 < d0i := by
+    have := iv (M.length - 1) j0lt le_rfl
+    omega
+  have hd1pos : 0 < d1i := by
+    have := rtg1_entry1_lt hle1c.2.2 (by omega)
+    omega
+  have hlp0 : entry M 0 (M.length - 1) = entry M 0 j0 + d0i := by
+    have := iv (M.length - 1) j0lt le_rfl
+    omega
+  have hlp1 : entry M 1 (M.length - 1) = entry M 1 j0 + d1i := by
+    have := rtg1_entry1_lt hle1c.2.2 (by omega)
+    omega
+  have hlpe : M.getD (M.length - 1) (0, 0, 0)
+      = (entry M 0 j0 + d0i, entry M 1 j0 + d1i, 1) := by
+    refine Prod.ext ?_ (Prod.ext ?_ ?_)
+    · show (M.getD (M.length - 1) (0, 0, 0)).1 = entry M 0 j0 + d0i
+      exact hlp0
+    · exact hlp1
+    · exact hlp2
+  rw [hlpe] at hq
+  unfold collt at hq
+  dsimp only at hq
+  -- the oper form
+  have hd0e : (if 0 < srow M (M.length - 1)
+      then entry M 0 (M.length - 1) - entry M 0 j0 else 0) = d0i := by
+    rw [if_pos (by omega)]
+  have hd1e : (if 1 < srow M (M.length - 1)
+      then entry M 1 (M.length - 1) - entry M 1 j0 else 0) = d1i := by
+    rw [if_pos (by omega)]
+  have hMn2 : ∀ m, M⟦m + 1⟧ = M.dropLast
+      ++ gcopiesFrom M j0 L d0i d1i 1 m := by
+    intro m
+    rw [oper_gcopies (m + 1) (by omega) hz hp, ← hj0, ← hLdef, hd0e, hd1e,
+      gcopies_eq_from, gcopiesFrom_succ, gcopy_zero, ← List.append_assoc,
+      take_gcopy_zero L1 hz hp]
+  have hsegL : seg M j0 L
+      = (entry M 0 j0, entry M 1 j0, entry M 2 j0)
+        :: seg M (j0 + 1) (L - 1) := by
+    obtain ⟨l', hle⟩ : ∃ l', L = l' + 1 := ⟨L - 1, by omega⟩
+    rw [hle, seg_cons, Nat.add_sub_cancel]
+  rw [hj02] at hsegL
+  have hRgt : ∀ x ∈ seg M (j0 + 1) (L - 1), entry M 0 j0 < x.1 := by
+    intro x hx
+    unfold seg at hx
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+    have hjb := List.mem_range'_1.1 hj
+    exact iv j (by omega) (by omega)
+  -- the head of the first guarded copy
+  have hhead : gcopiesFrom M j0 L d0i d1i 1 1
+      = (entry M 0 j0 + d0i, entry M 1 j0 + d1i, 0)
+        :: gmap M j0 d0i d1i 1 (j0 + 1) (L - 1) := by
+    rw [gcopiesFrom_succ, gcopiesFrom_zero, List.append_nil,
+      gcopy_root_cons M j0 L d0i d1i 1 (by omega) (by omega),
+      Nat.one_mul, Nat.one_mul, hj02]
+  rcases hq with hq1 | ⟨hqe1, hq2⟩
+  · -- below the copy level in row 0: one copy decides
+    refine ⟨2, by omega, ?_⟩
+    rw [hMn2 1, hNeq, hhead]
+    refine (sle_append_cancel _).2 (Or.inr ?_)
+    exact Or.inl (Or.inl (show q.1 < entry M 0 j0 + d0i by omega))
+  rcases hq2 with hq2 | ⟨hqe2, hq3⟩
+  · -- below in row 1 at the copy head: one copy decides
+    refine ⟨2, by omega, ?_⟩
+    rw [hMn2 1, hNeq, hhead]
+    refine (sle_append_cancel _).2 (Or.inr ?_)
+    exact Or.inl (Or.inr ⟨show q.1 = entry M 0 j0 + d0i by omega,
+      Or.inl (show q.2.1 < entry M 1 j0 + d1i by omega)⟩)
+  · -- the exact boundary: the second ascending crux
+    have hqeq : q = (entry M 0 j0 + d0i, entry M 1 j0 + d1i, 0) := by
+      refine Prod.ext ?_ (Prod.ext ?_ ?_)
+      · dsimp only
+        omega
+      · dsimp only
+        omega
+      · dsimp only
+        omega
+    have hMsh : (M.take j0
+        ++ ((entry M 0 j0, entry M 1 j0, 0) :: seg M (j0 + 1) (L - 1)))
+        ++ [((entry M 0 j0 + d0i, entry M 1 j0 + d1i, 1) : ℕ × ℕ × ℕ)]
+        = M := by
+      rw [← hsegL]
+      have h1 : M.take j0 ++ seg M j0 L = M.dropLast :=
+        take_gcopy_zero L1 hz hp
+      rw [h1, ← hlpe]
+      exact dropLast_snoc_getD (by
+        intro he
+        rw [he] at L1
+        simp at L1)
+    have hNsh : (M.take j0
+        ++ ((entry M 0 j0, entry M 1 j0, 0) :: seg M (j0 + 1) (L - 1)))
+        ++ ((entry M 0 j0 + d0i, entry M 1 j0 + d1i, 0) : ℕ × ℕ × ℕ)
+          :: S = N := by
+      rw [← hsegL]
+      have h1 : M.take j0 ++ seg M j0 L = M.dropLast :=
+        take_gcopy_zero L1 hz hp
+      rw [h1, hNeq, ← hqeq]
+    have htk : (M.take j0).length = j0 := by
+      rw [List.length_take]
+      omega
+    have hbk : (M.take j0
+        ++ ((entry M 0 j0, entry M 1 j0, 0)
+          :: seg M (j0 + 1) (L - 1))).length = M.length - 1 := by
+      rw [List.length_append, htk, List.length_cons, seg_length]
+      omega
+    have hle1sh : le1 ((M.take j0
+        ++ ((entry M 0 j0, entry M 1 j0, 0) :: seg M (j0 + 1) (L - 1)))
+        ++ [((entry M 0 j0 + d0i, entry M 1 j0 + d1i, 1) : ℕ × ℕ × ℕ)])
+        (M.take j0).length
+        (M.take j0
+          ++ ((entry M 0 j0, entry M 1 j0, 0)
+            :: seg M (j0 + 1) (L - 1))).length := by
+      rw [hMsh, htk, hbk]
+      exact hle1c
+    have hMst : ST_TS ((M.take j0
+        ++ ((entry M 0 j0, entry M 1 j0, 0) :: seg M (j0 + 1) (L - 1)))
+        ++ [((entry M 0 j0 + d0i, entry M 1 j0 + d1i, 1) : ℕ × ℕ × ℕ)]) := by
+      rw [hMsh]
+      exact hM
+    have hNst : ST_TS ((M.take j0
+        ++ ((entry M 0 j0, entry M 1 j0, 0) :: seg M (j0 + 1) (L - 1)))
+        ++ ((entry M 0 j0 + d0i, entry M 1 j0 + d1i, 0) : ℕ × ℕ × ℕ)
+          :: S) := by
+      rw [hNsh]
+      exact hN
+    obtain ⟨n', hn1, hm⟩ := asc_crux2 (ascArgDom2_of_core Hc)
+      hMst hNst hRgt hd0pos hd1pos hle1sh
+    rw [hMsh, htk, seg_length] at hm
+    rw [show L - 1 + 1 = L from by omega] at hm
+    refine ⟨n' + 1, by omega, ?_⟩
+    rw [hMn2 n', hNeq, hqeq]
+    refine (sle_append_cancel _).2 ?_
+    exact hm
+
+/-! ## 上昇 crux の完結と共終性 -/
+
+theorem trioAscCrux_of_core (Hc : ArgDomCore) : TrioAscCrux := by
+  intro M N q S hM hN L1 hz hsr hNeq hq
+  have hle2 : srow M (M.length - 1) ≤ 2 := by
+    unfold srow
+    split_ifs <;> omega
+  rcases Nat.eq_or_lt_of_le hle2 with h2 | hlt
+  · exact trioAsc_srow2 Hc hM hN L1 hz h2 hNeq hq
+  · exact trioAsc_srow1 Hc hM hN L1 hz (by omega) hNeq hq
+
+/-- **Trio Bachmann cofinality, modulo the host-free core** — among standard
+forms the fundamental sequence is cofinal below `M`. -/
+theorem trio_cofinality_of_core (Hc : ArgDomCore) {M N : TrioSeq}
+    (hM : ST_TS M) (hN : ST_TS N) (h : translate N <o translate M) :
+    ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧) :=
+  ts_cofinality_of_crux (badCrux_of_asc (trioAscCrux_of_core Hc)) hM hN h
+
 end TRIO
