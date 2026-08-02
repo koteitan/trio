@@ -497,4 +497,106 @@ theorem spineOK_of_le1 {G R : TrioSeq} {v0 w1 w2 : ℕ} {lp : ℕ × ℕ × ℕ}
   rw [e1, e2] at hbound
   omega
 
+/-! ## `i1 = 1` の引数支配 -/
+
+/-- Argument domination for the `i1 = 1` boundary continuation. -/
+def AscArgDom1 : Prop :=
+  ∀ {G R S : TrioSeq} {v0 w1 w2 d0 : ℕ},
+    ST_TS ((G ++ ((v0, w1, w2) :: R)) ++ [(v0 + d0, w1 + 1, 0)]) →
+    ST_TS ((G ++ ((v0, w1, w2) :: R)) ++ (v0 + d0, w1, w2) :: S) →
+    (∀ x ∈ R, v0 < x.1) → 0 < d0 →
+    le1 ((G ++ ((v0, w1, w2) :: R)) ++ [(v0 + d0, w1 + 1, 0)]) G.length
+      (G ++ ((v0, w1, w2) :: R)).length →
+    ∃ m, sle (S.takeWhile fun p => v0 + d0 < p.1)
+      (shiftr01 d0 0 (R ++ copies d0 0 (shiftr01 d0 0 ((v0, w1, w2) :: R)) m))
+
+theorem ascArgDom1_of_core (H : ArgDomCore) : AscArgDom1 := by
+  intro G R S v0 w1 w2 d0 _ hN hRgt hd hle1
+  set Shi := S.takeWhile (fun p => v0 + d0 < p.1) with hShidef
+  set D := S.dropWhile (fun p => v0 + d0 < p.1) with hDdef
+  set A2 := D.takeWhile (fun p => v0 < p.1) with hA2def
+  set Z := D.dropWhile (fun p => v0 < p.1) with hZdef
+  have hSsplit : Shi ++ D = S := List.takeWhile_append_dropWhile
+  have hDsplit : A2 ++ Z = D := List.takeWhile_append_dropWhile
+  have hShigt : ∀ x ∈ Shi, v0 + d0 < x.1 := by
+    intro x hx
+    simpa using List.mem_takeWhile_imp hx
+  have hA2gt : ∀ x ∈ A2, v0 < x.1 := by
+    intro x hx
+    simpa using List.mem_takeWhile_imp hx
+  have hDhd : D = [] ∨ (D.headI).1 ≤ v0 + d0 := by
+    rcases hdd : D with _ | ⟨z', Z'⟩
+    · exact Or.inl rfl
+    · refine Or.inr ?_
+      have h := List.head?_dropWhile_not
+        (fun p : ℕ × ℕ × ℕ => decide (v0 + d0 < p.1)) S
+      rw [← hDdef, hdd] at h
+      simp only [List.head?_cons] at h
+      have : ¬ (v0 + d0 < z'.1) := by simpa using h
+      simp only [List.headI]
+      omega
+  have hA2hd : A2 = [] ∨ (A2.headI).1 ≤ v0 + d0 := by
+    rcases hdd : A2 with _ | ⟨z', Z'⟩
+    · exact Or.inl rfl
+    · refine Or.inr ?_
+      have hDne : D ≠ [] := by
+        intro he
+        rw [hA2def, he] at hdd
+        simp at hdd
+      have hhd : A2.headI = D.headI := by
+        rcases hd2 : D with _ | ⟨y, Y⟩
+        · exact absurd hd2 hDne
+        · rw [hA2def, hd2]
+          by_cases hy : v0 < y.1
+          · rw [List.takeWhile_cons_of_pos (by simpa using hy)]
+            rfl
+          · rw [List.takeWhile_cons_of_neg (by simpa using hy)]
+            rw [hA2def, hd2, List.takeWhile_cons_of_neg (by simpa using hy)] at hdd
+            simp at hdd
+      rw [← hdd, hhd]
+      rcases hDhd with h | h
+      · exact absurd h hDne
+      · exact h
+  have hZhd : Z = [] ∨ (Z.headI).1 ≤ v0 := by
+    rcases hdd : Z with _ | ⟨z', Z'⟩
+    · exact Or.inl rfl
+    · refine Or.inr ?_
+      have h := List.head?_dropWhile_not
+        (fun p : ℕ × ℕ × ℕ => decide (v0 < p.1)) D
+      rw [← hZdef, hdd] at h
+      simp only [List.head?_cons] at h
+      have : ¬ (v0 < z'.1) := by simpa using h
+      simp only [List.headI]
+      omega
+  have hNeq : (G ++ ((v0, w1, w2) :: R)) ++ (v0 + d0, w1, w2) :: S
+      = (G ++ (v0, w1, w2) :: (R ++ (v0 + d0, w1, w2) :: (Shi ++ A2))) ++ Z := by
+    rw [← hSsplit, ← hDsplit]
+    simp
+  have hspine : SpineOK R (v0 + d0) w1 := by
+    have h := spineOK_of_le1 hle1
+    simpa using h
+  have hcore := H (X := G) (A1 := R) (B := Shi) (A2 := A2) (Z := Z)
+    (u := v0) (w1 := w1) (z := w2) (e := d0) (f := 0)
+    (by
+      rw [Nat.add_zero]
+      exact hNeq ▸ hN)
+    hd (Or.inl rfl) hRgt hShigt hA2gt hA2hd hZhd hspine
+  rw [Nat.add_zero, hshift_f0] at hcore
+  have hbnd : shiftr01 d0 0 (R ++ (v0 + d0, w1, w2) :: (Shi ++ A2))
+      = shiftr01 d0 0 R ++ (v0 + d0 + d0, w1, w2) :: shiftr01 d0 0 (Shi ++ A2) := by
+    rw [shiftr01_append, shiftr01_cons]
+    rfl
+  rw [hbnd] at hcore
+  obtain ⟨m, hm⟩ := peel_aux d0 w1 w2 Shi.length Shi (shiftr01 d0 0 R) A2
+    (v0 + d0 + d0) le_rfl hcore
+  refine ⟨m, ?_⟩
+  have hgoal : shiftr01 d0 0 (R ++ copies d0 0 (shiftr01 d0 0 ((v0, w1, w2) :: R)) m)
+      = shiftr01 d0 0 R
+        ++ copies d0 0 ((v0 + d0 + d0, w1, w2)
+            :: shiftr01 d0 0 (shiftr01 d0 0 R)) m := by
+    rw [shiftr01_append, shiftr01_copies, shiftr01_cons, shiftr01_cons]
+    rfl
+  rw [hgoal]
+  exact hm
+
 end TRIO
