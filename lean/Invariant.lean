@@ -835,4 +835,34 @@ theorem hasParent_last_ST_TS {M : TrioSeq} (hM : ST_TS M) (hlen : 0 < M.length)
   · show (M.getD (M.length - 1) (0, 0, 0)).2.2 = 0
     rw [he]
 
+/-! ## 最終列での行 1 の +1 規律 -/
+
+/-- If a column has a row-1 parent, its row-1 value is exactly one above the
+parent's (via `r1ok` at the first chain step out of the parent). -/
+theorem nextrel1_snd_succ {M : TrioSeq} (hr : r1ok M) {j0 j1 : ℕ}
+    (h : nextrel1 M j0 j1) : entry M 1 j1 = entry M 1 j0 + 1 := by
+  obtain ⟨hj0, hj1, hlt, hincr, hle0, hmin⟩ := h
+  obtain ⟨c, hstep, hchain⟩ :
+      ∃ c, nextrel0 M j0 c ∧ Relation.ReflTransGen (nextrel0 M) c j1 := by
+    rcases Relation.ReflTransGen.cases_head hle0.2.2 with he | h
+    · exact absurd he (by omega)
+    · exact h
+  have hcj0 : j0 < c := hstep.2.2.1
+  have hclen : c < M.length := hstep.2.1
+  have hcj1 : le0 M c j1 := ⟨hclen, hj1, hchain⟩
+  have h1 : entry M 1 j1 ≤ entry M 1 c := hmin c ⟨hcj0, hcj1⟩
+  have hc0 : 0 < (M.getD c (0, 0, 0)).1 := by
+    have := hstep.2.2.2.1
+    have e1 : entry M 0 c = (M.getD c (0, 0, 0)).1 := rfl
+    omega
+  obtain ⟨k, hkc, hk1, hkmin, hk2⟩ := hr c hclen hc0
+  have hnk : nextrel0 M k c := witness_nextrel0 hclen hkc hk1 hkmin
+  have hkj0 : k = j0 := nextrel0_src_unique hnk hstep
+  rw [hkj0] at hk2
+  have h2 : entry M 1 c ≤ entry M 1 j0 + 1 := by
+    have e1 : entry M 1 c = (M.getD c (0, 0, 0)).2.1 := rfl
+    have e2 : entry M 1 j0 = (M.getD j0 (0, 0, 0)).2.1 := rfl
+    omega
+  omega
+
 end TRIO
