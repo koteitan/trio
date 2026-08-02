@@ -157,4 +157,20 @@ theorem z0ok_oper {M : TrioSeq} {n : ℕ} (h : z0ok M) : z0ok (M⟦n⟧) := by
             split_ifs <;> simp [hz0.1]
       · exact hz0.2
 
+/-! ## スパイン補題: 鎖上の節はガードを継承する -/
+
+/-- Any row-0 chain node between `r` and a row-1 descendant `j1` of `r` is
+itself a row-1 descendant (the spine of the `t = 2` decomposition lies in the
+heartwood).  Immediate from the path lemma. -/
+theorem le1_of_chain_le1 {M : TrioSeq} {r x j1 : ℕ} (h : le1 M r j1)
+    (hrx : Relation.ReflTransGen (nextrel0 M) r x)
+    (hxj : Relation.ReflTransGen (nextrel0 M) x j1) : le1 M r x := by
+  have hxb : x < M.length := by
+    have h1 := nextrel0_rtrancl_index_le hxj
+    have h2 := h.2.1
+    omega
+  refine (le1_iff_chain_window hxb hrx).2 ?_
+  intro y hry hyx hyne
+  exact le1_chain_window h.2.2 y hry (hyx.trans hxj) hyne
+
 end TRIO
