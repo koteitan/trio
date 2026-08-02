@@ -7,6 +7,7 @@ ArgDom.lean: 引数支配（ホスト非依存の共終性核）。
 `(e0 j + e, e1 j + [le1 N r j]·f, e2 j)` と一致する。
 -/
 import Cofinality
+import Zjump
 
 namespace TRIO
 
@@ -708,5 +709,273 @@ theorem asc_crux1 (H : AscArgDom1) {G R S : TrioSeq} {v0 w1 w2 d0 : ℕ}
       refine Or.inl ?_
       dsimp only
       omega
+
+/-! ## `srow = 1` の派遣 -/
+
+set_option maxHeartbeats 1000000 in
+/-- The `srow = 1` half of the ascending crux, from the core. -/
+theorem trioAsc_srow1 (Hc : ArgDomCore) {M N : TrioSeq} {q : ℕ × ℕ × ℕ}
+    {S : TrioSeq} (hM : ST_TS M) (hN : ST_TS N) (L1 : 1 < M.length)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hsr1 : srow M (M.length - 1) = 1)
+    (hNeq : N = M.dropLast ++ q :: S)
+    (hq : collt q (M.getD (M.length - 1) (0, 0, 0))) :
+    ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧) := by
+  have hp := hasParent_last_ST_TS hM (by omega) hz
+  have np := parent_nextR hp
+  have j0lt : parent M (srow M (M.length - 1)) (M.length - 1)
+      < M.length - 1 := nextR_index_lt np
+  have chain := nextR_chain0 np
+  have iv : ∀ k, parent M (srow M (M.length - 1)) (M.length - 1) < k →
+      k ≤ M.length - 1 →
+      entry M 0 (parent M (srow M (M.length - 1)) (M.length - 1))
+        < entry M 0 k :=
+    fun k h1 h2 => le0_interval_gt chain k ⟨h1, h2⟩
+  have np1 : nextrel1 M (parent M (srow M (M.length - 1)) (M.length - 1))
+      (M.length - 1) := by
+    have np' := np
+    unfold nextR at np'
+    rw [if_neg (by omega : ¬ srow M (M.length - 1) = 0), if_pos hsr1] at np'
+    exact np'
+  set j0 := parent M (srow M (M.length - 1)) (M.length - 1) with hj0
+  set L := M.length - 1 - j0 with hLdef
+  have hLpos : 0 < L := by omega
+  have hj0b : j0 < M.length := by omega
+  -- pin the dropped column
+  have hlp1 : entry M 1 (M.length - 1) = entry M 1 j0 + 1 :=
+    nextrel1_snd_succ (r1ok_ST_TS hM) np1
+  have hlp2 : entry M 2 (M.length - 1) = 0 := by
+    by_contra hcon
+    push Not at hcon
+    have : srow M (M.length - 1) = 2 := by
+      unfold srow
+      rw [if_pos (by omega)]
+    omega
+  have hd0e : (if 0 < srow M (M.length - 1)
+      then entry M 0 (M.length - 1) - entry M 0 j0 else 0)
+      = entry M 0 (M.length - 1) - entry M 0 j0 := by
+    rw [if_pos (by omega)]
+  have hd1e : (if 1 < srow M (M.length - 1)
+      then entry M 1 (M.length - 1) - entry M 1 j0 else 0) = 0 := by
+    rw [if_neg (by omega)]
+  set d0i := entry M 0 (M.length - 1) - entry M 0 j0 with hd0i
+  have hd0pos : 0 < d0i := by
+    have := iv (M.length - 1) j0lt le_rfl
+    omega
+  have hlp0 : entry M 0 (M.length - 1) = entry M 0 j0 + d0i := by
+    have := iv (M.length - 1) j0lt le_rfl
+    omega
+  have hlpe : M.getD (M.length - 1) (0, 0, 0)
+      = (entry M 0 j0 + d0i, entry M 1 j0 + 1, 0) := by
+    refine Prod.ext ?_ (Prod.ext ?_ ?_)
+    · show (M.getD (M.length - 1) (0, 0, 0)).1 = entry M 0 j0 + d0i
+      exact hlp0
+    · exact hlp1
+    · exact hlp2
+  rw [hlpe] at hq
+  unfold collt at hq
+  dsimp only at hq
+  -- the first-copy root
+  have hMn2 : ∀ m, M⟦m + 1⟧ = M.dropLast
+      ++ shiftr01 d0i 0 (copies d0i 0 (seg M j0 L) m) := by
+    intro m
+    rw [oper_gcopies (m + 1) (by omega) hz hp, ← hj0, ← hLdef, hd0e, hd1e,
+      gcopies_eq_from, gcopiesFrom_succ, gcopy_zero,
+      gcopiesFrom_d1zero, ← List.append_assoc,
+      take_gcopy_zero L1 hz hp]
+    congr 1
+    rw [Nat.zero_mul, shiftr01_zero]
+  have hsegL : seg M j0 L
+      = (entry M 0 j0, entry M 1 j0, entry M 2 j0) :: seg M (j0 + 1) (L - 1) := by
+    obtain ⟨l', hle⟩ : ∃ l', L = l' + 1 := ⟨L - 1, by omega⟩
+    rw [hle, seg_cons, Nat.add_sub_cancel]
+  have hRgt : ∀ x ∈ seg M (j0 + 1) (L - 1), entry M 0 j0 < x.1 := by
+    intro x hx
+    unfold seg at hx
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+    have hjb := List.mem_range'_1.1 hj
+    exact iv j (by omega) (by omega)
+  -- the head of the first copy
+  have hcopy1 : ∀ m, shiftr01 d0i 0 (copies d0i 0 (seg M j0 L) (m + 1))
+      = (entry M 0 j0 + d0i, entry M 1 j0, entry M 2 j0)
+        :: (shiftr01 d0i 0 (seg M (j0 + 1) (L - 1))
+            ++ shiftr01 d0i 0 (shiftr01 d0i 0 (copies d0i 0 (seg M j0 L) m))) := by
+    intro m
+    rw [copies_succ_front, hsegL]
+    unfold shiftr01
+    simp only [List.map_append, List.map_cons, List.map_map]
+    rfl
+  rcases hq with hq1 | ⟨hqe1, hq2⟩
+  · -- the continuation opens below the copy level: one copy decides
+    refine ⟨2, by omega, ?_⟩
+    rw [hMn2 1, hNeq, hcopy1 0]
+    refine (sle_append_cancel _).2 (Or.inr ?_)
+    exact Or.inl (Or.inl (show q.1 < entry M 0 j0 + d0i by omega))
+  rcases hq2 with hq2 | ⟨hqe2, hq3⟩
+  · -- strictly below in row 1 at the copy level
+    rcases Nat.lt_or_ge q.2.1 (entry M 1 j0) with hql | hqg
+    · refine ⟨2, by omega, ?_⟩
+      rw [hMn2 1, hNeq, hcopy1 0]
+      refine (sle_append_cancel _).2 (Or.inr ?_)
+      exact Or.inl (Or.inr ⟨show q.1 = entry M 0 j0 + d0i by omega,
+        Or.inl (show q.2.1 < entry M 1 j0 by omega)⟩)
+    · have hqe : q.2.1 = entry M 1 j0 := by omega
+      -- z-analysis at the boundary
+      rcases Nat.lt_trichotomy q.2.2 (entry M 2 j0) with hzl | hze | hzg
+      · refine ⟨2, by omega, ?_⟩
+        rw [hMn2 1, hNeq, hcopy1 0]
+        refine (sle_append_cancel _).2 (Or.inr ?_)
+        exact Or.inl (Or.inr ⟨show q.1 = entry M 0 j0 + d0i by omega,
+          Or.inr ⟨show q.2.1 = entry M 1 j0 by omega,
+            show q.2.2 < entry M 2 j0 by omega⟩⟩)
+      · -- the exact boundary: the ascending crux
+        have hqeq : q = (entry M 0 j0 + d0i, entry M 1 j0, entry M 2 j0) :=
+          Prod.ext (by omega) (Prod.ext (by omega) (by omega))
+        have hMsh : (M.take j0
+            ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+              :: seg M (j0 + 1) (L - 1)))
+            ++ [((entry M 0 j0 + d0i, entry M 1 j0 + 1, 0) : ℕ × ℕ × ℕ)] = M := by
+          rw [← hsegL]
+          have h1 : M.take j0 ++ seg M j0 L = M.dropLast :=
+            take_gcopy_zero L1 hz hp
+          rw [h1, ← hlpe]
+          exact dropLast_snoc_getD (by
+            intro he
+            rw [he] at L1
+            simp at L1)
+        have hNsh : (M.take j0
+            ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+              :: seg M (j0 + 1) (L - 1)))
+            ++ ((entry M 0 j0 + d0i, entry M 1 j0, entry M 2 j0) : ℕ × ℕ × ℕ)
+              :: S = N := by
+          rw [← hsegL]
+          have h1 : M.take j0 ++ seg M j0 L = M.dropLast :=
+            take_gcopy_zero L1 hz hp
+          rw [h1, hNeq, ← hqeq]
+        have hle1sh : le1 ((M.take j0
+            ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+              :: seg M (j0 + 1) (L - 1)))
+            ++ [((entry M 0 j0 + d0i, entry M 1 j0 + 1, 0) : ℕ × ℕ × ℕ)])
+            (M.take j0).length
+            (M.take j0
+              ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+                :: seg M (j0 + 1) (L - 1))).length := by
+          rw [hMsh]
+          have htk : (M.take j0).length = j0 := by
+            rw [List.length_take]
+            omega
+          have hbk : (M.take j0
+              ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+                :: seg M (j0 + 1) (L - 1))).length = M.length - 1 := by
+            rw [List.length_append, htk, List.length_cons]
+            unfold seg
+            rw [List.length_map, List.length_range']
+            omega
+          rw [htk, hbk]
+          exact ⟨by omega, by omega, Relation.ReflTransGen.single np1⟩
+        have hMst : ST_TS ((M.take j0
+            ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+              :: seg M (j0 + 1) (L - 1)))
+            ++ [((entry M 0 j0 + d0i, entry M 1 j0 + 1, 0) : ℕ × ℕ × ℕ)]) := by
+          rw [hMsh]
+          exact hM
+        have hNst : ST_TS ((M.take j0
+            ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+              :: seg M (j0 + 1) (L - 1)))
+            ++ ((entry M 0 j0 + d0i, entry M 1 j0, entry M 2 j0) : ℕ × ℕ × ℕ)
+              :: S) := by
+          rw [hNsh]
+          exact hN
+        obtain ⟨m, hm1, hm⟩ := asc_crux1 (ascArgDom1_of_core Hc)
+          hMst hNst hRgt hd0pos hle1sh
+        refine ⟨m + 1, by omega, ?_⟩
+        rw [hMn2 m, hNeq, hqeq]
+        refine (sle_append_cancel _).2 ?_
+        rw [← hsegL] at hm
+        exact hm
+      · -- z-jump at the boundary: impossible
+        exfalso
+        have hzj := zjump_ST_TS hN
+        have hNlen : N.length = M.length + S.length := by
+          rw [hNeq]
+          simp
+          omega
+        have hgetN : ∀ x, x < M.length - 1 →
+            N.getD x (0, 0, 0) = M.getD x (0, 0, 0) := by
+          intro x hx
+          rw [hNeq, getD_append_left (by
+            rw [List.length_dropLast]
+            omega)]
+          rw [List.dropLast_eq_take, getD_take (by omega)]
+        have hgetQ : N.getD (M.length - 1) (0, 0, 0) = q := by
+          rw [hNeq]
+          have h := getD_append_right' M.dropLast (q :: S) 0
+          rw [Nat.add_zero] at h
+          rw [show M.length - 1 = (M.dropLast).length from by
+            rw [List.length_dropLast], h]
+          rfl
+        have := hzj j0 (M.length - 1) (by omega) (by omega)
+          (by
+            intro l h1 h2
+            show entry N 0 j0 < entry N 0 l
+            rcases Nat.eq_or_lt_of_le h2 with rfl | h2'
+            · unfold entry
+              rw [hgetN j0 (by omega), hgetQ]
+              show (M.getD j0 (0, 0, 0)).1 < q.1
+              have e0 : entry M 0 j0 = (M.getD j0 (0, 0, 0)).1 := rfl
+              omega
+            · unfold entry
+              rw [hgetN j0 (by omega), hgetN l (by omega)]
+              exact iv l h1 (by omega))
+          (by
+            show entry N 1 (M.length - 1) = entry N 1 j0
+            unfold entry
+            rw [hgetN j0 (by omega), hgetQ]
+            show q.2.1 = (M.getD j0 (0, 0, 0)).2.1
+            have e1 : entry M 1 j0 = (M.getD j0 (0, 0, 0)).2.1 := rfl
+            omega)
+          (by
+            intro l h1 h2 h3 h4
+            -- a right-visible column is a chain node of the dropped column
+            have hlM : ∀ x, x ≤ l → entry N 0 x = entry M 0 x := by
+              intro x hx
+              unfold entry
+              rw [hgetN x (by omega)]
+            have hlrtg : Relation.ReflTransGen (nextrel0 M) l (M.length - 1) := by
+              refine rtg0_of_window (by omega) (by omega) ?_
+              intro l'' hl1 hl2
+              rcases Nat.eq_or_lt_of_le hl2 with rfl | hl3
+              · have := h3
+                unfold entry at this
+                rw [hgetN l (by omega), hgetQ] at this
+                have this2 : (M.getD l (0, 0, 0)).1 < q.1 := this
+                show entry M 0 l < entry M 0 (M.length - 1)
+                have e0 : entry M 0 l = (M.getD l (0, 0, 0)).1 := rfl
+                omega
+              · have := h4 l'' hl1 hl3
+                unfold entry at this
+                rw [hgetN l (by omega), hgetN l'' (by omega)] at this
+                exact this
+            have hlrtg0 : Relation.ReflTransGen (nextrel0 M) j0 l :=
+              rtg0_comparable chain hlrtg (by omega)
+            have hbnd := le1_chain_window
+              (Relation.ReflTransGen.single np1) l hlrtg0 hlrtg (by omega)
+            show entry N 1 j0 ≤ entry N 1 l
+            unfold entry
+            rw [hgetN j0 (by omega), hgetN l (by omega)]
+            show (M.getD j0 (0, 0, 0)).2.1 ≤ (M.getD l (0, 0, 0)).2.1
+            have e1 : entry M 1 j0 = (M.getD j0 (0, 0, 0)).2.1 := rfl
+            have e1' : entry M 1 l = (M.getD l (0, 0, 0)).2.1 := rfl
+            omega)
+        have e2q : entry N 2 (M.length - 1) = q.2.2 := by
+          unfold entry
+          rw [hgetQ]
+          rfl
+        have e2j : entry N 2 j0 = entry M 2 j0 := by
+          unfold entry
+          rw [hgetN j0 (by omega)]
+        omega
+  · exact absurd hq3 (by omega)
 
 end TRIO
