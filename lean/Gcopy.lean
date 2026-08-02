@@ -341,4 +341,239 @@ theorem translate_gcopy {M : TrioSeq} {r L d0 d1 k : ℕ}
     (fun j h1 h2 => hup j (by omega) (by omega)) (fun j h1 h2 => by omega)]
   rfl
 
+/-! ## タワー: ガード付きコピー列 -/
+
+noncomputable def gcopiesFrom (M : TrioSeq) (r L d0 d1 k0 m : ℕ) : TrioSeq :=
+  (List.range' k0 m).flatMap fun k => gcopy M r L d0 d1 k
+
+theorem gcopiesFrom_zero (M : TrioSeq) (r L d0 d1 k0 : ℕ) :
+    gcopiesFrom M r L d0 d1 k0 0 = [] := rfl
+
+theorem gcopiesFrom_succ (M : TrioSeq) (r L d0 d1 k0 m : ℕ) :
+    gcopiesFrom M r L d0 d1 k0 (m + 1)
+      = gcopy M r L d0 d1 k0 ++ gcopiesFrom M r L d0 d1 (k0 + 1) m := by
+  unfold gcopiesFrom
+  rw [List.range'_succ, List.flatMap_cons]
+
+theorem gcopies_eq_from (M : TrioSeq) (r L d0 d1 n : ℕ) :
+    gcopies M r L d0 d1 n = gcopiesFrom M r L d0 d1 0 n := by
+  unfold gcopies gcopiesFrom
+  rw [List.range_eq_range']
+
+/-- Head/interior split of one guarded copy. -/
+theorem gcopy_head (M : TrioSeq) {r L : ℕ} (hL : 1 ≤ L) (hrb : r < M.length)
+    (d0 d1 k : ℕ) :
+    gcopy M r L d0 d1 k
+      = (entry M 0 r + k * d0, entry M 1 r + k * d1, entry M 2 r)
+        :: (List.range' (r + 1) (L - 1)).map (fun j =>
+          ((entry M 0 j + k * d0,
+            entry M 1 j + (if le1 M r j then k * d1 else 0),
+            entry M 2 j) : ℕ × ℕ × ℕ)) := by
+  obtain ⟨L', rfl⟩ : ∃ L', L = L' + 1 := ⟨L - 1, by omega⟩
+  unfold gcopy
+  rw [List.range'_succ, List.map_cons, if_pos (le1_refl hrb), Nat.add_sub_cancel]
+
+/-- Snoc split of the extended copy (block plus its last column). -/
+theorem gcopy_snoc (M : TrioSeq) (r L d0 d1 k : ℕ) :
+    gcopy M r (L + 1) d0 d1 k
+      = gcopy M r L d0 d1 k ++
+        [(entry M 0 (r + L) + k * d0,
+          entry M 1 (r + L) + (if le1 M r (r + L) then k * d1 else 0),
+          entry M 2 (r + L))] := by
+  unfold gcopy
+  have h := List.range'_append (s := r) (m := L) (n := 1) (step := 1)
+  rw [Nat.one_mul] at h
+  rw [← h, List.map_append]
+  rfl
+
+theorem seg_snoc (M : TrioSeq) (a L : ℕ) :
+    seg M a (L + 1)
+      = seg M a L ++ [(entry M 0 (a + L), entry M 1 (a + L), entry M 2 (a + L))] := by
+  unfold seg
+  have h := List.range'_append (s := a) (m := L) (n := 1) (step := 1)
+  rw [Nat.one_mul] at h
+  rw [← h, List.map_append]
+  rfl
+
+/-- Shape of a nonempty tower: a single tree headed by the first copy root. -/
+theorem translate_gcopiesFrom {M : TrioSeq} {r L d0 d1 : ℕ}
+    (hL : 1 ≤ L) (hlen : r + L ≤ M.length)
+    (hup : ∀ j, r < j → j < r + L → entry M 0 r < entry M 0 j)
+    (d0pos : 0 < d0) (k0 m : ℕ) :
+    translate (gcopiesFrom M r L d0 d1 k0 (m + 1))
+      = P (entry M 1 r + k0 * d1) (entry M 2 r)
+          (translate (((List.range' (r + 1) (L - 1)).map fun j =>
+              ((entry M 0 j + k0 * d0,
+                entry M 1 j + (if le1 M r j then k0 * d1 else 0),
+                entry M 2 j) : ℕ × ℕ × ℕ))
+            ++ gcopiesFrom M r L d0 d1 (k0 + 1) m)) Z := by
+  have hrb : r < M.length := by omega
+  rw [gcopiesFrom_succ, gcopy_head M hL hrb, List.cons_append]
+  exact translate_single_tree (by
+    intro x hx
+    rcases List.mem_append.1 hx with hx | hx
+    · obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+      have hjb := List.mem_range'_1.1 hj
+      show entry M 0 r + k0 * d0 < entry M 0 j + k0 * d0
+      have := hup j (by omega) (by omega)
+      omega
+    · unfold gcopiesFrom at hx
+      obtain ⟨k', hk', hxk⟩ := List.mem_flatMap.1 hx
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hxk
+      have hjb := List.mem_range'_1.1 hj
+      have hk'b := List.mem_range'_1.1 hk'
+      show entry M 0 r + k0 * d0 < entry M 0 j + k' * d0
+      have he0 : entry M 0 r ≤ entry M 0 j := by
+        rcases Nat.eq_or_lt_of_le hjb.1 with rfl | h
+        · exact le_rfl
+        · exact (hup j h (by omega)).le
+      have hmul : (k0 + 1) * d0 ≤ k' * d0 :=
+        Nat.mul_le_mul_right d0 hk'b.1
+      rw [Nat.succ_mul] at hmul
+      omega)
+
+/-- **タワーの cnf**: ガード付きコピー列は CNF を保つ。`lead_lt` は
+最後の列（位置 `r+L`）との先頭対比較、`hglp` はその列のガード（`i1 = 2`
+では `le1`、`i1 = 1` では `d1 = 0`）。 -/
+theorem cnf_gcopiesFrom {M : TrioSeq} {r L d0 d1 : ℕ}
+    (hL : 1 ≤ L) (hlen : r + L < M.length)
+    (hup1 : ∀ j, r < j → j ≤ r + L → entry M 0 r < entry M 0 j)
+    (d0pos : 0 < d0)
+    (hd0 : entry M 0 (r + L) = entry M 0 r + d0)
+    (hglp : le1 M r (r + L) ∨ d1 = 0)
+    (lead_lt : entry M 1 r + d1 < entry M 1 (r + L)
+      ∨ (entry M 1 r + d1 = entry M 1 (r + L) ∧ entry M 2 r < entry M 2 (r + L)))
+    (cBlp : cnf (translate (seg M r (L + 1)))) :
+    ∀ m k0, cnf (translate (gcopiesFrom M r L d0 d1 k0 m)) := by
+  have hrb : r < M.length := by omega
+  have hupI : ∀ j, r < j → j < r + L → entry M 0 r < entry M 0 j :=
+    fun j h1 h2 => hup1 j h1 (by omega)
+  have hsegtree : translate (seg M r (L + 1))
+      = P (entry M 1 r) (entry M 2 r) (translate (seg M (r + 1) L)) Z := by
+    rw [seg_cons]
+    exact translate_single_tree (by
+      intro x hx
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+      have hjb := List.mem_range'_1.1 hj
+      exact hup1 j (by omega) (by omega))
+  have cInt : cnf (translate (seg M (r + 1) L)) := by
+    have h := cBlp
+    rw [hsegtree] at h
+    exact cnf_P_Z.1 h
+  have cIntNoLp : cnf (translate (seg M (r + 1) (L - 1))) := by
+    obtain ⟨L', hLe⟩ : ∃ L', L = L' + 1 := ⟨L - 1, by omega⟩
+    have hne : seg M (r + 1) L ≠ [] := by
+      unfold seg
+      subst hLe
+      rw [List.range'_succ, List.map_cons]
+      exact List.cons_ne_nil _ _
+    have h := cnf_dropLast hne cInt
+    have hd : (seg M (r + 1) L).dropLast = seg M (r + 1) (L - 1) := by
+      subst hLe
+      rw [seg_snoc, List.dropLast_concat, Nat.add_sub_cancel]
+    rwa [hd] at h
+  have cg : ∀ k, cnf (translate (gcopy M r L d0 d1 k)) := by
+    intro k
+    rw [translate_gcopy hL (by omega) hupI, cnf_P_Z]
+    exact cnf_lsub _ _ _ cIntNoLp
+  have cgExt : ∀ k, cnf (translate (gcopy M r (L + 1) d0 d1 k)) := by
+    intro k
+    rw [translate_gcopy (by omega) (by omega)
+      (fun j h1 h2 => hup1 j h1 (by omega)), cnf_P_Z]
+    exact cnf_lsub _ _ _ cInt
+  have lpcol : ∀ k : ℕ, (if le1 M r (r + L) then k * d1 else 0) = k * d1 := by
+    intro k
+    rcases hglp with h | h
+    · rw [if_pos h]
+    · subst h
+      rw [Nat.mul_zero]
+      split_ifs <;> rfl
+  intro m
+  induction m with
+  | zero =>
+    intro k0
+    rw [gcopiesFrom_zero]
+    show cnf (translate [])
+    simp [translate]
+  | succ m ih =>
+    intro k0
+    rcases m with - | m'
+    · rw [show gcopiesFrom M r L d0 d1 k0 1 = gcopy M r L d0 d1 k0 from by
+        rw [gcopiesFrom_succ, gcopiesFrom_zero, List.append_nil]]
+      exact cg k0
+    · rw [gcopiesFrom_succ]
+      have restEq : gcopiesFrom M r L d0 d1 (k0 + 1) (m' + 1)
+          = (entry M 0 r + (k0 + 1) * d0,
+             entry M 1 r + (k0 + 1) * d1, entry M 2 r)
+            :: (((List.range' (r + 1) (L - 1)).map fun j =>
+                ((entry M 0 j + (k0 + 1) * d0,
+                  entry M 1 j + (if le1 M r j then (k0 + 1) * d1 else 0),
+                  entry M 2 j) : ℕ × ℕ × ℕ))
+              ++ gcopiesFrom M r L d0 d1 (k0 + 2) m') := by
+        rw [gcopiesFrom_succ, gcopy_head M hL hrb, List.cons_append]
+      have tREST := translate_gcopiesFrom (d1 := d1) hL (by omega) hupI d0pos (k0 + 1) m'
+      have tlp : translate ([((entry M 0 (r + L) + k0 * d0,
+            entry M 1 (r + L) + k0 * d1, entry M 2 (r + L)))] : TrioSeq)
+          = P (entry M 1 (r + L) + k0 * d1) (entry M 2 (r + L)) Z Z := by
+        rw [translate]
+        simp [translate]
+      have hlead' : entry M 1 r + (k0 + 1) * d1 < entry M 1 (r + L) + k0 * d1
+          ∨ (entry M 1 r + (k0 + 1) * d1 = entry M 1 (r + L) + k0 * d1
+             ∧ entry M 2 r < entry M 2 (r + L)) := by
+        rcases lead_lt with h | ⟨h1, h2⟩
+        · left
+          rw [Nat.succ_mul]
+          omega
+        · right
+          constructor
+          · rw [Nat.succ_mul]
+            omega
+          · exact h2
+      rw [restEq]
+      refine cnf_ctx_cong (z2 := (entry M 0 (r + L) + k0 * d0,
+          entry M 1 (r + L) + k0 * d1, entry M 2 (r + L))) (T2 := [])
+        ?_ ?_ ?_ ?_ ?_ ?_ (gcopy M r L d0 d1 k0) ?_
+      · rw [← restEq]
+        exact ih (k0 + 1)
+      · rw [← restEq, tREST, tlp, olt_P_P]
+        rcases hlead' with h | ⟨h1, h2⟩
+        · exact Or.inl h
+        · exact Or.inr (Or.inl ⟨h1, h2⟩)
+      · show entry M 0 r + (k0 + 1) * d0 = entry M 0 (r + L) + k0 * d0
+        rw [Nat.succ_mul]
+        omega
+      · refine ⟨entry M 1 r + (k0 + 1) * d1, entry M 2 r, _, Z,
+          entry M 1 (r + L) + k0 * d1, entry M 2 (r + L), Z, Z,
+          by rw [← restEq, tREST], tlp, Or.inl (olt_P_P.2 ?_)⟩
+        rcases hlead' with h | ⟨h1, h2⟩
+        · exact Or.inl h
+        · exact Or.inr (Or.inl ⟨h1, h2⟩)
+      · intro x hx
+        rcases List.mem_append.1 hx with hx | hx
+        · obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+          have hjb := List.mem_range'_1.1 hj
+          show entry M 0 r + (k0 + 1) * d0 ≤ entry M 0 j + (k0 + 1) * d0
+          have := hupI j (by omega) (by omega)
+          omega
+        · unfold gcopiesFrom at hx
+          obtain ⟨k', hk', hxk⟩ := List.mem_flatMap.1 hx
+          obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hxk
+          have hjb := List.mem_range'_1.1 hj
+          have hk'b := List.mem_range'_1.1 hk'
+          show entry M 0 r + (k0 + 1) * d0 ≤ entry M 0 j + k' * d0
+          rw [Nat.succ_mul]
+          have he0 : entry M 0 r ≤ entry M 0 j := by
+            rcases Nat.eq_or_lt_of_le hjb.1 with rfl | h
+            · exact le_rfl
+            · exact (hupI j h (by omega)).le
+          have hmul : (k0 + 2) * d0 ≤ k' * d0 :=
+            Nat.mul_le_mul_right d0 hk'b.1
+          rw [Nat.succ_mul, Nat.succ_mul] at hmul
+          omega
+      · intro x hx
+        exact absurd hx (List.not_mem_nil)
+      · have h := cgExt k0
+        rw [gcopy_snoc, lpcol k0] at h
+        exact h
+
 end TRIO
