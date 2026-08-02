@@ -418,6 +418,120 @@ theorem gexp_guard_transport {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
   · intro hg
     exact gexp_le1_mir hlen hk hq hup hd0pos hd0e hd1pos hle1lp hg
 
+/-! ## 一致転送（`le1` は前置と行 0/1 だけで決まる） -/
+
+section Agree
+
+variable {M X : TrioSeq}
+
+theorem nextrel0_of_agree_last {a b : ℕ} (hbX : b < X.length)
+    (hag : ∀ x, x < b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (hag0 : (X.getD b (0, 0, 0)).1 = (M.getD b (0, 0, 0)).1)
+    (h : nextrel0 M a b) : nextrel0 X a b := by
+  obtain ⟨h1, h2, h3, h4, h5⟩ := h
+  refine ⟨by omega, hbX, h3, ?_, ?_⟩
+  · show entry X 0 a < entry X 0 b
+    show (X.getD a (0, 0, 0)).1 < (X.getD b (0, 0, 0)).1
+    rw [hag a h3, hag0]
+    exact h4
+  · intro l hl
+    show entry X 0 b ≤ entry X 0 l
+    show (X.getD b (0, 0, 0)).1 ≤ (X.getD l (0, 0, 0)).1
+    rw [hag l (by omega), hag0]
+    exact h5 l hl
+
+theorem rtg0_of_agree_last {a b : ℕ} (hbX : b < X.length)
+    (hag : ∀ x, x < b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (hag0 : (X.getD b (0, 0, 0)).1 = (M.getD b (0, 0, 0)).1)
+    (h : Relation.ReflTransGen (nextrel0 M) a b) :
+    Relation.ReflTransGen (nextrel0 X) a b := by
+  rcases h.cases_tail with rfl | ⟨y, hay, hyb⟩
+  · exact .refl
+  · have hy : y < b := nextrel0_index_less hyb
+    have h1 : Relation.ReflTransGen (nextrel0 X) a y :=
+      rtg0_of_agree (by omega) (fun x hx => hag x (by omega)) le_rfl hay
+    exact h1.tail (nextrel0_of_agree_last hbX hag hag0 hyb)
+
+theorem le0_of_agree_last {a b : ℕ} (hbX : b < X.length)
+    (hag : ∀ x, x < b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (hag0 : (X.getD b (0, 0, 0)).1 = (M.getD b (0, 0, 0)).1)
+    (h : le0 M a b) : le0 X a b := by
+  obtain ⟨h1, h2, h3⟩ := h
+  have := nextrel0_rtrancl_index_le h3
+  exact ⟨by omega, hbX, rtg0_of_agree_last hbX hag hag0 h3⟩
+
+theorem nextrel1_of_agree_last {a b : ℕ} (hbX : b < X.length)
+    (hbM : b < M.length)
+    (hag : ∀ x, x < b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (hag0 : (X.getD b (0, 0, 0)).1 = (M.getD b (0, 0, 0)).1)
+    (hag1 : (X.getD b (0, 0, 0)).2.1 = (M.getD b (0, 0, 0)).2.1)
+    (h : nextrel1 M a b) : nextrel1 X a b := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  refine ⟨by omega, hbX, h3, ?_, le0_of_agree_last hbX hag hag0 h5, ?_⟩
+  · show entry X 1 a < entry X 1 b
+    show (X.getD a (0, 0, 0)).2.1 < (X.getD b (0, 0, 0)).2.1
+    rw [hag a h3, hag1]
+    exact h4
+  · intro j hj
+    obtain ⟨hj1, hj2⟩ := hj
+    have hjb : j ≤ b := nextrel0_rtrancl_index_le hj2.2.2
+    have hjM : le0 M j b :=
+      le0_of_agree_last hbM (fun x hx => (hag x hx).symm) hag0.symm hj2
+    have hw := h6 j ⟨hj1, hjM⟩
+    show entry X 1 b ≤ entry X 1 j
+    show (X.getD b (0, 0, 0)).2.1 ≤ (X.getD j (0, 0, 0)).2.1
+    rcases Nat.eq_or_lt_of_le hjb with rfl | hjb'
+    · exact le_rfl
+    · rw [hag j hjb', hag1]
+      exact hw
+
+theorem nextrel1_of_agree {a b : ℕ} (hbX : b < X.length) (hbM : b < M.length)
+    (hag : ∀ x, x ≤ b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (h : nextrel1 M a b) : nextrel1 X a b :=
+  nextrel1_of_agree_last hbX hbM (fun x hx => hag x (by omega))
+    (by rw [hag b le_rfl]) (by rw [hag b le_rfl]) h
+
+theorem rtg1_of_agree {b : ℕ} (hbX : b < X.length) (hbM : b < M.length)
+    (hag : ∀ x, x ≤ b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0)) :
+    ∀ {a c : ℕ}, c ≤ b → Relation.ReflTransGen (nextrel1 M) a c →
+    Relation.ReflTransGen (nextrel1 X) a c := by
+  intro a c hcb h
+  induction h with
+  | refl => exact .refl
+  | @tail y z hay hyz ih =>
+    have hy : y ≤ b := by
+      have := hyz.2.2.1
+      omega
+    refine (ih hy).tail
+      (nextrel1_of_agree (by omega) (by omega)
+        (fun x hx => hag x (by omega)) hyz)
+
+/-- **`le1` reads only the prefix and rows 0/1 of its target.** -/
+theorem le1_of_agree_last {r b : ℕ} (hbX : b < X.length) (hbM : b < M.length)
+    (hag : ∀ x, x < b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (hag0 : (X.getD b (0, 0, 0)).1 = (M.getD b (0, 0, 0)).1)
+    (hag1 : (X.getD b (0, 0, 0)).2.1 = (M.getD b (0, 0, 0)).2.1)
+    (h : le1 M r b) : le1 X r b := by
+  obtain ⟨h1, h2, h3⟩ := h
+  have hrb : r ≤ b := rtg1_index_le h3
+  refine ⟨by omega, hbX, ?_⟩
+  rcases h3.cases_tail with rfl | ⟨y, hay, hyb⟩
+  · exact .refl
+  · have hy : y < b := hyb.2.2.1
+    have h4 : Relation.ReflTransGen (nextrel1 X) r y :=
+      rtg1_of_agree (by omega) (by omega)
+        (fun x hx => hag x (by omega)) le_rfl hay
+    exact h4.tail (nextrel1_of_agree_last hbX hbM hag hag0 hag1 hyb)
+
+/-- Plain prefix locality of `le1`. -/
+theorem le1_of_agree {r b : ℕ} (hbX : b < X.length) (hbM : b < M.length)
+    (hag : ∀ x, x ≤ b → X.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (h : le1 M r b) : le1 X r b :=
+  le1_of_agree_last hbX hbM (fun x hx => hag x (by omega))
+    (by rw [hag b le_rfl]) (by rw [hag b le_rfl]) h
+
+end Agree
+
 end Gtrans
 
 end TRIO
