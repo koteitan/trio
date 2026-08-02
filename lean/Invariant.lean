@@ -926,4 +926,57 @@ theorem z2ok_ST_TS {M : TrioSeq} (h : ST_TS M) : z2ok M := by
   | diag v => exact z2ok_diagSeqT v
   | oper hN hn ih => exact z2ok_oper ih
 
+/-! ## 同 row-1 の z-jump 禁止（スパイン付き） -/
+
+/-- `zjump`: inside a row-0 subtree, a column with the *same* row 1 as the
+subtree root and a clean spine (right-visible columns carry row 1 at least
+the root's) cannot raise row 2. -/
+def zjump (M : TrioSeq) : Prop :=
+  ∀ i j, i < j → j < M.length →
+    (∀ l, i < l → l ≤ j → entry M 0 i < entry M 0 l) →
+    entry M 1 j = entry M 1 i →
+    (∀ l, i < l → l < j → entry M 0 l < entry M 0 j →
+      (∀ l', l < l' → l' < j → entry M 0 l < entry M 0 l') →
+      entry M 1 i ≤ entry M 1 l) →
+    entry M 2 j ≤ entry M 2 i
+
+theorem zjump_take {M : TrioSeq} (h : zjump M) (m : ℕ) : zjump (M.take m) := by
+  intro i j hij hj hsub heq hsp
+  rw [List.length_take] at hj
+  have hjm : j < m := lt_of_lt_of_le hj (min_le_left _ _)
+  have hjM : j < M.length := lt_of_lt_of_le hj (min_le_right _ _)
+  have he : ∀ x, x ≤ j → ∀ r, entry (M.take m) r x = entry M r x := by
+    intro x hx r
+    unfold entry
+    rw [getD_take (by omega)]
+  rw [he j le_rfl 2, he i (by omega) 2] at *
+  refine h i j hij hjM ?_ ?_ ?_
+  · intro l h1 h2
+    have := hsub l h1 h2
+    rwa [he i (by omega) 0, he l (by omega) 0] at this
+  · have := heq
+    rwa [he j le_rfl 1, he i (by omega) 1] at this
+  · intro l h1 h2 h3 h4
+    have := hsp l h1 h2 (by rwa [he l (by omega) 0, he j le_rfl 0]) (by
+      intro l' hl1 hl2
+      have := h4 l' hl1 hl2
+      rwa [← he l (by omega) 0, ← he l' (by omega) 0] at this)
+    rwa [he i (by omega) 1, he l (by omega) 1] at this
+
+theorem zjump_dropLast {M : TrioSeq} (h : zjump M) : zjump M.dropLast := by
+  rw [List.dropLast_eq_take]
+  exact zjump_take h _
+
+theorem zjump_diagSeqT (v : ℕ) : zjump (diagSeqT 0 v) := by
+  intro i j hij hj hsub heq hsp
+  rw [diagSeqT_length] at hj
+  have ei : entry (diagSeqT 0 v) 1 i = i := by
+    show (diagSeqT 0 v).getD i (0, 0, 0) |>.2.1 = i
+    rw [diagSeqT_getD (by omega)]
+  have ej : entry (diagSeqT 0 v) 1 j = j := by
+    show (diagSeqT 0 v).getD j (0, 0, 0) |>.2.1 = j
+    rw [diagSeqT_getD (by omega)]
+  rw [ei, ej] at heq
+  omega
+
 end TRIO
