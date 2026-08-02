@@ -817,4 +817,185 @@ theorem hkey_aligned {T : TrioSeq} {r ipos jpos s e f : ℕ}
           rw [hv1, ← htx] at hwx
           exact hwx
 
+/-! ## 交差ケース (c) の反駁 -/
+
+/-- The first row-1 chain node at or above `i`: walking the row-1 ancestry of
+`c` from below, the first node that reaches `i` carries row 1 at most `i`'s
+(by the `nextrel1` minimality clause at the step that jumps over `i`). -/
+theorem chain_first_above {M : TrioSeq} {i c : ℕ}
+    (hi0 : Relation.ReflTransGen (nextrel0 M) i c) :
+    ∀ (a : ℕ), Relation.ReflTransGen (nextrel1 M) a c → a < i → i ≤ c →
+      ∃ b, i ≤ b ∧ b ≤ c ∧ Relation.ReflTransGen (nextrel1 M) b c ∧
+        entry M 1 b ≤ entry M 1 i := by
+  intro a h
+  induction h using Relation.ReflTransGen.head_induction_on with
+  | refl => intro hai hic; omega
+  | @head a y hay hyc ih =>
+    intro hai hic
+    rcases Nat.lt_or_ge y i with hlt | hge
+    · exact ih hlt hic
+    · refine ⟨y, hge, rtg1_index_le hyc, hyc, ?_⟩
+      have hy0 : Relation.ReflTransGen (nextrel0 M) y c := rtg1_rtg0 hyc
+      have hiy : Relation.ReflTransGen (nextrel0 M) i y :=
+        rtg0_comparable hi0 hy0 hge
+      exact hay.2.2.2.2.2 i ⟨hai, ⟨lt_of_le_of_lt hge hay.2.1, hay.2.1, hiy⟩⟩
+
+set_option maxHeartbeats 4000000 in
+/-- **Case A2 (c)** — the shallower marked column sits strictly inside the
+block while the deeper one mirrors an *earlier* block position (`qj < i`).
+
+Refuted: `i` lies on the row-0 chain of the bad column `x`, so the first
+row-1 chain node `b ≥ i` carries row 1 at most `i`'s, while the spine
+carries it at least `i`'s — equality, so `zjump` transports `b`'s mark down
+to `i`.  A marked `i` forces `f = 0`, and the guard equation then puts
+row 1 of `i` strictly above the copy-1 root, contradicting the spine. -/
+theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
+    (np2 : nextrel2 M j0 x)
+    (hd0 : entry M 0 x = entry M 0 j0 + d0)
+    (hd1 : entry M 1 x = entry M 1 j0 + d1)
+    (hji : j0 < i) (hix : i < x) (hj0q : j0 ≤ qj) (hqi : qj < i)
+    (hu : entry M 0 i < entry M 0 j0 + d0)
+    (hf : entry M 1 i ≤ entry M 1 qj + (if le1 M j0 qj then d1 else 0))
+    (hzeq : entry M 2 i = entry M 2 qj)
+    (hzf : entry M 1 i = entry M 1 qj + (if le1 M j0 qj then d1 else 0)
+      ∨ entry M 2 i = 0)
+    (hA1blk : ∀ l, i < l → l < x → entry M 0 i < entry M 0 l)
+    (hspblk : ∀ p, i < p → p < x → entry M 0 p < entry M 0 x →
+      (∀ p', p < p' → p' < x → entry M 0 p < entry M 0 p') →
+      entry M 1 i ≤ entry M 1 p)
+    (hspcpy : ∀ c, j0 ≤ c → c < qj → entry M 0 c < entry M 0 qj →
+      (∀ c', c < c' → c' < qj → entry M 0 c < entry M 0 c') →
+      entry M 1 i ≤ entry M 1 c + (if le1 M j0 c then d1 else 0)) :
+    False := by
+  have hxlen : x < M.length := np2.2.1
+  have hj0len : j0 < M.length := np2.1
+  have hilen : i < M.length := by omega
+  have hqlen : qj < M.length := by omega
+  have hle1x : le1 M j0 x := np2.2.2.2.2.1
+  have hch0 : Relation.ReflTransGen (nextrel0 M) j0 x := rtg1_rtg0 hle1x.2.2
+  have hwin0 : ∀ k, j0 < k → k ≤ x → entry M 0 j0 < entry M 0 k :=
+    fun k h1 h2 => le0_interval_gt hch0 k ⟨h1, h2⟩
+  have hd1pos : 0 < d1 := by
+    have := rtg1_entry1_lt hle1x.2.2 (by omega : j0 ≠ x)
+    omega
+  have hx2 : entry M 2 x = 1 := by
+    have h1 := np2.2.2.2.1
+    have h2 := z2ok_ST_TS hM x hxlen
+    have e2 : entry M 2 x = (M.getD x (0, 0, 0)).2.2 := rfl
+    omega
+  have hj02 : entry M 2 j0 = 0 := by
+    have h1 := np2.2.2.2.1
+    omega
+  -- `i` sits on the row-0 chain of the bad column
+  have hrtgji : Relation.ReflTransGen (nextrel0 M) j0 i :=
+    rtg0_of_window hilen (by omega) (fun l h1 h2 => hwin0 l h1 (by omega))
+  have hrtgix : Relation.ReflTransGen (nextrel0 M) i x := by
+    refine rtg0_of_window hxlen (by omega) ?_
+    intro l h1 h2
+    rcases Nat.lt_or_ge l x with hlt | hge
+    · exact hA1blk l h1 hlt
+    · have hlx : l = x := by omega
+      rw [hlx, hd0]
+      omega
+  have hwgt : entry M 1 j0 < entry M 1 i :=
+    le1_chain_window hle1x.2.2 i hrtgji hrtgix (by omega)
+  -- the copy-1 root bounds `i`'s row 1 from above
+  have hroot : entry M 1 i ≤ entry M 1 j0 + d1 := by
+    rcases Nat.eq_or_lt_of_le hj0q with hqe | hlt
+    · rw [← hqe] at hf
+      rw [if_pos (le1_refl hj0len)] at hf
+      exact hf
+    · have hq0 : entry M 0 j0 < entry M 0 qj := hwin0 qj hlt (by omega)
+      have hh := hspcpy j0 le_rfl hlt hq0 (fun c' h1 h2 => hwin0 c' h1 (by omega))
+      rw [if_pos (le1_refl hj0len)] at hh
+      exact hh
+  -- the mirror source is guarded
+  have hgj : le1 M j0 qj := by
+    by_contra hg
+    rcases Nat.eq_or_lt_of_le hj0q with hqe | hlt
+    · exact hg (hqe ▸ le1_refl hj0len)
+    have hrtgjq : Relation.ReflTransGen (nextrel0 M) j0 qj :=
+      rtg0_of_window hqlen (by omega) (fun l h1 h2 => hwin0 l h1 (by omega))
+    obtain ⟨b, hb1, hb2, hb3, hb4⟩ := blocker_of_not_le1 hrtgjq hqlen hg
+    have hbj : j0 ≤ b := nextrel0_rtrancl_index_le hb1
+    have hbq : b ≤ qj := nextrel0_rtrancl_index_le hb2
+    have hgb : ¬ le1 M j0 b := by
+      intro hc
+      have := rtg1_entry1_lt hc.2.2 (Ne.symm hb3)
+      omega
+    rcases Nat.eq_or_lt_of_le hbq with hbeq | hblt
+    · rw [if_neg hg] at hf
+      rw [hbeq] at hb4
+      omega
+    · have hb0 : entry M 0 b < entry M 0 qj :=
+        le0_interval_gt hb2 qj ⟨hblt, le_rfl⟩
+      have hbvis : ∀ c', b < c' → c' < qj → entry M 0 b < entry M 0 c' :=
+        fun c' h1 h2 => le0_interval_gt hb2 c' ⟨h1, by omega⟩
+      have hh := hspcpy b hbj hblt hb0 hbvis
+      rw [if_neg hgb] at hh
+      omega
+  -- the first row-1 chain node at or above `i`
+  obtain ⟨b, hib, hbx, hchb, hble⟩ :=
+    chain_first_above hrtgix j0 hle1x.2.2 hji (by omega)
+  have hblen : b < M.length := by omega
+  have hb2 : 1 ≤ entry M 2 b := by
+    rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
+    · rw [hbeq]
+      omega
+    · have := np2.2.2.2.2.2 b ⟨by omega, ⟨hblen, hxlen, hchb⟩⟩
+      omega
+  -- `i` is marked
+  have hzi : 1 ≤ entry M 2 i := by
+    rcases Nat.eq_or_lt_of_le hib with hbeq | hilt
+    · rw [← hbeq] at hb2
+      exact hb2
+    · have hb0x : entry M 0 b ≤ entry M 0 x := by
+        rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
+        · rw [hbeq]
+        · exact (le0_interval_gt (rtg1_rtg0 hchb) x ⟨hblt, le_rfl⟩).le
+      have hwb : entry M 1 i ≤ entry M 1 b := by
+        rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
+        · rw [hbeq, hd1]
+          exact hroot
+        · refine hspblk b hilt hblt
+            (le0_interval_gt (rtg1_rtg0 hchb) x ⟨hblt, le_rfl⟩) ?_
+          intro p' h1 h2
+          exact le0_interval_gt (rtg1_rtg0 hchb) p' ⟨h1, by omega⟩
+      have heq1 : entry M 1 b = entry M 1 i := by omega
+      have hsub : ∀ l, i < l → l ≤ b → entry M 0 i < entry M 0 l := by
+        intro l h1 h2
+        rcases Nat.lt_or_ge l x with hlt | hge
+        · exact hA1blk l h1 hlt
+        · have hlx : l = x := by omega
+          rw [hlx, hd0]
+          omega
+      have hsp : ∀ l, i < l → l < b → entry M 0 l < entry M 0 b →
+          (∀ l', l < l' → l' < b → entry M 0 l < entry M 0 l') →
+          entry M 1 i ≤ entry M 1 l := by
+        intro l h1 h2 h3 h4
+        refine hspblk l h1 (by omega) (by omega) ?_
+        intro p' hp1 hp2
+        rcases Nat.lt_or_ge p' b with hpb | hpb
+        · exact h4 p' hp1 hpb
+        · rcases Nat.eq_or_lt_of_le hpb with hpe | hpl
+          · rw [← hpe]
+            exact h3
+          · have hbp : entry M 0 b < entry M 0 p' :=
+              le0_interval_gt (rtg1_rtg0 hchb) p' ⟨hpl, by omega⟩
+            omega
+      have hzj := zjump_ST_TS hM i b hilt hblen hsub heq1 hsp
+      omega
+  have hzi1 : entry M 2 i = 1 := by
+    have h2 := z2ok_ST_TS hM i hilen
+    have e2 : entry M 2 i = (M.getD i (0, 0, 0)).2.2 := rfl
+    omega
+  rcases hzf with hfe | hz0
+  · rw [if_pos hgj] at hfe
+    rcases Nat.eq_or_lt_of_le hj0q with hqe | hqlt
+    · rw [← hqe] at hzeq
+      omega
+    · have := rtg1_entry1_lt hgj.2.2 (by omega : j0 ≠ qj)
+      omega
+  · omega
+
 end TRIO
