@@ -347,4 +347,65 @@ theorem shiftr01_copies (d0 d1 : ℕ) (blk : TrioSeq) (n : ℕ) :
   simp only [Prod.mk.injEq]
   exact ⟨by omega, by omega, trivial⟩
 
+/-- **The peel** (uniform case): a self-referential bound unfolds into the
+copy tower. -/
+theorem peel_aux (d w z : ℕ) : ∀ (n : ℕ) (X Q A2 : TrioSeq) (a : ℕ),
+    X.length ≤ n →
+    sle X (Q ++ (a, w, z) :: shiftr01 d 0 (X ++ A2)) →
+    ∃ m, sle X (Q ++ copies d 0 ((a, w, z) :: shiftr01 d 0 Q) m) := by
+  intro n
+  induction n with
+  | zero =>
+    intro X Q A2 a hlen _
+    have hX : X = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hX
+    refine ⟨0, ?_⟩
+    rw [copies_zero, List.append_nil]
+    rcases Q with _ | ⟨q, Q'⟩
+    · exact Or.inl rfl
+    · exact Or.inr (by simp)
+  | succ n ih =>
+    intro X Q A2 a hlen h
+    by_cases hpre : ∃ X', X = Q ++ (a, w, z) :: X'
+    · obtain ⟨X', rfl⟩ := hpre
+      have hstep : sle X' (shiftr01 d 0 Q
+          ++ (a + d, w, z) :: shiftr01 d 0 (X' ++ A2)) := by
+        have h' : sle (Q ++ (a, w, z) :: X')
+            (Q ++ (a, w, z) :: shiftr01 d 0 ((Q ++ (a, w, z) :: X') ++ A2)) := h
+        have hc : sle ((a, w, z) :: X')
+            ((a, w, z) :: shiftr01 d 0 ((Q ++ (a, w, z) :: X') ++ A2)) :=
+          (sle_append_cancel Q).1 h'
+        have hc2 : sle X' (shiftr01 d 0 ((Q ++ (a, w, z) :: X') ++ A2)) :=
+          (sle_append_cancel [(a, w, z)]).1 (by simpa using hc)
+        have hrw : shiftr01 d 0 ((Q ++ (a, w, z) :: X') ++ A2)
+            = shiftr01 d 0 Q ++ (a + d, w, z) :: shiftr01 d 0 (X' ++ A2) := by
+          rw [List.append_assoc, List.cons_append, shiftr01_append, shiftr01_cons]
+          rfl
+        rwa [hrw] at hc2
+      have hlen' : X'.length ≤ n := by
+        simp only [List.length_append, List.length_cons] at hlen
+        omega
+      obtain ⟨m, hm⟩ := ih X' (shiftr01 d 0 Q) A2 (a + d) hlen' hstep
+      refine ⟨m + 1, ?_⟩
+      have hrw : Q ++ copies d 0 ((a, w, z) :: shiftr01 d 0 Q) (m + 1)
+          = (Q ++ [(a, w, z)]) ++
+              (shiftr01 d 0 Q
+                ++ copies d 0 ((a + d, w, z)
+                    :: shiftr01 d 0 (shiftr01 d 0 Q)) m) := by
+        rw [copies_succ_front, shiftr01_copies, shiftr01_cons]
+        simp
+      rw [hrw]
+      have he : Q ++ (a, w, z) :: X' = (Q ++ [(a, w, z)]) ++ X' := by simp
+      rw [he]
+      exact (sle_append_cancel _).2 hm
+    · refine ⟨1, Or.inr ?_⟩
+      rw [copies_one]
+      have hW : sle X ((Q ++ [(a, w, z)]) ++ shiftr01 d 0 (X ++ A2)) := by
+        simpa using h
+      have hnp : ∀ X', X ≠ (Q ++ [(a, w, z)]) ++ X' := by
+        intro X' hX'
+        exact hpre ⟨X', by rw [hX']; simp⟩
+      have := seqlex_of_sle_not_prefix hW hnp (shiftr01 d 0 Q)
+      simpa using this
+
 end TRIO
