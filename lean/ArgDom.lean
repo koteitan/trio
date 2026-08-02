@@ -978,4 +978,210 @@ theorem trioAsc_srow1 (Hc : ArgDomCore) {M N : TrioSeq} {q : ℕ × ℕ × ℕ}
         omega
   · exact absurd hq3 (by omega)
 
+/-! ## 心材シフトの合成則（`srow = 2` の剥離用） -/
+
+theorem shiftr01_comp (e e' : ℕ) (X : TrioSeq) :
+    shiftr01 e 0 (shiftr01 e' 0 X) = shiftr01 (e + e') 0 X := by
+  unfold shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro p hp
+  simp only [Function.comp_apply, Prod.mk.injEq, and_true]
+  omega
+
+theorem mem_hshift {w1 e f : ℕ} : ∀ {A : TrioSeq} {x : ℕ × ℕ × ℕ},
+    x ∈ hshift w1 e f A → ∃ y ∈ A, x.1 = y.1 + e := by
+  intro A
+  induction A using hshift.induct (w1 := w1) with
+  | case1 =>
+    intro x hx
+    rw [hshift_nil] at hx
+    exact absurd hx (List.not_mem_nil)
+  | case2 p rest hthr ih1 ih2 =>
+    intro x hx
+    rw [hshift_cons, if_pos hthr] at hx
+    rcases List.mem_cons.1 hx with rfl | hx
+    · exact ⟨p, by simp, rfl⟩
+    · rcases List.mem_append.1 hx with hx | hx
+      · obtain ⟨y, hy, he⟩ := ih1 hx
+        exact ⟨y, List.mem_cons_of_mem _ ((List.takeWhile_sublist _).mem hy), he⟩
+      · obtain ⟨y, hy, he⟩ := ih2 hx
+        exact ⟨y, List.mem_cons_of_mem _ ((List.dropWhile_sublist _).mem hy), he⟩
+  | case3 p rest hthr ih2 =>
+    intro x hx
+    rw [hshift_cons, if_neg hthr] at hx
+    rcases List.mem_cons.1 hx with rfl | hx
+    · exact ⟨p, by simp, rfl⟩
+    · rcases List.mem_append.1 hx with hx | hx
+      · obtain ⟨y, hy, rfl⟩ := mem_shiftr01.1 hx
+        exact ⟨y, List.mem_cons_of_mem _ ((List.takeWhile_sublist _).mem hy), rfl⟩
+      · obtain ⟨y, hy, he⟩ := ih2 hx
+        exact ⟨y, List.mem_cons_of_mem _ ((List.dropWhile_sublist _).mem hy), he⟩
+
+theorem hshift_headI (w1 e f : ℕ) (p : ℕ × ℕ × ℕ) (rest : TrioSeq) :
+    ((hshift w1 e f (p :: rest)).headI).1 = p.1 + e := by
+  rw [hshift_cons]
+  split_ifs <;> rfl
+
+theorem hshift_ne_nil (w1 e f : ℕ) (p : ℕ × ℕ × ℕ) (rest : TrioSeq) :
+    hshift w1 e f (p :: rest) ≠ [] := by
+  rw [hshift_cons]
+  split_ifs <;> exact List.cons_ne_nil _ _
+
+/-- The image split of a level-separated pair of forests. -/
+theorem hshift_split (w1 e' f' v : ℕ) (T D : TrioSeq)
+    (hT : ∀ x ∈ T, v < x.1) (hD : D = [] ∨ (D.headI).1 ≤ v) :
+    (hshift w1 e' f' T ++ hshift w1 e' f' D).takeWhile
+        (fun q => v + e' < q.1) = hshift w1 e' f' T
+    ∧ (hshift w1 e' f' T ++ hshift w1 e' f' D).dropWhile
+        (fun q => v + e' < q.1) = hshift w1 e' f' D := by
+  have hTall : ∀ x ∈ hshift w1 e' f' T,
+      (fun q : ℕ × ℕ × ℕ => decide (v + e' < q.1)) x = true := by
+    intro x hx
+    obtain ⟨y, hy, he⟩ := mem_hshift hx
+    have := hT y hy
+    simp only [decide_eq_true_eq]
+    omega
+  constructor
+  · rw [takeWhile_append_all hTall]
+    rcases hD with rfl | hD
+    · rw [hshift_nil]
+      simp
+    · rcases D with - | ⟨d, D'⟩
+      · rw [hshift_nil]
+        simp
+      · have hhd := hshift_headI w1 e' f' d D'
+        rcases he : hshift w1 e' f' (d :: D') with - | ⟨x, X⟩
+        · exact absurd he (hshift_ne_nil w1 e' f' d D')
+        · rw [List.takeWhile_cons_of_neg (by
+            rw [he] at hhd
+            simp only [List.headI] at hhd hD
+            simp only [decide_eq_true_eq]
+            omega)]
+          simp
+  · rw [dropWhile_append_all hTall]
+    rcases hD with rfl | hD
+    · rw [hshift_nil]
+      simp
+    · rcases D with - | ⟨d, D'⟩
+      · rw [hshift_nil]
+        simp
+      · have hhd := hshift_headI w1 e' f' d D'
+        rcases he : hshift w1 e' f' (d :: D') with - | ⟨x, X⟩
+        · exact absurd he (hshift_ne_nil w1 e' f' d D')
+        · rw [List.dropWhile_cons_of_neg (by
+            rw [he] at hhd
+            simp only [List.headI] at hhd hD
+            simp only [decide_eq_true_eq]
+            omega)]
+
+/-- The analogous split for a uniformly shifted blocked forest. -/
+theorem shiftr01_split (e' v : ℕ) (T D : TrioSeq)
+    (hT : ∀ x ∈ T, v < x.1) (hD : D = [] ∨ (D.headI).1 ≤ v) (w1 f' : ℕ) :
+    (shiftr01 e' 0 T ++ hshift w1 e' f' D).takeWhile
+        (fun q => v + e' < q.1) = shiftr01 e' 0 T
+    ∧ (shiftr01 e' 0 T ++ hshift w1 e' f' D).dropWhile
+        (fun q => v + e' < q.1) = hshift w1 e' f' D := by
+  have hTall : ∀ x ∈ shiftr01 e' 0 T,
+      (fun q : ℕ × ℕ × ℕ => decide (v + e' < q.1)) x = true := by
+    intro x hx
+    obtain ⟨y, hy, rfl⟩ := mem_shiftr01.1 hx
+    have := hT y hy
+    simp only [decide_eq_true_eq]
+    show v + e' < y.1 + e'
+    omega
+  constructor
+  · rw [takeWhile_append_all hTall]
+    rcases hD with rfl | hD
+    · rw [hshift_nil]
+      simp
+    · rcases D with - | ⟨d, D'⟩
+      · rw [hshift_nil]
+        simp
+      · have hhd := hshift_headI w1 e' f' d D'
+        rcases he : hshift w1 e' f' (d :: D') with - | ⟨x, X⟩
+        · exact absurd he (hshift_ne_nil w1 e' f' d D')
+        · rw [List.takeWhile_cons_of_neg (by
+            rw [he] at hhd
+            simp only [List.headI] at hhd hD
+            simp only [decide_eq_true_eq]
+            omega)]
+          simp
+  · rw [dropWhile_append_all hTall]
+    rcases hD with rfl | hD
+    · rw [hshift_nil]
+      simp
+    · rcases D with - | ⟨d, D'⟩
+      · rw [hshift_nil]
+        simp
+      · have hhd := hshift_headI w1 e' f' d D'
+        rcases he : hshift w1 e' f' (d :: D') with - | ⟨x, X⟩
+        · exact absurd he (hshift_ne_nil w1 e' f' d D')
+        · rw [List.dropWhile_cons_of_neg (by
+            rw [he] at hhd
+            simp only [List.headI] at hhd hD
+            simp only [decide_eq_true_eq]
+            omega)]
+
+/-- **Composition of heartwood shifts** (same threshold). -/
+theorem hshift_comp (w1 e f e' f' : ℕ) : ∀ A : TrioSeq,
+    hshift w1 e f (hshift w1 e' f' A) = hshift w1 (e + e') (f + f') A := by
+  intro A
+  induction A using hshift.induct (w1 := w1) with
+  | case1 =>
+    rw [hshift_nil, hshift_nil, hshift_nil]
+  | case2 p rest hthr ih1 ih2 =>
+    have hDhd : rest.dropWhile (fun q => p.1 < q.1) = []
+        ∨ ((rest.dropWhile (fun q => p.1 < q.1)).headI).1 ≤ p.1 := by
+      rcases hd : rest.dropWhile (fun q => p.1 < q.1) with _ | ⟨z, Z⟩
+      · exact Or.inl hd
+      · refine Or.inr ?_
+        have h := List.head?_dropWhile_not
+          (fun q : ℕ × ℕ × ℕ => decide (p.1 < q.1)) rest
+        rw [hd] at h
+        simp only [List.head?_cons] at h
+        have : ¬ (p.1 < z.1) := by simpa using h
+        rw [hd]
+        simp only [List.headI]
+        omega
+    have hsp := hshift_split w1 e' f' p.1
+      (rest.takeWhile fun q => p.1 < q.1)
+      (rest.dropWhile fun q => p.1 < q.1)
+      (fun x hx => by simpa using List.mem_takeWhile_imp hx) hDhd
+    rw [hshift_cons (w1 := w1) (e := e') (f := f'), if_pos hthr,
+      hshift_cons]
+    rw [if_pos (show w1 < ((p.1 + e', p.2.1 + f', p.2.2) : ℕ × ℕ × ℕ).2.1
+      from by dsimp only; omega)]
+    dsimp only
+    rw [hsp.1, hsp.2, ih1, ih2, hshift_cons, if_pos hthr]
+    congr 2
+    · omega
+    · exact Prod.ext (by omega) rfl
+  | case3 p rest hthr ih2 =>
+    have hDhd : rest.dropWhile (fun q => p.1 < q.1) = []
+        ∨ ((rest.dropWhile (fun q => p.1 < q.1)).headI).1 ≤ p.1 := by
+      rcases hd : rest.dropWhile (fun q => p.1 < q.1) with _ | ⟨z, Z⟩
+      · exact Or.inl hd
+      · refine Or.inr ?_
+        have h := List.head?_dropWhile_not
+          (fun q : ℕ × ℕ × ℕ => decide (p.1 < q.1)) rest
+        rw [hd] at h
+        simp only [List.head?_cons] at h
+        have : ¬ (p.1 < z.1) := by simpa using h
+        rw [hd]
+        simp only [List.headI]
+        omega
+    have hsp := shiftr01_split e' p.1
+      (rest.takeWhile fun q => p.1 < q.1)
+      (rest.dropWhile fun q => p.1 < q.1)
+      (fun x hx => by simpa using List.mem_takeWhile_imp hx) hDhd w1 f'
+    rw [hshift_cons (w1 := w1) (e := e') (f := f'), if_neg hthr,
+      hshift_cons]
+    rw [if_neg (show ¬ w1 < ((p.1 + e', p.2.1, p.2.2) : ℕ × ℕ × ℕ).2.1
+      from by dsimp only; omega)]
+    dsimp only
+    rw [hsp.1, hsp.2, ih2, shiftr01_comp, hshift_cons, if_neg hthr]
+    congr 2
+    omega
+
 end TRIO
