@@ -427,4 +427,163 @@ theorem peel2 {N : TrioSeq} {r Lb d0 d1 zl : ℕ}
       rw [← hfirst.2]
       exact hm
 
+/-! ## 橋と裏形（AscArgDom2 用の補助層） -/
+
+theorem gmap_one_eq (N : TrioSeq) (r d0 d1 a l : ℕ) :
+    gmap N r d0 d1 1 a l
+      = (List.range' a l).map fun p =>
+          (entry N 0 p + d0,
+           entry N 1 p + (if le1 N r p then d1 else 0),
+           entry N 2 p) := by
+  unfold gmap
+  refine List.map_congr_left ?_
+  intro p _
+  rw [Nat.one_mul, Nat.one_mul]
+
+theorem seg_append_context (P T : TrioSeq) {l : ℕ} (hl : l ≤ T.length) :
+    seg (P ++ T) P.length l = T.take l := by
+  refine list_ext_getD ?_ ?_
+  · rw [seg_length, List.length_take]
+    omega
+  · intro i hi
+    rw [seg_length] at hi
+    rw [seg_getD hi, getD_take hi, ← getD_triple,
+      getD_app_right _ _ (by omega),
+      show P.length + i - P.length = i from by omega]
+
+theorem gtow_succ_back (N : TrioSeq) (r d0 d1 Lb k m : ℕ) :
+    gtow N r d0 d1 Lb k (m + 1)
+      = gtow N r d0 d1 Lb k m ++ gmap N r d0 d1 (k + m) (r + 1) Lb := by
+  unfold gtow
+  rw [List.range'_1_concat, List.flatMap_append]
+  simp
+
+theorem gcopiesFrom_succ_back (M : TrioSeq) (r L d0 d1 k m : ℕ) :
+    gcopiesFrom M r L d0 d1 k (m + 1)
+      = gcopiesFrom M r L d0 d1 k m ++ gcopy M r L d0 d1 (k + m) := by
+  induction m generalizing k with
+  | zero =>
+    rw [gcopiesFrom_succ, gcopiesFrom_zero, gcopiesFrom_zero, Nat.add_zero]
+    simp
+  | succ m ih =>
+    rw [gcopiesFrom_succ, ih (k + 1), gcopiesFrom_succ (M := M) (k0 := k),
+      List.append_assoc]
+    rw [show k + 1 + m = k + (m + 1) from by omega]
+
+theorem gtow_mem {N : TrioSeq} {r d0 d1 Lb k m : ℕ} {x : ℕ × ℕ × ℕ}
+    (hx : x ∈ gtow N r d0 d1 Lb k m) :
+    ∃ j p, k ≤ j ∧ j < k + m ∧ r + 1 ≤ p ∧ p < r + 1 + Lb ∧
+      x = (entry N 0 p + j * d0,
+           entry N 1 p + (if le1 N r p then j * d1 else 0),
+           entry N 2 p) := by
+  unfold gtow at hx
+  obtain ⟨j, hj, hxj⟩ := List.mem_flatMap.1 hx
+  obtain ⟨hj1, hj2⟩ := List.mem_range'_1.1 hj
+  unfold gmap at hxj
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.1 hxj
+  obtain ⟨hp1, hp2⟩ := List.mem_range'_1.1 hp
+  exact ⟨j, p, hj1, hj2, hp1, hp2, rfl⟩
+
+/-- **The tower–copies bridge**: prepending the `k`-th root image turns the
+guarded tower into the `M`-anchored guarded copies plus one trailing root. -/
+theorem gtow_gcopiesFrom {N M : TrioSeq} {r Lb d0 d1 : ℕ}
+    (hLb : 0 < Lb)
+    (hagree : ∀ x, x < r + Lb → N.getD x (0, 0, 0) = M.getD x (0, 0, 0))
+    (hbN : r + Lb < N.length) (hbM : r + Lb < M.length)
+    (hle1qN : le1 N r (r + Lb))
+    (hq0 : entry N 0 (r + Lb) = entry M 0 r + d0)
+    (hq1 : entry N 1 (r + Lb) = entry M 1 r + d1)
+    (hq2 : entry N 2 (r + Lb) = entry M 2 r) :
+    ∀ m k, 1 ≤ k →
+    (entry M 0 r + k * d0, entry M 1 r + k * d1, entry M 2 r)
+        :: gtow N r d0 d1 Lb k m
+      = gcopiesFrom M r Lb d0 d1 k m
+          ++ [(entry M 0 r + (k + m) * d0,
+               entry M 1 r + (k + m) * d1, entry M 2 r)] := by
+  intro m
+  induction m with
+  | zero =>
+    intro k hk
+    rw [gtow_zero, gcopiesFrom_zero, Nat.add_zero]
+    rfl
+  | succ m ih =>
+    intro k hk
+    rw [gtow_succ, gcopiesFrom_succ]
+    have hLb' : Lb = (Lb - 1) + 1 := by omega
+    have hone : gmap N r d0 d1 k (r + Lb) 1
+        = [(entry N 0 (r + Lb) + k * d0,
+            entry N 1 (r + Lb) + k * d1,
+            entry N 2 (r + Lb))] := by
+      unfold gmap
+      rw [List.range'_one]
+      simp only [List.map_cons, List.map_nil]
+      rw [if_pos hle1qN]
+    have hsplit : gmap N r d0 d1 k (r + 1) Lb
+        = gmap N r d0 d1 k (r + 1) (Lb - 1)
+          ++ [(entry N 0 (r + Lb) + k * d0,
+               entry N 1 (r + Lb) + k * d1,
+               entry N 2 (r + Lb))] := by
+      have h := gmap_append N r d0 d1 k (r + 1) (Lb - 1) 1
+      rw [show Lb - 1 + 1 = Lb from by omega,
+        show r + 1 + (Lb - 1) = r + Lb from by omega, hone] at h
+      exact h
+    have hcsplit : gcopy M r Lb d0 d1 k
+        = (entry M 0 r + k * d0, entry M 1 r + k * d1, entry M 2 r)
+          :: gmap M r d0 d1 k (r + 1) (Lb - 1) := by
+      unfold gcopy gmap
+      rw [show Lb = (Lb - 1) + 1 from hLb', List.range'_succ, List.map_cons,
+        if_pos (le1_refl (by omega))]
+      simp only [Nat.add_sub_cancel]
+    have hint : gmap N r d0 d1 k (r + 1) (Lb - 1)
+        = gmap M r d0 d1 k (r + 1) (Lb - 1) := by
+      refine list_ext_getD (by rw [gmap_length, gmap_length]) ?_
+      intro i hi
+      rw [gmap_length] at hi
+      rw [gmap_getD hi, gmap_getD hi]
+      have hpb : r + 1 + i < r + Lb := by omega
+      have he : ∀ y, entry N y (r + 1 + i) = entry M y (r + 1 + i) := by
+        intro y
+        unfold entry
+        rw [hagree _ hpb]
+      have hg : le1 N r (r + 1 + i) ↔ le1 M r (r + 1 + i) := by
+        constructor
+        · intro h
+          exact le1_of_agree (X := M) (M := N) (by omega) (by omega)
+            (fun x hx => (hagree x (by omega)).symm) h
+        · intro h
+          exact le1_of_agree (X := N) (M := M) (by omega) (by omega)
+            (fun x hx => hagree x (by omega)) h
+      rw [he 0, he 1, he 2]
+      by_cases hgN : le1 M r (r + 1 + i)
+      · rw [if_pos (hg.2 hgN), if_pos hgN]
+      · rw [if_neg (fun hc => hgN (hg.1 hc)), if_neg hgN]
+    have hbnd : ((entry N 0 (r + Lb) + k * d0,
+        entry N 1 (r + Lb) + k * d1, entry N 2 (r + Lb)) : ℕ × ℕ × ℕ)
+        = ((entry M 0 r + (k + 1) * d0,
+            entry M 1 r + (k + 1) * d1, entry M 2 r) : ℕ × ℕ × ℕ) := by
+      have hs0 : (k + 1) * d0 = k * d0 + d0 := Nat.succ_mul k d0
+      have hs1 : (k + 1) * d1 = k * d1 + d1 := Nat.succ_mul k d1
+      refine Prod.ext ?_ (Prod.ext ?_ ?_)
+      · dsimp only
+        omega
+      · dsimp only
+        omega
+      · dsimp only
+        omega
+    rw [hsplit, hcsplit, hbnd]
+    have hih := ih (k + 1) (by omega)
+    rw [show k + 1 + m = k + (m + 1) from by omega] at hih
+    rw [hint]
+    rw [show ((entry M 0 r + k * d0, entry M 1 r + k * d1, entry M 2 r)
+          :: (gmap M r d0 d1 k (r + 1) (Lb - 1)
+            ++ [((entry M 0 r + (k + 1) * d0,
+                 entry M 1 r + (k + 1) * d1, entry M 2 r) : ℕ × ℕ × ℕ)]
+            ++ gtow N r d0 d1 Lb (k + 1) m))
+        = ((entry M 0 r + k * d0, entry M 1 r + k * d1, entry M 2 r)
+            :: gmap M r d0 d1 k (r + 1) (Lb - 1))
+          ++ ((entry M 0 r + (k + 1) * d0,
+               entry M 1 r + (k + 1) * d1, entry M 2 r)
+            :: gtow N r d0 d1 Lb (k + 1) m) from by simp]
+    rw [hih, ← List.append_assoc]
+
 end TRIO
