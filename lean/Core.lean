@@ -258,4 +258,37 @@ theorem instance_bridge {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
   rw [hsegd] at h
   exact h.symm
 
+/-! ## bad_B: ホスト検証（key） -/
+
+/-- **The host's verdict, map form**: for any admissible resplit of the
+host tail, the argument is dominated by the host-anchored map over the
+instance prefix. -/
+theorem bad_B_key {M P A1 D : TrioSeq} {u w1 z e f : ℕ} {lp : ℕ × ℕ × ℕ}
+    (hMon : ArgDomCoreOn M)
+    (hMeq : M = (P ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])) ++ (D ++ [lp]))
+    (he : 0 < e) (hzf : f = 0 ∨ z = 0)
+    (h1 : ∀ x ∈ A1, u < x.1) (h6 : SpineOK A1 (u + e) w1)
+    {B' A2' Z' : TrioSeq}
+    (hsplit : D ++ [lp] = B' ++ (A2' ++ Z'))
+    (hB' : ∀ x ∈ B', u + e < x.1) (hA2' : ∀ x ∈ A2', u < x.1)
+    (hA2'hd : A2' = [] ∨ (A2'.headI).1 ≤ u + e)
+    (hZ'hd : Z' = [] ∨ (Z'.headI).1 ≤ u) :
+    sle B' ((List.range' (P.length + 1) (A1.length + 1 + B'.length)).map
+        (fun p => ((entry M 0 p + e,
+          entry M 1 p + (if le1 M P.length p then f else 0),
+          entry M 2 p) : ℕ × ℕ × ℕ))) := by
+  have hMeq' : M = (P ++ (u, w1, z)
+      :: (A1 ++ (u + e, w1 + f, z) :: (B' ++ A2'))) ++ Z' := by
+    rw [hMeq, hsplit]
+    simp [List.append_assoc]
+  have hcore := hMon hMeq' he hzf h1 hB' hA2' hA2'hd hZ'hd h6
+  rw [instance_bridge hMeq' he h1 hB' hA2'] at hcore
+  have hsp : A1.length + (1 + (B'.length + A2'.length))
+      = (A1.length + 1 + B'.length) + A2'.length := by
+    omega
+  rw [hsp, ← List.range'_append_1, List.map_append] at hcore
+  exact sle_take_of_short hcore (by
+    rw [List.length_map, List.length_range']
+    omega)
+
 end TRIO
