@@ -606,4 +606,72 @@ theorem argDomCoreOn_bad_B {M G R : TrioSeq} {v0 w10 z0 d0 d1 n : ℕ}
           omega)] at hverd
         exact hverd
 
+/-! ## 自己相似窓の鏡映（hkey 機構の第一部品） -/
+
+/-- In a host whose window `[b, b+s)` holds the `(e, f)`-guarded-map image of
+`[a, a+s)`, row-0 parent steps mirror from the source window into the copy. -/
+theorem nextrel0_window_mirror {T : TrioSeq} {a b s e f r : ℕ}
+    (hab : a ≤ b)
+    (hcopy : ∀ t, t < s → T.getD (b + t) (0, 0, 0)
+      = ((entry T 0 (a + t) + e,
+          entry T 1 (a + t) + (if le1 T r (a + t) then f else 0),
+          entry T 2 (a + t)) : ℕ × ℕ × ℕ))
+    (hbs : b + s ≤ T.length)
+    {ta tb : ℕ} (hta : ta < s) (htb : tb < s)
+    (h : nextrel0 T (a + ta) (a + tb)) :
+    nextrel0 T (b + ta) (b + tb) := by
+  obtain ⟨h1, h2, h3, h4, h5⟩ := h
+  refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+  · show entry T 0 (b + ta) < entry T 0 (b + tb)
+    show (T.getD (b + ta) (0, 0, 0)).1 < (T.getD (b + tb) (0, 0, 0)).1
+    rw [hcopy ta hta, hcopy tb htb]
+    have h4' : (T.getD (a + ta) (0, 0, 0)).1 < (T.getD (a + tb) (0, 0, 0)).1 := h4
+    dsimp only
+    show entry T 0 (a + ta) + e < entry T 0 (a + tb) + e
+    have e1 : entry T 0 (a + ta) = (T.getD (a + ta) (0, 0, 0)).1 := rfl
+    have e2 : entry T 0 (a + tb) = (T.getD (a + tb) (0, 0, 0)).1 := rfl
+    omega
+  · intro l hl
+    have hlt : ∃ tl, ta < tl ∧ tl < tb ∧ l = b + tl :=
+      ⟨l - b, by omega, by omega, by omega⟩
+    obtain ⟨tl, htl1, htl2, rfl⟩ := hlt
+    show entry T 0 (b + tb) ≤ entry T 0 (b + tl)
+    show (T.getD (b + tb) (0, 0, 0)).1 ≤ (T.getD (b + tl) (0, 0, 0)).1
+    rw [hcopy tb htb, hcopy tl (by omega)]
+    have h5' := h5 (a + tl) ⟨by omega, by omega⟩
+    dsimp only
+    show entry T 0 (a + tb) + e ≤ entry T 0 (a + tl) + e
+    have e1 : entry T 0 (a + tb) = (T.getD (a + tb) (0, 0, 0)).1 := rfl
+    have e2 : entry T 0 (a + tl) = (T.getD (a + tl) (0, 0, 0)).1 := rfl
+    have h5'' : (T.getD (a + tb) (0, 0, 0)).1 ≤ (T.getD (a + tl) (0, 0, 0)).1 := h5'
+    omega
+
+/-- Chains mirror within self-similar windows. -/
+theorem rtg0_window_mirror {T : TrioSeq} {a b s e f r : ℕ}
+    (hab : a ≤ b)
+    (hcopy : ∀ t, t < s → T.getD (b + t) (0, 0, 0)
+      = ((entry T 0 (a + t) + e,
+          entry T 1 (a + t) + (if le1 T r (a + t) then f else 0),
+          entry T 2 (a + t)) : ℕ × ℕ × ℕ))
+    (hbs : b + s ≤ T.length)
+    {ta : ℕ} (hta : ta < s) :
+    ∀ {c : ℕ}, Relation.ReflTransGen (nextrel0 T) (a + ta) c →
+      ∀ tb, c = a + tb → tb < s →
+      Relation.ReflTransGen (nextrel0 T) (b + ta) (b + tb) := by
+  intro c h
+  induction h with
+  | refl =>
+    intro tb hc _
+    have : ta = tb := by omega
+    rw [this]
+  | @tail y z hay hyz ih =>
+    intro tb hc htb
+    have hy0 : a + ta ≤ y := nextrel0_rtrancl_index_le hay
+    have hyz' : y < z := nextrel0_index_less hyz
+    have hye : y = a + (y - a) := by omega
+    refine (ih (y - a) hye (by omega)).tail ?_
+    rw [hc] at hyz
+    rw [hye] at hyz
+    exact nextrel0_window_mirror hab hcopy hbs (by omega) htb hyz
+
 end TRIO
