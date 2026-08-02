@@ -173,4 +173,81 @@ theorem le1_of_chain_le1 {M : TrioSeq} {r x j1 : ℕ} (h : le1 M r j1)
   intro y hry hyx hyne
   exact le1_chain_window h.2.2 y hry (hyx.trans hxj) hyne
 
+/-! ## `gcopies` の位置補題 -/
+
+theorem gcopy_getD {M : TrioSeq} {r L d0 d1 k q : ℕ} (hq : q < L) :
+    (gcopy M r L d0 d1 k).getD q (0, 0, 0)
+      = (entry M 0 (r + q) + k * d0,
+         entry M 1 (r + q) + (if le1 M r (r + q) then k * d1 else 0),
+         entry M 2 (r + q)) := by
+  unfold gcopy
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+    List.getElem?_range' (by simpa using hq)]
+  rw [Nat.one_mul]
+  rfl
+
+theorem gcopiesFrom_length (M : TrioSeq) (r L d0 d1 k0 m : ℕ) :
+    (gcopiesFrom M r L d0 d1 k0 m).length = m * L := by
+  induction m generalizing k0 with
+  | zero => rw [gcopiesFrom_zero, Nat.zero_mul]; rfl
+  | succ m ih =>
+    rw [gcopiesFrom_succ, List.length_append, gcopy_len, ih, Nat.succ_mul]
+    omega
+
+theorem gcopiesFrom_getD {M : TrioSeq} {r L d0 d1 : ℕ} :
+    ∀ {i q k0 m : ℕ}, i < m → q < L →
+      (gcopiesFrom M r L d0 d1 k0 m).getD (i * L + q) (0, 0, 0)
+        = (entry M 0 (r + q) + (k0 + i) * d0,
+           entry M 1 (r + q)
+             + (if le1 M r (r + q) then (k0 + i) * d1 else 0),
+           entry M 2 (r + q)) := by
+  intro i
+  induction i with
+  | zero =>
+    intro q k0 m hi hq
+    obtain ⟨m', rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+    rw [gcopiesFrom_succ, Nat.zero_mul, Nat.zero_add,
+      getD_append_left (by rw [gcopy_len]; exact hq), gcopy_getD hq,
+      Nat.add_zero]
+  | succ i ih =>
+    intro q k0 m hi hq
+    obtain ⟨m', rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+    rw [gcopiesFrom_succ,
+      getD_app_right _ _ (by rw [gcopy_len]; rw [Nat.succ_mul]; omega),
+      gcopy_len,
+      show (i + 1) * L + q - L = i * L + q from by rw [Nat.succ_mul]; omega,
+      ih (by omega) hq]
+    rw [show k0 + 1 + i = k0 + (i + 1) from by omega]
+
+theorem gcopies_length (M : TrioSeq) (r L d0 d1 n : ℕ) :
+    (gcopies M r L d0 d1 n).length = n * L := by
+  rw [gcopies_eq_from, gcopiesFrom_length]
+
+theorem gcopies_getD {M : TrioSeq} {r L d0 d1 k q n : ℕ}
+    (hk : k < n) (hq : q < L) :
+    (gcopies M r L d0 d1 n).getD (k * L + q) (0, 0, 0)
+      = (entry M 0 (r + q) + k * d0,
+         entry M 1 (r + q) + (if le1 M r (r + q) then k * d1 else 0),
+         entry M 2 (r + q)) := by
+  rw [gcopies_eq_from, gcopiesFrom_getD hk hq, Nat.zero_add]
+
+/-! ## 行 1 の規律の保存 -/
+
+/-- The r1ok witness is the unique row-0 Next source. -/
+theorem witness_nextrel0 {M : TrioSeq} {j k : ℕ} (hj : j < M.length) (hk : k < j)
+    (hlev : (M.getD k (0, 0, 0)).1 + 1 = (M.getD j (0, 0, 0)).1)
+    (hwin : ∀ l, k < l → l < j → (M.getD j (0, 0, 0)).1 ≤ (M.getD l (0, 0, 0)).1) :
+    nextrel0 M k j := by
+  refine ⟨by omega, hj, hk, ?_, ?_⟩
+  · show entry M 0 k < entry M 0 j
+    have e1 : entry M 0 k = (M.getD k (0, 0, 0)).1 := rfl
+    have e2 : entry M 0 j = (M.getD j (0, 0, 0)).1 := rfl
+    omega
+  · intro l ⟨h1, h2⟩
+    show entry M 0 j ≤ entry M 0 l
+    have e1 : entry M 0 l = (M.getD l (0, 0, 0)).1 := rfl
+    have e2 : entry M 0 j = (M.getD j (0, 0, 0)).1 := rfl
+    have := hwin l h1 h2
+    omega
+
 end TRIO
