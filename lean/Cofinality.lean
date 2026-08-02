@@ -281,4 +281,54 @@ theorem ts_cofinality_of_crux (H : TrioBadCrux) {M N : TrioSeq}
     ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧) :=
   ts_cofinality_of_seqlex (seqlex_cofinality_of_crux H) hM hN h
 
+/-! ## Part 4 — 複写支配の道具（splice と分割） -/
+
+/-- **Splice.**  A strictly smaller argument block stays smaller once the
+tails are attached, provided the left tail re-opens at or below the block base
+while every column of the right block is strictly above it. -/
+theorem seqlex_splice : ∀ {A B : TrioSeq}, seqlex A B →
+    ∀ {U : TrioSeq}, (U = [] ∨ ∀ x ∈ B, collt (U.headI) x) →
+    ∀ (C : TrioSeq), seqlex (A ++ U) (B ++ C) := by
+  intro A
+  induction A with
+  | nil =>
+    intro B h U hU C
+    rcases B with _ | ⟨b0, B'⟩
+    · exact absurd h (by simp)
+    · rcases U with _ | ⟨u, U'⟩
+      · simp
+      · refine Or.inl ?_
+        rcases hU with h' | h'
+        · exact absurd h' (by simp)
+        · simpa using h' b0 (by simp)
+  | cons a A' ihA =>
+    intro B h U hU C
+    rcases B with _ | ⟨b0, B'⟩
+    · exact absurd h (by simp)
+    · rw [seqlex_cons_cons] at h
+      rcases h with hp | ⟨rfl, hs⟩
+      · exact Or.inl hp
+      · refine Or.inr ⟨rfl, ihA hs ?_ C⟩
+        rcases hU with h' | h'
+        · exact Or.inl h'
+        · exact Or.inr (fun x hx => h' x (List.mem_cons_of_mem _ hx))
+
+/-- The block split at the base level. -/
+theorem split_block {v0 : ℕ} {R Y : TrioSeq} (hRgt : ∀ x ∈ R, v0 < x.1)
+    (hYhd : Y = [] ∨ ¬ v0 < (Y.headI).1) :
+    (R ++ Y).takeWhile (fun q => v0 < q.1) = R ∧
+    (R ++ Y).dropWhile (fun q => v0 < q.1) = Y := by
+  have hR' : ∀ x ∈ R, (fun q : ℕ × ℕ × ℕ => decide (v0 < q.1)) x = true := by
+    intro x hx
+    simpa using hRgt x hx
+  rcases hYhd with rfl | hY
+  · exact ⟨by simpa using List.takeWhile_eq_self_iff.2 hR',
+      by simpa using List.dropWhile_eq_nil_iff.2 hR'⟩
+  · rcases Y with _ | ⟨y, Y'⟩
+    · exact ⟨by simpa using List.takeWhile_eq_self_iff.2 hR',
+        by simpa using List.dropWhile_eq_nil_iff.2 hR'⟩
+    · simp only [List.headI] at hY
+      exact ⟨by rw [takeWhile_append_all hR']; simp [hY],
+        by rw [dropWhile_append_all hR']; simp [hY]⟩
+
 end TRIO
