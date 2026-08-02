@@ -174,4 +174,88 @@ theorem seqlex_of_sle_snoc' : ∀ {X V E : TrioSeq} {lp q : ℕ × ℕ × ℕ},
         · exact Or.inl hp
         · exact Or.inr ⟨rfl, ih (Or.inr hs') hq (by omega) S' E'⟩
 
+/-! ## インスタンスの橋（比較子の宿主係留 map 化） -/
+
+/-- Any core instance's `hshift` comparator equals the host-anchored guarded
+map over the instance segment. -/
+theorem instance_bridge {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : N = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (he : 0 < e) (h1 : ∀ x ∈ A1, u < x.1) (h2 : ∀ x ∈ B, u + e < x.1)
+    (h3 : ∀ x ∈ A2, u < x.1) :
+    hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))
+      = (List.range' (X.length + 1) (A1.length + (1 + (B.length + A2.length)))).map
+          (fun p => ((entry N 0 p + e,
+            entry N 1 p + (if le1 N X.length p then f else 0),
+            entry N 2 p) : ℕ × ℕ × ℕ)) := by
+  set r := X.length with hrdef
+  set l := A1.length + (1 + (B.length + A2.length)) with hldef
+  set LIST := A1 ++ (u + e, w1 + f, z) :: (B ++ A2) with hLISTdef
+  have hLISTlen : LIST.length = l := by
+    rw [hLISTdef, hldef]
+    simp only [List.length_append, List.length_cons]
+    omega
+  have hNP : N = (X ++ [(u, w1, z)]) ++ (LIST ++ Z) := by
+    rw [heq, hLISTdef]
+    simp [List.append_assoc]
+  have hPlen : (X ++ [(u, w1, z)]).length = r + 1 := by
+    simp only [List.length_append, List.length_cons, List.length_nil, hrdef]
+  have hNlen : r + 1 + l ≤ N.length := by
+    rw [hNP]
+    simp only [List.length_append, hPlen, ← hLISTlen]
+    omega
+  have hseg : seg N (r + 1) l = LIST := by
+    have h := seg_append_context (X ++ [(u, w1, z)]) (LIST ++ Z)
+      (l := l) (by
+        simp only [List.length_append, ← hLISTlen]
+        omega)
+    rw [hPlen] at h
+    rw [hNP, h, ← hLISTlen, List.take_left]
+  have hLISTgt : ∀ x ∈ LIST, u < x.1 := by
+    intro x hx
+    rw [hLISTdef] at hx
+    rcases List.mem_append.1 hx with hx | hx
+    · exact h1 x hx
+    · rcases List.mem_cons.1 hx with rfl | hx
+      · dsimp only
+        omega
+      · rcases List.mem_append.1 hx with hx | hx
+        · have := h2 x hx
+          omega
+        · exact h3 x hx
+  have hdict : ∀ i, i < l → N.getD (r + 1 + i) (0, 0, 0)
+      = LIST.getD i (0, 0, 0) := by
+    intro i hi
+    have h := congrArg (fun t => t.getD i (0, 0, 0)) hseg
+    dsimp only at h
+    rw [seg_getD hi, ← getD_triple] at h
+    exact h
+  have hgr : N.getD r (0, 0, 0) = (u, w1, z) := by
+    rw [show N = X ++ ((u, w1, z) :: (LIST ++ Z)) from by
+        rw [hNP]
+        simp,
+      getD_app_right _ _ (show X.length ≤ r from by omega),
+      show r - X.length = 0 from by omega]
+    rfl
+  have he1r : entry N 1 r = w1 := by
+    show (N.getD r (0, 0, 0)).2.1 = w1
+    rw [hgr]
+  have hupSeg : ∀ j, r + 1 ≤ j → j < r + 1 + l → entry N 0 r < entry N 0 j := by
+    intro j hj1 hj2
+    have hji : j - r - 1 < l := by omega
+    show (N.getD r (0, 0, 0)).1 < (N.getD j (0, 0, 0)).1
+    rw [hgr, show j = r + 1 + (j - r - 1) from by omega, hdict _ hji]
+    have hmem := getD_mem_of_lt (A := LIST) (j := j - r - 1)
+      (by rw [hLISTlen]; exact hji)
+    exact hLISTgt _ hmem
+  have hrN : r < N.length := by omega
+  have h := hshift_gseg (M := N) (r := r) (e := e) (f := f) l
+    (a := r + 1) (pa := r) (le1_refl hrN) (by omega) hNlen
+    (fun j hj1 hj2 => hupSeg j hj1 hj2)
+    (fun j hj1 hj2 => absurd hj1 (by omega))
+  rw [he1r] at h
+  have hsegd : ((List.range' (r + 1) l).map fun j =>
+      ((entry N 0 j, entry N 1 j, entry N 2 j) : ℕ × ℕ × ℕ)) = LIST := hseg
+  rw [hsegd] at h
+  exact h.symm
+
 end TRIO
