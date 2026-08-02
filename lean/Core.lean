@@ -674,4 +674,147 @@ theorem rtg0_window_mirror {T : TrioSeq} {a b s e f r : ℕ}
     rw [hye] at hyz
     exact nextrel0_window_mirror hab hcopy hbs (by omega) htb hyz
 
+/-! ## hkey: 整列対のガード継承 -/
+
+set_option maxHeartbeats 4000000 in
+/-- **hkey** (probe: 494982 aligned pairs, 0 violations): if the window after
+`jpos` copies the guarded-map image of the window after `ipos`, the root
+guard descends from the copy endpoint to the source endpoint. -/
+theorem hkey_aligned {T : TrioSeq} {r ipos jpos s e f : ℕ}
+    (hri : r ≤ ipos) (hij : ipos < jpos)
+    (hlen : jpos + 1 + s < T.length)
+    (hprefix : ∀ t, t < s → T.getD (jpos + 1 + t) (0, 0, 0)
+      = ((entry T 0 (ipos + 1 + t) + e,
+          entry T 1 (ipos + 1 + t)
+            + (if le1 T ipos (ipos + 1 + t) then f else 0),
+          entry T 2 (ipos + 1 + t)) : ℕ × ℕ × ℕ))
+    (hrow0 : entry T 0 (jpos + 1 + s) = entry T 0 (ipos + 1 + s) + e)
+    (hupI : ∀ l, ipos < l → l ≤ jpos + 1 + s → entry T 0 ipos < entry T 0 l)
+    (hupR : ∀ l, r < l → l ≤ jpos + 1 + s → entry T 0 r < entry T 0 l)
+    (hrow1 : ¬ le1 T ipos (ipos + 1 + s) →
+      entry T 1 r < entry T 1 (ipos + 1 + s))
+    (hgB : le1 T r (jpos + 1 + s)) :
+    le1 T r (ipos + 1 + s) := by
+  have hlenI : ipos + 1 + s < T.length := by omega
+  have hchI : Relation.ReflTransGen (nextrel0 T) r (ipos + 1 + s) := by
+    refine rtg0_of_window (by omega) (by omega) ?_
+    intro l h1 h2
+    exact hupR l h1 (by omega)
+  have hchii : Relation.ReflTransGen (nextrel0 T) ipos (ipos + 1 + s) := by
+    refine rtg0_of_window (by omega) (by omega) ?_
+    intro l h1 h2
+    exact hupI l h1 (by omega)
+  have hchJi : Relation.ReflTransGen (nextrel0 T) ipos (jpos + 1 + s) := by
+    refine rtg0_of_window (by omega) (by omega) ?_
+    intro l h1 h2
+    exact hupI l h1 (by omega)
+  have hwJ := le1_chain_window hgB.2.2
+  have hw_ipos : ipos ≠ r → entry T 1 r < entry T 1 ipos := by
+    intro hne
+    refine hwJ ipos ?_ hchJi hne
+    refine rtg0_of_window (by omega) (by omega) ?_
+    intro l h1 h2
+    exact hupR l h1 (by omega)
+  -- row 1 of a guarded source node exceeds the root's
+  have hnode : ∀ x, ipos < x → x ≤ ipos + 1 + s →
+      Relation.ReflTransGen (nextrel0 T) x (ipos + 1 + s) →
+      le1 T ipos x → entry T 1 r < entry T 1 x := by
+    intro x hx1 hx2 hxch hgx
+    have hxi : entry T 1 ipos < entry T 1 x := by
+      refine le1_chain_window hgx.2.2 x ?_ .refl (by omega)
+      refine rtg0_of_window (by omega) (by omega) ?_
+      intro l h1 h2
+      exact hupI l h1 (by omega)
+    rcases Nat.eq_or_lt_of_le hri with rfl | hlt
+    · -- `ipos = r`
+      omega
+    · have := hw_ipos (by omega)
+      omega
+  refine (le1_iff_chain_window hlenI hchI).2 ?_
+  intro x hrx hxp hxne
+  have hx0 : r ≤ x := nextrel0_rtrancl_index_le hrx
+  have hxup : x ≤ ipos + 1 + s := nextrel0_rtrancl_index_le hxp
+  rcases Nat.lt_or_ge x (ipos + 1) with hxlo | hxhi
+  · rcases Nat.eq_or_lt_of_le (show x ≤ ipos from by omega) with rfl | hxlt
+    · exact hw_ipos hxne
+    · have hxJ : Relation.ReflTransGen (nextrel0 T) x (jpos + 1 + s) := by
+        have hxi : Relation.ReflTransGen (nextrel0 T) x ipos :=
+          rtg0_comparable hxp hchii (by omega)
+        exact hxi.trans hchJi
+      exact hwJ x hrx hxJ hxne
+  · rcases Nat.eq_or_lt_of_le hxup with rfl | hxstrict
+    · -- the endpoint itself
+      by_cases hgx : le1 T ipos (ipos + 1 + s)
+      · exact hnode _ (by omega) le_rfl .refl hgx
+      · exact hrow1 hgx
+    · -- a strict source-window node: mirror it into the copy
+      set tx := x - ipos - 1 with htxdef
+      have htx : x = ipos + 1 + tx := by omega
+      have htxs : tx < s := by omega
+      by_cases hgx : le1 T ipos x
+      · exact hnode x (by omega) (by omega) hxp hgx
+      · -- unguarded node: its mirror carries the same row 1
+        -- build the chain from the mirror to the copy endpoint
+        rw [htx] at hxp
+        rcases hxp.cases_tail with heq | ⟨y, hxy, hyp⟩
+        · exfalso
+          omega
+        · have hy0 : ipos + 1 + tx ≤ y := nextrel0_rtrancl_index_le hxy
+          have hyup : y < ipos + 1 + s := nextrel0_index_less hyp
+          set ty := y - ipos - 1 with htydef
+          have hty : y = ipos + 1 + ty := by omega
+          have htys : ty < s := by omega
+          have hmirch : Relation.ReflTransGen (nextrel0 T)
+              (jpos + 1 + tx) (jpos + 1 + ty) := by
+            have h := rtg0_window_mirror (a := ipos + 1) (b := jpos + 1)
+              (s := s) (e := e) (f := f) (r := ipos) (by omega)
+              (by
+                intro t ht
+                have h2 := hprefix t ht
+                rw [show jpos + 1 + t = jpos + 1 + t from rfl] at h2
+                exact h2)
+              (by omega) (ta := tx) (by omega) (c := y) hxy ty hty htys
+            exact h
+          have hstep : nextrel0 T (jpos + 1 + ty) (jpos + 1 + s) := by
+            rw [hty] at hyp
+            obtain ⟨g1, g2, g3, g4, g5⟩ := hyp
+            refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+            · show entry T 0 (jpos + 1 + ty) < entry T 0 (jpos + 1 + s)
+              have hv : entry T 0 (jpos + 1 + ty)
+                  = entry T 0 (ipos + 1 + ty) + e := by
+                show (T.getD (jpos + 1 + ty) (0, 0, 0)).1 = _
+                rw [hprefix ty htys]
+              rw [hv, hrow0]
+              have g4' : entry T 0 (ipos + 1 + ty)
+                  < entry T 0 (ipos + 1 + s) := g4
+              omega
+            · intro l hl
+              have htl : ∃ tl, ty < tl ∧ tl < s ∧ l = jpos + 1 + tl :=
+                ⟨l - jpos - 1, by omega, by omega, by omega⟩
+              obtain ⟨tl, htl1, htl2, rfl⟩ := htl
+              show entry T 0 (jpos + 1 + s) ≤ entry T 0 (jpos + 1 + tl)
+              have hv : entry T 0 (jpos + 1 + tl)
+                  = entry T 0 (ipos + 1 + tl) + e := by
+                show (T.getD (jpos + 1 + tl) (0, 0, 0)).1 = _
+                rw [hprefix tl htl2]
+              rw [hv, hrow0]
+              have g5' := g5 (ipos + 1 + tl) ⟨by omega, by omega⟩
+              have g5'' : entry T 0 (ipos + 1 + s)
+                  ≤ entry T 0 (ipos + 1 + tl) := g5'
+              omega
+          have hmir : Relation.ReflTransGen (nextrel0 T)
+              (jpos + 1 + tx) (jpos + 1 + s) := hmirch.tail hstep
+          have hrmir : Relation.ReflTransGen (nextrel0 T) r (jpos + 1 + tx) := by
+            refine rtg0_of_window (by omega) (by omega) ?_
+            intro l h1 h2
+            exact hupR l h1 (by omega)
+          have hwx := hwJ (jpos + 1 + tx) hrmir hmir (by omega)
+          have hv1 : entry T 1 (jpos + 1 + tx) = entry T 1 (ipos + 1 + tx) := by
+            show (T.getD (jpos + 1 + tx) (0, 0, 0)).2.1 = _
+            rw [hprefix tx htxs]
+            dsimp only
+            rw [if_neg (by rw [← htx]; exact hgx), Nat.add_zero]
+          rw [hv1, ← htx] at hwx
+          exact hwx
+
 end TRIO
