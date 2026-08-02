@@ -13,5 +13,9 @@
 - [x] 経路補題 le1 ⟺ chain 窓（無条件）✅（スパイン⊆D は不要と判明）
 - [x] Gcopy/Goper: translate_gseg・cnf_gcopiesFrom・cnf_oper・**cnf_ST_TS** ✅（不変量も窓仮説も不要）
 - [x] 不変量保存 r1ok/z0ok/noninc_oper（ガード対応・climb・スパイン補題）＋ ST_TS 版 ✅ Invariant.lean
-- [ ] 共終性: Part 0-3 ✅（配管・退化枝・bad 枝の crux 還元・親存在）; 残り TrioBadCrux（d0=0 の複写支配＋上昇核; z=0 制限核 probe 済 53757/0）
+- [x] 共終性 **完結（核を法として）**: trio_cofinality_of_core ✅ Peel2.lean v0.42.0
+- [x] ガード輸送 gexp_guard_transport ✅・尾部 le1 同値 le1_tail_equiv ✅ Gtrans.lean
+- [x] 核 ST 帰納の足場（ArgDomCoreOn・diag 基底・snoc_zero・drop_left・小道具）✅ Core.lean
+- [ ] 核 bad 枝: bad_B（ホスト検証 key を橋で map 形に; lp 置換は collt row2 で成立）→ bad_A2 → A1（hkey 経由 or 参照 memory）
+- [ ] argDomCoreOn_oper / _ST_TS / argDomCore_holds
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）
