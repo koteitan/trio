@@ -6,7 +6,7 @@
 - [x] Term.lean 記法（添字対 p_{a1,a2}(b)+c）・順序 olt（推移律まで）・翻訳 tr ✅
 - [x] Decrease.lean 測度の減少 m_step_decreases ✅ build 緑
 - [x] Reduction.lean 停止性への還元（条件付き停止性）✅
-- [ ] 列辞書式順序との同型
+- [x] Seqlex.lean 列辞書式順序との同型 olt_ST_iff_seqlex ✅
 - [ ] 不変量（z0ok / r1ok / r2ok / A≡1 予想）
 - [ ] 共終性（2 次元上昇の核）
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）
