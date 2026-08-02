@@ -351,6 +351,130 @@ theorem le1_window_desc {M : TrioSeq} {j0 j1 : ℕ}
         exact Nat.findGreatest_is_greatest (P := Q) hq1 (by omega) ⟨hq2, hcon⟩
       exact (ih p hpj hj0p (by omega)).tail hstep
 
+/-! ## 経路補題: `le1` = 行 0 の親鎖に沿った行 1 の窓条件
+
+ガード付きコピー（上昇行列 `A_x1`）の心材（heartwood）特徴付け。位置的な
+窓（`le1_window_desc`）と違い、こちらは**鎖上の節**だけを見る無条件の
+同値。 -/
+
+/-- Sources of the row-0 Next relation into a fixed target are unique
+(the nearest-lower characterization). -/
+theorem nextrel0_src_unique {M : TrioSeq} {a b j : ℕ}
+    (ha : nextrel0 M a j) (hb : nextrel0 M b j) : a = b := by
+  rcases Nat.lt_trichotomy a b with h | h | h
+  · exact absurd (ha.2.2.2.2 b ⟨h, hb.2.2.1⟩) (by
+      have := hb.2.2.2.1
+      omega)
+  · exact h
+  · exact absurd (hb.2.2.2.2 a ⟨h, ha.2.2.1⟩) (by
+      have := ha.2.2.2.1
+      omega)
+
+/-- Row-0 ancestors of a common target are totally ordered by ancestry. -/
+theorem rtg0_comparable {M : TrioSeq} {j : ℕ} :
+    ∀ {x y : ℕ}, Relation.ReflTransGen (nextrel0 M) x j →
+      Relation.ReflTransGen (nextrel0 M) y j → x ≤ y →
+      Relation.ReflTransGen (nextrel0 M) x y := by
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro x y hx hy hxy
+    rcases hy.cases_tail with rfl | ⟨c, hyc, hcj⟩
+    · exact hx
+    · rcases hx.cases_tail with rfl | ⟨c', hxc', hc'j⟩
+      · obtain rfl := le_antisymm (nextrel0_rtrancl_index_le hy) hxy
+        exact .refl
+      · rw [nextrel0_src_unique hc'j hcj] at hxc'
+        exact ih c (nextrel0_index_less hcj) hxc' hyc hxy
+
+/-- **Forward direction**: along a row-1 ancestry `r →₁ j`, every row-0 chain
+node of `j` above `r` carries row 1 strictly above `r`. -/
+theorem le1_chain_window {M : TrioSeq} {r j : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 M) r j) :
+    ∀ x, Relation.ReflTransGen (nextrel0 M) r x →
+      Relation.ReflTransGen (nextrel0 M) x j → x ≠ r →
+      entry M 1 r < entry M 1 x := by
+  induction h with
+  | refl =>
+    intro x hrx hxr hne
+    exact absurd (le_antisymm (nextrel0_rtrancl_index_le hxr)
+      (nextrel0_rtrancl_index_le hrx)) hne
+  | @tail c j' h' edge ih =>
+    intro x hrx hxj hne
+    rcases Nat.lt_or_ge c x with hcx | hxc
+    case inr => exact ih x hrx (rtg0_comparable hxj edge.2.2.2.2.1.2.2 hxc) hne
+    · have hj1 : entry M 1 j' ≤ entry M 1 x := by
+        refine edge.2.2.2.2.2 x ⟨hcx, ⟨?_, edge.2.1, hxj⟩⟩
+        have h1 := nextrel0_rtrancl_index_le hxj
+        have h2 := edge.2.1
+        omega
+      have hrj : entry M 1 r < entry M 1 j' :=
+        rtg1_entry1_lt (h'.tail edge) (by
+          have h1 := rtg1_index_le h'
+          have h2 := nextrel1_index_less edge
+          omega)
+      omega
+
+open Classical in
+/-- **Backward direction**: if every row-0 chain node of `j` above `r` carries
+row 1 strictly above `r`, then `j` is a row-1 descendant of `r`. -/
+theorem le1_of_chain_window {M : TrioSeq} {r : ℕ} :
+    ∀ {j : ℕ}, j < M.length →
+      Relation.ReflTransGen (nextrel0 M) r j →
+      (∀ x, Relation.ReflTransGen (nextrel0 M) r x →
+        Relation.ReflTransGen (nextrel0 M) x j → x ≠ r →
+        entry M 1 r < entry M 1 x) →
+      Relation.ReflTransGen (nextrel1 M) r j := by
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hb hch hwin
+    have hrj : r ≤ j := nextrel0_rtrancl_index_le hch
+    rcases Nat.eq_or_lt_of_le hrj with rfl | hlt
+    · exact .refl
+    · set Q : ℕ → Prop := fun q => Relation.ReflTransGen (nextrel0 M) r q ∧
+        Relation.ReflTransGen (nextrel0 M) q j ∧ entry M 1 q < entry M 1 j
+        with hQ
+      have hQr : Q r := ⟨.refl, hch, hwin j hch .refl (by omega)⟩
+      have hrj1 : r ≤ j - 1 := by omega
+      set y := Nat.findGreatest Q (j - 1) with hy
+      have hQy : Q y := Nat.findGreatest_spec (P := Q) hrj1 hQr
+      have hry : r ≤ y := Nat.le_findGreatest hrj1 hQr
+      have hyj : y < j := by
+        have : y ≤ j - 1 := Nat.findGreatest_le _
+        omega
+      have hstep : nextrel1 M y j := by
+        refine ⟨by omega, hb, hyj, hQy.2.2, ⟨by omega, hb, hQy.2.1⟩, ?_⟩
+        intro l ⟨hl1, hl2⟩
+        have hlj : l ≤ j := nextrel0_rtrancl_index_le hl2.2.2
+        rcases Nat.eq_or_lt_of_le hlj with rfl | hlj'
+        · exact le_rfl
+        · by_contra hcon
+          push Not at hcon
+          have hrl : Relation.ReflTransGen (nextrel0 M) r l :=
+            rtg0_comparable hch hl2.2.2 (by omega)
+          exact Nat.findGreatest_is_greatest (P := Q) hl1 (by omega)
+            ⟨hrl, hl2.2.2, by omega⟩
+      have hrec : Relation.ReflTransGen (nextrel1 M) r y := by
+        refine ih y hyj (by omega) hQy.1 ?_
+        intro x hrx hxy hne
+        exact hwin x hrx (hxy.trans hQy.2.1) hne
+      exact hrec.tail hstep
+
+/-- **経路補題**: `le1 M r j` ⟺ 行 0 の親鎖上の各節（`j` を含み `r` を
+除く）が行 1 で `r` を真に超える。無条件（標準性不要）。 -/
+theorem le1_iff_chain_window {M : TrioSeq} {r j : ℕ} (hb : j < M.length)
+    (hch : Relation.ReflTransGen (nextrel0 M) r j) :
+    le1 M r j ↔ ∀ x, Relation.ReflTransGen (nextrel0 M) r x →
+      Relation.ReflTransGen (nextrel0 M) x j → x ≠ r →
+      entry M 1 r < entry M 1 x := by
+  constructor
+  · intro h
+    exact le1_chain_window h.2.2
+  · intro hwin
+    exact ⟨by
+      have := nextrel0_rtrancl_index_le hch
+      omega, hb, le1_of_chain_window hb hch hwin⟩
+
 /-! ## Shape lemmas for `translate` -/
 
 /-- If every column after the head lies strictly above it in row 0, the whole
