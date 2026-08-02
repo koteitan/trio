@@ -4,7 +4,7 @@
 - [x] 検証 tools/verify_trio.py（ペア一致・対角・psi(I) 塔・z<2 閉性・A≡1 探索）✅
 - [x] Trio.lean 定義（TrioSeq / 親子 / oper / ST_TS / step）✅ build 緑
 - [x] Term.lean 記法（添字対 p_{a1,a2}(b)+c）・順序 olt（推移律まで）・翻訳 tr ✅
-- [ ] 翻訳と測度の減少
+- [x] Decrease.lean 測度の減少 m_step_decreases ✅ build 緑
 - [ ] 列辞書式順序との同型
 - [ ] 不変量（z0ok / r1ok / r2ok / A≡1 予想）
 - [ ] 共終性（2 次元上昇の核）
