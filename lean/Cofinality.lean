@@ -91,6 +91,18 @@ theorem sle_append_mono {A B : TrioSeq} (h : sle A B) (C : TrioSeq) :
     · exact Or.inr (seqlex_prefix (by simp) A)
   · exact Or.inr (seqlex_append_mono h C)
 
+theorem sle_append_cancel (A : TrioSeq) {u v : TrioSeq} :
+    sle (A ++ u) (A ++ v) ↔ sle u v := by
+  unfold sle
+  rw [seqlex_append_cancel]
+  constructor
+  · rintro (h | h)
+    · exact Or.inl (List.append_cancel_left h)
+    · exact Or.inr h
+  · rintro (rfl | h)
+    · exact Or.inl rfl
+    · exact Or.inr h
+
 /-- **Snoc case analysis.**  A sequence below `D ++ [lp]` either stays `≤ D`,
 or extends `D` by a first column strictly below `lp`. -/
 theorem seqlex_snoc_cases : ∀ {D : TrioSeq} {lp : ℕ × ℕ × ℕ} {N : TrioSeq},
@@ -330,5 +342,136 @@ theorem split_block {v0 : ℕ} {R Y : TrioSeq} (hRgt : ∀ x ∈ R, v0 < x.1)
     · simp only [List.headI] at hY
       exact ⟨by rw [takeWhile_append_all hR']; simp [hY],
         by rw [dropWhile_append_all hR']; simp [hY]⟩
+
+theorem copies_zero_succ (blk : TrioSeq) (m : ℕ) :
+    copies 0 0 blk (m + 1) = copies 0 0 blk m ++ blk := by
+  unfold copies
+  rw [List.range_succ, List.flatMap_append]
+  simp [shiftr01]
+
+/-- **Exact-copy domination (`d0 = d1 = 0`).**  The base-level remainder `Y`
+after a block `blk = (v0,w1,w2) :: R` of a CNF standard shape is dominated by
+finitely many verbatim copies of `blk`. -/
+theorem copy_dom_zero : ∀ (d : ℕ) (Y : TrioSeq) (v0 w1 w2 : ℕ) (R : TrioSeq),
+    Y.length ≤ d →
+    blockok v0 ((v0, w1, w2) :: (R ++ Y)) →
+    (∀ x ∈ R, v0 < x.1) →
+    (Y = [] ∨ ¬ v0 < (Y.headI).1) →
+    cnf (translate ((v0, w1, w2) :: (R ++ Y))) →
+    ∃ m, 1 ≤ m ∧ sle Y (copies 0 0 ((v0, w1, w2) :: R) m) := by
+  intro d
+  induction d with
+  | zero =>
+    intro Y v0 w1 w2 R hlen _ _ _ _
+    have hY : Y = [] := by
+      cases Y with
+      | nil => rfl
+      | cons y Y' => simp at hlen
+    subst hY
+    exact ⟨1, le_rfl, Or.inr (by rw [copies_one]; simp)⟩
+  | succ d ih =>
+    intro Y v0 w1 w2 R hlen hbo hRgt hYhd hcnf
+    rcases Y with _ | ⟨⟨y1, y2, y3⟩, Y'⟩
+    · exact ⟨1, le_rfl, Or.inr (by rw [copies_one]; simp)⟩
+    have hyv : y1 = v0 := by
+      have h1 : v0 ≤ y1 := hbo.2.1 (y1, y2, y3) (by simp)
+      have h2 : ¬ v0 < y1 := by
+        rcases hYhd with h' | h'
+        · exact absurd h' (by simp)
+        · simpa using h'
+      omega
+    subst hyv
+    set R' := Y'.takeWhile (fun q => y1 < q.1) with hR'def
+    set Y'' := Y'.dropWhile (fun q => y1 < q.1) with hY''def
+    have hY'split : R' ++ Y'' = Y' := List.takeWhile_append_dropWhile
+    have hR'gt : ∀ x ∈ R', y1 < x.1 := by
+      intro x hx
+      have := List.mem_takeWhile_imp hx
+      simpa using this
+    have hY''hd : Y'' = [] ∨ ¬ y1 < (Y''.headI).1 := by
+      rcases hd : Y'' with _ | ⟨z, Z⟩
+      · exact Or.inl rfl
+      · refine Or.inr ?_
+        have h := List.head?_dropWhile_not
+          (fun q : ℕ × ℕ × ℕ => decide (y1 < q.1)) Y'
+        rw [← hY''def, hd] at h
+        simpa using h
+    have hTy : translate ((y1, y2, y3) :: Y')
+        = P y2 y3 (translate R') (translate Y'') := by
+      have he : ((y1, y2, y3) :: R') ++ Y'' = (y1, y2, y3) :: Y' := by
+        rw [List.cons_append, hY'split]
+      rw [← he]
+      exact translate_block_append hR'gt hY''hd
+    have hTall : translate ((y1, w1, w2) :: (R ++ ((y1, y2, y3) :: Y')))
+        = P w1 w2 (translate R) (translate ((y1, y2, y3) :: Y')) := by
+      have he : ((y1, w1, w2) :: R) ++ ((y1, y2, y3) :: Y')
+          = (y1, w1, w2) :: (R ++ ((y1, y2, y3) :: Y')) := by
+        rw [List.cons_append]
+      rw [← he]
+      exact translate_block_append hRgt (Or.inr (by simp))
+    rw [hTall, hTy] at hcnf
+    obtain ⟨cR, hsib, ctail⟩ := cnf_P_P.1 hcnf
+    have hy2 : y2 < w1 ∨ (y2 = w1 ∧ y3 < w2) ∨ (y2 = w1 ∧ y3 = w2) := by
+      rcases Nat.lt_trichotomy y2 w1 with h | h | h
+      · exact Or.inl h
+      · rcases Nat.lt_trichotomy y3 w2 with h' | h' | h'
+        · exact Or.inr (Or.inl ⟨h, h'⟩)
+        · exact Or.inr (Or.inr ⟨h, h'⟩)
+        · exact absurd (olt_P_P.2 (Or.inr (Or.inl ⟨h.symm, h'⟩))) hsib
+      · exact absurd (olt_P_P.2 (Or.inl h)) hsib
+    rcases hy2 with hlt | ⟨he1, hlt⟩ | ⟨he1, he2⟩
+    · refine ⟨1, le_rfl, Or.inr ?_⟩
+      rw [copies_one]
+      exact Or.inl (Or.inr ⟨rfl, Or.inl hlt⟩)
+    · refine ⟨1, le_rfl, Or.inr ?_⟩
+      rw [copies_one]
+      exact Or.inl (Or.inr ⟨rfl, Or.inr ⟨he1, hlt⟩⟩)
+    · subst he1
+      subst he2
+      have hnolt : ¬ (translate R <o translate R') := by
+        intro hcon
+        exact hsib (olt_P_P.2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl, hcon⟩))))
+      have hsp := split_block hRgt hYhd
+      have hboY : blockok y1 ((y1, y2, y3) :: Y') := by
+        have := blockok_tail hbo
+        rwa [hsp.2] at this
+      have hboR : blockok (y1 + 1) R := by
+        have := blockok_arg hbo
+        rwa [hsp.1] at this
+      have hboR' : blockok (y1 + 1) R' := blockok_arg hboY
+      by_cases hRR : R' = R
+      · have hYeq : (y1, y2, y3) :: Y' = ((y1, y2, y3) :: R) ++ Y'' := by
+          rw [List.cons_append, ← hY'split, hRR]
+        have hlen'' : Y''.length ≤ d := by
+          have h1 : (R' ++ Y'').length = Y'.length := by rw [hY'split]
+          simp only [List.length_append] at h1
+          simp only [List.length_cons] at hlen
+          omega
+        have hbo'' : blockok y1 ((y1, y2, y3) :: (R ++ Y'')) := by
+          rw [← List.cons_append, ← hYeq]
+          exact hboY
+        have hcnf'' : cnf (translate ((y1, y2, y3) :: (R ++ Y''))) := by
+          rw [← List.cons_append, ← hYeq, hTy]
+          exact ctail
+        obtain ⟨m, hm, hsle⟩ := ih Y'' y1 y2 y3 R hlen'' hbo'' hRgt hY''hd hcnf''
+        refine ⟨m + 1, by omega, ?_⟩
+        rw [copies_succ_cons, shiftr01_zero, hYeq, ← List.cons_append]
+        exact (sle_append_cancel _).2 hsle
+      · have hslR : seqlex R' R := by
+          rcases seqlex_total R' R with he | h | h
+          · exact absurd he hRR
+          · exact h
+          · exact absurd (seqlex_imp_olt (y1 + 1) R R' hboR hboR' h) hnolt
+        refine ⟨2, by omega, Or.inr ?_⟩
+        rw [show (2 : ℕ) = 1 + 1 from rfl, copies_succ_cons, shiftr01_zero,
+          copies_one]
+        refine Or.inr ⟨rfl, ?_⟩
+        rw [← hY'split]
+        refine seqlex_splice hslR ?_ _
+        rcases hY''hd with h | h
+        · exact Or.inl h
+        · refine Or.inr (fun x hx => ?_)
+          have h1 := hRgt x hx
+          exact Or.inl (by omega)
 
 end TRIO
