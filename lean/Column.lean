@@ -492,10 +492,11 @@ def z0ok (M : TrioSeq) : Prop :=
 def noninc (M : TrioSeq) : Prop :=
   ∀ j, j < M.length → (M.getD j (0, 0, 0)).2.2 ≤ (M.getD j (0, 0, 0)).2.1
 
-/-- **行 2 の窓の下界**: すべての `nextrel2` 対の窓の内部で、行 1 は
-バッドルートを真に超える。`i1 = 2` の悪い分岐のガードを潰す不変量。 -/
-def W2ok (M : TrioSeq) : Prop :=
-  ∀ j0 j1, nextrel2 M j0 j1 → ∀ j, j0 < j → j < j1 → entry M 1 j0 < entry M 1 j
+/- NOTE (2026-08-03): the all-pairs window-bound invariant `W2ok` that used to live
+here is FALSE on `ST_TS` (counterexample line: … (0,0,0)(1,1,1)(2,0,0)(2,0,0) …),
+and so is `A_x1 ≡ 1`.  Guarded (non-uniform) copies are real; the live route is the
+chain-window characterization of `le1` (path lemma) plus the `lsub` heartwood lift
+on terms.  See `Lift.lean`. -/
 
 theorem diagSeqT_length (v : ℕ) : (diagSeqT 0 v).length = v + 1 := by
   unfold diagSeqT
