@@ -1,6 +1,6 @@
-v0.52.0/bad_A2 case (c) in tower coordinates
+v0.53.0/cross branch covers the aligned case as well
 
-- Add argdom_A1_pos: positional form of the A1 row-0 condition
-- Add argDomCoreOn_bad_A2_c: the cross case is empty — copy index forced
-  to 1, host readings via the gexp low/mirror formulas, and the block and
-  copy-1 spines fed to caseC_absurd
+- Relax caseC_absurd's mirror-source condition from qj < i to qj <= i
+- Relax the tower wrapper to jpos - Lb <= ipos with j0 < ipos explicit,
+  so it also empties case (b) whenever the shallower column is strictly
+  inside the block (probe: all 6270 aligned instances have ipos = j0)

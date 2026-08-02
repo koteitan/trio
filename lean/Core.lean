@@ -1055,7 +1055,7 @@ theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
     (np2 : nextrel2 M j0 x)
     (hd0 : entry M 0 x = entry M 0 j0 + d0)
     (hd1 : entry M 1 x = entry M 1 j0 + d1)
-    (hji : j0 < i) (hix : i < x) (hj0q : j0 ≤ qj) (hqi : qj < i)
+    (hji : j0 < i) (hix : i < x) (hj0q : j0 ≤ qj) (hqi : qj ≤ i)
     (hu : entry M 0 i < entry M 0 j0 + d0)
     (hf : entry M 1 i ≤ entry M 1 qj + (if le1 M j0 qj then d1 else 0))
     (hzeq : entry M 2 i = entry M 2 qj)
@@ -1223,9 +1223,11 @@ theorem argdom_A1_pos {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
   exact h1 _ (getD_mem_of_lt ht)
 
 set_option maxHeartbeats 4000000 in
-/-- **Case A2 (c)** in tower coordinates: the shallower marked column sits
-strictly inside copy 0 and the deeper one is the copy-1 mirror of an
-*earlier* block position.  Empty by `caseC_absurd`. -/
+/-- **Case A2, cross branch** in tower coordinates: the shallower marked
+column sits *strictly inside* copy 0 and the deeper one is the copy-1
+mirror of a block position at or before it.  Empty by `caseC_absurd`;
+this covers both case (c) (`qj < ipos`) and the aligned case (b) with
+`j0 < ipos` (probe: all 6270 aligned instances have `ipos = j0`). -/
 theorem argDomCoreOn_bad_A2_c {M : TrioSeq} (hM : ST_TS M) {j0 Lb d0 d1 n : ℕ}
     (hlen : j0 + Lb + 1 = M.length) (hLbpos : 0 < Lb)
     (np2 : nextrel2 M j0 (j0 + Lb))
@@ -1236,9 +1238,9 @@ theorem argDomCoreOn_bad_A2_c {M : TrioSeq} (hM : ST_TS M) {j0 Lb d0 d1 n : ℕ}
       = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
     (he : 0 < e) (hzf : f = 0 ∨ z = 0)
     (h1 : ∀ x ∈ A1, u < x.1) (h6 : SpineOK A1 (u + e) w1)
-    (hcaseL : X.length < j0 + Lb)
+    (hcaseL : X.length < j0 + Lb) (hj0i : j0 < X.length)
     (hcaseR : j0 + Lb ≤ X.length + (A1.length + 1))
-    (hcaseC : X.length + (A1.length + 1) - Lb < X.length) :
+    (hcaseC : X.length + (A1.length + 1) - Lb ≤ X.length) :
     False := by
   classical
   obtain ⟨hpi, hpj, hjlt⟩ := argdom_pos heq
