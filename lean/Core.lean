@@ -95,4 +95,83 @@ theorem argDomCoreOn_drop_left {P S : TrioSeq} (H : ArgDomCoreOn (P ++ S)) :
   rw [heq]
   simp [List.append_assoc]
 
+/-! ## bad 枝の小道具 -/
+
+theorem split_prefix_left {C D E F : TrioSeq} (h : C ++ D = E ++ F)
+    (hle : E.length ≤ C.length) :
+    C = E ++ C.drop E.length ∧ F = C.drop E.length ++ D := by
+  have hC : C = C.take E.length ++ C.drop E.length :=
+    (List.take_append_drop _ _).symm
+  have h' : (C.take E.length) ++ (C.drop E.length ++ D) = E ++ F := by
+    rw [← List.append_assoc, ← hC]
+    exact h
+  have hlen : (C.take E.length).length = E.length := by
+    rw [List.length_take]
+    omega
+  obtain ⟨h1, h2⟩ := List.append_inj h' hlen
+  refine ⟨?_, h2.symm⟩
+  calc C = C.take E.length ++ C.drop E.length := hC
+    _ = E ++ C.drop E.length := by rw [h1]
+
+theorem split_prefix_right {C D E F : TrioSeq} (h : C ++ D = E ++ F)
+    (hle : C.length ≤ E.length) :
+    E = C ++ E.drop C.length ∧ D = E.drop C.length ++ F :=
+  split_prefix_left h.symm hle
+
+/-- Split a column list at the first column at or below level `L`. -/
+theorem arg_split (L : ℕ) : ∀ (E : TrioSeq),
+    ∃ Bp Rp : TrioSeq, E = Bp ++ Rp ∧ (∀ x ∈ Bp, L < x.1)
+      ∧ (Rp = [] ∨ (Rp.headI).1 ≤ L) := by
+  intro E
+  induction E with
+  | nil => exact ⟨[], [], rfl, by simp, Or.inl rfl⟩
+  | cons a E' ih =>
+    by_cases ha : L < a.1
+    · obtain ⟨Bp, Rp, hE, hBp, hRp⟩ := ih
+      refine ⟨a :: Bp, Rp, by rw [List.cons_append, ← hE], ?_, hRp⟩
+      intro x hx
+      rcases List.mem_cons.1 hx with rfl | hx
+      · exact ha
+      · exact hBp x hx
+    · exact ⟨[], a :: E', rfl, by simp, Or.inr (by simp; omega)⟩
+
+/-- **The splice at the dropped column, bound-relative form.** -/
+theorem seqlex_of_sle_snoc' : ∀ {X V E : TrioSeq} {lp q : ℕ × ℕ × ℕ},
+    sle (X ++ [lp]) (V ++ E) → collt q lp → X.length < V.length →
+    ∀ (S' E' : TrioSeq), seqlex (X ++ q :: S') (V ++ E') := by
+  intro X
+  induction X with
+  | nil =>
+    intro V E lp q h hq hlen S' E'
+    rcases V with _ | ⟨v, V'⟩
+    · simp at hlen
+    · rw [List.nil_append, List.cons_append]
+      refine Or.inl ?_
+      rw [List.nil_append, List.cons_append] at h
+      rcases h with he | hs
+      · have : lp = v := by simpa using congrArg List.headI he
+        rw [← this]
+        exact hq
+      · rw [seqlex_cons_cons] at hs
+        rcases hs with hp | ⟨he, -⟩
+        · exact collt_trans hq hp
+        · rw [← he]
+          exact hq
+  | cons x X' ih =>
+    intro V E lp q h hq hlen S' E'
+    rcases V with _ | ⟨v, V'⟩
+    · simp at hlen
+    · simp only [List.length_cons] at hlen
+      rw [List.cons_append, List.cons_append] at h
+      rw [List.cons_append, List.cons_append, seqlex_cons_cons]
+      rcases h with he | hs
+      · have hxy : x = v := by simpa using congrArg List.headI he
+        have hrest : X' ++ [lp] = V' ++ E := by
+          simpa using congrArg List.tail he
+        exact Or.inr ⟨hxy, ih (Or.inl hrest) hq (by omega) S' E'⟩
+      · rw [seqlex_cons_cons] at hs
+        rcases hs with hp | ⟨rfl, hs'⟩
+        · exact Or.inl hp
+        · exact Or.inr ⟨rfl, ih (Or.inr hs') hq (by omega) S' E'⟩
+
 end TRIO
