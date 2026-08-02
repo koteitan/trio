@@ -592,4 +592,126 @@ theorem gcopiesFrom_zero_shift (M : TrioSeq) (r L k0 : ℕ) :
     rw [gcopiesFrom_succ, gcopy_zero_shift, ih (k0 + 1), copies_succ_front,
       shiftr01_zero]
 
+/-! ## Part 5 — 上昇 crux への還元（srow = 0 の枝は crux_zero で潰す） -/
+
+/-- **The ascending crux**: the bad branch with a positive search row. -/
+def TrioAscCrux : Prop :=
+  ∀ {M N : TrioSeq} {q : ℕ × ℕ × ℕ} {S : TrioSeq},
+    ST_TS M → ST_TS N → 1 < M.length →
+    ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) →
+    0 < srow M (M.length - 1) →
+    N = M.dropLast ++ q :: S →
+    collt q (M.getD (M.length - 1) (0, 0, 0)) →
+    ∃ n, 1 ≤ n ∧ sle N (M⟦n⟧)
+
+theorem badCrux_of_asc (H : TrioAscCrux) : TrioBadCrux := by
+  intro M N q S hM hN L hz hNeq hq
+  by_cases hsr : 0 < srow M (M.length - 1)
+  · exact H hM hN L hz hsr hNeq hq
+  · -- `srow = 0`: the dropped column is `(v0+1, 0, 0)`
+    push Not at hsr
+    have hsr0 : srow M (M.length - 1) = 0 := by omega
+    have hp := hasParent_last_ST_TS hM (by omega) hz
+    have np := parent_nextR hp
+    have j0lt : parent M (srow M (M.length - 1)) (M.length - 1)
+        < M.length - 1 := nextR_index_lt np
+    have chain := nextR_chain0 np
+    have iv : ∀ k, parent M (srow M (M.length - 1)) (M.length - 1) < k →
+        k ≤ M.length - 1 →
+        entry M 0 (parent M (srow M (M.length - 1)) (M.length - 1))
+          < entry M 0 k :=
+      fun k h1 h2 => le0_interval_gt chain k ⟨h1, h2⟩
+    -- the last-column pinning
+    have hlp2 : entry M 2 (M.length - 1) = 0 := by
+      by_contra hcon
+      push Not at hcon
+      have : srow M (M.length - 1) = 2 := by
+        unfold srow
+        rw [if_pos (by omega)]
+      omega
+    have hlp1 : entry M 1 (M.length - 1) = 0 := by
+      by_contra hcon
+      push Not at hcon
+      have : srow M (M.length - 1) = 1 := by
+        unfold srow
+        rw [if_neg (by omega), if_pos (by omega)]
+      omega
+    have np0 : nextrel0 M (parent M (srow M (M.length - 1)) (M.length - 1))
+        (M.length - 1) := by
+      have np' := np
+      unfold nextR at np'
+      rw [if_pos hsr0] at np'
+      exact np'
+    set j0 := parent M (srow M (M.length - 1)) (M.length - 1) with hj0
+    set L' := M.length - 1 - j0 with hL'
+    have hL'pos : 0 < L' := by omega
+    have hj0b : j0 < M.length := by omega
+    -- `e0 lp = e0 j0 + 1` via steps1 and the window
+    have hst : steps1 M := (blockok_ST_TS hM).2.2
+    have hstep := steps1_iff.1 hst j0 (by omega)
+    have hlp0 : entry M 0 (M.length - 1) = entry M 0 j0 + 1 := by
+      have hup : entry M 0 j0 < entry M 0 (M.length - 1) := iv _ j0lt le_rfl
+      rcases Nat.eq_or_lt_of_le (show j0 + 1 ≤ M.length - 1 by omega) with he | hlt
+      · have e1 : entry M 0 j0 = (M.getD j0 (0, 0, 0)).1 := rfl
+        have e2 : entry M 0 (M.length - 1)
+          = (M.getD (M.length - 1) (0, 0, 0)).1 := rfl
+        have e3 : (M.getD (j0 + 1) (0, 0, 0)).1
+            = (M.getD (M.length - 1) (0, 0, 0)).1 := by
+          rw [he]
+        omega
+      · have hwin := np0.2.2.2.2 (j0 + 1) ⟨by omega, hlt⟩
+        have e0 : entry M 0 (j0 + 1) = (M.getD (j0 + 1) (0, 0, 0)).1 := rfl
+        have e1 : entry M 0 j0 = (M.getD j0 (0, 0, 0)).1 := rfl
+        omega
+    have hlpe : M.getD (M.length - 1) (0, 0, 0) = (entry M 0 j0 + 1, 0, 0) := by
+      refine Prod.ext ?_ (Prod.ext ?_ ?_)
+      · show (M.getD (M.length - 1) (0, 0, 0)).1 = entry M 0 j0 + 1
+        exact hlp0
+      · exact hlp1
+      · exact hlp2
+    -- the list form of the good part
+    have hsegL : seg M j0 L' = (entry M 0 j0, entry M 1 j0, entry M 2 j0)
+        :: seg M (j0 + 1) (L' - 1) := by
+      obtain ⟨l', hle⟩ : ∃ l', L' = l' + 1 := ⟨L' - 1, by omega⟩
+      rw [hle, seg_cons, Nat.add_sub_cancel]
+    have hdl : M.take j0 ++ seg M j0 L' = M.dropLast :=
+      take_gcopy_zero L hz hp
+    have hRgt : ∀ x ∈ seg M (j0 + 1) (L' - 1), entry M 0 j0 < x.1 := by
+      intro x hx
+      unfold seg at hx
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+      have hjb := List.mem_range'_1.1 hj
+      exact iv j (by omega) (by omega)
+    -- apply the `d0 = 0` crux
+    have hNst : ST_TS ((M.take j0
+        ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+          :: seg M (j0 + 1) (L' - 1))) ++ q :: S) := by
+      have he2 : M.take j0 ++ ((entry M 0 j0, entry M 1 j0, entry M 2 j0)
+          :: seg M (j0 + 1) (L' - 1)) = M.dropLast := by
+        rw [← hsegL, hdl]
+      rw [he2, ← hNeq]
+      exact hN
+    have hqz : collt q (entry M 0 j0 + 1, 0, 0) := by
+      rw [hlpe] at hq
+      exact hq
+    obtain ⟨m, hm, hsle⟩ := crux_zero hNst hRgt hqz
+    -- assemble
+    refine ⟨m + 1, by omega, ?_⟩
+    have hd0z : (if 0 < srow M (M.length - 1)
+        then entry M 0 (M.length - 1) - entry M 0 j0 else 0) = 0 := by
+      rw [if_neg (by omega)]
+    have hd1z : (if 1 < srow M (M.length - 1)
+        then entry M 1 (M.length - 1) - entry M 1 j0 else 0) = 0 := by
+      rw [if_neg (by omega)]
+    have hMn : M⟦m + 1⟧ = M.dropLast
+        ++ copies 0 0 (seg M j0 L') m := by
+      rw [oper_gcopies (m + 1) (by omega) hz hp, ← hj0, ← hL', hd0z, hd1z,
+        gcopies_eq_from, gcopiesFrom_succ, gcopy_zero, gcopiesFrom_zero_shift,
+        ← List.append_assoc, hdl]
+    rw [hMn, hNeq]
+    refine (sle_append_cancel _).2 ?_
+    rw [hsegL]
+    exact hsle
+
 end TRIO
