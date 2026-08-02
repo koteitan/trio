@@ -498,6 +498,83 @@ theorem spineOK_of_le1 {G R : TrioSeq} {v0 w1 w2 : ℕ} {lp : ℕ × ℕ × ℕ}
   rw [e1, e2] at hbound
   omega
 
+/-- The strict spine bound (same chain-window derivation, kept strict). -/
+theorem spineOK_strict_of_le1 {G R : TrioSeq} {v0 w1 w2 : ℕ} {lp : ℕ × ℕ × ℕ}
+    (hle1 : le1 ((G ++ ((v0, w1, w2) :: R)) ++ [lp]) G.length
+      (G ++ ((v0, w1, w2) :: R)).length) :
+    SpineOK R lp.1 (w1 + 1) := by
+  intro U V x hR hxlt hV
+  have h := spineOK_of_le1 (v0 := v0) (w2 := w2) hle1
+  -- rerun the tail of the weak proof to recover the strict bound
+  set M := (G ++ ((v0, w1, w2) :: R)) ++ [lp] with hMdef
+  set A := G ++ ((v0, w1, w2) :: U) with hAdef
+  have hMeq : M = A ++ (x :: (V ++ [lp])) := by
+    rw [hMdef, hAdef, hR]
+    simp
+  have hAlen : A.length = G.length + 1 + U.length := by
+    rw [hAdef]
+    simp
+    omega
+  have hj1 : (G ++ ((v0, w1, w2) :: R)).length = A.length + 1 + V.length := by
+    rw [hR, hAlen]
+    simp
+    omega
+  have hMlen : M.length = (G ++ ((v0, w1, w2) :: R)).length + 1 := by
+    rw [hMdef]
+    simp
+    omega
+  have hgx : M.getD A.length (0, 0, 0) = x := by
+    have h2 := getD_append_right' A (x :: (V ++ [lp])) 0
+    rw [Nat.add_zero] at h2
+    rw [hMeq]
+    exact h2
+  have hwin : ∀ y, A.length < y → y ≤ (G ++ ((v0, w1, w2) :: R)).length →
+      entry M 0 A.length < entry M 0 y := by
+    intro y hy1 hy2
+    obtain ⟨t, rfl⟩ : ∃ t, y = A.length + (t + 1) := ⟨y - A.length - 1, by omega⟩
+    have hgy : M.getD (A.length + (t + 1)) (0, 0, 0)
+        = (V ++ [lp]).getD t (0, 0, 0) := by
+      conv_lhs => rw [hMeq]
+      rw [getD_append_right' A (x :: (V ++ [lp])) (t + 1), List.getD_cons_succ]
+    show (M.getD A.length (0, 0, 0)).1 < (M.getD (A.length + (t + 1)) (0, 0, 0)).1
+    rw [hgx, hgy]
+    rcases Nat.lt_or_ge t V.length with ht | ht
+    · have hmem : (V ++ [lp]).getD t (0, 0, 0) ∈ V := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_append_left ht,
+          List.getElem?_eq_getElem ht]
+        exact List.getElem_mem _
+      exact hV _ hmem
+    · have htv : t = V.length := by omega
+      subst htv
+      have he : (V ++ [lp]).getD V.length (0, 0, 0) = lp := by
+        have h2 := getD_append_right' V [lp] 0
+        rw [Nat.add_zero] at h2
+        exact h2
+      rw [he]
+      exact hxlt
+  have hxrtg : Relation.ReflTransGen (nextrel0 M) A.length
+      (G ++ ((v0, w1, w2) :: R)).length := by
+    refine rtg0_of_window (by omega) (by omega) ?_
+    intro l hl1 hl2
+    exact hwin l hl1 hl2
+  have hrootx : Relation.ReflTransGen (nextrel0 M) G.length A.length :=
+    rtg0_comparable (rtg1_to_rtg0 hle1.2.2) hxrtg (by omega)
+  have hbound := le1_chain_window hle1.2.2 A.length hrootx hxrtg (by omega)
+  have hgr : M.getD G.length (0, 0, 0) = (v0, w1, w2) := by
+    have h2 := getD_append_right' G (((v0, w1, w2) :: R) ++ [lp]) 0
+    rw [Nat.add_zero] at h2
+    rw [hMdef, List.append_assoc]
+    rw [h2]
+    rfl
+  have e1 : entry M 1 G.length = w1 := by
+    show (M.getD G.length (0, 0, 0)).2.1 = w1
+    rw [hgr]
+  have e2 : entry M 1 A.length = x.2.1 := by
+    show (M.getD A.length (0, 0, 0)).2.1 = x.2.1
+    rw [hgx]
+  rw [e1, e2] at hbound
+  omega
+
 /-! ## `i1 = 1` の引数支配 -/
 
 /-- Argument domination for the `i1 = 1` boundary continuation. -/
