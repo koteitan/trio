@@ -817,6 +817,139 @@ theorem hkey_aligned {T : TrioSeq} {r ipos jpos s e f : ℕ}
           rw [hv1, ← htx] at hwx
           exact hwx
 
+/-! ## ガード付き持ち上げの `sle` 輸送 -/
+
+/-- Pointwise guarded lift of a list, guards read at absolute positions. -/
+noncomputable def gliftAt (d0 d1 : ℕ) (g : ℕ → Prop) : ℕ → TrioSeq → TrioSeq
+  | _, [] => []
+  | o, p :: rest =>
+      ((p.1 + d0, p.2.1 + (if g o then d1 else 0), p.2.2) : ℕ × ℕ × ℕ)
+        :: gliftAt d0 d1 g (o + 1) rest
+
+@[simp] theorem gliftAt_nil (d0 d1 : ℕ) (g : ℕ → Prop) (o : ℕ) :
+    gliftAt d0 d1 g o [] = [] := rfl
+
+@[simp] theorem gliftAt_cons (d0 d1 : ℕ) (g : ℕ → Prop) (o : ℕ)
+    (p : ℕ × ℕ × ℕ) (rest : TrioSeq) :
+    gliftAt d0 d1 g o (p :: rest)
+      = ((p.1 + d0, p.2.1 + (if g o then d1 else 0), p.2.2) : ℕ × ℕ × ℕ)
+        :: gliftAt d0 d1 g (o + 1) rest := rfl
+
+theorem gliftAt_length (d0 d1 : ℕ) (g : ℕ → Prop) :
+    ∀ (o : ℕ) (A : TrioSeq), (gliftAt d0 d1 g o A).length = A.length
+  | _, [] => rfl
+  | o, _ :: rest => by
+      rw [gliftAt_cons, List.length_cons, List.length_cons,
+        gliftAt_length d0 d1 g (o + 1) rest]
+
+/-- Head-splitting form of `sle`. -/
+theorem sle_cons_cons {p q : ℕ × ℕ × ℕ} {M N : TrioSeq} :
+    sle (p :: M) (q :: N) ↔ collt p q ∨ (p = q ∧ sle M N) := by
+  constructor
+  · intro h
+    rcases h with heq | h
+    · refine Or.inr ⟨(List.cons.injEq _ _ _ _ ▸ heq).1,
+        Or.inl ((List.cons.injEq _ _ _ _ ▸ heq).2)⟩
+    · rw [seqlex_cons_cons] at h
+      rcases h with h | ⟨h1, h2⟩
+      · exact Or.inl h
+      · exact Or.inr ⟨h1, Or.inr h2⟩
+  · intro h
+    rcases h with h | ⟨rfl, h⟩
+    · exact Or.inr (by rw [seqlex_cons_cons]; exact Or.inl h)
+    · rcases h with rfl | h
+      · exact Or.inl rfl
+      · exact Or.inr (by rw [seqlex_cons_cons]; exact Or.inr ⟨rfl, h⟩)
+
+set_option maxHeartbeats 1000000 in
+/-- **Guarded-lift transport of `sle`** (the `hkey` interface): if at every
+index where the two lists agree in row 0 and the argument's row 1 does not
+exceed the comparator's the argument's guard implies the comparator's, then
+the guarded lift preserves `sle`.  The `(F, T)` mismatch wins early, the
+`(T, F)` one is exactly what `hkey` excludes. -/
+theorem sle_gliftAt {d0 d1 : ℕ} (hd1 : 0 < d1) {gB gc : ℕ → Prop} :
+    ∀ (B0 c0 : TrioSeq) (o : ℕ),
+      (∀ k, k < B0.length → k < c0.length →
+        (B0.getD k (0, 0, 0)).1 = (c0.getD k (0, 0, 0)).1 →
+        (B0.getD k (0, 0, 0)).2.1 ≤ (c0.getD k (0, 0, 0)).2.1 →
+        gB (o + k) → gc (o + k)) →
+      sle B0 c0 →
+      sle (gliftAt d0 d1 gB o B0) (gliftAt d0 d1 gc o c0) := by
+  intro B0
+  induction B0 with
+  | nil =>
+    intro c0 o _ _
+    rcases c0 with _ | ⟨q, c0'⟩
+    · exact Or.inl rfl
+    · exact Or.inr (by
+        rw [gliftAt_nil, gliftAt_cons]
+        exact List.cons_ne_nil _ _)
+  | cons p B0' ih =>
+    intro c0 o hkey h
+    rcases c0 with _ | ⟨q, c0'⟩
+    · exact absurd h (by
+        rintro (h | h)
+        · exact absurd h (by simp)
+        · exact h)
+    have hstep : ∀ k, k < B0'.length → k < c0'.length →
+        (B0'.getD k (0, 0, 0)).1 = (c0'.getD k (0, 0, 0)).1 →
+        (B0'.getD k (0, 0, 0)).2.1 ≤ (c0'.getD k (0, 0, 0)).2.1 →
+        gB (o + 1 + k) → gc (o + 1 + k) := by
+      intro k h1 h2 h3 h4
+      have hh := hkey (k + 1) (by simpa using h1) (by simpa using h2)
+        (by simpa using h3) (by simpa using h4)
+      rw [show o + (k + 1) = o + 1 + k from by omega] at hh
+      exact hh
+    have hk0 : p.1 = q.1 → p.2.1 ≤ q.2.1 → gB o → gc o := by
+      intro h1 h2 h3
+      have hh := hkey 0 (by simp) (by simp)
+        (by simpa using h1) (by simpa using h2)
+      rw [Nat.add_zero] at hh
+      exact hh h3
+    rw [gliftAt_cons, gliftAt_cons, sle_cons_cons]
+    rw [sle_cons_cons] at h
+    rcases h with hlt | ⟨rfl, h⟩
+    · -- the heads already decide
+      refine Or.inl ?_
+      rcases Nat.lt_or_ge p.1 q.1 with h1 | h1
+      · unfold collt
+        dsimp only
+        omega
+      · have h2 : p.1 = q.1 := by
+          unfold collt at hlt
+          omega
+        have h3 : p.2.1 ≤ q.2.1 := by
+          unfold collt at hlt
+          omega
+        by_cases hgb : gB o
+        · rw [if_pos hgb, if_pos (hk0 h2 h3 hgb)]
+          unfold collt at hlt ⊢
+          dsimp only at hlt ⊢
+          omega
+        · rw [if_neg hgb]
+          by_cases hgc : gc o
+          · rw [if_pos hgc]
+            unfold collt at hlt ⊢
+            dsimp only at hlt ⊢
+            omega
+          · rw [if_neg hgc]
+            unfold collt at hlt ⊢
+            dsimp only at hlt ⊢
+            omega
+    · -- equal heads: the guards decide
+      by_cases hgb : gB o
+      · rw [if_pos hgb, if_pos (hk0 rfl le_rfl hgb)]
+        exact Or.inr ⟨rfl, ih c0' (o + 1) hstep h⟩
+      · rw [if_neg hgb]
+        by_cases hgc : gc o
+        · refine Or.inl ?_
+          rw [if_pos hgc]
+          unfold collt
+          dsimp only
+          omega
+        · rw [if_neg hgc]
+          exact Or.inr ⟨rfl, ih c0' (o + 1) hstep h⟩
+
 /-! ## 交差ケース (c) の反駁 -/
 
 /-- The first row-1 chain node at or above `i`: walking the row-1 ancestry of

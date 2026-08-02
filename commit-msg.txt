@@ -1,10 +1,8 @@
-v0.49.0/case (c) refutation: zjump closes the cross case
+v0.50.0/guarded-lift transport of sle
 
-- Add chain_first_above: the first row-1 chain node at or above a row-0
-  chain node carries row 1 at most that node's (nextrel1 minimality)
-- Add caseC_absurd: the A2 cross case (deeper column mirrors an earlier
-  block position) is empty — spine and chain pin row 1 to equality, zjump
-  transports the mark down, f = 0 follows, and the guard equation then
-  exceeds the copy-1 root bound
-- Probe: 8606 case-C near-instances all fail SpineOK; zjump verified
-  400990/0 and the row-1 +1-discipline 0 violations on 47604 forms
+- Add gliftAt: pointwise guarded lift with guards read at absolute
+  positions (+ nil/cons/length lemmas)
+- Add sle_cons_cons: head-splitting form of sle
+- Add sle_gliftAt: the lift preserves sle given the hkey interface
+  (guard implication at indices with equal row 0 and non-exceeding
+  row 1); the (F,T) mismatch wins early, (T,F) is what hkey excludes
