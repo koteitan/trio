@@ -308,6 +308,49 @@ theorem rtg1_to_rtg0 {M : TrioSeq} {a b : ℕ}
   | refl => exact .refl
   | tail _ hyz ih => exact ih.trans hyz.2.2.2.2.1.2.2
 
+open Classical in
+/-- **The row-1 ascension matrix under the window bound**: if every interior
+column of the window `(j0, j1)` carries row 1 strictly above `j0`, then every
+column of `[j0, j1)` is a row-1 descendant of `j0`.  From an interior `j` the
+nearest row-1 candidate (a `le0`-ancestor with smaller row 1) stays in
+`[j0, j)`, because `j0` itself is a candidate. -/
+theorem le1_window_desc {M : TrioSeq} {j0 j1 : ℕ}
+    (hb1 : j1 < M.length)
+    (hch : Relation.ReflTransGen (nextrel0 M) j0 j1)
+    (hwin : ∀ j, j0 < j → j < j1 → entry M 1 j0 < entry M 1 j) :
+    ∀ j, j0 ≤ j → j < j1 → Relation.ReflTransGen (nextrel1 M) j0 j := by
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hj0 hj1
+    rcases Nat.eq_or_lt_of_le hj0 with rfl | hlt
+    · exact .refl
+    · -- `j0` is a row-1 candidate for `j`
+      have hle0 : le0 M j0 j :=
+        ⟨by omega, by omega, le0_interval_desc hch hb1 j (by omega) (by omega)⟩
+      have hcand0 : le0 M j0 j ∧ entry M 1 j0 < entry M 1 j :=
+        ⟨hle0, hwin j hlt hj1⟩
+      set Q : ℕ → Prop := fun q => le0 M q j ∧ entry M 1 q < entry M 1 j with hQ
+      have hj0j : j0 ≤ j - 1 := by omega
+      set p := Nat.findGreatest Q (j - 1) with hp
+      have hQp : Q p := Nat.findGreatest_spec (P := Q) hj0j hcand0
+      have hj0p : j0 ≤ p := Nat.le_findGreatest hj0j hcand0
+      have hpj : p < j := by
+        have : p ≤ j - 1 := Nat.findGreatest_le _
+        omega
+      have hstep : nextrel1 M p j := by
+        refine ⟨by omega, by omega, hpj, hQp.2, hQp.1, ?_⟩
+        intro q ⟨hq1, hq2⟩
+        by_contra hcon
+        push Not at hcon
+        have hqle : q ≤ j := nextrel0_rtrancl_index_le hq2.2.2
+        have hqj : q < j := by
+          rcases Nat.eq_or_lt_of_le hqle with rfl | h
+          · exact absurd hcon (by omega)
+          · exact h
+        exact Nat.findGreatest_is_greatest (P := Q) hq1 (by omega) ⟨hq2, hcon⟩
+      exact (ih p hpj hj0p (by omega)).tail hstep
+
 /-! ## Shape lemmas for `translate` -/
 
 /-- If every column after the head lies strictly above it in row 0, the whole

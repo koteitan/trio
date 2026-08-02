@@ -263,6 +263,50 @@ theorem nextR_chain0 {M : TrioSeq} {i j0 j1 : ℕ} (h : nextR M i j0 j1) :
     · exact h.2.2.2.2.1.2.2
     · exact rtg1_to_rtg0 h.2.2.2.2.1.2.2
 
+open Classical in
+/-- **Uniform copies.**  Under the row-1 descendance hypothesis `hA`
+(discharged on standard forms by the window bound and `le1_window_desc`,
+and vacuous when `d1 = 0`), both ascension guards collapse and the copies
+become uniform shifts, as in the two-row system. -/
+theorem oper_bad_uniform {M : TrioSeq} (n : ℕ) {i1 j0 d0 d1 : ℕ}
+    (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hi1 : i1 = srow M (M.length - 1))
+    (hj0 : j0 = parent M i1 (M.length - 1))
+    (hd0 : d0 = if 0 < i1 then entry M 0 (M.length - 1) - entry M 0 j0 else 0)
+    (hd1 : d1 = if 1 < i1 then entry M 1 (M.length - 1) - entry M 1 j0 else 0)
+    (hA : ∀ j, j0 ≤ j → j < M.length - 1 → le1 M j0 j ∨ d1 = 0) :
+    M⟦n⟧ = M.take j0 ++ (List.range n).flatMap fun k =>
+      (List.range' j0 (M.length - 1 - j0)).map fun j =>
+        (entry M 0 j + k * d0, entry M 1 j + k * d1, entry M 2 j) := by
+  subst hi1
+  subst hj0
+  subst hd0
+  subst hd1
+  have np := parent_nextR hp
+  have j0lt : parent M (srow M (M.length - 1)) (M.length - 1) < M.length - 1 :=
+    nextR_index_lt np
+  have chain := nextR_chain0 np
+  have hdesc := le0_interval_desc chain (by omega)
+  rw [oper_bad_unfold n hL hz hp]
+  congr 1
+  congr 1
+  funext k
+  apply List.map_congr_left
+  intro j hj
+  obtain ⟨i, hi, rfl⟩ := List.mem_range'.1 hj
+  have hg0 : le0 M (parent M (srow M (M.length - 1)) (M.length - 1))
+      (parent M (srow M (M.length - 1)) (M.length - 1) + 1 * i) :=
+    ⟨by omega, by omega, hdesc _ (by omega) (by omega)⟩
+  rcases hA (parent M (srow M (M.length - 1)) (M.length - 1) + 1 * i)
+      (by omega) (by omega) with h | h
+  · rw [if_pos hg0, if_pos h]
+  · rw [if_pos hg0, h]
+    simp
+
+
 theorem translate_oper_bad {M : TrioSeq} {n : ℕ} (L : 1 < M.length)
     (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
       entry M 2 (M.length - 1) = 0))
