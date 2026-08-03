@@ -1,10 +1,9 @@
-v0.82.0/W-membership layer: WF of olt on ST_TS modulo three hypotheses
+v0.83.0/Final.lean: trio termination modulo TowerOK and TbOper
 
-- Add `maxlev`/`le_maxlev`
-- Add `mem_of_Aclosed_aux`/`mem_of_Aclosed`/`mem_Wstar`: the length induction
-  over the last top-level tree, with the stage picked as the tree maximal
-  subscript level so that `tbAll` follows from `tbAll_of_lev_bound`
-- Add `mem_W_of_bound`/`mem_W_maxlev`/`W_membership`
-- Add `wf_olt_ST_TS_of_cofinality`: sorry-free, axioms [propext,
-  Classical.choice, Quot.sound], open only on `TowerOK`, `TbOper` and the
-  cofinality hypothesis
+- Add `Final.lean`: `acc_Rnf_of_acc_TS`, `wf_Rnf_of_wf_TS`,
+  `wf_olt_ST_TS_holds`, `wf_Rnf_holds`, `TRIO_terminates`,
+  `no_infinite_expansion_holds`
+- Wire in the unconditional `trio_cofinality`, so the whole termination proof
+  now depends on exactly two explicit Props: `Wset.TowerOK` and `Wset.TbOper`
+- Register `Final` in lakefile.toml
+- Update task.md

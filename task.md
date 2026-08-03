@@ -19,4 +19,7 @@
 - [x] 核 bad 枝 ガード経路 (i1=2): bad_B / bad_A2 / bad_A1 → argDomCoreOn_bad_guard ✅
 - [x] 核 bad 枝 一様経路 (i1<=1, d1=0): shift 不変性 + uni_A1/inner/root/desc ✅
 - [x] argDomCoreOn_oper / _ST_TS / **argDomCore_holds** ✅ 共終性が無条件に
-- [ ] W 階層（反射の壁: (2,0,0) 型の一手）
+- [x] W 階層 Wstar_closed / mem_Wstar / W_membership ✅（主ブロック添字 tbAll）
+- [x] Final.lean 組み立て TRIO_terminates ✅（残る仮定は TowerOK と TbOper のみ）
+- [ ] TowerOK（ガード付きコピー塔; i1=2 の row-1 リフトが核）
+- [ ] TbOper（tbAll が一手展開で保たれる）
