@@ -817,6 +817,48 @@ theorem hkey_aligned {T : TrioSeq} {r ipos jpos s e f : ℕ}
           rw [hv1, ← htx] at hwx
           exact hwx
 
+/-! ## 添字での分割 -/
+
+theorem getD_drop (N : TrioSeq) (m i : ℕ) :
+    (N.drop m).getD i (0, 0, 0) = N.getD (m + i) (0, 0, 0) := by
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_drop]
+
+theorem split_one {N : TrioSeq} {a : ℕ} (ha : a < N.length) :
+    N = N.take a ++ N.getD a (0, 0, 0) :: N.drop (a + 1) := by
+  conv_lhs => rw [← List.take_append_drop a N]
+  refine congrArg (fun t => N.take a ++ t) ?_
+  rcases hd : N.drop a with _ | ⟨x, V⟩
+  · exfalso
+    have hh := congrArg List.length hd
+    rw [List.length_drop, List.length_nil] at hh
+    omega
+  · have hx : N.getD a (0, 0, 0) = x := by
+      have hh := getD_drop N a 0
+      rw [hd, Nat.add_zero] at hh
+      rw [← hh, List.getD_cons_zero]
+    have hdr : N.drop (a + 1) = V := by
+      have hh : (N.drop a).drop 1 = N.drop (a + 1) := by
+        rw [List.drop_drop]
+      rw [← hh, hd, List.drop_succ_cons, List.drop_zero]
+    rw [hx, hdr]
+
+theorem split_two {N : TrioSeq} {a b : ℕ} (hab : a < b) (hb : b < N.length) :
+    N = N.take a ++ N.getD a (0, 0, 0) ::
+      ((N.drop (a + 1)).take (b - a - 1) ++ N.getD b (0, 0, 0)
+        :: N.drop (b + 1)) := by
+  have hin : b - a - 1 < (N.drop (a + 1)).length := by
+    rw [List.length_drop]
+    omega
+  have h1 := split_one (N := N) (a := a) (by omega)
+  have h2 := split_one (N := N.drop (a + 1)) (a := b - a - 1) hin
+  have hg : (N.drop (a + 1)).getD (b - a - 1) (0, 0, 0)
+      = N.getD b (0, 0, 0) := by
+    rw [getD_drop, show a + 1 + (b - a - 1) = b from by omega]
+  have hdd : (N.drop (a + 1)).drop (b - a - 1 + 1) = N.drop (b + 1) := by
+    rw [List.drop_drop, show a + 1 + (b - a - 1 + 1) = b + 1 from by omega]
+  rw [hg, hdd] at h2
+  conv_lhs => rw [h1, h2]
+
 /-! ## `SpineOK` の位置形 -/
 
 /-- **Positional form of `SpineOK`**: a column strictly between the two
