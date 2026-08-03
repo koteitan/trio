@@ -1720,6 +1720,206 @@ theorem oper_cons_tower1 {v z m n : ℕ} {R : TrioSeq}
   simp only [List.take_zero, List.nil_append, Nat.sub_zero, hroot0, Nat.sub_zero]
   exact hgc n
 
+
+/-! ## ガード付きタワー（行2の崩壊） -/
+
+theorem entry_append_left (A B : TrioSeq) {i j : ℕ} (hj : j < A.length) :
+    entry (A ++ B) i j = entry A i j := by
+  unfold entry
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_append_left hj]
+
+open Classical in
+/-- The guarded lift a row-2 tower performs on one copy: row 0 rises by `d0`
+everywhere, row 1 by `d1` exactly on the positions `le1`-below the root of `M`,
+read modulo the copy length `L`. -/
+noncomputable def glift (M : TrioSeq) (L d0 d1 : ℕ) (y : TrioSeq) : TrioSeq :=
+  (List.range y.length).map fun idx =>
+    ((entry y 0 idx + d0,
+      entry y 1 idx + (if le1 M 0 (idx % L) then d1 else 0),
+      entry y 2 idx) : ℕ × ℕ × ℕ)
+
+@[simp] theorem glift_nil (M : TrioSeq) (L d0 d1 : ℕ) :
+    glift M L d0 d1 [] = [] := rfl
+
+@[simp] theorem glift_length (M : TrioSeq) (L d0 d1 : ℕ) (y : TrioSeq) :
+    (glift M L d0 d1 y).length = y.length := by simp [glift]
+
+open Classical in
+theorem glift_getD (M : TrioSeq) (L d0 d1 : ℕ) (y : TrioSeq) {i : ℕ}
+    (hi : i < y.length) :
+    (glift M L d0 d1 y).getD i (0, 0, 0) =
+      ((entry y 0 i + d0,
+        entry y 1 i + (if le1 M 0 (i % L) then d1 else 0),
+        entry y 2 i) : ℕ × ℕ × ℕ) := by
+  have hlen : (glift M L d0 d1 y).length = y.length := glift_length _ _ _ _ _
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+  unfold glift
+  simp only [List.getElem_map, List.getElem_range]
+  rfl
+
+/-- The lift distributes over a concatenation whose left part is a whole number
+of copies. -/
+theorem glift_append {M : TrioSeq} {L d0 d1 : ℕ} {A B : TrioSeq}
+    (hA : A.length % L = 0) :
+    glift M L d0 d1 (A ++ B) = glift M L d0 d1 A ++ glift M L d0 d1 B := by
+  classical
+  apply List.ext_getElem
+  · simp
+  · intro i h1 h2
+    have hlenAB : (glift M L d0 d1 (A ++ B)).length = A.length + B.length := by
+      simp
+    have hlenA : (glift M L d0 d1 A).length = A.length := glift_length _ _ _ _ _
+    have hi1 : i < A.length + B.length := by rw [hlenAB] at h1; exact h1
+    have hkey : ∀ (X : TrioSeq) (j : ℕ) (hj : j < X.length)
+        (hj' : j < (glift M L d0 d1 X).length),
+        (glift M L d0 d1 X)[j] =
+          ((entry X 0 j + d0,
+            entry X 1 j + (if le1 M 0 (j % L) then d1 else 0),
+            entry X 2 j) : ℕ × ℕ × ℕ) := by
+      intro X j hj hj'
+      have h := glift_getD M L d0 d1 X hj
+      rwa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj'] at h
+    rw [hkey (A ++ B) i (by simpa using hi1) h1, List.getElem_append]
+    by_cases hi : i < A.length
+    · rw [dif_pos (by omega), hkey A i hi (by omega)]
+      simp only [entry_append_left A B hi]
+    · rw [dif_neg (by omega)]
+      obtain ⟨j, rfl⟩ : ∃ j, i = A.length + j := ⟨i - A.length, by omega⟩
+      have hmod : (A.length + j) % L = j % L := by
+        rcases Nat.eq_zero_or_pos L with rfl | hL
+        · have : A.length = 0 := by simpa using hA
+          rw [this, Nat.zero_add]
+        · obtain ⟨c, hc⟩ := Nat.dvd_of_mod_eq_zero hA
+          rw [hc, Nat.mul_add_mod]
+      simp only [hlenA, Nat.add_sub_cancel_left]
+      rw [hkey B j (by omega) (by simp; omega)]
+      simp only [entry_append_right, hmod]
+
+open Classical in
+theorem gcopy_getD (M : TrioSeq) {L : ℕ} (d0 d1 k j : ℕ) (hj : j < L) :
+    (gcopy M 0 L d0 d1 k).getD j (0, 0, 0)
+      = ((entry M 0 j + k * d0,
+          entry M 1 j + (if le1 M 0 j then k * d1 else 0),
+          entry M 2 j) : ℕ × ℕ × ℕ) := by
+  have hlen : (gcopy M 0 L d0 d1 k).length = L := gcopy_len _ _ _ _ _ _
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+  unfold gcopy
+  simp only [List.getElem_map, List.getElem_range', Nat.zero_add, Nat.one_mul]
+  rfl
+
+/-- **One guarded copy is the lift of the previous one.** -/
+theorem gcopy_succ_glift (M : TrioSeq) (L d0 d1 k : ℕ) :
+    gcopy M 0 L d0 d1 (k + 1) = glift M L d0 d1 (gcopy M 0 L d0 d1 k) := by
+  classical
+  apply List.ext_getElem
+  · simp
+  · intro i h1 h2
+    have hiL : i < L := by simpa using h1
+    have hlenk : (gcopy M 0 L d0 d1 k).length = L := gcopy_len _ _ _ _ _ _
+    have hA : (gcopy M 0 L d0 d1 (k + 1))[i] =
+        ((entry M 0 i + (k + 1) * d0,
+          entry M 1 i + (if le1 M 0 i then (k + 1) * d1 else 0),
+          entry M 2 i) : ℕ × ℕ × ℕ) := by
+      have h := gcopy_getD M d0 d1 (k + 1) i hiL
+      rwa [List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem (by rw [gcopy_len]; exact hiL)] at h
+    have hB : (glift M L d0 d1 (gcopy M 0 L d0 d1 k))[i] =
+        ((entry (gcopy M 0 L d0 d1 k) 0 i + d0,
+          entry (gcopy M 0 L d0 d1 k) 1 i
+            + (if le1 M 0 (i % L) then d1 else 0),
+          entry (gcopy M 0 L d0 d1 k) 2 i) : ℕ × ℕ × ℕ) := by
+      have h := glift_getD M L d0 d1 (gcopy M 0 L d0 d1 k)
+        (by rw [gcopy_len]; exact hiL)
+      rwa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h2] at h
+    have hg := gcopy_getD M d0 d1 k i hiL
+    have hE0 : entry (gcopy M 0 L d0 d1 k) 0 i = entry M 0 i + k * d0 := by
+      show ((gcopy M 0 L d0 d1 k).getD i (0, 0, 0)).1 = _
+      rw [hg]
+    have hE1 : entry (gcopy M 0 L d0 d1 k) 1 i
+        = entry M 1 i + (if le1 M 0 i then k * d1 else 0) := by
+      show ((gcopy M 0 L d0 d1 k).getD i (0, 0, 0)).2.1 = _
+      rw [hg]
+    have hE2 : entry (gcopy M 0 L d0 d1 k) 2 i = entry M 2 i := by
+      show ((gcopy M 0 L d0 d1 k).getD i (0, 0, 0)).2.2 = _
+      rw [hg]
+    rw [hA, hB, hE0, hE1, hE2, Nat.mod_eq_of_lt hiL]
+    simp only [Nat.succ_mul]
+    by_cases h : le1 M 0 i
+    · simp only [if_pos h]
+      refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> dsimp only <;> omega
+    · simp only [if_neg h]
+      refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> dsimp only <;> omega
+
+
+theorem gcopies_length (M : TrioSeq) (r L d0 d1 n : ℕ) :
+    (gcopies M r L d0 d1 n).length = n * L := by
+  induction n with
+  | zero => simp [gcopies]
+  | succ n ih =>
+      unfold gcopies at ih ⊢
+      rw [List.range_succ, List.flatMap_append]
+      simp only [List.length_append, List.flatMap_cons, List.flatMap_nil,
+        List.append_nil, ih, gcopy_len, Nat.succ_mul]
+
+theorem glift_gcopies (M : TrioSeq) (L d0 d1 : ℕ) : ∀ n,
+    (List.range n).flatMap (fun k => glift M L d0 d1 (gcopy M 0 L d0 d1 k))
+      = glift M L d0 d1 (gcopies M 0 L d0 d1 n) := by
+  intro n
+  induction n with
+  | zero => simp [gcopies]
+  | succ n ih =>
+      have hmod : (gcopies M 0 L d0 d1 n).length % L = 0 := by
+        rw [gcopies_length]
+        exact Nat.mul_mod_left n L
+      have hsplit : gcopies M 0 L d0 d1 (n + 1)
+          = gcopies M 0 L d0 d1 n ++ gcopy M 0 L d0 d1 n := by
+        unfold gcopies
+        rw [List.range_succ, List.flatMap_append]
+        simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      rw [List.range_succ, List.flatMap_append, ih, hsplit,
+        glift_append (M := M) (L := L) (d0 := d0) (d1 := d1) hmod]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+/-- **The guarded tower identity**: when the bad root is the very first column,
+`M⟦n+1⟧` is `M.dropLast` followed by the guarded lift of `M⟦n⟧`. -/
+theorem oper_root_tower {M : TrioSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hpar : parent M (srow M (M.length - 1)) (M.length - 1) = 0) :
+    M⟦n + 1⟧ = M.dropLast ++ glift M (M.length - 1)
+      (if 0 < srow M (M.length - 1)
+        then entry M 0 (M.length - 1) - entry M 0 0 else 0)
+      (if 1 < srow M (M.length - 1)
+        then entry M 1 (M.length - 1) - entry M 1 0 else 0)
+      (M⟦n⟧) := by
+  classical
+  set L := M.length - 1 with hLdef
+  set d0 := (if 0 < srow M L then entry M 0 L - entry M 0 0 else 0) with hd0
+  set d1 := (if 1 < srow M L then entry M 1 L - entry M 1 0 else 0) with hd1
+  have hgn : M⟦n⟧ = gcopies M 0 L d0 d1 n := by
+    rw [oper_gcopies n hL hz hp, hpar]
+    simp only [List.take_zero, List.nil_append, Nat.sub_zero]
+    rfl
+  have hgn1 : M⟦n + 1⟧ = gcopies M 0 L d0 d1 (n + 1) := by
+    rw [oper_gcopies (n + 1) hL hz hp, hpar]
+    simp only [List.take_zero, List.nil_append, Nat.sub_zero]
+    rfl
+  have hdl : gcopy M 0 L d0 d1 0 = M.dropLast := by
+    rw [gcopy_zero, seg_zero_eq_take _ (by omega), ← List.dropLast_eq_take]
+  have hstep : gcopies M 0 L d0 d1 (n + 1)
+      = gcopy M 0 L d0 d1 0
+        ++ (List.range n).flatMap (fun k => gcopy M 0 L d0 d1 (k + 1)) := by
+    unfold gcopies
+    rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+  rw [hgn, hgn1, hstep, hdl]
+  congr 1
+  rw [← glift_gcopies M L d0 d1 n]
+  refine List.flatMap_congr ?_
+  intro k _
+  exact gcopy_succ_glift M L d0 d1 k
+
 /-! ## 残る核: タワー枝 -/
 
 /-- **The one remaining core.**  When the principal root revives `R`'s trailing

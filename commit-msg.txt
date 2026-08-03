@@ -1,10 +1,12 @@
-v0.87.0/prove the row-1 tower; two named cores remain
+v0.88.0/prove the guarded tower identity
 
-- Add `graft_eq_shift`, `shiftr01_comp`, `shiftr01_zero`, `parent_cons_eq_zero`
-- Add the tower `tow v z R` and prove `oper_cons_tower1`: for a row-1 collapse
-  the copies carry no row-1 lift, so `p_{v,z}(R)[n]` is the plain graft tower
-- Add `tower1_le` (`2v+z <= m` in a row-1 tower) and `tower1_mem`
-- Split `TowerOK` into `TowerGraft2` (guarded row-2 tower) and `TowerExp`
-  (tower over an argument block that arrived by the successor clause), and
-  prove `towerOK_of`: the row-1 graft tower is now discharged
-- `TRIO_terminates` depends on `TowerGraft2` and `TowerExp`
+- Add `entry_append_left`
+- Add `glift`: the guarded lift one tower copy performs (row 0 by `d0`
+  everywhere, row 1 by `d1` exactly on the positions `le1`-below the root,
+  read modulo the copy length), with `glift_length`, `glift_getD` and
+  `glift_append` (distributes over a concatenation of whole copies)
+- Add `gcopy_getD`, `gcopies_length`, `glift_gcopies`
+- Prove `gcopy_succ_glift`: each guarded copy is the lift of the previous one
+- Prove `oper_root_tower`: when the bad root is column 0,
+  `M[n+1] = M.dropLast ++ glift M (|M|-1) d0 d1 (M[n])`, covering both the
+  row-1 (d1 = 0) and the row-2 collapse
