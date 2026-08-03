@@ -1,10 +1,9 @@
-v0.64.0/case (a) of bad_A2 closed: the descending branch
+v0.65.0/bad_A1 closed and bad_A2 assembled
 
-- Add `argDomCoreOn_bad_A2_desc`: descend the deeper marked column one
-  period into the shorter tower, apply the copy-count IH, lift back
-- Add `gliftAt_getD` and `headI_getD` helpers
-- Discharge the descended `SpineOK` positionally: below the block root
-  via the shallow instance, at or above it via the `+Lb` twin
-- Discharge the transport guard via `gexp_guard_transport` +
-  `le1_of_chain_le1` + `hkey_aligned` with the strict spine
-- Remove wip-A2desc.txt (now in Core.lean)
+- Add `gexp_guard_mod`: guard transport keyed by the position modulus
+- Add `argDomCoreOn_bad_A1`: descend the whole instance one period, apply
+  the copy-count IH, lift back through the guarded shift
+- Prove the two marked columns carry the same copy guard (strict spine
+  kills the (T,F) gap), so the descended pair keeps `f`
+- Add `argDomCoreOn_bad_A2`: `inner` forces `ipos <= j0`, which leaves only
+  the `desc` and `root` branches
