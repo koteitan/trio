@@ -21,5 +21,7 @@
 - [x] argDomCoreOn_oper / _ST_TS / **argDomCore_holds** ✅ 共終性が無条件に
 - [x] W 階層 Wstar_closed / mem_Wstar / W_membership ✅（主ブロック添字 tbAll）
 - [x] Final.lean 組み立て TRIO_terminates ✅（残る仮定は TowerOK と TbOper のみ）
-- [ ] TowerOK（ガード付きコピー塔; i1=2 の row-1 リフトが核）
-- [ ] TbOper（tbAll が一手展開で保たれる）
+- [x] W* から tbAll を除去（全段階で成立する形に）→ TbOper 消滅 ✅
+- [x] 行1タワー oper_cons_tower1 / tower1_mem ✅
+- [ ] TowerGraft2（ガード付き行2タワー; le1 錐上の row-1 リフト）
+- [ ] TowerExp（後続節で来た引数ブロック上のタワー）
