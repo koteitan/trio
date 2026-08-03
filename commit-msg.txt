@@ -1,9 +1,5 @@
-v0.65.0/bad_A1 closed and bad_A2 assembled
+v0.66.0/assemble the guarded bad branch
 
-- Add `gexp_guard_mod`: guard transport keyed by the position modulus
-- Add `argDomCoreOn_bad_A1`: descend the whole instance one period, apply
-  the copy-count IH, lift back through the guarded shift
-- Prove the two marked columns carry the same copy guard (strict spine
-  kills the (T,F) gap), so the descended pair keeps `f`
-- Add `argDomCoreOn_bad_A2`: `inner` forces `ipos <= j0`, which leaves only
-  the `desc` and `root` branches
+- Add `argDomCoreOn_bad_guard`: strong induction on the copy count with the
+  three-way positional split into bad_B / bad_A2 / bad_A1
+- Update task.md: the guarded route is closed, the uniform route is next

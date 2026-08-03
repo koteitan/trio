@@ -3296,4 +3296,50 @@ theorem argDomCoreOn_bad_A2 {M : TrioSeq} (hM : ST_TS M)
   · exact argDomCoreOn_bad_A2_root hlen hLbpos hd0pos hd1pos hwin0 hd0e hle1lp
       heq he h1 h2 h3 (by omega) (by omega)
 
+/-! ## bad 枝（ガード付き経路）の組み立て -/
+
+set_option maxHeartbeats 1000000 in
+/-- **The `bad` branch of the derivation induction, guarded route** (`i1 = 2`).
+`M = G ++ blk ++ [lp]` with `blk = (v0,w10,z0) :: R`; the expansion is the
+guarded copy tower.  Strong induction on the copy count, split three ways by
+the position of the two marked columns. -/
+theorem argDomCoreOn_bad_guard {M G R : TrioSeq} {v0 w10 z0 d0 d1 : ℕ}
+    {lp : ℕ × ℕ × ℕ}
+    (hM : ST_TS M) (hMon : ArgDomCoreOn M)
+    (hMeq : M = G ++ ((v0, w10, z0) :: R) ++ [lp])
+    (hqlt : collt (v0 + d0, w10 + d1, z0) lp)
+    (np2 : nextrel2 M G.length (G.length + (R.length + 1)))
+    (hd0e : entry M 0 (G.length + (R.length + 1)) = entry M 0 G.length + d0)
+    (hd1e : entry M 1 (G.length + (R.length + 1)) = entry M 1 G.length + d1)
+    {n : ℕ} (hn : 1 ≤ n) :
+    ArgDomCoreOn (gexp M G.length (R.length + 1) d0 d1 n) := by
+  have hlen : G.length + (R.length + 1) + 1 = M.length := by
+    rw [hMeq]
+    simp only [List.length_append, List.length_cons, List.length_nil]
+  have hGtake : M.take G.length = G := by
+    rw [hMeq]
+    simp
+  have hgexp : ∀ n', gexp M G.length (R.length + 1) d0 d1 n'
+      = G ++ gcopies M G.length (R.length + 1) d0 d1 n' := by
+    intro n'
+    unfold gexp
+    rw [hGtake]
+  revert hn
+  induction n using Nat.strong_induction_on with
+  | _ n hstrong =>
+    intro hn X A1 B A2 Z u w1 z e f heq he hzf h1 h2 h3 h4 h5 h6
+    have hIH : ∀ m, 1 ≤ m → m < n →
+        ArgDomCoreOn (gexp M G.length (R.length + 1) d0 d1 m) :=
+      fun m hm1 hm2 => hstrong m hm2 hm1
+    rcases Nat.lt_or_ge (X.length + (A1.length + 1))
+      (G.length + (R.length + 1)) with hc | hc
+    · refine argDomCoreOn_bad_B hMon hMeq hqlt hn ?_ he hzf h1 h2 h3 h4 h5 h6 hc
+      rw [← hgexp n]
+      exact heq
+    · rcases Nat.lt_or_ge X.length (G.length + (R.length + 1)) with hc2 | hc2
+      · exact argDomCoreOn_bad_A2 hM hlen (by omega) np2 hd0e hd1e hIH heq he
+          hzf h1 h2 h3 h4 h5 h6 hc2 hc
+      · exact argDomCoreOn_bad_A1 hlen (by omega) np2 hd0e hd1e hIH heq he
+          hzf h1 h2 h3 h4 h5 h6 hc2
+
 end TRIO

@@ -16,6 +16,7 @@
 - [x] 共終性 **完結（核を法として）**: trio_cofinality_of_core ✅ Peel2.lean v0.42.0
 - [x] ガード輸送 gexp_guard_transport ✅・尾部 le1 同値 le1_tail_equiv ✅ Gtrans.lean
 - [x] 核 ST 帰納の足場（ArgDomCoreOn・diag 基底・snoc_zero・drop_left・小道具）✅ Core.lean
-- [ ] 核 bad 枝: bad_B（ホスト検証 key を橋で map 形に; lp 置換は collt row2 で成立）→ bad_A2 → A1（hkey 経由 or 参照 memory）
+- [x] 核 bad 枝 ガード経路 (i1=2): bad_B / bad_A2 / bad_A1 → argDomCoreOn_bad_guard ✅
+- [ ] 核 bad 枝 一様経路 (i1<=1, d1=0): copies 版 bad_B/A2/A1
 - [ ] argDomCoreOn_oper / _ST_TS / argDomCore_holds
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）
