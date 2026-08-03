@@ -3342,4 +3342,303 @@ theorem argDomCoreOn_bad_guard {M G R : TrioSeq} {v0 w10 z0 d0 d1 : ℕ}
       · exact argDomCoreOn_bad_A1 hlen (by omega) np2 hd0e hd1e hIH heq he
           hzf h1 h2 h3 h4 h5 h6 hc2
 
+/-! ## 行 0 一様シフトの不変性 -/
+
+/-- The inverse of a row-0 shift. -/
+def shiftl0 (d : ℕ) : TrioSeq → TrioSeq :=
+  List.map fun p => ((p.1 - d, p.2.1, p.2.2) : ℕ × ℕ × ℕ)
+
+@[simp] theorem shiftl0_nil (d : ℕ) : shiftl0 d [] = [] := rfl
+
+theorem shiftl0_cons (d : ℕ) (p : ℕ × ℕ × ℕ) (M : TrioSeq) :
+    shiftl0 d (p :: M) = ((p.1 - d, p.2.1, p.2.2) : ℕ × ℕ × ℕ) :: shiftl0 d M := rfl
+
+theorem shiftl0_append (d : ℕ) (A B : TrioSeq) :
+    shiftl0 d (A ++ B) = shiftl0 d A ++ shiftl0 d B := List.map_append
+
+theorem shiftl0_length (d : ℕ) (A : TrioSeq) : (shiftl0 d A).length = A.length := by
+  unfold shiftl0
+  simp
+
+theorem mem_shiftl0 {d : ℕ} {M : TrioSeq} {x : ℕ × ℕ × ℕ} :
+    x ∈ shiftl0 d M ↔ ∃ p ∈ M, ((p.1 - d, p.2.1, p.2.2) : ℕ × ℕ × ℕ) = x := by
+  unfold shiftl0
+  simp
+
+theorem shiftl0_shiftr01 (d : ℕ) : ∀ (M : TrioSeq), shiftl0 d (shiftr01 d 0 M) = M
+  | [] => rfl
+  | p :: M' => by
+      rw [shiftr01_cons, shiftl0_cons, shiftl0_shiftr01 d M']
+      congr 1
+      refine Prod.ext (by dsimp only; omega)
+        (Prod.ext (by dsimp only; omega) rfl)
+
+theorem shiftr01_shiftl0 {d : ℕ} : ∀ {M : TrioSeq}, (∀ x ∈ M, d ≤ x.1) →
+    shiftr01 d 0 (shiftl0 d M) = M
+  | [], _ => rfl
+  | p :: M', h => by
+      rw [shiftl0_cons, shiftr01_cons,
+        shiftr01_shiftl0 (fun x hx => h x (List.mem_cons_of_mem _ hx))]
+      have hp := h p (List.mem_cons_self ..)
+      congr 1
+      refine Prod.ext (by dsimp only; omega)
+        (Prod.ext (by dsimp only; omega) rfl)
+
+theorem shiftr01_getD {d0 d1 : ℕ} {W : TrioSeq} {p : ℕ} (hp : p < W.length) :
+    (shiftr01 d0 d1 W).getD p (0, 0, 0)
+      = (((W.getD p (0, 0, 0)).1 + d0, (W.getD p (0, 0, 0)).2.1 + d1,
+          (W.getD p (0, 0, 0)).2.2) : ℕ × ℕ × ℕ) := by
+  unfold shiftr01
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_map,
+    List.getElem?_eq_getElem hp]
+  rfl
+
+theorem getD_out {L : TrioSeq} {p : ℕ} (hp : L.length ≤ p) :
+    L.getD p (0, 0, 0) = (0, 0, 0) := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none hp]
+  rfl
+
+theorem entry0_shiftr01 {d0 d1 : ℕ} {W : TrioSeq} {p : ℕ} (hp : p < W.length) :
+    entry (shiftr01 d0 d1 W) 0 p = entry W 0 p + d0 := by
+  show ((shiftr01 d0 d1 W).getD p (0, 0, 0)).1
+    = ((W.getD p (0, 0, 0)).1 : ℕ) + d0
+  rw [shiftr01_getD hp]
+
+theorem entry1_shiftr01 {d0 : ℕ} (W : TrioSeq) (p : ℕ) :
+    entry (shiftr01 d0 0 W) 1 p = entry W 1 p := by
+  show ((shiftr01 d0 0 W).getD p (0, 0, 0)).2.1
+    = ((W.getD p (0, 0, 0)).2.1 : ℕ)
+  rcases Nat.lt_or_ge p W.length with hp | hp
+  · rw [shiftr01_getD hp]
+    exact Nat.add_zero _
+  · rw [getD_out (by rw [shiftr01_length]; omega), getD_out hp]
+
+theorem entry2_shiftr01 {d0 d1 : ℕ} (W : TrioSeq) (p : ℕ) :
+    entry (shiftr01 d0 d1 W) 2 p = entry W 2 p := by
+  show ((shiftr01 d0 d1 W).getD p (0, 0, 0)).2.2
+    = ((W.getD p (0, 0, 0)).2.2 : ℕ)
+  rcases Nat.lt_or_ge p W.length with hp | hp
+  · rw [shiftr01_getD hp]
+  · rw [getD_out (by rw [shiftr01_length]; omega), getD_out hp]
+
+theorem nextrel0_shiftr01 {d0 : ℕ} {W : TrioSeq} {a b : ℕ} :
+    nextrel0 (shiftr01 d0 0 W) a b ↔ nextrel0 W a b := by
+  unfold nextrel0
+  rw [shiftr01_length]
+  constructor
+  · rintro ⟨ha, hb, hab, hlt, hmin⟩
+    refine ⟨ha, hb, hab, ?_, ?_⟩
+    · rw [entry0_shiftr01 ha, entry0_shiftr01 hb] at hlt
+      omega
+    · intro j hj
+      have := hmin j hj
+      rw [entry0_shiftr01 hb, entry0_shiftr01 (by omega : j < W.length)] at this
+      omega
+  · rintro ⟨ha, hb, hab, hlt, hmin⟩
+    refine ⟨ha, hb, hab, ?_, ?_⟩
+    · rw [entry0_shiftr01 ha, entry0_shiftr01 hb]
+      omega
+    · intro j hj
+      have := hmin j hj
+      rw [entry0_shiftr01 hb, entry0_shiftr01 (by omega : j < W.length)]
+      omega
+
+theorem rtg0_shiftr01 {d0 : ℕ} {W : TrioSeq} {a b : ℕ} :
+    Relation.ReflTransGen (nextrel0 (shiftr01 d0 0 W)) a b
+      ↔ Relation.ReflTransGen (nextrel0 W) a b := by
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel0_shiftr01.1 hyz)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel0_shiftr01.2 hyz)
+
+theorem le0_shiftr01 {d0 : ℕ} {W : TrioSeq} {a b : ℕ} :
+    le0 (shiftr01 d0 0 W) a b ↔ le0 W a b := by
+  unfold le0
+  rw [shiftr01_length, rtg0_shiftr01]
+
+theorem nextrel1_shiftr01 {d0 : ℕ} {W : TrioSeq} {a b : ℕ} :
+    nextrel1 (shiftr01 d0 0 W) a b ↔ nextrel1 W a b := by
+  unfold nextrel1
+  rw [shiftr01_length]
+  simp only [entry1_shiftr01, le0_shiftr01]
+
+theorem le1_shiftr01 {d0 : ℕ} {W : TrioSeq} {a b : ℕ} :
+    le1 (shiftr01 d0 0 W) a b ↔ le1 W a b := by
+  unfold le1
+  rw [shiftr01_length]
+  refine and_congr Iff.rfl (and_congr Iff.rfl ?_)
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel1_shiftr01.1 hyz)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel1_shiftr01.2 hyz)
+
+set_option maxHeartbeats 1000000 in
+/-- **The core is invariant under a uniform row-0 shift.** -/
+theorem argDomCoreOn_shift {W : TrioSeq} (d : ℕ) (H : ArgDomCoreOn W) :
+    ArgDomCoreOn (shiftr01 d 0 W) := by
+  intro X A1 B A2 Z u w1 z e f heq he hzf h1 h2 h3 h4 h5 h6
+  have hall : ∀ x ∈ (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2)))
+      ++ Z, d ≤ x.1 := by
+    rw [← heq]
+    intro x hx
+    obtain ⟨q, -, rfl⟩ := mem_shiftr01.1 hx
+    dsimp only
+    omega
+  have hmid : ∀ {L : TrioSeq},
+      (∀ x ∈ L, x ∈ A1 ++ (u + e, w1 + f, z) :: (B ++ A2)) → ∀ x ∈ L, d ≤ x.1 := by
+    intro L hL x hx
+    exact hall x (List.mem_append_left Z (List.mem_append_right X
+      (List.mem_cons_of_mem _ (hL x hx))))
+  have hX : ∀ x ∈ X, d ≤ x.1 := fun x hx =>
+    hall x (List.mem_append_left Z (List.mem_append_left _ hx))
+  have hZ : ∀ x ∈ Z, d ≤ x.1 := fun x hx => hall x (List.mem_append_right _ hx)
+  have hA1 : ∀ x ∈ A1, d ≤ x.1 := hmid (fun x hx => List.mem_append_left _ hx)
+  have hB : ∀ x ∈ B, d ≤ x.1 := hmid (fun x hx =>
+    List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_append_left _ hx)))
+  have hA2 : ∀ x ∈ A2, d ≤ x.1 := hmid (fun x hx =>
+    List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_append_right _ hx)))
+  have hu : d ≤ u := hall (u, w1, z) (List.mem_append_left Z
+    (List.mem_append_right X (List.mem_cons_self ..)))
+  set X' := shiftl0 d X with hX'
+  set A1' := shiftl0 d A1 with hA1'
+  set B' := shiftl0 d B with hB'
+  set A2' := shiftl0 d A2 with hA2'
+  set Z' := shiftl0 d Z with hZ'
+  have eX : shiftr01 d 0 X' = X := shiftr01_shiftl0 hX
+  have eA1 : shiftr01 d 0 A1' = A1 := shiftr01_shiftl0 hA1
+  have eB : shiftr01 d 0 B' = B := shiftr01_shiftl0 hB
+  have eA2 : shiftr01 d 0 A2' = A2 := shiftr01_shiftl0 hA2
+  have eZ : shiftr01 d 0 Z' = Z := shiftr01_shiftl0 hZ
+  have hc1 : ((((u - d, w1, z) : ℕ × ℕ × ℕ).1 + d,
+      ((u - d, w1, z) : ℕ × ℕ × ℕ).2.1 + 0,
+      ((u - d, w1, z) : ℕ × ℕ × ℕ).2.2) : ℕ × ℕ × ℕ)
+      = ((u, w1, z) : ℕ × ℕ × ℕ) :=
+    Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega) rfl)
+  have hc2 : ((((u - d + e, w1 + f, z) : ℕ × ℕ × ℕ).1 + d,
+      ((u - d + e, w1 + f, z) : ℕ × ℕ × ℕ).2.1 + 0,
+      ((u - d + e, w1 + f, z) : ℕ × ℕ × ℕ).2.2) : ℕ × ℕ × ℕ)
+      = ((u + e, w1 + f, z) : ℕ × ℕ × ℕ) :=
+    Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega) rfl)
+  have hWeq : W = (X' ++ (u - d, w1, z)
+      :: (A1' ++ (u - d + e, w1 + f, z) :: (B' ++ A2'))) ++ Z' := by
+    refine shiftr01_injective d 0 ?_
+    rw [shiftr01_append, shiftr01_append, shiftr01_cons, shiftr01_append,
+      shiftr01_cons, shiftr01_append, eX, eA1, eB, eA2, eZ, hc1, hc2]
+    exact heq
+  have g1 : ∀ x ∈ A1', u - d < x.1 := by
+    intro x hx
+    obtain ⟨q, hq, rfl⟩ := mem_shiftl0.1 hx
+    have hq1 := h1 q hq
+    have hq2 := hA1 q hq
+    dsimp only
+    omega
+  have g2 : ∀ x ∈ B', u - d + e < x.1 := by
+    intro x hx
+    obtain ⟨q, hq, rfl⟩ := mem_shiftl0.1 hx
+    have hq1 := h2 q hq
+    have hq2 := hB q hq
+    dsimp only
+    omega
+  have g3 : ∀ x ∈ A2', u - d < x.1 := by
+    intro x hx
+    obtain ⟨q, hq, rfl⟩ := mem_shiftl0.1 hx
+    have hq1 := h3 q hq
+    have hq2 := hA2 q hq
+    dsimp only
+    omega
+  have g4 : A2' = [] ∨ (A2'.headI).1 ≤ u - d + e := by
+    rcases hA2e : A2 with _ | ⟨a, A2''⟩
+    · exact Or.inl (by rw [hA2', hA2e]; rfl)
+    · refine Or.inr ?_
+      have hah : (A2.headI).1 ≤ u + e := by
+        rcases h4 with hc | hc
+        · exact absurd hc (by rw [hA2e]; simp)
+        · exact hc
+      have hage : d ≤ (A2.headI).1 := hA2 A2.headI (by rw [hA2e]; simp)
+      rw [hA2', hA2e, shiftl0_cons]
+      simp only [List.headI]
+      rw [hA2e] at hah hage
+      simp only [List.headI] at hah hage
+      omega
+  have g5 : Z' = [] ∨ (Z'.headI).1 ≤ u - d := by
+    rcases hZe : Z with _ | ⟨y, Z''⟩
+    · exact Or.inl (by rw [hZ', hZe]; rfl)
+    · refine Or.inr ?_
+      have hzh : (Z.headI).1 ≤ u := by
+        rcases h5 with hc | hc
+        · exact absurd hc (by rw [hZe]; simp)
+        · exact hc
+      rw [hZ', hZe, shiftl0_cons]
+      simp only [List.headI]
+      rw [hZe] at hzh
+      simp only [List.headI] at hzh
+      omega
+  have g6 : SpineOK A1' (u - d + e) (w1 + 1) := by
+    intro U' V' x' hdec hxlt hV'
+    have hdec2 : A1 = shiftr01 d 0 U'
+        ++ ((x'.1 + d, x'.2.1, x'.2.2) : ℕ × ℕ × ℕ) :: shiftr01 d 0 V' := by
+      rw [← eA1, hdec, shiftr01_append, shiftr01_cons]
+      simp only [Nat.add_zero]
+    refine h6 (shiftr01 d 0 U') (shiftr01 d 0 V')
+      ((x'.1 + d, x'.2.1, x'.2.2) : ℕ × ℕ × ℕ) hdec2 ?_ ?_
+    · dsimp only
+      omega
+    · intro y hy
+      obtain ⟨q, hq, rfl⟩ := mem_shiftr01.1 hy
+      have := hV' q hq
+      dsimp only
+      omega
+  have hcore := H hWeq he hzf g1 g2 g3 g4 g5 g6
+  rw [instance_bridge hWeq he g1 g2 g3] at hcore
+  rw [instance_bridge heq he h1 h2 h3]
+  have hXlen : X'.length = X.length := by rw [hX', shiftl0_length]
+  have hlensum : A1'.length + (1 + (B'.length + A2'.length))
+      = A1.length + (1 + (B.length + A2.length)) := by
+    rw [hA1', hB', hA2', shiftl0_length, shiftl0_length, shiftl0_length]
+  rw [hXlen, hlensum] at hcore
+  have hlenW : X.length + 1 + (A1.length + (1 + (B.length + A2.length)))
+      ≤ W.length := by
+    have hh := congrArg List.length hWeq
+    simp only [List.length_append, List.length_cons] at hh
+    rw [hXlen, hA1', hB', hA2', shiftl0_length, shiftl0_length,
+      shiftl0_length] at hh
+    omega
+  have hBeq : B = shiftr01 d 0 B' := eB.symm
+  have hmapeq : (List.range' (X.length + 1)
+        (A1.length + (1 + (B.length + A2.length)))).map
+      (fun p => ((entry (shiftr01 d 0 W) 0 p + e,
+        entry (shiftr01 d 0 W) 1 p
+          + (if le1 (shiftr01 d 0 W) X.length p then f else 0),
+        entry (shiftr01 d 0 W) 2 p) : ℕ × ℕ × ℕ))
+      = shiftr01 d 0 ((List.range' (X.length + 1)
+          (A1.length + (1 + (B.length + A2.length)))).map
+        (fun p => ((entry W 0 p + e,
+          entry W 1 p + (if le1 W X.length p then f else 0),
+          entry W 2 p) : ℕ × ℕ × ℕ))) := by
+    refine list_eq_of_getD (by
+      rw [shiftr01_length, List.length_map, List.length_map]) ?_
+    intro t ht
+    rw [List.length_map, List.length_range'] at ht
+    rw [map_range'_getD _ ht, shiftr01_getD (by
+      rw [List.length_map, List.length_range']; omega),
+      map_range'_getD _ ht]
+    have hlt : X.length + 1 + t < W.length := by omega
+    rw [entry0_shiftr01 hlt, entry1_shiftr01, entry2_shiftr01]
+    refine Prod.ext (by dsimp only; omega)
+      (Prod.ext (by dsimp only; rw [le1_shiftr01]; omega) (by dsimp only))
+  rw [hmapeq]
+  have hfin := (sle_shiftr01 d 0).2 hcore
+  rw [eB] at hfin
+  exact hfin
+
 end TRIO
