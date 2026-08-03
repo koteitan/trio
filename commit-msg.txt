@@ -1,7 +1,10 @@
-v0.78.0/guarded graft and the non-collapsing principal step
+v0.79.0/drop the natDom guard from the second A-clause
 
-- Add gdelta / ggraft: the fundamental-sequence substitution with the row-1
-  lift the guarded tower needs when the trailing orphan sits in row 2
-- Add ggraft_nil, ggraft_Om, ggraft_cons
-- Add oper_cons_nat: p_{v,z}(R)[n] = p_{v,z}(R[n]) when R's last column keeps
-  its own parent (three-row case split on srow, root blocked by that parent)
+- Remove `natDom M` from `Aop` clause 2: `acc_of_W` never consumed it, so the
+  ungated `∀ n ≥ 1, M⟦n⟧ ∈ X` is sound and strictly more permissive
+- This dissolves the z=1 obstruction: a block whose trailing orphan is a dead
+  root (`domT M m` with `m ≥ lev (root M)`, unreachable by clause 3) satisfies
+  `M⟦n⟧ = M.dropLast` and is now certified by clause 2
+- Remove the unused `tbAll z m` hypothesis from `Aop` clause 3
+- Adjust `Aop_mono_X`, `acc_of_W`, `W_shift`, `XA_closed`, `Om_mem_W` to the
+  new clause shapes

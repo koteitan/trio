@@ -167,12 +167,20 @@ theorem lfpS_unfold {f : Set TrioSeq → Set TrioSeq} (hm : Monotone f) :
     f (lfpS f) = lfpS f :=
   Set.Subset.antisymm (lfpS_unfold_le hm) (lfpS_unfold_ge hm)
 
-/-- The operator `A_u`. -/
+/-- The operator `A_u`.
+
+`natDom` is deliberately **absent** from the second clause: `acc_of_W` never uses
+it, so leaving it out costs nothing on the accessibility side while making the
+clause available to blocks whose trailing orphan is a *dead* root.  That is what
+saves the trio hierarchy: a `z = 1` root can never collapse a `z = 1` orphan (row
+2 parenthood needs a strictly smaller row 2), so such a block satisfies
+`domT M m` with `m ≥ lev (root M)` and the graft clause is out of reach — but
+BMS then returns `M⟦n⟧ = M.dropLast`, and the ungated second clause accepts it. -/
 def Aop (Wfam : ℕ → Set TrioSeq) (u : ℕ) (X : Set TrioSeq) (M : TrioSeq) : Prop :=
   (M.length ≤ 1 ∧ lev M 0 = 0) ∨
-  (natDom M ∧ ∀ n : ℕ, 1 ≤ n → M⟦n⟧ ∈ X) ∨
+  (∀ n : ℕ, 1 ≤ n → M⟦n⟧ ∈ X) ∨
   (∃ m : ℕ, m < u ∧ domT M m ∧
-    ∀ z ∈ Wfam m, based z → tbAll z m → graft M z ∈ X)
+    ∀ z ∈ Wfam m, based z → graft M z ∈ X)
 
 def Aset (Wfam : ℕ → Set TrioSeq) (u : ℕ) (X : Set TrioSeq) : Set TrioSeq :=
   {M | Aop Wfam u X M}
@@ -181,8 +189,8 @@ theorem Aop_mono_X {Wfam : ℕ → Set TrioSeq} {u : ℕ} {X Y : Set TrioSeq}
     {M : TrioSeq} (h : Aop Wfam u X M) (hXY : X ⊆ Y) : Aop Wfam u Y M := by
   rcases h with h | h | ⟨m, hm, hd, hop⟩
   · exact Or.inl h
-  · exact Or.inr (Or.inl ⟨h.1, fun n hn => hXY (h.2 n hn)⟩)
-  · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb ht => hXY (hop z hz hb ht)⟩)
+  · exact Or.inr (Or.inl fun n hn => hXY (h n hn))
+  · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb => hXY (hop z hz hb)⟩)
 
 theorem Aset_mono (Wfam : ℕ → Set TrioSeq) (u : ℕ) : Monotone (Aset Wfam u) := by
   intro X Y hXY M hM
@@ -297,7 +305,7 @@ theorem acc_of_W
   intro c A
   by_cases hc : ST_TS c
   · have hne : c ≠ [] := stts_ne_nil hc
-    rcases A with ⟨hlen, hw⟩ | ⟨-, hnat⟩ | ⟨m, -, hd, hgr⟩
+    rcases A with ⟨hlen, hw⟩ | hnat | ⟨m, -, hd, hgr⟩
     · -- branch 1: `translate c = p_{0,0}(0) = 1`; only `0` is below it.
       have hlen1 : c.length = 1 := by
         have := stps_len_pos hc
@@ -317,7 +325,7 @@ theorem acc_of_W
       by_cases hlen : 1 < c.length
       · refine acc_of_nat_branch hcof hc ?_
         intro n hn
-        have := hgr [] (W_nil m) based_nil (tbAll_nil m)
+        have := hgr [] (W_nil m) based_nil
         rw [← oper_eq_graft_nil_of_domT (n := n) hlen hd] at this
         exact this
       · have hlen1 : c.length = 1 := by
@@ -558,17 +566,17 @@ theorem W_shift {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (d : ℕ) :
     refine A2' ?_
     intro N A
     refine A1_intro ?_
-    rcases A with ⟨hl, hw⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, hgr⟩
+    rcases A with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
     · refine Or.inl ⟨by rw [shiftr01_length]; exact hl, ?_⟩
       rw [lev_shiftr01]
       exact hw
-    · exact Or.inr (Or.inl ⟨natDom_shiftr01.mpr hnat, fun n hn => by
+    · exact Or.inr (Or.inl fun n hn => by
         rw [oper_shiftr01]
-        exact hop n hn⟩)
-    · refine Or.inr (Or.inr ⟨m, hm, domT_shiftr01.mpr hd, fun z hz hb ht => ?_⟩)
+        exact hop n hn)
+    · refine Or.inr (Or.inr ⟨m, hm, domT_shiftr01.mpr hd, fun z hz hb => ?_⟩)
       have hne : N ≠ [] := by rintro rfl; exact not_domT_nil m hd
       rw [graft_shiftr01 hne]
-      exact hgr z hz hb ht
+      exact hgr z hz hb
   exact fun h => hsub h
 
 /-- Every nonempty block splits as `A ++ P` with `P` its last top-level tree. -/
@@ -850,7 +858,7 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
       fun p hp => hrs p (List.mem_append_right _ hp)
     have hAge : ∀ p ∈ A, entry B 0 0 ≤ p.1 :=
       fun p hp => hrs p (List.mem_append_left _ hp)
-    rcases AB with ⟨hl, hw⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, hgr⟩
+    rcases AB with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
     · have hB1 : B.length = 1 := by omega
       by_cases hAnil : A = []
       · subst hAnil; simpa using hX B (Or.inl ⟨hl, hw⟩)
@@ -870,8 +878,7 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
         have hzz0 : lev B (B.length - 1) = 0 := by
           have : B.length - 1 = 0 := by omega
           rw [this]; exact hw
-        refine hX _ (Or.inr (Or.inl ⟨(natDom_append hBnil hrs).mpr
-          (natDom_iff.mpr (Or.inl hzz0)), fun n hn => ?_⟩))
+        refine hX _ (Or.inr (Or.inl fun n hn => ?_))
         have hpred : (A ++ B)⟦n⟧ = Pred (A ++ B) := by
           by_cases hzz : entry (A ++ B) 0 ((A ++ B).length - 1) = 0 ∧
               entry (A ++ B) 1 ((A ++ B).length - 1) = 0 ∧
@@ -887,8 +894,7 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
         rw [hdl]
         simpa using hA
     · by_cases hB2 : 2 ≤ B.length
-      · refine hX _ (Or.inr (Or.inl ⟨(natDom_append hBnil hrs).mpr hnat,
-          fun n hn => ?_⟩))
+      · refine hX _ (Or.inr (Or.inl fun n hn => ?_))
         rw [oper_append_gen n hB2 hrs]
         refine hop n hn (fun p hp => ?_)
         rw [oper_head_eq hn]
@@ -900,9 +906,9 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
         rw [hB1] at h1
         exact h1 hrs
     · refine hX _ (Or.inr (Or.inr ⟨m, hm, (domT_append hBnil hrs).mpr hd,
-        fun z hz hbz htz => ?_⟩))
+        fun z hz hbz => ?_⟩))
       rw [graft_append hBnil]
-      refine hgr z hz hbz htz ?_
+      refine hgr z hz hbz ?_
       by_cases hgz : graft B z = []
       · rw [hgz]
         intro p hp
@@ -933,7 +939,7 @@ theorem Om_mem_W (v z : ℕ) : [((0, v, z) : ℕ × ℕ × ℕ)] ∈ W (2 * v + 
   · rw [h0]
     exact A1_intro (Or.inl ⟨by simp, by simp [lev, entry]; omega⟩)
   · refine A1_intro (Or.inr (Or.inr ⟨2 * v + z - 1, by omega, domT_Om hpos, ?_⟩))
-    intro y hy _ _
+    intro y hy _
     rw [graft_Om]
     exact W_mono (by omega) hy
 
