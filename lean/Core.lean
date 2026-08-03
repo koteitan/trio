@@ -877,6 +877,31 @@ theorem split_one {N : TrioSeq} {a : ℕ} (ha : a < N.length) :
       rw [← hh, hd, List.drop_succ_cons, List.drop_zero]
     rw [hx, hdr]
 
+theorem getD_take_drop {N : TrioSeq} {a l t : ℕ} (ht : t < l) :
+    ((N.drop a).take l).getD t (0, 0, 0) = N.getD (a + t) (0, 0, 0) := by
+  rw [getD_take ht, getD_drop]
+
+theorem mem_index {A : TrioSeq} {x : ℕ × ℕ × ℕ} (hx : x ∈ A) :
+    ∃ t, t < A.length ∧ x = A.getD t (0, 0, 0) := by
+  obtain ⟨t, ht, hxe⟩ := List.getElem_of_mem hx
+  refine ⟨t, ht, ?_⟩
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem ht, hxe]
+  rfl
+
+theorem mem_take_drop_index {N : TrioSeq} {a l : ℕ} {x : ℕ × ℕ × ℕ}
+    (hx : x ∈ (N.drop a).take l) :
+    ∃ t, t < l ∧ x = N.getD (a + t) (0, 0, 0) := by
+  obtain ⟨t, ht, hxe⟩ := mem_index hx
+  rw [List.length_take, List.length_drop] at ht
+  have htl : t < l := lt_of_lt_of_le ht (min_le_left _ _)
+  exact ⟨t, htl, by rw [hxe, getD_take_drop htl]⟩
+
+theorem mem_take_index {N : TrioSeq} {l : ℕ} {x : ℕ × ℕ × ℕ}
+    (hx : x ∈ N.take l) : ∃ t, t < l ∧ x = N.getD t (0, 0, 0) := by
+  have hx' : x ∈ (N.drop 0).take l := by rwa [List.drop_zero]
+  obtain ⟨t, ht, hxe⟩ := mem_take_drop_index hx'
+  exact ⟨t, ht, by rw [hxe, Nat.zero_add]⟩
+
 theorem split_two {N : TrioSeq} {a b : ℕ} (hab : a < b) (hb : b < N.length) :
     N = N.take a ++ N.getD a (0, 0, 0) ::
       ((N.drop (a + 1)).take (b - a - 1) ++ N.getD b (0, 0, 0)

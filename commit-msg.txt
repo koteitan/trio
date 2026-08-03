@@ -1,12 +1,4 @@
-v0.61.0/strict spine in the core
+v0.62.0/membership-index helpers
 
-- Strengthen ArgDomCore and ArgDomCoreOn to require SpineOK A1 (u+e)
-  (w1+1); the cofinality call sites supply it from spineOK_strict_of_le1
-  with the very same le1 hypothesis
-- Generalise spineOK_pos to an arbitrary threshold
-- Strengthen sle_gliftAt: the hkey obligation may now assume the
-  accumulated prefix agreement, which the induction supplies
-
-The strict spine makes every right-visible column of A1 exceed w1, so in
-the straddling case the shallower column always reaches the block root in
-row 1 — the sub-case that blocked the case (a) transport disappears.
+- Add getD_take_drop, mem_index, mem_take_drop_index and mem_take_index:
+  turn membership in a take/drop slice into an index and a getD reading
