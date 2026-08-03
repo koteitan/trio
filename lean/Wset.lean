@@ -167,20 +167,12 @@ theorem lfpS_unfold {f : Set TrioSeq → Set TrioSeq} (hm : Monotone f) :
     f (lfpS f) = lfpS f :=
   Set.Subset.antisymm (lfpS_unfold_le hm) (lfpS_unfold_ge hm)
 
-/-- The operator `A_u`.
-
-`natDom` is deliberately **absent** from the second clause: `acc_of_W` never uses
-it, so leaving it out costs nothing on the accessibility side while making the
-clause available to blocks whose trailing orphan is a *dead* root.  That is what
-saves the trio hierarchy: a `z = 1` root can never collapse a `z = 1` orphan (row
-2 parenthood needs a strictly smaller row 2), so such a block satisfies
-`domT M m` with `m ≥ lev (root M)` and the graft clause is out of reach — but
-BMS then returns `M⟦n⟧ = M.dropLast`, and the ungated second clause accepts it. -/
+/-- The operator `A_u`. -/
 def Aop (Wfam : ℕ → Set TrioSeq) (u : ℕ) (X : Set TrioSeq) (M : TrioSeq) : Prop :=
   (M.length ≤ 1 ∧ lev M 0 = 0) ∨
-  (∀ n : ℕ, 1 ≤ n → M⟦n⟧ ∈ X) ∨
+  (natDom M ∧ ∀ n : ℕ, 1 ≤ n → M⟦n⟧ ∈ X) ∨
   (∃ m : ℕ, m < u ∧ domT M m ∧
-    ∀ z ∈ Wfam m, based z → graft M z ∈ X)
+    ∀ z ∈ Wfam m, based z → tbAll z m → graft M z ∈ X)
 
 def Aset (Wfam : ℕ → Set TrioSeq) (u : ℕ) (X : Set TrioSeq) : Set TrioSeq :=
   {M | Aop Wfam u X M}
@@ -189,8 +181,8 @@ theorem Aop_mono_X {Wfam : ℕ → Set TrioSeq} {u : ℕ} {X Y : Set TrioSeq}
     {M : TrioSeq} (h : Aop Wfam u X M) (hXY : X ⊆ Y) : Aop Wfam u Y M := by
   rcases h with h | h | ⟨m, hm, hd, hop⟩
   · exact Or.inl h
-  · exact Or.inr (Or.inl fun n hn => hXY (h n hn))
-  · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb => hXY (hop z hz hb)⟩)
+  · exact Or.inr (Or.inl ⟨h.1, fun n hn => hXY (h.2 n hn)⟩)
+  · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb ht => hXY (hop z hz hb ht)⟩)
 
 theorem Aset_mono (Wfam : ℕ → Set TrioSeq) (u : ℕ) : Monotone (Aset Wfam u) := by
   intro X Y hXY M hM
@@ -305,7 +297,7 @@ theorem acc_of_W
   intro c A
   by_cases hc : ST_TS c
   · have hne : c ≠ [] := stts_ne_nil hc
-    rcases A with ⟨hlen, hw⟩ | hnat | ⟨m, -, hd, hgr⟩
+    rcases A with ⟨hlen, hw⟩ | ⟨-, hnat⟩ | ⟨m, -, hd, hgr⟩
     · -- branch 1: `translate c = p_{0,0}(0) = 1`; only `0` is below it.
       have hlen1 : c.length = 1 := by
         have := stps_len_pos hc
@@ -325,7 +317,7 @@ theorem acc_of_W
       by_cases hlen : 1 < c.length
       · refine acc_of_nat_branch hcof hc ?_
         intro n hn
-        have := hgr [] (W_nil m) based_nil
+        have := hgr [] (W_nil m) based_nil (tbAll_nil m)
         rw [← oper_eq_graft_nil_of_domT (n := n) hlen hd] at this
         exact this
       · have hlen1 : c.length = 1 := by
@@ -566,17 +558,17 @@ theorem W_shift {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (d : ℕ) :
     refine A2' ?_
     intro N A
     refine A1_intro ?_
-    rcases A with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+    rcases A with ⟨hl, hw⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, hgr⟩
     · refine Or.inl ⟨by rw [shiftr01_length]; exact hl, ?_⟩
       rw [lev_shiftr01]
       exact hw
-    · exact Or.inr (Or.inl fun n hn => by
+    · exact Or.inr (Or.inl ⟨natDom_shiftr01.mpr hnat, fun n hn => by
         rw [oper_shiftr01]
-        exact hop n hn)
-    · refine Or.inr (Or.inr ⟨m, hm, domT_shiftr01.mpr hd, fun z hz hb => ?_⟩)
+        exact hop n hn⟩)
+    · refine Or.inr (Or.inr ⟨m, hm, domT_shiftr01.mpr hd, fun z hz hb ht => ?_⟩)
       have hne : N ≠ [] := by rintro rfl; exact not_domT_nil m hd
       rw [graft_shiftr01 hne]
-      exact hgr z hz hb
+      exact hgr z hz hb ht
   exact fun h => hsub h
 
 /-- Every nonempty block splits as `A ++ P` with `P` its last top-level tree. -/
@@ -858,7 +850,7 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
       fun p hp => hrs p (List.mem_append_right _ hp)
     have hAge : ∀ p ∈ A, entry B 0 0 ≤ p.1 :=
       fun p hp => hrs p (List.mem_append_left _ hp)
-    rcases AB with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+    rcases AB with ⟨hl, hw⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, hgr⟩
     · have hB1 : B.length = 1 := by omega
       by_cases hAnil : A = []
       · subst hAnil; simpa using hX B (Or.inl ⟨hl, hw⟩)
@@ -878,7 +870,8 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
         have hzz0 : lev B (B.length - 1) = 0 := by
           have : B.length - 1 = 0 := by omega
           rw [this]; exact hw
-        refine hX _ (Or.inr (Or.inl fun n hn => ?_))
+        refine hX _ (Or.inr (Or.inl ⟨(natDom_append hBnil hrs).mpr
+          (natDom_iff.mpr (Or.inl hzz0)), fun n hn => ?_⟩))
         have hpred : (A ++ B)⟦n⟧ = Pred (A ++ B) := by
           by_cases hzz : entry (A ++ B) 0 ((A ++ B).length - 1) = 0 ∧
               entry (A ++ B) 1 ((A ++ B).length - 1) = 0 ∧
@@ -894,7 +887,8 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
         rw [hdl]
         simpa using hA
     · by_cases hB2 : 2 ≤ B.length
-      · refine hX _ (Or.inr (Or.inl fun n hn => ?_))
+      · refine hX _ (Or.inr (Or.inl ⟨(natDom_append hBnil hrs).mpr hnat,
+          fun n hn => ?_⟩))
         rw [oper_append_gen n hB2 hrs]
         refine hop n hn (fun p hp => ?_)
         rw [oper_head_eq hn]
@@ -906,9 +900,9 @@ theorem XA_closed {u : ℕ} {X : Set TrioSeq}
         rw [hB1] at h1
         exact h1 hrs
     · refine hX _ (Or.inr (Or.inr ⟨m, hm, (domT_append hBnil hrs).mpr hd,
-        fun z hz hbz => ?_⟩))
+        fun z hz hbz htz => ?_⟩))
       rw [graft_append hBnil]
-      refine hgr z hz hbz ?_
+      refine hgr z hz hbz htz ?_
       by_cases hgz : graft B z = []
       · rw [hgz]
         intro p hp
@@ -939,7 +933,7 @@ theorem Om_mem_W (v z : ℕ) : [((0, v, z) : ℕ × ℕ × ℕ)] ∈ W (2 * v + 
   · rw [h0]
     exact A1_intro (Or.inl ⟨by simp, by simp [lev, entry]; omega⟩)
   · refine A1_intro (Or.inr (Or.inr ⟨2 * v + z - 1, by omega, domT_Om hpos, ?_⟩))
-    intro y hy _
+    intro y hy _ _
     rw [graft_Om]
     exact W_mono (by omega) hy
 
@@ -1230,11 +1224,126 @@ theorem oper_cons_nat {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [
   intro j _
   simp only [Function.comp_apply, entry_cons, le0_cons, le1_cons]
 
-/-- An argument block `R` is in `W*` when every principal `p_{v,z}(R)` lands in
-the level-`u` stage, for every `u` above both the root and `R`'s prefix
-orphans. -/
+/-- **`W u` is closed under one expansion step.** -/
+theorem oper_closed {u n : ℕ} {M : TrioSeq} (hM : M ∈ W u) (hn : 1 ≤ n) :
+    M⟦n⟧ ∈ W u := by
+  have hA : Aop W u (W u) M := by
+    have h : M ∈ Aset W u (W u) := by rw [A1 u]; exact hM
+    exact h
+  by_cases hshort : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hshort]; exact hM
+  · rcases hA with ⟨hl, -⟩ | ⟨-, hop⟩ | ⟨m, -, hd, hgr⟩
+    · exact absurd (by omega : M.length - 1 = 0) hshort
+    · exact hop n hn
+    · rw [oper_eq_graft_nil_of_domT (n := n) (by omega) hd]
+      exact hgr [] (W_nil m) based_nil (tbAll_nil m)
+
+/-- The segment starting at `0` is a prefix. -/
+theorem seg_zero_eq_take (M : TrioSeq) {j : ℕ} (h : j ≤ M.length) :
+    seg M 0 j = M.take j := by
+  unfold seg
+  apply List.ext_getElem
+  · simp [Nat.min_eq_left h]
+  · intro i h1 h2
+    have hi : i < M.length := by
+      simp only [List.length_map, List.length_range'] at h1
+      omega
+    simp only [List.getElem_map, List.getElem_range', List.getElem_take,
+      ← getD_eq_entries, List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem hi, Nat.zero_add, Nat.one_mul,
+      Option.getD_some]
+
+/-- **Successor principal step**: when `R`'s trailing column carries no
+subscript and no row-0 parent inside `R`, the root itself is its parent and
+`p_{v,z}(R)⟦n⟧` is `n` literal copies of `p_{v,z}(R.dropLast)`. -/
+theorem oper_cons_succ {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hw : lev R (R.length - 1) = 0)
+    (hnp : ¬ hasParent R 0 (R.length - 1)) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ =
+      (List.range n).flatMap
+        (fun _ => (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast)) := by
+  classical
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : (p0 :: R).length - 1 = R.length := by simp
+  have hE : ∀ i, entry (p0 :: R) i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : (p0 :: R).length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hz : ¬ (entry (p0 :: R) 0 ((p0 :: R).length - 1) = 0 ∧
+      entry (p0 :: R) 1 ((p0 :: R).length - 1) = 0 ∧
+      entry (p0 :: R) 2 ((p0 :: R).length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hw1 : entry R 1 (R.length - 1) = 0 := by unfold lev at hw; omega
+  have hw2 : entry R 2 (R.length - 1) = 0 := by unfold lev at hw; omega
+  have hi1 : srow (p0 :: R) ((p0 :: R).length - 1) = 0 := by
+    rw [hMlen, srow_cons_last hRne]
+    unfold srow
+    rw [if_neg (by omega), if_neg (by omega)]
+  have hallge : ∀ k, k < R.length - 1 → entry R 0 (R.length - 1) ≤ entry R 0 k := by
+    intro k hk
+    by_contra hcon
+    exact hnp ((hasParent_zero_iff (by omega)).mpr ⟨k, hk, by omega⟩)
+  have hnr : nextrel0 (p0 :: R) 0 R.length := by
+    refine ⟨by simp, by simp, hRlen, ?_, ?_⟩
+    · rw [hE 0]
+      have : entry (p0 :: R) 0 0 = 0 := by simp [entry, hp0]
+      omega
+    · rintro l ⟨hl1, hl2⟩
+      obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+      rw [hE 0, entry_cons]
+      exact hallge l' (by omega)
+  have huniq : ∀ y, nextR (p0 :: R) 0 y R.length → y = 0 := by
+    intro y hy
+    by_contra hy0
+    obtain ⟨y', rfl⟩ : ∃ y', y = y' + 1 := ⟨y - 1, by omega⟩
+    have hyR : nextrel0 R y' (R.length - 1) := (nextR_cons_last hRne 0 y').mp hy
+    have h1 := hallge y' hyR.2.2.1
+    have h2 := hyR.2.2.2.1
+    omega
+  have hnr' : nextR (p0 :: R) 0 0 R.length := by
+    unfold nextR; rw [if_pos rfl]; exact hnr
+  have hp : hasParent (p0 :: R) (srow (p0 :: R) ((p0 :: R).length - 1))
+      ((p0 :: R).length - 1) := by
+    rw [hi1, hMlen]
+    exact ⟨0, hnr', huniq⟩
+  have hpar : parent (p0 :: R) (srow (p0 :: R) ((p0 :: R).length - 1))
+      ((p0 :: R).length - 1) = 0 := by
+    have hp' : hasParent (p0 :: R) 0 R.length := by rw [hi1, hMlen] at hp; exact hp
+    have heq : parent (p0 :: R) (srow (p0 :: R) ((p0 :: R).length - 1))
+        ((p0 :: R).length - 1) = parent (p0 :: R) 0 R.length := by rw [hi1, hMlen]
+    rw [heq]
+    exact huniq _ (parent_nextR hp')
+  rw [oper_gcopies n hL hz hp, hpar, hi1, if_neg (by omega), if_neg (by omega),
+    List.take_zero, List.nil_append, Nat.sub_zero]
+  unfold gcopies
+  refine List.flatMap_congr ?_
+  intro k _
+  have hgc : gcopy (p0 :: R) 0 ((p0 :: R).length - 1) 0 0 k
+      = seg (p0 :: R) 0 ((p0 :: R).length - 1) := by
+    unfold gcopy seg
+    refine List.map_congr_left ?_
+    intro j _
+    simp
+  rw [hgc, seg_zero_eq_take _ (by omega), ← List.dropLast_eq_take,
+    dropLast_cons hRne]
+
+/-- An argument block `R` is in `W*` when every principal block
+`M = p_{v,z}(R)` lands in every stage `u` that both dominates the root level
+and dominates the *dead orphans of `M`'s own prefixes*.
+
+The second condition is indexed by `M`, **not** by `R`, and that is exactly what
+makes the trio hierarchy work.  A `z = 1` root cannot collapse a `z = 1` orphan
+(row-2 parenthood needs a strictly smaller row 2), so `M` can carry `domT M m`
+with `m ≥ 2v+z` and the graft clause would be out of reach at `u = 2v+z`;
+`tbAll M u` forces `u > m` and puts it back in range.  Indexing by `tbAll R u`
+instead is *false*: it counts orphans of `R`'s prefixes that the root revives,
+which pushes `u` above `m` in the tower branch and breaks `W u ⊆ W m`
+(probe: 52/119 tower blocks violate it, versus 0/264 for the `M`-indexed form). -/
 def Wstar : Set TrioSeq :=
-  {R | argOK R → ∀ v z u : ℕ, 2 * v + z ≤ u → tbAll R u →
+  {R | argOK R → ∀ v z u : ℕ, 2 * v + z ≤ u →
+    tbAll (((0, v, z) : ℕ × ℕ × ℕ) :: R) u →
     (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W u}
 
 end Wset
