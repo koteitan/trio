@@ -261,7 +261,7 @@ def ArgDomCore : Prop :=
     (∀ x ∈ A2, u < x.1) →
     (A2 = [] ∨ (A2.headI).1 ≤ u + e) →
     (Z = [] ∨ (Z.headI).1 ≤ u) →
-    SpineOK A1 (u + e) w1 →
+    SpineOK A1 (u + e) (w1 + 1) →
     sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2)))
 
 /-! ## 一様シフトの道具（`i1 = 1`, `f = 0` の鎖） -/
@@ -650,8 +650,8 @@ theorem ascArgDom1_of_core (H : ArgDomCore) : AscArgDom1 := by
       = (G ++ (v0, w1, w2) :: (R ++ (v0 + d0, w1, w2) :: (Shi ++ A2))) ++ Z := by
     rw [← hSsplit, ← hDsplit]
     simp
-  have hspine : SpineOK R (v0 + d0) w1 := by
-    have h := spineOK_of_le1 hle1
+  have hspine : SpineOK R (v0 + d0) (w1 + 1) := by
+    have h := spineOK_strict_of_le1 hle1
     simpa using h
   have hcore := H (X := G) (A1 := R) (B := Shi) (A2 := A2) (Z := Z)
     (u := v0) (w1 := w1) (z := w2) (e := d0) (f := 0)

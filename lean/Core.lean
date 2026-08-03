@@ -22,7 +22,7 @@ def ArgDomCoreOn (N : TrioSeq) : Prop :=
     (∀ x ∈ A2, u < x.1) →
     (A2 = [] ∨ (A2.headI).1 ≤ u + e) →
     (Z = [] ∨ (Z.headI).1 ≤ u) →
-    SpineOK A1 (u + e) w1 →
+    SpineOK A1 (u + e) (w1 + 1) →
     sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2)))
 
 theorem argDomCore_of_on (H : ∀ N, ST_TS N → ArgDomCoreOn N) : ArgDomCore := by
@@ -267,7 +267,7 @@ theorem bad_B_key {M P A1 D : TrioSeq} {u w1 z e f : ℕ} {lp : ℕ × ℕ × �
     (hMon : ArgDomCoreOn M)
     (hMeq : M = (P ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])) ++ (D ++ [lp]))
     (he : 0 < e) (hzf : f = 0 ∨ z = 0)
-    (h1 : ∀ x ∈ A1, u < x.1) (h6 : SpineOK A1 (u + e) w1)
+    (h1 : ∀ x ∈ A1, u < x.1) (h6 : SpineOK A1 (u + e) (w1 + 1))
     {B' A2' Z' : TrioSeq}
     (hsplit : D ++ [lp] = B' ++ (A2' ++ Z'))
     (hB' : ∀ x ∈ B', u + e < x.1) (hA2' : ∀ x ∈ A2', u < x.1)
@@ -305,7 +305,7 @@ theorem argDomCoreOn_bad_B {M G R : TrioSeq} {v0 w10 z0 d0 d1 n : ℕ}
     (he : 0 < e) (hzf : f = 0 ∨ z = 0)
     (h1 : ∀ x ∈ A1, u < x.1) (h2 : ∀ x ∈ B, u + e < x.1)
     (h3 : ∀ x ∈ A2, u < x.1) (h4 : A2 = [] ∨ (A2.headI).1 ≤ u + e)
-    (h5 : Z = [] ∨ (Z.headI).1 ≤ u) (h6 : SpineOK A1 (u + e) w1)
+    (h5 : Z = [] ∨ (Z.headI).1 ≤ u) (h6 : SpineOK A1 (u + e) (w1 + 1))
     (hcase : X.length + (A1.length + 1) < G.length + (R.length + 1)) :
     sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
@@ -899,14 +899,14 @@ theorem split_two {N : TrioSeq} {a b : ℕ} (hab : a < b) (hb : b < N.length) :
 /-- **Positional form of `SpineOK`**: a column strictly between the two
 marked positions which is right-visible up to the deeper one and sits below
 its level carries row 1 at least `w1`. -/
-theorem spineOK_pos {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+theorem spineOK_pos {N X A1 B A2 Z : TrioSeq} {u w1 z e f w : ℕ}
     (heq : N = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
-    (h6 : SpineOK A1 (u + e) w1) :
+    (h6 : SpineOK A1 (u + e) w) :
     ∀ p, X.length < p → p < X.length + (A1.length + 1) →
       entry N 0 p < u + e →
       (∀ p', p < p' → p' < X.length + (A1.length + 1) →
         entry N 0 p < entry N 0 p') →
-      w1 ≤ entry N 1 p := by
+      w ≤ entry N 1 p := by
   have hN : N = X ++ ((u, w1, z)
       :: (A1 ++ ((u + e, w1 + f, z) :: ((B ++ A2) ++ Z)))) := by
     rw [heq]
@@ -959,7 +959,7 @@ theorem spineOK_pos {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
       hp4 (X.length + 1 + (t + 1 + s)) (by omega) (by omega)
     rw [hget t ht, hget (t + 1 + s) (by omega), hx, hidx] at hh
     exact hh
-  show w1 ≤ (N.getD (X.length + 1 + t) (0, 0, 0)).2.1
+  show w ≤ (N.getD (X.length + 1 + t) (0, 0, 0)).2.1
   rw [hget t ht, hx]
   exact h6 (A1.take t) V x hA1 hxlt hV
 
@@ -1016,6 +1016,8 @@ the guarded lift preserves `sle`.  The `(F, T)` mismatch wins early, the
 theorem sle_gliftAt {d0 d1 : ℕ} (hd1 : 0 < d1) {gB gc : ℕ → Prop} :
     ∀ (B0 c0 : TrioSeq) (o : ℕ),
       (∀ k, k < B0.length → k < c0.length →
+        (∀ s, s < k → B0.getD s (0, 0, 0) = c0.getD s (0, 0, 0)
+          ∧ (gB (o + s) ↔ gc (o + s))) →
         (B0.getD k (0, 0, 0)).1 = (c0.getD k (0, 0, 0)).1 →
         (B0.getD k (0, 0, 0)).2.1 ≤ (c0.getD k (0, 0, 0)).2.1 →
         gB (o + k) → gc (o + k)) →
@@ -1037,18 +1039,32 @@ theorem sle_gliftAt {d0 d1 : ℕ} (hd1 : 0 < d1) {gB gc : ℕ → Prop} :
         rintro (h | h)
         · exact absurd h (by simp)
         · exact h)
-    have hstep : ∀ k, k < B0'.length → k < c0'.length →
+    have hstep : p = q → (gB o ↔ gc o) →
+        ∀ k, k < B0'.length → k < c0'.length →
+        (∀ s, s < k → B0'.getD s (0, 0, 0) = c0'.getD s (0, 0, 0)
+          ∧ (gB (o + 1 + s) ↔ gc (o + 1 + s))) →
         (B0'.getD k (0, 0, 0)).1 = (c0'.getD k (0, 0, 0)).1 →
         (B0'.getD k (0, 0, 0)).2.1 ≤ (c0'.getD k (0, 0, 0)).2.1 →
         gB (o + 1 + k) → gc (o + 1 + k) := by
-      intro k h1 h2 h3 h4
+      intro hpq hg0 k h1 h2 hpre h3 h4
       have hh := hkey (k + 1) (by simpa using h1) (by simpa using h2)
+        (by
+          intro s hs
+          rcases Nat.eq_zero_or_pos s with rfl | hsp
+          · refine ⟨by simpa using hpq, ?_⟩
+            rw [Nat.add_zero]
+            exact hg0
+          · obtain ⟨s', rfl⟩ : ∃ s', s = s' + 1 := ⟨s - 1, by omega⟩
+            have hh2 := hpre s' (by omega)
+            refine ⟨by simpa using hh2.1, ?_⟩
+            rw [show o + (s' + 1) = o + 1 + s' from by omega]
+            exact hh2.2)
         (by simpa using h3) (by simpa using h4)
       rw [show o + (k + 1) = o + 1 + k from by omega] at hh
       exact hh
     have hk0 : p.1 = q.1 → p.2.1 ≤ q.2.1 → gB o → gc o := by
       intro h1 h2 h3
-      have hh := hkey 0 (by simp) (by simp)
+      have hh := hkey 0 (by simp) (by simp) (by omega)
         (by simpa using h1) (by simpa using h2)
       rw [Nat.add_zero] at hh
       exact hh h3
@@ -1084,8 +1100,10 @@ theorem sle_gliftAt {d0 d1 : ℕ} (hd1 : 0 < d1) {gB gc : ℕ → Prop} :
             omega
     · -- equal heads: the guards decide
       by_cases hgb : gB o
-      · rw [if_pos hgb, if_pos (hk0 rfl le_rfl hgb)]
-        exact Or.inr ⟨rfl, ih c0' (o + 1) hstep h⟩
+      · have hgc0 := hk0 rfl le_rfl hgb
+        rw [if_pos hgb, if_pos hgc0]
+        exact Or.inr ⟨rfl, ih c0' (o + 1)
+          (hstep rfl ⟨fun _ => hgc0, fun _ => hgb⟩) h⟩
       · rw [if_neg hgb]
         by_cases hgc : gc o
         · refine Or.inl ?_
@@ -1094,14 +1112,15 @@ theorem sle_gliftAt {d0 d1 : ℕ} (hd1 : 0 < d1) {gB gc : ℕ → Prop} :
           dsimp only
           omega
         · rw [if_neg hgc]
-          exact Or.inr ⟨rfl, ih c0' (o + 1) hstep h⟩
+          exact Or.inr ⟨rfl, ih c0' (o + 1)
+            (hstep rfl ⟨fun hh => absurd hh hgb, fun hh => absurd hh hgc⟩) h⟩
 
 /-- Same-guard specialisation (probe: in the straddling cases the two guard
 words agree at every index — 179673 checks, 0 mismatches). -/
 theorem sle_gliftAt_same {d0 d1 : ℕ} (hd1 : 0 < d1) {g : ℕ → Prop}
     (B0 c0 : TrioSeq) (o : ℕ) (h : sle B0 c0) :
     sle (gliftAt d0 d1 g o B0) (gliftAt d0 d1 g o c0) :=
-  sle_gliftAt hd1 B0 c0 o (fun _ _ _ _ _ hg => hg) h
+  sle_gliftAt hd1 B0 c0 o (fun _ _ _ _ _ _ hg => hg) h
 
 /-! ## 交差ケース (c) の反駁 -/
 
@@ -1349,7 +1368,7 @@ theorem argDomCoreOn_bad_A2_inner {M : TrioSeq} (hM : ST_TS M)
     (heq : gexp M j0 Lb d0 d1 n
       = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
     (he : 0 < e) (hzf : f = 0 ∨ z = 0)
-    (h1 : ∀ x ∈ A1, u < x.1) (h6 : SpineOK A1 (u + e) w1)
+    (h1 : ∀ x ∈ A1, u < x.1) (h6 : SpineOK A1 (u + e) (w1 + 1))
     (hcaseL : X.length < j0 + Lb) (hj0i : j0 < X.length)
     (hcaseR : j0 + Lb ≤ X.length + (A1.length + 1)) :
     False := by
@@ -1618,7 +1637,7 @@ theorem argDomCoreOn_bad_A2_inner {M : TrioSeq} (hM : ST_TS M)
       (by omega) (by omega) hlt hvis
     rw [hep1] at hsp
     rw [hu1, ← mul_ite_zero]
-    exact hsp
+    omega
   have hfc : entry M 1 X.length
       ≤ entry M 1 (j0 + q) + k * (if le1 M j0 (j0 + q) then d1 else 0) := by
     rw [hu1, ← mul_ite_zero]

@@ -1,6 +1,12 @@
-v0.60.0/tower period lemmas
+v0.61.0/strict spine in the core
 
-- Add gexp_getD_indep: a tower entry does not depend on the copy count,
-  so the shorter tower is an entry-wise prefix of the longer one
-- Add gexp_period: moving one period up adds d0 to row 0 and the block
-  guard's d1 to row 1
+- Strengthen ArgDomCore and ArgDomCoreOn to require SpineOK A1 (u+e)
+  (w1+1); the cofinality call sites supply it from spineOK_strict_of_le1
+  with the very same le1 hypothesis
+- Generalise spineOK_pos to an arbitrary threshold
+- Strengthen sle_gliftAt: the hkey obligation may now assume the
+  accumulated prefix agreement, which the induction supplies
+
+The strict spine makes every right-visible column of A1 exceed w1, so in
+the straddling case the shallower column always reaches the block root in
+row 1 — the sub-case that blocked the case (a) transport disappears.

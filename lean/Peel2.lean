@@ -671,8 +671,8 @@ theorem ascArgDom2_of_core (H : ArgDomCore) : AscArgDom2 := by
       :: (R ++ (v0 + d0, w1 + d1, 0) :: (Shi ++ A2))) ++ Z := by
     rw [hNdef, ← hSsplit, ← hDsplit]
     simp
-  have hspine : SpineOK R (v0 + d0) w1 := by
-    have h := spineOK_of_le1 hle1
+  have hspine : SpineOK R (v0 + d0) (w1 + 1) := by
+    have h := spineOK_strict_of_le1 hle1
     simpa using h
   have hcore := H (X := G) (A1 := R) (B := Shi) (A2 := A2) (Z := Z)
     (u := v0) (w1 := w1) (z := 0) (e := d0) (f := d1)
