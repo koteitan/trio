@@ -1,7 +1,7 @@
-v0.77.0/cons index-shift lemmas for the principal-block layer
+v0.78.0/guarded graft and the non-collapsing principal step
 
-- Add entry_cons / nextR_cons / le0_cons / le1_cons / srow_cons and their
-  "_last" variants, len_succ, cons_len_lt, cons_length, dropLast_cons
-- Add hasParent_zero_iff (row-0 parent iff some earlier column is shallower)
-- Add le0_cons_zero: the depth-0 root is a row-0 ancestor of every column of
-  an argument block
+- Add gdelta / ggraft: the fundamental-sequence substitution with the row-1
+  lift the guarded tower needs when the trailing orphan sits in row 2
+- Add ggraft_nil, ggraft_Om, ggraft_cons
+- Add oper_cons_nat: p_{v,z}(R)[n] = p_{v,z}(R[n]) when R's last column keeps
+  its own parent (three-row case split on srow, root blocked by that parent)

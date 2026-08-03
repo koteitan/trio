@@ -1086,6 +1086,144 @@ theorem le0_cons_zero {v z : ℕ} {R : TrioSeq} (hR : argOK R) :
   intro j hj
   exact key j j le_rfl hj
 
+/-! ## ガード付き graft と主ブロックの展開 -/
+
+/-- The row-1 lift carried by the guarded tower: when the trailing orphan sits
+in row 2 at positive depth, the copies raise row 1 up to the orphan's value. -/
+def gdelta (M y : TrioSeq) : ℕ :=
+  if 0 < entry M 0 (M.length - 1) ∧ 1 < srow M (M.length - 1)
+  then entry M 1 (M.length - 1) - entry y 1 0 else 0
+
+/-- **The guarded fundamental-sequence substitution** `M[y]`: replace the
+trailing orphan by `y`, re-based at the orphan's depth and lifted in row 1 by
+`gdelta`. -/
+def ggraft (M y : TrioSeq) : TrioSeq :=
+  M.dropLast ++ y.map (fun p =>
+    ((p.1 + entry M 0 (M.length - 1), p.2.1 + gdelta M y, p.2.2) : ℕ × ℕ × ℕ))
+
+@[simp] theorem ggraft_nil (M : TrioSeq) : ggraft M [] = M.dropLast := by
+  simp [ggraft]
+
+theorem ggraft_Om (v z : ℕ) (y : TrioSeq) :
+    ggraft [((0, v, z) : ℕ × ℕ × ℕ)] y = y := by
+  have hd : gdelta [((0, v, z) : ℕ × ℕ × ℕ)] y = 0 := by
+    unfold gdelta
+    rw [if_neg (by simp [entry])]
+  simp [ggraft, hd, entry]
+
+/-- `ggraft` commutes with a `cons` on a nonempty block. -/
+theorem ggraft_cons {p : ℕ × ℕ × ℕ} {R y : TrioSeq} (hRne : R ≠ []) :
+    ggraft (p :: R) y = p :: ggraft R y := by
+  have hlen : (p :: R).length - 1 = R.length := by simp
+  have he : ∀ i, entry (p :: R) i ((p :: R).length - 1) = entry R i (R.length - 1) := by
+    intro i; rw [hlen]; exact entry_cons_last hRne i
+  have hs : srow (p :: R) ((p :: R).length - 1) = srow R (R.length - 1) := by
+    rw [hlen]; exact srow_cons_last hRne
+  have hd : gdelta (p :: R) y = gdelta R y := by
+    unfold gdelta; rw [he 0, he 1, hs]
+  unfold ggraft
+  rw [hd, he 0, dropLast_cons hRne, List.cons_append]
+
+/-- **Non-collapsing principal step**: `p_{v,z}(R)[n] = p_{v,z}(R[n])`. -/
+theorem oper_cons_nat {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hp : hasParent R (srow R (R.length - 1)) (R.length - 1)) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ = ((0, v, z) : ℕ × ℕ × ℕ) :: R⟦n⟧ := by
+  classical
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  set i1 := srow R (R.length - 1) with hi1
+  set q := parent R i1 (R.length - 1) with hq
+  have hnrR : nextR R i1 q (R.length - 1) := parent_nextR hp
+  have hqlt : q < R.length - 1 := nextR_index_lt hnrR
+  have hLR : R.length - 1 ≠ 0 := by omega
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hzR : ¬ (entry R 0 (R.length - 1) = 0 ∧ entry R 1 (R.length - 1) = 0 ∧
+      entry R 2 (R.length - 1) = 0) := by rintro ⟨h1, -, -⟩; omega
+  have hMlen : (p0 :: R).length - 1 = R.length := by simp
+  have hE : ∀ i, entry (p0 :: R) i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hLM : (p0 :: R).length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hzM : ¬ (entry (p0 :: R) 0 ((p0 :: R).length - 1) = 0 ∧
+      entry (p0 :: R) 1 ((p0 :: R).length - 1) = 0 ∧
+      entry (p0 :: R) 2 ((p0 :: R).length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hi1M : srow (p0 :: R) ((p0 :: R).length - 1) = i1 := by
+    rw [hMlen]; exact srow_cons_last hRne
+  -- the root is *not* a parent of the last column: `R`'s own parent blocks it
+  have hnoroot : ¬ nextR (p0 :: R) i1 0 R.length := by
+    intro h0
+    by_cases hi : i1 = 0
+    · have h0' : nextrel0 (p0 :: R) 0 R.length := by
+        unfold nextR at h0; rw [if_pos hi] at h0; exact h0
+      have hnr0 : nextrel0 R q (R.length - 1) := by
+        have h := hnrR; unfold nextR at h; rw [if_pos hi] at h; exact h
+      have hval := h0'.2.2.2.2 (q + 1) ⟨by omega, by omega⟩
+      rw [hE 0, entry_cons] at hval
+      have := hnr0.2.2.2.1
+      omega
+    · by_cases hi2 : i1 = 1
+      · have h0' : nextrel1 (p0 :: R) 0 R.length := by
+          unfold nextR at h0; rw [if_neg hi, if_pos hi2] at h0; exact h0
+        have hnr1 : nextrel1 R q (R.length - 1) := by
+          have h := hnrR; unfold nextR at h; rw [if_neg hi, if_pos hi2] at h; exact h
+        have hle : le0 (p0 :: R) (q + 1) R.length :=
+          (le0_cons_last hRne q).mpr hnr1.2.2.2.2.1
+        have hval := h0'.2.2.2.2.2 (q + 1) ⟨by omega, hle⟩
+        rw [hE 1, entry_cons] at hval
+        have := hnr1.2.2.2.1
+        omega
+      · have h0' : nextrel2 (p0 :: R) 0 R.length := by
+          unfold nextR at h0; rw [if_neg hi, if_neg hi2] at h0; exact h0
+        have hnr2 : nextrel2 R q (R.length - 1) := by
+          have h := hnrR; unfold nextR at h; rw [if_neg hi, if_neg hi2] at h; exact h
+        have hle : le1 (p0 :: R) (q + 1) R.length :=
+          (le1_cons_last hRne q).mpr hnr2.2.2.2.2.1
+        have hval := h0'.2.2.2.2.2 (q + 1) ⟨by omega, hle⟩
+        rw [hE 2, entry_cons] at hval
+        have := hnr2.2.2.2.1
+        omega
+  have huniq : ∀ y, nextR (p0 :: R) i1 y R.length → y = q + 1 := by
+    intro y hy
+    rcases Nat.eq_zero_or_pos y with rfl | hy0
+    · exact absurd hy hnoroot
+    · obtain ⟨y', rfl⟩ : ∃ y', y = y' + 1 := ⟨y - 1, by omega⟩
+      have hyR := (nextR_cons_last hRne i1 y').mp hy
+      rw [hp.unique hyR hnrR]
+  have hpM : hasParent (p0 :: R) (srow (p0 :: R) ((p0 :: R).length - 1))
+      ((p0 :: R).length - 1) := by
+    rw [hi1M, hMlen]
+    exact ⟨q + 1, (nextR_cons_last hRne _ _).mpr hnrR, huniq⟩
+  have hparM : parent (p0 :: R) (srow (p0 :: R) ((p0 :: R).length - 1))
+      ((p0 :: R).length - 1) = q + 1 := by
+    have heq : parent (p0 :: R) (srow (p0 :: R) ((p0 :: R).length - 1))
+        ((p0 :: R).length - 1) = parent (p0 :: R) i1 R.length := by rw [hi1M, hMlen]
+    rw [heq]
+    refine huniq _ (parent_nextR ?_)
+    rw [hi1M, hMlen] at hpM; exact hpM
+  have hrange : R.length - (q + 1) = R.length - 1 - q := by omega
+  rw [oper_bad_unfold n hLM hzM hpM, oper_bad_unfold n hLR hzR hp,
+    hparM, hi1M, hMlen, hE 0, hE 1, entry_cons, entry_cons, hrange,
+    List.take_succ_cons, List.cons_append]
+  have hqq : parent R (srow R (R.length - 1)) (R.length - 1) = q := by
+    rw [← hi1, ← hq]
+  rw [hqq, ← hi1]
+  congr 1
+  congr 1
+  refine List.flatMap_congr ?_
+  intro k _
+  have hshift : List.range' (q + 1) (R.length - 1 - q)
+      = (List.range' q (R.length - 1 - q)).map (fun j => j + 1) := by
+    rw [List.range'_eq_map_range, List.range'_eq_map_range, List.map_map]
+    refine List.map_congr_left ?_
+    intro j _
+    simp only [Function.comp_apply]
+    omega
+  rw [hshift, List.map_map]
+  refine List.map_congr_left ?_
+  intro j _
+  simp only [Function.comp_apply, entry_cons, le0_cons, le1_cons]
+
 /-- An argument block `R` is in `W*` when every principal `p_{v,z}(R)` lands in
 the level-`u` stage, for every `u` above both the root and `R`'s prefix
 orphans. -/
