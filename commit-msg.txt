@@ -1,9 +1,6 @@
-v0.72.0/prefix-wise trailing-orphan bound for the W hierarchy
+v0.73.0/row-0 shift equivariance for the W hierarchy
 
-- Add `tbAll R u` (every prefix of R has its trailing orphan below u) with
-  monotonicity, take-stability and `tbAll_of_lev_bound`
-- Strengthen the graft clause of `Aop` with `tbAll z m`; `acc_of_W` is
-  unaffected since it only instantiates the clause at `z = []`
-- This is the fix for the obstruction found at v0.71.0: the ambient level of
-  `Wstar` is forced up to the trailing orphan, while the copy tower still
-  only needs its graft block at the block's ROOT level
+- Add the shift package in Wset.lean: `nextrel2`/`srow`/`nextR`/`hasParent`/
+  `parent`/`Pred`/`gcopy`/`gcopies` shift invariance
+- Add `oper_shiftr01`: `oper` commutes with a uniform row-0 shift
+- Add `lev`/`domT`/`natDom`/`tbAll`/`graft` shift invariance

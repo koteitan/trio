@@ -342,6 +342,205 @@ theorem wf_of_cofinality_and_membership
     exact acc_of_W hcof u M hu
   · exact Acc.intro M fun y hy => absurd hy.2.1 hM
 
+/-! ## 行 0 シフト同変性 -/
+
+theorem nextrel2_shiftr01 {d0 : ℕ} {W : TrioSeq} {a b : ℕ} :
+    nextrel2 (shiftr01 d0 0 W) a b ↔ nextrel2 W a b := by
+  unfold nextrel2
+  rw [shiftr01_length]
+  simp only [entry2_shiftr01, le1_shiftr01]
+
+theorem srow_shiftr01 {d0 : ℕ} (W : TrioSeq) (j : ℕ) :
+    srow (shiftr01 d0 0 W) j = srow W j := by
+  unfold srow
+  rw [entry2_shiftr01, entry1_shiftr01]
+
+theorem nextR_shiftr01 {d0 : ℕ} {W : TrioSeq} {i a b : ℕ} :
+    nextR (shiftr01 d0 0 W) i a b ↔ nextR W i a b := by
+  unfold nextR
+  split
+  · exact nextrel0_shiftr01
+  · split
+    · exact nextrel1_shiftr01
+    · exact nextrel2_shiftr01
+
+theorem hasParent_shiftr01 {d0 : ℕ} {W : TrioSeq} {i b : ℕ} :
+    hasParent (shiftr01 d0 0 W) i b ↔ hasParent W i b := by
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_shiftr01.mp hj0, fun y hy => hu y (nextR_shiftr01.mpr hy)⟩
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_shiftr01.mpr hj0, fun y hy => hu y (nextR_shiftr01.mp hy)⟩
+
+theorem parent_shiftr01 {d0 : ℕ} {W : TrioSeq} {i b : ℕ} :
+    parent (shiftr01 d0 0 W) i b = parent W i b := by
+  unfold parent
+  congr 1
+  funext j0
+  exact propext nextR_shiftr01
+
+theorem shiftr01_take (d0 d1 : ℕ) (W : TrioSeq) (k : ℕ) :
+    (shiftr01 d0 d1 W).take k = shiftr01 d0 d1 (W.take k) := by
+  unfold shiftr01
+  rw [List.map_take]
+
+theorem shiftr01_dropLast (d0 d1 : ℕ) (W : TrioSeq) :
+    (shiftr01 d0 d1 W).dropLast = shiftr01 d0 d1 W.dropLast := by
+  unfold shiftr01
+  rw [List.map_dropLast]
+
+theorem gcopy_shiftr01 {d : ℕ} {W : TrioSeq} {r L : ℕ} (hb : r + L ≤ W.length)
+    (d0 d1 k : ℕ) :
+    gcopy (shiftr01 d 0 W) r L d0 d1 k = shiftr01 d 0 (gcopy W r L d0 d1 k) := by
+  show _ = List.map (fun p : ℕ × ℕ × ℕ => ((p.1 + d, p.2.1 + 0, p.2.2) : ℕ × ℕ × ℕ)) _
+  unfold gcopy
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro j hj
+  have hjlt : j < W.length := by
+    have := List.mem_range'_1.1 hj
+    omega
+  rw [entry0_shiftr01 hjlt, entry1_shiftr01, entry2_shiftr01]
+  simp only [Function.comp_apply]
+  refine Prod.ext (by dsimp only; omega) (Prod.ext ?_ (by dsimp only))
+  dsimp only
+  by_cases hg : le1 W r j
+  · rw [if_pos hg, if_pos (le1_shiftr01.mpr hg)]
+    omega
+  · rw [if_neg hg, if_neg (fun hc => hg (le1_shiftr01.mp hc))]
+
+theorem gcopies_shiftr01 {d : ℕ} {W : TrioSeq} {r L : ℕ} (hb : r + L ≤ W.length)
+    (d0 d1 n : ℕ) :
+    gcopies (shiftr01 d 0 W) r L d0 d1 n
+      = shiftr01 d 0 (gcopies W r L d0 d1 n) := by
+  show _ = List.map (fun p : ℕ × ℕ × ℕ => ((p.1 + d, p.2.1 + 0, p.2.2) : ℕ × ℕ × ℕ)) _
+  unfold gcopies
+  rw [List.map_flatMap]
+  refine List.flatMap_congr ?_
+  intro k _
+  exact gcopy_shiftr01 hb d0 d1 k
+
+theorem Pred_shiftr01 {d : ℕ} (W : TrioSeq) :
+    Pred (shiftr01 d 0 W) = shiftr01 d 0 (Pred W) := by
+  unfold Pred
+  rw [shiftr01_length]
+  split_ifs with h
+  · rfl
+  · exact shiftr01_dropLast d 0 W
+
+set_option maxHeartbeats 1000000 in
+/-- `oper` is row-0-shift equivariant. -/
+theorem oper_shiftr01 (W : TrioSeq) (d n : ℕ) :
+    (shiftr01 d 0 W)⟦n⟧ = shiftr01 d 0 (W⟦n⟧) := by
+  by_cases hL : W.length - 1 = 0
+  · rw [oper_eq_self_of_short n (by rw [shiftr01_length]; exact hL),
+      oper_eq_self_of_short n hL]
+  · have hlt : W.length - 1 < W.length := by omega
+    have hlenmap : (shiftr01 d 0 W).length - 1 = W.length - 1 := by
+      rw [shiftr01_length]
+    have hLm : (shiftr01 d 0 W).length - 1 ≠ 0 := by rw [shiftr01_length]; exact hL
+    have hsr : srow (shiftr01 d 0 W) (W.length - 1) = srow W (W.length - 1) :=
+      srow_shiftr01 W (W.length - 1)
+    by_cases hp : hasParent W (srow W (W.length - 1)) (W.length - 1)
+    · have hpos : 0 < entry W 0 (W.length - 1) := by
+        by_contra h
+        exact no_hasParent_of_row0_zero (by omega) hp
+      have hz : ¬ (entry W 0 (W.length - 1) = 0 ∧ entry W 1 (W.length - 1) = 0 ∧
+          entry W 2 (W.length - 1) = 0) := by
+        rintro ⟨h1, -, -⟩; omega
+      have hpM : hasParent (shiftr01 d 0 W)
+          (srow (shiftr01 d 0 W) ((shiftr01 d 0 W).length - 1))
+          ((shiftr01 d 0 W).length - 1) := by
+        rw [hlenmap, hsr]
+        exact hasParent_shiftr01.mpr hp
+      have hzM : ¬ (entry (shiftr01 d 0 W) 0 ((shiftr01 d 0 W).length - 1) = 0 ∧
+          entry (shiftr01 d 0 W) 1 ((shiftr01 d 0 W).length - 1) = 0 ∧
+          entry (shiftr01 d 0 W) 2 ((shiftr01 d 0 W).length - 1) = 0) := by
+        rw [hlenmap]
+        rintro ⟨h1, -, -⟩
+        rw [entry0_shiftr01 hlt] at h1
+        omega
+      rw [oper_gcopies n hLm hzM hpM, oper_gcopies n hL hz hp, hlenmap, hsr,
+        parent_shiftr01, shiftr01_take]
+      have hj0lt : parent W (srow W (W.length - 1)) (W.length - 1) < W.length - 1 :=
+        nextR_index_lt (parent_nextR hp)
+      have he0 := entry0_shiftr01 (d0 := d) (d1 := 0) (W := W) hlt
+      have he0' := entry0_shiftr01 (d0 := d) (d1 := 0) (W := W)
+        (p := parent W (srow W (W.length - 1)) (W.length - 1)) (by omega)
+      have hd0 : entry (shiftr01 d 0 W) 0 (W.length - 1)
+          - entry (shiftr01 d 0 W) 0
+              (parent W (srow W (W.length - 1)) (W.length - 1))
+          = entry W 0 (W.length - 1)
+            - entry W 0 (parent W (srow W (W.length - 1)) (W.length - 1)) := by
+        rw [he0, he0']
+        omega
+      have hd1 : entry (shiftr01 d 0 W) 1 (W.length - 1)
+          - entry (shiftr01 d 0 W) 1
+              (parent W (srow W (W.length - 1)) (W.length - 1))
+          = entry W 1 (W.length - 1)
+            - entry W 1 (parent W (srow W (W.length - 1)) (W.length - 1)) := by
+        rw [entry1_shiftr01, entry1_shiftr01]
+      rw [hd0, hd1, gcopies_shiftr01 (by omega), shiftr01_append]
+    · have hpM : ¬ hasParent (shiftr01 d 0 W)
+          (srow (shiftr01 d 0 W) ((shiftr01 d 0 W).length - 1))
+          ((shiftr01 d 0 W).length - 1) := by
+        rw [hlenmap, hsr]
+        intro hh
+        exact hp (hasParent_shiftr01.mp hh)
+      have hW : W⟦n⟧ = Pred W := by
+        by_cases hz : entry W 0 (W.length - 1) = 0 ∧ entry W 1 (W.length - 1) = 0 ∧
+            entry W 2 (W.length - 1) = 0
+        · exact oper_eq_pred_of_zero n hL hz
+        · exact oper_eq_pred_of_noParent n hL hz hp
+      have hWm : (shiftr01 d 0 W)⟦n⟧ = Pred (shiftr01 d 0 W) := by
+        by_cases hz : entry (shiftr01 d 0 W) 0 ((shiftr01 d 0 W).length - 1) = 0 ∧
+            entry (shiftr01 d 0 W) 1 ((shiftr01 d 0 W).length - 1) = 0 ∧
+            entry (shiftr01 d 0 W) 2 ((shiftr01 d 0 W).length - 1) = 0
+        · exact oper_eq_pred_of_zero n hLm hz
+        · exact oper_eq_pred_of_noParent n hLm hz hpM
+      rw [hW, hWm, Pred_shiftr01]
+
+theorem lev_shiftr01 {d : ℕ} (W : TrioSeq) (j : ℕ) :
+    lev (shiftr01 d 0 W) j = lev W j := by
+  unfold lev
+  rw [entry1_shiftr01, entry2_shiftr01]
+
+theorem domT_shiftr01 {d m : ℕ} {W : TrioSeq} :
+    domT (shiftr01 d 0 W) m ↔ domT W m := by
+  unfold domT
+  rw [shiftr01_length, lev_shiftr01, srow_shiftr01, hasParent_shiftr01]
+
+theorem natDom_shiftr01 {d : ℕ} {W : TrioSeq} :
+    natDom (shiftr01 d 0 W) ↔ natDom W :=
+  ⟨fun h m hm => h m (domT_shiftr01.mpr hm),
+   fun h m hm => h m (domT_shiftr01.mp hm)⟩
+
+theorem tbAll_shiftr01 {d u : ℕ} {W : TrioSeq} :
+    tbAll (shiftr01 d 0 W) u ↔ tbAll W u := by
+  constructor
+  · intro h k m hd
+    exact h k m (by rw [shiftr01_take]; exact domT_shiftr01.mpr hd)
+  · intro h k m hd
+    rw [shiftr01_take] at hd
+    exact h k m (domT_shiftr01.mp hd)
+
+theorem graft_shiftr01 {W : TrioSeq} (hW : W ≠ []) (z : TrioSeq) (d : ℕ) :
+    graft (shiftr01 d 0 W) z = shiftr01 d 0 (graft W z) := by
+  have hlt : W.length - 1 < W.length := by
+    have : 0 < W.length := List.length_pos_iff.mpr hW
+    omega
+  unfold graft
+  rw [shiftr01_length, entry0_shiftr01 hlt, shiftr01_dropLast, shiftr01_append]
+  congr 1
+  unfold shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro p _
+  simp only [Function.comp_apply]
+  refine Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega)
+    (by dsimp only))
+
 end Wset
 
 end TRIO
