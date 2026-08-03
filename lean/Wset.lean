@@ -1649,6 +1649,199 @@ theorem Wstar_closed (htow : TowerOK) (htbo : TbOper) :
         rw [← graft_cons hRnil]
         exact tbAll_graft (M := p0 :: R) (by simp) htb hmu hty
 
+/-! ## `W*` から W-所属へ -/
+
+/-- The largest subscript level occurring in a block. -/
+def maxlev : TrioSeq → ℕ
+  | [] => 0
+  | p :: t => max (2 * p.2.1 + p.2.2) (maxlev t)
+
+theorem le_maxlev : ∀ {S : TrioSeq}, ∀ p ∈ S, 2 * p.2.1 + p.2.2 ≤ maxlev S := by
+  intro S
+  induction S with
+  | nil => intro p hp; simp at hp
+  | cons q S ih =>
+      intro p hp
+      rcases List.mem_cons.mp hp with rfl | hp
+      · exact le_max_left _ _
+      · exact le_trans (ih p hp) (le_max_right _ _)
+
+theorem mem_of_Aclosed_aux (htow : TowerOK) (htbo : TbOper) :
+    ∀ (N : ℕ) (M : TrioSeq), M.length ≤ N →
+    ∀ X : Set TrioSeq, (∀ (u : ℕ) (M' : TrioSeq), Aop W u X M' → M' ∈ X) →
+      M ∈ X := by
+  intro N
+  induction N with
+  | zero =>
+      intro M hM X hX
+      have hnil : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil
+      exact hX 0 [] (Or.inl ⟨by simp, by simp [lev, entry]⟩)
+  | succ N ih =>
+      intro M hM X hX
+      by_cases hMnil : M = []
+      · subst hMnil; exact hX 0 [] (Or.inl ⟨by simp, by simp [lev, entry]⟩)
+      · obtain ⟨A, P, hEq, hPne, hrs, htail⟩ := split_lastMin hMnil
+        subst hEq
+        have hPlen : 0 < P.length := List.length_pos_iff.mpr hPne
+        have hMlen : A.length + P.length ≤ N + 1 := by
+          rw [List.length_append] at hM; exact hM
+        by_cases hAnil : A = []
+        · subst hAnil
+          obtain ⟨p0, R, rfl⟩ : ∃ p0 R, P = p0 :: R := by
+            cases P with
+            | nil => exact absurd rfl hPne
+            | cons a b => exact ⟨a, b, rfl⟩
+          have hRgt : ∀ q ∈ R, p0.1 < q.1 := by
+            intro q hq
+            have := htail q (by simpa using hq)
+            simpa [entry] using this
+          have hargOK : argOK (shiftl0 p0.1 R) := by
+            intro q hq
+            rw [mem_shiftl0] at hq
+            obtain ⟨r, hr, rfl⟩ := hq
+            have := hRgt r hr
+            simp only []
+            omega
+          have hWs : shiftl0 p0.1 R ∈ Wstar := by
+            refine ih _ ?_ Wstar (Wstar_closed htow htbo)
+            rw [shiftl0_length]
+            simp only [List.length_cons] at hMlen
+            omega
+          set Q : TrioSeq :=
+            ((0, p0.2.1, p0.2.2) : ℕ × ℕ × ℕ) :: shiftl0 p0.1 R with hQ
+          have hroot : 2 * p0.2.1 + p0.2.2 ≤ maxlev Q :=
+            le_maxlev ((0, p0.2.1, p0.2.2) : ℕ × ℕ × ℕ)
+              (by rw [hQ]; exact List.mem_cons_self ..)
+          have htb : tbAll Q (maxlev Q) :=
+            tbAll_of_lev_bound (fun p hp => le_maxlev p hp)
+          have hmem : Q ∈ W (maxlev Q) :=
+            hWs hargOK p0.2.1 p0.2.2 (maxlev Q) hroot htb
+          have hQeq : Q = shiftl0 p0.1 (p0 :: R) := by
+            rw [hQ, shiftl0_cons]
+            congr 1
+            exact Prod.ext (by dsimp only; omega) rfl
+          have hPsub : ∀ x ∈ (p0 :: R), p0.1 ≤ x.1 := by
+            intro x hx
+            rcases List.mem_cons.mp hx with rfl | hx
+            · exact le_rfl
+            · exact le_of_lt (hRgt x hx)
+          have hmem' : shiftl0 p0.1 (p0 :: R) ∈ W (maxlev Q) := by
+            rw [← hQeq]; exact hmem
+          have hP : (p0 :: R) ∈ W (maxlev Q) := by
+            have h := W_shift hmem' p0.1
+            rwa [shiftr01_shiftl0 hPsub] at h
+          simp only [List.nil_append]
+          exact A2' (fun M' h => hX (maxlev Q) M' h) hP
+        · have hAlen : 0 < A.length := List.length_pos_iff.mpr hAnil
+          have hAX : A ∈ X := ih A (by omega) X hX
+          have hPX : P ∈ XA A X := ih P (by omega) (XA A X)
+            (fun u M' h => XA_closed (fun M'' h'' => hX u M'' h'') hAX M' h)
+          exact hPX hrs
+
+/-- Every block belongs to every `A`-closed set. -/
+theorem mem_of_Aclosed (htow : TowerOK) (htbo : TbOper) {X : Set TrioSeq}
+    (hX : ∀ (u : ℕ) (M : TrioSeq), Aop W u X M → M ∈ X) : ∀ M : TrioSeq, M ∈ X :=
+  fun M => mem_of_Aclosed_aux htow htbo M.length M le_rfl X hX
+
+/-- Every argument block is in `W*`. -/
+theorem mem_Wstar (htow : TowerOK) (htbo : TbOper) (R : TrioSeq) : R ∈ Wstar :=
+  mem_of_Aclosed htow htbo (Wstar_closed htow htbo) R
+
+/-- **Every block lies in `W u` as soon as `u` bounds its subscript levels.** -/
+theorem mem_W_of_bound_aux (htow : TowerOK) (htbo : TbOper) :
+    ∀ (N : ℕ) (M : TrioSeq), M.length ≤ N →
+    ∀ u : ℕ, (∀ p ∈ M, 2 * p.2.1 + p.2.2 ≤ u) → M ∈ W u := by
+  intro N
+  induction N with
+  | zero =>
+      intro M hM u _
+      have hnil : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil
+      exact W_nil u
+  | succ N ih =>
+      intro M hM u hbd
+      by_cases hMnil : M = []
+      · subst hMnil; exact W_nil u
+      · obtain ⟨A, P, hEq, hPne, hrs, htail⟩ := split_lastMin hMnil
+        subst hEq
+        have hPlen : 0 < P.length := List.length_pos_iff.mpr hPne
+        have hMlen : A.length + P.length ≤ N + 1 := by
+          rw [List.length_append] at hM; exact hM
+        obtain ⟨p0, R, hPeq⟩ : ∃ p0 R, P = p0 :: R := by
+          cases P with
+          | nil => exact absurd rfl hPne
+          | cons a b => exact ⟨a, b, rfl⟩
+        subst hPeq
+        have hRgt : ∀ q ∈ R, p0.1 < q.1 := by
+          intro q hq
+          have := htail q (by simpa using hq)
+          simpa [entry] using this
+        have hargOK : argOK (shiftl0 p0.1 R) := by
+          intro q hq
+          rw [mem_shiftl0] at hq
+          obtain ⟨r, hr, rfl⟩ := hq
+          have := hRgt r hr
+          simp only []
+          omega
+        set Q : TrioSeq :=
+          ((0, p0.2.1, p0.2.2) : ℕ × ℕ × ℕ) :: shiftl0 p0.1 R with hQ
+        have hQbd : ∀ p ∈ Q, 2 * p.2.1 + p.2.2 ≤ u := by
+          intro p hp
+          rw [hQ] at hp
+          rcases List.mem_cons.mp hp with rfl | hp
+          · exact hbd p0 (List.mem_append_right _ List.mem_cons_self)
+          · rw [mem_shiftl0] at hp
+            obtain ⟨r, hr, rfl⟩ := hp
+            exact hbd r (List.mem_append_right _ (List.mem_cons_of_mem _ hr))
+        have hroot : 2 * p0.2.1 + p0.2.2 ≤ u :=
+          hbd p0 (List.mem_append_right _ List.mem_cons_self)
+        have hmem : Q ∈ W u :=
+          mem_Wstar htow htbo _ hargOK p0.2.1 p0.2.2 u hroot
+            (tbAll_of_lev_bound hQbd)
+        have hQeq : Q = shiftl0 p0.1 (p0 :: R) := by
+          rw [hQ, shiftl0_cons]
+          congr 1
+          exact Prod.ext (by dsimp only; omega) rfl
+        have hPsub : ∀ x ∈ (p0 :: R), p0.1 ≤ x.1 := by
+          intro x hx
+          rcases List.mem_cons.mp hx with rfl | hx
+          · exact le_rfl
+          · exact le_of_lt (hRgt x hx)
+        have hmem' : shiftl0 p0.1 (p0 :: R) ∈ W u := by
+          rw [← hQeq]; exact hmem
+        have hPu : (p0 :: R) ∈ W u := by
+          have h := W_shift hmem' p0.1
+          rwa [shiftr01_shiftl0 hPsub] at h
+        by_cases hAnil : A = []
+        · subst hAnil; simpa using hPu
+        · have hAlen : 0 < A.length := List.length_pos_iff.mpr hAnil
+          have hAu : A ∈ W u :=
+            ih A (by omega) u (fun p hp => hbd p (List.mem_append_left _ hp))
+          exact W_add hAu hPu hrs
+
+theorem mem_W_of_bound (htow : TowerOK) (htbo : TbOper) (M : TrioSeq) (u : ℕ)
+    (h : ∀ p ∈ M, 2 * p.2.1 + p.2.2 ≤ u) : M ∈ W u :=
+  mem_W_of_bound_aux htow htbo M.length M le_rfl u h
+
+/-- Every block lies in `W u` for `u` its maximal subscript level. -/
+theorem mem_W_maxlev (htow : TowerOK) (htbo : TbOper) (M : TrioSeq) :
+    M ∈ W (maxlev M) :=
+  mem_W_of_bound htow htbo M (maxlev M) le_maxlev
+
+theorem W_membership (htow : TowerOK) (htbo : TbOper) :
+    ∀ M : TrioSeq, ST_TS M → ∃ u : ℕ, M ∈ W u :=
+  fun M _ => ⟨maxlev M, mem_W_maxlev htow htbo M⟩
+
+/-- **Cofinality + the two open cores give well-foundedness of `olt` on
+`ST_TS` images.** -/
+theorem wf_olt_ST_TS_of_cofinality (htow : TowerOK) (htbo : TbOper)
+    (hcof : ∀ {M N : TrioSeq}, ST_TS M → ST_TS N → translate N <o translate M →
+      ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧)) :
+    WellFounded (fun a b : TrioSeq =>
+      ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
+  wf_of_cofinality_and_membership hcof (W_membership htow htbo)
+
 end Wset
 
 end TRIO

@@ -1,12 +1,10 @@
-v0.81.0/Wstar_closed modulo two named cores
+v0.82.0/W-membership layer: WF of olt on ST_TS modulo three hypotheses
 
-- Add the `W*` helper package: `argOK_oper`/`argOK_graft`/`argOK_dropLast`,
-  `based_cons`, `rsum_self_cons`, `graft_cons`, `W_flatMap_copies`
-- Add `nextR_src_ge` and `hasParent_append_right_of`: a parent inside `T` stays
-  the unique parent of `A ++ T`, with no anchoring hypothesis on `T`
-- Add `tbAll_graft`: every dead orphan of a prefix of `graft M z` is one of `M`
-  or one of `z`
-- Factor `nextR_cons_uniq` out of `oper_cons_nat`; add `hasParent_cons_of` and
-  `domT_cons_of_dead`
-- Prove `Wstar_closed` for every branch, leaving exactly two named hypotheses:
-  `TowerOK` (the guarded copy tower) and `TbOper` (`tbAll` survives `oper`)
+- Add `maxlev`/`le_maxlev`
+- Add `mem_of_Aclosed_aux`/`mem_of_Aclosed`/`mem_Wstar`: the length induction
+  over the last top-level tree, with the stage picked as the tree maximal
+  subscript level so that `tbAll` follows from `tbAll_of_lev_bound`
+- Add `mem_W_of_bound`/`mem_W_maxlev`/`W_membership`
+- Add `wf_olt_ST_TS_of_cofinality`: sorry-free, axioms [propext,
+  Classical.choice, Quot.sound], open only on `TowerOK`, `TbOper` and the
+  cofinality hypothesis
