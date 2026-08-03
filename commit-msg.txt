@@ -1,6 +1,6 @@
-v0.56.0/factor out the marking lemma
+v0.57.0/generalise the cross-branch refutation
 
-- Extract mark_of_spine from caseC_absurd: on the bad column's row-0 chain
-  with a clean block spine, the first row-1 chain node at or above i has
-  exactly i's row 1, so zjump marks i
-- caseC_absurd now calls it; the lemma is also what case (a) needs
+- Rename caseC_absurd to cross_absurd and generalise it to an arbitrary
+  copy multiplier k, taking the copy-1 root bound as a hypothesis and
+  allowing the mirror source anywhere in the block
+- Adapt the tower wrapper to derive the root bound and call it at k = 1

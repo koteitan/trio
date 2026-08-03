@@ -1144,15 +1144,16 @@ row-1 chain node `b ≥ i` carries row 1 at most `i`'s, while the spine
 carries it at least `i`'s — equality, so `zjump` transports `b`'s mark down
 to `i`.  A marked `i` forces `f = 0`, and the guard equation then puts
 row 1 of `i` strictly above the copy-1 root, contradicting the spine. -/
-theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
+theorem cross_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 k : ℕ}
     (np2 : nextrel2 M j0 x)
     (hd0 : entry M 0 x = entry M 0 j0 + d0)
     (hd1 : entry M 1 x = entry M 1 j0 + d1)
-    (hji : j0 < i) (hix : i < x) (hj0q : j0 ≤ qj) (hqi : qj ≤ i)
+    (hji : j0 < i) (hix : i < x) (hj0q : j0 ≤ qj) (hqx : qj < x) (hk : 1 ≤ k)
     (hu : entry M 0 i < entry M 0 j0 + d0)
-    (hf : entry M 1 i ≤ entry M 1 qj + (if le1 M j0 qj then d1 else 0))
+    (hroot : entry M 1 i ≤ entry M 1 j0 + d1)
+    (hf : entry M 1 i ≤ entry M 1 qj + k * (if le1 M j0 qj then d1 else 0))
     (hzeq : entry M 2 i = entry M 2 qj)
-    (hzf : entry M 1 i = entry M 1 qj + (if le1 M j0 qj then d1 else 0)
+    (hzf : entry M 1 i = entry M 1 qj + k * (if le1 M j0 qj then d1 else 0)
       ∨ entry M 2 i = 0)
     (hA1blk : ∀ l, i < l → l < x → entry M 0 i < entry M 0 l)
     (hspblk : ∀ p, i < p → p < x → entry M 0 p < entry M 0 x →
@@ -1160,7 +1161,7 @@ theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
       entry M 1 i ≤ entry M 1 p)
     (hspcpy : ∀ c, j0 ≤ c → c < qj → entry M 0 c < entry M 0 qj →
       (∀ c', c < c' → c' < qj → entry M 0 c < entry M 0 c') →
-      entry M 1 i ≤ entry M 1 c + (if le1 M j0 c then d1 else 0)) :
+      entry M 1 i ≤ entry M 1 c + k * (if le1 M j0 c then d1 else 0)) :
     False := by
   have hxlen : x < M.length := np2.2.1
   have hj0len : j0 < M.length := np2.1
@@ -1194,16 +1195,6 @@ theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
       omega
   have hwgt : entry M 1 j0 < entry M 1 i :=
     le1_chain_window hle1x.2.2 i hrtgji hrtgix (by omega)
-  -- the copy-1 root bounds `i`'s row 1 from above
-  have hroot : entry M 1 i ≤ entry M 1 j0 + d1 := by
-    rcases Nat.eq_or_lt_of_le hj0q with hqe | hlt
-    · rw [← hqe] at hf
-      rw [if_pos (le1_refl hj0len)] at hf
-      exact hf
-    · have hq0 : entry M 0 j0 < entry M 0 qj := hwin0 qj hlt (by omega)
-      have hh := hspcpy j0 le_rfl hlt hq0 (fun c' h1 h2 => hwin0 c' h1 (by omega))
-      rw [if_pos (le1_refl hj0len)] at hh
-      exact hh
   -- the mirror source is guarded
   have hgj : le1 M j0 qj := by
     by_contra hg
@@ -1236,7 +1227,8 @@ theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
     rcases Nat.eq_or_lt_of_le hj0q with hqe | hqlt
     · rw [← hqe] at hzeq
       omega
-    · have := rtg1_entry1_lt hgj.2.2 (by omega : j0 ≠ qj)
+    · have hkd : d1 ≤ k * d1 := Nat.le_mul_of_pos_left d1 (by omega)
+      have := rtg1_entry1_lt hgj.2.2 (by omega : j0 ≠ qj)
       omega
   · omega
 
@@ -1456,17 +1448,37 @@ theorem argDomCoreOn_bad_A2_c {M : TrioSeq} (hM : ST_TS M) {j0 Lb d0 d1 n : ℕ}
       (by omega) (by omega) hlt hvis
     rw [hep1] at hsp
     omega
-  refine caseC_absurd hM np2 hd0e hd1e (i := X.length) (qj := j0 + q)
-    (by omega) hcaseL (by omega) (by omega) hulow ?_ ?_ ?_
-    hA1blk hspblk hspcpy
-  · rw [hu1]
+  have hj0len : j0 < M.length := np2.1
+  have hfc : entry M 1 X.length
+      ≤ entry M 1 (j0 + q) + (if le1 M j0 (j0 + q) then d1 else 0) := by
+    rw [hu1]
     omega
+  have hroot : entry M 1 X.length ≤ entry M 1 j0 + d1 := by
+    rcases Nat.eq_zero_or_pos q with hq0 | hqp
+    · rw [hq0, Nat.add_zero] at hfc
+      rw [if_pos (le1_refl hj0len)] at hfc
+      exact hfc
+    · have hq0' : entry M 0 j0 < entry M 0 (j0 + q) :=
+        hwin0 (j0 + q) (by omega) (by omega)
+      have hh := hspcpy j0 le_rfl (by omega) hq0'
+        (fun c' h1 h2 => hwin0 c' h1 (by omega))
+      rw [if_pos (le1_refl hj0len)] at hh
+      exact hh
+  refine cross_absurd hM np2 hd0e hd1e (i := X.length) (qj := j0 + q) (k := 1)
+    (by omega) hcaseL (by omega) (by omega) le_rfl hulow hroot ?_ ?_ ?_
+    hA1blk hspblk ?_
+  · rw [Nat.one_mul]
+    exact hfc
   · rw [hu2, hj2v]
-  · rcases hzf with rfl | hz0
+  · rw [Nat.one_mul]
+    rcases hzf with rfl | hz0
     · refine Or.inl ?_
       rw [hu1]
       omega
     · exact Or.inr (by rw [hu2]; exact hz0)
+  · intro c h1 h2 h3 h4
+    rw [Nat.one_mul]
+    exact hspcpy c h1 h2 h3 h4
 
 /-! ## bad_A2 のブロック根整列ケース -/
 
