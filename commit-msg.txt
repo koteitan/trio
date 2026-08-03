@@ -1,6 +1,6 @@
-v0.57.0/generalise the cross-branch refutation
+v0.58.0/A2 straddling: the shallower column is never inside the block
 
-- Rename caseC_absurd to cross_absurd and generalise it to an arbitrary
-  copy multiplier k, taking the copy-1 root bound as a hypothesis and
-  allowing the mirror source anywhere in the block
-- Adapt the tower wrapper to derive the root bound and call it at k = 1
+- Add mul_ite_zero and argDomCoreOn_bad_A2_inner: for an arbitrary copy
+  index the straddling case with j0 < ipos is empty, via cross_absurd
+  fed by the block spine, the copy-k mirror spine and the copy-1 root
+- Drop argDomCoreOn_bad_A2_c, now subsumed (it was the k = 1 instance)
