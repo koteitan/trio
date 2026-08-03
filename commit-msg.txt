@@ -1,8 +1,10 @@
-v0.70.0/the cofinality kernel is unconditional
+v0.71.0/W hierarchy: definitions and acc_of_W
 
-- Add `argDomCoreOn_oper`: the five oper branches, routing the guarded
-  (i1 = 2) and uniform (i1 <= 1) expansions to their bad-branch theorems
-- Add `argDomCoreOn_ST_TS` and `argDomCore_holds`
-- Add `trio_cofinality`: Bachmann cofinality for trio sequences with no
-  remaining hypothesis
-- Update task.md
+- Add lean/Wset.lean (port of the yapss W-hierarchy) with the trio subscript
+  encoding `lev = 2*row1 + row2` (lex on (row1,row2) has order type omega
+  because row2 < 2), so the hierarchy stays indexed by naturals
+- `domT`/`graft`/`based`/`natDom` over the srow-parent, `oper_eq_graft_nil_of_domT`
+- `lfpS`, the operator `Aop`/`Aset`, the stage family `Wf`, `W`, A1/A2/A2'
+- `acc_of_W`: cofinality turns W-membership into accessibility
+- `wf_of_cofinality_and_membership`
+- Register Wset in lakefile roots
