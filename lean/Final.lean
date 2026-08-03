@@ -37,26 +37,26 @@ theorem wf_Rnf_of_wf_TS
   · exact Acc.intro _ (fun v hv => absurd hv.2.1 hu)
 
 /-- Well-foundedness of `olt` restricted to standard forms. -/
-theorem wf_olt_ST_TS_holds (htow : Wset.TowerOK) (htbo : Wset.TbOper) :
+theorem wf_olt_ST_TS_holds (htow : Wset.TowerOK) :
     WellFounded
       (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
-  Wset.wf_olt_ST_TS_of_cofinality htow htbo
+  Wset.wf_olt_ST_TS_of_cofinality htow
     (fun hM hN h => trio_cofinality hM hN h)
 
 /-- Well-foundedness of `Rnf` (the term-side order on the `translate` image). -/
-theorem wf_Rnf_holds (htow : Wset.TowerOK) (htbo : Wset.TbOper) :
+theorem wf_Rnf_holds (htow : Wset.TowerOK) :
     WellFounded Rnf :=
-  wf_Rnf_of_wf_TS (wf_olt_ST_TS_holds htow htbo)
+  wf_Rnf_of_wf_TS (wf_olt_ST_TS_holds htow)
 
 /-- **Trio sequences terminate.**  The one-step expansion relation on standard
-forms is well-founded — modulo the two remaining cores. -/
-theorem TRIO_terminates (htow : Wset.TowerOK) (htbo : Wset.TbOper) :
+forms is well-founded — modulo the one remaining core. -/
+theorem TRIO_terminates (htow : Wset.TowerOK) :
     WellFounded stepRel :=
-  step_terminates (wf_Rnf_holds htow htbo)
+  step_terminates (wf_Rnf_holds htow)
 
 /-- **No infinite expansion sequence.** -/
-theorem no_infinite_expansion_holds (htow : Wset.TowerOK) (htbo : Wset.TbOper) :
+theorem no_infinite_expansion_holds (htow : Wset.TowerOK) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion (wf_Rnf_holds htow htbo)
+  no_infinite_expansion (wf_Rnf_holds htow)
 
 end TRIO

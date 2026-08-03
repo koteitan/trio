@@ -1,3 +1,13 @@
-v0.85.0/record the tower obstruction
+v0.86.0/drop tbAll from W*: one remaining core
 
-- No Lean change; commit-msg only (analysis recorded in the project memory)
+- Redefine `Wstar` as "for EVERY stage above the root level", with no `tbAll`
+  hypothesis: one block is provable at different stages by different clauses,
+  and the tower consumes the low end while the graft clause produces the high
+  end
+- Ungate `Aop` clause 2 and drop `tbAll z m` from clause 3; adjust
+  `Aop_mono_X`, `acc_of_W`, `W_shift`, `XA_closed`, `oper_closed`, `Om_mem_W`
+- Rebuild `Wstar_closed`: the tower branch is now the only appeal to a
+  hypothesis, and the "stage below the orphan" case falls back on the
+  successor route `M[n] = M.dropLast`
+- Delete `TbOper` entirely: it only existed to transport `tbAll` through `oper`
+- `TRIO_terminates` now depends on `TowerOK` alone
