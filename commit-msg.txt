@@ -1,7 +1,10 @@
-v0.63.0/positional criterion for SpineOK, case (a) work in progress
+v0.64.0/case (a) of bad_A2 closed: the descending branch
 
-- Add spineOK_of_pos: a take/drop slice satisfies SpineOK as soon as the
-  positional statement holds on it
-- Park the half-finished descending branch of case A2 in wip-A2desc.txt
-  (values, descended column and instance decomposition done; the A2' head
-  bound, the descended spine and the transport remain)
+- Add `argDomCoreOn_bad_A2_desc`: descend the deeper marked column one
+  period into the shorter tower, apply the copy-count IH, lift back
+- Add `gliftAt_getD` and `headI_getD` helpers
+- Discharge the descended `SpineOK` positionally: below the block root
+  via the shallow instance, at or above it via the `+Lb` twin
+- Discharge the transport guard via `gexp_guard_transport` +
+  `le1_of_chain_le1` + `hkey_aligned` with the strict spine
+- Remove wip-A2desc.txt (now in Core.lean)
