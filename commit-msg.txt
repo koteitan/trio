@@ -1,9 +1,8 @@
-v0.83.0/Final.lean: trio termination modulo TowerOK and TbOper
+v0.84.0/thread the z<2 fragment condition through W*
 
-- Add `Final.lean`: `acc_Rnf_of_acc_TS`, `wf_Rnf_of_wf_TS`,
-  `wf_olt_ST_TS_holds`, `wf_Rnf_holds`, `TRIO_terminates`,
-  `no_infinite_expansion_holds`
-- Wire in the unconditional `trio_cofinality`, so the whole termination proof
-  now depends on exactly two explicit Props: `Wset.TowerOK` and `Wset.TbOper`
-- Register `Final` in lakefile.toml
-- Update task.md
+- Add `zle1` (row 2 never exceeds 1) with `zle1_oper`, `zle1_diagSeqT` and
+  `zle1_ST_TS`: the generators are z-capped and `oper` copies row 2 verbatim
+- Add `z ≤ 1` to `Wstar` and to `TowerOK`; the srow=1 tower needs `2v+z ≤ m`,
+  which follows from `v < w` only when the root row 2 is capped
+- Carry `zle1 M` through `mem_of_Aclosed_aux` and `mem_W_of_bound_aux`, and
+  discharge it in `W_membership` from `ST_TS`
