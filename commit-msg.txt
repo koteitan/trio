@@ -1,5 +1,6 @@
-v0.59.0/list split at an index
+v0.60.0/tower period lemmas
 
-- Add getD_drop, split_one and split_two: decompose a list at one or two
-  marked positions into take/getD/drop pieces, the shape the descended
-  instance of the A2 straddling case needs
+- Add gexp_getD_indep: a tower entry does not depend on the copy count,
+  so the shorter tower is an entry-wise prefix of the longer one
+- Add gexp_period: moving one period up adds d0 to row 0 and the block
+  guard's d1 to row 1

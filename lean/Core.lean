@@ -817,6 +817,41 @@ theorem hkey_aligned {T : TrioSeq} {r ipos jpos s e f : ℕ}
           rw [hv1, ← htx] at hwx
           exact hwx
 
+/-! ## 塔の周期性（コピー数に依らない読み出し） -/
+
+/-- The tower's entries do not depend on the copy count. -/
+theorem gexp_getD_indep {M : TrioSeq} {j0 Lb d0 d1 n n' p : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+    (hp : p < j0 + n * Lb) (hp' : p < j0 + n' * Lb) :
+    (gexp M j0 Lb d0 d1 n).getD p (0, 0, 0)
+      = (gexp M j0 Lb d0 d1 n').getD p (0, 0, 0) := by
+  rcases Nat.lt_or_ge p j0 with h | h
+  · rw [gexp_getD_low hlen h, gexp_getD_low hlen h]
+  · obtain ⟨k, q, hk, hq, hpe⟩ := gexp_pos_decomp (j0 := j0) (Lb := Lb)
+      (n := n) (p := p) hLb h hp
+    have hk' : k < n' := by
+      by_contra hc
+      have hmul : n' * Lb ≤ k * Lb := Nat.mul_le_mul_right _ (by omega)
+      omega
+    rw [hpe, gexp_getD_mir hlen hk hq, gexp_getD_mir hlen hk' hq]
+
+/-- One period up: row 0 rises by `d0` and row 1 by the block guard's `d1`. -/
+theorem gexp_period {M : TrioSeq} {j0 Lb d0 d1 n c q : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hc1 : c + 1 < n) (hq : q < Lb) :
+    (gexp M j0 Lb d0 d1 n).getD (j0 + ((c + 1) * Lb + q)) (0, 0, 0)
+      = (entry M 0 (j0 + q) + c * d0 + d0,
+         entry M 1 (j0 + q) + (if le1 M j0 (j0 + q) then c * d1 else 0)
+           + (if le1 M j0 (j0 + q) then d1 else 0),
+         entry M 2 (j0 + q)) := by
+  rw [gexp_getD_mir hlen hc1 hq]
+  have h0 : (c + 1) * d0 = c * d0 + d0 := Nat.succ_mul c d0
+  have h1 : (c + 1) * d1 = c * d1 + d1 := Nat.succ_mul c d1
+  by_cases hg : le1 M j0 (j0 + q)
+  · simp only [if_pos hg]
+    exact Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega) rfl)
+  · simp only [if_neg hg, Nat.add_zero]
+    exact Prod.ext (by dsimp only; omega) (Prod.ext rfl rfl)
+
 /-! ## 添字での分割 -/
 
 theorem getD_drop (N : TrioSeq) (m i : ℕ) :
