@@ -1,14 +1,12 @@
-v0.80.0/index W* by tbAll on the principal block
+v0.81.0/Wstar_closed modulo two named cores
 
-- Restore `natDom` in `Aop` clause 2 and `tbAll z m` in clause 3, reverting the
-  v0.79.0 experiment: ungating clause 2 certifies dead-root blocks but leaves
-  consumers with only `M.dropLast`, which breaks the tower branch
-- Redefine `Wstar` to quantify over every stage `u` with `2v+z <= u` and
-  `tbAll ((0,v,z) :: R) u`, indexing by the dead orphans of the PRINCIPAL
-  block rather than of the argument block; this puts the z=1 pathology back
-  inside clause 3 range (probe: 0/264 tower and 0/184 non-tower violations,
-  against 52/119 for the R-indexed form)
-- Add `oper_closed`: `W u` is closed under one expansion step
-- Add `oper_cons_succ`: the successor principal step is `n` literal copies of
-  `p_{v,z}(R.dropLast)`
-- Add `seg_zero_eq_take`
+- Add the `W*` helper package: `argOK_oper`/`argOK_graft`/`argOK_dropLast`,
+  `based_cons`, `rsum_self_cons`, `graft_cons`, `W_flatMap_copies`
+- Add `nextR_src_ge` and `hasParent_append_right_of`: a parent inside `T` stays
+  the unique parent of `A ++ T`, with no anchoring hypothesis on `T`
+- Add `tbAll_graft`: every dead orphan of a prefix of `graft M z` is one of `M`
+  or one of `z`
+- Factor `nextR_cons_uniq` out of `oper_cons_nat`; add `hasParent_cons_of` and
+  `domT_cons_of_dead`
+- Prove `Wstar_closed` for every branch, leaving exactly two named hypotheses:
+  `TowerOK` (the guarded copy tower) and `TbOper` (`tbAll` survives `oper`)

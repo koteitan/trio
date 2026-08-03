@@ -1124,10 +1124,12 @@ theorem ggraft_cons {p : ℕ × ℕ × ℕ} {R y : TrioSeq} (hRne : R ≠ []) :
   unfold ggraft
   rw [hd, he 0, dropLast_cons hRne, List.cons_append]
 
-/-- **Non-collapsing principal step**: `p_{v,z}(R)[n] = p_{v,z}(R[n])`. -/
-theorem oper_cons_nat {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+/-- With `R`'s own last column parented inside `R`, the principal root is never a
+`nextR`-predecessor of that column, so the parent index just shifts by one. -/
+theorem nextR_cons_uniq {v z : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
     (hp : hasParent R (srow R (R.length - 1)) (R.length - 1)) :
-    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ = ((0, v, z) : ℕ × ℕ × ℕ) :: R⟦n⟧ := by
+    ∀ y, nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) y R.length
+      → y = parent R (srow R (R.length - 1)) (R.length - 1) + 1 := by
   classical
   set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
   have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
@@ -1135,21 +1137,8 @@ theorem oper_cons_nat {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [
   set q := parent R i1 (R.length - 1) with hq
   have hnrR : nextR R i1 q (R.length - 1) := parent_nextR hp
   have hqlt : q < R.length - 1 := nextR_index_lt hnrR
-  have hLR : R.length - 1 ≠ 0 := by omega
-  have hxpos : 0 < entry R 0 (R.length - 1) :=
-    hR _ (entry_pair_mem (B := R) (by omega))
-  have hzR : ¬ (entry R 0 (R.length - 1) = 0 ∧ entry R 1 (R.length - 1) = 0 ∧
-      entry R 2 (R.length - 1) = 0) := by rintro ⟨h1, -, -⟩; omega
-  have hMlen : (p0 :: R).length - 1 = R.length := by simp
   have hE : ∀ i, entry (p0 :: R) i R.length = entry R i (R.length - 1) :=
     fun i => entry_cons_last hRne i
-  have hLM : (p0 :: R).length - 1 ≠ 0 := by rw [hMlen]; omega
-  have hzM : ¬ (entry (p0 :: R) 0 ((p0 :: R).length - 1) = 0 ∧
-      entry (p0 :: R) 1 ((p0 :: R).length - 1) = 0 ∧
-      entry (p0 :: R) 2 ((p0 :: R).length - 1) = 0) := by
-    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
-  have hi1M : srow (p0 :: R) ((p0 :: R).length - 1) = i1 := by
-    rw [hMlen]; exact srow_cons_last hRne
   -- the root is *not* a parent of the last column: `R`'s own parent blocks it
   have hnoroot : ¬ nextR (p0 :: R) i1 0 R.length := by
     intro h0
@@ -1183,13 +1172,41 @@ theorem oper_cons_nat {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [
         rw [hE 2, entry_cons] at hval
         have := hnr2.2.2.2.1
         omega
-  have huniq : ∀ y, nextR (p0 :: R) i1 y R.length → y = q + 1 := by
-    intro y hy
-    rcases Nat.eq_zero_or_pos y with rfl | hy0
-    · exact absurd hy hnoroot
-    · obtain ⟨y', rfl⟩ : ∃ y', y = y' + 1 := ⟨y - 1, by omega⟩
-      have hyR := (nextR_cons_last hRne i1 y').mp hy
-      rw [hp.unique hyR hnrR]
+  intro y hy
+  rcases Nat.eq_zero_or_pos y with rfl | hy0
+  · exact absurd hy hnoroot
+  · obtain ⟨y', rfl⟩ : ∃ y', y = y' + 1 := ⟨y - 1, by omega⟩
+    have hyR := (nextR_cons_last hRne i1 y').mp hy
+    rw [hp.unique hyR hnrR]
+
+/-- **Non-collapsing principal step**: `p_{v,z}(R)[n] = p_{v,z}(R[n])`. -/
+theorem oper_cons_nat {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hp : hasParent R (srow R (R.length - 1)) (R.length - 1)) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ = ((0, v, z) : ℕ × ℕ × ℕ) :: R⟦n⟧ := by
+  classical
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  set i1 := srow R (R.length - 1) with hi1
+  set q := parent R i1 (R.length - 1) with hq
+  have hnrR : nextR R i1 q (R.length - 1) := parent_nextR hp
+  have hqlt : q < R.length - 1 := nextR_index_lt hnrR
+  have hLR : R.length - 1 ≠ 0 := by omega
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hzR : ¬ (entry R 0 (R.length - 1) = 0 ∧ entry R 1 (R.length - 1) = 0 ∧
+      entry R 2 (R.length - 1) = 0) := by rintro ⟨h1, -, -⟩; omega
+  have hMlen : (p0 :: R).length - 1 = R.length := by simp
+  have hE : ∀ i, entry (p0 :: R) i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hLM : (p0 :: R).length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hzM : ¬ (entry (p0 :: R) 0 ((p0 :: R).length - 1) = 0 ∧
+      entry (p0 :: R) 1 ((p0 :: R).length - 1) = 0 ∧
+      entry (p0 :: R) 2 ((p0 :: R).length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hi1M : srow (p0 :: R) ((p0 :: R).length - 1) = i1 := by
+    rw [hMlen]; exact srow_cons_last hRne
+  have huniq : ∀ y, nextR (p0 :: R) i1 y R.length → y = q + 1 :=
+    nextR_cons_uniq (v := v) (z := z) hR hRne hp
   have hpM : hasParent (p0 :: R) (srow (p0 :: R) ((p0 :: R).length - 1))
       ((p0 :: R).length - 1) := by
     rw [hi1M, hMlen]
@@ -1329,6 +1346,156 @@ theorem oper_cons_succ {v z n : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ 
   rw [hgc, seg_zero_eq_take _ (by omega), ← List.dropLast_eq_take,
     dropLast_cons hRne]
 
+/-! ## `W*` の補助 -/
+
+theorem argOK_oper {R : TrioSeq} (hR : argOK R) (n : ℕ) : argOK (R⟦n⟧) :=
+  fun p hp => oper_mem_ge (c := 1) (fun q hq => hR q hq) p hp
+
+theorem argOK_graft {R : TrioSeq} (hRne : R ≠ []) (hR : argOK R) (y : TrioSeq) :
+    argOK (graft R y) :=
+  fun p hp => graft_mem_ge (c := 1) hRne (fun q hq => hR q hq) p hp
+
+theorem argOK_dropLast {R : TrioSeq} (hR : argOK R) : argOK R.dropLast :=
+  fun p hp => hR p (List.dropLast_subset _ hp)
+
+theorem based_cons (v z : ℕ) (R : TrioSeq) :
+    based (((0, v, z) : ℕ × ℕ × ℕ) :: R) := by simp [based, entry]
+
+theorem rsum_self_cons (v z : ℕ) (R : TrioSeq) :
+    ∀ p ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: R),
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0 ≤ p.1 := by
+  intro p _
+  simp [entry]
+
+theorem graft_cons {v z : ℕ} {R y : TrioSeq} (hRne : R ≠ []) :
+    graft (((0, v, z) : ℕ × ℕ × ℕ) :: R) y
+      = ((0, v, z) : ℕ × ℕ × ℕ) :: graft R y := by
+  have h := graft_append (A := [((0, v, z) : ℕ × ℕ × ℕ)]) (P := R) (z := y) hRne
+  simpa [List.cons_append] using h
+
+/-- `n` copies of one tree stay in `W u`. -/
+theorem W_flatMap_copies {u : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u)
+    (hQr : ∀ p ∈ Q, entry Q 0 0 ≤ p.1) :
+    ∀ n : ℕ, ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  intro n
+  induction n with
+  | zero => simpa using W_nil u
+  | succ n ih =>
+      rw [List.range_succ, List.flatMap_append]
+      have hQ1 : ((List.flatMap fun _ => Q) [n]) = Q := by simp
+      rw [hQ1]
+      refine W_add ih hQ ?_
+      intro p hp
+      rcases List.mem_append.mp hp with hp | hp
+      · rw [List.mem_flatMap] at hp
+        obtain ⟨-, -, hp⟩ := hp
+        exact hQr p hp
+      · exact hQr p hp
+
+/-- A prefix cannot supply a `nextR`-predecessor once the block itself has one:
+the minimality clause of the inner predecessor rules it out.  Unlike
+`nextR_src_in_T` this needs **no** anchoring hypothesis on `T`. -/
+theorem nextR_src_ge {A T : TrioSeq} {i y q j1 : ℕ}
+    (hq : nextR T i q j1) (hy : nextR (A ++ T) i y (A.length + j1)) :
+    A.length ≤ y := by
+  by_contra hlt
+  push_neg at hlt
+  have hqlt : q < j1 := nextR_index_lt hq
+  unfold nextR at hy hq
+  by_cases hi : i = 0
+  · rw [if_pos hi] at hy hq
+    have hb := hy.2.2.2.2 (A.length + q) ⟨by omega, by omega⟩
+    rw [entry_append_right, entry_append_right] at hb
+    have := hq.2.2.2.1
+    omega
+  · rw [if_neg hi] at hy hq
+    by_cases hi1 : i = 1
+    · rw [if_pos hi1] at hy hq
+      have hle : le0 (A ++ T) (A.length + q) (A.length + j1) :=
+        (le0_append_right A T q j1).2 hq.2.2.2.2.1
+      have hb := hy.2.2.2.2.2 (A.length + q) ⟨by omega, hle⟩
+      rw [entry_append_right, entry_append_right] at hb
+      have := hq.2.2.2.1
+      omega
+    · rw [if_neg hi1] at hy hq
+      have hle : le1 (A ++ T) (A.length + q) (A.length + j1) :=
+        (le1_append_right A T q j1).2 hq.2.2.2.2.1
+      have hb := hy.2.2.2.2.2 (A.length + q) ⟨by omega, hle⟩
+      rw [entry_append_right, entry_append_right] at hb
+      have := hq.2.2.2.1
+      omega
+
+/-- A parent inside `T` stays the unique parent after any prefix is prepended. -/
+theorem hasParent_append_right_of (A T : TrioSeq) {i j1 : ℕ}
+    (h : hasParent T i j1) : hasParent (A ++ T) i (A.length + j1) := by
+  obtain ⟨q, hq, huniq⟩ := h
+  refine ⟨A.length + q, (nextR_append_right A T i q j1).2 hq, ?_⟩
+  intro y hy
+  have hge := nextR_src_ge hq hy
+  obtain ⟨y', rfl⟩ : ∃ y', y = A.length + y' := ⟨y - A.length, by omega⟩
+  have := huniq y' ((nextR_append_right A T i y' j1).1 hy)
+  omega
+
+/-- Every dead orphan of a prefix of `graft M z` is one of `M` or one of `z`. -/
+theorem tbAll_graft {M z : TrioSeq} {u m : ℕ} (hMne : M ≠ [])
+    (hM : tbAll M u) (hmu : m < u) (hz : tbAll z m) :
+    tbAll (graft M z) u := by
+  classical
+  have hMlen : 0 < M.length := List.length_pos_iff.mpr hMne
+  set A : TrioSeq := M.dropLast with hA
+  set c : ℕ := entry M 0 (M.length - 1) with hc
+  have hAlen : A.length = M.length - 1 := by rw [hA, List.length_dropLast]
+  have hgz : graft M z = A ++ shiftr01 c 0 z := by
+    unfold graft shiftr01
+    refine congrArg _ (List.map_congr_left ?_)
+    intro p _
+    exact Prod.ext rfl (Prod.ext (by dsimp only; omega) rfl)
+  intro k m' hd
+  by_cases hk : k ≤ A.length
+  · have htake : (graft M z).take k = M.take k := by
+      rw [hgz, List.take_append_of_le_length hk, hA, List.dropLast_eq_take,
+        List.take_take, Nat.min_eq_left (by omega)]
+    rw [htake] at hd
+    exact hM k m' hd
+  · push_neg at hk
+    obtain ⟨j, rfl⟩ : ∃ j, k = A.length + j := ⟨k - A.length, by omega⟩
+    set Z : TrioSeq := shiftr01 c 0 z with hZ
+    have htake : (graft M z).take (A.length + j) = A ++ Z.take j := by
+      rw [hgz, take_append_right]
+    rw [htake] at hd
+    obtain ⟨j0, hj0le, hj0t⟩ : ∃ j0, j0 ≤ Z.length ∧ Z.take j = Z.take j0 := by
+      rcases Nat.lt_or_ge Z.length j with h | h
+      · exact ⟨Z.length, le_rfl, by
+          rw [List.take_of_length_le (le_of_lt h), List.take_of_length_le le_rfl]⟩
+      · exact ⟨j, h, rfl⟩
+    rw [hj0t] at hd
+    have hlZ : (Z.take j0).length = j0 := by
+      rw [List.length_take, Nat.min_eq_left hj0le]
+    have hlen : (A ++ Z.take j0).length = A.length + j0 := by
+      rw [List.length_append, hlZ]
+    rcases Nat.eq_zero_or_pos j0 with hj0z | hj0pos
+    · rw [hj0z] at hd
+      simp only [List.take_zero, List.append_nil] at hd
+      rw [hA, List.dropLast_eq_take] at hd
+      exact hM _ m' hd
+    · obtain ⟨hlev, hnp⟩ := hd
+      rw [hlen] at hlev hnp
+      have hidx : A.length + j0 - 1 = A.length + (j0 - 1) := by omega
+      rw [hidx] at hlev hnp
+      have hZd : domT (Z.take j0) m' := by
+        refine ⟨?_, ?_⟩
+        · rw [hlZ, ← lev_append_right A (Z.take j0) (j0 - 1)]
+          exact hlev
+        · rw [hlZ]
+          intro hh
+          refine hnp ?_
+          rw [srow_append_right A (Z.take j0) (j0 - 1)]
+          exact hasParent_append_right_of A (Z.take j0) hh
+      have hshift : Z.take j0 = shiftr01 c 0 (z.take j0) := by
+        rw [hZ, shiftr01_take]
+      rw [hshift] at hZd
+      exact lt_trans (hz j0 m' (domT_shiftr01.mp hZd)) hmu
+
 /-- An argument block `R` is in `W*` when every principal block
 `M = p_{v,z}(R)` lands in every stage `u` that both dominates the root level
 and dominates the *dead orphans of `M`'s own prefixes*.
@@ -1345,6 +1512,142 @@ def Wstar : Set TrioSeq :=
   {R | argOK R → ∀ v z u : ℕ, 2 * v + z ≤ u →
     tbAll (((0, v, z) : ℕ × ℕ × ℕ) :: R) u →
     (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W u}
+
+/-- The principal root inherits `R`'s own parent, shifted by one. -/
+theorem hasParent_cons_of {v z : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hp : hasParent R (srow R (R.length - 1)) (R.length - 1)) :
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length :=
+  ⟨parent R (srow R (R.length - 1)) (R.length - 1) + 1,
+    (nextR_cons_last hRne _ _).mpr (parent_nextR hp),
+    nextR_cons_uniq hR hRne hp⟩
+
+/-- If the root fails to revive `R`'s trailing orphan, the principal block
+inherits `R`'s domain. -/
+theorem domT_cons_of_dead {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : domT R m)
+    (hnp : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow R (R.length - 1)) R.length) :
+    domT (((0, v, z) : ℕ × ℕ × ℕ) :: R) m := by
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : (p0 :: R).length - 1 = R.length := by simp
+  have hlevM : lev (p0 :: R) ((p0 :: R).length - 1) = lev R (R.length - 1) := by
+    unfold lev
+    rw [hMlen, entry_cons_last hRne 1, entry_cons_last hRne 2]
+  have hi1M : srow (p0 :: R) ((p0 :: R).length - 1) = srow R (R.length - 1) := by
+    rw [hMlen]; exact srow_cons_last hRne
+  exact ⟨by rw [hlevM]; exact hd.1, by rw [hi1M, hMlen]; exact hnp⟩
+
+/-! ## 残る二つの核 -/
+
+/-- **Open core 1 — the guarded tower.**  When the principal root revives `R`'s
+trailing orphan, `p_{v,z}(R)⟦n⟧` is an `n`-fold guarded copy tower and its
+membership has to be assembled from `R`'s graft closure.  For `srow = 1` the
+row-1 lift is `0` and the plain `graft` recursion of the pair-sequence proof
+applies; for `srow = 2` the copies raise row 1 by `w - v` on the `le1`-cone of
+the root, so the substituted block is the *lifted* tower, not the tower. -/
+def TowerOK : Prop :=
+  ∀ (v z m u : ℕ) (R : TrioSeq), argOK R → R ≠ [] → domT R m →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    (∀ y ∈ W m, based y → tbAll y m → graft R y ∈ Wstar) →
+    2 * v + z ≤ u → tbAll (((0, v, z) : ℕ × ℕ × ℕ) :: R) u →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W u
+
+/-- **Open core 2 — `tbAll` survives one expansion.**  True on every probe
+(56080/56080); the proof needs the cross-copy `le0`/`le1` correspondence. -/
+def TbOper : Prop := ∀ (M : TrioSeq) (u n : ℕ), tbAll M u → tbAll (M⟦n⟧) u
+
+/-- **`A_u(W*) ⊆ W*`.** -/
+theorem Wstar_closed (htow : TowerOK) (htbo : TbOper) :
+    ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 Wstar R → R ∈ Wstar := by
+  intro u0 R AR hR v z u hvu htb
+  by_cases hRnil : R = []
+  · subst hRnil
+    exact W_mono hvu (Om_mem_W v z)
+  · set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+    have hRlen : 0 < R.length := List.length_pos_iff.mpr hRnil
+    have hMlen : (p0 :: R).length - 1 = R.length := by simp
+    have hi1M : srow (p0 :: R) ((p0 :: R).length - 1) = srow R (R.length - 1) := by
+      rw [hMlen]; exact srow_cons_last hRnil
+    have hlevM : lev (p0 :: R) ((p0 :: R).length - 1) = lev R (R.length - 1) := by
+      unfold lev
+      rw [hMlen, entry_cons_last hRnil 1, entry_cons_last hRnil 2]
+    have htbdl : tbAll (p0 :: R.dropLast) u := by
+      have heq : (p0 :: R.dropLast) = (p0 :: R).take R.length := by
+        rw [← dropLast_cons hRnil, List.dropLast_eq_take, hMlen]
+      rw [heq]
+      exact tbAll_take htb
+    rcases AR with ⟨hl, hw⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, hgr⟩
+    · -- clause 1: `R = [(x,0,0)]`, so `p_{v,z}(R)⟦n⟧` is `n` copies of `Ω_{v,z}`
+      have hR1 : R.length = 1 := by omega
+      have hw' : lev R (R.length - 1) = 0 := by rw [hR1]; exact hw
+      have hnp : ¬ hasParent R 0 (R.length - 1) := by
+        rw [hR1]
+        rintro ⟨j0, hj0, -⟩
+        exact absurd (nextR_index_lt hj0) (Nat.not_lt_zero j0)
+      have hdl : R.dropLast = [] := List.eq_nil_of_length_eq_zero (by simp; omega)
+      refine A1_intro (Or.inr (Or.inl
+        ⟨natDom_iff.mpr (Or.inl (by rw [hlevM]; exact hw')), fun n hn => ?_⟩))
+      rw [oper_cons_succ hR hRnil hw' hnp, hdl]
+      exact W_flatMap_copies (W_mono hvu (Om_mem_W v z)) (rsum_self_cons v z []) n
+    · -- clause 2: `natDom R`
+      by_cases hp : hasParent R (srow R (R.length - 1)) (R.length - 1)
+      · -- `p_{v,z}(R)⟦n⟧ = p_{v,z}(R⟦n⟧)`
+        refine A1_intro (Or.inr (Or.inl ⟨natDom_iff.mpr (Or.inr
+          (by rw [hi1M, hMlen]; exact hasParent_cons_of hR hRnil hp)),
+          fun n hn => ?_⟩))
+        have hstep := oper_cons_nat (v := v) (z := z) (n := n) hR hRnil hp
+        rw [hstep]
+        refine hop n hn (argOK_oper hR n) v z u hvu ?_
+        rw [← hstep]
+        exact htbo (p0 :: R) u n htb
+      · -- no parent inside `R`: `natDom R` forces the successor case
+        have hw0 : lev R (R.length - 1) = 0 := by
+          rcases natDom_iff.mp hnat with h | h
+          · exact h
+          · exact absurd h hp
+        have hsr : srow R (R.length - 1) = 0 := by
+          unfold srow
+          unfold lev at hw0
+          rw [if_neg (by omega), if_neg (by omega)]
+        have hnp : ¬ hasParent R 0 (R.length - 1) := by rw [← hsr]; exact hp
+        refine A1_intro (Or.inr (Or.inl
+          ⟨natDom_iff.mpr (Or.inl (by rw [hlevM]; exact hw0)), fun n hn => ?_⟩))
+        rw [oper_cons_succ hR hRnil hw0 hnp]
+        refine W_flatMap_copies ?_ (rsum_self_cons v z _) n
+        by_cases hR2 : 2 ≤ R.length
+        · have hop1 := hop 1 le_rfl
+          have hpred : R⟦1⟧ = R.dropLast := by
+            have hL : R.length - 1 ≠ 0 := by omega
+            have he : R⟦1⟧ = Pred R := by
+              by_cases hz0 : entry R 0 (R.length - 1) = 0 ∧
+                  entry R 1 (R.length - 1) = 0 ∧ entry R 2 (R.length - 1) = 0
+              · exact oper_eq_pred_of_zero 1 hL hz0
+              · exact oper_eq_pred_of_noParent 1 hL hz0 hp
+            rw [he]
+            unfold Pred
+            rw [if_neg (by omega)]
+          rw [hpred] at hop1
+          exact hop1 (argOK_dropLast hR) v z u hvu htbdl
+        · have hdl : R.dropLast = [] :=
+            List.eq_nil_of_length_eq_zero (by simp; omega)
+          rw [hdl]
+          exact W_mono hvu (Om_mem_W v z)
+    · -- clause 3: `domT R m`
+      by_cases hpM : hasParent (p0 :: R) (srow R (R.length - 1)) R.length
+      · -- the root revives the orphan: the tower
+        refine A1_intro (Or.inr (Or.inl ⟨natDom_iff.mpr (Or.inr
+          (by rw [hi1M, hMlen]; exact hpM)), fun n hn => ?_⟩))
+        exact htow v z m u R hR hRnil hd hpM hgr hvu htb n hn
+      · -- the orphan stays dead: `p_{v,z}(R)` inherits the graft clause
+        have hdM : domT (p0 :: R) m := domT_cons_of_dead hRnil hd hpM
+        have hmu : m < u :=
+          htb (p0 :: R).length m (by rw [List.take_length]; exact hdM)
+        refine A1_intro (Or.inr (Or.inr ⟨m, hmu, hdM, fun y hy hby hty => ?_⟩))
+        rw [graft_cons hRnil]
+        refine hgr y hy hby hty (argOK_graft hRnil hR y) v z u hvu ?_
+        rw [← graft_cons hRnil]
+        exact tbAll_graft (M := p0 :: R) (by simp) htb hmu hty
 
 end Wset
 
