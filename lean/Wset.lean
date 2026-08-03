@@ -837,6 +837,113 @@ theorem graft_head_eq {B z : TrioSeq} (hB : B ≠ []) (hz : based z)
         omega
     · simp [graft, entry]
 
+set_option maxHeartbeats 1000000 in
+/-- `A_u(X) ⊆ X` and `A ∈ X` imply `A_u(X⁽ᴬ⁾) ⊆ X⁽ᴬ⁾`. -/
+theorem XA_closed {u : ℕ} {X : Set TrioSeq}
+    (hX : ∀ M : TrioSeq, Aop W u X M → M ∈ X) {A : TrioSeq} (hA : A ∈ X) :
+    ∀ M : TrioSeq, Aop W u (XA A X) M → M ∈ XA A X := by
+  intro B AB hrs
+  by_cases hBnil : B = []
+  · subst hBnil; simpa using hA
+  · have hBlen : 0 < B.length := List.length_pos_iff.mpr hBnil
+    have hBge : ∀ p ∈ B, entry B 0 0 ≤ p.1 :=
+      fun p hp => hrs p (List.mem_append_right _ hp)
+    have hAge : ∀ p ∈ A, entry B 0 0 ≤ p.1 :=
+      fun p hp => hrs p (List.mem_append_left _ hp)
+    rcases AB with ⟨hl, hw⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, hgr⟩
+    · have hB1 : B.length = 1 := by omega
+      by_cases hAnil : A = []
+      · subst hAnil; simpa using hX B (Or.inl ⟨hl, hw⟩)
+      · have hAlen : 0 < A.length := List.length_pos_iff.mpr hAnil
+        have hlast : (A ++ B).length - 1 = A.length + 0 := by
+          rw [List.length_append]; omega
+        have hnp : ∀ i, ¬ hasParent (A ++ B) i ((A ++ B).length - 1) := by
+          intro i hh
+          rw [hlast] at hh
+          have := (hasParent_append_gen (i := i) (j := 0) (by omega) hrs).mp hh
+          obtain ⟨j0, hj0, -⟩ := this
+          exact absurd (nextR_index_lt hj0) (Nat.not_lt_zero j0)
+        have hlev0 : lev (A ++ B) ((A ++ B).length - 1) = 0 := by
+          rw [hlast, lev_append_right]
+          have : B.length - 1 = 0 := by omega
+          exact hw
+        have hzz0 : lev B (B.length - 1) = 0 := by
+          have : B.length - 1 = 0 := by omega
+          rw [this]; exact hw
+        refine hX _ (Or.inr (Or.inl ⟨(natDom_append hBnil hrs).mpr
+          (natDom_iff.mpr (Or.inl hzz0)), fun n hn => ?_⟩))
+        have hpred : (A ++ B)⟦n⟧ = Pred (A ++ B) := by
+          by_cases hzz : entry (A ++ B) 0 ((A ++ B).length - 1) = 0 ∧
+              entry (A ++ B) 1 ((A ++ B).length - 1) = 0 ∧
+              entry (A ++ B) 2 ((A ++ B).length - 1) = 0
+          · exact oper_eq_pred_of_zero n (by rw [List.length_append]; omega) hzz
+          · exact oper_eq_pred_of_noParent n (by rw [List.length_append]; omega)
+              hzz (hnp _)
+        rw [hpred]
+        unfold Pred
+        rw [if_neg (by rw [List.length_append]; omega),
+          List.dropLast_append_of_ne_nil hBnil]
+        have hdl : B.dropLast = [] := List.eq_nil_of_length_eq_zero (by simp; omega)
+        rw [hdl]
+        simpa using hA
+    · by_cases hB2 : 2 ≤ B.length
+      · refine hX _ (Or.inr (Or.inl ⟨(natDom_append hBnil hrs).mpr hnat,
+          fun n hn => ?_⟩))
+        rw [oper_append_gen n hB2 hrs]
+        refine hop n hn (fun p hp => ?_)
+        rw [oper_head_eq hn]
+        rcases List.mem_append.mp hp with hp | hp
+        · exact hAge p hp
+        · exact oper_mem_ge hBge p hp
+      · have hB1 : B⟦1⟧ = B := oper_eq_self_of_short 1 (by omega)
+        have h1 := hop 1 le_rfl
+        rw [hB1] at h1
+        exact h1 hrs
+    · refine hX _ (Or.inr (Or.inr ⟨m, hm, (domT_append hBnil hrs).mpr hd,
+        fun z hz hbz htz => ?_⟩))
+      rw [graft_append hBnil]
+      refine hgr z hz hbz htz ?_
+      by_cases hgz : graft B z = []
+      · rw [hgz]
+        intro p hp
+        simp [entry]
+      · intro p hp
+        rw [graft_head_eq hBnil hbz hgz]
+        rcases List.mem_append.mp hp with hp | hp
+        · exact hAge p hp
+        · exact graft_mem_ge hBnil hBge p hp
+
+/-- `W_u` is closed under top-level concatenation. -/
+theorem W_add {u : ℕ} {A B : TrioSeq} (hA : A ∈ W u) (hB : B ∈ W u)
+    (h : rsum A B) : A ++ B ∈ W u :=
+  A2' (XA_closed (u := u) (X := W u) (fun _ hM => A1_intro hM) hA) hB h
+
+theorem graft_Om (v z : ℕ) (y : TrioSeq) : graft [((0, v, z) : ℕ × ℕ × ℕ)] y = y := by
+  simp [graft, entry]
+
+theorem domT_Om {v z : ℕ} (h : 0 < 2 * v + z) :
+    domT [((0, v, z) : ℕ × ℕ × ℕ)] (2 * v + z - 1) := by
+  refine ⟨by simp [lev, entry]; omega, ?_⟩
+  rintro ⟨j0, hj0, -⟩
+  have := nextR_index_lt hj0
+  simp at this
+
+theorem Om_mem_W (v z : ℕ) : [((0, v, z) : ℕ × ℕ × ℕ)] ∈ W (2 * v + z) := by
+  rcases Nat.eq_zero_or_pos (2 * v + z) with h0 | hpos
+  · rw [h0]
+    exact A1_intro (Or.inl ⟨by simp, by simp [lev, entry]; omega⟩)
+  · refine A1_intro (Or.inr (Or.inr ⟨2 * v + z - 1, by omega, domT_Om hpos, ?_⟩))
+    intro y hy _ _
+    rw [graft_Om]
+    exact W_mono (by omega) hy
+
+/-- An argument block `R` is in `W*` when every principal `p_{v,z}(R)` lands in
+the level-`u` stage, for every `u` above both the root and `R`'s prefix
+orphans. -/
+def Wstar : Set TrioSeq :=
+  {R | argOK R → ∀ v z u : ℕ, 2 * v + z ≤ u → tbAll R u →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W u}
+
 end Wset
 
 end TRIO

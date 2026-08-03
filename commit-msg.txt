@@ -1,6 +1,6 @@
-v0.75.0/head and depth preservation for the W hierarchy
+v0.76.0/prefix closure and the Omega blocks of the W hierarchy
 
-- Add `entry_zero_headD`, `oper_headD`, `oper_head_eq`, `entry_pair_mem`
-- Add `oper_mem_ge` and `graft_mem_ge` (neither `oper` nor `graft` produces a
-  column shallower than the block's shallowest one)
-- Add `graft_head_eq` (grafting a based block keeps the anchoring depth)
+- Add `XA_closed` and `W_add` (W_u is closed under top-level concatenation)
+- Add `graft_Om`, `domT_Om`, `Om_mem_W`: the single column `(0,v,z)` lands in
+  the stage `2*v + z`
+- Add `Wstar`, in the level form that carries the prefix-wise orphan bound
