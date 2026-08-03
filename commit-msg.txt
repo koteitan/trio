@@ -1,10 +1,9 @@
-v0.71.0/W hierarchy: definitions and acc_of_W
+v0.72.0/prefix-wise trailing-orphan bound for the W hierarchy
 
-- Add lean/Wset.lean (port of the yapss W-hierarchy) with the trio subscript
-  encoding `lev = 2*row1 + row2` (lex on (row1,row2) has order type omega
-  because row2 < 2), so the hierarchy stays indexed by naturals
-- `domT`/`graft`/`based`/`natDom` over the srow-parent, `oper_eq_graft_nil_of_domT`
-- `lfpS`, the operator `Aop`/`Aset`, the stage family `Wf`, `W`, A1/A2/A2'
-- `acc_of_W`: cofinality turns W-membership into accessibility
-- `wf_of_cofinality_and_membership`
-- Register Wset in lakefile roots
+- Add `tbAll R u` (every prefix of R has its trailing orphan below u) with
+  monotonicity, take-stability and `tbAll_of_lev_bound`
+- Strengthen the graft clause of `Aop` with `tbAll z m`; `acc_of_W` is
+  unaffected since it only instantiates the clause at `z = []`
+- This is the fix for the obstruction found at v0.71.0: the ambient level of
+  `Wstar` is forced up to the trailing orphan, while the copy tower still
+  only needs its graft block at the block's ROOT level

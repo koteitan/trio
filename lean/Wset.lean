@@ -82,6 +82,42 @@ theorem not_domT_nil (m : ℕ) : ¬ domT ([] : TrioSeq) m := by
 
 def natDom (M : TrioSeq) : Prop := ∀ m : ℕ, ¬ domT M m
 
+/-- Every prefix of `R` has its trailing orphan strictly below `u`. -/
+def tbAll (R : TrioSeq) (u : ℕ) : Prop := ∀ k m : ℕ, domT (R.take k) m → m < u
+
+@[simp] theorem tbAll_nil (u : ℕ) : tbAll ([] : TrioSeq) u := by
+  intro k m hd
+  rw [List.take_nil] at hd
+  exact absurd hd (not_domT_nil m)
+
+theorem tbAll_mono {R : TrioSeq} {u v : ℕ} (h : tbAll R u) (huv : u ≤ v) :
+    tbAll R v := fun k m hd => lt_of_lt_of_le (h k m hd) huv
+
+theorem tbAll_take {R : TrioSeq} {u l : ℕ} (h : tbAll R u) :
+    tbAll (R.take l) u := by
+  intro k m hd
+  rw [List.take_take] at hd
+  exact h _ m hd
+
+/-- A bound on every column's level bounds every prefix's trailing orphan. -/
+theorem tbAll_of_lev_bound {R : TrioSeq} {u : ℕ}
+    (h : ∀ p ∈ R, 2 * p.2.1 + p.2.2 ≤ u) : tbAll R u := by
+  intro k m hd
+  obtain ⟨hw, -⟩ := hd
+  have hne : (R.take k) ≠ [] := by
+    intro hc
+    rw [hc] at hw
+    simp [lev, entry] at hw
+  have hpos : 0 < (R.take k).length := List.length_pos_iff.mpr hne
+  have hmem : (R.take k).getD ((R.take k).length - 1) (0, 0, 0) ∈ R.take k :=
+    getD_mem_of_lt (by omega)
+  have hmem' : (R.take k).getD ((R.take k).length - 1) (0, 0, 0) ∈ R :=
+    List.mem_of_mem_take hmem
+  have hle := h _ hmem'
+  have hw' : 2 * ((R.take k).getD ((R.take k).length - 1) (0, 0, 0)).2.1
+      + ((R.take k).getD ((R.take k).length - 1) (0, 0, 0)).2.2 = m + 1 := hw
+  omega
+
 theorem natDom_iff {M : TrioSeq} :
     natDom M ↔ (lev M (M.length - 1) = 0 ∨
       hasParent M (srow M (M.length - 1)) (M.length - 1)) := by
@@ -135,7 +171,8 @@ theorem lfpS_unfold {f : Set TrioSeq → Set TrioSeq} (hm : Monotone f) :
 def Aop (Wfam : ℕ → Set TrioSeq) (u : ℕ) (X : Set TrioSeq) (M : TrioSeq) : Prop :=
   (M.length ≤ 1 ∧ lev M 0 = 0) ∨
   (natDom M ∧ ∀ n : ℕ, 1 ≤ n → M⟦n⟧ ∈ X) ∨
-  (∃ m : ℕ, m < u ∧ domT M m ∧ ∀ z ∈ Wfam m, based z → graft M z ∈ X)
+  (∃ m : ℕ, m < u ∧ domT M m ∧
+    ∀ z ∈ Wfam m, based z → tbAll z m → graft M z ∈ X)
 
 def Aset (Wfam : ℕ → Set TrioSeq) (u : ℕ) (X : Set TrioSeq) : Set TrioSeq :=
   {M | Aop Wfam u X M}
@@ -145,7 +182,7 @@ theorem Aop_mono_X {Wfam : ℕ → Set TrioSeq} {u : ℕ} {X Y : Set TrioSeq}
   rcases h with h | h | ⟨m, hm, hd, hop⟩
   · exact Or.inl h
   · exact Or.inr (Or.inl ⟨h.1, fun n hn => hXY (h.2 n hn)⟩)
-  · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb => hXY (hop z hz hb)⟩)
+  · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb ht => hXY (hop z hz hb ht)⟩)
 
 theorem Aset_mono (Wfam : ℕ → Set TrioSeq) (u : ℕ) : Monotone (Aset Wfam u) := by
   intro X Y hXY M hM
@@ -280,7 +317,7 @@ theorem acc_of_W
       by_cases hlen : 1 < c.length
       · refine acc_of_nat_branch hcof hc ?_
         intro n hn
-        have := hgr [] (W_nil m) based_nil
+        have := hgr [] (W_nil m) based_nil (tbAll_nil m)
         rw [← oper_eq_graft_nil_of_domT (n := n) hlen hd] at this
         exact this
       · have hlen1 : c.length = 1 := by
