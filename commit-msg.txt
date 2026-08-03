@@ -1,6 +1,7 @@
-v0.73.0/row-0 shift equivariance for the W hierarchy
+v0.74.0/top-level split machinery for the W hierarchy
 
-- Add the shift package in Wset.lean: `nextrel2`/`srow`/`nextR`/`hasParent`/
-  `parent`/`Pred`/`gcopy`/`gcopies` shift invariance
-- Add `oper_shiftr01`: `oper` commutes with a uniform row-0 shift
-- Add `lev`/`domT`/`natDom`/`tbAll`/`graft` shift invariance
+- Add `argOK`, `rsum`, `XA`
+- Add `W_shift` (W_u is closed under a uniform row-0 shift)
+- Add `split_lastMin` (every nonempty block splits off its last top-level tree)
+- Add `rsum_decomp`, `entry_sub_zero`, `oper_append_gen`, `graft_append`,
+  `hasParent_append_gen`, `lev`/`srow`/`domT`/`natDom` prefix invariance

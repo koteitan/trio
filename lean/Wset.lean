@@ -541,6 +541,199 @@ theorem graft_shiftr01 {W : TrioSeq} (hW : W ≠ []) (z : TrioSeq) (d : ℕ) :
   refine Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega)
     (by dsimp only))
 
+/-! ## 引数ブロックと最上位分解 -/
+
+/-- `R` is an *argument block*: every column sits strictly below depth `0`. -/
+def argOK (R : TrioSeq) : Prop := ∀ p ∈ R, 0 < p.1
+
+/-- `P` is a genuine top-level suffix of `A ++ P`. -/
+def rsum (A P : TrioSeq) : Prop := ∀ p ∈ A ++ P, entry P 0 0 ≤ p.1
+
+/-- `W_u` is row-0-shift closed. -/
+theorem W_shift {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (d : ℕ) :
+    shiftr01 d 0 M ∈ W u := by
+  revert h
+  show M ∈ W u → _
+  have hsub : W u ⊆ {N : TrioSeq | shiftr01 d 0 N ∈ W u} := by
+    refine A2' ?_
+    intro N A
+    refine A1_intro ?_
+    rcases A with ⟨hl, hw⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, hgr⟩
+    · refine Or.inl ⟨by rw [shiftr01_length]; exact hl, ?_⟩
+      rw [lev_shiftr01]
+      exact hw
+    · exact Or.inr (Or.inl ⟨natDom_shiftr01.mpr hnat, fun n hn => by
+        rw [oper_shiftr01]
+        exact hop n hn⟩)
+    · refine Or.inr (Or.inr ⟨m, hm, domT_shiftr01.mpr hd, fun z hz hb ht => ?_⟩)
+      have hne : N ≠ [] := by rintro rfl; exact not_domT_nil m hd
+      rw [graft_shiftr01 hne]
+      exact hgr z hz hb ht
+  exact fun h => hsub h
+
+/-- Every nonempty block splits as `A ++ P` with `P` its last top-level tree. -/
+theorem split_lastMin : ∀ {M : TrioSeq}, M ≠ [] →
+    ∃ A P, M = A ++ P ∧ P ≠ [] ∧ rsum A P ∧
+      (∀ p ∈ P.tail, entry P 0 0 < p.1) := by
+  intro M
+  induction M using List.reverseRecOn with
+  | nil => intro h; exact absurd rfl h
+  | append_singleton M' q ih =>
+      intro _
+      by_cases hM' : M' = []
+      · subst hM'
+        refine ⟨[], [q], by simp, by simp, ?_, by simp⟩
+        intro p hp
+        simp only [List.nil_append, List.mem_singleton] at hp
+        subst hp
+        simp [entry]
+      · obtain ⟨A', P', hEq, hPne, hrs, htail⟩ := ih hM'
+        have hhd : entry (P' ++ [q]) 0 0 = entry P' 0 0 := by
+          rcases P' with _ | ⟨p0, P''⟩
+          · exact absurd rfl hPne
+          · simp [entry]
+        by_cases hq : entry P' 0 0 < q.1
+        · refine ⟨A', P' ++ [q], by rw [hEq]; simp, by simp, ?_, ?_⟩
+          · intro p hp
+            rw [hhd]
+            rcases List.mem_append.mp hp with hp | hp
+            · exact hrs p (List.mem_append_left _ hp)
+            · rcases List.mem_append.mp hp with hp | hp
+              · exact hrs p (List.mem_append_right _ hp)
+              · simp only [List.mem_singleton] at hp
+                subst hp
+                omega
+          · intro p hp
+            rw [hhd]
+            rcases P' with _ | ⟨p0, P''⟩
+            · exact absurd rfl hPne
+            · simp only [List.cons_append, List.tail_cons] at hp
+              rcases List.mem_append.mp hp with hp | hp
+              · exact htail p (by simpa using hp)
+              · simp only [List.mem_singleton] at hp
+                subst hp
+                exact hq
+        · refine ⟨M', [q], rfl, by simp, ?_, by simp⟩
+          intro p hp
+          have hq0 : entry ([q] : TrioSeq) 0 0 = q.1 := by simp [entry]
+          rw [hq0]
+          rcases List.mem_append.mp hp with hp | hp
+          · rw [hEq] at hp
+            have := hrs p hp
+            omega
+          · simp only [List.mem_singleton] at hp
+            subst hp
+            exact le_rfl
+
+theorem entry_sub_zero {P : TrioSeq} (hP : P ≠ []) :
+    entry (shiftl0 (entry P 0 0) P) 0 0 = 0 := by
+  rcases P with _ | ⟨p0, P'⟩
+  · exact absurd rfl hP
+  · show ((shiftl0 (entry (p0 :: P') 0 0) (p0 :: P')).getD 0 (0, 0, 0)).1 = 0
+    rw [shiftl0_cons]
+    simp only [List.getD_cons_zero]
+    show p0.1 - entry (p0 :: P') 0 0 = 0
+    have : entry (p0 :: P') 0 0 = p0.1 := rfl
+    omega
+
+theorem rsum_decomp {A P : TrioSeq} (h : rsum A P) :
+    shiftr01 (entry P 0 0) 0 (shiftl0 (entry P 0 0) A ++ shiftl0 (entry P 0 0) P)
+      = A ++ P := by
+  rw [shiftr01_append,
+    shiftr01_shiftl0 (fun p hp => h p (List.mem_append_left _ hp)),
+    shiftr01_shiftl0 (fun p hp => h p (List.mem_append_right _ hp))]
+
+/-- Prefix commutation for a top-level split. -/
+theorem oper_append_gen {A P : TrioSeq} (n : ℕ) (hP : 2 ≤ P.length) (h : rsum A P) :
+    (A ++ P)⟦n⟧ = A ++ P⟦n⟧ := by
+  set c := entry P 0 0 with hc
+  set A₀ := shiftl0 c A with hA0
+  set P₀ := shiftl0 c P with hP0
+  have hPne : P ≠ [] := by rintro rfl; simp at hP
+  have hroot : entry P₀ 0 0 = 0 := entry_sub_zero hPne
+  have hlen0 : 2 ≤ P₀.length := by rw [hP0, shiftl0_length]; exact hP
+  have hAP : shiftr01 c 0 (A₀ ++ P₀) = A ++ P := rsum_decomp h
+  have hPP : shiftr01 c 0 P₀ = P :=
+    shiftr01_shiftl0 (fun p hp => h p (List.mem_append_right _ hp))
+  have hAA : shiftr01 c 0 A₀ = A :=
+    shiftr01_shiftl0 (fun p hp => h p (List.mem_append_left _ hp))
+  calc (A ++ P)⟦n⟧ = (shiftr01 c 0 (A₀ ++ P₀))⟦n⟧ := by rw [hAP]
+    _ = shiftr01 c 0 ((A₀ ++ P₀)⟦n⟧) := oper_shiftr01 _ _ _
+    _ = shiftr01 c 0 (A₀ ++ P₀⟦n⟧) := by
+          rw [oper_append_right A₀ P₀ n hlen0 hroot]
+    _ = A ++ shiftr01 c 0 (P₀⟦n⟧) := by rw [shiftr01_append, hAA]
+    _ = A ++ P⟦n⟧ := by rw [← oper_shiftr01, hPP]
+
+theorem graft_append {A P z : TrioSeq} (hP : P ≠ []) :
+    graft (A ++ P) z = A ++ graft P z := by
+  have hlen : (A ++ P).length - 1 = A.length + (P.length - 1) := by
+    have : 0 < P.length := List.length_pos_iff.mpr hP
+    rw [List.length_append]
+    omega
+  unfold graft
+  rw [hlen, entry_append_right, List.dropLast_append_of_ne_nil hP,
+    List.append_assoc]
+
+/-- `hasParent` is invariant under a prefix, for a genuine top-level split. -/
+theorem hasParent_append_gen {A P : TrioSeq} {i j : ℕ} (hj : j < P.length)
+    (h : rsum A P) :
+    hasParent (A ++ P) i (A.length + j) ↔ hasParent P i j := by
+  have hPne : P ≠ [] := by rintro rfl; simp at hj
+  set c := entry P 0 0 with hc
+  set A₀ := shiftl0 c A with hA0
+  set P₀ := shiftl0 c P with hP0
+  have hroot : entry P₀ 0 0 = 0 := entry_sub_zero hPne
+  have hAP : shiftr01 c 0 (A₀ ++ P₀) = A ++ P := rsum_decomp h
+  have hPP : shiftr01 c 0 P₀ = P :=
+    shiftr01_shiftl0 (fun p hp => h p (List.mem_append_right _ hp))
+  have hlenA : A₀.length = A.length := by rw [hA0, shiftl0_length]
+  have hlenP : P₀.length = P.length := by rw [hP0, shiftl0_length]
+  have step1 : hasParent (A ++ P) i (A.length + j)
+      ↔ hasParent (A₀ ++ P₀) i (A₀.length + j) := by
+    rw [hlenA, ← hAP]
+    exact hasParent_shiftr01
+  have step3 : hasParent P₀ i j ↔ hasParent P i j := by
+    rw [← hPP]
+    exact hasParent_shiftr01.symm
+  have step2 : hasParent (A₀ ++ P₀) i (A₀.length + j) ↔ hasParent P₀ i j := by
+    by_cases hz : entry P₀ 0 j = 0
+    · constructor
+      · intro hh
+        exact absurd hh (fun hh' => no_hasParent_of_row0_zero
+          (by rw [entry_append_right]; exact hz) hh')
+      · intro hh
+        exact absurd hh (fun hh' => no_hasParent_of_row0_zero hz hh')
+    · exact hasParent_append_right A₀ P₀ hroot
+        (by rw [entry_append_right]; omega)
+  rw [step1, step2, step3]
+
+theorem lev_append_right (A P : TrioSeq) (j : ℕ) :
+    lev (A ++ P) (A.length + j) = lev P j := by
+  unfold lev
+  rw [entry_append_right, entry_append_right]
+
+theorem srow_append_right (A P : TrioSeq) (j : ℕ) :
+    srow (A ++ P) (A.length + j) = srow P j := by
+  unfold srow
+  rw [entry_append_right, entry_append_right]
+
+theorem domT_append {A P : TrioSeq} {m : ℕ} (hP : P ≠ []) (h : rsum A P) :
+    domT (A ++ P) m ↔ domT P m := by
+  have hPlen : 0 < P.length := List.length_pos_iff.mpr hP
+  have hlen : (A ++ P).length - 1 = A.length + (P.length - 1) := by
+    rw [List.length_append]
+    omega
+  unfold domT
+  rw [hlen, lev_append_right, srow_append_right,
+    hasParent_append_gen (by omega) h]
+
+theorem natDom_append {A P : TrioSeq} (hP : P ≠ []) (h : rsum A P) :
+    natDom (A ++ P) ↔ natDom P :=
+  ⟨fun hn m hm => hn m ((domT_append hP h).mpr hm),
+   fun hn m hm => hn m ((domT_append hP h).mp hm)⟩
+
+def XA (A : TrioSeq) (X : Set TrioSeq) : Set TrioSeq := {B | rsum A B → A ++ B ∈ X}
+
 end Wset
 
 end TRIO
