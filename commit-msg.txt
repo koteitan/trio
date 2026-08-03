@@ -1,7 +1,6 @@
-v0.74.0/top-level split machinery for the W hierarchy
+v0.75.0/head and depth preservation for the W hierarchy
 
-- Add `argOK`, `rsum`, `XA`
-- Add `W_shift` (W_u is closed under a uniform row-0 shift)
-- Add `split_lastMin` (every nonempty block splits off its last top-level tree)
-- Add `rsum_decomp`, `entry_sub_zero`, `oper_append_gen`, `graft_append`,
-  `hasParent_append_gen`, `lev`/`srow`/`domT`/`natDom` prefix invariance
+- Add `entry_zero_headD`, `oper_headD`, `oper_head_eq`, `entry_pair_mem`
+- Add `oper_mem_ge` and `graft_mem_ge` (neither `oper` nor `graft` produces a
+  column shallower than the block's shallowest one)
+- Add `graft_head_eq` (grafting a based block keeps the anchoring depth)

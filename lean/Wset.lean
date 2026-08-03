@@ -734,6 +734,109 @@ theorem natDom_append {A P : TrioSeq} (hP : P ≠ []) (h : rsum A P) :
 
 def XA (A : TrioSeq) (X : Set TrioSeq) : Set TrioSeq := {B | rsum A B → A ++ B ∈ X}
 
+/-! ## 先頭・深さの保存 -/
+
+theorem entry_zero_headD (X : TrioSeq) : entry X 0 0 = (X.headD (0, 0, 0)).1 := by
+  cases X <;> simp [entry]
+
+theorem oper_headD (N : TrioSeq) {n : ℕ} (L : 1 < N.length) (hn : 1 ≤ n) :
+    (N⟦n⟧).headD (0, 0, 0) = N.headD (0, 0, 0) := by
+  obtain ⟨R, hR⟩ := oper_eq_dropLast_append L hn
+  rw [hR]
+  match N, L with
+  | a :: b :: u, _ =>
+    simp only [List.dropLast_cons_cons, List.cons_append, List.headD_cons]
+
+/-- `oper` keeps the head (hence the anchoring depth) for `n ≥ 1`. -/
+theorem oper_head_eq {B : TrioSeq} {n : ℕ} (hn : 1 ≤ n) :
+    entry (B⟦n⟧) 0 0 = entry B 0 0 := by
+  by_cases hL : 1 < B.length
+  · rw [entry_zero_headD, entry_zero_headD, oper_headD B hL hn]
+  · rw [oper_eq_self_of_short n (by omega)]
+
+/-- The `j`-th column of `B` really is a member of `B`. -/
+theorem entry_pair_mem {B : TrioSeq} {j : ℕ} (hj : j < B.length) :
+    ((entry B 0 j, entry B 1 j, entry B 2 j) : ℕ × ℕ × ℕ) ∈ B := by
+  have h : ((entry B 0 j, entry B 1 j, entry B 2 j) : ℕ × ℕ × ℕ)
+      = B.getD j (0, 0, 0) := rfl
+  have h2 : B.getD j (0, 0, 0) = B[j]'hj := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    rfl
+  rw [h, h2]
+  exact List.getElem_mem hj
+
+/-- `oper` never produces a column shallower than the shallowest column of `B`. -/
+theorem oper_mem_ge {B : TrioSeq} {c n : ℕ} (h : ∀ p ∈ B, c ≤ p.1) :
+    ∀ p ∈ B⟦n⟧, c ≤ p.1 := by
+  by_cases hL : B.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]
+    exact h
+  · by_cases hp : hasParent B (srow B (B.length - 1)) (B.length - 1)
+    · have hpos : 0 < entry B 0 (B.length - 1) := by
+        by_contra hh
+        exact no_hasParent_of_row0_zero (by omega) hp
+      have hz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+          entry B 2 (B.length - 1) = 0) := by
+        rintro ⟨h1, -, -⟩; omega
+      rw [oper_gcopies n hL hz hp]
+      intro p hp'
+      rcases List.mem_append.mp hp' with hmem | hmem
+      · exact h p (List.mem_of_mem_take hmem)
+      · unfold gcopies at hmem
+        rw [List.mem_flatMap] at hmem
+        obtain ⟨k, -, hmem2⟩ := hmem
+        unfold gcopy at hmem2
+        rw [List.mem_map] at hmem2
+        obtain ⟨j, hj, rfl⟩ := hmem2
+        rw [List.mem_range'] at hj
+        have hjlt : j < B.length := by omega
+        have := h _ (entry_pair_mem hjlt)
+        dsimp only
+        omega
+    · have hB : B⟦n⟧ = Pred B := by
+        by_cases hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0
+        · exact oper_eq_pred_of_zero n hL hz
+        · exact oper_eq_pred_of_noParent n hL hz hp
+      rw [hB]
+      unfold Pred
+      split
+      · exact h
+      · exact fun p hp' => h p (List.dropLast_subset _ hp')
+
+/-- `graft` never produces a column shallower than the shallowest column. -/
+theorem graft_mem_ge {B z : TrioSeq} {c : ℕ} (hB : B ≠ []) (h : ∀ p ∈ B, c ≤ p.1) :
+    ∀ p ∈ graft B z, c ≤ p.1 := by
+  have hlt : B.length - 1 < B.length := by
+    have : 0 < B.length := List.length_pos_iff.mpr hB
+    omega
+  have hx : c ≤ entry B 0 (B.length - 1) := h _ (entry_pair_mem hlt)
+  intro p hp
+  rcases List.mem_append.mp hp with hmem | hmem
+  · exact h p (List.dropLast_subset _ hmem)
+  · rw [List.mem_map] at hmem
+    obtain ⟨q, -, rfl⟩ := hmem
+    dsimp only
+    omega
+
+/-- `graft` keeps the anchoring depth (whenever the result is nonempty). -/
+theorem graft_head_eq {B z : TrioSeq} (hB : B ≠ []) (hz : based z)
+    (hne : graft B z ≠ []) : entry (graft B z) 0 0 = entry B 0 0 := by
+  rcases hB2 : B with _ | ⟨b0, B'⟩
+  · exact absurd hB2 hB
+  · rcases B' with _ | ⟨b1, B''⟩
+    · have hgr : graft [b0] z
+          = z.map (fun p => ((p.1 + b0.1, p.2.1, p.2.2) : ℕ × ℕ × ℕ)) := by
+        simp [graft, entry]
+      rw [hB2] at hne
+      rw [hgr] at hne ⊢
+      rcases z with _ | ⟨z0, z'⟩
+      · simp at hne
+      · have h0 : entry (z0 :: z') 0 0 = 0 := hz
+        simp [entry] at h0 ⊢
+        omega
+    · simp [graft, entry]
+
 end Wset
 
 end TRIO
