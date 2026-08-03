@@ -1,4 +1,7 @@
-v0.62.0/membership-index helpers
+v0.63.0/positional criterion for SpineOK, case (a) work in progress
 
-- Add getD_take_drop, mem_index, mem_take_drop_index and mem_take_index:
-  turn membership in a take/drop slice into an index and a getD reading
+- Add spineOK_of_pos: a take/drop slice satisfies SpineOK as soon as the
+  positional statement holds on it
+- Park the half-finished descending branch of case A2 in wip-A2desc.txt
+  (values, descended column and instance decomposition done; the A2' head
+  bound, the descended spine and the transport remain)

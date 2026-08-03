@@ -988,6 +988,49 @@ theorem spineOK_pos {N X A1 B A2 Z : TrioSeq} {u w1 z e f w : ℕ}
   rw [hget t ht, hx]
   exact h6 (A1.take t) V x hA1 hxlt hV
 
+/-- Positional criterion for `SpineOK` on a take/drop slice. -/
+theorem spineOK_of_pos {N : TrioSeq} {a l L w : ℕ} (hfull : a + l ≤ N.length)
+    (h : ∀ p, a ≤ p → p < a + l → entry N 0 p < L →
+      (∀ p', p < p' → p' < a + l → entry N 0 p < entry N 0 p') →
+      w ≤ entry N 1 p) :
+    SpineOK ((N.drop a).take l) L w := by
+  intro U V x hA hxlt hV
+  have hlen : U.length + 1 + V.length = ((N.drop a).take l).length := by
+    rw [hA]
+    simp only [List.length_append, List.length_cons]
+    omega
+  have hlt : U.length + 1 + V.length = l := by
+    rw [hlen, List.length_take, List.length_drop]
+    omega
+  have hx : x = N.getD (a + U.length) (0, 0, 0) := by
+    have hh : ((N.drop a).take l).getD U.length (0, 0, 0) = x := by
+      rw [hA, getD_app_right _ _ le_rfl, Nat.sub_self, List.getD_cons_zero]
+    rw [← hh, getD_take_drop (by omega)]
+  have hVget : ∀ s, s < V.length →
+      V.getD s (0, 0, 0) = N.getD (a + (U.length + 1 + s)) (0, 0, 0) := by
+    intro s hs
+    have hh : ((N.drop a).take l).getD (U.length + 1 + s) (0, 0, 0)
+        = V.getD s (0, 0, 0) := by
+      rw [hA, getD_app_right _ _ (by omega),
+        show U.length + 1 + s - U.length = s + 1 from by omega,
+        List.getD_cons_succ]
+    rw [← hh, getD_take_drop (by omega)]
+  rw [hx]
+  refine h (a + U.length) (by omega) (by omega) ?_ ?_
+  · show (N.getD (a + U.length) (0, 0, 0)).1 < L
+    rw [← hx]
+    exact hxlt
+  · intro p' hp1 hp2
+    obtain ⟨s, rfl⟩ : ∃ s, p' = a + (U.length + 1 + s) :=
+      ⟨p' - a - U.length - 1, by omega⟩
+    have hs : s < V.length := by omega
+    have hmem : V.getD s (0, 0, 0) ∈ V := getD_mem_of_lt hs
+    have := hV _ hmem
+    rw [hVget s hs] at this
+    show (N.getD (a + U.length) (0, 0, 0)).1 < _
+    rw [← hx]
+    exact this
+
 /-! ## ガード付き持ち上げの `sle` 輸送 -/
 
 /-- Pointwise guarded lift of a list, guards read at absolute positions. -/
