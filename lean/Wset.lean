@@ -937,6 +937,155 @@ theorem Om_mem_W (v z : ℕ) : [((0, v, z) : ℕ × ℕ × ℕ)] ∈ W (2 * v + 
     rw [graft_Om]
     exact W_mono (by omega) hy
 
+/-! ## `cons` に沿う添字ずらし -/
+
+/-- Index shift across a `cons`. -/
+theorem entry_cons (p : ℕ × ℕ × ℕ) (R : TrioSeq) (i j : ℕ) :
+    entry (p :: R) i (j + 1) = entry R i j := by
+  have h := entry_append_right [p] R i j
+  simp only [List.length_singleton, List.singleton_append] at h
+  rw [Nat.add_comm 1 j] at h
+  exact h
+
+theorem nextR_cons (p : ℕ × ℕ × ℕ) (R : TrioSeq) (i j0 j1 : ℕ) :
+    nextR (p :: R) i (j0 + 1) (j1 + 1) ↔ nextR R i j0 j1 := by
+  have h := nextR_append_right [p] R i j0 j1
+  simp only [List.length_singleton, List.singleton_append] at h
+  rw [Nat.add_comm 1 j0, Nat.add_comm 1 j1] at h
+  exact h
+
+theorem le0_cons (p : ℕ × ℕ × ℕ) (R : TrioSeq) (j0 j1 : ℕ) :
+    le0 (p :: R) (j0 + 1) (j1 + 1) ↔ le0 R j0 j1 := by
+  have h := le0_append_right [p] R j0 j1
+  simp only [List.length_singleton, List.singleton_append] at h
+  rw [Nat.add_comm 1 j0, Nat.add_comm 1 j1] at h
+  exact h
+
+theorem le1_cons (p : ℕ × ℕ × ℕ) (R : TrioSeq) (j0 j1 : ℕ) :
+    le1 (p :: R) (j0 + 1) (j1 + 1) ↔ le1 R j0 j1 := by
+  have h := le1_append_right [p] R j0 j1
+  simp only [List.length_singleton, List.singleton_append] at h
+  rw [Nat.add_comm 1 j0, Nat.add_comm 1 j1] at h
+  exact h
+
+theorem srow_cons (p : ℕ × ℕ × ℕ) (R : TrioSeq) (j : ℕ) :
+    srow (p :: R) (j + 1) = srow R j := by
+  unfold srow
+  rw [entry_cons, entry_cons]
+
+theorem len_succ {R : TrioSeq} (hRne : R ≠ []) : R.length = (R.length - 1) + 1 := by
+  have : 0 < R.length := List.length_pos_iff.mpr hRne
+  omega
+
+theorem entry_cons_last {p : ℕ × ℕ × ℕ} {R : TrioSeq} (hRne : R ≠ []) (i : ℕ) :
+    entry (p :: R) i R.length = entry R i (R.length - 1) := by
+  conv_lhs => rw [len_succ hRne]
+  rw [entry_cons]
+
+theorem le0_cons_last {p : ℕ × ℕ × ℕ} {R : TrioSeq} (hRne : R ≠ []) (j : ℕ) :
+    le0 (p :: R) (j + 1) R.length ↔ le0 R j (R.length - 1) := by
+  conv_lhs => rw [len_succ hRne]
+  rw [le0_cons]
+
+theorem le1_cons_last {p : ℕ × ℕ × ℕ} {R : TrioSeq} (hRne : R ≠ []) (j : ℕ) :
+    le1 (p :: R) (j + 1) R.length ↔ le1 R j (R.length - 1) := by
+  conv_lhs => rw [len_succ hRne]
+  rw [le1_cons]
+
+theorem nextR_cons_last {p : ℕ × ℕ × ℕ} {R : TrioSeq} (hRne : R ≠ []) (i j : ℕ) :
+    nextR (p :: R) i (j + 1) R.length ↔ nextR R i j (R.length - 1) := by
+  conv_lhs => rw [len_succ hRne]
+  rw [nextR_cons]
+
+theorem srow_cons_last {p : ℕ × ℕ × ℕ} {R : TrioSeq} (hRne : R ≠ []) :
+    srow (p :: R) R.length = srow R (R.length - 1) := by
+  conv_lhs => rw [len_succ hRne]
+  rw [srow_cons]
+
+theorem cons_len_lt {p : ℕ × ℕ × ℕ} (R : TrioSeq) : R.length < (p :: R).length := by
+  simp
+
+theorem cons_length (p : ℕ × ℕ × ℕ) (R : TrioSeq) : (p :: R).length - 1 = R.length := by
+  simp
+
+theorem dropLast_cons {p : ℕ × ℕ × ℕ} {R : TrioSeq} (hRne : R ≠ []) :
+    (p :: R).dropLast = p :: R.dropLast := by
+  cases R with
+  | nil => exact absurd rfl hRne
+  | cons a b => simp
+
+/-- Row-0 companion: a column has a row-0 parent iff some earlier column is
+strictly shallower. -/
+theorem hasParent_zero_iff {M : TrioSeq} {b : ℕ} (hb : b < M.length) :
+    hasParent M 0 b ↔ ∃ k, k < b ∧ entry M 0 k < entry M 0 b := by
+  classical
+  have nR : ∀ k : ℕ, nextR M 0 k b ↔ nextrel0 M k b := by
+    intro k; unfold nextR; rw [if_pos rfl]
+  constructor
+  · rintro ⟨k, hk, -⟩
+    have h := (nR k).mp hk
+    exact ⟨k, h.2.2.1, h.2.2.2.1⟩
+  · rintro ⟨k, hk1, hk2⟩
+    set P : ℕ → Prop := fun t => t < b ∧ entry M 0 t < entry M 0 b with hP
+    have hPg : P (Nat.findGreatest P b) :=
+      Nat.findGreatest_spec (m := k) (le_of_lt hk1) ⟨hk1, hk2⟩
+    have hmax : ∀ t, P t → t ≤ Nat.findGreatest P b :=
+      fun t ht => Nat.le_findGreatest (le_of_lt ht.1) ht
+    refine ⟨Nat.findGreatest P b, (nR _).mpr ?_, ?_⟩
+    · refine ⟨by omega, hb, hPg.1, hPg.2, ?_⟩
+      intro l hl
+      by_contra hcon
+      exact absurd (hmax l ⟨hl.2, by omega⟩) (by omega)
+    · intro y hy
+      have hy' : nextrel0 M y b := (nR y).mp hy
+      have hyP : P y := ⟨hy'.2.2.1, hy'.2.2.2.1⟩
+      rcases eq_or_lt_of_le (hmax y hyP) with h | h
+      · exact h
+      · have := hy'.2.2.2.2 (Nat.findGreatest P b) ⟨h, hPg.1⟩
+        have := hPg.2
+        omega
+
+/-- The root of a principal block is a row-0 ancestor of every column. -/
+theorem le0_cons_zero {v z : ℕ} {R : TrioSeq} (hR : argOK R) :
+    ∀ j, j < R.length → le0 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 (j + 1) := by
+  have key : ∀ N j, j ≤ N → j < R.length →
+      le0 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 (j + 1) := by
+    intro N
+    induction N with
+    | zero =>
+        intro j hj hjR
+        have hj0 : j = 0 := by omega
+        subst hj0
+        refine ⟨by simp, by simp; omega, Relation.ReflTransGen.single ?_⟩
+        refine ⟨by simp, by simp; omega, by omega, ?_, ?_⟩
+        · rw [entry_cons]
+          have := hR _ (entry_pair_mem (B := R) (j := 0) (by omega))
+          simpa [entry] using this
+        · intro l hl; omega
+    | succ N ih =>
+        intro j hj hjR
+        have hbnd : j + 1 < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := by simp; omega
+        have hpos : 0 < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 (j + 1) := by
+          rw [entry_cons]
+          exact hR _ (entry_pair_mem (B := R) hjR)
+        have hex : ∃ k, k < j + 1 ∧
+            entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 k
+              < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 (j + 1) := by
+          refine ⟨0, by omega, ?_⟩
+          simpa [entry] using hpos
+        obtain ⟨k, hk, -⟩ := (hasParent_zero_iff hbnd).mpr hex
+        have hnk : nextrel0 (((0, v, z) : ℕ × ℕ × ℕ) :: R) k (j + 1) := by
+          unfold nextR at hk; rwa [if_pos rfl] at hk
+        rcases Nat.eq_zero_or_pos k with hk0 | hk0
+        · subst hk0
+          exact ⟨by simp, hbnd, Relation.ReflTransGen.single hnk⟩
+        · obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+          have hklt : k' + 1 < j + 1 := hnk.2.2.1
+          obtain ⟨-, -, hchain⟩ := ih k' (by omega) (by omega)
+          exact ⟨by simp, hbnd, hchain.tail hnk⟩
+  intro j hj
+  exact key j j le_rfl hj
+
 /-- An argument block `R` is in `W*` when every principal `p_{v,z}(R)` lands in
 the level-`u` stage, for every `u` above both the root and `R`'s prefix
 orphans. -/

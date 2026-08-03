@@ -1,6 +1,7 @@
-v0.76.0/prefix closure and the Omega blocks of the W hierarchy
+v0.77.0/cons index-shift lemmas for the principal-block layer
 
-- Add `XA_closed` and `W_add` (W_u is closed under top-level concatenation)
-- Add `graft_Om`, `domT_Om`, `Om_mem_W`: the single column `(0,v,z)` lands in
-  the stage `2*v + z`
-- Add `Wstar`, in the level form that carries the prefix-wise orphan bound
+- Add entry_cons / nextR_cons / le0_cons / le1_cons / srow_cons and their
+  "_last" variants, len_succ, cons_len_lt, cons_length, dropLast_cons
+- Add hasParent_zero_iff (row-0 parent iff some earlier column is shallower)
+- Add le0_cons_zero: the depth-0 root is a row-0 ancestor of every column of
+  an argument block
