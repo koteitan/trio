@@ -1,5 +1,10 @@
-v0.66.0/assemble the guarded bad branch
+v0.69.0/uniform route closed: descending branch and assembly
 
-- Add `argDomCoreOn_bad_guard`: strong induction on the copy count with the
-  three-way positional split into bad_B / bad_A2 / bad_A1
-- Update task.md: the guarded route is closed, the uniform route is next
+- Add `argDomCoreOn_bad_uni_desc`: with `d1 = 0` the period lift is uniform,
+  so the descended verdict transports by `sle_shiftr01` with no guard step
+- Add `argDomCoreOn_bad_uni_A2`: inner forces `ipos <= j0`, leaving desc/root
+- Add `argDomCoreOn_bad_uni`: strong induction over the copy count with the
+  three-way positional split
+- Note: the three commits 91d0a1a/c2739cc/0fe9419 carry a stale subject line
+  (a shell short-circuit skipped the message rewrite); their contents are
+  v0.66.0 assembly, v0.67.0 shift invariance and v0.68.0 uniform A1/inner/root

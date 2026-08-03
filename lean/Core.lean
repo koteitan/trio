@@ -3971,4 +3971,460 @@ theorem argDomCoreOn_bad_uni_root {M : TrioSeq} {j0 Lb d0 n : ℕ}
   refine Prod.ext (by dsimp only; omega)
     (Prod.ext (by dsimp only; split_ifs <;> omega) (by dsimp only))
 
+set_option maxHeartbeats 4000000 in
+/-- **Case A2, uniform route, descending branch**: the deeper marked column is
+at least one full period above the shallower one; descend it and use the
+copy-count induction hypothesis.  With `d1 = 0` the lift is uniform, so the
+verdict transports without any guard bookkeeping. -/
+theorem argDomCoreOn_bad_uni_desc {M : TrioSeq} {j0 Lb d0 n : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLbpos : 0 < Lb)
+    (hwin0 : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hIH : ∀ m, 1 ≤ m → m < n → ArgDomCoreOn (gexp M j0 Lb d0 0 m))
+    {X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : gexp M j0 Lb d0 0 n
+      = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (he : 0 < e) (hzf : f = 0 ∨ z = 0)
+    (h1 : ∀ x ∈ A1, u < x.1) (h2 : ∀ x ∈ B, u + e < x.1)
+    (h3 : ∀ x ∈ A2, u < x.1) (h4 : A2 = [] ∨ (A2.headI).1 ≤ u + e)
+    (h5 : Z = [] ∨ (Z.headI).1 ≤ u) (h6 : SpineOK A1 (u + e) (w1 + 1))
+    (hipos : X.length ≤ j0)
+    (hcaseR : j0 + Lb ≤ X.length + (A1.length + 1))
+    (hcase : X.length + Lb < X.length + (A1.length + 1)) :
+    sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) := by
+  classical
+  obtain ⟨hpi, hpj, hjlt⟩ := argdom_pos heq
+  have hTlen : (gexp M j0 Lb d0 0 n).length = j0 + n * Lb := gexp_length hlen
+  have hjlt' : X.length + (A1.length + 1) < j0 + n * Lb := by
+    rw [← hTlen]; exact hjlt
+  have hn2 : 2 ≤ n := by
+    by_contra hc
+    have hmul : n * Lb ≤ 1 * Lb := Nat.mul_le_mul_right _ (by omega)
+    rw [Nat.one_mul] at hmul
+    omega
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have hm1 : 1 ≤ m := by omega
+  have hSlen : (gexp M j0 Lb d0 0 m).length = j0 + m * Lb := gexp_length hlen
+  have hsm : (m + 1) * Lb = m * Lb + Lb := Nat.succ_mul m Lb
+  have htot : (gexp M j0 Lb d0 0 (m + 1)).length
+      = X.length + (A1.length + 1) + 1 + (B.length + A2.length + Z.length) := by
+    have hh := congrArg List.length heq
+    simp only [List.length_append, List.length_cons] at hh
+    omega
+  set jd := X.length + (A1.length + 1) - Lb with hjddef
+  have hjdlo : X.length < jd := by omega
+  have hjdj0 : j0 ≤ jd := by omega
+  have hjdlt : jd + 1 + (B.length + A2.length + Z.length) = j0 + m * Lb := by
+    omega
+  -- the two towers agree below the shorter one's end
+  have hpref : ∀ p, p < j0 + m * Lb →
+      (gexp M j0 Lb d0 0 m).getD p (0, 0, 0)
+        = (gexp M j0 Lb d0 0 (m + 1)).getD p (0, 0, 0) := by
+    intro p hp
+    exact gexp_getD_indep hlen hLbpos hp (by omega)
+  have hentry' : ∀ r p, p < j0 + m * Lb →
+      entry (gexp M j0 Lb d0 0 m) r p = entry (gexp M j0 Lb d0 0 (m + 1)) r p := by
+    intro r p hp
+    unfold entry
+    rw [hpref p hp]
+  have hguard' : ∀ p, p < j0 + m * Lb →
+      (le1 (gexp M j0 Lb d0 0 m) X.length p
+        ↔ le1 (gexp M j0 Lb d0 0 (m + 1)) X.length p) := by
+    intro p hp
+    constructor
+    · intro h
+      exact le1_of_agree (X := gexp M j0 Lb d0 0 (m + 1))
+        (M := gexp M j0 Lb d0 0 m) (by omega) (by omega)
+        (fun x hx => (hpref x (by omega)).symm) h
+    · intro h
+      exact le1_of_agree (X := gexp M j0 Lb d0 0 m)
+        (M := gexp M j0 Lb d0 0 (m + 1)) (by omega) (by omega)
+        (fun x hx => hpref x (by omega)) h
+  -- mirror readings, `d1 = 0`
+  have hmir : ∀ k q, k < m + 1 → q < Lb →
+      (gexp M j0 Lb d0 0 (m + 1)).getD (j0 + (k * Lb + q)) (0, 0, 0)
+        = ((entry M 0 (j0 + q) + k * d0, entry M 1 (j0 + q),
+            entry M 2 (j0 + q)) : ℕ × ℕ × ℕ) := by
+    intro k q hk hq
+    rw [gexp_getD_mir hlen hk hq]
+    simp only [Nat.mul_zero, ite_self, Nat.add_zero]
+  have hagree : ∀ p, p < j0 + Lb →
+      (gexp M j0 Lb d0 0 (m + 1)).getD p (0, 0, 0) = M.getD p (0, 0, 0) := by
+    intro p hp
+    rcases Nat.lt_or_ge p j0 with h | h
+    · exact gexp_getD_low hlen h
+    · have h2 := hmir 0 (p - j0) (by omega) (by omega)
+      rw [Nat.zero_mul, Nat.zero_add, show j0 + (p - j0) = p from by omega] at h2
+      rw [h2]
+      simp only [Nat.zero_mul, Nat.add_zero]
+      rfl
+  have hentryM : ∀ r p, p < j0 + Lb →
+      entry (gexp M j0 Lb d0 0 (m + 1)) r p = entry M r p := by
+    intro r p hp
+    unfold entry
+    rw [hagree p hp]
+  have hgev0 : ∀ p, j0 ≤ p → p < j0 + (m + 1) * Lb →
+      entry M 0 j0 ≤ entry (gexp M j0 Lb d0 0 (m + 1)) 0 p := by
+    intro p ha hb
+    obtain ⟨c, q, hc, hq, hpe⟩ := gexp_pos_decomp (j0 := j0) (Lb := Lb)
+      (n := m + 1) (p := p) hLbpos ha hb
+    have hval : entry (gexp M j0 Lb d0 0 (m + 1)) 0 p
+        = entry M 0 (j0 + q) + c * d0 := by
+      show ((gexp M j0 Lb d0 0 (m + 1)).getD p (0, 0, 0)).1 = _
+      rw [hpe, hmir c q hc hq]
+    have hge : entry M 0 j0 ≤ entry M 0 (j0 + q) := by
+      rcases Nat.eq_zero_or_pos q with hz | hp
+      · rw [hz, Nat.add_zero]
+      · exact (hwin0 (j0 + q) (by omega) (by omega)).le
+    omega
+  -- the tail transport is a uniform row-0 shift
+  have hTg : ∀ p, j0 + Lb ≤ p → p < j0 + (m + 1) * Lb →
+      (gexp M j0 Lb d0 0 (m + 1)).getD p (0, 0, 0)
+        = (((gexp M j0 Lb d0 0 m).getD (p - Lb) (0, 0, 0)).1 + d0,
+           ((gexp M j0 Lb d0 0 m).getD (p - Lb) (0, 0, 0)).2.1,
+           ((gexp M j0 Lb d0 0 m).getD (p - Lb) (0, 0, 0)).2.2) := by
+    intro p ha hb
+    rw [gexp_tail_getD hlen hLbpos ha hb]
+    simp only [ite_self, Nat.add_zero]
+  have hT0 : ∀ p, j0 + Lb ≤ p → p < j0 + (m + 1) * Lb →
+      entry (gexp M j0 Lb d0 0 (m + 1)) 0 p
+        = entry (gexp M j0 Lb d0 0 m) 0 (p - Lb) + d0 := by
+    intro p ha hb
+    show ((gexp M j0 Lb d0 0 (m + 1)).getD p (0, 0, 0)).1
+      = ((gexp M j0 Lb d0 0 m).getD (p - Lb) (0, 0, 0)).1 + d0
+    rw [hTg p ha hb]
+  have hT1 : ∀ p, j0 + Lb ≤ p → p < j0 + (m + 1) * Lb →
+      entry (gexp M j0 Lb d0 0 (m + 1)) 1 p
+        = entry (gexp M j0 Lb d0 0 m) 1 (p - Lb) := by
+    intro p ha hb
+    show ((gexp M j0 Lb d0 0 (m + 1)).getD p (0, 0, 0)).2.1
+      = ((gexp M j0 Lb d0 0 m).getD (p - Lb) (0, 0, 0)).2.1
+    rw [hTg p ha hb]
+  -- readings of the two marked columns
+  have hu0 : entry (gexp M j0 Lb d0 0 (m + 1)) 0 X.length = u := by
+    show ((gexp M j0 Lb d0 0 (m + 1)).getD X.length (0, 0, 0)).1 = u
+    rw [hpi]
+  have hu1 : entry (gexp M j0 Lb d0 0 (m + 1)) 1 X.length = w1 := by
+    show ((gexp M j0 Lb d0 0 (m + 1)).getD X.length (0, 0, 0)).2.1 = w1
+    rw [hpi]
+  have hj0v : entry (gexp M j0 Lb d0 0 (m + 1)) 0
+      (X.length + (A1.length + 1)) = u + e := by
+    show ((gexp M j0 Lb d0 0 (m + 1)).getD (X.length + (A1.length + 1))
+      (0, 0, 0)).1 = u + e
+    rw [hpj]
+  -- the descended instance
+  have hipT' : (gexp M j0 Lb d0 0 m).getD X.length (0, 0, 0) = (u, w1, z) := by
+    rw [hpref X.length (by omega)]
+    exact hpi
+  have hjdv := hTg (X.length + (A1.length + 1)) (by omega) (by omega)
+  rw [show X.length + (A1.length + 1) - Lb = jd from by omega, hpj] at hjdv
+  have hjd0 : u + e = ((gexp M j0 Lb d0 0 m).getD jd (0, 0, 0)).1 + d0 :=
+    congrArg Prod.fst hjdv
+  have hjd1 : w1 + f = ((gexp M j0 Lb d0 0 m).getD jd (0, 0, 0)).2.1 :=
+    congrArg (fun p => p.2.1) hjdv
+  have hjd2 : z = ((gexp M j0 Lb d0 0 m).getD jd (0, 0, 0)).2.2 :=
+    congrArg (fun p => p.2.2) hjdv
+  have hed : d0 < e := by
+    have hh := argdom_A1_pos heq h1 jd (by omega) (by omega)
+    rw [← hentry' 0 jd (by omega)] at hh
+    have hd0' : entry (gexp M j0 Lb d0 0 m) 0 jd
+        = ((gexp M j0 Lb d0 0 m).getD jd (0, 0, 0)).1 := rfl
+    omega
+  have hjdT' : (gexp M j0 Lb d0 0 m).getD jd (0, 0, 0)
+      = (u + (e - d0), w1 + f, z) :=
+    Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega)
+      (by dsimp only; omega))
+  set A1' := ((gexp M j0 Lb d0 0 m).drop (X.length + 1)).take
+    (jd - X.length - 1) with hA1'def
+  set E' := (gexp M j0 Lb d0 0 m).drop (jd + 1) with hE'def
+  set B' := E'.take B.length with hB'def
+  have hE'len : E'.length = B.length + A2.length + Z.length := by
+    rw [hE'def, List.length_drop, hSlen]
+    omega
+  have hB'len : B'.length = B.length := by
+    rw [hB'def, List.length_take]
+    omega
+  have hE'get : ∀ t, E'.getD t (0, 0, 0)
+      = (gexp M j0 Lb d0 0 m).getD (jd + 1 + t) (0, 0, 0) := by
+    intro t
+    rw [hE'def, getD_drop]
+  have hB'get : ∀ t, t < B.length → B'.getD t (0, 0, 0)
+      = (gexp M j0 Lb d0 0 m).getD (jd + 1 + t) (0, 0, 0) := by
+    intro t ht
+    rw [hB'def, getD_take ht, hE'get]
+  obtain ⟨A2', Z', hAZ, hA2gt, hZhd⟩ := arg_split u (E'.drop B.length)
+  have hdec : gexp M j0 Lb d0 0 m
+      = ((gexp M j0 Lb d0 0 m).take X.length ++ (u, w1, z)
+          :: (A1' ++ (u + (e - d0), w1 + f, z) :: (B' ++ A2'))) ++ Z' := by
+    have hh := split_two (N := gexp M j0 Lb d0 0 m) (a := X.length) (b := jd)
+      (by omega) (by omega)
+    rw [hipT', hjdT'] at hh
+    have hE : E' = B' ++ (A2' ++ Z') := by
+      rw [hB'def, ← hAZ, List.take_append_drop]
+    conv_lhs => rw [hh]
+    rw [← hA1'def, ← hE'def, hE]
+    simp [List.append_assoc]
+  have hX'len : ((gexp M j0 Lb d0 0 m).take X.length).length = X.length := by
+    rw [List.length_take, hSlen]
+    omega
+  have hA1'gt : ∀ x ∈ A1', u < x.1 := by
+    intro x hx
+    obtain ⟨t, ht, rfl⟩ := mem_take_drop_index hx
+    have hh := argdom_A1_pos heq h1 (X.length + 1 + t) (by omega) (by omega)
+    rw [← hentry' 0 (X.length + 1 + t) (by omega)] at hh
+    exact hh
+  have hB'gt : ∀ x ∈ B', u + (e - d0) < x.1 := by
+    intro x hx
+    obtain ⟨t, ht, rfl⟩ := mem_take_index hx
+    rw [hE'get t]
+    have hBt : (gexp M j0 Lb d0 0 (m + 1)).getD
+        (X.length + (A1.length + 1) + 1 + t) (0, 0, 0) = B.getD t (0, 0, 0) :=
+      argdom_B_getD heq t ht
+    have hmem : B.getD t (0, 0, 0) ∈ B := getD_mem_of_lt ht
+    have hgt := h2 _ hmem
+    rw [← hBt] at hgt
+    rw [hTg _ (by omega) (by omega),
+      show X.length + (A1.length + 1) + 1 + t - Lb = jd + 1 + t from by omega]
+      at hgt
+    have hgt' : u + e
+        < ((gexp M j0 Lb d0 0 m).getD (jd + 1 + t) (0, 0, 0)).1 + d0 := hgt
+    omega
+  -- the head of the descended trailing context
+  have hA2'hd : A2' = [] ∨ (A2'.headI).1 ≤ u + (e - d0) := by
+    by_cases hA2e : A2' = []
+    · exact Or.inl hA2e
+    refine Or.inr ?_
+    have hpos : 0 < A2'.length := by
+      rcases hA2c : A2' with _ | ⟨a, A2''⟩
+      · exact absurd hA2c hA2e
+      · simp only [List.length_cons]; omega
+    have hdroplen : (E'.drop B.length).length = A2'.length + Z'.length := by
+      rw [hAZ, List.length_append]
+    have hBlt : B.length < E'.length := by
+      rw [List.length_drop] at hdroplen
+      omega
+    have hlt : jd + 1 + B.length < j0 + m * Lb := by omega
+    have hhd : A2'.headI
+        = (gexp M j0 Lb d0 0 m).getD (jd + 1 + B.length) (0, 0, 0) := by
+      rw [← headI_append_left (B := Z') hA2e, ← hAZ, headI_getD, getD_drop,
+        Nat.add_zero, hE'get]
+    have hN : gexp M j0 Lb d0 0 (m + 1)
+        = (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])) ++ (B ++ (A2 ++ Z)) := by
+      rw [heq]; simp [List.append_assoc]
+    have hPlen : (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])).length
+        = X.length + (A1.length + 1) + 1 := by
+      simp only [List.length_append, List.length_cons, List.length_nil]; omega
+    have hAZget : (gexp M j0 Lb d0 0 (m + 1)).getD
+        (X.length + (A1.length + 1) + 1 + B.length) (0, 0, 0)
+        = (A2 ++ Z).getD 0 (0, 0, 0) := by
+      rw [hN, getD_app_right _ _ (by rw [hPlen]; omega), hPlen,
+        show X.length + (A1.length + 1) + 1 + B.length
+          - (X.length + (A1.length + 1) + 1) = B.length from by omega,
+        getD_app_right B (A2 ++ Z) (le_refl _), Nat.sub_self]
+    have hhdle : ((A2 ++ Z).getD 0 (0, 0, 0)).1 ≤ u + e := by
+      rw [← headI_getD]
+      by_cases hA2n : A2 = []
+      · have hZne : Z ≠ [] := by
+          intro hc
+          rw [hA2n, hc] at hE'len
+          simp only [List.length_nil] at hE'len
+          omega
+        rw [hA2n, List.nil_append]
+        rcases h5 with hc | hc
+        · exact absurd hc hZne
+        · omega
+      · rw [headI_append_left hA2n]
+        rcases h4 with hc | hc
+        · exact absurd hc hA2n
+        · exact hc
+    have hcomb : ((gexp M j0 Lb d0 0 m).getD (jd + 1 + B.length) (0, 0, 0)).1
+        + d0 = ((A2 ++ Z).getD 0 (0, 0, 0)).1 := by
+      rw [← hAZget, hTg _ (by omega) (by omega),
+        show X.length + (A1.length + 1) + 1 + B.length - Lb
+          = jd + 1 + B.length from by omega]
+    rw [hhd]
+    omega
+  -- the descended spine
+  have hA1'spine : SpineOK A1' (u + (e - d0)) (w1 + 1) := by
+    rw [hA1'def]
+    refine spineOK_of_pos (by rw [hSlen]; omega) ?_
+    intro p hpa hpb hplt hpvis
+    rcases Nat.lt_or_ge p j0 with hlow | hhigh
+    · have hj0v' : entry (gexp M j0 Lb d0 0 m) 0 j0 = entry M 0 j0 := by
+        rw [hentry' 0 j0 (by omega), hentryM 0 j0 (by omega)]
+      have hp0 : entry (gexp M j0 Lb d0 0 m) 0 p < entry M 0 j0 := by
+        rcases Nat.eq_or_lt_of_le hjdj0 with hje | hjlt2
+        · have hjv : entry (gexp M j0 Lb d0 0 m) 0 jd = u + (e - d0) := by
+            show ((gexp M j0 Lb d0 0 m).getD jd (0, 0, 0)).1 = _
+            rw [hjdT']
+          have hcg : entry (gexp M j0 Lb d0 0 m) 0 j0
+              = entry (gexp M j0 Lb d0 0 m) 0 jd :=
+            congrArg (fun x => entry (gexp M j0 Lb d0 0 m) 0 x) hje
+          omega
+        · have hh := hpvis j0 hlow (by omega)
+          rw [hj0v'] at hh
+          exact hh
+      have hvis : ∀ p', p < p' → p' < X.length + (A1.length + 1) →
+          entry (gexp M j0 Lb d0 0 (m + 1)) 0 p
+            < entry (gexp M j0 Lb d0 0 (m + 1)) 0 p' := by
+        intro p' hq1 hq2
+        rcases Nat.lt_or_ge p' jd with hl | hg
+        · rw [← hentry' 0 p (by omega), ← hentry' 0 p' (by omega)]
+          exact hpvis p' hq1 (by omega)
+        · have hge := hgev0 p' (by omega) (by omega)
+          rw [← hentry' 0 p (by omega)]
+          omega
+      have hsp := spineOK_pos heq h6 p (by omega) (by omega)
+        (by rw [← hentry' 0 p (by omega)]; omega) hvis
+      rw [hentry' 1 p (by omega)]
+      exact hsp
+    · have hvis : ∀ p', p + Lb < p' → p' < X.length + (A1.length + 1) →
+          entry (gexp M j0 Lb d0 0 (m + 1)) 0 (p + Lb)
+            < entry (gexp M j0 Lb d0 0 (m + 1)) 0 p' := by
+        intro p' hq1 hq2
+        rw [hT0 (p + Lb) (by omega) (by omega), hT0 p' (by omega) (by omega),
+          show p + Lb - Lb = p from by omega]
+        have := hpvis (p' - Lb) (by omega) (by omega)
+        omega
+      have hlt0 : entry (gexp M j0 Lb d0 0 (m + 1)) 0 (p + Lb) < u + e := by
+        rw [hT0 (p + Lb) (by omega) (by omega), show p + Lb - Lb = p from by omega]
+        omega
+      have hsp := spineOK_pos heq h6 (p + Lb) (by omega) (by omega) hlt0 hvis
+      rw [hT1 (p + Lb) (by omega) (by omega),
+        show p + Lb - Lb = p from by omega] at hsp
+      exact hsp
+  -- the induction hypothesis, truncated to the argument's length
+  have he' : 0 < e - d0 := by omega
+  have hIHres := hIH m hm1 (by omega) hdec he' hzf hA1'gt hB'gt hA2gt
+    hA2'hd hZhd hA1'spine
+  rw [instance_bridge hdec he' hA1'gt hB'gt hA2gt, hX'len] at hIHres
+  rw [show A1'.length + (1 + (B'.length + A2'.length))
+      = B'.length + (A1'.length + 1 + A2'.length) from by omega,
+    ← List.range'_append_1, List.map_append] at hIHres
+  have hIH2 : sle B' ((List.range' (X.length + 1) B'.length).map
+      (fun p => ((entry (gexp M j0 Lb d0 0 m) 0 p + (e - d0),
+        entry (gexp M j0 Lb d0 0 m) 1 p
+          + (if le1 (gexp M j0 Lb d0 0 m) X.length p then f else 0),
+        entry (gexp M j0 Lb d0 0 m) 2 p) : ℕ × ℕ × ℕ))) :=
+    sle_take_of_short hIHres (by simp)
+  rw [instance_bridge heq he h1 h2 h3,
+    show A1.length + (1 + (B.length + A2.length))
+      = B.length + (A1.length + 1 + A2.length) from by omega,
+    ← List.range'_append_1, List.map_append]
+  refine sle_append_mono ?_ _
+  have hBlift : B = shiftr01 d0 0 B' := by
+    refine list_eq_of_getD (by rw [shiftr01_length]; omega) ?_
+    intro t ht
+    rw [shiftr01_getD (by omega), ← argdom_B_getD heq t ht,
+      hTg _ (by omega) (by omega),
+      show X.length + (A1.length + 1) + 1 + t - Lb = jd + 1 + t from by omega,
+      hB'get t ht]
+    refine Prod.ext (by dsimp only) (Prod.ext (by dsimp only; omega)
+      (by dsimp only))
+  have hclift : (List.range' (X.length + 1) B.length).map
+        (fun p => ((entry (gexp M j0 Lb d0 0 (m + 1)) 0 p + e,
+          entry (gexp M j0 Lb d0 0 (m + 1)) 1 p
+            + (if le1 (gexp M j0 Lb d0 0 (m + 1)) X.length p then f else 0),
+          entry (gexp M j0 Lb d0 0 (m + 1)) 2 p) : ℕ × ℕ × ℕ))
+      = shiftr01 d0 0 ((List.range' (X.length + 1) B'.length).map
+          (fun p => ((entry (gexp M j0 Lb d0 0 m) 0 p + (e - d0),
+            entry (gexp M j0 Lb d0 0 m) 1 p
+              + (if le1 (gexp M j0 Lb d0 0 m) X.length p then f else 0),
+            entry (gexp M j0 Lb d0 0 m) 2 p) : ℕ × ℕ × ℕ))) := by
+    refine list_eq_of_getD (by
+      rw [shiftr01_length, List.length_map, List.length_map, List.length_range',
+        List.length_range']
+      omega) ?_
+    intro t ht
+    rw [List.length_map, List.length_range'] at ht
+    rw [map_range'_getD _ ht, shiftr01_getD (by
+      rw [List.length_map, List.length_range']; omega),
+      map_range'_getD _ (show t < B'.length from by omega)]
+    have hlt' : X.length + 1 + t < j0 + m * Lb := by omega
+    have he0 := hentry' 0 (X.length + 1 + t) hlt'
+    have he1 := hentry' 1 (X.length + 1 + t) hlt'
+    have he2 := hentry' 2 (X.length + 1 + t) hlt'
+    have hg := hguard' (X.length + 1 + t) hlt'
+    refine Prod.ext (by dsimp only; omega) (Prod.ext ?_ (by dsimp only; omega))
+    dsimp only
+    by_cases hG : le1 (gexp M j0 Lb d0 0 (m + 1)) X.length (X.length + 1 + t)
+    · rw [if_pos hG, if_pos (hg.2 hG)]
+      omega
+    · rw [if_neg hG, if_neg (fun hc => hG (hg.1 hc))]
+      omega
+  rw [hclift, hBlift, sle_shiftr01]
+  exact hIH2
+
+set_option maxHeartbeats 1000000 in
+/-- **Case A2, uniform route** — the shallower marked column lies inside
+`G ++ blk`, the deeper one beyond it. -/
+theorem argDomCoreOn_bad_uni_A2 {M : TrioSeq} {j0 Lb d0 n : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLbpos : 0 < Lb)
+    (hwin0 : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hdisj : d0 = 0 ∨ (0 < d0 ∧ entry M 0 (j0 + Lb) = entry M 0 j0 + d0
+      ∧ nextrel1 M j0 (j0 + Lb)))
+    (hIH : ∀ m, 1 ≤ m → m < n → ArgDomCoreOn (gexp M j0 Lb d0 0 m))
+    {X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : gexp M j0 Lb d0 0 n
+      = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (he : 0 < e) (hzf : f = 0 ∨ z = 0)
+    (h1 : ∀ x ∈ A1, u < x.1) (h2 : ∀ x ∈ B, u + e < x.1)
+    (h3 : ∀ x ∈ A2, u < x.1) (h4 : A2 = [] ∨ (A2.headI).1 ≤ u + e)
+    (h5 : Z = [] ∨ (Z.headI).1 ≤ u) (h6 : SpineOK A1 (u + e) (w1 + 1))
+    (hcaseL : X.length < j0 + Lb)
+    (hcaseR : j0 + Lb ≤ X.length + (A1.length + 1)) :
+    sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) := by
+  have hipos : X.length ≤ j0 := by
+    by_contra hc
+    exact argDomCoreOn_bad_uni_inner hlen hLbpos hwin0 hdisj heq he h1 h6
+      (by omega) hcaseL hcaseR
+  rcases Nat.lt_or_ge (X.length + Lb) (X.length + (A1.length + 1)) with hc | hc
+  · exact argDomCoreOn_bad_uni_desc hlen hLbpos hwin0 hIH heq he hzf
+      h1 h2 h3 h4 h5 h6 hipos hcaseR hc
+  · exact argDomCoreOn_bad_uni_root hlen hLbpos heq he h1 h2 h3
+      (by omega) (by omega)
+
+set_option maxHeartbeats 1000000 in
+/-- **The `bad` branch of the derivation induction, uniform route** (`i1 ≤ 1`,
+so `d1 = 0`). -/
+theorem argDomCoreOn_bad_uni {M G R : TrioSeq} {v0 w10 z0 d0 : ℕ}
+    {lp : ℕ × ℕ × ℕ}
+    (hMon : ArgDomCoreOn M)
+    (hMeq : M = G ++ ((v0, w10, z0) :: R) ++ [lp])
+    (hqlt : collt (v0 + d0, w10 + 0, z0) lp)
+    (hwin0 : ∀ l, G.length < l → l ≤ G.length + (R.length + 1) →
+      entry M 0 G.length < entry M 0 l)
+    (hdisj : d0 = 0 ∨ (0 < d0
+      ∧ entry M 0 (G.length + (R.length + 1)) = entry M 0 G.length + d0
+      ∧ nextrel1 M G.length (G.length + (R.length + 1))))
+    {n : ℕ} (hn : 1 ≤ n) :
+    ArgDomCoreOn (gexp M G.length (R.length + 1) d0 0 n) := by
+  have hlen : G.length + (R.length + 1) + 1 = M.length := by
+    rw [hMeq]
+    simp only [List.length_append, List.length_cons, List.length_nil]
+  have hGtake : M.take G.length = G := by
+    rw [hMeq]
+    simp
+  have hgexp : ∀ n', gexp M G.length (R.length + 1) d0 0 n'
+      = G ++ gcopies M G.length (R.length + 1) d0 0 n' := by
+    intro n'
+    unfold gexp
+    rw [hGtake]
+  revert hn
+  induction n using Nat.strong_induction_on with
+  | _ n hstrong =>
+    intro hn X A1 B A2 Z u w1 z e f heq he hzf h1 h2 h3 h4 h5 h6
+    have hIH : ∀ m, 1 ≤ m → m < n →
+        ArgDomCoreOn (gexp M G.length (R.length + 1) d0 0 m) :=
+      fun m hm1 hm2 => hstrong m hm2 hm1
+    rcases Nat.lt_or_ge (X.length + (A1.length + 1))
+      (G.length + (R.length + 1)) with hc | hc
+    · refine argDomCoreOn_bad_B hMon hMeq hqlt hn ?_ he hzf h1 h2 h3 h4 h5 h6 hc
+      rw [← hgexp n]
+      exact heq
+    · rcases Nat.lt_or_ge X.length (G.length + (R.length + 1)) with hc2 | hc2
+      · exact argDomCoreOn_bad_uni_A2 hlen (by omega) hwin0 hdisj hIH heq he
+          hzf h1 h2 h3 h4 h5 h6 hc2 hc
+      · exact argDomCoreOn_bad_uni_A1 hlen (by omega) hIH heq he hzf
+          h1 h2 h3 h4 h5 h6 hc2
+
 end TRIO
