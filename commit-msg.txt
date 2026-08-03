@@ -1,13 +1,10 @@
-v0.86.0/drop tbAll from W*: one remaining core
+v0.87.0/prove the row-1 tower; two named cores remain
 
-- Redefine `Wstar` as "for EVERY stage above the root level", with no `tbAll`
-  hypothesis: one block is provable at different stages by different clauses,
-  and the tower consumes the low end while the graft clause produces the high
-  end
-- Ungate `Aop` clause 2 and drop `tbAll z m` from clause 3; adjust
-  `Aop_mono_X`, `acc_of_W`, `W_shift`, `XA_closed`, `oper_closed`, `Om_mem_W`
-- Rebuild `Wstar_closed`: the tower branch is now the only appeal to a
-  hypothesis, and the "stage below the orphan" case falls back on the
-  successor route `M[n] = M.dropLast`
-- Delete `TbOper` entirely: it only existed to transport `tbAll` through `oper`
-- `TRIO_terminates` now depends on `TowerOK` alone
+- Add `graft_eq_shift`, `shiftr01_comp`, `shiftr01_zero`, `parent_cons_eq_zero`
+- Add the tower `tow v z R` and prove `oper_cons_tower1`: for a row-1 collapse
+  the copies carry no row-1 lift, so `p_{v,z}(R)[n]` is the plain graft tower
+- Add `tower1_le` (`2v+z <= m` in a row-1 tower) and `tower1_mem`
+- Split `TowerOK` into `TowerGraft2` (guarded row-2 tower) and `TowerExp`
+  (tower over an argument block that arrived by the successor clause), and
+  prove `towerOK_of`: the row-1 graft tower is now discharged
+- `TRIO_terminates` depends on `TowerGraft2` and `TowerExp`

@@ -1589,6 +1589,137 @@ theorem domT_cons_of_dead {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
     rw [hMlen]; exact srow_cons_last hRne
   exact ⟨by rw [hlevM]; exact hd.1, by rw [hi1M, hMlen]; exact hnp⟩
 
+
+/-! ## タワー: `srow = 1` の枝 -/
+
+theorem graft_eq_shift (M y : TrioSeq) :
+    graft M y = M.dropLast ++ shiftr01 (entry M 0 (M.length - 1)) 0 y := by
+  unfold graft shiftr01
+  refine congrArg _ (List.map_congr_left ?_)
+  intro p _
+  exact Prod.ext rfl (Prod.ext (by dsimp only; omega) rfl)
+
+theorem shiftr01_comp (b c : ℕ) (X : TrioSeq) :
+    shiftr01 b 0 (shiftr01 c 0 X) = shiftr01 (b + c) 0 X := by
+  unfold shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro p _
+  simp only [Function.comp_apply]
+  refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> simp <;> omega
+
+@[simp] theorem shiftr01_zero (X : TrioSeq) : shiftr01 0 0 X = X := by
+  unfold shiftr01
+  conv_rhs => rw [← List.map_id X]
+  refine List.map_congr_left ?_
+  intro p _
+  simp
+
+/-- The root is the parent whenever it is a parent at all and `R`'s own trailing
+column is an orphan inside `R`. -/
+theorem parent_cons_eq_zero {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : domT R m)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length = 0 := by
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set i1 := srow R (R.length - 1) with hi1
+  have hnr := parent_nextR hpM
+  by_contra hq
+  obtain ⟨q', hq'⟩ : ∃ q', parent (p0 :: R) i1 R.length = q' + 1 :=
+    ⟨parent (p0 :: R) i1 R.length - 1, by omega⟩
+  rw [hq'] at hnr
+  refine hd.2 ⟨q', (nextR_cons_last hRne i1 q').mp hnr, ?_⟩
+  intro y hy
+  have h1 := hpM.unique ((nextR_cons_last hRne i1 y).mpr hy) hnr
+  omega
+
+/-- The **tower**: `t_0 = 0`, `t_{k+1} = p_{v,z}(R[t_k])`. -/
+def tow (v z : ℕ) (R : TrioSeq) : ℕ → TrioSeq
+  | 0 => []
+  | k + 1 => ((0, v, z) : ℕ × ℕ × ℕ) :: graft R (tow v z R k)
+
+theorem based_tow (v z : ℕ) (R : TrioSeq) : ∀ k, based (tow v z R k)
+  | 0 => by simp [tow]
+  | _ + 1 => based_cons v z _
+
+/-- **Tower identity for a row-1 collapse.** -/
+theorem oper_cons_tower1 {v z m n : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi1 : srow R (R.length - 1) = 1)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ = tow v z R n := by
+  classical
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = 1 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]
+    exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  have hroot0 : entry M 0 0 = 0 := by rw [hMdef]; simp [entry, hp0]
+  set d0 : ℕ := entry M 0 (M.length - 1) with hd0
+  have key : ∀ k, gcopy M 0 (M.length - 1) d0 0 k
+      = shiftr01 (k * d0) 0 M.dropLast := by
+    intro k
+    have hdl : M.dropLast = seg M 0 (M.length - 1) := by
+      rw [seg_zero_eq_take _ (by omega), List.dropLast_eq_take]
+    rw [hdl]
+    unfold gcopy seg shiftr01
+    rw [List.map_map]
+    refine List.map_congr_left ?_
+    intro j _
+    simp only [Function.comp_apply, Nat.mul_zero, ite_self, Nat.add_zero]
+  have hgc : ∀ k, gcopies M 0 (M.length - 1) d0 0 k = tow v z R k := by
+    intro k
+    induction k with
+    | zero => simp [gcopies, tow]
+    | succ k ih =>
+        unfold gcopies
+        rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map, key 0]
+        simp only [Nat.zero_mul, shiftr01_zero]
+        have hstep : ((List.range k).flatMap
+              fun x => gcopy M 0 (M.length - 1) d0 0 (Nat.succ x))
+            = shiftr01 d0 0 ((List.range k).flatMap
+              fun x => gcopy M 0 (M.length - 1) d0 0 x) := by
+          unfold shiftr01
+          rw [List.map_flatMap]
+          refine List.flatMap_congr ?_
+          intro x _
+          rw [key (Nat.succ x), key x]
+          unfold shiftr01
+          rw [List.map_map]
+          refine List.map_congr_left ?_
+          intro p _
+          simp only [Function.comp_apply, Nat.succ_mul]
+          refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> simp <;> omega
+        rw [hstep]
+        have : ((List.range k).flatMap fun x => gcopy M 0 (M.length - 1) d0 0 x)
+            = gcopies M 0 (M.length - 1) d0 0 k := rfl
+        rw [this, ih]
+        show M.dropLast ++ shiftr01 d0 0 (tow v z R k) = tow v z R (k + 1)
+        rw [show tow v z R (k + 1) = p0 :: graft R (tow v z R k) from rfl,
+          ← graft_cons (v := v) (z := z) hRne, graft_eq_shift]
+  rw [oper_gcopies n hL hz hpM', hpar0, hsrM]
+  rw [if_pos (by omega : 0 < 1), if_neg (by omega : ¬ (1 < 1))]
+  simp only [List.take_zero, List.nil_append, Nat.sub_zero, hroot0, Nat.sub_zero]
+  exact hgc n
+
 /-! ## 残る核: タワー枝 -/
 
 /-- **The one remaining core.**  When the principal root revives `R`'s trailing
@@ -1599,7 +1730,7 @@ block is the *lifted* tower.  Stated against `R`'s raw `Aop` datum, so it covers
 both the graft-clause and the successor-clause shapes of `R`. -/
 def TowerOK : Prop :=
   ∀ (v z u0 a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
-    Aop W u0 Wstar R →
+    Aop W u0 Wstar R → (∃ m, domT R m) →
     hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
     ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
 
@@ -1679,7 +1810,7 @@ theorem Wstar_closed (htow : TowerOK) :
           by_cases hpM : hasParent (p0 :: R) (srow R (R.length - 1)) R.length
           · -- revived by the root: the tower
             refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
-            exact htow v z u0 a R hR hRnil hz1 hva (Or.inr (Or.inl hop)) hpM n hn
+            exact htow v z u0 a R hR hRnil hz1 hva (Or.inr (Or.inl hop)) ⟨m', hdR⟩ hpM n hn
           · -- still dead: `p_{v,z}(R)⟦n⟧ = p_{v,z}(R.dropLast)`
             have hdM : domT (p0 :: R) m' := domT_cons_of_dead hRnil hdR hpM
             refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
@@ -1694,7 +1825,7 @@ theorem Wstar_closed (htow : TowerOK) :
       · -- revived by the root: the tower
         refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
         exact htow v z u0 a R hR hRnil hz1 hva
-          (Or.inr (Or.inr ⟨m, hm, hd, hgr⟩)) hpM n hn
+          (Or.inr (Or.inr ⟨m, hm, hd, hgr⟩)) ⟨m, hd⟩ hpM n hn
       · have hdM : domT (p0 :: R) m := domT_cons_of_dead hRnil hd hpM
         by_cases hma : m < a
         · -- the graft clause survives the root
@@ -1706,6 +1837,97 @@ theorem Wstar_closed (htow : TowerOK) :
           rw [oper_eq_graft_nil_of_domT (n := n) hMlen2 hdM, graft_nil,
             dropLast_cons hRnil]
           exact hdlmem hdlW
+
+
+/-- In a row-1 tower the root level is below the collapse level. -/
+theorem tower1_le {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hz1 : z ≤ 1)
+    (hd : domT R m) (hi1 : srow R (R.length - 1) = 1)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    2 * v + z ≤ m := by
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  have hpar := parent_cons_eq_zero hRne hd hpM
+  have hnr := parent_nextR hpM
+  rw [hpar, hi1] at hnr
+  have h1 : nextrel1 (p0 :: R) 0 R.length := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact hnr
+  have hlt : entry (p0 :: R) 1 0 < entry (p0 :: R) 1 R.length := h1.2.2.2.1
+  have h0 : entry (p0 :: R) 1 0 = v := by simp [entry, hp0]
+  have hE1 : entry (p0 :: R) 1 R.length = entry R 1 (R.length - 1) :=
+    entry_cons_last hRne 1
+  have hz2 : entry R 2 (R.length - 1) = 0 := by
+    by_contra h
+    unfold srow at hi1
+    rw [if_pos (by omega)] at hi1
+    omega
+  have hlev := hd.1
+  unfold lev at hlev
+  omega
+
+/-- **Row-1 tower membership.** -/
+theorem tower1_mem {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a) (hd : domT R m)
+    (hi1 : srow R (R.length - 1) = 1)
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ k, tow v z R k ∈ W a := by
+  have hvm : 2 * v + z ≤ m := tower1_le hRne hz1 hd hi1 hpM
+  have key : ∀ k, ∀ a', 2 * v + z ≤ a' → tow v z R k ∈ W a' := by
+    intro k
+    induction k with
+    | zero => intro a' _; simpa [tow] using W_nil a'
+    | succ k ih =>
+        intro a' ha'
+        have hk : tow v z R k ∈ W m := ih m hvm
+        have hgk := hgr (tow v z R k) hk (based_tow v z R k)
+        exact hgk (argOK_graft hRne hR _) v z a' hz1 ha'
+  exact fun k => key k a hva
+
+/-- **Open core A** — the guarded row-2 tower: the copies raise row 1 by `w - v`
+on the `le1`-cone of the root, so the substituted block is the *lifted* tower. -/
+def TowerGraft2 : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+    domT R m → srow R (R.length - 1) = 2 →
+    (∀ y ∈ W m, based y → graft R y ∈ Wstar) →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+/-- **Open core B** — a tower whose argument block arrived by the successor
+clause, so no graft closure is on hand. -/
+def TowerExp : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+    domT R m → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+/-- The row-1 graft tower is **proved**; only the two cores above are left. -/
+theorem towerOK_of (h2 : TowerGraft2) (he : TowerExp) : TowerOK := by
+  intro v z u0 a R hR hRne hz1 hva AR hdR hpM n hn
+  obtain ⟨m0, hm0⟩ := hdR
+  have hlevpos : 0 < lev R (R.length - 1) := by rw [hm0.1]; omega
+  have hsr : srow R (R.length - 1) = 1 ∨ srow R (R.length - 1) = 2 := by
+    unfold srow
+    unfold lev at hlevpos
+    by_cases h2' : 0 < entry R 2 (R.length - 1)
+    · rw [if_pos h2']; exact Or.inr rfl
+    · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+  rcases AR with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+  · exfalso
+    have hR1 : R.length = 1 := by
+      have := List.length_pos_iff.mpr hRne
+      omega
+    have h := hm0.1
+    rw [hR1] at h
+    simp only [Nat.sub_self] at h
+    omega
+  · exact he v z m0 a R hR hRne hz1 hva hm0 hop hpM n hn
+  · rcases hsr with h1 | h1
+    · rw [oper_cons_tower1 hR hRne hd h1 hpM]
+      exact tower1_mem hR hRne hz1 hva hd h1 hgr hpM n
+    · exact h2 v z m a R hR hRne hz1 hva hd h1 hgr hpM n hn
 
 /-! ## `W*` から W-所属へ -/
 
