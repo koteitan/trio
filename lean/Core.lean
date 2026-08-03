@@ -4427,4 +4427,181 @@ theorem argDomCoreOn_bad_uni {M G R : TrioSeq} {v0 w10 z0 d0 : ℕ}
       · exact argDomCoreOn_bad_uni_A1 hlen (by omega) hIH heq he hzf
           h1 h2 h3 h4 h5 h6 hc2
 
+/-! ## 導出帰納 -/
+
+set_option maxHeartbeats 2000000 in
+/-- **The induction step**: `ArgDomCoreOn` is preserved by `oper`. -/
+theorem argDomCoreOn_oper {M : TrioSeq} (hM : ST_TS M) (hMon : ArgDomCoreOn M)
+    {n : ℕ} (hn : 1 ≤ n) : ArgDomCoreOn (M⟦n⟧) := by
+  classical
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]
+    exact hMon
+  · have L1 : 1 < M.length := by omega
+    have Mne : M ≠ [] := by
+      intro he
+      rw [he] at L1
+      simp at L1
+    have hPred : Pred M = M.dropLast := by
+      unfold Pred
+      rw [if_neg (by omega)]
+    by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+        entry M 2 (M.length - 1) = 0
+    · rw [oper_eq_pred_of_zero n hL hz, hPred]
+      have hlast : M.getD (M.length - 1) (0, 0, 0) = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+        refine Prod.ext ?_ (Prod.ext ?_ ?_)
+        · exact hz.1
+        · exact hz.2.1
+        · exact hz.2.2
+      refine argDomCoreOn_snoc_zero (p := ((0, 0, 0) : ℕ × ℕ × ℕ)) rfl ?_
+      have hsp : M.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] = M := by
+        rw [← hlast]
+        exact dropLast_snoc_getD Mne
+      rw [hsp]
+      exact hMon
+    · have hp := hasParent_last_ST_TS hM (by omega) hz
+      have np := parent_nextR hp
+      have j0lt : parent M (srow M (M.length - 1)) (M.length - 1) < M.length - 1 :=
+        nextR_index_lt np
+      have chain := nextR_chain0 np
+      have iv : ∀ k, parent M (srow M (M.length - 1)) (M.length - 1) < k →
+          k ≤ M.length - 1 →
+          entry M 0 (parent M (srow M (M.length - 1)) (M.length - 1))
+            < entry M 0 k :=
+        fun k h1 h2 => le0_interval_gt chain k ⟨h1, h2⟩
+      set j1 := M.length - 1 with hj1def
+      set i1 := srow M j1 with hi1def
+      set j0 := parent M i1 j1 with hj0def
+      -- the block decomposition of the host
+      obtain ⟨L, hLe⟩ : ∃ L, j1 - j0 = L + 1 := ⟨j1 - j0 - 1, by omega⟩
+      have hcol : ∀ j, M.getD j (0, 0, 0)
+          = ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ) := fun _ => rfl
+      have hMsplit : M = M.take j0 ++ seg M j0 (L + 1 + 1) := by
+        conv_lhs => rw [← List.take_append_drop j0 M]
+        rw [drop_seg, show M.length - j0 = L + 1 + 1 from by omega]
+      have hblk : seg M j0 (L + 1 + 1)
+          = ((entry M 0 j0, entry M 1 j0, entry M 2 j0) : ℕ × ℕ × ℕ)
+            :: (seg M (j0 + 1) L
+                ++ [((entry M 0 j1, entry M 1 j1, entry M 2 j1) : ℕ × ℕ × ℕ)]) := by
+        rw [seg_cons]
+        congr 1
+        rw [seg_snoc, show j0 + 1 + L = j1 from by omega]
+      have hMeq : M = M.take j0
+          ++ (((entry M 0 j0, entry M 1 j0, entry M 2 j0) : ℕ × ℕ × ℕ)
+              :: seg M (j0 + 1) L)
+          ++ [((entry M 0 j1, entry M 1 j1, entry M 2 j1) : ℕ × ℕ × ℕ)] := by
+        conv_lhs => rw [hMsplit, hblk]
+        simp [List.append_assoc]
+      have hGlen : (M.take j0).length = j0 := by
+        rw [List.length_take]
+        omega
+      have hRlen : (seg M (j0 + 1) L).length = L := by
+        unfold seg
+        simp
+      have hLbeq : (seg M (j0 + 1) L).length + 1 = j1 - j0 := by
+        rw [hRlen]
+        omega
+      have hgexp : M⟦n⟧ = gexp M (M.take j0).length
+          ((seg M (j0 + 1) L).length + 1)
+          (if 0 < i1 then entry M 0 j1 - entry M 0 j0 else 0)
+          (if 1 < i1 then entry M 1 j1 - entry M 1 j0 else 0) n := by
+        rw [oper_gcopies n hL hz hp, ← hj0def, ← hi1def, ← hj1def]
+        unfold gexp
+        rw [hGlen, hLbeq]
+      rw [hgexp]
+      have hwin : ∀ l, (M.take j0).length < l →
+          l ≤ (M.take j0).length + ((seg M (j0 + 1) L).length + 1) →
+          entry M 0 (M.take j0).length < entry M 0 l := by
+        intro l ha hb
+        rw [hGlen] at ha ⊢
+        rw [hGlen, hLbeq] at hb
+        exact iv l ha (by omega)
+      by_cases hi2 : 1 < i1
+      · -- the guarded route
+        have np2 : nextrel2 M j0 j1 := by
+          have np' := np
+          unfold nextR at np'
+          rw [if_neg (by omega : ¬ i1 = 0), if_neg (by omega : ¬ i1 = 1)] at np'
+          exact np'
+        have h1lt : entry M 1 j0 < entry M 1 j1 :=
+          rtg1_entry1_lt np2.2.2.2.2.1.2.2 (by omega)
+        have h0lt : entry M 0 j0 < entry M 0 j1 := iv j1 j0lt le_rfl
+        have hjj : (M.take j0).length + ((seg M (j0 + 1) L).length + 1) = j1 := by
+          rw [hGlen, hLbeq]
+          omega
+        refine argDomCoreOn_bad_guard hM hMon hMeq ?_ ?_ ?_ ?_ hn
+        · rw [if_pos (by omega : 0 < i1), if_pos hi2]
+          refine Or.inr ⟨?_, Or.inr ⟨?_, ?_⟩⟩
+          · dsimp only; omega
+          · dsimp only; omega
+          · dsimp only; exact np2.2.2.2.1
+        · rw [hjj, hGlen]
+          exact np2
+        · rw [hjj, hGlen, if_pos (by omega : 0 < i1)]
+          omega
+        · rw [hjj, hGlen, if_pos hi2]
+          omega
+      · -- the uniform route
+        have hd1z : (if 1 < i1 then entry M 1 j1 - entry M 1 j0 else 0) = 0 :=
+          if_neg hi2
+        rw [hd1z]
+        have hjj : (M.take j0).length + ((seg M (j0 + 1) L).length + 1) = j1 := by
+          rw [hGlen, hLbeq]
+          omega
+        refine argDomCoreOn_bad_uni hMon hMeq ?_ ?_ ?_ hn
+        · rcases Nat.eq_zero_or_pos i1 with hi0 | hi0
+          · rw [if_neg (by omega : ¬ 0 < i1)]
+            refine Or.inl ?_
+            have := iv j1 j0lt le_rfl
+            dsimp only
+            omega
+          · have hi1e : i1 = 1 := by omega
+            have np1 : nextrel1 M j0 j1 := by
+              have np' := np
+              unfold nextR at np'
+              rw [if_neg (by omega : ¬ i1 = 0), if_pos hi1e] at np'
+              exact np'
+            rw [if_pos hi0]
+            refine Or.inr ⟨?_, Or.inl ?_⟩
+            · dsimp only
+              have := iv j1 j0lt le_rfl
+              omega
+            · dsimp only
+              have := np1.2.2.2.1
+              omega
+        · exact hwin
+        · rcases Nat.eq_zero_or_pos i1 with hi0 | hi0
+          · exact Or.inl (if_neg (by omega : ¬ 0 < i1))
+          · have hi1e : i1 = 1 := by omega
+            have np1 : nextrel1 M j0 j1 := by
+              have np' := np
+              unfold nextR at np'
+              rw [if_neg (by omega : ¬ i1 = 0), if_pos hi1e] at np'
+              exact np'
+            refine Or.inr ⟨?_, ?_, ?_⟩
+            · rw [if_pos hi0]
+              have := iv j1 j0lt le_rfl
+              omega
+            · rw [hjj, hGlen, if_pos hi0]
+              have := iv j1 j0lt le_rfl
+              omega
+            · rw [hjj, hGlen]
+              exact np1
+
+/-- **The derivation induction.** -/
+theorem argDomCoreOn_ST_TS {N : TrioSeq} (hN : ST_TS N) : ArgDomCoreOn N := by
+  induction hN with
+  | diag v => exact argDomCoreOn_diag v
+  | @oper M n hM hn ih => exact argDomCoreOn_oper hM ih hn
+
+/-- **The host-free cofinality kernel holds.** -/
+theorem argDomCore_holds : ArgDomCore :=
+  argDomCore_of_on (fun _ h => argDomCoreOn_ST_TS h)
+
+/-- **Trio Bachmann cofinality, unconditional.** -/
+theorem trio_cofinality {M N : TrioSeq} (hM : ST_TS M) (hN : ST_TS N)
+    (h : translate N <o translate M) :
+    ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧) :=
+  trio_cofinality_of_core argDomCore_holds hM hN h
+
 end TRIO

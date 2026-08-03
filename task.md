@@ -17,6 +17,6 @@
 - [x] ガード輸送 gexp_guard_transport ✅・尾部 le1 同値 le1_tail_equiv ✅ Gtrans.lean
 - [x] 核 ST 帰納の足場（ArgDomCoreOn・diag 基底・snoc_zero・drop_left・小道具）✅ Core.lean
 - [x] 核 bad 枝 ガード経路 (i1=2): bad_B / bad_A2 / bad_A1 → argDomCoreOn_bad_guard ✅
-- [ ] 核 bad 枝 一様経路 (i1<=1, d1=0): copies 版 bad_B/A2/A1
-- [ ] argDomCoreOn_oper / _ST_TS / argDomCore_holds
+- [x] 核 bad 枝 一様経路 (i1<=1, d1=0): shift 不変性 + uni_A1/inner/root/desc ✅
+- [x] argDomCoreOn_oper / _ST_TS / **argDomCore_holds** ✅ 共終性が無条件に
 - [ ] W 階層（反射の壁: (2,0,0) 型の一手）
