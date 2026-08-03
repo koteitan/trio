@@ -1,6 +1,7 @@
-v0.53.0/cross branch covers the aligned case as well
+v0.54.0/bad_A2 aligned-at-the-root case
 
-- Relax caseC_absurd's mirror-source condition from qj < i to qj <= i
-- Relax the tower wrapper to jpos - Lb <= ipos with j0 < ipos explicit,
-  so it also empties case (b) whenever the shallower column is strictly
-  inside the block (probe: all 6270 aligned instances have ipos = j0)
+- Add map_range'_getD, list_eq_of_getD and argdom_B_getD (positional form
+  of the argument segment)
+- Add argDomCoreOn_bad_A2_root: when the marked columns are the block root
+  and the copy-1 root, the tower's period-Lb self-similarity makes the
+  argument an initial segment of the comparator, so sle holds by prefix

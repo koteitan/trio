@@ -1428,4 +1428,164 @@ theorem argDomCoreOn_bad_A2_c {M : TrioSeq} (hM : ST_TS M) {j0 Lb d0 d1 n : ℕ}
       omega
     · exact Or.inr (by rw [hu2]; exact hz0)
 
+/-! ## bad_A2 のブロック根整列ケース -/
+
+theorem map_range'_getD (F : ℕ → ℕ × ℕ × ℕ) {a l t : ℕ} (ht : t < l) :
+    ((List.range' a l).map F).getD t (0, 0, 0) = F (a + t) := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+    List.getElem?_range' (by simpa using ht)]
+  rw [Nat.one_mul]
+  rfl
+
+theorem list_eq_of_getD {A C : TrioSeq} (hlen : A.length = C.length)
+    (h : ∀ t, t < A.length → A.getD t (0, 0, 0) = C.getD t (0, 0, 0)) : A = C := by
+  refine List.ext_getElem hlen ?_
+  intro t h1 h2
+  have hh := h t h1
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_eq_getElem h1, List.getElem?_eq_getElem h2] at hh
+  simpa using hh
+
+/-- Positional form of the argument segment. -/
+theorem argdom_B_getD {N X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : N = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z) :
+    ∀ t, t < B.length →
+      N.getD (X.length + (A1.length + 1) + 1 + t) (0, 0, 0)
+        = B.getD t (0, 0, 0) := by
+  have hN : N = (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)]))
+      ++ (B ++ (A2 ++ Z)) := by
+    rw [heq]
+    simp [List.append_assoc]
+  have hPlen : (X ++ (u, w1, z) :: (A1 ++ [(u + e, w1 + f, z)])).length
+      = X.length + (A1.length + 1) + 1 := by
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    omega
+  intro t ht
+  rw [hN, getD_app_right _ _ (by rw [hPlen]; omega), hPlen,
+    show X.length + (A1.length + 1) + 1 + t - (X.length + (A1.length + 1) + 1) = t
+      from by omega, getD_append_left ht]
+
+set_option maxHeartbeats 4000000 in
+/-- **Case A2, aligned at the block root**: the shallower marked column is the
+block root and the deeper one is the copy-1 root.  The tower is then
+self-similar with period `Lb`, so the argument is literally an initial
+segment of the comparator. -/
+theorem argDomCoreOn_bad_A2_root {M : TrioSeq} {j0 Lb d0 d1 n : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLbpos : 0 < Lb)
+    (hd0pos : 0 < d0) (hd1pos : 0 < d1)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hle1lp : le1 M j0 (j0 + Lb))
+    {X A1 B A2 Z : TrioSeq} {u w1 z e f : ℕ}
+    (heq : gexp M j0 Lb d0 d1 n
+      = (X ++ (u, w1, z) :: (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) ++ Z)
+    (he : 0 < e) (h1 : ∀ x ∈ A1, u < x.1) (h2 : ∀ x ∈ B, u + e < x.1)
+    (h3 : ∀ x ∈ A2, u < x.1)
+    (hipos : X.length = j0)
+    (hjpos : X.length + (A1.length + 1) = j0 + Lb) :
+    sle B (hshift w1 e f (A1 ++ (u + e, w1 + f, z) :: (B ++ A2))) := by
+  classical
+  subst hipos
+  obtain ⟨hpi, hpj, hjlt⟩ := argdom_pos heq
+  have hTlen : (gexp M X.length Lb d0 d1 n).length = X.length + n * Lb :=
+    gexp_length hlen
+  have hn2 : 2 ≤ n := by
+    by_contra hc
+    have hmul : n * Lb ≤ 1 * Lb := Nat.mul_le_mul_right _ (by omega)
+    rw [Nat.one_mul] at hmul
+    omega
+  -- the two marked columns are the block root and the copy-1 root
+  have hval_i : (gexp M X.length Lb d0 d1 n).getD X.length (0, 0, 0)
+      = (entry M 0 X.length, entry M 1 X.length, entry M 2 X.length) := by
+    have hh := gexp_getD_mir (M := M) (d0 := d0) (d1 := d1) (n := n) hlen
+      (k := 0) (q := 0) (by omega) hLbpos
+    simp only [Nat.zero_mul, Nat.zero_add, Nat.add_zero, ite_self] at hh
+    rw [hh]
+  have hval_j : (gexp M X.length Lb d0 d1 n).getD (X.length + Lb) (0, 0, 0)
+      = (entry M 0 X.length + d0, entry M 1 X.length + d1, entry M 2 X.length) := by
+    have hh := gexp_getD_mir (M := M) (d0 := d0) (d1 := d1) (n := n) hlen
+      (k := 1) (q := 0) (by omega) hLbpos
+    simp only [Nat.one_mul, Nat.add_zero] at hh
+    rw [hh, if_pos (le1_refl (by omega))]
+  rw [hjpos] at hpj
+  rw [hval_i] at hpi
+  rw [hval_j] at hpj
+  have hue : e = d0 := by
+    have ha := congrArg Prod.fst hpi
+    have hb := congrArg Prod.fst hpj
+    simp only [] at ha hb
+    omega
+  have hwf : f = d1 := by
+    have ha := congrArg (fun p => p.2.1) hpi
+    have hb := congrArg (fun p => p.2.1) hpj
+    simp only [] at ha hb
+    omega
+  -- the argument fits inside the tower
+  have hBbound : X.length + (A1.length + 1) + 1 + B.length
+      ≤ (gexp M X.length Lb d0 d1 n).length := by
+    have hh := congrArg List.length heq
+    simp only [List.length_append, List.length_cons] at hh
+    omega
+  rw [instance_bridge heq he h1 h2 h3]
+  have hlensum : A1.length + (1 + (B.length + A2.length))
+      = B.length + (A1.length + 1 + A2.length) := by omega
+  rw [hlensum, ← List.range'_append_1, List.map_append]
+  refine sle_append_mono (Or.inl ?_) _
+  refine list_eq_of_getD (by rw [List.length_map, List.length_range']) ?_
+  intro t ht
+  rw [map_range'_getD _ ht, ← argdom_B_getD heq t ht]
+  -- position bookkeeping
+  have hple : X.length ≤ X.length + 1 + t := by omega
+  have hplt : X.length + 1 + t < X.length + n * Lb := by omega
+  obtain ⟨k, q, hk, hq, hpe⟩ := gexp_pos_decomp (j0 := X.length) (Lb := Lb) (n := n)
+    hLbpos hple hplt
+  have hposb : X.length + (A1.length + 1) + 1 + t < X.length + n * Lb := by
+    rw [← hTlen]
+    omega
+  have hk1 : k + 1 < n := by
+    by_contra hc
+    have hmul : n * Lb ≤ (k + 1) * Lb := Nat.mul_le_mul_right _ (by omega)
+    have hsm : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    rw [hjpos] at hposb
+    omega
+  have hshift : X.length + (A1.length + 1) + 1 + t
+      = X.length + ((k + 1) * Lb + q) := by
+    have hsm : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    rw [hjpos, hsm]
+    omega
+  have hlo := gexp_getD_mir (M := M) (d0 := d0) (d1 := d1) (n := n) hlen hk hq
+  have hhi := gexp_getD_mir (M := M) (d0 := d0) (d1 := d1) (n := n) hlen hk1 hq
+  have hguard := gexp_guard_transport (M := M) (d0 := d0) (d1 := d1) (n := n)
+    hlen hk hq hup hd0pos hd0e hd1pos hle1lp
+  rw [← hpe] at hlo hguard
+  rw [← hshift] at hhi
+  rw [hhi]
+  have hg0 : entry (gexp M X.length Lb d0 d1 n) 0 (X.length + 1 + t)
+      = entry M 0 (X.length + q) + k * d0 := by
+    show ((gexp M X.length Lb d0 d1 n).getD (X.length + 1 + t) (0, 0, 0)).1 = _
+    rw [hlo]
+  have hg1 : entry (gexp M X.length Lb d0 d1 n) 1 (X.length + 1 + t)
+      = entry M 1 (X.length + q) + (if le1 M X.length (X.length + q) then k * d1 else 0) := by
+    show ((gexp M X.length Lb d0 d1 n).getD (X.length + 1 + t) (0, 0, 0)).2.1 = _
+    rw [hlo]
+  have hg2 : entry (gexp M X.length Lb d0 d1 n) 2 (X.length + 1 + t)
+      = entry M 2 (X.length + q) := by
+    show ((gexp M X.length Lb d0 d1 n).getD (X.length + 1 + t) (0, 0, 0)).2.2 = _
+    rw [hlo]
+  rw [hg0, hg1, hg2, hue, hwf]
+  have hsm0 : (k + 1) * d0 = k * d0 + d0 := Nat.succ_mul k d0
+  have hsm1 : (k + 1) * d1 = k * d1 + d1 := Nat.succ_mul k d1
+  have h0 : entry M 0 (X.length + q) + (k + 1) * d0
+      = entry M 0 (X.length + q) + k * d0 + d0 := by omega
+  have h1' : entry M 1 (X.length + q) + (k + 1) * d1
+      = entry M 1 (X.length + q) + k * d1 + d1 := by omega
+  by_cases hgm : le1 M X.length (X.length + q)
+  · have hg' := hguard.2 hgm
+    simp only [if_pos hgm, if_pos hg']
+    rw [h0, h1']
+  · have hg' : ¬ le1 (gexp M X.length Lb d0 d1 n) X.length (X.length + 1 + t) :=
+      fun hc => hgm (hguard.1 hc)
+    simp only [if_neg hgm, if_neg hg', Nat.add_zero]
+    rw [h0]
+
 end TRIO
