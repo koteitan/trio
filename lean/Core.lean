@@ -1050,6 +1050,92 @@ theorem chain_first_above {M : TrioSeq} {i c : ℕ}
       exact hay.2.2.2.2.2 i ⟨hai, ⟨lt_of_le_of_lt hge hay.2.1, hay.2.1, hiy⟩⟩
 
 set_option maxHeartbeats 4000000 in
+/-- **The shallower column is marked.**  If `i` sits on the bad column's
+row-0 chain below the copy level and the block spine never drops below `i`'s
+row 1, then the first row-1 chain node at or above `i` carries *exactly*
+`i`'s row 1, so `zjump` transports the bad column's mark down to `i`. -/
+theorem mark_of_spine {M : TrioSeq} (hM : ST_TS M) {j0 x i d0 d1 : ℕ}
+    (np2 : nextrel2 M j0 x)
+    (hd0 : entry M 0 x = entry M 0 j0 + d0)
+    (hd1 : entry M 1 x = entry M 1 j0 + d1)
+    (hji : j0 < i) (hix : i < x)
+    (hu : entry M 0 i < entry M 0 j0 + d0)
+    (hroot : entry M 1 i ≤ entry M 1 j0 + d1)
+    (hA1blk : ∀ l, i < l → l < x → entry M 0 i < entry M 0 l)
+    (hspblk : ∀ p, i < p → p < x → entry M 0 p < entry M 0 x →
+      (∀ p', p < p' → p' < x → entry M 0 p < entry M 0 p') →
+      entry M 1 i ≤ entry M 1 p) :
+    entry M 2 i = 1 := by
+  have hxlen : x < M.length := np2.2.1
+  have hilen : i < M.length := by omega
+  have hle1x : le1 M j0 x := np2.2.2.2.2.1
+  have hx2 : entry M 2 x = 1 := by
+    have h1 := np2.2.2.2.1
+    have h2 := z2ok_ST_TS hM x hxlen
+    have e2 : entry M 2 x = (M.getD x (0, 0, 0)).2.2 := rfl
+    omega
+  have hrtgix : Relation.ReflTransGen (nextrel0 M) i x := by
+    refine rtg0_of_window hxlen (by omega) ?_
+    intro l h1 h2
+    rcases Nat.lt_or_ge l x with hlt | hge
+    · exact hA1blk l h1 hlt
+    · have hlx : l = x := by omega
+      rw [hlx, hd0]
+      omega
+  obtain ⟨b, hib, hbx, hchb, hble⟩ :=
+    chain_first_above hrtgix j0 hle1x.2.2 hji (by omega)
+  have hblen : b < M.length := by omega
+  have hb2 : 1 ≤ entry M 2 b := by
+    rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
+    · rw [hbeq]
+      omega
+    · have := np2.2.2.2.2.2 b ⟨by omega, ⟨hblen, hxlen, hchb⟩⟩
+      omega
+  have hzi : 1 ≤ entry M 2 i := by
+    rcases Nat.eq_or_lt_of_le hib with hbeq | hilt
+    · rw [← hbeq] at hb2
+      exact hb2
+    · have hb0x : entry M 0 b ≤ entry M 0 x := by
+        rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
+        · rw [hbeq]
+        · exact (le0_interval_gt (rtg1_rtg0 hchb) x ⟨hblt, le_rfl⟩).le
+      have hwb : entry M 1 i ≤ entry M 1 b := by
+        rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
+        · rw [hbeq, hd1]
+          exact hroot
+        · refine hspblk b hilt hblt
+            (le0_interval_gt (rtg1_rtg0 hchb) x ⟨hblt, le_rfl⟩) ?_
+          intro p' h1 h2
+          exact le0_interval_gt (rtg1_rtg0 hchb) p' ⟨h1, by omega⟩
+      have heq1 : entry M 1 b = entry M 1 i := by omega
+      have hsub : ∀ l, i < l → l ≤ b → entry M 0 i < entry M 0 l := by
+        intro l h1 h2
+        rcases Nat.lt_or_ge l x with hlt | hge
+        · exact hA1blk l h1 hlt
+        · have hlx : l = x := by omega
+          rw [hlx, hd0]
+          omega
+      have hsp : ∀ l, i < l → l < b → entry M 0 l < entry M 0 b →
+          (∀ l', l < l' → l' < b → entry M 0 l < entry M 0 l') →
+          entry M 1 i ≤ entry M 1 l := by
+        intro l h1 h2 h3 h4
+        refine hspblk l h1 (by omega) (by omega) ?_
+        intro p' hp1 hp2
+        rcases Nat.lt_or_ge p' b with hpb | hpb
+        · exact h4 p' hp1 hpb
+        · rcases Nat.eq_or_lt_of_le hpb with hpe | hpl
+          · rw [← hpe]
+            exact h3
+          · have hbp : entry M 0 b < entry M 0 p' :=
+              le0_interval_gt (rtg1_rtg0 hchb) p' ⟨hpl, by omega⟩
+            omega
+      have hzj := zjump_ST_TS hM i b hilt hblen hsub heq1 hsp
+      omega
+  have h2 := z2ok_ST_TS hM i hilen
+  have e2 : entry M 2 i = (M.getD i (0, 0, 0)).2.2 := rfl
+  omega
+
+set_option maxHeartbeats 4000000 in
 /-- **Case A2 (c)** — the shallower marked column sits strictly inside the
 block while the deeper one mirrors an *earlier* block position (`qj < i`).
 
@@ -1143,61 +1229,8 @@ theorem caseC_absurd {M : TrioSeq} (hM : ST_TS M) {j0 x i qj d0 d1 : ℕ}
       have hh := hspcpy b hbj hblt hb0 hbvis
       rw [if_neg hgb] at hh
       omega
-  -- the first row-1 chain node at or above `i`
-  obtain ⟨b, hib, hbx, hchb, hble⟩ :=
-    chain_first_above hrtgix j0 hle1x.2.2 hji (by omega)
-  have hblen : b < M.length := by omega
-  have hb2 : 1 ≤ entry M 2 b := by
-    rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
-    · rw [hbeq]
-      omega
-    · have := np2.2.2.2.2.2 b ⟨by omega, ⟨hblen, hxlen, hchb⟩⟩
-      omega
-  -- `i` is marked
-  have hzi : 1 ≤ entry M 2 i := by
-    rcases Nat.eq_or_lt_of_le hib with hbeq | hilt
-    · rw [← hbeq] at hb2
-      exact hb2
-    · have hb0x : entry M 0 b ≤ entry M 0 x := by
-        rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
-        · rw [hbeq]
-        · exact (le0_interval_gt (rtg1_rtg0 hchb) x ⟨hblt, le_rfl⟩).le
-      have hwb : entry M 1 i ≤ entry M 1 b := by
-        rcases Nat.eq_or_lt_of_le hbx with hbeq | hblt
-        · rw [hbeq, hd1]
-          exact hroot
-        · refine hspblk b hilt hblt
-            (le0_interval_gt (rtg1_rtg0 hchb) x ⟨hblt, le_rfl⟩) ?_
-          intro p' h1 h2
-          exact le0_interval_gt (rtg1_rtg0 hchb) p' ⟨h1, by omega⟩
-      have heq1 : entry M 1 b = entry M 1 i := by omega
-      have hsub : ∀ l, i < l → l ≤ b → entry M 0 i < entry M 0 l := by
-        intro l h1 h2
-        rcases Nat.lt_or_ge l x with hlt | hge
-        · exact hA1blk l h1 hlt
-        · have hlx : l = x := by omega
-          rw [hlx, hd0]
-          omega
-      have hsp : ∀ l, i < l → l < b → entry M 0 l < entry M 0 b →
-          (∀ l', l < l' → l' < b → entry M 0 l < entry M 0 l') →
-          entry M 1 i ≤ entry M 1 l := by
-        intro l h1 h2 h3 h4
-        refine hspblk l h1 (by omega) (by omega) ?_
-        intro p' hp1 hp2
-        rcases Nat.lt_or_ge p' b with hpb | hpb
-        · exact h4 p' hp1 hpb
-        · rcases Nat.eq_or_lt_of_le hpb with hpe | hpl
-          · rw [← hpe]
-            exact h3
-          · have hbp : entry M 0 b < entry M 0 p' :=
-              le0_interval_gt (rtg1_rtg0 hchb) p' ⟨hpl, by omega⟩
-            omega
-      have hzj := zjump_ST_TS hM i b hilt hblen hsub heq1 hsp
-      omega
-  have hzi1 : entry M 2 i = 1 := by
-    have h2 := z2ok_ST_TS hM i hilen
-    have e2 : entry M 2 i = (M.getD i (0, 0, 0)).2.2 := rfl
-    omega
+  have hzi1 : entry M 2 i = 1 :=
+    mark_of_spine hM np2 hd0 hd1 hji hix hu hroot hA1blk hspblk
   rcases hzf with hfe | hz0
   · rw [if_pos hgj] at hfe
     rcases Nat.eq_or_lt_of_le hj0q with hqe | hqlt

@@ -1,5 +1,6 @@
-v0.55.0/same-guard transport corollary
+v0.56.0/factor out the marking lemma
 
-- Add sle_gliftAt_same: when the two guard words coincide the guarded
-  lift preserves sle unconditionally (probe: the straddling cases agree
-  at every index, 179673 checks, 0 mismatches)
+- Extract mark_of_spine from caseC_absurd: on the bad column's row-0 chain
+  with a clean block spine, the first row-1 chain node at or above i has
+  exactly i's row 1, so zjump marks i
+- caseC_absurd now calls it; the lemma is also what case (a) needs
