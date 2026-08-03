@@ -1019,6 +1019,13 @@ theorem sle_gliftAt {d0 d1 : ℕ} (hd1 : 0 < d1) {gB gc : ℕ → Prop} :
         · rw [if_neg hgc]
           exact Or.inr ⟨rfl, ih c0' (o + 1) hstep h⟩
 
+/-- Same-guard specialisation (probe: in the straddling cases the two guard
+words agree at every index — 179673 checks, 0 mismatches). -/
+theorem sle_gliftAt_same {d0 d1 : ℕ} (hd1 : 0 < d1) {g : ℕ → Prop}
+    (B0 c0 : TrioSeq) (o : ℕ) (h : sle B0 c0) :
+    sle (gliftAt d0 d1 g o B0) (gliftAt d0 d1 g o c0) :=
+  sle_gliftAt hd1 B0 c0 o (fun _ _ _ _ _ hg => hg) h
+
 /-! ## 交差ケース (c) の反駁 -/
 
 /-- The first row-1 chain node at or above `i`: walking the row-1 ancestry of
