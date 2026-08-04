@@ -71,6 +71,30 @@ A2 で `W u ⊆ 𝒳` を得る。閉包ステップ（要素 Y, データは `A
    パッケージ」なのでリフト済み接頭辞も自動被覆）
 3. 単集合文脈 |S| = 1（graft S y = shift y; W_shift で別処理）
 
+## 1.9 CoreT2E 設計解析（2026-08-05 深夜）— 核心は CtxOK の合成供給
+
+* CoreT2E の自然な放電 = 機械を複合文脈 S' := graft M Y で再起動
+  （`graftAll_of_GX S'`）。必要装備は **CtxOK (graft M Y)**。
+* **CtxOK は strict で十分**（k < |S|; k = |S| はどの消費者も使わない — 要確認済み）。
+* **同値**: `CtxOK S ⟺ ∀ k < |S|, S.take k ∈ Wstar2`（パッケージ = Wstar2 の定義そのもの）。
+* 複合文脈の接頭辞: k ≤ |M|-1 は CtxOK M ✓;
+  k = |M|-1+j (j < |Y|) は `graft M (Y.take j)` のパッケージで、
+  `Y.take j = Y.dropLast.take j`。塔枝の Y は dead-trailing なので
+  `Y.dropLast ∈ GX` はデータ一段 ✓ — しかし**深い接頭辞は反復 dropLast で
+  データが失われる**（GX 所属は集合所属でありデータを持たない）。
+* 候補解:
+  (a) GX の義務に要素接頭辞パッケージを内蔵。inner-Y では bad root p_Y 以浅の
+      接頭辞が展開で保存される（Y⟦n⟧.take j = Y.take j for j ≤ p_Y — 要 probe）
+      ので datum 一段; p_Y 超の接頭辞の供給が未解決。
+  (b) **W の接頭辞閉性** M ∈ W u → M.take k ∈ W u?: 成立すれば
+      W_le_GX 経由で全て解決。ただし interior 列の staging = 旧 tbAll の内容で
+      おそらく非自明（一段では閉じない）。要 probe/検討。
+      注: 旧 W* の tbAll 除去は「全段化」で消した — 同じ手（∀a 量化）が
+      CtxOK 供給にも効く可能性。
+  (c) 消費される k の有限性 → ✗（入れ子降下で全 k が要る）。
+* β の段ジャンプ（stage m_G の fresh A2 の整礎化）は依然独立の問題
+  （機械の自己適用は Lean 的に ill-founded; 測度が要る）。
+
 ## 2. probe 済み事実（違反 0 のもの）
 
 - (e)-サイトで `ltail v z (graft S Y) t = graft S↑ (liftset Y (coneV Y v) t)`、
