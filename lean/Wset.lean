@@ -1225,6 +1225,22 @@ theorem le1_Lift1 {X : TrioSeq} {d a b : ℕ} :
     | refl => exact .refl
     | @tail y z _ hyz ih => exact ih.tail (nextrel1_Lift1.2 hyz)
 
+/-- **Lift composition**: the cone is lift-invariant, so iterated root-cone
+lifts add. -/
+theorem Lift1_Lift1 (X : TrioSeq) (t s : ℕ) :
+    Lift1 (Lift1 X t) s = Lift1 X (t + s) := by
+  classical
+  show (List.range (Lift1 X t).length).map _ = (List.range X.length).map _
+  rw [Lift1_length]
+  refine List.map_congr_left ?_
+  intro i hi
+  have hiX : i < X.length := List.mem_range.1 hi
+  rw [entry0_Lift1, entry2_Lift1, entry1_Lift1 hiX,
+    if_congr (le1_Lift1 (X := X) (d := t) (a := 0) (b := i)) rfl rfl]
+  by_cases hc : le1 X 0 i
+  · rw [if_pos hc, if_pos hc, if_pos hc, Nat.add_assoc]
+  · rw [if_neg hc, if_neg hc, if_neg hc]
+
 theorem nextrel2_Lift1 {X : TrioSeq} {d a b : ℕ} :
     nextrel2 (Lift1 X d) a b ↔ nextrel2 X a b := by
   unfold nextrel2
@@ -3184,6 +3200,17 @@ theorem ltail_length : (ltail v z R t).length = R.length := by
   unfold ltail
   rw [List.length_tail, Lift1_length]
   simp
+
+/-- **Prefix locality of the lifted tail**: the root cone is prefix-local, so
+`take` commutes with `ltail`. -/
+theorem ltail_take {k : ℕ} (hk : k ≤ R.length) :
+    (ltail v z R t).take k = ltail v z (R.take k) t := by
+  have h : Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R).take (k + 1)) t
+      = (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).take (k + 1) :=
+    (Lift1_take (by simp only [List.length_cons]; omega)).symm
+  rw [List.take_succ_cons, lift_cons, lift_cons, List.take_succ_cons] at h
+  injection h with _ h2
+  exact h2.symm
 
 theorem ltail_ne (hRne : R ≠ []) : ltail v z R t ≠ [] := by
   intro h
