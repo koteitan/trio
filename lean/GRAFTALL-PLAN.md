@@ -25,14 +25,20 @@ A2 で `W u ⊆ 𝒳` を得る。閉包ステップ（要素 Y, データは `A
 | (f) 行2塔・clause-2 由来（死孤児が根に復活）| ⛔ 装置 β |
 | (g) ブロッカー（尾部が S.dropLast に復活, 0.9%）| ⛔ 装置 γ |
 
-## 1.5 Lean 済み部品（Xbar.lean, v0.101.0–v0.102.0）
+## 1.5 Lean 済み部品（Xbar.lean, v0.101.0–v0.102.2, 全て sorry 0 / axioms clean）
 
 - `oper_append_inner` / `oper_graft_inner`: 尾部親が引数内 → ミラー
 - `oper_append_pred` / `oper_graft_pred`: 親なし → 剥離（前置素通し）
 - `blocked_parent_lt`: 内部親なし ∧ graft 親あり → 親は文脈部（三分法完成）
 - `oper_graft_blocked`: ブロック済み展開 = `graft (M.take (p+1)) (shiftl0 w' copies)`
   — **文脈が厳密に短くなる**（γ の降下ステップ）
+- `based_blocked_element` / `argOK_take` / `take_ne_nil`（降下の整合部品）
 - `parent_region_row0_ge` / `srow_graft_last` / `parent_append_right_of` / `nextR_nonzero`
+- **γ のリフト互換ステップ合成は既証明補題のみで書ける**:
+  `liftInner_holds`（ブロック済み = B2a なので適用可）∘ `oper_cons_nat` ∘
+  `oper_graft_blocked`。残る γ の未設計部分 = 降下後の新要素
+  `shiftl0 w' copies`（M-接尾辞コピー + y-片の混合）への**データ変換**
+  （= セグメント化された要素データの合成規則）。
 
 ## 2. probe 済み事実（違反 0 のもの）
 
