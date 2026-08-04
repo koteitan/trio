@@ -60,6 +60,17 @@ A2 で `W u ⊆ 𝒳` を得る。閉包ステップ（要素 Y, データは `A
     **CoreBlocked**（降下後の Y'-義務）⛔ /
     **CoreT1L**（α）⛔ / **CoreT2E**（β; clause-2 由来塔）⛔
 
+## 1.8 ✅ GX 機械 Lean 化完了（Gamma.lean, v0.104.0）
+
+`CtxOK`（接頭辞パッケージ）/ `GX` / 三核 `CoreBlocked`・`CoreT1L`・`CoreT2E` /
+**`GX_closed`**（(a)/(b)/(c)/(γ-還元)/(d) 全て一段で閉、sorry 0, axioms clean）/
+`W_le_GX`（A2）/ `graftAll_of_GX`。残る作業:
+1. 三核の証明（α: E-測度 / β: X̄+∀s-key / γ': 降下後 Y'-義務）
+2. MASTER 長さ帰納（CtxOK の供給 + graftAll_of_GX を
+   liftTower1_of_graftAll 型消費者へ配線; IH は「長さ < N の全ブロックの
+   パッケージ」なのでリフト済み接頭辞も自動被覆）
+3. 単集合文脈 |S| = 1（graft S y = shift y; W_shift で別処理）
+
 ## 2. probe 済み事実（違反 0 のもの）
 
 - (e)-サイトで `ltail v z (graft S Y) t = graft S↑ (liftset Y (coneV Y v) t)`、
