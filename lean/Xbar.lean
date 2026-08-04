@@ -491,4 +491,25 @@ theorem graft_assoc {M y w : TrioSeq} (hy : y ≠ []) :
   simp only [Function.comp_apply]
   refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> dsimp only <;> omega
 
+
+/-- An inner parent survives the grafting: the graft block's trailing column is
+parented (at the same relative position). -/
+theorem hasParent_graft_inner {M y : TrioSeq} (hM : M ≠ []) (hy : y ≠ [])
+    (hp : hasParent y (srow y (y.length - 1)) (y.length - 1)) :
+    hasParent (graft M y)
+      (srow (graft M y) ((graft M y).length - 1)) ((graft M y).length - 1) := by
+  classical
+  have hylen : 0 < y.length := List.length_pos_iff.mpr hy
+  set c := entry M 0 (M.length - 1) with hc
+  have hg : graft M y = M.dropLast ++ shiftr01 c 0 y := graft_eq_shift M y
+  have hx : (graft M y).length - 1 = M.dropLast.length + (y.length - 1) := by
+    rw [graft_length, List.length_dropLast]
+    omega
+  have hsr : srow (graft M y) ((graft M y).length - 1)
+      = srow y (y.length - 1) := srow_graft_last hM hy
+  have hpT : hasParent (shiftr01 c 0 y) (srow y (y.length - 1))
+      (y.length - 1) := hasParent_shiftr01.mpr hp
+  rw [hsr, hx, hg]
+  exact hasParent_append_right_of _ _ hpT
+
 end TRIO
