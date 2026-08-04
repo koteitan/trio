@@ -1,8 +1,11 @@
-v0.95.0/tower equivariance of the guarded row-1 lift
+v0.106.0/beta reduces to the single-step core CoreT2EStep
 
-- Generalise the tower induction to an arbitrary lift amount
-  (`towerGraft2_lift`); `towerGraft2_holds` is its `t = 0` instance
-- Add `gcopy_Lift1`, `glift_gcopies'`, `gcopies_Lift1`: guarded copies pass the
-  lift through as the periodic lift
-- Prove `oper_Lift1_root` and, with `glift_eq_Lift1`, `oper_Lift1_tower`:
-  on a root-parented row-2 tower `Lift1` commutes with the expansion
+- Add CoreT2EStep (Gamma): at a beta-site, graft Y e in GX for every
+  e in W (2*w1 + z) - a stage strictly below the orphan level (z < w2)
+- Prove coreT2EFam_of_step: the family induction on the copy index is
+  mechanical - base = clause-2 datum peel (Y.dropLast in GX) or the
+  context package for singleton Y; step = the previous obligation's own
+  Wstar2 package puts the next tower element in W (2*w1 + z), then
+  graft_assoc re-expresses its graft over the equipped context M
+- Wire coreT2E_of_step, so GX_closed now rests on
+  CoreBlocked + CoreT1L + CoreT2EStep

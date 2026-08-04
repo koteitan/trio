@@ -255,6 +255,133 @@ theorem based_graft_arg {Y w : TrioSeq} (hy : Y ≠ []) (hbY : based Y)
         (graft_ne_nil (by simp))]
       exact hbY
 
+/-- **Core β, single-step form**: at a β-site (the argument's dead trailing
+orphan `(w0, w1, w2)` revived by the root via row 2), grafting any `W`-element
+at the sub-orphan stage `2*w1 + z` onto the argument lands in `GX`.  Since
+`z < w2` at the site, this stage sits strictly below the orphan level
+`lev = 2*w1 + w2` — the structural source of the probe's `t2 → t2` descent. -/
+def CoreT2EStep : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq),
+    (∀ n, 1 ≤ n → Y⟦n⟧ ∈ GX) → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length → CtxOK M →
+    srow (graft M Y) ((graft M Y).length - 1) = 2 →
+    (∃ m, domT (graft M Y) m) →
+    ∀ v z : ℕ, z ≤ 1 →
+      hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
+        (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length →
+      ∀ e : TrioSeq,
+        e ∈ W (2 * entry (graft M Y) 1 ((graft M Y).length - 1) + z) →
+        based e → graft Y e ∈ GX
+
+/-- **The family core reduces to the single-step core**: induction on the copy
+index.  The base is the peel of the clause-2 datum (`Y.dropLast ∈ GX`, or the
+context package when `Y` is a singleton); at the step, the previous obligation's
+own `Wstar2` package puts the next tower element in `W (2*w1 + z)`, and the
+step core re-expresses its graft through `graft_assoc` over the equipped
+context. -/
+theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
+  classical
+  intro u Y M hop hbased hy hMarg hM2 hctx hs2 hdG v z hz1 hpN
+  obtain ⟨m, hdm⟩ := hdG
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
+  have hpY : ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) :=
+    fun hp => hdm.2 (hasParent_graft_inner hMne hy hp)
+  have hR : argOK (graft M Y) := argOK_graft hMne hMarg Y
+  have hRne : graft M Y ≠ [] :=
+    List.length_pos_iff.mp (by rw [graft_length]; omega)
+  set R : TrioSeq := graft M Y with hRdef
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set Nb : TrioSeq := p0 :: R with hNdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hNlen : Nb.length - 1 = R.length := by rw [hNdef]; simp
+  have hE : ∀ i, entry Nb i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hL : Nb.length - 1 ≠ 0 := by rw [hNlen]; omega
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hzz : ¬ (entry Nb 0 (Nb.length - 1) = 0 ∧ entry Nb 1 (Nb.length - 1) = 0 ∧
+      entry Nb 2 (Nb.length - 1) = 0) := by
+    rw [hNlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrN : srow Nb (Nb.length - 1) = 2 := by
+    rw [hNlen, hNdef, srow_cons_last hRne, hs2]
+  have hpN' : hasParent Nb (srow Nb (Nb.length - 1)) (Nb.length - 1) := by
+    rw [hsrN, hNlen, hNdef, ← hs2]; exact hpN
+  have hpar0 : parent Nb (srow Nb (Nb.length - 1)) (Nb.length - 1) = 0 := by
+    rw [hsrN, hNlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hdm hpN
+    rwa [hs2] at this
+  have hroot1 : entry Nb 1 0 = v := by rw [hNdef]; simp [entry, hp0]
+  have hnr := parent_nextR hpN'
+  rw [hpar0, hsrN] at hnr
+  have hn2 : nextrel2 Nb 0 (Nb.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  have hle1lp : le1 Nb 0 (Nb.length - 1) := hn2.2.2.2.2.1
+  have hwv : v < entry R 1 (R.length - 1) := by
+    have := le1_entry1_lt hle1lp (by omega)
+    rw [hroot1, hNlen, hE 1] at this
+    exact this
+  set d1 : ℕ := entry R 1 (R.length - 1) - v with hd1
+  have hvd1 : v + d1 = entry R 1 (R.length - 1) := by omega
+  have hN0 : Nb⟦0⟧ = [] := by
+    rw [oper_gcopies 0 hL hzz hpN', hpar0]
+    simp [gcopies]
+  have hstep : ∀ i, Nb⟦i + 1⟧ = p0 :: graft R (Lift1 (Nb⟦i⟧) d1) := by
+    intro i
+    rw [hd1]
+    exact oper_cons_tower2 hR hRne hdm hs2 hpN
+  intro j
+  induction j with
+  | zero =>
+      rw [hN0, Lift1_nil, graft_nil, hRdef, graft_dropLast hy]
+      by_cases hY2 : 2 ≤ Y.length
+      · have hYL : Y.length - 1 ≠ 0 := by omega
+        have hpred : Y⟦1⟧ = Y.dropLast := by
+          have he : Y⟦1⟧ = Pred Y := by
+            by_cases hz0 : entry Y 0 (Y.length - 1) = 0 ∧
+                entry Y 1 (Y.length - 1) = 0 ∧ entry Y 2 (Y.length - 1) = 0
+            · exact oper_eq_pred_of_zero 1 hYL hz0
+            · exact oper_eq_pred_of_noParent 1 hYL hz0 hpY
+          rw [he]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hYd : Y.dropLast ∈ GX := by
+          have h := hop 1 le_rfl
+          rwa [hpred] at h
+        exact fun hargOK v' z' a' t' hz' ha' =>
+          hYd (based_dropLast hbased) M hMarg hM2 hctx v' z' a' t' hz' ha'
+      · have hYd : Y.dropLast = [] := by
+          rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
+          rfl
+        rw [hYd, graft_nil]
+        intro hargOK v' z' a' t' hz' ha'
+        rw [List.dropLast_eq_take]
+        exact hctx (M.length - 1) (by omega) v' z' a' t' hz' ha'
+  | succ i ih =>
+      rw [hstep i]
+      set Oj : TrioSeq := graft R (Lift1 (Nb⟦i⟧) d1) with hOj
+      have hOarg : argOK Oj := argOK_graft hRne hR _
+      have he : Lift1 (p0 :: Oj) d1 ∈ W (2 * (v + d1) + z) :=
+        ih hOarg v z (2 * (v + d1) + z) d1 hz1 (le_refl _)
+      have he' : Lift1 (p0 :: Oj) d1 ∈ W (2 * entry R 1 (R.length - 1) + z) := by
+        rwa [hvd1] at he
+      have hbe : based (Lift1 (p0 :: Oj) d1) :=
+        based_Lift1 d1 (by simp [based, entry, hp0])
+      have hgYe : graft Y (Lift1 (p0 :: Oj) d1) ∈ GX :=
+        hs u Y M hop hbased hy hMarg hM2 hctx hs2 ⟨m, hdm⟩ v z hz1 hpN _ he' hbe
+      intro hargOK v' z' a' t' hz' ha'
+      have hb2 : based (graft Y (Lift1 (p0 :: Oj) d1)) :=
+        based_graft_arg hy hbased hbe
+      have hres := hgYe hb2 M hMarg hM2 hctx v' z' a' t' hz' ha'
+      rw [← graft_assoc hy] at hres
+      exact hres
+
+/-- Direct wiring: the single-step core suffices for β. -/
+theorem coreT2E_of_step (hs : CoreT2EStep) : CoreT2E :=
+  coreT2E_of_fam (coreT2EFam_of_step hs)
+
 open Classical in
 /-- **The GX machine closes** modulo the three cores. -/
 theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
