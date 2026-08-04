@@ -30,5 +30,9 @@
 - [x] **Wstar2_closed**（三核を法として）✅ 行2接ぎ木塔は towerGraft2_lift_mem で消化
 - [x] **LiftInner**（B2a のリフト同変性）✅ Lcone.lean 錐輸送（強錐・平坦の両方）
 - [x] LiftTower1 / LiftTowerExp2 → **GraftAll に還元** ✅（Buchholz-(1) 型の段自由閉包）
-- [ ] **GraftAll**（∀S ∀u の graft 閉包 = 唯一の残核; G_S 閉包のミラー + ブロッカー + 塔）
+- [x] GX 機械（装備付き文脈・A2・graftAll_of_GX）✅ Gamma.lean
+- [x] β 完全還元: CoreT2E → Fam → Step → 機械自身の包含 ✅ GX_loop
+- [x] GX' 接頭辞内在化 + ctxOK_graft（複合文脈装備）✅
+- [x] α 還元 coreT1L_of_le（残差 CtxLiftT1）・γ' 還元 coreBlocked_of_elt ✅
+- [ ] **残差 4 つ**: CoreBlockedElt / CoreBlocked0 / CtxLiftT1 / W⊆GX の整礎化
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）
