@@ -134,7 +134,23 @@ naive なレベル帰納の穴: A2 は W-導出木の全ノードを触り、Ase
 ∀z ∈ W m 量化が任意の W-要素（孤児レベル非有界、"W 0 に lev 201" 病理）を
 持ち込む。→ 測度は W-クラス経由ではなく provenance 構造（§1.12）に載せる。
 
+## 1.9.9 ★★★ スライス装備で α 残差消滅（v0.112-113）— 残差は3つ
+
+**第7設計（義務量化子のスライス化）を実装、全ビルド緑**:
+- v0.112: tower 界面（towerGraft2_lift/_fam/_mem/_mem_fam, tower1_mem2）の
+  hgr/hgrF を ambient (v,z)-スライス + ∀(a,s) に in-place 縮小
+  （証明はもともとそのスライスしか消費していなかった）。
+- v0.113: `CtxOK M v z`（スライス装備）+ GX の義務を per-slice 装備と対に。
+  **`ctxOK_ltail`**: リフト済み複合文脈の (v+t,z)-スライス装備は
+  文脈の (v,z)-スライス + peel の接頭辞義務から合成（Lift1_Lift1 +
+  ltail_take）→ **CtxLiftT1 は削除（α 残差消滅）**。
+  `coreT1L_of_le : (∀σ W σ ⊆ GX) → CoreT1L`。
+- **GX_loop (CoreBlockedElt) (CoreBlocked0) (W ⊆ GX)** — 残差3つ:
+  γ' 要素合成（文脈長降下）、γ' 根スライス（shift 化; 文脈は argOK なので
+  シフト量 = entry M 0 0 > 0）、β の自己参照整礎化（§1.12 の provenance）。
+
 ## 1.9.8 ★ α の残差解析（v0.109-110）— 整列供給 ✓ / 非整列 = (e)-壁の最終形
+（→ 1.9.9 で解決済み。以下は経緯の記録）
 
 - `coreT1L_of_le`（v0.109）: **CoreT1L ⟸ (∀σ W σ ⊆ GX) + CtxLiftT1**
   （リフト済み複合文脈 Rt = ltail v z (graft M Y) t の装備だけが残る）。

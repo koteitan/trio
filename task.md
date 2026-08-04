@@ -34,5 +34,6 @@
 - [x] β 完全還元: CoreT2E → Fam → Step → 機械自身の包含 ✅ GX_loop
 - [x] GX' 接頭辞内在化 + ctxOK_graft（複合文脈装備）✅
 - [x] α 還元 coreT1L_of_le（残差 CtxLiftT1）・γ' 還元 coreBlocked_of_elt ✅
-- [ ] **残差 4 つ**: CoreBlockedElt / CoreBlocked0 / CtxLiftT1 / W⊆GX の整礎化
+- [x] スライス装備（第7設計）で α 残差消滅 ✅ v0.113
+- [ ] **残差 3 つ**: CoreBlockedElt / CoreBlocked0 / W⊆GX の整礎化
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）
