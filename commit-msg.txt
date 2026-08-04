@@ -1,5 +1,6 @@
-v0.93.0/row-2 tower identity
+v0.94.0/the row-2 tower core is proved
 
-- Add `le1_entry1_lt` (row-1 ancestry raises row 1) and `glift_split`
-- Prove `oper_cons_tower2`: one expansion of a row-2 tower peels the first
-  copy and substitutes the guarded row-1 lift `Lift1` of the previous tower
+- Add `Wstar2`: `W*` closed under the guarded row-1 lift `Lift1`
+- Prove `towerGraft2_holds` (the former open core `TowerGraft2`): induction on
+  the copy count with the lift amount universally quantified, so the graft
+  closure is consumed only at the single stage `m`

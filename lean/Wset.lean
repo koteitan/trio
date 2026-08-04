@@ -2828,6 +2828,99 @@ theorem oper_cons_tower2 {v z m n : ℕ} {R : TrioSeq}
   rw [← graft_cons (v := v) (z := z) hRne, graft_eq_shift]
   congr 2
 
+/-! ## リフト閉 `W*`
+
+`Wstar` を**ガード付き行 1 リフトで閉じた**形に強める。`t = 0` が従来の主張。
+上昇コピー塔では各コピーの根が行 1 で上昇するので、必要な段が上がっていく。
+接ぎ木閉包 `hgr` は段 `m`（`k = 1`）でしか使えないが、それ以上のリフトは
+`Wstar2` 自身が供給する — これが塔を閉じる仕掛け。 -/
+
+def Wstar2 : Set TrioSeq :=
+  {R | argOK R → ∀ v z a t : ℕ, z ≤ 1 → 2 * (v + t) + z ≤ a →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a}
+
+/-- **The row-2 tower core, proved.**  Induction on the copy count with the lift
+amount universally quantified: `hgr` is consumed only at the single stage `m`. -/
+theorem towerGraft2_holds :
+    ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+      domT R m → srow R (R.length - 1) = 2 →
+      (∀ y ∈ W m, based y → graft R y ∈ Wstar2) →
+      hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+        R.length →
+      ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  classical
+  intro v z m a R hR hRne hz1 hva hd hi1 hgr hpM n hn
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = 2 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]; exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  have hroot1 : entry M 1 0 = v := by rw [hMdef]; simp [entry, hp0]
+  have hroot2 : entry M 2 0 = z := by rw [hMdef]; simp [entry, hp0]
+  have hnr := parent_nextR hpM'
+  rw [hpar0, hsrM] at hnr
+  have hn2 : nextrel2 M 0 (M.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  have hle1lp : le1 M 0 (M.length - 1) := hn2.2.2.2.2.1
+  have hwv : v < entry R 1 (R.length - 1) := by
+    have := le1_entry1_lt hle1lp (by omega)
+    rw [hroot1, hMlen, hE 1] at this
+    exact this
+  have hz2 : z < entry R 2 (R.length - 1) := by
+    have := hn2.2.2.2.1
+    rw [hroot2, hMlen, hE 2] at this
+    exact this
+  set d1 : ℕ := entry R 1 (R.length - 1) - v with hd1
+  have hlev := hd.1
+  unfold lev at hlev
+  have hbound : 2 * (v + d1) + z ≤ m := by rw [hd1]; omega
+  have hM0 : M⟦0⟧ = [] := by
+    rw [oper_gcopies 0 hL hzz hpM', hpar0]
+    simp [gcopies]
+  have hstep : ∀ j, M⟦j + 1⟧ = p0 :: graft R (Lift1 (M⟦j⟧) d1) := by
+    intro j
+    rw [hd1]
+    exact oper_cons_tower2 hR hRne hd hi1 hpM
+  have hbased : ∀ j, based (M⟦j⟧) := by
+    intro j
+    cases j with
+    | zero => rw [hM0]; exact based_nil
+    | succ j => rw [hstep j]; exact based_cons v z _
+  have key : ∀ j k : ℕ, Lift1 (M⟦j⟧) (k * d1) ∈ W (2 * (v + k * d1) + z) := by
+    intro j
+    induction j with
+    | zero => intro k; rw [hM0]; simpa using W_nil (2 * (v + k * d1) + z)
+    | succ j ih =>
+        intro k
+        have hIH := ih 1
+        rw [Nat.one_mul] at hIH
+        have hmem : Lift1 (M⟦j⟧) d1 ∈ W m := W_mono hbound hIH
+        have hb : based (Lift1 (M⟦j⟧) d1) := based_Lift1 _ (hbased j)
+        have hres := hgr _ hmem hb (argOK_graft hRne hR _) v z
+          (2 * (v + k * d1) + z) (k * d1) hz1 (le_refl _)
+        rw [hstep j]
+        exact hres
+  have h0 := key n 0
+  rw [Nat.zero_mul, Lift1_zero, Nat.add_zero] at h0
+  exact W_mono hva h0
+
 /-! ## 残る核: タワー枝 -/
 
 /-- **The one remaining core.**  When the principal root revives `R`'s trailing
