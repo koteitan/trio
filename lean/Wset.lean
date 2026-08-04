@@ -3361,6 +3361,70 @@ theorem towerGraft2_lift_mem {v z m a t : ℕ} {R : TrioSeq} (hR : argOK R)
   rw [oper_Lift1_tower hL hzz hpM' hpar0 hgexp hup hd0pos hd0e hd1pos hle1lp]
   exact W_mono hva (towerGraft2_lift v z m R hR hRne hz1 hd hi1 hgr hpM n t)
 
+/-- The family-interface variant of `towerGraft2_lift_mem`. -/
+theorem towerGraft2_lift_mem_fam {v z m a t : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * (v + t) + z ≤ a)
+    (hd : domT R m) (hi1 : srow R (R.length - 1) = 2)
+    (hgrF : ∀ j : ℕ, graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
+      (entry R 1 (R.length - 1) - v)) ∈ Wstar2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a := by
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = 2 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]; exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  have hroot0 : entry M 0 0 = 0 := by rw [hMdef]; simp [entry, hp0]
+  have hroot1 : entry M 1 0 = v := by rw [hMdef]; simp [entry, hp0]
+  have hnr := parent_nextR hpM'
+  rw [hpar0, hsrM] at hnr
+  have hn2 : nextrel2 M 0 (M.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  have hle1lp : le1 M 0 (M.length - 1) := hn2.2.2.2.2.1
+  have hwv : v < entry R 1 (R.length - 1) := by
+    have := le1_entry1_lt hle1lp (by omega)
+    rw [hroot1, hMlen, hE 1] at this
+    exact this
+  have hup : ∀ l, 0 < l → l ≤ M.length - 1 → entry M 0 0 < entry M 0 l := by
+    intro l hl0 hl1
+    rw [hMlen] at hl1
+    obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    rw [hroot0, hMdef, entry_cons]
+    exact hR _ (entry_pair_mem (B := R) (by omega))
+  set D0 : ℕ := (if 0 < srow M (M.length - 1)
+    then entry M 0 (M.length - 1) - entry M 0 0 else 0) with hD0
+  set D1 : ℕ := (if 1 < srow M (M.length - 1)
+    then entry M 1 (M.length - 1) - entry M 1 0 else 0) with hD1
+  have hd0pos : 0 < D0 := by
+    rw [hD0, hsrM, if_pos (by omega), hroot0, hMlen, hE 0]; omega
+  have hd0e : entry M 0 (M.length - 1) = entry M 0 0 + D0 := by
+    rw [hD0, hsrM, if_pos (by omega), hroot0, hMlen, hE 0]; omega
+  have hd1pos : 0 < D1 := by
+    rw [hD1, hsrM, if_pos (by omega), hroot1, hMlen, hE 1]; omega
+  refine A1_intro (Or.inr (Or.inl (fun n _ => ?_)))
+  have hgexp : M⟦n⟧ = gexp M 0 (M.length - 1) D0 D1 n :=
+    oper_eq_gexp n hL hzz hpM' hpar0
+  rw [oper_Lift1_tower hL hzz hpM' hpar0 hgexp hup hd0pos hd0e hd1pos hle1lp]
+  exact W_mono hva (towerGraft2_lift_fam v z m R hR hRne hz1 hd hi1 hgrF hpM n t)
+
 /-! ## `Wstar2` の閉包
 
 行 2 タワーは `towerGraft2_lift_mem` で閉じた。残る核は三つ:

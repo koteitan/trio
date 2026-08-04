@@ -196,6 +196,21 @@ def CoreT1L : Prop :=
         (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length →
       Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y) t ∈ W a
 
+/-- **Core β, family form**: only the graft obligations of the composite
+tower's own lifted elements. -/
+def CoreT2EFam : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq),
+    (∀ n, 1 ≤ n → Y⟦n⟧ ∈ GX) → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length → CtxOK M →
+    srow (graft M Y) ((graft M Y).length - 1) = 2 →
+    (∃ m, domT (graft M Y) m) →
+    ∀ v z : ℕ, z ≤ 1 →
+      hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
+        (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length →
+      ∀ j : ℕ, graft (graft M Y)
+        (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)⟦j⟧)
+          (entry (graft M Y) 1 ((graft M Y).length - 1) - v)) ∈ Wstar2
+
 /-- **Core β (row-2 tower over clause-2 data)**. -/
 def CoreT2E : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq),
@@ -208,6 +223,20 @@ def CoreT2E : Prop :=
         (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length →
       Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y) t ∈ W a
 
+
+/-- The family core suffices: β's ∀-interface reduces to the family form. -/
+theorem coreT2E_of_fam (hf : CoreT2EFam) : CoreT2E := by
+  intro u Y M hop hbased hy hMarg hM2 hctx hs2 hdG v z a t hz1 hva hpN
+  obtain ⟨m, hdm⟩ := hdG
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hG : argOK (graft M Y) := argOK_graft hMne hMarg Y
+  have hGne : graft M Y ≠ [] :=
+    List.length_pos_iff.mp (by
+      rw [graft_length]
+      have : 0 < Y.length := List.length_pos_iff.mpr hy
+      omega)
+  exact towerGraft2_lift_mem_fam hG hGne hz1 hva hdm hs2
+    (hf u Y M hop hbased hy hMarg hM2 hctx hs2 ⟨m, hdm⟩ v z hz1 hpN) hpN
 
 theorem based_graft_arg {Y w : TrioSeq} (hy : Y ≠ []) (hbY : based Y)
     (hbw : based w) : based (graft Y w) := by
