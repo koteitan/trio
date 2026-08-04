@@ -95,6 +95,20 @@ A2 で `W u ⊆ 𝒳` を得る。閉包ステップ（要素 Y, データは `A
 * β の段ジャンプ（stage m_G の fresh A2 の整礎化）は依然独立の問題
   （機械の自己適用は Lean 的に ill-founded; 測度が要る）。
 
+## 1.9.5 ✅ β の族化（v0.105.0-1）
+
+- `towerGraft2_lift_fam` / `towerGraft2_lift_mem_fam`（Wset）:
+  行2塔は**自分の族要素の graft-義務だけ**を消費する（∀-W-m 界面は不要;
+  key の帰納も消える — 所属構築は界面の供給側の仕事に移動）。
+- `CoreT2EFam`（Gamma）+ `coreT2E_of_fam`: GX_closed の残核は
+  **CoreBlocked + CoreT1L + CoreT2EFam** に更新。
+- CoreT2EFam の攻め方（次セッションの開始点）: j-帰納。
+  j=0: family-elt = [] → graft (graft M Y) [] = graft M Y.dropLast の
+  パッケージ = clause-2 データ一段 ✓。
+  j+1: family-elt = Lift1 ((0,v,z)::graft (graft M Y) (elt_j)) d1 —
+  Buchholz 2.5 case 4 の n-重反復形。ステップで必要になる X̄-補題
+  （wrap が義務を保つ形）を特定するのが最初の仕事。
+
 ## 1.10 塔鎖の遷移行列（probe_walk8, 2514 鎖 / 5650 対）— β の測度データ
 
 連続する塔サイト間の孤児レベル m の遷移:
