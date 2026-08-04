@@ -145,21 +145,32 @@ theorem lev_graft_last {M y : TrioSeq} (hy : y ≠ []) :
 `GX` = 装備付き文脈すべてに対する graft-義務の集合。 -/
 
 def CtxOK (M : TrioSeq) : Prop :=
-  ∀ k, k ≤ M.length → ∀ v z a t : ℕ, z ≤ 1 → 2 * (v + t) + z ≤ a →
+  ∀ k, k < M.length → ∀ v z a t : ℕ, z ≤ 1 → 2 * (v + t) + z ≤ a →
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.take k) t ∈ W a
 
 theorem ctxOK_take {M : TrioSeq} (h : CtxOK M) (j : ℕ) : CtxOK (M.take j) := by
   intro k hk v z a t hz1 hva
   rw [List.take_take]
-  have hk' : min k j ≤ M.length := by
+  have hk' : min k j < M.length := by
     rw [List.length_take] at hk
     omega
   exact h (min k j) hk' v z a t hz1 hva
 
+/-- The machine's set: for every equipped context, the graft obligations of the
+element AND of all its prefixes (the latter feed context composition,
+`ctxOK_graft`). -/
 def GX : Set TrioSeq :=
   {y | based y → ∀ M : TrioSeq, argOK M → 2 ≤ M.length → CtxOK M →
-    ∀ v z a t : ℕ, z ≤ 1 → 2 * (v + t) + z ≤ a →
-    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M y) t ∈ W a}
+    ∀ i, i ≤ y.length → ∀ v z a t : ℕ, z ≤ 1 → 2 * (v + t) + z ≤ a →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M (y.take i)) t ∈ W a}
+
+/-- The full-element obligation of a `GX`-member. -/
+theorem GX_full {y M : TrioSeq} {v z a t : ℕ} (h : y ∈ GX) (hb : based y)
+    (hM : argOK M) (hM2 : 2 ≤ M.length) (hctx : CtxOK M)
+    (hz1 : z ≤ 1) (hva : 2 * (v + t) + z ≤ a) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M y) t ∈ W a := by
+  have := h hb M hM hM2 hctx y.length le_rfl v z a t hz1 hva
+  rwa [List.take_length] at this
 
 /-- **Core γ' (blocked)**: the descended obligations. -/
 def CoreBlocked : Prop :=
@@ -254,6 +265,25 @@ theorem based_graft_arg {Y w : TrioSeq} (hy : Y ≠ []) (hbY : based Y)
       rw [graft_head_eq (by simp) hbw
         (graft_ne_nil (by simp))]
       exact hbY
+
+/-- **Context composition**: the composite context `graft M Y` is equipped
+whenever `M` is and the peel `Y.dropLast` is in the machine's set — the strict
+composite prefixes are the `M`-prefixes plus the grafts of `Y`'s strict
+prefixes, i.e. exactly the peel's element-prefix obligations. -/
+theorem ctxOK_graft {M Y : TrioSeq} (hMarg : argOK M)
+    (hM2 : 2 ≤ M.length) (hctx : CtxOK M)
+    (hYd : Y.dropLast ∈ GX) (hbY : based Y) :
+    CtxOK (graft M Y) := by
+  intro k hk v z a t hz1 hva
+  rw [graft_length] at hk
+  rcases Nat.lt_or_ge k M.length with hkM | hkM
+  · rw [take_graft_low (by omega)]
+    exact hctx k hkM v z a t hz1 hva
+  · have hkk : k = M.length - 1 + (k - (M.length - 1)) := by omega
+    rw [hkk, take_graft_high]
+    have hres := hYd (based_dropLast hbY) M hMarg hM2 hctx (k - (M.length - 1))
+      (by rw [List.length_dropLast]; omega) v z a t hz1 hva
+    rwa [dropLast_take (by omega)] at hres
 
 /-- **Core β, single-step form**: at a β-site (the argument's dead trailing
 orphan `(w0, w1, w2)` revived by the root via row 2), grafting any `W`-element
@@ -351,7 +381,7 @@ theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
           have h := hop 1 le_rfl
           rwa [hpred] at h
         exact fun hargOK v' z' a' t' hz' ha' =>
-          hYd (based_dropLast hbased) M hMarg hM2 hctx v' z' a' t' hz' ha'
+          GX_full hYd (based_dropLast hbased) hMarg hM2 hctx hz' ha'
       · have hYd : Y.dropLast = [] := by
           rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
           rfl
@@ -374,7 +404,7 @@ theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
       intro hargOK v' z' a' t' hz' ha'
       have hb2 : based (graft Y (Lift1 (p0 :: Oj) d1)) :=
         based_graft_arg hy hbased hbe
-      have hres := hgYe hb2 M hMarg hM2 hctx v' z' a' t' hz' ha'
+      have hres := GX_full hgYe hb2 hMarg hM2 hctx hz' ha'
       rw [← graft_assoc hy] at hres
       exact hres
 
@@ -387,8 +417,34 @@ open Classical in
 theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX := by
   intro u Y AY
-  intro hbased M hMarg hM2 hctx v z a t hz1 hva
+  intro hbased M hMarg hM2 hctx i hi v z a t hz1 hva
   have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  rcases Nat.lt_or_eq_of_le hi with hilt | hieq
+  · -- element-prefix obligations: uniform one-step discharge from the datum
+    rcases Nat.eq_zero_or_pos i with hi0 | hipos
+    · subst hi0
+      rw [List.take_zero, graft_nil, List.dropLast_eq_take]
+      exact hctx (M.length - 1) (by omega) v z a t hz1 hva
+    · have hY2 : 2 ≤ Y.length := by omega
+      rcases AY with ⟨hl, -⟩ | hop | ⟨m, -, -, hgr⟩
+      · omega
+      · -- clause 2: prefixes are preserved by one expansion
+        have hd1 := hop 1 le_rfl
+        have hlen1 : i ≤ (Y⟦1⟧).length := by
+          obtain ⟨R, hR⟩ := oper_eq_dropLast_append (M := Y) (n := 1)
+            (by omega) le_rfl
+          rw [hR, List.length_append, List.length_dropLast]
+          omega
+        have hres := hd1 (based_oper le_rfl hbased) M hMarg hM2 hctx i hlen1
+          v z a t hz1 hva
+        rwa [oper_take_prefix (by omega) le_rfl (by omega)] at hres
+      · -- clause 3: prefixes of the peel (`w := []`)
+        have hd0 := hgr [] (W_nil m) based_nil
+        rw [graft_nil] at hd0
+        have hres := hd0 (based_dropLast hbased) M hMarg hM2 hctx i
+          (by rw [List.length_dropLast]; omega) v z a t hz1 hva
+        rwa [dropLast_take (by omega)] at hres
+  rw [hieq, List.take_length]
   by_cases hy : Y = []
   · subst hy
     rw [graft_nil, List.dropLast_eq_take]
@@ -408,7 +464,7 @@ theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
     rw [lift_graft_inner_step v z t n hMne hy hyL hG hpY]
     rcases AY with ⟨hl, -⟩ | hop | ⟨m, -, hd, -⟩
     · omega
-    · exact hop n hn (based_oper hn hbased) M hMarg hM2 hctx v z a t hz1 hva
+    · exact GX_full (hop n hn) (based_oper hn hbased) hMarg hM2 hctx hz1 hva
     · exact absurd hpY hd.2
   by_cases hpG : hasParent (graft M Y)
       (srow (graft M Y) ((graft M Y).length - 1)) ((graft M Y).length - 1)
@@ -438,7 +494,7 @@ theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
           rwa [hpred] at h
         · have h := hgr [] (W_nil m) based_nil
           rwa [graft_nil] at h
-      exact hYd (based_dropLast hbased) M hMarg hM2 hctx v z a t hz1 hva
+      exact GX_full hYd (based_dropLast hbased) hMarg hM2 hctx hz1 hva
     · have hYd : Y.dropLast = [] := by
         rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
         rfl
@@ -507,7 +563,7 @@ theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
           rw [graft_assoc hy]
           have hYw : graft Y w ∈ GX := hgr w hw hbw
           exact fun hargOK v' z' a' t' hz' ha' =>
-            hYw (based_graft_arg hy hbased hbw) M hMarg hM2 hctx v' z' a' t' hz' ha'
+            GX_full hYw (based_graft_arg hy hbased hbw) hMarg hM2 hctx hz' ha'
     · -- (c) still dead: peel
       refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
       have hnp' : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
@@ -535,6 +591,6 @@ theorem graftAll_of_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
   intro S hS hS2 hctx u y hy hby
   have hyGX : y ∈ GX := W_le_GX hb h1 h2 u hy
   exact fun hargOK v z a t hz1 hva =>
-    hyGX hby S hS hS2 hctx v z a t hz1 hva
+    GX_full hyGX hby hS hS2 hctx hz1 hva
 
 end TRIO

@@ -521,4 +521,25 @@ theorem graft_dropLast {M y : TrioSeq} (hy : y ≠ []) :
       | cons a l => simp [shiftr01]),
     shiftr01_dropLast, ← graft_eq_shift]
 
+theorem shiftr01_take (d0 d1 : ℕ) (l : TrioSeq) (i : ℕ) :
+    (shiftr01 d0 d1 l).take i = shiftr01 d0 d1 (l.take i) := by
+  unfold shiftr01
+  exact (List.map_take ..).symm
+
+/-- Below the graft point, prefixes of the graft block are context prefixes. -/
+theorem take_graft_low {M Y : TrioSeq} {k : ℕ} (hk : k ≤ M.length - 1) :
+    (graft M Y).take k = M.take k := by
+  rw [graft_eq_shift, List.take_append, show k - M.dropLast.length = 0 from
+    (by rw [List.length_dropLast]; omega),
+    List.take_zero, List.append_nil, dropLast_take hk]
+
+/-- At or above the graft point, prefixes of the graft block are grafts of the
+argument's prefixes. -/
+theorem take_graft_high {M Y : TrioSeq} (i : ℕ) :
+    (graft M Y).take (M.length - 1 + i) = graft M (Y.take i) := by
+  have h := take_append_right M.dropLast
+    (shiftr01 (entry M 0 (M.length - 1)) 0 Y) i
+  rw [List.length_dropLast] at h
+  rw [graft_eq_shift, h, shiftr01_take, ← graft_eq_shift]
+
 end TRIO

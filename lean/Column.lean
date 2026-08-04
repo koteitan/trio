@@ -79,6 +79,21 @@ theorem oper_eq_dropLast_append {M : TrioSeq} {n : ℕ} (L : 1 < M.length)
     · refine ⟨[], ?_⟩
       rw [oper_eq_pred_of_noParent n (by omega) hz hp, hPred, List.append_nil]
 
+/-- `take` commutes with the peel below the last column. -/
+theorem dropLast_take {l : TrioSeq} {i : ℕ} (hi : i ≤ l.length - 1) :
+    l.dropLast.take i = l.take i := by
+  rw [List.dropLast_eq_take, List.take_take, Nat.min_eq_left hi]
+
+/-- **Prefix preservation under expansion**: copy 0 is unshifted, so `M⟦n⟧`
+agrees with `M` on the first `M.length - 1` columns (`n ≥ 1`). -/
+theorem oper_take_prefix {M : TrioSeq} {n i : ℕ} (L : 1 < M.length)
+    (n1 : 1 ≤ n) (hi : i ≤ M.length - 1) :
+    (M⟦n⟧).take i = M.take i := by
+  obtain ⟨R, hR⟩ := oper_eq_dropLast_append L n1
+  rw [hR, List.take_append, show i - M.dropLast.length = 0 from
+    (by rw [List.length_dropLast]; omega),
+    List.take_zero, List.append_nil, dropLast_take hi]
+
 /-- Every `ST_TS` list is non-empty. -/
 theorem stps_len_pos {M : TrioSeq} (hM : ST_TS M) : 0 < M.length := by
   induction hM with

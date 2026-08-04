@@ -1,11 +1,13 @@
-v0.106.0/beta reduces to the single-step core CoreT2EStep
+v0.107.0/GX prefix internalization + composite-context equipment
 
-- Add CoreT2EStep (Gamma): at a beta-site, graft Y e in GX for every
-  e in W (2*w1 + z) - a stage strictly below the orphan level (z < w2)
-- Prove coreT2EFam_of_step: the family induction on the copy index is
-  mechanical - base = clause-2 datum peel (Y.dropLast in GX) or the
-  context package for singleton Y; step = the previous obligation's own
-  Wstar2 package puts the next tower element in W (2*w1 + z), then
-  graft_assoc re-expresses its graft over the equipped context M
-- Wire coreT2E_of_step, so GX_closed now rests on
-  CoreBlocked + CoreT1L + CoreT2EStep
+- Strictify CtxOK to k < M.length (no consumer used the full-block package)
+- Internalize element-prefix obligations into GX (packages of
+  graft M (y.take i) for i <= |y|); add GX_full for the full-element form
+- Discharge the new prefix obligations uniformly in GX_closed: one step
+  from the datum in all three clauses (clause 2 via the new
+  oper_take_prefix - copy 0 is unshifted; clause 3 via dropLast_take;
+  short elements via the context package)
+- Add ctxOK_graft: the composite context graft M Y is equipped from
+  CtxOK M + Y.dropLast in GX - the CtxOK-composition half of beta
+- Add oper_take_prefix, dropLast_take (Column); shiftr01_take,
+  take_graft_low, take_graft_high (Xbar)
