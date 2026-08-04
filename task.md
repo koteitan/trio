@@ -23,5 +23,9 @@
 - [x] Final.lean 組み立て TRIO_terminates ✅（残る仮定は TowerOK と TbOper のみ）
 - [x] W* から tbAll を除去（全段階で成立する形に）→ TbOper 消滅 ✅
 - [x] 行1タワー oper_cons_tower1 / tower1_mem ✅
-- [ ] TowerGraft2（ガード付き行2タワー; le1 錐上の row-1 リフト）
+- [x] 前置切片決定性 le0_take/le1_take・内在リフト Lift1 ✅
+- [x] nextrel1_Lift1（リフトは行1辺を保つ）と系 ✅
+- [x] glift_eq_Lift1（塔の周期マスク＝内在錐; Gtrans 由来）・oper_cons_tower2 ✅
+- [x] **towerGraft2_holds**（旧 TowerGraft2）✅ リフト閉 Wstar2 に対して
+- [ ] Wstar2_closed（B2a が難所; LiftS への一般化）
 - [ ] TowerExp（後続節で来た引数ブロック上のタワー）
