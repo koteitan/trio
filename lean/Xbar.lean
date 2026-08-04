@@ -431,4 +431,64 @@ theorem based_blocked_element {M y : TrioSeq} {p : ℕ} {d0 d1 : ℕ} (n : ℕ)
   dsimp only
   omega
 
+
+/-! ## graft の結合律（(d)-枝と β の共通部品） -/
+
+theorem graft_length (M y : TrioSeq) :
+    (graft M y).length = M.length - 1 + y.length := by
+  unfold graft
+  rw [List.length_append, List.length_dropLast, List.length_map]
+
+/-- The trailing depth of a graft block is the sum of the two depths. -/
+theorem entry0_graft_last {M y : TrioSeq} (hy : y ≠ []) :
+    entry (graft M y) 0 ((graft M y).length - 1)
+      = entry y 0 (y.length - 1) + entry M 0 (M.length - 1) := by
+  classical
+  have hylen : 0 < y.length := List.length_pos_iff.mpr hy
+  rw [graft_eq_shift]
+  have hlen : (M.dropLast ++ shiftr01 (entry M 0 (M.length - 1)) 0 y).length - 1
+      = M.dropLast.length + (y.length - 1) := by
+    rw [List.length_append, shiftr01_length]
+    omega
+  rw [hlen, entry_append_right]
+  show ((shiftr01 (entry M 0 (M.length - 1)) 0 y).getD (y.length - 1)
+      (0, 0, 0)).1 = _
+  rw [shiftr01_getD (by omega)]
+  rfl
+
+theorem graft_ne_nil {M y : TrioSeq} (hM2 : 2 ≤ M.length) :
+    graft M y ≠ [] := by
+  intro h
+  have := congrArg List.length h
+  rw [graft_length] at this
+  simp at this
+  omega
+
+/-- **Associativity**: grafting into a grafted argument is grafting the
+composed argument. -/
+theorem graft_assoc {M y w : TrioSeq} (hy : y ≠ []) :
+    graft (graft M y) w = graft M (graft y w) := by
+  classical
+  have hylen : 0 < y.length := List.length_pos_iff.mpr hy
+  set cM := entry M 0 (M.length - 1) with hcM
+  set cy := entry y 0 (y.length - 1) with hcy
+  have h1 : (graft M y).dropLast = M.dropLast ++ shiftr01 cM 0 y.dropLast := by
+    rw [graft_eq_shift, List.dropLast_append_of_ne_nil
+      (by cases y with
+        | nil => exact absurd rfl hy
+        | cons a l => simp [shiftr01]), shiftr01_dropLast]
+  have h2 : entry (graft M y) 0 ((graft M y).length - 1) = cy + cM :=
+    entry0_graft_last hy
+  rw [graft_eq_shift (M := graft M y), h1, h2,
+    graft_eq_shift (M := M), graft_eq_shift (M := y), ← hcM, ← hcy]
+  rw [List.append_assoc]
+  congr 1
+  unfold shiftr01
+  rw [List.map_append, List.map_map]
+  congr 1
+  refine List.map_congr_left ?_
+  intro q _
+  simp only [Function.comp_apply]
+  refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> dsimp only <;> omega
+
 end TRIO
