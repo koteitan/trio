@@ -786,6 +786,229 @@ theorem oper_shiftr1 {W : TrioSeq} (hlev : lev W (W.length - 1) ≠ 0) (d n : �
       rw [oper_eq_pred_of_noParent n hL hz hp,
         oper_eq_pred_of_noParent n hLm hzM hpM, Pred_shiftr1]
 
+/-! ## 前置切片で決まる先祖関係
+
+`nextrel0`/`nextrel1` の全条件は添字 `≤ j1` の列しか見ないので、行き先が
+前置切片の中にあるかぎり `le0`/`le1` は切片で計算してよい。ガード付き
+行 1 リフト `Lift1` を `take`/`dropLast` と交換させるのに使う。 -/
+
+theorem entry_take {X : TrioSeq} {l i j : ℕ} (hj : j < l) :
+    entry (X.take l) i j = entry X i j := by
+  unfold entry
+  have h : (X.take l).getD j (0, 0, 0) = X.getD j (0, 0, 0) := by
+    rcases Nat.lt_or_ge j X.length with hx | hx
+    · rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem (by rw [List.length_take]; omega),
+        List.getElem?_eq_getElem hx, List.getElem_take]
+    · rw [getD_out (by rw [List.length_take]; omega), getD_out hx]
+  rw [h]
+
+theorem nextrel0_take {X : TrioSeq} {l a b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    nextrel0 (X.take l) a b ↔ nextrel0 X a b := by
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  unfold nextrel0
+  rw [hlen]
+  constructor
+  · rintro ⟨ha, hb', hab, hlt, hmin⟩
+    refine ⟨by omega, by omega, hab, ?_, ?_⟩
+    · rw [entry_take (by omega : a < l), entry_take hb] at hlt; exact hlt
+    · intro j hj
+      have := hmin j hj
+      rw [entry_take hb, entry_take (by omega : j < l)] at this
+      exact this
+  · rintro ⟨ha, hb', hab, hlt, hmin⟩
+    refine ⟨by omega, hb, hab, ?_, ?_⟩
+    · rw [entry_take (by omega : a < l), entry_take hb]; exact hlt
+    · intro j hj
+      have := hmin j hj
+      rw [entry_take hb, entry_take (by omega : j < l)]
+      exact this
+
+theorem rtg0_le {X : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 X) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_rfl
+  | @tail y z _ hyz ih => exact le_trans ih (le_of_lt hyz.2.2.1)
+
+theorem rtg0_take_mp {X : TrioSeq} {l : ℕ} (hl : l ≤ X.length) {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 (X.take l)) a b) :
+    Relation.ReflTransGen (nextrel0 X) a b := by
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  induction h with
+  | refl => exact .refl
+  | @tail y z _ hyz ih =>
+      exact ih.tail ((nextrel0_take hl (by have := hyz.2.1; omega)).1 hyz)
+
+theorem rtg0_take_mpr {X : TrioSeq} {l : ℕ} (hl : l ≤ X.length) {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 X) a b) :
+    b < l → Relation.ReflTransGen (nextrel0 (X.take l)) a b := by
+  induction h with
+  | refl => intro _; exact .refl
+  | @tail y z _ hyz ih =>
+      intro hz
+      exact (ih (by have := hyz.2.2.1; omega)).tail ((nextrel0_take hl hz).2 hyz)
+
+theorem le0_take {X : TrioSeq} {l a b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    le0 (X.take l) a b ↔ le0 X a b := by
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  unfold le0
+  rw [hlen]
+  constructor
+  · rintro ⟨ha, -, hr⟩
+    exact ⟨by omega, by omega, rtg0_take_mp hl hr⟩
+  · rintro ⟨-, -, hr⟩
+    exact ⟨by have := rtg0_le hr; omega, hb, rtg0_take_mpr hl hr hb⟩
+
+theorem nextrel1_take {X : TrioSeq} {l a b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    nextrel1 (X.take l) a b ↔ nextrel1 X a b := by
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  unfold nextrel1
+  rw [hlen]
+  constructor
+  · rintro ⟨ha, -, hab, hlt, hle, hmin⟩
+    refine ⟨by omega, by omega, hab, ?_, (le0_take hl hb).1 hle, ?_⟩
+    · rw [entry_take (by omega : a < l), entry_take hb] at hlt; exact hlt
+    · intro j hj
+      have hjb : j ≤ b := rtg0_le hj.2.2.2
+      have := hmin j ⟨hj.1, (le0_take hl hb).2 hj.2⟩
+      rw [entry_take hb, entry_take (by omega : j < l)] at this
+      exact this
+  · rintro ⟨ha, -, hab, hlt, hle, hmin⟩
+    refine ⟨by omega, hb, hab, ?_, (le0_take hl hb).2 hle, ?_⟩
+    · rw [entry_take (by omega : a < l), entry_take hb]; exact hlt
+    · intro j hj
+      have hjb : j ≤ b := rtg0_le ((le0_take hl hb).1 hj.2).2.2
+      have := hmin j ⟨hj.1, (le0_take hl hb).1 hj.2⟩
+      rw [entry_take hb, entry_take (by omega : j < l)]
+      exact this
+
+theorem rtg1_le {X : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 X) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_rfl
+  | @tail y z _ hyz ih => exact le_trans ih (le_of_lt hyz.2.2.1)
+
+theorem rtg1_take_mp {X : TrioSeq} {l : ℕ} (hl : l ≤ X.length) {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 (X.take l)) a b) :
+    Relation.ReflTransGen (nextrel1 X) a b := by
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  induction h with
+  | refl => exact .refl
+  | @tail y z _ hyz ih =>
+      exact ih.tail ((nextrel1_take hl (by have := hyz.2.1; omega)).1 hyz)
+
+theorem rtg1_take_mpr {X : TrioSeq} {l : ℕ} (hl : l ≤ X.length) {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 X) a b) :
+    b < l → Relation.ReflTransGen (nextrel1 (X.take l)) a b := by
+  induction h with
+  | refl => intro _; exact .refl
+  | @tail y z _ hyz ih =>
+      intro hz
+      exact (ih (by have := hyz.2.2.1; omega)).tail ((nextrel1_take hl hz).2 hyz)
+
+theorem le1_take {X : TrioSeq} {l a b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    le1 (X.take l) a b ↔ le1 X a b := by
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  unfold le1
+  rw [hlen]
+  constructor
+  · rintro ⟨ha, -, hr⟩
+    exact ⟨by omega, by omega, rtg1_take_mp hl hr⟩
+  · rintro ⟨-, -, hr⟩
+    exact ⟨by have := rtg1_le hr; omega, hb, rtg1_take_mpr hl hr hb⟩
+
+/-! ## ガード付き行 1 リフト `Lift1`
+
+`Lift1 X d` は行 1 を `d` だけ、根 `0` の行 1 錐 `le1 X 0 ·` の上でだけ持ち上げる。
+`oper_root_tower` の `glift M L 0 d` は塔の中では（コピー周期性により）これに
+一致するので、`W*` はこの**内在的**なリフトで閉じていればよい。 -/
+
+open Classical in
+noncomputable def Lift1 (X : TrioSeq) (d : ℕ) : TrioSeq :=
+  (List.range X.length).map fun i =>
+    ((entry X 0 i, entry X 1 i + (if le1 X 0 i then d else 0),
+      entry X 2 i) : ℕ × ℕ × ℕ)
+
+@[simp] theorem Lift1_nil (d : ℕ) : Lift1 ([] : TrioSeq) d = [] := rfl
+
+@[simp] theorem Lift1_length (X : TrioSeq) (d : ℕ) :
+    (Lift1 X d).length = X.length := by simp [Lift1]
+
+open Classical in
+theorem Lift1_getD {X : TrioSeq} {d i : ℕ} (hi : i < X.length) :
+    (Lift1 X d).getD i (0, 0, 0)
+      = ((entry X 0 i, entry X 1 i + (if le1 X 0 i then d else 0),
+          entry X 2 i) : ℕ × ℕ × ℕ) := by
+  rw [List.getD_eq_getElem?_getD,
+    List.getElem?_eq_getElem (by rw [Lift1_length]; exact hi)]
+  unfold Lift1
+  simp only [List.getElem_map, List.getElem_range]
+  rfl
+
+theorem entry0_Lift1 (X : TrioSeq) (d i : ℕ) :
+    entry (Lift1 X d) 0 i = entry X 0 i := by
+  show ((Lift1 X d).getD i (0, 0, 0)).1 = ((X.getD i (0, 0, 0)).1 : ℕ)
+  rcases Nat.lt_or_ge i X.length with hi | hi
+  · rw [Lift1_getD hi]; rfl
+  · rw [getD_out (by rw [Lift1_length]; omega), getD_out hi]
+
+theorem entry2_Lift1 (X : TrioSeq) (d i : ℕ) :
+    entry (Lift1 X d) 2 i = entry X 2 i := by
+  show ((Lift1 X d).getD i (0, 0, 0)).2.2 = ((X.getD i (0, 0, 0)).2.2 : ℕ)
+  rcases Nat.lt_or_ge i X.length with hi | hi
+  · rw [Lift1_getD hi]; rfl
+  · rw [getD_out (by rw [Lift1_length]; omega), getD_out hi]
+
+open Classical in
+theorem entry1_Lift1 {X : TrioSeq} {d i : ℕ} (hi : i < X.length) :
+    entry (Lift1 X d) 1 i = entry X 1 i + (if le1 X 0 i then d else 0) := by
+  show ((Lift1 X d).getD i (0, 0, 0)).2.1 = _
+  rw [Lift1_getD hi]
+
+theorem entry_triple {X : TrioSeq} {i : ℕ} (hi : i < X.length) :
+    ((entry X 0 i, entry X 1 i, entry X 2 i) : ℕ × ℕ × ℕ) = X[i] := by
+  have h : X.getD i (0, 0, 0) = X[i] := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi]; rfl
+  show (((X.getD i (0, 0, 0)).1, (X.getD i (0, 0, 0)).2.1,
+    (X.getD i (0, 0, 0)).2.2) : ℕ × ℕ × ℕ) = X[i]
+  rw [h]
+
+@[simp] theorem Lift1_zero (X : TrioSeq) : Lift1 X 0 = X := by
+  classical
+  apply List.ext_getElem
+  · simp
+  · intro i h1 h2
+    have hiX : i < X.length := h2
+    have hA : (Lift1 X 0)[i] = ((entry X 0 i,
+        entry X 1 i + (if le1 X 0 i then 0 else 0), entry X 2 i) : ℕ × ℕ × ℕ) := by
+      unfold Lift1
+      simp only [List.getElem_map, List.getElem_range]
+    rw [hA]
+    simp only [Nat.add_zero, ite_self]
+    exact entry_triple hiX
+
+theorem based_Lift1 {X : TrioSeq} (d : ℕ) (h : based X) : based (Lift1 X d) := by
+  unfold based at h ⊢
+  rw [entry0_Lift1]
+  exact h
+
+theorem Lift1_take {X : TrioSeq} {d l : ℕ} (hl : l ≤ X.length) :
+    (Lift1 X d).take l = Lift1 (X.take l) d := by
+  classical
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  unfold Lift1
+  rw [← List.map_take, List.take_range, Nat.min_eq_left hl, hlen]
+  refine List.map_congr_left ?_
+  intro i hi
+  have hil : i < l := List.mem_range.1 hi
+  rw [entry_take hil, entry_take hil, entry_take hil,
+    if_congr (le1_take hl hil) rfl rfl]
+
+theorem Lift1_dropLast {X : TrioSeq} {d : ℕ} :
+    (Lift1 X d).dropLast = Lift1 X.dropLast d := by
+  rw [List.dropLast_eq_take, List.dropLast_eq_take, Lift1_length,
+    Lift1_take (by omega)]
+
 /-! ## 引数ブロックと最上位分解 -/
 
 /-- `R` is an *argument block*: every column sits strictly below depth `0`. -/

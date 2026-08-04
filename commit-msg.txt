@@ -1,8 +1,7 @@
-v0.89.0/row-1 shift equivariance of oper
+v0.90.0/prefix-determined ancestry and the guarded row-1 lift
 
-- Add the `shiftr01 0 d` twins of the row-0 shift package
-  (entry0/1, nextrel0/1/2, le0/le1, nextR, hasParent, parent, lev,
-  srow under `lev != 0`, gcopy/gcopies, Pred)
-- Prove `oper_shiftr1`: `oper` commutes with a uniform row-1 shift
-  exactly when the last column has positive level
-- Add `entry_out_row`: entries past the end are zero
+- Add prefix lemmas: `entry_take`, `nextrel0/1_take`, `rtg0/1_take_mp/mpr`,
+  `le0_take`, `le1_take`, `rtg0/1_le`
+- Add `Lift1 X d` (row 1 raised by `d` on the root's `le1` cone) with
+  `Lift1_length/getD/zero/take/dropLast`, `entry0/1/2_Lift1`, `based_Lift1`
+- Add `entry_triple`: a column equals its three entries
