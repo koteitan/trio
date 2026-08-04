@@ -2978,6 +2978,56 @@ def Wstar2 : Set TrioSeq :=
   {R | argOK R → ∀ v z a t : ℕ, z ≤ 1 → 2 * (v + t) + z ≤ a →
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a}
 
+/-- **The family form of the row-2 tower**: only the graft obligations of the
+tower's own lifted elements are consumed — no `∀ y ∈ W m` interface.  This is
+the interface the clause-2-origin towers (Core β) can hope to satisfy. -/
+theorem towerGraft2_lift_fam :
+    ∀ (v z m : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
+      domT R m → srow R (R.length - 1) = 2 →
+      (∀ j : ℕ, graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
+        (entry R 1 (R.length - 1) - v)) ∈ Wstar2) →
+      hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+        R.length →
+      ∀ n s : ℕ,
+        Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧) s ∈ W (2 * (v + s) + z) := by
+  classical
+  intro v z m R hR hRne hz1 hd hi1 hgrF hpM
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = 2 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]; exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  set d1 : ℕ := entry R 1 (R.length - 1) - v with hd1
+  have hM0 : M⟦0⟧ = [] := by
+    rw [oper_gcopies 0 hL hzz hpM', hpar0]
+    simp [gcopies]
+  have hstep : ∀ j, M⟦j + 1⟧ = p0 :: graft R (Lift1 (M⟦j⟧) d1) := by
+    intro j
+    rw [hd1]
+    exact oper_cons_tower2 hR hRne hd hi1 hpM
+  intro n s
+  cases n with
+  | zero => rw [hM0]; simpa using W_nil (2 * (v + s) + z)
+  | succ j =>
+      rw [hstep j]
+      exact hgrF j (argOK_graft hRne hR _) v z (2 * (v + s) + z) s hz1
+        (le_refl _)
+
 /-- **The row-2 tower core, proved.**  Induction on the copy count with the lift
 amount universally quantified: `hgr` is consumed only at the single stage `m`. -/
 theorem towerGraft2_lift :
