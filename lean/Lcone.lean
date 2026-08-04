@@ -90,10 +90,8 @@ theorem gexp_root_shallow (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0)
     omega
 
 /-- The prefix of the expansion carries the same root cone. -/
-theorem gexp_cone_low (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
-    (hn : 0 < n) {p : ℕ} (hp : p < j0) :
+theorem gexp_cone_low (hlen : j0 + Lb + 1 = M.length) {p : ℕ} (hp : p < j0) :
     le1 (gexp M j0 Lb d0 d1 n) 0 p ↔ le1 M 0 p := by
-  have hnLb : 0 < n * Lb := Nat.mul_pos hn hLb
   have hpX : p < (gexp M j0 Lb d0 d1 n).length := by
     rw [gexp_length hlen]; omega
   have hpM : p < M.length := by omega
@@ -435,6 +433,251 @@ theorem gexp_cone_mir_flat {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
       rw [gexp_flat_entry hlen hk hq']
       exact hMw (j0 + q') hM (by omega)
 
+theorem gexp_entry2_mir {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hk : k < n) (hq : q < Lb) (d0' d1' : ℕ) :
+    entry (gexp M j0 Lb d0' d1' n) 2 (j0 + (k * Lb + q)) = entry M 2 (j0 + q) := by
+  show ((gexp M j0 Lb d0' d1' n).getD (j0 + (k * Lb + q)) (0, 0, 0)).2.2 = _
+  rw [gexp_getD_mir hlen hk hq]
+
 end ConeFlat
+
+/-! ## `Wset.LiftInner` の組み立て -/
+
+theorem rtg0_entry0_lt {A : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 A) a b) (hne : a ≠ b) :
+    entry A 0 a < entry A 0 b := by
+  induction h with
+  | refl => exact absurd rfl hne
+  | @tail y w hay hyw ih =>
+      rcases Nat.eq_or_lt_of_le (nextrel0_rtrancl_index_le hay) with heq | hlt
+      · rw [heq]; exact hyw.2.2.2.1
+      · exact lt_trans (ih (by omega)) hyw.2.2.2.1
+
+theorem window_of_rtg0 {A : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 A) a b) (hb : b < A.length) :
+    ∀ l, a < l → l ≤ b → entry A 0 a < entry A 0 l := fun l hl0 hl1 =>
+  rtg0_entry0_lt (le0_interval_desc h hb l (by omega) hl1) (by omega)
+
+/-- Row-1 ancestors of a common target are linearly ordered. -/
+theorem le1_of_le1_le1 {X : TrioSeq} {a k b : ℕ}
+    (ha : le1 X a b) (hk : le1 X k b) (hak : a < k) : le1 X a k := by
+  obtain ⟨-, -, ha⟩ := ha
+  obtain ⟨hkl, -, hk⟩ := hk
+  have key : ∀ {c : ℕ}, Relation.ReflTransGen (nextrel1 X) k c →
+      Relation.ReflTransGen (nextrel1 X) a c →
+      Relation.ReflTransGen (nextrel1 X) a k := by
+    intro c hkc
+    induction hkc with
+    | refl => intro h; exact h
+    | @tail y w hky hyw ih =>
+        intro hac
+        cases hac with
+        | refl =>
+            have h1 : k ≤ y := rtg1_le hky
+            have h2 : y < a := hyw.2.2.1
+            exact absurd h1 (by omega)
+        | @tail y' _ hay' hy'w =>
+            have hyy : y' = y := nextrel1_uniq_src hy'w hyw
+            subst hyy
+            exact ih hay'
+  exact ⟨by have := rtg1_le (key hk ha); omega, hkl, key hk ha⟩
+
+open Classical in
+/-- The expansion as a `gexp`, for an arbitrary bad root. -/
+theorem oper_eq_gexp_gen {M : TrioSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1)) :
+    M⟦n⟧ = gexp M (parent M (srow M (M.length - 1)) (M.length - 1))
+      (M.length - 1 - parent M (srow M (M.length - 1)) (M.length - 1))
+      (if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1)
+        - entry M 0 (parent M (srow M (M.length - 1)) (M.length - 1)) else 0)
+      (if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1)
+        - entry M 1 (parent M (srow M (M.length - 1)) (M.length - 1)) else 0) n := by
+  rw [oper_gcopies n hL hz hp]
+  unfold gexp
+  rfl
+
+
+open Classical in
+/-- **`LiftInner` holds.**  When the bad root lies inside the argument block the
+guarded row-1 lift commutes with the expansion: the root cone transports, and
+everything else about the expansion (`srow`, the parent, `d0`, `d1`) is
+invariant under the lift. -/
+theorem liftInner_holds : Wset.LiftInner := by
+  classical
+  intro v z t n R hR hRne hp
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = srow R (R.length - 1) := by
+    rw [hMlen, hMdef, srow_cons_last hRne]
+  set q0 := parent R (srow R (R.length - 1)) (R.length - 1) with hq0def
+  have hnrR : nextR R (srow R (R.length - 1)) q0 (R.length - 1) := parent_nextR hp
+  have hq0lt : q0 < R.length - 1 := nextR_index_lt hnrR
+  have hnrM : nextR M (srow R (R.length - 1)) (q0 + 1) R.length :=
+    (nextR_cons_last hRne _ q0).mpr hnrR
+  have hpM : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen]
+    exact ⟨q0 + 1, hnrM, nextR_cons_uniq hR hRne hp⟩
+  have hparM : parent M (srow M (M.length - 1)) (M.length - 1) = q0 + 1 := by
+    have h := parent_nextR hpM
+    rw [hsrM, hMlen] at h ⊢
+    exact nextR_cons_uniq hR hRne hp _ h
+  set j0 := q0 + 1 with hj0def
+  set Lb := R.length - j0 with hLbdef
+  have hj0pos : 0 < j0 := by omega
+  have hLbpos : 0 < Lb := by omega
+  have hlenM : j0 + Lb + 1 = M.length := by omega
+  have hj0x : j0 + Lb = R.length := by omega
+  have hLbe : M.length - 1 - j0 = Lb := by omega
+  -- the lifted block
+  set N : TrioSeq := Lift1 M t with hNdef
+  have hNlen : N.length = M.length := by rw [hNdef]; exact Lift1_length M t
+  have hNe0 : ∀ y, entry N 0 y = entry M 0 y := fun y => by
+    rw [hNdef]; exact entry0_Lift1 M t y
+  have hNe2 : ∀ y, entry N 2 y = entry M 2 y := fun y => by
+    rw [hNdef]; exact entry2_Lift1 M t y
+  have hNe1 : ∀ y, y < M.length →
+      entry N 1 y = entry M 1 y + (if le1 M 0 y then t else 0) := by
+    intro y hy; rw [hNdef, entry1_Lift1 hy]
+  have hNlen1 : N.length - 1 = M.length - 1 := by rw [hNlen]
+  have hLN : N.length - 1 ≠ 0 := by rw [hNlen1]; exact hL
+  have hzN : ¬ (entry N 0 (N.length - 1) = 0 ∧ entry N 1 (N.length - 1) = 0 ∧
+      entry N 2 (N.length - 1) = 0) := by
+    rintro ⟨h1, -, -⟩
+    rw [hNlen1, hNe0, hMlen, hE 0] at h1
+    omega
+  have hsrN : srow N (N.length - 1) = srow M (M.length - 1) := by
+    rw [hNlen1, hNdef]
+    exact srow_Lift1 (by rw [hMlen]; omega)
+  have hpN : hasParent N (srow N (N.length - 1)) (N.length - 1) := by
+    rw [hsrN, hNlen1, hNdef]
+    exact hasParent_Lift1.mpr hpM
+  have hparN : parent N (srow N (N.length - 1)) (N.length - 1) = j0 := by
+    rw [hsrN, hNlen1, hNdef, parent_Lift1]
+    exact hparM
+  have hlenN : j0 + Lb + 1 = N.length := by rw [hNlen]; exact hlenM
+  -- the deltas
+  set D0 : ℕ := (if 0 < srow M (M.length - 1)
+    then entry M 0 (M.length - 1) - entry M 0 j0 else 0) with hD0
+  set D1 : ℕ := (if 1 < srow M (M.length - 1)
+    then entry M 1 (M.length - 1) - entry M 1 j0 else 0) with hD1
+  -- the root is strictly the shallowest column
+  have hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l := by
+    intro l hl0 hl1
+    obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    have h0 : entry M 0 0 = 0 := by rw [hMdef]; simp [entry, hp0]
+    rw [h0, hMdef, entry_cons]
+    exact hR _ (entry_pair_mem (B := R) (by omega))
+  -- the block window
+  have hrtgx : Relation.ReflTransGen (nextrel0 M) j0 (M.length - 1) := by
+    have hnr := parent_nextR hpM
+    rw [hparM] at hnr
+    unfold nextR at hnr
+    by_cases h0 : srow M (M.length - 1) = 0
+    · rw [if_pos h0] at hnr
+      exact Relation.ReflTransGen.single hnr
+    · by_cases h1 : srow M (M.length - 1) = 1
+      · rw [if_neg h0, if_pos h1] at hnr
+        exact hnr.2.2.2.2.1.2.2
+      · rw [if_neg h0, if_neg h1] at hnr
+        exact rtg1_rtg0 hnr.2.2.2.2.1.2.2
+  have hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l := by
+    intro l hl0 hl1
+    exact window_of_rtg0 hrtgx (by omega) l hl0 (by omega)
+  -- `d1` is invariant under the lift
+  have hD1N : (if 1 < srow N (N.length - 1)
+      then entry N 1 (N.length - 1) - entry N 1 j0 else 0) = D1 := by
+    rw [hsrN, hNlen1, hD1]
+    by_cases h2 : 1 < srow M (M.length - 1)
+    · rw [if_pos h2, if_pos h2]
+      have hnr := parent_nextR hpM
+      rw [hparM] at hnr
+      unfold nextR at hnr
+      rw [if_neg (by omega), if_neg (by omega)] at hnr
+      have hle1jx : le1 M j0 (M.length - 1) := hnr.2.2.2.2.1
+      have hiff : le1 M 0 (M.length - 1) ↔ le1 M 0 j0 :=
+        ⟨fun h => le1_of_le1_le1 h hle1jx hj0pos, fun h => le1_trans h hle1jx⟩
+      have hlt := le1_entry1_lt hle1jx (by omega)
+      rw [hNe1 _ (by omega), hNe1 _ (by omega)]
+      by_cases hc : le1 M 0 j0
+      · rw [if_pos hc, if_pos (hiff.mpr hc)]; omega
+      · rw [if_neg hc, if_neg (fun h => hc (hiff.mp h))]; omega
+    · rw [if_neg h2, if_neg h2]
+  have hD0N : (if 0 < srow N (N.length - 1)
+      then entry N 0 (N.length - 1) - entry N 0 j0 else 0) = D0 := by
+    rw [hsrN, hNlen1, hD0]
+    by_cases h0 : 0 < srow M (M.length - 1)
+    · rw [if_pos h0, if_pos h0, hNe0, hNe0]
+    · rw [if_neg h0, if_neg h0]
+  -- both expansions as guarded copies
+  have hMe : M⟦n⟧ = gexp M j0 Lb D0 D1 n := by
+    have h := oper_eq_gexp_gen (M := M) n hL hz hpM
+    rw [hparM, hLbe] at h
+    rw [h, hD0, hD1]
+  have hNe : N⟦n⟧ = gexp N j0 Lb D0 D1 n := by
+    have h := oper_eq_gexp_gen (M := N) n hLN hzN hpN
+    rw [hparN, show N.length - 1 - j0 = Lb from by rw [hNlen1]; omega] at h
+    rw [h, hD0N, hD1N]
+  -- the root cone transports
+  have htrans : ∀ k q, k < n → q < Lb →
+      (le1 (gexp M j0 Lb D0 D1 n) 0 (j0 + (k * Lb + q)) ↔ le1 M 0 (j0 + q)) := by
+    intro k q hk hq
+    by_cases h0 : 0 < srow M (M.length - 1)
+    · have hlt0 : entry M 0 j0 < entry M 0 (M.length - 1) :=
+        hup (M.length - 1) (by omega) (by omega)
+      have hd0pos : 0 < D0 := by rw [hD0, if_pos h0]; omega
+      have hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + D0 := by
+        rw [hD0, if_pos h0, show j0 + Lb = M.length - 1 from by omega]
+        omega
+      have hlp : le1 M j0 (j0 + Lb) := by
+        rw [show j0 + Lb = M.length - 1 from by omega]
+        have hnr := parent_nextR hpM
+        rw [hparM] at hnr
+        unfold nextR at hnr
+        by_cases h1 : srow M (M.length - 1) = 1
+        · rw [if_neg (by omega), if_pos h1] at hnr
+          exact ⟨hnr.1, hnr.2.1, Relation.ReflTransGen.single hnr⟩
+        · rw [if_neg (by omega), if_neg h1] at hnr
+          exact hnr.2.2.2.2.1
+      exact gexp_cone_mir hlenM hj0pos hLbpos hk hq hup hd0pos hd0e hr0 hlp
+    · have hD0z : D0 = 0 := by rw [hD0, if_neg h0]
+      have hD1z : D1 = 0 := by rw [hD1, if_neg (by omega)]
+      rw [hD0z, hD1z]
+      exact gexp_cone_mir_flat hlenM hj0pos hLbpos hk hq hup hr0
+  -- elementwise comparison
+  rw [hNe, hMe]
+  have hXlenM : (gexp M j0 Lb D0 D1 n).length = j0 + n * Lb := gexp_length hlenM
+  have hXlenN : (gexp N j0 Lb D0 D1 n).length = j0 + n * Lb := gexp_length hlenN
+  refine list_ext_getD (by rw [hXlenN, Lift1_length, hXlenM]) ?_
+  intro i hi
+  rw [hXlenN] at hi
+  rw [Lift1_getD (by rw [hXlenM]; exact hi)]
+  rcases Nat.lt_or_ge i j0 with hij | hij
+  · rw [gexp_getD_low hlenN hij, hNdef, Lift1_getD (by omega),
+      gexp_entry_low hlenM hij, gexp_entry_low hlenM hij,
+      gexp_entry_low hlenM hij]
+    refine Prod.ext rfl (Prod.ext ?_ rfl)
+    dsimp only
+    rw [if_congr (gexp_cone_low hlenM hij) rfl rfl]
+  · obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hLbpos hij hi
+    rw [gexp_getD_mir hlenN hk hq, gexp_entry0_mir hlenM hk hq,
+      gexp_entry1_mir hlenM hk hq, gexp_entry2_mir hlenM hk hq,
+      hNe0, hNe2, hNe1 _ (by omega)]
+    refine Prod.ext rfl (Prod.ext ?_ rfl)
+    dsimp only
+    rw [if_congr (le1_Lift1 (X := M) (d := t) (a := j0) (b := j0 + q)) rfl rfl,
+      if_congr (htrans k q hk hq) rfl rfl]
+    omega
 
 end TRIO

@@ -28,7 +28,7 @@
 - [x] glift_eq_Lift1（塔の周期マスク＝内在錐; Gtrans 由来）・oper_cons_tower2 ✅
 - [x] **towerGraft2_holds**（旧 TowerGraft2）✅ リフト閉 Wstar2 に対して
 - [x] **Wstar2_closed**（三核を法として）✅ 行2接ぎ木塔は towerGraft2_lift_mem で消化
-- [ ] LiftInner（B2a のリフト同変性; probe 0/7440）
+- [x] **LiftInner**（B2a のリフト同変性）✅ Lcone.lean 錐輸送（強錐・平坦の両方）
 - [ ] LiftTower1（行1タワーのリフト — 強錐だと段が m+2t に登る）
 - [ ] LiftTowerExp2（展開節由来の行2タワー）
 - [ ] TowerExp（旧トラック; 後続節で来た引数ブロック上のタワー）
