@@ -3070,6 +3070,403 @@ theorem towerGraft2_holds :
   rw [Lift1_zero, Nat.add_zero] at h0
   exact W_mono hva h0
 
+/-! ### `Lift1` の `cons` 分解
+
+`Wstar2` の枝分けは持ち上げた主ブロック `Lift1 ((0,v,z) :: R) t` について
+行うので、その尾部 `Rt` が `R` と同じ `srow`/`hasParent` を持つことを示す。
+行 1 の錐は `nextrel1` を保つ（`nextrel1_Lift1`）から、根を挟んだ添字ずらし
+`nextR_cons` と合わせて `Rt` の親構造は `R` のそれと一致する。 -/
+
+theorem entry_tail (L : TrioSeq) (i j : ℕ) :
+    entry L.tail i j = entry L i (j + 1) := by
+  cases L with
+  | nil => simp [entry, getD_out]
+  | cons a l => rw [List.tail_cons, entry_cons]
+
+/-- A column at or below the root's row 1 is outside the cone. -/
+theorem not_le1_zero_of_le {X : TrioSeq} {j : ℕ} (hj : j ≠ 0)
+    (h : entry X 1 j ≤ entry X 1 0) : ¬ le1 X 0 j := by
+  intro hc
+  exact absurd (le1_entry1_lt hc (Ne.symm hj)) (by omega)
+
+open Classical in
+/-- The root of a nonempty block is always lifted by the full amount. -/
+theorem Lift1_head {X : TrioSeq} (hX : X ≠ []) (d : ℕ) :
+    Lift1 X d = ((entry X 0 0, entry X 1 0 + d, entry X 2 0) : ℕ × ℕ × ℕ)
+      :: (Lift1 X d).tail := by
+  have hlen : 0 < X.length := List.length_pos_iff.mpr hX
+  obtain ⟨m, hm⟩ : ∃ m, X.length = m + 1 := ⟨X.length - 1, by omega⟩
+  have hc : le1 X 0 0 := le1_refl (by omega)
+  unfold Lift1
+  rw [hm, List.range_succ_eq_map]
+  simp only [List.map_cons, List.tail_cons, if_pos hc]
+
+/-- The `cons` form of the lifted principal block. -/
+theorem Lift1_cons_eq {v z t : ℕ} {R : TrioSeq} :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t
+      = ((0, v + t, z) : ℕ × ℕ × ℕ)
+        :: (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).tail := by
+  have h := Lift1_head (X := ((0, v, z) : ℕ × ℕ × ℕ) :: R)
+    (by simp) t
+  have e0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0 = 0 := by simp [entry]
+  have e1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+  have e2 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 = z := by simp [entry]
+  rw [e0, e1, e2] at h
+  exact h
+
+section LiftTail
+
+variable {v z t : ℕ} {R : TrioSeq}
+
+/-- The lifted argument block. -/
+noncomputable def ltail (v z : ℕ) (R : TrioSeq) (t : ℕ) : TrioSeq :=
+  (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).tail
+
+theorem lift_cons : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t
+    = ((0, v + t, z) : ℕ × ℕ × ℕ) :: ltail v z R t := Lift1_cons_eq
+
+theorem entry_ltail (i j : ℕ) :
+    entry (ltail v z R t) i j
+      = entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) i (j + 1) :=
+  entry_tail _ i j
+
+theorem ltail_length : (ltail v z R t).length = R.length := by
+  unfold ltail
+  rw [List.length_tail, Lift1_length]
+  simp
+
+theorem ltail_ne (hRne : R ≠ []) : ltail v z R t ≠ [] := by
+  intro h
+  have hl := ltail_length (v := v) (z := z) (R := R) (t := t)
+  rw [h] at hl
+  have hpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  simp at hl
+  omega
+
+theorem entry0_ltail (j : ℕ) : entry (ltail v z R t) 0 j = entry R 0 j := by
+  rw [entry_ltail, entry0_Lift1, entry_cons]
+
+theorem entry2_ltail (j : ℕ) : entry (ltail v z R t) 2 j = entry R 2 j := by
+  rw [entry_ltail, entry2_Lift1, entry_cons]
+
+theorem entry1_ltail_of_le {j : ℕ} (h : entry R 1 j ≤ v) :
+    entry (ltail v z R t) 1 j = entry R 1 j := by
+  classical
+  rw [entry_ltail]
+  rcases Nat.lt_or_ge (j + 1) (((0, v, z) : ℕ × ℕ × ℕ) :: R).length with hj | hj
+  · have hjR : j < R.length := by simpa using hj
+    have h0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+    have hle : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 (j + 1)
+        ≤ entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 := by
+      rw [h0, entry_cons]; exact h
+    rw [entry1_Lift1 hj, if_neg (not_le1_zero_of_le (by omega) hle), entry_cons]
+    omega
+  · have hjR : R.length ≤ j := by simpa using hj
+    rw [entry_out_row (L := Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        (by rw [Lift1_length]; exact hj),
+      entry_out_row (L := R) hjR]
+
+theorem lev_ltail_of_zero {j : ℕ} (h : lev R j = 0) :
+    lev (ltail v z R t) j = 0 := by
+  unfold lev at h ⊢
+  rw [entry2_ltail, entry1_ltail_of_le (v := v) (z := z) (t := t) (by omega)]
+  omega
+
+theorem argOK_ltail (hR : argOK R) : argOK (ltail v z R t) := by
+  intro p hp
+  obtain ⟨j, hj, hpj⟩ := List.mem_iff_getElem.mp hp
+  have hjR : j < R.length := by
+    rw [ltail_length] at hj; exact hj
+  have hpe : p = (ltail v z R t).getD j (0, 0, 0) := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    simp [hpj]
+  have : p.1 = entry (ltail v z R t) 0 j := by rw [hpe]; rfl
+  rw [this, entry0_ltail]
+  exact hR _ (entry_pair_mem (B := R) hjR)
+
+theorem nextR_ltail {i a b : ℕ} :
+    nextR (ltail v z R t) i a b ↔ nextR R i a b := by
+  have h1 : nextR (ltail v z R t) i a b
+      ↔ nextR (((0, v + t, z) : ℕ × ℕ × ℕ) :: ltail v z R t) i (a + 1) (b + 1) :=
+    (nextR_cons _ _ i a b).symm
+  rw [h1, ← lift_cons, nextR_Lift1, nextR_cons]
+
+theorem hasParent_ltail {i b : ℕ} :
+    hasParent (ltail v z R t) i b ↔ hasParent R i b := by
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_ltail.mp hj0, fun y hy => hu y (nextR_ltail.mpr hy)⟩
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_ltail.mpr hj0, fun y hy => hu y (nextR_ltail.mp hy)⟩
+
+theorem srow_ltail (j : ℕ) : srow (ltail v z R t) j = srow R j := by
+  have h : srow (ltail v z R t) j
+      = srow (((0, v + t, z) : ℕ × ℕ × ℕ) :: ltail v z R t) (j + 1) :=
+    (srow_cons _ _ j).symm
+  rw [h, ← lift_cons, srow_Lift1 (by omega), srow_cons]
+
+theorem ltail_dropLast :
+    ((0, v + t, z) : ℕ × ℕ × ℕ) :: (ltail v z R t).dropLast
+      = Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t := by
+  by_cases hRne : R = []
+  · subst hRne
+    have h0 : ltail v z ([] : TrioSeq) t = [] := by
+      have hl := ltail_length (v := v) (z := z) (R := ([] : TrioSeq)) (t := t)
+      simpa using hl
+    conv_rhs => rw [List.dropLast_nil, lift_cons]
+    rw [h0]
+    simp
+  · have h1 : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast
+        = Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast) t := Lift1_dropLast
+    rw [dropLast_cons hRne] at h1
+    conv_rhs => rw [← h1]
+    rw [lift_cons]
+    exact (dropLast_cons (ltail_ne hRne)).symm
+
+end LiftTail
+
+theorem lev_Lift1_ge {X : TrioSeq} {d j : ℕ} : lev X j ≤ lev (Lift1 X d) j := by
+  classical
+  unfold lev
+  rw [entry2_Lift1]
+  rcases Nat.lt_or_ge j X.length with hj | hj
+  · rw [entry1_Lift1 hj]; omega
+  · rw [entry_out_row (L := Lift1 X d) (by rw [Lift1_length]; exact hj),
+      entry_out_row (L := X) hj]
+
+theorem nil_mem_Wstar2 : ([] : TrioSeq) ∈ Wstar2 := by
+  intro _ v z a t _ hva
+  rw [lift_cons]
+  have h0 : ltail v z ([] : TrioSeq) t = [] := by
+    have hl := ltail_length (v := v) (z := z) (R := ([] : TrioSeq)) (t := t)
+    simpa using hl
+  rw [h0]
+  exact W_mono hva (Om_mem_W (v + t) z)
+
+/-! ### 行 2 タワーの持ち上げ済み所属 -/
+
+open Classical in
+/-- The row-2 graft tower closes **with the lift**: `oper_Lift1_tower` moves the
+lift across the expansion and `towerGraft2_lift` supplies the membership. -/
+theorem towerGraft2_lift_mem {v z m a t : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * (v + t) + z ≤ a)
+    (hd : domT R m) (hi1 : srow R (R.length - 1) = 2)
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a := by
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = 2 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]; exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  have hroot0 : entry M 0 0 = 0 := by rw [hMdef]; simp [entry, hp0]
+  have hroot1 : entry M 1 0 = v := by rw [hMdef]; simp [entry, hp0]
+  have hnr := parent_nextR hpM'
+  rw [hpar0, hsrM] at hnr
+  have hn2 : nextrel2 M 0 (M.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  have hle1lp : le1 M 0 (M.length - 1) := hn2.2.2.2.2.1
+  have hwv : v < entry R 1 (R.length - 1) := by
+    have := le1_entry1_lt hle1lp (by omega)
+    rw [hroot1, hMlen, hE 1] at this
+    exact this
+  have hup : ∀ l, 0 < l → l ≤ M.length - 1 → entry M 0 0 < entry M 0 l := by
+    intro l hl0 hl1
+    rw [hMlen] at hl1
+    obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    rw [hroot0, hMdef, entry_cons]
+    exact hR _ (entry_pair_mem (B := R) (by omega))
+  set D0 : ℕ := (if 0 < srow M (M.length - 1)
+    then entry M 0 (M.length - 1) - entry M 0 0 else 0) with hD0
+  set D1 : ℕ := (if 1 < srow M (M.length - 1)
+    then entry M 1 (M.length - 1) - entry M 1 0 else 0) with hD1
+  have hd0pos : 0 < D0 := by
+    rw [hD0, hsrM, if_pos (by omega), hroot0, hMlen, hE 0]; omega
+  have hd0e : entry M 0 (M.length - 1) = entry M 0 0 + D0 := by
+    rw [hD0, hsrM, if_pos (by omega), hroot0, hMlen, hE 0]; omega
+  have hd1pos : 0 < D1 := by
+    rw [hD1, hsrM, if_pos (by omega), hroot1, hMlen, hE 1]; omega
+  refine A1_intro (Or.inr (Or.inl (fun n _ => ?_)))
+  have hgexp : M⟦n⟧ = gexp M 0 (M.length - 1) D0 D1 n :=
+    oper_eq_gexp n hL hzz hpM' hpar0
+  rw [oper_Lift1_tower hL hzz hpM' hpar0 hgexp hup hd0pos hd0e hd1pos hle1lp]
+  exact W_mono hva (towerGraft2_lift v z m R hR hRne hz1 hd hi1 hgr hpM n t)
+
+/-! ## `Wstar2` の閉包
+
+行 2 タワーは `towerGraft2_lift_mem` で閉じた。残る核は三つ:
+
+* `LiftInner`  — B2a（`R` 内部が悪根）でのリフト同変性。probe 0/7440。
+* `LiftTower1` — 行 1 タワー。リフトすると全コピーの根が上がるので、接ぎ木
+  閉包が段 `m` ではなく `m + 2t` で要る。`Lift1`（強錐）では `hgr` から出ない
+  ことが確認済み（弱錐リフト `Lstar` なら遺伝的に閉じるが B2a を壊す）。
+* `LiftTowerExp2` — 展開節由来の行 2 タワー（旧 `TowerExp` の行 2 部分）。 -/
+
+/-- **Open core (B2a)** — the guarded row-1 lift commutes with an expansion
+whose bad root lies inside `R`. -/
+def LiftInner : Prop :=
+  ∀ (v z t n : ℕ) (R : TrioSeq), argOK R → R ≠ [] →
+    hasParent R (srow R (R.length - 1)) (R.length - 1) →
+    (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)⟦n⟧
+      = Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧) t
+
+/-- **Open core (row-1 tower)** — the copies are plain row-0 shifts, so the
+lifted tower needs the graft closure one stage up. -/
+def LiftTower1 : Prop :=
+  ∀ (v z u0 a t : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
+    2 * (v + t) + z ≤ a → Aop W u0 Wstar2 R → (∃ m, domT R m) →
+    srow R (R.length - 1) = 1 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a
+
+/-- **Open core (row-2 tower over an expansion datum)** — no graft closure is on
+hand. -/
+def LiftTowerExp2 : Prop :=
+  ∀ (v z a t : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
+    2 * (v + t) + z ≤ a → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar2) → (∃ m, domT R m) →
+    srow R (R.length - 1) = 2 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a
+
+/-- **`A_u(W*₂) ⊆ W*₂`** modulo the three cores. -/
+theorem Wstar2_closed (hin : LiftInner) (ht1 : LiftTower1)
+    (he2 : LiftTowerExp2) :
+    ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 Wstar2 R → R ∈ Wstar2 := by
+  classical
+  intro u0 R AR hR v z a t hz1 hva
+  by_cases hRnil : R = []
+  · subst hRnil
+    exact nil_mem_Wstar2 hR v z a t hz1 hva
+  · set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+    set M : TrioSeq := p0 :: R with hMdef
+    set Rt : TrioSeq := ltail v z R t with hRtdef
+    have hN : Lift1 M t = ((0, v + t, z) : ℕ × ℕ × ℕ) :: Rt := lift_cons
+    have hRlen : 0 < R.length := List.length_pos_iff.mpr hRnil
+    have hRtlen : Rt.length = R.length := ltail_length
+    have hRtne : Rt ≠ [] := ltail_ne hRnil
+    have hRtOK : argOK Rt := argOK_ltail hR
+    have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+    have hMlen2 : 1 < M.length := by rw [hMdef]; simp; omega
+    have hCd : R.dropLast ∈ Wstar2 → (Lift1 M t).dropLast ∈ W a := by
+      intro h
+      rw [Lift1_dropLast, hMdef, dropLast_cons hRnil]
+      exact h (argOK_dropLast hR) v z a t hz1 hva
+    have hdead : (∃ m', domT M m') → R.dropLast ∈ Wstar2 → Lift1 M t ∈ W a := by
+      rintro ⟨m', hdm⟩ hdl
+      have hlen3 : (Lift1 M t).length - 1 = M.length - 1 := by rw [Lift1_length]
+      have hdN : domT (Lift1 M t)
+          (lev (Lift1 M t) ((Lift1 M t).length - 1) - 1) := by
+        constructor
+        · have hge := lev_Lift1_ge (X := M) (d := t) (j := M.length - 1)
+          have h2 : lev M (M.length - 1) = m' + 1 := hdm.1
+          rw [hlen3]; omega
+        · rw [hlen3, srow_Lift1 (by rw [hMlen]; omega), hasParent_Lift1]
+          exact hdm.2
+      refine A1_intro (Or.inr (Or.inl (fun n _ => ?_)))
+      rw [oper_eq_graft_nil_of_domT (n := n)
+        (by rw [Lift1_length]; exact hMlen2) hdN, graft_nil]
+      exact hCd hdl
+    have hsucc : lev R (R.length - 1) = 0 → ¬ hasParent R 0 (R.length - 1) →
+        R.dropLast ∈ Wstar2 → Lift1 M t ∈ W a := by
+      intro hw0 hnp hdl
+      have hwt : lev Rt (Rt.length - 1) = 0 := by
+        rw [hRtlen, hRtdef]; exact lev_ltail_of_zero hw0
+      have hnpt : ¬ hasParent Rt 0 (Rt.length - 1) := by
+        rw [hRtlen, hRtdef, hasParent_ltail]; exact hnp
+      refine A1_intro (Or.inr (Or.inl (fun n _ => ?_)))
+      rw [hN, oper_cons_succ hRtOK hRtne hwt hnpt]
+      refine W_flatMap_copies ?_ (rsum_self_cons (v + t) z _) n
+      have hh := hCd hdl
+      rw [hN, dropLast_cons hRtne] at hh
+      exact hh
+    have hsplit : lev R (R.length - 1) ≠ 0 →
+        srow R (R.length - 1) = 1 ∨ srow R (R.length - 1) = 2 := by
+      intro hw0
+      unfold srow
+      unfold lev at hw0
+      by_cases h2' : 0 < entry R 2 (R.length - 1)
+      · rw [if_pos h2']; exact Or.inr rfl
+      · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+    rcases AR with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+    · -- clause 1
+      have hR1 : R.length = 1 := by omega
+      have hw' : lev R (R.length - 1) = 0 := by rw [hR1]; exact hw
+      have hnp : ¬ hasParent R 0 (R.length - 1) := by
+        rw [hR1]
+        rintro ⟨j0, hj0, -⟩
+        exact absurd (nextR_index_lt hj0) (Nat.not_lt_zero j0)
+      have hdl : R.dropLast = [] := List.eq_nil_of_length_eq_zero (by simp; omega)
+      exact hsucc hw' hnp (by rw [hdl]; exact nil_mem_Wstar2)
+    · -- clause 2
+      have hpredmem : ¬ hasParent R (srow R (R.length - 1)) (R.length - 1) →
+          R.dropLast ∈ Wstar2 := by
+        intro hp
+        by_cases hR2 : 2 ≤ R.length
+        · have hop1 := hop 1 le_rfl
+          have hpred : R⟦1⟧ = R.dropLast := by
+            have hLR : R.length - 1 ≠ 0 := by omega
+            have he : R⟦1⟧ = Pred R := by
+              by_cases hz0 : entry R 0 (R.length - 1) = 0 ∧
+                  entry R 1 (R.length - 1) = 0 ∧ entry R 2 (R.length - 1) = 0
+              · exact oper_eq_pred_of_zero 1 hLR hz0
+              · exact oper_eq_pred_of_noParent 1 hLR hz0 hp
+            rw [he]
+            unfold Pred
+            rw [if_neg (by omega)]
+          rwa [hpred] at hop1
+        · have hdl : R.dropLast = [] :=
+            List.eq_nil_of_length_eq_zero (by simp; omega)
+          rw [hdl]; exact nil_mem_Wstar2
+      by_cases hp : hasParent R (srow R (R.length - 1)) (R.length - 1)
+      · -- B2a
+        refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+        rw [hMdef, hin v z t n R hR hRnil hp, oper_cons_nat hR hRnil hp]
+        exact hop n hn (argOK_oper hR n) v z a t hz1 hva
+      · by_cases hw0 : lev R (R.length - 1) = 0
+        · have hsr : srow R (R.length - 1) = 0 := by
+            unfold srow
+            unfold lev at hw0
+            rw [if_neg (by omega), if_neg (by omega)]
+          exact hsucc hw0 (by rw [← hsr]; exact hp) (hpredmem hp)
+        · obtain ⟨m', hm'⟩ : ∃ m', lev R (R.length - 1) = m' + 1 :=
+            ⟨lev R (R.length - 1) - 1, by omega⟩
+          have hdR : domT R m' := ⟨hm', hp⟩
+          by_cases hpM : hasParent M (srow R (R.length - 1)) R.length
+          · rcases hsplit hw0 with hs1 | hs2
+            · exact ht1 v z u0 a t R hR hRnil hz1 hva (Or.inr (Or.inl hop))
+                ⟨m', hdR⟩ hs1 hpM
+            · exact he2 v z a t R hR hRnil hz1 hva hop ⟨m', hdR⟩ hs2 hpM
+          · exact hdead ⟨m', domT_cons_of_dead hRnil hdR hpM⟩ (hpredmem hp)
+    · -- clause 3
+      have hdlW : R.dropLast ∈ Wstar2 := by
+        have h := hgr [] (W_nil m) based_nil
+        rwa [graft_nil] at h
+      by_cases hpM : hasParent M (srow R (R.length - 1)) R.length
+      · rcases hsplit (by rw [hd.1]; omega) with hs1 | hs2
+        · exact ht1 v z u0 a t R hR hRnil hz1 hva
+            (Or.inr (Or.inr ⟨m, hm, hd, hgr⟩)) ⟨m, hd⟩ hs1 hpM
+        · exact towerGraft2_lift_mem hR hRnil hz1 hva hd hs2 hgr hpM
+      · exact hdead ⟨m, domT_cons_of_dead hRnil hd hpM⟩ hdlW
+
 /-! ## 残る核: タワー枝 -/
 
 /-- **The one remaining core.**  When the principal root revives `R`'s trailing
