@@ -1,13 +1,10 @@
-v0.108.0/beta shape-complete: CoreT2EStep follows from W <= GX
+v0.109.0/alpha reduces to machine inclusion + lifted equipment; GX_loop
 
-- Add nil_mem_GX (the empty element's obligations are context packages)
-- Add coreT2EStep_of_le: given the machine's own inclusion W subset GX,
-  the single-step core follows outright - context-part prefixes route
-  through the peel's prefix obligations (take_graft_low + dropLast_take),
-  element-part prefixes through the equipped composite context
-  (ctxOK_graft + take_graft_high + graft_assoc)
-- beta's sole remaining content = well-founding the self-reference
-  {cores <-> W_le_GX}; measure design recorded in GRAFTALL-PLAN
-  1.9.7/1.12 (provenance probe: t2-orphans are 100% initial-context
-  columns, position non-increasing; t1-orphans are 100% planted roots)
-- Update GRAFTALL-PLAN.md (1.9.6/1.9.7/1.12, execution order)
+- Add CtxLiftT1: the alpha-residue = equipment (CtxOK) of the lifted
+  composite context at a row-1 site
+- Add coreT1L_of_le: CoreT1L follows from (W subset GX) + CtxLiftT1 -
+  the lifted block is a row-1 tower over the lifted context at stage
+  m + 2t, whose closure routes through GX (stages are free in packages)
+- Add GX_loop: the whole machine closure now consumes only CoreBlocked,
+  CtxLiftT1, and its own inclusion W subset GX - the self-reference to
+  be well-founded is explicit in one theorem

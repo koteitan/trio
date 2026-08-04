@@ -472,6 +472,81 @@ theorem coreT2EStep_of_le (h : ∀ σ : ℕ, W σ ⊆ GX) : CoreT2EStep := by
       take_graft_high]
     exact hres
 
+/-- **The α-residue**: equipment of the LIFTED composite context at a row-1
+site.  Everything else in α reduces to the machine's own inclusion, exactly as
+in β (`coreT1L_of_le`). -/
+def CtxLiftT1 : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq),
+    Aop W u GX Y → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length → CtxOK M →
+    srow (graft M Y) ((graft M Y).length - 1) = 1 →
+    (∃ m, domT (graft M Y) m) →
+    ∀ v z t : ℕ, z ≤ 1 →
+      hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
+        (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length →
+      CtxOK (Wset.ltail v z (graft M Y) t)
+
+open Classical in
+/-- **α reduces to (machine inclusion + lifted-context equipment)**: the lifted
+block is a root-parented row-1 tower over the lifted composite context at stage
+`m + 2t`; its closure obligations route through `GX` at that equipped
+context — the stage is free because the packages are stage-quantified. -/
+theorem coreT1L_of_le (h : ∀ σ : ℕ, W σ ⊆ GX) (hcl : CtxLiftT1) : CoreT1L := by
+  intro u Y M AY hbased hy hMarg hM2 hctx hs1 hdG v z a t hz1 hva hpN
+  obtain ⟨m, hd⟩ := hdG
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
+  have hR : argOK (graft M Y) := argOK_graft hMne hMarg Y
+  have hRne : graft M Y ≠ [] :=
+    List.length_pos_iff.mp (by rw [graft_length]; omega)
+  have hR2 : 2 ≤ (graft M Y).length := by rw [graft_length]; omega
+  set R : TrioSeq := graft M Y with hRdef
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set Nb : TrioSeq := p0 :: R with hNbdef
+  set Rt : TrioSeq := Wset.ltail v z R t with hRtdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hRtlen : Rt.length = R.length := Wset.ltail_length
+  have hRtne : Rt ≠ [] := Wset.ltail_ne hRne
+  have hRtOK : argOK Rt := Wset.argOK_ltail hR
+  have hpar0 := parent_cons_eq_zero hRne hd hpN
+  have hnr := parent_nextR hpN
+  rw [hpar0, hs1] at hnr
+  have hn1 : nextrel1 Nb 0 R.length := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact hnr
+  have hcone : le1 Nb 0 R.length :=
+    ⟨hn1.1, hn1.2.1, Relation.ReflTransGen.single hn1⟩
+  have hconej : le1 Nb 0 ((R.length - 1) + 1) := by
+    rw [← len_succ hRne]
+    exact hcone
+  have hsrRt : srow Rt (Rt.length - 1) = 1 := by
+    rw [hRtlen, hRtdef, Wset.srow_ltail]; exact hs1
+  have hlevRt : lev Rt (Rt.length - 1) = (m + 2 * t) + 1 := by
+    unfold lev
+    rw [hRtlen, hRtdef, Wset.entry2_ltail, Wset.entry1_ltail_of_cone hconej]
+    have hm := hd.1
+    unfold lev at hm
+    omega
+  have hdRt : domT Rt (m + 2 * t) := by
+    refine ⟨hlevRt, ?_⟩
+    rw [hRtlen, hRtdef, Wset.srow_ltail, Wset.hasParent_ltail]
+    exact hd.2
+  have hpMt : hasParent (((0, v + t, z) : ℕ × ℕ × ℕ) :: Rt)
+      (srow Rt (Rt.length - 1)) Rt.length := by
+    rw [← Wset.lift_cons, hsrRt, hRtlen, ← hs1]
+    exact hasParent_Lift1.mpr hpN
+  have hRt2 : 2 ≤ Rt.length := by rw [hRtlen]; exact hR2
+  have hctxRt : CtxOK Rt :=
+    hcl u Y M AY hbased hy hMarg hM2 hctx hs1 ⟨m, hd⟩ v z t hz1 hpN
+  have hgr : ∀ y' ∈ W (m + 2 * t), based y' → graft Rt y' ∈ Wstar2 := by
+    intro y' hy' hb hargOK v' z' a' t' hz' ha'
+    exact GX_full (h _ hy') hb hRtOK hRt2 hctxRt hz' ha'
+  refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+  rw [hNbdef, Wset.lift_cons, ← hRtdef,
+    oper_cons_tower1 hRtOK hRtne hdRt hsrRt hpMt]
+  exact tower1_mem2 hRtOK hRtne hz1 hva hdRt hsrRt hgr hpMt n
+
 open Classical in
 /-- **The GX machine closes** modulo the three cores. -/
 theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
@@ -652,5 +727,16 @@ theorem graftAll_of_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
   have hyGX : y ∈ GX := W_le_GX hb h1 h2 u hy
   exact fun hargOK v z a t hz1 hva =>
     GX_full hyGX hby hS hS2 hctx hz1 hva
+
+/-- **The assembly loop, explicit**: modulo the γ'-core and the lifted-context
+equipment, the machine's closure consumes only its own inclusion `W ⊆ GX`
+(α via `coreT1L_of_le`, β via `coreT2EStep_of_le`).  Well-founding this
+self-reference — with the provenance descent measured in `probe_strat`
+(β-orphans = context material, position non-increasing; α-orphans = planted
+roots, stage-bounded) — is the single remaining task of the campaign. -/
+theorem GX_loop (hb : CoreBlocked) (hcl : CtxLiftT1)
+    (h : ∀ σ : ℕ, W σ ⊆ GX) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
+  GX_closed hb (coreT1L_of_le h hcl) (coreT2E_of_step (coreT2EStep_of_le h))
 
 end TRIO
