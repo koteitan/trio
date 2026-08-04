@@ -40,6 +40,26 @@ A2 で `W u ⊆ 𝒳` を得る。閉包ステップ（要素 Y, データは `A
   `shiftl0 w' copies`（M-接尾辞コピー + y-片の混合）への**データ変換**
   （= セグメント化された要素データの合成規則）。
 
+## 1.7 確定アーキテクチャ（2026-08-05 夜）
+
+二層構造（Buchholz 2.7 + 2.5 の trio 対応）:
+
+- **MASTER** = 長さ帰納（`mem_of_Aclosed_aux` 型）: 全ブロック ∈ Wstar2。
+  主要ケース (0,v,z)::R は GX-機械への還元で処理。
+- **GX-機械** = A2（要素 y の W-構造帰納）:
+  `GX := {y | based y → ∀ M（argOK, ≠[], CTXcond M）, ∀ v z a t: Lift1 ((0,v,z)::graft M y) t ∈ W a}`
+  - **CTXcond M := 全接頭辞パッケージ**
+    `∀ k ≤ M.length, ∀ v z a t: Lift1 ((0,v,z)::M.take k) t ∈ W a`
+    — 再帰なしの平 Prop。**MASTER の長さ IH がちょうど供給**
+    （文脈 S = Rt は |R| = |M|−1 なので接頭辞は全て短い）。
+    take で自明に保存 → blocked-降下と整合。
+  - 枝: inner（lift_graft_inner_step + clause-2 データ）✓ /
+    dead（lift_graft_dead_step + データ）✓ /
+    tower2-clause3（graft_assoc + towerGraft2_lift_mem + データ; Wstar2 の
+    パッケージ = CLM そのもの）✓ /
+    **CoreBlocked**（降下後の Y'-義務）⛔ /
+    **CoreT1L**（α）⛔ / **CoreT2E**（β; clause-2 由来塔）⛔
+
 ## 2. probe 済み事実（違反 0 のもの）
 
 - (e)-サイトで `ltail v z (graft S Y) t = graft S↑ (liftset Y (coneV Y v) t)`、
