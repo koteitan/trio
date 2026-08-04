@@ -512,4 +512,13 @@ theorem hasParent_graft_inner {M y : TrioSeq} (hM : M ≠ []) (hy : y ≠ [])
   rw [hsr, hx, hg]
   exact hasParent_append_right_of _ _ hpT
 
+
+theorem graft_dropLast {M y : TrioSeq} (hy : y ≠ []) :
+    (graft M y).dropLast = graft M y.dropLast := by
+  rw [graft_eq_shift, List.dropLast_append_of_ne_nil
+    (by cases y with
+      | nil => exact absurd rfl hy
+      | cons a l => simp [shiftr01]),
+    shiftr01_dropLast, ← graft_eq_shift]
+
 end TRIO
