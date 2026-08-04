@@ -1,8 +1,13 @@
-v0.112.0/slice-narrow the tower interfaces (consumption-faithful)
+v0.113.0/slice equipment dissolves the alpha residue (CtxLiftT1 deleted)
 
-- Narrow hgr in towerGraft2_lift/_mem and hgrF in the fam variants to
-  the ambient (v,z)-slice with quantified (a,s) - the proofs consumed
-  only that slice
-- Narrow tower1_mem2 hgr to the (v,z)-slice at lift 0
-- Project the slice at the full-package call sites (towerGraft2_holds,
-  liftTower1/liftTowerExp2_of_graftAll, Wstar2_closed, Gamma x3)
+- Re-scope CtxOK to the ambient (v,z)-slice (CtxOK M v z) and pair each
+  GX obligation with slice equipment only (the 7th design: obligation
+  quantifiers, not lift languages - audited against every consumption
+  site in the closure proofs)
+- Add ctxOK_ltail: the lifted composite context's slice at the lifted
+  root (v+t, z) is synthesized from the context's (v,z)-slice and the
+  peel's prefix obligations, via Lift1_Lift1 + ltail_take
+- coreT1L_of_le now needs only the machine inclusion: CtxLiftT1 DELETED
+- Narrow CoreT2EFam's conclusion to the slice packages; adapt all cores,
+  ctxOK_graft, nil_mem_GX, GX_closed, graftAll_of_GX
+- GX_loop rests on CoreBlockedElt + CoreBlocked0 + W subset GX only
