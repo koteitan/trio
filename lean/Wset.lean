@@ -2730,6 +2730,104 @@ theorem glift_eq_Lift1 {M : TrioSeq} {n t L d0 d1 : ℕ}
   · rw [if_pos hc, if_pos (hguard.mpr hc)]
   · rw [if_neg hc, if_neg (fun h => hc (hguard.mp h))]
 
+/-- Row-1 ancestry is strictly increasing in row 1. -/
+theorem le1_entry1_lt {X : TrioSeq} {a b : ℕ} (h : le1 X a b) (hne : a ≠ b) :
+    entry X 1 a < entry X 1 b := by
+  obtain ⟨-, -, hr⟩ := h
+  induction hr with
+  | refl => exact absurd rfl hne
+  | @tail y z hay hyz ih =>
+      rcases Nat.eq_or_lt_of_le (rtg1_le hay) with rfl | hlt
+      · exact hyz.2.2.2.1
+      · exact lt_trans (ih (by omega)) hyz.2.2.2.1
+
+open Classical in
+theorem glift_split (M : TrioSeq) (L d0 d1 : ℕ) (y : TrioSeq) :
+    glift M L d0 d1 y = shiftr01 d0 0 (glift M L 0 d1 y) := by
+  unfold glift shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro idx _
+  simp only [Function.comp_apply]
+  refine Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega)
+    (by dsimp only))
+
+/-- **Tower identity for a row-2 collapse.**  One expansion peels the first copy
+and substitutes the *guarded row-1 lift* of the previous tower. -/
+theorem oper_cons_tower2 {v z m n : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi1 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n + 1⟧
+      = ((0, v, z) : ℕ × ℕ × ℕ) ::
+        graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+          (entry R 1 (R.length - 1) - v)) := by
+  classical
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = 2 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]; exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  have hroot0 : entry M 0 0 = 0 := by rw [hMdef]; simp [entry, hp0]
+  have hroot1 : entry M 1 0 = v := by rw [hMdef]; simp [entry, hp0]
+  set D0 : ℕ := entry M 0 (M.length - 1) - entry M 0 0 with hD0
+  set D1 : ℕ := entry M 1 (M.length - 1) - entry M 1 0 with hD1
+  -- the row-2 parent supplies the row-1 guard at the tail
+  have hnr := parent_nextR hpM'
+  rw [hpar0, hsrM] at hnr
+  have hn2 : nextrel2 M 0 (M.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  have hle1lp : le1 M 0 (M.length - 1) := hn2.2.2.2.2.1
+  have hd1pos : 0 < D1 := by
+    have := le1_entry1_lt hle1lp (by omega)
+    omega
+  have hd0e : entry M 0 (M.length - 1) = entry M 0 0 + D0 := by
+    rw [hD0, hroot0]; omega
+  have hd0pos : 0 < D0 := by
+    rw [hD0, hroot0, hMlen, hE 0]; omega
+  have hup : ∀ l, 0 < l → l ≤ M.length - 1 → entry M 0 0 < entry M 0 l := by
+    intro l hl0 hlL
+    rw [hroot0, hMdef]
+    have hlt : l - 1 < R.length := by omega
+    have : entry (p0 :: R) 0 l = entry R 0 (l - 1) := by
+      unfold entry
+      rw [hMdef] at hMlen
+      show ((p0 :: R).getD l (0, 0, 0)).1 = (R.getD (l - 1) (0, 0, 0)).1
+      obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+      simp only [List.getD_cons_succ, Nat.add_sub_cancel]
+    rw [this]
+    exact hR _ (entry_pair_mem (B := R) hlt)
+  have hgexp : M⟦n⟧ = gexp M 0 (M.length - 1) D0 D1 n := by
+    have h := oper_eq_gexp (M := M) n hL hz hpM' hpar0
+    rwa [hsrM, if_pos (by omega : 0 < 2), if_pos (by omega : 1 < 2)] at h
+  have hglift : glift M (M.length - 1) 0 D1 (M⟦n⟧) = Lift1 (M⟦n⟧) D1 :=
+    glift_eq_Lift1 (by omega) hgexp hup hd0pos hd0e hd1pos hle1lp
+  have hD1val : D1 = entry R 1 (R.length - 1) - v := by
+    rw [hD1, hMlen, hE 1, hroot1]
+  rw [oper_root_tower n hL hz hpM' hpar0, hsrM,
+    if_pos (by omega : 0 < 2), if_pos (by omega : 1 < 2), ← hD0, ← hD1,
+    glift_split, hglift, hD1val]
+  rw [← graft_cons (v := v) (z := z) hRne, graft_eq_shift]
+  congr 2
+
 /-! ## 残る核: タワー枝 -/
 
 /-- **The one remaining core.**  When the principal root revives `R`'s trailing
