@@ -3000,8 +3000,12 @@ the interface the clause-2-origin towers (Core β) can hope to satisfy. -/
 theorem towerGraft2_lift_fam :
     ∀ (v z m : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
       domT R m → srow R (R.length - 1) = 2 →
-      (∀ j : ℕ, graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
-        (entry R 1 (R.length - 1) - v)) ∈ Wstar2) →
+      (∀ j : ℕ, argOK (graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
+          (entry R 1 (R.length - 1) - v))) →
+        ∀ a' s : ℕ, 2 * (v + s) + z ≤ a' →
+        Lift1 (((0, v, z) : ℕ × ℕ × ℕ)
+          :: graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
+            (entry R 1 (R.length - 1) - v))) s ∈ W a') →
       hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
         R.length →
       ∀ n s : ℕ,
@@ -3041,15 +3045,16 @@ theorem towerGraft2_lift_fam :
   | zero => rw [hM0]; simpa using W_nil (2 * (v + s) + z)
   | succ j =>
       rw [hstep j]
-      exact hgrF j (argOK_graft hRne hR _) v z (2 * (v + s) + z) s hz1
-        (le_refl _)
+      exact hgrF j (argOK_graft hRne hR _) (2 * (v + s) + z) s (le_refl _)
 
 /-- **The row-2 tower core, proved.**  Induction on the copy count with the lift
 amount universally quantified: `hgr` is consumed only at the single stage `m`. -/
 theorem towerGraft2_lift :
     ∀ (v z m : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
       domT R m → srow R (R.length - 1) = 2 →
-      (∀ y ∈ W m, based y → graft R y ∈ Wstar2) →
+      (∀ y ∈ W m, based y → argOK (graft R y) →
+        ∀ a' s : ℕ, 2 * (v + s) + z ≤ a' →
+        Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft R y) s ∈ W a') →
       hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
         R.length →
       ∀ n s : ℕ,
@@ -3117,8 +3122,8 @@ theorem towerGraft2_lift :
         intro s
         have hmem : Lift1 (M⟦j⟧) d1 ∈ W m := W_mono hbound (ih d1)
         have hb : based (Lift1 (M⟦j⟧) d1) := based_Lift1 _ (hbased j)
-        have hres := hgr _ hmem hb (argOK_graft hRne hR _) v z
-          (2 * (v + s) + z) s hz1 (le_refl _)
+        have hres := hgr _ hmem hb (argOK_graft hRne hR _)
+          (2 * (v + s) + z) s (le_refl _)
         rw [hstep j]
         exact hres
   exact key
@@ -3132,7 +3137,8 @@ theorem towerGraft2_holds :
         R.length →
       ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
   intro v z m a R hR hRne hz1 hva hd hi1 hgr hpM n _
-  have h0 := towerGraft2_lift v z m R hR hRne hz1 hd hi1 hgr hpM n 0
+  have h0 := towerGraft2_lift v z m R hR hRne hz1 hd hi1
+    (fun y hy hb hargOK a' s ha => hgr y hy hb hargOK v z a' s hz1 ha) hpM n 0
   rw [Lift1_zero, Nat.add_zero] at h0
   exact W_mono hva h0
 
@@ -3329,7 +3335,9 @@ lift across the expansion and `towerGraft2_lift` supplies the membership. -/
 theorem towerGraft2_lift_mem {v z m a t : ℕ} {R : TrioSeq} (hR : argOK R)
     (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * (v + t) + z ≤ a)
     (hd : domT R m) (hi1 : srow R (R.length - 1) = 2)
-    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar2)
+    (hgr : ∀ y ∈ W m, based y → argOK (graft R y) →
+      ∀ a' s : ℕ, 2 * (v + s) + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft R y) s ∈ W a')
     (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
       R.length) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a := by
@@ -3392,8 +3400,12 @@ theorem towerGraft2_lift_mem {v z m a t : ℕ} {R : TrioSeq} (hR : argOK R)
 theorem towerGraft2_lift_mem_fam {v z m a t : ℕ} {R : TrioSeq} (hR : argOK R)
     (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * (v + t) + z ≤ a)
     (hd : domT R m) (hi1 : srow R (R.length - 1) = 2)
-    (hgrF : ∀ j : ℕ, graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
-      (entry R 1 (R.length - 1) - v)) ∈ Wstar2)
+    (hgrF : ∀ j : ℕ, argOK (graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
+        (entry R 1 (R.length - 1) - v))) →
+      ∀ a' s : ℕ, 2 * (v + s) + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ)
+        :: graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧)
+          (entry R 1 (R.length - 1) - v))) s ∈ W a')
     (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
       R.length) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a := by
@@ -3527,7 +3539,9 @@ def GraftAll : Prop :=
 theorem tower1_mem2 {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
     (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a) (hd : domT R m)
     (hi1 : srow R (R.length - 1) = 1)
-    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar2)
+    (hgr : ∀ y ∈ W m, based y → argOK (graft R y) →
+      ∀ a' : ℕ, 2 * v + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft R y) 0 ∈ W a')
     (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
       R.length) :
     ∀ k, tow v z R k ∈ W a := by
@@ -3540,7 +3554,7 @@ theorem tower1_mem2 {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [
         intro a' ha'
         have hk : tow v z R k ∈ W m := ih m hvm
         have hgk := hgr (tow v z R k) hk (based_tow v z R k)
-        have h := hgk (argOK_graft hRne hR _) v z a' 0 hz1 (by omega)
+        have h := hgk (argOK_graft hRne hR _) a' (by omega)
         rw [Lift1_zero] at h
         exact h
   exact fun k => key k a hva
@@ -3596,8 +3610,12 @@ theorem liftTower1_of_graftAll (hga : GraftAll) : LiftTower1 := by
     rw [← lift_cons, hsrRt, hRtlen, ← hi1]
     exact hasParent_Lift1.mpr hpM
   -- the tower closes at stage m + 2t supplied by the graft closure
-  have hgr : ∀ y ∈ W (m + 2 * t), based y → graft Rt y ∈ Wstar2 :=
-    fun y hy hb => hga Rt hRtOK hRtne (m + 2 * t) y hy hb
+  have hgr : ∀ y ∈ W (m + 2 * t), based y → argOK (graft Rt y) →
+      ∀ a' : ℕ, 2 * (v + t) + z ≤ a' →
+      Lift1 (((0, v + t, z) : ℕ × ℕ × ℕ) :: graft Rt y) 0 ∈ W a' :=
+    fun y hy hb hargOK a' ha =>
+      hga Rt hRtOK hRtne (m + 2 * t) y hy hb hargOK (v + t) z a' 0 hz1
+        (by omega)
   refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
   rw [hMdef, lift_cons, ← hRtdef,
     oper_cons_tower1 hRtOK hRtne hdRt hsrRt hpMt]
@@ -3608,7 +3626,8 @@ needed once the closure is free. -/
 theorem liftTowerExp2_of_graftAll (hga : GraftAll) : LiftTowerExp2 := by
   rintro v z a t R hR hRne hz1 hva - ⟨m, hd⟩ hi1 hpM
   exact towerGraft2_lift_mem hR hRne hz1 hva hd hi1
-    (fun y hy hb => hga R hR hRne m y hy hb) hpM
+    (fun y hy hb hargOK a' s ha =>
+      hga R hR hRne m y hy hb hargOK v z a' s hz1 ha) hpM
 
 /-- **`A_u(W*₂) ⊆ W*₂`** modulo the three cores. -/
 theorem Wstar2_closed (hin : LiftInner) (ht1 : LiftTower1)
@@ -3727,7 +3746,9 @@ theorem Wstar2_closed (hin : LiftInner) (ht1 : LiftTower1)
       · rcases hsplit (by rw [hd.1]; omega) with hs1 | hs2
         · exact ht1 v z u0 a t R hR hRnil hz1 hva
             (Or.inr (Or.inr ⟨m, hm, hd, hgr⟩)) ⟨m, hd⟩ hs1 hpM
-        · exact towerGraft2_lift_mem hR hRnil hz1 hva hd hs2 hgr hpM
+        · exact towerGraft2_lift_mem hR hRnil hz1 hva hd hs2
+            (fun y hy hb hargOK a' s ha =>
+              hgr y hy hb hargOK v z a' s hz1 ha) hpM
       · exact hdead ⟨m, domT_cons_of_dead hRnil hd hpM⟩ hdlW
 
 /-! ## 残る核: タワー枝 -/

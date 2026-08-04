@@ -1,11 +1,8 @@
-v0.111.0/gamma reduces to element membership + root slice
+v0.112.0/slice-narrow the tower interfaces (consumption-faithful)
 
-- Add CoreBlockedElt: the descended copies block is in GX (independent
-  of the ambient root; the context-length descent lives here)
-- Add CoreBlocked0: the p = 0 slice (single-column descended context =
-  the shift case, outside GX's two-column interface)
-- Add coreBlocked_of_elt: away from the root the descended context
-  M.take (p+1) is equipped by restriction (ctxOK_take), so the package
-  is one GX_full application of the copies element
-- GX_loop now rests on CoreBlockedElt + CoreBlocked0 + CtxLiftT1 + the
-  machine's own inclusion W subset GX
+- Narrow hgr in towerGraft2_lift/_mem and hgrF in the fam variants to
+  the ambient (v,z)-slice with quantified (a,s) - the proofs consumed
+  only that slice
+- Narrow tower1_mem2 hgr to the (v,z)-slice at lift 0
+- Project the slice at the full-package call sites (towerGraft2_holds,
+  liftTower1/liftTowerExp2_of_graftAll, Wstar2_closed, Gamma x3)

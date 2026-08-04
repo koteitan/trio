@@ -247,7 +247,9 @@ theorem coreT2E_of_fam (hf : CoreT2EFam) : CoreT2E := by
       have : 0 < Y.length := List.length_pos_iff.mpr hy
       omega)
   exact towerGraft2_lift_mem_fam hG hGne hz1 hva hdm hs2
-    (hf u Y M hop hbased hy hMarg hM2 hctx hs2 ⟨m, hdm⟩ v z hz1 hpN) hpN
+    (fun j hargOK a' s ha =>
+      hf u Y M hop hbased hy hMarg hM2 hctx hs2 ⟨m, hdm⟩ v z hz1 hpN j
+        hargOK v z a' s hz1 ha) hpN
 
 theorem based_graft_arg {Y w : TrioSeq} (hy : Y ≠ []) (hbY : based Y)
     (hbw : based w) : based (graft Y w) := by
@@ -614,9 +616,11 @@ theorem coreT1L_of_le (h : ∀ σ : ℕ, W σ ⊆ GX) (hcl : CtxLiftT1) : CoreT1
   have hRt2 : 2 ≤ Rt.length := by rw [hRtlen]; exact hR2
   have hctxRt : CtxOK Rt :=
     hcl u Y M AY hbased hy hMarg hM2 hctx hs1 ⟨m, hd⟩ v z t hz1 hpN
-  have hgr : ∀ y' ∈ W (m + 2 * t), based y' → graft Rt y' ∈ Wstar2 := by
-    intro y' hy' hb hargOK v' z' a' t' hz' ha'
-    exact GX_full (h _ hy') hb hRtOK hRt2 hctxRt hz' ha'
+  have hgr : ∀ y' ∈ W (m + 2 * t), based y' → argOK (graft Rt y') →
+      ∀ a' : ℕ, 2 * (v + t) + z ≤ a' →
+      Lift1 (((0, v + t, z) : ℕ × ℕ × ℕ) :: graft Rt y') 0 ∈ W a' := by
+    intro y' hy' hb hargOK a' ha'
+    exact GX_full (h _ hy') hb hRtOK hRt2 hctxRt hz1 (by omega)
   refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
   rw [hNbdef, Wset.lift_cons, ← hRtdef,
     oper_cons_tower1 hRtOK hRtne hdRt hsrRt hpMt]
@@ -769,11 +773,11 @@ theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
           have hdGm : domT (graft M Y) m := ⟨hlev, hpG⟩
           refine towerGraft2_lift_mem hG hGne hz1 hva hdGm hs2 ?_
             (by rw [hs2] at hpN ⊢; exact hpN)
-          intro w hw hbw
+          intro w hw hbw hargOK a' s ha
           rw [graft_assoc hy]
           have hYw : graft Y w ∈ GX := hgr w hw hbw
-          exact fun hargOK v' z' a' t' hz' ha' =>
-            GX_full hYw (based_graft_arg hy hbased hbw) hMarg hM2 hctx hz' ha'
+          exact GX_full hYw (based_graft_arg hy hbased hbw) hMarg hM2 hctx
+            hz1 ha
     · -- (c) still dead: peel
       refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
       have hnp' : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
