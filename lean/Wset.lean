@@ -1009,6 +1009,289 @@ theorem Lift1_dropLast {X : TrioSeq} {d : ℕ} :
   rw [List.dropLast_eq_take, List.dropLast_eq_take, Lift1_length,
     Lift1_take (by omega)]
 
+/-! ### 錐の骨格
+
+行 0 も行 1 も「親」は一意（`nextrel0/1_uniq_src`）なので、祖先鎖は線形。
+`Lift1` は行 0 を触らないので `nextrel0`/`le0` はそのまま保たれる。 -/
+
+theorem nextrel0_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    nextrel0 (Lift1 X d) a b ↔ nextrel0 X a b := by
+  unfold nextrel0
+  rw [Lift1_length]
+  simp only [entry0_Lift1]
+
+theorem le0_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    le0 (Lift1 X d) a b ↔ le0 X a b := by
+  unfold le0
+  rw [Lift1_length]
+  refine and_congr Iff.rfl (and_congr Iff.rfl ?_)
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel0_Lift1.1 hyz)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel0_Lift1.2 hyz)
+
+/-- The row-0 predecessor of a column is unique: a later candidate would
+violate the minimality clause of the earlier one. -/
+theorem nextrel0_uniq_src {X : TrioSeq} {a a' b : ℕ}
+    (h : nextrel0 X a b) (h' : nextrel0 X a' b) : a = a' := by
+  by_contra hne
+  rcases Nat.lt_or_ge a a' with hlt | hge
+  · have h1 := h.2.2.2.2 a' ⟨hlt, h'.2.2.1⟩
+    have h2 := h'.2.2.2.1
+    omega
+  · have hlt : a' < a := by omega
+    have h1 := h'.2.2.2.2 a ⟨hlt, h.2.2.1⟩
+    have h2 := h.2.2.2.1
+    omega
+
+/-- The row-1 predecessor of a column is unique. -/
+theorem nextrel1_uniq_src {X : TrioSeq} {a a' b : ℕ}
+    (h : nextrel1 X a b) (h' : nextrel1 X a' b) : a = a' := by
+  by_contra hne
+  rcases Nat.lt_or_ge a a' with hlt | hge
+  · have h1 := h.2.2.2.2.2 a' ⟨hlt, h'.2.2.2.2.1⟩
+    have h2 := h'.2.2.2.1
+    omega
+  · have hlt : a' < a := by omega
+    have h1 := h'.2.2.2.2.2 a ⟨hlt, h.2.2.2.2.1⟩
+    have h2 := h.2.2.2.1
+    omega
+
+/-- Row-0 ancestry is linear: two ancestors of the same column are comparable. -/
+theorem le0_of_le0_le0 {X : TrioSeq} {a k b : ℕ}
+    (ha : le0 X a b) (hk : le0 X k b) (hak : a < k) : le0 X a k := by
+  obtain ⟨-, -, ha⟩ := ha
+  obtain ⟨hkl, -, hk⟩ := hk
+  have key : ∀ {c : ℕ}, Relation.ReflTransGen (nextrel0 X) k c →
+      Relation.ReflTransGen (nextrel0 X) a c →
+      Relation.ReflTransGen (nextrel0 X) a k := by
+    intro c hkc
+    induction hkc with
+    | refl => intro h; exact h
+    | @tail y z hky hyz ih =>
+        intro hac
+        cases hac with
+        | refl =>
+            have h1 : k ≤ y := rtg0_le hky
+            have h2 : y < a := hyz.2.2.1
+            exact absurd h1 (by omega)
+        | @tail y' _ hay' hy'z =>
+            have hyy : y' = y := nextrel0_uniq_src hy'z hyz
+            subst hyy
+            exact ih hay'
+  exact ⟨by have := rtg0_le (key hk ha); omega, hkl, key hk ha⟩
+
+theorem le0_refl {X : TrioSeq} {a : ℕ} (h : a < X.length) : le0 X a a :=
+  ⟨h, h, .refl⟩
+
+theorem le0_trans {X : TrioSeq} {a b c : ℕ} (h1 : le0 X a b) (h2 : le0 X b c) :
+    le0 X a c := ⟨h1.1, h2.2.1, h1.2.2.trans h2.2.2⟩
+
+theorem le1_trans {X : TrioSeq} {a b c : ℕ} (h1 : le1 X a b) (h2 : le1 X b c) :
+    le1 X a c := ⟨h1.1, h2.2.1, h1.2.2.trans h2.2.2⟩
+
+/-- Every column that sits row-0 above `j` and strictly below it in row 1 has a
+row-1 predecessor of `j` at or above it. -/
+theorem nextrel1_exists {X : TrioSeq} {a j : ℕ} (hj : j < X.length)
+    (ha : le0 X a j) (haj : a < j) (hlt : entry X 1 a < entry X 1 j) :
+    ∃ c, nextrel1 X c j ∧ a ≤ c := by
+  classical
+  set P : ℕ → Prop := fun k => le0 X k j ∧ entry X 1 k < entry X 1 j with hP
+  have hPa : P a := ⟨ha, hlt⟩
+  have haj1 : a ≤ j - 1 := by omega
+  have hspec := Nat.findGreatest_spec (P := P) haj1 hPa
+  have hle := Nat.findGreatest_le (P := P) (j - 1)
+  have hge := Nat.le_findGreatest haj1 hPa
+  refine ⟨Nat.findGreatest P (j - 1), ⟨hspec.1.1, hj, by omega, hspec.2,
+    hspec.1, ?_⟩, hge⟩
+  intro j' hj'
+  have hj'le : j' ≤ j := rtg0_le hj'.2.2.2
+  rcases Nat.eq_or_lt_of_le hj'le with rfl | hlt'
+  · exact le_rfl
+  · by_contra hcon
+    push_neg at hcon
+    exact Nat.findGreatest_is_greatest (P := P) hj'.1 (by omega) ⟨hj'.2, hcon⟩
+
+/-- If `a` is row-1 strictly below every row-0 ancestor of `k` after it, then `a`
+is a row-1 ancestor of `k`. -/
+theorem le1_gen {X : TrioSeq} {a : ℕ} : ∀ k : ℕ, a < k → k < X.length →
+    le0 X a k → (∀ j, a < j → le0 X j k → entry X 1 a < entry X 1 j) →
+    le1 X a k := by
+  intro k
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+    intro hak hkl hle0 hmin
+    have hlt : entry X 1 a < entry X 1 k := hmin k hak (le0_refl hkl)
+    obtain ⟨c, hc, hac⟩ := nextrel1_exists hkl hle0 hak hlt
+    rcases Nat.eq_or_lt_of_le hac with rfl | hlt2
+    · exact ⟨hc.1, hkl, Relation.ReflTransGen.single hc⟩
+    · have hck : c < k := hc.2.2.1
+      have hle0ck : le0 X c k := hc.2.2.2.2.1
+      have hsub : le1 X a c :=
+        ih c hck hlt2 hc.1 (le0_of_le0_le0 hle0 hle0ck hlt2)
+          (fun j hj hjc => hmin j hj (le0_trans hjc hle0ck))
+      exact ⟨hsub.1, hkl, hsub.2.2.tail hc⟩
+
+/-- Everything squeezed between a row-1 edge `a → b` (along row-0 ancestry) is a
+row-1 descendant of `a`. -/
+theorem le1_of_between {X : TrioSeq} {a b k : ℕ} (h : nextrel1 X a b)
+    (hak : a < k) (hkb : le0 X k b) : le1 X a k := by
+  refine le1_gen k hak hkb.1 (le0_of_le0_le0 h.2.2.2.2.1 hkb hak) ?_
+  intro j hj hjk
+  have h1 := h.2.2.2.2.2 j ⟨hj, le0_trans hjk hkb⟩
+  have h2 := h.2.2.2.1
+  omega
+
+theorem le1_cone_up {X : TrioSeq} {i j : ℕ} (h : le1 X 0 i)
+    (hn : nextrel1 X i j) : le1 X 0 j := ⟨h.1, hn.2.1, h.2.2.tail hn⟩
+
+theorem le1_cone_down {X : TrioSeq} {i j : ℕ} (h : le1 X 0 j)
+    (hn : nextrel1 X i j) : le1 X 0 i := by
+  obtain ⟨h0, -, hr⟩ := h
+  cases hr with
+  | refl => exact absurd hn.2.2.1 (by omega)
+  | @tail c _ hc hcj =>
+      have hci : c = i := nextrel1_uniq_src hcj hn
+      subst hci
+      exact ⟨h0, hn.1, hc⟩
+
+/-- **`Lift1` preserves the row-1 edge relation.**  Raising the cone of the root
+by a constant moves both ends of every row-1 edge together, and the minimality
+clause survives because anything squeezed under the edge is itself in the cone
+(`le1_of_between`). -/
+theorem nextrel1_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    nextrel1 (Lift1 X d) a b ↔ nextrel1 X a b := by
+  classical
+  have key : ∀ {a b : ℕ}, nextrel1 X a b → nextrel1 (Lift1 X d) a b := by
+    intro a b h
+    have hal := h.1
+    have hbl := h.2.1
+    have hcone : le1 X 0 a ↔ le1 X 0 b :=
+      ⟨fun hc => le1_cone_up hc h, fun hc => le1_cone_down hc h⟩
+    refine ⟨by rw [Lift1_length]; exact hal, by rw [Lift1_length]; exact hbl,
+      h.2.2.1, ?_, le0_Lift1.mpr h.2.2.2.2.1, ?_⟩
+    · rw [entry1_Lift1 hal, entry1_Lift1 hbl]
+      have hlt := h.2.2.2.1
+      by_cases hb : le1 X 0 b
+      · rw [if_pos (hcone.mpr hb), if_pos hb]; omega
+      · rw [if_neg (fun hc => hb (hcone.mp hc)), if_neg hb]; omega
+    · intro j hj
+      have hj0 : le0 X j b := le0_Lift1.mp hj.2
+      have hjl : j < X.length := hj0.1
+      have hjmin := h.2.2.2.2.2 j ⟨hj.1, hj0⟩
+      rw [entry1_Lift1 hbl, entry1_Lift1 hjl]
+      by_cases hb : le1 X 0 b
+      · have hja : le1 X a j := le1_of_between h hj.1 hj0
+        have hj0c : le1 X 0 j := le1_trans (le1_cone_down hb h) hja
+        rw [if_pos hb, if_pos hj0c]; omega
+      · rw [if_neg hb]; omega
+  refine ⟨fun h => ?_, key⟩
+  have hal : a < X.length := by have := h.1; rwa [Lift1_length] at this
+  have hbl : b < X.length := by have := h.2.1; rwa [Lift1_length] at this
+  have hab := h.2.2.1
+  have hex : ∃ c, nextrel1 X c b := by
+    by_cases hb : le1 X 0 b
+    · obtain ⟨-, -, hr⟩ := hb
+      cases hr with
+      | refl => exact absurd hab (by omega)
+      | @tail c _ _ hcb => exact ⟨c, hcb⟩
+    · have hlt := h.2.2.2.1
+      rw [entry1_Lift1 hal, entry1_Lift1 hbl, if_neg hb] at hlt
+      obtain ⟨c, hc, -⟩ := nextrel1_exists hbl (le0_Lift1.mp h.2.2.2.2.1) hab
+        (by split_ifs at hlt <;> omega)
+      exact ⟨c, hc⟩
+  obtain ⟨c, hc⟩ := hex
+  have hca : c = a := nextrel1_uniq_src (key hc) h
+  subst hca
+  exact hc
+
+theorem le1_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    le1 (Lift1 X d) a b ↔ le1 X a b := by
+  unfold le1
+  rw [Lift1_length]
+  refine and_congr Iff.rfl (and_congr Iff.rfl ?_)
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel1_Lift1.1 hyz)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel1_Lift1.2 hyz)
+
+theorem nextrel2_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    nextrel2 (Lift1 X d) a b ↔ nextrel2 X a b := by
+  unfold nextrel2
+  rw [Lift1_length]
+  simp only [entry2_Lift1, le1_Lift1]
+
+theorem nextR_Lift1 {X : TrioSeq} {d i a b : ℕ} :
+    nextR (Lift1 X d) i a b ↔ nextR X i a b := by
+  unfold nextR
+  split
+  · exact nextrel0_Lift1
+  · split
+    · exact nextrel1_Lift1
+    · exact nextrel2_Lift1
+
+theorem hasParent_Lift1 {X : TrioSeq} {d i b : ℕ} :
+    hasParent (Lift1 X d) i b ↔ hasParent X i b := by
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_Lift1.mp hj0, fun y hy => hu y (nextR_Lift1.mpr hy)⟩
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_Lift1.mpr hj0, fun y hy => hu y (nextR_Lift1.mp hy)⟩
+
+theorem parent_Lift1 {X : TrioSeq} {d i b : ℕ} :
+    parent (Lift1 X d) i b = parent X i b := by
+  unfold parent
+  congr 1
+  funext j0
+  exact propext nextR_Lift1
+
+/-- `srow` survives the lift: a lifted non-root column is in the cone, hence has
+strictly positive row 1 already. -/
+theorem srow_Lift1 {X : TrioSeq} {d j : ℕ} (hj : j ≠ 0) :
+    srow (Lift1 X d) j = srow X j := by
+  classical
+  unfold srow
+  rw [entry2_Lift1]
+  by_cases h2 : 0 < entry X 2 j
+  · rw [if_pos h2, if_pos h2]
+  · rw [if_neg h2, if_neg h2]
+    rcases Nat.lt_or_ge j X.length with hjl | hjl
+    · rw [entry1_Lift1 hjl]
+      by_cases hc : le1 X 0 j
+      · have hpos : 0 < entry X 1 j := by
+          obtain ⟨-, -, hr⟩ := hc
+          cases hr with
+          | refl => exact absurd rfl hj
+          | @tail c _ hc0 hcj =>
+              have := hcj.2.2.2.1
+              omega
+        rw [if_pos hc, if_pos (by omega : 0 < entry X 1 j + d),
+          if_pos hpos]
+      · rw [if_neg hc, Nat.add_zero]
+    · have h1 : entry X 1 j = 0 := entry_out_row hjl
+      have h1' : entry (Lift1 X d) 1 j = 0 :=
+        entry_out_row (by rw [Lift1_length]; exact hjl)
+      rw [h1, h1']
+
+open Classical in
+theorem lev_Lift1_of_cone {X : TrioSeq} {d j : ℕ} (hj : j < X.length) :
+    lev (Lift1 X d) j = lev X j + 2 * (if le1 X 0 j then d else 0) := by
+  classical
+  unfold lev
+  rw [entry1_Lift1 hj, entry2_Lift1]
+  omega
+
 /-! ## 引数ブロックと最上位分解 -/
 
 /-- `R` is an *argument block*: every column sits strictly below depth `0`. -/

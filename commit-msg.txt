@@ -1,7 +1,9 @@
-v0.90.0/prefix-determined ancestry and the guarded row-1 lift
+v0.91.0/Lift1 preserves the row-1 skeleton
 
-- Add prefix lemmas: `entry_take`, `nextrel0/1_take`, `rtg0/1_take_mp/mpr`,
-  `le0_take`, `le1_take`, `rtg0/1_le`
-- Add `Lift1 X d` (row 1 raised by `d` on the root's `le1` cone) with
-  `Lift1_length/getD/zero/take/dropLast`, `entry0/1/2_Lift1`, `based_Lift1`
-- Add `entry_triple`: a column equals its three entries
+- Add cone skeleton: `nextrel0/1_uniq_src`, `le0_of_le0_le0`, `le0_refl/trans`,
+  `le1_trans`, `nextrel1_exists`, `le1_gen`, `le1_of_between`,
+  `le1_cone_up/down`
+- Prove `nextrel1_Lift1`: the guarded row-1 lift preserves the row-1 edge
+  relation, hence `le1_Lift1`, `nextrel0/2_Lift1`, `le0_Lift1`, `nextR_Lift1`,
+  `hasParent_Lift1`, `parent_Lift1`
+- Prove `srow_Lift1` (non-root columns) and `lev_Lift1_of_cone`
