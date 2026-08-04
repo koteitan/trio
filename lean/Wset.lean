@@ -2828,6 +2828,145 @@ theorem oper_cons_tower2 {v z m n : ℕ} {R : TrioSeq}
   rw [← graft_cons (v := v) (z := z) hRne, graft_eq_shift]
   congr 2
 
+/-! ### `Lift1` は根が親の展開と可換
+
+コピーは `Lift1` を素通しする（`gcopy_Lift1`）ので、`(Lift1 M t)[n]` は
+`M[n]` の周期リフト。`glift_eq_Lift1` と合わせて塔の同変性になる。 -/
+
+open Classical in
+theorem gcopy_Lift1 {M : TrioSeq} {L : ℕ} (hL : L ≤ M.length) (t d0 d1 k : ℕ) :
+    gcopy (Lift1 M t) 0 L d0 d1 k = glift M L 0 t (gcopy M 0 L d0 d1 k) := by
+  classical
+  apply List.ext_getElem
+  · simp
+  · intro i h1 h2
+    have hiL : i < L := by simpa using h1
+    have hiM : i < M.length := by omega
+    have hA : (gcopy (Lift1 M t) 0 L d0 d1 k)[i]
+        = ((entry (Lift1 M t) 0 i + k * d0,
+            entry (Lift1 M t) 1 i + (if le1 (Lift1 M t) 0 i then k * d1 else 0),
+            entry (Lift1 M t) 2 i) : ℕ × ℕ × ℕ) := by
+      have h := gcopy_getD (Lift1 M t) d0 d1 k i hiL
+      rwa [List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem (by rw [gcopy_len]; exact hiL)] at h
+    have hB : (glift M L 0 t (gcopy M 0 L d0 d1 k))[i]
+        = ((entry (gcopy M 0 L d0 d1 k) 0 i + 0,
+            entry (gcopy M 0 L d0 d1 k) 1 i
+              + (if le1 M 0 (i % L) then t else 0),
+            entry (gcopy M 0 L d0 d1 k) 2 i) : ℕ × ℕ × ℕ) := by
+      have h := glift_getD M L 0 t (gcopy M 0 L d0 d1 k)
+        (by rw [gcopy_len]; exact hiL)
+      rwa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h2] at h
+    have hg := gcopy_getD M d0 d1 k i hiL
+    have hE0 : entry (gcopy M 0 L d0 d1 k) 0 i = entry M 0 i + k * d0 := by
+      show ((gcopy M 0 L d0 d1 k).getD i (0, 0, 0)).1 = _
+      rw [hg]
+    have hE1 : entry (gcopy M 0 L d0 d1 k) 1 i
+        = entry M 1 i + (if le1 M 0 i then k * d1 else 0) := by
+      show ((gcopy M 0 L d0 d1 k).getD i (0, 0, 0)).2.1 = _
+      rw [hg]
+    have hE2 : entry (gcopy M 0 L d0 d1 k) 2 i = entry M 2 i := by
+      show ((gcopy M 0 L d0 d1 k).getD i (0, 0, 0)).2.2 = _
+      rw [hg]
+    rw [hA, hB, hE0, hE1, hE2, entry0_Lift1, entry1_Lift1 hiM, entry2_Lift1,
+      Nat.mod_eq_of_lt hiL]
+    by_cases hc : le1 M 0 i
+    · simp only [if_pos hc, if_pos (le1_Lift1.mpr hc)]
+      refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> dsimp only <;> omega
+    · simp only [if_neg hc, if_neg (fun h => hc (le1_Lift1.mp h))]
+      refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> dsimp only <;> omega
+
+/-- `glift` distributes over guarded copies with unrelated deltas. -/
+theorem glift_gcopies' (M : TrioSeq) (L a b d0 d1 : ℕ) : ∀ n,
+    (List.range n).flatMap (fun k => glift M L a b (gcopy M 0 L d0 d1 k))
+      = glift M L a b (gcopies M 0 L d0 d1 n) := by
+  intro n
+  induction n with
+  | zero => simp [gcopies]
+  | succ n ih =>
+      have hmod : (gcopies M 0 L d0 d1 n).length % L = 0 := by
+        rw [gcopies_length]
+        exact Nat.mul_mod_left n L
+      have hsplit : gcopies M 0 L d0 d1 (n + 1)
+          = gcopies M 0 L d0 d1 n ++ gcopy M 0 L d0 d1 n := by
+        unfold gcopies
+        rw [List.range_succ, List.flatMap_append]
+        simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      rw [List.range_succ, List.flatMap_append, ih, hsplit,
+        glift_append (M := M) (L := L) (d0 := a) (d1 := b) hmod]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+theorem gcopies_Lift1 {M : TrioSeq} {L : ℕ} (hL : L ≤ M.length) (t d0 d1 n : ℕ) :
+    gcopies (Lift1 M t) 0 L d0 d1 n = glift M L 0 t (gcopies M 0 L d0 d1 n) := by
+  rw [← glift_gcopies' M L 0 t d0 d1 n]
+  unfold gcopies
+  refine List.flatMap_congr ?_
+  intro k _
+  exact gcopy_Lift1 hL t d0 d1 k
+
+open Classical in
+/-- On a root-parented block the lift passes through the expansion as the
+periodic lift. -/
+theorem oper_Lift1_root {M : TrioSeq} (n t : ℕ) (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hpar : parent M (srow M (M.length - 1)) (M.length - 1) = 0)
+    (hcone : le1 M 0 (M.length - 1)) :
+    (Lift1 M t)⟦n⟧ = glift M (M.length - 1) 0 t (M⟦n⟧) := by
+  classical
+  set L := M.length - 1 with hLdef
+  have hMpos : 0 < M.length := by omega
+  have hLlt : L < M.length := by omega
+  have hNlen : (Lift1 M t).length - 1 = L := by rw [Lift1_length]
+  have hcone0 : le1 M 0 0 := le1_refl hMpos
+  have hE0 : entry (Lift1 M t) 0 L = entry M 0 L := entry0_Lift1 _ _ _
+  have hE2 : entry (Lift1 M t) 2 L = entry M 2 L := entry2_Lift1 _ _ _
+  have hE1L : entry (Lift1 M t) 1 L = entry M 1 L + t := by
+    rw [entry1_Lift1 hLlt, if_pos hcone]
+  have hE10 : entry (Lift1 M t) 1 0 = entry M 1 0 + t := by
+    rw [entry1_Lift1 hMpos, if_pos hcone0]
+  have hsr : srow (Lift1 M t) L = srow M L := srow_Lift1 (by omega)
+  have hzN : ¬ (entry (Lift1 M t) 0 ((Lift1 M t).length - 1) = 0 ∧
+      entry (Lift1 M t) 1 ((Lift1 M t).length - 1) = 0 ∧
+      entry (Lift1 M t) 2 ((Lift1 M t).length - 1) = 0) := by
+    rw [hNlen]
+    rintro ⟨h1, h2, h3⟩
+    rw [hE0] at h1; rw [hE1L] at h2; rw [hE2] at h3
+    exact hz ⟨h1, by omega, h3⟩
+  have hpN : hasParent (Lift1 M t) (srow (Lift1 M t) ((Lift1 M t).length - 1))
+      ((Lift1 M t).length - 1) := by
+    rw [hNlen, hsr]; exact hasParent_Lift1.mpr hp
+  have hparN : parent (Lift1 M t) (srow (Lift1 M t) ((Lift1 M t).length - 1))
+      ((Lift1 M t).length - 1) = 0 := by
+    rw [hNlen, hsr, parent_Lift1]; exact hpar
+  rw [oper_gcopies n hL hz hp, hpar]
+  rw [oper_gcopies n (by rw [hNlen]; exact hL) hzN hpN, hparN]
+  rw [hNlen, hsr, hE0, hE1L, hE10, entry0_Lift1]
+  simp only [List.take_zero, List.nil_append, Nat.sub_zero]
+  have hd1 : (if 1 < srow M L then entry M 1 L + t - (entry M 1 0 + t) else 0)
+      = (if 1 < srow M L then entry M 1 L - entry M 1 0 else 0) := by
+    split_ifs <;> omega
+  rw [hd1]
+  exact gcopies_Lift1 (by omega) t _ _ n
+
+open Classical in
+/-- **Tower equivariance**: on a root-parented row-2 tower the guarded row-1
+lift commutes with the expansion. -/
+theorem oper_Lift1_tower {M : TrioSeq} {n t d0 d1 : ℕ}
+    (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hpar : parent M (srow M (M.length - 1)) (M.length - 1) = 0)
+    (hgexp : M⟦n⟧ = gexp M 0 (M.length - 1) d0 d1 n)
+    (hup : ∀ l, 0 < l → l ≤ M.length - 1 → entry M 0 0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (M.length - 1) = entry M 0 0 + d0)
+    (hd1pos : 0 < d1) (hle1lp : le1 M 0 (M.length - 1)) :
+    (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t := by
+  rw [oper_Lift1_root n t hL hz hp hpar hle1lp]
+  exact glift_eq_Lift1 (by omega) hgexp hup hd0pos hd0e hd1pos hle1lp
+
 /-! ## リフト閉 `W*`
 
 `Wstar` を**ガード付き行 1 リフトで閉じた**形に強める。`t = 0` が従来の主張。
@@ -2841,15 +2980,16 @@ def Wstar2 : Set TrioSeq :=
 
 /-- **The row-2 tower core, proved.**  Induction on the copy count with the lift
 amount universally quantified: `hgr` is consumed only at the single stage `m`. -/
-theorem towerGraft2_holds :
-    ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+theorem towerGraft2_lift :
+    ∀ (v z m : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
       domT R m → srow R (R.length - 1) = 2 →
       (∀ y ∈ W m, based y → graft R y ∈ Wstar2) →
       hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
         R.length →
-      ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+      ∀ n s : ℕ,
+        Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧) s ∈ W (2 * (v + s) + z) := by
   classical
-  intro v z m a R hR hRne hz1 hva hd hi1 hgr hpM n hn
+  intro v z m R hR hRne hz1 hd hi1 hgr hpM
   set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
   set M : TrioSeq := p0 :: R with hMdef
   have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
@@ -2903,22 +3043,31 @@ theorem towerGraft2_holds :
     cases j with
     | zero => rw [hM0]; exact based_nil
     | succ j => rw [hstep j]; exact based_cons v z _
-  have key : ∀ j k : ℕ, Lift1 (M⟦j⟧) (k * d1) ∈ W (2 * (v + k * d1) + z) := by
+  have key : ∀ j s : ℕ, Lift1 (M⟦j⟧) s ∈ W (2 * (v + s) + z) := by
     intro j
     induction j with
-    | zero => intro k; rw [hM0]; simpa using W_nil (2 * (v + k * d1) + z)
+    | zero => intro s; rw [hM0]; simpa using W_nil (2 * (v + s) + z)
     | succ j ih =>
-        intro k
-        have hIH := ih 1
-        rw [Nat.one_mul] at hIH
-        have hmem : Lift1 (M⟦j⟧) d1 ∈ W m := W_mono hbound hIH
+        intro s
+        have hmem : Lift1 (M⟦j⟧) d1 ∈ W m := W_mono hbound (ih d1)
         have hb : based (Lift1 (M⟦j⟧) d1) := based_Lift1 _ (hbased j)
         have hres := hgr _ hmem hb (argOK_graft hRne hR _) v z
-          (2 * (v + k * d1) + z) (k * d1) hz1 (le_refl _)
+          (2 * (v + s) + z) s hz1 (le_refl _)
         rw [hstep j]
         exact hres
-  have h0 := key n 0
-  rw [Nat.zero_mul, Lift1_zero, Nat.add_zero] at h0
+  exact key
+
+/-- The `t = 0` instance: the former open core `TowerGraft2`. -/
+theorem towerGraft2_holds :
+    ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+      domT R m → srow R (R.length - 1) = 2 →
+      (∀ y ∈ W m, based y → graft R y ∈ Wstar2) →
+      hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+        R.length →
+      ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  intro v z m a R hR hRne hz1 hva hd hi1 hgr hpM n _
+  have h0 := towerGraft2_lift v z m R hR hRne hz1 hd hi1 hgr hpM n 0
+  rw [Lift1_zero, Nat.add_zero] at h0
   exact W_mono hva h0
 
 /-! ## 残る核: タワー枝 -/

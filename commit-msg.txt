@@ -1,6 +1,8 @@
-v0.94.0/the row-2 tower core is proved
+v0.95.0/tower equivariance of the guarded row-1 lift
 
-- Add `Wstar2`: `W*` closed under the guarded row-1 lift `Lift1`
-- Prove `towerGraft2_holds` (the former open core `TowerGraft2`): induction on
-  the copy count with the lift amount universally quantified, so the graft
-  closure is consumed only at the single stage `m`
+- Generalise the tower induction to an arbitrary lift amount
+  (`towerGraft2_lift`); `towerGraft2_holds` is its `t = 0` instance
+- Add `gcopy_Lift1`, `glift_gcopies'`, `gcopies_Lift1`: guarded copies pass the
+  lift through as the periodic lift
+- Prove `oper_Lift1_root` and, with `glift_eq_Lift1`, `oper_Lift1_tower`:
+  on a root-parented row-2 tower `Lift1` commutes with the expansion
