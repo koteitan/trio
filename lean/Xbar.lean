@@ -212,4 +212,63 @@ theorem oper_graft_pred {M y : TrioSeq} (n : ℕ) (hM : M ≠ []) (hy : y ≠ []
   rw [hg y] at hL hnp ⊢
   rw [oper_append_pred n hsne hL hnp, shiftr01_dropLast, ← hg]
 
+
+/-- **The blocked-case characterization**: if the argument's trailing column has
+no parent within the argument but the graft block has one, that parent lies in
+the context part.  With `oper_graft_inner` and `oper_graft_pred` this gives the
+full trichotomy for the expansion of a graft block. -/
+theorem blocked_parent_lt {M y : TrioSeq} (hM : M ≠ []) (hy : y ≠ [])
+    (hni : ¬ hasParent y (srow y (y.length - 1)) (y.length - 1))
+    (hpG : hasParent (graft M y)
+      (srow (graft M y) ((graft M y).length - 1)) ((graft M y).length - 1)) :
+    parent (graft M y) (srow (graft M y) ((graft M y).length - 1))
+      ((graft M y).length - 1) < M.length - 1 := by
+  classical
+  set c := entry M 0 (M.length - 1) with hc
+  have hg : graft M y = M.dropLast ++ shiftr01 c 0 y := by
+    unfold graft shiftr01
+    refine congrArg _ (List.map_congr_left ?_)
+    intro p _
+    exact Prod.ext rfl (Prod.ext (by dsimp only; omega) rfl)
+  have hylen : 0 < y.length := List.length_pos_iff.mpr hy
+  have hMlen : 0 < M.length := List.length_pos_iff.mpr hM
+  set A : TrioSeq := M.dropLast with hA
+  set T : TrioSeq := shiftr01 c 0 y with hT
+  have hAlen : A.length = M.length - 1 := by rw [hA, List.length_dropLast]
+  have hTlen : T.length = y.length := by rw [hT, shiftr01_length]
+  set x := y.length - 1 with hx
+  have hGx : (graft M y).length - 1 = A.length + x := by
+    rw [hg, List.length_append, hTlen]
+    omega
+  have hsrT : srow T x = srow y x := by rw [hT]; exact srow_shiftr01 y x
+  have hsrG : srow (graft M y) ((graft M y).length - 1) = srow y x :=
+    srow_graft_last hM hy
+  have hniT : ¬ hasParent T (srow y x) x := by
+    rw [hT, ← hsrT, hT, srow_shiftr01]
+    intro h
+    exact hni (hasParent_shiftr01.mp h)
+  by_contra hge
+  push_neg at hge
+  rw [← hAlen] at hge
+  have hnr := parent_nextR hpG
+  obtain ⟨p', hp'⟩ : ∃ p', parent (graft M y)
+      (srow (graft M y) ((graft M y).length - 1)) ((graft M y).length - 1)
+      = A.length + p' :=
+    ⟨parent (graft M y) (srow (graft M y) ((graft M y).length - 1))
+      ((graft M y).length - 1) - A.length, by omega⟩
+  rw [hp', hsrG, hGx] at hnr
+  have hnrG : nextR (A ++ T) (srow y x) (A.length + p') (A.length + x) := by
+    rw [← hg]
+    exact hnr
+  have hnrT : nextR T (srow y x) p' x :=
+    (nextR_append_right A T (srow y x) p' x).1 hnrG
+  refine hniT ⟨p', hnrT, ?_⟩
+  intro q hq
+  have hqG : nextR (graft M y) (srow y x) (A.length + q) (A.length + x) := by
+    rw [hg]
+    exact (nextR_append_right A T (srow y x) q x).2 hq
+  have huniq := hpG.unique (by rw [hsrG, hGx]; exact hqG) (parent_nextR hpG)
+  rw [hp'] at huniq
+  omega
+
 end TRIO
