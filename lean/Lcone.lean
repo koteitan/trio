@@ -202,4 +202,239 @@ theorem gexp_cone_mir {k q : ℕ} (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0)
 
 end Cone
 
+/-! ## 平坦コピー（`d0 = d1 = 0`）の錐輸送
+
+`srow = 0` の展開ではコピーがそのまま複製され、コピーの根はどれも宿主の根と
+同じ深さに並ぶ。したがって `j0` は他コピーの行 0 祖先にはならず、鎖は
+「コピー `k` の内部 → その根 → 前置」としか降りない。`Gtrans` の鎖逆転は
+`hd0e`（根が `d0` だけ深くなる）を使うのでここでは使えず、平坦版を別に立てる。 -/
+
+section ConeFlat
+
+variable {M : TrioSeq} {j0 Lb n : ℕ}
+
+theorem gexp_flat_getD {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hk : k < n) (hq : q < Lb) :
+    (gexp M j0 Lb 0 0 n).getD (j0 + (k * Lb + q)) (0, 0, 0)
+      = M.getD (j0 + q) (0, 0, 0) := by
+  classical
+  rw [gexp_getD_mir hlen hk hq]
+  simp only [Nat.mul_zero, Nat.add_zero, ite_self]
+  rw [getD_eq_entries]
+
+theorem gexp_flat_entry {y k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hk : k < n) (hq : q < Lb) :
+    entry (gexp M j0 Lb 0 0 n) y (j0 + (k * Lb + q)) = entry M y (j0 + q) := by
+  unfold entry
+  rw [gexp_flat_getD hlen hk hq]
+
+theorem gexp_flat_root_entry {y k : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hk : k < n) (hLb : 0 < Lb) :
+    entry (gexp M j0 Lb 0 0 n) y (j0 + k * Lb) = entry M y j0 := by
+  have h := gexp_flat_entry (M := M) (n := n) (y := y) (k := k) (q := 0)
+    hlen hk hLb
+  simpa using h
+
+/-- Nothing in the copies region is shallower than the host root. -/
+theorem gexp_flat_ge (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l) :
+    ∀ l, j0 ≤ l → l < j0 + n * Lb →
+      entry M 0 j0 ≤ entry (gexp M j0 Lb 0 0 n) 0 l := by
+  intro l hl0 hl1
+  obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hLb hl0 hl1
+  rw [gexp_flat_entry hlen hk hq]
+  rcases Nat.eq_zero_or_pos q with rfl | hqpos
+  · simp
+  · exact le_of_lt (hup (j0 + q) (by omega) (by omega))
+
+/-- The chain from a copy root to a copy-interior position. -/
+theorem gexp_flat_rtg0_root {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb) (hn : 0 < n)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l) :
+    Relation.ReflTransGen (nextrel0 (gexp M j0 Lb 0 0 n)) (j0 + k * Lb)
+      (j0 + (k * Lb + q)) := by
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  refine rtg0_of_window (by rw [gexp_length hlen]; omega) (by omega) ?_
+  intro l hl0 hl1
+  obtain ⟨q', hq'0, hq'1, rfl⟩ : ∃ q', 0 < q' ∧ q' ≤ q ∧ l = j0 + (k * Lb + q') :=
+    ⟨l - j0 - k * Lb, by omega, by omega, by omega⟩
+  rw [gexp_flat_root_entry hlen hk hLb, gexp_flat_entry hlen hk (by omega)]
+  exact hup (j0 + q') (by omega) (by omega)
+
+/-- Below `j0` the expansion and the host share their row-0 chains. -/
+theorem gexp_flat_rtg0_low {a b : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (hn : 0 < n) (hb : b < j0) :
+    Relation.ReflTransGen (nextrel0 (gexp M j0 Lb 0 0 n)) a b
+      ↔ Relation.ReflTransGen (nextrel0 M) a b := by
+  have hnLb : 0 < n * Lb := Nat.mul_pos hn hLb
+  constructor
+  · exact rtg0_of_agree_last (M := gexp M j0 Lb 0 0 n) (X := M) (by omega)
+      (fun x hx => (gexp_getD_low hlen (by omega)).symm)
+      (by rw [gexp_getD_low hlen hb])
+  · exact rtg0_of_agree_last (M := M) (X := gexp M j0 Lb 0 0 n)
+      (by rw [gexp_length hlen]; omega)
+      (fun x hx => gexp_getD_low hlen (by omega))
+      (by rw [gexp_getD_low hlen hb])
+
+/-- A copy root has exactly the host root's row-0 parents. -/
+theorem nextrel0_flat_root {k y : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (hk : k < n) (hy : y < j0)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l) :
+    nextrel0 (gexp M j0 Lb 0 0 n) y (j0 + k * Lb) ↔ nextrel0 M y j0 := by
+  have hnLb : 0 < n * Lb := by
+    have : 0 < n := by omega
+    exact Nat.mul_pos this hLb
+  have hbnd : k * Lb < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hey : entry (gexp M j0 Lb 0 0 n) 0 y = entry M 0 y :=
+    gexp_entry_low hlen hy
+  have her : entry (gexp M j0 Lb 0 0 n) 0 (j0 + k * Lb) = entry M 0 j0 :=
+    gexp_flat_root_entry hlen hk hLb
+  constructor
+  · rintro ⟨-, -, -, h4, h5⟩
+    refine ⟨by omega, by omega, hy, ?_, ?_⟩
+    · rw [← hey, ← her]; exact h4
+    · intro l hl
+      have := h5 l ⟨hl.1, by omega⟩
+      rwa [her, gexp_entry_low hlen (by omega)] at this
+  · rintro ⟨-, -, -, h4, h5⟩
+    refine ⟨by rw [gexp_length hlen]; omega, by rw [gexp_length hlen]; omega,
+      by omega, ?_, ?_⟩
+    · rw [hey, her]; exact h4
+    · intro l hl
+      rw [her]
+      rcases Nat.lt_or_ge l j0 with hlj | hlj
+      · rw [gexp_entry_low hlen hlj]
+        exact h5 l ⟨hl.1, hlj⟩
+      · exact gexp_flat_ge hlen hLb hup l hlj (by omega)
+
+/-- **Flat chain inversion**: every row-0 ancestor at or above `j0` of a
+copy-`k` mirror is a copy-`k` mirror over a host chain. -/
+theorem gexp_flat_chain_inversion {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l) :
+    ∀ y, Relation.ReflTransGen (nextrel0 (gexp M j0 Lb 0 0 n)) y
+        (j0 + (k * Lb + q)) → j0 ≤ y →
+      ∃ q', q' < Lb ∧ y = j0 + (k * Lb + q') ∧
+        Relation.ReflTransGen (nextrel0 M) (j0 + q') (j0 + q) := by
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  intro y hy
+  induction hy using Relation.ReflTransGen.head_induction_on with
+  | refl => intro _; exact ⟨q, hq, rfl, .refl⟩
+  | @head x' y' hxy hyt ih =>
+      intro hx0
+      have hxy' : x' < y' := nextrel0_index_less hxy
+      obtain ⟨q', hq', rfl, hM⟩ := ih (by omega)
+      rcases Nat.eq_zero_or_pos q' with rfl | hq'pos
+      · exfalso
+        have hlt : entry (gexp M j0 Lb 0 0 n) 0 x'
+            < entry (gexp M j0 Lb 0 0 n) 0 (j0 + (k * Lb + 0)) := hxy.2.2.2.1
+        rw [gexp_flat_entry hlen hk hLb] at hlt
+        have hge := gexp_flat_ge (n := n) hlen hLb hup x' hx0 (by omega)
+        simp only [Nat.add_zero] at hlt
+        omega
+      · have hrtg : Relation.ReflTransGen (nextrel0 M) j0 (j0 + q') :=
+          rtg0_of_window (by omega) (by omega)
+            (fun l hl0 hl1 => hup l hl0 (by omega))
+        rcases hrtg.cases_tail with heq | ⟨pa, hpa1, hpa2⟩
+        · exact absurd heq (by omega)
+        · have hpa0 : j0 ≤ pa := nextrel0_rtrancl_index_le hpa1
+          have hpaq : pa < j0 + q' := nextrel0_index_less hpa2
+          obtain ⟨qa, rfl⟩ : ∃ qa, pa = j0 + qa := ⟨pa - j0, by omega⟩
+          have hstep := gexp_nextrel0_mir (n := n) (d0 := 0) (d1 := 0) (k := k)
+            hlen hk hq' hpa2
+          have hxe : x' = j0 + (k * Lb + qa) := nextrel0_src_unique hxy hstep
+          exact ⟨qa, by omega, hxe, hM.head hpa2⟩
+
+/-- **Root-cone transport, flat case.** -/
+theorem gexp_cone_mir_flat {k q : ℕ} (hlen : j0 + Lb + 1 = M.length)
+    (hj0 : 0 < j0) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) :
+    le1 (gexp M j0 Lb 0 0 n) 0 (j0 + (k * Lb + q)) ↔ le1 M 0 (j0 + q) := by
+  classical
+  have hn : 0 < n := by omega
+  have hXlen : (gexp M j0 Lb 0 0 n).length = j0 + n * Lb := gexp_length hlen
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hplt : j0 + (k * Lb + q) < (gexp M j0 Lb 0 0 n).length := by
+    rw [hXlen]; omega
+  have hqlt : j0 + q < M.length := by omega
+  have hrX := gexp_root_shallow (d0 := 0) (d1 := 0) (n := n) hlen hj0 hLb hr0
+  have h10 : entry (gexp M j0 Lb 0 0 n) 1 0 = entry M 1 0 :=
+    gexp_entry_low hlen hj0
+  have hMj0q : Relation.ReflTransGen (nextrel0 M) j0 (j0 + q) :=
+    rtg0_of_window (by omega) (by omega) (fun l hl0 hl1 => hup l hl0 (by omega))
+  have hXrp : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb 0 0 n)) (j0 + k * Lb)
+      (j0 + (k * Lb + q)) := gexp_flat_rtg0_root hlen hLb hk hq hn hup
+  -- the copy root's prefix ancestors are the host root's
+  have hlowX : ∀ y, y < j0 →
+      (Relation.ReflTransGen (nextrel0 (gexp M j0 Lb 0 0 n)) y (j0 + k * Lb)
+        ↔ Relation.ReflTransGen (nextrel0 M) y j0) := by
+    intro y hy
+    constructor
+    · intro h
+      rcases h.cases_tail with heq | ⟨w, hw1, hw2⟩
+      · exact absurd heq (by omega)
+      · have hwj : w < j0 := by
+          by_contra hcon
+          have hlt : entry (gexp M j0 Lb 0 0 n) 0 w
+              < entry (gexp M j0 Lb 0 0 n) 0 (j0 + k * Lb) := hw2.2.2.2.1
+          rw [gexp_flat_root_entry hlen hk hLb] at hlt
+          have hge := gexp_flat_ge (n := n) hlen hLb hup w (by omega)
+            (by have := nextrel0_index_less hw2; omega)
+          omega
+        exact ((gexp_flat_rtg0_low hlen hLb hn hwj).1 hw1).tail
+          ((nextrel0_flat_root hlen hLb hk hwj hup).1 hw2)
+    · intro h
+      rcases h.cases_tail with heq | ⟨w, hw1, hw2⟩
+      · exact absurd heq (by omega)
+      · have hwj : w < j0 := nextrel0_index_less hw2
+        exact ((gexp_flat_rtg0_low hlen hLb hn hwj).2 hw1).tail
+          ((nextrel0_flat_root hlen hLb hk hwj hup).2 hw2)
+  rw [le1_zero_iff hrX hplt, le1_zero_iff hr0 hqlt, h10]
+  constructor
+  · intro hXw y hyq hy0
+    have hyle : y ≤ j0 + q := nextrel0_rtrancl_index_le hyq
+    rcases Nat.lt_or_ge y j0 with hyj | hyj
+    · have hle0My : le0 M y (j0 + q) := ⟨by omega, hqlt, hyq⟩
+      have hle0Mj : le0 M j0 (j0 + q) := ⟨by omega, hqlt, hMj0q⟩
+      have hMyj0 := (le0_of_le0_le0 hle0My hle0Mj hyj).2.2
+      have h := hXw y (((hlowX y hyj).2 hMyj0).trans hXrp) hy0
+      rwa [gexp_entry_low hlen hyj] at h
+    · obtain ⟨q', hq'e⟩ : ∃ q', y = j0 + q' := ⟨y - j0, by omega⟩
+      subst hq'e
+      have hq'lt : q' < Lb := by omega
+      have hmir : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb 0 0 n))
+          (j0 + (k * Lb + q')) (j0 + (k * Lb + q)) :=
+        gexp_rtg0_mir hlen hk hyq q rfl hq
+      have h := hXw (j0 + (k * Lb + q')) hmir (by omega)
+      rwa [gexp_flat_entry hlen hk hq'lt] at h
+  · intro hMw y hyp hy0
+    rcases Nat.lt_or_ge y j0 with hyj | hyj
+    · have hle0X : le0 (gexp M j0 Lb 0 0 n) y (j0 + (k * Lb + q)) :=
+        ⟨by rw [hXlen]; omega, hplt, hyp⟩
+      have hle0r : le0 (gexp M j0 Lb 0 0 n) (j0 + k * Lb) (j0 + (k * Lb + q)) :=
+        ⟨by rw [hXlen]; omega, hplt, hXrp⟩
+      have hXyr := (le0_of_le0_le0 hle0X hle0r (by omega)).2.2
+      have h := hMw y (((hlowX y hyj).1 hXyr).trans hMj0q) hy0
+      rwa [gexp_entry_low hlen hyj]
+    · obtain ⟨q', hq', hye, hM⟩ :=
+        gexp_flat_chain_inversion hlen hLb hk hq hup y hyp hyj
+      subst hye
+      rw [gexp_flat_entry hlen hk hq']
+      exact hMw (j0 + q') hM (by omega)
+
+end ConeFlat
+
 end TRIO
