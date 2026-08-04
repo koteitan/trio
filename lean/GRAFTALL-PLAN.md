@@ -25,6 +25,15 @@ A2 で `W u ⊆ 𝒳` を得る。閉包ステップ（要素 Y, データは `A
 | (f) 行2塔・clause-2 由来（死孤児が根に復活）| ⛔ 装置 β |
 | (g) ブロッカー（尾部が S.dropLast に復活, 0.9%）| ⛔ 装置 γ |
 
+## 1.5 Lean 済み部品（Xbar.lean, v0.101.0–v0.102.0）
+
+- `oper_append_inner` / `oper_graft_inner`: 尾部親が引数内 → ミラー
+- `oper_append_pred` / `oper_graft_pred`: 親なし → 剥離（前置素通し）
+- `blocked_parent_lt`: 内部親なし ∧ graft 親あり → 親は文脈部（三分法完成）
+- `oper_graft_blocked`: ブロック済み展開 = `graft (M.take (p+1)) (shiftl0 w' copies)`
+  — **文脈が厳密に短くなる**（γ の降下ステップ）
+- `parent_region_row0_ge` / `srow_graft_last` / `parent_append_right_of` / `nextR_nonzero`
+
 ## 2. probe 済み事実（違反 0 のもの）
 
 - (e)-サイトで `ltail v z (graft S Y) t = graft S↑ (liftset Y (coneV Y v) t)`、
