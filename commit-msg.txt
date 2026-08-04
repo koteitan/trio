@@ -1,9 +1,6 @@
-v0.91.0/Lift1 preserves the row-1 skeleton
+v0.92.0/the tower's periodic mask is the intrinsic cone
 
-- Add cone skeleton: `nextrel0/1_uniq_src`, `le0_of_le0_le0`, `le0_refl/trans`,
-  `le1_trans`, `nextrel1_exists`, `le1_gen`, `le1_of_between`,
-  `le1_cone_up/down`
-- Prove `nextrel1_Lift1`: the guarded row-1 lift preserves the row-1 edge
-  relation, hence `le1_Lift1`, `nextrel0/2_Lift1`, `le0_Lift1`, `nextR_Lift1`,
-  `hasParent_Lift1`, `parent_Lift1`
-- Prove `srow_Lift1` (non-root columns) and `lev_Lift1_of_cone`
+- Add `oper_eq_gexp`: a root-parented expansion is `Gtrans.gexp` at `j0 = 0`
+- Prove `glift_eq_Lift1` from `Gtrans.gexp_guard_transport`: on a root-parented
+  tower the periodic `glift` mask coincides with `le1` of the expanded block,
+  so `glift M L 0 t (M[n]) = Lift1 (M[n]) t`

@@ -2671,6 +2671,65 @@ theorem oper_root_tower {M : TrioSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
   intro k _
   exact gcopy_succ_glift M L d0 d1 k
 
+/-! ### `glift` = `Lift1` on a root-parented tower
+
+`Gtrans.gexp_guard_transport` (probe: 77460 cases) says the `le1` guard at a
+mirror position equals the host guard.  With `j0 = 0` that is exactly the
+statement that the **periodic** mask of `oper_root_tower`'s `glift` coincides
+with the **intrinsic** cone of the expanded block. -/
+
+open Classical in
+theorem oper_eq_gexp {M : TrioSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hpar : parent M (srow M (M.length - 1)) (M.length - 1) = 0) :
+    M⟦n⟧ = gexp M 0 (M.length - 1)
+      (if 0 < srow M (M.length - 1)
+        then entry M 0 (M.length - 1) - entry M 0 0 else 0)
+      (if 1 < srow M (M.length - 1)
+        then entry M 1 (M.length - 1) - entry M 1 0 else 0) n := by
+  rw [oper_gcopies n hL hz hp, hpar]
+  unfold gexp
+  simp only [Nat.sub_zero]
+
+open Classical in
+theorem glift_eq_Lift1 {M : TrioSeq} {n t L d0 d1 : ℕ}
+    (hlen : L + 1 = M.length)
+    (hgexp : M⟦n⟧ = gexp M 0 L d0 d1 n)
+    (hup : ∀ l, 0 < l → l ≤ L → entry M 0 0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 L = entry M 0 0 + d0)
+    (hd1pos : 0 < d1) (hle1lp : le1 M 0 L) :
+    glift M L 0 t (M⟦n⟧) = Lift1 (M⟦n⟧) t := by
+  have hlen' : 0 + L + 1 = M.length := by omega
+  have hLpos : 0 < L := by
+    rcases Nat.eq_zero_or_pos L with rfl | h
+    · omega
+    · exact h
+  have hlenY : (M⟦n⟧).length = n * L := by
+    rw [hgexp, gexp_length hlen']; omega
+  unfold glift Lift1
+  refine List.map_congr_left ?_
+  intro idx hidx
+  have hidxlt : idx < n * L := by
+    have := List.mem_range.1 hidx
+    omega
+  have hk : idx / L < n := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact hidxlt)
+  have hq : idx % L < L := Nat.mod_lt _ hLpos
+  have hdm : idx / L * L + idx % L = idx := by
+    rw [Nat.mul_comm]
+    exact Nat.div_add_mod idx L
+  have hguard := gexp_guard_transport (M := M) (j0 := 0) (Lb := L) (d0 := d0)
+    (d1 := d1) (n := n) (k := idx / L) (q := idx % L) hlen' hk hq
+    (by intro l hl0 hlL; exact hup l hl0 (by omega))
+    hd0pos (by rw [Nat.zero_add]; exact hd0e) hd1pos (by rw [Nat.zero_add]; exact hle1lp)
+  rw [Nat.zero_add, Nat.zero_add, hdm, ← hgexp] at hguard
+  refine Prod.ext (by dsimp only; omega) (Prod.ext ?_ (by dsimp only))
+  dsimp only
+  by_cases hc : le1 M 0 (idx % L)
+  · rw [if_pos hc, if_pos (hguard.mpr hc)]
+  · rw [if_neg hc, if_neg (fun h => hc (hguard.mp h))]
+
 /-! ## 残る核: タワー枝 -/
 
 /-- **The one remaining core.**  When the principal root revives `R`'s trailing
