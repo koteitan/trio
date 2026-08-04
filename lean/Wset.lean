@@ -541,6 +541,251 @@ theorem graft_shiftr01 {W : TrioSeq} (hW : W ≠ []) (z : TrioSeq) (d : ℕ) :
   refine Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega)
     (by dsimp only))
 
+/-! ## 行 1 シフト同変性
+
+`oper` は一様な行 1 シフト `shiftr01 0 d` とも可換だが、最終列のレベルが
+正である（`lev W (W.length - 1) ≠ 0`）ときに限る。行 1 を一様に持ち上げると
+全零列が非全零になって `srow` が `0` から `1` に跳ぶからで、その分岐だけを
+`lev ≠ 0` が凍結する。行 0 は不変、行 2 は不変、行 1 は定数ずれなので
+`nextrel*` の狭義不等式も極小性条項もすべて生き残る。 -/
+
+theorem entry_out_row {L : TrioSeq} {i p : ℕ} (hp : L.length ≤ p) :
+    entry L i p = 0 := by
+  unfold entry
+  rw [getD_out hp]
+  split_ifs <;> rfl
+
+theorem entry0_shiftr1 {d : ℕ} (W : TrioSeq) (p : ℕ) :
+    entry (shiftr01 0 d W) 0 p = entry W 0 p := by
+  show ((shiftr01 0 d W).getD p (0, 0, 0)).1 = ((W.getD p (0, 0, 0)).1 : ℕ)
+  rcases Nat.lt_or_ge p W.length with hp | hp
+  · rw [shiftr01_getD hp]
+    exact Nat.add_zero _
+  · rw [getD_out (by rw [shiftr01_length]; omega), getD_out hp]
+
+theorem entry1_shiftr1 {d : ℕ} {W : TrioSeq} {p : ℕ} (hp : p < W.length) :
+    entry (shiftr01 0 d W) 1 p = entry W 1 p + d := by
+  show ((shiftr01 0 d W).getD p (0, 0, 0)).2.1
+    = ((W.getD p (0, 0, 0)).2.1 : ℕ) + d
+  rw [shiftr01_getD hp]
+
+theorem nextrel0_shiftr1 {d : ℕ} {W : TrioSeq} {a b : ℕ} :
+    nextrel0 (shiftr01 0 d W) a b ↔ nextrel0 W a b := by
+  unfold nextrel0
+  rw [shiftr01_length]
+  simp only [entry0_shiftr1]
+
+theorem rtg0_shiftr1 {d : ℕ} {W : TrioSeq} {a b : ℕ} :
+    Relation.ReflTransGen (nextrel0 (shiftr01 0 d W)) a b
+      ↔ Relation.ReflTransGen (nextrel0 W) a b := by
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel0_shiftr1.1 hyz)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel0_shiftr1.2 hyz)
+
+theorem le0_shiftr1 {d : ℕ} {W : TrioSeq} {a b : ℕ} :
+    le0 (shiftr01 0 d W) a b ↔ le0 W a b := by
+  unfold le0
+  rw [shiftr01_length, rtg0_shiftr1]
+
+theorem nextrel1_shiftr1 {d : ℕ} {W : TrioSeq} {a b : ℕ} :
+    nextrel1 (shiftr01 0 d W) a b ↔ nextrel1 W a b := by
+  unfold nextrel1
+  rw [shiftr01_length]
+  constructor
+  · rintro ⟨ha, hb, hab, hlt, hle, hmin⟩
+    refine ⟨ha, hb, hab, ?_, le0_shiftr1.1 hle, ?_⟩
+    · rw [entry1_shiftr1 ha, entry1_shiftr1 hb] at hlt
+      omega
+    · intro j hj
+      have hjlt : j < W.length := hj.2.1
+      have := hmin j ⟨hj.1, le0_shiftr1.2 hj.2⟩
+      rw [entry1_shiftr1 hb, entry1_shiftr1 hjlt] at this
+      omega
+  · rintro ⟨ha, hb, hab, hlt, hle, hmin⟩
+    refine ⟨ha, hb, hab, ?_, le0_shiftr1.2 hle, ?_⟩
+    · rw [entry1_shiftr1 ha, entry1_shiftr1 hb]
+      omega
+    · intro j hj
+      have hj' := le0_shiftr1.1 hj.2
+      have := hmin j ⟨hj.1, hj'⟩
+      rw [entry1_shiftr1 hb, entry1_shiftr1 hj'.1]
+      omega
+
+theorem le1_shiftr1 {d : ℕ} {W : TrioSeq} {a b : ℕ} :
+    le1 (shiftr01 0 d W) a b ↔ le1 W a b := by
+  unfold le1
+  rw [shiftr01_length]
+  refine and_congr Iff.rfl (and_congr Iff.rfl ?_)
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel1_shiftr1.1 hyz)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y z _ hyz ih => exact ih.tail (nextrel1_shiftr1.2 hyz)
+
+theorem nextrel2_shiftr1 {d : ℕ} {W : TrioSeq} {a b : ℕ} :
+    nextrel2 (shiftr01 0 d W) a b ↔ nextrel2 W a b := by
+  unfold nextrel2
+  rw [shiftr01_length]
+  simp only [entry2_shiftr01, le1_shiftr1]
+
+theorem nextR_shiftr1 {d : ℕ} {W : TrioSeq} {i a b : ℕ} :
+    nextR (shiftr01 0 d W) i a b ↔ nextR W i a b := by
+  unfold nextR
+  split
+  · exact nextrel0_shiftr1
+  · split
+    · exact nextrel1_shiftr1
+    · exact nextrel2_shiftr1
+
+theorem hasParent_shiftr1 {d : ℕ} {W : TrioSeq} {i b : ℕ} :
+    hasParent (shiftr01 0 d W) i b ↔ hasParent W i b := by
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_shiftr1.mp hj0, fun y hy => hu y (nextR_shiftr1.mpr hy)⟩
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, nextR_shiftr1.mpr hj0, fun y hy => hu y (nextR_shiftr1.mp hy)⟩
+
+theorem parent_shiftr1 {d : ℕ} {W : TrioSeq} {i b : ℕ} :
+    parent (shiftr01 0 d W) i b = parent W i b := by
+  unfold parent
+  congr 1
+  funext j0
+  exact propext nextR_shiftr1
+
+theorem lev_shiftr1 {d : ℕ} {W : TrioSeq} {j : ℕ} (hj : j < W.length) :
+    lev (shiftr01 0 d W) j = lev W j + 2 * d := by
+  unfold lev
+  rw [entry1_shiftr1 hj, entry2_shiftr01]
+  omega
+
+/-- The nonzero-level columns are exactly where `srow` survives a row-1 lift. -/
+theorem srow_shiftr1 {d : ℕ} {W : TrioSeq} {j : ℕ} (hj : lev W j ≠ 0) :
+    srow (shiftr01 0 d W) j = srow W j := by
+  have hjlt : j < W.length := by
+    by_contra hc
+    exact hj (by unfold lev; rw [entry_out_row (by omega), entry_out_row (by omega)])
+  unfold srow
+  rw [entry2_shiftr01]
+  by_cases h2 : 0 < entry W 2 j
+  · rw [if_pos h2, if_pos h2]
+  · have h1 : 0 < entry W 1 j := by
+      unfold lev at hj
+      omega
+    rw [if_neg h2, if_neg h2, if_pos h1,
+      if_pos (by rw [entry1_shiftr1 hjlt]; omega)]
+
+theorem gcopy_shiftr1 {d : ℕ} {W : TrioSeq} {r L : ℕ} (hb : r + L ≤ W.length)
+    (d0 d1 k : ℕ) :
+    gcopy (shiftr01 0 d W) r L d0 d1 k = shiftr01 0 d (gcopy W r L d0 d1 k) := by
+  show _ = List.map (fun p : ℕ × ℕ × ℕ => ((p.1 + 0, p.2.1 + d, p.2.2) : ℕ × ℕ × ℕ)) _
+  unfold gcopy
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro j hj
+  have hjlt : j < W.length := by
+    have := List.mem_range'_1.1 hj
+    omega
+  rw [entry0_shiftr1, entry1_shiftr1 hjlt, entry2_shiftr01]
+  simp only [Function.comp_apply]
+  refine Prod.ext (by dsimp only; omega) (Prod.ext ?_ (by dsimp only))
+  dsimp only
+  by_cases hg : le1 W r j
+  · rw [if_pos hg, if_pos (le1_shiftr1.mpr hg)]
+    omega
+  · rw [if_neg hg, if_neg (fun hc => hg (le1_shiftr1.mp hc))]
+    omega
+
+theorem gcopies_shiftr1 {d : ℕ} {W : TrioSeq} {r L : ℕ} (hb : r + L ≤ W.length)
+    (d0 d1 n : ℕ) :
+    gcopies (shiftr01 0 d W) r L d0 d1 n
+      = shiftr01 0 d (gcopies W r L d0 d1 n) := by
+  show _ = List.map (fun p : ℕ × ℕ × ℕ => ((p.1 + 0, p.2.1 + d, p.2.2) : ℕ × ℕ × ℕ)) _
+  unfold gcopies
+  rw [List.map_flatMap]
+  refine List.flatMap_congr ?_
+  intro k _
+  exact gcopy_shiftr1 hb d0 d1 k
+
+theorem Pred_shiftr1 {d : ℕ} (W : TrioSeq) :
+    Pred (shiftr01 0 d W) = shiftr01 0 d (Pred W) := by
+  unfold Pred
+  rw [shiftr01_length]
+  split_ifs with h
+  · rfl
+  · exact shiftr01_dropLast 0 d W
+
+set_option maxHeartbeats 1000000 in
+/-- **`oper` is row-1-shift equivariant on nonzero-level tails.** -/
+theorem oper_shiftr1 {W : TrioSeq} (hlev : lev W (W.length - 1) ≠ 0) (d n : ℕ) :
+    (shiftr01 0 d W)⟦n⟧ = shiftr01 0 d (W⟦n⟧) := by
+  by_cases hL : W.length - 1 = 0
+  · rw [oper_eq_self_of_short n (by rw [shiftr01_length]; exact hL),
+      oper_eq_self_of_short n hL]
+  · have hlt : W.length - 1 < W.length := by omega
+    have hlenmap : (shiftr01 0 d W).length - 1 = W.length - 1 := by
+      rw [shiftr01_length]
+    have hLm : (shiftr01 0 d W).length - 1 ≠ 0 := by rw [shiftr01_length]; exact hL
+    have hsr : srow (shiftr01 0 d W) (W.length - 1) = srow W (W.length - 1) :=
+      srow_shiftr1 hlev
+    have hz : ¬ (entry W 0 (W.length - 1) = 0 ∧ entry W 1 (W.length - 1) = 0 ∧
+        entry W 2 (W.length - 1) = 0) := by
+      rintro ⟨-, h1, h2⟩
+      exact hlev (by unfold lev; omega)
+    have hzM : ¬ (entry (shiftr01 0 d W) 0 ((shiftr01 0 d W).length - 1) = 0 ∧
+        entry (shiftr01 0 d W) 1 ((shiftr01 0 d W).length - 1) = 0 ∧
+        entry (shiftr01 0 d W) 2 ((shiftr01 0 d W).length - 1) = 0) := by
+      rw [hlenmap]
+      rintro ⟨-, h1, h2⟩
+      rw [entry1_shiftr1 hlt] at h1
+      rw [entry2_shiftr01] at h2
+      exact hlev (by unfold lev; omega)
+    by_cases hp : hasParent W (srow W (W.length - 1)) (W.length - 1)
+    · have hpM : hasParent (shiftr01 0 d W)
+          (srow (shiftr01 0 d W) ((shiftr01 0 d W).length - 1))
+          ((shiftr01 0 d W).length - 1) := by
+        rw [hlenmap, hsr]
+        exact hasParent_shiftr1.mpr hp
+      rw [oper_gcopies n hLm hzM hpM, oper_gcopies n hL hz hp, hlenmap, hsr,
+        parent_shiftr1, shiftr01_take]
+      have hj0lt : parent W (srow W (W.length - 1)) (W.length - 1) < W.length - 1 :=
+        nextR_index_lt (parent_nextR hp)
+      have hd0 : entry (shiftr01 0 d W) 0 (W.length - 1)
+          - entry (shiftr01 0 d W) 0
+              (parent W (srow W (W.length - 1)) (W.length - 1))
+          = entry W 0 (W.length - 1)
+            - entry W 0 (parent W (srow W (W.length - 1)) (W.length - 1)) := by
+        rw [entry0_shiftr1, entry0_shiftr1]
+      have he1 := entry1_shiftr1 (d := d) (W := W) hlt
+      have he1' := entry1_shiftr1 (d := d) (W := W)
+        (p := parent W (srow W (W.length - 1)) (W.length - 1)) (by omega)
+      have hd1 : entry (shiftr01 0 d W) 1 (W.length - 1)
+          - entry (shiftr01 0 d W) 1
+              (parent W (srow W (W.length - 1)) (W.length - 1))
+          = entry W 1 (W.length - 1)
+            - entry W 1 (parent W (srow W (W.length - 1)) (W.length - 1)) := by
+        rw [he1, he1']
+        omega
+      rw [hd0, hd1, gcopies_shiftr1 (by omega), shiftr01_append]
+    · have hpM : ¬ hasParent (shiftr01 0 d W)
+          (srow (shiftr01 0 d W) ((shiftr01 0 d W).length - 1))
+          ((shiftr01 0 d W).length - 1) := by
+        rw [hlenmap, hsr]
+        intro hh
+        exact hp (hasParent_shiftr1.mp hh)
+      rw [oper_eq_pred_of_noParent n hL hz hp,
+        oper_eq_pred_of_noParent n hLm hzM hpM, Pred_shiftr1]
+
 /-! ## 引数ブロックと最上位分解 -/
 
 /-- `R` is an *argument block*: every column sits strictly below depth `0`. -/

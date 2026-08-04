@@ -1,12 +1,8 @@
-v0.88.0/prove the guarded tower identity
+v0.89.0/row-1 shift equivariance of oper
 
-- Add `entry_append_left`
-- Add `glift`: the guarded lift one tower copy performs (row 0 by `d0`
-  everywhere, row 1 by `d1` exactly on the positions `le1`-below the root,
-  read modulo the copy length), with `glift_length`, `glift_getD` and
-  `glift_append` (distributes over a concatenation of whole copies)
-- Add `gcopy_getD`, `gcopies_length`, `glift_gcopies`
-- Prove `gcopy_succ_glift`: each guarded copy is the lift of the previous one
-- Prove `oper_root_tower`: when the bad root is column 0,
-  `M[n+1] = M.dropLast ++ glift M (|M|-1) d0 d1 (M[n])`, covering both the
-  row-1 (d1 = 0) and the row-2 collapse
+- Add the `shiftr01 0 d` twins of the row-0 shift package
+  (entry0/1, nextrel0/1/2, le0/le1, nextR, hasParent, parent, lev,
+  srow under `lev != 0`, gcopy/gcopies, Pred)
+- Prove `oper_shiftr1`: `oper` commutes with a uniform row-1 shift
+  exactly when the last column has positive level
+- Add `entry_out_row`: entries past the end are zero
