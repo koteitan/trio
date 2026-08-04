@@ -412,6 +412,66 @@ theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
 theorem coreT2E_of_step (hs : CoreT2EStep) : CoreT2E :=
   coreT2E_of_fam (coreT2EFam_of_step hs)
 
+theorem nil_mem_GX : ([] : TrioSeq) ∈ GX := by
+  intro _ M _ hM2 hctx i _ v z a t hz1 hva
+  rw [List.take_nil, graft_nil, List.dropLast_eq_take]
+  exact hctx (M.length - 1) (by omega) v z a t hz1 hva
+
+/-- **The shape-complete reduction of β**: the single-step core follows
+outright from the machine's own inclusion `W ⊆ GX` — the composite's full and
+prefix obligations all route through the equipped composite context
+(`ctxOK_graft` + `take_graft_low/high` + `graft_assoc`).  The sole remaining
+content of β is well-founding this self-reference. -/
+theorem coreT2EStep_of_le (h : ∀ σ : ℕ, W σ ⊆ GX) : CoreT2EStep := by
+  classical
+  intro u Y M hop hbased hy hMarg hM2 hctx hs2 hdG v z hz1 hpN e he hbe
+  obtain ⟨m, hdm⟩ := hdG
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
+  have hpY : ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) :=
+    fun hp => hdm.2 (hasParent_graft_inner hMne hy hp)
+  have heGX : e ∈ GX := h _ he
+  have hYd : Y.dropLast ∈ GX := by
+    by_cases hY2 : 2 ≤ Y.length
+    · have hYL : Y.length - 1 ≠ 0 := by omega
+      have hpred : Y⟦1⟧ = Y.dropLast := by
+        have hee : Y⟦1⟧ = Pred Y := by
+          by_cases hz0 : entry Y 0 (Y.length - 1) = 0 ∧
+              entry Y 1 (Y.length - 1) = 0 ∧ entry Y 2 (Y.length - 1) = 0
+          · exact oper_eq_pred_of_zero 1 hYL hz0
+          · exact oper_eq_pred_of_noParent 1 hYL hz0 hpY
+        rw [hee]
+        unfold Pred
+        rw [if_neg (by omega)]
+      have hh := hop 1 le_rfl
+      rwa [hpred] at hh
+    · have hYd0 : Y.dropLast = [] := by
+        rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
+        rfl
+      rw [hYd0]
+      exact nil_mem_GX
+  intro hbge M' hM'arg hM'2 hctx' i hi v' z' a' t' hz' ha'
+  have hM'ne : M' ≠ [] := List.length_pos_iff.mp (by omega)
+  rw [graft_length] at hi
+  rcases Nat.lt_or_ge i Y.length with hiY | hiY
+  · -- a prefix of the context part: the peel's own prefix obligation
+    rw [take_graft_low (by omega)]
+    have hres := hYd (based_dropLast hbased) M' hM'arg hM'2 hctx' i
+      (by rw [List.length_dropLast]; omega) v' z' a' t' hz' ha'
+    rwa [dropLast_take (by omega)] at hres
+  · -- at or above the graft point: the element's prefix obligation over the
+    -- equipped composite context
+    have hSarg : argOK (graft M' Y) := argOK_graft hM'ne hM'arg Y
+    have hS2 : 2 ≤ (graft M' Y).length := by rw [graft_length]; omega
+    have hSctx : CtxOK (graft M' Y) :=
+      ctxOK_graft hM'arg hM'2 hctx' hYd hbased
+    have hres := heGX hbe (graft M' Y) hSarg hS2 hSctx (i - (Y.length - 1))
+      (by omega) v' z' a' t' hz' ha'
+    rw [graft_assoc hy] at hres
+    rw [show i = Y.length - 1 + (i - (Y.length - 1)) from by omega,
+      take_graft_high]
+    exact hres
+
 open Classical in
 /-- **The GX machine closes** modulo the three cores. -/
 theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :

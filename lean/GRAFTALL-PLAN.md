@@ -102,12 +102,54 @@ A2 で `W u ⊆ 𝒳` を得る。閉包ステップ（要素 Y, データは `A
   key の帰納も消える — 所属構築は界面の供給側の仕事に移動）。
 - `CoreT2EFam`（Gamma）+ `coreT2E_of_fam`: GX_closed の残核は
   **CoreBlocked + CoreT1L + CoreT2EFam** に更新。
-- CoreT2EFam の攻め方（次セッションの開始点）: j-帰納。
-  j=0: family-elt = [] → graft (graft M Y) [] = graft M Y.dropLast の
-  パッケージ = clause-2 データ一段 ✓。
-  j+1: family-elt = Lift1 ((0,v,z)::graft (graft M Y) (elt_j)) d1 —
-  Buchholz 2.5 case 4 の n-重反復形。ステップで必要になる X̄-補題
-  （wrap が義務を保つ形）を特定するのが最初の仕事。
+
+## 1.9.6 ✅ β の単一ステップ核への還元（v0.106.0）+ 装備合成（v0.107.0）
+
+- **`CoreT2EStep`** := β-サイトで `∀ e ∈ W (2*w1+z), based e → graft Y e ∈ GX`
+  （w1 = 孤児の行1値; z < w2 なのでこの段は孤児レベル 2w1+w2 より真に下）。
+- **`coreT2EFam_of_step`**: j-帰納は機械的 —
+  j=0 は datum の peel（`Y.dropLast ∈ GX`）or 単集合なら CtxOK;
+  j+1 は IH のパッケージを (v,z,a:=2(v+d1)+z,t:=d1) に適用して
+  E_{j+1} ∈ W (2w1+z) を作り hs を適用、graft_assoc で M-graft へ。
+  GX_closed の残核 = **CoreBlocked + CoreT1L + CoreT2EStep**。
+- **GX'（v0.107.0）**: CtxOK を strict 化（k < |M|）し、GX に
+  **要素接頭辞義務**（graft M (y.take i), i ≤ |y|）を内在化。
+  閉包の接頭辞放電は全 datum-節で一段
+  （clause-2: `oper_take_prefix`（コピー0非シフト）; clause-3:
+  `dropLast_take`; 短要素: 文脈パッケージ）。
+- **`ctxOK_graft`**: CtxOK M + `Y.dropLast ∈ GX` → CtxOK (graft M Y)。
+  §1.9 の CtxOK-合成問題は**解決**。
+
+## 1.9.7 ★ CoreT2EStep の完全形状還元（次の Lean 目標）+ 最終残核
+
+**形状としては CoreT2EStep ⟸ `e ∈ GX` まで潰せる**（未 Lean 化、設計済み）:
+`graft Y e ∈ GX` の義務は ∀M'（装備済み）: graft M' ((graft Y e).take i):
+- i ≤ |Y|-1: = graft M' (Y.take i) — hYd（datum peel）の接頭辞義務 ✓
+- i = |Y|-1+i': `take_graft_high` で = graft M' (graft Y (e.take i'))
+  = (assoc) graft (graft M' Y) (e.take i') — **e ∈ GX の接頭辞義務を
+  装備済み複合文脈 graft M' Y（`ctxOK_graft`）で呼ぶだけ** ✓
+つまり **CoreT2EStep ⟸ W (2w1+z) ⊆ GX（= 機械自身の A2）**。
+残るのは唯一、この自己参照の整礎化 = **層化測度**。
+naive なレベル帰納の穴: A2 は W-導出木の全ノードを触り、Aset clause-3 の
+∀z ∈ W m 量化が任意の W-要素（孤児レベル非有界、"W 0 に lev 201" 病理）を
+持ち込む。→ 測度は W-クラス経由ではなく provenance 構造（§1.12）に載せる。
+
+## 1.12 ★★ provenance probe（probe_strat.py, 2026-08-05）— β の測度の実体
+
+タグ付き walk（初期列に位置タグ、タワー生成列に fresh タグ; expand は
+S[:r] + 窓コピー×n で位置的に伝播）:
+- **t2-サイトの孤児は 5235/5235 全て初期文脈列（のコピー）** —
+  タワー生成列（族要素・塔本体・E-リフト）が β-孤児になることは**皆無**。
+- **孤児の初期位置は t2-鎖に沿って非増加**（up 0 / eq 736 / dn 1499）。
+- **m-eq 対は 414/414 同一初期列**（別列同レベル 0）— eq = 同じ列の
+  コピーの再遭遇（∀M-内在化で吸収する型）。
+- **t1-サイトの孤児は 3415/3415 全てタワー生成列**（文脈列 0）—
+  α の孤児は常に機械が植えた根 (0,v°,z°)、レベル 2v°+z° は生成サイトの
+  段で有界 → α 測度（v-ヘッドルーム）と直結。
+- 帰結: β は「トップブロックの列材だけを上から順に消費する」大域構造
+  （heartwood 型）。fresh 素材に降りないので、測度は文脈列の
+  (位置, コピー多重度) 側に住む。同位置再燃（eq）の Lean 側吸収は
+  ∀M-内在化（同一 A2 の別文脈インスタンス）が既に用意されている。
 
 ## 1.10 塔鎖の遷移行列（probe_walk8, 2514 鎖 / 5650 対）— β の測度データ
 
@@ -219,15 +261,18 @@ S.dropLast の接尾辞 ++ shift Y にまたがるコピー。処理候補: 文�
 自身の Aop データ/Wstar2-導出を持たせ（CTX を「装備付き文脈」にする）、
 ブロック済み展開を S-側データと Y-側データの合成として導出する。
 
-## 4. 実行順序（推奨・2026-08-05 改訂）
+## 4. 実行順序（推奨・2026-08-05 深夜3 改訂）
 
-1. γ/β 共通の X̄-連接装置の paper-sketch:
-   ブロック済み展開の分解補題（oper = take p ++ copies(suffix ++ shift y)）
-   と文脈長降下の帰納の骨格。srow≤1（d1'=0, shiftr01 資産）から。
-2. γ の Lean 化（文脈長降下; srow≤1 → srow=2 の順）
-3. β（clause-2 復活塔; X̄ + ∀s-key）
-4. α の測度の paper-sketch → キャップ付き GA の文 → Lean
-5. `mem_of_Aclosed_aux` の Wstar2 への再配線 + Final.lean 差し替え
+1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
+2. **CoreT2EStep ⟸ e ∈ GX の形状還元を Lean 化**（§1.9.7 の
+   plumbing: take_graft_high + graft_assoc + ctxOK_graft。
+   `coreT2EStep_of_WleGX : (W (…) ⊆ GX) → CoreT2EStep` の形で
+   sorry なしに書ける — 自己参照はまだ解かない）
+3. γ' (CoreBlocked): 降下後 Y'-義務のデータ変換（文脈長降下は確保済み）
+4. α (CoreT1L): E-測度（v-ヘッドルーム; §1.12 で孤児 = 植えた根と確定）
+5. **層化測度の設計**（§1.12 の provenance 構造を Lean の測度に翻訳 —
+   相互参照 {cores ↔ W_le_GX} の joint wf）
+6. `mem_of_Aclosed_aux` の Wstar2 への再配線 + Final.lean 差し替え
 
 （δ = レベルキャップ簿記は γ の「空性→処理」転換により不要見込み。）
 

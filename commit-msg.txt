@@ -1,13 +1,13 @@
-v0.107.0/GX prefix internalization + composite-context equipment
+v0.108.0/beta shape-complete: CoreT2EStep follows from W <= GX
 
-- Strictify CtxOK to k < M.length (no consumer used the full-block package)
-- Internalize element-prefix obligations into GX (packages of
-  graft M (y.take i) for i <= |y|); add GX_full for the full-element form
-- Discharge the new prefix obligations uniformly in GX_closed: one step
-  from the datum in all three clauses (clause 2 via the new
-  oper_take_prefix - copy 0 is unshifted; clause 3 via dropLast_take;
-  short elements via the context package)
-- Add ctxOK_graft: the composite context graft M Y is equipped from
-  CtxOK M + Y.dropLast in GX - the CtxOK-composition half of beta
-- Add oper_take_prefix, dropLast_take (Column); shiftr01_take,
-  take_graft_low, take_graft_high (Xbar)
+- Add nil_mem_GX (the empty element's obligations are context packages)
+- Add coreT2EStep_of_le: given the machine's own inclusion W subset GX,
+  the single-step core follows outright - context-part prefixes route
+  through the peel's prefix obligations (take_graft_low + dropLast_take),
+  element-part prefixes through the equipped composite context
+  (ctxOK_graft + take_graft_high + graft_assoc)
+- beta's sole remaining content = well-founding the self-reference
+  {cores <-> W_le_GX}; measure design recorded in GRAFTALL-PLAN
+  1.9.7/1.12 (provenance probe: t2-orphans are 100% initial-context
+  columns, position non-increasing; t1-orphans are 100% planted roots)
+- Update GRAFTALL-PLAN.md (1.9.6/1.9.7/1.12, execution order)
