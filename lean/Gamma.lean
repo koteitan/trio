@@ -285,6 +285,81 @@ theorem ctxOK_graft {M Y : TrioSeq} (hMarg : argOK M)
       (by rw [List.length_dropLast]; omega) v z a t hz1 hva
     rwa [dropLast_take (by omega)] at hres
 
+/-- **The γ'-residue, element form**: the descended copies block is in the
+machine's set (independent of the ambient root `(v, z, t)`). -/
+def CoreBlockedElt : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
+    Aop W u GX Y → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length → CtxOK M →
+    ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
+    hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) →
+    parent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) = p →
+    p < M.length - 1 →
+    ∀ n : ℕ, 1 ≤ n →
+      shiftl0 (entry M 0 p)
+        (gcopies (graft M Y) p ((graft M Y).length - 1 - p)
+          (if 0 < srow (graft M Y) ((graft M Y).length - 1)
+            then entry (graft M Y) 0 ((graft M Y).length - 1)
+              - entry (graft M Y) 0 p else 0)
+          (if 1 < srow (graft M Y) ((graft M Y).length - 1)
+            then entry (graft M Y) 1 ((graft M Y).length - 1)
+              - entry (graft M Y) 1 p else 0) n) ∈ GX
+
+/-- **The γ'-residue, root slice**: a blocker at the context root descends to a
+single-column context — the shift case, outside `GX`'s reach. -/
+def CoreBlocked0 : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq),
+    Aop W u GX Y → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length → CtxOK M →
+    ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
+    hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) →
+    parent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) = 0 →
+    ∀ v z a t n : ℕ, z ≤ 1 → 2 * (v + t) + z ≤ a → 1 ≤ n →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ)
+        :: graft (M.take 1)
+          (shiftl0 (entry M 0 0)
+            (gcopies (graft M Y) 0 ((graft M Y).length - 1)
+              (if 0 < srow (graft M Y) ((graft M Y).length - 1)
+                then entry (graft M Y) 0 ((graft M Y).length - 1)
+                  - entry (graft M Y) 0 0 else 0)
+              (if 1 < srow (graft M Y) ((graft M Y).length - 1)
+                then entry (graft M Y) 1 ((graft M Y).length - 1)
+                  - entry (graft M Y) 1 0 else 0) n))) t ∈ W a
+
+/-- **γ' reduces to (element membership + the root slice)**: away from the
+root, the descended context `M.take (p+1)` is equipped by restriction, so the
+package is a `GX` application of the copies element. -/
+theorem coreBlocked_of_elt (he : CoreBlockedElt) (h0 : CoreBlocked0) :
+    CoreBlocked := by
+  intro u Y M p AY hbased hy hMarg hM2 hctx hpY hpG hpar hplt
+    v z a t n hz1 hva hn
+  rcases Nat.eq_zero_or_pos p with rfl | hp1
+  · exact h0 u Y M AY hbased hy hMarg hM2 hctx hpY hpG hpar
+      v z a t n hz1 hva hn
+  · have helt := he u Y M p AY hbased hy hMarg hM2 hctx hpY hpG hpar hplt n hn
+    have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+    have hyl : 0 < Y.length := List.length_pos_iff.mpr hy
+    have hplt' : p < (graft M Y).length - 1 := by rw [graft_length]; omega
+    have hlow : entry (graft M Y) 0 p = entry M 0 p := by
+      rw [← entry_take (t := p + 1) (N := graft M Y) (by omega),
+        take_graft_low (by omega), entry_take (by omega)]
+    have hbe := based_blocked_element (M := M) (y := Y)
+      (d0 := if 0 < srow (graft M Y) ((graft M Y).length - 1)
+        then entry (graft M Y) 0 ((graft M Y).length - 1)
+          - entry (graft M Y) 0 p else 0)
+      (d1 := if 1 < srow (graft M Y) ((graft M Y).length - 1)
+        then entry (graft M Y) 1 ((graft M Y).length - 1)
+          - entry (graft M Y) 1 p else 0)
+      n hn hplt' hlow
+    have htk2 : 2 ≤ (M.take (p + 1)).length := by
+      rw [List.length_take]; omega
+    exact GX_full helt hbe (argOK_take hMarg (p + 1)) htk2
+      (ctxOK_take hctx (p + 1)) hz1 hva
+
 /-- **Core β, single-step form**: at a β-site (the argument's dead trailing
 orphan `(w0, w1, w2)` revived by the root via row 2), grafting any `W`-element
 at the sub-orphan stage `2*w1 + z` onto the argument lands in `GX`.  Since
@@ -734,9 +809,10 @@ equipment, the machine's closure consumes only its own inclusion `W ⊆ GX`
 self-reference — with the provenance descent measured in `probe_strat`
 (β-orphans = context material, position non-increasing; α-orphans = planted
 roots, stage-bounded) — is the single remaining task of the campaign. -/
-theorem GX_loop (hb : CoreBlocked) (hcl : CtxLiftT1)
+theorem GX_loop (he : CoreBlockedElt) (h0 : CoreBlocked0) (hcl : CtxLiftT1)
     (h : ∀ σ : ℕ, W σ ⊆ GX) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
-  GX_closed hb (coreT1L_of_le h hcl) (coreT2E_of_step (coreT2EStep_of_le h))
+  GX_closed (coreBlocked_of_elt he h0) (coreT1L_of_le h hcl)
+    (coreT2E_of_step (coreT2EStep_of_le h))
 
 end TRIO

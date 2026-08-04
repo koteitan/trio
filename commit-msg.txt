@@ -1,10 +1,11 @@
-v0.110.0/lift composition + ltail prefix locality (alpha equipment assets)
+v0.111.0/gamma reduces to element membership + root slice
 
-- Add Lift1_Lift1 (Wset): iterated root-cone lifts add - the cone is
-  lift-invariant (via le1_Lift1)
-- Add ltail_take (Wset): take commutes with the lifted tail - the root
-  cone is prefix-local (via Lift1_take + lift_cons + injection)
-- Probe-verified first (probe: 0/18021 and 0/4000 violations); with
-  these, the ALIGNED instances of CtxLiftT1 reduce to CtxOK M + the
-  peel's prefix packages at lift t + t'; the residue is the unaligned
-  roots over lifted bodies (recorded in GRAFTALL-PLAN)
+- Add CoreBlockedElt: the descended copies block is in GX (independent
+  of the ambient root; the context-length descent lives here)
+- Add CoreBlocked0: the p = 0 slice (single-column descended context =
+  the shift case, outside GX's two-column interface)
+- Add coreBlocked_of_elt: away from the root the descended context
+  M.take (p+1) is equipped by restriction (ctxOK_take), so the package
+  is one GX_full application of the copies element
+- GX_loop now rests on CoreBlockedElt + CoreBlocked0 + CtxLiftT1 + the
+  machine's own inclusion W subset GX

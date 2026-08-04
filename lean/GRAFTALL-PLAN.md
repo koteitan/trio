@@ -134,6 +134,29 @@ naive なレベル帰納の穴: A2 は W-導出木の全ノードを触り、Ase
 ∀z ∈ W m 量化が任意の W-要素（孤児レベル非有界、"W 0 に lev 201" 病理）を
 持ち込む。→ 測度は W-クラス経由ではなく provenance 構造（§1.12）に載せる。
 
+## 1.9.8 ★ α の残差解析（v0.109-110）— 整列供給 ✓ / 非整列 = (e)-壁の最終形
+
+- `coreT1L_of_le`（v0.109）: **CoreT1L ⟸ (∀σ W σ ⊆ GX) + CtxLiftT1**
+  （リフト済み複合文脈 Rt = ltail v z (graft M Y) t の装備だけが残る）。
+  `GX_loop`: 機械の閉包全体が CoreBlocked + CtxLiftT1 + 自身の包含のみを
+  消費する形で一本化。
+- 資産（v0.110, probe 0 違反→Lean 化）: `Lift1_Lift1`（リフト合成、錐は
+  リフト不変）、`ltail_take`（錐は接頭辞局所的）。
+- **整列インスタンス**（v' = v+t, z' = z）の CtxOK Rt は完全供給できる:
+  Rt.take k = ltail v z (R.take k) t（ltail_take）→ lift_cons⁻¹ +
+  Lift1_Lift1 で Lift1 ((0,v,z)::R.take k) (t+t') に潰れ、
+  k < |M| は CtxOK M、k ≥ |M| は datum の接頭辞義務（v0.107）で供給 ✓。
+  制約 2(v+(t+t'))+z ≤ a' は要求とちょうど一致。
+- **残差 = 非整列ルート (v',z') ≠ (v+t,z) × リフト済み本体**のパッケージ。
+  ⚠ 却下済み 6 変種（§5, 値ベース/マスク言語）に隣接 — 再挑戦は形を変えて。
+- **リード（第7の設計・未検証）: 義務量化子のスライス化**。実消費は常に
+  「その機械インスタンスの ambient (v,z)」スライス + ∀(a,t) のみ:
+  towerGraft2_lift_fam は hgrF を同一 (v,z) でしか呼ばない、hctx も
+  ambient のみ、(v,z) の流れは α-サイトの v → v+t（単調増加）だけ。
+  GX/Wstar2/CtxOK の ∀v'z' を「初期 (v0,z0) から到達可能なスライス」に
+  狭めれば非整列要求は消える可能性。probe 済みの消費規律
+  （t は常に d1-値、族は (v,z)-スライスのみ）が根拠。次の設計検討課題。
+
 ## 1.12 ★★ provenance probe（probe_strat.py, 2026-08-05）— β の測度の実体
 
 タグ付き walk（初期列に位置タグ、タワー生成列に fresh タグ; expand は
