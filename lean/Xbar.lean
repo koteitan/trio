@@ -271,4 +271,115 @@ theorem blocked_parent_lt {M y : TrioSeq} (hM : M ≠ []) (hy : y ≠ [])
   rw [hp'] at huniq
   omega
 
+
+/-! ## γ: ブロック済み展開の文脈降下提示
+
+親 `p` が文脈部にあるとき、展開は `graft (M.take (p+1)) (再基底化コピー)` —
+文脈が厳密に短くなる。 -/
+
+/-- Along the parent's row-0 window every region column is at least as deep as
+the parent. -/
+theorem parent_region_row0_ge {M : TrioSeq} {i p x : ℕ}
+    (hnr : nextR M i p x) :
+    ∀ j, p ≤ j → j ≤ x → entry M 0 p ≤ entry M 0 j := by
+  intro j hj0 hj1
+  rcases Nat.eq_or_lt_of_le hj0 with rfl | hlt
+  · exact le_rfl
+  · unfold nextR at hnr
+    by_cases hi : i = 0
+    · rw [if_pos hi] at hnr
+      rcases Nat.eq_or_lt_of_le hj1 with rfl | hup
+      · exact le_of_lt hnr.2.2.2.1
+      · have := hnr.2.2.2.2 j ⟨hlt, hup⟩
+        have := hnr.2.2.2.1
+        omega
+    · rw [if_neg hi] at hnr
+      by_cases hi1 : i = 1
+      · rw [if_pos hi1] at hnr
+        have hch := hnr.2.2.2.2.1.2.2
+        exact le_of_lt (le0_interval_gt hch j ⟨hlt, hj1⟩)
+      · rw [if_neg hi1] at hnr
+        have hch := rtg1_rtg0 hnr.2.2.2.2.1.2.2
+        exact le_of_lt (le0_interval_gt hch j ⟨hlt, hj1⟩)
+
+open Classical in
+/-- **The context-descent presentation** of a blocked expansion: with the bad
+root `p` in the context part, the expansion is a graft onto the strictly
+shorter context `M.take (p + 1)`. -/
+theorem oper_graft_blocked {M y : TrioSeq} {p : ℕ} (n : ℕ) (hM : M ≠ [])
+    (hy : y ≠ [])
+    (hL : (graft M y).length - 1 ≠ 0)
+    (hpG : hasParent (graft M y)
+      (srow (graft M y) ((graft M y).length - 1)) ((graft M y).length - 1))
+    (hpar : parent (graft M y) (srow (graft M y) ((graft M y).length - 1))
+      ((graft M y).length - 1) = p)
+    (hplt : p < M.length - 1) :
+    (graft M y)⟦n⟧
+      = graft (M.take (p + 1))
+        (shiftl0 (entry M 0 p)
+          (gcopies (graft M y) p ((graft M y).length - 1 - p)
+            (if 0 < srow (graft M y) ((graft M y).length - 1)
+              then entry (graft M y) 0 ((graft M y).length - 1)
+                - entry (graft M y) 0 p else 0)
+            (if 1 < srow (graft M y) ((graft M y).length - 1)
+              then entry (graft M y) 1 ((graft M y).length - 1)
+                - entry (graft M y) 1 p else 0) n)) := by
+  classical
+  have hMlen : 0 < M.length := List.length_pos_iff.mpr hM
+  have hylen : 0 < y.length := List.length_pos_iff.mpr hy
+  have hnr : nextR (graft M y) (srow (graft M y) ((graft M y).length - 1)) p
+      ((graft M y).length - 1) := by
+    rw [← hpar]
+    exact parent_nextR hpG
+  have hplt' : p < (graft M y).length - 1 := nextR_index_lt hnr
+  have hzn : ¬ (entry (graft M y) 0 ((graft M y).length - 1) = 0 ∧
+      entry (graft M y) 1 ((graft M y).length - 1) = 0 ∧
+      entry (graft M y) 2 ((graft M y).length - 1) = 0) :=
+    nextR_nonzero hnr rfl
+  -- low entries read `M`
+  have hentry_low : entry (graft M y) 0 p = entry M 0 p := by
+    rw [graft_eq_shift]
+    have h1 : entry (M.dropLast ++ shiftr01 (entry M 0 (M.length - 1)) 0 y) 0 p
+        = entry M.dropLast 0 p :=
+      entry_append_left _ _ (by rw [List.length_dropLast]; omega)
+    rw [h1, List.dropLast_eq_take]
+    exact entry_take (by omega)
+  -- rebasing bound
+  have hbound : ∀ q ∈ gcopies (graft M y) p ((graft M y).length - 1 - p)
+      (if 0 < srow (graft M y) ((graft M y).length - 1)
+        then entry (graft M y) 0 ((graft M y).length - 1)
+          - entry (graft M y) 0 p else 0)
+      (if 1 < srow (graft M y) ((graft M y).length - 1)
+        then entry (graft M y) 1 ((graft M y).length - 1)
+          - entry (graft M y) 1 p else 0) n,
+      entry M 0 p ≤ q.1 := by
+    intro q hq
+    unfold gcopies at hq
+    rw [List.mem_flatMap] at hq
+    obtain ⟨k, -, hq⟩ := hq
+    unfold gcopy at hq
+    rw [List.mem_map] at hq
+    obtain ⟨j, hj, rfl⟩ := hq
+    have hjr := List.mem_range'_1.1 hj
+    have hge := parent_region_row0_ge hnr j (by omega) (by omega)
+    dsimp only
+    rw [← hentry_low]
+    omega
+  -- take of the graft block
+  have htake1 : (graft M y).take p = M.take p := by
+    rw [graft_eq_shift,
+      List.take_append_of_le_length (by rw [List.length_dropLast]; omega),
+      List.dropLast_eq_take, List.take_take, min_eq_left (by omega)]
+  have hlen1 : (M.take (p + 1)).length = p + 1 := by
+    rw [List.length_take]; omega
+  have hdl : (M.take (p + 1)).dropLast = M.take p := by
+    rw [List.dropLast_eq_take, hlen1, List.take_take, min_eq_left (by omega),
+      Nat.add_sub_cancel]
+  have hE : entry (M.take (p + 1)) 0 ((M.take (p + 1)).length - 1)
+      = entry M 0 p := by
+    rw [hlen1, Nat.add_sub_cancel]
+    exact entry_take (by omega)
+  rw [oper_gcopies n hL hzn hpG, hpar, htake1,
+    graft_eq_shift (M := M.take (p + 1)), hdl, hE, shiftr01_shiftl0 hbound]
+
 end TRIO
