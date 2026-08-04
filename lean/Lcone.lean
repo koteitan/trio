@@ -680,4 +680,11 @@ theorem liftInner_holds : Wset.LiftInner := by
       if_congr (htrans k q hk hq) rfl rfl]
     omega
 
+
+/-- **Everything now rests on `GraftAll` alone.** -/
+theorem Wstar2_closed_of_graftAll (hga : Wset.GraftAll) :
+    ∀ (u0 : ℕ) (R : TrioSeq), Wset.Aop Wset.W u0 Wset.Wstar2 R → R ∈ Wset.Wstar2 :=
+  Wset.Wstar2_closed liftInner_holds (Wset.liftTower1_of_graftAll hga)
+    (Wset.liftTowerExp2_of_graftAll hga)
+
 end TRIO

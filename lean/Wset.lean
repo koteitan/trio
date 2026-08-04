@@ -3347,6 +3347,128 @@ def LiftTowerExp2 : Prop :=
     hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a
 
+/-- In a row-1 tower the root level is below the collapse level. -/
+theorem tower1_le {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hz1 : z ≤ 1)
+    (hd : domT R m) (hi1 : srow R (R.length - 1) = 1)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    2 * v + z ≤ m := by
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  have hpar := parent_cons_eq_zero hRne hd hpM
+  have hnr := parent_nextR hpM
+  rw [hpar, hi1] at hnr
+  have h1 : nextrel1 (p0 :: R) 0 R.length := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact hnr
+  have hlt : entry (p0 :: R) 1 0 < entry (p0 :: R) 1 R.length := h1.2.2.2.1
+  have h0 : entry (p0 :: R) 1 0 = v := by simp [entry, hp0]
+  have hE1 : entry (p0 :: R) 1 R.length = entry R 1 (R.length - 1) :=
+    entry_cons_last hRne 1
+  have hz2 : entry R 2 (R.length - 1) = 0 := by
+    by_contra h
+    unfold srow at hi1
+    rw [if_pos (by omega)] at hi1
+    omega
+  have hlev := hd.1
+  unfold lev at hlev
+  omega
+
+/-- **The single Buchholz-(1) core**: the graft closure of every block at every
+stage.  In Buchholz 1987 this is manufactured, not assumed: `W_u ⊆ X^(a)` by
+(A2), because `X^(a)` is `A`-closed by the one-step mirror 2.4(a).  The trio
+mirror has UBI reattachment blockers, so the closure is named here. -/
+def GraftAll : Prop :=
+  ∀ (S : TrioSeq), argOK S → S ≠ [] →
+    ∀ (u : ℕ) (y : TrioSeq), y ∈ W u → based y → graft S y ∈ Wstar2
+
+/-- `Wstar2` version of `tower1_mem`: the row-1 graft tower stays in `W`. -/
+theorem tower1_mem2 {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a) (hd : domT R m)
+    (hi1 : srow R (R.length - 1) = 1)
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ k, tow v z R k ∈ W a := by
+  have hvm : 2 * v + z ≤ m := tower1_le hRne hz1 hd hi1 hpM
+  have key : ∀ k, ∀ a', 2 * v + z ≤ a' → tow v z R k ∈ W a' := by
+    intro k
+    induction k with
+    | zero => intro a' _; simpa [tow] using W_nil a'
+    | succ k ih =>
+        intro a' ha'
+        have hk : tow v z R k ∈ W m := ih m hvm
+        have hgk := hgr (tow v z R k) hk (based_tow v z R k)
+        have h := hgk (argOK_graft hRne hR _) v z a' 0 hz1 (by omega)
+        rw [Lift1_zero] at h
+        exact h
+  exact fun k => key k a hva
+
+/-- The lifted argument's trailing column is a cone member, so its level rises
+by `2t`. -/
+theorem entry1_ltail_of_cone {v z t : ℕ} {R : TrioSeq} {j : ℕ}
+    (hc : le1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 (j + 1)) :
+    entry (ltail v z R t) 1 j = entry R 1 j + t := by
+  classical
+  have hj : j + 1 < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := hc.2.1
+  rw [entry_ltail, entry1_Lift1 hj, if_pos hc, entry_cons]
+
+/-- **`LiftTower1` from the graft closure.**  The lifted block is again a
+root-parented row-1 tower, over the lifted argument at stage `m + 2t`. -/
+theorem liftTower1_of_graftAll (hga : GraftAll) : LiftTower1 := by
+  classical
+  rintro v z u0 a t R hR hRne hz1 hva - ⟨m, hd⟩ hi1 hpM
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  set Rt : TrioSeq := ltail v z R t with hRtdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hRtlen : Rt.length = R.length := ltail_length
+  have hRtne : Rt ≠ [] := ltail_ne hRne
+  have hRtOK : argOK Rt := argOK_ltail hR
+  -- the trailing orphan is a cone member
+  have hpar0 := parent_cons_eq_zero hRne hd hpM
+  have hnr := parent_nextR hpM
+  rw [hpar0, hi1] at hnr
+  have hn1 : nextrel1 M 0 R.length := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact hnr
+  have hcone : le1 M 0 R.length := ⟨hn1.1, hn1.2.1, Relation.ReflTransGen.single hn1⟩
+  have hconej : le1 M 0 ((R.length - 1) + 1) := by
+    rw [← len_succ hRne]
+    exact hcone
+  -- the lifted data
+  have hsrRt : srow Rt (Rt.length - 1) = 1 := by
+    rw [hRtlen, hRtdef, srow_ltail]; exact hi1
+  have hlevRt : lev Rt (Rt.length - 1) = (m + 2 * t) + 1 := by
+    unfold lev
+    rw [hRtlen, hRtdef, entry2_ltail, entry1_ltail_of_cone hconej]
+    have hm := hd.1
+    unfold lev at hm
+    omega
+  have hdRt : domT Rt (m + 2 * t) := by
+    refine ⟨hlevRt, ?_⟩
+    rw [hRtlen, hRtdef, srow_ltail, hasParent_ltail]
+    exact hd.2
+  have hpMt : hasParent (((0, v + t, z) : ℕ × ℕ × ℕ) :: Rt)
+      (srow Rt (Rt.length - 1)) Rt.length := by
+    rw [← lift_cons, hsrRt, hRtlen, ← hi1]
+    exact hasParent_Lift1.mpr hpM
+  -- the tower closes at stage m + 2t supplied by the graft closure
+  have hgr : ∀ y ∈ W (m + 2 * t), based y → graft Rt y ∈ Wstar2 :=
+    fun y hy hb => hga Rt hRtOK hRtne (m + 2 * t) y hy hb
+  refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+  rw [hMdef, lift_cons, ← hRtdef,
+    oper_cons_tower1 hRtOK hRtne hdRt hsrRt hpMt]
+  exact tower1_mem2 hRtOK hRtne hz1 hva hdRt hsrRt hgr hpMt n
+
+/-- **`LiftTowerExp2` from the graft closure**: the clause-2 datum is not even
+needed once the closure is free. -/
+theorem liftTowerExp2_of_graftAll (hga : GraftAll) : LiftTowerExp2 := by
+  rintro v z a t R hR hRne hz1 hva - ⟨m, hd⟩ hi1 hpM
+  exact towerGraft2_lift_mem hR hRne hz1 hva hd hi1
+    (fun y hy hb => hga R hR hRne m y hy hb) hpM
+
 /-- **`A_u(W*₂) ⊆ W*₂`** modulo the three cores. -/
 theorem Wstar2_closed (hin : LiftInner) (ht1 : LiftTower1)
     (he2 : LiftTowerExp2) :
@@ -3585,33 +3707,6 @@ theorem Wstar_closed (htow : TowerOK) :
             dropLast_cons hRnil]
           exact hdlmem hdlW
 
-
-/-- In a row-1 tower the root level is below the collapse level. -/
-theorem tower1_le {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hz1 : z ≤ 1)
-    (hd : domT R m) (hi1 : srow R (R.length - 1) = 1)
-    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
-      R.length) :
-    2 * v + z ≤ m := by
-  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
-  have hpar := parent_cons_eq_zero hRne hd hpM
-  have hnr := parent_nextR hpM
-  rw [hpar, hi1] at hnr
-  have h1 : nextrel1 (p0 :: R) 0 R.length := by
-    unfold nextR at hnr
-    rw [if_neg (by omega), if_pos rfl] at hnr
-    exact hnr
-  have hlt : entry (p0 :: R) 1 0 < entry (p0 :: R) 1 R.length := h1.2.2.2.1
-  have h0 : entry (p0 :: R) 1 0 = v := by simp [entry, hp0]
-  have hE1 : entry (p0 :: R) 1 R.length = entry R 1 (R.length - 1) :=
-    entry_cons_last hRne 1
-  have hz2 : entry R 2 (R.length - 1) = 0 := by
-    by_contra h
-    unfold srow at hi1
-    rw [if_pos (by omega)] at hi1
-    omega
-  have hlev := hd.1
-  unfold lev at hlev
-  omega
 
 /-- **Row-1 tower membership.** -/
 theorem tower1_mem {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])

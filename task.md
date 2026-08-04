@@ -29,6 +29,6 @@
 - [x] **towerGraft2_holds**（旧 TowerGraft2）✅ リフト閉 Wstar2 に対して
 - [x] **Wstar2_closed**（三核を法として）✅ 行2接ぎ木塔は towerGraft2_lift_mem で消化
 - [x] **LiftInner**（B2a のリフト同変性）✅ Lcone.lean 錐輸送（強錐・平坦の両方）
-- [ ] LiftTower1（行1タワーのリフト — 強錐だと段が m+2t に登る）
-- [ ] LiftTowerExp2（展開節由来の行2タワー）
-- [ ] TowerExp（旧トラック; 後続節で来た引数ブロック上のタワー）
+- [x] LiftTower1 / LiftTowerExp2 → **GraftAll に還元** ✅（Buchholz-(1) 型の段自由閉包）
+- [ ] **GraftAll**（∀S ∀u の graft 閉包 = 唯一の残核; G_S 閉包のミラー + ブロッカー + 塔）
+- [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）
