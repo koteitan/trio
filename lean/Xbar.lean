@@ -121,6 +121,29 @@ theorem oper_append_inner (n : ℕ) (hT : T ≠ [])
     · rw [if_pos ((le1_append_right A T q j).2 hg1), if_pos hg1]
     · rw [if_neg (fun hc => hg1 ((le1_append_right A T q j).1 hc)), if_neg hg1]
 
+/-- **The append `Pred`-mirror**: a trailing column with no parent in the
+whole block peels off, leaving the prefix untouched. -/
+theorem oper_append_pred (n : ℕ) (hT : T ≠ [])
+    (hL : (A ++ T).length - 1 ≠ 0)
+    (hnp : ¬ hasParent (A ++ T) (srow (A ++ T) ((A ++ T).length - 1))
+      ((A ++ T).length - 1)) :
+    (A ++ T)⟦n⟧ = A ++ T.dropLast := by
+  classical
+  have hdl : (A ++ T).dropLast = A ++ T.dropLast :=
+    List.dropLast_append_of_ne_nil hT
+  have hlen2 : 1 < (A ++ T).length := by
+    have := List.length_append (as := A) (bs := T)
+    omega
+  by_cases hz : entry (A ++ T) 0 ((A ++ T).length - 1) = 0 ∧
+      entry (A ++ T) 1 ((A ++ T).length - 1) = 0 ∧
+      entry (A ++ T) 2 ((A ++ T).length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz]
+    unfold Pred
+    rw [if_neg (by omega), hdl]
+  · rw [oper_eq_pred_of_noParent n hL hz hnp]
+    unfold Pred
+    rw [if_neg (by omega), hdl]
+
 end AppendMirror
 
 /-- **The graft mirror**: when the argument's trailing column keeps its parent
@@ -149,5 +172,44 @@ theorem oper_graft_inner {M y : TrioSeq} (n : ℕ) (hM : M ≠ []) (hy : y ≠ [
     rw [shiftr01_length, srow_shiftr01]
     exact hasParent_shiftr01.mpr hp
   rw [hg y, hg (y⟦n⟧), oper_append_inner n hsne hsL hsp, oper_shiftr01]
+
+
+/-- srow of the graft block's trailing column is the argument's. -/
+theorem srow_graft_last {M y : TrioSeq} (hM : M ≠ []) (hy : y ≠ []) :
+    srow (graft M y) ((graft M y).length - 1) = srow y (y.length - 1) := by
+  classical
+  set c := entry M 0 (M.length - 1) with hc
+  have hg : graft M y = M.dropLast ++ shiftr01 c 0 y := by
+    unfold graft shiftr01
+    refine congrArg _ (List.map_congr_left ?_)
+    intro p _
+    exact Prod.ext rfl (Prod.ext (by dsimp only; omega) rfl)
+  have hylen : 0 < y.length := List.length_pos_iff.mpr hy
+  have hlen : (M.dropLast ++ shiftr01 c 0 y).length - 1
+      = M.dropLast.length + (y.length - 1) := by
+    rw [List.length_append, shiftr01_length]
+    omega
+  rw [hg, hlen, srow_append_right, srow_shiftr01]
+
+/-- **The graft `Pred`-mirror**. -/
+theorem oper_graft_pred {M y : TrioSeq} (n : ℕ) (hM : M ≠ []) (hy : y ≠ [])
+    (hL : (graft M y).length - 1 ≠ 0)
+    (hnp : ¬ hasParent (graft M y)
+      (srow (graft M y) ((graft M y).length - 1)) ((graft M y).length - 1)) :
+    (graft M y)⟦n⟧ = graft M y.dropLast := by
+  classical
+  set c := entry M 0 (M.length - 1) with hc
+  have hg : ∀ w : TrioSeq, graft M w = M.dropLast ++ shiftr01 c 0 w := by
+    intro w
+    unfold graft shiftr01
+    refine congrArg _ (List.map_congr_left ?_)
+    intro p _
+    exact Prod.ext rfl (Prod.ext (by dsimp only; omega) rfl)
+  have hsne : shiftr01 c 0 y ≠ [] := by
+    cases y with
+    | nil => exact absurd rfl hy
+    | cons a l => simp [shiftr01]
+  rw [hg y] at hL hnp ⊢
+  rw [oper_append_pred n hsne hL hnp, shiftr01_dropLast, ← hg]
 
 end TRIO
