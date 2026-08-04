@@ -208,4 +208,177 @@ def CoreT2E : Prop :=
         (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length →
       Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y) t ∈ W a
 
+
+theorem based_graft_arg {Y w : TrioSeq} (hy : Y ≠ []) (hbY : based Y)
+    (hbw : based w) : based (graft Y w) := by
+  classical
+  rcases Y with _ | ⟨c, Y'⟩
+  · exact absurd rfl hy
+  · rcases Y' with _ | ⟨c1, Y''⟩
+    · have hc : c = ((0, c.2.1, c.2.2) : ℕ × ℕ × ℕ) := by
+        unfold based entry at hbY
+        simp at hbY
+        exact Prod.ext hbY rfl
+      rw [hc, graft_Om]
+      exact hbw
+    · unfold based
+      rw [graft_head_eq (by simp) hbw
+        (graft_ne_nil (by simp))]
+      exact hbY
+
+open Classical in
+/-- **The GX machine closes** modulo the three cores. -/
+theorem GX_closed (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX := by
+  intro u Y AY
+  intro hbased M hMarg hM2 hctx v z a t hz1 hva
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  by_cases hy : Y = []
+  · subst hy
+    rw [graft_nil, List.dropLast_eq_take]
+    exact hctx (M.length - 1) (by omega) v z a t hz1 hva
+  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
+  have hG : argOK (graft M Y) := argOK_graft hMne hMarg Y
+  have hGne : graft M Y ≠ [] :=
+    List.length_pos_iff.mp (by rw [graft_length]; omega)
+  have hGlen : 2 ≤ (graft M Y).length := by rw [graft_length]; omega
+  have hGL : (graft M Y).length - 1 ≠ 0 := by omega
+  by_cases hpY : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1)
+  · -- (a) inner
+    have hyL : Y.length - 1 ≠ 0 := by
+      have := nextR_index_lt (parent_nextR hpY)
+      omega
+    refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
+    rw [lift_graft_inner_step v z t n hMne hy hyL hG hpY]
+    rcases AY with ⟨hl, -⟩ | hop | ⟨m, -, hd, -⟩
+    · omega
+    · exact hop n hn (based_oper hn hbased) M hMarg hM2 hctx v z a t hz1 hva
+    · exact absurd hpY hd.2
+  by_cases hpG : hasParent (graft M Y)
+      (srow (graft M Y) ((graft M Y).length - 1)) ((graft M Y).length - 1)
+  · -- (γ) blocked
+    have hplt := blocked_parent_lt hMne hy hpY hpG
+    refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
+    rw [lift_graft_blocked_step v z t n hMne hy hG hGL hpG rfl hplt]
+    exact hb u Y M _ AY hbased hy hMarg hM2 hctx hpY hpG rfl hplt
+      v z a t n hz1 hva hn
+  -- trailing dead within the graft block
+  have hdrop : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y.dropLast) t ∈ W a := by
+    by_cases hY2 : 2 ≤ Y.length
+    · have hYd : Y.dropLast ∈ GX := by
+        rcases AY with ⟨hl, -⟩ | hop | ⟨m, -, -, hgr⟩
+        · omega
+        · have hYL : Y.length - 1 ≠ 0 := by omega
+          have hpred : Y⟦1⟧ = Y.dropLast := by
+            have he : Y⟦1⟧ = Pred Y := by
+              by_cases hz0 : entry Y 0 (Y.length - 1) = 0 ∧
+                  entry Y 1 (Y.length - 1) = 0 ∧ entry Y 2 (Y.length - 1) = 0
+              · exact oper_eq_pred_of_zero 1 hYL hz0
+              · exact oper_eq_pred_of_noParent 1 hYL hz0 hpY
+            rw [he]
+            unfold Pred
+            rw [if_neg (by omega)]
+          have h := hop 1 le_rfl
+          rwa [hpred] at h
+        · have h := hgr [] (W_nil m) based_nil
+          rwa [graft_nil] at h
+      exact hYd (based_dropLast hbased) M hMarg hM2 hctx v z a t hz1 hva
+    · have hYd : Y.dropLast = [] := by
+        rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
+        rfl
+      rw [hYd, graft_nil, List.dropLast_eq_take]
+      exact hctx (M.length - 1) (by omega) v z a t hz1 hva
+  by_cases hw0 : lev (graft M Y) ((graft M Y).length - 1) = 0
+  · -- (b) succ: the lifted block sheds unshifted copies
+    have hsr0 : srow (graft M Y) ((graft M Y).length - 1) = 0 := by
+      unfold srow
+      unfold lev at hw0
+      rw [if_neg (by omega), if_neg (by omega)]
+    set N : TrioSeq := ((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y with hN
+    set Rt : TrioSeq := Wset.ltail v z (graft M Y) t with hRt
+    have hRtlen : Rt.length = (graft M Y).length := Wset.ltail_length
+    have hRtne : Rt ≠ [] := Wset.ltail_ne hGne
+    have hRtOK : argOK Rt := Wset.argOK_ltail hG
+    have hwt : lev Rt (Rt.length - 1) = 0 := by
+      rw [hRtlen, hRt]
+      exact Wset.lev_ltail_of_zero hw0
+    have hnpt : ¬ hasParent Rt 0 (Rt.length - 1) := by
+      rw [hRtlen, hRt, Wset.hasParent_ltail]
+      rw [← hsr0]
+      exact hpG
+    refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
+    rw [Wset.lift_cons, ← hRt, oper_cons_succ hRtOK hRtne hwt hnpt]
+    refine W_flatMap_copies ?_ (rsum_self_cons (v + t) z _) n
+    have hkey : ((0, v + t, z) : ℕ × ℕ × ℕ) :: Rt.dropLast
+        = Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y.dropLast) t := by
+      rw [hRt, Wset.ltail_dropLast, graft_dropLast hy]
+    rw [hkey]
+    exact hdrop
+  · -- towers or dead
+    by_cases hpN : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
+        (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length
+    · -- revived by the root
+      have hdG : domT (graft M Y) (lev (graft M Y) ((graft M Y).length - 1) - 1) :=
+        ⟨by omega, hpG⟩
+      have hsplit : srow (graft M Y) ((graft M Y).length - 1) = 1 ∨
+          srow (graft M Y) ((graft M Y).length - 1) = 2 := by
+        unfold srow
+        unfold lev at hw0
+        by_cases h2' : 0 < entry (graft M Y) 2 ((graft M Y).length - 1)
+        · rw [if_pos h2']; exact Or.inr rfl
+        · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+      rcases hsplit with hs1 | hs2
+      · exact h1 u Y M AY hbased hy hMarg hM2 hctx hs1 ⟨_, hdG⟩
+          v z a t hz1 hva (by rw [hs1] at hpN ⊢; exact hpN)
+      · rcases AY with ⟨hl, hw⟩ | hop | ⟨m, -, hd, hgr⟩
+        · exfalso
+          have hY1 : Y.length = 1 := by omega
+          have := lev_graft_last (M := M) hy
+          rw [hY1] at this
+          simp at this
+          rw [this, hw] at hw0
+          exact hw0 rfl
+        · exact h2 u Y M hop hbased hy hMarg hM2 hctx hs2 ⟨_, hdG⟩
+            v z a t hz1 hva (by rw [hs2] at hpN ⊢; exact hpN)
+        · -- (d) the proven row-2 graft tower
+          have hlev : lev (graft M Y) ((graft M Y).length - 1) = m + 1 := by
+            rw [lev_graft_last hy]
+            exact hd.1
+          have hdGm : domT (graft M Y) m := ⟨hlev, hpG⟩
+          refine towerGraft2_lift_mem hG hGne hz1 hva hdGm hs2 ?_
+            (by rw [hs2] at hpN ⊢; exact hpN)
+          intro w hw hbw
+          rw [graft_assoc hy]
+          have hYw : graft Y w ∈ GX := hgr w hw hbw
+          exact fun hargOK v' z' a' t' hz' ha' =>
+            hYw (based_graft_arg hy hbased hbw) M hMarg hM2 hctx v' z' a' t' hz' ha'
+    · -- (c) still dead: peel
+      refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
+      have hnp' : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
+          (srow (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
+            ((((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y).length - 1))
+          ((((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y).length - 1) := by
+        rw [cons_length, srow_cons_last hGne]
+        exact hpN
+      rw [lift_graft_dead_step v z t n hMne hy
+        (by simp only [List.length_cons]; omega) hnp']
+      exact hdrop
+
+
+/-- **A2 corollary**: every `W`-element is in the machine's set. -/
+theorem W_le_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) (u : ℕ) :
+    W u ⊆ GX :=
+  A2' (fun Y hY => GX_closed hb h1 h2 u Y hY)
+
+/-- **GraftAll for equipped contexts**, modulo the three cores: the missing
+graft closure at every stage, for every context whose prefix packages are
+supplied (by the master length induction). -/
+theorem graftAll_of_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
+    ∀ S : TrioSeq, argOK S → 2 ≤ S.length → CtxOK S →
+      ∀ (u : ℕ) (y : TrioSeq), y ∈ W u → based y → graft S y ∈ Wstar2 := by
+  intro S hS hS2 hctx u y hy hby
+  have hyGX : y ∈ GX := W_le_GX hb h1 h2 u hy
+  exact fun hargOK v z a t hz1 hva =>
+    hyGX hby S hS hS2 hctx v z a t hz1 hva
+
 end TRIO
