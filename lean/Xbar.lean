@@ -382,4 +382,53 @@ theorem oper_graft_blocked {M y : TrioSeq} {p : ℕ} (n : ℕ) (hM : M ≠ [])
   rw [oper_gcopies n hL hzn hpG, hpar, htake1,
     graft_eq_shift (M := M.take (p + 1)), hdl, hE, shiftr01_shiftl0 hbound]
 
+
+/-! ### 降下ステップの整合部品 -/
+
+theorem argOK_take {M : TrioSeq} (hM : argOK M) (k : ℕ) : argOK (M.take k) :=
+  fun p hp => hM p (List.take_subset _ _ hp)
+
+theorem take_ne_nil {M : TrioSeq} (hM : M ≠ []) {k : ℕ} (hk : 0 < k) :
+    M.take k ≠ [] := by
+  intro h
+  have h1 := congrArg List.length h
+  rw [List.length_take] at h1
+  have h2 : 0 < M.length := List.length_pos_iff.mpr hM
+  simp only [List.length_nil] at h1
+  omega
+
+/-- The rebased copies block is based (its first column is the bad root). -/
+theorem based_blocked_element {M y : TrioSeq} {p : ℕ} {d0 d1 : ℕ} (n : ℕ)
+    (hn : 1 ≤ n) (hplt : p < (graft M y).length - 1)
+    (hlow : entry (graft M y) 0 p = entry M 0 p) :
+    based (shiftl0 (entry M 0 p)
+      (gcopies (graft M y) p ((graft M y).length - 1 - p) d0 d1 n)) := by
+  classical
+  unfold based
+  have hL : 0 < (graft M y).length - 1 - p := by omega
+  have hC := gcopies_getD (M := graft M y) (r := p)
+    (L := (graft M y).length - 1 - p) (d0 := d0) (d1 := d1)
+    (k := 0) (q := 0) (n := n) (by omega) hL
+  simp only [Nat.mul_zero, Nat.zero_mul, Nat.add_zero, Nat.zero_add,
+    ite_self] at hC
+  have hlen : 0 < (gcopies (graft M y) p ((graft M y).length - 1 - p)
+      d0 d1 n).length := by
+    rw [gcopies_length]
+    have : 1 * ((graft M y).length - 1 - p) ≤ n * ((graft M y).length - 1 - p) :=
+      Nat.mul_le_mul_right _ hn
+    omega
+  show ((shiftl0 (entry M 0 p) _).getD 0 (0, 0, 0)).1 = 0
+  unfold shiftl0
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem
+    (by rw [List.length_map]; exact hlen)]
+  simp only [List.getElem_map, Option.getD_some]
+  have hg : (gcopies (graft M y) p ((graft M y).length - 1 - p) d0 d1 n)[0]
+      = (gcopies (graft M y) p ((graft M y).length - 1 - p) d0 d1 n).getD 0
+        (0, 0, 0) := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlen]
+    rfl
+  rw [hg, hC]
+  dsimp only
+  omega
+
 end TRIO
