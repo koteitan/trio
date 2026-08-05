@@ -1,15 +1,12 @@
-v0.118.4/the staircase lift closes the obligation language (probes)
+v0.118.5/the staircase lift in Lean (amin, Stair, slift)
 
-- Identify the mask family's parameter: `mu A j` = the minimum row 1 along j's
-  row-0 ancestor chain, so `coneV A v = {j | mu j > v}` and mask lifts compose
-  into staircases `phi(m) = m + sum s_i [m > v_i]`
-- Add tools/probe_glift.py and tools/probe_glift2.py: over 100000 samples the
-  staircase lift `glift A phi` satisfies, with no violations, (G6) mu maps by
-  phi, (G5) glift composes, (G2) glift commutes with the expansion
-  unconditionally, (G3) glift distributes over grafts with the context cap,
-  which is again a staircase
-- Record in GRAFTALL-PLAN 1.9.19 the consequence: parameterising the machine's
-  obligations by a staircase makes lift closure definitional, so CoreLift,
-  CoreMaskLift and CoreLiftPlant should all disappear, leaving the context
-  pieces and the row-2 blocker
-- Update task.md with the v0.119 target
+- Define `amin A j` (the row-1 minimum along j's row-0 ancestor chain) and
+  prove `coneV_iff_amin`: the ambient mask is exactly `amin > v`
+- Define the staircase class `Stair` (phi m - m nondecreasing, phi m >= m) with
+  `stair_step` (one step = a mask lift), `stair_comp` (closed under
+  composition) and `Stair.mono`
+- Define `slift A phi` (lift column j by `phi (amin A j) - amin A j`) with its
+  entry lemmas and `nextrel0_slift` / `rtg0_slift`
+- Prove the two structural laws: `amin_slift` (the parameter transforms by phi)
+  and `slift_slift` (staircase lifts compose), plus `mlift_eq_slift`
+- Import Mathlib.Data.Nat.Lattice for sInf on naturals

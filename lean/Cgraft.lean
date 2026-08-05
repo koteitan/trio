@@ -25,6 +25,7 @@ Cgraft.lean: 接ぎ木ブロックにおける「根の行 1 錐」の輸送と�
 -/
 import Lcone
 import Xbar
+import Mathlib.Data.Nat.Lattice
 
 namespace TRIO
 
@@ -831,5 +832,214 @@ theorem lift_plant_graft {M y : TrioSeq} {v z t : ℕ} (hM : argOK M) (hMne : M 
         :: graft (mlift M v t) (if SiteV M v then mlift y v t else y) := by
   rw [lift_cons_eq_mlift (argOK_graft hMne hM y),
     mlift_graft hby (List.length_pos_iff.mpr hyne) hM2]
+
+
+/-! ## 階段リフト `slift` — マスクリフトの合成閉包
+
+`coneV A v` は「行 0 祖先鎖の行 1 最小値 `amin` が `v` を超える列」であり
+（`coneV_iff_amin`）、マスクリフトの合成は **階段関数**
+`φ m = m + Σ s_i · [v_i < m]` になる。この階段クラスは合成で閉じ、
+`slift A φ`（列 `j` を `φ (amin A j) - amin A j` だけ上げる）は
+`mlift` をすべて含む最小の言語（tools/probe_glift.py: 展開との可換性・合成・
+接ぎ木分配がいずれも 0/100000）。 -/
+
+open Classical in
+/-- 行 0 祖先鎖（自身を含む）の行 1 値の最小値。 -/
+noncomputable def amin (A : TrioSeq) (j : ℕ) : ℕ :=
+  sInf {m | ∃ y, Relation.ReflTransGen (nextrel0 A) y j ∧ entry A 1 y = m}
+
+theorem amin_le {A : TrioSeq} {j y : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 A) y j) : amin A j ≤ entry A 1 y :=
+  Nat.sInf_le ⟨y, h, rfl⟩
+
+theorem amin_mem (A : TrioSeq) (j : ℕ) :
+    ∃ y, Relation.ReflTransGen (nextrel0 A) y j ∧ entry A 1 y = amin A j := by
+  have hne : {m | ∃ y, Relation.ReflTransGen (nextrel0 A) y j
+      ∧ entry A 1 y = m}.Nonempty :=
+    ⟨entry A 1 j, j, Relation.ReflTransGen.refl, rfl⟩
+  exact Nat.sInf_mem hne
+
+/-- 環境マスクは `amin` の閾値条件にほかならない。 -/
+theorem coneV_iff_amin {A : TrioSeq} {v j : ℕ} : coneV A v j ↔ v < amin A j := by
+  constructor
+  · intro h
+    obtain ⟨y, hy, hey⟩ := amin_mem A j
+    rw [← hey]
+    exact h y hy
+  · intro h y hy
+    exact lt_of_lt_of_le h (amin_le hy)
+
+/-- 祖先の `amin` は大きい（祖先鎖が短くなるので最小値は上がる）。 -/
+theorem amin_mono {A : TrioSeq} {j y : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 A) y j) : amin A j ≤ amin A y := by
+  obtain ⟨w, hw, hew⟩ := amin_mem A y
+  rw [← hew]
+  exact amin_le (hw.trans h)
+
+theorem amin_self_le (A : TrioSeq) (j : ℕ) : amin A j ≤ entry A 1 j :=
+  amin_le Relation.ReflTransGen.refl
+
+/-- **階段関数**: `φ m - m` が単調非減少で `m ≤ φ m`。マスクリフトの合成閉包。 -/
+structure Stair (φ : ℕ → ℕ) : Prop where
+  ge : ∀ m, m ≤ φ m
+  step : ∀ m n, m ≤ n → φ m - m ≤ φ n - n
+
+theorem Stair.mono {φ : ℕ → ℕ} (h : Stair φ) {m n : ℕ} (hmn : m ≤ n) :
+    φ m ≤ φ n := by
+  have h1 := h.step m n hmn
+  have h2 := h.ge m
+  have h3 := h.ge n
+  omega
+
+/-- 一段の階段はマスクリフトの階段。 -/
+theorem stair_step (v s : ℕ) : Stair (fun m => m + (if v < m then s else 0)) := by
+  refine ⟨fun m => by split <;> omega, fun m n hmn => ?_⟩
+  by_cases h1 : v < m
+  · rw [if_pos h1, if_pos (by omega)]; omega
+  · rw [if_neg h1]
+    split <;> omega
+
+theorem stair_comp {φ ψ : ℕ → ℕ} (hφ : Stair φ) (hψ : Stair ψ) :
+    Stair (fun m => ψ (φ m)) := by
+  refine ⟨fun m => le_trans (hφ.ge m) (hψ.ge (φ m)), fun m n hmn => ?_⟩
+  have h1 := hφ.step m n hmn
+  have h2 := hψ.step (φ m) (φ n) (hφ.mono hmn)
+  have h3 := hφ.ge m
+  have h4 := hφ.ge n
+  have h5 := hψ.ge (φ m)
+  have h6 := hψ.ge (φ n)
+  omega
+
+open Classical in
+/-- **階段リフト**: 列 `j` を `φ (amin A j) - amin A j` だけ行 1 で持ち上げる。 -/
+noncomputable def slift (A : TrioSeq) (φ : ℕ → ℕ) : TrioSeq :=
+  (List.range A.length).map fun j =>
+    ((entry A 0 j, entry A 1 j + (φ (amin A j) - amin A j),
+      entry A 2 j) : ℕ × ℕ × ℕ)
+
+@[simp] theorem slift_length (A : TrioSeq) (φ : ℕ → ℕ) :
+    (slift A φ).length = A.length := by simp [slift]
+
+theorem slift_getD {A : TrioSeq} {φ : ℕ → ℕ} {i : ℕ} (hi : i < A.length) :
+    (slift A φ).getD i (0, 0, 0)
+      = ((entry A 0 i, entry A 1 i + (φ (amin A i) - amin A i),
+          entry A 2 i) : ℕ × ℕ × ℕ) := by
+  rw [List.getD_eq_getElem?_getD,
+    List.getElem?_eq_getElem (by rw [slift_length]; exact hi)]
+  unfold slift
+  simp only [List.getElem_map, List.getElem_range]
+  rfl
+
+theorem entry0_slift (A : TrioSeq) (φ : ℕ → ℕ) (i : ℕ) :
+    entry (slift A φ) 0 i = entry A 0 i := by
+  show ((slift A φ).getD i (0, 0, 0)).1 = ((A.getD i (0, 0, 0)).1 : ℕ)
+  rcases Nat.lt_or_ge i A.length with hi | hi
+  · rw [slift_getD hi]; rfl
+  · rw [getD_out (by rw [slift_length]; omega), getD_out hi]
+
+theorem entry2_slift (A : TrioSeq) (φ : ℕ → ℕ) (i : ℕ) :
+    entry (slift A φ) 2 i = entry A 2 i := by
+  show ((slift A φ).getD i (0, 0, 0)).2.2 = ((A.getD i (0, 0, 0)).2.2 : ℕ)
+  rcases Nat.lt_or_ge i A.length with hi | hi
+  · rw [slift_getD hi]; rfl
+  · rw [getD_out (by rw [slift_length]; omega), getD_out hi]
+
+theorem entry1_slift {A : TrioSeq} {φ : ℕ → ℕ} {i : ℕ} (hi : i < A.length) :
+    entry (slift A φ) 1 i = entry A 1 i + (φ (amin A i) - amin A i) := by
+  show ((slift A φ).getD i (0, 0, 0)).2.1 = _
+  rw [slift_getD hi]
+
+/-- 行 0 は動かないので行 0 の鎖はそのまま。 -/
+theorem nextrel0_slift {A : TrioSeq} {φ : ℕ → ℕ} {a b : ℕ} :
+    nextrel0 (slift A φ) a b ↔ nextrel0 A a b := by
+  unfold nextrel0
+  rw [slift_length]
+  simp only [entry0_slift]
+
+theorem rtg0_slift {A : TrioSeq} {φ : ℕ → ℕ} {a b : ℕ} :
+    Relation.ReflTransGen (nextrel0 (slift A φ)) a b
+      ↔ Relation.ReflTransGen (nextrel0 A) a b := by
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y w _ hyw ih => exact ih.tail (nextrel0_slift.1 hyw)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y w _ hyw ih => exact ih.tail (nextrel0_slift.2 hyw)
+
+/-- **(G6) パラメータの変換則**: `amin` はちょうど `φ` で写る。 -/
+theorem amin_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {j : ℕ}
+    (hj : j < A.length) : amin (slift A φ) j = φ (amin A j) := by
+  have hall : ∀ y, Relation.ReflTransGen (nextrel0 A) y j →
+      φ (amin A j) ≤ entry (slift A φ) 1 y := by
+    intro y hy
+    have hylen : y < A.length := by have := rtg0_le hy; omega
+    rw [entry1_slift hylen]
+    have h1 : amin A j ≤ amin A y := amin_mono hy
+    have h2 : amin A y ≤ entry A 1 y := amin_self_le A y
+    have h3 := hφ.step (amin A j) (amin A y) h1
+    have h4 := hφ.ge (amin A j)
+    have h5 := hφ.ge (amin A y)
+    omega
+  refine le_antisymm ?_ ?_
+  · obtain ⟨y, hy, hey⟩ := amin_mem A j
+    have hylen : y < A.length := by have := rtg0_le hy; omega
+    have hay : amin A y = amin A j := by
+      have h1 : amin A j ≤ amin A y := amin_mono hy
+      have h2 : amin A y ≤ entry A 1 y := amin_self_le A y
+      omega
+    have := amin_le (A := slift A φ) (j := j) (y := y) (rtg0_slift.2 hy)
+    rw [entry1_slift hylen, hay, hey] at this
+    have h4 := hφ.ge (amin A j)
+    omega
+  · obtain ⟨y, hy, hey⟩ := amin_mem (slift A φ) j
+    rw [← hey]
+    exact hall y (rtg0_slift.1 hy)
+
+/-- **(G5) 合成則**: 階段リフトは合成で閉じる。 -/
+theorem slift_slift {A : TrioSeq} {φ ψ : ℕ → ℕ} (hφ : Stair φ) (hψ : Stair ψ) :
+    slift (slift A φ) ψ = slift A (fun m => ψ (φ m)) := by
+  refine List.ext_getElem (by rw [slift_length, slift_length, slift_length]) ?_
+  intro i hi1 hi2
+  rw [slift_length, slift_length] at hi1
+  rw [← entry_triple (by rw [slift_length, slift_length]; omega),
+    ← entry_triple (by rw [slift_length]; omega)]
+  have e0 : entry (slift (slift A φ) ψ) 0 i = entry A 0 i := by
+    rw [entry0_slift, entry0_slift]
+  have e2 : entry (slift (slift A φ) ψ) 2 i = entry A 2 i := by
+    rw [entry2_slift, entry2_slift]
+  have e1 : entry (slift (slift A φ) ψ) 1 i
+      = entry A 1 i + (ψ (φ (amin A i)) - amin A i) := by
+    rw [entry1_slift (by rw [slift_length]; omega), entry1_slift hi1,
+      amin_slift hφ hi1]
+    have h1 := hφ.ge (amin A i)
+    have h2 := hψ.ge (φ (amin A i))
+    have h3 := amin_self_le A i
+    omega
+  have f0 : entry (slift A fun m => ψ (φ m)) 0 i = entry A 0 i := entry0_slift A _ i
+  have f2 : entry (slift A fun m => ψ (φ m)) 2 i = entry A 2 i := entry2_slift A _ i
+  have f1 : entry (slift A fun m => ψ (φ m)) 1 i
+      = entry A 1 i + (ψ (φ (amin A i)) - amin A i) := entry1_slift hi1
+  rw [e0, e1, e2, f0, f1, f2]
+
+open Classical in
+/-- マスクリフトは一段の階段リフト。 -/
+theorem mlift_eq_slift (A : TrioSeq) (v d : ℕ) :
+    mlift A v d = slift A (fun m => m + (if v < m then d else 0)) := by
+  refine List.ext_getElem (by rw [mlift_length, slift_length]) ?_
+  intro i hi1 hi2
+  rw [mlift_length] at hi1
+  rw [← entry_triple (by rw [mlift_length]; omega),
+    ← entry_triple (by rw [slift_length]; omega)]
+  have e1 : entry (mlift A v d) 1 i = entry A 1 i + (if coneV A v i then d else 0) :=
+    entry1_mlift hi1
+  have f1 : entry (slift A fun m => m + (if v < m then d else 0)) 1 i
+      = entry A 1 i + (if v < amin A i then d else 0) := by
+    rw [entry1_slift hi1]
+    split <;> omega
+  rw [entry0_mlift, entry2_mlift, e1, entry0_slift, entry2_slift, f1,
+    if_congr coneV_iff_amin rfl rfl]
 
 end TRIO
