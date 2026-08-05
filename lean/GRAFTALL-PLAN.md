@@ -1080,6 +1080,50 @@ EquipSelf := ∀ M 装備つき, ∀ 0 < k < |M|, ∀ t,
 `ctxOK_graft` / `ctxOK_ltail` / `ctxOK_take` が自己支持性を保つかを個別に
 検査する（＝クラスを閉包で構成する）道が開ける。
 
+## 1.9.28 ✅ 自己支持性はクラスとして閉じる／⛔ 定義に取り込むのは変性で不可
+
+### 得られた閉包則（Lean 済み, v0.118.29）
+
+```
+SelfSup M v z := ∀ 0 < k < |M|, ∀ t, Lift1 ((0,v,z) :: M.take k) t ∈ GX
+
+selfSup_take  : SelfSup M v z → SelfSup (M.take j) v z
+selfSup_graft : 装備 + SelfSup M + (Y.dropLast ∈ GXs) → SelfSup (graft M Y) v z
+selfSup_ltail : SelfSup R v z → SelfSup (ltail v z R t) (v+t) z
+```
+
+`selfSup_graft` の中身: 接頭辞 `(graft M Y).take k` は
+`k ≤ |M|-1` なら文脈側（`take_graft_low`）、そうでなければ
+`graft M (Y.take j)` で、後者は `liftPtant_of_plant`（新設）により
+「`M` の植え接頭辞（= `SelfSup M` の `k = |M|-1`）」＋「データのマスク
+（`gxs_mlift`）」に分かれる。
+
+⟹ **機械が作る文脈（`take` / `graft` / `ltail`）は自己支持性を保つ**。
+したがって `CorePlantCtxLift` は「**最上位の文脈 `S` が自己支持的**」に還元
+される（`graftAll_of_GX` の仮定を `CtxOK S v z ∧ SelfSup S v z` に強める形）。
+
+### ⛔ しかし `GX` の定義に取り込むのは変性の問題で不可（3 通り試して全滅）
+
+`gx_of_pieces` の内部で得られるのは `hctx : CtxOK M v z` だけで、`SelfSup M v z`
+を得るには `GX` の定義側で文脈を絞る必要がある。ところが
+
+- `GX` は装備クラス `E` に**反単調**、`SelfSup`（= 装備の `GX` 成分）は `GX` に
+  **単調**なので、合成は反単調 ⟹ 最小/最大不動点が取れない（§1.9.27 訂正済み）。
+- 深さで層化しても `GX_0 ⊆ GX_1 ⊇ GX_2 ⊆ …` と振動する。
+- 文脈長で層化すると `gx_graft` が層をまたぐ（§1.9.27）。
+
+### ⟹ v0.119 の選択肢（更新）
+
+1. **最上位の装備を強める**: `graftAll_of_GX` / `Wstar2_closed_of_graftAll` /
+   `GraftAll` の仮定に `SelfSup` を足し、機械の内部では `CorePlantCtxLift` を
+   核のまま残す（＝現状の 4 核から実質 3 核 + 装備強化）。閉包則が揃ったので
+   **これは今すぐ実装可能**。ただし `GX` 内部で `SelfSup` が使えない以上、
+   `CorePlantCtxLift` 自体は消えない（核の供給元が変わるだけ）。
+2. `GX` を「文脈を明示的に持ち歩く」形に書き換える（義務を集合ではなく
+   文脈つきの関係として定義し、自己支持性を関係の側で帰納的に構成する）。
+   変性の問題を回避できる可能性があるが大改造。
+3. 現状維持で `CoreWindow` / `CoreBlockedEltHi` / `CoreBlocked0` を先に潰す。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

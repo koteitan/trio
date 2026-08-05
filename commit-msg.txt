@@ -1,10 +1,10 @@
-v0.118.29/self-support of the equipment class is closed under the machine
+v0.118.30/record: self-support closes as a class, but not inside GX's definition
 
-- Add `SelfSup M v z` (every planted prefix of an equipped context is in `GX`)
-  and prove the three closure lemmas: `selfSup_take`, `selfSup_graft` (the
-  prefix splits into the context side or "planted context + datum mask", via
-  the new instance-level `liftPlant_of_plant`), `selfSup_ltail`
-- Factor `liftPlant_of_mask` through `liftPlant_of_plant`, which takes the
-  single plant instance instead of the whole `CorePlantCtxLift` core
-- These are the closure rules any future construction of a self-supporting
-  equipment class will need
+- GRAFTALL-PLAN 1.9.28: with `selfSup_take` / `selfSup_graft` / `selfSup_ltail`
+  the machine's own context constructions preserve self-support, so
+  `CorePlantCtxLift` reduces to "the TOP-LEVEL context is self-supporting"
+- But `gx_of_pieces` only ever has `CtxOK` in hand, and putting `SelfSup` into
+  `GX`'s definition is blocked by variance: `GX` is antitone in the equipment
+  while the equipment's GX-component is monotone, so there is no fixpoint;
+  depth stratification oscillates and length stratification breaks `gx_graft`
+- Updated the v0.119 options accordingly
