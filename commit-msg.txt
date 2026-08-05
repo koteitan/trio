@@ -1,7 +1,16 @@
-v0.118.45/write down the remaining ctxInf_cross recipe
+v0.118.46/analysis: the cores come entirely from the t>0 stage raise
 
-- GRAFTALL-PLAN.md 1.9.38: the seven-step recipe for the one remaining case of
-  `ctxInf_graft`, including the reason `gx_graft` has to be strengthened to
-  `E.dropLast in GXs` and the warning that a general `entry A i q` lemma is the
-  wrong decomposition (only the three q = 0 entries and the `A.take` form are
-  needed)
+- GRAFTALL-PLAN.md 1.9.39: at t = 0 the tower branch falls straight out of
+  `Aop` clause 3 via `graft_cons`, so every core is created by the ambient row-1
+  lift raising the required data stage from m to m+2t
+- Record that the stage cannot be the induction measure (2v+z <= m gives only
+  2(v+t)+z <= m+2t, no strict descent), alongside the four measures already
+  refuted (datum length, composite length, context length, equipment fixpoint)
+- Record the promising direction: GX quantifies over ALL contexts, but every
+  actual use is at an explicitly generated family (tower: graft^n Rt P with the
+  tower index descending; blocked: graft (M.take (p+1)) partial-copies with the
+  context strictly shortening), so a context-carrying relation with induction on
+  the tower/copy index should avoid the core
+- Record the smallest question to settle first: a family form of `LiftTower1`
+  (row 1), mirroring `towerGraft2_lift_fam` for row 2, since `tower1_mem2`
+  applies its `hgr` only to the tower own elements
