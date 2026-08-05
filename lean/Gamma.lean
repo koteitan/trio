@@ -926,6 +926,46 @@ theorem shiftl0_seg_graft {M Y : TrioSeq} {p : ℕ} (hy : Y ≠ [])
   rw [seg_graft_eq hy hM2 hp, shiftl0_append, shiftl0_shiftr01_sub hle,
     graft_eq_shift, hdl, hlen, hlast]
 
+/-- **The composite's infix that crosses the graft point**, general length. -/
+theorem seg_graft_cross {M E : TrioSeq} {p k j : ℕ} (hM2 : 2 ≤ M.length)
+    (hp : p < M.length - 1) (hj : (M.length - 1 - p) + j = k + 1)
+    (hjE : j ≤ E.length) :
+    seg (graft M E) p (k + 1)
+      = seg M p (M.length - 1 - p)
+        ++ shiftr01 (entry M 0 (M.length - 1)) 0 (E.take j) := by
+  classical
+  rw [← hj, seg_append]
+  refine congrArg₂ _ ?_ ?_
+  · unfold seg
+    refine List.map_congr_left ?_
+    intro q hq
+    rw [List.mem_range'_1] at hq
+    rw [entry_graft_low (by omega), entry_graft_low (by omega),
+      entry_graft_low (by omega)]
+  · have hidx : p + (M.length - 1 - p) = M.dropLast.length := by
+      rw [List.length_dropLast]; omega
+    rw [hidx, graft_eq_shift,
+      seg_append_context _ _ (by rw [shiftr01_length]; omega), shiftr01_take]
+
+/-- **The re-based crossing infix is a graft of the datum's prefix.** -/
+theorem shiftl0_seg_graft_cross {M E : TrioSeq} {p k j : ℕ} (hM2 : 2 ≤ M.length)
+    (hp : p < M.length - 1) (hj : (M.length - 1 - p) + j = k + 1)
+    (hjE : j ≤ E.length)
+    (hle : entry M 0 p ≤ entry M 0 (M.length - 1)) :
+    shiftl0 (entry M 0 p) (seg (graft M E) p (k + 1))
+      = graft (shiftl0 (entry M 0 p) (seg M p (M.length - p))) (E.take j) := by
+  classical
+  set c : ℕ := entry M 0 p with hc
+  have hdl := shiftl0_seg_dropLast (M := M) (p := p) (c := c) hp
+  have hlen : (shiftl0 c (seg M p (M.length - p))).length = M.length - p := by
+    rw [shiftl0_length, seg_length]
+  have hlast : entry (shiftl0 c (seg M p (M.length - p))) 0 (M.length - p - 1)
+      = entry M 0 (M.length - 1) - c := by
+    rw [entry0_shiftl0 (by rw [seg_length]; omega), entry0_seg (by omega),
+      show p + (M.length - p - 1) = M.length - 1 from by omega]
+  rw [seg_graft_cross hM2 hp hj hjE, shiftl0_append, shiftl0_shiftr01_sub hle,
+    graft_eq_shift, hdl, hlen, hlast]
+
 /-- **The γ'-window core**: the re-based window of the composite — the columns
 from the blocker `p` up to (but excluding) the blocked trailing column — is in
 the machine's set.  This is a *context piece* statement: the window is

@@ -1,9 +1,5 @@
-v0.118.43/CtxInf for composite contexts away from the graft point
+v0.118.44/the crossing infix of a composite context, general length
 
-- Add `seg_graft_low` and `shiftl0_seg_graft_high` in Croot.lean: an infix of a
-  composite context that stays inside the head block is the head block' own,
-  and one that stays inside the datum is the datum' own after re-basing (the
-  graft depth cancels)
-- Add `ctxInf_graft_of_cross`: `CtxInf (graft M E)` from `CtxInf M`, `CtxInf E`
-  and the isolated crossing case, with the row-0 chains transported by
-  `take_graft_low` / `le0_graft_high`
+- Add `seg_graft_cross` and `shiftl0_seg_graft_cross`: the generalised forms of
+  `seg_graft_eq` / `shiftl0_seg_graft` for an arbitrary infix length, so the
+  crossing case of `CtxInf` can be reduced to a graft of the datum prefix
