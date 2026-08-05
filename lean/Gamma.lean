@@ -201,7 +201,7 @@ theorem GX_full {y M : TrioSeq} {v z a t : ℕ} (h : y ∈ GX) (hb : based y)
 /-- **Core γ' (blocked)**: the descended obligations. -/
 def CoreBlocked : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
-    Y.dropLast ∈ GX → based Y → Y ≠ [] →
+    Y.dropLast ∈ GXs → based Y → Y ≠ [] →
     argOK M → 2 ≤ M.length →
     ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
     hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
@@ -824,7 +824,7 @@ theorem gcopiesLift_mem_GX {B T : TrioSeq} {L d0 d1 v z : ℕ}
 machine's set (independent of the ambient root `(v, z, t)`). -/
 def CoreBlockedElt : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
-    Y.dropLast ∈ GX → based Y → Y ≠ [] →
+    Y.dropLast ∈ GXs → based Y → Y ≠ [] →
     argOK M → 2 ≤ M.length →
     ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
     hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
@@ -932,7 +932,7 @@ the machine's set.  This is a *context piece* statement: the window is
 `graft (M's re-based suffix from p) (Y.dropLast)`. -/
 def CoreWindow : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
-    Y.dropLast ∈ GX → based Y → Y ≠ [] →
+    Y.dropLast ∈ GXs → based Y → Y ≠ [] →
     argOK M → 2 ≤ M.length →
     ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
     hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
@@ -969,7 +969,7 @@ theorem coreWindow_of_suffix (hs : CoreCtxSuffix) : CoreWindow := by
   have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
   set R : TrioSeq := graft M Y with hRdef
   have hRlen : R.length = M.length - 1 + Y.length := by rw [hRdef, graft_length]
-  have hYd : Y.dropLast ∈ GX := hYdG
+  have hYd : Y.dropLast ∈ GX := hYdG.1
   -- the blocker sits strictly above the graft point
   have hchain : Relation.ReflTransGen (nextrel0 R) p (R.length - 1) := by
     have hnr := parent_nextR hpG
@@ -1017,7 +1017,7 @@ theorem coreWindow_of_suffix (hs : CoreCtxSuffix) : CoreWindow := by
 (`d1 > 0`), so the graft recursion carries a lift. -/
 def CoreBlockedEltHi : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
-    Y.dropLast ∈ GX → based Y → Y ≠ [] →
+    Y.dropLast ∈ GXs → based Y → Y ≠ [] →
     argOK M → 2 ≤ M.length →
     ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
     hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
@@ -1095,7 +1095,7 @@ root lifts are in the machine's set.  At `s = 0` this is `CoreWindow`; the
 lifts are what the row-2 blocker's ascending copies consume. -/
 def CoreWindowLift : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
-    Y.dropLast ∈ GX → based Y → Y ≠ [] →
+    Y.dropLast ∈ GXs → based Y → Y ≠ [] →
     argOK M → 2 ≤ M.length →
     ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
     hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
@@ -1107,6 +1107,110 @@ def CoreWindowLift : Prop :=
     ∀ s : ℕ,
       Lift1 (shiftl0 (entry M 0 p)
         (seg (graft M Y) p ((graft M Y).length - 1 - p))) s ∈ GX
+
+/-- **The lifted context-suffix core**: the context's own re-based suffix (from
+the blocker `p`, minus its trailing column) AND all its root lifts are in the
+machine's set — a statement about the *context alone*. -/
+def CoreCtxSuffixLift : Prop :=
+  ∀ (M : TrioSeq) (p : ℕ), argOK M → 2 ≤ M.length → p < M.length - 1 →
+    ∀ v z : ℕ, z ≤ 1 → CtxOK M v z → ∀ s : ℕ,
+      Lift1 (shiftl0 (entry M 0 p) (seg M p (M.length - 1 - p))) s ∈ GX
+
+open Classical in
+/-- **The lifted window core reduces to the lifted context suffix**: the window
+is the context's re-based suffix grafted with the datum's peel
+(`shiftl0_seg_graft`), and the suffix is itself a planted block, so
+`liftPlant_of_plant` splits the lift into the suffix's own root lift and the
+datum's ambient mask (`gxs_mlift`). -/
+theorem coreWindowLift_of_ctxSuffixLift (hs : CoreCtxSuffixLift) :
+    CoreWindowLift := by
+  classical
+  intro u Y M p hYdG hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx s
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
+  set R : TrioSeq := graft M Y with hRdef
+  have hRlen : R.length = M.length - 1 + Y.length := by rw [hRdef, graft_length]
+  have hchain : Relation.ReflTransGen (nextrel0 R) p (R.length - 1) := by
+    have hnr := parent_nextR hpG
+    rw [hpar] at hnr
+    unfold nextR at hnr
+    by_cases h0 : srow R (R.length - 1) = 0
+    · rw [h0, if_pos rfl] at hnr
+      exact Relation.ReflTransGen.single hnr
+    · by_cases h1 : srow R (R.length - 1) = 1
+      · rw [h1, if_neg one_ne_zero, if_pos rfl] at hnr
+        exact hnr.2.2.2.2.1.2.2
+      · rw [if_neg h0, if_neg h1] at hnr
+        exact (le0_of_le1 hnr.2.2.2.2.1).2.2
+  have hwin := window_of_rtg0 hchain (by omega)
+  have hlowp : entry R 0 p = entry M 0 p := by
+    rw [← Wset.entry_take (X := R) (l := p + 1) (i := 0) (j := p) (by omega),
+      hRdef, take_graft_low (by omega), Wset.entry_take (by omega)]
+  have hgp : entry R 0 (M.length - 1) = entry M 0 (M.length - 1) := by
+    have hidx : M.length - 1 = M.dropLast.length + 0 := by
+      rw [List.length_dropLast]; omega
+    rw [hRdef, graft_eq_shift, hidx, entry_append_right]
+    cases Y with
+    | nil => exact absurd rfl hy
+    | cons a l =>
+        have hb : a.1 = 0 := hbased
+        unfold shiftr01 entry
+        simp [hb]
+  have hle : entry M 0 p ≤ entry M 0 (M.length - 1) := by
+    have := hwin (M.length - 1) (by omega) (by omega)
+    omega
+  set c : ℕ := entry M 0 p with hc
+  -- the M-side of the window is strictly deeper than the blocker
+  have hMstrict : ∀ j, p < j → j ≤ M.length - 1 → c < entry M 0 j := by
+    intro j hj0 hj1
+    rcases Nat.lt_or_ge j (M.length - 1) with hjlt | hjge
+    · have hent : entry R 0 j = entry M 0 j := by
+        rw [← Wset.entry_take (X := R) (l := M.length - 1) (i := 0) (j := j)
+          (by omega), hRdef, take_graft_low le_rfl, Wset.entry_take (by omega)]
+      have := hwin j hj0 (by omega)
+      omega
+    · have hjeq : j = M.length - 1 := by omega
+      subst hjeq
+      have := hwin (M.length - 1) hj0 (by omega)
+      omega
+  -- the re-based suffix as a planted block
+  have hsegc : seg M p (M.length - p)
+      = ((entry M 0 p, entry M 1 p, entry M 2 p) : ℕ × ℕ × ℕ)
+        :: seg M (p + 1) (M.length - p - 1) := by
+    rw [show M.length - p = (M.length - p - 1) + 1 from by omega, seg_cons,
+      Nat.add_sub_cancel]
+  set T : TrioSeq := shiftl0 c (seg M (p + 1) (M.length - p - 1)) with hT
+  have hTlen : T.length = M.length - p - 1 := by
+    rw [hT, shiftl0_length, seg_length]
+  have hTne : T ≠ [] := by
+    intro h
+    rw [h] at hTlen
+    simp at hTlen
+    omega
+  have hEcons : shiftl0 c (seg M p (M.length - p))
+      = ((0, entry M 1 p, entry M 2 p) : ℕ × ℕ × ℕ) :: T := by
+    rw [hsegc, shiftl0_cons, hT, show entry M 0 p - c = 0 from by omega]
+  have hargT : argOK T := by
+    intro x hx
+    rw [hT, mem_shiftl0] at hx
+    obtain ⟨y, hy', rfl⟩ := hx
+    unfold seg at hy'
+    rw [List.mem_map] at hy'
+    obtain ⟨j, hj, rfl⟩ := hy'
+    rw [List.mem_range'_1] at hj
+    have := hMstrict j (by omega) (by omega)
+    dsimp only
+    omega
+  have hplant : Lift1 (((0, entry M 1 p, entry M 2 p) : ℕ × ℕ × ℕ)
+      :: T.dropLast) s ∈ GX := by
+    have hEd : (shiftl0 c (seg M p (M.length - p))).dropLast
+        = shiftl0 c (seg M p (M.length - 1 - p)) := shiftl0_seg_dropLast hplt
+    rw [hEcons, dropLast_cons hTne] at hEd
+    rw [hEd]
+    exact hs M p hMarg hM2 hplt v z hz1 hctx s
+  rw [hRdef, shiftl0_seg_graft hy hM2 hplt hle, hEcons, graft_cons hTne]
+  exact liftPlant_of_plant hplant hargT (by omega) hYdG.1
+    (based_dropLast hbased) (gxs_mlift hYdG (entry M 1 p) s)
 
 theorem coreWindow_of_lift (hl : CoreWindowLift) : CoreWindow := by
   intro u Y M p hYd hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx
@@ -1487,7 +1591,7 @@ theorem gx_of_pieces (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
       omega
     refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
     rw [lift_graft_blocked_step v z t n hMne hy hG hGL hpG rfl hplt]
-    exact hb u Y M _ hYdrop.1 hbased hy hMarg hM2' hpY hpG rfl hplt
+    exact hb u Y M _ hYdrop hbased hy hMarg hM2' hpY hpG rfl hplt
       v z hz1 hctx a t n hva hn
   have hdrop : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y.dropLast) t ∈ W a :=
     GX_full hYdrop.1 (based_dropLast hbased) hMarg hM2 hctx hz1 hva
@@ -1831,5 +1935,13 @@ theorem GX_loop_lift (hwl : CoreWindowLift) (hp : CorePlantCtxLift) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
   GX_loop (coreBlockedElt_of_window (coreWindow_of_lift hwl)
     (coreBlockedEltHi_of_windowLift hwl)) hp
+
+/-- **The assembly loop, pure-context form**: both surviving cores speak only
+about the *context* — no datum, no expansion.  `CoreCtxSuffixLift` is the
+context's re-based infix from the blocker with all its root lifts;
+`CorePlantCtxLift` is the context's planted peel with all its root lifts. -/
+theorem GX_loop_ctx (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
+  GX_loop_lift (coreWindowLift_of_ctxSuffixLift hsl) hp
 
 end TRIO

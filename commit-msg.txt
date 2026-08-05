@@ -1,16 +1,13 @@
-v0.118.33/CoreBlockedEltHi falls: the residue is two cores
+v0.118.34/both surviving cores are now pure context statements
 
-- Add `gcopiesLift_mem_GX`: the strengthened copy-index induction
-  `forall n s, Lift1 (gcopies B 0 L d0 d1 n) s in GX`, riding on the window's
-  root lifts alone, with the ambient mask absorbed by `mlift_Lift1_cons`
-- Add the supporting `entry_gcopies_pos`, `argOK_gcopies_tail` and
-  `gcopies_cons_root`
-- Add `CoreWindowLift` (the re-based window AND all its root lifts) with
-  `coreWindow_of_lift` (its `s = 0` slice is `CoreWindow`) and
-  `coreBlockedEltHi_of_windowLift`
-- Give `CoreBlockedEltHi` the ambient equipment so it can reach the window core
-- Drop the unused `hz1` / `hctx` from `liftPlant_of_plant`, making it usable
-  outside the equipped setting
-- Add `GX_loop_lift : CoreWindowLift -> CorePlantCtxLift -> (Aop W u GXs Y ->
-  Y in GXs)` — the whole machine now closes on two cores
-- Record the reduction in GRAFTALL-PLAN.md 1.9.30 and task.md
+- Add `CoreCtxSuffixLift` (the context's re-based infix from the blocker, with
+  all its root lifts) and `coreWindowLift_of_ctxSuffixLift`: the window splits
+  as the suffix's planted block grafted with the datum's peel, so
+  `liftPlant_of_plant` sends the lift to the suffix's own root lift plus the
+  datum's ambient mask
+- Restore `Y.dropLast in GXs` in CoreBlocked / CoreBlockedElt /
+  CoreBlockedEltHi / CoreWindow / CoreWindowLift so the datum's mask is
+  available; `gx_of_pieces` already holds the GXs form
+- Add `GX_loop_ctx : CoreCtxSuffixLift -> CorePlantCtxLift -> (Aop W u GXs Y ->
+  Y in GXs)`
+- Record the reduction in GRAFTALL-PLAN.md 1.9.31 and task.md

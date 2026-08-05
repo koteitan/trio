@@ -1229,6 +1229,45 @@ GX_loop_lift (hwl : CoreWindowLift) (hp : CorePlantCtxLift)
 **「植えブロック族 `{(0,B,z) :: …}` とその根リフトが `GX`」**という
 §1.9.25 の収束点そのままの形になった。
 
+## 1.9.31 ★★★ v0.118.34: 残る 2 核が**どちらも純粋な文脈の言明**になった
+
+```
+GX_loop_ctx (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift)
+  : ∀ u Y, Aop W u GXs Y → Y ∈ GXs
+```
+
+`CoreWindowLift`（複合列の窓）は `shiftl0_seg_graft` で
+「文脈の再基底化した接尾 `E` にデータの peel を接ぎ木したもの」に分解する。
+`E` は根 `(0, entry M 1 p, entry M 2 p)` をもつ**植えブロック**なので、
+`liftPlant_of_plant` がリフトを
+
+* `E` 自身の根リフト = `CoreCtxSuffixLift`
+* データの環境マスク = `gxs_mlift`（そのためブロック系の核の仮定を
+  `Y.dropLast ∈ GX` から `Y.dropLast ∈ GXs` に戻した。`gx_of_pieces` は
+  もともと `GXs` を持っている）
+
+に割る。⟹ **`CoreWindowLift` は `CoreCtxSuffixLift` に落ちる**。
+
+### 残差（2 核、どちらも文脈だけ）
+
+| 核 | 対象 |
+|---|---|
+| `CorePlantCtxLift` | `Lift1 ((0,v,z) :: M.dropLast) t ∈ GX`（周囲の根で植えた peel） |
+| `CoreCtxSuffixLift` | `Lift1 (shiftl0 (entry M 0 p) (seg M p (\|M\|-1-p))) s ∈ GX`（自身の根で再基底化した中間ブロック） |
+
+どちらも「装備つき文脈から切り出した**植えブロック + その根リフト全部**が
+`GX`」という同じ形。§1.9.25 の収束点が Lean の命題として実現された。
+
+### 次の設計
+
+`CoreCtxSuffixLift` を `CorePlantCtxLift` に落とすには、接尾を文脈と見た
+`M' := shiftl0 c (seg M (p+1) (\|M\|-1-p))` に対する
+`CtxOK M' (entry M 1 p) (entry M 2 p)`（**再基底化した中間ブロックの
+package**）が要る。ambient の `CtxOK M v z` は `M.take k` の package しか
+与えないので、これは新しい義務 — つまり「装備クラスを中間ブロックについても
+閉じる」設計（§1.9.28 の選択肢 1 = 最上位の装備を強める）が次の一手。
+`entry M 2 p ≤ 1` も要確認（z<2 断片の不変量）。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
