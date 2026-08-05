@@ -1,8 +1,14 @@
-v0.117.3/self-audit: the aligned calculus also needs a single-tree argument
+v0.118.0/the graft cone-transfer and the lift calculus (Cgraft.lean)
 
-- Add probe_alignedforest: with a FOREST argument the aligned lift calculus
-  breaks (30448/93024 at tower1/aligned/d0=0), so the earlier statement was
-  too strong
-- Correct GRAFTALL-PLAN 1.9.17 (and the memory) to require X to be a
-  principal block; note that everything the machine lifts is one, so the
-  condition is automatic at the use sites
+- Add Cgraft.lean: `cone_graft_high` transports the root row-1 cone across a
+  graft (the composite's cone on the argument is the argument's own cone if
+  the graft site is in the cone, empty otherwise) and `lift_graft_cone` turns
+  it into the lift calculus `Lift1 (graft E A) d = graft (Lift1 E d) (...)`
+- State the exact hypothesis `HighPar A v` (no row-1 orphan above `v` except
+  the root), with `highPar_of_shallow` (single trees) and `highPar_Lift1`
+- Add the graft component lemmas (entry/nextrel1/le0/le1 below and above the
+  graft point, `shallow_graft`)
+- Add tools/probe_lowcalc.py (refutes the naive "argument root above v" guard,
+  7814/102572) and tools/probe_calc2.py (the corrected calculus: 0/241816,
+  and 54978/58184 violations once `HighPar` is dropped)
+- Register Cgraft in lakefile roots
