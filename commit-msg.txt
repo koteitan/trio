@@ -1,12 +1,15 @@
-v0.118.13/(ML): beta closes with the lifted planted context alone
+v0.118.15/GXs: the datum-side lift core is gone from the machine loop
 
-- Add `mlift_Lift1_cons` (Aexp.lean): the ambient mask lift is absorbed by the
-  root lift, `mlift (Lift1 ((0,v,z)::R) d) v e = Lift1 ((0,v,z)::R) (d+e)` for
-  `0 < d`, via `coneV_Lift1_cons` (a lifted block's `v`-mask IS its root cone)
-- Strengthen the row-2 tower induction to `forall j s, Lift1 (Nb[j]) (d1+s)`,
-  giving `coreT2EFam_of_plantctx : CorePlantCtxLift -> CoreT2EFam`: the
-  datum-side `CoreMaskLift` drops out of beta entirely
-- Factor `coreLiftPlant_of_mask` through the instance-level `liftPlant_of_mask`
-- Weaken `CoreT2EFam` / `CoreT2E` to consume only `Y.dropLast in GX`
-- Add `corePlantCtxLift_of` (CoreLift + CorePlantCtx) and rewire `GX_loop`
-- Add tools/probe_mliftlift.py: (ML) 0/132781 at `d > 0`, refuted at `d = 0`
+- Add `GXs = {y | y in GX and every staircase lift of y is in GX}`, closed
+  under `slift` by definition (`gxs_slift` via `slift_slift` + `stair_comp`)
+- Run the machine over `GXs`: `GX_closed` now consumes `Aop W u GXs Y`, and
+  `CoreT1L` consumes `Y.dropLast in GXs`, so alpha reads its mask lift straight
+  off the datum (`gxs_mlift`) — `coreT1L_of_plantctx : CorePlantCtxLift -> CoreT1L`
+- Add `aop_slift`: the staircase transport of `Aop` for length >= 2 — clause 1
+  by `Stair.zero`, clause 2 by `slift_oper` (G2), clause 3 collapsing to
+  clause 2 through `domT`'s `¬ hasParent`
+- Add `CoreStairOm` (the planted-root singleton, the only surviving hole in the
+  transport) and `GXs_closed` / `W_le_GXs` / `W_le_GX`
+- Retire `CoreLift` / `CoreLiftPlant` / `CoreMaskLift` from the loop: the
+  residues are now CoreCtxSuffix, CoreBlockedEltHi, CoreBlocked0,
+  CorePlantCtxLift, CoreStairOm (`GX_loop_pieces`)
