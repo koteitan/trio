@@ -1518,6 +1518,47 @@ infEquip_at_of_ctxInf: CtxInf M → （InfEquip の中身、φ = id の切片）
 `gcopies_mem_GX` / 窓）で `E` の peel の**階段閉包**が要るので、残る核も
 `CorePlantCtxLift` の階段閉包版に強まる。ここが v0.119 の実装コスト。
 
+## 1.9.38 v0.118.43-44: `ctxInf_graft` は「またぎ」1 ケースだけ残り（手順確定）
+
+### 済み
+
+```
+seg_graft_low            : p+k < |M|-1 → seg (graft M E) p (k+1) = seg M p (k+1)
+shiftl0_seg_graft_high   : |M|-1 ≤ p のとき再基底化した中間ブロックは E のもの
+seg_graft_cross          : またぎの中間ブロック（一般長）の分解
+shiftl0_seg_graft_cross  : = graft (M の再基底化接尾 A) (E.take j)
+ctxInf_graft_of_cross    : CtxInf M → CtxInf E → (またぎ) → CtxInf (graft M E)
+```
+
+### 残り `ctxInf_cross` の手順（この形で書けば通るはず）
+
+仮定: `argOK M`, `2 ≤ |M|`, `based E`, `E ≠ []`, `CtxInf M`,
+**`E.dropLast ∈ GXs`**（← `gx_graft` の仮定強化が要る理由）。
+
+1. `p < |M|-1` なので `entry (graft M E) i p = entry M i p`（`entry_graft_low`）。
+2. `M` 内の行 0 鎖: `hwin` を `le0_take` + `take_graft_low` で `M` に移す。
+   これで `entry M 2 p ≤ 1` は `CtxInf M` の `k = 0` から出る。
+3. `j := k+1 - (|M|-1-p)`（`1 ≤ j ≤ |E|-1`）。`hle : entry M 0 p ≤ entry M 0 (|M|-1)`
+   は `hwin (|M|-1-p)` + `rtg0_entry0_lt` + `hgp`（`based E` で接ぎ木点の深さが
+   `entry M 0 (|M|-1)`）から。
+4. `shiftl0_seg_graft_cross` で対象 = `graft A (E.take j)`,
+   `A := shiftl0 (entry M 0 p) (seg M p (|M|-p))`, `|A| = |M|-p ≥ 2`。
+5. `slift_graft` (G3) で `slift (graft A B) φ = graft (slift A φ) (slift B ψ)`,
+   `ψ = stair_cap φ (capV A)`。`hne` は `y = 0`（窓で `A` の根が最浅）。
+6. `A` の頭は `(0, r1, r2)`（`entry0_shiftl0` + `entry_seg`）、`amin A 0 = r1`
+   （`amin_zero`）なので `slift A φ` の頭は `(0, φ r1, r2)`。`graft_cons` で
+   `graft (slift A φ) B' = (0, φ r1, r2) :: graft ((slift A φ).tail) B'`。
+7. `GX_full` を適用。必要な部品:
+   * `slift (E.take j) ψ ∈ GX` ← `gxs_take hEd j` + `dropLast_take` + `.2 ψ`
+   * `based`（`entry0_slift`）、`argOK ((slift A φ).tail)`（窓、`entry0_slift`）
+   * `CtxOK ((slift A φ).tail) (φ r1) r2` ← **`CtxInf M` を φ で使う**。
+     `(slift A φ).take (k'+1) = slift (A.take (k'+1)) φ`（`slift_take`）、
+     `A.take (k'+1) = shiftl0 c (seg M p (k'+1))`（`seg_take`）で一致。
+   * `r2 ≤ 1`、レベル条件はそのまま。
+
+⚠ 実装時の注意: `entry A i q` の一般補題を作ろうとすると行 2 の添字合わせで
+ハマる。必要なのは `q = 0` の 3 つと `A.take` の形だけなので個別に出すこと。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

@@ -1,5 +1,7 @@
-v0.118.44/the crossing infix of a composite context, general length
+v0.118.45/write down the remaining ctxInf_cross recipe
 
-- Add `seg_graft_cross` and `shiftl0_seg_graft_cross`: the generalised forms of
-  `seg_graft_eq` / `shiftl0_seg_graft` for an arbitrary infix length, so the
-  crossing case of `CtxInf` can be reduced to a graft of the datum prefix
+- GRAFTALL-PLAN.md 1.9.38: the seven-step recipe for the one remaining case of
+  `ctxInf_graft`, including the reason `gx_graft` has to be strengthened to
+  `E.dropLast in GXs` and the warning that a general `entry A i q` lemma is the
+  wrong decomposition (only the three q = 0 entries and the `A.take` form are
+  needed)
