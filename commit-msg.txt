@@ -1,10 +1,16 @@
-v0.118.30/record: self-support closes as a class, but not inside GX's definition
+v0.118.31/relax GX's context to singletons: CoreBlocked0 eliminated
 
-- GRAFTALL-PLAN 1.9.28: with `selfSup_take` / `selfSup_graft` / `selfSup_ltail`
-  the machine's own context constructions preserve self-support, so
-  `CorePlantCtxLift` reduces to "the TOP-LEVEL context is self-supporting"
-- But `gx_of_pieces` only ever has `CtxOK` in hand, and putting `SelfSup` into
-  `GX`'s definition is blocked by variance: `GX` is antitone in the equipment
-  while the equipment's GX-component is monotone, so there is no fixpoint;
-  depth stratification oscillates and length stratification breaks `gx_graft`
-- Updated the v0.119 options accordingly
+- Weaken GX's context condition from `2 <= M.length` to `1 <= M.length`, and
+  propagate through GX_full / ctxOK_graft / ctxOK_ltail / liftPlant_of_plant /
+  liftPlant_of_mask / selfSup_graft / graftAll_of_GX
+- Weaken CoreT1L / CoreT2E / CoreT2EFam / CorePlantCtxLift / CorePlantCtx /
+  CoreLiftPlant / EquipSelf / SelfSup to the singleton-context form
+- Delete CoreBlocked0: coreBlocked_of_elt now discharges the root blocker
+  `p = 0` through GX_full at the descended context `M.take 1`
+- Recover `2 <= M.length` and `|graft M Y| - 1 <= 0` inside gx_of_pieces'
+  blocked branch from hplt / nextR_index_lt, keeping the blocked cores at
+  `2 <= M.length`
+- graftAll_of_GX now covers every nonempty context, matching GraftAll's own
+  `S <> []`; the only remaining gap to GraftAll is the equipment CtxOK
+- Record the correction in GRAFTALL-PLAN.md 1.9.29 and cut task.md's residue
+  list from 4 cores to 3

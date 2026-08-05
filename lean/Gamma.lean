@@ -166,7 +166,7 @@ theorem ctxOK_take {M : TrioSeq} {v z : ℕ} (h : CtxOK M v z) (j : ℕ) :
 of the element AND of all its prefixes (the latter feed context composition,
 `ctxOK_graft` / `ctxOK_ltail`). -/
 def GX : Set TrioSeq :=
-  {y | based y → ∀ M : TrioSeq, argOK M → 2 ≤ M.length →
+  {y | based y → ∀ M : TrioSeq, argOK M → 1 ≤ M.length →
     ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
     ∀ i, i ≤ y.length → ∀ a t : ℕ, 2 * (v + t) + z ≤ a →
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M (y.take i)) t ∈ W a}
@@ -191,7 +191,7 @@ theorem gxs_mlift {y : TrioSeq} (h : y ∈ GXs) (v t : ℕ) : mlift y v t ∈ GX
 
 /-- The full-element obligation of a `GX`-member. -/
 theorem GX_full {y M : TrioSeq} {v z a t : ℕ} (h : y ∈ GX) (hb : based y)
-    (hM : argOK M) (hM2 : 2 ≤ M.length) (hctx : CtxOK M v z)
+    (hM : argOK M) (hM2 : 1 ≤ M.length) (hctx : CtxOK M v z)
     (hz1 : z ≤ 1) (hva : 2 * (v + t) + z ≤ a) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M y) t ∈ W a := by
   have := h hb M hM hM2 v z hz1 hctx y.length le_rfl a t hva
@@ -225,7 +225,7 @@ def CoreBlocked : Prop :=
 def CoreT1L : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq),
     Y.dropLast ∈ GXs → based Y → Y ≠ [] →
-    argOK M → 2 ≤ M.length →
+    argOK M → 1 ≤ M.length →
     srow (graft M Y) ((graft M Y).length - 1) = 1 →
     (∃ m, domT (graft M Y) m) →
     ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
@@ -239,7 +239,7 @@ own lifted elements. -/
 def CoreT2EFam : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq),
     Y.dropLast ∈ GX → based Y → Y ≠ [] →
-    argOK M → 2 ≤ M.length →
+    argOK M → 1 ≤ M.length →
     srow (graft M Y) ((graft M Y).length - 1) = 2 →
     (∃ m, domT (graft M Y) m) →
     ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
@@ -257,7 +257,7 @@ def CoreT2EFam : Prop :=
 def CoreT2E : Prop :=
   ∀ (u : ℕ) (Y M : TrioSeq),
     Y.dropLast ∈ GX → based Y → Y ≠ [] →
-    argOK M → 2 ≤ M.length →
+    argOK M → 1 ≤ M.length →
     srow (graft M Y) ((graft M Y).length - 1) = 2 →
     (∃ m, domT (graft M Y) m) →
     ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
@@ -303,7 +303,7 @@ whenever `M` is and the peel `Y.dropLast` is in the machine's set — the strict
 composite prefixes are the `M`-prefixes plus the grafts of `Y`'s strict
 prefixes, i.e. exactly the peel's element-prefix obligations. -/
 theorem ctxOK_graft {M Y : TrioSeq} {v z : ℕ} (hMarg : argOK M)
-    (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hM2 : 1 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
     (hYd : Y.dropLast ∈ GX) (hbY : based Y) :
     CtxOK (graft M Y) v z := by
   intro k hk a t hva
@@ -322,7 +322,7 @@ lifted root `(v + t, z)` is fully supplied by the context's `(v, z)`-slice and
 the peel's prefix obligations — the lifts compose (`Lift1_Lift1`) and the cone
 is prefix-local (`ltail_take`). -/
 theorem ctxOK_ltail {M Y : TrioSeq} {v z t : ℕ} (hMarg : argOK M)
-    (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hM2 : 1 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
     (hYd : Y.dropLast ∈ GX) (hbY : based Y) :
     CtxOK (Wset.ltail v z (graft M Y) t) (v + t) z := by
   intro k hk a t' hva
@@ -428,7 +428,7 @@ context, lifted, is again in the machine's set.  At `t = 0` this is
 `gx_graft` applied to the context's own planted peel (`plantCtx_graft`); the
 lift is the residual content. -/
 def CoreLiftPlant : Prop :=
-  ∀ (M D : TrioSeq), argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 →
+  ∀ (M D : TrioSeq), argOK M → 1 ≤ M.length → ∀ v z : ℕ, z ≤ 1 →
     CtxOK M v z → D ∈ GX → based D → ∀ t : ℕ,
       Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX
 
@@ -569,7 +569,7 @@ def CoreLift : Prop :=
 planted root, is in the machine's set.  This is a pure *context*-side statement
 (no element data) — the master length induction's job. -/
 def CorePlantCtx : Prop :=
-  ∀ M : TrioSeq, argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+  ∀ M : TrioSeq, argOK M → 1 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
     (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) ∈ GX
 
 /-- **The unlifted plant is free**: given the context's own planted peel
@@ -609,7 +609,7 @@ def CoreMaskLift : Prop :=
 /-- **リフトした植え文脈核**: 文脈自身の植えた peel をリフトしたものが機械の
 集合に入る。データを含まない純粋な文脈側の言明（MASTER 長さ帰納の担当）。 -/
 def CorePlantCtxLift : Prop :=
-  ∀ M : TrioSeq, argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+  ∀ M : TrioSeq, argOK M → 1 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
     ∀ t : ℕ, Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX
 
 open Classical in
@@ -617,7 +617,7 @@ open Classical in
 マスクリフトを接ぎ木したもの。 -/
 theorem liftPlant_of_plant {M D : TrioSeq} {v z t : ℕ}
     (hp : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX)
-    (hMarg : argOK M) (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hMarg : argOK M) (hM2 : 1 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
     (hD : D ∈ GX) (hbD : based D) (hm : mlift D v t ∈ GX) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX := by
   classical
@@ -654,7 +654,7 @@ theorem liftPlant_of_plant {M D : TrioSeq} {v z t : ℕ}
   exact hp
 
 theorem liftPlant_of_mask (hp : CorePlantCtxLift) {M D : TrioSeq} {v z t : ℕ}
-    (hMarg : argOK M) (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hMarg : argOK M) (hM2 : 1 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
     (hD : D ∈ GX) (hbD : based D) (hm : mlift D v t ∈ GX) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX :=
   liftPlant_of_plant (hp M hMarg hM2 v z hz1 hctx t) hMarg hM2 hz1 hctx hD hbD hm
@@ -934,60 +934,33 @@ theorem coreBlockedElt_of_window (hw : CoreWindow) (hhi : CoreBlockedEltHi) :
       exact gcopies_mem_GX hdep hbaseR hL
         (hw u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx) n
 
-/-- **The γ'-residue, root slice**: a blocker at the context root descends to a
-single-column context — the shift case, outside `GX`'s reach. -/
-def CoreBlocked0 : Prop :=
-  ∀ (u : ℕ) (Y M : TrioSeq),
-    Y.dropLast ∈ GX → based Y → Y ≠ [] →
-    argOK M → 2 ≤ M.length →
-    ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
-    hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
-      ((graft M Y).length - 1) →
-    parent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
-      ((graft M Y).length - 1) = 0 →
-    ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
-    ∀ a t n : ℕ, 2 * (v + t) + z ≤ a → 1 ≤ n →
-      Lift1 (((0, v, z) : ℕ × ℕ × ℕ)
-        :: graft (M.take 1)
-          (shiftl0 (entry M 0 0)
-            (gcopies (graft M Y) 0 ((graft M Y).length - 1)
-              (if 0 < srow (graft M Y) ((graft M Y).length - 1)
-                then entry (graft M Y) 0 ((graft M Y).length - 1)
-                  - entry (graft M Y) 0 0 else 0)
-              (if 1 < srow (graft M Y) ((graft M Y).length - 1)
-                then entry (graft M Y) 1 ((graft M Y).length - 1)
-                  - entry (graft M Y) 1 0 else 0) n))) t ∈ W a
-
-/-- **γ' reduces to (element membership + the root slice)**: away from the
-root, the descended context `M.take (p+1)` is equipped by restriction, so the
-package is a `GX` application of the copies element. -/
-theorem coreBlocked_of_elt (he : CoreBlockedElt) (h0 : CoreBlocked0) :
-    CoreBlocked := by
+/-- **γ' reduces to element membership**: the descended context `M.take (p+1)`
+is equipped by restriction, so the package is a `GX` application of the copies
+element.  Since `GX` now also carries the singleton contexts (`1 ≤ |M|`), the
+root slice `p = 0` needs no separate core. -/
+theorem coreBlocked_of_elt (he : CoreBlockedElt) : CoreBlocked := by
   intro u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt
     v z hz1 hctx a t n hva hn
-  rcases Nat.eq_zero_or_pos p with rfl | hp1
-  · exact h0 u Y M AY hbased hy hMarg hM2 hpY hpG hpar
-      v z hz1 hctx a t n hva hn
-  · have helt := he u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt
-      v z hz1 hctx n hn
-    have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
-    have hyl : 0 < Y.length := List.length_pos_iff.mpr hy
-    have hplt' : p < (graft M Y).length - 1 := by rw [graft_length]; omega
-    have hlow : entry (graft M Y) 0 p = entry M 0 p := by
-      rw [← entry_take (t := p + 1) (N := graft M Y) (by omega),
-        take_graft_low (by omega), entry_take (by omega)]
-    have hbe := based_blocked_element (M := M) (y := Y)
-      (d0 := if 0 < srow (graft M Y) ((graft M Y).length - 1)
-        then entry (graft M Y) 0 ((graft M Y).length - 1)
-          - entry (graft M Y) 0 p else 0)
-      (d1 := if 1 < srow (graft M Y) ((graft M Y).length - 1)
-        then entry (graft M Y) 1 ((graft M Y).length - 1)
-          - entry (graft M Y) 1 p else 0)
-      n hn hplt' hlow
-    have htk2 : 2 ≤ (M.take (p + 1)).length := by
-      rw [List.length_take]; omega
-    exact GX_full helt hbe (argOK_take hMarg (p + 1)) htk2
-      (ctxOK_take hctx (p + 1)) hz1 hva
+  have helt := he u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt
+    v z hz1 hctx n hn
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hyl : 0 < Y.length := List.length_pos_iff.mpr hy
+  have hplt' : p < (graft M Y).length - 1 := by rw [graft_length]; omega
+  have hlow : entry (graft M Y) 0 p = entry M 0 p := by
+    rw [← entry_take (t := p + 1) (N := graft M Y) (by omega),
+      take_graft_low (by omega), entry_take (by omega)]
+  have hbe := based_blocked_element (M := M) (y := Y)
+    (d0 := if 0 < srow (graft M Y) ((graft M Y).length - 1)
+      then entry (graft M Y) 0 ((graft M Y).length - 1)
+        - entry (graft M Y) 0 p else 0)
+    (d1 := if 1 < srow (graft M Y) ((graft M Y).length - 1)
+      then entry (graft M Y) 1 ((graft M Y).length - 1)
+        - entry (graft M Y) 1 p else 0)
+    n hn hplt' hlow
+  have htk1 : 1 ≤ (M.take (p + 1)).length := by
+    rw [List.length_take]; omega
+  exact GX_full helt hbe (argOK_take hMarg (p + 1)) htk1
+    (ctxOK_take hctx (p + 1)) hz1 hva
 
 /-- **The family core from the lifted-plant core**: the row-2 tower's elements
 are exactly the lifted planted blocks `Lift1 (Nb⟦j⟧) d1` over the equipped
@@ -1002,7 +975,7 @@ theorem coreT2EFam_of_plantctx (hp : CorePlantCtxLift) : CoreT2EFam := by
   have hR : argOK (graft M Y) := argOK_graft hMne hMarg Y
   have hRne : graft M Y ≠ [] :=
     List.length_pos_iff.mp (by rw [graft_length]; omega)
-  have hR2 : 2 ≤ (graft M Y).length := by rw [graft_length]; omega
+  have hR2 : 1 ≤ (graft M Y).length := by rw [graft_length]; omega
   have hctxR : CtxOK (graft M Y) v z :=
     ctxOK_graft hMarg hM2 hz1 hctx hYd hbased
   set R : TrioSeq := graft M Y with hRdef
@@ -1112,7 +1085,7 @@ theorem coreT1L_of_plantctx (hp : CorePlantCtxLift) : CoreT1L := by
   have hR : argOK (graft M Y) := argOK_graft hMne hMarg Y
   have hRne : graft M Y ≠ [] :=
     List.length_pos_iff.mp (by rw [graft_length]; omega)
-  have hR2 : 2 ≤ (graft M Y).length := by rw [graft_length]; omega
+  have hR2 : 1 ≤ (graft M Y).length := by rw [graft_length]; omega
   have hpY : ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) :=
     fun hp => hd.2 (hasParent_graft_inner hMne hy hp)
   set R : TrioSeq := graft M Y with hRdef
@@ -1151,7 +1124,7 @@ theorem coreT1L_of_plantctx (hp : CorePlantCtxLift) : CoreT1L := by
       (srow Rt (Rt.length - 1)) Rt.length := by
     rw [← Wset.lift_cons, hsrRt, hRtlen, ← hs1]
     exact hasParent_Lift1.mpr hpN
-  have hRt2 : 2 ≤ Rt.length := by rw [hRtlen]; exact hR2
+  have hRt2 : 1 ≤ Rt.length := by rw [hRtlen]; exact hR2
   have hctxRt : CtxOK Rt (v + t) z :=
     ctxOK_ltail hMarg hM2 hz1 hctx hYd.1 hbased
   -- the lifted planted peel block carries the whole tower
@@ -1198,8 +1171,7 @@ theorem gx_of_pieces (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
   have hG : argOK (graft M Y) := argOK_graft hMne hMarg Y
   have hGne : graft M Y ≠ [] :=
     List.length_pos_iff.mp (by rw [graft_length]; omega)
-  have hGlen : 2 ≤ (graft M Y).length := by rw [graft_length]; omega
-  have hGL : (graft M Y).length - 1 ≠ 0 := by omega
+  have hGpos : 1 ≤ (graft M Y).length := by rw [graft_length]; omega
   by_cases hpY : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1)
   · -- (a) inner
     have hyL : Y.length - 1 ≠ 0 := by
@@ -1214,9 +1186,13 @@ theorem gx_of_pieces (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
       (srow (graft M Y) ((graft M Y).length - 1)) ((graft M Y).length - 1)
   · -- (γ) blocked
     have hplt := blocked_parent_lt hMne hy hpY hpG
+    have hM2' : 2 ≤ M.length := by omega
+    have hGL : (graft M Y).length - 1 ≠ 0 := by
+      have := nextR_index_lt (parent_nextR hpG)
+      omega
     refine A1_intro (Or.inr (Or.inl fun n hn => ?_))
     rw [lift_graft_blocked_step v z t n hMne hy hG hGL hpG rfl hplt]
-    exact hb u Y M _ hYdrop.1 hbased hy hMarg hM2 hpY hpG rfl hplt
+    exact hb u Y M _ hYdrop.1 hbased hy hMarg hM2' hpY hpG rfl hplt
       v z hz1 hctx a t n hva hn
   have hdrop : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y.dropLast) t ∈ W a :=
     GX_full hYdrop.1 (based_dropLast hbased) hMarg hM2 hctx hz1 hva
@@ -1340,35 +1316,35 @@ theorem singleton_mem_GXs (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E)
 `ltail` で閉じる」ことを示す — 将来そのクラスを構成するときの閉包則。 -/
 
 def SelfSup (M : TrioSeq) (v z : ℕ) : Prop :=
-  ∀ k, 0 < k → k < M.length → ∀ t : ℕ,
+  ∀ k, k < M.length → ∀ t : ℕ,
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.take k) t ∈ GX
 
 theorem selfSup_take {M : TrioSeq} {v z : ℕ} (h : SelfSup M v z) (j : ℕ) :
     SelfSup (M.take j) v z := by
-  intro k hk0 hk t
+  intro k hk t
   rw [List.length_take] at hk
   rw [List.take_take, Nat.min_eq_left (by omega)]
-  exact h k hk0 (by omega) t
+  exact h k (by omega) t
 
 open Classical in
 /-- **自己支持性は接ぎ木で保たれる**: 接頭辞は文脈側か「植え文脈 + データの
 マスク」に分解する（`liftPlant_of_plant`）。 -/
 theorem selfSup_graft {M Y : TrioSeq} {v z : ℕ} (hMarg : argOK M)
-    (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hM2 : 1 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
     (hself : SelfSup M v z) (hYd : Y.dropLast ∈ GXs) (hbY : based Y) :
     SelfSup (graft M Y) v z := by
   classical
-  intro k hk0 hk t
+  intro k hk t
   rw [graft_length] at hk
   rcases Nat.lt_or_ge k M.length with hkM | hkM
   · rw [take_graft_low (by omega)]
-    exact hself k hk0 (by omega) t
+    exact hself k (by omega) t
   · obtain ⟨j, rfl⟩ : ∃ j, k = M.length - 1 + j := ⟨k - (M.length - 1), by omega⟩
     have hjY : j < Y.length := by omega
     rw [take_graft_high]
     rcases Nat.eq_zero_or_pos j with rfl | hj0
     · rw [List.take_zero, graft_nil, List.dropLast_eq_take]
-      exact hself (M.length - 1) (by omega) (by omega) t
+      exact hself (M.length - 1) (by omega) t
     · have hYtj : Y.take j ∈ GXs := by
         have h := gxs_take hYd j
         rwa [dropLast_take (by omega)] at h
@@ -1378,35 +1354,35 @@ theorem selfSup_graft {M Y : TrioSeq} {v z : ℕ} (hMarg : argOK M)
         exact hbY
       have hplant : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX := by
         rw [List.dropLast_eq_take]
-        exact hself (M.length - 1) (by omega) (by omega) t
+        exact hself (M.length - 1) (by omega) t
       exact liftPlant_of_plant hplant hMarg hM2 hz1 hctx
         hYtj.1 hbtj (gxs_mlift hYtj v t)
 
 /-- **自己支持性はリフト文脈でも保たれる**（`ltail_take` + `Lift1_Lift1`）。 -/
 theorem selfSup_ltail {R : TrioSeq} {v z t : ℕ} (h : SelfSup R v z) :
     SelfSup (Wset.ltail v z R t) (v + t) z := by
-  intro k hk0 hk s
+  intro k hk s
   rw [Wset.ltail_length] at hk
   rw [Wset.ltail_take (by omega), ← Wset.lift_cons, Lift1_Lift1]
-  exact h k hk0 hk (t + s)
+  exact h k hk (t + s)
 
 /-- **The equipment class is self-supporting**: every equipped context's own
 planted prefixes are in the machine's set.  This is EXACTLY `CorePlantCtxLift`
 (`ctxOK_take` moves between a general `k` and `k = |M| - 1`), which identifies
 the core as a property of the *equipment class*, not of any single context. -/
 def EquipSelf : Prop :=
-  ∀ (M : TrioSeq), argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
-    ∀ k, 0 < k → k < M.length → ∀ t : ℕ,
+  ∀ (M : TrioSeq), argOK M → 1 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+    ∀ k, k < M.length → ∀ t : ℕ,
       Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.take k) t ∈ GX
 
 theorem corePlantCtxLift_of_equipSelf (h : EquipSelf) : CorePlantCtxLift := by
   intro M hMarg hM2 v z hz1 hctx t
   rw [List.dropLast_eq_take]
-  exact h M hMarg hM2 v z hz1 hctx (M.length - 1) (by omega) (by omega) t
+  exact h M hMarg hM2 v z hz1 hctx (M.length - 1) (by omega) t
 
 theorem equipSelf_of_corePlantCtxLift (h : CorePlantCtxLift) : EquipSelf := by
-  intro M hMarg hM2 v z hz1 hctx k hk0 hk t
-  have h2 : 2 ≤ (M.take (k + 1)).length := by rw [List.length_take]; omega
+  intro M hMarg hM2 v z hz1 hctx k hk t
+  have h2 : 1 ≤ (M.take (k + 1)).length := by rw [List.length_take]; omega
   have hres := h (M.take (k + 1)) (argOK_take hMarg (k + 1)) h2 v z hz1
     (ctxOK_take hctx (k + 1)) t
   rwa [List.dropLast_eq_take, List.length_take, List.take_take,
@@ -1510,7 +1486,7 @@ theorem W_le_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) (u : ℕ) :
 graft closure at every stage, for every context whose prefix packages are
 supplied (by the master length induction). -/
 theorem graftAll_of_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
-    ∀ S : TrioSeq, argOK S → 2 ≤ S.length →
+    ∀ S : TrioSeq, argOK S → 1 ≤ S.length →
       (∀ v z : ℕ, z ≤ 1 → CtxOK S v z) →
       ∀ (u : ℕ) (y : TrioSeq), y ∈ W u → based y → graft S y ∈ Wstar2 := by
   intro S hS hS2 hctx u y hy hby
@@ -1524,10 +1500,9 @@ equipment, the machine's closure consumes only its own inclusion `W ⊆ GX`
 self-reference — with the provenance descent measured in `probe_strat`
 (β-orphans = context material, position non-increasing; α-orphans = planted
 roots, stage-bounded) — is the single remaining task of the campaign. -/
-theorem GX_loop (he : CoreBlockedElt) (h0 : CoreBlocked0)
-    (hp : CorePlantCtxLift) :
+theorem GX_loop (he : CoreBlockedElt) (hp : CorePlantCtxLift) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
-  GXs_closed (coreBlocked_of_elt he h0) (coreT1L_of_plantctx hp)
+  GXs_closed (coreBlocked_of_elt he) (coreT1L_of_plantctx hp)
     (coreT2E_of_plantctx hp)
 
 /-- **The assembly loop, window form**: the honest residue list.  `CoreWindow`
@@ -1535,9 +1510,9 @@ is the composite's own window (context suffix + the datum's shifted peel);
 `CoreCtxSuffix` below is the strictly stronger context-only form, and reducing
 to it throws away the datum's hypotheses — keep both statements in view. -/
 theorem GX_loop_window (hw : CoreWindow) (hhi : CoreBlockedEltHi)
-    (h0 : CoreBlocked0) (hp : CorePlantCtxLift) :
+    (hp : CorePlantCtxLift) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
-  GX_loop (coreBlockedElt_of_window hw hhi) h0 hp
+  GX_loop (coreBlockedElt_of_window hw hhi) hp
 
 /-- **The assembly loop, context-piece form**: every residue in its finest
 currently known shape — three *context* statements (`CoreCtxSuffix` = the
@@ -1547,8 +1522,8 @@ and the planted-root staircase core (`CoreStairOm`).  **No datum-side lift
 core survives**: beta absorbs its mask into the tower's own root lift
 (`mlift_Lift1_cons`) and alpha reads it off `GXs`. -/
 theorem GX_loop_pieces (hsuf : CoreCtxSuffix) (hhi : CoreBlockedEltHi)
-    (h0 : CoreBlocked0) (hp : CorePlantCtxLift) :
+    (hp : CorePlantCtxLift) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
-  GX_loop (coreBlockedElt_of_window (coreWindow_of_suffix hsuf) hhi) h0 hp
+  GX_loop (coreBlockedElt_of_window (coreWindow_of_suffix hsuf) hhi) hp
 
 end TRIO

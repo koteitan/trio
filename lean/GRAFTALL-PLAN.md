@@ -1124,6 +1124,54 @@ selfSup_ltail : SelfSup R v z → SelfSup (ltail v z R t) (v+t) z
    変性の問題を回避できる可能性があるが大改造。
 3. 現状維持で `CoreWindow` / `CoreBlockedEltHi` / `CoreBlocked0` を先に潰す。
 
+## 1.9.29 ✅ v0.118.31: `GX` の文脈を**単元まで緩めて** `CoreBlocked0` を消した
+
+### 何をしたか
+
+`GX` の文脈条件 `2 ≤ M.length` を `1 ≤ M.length` に緩めた。連動して
+`GX_full` / `ctxOK_graft` / `ctxOK_ltail` / `liftPlant_of_plant` /
+`liftPlant_of_mask` / `selfSup_graft` / `graftAll_of_GX`、および
+`CoreT1L` / `CoreT2E` / `CoreT2EFam` / `CorePlantCtxLift` / `CorePlantCtx` /
+`CoreLiftPlant` / `EquipSelf` / `SelfSup` を `1 ≤` 版にした。
+
+- `coreBlocked_of_elt` の `p = 0` 分岐（降下文脈 `M.take 1` の長さが 1）が
+  `GX_full` で処理できるようになり、**`CoreBlocked0` は定義ごと削除**。
+- ブロック系の核（`CoreBlocked` / `CoreBlockedElt` / `CoreWindow` /
+  `CoreCtxSuffix` / `CoreBlockedEltHi`）は `2 ≤ M.length` のまま。
+  `gx_of_pieces` の γ 枝では `hplt : p < |M| - 1` から `2 ≤ |M|` が復元でき、
+  `hGL : |graft M Y| - 1 ≠ 0` も `hpG` から `nextR_index_lt` で出る
+  （旧 `hGlen` は `1 ≤ |graft M Y|` に弱めた）。
+
+### なぜ「核が強くなる」トレードオフではないのか
+
+以前 §1.9.26 でこの緩和を「他の核の結論が強くなるので net progress ではない」
+と評価したが、**それは誤り**だった。最終目標の
+
+```
+GraftAll : ∀ S, argOK S → S ≠ [] → ∀ u y, y ∈ W u → based y → graft S y ∈ Wstar2
+```
+
+は**もともと単元文脈 `S ≠ []` を要求している**。緩和前の `graftAll_of_GX` は
+`2 ≤ S.length` しか出せず、単元文脈は既知のギャップだった。緩和後は
+
+```
+graftAll_of_GX : ∀ S, argOK S → 1 ≤ S.length → (∀ v z, z ≤ 1 → CtxOK S v z) → …
+```
+
+となり、**`GraftAll` との差は装備 `CtxOK S v z` の一点だけ**になった
+（文脈長のギャップは消滅）。
+
+### 残差（3 本）
+
+| 核 | 内容 |
+|---|---|
+| `CorePlantCtxLift` | 装備つき文脈の植えた peel のリフトが `GX` |
+| `CoreWindow`（⊂ `CoreCtxSuffix`） | 複合列の窓が `GX` |
+| `CoreBlockedEltHi` | 行 2 ブロッカーの上昇コピー塊（`d1 > 0`）が `GX` |
+
+`GX_loop (he : CoreBlockedElt) (hp : CorePlantCtxLift)` /
+`GX_loop_window (hw) (hhi) (hp)` / `GX_loop_pieces (hsuf) (hhi) (hp)`。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
