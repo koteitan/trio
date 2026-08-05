@@ -377,6 +377,74 @@ Aop 由来の一般データ（非整列）は `GX_full` 経由でしか使わ�
 - `tow_mem_GX` を GXt 版に（塔要素は整列 ✓）
 - α/β の核が「整列植えブロック ∈ GXt」に統一され、リフト残差が消える見込み
 
+## 1.9.18 ★★★★ 接ぎ木リフト計算則を Lean 化（v0.118, Cgraft.lean）— 一般形は**環境マスク**
+
+§1.9.17 の「整列リフト計算則」を精密化して Lean 化した。自己監査で 2 度の
+訂正が入った（どちらも probe で捕捉）:
+
+1. **ガードは「引数の根が `v` より上」ではない**（probe_lowcalc: 7814/102572
+   違反）。文脈 `R` の途中の低い列が行 1 の親を横取りするので、正しいガードは
+   **接ぎ木点そのものの錐所属**。修正版は 0/241816（probe_calc2）。
+2. **単一木の仮定は落とせる**。落とすと結論はリフトではなく**環境マスク
+   リフト**になる（probe_maskcalc: 0/200000。マスクが引数自身の錐と食い違う例が
+   131887/200000 ある = 真に一般な形）。
+
+### Lean 資産（`Cgraft.lean`, sorry 0, build 緑 598 jobs）
+
+```
+coneV A v j   := j の行 0 祖先（自身含む）がすべて行 1 で v を超える
+SiteHigh E    := 接ぎ木点の**手前の**行 0 祖先がすべて根より行 1 で高い
+mlift A v d   := coneV A v の上だけ行 1 を d 持ち上げる
+HighPar A v   := 根以外の行 1 孤児は行 1 で v 以下
+
+cone_graft_mask : le1 (graft E A) 0 (|E|-1+j) ↔ SiteHigh E ∧ coneV A (entry E 1 0) j
+lift_graft_mask : Lift1 (graft E A) d
+                    = graft (Lift1 E d) (if SiteHigh E then mlift A (entry E 1 0) d else A)
+cone_graft_high : （HighPar 版）le1 (graft E A) 0 (|E|-1+j)
+                    ↔ le1 (graft E A) 0 (|E|-1) ∧ le1 A 0 j
+lift_graft_cone : Lift1 (graft E A) d
+                    = graft (Lift1 E d) (if 接ぎ木点が錐 then Lift1 A d else A)
+```
+補助: `highPar_of_shallow`（単一木は自動で HighPar）、`highPar_Lift1`、
+`exists_root_anc`、`rtg0_graft_split` / `rtg0_graft_join`（行 0 祖先鎖の分解）、
+`nextrel0_graft_site`（接ぎ木点への一歩 = 引数の任意の深さ 0 列への一歩）、
+`lift_graft_of_entries`（組み立て）、成分補題一式。
+
+### 帰結: α / β の残差がきれいに割れる
+
+- **β**: 塔ステップは `Nb⟦i+1⟧ = graft Nb (Lift1 (Nb⟦i⟧) d1)` で、引数は
+  植えたブロック（単一木 ⟹ `highPar_of_shallow` + `highPar_Lift1`）、接ぎ木点は
+  `nextrel2 Nb 0 last` が含む `le1` で錐の中。⟹ `lift_graft_cone` がそのまま効き、
+  塔要素は閉じた形をもつ（`d0 ⊕ d` 則）。**β のリフト残差は消える見込み**。
+- **α**: 機械の義務そのものが `Lift1 ((0,v,z) :: graft M Y) t`。`lift_graft_mask` で
+  ```
+      Lift1 ((0,v,z) :: graft M Y) t
+        = graft (Lift1 ((0,v,z) :: M) t) (mlift Y v t)      （SiteHigh のとき）
+  ```
+  すなわち **α の残差は 2 つに割れる**:
+  - (α1) **リフトした植え文脈** `Lift1 ((0,v,z)::M) t ∈ GX` — データを含まない
+    純粋な文脈側の言明（CorePlantCtx + リフト）。
+  - (α2) **データのマスクリフト** `mlift Y v t ∈ GX`（`Y ∈ GX`）。
+  これが (e)-壁の**最終形**であり、`CoreLift`（`Lift1 y t ∈ GX`）が偽/届かない
+  理由も同時に説明する: 一般のデータでは複合の錐は `Y` 自身の錐ではなく
+  `coneV Y v` だから（probe_liftplant の反証の正体）。
+
+### なぜ mlift なら閉じ得るか（probe_mliftgraft: 0/200000）
+
+`Lift1` はブロックごとに閾値を根の行 1 値へ**リセット**する。だから
+「接ぎ木の内側でリフトする」が言語の外に出る（§1.9.13 の壁）。
+`mlift` は閾値 `v` が**定数**で、接ぎ木に分配する:
+
+```
+  (D)  mlift (graft M y) v d = graft (mlift M v d) (if SiteV M v then mlift y v d else y)
+       SiteV M v := M の末尾列の行 0 祖先（末尾自身を除く）がすべて行 1 で v より上
+```
+
+つまり機械の接ぎ木義務は**同じ `v`** のマスクリフトで安定。`Lift1` にできな
+かったことがちょうどできる。⟹ **次期設計: 義務言語を `mlift` でパラメータ化**
+（`Lift1` は「整列データに対する mlift の特殊形」ではないので、β 用の
+`lift_graft_cone` と併用する 2 パラメータ設計になる）。
+
 ## 1.9.13 ★ 壁の同定: 「リフト後 graft」言語の非閉性（2026-08-05 深夜）
 
 残る核（`CoreLift` / `CoreLiftPlant` / `CoreBlockedEltHi`）はすべて

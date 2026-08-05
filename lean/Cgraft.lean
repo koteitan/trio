@@ -202,44 +202,19 @@ theorem cone_graft_high {E A : TrioSeq} (hE2 : 2 ≤ E.length)
 /-! ## リフト計算則 -/
 
 open Classical in
-/-- **接ぎ木リフト計算則**: 単一木 `A`（根以外の行 1 孤児が `E` の根の行 1 値
-以下）を接ぎ木したブロックをリフトすると、リフトは文脈側にだけ効き、引数側には
-「接ぎ木点が錐に入るときにかぎり」引数自身のリフトとして効く。 -/
-theorem lift_graft_cone {E A : TrioSeq} (hE2 : 2 ≤ E.length)
-    (hA0 : entry A 0 0 = 0)
-    (hAs : ∀ l, 0 < l → l < A.length → 0 < entry A 0 l)
-    (hlow : HighPar A (entry E 1 0)) (d : ℕ) :
-    Lift1 (graft E A) d
-      = graft (Lift1 E d)
-        (if le1 (graft E A) 0 (E.length - 1) then Lift1 A d else A) := by
-  set B : TrioSeq := if le1 (graft E A) 0 (E.length - 1) then Lift1 A d else A
-    with hB
-  have hBlen : B.length = A.length := by
-    rw [hB]; split <;> simp
+/-- **組み立て補題**: 引数側の置換ブロック `B` が「行 0・行 2 はそのまま、行 1 は
+複合ブロックの錐の上でだけ `d` 上がる」なら、複合ブロックのリフトは
+`graft (Lift1 E d) B` に等しい。 -/
+theorem lift_graft_of_entries {E A B : TrioSeq} {d : ℕ} (hE2 : 2 ≤ E.length)
+    (hBlen : B.length = A.length)
+    (hB0 : ∀ k, entry B 0 k = entry A 0 k) (hB2 : ∀ k, entry B 2 k = entry A 2 k)
+    (hB1 : ∀ k, k < A.length → entry B 1 k
+      = entry A 1 k + (if le1 (graft E A) 0 (E.length - 1 + k) then d else 0)) :
+    Lift1 (graft E A) d = graft (Lift1 E d) B := by
   have hLElen : (Lift1 E d).length = E.length := Lift1_length E d
   have hLE1 : (Lift1 E d).length - 1 = E.length - 1 := by rw [hLElen]
   have hlen : (Lift1 (graft E A) d).length = (graft (Lift1 E d) B).length := by
     rw [Lift1_length, graft_length, graft_length, hLElen, hBlen]
-  have hB0 : ∀ k, entry B 0 k = entry A 0 k := by
-    intro k; rw [hB]; split
-    · exact entry0_Lift1 A d k
-    · rfl
-  have hB2 : ∀ k, entry B 2 k = entry A 2 k := by
-    intro k; rw [hB]; split
-    · exact entry2_Lift1 A d k
-    · rfl
-  have hB1 : ∀ k, k < A.length → entry B 1 k
-      = entry A 1 k + (if le1 (graft E A) 0 (E.length - 1 + k) then d else 0) := by
-    intro k hk
-    by_cases hg : le1 (graft E A) 0 (E.length - 1)
-    · rw [hB, if_pos hg, entry1_Lift1 hk,
-        if_congr (cone_graft_high hE2 hA0 hAs hlow hk) rfl rfl]
-      by_cases hc : le1 A 0 k
-      · rw [if_pos hc, if_pos ⟨hg, hc⟩]
-      · rw [if_neg hc, if_neg (fun h => hc h.2)]
-    · rw [hB, if_neg hg,
-        if_neg (fun h => hg ((cone_graft_high hE2 hA0 hAs hlow hk).1 h).1)]
-      omega
   refine List.ext_getElem hlen ?_
   intro i hi1 hi2
   rw [Lift1_length, graft_length] at hi1
@@ -282,5 +257,336 @@ theorem lift_graft_cone {E A : TrioSeq} (hE2 : 2 ≤ E.length)
         = entry A 1 k + (if le1 (graft E A) 0 (E.length - 1 + k) then d else 0) := by
       rw [← hLE1, entry1_graft_high, hB1 k hkA, hLE1]
     rw [e0, e1, e2, f0, f1, f2]
+
+open Classical in
+/-- **接ぎ木リフト計算則（単一木版）**: 単一木 `A`（根以外の行 1 孤児が `E` の根の
+行 1 値以下）を接ぎ木したブロックをリフトすると、リフトは文脈側にだけ効き、
+引数側には「接ぎ木点が錐に入るときにかぎり」引数自身のリフトとして効く。 -/
+theorem lift_graft_cone {E A : TrioSeq} (hE2 : 2 ≤ E.length)
+    (hA0 : entry A 0 0 = 0)
+    (hAs : ∀ l, 0 < l → l < A.length → 0 < entry A 0 l)
+    (hlow : HighPar A (entry E 1 0)) (d : ℕ) :
+    Lift1 (graft E A) d
+      = graft (Lift1 E d)
+        (if le1 (graft E A) 0 (E.length - 1) then Lift1 A d else A) := by
+  refine lift_graft_of_entries hE2 (by split <;> simp) (fun k => ?_) (fun k => ?_)
+    (fun k hk => ?_)
+  · split
+    · exact entry0_Lift1 A d k
+    · rfl
+  · split
+    · exact entry2_Lift1 A d k
+    · rfl
+  · by_cases hg : le1 (graft E A) 0 (E.length - 1)
+    · rw [if_pos hg, entry1_Lift1 hk,
+        if_congr (cone_graft_high hE2 hA0 hAs hlow hk) rfl rfl]
+      by_cases hc : le1 A 0 k
+      · rw [if_pos hc, if_pos ⟨hg, hc⟩]
+      · rw [if_neg hc, if_neg (fun h => hc h.2)]
+    · rw [if_neg hg,
+        if_neg (fun h => hg ((cone_graft_high hE2 hA0 hAs hlow hk).1 h).1)]
+      omega
+
+
+/-! ## 一般形: 環境マスクリフト
+
+単一木の仮定 `HighPar` を落とすと、複合ブロックの錐は引数の上で**行 0 祖先鎖が
+すべて環境の根より高い列**（`coneV`）になる。したがって一般には、リフトは引数側
+に「環境しきい値 `v` のマスクリフト `mlift`」として効く（tools/probe_maskcalc.py:
+錐輸送・計算則ともに 0/200000 違反。マスクが引数自身の錐と食い違う場合が
+131887/200000 あるので、これは真に一般な形）。 -/
+
+/-- 行 0 の祖先（自身を含む）がすべて行 1 で `v` を超える列。 -/
+def coneV (A : TrioSeq) (v j : ℕ) : Prop :=
+  ∀ y, Relation.ReflTransGen (nextrel0 A) y j → v < entry A 1 y
+
+/-- 接ぎ木点の**手前の**行 0 祖先がすべて根より行 1 で高い。接ぎ木点そのものは
+引数の根の行 1 値を担うので除く。 -/
+def SiteHigh (E : TrioSeq) : Prop :=
+  ∀ y, y ≠ 0 → y < E.length - 1 →
+    Relation.ReflTransGen (nextrel0 E) y (E.length - 1) → entry E 1 0 < entry E 1 y
+
+open Classical in
+/-- 環境しきい値 `v` のマスクリフト。 -/
+noncomputable def mlift (A : TrioSeq) (v d : ℕ) : TrioSeq :=
+  (List.range A.length).map fun j =>
+    ((entry A 0 j, entry A 1 j + (if coneV A v j then d else 0),
+      entry A 2 j) : ℕ × ℕ × ℕ)
+
+@[simp] theorem mlift_length (A : TrioSeq) (v d : ℕ) :
+    (mlift A v d).length = A.length := by simp [mlift]
+
+open Classical in
+theorem mlift_getD {A : TrioSeq} {v d i : ℕ} (hi : i < A.length) :
+    (mlift A v d).getD i (0, 0, 0)
+      = ((entry A 0 i, entry A 1 i + (if coneV A v i then d else 0),
+          entry A 2 i) : ℕ × ℕ × ℕ) := by
+  rw [List.getD_eq_getElem?_getD,
+    List.getElem?_eq_getElem (by rw [mlift_length]; exact hi)]
+  unfold mlift
+  simp only [List.getElem_map, List.getElem_range]
+  rfl
+
+theorem entry0_mlift (A : TrioSeq) (v d i : ℕ) :
+    entry (mlift A v d) 0 i = entry A 0 i := by
+  show ((mlift A v d).getD i (0, 0, 0)).1 = ((A.getD i (0, 0, 0)).1 : ℕ)
+  rcases Nat.lt_or_ge i A.length with hi | hi
+  · rw [mlift_getD hi]; rfl
+  · rw [getD_out (by rw [mlift_length]; omega), getD_out hi]
+
+theorem entry2_mlift (A : TrioSeq) (v d i : ℕ) :
+    entry (mlift A v d) 2 i = entry A 2 i := by
+  show ((mlift A v d).getD i (0, 0, 0)).2.2 = ((A.getD i (0, 0, 0)).2.2 : ℕ)
+  rcases Nat.lt_or_ge i A.length with hi | hi
+  · rw [mlift_getD hi]; rfl
+  · rw [getD_out (by rw [mlift_length]; omega), getD_out hi]
+
+open Classical in
+theorem entry1_mlift {A : TrioSeq} {v d i : ℕ} (hi : i < A.length) :
+    entry (mlift A v d) 1 i = entry A 1 i + (if coneV A v i then d else 0) := by
+  show ((mlift A v d).getD i (0, 0, 0)).2.1 = _
+  rw [mlift_getD hi]
+
+/-! ### 行 0 の鎖: 接ぎ木点までは文脈と同じ、接ぎ木点からは引数の中 -/
+
+theorem entry0_graft_le {E A : TrioSeq} (hA0 : entry A 0 0 = 0) (hA : 0 < A.length)
+    {i : ℕ} (hi : i ≤ E.length - 1) :
+    entry (graft E A) 0 i = entry E 0 i := by
+  rcases Nat.lt_or_ge i (E.length - 1) with h | h
+  · exact entry_graft_low h
+  · have h0 := entry0_graft_high (E := E) (A := A) (k := 0) hA
+    rw [hA0, Nat.zero_add] at h0
+    have hie : i = E.length - 1 := by omega
+    rw [hie]
+    simpa using h0
+
+theorem nextrel0_graft_le {E A : TrioSeq} (hA0 : entry A 0 0 = 0) (hA : 0 < A.length)
+    (hE2 : 2 ≤ E.length) {a b : ℕ} (hb : b ≤ E.length - 1) :
+    nextrel0 (graft E A) a b ↔ nextrel0 E a b := by
+  have hGlen : (graft E A).length = E.length - 1 + A.length := graft_length E A
+  have eb : entry (graft E A) 0 b = entry E 0 b := entry0_graft_le hA0 hA hb
+  unfold nextrel0
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    have ea : entry (graft E A) 0 a = entry E 0 a := entry0_graft_le hA0 hA (by omega)
+    refine ⟨by omega, by omega, h3, by omega, ?_⟩
+    intro j hj
+    have ej : entry (graft E A) 0 j = entry E 0 j :=
+      entry0_graft_le hA0 hA (by omega)
+    have := h5 j hj
+    omega
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    have ea : entry (graft E A) 0 a = entry E 0 a := entry0_graft_le hA0 hA (by omega)
+    refine ⟨by omega, by omega, h3, by omega, ?_⟩
+    intro j hj
+    have ej : entry (graft E A) 0 j = entry E 0 j :=
+      entry0_graft_le hA0 hA (by omega)
+    have := h5 j hj
+    omega
+
+theorem rtg0_graft_le {E A : TrioSeq} (hA0 : entry A 0 0 = 0) (hA : 0 < A.length)
+    (hE2 : 2 ≤ E.length) {y b : ℕ} (hb : b ≤ E.length - 1) :
+    Relation.ReflTransGen (nextrel0 (graft E A)) y b
+      ↔ Relation.ReflTransGen (nextrel0 E) y b := by
+  constructor
+  · intro h
+    induction h with
+    | refl => exact Relation.ReflTransGen.refl
+    | @tail w c hw hwc ih =>
+        exact (ih (by have := hwc.2.2.1; omega)).tail
+          ((nextrel0_graft_le hA0 hA hE2 hb).1 hwc)
+  · intro h
+    induction h with
+    | refl => exact Relation.ReflTransGen.refl
+    | @tail w c hw hwc ih =>
+        exact (ih (by have := hwc.2.2.1; omega)).tail
+          ((nextrel0_graft_le hA0 hA hE2 hb).2 hwc)
+
+theorem rtg0_graft_embed {E A : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 A) a b) :
+    Relation.ReflTransGen (nextrel0 (graft E A)) (E.length - 1 + a) (E.length - 1 + b) := by
+  have hd : E.dropLast.length = E.length - 1 := List.length_dropLast
+  rw [graft_eq_shift, ← hd]
+  exact rtg_nextrel0_lift _ _ (rtg0_shiftr01.2 h)
+
+/-- 行 0 の孤児（深さ 0 の列）は必ずどの列の祖先鎖の末端にある。 -/
+theorem exists_root_anc {A : TrioSeq} (hA0 : entry A 0 0 = 0) {j : ℕ}
+    (hj : j < A.length) :
+    ∃ o, o < A.length ∧ entry A 0 o = 0 ∧
+      Relation.ReflTransGen (nextrel0 A) o j := by
+  classical
+  have hspec : entry A 0 (Nat.findGreatest (fun k => entry A 0 k = 0) j) = 0 :=
+    Nat.findGreatest_spec (P := fun k => entry A 0 k = 0) (Nat.zero_le j) hA0
+  have hle : Nat.findGreatest (fun k => entry A 0 k = 0) j ≤ j :=
+    Nat.findGreatest_le j
+  refine ⟨_, by omega, hspec, rtg0_of_window hj hle ?_⟩
+  intro l hl0 hl1
+  have hnp : ¬ (entry A 0 l = 0) :=
+    Nat.findGreatest_is_greatest (P := fun k => entry A 0 k = 0) hl0 hl1
+  rw [hspec]
+  omega
+
+/-- 接ぎ木点への行 0 の一歩は、引数の任意の深さ 0 の列への一歩と同値。 -/
+theorem nextrel0_graft_site {E A : TrioSeq} (hA0 : entry A 0 0 = 0)
+    (hE2 : 2 ≤ E.length) {w o : ℕ} (ho : o < A.length) (hoz : entry A 0 o = 0)
+    (hw : w < E.length - 1) :
+    nextrel0 (graft E A) w (E.length - 1 + o)
+      ↔ nextrel0 (graft E A) w (E.length - 1) := by
+  have hGlen : (graft E A).length = E.length - 1 + A.length := graft_length E A
+  have hA : 0 < A.length := by omega
+  have hso : entry (graft E A) 0 (E.length - 1 + o) = entry (graft E A) 0 (E.length - 1) := by
+    rw [entry0_graft_high ho, hoz, Nat.zero_add, entry0_graft_le hA0 hA (le_refl _)]
+  unfold nextrel0
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨h1, by omega, hw, by rw [← hso]; exact h4, ?_⟩
+    intro j hj
+    rw [← hso]
+    exact h5 j ⟨hj.1, by omega⟩
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨h1, by omega, by omega, by rw [hso]; exact h4, ?_⟩
+    intro j hj
+    rw [hso]
+    rcases Nat.lt_or_ge j (E.length - 1) with hjs | hjs
+    · exact h5 j ⟨hj.1, hjs⟩
+    · obtain ⟨k, rfl⟩ : ∃ k, j = E.length - 1 + k := ⟨j - (E.length - 1), by omega⟩
+      have hk : k < A.length := by omega
+      have e1 : entry (graft E A) 0 (E.length - 1 + k)
+          = entry A 0 k + entry E 0 (E.length - 1) := entry0_graft_high hk
+      have e2 : entry (graft E A) 0 (E.length - 1) = entry E 0 (E.length - 1) :=
+        entry0_graft_le hA0 hA (le_refl _)
+      omega
+
+/-- 複合ブロックでの行 0 祖先鎖の分解: 引数の中の祖先か、接ぎ木点より手前の
+（＝接ぎ木点の）祖先か。 -/
+theorem rtg0_graft_split {E A : TrioSeq} (hA0 : entry A 0 0 = 0) (hE2 : 2 ≤ E.length)
+    {j : ℕ} (hj : j < A.length) {y : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 (graft E A)) y (E.length - 1 + j)) :
+    (∃ y', y = E.length - 1 + y' ∧ y' < A.length ∧
+        Relation.ReflTransGen (nextrel0 A) y' j)
+      ∨ (y < E.length - 1 ∧
+        Relation.ReflTransGen (nextrel0 (graft E A)) y (E.length - 1)) := by
+  have hGlen : (graft E A).length = E.length - 1 + A.length := graft_length E A
+  have hA : 0 < A.length := by omega
+  have key : ∀ b : ℕ, Relation.ReflTransGen (nextrel0 (graft E A)) y b →
+      ∀ k, b = E.length - 1 + k → k < A.length →
+      (∃ y', y = E.length - 1 + y' ∧ y' < A.length ∧
+          Relation.ReflTransGen (nextrel0 A) y' k)
+        ∨ (y < E.length - 1 ∧
+          Relation.ReflTransGen (nextrel0 (graft E A)) y (E.length - 1)) := by
+    intro b hb
+    induction hb with
+    | refl => intro k hk hkA; exact Or.inl ⟨k, hk, hkA, Relation.ReflTransGen.refl⟩
+    | @tail w c hw hwc ih =>
+        intro k hk hkA
+        subst hk
+        rcases Nat.lt_or_ge w (E.length - 1) with hws | hws
+        · -- the step comes from the context: it factors through the graft point
+          have hdip := hwc.2.2.2.2
+          have hlow : entry A 0 k = 0 := by
+            rcases Nat.eq_zero_or_pos k with rfl | hk0
+            · rw [← Nat.add_zero (E.length - 1)] at hwc
+              have e1 : entry (graft E A) 0 (E.length - 1 + 0)
+                  = entry A 0 0 + entry E 0 (E.length - 1) := entry0_graft_high hA
+              rw [hA0] at e1
+              omega
+            · have hmid := hdip (E.length - 1) ⟨hws, by omega⟩
+              have e1 : entry (graft E A) 0 (E.length - 1 + k)
+                  = entry A 0 k + entry E 0 (E.length - 1) := entry0_graft_high hkA
+              have e2 : entry (graft E A) 0 (E.length - 1) = entry E 0 (E.length - 1) :=
+                entry0_graft_le hA0 hA (le_refl _)
+              omega
+          exact Or.inr ⟨by have := rtg0_le hw; omega,
+            hw.tail ((nextrel0_graft_site hA0 hE2 hkA hlow hws).1 hwc)⟩
+        · obtain ⟨w', rfl⟩ : ∃ w', w = E.length - 1 + w' := ⟨w - (E.length - 1), by omega⟩
+          have hw'A : w' < A.length := by have := hwc.1; omega
+          have hstep : nextrel0 A w' k := by
+            have hd : E.dropLast.length = E.length - 1 := List.length_dropLast
+            rw [graft_eq_shift, ← hd, nextrel0_append_right, nextrel0_shiftr01] at hwc
+            exact hwc
+          rcases ih w' rfl hw'A with ⟨y', hy1, hy2, hy3⟩ | hr
+          · exact Or.inl ⟨y', hy1, hy2, hy3.tail hstep⟩
+          · exact Or.inr hr
+  exact key _ h j rfl hj
+
+/-- 逆向き: 接ぎ木点の（手前の）祖先は、引数のどの列の祖先でもある。 -/
+theorem rtg0_graft_join {E A : TrioSeq} (hA0 : entry A 0 0 = 0) (hE2 : 2 ≤ E.length)
+    {j y : ℕ} (hj : j < A.length) (hy : y < E.length - 1)
+    (h : Relation.ReflTransGen (nextrel0 (graft E A)) y (E.length - 1)) :
+    Relation.ReflTransGen (nextrel0 (graft E A)) y (E.length - 1 + j) := by
+  obtain ⟨o, hoA, hoz, hoj⟩ := exists_root_anc hA0 hj
+  have hend : Relation.ReflTransGen (nextrel0 (graft E A)) (E.length - 1 + o)
+      (E.length - 1 + j) := rtg0_graft_embed hoj
+  refine Relation.ReflTransGen.trans ?_ hend
+  cases h with
+  | refl => omega
+  | @tail w _ hyw hws =>
+      exact hyw.tail ((nextrel0_graft_site hA0 hE2 hoA hoz
+        (by have := hws.2.2.1; omega)).2 hws)
+
+/-! ### 一般の錐輸送とリフト計算則 -/
+
+/-- **一般の錐輸送**: 複合ブロックの錐は引数の上で「接ぎ木点の手前がすべて高い
+（`SiteHigh`）ならば環境マスク `coneV`、そうでなければ空」。 -/
+theorem cone_graft_mask {E A : TrioSeq} (hE0 : entry E 0 0 = 0)
+    (hEs : ∀ l, 0 < l → l < E.length → 0 < entry E 0 l) (hE2 : 2 ≤ E.length)
+    (hA0 : entry A 0 0 = 0) {j : ℕ} (hj : j < A.length) :
+    le1 (graft E A) 0 (E.length - 1 + j)
+      ↔ (SiteHigh E ∧ coneV A (entry E 1 0) j) := by
+  have hGlen : (graft E A).length = E.length - 1 + A.length := graft_length E A
+  have hA : 0 < A.length := by omega
+  have hG0 : entry (graft E A) 0 0 = 0 := by
+    rw [entry_graft_low (by omega)]; exact hE0
+  have hshal : ∀ l, 0 < l → l < (graft E A).length →
+      entry (graft E A) 0 0 < entry (graft E A) 0 l := by
+    intro l h1 h2
+    rw [hG0]
+    exact shallow_graft hEs hE2 l h1 h2
+  have hG1 : entry (graft E A) 1 0 = entry E 1 0 := entry_graft_low (by omega)
+  rw [le1_zero_iff hshal (by omega)]
+  constructor
+  · intro h
+    refine ⟨fun y hy0 hys hchain => ?_, fun y hchain => ?_⟩
+    · have hGy := (rtg0_graft_le hA0 hA hE2 (le_refl _)).2 hchain
+      have := h y (rtg0_graft_join hA0 hE2 hj hys hGy) hy0
+      rwa [hG1, entry_graft_low hys] at this
+    · have hy' : y < A.length := by
+        have := rtg0_le hchain
+        omega
+      have := h (E.length - 1 + y) (rtg0_graft_embed hchain) (by omega)
+      rwa [hG1, entry1_graft_high] at this
+  · rintro ⟨hs, hc⟩ y hchain hy0
+    rw [hG1]
+    rcases rtg0_graft_split hA0 hE2 hj hchain with ⟨y', rfl, hy'A, hy'⟩ | ⟨hys, hGy⟩
+    · rw [entry1_graft_high]
+      exact hc y' hy'
+    · rw [entry_graft_low hys]
+      exact hs y hy0 hys ((rtg0_graft_le hA0 hA hE2 (le_refl _)).1 hGy)
+
+open Classical in
+/-- **一般のリフト計算則**: 引数が森でも構わない。リフトは文脈側に効き、引数側
+には環境しきい値 `entry E 1 0` のマスクリフトとして効く（接ぎ木点の手前が
+高くないなら引数はまったく動かない）。 -/
+theorem lift_graft_mask {E A : TrioSeq} (hE0 : entry E 0 0 = 0)
+    (hEs : ∀ l, 0 < l → l < E.length → 0 < entry E 0 l) (hE2 : 2 ≤ E.length)
+    (hA0 : entry A 0 0 = 0) (d : ℕ) :
+    Lift1 (graft E A) d
+      = graft (Lift1 E d) (if SiteHigh E then mlift A (entry E 1 0) d else A) := by
+  refine lift_graft_of_entries hE2 (by split <;> simp) (fun k => ?_) (fun k => ?_)
+    (fun k hk => ?_)
+  · split
+    · exact entry0_mlift A (entry E 1 0) d k
+    · rfl
+  · split
+    · exact entry2_mlift A (entry E 1 0) d k
+    · rfl
+  · by_cases hg : SiteHigh E
+    · rw [if_pos hg, entry1_mlift hk,
+        if_congr (cone_graft_mask hE0 hEs hE2 hA0 hk) rfl rfl]
+      by_cases hc : coneV A (entry E 1 0) k
+      · rw [if_pos hc, if_pos ⟨hg, hc⟩]
+      · rw [if_neg hc, if_neg (fun h => hc h.2)]
+    · rw [if_neg hg, if_neg (fun h => hg ((cone_graft_mask hE0 hEs hE2 hA0 hk).1 h).1)]
+      omega
 
 end TRIO

@@ -1,14 +1,17 @@
-v0.118.0/the graft cone-transfer and the lift calculus (Cgraft.lean)
+v0.118.1/the general mask form of the graft lift calculus
 
-- Add Cgraft.lean: `cone_graft_high` transports the root row-1 cone across a
-  graft (the composite's cone on the argument is the argument's own cone if
-  the graft site is in the cone, empty otherwise) and `lift_graft_cone` turns
-  it into the lift calculus `Lift1 (graft E A) d = graft (Lift1 E d) (...)`
-- State the exact hypothesis `HighPar A v` (no row-1 orphan above `v` except
-  the root), with `highPar_of_shallow` (single trees) and `highPar_Lift1`
-- Add the graft component lemmas (entry/nextrel1/le0/le1 below and above the
-  graft point, `shallow_graft`)
-- Add tools/probe_lowcalc.py (refutes the naive "argument root above v" guard,
-  7814/102572) and tools/probe_calc2.py (the corrected calculus: 0/241816,
-  and 54978/58184 violations once `HighPar` is dropped)
-- Register Cgraft in lakefile roots
+- Add the general cone transfer `cone_graft_mask`: with no single-tree
+  hypothesis, the composite's root cone meets the argument in the ambient
+  mask `coneV A v` (guarded by `SiteHigh E`), and `lift_graft_mask` turns it
+  into `Lift1 (graft E A) d = graft (Lift1 E d) (mlift A v d)`
+- Add `mlift` (ambient-threshold mask lift) with its entry lemmas, and the
+  row-0 chain machinery it needs (`exists_root_anc`, `nextrel0_graft_site`,
+  `rtg0_graft_split` / `rtg0_graft_join`, `rtg0_graft_le`, `rtg0_graft_embed`)
+- Factor the pointwise assembly into `lift_graft_of_entries`, shared by the
+  single-tree calculus and the mask calculus
+- Add tools/probe_maskcalc.py (0/200000; mask differs from the argument's own
+  cone in 131887 cases) and tools/probe_mliftgraft.py (0/200000: the mask lift
+  distributes over grafts at a CONSTANT threshold, which `Lift1` never did)
+- Record the consequence in GRAFTALL-PLAN 1.9.18: alpha's residue splits into
+  the lifted planted context and `mlift Y v t` in GX; beta's lift residue is
+  covered by the single-tree calculus
