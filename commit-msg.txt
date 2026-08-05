@@ -1,10 +1,9 @@
-v0.117.1/two decisive probes: TbOper holds, the natDom route is refuted
+v0.117.2/the aligned lift calculus (0/191880)
 
-- Add probe_tboper: the principal block's minimal tbAll bound survives
-  expansion (0/11304), so the tbAll bookkeeping the campaign dropped is
-  actually available
-- Add probe_deadgraft: at dead sites the graft does NOT commute with the
-  composite lift (9377004/26740030, and 247734/2083496 even for
-  level-bounded data), so clause 3 cannot be supplied there
-- Record GRAFTALL-PLAN 1.9.16: the measurement confirms that restoring
-  natDom only moves the wall to branch (c)
+- Add probe_alignedcalc and probe_alignedsite: at a tower site, with data
+  aligned to the ambient root, the composite lift satisfies
+  Lift1 (graft E (Lift1 X d0)) d = graft (Lift1 E d) (Lift1 X (d0 (+) d)),
+  with zero violations; alignment and the site condition are both exactly
+  necessary (misaligned data violate it 100% at d0 = 0)
+- Record GRAFTALL-PLAN 1.9.17 and the v0.118 design target: an aligned,
+  lift-internalised predicate in which the lift residue closes
