@@ -1,9 +1,12 @@
-v0.114.3/record the plift decomposition route
+v0.115.0/reduce the gamma' element to the window (copies = iterated graft)
 
-- Add probe_allhigh: at 68% of tower sites the datum lies entirely above
-  the ambient root's row 1, where the mask lift degenerates to the
-  uniform row-1 shift; the rest are low columns carrying high subtrees
-- Record GRAFTALL-PLAN 1.9.12: CoreLiftPlant splits into CorePlantCtxL
-  (context side) and CorePlift (element side), and CorePlift may reduce
-  to closure under the uniform row-1 shift via a subtree decomposition
-- Update task.md to the two-part residue
+- Add shiftl0_shiftr01_comm, gcopies_depth_ge, cwin (the re-based window
+  with the blocked column re-attached), cwin_dropLast/cwin_last
+- Add shiftl0_gcopies_succ: with no row-1 ascension the copies block is
+  graft (cwin) (previous copies), so gcopies_mem_GX carries every copies
+  block from the window's own GX-membership
+- Introduce CoreWindow (the re-based window is in GX) and
+  CoreBlockedEltHi (the row-2 blocker's guarded copies), and prove
+  coreBlockedElt_of_window: CoreBlockedElt follows from the two
+- Add GX_loop'': every residue is now either a context piece in GX or a
+  lift closure

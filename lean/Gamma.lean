@@ -398,6 +398,114 @@ def CoreLiftPlant : Prop :=
     CtxOK M v z → D ∈ GX → based D → ∀ t : ℕ,
       Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX
 
+/-! ### γ' の要素: ガードなしコピー塊も反復接ぎ木
+
+`d1 = 0`（`srow ≤ 1`）のブロック済み展開では、コピー塊は行 0 シフトの
+タイリングであり、`gcopies_succ_shift` はそのまま `graft` の再帰:
+再基底化した窓に「ブロック列」を末尾として付けた `E` に対し
+`copies (n+1) = graft E (copies n)`。よって `tow_mem_GX` と同じ帰納で、
+コピー塊は**窓（末尾を除く）の `GX`-所属だけ**で `GX` に入る。 -/
+
+theorem shiftl0_shiftr01_comm {c d : ℕ} {X : TrioSeq} (h : ∀ q ∈ X, c ≤ q.1) :
+    shiftl0 c (shiftr01 d 0 X) = shiftr01 d 0 (shiftl0 c X) := by
+  unfold shiftl0 shiftr01
+  rw [List.map_map, List.map_map]
+  refine List.map_congr_left ?_
+  intro q hq
+  have hc := h q hq
+  simp only [Function.comp_apply]
+  exact Prod.ext (by dsimp only; omega) rfl
+
+theorem gcopies_depth_ge {R : TrioSeq} {p L d0 d1 n c : ℕ}
+    (h : ∀ j, p ≤ j → j < p + L → c ≤ entry R 0 j) :
+    ∀ q ∈ gcopies R p L d0 d1 n, c ≤ q.1 := by
+  intro q hq
+  unfold gcopies gcopy at hq
+  rw [List.mem_flatMap] at hq
+  obtain ⟨k, -, hq⟩ := hq
+  rw [List.mem_map] at hq
+  obtain ⟨j, hj, rfl⟩ := hq
+  rw [List.mem_range'_1] at hj
+  have := h j hj.1 hj.2
+  dsimp only
+  omega
+
+/-- The re-based window with the blocked column re-attached: the block whose
+graft recursion generates the copies. -/
+noncomputable def cwin (R : TrioSeq) (p L d0 c : ℕ) : TrioSeq :=
+  shiftl0 c (seg R p L) ++ [((d0, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem cwin_dropLast {R : TrioSeq} {p L d0 c : ℕ} :
+    (cwin R p L d0 c).dropLast = shiftl0 c (seg R p L) := by
+  unfold cwin
+  exact List.dropLast_concat
+
+theorem cwin_last {R : TrioSeq} {p L d0 c : ℕ} :
+    entry (cwin R p L d0 c) 0 ((cwin R p L d0 c).length - 1) = d0 := by
+  have hlen : (shiftl0 c (seg R p L)).length = L := by
+    rw [shiftl0_length, seg_length]
+  have h : (cwin R p L d0 c).length - 1 = (shiftl0 c (seg R p L)).length + 0 := by
+    unfold cwin
+    rw [List.length_append, hlen]
+    simp
+  rw [h]
+  unfold cwin
+  rw [entry_append_right]
+  rfl
+
+/-- **The copies block is iterated grafting** (no row-1 ascension). -/
+theorem shiftl0_gcopies_succ {R : TrioSeq} {p L d0 c n : ℕ}
+    (h : ∀ j, p ≤ j → j < p + L → c ≤ entry R 0 j) :
+    shiftl0 c (gcopies R p L d0 0 (n + 1))
+      = graft (cwin R p L d0 c) (shiftl0 c (gcopies R p L d0 0 n)) := by
+  rw [gcopies_succ_shift, shiftl0_append, gcopy_zero,
+    shiftl0_shiftr01_comm (gcopies_depth_ge h)]
+  unfold graft
+  rw [cwin_dropLast, cwin_last]
+  rfl
+
+/-- **The copies block rides on the window**: if the re-based window (without
+the blocked column) is in `GX`, so is every copies block over it. -/
+theorem gcopies_mem_GX {R : TrioSeq} {p L d0 c : ℕ}
+    (h : ∀ j, p ≤ j → j < p + L → c ≤ entry R 0 j)
+    (hbase : entry R 0 p = c) (hL : 0 < L)
+    (hW : shiftl0 c (seg R p L) ∈ GX) :
+    ∀ n, shiftl0 c (gcopies R p L d0 0 n) ∈ GX := by
+  obtain ⟨L', rfl⟩ : ∃ L', L = L' + 1 := ⟨L - 1, by omega⟩
+  have hb0 : (R.getD p ((0, 0, 0) : ℕ × ℕ × ℕ)).1 = c := hbase
+  have hseg : shiftl0 c (seg R p (L' + 1))
+      = ((entry R 0 p - c, entry R 1 p, entry R 2 p) : ℕ × ℕ × ℕ)
+        :: shiftl0 c (seg R (p + 1) L') := by
+    rw [seg_cons, shiftl0_cons]
+  have hbW : based (shiftl0 c (seg R p (L' + 1))) := by
+    rw [hseg]
+    simp only [based, entry, List.getD_cons_zero, if_pos]
+    omega
+  have hbcw : based (cwin R p (L' + 1) d0 c) := by
+    unfold cwin
+    rw [hseg, List.cons_append]
+    simp only [based, entry, List.getD_cons_zero, if_pos]
+    omega
+  have hbc : ∀ n, based (shiftl0 c (gcopies R p (L' + 1) d0 0 n)) := by
+    intro n
+    cases n with
+    | zero => simp [gcopies]
+    | succ n =>
+        rw [shiftl0_gcopies_succ h]
+        unfold graft
+        rw [cwin_dropLast, hseg, List.cons_append]
+        simp only [based, entry, List.getD_cons_zero, if_pos]
+        omega
+  intro n
+  induction n with
+  | zero =>
+      simp only [gcopies, List.range_zero, List.flatMap_nil, shiftl0_nil]
+      exact nil_mem_GX
+  | succ n ih =>
+      rw [shiftl0_gcopies_succ h]
+      exact gx_graft (by unfold cwin; simp) hbcw
+        (by rw [cwin_dropLast]; exact hW) ih (hbc n)
+
 /-- **The lift-closure core**: the machine's set is closed under the intrinsic
 row-1 lift.  (The composite lift does *not* push through a graft as the
 argument's own `Lift1` — `probe_liftplant` refutes that — so this is a genuine
@@ -452,6 +560,98 @@ def CoreBlockedElt : Prop :=
           (if 1 < srow (graft M Y) ((graft M Y).length - 1)
             then entry (graft M Y) 1 ((graft M Y).length - 1)
               - entry (graft M Y) 1 p else 0) n) ∈ GX
+
+/-- **The γ'-window core**: the re-based window of the composite — the columns
+from the blocker `p` up to (but excluding) the blocked trailing column — is in
+the machine's set.  This is a *context piece* statement: the window is
+`graft (M's re-based suffix from p) (Y.dropLast)`. -/
+def CoreWindow : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
+    Aop W u GX Y → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length →
+    ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
+    hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) →
+    parent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) = p →
+    p < M.length - 1 →
+      shiftl0 (entry M 0 p)
+        (seg (graft M Y) p ((graft M Y).length - 1 - p)) ∈ GX
+
+/-- **The γ'-residue at a row-2 blocker**: there the copies ascend in row 1
+(`d1 > 0`), so the graft recursion carries a lift. -/
+def CoreBlockedEltHi : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
+    Aop W u GX Y → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length →
+    ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
+    hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) →
+    parent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) = p →
+    p < M.length - 1 →
+    srow (graft M Y) ((graft M Y).length - 1) = 2 →
+    ∀ n : ℕ, 1 ≤ n →
+      shiftl0 (entry M 0 p)
+        (gcopies (graft M Y) p ((graft M Y).length - 1 - p)
+          (entry (graft M Y) 0 ((graft M Y).length - 1)
+            - entry (graft M Y) 0 p)
+          (entry (graft M Y) 1 ((graft M Y).length - 1)
+            - entry (graft M Y) 1 p) n) ∈ GX
+
+/-- **γ' element from the window**: at a row-0/row-1 blocker the copies carry
+no row-1 ascension, so the copies block is iterated grafting over the window
+(`shiftl0_gcopies_succ`) and rides on the window's own membership. -/
+theorem coreBlockedElt_of_window (hw : CoreWindow) (hhi : CoreBlockedEltHi) :
+    CoreBlockedElt := by
+  classical
+  intro u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx n hn
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
+  set R : TrioSeq := graft M Y with hRdef
+  have hRlen : R.length = M.length - 1 + Y.length := by rw [hRdef, graft_length]
+  have hlow : entry R 0 p = entry M 0 p := by
+    rw [← Wset.entry_take (X := R) (l := p + 1) (i := 0) (j := p) (by omega),
+      hRdef, take_graft_low (by omega), Wset.entry_take (by omega)]
+  by_cases hs2 : srow R (R.length - 1) = 2
+  · rw [hs2, if_pos (by omega : (0:ℕ) < 2), if_pos (by omega : (1:ℕ) < 2)]
+    exact hhi u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt hs2 n hn
+  · -- row-0 / row-1 blocker: no ascension
+    have hs1 : srow R (R.length - 1) ≤ 1 := by
+      have := srow_le2 (M := R) (j := R.length - 1)
+      omega
+    -- the row-0 depths strictly increase away from the blocker
+    have hchain : Relation.ReflTransGen (nextrel0 R) p (R.length - 1) := by
+      have hnr := parent_nextR hpG
+      rw [hpar] at hnr
+      by_cases h0 : srow R (R.length - 1) = 0
+      · rw [h0] at hnr
+        unfold nextR at hnr
+        rw [if_pos rfl] at hnr
+        exact Relation.ReflTransGen.single hnr
+      · have h1 : srow R (R.length - 1) = 1 := by omega
+        rw [h1] at hnr
+        unfold nextR at hnr
+        rw [if_neg one_ne_zero, if_pos rfl] at hnr
+        exact hnr.2.2.2.2.1.2.2
+    have hwin := window_of_rtg0 hchain (by omega)
+    have hdep : ∀ j, p ≤ j → j < p + (R.length - 1 - p) →
+        entry M 0 p ≤ entry R 0 j := by
+      intro j hj1 hj2
+      rcases Nat.eq_or_lt_of_le hj1 with rfl | hlt
+      · rw [hlow]
+      · have := hwin j hlt (by omega)
+        omega
+    have hbaseR : entry R 0 p = entry M 0 p := hlow
+    have hL : 0 < R.length - 1 - p := by omega
+    by_cases h0d : srow R (R.length - 1) = 0
+    · rw [h0d, if_neg (by omega : ¬ (0:ℕ) < 0), if_neg (by omega : ¬ (1:ℕ) < 0)]
+      exact gcopies_mem_GX hdep hbaseR hL
+        (hw u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt) n
+    · have h1d : srow R (R.length - 1) = 1 := by omega
+      rw [h1d, if_pos (by omega : (0:ℕ) < 1), if_neg (by omega : ¬ (1:ℕ) < 1)]
+      exact gcopies_mem_GX hdep hbaseR hL
+        (hw u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt) n
 
 /-- **The γ'-residue, root slice**: a blocker at the context root descends to a
 single-column context — the shift case, outside `GX`'s reach. -/
@@ -892,5 +1092,14 @@ theorem GX_loop' (he : CoreBlockedElt) (h0 : CoreBlocked0) (hl : CoreLift)
     (hp : CorePlantCtx) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
   GX_loop he h0 (coreLiftPlant_of hl hp)
+
+/-- **The assembly loop, piece form**: with γ' reduced through the window, all
+four residues are of two kinds — *context pieces in `GX`* (`CorePlantCtx`,
+`CoreWindow`, `CoreBlocked0`) and *lift closure* (`CoreLift`), plus the row-2
+blocker's guarded copies (`CoreBlockedEltHi`, itself a lift residue). -/
+theorem GX_loop'' (hw : CoreWindow) (hhi : CoreBlockedEltHi)
+    (h0 : CoreBlocked0) (hl : CoreLift) (hp : CorePlantCtx) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
+  GX_loop' (coreBlockedElt_of_window hw hhi) h0 hl hp
 
 end TRIO
