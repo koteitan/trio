@@ -615,7 +615,8 @@ def CorePlantCtxLift : Prop :=
 open Classical in
 /-- **α 残差の分割**: リフトした植えブロックは、リフトした植え文脈にデータの
 マスクリフトを接ぎ木したもの。 -/
-theorem liftPlant_of_mask (hp : CorePlantCtxLift) {M D : TrioSeq} {v z t : ℕ}
+theorem liftPlant_of_plant {M D : TrioSeq} {v z t : ℕ}
+    (hp : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX)
     (hMarg : argOK M) (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
     (hD : D ∈ GX) (hbD : based D) (hm : mlift D v t ∈ GX) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX := by
@@ -650,7 +651,13 @@ theorem liftPlant_of_mask (hp : CorePlantCtxLift) {M D : TrioSeq} {v z t : ℕ}
   rw [hcalc, Wset.lift_cons, graft_cons (Wset.ltail_ne hMne)]
   refine plantCtx_graft (Wset.ltail_ne hMne) ?_ hBG hbB
   rw [Wset.ltail_dropLast]
-  exact hp M hMarg hM2 v z hz1 hctx t
+  exact hp
+
+theorem liftPlant_of_mask (hp : CorePlantCtxLift) {M D : TrioSeq} {v z t : ℕ}
+    (hMarg : argOK M) (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hD : D ∈ GX) (hbD : based D) (hm : mlift D v t ∈ GX) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX :=
+  liftPlant_of_plant (hp M hMarg hM2 v z hz1 hctx t) hMarg hM2 hz1 hctx hD hbD hm
 
 open Classical in
 /-- **α 残差の分割**: リフトした植えブロックは、リフトした植え文脈にデータの
@@ -1324,6 +1331,64 @@ theorem singleton_mem_GXs (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E)
   refine ⟨key b c, fun φ hφ => ?_⟩
   rw [slift_singleton b c hφ]
   exact key _ _
+
+/-! ### 装備クラスの自己支持性は機械の操作で保たれる
+
+`SelfSup M v z` = 装備つき文脈 `M` の**植えた接頭辞がすべて `GX` に入る**。
+`CorePlantCtxLift` はこれの `k = |M|-1` 版（`equipSelf_of_corePlantCtxLift`）。
+以下の 3 補題は「自己支持的な装備つき文脈のクラスは `take` / `graft` /
+`ltail` で閉じる」ことを示す — 将来そのクラスを構成するときの閉包則。 -/
+
+def SelfSup (M : TrioSeq) (v z : ℕ) : Prop :=
+  ∀ k, 0 < k → k < M.length → ∀ t : ℕ,
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.take k) t ∈ GX
+
+theorem selfSup_take {M : TrioSeq} {v z : ℕ} (h : SelfSup M v z) (j : ℕ) :
+    SelfSup (M.take j) v z := by
+  intro k hk0 hk t
+  rw [List.length_take] at hk
+  rw [List.take_take, Nat.min_eq_left (by omega)]
+  exact h k hk0 (by omega) t
+
+open Classical in
+/-- **自己支持性は接ぎ木で保たれる**: 接頭辞は文脈側か「植え文脈 + データの
+マスク」に分解する（`liftPlant_of_plant`）。 -/
+theorem selfSup_graft {M Y : TrioSeq} {v z : ℕ} (hMarg : argOK M)
+    (hM2 : 2 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hself : SelfSup M v z) (hYd : Y.dropLast ∈ GXs) (hbY : based Y) :
+    SelfSup (graft M Y) v z := by
+  classical
+  intro k hk0 hk t
+  rw [graft_length] at hk
+  rcases Nat.lt_or_ge k M.length with hkM | hkM
+  · rw [take_graft_low (by omega)]
+    exact hself k hk0 (by omega) t
+  · obtain ⟨j, rfl⟩ : ∃ j, k = M.length - 1 + j := ⟨k - (M.length - 1), by omega⟩
+    have hjY : j < Y.length := by omega
+    rw [take_graft_high]
+    rcases Nat.eq_zero_or_pos j with rfl | hj0
+    · rw [List.take_zero, graft_nil, List.dropLast_eq_take]
+      exact hself (M.length - 1) (by omega) (by omega) t
+    · have hYtj : Y.take j ∈ GXs := by
+        have h := gxs_take hYd j
+        rwa [dropLast_take (by omega)] at h
+      have hbtj : based (Y.take j) := by
+        show entry (Y.take j) 0 0 = 0
+        rw [Wset.entry_take (X := Y) (l := j) (i := 0) (j := 0) (by omega)]
+        exact hbY
+      have hplant : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX := by
+        rw [List.dropLast_eq_take]
+        exact hself (M.length - 1) (by omega) (by omega) t
+      exact liftPlant_of_plant hplant hMarg hM2 hz1 hctx
+        hYtj.1 hbtj (gxs_mlift hYtj v t)
+
+/-- **自己支持性はリフト文脈でも保たれる**（`ltail_take` + `Lift1_Lift1`）。 -/
+theorem selfSup_ltail {R : TrioSeq} {v z t : ℕ} (h : SelfSup R v z) :
+    SelfSup (Wset.ltail v z R t) (v + t) z := by
+  intro k hk0 hk s
+  rw [Wset.ltail_length] at hk
+  rw [Wset.ltail_take (by omega), ← Wset.lift_cons, Lift1_Lift1]
+  exact h k hk0 hk (t + s)
 
 /-- **The equipment class is self-supporting**: every equipped context's own
 planted prefixes are in the machine's set.  This is EXACTLY `CorePlantCtxLift`
