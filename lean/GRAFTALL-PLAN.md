@@ -1698,6 +1698,48 @@ N_n の接頭辞 = N_{n-1} の接頭辞 or graft N_{n-1} (P.take i)
 (b) γ 枝の窓が族に属することの確認、(c) `Aop` の節 3 データ（段 `m`）の
 取り込み口。まずは 1.-3. を行 1 塔だけで試作するのが安全。
 
+## 1.9.41 ★★★★ v0.118.50: 還元を Lean で確定 — 塔もコピー塊も「生成族の peel」
+
+### 証明済み（Gamma.lean / Wset.lean, sorry 0）
+
+```
+gpow N E 0 = N,  gpow N E (n+1) = graft (gpow N E n) E     -- 生成族
+
+graft_iter_gpow : f 0 = [] → (∀ n, f (n+1) = graft E (f n)) →
+  ∀ n k, graft (gpow N E k) (f n) = (gpow N E (k+n)).dropLast
+
+tower1_mem2_fam  : 塔は「塔自身の元を R に接ぎ木」だけで閉じる（∀ y ∈ W m 不要）
+graft_tow_gpow   : 塔の instance（E = (0,v,z)::R）
+graft_gcopies_gpow : ブロック済みコピー塊の instance（E = cwin, d1 = 0）
+tower1_mem2_gpow : ∀ k a', 2v+z ≤ a' →
+    Lift1 ((0,v,z) :: (gpow R ((0,v,z)::R) k).dropLast) 0 ∈ W a'
+  → ∀ k, tow v z R k ∈ W a
+```
+
+### 意味
+
+塔とコピー塊はどちらも「`f 0 = []`, `f (n+1) = graft E (f n)`」という
+**同一の反復接ぎ木**で、`graft_assoc` で文脈側に畳むと
+
+> 義務 = **生成族 `gpow N E k` の peel が `W` package**
+
+に化ける。したがって
+
+* `∀ y ∈ W m` の界面が消える ⟹ **段の押し上げ `m → m+2t` が消える**（§1.9.39）
+* `GX`（∀ 装備つき文脈）が要らない — 文脈は `gpow N E k` だけ
+
+⟹ **v0.120 の残りは「生成族の peel が `W` package」を示すこと**だけ。
+`(gpow N E (k+1)).dropLast = graft (gpow N E k) E.dropLast` なので、これは
+「`E` の peel を生成族に接ぎ木する」義務であり、`E.dropLast` は `E` より短い。
+生成族の接頭辞は `graft (gpow N E (k-1)) (E.take i)` で複合列長が真に降下する
+（§1.9.40 の訂正版）。⟹ （複合列長, 添字）の辞書式で回る見込み。
+
+### 次の一手
+
+`CoreT1L` を `tower1_mem2_gpow` 経由で書き直し、`tow_mem_GX` / `GX_full` /
+`CorePlantCtxLift` を通さない版を作る。そこで要るのは
+「生成族 `gpow Rt ((0,v+t,z)::Rt) k` の peel が `W` package」だけ。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

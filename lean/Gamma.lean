@@ -422,6 +422,68 @@ theorem graft_tow_succ {v z : ℕ} {N R : TrioSeq} (hRne : R ≠ []) (k : ℕ) :
     rfl
   rw [heq, graft_assoc (by simp)]
 
+/-! ### 塔 → 生成族の植えブロック（v0.120 の還元）
+
+`graft_tow_succ` を反復すると、塔の接ぎ木義務は文脈側を `n` 回伸ばした
+**生成族 `gpow N P n`** の植えブロックだけになる。`∀ y ∈ W m` の界面も
+段 `m + 2t` も現れない。 -/
+
+/-- The generated context family: `N` grafted with `P` `n` times. -/
+noncomputable def gpow (N P : TrioSeq) : ℕ → TrioSeq
+  | 0 => N
+  | n + 1 => graft (gpow N P n) P
+
+/-- **Every iterated-graft family collapses onto the generated context family.**
+If `f 0 = []` and `f (n+1) = graft E (f n)` — which is exactly how both the
+tower (`E = (0,v,z) :: R`) and the blocked copies block (`E = cwin …`) are
+built — then grafting `f n` into `N` is just the peel of `N` grown `n` times. -/
+theorem graft_iter_gpow {N E : TrioSeq} (hEne : E ≠ []) {f : ℕ → TrioSeq}
+    (hf0 : f 0 = []) (hfs : ∀ n, f (n + 1) = graft E (f n)) :
+    ∀ n k, graft (gpow N E k) (f n) = (gpow N E (k + n)).dropLast := by
+  intro n
+  induction n with
+  | zero => intro k; rw [hf0, graft_nil, Nat.add_zero]
+  | succ n ih =>
+      intro k
+      rw [hfs n, ← graft_assoc hEne,
+        show graft (gpow N E k) E = gpow N E (k + 1) from rfl, ih (k + 1),
+        show k + 1 + n = k + (n + 1) from by omega]
+
+/-- **The tower obligation IS the generated family's peel.** -/
+theorem graft_tow_gpow {v z : ℕ} {N R : TrioSeq} (hRne : R ≠ []) :
+    ∀ k n, graft (gpow N (((0, v, z) : ℕ × ℕ × ℕ) :: R) n) (Wset.tow v z R k)
+      = (gpow N (((0, v, z) : ℕ × ℕ × ℕ) :: R) (n + k)).dropLast := by
+  intro k
+  induction k with
+  | zero =>
+      intro n
+      rw [show Wset.tow v z R 0 = [] from rfl, graft_nil, Nat.add_zero]
+  | succ k ih =>
+      intro n
+      rw [graft_tow_succ hRne, show graft (gpow N (((0, v, z) : ℕ × ℕ × ℕ) :: R) n)
+          (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        = gpow N (((0, v, z) : ℕ × ℕ × ℕ) :: R) (n + 1) from rfl, ih (n + 1),
+        show n + 1 + k = n + (k + 1) from by omega]
+
+/-- **The row-1 tower, generated-family form.**  Everything the tower consumes
+is "the plants of the generated family are `W`-packages" — no `∀ y ∈ W m`
+interface, hence no stage raise `m → m + 2t`, and no `GX`. -/
+theorem tower1_mem2_gpow {v z a : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hva : 2 * v + z ≤ a)
+    (hplant : ∀ k a' : ℕ, 2 * v + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ)
+        :: (gpow R (((0, v, z) : ℕ × ℕ × ℕ) :: R) k).dropLast) 0 ∈ W a') :
+    ∀ k, Wset.tow v z R k ∈ W a := by
+  refine Wset.tower1_mem2_fam hRne hva ?_
+  intro k a' ha'
+  have h := hplant k a' ha'
+  have heq : graft R (Wset.tow v z R k)
+      = (gpow R (((0, v, z) : ℕ × ℕ × ℕ) :: R) k).dropLast := by
+    have hg := graft_tow_gpow (v := v) (z := z) (N := R) hRne k 0
+    rw [Nat.zero_add] at hg
+    exact hg
+  rwa [heq]
+
 /-- **The tower rides on its peel block**: every element of the `tow` tower over
 `R` is in `GX` as soon as the planted peel block is. -/
 theorem tow_mem_GX {R : TrioSeq} {v z : ℕ} (hRne : R ≠ [])
@@ -834,6 +896,19 @@ theorem gcopiesLift_mem_GX {B T : TrioSeq} {L d0 d1 v z : ℕ}
         rw [← hdrop]
         exact hw s
       exact liftPlant_of_plant hplant hargT (by omega) hZG hbZ hmask
+
+/-- **The blocked copies block collapses the same way** (`d1 = 0`): grafting the
+`n`-fold copies block into `N` is the peel of `N` grown `n` times with the
+window-plus-blocked-column `cwin`. -/
+theorem graft_gcopies_gpow {R N : TrioSeq} {p L d0 c : ℕ}
+    (h : ∀ j, p ≤ j → j < p + L → c ≤ entry R 0 j) :
+    ∀ n k, graft (gpow N (cwin R p L d0 c) k)
+        (shiftl0 c (gcopies R p L d0 0 n))
+      = (gpow N (cwin R p L d0 c) (k + n)).dropLast := by
+  refine graft_iter_gpow (by unfold cwin; simp) ?_ ?_
+  · simp [gcopies]
+  · intro n
+    exact shiftl0_gcopies_succ h
 
 /-- **The γ'-residue, element form**: the descended copies block is in the
 machine's set (independent of the ambient root `(v, z, t)`). -/

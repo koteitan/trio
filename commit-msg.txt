@@ -1,9 +1,11 @@
-v0.118.49/correct the measure: the tower re-association preserves composite length
+v0.118.50/the tower and the copies block both collapse onto a generated family
 
-- Add `graft_tow_succ` in Gamma.lean: grafting the (k+1)-st tower level into N
-  is grafting the k-th into the one-step grown context, and the two composites
-  are the same list
-- Correct GRAFTALL-PLAN.md 1.9.40 accordingly: composite length is INVARIANT
-  along the tower, so the tower must be driven by its own index; the measure is
-  the lexicographic pair (composite length, tower/copy index), with the length
-  descending only on the plant / window obligations
+- Add `gpow` (the generated context family) and `graft_iter_gpow`: any family
+  built by `f 0 = []`, `f (n+1) = graft E (f n)` satisfies
+  `graft (gpow N E k) (f n) = (gpow N E (k+n)).dropLast`
+- Instantiate it for the row-1 tower (`graft_tow_gpow`) and for the blocked
+  copies block with `d1 = 0` (`graft_gcopies_gpow`)
+- Add `graft_tow_succ` and `tower1_mem2_gpow`: the row-1 tower needs only
+  "the generated family peels are W-packages" — no `forall y in W m` interface,
+  hence no stage raise, and no `GX`
+- Record the reduction in GRAFTALL-PLAN.md 1.9.41 with the next step
