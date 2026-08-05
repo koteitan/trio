@@ -1,11 +1,8 @@
-v0.118.50/the tower and the copies block both collapse onto a generated family
+v0.118.51/the family peels descend in k: the shape of the new induction
 
-- Add `gpow` (the generated context family) and `graft_iter_gpow`: any family
-  built by `f 0 = []`, `f (n+1) = graft E (f n)` satisfies
-  `graft (gpow N E k) (f n) = (gpow N E (k+n)).dropLast`
-- Instantiate it for the row-1 tower (`graft_tow_gpow`) and for the blocked
-  copies block with `d1 = 0` (`graft_gcopies_gpow`)
-- Add `graft_tow_succ` and `tower1_mem2_gpow`: the row-1 tower needs only
-  "the generated family peels are W-packages" — no `forall y in W m` interface,
-  hence no stage raise, and no `GX`
-- Record the reduction in GRAFTALL-PLAN.md 1.9.41 with the next step
+- GRAFTALL-PLAN.md 1.9.41: `(gpow N E (k+1)).dropLast = graft (gpow N E k)
+  E.dropLast`, so the family-peel obligation Phi(k+1) needs exactly Phi(k) as its
+  context-plant obligation — the core that never descended over arbitrary
+  contexts DOES descend over the generated family
+- Phi(0) is the base context peel, which the equipment `CtxOK N` already gives;
+  the outer measure is the datum length (E, E.dropLast, ...), the inner one is k

@@ -1734,6 +1734,27 @@ tower1_mem2_gpow : ∀ k a', 2v+z ≤ a' →
 生成族の接頭辞は `graft (gpow N E (k-1)) (E.take i)` で複合列長が真に降下する
 （§1.9.40 の訂正版）。⟹ （複合列長, 添字）の辞書式で回る見込み。
 
+### ★ 生成族の peel には `k` の降下がある（これが「新しい帰納法」の芯）
+
+```
+(gpow N E (k+1)).dropLast = graft (gpow N E k) E.dropLast        （graft_dropLast）
+```
+
+つまり `Φ(k) := 「(gpow N E k).dropLast が W package」` と置くと
+
+* `Φ(0)` = `N.dropLast` … **装備 `CtxOK N` からそのまま出る**
+* `Φ(k+1)` = 文脈 `gpow N E k` にデータ `E.dropLast` を接ぎ木したもの。
+  機械を回すと必要になるのは
+  - データ側: `E.dropLast` の peel / 展開（`E.dropLast` は `E` より短い）
+  - **文脈側の植えブロック** = `(gpow N E k).dropLast` = **`Φ(k)`** ⟸ 降下！
+
+⟹ いままで「文脈が任意なので降下しない」と言っていた核が、生成族に限ると
+**`k` について厳密に降下する**。これが `GX` の ∀ 文脈を捨てる最大の理由。
+
+外側はデータ長（`E`, `E.dropLast`, … と 1 ずつ短くなる）、内側は `k`。
+⟹ **測度 = (データ長, k) の辞書式**。§1.9.40 の「(複合列長, 添字)」を
+生成族の言葉で言い直したもの。
+
 ### 次の一手
 
 `CoreT1L` を `tower1_mem2_gpow` 経由で書き直し、`tow_mem_GX` / `GX_full` /
