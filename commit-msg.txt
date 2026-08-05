@@ -1,5 +1,7 @@
-v0.118.8/record the staircase language status and the one remaining law
+v0.118.9/measure the amin copy-periodicity, the last law for (G2)
 
-- GRAFTALL-PLAN 1.9.20: the Lean inventory of the staircase language and the
-  reduction of (G2) to a single lemma — the expansion's copies inherit their
-  source column's `amin`
+- Add tools/probe_aminexp.py: over 21693 expansions the prefix keeps its `amin`
+  (A1) and every copy inherits its source column's `amin` (A2), with no
+  violations — so (G2) reduces to exactly these two
+- Record in GRAFTALL-PLAN 1.9.20 the Lean shape of `oper` and which pieces are
+  already proven (branch data and both guards), leaving (A1)/(A2)

@@ -480,9 +480,29 @@ hasParent_slift / parent_slift / srow_slift / entry1_slift_pos
    amin (A⟦n⟧) idx = amin A (idx のコピー元)     （接頭辞では idx 自身）
 ```
 
-すなわち**展開のコピー列は元の列と同じ `amin` をもつ**。行 0 の鎖の反転
-（`Lcone.gexp_chain_inversion` / `gexp_flat_chain_inversion`）がちょうど道具。
-これが済めば (G2) が出て、`GXg` の設計（§1.9.19）に進める。
+すなわち**展開のコピー列は元の列と同じ `amin` をもつ**。測定済み
+（tools/probe_aminexp.py, 21693 展開）:
+
+| | 内容 | 違反 |
+|---|---|---|
+| (A1) | `amin (S⟦n⟧) i = amin S i`（接頭辞 `i < r`） | 0 |
+| (A2) | `amin (S⟦n⟧) (r + a*L + xx) = amin S (r + xx)`（コピー） | 0 |
+
+`L = x - r`。(A1) は `(S⟦n⟧).take r = S.take r` と鎖の接頭辞局所性で軽い。
+(A2) は行 0 の鎖の反転（`Lcone.gexp_flat_chain_inversion` / `Gtrans` の
+`gexp_chain_inversion`）が道具 — コピー内の鏡像は行 0 で同型、コピーの根から
+先は前のコピー→接頭辞へ降り、最小値は接頭辞側（`amin S r` 以下）で達成される
+ので `k` に依存しない。これが済めば (G2) が出て `GXg`（§1.9.19）に進める。
+
+Lean 側で `oper` は
+```
+  M.take j0 ++ (range n).flatMap fun k => (range' j0 (j1-j0)).map fun j =>
+    (entry M 0 j + (if le0 M j0 j then k*d0 else 0),
+     entry M 1 j + (if le1 M j0 j then k*d1 else 0), entry M 2 j)
+```
+なので、分岐データの保存（`srow_slift` / `hasParent_slift` / `parent_slift` /
+`entry1_slift_pos` / `d1` は `amin_le1`）とガードの保存（`le0` は行 0 不変、
+`le1` は `le1_slift`）はすでに Lean 済み。残るのは (A1)(A2) だけ。
 
 ## 1.9.18 ★★★★ 接ぎ木リフト計算則を Lean 化（v0.118, Cgraft.lean）— 一般形は**環境マスク**
 
