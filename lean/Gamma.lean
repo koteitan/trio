@@ -2338,6 +2338,44 @@ theorem equipSelf_of_corePlantCtxLift (h : CorePlantCtxLift) : EquipSelf := by
   rwa [List.dropLast_eq_take, List.length_take, List.take_take,
     show min (min (k + 1) M.length - 1) (k + 1) = k from by omega] at hres
 
+/-! ### ★ 核から**リフト量詞が落ちる**（v0.118.53）
+
+`CtxOK` も `Lift1 ((0,v,z) :: ·)` も、根リフト `t` を `ltail` で文脈側に
+吸収できる（`ltail_take` + `Lift1_Lift1`, `ltail_dropLast`）。装備クラスが
+`ltail` で閉じることを示せば、`CorePlantCtxLift` の `∀ t` は不要になり、
+核は **`t = 0` の「装備つき文脈の植えた peel が `GX` に入る」** 一本になる。 -/
+
+/-- **The equipment class is closed under the ambient root lift**: lifting the
+root by `t` turns an equipped context into an equipped context at the lifted
+root `(v+t, z)`. -/
+theorem ctxOK_ltail_self {M : TrioSeq} {v z t : ℕ} (h : CtxOK M v z) :
+    CtxOK (Wset.ltail v z M t) (v + t) z := by
+  intro k hk a s hva
+  rw [Wset.ltail_length] at hk
+  rw [Wset.ltail_take (by omega), ← Wset.lift_cons, Lift1_Lift1]
+  exact h k hk a (t + s) (by omega)
+
+/-- **The core, lift-free**: the planted peel of an equipped context is in the
+machine's set.  No ambient lift quantifier. -/
+def CorePlantCtx0 : Prop :=
+  ∀ (M : TrioSeq), argOK M → 1 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) ∈ GX
+
+/-- **The lift quantifier is redundant**: the lifted planted peel of `M` is the
+un-lifted planted peel of the lifted context `ltail v z M t`, which is equipped
+at the lifted root. -/
+theorem corePlantCtxLift_of_plant0 (h : CorePlantCtx0) : CorePlantCtxLift := by
+  intro M hMarg hM2 v z hz1 hctx t
+  rw [← Wset.ltail_dropLast]
+  exact h (Wset.ltail v z M t) (Wset.argOK_ltail hMarg)
+    (by rw [Wset.ltail_length]; exact hM2) (v + t) z hz1 (ctxOK_ltail_self hctx)
+
+/-- The converse is the `t = 0` instance, so the two cores are equivalent. -/
+theorem plant0_of_corePlantCtxLift (h : CorePlantCtxLift) : CorePlantCtx0 := by
+  intro M hMarg hM2 v z hz1 hctx
+  have hres := h M hMarg hM2 v z hz1 hctx 0
+  rwa [Lift1_zero] at hres
+
 /-- **`CorePlantCtxLift` is bounded above by the self-reference**: the equipment
 `CtxOK M v z` already puts the lifted planted peel in `W a` (take `k = |M|-1`),
 so the core is at most "every based `W`-element is in `GX`".  This is only an

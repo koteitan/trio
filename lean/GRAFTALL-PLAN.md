@@ -1820,6 +1820,59 @@ CoreGpowPeel  ≡  ∀ k a, 2(v+t)+z ≤ a → tow (v+t) z Rt (k+1) ∈ W a
 ⟹ 次は **`tow v z R k ∈ W m`（段 `m` = 末端孤児の段）を装備だけから作れるか**
 を測定する。ここが取れれば `tower1_mem2` がそのまま回り、`GX` も要らない。
 
+## 1.9.43 ★★★ v0.118.53: 核から**リフト量詞が落ちた** — 残核は `t = 0` の一本
+
+### 証明済み（Gamma.lean / Final.lean, sorry 0, build green 782）
+
+```
+ctxOK_ltail_self : CtxOK M v z → CtxOK (ltail v z M t) (v+t) z
+
+CorePlantCtx0 : ∀ M, argOK M → 1 ≤ |M| → ∀ v z, z ≤ 1 → CtxOK M v z →
+                  (0,v,z) :: M.dropLast ∈ GX                     -- ★ リフトなし
+
+corePlantCtxLift_of_plant0 : CorePlantCtx0 → CorePlantCtxLift
+plant0_of_corePlantCtxLift : CorePlantCtxLift → CorePlantCtx0    -- 同値
+
+TRIO_terminates_of_plant0 : InfEquip → CorePlantCtx0 → WellFounded stepRel
+  #print axioms = [propext, Classical.choice, Quot.sound]
+```
+
+### 仕組み
+
+根リフトは `ltail` で**文脈側に吸収**できる:
+
+```
+Lift1 ((0,v,z) :: M.dropLast) t = (0,v+t,z) :: (ltail v z M t).dropLast
+                                                       （ltail_dropLast）
+CtxOK M v z ⟹ CtxOK (ltail v z M t) (v+t) z            （ltail_take + Lift1_Lift1）
+```
+
+したがって「リフトした植え peel」は「リフトした文脈の植え peel（リフトなし）」
+であり、装備クラスが `ltail` で閉じている以上 `∀ t` は**冗長**。
+`selfSup_ltail` が `SelfSup` で示していたことを、核そのものに適用した形。
+
+### 現在の残核（2 本、いずれもリフト量詞なし）
+
+1. `CorePlantCtx0`（`GX` レベル）:
+   装備つき文脈の植えた peel `(0,v,z) :: M.dropLast` が `GX` に入る。
+2. `InfEquip`（`W` レベル）: 文脈の窓の再基底化中置が再び装備になる。
+
+`CorePlantCtx0` を `GX` の定義に展開し、外側のリフトも同じ手で落とすと
+
+```
+Core0 : M, N ともに装備つき（M は根 (v,z)、N は根 (v',z')）のとき
+        (0,v',z') :: graft N ((0,v,z) :: M.take i) ∈ W a'   (a' ≥ 2v'+z')
+```
+
+= **「装備つき文脈に装備つき植えブロックを植えたものが package」**。
+量詞は文脈 2 本と接頭辞 `i` だけになった。
+
+### 次の一手
+
+`Core0` を `i` または `|N|` の帰納で回せるかを Lean で試す（外側リフトの
+消去 `GX` 版を先に作る）。§1.9.42 の教訓により、還元先が結論と一致していない
+ことを毎回確認する。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

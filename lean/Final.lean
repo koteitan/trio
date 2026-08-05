@@ -104,4 +104,19 @@ theorem TRIO_terminates_of_plant (hie : InfEquip) (hp : CorePlantCtxLift) :
     WellFounded stepRel :=
   step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_plant hie hp))
 
+/-- **Trio sequences terminate**, modulo the LIFT-FREE `GX` core
+(`CorePlantCtx0`: the planted peel of an equipped context is in `GX`) plus the
+`W`-level infix equipment (`InfEquip`).  `corePlantCtxLift_of_plant0` absorbs
+the ambient lift into the context (`ltail`), so no lift quantifier survives in
+either residue. -/
+theorem TRIO_terminates_of_plant0 (hie : InfEquip) (hp : CorePlantCtx0) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_plant hie (corePlantCtxLift_of_plant0 hp)
+
+/-- **No infinite expansion sequence**, from the lift-free core. -/
+theorem no_infinite_expansion_of_plant0 (hie : InfEquip) (hp : CorePlantCtx0) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion
+    (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_plant hie (corePlantCtxLift_of_plant0 hp)))
+
 end TRIO

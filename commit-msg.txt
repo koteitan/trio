@@ -1,14 +1,11 @@
-v0.118.52/the generated-family reduction is a tautology (honest correction)
+v0.118.53/the lift quantifier drops out of the GX core
 
-- Add `gpow_dropLast_eq_tow`: the family peel `(0,v,z) :: (gpow R ((0,v,z)::R)
-  k).dropLast` IS `tow v z R (k+1)`, so `CoreGpowPeel` restates "every tower
-  level is a W-package" and `tower1_mem2_fam` / `_gpow` only re-index k
-- Add `CoreGpowPeel` + `coreT1L_of_gpow`: alpha's obligation in GX-free,
-  stage-free form (no `∀ y ∈ W m` interface, no `GX_full`, no
-  `CorePlantCtxLift` in the statement), labelled as a restatement not a
-  reduction
-- Add `coreGpowPeel_of_plantctx` carrying the old `coreT1L_of_plantctx` content
-  (`tow_mem_GX` + `GX_full` + `liftPlant_of_mask`) — no regression
-- GRAFTALL-PLAN.md 1.9.42: record why the family form looked like it removed
-  the stage raise, and redirect the next probe to "can the equipment alone give
-  `tow v z R k ∈ W m`?"
+- Add `ctxOK_ltail_self`: the equipment class is closed under the ambient root
+  lift, so `CtxOK M v z` gives `CtxOK (ltail v z M t) (v+t) z`
+- Add `CorePlantCtx0` (lift-free: `(0,v,z) :: M.dropLast ∈ GX`) with
+  `corePlantCtxLift_of_plant0` / `plant0_of_corePlantCtxLift` — the two cores
+  are equivalent, so `∀ t` was redundant
+- Add `TRIO_terminates_of_plant0` / `no_infinite_expansion_of_plant0` in
+  Final.lean; axioms stay [propext, Classical.choice, Quot.sound]
+- GRAFTALL-PLAN.md 1.9.43 + task.md: residue is now `CorePlantCtx0` +
+  `InfEquip`, neither carrying a lift quantifier
