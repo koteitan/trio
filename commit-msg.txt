@@ -1,10 +1,10 @@
-v0.117.0/planting a root descends the stage
+v0.117.1/two decisive probes: TbOper holds, the natDom route is refuted
 
-- Add om_Aop: the bare planted root's Aop datum sits at stage 2v+z-1,
-  strictly below the root's own level
-- Add probe_pliftseg, which refutes the "mask lift = piecewise uniform
-  row-1 shift" decomposition (the mask interleaves by row-1 value), and
-  record in GRAFTALL-PLAN 1.9.15 that the mask is still recursive along
-  the graft decomposition, whose base is the planted root
-- Record that every residue funnels into "one stage lower W is in GX",
-  a descending self-reference (unlike the old one at stage m+2t)
+- Add probe_tboper: the principal block's minimal tbAll bound survives
+  expansion (0/11304), so the tbAll bookkeeping the campaign dropped is
+  actually available
+- Add probe_deadgraft: at dead sites the graft does NOT commute with the
+  composite lift (9377004/26740030, and 247734/2083496 even for
+  level-bounded data), so clause 3 cannot be supplied there
+- Record GRAFTALL-PLAN 1.9.16: the measurement confirms that restoring
+  natDom only moves the wall to branch (c)
