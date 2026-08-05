@@ -904,6 +904,40 @@ CorePlantCtxLift ≤ 「based な W の元は GX に入る」（= 自己参照�
   （`srow ≤ 1`）と `CoreBlockedEltHi`（`srow = 2`）に落ちる見込み。
   ⟹ **v0.119 の主タスク: `hin` を塔／ブロックの 2 相に分けて IH に落とす**。
 
+## 1.9.24 v0.118.21: 4 核の共通の底 — 「`∈ W a` を `∈ GX` に上げる」
+
+### 装備を取り戻した
+
+`coreBlockedElt_of_window` は `CtxOK M v z` をスコープに持ちながら `CoreWindow`
+に渡していなかった。渡すようにした（`CoreWindow` / `CoreCtxSuffix` が装備つき
+に）。装備なしの文脈核は事実上「定理そのもの」なので、この修正は必須だった。
+また `CoreT1L` 以外はデータのマスクを使わないので、ブロック系 5 核の仮定は
+`Y.dropLast ∈ GX` に戻した（核が弱くなる = 証明しやすくなる）。
+
+### 4 核はすべて同じ底に落ちる
+
+どの核も、装備 `CtxOK` からは目的の対象が `∈ W a` であることまでしか出ず、
+そこから `∈ GX` に上げるところが残る。例:
+
+- `CorePlantCtxLift`: `CtxOK M v z` を `k = |M|-1` で使えば
+  `Lift1 ((0,v,z)::M.dropLast) t ∈ W a`（`corePlantCtxLift_of_self`）。
+- `CoreCtxSuffix`: `graft (M.take (p+1)) S = M.dropLast` なので、装備は
+  **その 1 つの文脈での** 義務を与える。`GX` は全文脈を要求する。
+- `CoreT1L` の `hTplant` も `ctxOK_graft` から `∈ W a` までは出る。
+
+`W a ⊆ GXs` は `A2'`（最小不動点の下界）で得るので IH をもたない ⟹ **この
+持ち上げを機械の中で使うと循環**。機械の外（文脈の長さ帰納）で供給する必要が
+あるが、そこで `gx_of_pieces` を回すと peel の **GXs 成分**（階段リフト）に
+対応する装備がない — これが v0.119 の設計上の緊張。
+
+### `CoreBlocked0` は `GX` の `2 ≤ M.length` の副産物
+
+`coreBlocked_of_elt` が `p = 0` を別扱いするのは、降下した文脈 `M.take (p+1)`
+の長さが 1 になり `GX_full`（`2 ≤ M.length` を要求）が使えないからだけ。
+`(0,v,z) :: graft (M.take 1) C = graft ((0,v,z) :: M.take 1) C` と書けるので、
+`GX` の文脈条件を `1 ≤ M.length` に緩められれば `CoreBlocked0` は消える見込み
+（ただし `graft_length` 経由で `hGL` 等が壊れるので要検討）。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

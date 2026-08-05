@@ -1,14 +1,8 @@
-v0.118.21/put the equipment back into the window cores and weaken them
+v0.118.22/map the common bottom of the four cores
 
-(the Gamma.lean changes landed in e9b1143, which picked up a stale message
-because a `grep -c` returning 0 exited 1 and cut the `&&` chain before the
-message file was rewritten; this commit carries the correct record)
-
-- `CoreWindow` / `CoreCtxSuffix` now carry `CtxOK M v z`: the reduction
-  `coreBlockedElt_of_window` had the equipment in scope and was discarding it,
-  which is what made `CoreCtxSuffix` (a context-only statement with no bound at
-  all) close to the whole theorem
-- Weaken the blocked cores (`CoreBlocked` / `CoreBlockedElt` / `CoreWindow` /
-  `CoreBlockedEltHi` / `CoreBlocked0`) from `Y.dropLast in GXs` back to
-  `Y.dropLast in GX`: only `CoreT1L` consumes the datum's mask lift, so only it
-  keeps the staircase-closed hypothesis
+- GRAFTALL-PLAN 1.9.24: every remaining core bottoms out in the same step —
+  the equipment `CtxOK` yields `in W a`, and lifting that to `in GX` is the
+  self-reference (unusable inside the machine, and outside it the peel's GXs
+  component has no equipment)
+- Record that `CoreBlocked0` looks like an artifact of `GX`'s `2 <= M.length`:
+  `(0,v,z) :: graft (M.take 1) C = graft ((0,v,z) :: M.take 1) C`
