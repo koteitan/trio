@@ -755,6 +755,68 @@ S.dropLast の接尾辞 ++ shift Y にまたがるコピー。処理候補: 文�
 自身の Aop データ/Wstar2-導出を持たせ（CTX を「装備付き文脈」にする）、
 ブロック済み展開を S-側データと Y-側データの合成として導出する。
 
+## 1.9.21 ✅ v0.118.11-13: (A2)/(G2) 完成 → **β からマスク核が消えた**
+
+### 済み
+
+| | 内容 | 場所 |
+|---|---|---|
+| (A2) | `amin (M⟦n⟧) (j0+(k*Lb+q)) = amin M (j0+q)` | `Aexp.amin_oper_mir` |
+| (G2) | `slift (A⟦n⟧) φ = (slift A φ)⟦n⟧`（**無条件**） | `Aexp.slift_oper` |
+| (ML) | `mlift (Lift1 ((0,v,z)::R) d) v e = Lift1 ((0,v,z)::R) (d+e)`（`0<d`） | `Aexp.mlift_Lift1_cons` |
+
+(A2) は `Lcone` の錐輸送 `gexp_cone_mir` / `gexp_cone_mir_flat` の**閾値版**
+（根 `0` を経由しないので `hj0`・`hr0` が不要）。2 相の分岐は `srow`:
+`i1 ≥ 1` は上昇コピー（`gexp_chain_inversion` + 側条件 `amin M j0 ≤ amin M j1`
+= `le1 M j0 j1` から `amin_le1`）、`i1 = 0` は同一コピー（`gexp_flat_*`)。
+side condition `hrow1` は `i1=0` では偽（probe 4387/5967）なので相分けが必須。
+
+これで階段言語 (G2)(G3)(G5)(G6) が揃った。
+
+### ★ (ML) が β のマスク核を消した
+
+塔の帰納で使うデータは**任意の GX 元ではなく、前段の根リフト**
+`Lift1 (Nb⟦i⟧) d1` である。`Lift1 X d` は根の錐をちょうど `d` 上げるので
+`d>0` なら「`Lift1 X d` の閾値 `v` の環境マスク＝`X` の根の錐」
+(`coneV_Lift1_cons`)、したがって
+
+    mlift (Lift1 X d) v e = Lift1 X (d + e)
+
+塔の帰納を `∀ j s, Lift1 (Nb⟦j⟧) (d1+s) ∈ GX` に強めれば、`s`-リフトの
+マスクは `d1+s` の根リフトに吸収されて IH で閉じる。結果
+
+    coreT2EFam_of_plantctx : CorePlantCtxLift → CoreT2EFam
+
+**β は `CoreMaskLift` を一切使わない**。ついでに `CoreT2EFam` / `CoreT2E` の
+仮定は `Y.dropLast ∈ GX` に弱めた（節 2 は他で使っていなかった）。
+
+### α はまだマスク核（`GXg` は Aop 節3 で壁）
+
+α (`CoreT1L`) が要るのは `Lift1 ((0,v,z) :: graft M Y↓) t ∈ GX`。データ
+`Y↓ = Y.dropLast` は塔の元ではない**任意の GX 元**なので (ML) は効かない。
+
+§1.9.19 の `GXg`（義務言語を階段でパラメータ化）で `CoreMaskLift` を定義から
+自明にする案には**未検討の壁**がある: `Aop W u GXg Y → Y ∈ GXg` を示すには
+`slift Y φ` の `Aop` が要るが、
+
+- 節1（短い）: `lev` は保存 ✅
+- 節2（展開）: (G2) でそのまま移る ✅
+- 節3（塔データ）: `domT (slift Y φ) m'` の `m' = m + 2δ` は**元より高い段**。
+  `W m` のデータからは `W m'` のデータが作れない ❌
+
+ただし節3 の `Y` は `¬hasParent`（`domT` の第 2 成分）なので `|Y| ≥ 2` なら
+`Y⟦n⟧ = Y.dropLast` となり**節2 に落ちる**。残る唯一の穴は
+**`|Y| = 1`（植えた根 `[(0,b,c)]`、`om_Aop`）**: マスクリフトは根のレベルを
+`2b+c → 2(b+t)+c` に上げるので、必要な段が上がる。
+「α-orphans = planted roots, stage-bounded」（`GX_loop` の docstring）と同じ壁。
+
+**次の一手（v0.119 候補）**:
+1. `GXm := {y | y ∈ GX ∧ ∀ v t, mlift y v t ∈ GX}` を機械の集合にし、
+   節3 を「`¬hasParent` ⟹ 節2」で潰す。残るのは植えた根の単元だけなので、
+   マスタ帰納（段について）に `∀ w ∈ W m, based w → w ∈ GX` を**全段**で
+   持たせられるかを検討する（`Wf` の段再帰との整合が要点）。
+2. あるいは α を (ML) 型に組み替える: `Y↓` を塔の元に見せる分解を探す。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

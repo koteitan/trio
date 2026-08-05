@@ -38,6 +38,8 @@
 - [x] 接ぎ木閉包 gx_graft / tow_mem_GX で **自己参照 W⊆GX が消滅** ✅ v0.114
 - [x] γ' 要素をコピー塊の反復接ぎ木で窓に還元 ✅ v0.115（srow≤1）
 - [x] 接ぎ木リフト計算則 Cgraft.lean（錐輸送・環境マスク mlift）✅ v0.118
-- [ ] 階段リフト glift の Lean 化 → GXg（リフト閉包が定義から自明）v0.119
+- [x] 階段リフト slift の Lean 化: (A2)/(G2)/(ML) ✅ v0.118.11-13 Aexp.lean
+- [x] β からマスク核が消滅（塔データは根リフト、(ML) で吸収）✅ v0.118.13
+- [ ] α のマスク核 CoreMaskLift（植えた根の単元が唯一の壁）v0.119
 - [ ] **残差**: 文脈断片（CorePlantCtxLift / CoreCtxSuffix / CoreBlocked0）+ CoreBlockedEltHi
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）
