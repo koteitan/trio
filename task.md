@@ -37,5 +37,5 @@
 - [x] スライス装備（第7設計）で α 残差消滅 ✅ v0.113
 - [x] 接ぎ木閉包 gx_graft / tow_mem_GX で **自己参照 W⊆GX が消滅** ✅ v0.114
 - [x] γ' 要素をコピー塊の反復接ぎ木で窓に還元 ✅ v0.115（srow≤1）
-- [ ] **残差**: 文脈断片（CorePlantCtx / CoreWindow / CoreBlocked0）+ リフト閉包
+- [ ] **残差**: 文脈断片（CorePlantCtx / CoreCtxSuffix / CoreBlocked0）+ リフト閉包
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）
