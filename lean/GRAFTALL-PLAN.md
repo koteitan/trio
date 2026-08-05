@@ -938,6 +938,37 @@ CorePlantCtxLift ≤ 「based な W の元は GX に入る」（= 自己参照�
 `GX` の文脈条件を `1 ≤ M.length` に緩められれば `CoreBlocked0` は消える見込み
 （ただし `graft_length` 経由で `hGL` 等が壊れるので要検討）。
 
+## 1.9.25 ★ 収束点: 残る仕事は**植えブロック族** `{(0,B,z) :: slift S φ}` ただ一つ
+
+4 核をそれぞれ最後まで追うと、いずれも同じ対象に落ちる:
+
+| 核 | 落ちる先 |
+|---|---|
+| `CorePlantCtxLift` | `Lift1 ((0,v,z) :: M.dropLast) t = (0,v+t,z) :: mlift M.dropLast v t` |
+| `CoreT1L` の `hTplant` | 同上（複合文脈版） |
+| `CoreBlockedEltHi` | 窓 `cwin` の**根リフト**全部（下記） |
+| `CoreBlocked0` | `GX` の `2 ≤ M.length` の副産物（§1.9.24） |
+
+`CoreBlockedEltHi`（`d1 > 0` の上昇コピー）は、`d1 = 0` の `gcopies_mem_GX`
+と同じ「窓への反復接ぎ木」だが、各段が前段の**根リフト**になる
+（`oper_root_tower` / `gcopy_succ_glift` / `glift_eq_Lift1`）。外側のリフトは
+(ML) `mlift_Lift1_cons` でデータ側に吸収されるので、要るのは
+**窓 `cwin` とその根リフト全部が `GX` に入ること**。
+
+そして基づく列 `X`（根 `(0,B,C)`）の根リフトは
+```
+Lift1 X s = (0, B+s, C) :: mlift X.tail B s = (0, B+s, C) :: slift X.tail χ
+```
+であり、`slift_cons_plant` により**植えブロック族は階段リフトで閉じる**。
+つまり campaign の残りは
+
+> 「装備つきの文脈から作った植えブロック族 `{(0,B,z) :: slift S φ}` が `GX`
+> （さらに `GXs`）に入る」
+
+の一点に集約される。v0.119 はこの族の帰納法（長さ帰納 + 装備の設計）に集中
+すればよい。⚠ 装備なしの版は定理そのものなので、**装備をどう族に沿って
+伝播させるか**が唯一かつ本質的な設計問題（§1.9.24 の緊張）。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

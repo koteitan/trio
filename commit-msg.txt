@@ -1,8 +1,10 @@
-v0.118.22/map the common bottom of the four cores
+v0.118.23/the campaign converges on the plant family
 
-- GRAFTALL-PLAN 1.9.24: every remaining core bottoms out in the same step —
-  the equipment `CtxOK` yields `in W a`, and lifting that to `in GX` is the
-  self-reference (unusable inside the machine, and outside it the peel's GXs
-  component has no equipment)
-- Record that `CoreBlocked0` looks like an artifact of `GX`'s `2 <= M.length`:
-  `(0,v,z) :: graft (M.take 1) C = graft ((0,v,z) :: M.take 1) C`
+- GRAFTALL-PLAN 1.9.25: chasing each of the four cores to the end lands on the
+  same object, the plant family {(0,B,z) :: slift S phi}
+- `CoreBlockedEltHi` (ascending copies, d1 > 0) is the d1 = 0 iterated-graft
+  pattern with each level a ROOT LIFT of the previous, so (ML) absorbs the
+  outer lift and what is needed is the window `cwin` together with all its root
+  lifts -- and a root lift of a based sequence is exactly a plant-family member
+- So v0.119 is a single question: how to propagate the equipment `CtxOK` along
+  the plant family
