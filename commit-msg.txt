@@ -1,15 +1,15 @@
-v0.118.15/GXs: the datum-side lift core is gone from the machine loop
+v0.118.16/CoreStairOm discharged: the loop runs on four context cores
 
-- Add `GXs = {y | y in GX and every staircase lift of y is in GX}`, closed
-  under `slift` by definition (`gxs_slift` via `slift_slift` + `stair_comp`)
-- Run the machine over `GXs`: `GX_closed` now consumes `Aop W u GXs Y`, and
-  `CoreT1L` consumes `Y.dropLast in GXs`, so alpha reads its mask lift straight
-  off the datum (`gxs_mlift`) — `coreT1L_of_plantctx : CorePlantCtxLift -> CoreT1L`
-- Add `aop_slift`: the staircase transport of `Aop` for length >= 2 — clause 1
-  by `Stair.zero`, clause 2 by `slift_oper` (G2), clause 3 collapsing to
-  clause 2 through `domT`'s `¬ hasParent`
-- Add `CoreStairOm` (the planted-root singleton, the only surviving hole in the
-  transport) and `GXs_closed` / `W_le_GXs` / `W_le_GX`
-- Retire `CoreLift` / `CoreLiftPlant` / `CoreMaskLift` from the loop: the
-  residues are now CoreCtxSuffix, CoreBlockedEltHi, CoreBlocked0,
-  CorePlantCtxLift, CoreStairOm (`GX_loop_pieces`)
+- Split `GX_closed` into `gx_of_pieces` (consumes only `Y.dropLast in GXs` plus
+  the inner clause `hasParent Y -> forall n >= 1, Y[n] in GXs`) and a wrapper
+  that reads both off `Aop`; the peel comes from clause 2 via `gxs_take` +
+  `oper_take_prefix`
+- Prove `coreStairOm_holds`: a length-1 element's last column has no parent, so
+  its staircase lift needs no `Aop` at all — the planted-root hole closes
+- Weaken `CoreBlocked` / `CoreBlockedElt` / `CoreWindow` / `CoreBlockedEltHi` /
+  `CoreBlocked0` to `Y.dropLast in GXs` (formally stronger cores; with `hpY`
+  the dropped `Aop` only added clause-3 data that these cores never mention)
+- Fold the row-2 graft-tower case (d) into `CoreT2E`, which now covers every
+  `Aop` clause uniformly
+- `GX_loop_pieces` now takes exactly CoreCtxSuffix, CoreBlockedEltHi,
+  CoreBlocked0, CorePlantCtxLift — every lift core is gone
