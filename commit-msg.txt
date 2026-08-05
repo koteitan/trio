@@ -1,16 +1,15 @@
-v0.118.46/analysis: the cores come entirely from the t>0 stage raise
+v0.118.47/a concrete new induction: composite length over a generated context family
 
-- GRAFTALL-PLAN.md 1.9.39: at t = 0 the tower branch falls straight out of
-  `Aop` clause 3 via `graft_cons`, so every core is created by the ambient row-1
-  lift raising the required data stage from m to m+2t
-- Record that the stage cannot be the induction measure (2v+z <= m gives only
-  2(v+t)+z <= m+2t, no strict descent), alongside the four measures already
-  refuted (datum length, composite length, context length, equipment fixpoint)
-- Record the promising direction: GX quantifies over ALL contexts, but every
-  actual use is at an explicitly generated family (tower: graft^n Rt P with the
-  tower index descending; blocked: graft (M.take (p+1)) partial-copies with the
-  context strictly shortening), so a context-carrying relation with induction on
-  the tower/copy index should avoid the core
-- Record the smallest question to settle first: a family form of `LiftTower1`
-  (row 1), mirroring `towerGraft2_lift_fam` for row 2, since `tower1_mem2`
-  applies its `hgr` only to the tower own elements
+- GRAFTALL-PLAN.md 1.9.40: `tower1_mem2` applies its graft-closure hypothesis
+  only to the tower own elements, so a family form of `LiftTower1` is immediate
+  and the `forall y in W (m+2t)` interface — hence the stage raise — disappears
+  from the statement
+- With `N_0 = Rt`, `N_{n+1} = graft N_n P`, the whole row-1 tower reduces to
+  "`N_k.dropLast` is a W-package", i.e. `Rt`s plant grafted into the generated
+  family only; the prefixes of `N_n` are strictly shorter composites, so the
+  COMPOSITE LENGTH descends
+- Composite length is invariant under the `gx_graft` re-association
+  (`graft_assoc`), so it was only refuted because `GX` quantifies over ALL
+  contexts; restricting to the generated family revives it
+- Write the v0.120 design (context-carrying relation + inductive context
+  predicate + induction on composite length) with its three unverified risks
