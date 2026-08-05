@@ -1,12 +1,10 @@
-v0.118.5/the staircase lift in Lean (amin, Stair, slift)
+v0.118.6/the staircase lift distributes over grafts (Cgraft.lean)
 
-- Define `amin A j` (the row-1 minimum along j's row-0 ancestor chain) and
-  prove `coneV_iff_amin`: the ambient mask is exactly `amin > v`
-- Define the staircase class `Stair` (phi m - m nondecreasing, phi m >= m) with
-  `stair_step` (one step = a mask lift), `stair_comp` (closed under
-  composition) and `Stair.mono`
-- Define `slift A phi` (lift column j by `phi (amin A j) - amin A j`) with its
-  entry lemmas and `nextrel0_slift` / `rtg0_slift`
-- Prove the two structural laws: `amin_slift` (the parameter transforms by phi)
-  and `slift_slift` (staircase lifts compose), plus `mlift_eq_slift`
-- Import Mathlib.Data.Nat.Lattice for sInf on naturals
+- Add `capV M` (the row-1 minimum over the graft point's strict context
+  ancestors) with `siteV_iff_capV`
+- Prove `amin_graft_low` / `amin_graft_high_eq`: the composite's parameter is
+  the argument's own `amin` capped by `capV M`
+- Prove `slift_graft`: the staircase lift distributes over a graft, with the
+  argument's staircase cut at `capV M` — and `stair_cap` shows the cut is again
+  a staircase, so the language is closed under the graft recursion
+- Add `nat_eq_of_lt_iff` (a threshold characterisation determines the value)

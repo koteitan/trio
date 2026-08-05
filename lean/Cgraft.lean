@@ -1042,4 +1042,138 @@ theorem mlift_eq_slift (A : TrioSeq) (v d : ℕ) :
   rw [entry0_mlift, entry2_mlift, e1, entry0_slift, entry2_slift, f1,
     if_congr coneV_iff_amin rfl rfl]
 
+
+/-! ### 階段リフトの接ぎ木分配則
+
+複合ブロックの `amin` は引数側で「引数自身の `amin` を文脈のキャップ `capV` で
+抑えたもの」（`amin_graft_high_eq`）。したがって階段リフトは接ぎ木に分配し、
+引数に効く階段は `φ` を `capV` でカットしたもの — これも階段。 -/
+
+theorem nat_eq_of_lt_iff {X Y : ℕ} (h : ∀ v, v < X ↔ v < Y) : X = Y := by
+  rcases Nat.lt_trichotomy X Y with hlt | heq | hgt
+  · exact absurd ((h X).2 hlt) (lt_irrefl X)
+  · exact heq
+  · exact absurd ((h Y).1 hgt) (lt_irrefl Y)
+
+theorem amin_graft_low {M A : TrioSeq} (hA0 : entry A 0 0 = 0) (hA : 0 < A.length)
+    (hM2 : 2 ≤ M.length) {i : ℕ} (hi : i < M.length - 1) :
+    amin (graft M A) i = amin M i :=
+  nat_eq_of_lt_iff fun v => by
+    rw [← coneV_iff_amin, ← coneV_iff_amin]
+    exact coneV_graft_low hA0 hA hM2 hi
+
+open Classical in
+/-- 接ぎ木点の**手前の**行 0 祖先の行 1 最小値（文脈のキャップ）。 -/
+noncomputable def capV (M : TrioSeq) : ℕ :=
+  sInf {m | ∃ y, y < M.length - 1 ∧
+    Relation.ReflTransGen (nextrel0 M) y (M.length - 1) ∧ entry M 1 y = m}
+
+theorem siteV_iff_capV {M : TrioSeq}
+    (hne : ∃ y, y < M.length - 1 ∧
+      Relation.ReflTransGen (nextrel0 M) y (M.length - 1)) {v : ℕ} :
+    SiteV M v ↔ v < capV M := by
+  obtain ⟨y0, hy0, hy0c⟩ := hne
+  have hSne : {m | ∃ y, y < M.length - 1 ∧
+      Relation.ReflTransGen (nextrel0 M) y (M.length - 1) ∧
+      entry M 1 y = m}.Nonempty := ⟨entry M 1 y0, y0, hy0, hy0c, rfl⟩
+  constructor
+  · intro h
+    obtain ⟨y, hy, hyc, hey⟩ := Nat.sInf_mem hSne
+    unfold capV
+    rw [← hey]
+    exact h y hy hyc
+  · intro h y hy hyc
+    exact lt_of_lt_of_le h (Nat.sInf_le ⟨y, hy, hyc, rfl⟩)
+
+theorem amin_graft_high_eq {M A : TrioSeq} (hA0 : entry A 0 0 = 0)
+    (hM2 : 2 ≤ M.length)
+    (hne : ∃ y, y < M.length - 1 ∧
+      Relation.ReflTransGen (nextrel0 M) y (M.length - 1))
+    {k : ℕ} (hk : k < A.length) :
+    amin (graft M A) (M.length - 1 + k) = min (capV M) (amin A k) :=
+  nat_eq_of_lt_iff fun v => by
+    rw [← coneV_iff_amin, coneV_graft_high hA0 hM2 hk, siteV_iff_capV hne,
+      coneV_iff_amin, lt_min_iff]
+
+/-- キャップした階段はまた階段。 -/
+theorem stair_cap {φ : ℕ → ℕ} (hφ : Stair φ) (c : ℕ) :
+    Stair (fun m => m + (φ (min c m) - min c m)) := by
+  refine ⟨fun m => by omega, fun m n hmn => ?_⟩
+  have h1 : min c m ≤ min c n := by omega
+  have h2 := hφ.step (min c m) (min c n) h1
+  have h3 := hφ.ge (min c m)
+  have h4 := hφ.ge (min c n)
+  omega
+
+open Classical in
+/-- **(G3) 階段リフトは接ぎ木に分配する**（引数側の階段は `capV` でカットした
+もの）。 -/
+theorem slift_graft {M A : TrioSeq} (hA0 : entry A 0 0 = 0) (hA : 0 < A.length)
+    (hM2 : 2 ≤ M.length)
+    (hne : ∃ y, y < M.length - 1 ∧
+      Relation.ReflTransGen (nextrel0 M) y (M.length - 1))
+    {φ : ℕ → ℕ} (hφ : Stair φ) :
+    slift (graft M A) φ
+      = graft (slift M φ)
+        (slift A (fun m => m + (φ (min (capV M) m) - min (capV M) m))) := by
+  set ψ : ℕ → ℕ := fun m => m + (φ (min (capV M) m) - min (capV M) m) with hψ
+  have hMLlen : (slift M φ).length = M.length := slift_length M φ
+  have hML1 : (slift M φ).length - 1 = M.length - 1 := by rw [hMLlen]
+  have hAlen : (slift A ψ).length = A.length := slift_length A ψ
+  have hlen : (slift (graft M A) φ).length
+      = (graft (slift M φ) (slift A ψ)).length := by
+    rw [slift_length, graft_length, graft_length, hMLlen, hAlen]
+  refine List.ext_getElem hlen ?_
+  intro i hi1 hi2
+  rw [slift_length, graft_length] at hi1
+  rw [← entry_triple (by rw [slift_length, graft_length]; omega),
+    ← entry_triple (by rw [graft_length, hMLlen, hAlen]; omega)]
+  rcases Nat.lt_or_ge i (M.length - 1) with hlo | hhi
+  · have hMi : i < M.length := by omega
+    have e0 : entry (slift (graft M A) φ) 0 i = entry M 0 i := by
+      rw [entry0_slift, entry_graft_low hlo]
+    have e2 : entry (slift (graft M A) φ) 2 i = entry M 2 i := by
+      rw [entry2_slift, entry_graft_low hlo]
+    have e1 : entry (slift (graft M A) φ) 1 i
+        = entry M 1 i + (φ (amin M i) - amin M i) := by
+      rw [entry1_slift (by rw [graft_length]; omega), entry_graft_low hlo,
+        amin_graft_low hA0 hA hM2 hlo]
+    have f0 : entry (graft (slift M φ) (slift A ψ)) 0 i = entry M 0 i := by
+      rw [entry_graft_low (by omega), entry0_slift]
+    have f2 : entry (graft (slift M φ) (slift A ψ)) 2 i = entry M 2 i := by
+      rw [entry_graft_low (by omega), entry2_slift]
+    have f1 : entry (graft (slift M φ) (slift A ψ)) 1 i
+        = entry M 1 i + (φ (amin M i) - amin M i) := by
+      rw [entry_graft_low (by omega), entry1_slift hMi]
+    rw [e0, e1, e2, f0, f1, f2]
+  · obtain ⟨k, rfl⟩ : ∃ k, i = M.length - 1 + k := ⟨i - (M.length - 1), by omega⟩
+    have hkA : k < A.length := by omega
+    have hamin := amin_graft_high_eq hA0 hM2 hne hkA
+    have e0 : entry (slift (graft M A) φ) 0 (M.length - 1 + k)
+        = entry A 0 k + entry M 0 (M.length - 1) := by
+      rw [entry0_slift, entry0_graft_high hkA]
+    have e2 : entry (slift (graft M A) φ) 2 (M.length - 1 + k) = entry A 2 k := by
+      rw [entry2_slift, entry2_graft_high]
+    have e1 : entry (slift (graft M A) φ) 1 (M.length - 1 + k)
+        = entry A 1 k
+          + (φ (min (capV M) (amin A k)) - min (capV M) (amin A k)) := by
+      rw [entry1_slift (by rw [graft_length]; omega), entry1_graft_high, hamin]
+    have f0 : entry (graft (slift M φ) (slift A ψ)) 0 (M.length - 1 + k)
+        = entry A 0 k + entry M 0 (M.length - 1) := by
+      rw [← hML1, entry0_graft_high (by rw [hAlen]; exact hkA), entry0_slift,
+        entry0_slift]
+    have f2 : entry (graft (slift M φ) (slift A ψ)) 2 (M.length - 1 + k)
+        = entry A 2 k := by
+      rw [← hML1, entry2_graft_high, entry2_slift]
+    have f1 : entry (graft (slift M φ) (slift A ψ)) 1 (M.length - 1 + k)
+        = entry A 1 k
+          + (φ (min (capV M) (amin A k)) - min (capV M) (amin A k)) := by
+      have hbeta : ψ (amin A k)
+          = amin A k + (φ (min (capV M) (amin A k)) - min (capV M) (amin A k)) := rfl
+      rw [← hML1, entry1_graft_high, entry1_slift hkA, hbeta]
+      have h1 := hφ.ge (min (capV M) (amin A k))
+      have h2 : min (capV M) (amin A k) ≤ amin A k := by omega
+      omega
+    rw [e0, e1, e2, f0, f1, f2]
+
 end TRIO
