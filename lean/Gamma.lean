@@ -506,6 +506,24 @@ theorem gcopies_mem_GX {R : TrioSeq} {p L d0 c : ℕ}
       exact gx_graft (by unfold cwin; simp) hbcw
         (by rw [cwin_dropLast]; exact hW) ih (hbc n)
 
+/-! ### 根を植える: 段の厳密降下
+
+すべての残差核は `gx_graft` による分解で「文脈/要素の断片」に落ち、断片の
+再帰の**底は単列ブロック `[(0,v,z)]`（植えた根）**である。その `Aop` は
+節3 で、データ段は `2v+z-1` — 根のレベルより**厳密に低い**。つまり残差の
+最終的な内容は「一段下の `W` が `GX` に入る」ことに集約される。 -/
+
+/-- **Planting a root descends the stage**: the bare planted root's `Aop`
+datum lives at stage `2v+z-1`, strictly below the root's own level. -/
+theorem om_Aop {v z : ℕ} (h : ∀ w ∈ W (2 * v + z - 1), based w → w ∈ GX) :
+    Aop W (2 * v + z) GX [((0, v, z) : ℕ × ℕ × ℕ)] := by
+  rcases Nat.eq_zero_or_pos (2 * v + z) with h0 | hpos
+  · exact Or.inl ⟨by simp, by simp [lev, entry]; omega⟩
+  · refine Or.inr (Or.inr ⟨2 * v + z - 1, by omega, domT_Om hpos, ?_⟩)
+    intro y hy hb
+    rw [graft_Om]
+    exact h y hy hb
+
 /-- **The lift-closure core**: the machine's set is closed under the intrinsic
 row-1 lift.  (The composite lift does *not* push through a graft as the
 argument's own `Lift1` — `probe_liftplant` refutes that — so this is a genuine
