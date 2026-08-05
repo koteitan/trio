@@ -1,7 +1,9 @@
-v0.118.42/record the design consequence of the graft case of CtxInf
+v0.118.43/CtxInf for composite contexts away from the graft point
 
-- GRAFTALL-PLAN.md 1.9.37: the crossing case of `ctxInf_graft` reduces, via
-  `shiftl0_seg_graft` + `slift_graft`, to a `GX` obligation for a STAIRCASE LIFT
-  of the datum's prefix, so `gx_graft` must be strengthened from
-  `E.dropLast in GX` to `E.dropLast in GXs`, and with it the surviving core to
-  its staircase-closed form — the implementation cost of v0.119
+- Add `seg_graft_low` and `shiftl0_seg_graft_high` in Croot.lean: an infix of a
+  composite context that stays inside the head block is the head block' own,
+  and one that stays inside the datum is the datum' own after re-basing (the
+  graft depth cancels)
+- Add `ctxInf_graft_of_cross`: `CtxInf (graft M E)` from `CtxInf M`, `CtxInf E`
+  and the isolated crossing case, with the row-0 chains transported by
+  `take_graft_low` / `le0_graft_high`

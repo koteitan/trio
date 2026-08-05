@@ -694,6 +694,37 @@ theorem shiftl0_seg_ltail {R : TrioSeq} {p k v z t c : ℕ} (hR : argOK R)
   rw [ltail_eq_mlift (v := v) (z := z) (t := t) hR]
   exact shiftl0_seg_mlift hlen hwin hc
 
+/-! ### 複合文脈の中間ブロック（低位・高位） -/
+
+theorem seg_graft_low {E A : TrioSeq} {p k : ℕ} (hk : p + k < E.length - 1) :
+    seg (graft E A) p (k + 1) = seg E p (k + 1) := by
+  unfold seg
+  refine List.map_congr_left ?_
+  intro j hj
+  rw [List.mem_range'_1] at hj
+  rw [entry_graft_low (by omega), entry_graft_low (by omega),
+    entry_graft_low (by omega)]
+
+theorem shiftl0_seg_graft_high {E A : TrioSeq} {j0 k : ℕ}
+    (hk : j0 + k < A.length) :
+    shiftl0 (entry (graft E A) 0 (E.length - 1 + j0))
+        (seg (graft E A) (E.length - 1 + j0) (k + 1))
+      = shiftl0 (entry A 0 j0) (seg A j0 (k + 1)) := by
+  have hc : entry (graft E A) 0 (E.length - 1 + j0)
+      = entry A 0 j0 + entry E 0 (E.length - 1) :=
+    entry0_graft_high (by omega)
+  refine list_ext_getD ?_ ?_
+  · rw [shiftl0_length, seg_length, shiftl0_length, seg_length]
+  · intro q hq
+    rw [shiftl0_length, seg_length] at hq
+    have hidx : E.length - 1 + j0 + q = E.length - 1 + (j0 + q) := by omega
+    rw [getD_shiftl0, getD_shiftl0, seg_getD hq, seg_getD hq, hc, hidx,
+      entry0_graft_high (by omega : j0 + q < A.length),
+      entry1_graft_high, entry2_graft_high]
+    refine Prod.ext ?_ (Prod.ext rfl rfl)
+    dsimp only
+    omega
+
 end InfLift
 
 end Rebase

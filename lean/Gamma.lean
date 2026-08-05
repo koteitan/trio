@@ -1379,6 +1379,65 @@ theorem infEquip_at_of_ctxInf {M : TrioSeq} (h : CtxInf M) {p : ℕ}
     (by simpa using hva)
   rwa [slift_id] at hres
 
+open Classical in
+/-- **`CtxInf` for a composite context, away from the graft point.**  The infix
+either lies inside the head block `M` (`seg_graft_low`) or inside the datum `E`
+(`shiftl0_seg_graft_high`); the crossing case is isolated as `hcross`, and by
+`Croot.shiftl0_seg_graft` + `slift_graft` it is a `GX` obligation for a
+STAIRCASE LIFT of `E`'s prefix at the re-based `M`-suffix context. -/
+theorem ctxInf_graft_of_cross {M E : TrioSeq} (hMne : M ≠ []) (hEne : E ≠ [])
+    (hM : CtxInf M) (hE : CtxInf E)
+    (hcross : ∀ p k, p < M.length - 1 → M.length - 1 ≤ p + k →
+      p + k < (graft M E).length - 1 →
+      (∀ q, q < k + 1 →
+        Relation.ReflTransGen (nextrel0 (graft M E)) p (p + q)) →
+      entry (graft M E) 2 p ≤ 1 ∧
+      ∀ φ : ℕ → ℕ, Stair φ → ∀ a t : ℕ,
+        2 * (φ (entry (graft M E) 1 p) + t) + entry (graft M E) 2 p ≤ a →
+        Lift1 (slift (shiftl0 (entry (graft M E) 0 p)
+          (seg (graft M E) p (k + 1))) φ) t ∈ W a) :
+    CtxInf (graft M E) := by
+  classical
+  have hMlen : 0 < M.length := List.length_pos_iff.mpr hMne
+  have hElen : 0 < E.length := List.length_pos_iff.mpr hEne
+  have hGlen : (graft M E).length = M.length - 1 + E.length := graft_length M E
+  intro p k hk hwin
+  rw [hGlen] at hk
+  rcases Nat.lt_or_ge (p + k) (M.length - 1) with hlow | hge
+  · -- the infix lies inside the head block
+    have hwin' : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 M) p (p + q) := by
+      intro q hq
+      have hb : le0 (graft M E) p (p + q) :=
+        ⟨by rw [hGlen]; omega, by rw [hGlen]; omega, hwin q hq⟩
+      have h1 : le0 ((graft M E).take (M.length - 1)) p (p + q) :=
+        (le0_take (X := graft M E) (l := M.length - 1)
+          (by rw [hGlen]; omega) (by omega)).mpr hb
+      rw [take_graft_low le_rfl] at h1
+      exact ((le0_take (X := M) (l := M.length - 1) (by omega)
+        (by omega)).mp h1).2.2
+    obtain ⟨h2, hpk⟩ := hM p k (by omega) hwin'
+    rw [entry_graft_low (by omega), entry_graft_low (by omega),
+      entry_graft_low (by omega), seg_graft_low (by omega)]
+    exact ⟨h2, hpk⟩
+  · rcases Nat.lt_or_ge p (M.length - 1) with hcr | hhi
+    · -- the infix crosses the graft point
+      exact hcross p k hcr hge (by rw [hGlen]; omega) hwin
+    · -- the infix lies inside the datum
+      obtain ⟨j0, rfl⟩ : ∃ j0, p = M.length - 1 + j0 := ⟨p - (M.length - 1), by omega⟩
+      have hj0k : j0 + k < E.length - 1 := by omega
+      have hwin' : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 E) j0 (j0 + q) := by
+        intro q hq
+        have hb : le0 (graft M E) (M.length - 1 + j0)
+            (M.length - 1 + (j0 + q)) := by
+          refine ⟨by rw [hGlen]; omega, by rw [hGlen]; omega, ?_⟩
+          rw [show M.length - 1 + (j0 + q) = M.length - 1 + j0 + q from by omega]
+          exact hwin q hq
+        exact ((le0_graft_high M E j0 (j0 + q)).mp hb).2.2
+      obtain ⟨h2, hpk⟩ := hE j0 k hj0k hwin'
+      rw [entry1_graft_high, entry2_graft_high,
+        shiftl0_seg_graft_high (by omega)]
+      exact ⟨h2, hpk⟩
+
 /-! ### 中間ブロックの装備（`W` レベル）だけで接尾核は植え核に落ちる
 
 `CoreCtxSuffixLift` の対象は、再基底化した中間ブロックを**自身の根で植えた
