@@ -1,11 +1,9 @@
-v0.114.2/probe the lift residue and record its exact shape
+v0.114.3/record the plift decomposition route
 
-- Add the four probes behind GRAFTALL-PLAN 1.9.11: probe_liftplant
-  (composite lift acts by the coneV mask, not the argument's Lift1),
-  probe_plift (both masks are lift-stable, so both lifts compose),
-  probe_tower2lift (tower-2 family lift = one more Lift1, 0/21408;
-  the row-1 tow analogue is false), probe_lowroot (at every tower site
-  the datum's root sits above the ambient root, so the mask part never
-  trivializes)
-- Record 1.9.11: CoreLiftPlant = (lifted planted context peel) and
-  (plift closure of GX); alpha and beta converge on one core
+- Add probe_allhigh: at 68% of tower sites the datum lies entirely above
+  the ambient root's row 1, where the mask lift degenerates to the
+  uniform row-1 shift; the rest are low columns carrying high subtrees
+- Record GRAFTALL-PLAN 1.9.12: CoreLiftPlant splits into CorePlantCtxL
+  (context side) and CorePlift (element side), and CorePlift may reduce
+  to closure under the uniform row-1 shift via a subtree decomposition
+- Update task.md to the two-part residue

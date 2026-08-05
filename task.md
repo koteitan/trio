@@ -36,5 +36,5 @@
 - [x] α 還元 coreT1L_of_le（残差 CtxLiftT1）・γ' 還元 coreBlocked_of_elt ✅
 - [x] スライス装備（第7設計）で α 残差消滅 ✅ v0.113
 - [x] 接ぎ木閉包 gx_graft / tow_mem_GX で **自己参照 W⊆GX が消滅** ✅ v0.114
-- [ ] **残差**: CoreLift / CorePlantCtx / CoreBlockedElt / CoreBlocked0
+- [ ] **残差**: CoreLiftPlant（= 文脈側 CorePlantCtxL + 要素側 CorePlift）/ γ' 2核
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）

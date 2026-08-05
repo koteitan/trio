@@ -234,6 +234,27 @@ probe 結果:
 任意の GX 要素を走る）ので優先度は低い。攻めるべきは
 `plift 閉包`（要素側）と `リフト済み植え文脈 peel`（文脈側）の 2 つ。
 
+## 1.9.12 ★ plift 残差の分解案（次の攻め口）
+
+`CoreLiftPlant ⟸ CorePlantCtxL ∧ CorePlift`:
+- `CorePlantCtxL`: `Lift1 ((0,v,z) :: M.dropLast) t ∈ GX`（文脈側）
+  — `ltail_dropLast` で `(0,v+t,z) :: (ltail v z M t).dropLast` に一致
+- `CorePlift`: `D ∈ GX → plift v t D ∈ GX`（要素側）
+
+`probe_allhigh`: 塔サイトのうち **68%（tower1 384000/564864,
+tower2 228528/330192）は D の全列が entry1 > v**、その場合
+`coneV D v = 全体` すなわち **plift = 一様な行1シフト `shiftr1 t`**
+（trio には `oper_shiftr1`/`le1_shiftr1`/`lev_shiftr1` の同変性一式がある）。
+残り 32% は「低い列（entry1 ≤ v）に高い部分木がぶら下がる」形。
+
+⟹ **分解案**: D を「低い列 + 高い部分ブロック」に分け、plift は各高部分
+ブロックへの**一様行1シフト**として作用する（マスクは部分木単位）。
+`gx_graft` が既にあるので、D の分解が graft-合成で書ければ
+`CorePlift ⟸ GX の一様行1シフト閉包` に落ちる。
+一様シフト閉包は `oper_shiftr1` 同変性で機械の枝解析が通る可能性がある
+（節3データの整合だけ要確認）。⚠ ただし値ベースのリフト言語は 6 回
+反証されているので、**分解の probe を先に**（未実施）。
+
 ## 1.9.8 ★ α の残差解析（v0.109-110）— 整列供給 ✓ / 非整列 = (e)-壁の最終形
 （→ 1.9.9 で解決済み。以下は経緯の記録）
 
