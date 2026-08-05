@@ -1,15 +1,10 @@
-v0.118.16/CoreStairOm discharged: the loop runs on four context cores
+v0.118.18/planted roots in GXs, and the upper bound on CorePlantCtxLift
 
-- Split `GX_closed` into `gx_of_pieces` (consumes only `Y.dropLast in GXs` plus
-  the inner clause `hasParent Y -> forall n >= 1, Y[n] in GXs`) and a wrapper
-  that reads both off `Aop`; the peel comes from clause 2 via `gxs_take` +
-  `oper_take_prefix`
-- Prove `coreStairOm_holds`: a length-1 element's last column has no parent, so
-  its staircase lift needs no `Aop` at all — the planted-root hole closes
-- Weaken `CoreBlocked` / `CoreBlockedElt` / `CoreWindow` / `CoreBlockedEltHi` /
-  `CoreBlocked0` to `Y.dropLast in GXs` (formally stronger cores; with `hpY`
-  the dropped `Aop` only added clause-3 data that these cores never mention)
-- Fold the row-2 graft-tower case (d) into `CoreT2E`, which now covers every
-  `Aop` clause uniformly
-- `GX_loop_pieces` now takes exactly CoreCtxSuffix, CoreBlockedEltHi,
-  CoreBlocked0, CorePlantCtxLift — every lift core is gone
+- Add `amin_zero` and `slift_singleton` (Aexp.lean): a staircase moves a
+  singleton's root to `phi b`
+- Add `singleton_mem_GXs`: every planted root `[(0,b,c)]` is in `GXs`, with all
+  its staircase lifts (generalises `coreStairOm_holds`)
+- Add `corePlantCtxLift_of_self`: `CtxOK M v z` at `k = |M|-1` already puts the
+  lifted planted peel in `W a`, so the core is bounded above by the
+  self-reference "based W-elements are in GX" — recorded as an upper bound, not
+  as the intended route (the core is to be proved by induction on |M|)

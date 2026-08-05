@@ -1307,6 +1307,39 @@ def CoreStairOm : Prop :=
     ∀ φ : ℕ → ℕ, Stair φ → slift Y φ ∈ GX
 
 open Classical in
+/-- **The planted root is in the machine's set**, with all its staircase lifts:
+a length-1 sequence's last column has no parent, so `gx_of_pieces` runs on it
+with the empty peel and a vacuous inner clause. -/
+theorem singleton_mem_GXs (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E)
+    (b c : ℕ) : [((0, b, c) : ℕ × ℕ × ℕ)] ∈ GXs := by
+  classical
+  have key : ∀ B C : ℕ, [((0, B, C) : ℕ × ℕ × ℕ)] ∈ GX := by
+    intro B C
+    refine gx_of_pieces hb h1 h2 0 _ ?_ (fun hp n hn => ?_)
+    · show ([((0, B, C) : ℕ × ℕ × ℕ)]).dropLast ∈ GXs
+      exact nil_mem_GXs
+    · exact absurd (nextR_index_lt (parent_nextR hp)) (by simp)
+  refine ⟨key b c, fun φ hφ => ?_⟩
+  rw [slift_singleton b c hφ]
+  exact key _ _
+
+/-- **`CorePlantCtxLift` is bounded above by the self-reference**: the equipment
+`CtxOK M v z` already puts the lifted planted peel in `W a` (take `k = |M|-1`),
+so the core is at most "every based `W`-element is in `GX`".  This is only an
+upper bound — the point of the campaign is to prove the core WITHOUT the
+self-reference (by induction on the context's length). -/
+theorem corePlantCtxLift_of_self
+    (hs : ∀ (u : ℕ) (y : TrioSeq), y ∈ W u → based y → y ∈ GX) :
+    CorePlantCtxLift := by
+  intro M hMarg hM2 v z hz1 hctx t
+  have hW := hctx (M.length - 1) (by omega) (2 * (v + t) + z) t (le_refl _)
+  rw [← List.dropLast_eq_take] at hW
+  exact hs _ _ hW (by
+    show entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t) 0 0 = 0
+    rw [entry0_Lift1]
+    exact based_cons v z M.dropLast)
+
+open Classical in
 /-- **The planted-root staircase core is DISCHARGED**: a length-1 element's own
 last column can have no parent (there is no earlier index), so `gx_of_pieces`
 runs on it with the empty peel and a vacuous inner clause — no `Aop`, hence no

@@ -586,4 +586,32 @@ theorem mlift_Lift1_cons {R : TrioSeq} (hR : argOK R) {v z d e : ℕ} (hd : 0 < 
     split_ifs <;> omega
   rw [e0, e1, e2, entry0_Lift1, entry2_Lift1, entry1_Lift1 hi1]
 
+/-! ## 単元列（植えた根） -/
+
+theorem amin_zero (A : TrioSeq) : amin A 0 = entry A 1 0 := by
+  obtain ⟨y, hy, hey⟩ := amin_mem A 0
+  have hy0 : y = 0 := by have := rtg0_le hy; omega
+  rw [← hey, hy0]
+
+theorem slift_singleton (b c : ℕ) {φ : ℕ → ℕ} (hφ : Stair φ) :
+    slift [((0, b, c) : ℕ × ℕ × ℕ)] φ = [((0, φ b, c) : ℕ × ℕ × ℕ)] := by
+  refine List.ext_getElem (by simp) ?_
+  intro i hi1 hi2
+  rw [slift_length] at hi1
+  have hi0 : i = 0 := by simpa using hi1
+  subst hi0
+  rw [← entry_triple (X := slift [((0, b, c) : ℕ × ℕ × ℕ)] φ) (by simp),
+    ← entry_triple (X := [((0, φ b, c) : ℕ × ℕ × ℕ)]) (by simp)]
+  have e0 : entry [((0, b, c) : ℕ × ℕ × ℕ)] 0 0 = 0 := rfl
+  have e1 : entry [((0, b, c) : ℕ × ℕ × ℕ)] 1 0 = b := rfl
+  have e2 : entry [((0, b, c) : ℕ × ℕ × ℕ)] 2 0 = c := rfl
+  have f0 : entry [((0, φ b, c) : ℕ × ℕ × ℕ)] 0 0 = 0 := rfl
+  have f1 : entry [((0, φ b, c) : ℕ × ℕ × ℕ)] 1 0 = φ b := rfl
+  have f2 : entry [((0, φ b, c) : ℕ × ℕ × ℕ)] 2 0 = c := rfl
+  rw [entry0_slift, entry2_slift, entry1_slift (by simp), amin_zero, e0, e1, e2,
+    f0, f1, f2]
+  have hge := hφ.ge b
+  have he : b + (φ b - b) = φ b := by omega
+  rw [he]
+
 end TRIO
