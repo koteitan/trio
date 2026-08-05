@@ -1,12 +1,10 @@
-v0.118.11/(A2): the expansion's copies inherit their source column's amin
+v0.118.12/(G2): the staircase lift commutes with the expansion
 
-- Add lean/Aexp.lean: `amin_gexp_mir` (ascending copies, side condition
-  `amin M j0 <= amin M (j0+Lb)`) and `amin_gexp_mir_flat` (identical copies)
-- Derive the branch-free `amin_oper_mir` via `oper_eq_gexp_gen`, splitting on
-  `srow` (`i1 >= 1` gets `hrow1` from `le1 M j0 j1`, `i1 = 0` uses the flat
-  chain inversion)
-- Add `gexp_entry_le` (prefix values, graft point included) and
-  `rtg0_of_rtg1` (row-1 ancestry implies row-0 ancestry)
-- Add tools/probe_a2_branch.py: (A2)/(G2) 0 violations per branch, `hrow1`
-  false only for `i1 = 0` (4387/5967)
-- Register Aexp in lakefile roots
+- Add `slift_oper` (Aexp.lean): `slift (A[n]) phi = (slift A phi)[n]`,
+  unconditional in `A` and `n`, sorry-free
+- Add `slift_oper_main` for the gexp branch: prefix columns by (A1), copies by
+  (A2), the `le1` guard by `le1_slift`, `d1` by `amin_le1` on the row-2 parent
+- Add `slift_take` / `slift_dropLast` (Pred branches) and `oper_zero_take`
+  (`X[0]` is the truncation at the bad root)
+- Complete the staircase calculus: (G2) joins (G3) `slift_graft`,
+  (G5) `slift_slift`, (G6) `amin_slift`

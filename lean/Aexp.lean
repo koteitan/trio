@@ -275,4 +275,216 @@ theorem amin_oper_mir {M : TrioSeq} {n j0 Lb k q : ℕ}
     rw [if_neg h0, if_neg (by omega)]
     exact amin_gexp_mir_flat hlen hLb hk hq hup
 
+/-! ## (G2): 階段リフトは展開と可換 -/
+
+theorem slift_take {A : TrioSeq} {φ : ℕ → ℕ} {l : ℕ} (hl : l ≤ A.length) :
+    slift (A.take l) φ = (slift A φ).take l := by
+  refine List.ext_getElem (by simp) ?_
+  intro i hi1 hi2
+  rw [slift_length, List.length_take] at hi1
+  have hiA : i < A.length := by omega
+  have hil : i < l := by omega
+  rw [← entry_triple (X := slift (A.take l) φ)
+      (by rw [slift_length, List.length_take]; omega),
+    ← entry_triple (X := (slift A φ).take l)
+      (by rw [List.length_take, slift_length]; omega)]
+  have hL : ∀ y, entry ((slift A φ).take l) y i = entry (slift A φ) y i :=
+    fun y => Wset.entry_take (X := slift A φ) (l := l) (i := y) (j := i) hil
+  have hR : ∀ y, entry (A.take l) y i = entry A y i :=
+    fun y => Wset.entry_take (X := A) (l := l) (i := y) (j := i) hil
+  rw [hL 0, hL 1, hL 2, entry0_slift, entry0_slift, entry2_slift, entry2_slift,
+    entry1_slift (by rw [List.length_take]; omega), entry1_slift hiA, hR 0,
+    hR 1, hR 2, amin_take hl hil]
+
+theorem slift_dropLast {A : TrioSeq} {φ : ℕ → ℕ} :
+    slift A.dropLast φ = (slift A φ).dropLast := by
+  rw [List.dropLast_eq_take, List.dropLast_eq_take, slift_length,
+    slift_take (by omega)]
+
+open Classical in
+/-- **(G2) の主分岐**: 展開が `gexp` になる場合。分岐データ `j0 / Lb / d0 / d1`
+は両辺で共通（呼び出し側が `hAn` / `hBn` で供給する）。 -/
+theorem slift_oper_main {A : TrioSeq} {φ : ℕ → ℕ} {n j0 Lb d0 d1 : ℕ}
+    (hφ : Stair φ)
+    (hlen : j0 + Lb + 1 = A.length) (hLb : 0 < Lb) (hn : 0 < n)
+    (hz : ¬ (entry A 0 (A.length - 1) = 0 ∧ entry A 1 (A.length - 1) = 0 ∧
+      entry A 2 (A.length - 1) = 0))
+    (hp : hasParent A (srow A (A.length - 1)) (A.length - 1))
+    (hj0 : parent A (srow A (A.length - 1)) (A.length - 1) = j0)
+    (hAn : A⟦n⟧ = gexp A j0 Lb d0 d1 n)
+    (hBn : (slift A φ)⟦n⟧ = gexp (slift A φ) j0 Lb d0 d1 n) :
+    slift (A⟦n⟧) φ = (slift A φ)⟦n⟧ := by
+  classical
+  have hBlen : (slift A φ).length = A.length := slift_length A φ
+  have hlenB : j0 + Lb + 1 = (slift A φ).length := by rw [hBlen]; exact hlen
+  have hlenA : (A⟦n⟧).length = j0 + n * Lb := by rw [hAn]; exact gexp_length hlen
+  have hlenBn : ((slift A φ)⟦n⟧).length = j0 + n * Lb := by
+    rw [hBn]; exact gexp_length hlenB
+  refine List.ext_getElem (by rw [slift_length, hlenA, hlenBn]) ?_
+  intro i hi1 _
+  rw [slift_length, hlenA] at hi1
+  rw [← entry_triple (X := slift (A⟦n⟧) φ) (by rw [slift_length, hlenA]; omega),
+    ← entry_triple (X := (slift A φ)⟦n⟧) (by rw [hlenBn]; omega)]
+  rcases Nat.lt_or_ge i j0 with hlo | hhi
+  · -- 接頭辞: (A1)
+    have hiA : i < A.length := by omega
+    have hA0 : entry (A⟦n⟧) 0 i = entry A 0 i := by
+      rw [hAn]; exact gexp_entry_low hlen hlo
+    have hA1 : entry (A⟦n⟧) 1 i = entry A 1 i := by
+      rw [hAn]; exact gexp_entry_low hlen hlo
+    have hA2 : entry (A⟦n⟧) 2 i = entry A 2 i := by
+      rw [hAn]; exact gexp_entry_low hlen hlo
+    have hamin : amin (A⟦n⟧) i = amin A i :=
+      amin_oper_prefix (by omega) hn (by omega)
+    have hB0 : entry ((slift A φ)⟦n⟧) 0 i = entry A 0 i := by
+      rw [hBn, gexp_entry_low hlenB hlo, entry0_slift]
+    have hB1 : entry ((slift A φ)⟦n⟧) 1 i
+        = entry A 1 i + (φ (amin A i) - amin A i) := by
+      rw [hBn, gexp_entry_low hlenB hlo, entry1_slift hiA]
+    have hB2 : entry ((slift A φ)⟦n⟧) 2 i = entry A 2 i := by
+      rw [hBn, gexp_entry_low hlenB hlo, entry2_slift]
+    rw [entry0_slift, entry2_slift, entry1_slift (by rw [hlenA]; omega),
+      hA0, hA1, hA2, hamin, hB0, hB1, hB2]
+  · -- コピー: (A2)
+    obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hLb hhi hi1
+    have hqA : j0 + q < A.length := by omega
+    have hA0 : entry (A⟦n⟧) 0 (j0 + (k * Lb + q))
+        = entry A 0 (j0 + q) + k * d0 := by
+      rw [hAn]; exact gexp_entry0_mir hlen hk hq
+    have hA1 : entry (A⟦n⟧) 1 (j0 + (k * Lb + q))
+        = entry A 1 (j0 + q) + (if le1 A j0 (j0 + q) then k * d1 else 0) := by
+      rw [hAn]; exact gexp_entry1_mir hlen hk hq
+    have hA2 : entry (A⟦n⟧) 2 (j0 + (k * Lb + q)) = entry A 2 (j0 + q) := by
+      rw [hAn]; exact gexp_entry2_mir hlen hk hq d0 d1
+    have hamin : amin (A⟦n⟧) (j0 + (k * Lb + q)) = amin A (j0 + q) :=
+      amin_oper_mir hlen hLb hn hz hp hj0 hk hq
+    have hB0 : entry ((slift A φ)⟦n⟧) 0 (j0 + (k * Lb + q))
+        = entry A 0 (j0 + q) + k * d0 := by
+      rw [hBn, gexp_entry0_mir hlenB hk hq, entry0_slift]
+    have hB1 : entry ((slift A φ)⟦n⟧) 1 (j0 + (k * Lb + q))
+        = entry A 1 (j0 + q) + (φ (amin A (j0 + q)) - amin A (j0 + q))
+          + (if le1 A j0 (j0 + q) then k * d1 else 0) := by
+      rw [hBn, gexp_entry1_mir hlenB hk hq, entry1_slift hqA]
+      congr 1
+      exact if_congr (le1_slift hφ) rfl rfl
+    have hB2 : entry ((slift A φ)⟦n⟧) 2 (j0 + (k * Lb + q))
+        = entry A 2 (j0 + q) := by
+      rw [hBn, gexp_entry2_mir hlenB hk hq d0 d1, entry2_slift]
+    rw [entry0_slift, entry2_slift, entry1_slift (by rw [hlenA]; omega),
+      hA0, hA1, hA2, hamin, hB0, hB1, hB2]
+    have he : entry A 1 (j0 + q) + (if le1 A j0 (j0 + q) then k * d1 else 0)
+          + (φ (amin A (j0 + q)) - amin A (j0 + q))
+        = entry A 1 (j0 + q) + (φ (amin A (j0 + q)) - amin A (j0 + q))
+          + (if le1 A j0 (j0 + q) then k * d1 else 0) := by omega
+    rw [he]
+
+open Classical in
+/-- `n = 0` の展開はバッドルートまでの切り詰め。 -/
+theorem oper_zero_take {X : TrioSeq} (hL : X.length - 1 ≠ 0)
+    (hz : ¬ (entry X 0 (X.length - 1) = 0 ∧ entry X 1 (X.length - 1) = 0 ∧
+      entry X 2 (X.length - 1) = 0))
+    (hp : hasParent X (srow X (X.length - 1)) (X.length - 1)) :
+    X⟦0⟧ = X.take (parent X (srow X (X.length - 1)) (X.length - 1)) := by
+  rw [oper_eq_gexp_gen 0 hL hz hp]
+  unfold gexp gcopies
+  simp
+
+open Classical in
+/-- **(G2)**: 階段リフトは展開と可換（無条件、probe 0/28239）。 -/
+theorem slift_oper {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) (n : ℕ) :
+    slift (A⟦n⟧) φ = (slift A φ)⟦n⟧ := by
+  classical
+  have hBlen : (slift A φ).length = A.length := slift_length A φ
+  have hj1 : (slift A φ).length - 1 = A.length - 1 := by rw [hBlen]
+  by_cases hL : A.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL,
+      oper_eq_self_of_short n (by rw [hj1]; exact hL)]
+  · have hAlen : 1 < A.length := by omega
+    have hj1lt : A.length - 1 < A.length := by omega
+    have hLB : (slift A φ).length - 1 ≠ 0 := by rw [hj1]; exact hL
+    have hpred : Pred (slift A φ) = (slift A φ).dropLast := by
+      unfold Pred; rw [if_neg (by rw [hBlen]; omega)]
+    have hpredA : Pred A = A.dropLast := by
+      unfold Pred; rw [if_neg (by omega)]
+    have hzero : (entry (slift A φ) 0 ((slift A φ).length - 1) = 0 ∧
+        entry (slift A φ) 1 ((slift A φ).length - 1) = 0 ∧
+        entry (slift A φ) 2 ((slift A φ).length - 1) = 0)
+        ↔ (entry A 0 (A.length - 1) = 0 ∧ entry A 1 (A.length - 1) = 0 ∧
+          entry A 2 (A.length - 1) = 0) := by
+      rw [hj1, entry0_slift, entry2_slift]
+      have h1 := entry1_slift_pos hφ hj1lt
+      omega
+    have hsrB : srow (slift A φ) ((slift A φ).length - 1)
+        = srow A (A.length - 1) := by
+      rw [hj1]; exact srow_slift hφ hj1lt
+    by_cases hz0 : entry A 0 (A.length - 1) = 0 ∧ entry A 1 (A.length - 1) = 0 ∧
+        entry A 2 (A.length - 1) = 0
+    · rw [oper_eq_pred_of_zero n hL hz0,
+        oper_eq_pred_of_zero n hLB (hzero.2 hz0), hpred, hpredA]
+      exact slift_dropLast
+    · by_cases hp : hasParent A (srow A (A.length - 1)) (A.length - 1)
+      · -- 主分岐
+        have hnr := parent_nextR hp
+        have hj0lt : parent A (srow A (A.length - 1)) (A.length - 1)
+            < A.length - 1 := nextR_index_lt hnr
+        have hparB : parent (slift A φ)
+            (srow (slift A φ) ((slift A φ).length - 1))
+            ((slift A φ).length - 1)
+            = parent A (srow A (A.length - 1)) (A.length - 1) := by
+          rw [hsrB, hj1, parent_slift hφ]
+        have hpB : hasParent (slift A φ)
+            (srow (slift A φ) ((slift A φ).length - 1))
+            ((slift A φ).length - 1) := by
+          rw [hsrB, hj1]; exact (hasParent_slift hφ).2 hp
+        have hzB : ¬ (entry (slift A φ) 0 ((slift A φ).length - 1) = 0 ∧
+            entry (slift A φ) 1 ((slift A φ).length - 1) = 0 ∧
+            entry (slift A φ) 2 ((slift A φ).length - 1) = 0) :=
+          fun h => hz0 (hzero.1 h)
+        have hd1eq : (if 1 < srow A (A.length - 1)
+              then entry (slift A φ) 1 (A.length - 1)
+                - entry (slift A φ) 1
+                  (parent A (srow A (A.length - 1)) (A.length - 1))
+              else 0)
+            = (if 1 < srow A (A.length - 1)
+              then entry A 1 (A.length - 1)
+                - entry A 1 (parent A (srow A (A.length - 1)) (A.length - 1))
+              else 0) := by
+          split_ifs with h2
+          · have hn2 : nextrel2 A
+                (parent A (srow A (A.length - 1)) (A.length - 1))
+                (A.length - 1) := by
+              have h := hnr
+              unfold nextR at h
+              rw [if_neg (by omega), if_neg (by omega)] at h
+              exact h
+            rw [entry1_slift hj1lt, entry1_slift (by omega),
+              amin_le1 hn2.2.2.2.2.1]
+            omega
+          · rfl
+        have hBn : (slift A φ)⟦n⟧ = gexp (slift A φ)
+            (parent A (srow A (A.length - 1)) (A.length - 1))
+            (A.length - 1 - parent A (srow A (A.length - 1)) (A.length - 1))
+            (if 0 < srow A (A.length - 1) then entry A 0 (A.length - 1)
+              - entry A 0 (parent A (srow A (A.length - 1)) (A.length - 1))
+              else 0)
+            (if 1 < srow A (A.length - 1) then entry A 1 (A.length - 1)
+              - entry A 1 (parent A (srow A (A.length - 1)) (A.length - 1))
+              else 0) n := by
+          rw [oper_eq_gexp_gen n hLB hzB hpB, hparB, hsrB, hj1, entry0_slift,
+            entry0_slift, hd1eq]
+        rcases Nat.eq_zero_or_pos n with rfl | hn
+        · rw [oper_zero_take hL hz0 hp, oper_zero_take hLB hzB hpB, hparB,
+            slift_take (by omega)]
+        · exact slift_oper_main hφ (by omega) (by omega) hn hz0 hp rfl
+            (oper_eq_gexp_gen n hL hz0 hp) hBn
+      · have hpB : ¬ hasParent (slift A φ)
+            (srow (slift A φ) ((slift A φ).length - 1))
+            ((slift A φ).length - 1) := by
+          rw [hsrB, hj1]
+          exact fun h => hp ((hasParent_slift hφ).1 h)
+        rw [oper_eq_pred_of_noParent n hL hz0 hp,
+          oper_eq_pred_of_noParent n hLB (fun h => hz0 (hzero.1 h)) hpB,
+          hpred, hpredA]
+        exact slift_dropLast
+
 end TRIO
