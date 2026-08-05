@@ -1,12 +1,4 @@
-v0.116.0/reduce the window core to the context suffix
+v0.116.1/docs: record the two-kind residue picture
 
-- Add seg_graft_eq: the composite's window is the context's suffix
-  followed by the shifted peel of the datum
-- Add shiftl0_seg_graft (the re-based window is the re-based context
-  suffix grafted with the datum's peel) plus the entry/dropLast helpers
-  entry0_shiftl0, entry0_seg, shiftl0_seg_dropLast, shiftl0_shiftr01_sub
-  and le0_of_le1
-- Introduce CoreCtxSuffix and prove coreWindow_of_suffix, so the gamma'
-  window residue is a statement about the context alone
-- Add GX_loop_pieces: the machine closes from context pieces in GX plus
-  lift closure
+- GRAFTALL-PLAN 1.9.14: the residue table (context pieces in GX vs lift
+  closure) after the window-to-suffix reduction

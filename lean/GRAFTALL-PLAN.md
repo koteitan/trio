@@ -261,6 +261,27 @@ tower2 228528/330192）は D の全列が entry1 > v**、その場合
 （節3データの整合だけ要確認）。⚠ ただし値ベースのリフト言語は 6 回
 反証されているので、**分解の probe を先に**（未実施）。
 
+## 1.9.14 ✅ v0.116: γ' 窓核 → 文脈接尾辞核（残差の最終形）
+
+`seg_graft_eq`（複合の窓 = 文脈の接尾辞 ++ シフトした datum の peel）と
+`shiftl0_seg_graft`（再基底化すると窓 = `graft Msuf (Y.dropLast)`）で
+`CoreWindow ⟸ CoreCtxSuffix`（`coreWindow_of_suffix`）。補助として
+`entry0_shiftl0` / `entry0_seg` / `shiftl0_seg_dropLast` /
+`shiftl0_shiftr01_sub` / `le0_of_le1` を追加。
+
+**残差の最終形（`GX_loop_pieces`）**:
+| 種別 | 核 | 内容 |
+|---|---|---|
+| 文脈断片 | `CorePlantCtx` | `(0,v,z) :: M.dropLast ∈ GX`（植え付き接頭辞 peel）|
+| 文脈断片 | `CoreCtxSuffix` | `shiftl0 (entry M 0 p) (seg M p (|M|-1-p)) ∈ GX`（再基底化接尾辞）|
+| 文脈断片 | `CoreBlocked0` | p=0 の根スライス（単列文脈 = shift 形）|
+| リフト | `CoreLift` | `y ∈ GX → Lift1 y t ∈ GX` |
+| リフト | `CoreBlockedEltHi` | srow=2 ブロッカーのガード付きコピー |
+
+すなわち **「文脈の断片が GX に入る」+「GX がリフトで閉じる」** の 2 種類
+だけ。前者は MASTER 長さ帰納（`mem_of_Aclosed_aux`）/ 文脈クラス 𝒞 の仕事、
+後者が (e)-壁の最終形（§1.9.13）。
+
 ## 1.9.13 ★ 壁の同定: 「リフト後 graft」言語の非閉性（2026-08-05 深夜）
 
 残る核（`CoreLift` / `CoreLiftPlant` / `CoreBlockedEltHi`）はすべて
