@@ -1,10 +1,11 @@
-v0.118.18/planted roots in GXs, and the upper bound on CorePlantCtxLift
+v0.118.19/the plant family is staircase-closed
 
-- Add `amin_zero` and `slift_singleton` (Aexp.lean): a staircase moves a
-  singleton's root to `phi b`
-- Add `singleton_mem_GXs`: every planted root `[(0,b,c)]` is in `GXs`, with all
-  its staircase lifts (generalises `coreStairOm_holds`)
-- Add `corePlantCtxLift_of_self`: `CtxOK M v z` at `k = |M|-1` already puts the
-  lifted planted peel in `W a`, so the core is bounded above by the
-  self-reference "based W-elements are in GX" — recorded as an upper bound, not
-  as the intended route (the core is to be proved by induction on |M|)
+- Add `coneV_cons_iff` / `amin_cons` (Aexp.lean): the cons'd root caps the
+  ancestor minimum, `amin ((0,B,z)::S) (1+j) = min B (amin S j)`
+- Add `slift_cons_plant`: a staircase moves a plant's root to `phi B` and acts
+  on the tail through the capped staircase, so the plant family
+  `{(0,B,z) :: slift S psi}` is closed under staircase lifts — the language for
+  the context-length induction
+- GRAFTALL-PLAN 1.9.23: map the four remaining cores, record that
+  `CorePlantCtxLift` is bounded above by the (unusable) self-reference and must
+  go through a length induction whose only open step is `hin`

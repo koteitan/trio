@@ -870,6 +870,40 @@ gx_of_pieces (hb h1 h2) u Y
 現れない）。同じ理由で行 2 接ぎ木塔の枝 (d) を `CoreT2E` に畳んだ。
 **もし今後これらの核が偽と分かったら、まずこの弱化を疑うこと。**
 
+## 1.9.23 v0.118.18: 残る 4 核の地図（`CorePlantCtxLift` の設計メモ）
+
+### 上界: 自己参照
+
+`CtxOK M v z` を `k = |M|-1` で使うと `Lift1 ((0,v,z) :: M.dropLast) t ∈ W a`
+がそのまま出る（`corePlantCtxLift_of_self`）。つまり
+
+```
+CorePlantCtxLift ≤ 「based な W の元は GX に入る」（= 自己参照）
+```
+
+自己参照は v0.114 で消したものなので**これは使えない**（`A2'` は最小不動点の
+下界で、帰納法の IH をもたない）。よって核は**文脈の長さ帰納**で潰す必要がある。
+
+### 長さ帰納の言語（v0.119 の設計）
+
+`gx_of_pieces` に渡すのは (peel ∈ GXs) と (hin: 末列に親があるときの展開)。
+植えブロック `P = Lift1 ((0,v,z) :: R) t = (0, v+t, z) :: mlift R v t` について
+
+- **peel**: `P.dropLast = Lift1 ((0,v,z) :: R.dropLast) t`（`Lift1_dropLast`）
+  ⟹ 長さ帰納の IH でよい。底は `singleton_mem_GXs`（v0.118.18 で証明済み）。
+- **GXs 成分**: 植えブロックの族は階段リフトで閉じる（v0.118.18 で Lean 化）:
+  ```
+  slift ((0,B,z) :: S) φ = (0, φ B, z) :: slift S (m ↦ m + (φ (min B m) - min B m))
+  ```
+  （`slift_cons_plant`、キャップは `stair_cap`。補助に `amin_cons` /
+  `coneV_cons_iff`）。したがって帰納の言語は `{(0,B,z) :: slift R ψ}`。
+- **hin**: ここだけが残る。⚠ **長さ帰納では出ない**（展開は列を伸ばす）。
+  装備 `CtxOK` から `P ∈ W a` は出るが、そこから `GXs` に行くのが自己参照。
+  親が根 `0` のとき（塔）は `oper_cons_tower1/2` + `tow_mem_GX` + (ML) で
+  IH に落ちる見込み。親が `≥ 1` のとき（ブロック）は `gcopies_mem_GX`
+  （`srow ≤ 1`）と `CoreBlockedEltHi`（`srow = 2`）に落ちる見込み。
+  ⟹ **v0.119 の主タスク: `hin` を塔／ブロックの 2 相に分けて IH に落とす**。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

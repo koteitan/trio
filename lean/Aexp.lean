@@ -614,4 +614,103 @@ theorem slift_singleton (b c : ℕ) {φ : ℕ → ℕ} (hφ : Stair φ) :
   have he : b + (φ b - b) = φ b := by omega
   rw [he]
 
+/-! ## 植えブロックの階段リフト（次段の設計に必要な閉包則）
+
+`slift` は植えた根を `φ B` に動かし、尾部には**キャップした階段**として効く:
+
+    slift ((0,B,z) :: S) φ = (0, φ B, z) :: slift S (m ↦ m + (φ (min B m) - min B m))
+
+したがって「植えブロックの族」`{(0,B,z) :: slift S ψ}` は階段リフトで閉じる。
+`CorePlantCtxLift` を文脈の長さ帰納で証明するときの言語はこれ。 -/
+
+theorem coneV_cons_iff {S : TrioSeq} (hS : argOK S) {B z v j : ℕ}
+    (hj : j < S.length) :
+    coneV (((0, B, z) : ℕ × ℕ × ℕ) :: S) v (1 + j) ↔ (v < B ∧ coneV S v j) := by
+  set N : TrioSeq := ((0, B, z) : ℕ × ℕ × ℕ) :: S with hN
+  have hN1 : entry N 1 0 = B := by
+    show ((((0, B, z) : ℕ × ℕ × ℕ) :: S).getD 0 (0, 0, 0)).2.1 = B
+    rfl
+  have hshift : ∀ y : ℕ, entry N 1 (1 + y) = entry S 1 y := by
+    intro y
+    rw [hN, show 1 + y = y + 1 from by omega, entry_cons]
+  constructor
+  · intro h
+    refine ⟨?_, fun y hy => ?_⟩
+    · have h0 : Relation.ReflTransGen (nextrel0 N) 0 (1 + j) := by
+        refine rtg0_of_window (by rw [hN]; simp; omega) (by omega) ?_
+        intro l hl0 hl1
+        obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+        have h00 : entry N 0 0 = 0 := by rw [hN]; exact based_cons B z S
+        rw [h00, hN, entry_cons]
+        exact hS _ (entry_pair_mem (by omega))
+      have := h 0 h0
+      rwa [hN1] at this
+    · have := h (1 + y) (rtg0_cons_lift hy)
+      rwa [hshift] at this
+  · rintro ⟨hvB, h⟩ y hy
+    rcases Nat.eq_zero_or_pos y with rfl | hy0
+    · rw [hN1]; exact hvB
+    · obtain ⟨y', rfl⟩ : ∃ y', y = 1 + y' := ⟨y - 1, by omega⟩
+      rw [hshift]
+      have hun := rtg0_cons_unlift (y := 1 + y') (by omega) hy j rfl
+      rw [show 1 + y' - 1 = y' from by omega] at hun
+      exact h y' hun
+
+theorem amin_cons {S : TrioSeq} (hS : argOK S) {B z j : ℕ} (hj : j < S.length) :
+    amin (((0, B, z) : ℕ × ℕ × ℕ) :: S) (1 + j) = min B (amin S j) :=
+  nat_eq_of_lt_iff fun v => by
+    rw [← coneV_iff_amin, coneV_cons_iff hS hj, coneV_iff_amin]
+    omega
+
+open Classical in
+/-- **植えブロックの階段リフト**: 根は `φ B` に動き、尾部にはキャップした
+階段が効く。 -/
+theorem slift_cons_plant {S : TrioSeq} (hS : argOK S) {B z : ℕ} {φ : ℕ → ℕ}
+    (hφ : Stair φ) :
+    slift (((0, B, z) : ℕ × ℕ × ℕ) :: S) φ
+      = ((0, φ B, z) : ℕ × ℕ × ℕ)
+        :: slift S (fun m => m + (φ (min B m) - min B m)) := by
+  set ψ : ℕ → ℕ := fun m => m + (φ (min B m) - min B m) with hψ
+  refine List.ext_getElem (by simp) ?_
+  intro i hi1 hi2
+  rw [slift_length, List.length_cons] at hi1
+  rw [← entry_triple (X := slift (((0, B, z) : ℕ × ℕ × ℕ) :: S) φ)
+      (by rw [slift_length]; simpa using hi1),
+    ← entry_triple (X := ((0, φ B, z) : ℕ × ℕ × ℕ) :: slift S ψ)
+      (by simp; omega)]
+  rcases Nat.eq_zero_or_pos i with rfl | hipos
+  · have e0 : entry (((0, B, z) : ℕ × ℕ × ℕ) :: S) 0 0 = 0 := based_cons B z S
+    have e1 : entry (((0, B, z) : ℕ × ℕ × ℕ) :: S) 1 0 = B := rfl
+    have e2 : entry (((0, B, z) : ℕ × ℕ × ℕ) :: S) 2 0 = z := rfl
+    have f0 : entry (((0, φ B, z) : ℕ × ℕ × ℕ) :: slift S ψ) 0 0 = 0 := rfl
+    have f1 : entry (((0, φ B, z) : ℕ × ℕ × ℕ) :: slift S ψ) 1 0 = φ B := rfl
+    have f2 : entry (((0, φ B, z) : ℕ × ℕ × ℕ) :: slift S ψ) 2 0 = z := rfl
+    rw [entry0_slift, entry2_slift, entry1_slift (by simp), amin_zero, e0, e1,
+      e2, f0, f1, f2]
+    have := hφ.ge B
+    rw [show B + (φ B - B) = φ B from by omega]
+  · obtain ⟨j, rfl⟩ : ∃ j, i = 1 + j := ⟨i - 1, by omega⟩
+    have hjS : j < S.length := by omega
+    have e0 : entry (((0, B, z) : ℕ × ℕ × ℕ) :: S) 0 (1 + j) = entry S 0 j := by
+      rw [show 1 + j = j + 1 from by omega, entry_cons]
+    have e1 : entry (((0, B, z) : ℕ × ℕ × ℕ) :: S) 1 (1 + j) = entry S 1 j := by
+      rw [show 1 + j = j + 1 from by omega, entry_cons]
+    have e2 : entry (((0, B, z) : ℕ × ℕ × ℕ) :: S) 2 (1 + j) = entry S 2 j := by
+      rw [show 1 + j = j + 1 from by omega, entry_cons]
+    have f0 : entry (((0, φ B, z) : ℕ × ℕ × ℕ) :: slift S ψ) 0 (1 + j)
+        = entry (slift S ψ) 0 j := by
+      rw [show 1 + j = j + 1 from by omega, entry_cons]
+    have f1 : entry (((0, φ B, z) : ℕ × ℕ × ℕ) :: slift S ψ) 1 (1 + j)
+        = entry (slift S ψ) 1 j := by
+      rw [show 1 + j = j + 1 from by omega, entry_cons]
+    have f2 : entry (((0, φ B, z) : ℕ × ℕ × ℕ) :: slift S ψ) 2 (1 + j)
+        = entry (slift S ψ) 2 j := by
+      rw [show 1 + j = j + 1 from by omega, entry_cons]
+    rw [entry0_slift, entry2_slift,
+      entry1_slift (by simp; omega), amin_cons hS hjS, e0, e1, e2, f0, f1, f2,
+      entry0_slift, entry2_slift, entry1_slift hjS]
+    have hbeta : ψ (amin S j)
+        = amin S j + (φ (min B (amin S j)) - min B (amin S j)) := rfl
+    rw [hbeta, Nat.add_sub_cancel_left]
+
 end TRIO
