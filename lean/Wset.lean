@@ -3619,6 +3619,29 @@ theorem tower1_mem2 {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [
         exact h
   exact fun k => key k a hva
 
+/-- **The row-1 tower, family form.**  `tower1_mem2` applies its graft-closure
+hypothesis ONLY to the tower's own elements, so the `∀ y ∈ W m` interface — and
+with it the stage `m` (which the ambient lift would raise to `m + 2t`) — can be
+dropped entirely.  What is left is exactly "the tower's own elements graft into
+`R`", which is what the `GX` machine supplies. -/
+theorem tower1_mem2_fam {v z a : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hva : 2 * v + z ≤ a)
+    (hgrF : ∀ k a' : ℕ, 2 * v + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft R (tow v z R k)) 0 ∈ W a') :
+    ∀ k, tow v z R k ∈ W a := by
+  intro k
+  cases k with
+  | zero => simpa [tow] using W_nil a
+  | succ k =>
+      have heq : tow v z R (k + 1)
+          = graft (((0, v, z) : ℕ × ℕ × ℕ) :: R) (tow v z R k) := by
+        rw [graft_cons hRne]
+        rfl
+      have h := hgrF k a hva
+      rw [Lift1_zero] at h
+      rw [heq, graft_cons hRne]
+      exact h
+
 /-- The lifted argument's trailing column is a cone member, so its level rises
 by `2t`. -/
 theorem entry1_ltail_of_cone {v z t : ℕ} {R : TrioSeq} {j : ℕ}

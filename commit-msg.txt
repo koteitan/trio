@@ -1,15 +1,6 @@
-v0.118.47/a concrete new induction: composite length over a generated context family
+v0.118.48/verify the row-1 tower family form in Lean
 
-- GRAFTALL-PLAN.md 1.9.40: `tower1_mem2` applies its graft-closure hypothesis
-  only to the tower own elements, so a family form of `LiftTower1` is immediate
-  and the `forall y in W (m+2t)` interface — hence the stage raise — disappears
-  from the statement
-- With `N_0 = Rt`, `N_{n+1} = graft N_n P`, the whole row-1 tower reduces to
-  "`N_k.dropLast` is a W-package", i.e. `Rt`s plant grafted into the generated
-  family only; the prefixes of `N_n` are strictly shorter composites, so the
-  COMPOSITE LENGTH descends
-- Composite length is invariant under the `gx_graft` re-association
-  (`graft_assoc`), so it was only refuted because `GX` quantifies over ALL
-  contexts; restricting to the generated family revives it
-- Write the v0.120 design (context-carrying relation + inductive context
-  predicate + induction on composite length) with its three unverified risks
+- Add `tower1_mem2_fam`: the row-1 tower needs only its OWN elements grafted
+  into R, so the `forall y in W m` interface can be dropped; this confirms in
+  Lean that the stage raise m -> m+2t is an artefact of the interface, not of
+  the tower itself
