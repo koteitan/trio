@@ -377,6 +377,75 @@ Aop 由来の一般データ（非整列）は `GX_full` 経由でしか使わ�
 - `tow_mem_GX` を GXt 版に（塔要素は整列 ✓）
 - α/β の核が「整列植えブロック ∈ GXt」に統一され、リフト残差が消える見込み
 
+## 1.9.19 ★★★★★ 階段リフト `glift` — (e)-壁を溶かす閉じた言語（2026-08-05 深夜5）
+
+`mlift` の閾値族は入れ子で、しかも**一つの数値でパラメータ化される**:
+
+```
+  mu A j := j の行 0 祖先鎖（j 自身を含む）の行 1 値の最小値
+  coneV A v = { j | mu A j > v }
+```
+
+したがって `mlift A v s` は「`mu > v` の列を `s` 上げる」であり、マスクリフトの
+合成は**階段関数**になる:
+
+```
+  phi(m) = m + Σ_i s_i · [m > v_i]          （有限個の (v_i, s_i)）
+  glift A phi := 各列 j を  phi(mu A j) - mu A j  だけ行 1 で上げる
+```
+
+`phi(m) - m` が単調非減少という条件で閉じており、`mlift A v s` は
+`phi = (m ↦ m + s·[m > v])` の場合。**この階段クラスは合成で閉じる**。
+
+### 測定（tools/probe_glift.py / probe_glift2.py, 計 100000 サンプル、いずれも違反 0）
+
+| 法則 | 内容 | 違反 |
+|---|---|---|
+| (G6) | `mu (glift A phi) j = phi (mu A j)` | 0 |
+| (G5) | `glift (glift A phi1) phi2 = glift A (phi2 ∘ phi1)` | 0 |
+| (G2) | **`glift (A⟦n⟧) phi = (glift A phi)⟦n⟧`（展開と可換、無条件）** | 0 |
+| (G3) | `glift (graft M y) phi = graft (glift M phi) (y を mu を文脈で cap して glift)` | 0 |
+
+`Lift1` が条件付きでしか展開と可換でなかった理由も同時に説明される:
+`Lift1 ((0,v,z)::R) t` は根（`mu = v`）まで上げるので `glift` ではない。
+尾部だけ見れば `glift R (m ↦ m + t·[m > v])` に一致する
+（`lift_cons_eq_mlift`, Lean 済み）。
+
+### (G3) の cap は階段のまま
+
+接ぎ木した引数の側では `mu_composite(j) = min (mu_y j) c`（`c` = 接ぎ木点の
+文脈祖先の行 1 最小値）なので、引数に効くのは
+`psi(m) := m + (phi(min(m,c)) - min(m,c))`。`phi(x)-x` が単調なら
+`psi(m)-m` も単調 ⟹ **`psi` も階段**。したがって接ぎ木再帰の中で言語が閉じる。
+
+### 帰結: 義務言語を `glift` でパラメータ化すれば (e)-壁は消える
+
+機械の義務は `Lift1 ((0,v,z) :: graft M y) t ∈ W a`。マスク表示（Lean 済み
+`lift_plant_graft`）で
+
+```
+   = (0, v+t, z) :: graft (mlift M v t) (mlift y v t)
+```
+
+なので、**要素側のパラメータを階段 `phi` として内在化した集合**
+
+```
+  GXg := { y | ∀ phi 階段, ∀ 装備文脈 M, ∀ (v,z), ∀ i, ∀ a,
+             (0, phi v, z) :: graft (glift M phi) (glift (y.take i) phi) ∈ W a }
+```
+
+を取れば
+- **リフト閉包は定義から自明**（`glift y phi ∈ GXg` は `phi' ∘ phi` を取るだけ; (G5)）
+- **接ぎ木閉包は (G3)** で cap 付き階段に落ちる
+- **Aop の輸送は (G2)**（展開と可換なので節2がそのまま移る）
+
+⟹ `CoreLift` / `CoreMaskLift` / `CoreLiftPlant` が**すべて消える**見込み。
+残るのは文脈側（`CorePlantCtxLift` / `CoreCtxSuffix` / `CoreBlocked0`）と
+γ' の `CoreBlockedEltHi`。
+
+**次期作業 (v0.119)**: `glift` の Lean 化（`mu`・階段の型・(G6)/(G5)/(G2)/(G3)）
+→ `GXg` 定義 → `gxg_graft` / `gxg_glift` → α/β の再配線。
+
 ## 1.9.18 ★★★★ 接ぎ木リフト計算則を Lean 化（v0.118, Cgraft.lean）— 一般形は**環境マスク**
 
 §1.9.17 の「整列リフト計算則」を精密化して Lean 化した。自己監査で 2 度の

@@ -1,15 +1,15 @@
-v0.118.3/the machine's ambient lift IS a mask lift (Cgraft.lean)
+v0.118.4/the staircase lift closes the obligation language (probes)
 
-- Prove `lift_cons_eq_mlift`: for an argOK tail, `Lift1 ((0,v,z) :: R) t` is
-  the root raised by `t` over `mlift R v t` — the machine's `ltail` is exactly
-  the mask lift at the ambient threshold
-- Prove `mlift_graft`: the mask lift distributes over grafts at a CONSTANT
-  threshold (guarded by `SiteV`), via `coneV_graft_low` / `coneV_graft_high`
-- Combine them into `lift_plant_graft`: the obligation block equals
-  `(0,v+t,z) :: graft (mlift M v t) (mlift y v t)` — so the operation `Lift1`
-  was not closed under is closed in the mask presentation
-- Add the row-0 cons-chain lemmas (`rtg0_cons_lift` / `rtg0_cons_unlift`) and
-  `le1_cons_iff_coneV` (the planted root's cone is the tail's mask)
-- Add tools/probe_ltailmask.py (0 violations on argOK tails, 45375 without)
-  and tools/probe_mliftoper.py (the mask lift commutes with the expansion
-  unconditionally: 0/60000 over every site type)
+- Identify the mask family's parameter: `mu A j` = the minimum row 1 along j's
+  row-0 ancestor chain, so `coneV A v = {j | mu j > v}` and mask lifts compose
+  into staircases `phi(m) = m + sum s_i [m > v_i]`
+- Add tools/probe_glift.py and tools/probe_glift2.py: over 100000 samples the
+  staircase lift `glift A phi` satisfies, with no violations, (G6) mu maps by
+  phi, (G5) glift composes, (G2) glift commutes with the expansion
+  unconditionally, (G3) glift distributes over grafts with the context cap,
+  which is again a staircase
+- Record in GRAFTALL-PLAN 1.9.19 the consequence: parameterising the machine's
+  obligations by a staircase makes lift closure definitional, so CoreLift,
+  CoreMaskLift and CoreLiftPlant should all disappear, leaving the context
+  pieces and the row-2 blocker
+- Update task.md with the v0.119 target
