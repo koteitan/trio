@@ -1325,6 +1325,28 @@ theorem singleton_mem_GXs (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E)
   rw [slift_singleton b c hφ]
   exact key _ _
 
+/-- **The equipment class is self-supporting**: every equipped context's own
+planted prefixes are in the machine's set.  This is EXACTLY `CorePlantCtxLift`
+(`ctxOK_take` moves between a general `k` and `k = |M| - 1`), which identifies
+the core as a property of the *equipment class*, not of any single context. -/
+def EquipSelf : Prop :=
+  ∀ (M : TrioSeq), argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+    ∀ k, 0 < k → k < M.length → ∀ t : ℕ,
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.take k) t ∈ GX
+
+theorem corePlantCtxLift_of_equipSelf (h : EquipSelf) : CorePlantCtxLift := by
+  intro M hMarg hM2 v z hz1 hctx t
+  rw [List.dropLast_eq_take]
+  exact h M hMarg hM2 v z hz1 hctx (M.length - 1) (by omega) (by omega) t
+
+theorem equipSelf_of_corePlantCtxLift (h : CorePlantCtxLift) : EquipSelf := by
+  intro M hMarg hM2 v z hz1 hctx k hk0 hk t
+  have h2 : 2 ≤ (M.take (k + 1)).length := by rw [List.length_take]; omega
+  have hres := h (M.take (k + 1)) (argOK_take hMarg (k + 1)) h2 v z hz1
+    (ctxOK_take hctx (k + 1)) t
+  rwa [List.dropLast_eq_take, List.length_take, List.take_take,
+    show min (min (k + 1) M.length - 1) (k + 1) = k from by omega] at hres
+
 /-- **`CorePlantCtxLift` is bounded above by the self-reference**: the equipment
 `CtxOK M v z` already puts the lifted planted peel in `W a` (take `k = |M|-1`),
 so the core is at most "every based `W`-element is in `GX`".  This is only an

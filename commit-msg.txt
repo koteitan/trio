@@ -1,10 +1,15 @@
-v0.118.26/context-length stratification also breaks, and the fixpoint route
+v0.118.28/CORRECTION: the equipment functor is antitone, and the core is
+self-support
 
-- GRAFTALL-PLAN 1.9.27: stratifying `GX` by context length fails too, because
-  `gx_graft` goes through `graft M'' (graft E w) = graft (graft M'' E) w` and
-  the composite context is LONGER; the root `(v,z)` survives grafting but the
-  plant's root is `(v+t,z)`, so `2v+z` is not a usable measure either
-- What survives: parameterise `GX` by the equipment predicate `E` (antitone in
-  `E`), so `F(E) = (W part) and (plants in GX E)` is MONOTONE and has fixpoints;
-  which fixpoint to take is the v0.119 design fork (small `E` helps the cores,
-  large `E` helps whoever supplies the equipment)
+- Correct GRAFTALL-PLAN 1.9.27: the earlier claim that `F(E) = (W part) and
+  (plants in GXe E)` is monotone was WRONG.  `GXe E` is antitone in `E` and
+  appears positively, so `EqStep` is antitone too; only `EqStep . EqStep` is
+  monotone, and iterating brackets any fixpoint between a decreasing even chain
+  and an increasing odd chain
+- Add `EquipSelf` and prove `EquipSelf <-> CorePlantCtxLift`
+  (`corePlantCtxLift_of_equipSelf` / `equipSelf_of_corePlantCtxLift`): the
+  wanted condition `E subset EqStep E` IS the core, so parameterising does not
+  remove it -- it identifies it as a property of the equipment CLASS
+- v0.119 therefore becomes: construct an equipment class that is self-supporting
+  and contains the actual contexts (check whether `ctxOK_take` / `ctxOK_graft` /
+  `ctxOK_ltail` preserve self-support)
