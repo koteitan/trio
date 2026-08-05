@@ -1,12 +1,13 @@
-v0.118.38/measure the infix law for the lifted context
+v0.118.39/the (IL) law: the ambient mask lift restricts to a segment
 
-- Add tools/probe_infltail.py: the naive "infix root lift" form of the lifted
-  context's infix is FALSE (1911/35973 even under the window condition) because
-  the ambient root's row-1 value can sit below the infix root's
-- Establish the correct law with the AMBIENT MASK LIFT `mlift . v t`: 0
-  violations in every branch that matters (in/window-free 0/12283, in/window
-  0/35973, out/window 0/75328); the window condition is needed only in the
-  "root outside the ambient cone" branch
-- Record in GRAFTALL-PLAN.md 1.9.35 that `CtxInf` must therefore be a staircase
-  closure, exactly like `GXs`, and that the infixes `InfEquip` needs never touch
-  the last column so they inherit from `R[1]` just like the prefixes do
+- Add `nextrel0_shiftl0` / `rtg0_shiftl0` / `coneV_shiftl0` / `shiftl0_mlift`:
+  re-basing row 0 leaves row-0 ancestry, the cone and the mask lift alone
+- Add `le0_seg_iff` (row-0 ancestry inside a segment is the host's, translated)
+  and `amin_seg`: under a window chain, `amin R (p+q) = min (amin (seg …) q)
+  (amin R p)` — an ancestor of `p+q` is either inside the segment or an ancestor
+  of `p` itself
+- Add `coneV_seg` and `seg_mlift`, the measured (IL) law: `seg (mlift R v t) p
+  (k+1)` is `mlift (seg R p (k+1)) v t` when the segment root is in the cone and
+  the plain segment otherwise
+- Add `ltail_eq_mlift`, `shiftl0_seg_mlift` and `shiftl0_seg_ltail`, the
+  re-based forms the context component `CtxInf` will consume

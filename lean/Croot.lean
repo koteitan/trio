@@ -446,6 +446,196 @@ theorem shiftl0_gcopies_seg {R : TrioSeq} {p L d0 d1 c n : ℕ}
   rw [gcopies_seg R n hlen]
   exact shiftl0_gcopies_block (le_of_mem_seg hc) (by rw [seg_length]; omega)
 
+/-! ## リフト文脈の中間ブロック則 (IL)
+
+装備成分 `CtxInf`（文脈の再基底化した中間ブロックが `W` の package）を機械に
+通すとき、唯一機械的でないのがリフト文脈 `ltail v z R t = mlift R v t`。
+素朴な「中間ブロックの**根リフト**」は**偽**（tools/probe_infltail.py:
+窓条件つきでも 1911/35973 反例）。正しい形は**環境マスクリフト**:
+
+```
+seg (mlift R v t) p (k+1)
+  = mlift (seg R p (k+1)) v t   （p が錐に入るとき）
+  = seg R p (k+1)               （入らないとき）
+```
+
+理由は `amin` の分解: 窓の中の列 `p+q` の行 0 祖先鎖は `p` を通ってから外へ
+出るので `amin R (p+q) = min (amin (seg R p (k+1)) q) (amin R p)`。 -/
+
+section InfLift
+
+/-- Row-0 ancestry is invariant under re-basing row 0 (all entries at least
+`c`). -/
+theorem nextrel0_shiftl0 {c : ℕ} {Z : TrioSeq} (h : ∀ x ∈ Z, c ≤ x.1) {a b : ℕ} :
+    nextrel0 (shiftl0 c Z) a b ↔ nextrel0 Z a b := by
+  have hz : shiftr01 c 0 (shiftl0 c Z) = Z := shiftr01_shiftl0 h
+  have hh := nextrel0_shiftr01 (d0 := c) (W := shiftl0 c Z) (a := a) (b := b)
+  rw [hz] at hh
+  exact hh.symm
+
+theorem rtg0_shiftl0 {c : ℕ} {Z : TrioSeq} (h : ∀ x ∈ Z, c ≤ x.1) {a b : ℕ} :
+    Relation.ReflTransGen (nextrel0 (shiftl0 c Z)) a b
+      ↔ Relation.ReflTransGen (nextrel0 Z) a b := by
+  have hz : shiftr01 c 0 (shiftl0 c Z) = Z := shiftr01_shiftl0 h
+  have hh := rtg0_shiftr01 (d0 := c) (W := shiftl0 c Z) (a := a) (b := b)
+  rw [hz] at hh
+  exact hh.symm
+
+theorem coneV_shiftl0 {c : ℕ} {Z : TrioSeq} (h : ∀ x ∈ Z, c ≤ x.1) {v j : ℕ} :
+    coneV (shiftl0 c Z) v j ↔ coneV Z v j := by
+  unfold coneV
+  constructor
+  · intro hc y hy
+    have h1 := hc y ((rtg0_shiftl0 h).mpr hy)
+    rwa [entry1_shiftl0] at h1
+  · intro hc y hy
+    rw [entry1_shiftl0]
+    exact hc y ((rtg0_shiftl0 h).mp hy)
+
+open Classical in
+theorem shiftl0_mlift {c : ℕ} {Z : TrioSeq} (h : ∀ x ∈ Z, c ≤ x.1) (v t : ℕ) :
+    shiftl0 c (mlift Z v t) = mlift (shiftl0 c Z) v t := by
+  classical
+  refine list_ext_getD ?_ ?_
+  · rw [shiftl0_length, mlift_length, mlift_length, shiftl0_length]
+  · intro i hi
+    rw [shiftl0_length, mlift_length] at hi
+    rw [getD_shiftl0, mlift_getD hi,
+      mlift_getD (by rw [shiftl0_length]; exact hi)]
+    dsimp only
+    rw [entry0_shiftl0', entry1_shiftl0, entry2_shiftl0]
+    by_cases hg : coneV Z v i
+    · rw [if_pos hg, if_pos ((coneV_shiftl0 h).mpr hg)]
+    · rw [if_neg hg, if_neg (fun hc => hg ((coneV_shiftl0 h).mp hc))]
+
+/-- Row-0 ancestry inside a segment is the host's ancestry, translated. -/
+theorem le0_seg_iff {R : TrioSeq} {p k a b : ℕ} (hlen : p + (k + 1) ≤ R.length)
+    (hb : b < k + 1) :
+    le0 (seg R p (k + 1)) a b ↔ le0 R (p + a) (p + b) := by
+  have hsplit : R.take (p + (k + 1)) = R.take p ++ seg R p (k + 1) := by
+    rw [← seg_zero_eq_take R (by omega), ← seg_zero_eq_take R (by omega),
+      seg_append]
+    simp
+  have hplen : (R.take p).length = p := by rw [List.length_take]; omega
+  have happ := le0_append_right (R.take p) (seg R p (k + 1)) a b
+  rw [hplen] at happ
+  have htk : le0 (R.take (p + (k + 1))) (p + a) (p + b) ↔ le0 R (p + a) (p + b) :=
+    le0_take (by omega) (by omega)
+  rw [← htk, hsplit]
+  exact happ.symm
+
+/-- **`amin` splits at the window root**: an ancestor of `p + q` either lives in
+the segment or is an ancestor of `p` itself. -/
+theorem amin_seg {R : TrioSeq} {p k q : ℕ} (hlen : p + (k + 1) ≤ R.length)
+    (hq : q < k + 1)
+    (hchain : Relation.ReflTransGen (nextrel0 R) p (p + q)) :
+    amin R (p + q) = min (amin (seg R p (k + 1)) q) (amin R p) := by
+  classical
+  set S : TrioSeq := seg R p (k + 1) with hS
+  have hSlen : S.length = k + 1 := by rw [hS, seg_length]
+  refine Nat.le_antisymm ?_ ?_
+  · refine Nat.le_min.mpr ⟨?_, ?_⟩
+    · obtain ⟨y, hy, hey⟩ := amin_mem S q
+      have hylt : y < k + 1 := by
+        have := nextrel0_rtrancl_index_le hy
+        omega
+      have hyR : le0 R (p + y) (p + q) := by
+        rw [← le0_seg_iff hlen hq]
+        exact ⟨by rw [hSlen]; omega, by rw [hSlen]; omega, hy⟩
+      have hle := amin_le hyR.2.2
+      have hentry : entry S 1 y = entry R 1 (p + y) := by
+        rw [hS]; exact entry_seg (by omega)
+      omega
+    · exact amin_mono hchain
+  · obtain ⟨y, hy, hey⟩ := amin_mem R (p + q)
+    rcases Nat.lt_or_ge y p with hyp | hyp
+    · have hle0y : le0 R y (p + q) := ⟨by omega, by omega, hy⟩
+      have hle0p : le0 R p (p + q) := ⟨by omega, by omega, hchain⟩
+      have := amin_le (le0_of_le0_le0 hle0y hle0p hyp).2.2
+      omega
+    · obtain ⟨y', rfl⟩ : ∃ y', y = p + y' := ⟨y - p, by omega⟩
+      have hy'le : y' ≤ q := by
+        have := nextrel0_rtrancl_index_le hy
+        omega
+      have hyS : le0 S y' q := by
+        rw [le0_seg_iff hlen hq]
+        exact ⟨by omega, by omega, hy⟩
+      have hle := amin_le hyS.2.2
+      have hentry : entry S 1 y' = entry R 1 (p + y') := by
+        rw [hS]; exact entry_seg (by omega : y' < k + 1)
+      omega
+
+theorem coneV_seg {R : TrioSeq} {p k q v : ℕ} (hlen : p + (k + 1) ≤ R.length)
+    (hq : q < k + 1)
+    (hchain : Relation.ReflTransGen (nextrel0 R) p (p + q)) :
+    coneV R v (p + q) ↔ (coneV (seg R p (k + 1)) v q ∧ coneV R v p) := by
+  rw [coneV_iff_amin, coneV_iff_amin, coneV_iff_amin, amin_seg hlen hq hchain]
+  omega
+
+open Classical in
+/-- **(IL)**: the ambient mask lift restricts to a segment as the segment's own
+ambient mask lift — or not at all, when the segment root is outside the cone. -/
+theorem seg_mlift {R : TrioSeq} {p k v t : ℕ} (hlen : p + (k + 1) ≤ R.length)
+    (hwin : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 R) p (p + q)) :
+    seg (mlift R v t) p (k + 1)
+      = if coneV R v p then mlift (seg R p (k + 1)) v t
+        else seg R p (k + 1) := by
+  classical
+  refine list_ext_getD ?_ ?_
+  · rw [seg_length]
+    split <;> [rw [mlift_length, seg_length]; rw [seg_length]]
+  · intro q hq
+    rw [seg_length] at hq
+    have hpq : p + q < R.length := by omega
+    have hcone := coneV_seg (R := R) (p := p) (k := k) (q := q) (v := v) hlen hq
+      (hwin q hq)
+    rw [seg_getD hq, entry0_mlift, entry2_mlift,
+      entry1_mlift hpq]
+    by_cases hp : coneV R v p
+    · rw [if_pos hp, mlift_getD (by rw [seg_length]; exact hq),
+        entry_seg hq, entry_seg hq, entry_seg hq]
+      by_cases hg : coneV (seg R p (k + 1)) v q
+      · rw [if_pos hg, if_pos (hcone.mpr ⟨hg, hp⟩)]
+      · rw [if_neg hg, if_neg (fun hc => hg (hcone.mp hc).1)]
+    · rw [if_neg hp, seg_getD hq, if_neg (fun hc => hp (hcone.mp hc).2)]
+      simp
+
+/-- The lifted context IS the ambient mask lift. -/
+theorem ltail_eq_mlift {v z t : ℕ} {R : TrioSeq} (hR : argOK R) :
+    Wset.ltail v z R t = mlift R v t := by
+  have h := lift_cons_eq_mlift (v := v) (z := z) (t := t) hR
+  rw [Wset.lift_cons] at h
+  simpa using congrArg List.tail h
+
+open Classical in
+/-- **(IL), re-based form** — the shape the context component `CtxInf` needs:
+the lifted context's re-based infix is the infix's own ambient mask lift. -/
+theorem shiftl0_seg_mlift {R : TrioSeq} {p k v t c : ℕ}
+    (hlen : p + (k + 1) ≤ R.length)
+    (hwin : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 R) p (p + q))
+    (hc : ∀ x ∈ seg R p (k + 1), c ≤ x.1) :
+    shiftl0 c (seg (mlift R v t) p (k + 1))
+      = if coneV R v p then mlift (shiftl0 c (seg R p (k + 1))) v t
+        else shiftl0 c (seg R p (k + 1)) := by
+  rw [seg_mlift hlen hwin]
+  split
+  · rw [shiftl0_mlift hc]
+  · rfl
+
+open Classical in
+/-- **(IL) for the lifted context**, stated with `ltail`. -/
+theorem shiftl0_seg_ltail {R : TrioSeq} {p k v z t c : ℕ} (hR : argOK R)
+    (hlen : p + (k + 1) ≤ R.length)
+    (hwin : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 R) p (p + q))
+    (hc : ∀ x ∈ seg R p (k + 1), c ≤ x.1) :
+    shiftl0 c (seg (Wset.ltail v z R t) p (k + 1))
+      = if coneV R v p then mlift (shiftl0 c (seg R p (k + 1))) v t
+        else shiftl0 c (seg R p (k + 1)) := by
+  rw [ltail_eq_mlift (v := v) (z := z) (t := t) hR]
+  exact shiftl0_seg_mlift hlen hwin hc
+
+end InfLift
+
 end Rebase
 
 end TRIO
