@@ -1437,6 +1437,53 @@ shiftl0 c (seg (ltail v z R t) p (k+1))
 `mlift` は階段リフト（`Cgraft.mlift_eq_slift`）なので、**文脈成分 `CtxInf` は
 `GXs` と同じく階段閉包にしておく必要がある**。これが v0.119 の設計。
 
+## 1.9.36 ★★ v0.118.39: (IL) 計算則が Lean で揃った — v0.119 の設計確定
+
+### 証明済み（Croot.lean, sorry 0）
+
+```
+amin_seg   : amin R (p+q) = min (amin (seg R p (k+1)) q) (amin R p)
+             （窓の鎖 rtg0 R p (p+q) のもとで）
+coneV_seg  : coneV R v (p+q) ↔ coneV (seg R p (k+1)) v q ∧ coneV R v p
+seg_mlift  : seg (mlift R v t) p (k+1)
+               = if coneV R v p then mlift (seg R p (k+1)) v t
+                 else seg R p (k+1)
+seg_slift  : seg (slift R φ) p (k+1)
+               = slift (seg R p (k+1)) (φ を amin R p でキャップした階段)
+             （`stair_cap` の階段）
+ltail_eq_mlift, shiftl0_slift, shiftl0_seg_slift, shiftl0_seg_ltail,
+nextrel0_shiftl0 / rtg0_shiftl0 / coneV_shiftl0 / amin_shiftl0 / shiftl0_mlift
+```
+
+### v0.119 のレシピ（これで設計は確定）
+
+**文脈成分**（階段閉包にするのが必須。素朴な根リフト版は偽）:
+
+```
+CtxInf M : ∀ p k, p + k < |M| - 1 →
+  entry M 2 p ≤ 1 ∧
+  ∀ φ Stair, ∀ a t, 2 * (φ (entry M 1 p) + t) + entry M 2 p ≤ a →
+    Lift1 (slift (shiftl0 (entry M 0 p) (seg M p (k+1))) φ) t ∈ W a
+```
+
+* `take` 伝播: 自明（entry と seg が一致）。
+* `ltail` 伝播: `ltail_eq_mlift` + `seg_mlift` + `slift_slift` + `stair_comp`。
+  錐に入る場合は根の行 1 が `+t` されるので `ψ ∘ φ_{v,t}` を渡す。入らない場合は
+  そのまま。**両分岐とも計測で違反 0**。
+* `graft` 伝播: (i) `M` 内部 → そのまま、(ii) 接ぎ木点をまたぐ →
+  `shiftl0_seg_graft` で `graft (M の再基底化接尾) (E.take j)` になり、
+  `slift_graft` (G3) で階段が両側に分かれるので、`E.dropLast ∈ GXs`（＝
+  `gx_graft` の仮定を `GX` から `GXs` に強める）と `CtxInf M` から出る、
+  (iii) `E` の内部 → `CtxInf E`（各呼び出し点で `E` は具体的なので導ける）。
+* 供給元: A2' の集合を `Wstar2s` からさらに強めた `Wstar2i` にする。要る中間
+  ブロックは `p+k < |R|-1` で**末尾列に触れない**ので、接頭辞と同じく
+  `R⟦1⟧`（節 2）・`R.dropLast`（節 3）から継承できる。階段リフト成分も
+  同じ中間ブロックなのでそのまま継承。
+* 結果: `InfEquip` が装備から出て、残差は `CorePlantCtxLift` ただ 1 本。
+
+⚠ ただし §1.9.34 のとおり `CorePlantCtxLift` は `GraftAll` から出るので、
+これでも**閉じない**。閉じるには新しい帰納法が要る。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

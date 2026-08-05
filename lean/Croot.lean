@@ -600,6 +600,66 @@ theorem seg_mlift {R : TrioSeq} {p k v t : ℕ} (hlen : p + (k + 1) ≤ R.length
     · rw [if_neg hp, seg_getD hq, if_neg (fun hc => hp (hcone.mp hc).2)]
       simp
 
+theorem amin_shiftl0 {c : ℕ} {Z : TrioSeq} (h : ∀ x ∈ Z, c ≤ x.1) (j : ℕ) :
+    amin (shiftl0 c Z) j = amin Z j := by
+  refine Nat.le_antisymm ?_ ?_
+  · obtain ⟨y, hy, hey⟩ := amin_mem Z j
+    have hle := amin_le (A := shiftl0 c Z) ((rtg0_shiftl0 h).mpr hy)
+    rw [entry1_shiftl0] at hle
+    omega
+  · obtain ⟨y, hy, hey⟩ := amin_mem (shiftl0 c Z) j
+    have hle := amin_le (A := Z) ((rtg0_shiftl0 h).mp hy)
+    rw [entry1_shiftl0] at hey
+    omega
+
+theorem shiftl0_slift {c : ℕ} {Z : TrioSeq} (h : ∀ x ∈ Z, c ≤ x.1)
+    (φ : ℕ → ℕ) : shiftl0 c (slift Z φ) = slift (shiftl0 c Z) φ := by
+  refine list_ext_getD ?_ ?_
+  · rw [shiftl0_length, slift_length, slift_length, shiftl0_length]
+  · intro i hi
+    rw [shiftl0_length, slift_length] at hi
+    rw [getD_shiftl0, slift_getD hi, slift_getD (by rw [shiftl0_length]; exact hi)]
+    dsimp only
+    rw [entry0_shiftl0', entry1_shiftl0, entry2_shiftl0, amin_shiftl0 h]
+
+/-- **(IL), general staircase form**: a staircase lift restricts to a segment as
+the segment's own staircase lift, with the staircase capped at the segment
+root's ancestor-minimum (`stair_cap`). -/
+theorem seg_slift {R : TrioSeq} {p k : ℕ} {φ : ℕ → ℕ} (hφ : Stair φ)
+    (hlen : p + (k + 1) ≤ R.length)
+    (hwin : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 R) p (p + q)) :
+    seg (slift R φ) p (k + 1)
+      = slift (seg R p (k + 1))
+          (fun m => m + (φ (min (amin R p) m) - min (amin R p) m)) := by
+  refine list_ext_getD ?_ ?_
+  · rw [seg_length, slift_length, seg_length]
+  · intro q hq
+    rw [seg_length] at hq
+    have hpq : p + q < R.length := by omega
+    have hqS : q < (seg R p (k + 1)).length := by rw [seg_length]; exact hq
+    have hamin := amin_seg (R := R) (p := p) (k := k) (q := q) hlen hq (hwin q hq)
+    rw [seg_getD hq, entry0_slift, entry2_slift, entry1_slift hpq,
+      slift_getD hqS, entry_seg hq, entry_seg hq, entry_seg hq, hamin]
+    have hmin : min (amin R p) (amin (seg R p (k + 1)) q)
+        = min (amin (seg R p (k + 1)) q) (amin R p) := Nat.min_comm _ _
+    rw [hmin]
+    refine Prod.ext rfl (Prod.ext ?_ rfl)
+    dsimp only
+    have hle : min (amin (seg R p (k + 1)) q) (amin R p)
+        ≤ amin (seg R p (k + 1)) q := Nat.min_le_left _ _
+    have hge := hφ.ge (min (amin (seg R p (k + 1)) q) (amin R p))
+    omega
+
+/-- The re-based general form. -/
+theorem shiftl0_seg_slift {R : TrioSeq} {p k c : ℕ} {φ : ℕ → ℕ} (hφ : Stair φ)
+    (hlen : p + (k + 1) ≤ R.length)
+    (hwin : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 R) p (p + q))
+    (hc : ∀ x ∈ seg R p (k + 1), c ≤ x.1) :
+    shiftl0 c (seg (slift R φ) p (k + 1))
+      = slift (shiftl0 c (seg R p (k + 1)))
+          (fun m => m + (φ (min (amin R p) m) - min (amin R p) m)) := by
+  rw [seg_slift hφ hlen hwin, shiftl0_slift hc]
+
 /-- The lifted context IS the ambient mask lift. -/
 theorem ltail_eq_mlift {v z t : ℕ} {R : TrioSeq} (hR : argOK R) :
     Wset.ltail v z R t = mlift R v t := by
