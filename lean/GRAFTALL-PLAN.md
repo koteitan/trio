@@ -1484,6 +1484,40 @@ CtxInf M : ∀ p k, p + k < |M| - 1 →
 ⚠ ただし §1.9.34 のとおり `CorePlantCtxLift` は `GraftAll` から出るので、
 これでも**閉じない**。閉じるには新しい帰納法が要る。
 
+## 1.9.37 v0.118.41: `CtxInf` の take / ltail は済み、残るは graft（設計上の帰結）
+
+### 済み（Gamma.lean, sorry 0）
+
+```
+CtxInf M : ∀ p k, p + k < |M| - 1 → (窓の鎖) →
+  entry M 2 p ≤ 1 ∧
+  ∀ φ Stair, ∀ a t, 2 * (φ (entry M 1 p) + t) + entry M 2 p ≤ a →
+    Lift1 (slift (shiftl0 (entry M 0 p) (seg M p (k+1))) φ) t ∈ W a
+
+ctxInf_take          : CtxInf M → CtxInf (M.take j)
+ctxInf_ltail         : argOK M → CtxInf M → CtxInf (ltail v z M t)
+infEquip_at_of_ctxInf: CtxInf M → （InfEquip の中身、φ = id の切片）
+```
+`ctxInf_ltail` が (IL) の山場。錐に入る枝は `seg_mlift` + `mlift_eq_slift` +
+`slift_slift` + `stair_comp` で `ψ_{v,t}` を合成して落ちる。
+
+### ★ 残る `ctxInf_graft` の設計上の帰結（重要）
+
+複合文脈 `graft M E` の中間ブロックは 3 通り:
+
+1. `M` 内部 — そのまま（`take_graft_low`）
+2. `E` 内部 — `CtxInf E`（各 `gx_graft` 呼び出し点で `E` は具体的なので導ける）
+3. **接ぎ木点をまたぐ** — `shiftl0_seg_graft` で
+   `graft (M の再基底化接尾 A) (E.take j)` になり、`slift_graft` (G3) で
+   `graft (slift A φ) (slift (E.take j) ψ)` に分かれる。これは
+   `slift (E.take j) ψ` の **`GX` 義務**（文脈 `(slift A φ).tail`、根
+   `(φ r1, r2)`）そのもの。文脈の装備は `CtxInf M` から出る。
+
+⟹ 3 のために **`gx_graft` の仮定を `E.dropLast ∈ GX` から `∈ GXs` に強める**
+必要がある。するとその呼び出し点（`plantCtx_graft` / `tow_mem_GX` /
+`gcopies_mem_GX` / 窓）で `E` の peel の**階段閉包**が要るので、残る核も
+`CorePlantCtxLift` の階段閉包版に強まる。ここが v0.119 の実装コスト。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

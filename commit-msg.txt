@@ -1,11 +1,7 @@
-v0.118.41/the staircase-closed context component CtxInf
+v0.118.42/record the design consequence of the graft case of CtxInf
 
-- Add `CtxInf`: every re-based window-infix of the context that avoids the
-  trailing column, and every staircase lift of it, is a planted `W`-package
-- Prove `ctxInf_take` and `ctxInf_ltail`; the lifted context is where the naive
-  root-lift form fails, and `Croot.seg_mlift` plus `slift_slift` / `stair_comp`
-  carry it through
-- Add `stair_id`, `slift_id` and `seg_take`
-- Prove `infEquip_at_of_ctxInf`: `InfEquip`'s content is exactly the `phi = id`
-  slice of `CtxInf`, so wiring `CtxInf` into GX's context condition will
-  discharge `InfEquip`
+- GRAFTALL-PLAN.md 1.9.37: the crossing case of `ctxInf_graft` reduces, via
+  `shiftl0_seg_graft` + `slift_graft`, to a `GX` obligation for a STAIRCASE LIFT
+  of the datum's prefix, so `gx_graft` must be strengthened from
+  `E.dropLast in GX` to `E.dropLast in GXs`, and with it the surviving core to
+  its staircase-closed form — the implementation cost of v0.119
