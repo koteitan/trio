@@ -1,12 +1,14 @@
-v0.118.36/trio termination rests on exactly two context cores
+v0.118.37/one GX core plus a W-level equipment statement
 
-- Parameterise `mem_of_Aclosed_aux` and the whole `W_membership` chain by a set
-  `S` with `S subset Wstar` and its A-closedness, replacing the `TowerOK`
-  argument that was only ever used for `Wstar_closed`
-- Add `Wstar2_le_Wstar` / `Wstar2s_le_Wstar`
-- Wire the old track through `S := Wstar` so `TRIO_terminates` is unchanged
-- Add `wf_olt_ST_TS_of_cores`, `TRIO_terminates_of_cores` and
-  `no_infinite_expansion_of_cores` in Final.lean, running the chain through
-  `S := Wstar2s`: `CoreCtxSuffixLift -> CorePlantCtxLift -> WellFounded stepRel`,
-  axioms [propext, Classical.choice, Quot.sound]
-- Record the wiring in GRAFTALL-PLAN.md 1.9.33 and task.md
+- Add `corePlantCtxLift_of_graftAll : Wset.GraftAll -> CorePlantCtxLift`,
+  recording that the plant core is NOT stronger than the graft closure — so
+  further reduction alone can never close the campaign
+- Give `CoreCtxSuffixLift` the window hypothesis it always had at its call site
+- Add `InfEquip`, a pure `W`-level statement (no `GX`): the context's re-based
+  infix, planted at its own root, is itself equipped, and its root's row 2 is
+  at most 1
+- Add `coreCtxSuffixLift_of_plantctx : CorePlantCtxLift -> InfEquip ->
+  CoreCtxSuffixLift`, `GX_loop_plant` and `graftAll_of_plant`
+- Add `wf_olt_ST_TS_of_plant` and `TRIO_terminates_of_plant : InfEquip ->
+  CorePlantCtxLift -> WellFounded stepRel`
+- Record the status in GRAFTALL-PLAN.md 1.9.34 and task.md

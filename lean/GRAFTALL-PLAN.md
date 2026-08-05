@@ -1349,6 +1349,54 @@ CoreCtxSuffixLift : 装備つき文脈 M, p < |M|-1 について
                     ∀ s, Lift1 (shiftl0 (entry M 0 p) (seg M p (|M|-1-p))) s ∈ GX
 ```
 
+## 1.9.34 ★★★ v0.118.37: 残差が **`GX` 核 1 本 + `W` レベルの装備 1 本**に
+
+```
+TRIO_terminates_of_plant : InfEquip → CorePlantCtxLift → WellFounded stepRel
+```
+
+### ⚠ まず確認したこと: 還元は**同値変形**でしかない部分がある
+
+```
+corePlantCtxLift_of_graftAll : Wset.GraftAll → CorePlantCtxLift   （新規, Lean 済み）
+graftAll_of_cores            : 2 核 → Wset.GraftAll
+```
+つまり `CorePlantCtxLift` は `GraftAll` から**出てしまう**（＝ `GraftAll` より
+強くない）。したがって「さらに小さい核へ還元する」だけでは決して閉じない。
+閉じるには**新しい帰納法**が要る。この事実は明示しておく必要がある
+（還元を証明と取り違えない）。
+
+### 接尾核は「中間ブロックの装備」だけで植え核に落ちる
+
+`CoreCtxSuffixLift` の対象 `shiftl0 c (seg M p (|M|-1-p))` は、
+中間ブロック `M' = shiftl0 c (seg M (p+1) (|M|-1-p))` を根
+`(entry M 1 p, entry M 2 p)` で植えたブロックそのもの。よって
+
+```
+coreCtxSuffixLift_of_plantctx : CorePlantCtxLift → InfEquip → CoreCtxSuffixLift
+```
+
+`InfEquip`（新設）は**純粋に `W` レベル**の言明:
+
+```
+InfEquip : ∀ M p, argOK M → 2 ≤ |M| → p < |M|-1 → (窓条件) →
+  ∀ v z, z ≤ 1 → CtxOK M v z →
+    entry M 2 p ≤ 1 ∧ CtxOK (shiftl0 (entry M 0 p) (seg M (p+1) (|M|-1-p)))
+                            (entry M 1 p) (entry M 2 p)
+```
+
+`GX` を一切含まない。`Wstar2s` が接頭辞の package を帰納法から供給したのと
+同じ手が使える見込み（要る中間ブロックは**末尾列に触れない**ので `R⟦1⟧` から
+継承できるはず）。`entry M 2 p ≤ 1` は z<2 断片の `zle1` 不変量で、いまは
+文脈側に通っていないので `InfEquip` に同梱してある。
+
+### 残差
+
+| 残るもの | 種類 |
+|---|---|
+| `CorePlantCtxLift` | `GX` レベル（`GraftAll` より弱い） |
+| `InfEquip` | `W` レベル（装備の強化で供給できる見込み） |
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

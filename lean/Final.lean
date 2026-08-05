@@ -88,4 +88,20 @@ theorem no_infinite_expansion_of_cores (hsl : CoreCtxSuffixLift)
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_cores hsl hp))
 
+/-- **Well-foundedness from one `GX`-core plus the `W`-level infix
+equipment.** -/
+theorem wf_olt_ST_TS_of_plant (hie : InfEquip) (hp : CorePlantCtxLift) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
+  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar2s) Wset.Wstar2s_le_Wstar
+    (fun u0 R hR => Wstar2s_closed_of_graftAll (graftAll_of_plant hie hp) u0 R hR)
+    (fun hM hN h => trio_cofinality hM hN h)
+
+/-- **Trio sequences terminate**, modulo ONE `GX`-level core
+(`CorePlantCtxLift`) and one pure `W`-level equipment statement
+(`InfEquip`, the context's re-based infixes are themselves equipped). -/
+theorem TRIO_terminates_of_plant (hie : InfEquip) (hp : CorePlantCtxLift) :
+    WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_plant hie hp))
+
 end TRIO

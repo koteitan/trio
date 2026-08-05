@@ -1113,6 +1113,7 @@ the blocker `p`, minus its trailing column) AND all its root lifts are in the
 machine's set — a statement about the *context alone*. -/
 def CoreCtxSuffixLift : Prop :=
   ∀ (M : TrioSeq) (p : ℕ), argOK M → 2 ≤ M.length → p < M.length - 1 →
+    (∀ j, p < j → j ≤ M.length - 1 → entry M 0 p < entry M 0 j) →
     ∀ v z : ℕ, z ≤ 1 → CtxOK M v z → ∀ s : ℕ,
       Lift1 (shiftl0 (entry M 0 p) (seg M p (M.length - 1 - p))) s ∈ GX
 
@@ -1207,10 +1208,66 @@ theorem coreWindowLift_of_ctxSuffixLift (hs : CoreCtxSuffixLift) :
         = shiftl0 c (seg M p (M.length - 1 - p)) := shiftl0_seg_dropLast hplt
     rw [hEcons, dropLast_cons hTne] at hEd
     rw [hEd]
-    exact hs M p hMarg hM2 hplt v z hz1 hctx s
+    exact hs M p hMarg hM2 hplt hMstrict v z hz1 hctx s
   rw [hRdef, shiftl0_seg_graft hy hM2 hplt hle, hEcons, graft_cons hTne]
   exact liftPlant_of_plant hplant hargT (by omega) hYdG.1
     (based_dropLast hbased) (gxs_mlift hYdG (entry M 1 p) s)
+
+/-! ### 中間ブロックの装備（`W` レベル）だけで接尾核は植え核に落ちる
+
+`CoreCtxSuffixLift` の対象は、再基底化した中間ブロックを**自身の根で植えた
+ブロック**そのもの。したがって `CorePlantCtxLift` を文脈
+`M' = shiftl0 c (seg M (p+1) (|M|-1-p))` ／根 `(entry M 1 p, entry M 2 p)` に
+適用すればよい。要るのは `M'` の**装備**（純粋に `∈ W a` の言明で、`GX` を
+含まない）と `entry M 2 p ≤ 1` だけ。 -/
+
+/-- **Infix equipment**: the ambient context's re-based infix, planted at its
+own root, is itself equipped — a pure `W`-level statement about the context
+(no `GX`), exactly the kind the `Wstar2s` induction supplies for prefixes. -/
+def InfEquip : Prop :=
+  ∀ (M : TrioSeq) (p : ℕ), argOK M → 2 ≤ M.length → p < M.length - 1 →
+    (∀ j, p < j → j ≤ M.length - 1 → entry M 0 p < entry M 0 j) →
+    ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+      entry M 2 p ≤ 1 ∧
+      CtxOK (shiftl0 (entry M 0 p) (seg M (p + 1) (M.length - 1 - p)))
+        (entry M 1 p) (entry M 2 p)
+
+/-- **The context-suffix core falls to the plant core**, given the infix
+equipment.  ⟹ the whole machine closes on `CorePlantCtxLift` plus a `W`-level
+equipment statement. -/
+theorem coreCtxSuffixLift_of_plantctx (hp : CorePlantCtxLift) (hie : InfEquip) :
+    CoreCtxSuffixLift := by
+  classical
+  intro M p hMarg hM2 hplt hMstrict v z hz1 hctx s
+  set c : ℕ := entry M 0 p with hc
+  set L : ℕ := M.length - 1 - p with hL
+  have hLpos : 0 < L := by omega
+  set M' : TrioSeq := shiftl0 c (seg M (p + 1) L) with hM'
+  have hM'len : M'.length = L := by rw [hM', shiftl0_length, seg_length]
+  have hM'arg : argOK M' := by
+    intro x hx
+    rw [hM', mem_shiftl0] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    unfold seg at hy
+    rw [List.mem_map] at hy
+    obtain ⟨j, hj, rfl⟩ := hy
+    rw [List.mem_range'_1] at hj
+    have := hMstrict j (by omega) (by omega)
+    dsimp only
+    omega
+  obtain ⟨hz2, hctx'⟩ := hie M p hMarg hM2 hplt hMstrict v z hz1 hctx
+  have hres := hp M' hM'arg (by omega) (entry M 1 p) (entry M 2 p) hz2 hctx' s
+  have hseg : seg M p L
+      = ((entry M 0 p, entry M 1 p, entry M 2 p) : ℕ × ℕ × ℕ)
+        :: seg M (p + 1) (L - 1) := by
+    rw [show L = (L - 1) + 1 from by omega, seg_cons, Nat.add_sub_cancel]
+  have hdrop : M'.dropLast = shiftl0 c (seg M (p + 1) (L - 1)) := by
+    rw [hM', show L = (L - 1) + 1 from by omega, seg_snoc, shiftl0_append]
+    exact List.dropLast_concat
+  have hkey : ((0, entry M 1 p, entry M 2 p) : ℕ × ℕ × ℕ) :: M'.dropLast
+      = shiftl0 c (seg M p L) := by
+    rw [hdrop, hseg, shiftl0_cons, show entry M 0 p - c = 0 from by omega]
+  rwa [hkey] at hres
 
 theorem coreWindow_of_lift (hl : CoreWindowLift) : CoreWindow := by
   intro u Y M p hYd hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx
@@ -1943,6 +2000,74 @@ theorem GX_loop_ctx (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
   GX_loop_lift (coreWindowLift_of_ctxSuffixLift hsl) hp
 
+/-- **The assembly loop, one-`GX`-core form**: a single `GX`-level core
+(`CorePlantCtxLift`) plus a pure `W`-level equipment statement (`InfEquip`). -/
+theorem GX_loop_plant (hie : InfEquip) (hp : CorePlantCtxLift) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
+  GX_loop_ctx (coreCtxSuffixLift_of_plantctx hp hie) hp
+
+/-! ### ⚠ 逆向き: 核は `GraftAll` より弱くない
+
+`graftAll_of_cores` の逆も成り立つ。したがって「2 本の文脈核」への還元は
+**同値変形**であって強さを落としてはいない。閉じるには「さらに小さい核へ
+還元する」のではなく、**新しい帰納法**が要る（この事実を明示しておかないと
+還元を証明と取り違える危険がある）。 -/
+
+open Classical in
+/-- **The plant core is no weaker than `GraftAll` itself.**  Every prefix of the
+lifted planted peel is a `W`-package (that IS the equipment), so `GraftAll`
+hands the graft obligations straight back. -/
+theorem corePlantCtxLift_of_graftAll (hga : Wset.GraftAll) :
+    CorePlantCtxLift := by
+  classical
+  intro M hMarg hM1 v z hz1 hctx t
+  intro _hb N hNarg hNlen v' z' hz1' hctxN i hi a t' hva
+  have hNne : N ≠ [] := List.length_pos_iff.mp (by omega)
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hplen : (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast).length = M.length := by
+    rw [List.length_cons, List.length_dropLast]
+    omega
+  have hi' : i ≤ (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast).length := by
+    rwa [Lift1_length] at hi
+  set Q : TrioSeq := (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t).take i
+    with hQdef
+  have hQW : Q ∈ W (2 * (v + t) + z) := by
+    rcases Nat.eq_zero_or_pos i with rfl | hipos
+    · rw [hQdef, List.take_zero]
+      exact W_nil _
+    · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
+      have hjM : j ≤ M.length - 1 := by rw [hplen] at hi'; omega
+      have hcons : (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast).take (j + 1)
+          = ((0, v, z) : ℕ × ℕ × ℕ) :: M.take j := by
+        rw [List.take_succ_cons, dropLast_take hjM]
+      rw [hQdef, Lift1_take hi', hcons]
+      exact hctx j (by omega) (2 * (v + t) + z) t le_rfl
+  have hbQ : based Q := by
+    rcases Nat.eq_zero_or_pos i with rfl | hipos
+    · rw [hQdef, List.take_zero]
+      exact based_nil
+    · show entry Q 0 0 = 0
+      rw [hQdef, Wset.entry_take (l := i) (by omega), entry0_Lift1]
+      rfl
+  have hc : 0 < entry N 0 (N.length - 1) := by
+    have hmem : N.getD (N.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ N := by
+      rw [List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem (by omega : N.length - 1 < N.length)]
+      exact List.getElem_mem _
+    exact hNarg _ hmem
+  have hargOK : argOK (graft N Q) := by
+    rw [graft_eq_shift]
+    intro x hx
+    rcases List.mem_append.mp hx with h | h
+    · exact hNarg x (List.dropLast_subset _ h)
+    · unfold shiftr01 at h
+      rw [List.mem_map] at h
+      obtain ⟨q, -, rfl⟩ := h
+      dsimp only
+      omega
+  exact hga N hNarg hNne v' z' hz1' hctxN (2 * (v + t) + z) Q hQW hbQ hargOK
+    a t' hva
+
 /-! ## 全体の組み上げ
 
 2 つの文脈核から `GraftAll`、そして「`W` の元とその接頭辞はすべて植えブロック
@@ -1960,6 +2085,11 @@ theorem graftAll_of_cores (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift) :
     Wset.GraftAll :=
   graftAll_of_GX (coreBlocked_of_ctxSuffixLift hsl) (coreT1L_of_plantctx hp)
     (coreT2E_of_plantctx hp)
+
+/-- **`GraftAll` from one `GX`-core plus the `W`-level infix equipment.** -/
+theorem graftAll_of_plant (hie : InfEquip) (hp : CorePlantCtxLift) :
+    Wset.GraftAll :=
+  graftAll_of_cores (coreCtxSuffixLift_of_plantctx hp hie) hp
 
 /-- **The campaign's headline**: modulo the two *context* cores, every
 `W`-element and every one of its prefixes is a planted `W`-package. -/
