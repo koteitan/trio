@@ -1,11 +1,14 @@
-v0.118.19/the plant family is staircase-closed
+v0.118.21/put the equipment back into the window cores and weaken them
 
-- Add `coneV_cons_iff` / `amin_cons` (Aexp.lean): the cons'd root caps the
-  ancestor minimum, `amin ((0,B,z)::S) (1+j) = min B (amin S j)`
-- Add `slift_cons_plant`: a staircase moves a plant's root to `phi B` and acts
-  on the tail through the capped staircase, so the plant family
-  `{(0,B,z) :: slift S psi}` is closed under staircase lifts — the language for
-  the context-length induction
-- GRAFTALL-PLAN 1.9.23: map the four remaining cores, record that
-  `CorePlantCtxLift` is bounded above by the (unusable) self-reference and must
-  go through a length induction whose only open step is `hin`
+(the Gamma.lean changes landed in e9b1143, which picked up a stale message
+because a `grep -c` returning 0 exited 1 and cut the `&&` chain before the
+message file was rewritten; this commit carries the correct record)
+
+- `CoreWindow` / `CoreCtxSuffix` now carry `CtxOK M v z`: the reduction
+  `coreBlockedElt_of_window` had the equipment in scope and was discarding it,
+  which is what made `CoreCtxSuffix` (a context-only statement with no bound at
+  all) close to the whole theorem
+- Weaken the blocked cores (`CoreBlocked` / `CoreBlockedElt` / `CoreWindow` /
+  `CoreBlockedEltHi` / `CoreBlocked0`) from `Y.dropLast in GXs` back to
+  `Y.dropLast in GX`: only `CoreT1L` consumes the datum's mask lift, so only it
+  keeps the staircase-closed hypothesis
