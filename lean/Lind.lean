@@ -141,6 +141,55 @@ theorem corePlantCtx0_of_singleton (hs : CoreSingleton) : CorePlantCtx0 := by
   intro M _ _ v z _ _
   exact mem_GX_of_core hs (based_cons v z M.dropLast)
 
+/-! ## 単元核の素の形: **キャップ補題**（`GX` が statement から消える）
+
+単元をデータとして接ぎ木すると、文脈の末尾列の**添字だけ**が差し替わる:
+
+```
+graft M [(0,b,c)] = M.dropLast ++ [(entry M 0 (|M|-1), b, c)] =: cap M b c
+```
+
+`GX` の接頭辞義務 `i = 0` は文脈の装備そのもの（自明）なので、`CoreSingleton`
+は `i = 1` の一本、すなわち「装備つき文脈の末尾添字を任意に差し替えても
+`W` package」に等しい。⟹ 残核から `GX` が完全に消える。 -/
+
+/-- The context with its last column's subscript replaced by `(b, c)`. -/
+def cap (M : TrioSeq) (b c : ℕ) : TrioSeq :=
+  M.dropLast ++ [((entry M 0 (M.length - 1), b, c) : ℕ × ℕ × ℕ)]
+
+theorem graft_singleton_eq_cap (M : TrioSeq) (b c : ℕ) :
+    graft M [((0, b, c) : ℕ × ℕ × ℕ)] = cap M b c := by
+  rw [graft_eq_shift]
+  unfold cap shiftr01
+  simp
+
+/-- **The cap core**: a pure `W`-level statement — no `GX`. -/
+def CoreCap : Prop :=
+  ∀ (M : TrioSeq), argOK M → 1 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+    ∀ b c a t : ℕ, 2 * (v + t) + z ≤ a →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: cap M b c) t ∈ W a
+
+theorem coreSingleton_of_cap (h : CoreCap) : CoreSingleton := by
+  intro b c _ M hMarg hM2 v z hz1 hctx i hi a t hva
+  rcases Nat.lt_or_ge i 1 with hi0 | hi1
+  · have : i = 0 := by omega
+    subst this
+    rw [List.take_zero, graft_nil, List.dropLast_eq_take]
+    exact hctx (M.length - 1) (by omega) a t hva
+  · have hi1' : i = 1 := by
+      simp only [List.length_cons, List.length_nil] at hi
+      omega
+    subst hi1'
+    rw [List.take_one]
+    simpa [graft_singleton_eq_cap] using h M hMarg hM2 v z hz1 hctx b c a t hva
+
+theorem cap_of_coreSingleton (h : CoreSingleton) : CoreCap := by
+  intro M hMarg hM2 v z hz1 hctx b c a t hva
+  have hres := h b c (by show entry [((0, b, c) : ℕ × ℕ × ℕ)] 0 0 = 0; rfl)
+    M hMarg hM2 v z hz1 hctx 1 (by simp) a t hva
+  rw [List.take_one] at hres
+  simpa [graft_singleton_eq_cap] using hres
+
 /-- **No regression**: the old core still supplies the singleton core
 (`singleton_mem_GXs`), so modulo `InfEquip` the two are equivalent — the
 length induction trades a `∀`-context statement for a one-column family. -/

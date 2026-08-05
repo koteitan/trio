@@ -47,7 +47,9 @@
 - [x] 生成族還元はトートロジーと判明（機械検査済み）⛔ v0.118.52
 - [x] 核からリフト量詞が落ちた: CorePlantCtx0 と同値 ✅ v0.118.53
 - [x] 長さ帰納で GX 側が一列族に潰れた: CoreSingleton ✅ v0.118.54 Lind.lean
-- [ ] **残差**: CoreSingleton（一列キャップ）+ InfEquip（Wレベル装備）
+- [x] 残核から GX が消滅: CoreCap（純 W レベル）✅ v0.118.55
+- [ ] **残差**: CoreCap（末尾添字差し替え）+ InfEquip（Wレベル装備）
+- [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
 - [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）
 - [x] Final.lean を Wstar2s 系に配線替え: TRIO_terminates_of_cores ✅ v0.118.36

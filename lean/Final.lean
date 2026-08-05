@@ -133,4 +133,20 @@ theorem no_infinite_expansion_of_singleton (hie : InfEquip) (hs : CoreSingleton)
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_plant0 hie (corePlantCtx0_of_singleton hs)
 
+/-! ### ★ 残核の最終形: `GX` を含まない 2 本の `W` レベル命題
+
+`CoreCap` = 装備つき文脈の**末尾列の添字を任意に差し替えても `W` package**、
+`InfEquip` = 文脈の窓の再基底化中置が再び装備。どちらも `GX` を含まない。 -/
+
+/-- **Trio sequences terminate**, modulo two pure `W`-level statements:
+`CoreCap` (re-capping an equipped context's last column) and `InfEquip`. -/
+theorem TRIO_terminates_of_cap (hie : InfEquip) (hc : CoreCap) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_singleton hie (coreSingleton_of_cap hc)
+
+/-- **No infinite expansion sequence**, from the two `W`-level statements. -/
+theorem no_infinite_expansion_of_cap (hie : InfEquip) (hc : CoreCap) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_singleton hie (coreSingleton_of_cap hc)
+
 end TRIO

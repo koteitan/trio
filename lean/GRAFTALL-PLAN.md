@@ -1939,6 +1939,52 @@ CoreSingleton ⟺ 装備つき文脈 M（根 (v,z), z ≤ 1）に対し
 問題は核の証明で必要になる文脈 `M` の植え peel（`M` は任意レベル）。
 ここを回避できるかが次の判定点。
 
+## 1.9.45 ★★★★★ v0.118.55: 残核から `GX` が消えた — **キャップ補題 + InfEquip**
+
+### 頂点（Final.lean, sorry 0, build green 783）
+
+```
+TRIO_terminates_of_cap : InfEquip → CoreCap → WellFounded stepRel
+  #print axioms = [propext, Classical.choice, Quot.sound]
+
+CoreCap : ∀ M, argOK M → 1 ≤ |M| → ∀ v z, z ≤ 1 → CtxOK M v z →
+  ∀ b c a t, 2(v+t)+z ≤ a → Lift1 ((0,v,z) :: cap M b c) t ∈ W a
+    where cap M b c = M.dropLast ++ [(entry M 0 (|M|-1), b, c)]
+```
+
+`graft_singleton_eq_cap : graft M [(0,b,c)] = cap M b c` と、`GX` の接頭辞義務
+`i = 0` が装備そのものであることから `CoreSingleton ⟺ CoreCap`
+（`coreSingleton_of_cap` / `cap_of_coreSingleton`）。
+
+⟹ **残核 2 本はどちらも純 `W` レベル**（`GX` を含まない）:
+1. `CoreCap`: 装備つき文脈の末尾添字を任意に差し替えても package
+2. `InfEquip`: 文脈の窓の再基底化中置が再び装備
+
+### 現在地の正直な評価（重要）
+
+このセッションの 3 手（生成族、リフト量詞、長さ帰納）はいずれも**同値変形**で
+あって真の弱化ではない。`CoreCap → 機械 → CoreCap` の閉路は次の通り:
+
+* `CoreCap` ⟹（`Lind.mem_GX_of_singletons`）⟹ 任意の基づく列が `GX`
+* ⟹ `CorePlantCtx0` ⟹ 三核 ⟹ `GX_closed` ⟹ `singleton_mem_GXs` ⟹ `CoreCap`
+
+閉路が切れないのは、`GX`（および `ctxOK_graft`）が**任意の装備つき文脈**を
+量化するため、どの分岐でも「文脈の植え peel が `GX`」が再生産されるから。
+`Aop` の節 3 データ（段 `m`）を使うと α は閉じる（`tower1_mem2`）が、
+節 2 で正当化された末端孤児つき元には節 3 データが無く、そこでは
+「`W m ⊆ GX`（`m` は非有界）」＝定理自身が要る。
+
+⟹ **量詞整理はここで打ち止め**。次に要るのは BM4 展開そのものに対する
+新しい数学的入力（測度・多重集合順序・段の再設計のいずれか）。
+
+### 記録しておく計算則（今後の入力）
+
+* `graft N y` は `N.dropLast` と `entry N 0 (|N|-1)` にしか依らない
+  ⟹ `graft (cap M b c) y = graft M y`（キャップは接ぎ木に影響しない）
+* よって α 分岐の義務は `(b,c)` に依存せず「装備つき文脈 `M` 上の塔
+  `tow v z M k` が `W` package」だけ
+* γ' 分岐は文脈が `M.take (p+1)` に**真に短くなる**（唯一の長さ降下）
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

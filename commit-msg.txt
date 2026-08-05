@@ -1,14 +1,10 @@
-v0.118.54/the GX core collapses to a one-column family
+v0.118.55/the residue loses GX: a pure W-level cap statement
 
-- Add Lind.lean: `graft_take_drop` cuts a based sequence at a tail-minimal
-  depth into a strictly shorter context peel and a strictly shorter datum, so
-  `gx_graft` runs a length induction
-- Add `mem_GX_of_singletons` / `CoreSingleton` / `corePlantCtx0_of_singleton`:
-  every based sequence is in `GX` given only `[(0,b,c)] ∈ GX`
-- Add `coreSingleton_of_plant0`: the old core still supplies the new one, so
-  modulo `InfEquip` the two are equivalent (no regression, no strengthening)
-- Add `TRIO_terminates_of_singleton` / `no_infinite_expansion_of_singleton` in
-  Final.lean and register Lind in lakefile roots; axioms stay
-  [propext, Classical.choice, Quot.sound]
-- GRAFTALL-PLAN.md 1.9.44 + task.md: residue is `CoreSingleton` (cap the last
-  column of an equipped context with an arbitrary subscript) + `InfEquip`
+- Add `cap` / `graft_singleton_eq_cap`: grafting a one-column datum only
+  replaces the context's last subscript
+- Add `CoreCap` with `coreSingleton_of_cap` / `cap_of_coreSingleton`, so the
+  `GX`-level singleton core is exactly the `W`-level cap statement
+- Add `TRIO_terminates_of_cap` / `no_infinite_expansion_of_cap`; both residues
+  (`CoreCap`, `InfEquip`) are now `GX`-free, axioms unchanged
+- GRAFTALL-PLAN.md 1.9.45 + task.md: record the closed loop
+  CoreCap -> machine -> CoreCap and stop the quantifier-reshuffling track
