@@ -1,13 +1,9 @@
-v0.118.24/the v0.119 design: everything based is in GX by length induction
+v0.118.25/measured: baking the GX component into the equipment is circular
 
-- GRAFTALL-PLAN 1.9.26: `y in GX` is a CONDITIONAL statement (equipped contexts
-  only) and `CtxOK` is where the strength sits, so a length induction proving
-  "every based sequence is in GX" does not prove termination for free
-- Spell out how `hin` (the expansion) is assembled from strictly shorter pieces
-  in each bad-root case: towers via `tow_mem_GX` + (ML), blocks via
-  `gx_graft` + `gcopies_mem_GX` over the strictly shorter window
-- Name the circularity to break: `gx_of_pieces` needs cores stated over
-  arbitrary-length contexts, so the induction must run on the composite length
-  (or lexicographically on context/datum length)
-- Record the measured cost of dissolving `CoreBlocked0` by relaxing `GX` to
-  `1 <= M.length`: 12 errors, 11 mechanical, one real (the 1+1 degenerate case)
+- GRAFTALL-PLAN 1.9.27: the v0.119 design needs `CtxOK` to assert that the
+  context's own planted prefixes are in `GX`, but `GX` is DEFINED from `CtxOK`,
+  so the reference is a definitional cycle (verified in Lean: `Unknown
+  identifier GX`), and unfolding it makes `CtxOK` self-referential
+- Record the escape routes; the favoured one is to STRATIFY by context length
+  (`GX_n` obliges contexts of length <= n, `CtxOK_n`'s GX component uses
+  `GX_{n-1}` since `M.take k` is strictly shorter, `GX = intersection of GX_n`)

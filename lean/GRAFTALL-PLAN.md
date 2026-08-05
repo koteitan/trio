@@ -1013,6 +1013,34 @@ Lift1 X s = (0, B+s, C) :: mlift X.tail B s = (0, B+s, C) :: slift X.tail χ
 ただし `GX` が強くなるので `CoreBlockedElt/Hi/Window/CtxSuffix` の結論も
 単元文脈まで含むことになる（トレードオフ）。
 
+## 1.9.27 ⛔ 「装備に `GX` 成分を焼き込む」は**定義の循環**で不可（実験済み）
+
+§1.9.26 の設計を回すには、装備を
+
+```
+CtxOK M v z := (∀ k < |M|, ∀ a t, … → Lift1 ((0,v,z)::M.take k) t ∈ W a)
+             ∧ (∀ k < |M|, ∀ t,        Lift1 ((0,v,z)::M.take k) t ∈ GX)
+```
+
+に強めればよい（そうすれば `CorePlantCtxLift` は核から消え、`CoreWindow` /
+`CoreBlockedEltHi` は「窓は真に短い」ので長さ帰納で潰せる）。
+
+**しかし `GX` は `CtxOK` を使って定義されているので、`CtxOK` が `GX` に言及
+できない**（Lean で実際に試すと `Unknown identifier GX`）。展開しても
+`CtxOK` の自己言及になり、well-founded でない。
+
+### 逃げ道の候補
+
+1. **文脈長で層化する**: `GX_n` は長さ `≤ n` の文脈に対する義務だけを課し、
+   `CtxOK_n M v z` の `GX` 成分は `GX_{n-1}` を使う（`M.take k` は真に短い）。
+   `GX := ⋂_n GX_n`。再帰は文脈長の上界に関して整礎。**最有力**。
+2. 装備を `GX` のパラメータにする（`GX (E : TrioSeq → ℕ → ℕ → Prop)`）で、
+   `E` を別途最小不動点として構成する。
+3. 現状維持（`CorePlantCtxLift` を核のまま残す）。
+
+⟹ v0.119 はまず 1 の層化 `GX_n` を試すのが筋。層化すれば §1.9.26 の
+長さ帰納（`hin` を `gx_graft` + 短い窓 + 塔で組む）がそのまま乗る見込み。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
