@@ -1,17 +1,8 @@
-v0.118.56/InfEquip is false; the residue drops to a single core
+v0.118.57/soundness probe for the single remaining core
 
-- Add Infcex.lean with `not_infEquip`: `M = [(1,0,2),(2,0,0)]`, `p = 0`, root
-  `(0,0)` is `argOK`, satisfies the window condition and `CtxOK M 0 0`, yet
-  `entry M 2 0 = 2 > 1` — the conjunct is a z<2 fragment condition that neither
-  `argOK` (a row-0 condition) nor the slice equipment implies
-- Remove the vacuous `InfEquip`-based top-level theorems from Final.lean and
-  mark `InfEquip` and its consumers in Gamma.lean as ⛔ not to be cited
-- Add `corePlantCtxLift_of_core` / `coreCtxSuffixLift_of_core`: both context
-  cores are `GX`-membership of based sequences, so the length induction gets
-  them from the one-column core alone
-- Replace the no-regression lemma by `coreSingleton_of_cores`
-- Add `wf_olt_ST_TS_of_core` / `TRIO_terminates_of_core` /
-  `no_infinite_expansion_of_core` and re-base `TRIO_terminates_of_cap` on
-  `CoreCap` alone; axioms [propext, Classical.choice, Quot.sound], sorry 0
-- GRAFTALL-PLAN.md 1.9.46 + task.md: record the refutation and the new
-  single-core status
+- Add tools/probe_cap.py: `W 0` is the hereditarily-terminating set, so
+  termination of the capped composite is a necessary condition for `CoreCap`;
+  15552 instances (including c = 2, outside the z<2 fragment) show 0 violations
+- GRAFTALL-PLAN.md 1.9.47: record the result and its scope limits (the CtxOK
+  approximation does not bite at this size, the n-schedule is not exhaustive,
+  the stage is not checked)
