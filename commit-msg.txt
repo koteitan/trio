@@ -1,11 +1,11 @@
-v0.114.1/split the lifted-plant core and record the new architecture
+v0.114.2/probe the lift residue and record its exact shape
 
-- Split CoreLiftPlant into CoreLift (GX is closed under the intrinsic
-  row-1 lift) and CorePlantCtx (the context's planted peel is in GX),
-  wired by coreLiftPlant_of and GX_loop'
-- Record in GRAFTALL-PLAN 1.9.10: the graft-closure design, the
-  probe_liftplant refutation (the composite lift acts through the coneV
-  mask, not the argument's own Lift1), the gamma' reduction sketch
-  (gcopies = graft E (gcopies n)) and the unified residue picture
-  (context pieces in GX + lift closure)
-- Revise the execution order and task.md to the new residue list
+- Add the four probes behind GRAFTALL-PLAN 1.9.11: probe_liftplant
+  (composite lift acts by the coneV mask, not the argument's Lift1),
+  probe_plift (both masks are lift-stable, so both lifts compose),
+  probe_tower2lift (tower-2 family lift = one more Lift1, 0/21408;
+  the row-1 tow analogue is false), probe_lowroot (at every tower site
+  the datum's root sits above the ambient root, so the mask part never
+  trivializes)
+- Record 1.9.11: CoreLiftPlant = (lifted planted context peel) and
+  (plift closure of GX); alpha and beta converge on one core

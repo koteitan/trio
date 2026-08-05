@@ -201,6 +201,39 @@ y↑ は **coneV マスク**（y の全 le1-祖先が entry1 > v）であり、
 （𝒞 をパラメータにすれば GX の定義に GX が負の位置で現れる問題は起きない）。
 𝒞 の構成が MASTER 長さ帰納（`mem_of_Aclosed_aux`）の仕事。
 
+## 1.9.11 ★★ リフト残差の精密解析（probe 4 本, 2026-08-05）
+
+`CoreLiftPlant`（残る唯一の非-γ' 核）の中身を probe で確定した。
+
+**複合リフトの真の形**（既知 §2 の一般化）:
+`Lift1 ((0,v,z) :: graft M D) e = graft (Lift1 ((0,v,z)::M) e) (plift v e D)`,
+`plift v e D := liftset D (coneV D v) e`,
+`coneV D v = {j | j と j の全 le1-祖先の entry1 が > v}`。
+⟹ `gx_graft` と合わせて
+**CoreLiftPlant ⟸ (リフト済み植え文脈 peel ∈ GX) ∧ (GX の plift 閉包)**。
+
+probe 結果:
+- `probe_liftplant`: 引数の根 entry1 > v のとき `plift v e D ≠ Lift1 D e`
+  （違反 100664 件）。根 entry1 ≤ v なら `plift = id`（違反 0）。
+- `probe_lowroot`: **塔サイトでは常に「引数の根 entry1 > v」**
+  （tower1 564864/564864, tower2 330192/330192, coneV も常に非空）。
+  理由: 引数の根は死んだ末尾列の行0祖先なので、死性から
+  entry1(根) ≥ w1 > v が強制される。⟹ **plift 部は決して自明化しない**。
+- `probe_plift`: cone も coneV も**リフト安定**（0/2313）⟹ どちらの
+  リフトも合成可能（`Lift1_Lift1` の coneV 版が成り立つ）。
+- `probe_tower2lift` (T): **真の tower2 サイトでは**
+  `Lift1 (Nb⟦j+1⟧) e = graft (Lift1 Nb e) (Lift1 (Nb⟦j⟧) (d1+e))`
+  （違反 0/21408）⟹ β の族は「リフト済み植え peel ∈ GX」+ `gx_graft`
+  だけで閉じる（α の要求と**同一の核**）。
+  一方 (T1) 行1塔 `Lift1 (tow v z R k) s = tow (v+s) z (ltail v z R s) k`
+  は**偽**（20608/41216; 内側の植えた根は錐外なので Lift1 が上げない）。
+  ⟹ α は「リフト済み文脈 Rt 上の塔」として扱うのが正しい（現行どおり）。
+
+**帰結**: α・β は同一の核 `CoreLiftPlant`（= リフト済み植えブロック ∈ GX）
+に完全収束。(T) を Lean 化しても核の**型は変わらない**（D := Y.dropLast は
+任意の GX 要素を走る）ので優先度は低い。攻めるべきは
+`plift 閉包`（要素側）と `リフト済み植え文脈 peel`（文脈側）の 2 つ。
+
 ## 1.9.8 ★ α の残差解析（v0.109-110）— 整列供給 ✓ / 非整列 = (e)-壁の最終形
 （→ 1.9.9 で解決済み。以下は経緯の記録）
 
