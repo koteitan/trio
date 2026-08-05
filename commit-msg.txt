@@ -1,9 +1,8 @@
-v0.117.2/the aligned lift calculus (0/191880)
+v0.117.3/self-audit: the aligned calculus also needs a single-tree argument
 
-- Add probe_alignedcalc and probe_alignedsite: at a tower site, with data
-  aligned to the ambient root, the composite lift satisfies
-  Lift1 (graft E (Lift1 X d0)) d = graft (Lift1 E d) (Lift1 X (d0 (+) d)),
-  with zero violations; alignment and the site condition are both exactly
-  necessary (misaligned data violate it 100% at d0 = 0)
-- Record GRAFTALL-PLAN 1.9.17 and the v0.118 design target: an aligned,
-  lift-internalised predicate in which the lift residue closes
+- Add probe_alignedforest: with a FOREST argument the aligned lift calculus
+  breaks (30448/93024 at tower1/aligned/d0=0), so the earlier statement was
+  too strong
+- Correct GRAFTALL-PLAN 1.9.17 (and the memory) to require X to be a
+  principal block; note that everything the machine lifts is one, so the
+  condition is automatic at the use sites
