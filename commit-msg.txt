@@ -1,10 +1,12 @@
-v0.118.12/(G2): the staircase lift commutes with the expansion
+v0.118.13/(ML): beta closes with the lifted planted context alone
 
-- Add `slift_oper` (Aexp.lean): `slift (A[n]) phi = (slift A phi)[n]`,
-  unconditional in `A` and `n`, sorry-free
-- Add `slift_oper_main` for the gexp branch: prefix columns by (A1), copies by
-  (A2), the `le1` guard by `le1_slift`, `d1` by `amin_le1` on the row-2 parent
-- Add `slift_take` / `slift_dropLast` (Pred branches) and `oper_zero_take`
-  (`X[0]` is the truncation at the bad root)
-- Complete the staircase calculus: (G2) joins (G3) `slift_graft`,
-  (G5) `slift_slift`, (G6) `amin_slift`
+- Add `mlift_Lift1_cons` (Aexp.lean): the ambient mask lift is absorbed by the
+  root lift, `mlift (Lift1 ((0,v,z)::R) d) v e = Lift1 ((0,v,z)::R) (d+e)` for
+  `0 < d`, via `coneV_Lift1_cons` (a lifted block's `v`-mask IS its root cone)
+- Strengthen the row-2 tower induction to `forall j s, Lift1 (Nb[j]) (d1+s)`,
+  giving `coreT2EFam_of_plantctx : CorePlantCtxLift -> CoreT2EFam`: the
+  datum-side `CoreMaskLift` drops out of beta entirely
+- Factor `coreLiftPlant_of_mask` through the instance-level `liftPlant_of_mask`
+- Weaken `CoreT2EFam` / `CoreT2E` to consume only `Y.dropLast in GX`
+- Add `corePlantCtxLift_of` (CoreLift + CorePlantCtx) and rewire `GX_loop`
+- Add tools/probe_mliftlift.py: (ML) 0/132781 at `d > 0`, refuted at `d = 0`

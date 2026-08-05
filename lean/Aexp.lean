@@ -487,4 +487,103 @@ theorem slift_oper {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) (n : ℕ) :
           hpred, hpredA]
         exact slift_dropLast
 
+/-! ## 環境マスクは根リフトに吸収される
+
+`Lift1 X d` は根の錐をちょうど `d` だけ上げるので、`d > 0` なら錐の中の列は
+どれも祖先最小値が `v + d > v` になり、錐の外の列は行 1 が `v` 以下の祖先を
+もつ。したがって **`Lift1 X d` の閾値 `v` の環境マスクは `X` の根の錐そのもの**
+で、マスクリフトは根リフトに吸収される:
+
+    mlift (Lift1 X d) v e = Lift1 X (d + e)        （`X = (0,v,z) :: R`, `0 < d`）
+
+probe: tools/probe_mliftlift.py 0/132781（`d = 0` では偽 44631/67219 — 根が
+閾値ちょうどでマスクから外れる）。塔の帰納を `∀ s, Lift1 (Nb⟦j⟧) (d1+s) ∈ GX`
+に強めれば、塔のデータ側は `CoreMaskLift` なしで閉じる。 -/
+
+theorem rtg0_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    Relation.ReflTransGen (nextrel0 (Lift1 X d)) a b
+      ↔ Relation.ReflTransGen (nextrel0 X) a b := by
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y w _ hyw ih => exact ih.tail (nextrel0_Lift1.1 hyw)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y w _ hyw ih => exact ih.tail (nextrel0_Lift1.2 hyw)
+
+theorem argOK_mlift {R : TrioSeq} (hR : argOK R) (v d : ℕ) :
+    argOK (mlift R v d) := by
+  intro p hp
+  obtain ⟨i, hi, hpi⟩ := List.mem_iff_getElem.mp hp
+  have hi' : i < R.length := by rw [mlift_length] at hi; exact hi
+  have hpe : p = (mlift R v d).getD i (0, 0, 0) := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, ← hpi]
+    rfl
+  rw [hpe, mlift_getD hi']
+  show 0 < entry R 0 i
+  exact hR _ (entry_pair_mem hi')
+
+open Classical in
+/-- **リフト済みブロックの環境マスクは根の錐**（`0 < d`）。 -/
+theorem coneV_Lift1_cons {R : TrioSeq} (hR : argOK R) {v z d j : ℕ} (hd : 0 < d)
+    (hj : j < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length) :
+    coneV (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) v j
+      ↔ le1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 j := by
+  set N : TrioSeq := ((0, v, z) : ℕ × ℕ × ℕ) :: R with hN
+  have hNlen : N.length = R.length + 1 := by rw [hN]; simp
+  have hshal : ∀ l, 0 < l → l < N.length → entry N 0 0 < entry N 0 l := by
+    intro l hl0 hlN
+    obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    have h0 : entry N 0 0 = 0 := by rw [hN]; exact based_cons v z R
+    rw [h0, hN, entry_cons]
+    exact hR _ (entry_pair_mem (by omega))
+  have hN1 : entry N 1 0 = v := by
+    show ((((0, v, z) : ℕ × ℕ × ℕ) :: R).getD 0 (0, 0, 0)).2.1 = v
+    rfl
+  rw [le1_zero_iff hshal hj, hN1]
+  constructor
+  · intro h y hy hy0
+    have hylt : y < N.length := by have := rtg0_le hy; omega
+    have hval := h y (rtg0_Lift1.2 hy)
+    rw [entry1_Lift1 hylt] at hval
+    by_cases hg : le1 N 0 y
+    · have := le1_entry1_lt hg (Ne.symm hy0)
+      rw [hN1] at this
+      exact this
+    · rw [if_neg hg] at hval
+      exact hval
+  · intro h y hy
+    have hylt : y < N.length := by have := rtg0_le hy; omega
+    rw [entry1_Lift1 hylt]
+    rcases Nat.eq_zero_or_pos y with rfl | hy0
+    · rw [if_pos (le1_refl (by omega)), hN1]
+      omega
+    · have := h y (rtg0_Lift1.1 hy) (by omega)
+      split_ifs <;> omega
+
+open Classical in
+/-- **(ML)**: 環境マスクリフトは根リフトに吸収される。 -/
+theorem mlift_Lift1_cons {R : TrioSeq} (hR : argOK R) {v z d e : ℕ} (hd : 0 < d) :
+    mlift (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) v e
+      = Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) (d + e) := by
+  set N : TrioSeq := ((0, v, z) : ℕ × ℕ × ℕ) :: R with hN
+  refine List.ext_getElem (by simp) ?_
+  intro i hi1 hi2
+  rw [mlift_length, Lift1_length] at hi1
+  rw [← entry_triple (X := mlift (Lift1 N d) v e)
+      (by rw [mlift_length, Lift1_length]; exact hi1),
+    ← entry_triple (X := Lift1 N (d + e)) (by rw [Lift1_length]; exact hi1)]
+  have e0 : entry (mlift (Lift1 N d) v e) 0 i = entry N 0 i := by
+    rw [entry0_mlift, entry0_Lift1]
+  have e2 : entry (mlift (Lift1 N d) v e) 2 i = entry N 2 i := by
+    rw [entry2_mlift, entry2_Lift1]
+  have e1 : entry (mlift (Lift1 N d) v e) 1 i
+      = entry N 1 i + (if le1 N 0 i then d + e else 0) := by
+    rw [entry1_mlift (by rw [Lift1_length]; exact hi1), entry1_Lift1 hi1,
+      if_congr (coneV_Lift1_cons hR hd hi1) rfl rfl]
+    split_ifs <;> omega
+  rw [e0, e1, e2, entry0_Lift1, entry2_Lift1, entry1_Lift1 hi1]
+
 end TRIO
