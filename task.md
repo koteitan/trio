@@ -40,6 +40,6 @@
 - [x] 接ぎ木リフト計算則 Cgraft.lean（錐輸送・環境マスク mlift）✅ v0.118
 - [x] 階段リフト slift の Lean 化: (A2)/(G2)/(ML) ✅ v0.118.11-13 Aexp.lean
 - [x] β からマスク核が消滅（塔データは根リフト、(ML) で吸収）✅ v0.118.13
-- [ ] α のマスク核 CoreMaskLift（植えた根の単元が唯一の壁）v0.119
-- [ ] **残差**: 文脈断片（CorePlantCtxLift / CoreCtxSuffix / CoreBlocked0）+ CoreBlockedEltHi
+- [x] GXs（階段閉包）で α のマスク核も消滅・CoreStairOm も証明済み ✅ v0.118.16
+- [ ] **残差 4 本**: CorePlantCtxLift / CoreCtxSuffix / CoreBlocked0 / CoreBlockedEltHi
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）

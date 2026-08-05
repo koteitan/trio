@@ -817,6 +817,59 @@ side condition `hrow1` は `i1=0` では偽（probe 4387/5967）なので相分�
    持たせられるかを検討する（`Wf` の段再帰との整合が要点）。
 2. あるいは α を (ML) 型に組み替える: `Y↓` を塔の元に見せる分解を探す。
 
+## 1.9.22 ★★★★★ v0.118.15-16: **リフト核が全滅**、残差は文脈 3 本 + γ' 1 本
+
+```
+GX_loop_pieces : CoreCtxSuffix → CoreBlockedEltHi → CoreBlocked0
+               → CorePlantCtxLift
+               → ∀ u Y, Aop W u GXs Y → Y ∈ GXs
+```
+
+### 機械の集合を階段閉包にした
+
+```
+GXs := { y | y ∈ GX ∧ ∀ φ 階段, slift y φ ∈ GX }
+```
+
+- `gxs_slift`（(G5)+`stair_comp`）・`gxs_take`（`slift_take`）で閉じる
+- `gxs_mlift`: `GXs` の元の環境マスクリフトは `GX` に入る（`mlift_eq_slift`）
+- したがって **α**（`CoreT1L`）は仮定を `Y.dropLast ∈ GXs` にするだけで
+  `liftPlant_of_mask` に必要なマスクを読み出せる ⟹
+  `coreT1L_of_plantctx : CorePlantCtxLift → CoreT1L`
+- **β** は §1.9.21 の (ML) で既にマスク不要 ⟹ `coreT2E_of_plantctx`
+
+⟹ `CoreLift` / `CoreLiftPlant` / `CoreMaskLift` は機械のループから消滅。
+
+### `Aop` の階段輸送とその唯一の穴 → それも塞がった
+
+`aop_slift`: `Aop W u GXs Y` → `Aop W u GXs (slift Y φ)`（`2 ≤ |Y|`）。
+節1 は `Stair.zero`、節2 は (G2) `slift_oper`、節3 は `domT` の第 2 成分が
+`¬hasParent` なので `Y⟦n⟧ = Y.dropLast` となり**節2 に落ちる**。
+
+残った `|Y| = 1`（植えた根）は `CoreStairOm` として切り出したうえで
+**証明済み**（`coreStairOm_holds`）: 長さ 1 の列の末列には親が存在しえない
+（添字が負になる）ので、`gx_of_pieces` を「空の peel + 空虚な inner 節」で
+走らせればよく、`Aop` すなわち段をまったく消費しない。
+
+### `GX_closed` を部品化した（この整理が鍵）
+
+```
+gx_of_pieces (hb h1 h2) u Y
+  (hYd : Y.dropLast ∈ GXs)
+  (hin : hasParent Y … → ∀ n ≥ 1, Y⟦n⟧ ∈ GXs) : Y ∈ GX
+```
+`Aop` から `hYd` を取り出すのは節2 でも可能（`gxs_take` + `oper_take_prefix`
+で `Y.dropLast = (Y⟦1⟧).take (|Y|-1)`）。
+
+### ⚠ 引き換えに核を強めた（要監視）
+
+`CoreBlocked` / `CoreBlockedElt` / `CoreWindow` / `CoreBlockedEltHi` /
+`CoreBlocked0` の仮定を `Aop W u GX Y` から `Y.dropLast ∈ GXs` に置き換えた。
+`hpY : ¬hasParent Y` が別途あるので節2 は `Y.dropLast` と同値、節1 は
+`|Y| ≤ 1`、失うのは**節3 の `W m` データ**だけ（これらの核の結論に `w` は
+現れない）。同じ理由で行 2 接ぎ木塔の枝 (d) を `CoreT2E` に畳んだ。
+**もし今後これらの核が偽と分かったら、まずこの弱化を疑うこと。**
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
