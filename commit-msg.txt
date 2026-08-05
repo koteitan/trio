@@ -1,7 +1,5 @@
-v0.118.9/measure the amin copy-periodicity, the last law for (G2)
+v0.118.10/(A1): the expansion keeps the prefix's amin
 
-- Add tools/probe_aminexp.py: over 21693 expansions the prefix keeps its `amin`
-  (A1) and every copy inherits its source column's `amin` (A2), with no
-  violations — so (G2) reduces to exactly these two
-- Record in GRAFTALL-PLAN 1.9.20 the Lean shape of `oper` and which pieces are
-  already proven (branch data and both guards), leaving (A1)/(A2)
+- Add `rtg0_take_iff` and `amin_take` (the ancestor minimum is prefix-local)
+- Prove `amin_oper_prefix`: for `i < M.length - 1` the expansion `M[n]` has the
+  same `amin` at `i` as `M`, in every branch (via `oper_take_prefix`)

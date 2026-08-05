@@ -1354,4 +1354,38 @@ theorem parent_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {i b : �
   unfold parent
   exact congrArg _ (funext fun j0 => propext (nextR_slift hφ))
 
+
+/-! ### `amin` の接頭辞局所性と展開の接頭辞 (A1) -/
+
+theorem rtg0_take_iff {X : TrioSeq} {l a b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    Relation.ReflTransGen (nextrel0 (X.take l)) a b
+      ↔ Relation.ReflTransGen (nextrel0 X) a b :=
+  ⟨Wset.rtg0_take_mp hl, fun h => Wset.rtg0_take_mpr hl h hb⟩
+
+theorem amin_take {X : TrioSeq} {l j : ℕ} (hl : l ≤ X.length) (hj : j < l) :
+    amin (X.take l) j = amin X j :=
+  nat_eq_of_lt_iff fun v => by
+    rw [← coneV_iff_amin, ← coneV_iff_amin]
+    constructor
+    · intro h y hy
+      have hyj : y ≤ j := rtg0_le hy
+      rw [← Wset.entry_take (X := X) (l := l) (i := 1) (j := y) (by omega)]
+      exact h y ((rtg0_take_iff hl hj).2 hy)
+    · intro h y hy
+      have hyj : y ≤ j := rtg0_le hy
+      rw [Wset.entry_take (X := X) (l := l) (i := 1) (j := y) (by omega)]
+      exact h y ((rtg0_take_iff hl hj).1 hy)
+
+/-- **(A1)**: 展開しても接頭辞の `amin` は変わらない。 -/
+theorem amin_oper_prefix {M : TrioSeq} {n i : ℕ} (L : 1 < M.length) (n1 : 1 ≤ n)
+    (hi : i < M.length - 1) : amin (M⟦n⟧) i = amin M i := by
+  have h1 : (M⟦n⟧).take (M.length - 1) = M.take (M.length - 1) :=
+    oper_take_prefix L n1 (le_refl _)
+  have hlen : M.length - 1 ≤ (M⟦n⟧).length := by
+    have h2 := congrArg List.length h1
+    rw [List.length_take, List.length_take] at h2
+    omega
+  rw [← amin_take (X := M⟦n⟧) (l := M.length - 1) hlen hi, h1,
+    amin_take (by omega) hi]
+
 end TRIO
