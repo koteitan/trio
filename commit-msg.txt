@@ -1,8 +1,14 @@
-v0.118.51/the family peels descend in k: the shape of the new induction
+v0.118.52/the generated-family reduction is a tautology (honest correction)
 
-- GRAFTALL-PLAN.md 1.9.41: `(gpow N E (k+1)).dropLast = graft (gpow N E k)
-  E.dropLast`, so the family-peel obligation Phi(k+1) needs exactly Phi(k) as its
-  context-plant obligation — the core that never descended over arbitrary
-  contexts DOES descend over the generated family
-- Phi(0) is the base context peel, which the equipment `CtxOK N` already gives;
-  the outer measure is the datum length (E, E.dropLast, ...), the inner one is k
+- Add `gpow_dropLast_eq_tow`: the family peel `(0,v,z) :: (gpow R ((0,v,z)::R)
+  k).dropLast` IS `tow v z R (k+1)`, so `CoreGpowPeel` restates "every tower
+  level is a W-package" and `tower1_mem2_fam` / `_gpow` only re-index k
+- Add `CoreGpowPeel` + `coreT1L_of_gpow`: alpha's obligation in GX-free,
+  stage-free form (no `∀ y ∈ W m` interface, no `GX_full`, no
+  `CorePlantCtxLift` in the statement), labelled as a restatement not a
+  reduction
+- Add `coreGpowPeel_of_plantctx` carrying the old `coreT1L_of_plantctx` content
+  (`tow_mem_GX` + `GX_full` + `liftPlant_of_mask`) — no regression
+- GRAFTALL-PLAN.md 1.9.42: record why the family form looked like it removed
+  the stage raise, and redirect the next probe to "can the equipment alone give
+  `tow v z R k ∈ W m`?"

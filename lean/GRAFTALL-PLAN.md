@@ -1761,6 +1761,65 @@ tower1_mem2_gpow : ∀ k a', 2v+z ≤ a' →
 `CorePlantCtxLift` を通さない版を作る。そこで要るのは
 「生成族 `gpow Rt ((0,v+t,z)::Rt) k` の peel が `W` package」だけ。
 
+## 1.9.42 ⛔ v0.118.52: 生成族還元は**トートロジー**だった（§1.9.40–41 の訂正）
+
+### 実装して分かったこと
+
+`coreT1L_of_gpow : CoreGpowPeel → CoreT1L` は Lean で通った（sorry 0）が、
+その `CoreGpowPeel` は**還元先ではなく言い換え**である。機械検査済みの同一視:
+
+```
+gpow_dropLast_eq_tow :
+  (0,v,z) :: (gpow R ((0,v,z)::R) k).dropLast = tow v z R (k+1)
+```
+
+したがって
+
+```
+CoreGpowPeel  ≡  ∀ k a, 2(v+t)+z ≤ a → tow (v+t) z Rt (k+1) ∈ W a
+```
+
+であり、`CoreT1L` の結論（`A1_intro` 節 2 + `oper_cons_tower1`）は
+`∀ n ≥ 1, tow (v+t) z Rt n ∈ W a`。**両者は添字のずらしだけで同値**。
+`tower1_mem2_fam` / `tower1_mem2_gpow` の証明も実際 `cases k` の再添字づけ
+だけで、内容を一切消費していない。
+
+### なぜ「段の押し上げが消えた」ように見えたか
+
+`tower1_mem2`（本物）は
+
+* `hgr : ∀ y ∈ W m, based y → … graft R y の package`
+* 内部で `ih m hvm : tow k ∈ W m` を作って `hgr` に食わせる
+
+という構造で、`∀ y ∈ W m` の界面は**内部で自分で潰している**。
+族形式はその潰した後の残差を書いただけなので、界面が「消えた」のではなく
+**結論と同じものに化けた**。§1.9.39 の「リフトによる段の押し上げ」は
+一切解消していない。
+
+### 残るもの（正味の収穫）
+
+1. `CoreGpowPeel` は α の義務の **`GX`-free・段 free な素の形**。
+   「装備 `CtxOK Rt (v+t) z` のもとで塔の全段が `W` package」。
+   今後の新帰納法はこの形を直接攻めればよい（`GX` の ∀ 文脈は不要）。
+2. `coreGpowPeel_of_plantctx` に旧 `coreT1L_of_plantctx` の中身
+   （`tow_mem_GX` + `GX_full` + `liftPlant_of_mask`）がそのまま残っており、
+   **無回帰**（新形 ≤ 旧核）は機械検査済み。
+3. `gpow` / `graft_iter_gpow` / `graft_tow_gpow` / `graft_gcopies_gpow` は
+   「塔もコピー塊も同一の反復接ぎ木」を与える正しい補題群で、これ自体は有効。
+
+### 教訓（メモリ soundness-discipline に追記済み）
+
+**「界面を族形式に絞る」書き換えは、絞った先が結論と一致していないか
+必ず確認する。** 一致していれば還元ではない。確認方法は今回のように
+「族の subject を元の再帰の言葉に戻す等式」を Lean で書くこと。
+
+### 次の一手（差し替え）
+
+塔の段 `k` に関する真の帰納は、`hgr` の `∀ y ∈ W m` 界面を**保ったまま**
+段 `m` を下げるか、あるいは装備 `CtxOK` から `tow k ∈ W m` を直接作るしかない。
+⟹ 次は **`tow v z R k ∈ W m`（段 `m` = 末端孤児の段）を装備だけから作れるか**
+を測定する。ここが取れれば `tower1_mem2` がそのまま回り、`GX` も要らない。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
