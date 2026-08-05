@@ -1,10 +1,12 @@
-v0.118.6/the staircase lift distributes over grafts (Cgraft.lean)
+v0.118.7/the staircase lift preserves the whole parent structure
 
-- Add `capV M` (the row-1 minimum over the graft point's strict context
-  ancestors) with `siteV_iff_capV`
-- Prove `amin_graft_low` / `amin_graft_high_eq`: the composite's parameter is
-  the argument's own `amin` capped by `capV M`
-- Prove `slift_graft`: the staircase lift distributes over a graft, with the
-  argument's staircase cut at `capV M` — and `stair_cap` shows the cut is again
-  a staircase, so the language is closed under the graft recursion
-- Add `nat_eq_of_lt_iff` (a threshold characterisation determines the value)
+- Prove the shift-zone lemmas `amin_min_below_parent`, `amin_parent`,
+  `amin_between`, `amin_le1`: a row-1 parent (and everything squeezed under the
+  edge) carries the same `amin` as its child, so every comparison the parent
+  relation makes happens under one constant shift
+- Prove `nextrel1_slift`, `le1_slift`, `nextrel2_slift`, `nextR_slift`,
+  `hasParent_slift`, `parent_slift`, `srow_slift`: the staircase lift is an
+  isomorphism for the whole trio parent structure; the backward direction uses
+  `stair_strictMono` / `stair_inj`
+- Require `phi 0 = 0` in `Stair` (a column at row 1 = 0 must not move, or
+  `srow` would change); mask-generated staircases satisfy it automatically

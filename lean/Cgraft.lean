@@ -883,6 +883,9 @@ theorem amin_self_le (A : TrioSeq) (j : ℕ) : amin A j ≤ entry A 1 j :=
 structure Stair (φ : ℕ → ℕ) : Prop where
   ge : ∀ m, m ≤ φ m
   step : ∀ m n, m ≤ n → φ m - m ≤ φ n - n
+  /-- 行 1 が `0` の列は動かない（`srow` を保つために必須）。マスクリフトの
+  閾値は自然数なので `φ 0 = 0` は自動的に満たされる。 -/
+  zero : φ 0 = 0
 
 theorem Stair.mono {φ : ℕ → ℕ} (h : Stair φ) {m n : ℕ} (hmn : m ≤ n) :
     φ m ≤ φ n := by
@@ -893,7 +896,7 @@ theorem Stair.mono {φ : ℕ → ℕ} (h : Stair φ) {m n : ℕ} (hmn : m ≤ n)
 
 /-- 一段の階段はマスクリフトの階段。 -/
 theorem stair_step (v s : ℕ) : Stair (fun m => m + (if v < m then s else 0)) := by
-  refine ⟨fun m => by split <;> omega, fun m n hmn => ?_⟩
+  refine ⟨fun m => by split <;> omega, fun m n hmn => ?_, by simp⟩
   by_cases h1 : v < m
   · rw [if_pos h1, if_pos (by omega)]; omega
   · rw [if_neg h1]
@@ -901,7 +904,8 @@ theorem stair_step (v s : ℕ) : Stair (fun m => m + (if v < m then s else 0)) :
 
 theorem stair_comp {φ ψ : ℕ → ℕ} (hφ : Stair φ) (hψ : Stair ψ) :
     Stair (fun m => ψ (φ m)) := by
-  refine ⟨fun m => le_trans (hφ.ge m) (hψ.ge (φ m)), fun m n hmn => ?_⟩
+  refine ⟨fun m => le_trans (hφ.ge m) (hψ.ge (φ m)), fun m n hmn => ?_,
+    by rw [hφ.zero, hψ.zero]⟩
   have h1 := hφ.step m n hmn
   have h2 := hψ.step (φ m) (φ n) (hφ.mono hmn)
   have h3 := hφ.ge m
@@ -1098,7 +1102,7 @@ theorem amin_graft_high_eq {M A : TrioSeq} (hA0 : entry A 0 0 = 0)
 /-- キャップした階段はまた階段。 -/
 theorem stair_cap {φ : ℕ → ℕ} (hφ : Stair φ) (c : ℕ) :
     Stair (fun m => m + (φ (min c m) - min c m)) := by
-  refine ⟨fun m => by omega, fun m n hmn => ?_⟩
+  refine ⟨fun m => by omega, fun m n hmn => ?_, by simp [hφ.zero]⟩
   have h1 : min c m ≤ min c n := by omega
   have h2 := hφ.step (min c m) (min c n) h1
   have h3 := hφ.ge (min c m)
@@ -1175,5 +1179,179 @@ theorem slift_graft {M A : TrioSeq} (hA0 : entry A 0 0 = 0) (hA : 0 < A.length)
       have h2 : min (capV M) (amin A k) ≤ amin A k := by omega
       omega
     rw [e0, e1, e2, f0, f1, f2]
+
+
+/-! ### 階段リフトは行 1 の親子関係を保つ
+
+決め手は「行 1 の親は**同じシフト帯**にいる」こと: `nextrel1 A j0 b` なら
+`b` の祖先鎖の最小値は `j0` 以下で達成されるので `amin A j0 = amin A b`
+（`amin_parent`）、間に挟まる祖先も同じ（`amin_between`）。したがって親子関係の
+比較はすべて同じ定数シフトの下で行われ、`nextrel1` は保たれる。
+逆向きも、階段が狭義単調（`stair_strictMono`）なので同じ議論が持ち上がった側で
+使える。 -/
+
+theorem stair_strictMono {φ : ℕ → ℕ} (h : Stair φ) {m n : ℕ} (hmn : m < n) :
+    φ m < φ n := by
+  have h1 := h.step m n (by omega)
+  have h2 := h.ge m
+  have h3 := h.ge n
+  omega
+
+theorem stair_inj {φ : ℕ → ℕ} (h : Stair φ) {m n : ℕ} (he : φ m = φ n) : m = n := by
+  rcases Nat.lt_trichotomy m n with hlt | heq | hgt
+  · exact absurd he (by have := stair_strictMono h hlt; omega)
+  · exact heq
+  · exact absurd he (by have := stair_strictMono h hgt; omega)
+
+/-- `b` の祖先鎖の行 1 最小値は、行 1 の親 `j0` の側で達成される。 -/
+theorem amin_min_below_parent {A : TrioSeq} {j0 b : ℕ} (h : nextrel1 A j0 b) :
+    ∃ y, Relation.ReflTransGen (nextrel0 A) y j0 ∧ entry A 1 y = amin A b := by
+  obtain ⟨y, hy, hey⟩ := amin_mem A b
+  have hle0b : le0 A j0 b := h.2.2.2.2.1
+  have hyb : le0 A y b :=
+    ⟨by have := rtg0_le hy; have := h.2.1; omega, h.2.1, hy⟩
+  rcases Nat.lt_or_ge j0 y with hlt | hge
+  · exfalso
+    have hmin := h.2.2.2.2.2 y ⟨hlt, hyb⟩
+    have hlt1 := h.2.2.2.1
+    have hb : amin A b ≤ entry A 1 j0 := amin_le hle0b.2.2
+    omega
+  · rcases Nat.eq_or_lt_of_le hge with heq | hlt
+    · exact ⟨y, by rw [heq], hey⟩
+    · exact ⟨y, (le0_of_le0_le0 hyb hle0b hlt).2.2, hey⟩
+
+theorem amin_parent {A : TrioSeq} {j0 b : ℕ} (h : nextrel1 A j0 b) :
+    amin A j0 = amin A b := by
+  obtain ⟨y, hy, hey⟩ := amin_min_below_parent h
+  refine le_antisymm ?_ (amin_mono h.2.2.2.2.1.2.2)
+  rw [← hey]
+  exact amin_le hy
+
+theorem amin_between {A : TrioSeq} {j0 b j : ℕ} (h : nextrel1 A j0 b)
+    (hj : j0 < j) (hjb : le0 A j b) : amin A j = amin A b := by
+  obtain ⟨y, hy, hey⟩ := amin_min_below_parent h
+  refine le_antisymm ?_ (amin_mono hjb.2.2)
+  rw [← hey]
+  have hj0j : le0 A j0 j := le0_of_le0_le0 h.2.2.2.2.1 hjb hj
+  exact amin_le (hy.trans hj0j.2.2)
+
+/-- 行 1 の祖先鎖に沿って `amin` は一定。 -/
+theorem amin_le1 {A : TrioSeq} {a b : ℕ} (h : le1 A a b) : amin A a = amin A b := by
+  obtain ⟨-, -, hr⟩ := h
+  induction hr with
+  | refl => rfl
+  | @tail y w _ hyw ih => rw [ih, amin_parent hyw]
+
+/-- **階段リフトは行 1 の辺関係を保つ**。 -/
+theorem nextrel1_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {a b : ℕ} :
+    nextrel1 (slift A φ) a b ↔ nextrel1 A a b := by
+  have hle0 : ∀ x y, le0 (slift A φ) x y ↔ le0 A x y := by
+    intro x y
+    unfold le0
+    rw [slift_length, rtg0_slift]
+  constructor
+  · intro h
+    have hal : a < A.length := by have := h.1; rw [slift_length] at this; exact this
+    have hbl : b < A.length := by have := h.2.1; rw [slift_length] at this; exact this
+    have hab : le0 A a b := (hle0 a b).1 h.2.2.2.2.1
+    have hpar : amin (slift A φ) a = amin (slift A φ) b := amin_parent h
+    rw [amin_slift hφ hal, amin_slift hφ hbl] at hpar
+    have hama : amin A a = amin A b := stair_inj hφ hpar
+    have hlt : entry A 1 a < entry A 1 b := by
+      have h4 := h.2.2.2.1
+      rw [entry1_slift hal, entry1_slift hbl, hama] at h4
+      omega
+    refine ⟨hal, hbl, h.2.2.1, hlt, hab, ?_⟩
+    intro j hj
+    have hjl : j < A.length := hj.2.1
+    have hbet : amin (slift A φ) j = amin (slift A φ) b :=
+      amin_between h hj.1 ((hle0 j b).2 hj.2)
+    rw [amin_slift hφ hjl, amin_slift hφ hbl] at hbet
+    have hamj : amin A j = amin A b := stair_inj hφ hbet
+    have h5 := h.2.2.2.2.2 j ⟨hj.1, (hle0 j b).2 hj.2⟩
+    rw [entry1_slift hjl, entry1_slift hbl, hamj] at h5
+    omega
+  · intro h
+    have hal : a < A.length := h.1
+    have hbl : b < A.length := h.2.1
+    have hama : amin A a = amin A b := amin_parent h
+    have hlt : entry (slift A φ) 1 a < entry (slift A φ) 1 b := by
+      rw [entry1_slift hal, entry1_slift hbl, hama]
+      have := h.2.2.2.1
+      omega
+    refine ⟨by rw [slift_length]; exact hal, by rw [slift_length]; exact hbl,
+      h.2.2.1, hlt, (hle0 a b).2 h.2.2.2.2.1, ?_⟩
+    intro j hj
+    have hjb : le0 A j b := (hle0 j b).1 hj.2
+    have hjl : j < A.length := hjb.1
+    have hamj : amin A j = amin A b := amin_between h hj.1 hjb
+    have h5 := h.2.2.2.2.2 j ⟨hj.1, hjb⟩
+    rw [entry1_slift hjl, entry1_slift hbl, hamj]
+    omega
+
+theorem le1_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {a b : ℕ} :
+    le1 (slift A φ) a b ↔ le1 A a b := by
+  unfold le1
+  rw [slift_length]
+  refine and_congr Iff.rfl (and_congr Iff.rfl ?_)
+  constructor
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y w _ hyw ih => exact ih.tail ((nextrel1_slift hφ).1 hyw)
+  · intro h
+    induction h with
+    | refl => exact .refl
+    | @tail y w _ hyw ih => exact ih.tail ((nextrel1_slift hφ).2 hyw)
+
+/-- 行 1 が `0` の列は動かない（`Stair.zero`）。 -/
+theorem entry1_slift_pos {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {j : ℕ}
+    (hj : j < A.length) : 0 < entry (slift A φ) 1 j ↔ 0 < entry A 1 j := by
+  rw [entry1_slift hj]
+  constructor
+  · intro h
+    by_contra hc
+    have h0 : entry A 1 j = 0 := by omega
+    have ha : amin A j = 0 := by have := amin_self_le A j; omega
+    rw [ha, hφ.zero] at h
+    omega
+  · omega
+
+theorem srow_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {j : ℕ}
+    (hj : j < A.length) : srow (slift A φ) j = srow A j := by
+  unfold srow
+  rw [entry2_slift]
+  by_cases h2 : 0 < entry A 2 j
+  · rw [if_pos h2, if_pos h2]
+  · rw [if_neg h2, if_neg h2, if_congr (entry1_slift_pos hφ hj) rfl rfl]
+
+theorem nextrel2_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {a b : ℕ} :
+    nextrel2 (slift A φ) a b ↔ nextrel2 A a b := by
+  unfold nextrel2
+  rw [slift_length]
+  simp only [entry2_slift, le1_slift hφ]
+
+theorem nextR_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {i a b : ℕ} :
+    nextR (slift A φ) i a b ↔ nextR A i a b := by
+  unfold nextR
+  split
+  · exact nextrel0_slift
+  · split
+    · exact nextrel1_slift hφ
+    · exact nextrel2_slift hφ
+
+theorem hasParent_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {i b : ℕ} :
+    hasParent (slift A φ) i b ↔ hasParent A i b := by
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, hj0, huniq⟩
+    exact ⟨j0, (nextR_slift hφ).1 hj0, fun y hy => huniq y ((nextR_slift hφ).2 hy)⟩
+  · rintro ⟨j0, hj0, huniq⟩
+    exact ⟨j0, (nextR_slift hφ).2 hj0, fun y hy => huniq y ((nextR_slift hφ).1 hy)⟩
+
+theorem parent_slift {A : TrioSeq} {φ : ℕ → ℕ} (hφ : Stair φ) {i b : ℕ} :
+    parent (slift A φ) i b = parent A i b := by
+  unfold parent
+  exact congrArg _ (funext fun j0 => propext (nextR_slift hφ))
 
 end TRIO
