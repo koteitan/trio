@@ -149,6 +149,58 @@ naive なレベル帰納の穴: A2 は W-導出木の全ノードを触り、Ase
   γ' 要素合成（文脈長降下）、γ' 根スライス（shift 化; 文脈は argOK なので
   シフト量 = entry M 0 0 > 0）、β の自己参照整礎化（§1.12 の provenance）。
 
+## 1.9.10 ★★★★ 接ぎ木閉包 `gx_graft` で自己参照が消滅（v0.114）— 新設計
+
+**塔は「自分の主ブロックへの反復接ぎ木」である**（`graft_cons`）:
+`tow v z R (k+1) = graft ((0,v,z)::R) (tow v z R k)`。したがって
+
+- `gx_take`: GX は接頭辞閉（義務が ∀i を持つので自明）
+- **`gx_graft`**: `E.dropLast ∈ GX → w ∈ GX → graft E w ∈ GX`
+  （低位接頭辞 = E の真接頭辞義務、高位 = `take_graft_high`+`graft_assoc`
+  で装備済み複合文脈 `graft M E` 上の w の義務; 文脈装備は `ctxOK_graft`）
+- **`tow_mem_GX`**: `(0,v,z)::R.dropLast ∈ GX` だけで塔要素が全部 GX に入る
+
+⟹ **α も β も「W σ ⊆ GX」を全く必要としない**。α は
+`coreT1L_of_plant`（塔 = tow_mem_GX + GX_full）、β は
+`coreT2EFam_of_plant`（族要素 `Lift1 (Nb⟦j⟧) d1` の j-帰納）。
+`CoreT2EStep` とその W-還元は削除。**機械の自己参照（旧 §1.9.7 の
+最終残核）は消滅した**。
+
+新しい残差（v0.114, `GX_loop'`）:
+- **`CoreLift`**: `y ∈ GX → Lift1 y t ∈ GX`（GX のリフト閉包）
+- **`CorePlantCtx`**: `(0,v,z) :: M.dropLast ∈ GX`（文脈の植え付き peel）
+- γ' の 2 核（CoreBlockedElt / CoreBlocked0）
+
+### probe: 複合リフトは引数の Lift1 に落ちない（probe_liftplant.py）
+`Lift1 ((0,v,z)::graft R y) t = (0,v+t,z) :: graft (ltail v z R t) y↑` の
+y↑ は **coneV マスク**（y の全 le1-祖先が entry1 > v）であり、
+- y の根 entry1 ≤ v なら y↑ = y（違反 0/369920 — 既知の (B)）
+- y の根 entry1 > v でも y↑ ≠ Lift1 y t（**違反 100664/222 千**、
+  最小反例 y=[(0,1,0),(1,1,0)], v=0: 第2列は y の錐外だが複合では錐内）
+⟹ 「リフトを graft の中へ押し込む」経路は**閉じた**。CoreLift は
+リフト言語の最小形として残る（(e)-壁の純粋形）。
+
+### γ' も同じ形に落ちる（設計、未 Lean 化）
+`gcopies_succ_shift`（d1=0, Core.lean:3658）は
+`gcopies (n+1) = gcopy 0 ++ shiftr01 d0 0 (gcopies n)` であり、
+`graft E X = E.dropLast ++ shiftr01 (entry E 0 last) 0 X` と同型:
+**E := 再基底化した窓（ブロック列を含む末尾つき）** を取れば
+`gcopies (n+1) = graft E (gcopies n)` ⟹ `tow_mem_GX` と同じ帰納で
+**CoreBlockedElt ⟸ `E.dropLast ∈ GX`**。さらに
+`E.dropLast = graft Msuf (Y.dropLast)`（Msuf = M の p 以降の再基底化接尾辞）
+なので `gx_graft` で **CoreBlockedElt ⟸ `Msuf.dropLast ∈ GX`**。
+（srow=2 のガード付きコピーは d1>0 なので `CoreLift` を経由する。）
+
+### ⟹ 残差の統一像
+すべての核が「**文脈の断片が GX に入るか**」に収束する:
+- 植え付き接頭辞 peel `(0,v,z)::M.dropLast`（α/β）
+- 再基底化接尾辞 `Msuf.dropLast`（γ'）
++ リフト閉包 `CoreLift`。
+これは「良い文脈クラス 𝒞（接頭辞・接尾辞・graft・断片 ∈ GX で閉じる）を
+パラメータとして機械を回し、最後に 𝒞 を構成する」設計に一致する
+（𝒞 をパラメータにすれば GX の定義に GX が負の位置で現れる問題は起きない）。
+𝒞 の構成が MASTER 長さ帰納（`mem_of_Aclosed_aux`）の仕事。
+
 ## 1.9.8 ★ α の残差解析（v0.109-110）— 整列供給 ✓ / 非整列 = (e)-壁の最終形
 （→ 1.9.9 で解決済み。以下は経緯の記録）
 
@@ -300,20 +352,18 @@ S.dropLast の接尾辞 ++ shift Y にまたがるコピー。処理候補: 文�
 自身の Aop データ/Wstar2-導出を持たせ（CTX を「装備付き文脈」にする）、
 ブロック済み展開を S-側データと Y-側データの合成として導出する。
 
-## 4. 実行順序（推奨・2026-08-05 深夜3 改訂）
+## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
-2. **CoreT2EStep ⟸ e ∈ GX の形状還元を Lean 化**（§1.9.7 の
-   plumbing: take_graft_high + graft_assoc + ctxOK_graft。
-   `coreT2EStep_of_WleGX : (W (…) ⊆ GX) → CoreT2EStep` の形で
-   sorry なしに書ける — 自己参照はまだ解かない）
-3. γ' (CoreBlocked): 降下後 Y'-義務のデータ変換（文脈長降下は確保済み）
-4. α (CoreT1L): E-測度（v-ヘッドルーム; §1.12 で孤児 = 植えた根と確定）
-5. **層化測度の設計**（§1.12 の provenance 構造を Lean の測度に翻訳 —
-   相互参照 {cores ↔ W_le_GX} の joint wf）
-6. `mem_of_Aclosed_aux` の Wstar2 への再配線 + Final.lean 差し替え
-
-（δ = レベルキャップ簿記は γ の「空性→処理」転換により不要見込み。）
+2. ✅ スライス装備で α 残差消滅（§1.9.9）
+3. ✅ **接ぎ木閉包で自己参照消滅**（§1.9.10, v0.114）
+4. γ' を新形に還元（`gcopies = graft E (gcopies n)` の Lean 化 →
+   CoreBlockedElt ⟸ Msuf.dropLast ∈ GX、CoreBlocked0 は p=0 の shift 形）
+5. **文脈クラス 𝒞 のパラメータ化**（GX を 𝒞 で添字づけ、核の仮定を
+   「𝒞 の断片が GX𝒞 に入る」に統一）
+6. `CoreLift`（GX のリフト閉包）: 唯一残るリフト言語。ここだけは
+   probe 先行（既存 6 変種の反証を踏まえた形の探索）
+7. 𝒞 の構成 = `mem_of_Aclosed_aux` の Wstar2/GX への再配線 + Final.lean 差し替え
 
 ## 5. 却下済み経路（再挑戦禁止; 詳細は memory）
 

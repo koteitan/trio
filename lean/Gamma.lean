@@ -398,6 +398,20 @@ def CoreLiftPlant : Prop :=
     CtxOK M v z → D ∈ GX → based D → ∀ t : ℕ,
       Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX
 
+/-- **The lift-closure core**: the machine's set is closed under the intrinsic
+row-1 lift.  (The composite lift does *not* push through a graft as the
+argument's own `Lift1` — `probe_liftplant` refutes that — so this is a genuine
+residue, the purest form of the (e)-wall.) -/
+def CoreLift : Prop :=
+  ∀ y : TrioSeq, y ∈ GX → based y → ∀ t : ℕ, Lift1 y t ∈ GX
+
+/-- **The planted-context core**: the ambient context's own peel, with a
+planted root, is in the machine's set.  This is a pure *context*-side statement
+(no element data) — the master length induction's job. -/
+def CorePlantCtx : Prop :=
+  ∀ M : TrioSeq, argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) ∈ GX
+
 /-- **The unlifted plant is free**: given the context's own planted peel
 (`(0,v,z) :: M.dropLast ∈ GX`), grafting any `GX`-datum keeps the planted block
 in `GX`. -/
@@ -408,6 +422,13 @@ theorem plantCtx_graft {M D : TrioSeq} {v z : ℕ} (hMne : M ≠ [])
   rw [← graft_cons hMne]
   refine gx_graft (by simp) (based_cons v z M) ?_ hD hbD
   rwa [dropLast_cons hMne]
+
+/-- **The lifted-plant core splits**: lift-closure plus the planted context. -/
+theorem coreLiftPlant_of (hl : CoreLift) (hp : CorePlantCtx) : CoreLiftPlant := by
+  intro M D hMarg hM2 v z hz1 hctx hD hbD t
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  exact hl _ (plantCtx_graft hMne (hp M hMarg hM2 v z hz1 hctx) hD hbD)
+    (based_cons v z _) t
 
 /-- **The γ'-residue, element form**: the descended copies block is in the
 machine's set (independent of the ambient root `(v, z, t)`). -/
@@ -864,5 +885,12 @@ theorem GX_loop (he : CoreBlockedElt) (h0 : CoreBlocked0)
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
   GX_closed (coreBlocked_of_elt he h0) (coreT1L_of_plant hlp)
     (coreT2E_of_plant hlp)
+
+/-- **The assembly loop, split form**: the machine's closure consumes only the
+γ'-cores, the lift-closure of `GX`, and the planted context. -/
+theorem GX_loop' (he : CoreBlockedElt) (h0 : CoreBlocked0) (hl : CoreLift)
+    (hp : CorePlantCtx) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
+  GX_loop he h0 (coreLiftPlant_of hl hp)
 
 end TRIO

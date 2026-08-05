@@ -1,17 +1,11 @@
-v0.114.0/graft closure kills the machine's self-reference
+v0.114.1/split the lifted-plant core and record the new architecture
 
-- Add gx_take (GX is prefix-closed) and gx_graft (GX is closed under
-  grafting: the composite's prefixes split into the head block's strict
-  prefixes and the argument's obligations over the equipped composite
-  context)
-- Add tow_mem_GX: by graft_cons the tower is iterated grafting into its
-  own principal block, so the planted peel (0,v,z)::R.dropLast carries
-  every tower element
-- Introduce CoreLiftPlant (the lifted planted block stays in GX) and
-  plantCtx_graft (its unlifted case is free from the context's own
-  planted peel)
-- Re-derive alpha (coreT1L_of_plant) and beta (coreT2EFam_of_plant,
-  coreT2E_of_plant) from CoreLiftPlant; delete CoreT2EStep and the
-  W-subset-GX reductions
-- GX_loop now rests on CoreBlockedElt + CoreBlocked0 + CoreLiftPlant:
-  the unbounded self-reference (all sigma, W sigma subset GX) is gone
+- Split CoreLiftPlant into CoreLift (GX is closed under the intrinsic
+  row-1 lift) and CorePlantCtx (the context's planted peel is in GX),
+  wired by coreLiftPlant_of and GX_loop'
+- Record in GRAFTALL-PLAN 1.9.10: the graft-closure design, the
+  probe_liftplant refutation (the composite lift acts through the coneV
+  mask, not the argument's own Lift1), the gamma' reduction sketch
+  (gcopies = graft E (gcopies n)) and the unified residue picture
+  (context pieces in GX + lift closure)
+- Revise the execution order and task.md to the new residue list
