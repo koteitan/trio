@@ -1,13 +1,17 @@
-v0.113.0/slice equipment dissolves the alpha residue (CtxLiftT1 deleted)
+v0.114.0/graft closure kills the machine's self-reference
 
-- Re-scope CtxOK to the ambient (v,z)-slice (CtxOK M v z) and pair each
-  GX obligation with slice equipment only (the 7th design: obligation
-  quantifiers, not lift languages - audited against every consumption
-  site in the closure proofs)
-- Add ctxOK_ltail: the lifted composite context's slice at the lifted
-  root (v+t, z) is synthesized from the context's (v,z)-slice and the
-  peel's prefix obligations, via Lift1_Lift1 + ltail_take
-- coreT1L_of_le now needs only the machine inclusion: CtxLiftT1 DELETED
-- Narrow CoreT2EFam's conclusion to the slice packages; adapt all cores,
-  ctxOK_graft, nil_mem_GX, GX_closed, graftAll_of_GX
-- GX_loop rests on CoreBlockedElt + CoreBlocked0 + W subset GX only
+- Add gx_take (GX is prefix-closed) and gx_graft (GX is closed under
+  grafting: the composite's prefixes split into the head block's strict
+  prefixes and the argument's obligations over the equipped composite
+  context)
+- Add tow_mem_GX: by graft_cons the tower is iterated grafting into its
+  own principal block, so the planted peel (0,v,z)::R.dropLast carries
+  every tower element
+- Introduce CoreLiftPlant (the lifted planted block stays in GX) and
+  plantCtx_graft (its unlifted case is free from the context's own
+  planted peel)
+- Re-derive alpha (coreT1L_of_plant) and beta (coreT2EFam_of_plant,
+  coreT2E_of_plant) from CoreLiftPlant; delete CoreT2EStep and the
+  W-subset-GX reductions
+- GX_loop now rests on CoreBlockedElt + CoreBlocked0 + CoreLiftPlant:
+  the unbounded self-reference (all sigma, W sigma subset GX) is gone

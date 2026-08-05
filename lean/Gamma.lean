@@ -319,6 +319,96 @@ theorem ctxOK_ltail {M Y : TrioSeq} {v z t : ℕ} (hMarg : argOK M)
       (by omega)
     rwa [dropLast_take (by omega)] at hres
 
+/-! ## `GX` の閉包則（接頭辞・接ぎ木・塔）
+
+The machine's set is closed under prefixes and under grafting.  The graft
+closure is what makes a whole `tow`-tower ride on its own peel block: by
+`graft_cons` the tower is *iterated grafting into the principal block*,
+`tow v z R (k+1) = graft ((0,v,z) :: R) (tow v z R k)`, so
+`(0, v, z) :: R.dropLast ∈ GX` already carries every tower element.  This
+replaces the machine's unbounded self-reference (`∀ σ, W σ ⊆ GX`) — the towers
+never need foreign `W`-elements, only their own peel. -/
+
+theorem nil_mem_GX : ([] : TrioSeq) ∈ GX := by
+  intro _ M _ hM2 v z _ hctx i _ a t hva
+  rw [List.take_nil, graft_nil, List.dropLast_eq_take]
+  exact hctx (M.length - 1) (by omega) a t hva
+
+/-- `GX` is prefix-closed: its obligations already range over all prefixes. -/
+theorem gx_take {y : TrioSeq} (h : y ∈ GX) (j : ℕ) : y.take j ∈ GX := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj
+  · rw [List.take_zero]
+    exact nil_mem_GX
+  · intro hb M hMarg hM2 v z hz1 hctx i hi a t hva
+    have hby : based y := by
+      unfold based at hb ⊢
+      rwa [Wset.entry_take (X := y) (l := j) (i := 0) (j := 0) hj] at hb
+    have hiy : i ≤ y.length :=
+      le_trans hi (by rw [List.length_take]; omega)
+    rw [List.take_take]
+    exact h hby M hMarg hM2 v z hz1 hctx (min i j)
+      (le_trans (Nat.min_le_left i j) hiy) a t hva
+
+/-- **`GX` is closed under grafting**: the composite's prefix obligations split
+into the head block's strict prefixes (supplied by `E.dropLast ∈ GX`) and the
+argument's obligations over the equipped composite context `graft M E`
+(`ctxOK_graft` + `graft_assoc`). -/
+theorem gx_graft {E w : TrioSeq} (hEne : E ≠ []) (hbE : based E)
+    (hEd : E.dropLast ∈ GX) (hw : w ∈ GX) (hbw : based w) :
+    graft E w ∈ GX := by
+  intro _ M hMarg hM2 v z hz1 hctx i hi a t hva
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hElen : 0 < E.length := List.length_pos_iff.mpr hEne
+  rw [graft_length] at hi
+  by_cases hlow : i ≤ E.length - 1
+  · rw [take_graft_low hlow]
+    have hres := hEd (based_dropLast hbE) M hMarg hM2 v z hz1 hctx i
+      (by rw [List.length_dropLast]; omega) a t hva
+    rwa [dropLast_take hlow] at hres
+  · obtain ⟨j, rfl⟩ : ∃ j, i = E.length - 1 + j :=
+      ⟨i - (E.length - 1), by omega⟩
+    rw [take_graft_high, ← graft_assoc hEne]
+    exact hw hbw (graft M E) (argOK_graft hMne hMarg E)
+      (by rw [graft_length]; omega) v z hz1
+      (ctxOK_graft hMarg hM2 hz1 hctx hEd hbE) j (by omega) a t hva
+
+/-- **The tower rides on its peel block**: every element of the `tow` tower over
+`R` is in `GX` as soon as the planted peel block is. -/
+theorem tow_mem_GX {R : TrioSeq} {v z : ℕ} (hRne : R ≠ [])
+    (hT : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ GX) :
+    ∀ k, Wset.tow v z R k ∈ GX := by
+  intro k
+  induction k with
+  | zero => simpa [Wset.tow] using nil_mem_GX
+  | succ k ih =>
+      have heq : Wset.tow v z R (k + 1)
+          = graft (((0, v, z) : ℕ × ℕ × ℕ) :: R) (Wset.tow v z R k) := by
+        rw [graft_cons hRne]
+        rfl
+      rw [heq]
+      refine gx_graft (by simp) (based_cons v z R) ?_ ih (Wset.based_tow v z R k)
+      rwa [dropLast_cons hRne]
+
+/-- **The lifted-plant core**: a planted principal block over an equipped
+context, lifted, is again in the machine's set.  At `t = 0` this is
+`gx_graft` applied to the context's own planted peel (`plantCtx_graft`); the
+lift is the residual content. -/
+def CoreLiftPlant : Prop :=
+  ∀ (M D : TrioSeq), argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 →
+    CtxOK M v z → D ∈ GX → based D → ∀ t : ℕ,
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX
+
+/-- **The unlifted plant is free**: given the context's own planted peel
+(`(0,v,z) :: M.dropLast ∈ GX`), grafting any `GX`-datum keeps the planted block
+in `GX`. -/
+theorem plantCtx_graft {M D : TrioSeq} {v z : ℕ} (hMne : M ≠ [])
+    (hp : (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) ∈ GX)
+    (hD : D ∈ GX) (hbD : based D) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) ∈ GX := by
+  rw [← graft_cons hMne]
+  refine gx_graft (by simp) (based_cons v z M) ?_ hD hbD
+  rwa [dropLast_cons hMne]
+
 /-- **The γ'-residue, element form**: the descended copies block is in the
 machine's set (independent of the ambient root `(v, z, t)`). -/
 def CoreBlockedElt : Prop :=
@@ -397,31 +487,11 @@ theorem coreBlocked_of_elt (he : CoreBlockedElt) (h0 : CoreBlocked0) :
     exact GX_full helt hbe (argOK_take hMarg (p + 1)) htk2
       (ctxOK_take hctx (p + 1)) hz1 hva
 
-/-- **Core β, single-step form**: at a β-site (the argument's dead trailing
-orphan `(w0, w1, w2)` revived by the root via row 2), grafting any `W`-element
-at the sub-orphan stage `2*w1 + z` onto the argument lands in `GX`.  Since
-`z < w2` at the site, this stage sits strictly below the orphan level
-`lev = 2*w1 + w2` — the structural source of the probe's `t2 → t2` descent. -/
-def CoreT2EStep : Prop :=
-  ∀ (u : ℕ) (Y M : TrioSeq),
-    (∀ n, 1 ≤ n → Y⟦n⟧ ∈ GX) → based Y → Y ≠ [] →
-    argOK M → 2 ≤ M.length →
-    srow (graft M Y) ((graft M Y).length - 1) = 2 →
-    (∃ m, domT (graft M Y) m) →
-    ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
-      hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft M Y)
-        (srow (graft M Y) ((graft M Y).length - 1)) (graft M Y).length →
-      ∀ e : TrioSeq,
-        e ∈ W (2 * entry (graft M Y) 1 ((graft M Y).length - 1) + z) →
-        based e → graft Y e ∈ GX
-
-/-- **The family core reduces to the single-step core**: induction on the copy
-index.  The base is the peel of the clause-2 datum (`Y.dropLast ∈ GX`, or the
-context package when `Y` is a singleton); at the step, the previous obligation's
-own `Wstar2` package puts the next tower element in `W (2*w1 + z)`, and the
-step core re-expresses its graft through `graft_assoc` over the equipped
-context. -/
-theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
+/-- **The family core from the lifted-plant core**: the row-2 tower's elements
+are exactly the lifted planted blocks `Lift1 (Nb⟦j⟧) d1` over the equipped
+composite context, so the copy-index induction stays inside `GX` — no foreign
+`W`-elements and no self-reference. -/
+theorem coreT2EFam_of_plant (hlp : CoreLiftPlant) : CoreT2EFam := by
   classical
   intro u Y M hop hbased hy hMarg hM2 hs2 hdG v z hz1 hctx hpN
   obtain ⟨m, hdm⟩ := hdG
@@ -432,6 +502,28 @@ theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
   have hR : argOK (graft M Y) := argOK_graft hMne hMarg Y
   have hRne : graft M Y ≠ [] :=
     List.length_pos_iff.mp (by rw [graft_length]; omega)
+  have hR2 : 2 ≤ (graft M Y).length := by rw [graft_length]; omega
+  have hYd : Y.dropLast ∈ GX := by
+    by_cases hY2 : 2 ≤ Y.length
+    · have hYL : Y.length - 1 ≠ 0 := by omega
+      have hpred : Y⟦1⟧ = Y.dropLast := by
+        have hee : Y⟦1⟧ = Pred Y := by
+          by_cases hz0 : entry Y 0 (Y.length - 1) = 0 ∧
+              entry Y 1 (Y.length - 1) = 0 ∧ entry Y 2 (Y.length - 1) = 0
+          · exact oper_eq_pred_of_zero 1 hYL hz0
+          · exact oper_eq_pred_of_noParent 1 hYL hz0 hpY
+        rw [hee]
+        unfold Pred
+        rw [if_neg (by omega)]
+      have hh := hop 1 le_rfl
+      rwa [hpred] at hh
+    · have hYd0 : Y.dropLast = [] := by
+        rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
+        rfl
+      rw [hYd0]
+      exact nil_mem_GX
+  have hctxR : CtxOK (graft M Y) v z :=
+    ctxOK_graft hMarg hM2 hz1 hctx hYd hbased
   set R : TrioSeq := graft M Y with hRdef
   set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
   set Nb : TrioSeq := p0 :: R with hNdef
@@ -453,20 +545,7 @@ theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
     rw [hsrN, hNlen]
     have := parent_cons_eq_zero (v := v) (z := z) hRne hdm hpN
     rwa [hs2] at this
-  have hroot1 : entry Nb 1 0 = v := by rw [hNdef]; simp [entry, hp0]
-  have hnr := parent_nextR hpN'
-  rw [hpar0, hsrN] at hnr
-  have hn2 : nextrel2 Nb 0 (Nb.length - 1) := by
-    unfold nextR at hnr
-    rw [if_neg (by omega), if_neg (by omega)] at hnr
-    exact hnr
-  have hle1lp : le1 Nb 0 (Nb.length - 1) := hn2.2.2.2.2.1
-  have hwv : v < entry R 1 (R.length - 1) := by
-    have := le1_entry1_lt hle1lp (by omega)
-    rw [hroot1, hNlen, hE 1] at this
-    exact this
   set d1 : ℕ := entry R 1 (R.length - 1) - v with hd1
-  have hvd1 : v + d1 = entry R 1 (R.length - 1) := by omega
   have hN0 : Nb⟦0⟧ = [] := by
     rw [oper_gcopies 0 hL hzz hpN', hpar0]
     simp [gcopies]
@@ -474,123 +553,36 @@ theorem coreT2EFam_of_step (hs : CoreT2EStep) : CoreT2EFam := by
     intro i
     rw [hd1]
     exact oper_cons_tower2 hR hRne hdm hs2 hpN
-  intro j
-  induction j with
-  | zero =>
-      rw [hN0, Lift1_nil, graft_nil, hRdef, graft_dropLast hy]
-      by_cases hY2 : 2 ≤ Y.length
-      · have hYL : Y.length - 1 ≠ 0 := by omega
-        have hpred : Y⟦1⟧ = Y.dropLast := by
-          have he : Y⟦1⟧ = Pred Y := by
-            by_cases hz0 : entry Y 0 (Y.length - 1) = 0 ∧
-                entry Y 1 (Y.length - 1) = 0 ∧ entry Y 2 (Y.length - 1) = 0
-            · exact oper_eq_pred_of_zero 1 hYL hz0
-            · exact oper_eq_pred_of_noParent 1 hYL hz0 hpY
-          rw [he]
-          unfold Pred
-          rw [if_neg (by omega)]
-        have hYd : Y.dropLast ∈ GX := by
-          have h := hop 1 le_rfl
-          rwa [hpred] at h
-        exact fun hargOK a' s ha =>
-          GX_full hYd (based_dropLast hbased) hMarg hM2 hctx hz1 ha
-      · have hYd : Y.dropLast = [] := by
-          rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
-          rfl
-        rw [hYd, graft_nil]
-        intro hargOK a' s ha
-        rw [List.dropLast_eq_take]
-        exact hctx (M.length - 1) (by omega) a' s ha
-  | succ i ih =>
-      rw [hstep i]
-      set Oj : TrioSeq := graft R (Lift1 (Nb⟦i⟧) d1) with hOj
-      have hOarg : argOK Oj := argOK_graft hRne hR _
-      have he : Lift1 (p0 :: Oj) d1 ∈ W (2 * (v + d1) + z) :=
-        ih hOarg (2 * (v + d1) + z) d1 (le_refl _)
-      have he' : Lift1 (p0 :: Oj) d1 ∈ W (2 * entry R 1 (R.length - 1) + z) := by
-        rwa [hvd1] at he
-      have hbe : based (Lift1 (p0 :: Oj) d1) :=
-        based_Lift1 d1 (by simp [based, entry, hp0])
-      have hgYe : graft Y (Lift1 (p0 :: Oj) d1) ∈ GX :=
-        hs u Y M hop hbased hy hMarg hM2 hs2 ⟨m, hdm⟩ v z hz1 hctx hpN _ he' hbe
-      intro hargOK a' s ha
-      have hb2 : based (graft Y (Lift1 (p0 :: Oj) d1)) :=
-        based_graft_arg hy hbased hbe
-      have hres := GX_full hgYe hb2 hMarg hM2 hctx hz1 ha
-      rw [← graft_assoc hy] at hres
-      exact hres
+  have hbNb : ∀ j, based (Nb⟦j⟧) := by
+    intro j
+    rcases Nat.eq_zero_or_pos j with rfl | hj
+    · rw [hN0]; exact based_nil
+    · exact based_oper hj (by rw [hNdef]; exact based_cons v z R)
+  -- the tower's elements never leave `GX`
+  have hfam : ∀ j, Lift1 (Nb⟦j⟧) d1 ∈ GX := by
+    intro j
+    induction j with
+    | zero =>
+        rw [hN0, Lift1_nil]
+        exact nil_mem_GX
+    | succ i ih =>
+        rw [hstep i]
+        exact hlp R (Lift1 (Nb⟦i⟧) d1) hR hR2 v z hz1 hctxR ih
+          (based_Lift1 d1 (hbNb i)) d1
+  intro j _ a s ha
+  exact GX_full (hfam j) (based_Lift1 d1 (hbNb j)) hR hR2 hctxR hz1 ha
 
-/-- Direct wiring: the single-step core suffices for β. -/
-theorem coreT2E_of_step (hs : CoreT2EStep) : CoreT2E :=
-  coreT2E_of_fam (coreT2EFam_of_step hs)
-
-theorem nil_mem_GX : ([] : TrioSeq) ∈ GX := by
-  intro _ M _ hM2 v z _ hctx i _ a t hva
-  rw [List.take_nil, graft_nil, List.dropLast_eq_take]
-  exact hctx (M.length - 1) (by omega) a t hva
-
-/-- **The shape-complete reduction of β**: the single-step core follows
-outright from the machine's own inclusion `W ⊆ GX` — the composite's full and
-prefix obligations all route through the equipped composite context
-(`ctxOK_graft` + `take_graft_low/high` + `graft_assoc`).  The sole remaining
-content of β is well-founding this self-reference. -/
-theorem coreT2EStep_of_le (h : ∀ σ : ℕ, W σ ⊆ GX) : CoreT2EStep := by
-  classical
-  intro u Y M hop hbased hy hMarg hM2 hs2 hdG v z hz1 hctx hpN e he hbe
-  obtain ⟨m, hdm⟩ := hdG
-  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
-  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
-  have hpY : ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) :=
-    fun hp => hdm.2 (hasParent_graft_inner hMne hy hp)
-  have heGX : e ∈ GX := h _ he
-  have hYd : Y.dropLast ∈ GX := by
-    by_cases hY2 : 2 ≤ Y.length
-    · have hYL : Y.length - 1 ≠ 0 := by omega
-      have hpred : Y⟦1⟧ = Y.dropLast := by
-        have hee : Y⟦1⟧ = Pred Y := by
-          by_cases hz0 : entry Y 0 (Y.length - 1) = 0 ∧
-              entry Y 1 (Y.length - 1) = 0 ∧ entry Y 2 (Y.length - 1) = 0
-          · exact oper_eq_pred_of_zero 1 hYL hz0
-          · exact oper_eq_pred_of_noParent 1 hYL hz0 hpY
-        rw [hee]
-        unfold Pred
-        rw [if_neg (by omega)]
-      have hh := hop 1 le_rfl
-      rwa [hpred] at hh
-    · have hYd0 : Y.dropLast = [] := by
-        rw [List.dropLast_eq_take, show Y.length - 1 = 0 from by omega]
-        rfl
-      rw [hYd0]
-      exact nil_mem_GX
-  intro hbge M' hM'arg hM'2 v' z' hz' hctx' i hi a' t' ha'
-  have hM'ne : M' ≠ [] := List.length_pos_iff.mp (by omega)
-  rw [graft_length] at hi
-  rcases Nat.lt_or_ge i Y.length with hiY | hiY
-  · -- a prefix of the context part: the peel's own prefix obligation
-    rw [take_graft_low (by omega)]
-    have hres := hYd (based_dropLast hbased) M' hM'arg hM'2 v' z' hz' hctx' i
-      (by rw [List.length_dropLast]; omega) a' t' ha'
-    rwa [dropLast_take (by omega)] at hres
-  · -- at or above the graft point: the element's prefix obligation over the
-    -- equipped composite context
-    have hSarg : argOK (graft M' Y) := argOK_graft hM'ne hM'arg Y
-    have hS2 : 2 ≤ (graft M' Y).length := by rw [graft_length]; omega
-    have hSctx : CtxOK (graft M' Y) v' z' :=
-      ctxOK_graft hM'arg hM'2 hz' hctx' hYd hbased
-    have hres := heGX hbe (graft M' Y) hSarg hS2 v' z' hz' hSctx
-      (i - (Y.length - 1)) (by omega) a' t' ha'
-    rw [graft_assoc hy] at hres
-    rw [show i = Y.length - 1 + (i - (Y.length - 1)) from by omega,
-      take_graft_high]
-    exact hres
+/-- Direct wiring: the lifted-plant core suffices for β. -/
+theorem coreT2E_of_plant (hlp : CoreLiftPlant) : CoreT2E :=
+  coreT2E_of_fam (coreT2EFam_of_plant hlp)
 
 open Classical in
-/-- **α reduces to the machine's own inclusion**: the lifted block is a
-root-parented row-1 tower over the lifted composite context at stage `m + 2t`;
-its closure obligations route through `GX` at that context, whose slice
-equipment at the lifted root is synthesized by `ctxOK_ltail` — the stage is
-free because the packages are stage-quantified. -/
-theorem coreT1L_of_le (h : ∀ σ : ℕ, W σ ⊆ GX) : CoreT1L := by
+/-- **α reduces to the lifted-plant core**: the lifted block is a
+root-parented row-1 tower over the lifted composite context, and the tower is
+iterated grafting into its own principal block (`tow_mem_GX`), so the whole
+tower is carried by the lifted planted peel `Lift1 ((0,v,z) :: graft M Y↓) t`
+— no `W`-data at the raised stage `m + 2t` is needed. -/
+theorem coreT1L_of_plant (hlp : CoreLiftPlant) : CoreT1L := by
   classical
   intro u Y M AY hbased hy hMarg hM2 hs1 hdG v z hz1 hctx a t hva hpN
   obtain ⟨m, hd⟩ := hdG
@@ -664,15 +656,20 @@ theorem coreT1L_of_le (h : ∀ σ : ℕ, W σ ⊆ GX) : CoreT1L := by
   have hRt2 : 2 ≤ Rt.length := by rw [hRtlen]; exact hR2
   have hctxRt : CtxOK Rt (v + t) z :=
     ctxOK_ltail hMarg hM2 hz1 hctx hYd hbased
-  have hgr : ∀ y' ∈ W (m + 2 * t), based y' → argOK (graft Rt y') →
-      ∀ a' : ℕ, 2 * (v + t) + z ≤ a' →
-      Lift1 (((0, v + t, z) : ℕ × ℕ × ℕ) :: graft Rt y') 0 ∈ W a' := by
-    intro y' hy' hb hargOK a' ha'
-    exact GX_full (h _ hy') hb hRtOK hRt2 hctxRt hz1 (by omega)
+  -- the lifted planted peel block carries the whole tower
+  have hTplant : (((0, v + t, z) : ℕ × ℕ × ℕ) :: Rt.dropLast) ∈ GX := by
+    rw [hRtdef, Wset.ltail_dropLast, hRdef, graft_dropLast hy]
+    exact hlp M Y.dropLast hMarg hM2 v z hz1 hctx hYd (based_dropLast hbased) t
+  have hTow : ∀ k, Wset.tow (v + t) z Rt k ∈ GX := tow_mem_GX hRtne hTplant
   refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
   rw [hNbdef, Wset.lift_cons, ← hRtdef,
     oper_cons_tower1 hRtOK hRtne hdRt hsrRt hpMt]
-  exact tower1_mem2 hRtOK hRtne hz1 hva hdRt hsrRt hgr hpMt n
+  rcases n with _ | k
+  · simpa [Wset.tow] using W_nil a
+  · have hres := GX_full (hTow k) (Wset.based_tow (v + t) z Rt k) hRtOK hRt2
+      hctxRt hz1 (t := 0) (by omega)
+    rw [Lift1_zero] at hres
+    exact hres
 
 open Classical in
 /-- **The GX machine closes** modulo the three cores. -/
@@ -863,9 +860,9 @@ self-reference — with the provenance descent measured in `probe_strat`
 (β-orphans = context material, position non-increasing; α-orphans = planted
 roots, stage-bounded) — is the single remaining task of the campaign. -/
 theorem GX_loop (he : CoreBlockedElt) (h0 : CoreBlocked0)
-    (h : ∀ σ : ℕ, W σ ⊆ GX) :
+    (hlp : CoreLiftPlant) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
-  GX_closed (coreBlocked_of_elt he h0) (coreT1L_of_le h)
-    (coreT2E_of_step (coreT2EStep_of_le h))
+  GX_closed (coreBlocked_of_elt he h0) (coreT1L_of_plant hlp)
+    (coreT2E_of_plant hlp)
 
 end TRIO
