@@ -1985,6 +1985,58 @@ CoreCap : ∀ M, argOK M → 1 ≤ |M| → ∀ v z, z ≤ 1 → CtxOK M v z →
   `tow v z M k` が `W` package」だけ
 * γ' 分岐は文脈が `M.take (p+1)` に**真に短くなる**（唯一の長さ降下）
 
+## 1.9.46 ⛔★★★★★ v0.118.56: `InfEquip` は**偽**だった／残核は 1 本になった
+
+### 反例（Lean で機械検査済み: `Infcex.not_infEquip`, sorry 0）
+
+`InfEquip` の結論には `entry M 2 p ≤ 1` が含まれるが、これは
+`argOK M`（行 0 が正、という条件）からも装備 `CtxOK M v z` からも**出ない**。
+
+```
+M = [(1,0,2),(2,0,0)],  p = 0,  根 (v,z) = (0,0)
+  argOK M ✓（深さ 1, 2 > 0）    窓条件 entry M 0 0 = 1 < 2 = entry M 0 1 ✓
+  CtxOK M 0 0 ✓ — 接頭辞は [] と [(1,0,2)] だけで、リフト像は
+      [(0,t,0)]（Om_mem_W）と [(0,t,0),(1,0,2)]
+    後者の末尾列 (1,0,2) は行 1 が増えないため行 1 の祖先を持たず、
+    UBI により行 2 の親も持たない ⟹ oper = Pred ⟹ 節 2 で W a に入る
+  しかし entry M 2 0 = 2 > 1
+```
+
+⟹ `InfEquip` を仮定していた頂点定理（`TRIO_terminates_of_plant` /
+`_of_plant0` / `_of_singleton` / 旧 `_of_cap`）は**すべて空虚**だった。
+`coreCtxSuffixLift_of_plantctx` / `graftAll_of_plant` / `GX_loop_plant` /
+`W_le_Wstar2s_of_plant` も同様。Final.lean から撤去済み、Gamma.lean の
+`InfEquip` に ⛔ 注記を付けた。
+
+### 正しい置き換え（Lind.lean, これで残核は 1 本）
+
+`CoreCtxSuffixLift` の結論も `CorePlantCtxLift` の結論も
+「**基づく列が `GX` に入る**」だけなので、長さ帰納 `mem_GX_of_core` が直撃する:
+
+```
+corePlantCtxLift_of_core   : CoreSingleton → CorePlantCtxLift
+coreCtxSuffixLift_of_core  : CoreSingleton → CoreCtxSuffixLift
+coreSingleton_of_cores     : CoreCtxSuffixLift → CorePlantCtxLift → CoreSingleton （無回帰）
+
+wf_olt_ST_TS_of_core / TRIO_terminates_of_core : CoreSingleton → WellFounded stepRel
+TRIO_terminates_of_cap                          : CoreCap → WellFounded stepRel
+  #print axioms = [propext, Classical.choice, Quot.sound]、sorry 0、build 784
+```
+
+⟹ **トリオ停止性の残核は `CoreCap` ただ 1 本**（純 `W` レベル、`GX` 無し、
+リフト量詞は §1.9.43 の吸収で落ちる）:
+
+```
+CoreCap : 装備つき文脈 M（根 (v,z), z ≤ 1）の末尾列の添字を任意の (b,c) に
+          差し替えても Lift1 ((0,v,z) :: cap M b c) t は W a に入る
+```
+
+### 教訓（memory soundness-discipline に追記）
+
+**核を新設したら、その核が真であることを（小さな具体例で）必ず検査する。**
+`InfEquip` は「装備クラスの性質」に見えたが、`z<2` 断片の条件を装備から
+導けると暗黙に仮定していた。`argOK` は**行 0 の条件だけ**である。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

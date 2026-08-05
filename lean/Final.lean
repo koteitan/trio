@@ -89,64 +89,44 @@ theorem no_infinite_expansion_of_cores (hsl : CoreCtxSuffixLift)
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_cores hsl hp))
 
-/-- **Well-foundedness from one `GX`-core plus the `W`-level infix
-equipment.** -/
-theorem wf_olt_ST_TS_of_plant (hie : InfEquip) (hp : CorePlantCtxLift) :
+/-! ### ⛔ 旧 `InfEquip` 経路は撤去（`InfEquip` は偽: `Infcex.not_infEquip`）
+
+`InfEquip` は結論に `entry M 2 p ≤ 1` を含むが、これは `argOK`（行 0 の条件）
+からも装備 `CtxOK` からも出ない（反例 `M = [(1,0,2),(2,0,0)]`）。したがって
+`InfEquip` を仮定していた頂点定理はすべて空虚なので削除した。
+代わりに、**単元核 `CoreSingleton` ひとつ**から 2 本の文脈核が直接出る
+（`Lind.corePlantCtxLift_of_core` / `Lind.coreCtxSuffixLift_of_core`）。 -/
+
+/-- **Well-foundedness of `olt` on standard forms, from the ONE-COLUMN core.**
+Both context cores are `GX`-membership of *based* sequences, which the length
+induction supplies from `[(0,b,c)] ∈ GX` alone. -/
+theorem wf_olt_ST_TS_of_core (hs : CoreSingleton) :
     WellFounded
       (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
-  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar2s) Wset.Wstar2s_le_Wstar
-    (fun u0 R hR => Wstar2s_closed_of_graftAll (graftAll_of_plant hie hp) u0 R hR)
-    (fun hM hN h => trio_cofinality hM hN h)
+  wf_olt_ST_TS_of_cores (coreCtxSuffixLift_of_core hs) (corePlantCtxLift_of_core hs)
 
-/-- **Trio sequences terminate**, modulo ONE `GX`-level core
-(`CorePlantCtxLift`) and one pure `W`-level equipment statement
-(`InfEquip`, the context's re-based infixes are themselves equipped). -/
-theorem TRIO_terminates_of_plant (hie : InfEquip) (hp : CorePlantCtxLift) :
-    WellFounded stepRel :=
-  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_plant hie hp))
-
-/-- **Trio sequences terminate**, modulo the LIFT-FREE `GX` core
-(`CorePlantCtx0`: the planted peel of an equipped context is in `GX`) plus the
-`W`-level infix equipment (`InfEquip`).  `corePlantCtxLift_of_plant0` absorbs
-the ambient lift into the context (`ltail`), so no lift quantifier survives in
-either residue. -/
-theorem TRIO_terminates_of_plant0 (hie : InfEquip) (hp : CorePlantCtx0) :
-    WellFounded stepRel :=
-  TRIO_terminates_of_plant hie (corePlantCtxLift_of_plant0 hp)
-
-/-- **Trio sequences terminate**, modulo the ONE-COLUMN core `CoreSingleton`
-(`[(0,b,c)] ∈ GX`) plus `InfEquip`.  The length induction (`Lind.lean`) rebuilds
-every based sequence from one-column blocks by `gx_graft`, so the whole `GX`
-side of the campaign rests on this single family. -/
-theorem TRIO_terminates_of_singleton (hie : InfEquip) (hs : CoreSingleton) :
-    WellFounded stepRel :=
-  TRIO_terminates_of_plant0 hie (corePlantCtx0_of_singleton hs)
-
-/-- **No infinite expansion sequence**, from the lift-free core. -/
-theorem no_infinite_expansion_of_plant0 (hie : InfEquip) (hp : CorePlantCtx0) :
-    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion
-    (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_plant hie (corePlantCtxLift_of_plant0 hp)))
+/-- **Trio sequences terminate**, modulo the single one-column core
+`CoreSingleton` (`[(0,b,c)] ∈ GX`). -/
+theorem TRIO_terminates_of_core (hs : CoreSingleton) : WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_core hs))
 
 /-- **No infinite expansion sequence**, from the one-column core. -/
-theorem no_infinite_expansion_of_singleton (hie : InfEquip) (hs : CoreSingleton) :
+theorem no_infinite_expansion_of_core (hs : CoreSingleton) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion_of_plant0 hie (corePlantCtx0_of_singleton hs)
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_core hs))
 
-/-! ### ★ 残核の最終形: `GX` を含まない 2 本の `W` レベル命題
+/-! ### ★ 残核の最終形: `GX` を含まない 1 本の `W` レベル命題
 
-`CoreCap` = 装備つき文脈の**末尾列の添字を任意に差し替えても `W` package**、
-`InfEquip` = 文脈の窓の再基底化中置が再び装備。どちらも `GX` を含まない。 -/
+`CoreCap` = 装備つき文脈の**末尾列の添字を任意に差し替えても `W` package**。 -/
 
-/-- **Trio sequences terminate**, modulo two pure `W`-level statements:
-`CoreCap` (re-capping an equipped context's last column) and `InfEquip`. -/
-theorem TRIO_terminates_of_cap (hie : InfEquip) (hc : CoreCap) :
-    WellFounded stepRel :=
-  TRIO_terminates_of_singleton hie (coreSingleton_of_cap hc)
+/-- **Trio sequences terminate**, modulo ONE pure `W`-level statement:
+`CoreCap` (re-capping an equipped context's last column). -/
+theorem TRIO_terminates_of_cap (hc : CoreCap) : WellFounded stepRel :=
+  TRIO_terminates_of_core (coreSingleton_of_cap hc)
 
-/-- **No infinite expansion sequence**, from the two `W`-level statements. -/
-theorem no_infinite_expansion_of_cap (hie : InfEquip) (hc : CoreCap) :
+/-- **No infinite expansion sequence**, from the cap statement. -/
+theorem no_infinite_expansion_of_cap (hc : CoreCap) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion_of_singleton hie (coreSingleton_of_cap hc)
+  no_infinite_expansion_of_core (coreSingleton_of_cap hc)
 
 end TRIO

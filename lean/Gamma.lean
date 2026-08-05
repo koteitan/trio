@@ -1612,7 +1612,16 @@ theorem ctxInf_graft_of_cross {M E : TrioSeq} (hMne : M ≠ []) (hEne : E ≠ []
 
 /-- **Infix equipment**: the ambient context's re-based infix, planted at its
 own root, is itself equipped — a pure `W`-level statement about the context
-(no `GX`), exactly the kind the `Wstar2s` induction supplies for prefixes. -/
+(no `GX`), exactly the kind the `Wstar2s` induction supplies for prefixes.
+
+⛔ **FALSE** (`Infcex.not_infEquip`, v0.118.56): the conjunct
+`entry M 2 p ≤ 1` follows neither from `argOK M` (a row-0 condition) nor from
+the slice equipment — witness `M = [(1,0,2),(2,0,0)]`, `p = 0`, root `(0,0)`.
+Everything downstream of it (`coreCtxSuffixLift_of_plantctx`,
+`graftAll_of_plant`, `GX_loop_plant`, `W_le_Wstar2s_of_plant`) is therefore
+VACUOUS and must not be cited.  The live replacement is
+`Lind.coreCtxSuffixLift_of_core` / `Lind.corePlantCtxLift_of_core`, which get
+both context cores from the one-column core alone. -/
 def InfEquip : Prop :=
   ∀ (M : TrioSeq) (p : ℕ), argOK M → 2 ≤ M.length → p < M.length - 1 →
     (∀ j, p < j → j ≤ M.length - 1 → entry M 0 p < entry M 0 j) →

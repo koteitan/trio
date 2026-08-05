@@ -1,10 +1,17 @@
-v0.118.55/the residue loses GX: a pure W-level cap statement
+v0.118.56/InfEquip is false; the residue drops to a single core
 
-- Add `cap` / `graft_singleton_eq_cap`: grafting a one-column datum only
-  replaces the context's last subscript
-- Add `CoreCap` with `coreSingleton_of_cap` / `cap_of_coreSingleton`, so the
-  `GX`-level singleton core is exactly the `W`-level cap statement
-- Add `TRIO_terminates_of_cap` / `no_infinite_expansion_of_cap`; both residues
-  (`CoreCap`, `InfEquip`) are now `GX`-free, axioms unchanged
-- GRAFTALL-PLAN.md 1.9.45 + task.md: record the closed loop
-  CoreCap -> machine -> CoreCap and stop the quantifier-reshuffling track
+- Add Infcex.lean with `not_infEquip`: `M = [(1,0,2),(2,0,0)]`, `p = 0`, root
+  `(0,0)` is `argOK`, satisfies the window condition and `CtxOK M 0 0`, yet
+  `entry M 2 0 = 2 > 1` — the conjunct is a z<2 fragment condition that neither
+  `argOK` (a row-0 condition) nor the slice equipment implies
+- Remove the vacuous `InfEquip`-based top-level theorems from Final.lean and
+  mark `InfEquip` and its consumers in Gamma.lean as ⛔ not to be cited
+- Add `corePlantCtxLift_of_core` / `coreCtxSuffixLift_of_core`: both context
+  cores are `GX`-membership of based sequences, so the length induction gets
+  them from the one-column core alone
+- Replace the no-regression lemma by `coreSingleton_of_cores`
+- Add `wf_olt_ST_TS_of_core` / `TRIO_terminates_of_core` /
+  `no_infinite_expansion_of_core` and re-base `TRIO_terminates_of_cap` on
+  `CoreCap` alone; axioms [propext, Classical.choice, Quot.sound], sorry 0
+- GRAFTALL-PLAN.md 1.9.46 + task.md: record the refutation and the new
+  single-core status

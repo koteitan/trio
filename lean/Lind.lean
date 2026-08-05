@@ -190,14 +190,34 @@ theorem cap_of_coreSingleton (h : CoreSingleton) : CoreCap := by
   rw [List.take_one] at hres
   simpa [graft_singleton_eq_cap] using hres
 
-/-- **No regression**: the old core still supplies the singleton core
-(`singleton_mem_GXs`), so modulo `InfEquip` the two are equivalent — the
-length induction trades a `∀`-context statement for a one-column family. -/
-theorem coreSingleton_of_plant0 (hie : InfEquip) (hp0 : CorePlantCtx0) :
-    CoreSingleton := by
-  have hp : CorePlantCtxLift := corePlantCtxLift_of_plant0 hp0
-  have hsl : CoreCtxSuffixLift := coreCtxSuffixLift_of_plantctx hp hie
-  exact fun b c => (singleton_mem_GXs (coreBlocked_of_ctxSuffixLift hsl)
+/-! ## ★ 両方の文脈核が単元核から出る（`InfEquip` は不要）
+
+`CoreCtxSuffixLift` の結論も `CorePlantCtxLift` の結論も **`GX` に入る基づく列**
+なので、`mem_GX_of_core` がそのまま効く。⚠ 旧経路が使っていた `InfEquip` は
+**偽**（`Infcex.not_infEquip`）なので、この経路で置き換える必要がある。 -/
+
+theorem corePlantCtxLift_of_core (hs : CoreSingleton) : CorePlantCtxLift := by
+  intro M _ _ v z _ _ t
+  refine mem_GX_of_core hs ?_
+  show entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t) 0 0 = 0
+  rw [entry0_Lift1]
+  exact based_cons v z M.dropLast
+
+theorem coreCtxSuffixLift_of_core (hs : CoreSingleton) : CoreCtxSuffixLift := by
+  intro M p _ _ hplt _ v z _ _ s
+  refine mem_GX_of_core hs ?_
+  show entry (Lift1 (shiftl0 (entry M 0 p) (seg M p (M.length - 1 - p))) s) 0 0
+    = 0
+  rw [entry0_Lift1, entry0_shiftl0',
+    entry_seg (N := M) (a := p) (l := M.length - 1 - p) (i := 0) (j := 0)
+      (by omega), Nat.add_zero, Nat.sub_self]
+
+/-- **No regression**: the old two-core route still supplies the singleton core
+(`singleton_mem_GXs`), so the two formulations are equivalent — the length
+induction trades two `∀`-context statements for a one-column family. -/
+theorem coreSingleton_of_cores (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift) :
+    CoreSingleton :=
+  fun b c => (singleton_mem_GXs (coreBlocked_of_ctxSuffixLift hsl)
     (coreT1L_of_plantctx hp) (coreT2E_of_plantctx hp) b c).1
 
 end TRIO
