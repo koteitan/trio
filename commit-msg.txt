@@ -1,12 +1,4 @@
-v0.115.0/reduce the gamma' element to the window (copies = iterated graft)
+v0.115.1/docs: record the gamma' window reduction
 
-- Add shiftl0_shiftr01_comm, gcopies_depth_ge, cwin (the re-based window
-  with the blocked column re-attached), cwin_dropLast/cwin_last
-- Add shiftl0_gcopies_succ: with no row-1 ascension the copies block is
-  graft (cwin) (previous copies), so gcopies_mem_GX carries every copies
-  block from the window's own GX-membership
-- Introduce CoreWindow (the re-based window is in GX) and
-  CoreBlockedEltHi (the row-2 blocker's guarded copies), and prove
-  coreBlockedElt_of_window: CoreBlockedElt follows from the two
-- Add GX_loop'': every residue is now either a context piece in GX or a
-  lift closure
+- Mark GRAFTALL-PLAN 1.9.10's gamma' sketch as landed and name the
+  delivered lemmas

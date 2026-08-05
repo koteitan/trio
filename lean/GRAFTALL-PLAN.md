@@ -180,7 +180,7 @@ y↑ は **coneV マスク**（y の全 le1-祖先が entry1 > v）であり、
 ⟹ 「リフトを graft の中へ押し込む」経路は**閉じた**。CoreLift は
 リフト言語の最小形として残る（(e)-壁の純粋形）。
 
-### γ' も同じ形に落ちる（設計、未 Lean 化）
+### γ' も同じ形に落ちる（✅ v0.115 で Lean 化: srow ≤ 1）
 `gcopies_succ_shift`（d1=0, Core.lean:3658）は
 `gcopies (n+1) = gcopy 0 ++ shiftr01 d0 0 (gcopies n)` であり、
 `graft E X = E.dropLast ++ shiftr01 (entry E 0 last) 0 X` と同型:
@@ -190,6 +190,12 @@ y↑ は **coneV マスク**（y の全 le1-祖先が entry1 > v）であり、
 `E.dropLast = graft Msuf (Y.dropLast)`（Msuf = M の p 以降の再基底化接尾辞）
 なので `gx_graft` で **CoreBlockedElt ⟸ `Msuf.dropLast ∈ GX`**。
 （srow=2 のガード付きコピーは d1>0 なので `CoreLift` を経由する。）
+
+**v0.115 実装**: `shiftl0_gcopies_succ`（`gcopies_succ_shift` + shiftl0 の
+可換化）で `copies (n+1) = graft (cwin) (copies n)`、`gcopies_mem_GX` で
+窓の GX-所属から全コピー塊が GX に入る。核は `CoreWindow`
+（再基底化した窓 ∈ GX）と `CoreBlockedEltHi`（srow=2 のガード付き、
+リフト残差）に分割: `coreBlockedElt_of_window`, `GX_loop''`。
 
 ### ⟹ 残差の統一像
 すべての核が「**文脈の断片が GX に入るか**」に収束する:
