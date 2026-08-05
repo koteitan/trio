@@ -1,14 +1,12 @@
-v0.118.37/one GX core plus a W-level equipment statement
+v0.118.38/measure the infix law for the lifted context
 
-- Add `corePlantCtxLift_of_graftAll : Wset.GraftAll -> CorePlantCtxLift`,
-  recording that the plant core is NOT stronger than the graft closure — so
-  further reduction alone can never close the campaign
-- Give `CoreCtxSuffixLift` the window hypothesis it always had at its call site
-- Add `InfEquip`, a pure `W`-level statement (no `GX`): the context's re-based
-  infix, planted at its own root, is itself equipped, and its root's row 2 is
-  at most 1
-- Add `coreCtxSuffixLift_of_plantctx : CorePlantCtxLift -> InfEquip ->
-  CoreCtxSuffixLift`, `GX_loop_plant` and `graftAll_of_plant`
-- Add `wf_olt_ST_TS_of_plant` and `TRIO_terminates_of_plant : InfEquip ->
-  CorePlantCtxLift -> WellFounded stepRel`
-- Record the status in GRAFTALL-PLAN.md 1.9.34 and task.md
+- Add tools/probe_infltail.py: the naive "infix root lift" form of the lifted
+  context's infix is FALSE (1911/35973 even under the window condition) because
+  the ambient root's row-1 value can sit below the infix root's
+- Establish the correct law with the AMBIENT MASK LIFT `mlift . v t`: 0
+  violations in every branch that matters (in/window-free 0/12283, in/window
+  0/35973, out/window 0/75328); the window condition is needed only in the
+  "root outside the ambient cone" branch
+- Record in GRAFTALL-PLAN.md 1.9.35 that `CtxInf` must therefore be a staircase
+  closure, exactly like `GXs`, and that the infixes `InfEquip` needs never touch
+  the last column so they inherit from `R[1]` just like the prefixes do
