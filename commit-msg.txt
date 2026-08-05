@@ -1,16 +1,13 @@
-v0.118.31/relax GX's context to singletons: CoreBlocked0 eliminated
+v0.118.32/root-cone transport at the block root + the guarded copies' root-lift recursion
 
-- Weaken GX's context condition from `2 <= M.length` to `1 <= M.length`, and
-  propagate through GX_full / ctxOK_graft / ctxOK_ltail / liftPlant_of_plant /
-  liftPlant_of_mask / selfSup_graft / graftAll_of_GX
-- Weaken CoreT1L / CoreT2E / CoreT2EFam / CorePlantCtxLift / CorePlantCtx /
-  CoreLiftPlant / EquipSelf / SelfSup to the singleton-context form
-- Delete CoreBlocked0: coreBlocked_of_elt now discharges the root blocker
-  `p = 0` through GX_full at the descended context `M.take 1`
-- Recover `2 <= M.length` and `|graft M Y| - 1 <= 0` inside gx_of_pieces'
-  blocked branch from hplt / nextR_index_lt, keeping the blocked cores at
-  `2 <= M.length`
-- graftAll_of_GX now covers every nonempty context, matching GraftAll's own
-  `S <> []`; the only remaining gap to GraftAll is the equipment CtxOK
-- Record the correction in GRAFTALL-PLAN.md 1.9.29 and cut task.md's residue
-  list from 4 cores to 3
+- Add lean/Croot.lean with `gexp_cone_mir_root`, the `j0 = 0` case of Lcone's
+  root-cone transport, under the two hypotheses the probe isolates
+  (`0 < d1` for the copy roots, `le1 M 0 Lb` for the cross-copy chains)
+- Add the segment re-basing `le1_seg_root` / `gcopies_seg` (both free from
+  `le1_take` + `le1_append_right`) and `le1_shiftl0`
+- Add `gcopies_succ_graft_lift`: for `d1 > 0` the copies block is
+  `graft B (Lift1 (previous block) d1)` — the root-lift analogue of
+  `shiftl0_gcopies_succ`
+- Add tools/probe_gcopieshi.py and tools/probe_coneroot.py measuring the
+  recursion and both cone transports (0 violations on the real blocker shapes)
+- Register Croot between Aexp and Xbar in lakefile.toml
