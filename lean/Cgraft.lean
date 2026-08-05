@@ -589,4 +589,247 @@ theorem lift_graft_mask {E A : TrioSeq} (hE0 : entry E 0 0 = 0)
     · rw [if_neg hg, if_neg (fun h => hg ((cone_graft_mask hE0 hEs hE2 hA0 hk).1 h).1)]
       omega
 
+
+/-! ## マスクリフトの接ぎ木分配則と `ltail` との一致
+
+`Lift1` はブロックごとに閾値を根の行 1 値へリセットするので「接ぎ木の内側で
+リフトする」が言語の外に出る（(e)-壁）。`mlift` の閾値は定数なので接ぎ木に
+分配し（`mlift_graft`）、しかも機械の環境リフトはちょうど尾部のマスクリフト
+である（`ltail_eq_mlift`）。 -/
+
+/-- 接ぎ木点の手前の行 0 祖先がすべて `v` より上（マスク版の窓条件）。 -/
+def SiteV (M : TrioSeq) (v : ℕ) : Prop :=
+  ∀ y, y < M.length - 1 →
+    Relation.ReflTransGen (nextrel0 M) y (M.length - 1) → v < entry M 1 y
+
+theorem coneV_graft_low {M A : TrioSeq} {v i : ℕ} (hA0 : entry A 0 0 = 0)
+    (hA : 0 < A.length) (hM2 : 2 ≤ M.length) (hi : i < M.length - 1) :
+    coneV (graft M A) v i ↔ coneV M v i := by
+  constructor
+  · intro h y hy
+    have hyi : y ≤ i := rtg0_le hy
+    rw [← entry_graft_low (A := A) (by omega)]
+    exact h y ((rtg0_graft_le hA0 hA hM2 (by omega)).2 hy)
+  · intro h y hy
+    have hyi : y ≤ i := rtg0_le hy
+    rw [entry_graft_low (A := A) (by omega)]
+    exact h y ((rtg0_graft_le hA0 hA hM2 (by omega)).1 hy)
+
+theorem coneV_graft_high {M A : TrioSeq} {v k : ℕ} (hA0 : entry A 0 0 = 0)
+    (hM2 : 2 ≤ M.length) (hk : k < A.length) :
+    coneV (graft M A) v (M.length - 1 + k) ↔ (SiteV M v ∧ coneV A v k) := by
+  have hA : 0 < A.length := by omega
+  constructor
+  · intro h
+    refine ⟨fun y hys hchain => ?_, fun y hy => ?_⟩
+    · have hGy := (rtg0_graft_le hA0 hA hM2 (le_refl _)).2 hchain
+      have := h y (rtg0_graft_join hA0 hM2 hk hys hGy)
+      rwa [entry_graft_low hys] at this
+    · have := h (M.length - 1 + y) (rtg0_graft_embed hy)
+      rwa [entry1_graft_high] at this
+  · rintro ⟨hs, hc⟩ y hchain
+    rcases rtg0_graft_split hA0 hM2 hk hchain with ⟨y', rfl, hy'A, hy'⟩ | ⟨hys, hGy⟩
+    · rw [entry1_graft_high]
+      exact hc y' hy'
+    · rw [entry_graft_low hys]
+      exact hs y hys ((rtg0_graft_le hA0 hA hM2 (le_refl _)).1 hGy)
+
+open Classical in
+/-- **マスクリフトは接ぎ木に分配する（閾値は定数のまま）**。 -/
+theorem mlift_graft {M A : TrioSeq} (hA0 : entry A 0 0 = 0) (hA : 0 < A.length)
+    (hM2 : 2 ≤ M.length) (v d : ℕ) :
+    mlift (graft M A) v d
+      = graft (mlift M v d) (if SiteV M v then mlift A v d else A) := by
+  set B : TrioSeq := if SiteV M v then mlift A v d else A with hB
+  have hBlen : B.length = A.length := by rw [hB]; split <;> simp
+  have hMLlen : (mlift M v d).length = M.length := mlift_length M v d
+  have hML1 : (mlift M v d).length - 1 = M.length - 1 := by rw [hMLlen]
+  have hlen : (mlift (graft M A) v d).length = (graft (mlift M v d) B).length := by
+    rw [mlift_length, graft_length, graft_length, hMLlen, hBlen]
+  have hB0 : ∀ k, entry B 0 k = entry A 0 k := by
+    intro k; rw [hB]; split
+    · exact entry0_mlift A v d k
+    · rfl
+  have hB2 : ∀ k, entry B 2 k = entry A 2 k := by
+    intro k; rw [hB]; split
+    · exact entry2_mlift A v d k
+    · rfl
+  have hB1 : ∀ k, k < A.length → entry B 1 k
+      = entry A 1 k + (if coneV (graft M A) v (M.length - 1 + k) then d else 0) := by
+    intro k hk
+    by_cases hs : SiteV M v
+    · rw [hB, if_pos hs, entry1_mlift hk,
+        if_congr (coneV_graft_high hA0 hM2 hk) rfl rfl]
+      by_cases hc : coneV A v k
+      · rw [if_pos hc, if_pos ⟨hs, hc⟩]
+      · rw [if_neg hc, if_neg (fun h => hc h.2)]
+    · rw [hB, if_neg hs,
+        if_neg (fun h => hs ((coneV_graft_high hA0 hM2 hk).1 h).1)]
+      omega
+  refine List.ext_getElem hlen ?_
+  intro i hi1 hi2
+  rw [mlift_length, graft_length] at hi1
+  rw [← entry_triple (by rw [mlift_length, graft_length]; omega),
+    ← entry_triple (by rw [graft_length, hMLlen, hBlen]; omega)]
+  rcases Nat.lt_or_ge i (M.length - 1) with hlo | hhi
+  · have hMi : i < M.length := by omega
+    have e0 : entry (mlift (graft M A) v d) 0 i = entry M 0 i := by
+      rw [entry0_mlift, entry_graft_low hlo]
+    have e2 : entry (mlift (graft M A) v d) 2 i = entry M 2 i := by
+      rw [entry2_mlift, entry_graft_low hlo]
+    have e1 : entry (mlift (graft M A) v d) 1 i
+        = entry M 1 i + (if coneV M v i then d else 0) := by
+      rw [entry1_mlift (by rw [graft_length]; omega), entry_graft_low hlo,
+        if_congr (coneV_graft_low hA0 hA hM2 hlo) rfl rfl]
+    have f0 : entry (graft (mlift M v d) B) 0 i = entry M 0 i := by
+      rw [entry_graft_low (by omega), entry0_mlift]
+    have f2 : entry (graft (mlift M v d) B) 2 i = entry M 2 i := by
+      rw [entry_graft_low (by omega), entry2_mlift]
+    have f1 : entry (graft (mlift M v d) B) 1 i
+        = entry M 1 i + (if coneV M v i then d else 0) := by
+      rw [entry_graft_low (by omega), entry1_mlift hMi]
+    rw [e0, e1, e2, f0, f1, f2]
+  · obtain ⟨k, rfl⟩ : ∃ k, i = M.length - 1 + k := ⟨i - (M.length - 1), by omega⟩
+    have hkA : k < A.length := by omega
+    have e0 : entry (mlift (graft M A) v d) 0 (M.length - 1 + k)
+        = entry A 0 k + entry M 0 (M.length - 1) := by
+      rw [entry0_mlift, entry0_graft_high hkA]
+    have e2 : entry (mlift (graft M A) v d) 2 (M.length - 1 + k) = entry A 2 k := by
+      rw [entry2_mlift, entry2_graft_high]
+    have e1 : entry (mlift (graft M A) v d) 1 (M.length - 1 + k)
+        = entry A 1 k
+          + (if coneV (graft M A) v (M.length - 1 + k) then d else 0) := by
+      rw [entry1_mlift (by rw [graft_length]; omega), entry1_graft_high]
+    have f0 : entry (graft (mlift M v d) B) 0 (M.length - 1 + k)
+        = entry A 0 k + entry M 0 (M.length - 1) := by
+      rw [← hML1, entry0_graft_high (by rw [hBlen]; exact hkA), hB0, entry0_mlift]
+    have f2 : entry (graft (mlift M v d) B) 2 (M.length - 1 + k) = entry A 2 k := by
+      rw [← hML1, entry2_graft_high, hB2]
+    have f1 : entry (graft (mlift M v d) B) 1 (M.length - 1 + k)
+        = entry A 1 k
+          + (if coneV (graft M A) v (M.length - 1 + k) then d else 0) := by
+      rw [← hML1, entry1_graft_high, hB1 k hkA, hML1]
+    rw [e0, e1, e2, f0, f1, f2]
+
+/-! ### 環境リフトはマスクリフト -/
+
+theorem rtg0_cons_unlift {p : ℕ × ℕ × ℕ} {R : TrioSeq} {y b : ℕ} (hy : 1 ≤ y)
+    (h : Relation.ReflTransGen (nextrel0 (p :: R)) y b) :
+    ∀ b', b = 1 + b' → Relation.ReflTransGen (nextrel0 R) (y - 1) b' := by
+  induction h with
+  | refl => intro b' hb'; rw [show y - 1 = b' from by omega]
+  | @tail w c hw hwc ih =>
+      intro b' hb'
+      subst hb'
+      have hwy : y ≤ w := rtg0_le hw
+      obtain ⟨w', rfl⟩ : ∃ w', w = 1 + w' := ⟨w - 1, by omega⟩
+      have hstep : nextrel0 R w' b' := by
+        have h := nextrel0_append_right [p] R w' b'
+        simp only [List.length_singleton, List.singleton_append] at h
+        exact h.1 hwc
+      exact (ih w' rfl).tail hstep
+
+theorem rtg0_cons_lift {p : ℕ × ℕ × ℕ} {R : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 R) a b) :
+    Relation.ReflTransGen (nextrel0 (p :: R)) (1 + a) (1 + b) := by
+  have := rtg_nextrel0_lift [p] R h
+  simpa using this
+
+/-- **植えた根の錐は尾部の環境マスク**: `argOK` な尾部の上では、根の行 1 錐は
+閾値 `v` のマスク `coneV` にほかならない。 -/
+theorem le1_cons_iff_coneV {v z : ℕ} {R : TrioSeq} (hR : argOK R) {j : ℕ}
+    (hj : j < R.length) :
+    le1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 (1 + j) ↔ coneV R v j := by
+  set N : TrioSeq := ((0, v, z) : ℕ × ℕ × ℕ) :: R with hN
+  have hNlen : N.length = R.length + 1 := by rw [hN]; simp
+  have hshal : ∀ l, 0 < l → l < N.length → entry N 0 0 < entry N 0 l := by
+    intro l hl0 hlN
+    obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    have h0 : entry N 0 0 = 0 := by rw [hN]; exact based_cons v z R
+    rw [h0, hN, entry_cons]
+    exact hR _ (entry_pair_mem (by omega))
+  have hN1 : entry N 1 0 = v := by
+    show ((((0, v, z) : ℕ × ℕ × ℕ) :: R).getD 0 (0, 0, 0)).2.1 = v
+    rfl
+  rw [le1_zero_iff hshal (by omega), hN1]
+  constructor
+  · intro h y hy
+    have hy1 : entry N 1 (1 + y) = entry R 1 y := by
+      rw [hN, show 1 + y = y + 1 from by omega, entry_cons]
+    rw [← hy1]
+    exact h (1 + y) (rtg0_cons_lift hy) (by omega)
+  · intro h y hchain hy0
+    obtain ⟨y', rfl⟩ : ∃ y', y = 1 + y' := ⟨y - 1, by omega⟩
+    have hy1 : entry N 1 (1 + y') = entry R 1 y' := by
+      rw [hN, show 1 + y' = y' + 1 from by omega, entry_cons]
+    rw [hy1]
+    have hun := rtg0_cons_unlift (y := 1 + y') (by omega) hchain j rfl
+    rw [show 1 + y' - 1 = y' from by omega] at hun
+    exact h y' hun
+
+open Classical in
+/-- **機械の環境リフトはマスクリフト**: `Lift1 ((0,v,z) :: R) t` は根を `t` 上げ、
+尾部を閾値 `v` でマスクリフトしたものに等しい（`argOK R` が必要: 尾部に深さ 0 の
+列があると破れる — tools/probe_ltailmask.py）。ゆえに機械の義務言語は
+**「植えた根 + マスクリフトした尾部」**であり、`mlift_graft` によって
+接ぎ木で閉じる。 -/
+theorem lift_cons_eq_mlift {v z t : ℕ} {R : TrioSeq} (hR : argOK R) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t
+      = ((0, v + t, z) : ℕ × ℕ × ℕ) :: mlift R v t := by
+  set N : TrioSeq := ((0, v, z) : ℕ × ℕ × ℕ) :: R with hN
+  have hNlen : N.length = R.length + 1 := by rw [hN]; simp
+  have hRlen : (((0, v + t, z) : ℕ × ℕ × ℕ) :: mlift R v t).length
+      = R.length + 1 := by simp
+  have hn0 : entry N 0 0 = 0 := based_cons v z R
+  have hn1 : entry N 1 0 = v := rfl
+  have hn2 : entry N 2 0 = z := rfl
+  refine List.ext_getElem (by rw [Lift1_length, hNlen, hRlen]) ?_
+  intro i hi1 hi2
+  rw [Lift1_length, hNlen] at hi1
+  rw [← entry_triple (X := Lift1 N t) (by rw [Lift1_length, hNlen]; omega),
+    ← entry_triple (X := ((0, v + t, z) : ℕ × ℕ × ℕ) :: mlift R v t)
+      (by rw [hRlen]; omega)]
+  rcases Nat.eq_zero_or_pos i with rfl | hi0
+  · have hc : le1 N 0 0 := ⟨by rw [hNlen]; omega, by rw [hNlen]; omega, .refl⟩
+    have e0 : entry (Lift1 N t) 0 0 = 0 := by rw [entry0_Lift1, hn0]
+    have e2 : entry (Lift1 N t) 2 0 = z := by rw [entry2_Lift1, hn2]
+    have e1 : entry (Lift1 N t) 1 0 = v + t := by
+      rw [entry1_Lift1 (by rw [hNlen]; omega), if_pos hc, hn1]
+    rw [e0, e1, e2]
+    rfl
+  · obtain ⟨j, rfl⟩ : ∃ j, i = 1 + j := ⟨i - 1, by omega⟩
+    have hjR : j < R.length := by omega
+    have hidx : (1 : ℕ) + j = j + 1 := by omega
+    have hc := le1_cons_iff_coneV (v := v) (z := z) hR hjR
+    have e0 : entry (Lift1 N t) 0 (1 + j) = entry R 0 j := by
+      rw [entry0_Lift1, hN, hidx, entry_cons]
+    have e2 : entry (Lift1 N t) 2 (1 + j) = entry R 2 j := by
+      rw [entry2_Lift1, hN, hidx, entry_cons]
+    have e1 : entry (Lift1 N t) 1 (1 + j)
+        = entry R 1 j + (if coneV R v j then t else 0) := by
+      rw [entry1_Lift1 (by rw [hNlen]; omega), if_congr hc rfl rfl, hN, hidx,
+        entry_cons]
+    have f0 : entry (((0, v + t, z) : ℕ × ℕ × ℕ) :: mlift R v t) 0 (1 + j)
+        = entry R 0 j := by rw [hidx, entry_cons, entry0_mlift]
+    have f2 : entry (((0, v + t, z) : ℕ × ℕ × ℕ) :: mlift R v t) 2 (1 + j)
+        = entry R 2 j := by rw [hidx, entry_cons, entry2_mlift]
+    have f1 : entry (((0, v + t, z) : ℕ × ℕ × ℕ) :: mlift R v t) 1 (1 + j)
+        = entry R 1 j + (if coneV R v j then t else 0) := by
+      rw [hidx, entry_cons, entry1_mlift hjR]
+    rw [e0, e1, e2, f0, f1, f2]
+
+
+open Classical in
+/-- **機械の義務言語のマスク表示**: 植えた根の下の接ぎ木ブロックのリフトは、
+「根を上げ、文脈をマスクリフトし、引数をマスクリフトする」に等しい。
+`Lift1` が閉じなかった操作（接ぎ木の内側のリフト）が、マスク表示では
+そのまま閉じている。 -/
+theorem lift_plant_graft {M y : TrioSeq} {v z t : ℕ} (hM : argOK M) (hMne : M ≠ [])
+    (hM2 : 2 ≤ M.length) (hby : based y) (hyne : y ≠ []) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M y) t
+      = ((0, v + t, z) : ℕ × ℕ × ℕ)
+        :: graft (mlift M v t) (if SiteV M v then mlift y v t else y) := by
+  rw [lift_cons_eq_mlift (argOK_graft hMne hM y),
+    mlift_graft hby (List.length_pos_iff.mpr hyne) hM2]
+
 end TRIO

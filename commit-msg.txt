@@ -1,11 +1,15 @@
-v0.118.2/split the alpha lift residue into context and datum (Gamma.lean)
+v0.118.3/the machine's ambient lift IS a mask lift (Cgraft.lean)
 
-- Add `CoreMaskLift` (GX is closed under the ambient mask lift `mlift`) and
-  `CorePlantCtxLift` (the lifted planted context peel is in GX)
-- Prove `coreLiftPlant_of_mask`: the graft lift calculus rewrites the lifted
-  planted block as the lifted planted context grafted with the datum's mask
-  lift, so `CoreLiftPlant` follows from the two new cores via `plantCtx_graft`
-- Add `GX_loop_mask` / `GX_loop_pieces_mask`: the machine closes on
-  (CoreCtxSuffix, CoreBlockedEltHi, CoreBlocked0, CorePlantCtxLift,
-  CoreMaskLift) — the lift residue now carries no element/context mixture
-- Import Cgraft in Gamma
+- Prove `lift_cons_eq_mlift`: for an argOK tail, `Lift1 ((0,v,z) :: R) t` is
+  the root raised by `t` over `mlift R v t` — the machine's `ltail` is exactly
+  the mask lift at the ambient threshold
+- Prove `mlift_graft`: the mask lift distributes over grafts at a CONSTANT
+  threshold (guarded by `SiteV`), via `coneV_graft_low` / `coneV_graft_high`
+- Combine them into `lift_plant_graft`: the obligation block equals
+  `(0,v+t,z) :: graft (mlift M v t) (mlift y v t)` — so the operation `Lift1`
+  was not closed under is closed in the mask presentation
+- Add the row-0 cons-chain lemmas (`rtg0_cons_lift` / `rtg0_cons_unlift`) and
+  `le1_cons_iff_coneV` (the planted root's cone is the tail's mask)
+- Add tools/probe_ltailmask.py (0 violations on argOK tails, 45375 without)
+  and tools/probe_mliftoper.py (the mask lift commutes with the expansion
+  unconditionally: 0/60000 over every site type)
