@@ -349,6 +349,103 @@ theorem gcopies_succ_graft_lift {B : TrioSeq} {L d0 d1 n : ℕ}
       · rw [if_neg hg, if_neg (fun hc => hg (hcone.mp hc)), if_neg hg]
         refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> dsimp only <;> omega
 
+/-! ## 再基底化した窓ブロック `B = shiftl0 c (seg R p (L+1))`
+
+行 0 の一様な引き下げは行 1 の祖先関係を動かさない（`le1_shiftl0`）ので、
+コピー塊はそのまま再基底化したブロックのコピー塊になる。 -/
+
+theorem getD_shiftl0 {c : ℕ} {S : TrioSeq} {j : ℕ} :
+    (shiftl0 c S).getD j ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = (((S.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).1 - c,
+          (S.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1,
+          (S.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.2) : ℕ × ℕ × ℕ) := by
+  rcases Nat.lt_or_ge j S.length with hj | hj
+  · unfold shiftl0
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+      List.getElem?_eq_getElem hj, List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem hj]
+    simp
+  · rw [getD_out (by rw [shiftl0_length]; omega), getD_out hj]
+    simp
+
+theorem entry0_shiftl0' {c : ℕ} {S : TrioSeq} {j : ℕ} :
+    entry (shiftl0 c S) 0 j = entry S 0 j - c := by
+  unfold entry
+  rw [getD_shiftl0]
+  simp
+
+theorem entry1_shiftl0 {c : ℕ} {S : TrioSeq} {j : ℕ} :
+    entry (shiftl0 c S) 1 j = entry S 1 j := by
+  unfold entry
+  rw [getD_shiftl0]
+  simp
+
+theorem entry2_shiftl0 {c : ℕ} {S : TrioSeq} {j : ℕ} :
+    entry (shiftl0 c S) 2 j = entry S 2 j := by
+  unfold entry
+  rw [getD_shiftl0]
+  simp
+
+theorem le_of_mem_seg {R : TrioSeq} {p l c : ℕ}
+    (h : ∀ j, p ≤ j → j < p + l → c ≤ entry R 0 j) :
+    ∀ x ∈ seg R p l, c ≤ x.1 := by
+  intro x hx
+  unfold seg at hx
+  rw [List.mem_map] at hx
+  obtain ⟨j, hj, rfl⟩ := hx
+  rw [List.mem_range'_1] at hj
+  exact h j hj.1 hj.2
+
+theorem shiftl0_flatMap {c : ℕ} {α : Type} (l : List α) (f : α → TrioSeq) :
+    shiftl0 c (l.flatMap f) = l.flatMap (fun x => shiftl0 c (f x)) := by
+  unfold shiftl0
+  rw [List.map_flatMap]
+
+theorem shiftl0_map {c : ℕ} {α : Type} (l : List α) (f : α → ℕ × ℕ × ℕ) :
+    shiftl0 c (l.map f)
+      = l.map (fun x => (((f x).1 - c, (f x).2.1, (f x).2.2) : ℕ × ℕ × ℕ)) := by
+  unfold shiftl0
+  rw [List.map_map]
+  rfl
+
+/-- Re-basing row 0 commutes with taking guarded copies of a block. -/
+theorem shiftl0_gcopies_block {S : TrioSeq} {L d0 d1 c n : ℕ}
+    (hc : ∀ x ∈ S, c ≤ x.1) (hL : L ≤ S.length) :
+    shiftl0 c (gcopies S 0 L d0 d1 n) = gcopies (shiftl0 c S) 0 L d0 d1 n := by
+  classical
+  have hguard : ∀ j, le1 (shiftl0 c S) 0 j ↔ le1 S 0 j :=
+    fun j => le1_shiftl0 (c := c) (Z := S) hc
+  unfold gcopies gcopy
+  rw [shiftl0_flatMap]
+  refine List.flatMap_congr ?_
+  intro k _
+  rw [shiftl0_map]
+  refine List.map_congr_left ?_
+  intro j hj
+  rw [List.mem_range'_1] at hj
+  have hjS : j < S.length := by omega
+  have hmem : S.getD j ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ S := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hjS]
+    exact List.getElem_mem hjS
+  have hcj : c ≤ entry S 0 j := hc _ hmem
+  rw [entry0_shiftl0', entry1_shiftl0, entry2_shiftl0]
+  by_cases hg : le1 S 0 j
+  · rw [if_pos hg, if_pos ((hguard j).mpr hg)]
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> dsimp only <;> omega
+  · rw [if_neg hg, if_neg (fun hcx => hg ((hguard j).mp hcx))]
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> dsimp only <;> omega
+
+/-- **The whole re-basing**: the host's guarded copies at `p`, re-based in row
+0, are the guarded copies of the cut-out block `B = shiftl0 c (seg R p (L+1))`
+at its own root. -/
+theorem shiftl0_gcopies_seg {R : TrioSeq} {p L d0 d1 c n : ℕ}
+    (hlen : p + (L + 1) ≤ R.length)
+    (hc : ∀ j, p ≤ j → j < p + (L + 1) → c ≤ entry R 0 j) :
+    shiftl0 c (gcopies R p L d0 d1 n)
+      = gcopies (shiftl0 c (seg R p (L + 1))) 0 L d0 d1 n := by
+  rw [gcopies_seg R n hlen]
+  exact shiftl0_gcopies_block (le_of_mem_seg hc) (by rw [seg_length]; omega)
+
 end Rebase
 
 end TRIO

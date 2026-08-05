@@ -1172,6 +1172,63 @@ graftAll_of_GX : ∀ S, argOK S → 1 ≤ S.length → (∀ v z, z ≤ 1 → Ctx
 `GX_loop (he : CoreBlockedElt) (hp : CorePlantCtxLift)` /
 `GX_loop_window (hw) (hhi) (hp)` / `GX_loop_pieces (hsuf) (hhi) (hp)`。
 
+## 1.9.30 ★★★ v0.118.32-33: 残差が**2 核**に — `CoreBlockedEltHi` が消えた
+
+### 何が起きたか
+
+`gcopies_mem_GX`（`d1 = 0`）は「コピー塊 = 窓への反復接ぎ木」だった。
+行 2 ブロッカー（`d1 > 0`）でも同じ形になることを Lean で示した:
+
+```
+gcopies B 0 L d0 d1 (n+1) = graft B (Lift1 (gcopies B 0 L d0 d1 n) d1)
+                                     ^^^^^ 前段の**根リフト**
+```
+
+（`Croot.gcopies_succ_graft_lift`）。これは列ごとの計算に落とすと
+
+```
+le1 (gcopies B 0 L d0 d1 n) 0 (k*L+q)  ↔  le1 B 0 q
+```
+
+すなわち**ブロック自身の根の錐輸送**と同値。`Lcone.gexp_cone_mir` は
+宿主の根（`j0 > 0` の下）用なので、その `j0 = 0` 版
+`Croot.gexp_cone_mir_root` を新設した。前置ブロックが無いぶん鎖分解は素直で、
+代わりに 2 つの仮定が要る（tools/probe_coneroot.py で確定）:
+
+* `0 < d1` — コピーの根 `k*L` が錐に入るのは行 1 が `k*d1` 上がるから
+* `le1 B 0 L` — ブロックされた列が根の錐に入ること（行 2 ブロッカーでは
+  `parent R 2 x` から自動: `nextrel2` は `le1` を含む）
+
+宿主 `R` の窓を単独ブロック `B = shiftl0 c (seg R p (L+1))` に切り出す再基底化は
+**無条件の既存補題だけ**で済んだ（`le1_take` + `le1_append_right`）。
+
+### GX 側の帰納
+
+外側のリフトは (ML) `mlift_Lift1_cons` でデータ側に吸収されるので、強めた帰納
+
+```
+∀ n s, Lift1 (gcopies B 0 L d0 d1 n) s ∈ GX
+```
+
+が `liftPlant_of_plant`（装備不要に整理: `hz1` / `hctx` は未使用だった）だけで
+回る。底は `∀ s, Lift1 B.dropLast s ∈ GX` = **窓とその根リフト全部**。
+
+### 残差（2 核）
+
+| 核 | 内容 |
+|---|---|
+| `CorePlantCtxLift` | 装備つき文脈の植えた peel のリフトが `GX` |
+| `CoreWindowLift` | 複合列の再基底化した窓**とその根リフト全部**が `GX` |
+
+```
+GX_loop_lift (hwl : CoreWindowLift) (hp : CorePlantCtxLift)
+  : ∀ u Y, Aop W u GXs Y → Y ∈ GXs
+```
+
+`CoreWindowLift` の `s = 0` が旧 `CoreWindow`。両核とも
+**「植えブロック族 `{(0,B,z) :: …}` とその根リフトが `GX`」**という
+§1.9.25 の収束点そのままの形になった。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

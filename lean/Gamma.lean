@@ -14,6 +14,7 @@ import Lcone
 import Xbar
 import Cgraft
 import Aexp
+import Croot
 
 namespace TRIO
 
@@ -617,7 +618,7 @@ open Classical in
 マスクリフトを接ぎ木したもの。 -/
 theorem liftPlant_of_plant {M D : TrioSeq} {v z t : ℕ}
     (hp : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX)
-    (hMarg : argOK M) (hM2 : 1 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
+    (hMarg : argOK M) (hM2 : 1 ≤ M.length)
     (hD : D ∈ GX) (hbD : based D) (hm : mlift D v t ∈ GX) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX := by
   classical
@@ -657,7 +658,7 @@ theorem liftPlant_of_mask (hp : CorePlantCtxLift) {M D : TrioSeq} {v z t : ℕ}
     (hMarg : argOK M) (hM2 : 1 ≤ M.length) (hz1 : z ≤ 1) (hctx : CtxOK M v z)
     (hD : D ∈ GX) (hbD : based D) (hm : mlift D v t ∈ GX) :
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t ∈ GX :=
-  liftPlant_of_plant (hp M hMarg hM2 v z hz1 hctx t) hMarg hM2 hz1 hctx hD hbD hm
+  liftPlant_of_plant (hp M hMarg hM2 v z hz1 hctx t) hMarg hM2 hD hbD hm
 
 open Classical in
 /-- **α 残差の分割**: リフトした植えブロックは、リフトした植え文脈にデータの
@@ -665,6 +666,159 @@ open Classical in
 theorem coreLiftPlant_of_mask (hp : CorePlantCtxLift) (hm : CoreMaskLift) :
     CoreLiftPlant := fun M D hMarg hM2 v z hz1 hctx hD hbD t =>
   liftPlant_of_mask hp hMarg hM2 hz1 hctx hD hbD (hm D hD hbD v t)
+
+/-! ### ガード付きコピー塊（`d1 > 0`）も窓に乗る
+
+`Croot.gcopies_succ_graft_lift` により、行 2 ブロッカーのコピー塊は
+「窓への接ぎ木 + **根リフト**」の反復である。外側のリフトは (ML)
+`mlift_Lift1_cons` でデータ側に吸収されるので、必要なのは**窓とその根リフト
+全部が `GX` に入ること**だけ。 -/
+
+theorem entry_gcopies_pos {B : TrioSeq} {L d0 d1 n i : ℕ} (hLb : 0 < L)
+    (hup : ∀ l, 0 < l → l ≤ L → entry B 0 0 < entry B 0 l)
+    (hbase : entry B 0 0 = 0) (hd0pos : 0 < d0)
+    (hi0 : 0 < i) (hi : i < (gcopies B 0 L d0 d1 n).length) :
+    0 < entry (gcopies B 0 L d0 d1 n) 0 i := by
+  classical
+  rw [gcopies_length] at hi
+  obtain ⟨k, q, hk, hq, rfl⟩ := index_decomp hLb hi
+  have hgc := gcopies_getD (M := B) (r := 0) (L := L) (d0 := d0) (d1 := d1)
+    (k := k) (q := q) (n := n) hk hq
+  have h0 : entry (gcopies B 0 L d0 d1 n) 0 (k * L + q)
+      = entry B 0 (0 + q) + k * d0 := by
+    show ((gcopies B 0 L d0 d1 n).getD (k * L + q) ((0, 0, 0) : ℕ × ℕ × ℕ)).1 = _
+    rw [hgc]
+  rw [h0]
+  rcases Nat.eq_zero_or_pos q with rfl | hqpos
+  · have hkpos : 0 < k := by
+      by_contra hc
+      have hk0 : k = 0 := by omega
+      subst hk0
+      simp at hi0
+    have hkd : 0 < k * d0 := Nat.mul_pos hkpos hd0pos
+    simp only [Nat.add_zero, Nat.zero_add]
+    omega
+  · have := hup q hqpos (by omega)
+    simp only [Nat.zero_add]
+    omega
+
+theorem argOK_gcopies_tail {B : TrioSeq} {L d0 d1 n : ℕ} (hLb : 0 < L)
+    (hup : ∀ l, 0 < l → l ≤ L → entry B 0 0 < entry B 0 l)
+    (hbase : entry B 0 0 = 0) (hd0pos : 0 < d0) :
+    argOK (gcopies B 0 L d0 d1 n).tail := by
+  classical
+  intro x hx
+  cases hX : (gcopies B 0 L d0 d1 n) with
+  | nil =>
+      rw [hX] at hx
+      simp at hx
+  | cons a Xt =>
+      rw [hX] at hx
+      simp only [List.tail_cons] at hx
+      obtain ⟨t, ht, rfl⟩ := mem_index hx
+      have hpos := entry_gcopies_pos (B := B) (L := L) (d0 := d0) (d1 := d1)
+        (n := n) (i := t + 1) hLb hup hbase hd0pos (by omega)
+        (by rw [hX]; simp; omega)
+      rw [hX] at hpos
+      show 0 < (Xt.getD t ((0, 0, 0) : ℕ × ℕ × ℕ)).1
+      have hshift : entry (a :: Xt) 0 (t + 1)
+          = (Xt.getD t ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := by
+        unfold entry
+        simp
+      rwa [hshift] at hpos
+
+/-- The copies block's root is the block's own root. -/
+theorem gcopies_cons_root {B T : TrioSeq} {L d0 d1 n v z : ℕ} (hLb : 0 < L)
+    (hn : 0 < n) (hBcons : B = ((0, v, z) : ℕ × ℕ × ℕ) :: T) :
+    gcopies B 0 L d0 d1 n
+      = ((0, v, z) : ℕ × ℕ × ℕ) :: (gcopies B 0 L d0 d1 n).tail := by
+  classical
+  have hXne : gcopies B 0 L d0 d1 n ≠ [] := by
+    intro h
+    have hl := congrArg List.length h
+    rw [gcopies_length] at hl
+    have : 0 < n * L := Nat.mul_pos hn hLb
+    simp at hl
+    omega
+  have hgd : (gcopies B 0 L d0 d1 n).getD 0 ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = (entry B 0 0, entry B 1 0, entry B 2 0) := by
+    have h := gcopies_getD (M := B) (r := 0) (L := L) (d0 := d0) (d1 := d1)
+      (k := 0) (q := 0) (n := n) hn hLb
+    simpa using h
+  have he0 : entry B 0 0 = 0 := by rw [hBcons]; rfl
+  have he1 : entry B 1 0 = v := by rw [hBcons]; rfl
+  have he2 : entry B 2 0 = z := by rw [hBcons]; rfl
+  rw [he0, he1, he2] at hgd
+  cases hX : (gcopies B 0 L d0 d1 n) with
+  | nil => exact absurd hX hXne
+  | cons a Xt =>
+      have ha : a = ((0, v, z) : ℕ × ℕ × ℕ) := by
+        rw [hX] at hgd
+        simpa using hgd
+      rw [ha]
+      simp
+
+/-- **The guarded copies block rides on the lifted window**: with the row-1
+ascension realised as a root lift (`gcopies_succ_graft_lift`), the copy-index
+induction stays inside `GX` as soon as the window and all its root lifts are. -/
+theorem gcopiesLift_mem_GX {B T : TrioSeq} {L d0 d1 v z : ℕ}
+    (hBcons : B = ((0, v, z) : ℕ × ℕ × ℕ) :: T)
+    (hTlen : T.length = L) (hLb : 0 < L) (hargT : argOK T)
+    (hup : ∀ l, 0 < l → l ≤ L → entry B 0 0 < entry B 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry B 0 L = d0)
+    (hd1pos : 0 < d1) (hlp : le1 B 0 L)
+    (hw : ∀ s : ℕ, Lift1 B.dropLast s ∈ GX) :
+    ∀ n s : ℕ, Lift1 (gcopies B 0 L d0 d1 n) s ∈ GX := by
+  classical
+  have hbase : entry B 0 0 = 0 := by rw [hBcons]; rfl
+  have hlen : L + 1 = B.length := by rw [hBcons]; simp; omega
+  have hTne : T ≠ [] := by
+    intro h
+    rw [h] at hTlen
+    simp at hTlen
+    omega
+  have hdrop : B.dropLast = ((0, v, z) : ℕ × ℕ × ℕ) :: T.dropLast := by
+    rw [hBcons, dropLast_cons hTne]
+  have hgcons : ∀ Z : TrioSeq,
+      graft B Z = ((0, v, z) : ℕ × ℕ × ℕ) :: graft T Z := by
+    intro Z
+    rw [hBcons]
+    exact graft_cons hTne
+  intro n
+  induction n with
+  | zero =>
+      intro s
+      simp only [gcopies, List.range_zero, List.flatMap_nil, Lift1_nil]
+      exact nil_mem_GX
+  | succ n ih =>
+      intro s
+      rw [gcopies_succ_graft_lift hlen hLb hup hd0pos hbase hd0e hd1pos hlp,
+        hgcons]
+      have hZG : Lift1 (gcopies B 0 L d0 d1 n) d1 ∈ GX := ih d1
+      have hbZ : based (Lift1 (gcopies B 0 L d0 d1 n) d1) := by
+        show entry (Lift1 (gcopies B 0 L d0 d1 n) d1) 0 0 = 0
+        rw [entry0_Lift1]
+        rcases Nat.eq_zero_or_pos n with rfl | hn
+        · simp [gcopies, entry]
+        · rw [gcopies_cons_root hLb hn hBcons]
+          rfl
+      have hmask : mlift (Lift1 (gcopies B 0 L d0 d1 n) d1) v s ∈ GX := by
+        rcases Nat.eq_zero_or_pos n with rfl | hn
+        · have hnil : gcopies B 0 L d0 d1 0 = [] := by simp [gcopies]
+          rw [hnil, Lift1_nil]
+          have : mlift ([] : TrioSeq) v s = [] := by simp [mlift]
+          rw [this]
+          exact nil_mem_GX
+        · have hcons := gcopies_cons_root (B := B) (T := T) (d0 := d0)
+            (d1 := d1) (n := n) hLb hn hBcons
+          have hargXt : argOK (gcopies B 0 L d0 d1 n).tail :=
+            argOK_gcopies_tail hLb hup hbase hd0pos
+          rw [hcons, mlift_Lift1_cons hargXt hd1pos, ← hcons]
+          exact ih (d1 + s)
+      have hplant : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: T.dropLast) s ∈ GX := by
+        rw [← hdrop]
+        exact hw s
+      exact liftPlant_of_plant hplant hargT (by omega) hZG hbZ hmask
 
 /-- **The γ'-residue, element form**: the descended copies block is in the
 machine's set (independent of the ambient root `(v, z, t)`). -/
@@ -872,6 +1026,7 @@ def CoreBlockedEltHi : Prop :=
       ((graft M Y).length - 1) = p →
     p < M.length - 1 →
     srow (graft M Y) ((graft M Y).length - 1) = 2 →
+    ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
     ∀ n : ℕ, 1 ≤ n →
       shiftl0 (entry M 0 p)
         (gcopies (graft M Y) p ((graft M Y).length - 1 - p)
@@ -896,7 +1051,8 @@ theorem coreBlockedElt_of_window (hw : CoreWindow) (hhi : CoreBlockedEltHi) :
       hRdef, take_graft_low (by omega), Wset.entry_take (by omega)]
   by_cases hs2 : srow R (R.length - 1) = 2
   · rw [hs2, if_pos (by omega : (0:ℕ) < 2), if_pos (by omega : (1:ℕ) < 2)]
-    exact hhi u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt hs2 n hn
+    exact hhi u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt hs2 v z hz1 hctx
+      n hn
   · -- row-0 / row-1 blocker: no ascension
     have hs1 : srow R (R.length - 1) ≤ 1 := by
       have := srow_le2 (M := R) (j := R.length - 1)
@@ -933,6 +1089,145 @@ theorem coreBlockedElt_of_window (hw : CoreWindow) (hhi : CoreBlockedEltHi) :
       rw [h1d, if_pos (by omega : (0:ℕ) < 1), if_neg (by omega : ¬ (1:ℕ) < 1)]
       exact gcopies_mem_GX hdep hbaseR hL
         (hw u Y M p AY hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx) n
+
+/-- **The lifted γ'-window core**: the composite's re-based window AND all its
+root lifts are in the machine's set.  At `s = 0` this is `CoreWindow`; the
+lifts are what the row-2 blocker's ascending copies consume. -/
+def CoreWindowLift : Prop :=
+  ∀ (u : ℕ) (Y M : TrioSeq) (p : ℕ),
+    Y.dropLast ∈ GX → based Y → Y ≠ [] →
+    argOK M → 2 ≤ M.length →
+    ¬ hasParent Y (srow Y (Y.length - 1)) (Y.length - 1) →
+    hasParent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) →
+    parent (graft M Y) (srow (graft M Y) ((graft M Y).length - 1))
+      ((graft M Y).length - 1) = p →
+    p < M.length - 1 →
+    ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+    ∀ s : ℕ,
+      Lift1 (shiftl0 (entry M 0 p)
+        (seg (graft M Y) p ((graft M Y).length - 1 - p))) s ∈ GX
+
+theorem coreWindow_of_lift (hl : CoreWindowLift) : CoreWindow := by
+  intro u Y M p hYd hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx
+  have h := hl u Y M p hYd hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx 0
+  rwa [Lift1_zero] at h
+
+open Classical in
+/-- **The row-2 blocker's guarded copies ride on the lifted window**: the
+ascending copies block is `graft window (root lift of the previous block)`
+(`Croot.gcopies_succ_graft_lift` after re-basing), so `CoreWindowLift` alone
+carries it — `CoreBlockedEltHi` is not an independent core. -/
+theorem coreBlockedEltHi_of_windowLift (hl : CoreWindowLift) :
+    CoreBlockedEltHi := by
+  classical
+  intro u Y M p hYd hbased hy hMarg hM2 hpY hpG hpar hplt hs2 v z hz1 hctx n hn
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hylen : 0 < Y.length := List.length_pos_iff.mpr hy
+  set R : TrioSeq := graft M Y with hRdef
+  have hRlen : R.length = M.length - 1 + Y.length := by
+    rw [hRdef, graft_length]
+  have hplt' : p < R.length - 1 := by omega
+  set c : ℕ := entry M 0 p with hc
+  have hlow : entry R 0 p = c := by
+    rw [hc, hRdef, ← Wset.entry_take (X := graft M Y) (l := p + 1) (i := 0)
+      (j := p) (by omega), take_graft_low (by omega), Wset.entry_take (by omega)]
+  set L : ℕ := R.length - 1 - p with hLdef
+  have hLpos : 0 < L := by omega
+  have hpL : p + L = R.length - 1 := by omega
+  -- the row-2 blocker's own chain
+  have hnr := parent_nextR hpG
+  rw [hpar, hs2] at hnr
+  unfold nextR at hnr
+  rw [if_neg (by omega : ¬ (2 : ℕ) = 0), if_neg (by omega : ¬ (2 : ℕ) = 1)] at hnr
+  have hle1 : le1 R p (R.length - 1) := hnr.2.2.2.2.1
+  have hchain : Relation.ReflTransGen (nextrel0 R) p (R.length - 1) :=
+    (le0_of_le1 hle1).2.2
+  have hwin := window_of_rtg0 hchain (by omega)
+  have hstrict : ∀ j, p < j → j ≤ R.length - 1 → c < entry R 0 j := by
+    intro j hj0 hj1
+    have := hwin j hj0 hj1
+    omega
+  set d0 : ℕ := entry R 0 (R.length - 1) - entry R 0 p with hd0def
+  set d1 : ℕ := entry R 1 (R.length - 1) - entry R 1 p with hd1def
+  have hd0pos : 0 < d0 := by
+    have := rtg0_entry0_lt hchain (by omega)
+    omega
+  have hd1pos : 0 < d1 := by
+    have := le1_entry1_lt hle1 (by omega)
+    omega
+  -- the cut-out block and its window
+  set S : TrioSeq := seg R p (L + 1) with hSdef
+  set B : TrioSeq := shiftl0 c S with hBdef
+  have hSlen : S.length = L + 1 := by rw [hSdef, seg_length]
+  have hSc : ∀ x ∈ S, c ≤ x.1 := by
+    refine le_of_mem_seg ?_
+    intro j hj0 hj1
+    rcases Nat.eq_or_lt_of_le hj0 with rfl | hlt
+    · omega
+    · have := hstrict j hlt (by omega)
+      omega
+  have hentB0 : ∀ q, q < L + 1 → entry B 0 q = entry R 0 (p + q) - c := by
+    intro q hq
+    rw [hBdef, entry0_shiftl0', hSdef, entry_seg hq]
+  have hbase : entry B 0 0 = 0 := by
+    have h := hentB0 0 (by omega)
+    rw [Nat.add_zero, hlow] at h
+    rw [h]
+    omega
+  have hup : ∀ l, 0 < l → l ≤ L → entry B 0 0 < entry B 0 l := by
+    intro l hl0 hl1
+    rw [hbase, hentB0 l (by omega)]
+    have := hstrict (p + l) (by omega) (by omega)
+    omega
+  have hd0e : entry B 0 L = d0 := by
+    rw [hentB0 L (by omega), hpL, hd0def, hlow]
+  have hlp : le1 B 0 L := by
+    rw [hBdef, le1_shiftl0 hSc, hSdef, le1_seg_root (by omega) (by omega), hpL]
+    exact hle1
+  -- the block splits as a planted root over the window's tail
+  have hScons : S = ((entry R 0 p, entry R 1 p, entry R 2 p) : ℕ × ℕ × ℕ)
+      :: seg R (p + 1) L := by
+    rw [hSdef, seg_cons]
+  have hBcons : B = ((0, entry R 1 p, entry R 2 p) : ℕ × ℕ × ℕ)
+      :: shiftl0 c (seg R (p + 1) L) := by
+    rw [hBdef, hScons, shiftl0_cons,
+      show entry R 0 p - c = 0 from by omega]
+  have hTlen : (shiftl0 c (seg R (p + 1) L)).length = L := by
+    rw [shiftl0_length, seg_length]
+  have hargT : argOK (shiftl0 c (seg R (p + 1) L)) := by
+    intro x hx
+    rw [mem_shiftl0] at hx
+    obtain ⟨y, hy', rfl⟩ := hx
+    unfold seg at hy'
+    rw [List.mem_map] at hy'
+    obtain ⟨j, hj, rfl⟩ := hy'
+    rw [List.mem_range'_1] at hj
+    have := hstrict j (by omega) (by omega)
+    dsimp only
+    omega
+  -- the window is the block's peel
+  have hdropB : B.dropLast = shiftl0 c (seg R p L) := by
+    rw [hBdef, hSdef, seg_snoc, shiftl0_append]
+    exact List.dropLast_concat
+  have hwlift : ∀ s : ℕ, Lift1 B.dropLast s ∈ GX := by
+    intro s
+    rw [hdropB]
+    exact hl u Y M p hYd hbased hy hMarg hM2 hpY hpG hpar hplt v z hz1 hctx s
+  -- re-base the copies block and run the induction
+  have hrebase : shiftl0 c (gcopies R p L d0 d1 n) = gcopies B 0 L d0 d1 n := by
+    rw [hBdef, hSdef]
+    refine shiftl0_gcopies_seg (by omega) ?_
+    intro j hj0 hj1
+    rcases Nat.eq_or_lt_of_le hj0 with rfl | hlt
+    · omega
+    · have := hstrict j hlt (by omega)
+      omega
+  have hmain := gcopiesLift_mem_GX hBcons hTlen hLpos hargT hup hd0pos hd0e
+    hd1pos hlp hwlift n 0
+  rw [Lift1_zero] at hmain
+  rw [hrebase]
+  exact hmain
 
 /-- **γ' reduces to element membership**: the descended context `M.take (p+1)`
 is equipped by restriction, so the package is a `GX` application of the copies
@@ -1355,7 +1650,7 @@ theorem selfSup_graft {M Y : TrioSeq} {v z : ℕ} (hMarg : argOK M)
       have hplant : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX := by
         rw [List.dropLast_eq_take]
         exact hself (M.length - 1) (by omega) t
-      exact liftPlant_of_plant hplant hMarg hM2 hz1 hctx
+      exact liftPlant_of_plant hplant hMarg hM2
         hYtj.1 hbtj (gxs_mlift hYtj v t)
 
 /-- **自己支持性はリフト文脈でも保たれる**（`ltail_take` + `Lift1_Lift1`）。 -/
@@ -1525,5 +1820,16 @@ theorem GX_loop_pieces (hsuf : CoreCtxSuffix) (hhi : CoreBlockedEltHi)
     (hp : CorePlantCtxLift) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
   GX_loop (coreBlockedElt_of_window (coreWindow_of_suffix hsuf) hhi) hp
+
+/-- **The assembly loop, two-core form**: the whole machine closes on
+`CoreWindowLift` (the composite's re-based window and all its root lifts) and
+`CorePlantCtxLift` (the equipped context's lifted planted peel).  The row-2
+blocker's guarded copies are NOT an independent core — they are iterated
+grafting into the window with a root lift at each stage
+(`coreBlockedEltHi_of_windowLift`). -/
+theorem GX_loop_lift (hwl : CoreWindowLift) (hp : CorePlantCtxLift) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
+  GX_loop (coreBlockedElt_of_window (coreWindow_of_lift hwl)
+    (coreBlockedEltHi_of_windowLift hwl)) hp
 
 end TRIO

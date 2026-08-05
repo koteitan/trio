@@ -1,13 +1,16 @@
-v0.118.32/root-cone transport at the block root + the guarded copies' root-lift recursion
+v0.118.33/CoreBlockedEltHi falls: the residue is two cores
 
-- Add lean/Croot.lean with `gexp_cone_mir_root`, the `j0 = 0` case of Lcone's
-  root-cone transport, under the two hypotheses the probe isolates
-  (`0 < d1` for the copy roots, `le1 M 0 Lb` for the cross-copy chains)
-- Add the segment re-basing `le1_seg_root` / `gcopies_seg` (both free from
-  `le1_take` + `le1_append_right`) and `le1_shiftl0`
-- Add `gcopies_succ_graft_lift`: for `d1 > 0` the copies block is
-  `graft B (Lift1 (previous block) d1)` — the root-lift analogue of
-  `shiftl0_gcopies_succ`
-- Add tools/probe_gcopieshi.py and tools/probe_coneroot.py measuring the
-  recursion and both cone transports (0 violations on the real blocker shapes)
-- Register Croot between Aexp and Xbar in lakefile.toml
+- Add `gcopiesLift_mem_GX`: the strengthened copy-index induction
+  `forall n s, Lift1 (gcopies B 0 L d0 d1 n) s in GX`, riding on the window's
+  root lifts alone, with the ambient mask absorbed by `mlift_Lift1_cons`
+- Add the supporting `entry_gcopies_pos`, `argOK_gcopies_tail` and
+  `gcopies_cons_root`
+- Add `CoreWindowLift` (the re-based window AND all its root lifts) with
+  `coreWindow_of_lift` (its `s = 0` slice is `CoreWindow`) and
+  `coreBlockedEltHi_of_windowLift`
+- Give `CoreBlockedEltHi` the ambient equipment so it can reach the window core
+- Drop the unused `hz1` / `hctx` from `liftPlant_of_plant`, making it usable
+  outside the equipped setting
+- Add `GX_loop_lift : CoreWindowLift -> CorePlantCtxLift -> (Aop W u GXs Y ->
+  Y in GXs)` — the whole machine now closes on two cores
+- Record the reduction in GRAFTALL-PLAN.md 1.9.30 and task.md
