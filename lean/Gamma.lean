@@ -407,6 +407,21 @@ theorem gx_graft {E w : TrioSeq} (hEne : E ≠ []) (hbE : based E)
       (by rw [graft_length]; omega) v z hz1
       (ctxOK_graft hMarg hM2 hz1 hctx hEd hbE) j (by omega) a t hva
 
+/-- **The tower recursion re-associates onto the context.**  Grafting the
+`(k+1)`-st tower level into `N` is grafting the `k`-th level into the ONE-STEP
+GROWN context `graft N ((0,v,z) :: R)`.  The composite is literally the same
+list, so the composite length is *invariant* along the tower — the tower must be
+driven by its own index `k`, and the composite length can only measure the
+remaining (plant / window) obligations. -/
+theorem graft_tow_succ {v z : ℕ} {N R : TrioSeq} (hRne : R ≠ []) (k : ℕ) :
+    graft N (Wset.tow v z R (k + 1))
+      = graft (graft N (((0, v, z) : ℕ × ℕ × ℕ) :: R)) (Wset.tow v z R k) := by
+  have heq : Wset.tow v z R (k + 1)
+      = graft (((0, v, z) : ℕ × ℕ × ℕ) :: R) (Wset.tow v z R k) := by
+    rw [graft_cons hRne]
+    rfl
+  rw [heq, graft_assoc (by simp)]
+
 /-- **The tower rides on its peel block**: every element of the `tow` tower over
 `R` is in `GX` as soon as the planted peel block is. -/
 theorem tow_mem_GX {R : TrioSeq} {v z : ℕ} (hRne : R ≠ [])

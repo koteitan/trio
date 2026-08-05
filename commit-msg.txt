@@ -1,6 +1,9 @@
-v0.118.48/verify the row-1 tower family form in Lean
+v0.118.49/correct the measure: the tower re-association preserves composite length
 
-- Add `tower1_mem2_fam`: the row-1 tower needs only its OWN elements grafted
-  into R, so the `forall y in W m` interface can be dropped; this confirms in
-  Lean that the stage raise m -> m+2t is an artefact of the interface, not of
-  the tower itself
+- Add `graft_tow_succ` in Gamma.lean: grafting the (k+1)-st tower level into N
+  is grafting the k-th into the one-step grown context, and the two composites
+  are the same list
+- Correct GRAFTALL-PLAN.md 1.9.40 accordingly: composite length is INVARIANT
+  along the tower, so the tower must be driven by its own index; the measure is
+  the lexicographic pair (composite length, tower/copy index), with the length
+  descending only on the plant / window obligations
