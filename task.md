@@ -42,5 +42,6 @@
 - [x] β からマスク核が消滅（塔データは根リフト、(ML) で吸収）✅ v0.118.13
 - [x] GXs（階段閉包）で α のマスク核も消滅・CoreStairOm も証明済み ✅ v0.118.16
 - [ ] **残差 4 本**: CorePlantCtxLift / CoreWindow / CoreBlocked0 / CoreBlockedEltHi
-- [ ] v0.119: CorePlantCtxLift を文脈の長さ帰納で（残る一点は hin = 植えブロックの展開）
+- [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
+- [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）
