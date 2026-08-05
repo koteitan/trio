@@ -1881,17 +1881,16 @@ theorem W_le_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) (u : ℕ) :
     W u ⊆ GX :=
   fun _ hy => (W_le_GXs hb h1 h2 u hy).1
 
-/-- **GraftAll for equipped contexts**, modulo the three cores: the missing
-graft closure at every stage, for every context whose prefix packages are
-supplied (by the master length induction). -/
+/-- **`GraftAll` holds modulo the three cores.**  `GraftAll` now carries the
+context's own slice equipment (supplied by the `Wstar2s` induction,
+`Wset.take_mem_Wstar2_of_Aop`), so the machine matches it exactly — the old
+"unequipped contexts" gap is closed. -/
 theorem graftAll_of_GX (hb : CoreBlocked) (h1 : CoreT1L) (h2 : CoreT2E) :
-    ∀ S : TrioSeq, argOK S → 1 ≤ S.length →
-      (∀ v z : ℕ, z ≤ 1 → CtxOK S v z) →
-      ∀ (u : ℕ) (y : TrioSeq), y ∈ W u → based y → graft S y ∈ Wstar2 := by
-  intro S hS hS2 hctx u y hy hby
+    Wset.GraftAll := by
+  intro S hS hSne v z hz1 hctx u y hy hby _ a t hva
   have hyGX : y ∈ GX := W_le_GX hb h1 h2 u hy
-  exact fun hargOK v z a t hz1 hva =>
-    GX_full hyGX hby hS hS2 (hctx v z hz1) hz1 hva
+  have hSlen : 1 ≤ S.length := List.length_pos_iff.mpr hSne
+  exact GX_full hyGX hby hS hSlen hctx hz1 hva
 
 /-- **The assembly loop, explicit**: modulo the γ'-core and the lifted-context
 equipment, the machine's closure consumes only its own inclusion `W ⊆ GX`
@@ -1943,5 +1942,29 @@ context's re-based infix from the blocker with all its root lifts;
 theorem GX_loop_ctx (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
   GX_loop_lift (coreWindowLift_of_ctxSuffixLift hsl) hp
+
+/-! ## 全体の組み上げ
+
+2 つの文脈核から `GraftAll`、そして「`W` の元とその接頭辞はすべて植えブロック
+package」（`Wstar2s`）まで一気に通る。装備は `Wstar2s` 帰納法自身が供給する
+（`Wset.take_mem_Wstar2_of_Aop`）ので、文脈側のギャップは残っていない。 -/
+
+/-- **The three machine cores from the two context cores.** -/
+theorem coreBlocked_of_ctxSuffixLift (hsl : CoreCtxSuffixLift) : CoreBlocked :=
+  coreBlocked_of_elt (coreBlockedElt_of_window
+    (coreWindow_of_lift (coreWindowLift_of_ctxSuffixLift hsl))
+    (coreBlockedEltHi_of_windowLift (coreWindowLift_of_ctxSuffixLift hsl)))
+
+/-- **`GraftAll` from the two context cores.** -/
+theorem graftAll_of_cores (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift) :
+    Wset.GraftAll :=
+  graftAll_of_GX (coreBlocked_of_ctxSuffixLift hsl) (coreT1L_of_plantctx hp)
+    (coreT2E_of_plantctx hp)
+
+/-- **The campaign's headline**: modulo the two *context* cores, every
+`W`-element and every one of its prefixes is a planted `W`-package. -/
+theorem W_le_Wstar2s_of_cores (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift)
+    (u : ℕ) : Wset.W u ⊆ Wset.Wstar2s :=
+  W_le_Wstar2s (graftAll_of_cores hsl hp) u
 
 end TRIO

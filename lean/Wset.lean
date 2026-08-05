@@ -2179,6 +2179,9 @@ theorem argOK_graft {R : TrioSeq} (hRne : R ≠ []) (hR : argOK R) (y : TrioSeq)
 theorem argOK_dropLast {R : TrioSeq} (hR : argOK R) : argOK R.dropLast :=
   fun p hp => hR p (List.dropLast_subset _ hp)
 
+theorem argOK_take' {M : TrioSeq} (hM : argOK M) (k : ℕ) : argOK (M.take k) :=
+  fun p hp => hM p (List.take_subset _ _ hp)
+
 theorem based_cons (v z : ℕ) (R : TrioSeq) :
     based (((0, v, z) : ℕ × ℕ × ℕ) :: R) := by simp [based, entry]
 
@@ -3474,6 +3477,49 @@ theorem towerGraft2_lift_mem_fam {v z m a t : ℕ} {R : TrioSeq} (hR : argOK R)
   ことが確認済み（弱錐リフト `Lstar` なら遺伝的に閉じるが B2a を壊す）。
 * `LiftTowerExp2` — 展開節由来の行 2 タワー（旧 `TowerExp` の行 2 部分）。 -/
 
+/-! ## 接頭辞まで閉じた `Wstar2`（= 文脈の装備）
+
+`GX` 機械が要求する装備 `CtxOK M v z` は「`M` のすべての接頭辞の植えブロックが
+`W a` に入る」ことであり、これは `∀ k, M.take k ∈ Wstar2` と同じ。`Wstar2` 自身は
+接頭辞で閉じていないので、A2' を回す集合を接頭辞閉包にしておく。真の接頭辞は
+`Aop` のデータから読める: 節 2 なら `R⟦1⟧` の接頭辞（`oper_take_prefix`）、
+節 3 なら `graft R [] = R.dropLast`（`W_nil`）。 -/
+
+/-- **The prefix-closed form of `Wstar2`.**  `R ∈ Wstar2s` says every prefix of
+`R` is a planted `W`-package — exactly the slice equipment of a context. -/
+def Wstar2s : Set TrioSeq := {R | ∀ k, R.take k ∈ Wstar2}
+
+theorem Wstar2s_le : Wstar2s ⊆ Wstar2 := by
+  intro R h
+  have hR := h R.length
+  rwa [List.take_length] at hR
+
+theorem Wstar2s_take {R : TrioSeq} (h : R ∈ Wstar2s) (j : ℕ) :
+    R.take j ∈ Wstar2s := by
+  intro k
+  rw [List.take_take]
+  exact h (min k j)
+
+/-- **The strict prefixes come free from the `Aop` datum**: clause 2 hands
+`R⟦1⟧` whose short prefixes are `R`'s (`oper_take_prefix`), clause 3 hands
+`graft R [] = R.dropLast`. -/
+theorem take_mem_Wstar2_of_Aop {u0 : ℕ} {R : TrioSeq}
+    (AR : Aop W u0 Wstar2s R) :
+    ∀ k, k < R.length → R.take k ∈ Wstar2 := by
+  classical
+  intro k hk
+  rcases Nat.lt_or_ge R.length 2 with hR1 | hR2
+  · have hk0 : k = 0 := by omega
+    subst hk0
+    rw [List.take_zero]
+    exact nil_mem_Wstar2
+  · rcases AR with h1 | h2 | ⟨m, hm, hd, hop⟩
+    · exact absurd h1.1 (by omega)
+    · have h := h2 1 le_rfl k
+      rwa [oper_take_prefix (by omega) le_rfl (by omega)] at h
+    · have h := hop [] (W_nil m) based_nil k
+      rwa [graft_nil, dropLast_take (by omega)] at h
+
 /-- **Open core (B2a)** — the guarded row-1 lift commutes with an expansion
 whose bad root lies inside `R`. -/
 def LiftInner : Prop :=
@@ -3486,7 +3532,8 @@ def LiftInner : Prop :=
 lifted tower needs the graft closure one stage up. -/
 def LiftTower1 : Prop :=
   ∀ (v z u0 a t : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
-    2 * (v + t) + z ≤ a → Aop W u0 Wstar2 R → (∃ m, domT R m) →
+    2 * (v + t) + z ≤ a → Aop W u0 Wstar2 R →
+    (∀ k, k < R.length → R.take k ∈ Wstar2) → (∃ m, domT R m) →
     srow R (R.length - 1) = 1 →
     hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a
@@ -3495,7 +3542,8 @@ def LiftTower1 : Prop :=
 hand. -/
 def LiftTowerExp2 : Prop :=
   ∀ (v z a t : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
-    2 * (v + t) + z ≤ a → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar2) → (∃ m, domT R m) →
+    2 * (v + t) + z ≤ a → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar2) →
+    (∀ k, k < R.length → R.take k ∈ Wstar2) → (∃ m, domT R m) →
     srow R (R.length - 1) = 2 →
     hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a
@@ -3532,8 +3580,12 @@ stage.  In Buchholz 1987 this is manufactured, not assumed: `W_u ⊆ X^(a)` by
 (A2), because `X^(a)` is `A`-closed by the one-step mirror 2.4(a).  The trio
 mirror has UBI reattachment blockers, so the closure is named here. -/
 def GraftAll : Prop :=
-  ∀ (S : TrioSeq), argOK S → S ≠ [] →
-    ∀ (u : ℕ) (y : TrioSeq), y ∈ W u → based y → graft S y ∈ Wstar2
+  ∀ (S : TrioSeq), argOK S → S ≠ [] → ∀ v z : ℕ, z ≤ 1 →
+    (∀ k, k < S.length → ∀ a' t' : ℕ, 2 * (v + t') + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: S.take k) t' ∈ W a') →
+    ∀ (u : ℕ) (y : TrioSeq), y ∈ W u → based y → argOK (graft S y) →
+      ∀ a t : ℕ, 2 * (v + t) + z ≤ a →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft S y) t ∈ W a
 
 /-- `Wstar2` version of `tower1_mem`: the row-1 graft tower stays in `W`. -/
 theorem tower1_mem2 {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
@@ -3572,7 +3624,7 @@ theorem entry1_ltail_of_cone {v z t : ℕ} {R : TrioSeq} {j : ℕ}
 root-parented row-1 tower, over the lifted argument at stage `m + 2t`. -/
 theorem liftTower1_of_graftAll (hga : GraftAll) : LiftTower1 := by
   classical
-  rintro v z u0 a t R hR hRne hz1 hva - ⟨m, hd⟩ hi1 hpM
+  rintro v z u0 a t R hR hRne hz1 hva - hpre ⟨m, hd⟩ hi1 hpM
   set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
   set M : TrioSeq := p0 :: R with hMdef
   set Rt : TrioSeq := ltail v z R t with hRtdef
@@ -3610,11 +3662,18 @@ theorem liftTower1_of_graftAll (hga : GraftAll) : LiftTower1 := by
     rw [← lift_cons, hsrRt, hRtlen, ← hi1]
     exact hasParent_Lift1.mpr hpM
   -- the tower closes at stage m + 2t supplied by the graft closure
+  have hctxRt : ∀ k, k < Rt.length → ∀ a'' t'' : ℕ,
+      2 * ((v + t) + t'') + z ≤ a'' →
+      Lift1 (((0, v + t, z) : ℕ × ℕ × ℕ) :: Rt.take k) t'' ∈ W a'' := by
+    intro k hk a'' t'' hva''
+    rw [hRtlen] at hk
+    rw [hRtdef, ltail_take (by omega), ← lift_cons, Lift1_Lift1]
+    exact hpre k hk (argOK_take' hR k) v z a'' (t + t'') hz1 (by omega)
   have hgr : ∀ y ∈ W (m + 2 * t), based y → argOK (graft Rt y) →
       ∀ a' : ℕ, 2 * (v + t) + z ≤ a' →
       Lift1 (((0, v + t, z) : ℕ × ℕ × ℕ) :: graft Rt y) 0 ∈ W a' :=
     fun y hy hb hargOK a' ha =>
-      hga Rt hRtOK hRtne (m + 2 * t) y hy hb hargOK (v + t) z a' 0 hz1
+      hga Rt hRtOK hRtne (v + t) z hz1 hctxRt (m + 2 * t) y hy hb hargOK a' 0
         (by omega)
   refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
   rw [hMdef, lift_cons, ← hRtdef,
@@ -3624,17 +3683,23 @@ theorem liftTower1_of_graftAll (hga : GraftAll) : LiftTower1 := by
 /-- **`LiftTowerExp2` from the graft closure**: the clause-2 datum is not even
 needed once the closure is free. -/
 theorem liftTowerExp2_of_graftAll (hga : GraftAll) : LiftTowerExp2 := by
-  rintro v z a t R hR hRne hz1 hva - ⟨m, hd⟩ hi1 hpM
+  rintro v z a t R hR hRne hz1 hva - hpre ⟨m, hd⟩ hi1 hpM
+  have hctxR : ∀ k, k < R.length → ∀ a' t' : ℕ, 2 * (v + t') + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.take k) t' ∈ W a' :=
+    fun k hk a' t' h => hpre k hk (argOK_take' hR k) v z a' t' hz1 h
   exact towerGraft2_lift_mem hR hRne hz1 hva hd hi1
     (fun y hy hb hargOK a' s ha =>
-      hga R hR hRne m y hy hb hargOK v z a' s hz1 ha) hpM
+      hga R hR hRne v z hz1 hctxR m y hy hb hargOK a' s ha) hpM
 
 /-- **`A_u(W*₂) ⊆ W*₂`** modulo the three cores. -/
 theorem Wstar2_closed (hin : LiftInner) (ht1 : LiftTower1)
     (he2 : LiftTowerExp2) :
-    ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 Wstar2 R → R ∈ Wstar2 := by
+    ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 Wstar2s R → R ∈ Wstar2 := by
   classical
-  intro u0 R AR hR v z a t hz1 hva
+  intro u0 R AR0 hR v z a t hz1 hva
+  have hpre : ∀ k, k < R.length → R.take k ∈ Wstar2 :=
+    take_mem_Wstar2_of_Aop AR0
+  have AR : Aop W u0 Wstar2 R := Aop_mono_X AR0 Wstar2s_le
   by_cases hRnil : R = []
   · subst hRnil
     exact nil_mem_Wstar2 hR v z a t hz1 hva
@@ -3735,8 +3800,8 @@ theorem Wstar2_closed (hin : LiftInner) (ht1 : LiftTower1)
           by_cases hpM : hasParent M (srow R (R.length - 1)) R.length
           · rcases hsplit hw0 with hs1 | hs2
             · exact ht1 v z u0 a t R hR hRnil hz1 hva (Or.inr (Or.inl hop))
-                ⟨m', hdR⟩ hs1 hpM
-            · exact he2 v z a t R hR hRnil hz1 hva hop ⟨m', hdR⟩ hs2 hpM
+                hpre ⟨m', hdR⟩ hs1 hpM
+            · exact he2 v z a t R hR hRnil hz1 hva hop hpre ⟨m', hdR⟩ hs2 hpM
           · exact hdead ⟨m', domT_cons_of_dead hRnil hdR hpM⟩ (hpredmem hp)
     · -- clause 3
       have hdlW : R.dropLast ∈ Wstar2 := by
@@ -3745,11 +3810,23 @@ theorem Wstar2_closed (hin : LiftInner) (ht1 : LiftTower1)
       by_cases hpM : hasParent M (srow R (R.length - 1)) R.length
       · rcases hsplit (by rw [hd.1]; omega) with hs1 | hs2
         · exact ht1 v z u0 a t R hR hRnil hz1 hva
-            (Or.inr (Or.inr ⟨m, hm, hd, hgr⟩)) ⟨m, hd⟩ hs1 hpM
+            (Or.inr (Or.inr ⟨m, hm, hd, hgr⟩)) hpre ⟨m, hd⟩ hs1 hpM
         · exact towerGraft2_lift_mem hR hRnil hz1 hva hd hs2
             (fun y hy hb hargOK a' s ha =>
               hgr y hy hb hargOK v z a' s hz1 ha) hpM
       · exact hdead ⟨m, domT_cons_of_dead hRnil hd hpM⟩ hdlW
+
+/-- **`A_u(Wstar2s) ⊆ Wstar2s`**: the whole sequence is the old
+`Wstar2_closed`, and every strict prefix is read off the `Aop` datum. -/
+theorem Wstar2s_closed (hin : LiftInner) (ht1 : LiftTower1)
+    (he2 : LiftTowerExp2) :
+    ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 Wstar2s R → R ∈ Wstar2s := by
+  classical
+  intro u0 R AR k
+  rcases Nat.lt_or_ge k R.length with hk | hk
+  · exact take_mem_Wstar2_of_Aop AR k hk
+  · rw [List.take_of_length_le hk]
+    exact Wstar2_closed hin ht1 he2 u0 R AR
 
 /-! ## 残る核: タワー枝 -/
 

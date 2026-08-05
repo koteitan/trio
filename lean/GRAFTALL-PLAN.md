@@ -1268,6 +1268,51 @@ package**）が要る。ambient の `CtxOK M v z` は `M.take k` の package し
 閉じる」設計（§1.9.28 の選択肢 1 = 最上位の装備を強める）が次の一手。
 `entry M 2 p ≤ 1` も要確認（z<2 断片の不変量）。
 
+## 1.9.32 ★★★★ v0.118.35: **装備ギャップが閉じた** — `GraftAll` を核から直接出せる
+
+### `Wstar2s`（接頭辞閉包）
+
+装備 `CtxOK M v z` は「`M` の全接頭辞の植えブロックが `W a` に入る」であり、
+`∀ k, M.take k ∈ Wstar2` と同じ。`Wstar2` は接頭辞で閉じていないが、A2' を回す
+集合を接頭辞閉包 `Wstar2s := {R | ∀ k, R.take k ∈ Wstar2}` にすれば
+**帰納法自身が装備を供給する**:
+
+```
+take_mem_Wstar2_of_Aop : Aop W u0 Wstar2s R → ∀ k < |R|, R.take k ∈ Wstar2
+```
+
+真の接頭辞は `Aop` のデータから読める — 節 2 なら `R⟦1⟧` の接頭辞
+（`oper_take_prefix`）、節 3 なら `graft R [] = R.dropLast`（`W_nil`）。
+（これは `GXs_closed` が peel を `Y⟦1⟧` から取るのと同じ手。）
+
+### `GraftAll` の再定義
+
+`GraftAll` に文脈の装備を持たせ、`graft S y ∈ Wstar2` を根ごとに展開した:
+
+```
+GraftAll : ∀ S, argOK S → S ≠ [] → ∀ v z, z ≤ 1 →
+  CtxOK S v z → ∀ u y, y ∈ W u → based y → argOK (graft S y) →
+  ∀ a t, 2(v+t)+z ≤ a → Lift1 ((0,v,z) :: graft S y) t ∈ W a
+```
+
+`LiftTower1` / `LiftTowerExp2` に接頭辞仮定を足し、`Wstar2_closed` の入力を
+`Aop W u0 Wstar2s R` にすることで、消費側（`liftTower1_of_graftAll` は
+`Rt = ltail v z R t` を、`liftTowerExp2_of_graftAll` は `R` を）で
+`CtxOK` が作れる（`ltail_take` + `Lift1_Lift1`）。
+
+⟹ **`graftAll_of_GX : CoreBlocked → CoreT1L → CoreT2E → Wset.GraftAll`**
+（以前は「装備つき文脈だけ」で、単元文脈と装備が二重のギャップだった）。
+
+### 到達点
+
+```
+W_le_Wstar2s_of_cores (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift)
+  : ∀ u, W u ⊆ Wstar2s
+```
+sorry 0、axioms = [propext, Classical.choice, Quot.sound]、build 782 jobs。
+
+つまり **トリオ側の閉包はすべて 2 本の文脈核に還元された**。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

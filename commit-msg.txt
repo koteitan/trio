@@ -1,13 +1,19 @@
-v0.118.34/both surviving cores are now pure context statements
+v0.118.35/close the equipment gap: GraftAll follows from the cores
 
-- Add `CoreCtxSuffixLift` (the context's re-based infix from the blocker, with
-  all its root lifts) and `coreWindowLift_of_ctxSuffixLift`: the window splits
-  as the suffix's planted block grafted with the datum's peel, so
-  `liftPlant_of_plant` sends the lift to the suffix's own root lift plus the
-  datum's ambient mask
-- Restore `Y.dropLast in GXs` in CoreBlocked / CoreBlockedElt /
-  CoreBlockedEltHi / CoreWindow / CoreWindowLift so the datum's mask is
-  available; `gx_of_pieces` already holds the GXs form
-- Add `GX_loop_ctx : CoreCtxSuffixLift -> CorePlantCtxLift -> (Aop W u GXs Y ->
-  Y in GXs)`
-- Record the reduction in GRAFTALL-PLAN.md 1.9.31 and task.md
+- Add `Wstar2s` (the prefix-closed form of `Wstar2`) with `Wstar2s_le`,
+  `Wstar2s_take` and `take_mem_Wstar2_of_Aop`: the strict prefixes are read off
+  the `Aop` datum (clause 2 via `oper_take_prefix`, clause 3 via `graft R []`)
+- Run the outer induction over `Wstar2s`: `Wstar2_closed` now consumes
+  `Aop W u0 Wstar2s R`, `Wstar2s_closed` closes the prefix-closed set, and
+  `LiftTower1` / `LiftTowerExp2` gain the prefix hypothesis
+- Restate `GraftAll` with the context's own slice equipment, per ambient root,
+  and supply it at both consumption sites (`ltail_take` + `Lift1_Lift1` for the
+  lifted context)
+- Turn `graftAll_of_GX` into `CoreBlocked -> CoreT1L -> CoreT2E ->
+  Wset.GraftAll`, replacing the old equipped-contexts-only form
+- Replace `Wstar2_closed_of_graftAll` with `Wstar2s_closed_of_graftAll` and add
+  `W_le_Wstar2s`
+- Add `coreBlocked_of_ctxSuffixLift`, `graftAll_of_cores` and
+  `W_le_Wstar2s_of_cores : CoreCtxSuffixLift -> CorePlantCtxLift ->
+  (forall u, W u subset Wstar2s)`
+- Record the closure in GRAFTALL-PLAN.md 1.9.32 and task.md

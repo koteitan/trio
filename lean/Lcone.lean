@@ -681,10 +681,17 @@ theorem liftInner_holds : Wset.LiftInner := by
     omega
 
 
-/-- **Everything now rests on `GraftAll` alone.** -/
-theorem Wstar2_closed_of_graftAll (hga : Wset.GraftAll) :
-    ∀ (u0 : ℕ) (R : TrioSeq), Wset.Aop Wset.W u0 Wset.Wstar2 R → R ∈ Wset.Wstar2 :=
-  Wset.Wstar2_closed liftInner_holds (Wset.liftTower1_of_graftAll hga)
+/-- **Everything now rests on `GraftAll` alone.**  The A2'-set is the
+prefix-closed `Wstar2s`, so the induction itself supplies each context's slice
+equipment (`Wset.take_mem_Wstar2_of_Aop`). -/
+theorem Wstar2s_closed_of_graftAll (hga : Wset.GraftAll) :
+    ∀ (u0 : ℕ) (R : TrioSeq),
+      Wset.Aop Wset.W u0 Wset.Wstar2s R → R ∈ Wset.Wstar2s :=
+  Wset.Wstar2s_closed liftInner_holds (Wset.liftTower1_of_graftAll hga)
     (Wset.liftTowerExp2_of_graftAll hga)
+
+/-- Every `W`-element and all of its prefixes are planted `W`-packages. -/
+theorem W_le_Wstar2s (hga : Wset.GraftAll) (u : ℕ) : Wset.W u ⊆ Wset.Wstar2s :=
+  Wset.A2' (fun R hR => Wstar2s_closed_of_graftAll hga u R hR)
 
 end TRIO
