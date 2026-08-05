@@ -1,5 +1,12 @@
-v0.118.10/(A1): the expansion keeps the prefix's amin
+v0.118.11/(A2): the expansion's copies inherit their source column's amin
 
-- Add `rtg0_take_iff` and `amin_take` (the ancestor minimum is prefix-local)
-- Prove `amin_oper_prefix`: for `i < M.length - 1` the expansion `M[n]` has the
-  same `amin` at `i` as `M`, in every branch (via `oper_take_prefix`)
+- Add lean/Aexp.lean: `amin_gexp_mir` (ascending copies, side condition
+  `amin M j0 <= amin M (j0+Lb)`) and `amin_gexp_mir_flat` (identical copies)
+- Derive the branch-free `amin_oper_mir` via `oper_eq_gexp_gen`, splitting on
+  `srow` (`i1 >= 1` gets `hrow1` from `le1 M j0 j1`, `i1 = 0` uses the flat
+  chain inversion)
+- Add `gexp_entry_le` (prefix values, graft point included) and
+  `rtg0_of_rtg1` (row-1 ancestry implies row-0 ancestry)
+- Add tools/probe_a2_branch.py: (A2)/(G2) 0 violations per branch, `hrow1`
+  false only for `i1 = 0` (4387/5967)
+- Register Aexp in lakefile roots

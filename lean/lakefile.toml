@@ -8,4 +8,4 @@ rev = "v4.30.0"
 
 [[lean_lib]]
 name = "TRIO"
-roots = ["Trio", "Term", "Decrease", "Reduction", "Seqlex", "Cnf", "Lift", "Gcopy", "Goper", "Cofinality", "ArgDom", "Column", "Invariant", "Zjump", "Gtrans", "Peel2", "Core", "Wset", "Lcone", "Cgraft", "Xbar", "Gamma", "Final"]
+roots = ["Trio", "Term", "Decrease", "Reduction", "Seqlex", "Cnf", "Lift", "Gcopy", "Goper", "Cofinality", "ArgDom", "Column", "Invariant", "Zjump", "Gtrans", "Peel2", "Core", "Wset", "Lcone", "Cgraft", "Aexp", "Xbar", "Gamma", "Final"]
