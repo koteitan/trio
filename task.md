@@ -41,5 +41,6 @@
 - [x] 階段リフト slift の Lean 化: (A2)/(G2)/(ML) ✅ v0.118.11-13 Aexp.lean
 - [x] β からマスク核が消滅（塔データは根リフト、(ML) で吸収）✅ v0.118.13
 - [x] GXs（階段閉包）で α のマスク核も消滅・CoreStairOm も証明済み ✅ v0.118.16
-- [ ] **残差 4 本**: CorePlantCtxLift / CoreCtxSuffix / CoreBlocked0 / CoreBlockedEltHi
+- [ ] **残差 4 本**: CorePlantCtxLift / CoreWindow / CoreBlocked0 / CoreBlockedEltHi
+- [ ] v0.119: CorePlantCtxLift を文脈の長さ帰納で（残る一点は hin = 植えブロックの展開）
 - [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）

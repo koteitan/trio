@@ -1441,6 +1441,15 @@ theorem GX_loop (he : CoreBlockedElt) (h0 : CoreBlocked0)
   GXs_closed (coreBlocked_of_elt he h0) (coreT1L_of_plantctx hp)
     (coreT2E_of_plantctx hp)
 
+/-- **The assembly loop, window form**: the honest residue list.  `CoreWindow`
+is the composite's own window (context suffix + the datum's shifted peel);
+`CoreCtxSuffix` below is the strictly stronger context-only form, and reducing
+to it throws away the datum's hypotheses — keep both statements in view. -/
+theorem GX_loop_window (hw : CoreWindow) (hhi : CoreBlockedEltHi)
+    (h0 : CoreBlocked0) (hp : CorePlantCtxLift) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GXs Y → Y ∈ GXs :=
+  GX_loop (coreBlockedElt_of_window hw hhi) h0 hp
+
 /-- **The assembly loop, context-piece form**: every residue in its finest
 currently known shape — three *context* statements (`CoreCtxSuffix` = the
 re-based suffix, `CoreBlocked0` = the root slice, `CorePlantCtxLift` = the
