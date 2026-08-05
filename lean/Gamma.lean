@@ -1213,6 +1213,172 @@ theorem coreWindowLift_of_ctxSuffixLift (hs : CoreCtxSuffixLift) :
   exact liftPlant_of_plant hplant hargT (by omega) hYdG.1
     (based_dropLast hbased) (gxs_mlift hYdG (entry M 1 p) s)
 
+/-! ### 文脈成分 `CtxInf`（中間ブロックの装備、階段閉包）
+
+`InfEquip` を装備側から供給するための文脈成分。素朴な「中間ブロックの根
+リフト」版はリフト文脈で偽（tools/probe_infltail.py）なので、`GXs` と同じく
+**階段閉包**にしておく（`Croot.seg_slift` / `Croot.seg_mlift`）。 -/
+
+/-- **Infix equipment, staircase-closed.**  Every re-based window-infix of the
+context that avoids the trailing column — and every staircase lift of it — is a
+planted `W`-package. -/
+def CtxInf (M : TrioSeq) : Prop :=
+  ∀ p k, p + k < M.length - 1 →
+    (∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 M) p (p + q)) →
+    entry M 2 p ≤ 1 ∧
+    ∀ φ : ℕ → ℕ, Stair φ → ∀ a t : ℕ,
+      2 * (φ (entry M 1 p) + t) + entry M 2 p ≤ a →
+      Lift1 (slift (shiftl0 (entry M 0 p) (seg M p (k + 1))) φ) t ∈ W a
+
+theorem ctxInf_take {M : TrioSeq} (h : CtxInf M) (j : ℕ) : CtxInf (M.take j) := by
+  intro p k hk hwin
+  have hjM : p + k < M.length - 1 := by
+    rw [List.length_take] at hk
+    omega
+  have hlt : p + k < j := by rw [List.length_take] at hk; omega
+  have hwin' : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 M) p (p + q) := by
+    intro q hq
+    have hb : le0 (M.take j) p (p + q) :=
+      ⟨by rw [List.length_take]; omega, by rw [List.length_take]; omega,
+        hwin q hq⟩
+    rcases Nat.le_total j M.length with hj | hj
+    · exact ((le0_take (X := M) (l := j) (a := p) (b := p + q) hj
+        (by omega)).mp hb).2.2
+    · rw [List.take_of_length_le hj] at hb
+      exact hb.2.2
+  have hent : ∀ i, entry (M.take j) i p = entry M i p :=
+    fun i => Wset.entry_take (by omega)
+  have hseg : seg (M.take j) p (k + 1) = seg M p (k + 1) := by
+    unfold seg
+    refine List.map_congr_left ?_
+    intro q hq
+    rw [List.mem_range'_1] at hq
+    rw [Wset.entry_take (X := M) (l := j) (i := 0) (j := q) (by omega),
+      Wset.entry_take (X := M) (l := j) (i := 1) (j := q) (by omega),
+      Wset.entry_take (X := M) (l := j) (i := 2) (j := q) (by omega)]
+  obtain ⟨h2, hpk⟩ := h p k hjM hwin'
+  rw [hent 0, hent 1, hent 2, hseg]
+  exact ⟨h2, hpk⟩
+
+open Classical in
+/-- **The lifted context keeps the infix equipment** — this is where the naive
+"infix root lift" form fails and the staircase closure is needed
+(`Croot.seg_mlift`): the ambient mask restricts to the infix as the infix's own
+ambient mask, which is a staircase lift. -/
+theorem ctxInf_ltail {M : TrioSeq} (hMarg : argOK M) (h : CtxInf M) (v z t : ℕ) :
+    CtxInf (Wset.ltail v z M t) := by
+  classical
+  have hml : Wset.ltail v z M t = mlift M v t := ltail_eq_mlift hMarg
+  intro p k hk hwin
+  rw [hml] at hk hwin ⊢
+  rw [mlift_length] at hk
+  have hwin' : ∀ q, q < k + 1 → Relation.ReflTransGen (nextrel0 M) p (p + q) := by
+    intro q hq
+    exact (rtg0_slift (A := M)).mp (by
+      rw [← mlift_eq_slift]; exact hwin q hq)
+  obtain ⟨h2, hpk⟩ := h p k hk hwin'
+  have hplen : p < M.length := by omega
+  have he0 : entry (mlift M v t) 0 p = entry M 0 p := entry0_mlift M v t p
+  have he2 : entry (mlift M v t) 2 p = entry M 2 p := entry2_mlift M v t p
+  have he1 : entry (mlift M v t) 1 p
+      = entry M 1 p + (if coneV M v p then t else 0) := entry1_mlift hplen
+  have hlen' : p + (k + 1) ≤ M.length := by omega
+  have hseg := seg_mlift (R := M) (p := p) (k := k) (v := v) (t := t)
+    hlen' hwin'
+  refine ⟨by rw [he2]; exact h2, ?_⟩
+  intro φ hφ a t' hva
+  rw [he1, he2] at hva
+  rw [he0, hseg]
+  by_cases hc : coneV M v p
+  · rw [if_pos hc] at hva ⊢
+    set ψ : ℕ → ℕ := fun m => m + (if v < m then t else 0) with hψ
+    have hψs : Stair ψ := stair_step v t
+    have hc1 : v < entry M 1 p := by
+      have h1 := coneV_iff_amin.mp hc
+      have h2 := amin_self_le M p
+      omega
+    have hψr : ψ (entry M 1 p) = entry M 1 p + t := by
+      rw [hψ]; simp only []; rw [if_pos hc1]
+    have hcmp : Stair (fun m => φ (ψ m)) := stair_comp hψs hφ
+    have hmk : ∀ x ∈ seg M p (k + 1), entry M 0 p ≤ x.1 := by
+      intro x hx
+      unfold seg at hx
+      rw [List.mem_map] at hx
+      obtain ⟨q, hq, rfl⟩ := hx
+      rw [List.mem_range'_1] at hq
+      rcases Nat.eq_or_lt_of_le hq.1 with heq | hlt
+      · rw [← heq]
+      · have := rtg0_entry0_lt (hwin' (q - p) (by omega))
+          (by omega : p ≠ p + (q - p))
+        rw [show p + (q - p) = q from by omega] at this
+        dsimp only
+        omega
+    rw [shiftl0_mlift hmk, mlift_eq_slift, slift_slift hψs hφ]
+    refine hpk (fun m => φ (ψ m)) hcmp a t' ?_
+    show 2 * (φ (ψ (entry M 1 p)) + t') + entry M 2 p ≤ a
+    rw [hψr]
+    exact hva
+  · rw [if_neg hc] at hva ⊢
+    exact hpk φ hφ a t' hva
+
+theorem stair_id : Stair (fun m => m) :=
+  ⟨fun _ => le_rfl, fun _ _ _ => by omega, rfl⟩
+
+theorem slift_id (A : TrioSeq) : slift A (fun m => m) = A := by
+  refine list_ext_getD ?_ ?_
+  · rw [slift_length]
+  · intro i hi
+    rw [slift_length] at hi
+    rw [slift_getD hi, getD_eq_entries]
+    simp
+
+theorem seg_take {M : TrioSeq} {a l k : ℕ} (hk : k ≤ l) :
+    (seg M a l).take k = seg M a k := by
+  refine list_ext_getD ?_ ?_
+  · rw [List.length_take, seg_length, seg_length]
+    omega
+  · intro i hi
+    rw [List.length_take, seg_length] at hi
+    rw [getD_take (by omega), seg_getD (by omega), seg_getD (by omega)]
+
+/-- **`CtxInf` discharges `InfEquip` pointwise**: the infix equipment is exactly
+the `φ = id` slice of the staircase-closed context component. -/
+theorem infEquip_at_of_ctxInf {M : TrioSeq} (h : CtxInf M) {p : ℕ}
+    (hM2 : 2 ≤ M.length) (hplt : p < M.length - 1)
+    (hwin : ∀ j, p < j → j ≤ M.length - 1 → entry M 0 p < entry M 0 j) :
+    entry M 2 p ≤ 1 ∧
+    CtxOK (shiftl0 (entry M 0 p) (seg M (p + 1) (M.length - 1 - p)))
+      (entry M 1 p) (entry M 2 p) := by
+  classical
+  set c : ℕ := entry M 0 p with hc
+  set L : ℕ := M.length - 1 - p with hL
+  have hchain : ∀ p' q, p' = p → q < L → Relation.ReflTransGen (nextrel0 M) p (p + q) := by
+    intro _ q _ hq
+    refine rtg0_of_window (by omega) (by omega) ?_
+    intro l hl0 hl1
+    exact hwin l hl0 (by omega)
+  have hwin0 : ∀ k, k < L → ∀ q, q < k + 1 →
+      Relation.ReflTransGen (nextrel0 M) p (p + q) := by
+    intro k hk q hq
+    exact hchain p q rfl (by omega)
+  refine ⟨(h p 0 (by omega) (hwin0 0 (by omega))).1, ?_⟩
+  intro k hk a t hva
+  rw [shiftl0_length, seg_length] at hk
+  have hcons : ((0, entry M 1 p, entry M 2 p) : ℕ × ℕ × ℕ)
+      :: (shiftl0 c (seg M (p + 1) L)).take k
+      = shiftl0 c (seg M p (k + 1)) := by
+    have htk : (shiftl0 c (seg M (p + 1) L)).take k
+        = shiftl0 c (seg M (p + 1) k) := by
+      unfold shiftl0
+      rw [← List.map_take, seg_take (by omega)]
+    rw [htk, seg_cons, shiftl0_cons]
+    congr 1
+    exact Prod.ext (by dsimp only; omega) rfl
+  rw [hcons]
+  have hres := (h p k (by omega) (hwin0 k hk)).2 (fun m => m) stair_id a t
+    (by simpa using hva)
+  rwa [slift_id] at hres
+
 /-! ### 中間ブロックの装備（`W` レベル）だけで接尾核は植え核に落ちる
 
 `CoreCtxSuffixLift` の対象は、再基底化した中間ブロックを**自身の根で植えた

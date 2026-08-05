@@ -1,11 +1,11 @@
-v0.118.40/the general staircase (IL) law and the v0.119 recipe
+v0.118.41/the staircase-closed context component CtxInf
 
-- Add `amin_shiftl0` / `shiftl0_slift`, and `seg_slift`: a staircase lift
-  restricts to a segment as the segment's own staircase lift, with the
-  staircase capped at the segment root's ancestor-minimum (`stair_cap`)
-- Add the re-based forms `shiftl0_seg_slift` and `shiftl0_seg_ltail`
-- Write the v0.119 recipe into GRAFTALL-PLAN.md 1.9.36: the exact shape of the
-  context component `CtxInf` (staircase-closed — the naive root-lift form is
-  refuted), its take / ltail / graft propagation, and its supply from a
-  `Wstar2i` induction that inherits the infixes from `R[1]` exactly as the
-  prefixes are inherited
+- Add `CtxInf`: every re-based window-infix of the context that avoids the
+  trailing column, and every staircase lift of it, is a planted `W`-package
+- Prove `ctxInf_take` and `ctxInf_ltail`; the lifted context is where the naive
+  root-lift form fails, and `Croot.seg_mlift` plus `slift_slift` / `stair_comp`
+  carry it through
+- Add `stair_id`, `slift_id` and `seg_take`
+- Prove `infEquip_at_of_ctxInf`: `InfEquip`'s content is exactly the `phi = id`
+  slice of `CtxInf`, so wiring `CtxInf` into GX's context condition will
+  discharge `InfEquip`
