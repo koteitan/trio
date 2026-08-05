@@ -12,6 +12,7 @@ N = (0,v,z)::graft M y。どちらも既証明補題の合成。
 -/
 import Lcone
 import Xbar
+import Cgraft
 
 namespace TRIO
 
@@ -555,6 +556,67 @@ theorem coreLiftPlant_of (hl : CoreLift) (hp : CorePlantCtx) : CoreLiftPlant := 
   have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
   exact hl _ (plantCtx_graft hMne (hp M hMarg hM2 v z hz1 hctx) hD hbD)
     (based_cons v z _) t
+
+/-! ### v0.118: 接ぎ木リフト計算則による α 残差の分割
+
+`lift_graft_mask`（Cgraft.lean）で、リフトした植えブロックは
+
+    Lift1 ((0,v,z) :: graft M D) t
+      = (0, v+t, z) :: graft (ltail v z M t) (mlift D v t)      （SiteHigh のとき）
+
+と分解する。右辺は「リフトした植え文脈」に「データの**環境マスクリフト**」を
+接ぎ木した形なので、`plantCtx_graft` で 2 つの核に割れる。 -/
+
+/-- **マスクリフト核**: 機械の集合は環境マスクリフトで閉じる。これが (e)-壁の
+最終形。一般のデータでは複合ブロックの錐はデータ自身の錐ではなく `coneV` なので
+（`cone_graft_mask`）、`CoreLift`（データ自身の `Lift1`）ではなくこちらが要る。 -/
+def CoreMaskLift : Prop :=
+  ∀ D : TrioSeq, D ∈ GX → based D → ∀ v t : ℕ, mlift D v t ∈ GX
+
+/-- **リフトした植え文脈核**: 文脈自身の植えた peel をリフトしたものが機械の
+集合に入る。データを含まない純粋な文脈側の言明（MASTER 長さ帰納の担当）。 -/
+def CorePlantCtxLift : Prop :=
+  ∀ M : TrioSeq, argOK M → 2 ≤ M.length → ∀ v z : ℕ, z ≤ 1 → CtxOK M v z →
+    ∀ t : ℕ, Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) t ∈ GX
+
+open Classical in
+/-- **α 残差の分割**: リフトした植えブロックは、リフトした植え文脈にデータの
+マスクリフトを接ぎ木したもの。 -/
+theorem coreLiftPlant_of_mask (hp : CorePlantCtxLift) (hm : CoreMaskLift) :
+    CoreLiftPlant := by
+  classical
+  intro M D hMarg hM2 v z hz1 hctx hD hbD t
+  have hMne : M ≠ [] := List.length_pos_iff.mp (by omega)
+  have hElen : (((0, v, z) : ℕ × ℕ × ℕ) :: M).length = M.length + 1 := by simp
+  have hE2 : 2 ≤ (((0, v, z) : ℕ × ℕ × ℕ) :: M).length := by rw [hElen]; omega
+  have hE0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: M) 0 0 = 0 := based_cons v z M
+  have hEs : ∀ l, 0 < l → l < (((0, v, z) : ℕ × ℕ × ℕ) :: M).length →
+      0 < entry (((0, v, z) : ℕ × ℕ × ℕ) :: M) 0 l := by
+    intro l hl0 hlE
+    obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    rw [entry_cons]
+    exact hMarg _ (entry_pair_mem (by rw [hElen] at hlE; omega))
+  have hE1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: M) 1 0 = v := by
+    show ((((0, v, z) : ℕ × ℕ × ℕ) :: M).getD 0 (0, 0, 0)).2.1 = v
+    rfl
+  set B : TrioSeq :=
+    if SiteHigh (((0, v, z) : ℕ × ℕ × ℕ) :: M) then mlift D v t else D with hB
+  have hbB : based B := by
+    rw [hB]; split
+    · show entry (mlift D v t) 0 0 = 0
+      rw [entry0_mlift]; exact hbD
+    · exact hbD
+  have hBG : B ∈ GX := by
+    rw [hB]; split
+    · exact hm D hD hbD v t
+    · exact hD
+  have hcalc : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft M D) t
+      = graft (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: M) t) B := by
+    rw [← graft_cons hMne, lift_graft_mask hE0 hEs hE2 hbD t, hE1, hB]
+  rw [hcalc, Wset.lift_cons, graft_cons (Wset.ltail_ne hMne)]
+  refine plantCtx_graft (Wset.ltail_ne hMne) ?_ hBG hbB
+  rw [Wset.ltail_dropLast]
+  exact hp M hMarg hM2 v z hz1 hctx t
 
 /-- **The γ'-residue, element form**: the descended copies block is in the
 machine's set (independent of the ambient root `(v, z, t)`). -/
@@ -1303,5 +1365,21 @@ theorem GX_loop_pieces (hsuf : CoreCtxSuffix) (hhi : CoreBlockedEltHi)
     (h0 : CoreBlocked0) (hl : CoreLift) (hp : CorePlantCtx) :
     ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
   GX_loop'' (coreWindow_of_suffix hsuf) hhi h0 hl hp
+
+/-- **The assembly loop, mask form (v0.118)**: with the graft lift calculus the
+lift residue is exactly two statements — the *lifted planted context*
+(`CorePlantCtxLift`, no element data at all) and the *datum's ambient mask
+lift* (`CoreMaskLift`). -/
+theorem GX_loop_mask (he : CoreBlockedElt) (h0 : CoreBlocked0)
+    (hp : CorePlantCtxLift) (hm : CoreMaskLift) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
+  GX_loop he h0 (coreLiftPlant_of_mask hp hm)
+
+/-- **The assembly loop, mask + piece form**: every residue of the campaign in
+its finest currently known shape. -/
+theorem GX_loop_pieces_mask (hsuf : CoreCtxSuffix) (hhi : CoreBlockedEltHi)
+    (h0 : CoreBlocked0) (hp : CorePlantCtxLift) (hm : CoreMaskLift) :
+    ∀ (u : ℕ) (Y : TrioSeq), Aop W u GX Y → Y ∈ GX :=
+  GX_loop_mask (coreBlockedElt_of_window (coreWindow_of_suffix hsuf) hhi) h0 hp hm
 
 end TRIO

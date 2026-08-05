@@ -1,17 +1,11 @@
-v0.118.1/the general mask form of the graft lift calculus
+v0.118.2/split the alpha lift residue into context and datum (Gamma.lean)
 
-- Add the general cone transfer `cone_graft_mask`: with no single-tree
-  hypothesis, the composite's root cone meets the argument in the ambient
-  mask `coneV A v` (guarded by `SiteHigh E`), and `lift_graft_mask` turns it
-  into `Lift1 (graft E A) d = graft (Lift1 E d) (mlift A v d)`
-- Add `mlift` (ambient-threshold mask lift) with its entry lemmas, and the
-  row-0 chain machinery it needs (`exists_root_anc`, `nextrel0_graft_site`,
-  `rtg0_graft_split` / `rtg0_graft_join`, `rtg0_graft_le`, `rtg0_graft_embed`)
-- Factor the pointwise assembly into `lift_graft_of_entries`, shared by the
-  single-tree calculus and the mask calculus
-- Add tools/probe_maskcalc.py (0/200000; mask differs from the argument's own
-  cone in 131887 cases) and tools/probe_mliftgraft.py (0/200000: the mask lift
-  distributes over grafts at a CONSTANT threshold, which `Lift1` never did)
-- Record the consequence in GRAFTALL-PLAN 1.9.18: alpha's residue splits into
-  the lifted planted context and `mlift Y v t` in GX; beta's lift residue is
-  covered by the single-tree calculus
+- Add `CoreMaskLift` (GX is closed under the ambient mask lift `mlift`) and
+  `CorePlantCtxLift` (the lifted planted context peel is in GX)
+- Prove `coreLiftPlant_of_mask`: the graft lift calculus rewrites the lifted
+  planted block as the lifted planted context grafted with the datum's mask
+  lift, so `CoreLiftPlant` follows from the two new cores via `plantCtx_graft`
+- Add `GX_loop_mask` / `GX_loop_pieces_mask`: the machine closes on
+  (CoreCtxSuffix, CoreBlockedEltHi, CoreBlocked0, CorePlantCtxLift,
+  CoreMaskLift) — the lift residue now carries no element/context mixture
+- Import Cgraft in Gamma
