@@ -1,9 +1,10 @@
-v0.118.25/measured: baking the GX component into the equipment is circular
+v0.118.26/context-length stratification also breaks, and the fixpoint route
 
-- GRAFTALL-PLAN 1.9.27: the v0.119 design needs `CtxOK` to assert that the
-  context's own planted prefixes are in `GX`, but `GX` is DEFINED from `CtxOK`,
-  so the reference is a definitional cycle (verified in Lean: `Unknown
-  identifier GX`), and unfolding it makes `CtxOK` self-referential
-- Record the escape routes; the favoured one is to STRATIFY by context length
-  (`GX_n` obliges contexts of length <= n, `CtxOK_n`'s GX component uses
-  `GX_{n-1}` since `M.take k` is strictly shorter, `GX = intersection of GX_n`)
+- GRAFTALL-PLAN 1.9.27: stratifying `GX` by context length fails too, because
+  `gx_graft` goes through `graft M'' (graft E w) = graft (graft M'' E) w` and
+  the composite context is LONGER; the root `(v,z)` survives grafting but the
+  plant's root is `(v+t,z)`, so `2v+z` is not a usable measure either
+- What survives: parameterise `GX` by the equipment predicate `E` (antitone in
+  `E`), so `F(E) = (W part) and (plants in GX E)` is MONOTONE and has fixpoints;
+  which fixpoint to take is the v0.119 design fork (small `E` helps the cores,
+  large `E` helps whoever supplies the equipment)
