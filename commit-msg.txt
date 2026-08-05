@@ -1,4 +1,10 @@
-v0.115.1/docs: record the gamma' window reduction
+v0.115.2/identify the wall: the obligation language is not lift-closed
 
-- Mark GRAFTALL-PLAN 1.9.10's gamma' sketch as landed and name the
-  delivered lemmas
+- Record GRAFTALL-PLAN 1.9.13: every remaining core is a "lift inside a
+  graft" operation, which the machine's "lift after graft" language does
+  not support
+- Show why re-introducing natDom into clause 2 (the yapss shape) does not
+  pay: the srow<=1 dead peel then needs clause 3, whose data is the same
+  non-closure moved to branch (c)
+- List the three candidate ways out (two-parameter mask language, context
+  class parameterisation, master induction rewiring)
