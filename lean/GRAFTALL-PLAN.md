@@ -1873,6 +1873,72 @@ Core0 : M, N ともに装備つき（M は根 (v,z)、N は根 (v',z')）のと�
 消去 `GX` 版を先に作る）。§1.9.42 の教訓により、還元先が結論と一致していない
 ことを毎回確認する。
 
+## 1.9.44 ★★★★★ v0.118.54: `GX` 側の核が**一列族** `[(0,b,c)] ∈ GX` に潰れた
+
+### 発見
+
+`gx_graft` は**無条件の合成則**である:
+
+```
+gx_graft : E ≠ [] → based E → E.dropLast ∈ GX → w ∈ GX → based w → graft E w ∈ GX
+```
+
+（文脈側の装備は `ctxOK_graft` が内部で作る。）基づく列 `y`（長さ ≥ 2）を、
+末尾側 `[1,|y|)` で行 0 の深さが最小になる位置 `p` で切ると
+
+```
+y = graft (y.take (p+1)) (shiftl0 (entry y 0 p) (y.drop p))        （graft_take_drop）
+```
+
+で、文脈側の peel は `y.take p`（長さ `p < |y|`）、データ側は長さ
+`|y| - p < |y|`（`p ≥ 1`）。**両方とも真に短い**ので長さの強帰納法が回り、
+基底は基づく単元だけになる。
+
+### 証明済み（Lind.lean, sorry 0, build green 783）
+
+```
+entry_drop / le_of_mem_drop / dropLast_take_succ / graft_take_drop
+mem_GX_of_singletons : (∀ b c, [(0,b,c)] ∈ GX) → ∀ n y, |y| < n → based y → y ∈ GX
+CoreSingleton := ∀ b c, [(0,b,c)] ∈ GX
+mem_GX_of_core / corePlantCtx0_of_singleton : CoreSingleton → CorePlantCtx0
+coreSingleton_of_plant0 : InfEquip → CorePlantCtx0 → CoreSingleton   （無回帰＝同値）
+
+TRIO_terminates_of_singleton : InfEquip → CoreSingleton → WellFounded stepRel
+  #print axioms = [propext, Classical.choice, Quot.sound]
+```
+
+### `CoreSingleton` の中身（`GX` を展開した素の形）
+
+`[(0,b,c)].take i` は `i = 0` なら `[]`（= 文脈の装備そのもの、自明）、
+`i = 1` なら `[(0,b,c)]`。よって
+
+```
+CoreSingleton ⟺ 装備つき文脈 M（根 (v,z), z ≤ 1）に対し
+   Lift1 ((0,v,z) :: (M.dropLast ++ [(entry M 0 (|M|-1), b, c)])) t ∈ W a
+                                              (a ≥ 2(v+t)+z, ∀ b c)
+```
+
+= **「装備つき文脈の末尾列の添字を任意の (b,c) に差し替えても package」**
+（キャップ補題）。さらに §1.9.43 の吸収でリフト `t` も落ちる。
+
+⟹ 残核は 2 本、どちらも量詞が最小化された:
+1. `CoreSingleton`（一列キャップ, `GX` レベル）
+2. `InfEquip`（窓の再基底化中置が装備, `W` レベル）
+
+### 注意（§1.9.42 の教訓の適用）
+
+`CoreSingleton` は `CorePlantCtx0` と（`InfEquip` を法として）**同値**であって
+真の弱化ではない。しかし量詞は「∀ 装備つき文脈 + ∀ 接頭辞」から
+「∀ 添字対 (b,c)」に落ちており、`2b+c` の帰納法という新しい攻め口が立つ。
+
+### 次の一手
+
+`CoreSingleton` を `2b+c` の帰納で攻める。`mem_GX_of_singletons` は
+**y の列の添字レベルだけ**を使うので、レベル制限版
+「レベル < L の列だけからなる基づく列は `GX`」が同じ証明で出る。
+問題は核の証明で必要になる文脈 `M` の植え peel（`M` は任意レベル）。
+ここを回避できるかが次の判定点。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

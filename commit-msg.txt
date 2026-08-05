@@ -1,11 +1,14 @@
-v0.118.53/the lift quantifier drops out of the GX core
+v0.118.54/the GX core collapses to a one-column family
 
-- Add `ctxOK_ltail_self`: the equipment class is closed under the ambient root
-  lift, so `CtxOK M v z` gives `CtxOK (ltail v z M t) (v+t) z`
-- Add `CorePlantCtx0` (lift-free: `(0,v,z) :: M.dropLast ∈ GX`) with
-  `corePlantCtxLift_of_plant0` / `plant0_of_corePlantCtxLift` — the two cores
-  are equivalent, so `∀ t` was redundant
-- Add `TRIO_terminates_of_plant0` / `no_infinite_expansion_of_plant0` in
-  Final.lean; axioms stay [propext, Classical.choice, Quot.sound]
-- GRAFTALL-PLAN.md 1.9.43 + task.md: residue is now `CorePlantCtx0` +
-  `InfEquip`, neither carrying a lift quantifier
+- Add Lind.lean: `graft_take_drop` cuts a based sequence at a tail-minimal
+  depth into a strictly shorter context peel and a strictly shorter datum, so
+  `gx_graft` runs a length induction
+- Add `mem_GX_of_singletons` / `CoreSingleton` / `corePlantCtx0_of_singleton`:
+  every based sequence is in `GX` given only `[(0,b,c)] ∈ GX`
+- Add `coreSingleton_of_plant0`: the old core still supplies the new one, so
+  modulo `InfEquip` the two are equivalent (no regression, no strengthening)
+- Add `TRIO_terminates_of_singleton` / `no_infinite_expansion_of_singleton` in
+  Final.lean and register Lind in lakefile roots; axioms stay
+  [propext, Classical.choice, Quot.sound]
+- GRAFTALL-PLAN.md 1.9.44 + task.md: residue is `CoreSingleton` (cap the last
+  column of an equipped context with an arbitrary subscript) + `InfEquip`

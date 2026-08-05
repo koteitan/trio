@@ -46,7 +46,8 @@
 - [x] 装備ギャップ解消: Wstar2s 接頭辞閉包で GraftAll を核から直接導出 ✅ v0.118.35
 - [x] 生成族還元はトートロジーと判明（機械検査済み）⛔ v0.118.52
 - [x] 核からリフト量詞が落ちた: CorePlantCtx0 と同値 ✅ v0.118.53
-- [ ] **残差**: CorePlantCtx0（GXレベル・リフト無し）+ InfEquip（Wレベル装備）
+- [x] 長さ帰納で GX 側が一列族に潰れた: CoreSingleton ✅ v0.118.54 Lind.lean
+- [ ] **残差**: CoreSingleton（一列キャップ）+ InfEquip（Wレベル装備）
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
 - [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）
 - [x] Final.lean を Wstar2s 系に配線替え: TRIO_terminates_of_cores ✅ v0.118.36

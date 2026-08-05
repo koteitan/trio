@@ -7,6 +7,7 @@ Final.lean: トリオ数列（BM4, z<2 断片）停止性の組み立て。
 import Wset
 import Reduction
 import Gamma
+import Lind
 
 namespace TRIO
 
@@ -113,10 +114,23 @@ theorem TRIO_terminates_of_plant0 (hie : InfEquip) (hp : CorePlantCtx0) :
     WellFounded stepRel :=
   TRIO_terminates_of_plant hie (corePlantCtxLift_of_plant0 hp)
 
+/-- **Trio sequences terminate**, modulo the ONE-COLUMN core `CoreSingleton`
+(`[(0,b,c)] ∈ GX`) plus `InfEquip`.  The length induction (`Lind.lean`) rebuilds
+every based sequence from one-column blocks by `gx_graft`, so the whole `GX`
+side of the campaign rests on this single family. -/
+theorem TRIO_terminates_of_singleton (hie : InfEquip) (hs : CoreSingleton) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_plant0 hie (corePlantCtx0_of_singleton hs)
+
 /-- **No infinite expansion sequence**, from the lift-free core. -/
 theorem no_infinite_expansion_of_plant0 (hie : InfEquip) (hp : CorePlantCtx0) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion
     (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_plant hie (corePlantCtxLift_of_plant0 hp)))
+
+/-- **No infinite expansion sequence**, from the one-column core. -/
+theorem no_infinite_expansion_of_singleton (hie : InfEquip) (hs : CoreSingleton) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_plant0 hie (corePlantCtx0_of_singleton hs)
 
 end TRIO
