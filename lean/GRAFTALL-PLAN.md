@@ -446,6 +446,44 @@ Aop 由来の一般データ（非整列）は `GX_full` 経由でしか使わ�
 **次期作業 (v0.119)**: `glift` の Lean 化（`mu`・階段の型・(G6)/(G5)/(G2)/(G3)）
 → `GXg` 定義 → `gxg_graft` / `gxg_glift` → α/β の再配線。
 
+## 1.9.20 ✅ v0.118.5-7: 階段言語の Lean 化（残るは展開との可換性 (G2) だけ）
+
+`Cgraft.lean`（1350 行, sorry 0, build 緑 780 jobs）に階段言語一式:
+
+```
+amin A j        行 0 祖先鎖（自身含む）の行 1 最小値   coneV_iff_amin: coneV A v j ↔ v < amin A j
+Stair φ         φ m ≥ m ∧ (φ m - m 単調) ∧ φ 0 = 0     stair_step / stair_comp / stair_cap
+slift A φ       列 j を φ (amin A j) - amin A j 上げる  mlift_eq_slift
+amin_slift      (G6) amin (slift A φ) j = φ (amin A j)
+slift_slift     (G5) 合成則
+amin_graft_low / amin_graft_high_eq / capV / slift_graft   (G3) 接ぎ木分配（cap 付き）
+```
+
+**構造保存（(G2) の心臓部）も済み**:
+```
+amin_min_below_parent : 祖先鎖の最小値は行 1 の親 j0 の側で達成される
+amin_parent / amin_between / amin_le1 : 親・間の祖先・行 1 祖先鎖は同じ amin
+  ⟹ 行 1 の親子判定はすべて「同じ定数シフト」の下で行われる
+nextrel1_slift / le1_slift / nextrel2_slift / nextR_slift
+hasParent_slift / parent_slift / srow_slift / entry1_slift_pos
+```
+逆向きは `stair_strictMono`（階段は狭義単調）→ `stair_inj` で持ち上げ側の
+`amin_parent` を降ろす。**`Stair` に `φ 0 = 0` が必要**（行 1 = 0 の列が動くと
+`srow` が変わる）— マスク生成の階段は自動的に満たす。
+
+### 残る一点: `amin` のコピー周期性
+
+(G2) `slift (A⟦n⟧) φ = (slift A φ)⟦n⟧` は、分岐データ（`j1, i1, j0, d0, d1`）が
+すべて保存される（`d1` は `amin_le1`）ので、次の一点に還元される:
+
+```
+   amin (A⟦n⟧) idx = amin A (idx のコピー元)     （接頭辞では idx 自身）
+```
+
+すなわち**展開のコピー列は元の列と同じ `amin` をもつ**。行 0 の鎖の反転
+（`Lcone.gexp_chain_inversion` / `gexp_flat_chain_inversion`）がちょうど道具。
+これが済めば (G2) が出て、`GXg` の設計（§1.9.19）に進める。
+
 ## 1.9.18 ★★★★ 接ぎ木リフト計算則を Lean 化（v0.118, Cgraft.lean）— 一般形は**環境マスク**
 
 §1.9.17 の「整列リフト計算則」を精密化して Lean 化した。自己監査で 2 度の

@@ -1,12 +1,5 @@
-v0.118.7/the staircase lift preserves the whole parent structure
+v0.118.8/record the staircase language status and the one remaining law
 
-- Prove the shift-zone lemmas `amin_min_below_parent`, `amin_parent`,
-  `amin_between`, `amin_le1`: a row-1 parent (and everything squeezed under the
-  edge) carries the same `amin` as its child, so every comparison the parent
-  relation makes happens under one constant shift
-- Prove `nextrel1_slift`, `le1_slift`, `nextrel2_slift`, `nextR_slift`,
-  `hasParent_slift`, `parent_slift`, `srow_slift`: the staircase lift is an
-  isomorphism for the whole trio parent structure; the backward direction uses
-  `stair_strictMono` / `stair_inj`
-- Require `phi 0 = 0` in `Stair` (a column at row 1 = 0 must not move, or
-  `srow` would change); mask-generated staircases satisfy it automatically
+- GRAFTALL-PLAN 1.9.20: the Lean inventory of the staircase language and the
+  reduction of (G2) to a single lemma — the expansion's copies inherit their
+  source column's `amin`
