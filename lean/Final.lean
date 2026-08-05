@@ -6,6 +6,7 @@ Final.lean: トリオ数列（BM4, z<2 断片）停止性の組み立て。
 -/
 import Wset
 import Reduction
+import Gamma
 
 namespace TRIO
 
@@ -40,7 +41,8 @@ theorem wf_Rnf_of_wf_TS
 theorem wf_olt_ST_TS_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
     WellFounded
       (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
-  Wset.wf_olt_ST_TS_of_cofinality (Wset.towerOK_of h2 he)
+  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar) Set.Subset.rfl
+    (Wset.Wstar_closed (Wset.towerOK_of h2 he))
     (fun hM hN h => trio_cofinality hM hN h)
 
 /-- Well-foundedness of `Rnf` (the term-side order on the `translate` image). -/
@@ -58,5 +60,32 @@ theorem TRIO_terminates (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
 theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion (wf_Rnf_holds h2 he)
+
+
+/-! ## 新しいトラック: 2 本の文脈核から停止性まで
+
+`Wstar2s`（接頭辞閉包）で A2' を回すと装備が帰納法自身から出るので、
+`GraftAll` は `CoreCtxSuffixLift` / `CorePlantCtxLift` の 2 本だけに依存する。 -/
+
+/-- **Well-foundedness of `olt` on standard forms, from the two context
+cores.** -/
+theorem wf_olt_ST_TS_of_cores (hsl : CoreCtxSuffixLift) (hp : CorePlantCtxLift) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
+  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar2s) Wset.Wstar2s_le_Wstar
+    (fun u0 R hR => Wstar2s_closed_of_graftAll (graftAll_of_cores hsl hp) u0 R hR)
+    (fun hM hN h => trio_cofinality hM hN h)
+
+/-- **Trio sequences terminate**, modulo the two *context* cores
+`CoreCtxSuffixLift` and `CorePlantCtxLift` — no tower core, no equipment gap. -/
+theorem TRIO_terminates_of_cores (hsl : CoreCtxSuffixLift)
+    (hp : CorePlantCtxLift) : WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_cores hsl hp))
+
+/-- **No infinite expansion sequence**, from the two context cores. -/
+theorem no_infinite_expansion_of_cores (hsl : CoreCtxSuffixLift)
+    (hp : CorePlantCtxLift) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_cores hsl hp))
 
 end TRIO

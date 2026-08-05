@@ -1,19 +1,12 @@
-v0.118.35/close the equipment gap: GraftAll follows from the cores
+v0.118.36/trio termination rests on exactly two context cores
 
-- Add `Wstar2s` (the prefix-closed form of `Wstar2`) with `Wstar2s_le`,
-  `Wstar2s_take` and `take_mem_Wstar2_of_Aop`: the strict prefixes are read off
-  the `Aop` datum (clause 2 via `oper_take_prefix`, clause 3 via `graft R []`)
-- Run the outer induction over `Wstar2s`: `Wstar2_closed` now consumes
-  `Aop W u0 Wstar2s R`, `Wstar2s_closed` closes the prefix-closed set, and
-  `LiftTower1` / `LiftTowerExp2` gain the prefix hypothesis
-- Restate `GraftAll` with the context's own slice equipment, per ambient root,
-  and supply it at both consumption sites (`ltail_take` + `Lift1_Lift1` for the
-  lifted context)
-- Turn `graftAll_of_GX` into `CoreBlocked -> CoreT1L -> CoreT2E ->
-  Wset.GraftAll`, replacing the old equipped-contexts-only form
-- Replace `Wstar2_closed_of_graftAll` with `Wstar2s_closed_of_graftAll` and add
-  `W_le_Wstar2s`
-- Add `coreBlocked_of_ctxSuffixLift`, `graftAll_of_cores` and
-  `W_le_Wstar2s_of_cores : CoreCtxSuffixLift -> CorePlantCtxLift ->
-  (forall u, W u subset Wstar2s)`
-- Record the closure in GRAFTALL-PLAN.md 1.9.32 and task.md
+- Parameterise `mem_of_Aclosed_aux` and the whole `W_membership` chain by a set
+  `S` with `S subset Wstar` and its A-closedness, replacing the `TowerOK`
+  argument that was only ever used for `Wstar_closed`
+- Add `Wstar2_le_Wstar` / `Wstar2s_le_Wstar`
+- Wire the old track through `S := Wstar` so `TRIO_terminates` is unchanged
+- Add `wf_olt_ST_TS_of_cores`, `TRIO_terminates_of_cores` and
+  `no_infinite_expansion_of_cores` in Final.lean, running the chain through
+  `S := Wstar2s`: `CoreCtxSuffixLift -> CorePlantCtxLift -> WellFounded stepRel`,
+  axioms [propext, Classical.choice, Quot.sound]
+- Record the wiring in GRAFTALL-PLAN.md 1.9.33 and task.md

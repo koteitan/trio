@@ -1313,6 +1313,42 @@ sorry 0、axioms = [propext, Classical.choice, Quot.sound]、build 782 jobs。
 
 つまり **トリオ側の閉包はすべて 2 本の文脈核に還元された**。
 
+## 1.9.33 ★★★★★ v0.118.36: **停止性が 2 本の文脈核だけに乗った**
+
+```
+TRIO_terminates_of_cores : CoreCtxSuffixLift → CorePlantCtxLift
+                         → WellFounded stepRel
+```
+sorry 0、axioms = [propext, Classical.choice, Quot.sound]、build 782 jobs。
+
+### 配線替え
+
+`mem_of_Aclosed_aux` 以下（`mem_of_Aclosed` / `mem_Wstar` /
+`mem_W_of_bound(_aux)` / `mem_W_maxlev` / `W_membership` /
+`wf_olt_ST_TS_of_cofinality`）は `TowerOK` を `Wstar` の A-閉性にしか使って
+いなかったので、**集合 `S` でパラメータ化**した:
+
+```
+{S : Set TrioSeq} (hSle : S ⊆ Wstar)
+  (hScl : ∀ u0 R, Aop W u0 S R → R ∈ S)
+```
+
+* 旧トラック: `S := Wstar`, `Set.Subset.rfl`, `Wstar_closed (towerOK_of h2 he)`
+* 新トラック: `S := Wstar2s`, `Wstar2s_le_Wstar`,
+  `Wstar2s_closed_of_graftAll (graftAll_of_cores hsl hp)`
+
+`Final.lean` に新トラックの `wf_olt_ST_TS_of_cores` /
+`TRIO_terminates_of_cores` / `no_infinite_expansion_of_cores` を追加
+（旧 `TRIO_terminates (h2 he)` はそのまま残してある）。
+
+### いま残っているもの（これだけ）
+
+```
+CorePlantCtxLift  : 装備つき文脈 M について ∀ t, Lift1 ((0,v,z) :: M.dropLast) t ∈ GX
+CoreCtxSuffixLift : 装備つき文脈 M, p < |M|-1 について
+                    ∀ s, Lift1 (shiftl0 (entry M 0 p) (seg M p (|M|-1-p))) s ∈ GX
+```
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

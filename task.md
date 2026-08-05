@@ -47,4 +47,4 @@
 - [ ] **残差 2 本（どちらも純粋な文脈の言明）**: CorePlantCtxLift / CoreCtxSuffixLift
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
 - [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）
-- [ ] 旧トラック TowerExp の置換（Final.lean を Wstar2 系に配線替え）
+- [x] Final.lean を Wstar2s 系に配線替え: TRIO_terminates_of_cores ✅ v0.118.36

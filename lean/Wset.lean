@@ -3494,6 +3494,14 @@ theorem Wstar2s_le : Wstar2s ⊆ Wstar2 := by
   have hR := h R.length
   rwa [List.take_length] at hR
 
+theorem Wstar2_le_Wstar : Wstar2 ⊆ Wstar := by
+  intro R h hR v z a hz1 hva
+  have hL := h hR v z a 0 hz1 (by omega)
+  rwa [Lift1_zero] at hL
+
+theorem Wstar2s_le_Wstar : Wstar2s ⊆ Wstar :=
+  fun _ h => Wstar2_le_Wstar (Wstar2s_le h)
+
 theorem Wstar2s_take {R : TrioSeq} (h : R ∈ Wstar2s) (j : ℕ) :
     R.take j ∈ Wstar2s := by
   intro k
@@ -4027,7 +4035,8 @@ theorem le_maxlev : ∀ {S : TrioSeq}, ∀ p ∈ S, 2 * p.2.1 + p.2.2 ≤ maxlev
       · exact le_max_left _ _
       · exact le_trans (ih p hp) (le_max_right _ _)
 
-theorem mem_of_Aclosed_aux (htow : TowerOK) :
+theorem mem_of_Aclosed_aux {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S) :
     ∀ (N : ℕ) (M : TrioSeq), M.length ≤ N → zle1 M →
     ∀ X : Set TrioSeq, (∀ (u : ℕ) (M' : TrioSeq), Aop W u X M' → M' ∈ X) →
       M ∈ X := by
@@ -4065,7 +4074,7 @@ theorem mem_of_Aclosed_aux (htow : TowerOK) :
             simp only []
             omega
           have hWs : shiftl0 p0.1 R ∈ Wstar := by
-            refine ih _ ?_ ?_ Wstar (Wstar_closed htow)
+            refine hSle (ih _ ?_ ?_ S hScl)
             · rw [shiftl0_length]
               simp only [List.length_cons] at hMlen
               omega
@@ -4109,18 +4118,22 @@ theorem mem_of_Aclosed_aux (htow : TowerOK) :
           exact hPX hrs
 
 /-- Every block belongs to every `A`-closed set. -/
-theorem mem_of_Aclosed (htow : TowerOK) {X : Set TrioSeq}
+theorem mem_of_Aclosed {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S) {X : Set TrioSeq}
     (hX : ∀ (u : ℕ) (M : TrioSeq), Aop W u X M → M ∈ X) :
     ∀ M : TrioSeq, zle1 M → M ∈ X :=
-  fun M hz => mem_of_Aclosed_aux htow M.length M le_rfl hz X hX
+  fun M hz => mem_of_Aclosed_aux hSle hScl M.length M le_rfl hz X hX
 
 /-- Every argument block is in `W*`. -/
-theorem mem_Wstar (htow : TowerOK) (R : TrioSeq) (hz : zle1 R) :
+theorem mem_Wstar {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S)
+    (R : TrioSeq) (hz : zle1 R) :
     R ∈ Wstar :=
-  mem_of_Aclosed htow (Wstar_closed htow) R hz
+  hSle (mem_of_Aclosed hSle hScl hScl R hz)
 
 /-- **Every block lies in `W u` as soon as `u` bounds its subscript levels.** -/
-theorem mem_W_of_bound_aux (htow : TowerOK) :
+theorem mem_W_of_bound_aux {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S) :
     ∀ (N : ℕ) (M : TrioSeq), M.length ≤ N → zle1 M →
     ∀ u : ℕ, (∀ p ∈ M, 2 * p.2.1 + p.2.2 ≤ u) → M ∈ W u := by
   intro N
@@ -4170,7 +4183,7 @@ theorem mem_W_of_bound_aux (htow : TowerOK) :
         have hz1 : p0.2.2 ≤ 1 :=
           hzM p0 (List.mem_append_right _ List.mem_cons_self)
         have hmem : Q ∈ W u :=
-          mem_Wstar htow _
+          mem_Wstar hSle hScl _
             (fun q hq => by
               rw [mem_shiftl0] at hq
               obtain ⟨r, hr, rfl⟩ := hq
@@ -4198,27 +4211,31 @@ theorem mem_W_of_bound_aux (htow : TowerOK) :
               (fun p hp => hbd p (List.mem_append_left _ hp))
           exact W_add hAu hPu hrs
 
-theorem mem_W_of_bound (htow : TowerOK) (M : TrioSeq)
+theorem mem_W_of_bound {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S) (M : TrioSeq)
     (hz : zle1 M) (u : ℕ) (h : ∀ p ∈ M, 2 * p.2.1 + p.2.2 ≤ u) : M ∈ W u :=
-  mem_W_of_bound_aux htow M.length M le_rfl hz u h
+  mem_W_of_bound_aux hSle hScl M.length M le_rfl hz u h
 
 /-- Every block lies in `W u` for `u` its maximal subscript level. -/
-theorem mem_W_maxlev (htow : TowerOK) (M : TrioSeq)
+theorem mem_W_maxlev {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S) (M : TrioSeq)
     (hz : zle1 M) : M ∈ W (maxlev M) :=
-  mem_W_of_bound htow M hz (maxlev M) le_maxlev
+  mem_W_of_bound hSle hScl M hz (maxlev M) le_maxlev
 
-theorem W_membership (htow : TowerOK) :
+theorem W_membership {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S) :
     ∀ M : TrioSeq, ST_TS M → ∃ u : ℕ, M ∈ W u :=
-  fun M hM => ⟨maxlev M, mem_W_maxlev htow M (zle1_ST_TS hM)⟩
+  fun M hM => ⟨maxlev M, mem_W_maxlev hSle hScl M (zle1_ST_TS hM)⟩
 
 /-- **Cofinality + the two open cores give well-foundedness of `olt` on
 `ST_TS` images.** -/
-theorem wf_olt_ST_TS_of_cofinality (htow : TowerOK)
+theorem wf_olt_ST_TS_of_cofinality {S : Set TrioSeq} (hSle : S ⊆ Wstar)
+    (hScl : ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 S R → R ∈ S)
     (hcof : ∀ {M N : TrioSeq}, ST_TS M → ST_TS N → translate N <o translate M →
       ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧)) :
     WellFounded (fun a b : TrioSeq =>
       ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
-  wf_of_cofinality_and_membership hcof (W_membership htow)
+  wf_of_cofinality_and_membership hcof (W_membership hSle hScl)
 
 end Wset
 
