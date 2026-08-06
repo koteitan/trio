@@ -2389,6 +2389,46 @@ slift ((0,v,z) :: R) (step (v-1) d) = (0, v+d, z) :: 「amin R ≥ v を d 持�
 3. `i1 = 1, j0 = 0`（行 1 塔）が唯一の難所。ここは `amin R = v` 境界の問題と
    同じ根を持つ可能性が高い。
 
+## 1.9.55 ★★★★ v0.118.67: (WL) は「**親のある場合**」だけに縮んだ
+
+### 証明済み（`lean/Wtower2.lean`, sorry 0, build 787）
+
+```
+Lift1_of_length_one     : |X| = 1 → Lift1 X d = [(entry X 0 0, entry X 1 0 + d, entry X 2 0)]
+lift_oper_of_noParent   : 2 ≤ |X| → ¬hasParent X (srow X last) last →
+                            (Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d          -- Pred 分岐は可換
+LiftStageParented       : 親のある場合の (WL) 残差
+liftStage_of_parented   : LiftStageParented → LiftStage
+TRIO_terminates_of_parented : LiftStageParented → TowerExp → WellFounded stepRel
+  #print axioms = [propext, Classical.choice, Quot.sound]
+```
+
+### なぜ縮むか
+
+`Lift1` は行 2 を動かさず、行 1 も錐の列しか動かさない。錐の列は
+`le1_entry1_lt` より行 1 が根より真に大きいので、`srow` は保たれる
+（`srow_Lift1`）。`hasParent` も保たれる（`hasParent_Lift1`）。よって
+`oper` の `Pred` 分岐（全零 or 親なし）はリフトと**可換**。
+
+`Aop` の各節での使われ方:
+
+* 節 1: 長さ ≤ 1。`Lift1` は単元をレベル `+2d` にするだけ ⟹ `singleton_mem_W`
+* 節 2: 長さ ≤ 1 なら `oper` は恒等で仮定＝結論。長さ ≥ 2 は
+  親なし ⟹ 可換 ✓ / **親あり ⟹ 残差**
+* 節 3: `domT` ⟹ 親なし ⟹ 可換 ✓（長さ 1 は段の計算）
+
+⟹ **残るのは節 2 の「長さ ≥ 2・末尾列に親あり」だけ**。さらに計測（§1.9.51）
+より、その中でも `j0 ≥ 1` と `i1 = 2` は可換なので、真の残差は
+**`j0 = 0 ∧ i1 ≤ 1`**（＝窓が根を含む行 0/行 1 の崩壊）。
+
+### 現在の頂点定理（3 本）
+
+```
+TRIO_terminates             : TowerGraft2 → TowerExp → WellFounded stepRel   （旧）
+TRIO_terminates_of_cap      : CoreCap → WellFounded stepRel                  （GX）
+TRIO_terminates_of_parented : LiftStageParented → TowerExp → WellFounded stepRel （新・本命）
+```
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

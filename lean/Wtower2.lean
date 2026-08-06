@@ -34,6 +34,103 @@ is proved (`Wslift.mlift_mem_W`). -/
 def LiftStage : Prop :=
   ∀ (m d : ℕ) (X : TrioSeq), X ∈ W m → Lift1 X d ∈ W (m + 2 * d)
 
+/-! ## (WL) を「親のある場合」だけに縮める
+
+`oper` の `Pred` 分岐（末尾列が全零、または親なし）は根リフトと**可換**である:
+`Lift1` は行 2 を動かさず、行 1 も錐の列しか動かさないので `srow` を保ち
+（`srow_Lift1`）、`hasParent` も保つ（`hasParent_Lift1`）。したがって
+`Aop` の節 3（`domT` ⟹ 親なし）と節 2 の親なし枝は自動で流れ、(WL) は
+**末尾列に親がある場合**だけに縮む。 -/
+
+theorem Lift1_of_length_one {X : TrioSeq} (h1 : X.length = 1) (d : ℕ) :
+    Lift1 X d = [((entry X 0 0, entry X 1 0 + d, entry X 2 0) : ℕ × ℕ × ℕ)] := by
+  have hle : le1 X 0 0 := le1_refl (by omega)
+  unfold Lift1
+  rw [h1, show List.range 1 = [0] from rfl]
+  simp only [List.map_cons, List.map_nil, if_pos hle]
+
+/-- **The `Pred` branches commute with the root lift.** -/
+theorem lift_oper_of_noParent {X : TrioSeq} {d n : ℕ} (h2 : 2 ≤ X.length)
+    (hnp : ¬ hasParent X (srow X (X.length - 1)) (X.length - 1)) :
+    (Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d := by
+  classical
+  have hlen : (Lift1 X d).length = X.length := Lift1_length X d
+  have hL : X.length - 1 ≠ 0 := by omega
+  have hnp' : ¬ hasParent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) := by
+    rw [hlen, srow_Lift1 hL, hasParent_Lift1]
+    exact hnp
+  have hpredX : X⟦n⟧ = Pred X := by
+    by_cases hz : entry X 0 (X.length - 1) = 0 ∧ entry X 1 (X.length - 1) = 0 ∧
+        entry X 2 (X.length - 1) = 0
+    · exact oper_eq_pred_of_zero n hL hz
+    · exact oper_eq_pred_of_noParent n hL hz hnp
+  have hpredL : (Lift1 X d)⟦n⟧ = Pred (Lift1 X d) := by
+    by_cases hz : entry (Lift1 X d) 0 ((Lift1 X d).length - 1) = 0 ∧
+        entry (Lift1 X d) 1 ((Lift1 X d).length - 1) = 0 ∧
+        entry (Lift1 X d) 2 ((Lift1 X d).length - 1) = 0
+    · exact oper_eq_pred_of_zero n (by rw [hlen]; exact hL) hz
+    · exact oper_eq_pred_of_noParent n (by rw [hlen]; exact hL) hz hnp'
+  rw [hpredX, hpredL]
+  unfold Pred
+  rw [if_neg (by rw [hlen]; omega), if_neg (by omega), Lift1_dropLast]
+
+/-- **(WL), parented residue**: the only case the lift law still needs. -/
+def LiftStageParented : Prop :=
+  ∀ (m d : ℕ) (X : TrioSeq), 2 ≤ X.length →
+    hasParent X (srow X (X.length - 1)) (X.length - 1) →
+    (∀ n, 1 ≤ n → Lift1 (X⟦n⟧) d ∈ W (m + 2 * d)) →
+    ∀ n, 1 ≤ n → (Lift1 X d)⟦n⟧ ∈ W (m + 2 * d)
+
+/-- **(WL) reduces to the parented case.**  Clause 1 and the one-column roots
+are stage arithmetic, clause 3 forces `¬ hasParent` (`domT`), and the parentless
+branch of clause 2 commutes by `lift_oper_of_noParent`. -/
+theorem liftStage_of_parented (h : LiftStageParented) : LiftStage := by
+  intro m d
+  have hsub : W m ⊆ {X : TrioSeq | Lift1 X d ∈ W (m + 2 * d)} := by
+    refine A2' ?_
+    rintro X (⟨hl, hlev⟩ | hop | ⟨m', hm', hdom, hgr⟩)
+    · rcases Nat.eq_zero_or_pos X.length with h0 | hpos
+      · have hnil : X = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show Lift1 ([] : TrioSeq) d ∈ W (m + 2 * d)
+        simpa using W_nil (m + 2 * d)
+      · have h1 : X.length = 1 := by omega
+        show Lift1 X d ∈ W (m + 2 * d)
+        rw [Lift1_of_length_one h1 d]
+        have hbc : entry X 1 0 = 0 ∧ entry X 2 0 = 0 := by
+          unfold lev at hlev; omega
+        rw [hbc.1, hbc.2]
+        exact singleton_mem_W (by omega)
+    · rcases Nat.lt_or_ge X.length 2 with hsm | hbig
+      · have hres := hop 1 le_rfl
+        rwa [oper_eq_self_of_short 1 (by omega)] at hres
+      · show Lift1 X d ∈ W (m + 2 * d)
+        by_cases hp : hasParent X (srow X (X.length - 1)) (X.length - 1)
+        · exact mem_of_oper_mem (h m d X hbig hp (fun n hn => hop n hn))
+        · refine mem_of_oper_mem (fun n hn => ?_)
+          rw [lift_oper_of_noParent hbig hp]
+          exact hop n hn
+    · rcases Nat.lt_or_ge X.length 2 with hsm | hbig
+      · have hXne : X ≠ [] := by
+          intro hc
+          rw [hc] at hdom
+          exact not_domT_nil m' hdom
+        have h1 : X.length = 1 := by
+          have : 0 < X.length := List.length_pos_iff.mpr hXne
+          omega
+        have hlv := hdom.1
+        rw [show X.length - 1 = 0 from by omega] at hlv
+        unfold lev at hlv
+        show Lift1 X d ∈ W (m + 2 * d)
+        rw [Lift1_of_length_one h1 d]
+        exact singleton_mem_W (by omega)
+      · show Lift1 X d ∈ W (m + 2 * d)
+        refine mem_of_oper_mem (fun n hn => ?_)
+        rw [lift_oper_of_noParent hbig hdom.2]
+        exact aop_clause3_to_clause2 hbig hdom hgr n hn
+  exact fun X hX => hsub hX
+
 /-- **The row-2 tower falls to (WL) over the LIFT-FREE `Wstar`.**  The tower's
 induction only ever needs the single lift `d1`, so the `∀ s` strengthening (and
 with it `Wstar2`, `GraftAll`, `GX`) is unnecessary once the stage law is

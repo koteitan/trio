@@ -79,6 +79,19 @@ theorem no_infinite_expansion_of_liftStage (hWL : LiftStage) (he : Wset.TowerExp
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_holds (towerGraft2_of_liftStage hWL) he
 
+/-- **Trio sequences terminate**, modulo the PARENTED residue of the stage law
+and `TowerExp`.  `liftStage_of_parented` discharges every parentless branch of
+`Aop` (including all of clause 3) by `lift_oper_of_noParent`. -/
+theorem TRIO_terminates_of_parented (hP : LiftStageParented) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_liftStage (liftStage_of_parented hP) he
+
+/-- **No infinite expansion sequence**, from the parented residue. -/
+theorem no_infinite_expansion_of_parented (hP : LiftStageParented)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_liftStage (liftStage_of_parented hP) he
+
 
 
 /-! ## 新しいトラック: 2 本の文脈核から停止性まで

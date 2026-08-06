@@ -52,7 +52,8 @@
 - [x] W の初等的特徴づけ Wchar.lean・階段リフトの段法則 Wslift.lean ✅ v0.118.60-62
 - [x] ★ (WL) から行 2 塔核が落ちた: GX を通さない第 3 トラック ✅ v0.118.64
 - [ ] **残差A（GXトラック）**: CoreCap 1 本
-- [ ] **残差B（新トラック・本命）**: LiftStage=(WL) + TowerExp
+- [x] (WL) は Pred 分岐が可換なので「親あり」だけに縮小 ✅ v0.118.67
+- [ ] **残差B（新トラック・本命）**: LiftStageParented + TowerExp
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
 - [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）
