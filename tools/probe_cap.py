@@ -1,4 +1,15 @@
-"""Soundness check for the single remaining core `CoreCap` (catch #8 discipline).
+"""⚠ SUPERSEDED by probe_cap2.py — this script models the WRONG leaf rule.
+
+`trio.expand` peels a length-1 sequence to `[]` (the `r is None` branch),
+but Lean's `oper` is the IDENTITY at length 1 (`if j1 = 0 then M`).  So a
+positive-level root `[(0,v,z)]` never terminates in the Lean model; it is in
+`W a` only via clause 3, i.e. exactly when `2v+z <= a`.  Consequently the
+"reaches []" criterion below tests a DIFFERENT (weaker) statement and never
+sees the stage.  Kept for the record; use probe_cap2.py.
+
+Original description:
+
+Soundness check for the single remaining core `CoreCap` (catch #8 discipline).
 
 `CoreCap` says: for an equipped context `M` (root `(0,v,z)`, `z <= 1`,
 `argOK M` = every column's row-0 depth is positive), replacing `M`'s LAST
