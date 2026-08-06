@@ -2237,6 +2237,53 @@ i1=0/j0=0     972 例  違反 648
 行 2 塔分岐を直接組む方が近道の可能性がある。まず `i1 = 2 ∨ j0 ≥ 1 ∨ 親なし`
 での可換性を Lean 補題にし、(WL) をその 3 ケース＋`j0 = 0, i1 ≤ 1` に分ける。
 
+## 1.9.52 ★★★★★ v0.118.63: **2 トラック体制の整理**と (WL) ルートの位置づけ
+
+### trio には既に「リフト無しトラック」がある（見落としていた）
+
+```
+Wset.lean:2333  Wstar := {R | argOK R → ∀ v z a, z≤1 → 2v+z ≤ a → (0,v,z)::R ∈ W a}
+Wset.lean:3877  Wstar_closed (htow : TowerOK)         -- リフト無しで閉包が通る
+Wset.lean:4018  towerOK_of (h2 : TowerGraft2) (he : TowerExp) : TowerOK
+Final.lean:60   no_infinite_expansion_holds (h2 : TowerGraft2) (he : TowerExp)
+```
+
+* `TowerGraft2` = 行 2 塔（節 3 データあり）
+* `TowerExp`  = 塔だがデータが節 2 経由（graft closure が無い）
+
+**現在の 2 トラック**
+
+| | 残核 | 備考 |
+|---|---|---|
+| 旧: リフト無し `Wstar` | `TowerGraft2` + `TowerExp` | `Lift1` が statement に出ない |
+| 新: `Wstar2s` + `GX` | `CoreCap` 1 本 | リフト閉包のために GX を建てた |
+
+`Wstar2`（リフト閉）は `TowerGraft2` を解くために導入されたもので、そこから
+`GraftAll` → `GX` → `CoreCap` の全体が生えた。**(WL) があれば `TowerGraft2` を
+リフト無し `Wstar` のまま解ける見込み**なので、旧トラックに戻れる。
+
+### `Aop` 節 2 に `natDom` ガードが無い件（設計履歴、再提案禁止）
+
+yapss の節 2 は `natDom M ∧ ∀ n, M⟦n⟧ ∈ X` だが trio は無ガード。履歴:
+
+* v0.79.0 ガードを外す → v0.80.0 **差し戻し**（「無ガードだと消費側に
+  `M.dropLast` しか残らず塔分岐が壊れる」）＋ `tbAll` で principal block を添字づけ
+* v0.86.0 再び無ガード化し `tbAll` も削除。`Wstar` を「根レベル以上の**全段**で」
+  にすることで「同じ列を別の段で別の節から証明できる」ようにし、`TbOper` を削除
+
+⟹ **無ガードは意図的な設計**。その代償が「`W u` はレベル > u の死んだ孤児を
+含む」ことで、`InfEquip` を偽にしたのもこれ（§1.9.46）。設計を戻す提案は
+2 回却下済みなので**再提案しないこと**。
+
+### 推奨する次の一手（優先順）
+
+1. `i1 = 2 ∨ j0 ≥ 1 ∨ 親なし` での `Lift1`-`oper` 可換性を Lean 補題化
+   （計測では違反 0）。
+2. それで `TowerGraft2` をリフト無し `Wstar` に対して証明できるか試す
+   （段勘定は §1.9.50 の通り合っている。`mlift_mem_W` が使える）。
+3. 通れば残核は `TowerExp` 1 本。通らなければ (WL) を `j0 = 0, i1 ≤ 1` の
+   場合込みで証明する。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
