@@ -90,4 +90,63 @@ theorem slift_mem_W {m : ℕ} {φ : ℕ → ℕ} (hφ : Stair φ) :
         exact aop_clause3_to_clause2 hbig hd hgr n hn
   exact fun X hX => hsub hX
 
+/-- **Tight form**: if the staircase never lifts by more than `d`, the stage
+rises by exactly `2 * d` — the same law the root lift obeys with equality
+(`tools/probe_lift.py`).  The bound is only used at the one-column roots, where
+`2 * φ b + c ≤ (2 * b + c) + 2 * d ≤ m + 2 * d`. -/
+theorem slift_mem_W_tight {m d : ℕ} {φ : ℕ → ℕ} (hφ : Stair φ)
+    (hb : ∀ k, φ k ≤ k + d) : ∀ X ∈ W m, slift X φ ∈ W (m + 2 * d) := by
+  have hsub : W m ⊆ {X : TrioSeq | slift X φ ∈ W (m + 2 * d)} := by
+    refine A2' ?_
+    rintro X (⟨hl, hlev⟩ | hop | ⟨m', hm', hd, hgr⟩)
+    · rcases Nat.eq_zero_or_pos X.length with h0 | hpos
+      · have hnil : X = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show slift ([] : TrioSeq) φ ∈ W (m + 2 * d)
+        simpa [slift] using W_nil (m + 2 * d)
+      · have h1 : X.length = 1 := by omega
+        show slift X φ ∈ W (m + 2 * d)
+        rw [slift_of_length_one h1 hφ]
+        have hbc : entry X 1 0 = 0 ∧ entry X 2 0 = 0 := by
+          unfold lev at hlev; omega
+        rw [hbc.1, hbc.2, hφ.zero]
+        exact singleton_mem_W (by omega)
+    · rcases Nat.lt_or_ge X.length 2 with hsm | hbig
+      · have hres := hop 1 le_rfl
+        rwa [oper_eq_self_of_short 1 (by omega)] at hres
+      · show slift X φ ∈ W (m + 2 * d)
+        refine mem_of_oper_mem (fun n hn => ?_)
+        rw [← slift_oper hφ]
+        exact hop n hn
+    · rcases Nat.lt_or_ge X.length 2 with hsm | hbig
+      · have hXne : X ≠ [] := by
+          intro hc
+          rw [hc] at hd
+          exact not_domT_nil m' hd
+        have h1 : X.length = 1 := by
+          have : 0 < X.length := List.length_pos_iff.mpr hXne
+          omega
+        have hlev := hd.1
+        rw [show X.length - 1 = 0 from by omega] at hlev
+        unfold lev at hlev
+        show slift X φ ∈ W (m + 2 * d)
+        rw [slift_of_length_one h1 hφ]
+        refine singleton_mem_W ?_
+        have hbk := hb (entry X 1 0)
+        omega
+      · show slift X φ ∈ W (m + 2 * d)
+        refine mem_of_oper_mem (fun n hn => ?_)
+        rw [← slift_oper hφ]
+        exact aop_clause3_to_clause2 hbig hd hgr n hn
+  exact fun X hX => hsub hX
+
+/-- **The ambient mask lift costs exactly `2 * d` stages.**  `mlift` is the
+staircase lift by the step function (`mlift_eq_slift`), which never lifts by
+more than `d`. -/
+theorem mlift_mem_W {m v d : ℕ} : ∀ X ∈ W m, mlift X v d ∈ W (m + 2 * d) := by
+  intro X hX
+  rw [mlift_eq_slift]
+  exact slift_mem_W_tight (stair_step v d) (fun k => by split <;> omega) X hX
+
 end TRIO
+

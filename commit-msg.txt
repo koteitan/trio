@@ -1,12 +1,11 @@
-v0.118.61/the staircase lift transports W, and (WL) is measured exact
+v0.118.62/the mask lift obeys the exact stage law, core-free
 
-- Add Wslift.lean `slift_mem_W`: `Stair φ → X ∈ W m → slift X φ ∈ W (2*φ m + m)`,
-  core-free (clause 2 by `slift_oper`, clause 3 absorbed above length 1, the
-  one-column roots discharged by the stage bump) — so `CoreStairOm` is not a
-  core once the stage is allowed to rise
-- Add tools/probe_lift.py: `minstage (Lift1 X d) = minstage X + 2d` holds with
-  EQUALITY on all 18300 instances, giving the conjecture (WL)
-- GRAFTALL-PLAN.md 1.9.50: compare with the yapss `Wstar_closed` (no context,
-  no lift, no cores), show (WL)'s stage arithmetic matches the row-2 tower
-  branch exactly, and record that `Lift1` fails to commute with `oper` only
-  when the bad root's parent is index 0
+- Add `slift_mem_W_tight`: a staircase that never lifts by more than `d` raises
+  the stage by exactly `2*d`, and `mlift_mem_W` as its instance — the data-side
+  lift closure now comes from `W` itself, with no core
+- GRAFTALL-PLAN.md 1.9.51: localise the remaining (WL) gap by measurement —
+  `Lift1` commutes with `oper` except when the bad root's parent is index 0 and
+  the collapse row is <= 1; the row-2 case (the one the tower branch needs)
+  commutes in all 1512 instances
+- Record the refuted repair `(Lift1 X d)[n] = slift (X[n]) phi_v` (false at
+  9072/12312 for v=0 and 10368/24624 for v>=1)
