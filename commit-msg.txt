@@ -1,10 +1,12 @@
-v0.118.60/an elementary characterisation of W a
+v0.118.61/the staircase lift transports W, and (WL) is measured exact
 
-- Add Wchar.lean: `oper_of_length_one`, `oper_mem_of_mem`, `mem_of_oper_mem`,
-  `mem_iff_oper_mem` (length >= 2: membership is exactly "every expansion is a
-  member"), `lev_le_of_mem_of_length_one`, `singleton_mem_W`, `mem_iff_lev_le`
-  (length 1: membership is exactly "level <= stage")
-- Move `aop_clause3_to_clause2` from Lind.lean to Wchar.lean and import it
-- Consequence: `W a` is "the expansion tree closes on roots of level <= a",
-  so the stage is only a bound on the roots the tree may reach — this is what
-  probe_cap2.py implements
+- Add Wslift.lean `slift_mem_W`: `Stair φ → X ∈ W m → slift X φ ∈ W (2*φ m + m)`,
+  core-free (clause 2 by `slift_oper`, clause 3 absorbed above length 1, the
+  one-column roots discharged by the stage bump) — so `CoreStairOm` is not a
+  core once the stage is allowed to rise
+- Add tools/probe_lift.py: `minstage (Lift1 X d) = minstage X + 2d` holds with
+  EQUALITY on all 18300 instances, giving the conjecture (WL)
+- GRAFTALL-PLAN.md 1.9.50: compare with the yapss `Wstar_closed` (no context,
+  no lift, no cores), show (WL)'s stage arithmetic matches the row-2 tower
+  branch exactly, and record that `Lift1` fails to commute with `oper` only
+  when the bad root's parent is index 0
