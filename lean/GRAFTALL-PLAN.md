@@ -2284,6 +2284,62 @@ yapss の節 2 は `natDom M ∧ ∀ n, M⟦n⟧ ∈ X` だが trio は無ガー
 3. 通れば残核は `TowerExp` 1 本。通らなければ (WL) を `j0 = 0, i1 ≤ 1` の
    場合込みで証明する。
 
+## 1.9.53 ★★★★★ v0.118.64: **(WL) から行 2 塔核が落ちた** — GX を通さない第 3 トラック
+
+### 証明済み（`lean/Wtower2.lean`, sorry 0, build 787）
+
+```
+LiftStage : ∀ m d X, X ∈ W m → Lift1 X d ∈ W (m + 2*d)        -- (WL)
+
+towerGraft2_of_liftStage : LiftStage → Wset.TowerGraft2        -- ★ リフト無し Wstar に対して
+TRIO_terminates_of_liftStage        : LiftStage → TowerExp → WellFounded stepRel
+no_infinite_expansion_of_liftStage  : 同上
+  #print axioms = [propext, Classical.choice, Quot.sound]
+```
+
+### 何が起きたか
+
+`towerGraft2_holds`（Wset.lean）は塔の帰納を「**すべての**リフト量 `s`」で
+強めて回していた。そのために `Wstar2`（リフト閉）が必要になり、そこから
+`GraftAll` → `GX` → `CoreCap` の全体が生えていた。
+
+しかし塔が実際に消費するのは**ただ 1 つのリフト `d1 = 行1(末尾) - v`** だけで、
+段の勘定は
+
+```
+prev ∈ W (2v+z) --(WL)--> Lift1 prev d1 ∈ W (2v+z+2d1) = W (2w+z) ⊆ W m
+  （w = 行1(末尾)、根が行 2 の親 ⟹ z < 行2(末尾) ⟹ 2w+z ≤ m）
+```
+
+でちょうど閉じる。⟹ **`∀ s` の強化は不要**で、`Wstar`（リフト無し）のままで
+`TowerGraft2` が出る。⟹ `Wstar2` / `Wstar2s` / `GraftAll` / `GX` / `CoreCap` は
+**全部迂回できる**。
+
+### 3 トラック体制（現状）
+
+| トラック | 残核 | 状態 |
+|---|---|---|
+| 旧 | `TowerGraft2` + `TowerExp` | `TowerGraft2` は (WL) から出るので実質下と同じ |
+| GX | `CoreCap` 1 本 | 60 版かけた機構。閉路が確定していて動かない |
+| **新 (WL)** | **`LiftStage` + `TowerExp`** | (WL) は計測で**等号**、階段版は証明済み |
+
+### 残る 2 本の性格
+
+* `LiftStage` (WL): `W` だけの命題。階段リフト版 `slift_mem_W_tight` /
+  `mlift_mem_W` は**核なしで証明済み**。残る隙間は `Lift1` が `oper` と
+  非可換になる `j0 = 0 ∧ i1 ≤ 1` の場合だけ（§1.9.51）。
+* `TowerExp`: 節 2 経由（graft closure なし）で来た死んだ孤児が根で復活する場合。
+  無ガード節 2 の代償（§1.9.52）。`R.dropLast ∈ Wstar` しか無いので
+  `W_add` の `rsum` 条件（追加ブロックが最浅）も満たせない。
+
+### 次の一手
+
+1. (WL) を `j0 ≥ 1 ∨ i1 = 2 ∨ 親なし` の可換性 + `j0 = 0 ∧ i1 ≤ 1` の
+   個別議論に分けて証明する。`i1 = 0, j0 = 0` はコピーが同一なので
+   `W_flatMap_copies` で閉じる見込み（rsum 条件は `j0 = 0` が行 0 の親である
+   ことから出る）。`i1 = 1, j0 = 0` が唯一の難所。
+2. `TowerExp` は別途。`R.dropLast` しか無い状況で塔を回す方法を探す。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

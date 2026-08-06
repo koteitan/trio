@@ -8,6 +8,7 @@ import Wset
 import Reduction
 import Gamma
 import Lind
+import Wtower2
 
 namespace TRIO
 
@@ -61,6 +62,23 @@ theorem TRIO_terminates (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
 theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion (wf_Rnf_holds h2 he)
+
+/-! ### ★ (WL) 経由: リフト無しトラックで行 2 塔核が消える
+
+`towerGraft2_of_liftStage` により、`LiftStage`（= (WL): 根リフトは段を
+ちょうど `2d` 上げる）から `TowerGraft2` が出る。⟹ 残核は `TowerExp` だけ。 -/
+
+/-- **Trio sequences terminate**, modulo the stage law `(WL)` and the
+successor-route tower core `TowerExp` — no `Wstar2`, no `GraftAll`, no `GX`. -/
+theorem TRIO_terminates_of_liftStage (hWL : LiftStage) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates (towerGraft2_of_liftStage hWL) he
+
+/-- **No infinite expansion sequence**, from `(WL)` and `TowerExp`. -/
+theorem no_infinite_expansion_of_liftStage (hWL : LiftStage) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_holds (towerGraft2_of_liftStage hWL) he
+
 
 
 /-! ## 新しいトラック: 2 本の文脈核から停止性まで

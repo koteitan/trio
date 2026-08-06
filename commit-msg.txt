@@ -1,13 +1,11 @@
-v0.118.63/map the two tracks and place the (WL) route
+v0.118.64/the row-2 tower core falls to the stage law, bypassing GX
 
-- GRAFTALL-PLAN.md 1.9.52: record that the lift-free track already exists
-  (`Wstar` / `Wstar_closed` / `towerOK_of`, residue `TowerGraft2` + `TowerExp`)
-  next to the `Wstar2s`+`GX` track (residue `CoreCap`), and that (WL) would let
-  `TowerGraft2` be solved without ever introducing the lift
-- Record the design history of the ungated `Aop` clause 2 (v0.79.0 dropped,
-  v0.80.0 reverted, v0.86.0 dropped again with `Wstar` quantified over every
-  stage): the ungating is deliberate, its price is that `W u` contains dead
-  orphans of level > u, which is exactly what made `InfEquip` false — do not
-  re-propose restoring the guard
-- Set the next steps: Lean-ify the measured `Lift1`/`oper` commutation for
-  `i1 = 2`, then attack `TowerGraft2` on the lift-free `Wstar`
+- Add Wtower2.lean `LiftStage` (= (WL): `X ∈ W m → Lift1 X d ∈ W (m + 2*d)`) and
+  `towerGraft2_of_liftStage : LiftStage → Wset.TowerGraft2` for the LIFT-FREE
+  `Wstar`: the tower consumes only the single lift `d1`, and
+  `2v+z+2*d1 = 2w+z ≤ m` closes the stage bookkeeping, so the `∀ s`
+  strengthening that forced `Wstar2`/`GraftAll`/`GX` is unnecessary
+- Add `TRIO_terminates_of_liftStage` / `no_infinite_expansion_of_liftStage` in
+  Final.lean; axioms [propext, Classical.choice, Quot.sound]
+- GRAFTALL-PLAN.md 1.9.53 + task.md: record the three tracks and that the new
+  residue is `LiftStage` + `TowerExp`
