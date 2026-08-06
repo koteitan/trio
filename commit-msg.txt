@@ -1,10 +1,10 @@
-v0.118.59/probe CoreCap with the stage included
+v0.118.60/an elementary characterisation of W a
 
-- Add tools/probe_cap2.py: uses the exact recursive characterisation
-  (`S in W a <-> forall n, S[n] in W a` for length >= 2, leaf test
-  `[(d,v,z)] in W a <-> 2v+z <= a`), so a reachable over-level singleton would
-  refute `CoreCap`; 5048 ok / 136 unknown / 0 violations
-- Mark tools/probe_cap.py as superseded: `trio.expand` peels a length-1
-  sequence to `[]` while Lean's `oper` is the identity there, so its
-  "reaches []" criterion tested a different statement and never saw the stage
-- GRAFTALL-PLAN.md 1.9.49: record the model discrepancy and the new result
+- Add Wchar.lean: `oper_of_length_one`, `oper_mem_of_mem`, `mem_of_oper_mem`,
+  `mem_iff_oper_mem` (length >= 2: membership is exactly "every expansion is a
+  member"), `lev_le_of_mem_of_length_one`, `singleton_mem_W`, `mem_iff_lev_le`
+  (length 1: membership is exactly "level <= stage")
+- Move `aop_clause3_to_clause2` from Lind.lean to Wchar.lean and import it
+- Consequence: `W a` is "the expansion tree closes on roots of level <= a",
+  so the stage is only a bound on the roots the tree may reach — this is what
+  probe_cap2.py implements

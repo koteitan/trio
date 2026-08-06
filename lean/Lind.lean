@@ -13,6 +13,7 @@ Lind.lean: 長さの強帰納法で「基づく列はすべて `GX`」を**単�
 `[(0,b,c)]` のみ**になる。
 -/
 import Gamma
+import Wchar
 
 namespace TRIO
 
@@ -143,33 +144,11 @@ theorem corePlantCtx0_of_singleton (hs : CoreSingleton) : CorePlantCtx0 := by
 
 /-! ## 構造的事実: 段の階層は**単元だけ**が担っている
 
-`Aop` の節 3（`domT M m` かつ全 graft が `X`）は、長さ 2 以上では節 2 に
-**吸収される**: `domT` の末尾列は親を持たないので `M⟦n⟧ = Pred M = M.dropLast
-= graft M []` であり、節 3 の `z = []` の場合がそのまま節 2 を与える。
-
-節 3 が本質的に効くのは `|M| = 1` のときだけ。`oper` は `|M| - 1 = 0` で
-恒等なので単元は節 2 では絶対に入れず、`Om_mem_W` の通り
-`[(0,v,z)] ∈ W (2v+z)` は節 3 でしか得られない。
-
-⟹ **段 `u` の階層は根の単元 `[(0,v,z)]` が生成している**。残核が単元核
-`CoreSingleton` に落ちたことは、この構造と整合している。 -/
-
-theorem aop_clause3_to_clause2 {m : ℕ} {X : Set TrioSeq} {M : TrioSeq}
-    (hM2 : 2 ≤ M.length) (hd : domT M m)
-    (hop : ∀ z ∈ W m, based z → graft M z ∈ X) :
-    ∀ n, 1 ≤ n → M⟦n⟧ ∈ X := by
-  intro n _
-  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
-      entry M 2 (M.length - 1) = 0) := by
-    rintro ⟨-, h1, h2⟩
-    have hlev := hd.1
-    unfold lev at hlev
-    omega
-  rw [oper_eq_pred_of_noParent n (by omega) hz hd.2]
-  unfold Pred
-  rw [if_neg (by omega)]
-  have hres := hop [] (W_nil m) based_nil
-  rwa [graft_nil] at hres
+`Wchar.lean` 参照。`Aop` の節 3 は長さ 2 以上では節 2 に吸収され
+（`aop_clause3_to_clause2`）、本質的に効くのは `|M| = 1` だけ。`oper` は
+長さ 1 で恒等なので単元は節 2 では `W` に入れず、`Om_mem_W` の通り
+`[(0,v,z)] ∈ W (2v+z)` は節 3 でしか得られない。⟹ **段の階層は根の単元が
+生成している**。残核が単元核 `CoreSingleton` に落ちたのはこの構造の反映。 -/
 
 /-! ## 単元核の素の形: **キャップ補題**（`GX` が statement から消える）
 
