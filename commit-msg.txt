@@ -1,10 +1,5 @@
-v0.118.65/why (WL) does not reduce to the staircase lemma
+v0.118.66/strengthen the (WL) probe
 
-- GRAFTALL-PLAN.md 1.9.54: on a based composite the head caps every `amin`, so
-  `slift` sees only `amin R >= v` while `Lift1` lifts exactly `amin R > v`
-  (`ltail_eq_mlift`) — the two differ on the boundary `amin R = v`
-- Record the refutations: `Lift1 X d = mlift X (v-1) d` is false (1344/2744 on
-  argOK tails, witness `[(0,1,0),(1,1,0)]`), as is
-  `(Lift1 X d)[n] = slift (X[n]) phi_v`
-- Note the provable by-product (the `>=`-threshold lift is in `W (m+2d)` for
-  `v >= 1`) and set the three-step route for (WL)
+- probe_lift.py now sweeps length 4 and a deeper budget: 26153 base sequences,
+  78459 lift instances, `minstage (Lift1 X d) = minstage X + 2d` with EQUALITY
+  everywhere (no violation, no slack)

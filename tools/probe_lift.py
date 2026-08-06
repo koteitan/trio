@@ -36,9 +36,9 @@ sys.path.insert(0, '/home/koteitan/proofs/trio/tools')
 import trio
 
 NS = (1, 2)
-MAXDEPTH = 8
-MAXLEN = 24
-AMAX = 14
+MAXDEPTH = 9
+MAXLEN = 28
+AMAX = 16
 
 
 def lev(col):
@@ -88,13 +88,15 @@ def minstage(S, memo):
 
 
 COLS = [(d, b, c) for d in range(0, 3) for b in range(3) for c in range(2)]
+# L = 4 pass uses a reduced column set to stay in budget
+COLS4 = [(d, b, c) for d in range(0, 3) for b in range(2) for c in range(2)]
 
 tot = Counter()
 ex = {}
 memo = {}
 
-for L in (1, 2, 3):
-    for X in itertools.product(COLS, repeat=L):
+for L in (1, 2, 3, 4):
+    for X in itertools.product(COLS if L <= 3 else COLS4, repeat=L):
         X = list(X)
         m = minstage(X, memo)
         if not isinstance(m, int):
