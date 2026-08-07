@@ -2465,6 +2465,40 @@ liftStageParented_of_cases :
    `gexp_guard_transport` で埋める。
 4. 残る `badPar = 0, i1 = 1`（＋ `1 ≤ badPar, i1 ≤ 1`）が (WL) の真の核。
 
+## 1.9.57 ★★★ v0.118.69: 枝 `badPar = 0, i1 = 0` を証明（4 枝のうち 1 本）
+
+### Lean（`lean/Wtower2.lean`, sorry 0, build 787）
+
+```
+gcopy_flat / gcopies_flat : d0 = d1 = 0 のコピーは seg そのもの
+oper_of_srow0_par0 : 2 ≤ |X| → hasParent … → badPar X = 0 → srow X (last) = 0 →
+    X⟦n⟧ = (List.range n).flatMap (fun _ => X.dropLast)
+lspOn_srow0 : LSPOn (badPar = 0 ∧ srow = 0)          ★ 証明済み
+```
+
+`i1 = 0` では `srow` の `if` が両方偽なので `d0 = d1 = 0`、つまりコピーは
+**完全に同一**。したがって
+
+```
+X⟦n⟧          = X.dropLast の n 個並び        （特に X⟦1⟧ = X.dropLast）
+(Lift1 X d)⟦n⟧ = Lift1 (X.dropLast) d の n 個並び   （Lift1_dropLast）
+```
+
+で、`Lift1 (X.dropLast) d = Lift1 (X⟦1⟧) d ∈ W (m+2d)` は仮定そのもの。あとは
+`W_flatMap_copies` を使うだけで、**可換性を経由しない**。その `rsum` 条件
+「先頭列が最浅」は `nextrel0 X 0 (|X|-1)` の no-dip 節
+（`∀ j, 0 < j < |X|-1 → entry X 0 (|X|-1) ≤ entry X 0 j`）と
+`entry X 0 0 < entry X 0 (|X|-1)` から出る。
+
+### 4 枝の現状
+
+| 枝 | 状態 |
+|---|---|
+| `badPar = 0, i1 = 0` | ✅ `lspOn_srow0` |
+| `badPar = 0, i1 = 2` | 未（`glift_eq_Lift1` の雛形あり） |
+| `1 ≤ badPar` | 未（`i1 = 2` は `gexp_guard_transport`、`i1 ≤ 1` は道具なし） |
+| `badPar = 0, i1 = 1` | **難所**（行 1 塔） |
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

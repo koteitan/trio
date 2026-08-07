@@ -176,6 +176,109 @@ theorem liftStageParented_of_cases
     · exact hs2 m d X h2 hp ⟨h0, hsr⟩ hop n hn
   · exact hpos m d X h2 hp hposX hop n hn
 
+/-! ### 枝 `badPar = 0, i1 = 0`: コピーが同一なので可換性が要らない
+
+`i1 = 0` では `d0 = d1 = 0` なので `oper` のコピーは**完全に同一**であり、
+`X⟦n⟧` は `X.dropLast` を `n` 個並べたもの、`(Lift1 X d)⟦n⟧` は
+`Lift1 (X.dropLast) d = Lift1 (X⟦1⟧) d` を `n` 個並べたものになる。よって
+`W_flatMap_copies` がそのまま効く（`rsum` 条件は `nextrel0` の no-dip 節から）。 -/
+
+theorem gcopy_flat (M : TrioSeq) (r L k : ℕ) : gcopy M r L 0 0 k = seg M r L := by
+  unfold gcopy seg
+  refine List.map_congr_left ?_
+  intro j _
+  simp
+
+theorem gcopies_flat (M : TrioSeq) (r L n : ℕ) :
+    gcopies M r L 0 0 n = (List.range n).flatMap fun _ => seg M r L := by
+  unfold gcopies
+  refine List.flatMap_congr ?_
+  intro k _
+  exact gcopy_flat M r L k
+
+open Classical in
+/-- The expansion of a length-`≥ 2` block whose bad root sits in row 0 with the
+head as its parent: `n` literal copies of the peel. -/
+theorem oper_of_srow0_par0 {X : TrioSeq} (h2 : 2 ≤ X.length)
+    (hp : hasParent X (srow X (X.length - 1)) (X.length - 1))
+    (hbp : parent X (srow X (X.length - 1)) (X.length - 1) = 0)
+    (hsr : srow X (X.length - 1) = 0) (n : ℕ) :
+    X⟦n⟧ = (List.range n).flatMap fun _ => X.dropLast := by
+  have hnr := parent_nextR hp
+  rw [hbp, hsr] at hnr
+  have hn0 : nextrel0 X 0 (X.length - 1) := by
+    unfold nextR at hnr
+    rw [if_pos rfl] at hnr
+    exact hnr
+  have hpos : 0 < entry X 0 (X.length - 1) := by
+    have := hn0.2.2.2.1
+    omega
+  have hz : ¬ (entry X 0 (X.length - 1) = 0 ∧ entry X 1 (X.length - 1) = 0 ∧
+      entry X 2 (X.length - 1) = 0) := by
+    rintro ⟨h0, -, -⟩; omega
+  have hseg : seg X 0 (X.length - 1) = X.dropLast := by
+    rw [seg_zero_eq_take X (show X.length - 1 ≤ X.length by omega),
+      ← List.dropLast_eq_take]
+  rw [oper_gcopies n (by omega) hz hp, hbp, hsr]
+  rw [if_neg (by omega), if_neg (by omega), List.take_zero, Nat.sub_zero,
+    gcopies_flat, List.nil_append, hseg]
+
+open Classical in
+/-- **Branch `badPar = 0`, collapse row `0`.** -/
+theorem lspOn_srow0 :
+    LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 0) := by
+  classical
+  rintro m d X h2 hp ⟨hbp, hsr⟩ hop n hn
+  unfold badPar at hbp
+  -- the peel is a `W`-member at the bumped stage
+  have hQ : Lift1 X.dropLast d ∈ W (m + 2 * d) := by
+    have h1 := hop 1 le_rfl
+    rwa [oper_of_srow0_par0 h2 hp hbp hsr 1, show
+      ((List.range 1).flatMap fun _ => X.dropLast) = X.dropLast from by simp] at h1
+  -- the head is the shallowest column of the peel
+  have hnr := parent_nextR hp
+  rw [hbp, hsr] at hnr
+  have hn0 : nextrel0 X 0 (X.length - 1) := by
+    unfold nextR at hnr
+    rw [if_pos rfl] at hnr
+    exact hnr
+  have hdeep : ∀ i, i < X.length - 1 → entry X 0 0 ≤ entry X 0 i := by
+    intro i hi
+    rcases Nat.eq_zero_or_pos i with rfl | hipos
+    · exact le_rfl
+    · have := hn0.2.2.2.2 i ⟨hipos, hi⟩
+      have hlt := hn0.2.2.2.1
+      omega
+  have hhead : entry (Lift1 X.dropLast d) 0 0 = entry X 0 0 := by
+    rw [entry0_Lift1, List.dropLast_eq_take,
+      Wset.entry_take (show (0 : ℕ) < X.length - 1 by omega)]
+  have hQr : ∀ p ∈ Lift1 X.dropLast d,
+      entry (Lift1 X.dropLast d) 0 0 ≤ p.1 := by
+    intro p hpm
+    rw [hhead]
+    unfold Lift1 at hpm
+    rw [List.mem_map] at hpm
+    obtain ⟨i, hi, rfl⟩ := hpm
+    rw [List.mem_range, List.length_dropLast] at hi
+    show entry X 0 0 ≤ entry X.dropLast 0 i
+    rw [List.dropLast_eq_take, Wset.entry_take (show i < X.length - 1 by omega)]
+    exact hdeep i (by omega)
+  -- the lifted block expands to `n` copies of the lifted peel
+  have hsrL : srow (Lift1 X d) ((Lift1 X d).length - 1) = 0 := by
+    rw [Lift1_length, srow_Lift1 (by omega)]
+    exact hsr
+  have hpL : hasParent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) := by
+    rw [Lift1_length, srow_Lift1 (by omega), hasParent_Lift1]
+    exact hp
+  have hbpL : parent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) = 0 := by
+    rw [Lift1_length, srow_Lift1 (by omega), parent_Lift1]
+    exact hbp
+  rw [oper_of_srow0_par0 (by rw [Lift1_length]; omega) hpL hbpL hsrL n,
+    Lift1_dropLast]
+  exact W_flatMap_copies hQ hQr n
+
 /-- **The row-2 tower falls to (WL) over the LIFT-FREE `Wstar`.**  The tower's
 induction only ever needs the single lift `d1`, so the `∀ s` strengthening (and
 with it `Wstar2`, `GraftAll`, `GX`) is unnecessary once the stage law is

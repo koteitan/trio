@@ -1,9 +1,10 @@
-v0.118.68/split the parented residue of (WL) into four branches
+v0.118.69/prove the branch badPar = 0 with collapse row 0
 
-- Add `LSPOn`, `badPar`, `srow_cases` and `liftStageParented_of_cases`: the
-  parented residue splits into `1 ≤ badPar` and `badPar = 0` with each of the
-  three collapse rows, so the branches can be filled independently
-- GRAFTALL-PLAN.md 1.9.56 + task.md: pair each branch with the tool that should
-  discharge it (`gexp_guard_transport` for `i1 = 2`, `glift_eq_Lift1` for
-  `badPar = 0, i1 = 2`, `W_flatMap_copies` for `badPar = 0, i1 = 0`) and record
-  that `badPar = 0, i1 = 1` is the real core
+- Add `gcopy_flat` / `gcopies_flat`: with both deltas zero the copies are the
+  bare segment
+- Add `oper_of_srow0_par0`: such a block expands to `n` literal copies of its
+  peel, so `X[1] = X.dropLast`
+- Add `lspOn_srow0`: the branch closes by `W_flatMap_copies` on
+  `Lift1 (X[1]) d` without going through commutation; the rsum side condition
+  comes from the no-dip clause of `nextrel0 X 0 (|X|-1)`
+- GRAFTALL-PLAN.md 1.9.57 + task.md: one of the four branches is done
