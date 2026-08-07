@@ -131,6 +131,51 @@ theorem liftStage_of_parented (h : LiftStageParented) : LiftStage := by
         exact aop_clause3_to_clause2 hbig hdom hgr n hn
   exact fun X hX => hsub hX
 
+/-! ## 親ありの残差の 4 分割
+
+計測（`GRAFTALL-PLAN` §1.9.51）では `Lift1` と `oper` の非可換は
+**バッドルートの親 `j0` が `0` かつ崩壊行 `i1 ≤ 1`** の場合だけであった。
+以下はその場合分けを Lean 側で固定するもので、各枝を個別に埋めれば
+`LiftStageParented`、したがって (WL) が得られる。 -/
+
+/-- The parented residue restricted to a class `C` of sequences. -/
+def LSPOn (C : TrioSeq → Prop) : Prop :=
+  ∀ (m d : ℕ) (X : TrioSeq), 2 ≤ X.length →
+    hasParent X (srow X (X.length - 1)) (X.length - 1) → C X →
+    (∀ n, 1 ≤ n → Lift1 (X⟦n⟧) d ∈ W (m + 2 * d)) →
+    ∀ n, 1 ≤ n → (Lift1 X d)⟦n⟧ ∈ W (m + 2 * d)
+
+theorem srow_cases (X : TrioSeq) (j : ℕ) :
+    srow X j = 0 ∨ srow X j = 1 ∨ srow X j = 2 := by
+  unfold srow
+  split
+  · exact Or.inr (Or.inr rfl)
+  · split
+    · exact Or.inr (Or.inl rfl)
+    · exact Or.inl rfl
+
+/-- The bad root's parent index of `X`. -/
+noncomputable def badPar (X : TrioSeq) : ℕ :=
+  parent X (srow X (X.length - 1)) (X.length - 1)
+
+/-- **The four branches cover the parented residue.**  `1 ≤ badPar X` (the
+window misses the head) and `badPar X = 0` with each of the three collapse rows.
+Measurement says the first two branches commute with the lift; the open ones are
+`badPar X = 0` with `srow ≤ 1`. -/
+theorem liftStageParented_of_cases
+    (hpos : LSPOn (fun X => 1 ≤ badPar X))
+    (hs2 : LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 2))
+    (hs0 : LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 0))
+    (hs1 : LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 1)) :
+    LiftStageParented := by
+  intro m d X h2 hp hop n hn
+  rcases Nat.eq_zero_or_pos (badPar X) with h0 | hposX
+  · rcases srow_cases X (X.length - 1) with hsr | hsr | hsr
+    · exact hs0 m d X h2 hp ⟨h0, hsr⟩ hop n hn
+    · exact hs1 m d X h2 hp ⟨h0, hsr⟩ hop n hn
+    · exact hs2 m d X h2 hp ⟨h0, hsr⟩ hop n hn
+  · exact hpos m d X h2 hp hposX hop n hn
+
 /-- **The row-2 tower falls to (WL) over the LIFT-FREE `Wstar`.**  The tower's
 induction only ever needs the single lift `d1`, so the `∀ s` strengthening (and
 with it `Wstar2`, `GraftAll`, `GX`) is unnecessary once the stage law is

@@ -1,13 +1,9 @@
-v0.118.67/(WL) shrinks to the parented case
+v0.118.68/split the parented residue of (WL) into four branches
 
-- Add `lift_oper_of_noParent`: the two `Pred` branches of `oper` commute with
-  the root lift, since `Lift1` preserves row 2, `srow` and `hasParent`
-- Add `Lift1_of_length_one`, `LiftStageParented` and
-  `liftStage_of_parented : LiftStageParented → LiftStage`: clause 1 and the
-  one-column roots are stage arithmetic, clause 3 forces `¬ hasParent`, so only
-  clause 2 with a parented last column survives
-- Add `TRIO_terminates_of_parented` / `no_infinite_expansion_of_parented`;
-  axioms [propext, Classical.choice, Quot.sound]
-- GRAFTALL-PLAN.md 1.9.55 + task.md: the residue is now
-  `LiftStageParented` + `TowerExp`, and by measurement the parented case only
-  needs `j0 = 0` with collapse row <= 1
+- Add `LSPOn`, `badPar`, `srow_cases` and `liftStageParented_of_cases`: the
+  parented residue splits into `1 ≤ badPar` and `badPar = 0` with each of the
+  three collapse rows, so the branches can be filled independently
+- GRAFTALL-PLAN.md 1.9.56 + task.md: pair each branch with the tool that should
+  discharge it (`gexp_guard_transport` for `i1 = 2`, `glift_eq_Lift1` for
+  `badPar = 0, i1 = 2`, `W_flatMap_copies` for `badPar = 0, i1 = 0`) and record
+  that `badPar = 0, i1 = 1` is the real core

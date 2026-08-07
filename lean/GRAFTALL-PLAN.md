@@ -2429,6 +2429,42 @@ TRIO_terminates_of_cap      : CoreCap → WellFounded stepRel                  �
 TRIO_terminates_of_parented : LiftStageParented → TowerExp → WellFounded stepRel （新・本命）
 ```
 
+## 1.9.56 ★★★★ v0.118.68: `LiftStageParented` を 4 枝に分割（各枝の道具を確定）
+
+### Lean（`lean/Wtower2.lean`, sorry 0, build 787）
+
+```
+LSPOn C : 親ありの残差を「末尾列のクラス C」に制限したもの
+badPar X := parent X (srow X (|X|-1)) (|X|-1)
+srow_cases : srow X j = 0 ∨ 1 ∨ 2
+
+liftStageParented_of_cases :
+  LSPOn (1 ≤ badPar ·) → LSPOn (badPar = 0 ∧ srow = 2)
+  → LSPOn (badPar = 0 ∧ srow = 0) → LSPOn (badPar = 0 ∧ srow = 1)
+  → LiftStageParented
+```
+
+### 各枝の状況（計測 §1.9.51 と既存補題の対応）
+
+| 枝 | 計測 | 使える道具 | 状態 |
+|---|---|---|---|
+| `1 ≤ badPar`（`i1` 任意） | 違反 0 | `i1 = 2` は `gexp_guard_transport`（`j0` 一般）。`i1 ≤ 1` は既製補題なし | 要作業 |
+| `badPar = 0, i1 = 2` | 違反 0 | `glift_eq_Lift1`（周期マスク＝内在錐）。仮定 `hup`/`hd0pos`/`hd1pos`/`hle1lp` の導出は `Wset.lean:2790-2850` が雛形 | 見通し良 |
+| `badPar = 0, i1 = 0` | 違反あり（可換でない） | `d0 = d1 = 0` なのでコピーは同一。`X⟦n⟧` は `X.dropLast` の `n` 個並び、`(Lift1 X d)⟦n⟧` は `Lift1 (X⟦1⟧) d` の `n` 個並び ⟹ `W_flatMap_copies`。`rsum` 条件は `nextrel0` の no-dip 節から | 見通し良 |
+| `badPar = 0, i1 = 1` | 違反あり | 行 1 塔。`graft` 閉包が無いので既製の道具なし | **難所** |
+
+`i1 ≤ 1` では `d1 = 0` なので `Lift1 (X⟦n⟧) d` はコピー 0 の錐しか持ち上げず、
+`(Lift1 X d)⟦n⟧` は各コピーの錐を持ち上げる。ここが非可換の実体である。
+`i1 = 0` はコピーが完全に同一なので、可換性を経由せずに直接 `W` 所属を作れる。
+
+### 次の一手
+
+1. `badPar = 0, i1 = 0` を `W_flatMap_copies` で埋める（可換性は不要）。
+2. `badPar = 0, i1 = 2` を `glift_eq_Lift1` の雛形で埋める。
+3. `1 ≤ badPar` を `i1 = 2` と `i1 ≤ 1` に再分割し、前者を
+   `gexp_guard_transport` で埋める。
+4. 残る `badPar = 0, i1 = 1`（＋ `1 ≤ badPar, i1 ≤ 1`）が (WL) の真の核。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
