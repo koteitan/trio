@@ -2495,9 +2495,31 @@ X⟦n⟧          = X.dropLast の n 個並び        （特に X⟦1⟧ = X.dro
 | 枝 | 状態 |
 |---|---|
 | `badPar = 0, i1 = 0` | ✅ `lspOn_srow0` |
-| `badPar = 0, i1 = 2` | 未（`glift_eq_Lift1` の雛形あり） |
-| `1 ≤ badPar` | 未（`i1 = 2` は `gexp_guard_transport`、`i1 ≤ 1` は道具なし） |
+| `badPar = 0, i1 = 2` | 未（手順は下記。道具は全部そろっている） |
+| `1 ≤ badPar` | 未（`i1 = 2` は `gexp_guard_transport` が `j0` 一般なので同手順、`i1 ≤ 1` は道具なし） |
 | `badPar = 0, i1 = 1` | **難所**（行 1 塔） |
+
+### 枝 `badPar = 0, i1 = 2` の手順（道具は確定済み）
+
+示すべきは可換性 `(Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d`。`L := |X| - 1` として
+
+1. `parent_nextR hp` を `hbp`/`hsr` で書き換えて `nextrel2 X 0 L` を得る
+   （`nextR` の `if` を 2 回 `if_neg`）。
+2. `hle1lp : le1 X 0 L` は `nextrel2` の第 5 連言子。
+   `hd1pos : 0 < D1` は `le1_entry1_lt hle1lp`。
+3. `rtg0_of_rtg1`（Aexp.lean:215）で行 1 鎖を行 0 鎖に落とし、
+   `window_of_rtg0`（Lcone.lean:456）で
+   `hup : ∀ l, 0 < l → l ≤ L → entry X 0 0 < entry X 0 l` を得る。
+   `hd0pos`/`hd0e` は `hup L` から。
+4. `oper_eq_gexp n hL hz hp hbp` ＋ `hsr` の `if_pos` 2 回で
+   `hgexp : X⟦n⟧ = gexp X 0 L D0 D1 n`。同じものを `Lift1 X d` にも適用する
+   （`srow_Lift1` / `parent_Lift1` / `hasParent_Lift1` で仮定を移送、
+   `D0` は行 0 不変、`D1` は `0` と `L` がともに錐にいるので不変）。
+5. 残るのは `gexp (Lift1 X d) 0 L D0 D1 n = Lift1 (gexp X 0 L D0 D1 n) d` の
+   成分計算。行 0・行 2 は不変、行 1 は
+   `entry1_Lift1` ＋ `le1_Lift1` ＋ **`gexp_guard_transport`**
+   （コピー位置 `k*L+q` の錐 ⟺ 窓位置 `q` の錐）で一致する。
+   `glift_eq_Lift1`（Wset.lean:2716）の証明がこの成分計算の雛形。
 
 ## 4. 実行順序（v0.114 改訂）
 

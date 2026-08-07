@@ -1,10 +1,6 @@
-v0.118.69/prove the branch badPar = 0 with collapse row 0
+v0.118.70/record the recipe for the branch badPar = 0, i1 = 2
 
-- Add `gcopy_flat` / `gcopies_flat`: with both deltas zero the copies are the
-  bare segment
-- Add `oper_of_srow0_par0`: such a block expands to `n` literal copies of its
-  peel, so `X[1] = X.dropLast`
-- Add `lspOn_srow0`: the branch closes by `W_flatMap_copies` on
-  `Lift1 (X[1]) d` without going through commutation; the rsum side condition
-  comes from the no-dip clause of `nextrel0 X 0 (|X|-1)`
-- GRAFTALL-PLAN.md 1.9.57 + task.md: one of the four branches is done
+- GRAFTALL-PLAN.md 1.9.57: spell out the five steps that discharge the row-2
+  branch (nextrel2 -> le1 -> rtg0_of_rtg1 -> window_of_rtg0 -> oper_eq_gexp ->
+  gexp_guard_transport), and note that `gexp_guard_transport` is general in the
+  parent index so the same recipe covers `1 ≤ badPar` with `i1 = 2`
