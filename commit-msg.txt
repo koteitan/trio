@@ -1,10 +1,8 @@
-v0.118.72/identify the remaining (WL) branch as the tower graft recursion
+v0.118.73/correct the plan: the j0 >= 1 branch needs a new transport lemma
 
-- GRAFTALL-PLAN.md 1.9.59: with `i1 = 1` the deltas are `d1 = 0` and `d0 > 0`,
-  so the copies are row-0 shifts and, for a based block,
-  `X[n+1] = X.dropLast ++ shiftr01 d0 0 (X[n]) = graft X (X[n])` — the branch is
-  literally the row-1 tower recursion, so running it needs a graft closure that
-  the hypothesis does not give
-- Record that this makes the two residues of the new track (`badPar = 0, i1 = 1`
-  and `TowerExp`) the same phenomenon: running a tower with only `R.dropLast` in
-  hand
+- GRAFTALL-PLAN.md 1.9.60: `gexp_guard_transport` transports the cone from the
+  parent index `j0`, but the commutation needs the cone from index 0 of the
+  expansion; for `j0 >= 1` the two differ, which is also why `glift` and
+  `glift_eq_Lift1` are restricted to `j0 = 0`
+- Restate the remaining work: a cone-from-0 transport lemma for copies blocks,
+  the row-1 tower branch, and `TowerExp`
