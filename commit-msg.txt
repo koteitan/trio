@@ -1,10 +1,10 @@
-v0.118.71/prove the branch badPar = 0 with collapse row 2
+v0.118.72/identify the remaining (WL) branch as the tower graft recursion
 
-- Add `gexp_lift_eq_glift`: lifting the root before expanding equals expanding
-  and then applying the periodic mask, a pure component computation from
-  `gexp_getD_mir` and `le1_Lift1` that fixes the same deltas on both sides
-- Add `lspOn_srow2`: with `nextrel2` giving the cone, `rtg0_of_rtg1` and
-  `window_of_rtg0` giving the window, and `glift_eq_Lift1` identifying the
-  periodic mask with the intrinsic cone, the lift commutes with the expansion
-- GRAFTALL-PLAN.md 1.9.58 + task.md: two of the four branches are done; the
-  remaining ones are `1 ≤ badPar` and `badPar = 0, i1 = 1`
+- GRAFTALL-PLAN.md 1.9.59: with `i1 = 1` the deltas are `d1 = 0` and `d0 > 0`,
+  so the copies are row-0 shifts and, for a based block,
+  `X[n+1] = X.dropLast ++ shiftr01 d0 0 (X[n]) = graft X (X[n])` — the branch is
+  literally the row-1 tower recursion, so running it needs a graft closure that
+  the hypothesis does not give
+- Record that this makes the two residues of the new track (`badPar = 0, i1 = 1`
+  and `TowerExp`) the same phenomenon: running a tower with only `R.dropLast` in
+  hand

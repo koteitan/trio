@@ -2557,6 +2557,41 @@ lspOn_srow2 : LSPOn (badPar = 0 ∧ srow = 2)     ★ 証明済み
 `glift` は `j0 = 0` 専用（`idx % L` が窓位置）なので、一般 `j0` 版の周期マスクを
 定義するか、`gexp_guard_transport` から直接組む必要がある。
 
+## 1.9.59 ★★★ v0.118.72: 枝 `badPar = 0, i1 = 1` の正体は**塔の接ぎ木漸化式**
+
+### 計算
+
+`i1 = 1` では `d1 = 0`、`d0 = entry X 0 L - entry X 0 0 > 0` なので
+
+```
+gcopy X 0 L d0 0 k = shiftr01 (k*d0) 0 (seg X 0 L)      （行 1 は動かない）
+X⟦n⟧ = flatMap_{k<n} shiftr01 (k*d0) 0 X.dropLast        （深さ増加のコピー並び）
+```
+
+`X` が based（`entry X 0 0 = 0`）なら `d0 = entry X 0 L` なので
+
+```
+graft X z = X.dropLast ++ shiftr01 (entry X 0 L) 0 z = X.dropLast ++ shiftr01 d0 0 z
+⟹ X⟦n+1⟧ = X.dropLast ++ shiftr01 d0 0 (X⟦n⟧) = graft X (X⟦n⟧)
+```
+
+すなわち **`badPar = 0, i1 = 1` の展開は塔の接ぎ木漸化式そのもの**
+（`oper_cons_tower1` / `tow` と同じ形）。`Lift1 X d` も based なので同様に
+`(Lift1 X d)⟦n+1⟧ = graft (Lift1 X d) ((Lift1 X d)⟦n⟧)`。
+
+⟹ この枝を `n` の帰納で回すには **`graft (Lift1 X d) Y ∈ W (m+2d)`**（Y は
+前段）が要る。これは接ぎ木閉包そのもので、仮定
+「`Lift1 (X⟦n⟧) d ∈ W (m+2d)`」からは出ない。
+
+### 帰結: 2 本の残核は**同じ現象**
+
+* (WL) の残り枝 `badPar = 0, i1 = 1` … 行 1 塔の接ぎ木閉包
+* `TowerExp` … 節 2 経由で来た死んだ孤児が根で復活する行 1/行 2 塔
+
+どちらも「`R.dropLast` しか手元に無い状態で塔を回す」形であり、
+`Wstar` の graft 閉包（＝ 旧 `GraftAll`）の核と同一の現象と見てよい。
+⟹ **新トラックの真の残核は 1 つ**（行 1 塔の接ぎ木閉包）に集約される見込み。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）
