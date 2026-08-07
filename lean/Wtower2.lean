@@ -279,6 +279,137 @@ theorem lspOn_srow0 :
     Lift1_dropLast]
   exact W_flatMap_copies hQ hQr n
 
+/-! ### 枝 `i1 = 2`: リフトはコピー塊の周期マスクになる
+
+`gexp` の成分は `gexp_getD_mir` で明示的に書けるので、`Lift1` を先にかけた
+コピー塊は「コピー塊に周期マスク `glift` をかけたもの」に一致する。これは
+`D0`、`D1` を固定した**純粋な計算**で、`i1` にも親の位置にも依らない。 -/
+
+theorem getElem_eq_getD' {l : TrioSeq} {i : ℕ} (h : i < l.length) :
+    l[i] = l.getD i ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h]
+  rfl
+
+open Classical in
+/-- **The root lift of a copies block is the block's periodic mask lift.** -/
+theorem gexp_lift_eq_glift (X : TrioSeq) (L D0 D1 n d : ℕ)
+    (hlen : 0 + L + 1 = X.length) (hLpos : 0 < L) :
+    gexp (Lift1 X d) 0 L D0 D1 n = glift X L 0 d (gexp X 0 L D0 D1 n) := by
+  classical
+  have hlenL : 0 + L + 1 = (Lift1 X d).length := by rw [Lift1_length]; exact hlen
+  have hlenA : (gexp (Lift1 X d) 0 L D0 D1 n).length = 0 + n * L :=
+    gexp_length hlenL
+  have hlenB : (glift X L 0 d (gexp X 0 L D0 D1 n)).length = 0 + n * L := by
+    rw [glift_length]; exact gexp_length hlen
+  refine List.ext_getElem (by rw [hlenA, hlenB]) ?_
+  intro i h1 h2
+  rw [hlenA] at h1
+  obtain ⟨k, q, hk, hq, rfl⟩ := index_decomp hLpos (show i < n * L by omega)
+  have hqL : q < X.length := by omega
+  have hidx : (k * L + q) % L = q := by
+    rw [Nat.add_comm, Nat.add_mul_mod_self_right]
+    exact Nat.mod_eq_of_lt hq
+  have hA := gexp_getD_mir (M := Lift1 X d) (j0 := 0) (Lb := L) (d0 := D0)
+    (d1 := D1) (n := n) hlenL hk hq
+  have hB := gexp_getD_mir (M := X) (j0 := 0) (Lb := L) (d0 := D0)
+    (d1 := D1) (n := n) hlen hk hq
+  rw [Nat.zero_add, Nat.zero_add] at hA hB
+  have hiff : (le1 (Lift1 X d) 0 q) = (le1 X 0 q) := propext le1_Lift1
+  have hgetA : (gexp (Lift1 X d) 0 L D0 D1 n)[k * L + q]
+      = (entry X 0 q + k * D0,
+         entry X 1 q + (if le1 X 0 q then d else 0)
+           + (if le1 X 0 q then k * D1 else 0),
+         entry X 2 q) := by
+    rw [getElem_eq_getD' (by omega), hA, entry0_Lift1, entry2_Lift1,
+      entry1_Lift1 hqL, hiff]
+  have e0 : entry (gexp X 0 L D0 D1 n) 0 (k * L + q) = entry X 0 q + k * D0 := by
+    show ((gexp X 0 L D0 D1 n).getD (k * L + q) ((0, 0, 0) : ℕ × ℕ × ℕ)).1 = _
+    rw [hB]
+  have e1 : entry (gexp X 0 L D0 D1 n) 1 (k * L + q)
+      = entry X 1 q + (if le1 X 0 q then k * D1 else 0) := by
+    show ((gexp X 0 L D0 D1 n).getD (k * L + q) ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 = _
+    rw [hB]
+  have e2 : entry (gexp X 0 L D0 D1 n) 2 (k * L + q) = entry X 2 q := by
+    show ((gexp X 0 L D0 D1 n).getD (k * L + q) ((0, 0, 0) : ℕ × ℕ × ℕ)).2.2 = _
+    rw [hB]
+  have hgetB : (glift X L 0 d (gexp X 0 L D0 D1 n))[k * L + q]
+      = (entry X 0 q + k * D0 + 0,
+         entry X 1 q + (if le1 X 0 q then k * D1 else 0)
+           + (if le1 X 0 q then d else 0),
+         entry X 2 q) := by
+    unfold glift
+    rw [List.getElem_map, List.getElem_range, hidx, e0, e1, e2]
+  rw [hgetA, hgetB]
+  refine Prod.ext (by dsimp only; omega) (Prod.ext (by dsimp only; omega) rfl)
+
+open Classical in
+/-- **Branch `badPar = 0`, collapse row `2`**: here the lift commutes with the
+expansion.  `gexp_lift_eq_glift` turns the lifted expansion into the periodic
+mask lift, and `glift_eq_Lift1` identifies that mask with the intrinsic cone
+(this is where `0 < d0` and `0 < d1`, i.e. the row-2 collapse, are used). -/
+theorem lspOn_srow2 :
+    LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 2) := by
+  classical
+  rintro m d X h2 hp ⟨hbp, hsr⟩ hop n hn
+  unfold badPar at hbp
+  set L : ℕ := X.length - 1 with hLdef
+  have hLpos : 0 < L := by omega
+  have hlen : 0 + L + 1 = X.length := by omega
+  have hnr := parent_nextR hp
+  rw [hbp, hsr] at hnr
+  have hn2 : nextrel2 X 0 L := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  have hcone : le1 X 0 L := hn2.2.2.2.2.1
+  have hup : ∀ l, 0 < l → l ≤ L → entry X 0 0 < entry X 0 l :=
+    window_of_rtg0 (rtg0_of_rtg1 hcone.2.2) (by omega)
+  have hlt0 : entry X 0 0 < entry X 0 L := hup L hLpos le_rfl
+  set D0 : ℕ := entry X 0 L - entry X 0 0 with hD0
+  set D1 : ℕ := entry X 1 L - entry X 1 0 with hD1
+  have hd0pos : 0 < D0 := by omega
+  have hd0e : entry X 0 L = entry X 0 0 + D0 := by omega
+  have hd1pos : 0 < D1 := by
+    have := le1_entry1_lt hcone (by omega)
+    omega
+  have hz : ¬ (entry X 0 L = 0 ∧ entry X 1 L = 0 ∧ entry X 2 L = 0) := by
+    rintro ⟨h0, -, -⟩; omega
+  have hgexpX : X⟦n⟧ = gexp X 0 L D0 D1 n := by
+    have h := oper_eq_gexp (M := X) n (by omega) hz hp hbp
+    rw [hsr, if_pos (by omega : 0 < 2), if_pos (by omega : 1 < 2)] at h
+    exact h
+  -- the same data for the lifted block
+  have hlenL : (Lift1 X d).length = X.length := Lift1_length X d
+  have hsrL : srow (Lift1 X d) ((Lift1 X d).length - 1) = 2 := by
+    rw [hlenL, srow_Lift1 (by omega)]; exact hsr
+  have hpL : hasParent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) := by
+    rw [hlenL, srow_Lift1 (by omega), hasParent_Lift1]; exact hp
+  have hbpL : parent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) = 0 := by
+    rw [hlenL, srow_Lift1 (by omega), parent_Lift1]; exact hbp
+  have hzL : ¬ (entry (Lift1 X d) 0 ((Lift1 X d).length - 1) = 0 ∧
+      entry (Lift1 X d) 1 ((Lift1 X d).length - 1) = 0 ∧
+      entry (Lift1 X d) 2 ((Lift1 X d).length - 1) = 0) := by
+    rw [hlenL, ← hLdef, entry0_Lift1]
+    rintro ⟨h0, -, -⟩; omega
+  have hE1L : entry (Lift1 X d) 1 L = entry X 1 L + d := by
+    rw [entry1_Lift1 (by omega), if_pos hcone]
+  have hE10 : entry (Lift1 X d) 1 0 = entry X 1 0 + d := by
+    rw [entry1_Lift1 (by omega), if_pos (le1_refl (by omega))]
+  have hD0eq : entry (Lift1 X d) 0 L - entry (Lift1 X d) 0 0 = D0 := by
+    rw [entry0_Lift1, entry0_Lift1, hD0]
+  have hD1eq : entry (Lift1 X d) 1 L - entry (Lift1 X d) 1 0 = D1 := by
+    rw [hE1L, hE10, hD1]; omega
+  have hgexpL : (Lift1 X d)⟦n⟧ = gexp (Lift1 X d) 0 L D0 D1 n := by
+    have h := oper_eq_gexp (M := Lift1 X d) n (by rw [hlenL]; omega) hzL hpL hbpL
+    rw [hsrL, if_pos (by omega : 0 < 2), if_pos (by omega : 1 < 2), hlenL,
+      ← hLdef, hD0eq, hD1eq] at h
+    exact h
+  rw [hgexpL, gexp_lift_eq_glift X L D0 D1 n d hlen hLpos, ← hgexpX,
+    glift_eq_Lift1 (by omega) hgexpX hup hd0pos hd0e hd1pos hcone]
+  exact hop n hn
+
 /-- **The row-2 tower falls to (WL) over the LIFT-FREE `Wstar`.**  The tower's
 induction only ever needs the single lift `d1`, so the `∀ s` strengthening (and
 with it `Wstar2`, `GraftAll`, `GX`) is unnecessary once the stage law is

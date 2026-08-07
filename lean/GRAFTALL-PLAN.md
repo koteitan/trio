@@ -2521,6 +2521,42 @@ X⟦n⟧          = X.dropLast の n 個並び        （特に X⟦1⟧ = X.dro
    （コピー位置 `k*L+q` の錐 ⟺ 窓位置 `q` の錐）で一致する。
    `glift_eq_Lift1`（Wset.lean:2716）の証明がこの成分計算の雛形。
 
+## 1.9.58 ★★★★ v0.118.71: 枝 `badPar = 0, i1 = 2` も証明（4 枝のうち 2 本）
+
+### Lean（`lean/Wtower2.lean`, sorry 0, build 787）
+
+```
+getElem_eq_getD'      : 補助
+gexp_lift_eq_glift    : gexp (Lift1 X d) 0 L D0 D1 n = glift X L 0 d (gexp X 0 L D0 D1 n)
+                        ← D0, D1 を固定した**純粋な成分計算**（gexp_getD_mir + le1_Lift1）
+lspOn_srow2 : LSPOn (badPar = 0 ∧ srow = 2)     ★ 証明済み
+```
+
+### 筋
+
+1. `nextrel2 X 0 L` から `hcone : le1 X 0 L`、`hd1pos`（`le1_entry1_lt`）。
+2. `rtg0_of_rtg1` ＋ `window_of_rtg0` で `hup`、そこから `hd0pos` / `hd0e`。
+3. `oper_eq_gexp` を `X` と `Lift1 X d` の両方に適用（`srow_Lift1` /
+   `parent_Lift1` / `hasParent_Lift1` で仮定を移送。`D0` は行 0 不変、
+   `D1` は `0` と `L` がともに錐にいるので不変）。
+4. `gexp_lift_eq_glift` で「リフトしてから展開」＝「展開してから周期マスク」。
+5. `glift_eq_Lift1` で周期マスク＝内在錐（ここで `0 < d0` と `0 < d1`、
+   すなわち**行 2 崩壊**が効く）。⟹ 可換性 `(Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d`。
+
+### 4 枝の現状
+
+| 枝 | 状態 |
+|---|---|
+| `badPar = 0, i1 = 0` | ✅ `lspOn_srow0`（`W_flatMap_copies`、可換性不要） |
+| `badPar = 0, i1 = 2` | ✅ `lspOn_srow2`（可換性） |
+| `1 ≤ badPar` | 未。`i1 = 2` は `gexp_guard_transport` が `j0` 一般なので同じ筋。`i1 ≤ 1` は道具なし |
+| `badPar = 0, i1 = 1` | **難所**（行 1 塔） |
+
+⟹ 次は `1 ≤ badPar` を `i1 = 2` と `i1 ≤ 1` に割り、前者を `lspOn_srow2` と
+同じ手順（ただし `j0` 一般の `gexp_getD_mir` / `gexp_guard_transport`）で埋める。
+`glift` は `j0 = 0` 専用（`idx % L` が窓位置）なので、一般 `j0` 版の周期マスクを
+定義するか、`gexp_guard_transport` から直接組む必要がある。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

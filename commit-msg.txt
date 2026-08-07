@@ -1,6 +1,10 @@
-v0.118.70/record the recipe for the branch badPar = 0, i1 = 2
+v0.118.71/prove the branch badPar = 0 with collapse row 2
 
-- GRAFTALL-PLAN.md 1.9.57: spell out the five steps that discharge the row-2
-  branch (nextrel2 -> le1 -> rtg0_of_rtg1 -> window_of_rtg0 -> oper_eq_gexp ->
-  gexp_guard_transport), and note that `gexp_guard_transport` is general in the
-  parent index so the same recipe covers `1 ≤ badPar` with `i1 = 2`
+- Add `gexp_lift_eq_glift`: lifting the root before expanding equals expanding
+  and then applying the periodic mask, a pure component computation from
+  `gexp_getD_mir` and `le1_Lift1` that fixes the same deltas on both sides
+- Add `lspOn_srow2`: with `nextrel2` giving the cone, `rtg0_of_rtg1` and
+  `window_of_rtg0` giving the window, and `glift_eq_Lift1` identifying the
+  periodic mask with the intrinsic cone, the lift commutes with the expansion
+- GRAFTALL-PLAN.md 1.9.58 + task.md: two of the four branches are done; the
+  remaining ones are `1 ≤ badPar` and `badPar = 0, i1 = 1`

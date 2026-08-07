@@ -54,7 +54,7 @@
 - [ ] **残差A（GXトラック）**: CoreCap 1 本
 - [x] (WL) は Pred 分岐が可換なので「親あり」だけに縮小 ✅ v0.118.67
 - [x] LiftStageParented を 4 枝に分割（badPar と srow で場合分け）✅ v0.118.68
-- [x] 4 枝のうち badPar=0/i1=0 を証明（lspOn_srow0）✅ v0.118.69
+- [x] 4 枝のうち badPar=0/i1=0 と badPar=0/i1=2 を証明 ✅ v0.118.69-71
 - [ ] **残差B（新トラック・本命）**: LiftStageParented（残り 3 枝）+ TowerExp
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
