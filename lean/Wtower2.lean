@@ -2429,6 +2429,35 @@ theorem mem_Wself_iff (u : ℕ) (M : TrioSeq) :
   · rintro ⟨h1, h2⟩
     exact W_mono h2 h1
 
+/-- **★★ The `z = 0` fragment of trio is already done.**
+
+A trio sequence whose row 2 is identically zero IS a pair sequence, and
+`YAPSS.Wset.mem_W_of_bound` puts every pair sequence in `W u` as soon as `u`
+bounds its row-1 values — unconditionally, since lean-yapss's `mem_Wstar` is
+unconditional.  The bridge carries that to trio, and `W_root_stage` then sharpens
+the stage down to the root's own level.
+
+So all of trio's difficulty sits in the row-2 columns. -/
+theorem zeroRow2_mem_Wself {M : TrioSeq} (hz : ∀ p ∈ M, p.2.2 = 0) : M ∈ Wself := by
+  classical
+  by_cases hne : M = []
+  · subst hne
+    exact show ([] : TrioSeq) ∈ W (lev ([] : TrioSeq) 0) from W_nil _
+  · set S : YAPSS.PairSeq := M.map (fun p => (p.1, p.2.1)) with hS
+    have hemb : PairBridge.emb S = M := by
+      rw [hS]
+      unfold PairBridge.emb
+      rw [List.map_map,
+        List.map_congr_left (g := fun p : ℕ × ℕ × ℕ => p)
+          (fun p hp => by
+            show ((p.1, p.2.1, 0) : ℕ × ℕ × ℕ) = p
+            rw [← hz p hp])]
+      simp
+    have h1 : S ∈ YAPSS.Wset.W (YAPSS.maxr1 S) := YAPSS.Wset.mem_W_maxr1 S
+    have h2 : M ∈ W (2 * YAPSS.maxr1 S) := by
+      rw [← hemb]; exact PairBridge.emb_mem_W h1
+    exact W_root_stage h2 hne
+
 theorem drop_mem_Wself {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ) :
     M.drop j ∈ Wself := by
   have := W_drop h j
@@ -2497,14 +2526,19 @@ def Subst1gReviveSelf : Prop :=
         ¬ hasParent (S.drop (p + 1))
           (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
           ((S.drop (p + 1)).length - 1))) →
+    (∃ q ∈ S.take p ++ C ++ S.drop (p + 1), 0 < q.2.2) →
     (S.take p ++ C ++ S.drop (p + 1)) ∈ Wself
 
 theorem subst1gRevive_of_self (h : Subst1gReviveSelf) : Subst1gRevive := by
   intro u p S C hS hp hCne hCW hhead hdeep hRp hdisj
   obtain ⟨hSself, hSlev⟩ := (mem_Wself_iff u S).mp hS
   obtain ⟨hCself, hClev⟩ := (mem_Wself_iff (lev S p) C).mp hCW
-  refine (mem_Wself_iff u _).mpr
-    ⟨h p S C hSself hp hCne hCself hClev hhead hdeep hRp hdisj, ?_⟩
+  refine (mem_Wself_iff u _).mpr ⟨?_, ?_⟩
+  · by_cases hz2 : ∃ q ∈ S.take p ++ C ++ S.drop (p + 1), 0 < q.2.2
+    · exact h p S C hSself hp hCne hCself hClev hhead hdeep hRp hdisj hz2
+    · refine zeroRow2_mem_Wself (fun q hq => ?_)
+      by_contra hc
+      exact hz2 ⟨q, hq, by omega⟩
   have hr : ∀ i, entry (S.take p ++ C ++ S.drop (p + 1)) i 0
       = if p = 0 then entry C i 0 else entry S i 0 :=
     fun i => entry_subst_root hCne hp i

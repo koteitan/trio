@@ -1,1 +1,8 @@
-v0.118.138/version bump for the status document
+v0.118.139/close the z = 0 fragment and narrow the residue to row-2 columns
+
+- Prove zeroRow2_mem_Wself: a trio sequence with row 2 identically zero IS a
+  pair sequence, so lean-yapss's unconditional mem_W_maxr1 puts it in W of twice
+  its row-1 maximum, and W_root_stage sharpens that to its own root level
+- Add the hypothesis "some column of R has row 2 > 0" to Subst1gReviveSelf and
+  discharge the complement in subst1gRevive_of_self, so the residue is now only
+  about sequences that actually carry a row-2 column
