@@ -1,5 +1,8 @@
-v0.118.142/record the end-to-end verification sweep
+v0.118.143/record the zle1 threading feasibility and the inW truncation check
 
-- 40850 own lines with 0 sorry, Pair/ included
-- Every top-level theorem and the vendored YAPSS.PSS_terminates_unconditional
-  depend only on [propext, Classical.choice, Quot.sound]
+- Add PROOF-STATUS 5.5: threading zle1 down to the core is feasible (MASTER
+  already carries it, guarding Wstar only weakens the clause-3 obligation, and
+  every tower is built from zle1 pieces), but it is not started because no proof
+  idea uses zle1 yet and the blast radius is the whole chain
+- Add tools/check_inw_ns.py: compare inW's verdict under n <= 2, n <= 3 and
+  n <= 4, since every probe in the campaign truncates at n <= 2
