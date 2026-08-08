@@ -2612,8 +2612,10 @@ gexp_guard_transport : le1 (gexp M j0 Lb d0 d1 n) j0 (j0 + (k*Lb+q)) ↔ le1 M j
 ### 残作業（新トラック）
 
 1. `1 ≤ badPar`（全 `i1`）: 添字 0 からの錐の輸送補題を作る。
-   `p < j0` の部分は `le1_take` で前置局所性から出る（`gexp` の頭は
-   `X.take j0`）。難しいのはコピー部分。
+   `p < j0` の部分は **`le1_gexp_low`（v0.118.74 で証明済み）**:
+   `le1 (gexp M j0 Lb d0 d1 n) 0 p ↔ le1 M 0 p`（`p < j0`）。
+   `gexp` の頭が `M.take j0` であること（`List.take_left'`）と `le1_take` の
+   前置局所性だけで出る。**難しいのはコピー部分**（`p ≥ j0`）。
 2. `badPar = 0, i1 = 1`: 塔の接ぎ木漸化式（§1.9.59）。真の核。
 3. `TowerExp`: 1 と同じ現象（§1.9.59）。
 

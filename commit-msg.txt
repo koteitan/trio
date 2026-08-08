@@ -1,8 +1,6 @@
-v0.118.73/correct the plan: the j0 >= 1 branch needs a new transport lemma
+v0.118.74/prove the easy half of the cone transport for j0 >= 1
 
-- GRAFTALL-PLAN.md 1.9.60: `gexp_guard_transport` transports the cone from the
-  parent index `j0`, but the commutation needs the cone from index 0 of the
-  expansion; for `j0 >= 1` the two differ, which is also why `glift` and
-  `glift_eq_Lift1` are restricted to `j0 = 0`
-- Restate the remaining work: a cone-from-0 transport lemma for copies blocks,
-  the row-1 tower branch, and `TowerExp`
+- Add `le1_gexp_low`: on the head `M.take j0` of a copies block the cone from
+  index 0 is unchanged, by `List.take_left'` and the prefix-locality of `le1`
+- GRAFTALL-PLAN.md 1.9.60: mark that half done and point at the copies part as
+  the remaining difficulty

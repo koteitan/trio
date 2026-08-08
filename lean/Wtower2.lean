@@ -410,6 +410,25 @@ theorem lspOn_srow2 :
     glift_eq_Lift1 (by omega) hgexpX hup hd0pos hd0e hd1pos hcone]
   exact hop n hn
 
+/-! ### 枝 `1 ≤ badPar` に向けて: 錐輸送の易しい半分
+
+`1 ≤ badPar` の可換性に要るのは「`X⟦n⟧` の**添字 0 からの**錐」であり、
+`gexp_guard_transport` が運ぶ「`j0` からの錐」とは `j0 ≥ 1` では一致しない
+（§1.9.60）。頭 `M.take j0` の部分だけは前置局所性（`le1_take`）で片付く。 -/
+
+theorem le1_gexp_low {M : TrioSeq} {j0 Lb d0 d1 n p : ℕ}
+    (hj0 : j0 ≤ M.length) (hp : p < j0) :
+    le1 (gexp M j0 Lb d0 d1 n) 0 p ↔ le1 M 0 p := by
+  have hlent : (M.take j0).length = j0 := by rw [List.length_take]; omega
+  have htake : (gexp M j0 Lb d0 d1 n).take j0 = M.take j0 := by
+    unfold gexp
+    exact List.take_left' hlent
+  have hj0len : j0 ≤ (gexp M j0 Lb d0 d1 n).length := by
+    unfold gexp
+    rw [List.length_append, hlent]
+    omega
+  rw [← le1_take hj0len hp, htake, le1_take hj0 hp]
+
 /-- **The row-2 tower falls to (WL) over the LIFT-FREE `Wstar`.**  The tower's
 induction only ever needs the single lift `d1`, so the `∀ s` strengthening (and
 with it `Wstar2`, `GraftAll`, `GX`) is unnecessary once the stage law is
