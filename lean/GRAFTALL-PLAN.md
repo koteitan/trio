@@ -3074,11 +3074,49 @@ M⟦n⟧ = ⧺_{k<n} shiftr01 (k*d0) 0 (Lift1 ((0,v,z) :: R.dropLast) (k*d1))
 ⟹ 残るのは
 
 ```
-(SUBST)  W u の元の各列の下に「その列のレベルの W ブロック」を挿し込んでも W u に留まる
+(SUBST)  Q ∈ W u、各列 j について B_j（頭が Q[j]、他の列は Q[j] より真に深い、
+         B_j ∈ W (lev Q[j])）⟹ ⧺_j B_j ∈ W u
 ```
 
 という**代入閉包**。`W_add` は `rsum`（後半の根が最浅）を要求するので直接は使えない
 （後のコピーほど深い）。`(CAT)` も両辺が同じ段を要求するので届かない。
+
+**計測 `tools/probe_subst.py`: 判定 38403 例 0 違反**（未判定 2014、ホスト 2010）。
+
+### なぜ `(SUBST)` を選ぶか（`(GC)` は強すぎる）
+
+もう一つの分解は `Wset.oper_cons_tower2`（**既存**）
+
+```
+((0,v,z) :: R)⟦n+1⟧ = (0,v,z) :: graft R (Lift1 (((0,v,z) :: R)⟦n⟧) (w - v))
+```
+
+を使った塔の帰納で、必要になるのは
+
+```
+(GC)  domT R m → (∀n≥1, R⟦n⟧ ∈ Wstar) → ∀ Y ∈ W m, based Y → graft R Y ∈ Wstar
+```
+
+＝「後者節のデータが接ぎ木閉包に格上げされる」。だが `|R| = 1` では
+`graft R Y = Y'` なので `(GC)` は「任意の `Y ∈ W m` を根の下に植えると
+`W a'`（`a'` は 0 まで小さい）に入る」を要求し、これは `mem_Wstar`
+（＝目標そのもの）に近い。⟹ **`(GC)` は強すぎる**。
+
+`(SUBST)` は各ブロックの段が `lev Q[j]` に**ぴったり合っている**閉包なので、
+`(CAT)` と同じ「純粋な `W` の閉包」型であり、ペア定理も含まない見込み
+（各 `B_j` が既に `W (lev)` に居ることを要求するので、対角列を無から作れない）。
+
+### ⟹ 予想される最終形
+
+```
+TRIO_terminates : WCat → SubstClosed → WellFounded stepRel
+```
+
+必要な配線: `TowerExp2Root ⟸ (SUBST) + (WL) + diag_mem_W`。
+Lean 側の部品は揃っている（`oper_eq_gexp` / `gexp` = `gcopies` /
+`glift_eq_Lift1` / `Croot.gcopies_succ_graft_lift` / `diag_mem_W`）。
+残る作業は `gcopy M 0 L d0 d1 k = shiftr01 (k*d0) 0 (Lift1 (seg M 0 L) (k*d1))`
+の形を出すこと。
 
 ### 段の帳尻（確認済み）
 
