@@ -1,1 +1,5 @@
-v0.118.141/list the three structural inputs obtained so far
+v0.118.142/record the end-to-end verification sweep
+
+- 40850 own lines with 0 sorry, Pair/ included
+- Every top-level theorem and the vendored YAPSS.PSS_terminates_unconditional
+  depend only on [propext, Classical.choice, Quot.sound]

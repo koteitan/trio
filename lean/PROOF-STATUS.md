@@ -3,7 +3,9 @@
 3 行バシク（BM4, `z<2` 断片）の停止性 Lean 形式化の現状。
 `GRAFTALL-PLAN.md` は 3700 行の設計ログなので、**現状はこの文書を見る**。
 
-- build: 800 jobs 緑 / `sorry` 0 / 全 top-level の axioms = `[propext, Classical.choice, Quot.sound]`
+- build: 800 jobs 緑 / **自前 40850 行に `sorry` 0**（取り込んだ `Pair/` 込み） /
+  全 top-level の axioms = `[propext, Classical.choice, Quot.sound]`
+- 取り込んだ `YAPSS.PSS_terminates_unconditional` も trio のビルド内で axioms clean
 - 主目標: `Final.TRIO_terminates_of_revive_self`
 
 ## 1. 残核はただ 1 本（段量詞なし）
