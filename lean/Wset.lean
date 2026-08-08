@@ -2154,6 +2154,70 @@ theorem W_take {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (k : ℕ) : M.take k ∈ 
         rwa [List.take_of_length_le le_rfl] at hx
   exact hsub h k
 
+/-- **The root's level bounds the stage.**  Converse of `singleton_mem_W`: the
+expansion never drops the first column (copy 0 is unshifted, `Pred` only removes
+the last), so the block's root survives every step and its level must fit under
+`u`. -/
+theorem lev_root_le_of_mem_W {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (hne : M ≠ []) :
+    lev M 0 ≤ u := by
+  classical
+  have hsub : W u ⊆ {N : TrioSeq | N ≠ [] → lev N 0 ≤ u} := by
+    refine A2' ?_
+    intro N A hNne
+    show lev N 0 ≤ u
+    rcases A with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+    · rw [hw]; omega
+    · rcases Nat.lt_or_ge 1 N.length with hL | hshort
+      · have h1 := hop 1 le_rfl
+        have htk : (N⟦1⟧).take 1 = N.take 1 := oper_take_prefix hL le_rfl (by omega)
+        have hNt : N.take 1 ≠ [] := by
+          intro hc
+          have : N.length = 0 := by
+            have h2 : (N.take 1).length = min 1 N.length := List.length_take
+            rw [hc] at h2; simp at h2; omega
+          exact hNne (List.eq_nil_of_length_eq_zero this)
+        have hne1 : N⟦1⟧ ≠ [] := by
+          intro hc
+          rw [hc] at htk
+          simp only [List.take_nil] at htk
+          exact hNt htk.symm
+        have hlev : lev (N⟦1⟧) 0 = lev N 0 := by
+          have e : ∀ i, entry (N⟦1⟧) i 0 = entry N i 0 := by
+            intro i
+            rw [← entry_take (X := N⟦1⟧) (l := 1) (i := i) (by omega),
+              ← entry_take (X := N) (l := 1) (i := i) (by omega), htk]
+          unfold lev
+          rw [e 1, e 2]
+        rw [← hlev]
+        exact h1 hne1
+      · have h1 := hop 1 le_rfl
+        rw [oper_eq_self_of_short 1 (by omega)] at h1
+        exact h1 hNne
+    · rcases Nat.lt_or_ge 1 N.length with hL | hshort
+      · have hdl := hgr [] (W_nil m) based_nil
+        rw [graft_nil] at hdl
+        have hne2 : N.dropLast ≠ [] := by
+          intro hc
+          have hlen : N.dropLast.length = N.length - 1 := List.length_dropLast
+          rw [hc] at hlen
+          simp at hlen
+          omega
+        have hlev : lev N.dropLast 0 = lev N 0 := by
+          unfold lev
+          rw [List.dropLast_eq_take,
+            entry_take (X := N) (l := N.length - 1) (i := 1) (by omega),
+            entry_take (X := N) (l := N.length - 1) (i := 2) (by omega)]
+        rw [← hlev]
+        exact hdl hne2
+      · have hN1 : N.length = 1 := by
+          have := List.length_pos_iff.mpr hNne
+          omega
+        have hlv := hd.1
+        rw [hN1] at hlv
+        simp only [Nat.sub_self] at hlv
+        omega
+  exact hsub h hne
+
 /-- Prefixes of a `W u` member, in `dropLast` form. -/
 theorem W_dropLast {u : ℕ} {M : TrioSeq} (h : M ∈ W u) : M.dropLast ∈ W u := by
   rw [List.dropLast_eq_take]
