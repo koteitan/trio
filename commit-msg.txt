@@ -1,6 +1,4 @@
-v0.118.133/document the stage collapse
+v0.118.134/record the 60000-sample adversarial result
 
-- Add GRAFTALL-PLAN 4.001: W_root_stage, the Wself normal form, why the
-  substitution never raises the root level, and the stage-free residue
-- Note that the (LOW)+(HANG) split is available but raises the core count
-- Point task.md at Subst1gReviveSelf
+- 78885 decided residue instances (context-revives 14540,
+  insertion-creates-parent 17816, inside-copied-region 46529), 0 violations

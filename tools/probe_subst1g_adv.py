@@ -17,9 +17,9 @@ Those are exactly the shapes that killed A_x1 == 1, W2ok, spanOK and dichOK.
 Hosts and blocks are drawn at random over a much wider column range than the
 exhaustive probe, with dips allowed, and only the residue cases are counted.
 
-Measured (seed 20260809, 30000 samples): 39376 decided residue instances --
-context-revives 7217, insertion-creates-parent 8837, inside-copied-region
-23322 -- and 0 violations.  `inW` is the bottleneck, so keep SAMPLES modest;
+Measured (seed 20260809, 60000 samples): 78885 decided residue instances --
+context-revives 14540, insertion-creates-parent 17816, inside-copied-region
+46529 -- and 0 violations.  `inW` is the bottleneck, so keep SAMPLES modest;
 progress is printed every 10000 samples.
 """
 import sys
