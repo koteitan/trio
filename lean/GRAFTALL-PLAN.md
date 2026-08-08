@@ -2863,6 +2863,41 @@ lift_graft_cone : 2 ≤ |E| → based A → (A の非根が深い) → HighPar A
 `z = 1` の例外を別扱いできるかを調べる。ここが通れば `TowerExp` が丸ごと消え、
 残差は `(SNOC)` 1 本になる。
 
+### v0.118.88: ★ 最終設計 — ガード復活で残差は `(SNOC)` **1 本**になる
+
+**確実な事実**: `natDom R := ∀ m, ¬ domT R m` なので `domT R m0` は
+`¬ natDom R` を**定義から**与える。したがってガードを戻すと
+`towerOK_of` の節 2 分岐（`hop`）は `hdR : ∃ m0, domT R m0` と両立せず
+**空虚**になる ⟹ **`TowerExp` / `TowerExp1` / `TowerExp2` は丸ごと消える**。
+
+ガード後の trio の残差構造（yapss と同型）:
+
+```
+TowerOK の分岐   節1        : W_flatMap_copies                      ✅ free
+                 節2        : ガードで空虚                          ✅ 消滅
+                 節3 srow=1 : tower1_mem（hgr を使う）              ✅ 証明済み
+                 節3 srow=2 : TowerGraft2 ⟸ (WL)                    ← 行 2 固有
+(WL) の 4 枝     1<=badPar / badPar=0,i1∈{0,2}                      ✅ 証明済み
+                 badPar=0,i1=1                                      ⟸ (SNOC)
+ガードの修復     末尾列が 0 錐の外（srow=1 は自動）: lift_graft_cone ✅ (CAT) 不要
+                 例外（srow=2 かつ根の行2=1）                        ⟸ (CAT) ⟸ (SNOC)
+```
+
+⟹ **すべてが `(SNOC)` 1 本に集まる**。yapss に `(SNOC)` が現れないのは行 2 が
+無いからで、`(SNOC)` は **trio の行 2 固有の内容**である（ただしその節 1 基底は
+行 2 が 0 の対角塔なので、ペア数列の事実を含む — それは trio 側の行 1 塔
+`tower1_mem` が既に担っている部分と重なる）。
+
+**次セッションの主タスク（設計は確定、作業は機械的）**:
+1. `Aop` 節 2 に `natDom M ∧` を戻す（`Wset.lean`）。
+2. 節 2 導入 23 箇所 + `mem_of_oper_mem` 7 箇所に `natDom` を供給する。
+   `Wchar.mem_iff_oper_mem` は `natDom` 付きの条件付き版になる。
+3. 壊れる 3 箇所（`Wslift:88/138`, `Wtower2:129`）を `lift_graft_cone` で修復
+   （末尾列が 0 錐の外の場合）。例外ケースは `(CAT)` を仮定として残す。
+4. `TowerExp*` と `towerExp_of_rows` 系を撤去、`Final.lean` を配線替え。
+⚠ ガード付き `W` は probe で決定できないので、(SNOC) の測定証拠は
+**ガード前の `W`** についてのものであることを明記して持ち越すこと。
+
 ### ⚠ 健全性の注意: `(CAT)` / `(TOW)` は定理の**下流**でもある
 
 `mem_W_maxlev`（A 閉集合 `S` を法として）は `zle1 M → M ∈ W (maxlev M)` を与え、
