@@ -3444,6 +3444,46 @@ theorem nil_mem_Wstar2 : ([] : TrioSeq) ∈ Wstar2 := by
   rw [h0]
   exact W_mono hva (Om_mem_W (v + t) z)
 
+/-- **The row-2 revival gap.**  When the principal root is the row-2 parent of
+`R`'s trailing orphan, `nextrel2` forces a strict rise in BOTH rows: the root is
+a row-1 ancestor (so `v < w`) and its row 2 is strictly smaller (`z < y`).
+Consequently `2v+z < lev R (R.length - 1) = m + 1`, i.e. the root's stage is
+strictly below the orphan's. -/
+theorem row2_revival_gap {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : domT R m) (hi1 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    v < entry R 1 (R.length - 1) ∧ z < entry R 2 (R.length - 1) := by
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hroot1 : entry M 1 0 = v := by rw [hMdef]; simp [entry, hp0]
+  have hroot2 : entry M 2 0 = z := by rw [hMdef]; simp [entry, hp0]
+  have hsrM : srow M (M.length - 1) = 2 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]; exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  have hnr := parent_nextR hpM'
+  rw [hpar0, hsrM] at hnr
+  have hn2 : nextrel2 M 0 (M.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  constructor
+  · have h := le1_entry1_lt hn2.2.2.2.2.1 (by omega)
+    rw [hroot1, hMlen, hE 1] at h
+    exact h
+  · have h := hn2.2.2.2.1
+    rw [hroot2, hMlen, hE 2] at h
+    exact h
+
 /-! ### 行 2 タワーの持ち上げ済み所属 -/
 
 open Classical in

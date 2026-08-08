@@ -1677,15 +1677,18 @@ def TowerExp2Root : Prop :=
   ∀ (v z m : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → domT R m →
     (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) → srow R (R.length - 1) = 2 →
     hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    v < entry R 1 (R.length - 1) → z < entry R 2 (R.length - 1) →
     ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W (2 * v + z)
 
-theorem towerExp2_of_root (h : TowerExp2Root) : TowerExp2 :=
-  fun v z m a R hR hRne hz1 hva hd hop hsr hpM n hn =>
-    W_mono hva (h v z m R hR hRne hz1 hd hop hsr hpM n hn)
+theorem towerExp2_of_root (h : TowerExp2Root) : TowerExp2 := by
+  intro v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
+  obtain ⟨h1, h2⟩ := row2_revival_gap hRne hd hsr hpM
+  exact W_mono hva (h v z m R hR hRne hz1 hd hop hsr hpM h1 h2 n hn)
 
-theorem towerExp2Low_of_root (h : TowerExp2Root) : TowerExp2Low :=
-  fun v z m a R hR hRne hz1 hva _ hd hop hsr hpM n hn =>
-    W_mono hva (h v z m R hR hRne hz1 hd hop hsr hpM n hn)
+theorem towerExp2Low_of_root (h : TowerExp2Root) : TowerExp2Low := by
+  intro v z m a R hR hRne hz1 hva _ hd hop hsr hpM n hn
+  obtain ⟨h1, h2⟩ := row2_revival_gap hRne hd hsr hpM
+  exact W_mono hva (h v z m R hR hRne hz1 hd hop hsr hpM h1 h2 n hn)
 
 open Classical in
 /-- **★ The `m < a` half of `TowerExp` is `(CAT)`-strength.**  When the trailing
