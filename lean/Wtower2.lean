@@ -2259,32 +2259,54 @@ theorem substClosedG_of_subst1g (hs : Subst1g) : SubstClosedG := by
 def SubstProp (u : ℕ) (N : TrioSeq) : Prop :=
   ∀ p C, p < N.length → C ≠ [] → C ∈ W (lev N p) →
     entry C 0 0 = entry N 0 p →
-    (∀ j, 1 ≤ j → j < C.length → entry N 0 p < entry C 0 j) →
+    (∀ q ∈ C, entry N 0 p ≤ q.1) →
     (N.take p ++ C ++ N.drop (p + 1)) ∈ W u
+
+theorem entry_getElem {M : TrioSeq} {j : ℕ} (hj : j < M.length) :
+    entry M 0 j = M[j].1 := by
+  unfold entry
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+  simp
+
+/-- The strict "every other column is deeper" condition implies the NON-STRICT
+membership form, which is the one `oper` preserves (`oper_mem_ge`). -/
+theorem mem_ge_of_deep {C : TrioSeq} {x : ℕ} (hhead : entry C 0 0 = x)
+    (hdeep : ∀ j, 1 ≤ j → j < C.length → x < entry C 0 j) :
+    ∀ q ∈ C, x ≤ q.1 := by
+  intro q hq
+  obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hq
+  rw [← entry_getElem hj]
+  rcases Nat.eq_zero_or_pos j with rfl | hjp
+  · exact le_of_eq hhead.symm
+  · exact le_of_lt (hdeep j hjp hj)
 
 theorem substProp_nil (u : ℕ) : SubstProp u [] := by
   intro p C hp; simp at hp
 
 /-- **The residue of `(SUBST1g)`: the context revives a dead orphan.**
 
-`subst1g_of_revive` below closes every other case.  Writing `D = S.drop (p+1)`
-and `R` for the substituted sequence, what is left is
+`subst1g_of_revive` closes every other case.  Writing `D = S.drop (p+1)` and `R`
+for the substituted sequence, what survives is exactly: `R`'s trailing column HAS
+a parent, although it is an ORPHAN inside the block it belongs to — the block `C`
+itself when `D = []`, and the tail `D` otherwise.  So the parent is supplied by
+the CONTEXT.  This is the shape the whole campaign keeps meeting (装置 γ).
 
-* `D = []` — the block sits at the very end, so there is nothing to mirror; and
-* `R`'s trailing column HAS a parent although it is an ORPHAN inside `D`, i.e.
-  the parent is supplied by the context.
-
-This is exactly the shape the whole campaign keeps meeting (装置 γ). -/
+The depth condition is the NON-STRICT one, because that is what `oper` preserves
+(`oper_mem_ge`); it is what the nested induction on the block needs, and it is
+measured just as clean (165768 instances with at least one flush column,
+0 violations). -/
 def Subst1gRevive : Prop :=
   ∀ (u p : ℕ) (S C : TrioSeq), S ∈ W u → p < S.length → C ≠ [] →
     C ∈ W (lev S p) →
     entry C 0 0 = entry S 0 p →
-    (∀ j, 1 ≤ j → j < C.length → entry S 0 p < entry C 0 j) →
-    (S.drop (p + 1) = [] ∨
-      (hasParent (S.take p ++ C ++ S.drop (p + 1))
-          (srow (S.take p ++ C ++ S.drop (p + 1))
-            ((S.take p ++ C ++ S.drop (p + 1)).length - 1))
-          ((S.take p ++ C ++ S.drop (p + 1)).length - 1) ∧
+    (∀ q ∈ C, entry S 0 p ≤ q.1) →
+    hasParent (S.take p ++ C ++ S.drop (p + 1))
+      (srow (S.take p ++ C ++ S.drop (p + 1))
+        ((S.take p ++ C ++ S.drop (p + 1)).length - 1))
+      ((S.take p ++ C ++ S.drop (p + 1)).length - 1) →
+    ((S.drop (p + 1) = [] ∧
+        ¬ hasParent C (srow C (C.length - 1)) (C.length - 1)) ∨
+      (S.drop (p + 1) ≠ [] ∧
         ¬ hasParent (S.drop (p + 1))
           (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
           ((S.drop (p + 1)).length - 1))) →
@@ -2293,6 +2315,142 @@ def Subst1gRevive : Prop :=
 theorem not_hasParent_zero {M : TrioSeq} {i : ℕ} (h : hasParent M i 0) : False := by
   obtain ⟨j0, hj0, -⟩ := h
   exact absurd (nextR_index_lt hj0) (Nat.not_lt_zero j0)
+
+open Classical in
+/-- **★★ End substitution, by a nested induction on the BLOCK's datum.**
+
+`S ≠ []` and a block `C` rooted at `S`'s trailing column: `S.dropLast ++ C ∈ W u`.
+Induct on `C`'s `W` datum over the prefix-closed property (prefixes free, as
+before).  With `A = S.dropLast`:
+
+* `C`'s trailing column has a parent INSIDE `C` — `oper_append_inner` gives
+  `(A ++ C)⟦n⟧ = A ++ C⟦n⟧`, and `C`'s clause-2 datum carries it (clause 3 is
+  impossible: a dominant terminal is parentless);
+* it is an orphan in `A ++ C` too — `oper_append_pred` peels to `A ++ C.dropLast`,
+  supplied by the prefix package (or `A ∈ W u` itself when `C` is a singleton);
+* it is an orphan in `C` but revived by `A` — the residue.
+
+`S.dropLast = []` is separate and free: the goal is then `C ∈ W u`, and
+`lev_root_le_of_mem_W` puts `C`'s stage below `u`. -/
+theorem end_subst_of_revive (hrev : Subst1gRevive) {u : ℕ} {S : TrioSeq}
+    (hS : S ∈ W u) (hSne : S ≠ []) :
+    ∀ C : TrioSeq, C ∈ W (lev S (S.length - 1)) → C ≠ [] →
+      entry C 0 0 = entry S 0 (S.length - 1) →
+      (∀ q ∈ C, entry S 0 (S.length - 1) ≤ q.1) →
+      (S.dropLast ++ C) ∈ W u := by
+  classical
+  have hSlen : 0 < S.length := List.length_pos_iff.mpr hSne
+  have hdlen : S.dropLast.length = S.length - 1 := List.length_dropLast
+  have hST : S.take (S.length - 1) = S.dropLast := List.dropLast_eq_take.symm
+  have hSD : S.drop (S.length - 1 + 1) = [] :=
+    List.drop_eq_nil_of_le (by omega)
+  by_cases hAnil : S.dropLast = []
+  · intro C hCW hCne _ _
+    rw [hAnil, List.nil_append]
+    have h1 : S.length = 1 := by
+      have : S.dropLast.length = 0 := by rw [hAnil]; simp
+      omega
+    exact W_mono (by rw [h1]; exact lev_root_le_of_mem_W hS hSne) hCW
+  · have hAlen : 0 < S.dropLast.length := List.length_pos_iff.mpr hAnil
+    have hsub : W (lev S (S.length - 1)) ⊆
+        {B : TrioSeq | B ∈ W (lev S (S.length - 1)) ∧ ∀ k,
+          (B.take k ≠ [] → entry (B.take k) 0 0 = entry S 0 (S.length - 1) →
+            (∀ q ∈ B.take k, entry S 0 (S.length - 1) ≤ q.1) →
+            (S.dropLast ++ B.take k) ∈ W u)} := by
+      refine A2' ?_
+      intro B hA
+      have hmemB : B ∈ W (lev S (S.length - 1)) := by
+        refine A1_intro ?_
+        rcases hA with h | h | ⟨m, hm, hd, hgr⟩
+        · exact Or.inl h
+        · exact Or.inr (Or.inl fun n hn => (h n hn).1)
+        · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb => (hgr z hz hb).1⟩)
+      have hpre : ∀ k, k < B.length → (B.take k ≠ [] →
+          entry (B.take k) 0 0 = entry S 0 (S.length - 1) →
+          (∀ q ∈ B.take k, entry S 0 (S.length - 1) ≤ q.1) →
+          (S.dropLast ++ B.take k) ∈ W u) := by
+        intro k hk
+        rcases hA with h | h | ⟨m, hm, hd, hgr⟩
+        · rw [show k = 0 from by omega, List.take_zero]
+          intro hc; exact absurd rfl hc
+        · rcases Nat.lt_or_ge 1 B.length with hBlen | hBlen
+          · have := (h 1 le_rfl).2 k
+            rwa [oper_take_prefix hBlen le_rfl (by omega)] at this
+          · rw [show k = 0 from by omega, List.take_zero]
+            intro hc; exact absurd rfl hc
+        · rcases Nat.lt_or_ge 1 B.length with hBlen | hBlen
+          · have := (hgr [] (W_nil m) based_nil).2 k
+            rwa [graft_nil, List.dropLast_eq_take, List.take_take,
+              show min k (B.length - 1) = k from by omega] at this
+          · rw [show k = 0 from by omega, List.take_zero]
+            intro hc; exact absurd rfl hc
+      have hmain : B ≠ [] → entry B 0 0 = entry S 0 (S.length - 1) →
+          (∀ q ∈ B, entry S 0 (S.length - 1) ≤ q.1) →
+          (S.dropLast ++ B) ∈ W u := by
+        intro hBne hhead hdeep
+        have hBlen : 0 < B.length := List.length_pos_iff.mpr hBne
+        have hcat : 1 < (S.dropLast ++ B).length := by
+          rw [List.length_append]; omega
+        by_cases hBp : hasParent B (srow B (B.length - 1)) (B.length - 1)
+        · have hBL : B.length - 1 ≠ 0 := by
+            have := nextR_index_lt (parent_nextR hBp); omega
+          have hdatum : ∀ n, 1 ≤ n → (B⟦n⟧ ≠ [] →
+              entry (B⟦n⟧) 0 0 = entry S 0 (S.length - 1) →
+              (∀ q ∈ B⟦n⟧, entry S 0 (S.length - 1) ≤ q.1) →
+              (S.dropLast ++ B⟦n⟧) ∈ W u) := by
+            rcases hA with h | h | ⟨m, hm, hd, hgr⟩
+            · exact absurd h.1 (by omega)
+            · intro n hn
+              have := (h n hn).2 (B⟦n⟧).length
+              rwa [List.take_length] at this
+            · exact absurd hBp hd.2
+          refine mem_of_oper_mem (fun n hn => ?_)
+          rw [oper_append_inner n hBne hBL hBp]
+          obtain ⟨R', hR'⟩ := oper_eq_dropLast_append (M := B) (by omega) hn
+          refine hdatum n hn (by
+              intro hc
+              rw [hc] at hR'
+              have : B.dropLast.length = 0 := by
+                have := congrArg List.length hR'.symm
+                simp at this
+                omega
+              rw [List.length_dropLast] at this
+              omega)
+            (by rw [oper_head_eq hn]; exact hhead) (oper_mem_ge hdeep)
+        · by_cases hRp : hasParent (S.dropLast ++ B)
+              (srow (S.dropLast ++ B) ((S.dropLast ++ B).length - 1))
+              ((S.dropLast ++ B).length - 1)
+          · have hgo := hrev u (S.length - 1) S B hS (by omega) hBne
+              hmemB hhead hdeep
+            rw [hST, hSD, List.append_nil] at hgo
+            exact hgo hRp (Or.inl ⟨rfl, hBp⟩)
+          · refine mem_of_oper_mem (fun n hn => ?_)
+            rw [oper_append_pred n hBne (by omega) hRp]
+            by_cases hdl : B.dropLast = []
+            · rw [hdl, List.append_nil]
+              exact W_dropLast hS
+            · have hdlne : B.take (B.length - 1) ≠ [] := by
+                rwa [← List.dropLast_eq_take]
+              have hhd : entry (B.take (B.length - 1)) 0 0
+                  = entry S 0 (S.length - 1) := by
+                rw [entry_take (show (0:ℕ) < B.length - 1 by
+                  rw [← List.length_dropLast]
+                  exact List.length_pos_iff.mpr hdl)]
+                exact hhead
+              have hdp : ∀ q ∈ B.take (B.length - 1),
+                  entry S 0 (S.length - 1) ≤ q.1 :=
+                fun q hq => hdeep q (List.mem_of_mem_take hq)
+              have := hpre (B.length - 1) (by omega) hdlne hhd hdp
+              rwa [← List.dropLast_eq_take] at this
+      refine ⟨hmemB, fun k => ?_⟩
+      rcases Nat.lt_or_ge k B.length with hk | hk
+      · exact hpre k hk
+      · rw [List.take_of_length_le hk]
+        exact hmain
+    intro C hCW hCne hhead hdeep
+    have h := (hsub hCW).2 C.length
+    rw [List.take_length] at h
+    exact h hCne hhead hdeep
 
 open Classical in
 /-- **★★★ `(SUBST1g)` minus the revival case.**
@@ -2383,7 +2541,7 @@ theorem subst1g_of_revive (hrev : Subst1gRevive) : Subst1g := by
           rw [hOpM, List.length_append, htk]; omega
         have hstep := hdatum n hn p C hlen' hCne (by rw [hlv]; exact hCW)
           (by rw [hent 0]; exact hhead)
-          (by intro j hj1 hj2; rw [hent 0]; exact hdeep j hj1 hj2)
+          (by intro q hq; rw [hent 0]; exact hdeep q hq)
         have htake' : (M⟦n⟧).take p = M.take p := by
           rw [hOpM, List.take_append_of_le_length (by omega), List.take_take]
           congr 1
@@ -2395,7 +2553,27 @@ theorem subst1g_of_revive (hrev : Subst1gRevive) : Subst1g := by
           rw [hOpM, hdl]
         rwa [htake', hdrop'] at hstep
       · by_cases hDnil : D = []
-        · exact hrev u p M C hmem hp hCne hCW hhead hdeep (Or.inl hDnil)
+        · -- nothing after the block: end substitution on the prefix `M.take (p+1)`
+          have hTne : M.take (p + 1) ≠ [] := by
+            intro hc
+            have : (M.take (p + 1)).length = 0 := by rw [hc]; simp
+            have h2 : (M.take (p + 1)).length = min (p + 1) M.length := List.length_take
+            omega
+          have htk1 : (M.take (p + 1)).length - 1 = p := by
+            have h2 : (M.take (p + 1)).length = min (p + 1) M.length := List.length_take
+            omega
+          have hdl1 : (M.take (p + 1)).dropLast = M.take p := by
+            rw [List.dropLast_eq_take, htk1, List.take_take,
+              show min p (p + 1) = p from by omega]
+          have hE1 : ∀ i, entry (M.take (p + 1)) i p = entry M i p :=
+            fun i => entry_take (by omega)
+          have hgo := end_subst_of_revive hrev (W_take hmem (p + 1)) hTne C
+            (by rw [htk1]; unfold lev; rw [hE1 1, hE1 2]; exact hCW) hCne
+            (by rw [htk1, hE1 0]; exact hhead)
+            (by intro q hq; rw [htk1, hE1 0]; exact hdeep q hq)
+          rw [hdl1] at hgo
+          rw [hDnil, List.append_nil]
+          exact hgo
         · have hDpos : 0 < D.length := List.length_pos_iff.mpr hDnil
           have hCpos : 0 < C.length := List.length_pos_iff.mpr hCne
           have hRlen : 1 < (M.take p ++ C ++ D).length := by
@@ -2411,7 +2589,8 @@ theorem subst1g_of_revive (hrev : Subst1gRevive) : Subst1g := by
           by_cases hRp : hasParent (M.take p ++ C ++ D)
               (srow (M.take p ++ C ++ D) ((M.take p ++ C ++ D).length - 1))
               ((M.take p ++ C ++ D).length - 1)
-          · exact hrev u p M C hmem hp hCne hCW hhead hdeep (Or.inr ⟨hRp, hnoD⟩)
+          · exact hrev u p M C hmem hp hCne hCW hhead hdeep hRp
+              (Or.inr ⟨hDnil, hnoD⟩)
           · -- orphan: `oper` peels, and the peel is the substitution on `M.dropLast`
             refine mem_of_oper_mem (fun n hn => ?_)
             rw [oper_append_pred n hDnil (by omega) hRp]
@@ -2436,9 +2615,9 @@ theorem subst1g_of_revive (hrev : Subst1gRevive) : Subst1g := by
               (by rw [← List.dropLast_eq_take, hlvd]; exact hCW)
               (by rw [← List.dropLast_eq_take, hentd 0]; exact hhead)
               (by
-                intro j hj1 hj2
+                intro q hq
                 rw [← List.dropLast_eq_take, hentd 0]
-                exact hdeep j hj1 hj2)
+                exact hdeep q hq)
             rw [← List.dropLast_eq_take, hdlt, hdld] at hstep
             exact hstep
     refine ⟨hmem, fun k => ?_⟩
@@ -2449,7 +2628,7 @@ theorem subst1g_of_revive (hrev : Subst1gRevive) : Subst1g := by
   intro p S C hS hp hCne hCW hhead hdeep
   have h := (hsub hS).2 S.length
   rw [List.take_length] at h
-  exact h p C hp hCne hCW hhead hdeep
+  exact h p C hp hCne hCW hhead (mem_ge_of_deep hhead hdeep)
 
 section ShiftEntry
 

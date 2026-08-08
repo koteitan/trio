@@ -1,5 +1,14 @@
-v0.118.126/document the revival residue
+v0.118.127/close the end-substitution case of (SUBST1g)
 
-- Add GRAFTALL-PLAN 4.005: the prefix-closed datum induction, the mirror and
-  orphan branches, and the exact shape that survives
-- Point task.md at Subst1gRevive
+- Weaken the block depth condition to the NON-STRICT membership form that oper
+  preserves (oper_mem_ge); add entry_getElem and mem_ge_of_deep to convert
+- Prove end_subst_of_revive by a nested induction on the BLOCK's datum: parent
+  inside C mirrors via oper_append_inner, an orphan in the whole peels to
+  C.dropLast from the prefix package, and |S| = 1 is free by
+  lev_root_le_of_mem_W
+- Route the D = [] branch of subst1g_of_revive through it, on the prefix
+  M.take (p+1)
+- Restate Subst1gRevive as the revival shape alone: R's trailing column has a
+  parent while being an orphan inside its own block (C when D = [], else D)
+- Measure the non-strict variant: 165768 instances with a flush column,
+  0 violations
