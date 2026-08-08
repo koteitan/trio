@@ -1583,4 +1583,82 @@ theorem wcat_of_snoc (hsn : WSnoc) : WCat := by
         exact snoc_step hsn _ hC hCne
   exact hsub hB
 
+/-! ### `(SNOC)` の自由な断片
+
+`M = C ++ [p]`、`j0 = parent M i1 |C| < |C|` とすると、窓 `[j0, |C|)` は**すべて
+`C` の中**にあり
+
+```
+M⟦1⟧ = C,      M⟦n⟧ = C.take j0 ++ (C.drop j0 のガード付きコピー塔)
+```
+
+なので `(SNOC)` は「`C ∈ W u` から `C` の任意の**切り口**でのコピー塔が `W u` に
+入る」と読める（`C` 自身の展開はその中の 1 つ、`C` の正準な切り口の場合）。
+
+`i1 = 0`（`d0 = d1 = 0`）かつ `j0 = 0` のときだけコピーが `C` そのものになり、
+`W_flatMap_copies` で**無条件に**閉じる。他の枝（`j0 ≥ 1`、または `i1 ≥ 1`）は
+コピーが持ち上がる／接頭辞が残るので核のまま。 -/
+
+open Classical in
+/-- With a row-0 collapse whose parent is the root, the expansion is `n` literal
+copies of `C`. -/
+theorem oper_snoc_flat_root {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hCne : C ≠ [])
+    (hsr : srow (C ++ [p]) C.length = 0)
+    (hbp : parent (C ++ [p]) (srow (C ++ [p]) C.length) C.length = 0)
+    (hpar : hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length) (n : ℕ) :
+    (C ++ [p])⟦n⟧ = (List.range n).flatMap fun _ => C := by
+  have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
+  have hlen : (C ++ [p]).length - 1 = C.length := by simp
+  have hp' : hasParent (C ++ [p])
+      (srow (C ++ [p]) ((C ++ [p]).length - 1)) ((C ++ [p]).length - 1) := by
+    rw [hlen]; exact hpar
+  have hbp' : parent (C ++ [p])
+      (srow (C ++ [p]) ((C ++ [p]).length - 1)) ((C ++ [p]).length - 1) = 0 := by
+    rw [hlen]; exact hbp
+  have hsr' : srow (C ++ [p]) ((C ++ [p]).length - 1) = 0 := by
+    rw [hlen]; exact hsr
+  have h := oper_of_srow0_par0 (by simp; omega) hp' hbp' hsr' n
+  rwa [List.dropLast_concat] at h
+
+open Classical in
+/-- **The free fragment of `(SNOC)`**: a row-0 collapse whose parent is the
+root.  Then the copies are `C` verbatim, so `W_flatMap_copies` closes it with no
+core at all. -/
+theorem snoc_flat_root {u : ℕ} {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hC : C ∈ W u)
+    (hCne : C ≠ [])
+    (hsr : srow (C ++ [p]) C.length = 0)
+    (hbp : parent (C ++ [p]) (srow (C ++ [p]) C.length) C.length = 0)
+    (hpar : hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length) :
+    C ++ [p] ∈ W u := by
+  classical
+  have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
+  -- the root of `C` is strictly its shallowest column: it is `p`'s row-0 parent
+  have hnr := parent_nextR hpar
+  rw [hbp, hsr] at hnr
+  have hn0 : nextrel0 (C ++ [p]) 0 C.length := by
+    unfold nextR at hnr
+    rw [if_pos rfl] at hnr
+    exact hnr
+  have hCr : ∀ q ∈ C, entry C 0 0 ≤ q.1 := by
+    intro q hq
+    obtain ⟨j, hj, hje⟩ : ∃ j, j < C.length ∧ C.getD j (0, 0, 0) = q := by
+      obtain ⟨j, hj⟩ := List.mem_iff_getElem.mp hq
+      exact ⟨j, hj.1, by rw [← hj.2, getElem_eq_getD' hj.1]⟩
+    have hEC : ∀ i, entry (C ++ [p]) i j = entry C i j := by
+      intro i; unfold entry; rw [getD_append_left hj]
+    have hE0 : entry (C ++ [p]) 0 0 = entry C 0 0 := by
+      unfold entry; rw [getD_append_left (by omega)]
+    rw [← hje]
+    show entry C 0 0 ≤ entry C 0 j
+    rcases Nat.eq_zero_or_pos j with rfl | hjpos
+    · exact le_rfl
+    · have hdip := hn0.2.2.2.2 j ⟨hjpos, hj⟩
+      have hlt := hn0.2.2.2.1
+      rw [hEC 0] at hdip
+      rw [hE0] at hlt
+      omega
+  refine mem_of_oper_mem (fun n hn => ?_)
+  rw [oper_snoc_flat_root hCne hsr hbp hpar n]
+  exact W_flatMap_copies hC hCr n
+
 end TRIO
