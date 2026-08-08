@@ -1,12 +1,5 @@
-v0.118.125/reduce (SUBST1g) to the revival case
+v0.118.126/document the revival residue
 
-- Add SubstProp / substProp_nil and induct on the host's W datum over the
-  PREFIX-CLOSED property, so prefixes come free from the datum
-  (oper_take_prefix for clause 2, graft M [] = M.dropLast for clause 3)
-- Close the mirror case with Xbar.oper_append_inner, which needs no rsum and
-  applies to S = S.take (p+1) ++ D and R = (S.take p ++ C) ++ D alike
-- Close the orphan case: oper peels and the peel is the substitution on the
-  prefix S.dropLast
-- Replace Subst1gDead by Subst1gRevive (D = [] or R's trailing column has a
-  parent while being an orphan inside D) and add not_hasParent_zero
-- Rewire Final.TRIO_terminates_of_revive / no_infinite_expansion_of_revive
+- Add GRAFTALL-PLAN 4.005: the prefix-closed datum induction, the mirror and
+  orphan branches, and the exact shape that survives
+- Point task.md at Subst1gRevive

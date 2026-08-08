@@ -3210,7 +3210,32 @@ copy k ∈ W (2*(v + k*D1) + z) = W (lev Q k)                     (WL) + W_shift
 ⟹ (SUBST) が閉じる
 ```
 
-## 4.01 ★★★★★ 残差は `(SUBST1g)` **1 本**になった（v0.118.122、現在の頂点）
+## 4.005 ★★★★★ `(SUBST1g)` は**復活ケース 1 本**に潰れた（v0.118.125、現在の頂点）
+
+```
+Final.TRIO_terminates_of_revive : Subst1gRevive -> WellFounded stepRel
+  axioms clean, sorry 0, build 800
+```
+
+`subst1g_of_revive` は**ホストの `W` データで帰納**し、性質を
+`∀ k, SubstProp u (M.take k)`（**接頭辞閉**）に強めて回す。接頭辞は各節から無料
+（節2 は `oper_take_prefix`、節3 は `graft M [] = M.dropLast`）で、これが孤児ケースの
+支払いになる。`D := S.drop (p+1)`、`R` を置換後として:
+
+| 枝 | 閉じ方 |
+|---|---|
+| **mirror**: `|D| >= 2` かつ `D` の末尾列が **`D` 内に**親を持つ | `Xbar.oper_append_inner`（**`rsum` 不要**）が `S = S.take(p+1) ++ D` と `R = (S.take p ++ C) ++ D` の**両方**に同じ仮説で効く ⟹ `S[n] = S.take(p+1) ++ D[n]`, `R[n] = (S.take p ++ C) ++ D[n]`。列 `p` は 3 行とも保存されるのでデータ `S[n]` がそのまま目標 |
+| **orphan**: `D /= []` かつ `R` の末尾列が `R` でも親なし | `oper` が剥離し、剥離結果は**接頭辞 `S.dropLast` 上の置換**＝接頭辞パッケージが供給 |
+| 節 1 (`|S| <= 1`) | `C ∈ W 0 ⊆ W u` で即 |
+
+**残差 `Subst1gRevive`** = `D = []`（ブロックが最末尾）、または
+`R` の末尾列が**`D` 内では孤児なのに `R` では親を持つ**（＝ **文脈が死んだ孤児を
+復活させる**）。装置 γ と同じ形で、これが停止性定理全体を支える唯一の形になった。
+
+計測（`tools/probe_subst1_ind.py`, 210201 例）:
+mirror 105532 / inner 65673 / 残差 38996、**両恒等式は例外 0**。
+
+## 4.01 ★★★★★ 残差は `(SUBST1g)` **1 本**になった（v0.118.122）
 
 ```
 Final.TRIO_terminates_of_subst1g : Subst1g -> WellFounded stepRel
