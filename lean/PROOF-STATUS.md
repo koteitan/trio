@@ -22,6 +22,7 @@ Subst1gReviveSelf :
   (∀ q ∈ C, entry S 0 p ≤ q.1) →         -- 他の列はそれ以上の深さ（非厳格）
   R := S.take p ++ C ++ S.drop (p+1) の末尾列が R では親を持つ →
   かつ その列が自分のブロック内（D=[] なら C、そうでなければ D）では孤児 →
+  R に行 2 > 0 の列がある →                -- 行 2 ≡ 0 なら無料（zeroRow2_mem_Wself）
   R ∈ Wself
 ```
 
@@ -50,6 +51,9 @@ Subst1gReviveSelf
 * **ペア数列の停止性は内部で解消済み**。lean-yapss 11 モジュールを `lean/Pair/`
   に取り込み、`Pair/Bridge.lean` の `emb` で橋渡し。`TowerExp2Root` の `|R| = 1`
   基底 `diag_mem_W`（`z=0`）と二列定理 `two_col_mem_W` で使う。
+* **`z = 0` 断片は完全に済んでいる**（`zeroRow2_mem_Wself`）。yapss の無条件
+  `mem_W_maxr1` ＋ `W_root_stage` で、行 2 が恒等的に 0 の trio 列は無条件に
+  `Wself`。trio の難所は**行 2 の列だけ**にある。
 * **`(CAT)` は消えた**（v0.118.122）。旧経路 `TRIO_terminates_of_cat_*` /
   `TRIO_terminates_of_snoc` も生きているが、こちらが広い。
 
@@ -64,6 +68,7 @@ Subst1gReviveSelf
 | `W_drop` | `M ∈ W u → M.drop j ∈ W (lev M j)` — **接尾辞閉**（接尾辞自身の根レベルで） |
 | `W_segment` | 任意の連続区間で閉じる |
 | `Wset.oper_one_eq_dropLast` | `M⟦1⟧ = M.dropLast`（1 コピーは剥離） |
+| `zeroRow2_mem_Wself` | **行 2 が恒等的に 0 の列は全部 `Wself`** — ペア定理そのもの |
 | `two_col_mem_W` | `[(0,v,z), t] ∈ W a`（`2v+z ≤ a`、`t` は**任意**） |
 | `Wset.W_shift` / `W_mono` / `W_add`(rsum) | 既存 |
 
