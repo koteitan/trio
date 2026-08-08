@@ -1,5 +1,14 @@
-v0.118.121/document the (SUBST1) reduction
+v0.118.122/collapse the residue to (SUBST1g) alone
 
-- Add GRAFTALL-PLAN 4.02: the left-to-right substitution argument, the two
-  probe results, and why (SUBST1g) still cannot absorb (CAT)'s m < a branch
-- Mark the (SUBST) -> (SUBST1) reduction done in task.md
+- Prove constcol_mem_W (repeated copies of one column) and two_col_mem_W:
+  [(0,v,z), t] is in W a for an ARBITRARY second column, via the diagonal
+  (pair theorem) or Pred
+- Add Subst1g (graft-at-a-position), SubstClosedG and the bridges
+  subst1_of_subst1g / substClosed_of_substClosedG / substClosedG_of_subst1g
+- Add ShiftTowerClosedS (root STRICTLY shallowest) and switch (TOW)'s consumers
+  to it, supplying strictness from window_of_rtg0 and argOK
+- Prove shiftTowerClosedS_of_substG: the copy tower is (SUBST) over the constant
+  diagonal at level 2b+c = u
+- Prove cons_mem_W_of_substG: TowerExp's m < a half over the two-column host
+- Add towerExp_of_substG and Final.TRIO_terminates_of_subst1g /
+  no_infinite_expansion_of_subst1g, dropping (CAT) from the residue

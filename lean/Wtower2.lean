@@ -1259,10 +1259,31 @@ def ShiftTowerClosed : Prop :=
   ∀ (u e n : ℕ) (Q : TrioSeq), Q ∈ W u → (∀ p ∈ Q, entry Q 0 0 ≤ p.1) →
     shTower Q e n ∈ W u
 
+/-- **(TOW) with the root STRICTLY shallowest.**  Every consumer of `(TOW)`
+supplies this stronger form (`argOK` for the peel of a planted root, the row-0
+window `window_of_rtg0` for the lifted peel), and it is what `(SUBST)` can
+discharge: a block hung under a host column must be strictly deeper than it. -/
+def ShiftTowerClosedS : Prop :=
+  ∀ (u e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    shTower Q e n ∈ W u
+
+theorem shiftTowerClosedS_of_closed (h : ShiftTowerClosed) : ShiftTowerClosedS := by
+  intro u e n Q hQ hs
+  refine h u e n Q hQ (fun p hpm => ?_)
+  obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hpm
+  have hval : entry Q 0 j = Q[j].1 := by
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    simp
+  rcases Nat.eq_zero_or_pos j with rfl | hjp
+  · exact le_of_eq (by rw [← hval])
+  · exact le_of_lt (by rw [← hval]; exact hs j hjp hj)
+
 open Classical in
 /-- **The last `(WL)` branch reduces to `(TOW)`** — a statement with no lift in
 it at all.  The clause-2 hypothesis is consumed only at `n = 1`. -/
-theorem lspOn_srow1_of_tower (htow : ShiftTowerClosed) :
+theorem lspOn_srow1_of_tower (htow : ShiftTowerClosedS) :
     LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 1) := by
   classical
   rintro m d X h2 hp ⟨hbp, hsr⟩ hop n hn
@@ -1285,19 +1306,13 @@ theorem lspOn_srow1_of_tower (htow : ShiftTowerClosed) :
   have hhead : entry (Lift1 X.dropLast d) 0 0 = entry X 0 0 := by
     rw [entry0_Lift1, List.dropLast_eq_take,
       Wset.entry_take (show (0 : ℕ) < X.length - 1 by omega)]
-  have hQr : ∀ p ∈ Lift1 X.dropLast d,
-      entry (Lift1 X.dropLast d) 0 0 ≤ p.1 := by
-    intro p hpm
-    rw [hhead]
-    unfold Lift1 at hpm
-    rw [List.mem_map] at hpm
-    obtain ⟨i, hi, rfl⟩ := hpm
-    rw [List.mem_range, List.length_dropLast] at hi
-    show entry X 0 0 ≤ entry X.dropLast 0 i
-    rw [List.dropLast_eq_take, Wset.entry_take (show i < X.length - 1 by omega)]
-    rcases Nat.eq_zero_or_pos i with rfl | hipos
-    · exact le_rfl
-    · exact le_of_lt (hwin i hipos (by omega))
+  have hQr : ∀ j, 1 ≤ j → j < (Lift1 X.dropLast d).length →
+      entry (Lift1 X.dropLast d) 0 0 < entry (Lift1 X.dropLast d) 0 j := by
+    intro j hj1 hjl
+    rw [Lift1_length, List.length_dropLast] at hjl
+    rw [hhead, entry0_Lift1, List.dropLast_eq_take,
+      Wset.entry_take (show j < X.length - 1 by omega)]
+    exact hwin j (by omega) (by omega)
   -- the lifted expansion is the same tower, over the lifted peel
   have hsrL : srow (Lift1 X d) ((Lift1 X d).length - 1) = 1 := by
     rw [Lift1_length, srow_Lift1 hj1ne]; exact hsr
@@ -1312,7 +1327,7 @@ theorem lspOn_srow1_of_tower (htow : ShiftTowerClosed) :
   exact htow _ _ _ _ hQ hQr
 
 /-- **(WL) rests on `(TOW)` alone.** -/
-theorem liftStageParented_of_tower (htow : ShiftTowerClosed) :
+theorem liftStageParented_of_tower (htow : ShiftTowerClosedS) :
     LiftStageParented :=
   liftStageParented_of_srow1 (lspOn_srow1_of_tower htow)
 
@@ -1359,7 +1374,7 @@ theorem towerExp_of_rows (h1 : TowerExp1) (h2 : TowerExp2) : Wset.TowerExp := by
 
 open Classical in
 /-- **The row-1 half of `TowerExp` reduces to `(TOW)` as well.** -/
-theorem towerExp1_of_tower (htow : ShiftTowerClosed) : TowerExp1 := by
+theorem towerExp1_of_tower (htow : ShiftTowerClosedS) : TowerExp1 := by
   classical
   intro v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
   have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
@@ -1406,17 +1421,26 @@ theorem towerExp1_of_tower (htow : ShiftTowerClosed) : TowerExp1 := by
       refine hst ?_ v z a hz1 hva
       rw [List.dropLast_eq_take]
       exact argOK_take' hR _
-  have hQr : ∀ p ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast,
-      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast 0 0 ≤ p.1 := by
-    intro p _
-    rw [hdrop]
-    show (0 : ℕ) ≤ p.1
-    exact Nat.zero_le _
+  have hQr : ∀ j, 1 ≤ j → j < (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast.length →
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast 0 0
+        < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast 0 j := by
+    intro j hj1 hjl
+    rw [hdrop] at hjl ⊢
+    have hroot : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 := by
+      simp [entry]
+    have hjR : j - 1 < R.dropLast.length := by
+      rw [List.length_cons] at hjl; omega
+    have hshift : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 j
+        = entry R.dropLast 0 (j - 1) := by
+      conv_lhs => rw [show j = (j - 1) + 1 by omega]
+      rw [entry_cons]
+    rw [hroot, hshift]
+    exact argOK_dropLast hR _ (entry_pair_mem hjR)
   rw [oper_of_srow1_par0 hM2 hpM' hpar0 hsrM n]
   exact htow _ _ _ _ hMd hQr
 
 /-- **The whole residue is `(TOW)` plus the row-2 half of `TowerExp`.** -/
-theorem towerExp_of_tower (htow : ShiftTowerClosed) (h2 : TowerExp2) :
+theorem towerExp_of_tower (htow : ShiftTowerClosedS) (h2 : TowerExp2) :
     Wset.TowerExp :=
   towerExp_of_rows (towerExp1_of_tower htow) h2
 
@@ -1765,7 +1789,7 @@ theorem towerExp_of_cat (hcat : WCat) (h2 : TowerExp2Low) : Wset.TowerExp := by
       · split at hsr
         · omega
         · omega
-    · exact towerExp1_of_tower (shiftTowerClosed_of_cat hcat)
+    · exact towerExp1_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat hcat))
         v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
     · exact h2 v z m a R hR hRne hz1 hva hma hd hop hsr hpM n hn
 
@@ -1919,6 +1943,137 @@ theorem entry_ge_two {Y : TrioSeq} {i j : ℕ} (hi : 2 ≤ i) :
 
 end ShiftLift
 
+/-! ## 二列の定理 — 高いレベルの列は根の段に吸収される -/
+
+/-- **Repeated copies of one column.**  Every column sits at depth `0`, so none
+has a row-0 predecessor and hence none has a parent at any row
+(`no_hasParent_of_row0_zero`): `oper` is `Pred` throughout and the block shrinks
+to `[(0,b,c)]`, whose level is exactly the stage.  This is the degenerate
+diagonal, the one `diagz_mem_W` cannot reach (it needs `0 < e`). -/
+theorem constcol_mem_W (b c : ℕ) : ∀ n : ℕ,
+    ((List.range n).map (fun _ => ((0, b, c) : ℕ × ℕ × ℕ))) ∈ W (2 * b + c) := by
+  intro n
+  induction n with
+  | zero => simpa using W_nil (2 * b + c)
+  | succ n ih =>
+      set D : TrioSeq := (List.range (n + 1)).map (fun _ => ((0, b, c) : ℕ × ℕ × ℕ))
+        with hD
+      have hlen : D.length = n + 1 := by rw [hD]; simp
+      rcases Nat.eq_zero_or_pos n with rfl | hn
+      · have hD1 : D = [((0, b, c) : ℕ × ℕ × ℕ)] := by rw [hD]; simp
+        rw [hD1]
+        exact singleton_mem_W le_rfl
+      · refine mem_of_oper_mem (fun p hp => ?_)
+        have hL : D.length - 1 ≠ 0 := by omega
+        have hent0 : ∀ j, entry D 0 j = 0 := by
+          intro j
+          unfold entry
+          rw [hD, List.getD_eq_getElem?_getD]
+          rcases Nat.lt_or_ge j (n + 1) with hj | hj
+          · rw [List.getElem?_map, List.getElem?_eq_getElem (by simpa using hj)]
+            simp
+          · rw [List.getElem?_map, List.getElem?_eq_none_iff.mpr (by simpa using hj)]
+            simp
+        have hpred : D⟦p⟧ = Pred D := by
+          by_cases hzz : entry D 0 (D.length - 1) = 0 ∧ entry D 1 (D.length - 1) = 0 ∧
+              entry D 2 (D.length - 1) = 0
+          · exact oper_eq_pred_of_zero p hL hzz
+          · exact oper_eq_pred_of_noParent p hL hzz
+              (fun hh => no_hasParent_of_row0_zero (hent0 _) hh)
+        rw [hpred]
+        unfold Pred
+        rw [if_neg (by omega)]
+        have hdl : D.dropLast
+            = (List.range n).map (fun _ => ((0, b, c) : ℕ × ℕ × ℕ)) := by
+          rw [hD, List.range_succ, List.map_append]
+          simp
+        rw [hdl]
+        exact ih
+
+open Classical in
+/-- **★★ Two columns live at the root's own stage** — for an ARBITRARY second
+column, however deep and however high.
+
+Either the second column is an orphan, and `oper` is `Pred`; or its parent is
+the root, and the expansion is exactly the diagonal
+`[(k*D0, v + k*D1, z)]_{k<n}` (`gcopies_eq_tower` with `M.take 1 = [(0,v,z)]`),
+which `diagz_mem_W` — the pair theorem for `z = 0` — puts in `W (2v+z)`.  When
+the second column has level `0` the diagonal degenerates to repeated copies of
+the root (`constcol_mem_W`).
+
+So `[(0,0,0), (1,100,1)] ∈ W 0`: a level-`201` column is harmless under a
+level-`0` root.  This is the two-column host that `(SUBST1g)` grafts into. -/
+theorem two_col_mem_W {v z a : ℕ} (hz : z ≤ 1) (ha : 2 * v + z ≤ a)
+    (t : ℕ × ℕ × ℕ) : [((0, v, z) : ℕ × ℕ × ℕ), t] ∈ W a := by
+  classical
+  set M : TrioSeq := [((0, v, z) : ℕ × ℕ × ℕ), t] with hM
+  have hlen : M.length = 2 := by rw [hM]; simp
+  have hL : M.length - 1 ≠ 0 := by omega
+  have hdl : M.dropLast = [((0, v, z) : ℕ × ℕ × ℕ)] := by rw [hM]; simp
+  have hr0 : entry M 0 0 = 0 := by rw [hM]; simp [entry]
+  have hr1 : entry M 1 0 = v := by rw [hM]; simp [entry]
+  have hr2 : entry M 2 0 = z := by rw [hM]; simp [entry]
+  refine mem_of_oper_mem (fun n hn => ?_)
+  by_cases hpar : hasParent M (srow M (M.length - 1)) (M.length - 1)
+  · have hne0 : entry M 0 (M.length - 1) ≠ 0 := fun h0 =>
+      no_hasParent_of_row0_zero h0 hpar
+    have hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+        entry M 2 (M.length - 1) = 0) := by
+      rintro ⟨h0, -, -⟩; exact hne0 h0
+    have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+      have hlt := nextR_index_lt (parent_nextR hpar)
+      omega
+    set D0 : ℕ := (if 0 < srow M (M.length - 1)
+      then entry M 0 (M.length - 1) - entry M 0 0 else 0) with hD0
+    set D1 : ℕ := (if 1 < srow M (M.length - 1)
+      then entry M 1 (M.length - 1) - entry M 1 0 else 0) with hD1
+    have hgexp : M⟦n⟧ = gexp M 0 (M.length - 1) D0 D1 n :=
+      oper_eq_gexp n hL hzz hpar hpar0
+    have hone : ∀ k, shiftr01 (k * D0) 0 (Lift1 (M.take 1) (k * D1))
+        = [((k * D0, v + k * D1, z) : ℕ × ℕ × ℕ)] := by
+      intro k
+      have htk : M.take 1 = [((0, v, z) : ℕ × ℕ × ℕ)] := by rw [hM]; simp
+      rw [htk, Lift1_of_length_one (by simp) (k * D1)]
+      unfold shiftr01
+      simp [entry]
+    have hdiag : M⟦n⟧
+        = (List.range n).map (fun k => ((k * D0, v + k * D1, z) : ℕ × ℕ × ℕ)) := by
+      rw [hgexp]
+      unfold gexp
+      rw [show M.length - 1 = 1 by omega, gcopies_eq_tower 1 D0 D1 n (by omega),
+        List.flatMap_congr (fun k (_ : k ∈ List.range n) => hone k)]
+      have hfm : ∀ l : List ℕ,
+          List.flatMap (fun k => [((k * D0, v + k * D1, z) : ℕ × ℕ × ℕ)]) l
+            = l.map (fun k => ((k * D0, v + k * D1, z) : ℕ × ℕ × ℕ)) := by
+        intro l
+        induction l with
+        | nil => rfl
+        | cons c l ih => simp [ih]
+      exact hfm _
+    rw [hdiag]
+    rcases Nat.eq_zero_or_pos D0 with hD0z | hD0p
+    · -- level-0 second column: the diagonal degenerates to repeated roots
+      have hsr0 : srow M (M.length - 1) = 0 := by
+        by_contra hsr
+        rw [hD0, if_pos (by omega), hr0] at hD0z
+        omega
+      have hD1z : D1 = 0 := by rw [hD1, hsr0]; simp
+      rw [hD0z, hD1z]
+      have : ∀ k : ℕ, ((k * 0, v + k * 0, z) : ℕ × ℕ × ℕ) = ((0, v, z) : ℕ × ℕ × ℕ) := by
+        intro k; simp
+      rw [List.map_congr_left (fun k _ => this k)]
+      exact W_mono ha (constcol_mem_W v z n)
+    · exact W_mono ha (diagz_mem_W hz v D0 D1 hD0p n)
+  · have hpred : M⟦n⟧ = Pred M := by
+      by_cases hzz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+          entry M 2 (M.length - 1) = 0
+      · exact oper_eq_pred_of_zero n hL hzz
+      · exact oper_eq_pred_of_noParent n hL hzz hpar
+    rw [hpred]
+    unfold Pred
+    rw [if_neg (by omega), hdl]
+    exact W_mono ha (Om_mem_W v z)
+
 /-- **(SUBST)** — the substitution closure, the shape `TowerExp2Root` needs for
 `|R| ≥ 2` (GRAFTALL-PLAN 4.15).  Replacing every column of a `W u` member by a
 block rooted at that column, whose other columns are strictly deeper and which
@@ -2019,6 +2174,325 @@ theorem substClosed_of_subst1 (hs : Subst1) : SubstClosed := by
         exact hstep
   have h := key Q.length le_rfl
   simpa using h
+
+/-- **(SUBST1g)** — the *graft-at-a-position* form of `(SUBST1)`: the block's
+head need only sit at the same DEPTH as the column it replaces, its level may be
+anything at or below `lev S p` (`C ∈ W (lev S p)` already forces
+`lev (C 0) ≤ lev S p` by `lev_root_le_of_mem_W`).
+
+This is exactly `Aop`'s clause 3 with two liberalisations — any position instead
+of the last, and the block's stage raised from `lev - 1` to `lev` — which is why
+it is the natural single core.
+
+Probe `tools/probe_subst1g.py`: 210201 instances, 0 violations, of which 148050
+have a head different from `S p`. -/
+def Subst1g : Prop :=
+  ∀ (u p : ℕ) (S C : TrioSeq), S ∈ W u → p < S.length → C ≠ [] →
+    C ∈ W (lev S p) →
+    entry C 0 0 = entry S 0 p →
+    (∀ j, 1 ≤ j → j < C.length → entry S 0 p < entry C 0 j) →
+    (S.take p ++ C ++ S.drop (p + 1)) ∈ W u
+
+theorem subst1_of_subst1g (hg : Subst1g) : Subst1 :=
+  fun u p S C hS hp hCne hCW hhead hdeep =>
+    hg u p S C hS hp hCne hCW (hhead 0) hdeep
+
+/-- The multi-block form of `(SUBST1g)`: `(SUBST)` with the head condition cut
+down to the depth and the chain hypothesis dropped. -/
+def SubstClosedG : Prop :=
+  ∀ (u : ℕ) (Q : TrioSeq) (B : ℕ → TrioSeq), Q ∈ W u →
+    (∀ k, k < Q.length → 0 < (B k).length) →
+    (∀ k, k < Q.length → entry (B k) 0 0 = entry Q 0 k) →
+    (∀ k, k < Q.length → ∀ j, 1 ≤ j → j < (B k).length →
+      entry Q 0 k < entry (B k) 0 j) →
+    (∀ k, k < Q.length → B k ∈ W (lev Q k)) →
+    ((List.range Q.length).flatMap B) ∈ W u
+
+theorem substClosed_of_substClosedG (hg : SubstClosedG) : SubstClosed :=
+  fun u Q B hQ _hchain hBne hBhead hBdeep hBW =>
+    hg u Q B hQ hBne (fun k hk => hBhead k hk 0) hBdeep hBW
+
+/-- `(SUBST1g)` gives its own multi-block form, by the same left-to-right
+substitution as `substClosed_of_subst1`. -/
+theorem substClosedG_of_subst1g (hs : Subst1g) : SubstClosedG := by
+  intro u Q B hQ hBne hBhead hBdeep hBW
+  have key : ∀ k, k ≤ Q.length → ((List.range k).flatMap B ++ Q.drop k) ∈ W u := by
+    intro k
+    induction k with
+    | zero => intro _; simpa using hQ
+    | succ k ih =>
+        intro hk
+        have hk' : k < Q.length := by omega
+        have hIH := ih (by omega)
+        set P : TrioSeq := (List.range k).flatMap B with hPdef
+        set T : TrioSeq := Q.drop k with hTdef
+        have hTlen : T.length = Q.length - k := by rw [hTdef]; simp
+        have hE : ∀ i, entry (P ++ T) i P.length = entry Q i k := by
+          intro i
+          have h1 := entry_append_right P T i 0
+          rw [Nat.add_zero] at h1
+          rw [h1, hTdef, entry_drop_head Q i k]
+        have hlv : lev (P ++ T) P.length = lev Q k := by
+          unfold lev; rw [hE 1, hE 2]
+        have hplt : P.length < (P ++ T).length := by
+          rw [List.length_append]; omega
+        have htake : (P ++ T).take P.length = P := List.take_left
+        have hdrop : (P ++ T).drop (P.length + 1) = Q.drop (k + 1) := by
+          have h1 : (P ++ T).drop (P.length + 1) = ((P ++ T).drop P.length).drop 1 := by
+            rw [List.drop_drop]
+          rw [h1, List.drop_left, hTdef, List.drop_drop]
+        have hstep := hs u P.length (P ++ T) (B k) hIH hplt
+          (by intro h; have hb := hBne k hk'; rw [h] at hb; simp at hb)
+          (by rw [hlv]; exact hBW k hk')
+          (by rw [hE 0]; exact hBhead k hk')
+          (by intro j hj1 hj2; rw [hE 0]; exact hBdeep k hk' j hj1 hj2)
+        rw [htake, hdrop] at hstep
+        have hrange : (List.range (k + 1)).flatMap B = P ++ B k := by
+          rw [List.range_succ, List.flatMap_append, hPdef]
+          simp
+        rw [hrange]
+        exact hstep
+  have h := key Q.length le_rfl
+  simpa using h
+
+section ShiftEntry
+
+variable {Q : TrioSeq} {d j : ℕ}
+
+theorem entry0_shift (hj : j < Q.length) :
+    entry (shiftr01 d 0 Q) 0 j = entry Q 0 j + d := by
+  unfold entry
+  rw [shiftr01_getD hj]
+  simp
+
+theorem entry1_shift (hj : j < Q.length) :
+    entry (shiftr01 d 0 Q) 1 j = entry Q 1 j := by
+  unfold entry
+  rw [shiftr01_getD hj]
+  simp
+
+theorem entry2_shift (hj : j < Q.length) :
+    entry (shiftr01 d 0 Q) 2 j = entry Q 2 j := by
+  unfold entry
+  rw [shiftr01_getD hj]
+  simp
+
+end ShiftEntry
+
+open Classical in
+/-- **★★ `(TOW)` from `(SUBST)`.**
+
+The tower's spine is the CONSTANT diagonal `[(x0 + k*e, b, c)]_{k<n}` sitting at
+the stage's own level `2b+c = u` — in `W u` by `diagz_mem_W` with `f = 0`, or by
+`constcol_mem_W` when `e = 0`.  Copy `k` is `shiftr01 (k*e) 0 Q ∈ W u`, exactly
+`W (lev spine k)`, rooted at the spine column `x0 + k*e` and strictly deeper
+elsewhere — which is where `ShiftTowerClosedS`'s strict root-minimality is
+consumed.  So `(SUBST)` absorbs the last consumer of `(CAT)`. -/
+theorem shiftTowerClosedS_of_substG (hg : SubstClosedG) : ShiftTowerClosedS := by
+  classical
+  intro u e n Q hQ hs
+  have hflat : shTower Q e n
+      = (List.range n).flatMap (fun k => shiftr01 (k * e) 0 Q) := rfl
+  by_cases hQnil : Q = []
+  · subst hQnil
+    have hnil : ∀ m : ℕ,
+        (List.range m).flatMap (fun k => shiftr01 (k * e) 0 ([] : TrioSeq)) = [] := by
+      intro m
+      induction m with
+      | zero => rfl
+      | succ m ih => rw [List.range_succ, List.flatMap_append, ih]; simp
+    rw [hflat, hnil]
+    exact W_nil u
+  · have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQnil
+    have hbc : 2 * (u / 2) + u % 2 = u := by omega
+    have hc1 : u % 2 ≤ 1 := by omega
+    set D : TrioSeq :=
+      (List.range n).map (fun k => ((k * e, u / 2, u % 2) : ℕ × ℕ × ℕ)) with hD
+    have hDlen : D.length = n := by rw [hD]; simp
+    have hDget : ∀ k, k < n →
+        D.getD k ((0, 0, 0) : ℕ × ℕ × ℕ) = ((k * e, u / 2, u % 2) : ℕ × ℕ × ℕ) := by
+      intro k hk
+      rw [hD, List.getD_eq_getElem?_getD, List.getElem?_map,
+        List.getElem?_eq_getElem (by simpa using hk)]
+      simp
+    have hDmem : D ∈ W u := by
+      rcases Nat.eq_zero_or_pos e with he | he
+      · have heq : D = (List.range n).map (fun _ => ((0, u / 2, u % 2) : ℕ × ℕ × ℕ)) := by
+          rw [hD, he]; simp
+        have hcc := constcol_mem_W (u / 2) (u % 2) n
+        rw [hbc] at hcc
+        rw [heq]
+        exact hcc
+      · have hd0 := diagz_mem_W hc1 (u / 2) e 0 he n
+        have heq : ((List.range n).map
+            (fun k => ((k * e, u / 2 + k * 0, u % 2) : ℕ × ℕ × ℕ))) = D := by
+          rw [hD]; simp
+        rw [heq, hbc] at hd0
+        exact hd0
+    set H : TrioSeq := shiftr01 (entry Q 0 0) 0 D with hH
+    have hHlen : H.length = n := by rw [hH, shiftr01_length, hDlen]
+    have hHmem : H ∈ W u := by rw [hH]; exact W_shift hDmem _
+    have hHent0 : ∀ k, k < n → entry H 0 k = entry Q 0 0 + k * e := by
+      intro k hk
+      rw [hH, entry0_shift (by omega : k < D.length)]
+      have : entry D 0 k = k * e := by unfold entry; rw [hDget k hk]; simp
+      omega
+    have hHlev : ∀ k, k < n → lev H k = u := by
+      intro k hk
+      have h1 : entry D 1 k = u / 2 := by unfold entry; rw [hDget k hk]; simp
+      have h2 : entry D 2 k = u % 2 := by unfold entry; rw [hDget k hk]; simp
+      unfold lev
+      rw [hH, entry1_shift (by omega : k < D.length),
+        entry2_shift (by omega : k < D.length), h1, h2]
+      omega
+    set B : ℕ → TrioSeq := fun k => shiftr01 (k * e) 0 Q with hB
+    have hBlen : ∀ k, (B k).length = Q.length := by
+      intro k; rw [hB]; exact shiftr01_length _ _ _
+    have hmain := hg u H B hHmem
+      (by intro k hk; rw [hBlen k]; exact hQlen)
+      (by
+        intro k hk
+        rw [hHlen] at hk
+        simp only [hB]
+        rw [entry0_shift hQlen, hHent0 k hk])
+      (by
+        intro k hk j hj1 hjl
+        rw [hHlen] at hk
+        rw [hBlen k] at hjl
+        simp only [hB]
+        rw [entry0_shift hjl, hHent0 k hk]
+        have := hs j hj1 hjl
+        omega)
+      (by
+        intro k hk
+        rw [hHlen] at hk
+        rw [hHlev k hk]
+        simp only [hB]
+        exact W_shift hQ _)
+    rw [hHlen] at hmain
+    rw [hflat]
+    exact hmain
+
+open Classical in
+/-- **★★ The `m < a` half of `TowerExp`, from `(SUBST)` instead of `(CAT)`.**
+
+The two-column sequence `[(0,v,z), t]` — `t` the trailing column that the root
+revives — is in `W a` outright (`two_col_mem_W`), and its two levels are exactly
+`2v+z` and `m+1`.  Grafting the peel `p_{v,z}(R.dropLast) ∈ W (2v+z)` under the
+first column and the singleton `[t] ∈ W (m+1)` under the second rebuilds
+`p_{v,z}(R)`.  `(CAT)` needed BOTH sides in `W a`; here the deep column is paid
+for by its own host column. -/
+theorem cons_mem_W_of_substG (hg : SubstClosedG) {v z m a : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
+    (hd : domT R m) (hma : m < a) (hop : ∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W a := by
+  classical
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  set t : ℕ × ℕ × ℕ := R.getLast hRne with ht
+  have hqd : t = R.getD (R.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+    rw [ht, List.getLast_eq_getElem, getElem_eq_getD' (by omega)]
+  have hlv : 2 * t.2.1 + t.2.2 = m + 1 := by
+    have hl := hd.1
+    unfold lev entry at hl
+    rw [hqd]
+    simpa using hl
+  set C : TrioSeq := ((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast with hC
+  have hCA : C ∈ W (2 * v + z) := by
+    rcases Nat.lt_or_ge R.length 2 with hsm | hbig
+    · have hdl : R.dropLast = [] := List.eq_nil_of_length_eq_zero (by simp; omega)
+      rw [hC, hdl]
+      exact Om_mem_W v z
+    · have h1 := hop 1 le_rfl
+      rw [oper_eq_graft_nil_of_domT (n := 1) (by omega) hd, graft_nil] at h1
+      exact h1 (argOK_dropLast hR) v z (2 * v + z) hz1 le_rfl
+  set Q : TrioSeq := [((0, v, z) : ℕ × ℕ × ℕ), t] with hQ
+  have hQlen : Q.length = 2 := by rw [hQ]; simp
+  have hQmem : Q ∈ W a := two_col_mem_W hz1 hva t
+  have hQ0 : entry Q 0 0 = 0 := by rw [hQ]; simp [entry]
+  have hQ1 : entry Q 0 1 = t.1 := by rw [hQ]; simp [entry]
+  have hlvQ0 : lev Q 0 = 2 * v + z := by rw [hQ]; simp [lev, entry]
+  have hlvQ1 : lev Q 1 = m + 1 := by rw [hQ]; simp [lev, entry]; omega
+  set B : ℕ → TrioSeq := fun k => if k = 0 then C else [t] with hB
+  have hB0 : B 0 = C := by rw [hB]; simp
+  have hB1 : B 1 = [t] := by rw [hB]; simp
+  have hCdeep : ∀ j, 1 ≤ j → j < C.length → 0 < entry C 0 j := by
+    intro j hj1 hjl
+    have hClen : C.length = R.dropLast.length + 1 := by rw [hC]; simp
+    have hjR : j - 1 < R.dropLast.length := by omega
+    have hshift : entry C 0 j = entry R.dropLast 0 (j - 1) := by
+      rw [hC]
+      conv_lhs => rw [show j = (j - 1) + 1 by omega]
+      rw [entry_cons]
+    rw [hshift]
+    exact argOK_dropLast hR _ (entry_pair_mem hjR)
+  have hmain := hg a Q B hQmem
+    (by
+      intro k hk
+      rw [hQlen] at hk
+      rcases Nat.lt_or_ge k 1 with hk0 | hk1
+      · have hkk : k = 0 := by omega
+        subst hkk; rw [hB0, hC]; simp
+      · have hkk : k = 1 := by omega
+        subst hkk; rw [hB1]; simp)
+    (by
+      intro k hk
+      rw [hQlen] at hk
+      rcases Nat.lt_or_ge k 1 with hk0 | hk1
+      · have hkk : k = 0 := by omega
+        subst hkk; rw [hB0, hQ0, hC]; simp [entry]
+      · have hkk : k = 1 := by omega
+        subst hkk; rw [hB1, hQ1]; simp [entry])
+    (by
+      intro k hk j hj1 hjl
+      rw [hQlen] at hk
+      rcases Nat.lt_or_ge k 1 with hk0 | hk1
+      · have hkk : k = 0 := by omega
+        subst hkk
+        rw [hB0] at hjl ⊢
+        rw [hQ0]
+        exact hCdeep j hj1 hjl
+      · have hkk : k = 1 := by omega
+        subst hkk
+        rw [hB1] at hjl; simp at hjl; omega)
+    (by
+      intro k hk
+      rw [hQlen] at hk
+      rcases Nat.lt_or_ge k 1 with hk0 | hk1
+      · have hkk : k = 0 := by omega
+        subst hkk; rw [hB0, hlvQ0]; exact hCA
+      · have hkk : k = 1 := by omega
+        subst hkk
+        rw [hB1, hlvQ1]
+        have hte : t = ((t.1, t.2.1, t.2.2) : ℕ × ℕ × ℕ) := rfl
+        rw [hte]
+        exact singleton_mem_W (by omega))
+  rw [hQlen] at hmain
+  have hflat : (List.range 2).flatMap B = C ++ [t] := by
+    rw [show (List.range 2) = [0, 1] from rfl]
+    simp [hB0, hB1]
+  rw [hflat, hC, List.cons_append, ht, List.dropLast_append_getLast hRne] at hmain
+  exact hmain
+
+/-- **★★ `TowerExp` with `(CAT)` fully replaced by `(SUBST)`.**  The `m < a`
+half is `cons_mem_W_of_substG`, the row-1 half is the shifted copy tower, and the
+row-2 half at `a ≤ m` is the low core. -/
+theorem towerExp_of_substG (hg : SubstClosedG) (htow : ShiftTowerClosedS)
+    (h2 : TowerExp2Low) : Wset.TowerExp := by
+  intro v z m a R hR hRne hz1 hva hd hop hpM n hn
+  rcases Nat.lt_or_ge m a with hma | hma
+  · exact oper_closed (cons_mem_W_of_substG hg hR hRne hz1 hva hd hma hop) hn
+  · have hlevpos : 0 < lev R (R.length - 1) := by rw [hd.1]; omega
+    unfold lev at hlevpos
+    rcases srow_cases R (R.length - 1) with hsr | hsr | hsr
+    · exfalso
+      unfold srow at hsr
+      split at hsr
+      · omega
+      · split at hsr
+        · omega
+        · omega
+    · exact towerExp1_of_tower htow v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
+    · exact h2 v z m a R hR hRne hz1 hva hma hd hop hsr hpM n hn
 
 open Classical in
 /-- **★ `TowerExp2Root` from `(SUBST)` and the stage law `(WL)`.**

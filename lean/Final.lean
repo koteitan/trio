@@ -113,12 +113,12 @@ last `(WL)` branch is the row-1 collapse at the root, whose expansion IS the
 row-0-shifted copy tower of the peel (`oper_of_srow1_par0`); the clause-2
 hypothesis supplies the peel itself at `n = 1`.  So the whole stage law reduces
 to a `W`-closure with no lift in it. -/
-theorem TRIO_terminates_of_tower (htow : ShiftTowerClosed) (he : Wset.TowerExp) :
+theorem TRIO_terminates_of_tower (htow : ShiftTowerClosedS) (he : Wset.TowerExp) :
     WellFounded stepRel :=
   TRIO_terminates_of_parented (liftStageParented_of_tower htow) he
 
 /-- **No infinite expansion sequence**, from `(TOW)` and `TowerExp`. -/
-theorem no_infinite_expansion_of_tower (htow : ShiftTowerClosed)
+theorem no_infinite_expansion_of_tower (htow : ShiftTowerClosedS)
     (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_parented (liftStageParented_of_tower htow) he
@@ -128,12 +128,12 @@ theorem no_infinite_expansion_of_tower (htow : ShiftTowerClosed)
 (`towerExp1_of_tower`), so the whole proof now rests on exactly two statements:
 the shifted copy tower `(TOW)`, and the guarded (row-1-ascending) tower of a
 row-2 collapse arriving through clause 2. -/
-theorem TRIO_terminates_of_tow (htow : ShiftTowerClosed) (h2 : TowerExp2) :
+theorem TRIO_terminates_of_tow (htow : ShiftTowerClosedS) (h2 : TowerExp2) :
     WellFounded stepRel :=
   TRIO_terminates_of_tower htow (towerExp_of_tower htow h2)
 
 /-- **No infinite expansion sequence**, from `(TOW)` and `TowerExp2`. -/
-theorem no_infinite_expansion_of_tow (htow : ShiftTowerClosed)
+theorem no_infinite_expansion_of_tow (htow : ShiftTowerClosedS)
     (h2 : TowerExp2) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_tower htow (towerExp_of_tower htow h2)
@@ -143,12 +143,12 @@ the hypothesis-free strengthening of `Wset.W_add`: `W u` closed under plain
 concatenation.  Probe `tools/probe_cat.py`: 372290 pairs, 0 violations. -/
 theorem TRIO_terminates_of_cat (hcat : WCat) (h2 : TowerExp2) :
     WellFounded stepRel :=
-  TRIO_terminates_of_tow (shiftTowerClosed_of_cat hcat) h2
+  TRIO_terminates_of_tow (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat hcat)) h2
 
 /-- **No infinite expansion sequence**, from `(CAT)` and `TowerExp2`. -/
 theorem no_infinite_expansion_of_cat (hcat : WCat) (h2 : TowerExp2) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion_of_tow (shiftTowerClosed_of_cat hcat) h2
+  no_infinite_expansion_of_tow (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat hcat)) h2
 
 /-- **★ Trio sequences terminate, modulo `(CAT)` and the LOW half of the row-2
 tower.**  `TowerExp`'s `m < a` half is `(CAT)`-strength (`towerExp_of_cat`): the
@@ -159,12 +159,12 @@ That is where the pair-sequence content sits (its `|R| = 1`, `z = 0` base is the
 pair diagonal `[(k*d0, v + k*d1, 0)]`). -/
 theorem TRIO_terminates_of_cat_low (hcat : WCat) (h2 : TowerExp2Low) :
     WellFounded stepRel :=
-  TRIO_terminates_of_tower (shiftTowerClosed_of_cat hcat) (towerExp_of_cat hcat h2)
+  TRIO_terminates_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat hcat)) (towerExp_of_cat hcat h2)
 
 /-- **No infinite expansion sequence**, from `(CAT)` and the low row-2 tower. -/
 theorem no_infinite_expansion_of_cat_low (hcat : WCat) (h2 : TowerExp2Low) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion_of_tower (shiftTowerClosed_of_cat hcat)
+  no_infinite_expansion_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat hcat))
     (towerExp_of_cat hcat h2)
 
 /-- **★★ Trio sequences terminate, modulo `(CAT)` and the row-2 tower at the
@@ -203,7 +203,7 @@ theorem TRIO_terminates_of_cat_subst (hcat : WCat) (hsub : SubstClosed) :
   TRIO_terminates_of_cat_root hcat
     (towerExp2Root_of_subst hsub
       (liftStage_of_parented
-        (liftStageParented_of_tower (shiftTowerClosed_of_cat hcat))))
+        (liftStageParented_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat hcat)))))
 
 /-- **No infinite expansion sequence**, from `(CAT)` and `(SUBST)`. -/
 theorem no_infinite_expansion_of_cat_subst (hcat : WCat) (hsub : SubstClosed) :
@@ -211,7 +211,7 @@ theorem no_infinite_expansion_of_cat_subst (hcat : WCat) (hsub : SubstClosed) :
   no_infinite_expansion_of_cat_root hcat
     (towerExp2Root_of_subst hsub
       (liftStage_of_parented
-        (liftStageParented_of_tower (shiftTowerClosed_of_cat hcat))))
+        (liftStageParented_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat hcat)))))
 
 /-- **★★ Trio sequences terminate, modulo `(CAT)` and `(SUBST1)`.**
 
@@ -231,6 +231,48 @@ theorem no_infinite_expansion_of_cat_subst1 (hcat : WCat) (hs : Subst1) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_cat_subst hcat (substClosed_of_subst1 hs)
 
+/-- **★★★ Trio sequences terminate, modulo `(SUBST1g)` ALONE.**
+
+`(SUBST1g)` is the whole residue in one statement:
+
+    S ∈ W u,  p < |S|,  C ∈ W (lev S p),  entry C 0 0 = entry S 0 p,
+    every other column of C strictly deeper
+    ⟹ S.take p ++ C ++ S.drop (p+1) ∈ W u
+
+i.e. `Aop`'s clause 3 (graft a `W m` block onto the LAST column, `m = lev - 1`)
+liberalised in exactly two places: any position, and the block's stage raised
+from `lev - 1` to `lev`.
+
+`(CAT)` is gone.  Its two consumers are both `(SUBST)`:
+
+* `(TOW)` — the shifted copy tower is `(SUBST)` over the constant diagonal
+  `[(x0 + k*e, b, c)]_{k<n}` at level `2b+c = u` (`shiftTowerClosedS_of_substG`),
+  which carries the stage law `(WL)`;
+* `TowerExp`'s `m < a` half — the two-column host `[(0,v,z), t] ∈ W a`
+  (`two_col_mem_W`, itself the pair theorem) has exactly the two levels the peel
+  and the trailing column need (`cons_mem_W_of_substG`).
+
+Probe `tools/probe_subst1g.py`: 210201 instances, 0 violations. -/
+theorem TRIO_terminates_of_subst1g (hs : Subst1g) : WellFounded stepRel := by
+  have hgG : SubstClosedG := substClosedG_of_subst1g hs
+  have htowS : ShiftTowerClosedS := shiftTowerClosedS_of_substG hgG
+  have hWL : LiftStage := liftStage_of_parented (liftStageParented_of_tower htowS)
+  have h2 : TowerExp2Low :=
+    towerExp2Low_of_root
+      (towerExp2Root_of_subst (substClosed_of_substClosedG hgG) hWL)
+  exact TRIO_terminates_of_tower htowS (towerExp_of_substG hgG htowS h2)
+
+/-- **No infinite expansion sequence**, from `(SUBST1g)` alone. -/
+theorem no_infinite_expansion_of_subst1g (hs : Subst1g) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) := by
+  have hgG : SubstClosedG := substClosedG_of_subst1g hs
+  have htowS : ShiftTowerClosedS := shiftTowerClosedS_of_substG hgG
+  have hWL : LiftStage := liftStage_of_parented (liftStageParented_of_tower htowS)
+  have h2 : TowerExp2Low :=
+    towerExp2Low_of_root
+      (towerExp2Root_of_subst (substClosed_of_substClosedG hgG) hWL)
+  exact no_infinite_expansion_of_tower htowS (towerExp_of_substG hgG htowS h2)
+
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
 not raise the stage*.
@@ -246,13 +288,13 @@ not raise the stage*.
 
 Probe `tools/probe_snoc.py`: 14455 instances, 0 violations. -/
 theorem TRIO_terminates_of_snoc (hsn : WSnoc) : WellFounded stepRel :=
-  TRIO_terminates_of_tower (shiftTowerClosed_of_cat (wcat_of_snoc hsn))
+  TRIO_terminates_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat (wcat_of_snoc hsn)))
     (towerExp_of_snoc hsn)
 
 /-- **No infinite expansion sequence**, from `(SNOC)` alone. -/
 theorem no_infinite_expansion_of_snoc (hsn : WSnoc) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion_of_tower (shiftTowerClosed_of_cat (wcat_of_snoc hsn))
+  no_infinite_expansion_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat (wcat_of_snoc hsn)))
     (towerExp_of_snoc hsn)
 
 
