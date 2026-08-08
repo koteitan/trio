@@ -711,4 +711,181 @@ theorem gexp_cone0_transport {M : TrioSeq} {j0 Lb d0 d1 n k q : ℕ}
         · have := le1_chain_window hcone.2.2 (j0 + q') (hrtgM _ hq') hM (by omega)
           split_ifs <;> omega
 
+/-- **The root lift commutes with an ascending expansion whose bad root is not
+the sequence's own root.**  The two masks are cones of *different* roots — the
+lift rides on `le1 X 0 ·`, the copies on `le1 X j0 ·` — so they simply add up on
+each mirror, once `gexp_cone0_transport` says the `0`-cone is mirrored. -/
+theorem gexp_Lift1_comm {X : TrioSeq} {j0 Lb D0 D1 n d : ℕ}
+    (hlen : j0 + Lb + 1 = X.length) (hj0 : 0 < j0) (hLb : 0 < Lb) (hn : 0 < n)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry X 0 j0 < entry X 0 l)
+    (hd0pos : 0 < D0) (hd0e : entry X 0 (j0 + Lb) = entry X 0 j0 + D0)
+    (hcone : le1 X j0 (j0 + Lb)) :
+    gexp (Lift1 X d) j0 Lb D0 D1 n = Lift1 (gexp X j0 Lb D0 D1 n) d := by
+  classical
+  have hlenLX : (Lift1 X d).length = X.length := Lift1_length X d
+  have hlenL' : j0 + Lb + 1 = (Lift1 X d).length := by rw [hlenLX]; exact hlen
+  have hlenG : (gexp X j0 Lb D0 D1 n).length = j0 + n * Lb := gexp_length hlen
+  have hlenGL : (gexp (Lift1 X d) j0 Lb D0 D1 n).length = j0 + n * Lb :=
+    gexp_length hlenL'
+  have hnL : Lb ≤ n * Lb := Nat.le_mul_of_pos_left _ hn
+  refine List.ext_getElem (by rw [hlenGL, Lift1_length, hlenG]) ?_
+  intro i hia hib
+  rw [hlenGL] at hia
+  rw [getElem_eq_getD' (by omega), getElem_eq_getD' (by rw [Lift1_length]; omega),
+    Lift1_getD (by omega)]
+  rcases Nat.lt_or_ge i j0 with hlow | hhigh
+  · -- head: both sides read the host verbatim
+    have hlowX : (gexp X j0 Lb D0 D1 n).getD i (0, 0, 0) = X.getD i (0, 0, 0) :=
+      gexp_getD_low hlen hlow
+    have hE : ∀ y, entry (gexp X j0 Lb D0 D1 n) y i = entry X y i := by
+      intro y; unfold entry; rw [hlowX]
+    rw [gexp_getD_low hlenL' hlow, Lift1_getD (by omega), hE 0, hE 1, hE 2,
+      le1_gexp_low (by omega) hlow]
+  · -- copies: the two masks add up
+    obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hLb hhigh (by omega)
+    have hmir : (gexp X j0 Lb D0 D1 n).getD (j0 + (k * Lb + q)) (0, 0, 0)
+        = (entry X 0 (j0 + q) + k * D0,
+           entry X 1 (j0 + q) + (if le1 X j0 (j0 + q) then k * D1 else 0),
+           entry X 2 (j0 + q)) := gexp_getD_mir hlen hk hq
+    have hE0 : entry (gexp X j0 Lb D0 D1 n) 0 (j0 + (k * Lb + q))
+        = entry X 0 (j0 + q) + k * D0 := by
+      show ((gexp X j0 Lb D0 D1 n).getD (j0 + (k * Lb + q)) (0, 0, 0)).1 = _
+      rw [hmir]
+    have hE1 : entry (gexp X j0 Lb D0 D1 n) 1 (j0 + (k * Lb + q))
+        = entry X 1 (j0 + q) + (if le1 X j0 (j0 + q) then k * D1 else 0) := by
+      show ((gexp X j0 Lb D0 D1 n).getD (j0 + (k * Lb + q)) (0, 0, 0)).2.1 = _
+      rw [hmir]
+    have hE2 : entry (gexp X j0 Lb D0 D1 n) 2 (j0 + (k * Lb + q))
+        = entry X 2 (j0 + q) := by
+      show ((gexp X j0 Lb D0 D1 n).getD (j0 + (k * Lb + q)) (0, 0, 0)).2.2 = _
+      rw [hmir]
+    rw [gexp_getD_mir hlenL' hk hq, hE0, hE1, hE2, entry0_Lift1, entry2_Lift1,
+      entry1_Lift1 (by omega)]
+    simp only [le1_Lift1,
+      gexp_cone0_transport (M := X) (d1 := D1) hlen hj0 hLb hk hq hup hd0pos
+        hd0e hcone]
+    rw [Nat.add_right_comm]
+
+/-- A collapse row above `0` means the last column is nonzero in that row. -/
+theorem entry_pos_of_srow {X : TrioSeq} {j : ℕ} (h : 1 ≤ srow X j) :
+    0 < entry X 1 j ∨ 0 < entry X 2 j := by
+  unfold srow at h
+  split at h
+  · exact Or.inr (by assumption)
+  · split at h
+    · exact Or.inl (by assumption)
+    · omega
+
+/-- The collapse row `i1 ≥ 1` puts the bad root in the row-1 cone of the last
+column, which is what makes the two lift masks nest. -/
+theorem le1_parent_of_srow_pos {X : TrioSeq} {i1 j0 j1 : ℕ} (hi1 : 1 ≤ i1)
+    (hnr : nextR X i1 j0 j1) : le1 X j0 j1 := by
+  unfold nextR at hnr
+  rw [if_neg (by omega)] at hnr
+  rcases Nat.lt_or_ge i1 2 with h | h
+  · rw [if_pos (by omega)] at hnr
+    exact ⟨hnr.1, hnr.2.1, Relation.ReflTransGen.single hnr⟩
+  · rw [if_neg (by omega)] at hnr
+    exact hnr.2.2.2.2.1
+
+/-- **The branch `1 ≤ badPar`, ascending collapse (`i1 ≥ 1`)**: `oper` commutes
+with the root lift.  All the expansion data (`j0`, `Lb`, `D0`, `D1`) is
+transported verbatim by `Lift1`; the row-1 datum `D1` survives because the bad
+root and the last column lie in the *same* `0`-cone (`le1_of_le1_le1`), so the
+lift cancels in the difference. -/
+theorem lift_oper_comm_of_parent {X : TrioSeq} {d n : ℕ} (h2 : 2 ≤ X.length)
+    (hp : hasParent X (srow X (X.length - 1)) (X.length - 1))
+    (hjpos : 0 < parent X (srow X (X.length - 1)) (X.length - 1))
+    (hi1 : 1 ≤ srow X (X.length - 1)) (hn : 0 < n) :
+    (Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d := by
+  classical
+  have hlenL : (Lift1 X d).length = X.length := Lift1_length X d
+  have hnr := parent_nextR hp
+  have hlt : parent X (srow X (X.length - 1)) (X.length - 1) < X.length - 1 :=
+    nextR_index_lt hnr
+  have hch0 := nextR_chain0 hnr
+  have hj1ne : X.length - 1 ≠ 0 := by omega
+  set j1 : ℕ := X.length - 1 with hj1def
+  set i1 : ℕ := srow X j1 with hi1def
+  set j0 : ℕ := parent X i1 j1 with hj0def
+  set Lb : ℕ := j1 - j0 with hLbdef
+  have hlen : j0 + Lb + 1 = X.length := by omega
+  have hLb : 0 < Lb := by omega
+  have hj1e : j0 + Lb = j1 := by omega
+  have hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry X 0 j0 < entry X 0 l := by
+    have hw := window_of_rtg0 hch0 (by omega)
+    intro l hl0 hl1
+    exact hw l hl0 (by omega)
+  have hcone : le1 X j0 (j0 + Lb) := by rw [hj1e]; exact le1_parent_of_srow_pos hi1 hnr
+  set D0 : ℕ := if 0 < i1 then entry X 0 j1 - entry X 0 j0 else 0 with hD0def
+  set D1 : ℕ := if 1 < i1 then entry X 1 j1 - entry X 1 j0 else 0 with hD1def
+  have hd0pos : 0 < D0 := by
+    rw [hD0def, if_pos (by omega)]
+    have := hup j1 (by omega) (by omega)
+    omega
+  have hd0e : entry X 0 (j0 + Lb) = entry X 0 j0 + D0 := by
+    rw [hj1e, hD0def, if_pos (by omega)]
+    have := hup j1 (by omega) (by omega)
+    omega
+  -- the two `oper` presentations, sharing the same data
+  have hpos1 : 0 < entry X 1 j1 ∨ 0 < entry X 2 j1 := entry_pos_of_srow hi1
+  have hz : ¬ (entry X 0 j1 = 0 ∧ entry X 1 j1 = 0 ∧ entry X 2 j1 = 0) := by
+    rintro ⟨-, ha, hb⟩; omega
+  have hgX : X⟦n⟧ = gexp X j0 Lb D0 D1 n := by
+    have h := oper_gcopies (M := X) n hj1ne hz hp
+    rw [← hj1def, ← hi1def, ← hj0def, ← hLbdef, ← hD0def, ← hD1def] at h
+    unfold gexp
+    exact h
+  -- the lifted side: every datum transports
+  have hlenL1 : (Lift1 X d).length - 1 = j1 := by rw [hlenL]
+  have hsrL : srow (Lift1 X d) j1 = i1 := srow_Lift1 hj1ne
+  have hpL : hasParent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) := by
+    rw [hlenL1, hsrL, hasParent_Lift1]; exact hp
+  have hzL : ¬ (entry (Lift1 X d) 0 ((Lift1 X d).length - 1) = 0 ∧
+      entry (Lift1 X d) 1 ((Lift1 X d).length - 1) = 0 ∧
+      entry (Lift1 X d) 2 ((Lift1 X d).length - 1) = 0) := by
+    rw [hlenL1, entry0_Lift1, entry2_Lift1, entry1_Lift1 (by omega)]
+    rintro ⟨-, ha, hb⟩
+    omega
+  -- the row-1 datum: the bad root and the last column share the `0`-cone
+  have hg01 : le1 X 0 j0 ↔ le1 X 0 j1 := by
+    constructor
+    · intro h; rw [← hj1e]; exact le1_trans h hcone
+    · intro h; exact le1_of_le1_le1 h (by rw [← hj1e]; exact hcone) (by omega)
+  have hD1L : (if 1 < i1 then entry (Lift1 X d) 1 j1
+        - entry (Lift1 X d) 1 j0 else 0) = D1 := by
+    rw [entry1_Lift1 (by omega), entry1_Lift1 (by omega), hD1def]
+    by_cases hc : le1 X 0 j0
+    · rw [if_pos hc, if_pos (hg01.1 hc)]
+      split_ifs <;> omega
+    · rw [if_neg hc, if_neg (fun hcon => hc (hg01.2 hcon))]
+      split_ifs <;> omega
+  have hgL : (Lift1 X d)⟦n⟧ = gexp (Lift1 X d) j0 Lb D0 D1 n := by
+    have h := oper_gcopies (M := Lift1 X d) n (by rw [hlenL1]; exact hj1ne) hzL hpL
+    rw [hlenL1, hsrL, parent_Lift1, ← hj0def, entry0_Lift1, entry0_Lift1,
+      hD1L] at h
+    rw [show j1 - j0 = Lb from hLbdef.symm, ← hD0def] at h
+    unfold gexp
+    exact h
+  rw [hgL, hgX, gexp_Lift1_comm hlen hjpos hLb hn hup hd0pos hd0e hcone]
+
+/-- Splitting the `1 ≤ badPar` residue by the collapse row. -/
+theorem lspOn_pos_of
+    (h0 : LSPOn (fun X => 1 ≤ badPar X ∧ srow X (X.length - 1) = 0))
+    (hhi : LSPOn (fun X => 1 ≤ badPar X ∧ 1 ≤ srow X (X.length - 1))) :
+    LSPOn (fun X => 1 ≤ badPar X) := by
+  intro m d X h2 hp hpos hop n hn
+  rcases Nat.eq_zero_or_pos (srow X (X.length - 1)) with hs | hs
+  · exact h0 m d X h2 hp ⟨hpos, hs⟩ hop n hn
+  · exact hhi m d X h2 hp ⟨hpos, hs⟩ hop n hn
+
+/-- **Branch `1 ≤ badPar`, `i1 ≥ 1`** — commutation, so the stage is inherited
+straight from the hypothesis on `X⟦n⟧`. -/
+theorem lspOn_pos_hi :
+    LSPOn (fun X => 1 ≤ badPar X ∧ 1 ≤ srow X (X.length - 1)) := by
+  rintro m d X h2 hp ⟨hjpos, hi1⟩ hop n hn
+  rw [lift_oper_comm_of_parent h2 hp hjpos hi1 (by omega)]
+  exact hop n hn
+
 end TRIO
