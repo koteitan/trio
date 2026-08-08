@@ -502,4 +502,213 @@ theorem towerGraft2_of_liftStage (hWL : LiftStage) : Wset.TowerGraft2 := by
           (le_refl _)
   exact W_mono hva (key n)
 
+/-! ### 添字 0 からの錐輸送（`d0 > 0` の枝）
+
+`1 ≤ badPar` の可換性 `(Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d` を列ごとに開くと、
+頭の部分は `le1_gexp_low` で片付き、コピー領域には
+
+```
+(T0)   le1 (gexp M j0 Lb d0 d1 n) 0 (j0 + (k*Lb + q))  ↔  le1 M 0 (j0 + q)
+```
+
+だけが残る。`gexp_guard_transport` が運ぶのは `j0` からの錐なので、`j0 ≥ 1` では
+これとは別物である（§1.9.60）。計測 `tools/probe_cone0.py`: 1812 ホスト・
+85680 例で違反 0。
+
+証明の骨格は次の切断である。窓 `(j0, j0+Lb]` の行 0 値はすべて `entry M 0 j0`
+より真に大きい（`hup`）ので、**行 0 の鎖は窓に入る前に必ず `j0` を通る**。
+切断の下側は接頭辞局所性（`le1_gexp_le`）でホストに戻り、上側は
+`gexp_chain_inversion` で鏡映に分解する。ガードが立った位置では
+`le1 M j0 ·` から行 1 値がすでに `entry M 1 j0` を超えているので、乗るリフト
+`k*d1` は不等式を壊さない。 -/
+
+/-- **A row-0 edge cannot jump over `j0`.**  If every column of `(j0, B]` sits
+strictly above `j0` in row 0, then a `nextrel0` chain starting at or below `j0`
+and ending inside the window factors through `j0` itself. -/
+theorem rtg0_split_at {A : TrioSeq} {j0 B : ℕ}
+    (hgt : ∀ l, j0 < l → l ≤ B → entry A 0 j0 < entry A 0 l)
+    {a p : ℕ} (h : Relation.ReflTransGen (nextrel0 A) a p) (ha : a ≤ j0) :
+    j0 ≤ p → p ≤ B →
+      Relation.ReflTransGen (nextrel0 A) a j0 ∧
+        Relation.ReflTransGen (nextrel0 A) j0 p := by
+  induction h with
+  | refl =>
+      intro hp0 _
+      have hj : a = j0 := by omega
+      subst hj
+      exact ⟨.refl, .refl⟩
+  | @tail c p' hac hcp ih =>
+      intro hp0 hp1
+      have hclt : c < p' := hcp.2.2.1
+      rcases Nat.lt_or_ge c j0 with hcj | hcj
+      · rcases Nat.eq_or_lt_of_le hp0 with hj | hj
+        · have hp'j : p' = j0 := by omega
+          subst hp'j
+          exact ⟨hac.tail hcp, .refl⟩
+        · exfalso
+          have hnodip := hcp.2.2.2.2 j0 ⟨hcj, hj⟩
+          have := hgt p' hj hp1
+          omega
+      · obtain ⟨h1, h2⟩ := ih hcj (by omega)
+        exact ⟨h1, h2.tail hcp⟩
+
+/-- The copy-`0` root of the expansion is the host's bad root verbatim. -/
+theorem gexp_getD_root {M : TrioSeq} {j0 Lb d0 d1 n : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hn : 0 < n) :
+    (gexp M j0 Lb d0 d1 n).getD j0 (0, 0, 0) = M.getD j0 (0, 0, 0) := by
+  have h := gexp_getD_mir (M := M) (j0 := j0) (Lb := Lb) (d0 := d0) (d1 := d1)
+    (n := n) (k := 0) (q := 0) hlen hn hLb
+  simp only [Nat.zero_mul, Nat.add_zero, ite_self] at h
+  rw [h, getD_eq_entries]
+
+/-- The expansion agrees with the host on the closed prefix `[0, j0]`. -/
+theorem gexp_take_succ {M : TrioSeq} {j0 Lb d0 d1 n : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hn : 0 < n) :
+    (gexp M j0 Lb d0 d1 n).take (j0 + 1) = M.take (j0 + 1) := by
+  have hlenG : (gexp M j0 Lb d0 d1 n).length = j0 + n * Lb := gexp_length hlen
+  have hnL : Lb ≤ n * Lb := Nat.le_mul_of_pos_left _ hn
+  refine List.ext_getElem ?_ ?_
+  · rw [List.length_take, List.length_take, hlenG]; omega
+  · intro i hi1 hi2
+    rw [List.length_take, hlenG] at hi1
+    rw [List.getElem_take, List.getElem_take,
+      getElem_eq_getD' (by omega), getElem_eq_getD' (by omega)]
+    rcases Nat.lt_or_ge i j0 with h | h
+    · exact gexp_getD_low hlen h
+    · have hij : i = j0 := by omega
+      subst hij
+      exact gexp_getD_root hlen hLb hn
+
+/-- **Closed-prefix locality of the `0`-cone** (the `p ≤ j0` strengthening of
+`le1_gexp_low`; the bad root itself is included). -/
+theorem le1_gexp_le {M : TrioSeq} {j0 Lb d0 d1 n p : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hn : 0 < n) (hp : p ≤ j0) :
+    le1 (gexp M j0 Lb d0 d1 n) 0 p ↔ le1 M 0 p := by
+  have hlenG : (gexp M j0 Lb d0 d1 n).length = j0 + n * Lb := gexp_length hlen
+  have hnL : Lb ≤ n * Lb := Nat.le_mul_of_pos_left _ hn
+  rw [← le1_take (X := gexp M j0 Lb d0 d1 n) (l := j0 + 1) (by omega) (by omega),
+    gexp_take_succ hlen hLb hn,
+    le1_take (X := M) (l := j0 + 1) (by omega) (by omega)]
+
+/-- The row-0 profile of the copies region stays strictly above the bad root. -/
+theorem gexp_entry0_gt_root {M : TrioSeq} {j0 Lb d0 d1 n : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hn : 0 < n)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) :
+    ∀ l, j0 < l → l ≤ j0 + n * Lb - 1 →
+      entry (gexp M j0 Lb d0 d1 n) 0 j0 < entry (gexp M j0 Lb d0 d1 n) 0 l := by
+  have hnL : Lb ≤ n * Lb := Nat.le_mul_of_pos_left _ hn
+  intro l hl0 hl1
+  rw [gexp_entry_root hlen hn hLb]
+  exact gexp_entry0_gt hlen hLb hup hd0pos l hl0 (by omega)
+
+/-- **Cone-from-`0` transport** (probe `tools/probe_cone0.py`: 1812 hosts,
+85680 instances, 0 violations).  For an ascending window (`d0 > 0`) the cone of
+the sequence's own root is mirrored by the expansion — the companion of
+`gexp_guard_transport`, which mirrors the cone of the bad root `j0`. -/
+theorem gexp_cone0_transport {M : TrioSeq} {j0 Lb d0 d1 n k q : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0) (hLb : 0 < Lb)
+    (hk : k < n) (hq : q < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hcone : le1 M j0 (j0 + Lb)) :
+    le1 (gexp M j0 Lb d0 d1 n) 0 (j0 + (k * Lb + q)) ↔ le1 M 0 (j0 + q) := by
+  classical
+  have hn : 0 < n := by omega
+  have hnL : Lb ≤ n * Lb := Nat.le_mul_of_pos_left _ hn
+  have hlenG : (gexp M j0 Lb d0 d1 n).length = j0 + n * Lb := gexp_length hlen
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hgtG := gexp_entry0_gt_root (d1 := d1) hlen hLb hn hup hd0pos
+  have hE10 : entry (gexp M j0 Lb d0 d1 n) 1 0 = entry M 1 0 := by
+    show ((gexp M j0 Lb d0 d1 n).getD 0 (0, 0, 0)).2.1 = _
+    rw [gexp_getD_low hlen hj0, getD_eq_entries]
+  -- the row-0 chains that both sides ride on
+  have hrtgM : ∀ r : ℕ, r < Lb → Relation.ReflTransGen (nextrel0 M) j0 (j0 + r) :=
+    fun r hr => rtg0_of_window (by omega) (by omega)
+      (fun l hl0 hl1 => hup l hl0 (by omega))
+  have hrtgG : ∀ r : ℕ, r < n * Lb →
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) j0 (j0 + r) :=
+    fun r hr => gexp_rtg0_root hlen hn hLb hup hd0pos _ (by omega) (by omega)
+  constructor
+  · -- `G`-side cone ⟹ `M`-side cone
+    intro h
+    obtain ⟨hsp1, hsp2⟩ :=
+      rtg0_split_at hgtG (rtg0_of_rtg1 h.2.2) (Nat.zero_le _) (by omega) (by omega)
+    have hG0j0 : le1 (gexp M j0 Lb d0 d1 n) 0 j0 :=
+      (le1_iff_chain_window (by omega) hsp1).2
+        (fun x hx1 hx2 hne => le1_chain_window h.2.2 x hx1 (hx2.trans hsp2) hne)
+    have hM0j0 : le1 M 0 j0 := (le1_gexp_le hlen hLb hn le_rfl).1 hG0j0
+    have hlt0 : entry M 1 0 < entry M 1 j0 := le1_entry1_lt hM0j0 (by omega)
+    refine (le1_iff_chain_window (by omega)
+      ((rtg0_of_rtg1 hM0j0.2.2).trans (hrtgM q hq))).2 ?_
+    intro x hx1 hx2 hne
+    rcases Nat.lt_or_ge x (j0 + 1) with hxl | hxg
+    · obtain ⟨hs1, -⟩ := rtg0_split_at hup hx2 (by omega) (by omega) (by omega)
+      exact le1_chain_window hM0j0.2.2 x hx1 hs1 hne
+    · -- a window position: read it off the `k`-th mirror
+      have hxle : x ≤ j0 + q := nextrel0_rtrancl_index_le hx2
+      set q' : ℕ := x - j0 with hq'def
+      have hxe : x = j0 + q' := by omega
+      have hq'lt : q' < Lb := by omega
+      have hx'2 : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n))
+          (j0 + (k * Lb + q')) (j0 + (k * Lb + q)) :=
+        gexp_rtg0_mir hlen hk (by rw [← hxe]; exact hx2) q rfl hq
+      have hx'1 : Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) 0
+          (j0 + (k * Lb + q')) :=
+        (rtg0_of_rtg1 hG0j0.2.2).trans (hrtgG _ (by omega))
+      have hwin := le1_chain_window h.2.2 (j0 + (k * Lb + q')) hx'1 hx'2
+        (by omega)
+      rw [hE10] at hwin
+      have hval : entry (gexp M j0 Lb d0 d1 n) 1 (j0 + (k * Lb + q'))
+          = entry M 1 (j0 + q')
+            + (if le1 M j0 (j0 + q') then k * d1 else 0) := by
+        show ((gexp M j0 Lb d0 d1 n).getD (j0 + (k * Lb + q')) (0, 0, 0)).2.1 = _
+        rw [gexp_getD_mir hlen hk hq'lt]
+      rw [hval] at hwin
+      rw [hxe]
+      by_cases hg : le1 M j0 (j0 + q')
+      · have := le1_entry1_lt hg (by omega)
+        omega
+      · rw [if_neg hg] at hwin
+        omega
+  · -- `M`-side cone ⟹ `G`-side cone
+    intro h
+    obtain ⟨hsp1, hsp2⟩ :=
+      rtg0_split_at hup (rtg0_of_rtg1 h.2.2) (Nat.zero_le _) (by omega) (by omega)
+    have hM0j0 : le1 M 0 j0 :=
+      (le1_iff_chain_window (by omega) hsp1).2
+        (fun x hx1 hx2 hne => le1_chain_window h.2.2 x hx1 (hx2.trans hsp2) hne)
+    have hlt0 : entry M 1 0 < entry M 1 j0 := le1_entry1_lt hM0j0 (by omega)
+    have hG0j0 : le1 (gexp M j0 Lb d0 d1 n) 0 j0 :=
+      (le1_gexp_le hlen hLb hn le_rfl).2 hM0j0
+    refine (le1_iff_chain_window (by omega)
+      ((rtg0_of_rtg1 hG0j0.2.2).trans (hrtgG _ hbnd))).2 ?_
+    intro x hx1 hx2 hne
+    rcases Nat.lt_or_ge x (j0 + 1) with hxl | hxg
+    · obtain ⟨hs1, -⟩ := rtg0_split_at hgtG hx2 (by omega) (by omega) (by omega)
+      exact le1_chain_window hG0j0.2.2 x hx1 hs1 hne
+    · obtain ⟨k', q', hk', hq', rfl, hcase⟩ :=
+        gexp_chain_inversion hlen hk hq hup hd0e x hx2 (by omega)
+      rw [hE10]
+      have hval : entry (gexp M j0 Lb d0 d1 n) 1 (j0 + (k' * Lb + q'))
+          = entry M 1 (j0 + q')
+            + (if le1 M j0 (j0 + q') then k' * d1 else 0) := by
+        show ((gexp M j0 Lb d0 d1 n).getD (j0 + (k' * Lb + q')) (0, 0, 0)).2.1 = _
+        rw [gexp_getD_mir hlen (by omega) hq']
+      rw [hval]
+      rcases Nat.eq_zero_or_pos q' with rfl | hq'pos
+      · -- a copy root: it carries the bad root's row 1, possibly lifted
+        rw [Nat.add_zero]
+        split_ifs <;> omega
+      · have hM0q' : Relation.ReflTransGen (nextrel0 M) 0 (j0 + q') :=
+          (rtg0_of_rtg1 hM0j0.2.2).trans (hrtgM _ hq')
+        rcases hcase with ⟨-, hM⟩ | ⟨-, hM⟩
+        · have := le1_chain_window h.2.2 (j0 + q') hM0q' hM (by omega)
+          split_ifs <;> omega
+        · have := le1_chain_window hcone.2.2 (j0 + q') (hrtgM _ hq') hM (by omega)
+          split_ifs <;> omega
+
 end TRIO
