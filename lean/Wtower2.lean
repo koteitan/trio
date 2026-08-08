@@ -23,6 +23,7 @@ prev ∈ W (2v+z)  --(WL)-->  Lift1 prev d1 ∈ W (2v+z+2*d1) = W (2w+z) ⊆ W m
 import Wset
 import Wslift
 import Xbar
+import Pair.Bridge
 
 namespace TRIO
 
@@ -1861,6 +1862,57 @@ theorem diag1_mem_W (v e f : ℕ) : ∀ n : ℕ,
         rw [hdl]
         exact ih
 
+/-- **★ The diagonal at the root's own stage, for both `z ≤ 1`.**  `z = 0` is
+the pair theorem (`PairBridge.diag_mem_W`, transported from lean-yapss); `z = 1`
+is the `Pred` chain (`diag1_mem_W`).  This is the host `Q` that `(SUBST)`
+substitutes into. -/
+theorem diagz_mem_W {z : ℕ} (hz : z ≤ 1) (v e f : ℕ) (he : 0 < e) (n : ℕ) :
+    ((List.range n).map (fun k => ((k * e, v + k * f, z) : ℕ × ℕ × ℕ)))
+      ∈ W (2 * v + z) := by
+  rcases Nat.lt_or_ge z 1 with h | h
+  · have hz0 : z = 0 := by omega
+    subst hz0
+    simpa using PairBridge.diag_mem_W v e f n he
+  · have hz1 : z = 1 := by omega
+    subst hz1
+    exact diag1_mem_W v e f n
+
+section ShiftLift
+
+variable {X : TrioSeq} {a d j : ℕ}
+
+theorem entry0_shiftLift (hj : j < X.length) :
+    entry (shiftr01 a 0 (Lift1 X d)) 0 j = entry X 0 j + a := by
+  unfold entry
+  rw [shiftr01_getD (by rw [Lift1_length]; exact hj)]
+  show ((Lift1 X d).getD j (0, 0, 0)).1 + a = _
+  rw [Lift1_getD hj]
+  simp [entry, List.getD_eq_getElem?_getD]
+
+open Classical in
+theorem entry1_shiftLift (hj : j < X.length) :
+    entry (shiftr01 a 0 (Lift1 X d)) 1 j
+      = entry X 1 j + (if le1 X 0 j then d else 0) := by
+  unfold entry
+  rw [shiftr01_getD (by rw [Lift1_length]; exact hj)]
+  show ((Lift1 X d).getD j (0, 0, 0)).2.1 + 0 = _
+  rw [Lift1_getD hj]
+  simp [entry, List.getD_eq_getElem?_getD]
+
+theorem entry2_shiftLift (hj : j < X.length) :
+    entry (shiftr01 a 0 (Lift1 X d)) 2 j = entry X 2 j := by
+  unfold entry
+  rw [shiftr01_getD (by rw [Lift1_length]; exact hj)]
+  show ((Lift1 X d).getD j (0, 0, 0)).2.2 = _
+  rw [Lift1_getD hj]
+  simp [entry, List.getD_eq_getElem?_getD]
+
+@[simp] theorem shiftLift_length (X : TrioSeq) (a d : ℕ) :
+    (shiftr01 a 0 (Lift1 X d)).length = X.length := by
+  rw [shiftr01_length, Lift1_length]
+
+end ShiftLift
+
 /-- **(SUBST)** — the substitution closure, the shape `TowerExp2Root` needs for
 `|R| ≥ 2` (GRAFTALL-PLAN 4.15).  Replacing every column of a `W u` member by a
 block rooted at that column, whose other columns are strictly deeper and which
@@ -1875,9 +1927,10 @@ to be in `W (2v+z)` by `PairBridge.diag_mem_W` (`z = 0`) and `diag1_mem_W`
 Probe `tools/probe_subst.py`: 38403 decided instances, 0 violations. -/
 def SubstClosed : Prop :=
   ∀ (u : ℕ) (Q : TrioSeq) (B : ℕ → TrioSeq), Q ∈ W u →
-    (∀ k, k < Q.length →
-      (B k).getD 0 ((0, 0, 0) : ℕ × ℕ × ℕ) = Q.getD k ((0, 0, 0) : ℕ × ℕ × ℕ)) →
-    (∀ k, k < Q.length → ∀ p ∈ (B k).tail, entry Q 0 k < p.1) →
+    (∀ k, k < Q.length → 0 < (B k).length) →
+    (∀ k, k < Q.length → ∀ i, entry (B k) i 0 = entry Q i k) →
+    (∀ k, k < Q.length → ∀ j, 1 ≤ j → j < (B k).length →
+      entry Q 0 k < entry (B k) 0 j) →
     (∀ k, k < Q.length → B k ∈ W (lev Q k)) →
     ((List.range Q.length).flatMap B) ∈ W u
 
