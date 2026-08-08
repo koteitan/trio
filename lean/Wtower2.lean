@@ -1924,6 +1924,9 @@ end ShiftLift
 block rooted at that column, whose other columns are strictly deeper and which
 itself lies in `W` of that column's own level, keeps the stage.
 
+The host `Q` may be assumed to be a *chain* (strictly increasing in row 0),
+which is all the tower ever supplies.
+
 The tower instance: `Q` is the diagonal `[(k*d0, v + k*d1, z)]_{k<n}` — proved
 to be in `W (2v+z)` by `PairBridge.diag_mem_W` (`z = 0`) and `diag1_mem_W`
 (`z = 1`) — and `B k = shiftr01 (k*d0) 0 (Lift1 M.dropLast (k*d1))`
@@ -1933,6 +1936,7 @@ to be in `W (2v+z)` by `PairBridge.diag_mem_W` (`z = 0`) and `diag1_mem_W`
 Probe `tools/probe_subst.py`: 38403 decided instances, 0 violations. -/
 def SubstClosed : Prop :=
   ∀ (u : ℕ) (Q : TrioSeq) (B : ℕ → TrioSeq), Q ∈ W u →
+    (∀ k, k + 1 < Q.length → entry Q 0 k < entry Q 0 (k + 1)) →
     (∀ k, k < Q.length → 0 < (B k).length) →
     (∀ k, k < Q.length → ∀ i, entry (B k) i 0 = entry Q i k) →
     (∀ k, k < Q.length → ∀ j, 1 ≤ j → j < (B k).length →
@@ -2022,6 +2026,14 @@ theorem towerExp2Root_of_subst (hsub : SubstClosed) (hWL : LiftStage) :
   have hQmem : Q ∈ W (2 * v + z) := diagz_mem_W hz1 v D0 D1 hD0pos n
   -- assemble
   have hmain := hsub (2 * v + z) Q B hQmem
+    (by
+      intro k hk
+      have hk1 : k + 1 < n := by rw [← hQlen]; exact hk
+      rcases hQent k (by omega) with ⟨e0, -, -⟩
+      rcases hQent (k + 1) hk1 with ⟨e0', -, -⟩
+      rw [e0, e0']
+      have hmul : (k + 1) * D0 = k * D0 + D0 := Nat.succ_mul k D0
+      omega)
     (by intro k hk; rw [hBlen k]; exact hMdlen)
     (by
       intro k hk i
