@@ -1,13 +1,12 @@
-v0.118.124/close the mirror half of (SUBST1g)
+v0.118.125/reduce (SUBST1g) to the revival case
 
-- Add Subst1gDead: (SUBST1g) restricted to a short tail D = S.drop (p+1) or a
-  tail whose own trailing column is an orphan inside D
-- Prove subst1g_of_dead by induction on the host's W datum: when D has >= 2
-  columns and its trailing column has a parent inside D, Xbar.oper_append_inner
-  mirrors oper across the substitution with no rsum, and the datum at S[n]
-  gives the goal (clause 3 supplies graft S [] = S.dropLast = S[n])
-- Wire Final.TRIO_terminates_of_dead / no_infinite_expansion_of_dead
-- Add tools/probe_subst1_ind.py: MIRROR 105532 / INNER 65673 / residue 38996,
-  both identities exact
-- Add tools/audit_subst1g_stts.py (ST_TS hosts and blocks, 651 decided
-  0 violations) and tools/probe_subst1g_adv.py (adversarial residue-only hunt)
+- Add SubstProp / substProp_nil and induct on the host's W datum over the
+  PREFIX-CLOSED property, so prefixes come free from the datum
+  (oper_take_prefix for clause 2, graft M [] = M.dropLast for clause 3)
+- Close the mirror case with Xbar.oper_append_inner, which needs no rsum and
+  applies to S = S.take (p+1) ++ D and R = (S.take p ++ C) ++ D alike
+- Close the orphan case: oper peels and the peel is the substitution on the
+  prefix S.dropLast
+- Replace Subst1gDead by Subst1gRevive (D = [] or R's trailing column has a
+  parent while being an orphan inside D) and add not_hasParent_zero
+- Rewire Final.TRIO_terminates_of_revive / no_infinite_expansion_of_revive

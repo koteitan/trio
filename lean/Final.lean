@@ -273,24 +273,31 @@ theorem no_infinite_expansion_of_subst1g (hs : Subst1g) :
       (towerExp2Root_of_subst (substClosed_of_substClosedG hgG) hWL)
   exact no_infinite_expansion_of_tower htowS (towerExp_of_substG hgG htowS h2)
 
-/-- **★★★★ Trio sequences terminate, modulo the DEAD-ORPHAN half of `(SUBST1g)`.**
+/-- **★★★★ Trio sequences terminate, modulo the REVIVAL case alone.**
 
-`subst1g_of_dead` runs the induction on the host's `W` datum and closes every
-case in which the tail `D = S.drop (p+1)` has ≥ 2 columns and its own trailing
-column has a parent INSIDE `D`: there `Xbar.oper_append_inner` — which needs no
-`rsum` — mirrors `oper` across the substitution, and the induction hypothesis at
-`S⟦n⟧` is exactly the goal.
+`subst1g_of_revive` runs the induction on the host's `W` datum over the
+prefix-closed substitution property and closes everything except one shape.
+Writing `D = S.drop (p+1)` and `R` for the substituted sequence:
 
-So the whole termination proof now rests on the single shape this campaign keeps
-meeting: `D` is short, or `D`'s trailing column is an ORPHAN inside `D`, so any
-parent it has is supplied by the CONTEXT. -/
-theorem TRIO_terminates_of_dead (hdead : Subst1gDead) : WellFounded stepRel :=
-  TRIO_terminates_of_subst1g (subst1g_of_dead hdead)
+* **mirror** — `D` has ≥ 2 columns and its trailing column has a parent inside
+  `D`: `Xbar.oper_append_inner` (no `rsum`) mirrors `oper` across the
+  substitution and the datum at `S⟦n⟧` is the goal;
+* **orphan** — `D ≠ []` and `R`'s trailing column has no parent in `R` either:
+  `oper` peels, and the peel is the substitution on the PREFIX `S.dropLast`,
+  which the prefix package supplies;
+* clause 1 is immediate (`C ∈ W 0 ⊆ W u`).
 
-/-- **No infinite expansion sequence**, from the dead-orphan half alone. -/
-theorem no_infinite_expansion_of_dead (hdead : Subst1gDead) :
+What survives is `Subst1gRevive`: the block sits at the very end (`D = []`), or
+`R`'s trailing column HAS a parent although it is an orphan inside `D` — i.e.
+**the context revives a dead orphan**.  That single shape now carries the whole
+termination theorem. -/
+theorem TRIO_terminates_of_revive (hrev : Subst1gRevive) : WellFounded stepRel :=
+  TRIO_terminates_of_subst1g (subst1g_of_revive hrev)
+
+/-- **No infinite expansion sequence**, from the revival case alone. -/
+theorem no_infinite_expansion_of_revive (hrev : Subst1gRevive) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion_of_subst1g (subst1g_of_dead hdead)
+  no_infinite_expansion_of_subst1g (subst1g_of_revive hrev)
 
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
