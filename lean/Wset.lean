@@ -1810,6 +1810,99 @@ theorem hasParent_zero_iff {M : TrioSeq} {b : ℕ} (hb : b < M.length) :
         have := hPg.2
         omega
 
+theorem rtg1_le' {X : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 X) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_rfl
+  | @tail y z _ hyz ih => exact le_trans ih (le_of_lt hyz.2.2.1)
+
+/-- **Row-1 companion of `hasParent_zero_iff`.**  A column has a row-1 parent as
+soon as SOME row-0 ancestor is strictly lower in row 1: the *greatest* such
+ancestor is the parent, because `nextrel1`'s minimality clause only speaks about
+row-0 ancestors above it, and every rival candidate is one. -/
+theorem hasParent_one_of {M : TrioSeq} {b k : ℕ} (hb : b < M.length)
+    (hk1 : k < b) (hk0 : le0 M k b) (hk2 : entry M 1 k < entry M 1 b) :
+    hasParent M 1 b := by
+  classical
+  have nR : ∀ j : ℕ, nextR M 1 j b ↔ nextrel1 M j b := by
+    intro j; unfold nextR; rw [if_neg (by omega), if_pos rfl]
+  set P : ℕ → Prop := fun t => t < b ∧ le0 M t b ∧ entry M 1 t < entry M 1 b
+    with hP
+  have hPg : P (Nat.findGreatest P b) :=
+    Nat.findGreatest_spec (m := k) (le_of_lt hk1) ⟨hk1, hk0, hk2⟩
+  have hmax : ∀ t, P t → t ≤ Nat.findGreatest P b :=
+    fun t ht => Nat.le_findGreatest (le_of_lt ht.1) ht
+  refine ⟨Nat.findGreatest P b, (nR _).mpr ?_, ?_⟩
+  · refine ⟨by omega, hb, hPg.1, hPg.2.2, hPg.2.1, ?_⟩
+    intro j hj
+    by_contra hcon
+    have hjle : j ≤ b := rtg0_le hj.2.2.2
+    have hjb : j < b := by
+      rcases Nat.eq_or_lt_of_le hjle with rfl | hlt
+      · omega
+      · exact hlt
+    exact absurd (hmax j ⟨hjb, hj.2, by omega⟩) (by omega)
+  · intro y hy
+    have hy' : nextrel1 M y b := (nR y).mp hy
+    have hyP : P y := ⟨hy'.2.2.1, hy'.2.2.2.2.1, hy'.2.2.2.1⟩
+    rcases eq_or_lt_of_le (hmax y hyP) with h | h
+    · exact h
+    · have h2 := hy'.2.2.2.2.2 (Nat.findGreatest P b) ⟨h, hPg.2.1⟩
+      have h3 := hPg.2.2
+      omega
+
+/-- **Row-2 companion.**  Same statement one row up, with `le1` in place of
+`le0`.  Together with `hasParent_one_of` this says that a column is an orphan
+*exactly* when no ancestor in the row below is strictly lower in its own row —
+the fact behind "`(x,0,1)` is a permanent orphan". -/
+theorem hasParent_two_of {M : TrioSeq} {b k : ℕ} (hb : b < M.length)
+    (hk1 : k < b) (hk0 : le1 M k b) (hk2 : entry M 2 k < entry M 2 b) :
+    hasParent M 2 b := by
+  classical
+  have nR : ∀ j : ℕ, nextR M 2 j b ↔ nextrel2 M j b := by
+    intro j; unfold nextR; rw [if_neg (by omega), if_neg (by omega)]
+  set P : ℕ → Prop := fun t => t < b ∧ le1 M t b ∧ entry M 2 t < entry M 2 b
+    with hP
+  have hPg : P (Nat.findGreatest P b) :=
+    Nat.findGreatest_spec (m := k) (le_of_lt hk1) ⟨hk1, hk0, hk2⟩
+  have hmax : ∀ t, P t → t ≤ Nat.findGreatest P b :=
+    fun t ht => Nat.le_findGreatest (le_of_lt ht.1) ht
+  refine ⟨Nat.findGreatest P b, (nR _).mpr ?_, ?_⟩
+  · refine ⟨by omega, hb, hPg.1, hPg.2.2, hPg.2.1, ?_⟩
+    intro j hj
+    by_contra hcon
+    have hjle : j ≤ b := rtg1_le' hj.2.2.2
+    have hjb : j < b := by
+      rcases Nat.eq_or_lt_of_le hjle with rfl | hlt
+      · omega
+      · exact hlt
+    exact absurd (hmax j ⟨hjb, hj.2, by omega⟩) (by omega)
+  · intro y hy
+    have hy' : nextrel2 M y b := (nR y).mp hy
+    have hyP : P y := ⟨hy'.2.2.1, hy'.2.2.2.2.1, hy'.2.2.2.1⟩
+    rcases eq_or_lt_of_le (hmax y hyP) with h | h
+    · exact h
+    · have h2 := hy'.2.2.2.2.2 (Nat.findGreatest P b) ⟨h, hPg.2.1⟩
+      have h3 := hPg.2.2
+      omega
+
+/-- **`(x,0,1)` is a permanent orphan.**  A row-2 parent must be a row-1
+ancestor, and a nontrivial row-1 chain ends in a strict row-1 rise, so a column
+whose row 1 is `0` can never acquire a row-2 parent — in ANY context.  This is
+the structural fact that refutes the `natDom` guard (GRAFTALL-PLAN 4.5). -/
+theorem no_hasParent_two_of_row1_zero {M : TrioSeq} {b : ℕ} (hb : 0 < b)
+    (h1 : entry M 1 b = 0) : ¬ hasParent M 2 b := by
+  rintro ⟨j0, hj0, -⟩
+  have hn2 : nextrel2 M j0 b := by
+    unfold nextR at hj0
+    rw [if_neg (by omega), if_neg (by omega)] at hj0
+    exact hj0
+  have hlt : j0 < b := hn2.2.2.1
+  rcases Relation.ReflTransGen.cases_tail hn2.2.2.2.2.1.2.2 with heq | ⟨c, -, hcb⟩
+  · omega
+  · have := hcb.2.2.2.1
+    omega
+
 /-- The root of a principal block is a row-0 ancestor of every column. -/
 theorem le0_cons_zero {v z : ℕ} {R : TrioSeq} (hR : argOK R) :
     ∀ j, j < R.length → le0 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 (j + 1) := by
@@ -2333,6 +2426,27 @@ unnecessary. -/
 def Wstar : Set TrioSeq :=
   {R | argOK R → ∀ v z a : ℕ, z ≤ 1 → 2 * v + z ≤ a →
     (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W a}
+
+/-- **A row-1 orphan is always dominated by the root.**  If the principal root
+fails to revive `R`'s trailing column at row 1, that column's row 1 is at most
+`v`, so its level is at most `2v ≤ 2v+z` — the orphan is automatically BELOW the
+root's stage.  No such bound holds at row 2 (`no_hasParent_two_of_row1_zero`
+gives permanent orphans of level 1 under a level-0 root), and that asymmetry is
+exactly why trio needs more than yapss. -/
+theorem entry1_le_of_dead_one {v z : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ [])
+    (hnp : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 R.length) :
+    entry R 1 (R.length - 1) ≤ v := by
+  by_contra hcon
+  push_neg at hcon
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  refine hnp (hasParent_one_of (b := R.length) (k := 0) (by simp) hRlen ?_ ?_)
+  · have h := le0_cons_zero (v := v) (z := z) hR (R.length - 1) (by omega)
+    rwa [← len_succ hRne] at h
+  · rw [entry_cons_last hRne 1]
+    have hr : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+    rw [hr]
+    exact hcon
 
 /-- The principal root inherits `R`'s own parent, shifted by one. -/
 theorem hasParent_cons_of {v z : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
