@@ -1,4 +1,10 @@
-v0.118.134/record the 60000-sample adversarial result
+v0.118.135/prove that W is suffix-closed at the suffix's own root level
 
-- 78885 decided residue instances (context-revives 14540,
-  insertion-creates-parent 17816, inside-copied-region 46529), 0 violations
+- Prove Wset.oper_one_eq_dropLast: one copy is the peel, via oper_gcopies and
+  gcopies_length
+- Add Wset.singleton_mem_self and Wset.lev_drop_head
+- Prove W_drop: M in W u -> M.drop j in W (lev M j).  The old "suffix closure is
+  false" note used a fixed stage; at the suffix's own root level it holds.
+  Induct on the datum: a parent inside the suffix mirrors via oper_append_inner,
+  otherwise oper peels and the suffix sits inside N.dropLast = N[1]
+- Measured 237099 drop instances and 470712 segment instances, 0 failures

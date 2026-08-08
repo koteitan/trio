@@ -2932,6 +2932,48 @@ theorem gcopies_length (M : TrioSeq) (r L d0 d1 n : ℕ) :
       simp only [List.length_append, List.flatMap_cons, List.flatMap_nil,
         List.append_nil, ih, gcopy_len, Nat.succ_mul]
 
+/-- One copy is the peel: `M⟦1⟧ = M.dropLast`, always. -/
+theorem oper_one_eq_dropLast {M : TrioSeq} (hL : 1 < M.length) :
+    M⟦1⟧ = M.dropLast := by
+  classical
+  obtain ⟨R, hR⟩ := oper_eq_dropLast_append hL le_rfl
+  have hlen : (M⟦1⟧).length = M.length - 1 := by
+    by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+        entry M 2 (M.length - 1) = 0
+    · rw [oper_eq_pred_of_zero 1 (by omega) hz]
+      unfold Pred
+      rw [if_neg (by omega), List.length_dropLast]
+    · by_cases hp : hasParent M (srow M (M.length - 1)) (M.length - 1)
+      · rw [oper_gcopies 1 (by omega) hz hp, List.length_append, gcopies_length]
+        have hpar : parent M (srow M (M.length - 1)) (M.length - 1) < M.length - 1 :=
+          nextR_index_lt (parent_nextR hp)
+        have h2 : (M.take (parent M (srow M (M.length - 1)) (M.length - 1))).length
+            = min (parent M (srow M (M.length - 1)) (M.length - 1)) M.length :=
+          List.length_take
+        omega
+      · rw [oper_eq_pred_of_noParent 1 (by omega) hz hp]
+        unfold Pred
+        rw [if_neg (by omega), List.length_dropLast]
+  have hRnil : R = [] := by
+    have hc := congrArg List.length hR
+    rw [hlen, List.length_append, List.length_dropLast] at hc
+    exact List.eq_nil_of_length_eq_zero (by omega)
+  rw [hR, hRnil, List.append_nil]
+
+/-- A singleton sits at exactly its own level. -/
+theorem singleton_mem_self (c : ℕ × ℕ × ℕ) : [c] ∈ W (lev [c] 0) := by
+  have hOm := W_shift (Om_mem_W c.2.1 c.2.2) c.1
+  have hsh : shiftr01 c.1 0 [((0, c.2.1, c.2.2) : ℕ × ℕ × ℕ)] = [c] := by
+    unfold shiftr01; simp
+  rw [hsh] at hOm
+  rw [show lev [c] 0 = 2 * c.2.1 + c.2.2 from by simp [lev, entry]]
+  exact hOm
+
+theorem lev_drop_head (N : TrioSeq) (j : ℕ) : lev (N.drop j) 0 = lev N j := by
+  unfold lev entry
+  rw [getD_drop]
+  simp only [Nat.add_zero]
+
 theorem glift_gcopies (M : TrioSeq) (L d0 d1 : ℕ) : ∀ n,
     (List.range n).flatMap (fun k => glift M L d0 d1 (gcopy M 0 L d0 d1 k))
       = glift M L d0 d1 (gcopies M 0 L d0 d1 n) := by

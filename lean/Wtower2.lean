@@ -2283,6 +2283,129 @@ theorem mem_ge_of_deep {C : TrioSeq} {x : ℕ} (hhead : entry C 0 0 = x)
 theorem substProp_nil (u : ℕ) : SubstProp u [] := by
   intro p C hp; simp at hp
 
+open Classical in
+/-- **★★★ Every SUFFIX of a `W`-member is a `W`-member at its own root's level.**
+
+The old note "suffix closure of `W` is false" used a FIXED stage
+(`[(0,0,0),(1,1,0)] ∈ W 0` but `[(1,1,0)]` needs `W 2`); with `W_root_stage` the
+right stage is the suffix's own root level, and then it holds.
+
+Induct on the datum.  With `T = N.drop j` and `2 ≤ |T|`: if `T`'s trailing column
+has a parent inside `T`, `Xbar`-free `oper_append_inner` gives
+`N⟦n⟧ = N.take j ++ T⟦n⟧`, so `T⟦n⟧` is a suffix of `N⟦n⟧` and the datum applies;
+otherwise `oper` peels `T` and `T⟦n⟧` is a suffix of `N.dropLast = N⟦1⟧`.  The
+short cases are `singleton_mem_self` and `W_nil`.
+
+Probe: 237099 `drop` instances and 470712 segment instances, 0 failures. -/
+theorem W_drop {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ) :
+    M.drop j ∈ W (lev M j) := by
+  classical
+  have hsub : W u ⊆ {N : TrioSeq | N ∈ W u ∧ ∀ j, N.drop j ∈ W (lev N j)} := by
+    refine A2' ?_
+    intro N hA
+    have hmem : N ∈ W u := by
+      refine A1_intro ?_
+      rcases hA with h' | h' | ⟨m, hm, hd, hgr⟩
+      · exact Or.inl h'
+      · exact Or.inr (Or.inl fun n hn => (h' n hn).1)
+      · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb => (hgr z hz hb).1⟩)
+    refine ⟨hmem, fun j => ?_⟩
+    rcases Nat.eq_zero_or_pos j with rfl | hjpos
+    · rw [List.drop_zero]
+      by_cases hne : N = []
+      · subst hne; exact W_nil _
+      · exact W_root_stage hmem hne
+    · by_cases hjlen : N.length ≤ j
+      · rw [List.drop_eq_nil_of_le hjlen]; exact W_nil _
+      · have hlv0 : lev (N.drop j) 0 = lev N j := lev_drop_head N j
+        have hTlen : (N.drop j).length = N.length - j := by simp
+        rcases Nat.lt_or_ge ((N.drop j).length) 2 with hshort | hbig
+        · obtain ⟨c, hc⟩ : ∃ c, N.drop j = [c] := by
+            have h1 : (N.drop j).length = 1 := by omega
+            cases hD : N.drop j with
+            | nil => rw [hD] at h1; simp at h1
+            | cons a t =>
+                refine ⟨a, ?_⟩
+                rw [hD] at h1
+                simp only [List.length_cons] at h1
+                rw [List.eq_nil_of_length_eq_zero (show t.length = 0 by omega)]
+          rw [hc]
+          rw [hc] at hlv0
+          rw [← hlv0]
+          exact singleton_mem_self c
+        · -- `|T| ≥ 2`
+          have hNlen : 1 < N.length := by omega
+          have hjlt : j + 1 ≤ N.length - 1 := by omega
+          have htkj : (N.take j).length = j := by
+            have h2 : (N.take j).length = min j N.length := List.length_take
+            omega
+          have hsplit : N.take j ++ N.drop j = N := List.take_append_drop _ _
+          have hdatum : ∀ n, 1 ≤ n →
+              (N⟦n⟧ ∈ W u ∧ ∀ i, (N⟦n⟧).drop i ∈ W (lev (N⟦n⟧) i)) := by
+            rcases hA with h' | h' | ⟨m, hm, hd, hgr⟩
+            · exact absurd h'.1 (by omega)
+            · exact h'
+            · intro n hn
+              rw [oper_eq_graft_nil_of_domT (by omega) hd]
+              exact hgr [] (W_nil m) based_nil
+          have hlevop : ∀ n, 1 ≤ n → lev (N⟦n⟧) j = lev N j := by
+            intro n hn
+            have htk := oper_take_prefix hNlen hn hjlt
+            have e : ∀ i, entry (N⟦n⟧) i j = entry N i j := by
+              intro i
+              rw [← Wset.entry_take (X := N⟦n⟧) (l := j + 1) (i := i) (by omega),
+                ← Wset.entry_take (X := N) (l := j + 1) (i := i) (by omega), htk]
+            unfold lev
+            rw [e 1, e 2]
+          have hNdl : N.dropLast ∈ W u ∧
+              ∀ i, (N.dropLast).drop i ∈ W (lev (N.dropLast) i) := by
+            have := hdatum 1 le_rfl
+            rwa [oper_one_eq_dropLast hNlen] at this
+          rw [← hlv0]
+          refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+          rw [hlv0]
+          by_cases hTp : hasParent (N.drop j)
+              (srow (N.drop j) ((N.drop j).length - 1)) ((N.drop j).length - 1)
+          · have hTne : N.drop j ≠ [] := by
+              intro hc; rw [hc] at hbig; simp at hbig
+            have hop : N⟦n⟧ = N.take j ++ (N.drop j)⟦n⟧ := by
+              conv_lhs => rw [← hsplit]
+              exact oper_append_inner n hTne (by omega) hTp
+            have hdr : (N⟦n⟧).drop j = (N.drop j)⟦n⟧ := by
+              have hdl : (N.take j ++ (N.drop j)⟦n⟧).drop (N.take j).length
+                  = (N.drop j)⟦n⟧ := List.drop_left
+              rw [htkj] at hdl
+              rw [hop, hdl]
+            rw [← hdr, ← hlevop n hn]
+            exact (hdatum n hn).2 j
+          · have hzz : ¬ (entry (N.drop j) 0 ((N.drop j).length - 1) = 0 ∧
+                entry (N.drop j) 1 ((N.drop j).length - 1) = 0 ∧
+                entry (N.drop j) 2 ((N.drop j).length - 1) = 0) ∨
+                (entry (N.drop j) 0 ((N.drop j).length - 1) = 0 ∧
+                entry (N.drop j) 1 ((N.drop j).length - 1) = 0 ∧
+                entry (N.drop j) 2 ((N.drop j).length - 1) = 0) := by
+              tauto
+            have hpred : (N.drop j)⟦n⟧ = (N.drop j).dropLast := by
+              rcases hzz with hz | hz
+              · rw [oper_eq_pred_of_noParent n (by omega) hz hTp]
+                unfold Pred; rw [if_neg (by omega)]
+              · rw [oper_eq_pred_of_zero n (by omega) hz]
+                unfold Pred; rw [if_neg (by omega)]
+            rw [hpred]
+            have heq : (N.drop j).dropLast = (N.dropLast).drop j := by
+              rw [List.dropLast_eq_take, List.dropLast_eq_take, List.drop_take]
+              congr 1
+              simp
+              omega
+            have hlevdl : lev (N.dropLast) j = lev N j := by
+              unfold lev
+              rw [List.dropLast_eq_take,
+                Wset.entry_take (X := N) (l := N.length - 1) (i := 1) (by omega),
+                Wset.entry_take (X := N) (l := N.length - 1) (i := 2) (by omega)]
+            rw [heq, ← hlevdl]
+            exact hNdl.2 j
+  exact (hsub h).2 j
+
 /-- **The stage-free form of `W`.**  `W_root_stage` and `lev_root_le_of_mem_W`
 together give `M ∈ W u ↔ M ∈ Wself ∧ lev M 0 ≤ u`: the whole indexed family
 collapses to ONE set plus a root-level side condition. -/
