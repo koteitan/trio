@@ -3186,7 +3186,7 @@ Final.TRIO_terminates_of_cat_subst : WCat → SubstClosed → WellFounded stepRe
 | 核 | 内容 | 計測 |
 |---|---|---|
 | `(CAT) WCat` | `A, B ∈ W u → A ++ B ∈ W u` | 372290 対 0 違反 |
-| `(SUBST) SubstClosed` | `W u` の各列の下に「その列のレベルの `W` ブロック」を挿しても `W u` | 判定 38403 例 0 違反 |
+| `(SUBST) SubstClosed` | `W u` の各列（**行 0 で狭義増加＝鎖でよい**）の下に「その列のレベルの `W` ブロック」を挿しても `W u` | 判定 38403 例 0 違反 |
 
 ### 配線（すべて Lean 済み）
 
