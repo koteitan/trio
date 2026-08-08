@@ -1,6 +1,6 @@
-v0.118.145/size the inW truncation check to finish
+v0.118.146/list the evaluated next moves
 
-- Drop the n <= 4 variant (its expansions blow the length budget) and cut the
-  bounds to MAXDEPTH 8 / MAXLEN 30 / AMAX 6 with a 700-sequence random tail; the
-  full-bounds run was killed after 53 minutes without printing
-- Print progress every 200 sequences
+- Add PROOF-STATUS 7: five candidate attacks with their assessed cost, and the
+  routes already shown to circle back through TowerExp
+- Note that passing the induction context into the residue is the cheapest way
+  to weaken the core
