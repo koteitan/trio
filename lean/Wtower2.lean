@@ -2458,6 +2458,85 @@ theorem zeroRow2_mem_Wself {M : TrioSeq} (hz : ∀ p ∈ M, p.2.2 = 0) : M ∈ W
       rw [← hemb]; exact PairBridge.emb_mem_W h1
     exact W_root_stage h2 hne
 
+theorem gcopy_row2 {M : TrioSeq} {r L d0 d1 k : ℕ} {q : ℕ × ℕ × ℕ}
+    (hq : q ∈ gcopy M r L d0 d1 k) : ∃ j, r ≤ j ∧ j < r + L ∧ q.2.2 = entry M 2 j := by
+  unfold gcopy at hq
+  rw [List.mem_map] at hq
+  obtain ⟨j, hj, rfl⟩ := hq
+  rw [List.mem_range'] at hj
+  obtain ⟨i, hi, rfl⟩ := hj
+  exact ⟨r + 1 * i, by omega, by omega, rfl⟩
+
+theorem gcopies_row2 {M : TrioSeq} {r L d0 d1 n : ℕ} {q : ℕ × ℕ × ℕ}
+    (hq : q ∈ gcopies M r L d0 d1 n) :
+    ∃ j, r ≤ j ∧ j < r + L ∧ q.2.2 = entry M 2 j := by
+  unfold gcopies at hq
+  rw [List.mem_flatMap] at hq
+  obtain ⟨k, -, hk⟩ := hq
+  exact gcopy_row2 hk
+
+open Classical in
+/-- **★★ A row-2-free block carries ANY trailing column.**
+
+If every column of `M'` has row 2 = 0 then `M' ++ [t] ∈ Wself` for an arbitrary
+`t` — arbitrary depth, arbitrary level.  The reason is that `oper` never copies
+the trailing column: either it is an orphan and `oper` peels back to `M'`, or the
+copies are taken from `M[j0 .. |M|-2] ⊆ M'`, so the whole expansion is again
+row-2-free and `zeroRow2_mem_Wself` applies.  Row 2 is never incremented by an
+expansion, so the copies stay row-2-free.
+
+This strictly generalises `two_col_mem_W` (the case `|M'| = 1`). -/
+theorem snoc_zeroRow2 {M' : TrioSeq} (hz : ∀ p ∈ M', p.2.2 = 0) (t : ℕ × ℕ × ℕ) :
+    (M' ++ [t]) ∈ Wself := by
+  classical
+  by_cases hnil : M' = []
+  · subst hnil
+    simpa using singleton_mem_self t
+  · have hM'len : 0 < M'.length := List.length_pos_iff.mpr hnil
+    set M : TrioSeq := M' ++ [t] with hM
+    have hlen : M.length = M'.length + 1 := by rw [hM, List.length_append]; simp
+    have hdl : M.dropLast = M' := by rw [hM]; simp
+    have hroot : ∀ i, entry M i 0 = entry M' i 0 :=
+      fun i => entry_append_left _ _ (by omega)
+    have hlv : lev M 0 = lev M' 0 := by unfold lev; rw [hroot 1, hroot 2]
+    have hM'z : ∀ j, j < M'.length → entry M' 2 j = 0 :=
+      fun j hj => hz _ (entry_pair_mem hj)
+    refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+    have hlevop : lev (M⟦n⟧) 0 = lev M 0 := by
+      have htk := oper_take_prefix (M := M) (by omega) hn (i := 1) (by omega)
+      have e : ∀ i, entry (M⟦n⟧) i 0 = entry M i 0 := by
+        intro i
+        rw [← Wset.entry_take (X := M⟦n⟧) (l := 1) (i := i) (by omega),
+          ← Wset.entry_take (X := M) (l := 1) (i := i) (by omega), htk]
+      unfold lev
+      rw [e 1, e 2]
+    have hgoal : ∀ q ∈ M⟦n⟧, q.2.2 = 0 := by
+      by_cases hp : hasParent M (srow M (M.length - 1)) (M.length - 1)
+      · have hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+            entry M 2 (M.length - 1) = 0) := by
+          rintro ⟨h0, -, -⟩
+          exact no_hasParent_of_row0_zero h0 hp
+        rw [oper_gcopies n (by omega) hzz hp]
+        intro q hq
+        have hj0 : parent M (srow M (M.length - 1)) (M.length - 1) < M.length - 1 :=
+          nextR_index_lt (parent_nextR hp)
+        rcases List.mem_append.mp hq with hq | hq
+        · rw [List.take_append_of_le_length (by omega)] at hq
+          exact hz q (List.mem_of_mem_take hq)
+        · obtain ⟨j, -, hjlt, hqj⟩ := gcopies_row2 hq
+          rw [hqj, entry_append_left _ _ (by omega), hM'z j (by omega)]
+      · have hpred : M⟦n⟧ = Pred M := by
+          by_cases hzz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+              entry M 2 (M.length - 1) = 0
+          · exact oper_eq_pred_of_zero n (by omega) hzz
+          · exact oper_eq_pred_of_noParent n (by omega) hzz hp
+        rw [hpred]
+        unfold Pred
+        rw [if_neg (by omega), hdl]
+        exact hz
+    rw [← hlevop]
+    exact zeroRow2_mem_Wself hgoal
+
 theorem drop_mem_Wself {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ) :
     M.drop j ∈ Wself := by
   have := W_drop h j
@@ -2526,7 +2605,7 @@ def Subst1gReviveSelf : Prop :=
         ¬ hasParent (S.drop (p + 1))
           (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
           ((S.drop (p + 1)).length - 1))) →
-    (∃ q ∈ S.take p ++ C ++ S.drop (p + 1), 0 < q.2.2) →
+    (∃ q ∈ (S.take p ++ C ++ S.drop (p + 1)).dropLast, 0 < q.2.2) →
     (S.take p ++ C ++ S.drop (p + 1)) ∈ Wself
 
 theorem subst1gRevive_of_self (h : Subst1gReviveSelf) : Subst1gRevive := by
@@ -2534,11 +2613,20 @@ theorem subst1gRevive_of_self (h : Subst1gReviveSelf) : Subst1gRevive := by
   obtain ⟨hSself, hSlev⟩ := (mem_Wself_iff u S).mp hS
   obtain ⟨hCself, hClev⟩ := (mem_Wself_iff (lev S p) C).mp hCW
   refine (mem_Wself_iff u _).mpr ⟨?_, ?_⟩
-  · by_cases hz2 : ∃ q ∈ S.take p ++ C ++ S.drop (p + 1), 0 < q.2.2
+  · by_cases hz2 : ∃ q ∈ (S.take p ++ C ++ S.drop (p + 1)).dropLast, 0 < q.2.2
     · exact h p S C hSself hp hCne hCself hClev hhead hdeep hRp hdisj hz2
-    · refine zeroRow2_mem_Wself (fun q hq => ?_)
-      by_contra hc
-      exact hz2 ⟨q, hq, by omega⟩
+    · have hCpos : 0 < C.length := List.length_pos_iff.mpr hCne
+      have hRne : S.take p ++ C ++ S.drop (p + 1) ≠ [] := by
+        intro hc
+        have hl : (S.take p ++ C ++ S.drop (p + 1)).length = 0 := by rw [hc]; simp
+        rw [List.length_append, List.length_append] at hl
+        omega
+      have hzz : ∀ q ∈ (S.take p ++ C ++ S.drop (p + 1)).dropLast, q.2.2 = 0 := by
+        intro q hq
+        by_contra hc
+        exact hz2 ⟨q, hq, by omega⟩
+      have hsn := snoc_zeroRow2 hzz ((S.take p ++ C ++ S.drop (p + 1)).getLast hRne)
+      rwa [List.dropLast_append_getLast hRne] at hsn
   have hr : ∀ i, entry (S.take p ++ C ++ S.drop (p + 1)) i 0
       = if p = 0 then entry C i 0 else entry S i 0 :=
     fun i => entry_subst_root hCne hp i

@@ -1,6 +1,9 @@
-v0.118.146/list the evaluated next moves
+v0.118.147/carry an arbitrary trailing column over a row-2-free block
 
-- Add PROOF-STATUS 7: five candidate attacks with their assessed cost, and the
-  routes already shown to circle back through TowerExp
-- Note that passing the induction context into the residue is the cheapest way
-  to weaken the core
+- Prove snoc_zeroRow2: (forall p in M', p.2.2 = 0) -> M' ++ [t] in Wself for an
+  arbitrary t.  oper never copies the trailing column, so the expansion is again
+  row-2-free and zeroRow2_mem_Wself applies; row 2 is never incremented
+- Add gcopy_row2 / gcopies_row2 for the row-2 transport
+- This strictly generalises two_col_mem_W (the |M'| = 1 case)
+- Narrow Subst1gReviveSelf: the row-2 column must now sit in R.dropLast, since a
+  row-2-free R.dropLast is discharged by snoc_zeroRow2
