@@ -1155,4 +1155,242 @@ theorem liftStageParented_of_srow1
     LiftStageParented :=
   liftStageParented_of_cases lspOn_pos lspOn_srow2 lspOn_srow0 hs1
 
+/-! ### 最後の枝 `badPar = 0, i1 = 1` を**行 0 ずらしコピー塔**に還元する
+
+`i1 = 1` では `d1 = 0`、`d0 = entry X 0 j1 - entry X 0 0 > 0` なので、展開は
+`X.dropLast` の行 0 ずらしコピー塔そのものである:
+
+```
+X⟦n⟧ = shTower X.dropLast d0 n = ⧺_{k<n} shiftr01 (k*d0) 0 X.dropLast
+```
+
+`Lift1` は行 0 を動かさないので同じ `d0` で `(Lift1 X d)⟦n⟧ = shTower Q d0 n`
+（`Q = Lift1 X.dropLast d`）。ここで仮定 `hop` は **`n = 1` でだけ**使えば足りる:
+`X⟦1⟧ = X.dropLast` なので `hop 1` がそのまま `Q ∈ W (m+2d)` を与える。
+したがってこの枝は
+
+```
+(TOW)   Q ∈ W u → （根が最浅） → shTower Q e n ∈ W u
+```
+
+という**リフトを一切含まない純粋な `W` の閉包**に還元される。計測
+`tools/probe_core1.py` (C): 6244 例で違反 0、しかも `minstage` は**等号**
+（塔は段を一切上げない）。 -/
+
+/-- The row-0-shifted copy tower: `n` copies of `Q`, the `k`-th sunk by `k * e`. -/
+def shTower (Q : TrioSeq) (e n : ℕ) : TrioSeq :=
+  (List.range n).flatMap fun k => shiftr01 (k * e) 0 Q
+
+@[simp] theorem shTower_zero (Q : TrioSeq) (e : ℕ) : shTower Q e 0 = [] := rfl
+
+@[simp] theorem shTower_one (Q : TrioSeq) (e : ℕ) : shTower Q e 1 = Q := by
+  unfold shTower
+  simp
+
+open Classical in
+theorem gcopy_shift0 (M : TrioSeq) (L d0 k : ℕ) :
+    gcopy M 0 L d0 0 k = shiftr01 (k * d0) 0 (seg M 0 L) := by
+  unfold gcopy seg shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro j _
+  simp
+
+open Classical in
+/-- **The row-1 collapse at the root expands to a shifted copy tower.** -/
+theorem oper_of_srow1_par0 {X : TrioSeq} (h2 : 2 ≤ X.length)
+    (hp : hasParent X (srow X (X.length - 1)) (X.length - 1))
+    (hbp : parent X (srow X (X.length - 1)) (X.length - 1) = 0)
+    (hsr : srow X (X.length - 1) = 1) (n : ℕ) :
+    X⟦n⟧ = shTower X.dropLast (entry X 0 (X.length - 1) - entry X 0 0) n := by
+  have hnr := parent_nextR hp
+  rw [hbp, hsr] at hnr
+  have hn1 : nextrel1 X 0 (X.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact hnr
+  have hpos : 0 < entry X 1 (X.length - 1) := by
+    have := hn1.2.2.2.1; omega
+  have hz : ¬ (entry X 0 (X.length - 1) = 0 ∧ entry X 1 (X.length - 1) = 0 ∧
+      entry X 2 (X.length - 1) = 0) := by
+    rintro ⟨-, h1, -⟩; omega
+  have hseg : seg X 0 (X.length - 1) = X.dropLast := by
+    rw [seg_zero_eq_take X (show X.length - 1 ≤ X.length by omega),
+      ← List.dropLast_eq_take]
+  rw [oper_gcopies n (by omega) hz hp, hbp, hsr,
+    if_pos (by omega : (0 : ℕ) < 1), if_neg (by omega : ¬ (1 : ℕ) < 1),
+    List.take_zero, Nat.sub_zero, List.nil_append]
+  unfold gcopies shTower
+  refine List.flatMap_congr ?_
+  intro k _
+  rw [gcopy_shift0, hseg]
+
+/-- **(TOW)**: a row-0-shifted copy tower over a `W`-member whose root is its
+shallowest column stays in the same stage.  Probe `tools/probe_core1.py` (C):
+6244 instances, 0 violations, and `minstage` is *equal*, not just bounded. -/
+def ShiftTowerClosed : Prop :=
+  ∀ (u e n : ℕ) (Q : TrioSeq), Q ∈ W u → (∀ p ∈ Q, entry Q 0 0 ≤ p.1) →
+    shTower Q e n ∈ W u
+
+open Classical in
+/-- **The last `(WL)` branch reduces to `(TOW)`** — a statement with no lift in
+it at all.  The clause-2 hypothesis is consumed only at `n = 1`. -/
+theorem lspOn_srow1_of_tower (htow : ShiftTowerClosed) :
+    LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 1) := by
+  classical
+  rintro m d X h2 hp ⟨hbp, hsr⟩ hop n hn
+  unfold badPar at hbp
+  have hnr := parent_nextR hp
+  rw [hbp, hsr] at hnr
+  have hj1pos : 0 < X.length - 1 := nextR_index_lt hnr
+  have hj1ne : X.length - 1 ≠ 0 := by omega
+  have hn1 : nextrel1 X 0 (X.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact hnr
+  have hwin : ∀ l, 0 < l → l ≤ X.length - 1 → entry X 0 0 < entry X 0 l :=
+    window_of_rtg0 hn1.2.2.2.2.1.2.2 (by omega)
+  -- the peel is a `W`-member, straight from the hypothesis at `n = 1`
+  have hQ : Lift1 X.dropLast d ∈ W (m + 2 * d) := by
+    have h1 := hop 1 le_rfl
+    rwa [oper_of_srow1_par0 h2 hp hbp hsr 1, shTower_one] at h1
+  -- and its root is its shallowest column
+  have hhead : entry (Lift1 X.dropLast d) 0 0 = entry X 0 0 := by
+    rw [entry0_Lift1, List.dropLast_eq_take,
+      Wset.entry_take (show (0 : ℕ) < X.length - 1 by omega)]
+  have hQr : ∀ p ∈ Lift1 X.dropLast d,
+      entry (Lift1 X.dropLast d) 0 0 ≤ p.1 := by
+    intro p hpm
+    rw [hhead]
+    unfold Lift1 at hpm
+    rw [List.mem_map] at hpm
+    obtain ⟨i, hi, rfl⟩ := hpm
+    rw [List.mem_range, List.length_dropLast] at hi
+    show entry X 0 0 ≤ entry X.dropLast 0 i
+    rw [List.dropLast_eq_take, Wset.entry_take (show i < X.length - 1 by omega)]
+    rcases Nat.eq_zero_or_pos i with rfl | hipos
+    · exact le_rfl
+    · exact le_of_lt (hwin i hipos (by omega))
+  -- the lifted expansion is the same tower, over the lifted peel
+  have hsrL : srow (Lift1 X d) ((Lift1 X d).length - 1) = 1 := by
+    rw [Lift1_length, srow_Lift1 hj1ne]; exact hsr
+  have hpL : hasParent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) := by
+    rw [Lift1_length, srow_Lift1 hj1ne, hasParent_Lift1]; exact hp
+  have hbpL : parent (Lift1 X d) (srow (Lift1 X d) ((Lift1 X d).length - 1))
+      ((Lift1 X d).length - 1) = 0 := by
+    rw [Lift1_length, srow_Lift1 hj1ne, parent_Lift1]; exact hbp
+  rw [oper_of_srow1_par0 (by rw [Lift1_length]; omega) hpL hbpL hsrL n,
+    Lift1_dropLast]
+  exact htow _ _ _ _ hQ hQr
+
+/-- **(WL) rests on `(TOW)` alone.** -/
+theorem liftStageParented_of_tower (htow : ShiftTowerClosed) :
+    LiftStageParented :=
+  liftStageParented_of_srow1 (lspOn_srow1_of_tower htow)
+
+/-! ### `TowerExp` の行 1 部分も同じ `(TOW)` に落ちる
+
+`TowerExp` は「節 2 経由で来た死んだ孤児が根 `(0,v,z)` の下で復活する」塔である。
+`domT R m` から `R` の末尾列は自分の行の孤児なので `R⟦n⟧ = Pred R = R.dropLast`
+（長さ 1 なら `R⟦n⟧ = R`）。したがって節 2 のデータは `n = 1` だけで
+`M.dropLast ∈ W a`（`M = (0,v,z) :: R`）を与える。崩壊行が 1 なら
+`oper_of_srow1_par0` により `M⟦n⟧` は `M.dropLast` の行 0 ずらしコピー塔なので、
+`(TOW)` がそのまま効く。根は `(0,v,z)` で深さ 0 なので「根が最浅」は自明。
+
+行 2 の部分（`d1 > 0`、コピーごとに行 1 が上がる保護付き塔）は `(TOW)` の形では
+ないので、別核として残る。 -/
+
+/-- `TowerExp` restricted to a row-1 collapse. -/
+def TowerExp1 : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+    domT R m → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) → srow R (R.length - 1) = 1 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+/-- `TowerExp` restricted to a row-2 collapse. -/
+def TowerExp2 : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+    domT R m → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) → srow R (R.length - 1) = 2 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+theorem towerExp_of_rows (h1 : TowerExp1) (h2 : TowerExp2) : Wset.TowerExp := by
+  intro v z m a R hR hRne hz1 hva hd hop hpM n hn
+  have hlevpos : 0 < lev R (R.length - 1) := by rw [hd.1]; omega
+  unfold lev at hlevpos
+  rcases srow_cases R (R.length - 1) with hsr | hsr | hsr
+  · exfalso
+    unfold srow at hsr
+    split at hsr
+    · omega
+    · split at hsr
+      · omega
+      · omega
+  · exact h1 v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
+  · exact h2 v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
+
+open Classical in
+/-- **The row-1 half of `TowerExp` reduces to `(TOW)` as well.** -/
+theorem towerExp1_of_tower (htow : ShiftTowerClosed) : TowerExp1 := by
+  classical
+  intro v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : (((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1 = R.length := by simp
+  have hM2 : 2 ≤ (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := by simp; omega
+  have hsrM : srow (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 1 := by
+    rw [hMlen, srow_cons_last hRne]; exact hsr
+  have hpM' : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1))
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) := by
+    rw [hsrM, hMlen, ← hsr]; exact hpM
+  have hpar0 : parent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1))
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 0 := by
+    rw [hsrM, hMlen, ← hsr]
+    exact parent_cons_eq_zero hRne hd hpM
+  have hdrop : (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast
+      = ((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast :=
+    List.dropLast_cons_of_ne_nil hRne
+  -- the peel of `M` is a `W`-member: the clause-2 data at `n = 1` suffices
+  have hMd : (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast ∈ W a := by
+    rw [hdrop]
+    rcases Nat.lt_or_ge R.length 2 with hshort | hbig
+    · have h1 : R.length = 1 := by omega
+      have : R.dropLast = [] := by
+        rw [List.dropLast_eq_take, h1]; simp
+      rw [this]
+      exact W_mono hva (Om_mem_W v z)
+    · have hzR : ¬ (entry R 0 (R.length - 1) = 0 ∧ entry R 1 (R.length - 1) = 0 ∧
+          entry R 2 (R.length - 1) = 0) := by
+        rintro ⟨-, ha, hb⟩
+        have hlv := hd.1
+        unfold lev at hlv
+        omega
+      have hRop : R⟦1⟧ = R.dropLast := by
+        rw [oper_eq_pred_of_noParent 1 (by omega) hzR hd.2]
+        unfold Pred
+        rw [if_neg (by omega)]
+      have hst := hop 1 le_rfl
+      rw [hRop] at hst
+      refine hst ?_ v z a hz1 hva
+      rw [List.dropLast_eq_take]
+      exact argOK_take' hR _
+  have hQr : ∀ p ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast,
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R).dropLast 0 0 ≤ p.1 := by
+    intro p _
+    rw [hdrop]
+    show (0 : ℕ) ≤ p.1
+    exact Nat.zero_le _
+  rw [oper_of_srow1_par0 hM2 hpM' hpar0 hsrM n]
+  exact htow _ _ _ _ hMd hQr
+
+/-- **The whole residue is `(TOW)` plus the row-2 half of `TowerExp`.** -/
+theorem towerExp_of_tower (htow : ShiftTowerClosed) (h2 : TowerExp2) :
+    Wset.TowerExp :=
+  towerExp_of_rows (towerExp1_of_tower htow) h2
+
 end TRIO

@@ -108,6 +108,36 @@ theorem no_infinite_expansion_of_srow1
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_parented (liftStageParented_of_srow1 hs1) he
 
+/-- **Trio sequences terminate, modulo the shifted copy tower `(TOW)`.**  The
+last `(WL)` branch is the row-1 collapse at the root, whose expansion IS the
+row-0-shifted copy tower of the peel (`oper_of_srow1_par0`); the clause-2
+hypothesis supplies the peel itself at `n = 1`.  So the whole stage law reduces
+to a `W`-closure with no lift in it. -/
+theorem TRIO_terminates_of_tower (htow : ShiftTowerClosed) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_parented (liftStageParented_of_tower htow) he
+
+/-- **No infinite expansion sequence**, from `(TOW)` and `TowerExp`. -/
+theorem no_infinite_expansion_of_tower (htow : ShiftTowerClosed)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_parented (liftStageParented_of_tower htow) he
+
+/-- **Trio sequences terminate, modulo `(TOW)` and the ROW-2 half of
+`TowerExp`.**  The row-1 half of `TowerExp` is the same shifted copy tower
+(`towerExp1_of_tower`), so the whole proof now rests on exactly two statements:
+the shifted copy tower `(TOW)`, and the guarded (row-1-ascending) tower of a
+row-2 collapse arriving through clause 2. -/
+theorem TRIO_terminates_of_tow (htow : ShiftTowerClosed) (h2 : TowerExp2) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_tower htow (towerExp_of_tower htow h2)
+
+/-- **No infinite expansion sequence**, from `(TOW)` and `TowerExp2`. -/
+theorem no_infinite_expansion_of_tow (htow : ShiftTowerClosed)
+    (h2 : TowerExp2) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_tower htow (towerExp_of_tower htow h2)
+
 
 
 /-! ## 新しいトラック: 2 本の文脈核から停止性まで
