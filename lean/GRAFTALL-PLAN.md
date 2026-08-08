@@ -2694,6 +2694,39 @@ TRIO_terminates_of_cat   (hcat : WCat)             (h2 : TowerExp2)
 となり、`A` は短くなるがコピーは伸びる。これは `TowerExp` と同じ「文脈が死んだ
 孤児を復活させる」現象であり、`(CAT)` は少なくとも `TowerExp` と同程度に難しい。
 
+### v0.118.81: `(CAT)` は **1 列の追加 `(SNOC)`** に落ちる
+
+`Xbar.oper_append_inner`（`rsum` も根条件も無い既存補題）
+
+```
+(AP)  T ≠ [] → |T|-1 ≠ 0 → hasParent T (srow T (|T|-1)) (|T|-1)
+      → (A ++ T)⟦n⟧ = A ++ T⟦n⟧
+```
+
+を使って `{B | A ++ B ∈ W u}` の上で A2' を回すと、`Aop` の全節が 1 列追加に落ちる:
+
+| 節 | 処理 |
+|---|---|
+| 節 2・`B` に親あり | (AP) + `mem_of_oper_mem` |
+| 節 2・`B` 末尾が孤児 | `B⟦n⟧ = Pred B = B.dropLast`、`A ++ B = (A ++ B.dropLast) ++ [末尾]` |
+| 節 3 | `graft B [] = B.dropLast` で同上 |
+| 節 1 | `B = []` 自明 / `B = [p]` は 1 列追加 |
+
+追加列が `C ++ [p]` でも孤児なら展開は `Pred` なので**ただ**（`snoc_step` で処理済み）。
+残るのは
+
+```
+(SNOC)  C ∈ W u → C ≠ [] → hasParent (C ++ [p]) (srow (C++[p]) |C|) |C|
+        → C ++ [p] ∈ W u          [WSnoc, wcat_of_snoc : WSnoc → WCat]
+```
+
+＝「**親を見つける 1 列を足しても段は上がらない**」。計測 `tools/probe_snoc.py`:
+14455 例違反 0（孤児側の対照 34507 例違反 0）。`p` のレベル上限では言い換え
+られない: `C = [(0,0,0)]`, `p = (1,5,0)` は `lev p = 10` だが `C ++ [p] ∈ W 0`
+（親が付くと `C` の窓の塔になる）。
+
+到達点: `TRIO_terminates_of_snoc (hsn : WSnoc) (h2 : TowerExp2) : WellFounded stepRel`
+
 ### ⚠ 健全性の注意: `(CAT)` / `(TOW)` は定理の**下流**でもある
 
 `mem_W_maxlev`（A 閉集合 `S` を法として）は `zle1 M → M ∈ W (maxlev M)` を与え、

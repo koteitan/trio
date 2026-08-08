@@ -22,6 +22,7 @@ prev ∈ W (2v+z)  --(WL)-->  Lift1 prev d1 ∈ W (2v+z+2*d1) = W (2w+z) ⊆ W m
 -/
 import Wset
 import Wslift
+import Xbar
 
 namespace TRIO
 
@@ -1431,5 +1432,155 @@ theorem shiftTowerClosed_of_cat (hcat : WCat) : ShiftTowerClosed := by
   | succ n ih =>
       rw [shTower_succ]
       exact hcat u _ _ ih (W_shift hQ _)
+
+/-! ### `(CAT)` を「1 列の追加」に落とす
+
+`Xbar.oper_append_inner`（`rsum` も根条件も無し）が
+
+```
+(AP)  T ≠ [] → |T|-1 ≠ 0 → hasParent T (srow T (|T|-1)) (|T|-1)
+      → (A ++ T)⟦n⟧ = A ++ T⟦n⟧
+```
+
+を既に与えている。これを使って `XA A (W u) = {B | A ++ B ∈ W u}` の上で A2' を
+回すと、`Aop` の各節が**1 列追加**に落ちる:
+
+| 節 | 処理 |
+|---|---|
+| 節 2・`B` に親あり | `(AP)` + `mem_of_oper_mem` |
+| 節 2・`B` の末尾が孤児 | `B⟦n⟧ = Pred B = B.dropLast` ⟹ `A ++ B.dropLast ∈ W u`、`A ++ B = (A ++ B.dropLast) ++ [末尾]` |
+| 節 3 | `graft B [] = B.dropLast` で同上 |
+| 節 1 | `B = []` は自明、`B = [p]` は 1 列追加 |
+
+追加した列が `C ++ [p]` でも孤児なら展開は `Pred` なので**ただ**である。残るのは
+
+```
+(SNOC)  C ∈ W u → C ≠ [] → hasParent (C ++ [p]) (srow (C++[p]) |C|) |C|
+        → C ++ [p] ∈ W u
+```
+
+＝「**親を見つける 1 列を足しても段は上がらない**」。計測
+`tools/probe_snoc.py`: 14455 例違反 0（孤児側の対照は 34507 例違反 0）。
+`p` のレベル上限では言い換えられない: `C = [(0,0,0)]`, `p = (1,5,0)` は
+`lev p = 10` だが `C ++ [p] ∈ W 0`（親が付くと `C` の窓の塔になるため）。 -/
+
+/-- **(SNOC)**: appending one column that finds a parent costs no stage. -/
+def WSnoc : Prop :=
+  ∀ (u : ℕ) (C : TrioSeq) (p : ℕ × ℕ × ℕ), C ∈ W u → C ≠ [] →
+    hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length → C ++ [p] ∈ W u
+
+open Classical in
+/-- The snoc step, with the orphan half discharged: only the parented case is
+open. -/
+theorem snoc_step (hsn : WSnoc) {u : ℕ} {C : TrioSeq} (p : ℕ × ℕ × ℕ)
+    (hC : C ∈ W u) (hCne : C ≠ []) : C ++ [p] ∈ W u := by
+  classical
+  have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
+  have hlen : (C ++ [p]).length - 1 = C.length := by simp
+  by_cases hpar : hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length
+  · exact hsn u C p hC hCne hpar
+  · refine mem_of_oper_mem (fun n hn => ?_)
+    have hL : (C ++ [p]).length - 1 ≠ 0 := by rw [hlen]; omega
+    have hpr : (C ++ [p])⟦n⟧ = Pred (C ++ [p]) := by
+      by_cases hz : entry (C ++ [p]) 0 ((C ++ [p]).length - 1) = 0 ∧
+          entry (C ++ [p]) 1 ((C ++ [p]).length - 1) = 0 ∧
+          entry (C ++ [p]) 2 ((C ++ [p]).length - 1) = 0
+      · exact oper_eq_pred_of_zero n hL hz
+      · exact oper_eq_pred_of_noParent n hL hz (by rw [hlen]; exact hpar)
+    rw [hpr]
+    unfold Pred
+    rw [if_neg (by simp; omega), List.dropLast_concat]
+    exact hC
+
+open Classical in
+/-- **`(SNOC)` gives `(CAT)`** — every `Aop` clause reduces to one snoc. -/
+theorem wcat_of_snoc (hsn : WSnoc) : WCat := by
+  classical
+  intro u A B hA hB
+  have hsub : W u ⊆ {B : TrioSeq | A ++ B ∈ W u} := by
+    refine A2' ?_
+    rintro B (⟨hl, hlev⟩ | hop | ⟨m, hm, hd, hgr⟩)
+    · -- clause 1: `B` is empty or a single level-`0` column
+      rcases Nat.eq_zero_or_pos B.length with h0 | hpos
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        simpa using hA
+      · obtain ⟨q, rfl⟩ : ∃ q, B = [q] :=
+          List.length_eq_one_iff.mp (by omega)
+        show A ++ [q] ∈ W u
+        rcases List.eq_nil_or_concat A with rfl | ⟨A', a, rfl⟩
+        · rw [List.nil_append]
+          have : q = (q.1, q.2.1, q.2.2) := rfl
+          rw [this]
+          refine singleton_mem_W ?_
+          unfold lev entry at hlev
+          simp at hlev
+          omega
+        · exact snoc_step hsn q hA (by simp)
+    · -- clause 2
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · have h1 := hop 1 le_rfl
+        rwa [oper_eq_self_of_short 1 (by omega)] at h1
+      · have hBne : B ≠ [] := by
+          intro hc; rw [hc] at hbig; simp at hbig
+        by_cases hpar : hasParent B (srow B (B.length - 1)) (B.length - 1)
+        · show A ++ B ∈ W u
+          refine mem_of_oper_mem (fun n hn => ?_)
+          rw [oper_append_inner n hBne (by omega) hpar]
+          exact hop n hn
+        · have hdrop : B⟦1⟧ = B.dropLast := by
+            by_cases hz : entry B 0 (B.length - 1) = 0 ∧
+                entry B 1 (B.length - 1) = 0 ∧ entry B 2 (B.length - 1) = 0
+            · rw [oper_eq_pred_of_zero 1 (by omega) hz]
+              unfold Pred; rw [if_neg (by omega)]
+            · rw [oper_eq_pred_of_noParent 1 (by omega) hz hpar]
+              unfold Pred; rw [if_neg (by omega)]
+          have hC : A ++ B.dropLast ∈ W u := by
+            have h1 := hop 1 le_rfl
+            rwa [hdrop] at h1
+          have hCne : A ++ B.dropLast ≠ [] := by
+            intro hc
+            have := congrArg List.length hc
+            rw [List.length_append, List.length_dropLast] at this
+            simp at this
+            omega
+          have hsplit : A ++ B = (A ++ B.dropLast) ++ [B.getLast hBne] := by
+            rw [List.append_assoc, List.dropLast_append_getLast hBne]
+          show A ++ B ∈ W u
+          rw [hsplit]
+          exact snoc_step hsn _ hC hCne
+    · -- clause 3: the trailing orphan, grafted with the empty forest
+      have hBne : B ≠ [] := by
+        intro hc; rw [hc] at hd; exact not_domT_nil m hd
+      have hC : A ++ B.dropLast ∈ W u := by
+        have h := hgr [] (W_nil m) based_nil
+        rwa [graft_nil] at h
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · obtain ⟨q, rfl⟩ : ∃ q, B = [q] :=
+          List.length_eq_one_iff.mp (by
+            have := List.length_pos_iff.mpr hBne; omega)
+        show A ++ [q] ∈ W u
+        rcases List.eq_nil_or_concat A with rfl | ⟨A', a, rfl⟩
+        · rw [List.nil_append]
+          have hq : q = (q.1, q.2.1, q.2.2) := rfl
+          rw [hq]
+          refine singleton_mem_W ?_
+          have hlv := hd.1
+          unfold lev entry at hlv
+          simp at hlv
+          omega
+        · exact snoc_step hsn q hA (by simp)
+      · have hCne : A ++ B.dropLast ≠ [] := by
+          intro hc
+          have := congrArg List.length hc
+          rw [List.length_append, List.length_dropLast] at this
+          simp at this
+          omega
+        have hsplit : A ++ B = (A ++ B.dropLast) ++ [B.getLast hBne] := by
+          rw [List.append_assoc, List.dropLast_append_getLast hBne]
+        show A ++ B ∈ W u
+        rw [hsplit]
+        exact snoc_step hsn _ hC hCne
+  exact hsub hB
 
 end TRIO

@@ -150,6 +150,21 @@ theorem no_infinite_expansion_of_cat (hcat : WCat) (h2 : TowerExp2) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_tow (shiftTowerClosed_of_cat hcat) h2
 
+/-- **Trio sequences terminate, modulo `(SNOC)` and `TowerExp2`.**  `(SNOC)` is
+the atomic form of the whole `(WL)` residue: *appending one column that finds a
+parent does not raise the stage*.  Every `Aop` clause of `(CAT)` reduces to it
+(`wcat_of_snoc`), using the `rsum`-free append identity `Xbar.oper_append_inner`
+for the parented case and `graft B [] = B.dropLast` for the orphan case.
+Probe `tools/probe_snoc.py`: 14455 instances, 0 violations. -/
+theorem TRIO_terminates_of_snoc (hsn : WSnoc) (h2 : TowerExp2) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_cat (wcat_of_snoc hsn) h2
+
+/-- **No infinite expansion sequence**, from `(SNOC)` and `TowerExp2`. -/
+theorem no_infinite_expansion_of_snoc (hsn : WSnoc) (h2 : TowerExp2) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_cat (wcat_of_snoc hsn) h2
+
 
 
 /-! ## 新しいトラック: 2 本の文脈核から停止性まで
