@@ -3173,6 +3173,43 @@ M⟦n⟧ = [(k*e, v + k*(w-v), z)]_{k<n}        -- 行 2 は「根の z」であ
 ⚠ (PAIR) は `TowerExp2Root` の**基底だけ**を与える。必要条件であって
 十分条件ではない。
 
+## 4.0 ★★★ 残差 = `(CAT)` + `(SUBST)`（v0.118.113、現在の頂点）
+
+```
+Final.TRIO_terminates_of_cat_subst : WCat → SubstClosed → WellFounded stepRel
+  axioms = [propext, Classical.choice, Quot.sound],  sorry 0,  build 800
+```
+
+**両方とも「純粋な `W` の閉包」命題**であり、**ペア数列の停止性は証明の内部で
+完全に解消済み**（`Pair/` に取り込んだ lean-yapss ＋ `PairBridge.diag_mem_W`）。
+
+| 核 | 内容 | 計測 |
+|---|---|---|
+| `(CAT) WCat` | `A, B ∈ W u → A ++ B ∈ W u` | 372290 対 0 違反 |
+| `(SUBST) SubstClosed` | `W u` の各列の下に「その列のレベルの `W` ブロック」を挿しても `W u` | 判定 38403 例 0 違反 |
+
+### 配線（すべて Lean 済み）
+
+```
+(CAT) ─→ (TOW) shiftTowerClosed_of_cat
+      ─→ (WL) liftStageParented_of_tower → liftStage_of_parented
+      ─→ TowerExp の m < a 側        towerExp_of_cat
+(SUBST) + (WL) ─→ TowerExp2Root      towerExp2Root_of_subst      ← ★ v0.118.113
+                  基底 |R| = 1: diag_mem_W (z=0, ペア定理) / diag1_mem_W (z=1)
+⟹ TRIO_terminates_of_cat_subst
+```
+
+### `towerExp2Root_of_subst` の骨子
+
+```
+M⟦n⟧ = gexp M 0 L D0 D1 n                       oper_eq_gexp（j0 = 0 は parent_cons_eq_zero）
+     = ⧺_{k<n} shiftr01 (k*D0) 0 (Lift1 M.dropLast (k*D1))     gcopies_eq_tower
+ホスト Q = [(k*D0, v + k*D1, z)]_{k<n} ∈ W (2v+z)              diagz_mem_W
+copy k ∈ W (2*(v + k*D1) + z) = W (lev Q k)                     (WL) + W_shift
+  ← M.dropLast = p_{v,z}(R.dropLast) ∈ W (2v+z)                 後者節 hop
+⟹ (SUBST) が閉じる
+```
+
 ## 4.1 ★★★ ペア定理を trio に取り込んだ（v0.118.104-106）
 
 lean-yapss の 11 モジュールを `lean/Pair/` として取り込み（名前空間は `YAPSS`
