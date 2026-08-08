@@ -1,14 +1,5 @@
-v0.118.127/close the end-substitution case of (SUBST1g)
+v0.118.128/document the single revival shape
 
-- Weaken the block depth condition to the NON-STRICT membership form that oper
-  preserves (oper_mem_ge); add entry_getElem and mem_ge_of_deep to convert
-- Prove end_subst_of_revive by a nested induction on the BLOCK's datum: parent
-  inside C mirrors via oper_append_inner, an orphan in the whole peels to
-  C.dropLast from the prefix package, and |S| = 1 is free by
-  lev_root_le_of_mem_W
-- Route the D = [] branch of subst1g_of_revive through it, on the prefix
-  M.take (p+1)
-- Restate Subst1gRevive as the revival shape alone: R's trailing column has a
-  parent while being an orphan inside its own block (C when D = [], else D)
-- Measure the non-strict variant: 165768 instances with a flush column,
-  0 violations
+- Add GRAFTALL-PLAN 4.003: the nested block induction, the non-strict depth
+  condition and why oper forces it, and the audit limit on real ST_TS matrices
+- Point task.md at the single surviving shape

@@ -3210,7 +3210,37 @@ copy k ∈ W (2*(v + k*D1) + z) = W (lev Q k)                     (WL) + W_shift
 ⟹ (SUBST) が閉じる
 ```
 
-## 4.005 ★★★★★ `(SUBST1g)` は**復活ケース 1 本**に潰れた（v0.118.125、現在の頂点）
+## 4.003 ★★★★★ 残差は「**復活形ただ 1 つ**」（v0.118.127、現在の頂点）
+
+```
+Final.TRIO_terminates_of_revive : Subst1gRevive -> WellFounded stepRel
+  axioms clean, sorry 0, build 800
+
+Subst1gRevive := 置換後 R の末尾列が
+  「自分の属するブロック（D=[] なら C、そうでなければ D）の中では孤児なのに
+    R では親を持つ」  ==>  R ∈ W u
+```
+
+前段（4.005）で残っていた `D = []`（端置換）を、**ブロック `C` のデータによる
+入れ子帰納** `end_subst_of_revive` で閉じた:
+
+| 枝 | 閉じ方 |
+|---|---|
+| `C` の末尾列が **`C` 内に**親を持つ | `oper_append_inner` で `(A ++ C)[n] = A ++ C[n]`、`C` の節 2 データ（節 3 は domT=親なしなので不可能） |
+| `A ++ C` でも親なし | `oper_append_pred` で `A ++ C.dropLast` に剥離 → `C` の接頭辞パッケージ |
+| `S.dropLast = []`（`|S| = 1`） | 目標が `C ∈ W u` になり `lev_root_le_of_mem_W` で無料 |
+| `C` 内孤児だが `A` が復活させる | **残差** |
+
+**深さ条件を非厳格化した**（`∀ q ∈ C, x ≤ q.1`）。`oper` は厳格性を保たない
+（`C = [(x,0,0),(x+1,0,0)]` の展開は `[(x,0,0)]` の n 個コピー）ので入れ子帰納には
+非厳格版が要る。非厳格版も**計測 165768 例（うち必ず 1 列は同深さ）0 違反**。
+外側の `Subst1g` は厳格のまま（`mem_ge_of_deep` で変換）。
+
+⚠ **実 ST_TS 行列は `inW` で判定不能**（判定＝停止性そのもの）。確認型監査は
+`audit_subst1g_stts.py` の 651 例 0 違反で頭打ち。反証型 `probe_subst1g_adv.py`
+（危険地帯＝残差ケースのみ 40 万サンプル）を併走中。
+
+## 4.005 ★★★★ `(SUBST1g)` の mirror/orphan 枝（v0.118.125）
 
 ```
 Final.TRIO_terminates_of_revive : Subst1gRevive -> WellFounded stepRel
