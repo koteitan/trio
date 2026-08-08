@@ -3210,6 +3210,36 @@ copy k ∈ W (2*(v + k*D1) + z) = W (lev Q k)                     (WL) + W_shift
 ⟹ (SUBST) が閉じる
 ```
 
+## 4.001 ★★★★★ 段の階層は**根のレベルに潰れる** — 核から `u` が消えた（v0.118.132、現在の頂点）
+
+```
+Wset.W_root_stage : M ∈ W u → M ≠ [] → M ∈ W (lev M 0)
+mem_Wself_iff     : M ∈ W u ↔ (M ∈ Wself ∧ lev M 0 ≤ u)     Wself := {M | M ∈ W (lev M 0)}
+
+Final.TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel
+  axioms clean, sorry 0, build 800
+```
+
+`lev_root_le_of_mem_W` の逆向きで、**`W`-元の段はちょうど根のレベル**。証明は `A2'`:
+- 節 2: コピー 0 は非シフトなので `oper_take_prefix` で根が保存 → 同じ段の帰納法
+- 節 3: `graft M [] = M.dropLast` は末尾だけ落とすので根が保存
+- `|M| ≤ 1`: `Om_mem_W` + `W_shift`
+
+計測 211880 例 0 失敗。**`zle1` 制限は不要**（行2 ≤ 2 でも成立）。
+
+**帰結**: 添字族 `W u` は「単一の集合 `Wself` + 根レベルの側条件」に潰れる。
+置換は根レベルを上げない（`entry_subst_root`: `p = 0` ならブロックの根、
+それ以外はホストの根）ので、**核から段量詞 `u` が消える**:
+
+```
+Subst1gReviveSelf : S ∈ Wself → p < |S| → C ≠ [] → C ∈ Wself → lev C 0 ≤ lev S p →
+  head 深さ一致 → 全列 ≥ → (R 末尾に親) → (ブロック内では孤児) →
+  R ∈ Wself
+```
+
+⚠ (LOW)+(HANG) への分解に `W_root_stage` が効く（`C ∈ W (lev c)` から
+`C ∈ W (lev (C 0))` が出る）が、核の本数が 1→2 に増えるので採らない。
+
 ## 4.002 ★★★★ 残差の正体 = **`Aop` 節 3 の段を 1 つ上げたもの**（v0.118.129 分析）
 
 `end_subst_of_revive` の残差枝を `Aop` 節 3 と並べると差が 1 点に集約する:

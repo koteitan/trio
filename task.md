@@ -80,7 +80,9 @@
 - [x] ★★★ (SUBST1g) の mirror/orphan 枝を証明（ホスト W データ帰納）✅ v0.118.125
 - [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive : Subst1gRevive → WellFounded stepRel`
 - [x] 端置換 D=[] をブロックのデータで入れ子帰納して閉じた ✅ v0.118.127
-- [ ] 次: 復活形ただ 1 つ（文脈がブロック内孤児を復活させる）
+- [x] ★ W_root_stage（段＝根のレベル）で核から段量詞 u が消えた ✅ v0.118.132
+- [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel`
+- [ ] 次: 復活形ただ 1 つ（文脈がブロック内孤児を復活させる・段なし）
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
