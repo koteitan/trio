@@ -2255,6 +2255,115 @@ theorem substClosedG_of_subst1g (hs : Subst1g) : SubstClosedG := by
   have h := key Q.length le_rfl
   simpa using h
 
+/-- **The residue of `(SUBST1g)` after the mirror step.**  `subst1g_of_dead`
+below closes every case in which the tail `D = S.drop (p+1)` has at least two
+columns AND its own last column has a parent INSIDE `D`: then `oper` mirrors
+across the substitution (`Xbar.oper_append_inner`, which needs no `rsum`) and
+the host's own datum carries the step.
+
+What is left is exactly the shape this campaign keeps meeting: `D` is short, or
+`D`'s trailing column is an ORPHAN inside `D` — so whatever parent it has must
+come from the context, i.e. **the context revives a dead orphan**. -/
+def Subst1gDead : Prop :=
+  ∀ (u p : ℕ) (S C : TrioSeq), S ∈ W u → p < S.length → C ≠ [] →
+    C ∈ W (lev S p) →
+    entry C 0 0 = entry S 0 p →
+    (∀ j, 1 ≤ j → j < C.length → entry S 0 p < entry C 0 j) →
+    ¬ (2 ≤ (S.drop (p + 1)).length ∧
+       hasParent (S.drop (p + 1))
+         (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
+         ((S.drop (p + 1)).length - 1)) →
+    (S.take p ++ C ++ S.drop (p + 1)) ∈ W u
+
+open Classical in
+/-- **★★ The mirror step of `(SUBST1g)`.**
+
+Induct on the host's `W` datum.  Write `D = S.drop (p+1)`.  If `D` has ≥ 2
+columns and its trailing column has a parent inside `D`, then
+`Xbar.oper_append_inner` applies to BOTH splittings
+
+    S = S.take (p+1) ++ D          R = (S.take p ++ C) ++ D
+
+with the SAME hypothesis — it is a statement about `D` alone, with no `rsum` —
+so `S⟦n⟧ = S.take (p+1) ++ D⟦n⟧` and `R⟦n⟧ = (S.take p ++ C) ++ D⟦n⟧`.  The
+column at `p` survives in `S⟦n⟧` with all three entries intact, so the induction
+hypothesis at `S⟦n⟧` yields exactly `R⟦n⟧`, and `Wchar` closes it.
+
+The datum is available in every clause: clause 2 gives `S⟦n⟧` directly, clause 3
+gives `graft S [] = S.dropLast = S⟦n⟧` (a dominant terminal is parentless), and
+clause 1 cannot occur because `|D| ≥ 2` forces `|S| ≥ 3`. -/
+theorem subst1g_of_dead (hdead : Subst1gDead) : Subst1g := by
+  classical
+  intro u
+  have hsub : W u ⊆ {M : TrioSeq | M ∈ W u ∧
+      ∀ p C, p < M.length → C ≠ [] → C ∈ W (lev M p) →
+        entry C 0 0 = entry M 0 p →
+        (∀ j, 1 ≤ j → j < C.length → entry M 0 p < entry C 0 j) →
+        (M.take p ++ C ++ M.drop (p + 1)) ∈ W u} := by
+    refine A2' ?_
+    intro M hA
+    have hmem : M ∈ W u := by
+      refine A1_intro ?_
+      rcases hA with h | h | ⟨m, hm, hd, hgr⟩
+      · exact Or.inl h
+      · exact Or.inr (Or.inl fun n hn => (h n hn).1)
+      · exact Or.inr (Or.inr ⟨m, hm, hd, fun z hz hb => (hgr z hz hb).1⟩)
+    refine ⟨hmem, ?_⟩
+    intro p C hp hCne hCW hhead hdeep
+    set D : TrioSeq := M.drop (p + 1) with hD
+    have hDlen0 : D.length = M.length - (p + 1) := by rw [hD]; simp
+    by_cases hcase : 2 ≤ D.length ∧
+        hasParent D (srow D (D.length - 1)) (D.length - 1)
+    · obtain ⟨hDlen, hDp⟩ := hcase
+      have hDne : D ≠ [] := by
+        intro h; rw [h] at hDlen; simp at hDlen
+      have hDL : D.length - 1 ≠ 0 := by omega
+      have htk : (M.take (p + 1)).length = p + 1 := by
+        have h2 : (M.take (p + 1)).length = min (p + 1) M.length := List.length_take
+        omega
+      have hdatum : ∀ n, 1 ≤ n → M⟦n⟧ ∈ {N : TrioSeq | N ∈ W u ∧
+          ∀ p C, p < N.length → C ≠ [] → C ∈ W (lev N p) →
+            entry C 0 0 = entry N 0 p →
+            (∀ j, 1 ≤ j → j < C.length → entry N 0 p < entry C 0 j) →
+            (N.take p ++ C ++ N.drop (p + 1)) ∈ W u} := by
+        rcases hA with h | h | ⟨m, hm, hd, hgr⟩
+        · exact absurd h.1 (by omega)
+        · exact h
+        · intro n hn
+          rw [oper_eq_graft_nil_of_domT (by omega) hd]
+          exact hgr [] (W_nil m) based_nil
+      refine mem_of_oper_mem (fun n hn => ?_)
+      have hMsplit : M.take (p + 1) ++ D = M := List.take_append_drop _ _
+      have hOpM : M⟦n⟧ = M.take (p + 1) ++ D⟦n⟧ := by
+        conv_lhs => rw [← hMsplit]
+        exact oper_append_inner n hDne hDL hDp
+      have hOpR : (M.take p ++ C ++ D)⟦n⟧ = (M.take p ++ C) ++ D⟦n⟧ :=
+        oper_append_inner n hDne hDL hDp
+      rw [hOpR]
+      obtain ⟨-, hprop⟩ := hdatum n hn
+      have hent : ∀ i, entry (M⟦n⟧) i p = entry M i p := by
+        intro i
+        rw [hOpM, entry_append_left _ _ (by rw [htk]; omega), entry_take (by omega)]
+      have hlv : lev (M⟦n⟧) p = lev M p := by unfold lev; rw [hent 1, hent 2]
+      have hlen' : p < (M⟦n⟧).length := by
+        rw [hOpM, List.length_append, htk]; omega
+      have hstep := hprop p C hlen' hCne (by rw [hlv]; exact hCW)
+        (by rw [hent 0]; exact hhead)
+        (by intro j hj1 hj2; rw [hent 0]; exact hdeep j hj1 hj2)
+      have htake' : (M⟦n⟧).take p = M.take p := by
+        rw [hOpM, List.take_append_of_le_length (by omega), List.take_take]
+        congr 1
+        omega
+      have hdrop' : (M⟦n⟧).drop (p + 1) = D⟦n⟧ := by
+        have hdl : ((M.take (p + 1)) ++ D⟦n⟧).drop (M.take (p + 1)).length = D⟦n⟧ :=
+          List.drop_left
+        rw [htk] at hdl
+        rw [hOpM, hdl]
+      rwa [htake', hdrop'] at hstep
+    · exact hdead u p M C hmem hp hCne hCW hhead hdeep (by rw [← hD]; exact hcase)
+  intro p S C hS hp hCne hCW hhead hdeep
+  exact (hsub hS).2 p C hp hCne hCW hhead hdeep
+
 section ShiftEntry
 
 variable {Q : TrioSeq} {d j : ℕ}

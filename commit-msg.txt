@@ -1,6 +1,13 @@
-v0.118.123/document the one-core residue
+v0.118.124/close the mirror half of (SUBST1g)
 
-- Add GRAFTALL-PLAN 4.01: (SUBST1g) as the two-point liberalisation of Aop
-  clause 3, the two (CAT) consumers it absorbs, and two_col_mem_W
-- Record the ShiftTowerClosedS strictness change and its two suppliers
-- Point task.md at the single remaining core
+- Add Subst1gDead: (SUBST1g) restricted to a short tail D = S.drop (p+1) or a
+  tail whose own trailing column is an orphan inside D
+- Prove subst1g_of_dead by induction on the host's W datum: when D has >= 2
+  columns and its trailing column has a parent inside D, Xbar.oper_append_inner
+  mirrors oper across the substitution with no rsum, and the datum at S[n]
+  gives the goal (clause 3 supplies graft S [] = S.dropLast = S[n])
+- Wire Final.TRIO_terminates_of_dead / no_infinite_expansion_of_dead
+- Add tools/probe_subst1_ind.py: MIRROR 105532 / INNER 65673 / residue 38996,
+  both identities exact
+- Add tools/audit_subst1g_stts.py (ST_TS hosts and blocks, 651 decided
+  0 violations) and tools/probe_subst1g_adv.py (adversarial residue-only hunt)

@@ -273,6 +273,25 @@ theorem no_infinite_expansion_of_subst1g (hs : Subst1g) :
       (towerExp2Root_of_subst (substClosed_of_substClosedG hgG) hWL)
   exact no_infinite_expansion_of_tower htowS (towerExp_of_substG hgG htowS h2)
 
+/-- **★★★★ Trio sequences terminate, modulo the DEAD-ORPHAN half of `(SUBST1g)`.**
+
+`subst1g_of_dead` runs the induction on the host's `W` datum and closes every
+case in which the tail `D = S.drop (p+1)` has ≥ 2 columns and its own trailing
+column has a parent INSIDE `D`: there `Xbar.oper_append_inner` — which needs no
+`rsum` — mirrors `oper` across the substitution, and the induction hypothesis at
+`S⟦n⟧` is exactly the goal.
+
+So the whole termination proof now rests on the single shape this campaign keeps
+meeting: `D` is short, or `D`'s trailing column is an ORPHAN inside `D`, so any
+parent it has is supplied by the CONTEXT. -/
+theorem TRIO_terminates_of_dead (hdead : Subst1gDead) : WellFounded stepRel :=
+  TRIO_terminates_of_subst1g (subst1g_of_dead hdead)
+
+/-- **No infinite expansion sequence**, from the dead-orphan half alone. -/
+theorem no_infinite_expansion_of_dead (hdead : Subst1gDead) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_subst1g (subst1g_of_dead hdead)
+
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
 not raise the stage*.
