@@ -1,10 +1,1 @@
-v0.118.137/add lean/PROOF-STATUS.md as the authoritative status document
-
-- State the single remaining core Subst1gReviveSelf and the full Lean chain from
-  it to WellFounded stepRel
-- Tabulate the W structure theorems, including the retraction of the old
-  "suffix closure is false" note
-- Tabulate every probe with its instance count, and state plainly that the
-  ST_TS audit is capped and the adversarial one is over random small tuples
-- Record where the wall is and which decompositions close the circle
-- Point task.md at it; GRAFTALL-PLAN.md stays as the 3700-line design log
+v0.118.138/version bump for the status document
