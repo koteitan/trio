@@ -1393,4 +1393,43 @@ theorem towerExp_of_tower (htow : ShiftTowerClosed) (h2 : TowerExp2) :
     Wset.TowerExp :=
   towerExp_of_rows (towerExp1_of_tower htow) h2
 
+/-! ### `(TOW)` の候補上位: `W u` は連結で閉じているか
+
+`Wset.W_add` は `rsum A B`（「`B` の根が `A ++ B` の最浅列」）を要求する。これは
+`XA_closed` の**証明**が必要とする条件である: `B` が最浅なら `A ++ B` のバッド
+ルートは `B` から出られず、展開は `A ++ B⟦n⟧` に留まる（`oper_append_gen`）。
+塔ではこれがちょうど逆で、
+`shTower Q e (n+1) = shTower Q e n ++ shiftr01 (n*e) 0 Q` の後半は**最深**である。
+
+計測 `tools/probe_cat.py`: 仮定を一切置かない
+
+```
+(CAT)   A ∈ W u → B ∈ W u → A ++ B ∈ W u
+```
+
+は 372290 例（短列全数 + 長列ランダム + ST_TS 由来）で違反 0。判定を
+`n ∈ {1,2,3}` に上げた再計測でも 28065 例で違反 0。`W_shift` と合わせると
+`(TOW)` は 2 行で出る（根の最浅条件すら要らなくなる）。
+⚠ `minstage` の判定は有限個の `n` の展開しか見ない近似なので、これは**候補**で
+あって証明ではない。 -/
+
+/-- **(CAT)**: `W u` is closed under plain concatenation, with no side
+condition — the hypothesis-free strengthening of `Wset.W_add`. -/
+def WCat : Prop := ∀ (u : ℕ) (A B : TrioSeq), A ∈ W u → B ∈ W u → A ++ B ∈ W u
+
+theorem shTower_succ (Q : TrioSeq) (e n : ℕ) :
+    shTower Q e (n + 1) = shTower Q e n ++ shiftr01 (n * e) 0 Q := by
+  unfold shTower
+  rw [List.range_succ, List.flatMap_append]
+  simp
+
+/-- **`(CAT)` gives `(TOW)`** — and drops the shallowest-root hypothesis. -/
+theorem shiftTowerClosed_of_cat (hcat : WCat) : ShiftTowerClosed := by
+  intro u e n Q hQ _
+  induction n with
+  | zero => simpa [shTower] using W_nil u
+  | succ n ih =>
+      rw [shTower_succ]
+      exact hcat u _ _ ih (W_shift hQ _)
+
 end TRIO

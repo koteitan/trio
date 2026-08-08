@@ -2633,6 +2633,73 @@ gexp_guard_transport : le1 (gexp M j0 Lb d0 d1 n) j0 (j0 + (k*Lb+q)) ↔ le1 M j
 srow = 1)) (he : TowerExp) : WellFounded stepRel`（公理は
 `[propext, Classical.choice, Quot.sound]` のみ）。
 
+## 1.9.61 ★★★ v0.118.75-79: 残差が **(TOW)/(CAT) + TowerExp2** の 2 本になった
+
+### 済んだこと
+
+1. **`1 ≤ badPar` の枝が完全に落ちた**（v0.118.75-77）。
+   鍵は切断補題 `rtg0_split_at`:「窓 `(j0, j0+Lb]` の行 0 値は根より真に大きい
+   （`hup`）ので、行 0 の鎖は窓に入る前に必ず `j0`（平坦枝ではコピー `k` の根）を
+   通る」。これで `le1_iff_chain_window` の前提が両側で対応づき、
+   `Lcone.gexp_cone_mir` / `gexp_cone_mir_flat` が要求していた「根が厳密に最浅」
+   `hr0` を外せる（`LSPOn` は `W` の任意の元についての主張なので `hr0` は無い）。
+   - 上昇枝 `gexp_cone0_transport`（`d0 > 0`）／平坦枝 `gexp_cone0_flat`（`i1=0`）
+   - 可換性は `gexp_Lift1_comm_of_transport` に一本化
+2. **最後の枝 `badPar=0, i1=1` と `TowerExp` の行 1 部分が同じ形に落ちた**
+   （v0.118.78）。`i1 = 1` では `d1 = 0` なので展開は行 0 ずらしコピー塔:
+
+   ```
+   oper_of_srow1_par0 :  X⟦n⟧ = shTower X.dropLast (entry X 0 j1 - entry X 0 0) n
+   shTower Q e n      = ⧺_{k<n} shiftr01 (k*e) 0 Q
+   ```
+
+   `Lift1` は行 0 を動かさないので `(Lift1 X d)⟦n⟧ = shTower (Lift1 X.dropLast d) d0 n`。
+   **仮定 `hop` は `n = 1` でしか使わない**（`X⟦1⟧ = X.dropLast`）。よって
+
+   ```
+   (TOW)  Q ∈ W u → （根が最浅）→ shTower Q e n ∈ W u        [ShiftTowerClosed]
+   ```
+
+   に還元。`TowerExp` も `domT R m` から `R⟦n⟧ = Pred R = R.dropLast` なので
+   同じく `n = 1` だけで足り、行 1 部分は `(TOW)` に落ちる（`towerExp1_of_tower`）。
+3. **`(TOW)` の候補上位 `(CAT)`**（v0.118.79）。`W_add` の `rsum`
+   （`B` の根が最浅）は `XA_closed` の**証明**の都合であって、塔ではちょうど逆
+   （後半が最深）。仮定なしの
+
+   ```
+   (CAT)  A ∈ W u → B ∈ W u → A ++ B ∈ W u                    [WCat]
+   ```
+
+   は `tools/probe_cat.py` で 372290 例（短列全数 + 長列ランダム + ST_TS 由来）
+   違反 0、判定を `n ∈ {1,2,3}` に上げた再計測でも 28065 例違反 0。
+   `W_shift` と合わせて `(TOW)` は 2 行（`shiftTowerClosed_of_cat`）。
+
+### 到達点（`Final.lean`、公理は `[propext, Classical.choice, Quot.sound]`）
+
+```
+TRIO_terminates_of_srow1 (hs1 : LSPOn (badPar=0 ∧ srow=1)) (he : TowerExp)
+TRIO_terminates_of_tow   (htow : ShiftTowerClosed) (h2 : TowerExp2)
+TRIO_terminates_of_cat   (hcat : WCat)             (h2 : TowerExp2)
+```
+
+### `(CAT)` の証明がどこで詰まるか（次に攻める場所）
+
+`A ++ B` のバッドルートが `B` の中にある場合は易しい:
+`hasParent B (srow B (|B|-1)) (|B|-1)` なら `hasParent_append_right_of` と
+`le0/le1_append_right` から `(A++B)⟦n⟧ = A ++ B⟦n⟧` が出るはず（`rsum` 不要の
+`oper_append_gen`。未実装、機械的で ~80 行）。
+
+**詰まるのは `B` の末尾が `B` の中では孤児なのに `A` から親を貰う場合**で、
+このとき `(A++B)⟦n⟧ = A.take j0 ++ （`A.drop j0 ++ B.dropLast` のコピー塔）`
+となり、`A` は短くなるがコピーは伸びる。これは `TowerExp` と同じ「文脈が死んだ
+孤児を復活させる」現象であり、`(CAT)` は少なくとも `TowerExp` と同程度に難しい。
+
+### `TowerExp2` は `(CAT)` からは出ない（確認済み）
+
+行 2 崩壊のコピー `k` は行 1 が `k*d1` 上がるので、単体では段
+`2(v + k*d1) + z` を要求し `W a` に入らない。したがって「`W a` の元の連結」の
+形にならない。`TowerExp2` は `Aop` 節 3 が担う本来の崩壊であり、別核として残る。
+
 ## 4. 実行順序（v0.114 改訂）
 
 1. ✅ β 族化 → 単一ステップ核 → 装備合成（§1.9.5–1.9.6）

@@ -138,6 +138,18 @@ theorem no_infinite_expansion_of_tow (htow : ShiftTowerClosed)
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_tower htow (towerExp_of_tower htow h2)
 
+/-- **Trio sequences terminate, modulo `(CAT)` and `TowerExp2`.**  `(CAT)` is
+the hypothesis-free strengthening of `Wset.W_add`: `W u` closed under plain
+concatenation.  Probe `tools/probe_cat.py`: 372290 pairs, 0 violations. -/
+theorem TRIO_terminates_of_cat (hcat : WCat) (h2 : TowerExp2) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_tow (shiftTowerClosed_of_cat hcat) h2
+
+/-- **No infinite expansion sequence**, from `(CAT)` and `TowerExp2`. -/
+theorem no_infinite_expansion_of_cat (hcat : WCat) (h2 : TowerExp2) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_tow (shiftTowerClosed_of_cat hcat) h2
+
 
 
 /-! ## 新しいトラック: 2 本の文脈核から停止性まで

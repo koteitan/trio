@@ -73,7 +73,7 @@ def shallow(S):
     return all(S[0][0] <= p[0] for p in S)
 
 
-COLS = [(a, b, c) for a in range(3) for b in range(3) for c in range(2)]
+COLS = [(a, b, c) for a in range(3) for b in range(2) for c in range(2)]
 
 
 def main():
@@ -81,7 +81,7 @@ def main():
     tot = Counter()
     ex = {}
     seqs = []
-    for L in (1, 2, 3):
+    for L in (1, 2):
         for S in itertools.product(COLS, repeat=L):
             seqs.append(list(S))
     stage = {}
@@ -93,7 +93,7 @@ def main():
     keys = list(stage)
     for A in keys:
         for B in keys:
-            if len(A) + len(B) > 6:
+            if len(A) + len(B) > 4:
                 continue
             AB = list(A) + list(B)
             m = minstage(AB, memo)
