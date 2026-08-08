@@ -2283,6 +2283,36 @@ theorem mem_ge_of_deep {C : TrioSeq} {x : ℕ} (hhead : entry C 0 0 = x)
 theorem substProp_nil (u : ℕ) : SubstProp u [] := by
   intro p C hp; simp at hp
 
+/-- **The stage-free form of `W`.**  `W_root_stage` and `lev_root_le_of_mem_W`
+together give `M ∈ W u ↔ M ∈ Wself ∧ lev M 0 ≤ u`: the whole indexed family
+collapses to ONE set plus a root-level side condition. -/
+def Wself : Set TrioSeq := {M : TrioSeq | M ∈ W (lev M 0)}
+
+theorem mem_Wself_iff (u : ℕ) (M : TrioSeq) :
+    M ∈ W u ↔ (M ∈ Wself ∧ lev M 0 ≤ u) := by
+  constructor
+  · intro h
+    by_cases hne : M = []
+    · subst hne
+      exact ⟨show ([] : TrioSeq) ∈ W (lev ([] : TrioSeq) 0) from W_nil _,
+        by simp [lev, entry]⟩
+    · exact ⟨W_root_stage h hne, lev_root_le_of_mem_W h hne⟩
+  · rintro ⟨h1, h2⟩
+    exact W_mono h2 h1
+
+/-- The root of a substituted sequence: the block's root when `p = 0`, the
+host's otherwise. -/
+theorem entry_subst_root {S C : TrioSeq} {p : ℕ} (hCne : C ≠ []) (hp : p < S.length)
+    (i : ℕ) : entry (S.take p ++ C ++ S.drop (p + 1)) i 0
+      = if p = 0 then entry C i 0 else entry S i 0 := by
+  have hCpos : 0 < C.length := List.length_pos_iff.mpr hCne
+  have htk : (S.take p).length = min p S.length := List.length_take
+  rcases Nat.eq_zero_or_pos p with rfl | hpp
+  · rw [if_pos rfl, List.take_zero, List.nil_append,
+      entry_append_left _ _ (by omega)]
+  · rw [if_neg (by omega), entry_append_left _ _ (by rw [List.length_append]; omega),
+      entry_append_left _ _ (by omega), entry_take (by omega)]
+
 /-- **The residue of `(SUBST1g)`: the context revives a dead orphan.**
 
 `subst1g_of_revive` closes every other case.  Writing `D = S.drop (p+1)` and `R`
@@ -2311,6 +2341,49 @@ def Subst1gRevive : Prop :=
           (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
           ((S.drop (p + 1)).length - 1))) →
     (S.take p ++ C ++ S.drop (p + 1)) ∈ W u
+
+/-- **★★★ The residue with the STAGE QUANTIFIER REMOVED.**
+
+`mem_Wself_iff` collapses the whole `W`-family to the single set `Wself` plus a
+root-level side condition, and a substitution never raises the root level
+(`entry_subst_root`: the root is the block's when `p = 0` and the host's
+otherwise).  So `u` drops out of the core entirely. -/
+def Subst1gReviveSelf : Prop :=
+  ∀ (p : ℕ) (S C : TrioSeq), S ∈ Wself → p < S.length → C ≠ [] →
+    C ∈ Wself → lev C 0 ≤ lev S p →
+    entry C 0 0 = entry S 0 p →
+    (∀ q ∈ C, entry S 0 p ≤ q.1) →
+    hasParent (S.take p ++ C ++ S.drop (p + 1))
+      (srow (S.take p ++ C ++ S.drop (p + 1))
+        ((S.take p ++ C ++ S.drop (p + 1)).length - 1))
+      ((S.take p ++ C ++ S.drop (p + 1)).length - 1) →
+    ((S.drop (p + 1) = [] ∧
+        ¬ hasParent C (srow C (C.length - 1)) (C.length - 1)) ∨
+      (S.drop (p + 1) ≠ [] ∧
+        ¬ hasParent (S.drop (p + 1))
+          (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
+          ((S.drop (p + 1)).length - 1))) →
+    (S.take p ++ C ++ S.drop (p + 1)) ∈ Wself
+
+theorem subst1gRevive_of_self (h : Subst1gReviveSelf) : Subst1gRevive := by
+  intro u p S C hS hp hCne hCW hhead hdeep hRp hdisj
+  obtain ⟨hSself, hSlev⟩ := (mem_Wself_iff u S).mp hS
+  obtain ⟨hCself, hClev⟩ := (mem_Wself_iff (lev S p) C).mp hCW
+  refine (mem_Wself_iff u _).mpr
+    ⟨h p S C hSself hp hCne hCself hClev hhead hdeep hRp hdisj, ?_⟩
+  have hr : ∀ i, entry (S.take p ++ C ++ S.drop (p + 1)) i 0
+      = if p = 0 then entry C i 0 else entry S i 0 :=
+    fun i => entry_subst_root hCne hp i
+  rcases Nat.eq_zero_or_pos p with hp0 | hpp
+  · have he : lev (S.take p ++ C ++ S.drop (p + 1)) 0 = lev C 0 := by
+      unfold lev; rw [hr 1, hr 2, if_pos hp0, if_pos hp0]
+    rw [he]
+    have : lev C 0 ≤ lev S p := hClev
+    rw [hp0] at this
+    omega
+  · have he : lev (S.take p ++ C ++ S.drop (p + 1)) 0 = lev S 0 := by
+      unfold lev; rw [hr 1, hr 2, if_neg (by omega), if_neg (by omega)]
+    rw [he]; exact hSlev
 
 theorem not_hasParent_zero {M : TrioSeq} {i : ℕ} (h : hasParent M i 0) : False := by
   obtain ⟨j0, hj0, -⟩ := h

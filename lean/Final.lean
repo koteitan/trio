@@ -299,6 +299,28 @@ theorem no_infinite_expansion_of_revive (hrev : Subst1gRevive) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_subst1g (subst1g_of_revive hrev)
 
+/-- **★★★★★ Trio sequences terminate, modulo a residue with NO STAGE in it.**
+
+`Wset.W_root_stage` (new) says the stage of a `W`-member is exactly its root's
+level, so together with `lev_root_le_of_mem_W`
+
+    M ∈ W u  ↔  M ∈ Wself ∧ lev M 0 ≤ u
+
+— the whole indexed family collapses to one set plus a root-level side
+condition.  Since a substitution never raises the root level, the stage
+quantifier drops out of the core, and what carries the entire termination
+theorem is a single stage-free statement: *a `Wself` member stays in `Wself`
+when a `Wself` block is grafted under one of its columns, in the one case where
+the context revives a column that is an orphan inside its own block.* -/
+theorem TRIO_terminates_of_revive_self (h : Subst1gReviveSelf) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_revive (subst1gRevive_of_self h)
+
+/-- **No infinite expansion sequence**, from the stage-free residue. -/
+theorem no_infinite_expansion_of_revive_self (h : Subst1gReviveSelf) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_revive (subst1gRevive_of_self h)
+
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
 not raise the stage*.

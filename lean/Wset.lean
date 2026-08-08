@@ -2218,6 +2218,82 @@ theorem lev_root_le_of_mem_W {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (hne : M �
         omega
   exact hsub h hne
 
+/-- **★★ The stage of a `W`-member is exactly its root's level.**
+
+`lev_root_le_of_mem_W` is one half (`M ∈ W u → lev M 0 ≤ u`); this is the other,
+and it needs no hypothesis on `u` at all.  Every clause preserves the root
+column: clause 2 because copy 0 is unshifted (`oper_take_prefix` at `1`), clause
+3 because `graft M [] = M.dropLast` only removes the last column, and the two
+degenerate lengths are `singleton_mem_W`.
+
+So `W` is not a genuine hierarchy over a fixed sequence — the whole stage
+information of `M` sits in `M 0`.  Probe: 211880 instances, 0 failures, and it
+does not need the `zle1` restriction. -/
+theorem W_root_stage {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (hne : M ≠ []) :
+    M ∈ W (lev M 0) := by
+  classical
+  have hsub : W u ⊆ {N : TrioSeq | N ≠ [] → N ∈ W (lev N 0)} := by
+    refine A2' ?_
+    intro N A hNne
+    show N ∈ W (lev N 0)
+    have hNlen : 0 < N.length := List.length_pos_iff.mpr hNne
+    rcases Nat.lt_or_ge 1 N.length with hL | hshort
+    · -- `|N| ≥ 2`: the root survives every step, so the datum lands at the same stage
+      have hroot : ∀ (n : ℕ), 1 ≤ n → (N⟦n⟧ ≠ [] ∧ lev (N⟦n⟧) 0 = lev N 0) := by
+        intro n hn
+        have htk : (N⟦n⟧).take 1 = N.take 1 := oper_take_prefix hL hn (by omega)
+        have hNt : N.take 1 ≠ [] := by
+          intro hc
+          have h2 : (N.take 1).length = min 1 N.length := List.length_take
+          rw [hc] at h2; simp at h2; omega
+        refine ⟨?_, ?_⟩
+        · intro hc
+          rw [hc] at htk
+          simp only [List.take_nil] at htk
+          exact hNt htk.symm
+        · have e : ∀ i, entry (N⟦n⟧) i 0 = entry N i 0 := by
+            intro i
+            rw [← entry_take (X := N⟦n⟧) (l := 1) (i := i) (by omega),
+              ← entry_take (X := N) (l := 1) (i := i) (by omega), htk]
+          unfold lev
+          rw [e 1, e 2]
+      refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+      obtain ⟨hne', hlev⟩ := hroot n hn
+      rcases A with ⟨hl, -⟩ | hop | ⟨m, hm, hd, hgr⟩
+      · omega
+      · rw [← hlev]; exact hop n hn hne'
+      · -- a dominant terminal is parentless, so `oper` is the peel
+        have hdl := hgr [] (W_nil m) based_nil
+        rw [graft_nil] at hdl
+        have hne2 : N.dropLast ≠ [] := by
+          intro hc
+          have hlen : N.dropLast.length = N.length - 1 := List.length_dropLast
+          rw [hc] at hlen; simp at hlen; omega
+        have hlev2 : lev N.dropLast 0 = lev N 0 := by
+          unfold lev
+          rw [List.dropLast_eq_take,
+            entry_take (X := N) (l := N.length - 1) (i := 1) (by omega),
+            entry_take (X := N) (l := N.length - 1) (i := 2) (by omega)]
+        rw [oper_eq_graft_nil_of_domT (by omega) hd, graft_nil, ← hlev2]
+        exact hdl hne2
+    · -- `|N| = 1`: the single column is the root
+      have hN1 : N.length = 1 := by omega
+      obtain ⟨c, hc⟩ : ∃ c, N = [c] := by
+        cases N with
+        | nil => exact absurd rfl hNne
+        | cons a t =>
+            refine ⟨a, ?_⟩
+            simp only [List.length_cons] at hN1
+            rw [List.eq_nil_of_length_eq_zero (show t.length = 0 by omega)]
+      subst hc
+      have hOm := W_shift (Om_mem_W c.2.1 c.2.2) c.1
+      have hsh : shiftr01 c.1 0 [((0, c.2.1, c.2.2) : ℕ × ℕ × ℕ)] = [c] := by
+        unfold shiftr01; simp
+      rw [hsh] at hOm
+      rw [show lev [c] 0 = 2 * c.2.1 + c.2.2 from by simp [lev, entry]]
+      exact hOm
+  exact hsub h hne
+
 /-- Prefixes of a `W u` member, in `dropLast` form. -/
 theorem W_dropLast {u : ℕ} {M : TrioSeq} (h : M ∈ W u) : M.dropLast ∈ W u := by
   rw [List.dropLast_eq_take]

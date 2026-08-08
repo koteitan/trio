@@ -1,5 +1,13 @@
-v0.118.131/make the adversarial probe finishable
+v0.118.132/collapse the stage hierarchy and drop u from the residue
 
-- Lower the sample count to 60000 and print progress every 10000 samples; the
-  400000-sample run was killed by its own timeout before printing anything
-- Record the measured 30000-sample result in the docstring
+- Prove Wset.W_root_stage: the stage of a W-member is exactly its root's level,
+  by A2' (clause 2 keeps the root because copy 0 is unshifted, clause 3 because
+  graft M [] only removes the last column); measured 211880 instances, 0
+  failures, and it needs no zle1 restriction
+- Add Wself and mem_Wself_iff: M in W u iff M in Wself and lev M 0 <= u, so the
+  indexed family is one set plus a root-level side condition
+- Add entry_subst_root: a substitution takes its root from the block when p = 0
+  and from the host otherwise, hence never raises the root level
+- Add Subst1gReviveSelf and subst1gRevive_of_self: the residue with no stage
+  quantifier
+- Wire Final.TRIO_terminates_of_revive_self / no_infinite_expansion_of_revive_self
