@@ -2694,6 +2694,15 @@ TRIO_terminates_of_cat   (hcat : WCat)             (h2 : TowerExp2)
 となり、`A` は短くなるがコピーは伸びる。これは `TowerExp` と同じ「文脈が死んだ
 孤児を復活させる」現象であり、`(CAT)` は少なくとも `TowerExp` と同程度に難しい。
 
+### ⚠ 健全性の注意: `(CAT)` / `(TOW)` は定理の**下流**でもある
+
+`mem_W_maxlev`（A 閉集合 `S` を法として）は `zle1 M → M ∈ W (maxlev M)` を与え、
+`maxlev (A ++ B) = max (maxlev A) (maxlev B)` なので、**完成した定理から
+`zle1` 列についての `(CAT)` は出る**。したがって `(CAT)`/`(TOW)` は
+「定理より小さい命題」ではなく、`corePlantCtxLift_of_self` と同じ
+「還元だけでは閉じない」型である。今回の前進は**閉包ではなく形の単純化**
+（4 枝 + `TowerExp` ⟹ 2 本の素朴な命題）であって、証明そのものではない。
+
 ### `TowerExp2` は `(CAT)` からは出ない（確認済み）
 
 行 2 崩壊のコピー `k` は行 1 が `k*d1` 上がるので、単体では段
