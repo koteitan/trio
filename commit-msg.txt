@@ -1,5 +1,1 @@
-v0.118.140/record the z = 0 closure in PROOF-STATUS
-
-- State the narrowed residue (a row-2 column must be present)
-- Add zeroRow2_mem_Wself to the structure table and note that all of trio's
-  difficulty now sits in the row-2 columns
+v0.118.141/list the three structural inputs obtained so far
