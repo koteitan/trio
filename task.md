@@ -70,7 +70,10 @@
 - [ ] **残差B'（最狭）**: `TRIO_terminates_of_cat_root : WCat → TowerExp2Root → ...`
 - [x] ★ lean-yapss を lean/Pair/ に取り込み・橋渡し完成（emb / oper_emb / emb_mem_W）✅ v0.118.104-106
 - [x] ★ (PAIR) と対角列 `[(k*e, v+k*f, 0)] ∈ W (2v)` を証明（TowerExp2Root の基底）✅ v0.118.106
-- [ ] **次**: TowerExp2Root の `|R| >= 2`（`z = 1` は oper = Pred で自明）
+- [x] z=1 対角列 diag1_mem_W を証明（oper = Pred）→ |R|=1 基底は完全に閉じた ✅ v0.118.110
+- [x] gcopy_eq_shift_lift / gcopies_eq_tower（コピー＝行0シフト×行1リフト）✅ v0.118.110
+- [x] (SUBST) SubstClosed を計測（38403 例 0 違反）・Lean で def 化 ✅ v0.118.109-110
+- [ ] **次**: `TowerExp2Root <= (SUBST) + (WL) + diag` の配線、そして (SUBST) 本体
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
