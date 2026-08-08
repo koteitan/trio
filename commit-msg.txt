@@ -1,9 +1,10 @@
-v0.118.136/document suffix closure and the (REPL) normalisation
+v0.118.137/add lean/PROOF-STATUS.md as the authoritative status document
 
-- Add W_segment and drop_mem_Wself
-- Add GRAFTALL-PLAN 4.0005: why the old "suffix closure is false" note was about
-  a fixed stage, the datum induction that proves it, and the consequence that
-  Wself is closed under any contiguous block, so the residue is pure gluing
-- Record (REPL), the suffix-replacement principle that would normalise the
-  residue's position to 0: 1097675 instances, 0 violations, not adopted because
-  it raises the core count
+- State the single remaining core Subst1gReviveSelf and the full Lean chain from
+  it to WellFounded stepRel
+- Tabulate the W structure theorems, including the retraction of the old
+  "suffix closure is false" note
+- Tabulate every probe with its instance count, and state plainly that the
+  ST_TS audit is capped and the adversarial one is over random small tuples
+- Record where the wall is and which decompositions close the circle
+- Point task.md at it; GRAFTALL-PLAN.md stays as the 3700-line design log

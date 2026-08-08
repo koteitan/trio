@@ -1,0 +1,106 @@
+# trio / PROOF-STATUS (authoritative)
+
+3 行バシク（BM4, `z<2` 断片）の停止性 Lean 形式化の現状。
+`GRAFTALL-PLAN.md` は 3700 行の設計ログなので、**現状はこの文書を見る**。
+
+- build: 800 jobs 緑 / `sorry` 0 / 全 top-level の axioms = `[propext, Classical.choice, Quot.sound]`
+- 主目標: `Final.TRIO_terminates_of_revive_self`
+
+## 1. 残核はただ 1 本（段量詞なし）
+
+```lean
+Final.TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel
+Final.no_infinite_expansion_of_revive_self : Subst1gReviveSelf → ¬ ∃ 無限展開列
+```
+
+```
+Wself := {M | M ∈ W (lev M 0)}                        -- 段は根のレベルで決まる
+
+Subst1gReviveSelf :
+  S ∈ Wself → p < |S| → C ≠ [] → C ∈ Wself → lev C 0 ≤ lev S p →
+  entry C 0 0 = entry S 0 p →            -- ブロックの根はその列と同じ深さ
+  (∀ q ∈ C, entry S 0 p ≤ q.1) →         -- 他の列はそれ以上の深さ（非厳格）
+  R := S.take p ++ C ++ S.drop (p+1) の末尾列が R では親を持つ →
+  かつ その列が自分のブロック内（D=[] なら C、そうでなければ D）では孤児 →
+  R ∈ Wself
+```
+
+**意味**: 「`W` 元の 1 列の下に `W` ブロックを吊るしてよい」を、**文脈が
+ブロック内の孤児を復活させる場合**に限ったもの。`Aop` の節 3
+（末尾列に段 `lev-1` のブロックを graft）と比べた差は **ブロックの段が
+`lev-1` か `lev` か**の 1 点だけ（GRAFTALL-PLAN 4.002）。
+
+## 2. 核から目標までの鎖（すべて Lean 済み）
+
+```
+Subst1gReviveSelf
+  --subst1gRevive_of_self-->  Subst1gRevive        （mem_Wself_iff で段を復元）
+  --subst1g_of_revive------>  Subst1g              （mirror / orphan / 端置換）
+  --substClosedG_of_subst1g→  SubstClosedG
+       ├── shiftTowerClosedS_of_substG → ShiftTowerClosedS = (TOW)
+       │      └── liftStageParented_of_tower → liftStage_of_parented → (WL) LiftStage
+       ├── cons_mem_W_of_substG          → TowerExp の m < a 枝
+       └── substClosed_of_substClosedG   → SubstClosed
+              └── towerExp2Root_of_subst (+ (WL)) → TowerExp2Root
+                     └── towerExp2Low_of_root     → TowerExp2Low
+  --towerExp_of_substG----->  Wset.TowerExp
+  --TRIO_terminates_of_tower→ WellFounded stepRel
+```
+
+* **ペア数列の停止性は内部で解消済み**。lean-yapss 11 モジュールを `lean/Pair/`
+  に取り込み、`Pair/Bridge.lean` の `emb` で橋渡し。`TowerExp2Root` の `|R| = 1`
+  基底 `diag_mem_W`（`z=0`）と二列定理 `two_col_mem_W` で使う。
+* **`(CAT)` は消えた**（v0.118.122）。旧経路 `TRIO_terminates_of_cat_*` /
+  `TRIO_terminates_of_snoc` も生きているが、こちらが広い。
+
+## 3. `W` の構造定理（この階層は見かけより単純）
+
+| 定理 | 内容 |
+|---|---|
+| `Wset.lev_root_le_of_mem_W` | `M ∈ W u → lev M 0 ≤ u` |
+| `Wset.W_root_stage` | `M ∈ W u → M ≠ [] → M ∈ W (lev M 0)` — **段はちょうど根のレベル** |
+| `mem_Wself_iff` | `M ∈ W u ↔ M ∈ Wself ∧ lev M 0 ≤ u` — 添字族は 1 集合＋側条件に潰れる |
+| `Wset.W_take` / `W_dropLast` | 接頭辞閉 |
+| `W_drop` | `M ∈ W u → M.drop j ∈ W (lev M j)` — **接尾辞閉**（接尾辞自身の根レベルで） |
+| `W_segment` | 任意の連続区間で閉じる |
+| `Wset.oper_one_eq_dropLast` | `M⟦1⟧ = M.dropLast`（1 コピーは剥離） |
+| `two_col_mem_W` | `[(0,v,z), t] ∈ W a`（`2v+z ≤ a`、`t` は**任意**） |
+| `Wset.W_shift` / `W_mono` / `W_add`(rsum) | 既存 |
+
+⚠ 旧メモ「接尾辞閉包は偽」は**撤回**（段を固定していたため）。
+
+## 4. 計測（probe）
+
+| 命題 | 例数 | 違反 |
+|---|---|---|
+| `(SUBST1g)` 網羅 | 210201 | 0 |
+| `(SUBST1g)` 非厳格 | 165768 | 0 |
+| `(SUBST1)` | 62151 | 0 |
+| 残差のみ・反証型乱択 | 78885 | 0 |
+| `(LOW)` 末尾レベル下げ | 5544711 | 0 |
+| 段＝根レベル | 211880 | 0 |
+| 接尾辞閉 / 区間閉 | 237099 / 470712 | 0 |
+| `(REPL)` 接尾辞差し替え | 1097675 | 0 |
+
+⚠ **実 ST_TS 行列は `inW` で判定不能**（判定すること自体が停止性問題）。
+確認型監査 `audit_subst1g_stts.py` は判定 651 例で頭打ち。反証型
+`probe_subst1g_adv.py` はランダム小タプル領域（`|S| ≤ 5`, `|C| ≤ 4`,
+展開は `n ∈ {1,2}` 近似）。**決定的な監査ではない**。
+
+## 5. 壁
+
+残核は「文脈が死んだ孤児を復活させる」＝ 装置 γ と同型。分解では進まない:
+
+* `(LOW)` の難枝 → `W u` 元の接尾辞上のガード付き塔 → `TowerExp` 経由で**循環**
+* `(REPL)` で位置を `p = 0` に正規化できるが、核が 1→2 に増え、(REPL) 自身も
+  同じ復活枝で止まる
+
+**BM4 展開への新しい数学的入力が要る。** この 3 セッションで得た入力は
+`W_root_stage`（階層は偽の複雑さ）と `W_drop`（接尾辞閉）の 2 つ。
+
+## 6. 却下済み（再挑戦禁止）
+
+* `Aop` 節 2 の `natDom` ガード（全変種）— 反証
+* `(GC)`「後続データが graft 閉包に格上げ」— `|R|=1` で目標に退化
+* 前置だけの界面 / `InfEquip` — 反証
+* 詳細は `GRAFTALL-PLAN.md` §5 と memory `trio-wset-redesign.md`

@@ -1,5 +1,7 @@
 # trio: トリオ数列（z<2）停止性の構文的証明
 
+**現状の権威ドキュメント: `lean/PROOF-STATUS.md`**（GRAFTALL-PLAN.md は設計ログ）
+
 - [x] BM4 実行可能モデル tools/trio.py ✅
 - [x] 検証 tools/verify_trio.py（ペア一致・対角・psi(I) 塔・z<2 閉性・A≡1 探索）✅
 - [x] Trio.lean 定義（TrioSeq / 親子 / oper / ST_TS / step）✅ build 緑
