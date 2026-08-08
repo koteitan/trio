@@ -1,14 +1,6 @@
-v0.118.122/collapse the residue to (SUBST1g) alone
+v0.118.123/document the one-core residue
 
-- Prove constcol_mem_W (repeated copies of one column) and two_col_mem_W:
-  [(0,v,z), t] is in W a for an ARBITRARY second column, via the diagonal
-  (pair theorem) or Pred
-- Add Subst1g (graft-at-a-position), SubstClosedG and the bridges
-  subst1_of_subst1g / substClosed_of_substClosedG / substClosedG_of_subst1g
-- Add ShiftTowerClosedS (root STRICTLY shallowest) and switch (TOW)'s consumers
-  to it, supplying strictness from window_of_rtg0 and argOK
-- Prove shiftTowerClosedS_of_substG: the copy tower is (SUBST) over the constant
-  diagonal at level 2b+c = u
-- Prove cons_mem_W_of_substG: TowerExp's m < a half over the two-column host
-- Add towerExp_of_substG and Final.TRIO_terminates_of_subst1g /
-  no_infinite_expansion_of_subst1g, dropping (CAT) from the residue
+- Add GRAFTALL-PLAN 4.01: (SUBST1g) as the two-point liberalisation of Aop
+  clause 3, the two (CAT) consumers it absorbs, and two_col_mem_W
+- Record the ShiftTowerClosedS strictness change and its two suppliers
+- Point task.md at the single remaining core

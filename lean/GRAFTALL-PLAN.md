@@ -3210,6 +3210,48 @@ copy k ∈ W (2*(v + k*D1) + z) = W (lev Q k)                     (WL) + W_shift
 ⟹ (SUBST) が閉じる
 ```
 
+## 4.01 ★★★★★ 残差は `(SUBST1g)` **1 本**になった（v0.118.122、現在の頂点）
+
+```
+Final.TRIO_terminates_of_subst1g : Subst1g -> WellFounded stepRel
+  axioms = [propext, Classical.choice, Quot.sound],  sorry 0,  build 800
+
+Subst1g : S in W u -> p < |S| -> C /= [] -> C in W (lev S p) ->
+          entry C 0 0 = entry S 0 p ->
+          (forall j, 1 <= j < |C|, entry S 0 p < entry C 0 j) ->
+          S.take p ++ C ++ S.drop (p+1) in W u
+```
+
+**`(SUBST1g)` は `Aop` 節 3 の 2 点緩和そのもの**:
+節 3 は「**末尾**列に `W m` ブロック（`m = lev - 1`）を graft してよい」。
+`(SUBST1g)` は (a) 位置を任意にし、(b) ブロックの段を `lev - 1` から `lev` に
+1 つ上げただけ。だから「新しい公理」ではなく既存公理の最小の強化である。
+
+### `(CAT)` が消えた — 消費者 2 本とも `(SUBST)` だった
+
+| 旧消費者 | 置換 | 鍵 |
+|---|---|---|
+| `(TOW)` シフトコピー塔 → `(WL)` | `shiftTowerClosedS_of_substG` | ホスト = **定数対角** `[(x0+k*e, b, c)]_{k<n}`（レベルはどの列も `2b+c = u`）。`diagz_mem_W` を `f = 0` で使う（`e = 0` は `constcol_mem_W`）。コピー `k` = `shiftr01 (k*e) 0 Q ∈ W u = W (lev ホスト k)` |
+| `TowerExp` の `m < a` 枝 | `cons_mem_W_of_substG` | ホスト = **二列** `[(0,v,z), t] ∈ W a`（`two_col_mem_W`）。その 2 つのレベルが皮 `p_{v,z}(R.dropLast) ∈ W (2v+z)` と末尾単元 `[t] ∈ W (m+1)` にちょうど一致 |
+
+### `two_col_mem_W`（新規・単独で強い）
+
+```
+two_col_mem_W : z <= 1 -> 2v+z <= a -> forall t, [(0,v,z), t] in W a
+```
+第 2 列は**深さもレベルも任意**。孤児なら `oper = Pred`、親があれば根が親で
+展開はちょうど対角 `[(k*D0, v+k*D1, z)]_{k<n}`（`gcopies_eq_tower` を
+`M.take 1 = [(0,v,z)]` で）。だから `[(0,0,0), (1,100,1)] ∈ W 0` — レベル 201 の
+列がレベル 0 の根の下で無害になる。**ペア定理がここで効いている。**
+
+### `(TOW)` の仮説を厳格化した
+
+`ShiftTowerClosedS`（根が**厳密に**最浅）。`(SUBST)` はブロックをホスト列より
+厳密に深く置く必要があるため。消費者は 2 本ともこれを供給できる
+（`lspOn_srow1_of_tower` は `window_of_rtg0`、`towerExp1_of_tower` は `argOK`）。
+`shiftTowerClosedS_of_closed : ShiftTowerClosed -> ShiftTowerClosedS` で
+旧 `(CAT)` 経路も生きたまま。
+
 ## 4.02 ★★ `(SUBST)` は**単一ブロック** `(SUBST1)` に割れた（v0.118.120）
 
 ```

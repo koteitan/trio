@@ -76,7 +76,9 @@
 - [x] ★ `TowerExp2Root <= (SUBST) + (WL) + diag` の配線 ✅ v0.118.113
 - [ ] **残差（現在の頂点・2 本）**: `TRIO_terminates_of_cat_subst : WCat → SubstClosed → WellFounded stepRel`
 - [x] ★ (SUBST) を単一ブロック (SUBST1) に還元 ✅ v0.118.120
-- [ ] 次: (SUBST1) 本体、または (CAT) 本体
+- [x] ★★★ (CAT) を吸収し残差を (SUBST1g) 1 本に ✅ v0.118.122
+- [ ] **残差（現在の頂点・1 本）**: `TRIO_terminates_of_subst1g : Subst1g → WellFounded stepRel`
+- [ ] 次: (SUBST1g) 本体（= Aop 節3 の「位置任意 + 段 lev-1→lev」）
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
