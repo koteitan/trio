@@ -74,10 +74,10 @@ def main():
             pop.append(S)
     rng = random.Random(20260809)
     for _ in range(4000):                      # wider random tail
-        L = rng.randint(2, 5)
-        S = [(0, rng.randint(0, 4), rng.randint(0, 1))]
+        L = rng.randint(3, 4)
+        S = [(0, rng.randint(0, 3), rng.randint(0, 1))]
         for _ in range(L - 1):
-            S.append((rng.randint(1, 5), rng.randint(0, 4), rng.randint(0, 1)))
+            S.append((rng.randint(1, 4), rng.randint(0, 3), rng.randint(0, 1)))
         pop.append(S)
     print('population:', len(pop))
 

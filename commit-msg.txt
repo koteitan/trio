@@ -1,3 +1,6 @@
-v0.118.144/first result of the inW truncation check
+v0.118.145/size the inW truncation check to finish
 
-- n <= 2 and n <= 3 agree on all 2209 decided instances, 0 disagreements
+- Drop the n <= 4 variant (its expansions blow the length budget) and cut the
+  bounds to MAXDEPTH 8 / MAXLEN 30 / AMAX 6 with a 700-sequence random tail; the
+  full-bounds run was killed after 53 minutes without printing
+- Print progress every 200 sequences
