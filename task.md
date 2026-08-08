@@ -60,10 +60,11 @@
 - [x] (TOW) の候補上位 (CAT)「W u は連結で閉じる」を計測（37万例 違反 0）✅ v0.118.79
 - [x] (CAT) を 1 列追加 (SNOC) に還元（Xbar.oper_append_inner が既存）✅ v0.118.81
 - [x] (SNOC) の自由な断片 (i1=0,j0=0) を証明・ST_TS 監査 ✅ v0.118.82-83
-- [x] ⛔ TowerExp2 は (CAT) から出ない（崩壊は Aop 節 3 のみ）→ ガード復活が要る
+- [x] ⛔ TowerExp2 は (CAT) から出ない ✅ v0.118.85
 - [x] ⛔ 前置だけの界面は不可能（0 錐は行1祖先鎖、塔では周期的）計測済み
-- [ ] **次の主タスク**: Aop 節2 に natDom ガードを戻す（TowerExp が空虚に）
-- [ ] **残差B（新トラック・本命）**: ガード後は (SNOC) 1 本に集まる
+- [x] ⛔ Aop 節2 の natDom ガードは全変種が反証 ✅ v0.118.90-93
+- [x] ★ TowerExp は (SNOC) からそのまま出る（towerExp_of_snoc）✅ v0.118.94
+- [ ] **残差B（本命・唯一）**: `TRIO_terminates_of_snoc : WSnoc → WellFounded stepRel`
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
 - [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）

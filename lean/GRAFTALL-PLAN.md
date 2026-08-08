@@ -2941,6 +2941,62 @@ Wset.lean:4038 は towerOK_of の節 2 分岐 = **空虚化して消える箇所
    probe 先行（既存 6 変種の反証を踏まえた形の探索）
 7. 𝒞 の構成 = `mem_of_Aclosed_aux` の Wstar2/GX への再配線 + Final.lean 差し替え
 
+## 4.4 ★★ 残差は `(SNOC)` 1 本になった（v0.118.94）
+
+```
+TRIO_terminates_of_snoc : WSnoc → WellFounded stepRel
+  axioms = [propext, Classical.choice, Quot.sound],  sorry 0,  build 787
+```
+
+### 見落としていたこと: `TowerExp` は**そのまま snoc**
+
+`TowerExp2` が `(CAT)` から出ないのは正しいが、**`(SNOC)` からは直接出る**。
+`(SNOC)` は「文脈から親を貰う 1 列の追加」なので、まさに `TowerExp` の状況
+（死んだ孤児が根で復活する）そのものだった。
+
+```
+Wtower2.towerExp_of_snoc (hsn : WSnoc) : Wset.TowerExp
+```
+
+証明（`Wtower2.lean` 末尾、~20 行）:
+
+* `domT R m` ⟹ `R⟦1⟧ = graft R [] = R.dropLast`
+  （`oper_eq_graft_nil_of_domT` + `graft_nil`）
+* 節 2 のデータ `hop 1` は `R.dropLast ∈ Wstar`、これを `(v,z,a)` に当てて
+  `C := (0,v,z) :: R.dropLast ∈ W a`
+* `C ++ [R.getLast] = (0,v,z) :: R = M`（`List.dropLast_append_getLast`）
+* `snoc_step hsn` で `M ∈ W a`、`oper_closed` で `M⟦n⟧ ∈ W a`
+* `|R| = 1` の場合は `R.dropLast = []` で `C = [(0,v,z)]`、`Om_mem_W` + `W_mono`
+* **`hpM` は不要**（`snoc_step` が孤児側も処理済み）
+
+### なぜ `(CAT)` では届かなかったか
+
+`(CAT)` は両辺が `W a` に居ることを要求する。`TowerExp` で追加される列は
+レベルが幾らでも高く（`m+1 = 2w+z'`）、**文脈から親を貰うことではじめて無害になる**。
+`(SNOC)` はその「親を貰う」を条件に持つので一段強い。
+
+### 統一核の計測（`tools/probe_ltow.py`）
+
+両残差が生む対象は同じ「リフト付きコピー塔」:
+
+```
+(LTOW)  X ∈ W u → concat_{k<n} shiftr01 (k*d0) 0 (Lift1 X (k*d1)) ∈ W u
+        側条件: X は based、非根列の深さ ≥ d0（no-dip）
+```
+
+計測 12920 例 0 違反（うち `d1 > 0` が 7806）。`d1 = 0` が `(TOW)`、
+`j0 = 0` の文脈付き版が `TowerExp2`、一般の `j0` が `(SNOC)`。
+`TowerExp2` 自体も 1330 例 0 違反（`tools/probe_towerexp2.py`、未判定 2336）。
+
+### 残差の性質
+
+`W 0` は「遺伝的に停止する列」そのもの（`[(d,v,z)] ∈ W a ⟺ 2v+z ≤ a`、
+`|S|≥2` では `S ∈ W a ⟺ ∀n, S⟦n⟧ ∈ W a`）。よって **`(SNOC)` の `u = 0` 事例は
+停止性定理そのもの**で、さらに小さい命題への還元では閉じない。
+`(SNOC)` の節 1・`i1=2` の基底は `[(a,0,0),(b,w,1)]` で、その展開
+`[(a+k d0, k w, 0)]_{k<n}` は行 2 が 0 の 2 行対角列 ＝ ペア数列の停止性。
+⟹ **新しい帰納法**が要る。
+
 ## 4.5 `natDom` ガードは⛔反証（v0.118.90）
 
 **結論: `Aop` 節 2 に `natDom M` を戻す設計は、`Wstar_closed` を偽にする。**
