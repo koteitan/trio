@@ -92,6 +92,22 @@ theorem no_infinite_expansion_of_parented (hP : LiftStageParented)
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_liftStage (liftStage_of_parented hP) he
 
+/-- **Trio sequences terminate, modulo the row-1 graft tower alone.**  Three of
+the four `(WL)` branches are proved (`lspOn_pos`, `lspOn_srow2`, `lspOn_srow0`),
+so the whole stage law now rests on the single class
+`badPar X = 0 ∧ srow X (|X| - 1) = 1` — the same phenomenon as `TowerExp`. -/
+theorem TRIO_terminates_of_srow1
+    (hs1 : LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 1))
+    (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_parented (liftStageParented_of_srow1 hs1) he
+
+/-- **No infinite expansion sequence**, from the row-1 graft tower alone. -/
+theorem no_infinite_expansion_of_srow1
+    (hs1 : LSPOn (fun X => badPar X = 0 ∧ srow X (X.length - 1) = 1))
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_parented (liftStageParented_of_srow1 hs1) he
+
 
 
 /-! ## 新しいトラック: 2 本の文脈核から停止性まで

@@ -2609,15 +2609,29 @@ gexp_guard_transport : le1 (gexp M j0 Lb d0 d1 n) j0 (j0 + (k*Lb+q)) ↔ le1 M j
 ⟹ `1 ≤ badPar` には**新しい輸送補題**（コピー塊での「添字 0 からの錐」の
 特徴づけ）が要る。計測では違反 0 なので命題自体は正しい見込み。
 
-### 残作業（新トラック）
+### 残作業（新トラック）— v0.118.77 で 1 枝に
 
-1. `1 ≤ badPar`（全 `i1`）: 添字 0 からの錐の輸送補題を作る。
-   `p < j0` の部分は **`le1_gexp_low`（v0.118.74 で証明済み）**:
-   `le1 (gexp M j0 Lb d0 d1 n) 0 p ↔ le1 M 0 p`（`p < j0`）。
-   `gexp` の頭が `M.take j0` であること（`List.take_left'`）と `le1_take` の
-   前置局所性だけで出る。**難しいのはコピー部分**（`p ≥ j0`）。
-2. `badPar = 0, i1 = 1`: 塔の接ぎ木漸化式（§1.9.59）。真の核。
-3. `TowerExp`: 1 と同じ現象（§1.9.59）。
+1. ✅ `1 ≤ badPar`（全 `i1`）: **落ちた**（v0.118.75-77, `lspOn_pos`）。
+   鍵は「窓の行 0 値は根より真に大きい（`hup`）ので、行 0 の鎖は窓に入る前に
+   必ずバッドルートを通る」という切断補題 `rtg0_split_at`。これで
+   `le1_iff_chain_window` の前提（`rtg0` の存在）が両側で対応づき、
+   `Lcone.gexp_cone_mir` / `gexp_cone_mir_flat` が要求していた
+   「根が厳密に最浅」`hr0` を落とせる（`LSPOn` は `W` の任意の元に対する
+   主張なので `hr0` は使えない）。
+   - 上昇枝（`i1 ≥ 1`, `d0 > 0`）: `gexp_cone0_transport`。ガードが立った
+     位置は `le1 M j0 ·` から行 1 値が既に `entry M 1 j0` を超えるので、
+     乗るリフト `k*d1` は不等式を壊さない。
+   - 平坦枝（`i1 = 0`, `d0 = d1 = 0`）: `gexp_cone0_flat`。切断点は `j0` では
+     なく**コピー `k` の根**。`Lcone` の平坦補題（`nextrel0_flat_root` /
+     `gexp_flat_chain_inversion` / `gexp_flat_rtg0_low`）をそのまま使う。
+   - 可換性は `gexp_Lift1_comm_of_transport` に一本化（錐輸送を仮定として
+     受け取り、上昇版・平坦版の 2 系にする）。
+2. `badPar = 0, i1 = 1`: 塔の接ぎ木漸化式（§1.9.59）。**真の核、唯一の残り**。
+3. `TowerExp`: 2 と同じ現象（§1.9.59）。
+
+`Final.lean` の到達点: `TRIO_terminates_of_srow1 (hs1 : LSPOn (badPar = 0 ∧
+srow = 1)) (he : TowerExp) : WellFounded stepRel`（公理は
+`[propext, Classical.choice, Quot.sound]` のみ）。
 
 ## 4. 実行順序（v0.114 改訂）
 
