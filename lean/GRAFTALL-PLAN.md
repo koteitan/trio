@@ -3210,6 +3210,30 @@ copy k ∈ W (2*(v + k*D1) + z) = W (lev Q k)                     (WL) + W_shift
 ⟹ (SUBST) が閉じる
 ```
 
+## 4.02 ★★ `(SUBST)` は**単一ブロック** `(SUBST1)` に割れた（v0.118.120）
+
+```
+Subst1 : S ∈ W u → p < |S| → C ≠ [] → C ∈ W (lev S p) →
+         (∀ i, entry C i 0 = entry S i p) →
+         (∀ j, 1 ≤ j < |C|, entry S 0 p < entry C 0 j) →
+         S.take p ++ C ++ S.drop (p+1) ∈ W u
+substClosed_of_subst1 : Subst1 → SubstClosed          -- Lean 済み
+Final.TRIO_terminates_of_cat_subst1 : WCat → Subst1 → WellFounded stepRel
+```
+
+* 各列の置換は**独立**で、左から順に行える（位置 `p` の置換は `p` より左を乱さない）。
+  段 `k` の対象は `⧺_{j<k} B j ++ Q.drop k` で、ブロック境界の列はまだ `Q k`
+  （entry も lev も同一）。`(SUBST1)` 一発で段 `k+1`、`k = |Q|` が目標。
+* `(SUBST)` の**鎖条件は使わない**（計測でも不要）。
+* 計測: `tools/probe_subst1.py` 62151 例 0 違反（判定 58799 / 未判定 3352）。
+* さらに強い**位置つき graft 形** `(SUBST1g)`（頭の一致を捨て `entry C 0 0 = entry S 0 p`
+  だけ課す。`C ∈ W (lev S p)` が `lev (C 0) ≤ lev S p` を自動で与える）も
+  0 違反: `tools/probe_subst1g.py` 210201 例（うち頭が異なる 148050）。
+  `(TOW)` は `(SUBST1g)` を定数対角 `[(k*e, b, c)]_{k<n}`（全列が永久孤児なので
+  `W (2b+c)`）の上で反復した形なので、`(CAT)` の消費者 1 本は吸収できる見込み。
+  ⚠ ただし `towerExp_of_cat` の `m < a` 枝（`C ++ [t]`, `lev t = m+1 ≤ a`）は
+  `(SUBST1g)` では届かない（末尾に**挿入**する形が要る）。`(CAT)` は依然独立。
+
 ## 4.05 `W` の構造的補題（v0.118.117-118、残差攻略の道具）
 
 ```
