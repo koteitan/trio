@@ -2997,26 +2997,72 @@ domT R 1,  m0 = 1,  domLow a R ⟺ a ≤ m0 ⟺ 0 ≤ 1  … 成立してしま�
 `hpM`（根が復活させる）からは `m0 < a` は出ない（`m0 = 2w-1` は幾らでも
 大きくできる）。よって `TowerExp` は残る。
 
-### `tbAll` 復活も⛔（旧設計への逆戻り）
+### ★ `tbAll` を戻せば救済できる（v0.118.91 で訂正）
 
-ガード + `Wstar` に `tbAll R a` を足せば反例は排除できる（`tbAll R 0` が
-`domT R 0 → 0 < 0` を要求して偽になる）。しかし `Wstar_closed` の
-B2a 分岐が `tbAll (R⟦n⟧) a` を要求し、これは旧 `Wset.TbOper`
-（Final.lean の冒頭コメントに化石が残っている「`tbAll` が一手展開で保たれる」）
-そのもの。コピーは行 1 が `k*d1` 上がるので `tbAll` は展開で保たれない。
-`Wstar` の「全 `a` で主張する」現行設計は、まさにこの `tbAll` 簿記を
-不要にするために選ばれたものだった（`Wset.lean:2331` の doc comment）。
+ガード + `Wstar` に `tbAll R a` を足せば反例は排除できる: 反例は
+`tbAll R 0` ⟺ `domT R 0 → 0 < 0` が偽なので仮定が立たない。
 
-### ⟹ 残差は変わらず 2 本
+**この訂正の要は `TbOper` が真だったこと**（当初「コピーが行 1 を `k*d1` 上げる
+から偽」と書いたが誤り）。
 
 ```
-TRIO_terminates_of_snoc (hsn : WSnoc) (h2 : TowerExp2) : WellFounded stepRel
+(TB) TbOper : tbAll X u → tbAll (X⟦n⟧) u
 ```
 
-* `(SNOC)` = 「親を見つける 1 列の追加は段を上げない」
-* `TowerExp2` = 行 2 崩壊タワー（コピーが行 1 リフトされるので `(CAT)` 系では出ない）
+`tbAll X u` は「`X` の親を持たない列はすべて lev < u」と同値なので
+(TB) ⟺ `u0 (X⟦n⟧) ≤ u0 X`（`u0` = 親無し列の lev の最大）。
 
-`TowerExp2` を消す手段としてのガードは**閉じた**（再挑戦禁止）。
+* 計測 `tools/probe_tboper2.py`: **185138 例 0 違反**
+  （短列全数 24624 / ランダム長列 160000 / 反復降下）。
+  うち **3305 ホストが危険ケース（`i1 = 2` かつ `d1 > 0`＝コピーが行 1 リフト）**。
+* **構造的理由**: `d1 > 0` は `i1 = srow X (|X|-1) = 2` のときだけ。そのとき
+  コピー根 `j0` は末尾列の**行 2 の親**なので `entry X 2 j0 = 0`。
+  よって `j0` の行 1 錐に入る行 2 の列は必ず行 2 の親（`j0` 以近）を持つ
+  ⟹ **親無しの行 2 列は決してリフトされる錐に入らない**。
+  親無しの行 1 列はそもそも誰の行 1 錐にも入らない（`le1` の最後の一歩が
+  その列の行 1 の親だから）。⟹ 親無し列の lev は展開で上がらない。
+
+### ⟹ 改訂設計（v0.118.91、実装対象）
+
+```
+Aop 節 2   : natDom M ∧ ∀ n ≥ 1, M⟦n⟧ ∈ X
+Wstar      : argOK R → ∀ v z a, z ≤ 1 → 2v+z ≤ a → tbAll R a → (0,v,z) :: R ∈ W a
+新補題     : TbOper      : tbAll X u → tbAll (X⟦n⟧) u          （probe 185138/0）
+             mem_W_tbAll : M ∈ W u → tbAll M u                  （A2' 帰納、易しい）
+既存で足りる: tbAll_take / tbAll_graft / tbAll_of_lev_bound（すべて証明済み）
+供給点      : Wset.lean:4113 に `htb : tbAll Q (maxlev Q)` が**すでに計算されている**
+             （旧 tbAll 設計の遺物。そのまま使える）
+```
+
+`Wstar_closed` の枝ごとの帰結（yapss の `Wstar_closed` と同型になる）:
+
+| 枝 | 扱い |
+|---|---|
+| 節 1 | 後者手（現行のまま） |
+| 節 2・親あり | `oper_cons_nat` で可換。`tbAll (R⟦n⟧) a` に **(TB)** が要る |
+| 節 2・親なし | `natDom R` が `lev R last = 0` を強制 ⟹ 後者手。`tbAll_take` |
+| 節 3・根が復活 | 塔（`tower1_mem` / `TowerGraft2`）。接ぎ木データあり |
+| 節 3・死んだ孤児 | `tbAll R a` から `m < a` ⟹ **節 3 が使える**。`tbAll_graft` |
+
+⟹ **`TowerExp` / `TowerExp2` が枝ごと消える**。`TowerGraft2` は
+`towerGraft2_of_liftStage` で `(WL)` に、`(WL)` は `(TOW)`→`(CAT)`→`(SNOC)` に
+落ちるので、目標は
+
+```
+TRIO_terminates_of_snoc : WSnoc → WellFounded stepRel      -- 残差 1 本
+```
+
+### なぜ yapss には要らないのか（設計の core）
+
+yapss の `Wstar_closed` は `v ≤ m ⟺ 根が孤児を復活させる`という**厳密な二分法**で
+通っている（`nextrel1 M 0 last` ⟺ `v < entry R 1 last = m+1`）。trio でこれが
+破れるのは行 2 だけ:
+
+* `srow = 1`: 復活しない ⟹ `w ≤ v` ⟹ `m+1 = 2w ≤ 2v ≤ a` ⟹ `m < a` **自動**
+* `srow = 2`: `nextrel2` は `le1` を要求するので、`(x,0,1)` 型は**永久に**親無し。
+  `m` と `2v+z` の間に関係が無い ⟹ 側条件 `tbAll R a` が要る
+
+⟹ `tbAll` は「行 2 の永久孤児のレベルを段が上回る」という trio 固有の簿記。
 
 ## 5. 却下済み経路（再挑戦禁止; 詳細は memory）
 
@@ -3026,5 +3072,5 @@ TRIO_terminates_of_snoc (hsn : WSnoc) (h2 : TowerExp2) : WellFounded stepRel
 - `Aop` 節3の全段閉包化: 段再帰の整礎性が壊れる
 - 値ベース要素リフト言語（LiftVc*/origin-mask/TLift 脊柱型): 位置性で全滅
 - GA の素朴な A2（キャップなし）: 段 m_Y+2t の幾何的成長
-- **`Aop` 節 2 の `natDom` ガード（および `domLow` 弱化・`tbAll` 復活）**:
-  §4.5 の反例で決着。無ガード節 2 のゴミ吸収は本質
+- **`Aop` 節 2 の `natDom` ガード（側条件なし）／`domLow` 弱化**: §4.5 の反例で決着。
+  ⚠ ただし **ガード + `Wstar` の `tbAll R a`** は生きている（§4.5 改訂版）
