@@ -1197,6 +1197,31 @@ theorem gcopy_shift0 (M : TrioSeq) (L d0 k : ℕ) :
   intro j _
   simp
 
+/-- **★ Each guarded copy is a row-0 shift of a row-1 lift of the window.**
+This is the form `(SUBST)` consumes: copy `k` is rooted at the diagonal column
+`(k*d0, v + k*d1, z)` and, by `(WL)`, sits in `W` of exactly that column's
+level (GRAFTALL-PLAN 4.15). -/
+theorem gcopy_eq_shift_lift {M : TrioSeq} (L d0 d1 k : ℕ) (hL : L ≤ M.length) :
+    gcopy M 0 L d0 d1 k = shiftr01 (k * d0) 0 (Lift1 (M.take L) (k * d1)) := by
+  classical
+  have hlen : (M.take L).length = L := by rw [List.length_take]; omega
+  unfold gcopy shiftr01 Lift1
+  rw [hlen, List.map_map, ← List.range_eq_range']
+  refine List.map_congr_left ?_
+  intro j hj
+  have hjl : j < L := List.mem_range.mp hj
+  simp only [Function.comp_apply, entry_take hjl, le1_take hL hjl, Nat.add_zero]
+
+/-- The whole copy block, as the tower of shifted lifts of the window. -/
+theorem gcopies_eq_tower {M : TrioSeq} (L d0 d1 n : ℕ) (hL : L ≤ M.length) :
+    gcopies M 0 L d0 d1 n
+      = (List.range n).flatMap
+          fun k => shiftr01 (k * d0) 0 (Lift1 (M.take L) (k * d1)) := by
+  unfold gcopies
+  refine List.flatMap_congr ?_
+  intro k _
+  exact gcopy_eq_shift_lift L d0 d1 k hL
+
 open Classical in
 /-- **The row-1 collapse at the root expands to a shifted copy tower.** -/
 theorem oper_of_srow1_par0 {X : TrioSeq} (h2 : 2 ≤ X.length)
@@ -1771,5 +1796,89 @@ theorem towerExp_of_snoc (hsn : WSnoc) : Wset.TowerExp := by
     have hstep := snoc_step hsn (R.getLast hRne) hCA hCne
     rwa [List.cons_append, List.dropLast_append_getLast hRne] at hstep
   exact oper_closed hM hn
+
+/-- **★ The `z = 1` diagonal is trivial.**  Every column carries row 2 = `1`, so
+no column has a row-1 ancestor with a smaller row 2, i.e. no row-2 parent at
+all; `oper` is therefore just `Pred` and the block shrinks to `[(0,v,1)]`, whose
+level `2v+1` is exactly the target stage.  Together with
+`PairBridge.diag_mem_W` (the `z = 0` case) this closes the `|R| = 1` base of
+`TowerExp2Root` (GRAFTALL-PLAN 4.2). -/
+theorem diag1_mem_W (v e f : ℕ) : ∀ n : ℕ,
+    ((List.range n).map (fun k => ((k * e, v + k * f, 1) : ℕ × ℕ × ℕ)))
+      ∈ W (2 * v + 1) := by
+  classical
+  intro n
+  induction n with
+  | zero => simpa using W_nil (2 * v + 1)
+  | succ n ih =>
+      set D : TrioSeq :=
+        (List.range (n + 1)).map (fun k => ((k * e, v + k * f, 1) : ℕ × ℕ × ℕ))
+        with hD
+      have hlen : D.length = n + 1 := by rw [hD]; simp
+      have hget : ∀ j, j < n + 1 →
+          D.getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = ((j * e, v + j * f, 1) : ℕ × ℕ × ℕ) := by
+        intro j hj
+        rw [hD, List.getD_eq_getElem?_getD, List.getElem?_map,
+          List.getElem?_eq_getElem (by simpa using hj)]
+        simp
+      have hent2 : ∀ j, j < n + 1 → entry D 2 j = 1 := by
+        intro j hj
+        unfold entry
+        rw [hget j hj]
+        simp
+      rcases Nat.eq_zero_or_pos n with rfl | hn
+      · have hD1 : D = [((0 * e, v + 0 * f, 1) : ℕ × ℕ × ℕ)] := by rw [hD]; simp
+        rw [hD1]
+        exact singleton_mem_W (by omega)
+      · refine mem_of_oper_mem (fun p hp => ?_)
+        have hL : D.length - 1 ≠ 0 := by omega
+        have hj1 : D.length - 1 < n + 1 := by omega
+        have hsr : srow D (D.length - 1) = 2 := by
+          unfold srow
+          rw [if_pos (by rw [hent2 _ hj1]; omega)]
+        have hnp : ¬ hasParent D 2 (D.length - 1) := by
+          rintro ⟨j0, hj0, -⟩
+          have hn2 : nextrel2 D j0 (D.length - 1) := by
+            unfold nextR at hj0
+            rw [if_neg (by omega), if_neg (by omega)] at hj0
+            exact hj0
+          have hj0l : j0 < n + 1 := by rw [← hlen]; exact hn2.1
+          have := hn2.2.2.2.1
+          rw [hent2 _ hj0l, hent2 _ hj1] at this
+          omega
+        have hzz : ¬ (entry D 0 (D.length - 1) = 0 ∧ entry D 1 (D.length - 1) = 0 ∧
+            entry D 2 (D.length - 1) = 0) := by
+          rintro ⟨-, -, h2⟩
+          rw [hent2 _ hj1] at h2
+          omega
+        rw [oper_eq_pred_of_noParent p hL hzz (by rw [hsr]; exact hnp)]
+        unfold Pred
+        rw [if_neg (by omega)]
+        have hdl : D.dropLast
+            = (List.range n).map (fun k => ((k * e, v + k * f, 1) : ℕ × ℕ × ℕ)) := by
+          rw [hD, List.range_succ, List.map_append]
+          simp
+        rw [hdl]
+        exact ih
+
+/-- **(SUBST)** — the substitution closure, the shape `TowerExp2Root` needs for
+`|R| ≥ 2` (GRAFTALL-PLAN 4.15).  Replacing every column of a `W u` member by a
+block rooted at that column, whose other columns are strictly deeper and which
+itself lies in `W` of that column's own level, keeps the stage.
+
+The tower instance: `Q` is the diagonal `[(k*d0, v + k*d1, z)]_{k<n}` — proved
+to be in `W (2v+z)` by `PairBridge.diag_mem_W` (`z = 0`) and `diag1_mem_W`
+(`z = 1`) — and `B k = shiftr01 (k*d0) 0 (Lift1 M.dropLast (k*d1))`
+(`gcopy_eq_shift_lift`), which `(WL)` places in `W (2*(v + k*d1) + z)`, exactly
+`lev Q k`.
+
+Probe `tools/probe_subst.py`: 38403 decided instances, 0 violations. -/
+def SubstClosed : Prop :=
+  ∀ (u : ℕ) (Q : TrioSeq) (B : ℕ → TrioSeq), Q ∈ W u →
+    (∀ k, k < Q.length →
+      (B k).getD 0 ((0, 0, 0) : ℕ × ℕ × ℕ) = Q.getD k ((0, 0, 0) : ℕ × ℕ × ℕ)) →
+    (∀ k, k < Q.length → ∀ p ∈ (B k).tail, entry Q 0 k < p.1) →
+    (∀ k, k < Q.length → B k ∈ W (lev Q k)) →
+    ((List.range Q.length).flatMap B) ∈ W u
 
 end TRIO
