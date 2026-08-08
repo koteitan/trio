@@ -150,6 +150,23 @@ theorem no_infinite_expansion_of_cat (hcat : WCat) (h2 : TowerExp2) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_tow (shiftTowerClosed_of_cat hcat) h2
 
+/-- **★ Trio sequences terminate, modulo `(CAT)` and the LOW half of the row-2
+tower.**  `TowerExp`'s `m < a` half is `(CAT)`-strength (`towerExp_of_cat`): the
+appended column is then a `W a` member on its own.  What is left is the row-2
+collapse with `a ≤ m`, i.e. exactly the case where the orphan's level exceeds
+the target stage and the column is harmless only because it finds a parent.
+That is where the pair-sequence content sits (its `|R| = 1`, `z = 0` base is the
+pair diagonal `[(k*d0, v + k*d1, 0)]`). -/
+theorem TRIO_terminates_of_cat_low (hcat : WCat) (h2 : TowerExp2Low) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_tower (shiftTowerClosed_of_cat hcat) (towerExp_of_cat hcat h2)
+
+/-- **No infinite expansion sequence**, from `(CAT)` and the low row-2 tower. -/
+theorem no_infinite_expansion_of_cat_low (hcat : WCat) (h2 : TowerExp2Low) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_tower (shiftTowerClosed_of_cat hcat)
+    (towerExp_of_cat hcat h2)
+
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
 not raise the stage*.

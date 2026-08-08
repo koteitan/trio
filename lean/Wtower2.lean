@@ -1661,6 +1661,67 @@ theorem snoc_flat_root {u : ℕ} {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hC : C �
   rw [oper_snoc_flat_root hCne hsr hbp hpar n]
   exact W_flatMap_copies hC hCr n
 
+/-- `TowerExp` restricted to a row-2 collapse whose orphan sits at or above the
+target stage.  The complementary half (`m < a`) is `(CAT)`-strength. -/
+def TowerExp2Low : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+    a ≤ m → domT R m → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) → srow R (R.length - 1) = 2 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+open Classical in
+/-- **★ The `m < a` half of `TowerExp` is `(CAT)`-strength.**  When the trailing
+orphan's own level fits under the target stage, the single column is already a
+`W a` member on its own, so `(CAT)` glues it onto `p_{v,z}(R.dropLast)`.  This
+is what isolates the genuinely hard half: `a ≤ m`, where the appended column
+is only harmless because it finds a parent. -/
+theorem towerExp_of_cat (hcat : WCat) (h2 : TowerExp2Low) : Wset.TowerExp := by
+  classical
+  intro v z m a R hR hRne hz1 hva hd hop hpM n hn
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  rcases Nat.lt_or_ge m a with hma | hma
+  · -- `m < a`: the appended column is itself in `W a`, so `(CAT)` suffices.
+    have hCne : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ≠ [] := by simp
+    have hCA : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ W a := by
+      rcases Nat.lt_or_ge R.length 2 with hsm | hbig
+      · have hdl : R.dropLast = [] :=
+          List.eq_nil_of_length_eq_zero (by simp; omega)
+        rw [hdl]
+        exact W_mono hva (Om_mem_W v z)
+      · have h1 := hop 1 le_rfl
+        rw [oper_eq_graft_nil_of_domT (n := 1) (by omega) hd, graft_nil] at h1
+        exact h1 (argOK_dropLast hR) v z a hz1 hva
+    have hqd : R.getLast hRne = R.getD (R.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [List.getLast_eq_getElem, getElem_eq_getD' (by omega)]
+    have hlv : 2 * (R.getLast hRne).2.1 + (R.getLast hRne).2.2 = m + 1 := by
+      have hl := hd.1
+      unfold lev entry at hl
+      rw [hqd]
+      simpa using hl
+    have hpW : [R.getLast hRne] ∈ W a := by
+      have hq : R.getLast hRne
+          = ((R.getLast hRne).1, (R.getLast hRne).2.1, (R.getLast hRne).2.2) := rfl
+      rw [hq]
+      exact singleton_mem_W (by omega)
+    have hM : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W a := by
+      have hglue := hcat a _ _ hCA hpW
+      rwa [List.cons_append, List.dropLast_append_getLast hRne] at hglue
+    exact oper_closed hM hn
+  · -- `a ≤ m`: row 1 still reduces to `(TOW)`, row 2 is the open half.
+    have hlevpos : 0 < lev R (R.length - 1) := by rw [hd.1]; omega
+    unfold lev at hlevpos
+    rcases srow_cases R (R.length - 1) with hsr | hsr | hsr
+    · exfalso
+      unfold srow at hsr
+      split at hsr
+      · omega
+      · split at hsr
+        · omega
+        · omega
+    · exact towerExp1_of_tower (shiftTowerClosed_of_cat hcat)
+        v z m a R hR hRne hz1 hva hd hop hsr hpM n hn
+    · exact h2 v z m a R hR hRne hz1 hva hma hd hop hsr hpM n hn
+
 open Classical in
 /-- **★ `(SNOC)` gives `TowerExp` outright.**  The successor-clause tower *is* a
 snoc: `domT R m` makes `R⟦1⟧ = R.dropLast`, so the clause-2 datum puts
