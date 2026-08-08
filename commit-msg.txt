@@ -1,5 +1,5 @@
-v0.118.130/record the adversarial audit of the residue
+v0.118.131/make the adversarial probe finishable
 
-- Run the residue-only adversarial hunt on 30000 random wide-range instances:
-  39376 decided (context-revives 7217, insertion-creates-parent 8837,
-  inside-copied-region 23322), 0 violations
+- Lower the sample count to 60000 and print progress every 10000 samples; the
+  400000-sample run was killed by its own timeout before printing anything
+- Record the measured 30000-sample result in the docstring

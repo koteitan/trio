@@ -16,6 +16,11 @@ So this probe tries to REFUTE instead, and aims at the danger zone that
 Those are exactly the shapes that killed A_x1 == 1, W2ok, spanOK and dichOK.
 Hosts and blocks are drawn at random over a much wider column range than the
 exhaustive probe, with dips allowed, and only the residue cases are counted.
+
+Measured (seed 20260809, 30000 samples): 39376 decided residue instances --
+context-revives 7217, insertion-creates-parent 8837, inside-copied-region
+23322 -- and 0 violations.  `inW` is the bottleneck, so keep SAMPLES modest;
+progress is printed every 10000 samples.
 """
 import sys
 import random
@@ -28,7 +33,7 @@ NS = (1, 2)
 MAXDEPTH = 11
 MAXLEN = 44
 AMAX = 16
-SAMPLES = 400000
+SAMPLES = 60000
 
 
 def lev(col):
@@ -98,7 +103,10 @@ def main():
     memo = {}
     tot = Counter()
     ex = []
-    for _ in range(SAMPLES):
+    for it in range(SAMPLES):
+        if it and it % 10000 == 0:
+            print(f'  ... {it}/{SAMPLES}  violations so far:',
+                  sum(v for k, v in tot.items() if 'VIOLATION' in k), flush=True)
         S = rand_host(rng)
         p = rng.randrange(len(S))
         C = rand_block(rng, S[p][0])
