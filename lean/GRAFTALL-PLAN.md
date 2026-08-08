@@ -3210,7 +3210,39 @@ copy k ∈ W (2*(v + k*D1) + z) = W (lev Q k)                     (WL) + W_shift
 ⟹ (SUBST) が閉じる
 ```
 
-## 4.003 ★★★★★ 残差は「**復活形ただ 1 つ**」（v0.118.127、現在の頂点）
+## 4.002 ★★★★ 残差の正体 = **`Aop` 節 3 の段を 1 つ上げたもの**（v0.118.129 分析）
+
+`end_subst_of_revive` の残差枝を `Aop` 節 3 と並べると差が 1 点に集約する:
+
+```
+Aop 節3     : domT S m (m = lev(S 末尾) - 1) -> forall z in W m, based z ->
+              graft S z = S.dropLast ++ shift_x z  in W u
+残差(D=[])  :                                  forall C in W (lev(S 末尾)),
+              head 深さ = x, 列は深さ >= x  ->   S.dropLast ++ C  in W u
+```
+
+**唯一の差はブロックの段が `lev - 1` か `lev` か**（＋ 節 3 は `domT` を要求）。
+つまり残差は「**節 3 のブロック段を 1 つ上げてよい**」という命題そのもの。
+`(SUBST1g)` を「節 3 の 2 点緩和（位置任意 + 段 +1）」と述べた 4.01 と整合し、
+mirror/orphan/端置換を落とした後は**位置の一般化が消えて段の +1 だけが残った**。
+
+### `|C| = 1` の残差 = (LOW)「末尾列のレベルを下げてよい」
+
+```
+(LOW)  A ++ [c] in W u,  t.0 = c.0,  lev t <= lev c  ==>  A ++ [t] in W u
+```
+計測 `tools/probe_lowerlast.py`: **5544711 例、違反 0**（未判定 16550）。内訳:
+`c` 孤児/`lev t < lev c` 3175106、`c` 有親/`lev<` 1124218、`lev=` は
+（行2 <= 1 なのでレベルが列を一意に決め）`t = c` で自明。
+うち `t` が親を持つ（＝真の復活）のは 633397 + 510120。
+
+* `c` が dominant terminal で `lev t < lev c` なら**節 3 で無料**
+  （`graft (A++[c]) [(0,t.1,t.2)] = A ++ [t]`、`[(0,t.1,t.2)] in W (lev c - 1)`）。
+* 残るのは節 2 枝で `t` が親を持つ場合。そこでは
+  `(A ++ [t])[n] = A.take j0 ++ (A.drop j0 のガード付きコピー塔)` になり、
+  **`W u` 元の接尾辞の上の塔** = `(SNOC)/(CAT)/(SUBST)/TowerExp` 共通の核に戻る。
+
+## 4.003 ★★★★★ 残差は「**復活形ただ 1 つ**」（v0.118.127）
 
 ```
 Final.TRIO_terminates_of_revive : Subst1gRevive -> WellFounded stepRel
