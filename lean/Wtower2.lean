@@ -2406,6 +2406,12 @@ theorem W_drop {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ) :
             exact hNdl.2 j
   exact (hsub h).2 j
 
+/-- **Segments too**: `Wself` is closed under taking any contiguous block, at
+that block's own root level. -/
+theorem W_segment {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j k : ℕ) :
+    (M.drop j).take k ∈ W (lev M j) :=
+  W_take (W_drop h j) k
+
 /-- **The stage-free form of `W`.**  `W_root_stage` and `lev_root_le_of_mem_W`
 together give `M ∈ W u ↔ M ∈ Wself ∧ lev M 0 ≤ u`: the whole indexed family
 collapses to ONE set plus a root-level side condition. -/
@@ -2422,6 +2428,11 @@ theorem mem_Wself_iff (u : ℕ) (M : TrioSeq) :
     · exact ⟨W_root_stage h hne, lev_root_le_of_mem_W h hne⟩
   · rintro ⟨h1, h2⟩
     exact W_mono h2 h1
+
+theorem drop_mem_Wself {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ) :
+    M.drop j ∈ Wself := by
+  have := W_drop h j
+  rwa [← lev_drop_head M j] at this
 
 /-- The root of a substituted sequence: the block's root when `p = 0`, the
 host's otherwise. -/

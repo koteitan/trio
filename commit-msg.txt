@@ -1,10 +1,9 @@
-v0.118.135/prove that W is suffix-closed at the suffix's own root level
+v0.118.136/document suffix closure and the (REPL) normalisation
 
-- Prove Wset.oper_one_eq_dropLast: one copy is the peel, via oper_gcopies and
-  gcopies_length
-- Add Wset.singleton_mem_self and Wset.lev_drop_head
-- Prove W_drop: M in W u -> M.drop j in W (lev M j).  The old "suffix closure is
-  false" note used a fixed stage; at the suffix's own root level it holds.
-  Induct on the datum: a parent inside the suffix mirrors via oper_append_inner,
-  otherwise oper peels and the suffix sits inside N.dropLast = N[1]
-- Measured 237099 drop instances and 470712 segment instances, 0 failures
+- Add W_segment and drop_mem_Wself
+- Add GRAFTALL-PLAN 4.0005: why the old "suffix closure is false" note was about
+  a fixed stage, the datum induction that proves it, and the consequence that
+  Wself is closed under any contiguous block, so the residue is pure gluing
+- Record (REPL), the suffix-replacement principle that would normalise the
+  residue's position to 0: 1097675 instances, 0 violations, not adopted because
+  it raises the core count
