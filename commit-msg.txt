@@ -1,11 +1,5 @@
-v0.118.129/identify the residue as clause 3 with the stage raised by one
+v0.118.130/record the adversarial audit of the residue
 
-- Add tools/probe_lowerlast.py: (LOW), the single-column case of the residue,
-  holds on 5544711 instances with 0 violations
-- Add GRAFTALL-PLAN 4.002: the residue differs from Aop clause 3 only in the
-  block's stage (lev - 1 vs lev), so after the mirror, orphan and
-  end-substitution branches the position generalisation is gone and only the
-  +1 on the stage survives
-- Record that a dominant terminal with lev t < lev c is free from clause 3, and
-  that the remaining branch unfolds to a guarded tower over a suffix of a W u
-  member
+- Run the residue-only adversarial hunt on 30000 random wide-range instances:
+  39376 decided (context-revives 7217, insertion-creates-parent 8837,
+  inside-copied-region 23322), 0 violations
