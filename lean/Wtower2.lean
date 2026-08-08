@@ -1661,4 +1661,33 @@ theorem snoc_flat_root {u : ℕ} {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hC : C �
   rw [oper_snoc_flat_root hCne hsr hbp hpar n]
   exact W_flatMap_copies hC hCr n
 
+open Classical in
+/-- **★ `(SNOC)` gives `TowerExp` outright.**  The successor-clause tower *is* a
+snoc: `domT R m` makes `R⟦1⟧ = R.dropLast`, so the clause-2 datum puts
+`p_{v,z}(R.dropLast)` in `W a`, and `R`'s trailing orphan — the very column the
+root revives — is the single column being appended.  `snoc_step` covers the
+orphan case too, so `hpM` is not even needed.
+
+This is what `(CAT)` could NOT do: `(CAT)` needs both sides in `W a`, whereas
+here the appended column carries an arbitrarily high level and only becomes
+harmless because it finds a parent in the context. -/
+theorem towerExp_of_snoc (hsn : WSnoc) : Wset.TowerExp := by
+  classical
+  intro v z m a R hR hRne hz1 hva hd hop _hpM n hn
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hCne : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ≠ [] := by simp
+  have hCA : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ W a := by
+    rcases Nat.lt_or_ge R.length 2 with hsm | hbig
+    · have hdl : R.dropLast = [] :=
+        List.eq_nil_of_length_eq_zero (by simp; omega)
+      rw [hdl]
+      exact W_mono hva (Om_mem_W v z)
+    · have h1 := hop 1 le_rfl
+      rw [oper_eq_graft_nil_of_domT (n := 1) (by omega) hd, graft_nil] at h1
+      exact h1 (argOK_dropLast hR) v z a hz1 hva
+  have hM : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W a := by
+    have hstep := snoc_step hsn (R.getLast hRne) hCA hCne
+    rwa [List.cons_append, List.dropLast_append_getLast hRne] at hstep
+  exact oper_closed hM hn
+
 end TRIO

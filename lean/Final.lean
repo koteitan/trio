@@ -150,20 +150,29 @@ theorem no_infinite_expansion_of_cat (hcat : WCat) (h2 : TowerExp2) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_tow (shiftTowerClosed_of_cat hcat) h2
 
-/-- **Trio sequences terminate, modulo `(SNOC)` and `TowerExp2`.**  `(SNOC)` is
-the atomic form of the whole `(WL)` residue: *appending one column that finds a
-parent does not raise the stage*.  Every `Aop` clause of `(CAT)` reduces to it
-(`wcat_of_snoc`), using the `rsum`-free append identity `Xbar.oper_append_inner`
-for the parented case and `graft B [] = B.dropLast` for the orphan case.
-Probe `tools/probe_snoc.py`: 14455 instances, 0 violations. -/
-theorem TRIO_terminates_of_snoc (hsn : WSnoc) (h2 : TowerExp2) :
-    WellFounded stepRel :=
-  TRIO_terminates_of_cat (wcat_of_snoc hsn) h2
+/-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
+atomic form of the whole residue: *appending one column that finds a parent does
+not raise the stage*.
 
-/-- **No infinite expansion sequence**, from `(SNOC)` and `TowerExp2`. -/
-theorem no_infinite_expansion_of_snoc (hsn : WSnoc) (h2 : TowerExp2) :
+* Every `Aop` clause of `(CAT)` reduces to it (`wcat_of_snoc`), using the
+  `rsum`-free append identity `Xbar.oper_append_inner` for the parented case and
+  `graft B [] = B.dropLast` for the orphan case; `(CAT)` gives `(TOW)`, hence the
+  whole stage law `(WL)`.
+* `TowerExp` — both halves, including the row-2 one that `(CAT)` provably could
+  not reach — is *literally* a snoc (`towerExp_of_snoc`): `domT R m` makes
+  `R⟦1⟧ = R.dropLast`, so the clause-2 datum puts `p_{v,z}(R.dropLast)` in
+  `W a`, and `R`'s trailing orphan is the one column appended.
+
+Probe `tools/probe_snoc.py`: 14455 instances, 0 violations. -/
+theorem TRIO_terminates_of_snoc (hsn : WSnoc) : WellFounded stepRel :=
+  TRIO_terminates_of_tower (shiftTowerClosed_of_cat (wcat_of_snoc hsn))
+    (towerExp_of_snoc hsn)
+
+/-- **No infinite expansion sequence**, from `(SNOC)` alone. -/
+theorem no_infinite_expansion_of_snoc (hsn : WSnoc) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
-  no_infinite_expansion_of_cat (wcat_of_snoc hsn) h2
+  no_infinite_expansion_of_tower (shiftTowerClosed_of_cat (wcat_of_snoc hsn))
+    (towerExp_of_snoc hsn)
 
 
 
