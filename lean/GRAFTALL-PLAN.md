@@ -2888,6 +2888,21 @@ TowerOK の分岐   節1        : W_flatMap_copies                      ✅ free
 行 2 が 0 の対角塔なので、ペア数列の事実を含む — それは trio 側の行 1 塔
 `tower1_mem` が既に担っている部分と重なる）。
 
+**実測したリファクタ規模（v0.118.88、その場で適用して計測・revert 済み）**:
+`Aop` 節 2 に `natDom M ∧` を足しただけで **`Wset.lean` 単独で 41 エラー**。
+下流（`Wchar` / `Wslift` / `Wtower2` / `Gamma` / `Core` / `Infcex` / `Lind`）は
+Lean がそこで止まるので未到達。エラーは規則的なペアで機械的:
+
+```
+"Application type mismatch" + "No goals to be solved"  … 節 2 の導入
+    （Or.inr (Or.inl (fun n hn => …)) → ⟨natDom 証明, fun n hn => …⟩）  約 20 組
+"Function expected at"                                  … 節 2 の分解
+    （rcases … | hop | … の hop が対になる）                約 6 箇所
+Wset.lean:4038 は towerOK_of の節 2 分岐 = **空虚化して消える箇所**（狙いどおり）
+```
+
+⟹ 全体で 150〜300 箇所の修正が見込まれる。1 セッション分の作業。
+
 **次セッションの主タスク（設計は確定、作業は機械的）**:
 1. `Aop` 節 2 に `natDom M ∧` を戻す（`Wset.lean`）。
 2. 節 2 導入 23 箇所 + `mem_of_oper_mem` 7 箇所に `natDom` を供給する。
