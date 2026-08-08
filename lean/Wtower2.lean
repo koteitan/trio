@@ -1907,6 +1907,12 @@ theorem entry2_shiftLift (hj : j < X.length) :
   rw [Lift1_getD hj]
   simp [entry, List.getD_eq_getElem?_getD]
 
+theorem entry_ge_two {Y : TrioSeq} {i j : ℕ} (hi : 2 ≤ i) :
+    entry Y i j = entry Y 2 j := by
+  unfold entry
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp
+
 @[simp] theorem shiftLift_length (X : TrioSeq) (a d : ℕ) :
     (shiftr01 a 0 (Lift1 X d)).length = X.length := by
   rw [shiftr01_length, Lift1_length]
@@ -1933,5 +1939,144 @@ def SubstClosed : Prop :=
       entry Q 0 k < entry (B k) 0 j) →
     (∀ k, k < Q.length → B k ∈ W (lev Q k)) →
     ((List.range Q.length).flatMap B) ∈ W u
+
+open Classical in
+/-- **★ `TowerExp2Root` from `(SUBST)` and the stage law `(WL)`.**
+
+`M⟦n⟧` is the tower of guarded copies (`gcopies_eq_tower`); copy `k` is
+`shiftr01 (k*d0) 0 (Lift1 M.dropLast (k*d1))`, rooted at the diagonal column
+`(k*d0, v + k*d1, z)` and — by `(WL)` applied to `M.dropLast ∈ W (2v+z)` — living
+in `W (2*(v + k*d1) + z)`, exactly that column's level.  The diagonal itself is
+`diagz_mem_W`.  So `(SUBST)` closes the gap. -/
+theorem towerExp2Root_of_subst (hsub : SubstClosed) (hWL : LiftStage) :
+    TowerExp2Root := by
+  classical
+  intro v z m R hR hRne hz1 hd hop hi1 hpM hvw hzy n hn
+  set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
+  set M : TrioSeq := p0 :: R with hMdef
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hMlen : M.length - 1 = R.length := by rw [hMdef]; simp
+  have hE : ∀ i, entry M i R.length = entry R i (R.length - 1) :=
+    fun i => entry_cons_last hRne i
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  have hL : M.length - 1 ≠ 0 := by rw [hMlen]; omega
+  have hzz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) := by
+    rw [hMlen]; rintro ⟨h1, -, -⟩; rw [hE 0] at h1; omega
+  have hsrM : srow M (M.length - 1) = 2 := by
+    rw [hMlen, hMdef, srow_cons_last hRne, hi1]
+  have hpM' : hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+    rw [hsrM, hMlen, hMdef, ← hi1]; exact hpM
+  have hpar0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0 := by
+    rw [hsrM, hMlen]
+    have := parent_cons_eq_zero (v := v) (z := z) hRne hd hpM
+    rwa [hi1] at this
+  have hroot0 : entry M 0 0 = 0 := by rw [hMdef]; simp [entry, hp0]
+  have hroot1 : entry M 1 0 = v := by rw [hMdef]; simp [entry, hp0]
+  have hroot2 : entry M 2 0 = z := by rw [hMdef]; simp [entry, hp0]
+  set D0 : ℕ := (if 0 < srow M (M.length - 1)
+    then entry M 0 (M.length - 1) - entry M 0 0 else 0) with hD0
+  set D1 : ℕ := (if 1 < srow M (M.length - 1)
+    then entry M 1 (M.length - 1) - entry M 1 0 else 0) with hD1
+  have hD0pos : 0 < D0 := by
+    rw [hD0, hsrM, if_pos (by omega), hroot0, hMlen, hE 0]; omega
+  -- the peel `M.dropLast = p_{v,z}(R.dropLast)` lands in `W (2v+z)`
+  set Md : TrioSeq := M.dropLast with hMd
+  have hMdcons : Md = p0 :: R.dropLast := by rw [hMd, hMdef, dropLast_cons hRne]
+  have hMdlen : 0 < Md.length := by rw [hMdcons]; simp
+  have hMdmem : Md ∈ W (2 * v + z) := by
+    rcases Nat.lt_or_ge R.length 2 with hsm | hbig
+    · have hdl : R.dropLast = [] :=
+        List.eq_nil_of_length_eq_zero (by simp; omega)
+      rw [hMdcons, hdl]
+      exact Om_mem_W v z
+    · have h1 := hop 1 le_rfl
+      rw [oper_eq_graft_nil_of_domT (n := 1) (by omega) hd, graft_nil] at h1
+      rw [hMdcons]
+      exact h1 (argOK_dropLast hR) v z (2 * v + z) hz1 le_rfl
+  -- the copies
+  set B : ℕ → TrioSeq := fun k => shiftr01 (k * D0) 0 (Lift1 Md (k * D1)) with hB
+  have hBlen : ∀ k, (B k).length = Md.length := fun k => by
+    rw [hB]; exact shiftLift_length Md _ _
+  have hBmem : ∀ k, B k ∈ W (2 * (v + k * D1) + z) := by
+    intro k
+    have h := hWL (2 * v + z) (k * D1) Md hMdmem
+    have he : 2 * v + z + 2 * (k * D1) = 2 * (v + k * D1) + z := by omega
+    rw [he] at h
+    simpa only [hB] using W_shift h (k * D0)
+  -- the diagonal host
+  set Q : TrioSeq :=
+    (List.range n).map (fun k => ((k * D0, v + k * D1, z) : ℕ × ℕ × ℕ)) with hQ
+  have hQlen : Q.length = n := by rw [hQ]; simp
+  have hQget : ∀ k, k < n → Q.getD k ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = ((k * D0, v + k * D1, z) : ℕ × ℕ × ℕ) := by
+    intro k hk
+    rw [hQ, List.getD_eq_getElem?_getD, List.getElem?_map,
+      List.getElem?_eq_getElem (by simpa using hk)]
+    simp
+  have hQent : ∀ k, k < n →
+      entry Q 0 k = k * D0 ∧ entry Q 1 k = v + k * D1 ∧ entry Q 2 k = z := by
+    intro k hk
+    refine ⟨?_, ?_, ?_⟩ <;> · unfold entry; rw [hQget k hk]; simp
+  have hQmem : Q ∈ W (2 * v + z) := diagz_mem_W hz1 v D0 D1 hD0pos n
+  -- assemble
+  have hmain := hsub (2 * v + z) Q B hQmem
+    (by intro k hk; rw [hBlen k]; exact hMdlen)
+    (by
+      intro k hk i
+      have hk' : k < n := by rw [← hQlen]; exact hk
+      have hlt : (0 : ℕ) < Md.length := hMdlen
+      rcases hQent k hk' with ⟨e0, e1, e2⟩
+      have hM0 : entry Md 0 0 = 0 := by
+        rw [hMdcons]; simp [entry, hp0]
+      have hM1 : entry Md 1 0 = v := by
+        rw [hMdcons]; simp [entry, hp0]
+      have hM2 : entry Md 2 0 = z := by
+        rw [hMdcons]; simp [entry, hp0]
+      simp only [hB]
+      rcases Nat.lt_or_ge i 1 with hi0 | hi1'
+      · have hii : i = 0 := by omega
+        subst hii
+        rw [entry0_shiftLift hlt, hM0, e0]
+        omega
+      · rcases Nat.lt_or_ge i 2 with hia | hib
+        · have hii : i = 1 := by omega
+          subst hii
+          rw [entry1_shiftLift hlt, hM1, e1, if_pos (le1_refl hlt)]
+        · rw [entry_ge_two hib, entry_ge_two hib, entry2_shiftLift hlt, hM2, e2])
+    (by
+      intro k hk j hj1 hjlt
+      have hk' : k < n := by rw [← hQlen]; exact hk
+      rcases hQent k hk' with ⟨e0, -, -⟩
+      rw [hBlen k] at hjlt
+      simp only [hB]
+      rw [entry0_shiftLift hjlt, e0]
+      have hpos : 0 < entry Md 0 j := by
+        rw [hMdcons]
+        have hMdl : Md.length = R.dropLast.length + 1 := by rw [hMdcons]; simp
+        have hjR : j - 1 < R.dropLast.length := by omega
+        have : entry (p0 :: R.dropLast) 0 j = entry R.dropLast 0 (j - 1) := by
+          conv_lhs => rw [show j = (j - 1) + 1 by omega]
+          rw [entry_cons]
+        rw [this]
+        exact argOK_dropLast hR _ (entry_pair_mem hjR)
+      omega)
+    (by
+      intro k hk
+      have hk' : k < n := by rw [← hQlen]; exact hk
+      rcases hQent k hk' with ⟨-, e1, e2⟩
+      have : lev Q k = 2 * (v + k * D1) + z := by unfold lev; rw [e1, e2]
+      rw [this]
+      exact hBmem k)
+  rw [hQlen] at hmain
+  have hgexp : M⟦n⟧ = gexp M 0 (M.length - 1) D0 D1 n :=
+    oper_eq_gexp n hL hzz hpM' hpar0
+  rw [hgexp]
+  unfold gexp
+  rw [List.take_zero, List.nil_append,
+    gcopies_eq_tower (M := M) (M.length - 1) D0 D1 n (by omega),
+    ← List.dropLast_eq_take, ← hMd]
+  exact hmain
 
 end TRIO

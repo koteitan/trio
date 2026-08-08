@@ -185,6 +185,34 @@ theorem no_infinite_expansion_of_cat_root (hcat : WCat) (h2 : TowerExp2Root) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_cat_low hcat (towerExp2Low_of_root h2)
 
+/-- **★★★ Trio sequences terminate, modulo `(CAT)` and `(SUBST)`.**  Both are
+pure `W`-closure statements, and the pair-sequence theorem is already discharged
+(it lives in the `|R| = 1` base of the row-2 tower, proved by
+`PairBridge.diag_mem_W` / `diag1_mem_W`).
+
+* `(CAT)` — `W u` is closed under concatenation; it carries `(TOW)`, hence the
+  whole stage law `(WL)`, and the `m < a` half of `TowerExp`.
+* `(SUBST)` — substituting under each column of a `W u` member a block rooted at
+  that column and lying in `W` of that column's own level keeps the stage; it
+  closes the row-2 tower via `towerExp2Root_of_subst`.
+
+Probes: `tools/probe_cat.py` 372290 pairs 0 violations,
+`tools/probe_subst.py` 38403 decided instances 0 violations. -/
+theorem TRIO_terminates_of_cat_subst (hcat : WCat) (hsub : SubstClosed) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_cat_root hcat
+    (towerExp2Root_of_subst hsub
+      (liftStage_of_parented
+        (liftStageParented_of_tower (shiftTowerClosed_of_cat hcat))))
+
+/-- **No infinite expansion sequence**, from `(CAT)` and `(SUBST)`. -/
+theorem no_infinite_expansion_of_cat_subst (hcat : WCat) (hsub : SubstClosed) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_cat_root hcat
+    (towerExp2Root_of_subst hsub
+      (liftStage_of_parented
+        (liftStageParented_of_tower (shiftTowerClosed_of_cat hcat))))
+
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
 not raise the stage*.
