@@ -2727,6 +2727,45 @@ TRIO_terminates_of_cat   (hcat : WCat)             (h2 : TowerExp2)
 
 到達点: `TRIO_terminates_of_snoc (hsn : WSnoc) (h2 : TowerExp2) : WellFounded stepRel`
 
+### v0.118.83: `(SNOC)` の自由な断片と、`TowerExp2` についての firm な否定
+
+**自由な断片（証明済み `snoc_flat_root`）**: `i1 = 0` かつ `j0 = 0` なら
+コピーは `C` そのものなので `W_flatMap_copies` で無条件に閉じる
+（`C` の根が最浅なのは `C` の根が `p` の行 0 の親だから＝ no-dip 節）。
+残るのは `j0 ≥ 1`（接頭辞が残る）と `i1 ≥ 1`（コピーが持ち上がる）。
+
+**`(SNOC)` は簿記ではなく本物の停止性を含む**: 節 1 の基底
+（`C = [q]`, `lev q = 0`）ですら `M⟦n⟧ = [(a+k*d0, k*d1, 0)]_{k<n}` という
+**対角列**であり、これが `W u` に入ることは 1 行／2 行（原始・ペア）数列の
+停止性そのものである。したがって `(SNOC)` に「量詞整理」で到達することは
+できず、yapss 型の議論の移植か新しい数学が要る。
+
+### ⛔ `TowerExp2` は `(CAT)` からは**原理的に**出ない（v0.118.83 確認）
+
+`TowerExp2` の消費点は `hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar` で、
+`Wstar` は「**任意に小さい根** `(0,v',z')`（`2v'+z' ≤ a'`）の下に植えられる」
+ことを要求する。`graft R y = R.dropLast ++ shiftr01 c 0 y` なので `(CAT)` で
+繋ぐには `y ∈ W a'` が要るが、実際には `y ∈ W m` で `2v+z ≤ m`、つまり
+**データの段のほうが結果の段より高い**。`(CAT)` は段を保つだけなので、この
+崩壊（高い段のデータを低い根の下で捕まえる）は `Aop` 節 3 でしか起きない。
+
+⟹ `TowerExp2` を消すには **`Aop` 節 2 に `natDom` ガードを戻す**（孤児は節 3
+経由しか許さない）か、GX トラックの機構が要る。ガードを戻したときに壊れる
+3 箇所（`Wslift:88/138`, `Wtower2:129`）は **`(CAT)` があれば修復できる**:
+
+```
+目標 Lift1 X d ∈ W (m+2d) を節 3 で:
+  domT (Lift1 X d) m''、m'' ≤ m' + 2d、節 3 より m' < m ⟹ m'' < m+2d
+  graft (Lift1 X d) z = Lift1 (X.dropLast) d ++ shiftr01 c 0 z
+    前半: 節 3 のデータを z = [] で（graft X [] = X.dropLast）
+    後半: z ∈ W m'' ⊆ W (m+2d)（W_mono）→ W_shift
+    (CAT) で連結
+```
+
+⚠ ただしガード付き `W` は今の probe 道具では**決定できない**（節 3 が
+`∀ z ∈ W m` を含む）ので、`(SNOC)`/`(CAT)` の測定証拠が使えなくなる。
+⟹ **順序は `(SNOC)` を証明 → `(CAT)` が定理 → その後でガード復活**が安全。
+
 ### ⚠ 健全性の注意: `(CAT)` / `(TOW)` は定理の**下流**でもある
 
 `mem_W_maxlev`（A 閉集合 `S` を法として）は `zle1 M → M ∈ W (maxlev M)` を与え、
