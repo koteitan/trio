@@ -65,7 +65,9 @@
 - [x] ⛔ Aop 節2 の natDom ガードは全変種が反証 ✅ v0.118.90-93
 - [x] ★ TowerExp は (SNOC) からそのまま出る（towerExp_of_snoc）✅ v0.118.94
 - [ ] **残差B（本命）**: `TRIO_terminates_of_snoc : WSnoc → WellFounded stepRel`（核 1 本・広い）
-- [ ] **残差B'（狭い提示）**: `TRIO_terminates_of_cat : WCat → TowerExp2 → ...`（(CAT) はペア定理を含まない）
+- [x] TowerExp を m<a で分割、高い側は (CAT) で証明 ✅ v0.118.99
+- [x] 行2塔の段量詞 a を除去（W_mono）・復活ギャップを核に焼込 ✅ v0.118.100-101
+- [ ] **残差B'（最狭）**: `TRIO_terminates_of_cat_root : WCat → TowerExp2Root → ...`
 - [ ] **次の具体タスク**: (PAIR) 行2が0の based ブロックは W 0 — lean-yapss から移植
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る

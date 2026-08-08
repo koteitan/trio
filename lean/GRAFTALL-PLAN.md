@@ -3043,6 +3043,49 @@ yapss の `oper` と一致する（`t = max{y | S_(X-1)y > 0} ≤ 1`）。
 `[(a+k d0, k w, 0)]_{k<n}` は行 2 が 0 の 2 行対角列 ＝ ペア数列の停止性。
 ⟹ **新しい帰納法**が要る。
 
+## 4.3 ★★ 残差の最終形（v0.118.99-101）
+
+```
+TRIO_terminates_of_cat_root : WCat → TowerExp2Root → WellFounded stepRel
+  axioms = [propext, Classical.choice, Quot.sound],  sorry 0,  build 787
+```
+
+### 何を削ったか
+
+1. **`TowerExp` を `m < a` で分割**（`towerExp_of_cat`）:
+   `m < a` なら追加される列は**単体で** `W a` の元（`lev = m+1 ≤ a`）なので
+   `(CAT)` で `p_{v,z}(R.dropLast)` に貼るだけ。⟹ 残るのは `a ≤ m`。
+2. **`a` の量詞は余計**（`towerExp2_of_root`）: `W_mono` が `W (2v+z)` を
+   すべての `a ≥ 2v+z` に持ち上げ、`tower1_le` が `2v+z ≤ m` を与えるので、
+   行 2 の残差は**段 `2v+z` 一点**に縮む。
+3. **行 2 復活のギャップを核に焼き込んだ**（`row2_revival_gap`）:
+   根が行 2 の親 ⟹ `nextrel2` の `le1` 成分から `v < w`、行 2 の狭義上昇から
+   `z < y`。⟹ `2v+z < m+1`。核の仮定に加えたので核は**形式的に弱く**なった。
+
+### 残差の内容（これだけ）
+
+```
+TowerExp2Root :
+  argOK R → R ≠ [] → z ≤ 1 → domT R m →
+  (∀ n ≥ 1, R⟦n⟧ ∈ Wstar) →            -- 後者節のデータ（接ぎ木閉包は無い）
+  srow R (|R|-1) = 2 →                  -- 行 2 崩壊
+  hasParent ((0,v,z) :: R) 2 |R| →      -- 根が孤児を復活させる
+  v < entry R 1 (|R|-1) → z < entry R 2 (|R|-1) →
+  ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W (2v+z)
+```
+
+日本語で言うと **「引数が後者節で来た行 2 崩壊 `p_{v,z}(R)` が、根自身の段
+`W (2v+z)` に入る」**。`(CAT)`（`W u` は連結で閉じる）が残り全部を運ぶ。
+
+### なぜここで止まるか
+
+塔の漸化式は `M⟦n+1⟧ = (0,v,z) :: graft R (Lift1 (M⟦n⟧) d1)` で、
+`(WL)` があれば段は `2v+z+2d1 = 2w+z ≤ m` にぴったり収まる。だが
+`graft R y ∈ Wstar`（接ぎ木閉包）が要り、**後者節は `R.dropLast ∈ Wstar` しか
+与えない**。これを `R.dropLast ∈ Wstar` から出そうとすると
+「`W m` のブロックを `W a'`（`a'` は幾らでも小さい）のブロックに連結する」
+＝ 崩壊そのものになり循環する。
+
 ## 4.5 `natDom` ガードは⛔反証（v0.118.90）
 
 **結論: `Aop` 節 2 に `natDom M` を戻す設計は、`Wstar_closed` を偽にする。**
