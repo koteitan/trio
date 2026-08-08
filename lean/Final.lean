@@ -213,6 +213,24 @@ theorem no_infinite_expansion_of_cat_subst (hcat : WCat) (hsub : SubstClosed) :
       (liftStage_of_parented
         (liftStageParented_of_tower (shiftTowerClosed_of_cat hcat))))
 
+/-- **★★ Trio sequences terminate, modulo `(CAT)` and `(SUBST1)`.**
+
+`(SUBST1)` is `(SUBST)` for a SINGLE block: the substitutions under the host's
+columns are independent, so doing them left to right (`substClosed_of_subst1`)
+recovers the full statement.  It is the better core — one block, no `flatMap`,
+and no chain condition on the host.
+
+Probes: `tools/probe_cat.py` 372290 pairs 0 violations,
+`tools/probe_subst1.py` 62151 instances 0 violations. -/
+theorem TRIO_terminates_of_cat_subst1 (hcat : WCat) (hs : Subst1) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_cat_subst hcat (substClosed_of_subst1 hs)
+
+/-- **No infinite expansion sequence**, from `(CAT)` and `(SUBST1)`. -/
+theorem no_infinite_expansion_of_cat_subst1 (hcat : WCat) (hs : Subst1) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_cat_subst hcat (substClosed_of_subst1 hs)
+
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
 not raise the stage*.

@@ -1944,6 +1944,82 @@ def SubstClosed : Prop :=
     (∀ k, k < Q.length → B k ∈ W (lev Q k)) →
     ((List.range Q.length).flatMap B) ∈ W u
 
+theorem entry_drop_head (Q : TrioSeq) (i k : ℕ) :
+    entry (Q.drop k) i 0 = entry Q i k := by
+  unfold entry
+  rw [getD_drop, Nat.add_zero]
+
+/-- **(SUBST1)** — the single-block form of `(SUBST)`.
+
+`(SUBST)` hangs a block under *every* column of the host at once, but the
+substitutions are independent and can be done ONE AT A TIME, left to right:
+replacing the column at position `p` never touches positions `< p`.  So the
+whole of `(SUBST)` follows from the single-block statement
+
+    S ∈ W u,  p < |S|,  C ∈ W (lev S p),  head C = S p,  rest of C deeper
+    ⟹ S.take p ++ C ++ S.drop (p+1) ∈ W u
+
+which is a far better induction target: one block, no `flatMap`, and — as the
+probe shows — no chain condition on the host.
+
+Probe `tools/probe_subst1.py`: 62151 instances, 0 violations (58799 decided,
+3352 undecided).  The stronger *graft-at-a-position* form, which only asks
+`entry C 0 0 = entry S 0 p` and lets the head's level drop below `lev S p`, is
+also clean: `tools/probe_subst1g.py`, 210201 instances, 0 violations, of which
+148050 have a head different from `S p`. -/
+def Subst1 : Prop :=
+  ∀ (u p : ℕ) (S C : TrioSeq), S ∈ W u → p < S.length → C ≠ [] →
+    C ∈ W (lev S p) →
+    (∀ i, entry C i 0 = entry S i p) →
+    (∀ j, 1 ≤ j → j < C.length → entry S 0 p < entry C 0 j) →
+    (S.take p ++ C ++ S.drop (p + 1)) ∈ W u
+
+/-- **`(SUBST1)` gives `(SUBST)`.**  Substitute the blocks left to right: after
+`k` steps the object is `⧺_{j<k} B j ++ Q.drop k`, whose column at index
+`|⧺_{j<k} B j|` is still `Q k`, with the same entries and the same level.  One
+`(SUBST1)` step turns it into stage `k+1`, and `k = |Q|` is the goal.  The chain
+hypothesis of `(SUBST)` is not used. -/
+theorem substClosed_of_subst1 (hs : Subst1) : SubstClosed := by
+  intro u Q B hQ _hchain hBne hBhead hBdeep hBW
+  have key : ∀ k, k ≤ Q.length → ((List.range k).flatMap B ++ Q.drop k) ∈ W u := by
+    intro k
+    induction k with
+    | zero => intro _; simpa using hQ
+    | succ k ih =>
+        intro hk
+        have hk' : k < Q.length := by omega
+        have hIH := ih (by omega)
+        set P : TrioSeq := (List.range k).flatMap B with hPdef
+        set T : TrioSeq := Q.drop k with hTdef
+        have hTlen : T.length = Q.length - k := by rw [hTdef]; simp
+        have hE : ∀ i, entry (P ++ T) i P.length = entry Q i k := by
+          intro i
+          have h1 := entry_append_right P T i 0
+          rw [Nat.add_zero] at h1
+          rw [h1, hTdef, entry_drop_head Q i k]
+        have hlv : lev (P ++ T) P.length = lev Q k := by
+          unfold lev; rw [hE 1, hE 2]
+        have hplt : P.length < (P ++ T).length := by
+          rw [List.length_append]; omega
+        have htake : (P ++ T).take P.length = P := List.take_left
+        have hdrop : (P ++ T).drop (P.length + 1) = Q.drop (k + 1) := by
+          have h1 : (P ++ T).drop (P.length + 1) = ((P ++ T).drop P.length).drop 1 := by
+            rw [List.drop_drop]
+          rw [h1, List.drop_left, hTdef, List.drop_drop]
+        have hstep := hs u P.length (P ++ T) (B k) hIH hplt
+          (by intro h; have hb := hBne k hk'; rw [h] at hb; simp at hb)
+          (by rw [hlv]; exact hBW k hk')
+          (by intro i; rw [hE i]; exact hBhead k hk' i)
+          (by intro j hj1 hj2; rw [hE 0]; exact hBdeep k hk' j hj1 hj2)
+        rw [htake, hdrop] at hstep
+        have hrange : (List.range (k + 1)).flatMap B = P ++ B k := by
+          rw [List.range_succ, List.flatMap_append, hPdef]
+          simp
+        rw [hrange]
+        exact hstep
+  have h := key Q.length le_rfl
+  simpa using h
+
 open Classical in
 /-- **★ `TowerExp2Root` from `(SUBST)` and the stage law `(WL)`.**
 

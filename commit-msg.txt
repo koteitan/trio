@@ -1,6 +1,11 @@
-v0.118.74/prove the easy half of the cone transport for j0 >= 1
+v0.118.120/reduce (SUBST) to the single-block (SUBST1)
 
-- Add `le1_gexp_low`: on the head `M.take j0` of a copies block the cone from
-  index 0 is unchanged, by `List.take_left'` and the prefix-locality of `le1`
-- GRAFTALL-PLAN.md 1.9.60: mark that half done and point at the copies part as
-  the remaining difficulty
+- Measure (SUBST1), the one-column substitution: 62151 instances, 0 violations,
+  and the host needs no chain condition (tools/probe_subst1.py)
+- Measure the graft-at-a-position form (SUBST1g), which drops the head match:
+  210201 instances, 0 violations (tools/probe_subst1g.py)
+- Add Wtower2.Subst1 and substClosed_of_subst1: substituting left to right,
+  stage k is (flatMap B over range k) ++ Q.drop k, whose column at the block
+  boundary is still Q k
+- Add Wtower2.entry_drop_head
+- Wire Final.TRIO_terminates_of_cat_subst1 / no_infinite_expansion_of_cat_subst1
