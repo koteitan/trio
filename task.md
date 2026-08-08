@@ -68,7 +68,9 @@
 - [x] TowerExp を m<a で分割、高い側は (CAT) で証明 ✅ v0.118.99
 - [x] 行2塔の段量詞 a を除去（W_mono）・復活ギャップを核に焼込 ✅ v0.118.100-101
 - [ ] **残差B'（最狭）**: `TRIO_terminates_of_cat_root : WCat → TowerExp2Root → ...`
-- [ ] **次の具体タスク**: (PAIR) 行2が0の based ブロックは W 0 — lean-yapss から移植
+- [x] ★ lean-yapss を lean/Pair/ に取り込み・橋渡し完成（emb / oper_emb / emb_mem_W）✅ v0.118.104-106
+- [x] ★ (PAIR) と対角列 `[(k*e, v+k*f, 0)] ∈ W (2v)` を証明（TowerExp2Root の基底）✅ v0.118.106
+- [ ] **次**: TowerExp2Root の `|R| >= 2`（`z = 1` は oper = Pred で自明）
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える

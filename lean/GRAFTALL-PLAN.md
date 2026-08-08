@@ -3090,6 +3090,47 @@ M⟦n⟧ = [(k*e, v + k*(w-v), z)]_{k<n}        -- 行 2 は「根の z」であ
 ⚠ (PAIR) は `TowerExp2Root` の**基底だけ**を与える。必要条件であって
 十分条件ではない。
 
+## 4.1 ★★★ ペア定理を trio に取り込んだ（v0.118.104-106）
+
+lean-yapss の 11 モジュールを `lean/Pair/` として取り込み（名前空間は `YAPSS`
+なので `TRIO` と衝突しない。モジュール名だけ `Pair.*` にリネーム）、
+**橋渡しを完成させた**（`lean/Pair/Bridge.lean`、sorry 0、
+axioms = [propext, Classical.choice, Quot.sound]、build 800）。
+
+```
+emb S := S.map (fun p => (p.1, p.2, 0))
+
+oper_emb          : (emb S)⟦n⟧ = emb (S⟦n⟧)
+emb_mem_W         : S ∈ YAPSS.W v → emb S ∈ TRIO.W (2v)
+pair_plant_mem_W  : argOK R → emb ((0,v) :: R) ∈ TRIO.W (2v)          -- (PAIR)
+diag_mem_W        : 0 < e → [(k*e, v + k*f, 0)]_{k<n} ∈ TRIO.W (2v)   -- ★ 基底
+```
+
+### `oper_emb` の要点
+
+trio の `oper` は BM4 の上昇行列 `A_xy` のガード付き
+（`if le0 M j0 j then k*d0 else 0`）だが、yapss の `oper` にはガードが無い。
+ペアではこれが一致する:
+
+* `d1 = 0`（両側とも `if 1 < i1 then … else 0` で `i1 ≤ 1`）⟹ 行 1 のガードは無害
+* 行 0 のガードは**窓の中では常に真**（`le0_window`）:
+  `window_of_rtg0`（窓の列は根より真に深い）と `rtg0_of_window`（深ければ行 0 の
+  子孫）の合成。両方とも既存補題。
+
+### `emb_mem_W` の要点
+
+転送では **trio 側の `Aop` 節 3 を一切使わない**。
+yapss 側の節 3 は `domT S m` を持つので `S⟦n⟧ = graft S []`、つまり `z = []` の
+データだけで trio 側の節 2 が立つ。これで「trio の `W m'` は埋め込み像より真に
+大きい」という量詞のずれを回避できる。`|S| = 1` の場合だけ
+`singleton_mem_W`（`m+1 ≤ v` は `m < v` から）。
+
+### ⟹ 残差 `TowerExp2Root` の基底は**証明済み**になった
+
+`|R| = 1` かつ `z = 0` の場合、`M⟦n⟧ = [(k*e, v + k*(w-v), 0)]_{k<n}` は
+`diag_mem_W` そのもの。残るのは `|R| ≥ 2`（と `z = 1` だが、こちらは
+全列の行 2 が 1 で `oper = Pred` なので自明、§4.2）。
+
 ## 4.3 ★★ 残差の最終形（v0.118.99-101）
 
 ```
