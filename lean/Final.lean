@@ -167,6 +167,24 @@ theorem no_infinite_expansion_of_cat_low (hcat : WCat) (h2 : TowerExp2Low) :
   no_infinite_expansion_of_tower (shiftTowerClosed_of_cat hcat)
     (towerExp_of_cat hcat h2)
 
+/-- **★★ Trio sequences terminate, modulo `(CAT)` and the row-2 tower at the
+root's OWN stage.**  This is the tightest form of the residue: `TowerExp2Root`
+has no `a` quantifier at all (`W_mono` supplies every `a ≥ 2v+z`, and
+`tower1_le` forces `2v+z ≤ m`), so what is open is exactly
+
+> a row-2 collapse `p_{v,z}(R)` whose argument arrived through the SUCCESSOR
+> clause lands in `W (2v+z)`.
+
+`(CAT)` — `W u` is closed under concatenation — carries everything else. -/
+theorem TRIO_terminates_of_cat_root (hcat : WCat) (h2 : TowerExp2Root) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_cat_low hcat (towerExp2Low_of_root h2)
+
+/-- **No infinite expansion sequence**, from `(CAT)` and the root-stage tower. -/
+theorem no_infinite_expansion_of_cat_root (hcat : WCat) (h2 : TowerExp2Root) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_cat_low hcat (towerExp2Low_of_root h2)
+
 /-- **★ Trio sequences terminate, modulo `(SNOC)` ALONE.**  `(SNOC)` is the
 atomic form of the whole residue: *appending one column that finds a parent does
 not raise the stage*.
