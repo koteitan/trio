@@ -64,7 +64,10 @@
 - [x] ⛔ 前置だけの界面は不可能（0 錐は行1祖先鎖、塔では周期的）計測済み
 - [x] ⛔ Aop 節2 の natDom ガードは全変種が反証 ✅ v0.118.90-93
 - [x] ★ TowerExp は (SNOC) からそのまま出る（towerExp_of_snoc）✅ v0.118.94
-- [ ] **残差B（本命・唯一）**: `TRIO_terminates_of_snoc : WSnoc → WellFounded stepRel`
+- [ ] **残差B（本命）**: `TRIO_terminates_of_snoc : WSnoc → WellFounded stepRel`（核 1 本・広い）
+- [ ] **残差B'（狭い提示）**: `TRIO_terminates_of_cat : WCat → TowerExp2 → ...`（(CAT) はペア定理を含まない）
+- [ ] **次の具体タスク**: (PAIR) 行2が0の based ブロックは W 0 — lean-yapss から移植
+- [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
 - [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）
