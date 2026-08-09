@@ -1,4 +1,6 @@
-v0.118.150/add oper_mem_Wself
+v0.118.151/write the residue as a self-contained problem statement
 
-- Wself is closed under expansion: the root column survives every step, so the
-  stage does not move
+- Add lean/RESIDUE-PROBLEM.md: the trio sequence, the BM4 expansion, W and
+  Wself, the residue itself, the proved fragments, the measurement limits, and
+  the four routes already shown to circle back
+- Point PROOF-STATUS at it
