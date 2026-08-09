@@ -1,7 +1,8 @@
-v0.118.156/record why multi-block induction plus (WL) is circular
+v0.118.157/record what zle1 concretely buys
 
-- The largest residue branch (insertion inside the copied region) does close if
-  the induction runs on the multi-block property: copy k's host column has level
-  lev S p + 2*k*d1 and (WL) puts the lifted block at exactly that level
-- But (WL) is derived from the core through (TOW), so the route is circular;
-  (TOW) itself resists W_add because the last copy has the deepest root
+- Under zle1 the level determines the column (2b+c = 2b'+c' with c,c' <= 1
+  forces c = c' mod 2), so the residue's lev C 0 <= lev S p splits into
+  "C's head IS the column" (the head-matching form) and "C sits at the very
+  stage Aop clause 3 allows"
+- The g-ness of (SUBST1g) is needed only for (TOW)'s constant diagonal host,
+  which falls in the second case
