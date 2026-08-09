@@ -1,9 +1,11 @@
-v0.118.178/separate the two reasons tie-freeness cannot be discharged
+v0.118.179/measure the shortest equivalent form of the theorem, single-column insertion
 
-- Measure the closure of ST_TS under take and drop+rebase, which is exactly what
-  mem_of_Aclosed_aux recurses on: 1225966 sequences, 411600 row-2 bad parts at
-  root row 1 >= 1, 0 ties -- so the induction does NOT leave the tie-free class
-- Record in PROOF-STATUS 5.7 that the real obstacle is instead that Wstar is
-  used as an A-closed set in A2', so the tower argument is needed for every
-  argOK block and no class restriction survives (Aop data never implies class
-  membership)
+- Add tools/probe_insert.py for (INS): Wself closed under inserting one
+  arbitrary column at an arbitrary position, 1603817 decided instances with 0
+  violations (1268993 for the variant that hangs the column under S[p])
+- Note that (INS) at the end position is (SNOC), already wired as
+  TRIO_terminates_of_snoc, so it adds no new core but states the whole theorem
+  with no side condition at all
+- Use the proved snoc_zeroRow2 as a base case of the decision procedure, which
+  is what lets these probes decide an order of magnitude more instances
+- Record both rows in PROOF-STATUS 4
