@@ -1,8 +1,8 @@
-v0.118.153/hunt for a counterexample in the narrowed residue regime
+v0.118.154/document the context available at the residue call sites
 
-- Add the row-2-in-dropLast filter to the adversarial probe so it matches the
-  current core
-- Fresh seed 777001, hosts of length 3..6, blocks of length 1..5: 13616 decided
-  residue instances (context-revives 1870, insertion-creates-parent 2225,
-  inside-copied-region 9521), 0 violations
-- Record it in the PROOF-STATUS measurement table
+- Add RESIDUE-PROBLEM 4.5: the prefix package and the one-step Aop datum that
+  subst1g_of_revive and end_subst_of_revive hold when they invoke the residue,
+  so a proof may use them; passing them through is a small Lean change
+- Verify that every Lean name cited in PROOF-STATUS and RESIDUE-PROBLEM exists,
+  and that oper's copy range excludes the trailing column and copies row 2
+  verbatim, which is what snoc_zeroRow2 rests on
