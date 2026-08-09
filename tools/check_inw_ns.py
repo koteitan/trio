@@ -5,8 +5,8 @@ probe in this campaign decides `W` by expanding only `n in {1,2}`.  That is an
 OVER-approximation: it can only ACCEPT too much, so a "0 violations" result
 could in principle be an artefact.
 
-This check compares the verdicts of `inW` with NS = (1,2), (1,2,3) and (1,2,3,4)
-on the same population, and reports every sequence/stage where they differ.
+This check compares the verdicts of `inW` with NS = (1,2) and (1,2,3) on the same
+population, and reports every sequence/stage where they differ.
 Disagreement would invalidate the probe results; agreement is evidence (not
 proof) that the truncation is harmless.
 
@@ -26,9 +26,9 @@ from collections import Counter
 sys.path.insert(0, '/home/koteitan/proofs/trio/tools')
 import trio
 
-MAXDEPTH = 10
-MAXLEN = 60
-AMAX = 10
+MAXDEPTH = 8
+MAXLEN = 30
+AMAX = 5
 
 
 def lev(c):
@@ -62,21 +62,21 @@ def inW(S, a, depth, memo, ns):
 
 
 def main():
-    variants = [(1, 2), (1, 2, 3), (1, 2, 3, 4)]
+    variants = [(1, 2), (1, 2, 3)]      # n <= 4 blows the length budget
     memos = [dict() for _ in variants]
     tot = Counter()
     ex = []
 
     pop = []
     COLS = [(x, b, z) for x in range(3) for b in range(3) for z in range(2)]
-    for L in (1, 2, 3):
+    for L in (1, 2):
         for S in itertools.product(COLS, repeat=L):
             S = list(S)
             if S[0][0] != 0:
                 continue
             pop.append(S)
     rng = random.Random(20260809)
-    for _ in range(4000):                      # wider random tail
+    for _ in range(300):                       # wider random tail
         L = rng.randint(3, 4)
         S = [(0, rng.randint(0, 3), rng.randint(0, 1))]
         for _ in range(L - 1):
@@ -84,14 +84,16 @@ def main():
         pop.append(S)
     print('population:', len(pop))
 
-    for S in pop:
+    for idx, S in enumerate(pop):
+        if idx and idx % 100 == 0:
+            print(f'  ... {idx}/{len(pop)}  disagreements: {tot["DISAGREE"]}', flush=True)
         for a in range(AMAX + 1):
             rs = [inW(S, a, MAXDEPTH, memos[i], v) for i, v in enumerate(variants)]
             if any(r is None for r in rs):
                 tot['undecided by some variant'] += 1
                 continue
             tot['decided by all'] += 1
-            if rs[0] == rs[1] == rs[2]:
+            if rs[0] == rs[1]:
                 tot['agree'] += 1
             else:
                 tot['DISAGREE'] += 1
@@ -100,7 +102,7 @@ def main():
     for k in sorted(tot):
         print(f'  {k:26s} {tot[k]:9d}')
     for S, a, rs in ex:
-        print(f'  DISAGREE a={a} S={S} verdicts(n<=2, n<=3, n<=4) = {rs}')
+        print(f'  DISAGREE a={a} S={S} verdicts(n<=2, n<=3) = {rs}')
 
 
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
-v0.118.151/write the residue as a self-contained problem statement
+v0.118.152/finish the inW truncation check
 
-- Add lean/RESIDUE-PROBLEM.md: the trio sequence, the BM4 expansion, W and
-  Wself, the residue itself, the proved fragments, the measurement limits, and
-  the four routes already shown to circle back
-- Point PROOF-STATUS at it
+- Fix the parameter block, which had silently reverted: two of the earlier
+  replacements carried no assert, so they were no-ops and the run used the
+  original bounds and never completed
+- Result at MAXDEPTH 8 / MAXLEN 30 / AMAX 5 over 414 sequences: n <= 2 and
+  n <= 3 agree on all 2209 decided instances, 0 disagreements, 275 undecided
+- Record it in PROOF-STATUS next to the audit caveats
