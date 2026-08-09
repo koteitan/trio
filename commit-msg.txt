@@ -1,14 +1,10 @@
-v0.118.180/replace the (WL) core by (ROW1MONO), a statement with no mask in it
+v0.118.181/refute the naive induction for (ROW1MONO) and record what is really needed
 
-- Add Wtower2.Row1Mono and liftStage_of_row1mono: since Lift1 X d is the uniform
-  shift shiftr01 0 d X with row 1 lowered outside the root cone, and the uniform
-  shift is proved (ulift_mem_W), (WL) follows from W being closed under lowering
-  row 1 -- the index-mask vs value-mask obstruction disappears from the statement
-- Add Final.TRIO_terminates_of_row1mono and no_infinite_expansion_of_row1mono,
-  axioms [propext, Classical.choice, Quot.sound]
-- Add tools/probe_row1mono.py: 369068 multi-column, 106763 single-column and
-  773483 adversarial instances (lowering at the bad root, its le1-cone and the
-  terminal), 0 violations
-- Record the closed route-C gate in PROOF-STATUS 5.7: the take/drop-rebase/oper
-  closure stays tie-free (72561, 0) but the proved invariant cnf does not exclude
-  ties (25 counterexamples), so no local invariant was available
+- Refute the domination lemma that a straight A2' induction would need: for all
+  n there is n' with M'[n] <=1 (M[n']).take -- false in 26396 of 296121 cases,
+  because lowering row 1 at the terminal turns an orphan strip into a copy, so
+  M'[n] can be longer than every M[n']
+- Record the sandwich that isolates what is actually required: only the middle of
+  Lift1 (X[n]) d <=1 (Lift1 X d)[n] <=1 shiftr01 0 d (X[n]) is missing, both ends
+  are already in W, and Lift1 and shiftr01 0 d preserve nextrel1 so the branch
+  data j0/Lb/d0/d1 coincide -- a masked lowering suffices, weaker than (ROW1MONO)
