@@ -1,10 +1,8 @@
-v0.118.181/refute the naive induction for (ROW1MONO) and record what is really needed
+v0.118.182/audit (ROW1MONO) on tower-shaped hosts
 
-- Refute the domination lemma that a straight A2' induction would need: for all
-  n there is n' with M'[n] <=1 (M[n']).take -- false in 26396 of 296121 cases,
-  because lowering row 1 at the terminal turns an orphan strip into a copy, so
-  M'[n] can be longer than every M[n']
-- Record the sandwich that isolates what is actually required: only the middle of
-  Lift1 (X[n]) d <=1 (Lift1 X d)[n] <=1 shiftr01 0 d (X[n]) is missing, both ends
-  are already in W, and Lift1 and shiftr01 0 d preserve nextrel1 so the branch
-  data j0/Lb/d0/d1 coincide -- a masked lowering suffices, weaker than (ROW1MONO)
+- Add main_tower to tools/probe_row1mono.py: guarded copy towers (row-0 shifted,
+  row-1 lifted, with and without a trailing column), the shapes that made
+  A_x1 == 1, W2ok, spanOK and dichOK look true on toy data -- 258507 decided,
+  0 violations
+- Bring the (ROW1MONO) total to 1507821 decided instances with 0 violations
+  across generic, single-column, adversarial-structural and tower populations

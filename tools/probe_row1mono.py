@@ -19,6 +19,9 @@ Measured, 0 violations everywhere:
   * ADVERSARIAL, lowering exactly where it changes the parent structure -- at
     the bad root, at its whole `le1`-cone and at the terminal: 773483 decided
     (`main_adversarial` below)
+  * TOWER-shaped hosts (row-0-shifted, row-1-lifted copy towers, with and
+    without a trailing column) -- the shapes that made A_x1 == 1, W2ok, spanOK
+    and dichOK look true on toy data: 258507 decided (`main_tower` below)
 The proved `snoc_zeroRow2` is used as a base case of the decision procedure,
 which is why these decide far more than the earlier probes.
 """
@@ -162,7 +165,53 @@ def main_adversarial():
         print(f'  VIOL a={a} j={j}->{nb}\n    S={S}\n    M={M}')
 
 
+def main_tower():
+    """Hosts that are guarded copy towers, with an optional trailing column."""
+    memo, tot, ex = {}, Counter(), []
+    rng = random.Random(606060)
+
+    def tower(Q, e, f, n):
+        T = []
+        for k in range(n):
+            T += [(c[0] + k * e, c[1] + k * f, c[2]) for c in Q]
+        return T
+
+    for _ in range(60000):
+        L = rng.randint(1, 3)
+        Q = [(0, rng.randint(0, 3), rng.randint(0, 1))]
+        for _ in range(L - 1):
+            Q.append((rng.randint(1, 3), rng.randint(0, 4), rng.randint(0, 1)))
+        S = tower(Q, rng.randint(1, 3), rng.randint(0, 2), rng.randint(2, 4))
+        if rng.random() < 0.5:
+            S = S + [(rng.randint(0, 6), rng.randint(0, 5), rng.randint(0, 1))]
+        if len(S) > 60:
+            continue
+        a = lev(tuple(S[0]))
+        if inW(S, a, MAXD, memo) is not True:
+            continue
+        tot['tower ok'] += 1
+        for _ in range(6):
+            M = [(c[0], rng.randint(0, c[1]) if c[1] > 0 else 0, c[2]) for c in S]
+            if M == S:
+                continue
+            r = inW(M, a, MAXD, memo)
+            if r is None:
+                tot['undecided'] += 1
+                continue
+            tot['decided'] += 1
+            if r is False:
+                tot['VIOLATION'] += 1
+                if len(ex) < 6:
+                    ex.append((S, a, M))
+    for k in sorted(tot):
+        print(f'  {k:12s} {tot[k]:9d}')
+    for S, a, M in ex:
+        print(f'  VIOL a={a}\n    S={S}\n    M={M}')
+
+
 if __name__ == '__main__':
     main()
     print('--- adversarial:')
     main_adversarial()
+    print('--- towers:')
+    main_tower()
