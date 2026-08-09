@@ -73,6 +73,8 @@ Subst1gReviveSelf
 | `Wset.oper_one_eq_dropLast` | `M⟦1⟧ = M.dropLast`（1 コピーは剥離） |
 | `zeroRow2_mem_Wself` | **行 2 が恒等的に 0 の列は全部 `Wself`** — ペア定理そのもの |
 | `snoc_zeroRow2` | **行 2 ≡ 0 のブロックの末尾に任意の 1 列を継いでよい** — `oper` は末尾列をコピーせず行 2 も増やさないので展開が行 2 ≡ 0 のまま |
+| `snoc_orphan` | 孤児のままの 1 列を継ぐのは無料（`oper` が剥がす）⟹ `(LOW)` の孤児半分が落ちる（`lowerLast_of_parented`）|
+| `dropLast_mem_Wself` | `Wself` は末尾除去で閉じる |
 | `two_col_mem_W` | `[(0,v,z), t] ∈ W a`（`2v+z ≤ a`、`t` は**任意**）— `snoc_zeroRow2` の `|M'| = 1` |
 | `Wset.W_shiftl0` | `M ∈ W u → 全列が深さ ≥ d → shiftl0 d M ∈ W u` — **`W_shift` の逆向き**（再基底化） |
 | `drop_rebase_mem_W` | 部分木を深さ 0 に戻すと `based` な `W (lev M j)` 元（節 3 の graft 引数の形） |

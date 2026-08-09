@@ -1,7 +1,5 @@
-v0.118.164/map the equivalent faces of the residue
+v0.118.165/record snoc_orphan and where (TOW) is already free
 
-- Add RESIDUE-PROBLEM 4.8: Subst1gReviveSelf, (GC), the parented half of (LOW),
-  (TOW)/(WL), (REPL) and (SNOC) all reduce to one another, so translating
-  between them is not progress; they all land on "may a guarded copy tower be
-  built over a suffix of a W u member"
-- Refresh task.md
+- Add snoc_orphan and dropLast_mem_Wself to the structure table
+- Note that (TOW) is free when Q is row-2-free, when |Q| = 1, and when e = 0,
+  so its content is |Q| >= 2 carrying a row-2 column
