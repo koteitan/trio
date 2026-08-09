@@ -10,10 +10,13 @@ on the same population, and reports every sequence/stage where they differ.
 Disagreement would invalidate the probe results; agreement is evidence (not
 proof) that the truncation is harmless.
 
-First result (reduced bounds: MAXDEPTH 8, MAXLEN 30, AMAX 5, 414 sequences,
-n <= 2 vs n <= 3): 2209 decided, 2209 agree, 0 disagreements, 275 undecided.
-The n <= 4 variant blows up quickly (expansion length grows with n), so keep the
-bounds small when adding it.
+Result at the bounds set below (414 sequences, n <= 2 vs n <= 3):
+2209 decided, 2209 agree, 0 disagreements, 275 undecided.
+
+These bounds are chosen so the run FINISHES.  Raising AMAX to 6 and the random
+tail to 700 already fails to complete in 5000s, and the n <= 4 variant blows up
+much faster still (expansion length grows with n).  Stdout is line-buffered only
+for the progress prints, so a killed run leaves an empty file.
 """
 import sys
 import itertools

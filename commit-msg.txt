@@ -1,7 +1,7 @@
-v0.118.148/record snoc_zeroRow2 in PROOF-STATUS
+v0.118.149/size the truncation check to a configuration that finishes
 
-- State the narrowed residue: the row-2 column must sit in R.dropLast
-- Add snoc_zeroRow2 to the structure table and note that two_col_mem_W is its
-  |M'| = 1 case
-- Record why the next step (two trailing columns) does not go through, with or
-  without zle1
+- Cut AMAX to 5 and the random tail to 300; AMAX 6 with 700 already fails to
+  complete in 5000s and leaves an empty file
+- Record in the docstring that the bounds are chosen for completion
+- Note in PROOF-STATUS that W_root_stage and W_drop should transfer to
+  lean-yapss, whose D.W is the same construction

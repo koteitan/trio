@@ -77,6 +77,11 @@ Subst1gReviveSelf
 
 ⚠ 旧メモ「接尾辞閉包は偽」は**撤回**（段を固定していたため）。
 
+📌 **lean-yapss に移せる可能性**: `W_root_stage` / `W_drop` の証明は `A2'` と
+`oper_take_prefix` / `oper_append_inner` しか使っておらず、ペア側でもそのまま
+通るはず（`Wset-ja.md` の D.W と trio の `Wf`/`W` は逐語的に同じ構成）。
+`Wset-4-ja.md` の `mem_W_of_bound` より鋭い「段＝根のレベル」が得られる。
+
 ## 4. 計測（probe）
 
 | 命題 | 例数 | 違反 |
