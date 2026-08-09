@@ -85,7 +85,11 @@
 - [x] ★ W_root_stage（段＝根のレベル）で核から段量詞 u が消えた ✅ v0.118.132
 - [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel`
 - [x] ★ W_drop: W は接尾辞閉（接尾辞自身の根のレベルで）✅ v0.118.135
-- [ ] 次: 復活形ただ 1 つ（文脈がブロック内孤児を復活させる・段なし）
+- [x] W_root_stage / W_drop / W_shiftl0 / zeroRow2 / snoc_zeroRow2 / snoc_orphan ✅ v0.118.132-163
+- [x] 経験的検証: inW の n<=2 打ち切りを n<=3,4 と突合（不一致 0）✅ v0.118.152-155
+- [x] (GC) の「反証済み」記録を訂正（1221万例 0 違反・未証明なだけ）✅ v0.118.160-162
+- [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel`
+- [ ] 次: 残核の同値な顔は出揃った（RESIDUE-PROBLEM 4.8）。翻訳ではなく新しい入力を探す
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える

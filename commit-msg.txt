@@ -1,7 +1,7 @@
-v0.118.163/free the orphan half of (LOW)
+v0.118.164/map the equivalent faces of the residue
 
-- Prove snoc_orphan: appending a column that stays an orphan is free, since oper
-  peels it straight back off and the root is untouched
-- Add dropLast_mem_Wself
-- Define LowerLast and LowerLastParented and prove lowerLast_of_parented, so
-  (LOW) now only concerns the case where the lowered column finds a parent
+- Add RESIDUE-PROBLEM 4.8: Subst1gReviveSelf, (GC), the parented half of (LOW),
+  (TOW)/(WL), (REPL) and (SNOC) all reduce to one another, so translating
+  between them is not progress; they all land on "may a guarded copy tower be
+  built over a suffix of a W u member"
+- Refresh task.md
