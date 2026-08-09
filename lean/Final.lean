@@ -95,6 +95,17 @@ theorem no_infinite_expansion_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_liftStage (liftStage_of_row1mono hM) he
 
+/-- **⚠ 参考: `(ROW0FREE)` は定理と同値**（進展ではなく警告のための記録）。
+行 1 で効いた「証明済みの上界 ＋ 単調性」の手は行 0 では使えない: 深さを全部 0 に
+潰した列は `nextrel0` が空で全列が孤児なので**無条件に `W`**（`flat_mem_W`）。
+よって「行 1・行 2 が同じなら行 0 は効かない」を仮定した瞬間に停止性そのものに
+なる。行 0 の単調性や (DEPTHORD) を補題として使おうとしないこと。 -/
+theorem TRIO_terminates_of_row0free (h : Row0Free) : WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS
+    (Wset.wf_of_cofinality_and_membership
+      (fun hM hN hlt => trio_cofinality hM hN hlt)
+      (fun M _ => ⟨Wset.lev M 0, mem_W_of_row0free h M⟩)))
+
 /-- **Trio sequences terminate**, modulo the PARENTED residue of the stage law
 and `TowerExp`.  `liftStage_of_parented` discharges every parentless branch of
 `Aop` (including all of clause 3) by `lift_oper_of_noParent`. -/

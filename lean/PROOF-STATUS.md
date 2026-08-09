@@ -88,6 +88,8 @@ Subst1gReviveSelf
 | **`Wtower2.liftStage_of_window`** | **★★ (WL) は行 1 の窓があれば核なしで成立**（`v0 = 0` でも可） |
 | **`Wtower2.Row1Mono` / `liftStage_of_row1mono`** | **★★★ (WL) はマスク一致を使わず `(ROW1MONO)`（`W a` は行 1 の引き下げで閉じる）から出る** |
 | **`Final.TRIO_terminates_of_row1mono`** | **`Row1Mono → TowerExp → WellFounded stepRel`**（axioms clean） |
+| **`Wtower2.flat_mem_W`** | **深さを全部 0 に潰した列は無条件に `W a`**（`nextrel0` が空 ⟹ 全列孤児 ⟹ 展開は `dropLast`） |
+| ⚠ `Wtower2.Row0Free` / `Final.TRIO_terminates_of_row0free` | **`(ROW0FREE)` は停止性と同値**（行 0 を補題として使うなという記録） |
 | `Wset.W_shift` / `W_mono` / `W_add`(rsum) | 既存 |
 
 ⚠ 旧メモ「接尾辞閉包は偽」は**撤回**（段を固定していたため）。
@@ -129,6 +131,7 @@ Subst1gReviveSelf
 | 同・単列 / **反証型**（悪い根・その錐・末尾を狙う） | 106763 / **773483** | 0 / 0 |
 | 同・**塔型ホスト**（行0ずらし×行1リフトのコピー塔、末尾列あり／なし） | **258507** | 0 |
 | (C) ゲート: `take`/`drop-rebase`/**`oper`** 閉包でタイは出るか | 72561 | 0 |
+| ⚠ 行 0 の任意の上げ下げで `W` は閉じるか（＝定理と同値） | 390293 / 337510 | 0 / 0 |
 | 証明済み ST_TS 不変量 `cnf` はタイを排除するか | — | **⛔ 25 例でタイ** |
 
 **打ち切りの検証**: 全プローブの `inW` は `n ∈ {1,2}` しか展開しない過大近似。
@@ -363,6 +366,19 @@ Lift1 (X⟦n⟧) d   ≤₁   (Lift1 X d)⟦n⟧   ≤₁   shiftr01 0 d (X⟦n�
 に限った版で十分。一般の `(ROW1MONO)` より弱い。
 
 ⟹ (WL) 側の残差は `(ROW1MONO)` 1 本になった。本丸は依然 `Subst1gReviveSelf`。
+
+### ⚠ 同じ手は**行 0 では使えない**（`(ROW0FREE)` は定理と同値）
+
+「証明済みの上界 ＋ 単調性」を行 0 でやると同値になる。深さを全部 0 に潰した列は
+`nextrel0` が空で全列が孤児なので展開が `dropLast` に潰れ、**根のレベルさえ
+収まれば無条件に `W a`**（`Wtower2.flat_mem_W`、`sorry` 0）。したがって
+
+```
+(ROW0FREE) 行 1・行 2 が同じなら行 0 は W 所属に効かない  ⟺  trio 停止性
+```
+（`Final.TRIO_terminates_of_row0free`、axioms clean）。計測でも行 0 の任意の
+上げ下げは 0 違反（RAISE 390293 / LOWER 337510）だが、それは定理を測っている
+だけ。⛔ **行 0 の単調性や §6.5 の (DEPTHORD) を「補題」として使おうとしないこと。**
 
 ## 6.5 ★ 未証明だが強く測れている予想: **深さは順序型しか効かない**
 

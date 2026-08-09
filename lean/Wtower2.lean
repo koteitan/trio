@@ -157,6 +157,151 @@ theorem entry1_out {Y : TrioSeq} {j : ℕ} (hj : Y.length ≤ j) : entry Y 1 j =
   show (Y.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 = 0
   rw [getD_out hj]
 
+/-! ### ⚠ 行 0 の側は**やってはいけない**: 定理そのものと同値
+
+行 1 で効いた「証明済みの上界 ＋ 単調性」を行 0 でやると**同値**になってしまう。
+深さを全部 0 に潰した列は `nextrel0` が空なので全列が孤児で、展開は
+`dropLast` に潰れる ⟹ 根のレベルさえ収まれば**無条件に `W a`**（`flat_mem_W`）。
+したがって
+
+```
+(ROW0FREE) 行 1・行 2 が同じなら行 0 は `W` 所属に効かない  ⟺  trio 停止性
+```
+
+（`mem_W_of_row0free` / `Final.TRIO_terminates_of_row0free`）。計測でも行 0 の
+任意の上げ下げは 0 違反（RAISE 390293 / LOWER 337510）だが、それは定理を測って
+いるだけ。⛔ **行 0 の単調性・(DEPTHORD) を「補題」として使おうとしないこと。** -/
+
+/-- 深さが全部 0 の列には親が無い（`nextrel0` が空なので `le0` は反射のみ）。 -/
+theorem no_hasParent_of_flat {M : TrioSeq} (h0 : ∀ j, entry M 0 j = 0) (i j : ℕ) :
+    ¬ hasParent M i j := by
+  have hn0 : ∀ a b, ¬ nextrel0 M a b := by
+    rintro a b ⟨-, -, -, hlt, -⟩
+    rw [h0 a, h0 b] at hlt; omega
+  have hr0 : ∀ {a b}, Relation.ReflTransGen (nextrel0 M) a b → a = b := by
+    intro a b hab
+    induction hab with
+    | refl => rfl
+    | @tail y z _ hyz _ => exact absurd hyz (hn0 y z)
+  have hn1 : ∀ a b, ¬ nextrel1 M a b := by
+    rintro a b ⟨-, -, hab, -, hle0, -⟩
+    have := hr0 hle0.2.2
+    omega
+  have hr1 : ∀ {a b}, Relation.ReflTransGen (nextrel1 M) a b → a = b := by
+    intro a b hab
+    induction hab with
+    | refl => rfl
+    | @tail y z _ hyz _ => exact absurd hyz (hn1 y z)
+  have hn2 : ∀ a b, ¬ nextrel2 M a b := by
+    rintro a b ⟨-, -, hab, -, hle1, -⟩
+    have := hr1 hle1.2.2
+    omega
+  rintro ⟨j0, hj0, -⟩
+  unfold nextR at hj0
+  split at hj0
+  · exact hn0 _ _ hj0
+  · split at hj0
+    · exact hn1 _ _ hj0
+    · exact hn2 _ _ hj0
+
+theorem entry_out {Y : TrioSeq} {i j : ℕ} (hj : Y.length ≤ j) : entry Y i j = 0 := by
+  unfold entry
+  rw [getD_out hj]
+  split_ifs <;> rfl
+
+theorem flat_mem_W_aux : ∀ (N : ℕ) (M : TrioSeq) (a : ℕ), M.length ≤ N →
+    (∀ j, entry M 0 j = 0) → lev M 0 ≤ a → M ∈ W a := by
+  intro N
+  induction N with
+  | zero =>
+      intro M a hN _ _
+      have hnil : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil; exact W_nil a
+  | succ N ih =>
+      intro M a hN h0 hlev
+      rcases Nat.lt_or_ge M.length 2 with hsm | hbig
+      · rcases Nat.eq_zero_or_pos M.length with h | h
+        · have hnil : M = [] := List.eq_nil_of_length_eq_zero h
+          subst hnil; exact W_nil a
+        · obtain ⟨p, rfl⟩ : ∃ p, M = [p] :=
+            List.length_eq_one_iff.mp (by omega)
+          have hb : 2 * p.2.1 + p.2.2 ≤ a := by
+            unfold lev entry at hlev
+            simpa using hlev
+          exact singleton_mem_W hb
+      · refine mem_of_oper_mem (fun n hn => ?_)
+        have hL : M.length - 1 ≠ 0 := by omega
+        have hp := no_hasParent_of_flat h0 (srow M (M.length - 1)) (M.length - 1)
+        have hop : M⟦n⟧ = Pred M := by
+          by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+              entry M 2 (M.length - 1) = 0
+          · exact oper_eq_pred_of_zero n hL hz
+          · exact oper_eq_pred_of_noParent n hL hz hp
+        have hdl : M.dropLast = M.take (M.length - 1) := List.dropLast_eq_take
+        rw [hop]
+        unfold Pred
+        rw [if_neg (by omega)]
+        refine ih M.dropLast a (by rw [List.length_dropLast]; omega) ?_ ?_
+        · intro j
+          rcases Nat.lt_or_ge j (M.length - 1) with hj | hj
+          · rw [hdl, Wset.entry_take hj]; exact h0 j
+          · exact entry_out (by rw [List.length_dropLast]; omega)
+        · have e1 : entry M.dropLast 1 0 = entry M 1 0 := by
+            rw [hdl]; exact Wset.entry_take (by omega)
+          have e2 : entry M.dropLast 2 0 = entry M 2 0 := by
+            rw [hdl]; exact Wset.entry_take (by omega)
+          unfold lev at hlev ⊢
+          rw [e1, e2]; exact hlev
+
+/-- **深さを全部 0 に潰した列は無条件に `W a`**（根のレベルが収まれば）。 -/
+theorem flat_mem_W {M : TrioSeq} {a : ℕ} (h0 : ∀ j, entry M 0 j = 0)
+    (hlev : lev M 0 ≤ a) : M ∈ W a :=
+  flat_mem_W_aux M.length M a le_rfl h0 hlev
+
+/-- **(ROW0FREE)**: 行 1・行 2 が同じなら行 0 は `W` 所属に効かない。 -/
+def Row0Free : Prop :=
+  ∀ (a : ℕ) (M M' : TrioSeq), M ∈ W a → M'.length = M.length →
+    (∀ j, entry M' 1 j = entry M 1 j) → (∀ j, entry M' 2 j = entry M 2 j) →
+      M' ∈ W a
+
+/-- **⚠ `(ROW0FREE)` は定理そのもの**: 深さを潰した相手が無条件に `W` なので、
+これを仮定すると**すべての**列が `Wself` に入ってしまう。 -/
+theorem mem_W_of_row0free (h : Row0Free) (M : TrioSeq) : M ∈ W (lev M 0) := by
+  set F : TrioSeq := M.map (fun p => ((0, p.2.1, p.2.2) : ℕ × ℕ × ℕ)) with hF
+  have hlen : F.length = M.length := by rw [hF, List.length_map]
+  have hget : ∀ j, j < M.length →
+      F.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)
+        = ((0, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ) := by
+    intro j hj
+    rw [hF, List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem (by rw [List.length_map]; exact hj)]
+    simp only [List.getElem_map, Option.getD_some]
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    rfl
+  have he1 : ∀ j, entry F 1 j = entry M 1 j := by
+    intro j
+    rcases Nat.lt_or_ge j M.length with hj | hj
+    · show (F.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 = entry M 1 j
+      rw [hget j hj]
+    · rw [entry_out (by rw [hlen]; exact hj), entry_out hj]
+  have he2 : ∀ j, entry F 2 j = entry M 2 j := by
+    intro j
+    rcases Nat.lt_or_ge j M.length with hj | hj
+    · show (F.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.2 = entry M 2 j
+      rw [hget j hj]
+    · rw [entry_out (by rw [hlen]; exact hj), entry_out hj]
+  have h0 : ∀ j, entry F 0 j = 0 := by
+    intro j
+    rcases Nat.lt_or_ge j M.length with hj | hj
+    · show (F.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).1 = 0
+      rw [hget j hj]
+    · exact entry_out (by rw [hlen]; exact hj)
+  have hlevF : lev F 0 = lev M 0 := by
+    unfold lev; rw [he1 0, he2 0]
+  exact h (lev M 0) F M (flat_mem_W h0 (by rw [hlevF])) hlen.symm
+    (fun j => (he1 j).symm) (fun j => (he2 j).symm)
+
 /-- **★★★ (WL) はマスク一致を使わずに `(ROW1MONO)` から出る。** -/
 theorem liftStage_of_row1mono (h : Row1Mono) : LiftStage := by
   intro m d X hX
