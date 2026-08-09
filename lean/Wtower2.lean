@@ -93,6 +93,45 @@ theorem liftStage_of_tieFree {m d : ℕ} {X : TrioSeq} (hX : X ∈ W m)
   rw [Lift1_eq_mlift_of_tieFree hv h d]
   exact mlift_mem_W X hX
 
+/-! ### `v0 = 0` も込みの版: 行 1 の**窓**があれば錐は全体
+
+`TieFree` は `mlift` の閾値が `v0 - 1` なので `v0 = 0` では原理的に届かない。
+だが根が行 1 でも**狭義最小**なら（＝悪い部分が行 1 の窓）、`le1_zero_iff` より
+根の錐は**全体**になり、`Lift1` は一様シフト `shiftr01 0 d` そのものになる。
+そして一様シフトは `Wslift.ulift_mem_W` で**核なしに証明済み**（`Stair.zero` を
+使わない）。実 ST_TS では行 2 崩壊の悪い部分の 53634/53642 がこの窓を満たす
+（破れる 8 例はすべて `v0 = 0`、`tools/probe_tiefree_stts.py` の姉妹計測）。 -/
+
+/-- 根が行 0 で狭義最浅かつ行 1 でも狭義最小なら `Lift1` は一様シフト。 -/
+theorem Lift1_eq_shiftr1_of_window {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    (hw : ∀ l, 0 < l → l < X.length → entry X 1 0 < entry X 1 l) (d : ℕ) :
+    Lift1 X d = shiftr01 0 d X := by
+  have hlenL : (Lift1 X d).length = X.length := Lift1_length X d
+  have hlenS : (shiftr01 0 d X).length = X.length := shiftr01_length 0 d X
+  refine List.ext_getElem (by rw [hlenL, hlenS]) ?_
+  intro i hi1 _
+  rw [hlenL] at hi1
+  rw [← entry_triple (X := Lift1 X d) (by rw [hlenL]; exact hi1),
+    ← entry_triple (X := shiftr01 0 d X) (by rw [hlenS]; exact hi1)]
+  have hcone : le1 X 0 i := by
+    rw [le1_zero_iff hr hi1]
+    intro y hyj hy0
+    have hylt : y < X.length := by
+      have := nextrel0_rtrancl_index_le hyj
+      omega
+    exact hw y (by omega) hylt
+  rw [entry0_Lift1, entry2_Lift1, entry1_Lift1 hi1, if_pos hcone,
+    entry0_shiftr1, entry1_shiftr1 hi1, entry2_shiftr01]
+
+/-- **★★ (WL) は「根が行 1 でも狭義最小」なら核なしで成立**（`v0 = 0` でも可）。 -/
+theorem liftStage_of_window {m d : ℕ} {X : TrioSeq} (hX : X ∈ W m)
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    (hw : ∀ l, 0 < l → l < X.length → entry X 1 0 < entry X 1 l) :
+    Lift1 X d ∈ W (m + 2 * d) := by
+  rw [Lift1_eq_shiftr1_of_window hr hw d]
+  exact ulift_mem_W X hX
+
 /-! ## (WL) を「親のある場合」だけに縮める
 
 `oper` の `Pred` 分岐（末尾列が全零、または親なし）は根リフトと**可換**である:

@@ -1,13 +1,17 @@
-v0.118.174/pin the (WL) wall as index-mask vs value-mask and prove the tie-free case
+v0.118.175/prove (ULIFT): the uniform row-1 shift transports W without Stair.zero
 
-- Prove Wtower2.coneV_of_le1: the le1-cone of the root is always inside the amin
-  cone (from le1_chain_window), so BM4's index mask sits under the value mask
-- Prove Wtower2.Lift1_eq_mlift_of_tieFree and liftStage_of_tieFree: with no
-  row-1 tie and root row 1 >= 1, (WL) follows from the proved mlift_mem_W
-- Measure the non-commutation of Lift1 with oper (47718 of 192996 parented
-  instances) and identify its mechanism: every copy gets its own index cone
-- Add tools/probe_lift1_mask.py (le1-cone inside amin-cone, 64808 blocks, 0
-  exceptions) and tools/probe_tiefree_stts.py (ST_TS closure, 139914 row-2 copy
-  blocks, ties only at v0 = 0, 24 of them)
-- Record it as PROOF-STATUS 5.7 with the caveat that ties DO occur on general
-  matrices, so TieFree cannot yet be discharged inside the Wstar framework
+- Add Wslift.ulift_mem_W: X in W m implies shiftr01 0 d X in W (m + 2*d), with
+  the full row-1-shift equivariance kit (entry/nextrel0-2/le0/le1/srow/gcopy/
+  gcopies/Pred/oper) that it needs
+- Show Stair.zero is needed only for the commutation slift_oper, not for the
+  W transport: a uniform shift raises srow only at a srow-0 terminal, and there
+  the shifted terminal is always an orphan, so the expansion collapses to
+  dropLast = X[1] and the clause-2 hypothesis at n = 1 closes it
+- Add Wtower2.Lift1_eq_shiftr1_of_window and liftStage_of_window: when the root
+  is strictly minimal in row 1 as well as row 0, the root cone is everything
+  (le1_zero_iff), so (WL) is free -- including at root row 1 = 0, which mlift
+  cannot reach because its threshold is a natural number
+- Add tools/probe_ulift.py: 378075 decided instances of (ULIFT) with 0
+  violations, plus the ST_TS measurement that 53634 of 53642 row-2 bad parts are
+  a row-1 window (all 8 failures at root row 1 = 0)
+- Record both in PROOF-STATUS 3, 4 and 5.7
