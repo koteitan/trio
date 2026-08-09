@@ -1,7 +1,4 @@
-v0.118.149/size the truncation check to a configuration that finishes
+v0.118.150/add oper_mem_Wself
 
-- Cut AMAX to 5 and the random tail to 300; AMAX 6 with 700 already fails to
-  complete in 5000s and leaves an empty file
-- Record in the docstring that the bounds are chosen for completion
-- Note in PROOF-STATUS that W_root_stage and W_drop should transfer to
-  lean-yapss, whose D.W is the same construction
+- Wself is closed under expansion: the root column survives every step, so the
+  stage does not move

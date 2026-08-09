@@ -2542,6 +2542,26 @@ theorem drop_mem_Wself {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ) :
   have := W_drop h j
   rwa [← lev_drop_head M j] at this
 
+/-- `Wself` is closed under expansion: the root column survives every step, so
+the stage does not move. -/
+theorem oper_mem_Wself {M : TrioSeq} (h : M ∈ Wself) {n : ℕ} (hn : 1 ≤ n) :
+    M⟦n⟧ ∈ Wself := by
+  classical
+  rcases Nat.lt_or_ge 1 M.length with hL | hL
+  · have hlev : lev (M⟦n⟧) 0 = lev M 0 := by
+      have htk := oper_take_prefix hL hn (i := 1) (by omega)
+      have e : ∀ i, entry (M⟦n⟧) i 0 = entry M i 0 := by
+        intro i
+        rw [← Wset.entry_take (X := M⟦n⟧) (l := 1) (i := i) (by omega),
+          ← Wset.entry_take (X := M) (l := 1) (i := i) (by omega), htk]
+      unfold lev
+      rw [e 1, e 2]
+    show M⟦n⟧ ∈ W (lev (M⟦n⟧) 0)
+    rw [hlev]
+    exact oper_closed h hn
+  · rw [oper_eq_self_of_short n (by omega)]
+    exact h
+
 /-- The root of a substituted sequence: the block's root when `p = 0`, the
 host's otherwise. -/
 theorem entry_subst_root {S C : TrioSeq} {p : ℕ} (hCne : C ≠ []) (hp : p < S.length)
