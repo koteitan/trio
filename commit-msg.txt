@@ -1,6 +1,8 @@
-v0.118.169/prove that a row-2-free tower is free
+v0.118.170/probe whether W-membership depends only on row 0's order type
 
-- shTower_zeroRow2: every column of the shifted copy tower is a row-0 shift of a
-  column of Q and shiftr01 leaves row 2 alone, so zeroRow2_mem_Wself applies
-- With |Q| = 1 (constant diagonal) and e = 0 (identical copies) this pins
-  (TOW)'s content to |Q| >= 2 carrying a row-2 column
+- Add tools/probe_depth_norm.py comparing membership under rank compression,
+  stretching, an affine map and a random order-preserving relabelling
+- First result on short sequences: 514202 decided, 0 disagreements
+- Note that oper itself does NOT commute with the relabelling:
+  M = [(0,0,0),(5,0,0),(1,1,0)] expands to order type 0,3,1,4,2,5 while its rank
+  compression expands to 0,2,1,3,2,4, so any proof cannot be by equivariance
