@@ -10,8 +10,13 @@ population, and reports every sequence/stage where they differ.
 Disagreement would invalidate the probe results; agreement is evidence (not
 proof) that the truncation is harmless.
 
-Result at the bounds set below (414 sequences, n <= 2 vs n <= 3):
-2209 decided, 2209 agree, 0 disagreements, 275 undecided.
+Results, both with 0 disagreements:
+
+* the bounds set below (414 sequences, n <= 2 vs n <= 3):
+  2209 decided, 2209 agree, 275 undecided;
+* a smaller population with the n <= 4 variant added (MAXDEPTH 7, MAXLEN 24,
+  AMAX 4, the 114 based sequences of length <= 2): 524 decided, 524 agree,
+  46 undecided.
 
 These bounds are chosen so the run FINISHES.  Raising AMAX to 6 and the random
 tail to 700 already fails to complete in 5000s, and the n <= 4 variant blows up

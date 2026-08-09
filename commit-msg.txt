@@ -1,8 +1,6 @@
-v0.118.154/document the context available at the residue call sites
+v0.118.155/extend the truncation check to n <= 4
 
-- Add RESIDUE-PROBLEM 4.5: the prefix package and the one-step Aop datum that
-  subst1g_of_revive and end_subst_of_revive hold when they invoke the residue,
-  so a proof may use them; passing them through is a small Lean change
-- Verify that every Lean name cited in PROOF-STATUS and RESIDUE-PROBLEM exists,
-  and that oper's copy range excludes the trailing column and copies row 2
-  verbatim, which is what snoc_zeroRow2 rests on
+- On the 114 based sequences of length <= 2 with MAXDEPTH 7 / MAXLEN 24 /
+  AMAX 4, the verdicts under n <= 2, n <= 3 and n <= 4 agree on all 524 decided
+  instances, 0 disagreements, 46 undecided
+- Record it in the checker docstring and in PROOF-STATUS
