@@ -2605,6 +2605,22 @@ theorem snoc_zeroRow2 {M' : TrioSeq} (hz : ∀ p ∈ M', p.2.2 = 0) (t : ℕ × 
     rw [← hlevop]
     exact zeroRow2_mem_Wself hgoal
 
+/-- **The shifted copy tower over a row-2-free block is free.**  Every column of
+the tower is a row-0 shift of a column of `Q`, and `shiftr01` does not touch row
+2, so `zeroRow2_mem_Wself` applies.  Together with `|Q| = 1` (a constant
+diagonal, `diagz_mem_W`) and `e = 0` (identical copies, `W_flatMap_copies`) this
+pins `(TOW)`'s content to `|Q| ≥ 2` carrying a row-2 column. -/
+theorem shTower_zeroRow2 {Q : TrioSeq} (hz : ∀ p ∈ Q, p.2.2 = 0) (e n : ℕ) :
+    shTower Q e n ∈ Wself := by
+  refine zeroRow2_mem_Wself (fun q hq => ?_)
+  unfold shTower at hq
+  rw [List.mem_flatMap] at hq
+  obtain ⟨k, -, hk⟩ := hq
+  unfold shiftr01 at hk
+  rw [List.mem_map] at hk
+  obtain ⟨p, hp, rfl⟩ := hk
+  exact hz p hp
+
 /-- **Every subtree, re-based to depth 0, is a `based` `W`-member at its own
 level** — the shape `Aop`'s clause 3 wants for its graft argument. -/
 theorem drop_rebase_mem_W {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ)

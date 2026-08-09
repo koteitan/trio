@@ -1,6 +1,6 @@
-v0.118.168/record the large (TOW) measurement
+v0.118.169/prove that a row-2-free tower is free
 
-- Stage-free (TOW) over 120000 random trees with e in 1..4 and n in 2..5:
-  1642293 decided, 0 violations, 134699 undecided
-- The probe does not impose the no-dip constraint a real bad root would put on
-  e, so it measures a strictly more general statement
+- shTower_zeroRow2: every column of the shifted copy tower is a row-0 shift of a
+  column of Q and shiftr01 leaves row 2 alone, so zeroRow2_mem_Wself applies
+- With |Q| = 1 (constant diagonal) and e = 0 (identical copies) this pins
+  (TOW)'s content to |Q| >= 2 carrying a row-2 column
