@@ -17,10 +17,16 @@ Those are exactly the shapes that killed A_x1 == 1, W2ok, spanOK and dichOK.
 Hosts and blocks are drawn at random over a much wider column range than the
 exhaustive probe, with dips allowed, and only the residue cases are counted.
 
-Measured (seed 20260809, 60000 samples): 78885 decided residue instances --
-context-revives 14540, insertion-creates-parent 17816, inside-copied-region
-46529 -- and 0 violations.  `inW` is the bottleneck, so keep SAMPLES modest;
-progress is printed every 10000 samples.
+Measured, both with 0 violations:
+
+* seed 20260809, 60000 samples, before the row-2 filter: 78885 decided
+  (context-revives 14540, insertion-creates-parent 17816, inside-copied-region
+  46529);
+* seed 777001, 15000 samples, hosts of length 3..6 and blocks of length 1..5,
+  WITH the row-2 filter: 13616 decided (1870 / 2225 / 9521).
+
+`inW` is the bottleneck, so keep SAMPLES modest; progress is printed every
+10000 samples.
 """
 import sys
 import random
@@ -146,6 +152,11 @@ def main():
             continue
         if inW(C, lev(S[p]), MAXDEPTH, memo) is not True:
             tot['block/not in W(lev)'] += 1
+            continue
+        # the core also requires a row-2 column in R.dropLast (snoc_zeroRow2
+        # discharges the complement), so do not count those instances
+        if not any(q[2] > 0 for q in R[:-1]):
+            tot['skip/dropLast row2-free'] += 1
             continue
         for a in stages:
             r = inW(R, a, MAXDEPTH, memo)
