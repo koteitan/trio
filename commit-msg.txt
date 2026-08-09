@@ -1,7 +1,6 @@
-v0.118.166/prove that oper is monotone in the copy count
+v0.118.167/record oper's monotonicity and what it says about the probes
 
-- oper_prefix_of_le: M[n'] is a prefix of M[n] whenever n' <= n.  Both keep the
-  untouched head M.take j0, and the copies are a flatMap over List.range, which
-  grows by appending; the Pred branches are equal outright
-- W_oper_mono: membership at a large copy count gives it at every smaller one,
-  via W_take
+- Add oper_prefix_of_le and W_oper_mono to the structure table
+- Note that since M[n'] is a prefix of M[n], a larger n is a STRICTLY stronger
+  condition, so the probes' n <= 2 truncation is the loosest possible check --
+  which is why the truncation validation mattered
