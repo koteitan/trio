@@ -79,6 +79,22 @@ theorem no_infinite_expansion_of_liftStage (hWL : LiftStage) (he : Wset.TowerExp
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_holds (towerGraft2_of_liftStage hWL) he
 
+/-- **★★★ Trio sequences terminate, modulo `(ROW1MONO)` and `TowerExp`.**
+`(ROW1MONO)` says only that `W a` is closed under LOWERING row 1 — no lift, no
+mask, no cone in the statement.  `Lift1 X d` is the uniform shift
+`shiftr01 0 d X` with row 1 lowered at the columns outside the root cone, and
+the uniform shift is proved (`Wslift.ulift_mem_W`), so this bypasses the
+index-mask vs value-mask obstruction that `TieFree` and the row-1 window both
+ran into. -/
+theorem TRIO_terminates_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_liftStage (liftStage_of_row1mono hM) he
+
+/-- **No infinite expansion sequence**, from `(ROW1MONO)` and `TowerExp`. -/
+theorem no_infinite_expansion_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_liftStage (liftStage_of_row1mono hM) he
+
 /-- **Trio sequences terminate**, modulo the PARENTED residue of the stage law
 and `TowerExp`.  `liftStage_of_parented` discharges every parentless branch of
 `Aop` (including all of clause 3) by `lift_oper_of_noParent`. -/

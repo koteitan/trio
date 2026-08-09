@@ -1,11 +1,14 @@
-v0.118.179/measure the shortest equivalent form of the theorem, single-column insertion
+v0.118.180/replace the (WL) core by (ROW1MONO), a statement with no mask in it
 
-- Add tools/probe_insert.py for (INS): Wself closed under inserting one
-  arbitrary column at an arbitrary position, 1603817 decided instances with 0
-  violations (1268993 for the variant that hangs the column under S[p])
-- Note that (INS) at the end position is (SNOC), already wired as
-  TRIO_terminates_of_snoc, so it adds no new core but states the whole theorem
-  with no side condition at all
-- Use the proved snoc_zeroRow2 as a base case of the decision procedure, which
-  is what lets these probes decide an order of magnitude more instances
-- Record both rows in PROOF-STATUS 4
+- Add Wtower2.Row1Mono and liftStage_of_row1mono: since Lift1 X d is the uniform
+  shift shiftr01 0 d X with row 1 lowered outside the root cone, and the uniform
+  shift is proved (ulift_mem_W), (WL) follows from W being closed under lowering
+  row 1 -- the index-mask vs value-mask obstruction disappears from the statement
+- Add Final.TRIO_terminates_of_row1mono and no_infinite_expansion_of_row1mono,
+  axioms [propext, Classical.choice, Quot.sound]
+- Add tools/probe_row1mono.py: 369068 multi-column, 106763 single-column and
+  773483 adversarial instances (lowering at the bad root, its le1-cone and the
+  terminal), 0 violations
+- Record the closed route-C gate in PROOF-STATUS 5.7: the take/drop-rebase/oper
+  closure stays tie-free (72561, 0) but the proved invariant cnf does not exclude
+  ties (25 counterexamples), so no local invariant was available

@@ -132,6 +132,46 @@ theorem liftStage_of_window {m d : ℕ} {X : TrioSeq} (hX : X ∈ W m)
   rw [Lift1_eq_shiftr1_of_window hr hw d]
   exact ulift_mem_W X hX
 
+/-! ### ★★★ マスクを完全に迂回する: 行 1 の単調性 `(ROW1MONO)`
+
+上の 2 つはどちらも「マスクが一致する」十分条件で、その仮定は ST_TS 到達可能性の
+強さを持つ（PROOF-STATUS 5.7）。ところが **マスクを比較する必要は無い**:
+
+```
+Lift1 X d  =  shiftr01 0 d X  の行 1 を、錐の外の列でだけ d 下げたもの
+```
+
+であり、一様シフトの方は `(ULIFT)` で**証明済み**。したがって `W` が行 1 の
+**引き下げ**で閉じてさえいれば、`(WL)` はマスクの一致を一切使わずに出る。
+これで「添字マスク vs 値マスク」の障害は迂回できる。
+
+計測 `tools/probe_row1mono.py`: 多列同時 369068 例 0 違反、単列 106763 例 0 違反。 -/
+
+/-- **(ROW1MONO)**: `W a` は行 1 の引き下げで閉じている（行 0・行 2 は不変）。 -/
+def Row1Mono : Prop :=
+  ∀ (a : ℕ) (M M' : TrioSeq), M ∈ W a → M'.length = M.length →
+    (∀ j, entry M' 0 j = entry M 0 j) → (∀ j, entry M' 2 j = entry M 2 j) →
+    (∀ j, entry M' 1 j ≤ entry M 1 j) → M' ∈ W a
+
+theorem entry1_out {Y : TrioSeq} {j : ℕ} (hj : Y.length ≤ j) : entry Y 1 j = 0 := by
+  show (Y.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 = 0
+  rw [getD_out hj]
+
+/-- **★★★ (WL) はマスク一致を使わずに `(ROW1MONO)` から出る。** -/
+theorem liftStage_of_row1mono (h : Row1Mono) : LiftStage := by
+  intro m d X hX
+  refine h (m + 2 * d) (shiftr01 0 d X) (Lift1 X d) (ulift_mem_W X hX)
+    ?_ ?_ ?_ ?_
+  · rw [Lift1_length, shiftr01_length]
+  · intro j; rw [entry0_Lift1, entry0_shiftr1]
+  · intro j; rw [entry2_Lift1, entry2_shiftr01]
+  · intro j
+    rcases Nat.lt_or_ge j X.length with hj | hj
+    · rw [entry1_Lift1 hj, entry1_shiftr1 hj]
+      split <;> omega
+    · rw [entry1_out (by rw [Lift1_length]; exact hj),
+        entry1_out (by rw [shiftr01_length]; exact hj)]
+
 /-! ## (WL) を「親のある場合」だけに縮める
 
 `oper` の `Pred` 分岐（末尾列が全零、または親なし）は根リフトと**可換**である:
