@@ -1,6 +1,9 @@
-v0.118.172/actually record the |Q| = 2 shape (the previous commit was empty)
+v0.118.173/measure that row 0 only matters up to order type
 
-- The v0.118.171 edit asserted against PROOF-STATUS but the text lives in
-  RESIDUE-PROBLEM, so that commit carried only the message file
-- Add the finding to RESIDUE-PROBLEM: both recursions for a two-column tower
-  land on appending a Wself member of the same root level
+- Add a random order-preserving relabelling to probe_depth_norm.py and widen the
+  population: 3290952 decided instances over 67900 sequences of length up to 6
+  with depths up to 7, 0 disagreements across rank, stretch, affine and random
+- A targeted sweep over the depth patterns where the arithmetic differs most
+  adds 134200 decided, 0 disagreements
+- Record it in PROOF-STATUS 6.5 as a measured conjecture, with the concrete
+  witness that oper is NOT equivariant, so a proof cannot be a commuting square

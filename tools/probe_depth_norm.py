@@ -10,10 +10,21 @@ If membership is order-invariant, towers can be normalised (e.g. to `d0 = 1`)
 and the open content of `(TOW)` becomes a much smaller family.  If not, the
 counterexample tells us exactly which arithmetic matters.
 
-Three relabellings, all strictly order- and equality-preserving on row 0:
+Four relabellings, all strictly order- and equality-preserving on row 0:
   * `rank`    -- compress the distinct depths to 0,1,2,...
   * `stretch` -- x |-> 2*x
-  * `affine`  -- x |-> 3*x + 1  (kept >= 0)
+  * `affine`  -- x |-> 3*x + 1
+  * `random`  -- a random strictly increasing map
+
+Measured (67900 sequences, length up to 6, depths up to 7): 3290952 decided,
+0 disagreements (rank 794933, stretch 837728, affine 841208, random 817083).
+A targeted sweep over the depth patterns where the arithmetic differs most
+(x0 = 0, x1 large, x2 small) added 134200 decided, 0 disagreements.
+
+⚠ `oper` itself is NOT equivariant.  `M = [(0,0,0),(5,0,0),(1,1,0)]` expands to
+order type 0,3,1,4,2,5 while its rank compression expands to 0,2,1,3,2,4.  So
+membership invariance, if true, is not a consequence of a commuting square, and
+a proof would need a different mechanism.
 """
 import sys
 import itertools
