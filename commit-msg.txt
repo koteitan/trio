@@ -1,8 +1,5 @@
-v0.118.161/reduce (GC) to dominant-terminal replacement
+v0.118.162/correct the (GC) reduction: it narrows the proof, not the statement
 
-- The clause-3 case of (GC) is immediate: run A2' over
-  Y = {S | S in W u and the graft closure}, and clause 3's datum hands back the
-  membership directly; domT pins m, and clause 1 contradicts lev(last) = m+1 > 0
-- So (GC) is equivalent to (DTR): replacing a dominant terminal by a block of
-  the stage below keeps the sequence in W u.  The 12217217-instance measurement
-  already covers it, since every host in probe_gc.py is a domT host
+- The clause-2 case hands back S.dropLast in W u, but W_dropLast already gives
+  that for free, so adding it as a hypothesis yields the same proposition
+- What the clause analysis buys is that a proof only has to treat one case
