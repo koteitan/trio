@@ -1,6 +1,8 @@
-v0.118.184/cross-check the (ROW1MONO) probe against the n<=3 decision procedure
+v0.118.185/add the generation test that tells a lever from a restatement
 
-- Compare the n<=2 and n<=3 verdicts on (ROW1MONO) instances: 44692 decided by
-  both, 0 disagreements and no violation under n<=3 either, so the truncation
-  the probes use is not hiding a counterexample in this range
-- Record the row in PROOF-STATUS 4
+- Record in PROOF-STATUS 5.7 that the two unconditionally free classes are
+  row 2 identically 0 (zeroRow2_mem_Wself) and row 0 identically 0 (flat_mem_W)
+- State the test a candidate monotonicity has to pass: it is a lever only if the
+  free classes do not generate everything under it -- raising row 2 and changing
+  row 0 both do, hence both are equivalent to the theorem, while lowering row 1
+  moves neither row 0 nor row 2 and so cannot leave a free class
