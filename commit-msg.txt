@@ -1,16 +1,10 @@
-v0.118.176/pin the (WL) residue to ST_TS reachability, the same wall as the core
+v0.118.177/carry the index-mask vs value-mask picture into RESIDUE-PROBLEM
 
-- Measure row-1 ties in row-2 bad parts on a deep ST_TS closure (400003
-  sequences, depth 16, n up to 4, length up to 160): 40444281 instances with
-  root row 1 >= 1, 0 ties
-- Show the fact is about the collapse, not a global row-1 discipline: flat
-  ancestor pairs at row 1 >= 1 do occur on ST_TS (520173), just never inside a
-  row-2 bad part
-- Add tools/probe_tie_invariants.py: the already-proved invariants r1ok, z0ok,
-  noninc and zle1 do NOT exclude ties (1552 of 9611), and the smallest witness
-  [(0,0,0),(1,1,0),(2,1,0),(2,2,1)] is absent from the ST_TS closure
-- Conclude in PROOF-STATUS 5.7 that discharging tie-freeness needs ST_TS
-  reachability, so (WL) is not a separate difficulty and is not worth attacking
-  on its own
-- Re-audit the residue Subst1gReviveSelf with an independent enumerator:
-  1201307 instances, 0 violations, 273562 undecided
+- Add RESIDUE-PROBLEM 4.9: the single difference from 2-row Bashicu is that a
+  row-2 collapse lifts row 1 of the copies, and the lift BM4 performs is masked
+  by an INDEX cone while every proved lift law is masked by row-1 VALUES
+- State the measured split: Lift1 commutes with oper in all 93231 instances
+  where the bad root is interior, and fails in 47718 of the bad-root-at-0 ones
+- State that the gap is exactly row-1 ties, that tie-freeness holds on ST_TS but
+  is not implied by the proved invariants, and that the residue itself needs no
+  ST_TS, so the residue is what to attack
