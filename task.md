@@ -90,6 +90,7 @@
 - [x] (GC) の「反証済み」記録を訂正（1221万例 0 違反・未証明なだけ）✅ v0.118.160-162
 - [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel`
 - [ ] 次: 残核の同値な顔は出揃った（RESIDUE-PROBLEM 4.8）。翻訳ではなく新しい入力を探す
+- [x] ★ (WL) の壁＝「添字マスク vs 値マスク」と判明・タイ無し枝を証明 ✅ v0.118.174
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える

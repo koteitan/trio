@@ -36,6 +36,63 @@ is proved (`Wslift.mlift_mem_W`). -/
 def LiftStage : Prop :=
   ∀ (m d : ℕ) (X : TrioSeq), X ∈ W m → Lift1 X d ∈ W (m + 2 * d)
 
+/-! ## (WL) の**タイのない**場合は無料
+
+BM4 が行 1 に施すリフトのマスクは `A_xy` ＝ 悪い根の**添字**の子孫錐
+（`Lift1` の `le1 X 0 ·`）である。一方、証明済みのリフト法則
+（`Wslift.slift_mem_W` / `mlift_mem_W`）のマスクは `amin`（行 0 祖先鎖上の行 1
+最小値）という**値**で決まる上方集合 `coneV` である。この違いが本質的なのは
+
+* `amin` は `oper` で不変（`amin_oper_mir`）なので `slift` は展開と可換
+  （`slift_oper`）だが、
+* **添字**で決まる錐はコピーで壊れる（コピー `k` は自分自身の錐を持つ）ので
+  `Lift1` は展開と可換でない
+
+からである（計測 `tools/probe_lift1_mask.py` 系: 孤児枝は 210204 例すべて可換、
+親あり枝は 192996 例中 47718 例で不可換）。
+
+2 つのマスクの差はちょうど**行 1 のタイ**（根と行 1 の値が等しい列）だけで、
+`le1` 錐 ⊆ `amin` 錐は**無条件**（下の `coneV_of_le1`。計測 64808 例 0 例外）。
+したがって逆包含（`TieFree`）が成り立てば (WL) はその場で無料になる。 -/
+
+/-- 行 1 のタイが無い: `amin` 錐が `le1` 錐に収まる（逆は `coneV_of_le1`）。 -/
+def TieFree (X : TrioSeq) : Prop :=
+  ∀ j, coneV X (entry X 1 0 - 1) j → le1 X 0 j
+
+/-- **`le1` 錐 ⊆ `amin` 錐**（無条件）。根の行 1 錐に入る列は、行 0 祖先すべてが
+根以上の行 1 値を持つ（`le1_chain_window`）。 -/
+theorem coneV_of_le1 {X : TrioSeq} (hv : 1 ≤ entry X 1 0) {j : ℕ}
+    (h : le1 X 0 j) : coneV X (entry X 1 0 - 1) j := by
+  intro y hyj
+  have h0j : Relation.ReflTransGen (nextrel0 X) 0 j := rtg1_to_rtg0 h.2.2
+  have h0y : Relation.ReflTransGen (nextrel0 X) 0 y :=
+    rtg0_comparable h0j hyj (Nat.zero_le y)
+  by_cases hy0 : y = 0
+  · subst hy0; omega
+  · have := le1_chain_window h.2.2 y h0y hyj (fun hh => hy0 hh)
+    omega
+
+/-- タイが無ければ根リフトは**証明済みの**マスクリフトそのもの。 -/
+theorem Lift1_eq_mlift_of_tieFree {X : TrioSeq} (hv : 1 ≤ entry X 1 0)
+    (h : TieFree X) (d : ℕ) :
+    Lift1 X d = mlift X (entry X 1 0 - 1) d := by
+  unfold Lift1 mlift
+  refine List.map_congr_left ?_
+  intro j _
+  have hif : (if le1 X 0 j then d else 0)
+      = (if coneV X (entry X 1 0 - 1) j then d else 0) := by
+    by_cases hc : le1 X 0 j
+    · rw [if_pos hc, if_pos (coneV_of_le1 hv hc)]
+    · rw [if_neg hc, if_neg (fun hcc => hc (h j hcc))]
+  rw [hif]
+
+/-- **★ (WL) はタイのない根の上では核なしで成り立つ。**  `mlift_mem_W` は
+`slift_oper` 経由で証明済みなので、この場合の (WL) は完全に無料。 -/
+theorem liftStage_of_tieFree {m d : ℕ} {X : TrioSeq} (hX : X ∈ W m)
+    (hv : 1 ≤ entry X 1 0) (h : TieFree X) : Lift1 X d ∈ W (m + 2 * d) := by
+  rw [Lift1_eq_mlift_of_tieFree hv h d]
+  exact mlift_mem_W X hX
+
 /-! ## (WL) を「親のある場合」だけに縮める
 
 `oper` の `Pred` 分岐（末尾列が全零、または親なし）は根リフトと**可換**である:

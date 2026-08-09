@@ -1,9 +1,13 @@
-v0.118.173/measure that row 0 only matters up to order type
+v0.118.174/pin the (WL) wall as index-mask vs value-mask and prove the tie-free case
 
-- Add a random order-preserving relabelling to probe_depth_norm.py and widen the
-  population: 3290952 decided instances over 67900 sequences of length up to 6
-  with depths up to 7, 0 disagreements across rank, stretch, affine and random
-- A targeted sweep over the depth patterns where the arithmetic differs most
-  adds 134200 decided, 0 disagreements
-- Record it in PROOF-STATUS 6.5 as a measured conjecture, with the concrete
-  witness that oper is NOT equivariant, so a proof cannot be a commuting square
+- Prove Wtower2.coneV_of_le1: the le1-cone of the root is always inside the amin
+  cone (from le1_chain_window), so BM4's index mask sits under the value mask
+- Prove Wtower2.Lift1_eq_mlift_of_tieFree and liftStage_of_tieFree: with no
+  row-1 tie and root row 1 >= 1, (WL) follows from the proved mlift_mem_W
+- Measure the non-commutation of Lift1 with oper (47718 of 192996 parented
+  instances) and identify its mechanism: every copy gets its own index cone
+- Add tools/probe_lift1_mask.py (le1-cone inside amin-cone, 64808 blocks, 0
+  exceptions) and tools/probe_tiefree_stts.py (ST_TS closure, 139914 row-2 copy
+  blocks, ties only at v0 = 0, 24 of them)
+- Record it as PROOF-STATUS 5.7 with the caveat that ties DO occur on general
+  matrices, so TieFree cannot yet be discharged inside the Wstar framework
