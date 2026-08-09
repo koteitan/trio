@@ -1,7 +1,10 @@
-v0.118.159/add drop_rebase_mem_W and record what W_shiftl0 unlocks
+v0.118.160/correct the (GC) entry: it is not refuted
 
-- drop_rebase_mem_W: a subtree re-based to depth 0 is a based W-member at its
-  own level, which is the shape Aop clause 3 wants for its graft argument
-- Record in PROOF-STATUS that with W_shiftl0 the strictly-lower-level half of
-  the residue is exactly a clause-3 graft, so only the clause-2-datum case and
-  the equal-level case survive there
+- Add tools/probe_gc.py.  In the W u formulation, S in W u and domT S m imply
+  the clause-3 graft closure on 12217217 decided instances with 0 violations
+  (467847 undecided), and |S| = 1 is immediate from W_shift
+- What was ruled out earlier was a different formulation inside the Wstar / GX
+  machinery; listing (GC) as refuted was misleading
+- It is still not a way forward: inducting on z's datum produces the branch
+  where S.dropLast revives z's trailing orphan, which is exactly the residue's
+  lev C 0 < lev (S last) half once W_shiftl0 re-bases the block

@@ -174,7 +174,15 @@ lev が等しい  <->  row1, row2 が等しい     （2b+c = 2b'+c', c,c' <= 1 �
 ## 6. 却下済み（再挑戦禁止）
 
 * `Aop` 節 2 の `natDom` ガード（全変種）— 反証
-* `(GC)`「後続データが graft 閉包に格上げ」— `|R|=1` で目標に退化
+* ⚠ **`(GC)` は「反証」ではない（2026-08-09 訂正）**:
+  `(GC) : S ∈ W u → domT S m → ∀ z ∈ W m, based z → graft S z ∈ W u`
+  は **1221万例・違反 0**（`tools/probe_gc.py`、未判定 467847）。
+  `|S| = 1` では `graft [c] z = shift z` なので `W_shift` で即。
+  過去に却下されたのは `Wstar`/`GX` 機構内の別定式化であり、この `W u` 版は
+  未証明なだけ。⛔ ただし**前進には使えない**: `z` のデータで帰納すると
+  「文脈 `S.dropLast` が `z` の末尾孤児を復活させる」枝が出て、これは残核の
+  `lev C 0 < lev(S 末尾)` 半分と**同値**（`W_shiftl0` で再基底すれば
+  `graft S (shiftl0 x C) = S.dropLast ++ C`）
 * 前置だけの界面 / `InfEquip` — 反証
 * 詳細は `GRAFTALL-PLAN.md` §5 と memory `trio-wset-redesign.md`
 
