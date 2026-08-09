@@ -1,10 +1,9 @@
-v0.118.177/carry the index-mask vs value-mask picture into RESIDUE-PROBLEM
+v0.118.178/separate the two reasons tie-freeness cannot be discharged
 
-- Add RESIDUE-PROBLEM 4.9: the single difference from 2-row Bashicu is that a
-  row-2 collapse lifts row 1 of the copies, and the lift BM4 performs is masked
-  by an INDEX cone while every proved lift law is masked by row-1 VALUES
-- State the measured split: Lift1 commutes with oper in all 93231 instances
-  where the bad root is interior, and fails in 47718 of the bad-root-at-0 ones
-- State that the gap is exactly row-1 ties, that tie-freeness holds on ST_TS but
-  is not implied by the proved invariants, and that the residue itself needs no
-  ST_TS, so the residue is what to attack
+- Measure the closure of ST_TS under take and drop+rebase, which is exactly what
+  mem_of_Aclosed_aux recurses on: 1225966 sequences, 411600 row-2 bad parts at
+  root row 1 >= 1, 0 ties -- so the induction does NOT leave the tie-free class
+- Record in PROOF-STATUS 5.7 that the real obstacle is instead that Wstar is
+  used as an A-closed set in A2', so the tower argument is needed for every
+  argOK block and no class restriction survives (Aop data never implies class
+  membership)
