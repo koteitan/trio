@@ -2476,6 +2476,74 @@ theorem gcopies_row2 {M : TrioSeq} {r L d0 d1 n : ℕ} {q : ℕ × ℕ × ℕ}
   exact gcopy_row2 hk
 
 open Classical in
+/-- **Appending a column that stays an ORPHAN is free.**  `oper` peels it back
+off, so the whole expansion is the block itself, and the root is untouched.
+This is what makes the orphan half of `(LOW)` (lowering a trailing column) free:
+only the case where the new column FINDS a parent is open. -/
+theorem snoc_orphan {A : TrioSeq} (hA : A ∈ Wself) (hAne : A ≠ [])
+    (t : ℕ × ℕ × ℕ)
+    (hnp : ¬ hasParent (A ++ [t]) (srow (A ++ [t]) ((A ++ [t]).length - 1))
+      ((A ++ [t]).length - 1)) :
+    (A ++ [t]) ∈ Wself := by
+  classical
+  have hAlen : 0 < A.length := List.length_pos_iff.mpr hAne
+  have hlen : (A ++ [t]).length = A.length + 1 := by rw [List.length_append]; simp
+  have hdl : (A ++ [t]).dropLast = A := by simp
+  have hroot : ∀ i, entry (A ++ [t]) i 0 = entry A i 0 :=
+    fun i => entry_append_left _ _ (by omega)
+  have hlv : lev (A ++ [t]) 0 = lev A 0 := by unfold lev; rw [hroot 1, hroot 2]
+  refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+  have hpred : (A ++ [t])⟦n⟧ = Pred (A ++ [t]) := by
+    by_cases hz : entry (A ++ [t]) 0 ((A ++ [t]).length - 1) = 0 ∧
+        entry (A ++ [t]) 1 ((A ++ [t]).length - 1) = 0 ∧
+        entry (A ++ [t]) 2 ((A ++ [t]).length - 1) = 0
+    · exact oper_eq_pred_of_zero n (by omega) hz
+    · exact oper_eq_pred_of_noParent n (by omega) hz hnp
+  rw [hpred]
+  unfold Pred
+  rw [if_neg (by omega), hdl, hlv]
+  exact hA
+
+theorem dropLast_mem_Wself {M : TrioSeq} (h : M ∈ Wself) (hne : M.dropLast ≠ []) :
+    M.dropLast ∈ Wself := by
+  have hlen : 0 < M.dropLast.length := List.length_pos_iff.mpr hne
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hlv : lev M.dropLast 0 = lev M 0 := by
+    unfold lev
+    rw [List.dropLast_eq_take,
+      Wset.entry_take (X := M) (l := M.length - 1) (i := 1) (by omega),
+      Wset.entry_take (X := M) (l := M.length - 1) (i := 2) (by omega)]
+  show M.dropLast ∈ W (lev M.dropLast 0)
+  rw [hlv]
+  exact W_dropLast h
+
+/-- **(LOW)** — lowering the trailing column of a `Wself` member. -/
+def LowerLast : Prop :=
+  ∀ (A : TrioSeq) (c t : ℕ × ℕ × ℕ), (A ++ [c]) ∈ Wself → A ≠ [] →
+    t.1 = c.1 → 2 * t.2.1 + t.2.2 ≤ 2 * c.2.1 + c.2.2 →
+    (A ++ [t]) ∈ Wself
+
+/-- `(LOW)` restricted to the case where the lowered column FINDS a parent. -/
+def LowerLastParented : Prop :=
+  ∀ (A : TrioSeq) (c t : ℕ × ℕ × ℕ), (A ++ [c]) ∈ Wself → A ≠ [] →
+    t.1 = c.1 → 2 * t.2.1 + t.2.2 ≤ 2 * c.2.1 + c.2.2 →
+    hasParent (A ++ [t]) (srow (A ++ [t]) ((A ++ [t]).length - 1))
+      ((A ++ [t]).length - 1) →
+    (A ++ [t]) ∈ Wself
+
+/-- **The orphan half of `(LOW)` is free** (`snoc_orphan`). -/
+theorem lowerLast_of_parented (h : LowerLastParented) : LowerLast := by
+  classical
+  intro A c t hAc hAne ht hlev
+  by_cases hp : hasParent (A ++ [t]) (srow (A ++ [t]) ((A ++ [t]).length - 1))
+      ((A ++ [t]).length - 1)
+  · exact h A c t hAc hAne ht hlev hp
+  · refine snoc_orphan ?_ hAne t hp
+    have hdl : (A ++ [c]).dropLast = A := by simp
+    have := dropLast_mem_Wself hAc (by rw [hdl]; exact hAne)
+    rwa [hdl] at this
+
+open Classical in
 /-- **★★ A row-2-free block carries ANY trailing column.**
 
 If every column of `M'` has row 2 = 0 then `M' ++ [t] ∈ Wself` for an arbitrary

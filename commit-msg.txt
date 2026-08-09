@@ -1,5 +1,7 @@
-v0.118.162/correct the (GC) reduction: it narrows the proof, not the statement
+v0.118.163/free the orphan half of (LOW)
 
-- The clause-2 case hands back S.dropLast in W u, but W_dropLast already gives
-  that for free, so adding it as a hypothesis yields the same proposition
-- What the clause analysis buys is that a proof only has to treat one case
+- Prove snoc_orphan: appending a column that stays an orphan is free, since oper
+  peels it straight back off and the root is untouched
+- Add dropLast_mem_Wself
+- Define LowerLast and LowerLastParented and prove lowerLast_of_parented, so
+  (LOW) now only concerns the case where the lowered column finds a parent
