@@ -1,13 +1,6 @@
-v0.118.183/prove flat_mem_W and pin (ROW0FREE) as equivalent to the theorem
+v0.118.184/cross-check the (ROW1MONO) probe against the n<=3 decision procedure
 
-- Add Wtower2.no_hasParent_of_flat and flat_mem_W: a block whose row 0 is
-  identically 0 has no nextrel0 edges, so every column is an orphan, every
-  expansion collapses to dropLast, and the block is in W a as soon as its root
-  level fits
-- Add Wtower2.Row0Free, mem_W_of_row0free and Final.TRIO_terminates_of_row0free
-  (axioms clean): assuming row 0 does not affect W-membership already gives the
-  whole theorem, since the flattened matrix is unconditionally in W
-- Record it as a WARNING in PROOF-STATUS 5.7: the "proved upper bound + a
-  monotonicity" move that worked for row 1 cannot be reused on row 0, and the
-  measured row-0 monotonicity (390293 raise / 337510 lower, 0 violations) is
-  just the theorem being measured -- (DEPTHORD) must not be used as a lemma
+- Compare the n<=2 and n<=3 verdicts on (ROW1MONO) instances: 44692 decided by
+  both, 0 disagreements and no violation under n<=3 either, so the truncation
+  the probes use is not hiding a counterexample in this range
+- Record the row in PROOF-STATUS 4
