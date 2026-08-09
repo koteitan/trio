@@ -1,8 +1,9 @@
-v0.118.157/record what zle1 concretely buys
+v0.118.158/prove the missing direction of W_shift
 
-- Under zle1 the level determines the column (2b+c = 2b'+c' with c,c' <= 1
-  forces c = c' mod 2), so the residue's lev C 0 <= lev S p splits into
-  "C's head IS the column" (the head-matching form) and "C sits at the very
-  stage Aop clause 3 allows"
-- The g-ness of (SUBST1g) is needed only for (TOW)'s constant diagonal host,
-  which falls in the second case
+- Add Wset.lev_shiftl0 and Wset.oper_shiftl0: oper commutes with a downward
+  row-0 shift whenever every column sits at depth >= d
+- Prove Wset.W_shiftl0: M in W u -> (forall x in M, d <= x.1) ->
+  shiftl0 d M in W u.  W_shift only moved a block deeper; this moves it back up,
+  which is what re-basing a sub-block needs
+- Clause 3 needs no parent transport: a dominant terminal only ever uses its
+  peel graft N [] = N.dropLast

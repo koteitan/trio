@@ -2218,6 +2218,78 @@ theorem lev_root_le_of_mem_W {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (hne : M �
         omega
   exact hsub h hne
 
+theorem lev_shiftl0 (d : ℕ) (N : TrioSeq) (j : ℕ) : lev (shiftl0 d N) j = lev N j := by
+  unfold lev entry shiftl0
+  rcases Nat.lt_or_ge j N.length with hj | hj
+  · rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+      List.getElem?_eq_getElem hj, List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem hj]
+    simp
+  · rw [List.getD_eq_getElem?_getD, List.getElem?_map,
+      List.getElem?_eq_none_iff.mpr hj, List.getD_eq_getElem?_getD,
+      List.getElem?_eq_none_iff.mpr hj]
+    simp
+
+/-- `oper` commutes with a downward row-0 shift, whenever the shift is legal. -/
+theorem oper_shiftl0 {d n : ℕ} {N : TrioSeq} (hsub : ∀ x ∈ N, d ≤ x.1) :
+    (shiftl0 d N)⟦n⟧ = shiftl0 d (N⟦n⟧) := by
+  have hN : shiftr01 d 0 (shiftl0 d N) = N := shiftr01_shiftl0 hsub
+  have he := oper_shiftr01 (shiftl0 d N) d n
+  rw [hN] at he
+  rw [he, shiftl0_shiftr01]
+
+/-- **The missing direction of `W_shift`.**  `W_shift` moves a block DEEPER;
+this moves it back up, which is what re-basing a sub-block needs.  Every clause
+transports: `shiftl0` keeps lengths and rows 1,2, `oper` commutes with it
+(`oper_shiftl0`), and a dominant terminal only ever needs its peel
+(`graft N [] = N.dropLast`). -/
+theorem W_shiftl0 {u d : ℕ} {M : TrioSeq} (h : M ∈ W u)
+    (hsub : ∀ x ∈ M, d ≤ x.1) : shiftl0 d M ∈ W u := by
+  classical
+  have hall : W u ⊆ {N : TrioSeq | (∀ x ∈ N, d ≤ x.1) → shiftl0 d N ∈ W u} := by
+    refine A2' ?_
+    intro N hA hs
+    rcases hA with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+    · exact A1_intro (Or.inl ⟨by rw [shiftl0_length]; exact hl,
+        by rw [lev_shiftl0]; exact hw⟩)
+    · refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+      rw [oper_shiftl0 hs]
+      exact hop n hn (oper_mem_ge hs)
+    · rcases Nat.lt_or_ge 1 N.length with hNlen | hNlen
+      · refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))
+        rw [oper_shiftl0 hs, oper_eq_graft_nil_of_domT hNlen hd]
+        refine (hgr [] (W_nil m) based_nil) (fun x hx => ?_)
+        rw [graft_nil] at hx
+        exact hs x (List.dropLast_subset _ hx)
+      · -- a singleton dominant terminal: its level is `m+1 ≤ u`
+        have hlv : lev N (N.length - 1) = m + 1 := hd.1
+        obtain ⟨c, hc⟩ : ∃ c, N = [c] := by
+          cases hD : N with
+          | nil =>
+              exfalso
+              rw [hD] at hlv
+              simp [lev, entry] at hlv
+          | cons a t =>
+              refine ⟨a, ?_⟩
+              rw [hD] at hNlen
+              simp only [List.length_cons] at hNlen
+              rw [List.eq_nil_of_length_eq_zero (show t.length = 0 by omega)]
+        rw [hc] at hlv ⊢
+        simp only [List.length_singleton, Nat.sub_self] at hlv
+        set c' : ℕ × ℕ × ℕ := ((c.1 - d, c.2.1, c.2.2) : ℕ × ℕ × ℕ) with hc'
+        have hsh : shiftl0 d [c] = [c'] := rfl
+        have hOm := W_shift (Om_mem_W c'.2.1 c'.2.2) c'.1
+        have hsh2 : shiftr01 c'.1 0 [((0, c'.2.1, c'.2.2) : ℕ × ℕ × ℕ)] = [c'] := by
+          unfold shiftr01; simp
+        rw [hsh2] at hOm
+        rw [hsh]
+        refine W_mono ?_ hOm
+        have : 2 * c'.2.1 + c'.2.2 = lev [c] 0 := by
+          rw [hc']; simp [lev, entry]
+        rw [this]
+        omega
+  exact hall h hsub
+
 /-- **★★ The stage of a `W`-member is exactly its root's level.**
 
 `lev_root_le_of_mem_W` is one half (`M ∈ W u → lev M 0 ≤ u`); this is the other,
