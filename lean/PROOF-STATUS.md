@@ -183,6 +183,20 @@ lev が等しい  <->  row1, row2 が等しい     （2b+c = 2b'+c', c,c' <= 1 �
   「文脈 `S.dropLast` が `z` の末尾孤児を復活させる」枝が出て、これは残核の
   `lev C 0 < lev(S 末尾)` 半分と**同値**（`W_shiftl0` で再基底すれば
   `graft S (shiftl0 x C) = S.dropLast ++ C`）
+
+  **`(GC)` の節 3 の場合は自明**（`Y := {S | S ∈ W u ∧ (graft 閉包)}` で `A2'`
+  すると、節 3 のデータ `hgr z hz hbz : graft S z ∈ Y` の第 1 成分がそのまま
+  目標。`domT` は `m` を一意に決めるので `m` の食い違いも起きない。節 1 は
+  `lev(末尾) = m+1 > 0` と矛盾して不可能）。よって
+
+  ```
+  (GC)  <->  (DTR) : A ++ [t] ∈ W u,  t は A ++ [t] で親なし,  lev t = m+1,
+                     z ∈ W m,  based z   ==>   A ++ shiftr01 t.1 0 z ∈ W u
+  ```
+
+  つまり **「dominant terminal を、1 つ下の段のブロックに置き換えてよい」**。
+  計測は上の 1221万例がそのまま（`probe_gc.py` のホストは全部 domT ホスト）。
+  ⛔ (DTR) を `z` のデータで帰納するとやはり復活枝が残る。
 * 前置だけの界面 / `InfEquip` — 反証
 * 詳細は `GRAFTALL-PLAN.md` §5 と memory `trio-wset-redesign.md`
 

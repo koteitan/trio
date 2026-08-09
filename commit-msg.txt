@@ -1,10 +1,8 @@
-v0.118.160/correct the (GC) entry: it is not refuted
+v0.118.161/reduce (GC) to dominant-terminal replacement
 
-- Add tools/probe_gc.py.  In the W u formulation, S in W u and domT S m imply
-  the clause-3 graft closure on 12217217 decided instances with 0 violations
-  (467847 undecided), and |S| = 1 is immediate from W_shift
-- What was ruled out earlier was a different formulation inside the Wstar / GX
-  machinery; listing (GC) as refuted was misleading
-- It is still not a way forward: inducting on z's datum produces the branch
-  where S.dropLast revives z's trailing orphan, which is exactly the residue's
-  lev C 0 < lev (S last) half once W_shiftl0 re-bases the block
+- The clause-3 case of (GC) is immediate: run A2' over
+  Y = {S | S in W u and the graft closure}, and clause 3's datum hands back the
+  membership directly; domT pins m, and clause 1 contradicts lev(last) = m+1 > 0
+- So (GC) is equivalent to (DTR): replacing a dominant terminal by a block of
+  the stage below keeps the sequence in W u.  The 12217217-instance measurement
+  already covers it, since every host in probe_gc.py is a domT host
