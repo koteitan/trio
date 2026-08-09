@@ -3032,6 +3032,47 @@ theorem oper_one_eq_dropLast {M : TrioSeq} (hL : 1 < M.length) :
     exact List.eq_nil_of_length_eq_zero (by omega)
   rw [hR, hRnil, List.append_nil]
 
+/-- **`oper` is monotone in the copy count**: `M⟦n'⟧` is a PREFIX of `M⟦n⟧`
+whenever `n' ≤ n`.  Both share the untouched head `M.take j0`, and the copies
+are a `flatMap` over `List.range`, which grows by appending. -/
+theorem oper_prefix_of_le {M : TrioSeq} {n n' : ℕ} (h : n' ≤ n) :
+    ∃ R, M⟦n⟧ = M⟦n'⟧ ++ R := by
+  classical
+  by_cases hL : M.length - 1 = 0
+  · exact ⟨[], by rw [oper_eq_self_of_short n hL, oper_eq_self_of_short n' hL,
+      List.append_nil]⟩
+  · by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+        entry M 2 (M.length - 1) = 0
+    · exact ⟨[], by rw [oper_eq_pred_of_zero n hL hz, oper_eq_pred_of_zero n' hL hz,
+        List.append_nil]⟩
+    · by_cases hp : hasParent M (srow M (M.length - 1)) (M.length - 1)
+      · rw [oper_gcopies n hL hz hp, oper_gcopies n' hL hz hp]
+        set j0 := parent M (srow M (M.length - 1)) (M.length - 1)
+        set L := M.length - 1 - j0
+        set d0 := (if 0 < srow M (M.length - 1)
+          then entry M 0 (M.length - 1) - entry M 0 j0 else 0)
+        set d1 := (if 1 < srow M (M.length - 1)
+          then entry M 1 (M.length - 1) - entry M 1 j0 else 0)
+        refine ⟨(List.range' n' (n - n')).flatMap
+          (fun k => gcopy M j0 L d0 d1 k), ?_⟩
+        have hr : List.range n = List.range n' ++ List.range' n' (n - n') := by
+          have h2 : List.range' 0 n' 1 ++ List.range' (0 + 1 * n') (n - n') 1
+              = List.range' 0 (n' + (n - n')) 1 := List.range'_append
+          rw [show n' + (n - n') = n from by omega] at h2
+          simp only [Nat.zero_add, Nat.one_mul] at h2
+          rw [List.range_eq_range', List.range_eq_range', ← h2]
+        unfold gcopies
+        rw [hr, List.flatMap_append, List.append_assoc]
+      · exact ⟨[], by rw [oper_eq_pred_of_noParent n hL hz hp,
+          oper_eq_pred_of_noParent n' hL hz hp, List.append_nil]⟩
+
+/-- Hence membership at a large copy count gives it at every smaller one. -/
+theorem W_oper_mono {u : ℕ} {M : TrioSeq} {n n' : ℕ} (h : n' ≤ n)
+    (hmem : M⟦n⟧ ∈ W u) : M⟦n'⟧ ∈ W u := by
+  obtain ⟨R, hR⟩ := oper_prefix_of_le (M := M) h
+  have := W_take hmem (M⟦n'⟧).length
+  rwa [hR, List.take_left] at this
+
 /-- A singleton sits at exactly its own level. -/
 theorem singleton_mem_self (c : ℕ × ℕ × ℕ) : [c] ∈ W (lev [c] 0) := by
   have hOm := W_shift (Om_mem_W c.2.1 c.2.2) c.1

@@ -1,5 +1,7 @@
-v0.118.165/record snoc_orphan and where (TOW) is already free
+v0.118.166/prove that oper is monotone in the copy count
 
-- Add snoc_orphan and dropLast_mem_Wself to the structure table
-- Note that (TOW) is free when Q is row-2-free, when |Q| = 1, and when e = 0,
-  so its content is |Q| >= 2 carrying a row-2 column
+- oper_prefix_of_le: M[n'] is a prefix of M[n] whenever n' <= n.  Both keep the
+  untouched head M.take j0, and the copies are a flatMap over List.range, which
+  grows by appending; the Pred branches are equal outright
+- W_oper_mono: membership at a large copy count gives it at every smaller one,
+  via W_take
