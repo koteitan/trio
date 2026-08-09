@@ -1,6 +1,7 @@
-v0.118.155/extend the truncation check to n <= 4
+v0.118.156/record why multi-block induction plus (WL) is circular
 
-- On the 114 based sequences of length <= 2 with MAXDEPTH 7 / MAXLEN 24 /
-  AMAX 4, the verdicts under n <= 2, n <= 3 and n <= 4 agree on all 524 decided
-  instances, 0 disagreements, 46 undecided
-- Record it in the checker docstring and in PROOF-STATUS
+- The largest residue branch (insertion inside the copied region) does close if
+  the induction runs on the multi-block property: copy k's host column has level
+  lev S p + 2*k*d1 and (WL) puts the lifted block at exactly that level
+- But (WL) is derived from the core through (TOW), so the route is circular;
+  (TOW) itself resists W_add because the last copy has the deepest root
