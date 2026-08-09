@@ -74,6 +74,8 @@ Subst1gReviveSelf
 | `zeroRow2_mem_Wself` | **行 2 が恒等的に 0 の列は全部 `Wself`** — ペア定理そのもの |
 | `snoc_zeroRow2` | **行 2 ≡ 0 のブロックの末尾に任意の 1 列を継いでよい** — `oper` は末尾列をコピーせず行 2 も増やさないので展開が行 2 ≡ 0 のまま |
 | `two_col_mem_W` | `[(0,v,z), t] ∈ W a`（`2v+z ≤ a`、`t` は**任意**）— `snoc_zeroRow2` の `|M'| = 1` |
+| `Wset.W_shiftl0` | `M ∈ W u → 全列が深さ ≥ d → shiftl0 d M ∈ W u` — **`W_shift` の逆向き**（再基底化） |
+| `drop_rebase_mem_W` | 部分木を深さ 0 に戻すと `based` な `W (lev M j)` 元（節 3 の graft 引数の形） |
 | `Wset.W_shift` / `W_mono` / `W_add`(rsum) | 既存 |
 
 ⚠ 旧メモ「接尾辞閉包は偽」は**撤回**（段を固定していたため）。
@@ -156,7 +158,12 @@ lev が等しい  <->  row1, row2 が等しい     （2b+c = 2b'+c', c,c' <= 1 �
 | `lev C 0 < lev S p` | `C ∈ W (lev S p - 1)` ＝ **`Aop` 節 3 と同じ段** |
 
 ⟹ `zle1` の下で残核は「**頭一致形**」＋「**節 3 と同じ段の場合**」に分かれる。
-後者は `domT` と節 3 データが揃えば `graft` でそのまま出る（揃う保証は無い）。
+後者（`lev C 0 < lev S p`）は、**`W_shiftl0` で `C` を深さ 0 に戻せば
+`Aop` 節 3 の graft 引数そのもの**になる: `S` の `Aop` データが節 3
+（`domT S m`, `m = lev(S 末尾) - 1`）なら
+`graft S (shiftl0 x C) = S.dropLast ++ C ∈ W u` が即出る。
+⚠ ただし `S ∈ W u` から取れるデータが節 3 である保証は無い（節 2 かもしれない）。
+残るのは「節 2 データしか無い場合」と「レベルが等しい場合」。
 `(SUBST1g)` の g-性（頭が違ってよい）が要るのは `(TOW)` の定数対角ホストだけで、
 そこは後者の場合に当たる。
 

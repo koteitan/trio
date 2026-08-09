@@ -2537,6 +2537,13 @@ theorem snoc_zeroRow2 {M' : TrioSeq} (hz : ∀ p ∈ M', p.2.2 = 0) (t : ℕ × 
     rw [← hlevop]
     exact zeroRow2_mem_Wself hgoal
 
+/-- **Every subtree, re-based to depth 0, is a `based` `W`-member at its own
+level** — the shape `Aop`'s clause 3 wants for its graft argument. -/
+theorem drop_rebase_mem_W {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ)
+    (hsub : ∀ x ∈ M.drop j, entry M 0 j ≤ x.1) :
+    shiftl0 (entry M 0 j) (M.drop j) ∈ W (lev M j) :=
+  W_shiftl0 (W_drop h j) hsub
+
 theorem drop_mem_Wself {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (j : ℕ) :
     M.drop j ∈ Wself := by
   have := W_drop h j

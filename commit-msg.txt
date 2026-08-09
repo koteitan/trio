@@ -1,9 +1,7 @@
-v0.118.158/prove the missing direction of W_shift
+v0.118.159/add drop_rebase_mem_W and record what W_shiftl0 unlocks
 
-- Add Wset.lev_shiftl0 and Wset.oper_shiftl0: oper commutes with a downward
-  row-0 shift whenever every column sits at depth >= d
-- Prove Wset.W_shiftl0: M in W u -> (forall x in M, d <= x.1) ->
-  shiftl0 d M in W u.  W_shift only moved a block deeper; this moves it back up,
-  which is what re-basing a sub-block needs
-- Clause 3 needs no parent transport: a dominant terminal only ever uses its
-  peel graft N [] = N.dropLast
+- drop_rebase_mem_W: a subtree re-based to depth 0 is a based W-member at its
+  own level, which is the shape Aop clause 3 wants for its graft argument
+- Record in PROOF-STATUS that with W_shiftl0 the strictly-lower-level half of
+  the residue is exactly a clause-3 graft, so only the clause-2-datum case and
+  the equal-level case survive there
