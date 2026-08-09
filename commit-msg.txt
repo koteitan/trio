@@ -1,17 +1,16 @@
-v0.118.175/prove (ULIFT): the uniform row-1 shift transports W without Stair.zero
+v0.118.176/pin the (WL) residue to ST_TS reachability, the same wall as the core
 
-- Add Wslift.ulift_mem_W: X in W m implies shiftr01 0 d X in W (m + 2*d), with
-  the full row-1-shift equivariance kit (entry/nextrel0-2/le0/le1/srow/gcopy/
-  gcopies/Pred/oper) that it needs
-- Show Stair.zero is needed only for the commutation slift_oper, not for the
-  W transport: a uniform shift raises srow only at a srow-0 terminal, and there
-  the shifted terminal is always an orphan, so the expansion collapses to
-  dropLast = X[1] and the clause-2 hypothesis at n = 1 closes it
-- Add Wtower2.Lift1_eq_shiftr1_of_window and liftStage_of_window: when the root
-  is strictly minimal in row 1 as well as row 0, the root cone is everything
-  (le1_zero_iff), so (WL) is free -- including at root row 1 = 0, which mlift
-  cannot reach because its threshold is a natural number
-- Add tools/probe_ulift.py: 378075 decided instances of (ULIFT) with 0
-  violations, plus the ST_TS measurement that 53634 of 53642 row-2 bad parts are
-  a row-1 window (all 8 failures at root row 1 = 0)
-- Record both in PROOF-STATUS 3, 4 and 5.7
+- Measure row-1 ties in row-2 bad parts on a deep ST_TS closure (400003
+  sequences, depth 16, n up to 4, length up to 160): 40444281 instances with
+  root row 1 >= 1, 0 ties
+- Show the fact is about the collapse, not a global row-1 discipline: flat
+  ancestor pairs at row 1 >= 1 do occur on ST_TS (520173), just never inside a
+  row-2 bad part
+- Add tools/probe_tie_invariants.py: the already-proved invariants r1ok, z0ok,
+  noninc and zle1 do NOT exclude ties (1552 of 9611), and the smallest witness
+  [(0,0,0),(1,1,0),(2,1,0),(2,2,1)] is absent from the ST_TS closure
+- Conclude in PROOF-STATUS 5.7 that discharging tie-freeness needs ST_TS
+  reachability, so (WL) is not a separate difficulty and is not worth attacking
+  on its own
+- Re-audit the residue Subst1gReviveSelf with an independent enumerator:
+  1201307 instances, 0 violations, 273562 undecided
