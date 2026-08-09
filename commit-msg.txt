@@ -1,6 +1,6 @@
-v0.118.167/record oper's monotonicity and what it says about the probes
+v0.118.168/record the large (TOW) measurement
 
-- Add oper_prefix_of_le and W_oper_mono to the structure table
-- Note that since M[n'] is a prefix of M[n], a larger n is a STRICTLY stronger
-  condition, so the probes' n <= 2 truncation is the loosest possible check --
-  which is why the truncation validation mattered
+- Stage-free (TOW) over 120000 random trees with e in 1..4 and n in 2..5:
+  1642293 decided, 0 violations, 134699 undecided
+- The probe does not impose the no-dip constraint a real bad root would put on
+  e, so it measures a strictly more general statement
