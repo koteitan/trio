@@ -1,8 +1,6 @@
-v0.118.171/record the |Q| = 2 shape of (TOW)
+v0.118.172/actually record the |Q| = 2 shape (the previous commit was empty)
 
-- The trailing column's parent is the last copy's root, so
-  T_n[m] = T_{n-1} ++ (an m-column diagonal); the reverse recursion
-  T_n = Q ++ shiftr01 e 0 T_{n-1} plus oper_append_inner gives
-  T_n[m] = Q ++ shiftr01 e 0 (T_{n-1}[m]) for n >= 3
-- Both land on appending a Wself member of the same root level, deeper -- the
-  same gluing
+- The v0.118.171 edit asserted against PROOF-STATUS but the text lives in
+  RESIDUE-PROBLEM, so that commit carried only the message file
+- Add the finding to RESIDUE-PROBLEM: both recursions for a two-column tower
+  land on appending a Wself member of the same root level
