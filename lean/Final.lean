@@ -95,6 +95,22 @@ theorem no_infinite_expansion_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_liftStage (liftStage_of_row1mono hM) he
 
+/-- **★★★★ Trio sequences terminate, modulo `(WCONVEX)` and `TowerExp`.**
+`(WCONVEX)` is strictly weaker in shape than `(ROW1MONO)`: it may assume a
+witness BELOW as well as above.  That is exactly what the (WL) induction
+supplies — the lower end is the induction hypothesis and the upper end is free
+from `(ULIFT)` — and the two sandwich halves that connect them are now proved
+(`Le1_Lift1_oper`, `Le1_oper_Lift1_shiftr01`), so nothing about masks, cones,
+ties or `oper` survives in the hypothesis. -/
+theorem TRIO_terminates_of_wconvex (hc : WConvex) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_liftStage (liftStage_of_wconvex' hc) he
+
+/-- **No infinite expansion sequence**, from `(WCONVEX)` and `TowerExp`. -/
+theorem no_infinite_expansion_of_wconvex (hc : WConvex) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_liftStage (liftStage_of_wconvex' hc) he
+
 /-- **⚠ 参考: `(ROW0FREE)` は定理と同値**（進展ではなく警告のための記録）。
 行 1 で効いた「証明済みの上界 ＋ 単調性」の手は行 0 では使えない: 深さを全部 0 に
 潰した列は `nextrel0` が空で全列が孤児なので**無条件に `W`**（`flat_mem_W`）。

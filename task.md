@@ -98,7 +98,8 @@
 - [x] ★ 行1引き下げ関係 `Le1` 一式（refl/trans/take/shiftr01/`Le1_Lift1_shiftr1`）✅ v0.118.186
 - [x] ★★★ サンドイッチを計測（192万例 0 違反・無条件）✅ v0.118.187
 - [x] ★★★ (WL) の核を `(ROW1MONO)` から `(WCONVEX)`（`W` の `Le1`-凸性）に弱化 ✅ v0.118.187
-- [ ] **(WL) 側の残差**: `(WCONVEX)` ＋ サンドイッチ 2 本 `Le1_Lift1_oper` / `Le1_oper_Lift1_shiftr01`
+- [x] ★★★★ サンドイッチ 2 本を証明 → `liftStage_of_wconvex'` で仮説が消えた ✅ v0.118.190
+- [ ] **(WL) 側の残差（1 本）**: `TRIO_terminates_of_wconvex : WConvex → TowerExp → WellFounded stepRel`
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える

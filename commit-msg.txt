@@ -1,4 +1,6 @@
-v0.118.189/record the (WCONVEX) reduction in task.md
+v0.118.190/prove both sandwich halves, reducing (WL) to (WCONVEX) alone
 
-- Mark the Le1 relation package and the sandwich measurement as done
-- Replace the open (WL) item with (WCONVEX) plus the two sandwich halves
+- Prove `Le1_Lift1_oper` and `Le1_oper_Lift1_shiftr01` via the gexp mirror decomposition, with the no-parent branch collapsing through `lift_oper_of_noParent`
+- Discharge the hypotheses of `liftStage_of_wconvex`, giving `liftStage_of_wconvex' : WConvex -> LiftStage`
+- Wire `Final.TRIO_terminates_of_wconvex` and `no_infinite_expansion_of_wconvex`
+- Update PROOF-STATUS and task.md: masks, cones, ties and `oper` are all gone from the (WL) hypothesis

@@ -3926,4 +3926,477 @@ theorem towerExp2Root_of_subst (hsub : SubstClosed) (hWL : LiftStage) :
     ← List.dropLast_eq_take, ← hMd]
   exact hmain
 
+/-! ### ★★★ サンドイッチ 2 本（`oper` の構造の話のみ。`W` は出てこない）
+
+`tools/probe_sandwich.py` の 1920294 例 0 違反（`based` を課さない完全乱択込み）を
+そのまま Lean 化したもの。分岐データが `Lift1` でも `shiftr01 0 d` でも保存される
+ので、3 つの列は長さ・行 0・行 2 が一致し、行 1 の持ち上げ量だけが違う:
+左は最初のコピーのみ、中央は全コピー、右は全列。
+
+親なし枝は `lift_oper_of_noParent` の等式で潰れ、本体は `gexp` のミラー分解
+（`gexp_getD_mir` / `gexp_pos_decomp` / `oper_eq_gexp_gen`）で処理する。 -/
+
+private theorem Le1_of_lt {A B : TrioSeq} (hlen : A.length = B.length)
+    (h0 : ∀ j, j < A.length → entry A 0 j = entry B 0 j)
+    (h2 : ∀ j, j < A.length → entry A 2 j = entry B 2 j)
+    (h1 : ∀ j, j < A.length → entry A 1 j ≤ entry B 1 j) : Le1 A B := by
+  refine ⟨hlen, ?_, ?_, ?_⟩
+  · intro j
+    by_cases hj : j < A.length
+    · exact h0 j hj
+    · rw [entry_out (by omega), entry_out (by rw [← hlen]; omega)]
+  · intro j
+    by_cases hj : j < A.length
+    · exact h2 j hj
+    · rw [entry_out (by omega), entry_out (by rw [← hlen]; omega)]
+  · intro j
+    by_cases hj : j < A.length
+    · exact h1 j hj
+    · rw [entry_out (by omega), entry_out (by rw [← hlen]; omega)]
+
+private theorem Le1_gexp_Lift1_shiftr01 {X : TrioSeq}
+    {j0 L D0 D1 n d : ℕ} (hlen : j0 + L + 1 = X.length) (hL : 0 < L) :
+    Le1 (gexp (Lift1 X d) j0 L D0 D1 n)
+      (shiftr01 0 d (gexp X j0 L D0 D1 n)) := by
+  have hlenL : j0 + L + 1 = (Lift1 X d).length := by
+    rw [Lift1_length]
+    exact hlen
+  have hlenA : (gexp (Lift1 X d) j0 L D0 D1 n).length = j0 + n * L :=
+    gexp_length hlenL
+  have hlenG : (gexp X j0 L D0 D1 n).length = j0 + n * L :=
+    gexp_length hlen
+  have hlenB : (shiftr01 0 d (gexp X j0 L D0 D1 n)).length = j0 + n * L := by
+    rw [shiftr01_length, hlenG]
+  have hcols : ∀ i, i < (gexp (Lift1 X d) j0 L D0 D1 n).length →
+      entry (gexp (Lift1 X d) j0 L D0 D1 n) 0 i
+          = entry (shiftr01 0 d (gexp X j0 L D0 D1 n)) 0 i ∧
+      entry (gexp (Lift1 X d) j0 L D0 D1 n) 2 i
+          = entry (shiftr01 0 d (gexp X j0 L D0 D1 n)) 2 i ∧
+      entry (gexp (Lift1 X d) j0 L D0 D1 n) 1 i
+          ≤ entry (shiftr01 0 d (gexp X j0 L D0 D1 n)) 1 i := by
+    intro i hi
+    rw [hlenA] at hi
+    by_cases hilow : i < j0
+    · have hA : (gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0) =
+          ((entry X 0 i, entry X 1 i + (if le1 X 0 i then d else 0),
+            entry X 2 i) : ℕ × ℕ × ℕ) := by
+        rw [gexp_getD_low hlenL hilow, Lift1_getD (by omega)]
+      have hB : (shiftr01 0 d (gexp X j0 L D0 D1 n)).getD i (0, 0, 0) =
+          ((entry X 0 i, entry X 1 i + d, entry X 2 i) : ℕ × ℕ × ℕ) := by
+        rw [shiftr01_getD (by rw [hlenG]; omega), gexp_getD_low hlen hilow,
+          getD_eq_entries]
+        simp
+      refine ⟨?_, ?_, ?_⟩
+      · show ((gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0)).1 =
+          ((shiftr01 0 d (gexp X j0 L D0 D1 n)).getD i (0, 0, 0)).1
+        rw [hA, hB]
+      · show ((gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0)).2.2 =
+          ((shiftr01 0 d (gexp X j0 L D0 D1 n)).getD i (0, 0, 0)).2.2
+        rw [hA, hB]
+      · show ((gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0)).2.1 ≤
+          ((shiftr01 0 d (gexp X j0 L D0 D1 n)).getD i (0, 0, 0)).2.1
+        rw [hA, hB]
+        dsimp only
+        split <;> omega
+    · obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hL (by omega) hi
+      have hqX : j0 + q < X.length := by omega
+      have hA : (gexp (Lift1 X d) j0 L D0 D1 n).getD
+          (j0 + (k * L + q)) (0, 0, 0) =
+          ((entry X 0 (j0 + q) + k * D0,
+            entry X 1 (j0 + q) + (if le1 X 0 (j0 + q) then d else 0) +
+              (if le1 X j0 (j0 + q) then k * D1 else 0),
+            entry X 2 (j0 + q)) : ℕ × ℕ × ℕ) := by
+        rw [gexp_getD_mir hlenL hk hq, entry0_Lift1, entry2_Lift1,
+          entry1_Lift1 hqX]
+        simp only [le1_Lift1]
+      have hB : (shiftr01 0 d (gexp X j0 L D0 D1 n)).getD
+          (j0 + (k * L + q)) (0, 0, 0) =
+          ((entry X 0 (j0 + q) + k * D0,
+            entry X 1 (j0 + q) + (if le1 X j0 (j0 + q) then k * D1 else 0) + d,
+            entry X 2 (j0 + q)) : ℕ × ℕ × ℕ) := by
+        rw [shiftr01_getD (by rw [hlenG]; omega), gexp_getD_mir hlen hk hq]
+        simp
+      refine ⟨?_, ?_, ?_⟩
+      · show ((gexp (Lift1 X d) j0 L D0 D1 n).getD
+            (j0 + (k * L + q)) (0, 0, 0)).1 =
+          ((shiftr01 0 d (gexp X j0 L D0 D1 n)).getD
+            (j0 + (k * L + q)) (0, 0, 0)).1
+        rw [hA, hB]
+      · show ((gexp (Lift1 X d) j0 L D0 D1 n).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.2 =
+          ((shiftr01 0 d (gexp X j0 L D0 D1 n)).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.2
+        rw [hA, hB]
+      · show ((gexp (Lift1 X d) j0 L D0 D1 n).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.1 ≤
+          ((shiftr01 0 d (gexp X j0 L D0 D1 n)).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.1
+        rw [hA, hB]
+        dsimp only
+        split <;> omega
+  refine Le1_of_lt (by rw [hlenA, hlenB])
+    (fun i hi => (hcols i hi).1) (fun i hi => (hcols i hi).2.1)
+    (fun i hi => (hcols i hi).2.2)
+
+private theorem oper_Lift1_gexp_shared (X : TrioSeq) (d n : ℕ)
+    (h2 : 2 ≤ X.length)
+    (hp : hasParent X (srow X (X.length - 1)) (X.length - 1)) :
+    ∃ j0 L D0 D1,
+      j0 = parent X (srow X (X.length - 1)) (X.length - 1) ∧
+      L = X.length - 1 - j0 ∧
+      D0 = (if 0 < srow X (X.length - 1) then
+        entry X 0 (X.length - 1) - entry X 0 j0 else 0) ∧
+      D1 = (if 1 < srow X (X.length - 1) then
+        entry X 1 (X.length - 1) - entry X 1 j0 else 0) ∧
+      j0 + L + 1 = X.length ∧ 0 < L ∧
+      X⟦n⟧ = gexp X j0 L D0 D1 n ∧
+      (Lift1 X d)⟦n⟧ = gexp (Lift1 X d) j0 L D0 D1 n := by
+  classical
+  let j1 : ℕ := X.length - 1
+  let i1 : ℕ := srow X j1
+  let j0 : ℕ := parent X i1 j1
+  let L : ℕ := j1 - j0
+  let D0 : ℕ := if 0 < i1 then entry X 0 j1 - entry X 0 j0 else 0
+  let D1 : ℕ := if 1 < i1 then entry X 1 j1 - entry X 1 j0 else 0
+  have hj1 : j1 = X.length - 1 := rfl
+  have hi1 : i1 = srow X j1 := rfl
+  have hj0 : j0 = parent X i1 j1 := rfl
+  have hnr : nextR X i1 j0 j1 := by
+    rw [hi1, hj1, hj0]
+    exact parent_nextR hp
+  have hj0lt : j0 < j1 := nextR_index_lt hnr
+  have hj1ne : j1 ≠ 0 := by omega
+  have hj1lt : j1 < X.length := by omega
+  have hj0ltX : j0 < X.length := by omega
+  have hlen : j0 + L + 1 = X.length := by
+    dsimp only [L, j1]
+    omega
+  have hL : 0 < L := by
+    dsimp only [L]
+    omega
+  have hz : ¬ (entry X 0 j1 = 0 ∧ entry X 1 j1 = 0 ∧ entry X 2 j1 = 0) := by
+    rcases srow_cases X j1 with hs | hs | hs
+    · have hn := hnr
+      unfold nextR at hn
+      have hi : i1 = 0 := by rw [hi1, hs]
+      rw [hi, if_pos rfl] at hn
+      rintro ⟨h0, -, -⟩
+      have := hn.2.2.2.1
+      omega
+    · have hn := hnr
+      unfold nextR at hn
+      have hi : i1 = 1 := by rw [hi1, hs]
+      rw [hi, if_neg one_ne_zero, if_pos rfl] at hn
+      rintro ⟨-, h1, -⟩
+      have := hn.2.2.2.1
+      omega
+    · have hn := hnr
+      unfold nextR at hn
+      have hi : i1 = 2 := by rw [hi1, hs]
+      rw [hi, if_neg (by omega), if_neg (by omega)] at hn
+      rintro ⟨-, -, h2z⟩
+      have := hn.2.2.2.1
+      omega
+  have hoperX : X⟦n⟧ = gexp X j0 L D0 D1 n := by
+    have h := oper_eq_gexp_gen (M := X) n (by rw [← hj1]; exact hj1ne)
+      (by rw [← hj1]; exact hz) hp
+    simpa [j1, i1, j0, L, D0, D1] using h
+  have hlenLift : (Lift1 X d).length = X.length := Lift1_length X d
+  have hsrjLift : srow (Lift1 X d) j1 = i1 := by
+    rw [srow_Lift1 hj1ne]
+  have hsrLift : srow (Lift1 X d) ((Lift1 X d).length - 1) = i1 := by
+    rw [hlenLift, ← hj1, hsrjLift]
+  have hpLift : hasParent (Lift1 X d)
+      (srow (Lift1 X d) ((Lift1 X d).length - 1)) ((Lift1 X d).length - 1) := by
+    rw [hlenLift, ← hj1, hsrjLift, hi1, hasParent_Lift1]
+    rw [hj1]
+    exact hp
+  have hparLift : parent (Lift1 X d)
+      (srow (Lift1 X d) ((Lift1 X d).length - 1)) ((Lift1 X d).length - 1) = j0 := by
+    rw [hlenLift, ← hj1, hsrjLift, hi1, parent_Lift1]
+  have hparjLift : parent (Lift1 X d) i1 j1 = j0 := by
+    rw [hi1, parent_Lift1]
+  have hzLift : ¬ (entry (Lift1 X d) 0 ((Lift1 X d).length - 1) = 0 ∧
+      entry (Lift1 X d) 1 ((Lift1 X d).length - 1) = 0 ∧
+      entry (Lift1 X d) 2 ((Lift1 X d).length - 1) = 0) := by
+    rw [hlenLift, ← hj1, entry0_Lift1, entry2_Lift1, entry1_Lift1 hj1lt]
+    rintro ⟨h0, h1, h2z⟩
+    exact hz ⟨h0, by split at h1 <;> omega, h2z⟩
+  have hD1Lift : (if 1 < i1 then
+      entry (Lift1 X d) 1 j1 - entry (Lift1 X d) 1 j0 else 0) = D1 := by
+    by_cases his : 1 < i1
+    · have hn := hnr
+      unfold nextR at hn
+      rw [if_neg (by omega), if_neg (by omega)] at hn
+      have hle : le1 X j0 j1 := hn.2.2.2.2.1
+      have hciff : le1 X 0 j1 ↔ le1 X 0 j0 := by
+        by_cases hjz : j0 = 0
+        · constructor
+          · intro _
+            rw [hjz]
+            exact le1_refl (by omega)
+          · intro _
+            rwa [hjz] at hle
+        · exact ⟨fun h => le1_of_le1_le1 h hle (by omega),
+            fun h => le1_trans h hle⟩
+      rw [if_pos his, entry1_Lift1 hj1lt, entry1_Lift1 hj0ltX]
+      dsimp only [D1]
+      rw [if_pos his]
+      by_cases hc : le1 X 0 j0
+      · rw [if_pos hc, if_pos (hciff.mpr hc)]
+        omega
+      · rw [if_neg hc, if_neg (fun h => hc (hciff.mp h))]
+        omega
+    · rw [if_neg his]
+      simp [D1, his]
+  have hoperLift : (Lift1 X d)⟦n⟧ = gexp (Lift1 X d) j0 L D0 D1 n := by
+    have h := oper_eq_gexp_gen (M := Lift1 X d) n
+      (by rw [hlenLift, ← hj1]; exact hj1ne) hzLift hpLift
+    rw [hsrLift, hlenLift, ← hj1, hparjLift] at h
+    rw [entry0_Lift1, entry0_Lift1, hD1Lift] at h
+    simpa [L, D0] using h
+  exact ⟨j0, L, D0, D1, by simp [j0, i1, j1],
+    by simp [L, j1], by simp [D0, i1, j1],
+    by simp [D1, i1, j1], hlen, hL, hoperX, hoperLift⟩
+
+private theorem Le1_Lift1_gexp_Lift1 {X : TrioSeq}
+    {j0 L D0 D1 n d : ℕ} (hlen : j0 + L + 1 = X.length) (hL : 0 < L)
+    (hmask : ∀ k q, k < n → q < L →
+      le1 (gexp X j0 L D0 D1 n) 0 (j0 + (k * L + q)) →
+        le1 X 0 (j0 + q)) :
+    Le1 (Lift1 (gexp X j0 L D0 D1 n) d)
+      (gexp (Lift1 X d) j0 L D0 D1 n) := by
+  have hlenL : j0 + L + 1 = (Lift1 X d).length := by
+    rw [Lift1_length]
+    exact hlen
+  have hlenG : (gexp X j0 L D0 D1 n).length = j0 + n * L :=
+    gexp_length hlen
+  have hlenA : (Lift1 (gexp X j0 L D0 D1 n) d).length = j0 + n * L := by
+    rw [Lift1_length, hlenG]
+  have hlenB : (gexp (Lift1 X d) j0 L D0 D1 n).length = j0 + n * L :=
+    gexp_length hlenL
+  have hcols : ∀ i, i < (Lift1 (gexp X j0 L D0 D1 n) d).length →
+      entry (Lift1 (gexp X j0 L D0 D1 n) d) 0 i
+          = entry (gexp (Lift1 X d) j0 L D0 D1 n) 0 i ∧
+      entry (Lift1 (gexp X j0 L D0 D1 n) d) 2 i
+          = entry (gexp (Lift1 X d) j0 L D0 D1 n) 2 i ∧
+      entry (Lift1 (gexp X j0 L D0 D1 n) d) 1 i
+          ≤ entry (gexp (Lift1 X d) j0 L D0 D1 n) 1 i := by
+    intro i hi
+    rw [hlenA] at hi
+    have hiG : i < (gexp X j0 L D0 D1 n).length := by rw [hlenG]; exact hi
+    by_cases hilow : i < j0
+    · have he : ∀ r, entry (gexp X j0 L D0 D1 n) r i = entry X r i := by
+        intro r
+        unfold entry
+        rw [gexp_getD_low hlen hilow]
+      have hA : (Lift1 (gexp X j0 L D0 D1 n) d).getD i (0, 0, 0) =
+          ((entry X 0 i, entry X 1 i + (if le1 X 0 i then d else 0),
+            entry X 2 i) : ℕ × ℕ × ℕ) := by
+        rw [Lift1_getD hiG, he 0, he 1, he 2,
+          if_congr (le1_gexp_low (by omega) hilow) rfl rfl]
+      have hB : (gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0) =
+          ((entry X 0 i, entry X 1 i + (if le1 X 0 i then d else 0),
+            entry X 2 i) : ℕ × ℕ × ℕ) := by
+        rw [gexp_getD_low hlenL hilow, Lift1_getD (by omega)]
+      refine ⟨?_, ?_, ?_⟩
+      · show ((Lift1 (gexp X j0 L D0 D1 n) d).getD i (0, 0, 0)).1 =
+          ((gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0)).1
+        rw [hA, hB]
+      · show ((Lift1 (gexp X j0 L D0 D1 n) d).getD i (0, 0, 0)).2.2 =
+          ((gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0)).2.2
+        rw [hA, hB]
+      · show ((Lift1 (gexp X j0 L D0 D1 n) d).getD i (0, 0, 0)).2.1 ≤
+          ((gexp (Lift1 X d) j0 L D0 D1 n).getD i (0, 0, 0)).2.1
+        rw [hA, hB]
+    · obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hL (by omega) hi
+      have hqX : j0 + q < X.length := by omega
+      have hG := gexp_getD_mir (M := X) (j0 := j0) (Lb := L) (d0 := D0)
+        (d1 := D1) (n := n) hlen hk hq
+      have he0 : entry (gexp X j0 L D0 D1 n) 0 (j0 + (k * L + q)) =
+          entry X 0 (j0 + q) + k * D0 := by
+        show ((gexp X j0 L D0 D1 n).getD (j0 + (k * L + q)) (0, 0, 0)).1 = _
+        rw [hG]
+      have he1 : entry (gexp X j0 L D0 D1 n) 1 (j0 + (k * L + q)) =
+          entry X 1 (j0 + q) + (if le1 X j0 (j0 + q) then k * D1 else 0) := by
+        show ((gexp X j0 L D0 D1 n).getD (j0 + (k * L + q)) (0, 0, 0)).2.1 = _
+        rw [hG]
+      have he2 : entry (gexp X j0 L D0 D1 n) 2 (j0 + (k * L + q)) =
+          entry X 2 (j0 + q) := by
+        show ((gexp X j0 L D0 D1 n).getD (j0 + (k * L + q)) (0, 0, 0)).2.2 = _
+        rw [hG]
+      have hA : (Lift1 (gexp X j0 L D0 D1 n) d).getD
+          (j0 + (k * L + q)) (0, 0, 0) =
+          ((entry X 0 (j0 + q) + k * D0,
+            entry X 1 (j0 + q) + (if le1 X j0 (j0 + q) then k * D1 else 0) +
+              (if le1 (gexp X j0 L D0 D1 n) 0 (j0 + (k * L + q)) then d else 0),
+            entry X 2 (j0 + q)) : ℕ × ℕ × ℕ) := by
+        rw [Lift1_getD hiG, he0, he1, he2]
+      have hB : (gexp (Lift1 X d) j0 L D0 D1 n).getD
+          (j0 + (k * L + q)) (0, 0, 0) =
+          ((entry X 0 (j0 + q) + k * D0,
+            entry X 1 (j0 + q) + (if le1 X 0 (j0 + q) then d else 0) +
+              (if le1 X j0 (j0 + q) then k * D1 else 0),
+            entry X 2 (j0 + q)) : ℕ × ℕ × ℕ) := by
+        rw [gexp_getD_mir hlenL hk hq, entry0_Lift1, entry2_Lift1,
+          entry1_Lift1 hqX]
+        simp only [le1_Lift1]
+      refine ⟨?_, ?_, ?_⟩
+      · show ((Lift1 (gexp X j0 L D0 D1 n) d).getD
+            (j0 + (k * L + q)) (0, 0, 0)).1 =
+          ((gexp (Lift1 X d) j0 L D0 D1 n).getD
+            (j0 + (k * L + q)) (0, 0, 0)).1
+        rw [hA, hB]
+      · show ((Lift1 (gexp X j0 L D0 D1 n) d).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.2 =
+          ((gexp (Lift1 X d) j0 L D0 D1 n).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.2
+        rw [hA, hB]
+      · show ((Lift1 (gexp X j0 L D0 D1 n) d).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.1 ≤
+          ((gexp (Lift1 X d) j0 L D0 D1 n).getD
+            (j0 + (k * L + q)) (0, 0, 0)).2.1
+        rw [hA, hB]
+        dsimp only
+        by_cases hc : le1 (gexp X j0 L D0 D1 n) 0 (j0 + (k * L + q))
+        · rw [if_pos hc, if_pos (hmask k q hk hq hc)]
+          omega
+        · rw [if_neg hc]
+          split <;> omega
+  refine Le1_of_lt (by rw [hlenA, hlenB])
+    (fun i hi => (hcols i hi).1) (fun i hi => (hcols i hi).2.1)
+    (fun i hi => (hcols i hi).2.2)
+
+private theorem le1_gexp_flat_zero_imp {X : TrioSeq} {L n k q : ℕ}
+    (hlen : L + 1 = X.length) (hL : 0 < L) (hk : k < n) (hq : q < L)
+    (hup : ∀ l, 0 < l → l ≤ L → entry X 0 0 < entry X 0 l)
+    (h : le1 (gexp X 0 L 0 0 n) 0 (k * L + q)) :
+    le1 X 0 q := by
+  rcases Nat.eq_zero_or_pos k with rfl | hkpos
+  · simp only [Nat.zero_mul, Nat.zero_add] at h ⊢
+    have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hk
+    refine le1_of_agree (X := X) (M := gexp X 0 L 0 0 n) (by omega)
+      (by rw [gexp_length (by simpa using hlen)]; omega) ?_ h
+    intro x hx
+    have hg := gexp_getD_mir (M := X) (j0 := 0) (Lb := L) (d0 := 0)
+      (d1 := 0) (n := n) (k := 0) (q := x) (by simpa using hlen) hk (by omega)
+    rw [getD_eq_entries]
+    simpa only [Nat.zero_mul, Nat.zero_add, Nat.add_zero, ite_self] using hg.symm
+  · have hgtk : ∀ l, k * L < l → l ≤ k * L + q →
+        entry (gexp X 0 L 0 0 n) 0 (k * L) <
+          entry (gexp X 0 L 0 0 n) 0 l := by
+      intro l hl0 hl1
+      obtain ⟨q', hq'0, hq'le, rfl⟩ :
+          ∃ q', 0 < q' ∧ q' ≤ q ∧ l = k * L + q' :=
+        ⟨l - k * L, by omega, by omega, by omega⟩
+      calc
+        entry (gexp X 0 L 0 0 n) 0 (k * L) = entry X 0 0 := by
+          simpa only [Nat.zero_add] using
+            (gexp_flat_root_entry (M := X) (j0 := 0) (n := n) (y := 0)
+              (by simpa using hlen) hk hL)
+        _ < entry X 0 q' := hup q' hq'0 (by omega)
+        _ = entry (gexp X 0 L 0 0 n) 0 (k * L + q') := by
+          symm
+          simpa only [Nat.zero_add] using
+            (gexp_flat_entry (M := X) (j0 := 0) (n := n) (y := 0)
+              (by simpa using hlen) hk (by omega))
+    obtain ⟨hroot, -⟩ := rtg0_split_at hgtk (rtg0_of_rtg1 h.2.2)
+      (Nat.zero_le _) (by omega) le_rfl
+    have hlen0 : 0 + L + 1 = X.length := by omega
+    have hroot' : Relation.ReflTransGen (nextrel0 (gexp X 0 L 0 0 n))
+        0 (0 + k * L) := by simpa using hroot
+    rcases gexp_flat_anc_root (M := X) (j0 := 0) (n := n)
+        hlen0 hL hk (fun l hl0 hl1 => hup l hl0 (by omega)) hroot' with he | hf
+    · have hmul : 0 < k * L := Nat.mul_pos hkpos hL
+      omega
+    · omega
+
+-- TARGET 1 (the left half of the sandwich)
+theorem Le1_Lift1_oper (X : TrioSeq) (d n : ℕ) :
+    Le1 (Lift1 (X⟦n⟧) d) ((Lift1 X d)⟦n⟧) := by
+  classical
+  rcases Nat.lt_or_ge X.length 2 with hshort | h2
+  · rw [oper_eq_self_of_short (M := X) n (by omega),
+      oper_eq_self_of_short (M := Lift1 X d) n (by rw [Lift1_length]; omega)]
+    exact Le1_refl _
+  · by_cases hp : hasParent X (srow X (X.length - 1)) (X.length - 1)
+    · obtain ⟨j0, L, D0, D1, hj0, hLdef, hD0, hD1, hlen, hL, hgX, hgL⟩ :=
+        oper_Lift1_gexp_shared X d n h2 hp
+      rw [hgX, hgL]
+      refine Le1_Lift1_gexp_Lift1 hlen hL ?_
+      intro k q hk hq hc
+      have hnr : nextR X (srow X (X.length - 1)) j0 (X.length - 1) := by
+        rw [hj0]
+        exact parent_nextR hp
+      have hj0lt : j0 < X.length - 1 := nextR_index_lt hnr
+      have hlast : j0 + L = X.length - 1 := by omega
+      have hchain : Relation.ReflTransGen (nextrel0 X) j0 (X.length - 1) :=
+        nextR_chain0 hnr
+      have hup : ∀ l, j0 < l → l ≤ j0 + L → entry X 0 j0 < entry X 0 l := by
+        intro l hl0 hl1
+        exact window_of_rtg0 hchain (by omega) l hl0 (by omega)
+      by_cases hs0 : srow X (X.length - 1) = 0
+      · have hD0z : D0 = 0 := by rw [hD0, hs0, if_neg (by omega)]
+        have hD1z : D1 = 0 := by rw [hD1, hs0, if_neg (by omega)]
+        by_cases hjz : j0 = 0
+        · have hlen0 : L + 1 = X.length := by omega
+          have hc0 : le1 (gexp X 0 L 0 0 n) 0 (0 + (k * L + q)) := by
+            simpa [hjz, hD0z, hD1z] using hc
+          have hh := le1_gexp_flat_zero_imp hlen0 hL hk hq
+            (fun l hl0 hl1 => by simpa [hjz] using hup l (by omega) (by omega))
+            (by simpa using hc0)
+          simpa [hjz] using hh
+        · have ht := gexp_cone0_flat (M := X) (j0 := j0) (Lb := L) (n := n)
+            (k := k) (q := q) hlen (by omega) hL hk hq hup
+          apply ht.mp
+          simpa [hD0z, hD1z] using hc
+      · have hspos : 0 < srow X (X.length - 1) := by
+          rcases srow_cases X (X.length - 1) with hs | hs | hs <;> omega
+        have hd0pos : 0 < D0 := by
+          rw [hD0, if_pos hspos]
+          have hlt := rtg0_entry0_lt hchain (by omega)
+          omega
+        have hd0e : entry X 0 (j0 + L) = entry X 0 j0 + D0 := by
+          rw [hD0, if_pos hspos, hlast]
+          have hlt := rtg0_entry0_lt hchain (by omega)
+          omega
+        have hcone : le1 X j0 (j0 + L) := by
+          rw [hlast]
+          exact le1_parent_of_srow_pos hspos hnr
+        by_cases hjz : j0 = 0
+        · have hlen0 : 0 + L + 1 = X.length := by omega
+          by_contra hncone
+          have hncone0 : ¬ le1 X 0 (0 + q) := by simpa [hjz] using hncone
+          have hnot := gexp_not_le1_mir (M := X) (j0 := 0) (Lb := L)
+            (d0 := D0) (d1 := D1) (n := n) (k := k) (q := q)
+            hlen0 hk hq
+            (fun l hl0 hl1 => by simpa [hjz] using hup l (by omega) (by omega))
+            hd0pos hncone0
+          exact hnot (by simpa [hjz] using hc)
+        · exact (gexp_cone0_transport hlen (by omega) hL hk hq hup
+            hd0pos hd0e hcone).mp hc
+    · rw [lift_oper_of_noParent h2 hp]
+      exact Le1_refl _
+
+-- TARGET 2 (the right half of the sandwich)
+theorem Le1_oper_Lift1_shiftr01 (X : TrioSeq) (d n : ℕ) :
+    Le1 ((Lift1 X d)⟦n⟧) (shiftr01 0 d (X⟦n⟧)) := by
+  classical
+  rcases Nat.lt_or_ge X.length 2 with hshort | h2
+  · rw [oper_eq_self_of_short (M := Lift1 X d) n (by rw [Lift1_length]; omega),
+      oper_eq_self_of_short (M := X) n (by omega)]
+    exact Le1_Lift1_shiftr1 X d
+  · by_cases hp : hasParent X (srow X (X.length - 1)) (X.length - 1)
+    · obtain ⟨j0, L, D0, D1, -, -, -, -, hlen, hL, hgX, hgL⟩ :=
+        oper_Lift1_gexp_shared X d n h2 hp
+      rw [hgL, hgX]
+      exact Le1_gexp_Lift1_shiftr01 hlen hL
+    · rw [lift_oper_of_noParent h2 hp]
+      exact Le1_Lift1_shiftr1 (X⟦n⟧) d
+
+/-- **★★★★ (WL) は `W` の `Le1`-凸性ただ 1 本から出る。**
+サンドイッチ 2 本が証明できたので `liftStage_of_wconvex` の仮説が消えた。 -/
+theorem liftStage_of_wconvex' (hconv : WConvex) : LiftStage :=
+  liftStage_of_wconvex hconv Le1_Lift1_oper Le1_oper_Lift1_shiftr01
+
 end TRIO

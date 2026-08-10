@@ -93,6 +93,9 @@ Subst1gReviveSelf
 | `Wtower2.Row1Mono_iff` / `liftStage_of_le1_closed` | `(ROW1MONO)` の関係版と、そこからの (WL) |
 | **`Wtower2.WConvex` / `wconvex_of_row1mono`** | **`W` の `Le1`-凸性。`(ROW1MONO)` ⟹ `(WCONVEX)`（逆は未知）** |
 | **`Wtower2.liftStage_of_wconvex`** | **★★★ (WL) ⟸ `(WCONVEX)` ＋ サンドイッチ 2 本**（下端＝帰納法仮定、上端＝`(ULIFT)` で無料） |
+| **`Wtower2.Le1_Lift1_oper` / `Le1_oper_Lift1_shiftr01`** | **★★★ サンドイッチ 2 本を証明**（`gexp` ミラー分解＋`lift_oper_of_noParent`。`W` は登場しない） |
+| **`Wtower2.liftStage_of_wconvex'`** | **★★★★ (WL) ⟸ `(WCONVEX)` ただ 1 本**（仮説が消えた） |
+| **`Final.TRIO_terminates_of_wconvex`** | **`WConvex → TowerExp → WellFounded stepRel`**（axioms clean） |
 | **`Wtower2.flat_mem_W`** | **深さを全部 0 に潰した列は無条件に `W a`**（`nextrel0` が空 ⟹ 全列孤児 ⟹ 展開は `dropLast`） |
 | ⚠ `Wtower2.Row0Free` / `Final.TRIO_terminates_of_row0free` | **`(ROW0FREE)` は停止性と同値**（行 0 を補題として使うなという記録） |
 | `Wset.W_shift` / `W_mono` / `W_add`(rsum) | 既存 |
@@ -405,11 +408,23 @@ RIGHT  Le1( (Lift1 X d)⟦n⟧ , shiftr01 0 d (X⟦n⟧) )
 `Wtower2.WConvex` / `wconvex_of_row1mono`（`(ROW1MONO)` ⟹ `(WCONVEX)`、逆は未知）/
 `lift1_mem_of_wconvex` / **`liftStage_of_wconvex`**（`sorry` 0、axioms clean）。
 
-残る未証明はサンドイッチ 2 本 `hL` / `hR` のみで、これは `W` の話ではなく
-**`oper` の構造の話**（分岐データが一致するので純粋に組み合わせ的）。
-`Wtower2.lift_oper_of_noParent` が親なし枝を等式で既に閉じている。
+### ★★★★ サンドイッチ 2 本も証明できた（2026-08-10）
 
-⟹ (WL) 側の残差は `(WCONVEX)` ＋ サンドイッチ 2 本。本丸は依然 `Subst1gReviveSelf`。
+`Wtower2.Le1_Lift1_oper` / `Le1_oper_Lift1_shiftr01`（`sorry` 0、axioms clean）。
+`W` は一切登場しない純粋に `oper` の構造の命題で、証明は
+
+* 親なし枝 … `lift_oper_of_noParent` の**等式**で潰れる（`Le1_refl` / `Le1_Lift1_shiftr1`）
+* 短い枝 … `oper_eq_self_of_short`
+* 親あり枝（本体）… `oper_eq_gexp_gen` で `gexp` に落とし、`gexp_pos_decomp` で
+  位置を `(k, q)`（コピー番号・コピー内位置）に分解、`gexp_getD_low` /
+  `gexp_getD_mir` で各成分を読む。行 1 は左が `if le1 X 0 (j0+q)`、中央が
+  `if le1 (Lift1 X d) 0 ·`（＝`le1_Lift1` で同じ）＋ミラー項、右が `+d`。
+
+⟹ **`liftStage_of_wconvex'` : `WConvex → LiftStage`**、
+**`Final.TRIO_terminates_of_wconvex` : `WConvex → TowerExp → WellFounded stepRel`**。
+
+⟹ **(WL) 側の残差は `(WCONVEX)` ただ 1 本**（`W` の `Le1`-凸性）。マスク・錐・
+タイ・`oper` はすべて命題から消えた。本丸は依然 `Subst1gReviveSelf`。
 
 ### ⚠ 同じ手は**行 0 では使えない**（`(ROW0FREE)` は定理と同値）
 
