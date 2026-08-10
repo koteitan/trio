@@ -317,6 +317,105 @@ theorem liftStage_of_row1mono (h : Row1Mono) : LiftStage := by
     · rw [entry1_out (by rw [Lift1_length]; exact hj),
         entry1_out (by rw [shiftr01_length]; exact hj)]
 
+/-! ### 行 1 引き下げ関係 `Le1` — `(ROW1MONO)` の関係版
+
+上の `liftStage_of_row1mono` は「行 0・行 2 が同じで行 1 が各列 `≤`」という条件を
+4 本のバラの仮定として持ち回っている。サンドイッチ
+
+```
+Lift1 (X⟦n⟧) d  ≤₁  (Lift1 X d)⟦n⟧  ≤₁  shiftr01 0 d (X⟦n⟧)
+```
+
+を扱うには推移律と `take` 保存が要るので、関係として名前を付けておく。 -/
+
+/-- 行 1 のみを引き下げる関係: `A ≤₁ B` ⟺ 長さが等しく、行 0・行 2 は一致し、
+行 1 は各列で `A ≤ B`。 -/
+def Le1 (A B : TrioSeq) : Prop :=
+  A.length = B.length ∧
+  (∀ j, entry A 0 j = entry B 0 j) ∧
+  (∀ j, entry A 2 j = entry B 2 j) ∧
+  (∀ j, entry A 1 j ≤ entry B 1 j)
+
+theorem Le1_refl (A : TrioSeq) : Le1 A A := by
+  exact ⟨rfl, fun _ => rfl, fun _ => rfl, fun _ => le_rfl⟩
+
+theorem Le1_trans {A B C : TrioSeq} (h₁ : Le1 A B) (h₂ : Le1 B C) : Le1 A C := by
+  rcases h₁ with ⟨hlen₁, h0₁, h2₁, h1₁⟩
+  rcases h₂ with ⟨hlen₂, h0₂, h2₂, h1₂⟩
+  exact ⟨hlen₁.trans hlen₂,
+    fun j => (h0₁ j).trans (h0₂ j),
+    fun j => (h2₁ j).trans (h2₂ j),
+    fun j => (h1₁ j).trans (h1₂ j)⟩
+
+theorem Le1_take {A B : TrioSeq} (h : Le1 A B) (k : ℕ) :
+    Le1 (A.take k) (B.take k) := by
+  rcases h with ⟨hlen, h0, h2, h1⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp [hlen]
+  · intro j
+    by_cases hj : j < k
+    · rw [Wset.entry_take hj, Wset.entry_take hj, h0 j]
+    · rw [entry_out (by rw [List.length_take]; omega),
+        entry_out (by rw [List.length_take]; omega)]
+  · intro j
+    by_cases hj : j < k
+    · rw [Wset.entry_take hj, Wset.entry_take hj, h2 j]
+    · rw [entry_out (by rw [List.length_take]; omega),
+        entry_out (by rw [List.length_take]; omega)]
+  · intro j
+    by_cases hj : j < k
+    · rw [Wset.entry_take hj, Wset.entry_take hj]
+      exact h1 j
+    · rw [entry_out (by rw [List.length_take]; omega),
+        entry_out (by rw [List.length_take]; omega)]
+
+theorem Le1_shiftr01 {A B : TrioSeq} (h : Le1 A B) (d : ℕ) :
+    Le1 (shiftr01 0 d A) (shiftr01 0 d B) := by
+  rcases h with ⟨hlen, h0, h2, h1⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [shiftr01_length, shiftr01_length, hlen]
+  · intro j
+    rw [Wset.entry0_shiftr1, Wset.entry0_shiftr1, h0 j]
+  · intro j
+    rw [entry2_shiftr01, entry2_shiftr01, h2 j]
+  · intro j
+    rcases Nat.lt_or_ge j A.length with hj | hj
+    · rw [Wset.entry1_shiftr1 hj,
+        Wset.entry1_shiftr1 (by rw [← hlen]; exact hj)]
+      exact Nat.add_le_add_right (h1 j) d
+    · rw [entry1_out (by rw [shiftr01_length]; exact hj),
+        entry1_out (by rw [shiftr01_length, ← hlen]; exact hj)]
+
+/-- **壁の迂回の 1 行**: `Lift1 X d` は一様シフト `shiftr01 0 d X` の行 1 を
+錐の外で下げただけのもの。マスク・錐・タイはここで消える。 -/
+theorem Le1_Lift1_shiftr1 (X : TrioSeq) (d : ℕ) :
+    Le1 (Lift1 X d) (shiftr01 0 d X) := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [Lift1_length, shiftr01_length]
+  · intro j
+    rw [entry0_Lift1, Wset.entry0_shiftr1]
+  · intro j
+    rw [entry2_Lift1, entry2_shiftr01]
+  · intro j
+    rcases Nat.lt_or_ge j X.length with hj | hj
+    · rw [entry1_Lift1 hj, Wset.entry1_shiftr1 hj]
+      split <;> omega
+    · rw [entry1_out (by rw [Lift1_length]; exact hj),
+        entry1_out (by rw [shiftr01_length]; exact hj)]
+
+theorem Row1Mono_iff :
+    Row1Mono ↔ (∀ (a : ℕ) (M M' : TrioSeq), M ∈ W a → Le1 M' M → M' ∈ W a) := by
+  constructor
+  · intro h a M M' hM hle
+    exact h a M M' hM hle.1 hle.2.1 hle.2.2.1 hle.2.2.2
+  · intro h a M M' hM hlen h0 h2 h1
+    exact h a M M' hM ⟨hlen, h0, h2, h1⟩
+
+theorem liftStage_of_le1_closed
+    (h : ∀ (a : ℕ) (M M' : TrioSeq), M ∈ W a → Le1 M' M → M' ∈ W a) :
+    LiftStage := by
+  exact liftStage_of_row1mono (Row1Mono_iff.mpr h)
+
 /-! ## (WL) を「親のある場合」だけに縮める
 
 `oper` の `Pred` 分岐（末尾列が全零、または親なし）は根リフトと**可換**である:

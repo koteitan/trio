@@ -1,8 +1,6 @@
-v0.118.185/add the generation test that tells a lever from a restatement
+v0.118.186/name the row-1 lowering relation Le1 and restate (ROW1MONO) with it
 
-- Record in PROOF-STATUS 5.7 that the two unconditionally free classes are
-  row 2 identically 0 (zeroRow2_mem_Wself) and row 0 identically 0 (flat_mem_W)
-- State the test a candidate monotonicity has to pass: it is a lever only if the
-  free classes do not generate everything under it -- raising row 2 and changing
-  row 0 both do, hence both are equivalent to the theorem, while lowering row 1
-  moves neither row 0 nor row 2 and so cannot leave a free class
+- Add `Le1 A B` = equal length, rows 0/2 equal, row 1 pointwise `<=`
+- Prove `Le1_refl` / `Le1_trans` / `Le1_take` / `Le1_shiftr01`
+- Prove `Le1_Lift1_shiftr1`, isolating the mask-free core of the (WL) bypass
+- Add `Row1Mono_iff` and `liftStage_of_le1_closed` as the relation-form entry points
