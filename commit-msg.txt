@@ -1,5 +1,4 @@
-v0.118.188/record the sandwich measurement and the (WCONVEX) reduction
+v0.118.189/record the (WCONVEX) reduction in task.md
 
-- Add the Le1 / WConvex rows to the PROOF-STATUS theorem table
-- Add the two sandwich rows and their population breakdown to the measurement table
-- Replace the old "hint" paragraph with the measured result and the reason lengths agree
+- Mark the Le1 relation package and the sandwich measurement as done
+- Replace the open (WL) item with (WCONVEX) plus the two sandwich halves
