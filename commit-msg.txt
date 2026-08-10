@@ -1,6 +1,6 @@
-v0.118.190/prove both sandwich halves, reducing (WL) to (WCONVEX) alone
+v0.118.191/refute the naive oper induction for (WCONVEX)
 
-- Prove `Le1_Lift1_oper` and `Le1_oper_Lift1_shiftr01` via the gexp mirror decomposition, with the no-parent branch collapsing through `lift_oper_of_noParent`
-- Discharge the hypotheses of `liftStage_of_wconvex`, giving `liftStage_of_wconvex' : WConvex -> LiftStage`
-- Wire `Final.TRIO_terminates_of_wconvex` and `no_infinite_expansion_of_wconvex`
-- Update PROOF-STATUS and task.md: masks, cones, ties and `oper` are all gone from the (WL) hypothesis
+- Add tools/probe_wconvex_step.py measuring the step fact both ways
+- Record the result: monotone form fails 7.2%, existential form 4.3%, on sandwich-shaped chains too
+- Note the mechanism is identical to the one that killed (ROW1MONO): moving row 1 creates or destroys a parent, so the expanded lengths disagree
+- Conclude (WCONVEX) is a weaker statement but not an easier induction; the next input must come from outside the oper induction
