@@ -88,6 +88,11 @@ Subst1gReviveSelf
 | **`Wtower2.liftStage_of_window`** | **★★ (WL) は行 1 の窓があれば核なしで成立**（`v0 = 0` でも可） |
 | **`Wtower2.Row1Mono` / `liftStage_of_row1mono`** | **★★★ (WL) はマスク一致を使わず `(ROW1MONO)`（`W a` は行 1 の引き下げで閉じる）から出る** |
 | **`Final.TRIO_terminates_of_row1mono`** | **`Row1Mono → TowerExp → WellFounded stepRel`**（axioms clean） |
+| `Wtower2.Le1` / `Le1_refl` / `Le1_trans` / `Le1_take` / `Le1_shiftr01` | 行 1 引き下げ関係とその閉包（サンドイッチに要る推移律・`take` 保存） |
+| **`Wtower2.Le1_Lift1_shiftr1`** | **`Lift1 X d ≤₁ shiftr01 0 d X`** — 迂回の 1 行（マスク・錐・タイが消える所） |
+| `Wtower2.Row1Mono_iff` / `liftStage_of_le1_closed` | `(ROW1MONO)` の関係版と、そこからの (WL) |
+| **`Wtower2.WConvex` / `wconvex_of_row1mono`** | **`W` の `Le1`-凸性。`(ROW1MONO)` ⟹ `(WCONVEX)`（逆は未知）** |
+| **`Wtower2.liftStage_of_wconvex`** | **★★★ (WL) ⟸ `(WCONVEX)` ＋ サンドイッチ 2 本**（下端＝帰納法仮定、上端＝`(ULIFT)` で無料） |
 | **`Wtower2.flat_mem_W`** | **深さを全部 0 に潰した列は無条件に `W a`**（`nextrel0` が空 ⟹ 全列孤児 ⟹ 展開は `dropLast`） |
 | ⚠ `Wtower2.Row0Free` / `Final.TRIO_terminates_of_row0free` | **`(ROW0FREE)` は停止性と同値**（行 0 を補題として使うなという記録） |
 | `Wset.W_shift` / `W_mono` / `W_add`(rsum) | 既存 |
@@ -133,6 +138,9 @@ Subst1gReviveSelf
 | (C) ゲート: `take`/`drop-rebase`/**`oper`** 閉包でタイは出るか | 72561 | 0 |
 | ⚠ 行 0 の任意の上げ下げで `W` は閉じるか（＝定理と同値） | 390293 / 337510 | 0 / 0 |
 | (ROW1MONO) の打ち切り検証（`n≤2` vs `n≤3` 突合） | 44692 | 不一致 0 |
+| **サンドイッチ左 `Lift1 (X⟦n⟧) d ≤₁ (Lift1 X d)⟦n⟧`** | **1920294** | **0** |
+| **サンドイッチ右 `(Lift1 X d)⟦n⟧ ≤₁ shiftr01 0 d (X⟦n⟧)`** | **1920294** | **0** |
+| 内訳: 構造化 based / 敵対的（行2崩壊末尾・タイ・深さ9） / **完全乱択（`based` 無し）** | 368424 / 831870 / **720000** | 0 / 0 / 0 |
 | 証明済み ST_TS 不変量 `cnf` はタイを排除するか | — | **⛔ 25 例でタイ** |
 
 **打ち切りの検証**: 全プローブの `inW` は `n ∈ {1,2}` しか展開しない過大近似。
@@ -366,7 +374,42 @@ Lift1 (X⟦n⟧) d   ≤₁   (Lift1 X d)⟦n⟧   ≤₁   shiftr01 0 d (X⟦n�
 ⟹ 「行 1 の**マスク付き**引き下げ（＝行 1 子孫錐の合併の上でだけ `d` 下げる）」
 に限った版で十分。一般の `(ROW1MONO)` より弱い。
 
-⟹ (WL) 側の残差は `(ROW1MONO)` 1 本になった。本丸は依然 `Subst1gReviveSelf`。
+### ★★★ サンドイッチは測れた ⟹ 核は `(ROW1MONO)` から `(WCONVEX)` に下がる（2026-08-10）
+
+上の「ヒント」はヒントのままだった（`Le1` は長さの一致を要求するのに、`Lift1` も
+`shiftr01 0 d` も `oper` と可換でないので、長さが崩れる疑いがあった）。**測った**:
+
+```
+LEFT   Le1( Lift1 (X⟦n⟧) d , (Lift1 X d)⟦n⟧ )
+RIGHT  Le1( (Lift1 X d)⟦n⟧ , shiftr01 0 d (X⟦n⟧) )
+```
+
+**1920294 例 0 違反**（構造化 based 368424 ＋ 敵対的（行 2 崩壊末尾・行 1 タイ・
+深さ 9・`d ≤ 5`・`n ≤ 5`）831870 ＋ **完全乱択（`based` 無し）720000**）。
+長さの一致も込みで 0 違反で、**両半分とも無条件**（`tools/probe_sandwich.py`）。
+
+長さが崩れない理由は `oper` の**形**が分岐データだけの関数だから:
+`Lift1` は `nextrel0/1/2`・`le0`・`le1`・`hasParent`・`parent`・`srow`・`gcopies`
+を全部保存する（`Wset` に補題一式が既にある）。`shiftr01 0 d` も同様
+（`Wslift`、(ULIFT) で証明済み）。3 つの列は**同じ長さ・同じ行 0・同じ行 2**を
+持ち、行 1 の持ち上げ量だけが違う ── 左は最初のコピーのみ、中央は全コピー、
+右は全列。
+
+⟹ 帰納法は各段で**下端（帰納法の仮定）と上端（`(ULIFT)` で無料）の両方**を
+持てる。したがって要るのは「上の witness だけで下に降りる」`(ROW1MONO)` ではなく
+
+```
+(WCONVEX)  A ∈ W a → C ∈ W a → A ≤₁ B → B ≤₁ C → B ∈ W a
+```
+
+`Wtower2.WConvex` / `wconvex_of_row1mono`（`(ROW1MONO)` ⟹ `(WCONVEX)`、逆は未知）/
+`lift1_mem_of_wconvex` / **`liftStage_of_wconvex`**（`sorry` 0、axioms clean）。
+
+残る未証明はサンドイッチ 2 本 `hL` / `hR` のみで、これは `W` の話ではなく
+**`oper` の構造の話**（分岐データが一致するので純粋に組み合わせ的）。
+`Wtower2.lift_oper_of_noParent` が親なし枝を等式で既に閉じている。
+
+⟹ (WL) 側の残差は `(WCONVEX)` ＋ サンドイッチ 2 本。本丸は依然 `Subst1gReviveSelf`。
 
 ### ⚠ 同じ手は**行 0 では使えない**（`(ROW0FREE)` は定理と同値）
 

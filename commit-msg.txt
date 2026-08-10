@@ -1,6 +1,5 @@
-v0.118.187/weaken the (WL) core from (ROW1MONO) to Le1-convexity of W
+v0.118.188/record the sandwich measurement and the (WCONVEX) reduction
 
-- Measure the sandwich `Lift1 (X[n]) d <=1 (Lift1 X d)[n] <=1 shiftr01 0 d (X[n])`: 1920294 instances, 0 violations, unconditional (tools/probe_sandwich.py)
-- Add `WConvex` = W is Le1-convex, and `wconvex_of_row1mono` placing it strictly below (ROW1MONO)
-- Prove `liftStage_of_wconvex`: (WL) follows from convexity plus the two sandwich halves, the lower end being the induction hypothesis and the upper end free from (ULIFT)
-- Move `Lift1_of_length_one` above its first use
+- Add the Le1 / WConvex rows to the PROOF-STATUS theorem table
+- Add the two sandwich rows and their population breakdown to the measurement table
+- Replace the old "hint" paragraph with the measured result and the reason lengths agree
