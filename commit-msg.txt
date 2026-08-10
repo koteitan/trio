@@ -1,5 +1,6 @@
-v0.118.193/show the residue's substitution half is free from the prefix package
+v0.118.194/record that the append reduction is circular with (CAT)
 
-- Confirm `hpre` (every proper prefix of S satisfies SubstProp) is in scope at the residue call site and currently discarded
-- Prove `takeC_mem_of_prefixPackage`: instantiating it at `S.take (p+1)` yields `S.take p ++ C` directly
-- Record in RESIDUE-PROBLEM that both branches then reduce to an append step, with an explicit warning to check v0.118.122 for circularity with (CAT)
+- Read v0.118.122: its direction is (SUBST1g) => the tower facts => "(CAT) dropped from the residue", so (CAT) has no independent proof
+- Conclude that reducing the residue to an append step closes a loop, and mark that direction as refuted
+- Keep the two real assets: `takeC_mem_of_prefixPackage` and the confirmed availability of the prefix package
+- Record the one untested difference: the append we need carries `S` itself and the package, which bare (CAT) does not
