@@ -101,6 +101,8 @@
 - [x] ★★★★ サンドイッチ 2 本を証明 → `liftStage_of_wconvex'` で仮説が消えた ✅ v0.118.190
 - [ ] **(WL) 側の残差（1 本）**: `TRIO_terminates_of_wconvex : WConvex → TowerExp → WellFounded stepRel`
 - [x] ⛔ `(WCONVEX)` の素直な oper 帰納は反証（単調形 7.2% / 存在形 4.3% 失敗）✅ v0.118.191
+- [x] ⛔ `Le1s`/`Le1sd`（分岐データ一致を足す）も反証: (WL) の実例が関係外 ✅ v0.118.192
+- [x] ⚠ 訂正: 「Lift1/shiftr01 は分岐データを全部保存」は偽。真の理由は Lift1 の展開パス一致 ✅ v0.118.192
 - [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
 - [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
 - [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
