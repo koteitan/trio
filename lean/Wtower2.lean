@@ -416,13 +416,27 @@ theorem liftStage_of_le1_closed
     LiftStage := by
   exact liftStage_of_row1mono (Row1Mono_iff.mpr h)
 
-/-! ## (WL) を「親のある場合」だけに縮める
+/-! ### ★★★ `(ROW1MONO)` を `W` の `Le1`-**凸性**まで弱める
 
-`oper` の `Pred` 分岐（末尾列が全零、または親なし）は根リフトと**可換**である:
-`Lift1` は行 2 を動かさず、行 1 も錐の列しか動かさないので `srow` を保ち
-（`srow_Lift1`）、`hasParent` も保つ（`hasParent_Lift1`）。したがって
-`Aop` の節 3（`domT` ⟹ 親なし）と節 2 の親なし枝は自動で流れ、(WL) は
-**末尾列に親がある場合**だけに縮む。 -/
+`(ROW1MONO)` は「上の witness だけ」で下に降りることを要求する。しかし (WL) の
+帰納法が実際に必要とするのは、次のサンドイッチの**中央**だけである:
+
+```
+Lift1 (X⟦n⟧) d  ≤₁  (Lift1 X d)⟦n⟧  ≤₁  shiftr01 0 d (X⟦n⟧)
+```
+
+* 左端は (WL) の帰納法の仮定（`X⟦n⟧` に適用したもの）で `W` に入っている
+* 右端は `(ULIFT)` (`ulift_mem_W`) で**無料**で `W` に入っている
+
+したがって「上下に witness があるとき中間も入る」＝ `Le1`-凸性で足りる。
+`Lift1` も `shiftr01 0 d` も分岐データ（`nextrel0/1/2`, `le0`, `le1`,
+`hasParent`, `parent`, `srow`, `gcopies`）を保存するので 3 つの列は
+**同じ長さ・同じ行 0・同じ行 2** を持ち、行 1 の持ち上げ量だけが違う:
+左は最初のコピーのみ、中央は全コピー、右は全列。
+
+計測 `tools/probe_sandwich.py`: **1920294 例 0 違反**（構造化 based 368424 ＋
+敵対的（行 2 崩壊末尾・行 1 タイ・深さ 9・`d ≤ 5`・`n ≤ 5`）831870 ＋
+完全乱択（`based` 無し）720000）。両半分とも**無条件**。 -/
 
 theorem Lift1_of_length_one {X : TrioSeq} (h1 : X.length = 1) (d : ℕ) :
     Lift1 X d = [((entry X 0 0, entry X 1 0 + d, entry X 2 0) : ℕ × ℕ × ℕ)] := by
@@ -430,6 +444,82 @@ theorem Lift1_of_length_one {X : TrioSeq} (h1 : X.length = 1) (d : ℕ) :
   unfold Lift1
   rw [h1, show List.range 1 = [0] from rfl]
   simp only [List.map_cons, List.map_nil, if_pos hle]
+
+/-- `W a` の `Le1`-**凸性**: 上下に `W a` の witness があれば中間も `W a`。
+`(ROW1MONO)` は下側の witness を要求しないので、これはその弱化である。 -/
+def WConvex : Prop :=
+  ∀ (a : ℕ) (A B C : TrioSeq), A ∈ W a → C ∈ W a → Le1 A B → Le1 B C → B ∈ W a
+
+theorem wconvex_of_row1mono (h : Row1Mono) : WConvex := by
+  intro a A B C _ hC _ hBC
+  exact (Row1Mono_iff.mp h) a C B hC hBC
+
+/-- サンドイッチの一段。上端は `(ULIFT)` で無料、下端は帰納法の仮定。 -/
+theorem lift1_mem_of_wconvex (hconv : WConvex)
+    (hL : ∀ (X : TrioSeq) (d n : ℕ), Le1 (Lift1 (X⟦n⟧) d) ((Lift1 X d)⟦n⟧))
+    (hR : ∀ (X : TrioSeq) (d n : ℕ), Le1 ((Lift1 X d)⟦n⟧) (shiftr01 0 d (X⟦n⟧)))
+    {m d : ℕ} {Y : TrioSeq}
+    (hop : ∀ n, 1 ≤ n → Y⟦n⟧ ∈ W m ∧ Lift1 (Y⟦n⟧) d ∈ W (m + 2 * d)) :
+    Lift1 Y d ∈ W (m + 2 * d) :=
+  mem_of_oper_mem (fun n hn =>
+    hconv (m + 2 * d) (Lift1 (Y⟦n⟧) d) ((Lift1 Y d)⟦n⟧) (shiftr01 0 d (Y⟦n⟧))
+      (hop n hn).2 (ulift_mem_W (Y⟦n⟧) (hop n hn).1) (hL Y d n) (hR Y d n))
+
+theorem lift1_singleton_mem {Y : TrioSeq} {d k : ℕ} (h1 : Y.length = 1)
+    (hb : 2 * entry Y 1 0 + entry Y 2 0 + 2 * d ≤ k) :
+    Lift1 Y d ∈ W k := by
+  rw [Lift1_of_length_one h1 d]
+  exact singleton_mem_W (by omega)
+
+/-- **★★★ (WL) は `W` の `Le1`-凸性とサンドイッチから出る。**
+`(ROW1MONO)` と違い、帰納法は各段で**下端（帰納法の仮定）と上端（`(ULIFT)`）の
+両方**を手に持って進む。 -/
+theorem liftStage_of_wconvex (hconv : WConvex)
+    (hL : ∀ (X : TrioSeq) (d n : ℕ), Le1 (Lift1 (X⟦n⟧) d) ((Lift1 X d)⟦n⟧))
+    (hR : ∀ (X : TrioSeq) (d n : ℕ), Le1 ((Lift1 X d)⟦n⟧) (shiftr01 0 d (X⟦n⟧))) :
+    LiftStage := by
+  intro m d X hX
+  have hsub : W m ⊆ {Y : TrioSeq | Y ∈ W m ∧ Lift1 Y d ∈ W (m + 2 * d)} := by
+    refine A2' ?_
+    rintro Y (⟨hl, hlev⟩ | hop | ⟨m', hm', hd', hgr⟩)
+    · refine ⟨A1_intro (Or.inl ⟨hl, hlev⟩), ?_⟩
+      rcases Nat.eq_zero_or_pos Y.length with h0 | hpos
+      · have hnil : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show Lift1 ([] : TrioSeq) d ∈ W (m + 2 * d)
+        simpa using W_nil (m + 2 * d)
+      · have h1 : Y.length = 1 := by omega
+        have hbc : 2 * entry Y 1 0 + entry Y 2 0 = 0 := by
+          unfold lev at hlev; omega
+        exact lift1_singleton_mem h1 (by omega)
+    · exact ⟨mem_of_oper_mem (fun n hn => (hop n hn).1),
+        lift1_mem_of_wconvex hconv hL hR (fun n hn => hop n hn)⟩
+    · have hY : Y ∈ W m :=
+        A1_intro (Or.inr (Or.inr ⟨m', hm', hd', fun z hz hb => (hgr z hz hb).1⟩))
+      refine ⟨hY, ?_⟩
+      rcases Nat.lt_or_ge Y.length 2 with hsm | hbig
+      · have hYne : Y ≠ [] := by
+          intro hc
+          rw [hc] at hd'
+          exact not_domT_nil m' hd'
+        have h1 : Y.length = 1 := by
+          have : 0 < Y.length := List.length_pos_iff.mpr hYne
+          omega
+        have hlev := hd'.1
+        rw [show Y.length - 1 = 0 from by omega] at hlev
+        unfold lev at hlev
+        exact lift1_singleton_mem h1 (by omega)
+      · exact lift1_mem_of_wconvex hconv hL hR
+          (aop_clause3_to_clause2 hbig hd' hgr)
+  exact (hsub hX).2
+
+/-! ## (WL) を「親のある場合」だけに縮める
+
+`oper` の `Pred` 分岐（末尾列が全零、または親なし）は根リフトと**可換**である:
+`Lift1` は行 2 を動かさず、行 1 も錐の列しか動かさないので `srow` を保ち
+（`srow_Lift1`）、`hasParent` も保つ（`hasParent_Lift1`）。したがって
+`Aop` の節 3（`domT` ⟹ 親なし）と節 2 の親なし枝は自動で流れ、(WL) は
+**末尾列に親がある場合**だけに縮む。 -/
 
 /-- **The `Pred` branches commute with the root lift.** -/
 theorem lift_oper_of_noParent {X : TrioSeq} {d n : ℕ} (h2 : 2 ≤ X.length)
