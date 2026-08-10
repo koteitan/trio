@@ -2732,6 +2732,45 @@ def SubstProp (u : ℕ) (N : TrioSeq) : Prop :=
     (∀ q ∈ C, entry N 0 p ≤ q.1) →
     (N.take p ++ C ++ N.drop (p + 1)) ∈ W u
 
+/-! ### 接頭辞パッケージ: 残核の置換部分は**無料**
+
+`subst1g_of_revive` の帰納の中で残核を呼ぶ地点では、`S` の**全真接頭辞**について
+同じ置換命題 `hpre` が手元にある（`RESIDUE-PROBLEM.md` §4.5）。これを
+`N := S.take (p+1)` に当てると、その `drop` 部分が空なので結論はちょうど
+`S.take p ++ C` になる。
+
+⟹ 主枝（`S.drop (p+1) ≠ []`）では**置換そのものは証明すべきことではない**。
+残るのは `S.take p ++ C` に末尾 `S.drop (p+1)` を継ぐ操作だけである。
+
+⚠ ただし「継ぐ」は `RESIDUE-PROBLEM.md` §4.8 の `(CAT)`/`(SNOC)` の顔でもある。
+v0.118.122 で `(CAT)` は残核に**吸収**された経緯があるので、これを進展として
+扱う前に循環していないか必ず確認すること。ここで確かに新しいのは
+**パッケージを持てること**（§4.8 の顔はどれも孤立命題として述べられている）。 -/
+theorem takeC_mem_of_prefixPackage {u p : ℕ} {S C : TrioSeq}
+    (hpre : ∀ k, k < S.length → SubstProp u (S.take k))
+    (hp1 : p + 1 < S.length) (hCne : C ≠ []) (hCW : C ∈ W (lev S p))
+    (hhead : entry C 0 0 = entry S 0 p)
+    (hdeep : ∀ q ∈ C, entry S 0 p ≤ q.1) :
+    (S.take p ++ C) ∈ W u := by
+  have hlen : (S.take (p + 1)).length = p + 1 := by
+    rw [List.length_take]
+    omega
+  have hent : ∀ i, entry (S.take (p + 1)) i p = entry S i p :=
+    fun i => Wset.entry_take (by omega)
+  have hlev : lev (S.take (p + 1)) p = lev S p := by
+    unfold lev
+    rw [hent 1, hent 2]
+  have hstep := hpre (p + 1) hp1 p C (by rw [hlen]; omega) hCne
+    (by rw [hlev]; exact hCW)
+    (by rw [hent 0]; exact hhead)
+    (by intro q hq; rw [hent 0]; exact hdeep q hq)
+  have htake : (S.take (p + 1)).take p = S.take p := by
+    rw [List.take_take, min_eq_left (by omega)]
+  have hdrop : (S.take (p + 1)).drop (p + 1) = [] :=
+    List.drop_eq_nil_of_le (by omega)
+  rw [htake, hdrop, List.append_nil] at hstep
+  exact hstep
+
 theorem entry_getElem {M : TrioSeq} {j : ℕ} (hj : j < M.length) :
     entry M 0 j = M[j].1 := by
   unfold entry

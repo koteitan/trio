@@ -1,5 +1,5 @@
-v0.118.192/refute the Le1s / Le1sd route and correct the sandwich rationale
+v0.118.193/show the residue's substitution half is free from the prefix package
 
-- Add tools/probe_le1s.py and probe_le1sd.py: Le1sd is oper-monotone on 1012280 instances with 0 violations, but the (WL) instance is NOT in the relation (branch data differs in 11% of based cases, 31% free) and the delta clause does not chain (0.26%)
-- Correct the stated reason the sandwich lengths agree: "Lift1 and shiftr01 preserve all branch data" is FALSE (global agreement 90% and 63%); the real reason is that Lift1 preserves the expansion path exactly (600000/600000) and the right member applies shiftr01 after oper
-- Record that `|(Lift1 X d)[n]| = |(shiftr01 0 d X)[n]|` fails 4.2%, so the sandwich's right member must stay `shiftr01 0 d (X[n])`
+- Confirm `hpre` (every proper prefix of S satisfies SubstProp) is in scope at the residue call site and currently discarded
+- Prove `takeC_mem_of_prefixPackage`: instantiating it at `S.take (p+1)` yields `S.take p ++ C` directly
+- Record in RESIDUE-PROBLEM that both branches then reduce to an append step, with an explicit warning to check v0.118.122 for circularity with (CAT)
