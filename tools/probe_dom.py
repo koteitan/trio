@@ -291,6 +291,51 @@ def main():
           (psiI, classify(psiI)[0]))
     for n in (1, 2): print('  psi(I)[%d] = %s' % (n, expand(psiI, n)))
 
+    print('\n== 5. BM4-Analysis シート照合（行列 <-> psi ラベルの正解表） ==')
+    xlsx = os.path.expanduser('~/proofs/papers/BM4-Analysis-2021.4.27.xlsx')
+    if not os.path.exists(xlsx):
+        print('  (シートが無いのでスキップ)')
+    else:
+        import openpyxl
+        wb = openpyxl.load_workbook(xlsx, read_only=True)
+        label = {}
+        for name in wb.sheetnames[1:]:
+            for r in wb[name].iter_rows(values_only=True):
+                if r and isinstance(r[0], str) and r[0].startswith('('):
+                    label.setdefault(r[0], r[1])
+        WANT = [
+            ('(0,0,0)(1,1,1)', 'psi(W_w)'),
+            ('(0,0,0)(1,1,1)(2,1,0)', 'psi(W_w*W)'),
+            ('(0,0,0)(1,1,1)(2,1,0)(3,1,0)', 'psi(W_w^W)'),
+            ('(0,0,0)(1,1,1)(2,1,0)(3,2,0)', 'psi(W_(w+1))'),
+            ('(0,0,0)(1,1,1)(2,1,1)', 'psi(W_(w^2))'),
+            ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)', 'psi(W_W)'),
+            ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0)', 'psi(I)'),
+        ]
+        allok = True
+        for m, w in WANT:
+            got = label.get(m)
+            good = got == w
+            allok &= good
+            print('  %-40s %-14s %s' % (m, got, 'ok' if good else 'NG want ' + w))
+        assert allok
+        # 罠の記録: (0,0,0)(1,1,1)(2,2,0) は全シートに無い（psi(K) 圏の先）
+        assert '(0,0,0)(1,1,1)(2,2,0)' not in label
+        print('  (0,0,0)(1,1,1)(2,2,0): 全シートに無し（解析範囲 psi(e(K+1)) の先）')
+        # 順序でも確認: S[n] は列辞書式で psi(I) 行列や最終行を追い越す
+        def mlt(A, B):  # BM 行列の列辞書式順序（接頭辞は小さい）
+            for a, b in zip(A, B):
+                if a != b: return a < b
+            return len(A) < len(B)
+        S = [(0, 0, 0), (1, 1, 1), (2, 2, 0)]
+        psiIm = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (2, 0, 0)]
+        lastm = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 0), (2, 1, 1)]
+        s3 = [tuple(c) for c in expand(S, 3)]
+        s4 = [tuple(c) for c in expand(S, 4)]
+        assert mlt(psiIm, s3) and mlt(s3, S)
+        assert mlt(lastm, s4) and mlt(s4, S)
+        print('  psi(I)行列 < S[3] < S,  psi(C(1,0;0))*w 行列 < S[4] < S  (S=(0,0,0)(1,1,1)(2,2,0))')
+
     print('\nall ok')
 
 if __name__ == '__main__':
