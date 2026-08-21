@@ -197,4 +197,20 @@ def main():
     print('自己検証（軌道法則、シート外 alpha）: %d/%d ok' % (sok, len(SELF)))
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1:
+        # 使い方: python3 build_omega_alpha.py 'w^2+w+1' ['n']
+        #   alpha (シートと同じ記法: w, 数, +, *, ^, 併置数 w2=w*2) の
+        #   M(alpha) を表示。第 2 引数 n を与えると M(alpha)[n] も表示。
+        a = parse(sys.argv[1])
+        if a is None or a == 0:
+            print('parse error（対応: w / 数 / + / * / ^ / 括弧。例: w^(w+1)*2+w3+1）')
+            sys.exit(1)
+        mat = M(a)
+        print('M(%s) = %s' % (sys.argv[1], ''.join('(%d,%d,%d)' % c for c in mat)))
+        if len(sys.argv) > 2:
+            from trio import expand
+            n = int(sys.argv[2])
+            print('M[%d]   = %s' % (n, ''.join('(%d,%d,%d)' % tuple(c)
+                                               for c in expand(mat, n))))
+    else:
+        main()
