@@ -37,6 +37,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 
+from bms2bmshydra import Unsupported, labels_of                       # noqa: E402
 from extract import (bands, forest, parse_band, read_rows, render,      # noqa: E402
                      split_blocks)
 from trio_term import cnf, olt, translate                               # noqa: E402
@@ -92,13 +93,8 @@ def apply_errata(sheets):
 
 
 # ---- A: what a column says ----
-
-def labels_of(mat):
-    """The Omega subscript of each column, as ebp2bms/algorithm/2 reads it."""
-    out = []
-    for x, y, z in mat:
-        out.append('w' if z else str(y))
-    return out
+# labels_of is tools/bms2bmshydra.py's reading of a column, the one
+# ebp2bms/algorithm/2 states; this is where it gets checked against the sheet.
 
 
 def check_reading(sheets):
@@ -113,13 +109,14 @@ def check_reading(sheets):
                       % (title, n, row, len(nodes), len(mat)))
                 bad += 1
                 continue
-            got = [lab for _, _, lab in nodes]
-            want = labels_of(mat)
-            hs = [h for _, h, _ in nodes]
-            xs = [c[0] for c in mat]
-            if max(c[2] for c in mat) > 1:
+            try:
+                want = labels_of(mat)
+            except Unsupported:
                 miss += 1                       # outside the z<2 fragment
                 continue
+            got = [lab for _, _, lab in nodes]
+            hs = [h for _, h, _ in nodes]
+            xs = [c[0] for c in mat]
             if got == want and hs == xs:
                 ok += 1
             else:

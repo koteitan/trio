@@ -27,6 +27,9 @@ Tsskyx 氏の私物シート `Tsskyx's BMS Analysis`（`../papers/tsskyx-bms-ana
 Bashicu 帯のラベルは `ebp2bms/algorithm/2` の読みそのもので、
 **z=0 なら y、z=1 なら w**。Idealized 帯は別系なのでこの規則は当てはまらない。
 
+同じ絵を行列から描くのが `tools/bms2bmshydra.py`。読みの実装はそちらにあり、
+check.py の A はそれをシートに突き合わせている。
+
 ## 照合結果（2026-08-23 版の xlsx）
 
 373 ブロック・321 行列を対象。
