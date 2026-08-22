@@ -15,9 +15,9 @@ $`\alpha`$ の定義域: 本ページの生成器が対応するのは
 (3) $`\Omega_v`$ 自身（有限 $`v`$ は法則で生成、極限 $`v`$ はシート観測値）。
 未対応: 添字の外での演算（$`(\Omega_\omega)^2`$ など）と極限 $`v`$ の一般法則。
 
-表記: 行列は**ユニットごとに分けて**並べる（括弧 1 組 = ユニット $`U_i`$）。
+表記: 行列は**加算ユニットごとに分けて**並べる（括弧 1 組 = 加算ユニット $`U_i`$）。
 
-| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | トリオ数列（括弧 1 組 = ユニット） |
+| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | トリオ数列（括弧 1 組 = 加算ユニット） |
 |---|---|---|
 | $`\varepsilon_0 = \psi_0(\Omega_1)`$ | $`\psi_0(\Omega_{\varepsilon_0})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0+1`$ | $`\psi_0(\Omega_{\varepsilon_0+1})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
@@ -50,7 +50,7 @@ $`\alpha`$ の定義域: 本ページの生成器が対応するのは
 
 その 1 の文法と**同一**で、変わるのは指数スロットの中身だけである。
 $`\alpha = \sum_i \omega^{\beta_i}`$、$`1 + \beta_i' = \beta_i`$、
-$`\beta_i' = \sum_j \omega^{\gamma_{ij}}`$ と 2 段組みに書き、加算項をユニットとして並べる。
+$`\beta_i' = \sum_j \omega^{\gamma_{ij}}`$ と 2 段組みに書き、加算項を加算ユニットとして並べる。
 
 ```math
 M(\alpha) = U_1 +\!\!+ U_2 +\!\!+ \cdots +\!\!+ U_m .
@@ -58,25 +58,25 @@ M(\alpha) = U_1 +\!\!+ U_2 +\!\!+ \cdots +\!\!+ U_m .
 
 ### 構造
 
-- ユニット $`U_i = \omega^{\beta_i}`$
+- 加算ユニット $`U_i = \omega^{\beta_i}`$
   - アンカー
   - 根 — $`\beta_i`$ の先頭の $`1`$ を担う
-  - サブユニット $`S_{ij} = \omega^{\gamma_{ij}}`$
+  - 乗算ユニット $`S_{ij} = \omega^{\gamma_{ij}}`$
     - 桁
     - **OT 埋め込み** $`\mathrm{B}(\gamma_{ij})`$
-- ユニット $`U_i = 1`$（$`\beta_i = 0`$ のとき）
+- 加算ユニット $`U_i = 1`$（$`\beta_i = 0`$ のとき）
   - アンカー
   - z0 列
 
-その 1 との違いは 1 点だけ: サブユニットの下が
+その 1 との違いは 1 点だけ: 乗算ユニットの下が
 「原始数列埋め込み $`\mathrm{PrSS}`$」から
 「**OT 埋め込み** $`\mathrm{B}`$」に一般化される。
 $`\gamma \lt \varepsilon_0`$ では $`\mathrm{B}(\gamma) = \mathrm{PrSS}(\gamma)`$ なので
 その 1 は本ページの特殊ケースである。
 
-### ユニット（加法）
+### 加算ユニット（加法）
 
-その 1 と同一。状態 $`r`$（直前ユニットの根の $`x`$ 座標）を $`-1`$ で初期化して
+その 1 と同一。状態 $`r`$（直前の加算ユニットの根の $`x`$ 座標）を $`-1`$ で初期化して
 
 ```math
 \begin{aligned}
@@ -89,7 +89,7 @@ U_i &= (x_t{+}1,\ i,\ 0)
 \end{aligned}
 ```
 
-### 根とサブユニット（乗法）
+### 根と乗算ユニット（乗法）
 
 $`1 + \beta' = \beta`$、$`\beta' = \omega^{\gamma_1} + \cdots + \omega^{\gamma_k}`$ として
 
@@ -196,19 +196,19 @@ $`x`$ が 1 だけずれる。$`\omega^2\cdot 2`$ の行はラベル重複（同
 [dom.md](dom.md) に記録した既知の不一致行と同種の可能性がある。未解決。
 
 **まとめ**: 3 段の入れ子が担うものは変わらない —
-**ユニットの個数が加法**、**サブユニットの個数が乗法**（因子 1 つずつ）、
+**加算ユニットの個数が加法**、**乗算ユニットの個数が乗法**（因子 1 つずつ）、
 **$`\mathrm{B}`$ の入れ子が冪と崩壊**。$`y`$ 行は $`\Omega`$ の添字を担い
 （$`(x,1,0) = \Omega_1`$、$`(x,1,0)(x{+}1,2,0) = \Omega_2`$、
 $`(x,1,1) = \Omega_\omega`$）、その添字自身がまた同じ文法で書かれる。
 
 ## 例
 
-用語は [その 1](ebp2bms-1.md) と同じ（ア = アンカー、$`S`$ = サブユニット、
+用語は [その 1](ebp2bms-1.md) と同じ（ア = アンカー、$`S`$ = 乗算ユニット、
 $`\mathrm{B}`$ = OT 埋め込み）。
 
 ### 例: $`\alpha = \varepsilon_0`$
 
-$`\varepsilon_0 = \omega^{\varepsilon_0}`$ なのでユニット 1 つ、サブユニット 1 つ、
+$`\varepsilon_0 = \omega^{\varepsilon_0}`$ なので加算ユニット 1 つ、乗算ユニット 1 つ、
 その指数は $`\varepsilon_0`$ 自身。$`\mathrm{B}(\varepsilon_0)`$ =
 $`\psi_0`$ ノード＋$`\Omega_1`$ 葉:
 
@@ -218,8 +218,8 @@ $`\psi_0`$ ノード＋$`\Omega_1`$ 葉:
 
 ### 例: $`\alpha = \varepsilon_0 + \omega^2`$
 
-ユニット 2 つ。$`U_2`$ はその 1 の文法そのまま（$`\gamma = 1`$ の
-サブユニットが 1 つで $`\mathrm{B}(1)`$ はノード 1 本）:
+加算ユニット 2 つ。$`U_2`$ はその 1 の文法そのまま（$`\gamma = 1`$ の
+乗算ユニットが 1 つで $`\mathrm{B}(1)`$ はノード 1 本）:
 
 ```math
 \overbrace{\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 4\cr 0 & 1\cr 0 & 0\end{pmatrix}}_{\mathrm{B}}}_{S}}^{U_1}
@@ -249,7 +249,7 @@ $`\Omega_1`$ に戻り、残りの $`\varepsilon_0`$ は $`\psi_0(\Omega_1)`$ �
 
 ### 例: $`\alpha = \psi_0(\Omega_\omega)`$
 
-$`\alpha`$ は崩壊値なので $`\omega^\alpha = \alpha`$、ユニット 1 つ・サブユニット 1 つで
+$`\alpha`$ は崩壊値なので $`\omega^\alpha = \alpha`$、加算ユニット 1 つ・乗算ユニット 1 つで
 その指数は $`\alpha`$ 自身。$`\mathrm{B}(\alpha)`$ は $`\psi_0`$ ノード＋$`\Omega_\omega`$ ブロック。
 
 添字 $`\omega`$ 側: $`M(\omega) = `$ $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}`$

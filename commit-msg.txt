@@ -1,7 +1,5 @@
-say why subunits are multiplication: spell out the value of one unit
+rename unit / subunit to additive unit / multiplicative unit
 
-- Add the identity omega^{beta_i} = omega * prod_j omega^{omega^{gamma_ij}}
-  to both parts: a sum inside the exponent is a product of values, so one
-  subunit is one factor and the embedding carries that factor's gamma
-- Restate the summary as "number of units = addition, number of subunits =
-  multiplication, shape of the embedding = exponentiation"
+- Apply the rename across ebp2bms-1/-2 (ja and en) and dom.md, so the name
+  states which CNF operation each nesting level carries
+- Fix the English articles and the Japanese wording the rename disturbed

@@ -14,10 +14,10 @@ Domain of $`\alpha`$: in principle every term of the extended Buchholz OT
 currently covers $`\alpha \lt \varepsilon_0`$, i.e. what the CNF of $`\omega`$ can write.
 For $`\varepsilon_0 \le \alpha \lt \Lambda`$ see [part 2](ebp2bms-2-en.md).
 
-Notation: the matrix is written **one bracket per unit** ($`U_i`$). For the split inside a
-unit (anchor, root, subunits) see the underbraces in the examples.
+Notation: the matrix is written **one bracket per additive unit** ($`U_i`$). For the split inside an
+additive unit (anchor, root, multiplicative units) see the underbraces in the examples.
 
-| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | trio sequence (one bracket = one unit) |
+| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | trio sequence (one bracket = one additive unit) |
 |---|---|---|
 | $`\omega`$ | $`\psi_0(\Omega_{\omega})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}`$ |
 | $`\omega+1`$ | $`\psi_0(\Omega_{\omega+1})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
@@ -51,7 +51,7 @@ $`1`$, i.e. $`1 + \beta_i' = \beta_i`$):
 \end{aligned}
 ```
 
-The matrix lays out each summand $`\omega^{\beta_i}`$ as a **unit** $`U_i`$
+The matrix lays out each summand $`\omega^{\beta_i}`$ as a **additive unit** $`U_i`$
 ($`+\!\!+`$ is concatenation of column lists):
 
 ```math
@@ -60,25 +60,25 @@ M(\alpha) = U_1 +\!\!+ U_2 +\!\!+ \cdots +\!\!+ U_m .
 
 ### Structure
 
-- unit $`U_i = \omega^{\beta_i}`$
+- additive unit $`U_i = \omega^{\beta_i}`$
   - anchor
   - root — carries the leading $`1`$ of $`\beta_i`$
-  - subunit $`S_{i1} = \omega^{\gamma_{i1}}`$
+  - multiplicative unit $`S_{i1} = \omega^{\gamma_{i1}}`$
     - digit
     - primitive-sequence embedding $`\mathrm{PrSS}(\gamma_{i1})`$
-  - subunit $`S_{i2} = \omega^{\gamma_{i2}}`$
+  - multiplicative unit $`S_{i2} = \omega^{\gamma_{i2}}`$
     - digit
     - primitive-sequence embedding $`\mathrm{PrSS}(\gamma_{i2})`$
   - …
-- unit $`U_i = 1`$ (when $`\beta_i = 0`$)
+- additive unit $`U_i = 1`$ (when $`\beta_i = 0`$)
   - anchor
   - a z0 column
 
-That is, **a unit consists of an anchor, a root and subunits, and a subunit consists of a
-digit and a primitive-sequence embedding** (only a $`\beta_i = 0`$ unit has neither root nor
-subunit: it is an anchor plus a single z0 column).
+That is, **an additive unit consists of an anchor, a root and multiplicative units, and a multiplicative unit consists of a
+digit and a primitive-sequence embedding** (only a $`\beta_i = 0`$ additive unit has neither root nor
+multiplicative unit: it is an anchor plus a single z0 column).
 
-The value of one unit is the product of the root's $`\omega`$ and the subunits' factors:
+The value of one additive unit is the product of the root's $`\omega`$ and the multiplicative units' factors:
 
 ```math
 \omega^{\beta_i} = \omega^{1 + \sum_j \omega^{\gamma_{ij}}}
@@ -86,9 +86,9 @@ The value of one unit is the product of the root's $`\omega`$ and the subunits' 
 ```
 
 Since $`\omega^{a+b} = \omega^a \cdot \omega^b`$, **a sum inside the exponent is a product of
-values**. One subunit is one factor, and the embedding carries the $`\gamma_{ij}`$ appearing
+values**. One multiplicative unit is one factor, and the embedding carries the $`\gamma_{ij}`$ appearing
 in that factor's size $`\omega^{\omega^{\gamma_{ij}}}`$. For instance $`\omega^3`$ is the root
-$`\omega`$ plus two subunits with $`\gamma = 0`$, giving
+$`\omega`$ plus two multiplicative units with $`\gamma = 0`$, giving
 $`\omega \cdot \omega \cdot \omega`$.
 
 ### Terminology
@@ -98,26 +98,26 @@ Columns $`(x, y, z)`$ are named by their $`z`$: a **z1 column** has $`z = 1`$, a
 nearest column to its left with strictly smaller $`x`$** ($`x`$ is not monotone from the
 left; it can drop and come back).
 
-- **unit** $`U_i`$: the run of columns for one summand $`\omega^{\beta_i}`$ of $`\alpha`$.
+- **additive unit** $`U_i`$: the run of columns for one summand $`\omega^{\beta_i}`$ of $`\alpha`$.
   - lives at level $`y = i`$.
-- **anchor**: the z0 column at the head of a unit (the $`(r{+}1,\ i{-}1,\ 0)`$ of the unit
+- **anchor**: the z0 column at the head of an additive unit (the $`(r{+}1,\ i{-}1,\ 0)`$ of the additive unit
   rule below).
-  - it rebuilds the previous unit's address in z0 form, giving the new unit a foothold to
+  - it rebuilds the previous additive unit's address in z0 form, giving the new additive unit a foothold to
     hang from (a z1 limit marker cannot carry a successor directly).
-  - the anchor of the first unit $`U_1`$ is $`(0,0,0)`$ itself (previous address = $`0`$,
+  - the anchor of the first additive unit $`U_1`$ is $`(0,0,0)`$ itself (previous address = $`0`$,
     the ground).
 - **root**: the z1 column right after the anchor.
   - carries the leading $`1`$ of the split $`1 + \beta_i' = \beta_i`$.
-- **subunit** $`S_{ij}`$: one summand $`\omega^{\gamma_{ij}}`$ of $`\beta_i'`$.
+- **multiplicative unit** $`S_{ij}`$: one summand $`\omega^{\gamma_{ij}}`$ of $`\beta_i'`$.
   - consists of a digit and a primitive-sequence embedding.
-- **digit**: the leading z1 column of a subunit.
+- **digit**: the leading z1 column of a multiplicative unit.
   - writing $`x_0`$ for the root's $`x`$, every digit sits at $`x_0{+}1`$ and is a row-0
     child of the root.
 - **primitive-sequence embedding** $`\mathrm{PrSS}(\gamma_{ij})`$: the forest of $`y = 0`$
   z0 columns hanging below a digit (its row-0 descendants).
   - it carries the exponent $`\gamma_{ij}`$.
 
-The generator carries one piece of state: $`r`$, the $`x`$ of the previous unit's root.
+The generator carries one piece of state: $`r`$, the $`x`$ of the previous additive unit's root.
 
 ### Units (addition)
 
@@ -134,10 +134,10 @@ U_i &= (x_t{+}1,\ i,\ 0)
 \end{aligned}
 ```
 
-So a $`\beta_i = 0`$ unit climbs one level with an anchor plus a bare z0 column, and while
-such units continue they share the anchor and keep climbing as a z0 chain.
+So a $`\beta_i = 0`$ additive unit climbs one level with an anchor plus a bare z0 column, and while
+such additive units continue they share the anchor and keep climbing as a z0 chain.
 
-### Root and subunits (multiplication)
+### Root and multiplicative units (multiplication)
 
 Split $`1 + \beta' = \beta`$ (if $`\beta \ge \omega`$ then $`\beta' = \beta`$; for finite
 $`k`$, $`\beta' = k-1`$). Writing
@@ -149,7 +149,7 @@ $`\beta' = \omega^{\gamma_1} + \cdots + \omega^{\gamma_k}`$,
   +\!\!+ \mathrm{PrSS}(\gamma_j,\ x_0{+}2) \,\big]_{j=1}^{k} .
 ```
 
-one column for the root, and one subunit (a digit column plus its primitive-sequence
+one column for the root, and one multiplicative unit (a digit column plus its primitive-sequence
 embedding) per summand of $`\beta'`$.
 
 ### Primitive-sequence embedding (exponentiation)
@@ -166,14 +166,14 @@ This is literally the 1-row Bashicu matrix (primitive sequence) of $`\gamma`$, a
 lives in columns with $`y = z = 0`$.
 
 **Summary**: the three nesting levels carry the three operations of the CNF — **the number of
-units is addition** (one step of the row-1 staircase each), **the number of subunits is
+additive units is addition** (one step of the row-1 staircase each), **the number of multiplicative units is
 multiplication** (one factor each), and **the shape of the embedding is exponentiation** (the
 primitive sequence of the exponent $`\gamma`$).
 
 ### Example: $`\alpha = \omega^2 + \omega + 1`$
 
-Three units. A = anchor, R = root, D = digit. Each digit together with its
-primitive-sequence embedding is wrapped in a further underbrace as a **subunit**, labelled by
+Three additive units. A = anchor, R = root, D = digit. Each digit together with its
+primitive-sequence embedding is wrapped in a further underbrace as a **multiplicative unit**, labelled by
 its value $`\omega^{\gamma_{ij}}`$:
 
 ```math
@@ -184,8 +184,8 @@ its value $`\omega^{\gamma_{ij}}`$:
 
 ### Example: $`\alpha = \omega^{\omega^\omega}`$
 
-One unit. $`\mathrm{P}(\gamma) = \mathrm{PrSS}(\gamma)`$ (the primitive-sequence
-embedding). The subunit $`\omega^\omega`$ = digit + $`\mathrm{P}(\omega)`$:
+One additive unit. $`\mathrm{P}(\gamma) = \mathrm{PrSS}(\gamma)`$ (the primitive-sequence
+embedding). The multiplicative unit $`\omega^\omega`$ = digit + $`\mathrm{P}(\omega)`$:
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{A}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{R}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{D}}\underbrace{\begin{pmatrix}3 & 4\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega)}}_{\omega^{\omega}}
@@ -203,7 +203,7 @@ $`(4,0,0)`$ gives $`g=\omega`$, appending $`(5,0,0)`$ gives $`g=\omega^\omega`$)
 
 ### Example: $`\alpha = \omega^{\omega^{1+1}+\omega^{1+1}}`$
 
-$`\beta = \omega^2 + \omega^2`$ has two summands, hence two subunits. Each subunit's
+$`\beta = \omega^2 + \omega^2`$ has two summands, hence two multiplicative units. Each multiplicative unit's
 exponent $`\gamma = 2`$ becomes two nodes of $`\mathrm{PrSS}`$ (siblings, same $`x`$).
 Inside $`\mathrm{P}`$, a sibling (same $`x`$) means $`+1`$ and a child ($`x{+}1`$) means one
 more level of the tower:
@@ -214,7 +214,7 @@ more level of the tower:
 
 ### Example: $`\alpha = \omega^{\omega^{\omega^{\omega^5+\omega^4}+\omega^3}+\omega^2}`$
 
-Two subunits. The primitive-sequence embedding of the first subunit's exponent
+Two multiplicative units. The primitive-sequence embedding of the first multiplicative unit's exponent
 $`\gamma_{11} = \omega^{\omega^5+\omega^4} + \omega^3`$ is written by the recursion of
 $`\mathrm{P}`$:
 
@@ -222,7 +222,7 @@ $`\mathrm{P}`$:
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{A}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{R}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{D}}\underbrace{\begin{pmatrix}3 & 4 & 5 & 5 & 5 & 5 & 5 & 4 & 5 & 5 & 5 & 5 & 3 & 4 & 4 & 4\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega^{5}+\omega^{4}}+\omega^{3})}}_{\omega^{\omega^{\omega^{5}+\omega^{4}}+\omega^{3}}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{D}}\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}}_{\omega^{2}}
 ```
 
-The nesting inside the first subunit's embedding (all these columns have $`y = z = 0`$, so
+The nesting inside the first multiplicative unit's embedding (all these columns have $`y = z = 0`$, so
 only $`x`$ is shown):
 
 ```math

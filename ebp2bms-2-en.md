@@ -17,9 +17,9 @@ itself. In principle the ceiling is $`\alpha \lt \Lambda`$, the least $`\Omega`$
 point. Not covered: arithmetic applied outside a subscript (such as
 $`(\Omega_\omega)^2`$).
 
-Notation: the matrix is written **one bracket per unit** ($`U_i`$).
+Notation: the matrix is written **one bracket per additive unit** ($`U_i`$).
 
-| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | trio sequence (one bracket = one unit) |
+| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | trio sequence (one bracket = one additive unit) |
 |---|---|---|
 | $`\varepsilon_0 = \psi_0(\Omega_1)`$ | $`\psi_0(\Omega_{\varepsilon_0})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0+1`$ | $`\psi_0(\Omega_{\varepsilon_0+1})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
@@ -53,7 +53,7 @@ Notation: the matrix is written **one bracket per unit** ($`U_i`$).
 The grammar is **the same** as in part 1; only the contents of the exponent slot change.
 Write $`\alpha = \sum_i \omega^{\beta_i}`$, $`1 + \beta_i' = \beta_i`$,
 $`\beta_i' = \sum_j \omega^{\gamma_{ij}}`$ as a two-level CNF and lay the summands out as
-units.
+additive units.
 
 ```math
 M(\alpha) = U_1 +\!\!+ U_2 +\!\!+ \cdots +\!\!+ U_m .
@@ -61,24 +61,24 @@ M(\alpha) = U_1 +\!\!+ U_2 +\!\!+ \cdots +\!\!+ U_m .
 
 ### Structure
 
-- unit $`U_i = \omega^{\beta_i}`$
+- additive unit $`U_i = \omega^{\beta_i}`$
   - anchor
   - root — carries the leading $`1`$ of $`\beta_i`$
-  - subunit $`S_{ij} = \omega^{\gamma_{ij}}`$
+  - multiplicative unit $`S_{ij} = \omega^{\gamma_{ij}}`$
     - digit
     - **OT embedding** $`\mathrm{B}(\gamma_{ij})`$
-- unit $`U_i = 1`$ (when $`\beta_i = 0`$)
+- additive unit $`U_i = 1`$ (when $`\beta_i = 0`$)
   - anchor
   - a z0 column
 
-Exactly one thing differs from part 1: what sits below a subunit is generalized from the
+Exactly one thing differs from part 1: what sits below a multiplicative unit is generalized from the
 primitive-sequence embedding $`\mathrm{PrSS}`$ to the **OT embedding** $`\mathrm{B}`$. For
 $`\gamma \lt \varepsilon_0`$ we have $`\mathrm{B}(\gamma) = \mathrm{PrSS}(\gamma)`$, so
 part 1 is the special case of this page.
 
 ### Units (addition)
 
-Same as part 1. Initialize the state $`r`$ (the $`x`$ of the previous unit's root) to $`-1`$:
+Same as part 1. Initialize the state $`r`$ (the $`x`$ of the previous additive unit's root) to $`-1`$:
 
 ```math
 \begin{aligned}
@@ -91,7 +91,7 @@ U_i &= (x_t{+}1,\ i,\ 0)
 \end{aligned}
 ```
 
-### Root and subunits (multiplication)
+### Root and multiplicative units (multiplication)
 
 With $`1 + \beta' = \beta`$ and $`\beta' = \omega^{\gamma_1} + \cdots + \omega^{\gamma_k}`$,
 
@@ -154,7 +154,7 @@ $`M(\Omega_1) = (0,0,0)(1,1,1)(2,1,1)(3,1,0)`$.
 ### $`\alpha = \Omega_v`$ itself ($`v \ge 2`$)
 
 When $`\alpha`$ is uncountable no $`\psi_0`$ node is raised, and the matrix is built out of
-$`B = (0,0,0)(1,1,1)(2,1,1)(3,1,0) = M(\Omega_1)`$ as its unit. With the lift
+$`B = (0,0,0)(1,1,1)(2,1,1)(3,1,0) = M(\Omega_1)`$ as its additive unit. With the lift
 $`\mathrm{L}(x,y,z) = (x{+}1,\ y{+}1,\ z)`$, **finite $`v`$** gives
 
 ```math
@@ -203,8 +203,8 @@ $`\omega^2\cdot 2`$ row is a duplicate label (another row with the same label do
 it may be of the same kind as the known mismatch rows recorded in [dom.md](dom.md).
 Unresolved.
 
-**Summary**: what the three nesting levels carry does not change — **the number of units is
-addition**, **the number of subunits is multiplication** (one factor each), and **the nesting
+**Summary**: what the three nesting levels carry does not change — **the number of additive units is
+addition**, **the number of multiplicative units is multiplication** (one factor each), and **the nesting
 of $`\mathrm{B}`$ is exponentiation and collapse**. Row $`y`$ carries the subscript of $`\Omega`$
 ($`(x,1,0) = \Omega_1`$, $`(x,1,0)(x{+}1,2,0) = \Omega_2`$,
 $`(x,1,1) = \Omega_\omega`$), and that subscript is again written by the same grammar.
@@ -212,11 +212,11 @@ $`(x,1,1) = \Omega_\omega`$), and that subscript is again written by the same gr
 ## Examples
 
 Terminology as in [part 1](ebp2bms-1-en.md): A = anchor, R = root, D = digit,
-$`S`$ = subunit, $`\mathrm{B}`$ = OT embedding.
+$`S`$ = multiplicative unit, $`\mathrm{B}`$ = OT embedding.
 
 ### Examples: $`\alpha = \varepsilon_0`$
 
-Since $`\varepsilon_0 = \omega^{\varepsilon_0}`$ there is one unit and one subunit, whose
+Since $`\varepsilon_0 = \omega^{\varepsilon_0}`$ there is one additive unit and one multiplicative unit, whose
 exponent is $`\varepsilon_0`$ itself. $`\mathrm{B}(\varepsilon_0)`$ is a $`\psi_0`$ node
 plus an $`\Omega_1`$ leaf:
 
@@ -226,7 +226,7 @@ plus an $`\Omega_1`$ leaf:
 
 ### Examples: $`\alpha = \varepsilon_0 + \omega^2`$
 
-Two units. $`U_2`$ is exactly part 1's grammar (one subunit with $`\gamma = 1`$, and
+Two additive units. $`U_2`$ is exactly part 1's grammar (one multiplicative unit with $`\gamma = 1`$, and
 $`\mathrm{B}(1)`$ is a single node):
 
 ```math
@@ -258,7 +258,7 @@ $`\mathrm{arg}(\varepsilon_0 \cdot 2) = \Omega_1 + \psi_0(\Omega_1)`$):
 
 ### Examples: $`\alpha = \psi_0(\Omega_\omega)`$
 
-$`\alpha`$ is a collapse value, so $`\omega^\alpha = \alpha`$: one unit, one subunit, and
+$`\alpha`$ is a collapse value, so $`\omega^\alpha = \alpha`$: one additive unit, one multiplicative unit, and
 its exponent is $`\alpha`$ itself. $`\mathrm{B}(\alpha)`$ is a $`\psi_0`$ node plus the
 $`\Omega_\omega`$ block.
 

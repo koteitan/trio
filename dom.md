@@ -471,8 +471,8 @@ M(\alpha) = (0,0,0)(1,1,1)(2,1,1) +\!\!+ \mathrm{shift}(V(\alpha),\ 3)
 ```
 
 が成り立つ（$`V(\alpha)`$ = $`\alpha`$ 自身を値とする行列）。
-これは既存の文法そのもの: $`\alpha = \omega^{\alpha}`$ なのでユニット 1 つ、
-根が先頭の $`1`$、サブユニット 1 つ、その指数 $`\gamma = \alpha`$。
+これは既存の文法そのもの: $`\alpha = \omega^{\alpha}`$ なので加算ユニット 1 つ、
+根が先頭の $`1`$、乗算ユニット 1 つ、その指数 $`\gamma = \alpha`$。
 一致した 17 行は $`\psi(\Omega)`$, $`\psi(\Omega_\omega)`$, $`\psi(\Omega_{\omega\cdot 2})`$,
 $`\psi(\Omega_{\omega^2})`$, $`\psi(\Omega_{\psi(\Omega_\omega)})`$ 等。
 例: $`M(\psi(\Omega_{\psi(\Omega_\omega)}))`$ の尻尾を $`3`$ 左シフトすると
