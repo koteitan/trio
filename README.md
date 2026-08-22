@@ -18,6 +18,7 @@ tools/   実行可能な BM4 モデルと検証
 ## 資料
 
 - [dom.md](dom.md) — 拡張ブーフホルツ OCF の `dom` 関数と BM4 展開分岐の対応
-- [bms-rathjen/](bms-rathjen/README.md) — BM4-Analysis シートの正規化コピー（形式修正のみ）
+- `tools/normalize_sheet.py` — BM4-Analysis シートのラベルを形式だけ正規化して
+  `tmp/fixed-sheet/`（バージョン管理外）と `tools/omega_alpha_rows.tsv` を作る
 - 拡張ブーフホルツ psi ↔ トリオ数列 対応表
   — [α < ε₀](ebp2bms-1.md) [ε₀ ≤ α < Λ](ebp2bms-2.md)（[English](ebp2bms-1-en.md)）

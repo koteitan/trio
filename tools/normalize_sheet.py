@@ -9,14 +9,18 @@
   2. 括弧不整合  各別名について、不足する ')' を末尾に足す／末尾の余分な ')' を落とす。
   3. 先頭タイポ  'si(' で始まるラベルを 'psi(' に直す。
 
-出力: bms-rathjen/to-psi-I.tsv
-  row / matrix / label_orig / label_norm / fix   （fix は適用した規則のカンマ区切り）
+出力:
+  tmp/fixed-sheet/to-psi-I.tsv   （バージョン管理外）
+    row / matrix / label_orig / label_norm / fix   （fix は適用した規則のカンマ区切り）
+  tools/omega_alpha_rows.tsv     （バージョン管理下。probe/ビルダーの入力）
+    正規化ラベルから純粋な psi_0(Omega_alpha) 行だけを抜いたもの
 """
 import openpyxl, os, re, sys
 
 XLSX = os.path.expanduser('~/proofs/papers/BM4-Analysis-2021.4.27.xlsx')
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                   '..', 'bms-rathjen', 'to-psi-I.tsv')
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, '..', 'tmp', 'fixed-sheet', 'to-psi-I.tsv')
+ROWS = os.path.join(HERE, 'omega_alpha_rows.tsv')
 
 def depth(s):
     d = 0
@@ -54,6 +58,7 @@ def normalize(label):
     return canon, fixes
 
 def main():
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     wb = openpyxl.load_workbook(XLSX, read_only=True)
     ws = wb['To psi(I)']
     n = nfix = 0
@@ -71,6 +76,27 @@ def main():
                     % (row, mat if isinstance(mat, str) else '',
                        lab.strip(), canon, ','.join(fixes)))
     print('ラベル付き行 %d / 形式修正あり %d -> %s' % (n, nfix, os.path.normpath(OUT)))
+    write_rows()
+
+def write_rows():
+    """正規化ラベルから純粋な psi_0(Omega_alpha) 行を抜いて tools/ に置く。"""
+    sys.path.insert(0, HERE)
+    from probe_omega_alpha import pure_sub
+    from probe_dom import classify
+    def cols(s):
+        cs = [tuple(int(v) for v in x.split(',')) for x in re.findall(r'\((\d+(?:,\d+)*)\)', s)]
+        return [c + (0,) * (3 - len(c)) for c in cs]
+    out = ['row\talpha\tbranch\tmatrix']
+    for L in open(OUT, encoding='utf-8'):
+        p = L.rstrip('\n').split('\t')
+        if p[0] == 'row': continue
+        a = pure_sub(p[3])
+        if not a or not p[1].startswith('('): continue
+        try: b = classify(cols(p[1]))[0]
+        except Exception: b = '?'
+        out.append('%s\t%s\t%s\t%s' % (p[0], a, b, p[1]))
+    open(ROWS, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+    print('純粋な psi_0(Omega_alpha) 行 %d -> %s' % (len(out) - 1, os.path.normpath(ROWS)))
 
 if __name__ == '__main__':
     main()
