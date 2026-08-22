@@ -19,4 +19,4 @@ tools/   実行可能な BM4 モデルと検証
 
 - [dom.md](dom.md) — 拡張ブーフホルツ OCF の `dom` 関数と BM4 展開分岐の対応
 - 拡張ブーフホルツ psi ↔ トリオ数列 対応表
-  — [1](ebp2bms-1.md) [2](ebp2bms-2.md)（[English](ebp2bms-1-en.md)）
+  — [α < ε₀](ebp2bms-1.md) [ε₀ ≤ α < Λ](ebp2bms-2.md)（[English](ebp2bms-1-en.md)）

@@ -1,6 +1,6 @@
 # Extended Buchholz psi <-> trio sequence (3-row BMS), part 2: $`\varepsilon_0 \le \alpha`$
 
-[← Back](README.md) | [Japanese](ebp2bms-2.md) | [English](ebp2bms-2-en.md) | [1](ebp2bms-1-en.md) [2](ebp2bms-2-en.md)
+[← Back](README.md) | [Japanese](ebp2bms-2.md) | [English](ebp2bms-2-en.md) | [α < ε₀](ebp2bms-1-en.md) [ε₀ ≤ α < Λ](ebp2bms-2-en.md)
 
 Continues [part 1 ($`\alpha \lt \varepsilon_0`$)](ebp2bms-1-en.md). The correspondence
 between $`\psi_0(\Omega_\alpha)`$ and the standard forms of the trio sequence system (the

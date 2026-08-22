@@ -1,6 +1,6 @@
 # Extended Buchholz psi <-> trio sequence (3-row BMS), part 1
 
-[← Back](README.md) | [Japanese](ebp2bms-1.md) | [English](ebp2bms-1-en.md) | [1](ebp2bms-1-en.md) [2](ebp2bms-2-en.md)
+[← Back](README.md) | [Japanese](ebp2bms-1.md) | [English](ebp2bms-1-en.md) | [α < ε₀](ebp2bms-1-en.md) [ε₀ ≤ α < Λ](ebp2bms-2-en.md)
 
 
 The correspondence between $`\psi_0(\Omega_\alpha)`$ and the standard forms of the trio
@@ -11,6 +11,7 @@ with the builder there (details in [dom.md](dom.md)).
 Domain of $`\alpha`$: in principle every term of the extended Buchholz OT
 ($`\alpha \lt \Lambda`$, the least $`\Omega`$ fixed point). The generator behind this page
 currently covers $`\alpha \lt \varepsilon_0`$, i.e. what the CNF of $`\omega`$ can write.
+For $`\varepsilon_0 \le \alpha \lt \Lambda`$ see [part 2](ebp2bms-2-en.md).
 
 Notation: the matrix is written **one bracket per unit** ($`U_i`$). For the split inside a
 unit (anchor, root, subunits) see the underbraces in the examples.

@@ -1,9 +1,6 @@
-the psi_0 node IS the shifted anchor of M(X), so stop removing it
+label the part links by their alpha range instead of 1/2
 
-- Simplify the collapse-value rule to
-  M(psi_0(Omega_X)) = (0,0,0)(1,1,1)(2,1,1) ++ shift(M(X), 3):
-  M(X)'s anchor shifts to (3,0,0) and serves as the psi_0 node
-- Rewrite the builder branch and the ebp2bms-2.md section accordingly
-  (verified identical on the 15 collapse-value sheet rows)
-- Reword the three psi_0(Omega_v) examples: embed M(X) whole, no anchor
-  removal step
+- Navigation links now read "α < ε₀" and "ε₀ ≤ α < Λ", written in Unicode
+  because GitHub does not render math inside a link
+- Point from part 1's domain paragraph to part 2 for ε₀ ≤ α < Λ
+- Use the same labels in README.md

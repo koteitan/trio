@@ -1,6 +1,6 @@
 # 拡張ブーフホルツ psi ↔ トリオ数列（BMS 3 行）対応表 その 1: $`\alpha \lt \varepsilon_0`$
 
-[← 戻る](README.md) | [Japanese](ebp2bms-1.md) | [English](ebp2bms-1-en.md) | [1](ebp2bms-1.md) [2](ebp2bms-2.md)
+[← 戻る](README.md) | [Japanese](ebp2bms-1.md) | [English](ebp2bms-1-en.md) | [α < ε₀](ebp2bms-1.md) [ε₀ ≤ α < Λ](ebp2bms-2.md)
 
 
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応。
@@ -10,6 +10,7 @@ $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列�
 $`\alpha`$ の定義域: 原理上は拡張ブーフホルツ OT の項全体（$`\alpha \lt \Lambda`$ =
 最小 $`\Omega`$ 不動点）。本表の生成器が現在対応するのは
 $`\alpha \lt \varepsilon_0`$（$`\omega`$ の CNF で書ける範囲）。
+$`\varepsilon_0 \le \alpha \lt \Lambda`$ は[その 2](ebp2bms-2.md)。
 
 表記: 行列は**ユニットごとに分けて**並べる（括弧 1 組 = ユニット $`U_i`$）。
 ユニットの中身（アンカー・根・サブユニット）の区切りは例の節の underbrace を参照。
