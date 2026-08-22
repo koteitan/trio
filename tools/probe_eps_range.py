@@ -22,7 +22,7 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-681; dom.md lists what the other 126 need. The CLI mirrors build_omega_alpha.py:
+703; dom.md lists what the other 104 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -58,14 +58,22 @@ def ato(x):
     """The Ord an exponent denotes. w^atom = atom, so an atom is its own w-power."""
     return ((x, 1),) if is_atom(x) else x
 
+def is_card_psi(a):
+    """psi written with a cardinal index, psi_{Omega_u}(X). The sheet puts such a collapse
+    just BELOW Omega_u, where an ordinal index (psi_u) puts it just above."""
+    v = a[1]
+    return (a[0] == 'psi' and len(v) == 1 and v[0][1] == 1
+            and is_atom(v[0][0]) and v[0][0][0] == 'W')
+
 def cmp_atom(a, b):
-    if a[0] == 'W' and b[0] == 'W': return cmp_ord(a[1], b[1])
-    if a[0] == 'W':                            # Omega_v vs psi_u(X): Omega_u < psi_u(X)
-        return 1 if cmp_ord(a[1], b[1]) > 0 else -1
-    if b[0] == 'W':
-        return -cmp_atom(b, a)
-    c = cmp_ord(a[1], b[1])                    # psi_v vs psi_u: the level decides first
-    return c if c else cmp_ord(a[2], b[2])
+    la, lb = lvl(a) or ZERO, lvl(b) or ZERO     # the level each atom sits at
+    c = cmp_ord(la, lb)
+    if c: return c                              # a different level decides on its own
+    ka = -1 if a[0] == 'psi' and is_card_psi(a) else (0 if a[0] == 'W' else 1)
+    kb = -1 if b[0] == 'psi' and is_card_psi(b) else (0 if b[0] == 'W' else 1)
+    if ka != kb: return -1 if ka < kb else 1     # below Omega_u < Omega_u < above it
+    if a[0] == 'W': return 0
+    return cmp_ord(a[2], b[2])
 
 def cmp_exp(a, b):
     if is_atom(a) and is_atom(b): return cmp_atom(a, b)
@@ -237,14 +245,20 @@ def write_level(v, x, d, arg=False):
         # A unit's leaf only has to name the level, and one column does that: the row-1
         # entry of M(v)'s last column, with z=0 (the level itself, not its spelling).
         return [(x, base[-1][1], 0)]
-    k = 0
-    while k < d and k + 1 < len(base) and base[k + 1] == (k + 1, k + 1, 0): k += 1
-    tail = base[1 + k:]
+    par, _ = _forest(base)
+    lev = idx = 0                                # how far the context's ladder covers M(v)
+    for i in range(1, len(base)):
+        if not _is_level(base, par, i): continue
+        if base[i][1] == lev + 1 and lev + 1 <= d:
+            lev, idx = lev + 1, i
+        else:
+            break
+    tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
-    par, _ = _forest(base)
-    bump = d - k
-    return [(c[0] + x - 1 - k, c[1] + (bump if _relative(base, par, 1 + k + i) else 0), c[2])
+    bump = d - lev
+    dx = x - tail[0][0]
+    return [(c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
             for i, c in enumerate(tail)]
 
 def block(gamma, x, d=0, arg=False, ctx=None):
@@ -487,6 +501,31 @@ def last_root(cols):
             if cols[j][2] == 1 and (par[j] is None or cols[par[j]][2] == 0))
     return cols[i][1], cols[i][0] + (0 if cols[-1][2] == 0 else 1)
 
+def is_psi_level(alpha):
+    """alpha = psi_{Omega_u}(X) written with a cardinal index: (u, X), else None.
+
+    The sheet writes psi_a(b) with a the cardinal itself, so such a collapse lands just
+    above Omega_u and is written inside the level-u unit rather than as a new one.
+    """
+    if len(alpha) != 1 or alpha[0][1] != 1: return None
+    a = alpha[0][0]
+    if not (is_atom(a) and a[0] == 'psi' and a[1] != ZERO): return None
+    u = lvl(a)
+    return (u, a[2]) if cmp_ord(u, a[1]) != 0 else None
+
+def M_psi_level(u, X):
+    """M(psi_{Omega_u}(X)): M(Omega_u) with its leaf dropped one level -- the collapse --
+    and the argument written below it."""
+    base = M_Omega(u)
+    y0 = base[-1][1]
+    cols = base[:-1] + [(base[-1][0], y0 - 1, base[-1][2])]
+    x = base[-1][0] + 1
+    w = lvl(X)
+    if w is None: raise Unsupported('a countable psi argument')
+    if cmp_ord(w, u) == 0:
+        return cols + [(x, y0, 0)]               # the argument is the level itself
+    return append_suffix(cols + write_level(w, x, y0 - 1, True), w)
+
 def M(alpha):
     """alpha -> the standard form of psi_0(Omega_alpha).
 
@@ -495,6 +534,9 @@ def M(alpha):
     which M_Omega builds by writing the subscript v as a chain of level columns.
     """
     v = lvl(alpha)
+    pl = is_psi_level(alpha) if v is not None else None
+    if pl is not None:
+        return M_psi_level(*pl)
     if v is None:
         ctx = place_units([], alpha, 0, -1)
     elif alpha == ato(Om(v)):                # alpha = Omega_v itself: the base
