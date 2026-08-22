@@ -1,8 +1,12 @@
-Leave the sheet's own non-standard rows out of the measurement
+Omega arithmetic: four more fixes the standard-form check found
 
-- List the 28 rows whose matrix yaBMS calls non-standard and skip them: a
-  row that is not a standard form has no entry for the builder to match
-- Re-derive that list in the standard check and report it when it goes stale
-- Drop row 1947 from the known mismatches; it is one of the 28
-- Of the 785 rows that remain, 735 agree and 50 do not: 4 where the sheet
-  repeats a label, 6 where our build is not standard, 40 undecided
+- Take the leaf naming the regime past a copy from that copy's own leaf,
+  one deeper only when the copy was an extra storey rather than the unit
+- Give a level that would leave the regime's leaf the slot one deeper,
+  under an uncountable subscript and above the bottom level
+- Let a child naming the same level as the column above it take that
+  column's row-1 entry
+- Repeat the upgrade suffix at the lift the leaf just written sits at
+- Skip the level climb when the ladder was just laid again for that unit
+- 743 of the 785 measured rows agree (was 735), 781 of the built matrices
+  are standard forms, row order still clean

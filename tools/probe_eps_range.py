@@ -22,8 +22,8 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-735 of the 785 whose matrix is a
-standard form; dom.md lists what the other 50 need. The CLI mirrors build_omega_alpha.py:
+743 of the 785 whose matrix is a
+standard form; dom.md lists what the other 42 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -267,7 +267,7 @@ def write_level(v, x, d, arg=False, *ladders):
     return [(c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
             for i, c in enumerate(tail)]
 
-def block(gamma, x, d=0, arg=False, ctx=None):
+def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None):
     """Copy the ordinal gamma into columns: one column per summand w^delta of gamma, and
     the children of that column spell out strip(delta).
 
@@ -291,12 +291,20 @@ def block(gamma, x, d=0, arg=False, ctx=None):
             v = lvl(e)
             if v is None:
                 run = [(x, 0, 0)]
+            elif not arg and plvl is not None and cmp_ord(v, plvl) == 0:
+                run = [(x, py, 0)]               # the same level as the column above it
             elif (ctx is not None and not arg and ctx.storeys
                   and ctx.regime is not None and cmp_ord(v, ctx.regime) == 0):
                 # past a storey the regime sits deeper: under a countable subscript by the
                 # unit's own anchor, under an uncountable one by one per storey
                 run = [(x, ctx.level if lvl(ctx.regime) is None
-                        else leaf_y(ctx.regime) + ctx.storeys, 0)]
+                        else ctx.leaf_level, 0)]
+            elif (ctx is not None and not arg and ctx.regime is not None
+                  and lvl(ctx.regime) is not None
+                  and leaf_y(v) == leaf_y(ctx.regime) and cmp_ord(v, ONE) != 0):
+                # under an uncountable subscript this level would leave the regime's own
+                # leaf, so it takes the slot one deeper (the bottom level keeps its own)
+                run = [(x, leaf_y(v) + 1, 0)]
             else:
                 run = (write_level(v, x, d, arg, cols) if ctx is not None
                        else write_level(v, x, d, arg))
@@ -309,10 +317,11 @@ def block(gamma, x, d=0, arg=False, ctx=None):
                 if sub != ZERO and ctx.spent():   # the ladder is spent before the children
                     ctx.lay_storey()
                     nx, nd = cols[-1][0] + 1, cols[-1][1]
-                block(sub, nx, nd, sub_arg, ctx)
+                block(sub, nx, nd, sub_arg, ctx, v, run[-1][1])
                 ctx.prev = _tail_block(ato(e), arg)
             else:
-                cols += block(strip(e), run[-1][0] + 1, run[-1][1], sub_arg)
+                cols += block(strip(e), run[-1][0] + 1, run[-1][1], sub_arg,
+                              None, v, run[-1][1])
     return cols
 
 def body(beta, x0, y):
@@ -361,7 +370,8 @@ def append_suffix(cols, v, storeys=0, tail_sub=None):
             runs.append(i); i = j + 1
         else:
             i += 1
-    for k in range(storeys, -1, -1):
+    lift0 = max(cols[-1][1] - leaf_y(v), 0)      # the lift the leaf just written sits at
+    for k in [lift0] + [j for j in range(storeys, -1, -1) if j != lift0]:
         pat = [(c[1] + k, c[2]) for c in suf]
         for i in reversed(runs):                 # a run's own head spells the level
             seg = cols[i:i + n]
@@ -422,7 +432,7 @@ class Ctx:
     which level the last leaf named."""
     def __init__(self, cols, regime):
         self.cols = cols; self.st = 0; self.regime = regime; self.prev = None
-        self.storeys = 0; self.level = 0; self.tail_sub = None
+        self.storeys = 0; self.level = 0; self.tail_sub = None; self.leaf_level = None
 
     def spent(self):
         """Has the last leaf used up the regime's own leaf on a different level?"""
@@ -456,8 +466,15 @@ class Ctx:
             self.st = len(cols); cols += seg
             self.storeys += 1; self.prev = None
             zs = [j for j in range(len(seg)) if seg[j][2] == 0]
-            if len(zs) >= 2: self.tail_sub = seg[zs[-2] + 1:]   # for the upgrade suffix
-            if len(zs) <= 3: return len(zs) - 1              # sub-units left in the copy
+            if len(zs) <= 3:                                 # sub-units left in the copy
+                one = len(zs) - 1 == 1
+                # a copy that still holds more than one sub-unit is an extra storey, so
+                # the leaf naming the regime sits one deeper than the copy's own leaf, and
+                # that copy's last sub-unit is the level's upgrade suffix
+                self.leaf_level = seg[-1][1] + (0 if one else 1)
+                if not one and len(zs) >= 2: self.tail_sub = seg[zs[-2] + 1:]
+                return len(zs) - 1
+            src = seg[:zs[-2] + 1]                          # drop the last sub-unit
             src = seg[:zs[-2] + 1]                          # drop the last sub-unit
             ax = last_root_plain(cols)[1] + 1
 
@@ -488,7 +505,8 @@ def place_units(cols, alpha, level, root_x, regime=None):
     prev0 = False; first = True
     for b in units(alpha)[skip:]:
         beta = ato(b)
-        if not first and ctx.spent():
+        laid = not first and ctx.spent()
+        if laid:
             ctx.lay_storey()
             level, root_x = last_root_plain(cols)
             prev0 = False
@@ -514,7 +532,7 @@ def place_units(cols, alpha, level, root_x, regime=None):
         prev0 = (beta == ZERO)
         if beta != ZERO: ctx.prev = unit_tail_level(beta)
         if (ctx.prev is not None and regime is not None and lvl(regime) is None
-                and cmp_ord(ctx.prev, regime) < 0):
+                and not laid and cmp_ord(ctx.prev, regime) < 0):
             dy = leaf_y(ctx.prev) - leaf_y(regime)
             if dy > 0:                           # the leaf cannot reach that deep here
                 cols[-1] = (cols[-1][0], leaf_y(regime), cols[-1][2])
