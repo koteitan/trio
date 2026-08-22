@@ -322,22 +322,94 @@ def _tail_block(gamma, arg):
         return _tail_block(rest, is_atom(h) and h[0] == 'psi')
     return None if arg else lvl(e)
 
-def unit_loop(alpha, level, root_x):
-    cols = []; prev0 = False
+def leaf_y(v):
+    """The row-1 entry a leaf naming level v carries."""
+    return M(v)[-1][1]
+
+def storey(cols, y):
+    """The lifted copy of cols that psi_0(Omega_b + psi_1(Omega_b)) puts on top of
+    M(b) = cols: every column one level deeper, with the final leaf naming level y."""
+    out = lift(cols)
+    out[-1] = (out[-1][0], y, out[-1][2])
+    return out
+
+def unit_tail_level(beta):
+    """The level named by the last column of the add unit w^beta, or None."""
+    bp = pred_beta(beta)
+    if beta == ZERO or bp == ZERO: return None
+    return _tail_block(ato(bp[-1][0]), False)
+
+def needs_storey(prev, regime):
+    """Does a storey have to come before the next add unit?
+
+    Under a limit regime the ladder of anchors reads Omega_regime, Omega_{regime+1}, ...,
+    so a leaf there can only name the regime's own level or the bottom one. Once a unit has
+    named anything else the ladder has to be laid again, and the lifted copy lays it.
+    """
+    return (regime is not None and prev is not None and cmp_ord(prev, regime) != 0
+            and suffix(regime) and leaf_y(prev) == leaf_y(regime))
+
+def place_units(cols, alpha, level, root_x, regime=None):
+    """Lay alpha's add units out after cols, starting at the given level and root x.
+
+    Three things interrupt the plain loop, all of them in a limit regime, and all of them
+    storeys -- lifted copies of the matrix so far (of the last storey, once there is one):
+      * a leaf only reaches as deep as the regime's own leaf, so naming a level whose leaf
+        is deeper takes one storey per extra step;
+      * once a leaf has named a level that shares the regime's leaf, the ladder is spent
+        and the next add unit needs a fresh one;
+      * the same holds between the digits of one add unit.
+    """
+    st = 0
+    def add_storey(cols, st, y):
+        return cols + storey(cols[st:], y), len(cols)
+    def spent(u):
+        return (regime is not None and u is not None and cmp_ord(u, regime) != 0
+                and suffix(regime) and leaf_y(u) == leaf_y(regime))
+    prev0 = False; prev = None; first = True
     for b in units(alpha):
         beta = ato(b)
+        if not first and spent(prev):
+            cols, st = add_storey(cols, st, cols[-1][1])
+            level, root_x = last_root_plain(cols)
+            prev0 = False
         if beta == ZERO and prev0:
-            tx, ty, _ = cols[-1]; cols.append((tx + 1, ty + 1, 0))
+            tx, ty, _ = cols[-1]; cols = cols + [(tx + 1, ty + 1, 0)]
         elif beta == ZERO:
-            cols.append((root_x + 1, level, 0)); cols.append((root_x + 2, level + 1, 0))
+            cols = cols + [(root_x + 1, level, 0), (root_x + 2, level + 1, 0)]
         else:
             ax = root_x + 1
-            cols.append((ax, level, 0))
-            cols += body(beta, ax + 1, level + 1)
-            root_x = ax + 1
+            x0, y = ax + 1, level + 1
+            cols = cols + [(ax, level, 0), (x0, y, 1)]        # anchor and z1 root
+            digits = [e for e, c in pred_beta(beta) for _ in range(c)]
+            for i, e in enumerate(digits):
+                if i and spent(prev):                         # the ladder is spent mid-unit
+                    cols, st = add_storey(cols, st, cols[-1][1])
+                    y, x0 = last_root_plain(cols)
+                cols = cols + [(x0 + 1, y, 1)] + block(ato(e), x0 + 2, y - 1)
+                prev = _tail_block(ato(e), False)
+            root_x = x0
         level += 1
         prev0 = (beta == ZERO)
+        prev = unit_tail_level(beta)
+        if prev is not None and regime is not None and cmp_ord(prev, regime) < 0:
+            dy = leaf_y(prev) - leaf_y(regime)
+            if dy > 0:                           # the leaf cannot reach that deep here
+                cols[-1] = (cols[-1][0], leaf_y(regime), cols[-1][2])
+                for k in range(1, dy + 1):
+                    cols, st = add_storey(cols, st, leaf_y(regime) + k)
+                level, root_x = last_root_plain(cols)
+                prev0 = False
+        first = False
     return cols
+
+def last_root_plain(cols):
+    """(level, root x) of the last add unit's z1 root, for a continuation that hangs one
+    step below that root."""
+    par, _ = _forest(cols)
+    i = max(j for j in range(len(cols))
+            if cols[j][2] == 1 and (par[j] is None or cols[par[j]][2] == 0))
+    return cols[i][1], cols[i][0]
 
 def last_root(cols):
     """(level, anchor x) for the add unit that continues the base matrix cols.
@@ -361,13 +433,13 @@ def M(alpha):
     """
     v = lvl(alpha)
     if v is None:
-        cols = unit_loop(alpha, 0, -1)
+        cols = place_units([], alpha, 0, -1)
     elif alpha == ato(Om(v)):                # alpha = Omega_v itself: the base
         return M_Omega(v)
     else:
         base = M_Omega(v)
         y, ax = last_root(base)
-        cols = base + unit_loop(alpha, y, ax - 1)
+        cols = place_units(base, alpha, y, ax - 1, v)
     t = tail_level(alpha)                    # the upgrade effect, if a leaf ends the matrix
     return append_suffix(cols, t) if t is not None else cols
 

@@ -1,11 +1,12 @@
-Omega arithmetic: the leaf rule and the upgrade suffix
+Omega arithmetic: storeys where the ladder of levels runs out
 
-- Name a level in a unit's leaf with one column, whose row-1 entry is that
-  of M(v)'s last column, and keep the spelling rule for collapse arguments
-- Append suffix(v), the trailing z1 run of M(v), when such a leaf ends the
-  matrix, so Omega_w and Omega_1 stop sharing a matrix (the upgrade effect)
-- Find the base's last add unit by its z1 root instead of a z1 pair, and
-  put the next anchor one x further when that root carries no children
-- Drop the refusal to write a limit level: every sheet row now builds
-- Check that the matching rows come out in the sheet's row order (603
-  rows, 0 order violations) and record the rules and the 204 open rows
+- Insert a storey, the lifted copy that psi_0(Omega_b + psi_1(Omega_b))
+  puts on top of M(b), where a leaf would have to reach deeper than the
+  regime's own leaf, and where a spent ladder needs laying again
+- Lay one storey per level when a unit names a level whose leaf is deeper
+  than the regime's, and lift the last storey rather than the whole matrix
+- Inline the add unit's body into place_units so a storey can also come
+  between two digits of one unit
+- 623 of the sheet's 813 rows now agree (was 603); the matching rows still
+  come out in the sheet's row order and the alpha collisions drop 57 -> 16
+- Record the storey rule and what the remaining 184 rows need in dom.md
