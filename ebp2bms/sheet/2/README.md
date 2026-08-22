@@ -4,7 +4,7 @@
 
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応、$`\varepsilon_0 \le \alpha \lt \Lambda`$（$`\Lambda`$ = 最小 $`\Omega`$ 不動点）。
 生成: `tools/build_omega_alpha.py`（BM4-Analysis シートと全数照合済み。
-813 行中 728 行が一致、79 行が不一致 — 詳細は [dom.md](../../../dom.md)）。
+813 行中 734 行が一致、73 行が不一致 — 詳細は [dom.md](../../../dom.md)）。
 
 一般式は[アルゴリズム](../../algorithm/2/README.md)にある。
 

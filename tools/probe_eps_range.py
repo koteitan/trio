@@ -22,7 +22,7 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-728; dom.md lists what the other 79 need. The CLI mirrors build_omega_alpha.py:
+734; dom.md lists what the other 73 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -340,6 +340,7 @@ def append_suffix(cols, v, storeys=0, tail_sub=None):
     The suffix repeats the marker run that names v, so it lands on the run already in the
     matrix. Each storey lifts that run one level, so the most lifted copy present is the
     one to repeat; M(v)'s own columns are the fallback."""
+    if cols[-1][2] != 0: return cols          # only a leaf takes an upgrade suffix
     suf = suffix(v)
     if not suf:
         # an uncountable level leaves no marker of its own; its upgrade repeats the last
@@ -427,12 +428,12 @@ class Ctx:
                 and bool(suffix(v)) and leaf_y(u) == leaf_y(v))
 
     def last_storey(self):
-        """Where the last storey of the matrix starts: the last z0 column that opens a new
-        branch (its x does not grow), 0 when the matrix is one storey."""
+        """Where the last storey of the matrix starts: its last level column, or 0 when
+        the matrix has none and is therefore one storey."""
         cols = self.cols
-        starts = [i for i in range(1, len(cols))
-                  if cols[i][2] == 0 and cols[i][0] <= cols[i - 1][0]]
-        return starts[-1] if starts else 0
+        par, _ = _forest(cols)
+        lv = [i for i in range(1, len(cols)) if _is_level(cols, par, i)]
+        return lv[-1] if lv else 0
 
     def copy_storey(self, ax):
         """Lay copies of the last storey until one sub-unit is left.

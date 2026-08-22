@@ -1,3 +1,8 @@
-Add w^2+w+1 to the alpha < eps_0 table
+Omega arithmetic: find the last storey by its level column
 
-- Insert the row after w^2+w in both the Japanese and English pages
+- Start the last storey at the matrix's last level column instead of at a
+  z0 column whose x does not grow, which the deeper bases do not have
+- Leave the upgrade suffix off a matrix that ends in a marker: only a leaf
+  takes one, and write_level has already spelt the run there
+- 734 of the sheet's 813 rows agree (was 728), 806 of the built matrices are
+  standard forms (was 801), row order still clean
