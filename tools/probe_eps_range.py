@@ -7,7 +7,7 @@ x -> w^x that the CNF cannot decompose:
   Omega_v   the v-th uncountable cardinal    ('W', v)
   psi_v(X)  a collapse                       ('psi', v, X)   (E = eps_0 = psi_0(Omega_1))
 
-The matrix side has three rules:
+The matrix side has four rules:
 
   unit_loop  alpha = w^{beta_1} + ... + w^{beta_m}: one add unit per summand, each an
              anchor plus a body (a z1 root and one digit per summand of beta_i').
@@ -16,12 +16,13 @@ The matrix side has three rules:
              repeats row 0 one storey up, with Omega_v in the place of 1.
   M          alpha >= Omega_v is built on top of M(Omega_v): the units are laid out one
              storey higher, starting at the base's last z1 root.
+  storey     a lifted copy of the matrix so far, laid where the ladder of levels runs out.
 
 The level a column names is its position in the chain of z0 ancestors, not the bare entry,
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-603; dom.md lists what the other 210 need. The CLI mirrors build_omega_alpha.py:
+626; dom.md lists what the other 187 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -242,25 +243,36 @@ def write_level(v, x, d, arg=False):
     return [(c[0] + x - 1 - k, c[1] + (bump if _relative(base, par, 1 + k + i) else 0), c[2])
             for i, c in enumerate(tail)]
 
-def block(gamma, x, d=0, arg=False):
+def block(gamma, x, d=0, arg=False, ctx=None):
     """Copy the ordinal gamma into columns: one column per summand w^delta of gamma, and
     the children of that column spell out strip(delta).
 
     d is the level the surrounding chain of z0 ancestors already reaches, and arg says the
     columns are the argument of a collapse (the uncollapse). A countable summand is the
     single psi_0 node (x,0,0); an uncountable one names its level through write_level.
+
+    With a context (only place_units passes one) the columns go straight into the matrix
+    being built, so a spent ladder can be laid again by a storey here too -- between two
+    summands, or between a column and the next one.
     """
-    cols = []
+    cols = ctx.cols if ctx is not None else []
     for e, c in gamma:
         eo = ato(e)
         h = eo[0][0] if eo else None
+        sub_arg = is_atom(h) and h[0] == 'psi'
         for _ in range(c):
+            if ctx is not None and ctx.spent():
+                ctx.lay_storey()
+                x, d = cols[-1][0], cols[-1][1]
             v = lvl(e)
             run = [(x, 0, 0)] if v is None else write_level(v, x, d, arg)
             cols += run
             # the children of a collapse are its argument, written one level up
-            cols += block(strip(e), run[-1][0] + 1, run[-1][1],
-                          is_atom(h) and h[0] == 'psi')
+            if ctx is not None:
+                block(strip(e), run[-1][0] + 1, run[-1][1], sub_arg, ctx)
+                ctx.prev = _tail_block(ato(e), arg)
+            else:
+                cols += block(strip(e), run[-1][0] + 1, run[-1][1], sub_arg)
     return cols
 
 def body(beta, x0, y):
@@ -349,6 +361,22 @@ def needs_storey(prev, regime):
     return (regime is not None and prev is not None and cmp_ord(prev, regime) != 0
             and suffix(regime) and leaf_y(prev) == leaf_y(regime))
 
+class Ctx:
+    """The matrix being built, plus what a storey needs: where the last one starts and
+    which level the last leaf named."""
+    def __init__(self, cols, regime):
+        self.cols = cols; self.st = 0; self.regime = regime; self.prev = None
+
+    def spent(self):
+        """Has the last leaf used up the regime's own leaf on a different level?"""
+        u = self.prev; v = self.regime
+        return (v is not None and u is not None and cmp_ord(u, v) != 0
+                and bool(suffix(v)) and leaf_y(u) == leaf_y(v))
+
+    def lay_storey(self, y=None):
+        seg = storey(self.cols[self.st:], self.cols[-1][1] if y is None else y)
+        self.st = len(self.cols); self.cols += seg; self.prev = None
+
 def place_units(cols, alpha, level, root_x, regime=None):
     """Lay alpha's add units out after cols, starting at the given level and root x.
 
@@ -360,44 +388,40 @@ def place_units(cols, alpha, level, root_x, regime=None):
         and the next add unit needs a fresh one;
       * the same holds between the digits of one add unit.
     """
-    st = 0
-    def add_storey(cols, st, y):
-        return cols + storey(cols[st:], y), len(cols)
-    def spent(u):
-        return (regime is not None and u is not None and cmp_ord(u, regime) != 0
-                and suffix(regime) and leaf_y(u) == leaf_y(regime))
-    prev0 = False; prev = None; first = True
+    ctx = Ctx(list(cols), regime)
+    cols = ctx.cols
+    prev0 = False; first = True
     for b in units(alpha):
         beta = ato(b)
-        if not first and spent(prev):
-            cols, st = add_storey(cols, st, cols[-1][1])
+        if not first and ctx.spent():
+            ctx.lay_storey()
             level, root_x = last_root_plain(cols)
             prev0 = False
         if beta == ZERO and prev0:
-            tx, ty, _ = cols[-1]; cols = cols + [(tx + 1, ty + 1, 0)]
+            tx, ty, _ = cols[-1]; cols.append((tx + 1, ty + 1, 0))
         elif beta == ZERO:
-            cols = cols + [(root_x + 1, level, 0), (root_x + 2, level + 1, 0)]
+            cols += [(root_x + 1, level, 0), (root_x + 2, level + 1, 0)]
+            ctx.prev = None
         else:
             ax = root_x + 1
             x0, y = ax + 1, level + 1
-            cols = cols + [(ax, level, 0), (x0, y, 1)]        # anchor and z1 root
-            digits = [e for e, c in pred_beta(beta) for _ in range(c)]
-            for i, e in enumerate(digits):
-                if i and spent(prev):                         # the ladder is spent mid-unit
-                    cols, st = add_storey(cols, st, cols[-1][1])
+            cols += [(ax, level, 0), (x0, y, 1)]             # anchor and z1 root
+            for i, e in enumerate([e for e, c in pred_beta(beta) for _ in range(c)]):
+                if i and ctx.spent():                        # the ladder is spent mid-unit
+                    ctx.lay_storey()
                     y, x0 = last_root_plain(cols)
-                cols = cols + [(x0 + 1, y, 1)] + block(ato(e), x0 + 2, y - 1)
-                prev = _tail_block(ato(e), False)
+                cols.append((x0 + 1, y, 1))
+                block(ato(e), x0 + 2, y - 1, False, ctx)
             root_x = x0
         level += 1
         prev0 = (beta == ZERO)
-        prev = unit_tail_level(beta)
-        if prev is not None and regime is not None and cmp_ord(prev, regime) < 0:
-            dy = leaf_y(prev) - leaf_y(regime)
+        if beta != ZERO: ctx.prev = unit_tail_level(beta)
+        if ctx.prev is not None and regime is not None and cmp_ord(ctx.prev, regime) < 0:
+            dy = leaf_y(ctx.prev) - leaf_y(regime)
             if dy > 0:                           # the leaf cannot reach that deep here
                 cols[-1] = (cols[-1][0], leaf_y(regime), cols[-1][2])
                 for k in range(1, dy + 1):
-                    cols, st = add_storey(cols, st, leaf_y(regime) + k)
+                    ctx.lay_storey(leaf_y(regime) + k)
                 level, root_x = last_root_plain(cols)
                 prev0 = False
         first = False

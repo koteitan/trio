@@ -1,12 +1,8 @@
-Omega arithmetic: storeys where the ladder of levels runs out
+Omega arithmetic: a storey between the columns of one digit
 
-- Insert a storey, the lifted copy that psi_0(Omega_b + psi_1(Omega_b))
-  puts on top of M(b), where a leaf would have to reach deeper than the
-  regime's own leaf, and where a spent ladder needs laying again
-- Lay one storey per level when a unit names a level whose leaf is deeper
-  than the regime's, and lift the last storey rather than the whole matrix
-- Inline the add unit's body into place_units so a storey can also come
-  between two digits of one unit
-- 623 of the sheet's 813 rows now agree (was 603); the matching rows still
-  come out in the sheet's row order and the alpha collisions drop 57 -> 16
-- Record the storey rule and what the remaining 184 rows need in dom.md
+- Give block an optional context so it appends to the matrix being built,
+  which lets a storey be laid between two summands of one digit as well
+- Move the add unit's digit loop onto that context (Ctx tracks the last
+  storey's start and the level the last leaf named)
+- 626 of the sheet's 813 rows now agree (was 623), the matching rows keep
+  the sheet's row order and the alpha collisions stay at 16

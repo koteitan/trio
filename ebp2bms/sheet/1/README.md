@@ -4,7 +4,7 @@
 
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応、$`\alpha \lt \varepsilon_0`$（$`\omega`$ のカントール標準形で書ける範囲）。
 生成: `tools/build_omega_alpha.py`（BM4-Analysis シートと全数照合済み。
-813 行中 623 行が一致、184 行が不一致 — 詳細は [dom.md](../../../dom.md)）。
+813 行中 626 行が一致、181 行が不一致 — 詳細は [dom.md](../../../dom.md)）。
 
 一般式は[アルゴリズム](../../algorithm/1/README.md)にある。
 
