@@ -1,7 +1,0 @@
-Omega arithmetic: one storey serves the rest of its add unit
-
-- Track on the context that a storey has just been laid, and let the rest
-  of that add unit -- its digits and their blocks -- use it instead of
-  laying another one per repeat of the same level
-- 744 of the 785 measured rows agree (was 743), 782 of the built matrices
-  are standard forms, row order still clean; 3 wrong builds remain
