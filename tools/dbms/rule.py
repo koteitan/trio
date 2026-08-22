@@ -154,3 +154,85 @@ def normalize(Z, limit=64):
 
 def R8(m: Mat, Y: int | None = None) -> Mat:
     return normalize(R7(m, Y))
+
+
+# ---------------------------------------------------------------- R9 = R7 + 一般の重複縮約
+from core import cmpmat
+
+
+def cofinal(Z, W, K=3, K2=6):
+    """{Z[n]} と {W[m]} が互いに共終か（＝ sup が等しいか）を有限近似で判定。
+
+    展開結果はどちらも DBMS 側の行列なので cmpmat で直接比較できる。
+    reduce_once の `expand(Z_red,n+1)==expand(Z,n)` は delta=0 の場合しか通らないが、
+    こちらは基本列の形が違っていても sup の一致を拾える。
+    """
+    ez = [expand(Z, n) for n in range(1, K2 + 1)]
+    ew = [expand(W, m) for m in range(1, K2 + 1)]
+    for n in range(K):
+        if not any(cmpmat(ez[n], w) <= 0 for w in ew):
+            return False
+    for m in range(K):
+        if not any(cmpmat(ew[m], z) <= 0 for z in ez):
+            return False
+    return True
+
+
+def dup_candidates(Z):
+    """Z[i-L:i] == Z[i:i+L] な逐語重複を 1 個落とした候補（長い方・右から）。"""
+    n = len(Z)
+    out = []
+    for L in range(n // 2, 0, -1):
+        for i in range(n - L, L - 1, -1):
+            if Z[i - L:i] == Z[i:i + L]:
+                out.append(Z[:i] + Z[i + L:])
+    return out
+
+
+def normalize2(Z, limit=24):
+    """非標準形のあいだ、共終性を保つ逐語重複の削除を繰り返す。"""
+    for _ in range(limit):
+        if isstd(Z, 'DBMS'):
+            return Z
+        nxt = None
+        for c in dup_candidates(Z):
+            if cofinal(Z, c):
+                nxt = c
+                break
+        if nxt is None:
+            return Z
+        Z = nxt
+    return Z
+
+
+def R9(m: Mat, Y: int | None = None) -> Mat:
+    return normalize2(R7(m, Y))
+
+
+# ---------------------------------------------------------------- R10 = R7 + 縮約（2 つの健全性判定の OR）
+def accept(Z, c):
+    if cofinal(Z, c):
+        return True
+    for n in range(4):                      # delta=0 型（添字が 1 ずれるだけ）
+        if expand(c, n + 1) != expand(Z, n):
+            return False
+    return True
+
+
+def normalize3(Z, limit=24):
+    for _ in range(limit):
+        if isstd(Z, 'DBMS'):
+            return Z
+        nxt = None
+        for c in dup_candidates(Z):
+            if accept(Z, c):
+                nxt = c
+                break
+        if nxt is None:
+            return Z
+        Z = nxt
+    return Z
+
+
+def R10(m: Mat, Y: int | None = None) -> Mat:
+    return normalize3(R7(m, Y))
