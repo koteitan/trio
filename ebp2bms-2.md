@@ -169,6 +169,22 @@ M(\Omega_v) = B +\!\!+ \mathrm{L}(B) +\!\!+ \mathrm{L}^2(B) +\!\!+ \cdots +\!\!+
 $`\Omega_{\Omega_2}`$ の行が示すとおり、**添字の側でも「後続 = 持ち上げ、極限 = 対角化」
 という同じ文法が繰り返される**。
 
+#### $`v \ge \omega`$ の一般法則（部分的、調査中）
+
+$`M(v)`$ の**レベル列**（アンカーと $`{+}1`$ 標識。$`z = 0`$、$`y \ge 1`$ で、
+行 0 親が z0 列か「根」である列。$`\Omega`$ 葉と $`\psi_0`$ ノードは除く）に注目すると:
+
+- 末尾の列がレベル列なら、それを削除する。
+- 残る各レベル列 $`c = (x, y, 0)`$ を $`c +\!\!+ (B[1{:}] + (x,y))`$ に置き換える。
+- 得られた列を $`B`$ の後ろに継ぐ。
+
+これで $`\alpha = \Omega_v`$ のシート 87 行中 **48 行が一致**する
+（$`v = \omega`$, $`\omega+1`$, $`\omega+2`$, $`\omega\cdot 2`$, $`\omega^2`$,
+$`\omega^\omega`$, $`\varepsilon_0`$, $`\Omega_1`$, $`\Omega_2`$, $`\Omega_{\Omega_1}`$ など）。
+残り 39 行のずれは**挿入で後続列の $`x`$ が押し出される分の帳尻**で
+（例: $`v = \omega^2+\omega+2`$ でレベル列が $`(6,3,0)`$ になるべきところ $`(5,3,0)`$）、
+後処理ではなく生成時に $`x`$ を追跡すれば直るはず。未完。
+
 **まとめ**: 3 つの行が担うものは変わらない —
 行 1 のレベル階段が**加法**、z1 列の木が**乗法**、
 $`\mathrm{B}`$ の入れ子が**冪と崩壊**。$`y`$ 行は $`\Omega`$ の添字を担い
@@ -263,6 +279,17 @@ $`M(\Omega_1)`$ は 4 列で終わる:
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 1\cr 0\end{pmatrix}}_{\Omega_1}
+```
+
+### 例: $`\alpha = \Omega_2`$
+
+$`B = M(\Omega_1) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}`$ に持ち上げ $`\mathrm{L}(B)`$ を 1 つ継ぐ。
+$`\mathrm{L}`$ は $`x`$ と $`y`$ を同時に $`{+}1`$ するので、$`B`$ のアンカー $`(0,0,0)`$ は
+$`(1,1,0)`$ に、$`\Omega_1`$ 葉 $`(3,1,0)`$ は $`(4,2,0)`$ に写る:
+
+```math
+\underbrace{\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}}_{B}
+\underbrace{\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 2 & 2 & 2\cr 0 & 1 & 1 & 0\end{pmatrix}}_{\mathrm{L}(B)}
 ```
 
 ### 例: $`\alpha = \Omega_3`$
