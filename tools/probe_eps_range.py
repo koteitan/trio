@@ -22,8 +22,8 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-743 of the 785 whose matrix is a
-standard form; dom.md lists what the other 42 need. The CLI mirrors build_omega_alpha.py:
+744 of the 785 whose matrix is a
+standard form; dom.md lists what the other 41 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -285,7 +285,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None):
         h = eo[0][0] if eo else None
         sub_arg = is_atom(h) and h[0] == 'psi'
         for _ in range(c):
-            if ctx is not None and ctx.spent():
+            if ctx is not None and not ctx.fresh and ctx.spent():
                 ctx.lay_storey()
                 x, d = cols[-1][0], cols[-1][1]
             v = lvl(e)
@@ -314,7 +314,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None):
                 sub = strip(e)
                 nx, nd = run[-1][0] + 1, run[-1][1]
                 ctx.prev = None if arg else v
-                if sub != ZERO and ctx.spent():   # the ladder is spent before the children
+                if sub != ZERO and not ctx.fresh and ctx.spent():   # spent before the children
                     ctx.lay_storey()
                     nx, nd = cols[-1][0] + 1, cols[-1][1]
                 block(sub, nx, nd, sub_arg, ctx, v, run[-1][1])
@@ -433,6 +433,7 @@ class Ctx:
     def __init__(self, cols, regime):
         self.cols = cols; self.st = 0; self.regime = regime; self.prev = None
         self.storeys = 0; self.level = 0; self.tail_sub = None; self.leaf_level = None
+        self.fresh = False
 
     def spent(self):
         """Has the last leaf used up the regime's own leaf on a different level?"""
@@ -481,6 +482,7 @@ class Ctx:
     def lay_storey(self, y=None):
         seg = storey(self.cols[self.st:], self.cols[-1][1] if y is None else y)
         self.st = len(self.cols); self.cols += seg; self.prev = None; self.storeys += 1
+        self.fresh = True                        # it serves the rest of this add unit
 
 def place_units(cols, alpha, level, root_x, regime=None):
     """Lay alpha's add units out after cols, starting at the given level and root x.
@@ -505,6 +507,7 @@ def place_units(cols, alpha, level, root_x, regime=None):
     prev0 = False; first = True
     for b in units(alpha)[skip:]:
         beta = ato(b)
+        ctx.fresh = False                        # each add unit starts with a fresh check
         laid = not first and ctx.spent()
         if laid:
             ctx.lay_storey()
@@ -521,7 +524,7 @@ def place_units(cols, alpha, level, root_x, regime=None):
             ctx.level = level
             cols += [(ax, level, 0), (x0, y, 1)]             # anchor and z1 root
             for i, e in enumerate([e for e, c in pred_beta(beta) for _ in range(c)]):
-                if i and ctx.spent():                        # the ladder is spent mid-unit
+                if i and not ctx.fresh and ctx.spent():      # the ladder is spent mid-unit
                     ctx.lay_storey()
                     y, x0 = last_root_plain(cols)
                     ctx.level = y - 1

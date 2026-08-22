@@ -1,12 +1,7 @@
-Omega arithmetic: four more fixes the standard-form check found
+Omega arithmetic: one storey serves the rest of its add unit
 
-- Take the leaf naming the regime past a copy from that copy's own leaf,
-  one deeper only when the copy was an extra storey rather than the unit
-- Give a level that would leave the regime's leaf the slot one deeper,
-  under an uncountable subscript and above the bottom level
-- Let a child naming the same level as the column above it take that
-  column's row-1 entry
-- Repeat the upgrade suffix at the lift the leaf just written sits at
-- Skip the level climb when the ladder was just laid again for that unit
-- 743 of the 785 measured rows agree (was 735), 781 of the built matrices
-  are standard forms, row order still clean
+- Track on the context that a storey has just been laid, and let the rest
+  of that add unit -- its digits and their blocks -- use it instead of
+  laying another one per repeat of the same level
+- 744 of the 785 measured rows agree (was 743), 782 of the built matrices
+  are standard forms, row order still clean; 3 wrong builds remain
