@@ -516,6 +516,9 @@ $`\gamma \lt \varepsilon_0`$ では $`\mathrm{B} = \mathrm{PrSS}`$ なので、
 
 ## $`\Omega`$ の演算（実装済み・一部未解決）
 
+整理済みの版は [ebp2bms/algorithm/2/README.md](ebp2bms/algorithm/2/README.md) にある。
+以下は作業メモ。
+
 $`\alpha`$ に $`\Omega_v`$ が入る領域。原子を 2 族に一般化すると、
 $`\varepsilon_0`$ 領域の文法がそのまま延びる。
 
