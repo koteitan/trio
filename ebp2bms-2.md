@@ -310,3 +310,31 @@ $`B = M(\Omega_1) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 
 \underbrace{\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 2 & 2 & 2\cr 0 & 1 & 1 & 0\end{pmatrix}}_{\mathrm{L}(B)}
 \underbrace{\begin{pmatrix}2 & 3 & 4 & 5\cr 2 & 3 & 3 & 3\cr 0 & 1 & 1 & 0\end{pmatrix}}_{\mathrm{L}^2(B)}
 ```
+
+### 例: $`\alpha = \Omega_\omega`$
+
+$`M(\omega) = `$ $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}`$ にレベル列は無い（$`(1,1,1)`$ は根）。
+根のアンカーの下に $`B`$ の尾を挿すだけ:
+
+```math
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 1\cr 1 & 1 & 0\end{pmatrix}}_{B}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{M(\omega)\ \text{の残り}}
+```
+
+### 例: $`\alpha = \Omega_{\omega+1}`$
+
+$`M(\omega+1) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 2\cr 0 & 1 & 0 & 0\end{pmatrix}`$。
+$`(2,1,0)`$ がレベル列（アンカー）、$`(3,2,0)`$ は末尾のレベル列なので**削除**され、
+代わりに $`(2,1,0)`$ の下に $`B`$ の尾が $`y`$ を $`{+}1`$ して挿さる:
+
+```math
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 1\cr 1 & 1 & 0\end{pmatrix}}_{B}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 0\end{pmatrix}}_{\text{レベル列}}\underbrace{\begin{pmatrix}3 & 4 & 5\cr 2 & 2 & 2\cr 1 & 1 & 0\end{pmatrix}}_{B{+}(2,1)}
+```
+
+### 例: $`\alpha = \Omega_{\Omega_1}`$
+
+$`M(\Omega_1) = B`$ にレベル列は無い（末尾 $`(3,1,0)`$ は桁の子なので $`\Omega`$ 葉）。
+よって根のアンカーの下に $`B`$ の尾が 1 つ挿さるだけで、$`B`$ が 2 つ並ぶ形になる:
+
+```math
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 1\cr 1 & 1 & 0\end{pmatrix}}_{B}\underbrace{\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 1\cr 1 & 1 & 0\end{pmatrix}}_{M(\Omega_1)\ \text{の残り}}
+```
