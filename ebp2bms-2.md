@@ -3,30 +3,39 @@
 [その 1（$`\alpha \lt \varepsilon_0`$）](ebp2bms.md) の続き。
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応。
 生成: `tools/probe_eps_range.py`（BM4-Analysis シートと照合、
-w-CNF + $`\varepsilon_0`$ 原子の 135 行中 131 一致、
-残り 4 は [dom.md](dom.md) に記録した既知の不一致行）。
+w-CNF + $`\varepsilon_0`$ 原子の 135 行中 131 一致（残り 4 は
+[dom.md](dom.md) に記録した既知の不一致行）、崩壊値 $`\psi_0(\Omega_X)`$ 系 16 行は全一致）。
 
-$`\alpha`$ の定義域: 本ページの生成器は $`\omega`$ と原子
-$`\varepsilon_0 = \psi_0(\Omega_1)`$ から $`+, \cdot, {}^\wedge`$ で作れる範囲。
-原理上の上限は $`\alpha \lt \Lambda`$（最小 $`\Omega`$ 不動点）。
+$`\alpha`$ の定義域: 本ページの生成器が対応するのは
+(1) $`\omega`$ と原子 $`\varepsilon_0 = \psi_0(\Omega_1)`$ から $`+, \cdot, {}^\wedge`$ で
+作れる範囲、および (2) 崩壊値 $`\psi_0(\Omega_X)`$ と $`\Omega_1`$（添字 $`X`$ は
+再帰的に同じ範囲）。原理上の上限は $`\alpha \lt \Lambda`$（最小 $`\Omega`$ 不動点）。
+未対応: 添字の外での演算（$`(\Omega_\omega)^2`$ など）と $`\Omega_v`$（$`v \ge 2`$）自身。
 
 表記: 行列は**ユニットごとに分けて**並べる（括弧 1 組 = ユニット $`U_i`$）。
 
 | $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | トリオ数列（括弧 1 組 = ユニット） |
 |---|---|---|
-| $`\varepsilon_0`$ | $`\psi_0(\Omega_{\varepsilon_0})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}`$ |
+| $`\varepsilon_0 = \psi_0(\Omega_1)`$ | $`\psi_0(\Omega_{\varepsilon_0})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0+1`$ | $`\psi_0(\Omega_{\varepsilon_0+1})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
-| $`\varepsilon_0+\omega`$ | $`\psi_0(\Omega_{\varepsilon_0+\omega})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}`$ |
 | $`\varepsilon_0+\omega^2`$ | $`\psi_0(\Omega_{\varepsilon_0+\omega^2})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}\begin{pmatrix}2 & 3 & 4\cr 1 & 2 & 2\cr 0 & 1 & 1\end{pmatrix}`$ |
-| $`\varepsilon_0+\omega^\omega`$ | $`\psi_0(\Omega_{\varepsilon_0+\omega^\omega})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}\begin{pmatrix}2 & 3 & 4 & 5\cr 1 & 2 & 2 & 0\cr 0 & 1 & 1 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0\cdot 2`$ | $`\psi_0(\Omega_{\varepsilon_0\cdot 2})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}\begin{pmatrix}2 & 3 & 4 & 5 & 6\cr 1 & 2 & 2 & 0 & 1\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0\cdot\omega`$ | $`\psi_0(\Omega_{\varepsilon_0\cdot\omega})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 2\cr 0 & 1 & 1 & 0 & 1 & 1\cr 0 & 1 & 1 & 0 & 0 & 1\end{pmatrix}`$ |
-| $`\varepsilon_0\cdot\omega^\omega`$ | $`\psi_0(\Omega_{\varepsilon_0\cdot\omega^\omega})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 2 & 3\cr 0 & 1 & 1 & 0 & 1 & 1 & 0\cr 0 & 1 & 1 & 0 & 0 & 1 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0^2`$ | $`\psi_0(\Omega_{\varepsilon_0^2})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0^\omega`$ | $`\psi_0(\Omega_{\varepsilon_0^\omega})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 3\cr 0 & 1 & 1 & 0 & 1 & 0\cr 0 & 1 & 1 & 0 & 0 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0^{\varepsilon_0}`$ | $`\psi_0(\Omega_{\varepsilon_0^{\varepsilon_0}})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 3 & 4\cr 0 & 1 & 1 & 0 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0 & 0 & 0\end{pmatrix}`$ |
-| $`\varepsilon_0^{\varepsilon_0^\omega}`$ | $`\psi_0(\Omega_{\varepsilon_0^{\varepsilon_0^\omega}})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 4\cr 0 & 1 & 1 & 0 & 1 & 0\cr 0 & 1 & 1 & 0 & 0 & 0\end{pmatrix}`$ |
 | $`\varepsilon_0^{\varepsilon_0^{\varepsilon_0}}`$ | $`\psi_0(\Omega_{\varepsilon_0^{\varepsilon_0^{\varepsilon_0}}})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 4 & 5\cr 0 & 1 & 1 & 0 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 0 & 0 & 0\end{pmatrix}`$ |
+| $`\psi_0(\Omega_2)`$ | $`\psi_0(\Omega_{\psi_0(\Omega_2)})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5\cr 0 & 1 & 1 & 0 & 1 & 2\cr 0 & 1 & 1 & 0 & 0 & 0\end{pmatrix}`$ |
+| $`\psi_0(\Omega_3)`$ | $`\psi_0(\Omega_{\psi_0(\Omega_3)})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6\cr 0 & 1 & 1 & 0 & 1 & 2 & 3\cr 0 & 1 & 1 & 0 & 0 & 0 & 0\end{pmatrix}`$ |
+| $`\psi_0(\Omega_\omega)`$ | $`\psi_0(\Omega_{\psi_0(\Omega_\omega)})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1\end{pmatrix}`$ |
+| $`\psi_0(\Omega_{\omega+1})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\omega+1})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6\cr 0 & 1 & 1 & 0 & 1 & 1 & 2\cr 0 & 1 & 1 & 0 & 1 & 0 & 0\end{pmatrix}`$ |
+| $`\psi_0(\Omega_{\omega\cdot 2})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\omega\cdot 2})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6\cr 0 & 1 & 1 & 0 & 1 & 1 & 2\cr 0 & 1 & 1 & 0 & 1 & 0 & 1\end{pmatrix}`$ |
+| $`\psi_0(\Omega_{\omega^2})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\omega^2})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5\cr 0 & 1 & 1 & 0 & 1 & 1\cr 0 & 1 & 1 & 0 & 1 & 1\end{pmatrix}`$ |
+| $`\psi_0(\Omega_{\omega^\omega})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\omega^\omega})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6\cr 0 & 1 & 1 & 0 & 1 & 1 & 0\cr 0 & 1 & 1 & 0 & 1 & 1 & 0\end{pmatrix}`$ |
+| $`\psi_0(\Omega_{\varepsilon_0})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\varepsilon_0})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 0\end{pmatrix}`$ |
+| $`\psi_0(\Omega_{\psi_0(\Omega_\omega)})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_\omega)})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\end{pmatrix}`$ |
+| $`\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_\omega)})})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_\omega)})})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\end{pmatrix}`$ |
+| $`\Omega_1`$ | $`\psi_0(\Omega_{\Omega_1})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}`$ |
 
 ## 一般式
 
@@ -110,6 +119,26 @@ $`\varepsilon_0 \cdot \omega = \omega^{\varepsilon_0+1} = \psi_0(\Omega_1+1)`$ �
 **引数の先頭の $`\varepsilon_0`$ を $`\Omega_1`$ の葉 $`(x,1,0)`$ に戻す**。
 $`\delta \ominus \varepsilon_0`$ は先頭の $`\varepsilon_0`$ を 1 つ落とした残り。
 
+### $`\Omega_v`$ ブロック
+
+$`\mathrm{arg}`$ の中に現れる $`\Omega_v`$ は次で書かれる:
+
+```math
+\mathrm{Om}(v,\ x) = \mathrm{shift}\big(M(v)\ \text{のアンカーを外したもの},\ x\big).
+```
+
+$`\mathrm{Om}(1) = (x,1,0)`$、$`\mathrm{Om}(2) = (x,1,0)(x{+}1,2,0)`$、
+$`\mathrm{Om}(\omega) = (x,1,1)`$、$`\mathrm{Om}(\omega^\omega) = (x,1,1)(x{+}1,1,1)(x{+}2,0,0)`$。
+アンカーを外すのは、その役目を上の $`\psi_0`$ ノードが果たしているため。
+$`\alpha`$ が崩壊値 $`\psi_0(\Omega_X)`$ のときはこれで
+
+```math
+M(\psi_0(\Omega_X)) = (0,0,0)(1,1,1)(2,1,1)(3,0,0) +\!\!+ \mathrm{Om}(X,\ 4)
+```
+
+となり、$`\alpha = \Omega_1`$ のときは $`\psi_0`$ ノードが立たず
+$`M(\Omega_1) = (0,0,0)(1,1,1)(2,1,1)(3,1,0)`$。
+
 **まとめ**: 3 つの行が担うものは変わらない —
 行 1 のレベル階段が**加法**、z1 列の木が**乗法**、
 $`\mathrm{B}`$ の入れ子が**冪と崩壊**。$`y`$ 行は $`\Omega`$ の添字を担い
@@ -160,4 +189,43 @@ $`\Omega_1`$ に戻り、残りの $`\varepsilon_0`$ は $`\psi_0(\Omega_1)`$ �
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 4 & 4 & 5\cr 0 & 1 & 0 & 1\cr 0 & 0 & 0 & 0\end{pmatrix}}_{\mathrm{B}}}_{S}
+```
+
+### 例: $`\alpha = \psi_0(\Omega_\omega)`$
+
+$`\alpha`$ は崩壊値なので $`\omega^\alpha = \alpha`$、ユニット 1 つ・サブユニット 1 つで
+その指数は $`\alpha`$ 自身。$`\mathrm{B}(\alpha)`$ は $`\psi_0`$ ノード＋$`\Omega_\omega`$ ブロック
+（$`\Omega_\omega`$ は 1 列 $`(4,1,1)`$）:
+
+```math
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4\cr 1\cr 1\end{pmatrix}}_{\Omega_\omega}
+```
+
+### 例: $`\alpha = \psi_0(\Omega_{\omega^\omega})`$
+
+$`\Omega_v`$ のブロックは **$`M(v)`$ からアンカーを外したもの**である。
+$`M(\omega^\omega) = (0,0,0)(1,1,1)(2,1,1)(3,0,0)`$ なので
+$`\Omega_{\omega^\omega}`$ は $`(4,1,1)(5,1,1)(6,0,0)`$:
+
+```math
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4 & 5 & 6\cr 1 & 1 & 0\cr 1 & 1 & 0\end{pmatrix}}_{\Omega_{\omega^\omega}}
+```
+
+### 例: $`\alpha = \psi_0(\Omega_{\psi_0(\Omega_\omega)})`$
+
+添字がまた崩壊値。$`M(\psi_0(\Omega_\omega))`$ からアンカーを外して埋め込む
+（前々の例の行列の 2 列目以降）。**添字が何段深くなっても同じ規則が繰り返される**:
+
+```math
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4 & 5 & 6 & 7\cr 1 & 1 & 0 & 1\cr 1 & 1 & 0 & 1\end{pmatrix}}_{\Omega_{\psi_0(\Omega_\omega)}}
+```
+
+### 例: $`\alpha = \Omega_1`$
+
+$`\alpha`$ が非可算のとき、$`\mathrm{B}`$ には $`\psi_0`$ ノードが立たず
+$`\Omega_1`$ の葉が直接置かれる（$`\Omega_1`$ は $`\psi_0`$ の値ではないから）。
+$`M(\Omega_1)`$ は 4 列で終わる:
+
+```math
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 1\cr 0\end{pmatrix}}_{\Omega_1}
 ```

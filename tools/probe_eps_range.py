@@ -200,6 +200,79 @@ def mat(s):
     cs = [tuple(int(v) for v in x.split(',')) for x in re.findall(r'\((\d+(?:,\d+)*)\)', s)]
     return [c + (0,) * (3 - len(c)) for c in cs]
 
+# ---- 大きい alpha: psi_0(X) 原子と Omega_v 原子 ----
+def _toplevel_ops(t):
+    d = 0
+    for ch in t:
+        d += (ch == '(') - (ch == ')')
+        if d == 0 and ch in '+*^': return True
+    return False
+
+def big_parse(t):
+    """'psi(W)' / 'psi(W_X)' / 'W' / 'W_X' -> ('psi'|'om', X文字列)。
+
+    添字 X の外側に演算子があるもの（W_2^2 = (Omega_2)^2 など）は None。
+    """
+    t = t.strip()
+    while t.startswith('(') and t.endswith(')') and not _toplevel_ops(t[1:-1]):
+        inner = t[1:-1]
+        d = 0; ok = True
+        for ch in inner:
+            d += (ch == '(') - (ch == ')')
+            if d < 0: ok = False; break
+        if not ok or d != 0: break
+        t = inner
+    if _toplevel_ops(t): return None
+    if t == 'W': return ('om', '1')
+    if t == 'psi(W)': return ('psi', '1')
+    if t.startswith('W_') and not _toplevel_ops(t[2:]):
+        return ('om', t[2:])
+    if t.startswith('psi(W_') and t.endswith(')') and not _toplevel_ops(t[6:-1]):
+        return ('psi', t[6:-1])          # W_X^2 等は添字でなく Omega_X の演算
+    return None
+
+def Many(t):
+    """t（文字列）の M(alpha)。大きい原子と w-CNF+E の両方を受ける。"""
+    b = big_parse(t)
+    if b:
+        kind, v = b
+        vm = Many(v)
+        if vm is None: return None
+        tail = vm[1:]                      # Omega_v = M(v) からアンカーを外したもの
+        x0 = 3 if kind == 'om' else 4
+        base = tail[0][0]
+        shifted = [(c[0] - base + x0, c[1], c[2]) for c in tail]
+        head = [(0, 0, 0), (1, 1, 1), (2, 1, 1)]
+        if kind == 'psi': head.append((3, 0, 0))
+        return head + shifted
+    a = parse(t)
+    if a in (None, ZERO): return None
+    return M(a)
+
+def run_big():
+    tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
+    ok = ng = skip = 0; bad = []
+    for L in open(tsv):
+        p = L.rstrip('\n').split('\t')
+        if p[0] == 'row': continue
+        if not big_parse(p[1]): continue
+        got = Many(p[1])
+        if got is None: skip += 1; continue
+        kind, _ = big_parse(p[1])
+        if kind == 'om' and p[1].strip() not in ('W', '(W)'):
+            skip += 1; continue          # Omega_v (v>=2) は別レジーム（未対応）
+        want = mat(p[3])
+        if got == want: ok += 1
+        else:
+            ng += 1
+            if len(bad) < 8: bad.append((p[0], p[1], want, got))
+    print('大きい原子 (psi(W_X) / W_X): 一致 %d / 不一致 %d / 添字が未対応 %d' % (ok, ng, skip))
+    for r, t, w, g in bad:
+        print(' row %s a=%s' % (r, t))
+        print('   sheet:', ''.join('(%d,%d,%d)' % c for c in w))
+        print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
+    return ng
+
 KNOWN_MISMATCH = {'1947', '2113', '2131', '2133'}
 
 USAGE = """\
@@ -232,15 +305,15 @@ def run_check():
         print('   sheet:', ''.join('(%d,%d,%d)' % c for c in w))
         print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
     assert ng == 0
+    assert run_big() == 0
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):
         print(USAGE)
     elif len(sys.argv) > 1:
-        a = parse(sys.argv[1])
-        if a in (None, ZERO):
-            print('parse error（w / 数 / + * ^ / 括弧 / psi(W)）'); sys.exit(1)
-        cols = M(a)
+        cols = Many(sys.argv[1])
+        if cols is None:
+            print('parse error（w / 数 / + * ^ / 括弧 / psi(W) / psi(W_X) / W_X）'); sys.exit(1)
         print('M(%s) = %s' % (sys.argv[1], ''.join('(%d,%d,%d)' % c for c in cols)))
         if len(sys.argv) > 2:
             n = int(sys.argv[2])
