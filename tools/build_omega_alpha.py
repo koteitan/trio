@@ -137,11 +137,14 @@ def parse(s):
     except Exception:
         return None
 
-ERRATA = {
-    '1947': '(11,5,1) は (11,6,1)（M(w^3)[6] で確認）',
-    '2113': '行列は w^5*2 のもの（M(w^6)[3] で確認）',
-    '2131': 'ラベルは w^w+2 が正（内容は +1 の階段 2 段）',
-    '2133': '(3,2,0)(4,3,1) は (4,2,0)(5,3,1)（M(w^w+w^2)[2] で確認）',
+# シートと一致しない既知の 4 行。軌道法則 M(alpha)[n] = M(alpha_n) による監査
+# （信頼できる隣の行の展開との突合）ではビルダー側に一致するが、
+# 軌道法則自体は経験則であり、シートの誤記だと証明できたわけではない。
+KNOWN_MISMATCH = {
+    '1947': '(11,5,1) vs (11,6,1)（M(w^3)[6] はビルダー側）',
+    '2113': '行列は w^5*2 の形（M(w^6)[3] はビルダー側）',
+    '2131': '内容は +1 の階段 2 段 = w^w+2 相当（2133 とラベル重複）',
+    '2133': '(3,2,0)(4,3,1) vs (4,2,0)(5,3,1)（M(w^w+w^2)[2] はビルダー側）',
 }
 
 def main():
@@ -159,12 +162,13 @@ def main():
         got = M(c)
         if got == want:
             ok += 1
-        elif p[0] in ERRATA:
+        elif p[0] in KNOWN_MISMATCH:
             nerr += 1
         else:
             ng += 1
             bad.append((p[0], p[1], want, got))
-    print('w-CNF 断片: 一致 %d / 不一致 %d / シート誤記 %d' % (ok, ng, nerr))
+    print('w-CNF 断片: 一致 %d / 想定外の不一致 %d / 既知の不一致 %d（軌道法則の監査ではビルダー側）'
+          % (ok, ng, nerr))
     for r, a, w, g in bad[:8]:
         print(' row %s a=%s' % (r, a))
         print('   sheet:', ''.join('(%d,%d,%d)' % t for t in w))
@@ -187,11 +191,33 @@ def main():
         sok += 1
     print('自己検証（軌道法則、シート外 alpha）: %d/%d ok' % (sok, len(SELF)))
 
+USAGE = '''\
+使い方: python3 build_omega_alpha.py [alpha] [n]
+
+  alpha        M(alpha) = psi_0(Omega_alpha) のトリオ数列標準形を表示する。
+               記法は BM4-Analysis シートと同じ:
+                 w      omega
+                 数     自然数（係数・有限順序数）
+                 + * ^  和・積・冪（^ は右結合）
+                 ( )    括弧
+                 併置数  w2 = w*2, w^w3 = w^w*3 など
+               例: 'w^2+w+1'  'w^(w+1)*2'  'w^(w^(w^5+w^4)+w^3)+w^2'
+               定義域は alpha < eps_0（w の CNF で書ける範囲）。
+  n            省略可。与えると展開 M(alpha)[n] も表示する。
+  （引数なし）  検証モード: シートの pure 行 121 との全数照合と
+               軌道法則による自己検証を走らせる。
+
+例:
+  python3 build_omega_alpha.py 'w+1'
+  python3 build_omega_alpha.py 'w^(w2)+w^2*3' 2
+  python3 build_omega_alpha.py
+'''
+
 if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):
+        print(USAGE)
+        sys.exit(0)
     if len(sys.argv) > 1:
-        # 使い方: python3 build_omega_alpha.py 'w^2+w+1' ['n']
-        #   alpha (シートと同じ記法: w, 数, +, *, ^, 併置数 w2=w*2) の
-        #   M(alpha) を表示。第 2 引数 n を与えると M(alpha)[n] も表示。
         a = parse(sys.argv[1])
         if a is None or a == 0:
             print('parse error（対応: w / 数 / + / * / ^ / 括弧。例: w^(w+1)*2+w3+1）')

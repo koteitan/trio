@@ -2,8 +2,8 @@
 
 
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応。
-生成: `tools/build_omega_alpha.py`（BM4-Analysis シートと全数照合済み、
-シート誤記 4 行は軌道法則で監査済み — 詳細は [dom.md](dom.md)）。
+生成: `tools/build_omega_alpha.py`（BM4-Analysis シートと全数照合済み。
+不一致 4 行あり、軌道法則の監査ではビルダー側に一致 — 詳細は [dom.md](dom.md)）。
 
 $`\alpha`$ の定義域: 原理上は拡張ブーフホルツ OT の項全体（$`\alpha \lt \Lambda`$ =
 最小 $`\Omega`$ 不動点）。本表の生成器が現在対応するのは
