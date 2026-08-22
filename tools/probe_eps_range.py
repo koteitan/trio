@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
-"""eps_0 <= alpha 領域の探索: E = eps_0 を原子に持つ順序数算術 + M(alpha) 拡張。
+"""eps_0 <= alpha 領域: E = eps_0 を原子に持つ順序数算術 + M(alpha)。
 
-現状 11/13 一致。残り 2 件（塔のケース）は指数スロットの引数位置で
-E -> Omega_1 の逆崩壊が起きており、その適用条件が未特定。詳細は ../dom.md。
-未完なので build_omega_alpha.py には統合していない。
+build_omega_alpha.py の PrSS を「Buchholz OT 項をそのまま写す block」に
+置き換え、psi_0 の引数位置での逆崩壊（先頭の E -> Omega_1 葉）を入れた版。
+シートの w-CNF + E 原子 135 行に対し 131 一致（残り 4 は既知の不一致行
+1947 / 2113 / 2131 / 2133）。CLI は build_omega_alpha.py と同じ:
+
+  python3 probe_eps_range.py 'psi(W)^psi(W)'     M(alpha) を表示
+  python3 probe_eps_range.py 'psi(W)+w^2' 2      展開も表示
+  python3 probe_eps_range.py                     検証モード
 """
 import re, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -134,27 +139,42 @@ def pred_beta(beta):
         return nat(k - 1)
     return beta
 
-def V(gamma, x):
-    """指数 gamma の埋め込みブロック。gamma < eps_0 は原始数列、E は psi_0(Omega_1)。"""
+def block(gamma, x):
+    """gamma の Buchholz OT 項をそのまま列に写す。
+
+    加法項 w^delta ごとに psi_0 ノード (x,0,0) を置き、その子として
+    引数 arg(delta) を x+1 に書く。arg は逆崩壊込み:
+      delta = E*c + rest -> Omega_1 葉 (x,1,0) ++ block(E*(c-1)+rest)
+      それ以外           -> block(delta)
+    根拠: delta < eps_0 では w^delta = psi_0(delta) なので素直な写し。
+    delta >= eps_0 では先頭の E が Omega_1 に戻る（逆崩壊）。
+    """
     if gamma == ZERO: return []
     cols = []
     for e, c in gamma:
         for _ in range(c):
-            if e == E_EXP:                       # w^E = E = psi_0(Omega_1)
-                cols.append((x, 0, 0)); cols.append((x + 1, 1, 0))
-            else:
-                cols.append((x, 0, 0)); cols += V(e, x + 1)
+            cols.append((x, 0, 0))
+            cols += arg(e, x + 1)
     return cols
+
+def arg(delta, x):
+    """psi_0 の引数位置の書き方（逆崩壊込み）。delta は exp（Ord または 'E'）。"""
+    if delta == E_EXP:
+        return [(x, 1, 0)]
+    if delta == ZERO:
+        return []
+    if delta[0][0] == E_EXP:
+        c = delta[0][1]
+        rest = ((E_EXP, c - 1),) + delta[1:] if c > 1 else delta[1:]
+        return [(x, 1, 0)] + block(rest, x)
+    return block(delta, x)
 
 def body(beta, x0, y):
     cols = [(x0, y, 1)]
     for e, c in pred_beta(beta):
         for _ in range(c):
             cols.append((x0 + 1, y, 1))
-            if e == E_EXP:
-                cols.append((x0 + 2, 0, 0)); cols.append((x0 + 3, 1, 0))
-            elif e != ZERO:
-                cols += V(e, x0 + 2)
+            cols += block(E if e == E_EXP else e, x0 + 2)   # 桁の子 = 指数 gamma 自身
     return cols
 
 def M(alpha):
@@ -180,20 +200,51 @@ def mat(s):
     cs = [tuple(int(v) for v in x.split(',')) for x in re.findall(r'\((\d+(?:,\d+)*)\)', s)]
     return [c + (0,) * (3 - len(c)) for c in cs]
 
-ok = ng = skip = 0; bad = []
-for L in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')):
-    p = L.rstrip('\n').split('\t')
-    if p[0] == 'row': continue
-    a = parse(p[1])
-    if a in (None, ZERO): skip += 1; continue
-    if not has_E(a): continue          # w-CNF は既存で検証済み
-    want = mat(p[3]); got = M(a)
-    if got == want: ok += 1
+KNOWN_MISMATCH = {'1947', '2113', '2131', '2133'}
+
+USAGE = """\
+使い方: python3 probe_eps_range.py [alpha] [n]
+
+  alpha  記法は build_omega_alpha.py と同じ（w / 数 / + * ^ / 括弧）に
+         原子 psi(W) = eps_0 を加えたもの。例: 'psi(W)^psi(W)+w^2'
+  n      省略可。与えると展開 M(alpha)[n] も表示。
+  なし   検証モード（シート照合）。
+"""
+
+def run_check():
+    ok = ng = skip = known = 0; bad = []
+    tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
+    for L in open(tsv):
+        p = L.rstrip('\n').split('\t')
+        if p[0] == 'row': continue
+        a = parse(p[1])
+        if a in (None, ZERO): skip += 1; continue
+        want = mat(p[3]); got = M(a)
+        if got == want: ok += 1
+        elif p[0] in KNOWN_MISMATCH: known += 1
+        else:
+            ng += 1
+            if len(bad) < 8: bad.append((p[0], p[1], want, got))
+    print('w-CNF + E 原子の alpha: 一致 %d / 想定外の不一致 %d / 既知の不一致 %d / パース外 %d'
+          % (ok, ng, known, skip))
+    for r, t, w, g in bad:
+        print(' row %s a=%s' % (r, t))
+        print('   sheet:', ''.join('(%d,%d,%d)' % c for c in w))
+        print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
+    assert ng == 0
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):
+        print(USAGE)
+    elif len(sys.argv) > 1:
+        a = parse(sys.argv[1])
+        if a in (None, ZERO):
+            print('parse error（w / 数 / + * ^ / 括弧 / psi(W)）'); sys.exit(1)
+        cols = M(a)
+        print('M(%s) = %s' % (sys.argv[1], ''.join('(%d,%d,%d)' % c for c in cols)))
+        if len(sys.argv) > 2:
+            n = int(sys.argv[2])
+            print('M[%d]   = %s' % (n, ''.join('(%d,%d,%d)' % tuple(c)
+                                               for c in expand(cols, n))))
     else:
-        ng += 1
-        if len(bad) < 8: bad.append((p[0], p[1], want, got))
-print('E 原子を含む alpha: 一致 %d / 不一致 %d' % (ok, ng))
-for r, s, w, g in bad:
-    print(' row %s a=%s' % (r, s))
-    print('   sheet:', ''.join('(%d,%d,%d)' % t for t in w))
-    print('   built:', ''.join('(%d,%d,%d)' % t for t in g))
+        run_check()

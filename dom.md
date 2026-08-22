@@ -485,27 +485,37 @@ $`(x,0,0)`$ = $`\psi_0(\cdot)`$ ノード（子が引数）、$`(x,1,0)`$ = $`\O
 $`(x,1,0)(x{+}1,2,0)`$ = $`\Omega_2`$、$`(x,1,1)`$ = $`\Omega_\omega`$。
 $`y`$ 行が $`\Omega`$ の添字を担い、その添字自身がまた同じ文法で書かれる。
 
-### 未解決: $`E \mapsto \Omega_1`$ の逆崩壊規則
+### 解決: 逆崩壊規則 — 指数は Buchholz OT 項として書かれる
 
-$`E = \varepsilon_0`$ を原子に足した順序数算術を実装して検証すると **11/13 一致**。
-残り 2 件は塔のケースで、指数スロットの中身が食い違う:
+$`\mathrm{PrSS}`$ を「$`\gamma`$ の Buchholz OT 項をそのまま列に写す
+**OT 埋め込み** $`\mathrm{B}`$」に置き換えると全部揃う。
+加算項 $`\omega^\delta`$ ごとに $`\psi_0`$ ノード $`(x,0,0)`$、その子が引数:
 
-| 行 | $`\alpha`$ | シート | ビルダー |
-|---|---|---|---|
-| 2163 | $`\varepsilon_0^{\varepsilon_0^\omega}`$ | (3,0,0)**(4,1,0)**(4,0,0) | (3,0,0)**(4,0,0)(5,1,0)**(4,0,0) |
-| 2164 | $`\varepsilon_0^{\varepsilon_0^{\varepsilon_0}}`$ | (3,0,0)(4,1,0)(4,0,0)(5,1,0) | (3,0,0)(4,0,0)(5,1,0)(4,0,0)(5,1,0) |
+```math
+\mathrm{arg}(\delta,\ x) = \begin{cases}
+\varepsilon & (\delta = 0)\cr
+(x,\ 1,\ 0) +\!\!+ \mathrm{B}(\delta \ominus \varepsilon_0,\ x)
+  & (\delta = \varepsilon_0 + \delta')\cr
+\mathrm{B}(\delta,\ x) & (\text{otherwise})
+\end{cases}
+```
 
-シート側は $`E`$ を**そのまま $`\Omega_1`$ 葉に置換**しているのに対し、
-ビルダーは $`E = \psi_0(\Omega_1)`$ と展開して $`\psi_0`$ ノードを 1 段挟んでいる。
-つまり指数スロットの引数位置では $`E \mapsto \Omega_1`$ の**逆崩壊**が起きる。
-その適用条件（どの深さで置換するか）が未特定で、ここが次の鍵。
+第 2 段が逆崩壊。$`\delta \lt \varepsilon_0`$ では $`\omega^\delta = \psi_0(\delta)`$ なので
+引数はそのまま $`\delta`$ でよいが、$`\delta \ge \varepsilon_0`$ ではそうならないので、
+**引数の先頭の $`\varepsilon_0`$ だけを $`\Omega_1`$ の葉 $`(x,1,0)`$ に戻す**
+（残りの $`\varepsilon_0`$ は $`\psi_0(\Omega_1)`$ のまま書く）。
+$`\varepsilon_0 \cdot \omega = \omega^{\varepsilon_0+1} = \psi_0(\Omega_1+1)`$、
+$`\mathrm{arg}(\varepsilon_0 \cdot 2) = \Omega_1 + \psi_0(\Omega_1)`$。
 
-これが解ければ $`\varepsilon_0 \le \alpha`$ 版の対応表を `ebp2bms-2.md` に
-（`ebp2bms.md` と同じ構成で）書く。
+検証（`tools/probe_eps_range.py`）: w-CNF ＋ $`\varepsilon_0`$ 原子の 135 行に対し
+**131 一致・想定外の不一致 0**（残り 4 は既知の不一致行 1947 / 2113 / 2131 / 2133）。
+$`\gamma \lt \varepsilon_0`$ では $`\mathrm{B} = \mathrm{PrSS}`$ なので、
+`build_omega_alpha.py` の文法は本規則の特殊ケースだったことになる。
+対応表は [ebp2bms-2.md](ebp2bms-2.md)。
 
 ## 次の一手（案）
 
-1. 逆崩壊規則（$`E \mapsto \Omega_1`$ の適用条件）を特定し、
-   $`\varepsilon_0 \le \alpha`$ 版のビルダーを完成させて `ebp2bms-2.md` を書く。
+1. $`\varepsilon_1`$ 以上（先頭が $`\varepsilon_0`$ でない $`\delta`$）と
+   $`\Omega`$ を含む $`\alpha`$ への拡張。材料は tsv の残り 677 行。
 2. (a-2)/(a-3) 系（graft = W 階層）の共終性が trio の W-membership 残核
    （WCONVEX / SNOC 系）にどう効くかの読み替え。
