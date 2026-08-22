@@ -1,14 +1,3 @@
-Omega arithmetic: five fixes the standard-form check found
+Add w^2+w+1 to the alpha < eps_0 table
 
-- Repeat the marker run a level's own head sits on, not the last run that
-  matches, when appending an upgrade suffix
-- Lay a storey between a column and its children too, once the ladder is
-  spent, so a collapse argument gets a fresh one
-- Climb a level per storey only under a countable subscript; an uncountable
-  one names a deeper level with a plain leaf
-- Take the regime's post-storey leaf from leaf_y + storeys under an
-  uncountable subscript, and repeat the naming storey's last sub-unit as
-  that level's upgrade suffix
-- Skip the first add unit when the naming cascade already ended on one
-- 728 of the sheet's 813 rows agree (was 706), 801 of the built matrices are
-  standard forms (was 762), row order still clean
+- Insert the row after w^2+w in both the Japanese and English pages
