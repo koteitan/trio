@@ -22,7 +22,7 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-734; dom.md lists what the other 73 need. The CLI mirrors build_omega_alpha.py:
+736; dom.md lists what the other 71 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -230,7 +230,7 @@ def strip(delta):
     if is_atom(h) and h[0] == 'W': return rest
     return d
 
-def write_level(v, x, d, arg=False):
+def write_level(v, x, d, arg=False, *ladders):
     """The columns that name the level Omega_v at x, for a column at chain depth d.
 
     A unit's leaf (arg=False) only names the level, and one column does that: the row-1
@@ -238,11 +238,12 @@ def write_level(v, x, d, arg=False):
     at y=1 -- the suffix in append_suffix puts back.
 
     In the argument of a collapse (arg=True) the level is spelt out instead, by M(v)
-    itself: the chain of z0 ancestors already provides M(v)'s first 1+k columns (k = how
-    far the plain staircase of anchors agrees with M(v)), so only M(v)[1+k:] is written.
-    The d-k ancestor levels the context spends on something else push the copy that much
-    deeper, so every entry whose row-1 value tracks the unit level is raised by d-k; the
-    ones naming an absolute level (Omega leaves, psi nodes) keep theirs.
+    itself. What the context already provides is measured against its ladder matrix --
+    the plain staircase M(d), the matrix so far, M(u) inside psi_{Omega_u} -- as the deepest
+    level column inside a longest common prefix; only M(v) past that column is written. The
+    levels the context spends on something else push the copy that much deeper, so every
+    entry whose row-1 value tracks the unit level is raised by the difference; the ones
+    naming an absolute level (Omega leaves, psi nodes) keep theirs.
     """
     base = M(v)
     if not arg:
@@ -250,13 +251,13 @@ def write_level(v, x, d, arg=False):
         # entry of M(v)'s last column, with z=0 (the level itself, not its spelling).
         return [(x, base[-1][1], 0)]
     par, _ = _forest(base)
-    lev = idx = 0                                # how far the context's ladder covers M(v)
-    for i in range(1, len(base)):
-        if not _is_level(base, par, i): continue
-        if base[i][1] == lev + 1 and lev + 1 <= d:
-            lev, idx = lev + 1, i
-        else:
-            break
+    lev = idx = 0                                # the last level column the context covers
+    for lad in (M(nat(d)),) + ladders:           # the plain staircase, plus what is around
+        n = 0
+        while n < len(lad) and n < len(base) and lad[n] == base[n]: n += 1
+        for i in range(1, n):                    # the chain only reaches depth d
+            if _is_level(base, par, i) and base[i][1] <= d and i > idx:
+                lev, idx = base[i][1], i
     tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
@@ -296,7 +297,8 @@ def block(gamma, x, d=0, arg=False, ctx=None):
                 run = [(x, ctx.level if lvl(ctx.regime) is None
                         else leaf_y(ctx.regime) + ctx.storeys, 0)]
             else:
-                run = write_level(v, x, d, arg)
+                run = (write_level(v, x, d, arg, cols) if ctx is not None
+                       else write_level(v, x, d, arg))
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
@@ -566,7 +568,7 @@ def M_psi_level(u, X):
     if w is None: raise Unsupported('a countable psi argument')
     if cmp_ord(w, u) == 0:
         return cols + [(x, y0, 0)]               # the argument is the level itself
-    return append_suffix(cols + write_level(w, x, y0 - 1, True), w)
+    return append_suffix(cols + write_level(w, x, y0 - 1, True, M(u), cols), w)
 
 def M(alpha):
     """alpha -> the standard form of psi_0(Omega_alpha).
