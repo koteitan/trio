@@ -196,20 +196,28 @@ USAGE = '''\
 
   alpha        M(alpha) = psi_0(Omega_alpha) のトリオ数列標準形を表示する。
                記法は BM4-Analysis シートと同じ:
-                 w      omega
-                 数     自然数（係数・有限順序数）
-                 + * ^  和・積・冪（^ は右結合）
-                 ( )    括弧
-                 併置数  w2 = w*2, w^w3 = w^w*3 など
-               例: 'w^2+w+1'  'w^(w+1)*2'  'w^(w^(w^5+w^4)+w^3)+w^2'
-               定義域は alpha < eps_0（w の CNF で書ける範囲）。
+                 w        omega
+                 数       自然数（係数・有限順序数）
+                 + * ^    和・積・冪（^ は右結合）
+                 ( )      括弧
+                 併置数    w2 = w*2, w^w3 = w^w*3 など
+                 psi(W)   eps_0 = psi_0(Omega_1)
+                 psi(W_X) psi_0(Omega_X)（X は再帰的に同じ記法）
+                 W, W_X   Omega_1, Omega_X
+               例: 'w^2+w+1'  'w^(w+1)*2'  'psi(W)^psi(W)'
+                   'psi(W_(w^2))'  'W_3'  'W_W_W'
+               定義域は alpha < Lambda（最小 Omega 不動点）。
+               alpha < eps_0 は本ファイルの M() が、それ以上は
+               probe_eps_range.Many() が担当する（w-CNF 上で両者は一致）。
   n            省略可。与えると展開 M(alpha)[n] も表示する。
-  （引数なし）  検証モード: シートの pure 行 121 との全数照合と
-               軌道法則による自己検証を走らせる。
+  （引数なし）  検証モード: alpha < eps_0 の全数照合と
+               軌道法則による自己検証を走らせる
+               （eps_0 以上の検証は probe_eps_range.py 側）。
 
 例:
   python3 build_omega_alpha.py 'w+1'
   python3 build_omega_alpha.py 'w^(w2)+w^2*3' 2
+  python3 build_omega_alpha.py 'W_3'
   python3 build_omega_alpha.py
 '''
 
@@ -218,11 +226,11 @@ if __name__ == '__main__':
         print(USAGE)
         sys.exit(0)
     if len(sys.argv) > 1:
-        a = parse(sys.argv[1])
-        if a is None or a == 0:
-            print('parse error（対応: w / 数 / + / * / ^ / 括弧。例: w^(w+1)*2+w3+1）')
+        from probe_eps_range import Many     # alpha < Lambda の一般ビルダー
+        mat = Many(sys.argv[1])
+        if mat is None:
+            print('parse error。--help で対応記法を表示します。')
             sys.exit(1)
-        mat = M(a)
         print('M(%s) = %s' % (sys.argv[1], ''.join('(%d,%d,%d)' % c for c in mat)))
         if len(sys.argv) > 2:
             from trio import expand
