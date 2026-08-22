@@ -1,11 +1,10 @@
-Omega arithmetic: psi with a cardinal index, and level-column coverage
+Omega arithmetic: cascade the copies, and check standardness with yaBMS
 
-- Write psi_{Omega_u}(X) as M(Omega_u) with its leaf dropped one level and
-  the argument below it, instead of opening a new add unit
-- Order such a collapse just below Omega_u (an ordinal index puts psi just
-  above), which is what the sheet's row order asks for
-- Measure how far the context covers M(v) by its level columns rather than
-  by a plain staircase of anchors, so a limit subscript is copied whole
-- 703 of the sheet's 813 rows now agree (was 681), with the matching rows
-  back in the sheet's row order (the wrong psi order showed up as 14
-  violations before the fix)
+- Keep copying the last storey, one sub-unit shorter each time, so a
+  subscript that is uncountable several times over descends step by step
+- Check every matrix the builder writes with yaBMS's bms -s: 762 of the 813
+  are standard forms, which tells apart a wrong build from a right build of
+  a different ordinal
+- Print the row-order check from the validation run as well
+- 706 of the sheet's 813 rows agree (was 703); of the 101 that do not, 50
+  are non-standard (the builder is wrong) and 51 are standard forms

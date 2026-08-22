@@ -22,11 +22,15 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-703; dom.md lists what the other 104 need. The CLI mirrors build_omega_alpha.py:
+706; dom.md lists what the other 101 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
   python3 probe_eps_range.py                      validation mode
+
+Validation has three independent parts: agreement with the sheet, the sheet's row order
+(the builder's own ordinal comparison has to increase along it), and yaBMS's standard-form
+check on every matrix written.
 """
 import re, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -409,15 +413,26 @@ class Ctx:
         return starts[-1] if starts else 0
 
     def copy_storey(self, ax):
-        """Lay a copy of the last storey (without its trailing markers) starting at x=ax."""
+        """Lay copies of the last storey until one sub-unit is left.
+
+        Each copy lifts the previous one (its final leaf keeps the level it names) and drops
+        its last sub-unit, so a subscript that is uncountable several times over descends one
+        sub-unit per copy; the add unit the loop then writes is the last step.
+        """
         cols = self.cols
         i0 = self.last_storey()
-        k = max(j for j in range(i0, len(cols)) if cols[j][2] == 0)
-        src = cols[i0:k + 1]
-        dx = ax - src[0][0]
-        seg = [(c[0] + dx, c[1] + 1, c[2]) for c in src]
-        seg[-1] = (seg[-1][0], src[-1][1], seg[-1][2])   # the leaf keeps the level it names
-        self.st = len(cols); cols += seg; self.storeys += 1; self.prev = None
+        z0 = [j for j in range(i0, len(cols)) if cols[j][2] == 0]
+        src = cols[i0:z0[-1] + 1]
+        while True:
+            dx = ax - src[0][0]
+            seg = [(c[0] + dx, c[1] + 1, c[2]) for c in src]
+            seg[-1] = (seg[-1][0], src[-1][1], seg[-1][2])   # the leaf keeps its level
+            self.st = len(cols); cols += seg
+            self.storeys += 1; self.prev = None
+            zs = [j for j in range(len(seg)) if seg[j][2] == 0]
+            if len(zs) <= 3: return                         # anchor + two leaves
+            src = seg[:zs[-2] + 1]                          # drop the last sub-unit
+            ax = last_root_plain(cols)[1] + 1
 
     def lay_storey(self, y=None):
         seg = storey(self.cols[self.st:], self.cols[-1][1] if y is None else y)
@@ -638,10 +653,29 @@ def group(alpha):
     return ('Omega_v arithmetic' if 'W_' in alpha else
             'Omega_1 arithmetic' if 'W' in alpha else 'alpha < Omega_1')
 
+BMS = os.path.expanduser('~/code/yaBMS/c/bms')
+
+def run_standard(built):
+    """Second opinion from yaBMS: every matrix the builder writes has to be a standard
+    form. Skipped when the bms binary is not built."""
+    import subprocess
+    if not os.path.exists(BMS): return
+    ok = ng = 0; bad = []
+    for row, alpha, agrees, cols in built:
+        m = ''.join('(%d,%d,%d)' % c for c in cols)
+        v = subprocess.run([BMS, '-s', m], capture_output=True, text=True).stdout.strip()
+        if v == '1': ok += 1
+        else:
+            ng += 1
+            if not agrees and len(bad) < 6: bad.append((row, alpha))
+    print('yaBMS standard check: %d standard / %d not (of the built matrices)' % (ok, ng))
+    for r, a in bad:
+        print(' non-standard row %s a=%s' % (r, a))
+
 def run_check():
     from collections import Counter
     ok = Counter(); ng = Counter(); skip = Counter(); uns = Counter(); known = 0
-    bad = []
+    bad = []; built = []
     for p in rows():
         g = group(p[1])
         try:
@@ -653,6 +687,7 @@ def run_check():
             got = M(a)
         except (Unsupported, RecursionError):
             uns[g] += 1; continue
+        built.append((p[0], p[1], got == mat(p[3]), got))
         if got == mat(p[3]): ok[g] += 1
         elif p[0] in KNOWN_MISMATCH: known += 1
         else:
@@ -671,7 +706,18 @@ def run_check():
         print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
     for v in range(1, 7):                       # finite v agrees with the closed form
         assert M_Omega(nat(v)) == M_Omega_fin(v), v
+    run_order(built)
+    run_standard(built)
     return sum(ng.values())
+
+def run_order(built):
+    """The sheet lists its rows in increasing order, so the rows the builder reproduces
+    have to come out increasing under its own ordinal comparison."""
+    good = [(int(r), a, parse(a)) for r, a, agrees, _ in built if agrees]
+    bad = [(x, y) for x, y in zip(good, good[1:]) if cmp_ord(x[2], y[2]) >= 0]
+    print('sheet row order: %d matching rows, %d order violations' % (len(good), len(bad)))
+    for x, y in bad[:4]:
+        print(' row %d %s >= row %d %s' % (x[0], x[1], y[0], y[1]))
 
 USAGE = """\
 usage: python3 probe_eps_range.py [alpha] [n]
