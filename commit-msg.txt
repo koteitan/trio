@@ -1,8 +1,11 @@
-Omega arithmetic: a storey between the columns of one digit
+Omega arithmetic: where the next anchor goes, and copies for a big subscript
 
-- Give block an optional context so it appends to the matrix being built,
-  which lets a storey be laid between two summands of one digit as well
-- Move the add unit's digit loop onto that context (Ctx tracks the last
-  storey's start and the level the last leaf named)
-- 626 of the sheet's 813 rows now agree (was 623), the matching rows keep
-  the sheet's row order and the alpha collisions stay at 16
+- Put the next add unit's anchor at the base's last root when a leaf closes
+  the base, one x further when it trails off in markers or digits
+- Name an uncountable subscript's level with a copy of the base's last
+  storey instead of a plain add unit
+- Past a storey, let a leaf naming the regime take the anchor's row-1 entry,
+  and copy the upgrade suffix from the most lifted marker run present
+- Read psi_{Omega_u} as naming the cardinal, so its level is u
+- 681 of the sheet's 813 rows now agree (was 626), the matching rows keep the
+  sheet's row order and the alpha collisions drop 16 -> 11

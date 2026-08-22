@@ -22,7 +22,7 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-626; dom.md lists what the other 187 need. The CLI mirrors build_omega_alpha.py:
+681; dom.md lists what the other 126 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -187,7 +187,11 @@ def lvl(x):
     countable. The leading exponent decides it, since a CNF is decreasing."""
     if is_atom(x):
         if x[0] == 'W': return x[1]
-        return x[1] if x[1] != ZERO else None      # psi_v(X) sits in [Omega_v, Omega_{v+1})
+        v = x[1]                                   # psi_v(X) sits in [Omega_v, Omega_{v+1})
+        if v == ZERO: return None
+        if len(v) == 1 and v[0][1] == 1 and is_atom(v[0][0]) and v[0][0][0] == 'W':
+            return v[0][0][1]                      # psi_{Omega_u} names the cardinal, so u
+        return v
     if x == ZERO: return None
     return lvl(x[0][0])
 
@@ -265,7 +269,13 @@ def block(gamma, x, d=0, arg=False, ctx=None):
                 ctx.lay_storey()
                 x, d = cols[-1][0], cols[-1][1]
             v = lvl(e)
-            run = [(x, 0, 0)] if v is None else write_level(v, x, d, arg)
+            if v is None:
+                run = [(x, 0, 0)]
+            elif (ctx is not None and not arg and ctx.storeys
+                  and ctx.regime is not None and cmp_ord(v, ctx.regime) == 0):
+                run = [(x, ctx.level, 0)]        # past a storey the regime sits deeper
+            else:
+                run = write_level(v, x, d, arg)
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
@@ -297,21 +307,23 @@ def suffix(v):
     i = max(j for j in range(len(cols)) if cols[j][2] == 0)
     return cols[i + 1:]
 
-def append_suffix(cols, v):
+def append_suffix(cols, v, storeys=0):
     """Append the upgrade suffix for level v, copied from where v is already spelt.
 
-    The suffix repeats the marker run that names v, so it lands at the x of the run
-    already in the matrix; M(v)'s own x is the fallback."""
+    The suffix repeats the marker run that names v, so it lands on the run already in the
+    matrix. Each storey lifts that run one level, so the most lifted copy present is the
+    one to repeat; M(v)'s own columns are the fallback."""
     suf = suffix(v)
     if not suf: return cols
     n = len(suf)
-    pat = [(c[1], c[2]) for c in suf]
     dx = [c[0] - suf[0][0] for c in suf]
-    for i in range(len(cols) - n, -1, -1):
-        seg = cols[i:i + n]
-        if ([(c[1], c[2]) for c in seg] == pat
-                and [c[0] - seg[0][0] for c in seg] == dx):
-            return cols + seg
+    for k in range(storeys, -1, -1):
+        pat = [(c[1] + k, c[2]) for c in suf]
+        for i in range(len(cols) - n, -1, -1):
+            seg = cols[i:i + n]
+            if ([(c[1], c[2]) for c in seg] == pat
+                    and [c[0] - seg[0][0] for c in seg] == dx):
+                return cols + seg
     return cols + suf
 
 def tail_level(alpha):
@@ -366,6 +378,7 @@ class Ctx:
     which level the last leaf named."""
     def __init__(self, cols, regime):
         self.cols = cols; self.st = 0; self.regime = regime; self.prev = None
+        self.storeys = 0; self.level = 0
 
     def spent(self):
         """Has the last leaf used up the regime's own leaf on a different level?"""
@@ -373,9 +386,28 @@ class Ctx:
         return (v is not None and u is not None and cmp_ord(u, v) != 0
                 and bool(suffix(v)) and leaf_y(u) == leaf_y(v))
 
+    def last_storey(self):
+        """Where the last storey of the matrix starts: the last z0 column that opens a new
+        branch (its x does not grow), 0 when the matrix is one storey."""
+        cols = self.cols
+        starts = [i for i in range(1, len(cols))
+                  if cols[i][2] == 0 and cols[i][0] <= cols[i - 1][0]]
+        return starts[-1] if starts else 0
+
+    def copy_storey(self, ax):
+        """Lay a copy of the last storey (without its trailing markers) starting at x=ax."""
+        cols = self.cols
+        i0 = self.last_storey()
+        k = max(j for j in range(i0, len(cols)) if cols[j][2] == 0)
+        src = cols[i0:k + 1]
+        dx = ax - src[0][0]
+        seg = [(c[0] + dx, c[1] + 1, c[2]) for c in src]
+        seg[-1] = (seg[-1][0], src[-1][1], seg[-1][2])   # the leaf keeps the level it names
+        self.st = len(cols); cols += seg; self.storeys += 1; self.prev = None
+
     def lay_storey(self, y=None):
         seg = storey(self.cols[self.st:], self.cols[-1][1] if y is None else y)
-        self.st = len(self.cols); self.cols += seg; self.prev = None
+        self.st = len(self.cols); self.cols += seg; self.prev = None; self.storeys += 1
 
 def place_units(cols, alpha, level, root_x, regime=None):
     """Lay alpha's add units out after cols, starting at the given level and root x.
@@ -390,6 +422,11 @@ def place_units(cols, alpha, level, root_x, regime=None):
     """
     ctx = Ctx(list(cols), regime)
     cols = ctx.cols
+    if regime is not None and lvl(regime) is not None:
+        # an uncountable subscript: the level is named by a copy of the base's last
+        # storey, not by a plain add unit
+        ctx.copy_storey(root_x + 1)
+        level, root_x = last_root_plain(cols)
     prev0 = False; first = True
     for b in units(alpha):
         beta = ato(b)
@@ -405,11 +442,13 @@ def place_units(cols, alpha, level, root_x, regime=None):
         else:
             ax = root_x + 1
             x0, y = ax + 1, level + 1
+            ctx.level = level
             cols += [(ax, level, 0), (x0, y, 1)]             # anchor and z1 root
             for i, e in enumerate([e for e, c in pred_beta(beta) for _ in range(c)]):
                 if i and ctx.spent():                        # the ladder is spent mid-unit
                     ctx.lay_storey()
                     y, x0 = last_root_plain(cols)
+                    ctx.level = y - 1
                 cols.append((x0 + 1, y, 1))
                 block(ato(e), x0 + 2, y - 1, False, ctx)
             root_x = x0
@@ -425,7 +464,7 @@ def place_units(cols, alpha, level, root_x, regime=None):
                 level, root_x = last_root_plain(cols)
                 prev0 = False
         first = False
-    return cols
+    return ctx
 
 def last_root_plain(cols):
     """(level, root x) of the last add unit's z1 root, for a continuation that hangs one
@@ -440,13 +479,13 @@ def last_root(cols):
 
     The last add unit's z1 root is the last z1 column whose x parent is a z0 column (a
     digit's parent is the root, which is z1). The next anchor takes the root's own x when
-    the root already carries children, and the next x when it does not.
+    that unit is complete -- when a leaf closes the base -- and the next x when the base
+    trails off in markers or digits.
     """
     par, _ = _forest(cols)
     i = max(j for j in range(len(cols))
             if cols[j][2] == 1 and (par[j] is None or cols[par[j]][2] == 0))
-    kid = any(par[j] == i for j in range(i + 1, len(cols)))
-    return cols[i][1], cols[i][0] + (0 if kid else 1)
+    return cols[i][1], cols[i][0] + (0 if cols[-1][2] == 0 else 1)
 
 def M(alpha):
     """alpha -> the standard form of psi_0(Omega_alpha).
@@ -457,15 +496,15 @@ def M(alpha):
     """
     v = lvl(alpha)
     if v is None:
-        cols = place_units([], alpha, 0, -1)
+        ctx = place_units([], alpha, 0, -1)
     elif alpha == ato(Om(v)):                # alpha = Omega_v itself: the base
         return M_Omega(v)
     else:
         base = M_Omega(v)
         y, ax = last_root(base)
-        cols = place_units(base, alpha, y, ax - 1, v)
+        ctx = place_units(base, alpha, y, ax - 1, v)
     t = tail_level(alpha)                    # the upgrade effect, if a leaf ends the matrix
-    return append_suffix(cols, t) if t is not None else cols
+    return append_suffix(ctx.cols, t, ctx.storeys) if t is not None else ctx.cols
 
 def Many(t):
     """M(alpha) for the string t; None when it does not parse."""
