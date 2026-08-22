@@ -1,6 +1,9 @@
-v0.118.194/record that the append reduction is circular with (CAT)
+the psi_0 node IS the shifted anchor of M(X), so stop removing it
 
-- Read v0.118.122: its direction is (SUBST1g) => the tower facts => "(CAT) dropped from the residue", so (CAT) has no independent proof
-- Conclude that reducing the residue to an append step closes a loop, and mark that direction as refuted
-- Keep the two real assets: `takeC_mem_of_prefixPackage` and the confirmed availability of the prefix package
-- Record the one untested difference: the append we need carries `S` itself and the package, which bare (CAT) does not
+- Simplify the collapse-value rule to
+  M(psi_0(Omega_X)) = (0,0,0)(1,1,1)(2,1,1) ++ shift(M(X), 3):
+  M(X)'s anchor shifts to (3,0,0) and serves as the psi_0 node
+- Rewrite the builder branch and the ebp2bms-2.md section accordingly
+  (verified identical on the 15 collapse-value sheet rows)
+- Reword the three psi_0(Omega_v) examples: embed M(X) whole, no anchor
+  removal step

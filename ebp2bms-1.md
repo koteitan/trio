@@ -1,4 +1,6 @@
-# 拡張ブーフホルツ psi ↔ トリオ数列（BMS 3 行）対応表
+# 拡張ブーフホルツ psi ↔ トリオ数列（BMS 3 行）対応表 その 1: $`\alpha \lt \varepsilon_0`$
+
+[← 戻る](README.md) | [Japanese](ebp2bms-1.md) | [English](ebp2bms-1-en.md) | [1](ebp2bms-1.md) [2](ebp2bms-2.md)
 
 
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応。

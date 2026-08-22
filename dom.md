@@ -511,7 +511,7 @@ $`\mathrm{arg}(\varepsilon_0 \cdot 2) = \Omega_1 + \psi_0(\Omega_1)`$。
 **131 一致・想定外の不一致 0**（残り 4 は既知の不一致行 1947 / 2113 / 2131 / 2133）。
 $`\gamma \lt \varepsilon_0`$ では $`\mathrm{B} = \mathrm{PrSS}`$ なので、
 `build_omega_alpha.py` の文法は本規則の特殊ケースだったことになる。
-対応表は [ebp2bms-2.md](ebp2bms-2.md)。
+対応表は [ebp2bms-2.md](ebp2bms-2.md)（$`\alpha \lt \varepsilon_0`$ は [ebp2bms-1.md](ebp2bms-1.md)）。
 
 ## 次の一手（案）
 

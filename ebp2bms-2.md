@@ -1,6 +1,8 @@
 # 拡張ブーフホルツ psi ↔ トリオ数列（BMS 3 行）対応表 その 2: $`\varepsilon_0 \le \alpha`$
 
-[その 1（$`\alpha \lt \varepsilon_0`$）](ebp2bms.md) の続き。
+[← 戻る](README.md) | [Japanese](ebp2bms-2.md) | [English](ebp2bms-2-en.md) | [1](ebp2bms-1.md) [2](ebp2bms-2.md)
+
+[その 1（$`\alpha \lt \varepsilon_0`$）](ebp2bms-1.md) の続き。
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応。
 生成: `tools/probe_eps_range.py`（BM4-Analysis シートと照合、
 w-CNF + $`\varepsilon_0`$ 原子の 135 行中 131 一致（残り 4 は
@@ -201,7 +203,7 @@ $`(x,1,1) = \Omega_\omega`$）、その添字自身がまた同じ文法で書�
 
 ## 例
 
-用語は [その 1](ebp2bms.md) と同じ（ア = アンカー、$`S`$ = サブユニット、
+用語は [その 1](ebp2bms-1.md) と同じ（ア = アンカー、$`S`$ = サブユニット、
 $`\mathrm{B}`$ = OT 埋め込み）。
 
 ### 例: $`\alpha = \varepsilon_0`$
