@@ -188,8 +188,8 @@ $`z = 0`$、$`y \ge 1`$ の列のうち、行 0 親が
 添字が入れ子の $`\Omega`$（$`\Omega_{\Omega_{\Omega_{\Omega_\Omega}}}`$ まで）も含む。
 有限 $`v`$ では上の持ち上げ鎖の閉じた形と一致することを機械検査している。
 
-残る 7 行（$`v = \omega\cdot 5,\ \omega^2{+}\omega{+}2,\ \omega^2{+}\omega\cdot 2,\
-\omega^2{+}\omega\cdot 3,\ \omega^2\cdot 2,\ \Omega_3`$ ほか）は、挿入の直後に来る列の
+残る 7 行（$`v = \omega\cdot 5`$, $`\omega^2{+}\omega{+}2`$, $`\omega^2{+}\omega\cdot 2`$,
+$`\omega^2{+}\omega\cdot 3`$, $`\omega^2\cdot 2`$, $`\Omega_3`$ ほか）は、挿入の直後に来る列の
 $`x`$ が 1 だけずれる。$`\omega^2\cdot 2`$ の行はラベル重複（同じラベルの別行は一致）で、
 [dom.md](dom.md) に記録した既知の不一致行と同種の可能性がある。未解決。
 
