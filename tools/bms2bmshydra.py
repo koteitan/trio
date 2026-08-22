@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 """Draw a Bashicu matrix as the hydra it stands for.
 
-This is the "Bashicu Hydra" of Tsskyx's BMS Analysis: one node per column,
-hung on the row-0 forest, each node labelled by the Omega subscript that its
-upper rows name.  ebp2bms/algorithm/2 reads those rows as
+The BMS hydra notation is Tsskyx's: one node per column, hung on the row-0
+forest, each node labelled by the Omega subscript that its upper rows name:
 
     (x, y, 0) = Omega_y        (x, y, 1) = Omega_w
 
-so a column's label is y when it has no z, and w when it does.  Both readings
-are checked against the whole of Tsskyx's sheet by
-tools/tsskyx-sheet/check.py.
+so a column's label is y when it has no z, and w when it does.
 
 The picture puts a node at character column i (its position in the matrix) and
-at height x_i (its depth in the row-0 forest), which is how the sheet draws it:
+at height x_i (its depth in the row-0 forest):
 
     $ python3 tools/bms2bmshydra.py '(0,0,0)(1,1,1)(2,1,0)(3,2,1)'
        w
@@ -38,9 +35,8 @@ class Unsupported(Exception):
 def parse(text):
     """'(0,0,0)(1,1,1)' -> [(0,0,0), (1,1,1)].
 
-    A group without commas is read one digit per row, the way the sheet types
-    its matrices, so '(000)(111)' means the same thing.  Stray commas and
-    spaces are ignored.
+    A group without commas is read one digit per row, so '(000)(111)' means
+    the same thing.  Stray commas and spaces are ignored.
     """
     groups = re.findall(r'\(([^)]*)\)', text)
     if not groups or re.sub(r'\([^)]*\)', '', text).strip():
