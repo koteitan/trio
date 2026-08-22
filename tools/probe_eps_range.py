@@ -249,6 +249,37 @@ def Many(t):
     if a in (None, ZERO): return None
     return M(a)
 
+BASE_B = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0)]   # = M(Omega_1)
+
+def lift(cols, k=1):
+    return [(c[0] + k, c[1] + k, c[2]) for c in cols]
+
+def M_Omega_fin(v):
+    """M(Omega_v)（v 有限）= B ++ L(B) ++ ... ++ L^{v-1}(B)。"""
+    out = []
+    for k in range(v):
+        out += lift(BASE_B, k)
+    return out
+
+def run_omega():
+    tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
+    rows = {}
+    for L in open(tsv):
+        p = L.rstrip('\n').split('\t')
+        if p[0] != 'row': rows[p[1].strip('()')] = p[3]
+    ok = ng = 0
+    for v in range(1, 8):
+        key = 'W' if v == 1 else 'W_%d' % v
+        if key not in rows: continue
+        if M_Omega_fin(v) == mat(rows[key]): ok += 1
+        else:
+            ng += 1
+            print(' NG Omega_%d' % v)
+            print('   sheet:', rows[key])
+            print('   built:', ''.join('(%d,%d,%d)' % c for c in M_Omega_fin(v)))
+    print('Omega_v (v 有限): 一致 %d / 不一致 %d' % (ok, ng))
+    return ng
+
 def run_big():
     tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
     ok = ng = skip = 0; bad = []
@@ -306,6 +337,7 @@ def run_check():
         print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
     assert ng == 0
     assert run_big() == 0
+    assert run_omega() == 0
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):

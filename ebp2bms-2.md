@@ -10,7 +10,8 @@ $`\alpha`$ の定義域: 本ページの生成器が対応するのは
 (1) $`\omega`$ と原子 $`\varepsilon_0 = \psi_0(\Omega_1)`$ から $`+, \cdot, {}^\wedge`$ で
 作れる範囲、および (2) 崩壊値 $`\psi_0(\Omega_X)`$ と $`\Omega_1`$（添字 $`X`$ は
 再帰的に同じ範囲）。原理上の上限は $`\alpha \lt \Lambda`$（最小 $`\Omega`$ 不動点）。
-未対応: 添字の外での演算（$`(\Omega_\omega)^2`$ など）と $`\Omega_v`$（$`v \ge 2`$）自身。
+(3) $`\Omega_v`$ 自身（有限 $`v`$ は法則で生成、極限 $`v`$ はシート観測値）。
+未対応: 添字の外での演算（$`(\Omega_\omega)^2`$ など）と極限 $`v`$ の一般法則。
 
 表記: 行列は**ユニットごとに分けて**並べる（括弧 1 組 = ユニット $`U_i`$）。
 
@@ -36,6 +37,12 @@ $`\alpha`$ の定義域: 本ページの生成器が対応するのは
 | $`\psi_0(\Omega_{\psi_0(\Omega_\omega)})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_\omega)})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\end{pmatrix}`$ |
 | $`\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_\omega)})})`$ | $`\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_{\psi_0(\Omega_\omega)})})})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1 & 1 & 0 & 1\end{pmatrix}`$ |
 | $`\Omega_1`$ | $`\psi_0(\Omega_{\Omega_1})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}`$ |
+| $`\Omega_2`$ | $`\psi_0(\Omega_{\Omega_2})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 2 & 2 & 2\cr 0 & 1 & 1 & 0\end{pmatrix}`$ |
+| $`\Omega_3`$ | $`\psi_0(\Omega_{\Omega_3})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 2 & 2 & 2\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}2 & 3 & 4 & 5\cr 2 & 3 & 3 & 3\cr 0 & 1 & 1 & 0\end{pmatrix}`$ |
+| $`\Omega_5`$ | $`\psi_0(\Omega_{\Omega_5})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 2 & 2 & 2\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}2 & 3 & 4 & 5\cr 2 & 3 & 3 & 3\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}3 & 4 & 5 & 6\cr 3 & 4 & 4 & 4\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}4 & 5 & 6 & 7\cr 4 & 5 & 5 & 5\cr 0 & 1 & 1 & 0\end{pmatrix}`$ |
+| $`\Omega_\omega`$ | $`\psi_0(\Omega_{\Omega_\omega})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}`$ |
+| $`\Omega_{\Omega_1}`$ | $`\psi_0(\Omega_{\Omega_{\Omega_1}})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 1\cr 1 & 1 & 0\end{pmatrix}`$ |
+| $`\Omega_{\Omega_2}`$ | $`\psi_0(\Omega_{\Omega_{\Omega_2}})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 1\cr 1 & 1 & 0\end{pmatrix}\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 2 & 2 & 2\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}2 & 3 & 4\cr 2 & 2 & 2\cr 1 & 1 & 0\end{pmatrix}`$ |
 
 ## 一般式
 
@@ -139,6 +146,29 @@ M(\psi_0(\Omega_X)) = (0,0,0)(1,1,1)(2,1,1)(3,0,0) +\!\!+ \mathrm{Om}(X,\ 4)
 となり、$`\alpha = \Omega_1`$ のときは $`\psi_0`$ ノードが立たず
 $`M(\Omega_1) = (0,0,0)(1,1,1)(2,1,1)(3,1,0)`$。
 
+### $`\alpha = \Omega_v`$ 自身（$`v \ge 2`$）
+
+$`\alpha`$ が非可算のときは $`\psi_0`$ ノードが立たず、行列は
+$`B = (0,0,0)(1,1,1)(2,1,1)(3,1,0) = M(\Omega_1)`$ を単位として作られる。
+持ち上げ $`\mathrm{L}(x,y,z) = (x{+}1,\ y{+}1,\ z)`$ を使うと、**有限の $`v`$** では
+
+```math
+M(\Omega_v) = B +\!\!+ \mathrm{L}(B) +\!\!+ \mathrm{L}^2(B) +\!\!+ \cdots +\!\!+ \mathrm{L}^{v-1}(B)
+```
+
+（$`v = 1,\dots,5`$ でシートと一致）。基数の後続 1 段が持ち上げ 1 回に対応する。
+
+極限側はシートの観測値（法則の一般形は未確定）:
+
+| $`v`$ | $`M(\Omega_v)`$ | 読み |
+|---|---|---|
+| $`\omega`$ | $`B +\!\!+ M(\omega)[1{:}]`$ | 対角化（$`\mathrm{L}`$ の鎖の極限） |
+| $`\Omega_1`$ | $`B +\!\!+ M(\Omega_1)[1{:}]`$ | 同上 |
+| $`\Omega_2`$ | $`M(\Omega_{\Omega_1}) +\!\!+ \mathrm{L}(M(\Omega_{\Omega_1}))`$ | 持ち上げ 1 回（基数の後続） |
+
+$`\Omega_{\Omega_2}`$ の行が示すとおり、**添字の側でも「後続 = 持ち上げ、極限 = 対角化」
+という同じ文法が繰り返される**。
+
 **まとめ**: 3 つの行が担うものは変わらない —
 行 1 のレベル階段が**加法**、z1 列の木が**乗法**、
 $`\mathrm{B}`$ の入れ子が**冪と崩壊**。$`y`$ 行は $`\Omega`$ の添字を担い
@@ -228,4 +258,14 @@ $`M(\Omega_1)`$ は 4 列で終わる:
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 1\cr 0\end{pmatrix}}_{\Omega_1}
+```
+
+### 例: $`\alpha = \Omega_3`$
+
+$`B = M(\Omega_1)`$ を持ち上げながら並べる。持ち上げ 1 回が基数の後続 1 段:
+
+```math
+\underbrace{\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}}_{B}
+\underbrace{\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 2 & 2 & 2\cr 0 & 1 & 1 & 0\end{pmatrix}}_{\mathrm{L}(B)}
+\underbrace{\begin{pmatrix}2 & 3 & 4 & 5\cr 2 & 3 & 3 & 3\cr 0 & 1 & 1 & 0\end{pmatrix}}_{\mathrm{L}^2(B)}
 ```
