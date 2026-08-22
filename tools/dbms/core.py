@@ -47,8 +47,16 @@ def rows(m: Mat) -> int:
 
 
 # ---------- comparison ----------
+_flat_memo = {}
+
+
 def flat(m: Mat):
-    return [v for c in m for v in c]
+    r = _flat_memo.get(m)
+    if r is None:
+        r = [v for c in m for v in c]
+        if len(_flat_memo) < 400000:
+            _flat_memo[m] = r
+    return r
 
 
 def cmpmat(a: Mat, b: Mat) -> int:
