@@ -190,8 +190,13 @@ def reach(a: Mat, b: Mat, limit: int = 10000) -> bool:
     raise RuntimeError("reach: too deep")
 
 
-def fsindex(a: Mat, b: Mat, nmax: int = 1 << 20) -> int:
-    """b <= a[n] となる最小の n（expand(a,n) は n について単調増加）。"""
+def fsindex(a: Mat, b: Mat, nmax: int | None = None) -> int:
+    """b <= a[n] となる最小の n（expand(a,n) は n について単調増加）。
+
+    expand(a,n) は n に比例して長くなるので、n は len(b) 程度で頭打ちにできる。
+    これを付けないと二分探索が巨大な行列を作って一気に遅くなる。"""
+    if nmax is None:
+        nmax = max(64, len(b) + 4)
     if cmpmat(expand(a, 0), b) >= 0:
         return 0
     lo, hi = 0, 1
