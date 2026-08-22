@@ -22,7 +22,7 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-706; dom.md lists what the other 101 need. The CLI mirrors build_omega_alpha.py:
+728; dom.md lists what the other 79 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -291,13 +291,22 @@ def block(gamma, x, d=0, arg=False, ctx=None):
                 run = [(x, 0, 0)]
             elif (ctx is not None and not arg and ctx.storeys
                   and ctx.regime is not None and cmp_ord(v, ctx.regime) == 0):
-                run = [(x, ctx.level, 0)]        # past a storey the regime sits deeper
+                # past a storey the regime sits deeper: under a countable subscript by the
+                # unit's own anchor, under an uncountable one by one per storey
+                run = [(x, ctx.level if lvl(ctx.regime) is None
+                        else leaf_y(ctx.regime) + ctx.storeys, 0)]
             else:
                 run = write_level(v, x, d, arg)
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
-                block(strip(e), run[-1][0] + 1, run[-1][1], sub_arg, ctx)
+                sub = strip(e)
+                nx, nd = run[-1][0] + 1, run[-1][1]
+                ctx.prev = None if arg else v
+                if sub != ZERO and ctx.spent():   # the ladder is spent before the children
+                    ctx.lay_storey()
+                    nx, nd = cols[-1][0] + 1, cols[-1][1]
+                block(sub, nx, nd, sub_arg, ctx)
                 ctx.prev = _tail_block(ato(e), arg)
             else:
                 cols += block(strip(e), run[-1][0] + 1, run[-1][1], sub_arg)
@@ -325,21 +334,34 @@ def suffix(v):
     i = max(j for j in range(len(cols)) if cols[j][2] == 0)
     return cols[i + 1:]
 
-def append_suffix(cols, v, storeys=0):
+def append_suffix(cols, v, storeys=0, tail_sub=None):
     """Append the upgrade suffix for level v, copied from where v is already spelt.
 
     The suffix repeats the marker run that names v, so it lands on the run already in the
     matrix. Each storey lifts that run one level, so the most lifted copy present is the
     one to repeat; M(v)'s own columns are the fallback."""
     suf = suffix(v)
-    if not suf: return cols
+    if not suf:
+        # an uncountable level leaves no marker of its own; its upgrade repeats the last
+        # sub-unit of the storey that named it
+        return cols + tail_sub if (tail_sub and lvl(v) is not None) else cols
     n = len(suf)
     dx = [c[0] - suf[0][0] for c in suf]
+    runs = []                                    # maximal runs of markers
+    i = 0
+    while i < len(cols):
+        if cols[i][2] == 1:
+            j = i
+            while (j + 1 < len(cols) and cols[j + 1][2] == 1
+                   and cols[j + 1][0] == cols[j][0] + 1): j += 1
+            runs.append(i); i = j + 1
+        else:
+            i += 1
     for k in range(storeys, -1, -1):
         pat = [(c[1] + k, c[2]) for c in suf]
-        for i in range(len(cols) - n, -1, -1):
+        for i in reversed(runs):                 # a run's own head spells the level
             seg = cols[i:i + n]
-            if ([(c[1], c[2]) for c in seg] == pat
+            if (len(seg) == n and [(c[1], c[2]) for c in seg] == pat
                     and [c[0] - seg[0][0] for c in seg] == dx):
                 return cols + seg
     return cols + suf
@@ -396,7 +418,7 @@ class Ctx:
     which level the last leaf named."""
     def __init__(self, cols, regime):
         self.cols = cols; self.st = 0; self.regime = regime; self.prev = None
-        self.storeys = 0; self.level = 0
+        self.storeys = 0; self.level = 0; self.tail_sub = None
 
     def spent(self):
         """Has the last leaf used up the regime's own leaf on a different level?"""
@@ -430,7 +452,8 @@ class Ctx:
             self.st = len(cols); cols += seg
             self.storeys += 1; self.prev = None
             zs = [j for j in range(len(seg)) if seg[j][2] == 0]
-            if len(zs) <= 3: return                         # anchor + two leaves
+            if len(zs) >= 2: self.tail_sub = seg[zs[-2] + 1:]   # for the upgrade suffix
+            if len(zs) <= 3: return len(zs) - 1              # sub-units left in the copy
             src = seg[:zs[-2] + 1]                          # drop the last sub-unit
             ax = last_root_plain(cols)[1] + 1
 
@@ -451,13 +474,15 @@ def place_units(cols, alpha, level, root_x, regime=None):
     """
     ctx = Ctx(list(cols), regime)
     cols = ctx.cols
+    skip = 0
     if regime is not None and lvl(regime) is not None:
         # an uncountable subscript: the level is named by a copy of the base's last
-        # storey, not by a plain add unit
-        ctx.copy_storey(root_x + 1)
+        # storey, not by a plain add unit. When that copy is already down to one sub-unit
+        # it IS the first add unit, so the loop starts at the second.
+        skip = 1 if ctx.copy_storey(root_x + 1) == 1 else 0
         level, root_x = last_root_plain(cols)
     prev0 = False; first = True
-    for b in units(alpha):
+    for b in units(alpha)[skip:]:
         beta = ato(b)
         if not first and ctx.spent():
             ctx.lay_storey()
@@ -484,7 +509,8 @@ def place_units(cols, alpha, level, root_x, regime=None):
         level += 1
         prev0 = (beta == ZERO)
         if beta != ZERO: ctx.prev = unit_tail_level(beta)
-        if ctx.prev is not None and regime is not None and cmp_ord(ctx.prev, regime) < 0:
+        if (ctx.prev is not None and regime is not None and lvl(regime) is None
+                and cmp_ord(ctx.prev, regime) < 0):
             dy = leaf_y(ctx.prev) - leaf_y(regime)
             if dy > 0:                           # the leaf cannot reach that deep here
                 cols[-1] = (cols[-1][0], leaf_y(regime), cols[-1][2])
@@ -561,7 +587,8 @@ def M(alpha):
         y, ax = last_root(base)
         ctx = place_units(base, alpha, y, ax - 1, v)
     t = tail_level(alpha)                    # the upgrade effect, if a leaf ends the matrix
-    return append_suffix(ctx.cols, t, ctx.storeys) if t is not None else ctx.cols
+    return (append_suffix(ctx.cols, t, ctx.storeys, ctx.tail_sub)
+            if t is not None else ctx.cols)
 
 def Many(t):
     """M(alpha) for the string t; None when it does not parse."""
