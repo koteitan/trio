@@ -10,12 +10,21 @@ import convert as CONV
 
 DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'psiI.json')
 
+# シート E 列(DBMS) の誤り。BMS 列と OCF ラベルは正しく、DBMS 列だけが別の順序数を指す。
+#   128 phi(3,z0)        E 列 = ...(4,1)(4,1)    -> 引数を戻すと e1  なので psi(W^3*e1)
+#   129 phi(3,phi(3,0))  E 列 = ...(4,1)(4,1)(4,1) -> 同じく e2 なので psi(W^3*e2)
+# 正しくは ...(4,1)(5,1) / ...(4,1)(5,1)(5,1)（行 113/117/121/127 の綴り方と同じ）。
+SHEET_ERRORS = {128: '(0)(1)(2,1)(3,1)(3,1)(3)(4,1)(5,1)',
+                129: '(0)(1)(2,1)(3,1)(3,1)(3)(4,1)(5,1)(5,1)'}
+
 
 def load():
     out = []
     for r in json.load(open(DATA)):
         if not (r['bms'] and r['dbms']):
             continue
+        if r['row'] in SHEET_ERRORS and not os.environ.get('RAWSHEET'):
+            r = dict(r, dbms=SHEET_ERRORS[r['row']])
         try:
             Y = max(rows(parse(r['bms'])), rows(parse(r['dbms'])))
             mb, md = parse(r['bms'], Y), parse(r['dbms'], Y)
