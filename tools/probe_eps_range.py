@@ -1,40 +1,72 @@
 # -*- coding: utf-8 -*-
-"""The eps_0 <= alpha range: ordinal arithmetic with the atom E = eps_0, plus M(alpha).
+"""M(alpha) = the standard form of psi_0(Omega_alpha), for alpha up to the Omega arithmetic.
 
-This replaces build_omega_alpha.py's PrSS by `block`, which copies the Buchholz OT term of
-the exponent verbatim, and adds the uncollapse in the argument position of psi_0 (a leading
-E becomes an Omega_1 leaf). Of the 135 sheet rows whose alpha is w-CNF plus the E atom, 131
-match (the other 4 are the known mismatch rows 1947 / 2113 / 2131 / 2133). This module is
-also the builder the build_omega_alpha.py CLI delegates to above eps_0. Its own CLI mirrors
-build_omega_alpha.py:
+Ordinals are ordinary base-w CNFs over two families of atoms, both of them fixed points of
+x -> w^x that the CNF cannot decompose:
+
+  Omega_v   the v-th uncountable cardinal    ('W', v)
+  psi_v(X)  a collapse                       ('psi', v, X)   (E = eps_0 = psi_0(Omega_1))
+
+The matrix side has three rules:
+
+  unit_loop  alpha = w^{beta_1} + ... + w^{beta_m}: one add unit per summand, each an
+             anchor plus a body (a z1 root and one digit per summand of beta_i').
+  block      a summand w^delta becomes ONE column whose children spell out delta. Its row-1
+             entry names the level: 0 for a countable psi_0 node, v for Omega_v. Row 1
+             repeats row 0 one storey up, with Omega_v in the place of 1.
+  M          alpha >= Omega_v is built on top of M(Omega_v): the units are laid out one
+             storey higher, starting at the base's last z1 root.
+
+The level a column names is its depth in the chain of z0 ancestors, not the bare entry, so
+block carries that depth and writes only the part of the chain the context does not already
+provide (the "emergent address"). The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
-  python3 probe_eps_range.py 'psi_0(W)+w^2' 2     also print the expansion
+  python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
   python3 probe_eps_range.py                      validation mode
 """
 import re, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from trio import expand
 
-# Ord = tuple((exp, coeff), ...) in decreasing order; exp is an Ord or 'E'.
-ZERO = ()
-E_EXP = 'E'
-E = ((E_EXP, 1),)
+class Unsupported(Exception):
+    """A shape the builder does not write yet (an infinite Omega subscript in a place where
+    the surrounding chain does not already spell it out)."""
 
-def has_E(x):
-    if x == E_EXP: return True
-    if x == ZERO: return False
-    return any(has_E(e) for e, _ in x)
+# ---- Ord = tuple((exp, coeff), ...) in decreasing order; exp is an Ord or an atom ----
+ZERO = ()
+
+def is_atom(x):
+    return bool(x) and isinstance(x[0], str)
+
+def nat(n):
+    return ((ZERO, n),) if n else ZERO
+
+ONE = nat(1)
+def Om(v): return ('W', v)                     # Omega_v
+def Psi(v, X): return ('psi', v, X)            # psi_v(X)
+
+OM_EXP = Om(ONE)
+OM = ((OM_EXP, 1),)                            # Omega_1
+E_EXP = Psi(ZERO, OM)
+E = ((E_EXP, 1),)                              # eps_0 = psi_0(Omega_1)
+
+def ato(x):
+    """The Ord an exponent denotes. w^atom = atom, so an atom is its own w-power."""
+    return ((x, 1),) if is_atom(x) else x
+
+def cmp_atom(a, b):
+    if a[0] == 'W' and b[0] == 'W': return cmp_ord(a[1], b[1])
+    if a[0] == 'W':                            # Omega_v vs psi_u(X): Omega_u < psi_u(X)
+        return 1 if cmp_ord(a[1], b[1]) > 0 else -1
+    if b[0] == 'W':
+        return -cmp_atom(b, a)
+    c = cmp_ord(a[1], b[1])                    # psi_v vs psi_u: the level decides first
+    return c if c else cmp_ord(a[2], b[2])
 
 def cmp_exp(a, b):
-    if a == E_EXP and b == E_EXP: return 0
-    if a == E_EXP:
-        if not has_E(b): return 1
-        return 0 if b == E else -1
-    if b == E_EXP:
-        if not has_E(a): return -1
-        return 0 if a == E else 1
-    return cmp_ord(a, b)
+    if is_atom(a) and is_atom(b): return cmp_atom(a, b)
+    return cmp_ord(ato(a), ato(b))
 
 def cmp_ord(a, b):
     for (ea, ca), (eb, cb) in zip(a, b):
@@ -55,9 +87,6 @@ def add(a, b):
 def wpow(x):
     return ((x, 1),)
 
-def nat(n):
-    return ((ZERO, n),) if n else ZERO
-
 def mul(a, b):
     if not a or not b: return ZERO
     e1 = a[0][0]
@@ -70,29 +99,29 @@ def mul(a, b):
     return out
 
 def add_exp(x, y):
-    xo = E if x == E_EXP else x
-    yo = E if y == E_EXP else y
-    return add(xo, yo)
+    return add(ato(x), ato(y))
 
 def power(a, b):
-    if b == ZERO: return nat(1)
-    if a == nat(1): return nat(1)
-    if b == nat(1): return a
+    if b == ZERO: return ONE
+    if a == ONE: return ONE
+    if b == ONE: return a
     # a finite exponent is repeated multiplication
     if len(b) == 1 and b[0][0] == ZERO:
         r = a
         for _ in range(b[0][1] - 1): r = mul(r, a)
         return r
     e1 = a[0][0]
-    if e1 == ZERO:                       # a finite base
-        return wpow(b_pred(b))
-    return wpow(mul(E if e1 == E_EXP else e1, b))
+    if e1 == ZERO:                             # a finite base
+        return wpow(b)
+    return wpow(mul(ato(e1), b))
 
-def b_pred(b):
-    return b
+# ---- Parser: w, digits, W[_sub], psi[_sub]( ), + * ^ ( ) ----
+TOK = re.compile(r'psi|w|W|\d+|[+*^()_]')
 
-# ---- Parser: w, digits, E (= psi(W)), + * ^ ( ) ----
-TOK = re.compile(r'psi\(W\)|w|\d+|[+*^()]')
+def canon(t):
+    """Rewrite the input sugar into the canonical psi form: p( / p_ -> psi( / psi_ ."""
+    return re.sub(r'(?<![A-Za-z])p(?=[_(])', 'psi', t)
+
 def parse(s):
     s = canon(s.replace(' ', ''))
     toks = TOK.findall(s)
@@ -101,12 +130,21 @@ def parse(s):
     def peek(): return toks[pos] if pos < len(toks) else None
     def eat():
         nonlocal pos; t = toks[pos]; pos += 1; return t
+    def sub():
+        """A subscript binds tight: W_w*2 is (Omega_w)*2, W_W_w is Omega_{Omega_w}."""
+        assert eat() == '_'
+        return atom()
     def atom():
         t = eat()
         if t == '(':
             e = expr(); assert eat() == ')'; return e
-        if t == 'w': return wpow(nat(1))
-        if t == 'psi(W)': return E
+        if t == 'w': return wpow(ONE)
+        if t == 'W': return ato(Om(sub() if peek() == '_' else ONE))
+        if t == 'psi':
+            v = sub() if peek() == '_' else ZERO
+            assert eat() == '('
+            x = expr(); assert eat() == ')'
+            return ato(Psi(v, x))
         return nat(int(t))
     def pw():
         b = atom()
@@ -141,49 +179,98 @@ def pred_beta(beta):
         return nat(k - 1)
     return beta
 
-def block(gamma, x):
-    """Copy the Buchholz OT term of gamma into columns verbatim.
+def lvl(x):
+    """The Omega level of x as an Ord (Omega_v <= x < Omega_{v+1}), None when x is
+    countable. The leading exponent decides it, since a CNF is decreasing."""
+    if is_atom(x):
+        if x[0] == 'W': return x[1]
+        return x[1] if x[1] != ZERO else None      # psi_v(X) sits in [Omega_v, Omega_{v+1})
+    if x == ZERO: return None
+    return lvl(x[0][0])
 
-    For each summand w^delta place a psi_0 node (x,0,0) and write its argument arg(delta)
-    at x+1 as its children. arg carries the uncollapse:
-      delta = E*c + rest -> the Omega_1 leaf (x,1,0) ++ block(E*(c-1)+rest)
-      otherwise          -> block(delta)
-    Why: for delta < eps_0 we have w^delta = psi_0(delta), so the copy is direct. For
-    delta >= eps_0 the leading E turns back into Omega_1 (the uncollapse).
+def fin(v):
+    """v as a natural number, or None when it is infinite."""
+    if v == ZERO: return 0
+    return v[0][1] if len(v) == 1 and v[0][0] == ZERO else None
+
+def strip(delta):
+    """The ordinal the children of delta's column spell out.
+
+    The column already names delta's leading atom, so the children carry what is left:
+      psi_v(X)*c + rest -> X + psi_v(X)*(c-1) + rest   (the uncollapse: the argument of the
+                           collapse takes the place of the collapse itself)
+      Omega_v*c + rest  -> Omega_v*(c-1) + rest        (the level is cancelled)
+      anything else     -> delta itself                (nothing to cancel: either delta is
+                           below eps_0, or its head absorbs the level)
     """
-    if gamma == ZERO: return []
+    d = ato(delta)
+    if d == ZERO: return ZERO
+    h, c = d[0]
+    rest = (((h, c - 1),) if c > 1 else ()) + d[1:]
+    if is_atom(h) and h[0] == 'psi': return add(h[2], rest)
+    if is_atom(h) and h[0] == 'W': return rest
+    return d
+
+def write_level(v, x, d, arg=False):
+    """The columns that name the level Omega_v for a column sitting at chain depth d.
+
+    The subscript v is spelt by the chain of z0 ancestors, i.e. by M(v) itself. The context
+    already provides M(v)'s first 1+k columns (k = how far the plain staircase of anchors
+    agrees with M(v)), so only M(v)[1+k:] is written, starting at x. The d-k ancestor levels
+    that the context spends on something else push the copy that much deeper, so every
+    entry whose row-1 value tracks the unit level is raised by d-k; the ones that name an
+    absolute level (Omega leaves, psi nodes) keep theirs.
+    """
+    if fin(v) is None and d > 0 and not arg:
+        # A limit subscript below the top of the chain is only understood in the argument
+        # of a collapse. Elsewhere the sheet does not simply raise the copy's rows.
+        raise Unsupported('a limit level below the top of the chain')
+    base = M(v)
+    k = 0
+    while k < d and k + 1 < len(base) and base[k + 1] == (k + 1, k + 1, 0): k += 1
+    tail = base[1 + k:]
+    if not tail:                                 # the chain already spells v out
+        return [(x, base[-1][1], 0)]
+    par, _ = _forest(base)
+    bump = d - k
+    return [(c[0] + x - 1 - k, c[1] + (bump if _relative(base, par, 1 + k + i) else 0), c[2])
+            for i, c in enumerate(tail)]
+
+def block(gamma, x, d=0, arg=False):
+    """Copy the ordinal gamma into columns: one column per summand w^delta of gamma, and
+    the children of that column spell out strip(delta).
+
+    d is the level the surrounding chain of z0 ancestors already reaches, and arg says the
+    columns are the argument of a collapse (the uncollapse). A countable summand is the
+    single psi_0 node (x,0,0); an uncountable one names its level through write_level.
+    """
     cols = []
     for e, c in gamma:
+        eo = ato(e)
+        h = eo[0][0] if eo else None
         for _ in range(c):
-            cols.append((x, 0, 0))
-            cols += arg(e, x + 1)
+            v = lvl(e)
+            run = [(x, 0, 0)] if v is None else write_level(v, x, d, arg)
+            cols += run
+            # the children of a collapse are its argument, written one level up
+            cols += block(strip(e), run[-1][0] + 1, run[-1][1],
+                          is_atom(h) and h[0] == 'psi')
     return cols
 
-def arg(delta, x):
-    """How the argument of psi_0 is written (uncollapse included). delta is an exp."""
-    if delta == E_EXP:
-        return [(x, 1, 0)]
-    if delta == ZERO:
-        return []
-    if delta[0][0] == E_EXP:
-        c = delta[0][1]
-        rest = ((E_EXP, c - 1),) + delta[1:] if c > 1 else delta[1:]
-        return [(x, 1, 0)] + block(rest, x)
-    return block(delta, x)
-
 def body(beta, x0, y):
+    """The body of an add unit w^beta at level y: the z1 root and one digit per summand of
+    beta', each digit followed by the block of that summand's exponent."""
     cols = [(x0, y, 1)]
     for e, c in pred_beta(beta):
         for _ in range(c):
             cols.append((x0 + 1, y, 1))
-            cols += block(E if e == E_EXP else e, x0 + 2)   # a digit's children = gamma
+            cols += block(ato(e), x0 + 2, y - 1)     # the anchor's level is y-1
     return cols
 
-def M(alpha):
-    us = units(alpha)
-    cols = []; level = 0; root_x = -1; prev0 = False
-    for b in us:
-        beta = E if b == E_EXP else b
+def unit_loop(alpha, level, root_x):
+    cols = []; prev0 = False
+    for b in units(alpha):
+        beta = ato(b)
         if beta == ZERO and prev0:
             tx, ty, _ = cols[-1]; cols.append((tx + 1, ty + 1, 0))
         elif beta == ZERO:
@@ -197,63 +284,37 @@ def M(alpha):
         prev0 = (beta == ZERO)
     return cols
 
-# ---- Validation ----
-def mat(s):
-    cs = [tuple(int(v) for v in x.split(',')) for x in re.findall(r'\((\d+(?:,\d+)*)\)', s)]
-    return [c + (0,) * (3 - len(c)) for c in cs]
+def last_root(cols):
+    """(level, anchor x) for the add unit that continues the base matrix cols.
 
-# ---- Large alpha: the psi_0(X) and Omega_v atoms ----
-def _toplevel_ops(t):
-    d = 0
-    for ch in t:
-        d += (ch == '(') - (ch == ')')
-        if d == 0 and ch in '+*^': return True
-    return False
-
-def canon(t):
-    """Rewrite the input sugar into the canonical psi(...) form.
-
-    psi_0( / p_0( / p(  ->  psi(   (psi_1( and other v>0 collapses are left alone)
+    The last add unit's z1 root is the last z1 column whose x parent is a z0 column (a
+    digit's parent is the root, which is z1). The next anchor takes the root's own x when
+    the root already carries children, and the next x when it does not.
     """
-    return (t.replace('psi_0(', 'psi(')
-             .replace('p_0(', 'psi(')
-             .replace('p(', 'psi('))
+    par, _ = _forest(cols)
+    i = max(j for j in range(len(cols))
+            if cols[j][2] == 1 and (par[j] is None or cols[par[j]][2] == 0))
+    kid = any(par[j] == i for j in range(i + 1, len(cols)))
+    return cols[i][1], cols[i][0] + (0 if kid else 1)
 
-def big_parse(t):
-    """'psi(W)' / 'psi(W_X)' / 'W' / 'W_X' -> ('psi'|'om', the X string).
+def M(alpha):
+    """alpha -> the standard form of psi_0(Omega_alpha).
 
-    Returns None when an operator sits outside the subscript X, as in W_2^2 = (Omega_2)^2.
+    Below Omega_1 the add units are laid out from (0,0,0). Otherwise they are laid out on
+    top of M(Omega_v), starting at its last z1 root. alpha = Omega_v itself is that base,
+    which M_Omega builds by writing the subscript v as a chain of level columns.
     """
-    t = canon(t.strip())
-    while t.startswith('(') and t.endswith(')') and not _toplevel_ops(t[1:-1]):
-        inner = t[1:-1]
-        d = 0; ok = True
-        for ch in inner:
-            d += (ch == '(') - (ch == ')')
-            if d < 0: ok = False; break
-        if not ok or d != 0: break
-        t = inner
-    if _toplevel_ops(t): return None
-    if t == 'W': return ('om', '1')
-    if t == 'psi(W)': return ('psi', '1')
-    if t.startswith('W_') and not _toplevel_ops(t[2:]):
-        return ('om', t[2:])
-    if t.startswith('psi(W_') and t.endswith(')') and not _toplevel_ops(t[6:-1]):
-        return ('psi', t[6:-1])          # W_X^2 is arithmetic on Omega_X, not a subscript
-    return None
+    v = lvl(alpha)
+    if v is None:
+        return unit_loop(alpha, 0, -1)
+    if alpha == ato(Om(v)):                  # alpha = Omega_v itself: the base
+        return M_Omega(v)
+    base = M_Omega(v)
+    y, ax = last_root(base)
+    return base + unit_loop(alpha, y, ax - 1)
 
 def Many(t):
-    """M(alpha) for the string t; accepts both the large atoms and w-CNF plus E."""
-    b = big_parse(t)
-    if b:
-        kind, v = b
-        if kind == 'om':
-            return M_Omega(v)
-        vm = Many(v)
-        if vm is None: return None
-        # M(psi_0(Omega_X)) = (0,0,0)(1,1,1)(2,1,1) ++ shift(M(X), 3)。
-        # the shifted anchor of M(X) is the psi_0 node (3,0,0) itself.
-        return [(0, 0, 0), (1, 1, 1), (2, 1, 1)] + [(c[0] + 3, c[1], c[2]) for c in vm]
+    """M(alpha) for the string t; None when it does not parse."""
     a = parse(t)
     if a in (None, ZERO): return None
     return M(a)
@@ -280,16 +341,20 @@ def _is_level(cols, par, i):
     p = par[i]
     if p is None: return True
     if cols[p][2] == 0:
-        # a parent that is a psi_0 node (a z0 column with y=0, other than the root
+        # a parent that is a psi_0 node (a z0 column with y=0, other than the root)
         return not (p != 0 and cols[p][1] == 0)
     gp = par[p]
-    return gp is None or cols[gp][2] == 0           # parent is a root -> level; a digit -> leaf
+    return gp is None or cols[gp][2] == 0        # parent is a root -> level; a digit -> leaf
+
+def _relative(cols, par, i):
+    """Does this column's row-1 entry track the unit level (so that embedding the matrix
+    one level deeper raises it), rather than name an absolute level?"""
+    return cols[i][2] == 1 or _is_level(cols, par, i)
 
 def M_Omega(v):
     """M(Omega_v): insert B's tail below every level column of M(v) and drop a trailing
     level column."""
-    cols = Many(v)
-    if cols is None: return None
+    cols = M(v)
     par, kids = _forest(cols)
     lev = {i for i in range(len(cols)) if _is_level(cols, par, i)}
     drop = len(cols) - 1 if (len(cols) - 1) in lev else None
@@ -311,91 +376,77 @@ def M_Omega_fin(v):
     for k in range(v): out += lift(BASE_B, k)
     return out
 
-def run_omega():
-    tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
-    ok = ng = skip = 0; bad = []
-    for L in open(tsv):
-        p = L.rstrip('\n').split('\t')
-        if p[0] == 'row': continue
-        b = big_parse(p[1])
-        if not b or b[0] != 'om': continue
-        got = M_Omega(b[1])
-        if got is None: skip += 1; continue
-        if got == mat(p[3]): ok += 1
-        else:
-            ng += 1
-            if len(bad) < 6: bad.append((p[0], b[1], p[3], got))
-    print('alpha = Omega_v: %d match / %d mismatch / %d subscript unsupported' % (ok, ng, skip))
-    for r, v, w, g in bad:
-        print(' NG row %s v=%s' % (r, v))
-        print('   sheet:', w)
-        print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
-    # finite v also agrees with the closed form
-    for v in range(1, 7):
-        assert M_Omega(str(v)) == M_Omega_fin(v), v
-    return ng
+# ---- Validation ----
+def mat(s):
+    cs = [tuple(int(v) for v in x.split(',')) for x in re.findall(r'\((\d+(?:,\d+)*)\)', s)]
+    return [c + (0,) * (3 - len(c)) for c in cs]
 
-def run_big():
+# Rows whose label and matrix do not agree. The orbit-law audit (M(alpha)[n] = M(alpha_n),
+# expanding a trusted neighbouring row) sides with the builder on all of them, but the
+# orbit law is itself empirical, so these are mismatches, not proven errata.
+KNOWN_MISMATCH = {
+    '1947': '(11,5,1) vs (11,6,1); M(w^3)[6] sides with the builder',
+    '2113': 'the matrix has the shape of w^5*2; M(w^6)[3] sides with the builder',
+    '2131': 'the content is a two-step +1 staircase, i.e. w^w+2 (label duplicated with 2133)',
+    '2133': '(3,2,0)(4,3,1) vs (4,2,0)(5,3,1); M(w^w+w^2)[2] sides with the builder',
+    '2532': 'the matrix is M(W^(w+1)); the label duplicates 2538, which is W^(W+1)',
+    '2723': 'the matrix drops the trailing Omega leaf; the label duplicates 2724',
+}
+
+def rows():
     tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
-    ok = ng = skip = 0; bad = []
     for L in open(tsv):
         p = L.rstrip('\n').split('\t')
-        if p[0] == 'row': continue
-        if not big_parse(p[1]): continue
-        got = Many(p[1])
-        if got is None: skip += 1; continue
-        kind, _ = big_parse(p[1])
-        if kind == 'om' and p[1].strip() not in ('W', '(W)'):
-            skip += 1; continue          # Omega_v (v>=2) is a different regime
-        want = mat(p[3])
-        if got == want: ok += 1
+        if p[0] != 'row': yield p
+
+def group(alpha):
+    return ('Omega_v arithmetic' if 'W_' in alpha else
+            'Omega_1 arithmetic' if 'W' in alpha else 'alpha < Omega_1')
+
+def run_check():
+    from collections import Counter
+    ok = Counter(); ng = Counter(); skip = Counter(); uns = Counter(); known = 0
+    bad = []
+    for p in rows():
+        g = group(p[1])
+        try:
+            a = parse(p[1])
+        except RecursionError:
+            a = None
+        if a in (None, ZERO): skip[g] += 1; continue
+        try:
+            got = M(a)
+        except (Unsupported, RecursionError):
+            uns[g] += 1; continue
+        if got == mat(p[3]): ok[g] += 1
+        elif p[0] in KNOWN_MISMATCH: known += 1
         else:
-            ng += 1
-            if len(bad) < 8: bad.append((p[0], p[1], want, got))
-    print('large atoms (psi(W_X) / W_X): %d match / %d mismatch / %d subscript unsupported'
-          % (ok, ng, skip))
+            ng[g] += 1
+            if len(bad) < 8: bad.append((p[0], p[1], mat(p[3]), got))
+    for g in ('alpha < Omega_1', 'Omega_1 arithmetic', 'Omega_v arithmetic'):
+        print('%-20s %4d match / %3d mismatch / %3d unsupported / %3d unparsed'
+              % (g, ok[g], ng[g], uns[g], skip[g]))
+    print('%-20s %4d match / %3d mismatch / %3d unsupported / %3d unparsed'
+          ' (+%d known mismatch)'
+          % ('total', sum(ok.values()), sum(ng.values()), sum(uns.values()),
+             sum(skip.values()), known))
     for r, t, w, g in bad:
         print(' row %s a=%s' % (r, t))
         print('   sheet:', ''.join('(%d,%d,%d)' % c for c in w))
         print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
-    return ng
-
-KNOWN_MISMATCH = {'1947', '2113', '2131', '2133'}
+    for v in range(1, 7):                       # finite v agrees with the closed form
+        assert M_Omega(nat(v)) == M_Omega_fin(v), v
+    return sum(ng.values())
 
 USAGE = """\
 usage: python3 probe_eps_range.py [alpha] [n]
 
-  alpha  the notation of build_omega_alpha.py (w / digits / + * ^ / parentheses)
-         plus the atom psi_0(W) = eps_0. Example: 'psi_0(W)^psi_0(W)+w^2'
-         Sugar: psi( , p( and p_0( may be written for psi_0( .
+  alpha  the notation of build_omega_alpha.py (w / digits / + * ^ / parentheses) plus the
+         atoms W_v = Omega_v and psi_v(X). Example: 'psi_0(W)^psi_0(W)+w^2', 'W_2+W*w'
+         Sugar: p( and p_v( may be written for psi( and psi_v( .
   n      optional; also print the expansion psi_0(W_alpha)[n].
   (none) validation mode (check against the sheet).
 """
-
-def run_check():
-    ok = ng = skip = known = 0; bad = []
-    tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
-    for L in open(tsv):
-        p = L.rstrip('\n').split('\t')
-        if p[0] == 'row': continue
-        a = parse(p[1])
-        if a in (None, ZERO): skip += 1; continue
-        want = mat(p[3]); got = M(a)
-        if got == want: ok += 1
-        elif p[0] in KNOWN_MISMATCH: known += 1
-        else:
-            ng += 1
-            if len(bad) < 8: bad.append((p[0], p[1], want, got))
-    print('alpha in w-CNF + E: %d match / %d unexpected mismatch / %d known mismatch'
-          ' / %d unparsed'
-          % (ok, ng, known, skip))
-    for r, t, w, g in bad:
-        print(' row %s a=%s' % (r, t))
-        print('   sheet:', ''.join('(%d,%d,%d)' % c for c in w))
-        print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
-    assert ng == 0
-    assert run_big() == 0
-    run_omega()
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):

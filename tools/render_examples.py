@@ -16,8 +16,37 @@ GitHub's KaTeX rejects \\def).
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from probe_eps_range import (Many, big_parse, parse, units, pred_beta, block,
+from probe_eps_range import (Many, parse, units, pred_beta, block,
                              E, E_EXP, ZERO, BASE_B, lift)
+
+def _toplevel_ops(t):
+    d = 0
+    for ch in t:
+        d += (ch == '(') - (ch == ')')
+        if d == 0 and ch in '+*^': return True
+    return False
+
+def big_parse(t):
+    """'psi(W_X)' / 'W_X' -> ('psi'|'om', the X string); None otherwise.
+
+    The renderer draws those two shapes with their own grammar, so it needs the subscript
+    as text. probe_eps_range parses them into ordinals instead and has no use for this.
+    """
+    t = t.strip().replace('psi_0(', 'psi(').replace('p_0(', 'psi(').replace('p(', 'psi(')
+    while t.startswith('(') and t.endswith(')') and not _toplevel_ops(t[1:-1]):
+        inner = t[1:-1]; d = 0; ok = True
+        for ch in inner:
+            d += (ch == '(') - (ch == ')')
+            if d < 0: ok = False; break
+        if not ok or d != 0: break
+        t = inner
+    if _toplevel_ops(t): return None
+    if t == 'W': return ('om', '1')
+    if t == 'psi(W)': return ('psi', '1')
+    if t.startswith('W_') and not _toplevel_ops(t[2:]): return ('om', t[2:])
+    if t.startswith('psi(W_') and t.endswith(')') and not _toplevel_ops(t[6:-1]):
+        return ('psi', t[6:-1])          # W_X^2 is arithmetic on Omega_X, not a subscript
+    return None
 
 # GitHub's KaTeX rejects \def, so pmatrix is written out in full.
 MDEF = ''

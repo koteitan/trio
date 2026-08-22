@@ -1,8 +1,14 @@
-english comments for the remaining converter tools; stop clobbering the row table
+Omega arithmetic: Omega_v and psi_v atoms in M(alpha)
 
-- Translate the comments and messages of probe_omega_alpha.py,
-  normalize_sheet.py and render_examples.py (the Japanese label data in
-  render_examples stays, it is the text the Japanese pages print)
-- probe_omega_alpha.py wrote tools/omega_alpha_rows.tsv from the raw sheet,
-  silently undoing the format normalization; it now dumps to tmp/pure-rows.tsv
-  and the docstring says which script owns the shared table
+- Generalise the ordinal atoms to Omega_v and psi_v(X) (eps_0 becomes the
+  special case psi_0(Omega_1)) and parse W_X / psi_v(X) inside + * ^
+- Write a summand w^delta as one column at its Omega level whose children
+  spell strip(delta), so row 1 repeats row 0 with Omega_v in place of 1
+- Build alpha >= Omega_v on top of M(Omega_v), continuing from the base's
+  last z1 root; drop the hand-written Omega_1 bridge it subsumes
+- Write a level as the part of M(v) the ancestor chain does not provide,
+  raising the unit-relative row-1 entries by the unused depth
+- Refuse (rather than guess) a limit level below the top of the chain,
+  and report that from the CLI
+- Move the string-level big_parse into render_examples.py, its only user
+- Record the rules, the 428/25/354 count and the open cases in dom.md

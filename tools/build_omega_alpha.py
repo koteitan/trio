@@ -206,16 +206,19 @@ usage: python3 build_omega_alpha.py [alpha] [n]
                  + * ^       sum, product, power (^ is right associative)
                  ( )         parentheses
                  juxtaposed  w2 = w*2, w^w3 = w^w*3, and so on
-                 W, W_X      Omega_1, Omega_X
+                 W, W_X      Omega_1, Omega_X (a subscript binds tight:
+                             W_w*2 = (Omega_w)*2, W_W_w = Omega_{Omega_w})
                  psi_0(W)    eps_0 = psi_0(Omega_1)
-                 psi_0(W_X)  psi_0(Omega_X) (X recursively in the same notation)
-               Sugar: psi( , p( and p_0( may be written for psi_0( .
+                 psi_v(X)    the collapse psi_v (X recursively in the same notation)
+               Both atoms may be combined by + * ^ , as in 'W_2+W*w'.
+               Sugar: p( and p_v( may be written for psi( and psi_v( .
                  psi_0(W_w) = psi(W_w) = p(W_w) = p_0(W_w)
                Examples: 'w^2+w+1'  'w^(w+1)*2'  'psi_0(W)^psi_0(W)'
-                         'psi_0(W_(w^2))'  'W_3'  'W_W_W'
+                         'psi_0(W_(w^2))'  'W_3'  'W_W_W'  'W_2+W*w'
                The domain is alpha < Lambda (the least Omega fixed point).
                M() in this file covers alpha < eps_0; probe_eps_range.Many()
-               takes over above it (the two agree on every w-CNF row).
+               takes over above it (the two agree on every w-CNF row). An
+               alpha whose shape is not built yet is reported, not guessed.
   n            optional; also print the expansion psi_0(W_alpha)[n].
   (no argument) validation mode: check every alpha < eps_0 row against the sheet
                and run the orbit-law self-check
@@ -226,6 +229,7 @@ examples:
   python3 build_omega_alpha.py 'w^(w2)+w^2*3' 2
   python3 build_omega_alpha.py 'psi_0(W_(w^2))'
   python3 build_omega_alpha.py 'W_3'
+  python3 build_omega_alpha.py 'W_2+W*w'
   python3 build_omega_alpha.py
 '''
 
@@ -235,7 +239,12 @@ if __name__ == '__main__':
         sys.exit(0)
     if len(sys.argv) > 1:
         from probe_eps_range import Many     # the general builder, alpha < Lambda
-        mat = Many(sys.argv[1])
+        from probe_eps_range import Unsupported
+        try:
+            mat = Many(sys.argv[1])
+        except Unsupported as e:
+            print('not built yet for this alpha (%s); see dom.md.' % e)
+            sys.exit(1)
         if mat is None:
             print('parse error; run --help for the accepted notation.')
             sys.exit(1)
