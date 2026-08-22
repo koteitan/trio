@@ -17,9 +17,11 @@ The matrix side has three rules:
   M          alpha >= Omega_v is built on top of M(Omega_v): the units are laid out one
              storey higher, starting at the base's last z1 root.
 
-The level a column names is its depth in the chain of z0 ancestors, not the bare entry, so
-block carries that depth and writes only the part of the chain the context does not already
-provide (the "emergent address"). The CLI mirrors build_omega_alpha.py:
+The level a column names is its position in the chain of z0 ancestors, not the bare entry,
+so a unit's leaf names it in one column while a collapse argument spells the whole subscript
+out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
+limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
+603; dom.md lists what the other 210 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -212,20 +214,24 @@ def strip(delta):
     return d
 
 def write_level(v, x, d, arg=False):
-    """The columns that name the level Omega_v for a column sitting at chain depth d.
+    """The columns that name the level Omega_v at x, for a column at chain depth d.
 
-    The subscript v is spelt by the chain of z0 ancestors, i.e. by M(v) itself. The context
-    already provides M(v)'s first 1+k columns (k = how far the plain staircase of anchors
-    agrees with M(v)), so only M(v)[1+k:] is written, starting at x. The d-k ancestor levels
-    that the context spends on something else push the copy that much deeper, so every
-    entry whose row-1 value tracks the unit level is raised by d-k; the ones that name an
-    absolute level (Omega leaves, psi nodes) keep theirs.
+    A unit's leaf (arg=False) only names the level, and one column does that: the row-1
+    entry of M(v)'s last column. What that loses -- Omega_w and Omega_1 both leave a leaf
+    at y=1 -- the suffix in append_suffix puts back.
+
+    In the argument of a collapse (arg=True) the level is spelt out instead, by M(v)
+    itself: the chain of z0 ancestors already provides M(v)'s first 1+k columns (k = how
+    far the plain staircase of anchors agrees with M(v)), so only M(v)[1+k:] is written.
+    The d-k ancestor levels the context spends on something else push the copy that much
+    deeper, so every entry whose row-1 value tracks the unit level is raised by d-k; the
+    ones naming an absolute level (Omega leaves, psi nodes) keep theirs.
     """
-    if fin(v) is None and d > 0 and not arg:
-        # A limit subscript below the top of the chain is only understood in the argument
-        # of a collapse. Elsewhere the sheet does not simply raise the copy's rows.
-        raise Unsupported('a limit level below the top of the chain')
     base = M(v)
+    if not arg:
+        # A unit's leaf only has to name the level, and one column does that: the row-1
+        # entry of M(v)'s last column, with z=0 (the level itself, not its spelling).
+        return [(x, base[-1][1], 0)]
     k = 0
     while k < d and k + 1 < len(base) and base[k + 1] == (k + 1, k + 1, 0): k += 1
     tail = base[1 + k:]
@@ -267,6 +273,55 @@ def body(beta, x0, y):
             cols += block(ato(e), x0 + 2, y - 1)     # the anchor's level is y-1
     return cols
 
+def suffix(v):
+    """The trailing z1 columns of M(v) (the part after its last z0 column).
+
+    A limit level is named by the same leaf as the level with the same last row-1 entry
+    (Omega_w and Omega_1 both leave a leaf at y=1), and this suffix is what tells them
+    apart. It only shows up when the leaf ends the matrix -- the upgrade effect: anything
+    written after the leaf absorbs it.
+    """
+    cols = M(v)
+    i = max(j for j in range(len(cols)) if cols[j][2] == 0)
+    return cols[i + 1:]
+
+def append_suffix(cols, v):
+    """Append the upgrade suffix for level v, copied from where v is already spelt.
+
+    The suffix repeats the marker run that names v, so it lands at the x of the run
+    already in the matrix; M(v)'s own x is the fallback."""
+    suf = suffix(v)
+    if not suf: return cols
+    n = len(suf)
+    pat = [(c[1], c[2]) for c in suf]
+    dx = [c[0] - suf[0][0] for c in suf]
+    for i in range(len(cols) - n, -1, -1):
+        seg = cols[i:i + n]
+        if ([(c[1], c[2]) for c in seg] == pat
+                and [c[0] - seg[0][0] for c in seg] == dx):
+            return cols + seg
+    return cols + suf
+
+def tail_level(alpha):
+    """The level named by the very last column of M(alpha), or None."""
+    us = units(alpha)
+    if not us: return None
+    beta = ato(us[-1])
+    bp = pred_beta(beta)
+    if beta == ZERO or bp == ZERO: return None    # a +1 marker or a bare root ends it
+    return _tail_block(ato(bp[-1][0]), False)
+
+def _tail_block(gamma, arg):
+    """The level of the last column block(gamma, .., arg) writes, or None. A column
+    written inside a collapse argument spells its level out, so it takes no suffix."""
+    if gamma == ZERO: return None
+    e = gamma[-1][0]
+    rest = strip(e)
+    if rest != ZERO:                              # the children are written after it
+        h = ato(e)[0][0]
+        return _tail_block(rest, is_atom(h) and h[0] == 'psi')
+    return None if arg else lvl(e)
+
 def unit_loop(alpha, level, root_x):
     cols = []; prev0 = False
     for b in units(alpha):
@@ -306,12 +361,15 @@ def M(alpha):
     """
     v = lvl(alpha)
     if v is None:
-        return unit_loop(alpha, 0, -1)
-    if alpha == ato(Om(v)):                  # alpha = Omega_v itself: the base
+        cols = unit_loop(alpha, 0, -1)
+    elif alpha == ato(Om(v)):                # alpha = Omega_v itself: the base
         return M_Omega(v)
-    base = M_Omega(v)
-    y, ax = last_root(base)
-    return base + unit_loop(alpha, y, ax - 1)
+    else:
+        base = M_Omega(v)
+        y, ax = last_root(base)
+        cols = base + unit_loop(alpha, y, ax - 1)
+    t = tail_level(alpha)                    # the upgrade effect, if a leaf ends the matrix
+    return append_suffix(cols, t) if t is not None else cols
 
 def Many(t):
     """M(alpha) for the string t; None when it does not parse."""

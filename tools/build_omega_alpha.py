@@ -217,8 +217,8 @@ usage: python3 build_omega_alpha.py [alpha] [n]
                          'psi_0(W_(w^2))'  'W_3'  'W_W_W'  'W_2+W*w'
                The domain is alpha < Lambda (the least Omega fixed point).
                M() in this file covers alpha < eps_0; probe_eps_range.Many()
-               takes over above it (the two agree on every w-CNF row). An
-               alpha whose shape is not built yet is reported, not guessed.
+               takes over above it (the two agree on every w-CNF row).
+               The shapes it does not reproduce yet are listed in dom.md.
   n            optional; also print the expansion psi_0(W_alpha)[n].
   (no argument) validation mode: check every alpha < eps_0 row against the sheet
                and run the orbit-law self-check

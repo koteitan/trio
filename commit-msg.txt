@@ -1,14 +1,11 @@
-Omega arithmetic: Omega_v and psi_v atoms in M(alpha)
+Omega arithmetic: the leaf rule and the upgrade suffix
 
-- Generalise the ordinal atoms to Omega_v and psi_v(X) (eps_0 becomes the
-  special case psi_0(Omega_1)) and parse W_X / psi_v(X) inside + * ^
-- Write a summand w^delta as one column at its Omega level whose children
-  spell strip(delta), so row 1 repeats row 0 with Omega_v in place of 1
-- Build alpha >= Omega_v on top of M(Omega_v), continuing from the base's
-  last z1 root; drop the hand-written Omega_1 bridge it subsumes
-- Write a level as the part of M(v) the ancestor chain does not provide,
-  raising the unit-relative row-1 entries by the unused depth
-- Refuse (rather than guess) a limit level below the top of the chain,
-  and report that from the CLI
-- Move the string-level big_parse into render_examples.py, its only user
-- Record the rules, the 428/25/354 count and the open cases in dom.md
+- Name a level in a unit's leaf with one column, whose row-1 entry is that
+  of M(v)'s last column, and keep the spelling rule for collapse arguments
+- Append suffix(v), the trailing z1 run of M(v), when such a leaf ends the
+  matrix, so Omega_w and Omega_1 stop sharing a matrix (the upgrade effect)
+- Find the base's last add unit by its z1 root instead of a z1 pair, and
+  put the next anchor one x further when that root carries no children
+- Drop the refusal to write a limit level: every sheet row now builds
+- Check that the matching rows come out in the sheet's row order (603
+  rows, 0 order violations) and record the rules and the 204 open rows
