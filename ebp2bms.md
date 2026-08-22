@@ -9,29 +9,29 @@ $`\alpha`$ の定義域: 原理上は拡張ブーフホルツ OT の項全体（
 最小 $`\Omega`$ 不動点）。本表の生成器が現在対応するのは
 $`\alpha \lt \varepsilon_0`$（$`\omega`$ の CNF で書ける範囲）。
 
-縦線の凡例: 二重実線 $`\|`$ = 単位境界、点線 = z1 根の両側（アンカー・桁との境）、
-実線 $`|`$ = 桁境界。
+表記: 行列は**単位ごとに分けて**並べる（括弧 1 組 = 単位 $`U_i`$）。
+各単位の中身（アンカー・z1 根・桁・閉包子）の区切りは例の節の underbrace を参照。
 
-| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | トリオ数列 |
+| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | トリオ数列（括弧 1 組 = 単位） |
 |---|---|---|
-| $`\omega`$ | $`\psi_0(\Omega_{\omega})`$ | $`\left(\begin{array}{c:c}0 & 1\cr 0 & 1\cr 0 & 1\end{array}\right)`$ |
-| $`\omega+1`$ | $`\psi_0(\Omega_{\omega+1})`$ | $`\left(\begin{array}{c:c||c:c}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 2\cr 0 & 1 & 0 & 0\end{array}\right)`$ |
-| $`\omega+2`$ | $`\psi_0(\Omega_{\omega+2})`$ | $`\left(\begin{array}{c:c||c:c||c}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 2 & 3\cr 0 & 1 & 0 & 0 & 0\end{array}\right)`$ |
-| $`\omega\cdot 2`$ | $`\psi_0(\Omega_{\omega\cdot 2})`$ | $`\left(\begin{array}{c:c||c:c}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 2\cr 0 & 1 & 0 & 1\end{array}\right)`$ |
-| $`\omega\cdot 2+1`$ | $`\psi_0(\Omega_{\omega\cdot 2+1})`$ | $`\left(\begin{array}{c:c||c:c||c:c}0 & 1 & 2 & 3 & 4 & 5\cr 0 & 1 & 1 & 2 & 2 & 3\cr 0 & 1 & 0 & 1 & 0 & 0\end{array}\right)`$ |
-| $`\omega\cdot 2+2`$ | $`\psi_0(\Omega_{\omega\cdot 2+2})`$ | $`\left(\begin{array}{c:c||c:c||c:c||c}0 & 1 & 2 & 3 & 4 & 5 & 6\cr 0 & 1 & 1 & 2 & 2 & 3 & 4\cr 0 & 1 & 0 & 1 & 0 & 0 & 0\end{array}\right)`$ |
-| $`\omega\cdot 2+3`$ | $`\psi_0(\Omega_{\omega\cdot 2+3})`$ | $`\left(\begin{array}{c:c||c:c||c:c||c||c}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7\cr 0 & 1 & 1 & 2 & 2 & 3 & 4 & 5\cr 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0\end{array}\right)`$ |
-| $`\omega\cdot 3`$ | $`\psi_0(\Omega_{\omega\cdot 3})`$ | $`\left(\begin{array}{c:c||c:c||c:c}0 & 1 & 2 & 3 & 4 & 5\cr 0 & 1 & 1 & 2 & 2 & 3\cr 0 & 1 & 0 & 1 & 0 & 1\end{array}\right)`$ |
-| $`\omega\cdot 4`$ | $`\psi_0(\Omega_{\omega\cdot 4})`$ | $`\left(\begin{array}{c:c||c:c||c:c||c:c}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7\cr 0 & 1 & 1 & 2 & 2 & 3 & 3 & 4\cr 0 & 1 & 0 & 1 & 0 & 1 & 0 & 1\end{array}\right)`$ |
-| $`\omega^2`$ | $`\psi_0(\Omega_{\omega^2})`$ | $`\left(\begin{array}{c:c:c}0 & 1 & 2\cr 0 & 1 & 1\cr 0 & 1 & 1\end{array}\right)`$ |
-| $`\omega^2+1`$ | $`\psi_0(\Omega_{\omega^2+1})`$ | $`\left(\begin{array}{c:c:c||c:c}0 & 1 & 2 & 2 & 3\cr 0 & 1 & 1 & 1 & 2\cr 0 & 1 & 1 & 0 & 0\end{array}\right)`$ |
-| $`\omega^2+\omega`$ | $`\psi_0(\Omega_{\omega^2+\omega})`$ | $`\left(\begin{array}{c:c:c||c:c}0 & 1 & 2 & 2 & 3\cr 0 & 1 & 1 & 1 & 2\cr 0 & 1 & 1 & 0 & 1\end{array}\right)`$ |
-| $`\omega^2\cdot 2`$ | $`\psi_0(\Omega_{\omega^2\cdot 2})`$ | $`\left(\begin{array}{c:c:c||c:c:c}0 & 1 & 2 & 2 & 3 & 4\cr 0 & 1 & 1 & 1 & 2 & 2\cr 0 & 1 & 1 & 0 & 1 & 1\end{array}\right)`$ |
-| $`\omega^3`$ | $`\psi_0(\Omega_{\omega^3})`$ | $`\left(\begin{array}{c:c:c|c}0 & 1 & 2 & 2\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 1\end{array}\right)`$ |
-| $`\omega^\omega`$ | $`\psi_0(\Omega_{\omega^\omega})`$ | $`\left(\begin{array}{c:c:cc}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 0\cr 0 & 1 & 1 & 0\end{array}\right)`$ |
-| $`\omega^\omega+1`$ | $`\psi_0(\Omega_{\omega^\omega+1})`$ | $`\left(\begin{array}{c:c:cc||c:c}0 & 1 & 2 & 3 & 2 & 3\cr 0 & 1 & 1 & 0 & 1 & 2\cr 0 & 1 & 1 & 0 & 0 & 0\end{array}\right)`$ |
-| $`\omega^{\omega+1}`$ | $`\psi_0(\Omega_{\omega^{\omega+1}})`$ | $`\left(\begin{array}{c:c:cc|c}0 & 1 & 2 & 3 & 2\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1\end{array}\right)`$ |
-| $`\omega^{\omega^\omega}`$ | $`\psi_0(\Omega_{\omega^{\omega^\omega}})`$ | $`\left(\begin{array}{c:c:ccc}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 0\cr 0 & 1 & 1 & 0 & 0\end{array}\right)`$ |
+| $`\omega`$ | $`\psi_0(\Omega_{\omega})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}`$ |
+| $`\omega+1`$ | $`\psi_0(\Omega_{\omega+1})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
+| $`\omega+2`$ | $`\psi_0(\Omega_{\omega+2})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}\begin{pmatrix}4\cr 3\cr 0\end{pmatrix}`$ |
+| $`\omega\cdot 2`$ | $`\psi_0(\Omega_{\omega\cdot 2})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}`$ |
+| $`\omega\cdot 2+1`$ | $`\psi_0(\Omega_{\omega\cdot 2+1})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}\begin{pmatrix}4 & 5\cr 2 & 3\cr 0 & 0\end{pmatrix}`$ |
+| $`\omega\cdot 2+2`$ | $`\psi_0(\Omega_{\omega\cdot 2+2})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}\begin{pmatrix}4 & 5\cr 2 & 3\cr 0 & 0\end{pmatrix}\begin{pmatrix}6\cr 4\cr 0\end{pmatrix}`$ |
+| $`\omega\cdot 2+3`$ | $`\psi_0(\Omega_{\omega\cdot 2+3})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}\begin{pmatrix}4 & 5\cr 2 & 3\cr 0 & 0\end{pmatrix}\begin{pmatrix}6\cr 4\cr 0\end{pmatrix}\begin{pmatrix}7\cr 5\cr 0\end{pmatrix}`$ |
+| $`\omega\cdot 3`$ | $`\psi_0(\Omega_{\omega\cdot 3})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}\begin{pmatrix}4 & 5\cr 2 & 3\cr 0 & 1\end{pmatrix}`$ |
+| $`\omega\cdot 4`$ | $`\psi_0(\Omega_{\omega\cdot 4})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}\begin{pmatrix}4 & 5\cr 2 & 3\cr 0 & 1\end{pmatrix}\begin{pmatrix}6 & 7\cr 3 & 4\cr 0 & 1\end{pmatrix}`$ |
+| $`\omega^2`$ | $`\psi_0(\Omega_{\omega^2})`$ | $`\begin{pmatrix}0 & 1 & 2\cr 0 & 1 & 1\cr 0 & 1 & 1\end{pmatrix}`$ |
+| $`\omega^2+1`$ | $`\psi_0(\Omega_{\omega^2+1})`$ | $`\begin{pmatrix}0 & 1 & 2\cr 0 & 1 & 1\cr 0 & 1 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
+| $`\omega^2+\omega`$ | $`\psi_0(\Omega_{\omega^2+\omega})`$ | $`\begin{pmatrix}0 & 1 & 2\cr 0 & 1 & 1\cr 0 & 1 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 1\end{pmatrix}`$ |
+| $`\omega^2\cdot 2`$ | $`\psi_0(\Omega_{\omega^2\cdot 2})`$ | $`\begin{pmatrix}0 & 1 & 2\cr 0 & 1 & 1\cr 0 & 1 & 1\end{pmatrix}\begin{pmatrix}2 & 3 & 4\cr 1 & 2 & 2\cr 0 & 1 & 1\end{pmatrix}`$ |
+| $`\omega^3`$ | $`\psi_0(\Omega_{\omega^3})`$ | $`\begin{pmatrix}0 & 1 & 2 & 2\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 1\end{pmatrix}`$ |
+| $`\omega^\omega`$ | $`\psi_0(\Omega_{\omega^\omega})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 0\cr 0 & 1 & 1 & 0\end{pmatrix}`$ |
+| $`\omega^\omega+1`$ | $`\psi_0(\Omega_{\omega^\omega+1})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 0\cr 0 & 1 & 1 & 0\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
+| $`\omega^{\omega+1}`$ | $`\psi_0(\Omega_{\omega^{\omega+1}})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 2\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1\end{pmatrix}`$ |
+| $`\omega^{\omega^\omega}`$ | $`\psi_0(\Omega_{\omega^{\omega^\omega}})`$ | $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 0\cr 0 & 1 & 1 & 0 & 0\end{pmatrix}`$ |
 
 ## 一般式（$`\alpha \lt \varepsilon_0`$）
 
@@ -120,75 +120,72 @@ z0 閉包子森が**冪**（指数の原始数列）。
 
 ### 例: $`\alpha = \omega^2 + \omega + 1`$
 
+単位 3 つ。ア = アンカー、根 = z1 根:
+
 ```math
-\underbrace{(0,0,0)(1,1,1)(2,1,1)}_{U_1:\ \text{アンカー+body}(\omega^2)}
-\underbrace{(2,1,0)(3,2,1)}_{U_2:\ \text{アンカー+body}(\omega)}
-\underbrace{(4,2,0)(5,3,0)}_{U_3:\ \text{アンカー+z0}\ (+1)}
+\overbrace{\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}}^{U_1}
+\overbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}3\cr 2\cr 1\end{pmatrix}}_{\text{根}}}^{U_2}
+\overbrace{\underbrace{\begin{pmatrix}4\cr 2\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}5\cr 3\cr 0\end{pmatrix}}_{{+}1}}^{U_3}
 ```
 
 ### 例: $`\alpha = \omega^{\omega^\omega}`$
 
-単位 1 つ。$`\beta' = \omega^\omega`$ の桁は $`\omega^{g}`$（$`g = \omega`$）1 つで、
-$`\mathrm{PrSS}(\omega) = (x,0,0)(x{+}1,0,0)`$:
+単位 1 つ。$`\mathrm{P}(g) = \mathrm{PrSS}(g)`$（桁の指数 $`g`$ の閉包子森）:
 
 ```math
-\underbrace{(0,0,0)}_{\text{アンカー}}
-\underbrace{(1,1,1)}_{\text{z1 根}}
-\underbrace{(2,1,1)}_{\text{桁}}
-\underbrace{(3,0,0)(4,0,0)}_{\mathrm{PrSS}(\omega)}
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
+\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
+\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
+\underbrace{\begin{pmatrix}3 & 4\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega)}
 ```
 
 ### 例: $`\alpha = \omega^{\omega^{\omega^\omega}}`$
 
-一つ前の例との違いは閉包子森だけ。桁の指数が $`g = \omega^\omega`$ に上がり、
-$`\mathrm{PrSS}(\omega^\omega)`$ は鎖が 1 節伸びる:
+一つ前の例との違いは閉包子森だけ。$`\mathrm{P}`$ の節が 1 つ増えるごとに
+指数の塔が 1 段上がる（$`(3,0,0)`$ で $`g=1`$、$`(4,0,0)`$ を継いで $`g=\omega`$、
+$`(5,0,0)`$ を継いで $`g=\omega^\omega`$）:
 
 ```math
-\underbrace{(0,0,0)}_{\text{アンカー}}
-\underbrace{(1,1,1)}_{\text{z1 根}}
-\underbrace{(2,1,1)}_{\text{桁}}
-\underbrace{(3,0,0)(4,0,0)(5,0,0)}_{\mathrm{PrSS}(\omega^\omega)}
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
+\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
+\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
+\underbrace{\begin{pmatrix}3 & 4 & 5\cr 0 & 0 & 0\cr 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega})}
 ```
 
-（$`\mathrm{PrSS}`$ の節が 1 つ増えるごとに指数の塔が 1 段上がる:
-$`(3,0,0)`$ で $`g=1`$、$`(4,0,0)`$ を継いで $`g=\omega`$、
-$`(5,0,0)`$ を継いで $`g=\omega^\omega`$。）
+### 例: $`\alpha = \omega^{\omega^{1+1}+\omega^{1+1}}`$
 
-### 例: $`\alpha = \omega^{\omega^{1+1} + \omega^{1+1}}`$
-
-指数 $`\beta = \omega^2 + \omega^2`$ は加法項 2 つなので**桁が 2 列**。
-各桁の指数 $`g = 2 = 1 + 1`$ は閉包子 2 節（兄弟、同じ $`x`$）:
+指数 $`\beta = \omega^2 + \omega^2`$ は加法項 2 つなので桁が 2 列、
+各桁の指数 $`g = 2`$ は閉包子 2 節（兄弟、同じ $`x`$）。
+$`\mathrm{P}`$ の中では兄弟（同じ $`x`$）が $`+1`$、子（$`x{+}1`$）が塔 1 段:
 
 ```math
-\underbrace{(0,0,0)}_{\text{アンカー}}
-\underbrace{(1,1,1)}_{\text{z1 根}}
-\underbrace{(2,1,1)}_{\text{桁}}
-\underbrace{(3,0,0)(3,0,0)}_{\mathrm{PrSS}(2)}
-\underbrace{(2,1,1)}_{\text{桁}}
-\underbrace{(3,0,0)(3,0,0)}_{\mathrm{PrSS}(2)}
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
+\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
+\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
+\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}
+\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
+\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}
 ```
-
-$`\mathrm{PrSS}`$ の中では**兄弟（同じ $`x`$）が $`+1`$、子（$`x{+}1`$）が塔 1 段**、
-という 1 行 BM そのままの読みになっている。桁の並びも同様に、
-兄弟の桁（同じ $`x_0{+}1`$）が指数の加法項 1 つずつを担う。
 
 ### 例: $`\alpha = \omega^{\omega^{\omega^{\omega^5+\omega^4}+\omega^3}+\omega^2}`$
 
-指数 $`\beta = \omega^{\omega^{\omega^5+\omega^4}+\omega^3} + \omega^2`$ で桁は 2 列。
-縦線は表と同じ凡例（点線 = z1 根の両側、実線 = 桁境界。桁は自分の閉包子森を
-連れて 1 区画になる）:
+桁 1 の指数 $`g_1 = \omega^{\omega^5+\omega^4} + \omega^3`$ の閉包子森は
+$`\mathrm{P}`$ の再帰で書かれる:
 
 ```math
-\left(\begin{array}{c:c:ccccccccccccccccc|ccc}0 & 1 & 2 & 3 & 4 & 5 & 5 & 5 & 5 & 5 & 4 & 5 & 5 & 5 & 5 & 3 & 4 & 4 & 4 & 2 & 3 & 3\cr 0 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0\cr 0 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0\end{array}\right)
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
+\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
+\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
+\underbrace{\begin{pmatrix}3 & 4 & 5 & 5 & 5 & 5 & 5 & 4 & 5 & 5 & 5 & 5 & 3 & 4 & 4 & 4\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega^{5}+\omega^{4}}+\omega^{3})}
+\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
+\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}
 ```
 
-桁 1 の指数 $`g_1 = \omega^{\omega^5+\omega^4} + \omega^3`$ の閉包子森
-（$`x = 3`$ の節 2 つ = 加法項 2 つ）は $`\mathrm{PrSS}`$ の再帰で書かれる:
+桁 1 の閉包子森の入れ子（閉包子は全部 $`y = z = 0`$ なので $`x`$ だけ書く）:
 
 ```math
-\underbrace{(3)\overbrace{(4)\overbrace{(5)(5)(5)(5)(5)}^{\mathrm{PrSS}(5)}(4)\overbrace{(5)(5)(5)(5)}^{\mathrm{PrSS}(4)}}^{\mathrm{PrSS}(\omega^5+\omega^4)}\ (3)\overbrace{(4)(4)(4)}^{\mathrm{PrSS}(3)}}_{\mathrm{PrSS}(\omega^{\omega^5+\omega^4}+\omega^3)}
+\underbrace{(3)\overbrace{(4)\overbrace{(5)(5)(5)(5)(5)}^{\mathrm{P}(5)}(4)\overbrace{(5)(5)(5)(5)}^{\mathrm{P}(4)}}^{\mathrm{P}(\omega^5+\omega^4)}\ (3)\overbrace{(4)(4)(4)}^{\mathrm{P}(3)}}_{\mathrm{P}(\omega^{\omega^5+\omega^4}+\omega^3)}
 ```
 
-（閉包子は全部 $`y = z = 0`$ なので $`x`$ だけ書いた。）
 閉包子森の中身は指数の $`\mathrm{CNF}`$ をそのまま 1 行 BM に写した入れ子で、
 どの深さでも同じ文法が繰り返される。
