@@ -9,10 +9,10 @@ $`\alpha`$ の定義域: 原理上は拡張ブーフホルツ OT の項全体（
 最小 $`\Omega`$ 不動点）。本表の生成器が現在対応するのは
 $`\alpha \lt \varepsilon_0`$（$`\omega`$ の CNF で書ける範囲）。
 
-表記: 行列は**単位ごとに分けて**並べる（括弧 1 組 = 単位 $`U_i`$）。
-各単位の中身（アンカー・z1 根・桁・閉包子）の区切りは例の節の underbrace を参照。
+表記: 行列は**ユニットごとに分けて**並べる（括弧 1 組 = ユニット $`U_i`$）。
+ユニットの中身（アンカー・根・サブユニット）の区切りは例の節の underbrace を参照。
 
-| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | トリオ数列（括弧 1 組 = 単位） |
+| $`\alpha`$ | $`\psi_0(\Omega_\alpha)`$ | トリオ数列（括弧 1 組 = ユニット） |
 |---|---|---|
 | $`\omega`$ | $`\psi_0(\Omega_{\omega})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}`$ |
 | $`\omega+1`$ | $`\psi_0(\Omega_{\omega+1})`$ | $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}\begin{pmatrix}2 & 3\cr 1 & 2\cr 0 & 0\end{pmatrix}`$ |
@@ -35,47 +35,70 @@ $`\alpha \lt \varepsilon_0`$（$`\omega`$ の CNF で書ける範囲）。
 
 ## 一般式（$`\alpha \lt \varepsilon_0`$）
 
-$`\alpha`$ を係数を展開した CNF（単位の列、非増加）で書く:
+$`\Omega_\alpha`$ の $`\alpha`$ を 2 段組みのカントール標準形として捉える
+（係数は展開して並べる。$`1 + \beta_i' = \beta_i`$ は先頭の $`1`$ を外した残り）:
 
 ```math
-\alpha = \omega^{\beta_1} + \omega^{\beta_2} + \cdots + \omega^{\beta_m},
-\qquad \beta_1 \ge \beta_2 \ge \cdots \ge \beta_m .
+\begin{aligned}
+\alpha &= \sum_i \omega^{\beta_i}, & \beta_1 &\ge \beta_2 \ge \cdots \ge \beta_m \cr
+\beta_i' &= \sum_j \omega^{\gamma_{ij}}, & \gamma_{i1} &\ge \gamma_{i2} \ge \cdots
+\end{aligned}
 ```
 
-行列は列リストの連結（$`+\!\!+`$）で与えられる:
+行列は加算項 $`\omega^{\beta_i}`$ を**ユニット** $`U_i`$ として並べたもの
+（$`+\!\!+`$ は列リストの連結）:
 
 ```math
 M(\alpha) = U_1 +\!\!+ U_2 +\!\!+ \cdots +\!\!+ U_m .
 ```
 
-**用語**: 列 $`(x, y, z)`$ を $`z`$ の値で呼び分ける —
+### 構造
+
+- ユニット $`U_i = \omega^{\beta_i}`$
+  - アンカー
+  - 根 — $`\beta_i`$ の先頭の $`1`$ を担う
+  - サブユニット $`S_{i1} = \omega^{\gamma_{i1}}`$
+    - 桁
+    - 原始数列埋め込み $`\mathrm{PrSS}(\gamma_{i1})`$
+  - サブユニット $`S_{i2} = \omega^{\gamma_{i2}}`$
+    - 桁
+    - 原始数列埋め込み $`\mathrm{PrSS}(\gamma_{i2})`$
+  - …
+- ユニット $`U_i = 1`$（$`\beta_i = 0`$ のとき）
+  - アンカー
+  - z0 列
+
+すなわち**ユニットはアンカーと根とサブユニットからなり、サブユニットは桁と
+原始数列埋め込みからなる**（$`\beta_i = 0`$ のユニットだけは根もサブユニットも
+持たず、アンカーと z0 列 1 本）。
+
+### 用語
+
+列 $`(x, y, z)`$ を $`z`$ の値で呼び分ける —
 **z1 列** = $`z = 1`$ の列、**z0 列** = $`z = 0`$ の列。
 列の行 0 親は BM の通常の読み（**それより左で $`x`$ が真に小さい直近の列**。
 $`x`$ は左から単調ではなく、下がって戻ることがある）。
 
-- **単位** $`U_i`$: $`\alpha`$ の CNF の加法項 $`\omega^{\beta_i}`$ 一つ分に当たる列の区間。
-  - アンカーと本体からなる。
+- **ユニット** $`U_i`$: $`\alpha`$ の加算項 $`\omega^{\beta_i}`$ 一つ分に当たる列の区間。
   - レベル $`y = i`$ に住む。
-- **アンカー**: 単位の先頭に置く z0 列（下の単位規則の $`(r{+}1,\ i{-}1,\ 0)`$）。
-  - 直前単位の番地を z0 の形で作り直し、新しい単位をぶら下げる足場になる
+- **アンカー**: ユニットの先頭に置く z0 列（下のユニット規則の $`(r{+}1,\ i{-}1,\ 0)`$）。
+  - 直前ユニットの番地を z0 の形で作り直し、新しいユニットをぶら下げる足場になる
     （z1 の極限標識には後続を直接ぶら下げられない）。
-  - 先頭単位 $`U_1`$ のアンカーは $`(0,0,0)`$ 自身（直前の番地 = $`0`$、地面）。
-- **本体**: 単位のアンカー以外の残り。
-  - $`\omega^\beta`$（$`\beta \ge 1`$）の単位では z1 列の並び＋閉包子
-    （後述の $`\mathrm{body}`$）。
-  - $`+1`$ 単位では z0 列 1 本。
-- **z1 根**: 本体の先頭の z1 列。
-  - 分解 $`1 + \beta' = \beta`$ の先頭の $`1`$ を担う。
-- **桁**: 本体内の z1 根以外の z1 列。
-  - $`\beta'`$ の CNF の加法項 $`\omega^g`$ 一つにつき 1 列（下の $`\mathrm{body}`$ 参照）。
-  - z1 根の $`x`$ を $`x_0`$ とすると桁の $`x`$ は全部 $`x_0{+}1`$ で、
-    全部 z1 根の行 0 子になる。
-- **閉包子**: 桁の下（行 0 子孫）にぶら下がる $`y = 0`$ の z0 列。
-  - その全体（後述の $`\mathrm{PrSS}`$）が桁の指数 $`g`$ を担う。
+  - 先頭ユニット $`U_1`$ のアンカーは $`(0,0,0)`$ 自身（直前の番地 = $`0`$、地面）。
+- **根**: アンカーの次に置く z1 列。
+  - 分解 $`1 + \beta_i' = \beta_i`$ の先頭の $`1`$ を担う。
+- **サブユニット** $`S_{ij}`$: $`\beta_i'`$ の加算項 $`\omega^{\gamma_{ij}}`$ 一つ分。
+  - 桁と原始数列埋め込みからなる。
+- **桁**: サブユニットの先頭の z1 列。
+  - 根の $`x`$ を $`x_0`$ とすると桁の $`x`$ は全部 $`x_0{+}1`$ で、
+    全部 根の行 0 子になる。
+- **原始数列埋め込み** $`\mathrm{PrSS}(\gamma_{ij})`$: 桁の下（行 0 子孫）に
+  ぶら下がる $`y = 0`$ の z0 列の森。
+  - 指数 $`\gamma_{ij}`$ を担う。
 
-状態として直前の単位の z1 根の $`x`$ 座標 $`r`$ を持ち回る。
+状態として直前のユニットの根の $`x`$ 座標 $`r`$ を持ち回る。
 
-**単位（加法）**:
+### ユニット（加法）
 
 状態 $`r`$ は $`-1`$ で初期化する（$`U_1`$ のアンカーが $`(0,0,0)`$ になる）。
 
@@ -90,39 +113,44 @@ U_i &= (x_t{+}1,\ i,\ 0)
 \end{aligned}
 ```
 
-すなわち $`+1`$ 単位はアンカーと素の z0 列でレベルを 1 段登り、$`+1`$ が続く間は
-アンカーを共有して z0 の鎖で登り続ける。
+すなわち $`\beta_i = 0`$ のユニットはアンカーと素の z0 列でレベルを 1 段登り、
+それが続く間はアンカーを共有して z0 の鎖で登り続ける。
 
-**本体（乗法）**: $`1 + \beta' = \beta`$ と分解する
+### 根とサブユニット（乗法）
+
+$`1 + \beta' = \beta`$ と分解する
 （$`\beta \ge \omega`$ なら $`\beta' = \beta`$、有限 $`k`$ なら $`\beta' = k-1`$）。
-$`\beta' = \omega^{g_1} + \cdots + \omega^{g_k}`$（単位の列、非増加）として
+$`\beta' = \omega^{\gamma_1} + \cdots + \omega^{\gamma_k}`$ として
 
 ```math
-\mathrm{body}(\beta,\ x_0,\ y) = (x_0,\ y,\ 1)
-  +\!\!+ \big[\, (x_0{+}1,\ y,\ 1) +\!\!+ \mathrm{PrSS}(g_j,\ x_0{+}2) \,\big]_{j=1}^{k} .
+\mathrm{body}(\beta,\ x_0,\ y) = \underbrace{(x_0,\ y,\ 1)}_{\text{根}}
+  +\!\!+ \big[\, \underbrace{(x_0{+}1,\ y,\ 1)}_{\text{桁}}
+  +\!\!+ \mathrm{PrSS}(\gamma_j,\ x_0{+}2) \,\big]_{j=1}^{k} .
 ```
 
-z1 根が 1 つ、z1 子が $`\beta`$ の桁 1 つにつき 1 列。桁 $`\omega^{g}`$ の指数 $`g`$ は
-子の閉包子森 $`\mathrm{PrSS}(g)`$ が担う。
+根が 1 列、サブユニットが $`\beta'`$ の加算項 1 つにつき 1 組
+（桁 1 列＋その原始数列埋め込み）。
 
-**閉包子森（冪）**: $`g = \omega^{h_1} + \cdots + \omega^{h_l}`$（単位の列）として
+### 原始数列埋め込み（冪）
+
+$`\gamma = \omega^{\delta_1} + \cdots + \omega^{\delta_l}`$ として
 
 ```math
-\mathrm{PrSS}(g,\ x) = \big[\, (x,\ 0,\ 0) +\!\!+ \mathrm{PrSS}(h_j,\ x{+}1) \,\big]_{j=1}^{l},
+\mathrm{PrSS}(\gamma,\ x) = \big[\, (x,\ 0,\ 0)
+  +\!\!+ \mathrm{PrSS}(\delta_j,\ x{+}1) \,\big]_{j=1}^{l},
 \qquad \mathrm{PrSS}(0,\ x) = \varepsilon .
 ```
 
-これは $`g`$ の 1 行バシク行列（原始数列）そのもので、常に $`y = z = 0`$ の列に住む。
+これは $`\gamma`$ の 1 行バシク行列（原始数列）そのもので、常に $`y = z = 0`$ の列に住む。
 
 **まとめ**: 3 つの行が CNF の 3 つの演算をそのまま担う —
-行 1 のレベル階段が**加法**（単位ごとに 1 段）、z1 列の木が**乗法**（$`\omega`$ 因子）、
-z0 閉包子森が**冪**（指数の原始数列）。
+行 1 のレベル階段が**加法**（ユニットごとに 1 段）、z1 列の木が**乗法**（$`\omega`$ 因子）、
+z0 の原始数列埋め込みが**冪**（指数の原始数列）。
 
 ### 例: $`\alpha = \omega^2 + \omega + 1`$
 
-単位 3 つ。ア = アンカー、根 = z1 根。桁（と閉包子森）の組は
-さらに underbrace で括り、**サブユニット**（$`\beta'`$ の加法項 1 つ分、
-ラベルはその値）とする:
+ユニット 3 つ。ア = アンカー。桁と原始数列埋め込みの組は
+さらに underbrace で括って**サブユニット**とし、ラベルはその値 $`\omega^{\gamma_{ij}}`$:
 
 ```math
 \overbrace{\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}}_{1}}^{U_1}
@@ -132,7 +160,7 @@ z0 閉包子森が**冪**（指数の原始数列）。
 
 ### 例: $`\alpha = \omega^{\omega^\omega}`$
 
-単位 1 つ。$`\mathrm{P}(g) = \mathrm{PrSS}(g)`$（桁の指数 $`g`$ の閉包子森）。
+ユニット 1 つ。$`\mathrm{P}(\gamma) = \mathrm{PrSS}(\gamma)`$（原始数列埋め込み）。
 サブユニット $`\omega^\omega`$ = 桁 + $`\mathrm{P}(\omega)`$:
 
 ```math
@@ -141,7 +169,7 @@ z0 閉包子森が**冪**（指数の原始数列）。
 
 ### 例: $`\alpha = \omega^{\omega^{\omega^\omega}}`$
 
-一つ前の例との違いは閉包子森だけ。$`\mathrm{P}`$ の節が 1 つ増えるごとに
+一つ前の例との違いは原始数列埋め込みだけ。$`\mathrm{P}`$ の節が 1 つ増えるごとに
 指数の塔が 1 段上がる（$`(3,0,0)`$ で $`g=1`$、$`(4,0,0)`$ を継いで $`g=\omega`$、
 $`(5,0,0)`$ を継いで $`g=\omega^\omega`$）:
 
@@ -151,8 +179,8 @@ $`(5,0,0)`$ を継いで $`g=\omega^\omega`$）:
 
 ### 例: $`\alpha = \omega^{\omega^{1+1}+\omega^{1+1}}`$
 
-指数 $`\beta = \omega^2 + \omega^2`$ は加法項 2 つなのでサブユニットが 2 つ。
-各桁の指数 $`g = 2`$ は閉包子 2 節（兄弟、同じ $`x`$）。
+$`\beta = \omega^2 + \omega^2`$ は加算項 2 つなのでサブユニットが 2 つ。
+各サブユニットの指数 $`\gamma = 2`$ は $`\mathrm{PrSS}`$ の節 2 つ（兄弟、同じ $`x`$）。
 $`\mathrm{P}`$ の中では兄弟（同じ $`x`$）が $`+1`$、子（$`x{+}1`$）が塔 1 段:
 
 ```math
@@ -162,18 +190,18 @@ $`\mathrm{P}`$ の中では兄弟（同じ $`x`$）が $`+1`$、子（$`x{+}1`$�
 ### 例: $`\alpha = \omega^{\omega^{\omega^{\omega^5+\omega^4}+\omega^3}+\omega^2}`$
 
 サブユニット 2 つ。サブユニット 1 の指数
-$`g_1 = \omega^{\omega^5+\omega^4} + \omega^3`$ の閉包子森は
+$`\gamma_{11} = \omega^{\omega^5+\omega^4} + \omega^3`$ の原始数列埋め込みは
 $`\mathrm{P}`$ の再帰で書かれる:
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 4 & 5 & 5 & 5 & 5 & 5 & 4 & 5 & 5 & 5 & 5 & 3 & 4 & 4 & 4\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega^{5}+\omega^{4}}+\omega^{3})}}_{\omega^{\omega^{\omega^{5}+\omega^{4}}+\omega^{3}}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}}_{\omega^{2}}
 ```
 
-サブユニット 1 の閉包子森の入れ子（閉包子は全部 $`y = z = 0`$ なので $`x`$ だけ書く）:
+サブユニット 1 の原始数列埋め込みの入れ子（列は全部 $`y = z = 0`$ なので $`x`$ だけ書く）:
 
 ```math
 \underbrace{(3)\overbrace{(4)\overbrace{(5)(5)(5)(5)(5)}^{\mathrm{P}(5)}(4)\overbrace{(5)(5)(5)(5)}^{\mathrm{P}(4)}}^{\mathrm{P}(\omega^5+\omega^4)}\ (3)\overbrace{(4)(4)(4)}^{\mathrm{P}(3)}}_{\mathrm{P}(\omega^{\omega^5+\omega^4}+\omega^3)}
 ```
 
-閉包子森の中身は指数の $`\mathrm{CNF}`$ をそのまま 1 行 BM に写した入れ子で、
+原始数列埋め込みの中身は指数の $`\mathrm{CNF}`$ をそのまま 1 行 BM に写した入れ子で、
 どの深さでも同じ文法が繰り返される。
