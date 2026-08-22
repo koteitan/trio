@@ -22,7 +22,8 @@ The level a column names is its position in the chain of z0 ancestors, not the b
 so a unit's leaf names it in one column while a collapse argument spells the whole subscript
 out (the "emergent address"). A leaf that ends the matrix takes a suffix that says which
 limit level it was -- the upgrade effect. Of the sheet's 813 rows the builder reproduces
-736; dom.md lists what the other 71 need. The CLI mirrors build_omega_alpha.py:
+735 of the 785 whose matrix is a
+standard form; dom.md lists what the other 50 need. The CLI mirrors build_omega_alpha.py:
 
   python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
   python3 probe_eps_range.py 'W_2+W*w' 2          also print the expansion
@@ -664,8 +665,15 @@ def mat(s):
 # Rows whose label and matrix do not agree. The orbit-law audit (M(alpha)[n] = M(alpha_n),
 # expanding a trusted neighbouring row) sides with the builder on all of them, but the
 # orbit law is itself empirical, so these are mismatches, not proven errata.
+# Rows whose own matrix yaBMS calls non-standard, so they cannot be a standard form's
+# entry. run_standard re-derives the list; the builder is measured on the rest.
+SHEET_NONSTANDARD = {
+    '1947', '2755', '2756', '2757', '3481', '3482', '3953', '4306', '4307', '4308',
+    '4499', '4519', '4520', '4521', '4522', '4523', '4524', '4525', '4526', '4527',
+    '4528', '4529', '4530', '4531', '4532', '4533', '4534', '4535',
+}
+
 KNOWN_MISMATCH = {
-    '1947': '(11,5,1) vs (11,6,1); M(w^3)[6] sides with the builder',
     '2113': 'the matrix has the shape of w^5*2; M(w^6)[3] sides with the builder',
     '2131': 'the content is a two-step +1 staircase, i.e. w^w+2 (label duplicated with 2133)',
     '2133': '(3,2,0)(4,3,1) vs (4,2,0)(5,3,1); M(w^w+w^2)[2] sides with the builder',
@@ -690,7 +698,7 @@ def run_standard(built):
     form. Skipped when the bms binary is not built."""
     import subprocess
     if not os.path.exists(BMS): return
-    ok = ng = 0; bad = []
+    ok = ng = 0; bad = []; stale = []
     for row, alpha, agrees, cols in built:
         m = ''.join('(%d,%d,%d)' % c for c in cols)
         v = subprocess.run([BMS, '-s', m], capture_output=True, text=True).stdout.strip()
@@ -701,12 +709,17 @@ def run_standard(built):
     print('yaBMS standard check: %d standard / %d not (of the built matrices)' % (ok, ng))
     for r, a in bad:
         print(' non-standard row %s a=%s' % (r, a))
+    for p in rows():                             # keep SHEET_NONSTANDARD honest
+        v = subprocess.run([BMS, '-s', p[3]], capture_output=True, text=True).stdout.strip()
+        if (v == '0') != (p[0] in SHEET_NONSTANDARD): stale.append(p[0])
+    if stale: print(' SHEET_NONSTANDARD is out of date at rows: %s' % ' '.join(stale))
 
 def run_check():
     from collections import Counter
     ok = Counter(); ng = Counter(); skip = Counter(); uns = Counter(); known = 0
     bad = []; built = []
     for p in rows():
+        if p[0] in SHEET_NONSTANDARD: continue   # not a standard form: nothing to match
         g = group(p[1])
         try:
             a = parse(p[1])
@@ -727,9 +740,9 @@ def run_check():
         print('%-20s %4d match / %3d mismatch / %3d unsupported / %3d unparsed'
               % (g, ok[g], ng[g], uns[g], skip[g]))
     print('%-20s %4d match / %3d mismatch / %3d unsupported / %3d unparsed'
-          ' (+%d known mismatch)'
+          ' (+%d known mismatch, %d sheet rows non-standard)'
           % ('total', sum(ok.values()), sum(ng.values()), sum(uns.values()),
-             sum(skip.values()), known))
+             sum(skip.values()), known, len(SHEET_NONSTANDARD)))
     for r, t, w, g in bad:
         print(' row %s a=%s' % (r, t))
         print('   sheet:', ''.join('(%d,%d,%d)' % c for c in w))

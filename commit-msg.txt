@@ -1,9 +1,8 @@
-Omega arithmetic: measure coverage against every ladder in reach
+Leave the sheet's own non-standard rows out of the measurement
 
-- Take what the context provides as the deepest level column inside a
-  longest common prefix with M(v), over the plain staircase, the matrix
-  being built, and M(u) inside a psi_{Omega_u}
-- Cap that at the chain's own depth, so a level column below it stays
-  unwritten and the copy carries it instead
-- 736 of the sheet's 813 rows agree (was 734); row order still clean and
-  805 of the built matrices are standard forms
+- List the 28 rows whose matrix yaBMS calls non-standard and skip them: a
+  row that is not a standard form has no entry for the builder to match
+- Re-derive that list in the standard check and report it when it goes stale
+- Drop row 1947 from the known mismatches; it is one of the 28
+- Of the 785 rows that remain, 735 agree and 50 do not: 4 where the sheet
+  repeats a label, 6 where our build is not standard, 40 undecided
