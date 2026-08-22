@@ -1,8 +1,6 @@
-move the normalized sheet to tmp/fixed-sheet and untrack it
+sheet/1: add omega^{omega^2+omega^2}+omega^{omega+omega} and simplify the last row
 
-- Relocate bms-rathjen/ to tmp/fixed-sheet/ and add tmp/ to .gitignore
-- normalize_sheet.py writes there (creating the directory) and now also
-  regenerates tools/omega_alpha_rows.tsv, so the whole chain is one command
-  from the xlsx (output verified byte-identical)
-- Replace the links to the now-untracked copy in README.md and
-  ebp2bms-1{,-en}.md with a pointer to the script
+- Insert the new row right after omega^{omega^2+omega^2}
+- Replace omega^{omega^{omega^{omega^5+omega^4}+omega^3}+omega^2} with
+  omega^{omega^{omega^{omega^2+omega^2}+omega^2}+omega^2}+omega^2, which
+  shows the same nesting with a trailing add unit and smaller exponents
