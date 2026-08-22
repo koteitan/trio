@@ -1,8 +1,7 @@
-build_omega_alpha.py: write the comments and --help in English
+probe_eps_range.py: write the comments, --help and messages in English
 
-- Translate the module docstring, the inline comments and the
-  KNOWN_MISMATCH notes
-- Translate USAGE and the two runtime messages, since the English blog post
-  links this file directly
-- Output and validation counts are unchanged (118 match / 0 unexpected / 4
-  known; self-check 8/8)
+- Translate the module docstring, the block/arg/uncollapse explanations, the
+  level-column rule and the Omega_v notes
+- Translate USAGE, the validation summaries and the parse-error message
+- Note in the docstring that build_omega_alpha.py delegates here above eps_0
+- Counts unchanged: 137 / 16 / 80 match with 0 unexpected mismatches

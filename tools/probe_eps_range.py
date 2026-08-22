@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
-"""eps_0 <= alpha 領域: E = eps_0 を原子に持つ順序数算術 + M(alpha)。
+"""The eps_0 <= alpha range: ordinal arithmetic with the atom E = eps_0, plus M(alpha).
 
-build_omega_alpha.py の PrSS を「Buchholz OT 項をそのまま写す block」に
-置き換え、psi_0 の引数位置での逆崩壊（先頭の E -> Omega_1 葉）を入れた版。
-シートの w-CNF + E 原子 135 行に対し 131 一致（残り 4 は既知の不一致行
-1947 / 2113 / 2131 / 2133）。CLI は build_omega_alpha.py と同じ:
+This replaces build_omega_alpha.py's PrSS by `block`, which copies the Buchholz OT term of
+the exponent verbatim, and adds the uncollapse in the argument position of psi_0 (a leading
+E becomes an Omega_1 leaf). Of the 135 sheet rows whose alpha is w-CNF plus the E atom, 131
+match (the other 4 are the known mismatch rows 1947 / 2113 / 2131 / 2133). This module is
+also the builder the build_omega_alpha.py CLI delegates to above eps_0. Its own CLI mirrors
+build_omega_alpha.py:
 
-  python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  psi_0(W_alpha) を表示
-  python3 probe_eps_range.py 'psi_0(W)+w^2' 2     展開も表示
-  python3 probe_eps_range.py                      検証モード
+  python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  print psi_0(W_alpha)
+  python3 probe_eps_range.py 'psi_0(W)+w^2' 2     also print the expansion
+  python3 probe_eps_range.py                      validation mode
 """
 import re, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from trio import expand
 
-# Ord = tuple((exp, coeff), ...) 降順。exp は Ord または 'E'。
+# Ord = tuple((exp, coeff), ...) in decreasing order; exp is an Ord or 'E'.
 ZERO = ()
 E_EXP = 'E'
 E = ((E_EXP, 1),)
@@ -76,20 +78,20 @@ def power(a, b):
     if b == ZERO: return nat(1)
     if a == nat(1): return nat(1)
     if b == nat(1): return a
-    # 有限指数は反復
+    # a finite exponent is repeated multiplication
     if len(b) == 1 and b[0][0] == ZERO:
         r = a
         for _ in range(b[0][1] - 1): r = mul(r, a)
         return r
     e1 = a[0][0]
-    if e1 == ZERO:                       # 有限の底
+    if e1 == ZERO:                       # a finite base
         return wpow(b_pred(b))
     return wpow(mul(E if e1 == E_EXP else e1, b))
 
 def b_pred(b):
     return b
 
-# ---- パーサ: w, 数, E(=psi(W)), + * ^ ( ) ----
+# ---- Parser: w, digits, E (= psi(W)), + * ^ ( ) ----
 TOK = re.compile(r'psi\(W\)|w|\d+|[+*^()]')
 def parse(s):
     s = canon(s.replace(' ', ''))
@@ -127,12 +129,12 @@ def parse(s):
     except Exception:
         return None
 
-# ---- ビルダー拡張 ----
+# ---- The builder ----
 def units(a):
     return [e for e, c in a for _ in range(c)]
 
 def pred_beta(beta):
-    """1 + beta' = beta の beta'。"""
+    """The beta' with 1 + beta' = beta."""
     if beta == ZERO: return ZERO
     if beta[0][0] == ZERO:
         k = beta[0][1]
@@ -140,14 +142,14 @@ def pred_beta(beta):
     return beta
 
 def block(gamma, x):
-    """gamma の Buchholz OT 項をそのまま列に写す。
+    """Copy the Buchholz OT term of gamma into columns verbatim.
 
-    加法項 w^delta ごとに psi_0 ノード (x,0,0) を置き、その子として
-    引数 arg(delta) を x+1 に書く。arg は逆崩壊込み:
-      delta = E*c + rest -> Omega_1 葉 (x,1,0) ++ block(E*(c-1)+rest)
-      それ以外           -> block(delta)
-    根拠: delta < eps_0 では w^delta = psi_0(delta) なので素直な写し。
-    delta >= eps_0 では先頭の E が Omega_1 に戻る（逆崩壊）。
+    For each summand w^delta place a psi_0 node (x,0,0) and write its argument arg(delta)
+    at x+1 as its children. arg carries the uncollapse:
+      delta = E*c + rest -> the Omega_1 leaf (x,1,0) ++ block(E*(c-1)+rest)
+      otherwise          -> block(delta)
+    Why: for delta < eps_0 we have w^delta = psi_0(delta), so the copy is direct. For
+    delta >= eps_0 the leading E turns back into Omega_1 (the uncollapse).
     """
     if gamma == ZERO: return []
     cols = []
@@ -158,7 +160,7 @@ def block(gamma, x):
     return cols
 
 def arg(delta, x):
-    """psi_0 の引数位置の書き方（逆崩壊込み）。delta は exp（Ord または 'E'）。"""
+    """How the argument of psi_0 is written (uncollapse included). delta is an exp."""
     if delta == E_EXP:
         return [(x, 1, 0)]
     if delta == ZERO:
@@ -174,7 +176,7 @@ def body(beta, x0, y):
     for e, c in pred_beta(beta):
         for _ in range(c):
             cols.append((x0 + 1, y, 1))
-            cols += block(E if e == E_EXP else e, x0 + 2)   # 桁の子 = 指数 gamma 自身
+            cols += block(E if e == E_EXP else e, x0 + 2)   # a digit's children = gamma
     return cols
 
 def M(alpha):
@@ -195,12 +197,12 @@ def M(alpha):
         prev0 = (beta == ZERO)
     return cols
 
-# ---- 検証 ----
+# ---- Validation ----
 def mat(s):
     cs = [tuple(int(v) for v in x.split(',')) for x in re.findall(r'\((\d+(?:,\d+)*)\)', s)]
     return [c + (0,) * (3 - len(c)) for c in cs]
 
-# ---- 大きい alpha: psi_0(X) 原子と Omega_v 原子 ----
+# ---- Large alpha: the psi_0(X) and Omega_v atoms ----
 def _toplevel_ops(t):
     d = 0
     for ch in t:
@@ -209,18 +211,18 @@ def _toplevel_ops(t):
     return False
 
 def canon(t):
-    """入力のシュガーシンタクスを正規形 psi(...) に直す。
+    """Rewrite the input sugar into the canonical psi(...) form.
 
-    psi_0( / p_0( / p(  ->  psi(   （psi_1( 等の v>0 崩壊はそのまま）
+    psi_0( / p_0( / p(  ->  psi(   (psi_1( and other v>0 collapses are left alone)
     """
     return (t.replace('psi_0(', 'psi(')
              .replace('p_0(', 'psi(')
              .replace('p(', 'psi('))
 
 def big_parse(t):
-    """'psi(W)' / 'psi(W_X)' / 'W' / 'W_X' -> ('psi'|'om', X文字列)。
+    """'psi(W)' / 'psi(W_X)' / 'W' / 'W_X' -> ('psi'|'om', the X string).
 
-    添字 X の外側に演算子があるもの（W_2^2 = (Omega_2)^2 など）は None。
+    Returns None when an operator sits outside the subscript X, as in W_2^2 = (Omega_2)^2.
     """
     t = canon(t.strip())
     while t.startswith('(') and t.endswith(')') and not _toplevel_ops(t[1:-1]):
@@ -237,11 +239,11 @@ def big_parse(t):
     if t.startswith('W_') and not _toplevel_ops(t[2:]):
         return ('om', t[2:])
     if t.startswith('psi(W_') and t.endswith(')') and not _toplevel_ops(t[6:-1]):
-        return ('psi', t[6:-1])          # W_X^2 等は添字でなく Omega_X の演算
+        return ('psi', t[6:-1])          # W_X^2 is arithmetic on Omega_X, not a subscript
     return None
 
 def Many(t):
-    """t（文字列）の M(alpha)。大きい原子と w-CNF+E の両方を受ける。"""
+    """M(alpha) for the string t; accepts both the large atoms and w-CNF plus E."""
     b = big_parse(t)
     if b:
         kind, v = b
@@ -250,13 +252,13 @@ def Many(t):
         vm = Many(v)
         if vm is None: return None
         # M(psi_0(Omega_X)) = (0,0,0)(1,1,1)(2,1,1) ++ shift(M(X), 3)。
-        # shift された M(X) のアンカーがそのまま psi_0 ノード (3,0,0) になる。
+        # the shifted anchor of M(X) is the psi_0 node (3,0,0) itself.
         return [(0, 0, 0), (1, 1, 1), (2, 1, 1)] + [(c[0] + 3, c[1], c[2]) for c in vm]
     a = parse(t)
     if a in (None, ZERO): return None
     return M(a)
 
-# ---- alpha = Omega_v （B を単位とする第 2 階層）----
+# ---- alpha = Omega_v: a second storey built out of B ----
 BASE_B = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0)]   # = M(Omega_1)
 
 def lift(cols, k=1):
@@ -271,19 +273,21 @@ def _forest(cols):
     return par, kids
 
 def _is_level(cols, par, i):
-    """レベル列（アンカー / +1 標識）か。Omega 葉・psi_0 ノードは除く。"""
+    """Is this a level column (an anchor or a +1 marker)? Omega leaves and psi_0 nodes
+    are excluded."""
     x, y, z = cols[i]
     if z != 0 or y < 1: return False
     p = par[i]
     if p is None: return True
     if cols[p][2] == 0:
-        # 親が psi_0 ノード（y=0 の z0 列、ただし根のアンカーを除く）なら Omega 葉
+        # a parent that is a psi_0 node (a z0 column with y=0, other than the root
         return not (p != 0 and cols[p][1] == 0)
     gp = par[p]
-    return gp is None or cols[gp][2] == 0           # 親が「根」なら level、桁なら Omega 葉
+    return gp is None or cols[gp][2] == 0           # parent is a root -> level; a digit -> leaf
 
 def M_Omega(v):
-    """M(Omega_v)。M(v) の各レベル列の下に B の尾を挿し、末尾のレベル列を落とす。"""
+    """M(Omega_v): insert B's tail below every level column of M(v) and drop a trailing
+    level column."""
     cols = Many(v)
     if cols is None: return None
     par, kids = _forest(cols)
@@ -293,7 +297,7 @@ def M_Omega(v):
     def dfs(i, d):
         if i == drop: return
         out.append((d, cols[i][1], cols[i][2]))
-        if i in lev or i == 0:                       # 根のアンカーにも B を挿す
+        if i in lev or i == 0:                       # the root anchor also takes a B
             y0 = cols[i][1]
             for k, (dy, z) in enumerate(((1, 1), (1, 1), (1, 0))):
                 out.append((d + 1 + k, y0 + dy, z))
@@ -302,7 +306,7 @@ def M_Omega(v):
     return out
 
 def M_Omega_fin(v):
-    """有限 v の閉じた形（M_Omega と一致する）: B ++ L(B) ++ ... ++ L^{v-1}(B)。"""
+    """The closed form for finite v (agrees with M_Omega): B ++ L(B) ++ ... ++ L^{v-1}(B)."""
     out = []
     for k in range(v): out += lift(BASE_B, k)
     return out
@@ -321,12 +325,12 @@ def run_omega():
         else:
             ng += 1
             if len(bad) < 6: bad.append((p[0], b[1], p[3], got))
-    print('alpha = Omega_v: 一致 %d / 不一致 %d / 添字未対応 %d' % (ok, ng, skip))
+    print('alpha = Omega_v: %d match / %d mismatch / %d subscript unsupported' % (ok, ng, skip))
     for r, v, w, g in bad:
         print(' NG row %s v=%s' % (r, v))
         print('   sheet:', w)
         print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
-    # 有限 v は閉じた形とも一致
+    # finite v also agrees with the closed form
     for v in range(1, 7):
         assert M_Omega(str(v)) == M_Omega_fin(v), v
     return ng
@@ -342,13 +346,14 @@ def run_big():
         if got is None: skip += 1; continue
         kind, _ = big_parse(p[1])
         if kind == 'om' and p[1].strip() not in ('W', '(W)'):
-            skip += 1; continue          # Omega_v (v>=2) は別レジーム（未対応）
+            skip += 1; continue          # Omega_v (v>=2) is a different regime
         want = mat(p[3])
         if got == want: ok += 1
         else:
             ng += 1
             if len(bad) < 8: bad.append((p[0], p[1], want, got))
-    print('大きい原子 (psi(W_X) / W_X): 一致 %d / 不一致 %d / 添字が未対応 %d' % (ok, ng, skip))
+    print('large atoms (psi(W_X) / W_X): %d match / %d mismatch / %d subscript unsupported'
+          % (ok, ng, skip))
     for r, t, w, g in bad:
         print(' row %s a=%s' % (r, t))
         print('   sheet:', ''.join('(%d,%d,%d)' % c for c in w))
@@ -358,13 +363,13 @@ def run_big():
 KNOWN_MISMATCH = {'1947', '2113', '2131', '2133'}
 
 USAGE = """\
-使い方: python3 probe_eps_range.py [alpha] [n]
+usage: python3 probe_eps_range.py [alpha] [n]
 
-  alpha  記法は build_omega_alpha.py と同じ（w / 数 / + * ^ / 括弧）に
-         原子 psi_0(W) = eps_0 を加えたもの。例: 'psi_0(W)^psi_0(W)+w^2'
-         シュガーシンタクス: psi_0( の代わりに psi( / p( / p_0( も可。
-  n      省略可。与えると展開 psi_0(W_alpha)[n] も表示。
-  なし   検証モード（シート照合）。
+  alpha  the notation of build_omega_alpha.py (w / digits / + * ^ / parentheses)
+         plus the atom psi_0(W) = eps_0. Example: 'psi_0(W)^psi_0(W)+w^2'
+         Sugar: psi( , p( and p_0( may be written for psi_0( .
+  n      optional; also print the expansion psi_0(W_alpha)[n].
+  (none) validation mode (check against the sheet).
 """
 
 def run_check():
@@ -381,7 +386,8 @@ def run_check():
         else:
             ng += 1
             if len(bad) < 8: bad.append((p[0], p[1], want, got))
-    print('w-CNF + E 原子の alpha: 一致 %d / 想定外の不一致 %d / 既知の不一致 %d / パース外 %d'
+    print('alpha in w-CNF + E: %d match / %d unexpected mismatch / %d known mismatch'
+          ' / %d unparsed'
           % (ok, ng, known, skip))
     for r, t, w, g in bad:
         print(' row %s a=%s' % (r, t))
@@ -397,7 +403,7 @@ if __name__ == '__main__':
     elif len(sys.argv) > 1:
         cols = Many(sys.argv[1])
         if cols is None:
-            print('parse error（w / 数 / + * ^ / 括弧 / psi(W) / psi(W_X) / W_X）'); sys.exit(1)
+            print('parse error; run --help for the accepted notation.'); sys.exit(1)
         head = 'psi_0(W_{%s})' % sys.argv[1]
         print('%s = %s' % (head, ''.join('(%d,%d,%d)' % c for c in cols)))
         if len(sys.argv) > 2:
