@@ -224,8 +224,10 @@ $`\Omega_1`$ に戻り、残りの $`\varepsilon_0`$ は $`\psi_0(\Omega_1)`$ �
 ### 例: $`\alpha = \psi_0(\Omega_\omega)`$
 
 $`\alpha`$ は崩壊値なので $`\omega^\alpha = \alpha`$、ユニット 1 つ・サブユニット 1 つで
-その指数は $`\alpha`$ 自身。$`\mathrm{B}(\alpha)`$ は $`\psi_0`$ ノード＋$`\Omega_\omega`$ ブロック
-（$`\Omega_\omega`$ は 1 列 $`(4,1,1)`$）:
+その指数は $`\alpha`$ 自身。$`\mathrm{B}(\alpha)`$ は $`\psi_0`$ ノード＋$`\Omega_\omega`$ ブロック。
+
+添字 $`\omega`$ 側: $`M(\omega) = `$ $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}`$
+であり、アンカー $`(0,0,0)`$ を外した $`\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}`$ を $`x`$ シフトして埋め込む。
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4\cr 1\cr 1\end{pmatrix}}_{\Omega_\omega}
@@ -234,8 +236,9 @@ $`\alpha`$ は崩壊値なので $`\omega^\alpha = \alpha`$、ユニット 1 つ
 ### 例: $`\alpha = \psi_0(\Omega_{\omega^\omega})`$
 
 $`\Omega_v`$ のブロックは **$`M(v)`$ からアンカーを外したもの**である。
-$`M(\omega^\omega) = (0,0,0)(1,1,1)(2,1,1)(3,0,0)`$ なので
-$`\Omega_{\omega^\omega}`$ は $`(4,1,1)(5,1,1)(6,0,0)`$:
+
+添字 $`\omega^\omega`$ 側: $`M(\omega^\omega) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 0\cr 0 & 1 & 1 & 0\end{pmatrix}`$
+であり、アンカー $`(0,0,0)`$ を外した $`\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 0\cr 1 & 1 & 0\end{pmatrix}`$ を $`x`$ シフトして埋め込む。
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4 & 5 & 6\cr 1 & 1 & 0\cr 1 & 1 & 0\end{pmatrix}}_{\Omega_{\omega^\omega}}
@@ -243,8 +246,10 @@ $`\Omega_{\omega^\omega}`$ は $`(4,1,1)(5,1,1)(6,0,0)`$:
 
 ### 例: $`\alpha = \psi_0(\Omega_{\psi_0(\Omega_\omega)})`$
 
-添字がまた崩壊値。$`M(\psi_0(\Omega_\omega))`$ からアンカーを外して埋め込む
-（前々の例の行列の 2 列目以降）。**添字が何段深くなっても同じ規則が繰り返される**:
+添字がまた崩壊値。**添字が何段深くなっても同じ規則が繰り返される**。
+
+添字 $`\psi_0(\Omega_\omega)`$ 側: $`M(\psi_0(\Omega_\omega)) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1\end{pmatrix}`$
+であり、アンカー $`(0,0,0)`$ を外した $`\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 1 & 0 & 1\cr 1 & 1 & 0 & 1\end{pmatrix}`$ を $`x`$ シフトして埋め込む。
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4 & 5 & 6 & 7\cr 1 & 1 & 0 & 1\cr 1 & 1 & 0 & 1\end{pmatrix}}_{\Omega_{\psi_0(\Omega_\omega)}}
@@ -262,7 +267,8 @@ $`M(\Omega_1)`$ は 4 列で終わる:
 
 ### 例: $`\alpha = \Omega_3`$
 
-$`B = M(\Omega_1)`$ を持ち上げながら並べる。持ち上げ 1 回が基数の後続 1 段:
+$`B = M(\Omega_1) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}`$
+を持ち上げながら並べる。持ち上げ 1 回が基数の後続 1 段:
 
 ```math
 \underbrace{\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 1\cr 0 & 1 & 1 & 0\end{pmatrix}}_{B}
