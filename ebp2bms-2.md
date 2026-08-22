@@ -126,24 +126,24 @@ $`\varepsilon_0 \cdot \omega = \omega^{\varepsilon_0+1} = \psi_0(\Omega_1+1)`$ �
 **引数の先頭の $`\varepsilon_0`$ を $`\Omega_1`$ の葉 $`(x,1,0)`$ に戻す**。
 $`\delta \ominus \varepsilon_0`$ は先頭の $`\varepsilon_0`$ を 1 つ落とした残り。
 
-### $`\Omega_v`$ ブロック
+### $`\alpha`$ が崩壊値 $`\psi_0(\Omega_X)`$ のとき
 
-$`\mathrm{arg}`$ の中に現れる $`\Omega_v`$ は次で書かれる:
-
-```math
-\mathrm{Om}(v,\ x) = \mathrm{shift}\big(M(v)\ \text{のアンカーを外したもの},\ x\big).
-```
-
-$`\mathrm{Om}(1) = (x,1,0)`$、$`\mathrm{Om}(2) = (x,1,0)(x{+}1,2,0)`$、
-$`\mathrm{Om}(\omega) = (x,1,1)`$、$`\mathrm{Om}(\omega^\omega) = (x,1,1)(x{+}1,1,1)(x{+}2,0,0)`$。
-アンカーを外すのは、その役目を上の $`\psi_0`$ ノードが果たしているため。
-$`\alpha`$ が崩壊値 $`\psi_0(\Omega_X)`$ のときはこれで
+添字 $`X`$ の行列がそのまま入る:
 
 ```math
-M(\psi_0(\Omega_X)) = (0,0,0)(1,1,1)(2,1,1)(3,0,0) +\!\!+ \mathrm{Om}(X,\ 4)
+M(\psi_0(\Omega_X)) = (0,0,0)(1,1,1)(2,1,1) +\!\!+ \mathrm{shift}(M(X),\ 3).
 ```
 
-となり、$`\alpha = \Omega_1`$ のときは $`\psi_0`$ ノードが立たず
+**$`M(X)`$ のアンカーが、$`x`$ シフトされて $`\psi_0`$ ノード $`(3,0,0)`$ になる**
+（アンカーと $`\psi_0`$ ノードは同じ列で、役目が二重になっている）。
+$`X`$ の中身は $`x`$ をずらすだけで一切書き換えない。
+
+例: $`M(\omega) = (0,0,0)(1,1,1)`$ なので
+$`M(\psi_0(\Omega_\omega)) = (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)`$。
+$`M(\omega^\omega) = (0,0,0)(1,1,1)(2,1,1)(3,0,0)`$ なので
+$`M(\psi_0(\Omega_{\omega^\omega})) = (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,0,0)`$。
+
+$`\alpha = \Omega_1`$ のときは $`\psi_0`$ を通さないので別扱いで、
 $`M(\Omega_1) = (0,0,0)(1,1,1)(2,1,1)(3,1,0)`$。
 
 ### $`\alpha = \Omega_v`$ 自身（$`v \ge 2`$）
@@ -251,7 +251,8 @@ $`\alpha`$ は崩壊値なので $`\omega^\alpha = \alpha`$、ユニット 1 つ
 その指数は $`\alpha`$ 自身。$`\mathrm{B}(\alpha)`$ は $`\psi_0`$ ノード＋$`\Omega_\omega`$ ブロック。
 
 添字 $`\omega`$ 側: $`M(\omega) = `$ $`\begin{pmatrix}0 & 1\cr 0 & 1\cr 0 & 1\end{pmatrix}`$
-であり、アンカー $`(0,0,0)`$ を外した $`\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}`$ を $`x`$ シフトして埋め込む。
+を丸ごと $`x`$ に $`{+}3`$ して埋め込む。そのアンカー $`(0,0,0)`$ が $`(3,0,0)`$ に写り、
+これが $`\psi_0`$ ノードそのものになる。
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4\cr 1\cr 1\end{pmatrix}}_{\Omega_\omega}
@@ -259,10 +260,8 @@ $`\alpha`$ は崩壊値なので $`\omega^\alpha = \alpha`$、ユニット 1 つ
 
 ### 例: $`\alpha = \psi_0(\Omega_{\omega^\omega})`$
 
-$`\Omega_v`$ のブロックは **$`M(v)`$ からアンカーを外したもの**である。
-
 添字 $`\omega^\omega`$ 側: $`M(\omega^\omega) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3\cr 0 & 1 & 1 & 0\cr 0 & 1 & 1 & 0\end{pmatrix}`$
-であり、アンカー $`(0,0,0)`$ を外した $`\begin{pmatrix}1 & 2 & 3\cr 1 & 1 & 0\cr 1 & 1 & 0\end{pmatrix}`$ を $`x`$ シフトして埋め込む。
+を丸ごと $`{+}3`$ シフト。アンカーが $`\psi_0`$ ノード $`(3,0,0)`$ になる。
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4 & 5 & 6\cr 1 & 1 & 0\cr 1 & 1 & 0\end{pmatrix}}_{\Omega_{\omega^\omega}}
@@ -273,7 +272,7 @@ $`\Omega_v`$ のブロックは **$`M(v)`$ からアンカーを外したもの*
 添字がまた崩壊値。**添字が何段深くなっても同じ規則が繰り返される**。
 
 添字 $`\psi_0(\Omega_\omega)`$ 側: $`M(\psi_0(\Omega_\omega)) = `$ $`\begin{pmatrix}0 & 1 & 2 & 3 & 4\cr 0 & 1 & 1 & 0 & 1\cr 0 & 1 & 1 & 0 & 1\end{pmatrix}`$
-であり、アンカー $`(0,0,0)`$ を外した $`\begin{pmatrix}1 & 2 & 3 & 4\cr 1 & 1 & 0 & 1\cr 1 & 1 & 0 & 1\end{pmatrix}`$ を $`x`$ シフトして埋め込む。
+を丸ごと $`{+}3`$ シフト。前の例の行列がそのまま尻尾に入る。
 
 ```math
 \underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3\cr 0\cr 0\end{pmatrix}}_{\psi_0}\underbrace{\begin{pmatrix}4 & 5 & 6 & 7\cr 1 & 1 & 0 & 1\cr 1 & 1 & 0 & 1\end{pmatrix}}_{\Omega_{\psi_0(\Omega_\omega)}}

@@ -240,10 +240,9 @@ def Many(t):
             return M_Omega(v)
         vm = Many(v)
         if vm is None: return None
-        tail = vm[1:]                      # psi_0(Omega_X) = M(X) からアンカーを外したもの
-        base = tail[0][0]
-        return ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 0, 0)]
-                + [(c[0] - base + 4, c[1], c[2]) for c in tail])
+        # M(psi_0(Omega_X)) = (0,0,0)(1,1,1)(2,1,1) ++ shift(M(X), 3)。
+        # shift された M(X) のアンカーがそのまま psi_0 ノード (3,0,0) になる。
+        return [(0, 0, 0), (1, 1, 1), (2, 1, 1)] + [(c[0] + 3, c[1], c[2]) for c in vm]
     a = parse(t)
     if a in (None, ZERO): return None
     return M(a)
