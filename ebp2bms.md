@@ -120,23 +120,23 @@ z0 閉包子森が**冪**（指数の原始数列）。
 
 ### 例: $`\alpha = \omega^2 + \omega + 1`$
 
-単位 3 つ。ア = アンカー、根 = z1 根:
+単位 3 つ。ア = アンカー、根 = z1 根。桁（と閉包子森）の組は
+さらに underbrace で括り、**サブユニット**（$`\beta'`$ の加法項 1 つ分、
+ラベルはその値）とする:
 
 ```math
-\overbrace{\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}}^{U_1}
+\overbrace{\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}}_{1}}^{U_1}
 \overbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}3\cr 2\cr 1\end{pmatrix}}_{\text{根}}}^{U_2}
 \overbrace{\underbrace{\begin{pmatrix}4\cr 2\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}5\cr 3\cr 0\end{pmatrix}}_{{+}1}}^{U_3}
 ```
 
 ### 例: $`\alpha = \omega^{\omega^\omega}`$
 
-単位 1 つ。$`\mathrm{P}(g) = \mathrm{PrSS}(g)`$（桁の指数 $`g`$ の閉包子森）:
+単位 1 つ。$`\mathrm{P}(g) = \mathrm{PrSS}(g)`$（桁の指数 $`g`$ の閉包子森）。
+サブユニット $`\omega^\omega`$ = 桁 + $`\mathrm{P}(\omega)`$:
 
 ```math
-\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
-\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
-\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
-\underbrace{\begin{pmatrix}3 & 4\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega)}
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 4\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega)}}_{\omega^{\omega}}
 ```
 
 ### 例: $`\alpha = \omega^{\omega^{\omega^\omega}}`$
@@ -146,42 +146,30 @@ z0 閉包子森が**冪**（指数の原始数列）。
 $`(5,0,0)`$ を継いで $`g=\omega^\omega`$）:
 
 ```math
-\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
-\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
-\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
-\underbrace{\begin{pmatrix}3 & 4 & 5\cr 0 & 0 & 0\cr 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega})}
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 4 & 5\cr 0 & 0 & 0\cr 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega})}}_{\omega^{\omega^{\omega}}}
 ```
 
 ### 例: $`\alpha = \omega^{\omega^{1+1}+\omega^{1+1}}`$
 
-指数 $`\beta = \omega^2 + \omega^2`$ は加法項 2 つなので桁が 2 列、
+指数 $`\beta = \omega^2 + \omega^2`$ は加法項 2 つなのでサブユニットが 2 つ。
 各桁の指数 $`g = 2`$ は閉包子 2 節（兄弟、同じ $`x`$）。
 $`\mathrm{P}`$ の中では兄弟（同じ $`x`$）が $`+1`$、子（$`x{+}1`$）が塔 1 段:
 
 ```math
-\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
-\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
-\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
-\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}
-\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
-\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}}_{\omega^{2}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}}_{\omega^{2}}
 ```
 
 ### 例: $`\alpha = \omega^{\omega^{\omega^{\omega^5+\omega^4}+\omega^3}+\omega^2}`$
 
-桁 1 の指数 $`g_1 = \omega^{\omega^5+\omega^4} + \omega^3`$ の閉包子森は
+サブユニット 2 つ。サブユニット 1 の指数
+$`g_1 = \omega^{\omega^5+\omega^4} + \omega^3`$ の閉包子森は
 $`\mathrm{P}`$ の再帰で書かれる:
 
 ```math
-\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}
-\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}
-\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
-\underbrace{\begin{pmatrix}3 & 4 & 5 & 5 & 5 & 5 & 5 & 4 & 5 & 5 & 5 & 5 & 3 & 4 & 4 & 4\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega^{5}+\omega^{4}}+\omega^{3})}
-\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}
-\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}
+\underbrace{\begin{pmatrix}0\cr 0\cr 0\end{pmatrix}}_{\text{ア}}\underbrace{\begin{pmatrix}1\cr 1\cr 1\end{pmatrix}}_{\text{根}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 4 & 5 & 5 & 5 & 5 & 5 & 4 & 5 & 5 & 5 & 5 & 3 & 4 & 4 & 4\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\cr 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\end{pmatrix}}_{\mathrm{P}(\omega^{\omega^{5}+\omega^{4}}+\omega^{3})}}_{\omega^{\omega^{\omega^{5}+\omega^{4}}+\omega^{3}}}\underbrace{\underbrace{\begin{pmatrix}2\cr 1\cr 1\end{pmatrix}}_{\text{桁}}\underbrace{\begin{pmatrix}3 & 3\cr 0 & 0\cr 0 & 0\end{pmatrix}}_{\mathrm{P}(2)}}_{\omega^{2}}
 ```
 
-桁 1 の閉包子森の入れ子（閉包子は全部 $`y = z = 0`$ なので $`x`$ だけ書く）:
+サブユニット 1 の閉包子森の入れ子（閉包子は全部 $`y = z = 0`$ なので $`x`$ だけ書く）:
 
 ```math
 \underbrace{(3)\overbrace{(4)\overbrace{(5)(5)(5)(5)(5)}^{\mathrm{P}(5)}(4)\overbrace{(5)(5)(5)(5)}^{\mathrm{P}(4)}}^{\mathrm{P}(\omega^5+\omega^4)}\ (3)\overbrace{(4)(4)(4)}^{\mathrm{P}(3)}}_{\mathrm{P}(\omega^{\omega^5+\omega^4}+\omega^3)}
