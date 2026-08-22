@@ -1,24 +1,27 @@
 # -*- coding: utf-8 -*-
-"""M(alpha) ビルダー: psi_0(Omega_alpha) の標準形行列の一般項（w-CNF 断片）。
+"""The M(alpha) builder: the general term of the standard form for psi_0(Omega_alpha).
 
-alpha の定義域: 拡張ブーフホルツ OT の項（< Lambda = 最小 Omega 不動点）。
-本ファイルはまず alpha < eps_0（w の CNF で書ける範囲）を実装する。
+Domain of alpha: the terms of the extended Buchholz OT (< Lambda, the least Omega fixed
+point). This file implements alpha < eps_0 first (what the CNF of w can write); the CLI
+routes larger alpha through probe_eps_range.Many.
 
-文法（BM4-Analysis 812 行からの帰納、probe で全数照合）:
-- alpha = w^{b_1} + ... + w^{b_m}（単位の列、非増加）。単位 i はレベル y=i に住む。
-- 単位 w^b（b>=1）: アンカー列 (root_prev+1, level, 0) の後、
-  本体 = z1 根 (x0, y, 1) ＋ b の CNF 桁（1+b' = b と分解した b'）:
-  桁 w^g は z1 子 (x0+1, y, 1) ＋ 閉包子森 prss(g)（y-1 レベル、z=0）。
-- 単位 w^0 = +1: アンカー ＋ 素の z0 列でレベルを 1 段登る。連続する +1 は鎖で継ぐ。
-- prss(g): 1 行 BM。桁 w^g は節 (x,y,0) ＋ 子森 prss(g)。
+The grammar (induced from the 812 BM4-Analysis rows, cross-checked by the probe):
+- alpha = w^{b_1} + ... + w^{b_m} (a non-increasing list of add units). Add unit i lives at
+  level y = i.
+- add unit w^b (b >= 1): the anchor column (root_prev+1, level, 0), then the body = the z1
+  root (x0, y, 1) plus one digit per summand of b' (split as 1 + b' = b):
+  a digit w^g is the z1 child (x0+1, y, 1) plus the closer forest prss(g).
+- add unit w^0 = +1: an anchor plus a bare z0 column, climbing one level. Consecutive +1
+  units share the anchor and continue as a chain.
+- prss(g): a 1-row BM. A digit w^g is the node (x,0,0) plus the child forest prss(g).
 """
 import sys, os, re
 sys.path.insert(0, os.path.dirname(__file__))
 
-# ---- CNF 表現: 0 | [(beta_cnf, count), ...] 非増加 ----
+# ---- CNF representation: 0 | [(beta_cnf, count), ...], non-increasing ----
 
 def cnf_cmp(a, b):
-    """CNF の比較 (-1/0/1)。"""
+    """Compare two CNFs (-1/0/1)."""
     if a == b: return 0
     if a == 0: return -1
     if b == 0: return 1
@@ -32,14 +35,15 @@ def units(cnf):
     return [b for b, c in cnf for _ in range(c)]
 
 def pred(beta):
-    """1 + b' = beta となる b'（beta >= 1）。先頭項が無限なら 1 は吸収される。"""
+    """The b' with 1 + b' = beta (beta >= 1). A leading infinite term absorbs the 1."""
     if beta[0][0] != 0:
         return beta
     k = beta[0][1]
     return [(0, k - 1)] if k > 1 else 0
 
 def prss(gamma, x0):
-    """指数 gamma の 1 行 BM 森。閉包子は常に y=0 の z0 列。節 = (x,0,0) + 子森。"""
+    """The 1-row BM forest of the exponent gamma. Closers are always z0 columns with
+    y = 0; a node is (x,0,0) followed by its child forest."""
     cols = []
     if gamma == 0:
         return cols
@@ -50,7 +54,7 @@ def prss(gamma, x0):
     return cols
 
 def body(beta, x0, y):
-    """単位 w^beta の本体。z1 根 + 桁。根の x を返す。"""
+    """The body of an add unit w^beta: the z1 root followed by the digits."""
     cols = [(x0, y, 1)]
     bp = pred(beta)
     if bp != 0:
@@ -62,30 +66,30 @@ def body(beta, x0, y):
     return cols
 
 def M(alpha):
-    """alpha (CNF, >= w) -> psi_0(Omega_alpha) の行列。"""
+    """alpha (a CNF, >= w) -> the matrix of psi_0(Omega_alpha)."""
     us = units(alpha)
-    assert us and us[0] != 0, 'alpha >= w のみ'
+    assert us and us[0] != 0, 'alpha >= w only'
     cols = []
-    level = 0                                   # 単位 i のアンカーは y = i-1
-    root_x = -1                                 # 直前単位の z1 根の x（初期値 -1）
+    level = 0                                   # add unit i has its anchor at y = i-1
+    root_x = -1                                 # x of the previous add unit's z1 root
     prev_plus1 = False
     for b in us:
-        if b == 0 and prev_plus1:               # +1 の連鎖: アンカー共有で z0 鎖
+        if b == 0 and prev_plus1:               # a +1 chain: share the anchor, extend z0
             tx, ty, _ = cols[-1]
             cols.append((tx + 1, ty + 1, 0))
-        elif b == 0:                            # 最初の +1: アンカー + z0 列
+        elif b == 0:                            # the first +1: anchor plus a z0 column
             cols.append((root_x + 1, level, 0))
             cols.append((root_x + 2, level + 1, 0))
-        else:                                   # w^b 単位: アンカー + 本体
+        else:                                   # a w^b add unit: anchor plus body
             ax = root_x + 1
-            cols.append((ax, level, 0))         # U_1 ではこれが (0,0,0)
+            cols.append((ax, level, 0))         # for U_1 this is (0,0,0)
             cols += body(b, ax + 1, level + 1)
             root_x = ax + 1
         level += 1
         prev_plus1 = (b == 0)
     return cols
 
-# ---- 検証: シート由来の 812 行のうち w-CNF なものと全数照合 ----
+# ---- Validation: check every w-CNF row among the 812 taken from the sheet ----
 
 tok_re = re.compile(r'w|\d+|[+*^()]')
 
@@ -137,14 +141,15 @@ def parse(s):
     except Exception:
         return None
 
-# シートと一致しない既知の 4 行。軌道法則 M(alpha)[n] = M(alpha_n) による監査
-# （信頼できる隣の行の展開との突合）ではビルダー側に一致するが、
-# 軌道法則自体は経験則であり、シートの誤記だと証明できたわけではない。
+# The 4 rows known to disagree with the sheet. The orbit-law audit
+# (M(alpha)[n] = M(alpha_n), expanding a trusted neighbouring row) sides with the builder
+# on all four, but the orbit law is itself empirical, so these are mismatches, not proven
+# errata.
 KNOWN_MISMATCH = {
-    '1947': '(11,5,1) vs (11,6,1)（M(w^3)[6] はビルダー側）',
-    '2113': '行列は w^5*2 の形（M(w^6)[3] はビルダー側）',
-    '2131': '内容は +1 の階段 2 段 = w^w+2 相当（2133 とラベル重複）',
-    '2133': '(3,2,0)(4,3,1) vs (4,2,0)(5,3,1)（M(w^w+w^2)[2] はビルダー側）',
+    '1947': '(11,5,1) vs (11,6,1); M(w^3)[6] sides with the builder',
+    '2113': 'the matrix has the shape of w^5*2; M(w^6)[3] sides with the builder',
+    '2131': 'the content is a two-step +1 staircase, i.e. w^w+2 (label duplicated with 2133)',
+    '2133': '(3,2,0)(4,3,1) vs (4,2,0)(5,3,1); M(w^w+w^2)[2] sides with the builder',
 }
 
 def main():
@@ -155,7 +160,7 @@ def main():
         p = L.rstrip('\n').split('\t')
         if p[0] == 'row': continue
         c = parse(p[1])
-        if c is None or c == 0 or c[0][0] == 0:   # w-CNF 外・有限は対象外
+        if c is None or c == 0 or c[0][0] == 0:   # skip non-w-CNF and finite alpha
             continue
         want = [tuple(int(v) for v in x.split(',')) for x in re.findall(r'\(([^)]*)\)', p[3])]
         want = [t + (0,) * (3 - len(t)) for t in want]
@@ -167,7 +172,7 @@ def main():
         else:
             ng += 1
             bad.append((p[0], p[1], want, got))
-    print('w-CNF 断片: 一致 %d / 想定外の不一致 %d / 既知の不一致 %d（軌道法則の監査ではビルダー側）'
+    print('w-CNF fragment: %d match / %d unexpected mismatch / %d known mismatch'
           % (ok, ng, nerr))
     for r, a, w, g in bad[:8]:
         print(' row %s a=%s' % (r, a))
@@ -175,7 +180,7 @@ def main():
         print('   built:', ''.join('(%d,%d,%d)' % t for t in g))
     assert ng == 0
 
-    # 自己検証: シートに無い alpha でも軌道法則が成り立つ
+    # Self-check: the orbit law also holds for alpha that the sheet does not list
     from trio import expand
     SELF = [('w^9', 4, 'w^8*4'),
             ('w^8*4', 3, 'w^8*3+w^7*3'),
@@ -189,34 +194,34 @@ def main():
     for a, n, b in SELF:
         assert expand(M(parse(a)), n) == M(parse(b)), (a, n, b)
         sok += 1
-    print('自己検証（軌道法則、シート外 alpha）: %d/%d ok' % (sok, len(SELF)))
+    print('self-check (orbit law, off-sheet alpha): %d/%d ok' % (sok, len(SELF)))
 
 USAGE = '''\
-使い方: python3 build_omega_alpha.py [alpha] [n]
+usage: python3 build_omega_alpha.py [alpha] [n]
 
-  alpha        psi_0(W_alpha) のトリオ数列標準形を表示する（W = Omega）。
-               記法は BM4-Analysis シートと同じ:
+  alpha        print the trio sequence standard form of psi_0(W_alpha) (W = Omega).
+               The notation is the one used by the BM4-Analysis sheet:
                  w           omega
-                 数          自然数（係数・有限順序数）
-                 + * ^       和・積・冪（^ は右結合）
-                 ( )         括弧
-                 併置数       w2 = w*2, w^w3 = w^w*3 など
+                 digits      a natural number (coefficient or finite ordinal)
+                 + * ^       sum, product, power (^ is right associative)
+                 ( )         parentheses
+                 juxtaposed  w2 = w*2, w^w3 = w^w*3, and so on
                  W, W_X      Omega_1, Omega_X
                  psi_0(W)    eps_0 = psi_0(Omega_1)
-                 psi_0(W_X)  psi_0(Omega_X)（X は再帰的に同じ記法）
-               シュガーシンタクス: psi_0( の代わりに psi( / p( / p_0( も可。
+                 psi_0(W_X)  psi_0(Omega_X) (X recursively in the same notation)
+               Sugar: psi( , p( and p_0( may be written for psi_0( .
                  psi_0(W_w) = psi(W_w) = p(W_w) = p_0(W_w)
-               例: 'w^2+w+1'  'w^(w+1)*2'  'psi_0(W)^psi_0(W)'
-                   'psi_0(W_(w^2))'  'W_3'  'W_W_W'
-               定義域は alpha < Lambda（最小 Omega 不動点）。
-               alpha < eps_0 は本ファイルの M() が、それ以上は
-               probe_eps_range.Many() が担当する（w-CNF 上で両者は一致）。
-  n            省略可。与えると展開 psi_0(W_alpha)[n] も表示する。
-  （引数なし）  検証モード: alpha < eps_0 の全数照合と
-               軌道法則による自己検証を走らせる
-               （eps_0 以上の検証は probe_eps_range.py 側）。
+               Examples: 'w^2+w+1'  'w^(w+1)*2'  'psi_0(W)^psi_0(W)'
+                         'psi_0(W_(w^2))'  'W_3'  'W_W_W'
+               The domain is alpha < Lambda (the least Omega fixed point).
+               M() in this file covers alpha < eps_0; probe_eps_range.Many()
+               takes over above it (the two agree on every w-CNF row).
+  n            optional; also print the expansion psi_0(W_alpha)[n].
+  (no argument) validation mode: check every alpha < eps_0 row against the sheet
+               and run the orbit-law self-check
+               (validation above eps_0 lives in probe_eps_range.py).
 
-例:
+examples:
   python3 build_omega_alpha.py 'w+1'
   python3 build_omega_alpha.py 'w^(w2)+w^2*3' 2
   python3 build_omega_alpha.py 'psi_0(W_(w^2))'
@@ -229,10 +234,10 @@ if __name__ == '__main__':
         print(USAGE)
         sys.exit(0)
     if len(sys.argv) > 1:
-        from probe_eps_range import Many     # alpha < Lambda の一般ビルダー
+        from probe_eps_range import Many     # the general builder, alpha < Lambda
         mat = Many(sys.argv[1])
         if mat is None:
-            print('parse error。--help で対応記法を表示します。')
+            print('parse error; run --help for the accepted notation.')
             sys.exit(1)
         head = 'psi_0(W_{%s})' % sys.argv[1]
         print('%s = %s' % (head, ''.join('(%d,%d,%d)' % c for c in mat)))
