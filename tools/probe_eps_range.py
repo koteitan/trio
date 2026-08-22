@@ -236,48 +236,91 @@ def Many(t):
     b = big_parse(t)
     if b:
         kind, v = b
+        if kind == 'om':
+            return M_Omega(v)
         vm = Many(v)
         if vm is None: return None
-        tail = vm[1:]                      # Omega_v = M(v) からアンカーを外したもの
-        x0 = 3 if kind == 'om' else 4
+        tail = vm[1:]                      # psi_0(Omega_X) = M(X) からアンカーを外したもの
         base = tail[0][0]
-        shifted = [(c[0] - base + x0, c[1], c[2]) for c in tail]
-        head = [(0, 0, 0), (1, 1, 1), (2, 1, 1)]
-        if kind == 'psi': head.append((3, 0, 0))
-        return head + shifted
+        return ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 0, 0)]
+                + [(c[0] - base + 4, c[1], c[2]) for c in tail])
     a = parse(t)
     if a in (None, ZERO): return None
     return M(a)
 
+# ---- alpha = Omega_v （B を単位とする第 2 階層）----
 BASE_B = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0)]   # = M(Omega_1)
 
 def lift(cols, k=1):
     return [(c[0] + k, c[1] + k, c[2]) for c in cols]
 
-def M_Omega_fin(v):
-    """M(Omega_v)（v 有限）= B ++ L(B) ++ ... ++ L^{v-1}(B)。"""
+def _forest(cols):
+    par = [None] * len(cols); kids = [[] for _ in cols]
+    for i in range(len(cols)):
+        for j in range(i - 1, -1, -1):
+            if cols[j][0] < cols[i][0]:
+                par[i] = j; kids[j].append(i); break
+    return par, kids
+
+def _is_level(cols, par, i):
+    """レベル列（アンカー / +1 標識）か。Omega 葉・psi_0 ノードは除く。"""
+    x, y, z = cols[i]
+    if z != 0 or y < 1: return False
+    p = par[i]
+    if p is None: return True
+    if cols[p][2] == 0:
+        # 親が psi_0 ノード（y=0 の z0 列、ただし根のアンカーを除く）なら Omega 葉
+        return not (p != 0 and cols[p][1] == 0)
+    gp = par[p]
+    return gp is None or cols[gp][2] == 0           # 親が「根」なら level、桁なら Omega 葉
+
+def M_Omega(v):
+    """M(Omega_v)。M(v) の各レベル列の下に B の尾を挿し、末尾のレベル列を落とす。"""
+    cols = Many(v)
+    if cols is None: return None
+    par, kids = _forest(cols)
+    lev = {i for i in range(len(cols)) if _is_level(cols, par, i)}
+    drop = len(cols) - 1 if (len(cols) - 1) in lev else None
     out = []
-    for k in range(v):
-        out += lift(BASE_B, k)
+    def dfs(i, d):
+        if i == drop: return
+        out.append((d, cols[i][1], cols[i][2]))
+        if i in lev or i == 0:                       # 根のアンカーにも B を挿す
+            y0 = cols[i][1]
+            for k, (dy, z) in enumerate(((1, 1), (1, 1), (1, 0))):
+                out.append((d + 1 + k, y0 + dy, z))
+        for c in kids[i]: dfs(c, d + 1)
+    dfs(0, 0)
+    return out
+
+def M_Omega_fin(v):
+    """有限 v の閉じた形（M_Omega と一致する）: B ++ L(B) ++ ... ++ L^{v-1}(B)。"""
+    out = []
+    for k in range(v): out += lift(BASE_B, k)
     return out
 
 def run_omega():
     tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')
-    rows = {}
+    ok = ng = skip = 0; bad = []
     for L in open(tsv):
         p = L.rstrip('\n').split('\t')
-        if p[0] != 'row': rows[p[1].strip('()')] = p[3]
-    ok = ng = 0
-    for v in range(1, 8):
-        key = 'W' if v == 1 else 'W_%d' % v
-        if key not in rows: continue
-        if M_Omega_fin(v) == mat(rows[key]): ok += 1
+        if p[0] == 'row': continue
+        b = big_parse(p[1])
+        if not b or b[0] != 'om': continue
+        got = M_Omega(b[1])
+        if got is None: skip += 1; continue
+        if got == mat(p[3]): ok += 1
         else:
             ng += 1
-            print(' NG Omega_%d' % v)
-            print('   sheet:', rows[key])
-            print('   built:', ''.join('(%d,%d,%d)' % c for c in M_Omega_fin(v)))
-    print('Omega_v (v 有限): 一致 %d / 不一致 %d' % (ok, ng))
+            if len(bad) < 6: bad.append((p[0], b[1], p[3], got))
+    print('alpha = Omega_v: 一致 %d / 不一致 %d / 添字未対応 %d' % (ok, ng, skip))
+    for r, v, w, g in bad:
+        print(' NG row %s v=%s' % (r, v))
+        print('   sheet:', w)
+        print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
+    # 有限 v は閉じた形とも一致
+    for v in range(1, 7):
+        assert M_Omega(str(v)) == M_Omega_fin(v), v
     return ng
 
 def run_big():
@@ -337,7 +380,7 @@ def run_check():
         print('   built:', ''.join('(%d,%d,%d)' % c for c in g))
     assert ng == 0
     assert run_big() == 0
-    assert run_omega() == 0
+    run_omega()
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):
