@@ -65,33 +65,24 @@ def M(alpha):
     """alpha (CNF, >= w) -> psi_0(Omega_alpha) の行列。"""
     us = units(alpha)
     assert us and us[0] != 0, 'alpha >= w のみ'
-    cols = [(0, 0, 0)]
-    level = 0
-    root_x = 0
+    cols = []
+    level = 0                                   # 単位 i のアンカーは y = i-1
+    root_x = -1                                 # 直前単位の z1 根の x（初期値 -1）
     prev_plus1 = False
-    for i, b in enumerate(us):
-        if i == 0:
-            level = 1
-            cols += body(b, 1, 1)
-            root_x = 1
-            prev_plus1 = False
-            continue
-        if b == 0:                              # +1 単位
-            if prev_plus1:
-                tx, ty, _ = cols[-1]
-                cols.append((tx + 1, ty + 1, 0))
-            else:
-                cols.append((root_x + 1, level, 0))
-                cols.append((root_x + 2, level + 1, 0))
-            level += 1
-            prev_plus1 = True
-        else:
+    for b in us:
+        if b == 0 and prev_plus1:               # +1 の連鎖: アンカー共有で z0 鎖
+            tx, ty, _ = cols[-1]
+            cols.append((tx + 1, ty + 1, 0))
+        elif b == 0:                            # 最初の +1: アンカー + z0 列
+            cols.append((root_x + 1, level, 0))
+            cols.append((root_x + 2, level + 1, 0))
+        else:                                   # w^b 単位: アンカー + 本体
             ax = root_x + 1
-            cols.append((ax, level, 0))
+            cols.append((ax, level, 0))         # U_1 ではこれが (0,0,0)
             cols += body(b, ax + 1, level + 1)
             root_x = ax + 1
-            level += 1
-            prev_plus1 = False
+        level += 1
+        prev_plus1 = (b == 0)
     return cols
 
 # ---- 検証: シート由来の 812 行のうち w-CNF なものと全数照合 ----
