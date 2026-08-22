@@ -78,6 +78,19 @@ That is, **a unit consists of an anchor, a root and subunits, and a subunit cons
 digit and a primitive-sequence embedding** (only a $`\beta_i = 0`$ unit has neither root nor
 subunit: it is an anchor plus a single z0 column).
 
+The value of one unit is the product of the root's $`\omega`$ and the subunits' factors:
+
+```math
+\omega^{\beta_i} = \omega^{1 + \sum_j \omega^{\gamma_{ij}}}
+  = \omega \cdot \prod_j \omega^{\omega^{\gamma_{ij}}} .
+```
+
+Since $`\omega^{a+b} = \omega^a \cdot \omega^b`$, **a sum inside the exponent is a product of
+values**. One subunit is one factor, and the embedding carries the $`\gamma_{ij}`$ appearing
+in that factor's size $`\omega^{\omega^{\gamma_{ij}}}`$. For instance $`\omega^3`$ is the root
+$`\omega`$ plus two subunits with $`\gamma = 0`$, giving
+$`\omega \cdot \omega \cdot \omega`$.
+
 ### Terminology
 
 Columns $`(x, y, z)`$ are named by their $`z`$: a **z1 column** has $`z = 1`$, a
@@ -152,10 +165,10 @@ Writing $`\gamma = \omega^{\delta_1} + \cdots + \omega^{\delta_l}`$,
 This is literally the 1-row Bashicu matrix (primitive sequence) of $`\gamma`$, and it always
 lives in columns with $`y = z = 0`$.
 
-**Summary**: the three rows carry the three operations of the CNF — the level staircase in
-row 1 is **addition** (one step per unit), the tree of z1 columns is **multiplication** (the
-$`\omega`$ factors), and the z0 primitive-sequence embedding is **exponentiation** (the
-primitive sequence of the exponent).
+**Summary**: the three nesting levels carry the three operations of the CNF — **the number of
+units is addition** (one step of the row-1 staircase each), **the number of subunits is
+multiplication** (one factor each), and **the shape of the embedding is exponentiation** (the
+primitive sequence of the exponent $`\gamma`$).
 
 ### Example: $`\alpha = \omega^2 + \omega + 1`$
 

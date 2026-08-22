@@ -203,9 +203,9 @@ $`\omega^2\cdot 2`$ row is a duplicate label (another row with the same label do
 it may be of the same kind as the known mismatch rows recorded in [dom.md](dom.md).
 Unresolved.
 
-**Summary**: what the three rows carry does not change — the level staircase in row 1 is
-**addition**, the tree of z1 columns is **multiplication**, and the nesting of $`\mathrm{B}`$
-is **exponentiation and collapse**. Row $`y`$ carries the subscript of $`\Omega`$
+**Summary**: what the three nesting levels carry does not change — **the number of units is
+addition**, **the number of subunits is multiplication** (one factor each), and **the nesting
+of $`\mathrm{B}`$ is exponentiation and collapse**. Row $`y`$ carries the subscript of $`\Omega`$
 ($`(x,1,0) = \Omega_1`$, $`(x,1,0)(x{+}1,2,0) = \Omega_2`$,
 $`(x,1,1) = \Omega_\omega`$), and that subscript is again written by the same grammar.
 

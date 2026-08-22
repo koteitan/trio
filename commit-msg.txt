@@ -1,6 +1,7 @@
-build_omega_alpha CLI now accepts the whole range alpha < Lambda
+say why subunits are multiplication: spell out the value of one unit
 
-- Route the CLI through probe_eps_range.Many, so psi(W), psi(W_X), W and
-  W_X parse (the two builders are checked to agree on all 121 w-CNF rows)
-- Rewrite --help with the new atoms, examples and the domain statement
-- Note the CLI's range in ebp2bms-1.md and ebp2bms-1-en.md
+- Add the identity omega^{beta_i} = omega * prod_j omega^{omega^{gamma_ij}}
+  to both parts: a sum inside the exponent is a product of values, so one
+  subunit is one factor and the embedding carries that factor's gamma
+- Restate the summary as "number of units = addition, number of subunits =
+  multiplication, shape of the embedding = exponentiation"
