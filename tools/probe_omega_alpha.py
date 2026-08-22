@@ -1,12 +1,14 @@
-"""psi_0(Omega_alpha) の一般項の観測。
+"""Observing the general term of psi_0(Omega_alpha).
 
-BM4-Analysis の「To psi(I)」シートから純粋な psi(W_alpha) 行（和・積・冪で
-汚れていない Omega_alpha 崩壊）を全部抜き、次を計測する:
+Extract from the "To psi(I)" sheet of BM4-Analysis every pure psi(W_alpha) row (an
+Omega_alpha collapse not mixed with sums, products or powers) and measure:
 
-1. 展開閉包: M が pure で分岐 T2/T0（alpha 極限）なら M[n] も pure。
-   分岐 T1（alpha 後続 = (d-2) 塔）なら M[n] は pure 族を出る
-   （psi(W_w^...) の冪塔に潜る）— dom 対応表の予言。
-2. pure 表を tools/omega_alpha_rows.tsv に保存（一般項の文法学習の材料）。
+1. Orbit closure: if M is pure and its branch is T2/T0 (alpha a limit), then M[n] is pure
+   as well. If the branch is T1 (alpha a successor, the (d-2) tower), M[n] leaves the pure
+   family and dives into a power tower psi(W_w^...) - as the dom correspondence predicts.
+2. Dump the pure rows to tmp/pure-rows.tsv for inspection. The table the builder and the
+   probes actually read is tools/omega_alpha_rows.tsv, which normalize_sheet.py writes from
+   the format-normalized labels; this script must not overwrite it.
 """
 import sys, os, re
 sys.path.insert(0, os.path.dirname(__file__))
@@ -16,14 +18,14 @@ from probe_dom import classify
 XLSX = os.path.expanduser('~/proofs/papers/BM4-Analysis-2021.4.27.xlsx')
 
 def pure_sub(label):
-    """psi(W_alpha) 単独形なら alpha 文字列を返す。それ以外は None。"""
+    """Return the alpha string when the label is a bare psi(W_alpha); None otherwise."""
     if not (isinstance(label, str) and label.startswith('psi(W') and label.endswith(')')):
         return None
     body = label[4:-1]
     if body == 'W':
         return '1'
     if not body.startswith('W_'):
-        # psi(W2) 等は W_ 無し = Omega*2 系なので除外。W のみ上で処理済。
+        # psi(W2) and friends have no W_, so they are Omega*2 shapes; W alone is above.
         return None
     sub = body[2:]
     depth = 0
@@ -49,9 +51,11 @@ def main():
             and isinstance(r[1], str)]
     label = {m: lab for _, m, lab in rows}
     pure = [(n, m, lab, pure_sub(lab)) for n, m, lab in rows if pure_sub(lab)]
-    print('To psi(I): %d 行, pure psi(W_alpha): %d 行' % (len(rows), len(pure)))
+    print('To psi(I): %d rows, pure psi(W_alpha): %d rows' % (len(rows), len(pure)))
 
-    with open(os.path.join(os.path.dirname(__file__), 'omega_alpha_rows.tsv'), 'w') as f:
+    out = os.path.join(os.path.dirname(__file__), '..', 'tmp', 'pure-rows.tsv')
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, 'w') as f:
         f.write('row\talpha\tbranch\tmatrix\n')
         for n, m, lab, a in pure:
             b = classify(mat(m))[0]
@@ -70,19 +74,19 @@ def main():
             kind = ('absent' if lab2 is None
                     else 'pure' if pure_sub(lab2) else 'impure')
             stat[(b, kind)] += 1
-            # dom 対応表の予言との突合
+            # compare against the dom correspondence's prediction
             if b in ('T2', 'T0') and kind == 'impure':
                 bad.append((n, a, b, k, lab2))
             if b == 'T1' and kind == 'pure':
                 bad.append((n, a, b, k, lab2))
-    print('\n分岐 x 展開先 (n=2,3 の延べ):')
+    print('\nbranch x destination (n = 2 and 3 together):')
     for key in sorted(stat):
         print('  %-4s -> %-7s %5d' % (key[0], key[1], stat[key]))
-    print('\n予言違反 (T2/T0->impure, T1->pure): %d 件' % len(bad))
+    print('\nprediction violated (T2/T0 -> impure, T1 -> pure): %d' % len(bad))
     for v in bad[:10]:
         print('   ', v)
     branches = Counter(classify(mat(m))[0] for _, m, _, _ in pure)
-    print('\npure 行の分岐分布:', dict(branches))
+    print('\nbranch distribution over the pure rows:', dict(branches))
     print('\nall done')
 
 if __name__ == '__main__':

@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-"""BM4-Analysis「To psi(I)」シートのラベルを機械可読な形式に正規化する。
+"""Normalize the labels of the "To psi(I)" sheet of BM4-Analysis into a machine-readable form.
 
-**形式だけを直す**。順序数の値・行列は一切変更しない。
+**Only the format is fixed**; no ordinal value and no matrix is changed.
 
-正規化の 3 規則:
-  1. 別名併記  'A = B = C' を分割し、`psi(W...)` 形の最初の別名を正規形とする
-     （無ければ最初の別名）。
-  2. 括弧不整合  各別名について、不足する ')' を末尾に足す／末尾の余分な ')' を落とす。
-  3. 先頭タイポ  'si(' で始まるラベルを 'psi(' に直す。
+The three rules:
+  1. Alias lists (aliasN)   split 'A = B = C' and take the first alias of the form
+     `psi(W...)` as canonical (the first alias otherwise).
+  2. Unbalanced parentheses (paren+n / paren-n)   per alias, append the missing ')' or
+     drop the surplus trailing ')'.
+  3. Leading typo (typo)   a label starting with 'si(' becomes 'psi('.
 
-出力:
-  tmp/fixed-sheet/to-psi-I.tsv   （バージョン管理外）
-    row / matrix / label_orig / label_norm / fix   （fix は適用した規則のカンマ区切り）
-  tools/omega_alpha_rows.tsv     （バージョン管理下。probe/ビルダーの入力）
-    正規化ラベルから純粋な psi_0(Omega_alpha) 行だけを抜いたもの
+Outputs:
+  tmp/fixed-sheet/to-psi-I.tsv   (not under version control)
+    row / matrix / label_orig / label_norm / fix   (fix lists the rules that fired)
+  tools/omega_alpha_rows.tsv     (under version control; the input of the probes and the
+    builder) the pure psi_0(Omega_alpha) rows extracted from the normalized labels
 """
 import openpyxl, os, re, sys
 
@@ -29,7 +30,7 @@ def depth(s):
     return d
 
 def balance(s):
-    """括弧を合わせる。不足は末尾に足し、余りは末尾から落とす。"""
+    """Balance the parentheses: append what is missing, drop the surplus from the end."""
     d = depth(s)
     if d > 0:
         return s + ')' * d, 'paren+%d' % d
@@ -43,7 +44,7 @@ def balance(s):
 def normalize(label):
     fixes = []
     s = label.strip()
-    if s.startswith('si('):                      # 規則 3
+    if s.startswith('si('):                      # rule 3
         s = 'p' + s
         fixes.append('typo')
     parts = [p.strip() for p in s.split(' = ')]
@@ -75,11 +76,11 @@ def main():
             f.write('%d\t%s\t%s\t%s\t%s\n'
                     % (row, mat if isinstance(mat, str) else '',
                        lab.strip(), canon, ','.join(fixes)))
-    print('ラベル付き行 %d / 形式修正あり %d -> %s' % (n, nfix, os.path.normpath(OUT)))
+    print('labelled rows %d / with a format fix %d -> %s' % (n, nfix, os.path.normpath(OUT)))
     write_rows()
 
 def write_rows():
-    """正規化ラベルから純粋な psi_0(Omega_alpha) 行を抜いて tools/ に置く。"""
+    """Extract the pure psi_0(Omega_alpha) rows from the normalized labels into tools/."""
     sys.path.insert(0, HERE)
     from probe_omega_alpha import pure_sub
     from probe_dom import classify
@@ -96,7 +97,7 @@ def write_rows():
         except Exception: b = '?'
         out.append('%s\t%s\t%s\t%s' % (p[0], a, b, p[1]))
     open(ROWS, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
-    print('純粋な psi_0(Omega_alpha) 行 %d -> %s' % (len(out) - 1, os.path.normpath(ROWS)))
+    print('pure psi_0(Omega_alpha) rows %d -> %s' % (len(out) - 1, os.path.normpath(ROWS)))
 
 if __name__ == '__main__':
     main()

@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
-"""ebp2bms の表セルを、加算/乗算ユニットの underbrace 付きで生成する。
+"""Generate the ebp2bms table cells with underbraces over the add and multiply units.
 
-入れ子:
-  加算ユニット U_i
-    アンカー / 根 / 乗算ユニット S_ij（= 桁 + 埋め込み）
-  beta_i = 0 のときは アンカー / +1 列。
+The nesting:
+  add unit U_i
+    anchor / root / multiply unit S_ij (= digit + embedding)
+  when beta_i = 0 it is instead anchor / a +1 column.
 
-alpha = psi_0(Omega_X) と alpha = Omega_v は文法が別なので個別に扱う。
-どの出力も列を平坦化すると probe_eps_range.Many(alpha) に一致することを assert する。
+alpha = psi_0(Omega_X) and alpha = Omega_v follow a different grammar and are handled
+separately. Every output asserts that flattening its columns reproduces
+probe_eps_range.Many(alpha).
 
-GitHub は 1 ページの数式ソースが 20000 字を超えると描画を止めるので、
-ページの分割で収める（\\def によるマクロ化は GitHub の KaTeX が許可しない）。
+GitHub stops rendering once the math source of one page exceeds 20000 characters, so the
+pages are split to stay under it (folding pmatrix into a \\def macro is not an option:
+GitHub's KaTeX rejects \\def).
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from probe_eps_range import (Many, big_parse, parse, units, pred_beta, block,
                              E, E_EXP, ZERO, BASE_B, lift)
 
-# GitHub の KaTeX は \def を許可しないので pmatrix をそのまま書く。
+# GitHub's KaTeX rejects \def, so pmatrix is written out in full.
 MDEF = ''
 
 L = {
@@ -48,7 +50,7 @@ def cnf_tex(c):
         out.append(b + (r'\cdot %d' % d if d > 1 else ''))
     return '+'.join(out)
 
-# ---- 一般の alpha（ユニットループ） ----
+# ---- General alpha: the add-unit loop ----
 
 def tagged(alpha):
     out = []; level = 0; root_x = -1; prev0 = False; last = None
@@ -109,7 +111,8 @@ def render_psi(X, lang, emb):
 # ---- alpha = Omega_v ----
 
 def render_omega(v, lang):
-    """先頭 B をアンカー/根/乗算ユニットに割り、残りは L^k(B) または B としてまとめる。"""
+    """Split the leading B into anchor / root / multiply unit and group the rest as
+    L^k(B) or as a single B."""
     lab = L[lang]
     full = Many('W' if v == '1' else 'W_' + v)
     b0 = BASE_B
