@@ -1,5 +1,8 @@
-rename unit / subunit to additive unit / multiplicative unit
+print psi_0(W_{alpha}) instead of M(alpha); accept psi_0/p/p_0 sugar
 
-- Apply the rename across ebp2bms-1/-2 (ja and en) and dom.md, so the name
-  states which CNF operation each nesting level carries
-- Fix the English articles and the Japanese wording the rename disturbed
+- CLI output of build_omega_alpha.py and probe_eps_range.py now reads
+  psi_0(W_{alpha}) = ... and psi_0(W_{alpha})[n] = ...
+- Add canon() to probe_eps_range: psi_0( / p_0( / p( are rewritten to psi(
+  before parsing, at every nesting depth (psi_1( and friends untouched)
+- Rewrite both --help texts with psi_0(...) as the primary spelling and the
+  three others listed as sugar

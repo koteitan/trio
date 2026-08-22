@@ -6,9 +6,9 @@ build_omega_alpha.py の PrSS を「Buchholz OT 項をそのまま写す block�
 シートの w-CNF + E 原子 135 行に対し 131 一致（残り 4 は既知の不一致行
 1947 / 2113 / 2131 / 2133）。CLI は build_omega_alpha.py と同じ:
 
-  python3 probe_eps_range.py 'psi(W)^psi(W)'     M(alpha) を表示
-  python3 probe_eps_range.py 'psi(W)+w^2' 2      展開も表示
-  python3 probe_eps_range.py                     検証モード
+  python3 probe_eps_range.py 'psi_0(W)^psi_0(W)'  psi_0(W_alpha) を表示
+  python3 probe_eps_range.py 'psi_0(W)+w^2' 2     展開も表示
+  python3 probe_eps_range.py                      検証モード
 """
 import re, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -92,7 +92,7 @@ def b_pred(b):
 # ---- パーサ: w, 数, E(=psi(W)), + * ^ ( ) ----
 TOK = re.compile(r'psi\(W\)|w|\d+|[+*^()]')
 def parse(s):
-    s = s.replace(' ', '')
+    s = canon(s.replace(' ', ''))
     toks = TOK.findall(s)
     if ''.join(toks) != s: return None
     pos = 0
@@ -208,12 +208,21 @@ def _toplevel_ops(t):
         if d == 0 and ch in '+*^': return True
     return False
 
+def canon(t):
+    """入力のシュガーシンタクスを正規形 psi(...) に直す。
+
+    psi_0( / p_0( / p(  ->  psi(   （psi_1( 等の v>0 崩壊はそのまま）
+    """
+    return (t.replace('psi_0(', 'psi(')
+             .replace('p_0(', 'psi(')
+             .replace('p(', 'psi('))
+
 def big_parse(t):
     """'psi(W)' / 'psi(W_X)' / 'W' / 'W_X' -> ('psi'|'om', X文字列)。
 
     添字 X の外側に演算子があるもの（W_2^2 = (Omega_2)^2 など）は None。
     """
-    t = t.strip()
+    t = canon(t.strip())
     while t.startswith('(') and t.endswith(')') and not _toplevel_ops(t[1:-1]):
         inner = t[1:-1]
         d = 0; ok = True
@@ -352,8 +361,9 @@ USAGE = """\
 使い方: python3 probe_eps_range.py [alpha] [n]
 
   alpha  記法は build_omega_alpha.py と同じ（w / 数 / + * ^ / 括弧）に
-         原子 psi(W) = eps_0 を加えたもの。例: 'psi(W)^psi(W)+w^2'
-  n      省略可。与えると展開 M(alpha)[n] も表示。
+         原子 psi_0(W) = eps_0 を加えたもの。例: 'psi_0(W)^psi_0(W)+w^2'
+         シュガーシンタクス: psi_0( の代わりに psi( / p( / p_0( も可。
+  n      省略可。与えると展開 psi_0(W_alpha)[n] も表示。
   なし   検証モード（シート照合）。
 """
 
@@ -388,10 +398,11 @@ if __name__ == '__main__':
         cols = Many(sys.argv[1])
         if cols is None:
             print('parse error（w / 数 / + * ^ / 括弧 / psi(W) / psi(W_X) / W_X）'); sys.exit(1)
-        print('M(%s) = %s' % (sys.argv[1], ''.join('(%d,%d,%d)' % c for c in cols)))
+        head = 'psi_0(W_{%s})' % sys.argv[1]
+        print('%s = %s' % (head, ''.join('(%d,%d,%d)' % c for c in cols)))
         if len(sys.argv) > 2:
             n = int(sys.argv[2])
-            print('M[%d]   = %s' % (n, ''.join('(%d,%d,%d)' % tuple(c)
-                                               for c in expand(cols, n))))
+            print('%s[%d] = %s' % (head, n, ''.join('(%d,%d,%d)' % tuple(c)
+                                                    for c in expand(cols, n))))
     else:
         run_check()
