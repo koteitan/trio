@@ -96,6 +96,10 @@ def R7(m: Mat, Y: int | None = None) -> Mat:
             T[y] = out[shadow(p, y)][y] + 1 if p != -1 else 0
         p0 = P[x][0]
         T[0] = out[img[p0]][0] + 1 if p0 != -1 else 0
+        # 敷き直しで捨てられた側に行 0 の親がいるなら、写しのほうを使う
+        if (p1 > 0 and (p1, lvl) in relaid and p0 != -1
+                and img[p0] < relaid[(p1, lvl)]):
+            T[0] = out[base][0] + 1
         if base is not None:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
@@ -327,6 +331,10 @@ def R13(m: Mat, Y: int | None = None, deep=None) -> Mat:
             T[y] = out[shadow(p, y)][y] + 1 if p != -1 else 0
         p0 = P[x][0]
         T[0] = out[img[p0]][0] + 1 if p0 != -1 else 0
+        # 敷き直しで捨てられた側に行 0 の親がいるなら、写しのほうを使う
+        if (p1 > 0 and (p1, lvl) in relaid and p0 != -1
+                and img[p0] < relaid[(p1, lvl)]):
+            T[0] = out[base][0] + 1
         if base is not None:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
@@ -555,6 +563,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
     out: list = []
     img: list = [None] * len(m)
     sh: dict = {}
+    relaid: dict = {}         # 敷き直した (p1,lvl) -> 写しの開始位置
     anchors: set = set()      # ブロックのアンカー (k,k,...) の像
     realimg: list = []        # 実際の列の像 (out の位置, もとの列 x)
 
@@ -566,6 +575,8 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
             sh[k] = f(sh[k])
         for i, z in enumerate(realimg):
             realimg[i] = (f(z[0]), z[1])
+        for k in list(relaid):
+            relaid[k] = f(relaid[k])
         a = set(f(z) for z in anchors)
         anchors.clear(); anchors.update(a)
 
@@ -628,7 +639,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
                   if oi < s0 and xx > bb and out[oi][1] == L]
             if tg:
                 j = tg[0]
-                chain = []; k = j
+                chain = []; k = j; st = len(out)
                 while k > 0:
                     pk = max([q for q in range(k) if out[q][0] < out[k][0]],
                              default=None)
@@ -643,6 +654,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
                     out.append(out[q])
                 out.append(out[j]); base = len(out) - 1
                 sh[(p1, lvl)] = base
+                relaid[(p1, lvl)] = st
                 out.append(tuple(out[base][y] + 1 if y <= t else 0
                                  for y in range(Y)))
                 img[x] = len(out) - 1
@@ -659,6 +671,10 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
             T[y] = out[shadow(p, y)][y] + 1 if p != -1 else 0
         p0 = P[x][0]
         T[0] = out[img[p0]][0] + 1 if p0 != -1 else 0
+        # 敷き直しで捨てられた側に行 0 の親がいるなら、写しのほうを使う
+        if (p1 > 0 and (p1, lvl) in relaid and p0 != -1
+                and img[p0] < relaid[(p1, lvl)]):
+            T[0] = out[base][0] + 1
         if base is not None:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
