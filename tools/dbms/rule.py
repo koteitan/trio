@@ -609,33 +609,143 @@ def relay_site(m: Mat, P, x: int, t: int) -> bool:
 _ABSORB = True     # 実験用。_stair 内の吸収を切って効果を測るためのつまみ
 
 
-def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
-    """階段を組む。列を 1 本書くたびに末尾の「吸収」を試し、
-    消えた列を参照している img/sh を写像し直す（後続の列が縮約後の状態を見る）。"""
-    P = pim(m)
-    out: list = []
-    img: list = [None] * len(m)
-    sh: dict = {}
-    relaid: dict = {}         # 敷き直した (p1,lvl) -> 写しの開始位置
-    anchors: set = set()      # ブロックのアンカー (k,k,...) の像
-    realimg: list = []        # 実際の列の像 (out の位置, もとの列 x)
+class _Staircase:
+    """BMS の列を 1 本ずつ DBMS の列に写していく組み立て器。
 
-    def remap(f):
-        for i in range(len(img)):
-            if img[i] is not None:
-                img[i] = f(img[i])
-        for k in list(sh):
-            sh[k] = f(sh[k])
-        for i, z in enumerate(realimg):
-            realimg[i] = (f(z[0]), z[1])
-        for k in list(relaid):
-            relaid[k] = f(relaid[k])
-        a = set(f(z) for z in anchors)
-        anchors.clear(); anchors.update(a)
+    持ち物:
+      out      いままでに書いた DBMS の列
+      img[x]   BMS の列 x の像の位置
+      sh       影の列のキャッシュ (親, 段) -> 位置
+      relaid   敷き直した (親, 段) -> 写しの開始位置
+      anchors  ブロックのアンカー (k,k,..) の像の位置
+      realimg  実際の列の像 (位置, もとの列 x)。影の列は含まない
+    """
 
-    def absorb_tail():
+    def __init__(self, m: Mat, Y: int, depth, relay: bool = True):
+        self.m, self.Y, self.depth, self.relay = m, Y, depth, relay
+        self.P = pim(m)
+        self.out: list = []
+        self.img: list = [None] * len(m)
+        self.sh: dict = {}
+        self.relaid: dict = {}
+        self.anchors: set = set()
+        self.realimg: list = []
+
+    # ------------------------------------------------------------ 組み立て
+    def run(self) -> Mat:
+        for x, c in enumerate(self.m):
+            nz = [y for y in range(self.Y) if c[y] > 0]
+            if not nz:
+                self._emit(tuple([0] * self.Y), x, c)
+            else:
+                t = nz[-1]
+                lvl = min(self.Y - 1, t + self.depth(x, c))
+                p1 = self.P[x][1] if t >= 1 else -1
+                if not self._relay(x, c, t, lvl, p1):
+                    self._normal(x, c, t, lvl, p1)
+            while self._absorb_tail():
+                pass
+        return tuple(self.out)
+
+    def _emit(self, col, x, c):
+        """列を 1 本書いて、それを BMS の列 x の像として記録する。"""
+        self.out.append(col)
+        self.img[x] = len(self.out) - 1
+        self.realimg.append((len(self.out) - 1, x))
+        if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
+            self.anchors.add(self.img[x])
+
+    # ------------------------------------------------------------ 影の列
+    def _shadow(self, p, y):
+        """列 p の像を、段 y まで届く足場に持ち上げる。足りなければ影の列を挿す。"""
+        if y <= 0:
+            return self.img[p]
+        k = (p, y)
+        if k in self.sh:
+            return self.sh[k]
+        s = self._shadow(p, y - 1)
+        if self.out[s][y - 1] >= 1:
+            r = s
+        else:
+            self.out.append(tuple(self.out[s][z] + 1 if z < y else 0
+                                  for z in range(self.Y)))
+            r = len(self.out) - 1
+        self.sh[k] = r
+        return r
+
+    # ------------------------------------------------------------ ふつうの列
+    def _normal(self, x, c, t, lvl, p1):
+        out, P = self.out, self.P
+        base = self._shadow(P[x][t], lvl) if P[x][t] != -1 else None
+        T = [0] * self.Y
+        for y in range(1, t + 1):
+            p = P[x][y]
+            T[y] = out[self._shadow(p, y)][y] + 1 if p != -1 else 0
+        p0 = P[x][0]
+        T[0] = out[self.img[p0]][0] + 1 if p0 != -1 else 0
+        # 敷き直しで捨てられた側に行 0 の親がいるなら、写しのほうを使う
+        if (p1 > 0 and (p1, lvl) in self.relaid and p0 != -1
+                and self.img[p0] < self.relaid[(p1, lvl)]):
+            T[0] = out[base][0] + 1
+        if base is not None:
+            for y in range(0, t + 1):
+                T[y] = max(T[y], out[base][y] + 1)
+        self._emit(tuple(T), x, c)
+
+    # ------------------------------------------------------------ 敷き直し
+    def _relay(self, x, c, t, lvl, p1) -> bool:
+        """梯子を使い切っているなら、前の段の写しを並べ直してから書く。
+        書いたら True。"""
+        out = self.out
+        if not (self.relay and p1 > 0 and (p1, lvl) not in self.sh
+                and self.img[p1] is not None
+                and len(out[self.img[p1]]) > 1 and out[self.img[p1]][1] >= 1
+                and relay_site(self.m, self.P, x, t)):
+            return False
+        s0 = self.img[p1]
+        L = out[s0][1]
+        bb = block_base(self.m, p1)
+        tg = [oi for oi, xx in self.realimg
+              if oi < s0 and xx > bb and out[oi][1] == L]
+        if not tg:
+            return False
+        j = tg[0]
+        chain = self._ancestor_chain(j)
+        st = len(out)
+        for q in reversed(chain):
+            out.append(out[q])
+        out.append(out[j])
+        base = len(out) - 1
+        self.sh[(p1, lvl)] = base
+        self.relaid[(p1, lvl)] = st
+        self._emit(tuple(out[base][y] + 1 if y <= t else 0
+                         for y in range(self.Y)), x, c)
+        return True
+
+    def _ancestor_chain(self, j):
+        """写し元 j を書くのに要る、行 0 の祖先鎖。まだ生きている段で止める。"""
+        out = self.out
+        chain = []
+        k = j
+        while k > 0:
+            pk = max([q for q in range(k) if out[q][0] < out[k][0]], default=None)
+            if pk is None:
+                break
+            if (out[pk][1] < out[j][1]
+                    and all(out[q][0] > out[pk][0]
+                            for q in range(pk + 1, len(out)))):
+                break
+            chain.append(pk)
+            k = pk
+        return chain
+
+    # ------------------------------------------------------------ 吸収
+    def _absorb_tail(self) -> bool:
+        """末尾が A ++ [P] ++ B ++ [Q]（B は A の接尾辞の写し、Q は P を上書き）の形なら、
+        A ++ [Q] に縮める。縮めたら True。"""
         if not _ABSORB:
             return False
+        out = self.out
         n = len(out)
         if n < 2:
             return False
@@ -648,103 +758,42 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
             L = j - i - 1
             if L <= 0 or i - L < 0:
                 continue
-            if out[i - L:i] == out[i + 1:j]:
-                keep = out[:]
-                del out[i:j]
-                if not isstd(tuple(out), 'DBMS'):
-                    out[:] = keep      # 縮めると標準形でなくなるならやめる
-                    continue
+            if out[i - L:i] != out[i + 1:j]:
+                continue
+            keep = out[:]
+            del out[i:j]
+            if not isstd(tuple(out), 'DBMS'):
+                out[:] = keep      # 縮めると標準形でなくなるならやめる
+                continue
 
-                def g(z, i=i, j=j, L=L):
-                    if z < i:
-                        return z
-                    if z < j:
-                        return z - (L + 1) if z > i else i - L
-                    return z - (j - i)
-                remap(g)
-                return True
+            def g(z, i=i, j=j, L=L):
+                if z < i:
+                    return z
+                if z < j:
+                    return z - (L + 1) if z > i else i - L
+                return z - (j - i)
+            self._remap(g)
+            return True
         return False
 
-    def shadow(p, y):
-        if y <= 0:
-            return img[p]
-        k = (p, y)
-        if k in sh:
-            return sh[k]
-        s = shadow(p, y - 1)
-        if out[s][y - 1] >= 1:
-            r = s
-        else:
-            out.append(tuple(out[s][z] + 1 if z < y else 0 for z in range(Y)))
-            r = len(out) - 1
-        sh[k] = r
-        return r
+    def _remap(self, f):
+        """列が消えたので、位置を指しているもの全部を写し直す。"""
+        for i in range(len(self.img)):
+            if self.img[i] is not None:
+                self.img[i] = f(self.img[i])
+        for k in list(self.sh):
+            self.sh[k] = f(self.sh[k])
+        for i, z in enumerate(self.realimg):
+            self.realimg[i] = (f(z[0]), z[1])
+        for k in list(self.relaid):
+            self.relaid[k] = f(self.relaid[k])
+        a = set(f(z) for z in self.anchors)
+        self.anchors.clear()
+        self.anchors.update(a)
 
-    for x, c in enumerate(m):
-        nz = [y for y in range(Y) if c[y] > 0]
-        if not nz:
-            out.append(tuple([0] * Y)); img[x] = len(out) - 1
-            realimg.append((len(out) - 1, x))
-            continue
-        t = nz[-1]
-        lvl = min(Y - 1, t + depth(x, c))
-        p1 = P[x][1] if t >= 1 else -1
-        if (p1 > 0 and (p1, lvl) not in sh and img[p1] is not None
-                and len(out[img[p1]]) > 1 and out[img[p1]][1] >= 1
-                and relay and relay_site(m, P, x, t)):
-            s0 = img[p1]; L = out[s0][1]
-            bb = block_base(m, p1)
-            tg = [oi for oi, xx in realimg
-                  if oi < s0 and xx > bb and out[oi][1] == L]
-            if tg:
-                j = tg[0]
-                chain = []; k = j; st = len(out)
-                while k > 0:
-                    pk = max([q for q in range(k) if out[q][0] < out[k][0]],
-                             default=None)
-                    if pk is None:
-                        break
-                    if (out[pk][1] < out[j][1]
-                            and all(out[q][0] > out[pk][0]
-                                    for q in range(pk + 1, len(out)))):
-                        break
-                    chain.append(pk); k = pk
-                for q in reversed(chain):
-                    out.append(out[q])
-                out.append(out[j]); base = len(out) - 1
-                sh[(p1, lvl)] = base
-                relaid[(p1, lvl)] = st
-                out.append(tuple(out[base][y] + 1 if y <= t else 0
-                                 for y in range(Y)))
-                img[x] = len(out) - 1
-                realimg.append((len(out) - 1, x))
-                if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
-                    anchors.add(img[x])
-                while absorb_tail():
-                    pass
-                continue
-        base = shadow(P[x][t], lvl) if P[x][t] != -1 else None
-        T = [0] * Y
-        for y in range(1, t + 1):
-            p = P[x][y]
-            T[y] = out[shadow(p, y)][y] + 1 if p != -1 else 0
-        p0 = P[x][0]
-        T[0] = out[img[p0]][0] + 1 if p0 != -1 else 0
-        # 敷き直しで捨てられた側に行 0 の親がいるなら、写しのほうを使う
-        if (p1 > 0 and (p1, lvl) in relaid and p0 != -1
-                and img[p0] < relaid[(p1, lvl)]):
-            T[0] = out[base][0] + 1
-        if base is not None:
-            for y in range(0, t + 1):
-                T[y] = max(T[y], out[base][y] + 1)
-        out.append(tuple(T)); img[x] = len(out) - 1
-        realimg.append((len(out) - 1, x))
-        if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
-            anchors.add(img[x])
-        while absorb_tail():
-            pass
-    return tuple(out)
 
+def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
+    return _Staircase(m, Y, depth, relay).run()
 
 def _absorb_cands(Z: Mat):
     """吸収: Z = A ++ [P] ++ B ++ [Q] で B が A の接尾辞のコピー、
