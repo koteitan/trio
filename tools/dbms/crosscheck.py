@@ -39,6 +39,16 @@ def c_cmp(a, b, Y=None):
     return int(t) if t in ('-1', '0', '1') else None
 
 
+def c_expand(m, n, Y=None):
+    out = subprocess.run([BMS, ser(m, Y) + '[%d]' % n],
+                         capture_output=True, text=True, timeout=60)
+    t = out.stdout.strip()
+    if not t.startswith('('):
+        return None
+    cols = [x for x in t.replace(')', ')|').split('|') if x]
+    return tuple(tuple(int(v) for v in c.strip('()').split(',')) for c in cols)
+
+
 def main(n=400):
     if not os.path.exists(BMS):
         print('c/bms が無い。~/code/yaBMS/c で make してから。'); return
@@ -89,6 +99,28 @@ def main(n=400):
                 if ng2 <= 3:
                     print('  cmp 不一致 C=%s Python=%s' % (cc, pp))
     print('cmpmat 突き合わせ %d 件、不一致 %d 件' % (tot2, ng2))
+
+    # 展開も見る（展開規則は BM4 と DBMS で同一なので版は 4 でよい）
+    from core import expand
+    ng3 = 0; tot3 = 0
+    for m, ver, lab in cases[:120]:
+        if not m or all(v == 0 for v in m[-1]):
+            continue
+        Y = rows(m)
+        for k in (1, 2, 3):
+            try:
+                pe = expand(m, k)
+            except Exception:
+                continue
+            ce = c_expand(m, k - 1, Y)   # C の [n] は Python の expand(m, n+1)
+            tot3 += 1
+            if ce is None or tuple(tuple(c) for c in pe) != ce:
+                ng3 += 1
+                if ng3 <= 3:
+                    print('  expand 不一致 %s [%d]' % (lab, k))
+                    print('     C      %s' % (ce,))
+                    print('     Python %s' % (pe,))
+    print('expand 突き合わせ %d 件、不一致 %d 件' % (tot3, ng3))
 
 
 if __name__ == '__main__':

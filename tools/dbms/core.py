@@ -101,6 +101,8 @@ _exp_memo = {}
 
 
 def expand(S: Mat, n: int) -> Mat:
+    """添字は 1 始まり。expand(m, 1) が基本列の最初の項で、
+    yaBMS の C 実装の `[0]` に対応する（crosscheck.py で確認済み）。"""
     k = (S, n)
     r = _exp_memo.get(k)
     if r is None:
