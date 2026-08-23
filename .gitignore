@@ -2,3 +2,4 @@ lean/.lake/
 __pycache__/
 tmp/
 commit-msg.txt
+tools/dbms/depth_data.json
