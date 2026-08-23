@@ -97,17 +97,18 @@ def ladder_spent(c, nxt, pv, spent) -> bool:
             and nxt[0] <= c[0] + 1 and nxt[1] <= 1 and nxt[2] == 0)
 
 
-def after_w(nxt, prev, pv, hi):
+def after_w(nxt, prev, pv, hi, pv_new_term=False):
     """直前が「×w」の列 (k,0,0) で、この分岐列がユニットの端にあるときの段。
 
     ×w は段を上げないので、ふつうは段が 1 に落ちる（浅い）。
-    ただし W_(w^2) 系のブロックで直前の分岐列が深かったなら、×w は段の上に
-    乗っているだけなので段は残る（深い）。
+    ただし W_(w^2) 系のブロックで直前の分岐列が深く、かつその ×w が
+    **いまの項の続き**なら、×w は段の上に乗っているだけなので段は残る（深い）。
+    ×w が根から生えて新しい加算項を始めているなら段は残らない。
     該当しなければ None を返す（この規則は口を出さない）。
     """
     if not (is_w_col(pv) and at_unit_edge(nxt, prev)):
         return None
-    return 1 if (hi and prev == 1) else 0
+    return 1 if (hi and prev == 1 and not pv_new_term) else 0
 
 
 def closes_hi_unit(c, nxt, pv, pv2, hi, rep) -> bool:
@@ -121,7 +122,7 @@ def closes_hi_unit(c, nxt, pv, pv2, hi, rep) -> bool:
 
 
 def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False,
-               spent=False) -> int:
+               spent=False, pv_new_term=False) -> int:
     """分岐列 c が名指す対象の段（0=段 1 / 1=段 2）。
 
     **深いのが既定**。BMS は段を梯子で綴るので、綴りが続いていれば段 2 を名指している。
@@ -140,7 +141,7 @@ def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False,
         return 0
     if prev == 0:
         return 0
-    v = after_w(nxt, prev, pv, hi)
+    v = after_w(nxt, prev, pv, hi, pv_new_term)
     if v is not None:
         return v
     if closes_unit(nxt):
@@ -448,6 +449,7 @@ def convert(m: Mat, Y: int | None = None) -> Mat:
 
 def depths(m: Mat):
     """各列の深さ（0=浅い / 1=深い）を規則で決める。"""
+    P = pim(m)
     prev = [None]
     out = []
     for x, c in enumerate(m):
@@ -458,7 +460,8 @@ def depths(m: Mat):
         v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0],
                        m[x - 1] if x > 0 else None, hi_block(m, x),
                        m[x - 2] if x > 1 else None, is_repeat(m, x),
-                       spent_level(m, x, c[1] + 1))
+                       spent_level(m, x, c[1] + 1),
+                       x > 0 and P[x - 1][0] == 0)
         prev[0] = v
         out.append(v)
     return out
