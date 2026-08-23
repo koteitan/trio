@@ -553,7 +553,11 @@ def relay_site(m: Mat, P, x: int, t: int) -> bool:
     if n < 2:
         return False
     # 足場を使い切った列は、そのブロックの一番上になければならない
-    return pc[0] >= max(m[z][0] for z in range(b, p1))
+    if pc[0] < max(m[z][0] for z in range(b, p1)):
+        return False
+    # かつ、その列自身は regime の根から段 1 を取っている（途中で入れ子に
+    # なっていない）ことが要る
+    return P[p1][1] <= b
 
 
 def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
