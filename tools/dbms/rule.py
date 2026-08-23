@@ -433,7 +433,16 @@ def hi_block(m, x) -> bool:
     return any(len(m[z]) > 2 and m[z][2] > 0 for z in range(b + 1, x))
 
 
-def depth_rule(c, nxt, prev, pv=None, hi=False) -> int:
+def is_repeat(m, x) -> bool:
+    """m[..x] の末尾が、その直前の同じ長さの区間の逐語コピーか。
+    コピーされた区間は、もとの区間と同じ深さで書かれる。"""
+    for L in range(1, (x + 1) // 2 + 1):
+        if m[x - 2 * L + 1:x - L + 1] == m[x - L + 1:x + 1]:
+            return True
+    return False
+
+
+def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False) -> int:
     """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。
 
     **1 ビットの状態機械**。状態 prev = 直前の分岐列で選んだ深さ（最初は None）で、
@@ -457,6 +466,14 @@ def depth_rule(c, nxt, prev, pv=None, hi=False) -> int:
         return 1 if (prev == 1 and pv is not None and len(pv) > 1
                      and pv[1] == 0 and pv[0] >= 1 and hi) else 0
     if is_anchor1(nxt):
+        return 0
+    # W_(w^2) 系のブロックで (c0,2,1)(c0,2,0) と積んだ直後の (c0,1,0) は、
+    # 次がアンカー (1,1,1) なら浅い（段を上げずに閉じる）。
+    # ただしその区間が直前の区間の逐語コピーなら、もとの深さを引き継ぐ。
+    if (hi and not rep and len(nxt) > 2 and nxt[0] == 1 and nxt[1] == 1
+            and nxt[2] == 1
+            and pv is not None and len(pv) > 2 and pv[:3] == (c[0], 2, 0)
+            and pv2 is not None and len(pv2) > 2 and pv2[:3] == (c[0], 2, 1)):
         return 0
     # 最初の分岐列で、直前が「×w」の列 (k,0,0) なら浅い
     if prev is None and pv is not None and len(pv) > 1 and pv[1] == 0 and pv[0] >= 1:
@@ -702,7 +719,7 @@ def strip_lift(m: Mat):
 def convert(m: Mat, Y: int | None = None) -> Mat:
     """BMS(BM4) 標準形 -> DBMS 標準形。現時点の最良の変換規則。
 
-    Y=1 で 28/28、Y=2 で 236/236、Y=3 で 1354/1357（BM4-Analysis シート）。
+    BM4-Analysis シートの 3 行以下の全 1621 行に一致（Y=1 28、Y=2 236、Y=3 1357）。
     """
     if Y is None:
         Y = rows(m)
@@ -727,7 +744,8 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
         if not is_branching(c):
             return 0
         v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0],
-                       m[x - 1] if x > 0 else None, hi_block(m, x))
+                       m[x - 1] if x > 0 else None, hi_block(m, x),
+                       m[x - 2] if x > 1 else None, is_repeat(m, x))
         prev[0] = v
         return v
     return dedup(_stair(m, Y, dep))

@@ -35,6 +35,14 @@ def hi_block(m, x):
     return any(len(m[z]) > 2 and m[z][2] > 0 for z in range(b + 1, x))
 
 
+def is_repeat(m, x):
+    """m[..x] の末尾が、その直前の同じ長さの区間の逐語コピーか。"""
+    for L in range(1, (x + 1) // 2 + 1):
+        if m[x - 2 * L + 1:x - L + 1] == m[x - L + 1:x + 1]:
+            return True
+    return False
+
+
 E1 = {   # nxt=None のとき深くする条件
     'なし': lambda c, nx, pv, pr, m=None, x=None: False,
     'prev=1 & 前が(k,0,0)': lambda c, nx, pv, pr, m=None, x=None: pr == 1 and is_w(pv),
@@ -53,6 +61,8 @@ E2 = {   # ふつう深いところを浅くする条件
     '次が(1,1,1) & prev=1': lambda c, nx, pv, pr, m=None, x=None: full_anchor(nx) and pr == 1,
     '次が(1,1,1) & 高ブロック': lambda c, nx, pv, pr, m=None, x=None: full_anchor(nx) and hi_block(m, x),
     '次が(1,1,1) & 高ブロック & 前が(c0,2,0)': lambda c, nx, pv, pr, m=None, x=None: full_anchor(nx) and hi_block(m, x) and pv is not None and len(pv) > 2 and pv[1] == 2 and pv[2] == 0 and pv[0] == c[0],
+    '同上 & 前々が(c0,2,1)': lambda c, nx, pv, pr, m=None, x=None: full_anchor(nx) and hi_block(m, x) and pv is not None and len(pv) > 2 and pv[1] == 2 and pv[2] == 0 and pv[0] == c[0] and x >= 2 and len(m[x - 2]) > 2 and m[x - 2] == (c[0], 2, 1),
+    '同上 & 反復でない': lambda c, nx, pv, pr, m=None, x=None: full_anchor(nx) and hi_block(m, x) and pv is not None and len(pv) > 2 and pv[1] == 2 and pv[2] == 0 and pv[0] == c[0] and x >= 2 and len(m[x - 2]) > 2 and m[x - 2] == (c[0], 2, 1) and not is_repeat(m, x),
 }
 
 
@@ -99,8 +109,9 @@ def moved(e1, e2):
 
 
 if __name__ == '__main__':
-    PICK1 = ['なし', 'prev=1 & 高ブロック', '高ブロック', 'prev=1 & 前が(k,0,0) & 高ブロック']
-    PICK2 = ['なし', '次が(1,1,1) & 高ブロック', '次が(1,1,1) & 高ブロック & 前が(c0,2,0)']
+    PICK1 = ['prev=1 & 前が(k,0,0) & 高ブロック']
+    PICK2 = ['なし', '次が(1,1,1) & 高ブロック & 前が(c0,2,0)',
+             '同上 & 前々が(c0,2,1)', '同上 & 反復でない']
     for n1 in PICK1:
         e1 = E1[n1]
         for n2 in PICK2:
