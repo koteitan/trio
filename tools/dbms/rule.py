@@ -460,55 +460,94 @@ def spent_level(m: Mat, x: int, lv: int) -> bool:
                if len(m[z]) > 2 and m[z][1] == lv and m[z][2] == 0) >= 2
 
 
+def is_w_col(c) -> bool:
+    """「×w」の列 (k,0,0), k>=1。段を上げずに項を伸ばす。"""
+    return c is not None and len(c) > 1 and c[1] == 0 and c[0] >= 1
+
+
+def is_lv2_col(c) -> bool:
+    """段 2 の列 (k,2,0)。行 2 は使わない。"""
+    return c is not None and len(c) > 2 and c[1] == 2 and c[2] == 0
+
+
+def closes_unit(nxt) -> bool:
+    """次の列がこの加算ユニットを閉じるか。
+
+    閉じるのは (a) 次が無い (b) 次がアンカー (1,1,0) (c) 次が根元 (行 0 <= 1) に戻る。
+    閉じるなら、この分岐列が名指すのは段 1 の対象なので浅い。
+    """
+    if nxt is None:
+        return True
+    if is_anchor1(nxt):
+        return True
+    return len(nxt) > 2 and nxt[0] <= 1 and nxt[2] == 0
+
+
+def at_unit_edge(nxt, prev) -> bool:
+    """加算ユニットの端か（＝この分岐列の前か後ろにユニットの切れ目がある）。"""
+    return prev is None or closes_unit(nxt)
+
+
+def ladder_spent(c, nxt, pv, spent) -> bool:
+    """段 2 の梯子を使い切ったあと、次が段 1 以下の続きの列なら、
+    掛けている相手は段 1（w のべき）なので浅い。"""
+    return (spent and is_lv2_col(pv) and nxt is not None and len(nxt) > 2
+            and nxt[0] <= c[0] + 1 and nxt[1] <= 1 and nxt[2] == 0)
+
+
+def after_w(nxt, prev, pv, hi):
+    """直前が「×w」の列 (k,0,0) で、この分岐列がユニットの端にあるときの段。
+
+    ×w は段を上げないので、ふつうは段が 1 に落ちる（浅い）。
+    ただし W_(w^2) 系のブロックで直前の分岐列が深かったなら、×w は段の上に
+    乗っているだけなので段は残る（深い）。
+    該当しなければ None を返す（この規則は口を出さない）。
+    """
+    if not (is_w_col(pv) and at_unit_edge(nxt, prev)):
+        return None
+    return 1 if (hi and prev == 1) else 0
+
+
+def closes_hi_unit(c, nxt, pv, pv2, hi, rep) -> bool:
+    """W_(w^2) 系で (c0,2,1)(c0,2,0) と積んだ直後の (c0,1,0) は、
+    次がアンカー (1,1,1) なら段を上げずに閉じる。
+    ただしその区間が直前の逐語コピーなら、もとの深さを引き継ぐ。"""
+    return (hi and not rep and nxt is not None and len(nxt) > 2
+            and nxt[:3] == (1, 1, 1)
+            and pv is not None and len(pv) > 2 and pv[:3] == (c[0], 2, 0)
+            and pv2 is not None and len(pv2) > 2 and pv2[:3] == (c[0], 2, 1))
+
+
 def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False,
                spent=False) -> int:
-    """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。
+    """分岐列 c が名指す対象の段（0=段 1 / 1=段 2）。
 
-    **1 ビットの状態機械**。状態 prev = 直前の分岐列で選んだ深さ（最初は None）で、
-    アンカー列 (1,1,0) を通過するたびに 0 にリセットされる（`R23` を参照）。
+    **深いのが既定**。BMS は段を梯子で綴るので、綴りが続いていれば段 2 を名指している。
+    浅くなるのは「段が落ちる／落ちたままである」合図が出たときだけ:
 
-      浅い(0) <=> prev == 0                      直前が浅ければ以後も浅い
-               or 次の列が無い（行列の末尾）
-               or 次がアンカー (1,1,0)           新しい加算ユニットの頭
-      深い(1) <=> それ以外
+      1. prev == 0        直前の分岐列が浅い（ユニット内では段は戻らない）
+      2. after_w          ユニットの端で直前が「×w」なら段は 1 に落ちる
+                          （W_(w^2) 系で直前が深いときだけ段が残る）
+      3. closes_unit      次の列がこの加算ユニットを閉じる
+      4. ladder_spent     段 2 の梯子を使い切っていて、次は段 1 の続き
+      5. closes_hi_unit   W_(w^2) 系で段を上げずにユニットを閉じる形
 
-    「直前が浅ければ以後も浅い」が trio-agent の言う「レベルを状態として持ち回る」に
-    あたる。レベルが一度落ちたら、次のアンカーで区切り直すまで戻らない。
+    状態 prev は直前の分岐列で選んだ深さ。アンカー (1,1,0) で 0 に戻る（`depths`）。
     """
     if not is_branching(c):
         return 0
     if prev == 0:
         return 0
-    if nxt is None:
-        # 末尾の列はふつう浅い。ただし W_(w^2) 系のブロックで、直前が「×w」の
-        # 列 (k,0,0) なら、その手前の段をそのまま使う（深い）。
-        return 1 if (prev == 1 and pv is not None and len(pv) > 1
-                     and pv[1] == 0 and pv[0] >= 1 and hi) else 0
-    if is_anchor1(nxt):
+    v = after_w(nxt, prev, pv, hi)
+    if v is not None:
+        return v
+    if closes_unit(nxt):
         return 0
-    # 次が根元 (row0 <= 1) に戻る列なら、この列は項を閉じるので浅い。
-    if len(nxt) > 2 and nxt[0] <= 1 and nxt[2] == 0:
+    if ladder_spent(c, nxt, pv, spent):
         return 0
-    # 段 2 の梯子をすでに 2 本以上使い切っていて（spent）、直前が段 2 の列、
-    # 次が段 1 以下の続きの列 (c0+1,1,0) / (c0+1,0,0) なら、
-    # 掛けている相手は段 1（w のべき）なので浅い。
-    if (spent and pv is not None and len(pv) > 2 and pv[1] == 2 and pv[2] == 0
-            and len(nxt) > 2 and nxt[0] <= c[0] + 1 and nxt[1] <= 1
-            and nxt[2] == 0):
-        return 0
-    # W_(w^2) 系のブロックで (c0,2,1)(c0,2,0) と積んだ直後の (c0,1,0) は、
-    # 次がアンカー (1,1,1) なら浅い（段を上げずに閉じる）。
-    # ただしその区間が直前の区間の逐語コピーなら、もとの深さを引き継ぐ。
-    if (hi and not rep and len(nxt) > 2 and nxt[0] == 1 and nxt[1] == 1
-            and nxt[2] == 1
-            and pv is not None and len(pv) > 2 and pv[:3] == (c[0], 2, 0)
-            and pv2 is not None and len(pv2) > 2 and pv2[:3] == (c[0], 2, 1)):
-        return 0
-    # 最初の分岐列で、直前が「×w」の列 (k,0,0) なら浅い
-    if prev is None and pv is not None and len(pv) > 1 and pv[1] == 0 and pv[0] >= 1:
+    if closes_hi_unit(c, nxt, pv, pv2, hi, rep):
         return 0
     return 1
-
 
 def block_base(m: Mat, x: int) -> int:
     """x の属する「段の regime」を開いた列の位置。
