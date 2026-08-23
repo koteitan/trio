@@ -17,14 +17,27 @@ DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'psiI.json')
 SHEET_ERRORS = {128: '(0)(1)(2,1)(3,1)(3,1)(3)(4,1)(5,1)',
                 129: '(0)(1)(2,1)(3,1)(3,1)(3)(4,1)(5,1)(5,1)'}
 
+# シート A 列(BMS) の誤り。末尾列の行 2 の印 1 が 0 になっている。
+# 判定: 直すと (a) BMS 標準形のまま (b) シートの他行と重複しない
+#       (c) 全 1357 行との順序が E 列と一致する (d) 変換器の出力が E 列に一致する
+# の 4 つを全部みたす（`scratchpad/typo.py` の探索）。
+BMS_ERRORS = {
+ 999:  '(0,0,0)(1,1,1)(2,1,0)(3,2,1)(1,1,0)(2,2,1)(3,2,0)(4,3,1)(1,1,0)(2,2,1)(3,2,0)(4,3,1)',
+ 1004: '(0,0,0)(1,1,1)(2,1,0)(3,2,1)(1,1,0)(2,2,1)(3,2,0)(4,3,1)(2,2,0)(3,3,1)(4,3,0)(5,4,1)(3,3,0)',
+ 1027: '(0,0,0)(1,1,1)(2,1,0)(3,2,1)(2,1,0)(3,2,1)(2,1,0)(3,2,1)',
+}
+
 
 def load():
     out = []
     for r in json.load(open(DATA)):
         if not (r['bms'] and r['dbms']):
             continue
-        if r['row'] in SHEET_ERRORS and not os.environ.get('RAWSHEET'):
-            r = dict(r, dbms=SHEET_ERRORS[r['row']])
+        if not os.environ.get('RAWSHEET'):
+            if r['row'] in SHEET_ERRORS:
+                r = dict(r, dbms=SHEET_ERRORS[r['row']])
+            if r['row'] in BMS_ERRORS:
+                r = dict(r, bms=BMS_ERRORS[r['row']])
         try:
             Y = max(rows(parse(r['bms'])), rows(parse(r['dbms'])))
             mb, md = parse(r['bms'], Y), parse(r['dbms'], Y)
