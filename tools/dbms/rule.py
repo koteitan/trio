@@ -10,7 +10,7 @@ R2: R1 を「行 0 が 0 の列で切ったブロック（＝順序数の和の�
 from __future__ import annotations
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from core import Mat, diag, rows
+from core import Mat, diag, rows, isstd
 
 
 def R1(m: Mat, Y: int | None = None) -> Mat:
@@ -598,7 +598,11 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
             if L <= 0 or i - L < 0:
                 continue
             if out[i - L:i] == out[i + 1:j]:
+                keep = out[:]
                 del out[i:j]
+                if not isstd(tuple(out), 'DBMS'):
+                    out[:] = keep      # 縮めると標準形でなくなるならやめる
+                    continue
 
                 def g(z, i=i, j=j, L=L):
                     if z < i:
