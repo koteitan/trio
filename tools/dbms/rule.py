@@ -91,10 +91,10 @@ def at_unit_edge(nxt, prev) -> bool:
 
 
 def ladder_spent(c, nxt, pv, spent) -> bool:
-    """段 2 の梯子を使い切ったあと、次が段 1 以下の続きの列なら、
-    掛けている相手は段 1（w のべき）なので浅い。"""
-    return (spent and is_lv2_col(pv) and nxt is not None and len(nxt) > 2
-            and nxt[0] <= c[0] + 1 and nxt[1] <= 1 and nxt[2] == 0)
+    """**廃止**。かつては「段 2 の梯子を使い切ったら浅い」としていたが、
+    共終検査で誤りと判明した。正しくは格上げ自体は起き、梯子を敷き直す。
+    外すと共終検査の不合格が 291 -> 212 に減る（シートは 1621/1621 のまま）。"""
+    return False
 
 
 def after_w(nxt, prev, pv, hi, pv_new_term=False):
@@ -132,7 +132,6 @@ def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False,
       2. after_w          ユニットの端で直前が「×w」なら段は 1 に落ちる
                           （W_(w^2) 系で直前が深いときだけ段が残る）
       3. closes_unit      次の列がこの加算ユニットを閉じる
-      4. ladder_spent     段 2 の梯子を使い切っていて、次は段 1 の続き
       5. closes_hi_unit   W_(w^2) 系で段を上げずにユニットを閉じる形
 
     状態 prev は直前の分岐列で選んだ深さ。アンカー (1,1,0) で 0 に戻る（`depths`）。
