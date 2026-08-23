@@ -166,7 +166,18 @@ def block_base(m: Mat, x: int) -> int:
 
 
 def relay_leaf(m: Mat, P, x: int, dep) -> bool:
-    """格上げされた列の上に乗る「段 1 の葉」で、梯子の敷き直しが要るか。
+    """**いまは使っていない**（`_relay_leaf` から切ってある）。
+
+    格上げされた列の上に乗る「段 1 の葉」で、梯子の敷き直しが要るか。
+
+    この規則自体は正しい。7 列の
+    `(0)(1,1,1)(2,1)(3,2)(4,2)(4,1)(5,1)` の像は
+    `...(6,2)(3,2,1)(4,2)`（= シート 897 の像から末尾列を落としたもの）で、
+    敷き直しを入れるとその値になる。シートも 1621/1621 のまま。
+
+    しかし単独で入れると全体は悪化する（共終不合格 212 -> 269、直った 2 / 壊れた 59）。
+    f(M) だけ直しても f(M[n]) が追随しないので、共終条件の左右が食い違うため。
+    **この家系は M と M[1], M[2] をまとめて直さないといけない。**
 
     直前の分岐列が段 2 に格上げされている（dep=1）とき、その列は段 2 の梯子を
     要求するが、梯子が使い切られていれば残っていない。そこに乗る段 1 の葉
@@ -225,6 +236,7 @@ def relay_site(m: Mat, P, x: int, t: int) -> bool:
 
 
 _ABSORB = True     # 実験用。_stair 内の吸収を切って効果を測るためのつまみ
+_USE_RELAY_LEAF = False   # relay_leaf の docstring を参照（単独では悪化する）
 
 
 class _Staircase:
@@ -348,7 +360,8 @@ class _Staircase:
     def _relay_leaf(self, x, c, t) -> bool:
         """格上げされた列の上の段 1 の葉。梯子を敷き直し、その一番上を像にする。"""
         out = self.out
-        if not (self.relay and relay_leaf(self.m, self.P, x, self.dep)):
+        if not (self.relay and _USE_RELAY_LEAF
+                and relay_leaf(self.m, self.P, x, self.dep)):
             return False
         s0 = self.img[x - 1]
         if s0 is None or len(out[s0]) < 2 or out[s0][1] < 1:
