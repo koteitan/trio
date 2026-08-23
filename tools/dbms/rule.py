@@ -422,7 +422,7 @@ def is_branching(c) -> bool:
     return len(c) > 2 and c[1] == 1 and c[2] == 0 and c[0] >= 2
 
 
-def depth_rule(c, nxt, prev) -> int:
+def depth_rule(c, nxt, prev, pv=None) -> int:
     """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。
 
     **1 ビットの状態機械**。状態 prev = 直前の分岐列で選んだ深さ（最初は None）で、
@@ -443,6 +443,9 @@ def depth_rule(c, nxt, prev) -> int:
     if nxt is None:
         return 0
     if is_anchor1(nxt):
+        return 0
+    # 最初の分岐列で、直前が「×w」の列 (k,0,0) なら浅い
+    if prev is None and pv is not None and len(pv) > 1 and pv[1] == 0 and pv[0] >= 1:
         return 0
     return 1
 
@@ -632,7 +635,8 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
             prev[0] = 0            # アンカーを通ると加算ユニットが変わるのでリセット
         if not is_branching(c):
             return 0
-        v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0])
+        v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0],
+                       m[x - 1] if x > 0 else None)
         prev[0] = v
         return v
     return dedup(_stair(m, Y, dep))
