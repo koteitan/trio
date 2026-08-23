@@ -484,7 +484,7 @@ def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False,
     # 次が段 1 以下の続きの列 (c0+1,1,0) / (c0+1,0,0) なら、
     # 掛けている相手は段 1（w のべき）なので浅い。
     if (spent and pv is not None and len(pv) > 2 and pv[1] == 2 and pv[2] == 0
-            and len(nxt) > 2 and nxt[0] == c[0] + 1 and nxt[1] <= 1
+            and len(nxt) > 2 and nxt[0] <= c[0] + 1 and nxt[1] <= 1
             and nxt[2] == 0):
         return 0
     # W_(w^2) 系のブロックで (c0,2,1)(c0,2,0) と積んだ直後の (c0,1,0) は、
