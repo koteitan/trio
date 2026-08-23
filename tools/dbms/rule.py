@@ -468,24 +468,48 @@ def _stair(m: Mat, Y: int, depth) -> Mat:
     return tuple(out)
 
 
-def dedup(Z: Mat, limit: int = 32) -> Mat:
-    """標準形になるまで、逐語重複した区間を 1 つずつ落とす。"""
+def _absorb_cands(Z: Mat):
+    """吸収: Z = A ++ [P] ++ B ++ [Q] で B が A の接尾辞のコピー、
+    Q が P を上書きする（行 0 が同じで行 1 が大きい）なら A ++ [Q] に縮む。
+
+    BMS は「レベル 1 の印を書いてから、レベルを上げ直して書き直す」が、
+    DBMS は最初から上のレベルで書くので、この形の重複が出る。
+    """
+    n = len(Z)
+    for j in range(n - 1, 0, -1):
+        Q = Z[j]
+        for i in range(j - 1, -1, -1):
+            P = Z[i]
+            if P[0] != Q[0] or Q[1] <= P[1]:
+                continue
+            L = j - i - 1
+            if L <= 0 or i - L < 0:
+                continue
+            if Z[i - L:i] == Z[i + 1:j]:
+                yield Z[:i] + Z[j:]
+
+
+def dedup(Z: Mat, limit: int = 40) -> Mat:
+    """標準形になるまで縮約する。逐語重複の削除 → 吸収 の順に試す。"""
     for _ in range(limit):
         if isstd(Z, 'DBMS'):
             return Z
-        best = None
+        nxt = None
         n = len(Z)
         for L in range(n // 2, 0, -1):
             for i in range(n - L, L - 1, -1):
                 if Z[i - L:i] == Z[i:i + L]:
                     cand = Z[:i] + Z[i + L:]
                     if isstd(cand, 'DBMS'):
-                        return dedup(cand, limit - 1)
-                    if best is None:
-                        best = cand
-        if best is None:
+                        return cand
+                    if nxt is None:
+                        nxt = cand
+        for cand in _absorb_cands(Z):
+            if isstd(cand, 'DBMS'):
+                return cand          # 吸収は標準形になるときだけ使う
+        if nxt is None:
             return Z
-        Z = best
+        Z = nxt
     return Z
 
 
