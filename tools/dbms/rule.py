@@ -236,3 +236,234 @@ def normalize3(Z, limit=24):
 
 def R10(m: Mat, Y: int | None = None) -> Mat:
     return normalize3(R7(m, Y))
+
+
+# ---------------------------------------------------------------- R12 ブロックごとの一様オフセット
+def _topt(c):
+    nz = [y for y in range(len(c)) if c[y] > 0]
+    return nz[-1] if nz else -1
+
+
+def R12(m: Mat, Y: int | None = None, tfun=None) -> Mat:
+    """行 0 の根で切ったブロックごとに、そのブロックの深さ t だけ「階段」を前置して
+    一様オフセット (t, t-1, ..., 0) を足す。
+
+    psi(W_(wk)) 族などはこれで完全に一致する:
+      BMS  (0,0,0)(1,1,1)(2,1,0)(3,2,1)
+      -> 前置 (0)(1) ＋ 各列に (2,1,0) を足す
+      =    (0)(1)(2,1)(3,2,1)(4,2)(5,3,1)   （正解）
+    """
+    if Y is None:
+        Y = rows(m)
+    out = []
+    for b in _blocks(m):
+        t = max((_topt(c) for c in b), default=-1)
+        if tfun is not None:
+            t = tfun(b, t)
+        if t <= 0:
+            out.extend(b)
+            continue
+        off = tuple(max(t - y, 0) for y in range(Y))
+        out.extend(diag('DBMS', t, Y))
+        out.extend(tuple(c[y] + off[y] for y in range(Y)) for c in b)
+    return tuple(out)
+
+
+# ---------------------------------------------------------------- R13 深さを状態にした階段
+def R13(m: Mat, Y: int | None = None, deep=None) -> Mat:
+    """R7 の階段に「レベル（影の深さ）」の状態を足したもの。
+
+    観測: 印の無い列 (2,1,0) の像の行 1 値は、その列が行 0 の木で葉なら 1、
+    子孫を持つなら 2 になる。つまり使う影の深さが 1 段変わる。
+    deep(x) が真なら shadow(P_t(x), t+1) を使う。
+    """
+    if Y is None:
+        Y = rows(m)
+    if not m:
+        return ()
+    P = pim(m)
+
+    def has_desc0(x):
+        for z in range(x + 1, len(m)):
+            j = z
+            while j != -1:
+                if j == x:
+                    return True
+                j = P[j][0]
+        return False
+
+    if deep is None:
+        deep = has_desc0
+    out: list = []
+    img: list = [None] * len(m)
+    sh: dict = {}
+
+    def shadow(p: int, y: int) -> int:
+        if y <= 0:
+            return img[p]
+        key = (p, y)
+        if key in sh:
+            return sh[key]
+        s = shadow(p, y - 1)
+        if out[s][y - 1] >= 1:
+            r = s
+        else:
+            col = [out[s][z] + 1 if z < y else 0 for z in range(Y)]
+            out.append(tuple(col))
+            r = len(out) - 1
+        sh[key] = r
+        return r
+
+    for x, c in enumerate(m):
+        nz = [y for y in range(Y) if c[y] > 0]
+        if not nz:
+            out.append(tuple([0] * Y)); img[x] = len(out) - 1; continue
+        t = nz[-1]
+        lvl = t + 1 if (t < Y - 1 and deep(x)) else t
+        base = shadow(P[x][t], lvl) if P[x][t] != -1 else None
+        T = [0] * Y
+        for y in range(1, t + 1):
+            p = P[x][y]
+            T[y] = out[shadow(p, y)][y] + 1 if p != -1 else 0
+        p0 = P[x][0]
+        T[0] = out[img[p0]][0] + 1 if p0 != -1 else 0
+        if base is not None:
+            for y in range(0, t + 1):
+                T[y] = max(T[y], out[base][y] + 1)
+        out.append(tuple(T)); img[x] = len(out) - 1
+    return tuple(out)
+
+
+# ---------------------------------------------------------------- R15 一様オフセット + 深さ状態
+def R15(m: Mat, Y: int | None = None, mode='desc') -> Mat:
+    """R12（ブロック単位の一様オフセット）に「行 1 のオフセットは列ごと」を足す。
+
+    行 0 のオフセットはブロックの深さ t で一様、行 1 のオフセットは
+    その列が「深い」かどうかで t-1 か 0。深さの判定は mode で切り替える:
+      'desc'   行 0 の木で子孫を持つ
+      'mark'   自分に行 2 の印がある
+      'both'   どちらか
+    """
+    if Y is None:
+        Y = rows(m)
+    if not m:
+        return ()
+    P = pim(m)
+
+    def has_desc0(x):
+        for z in range(x + 1, len(m)):
+            j = z
+            while j != -1:
+                if j == x:
+                    return True
+                j = P[j][0]
+        return False
+
+    def deep(x, c):
+        d = has_desc0(x)
+        mk = any(c[y] > 0 for y in range(2, Y))
+        return {'desc': d, 'mark': mk, 'both': d or mk}[mode]
+
+    out = []
+    base = 0
+    for b in _blocks(m):
+        t = max((_topt(c) for c in b), default=-1)
+        if t <= 0:
+            out.extend(b); base += len(b); continue
+        out.extend(diag('DBMS', t, Y))
+        for i, c in enumerate(b):
+            o1 = (t - 1) if deep(base + i, c) else 0
+            col = [c[0] + t] + [c[1] + o1 if Y > 1 else 0] + list(c[2:])
+            out.append(tuple(col[:Y]))
+        base += len(b)
+    return tuple(out)
+
+
+# ================================================================ R23（現時点の最良）
+# 設計:
+#   1. 階段（影の列）: 行 y (y>=1) の親になる列は DBMS では「行 y-1 で 1 段深い影」で
+#      なければならない。足りなければ影を挿入する（親ごとに 1 回、使い回す）。
+#   2. 深さ（レベル）: 影を何段まで使うかは列ごとに変わる。実測すると
+#      **分岐するのは (a,1,0) 型の列だけ**で、他は常に t 段（浅い方）。
+#      (a,1,0) (a>=2) は「次の列」で決まる（シートで曖昧 0.66%）。
+#   3. 縮約: BMS は「コピー 1 個 + 印」で書くところを DBMS は「印」だけで書くので、
+#      出力に逐語重複が出る。標準形になるまで重複区間を 1 つずつ落とす。
+def depth_rule(c, nxt) -> int:
+    """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。"""
+    if not (c[1] == 1 and len(c) > 2 and c[2] == 0 and c[0] >= 2):
+        return 0                       # 分岐するのは (a,1,0) 型 (a>=2) だけ
+    if nxt is None:
+        return 0                       # 行列の末尾なら浅い
+    if nxt[0] == nxt[1] and nxt != (1, 1, 1):
+        return 0                       # 次が「対角上の列」なら浅い
+    return 1
+
+
+def _stair(m: Mat, Y: int, depth) -> Mat:
+    P = pim(m)
+    out: list = []
+    img: list = [None] * len(m)
+    sh: dict = {}
+
+    def shadow(p, y):
+        if y <= 0:
+            return img[p]
+        k = (p, y)
+        if k in sh:
+            return sh[k]
+        s = shadow(p, y - 1)
+        if out[s][y - 1] >= 1:
+            r = s
+        else:
+            out.append(tuple(out[s][z] + 1 if z < y else 0 for z in range(Y)))
+            r = len(out) - 1
+        sh[k] = r
+        return r
+
+    for x, c in enumerate(m):
+        nz = [y for y in range(Y) if c[y] > 0]
+        if not nz:
+            out.append(tuple([0] * Y)); img[x] = len(out) - 1; continue
+        t = nz[-1]
+        lvl = min(Y - 1, t + depth(x, c))
+        base = shadow(P[x][t], lvl) if P[x][t] != -1 else None
+        T = [0] * Y
+        for y in range(1, t + 1):
+            p = P[x][y]
+            T[y] = out[shadow(p, y)][y] + 1 if p != -1 else 0
+        p0 = P[x][0]
+        T[0] = out[img[p0]][0] + 1 if p0 != -1 else 0
+        if base is not None:
+            for y in range(0, t + 1):
+                T[y] = max(T[y], out[base][y] + 1)
+        out.append(tuple(T)); img[x] = len(out) - 1
+    return tuple(out)
+
+
+def dedup(Z: Mat, limit: int = 32) -> Mat:
+    """標準形になるまで、逐語重複した区間を 1 つずつ落とす。"""
+    for _ in range(limit):
+        if isstd(Z, 'DBMS'):
+            return Z
+        best = None
+        n = len(Z)
+        for L in range(n // 2, 0, -1):
+            for i in range(n - L, L - 1, -1):
+                if Z[i - L:i] == Z[i:i + L]:
+                    cand = Z[:i] + Z[i + L:]
+                    if isstd(cand, 'DBMS'):
+                        return dedup(cand, limit - 1)
+                    if best is None:
+                        best = cand
+        if best is None:
+            return Z
+        Z = best
+    return Z
+
+
+def R23(m: Mat, Y: int | None = None) -> Mat:
+    if Y is None:
+        Y = rows(m)
+    if not m:
+        return ()
+    return dedup(_stair(m, Y, lambda x, c: depth_rule(c, m[x + 1] if x + 1 < len(m) else None)))
