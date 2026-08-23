@@ -62,6 +62,9 @@ def flat(m: Mat):
 
 
 def cmpmat(a: Mat, b: Mat) -> int:
+    """標準形どうしの順序。**行数がそろっているものだけ**に使うこと
+    （列を平らに並べて辞書式に比べるので、行数が違うと意味を成さない）。
+    yaBMS の C 実装 `bms -c` と一致することを crosscheck.py で確認済み。"""
     fa, fb = flat(a), flat(b)
     for x, y in zip(fa, fb):
         if x != y:
