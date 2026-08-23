@@ -3,3 +3,4 @@ __pycache__/
 tmp/
 commit-msg.txt
 tools/dbms/depth_data.json
+tools/dbms/relay_labels.json
