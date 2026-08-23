@@ -15,7 +15,7 @@ import rule as R
 Y = 3
 
 
-def gen(seeds, rounds=3, ns=(0, 1, 2, 3), cap=4000, maxcols=14):
+def gen(seeds, rounds=4, ns=(0, 1, 2, 3, 4), cap=20000, maxcols=26):
     seen = set()
     frontier = list(seeds)
     for m in frontier:
@@ -42,12 +42,19 @@ def gen(seeds, rounds=3, ns=(0, 1, 2, 3), cap=4000, maxcols=14):
 
 
 def main():
-    seeds = [diag('BMS', k, Y) for k in range(1, 6)]
+    seeds = [diag('BMS', k, Y) for k in range(1, 8)]
     seeds += [parse(s, Y) for s in (
         '(0,0,0)(1,1,1)(2,2,1)(3,2,0)(4,3,1)',
         '(0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,0)(5,1,0)(6,2,1)',
         '(0,0,0)(1,1,1)(2,1,1)(2,1,0)(2,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(4,2,0)(4,1,0)',
         '(0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,2,0)(4,1,0)(5,2,0)(6,2,0)',
+        '(0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,0)(5,1,0)(6,2,1)(7,2,0)',
+        '(0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,0,0)(2,1,0)',
+        '(0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)(4,1,0)(5,2,0)',
+        '(0,0,0)(1,1,1)(1,1,0)(2,2,1)(3,2,0)(4,3,1)(5,3,0)',
+        '(0,0,0)(1,1,1)(2,2,1)(3,3,1)(4,3,0)(5,4,1)',
+        '(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(2,0,0)',
+        '(0,0,0)(1,1,1)(2,1,1)(2,1,0)(2,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(4,2,0)(4,1,0)(4,1,0)',
     )]
     seeds = [m for m in seeds if isstd(m, 'BMS')]
     ms = gen(seeds)
@@ -65,7 +72,7 @@ def main():
             bad.append(('非標準形', m, show(g, 1)))
         conv[m] = g
     print('(a) 非標準形/例外: %d 件' % len(bad))
-    for t, m, g in bad[:5]:
+    for t, m, g in bad[:3]:
         print('    %s %s -> %s' % (t, show(m, 1), g))
 
     inv = {}
@@ -80,13 +87,13 @@ def main():
 
     keys = list(conv)
     random.seed(1)
-    pairs = [(a, b) for a, b in itertools.combinations(random.sample(keys, min(260, len(keys))), 2)]
+    pairs = [(a, b) for a, b in itertools.combinations(random.sample(keys, min(400, len(keys))), 2)]
     viol = 0
     for a, b in pairs:
         s1 = cmpmat(a, b); s2 = cmpmat(conv[a], conv[b])
         if (s1 > 0) != (s2 > 0) or (s1 == 0) != (s2 == 0):
             viol += 1
-            if viol <= 3:
+            if viol <= 2:
                 print('    順序違反 %s vs %s' % (show(a, 1), show(b, 1)))
     print('(c) 順序違反: %d / %d 対' % (viol, len(pairs)))
 
@@ -108,7 +115,7 @@ def main():
             prev = e
         if okm:
             mono += 1
-        elif lim - mono <= 3:
+        elif lim - mono <= 2:
             print('    展開が単調でない %s' % show(m, 1))
     print('(d) 極限 %d 個中、展開が単調増加かつ上限未満: %d 個' % (lim, mono))
 

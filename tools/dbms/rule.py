@@ -467,6 +467,9 @@ def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False) -> int:
                      and pv[1] == 0 and pv[0] >= 1 and hi) else 0
     if is_anchor1(nxt):
         return 0
+    # 次が根元 (row0 <= 1) に戻る列なら、この列は項を閉じるので浅い。
+    if len(nxt) > 2 and nxt[0] <= 1 and nxt[2] == 0:
+        return 0
     # 直前が (c0,2,0) で（＝掛け算の形に戻った）、次が段 1 以下の続きの列
     # (c0+1,1,0) / (c0+1,0,0) なら、掛けている相手は段 1（w のべき）なので浅い。
     if (pv is not None and len(pv) > 2 and pv[:3] == (c[0], 2, 0)
