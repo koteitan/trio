@@ -488,20 +488,11 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
         return isstd(W, 'DBMS') and (lo is None or cmpmat(lo, W) < 0)
 
     br = [x for x, c in enumerate(m) if is_branching(c)]
-    for k in (1, 2):
-        cands = []
-        flips = ([(i,) for i in br] if k == 1
-                 else [(i, j) for i in br for j in br if j > i])
-        for f in flips:
-            e = list(ds)
-            for i in f:
-                e[i] ^= 1
-            try:
-                W = dedup(_stair(m, Y, lambda x, c, e=e: e[x]))
-            except Exception:
-                continue
-            if okay(W):
-                cands.append(W)
+    import itertools as _it
+    for k in (1, 2, 3):
+        cands = [W for W in
+                 (_try(m, Y, ds, f) for f in _it.combinations(br, k))
+                 if W is not None and okay(W)]
         if cands:
             # 条件を満たすもののうち最小を取る（規則は上に振れやすい）
             best = cands[0]
@@ -510,3 +501,13 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
                     best = W
             return best
     return Z
+
+
+def _try(m, Y, ds, flips):
+    e = list(ds)
+    for i in flips:
+        e[i] ^= 1
+    try:
+        return dedup(_stair(m, Y, lambda x, c, e=e: e[x]))
+    except Exception:
+        return None
