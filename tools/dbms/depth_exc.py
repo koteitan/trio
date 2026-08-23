@@ -91,10 +91,6 @@ def depths(m, e1, e2):
 
 
 def conv(m, Y, e1, e2):
-    m2, n = R.strip_lift(m)
-    if n and m2 and R.is_branching(m2[-1]):
-        return R.dedup(R._stair(m2, Y, lambda x, c: 1 if R.is_branching(c) else 0,
-                                relay=False))
     ds = depths(m, e1, e2)
     return R.dedup(R._stair(m, Y, lambda x, c: ds[x] or 0))
 

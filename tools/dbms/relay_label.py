@@ -84,10 +84,6 @@ def build(m, depth, firepred):
         while absorb_tail(): pass
     return tuple(out), sites
 def conv(m, mask):
-    m2,n=R.strip_lift(m)
-    if n and m2 and R.is_branching(m2[-1]):
-        return R.dedup(R._stair(m2,3, lambda x,c: 1 if R.is_branching(c) else 0)), []
-    prev=[None]
     def dp(x,c):
         if R.is_anchor1(c): prev[0]=0
         if not R.is_branching(c): return 0

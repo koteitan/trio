@@ -204,6 +204,9 @@ def normalize2(Z, limit=24):
             if cofinal(Z, c):
                 nxt = c
                 break
+        for cand in _absorb_cands(Z):
+            if isstd(cand, 'DBMS'):
+                return cand          # 吸収は標準形になるときだけ使う
         if nxt is None:
             return Z
         Z = nxt
@@ -233,6 +236,9 @@ def normalize3(Z, limit=24):
             if accept(Z, c):
                 nxt = c
                 break
+        for cand in _absorb_cands(Z):
+            if isstd(cand, 'DBMS'):
+                return cand          # 吸収は標準形になるときだけ使う
         if nxt is None:
             return Z
         Z = nxt
@@ -600,6 +606,9 @@ def relay_site(m: Mat, P, x: int, t: int) -> bool:
     return P[p1][1] <= b
 
 
+_ABSORB = True     # 実験用。_stair 内の吸収を切って効果を測るためのつまみ
+
+
 def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
     """階段を組む。列を 1 本書くたびに末尾の「吸収」を試し、
     消えた列を参照している img/sh を写像し直す（後続の列が縮約後の状態を見る）。"""
@@ -625,6 +634,8 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
         anchors.clear(); anchors.update(a)
 
     def absorb_tail():
+        if not _ABSORB:
+            return False
         n = len(out)
         if n < 2:
             return False
@@ -780,57 +791,15 @@ def dedup(Z: Mat, limit: int = 40) -> Mat:
     return Z
 
 
-def _lift(cols):
-    """列を 1 レベル持ち上げる: (a, b, ...) -> (a+1, b+1, ...)。"""
-    return tuple((c[0] + 1, c[1] + 1) + tuple(c[2:]) for c in cols)
-
-
-def strip_lift(m: Mat):
-    """末尾の「レベルの綴り」を剥がす。
-
-    BMS は葉のレベルを 1 段上げるとき、**アンカー (L,L,0) ++ 本体の持ち上げコピー**
-    を書き足す（レベルを綴る）。DBMS はレベルを列 1 本で名指すのでこれは消える。
-    例:
-      BMS  (0,0,0)(1,1,1)(2,1,0)(2,1,0) ++ (1,1,0) ++ lift((1,1,1)(2,1,0)(2,1,0))
-      -> 本体の葉 (2,1,0)(2,1,0) がレベル 2 になり、綴りは消える
-      true (0)(1)(2,1)(3,2,1)(4,2)(4,2)
-    戻り値 (剥がした行列, 剥がした回数)。
-    """
-    m = tuple(m)
-    n = 0
-    while True:
-        L = len(m)
-        b = 0
-        for i, c in enumerate(m):
-            if c[0] == 0:
-                b = i
-        found = False
-        for j in range(L - 1, b, -1):
-            c = m[j]
-            if len(c) < 2 or not (c[0] == c[1] and c[0] >= 1 and (len(c) < 3 or c[2] == 0)):
-                continue
-            body = m[b + 1:j]
-            if body and m[j + 1:] == _lift(body):
-                m = m[:j]; n += 1; found = True; break
-        if not found:
-            return m, n
-
-
 @lru_cache(maxsize=200000)
 def convert(m: Mat, Y: int | None = None) -> Mat:
-    """BMS(BM4) 標準形 -> DBMS 標準形。現時点の最良の変換規則。
+    """BMS(BM4) 標準形 -> DBMS 標準形。
 
     BM4-Analysis シートの 3 行以下の全 1621 行に一致（Y=1 28、Y=2 236、Y=3 1357）。
     """
     if Y is None:
         Y = rows(m)
-    m2, n = strip_lift(m)
-    # 剥がすのは、残りが分岐列 (a,1,0) で終わるときだけ（葉のレベルを上げる形）
-    if n and m2 and is_branching(m2[-1]):
-        return dedup(_stair(m2, Y, lambda x, c: 1 if is_branching(c) else 0,
-                            relay=False))
     return R23(m, Y)
-
 
 def depths(m: Mat):
     """各列の深さ（0=浅い / 1=深い）を規則で決める。"""
