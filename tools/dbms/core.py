@@ -23,7 +23,9 @@ def parse(s: str, Y: int | None = None) -> Mat:
             continue
         assert part.startswith("("), part
         body = part[1:].strip()
-        cols.append(tuple(int(v) for v in body.split(",")) if body else (0,))
+        if not body:
+            continue          # 末尾の閉じ括弧なし "(" はシートの切り詰め跡なので捨てる
+        cols.append(tuple(int(v) for v in body.split(",")))
     if Y is None:
         Y = max(len(c) for c in cols)
     return tuple(tuple(list(c) + [0] * (Y - len(c)))[:Y] for c in cols)
