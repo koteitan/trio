@@ -331,7 +331,7 @@ def R13(m: Mat, Y: int | None = None, deep=None) -> Mat:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
         out.append(tuple(T)); img[x] = len(out) - 1
-        realimg.append(len(out) - 1)
+        realimg.append((len(out) - 1, x))
         if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
             anchors.add(img[x])
         while absorb_tail():
@@ -490,6 +490,20 @@ def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False) -> int:
     return 1
 
 
+def block_base(m: Mat, x: int) -> int:
+    """x の属する「段の regime」を開いた列の位置。
+
+    行 2 の印を立てて段 2 の梯子を開く列 (a,1,1) 型（行 1 <= 行 2）か、
+    行 2 を使わないときの対角列 (k,k,0) のうち、直近のもの。"""
+    for q in range(x - 1, 0, -1):
+        c = m[q]
+        if len(c) > 2 and c[2] >= 1 and c[1] <= c[2]:
+            return q
+        if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
+            return q
+    return 0
+
+
 def relay_site(m: Mat, P, x: int, t: int) -> bool:
     """「梯子の敷き直し」が要るか。
 
@@ -511,15 +525,16 @@ def relay_site(m: Mat, P, x: int, t: int) -> bool:
     pc = m[p1]
     if len(pc) < 3 or pc[2] != 0:
         return False
-    b = max([q for q in range(p1)
-             if len(m[q]) > 1 and m[q][0] == m[q][1] and m[q][0] >= 1],
-            default=0)
+    b = block_base(m, p1)
     tgt = (pc[0], pc[1] + 1, 0)
     if not any(len(m[z]) > 2 and m[z][:3] == tgt for z in range(b, p1)):
         return False
     n = sum(1 for z in range(b, p1)
             if len(m[z]) > 2 and m[z][1] == pc[1] + 1 and m[z][2] == 0)
-    return n >= 2
+    if n < 2:
+        return False
+    # 足場を使い切った列は、そのブロックの一番上になければならない
+    return pc[0] >= max(m[z][0] for z in range(b, p1))
 
 
 def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
@@ -530,7 +545,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
     img: list = [None] * len(m)
     sh: dict = {}
     anchors: set = set()      # ブロックのアンカー (k,k,...) の像
-    realimg: list = []        # 実際の列の像（影の列は含まない）
+    realimg: list = []        # 実際の列の像 (out の位置, もとの列 x)
 
     def remap(f):
         for i in range(len(img)):
@@ -539,7 +554,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
         for k in list(sh):
             sh[k] = f(sh[k])
         for i, z in enumerate(realimg):
-            realimg[i] = f(z)
+            realimg[i] = (f(z[0]), z[1])
         a = set(f(z) for z in anchors)
         anchors.clear(); anchors.update(a)
 
@@ -588,7 +603,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
         nz = [y for y in range(Y) if c[y] > 0]
         if not nz:
             out.append(tuple([0] * Y)); img[x] = len(out) - 1
-            realimg.append(len(out) - 1)
+            realimg.append((len(out) - 1, x))
             continue
         t = nz[-1]
         lvl = min(Y - 1, t + depth(x, c))
@@ -597,8 +612,9 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
                 and len(out[img[p1]]) > 1 and out[img[p1]][1] >= 1
                 and relay and relay_site(m, P, x, t)):
             s0 = img[p1]; L = out[s0][1]
-            tg = [oi for oi in realimg
-                  if oi < s0 and oi not in anchors and out[oi][1] == L]
+            bb = block_base(m, p1)
+            tg = [oi for oi, xx in realimg
+                  if oi < s0 and xx > bb and out[oi][1] == L]
             if tg:
                 j = tg[0]
                 chain = []; k = j
@@ -619,7 +635,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
                 out.append(tuple(out[base][y] + 1 if y <= t else 0
                                  for y in range(Y)))
                 img[x] = len(out) - 1
-                realimg.append(len(out) - 1)
+                realimg.append((len(out) - 1, x))
                 if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
                     anchors.add(img[x])
                 while absorb_tail():
@@ -636,7 +652,7 @@ def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
         out.append(tuple(T)); img[x] = len(out) - 1
-        realimg.append(len(out) - 1)
+        realimg.append((len(out) - 1, x))
         if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
             anchors.add(img[x])
         while absorb_tail():
