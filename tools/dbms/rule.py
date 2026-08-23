@@ -415,14 +415,18 @@ def depth_rule(c, nxt, pm: int = 0, lm: int = 0) -> int:
 
     分岐するのは (a,1,0) 型 (a>=2) の列だけ。浅くなるのは
       * 行列の末尾（次の列が無い）
-      * 次がアンカーで、かつ**そのブロックでまだ 2 段以上深いレベルが名指されない**
-        （lm - pm <= 1。lm/pm は同じブロックの後／前に現れる行 1 の最大値）
+      * 次がアンカー（新しい加算ユニットの頭）
+      * そのブロックで**既に自分より深いレベルが名指し済みで、後にはもう出てこない**
+        （pm > c[1] かつ lm == 0）
+    pm/lm は同じ行 0 ブロックで、その列より前／後に現れる行 1 の最大値。
     """
     if not (len(c) > 2 and c[1] == 1 and c[2] == 0 and c[0] >= 2):
         return 0
     if nxt is None:
         return 0
-    if is_anchor(nxt) and lm - pm <= 1:
+    if is_anchor(nxt):
+        return 0
+    if pm > c[1] and lm == 0:
         return 0
     return 1
 
