@@ -388,14 +388,42 @@ def R15(m: Mat, Y: int | None = None, mode='desc') -> Mat:
 #      (a,1,0) (a>=2) は「次の列」で決まる（シートで曖昧 0.66%）。
 #   3. 縮約: BMS は「コピー 1 個 + 印」で書くところを DBMS は「印」だけで書くので、
 #      出力に逐語重複が出る。標準形になるまで重複区間を 1 つずつ落とす。
-def depth_rule(c, nxt) -> int:
-    """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。"""
-    if not (c[1] == 1 and len(c) > 2 and c[2] == 0 and c[0] >= 2):
-        return 0                       # 分岐するのは (a,1,0) 型 (a>=2) だけ
+def _blockctx(m: Mat, x: int):
+    """列 x が属する行 0 ブロックの中で、x より前／後の行 1 値の最大。"""
+    L = len(m)
+    b = 0
+    for i in range(x + 1):
+        if m[i][0] == 0:
+            b = i
+    nb = L
+    for i in range(x + 1, L):
+        if m[i][0] == 0:
+            nb = i
+            break
+    pm = max([m[z][1] for z in range(b, x)], default=0)
+    lm = max([m[z][1] for z in range(x + 1, nb)], default=0)
+    return pm, lm
+
+
+def is_anchor(n) -> bool:
+    """次の列が「アンカー」（新しい加算ユニットの頭 = 対角上の列）か。"""
+    return n is not None and n[0] == n[1] and n != (1, 1, 1)
+
+
+def depth_rule(c, nxt, pm: int = 0, lm: int = 0) -> int:
+    """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。
+
+    分岐するのは (a,1,0) 型 (a>=2) の列だけ。浅くなるのは
+      * 行列の末尾（次の列が無い）
+      * 次がアンカーで、かつ**そのブロックでまだ 2 段以上深いレベルが名指されない**
+        （lm - pm <= 1。lm/pm は同じブロックの後／前に現れる行 1 の最大値）
+    """
+    if not (len(c) > 2 and c[1] == 1 and c[2] == 0 and c[0] >= 2):
+        return 0
     if nxt is None:
-        return 0                       # 行列の末尾なら浅い
-    if nxt[0] == nxt[1] and nxt != (1, 1, 1):
-        return 0                       # 次が「対角上の列」なら浅い
+        return 0
+    if is_anchor(nxt) and lm - pm <= 1:
+        return 0
     return 1
 
 
@@ -466,4 +494,7 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
         Y = rows(m)
     if not m:
         return ()
-    return dedup(_stair(m, Y, lambda x, c: depth_rule(c, m[x + 1] if x + 1 < len(m) else None)))
+    def dep(x, c):
+        pm, lm = _blockctx(m, x)
+        return depth_rule(c, m[x + 1] if x + 1 < len(m) else None, pm, lm)
+    return dedup(_stair(m, Y, dep))
