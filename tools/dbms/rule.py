@@ -467,6 +467,11 @@ def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False) -> int:
                      and pv[1] == 0 and pv[0] >= 1 and hi) else 0
     if is_anchor1(nxt):
         return 0
+    # 直前が (c0,2,0) で（＝掛け算の形に戻った）、次も段 1 の列 (c0+1,1,0) なら
+    # 掛けている相手は段 1（w のべき）なので浅い。
+    if (pv is not None and len(pv) > 2 and pv[:3] == (c[0], 2, 0)
+            and len(nxt) > 2 and nxt[:3] == (c[0] + 1, 1, 0)):
+        return 0
     # W_(w^2) 系のブロックで (c0,2,1)(c0,2,0) と積んだ直後の (c0,1,0) は、
     # 次がアンカー (1,1,1) なら浅い（段を上げずに閉じる）。
     # ただしその区間が直前の区間の逐語コピーなら、もとの深さを引き継ぐ。
