@@ -165,6 +165,28 @@ def block_base(m: Mat, x: int) -> int:
     return 0
 
 
+def relay_leaf(m: Mat, P, x: int, dep) -> bool:
+    """格上げされた列の上に乗る「段 1 の葉」で、梯子の敷き直しが要るか。
+
+    直前の分岐列が段 2 に格上げされている（dep=1）とき、その列は段 2 の梯子を
+    要求するが、梯子が使い切られていれば残っていない。そこに乗る段 1 の葉
+    （行 1 の親が根の列）は、敷き直した梯子の上に置かねばならない。
+
+    例: (0)(1,1,1)(2,1)(3,2)(4,2)(4,1)(5,1) の末尾 (5,1,0)。
+        像は ...(6,2)(3,2,1)(4,2) で、(3,2,1)(4,2) が敷き直した梯子、
+        葉はその一番上に乗る（列は増えない）。
+    """
+    c = m[x]
+    if len(c) < 3 or c[1] != 1 or c[2] != 0:
+        return False
+    if P[x][1] != 0:
+        return False
+    if x == 0 or not is_branching(m[x - 1]) or dep.get(x - 1) != 1:
+        return False
+    # 直前の掛け算の区切りから数えて段 2 の列が 2 本以上なら梯子は残っていない
+    return spent_level(m, x - 1, 2)
+
+
 def relay_site(m: Mat, P, x: int, t: int) -> bool:
     """「梯子の敷き直し」が要るか。
 
@@ -226,6 +248,7 @@ class _Staircase:
         self.relaid: dict = {}
         self.anchors: set = set()
         self.realimg: list = []
+        self.dep: dict = {}      # 列ごとに選んだ深さ
 
     # ------------------------------------------------------------ 組み立て
     def run(self) -> Mat:
@@ -235,9 +258,13 @@ class _Staircase:
                 self._emit(tuple([0] * self.Y), x, c)
             else:
                 t = nz[-1]
-                lvl = min(self.Y - 1, t + self.depth(x, c))
+                d = self.depth(x, c)
+                self.dep[x] = d
+                lvl = min(self.Y - 1, t + d)
                 p1 = self.P[x][1] if t >= 1 else -1
-                if not self._relay(x, c, t, lvl, p1):
+                if self._relay_leaf(x, c, t):
+                    pass
+                elif not self._relay(x, c, t, lvl, p1):
                     self._normal(x, c, t, lvl, p1)
             while self._absorb_tail():
                 pass
@@ -317,6 +344,34 @@ class _Staircase:
         self._emit(tuple(out[base][y] + 1 if y <= t else 0
                          for y in range(self.Y)), x, c)
         return True
+
+    def _relay_leaf(self, x, c, t) -> bool:
+        """格上げされた列の上の段 1 の葉。梯子を敷き直し、その一番上を像にする。"""
+        out = self.out
+        if not (self.relay and relay_leaf(self.m, self.P, x, self.dep)):
+            return False
+        s0 = self.img[x - 1]
+        if s0 is None or len(out[s0]) < 2 or out[s0][1] < 1:
+            return False
+        L = out[s0][1]
+        bb = block_base(self.m, x - 1)
+        tg = [oi for oi, xx in self.realimg
+              if oi < s0 and xx > bb and out[oi][1] == L]
+        if not tg:
+            return False
+        j = tg[0]
+        for q in reversed(self._ancestor_chain(j)):
+            out.append(out[q])
+        out.append(out[j])
+        self._emit_at(len(out) - 1, x, c)
+        return True
+
+    def _emit_at(self, idx, x, c):
+        """すでに書いた列 idx を、BMS の列 x の像として記録する。"""
+        self.img[x] = idx
+        self.realimg.append((idx, x))
+        if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
+            self.anchors.add(idx)
 
     def _ancestor_chain(self, j):
         """写し元 j を書くのに要る、行 0 の祖先鎖。まだ生きている段で止める。"""

@@ -41,6 +41,17 @@ def gen(seeds, rounds=5, ns=(0, 1, 2, 3, 4, 5), cap=60000, maxcols=40):
     return sorted(seen, key=len)
 
 
+def seeds2():
+    """2 行の種。"""
+    out = [diag('BMS', k, 2) for k in range(1, 8)]
+    out += [parse(t, 2) for t in (
+        '(0,0)(1,1)(2,1)(1,1)',
+        '(0,0)(1,1)(2,0)(3,1)',
+        '(0,0)(1,1)(1,1)(2,1)(2,0)',
+    )]
+    return [m for m in out if isstd(m, 'BMS')]
+
+
 def seeds():
     seeds = [diag('BMS', k, Y) for k in range(1, 10)]
     seeds += [parse(s, Y) for s in (
@@ -64,6 +75,67 @@ def seeds():
         '(0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,2,0)(3,1,0)(4,2,0)(5,2,0)(4,1,0)',
     )]
     return [m for m in seeds if isstd(m, 'BMS')]
+
+
+def cofinal_report(ms=None, rows=3):
+    """ord の定義から来る共終条件で測る（`cofinal_check`）。
+
+    標準形・順序・単調性より強い検査。行 2 の最大値と列数で切り分けて出す。
+    """
+    import collections
+    import cofinal_check as CC
+    if ms is None:
+        ms = [m for m in gen(seeds() if rows == 3 else seeds2()) if m]
+    conv = (lambda z: R.convert(z, rows))
+    tot = collections.Counter(); bad = collections.Counter()
+    byz = collections.Counter(); badz = collections.Counter()
+    ex = []
+    for m in ms:
+        if rows >= 3:
+            v, why = CC.check_one(m, K=2)
+        elif all(t == 0 for t in m[-1]):
+            v, why = True, '後続'
+        else:
+            v, why = CC.cofinal(m, R.convert(m, 2), K=2, conv=conv)
+        k = len(m)
+        z = max(c[2] for c in m) if rows >= 3 else 0
+        tot[k] += 1; byz[z] += 1
+        if v is False:
+            bad[k] += 1; badz[z] += 1
+            if len(ex) < 5:
+                ex.append((k, why, show(m, 1)))
+    print('%d 行の標準形 %d 個  共終不合格 %d 個'
+          % (rows, len(ms), sum(bad.values())))
+    if rows >= 3:
+        print('  行 2 の最大値ごと:')
+        for z in sorted(byz):
+            print('    z=%d  %6d 個  不合格 %4d' % (z, byz[z], badz[z]))
+    print('  列数ごと（不合格のあるところだけ）:')
+    run = 0
+    for k in sorted(tot):
+        if bad[k] == 0 and run == k - 1:
+            run = k
+        if bad[k]:
+            print('    %2d 列 %6d 個  不合格 %3d' % (k, tot[k], bad[k]))
+    print('  不合格ゼロが続く最大の列数: %d' % run)
+    for k, why, t in sorted(ex):
+        print('    最小級の反例 %d 列 %s' % (k, why))
+        print('      %s' % t[:110])
+
+
+def main2():
+    """2 行の検証。"""
+    global Y
+    Y = 2
+    ms = [m for m in gen(seeds2(), rounds=5, ns=(0, 1, 2, 3, 4),
+                         cap=40000, maxcols=40) if m]
+    print('2 行の標準形 %d 個（最大 %d 列）' % (len(ms), max(len(m) for m in ms)))
+    ns = sum(1 for m in ms if not isstd(R.convert(m, 2), 'DBMS'))
+    raw = sum(1 for m in ms if isstd(R._stair(m, 2, lambda x, c: 0), 'DBMS'))
+    print('  非標準 %d、階段の生出力がそのまま標準形 %d（縮約が要る %d）'
+          % (ns, raw, len(ms) - raw))
+    cofinal_report(ms, rows=2)
+    Y = 3
 
 
 def main():
@@ -131,4 +203,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys as _s
+    if '--cofinal' in _s.argv:
+        cofinal_report()
+    elif '--rows2' in _s.argv:
+        main2()
+    else:
+        main()
