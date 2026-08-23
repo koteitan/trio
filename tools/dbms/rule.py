@@ -331,6 +331,8 @@ def R13(m: Mat, Y: int | None = None, deep=None) -> Mat:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
         out.append(tuple(T)); img[x] = len(out) - 1
+        while absorb_tail():
+            pass
     return tuple(out)
 
 
@@ -446,10 +448,45 @@ def depth_rule(c, nxt, prev) -> int:
 
 
 def _stair(m: Mat, Y: int, depth) -> Mat:
+    """階段を組む。列を 1 本書くたびに末尾の「吸収」を試し、
+    消えた列を参照している img/sh を写像し直す（後続の列が縮約後の状態を見る）。"""
     P = pim(m)
     out: list = []
     img: list = [None] * len(m)
     sh: dict = {}
+
+    def remap(f):
+        for i in range(len(img)):
+            if img[i] is not None:
+                img[i] = f(img[i])
+        for k in list(sh):
+            sh[k] = f(sh[k])
+
+    def absorb_tail():
+        n = len(out)
+        if n < 2:
+            return False
+        j = n - 1
+        Q = out[j]
+        for i in range(j - 1, -1, -1):
+            Pc = out[i]
+            if len(Pc) < 2 or len(Q) < 2 or Pc[0] != Q[0] or Q[1] <= Pc[1]:
+                continue
+            L = j - i - 1
+            if L <= 0 or i - L < 0:
+                continue
+            if out[i - L:i] == out[i + 1:j]:
+                del out[i:j]
+
+                def g(z, i=i, j=j, L=L):
+                    if z < i:
+                        return z
+                    if z < j:
+                        return z - (L + 1) if z > i else i - L
+                    return z - (j - i)
+                remap(g)
+                return True
+        return False
 
     def shadow(p, y):
         if y <= 0:
@@ -483,6 +520,8 @@ def _stair(m: Mat, Y: int, depth) -> Mat:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
         out.append(tuple(T)); img[x] = len(out) - 1
+        while absorb_tail():
+            pass
     return tuple(out)
 
 
