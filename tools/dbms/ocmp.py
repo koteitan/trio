@@ -24,8 +24,9 @@ LIM = 3
 IDX = 2            # 添字ごと一致を見る項数
 EQD = 1            # 相互共終で試す添字ずらしの上限
 _memo: dict = {}
+_onpath: set = set()   # 再帰経路上のゴール（極限どうしの等号は最大不動点なので再訪＝成功）
 fmap: dict = {}        # BMS 標準形 -> 同じ順序数の DBMS 標準形（等号を証明したら記録）
-stats = {'ocmp': 0, 'fmap': 0}
+stats = {'ocmp': 0, 'fmap': 0, 'fix': 0}
 
 
 _bl_memo = {}
@@ -73,7 +74,16 @@ def ocmp(A: Mat, ta: str, B: Mat, tb: str) -> int:
     r = _memo.get(key)
     if r is not None:
         return r
-    r = _ocmp(A, ta, B, tb)
+    if key in _onpath:
+        # 極限どうしの等号は最小不動点ではなく最大不動点。各再帰が基本列を
+        # 1 段進めている（ガード付き）ので、目標が再訪されたら成功とみなせる。
+        stats['fix'] += 1
+        return 0
+    _onpath.add(key)
+    try:
+        r = _ocmp(A, ta, B, tb)
+    finally:
+        _onpath.discard(key)
     _memo[key] = r
     if r == 0:
         if ta == 'DBMS' and tb == 'BMS':
