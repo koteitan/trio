@@ -40,7 +40,7 @@ def main():
     d = [x for x in load() if x[3] == want]
     if use_cand:
         import rule as R
-        pairs = [(r['row'], mb, R.R8(mb, Y)) for r, mb, md, Y in d]
+        pairs = [(r['row'], mb, R.convert(mb, Y)) for r, mb, md, Y in d]
     else:
         pairs = [(r['row'], mb, md) for r, mb, md, Y in d]
     v = check(pairs)

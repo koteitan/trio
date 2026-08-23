@@ -84,10 +84,14 @@ def build(m, depth, firepred):
         while absorb_tail(): pass
     return tuple(out), sites
 def conv(m, mask):
+    prev=[None]
     def dp(x,c):
         if R.is_anchor1(c): prev[0]=0
         if not R.is_branching(c): return 0
-        v=R.depth_rule(c, m[x+1] if x+1<len(m) else None, prev[0], m[x-1] if x>0 else None); prev[0]=v
+        v=R.depth_rule(c, m[x+1] if x+1<len(m) else None, prev[0],
+                       m[x-1] if x>0 else None, R.hi_block(m,x),
+                       m[x-2] if x>1 else None, R.is_repeat(m,x),
+                       R.spent_level(m,x,c[1]+1)); prev[0]=v
         return v
     o,s=build(m,dp,lambda k,x: bool(mask>>k & 1))
     return R.dedup(o), s
