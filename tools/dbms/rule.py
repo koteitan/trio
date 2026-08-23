@@ -531,6 +531,14 @@ def dedup(Z: Mat, limit: int = 40) -> Mat:
     return Z
 
 
+def convert(m: Mat, Y: int | None = None) -> Mat:
+    """BMS(BM4) 標準形 -> DBMS 標準形。現時点の最良の変換規則。
+
+    Y=2 で 236/236、Y=3 で 1309/1357（BM4-Analysis シート）。
+    """
+    return R23(m, Y)
+
+
 def R23(m: Mat, Y: int | None = None) -> Mat:
     if Y is None:
         Y = rows(m)
