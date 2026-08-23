@@ -331,6 +331,9 @@ def R13(m: Mat, Y: int | None = None, deep=None) -> Mat:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
         out.append(tuple(T)); img[x] = len(out) - 1
+        realimg.append(len(out) - 1)
+        if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
+            anchors.add(img[x])
         while absorb_tail():
             pass
     return tuple(out)
@@ -450,6 +453,38 @@ def depth_rule(c, nxt, prev, pv=None) -> int:
     return 1
 
 
+def relay_site(m: Mat, P, x: int, t: int) -> bool:
+    """「梯子の敷き直し」が要るか。
+
+    BMS では ×psi_W(W) を (a,1,0)(a+1,2,0) と綴る。ふつうはその (a,1,0) の像を
+    足場にして次の段を書けばよいが、掛けられる側が W^2 のように **同じ段を
+    2 本以上使い切っている** ときは足場が残っていない。このとき DBMS は
+    梯子を一から敷き直す（前の段の写しを並べ直す）。
+
+    判定は BMS 側だけで済む:
+      p1 = 行 1 の親、pc = m[p1] として
+      (1) 同じブロックに (pc[0], pc[1]+1, 0) がすでにある   … 足場が使われた
+      (2) 同じブロックの行 pc[1]+1 の列（行 2 が 0）が 2 本以上 … 使い切っている
+    """
+    if t < 1:
+        return False
+    p1 = P[x][1]
+    if p1 <= 0:
+        return False
+    pc = m[p1]
+    if len(pc) < 3 or pc[2] != 0:
+        return False
+    b = max([q for q in range(p1)
+             if len(m[q]) > 1 and m[q][0] == m[q][1] and m[q][0] >= 1],
+            default=0)
+    tgt = (pc[0], pc[1] + 1, 0)
+    if not any(len(m[z]) > 2 and m[z][:3] == tgt for z in range(b, p1)):
+        return False
+    n = sum(1 for z in range(b, p1)
+            if len(m[z]) > 2 and m[z][1] == pc[1] + 1 and m[z][2] == 0)
+    return n >= 2
+
+
 def _stair(m: Mat, Y: int, depth) -> Mat:
     """階段を組む。列を 1 本書くたびに末尾の「吸収」を試し、
     消えた列を参照している img/sh を写像し直す（後続の列が縮約後の状態を見る）。"""
@@ -457,6 +492,8 @@ def _stair(m: Mat, Y: int, depth) -> Mat:
     out: list = []
     img: list = [None] * len(m)
     sh: dict = {}
+    anchors: set = set()      # ブロックのアンカー (k,k,...) の像
+    realimg: list = []        # 実際の列の像（影の列は含まない）
 
     def remap(f):
         for i in range(len(img)):
@@ -464,6 +501,10 @@ def _stair(m: Mat, Y: int, depth) -> Mat:
                 img[i] = f(img[i])
         for k in list(sh):
             sh[k] = f(sh[k])
+        for i, z in enumerate(realimg):
+            realimg[i] = f(z)
+        a = set(f(z) for z in anchors)
+        anchors.clear(); anchors.update(a)
 
     def absorb_tail():
         n = len(out)
@@ -509,9 +550,44 @@ def _stair(m: Mat, Y: int, depth) -> Mat:
     for x, c in enumerate(m):
         nz = [y for y in range(Y) if c[y] > 0]
         if not nz:
-            out.append(tuple([0] * Y)); img[x] = len(out) - 1; continue
+            out.append(tuple([0] * Y)); img[x] = len(out) - 1
+            realimg.append(len(out) - 1)
+            continue
         t = nz[-1]
         lvl = min(Y - 1, t + depth(x, c))
+        p1 = P[x][1] if t >= 1 else -1
+        if (p1 > 0 and (p1, lvl) not in sh and img[p1] is not None
+                and len(out[img[p1]]) > 1 and out[img[p1]][1] >= 1
+                and relay_site(m, P, x, t)):
+            s0 = img[p1]; L = out[s0][1]
+            tg = [oi for oi in realimg
+                  if oi < s0 and oi not in anchors and out[oi][1] == L]
+            if tg:
+                j = tg[0]
+                chain = []; k = j
+                while k > 0:
+                    pk = max([q for q in range(k) if out[q][0] < out[k][0]],
+                             default=None)
+                    if pk is None:
+                        break
+                    if (out[pk][1] < out[j][1]
+                            and all(out[q][0] > out[pk][0]
+                                    for q in range(pk + 1, len(out)))):
+                        break
+                    chain.append(pk); k = pk
+                for q in reversed(chain):
+                    out.append(out[q])
+                out.append(out[j]); base = len(out) - 1
+                sh[(p1, lvl)] = base
+                out.append(tuple(out[base][y] + 1 if y <= t else 0
+                                 for y in range(Y)))
+                img[x] = len(out) - 1
+                realimg.append(len(out) - 1)
+                if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
+                    anchors.add(img[x])
+                while absorb_tail():
+                    pass
+                continue
         base = shadow(P[x][t], lvl) if P[x][t] != -1 else None
         T = [0] * Y
         for y in range(1, t + 1):
@@ -523,6 +599,9 @@ def _stair(m: Mat, Y: int, depth) -> Mat:
             for y in range(0, t + 1):
                 T[y] = max(T[y], out[base][y] + 1)
         out.append(tuple(T)); img[x] = len(out) - 1
+        realimg.append(len(out) - 1)
+        if len(c) > 1 and c[0] == c[1] and c[0] >= 1:
+            anchors.add(img[x])
         while absorb_tail():
             pass
     return tuple(out)
