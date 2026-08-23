@@ -8,6 +8,7 @@ R2: R1 を「行 0 が 0 の列で切ったブロック（＝順序数の和の�
     f は和について加法的なので R1 より筋がよい……はずだが、単項ブロックで壊れる。
 """
 from __future__ import annotations
+from functools import lru_cache
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import Mat, diag, rows, isstd
@@ -776,6 +777,7 @@ def strip_lift(m: Mat):
             return m, n
 
 
+@lru_cache(maxsize=200000)
 def convert(m: Mat, Y: int | None = None) -> Mat:
     """BMS(BM4) 標準形 -> DBMS 標準形。現時点の最良の変換規則。
 
@@ -791,7 +793,73 @@ def convert(m: Mat, Y: int | None = None) -> Mat:
     return R23(m, Y)
 
 
+def depths(m: Mat):
+    """各列の深さ（0=浅い / 1=深い）を規則で決める。"""
+    prev = [None]
+    out = []
+    for x, c in enumerate(m):
+        if is_anchor1(c):
+            prev[0] = 0            # アンカーを通ると加算ユニットが変わるのでリセット
+        if not is_branching(c):
+            out.append(0); continue
+        v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0],
+                       m[x - 1] if x > 0 else None, hi_block(m, x),
+                       m[x - 2] if x > 1 else None, is_repeat(m, x),
+                       spent_level(m, x, c[1] + 1))
+        prev[0] = v
+        out.append(v)
+    return out
+
+
 def R23(m: Mat, Y: int | None = None) -> Mat:
+    """規則で深さを決めて階段を組む。出力が DBMS 標準形にならないときだけ、
+    深さを 1 箇所ずつ（足りなければ 2 箇所）ひっくり返して探し直す。
+    標準形であることは順序数側から来る要請なので、これは規則の後始末にあたる。"""
+    if Y is None:
+        Y = rows(m)
+    if not m:
+        return ()
+    ds = depths(m)
+    Z = dedup(_stair(m, Y, lambda x, c: ds[x]))
+    if isstd(Z, 'DBMS'):
+        return Z
+    # 1 列短い行列の像より大きくなければならない（真の接頭辞は小さいので）
+    lo = None
+    if len(m) > 1 and isstd(m[:-1], 'BMS'):
+        try:
+            lo = convert(m[:-1], Y)
+        except Exception:
+            lo = None
+
+    def okay(W):
+        return isstd(W, 'DBMS') and (lo is None or cmpmat(lo, W) < 0)
+
+    br = [x for x, c in enumerate(m) if is_branching(c)]
+    for k in (1, 2):
+        cands = []
+        flips = ([(i,) for i in br] if k == 1
+                 else [(i, j) for i in br for j in br if j > i])
+        for f in flips:
+            e = list(ds)
+            for i in f:
+                e[i] ^= 1
+            try:
+                W = dedup(_stair(m, Y, lambda x, c, e=e: e[x]))
+            except Exception:
+                continue
+            if okay(W):
+                cands.append(W)
+        if cands:
+            # 条件を満たすもののうち最小を取る（規則は上に振れやすい）
+            best = cands[0]
+            for W in cands[1:]:
+                if cmpmat(W, best) < 0:
+                    best = W
+            return best
+    return Z
+
+
+def _R23_old(m: Mat, Y: int | None = None) -> Mat:
     if Y is None:
         Y = rows(m)
     if not m:
