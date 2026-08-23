@@ -410,23 +410,31 @@ def is_anchor(n) -> bool:
     return n is not None and n[0] == n[1] and n != (1, 1, 1)
 
 
-def depth_rule(c, nxt, pm: int = 0, lm: int = 0) -> int:
+def is_branching(c) -> bool:
+    """深さが分岐する列か。実測では (a,1,0) 型 (a>=2) だけが分岐する。"""
+    return len(c) > 2 and c[1] == 1 and c[2] == 0 and c[0] >= 2
+
+
+def depth_rule(c, nxt, prev) -> int:
     """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。
 
-    分岐するのは (a,1,0) 型 (a>=2) の列だけ。浅くなるのは
-      * 行列の末尾（次の列が無い）
-      * 次がアンカー（新しい加算ユニットの頭）
-      * そのブロックで**既に自分より深いレベルが名指し済みで、後にはもう出てこない**
-        （pm > c[1] かつ lm == 0）
-    pm/lm は同じ行 0 ブロックで、その列より前／後に現れる行 1 の最大値。
+    **1 ビットの状態機械**。状態 prev = 直前の分岐列で選んだ深さ（最初は None）。
+
+      浅い(0) <=> prev == 0                      直前が浅ければ以後も浅い
+               or 次の列が無い（行列の末尾）
+               or 次がアンカー (1,1,0)           新しい加算ユニットの頭
+      深い(1) <=> それ以外
+
+    「直前が浅ければ以後も浅い」が trio-agent の言う「レベルを状態として持ち回る」に
+    あたる。レベルが一度落ちたらその加算ユニットの中では戻らない。
     """
-    if not (len(c) > 2 and c[1] == 1 and c[2] == 0 and c[0] >= 2):
+    if not is_branching(c):
+        return 0
+    if prev == 0:
         return 0
     if nxt is None:
         return 0
-    if is_anchor(nxt):
-        return 0
-    if pm > c[1] and lm == 0:
+    if nxt[0] == 1 and nxt[1] == 1 and (len(nxt) < 3 or nxt[2] == 0):
         return 0
     return 1
 
@@ -522,7 +530,12 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
         Y = rows(m)
     if not m:
         return ()
+    prev = [None]
+
     def dep(x, c):
-        pm, lm = _blockctx(m, x)
-        return depth_rule(c, m[x + 1] if x + 1 < len(m) else None, pm, lm)
+        if not is_branching(c):
+            return 0
+        v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0])
+        prev[0] = v
+        return v
     return dedup(_stair(m, Y, dep))
