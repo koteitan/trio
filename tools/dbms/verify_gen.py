@@ -15,7 +15,7 @@ import rule as R
 Y = 3
 
 
-def gen(seeds, rounds=4, ns=(0, 1, 2, 3, 4), cap=20000, maxcols=26):
+def gen(seeds, rounds=5, ns=(0, 1, 2, 3, 4, 5), cap=60000, maxcols=40):
     seen = set()
     frontier = list(seeds)
     for m in frontier:
@@ -41,8 +41,8 @@ def gen(seeds, rounds=4, ns=(0, 1, 2, 3, 4), cap=20000, maxcols=26):
     return sorted(seen, key=len)
 
 
-def main():
-    seeds = [diag('BMS', k, Y) for k in range(1, 8)]
+def seeds():
+    seeds = [diag('BMS', k, Y) for k in range(1, 10)]
     seeds += [parse(s, Y) for s in (
         '(0,0,0)(1,1,1)(2,2,1)(3,2,0)(4,3,1)',
         '(0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,0)(5,1,0)(6,2,1)',
@@ -55,9 +55,19 @@ def main():
         '(0,0,0)(1,1,1)(2,2,1)(3,3,1)(4,3,0)(5,4,1)',
         '(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(2,0,0)',
         '(0,0,0)(1,1,1)(2,1,1)(2,1,0)(2,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(4,2,0)(4,1,0)(4,1,0)',
+        '(0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,2,0)(4,1,0)(5,2,0)(6,1,0)(7,1,0)',
+        '(0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,3,0)(5,3,0)(3,2,0)',
+        '(0,0,0)(1,1,1)(2,1,0)(3,2,1)(1,1,0)(2,2,1)(3,2,0)(4,3,1)',
+        '(0,0,0)(1,1,1)(2,2,1)(3,2,0)(4,3,1)(5,3,0)(6,4,1)',
+        '(0,0,0)(1,1,1)(2,1,1)(3,2,2)(4,2,1)(5,3,2)',
+        '(0,0,0)(1,1,1)(2,1,0)(3,1,0)(2,1,0)(3,1,0)(1,1,0)(2,2,1)(3,2,0)(4,2,0)(3,2,0)(4,1,0)(3,1,0)',
+        '(0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,2,0)(3,1,0)(4,2,0)(5,2,0)(4,1,0)',
     )]
-    seeds = [m for m in seeds if isstd(m, 'BMS')]
-    ms = gen(seeds)
+    return [m for m in seeds if isstd(m, 'BMS')]
+
+
+def main():
+    ms = gen(seeds())
     print('生成した BMS 標準形 %d 個（最大 %d 列）' % (ms, max(len(m) for m in ms))
           if False else '生成した BMS 標準形 %d 個（最大 %d 列）'
           % (len(ms), max(len(m) for m in ms)))
@@ -87,7 +97,7 @@ def main():
 
     keys = list(conv)
     random.seed(1)
-    pairs = [(a, b) for a, b in itertools.combinations(random.sample(keys, min(400, len(keys))), 2)]
+    pairs = [(a, b) for a, b in itertools.combinations(random.sample(keys, min(500, len(keys))), 2)]
     viol = 0
     for a, b in pairs:
         s1 = cmpmat(a, b); s2 = cmpmat(conv[a], conv[b])
