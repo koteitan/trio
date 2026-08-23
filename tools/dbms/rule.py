@@ -442,7 +442,17 @@ def is_repeat(m, x) -> bool:
     return False
 
 
-def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False) -> int:
+def spent_level(m: Mat, x: int, lv: int) -> bool:
+    """直前の分岐列（＝掛け算の区切り）から x までに、段 lv の列（行 2 が 0）を
+    すでに 2 本以上使っているか。使い切っていれば足場は残っていない。"""
+    b = max([block_base(m, x)]
+            + [q for q in range(x) if is_branching(m[q])])
+    return sum(1 for z in range(b + 1, x)
+               if len(m[z]) > 2 and m[z][1] == lv and m[z][2] == 0) >= 2
+
+
+def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False,
+               spent=False) -> int:
     """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。
 
     **1 ビットの状態機械**。状態 prev = 直前の分岐列で選んだ深さ（最初は None）で、
@@ -470,9 +480,10 @@ def depth_rule(c, nxt, prev, pv=None, hi=False, pv2=None, rep=False) -> int:
     # 次が根元 (row0 <= 1) に戻る列なら、この列は項を閉じるので浅い。
     if len(nxt) > 2 and nxt[0] <= 1 and nxt[2] == 0:
         return 0
-    # 直前が (c0,2,0) で（＝掛け算の形に戻った）、次が段 1 以下の続きの列
-    # (c0+1,1,0) / (c0+1,0,0) なら、掛けている相手は段 1（w のべき）なので浅い。
-    if (pv is not None and len(pv) > 2 and pv[:3] == (c[0], 2, 0)
+    # 段 2 の梯子をすでに 2 本以上使い切っていて（spent）、直前が段 2 の列、
+    # 次が段 1 以下の続きの列 (c0+1,1,0) / (c0+1,0,0) なら、
+    # 掛けている相手は段 1（w のべき）なので浅い。
+    if (spent and pv is not None and len(pv) > 2 and pv[1] == 2 and pv[2] == 0
             and len(nxt) > 2 and nxt[0] == c[0] + 1 and nxt[1] <= 1
             and nxt[2] == 0):
         return 0
@@ -770,7 +781,8 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
             return 0
         v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0],
                        m[x - 1] if x > 0 else None, hi_block(m, x),
-                       m[x - 2] if x > 1 else None, is_repeat(m, x))
+                       m[x - 2] if x > 1 else None, is_repeat(m, x),
+                       spent_level(m, x, c[1] + 1))
         prev[0] = v
         return v
     return dedup(_stair(m, Y, dep))
