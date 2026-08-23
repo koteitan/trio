@@ -466,7 +466,7 @@ def relay_site(m: Mat, P, x: int, t: int) -> bool:
       (1) 同じブロックに (pc[0], pc[1]+1, 0) がすでにある   … 足場が使われた
       (2) 同じブロックの行 pc[1]+1 の列（行 2 が 0）が 2 本以上 … 使い切っている
     """
-    if t < 1:
+    if t != 1:
         return False
     p1 = P[x][1]
     if p1 <= 0:
@@ -485,7 +485,7 @@ def relay_site(m: Mat, P, x: int, t: int) -> bool:
     return n >= 2
 
 
-def _stair(m: Mat, Y: int, depth) -> Mat:
+def _stair(m: Mat, Y: int, depth, relay: bool = True) -> Mat:
     """階段を組む。列を 1 本書くたびに末尾の「吸収」を試し、
     消えた列を参照している img/sh を写像し直す（後続の列が縮約後の状態を見る）。"""
     P = pim(m)
@@ -558,7 +558,7 @@ def _stair(m: Mat, Y: int, depth) -> Mat:
         p1 = P[x][1] if t >= 1 else -1
         if (p1 > 0 and (p1, lvl) not in sh and img[p1] is not None
                 and len(out[img[p1]]) > 1 and out[img[p1]][1] >= 1
-                and relay_site(m, P, x, t)):
+                and relay and relay_site(m, P, x, t)):
             s0 = img[p1]; L = out[s0][1]
             tg = [oi for oi in realimg
                   if oi < s0 and oi not in anchors and out[oi][1] == L]
@@ -691,14 +691,15 @@ def strip_lift(m: Mat):
 def convert(m: Mat, Y: int | None = None) -> Mat:
     """BMS(BM4) 標準形 -> DBMS 標準形。現時点の最良の変換規則。
 
-    Y=2 で 236/236、Y=3 で 1321/1357（BM4-Analysis シート）。
+    Y=1 で 28/28、Y=2 で 236/236、Y=3 で 1354/1357（BM4-Analysis シート）。
     """
     if Y is None:
         Y = rows(m)
     m2, n = strip_lift(m)
     # 剥がすのは、残りが分岐列 (a,1,0) で終わるときだけ（葉のレベルを上げる形）
     if n and m2 and is_branching(m2[-1]):
-        return dedup(_stair(m2, Y, lambda x, c: 1 if is_branching(c) else 0))
+        return dedup(_stair(m2, Y, lambda x, c: 1 if is_branching(c) else 0,
+                            relay=False))
     return R23(m, Y)
 
 
