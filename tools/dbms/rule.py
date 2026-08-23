@@ -425,7 +425,15 @@ def is_branching(c) -> bool:
     return len(c) > 2 and c[1] == 1 and c[2] == 0 and c[0] >= 2
 
 
-def depth_rule(c, nxt, prev, pv=None) -> int:
+def hi_block(m, x) -> bool:
+    """x の属するブロック（直前のアンカー以降）に行 2 を使う列があるか。
+    W_(w^2) 系の regime にいるかどうかの目印。"""
+    b = max([q for q in range(x)
+             if len(m[q]) > 1 and m[q][0] == m[q][1] and m[q][0] >= 1], default=0)
+    return any(len(m[z]) > 2 and m[z][2] > 0 for z in range(b + 1, x))
+
+
+def depth_rule(c, nxt, prev, pv=None, hi=False) -> int:
     """列 c の像が使う影の深さ（t からの追加段数）。0 か 1。
 
     **1 ビットの状態機械**。状態 prev = 直前の分岐列で選んだ深さ（最初は None）で、
@@ -444,7 +452,10 @@ def depth_rule(c, nxt, prev, pv=None) -> int:
     if prev == 0:
         return 0
     if nxt is None:
-        return 0
+        # 末尾の列はふつう浅い。ただし W_(w^2) 系のブロックで、直前が「×w」の
+        # 列 (k,0,0) なら、その手前の段をそのまま使う（深い）。
+        return 1 if (prev == 1 and pv is not None and len(pv) > 1
+                     and pv[1] == 0 and pv[0] >= 1 and hi) else 0
     if is_anchor1(nxt):
         return 0
     # 最初の分岐列で、直前が「×w」の列 (k,0,0) なら浅い
@@ -716,7 +727,7 @@ def R23(m: Mat, Y: int | None = None) -> Mat:
         if not is_branching(c):
             return 0
         v = depth_rule(c, m[x + 1] if x + 1 < len(m) else None, prev[0],
-                       m[x - 1] if x > 0 else None)
+                       m[x - 1] if x > 0 else None, hi_block(m, x))
         prev[0] = v
         return v
     return dedup(_stair(m, Y, dep))
