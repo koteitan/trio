@@ -320,7 +320,77 @@ open YAPSS.Three in
 #guard transD [(0,0),(1,0),(2,1),(2,0)]
     = P 0 (P 1 Z (P 0 (P 1 Z (P 0 Z Z)) Z)) Z
 
-/-! ## 5. 次の関門: `oltD_iff_seqlex`
+/-! ## 5. DBMS のブロック規律 `blockokD`
+
+BMS 側の `blockok d B`（頭が `d`、全部 `d` 以上、行 0 は 1 段ずつ）に、
+DBMS 特有の 2 つを足す。どちらもシートの DBMS 列 1637 行で違反 0
+（trio-agent が全数検査）。
+
+* 対角の条件: 0 でない成分は厳密に減る（`c.2 > 0 → c.2 < c.1`）
+* 行 1 も 1 段ずつしか上がらない
+
+2 行に限れば行 1 は素の `steps1` で 0 違反。3 行に進むと行 0 が下がる列で破れるので、
+将来は「行 1 は行 0 の親に対して高々 +1」の形に替える（1637 行で 0 違反）。
+-/
+
+/-- 行 1 が隣接で 1 段ずつしか上がらない。 -/
+def steps1r1 : PairSeq → Prop
+  | [] => True
+  | [_] => True
+  | p :: q :: r => q.2 ≤ p.2 + 1 ∧ steps1r1 (q :: r)
+
+/-- DBMS の列の条件: 0 でない成分は厳密に減る。 -/
+def dcolOK (c : ℕ × ℕ) : Prop := c.2 > 0 → c.2 < c.1
+
+/-- DBMS のブロック規律。 -/
+def blockokD (d : ℕ) (B : PairSeq) : Prop :=
+  blockok d B ∧ (∀ c ∈ B, dcolOK c) ∧ steps1r1 B
+
+/-- 連が続くかどうかは、**隣り合う 2 列だけ**で決まる（接尾辞全体には依らない）。
+これが `seqlex` との整合の鍵で、先頭列が一致すれば連の長さも一致する。 -/
+theorem runLen_cons_pos {p q : ℕ × ℕ} {r : PairSeq}
+    (h : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1) :
+    runLen p (q :: r) = runLen q r + 1 := by
+  simp [runLen, h]
+
+theorem runLen_cons_neg {p q : ℕ × ℕ} {r : PairSeq}
+    (h : ¬ (q.1 = p.1 + 1 ∧ q.2 = p.2 + 1)) :
+    runLen p (q :: r) = 0 := by
+  simp [runLen, h]
+
+/-- 先頭列が同じなら連の長さも同じ。3 分岐の補題の 2 番目の枝で使う。 -/
+theorem runLen_congr_head {p : ℕ × ℕ} {q : ℕ × ℕ} {r r' : PairSeq}
+    (h : runLen q r = runLen q r') :
+    runLen p (q :: r) = runLen p (q :: r') := by
+  by_cases hc : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1
+  · simp [runLen, hc, h]
+  · simp [runLen, hc]
+
+/-! ### 対角が `blockokD` を満たす（帰納法の底） -/
+
+@[simp] theorem ddiagSeq_zero : ddiagSeq 0 = [(0, 0)] := by
+  simp [ddiagSeq, dcol]
+
+theorem ddiagSeq_succ (v : ℕ) : ddiagSeq (v + 1) = ddiagSeq v ++ [dcol (v + 1)] := by
+  simp [ddiagSeq, List.range_succ]
+
+theorem ddiagSeq_head (v : ℕ) : (ddiagSeq v).headI = (0, 0) := by
+  cases v with
+  | zero => simp
+  | succ n => simp [ddiagSeq, List.range_succ_eq_map, dcol]
+
+theorem dcolOK_dcol (j : ℕ) : dcolOK (dcol j) := by
+  intro h
+  simp only [dcol] at h ⊢
+  omega
+
+theorem ddiagSeq_dcolOK (v : ℕ) : ∀ c ∈ ddiagSeq v, dcolOK c := by
+  intro c hc
+  simp only [ddiagSeq, List.mem_map] at hc
+  obtain ⟨j, -, rfl⟩ := hc
+  exact dcolOK_dcol j
+
+/-! ## 6. 次の関門: `oltD_iff_seqlex`
 
 目標は
 
@@ -330,34 +400,35 @@ open YAPSS.Three in
 これが通れば、順序保存は両側の `_iff_seqlex` から、単射性は `seqlex_total` +
 `olt_irrefl` から出る（`Pair/Term.lean` / `Pair/Seqlex.lean`）。
 
-### 障害
+### 分割の補題は 3 分岐にする（trio-agent の助言）
 
-既存の `Seqlex.lean:233 seqlex_arg_or_tail` は、分割の述語 `(d < ·.1)` が
-**列ごとに独立**であることに依存している。`transD` の連の切れ目は後続を見て決まる
-（`runLen`）ので、そのままでは移らない。
+`Seqlex.lean:233 seqlex_arg_or_tail` は述語が**列ごと**なのに対し、
+連の述語は**隣り合う 2 列ごと**。接尾辞全体には依らない（`runLen_cons_pos/neg`）ので、
+次の 3 分岐にすれば足りる。
 
-連の分割について同じ形の補題を作ろうとすると、次の反例で壊れる:
+    seqlex (q :: s) (q' :: s') →
+        q ≠ q' ∧ pairlt q q'        -- 即決。連には入らない
+      ∨ q = q' ∧ 連の長さが一致 ∧ （引数が一致 → 後続を比較 / 違う → 引数を比較）
 
-    p = (0,0),  r = [(1,1)],  r' = [(2,0)]
-    seqlex r r' は成立（pairlt (1,1) (2,0)、1 < 2）
-    runLen p r  = 1  （(1,1) = (0+1,0+1)）
-    runLen p r' = 0  （(2,0) ≠ (1,1)）
-    r.take 1 = [(1,1)]、r'.take 0 = []
-    seqlex [(1,1)] [] は **偽**
+2 番目の枝では先頭列が一致しているので連の長さも一致し（`runLen_congr_head`）、
+BMS 版の議論がそのまま通る。
 
-つまり「連の部分どうしを seqlex で比べる」形の分岐は取れない。
-連の長さが違うとき、項の**形**が変わる（鎖の段数が変わる）ので、
-比較は seqlex ではなく `olt` の添字優先の規則で決まる。
+### 連の長さが違う場合も決まる
 
-### 分かっていること
+`M = p :: r`, `N = p :: r'` で連の長さが `k < m` のとき、決着するのは `k+1` 列目。
+連は `c_{j+1} = c_j + (1,1)` で強制されるので `min(k,m)` までは完全に一致している。
+`M` の `k+1` 列目を `q` とすると `pairlt q (c_k + (1,1))` で、場合は 2 つだけ。
 
-* 連は先頭からの接頭辞（`runLen_le`）
-* 連の長さは、先頭から順に見て決まるので、`r` と `r'` が先頭 `m` 列で一致すれば
-  連の長さも `m` まで一致する
-* したがって連の長さが違うのは、最初に列が違う位置**以降**だけ
+1. `q.1 ≤ c_k.1` — `q` は `c_k` の子でないので深さ `k` のノードの引数が空。
+   `M` 側は `Z`、`N` 側は `P … `。`olt` の「Z < P」で即決
+2. `q.1 = c_k.1 + 1` かつ `q.2 < c_k.2 + 1` — 同じ深さで添字が小さい。
+   `olt` の第 1 節（`a < e`）で即決
 
-この 3 つを使って、連の長さが違う場合を `olt` の側で直接処理する形に
-組み直す必要がある。
+逆向き（`k > m`）を排除するのに `steps1r1`（行 1 も 1 段ずつ）が要る。
+`steps1` は行 0 しか縛らないので、`(4,1)` に対する `(4,2)` を通してしまう。
+
+なお、以前ここに書いた反例 `p=(0,0), r'=[(2,0)]` は `blockok` の下では**存在しない**
+（行 0 が 0 から 2 へ飛ぶので `steps1` 違反）。
 
 -/
 
