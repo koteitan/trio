@@ -390,6 +390,86 @@ theorem ddiagSeq_dcolOK (v : ℕ) : ∀ c ∈ ddiagSeq v, dcolOK c := by
   obtain ⟨j, -, rfl⟩ := hc
   exact dcolOK_dcol j
 
+theorem ddiagSeq_getLast (v : ℕ) : (ddiagSeq v).getLastD (0, 0) = dcol v := by
+  induction v with
+  | zero => simp [dcol]
+  | succ n _ => rw [ddiagSeq_succ]; simp
+
+theorem steps1_ddiagSeq (v : ℕ) : steps1 (ddiagSeq v) := by
+  induction v with
+  | zero => simp
+  | succ n ih =>
+    rw [ddiagSeq_succ]
+    refine steps1_append.2 ⟨ih, by simp, Or.inr (Or.inr ?_)⟩
+    rw [ddiagSeq_getLast]
+    simp [dcol]
+
+@[simp] theorem steps1r1_nil : steps1r1 [] := trivial
+@[simp] theorem steps1r1_single (p : ℕ × ℕ) : steps1r1 [p] := trivial
+
+@[simp] theorem steps1r1_cons_cons {p q : ℕ × ℕ} {r : PairSeq} :
+    steps1r1 (p :: q :: r) ↔ q.2 ≤ p.2 + 1 ∧ steps1r1 (q :: r) := Iff.rfl
+
+theorem steps1r1_append {A B : PairSeq} :
+    steps1r1 (A ++ B) ↔
+      steps1r1 A ∧ steps1r1 B ∧
+      (A = [] ∨ B = [] ∨ (B.headI).2 ≤ (A.getLastD (0, 0)).2 + 1) := by
+  induction A with
+  | nil => simp
+  | cons p A ih =>
+    cases A with
+    | nil =>
+      cases B with
+      | nil => simp
+      | cons q B' =>
+        simp only [List.nil_append, List.cons_append, steps1r1_cons_cons]
+        constructor
+        · rintro ⟨h1, h2⟩
+          exact ⟨trivial, h2, Or.inr (Or.inr (by simpa using h1))⟩
+        · rintro ⟨-, h2, (h | h | h)⟩
+          · simp at h
+          · simp at h
+          · exact ⟨by simpa using h, h2⟩
+    | cons p' A' =>
+      simp only [List.cons_append, steps1r1_cons_cons] at ih ⊢
+      constructor
+      · rintro ⟨h1, h2⟩
+        obtain ⟨hA, hB, hj⟩ := ih.1 h2
+        refine ⟨⟨h1, hA⟩, hB, ?_⟩
+        rcases hj with h | h | h
+        · simp at h
+        · exact Or.inr (Or.inl h)
+        · refine Or.inr (Or.inr ?_)
+          simpa [List.getLastD_cons] using h
+      · rintro ⟨⟨h1, hA⟩, hB, hj⟩
+        refine ⟨h1, ih.2 ⟨hA, hB, ?_⟩⟩
+        rcases hj with h | h | h
+        · simp at h
+        · exact Or.inr (Or.inl h)
+        · refine Or.inr (Or.inr ?_)
+          simpa [List.getLastD_cons] using h
+
+/-- 行 1 も 1 段ずつ（対角）。 -/
+theorem steps1r1_ddiagSeq (v : ℕ) : steps1r1 (ddiagSeq v) := by
+  induction v with
+  | zero => simp [ddiagSeq, dcol]
+  | succ n ih =>
+    rw [ddiagSeq_succ]
+    refine steps1r1_append.2 ⟨ih, by simp, Or.inr (Or.inr ?_)⟩
+    rw [ddiagSeq_getLast]
+    simp [dcol]
+    omega
+
+/-- 対角は `blockokD 0` を満たす。**帰納法の底**。
+
+trio-agent の指摘どおり、`oper` の段は BMS 版の補題がそのまま使えるので、
+移植コストはこの底だけである（`Seqlex.lean:504 blockok_oper` に相当するものを
+DBMS 側でも用意すれば `blockokD_ST_D` が 4 行で書ける）。 -/
+theorem blockokD_ddiagSeq (v : ℕ) : blockokD 0 (ddiagSeq v) := by
+  refine ⟨⟨?_, ?_, steps1_ddiagSeq v⟩, ddiagSeq_dcolOK v, steps1r1_ddiagSeq v⟩
+  · intro _; rw [ddiagSeq_head]
+  · intro c _; exact Nat.zero_le _
+
 /-! ## 6. 次の関門: `oltD_iff_seqlex`
 
 目標は
