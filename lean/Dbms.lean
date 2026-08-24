@@ -55,6 +55,18 @@ BMS と DBMS は**展開規則が完全に同一**で、違うのは標準形の
 ## 残る穴
 
 **像が DBMS 標準形であること**は未証明（BMS 2 行標準形 ≤8 列 44653 個で全数確認のみ）。
+帰納法の底（対角）は済んでいる:
+
+    conC_diagSeq     : conC (diagSeq 0 v) = if v = 0 then ddiagSeq 0 else ddiagSeq (v + 1)
+    ST_D_conC_diagSeq : ST_D (conC (diagSeq 0 v))
+
+残るのは `oper` の段、すなわち `conC (M⟦n⟧)` が `conC M` から展開で届くこと。
+
+全射性については Naruyoko 氏が `Trans`（PSS -> ブーフホルツ）で使った道が使える:
+逆写像を作らず、**両側の共終性**（降下性 + 基本列の関係）だけで全単射が出る。
+`tools/dbms/cofinal_check.py` が見ているのがちょうどその 2 条件で、
+BMS 2 行標準形 7256 個（≤7 列）で違反 0。
+出典: ユーザーブログ:Naruyoko/ペア数列システムの停止性証明に用いられた変換写像の全単射性
 
 全射性は、DBMS 標準形 ≤6 列の 358 個すべてに逆像があることを確認した
 （`tools/dbms/onto.py`）。逆像は像より**長い**ことがあるので、
@@ -1763,6 +1775,142 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
             rw [hBe] at h0
             simp only [List.headI_cons] at h0 ⊢
             omega
+
+/-! ### 対角の像は対角
+
+`conC` の像が DBMS 標準形であることの**帰納法の底**。
+
+    conC (diagSeq 0 0) = ddiagSeq 0
+    conC (diagSeq 0 (v+1)) = ddiagSeq (v+2)
+
+最初の `(1,1)` だけ梯子で 2 列に化けるので、以降 1 列ずつずれる。 -/
+
+/-- DBMS の対角の切片 `(a,a-1)…(b,b-1)`。 -/
+def ddiagSeg (a b : ℕ) : PairSeq := (List.range' a (b + 1 - a)).map dcol
+
+theorem ddiagSeq_eq_seg (v : ℕ) : ddiagSeq v = ddiagSeg 0 v := by
+  simp [ddiagSeq, ddiagSeg, List.range_eq_range']
+
+theorem ddiagSeg_cons {u v : ℕ} (h : u ≤ v) :
+    ddiagSeg u v = dcol u :: ddiagSeg (u + 1) v := by
+  unfold ddiagSeg
+  rw [show v + 1 - u = (v + 1 - (u + 1)) + 1 by omega, List.range'_succ, List.map_cons]
+
+theorem ddiagSeg_nil {u v : ℕ} (h : v < u) : ddiagSeg u v = [] := by
+  unfold ddiagSeg
+  rw [show v + 1 - u = 0 by omega]
+  rfl
+
+theorem diagSeq_nil {u v : ℕ} (h : v < u) : diagSeq u v = [] := by
+  unfold diagSeq
+  rw [show v + 1 - u = 0 by omega]
+  rfl
+
+/-- 対角の切片は全部深い。 -/
+theorem diagSeq_deep {u v a : ℕ} (h : a < u) : ∀ c ∈ diagSeq u v, a < c.1 := by
+  intro c hc
+  have := fst_in_diagSeq hc
+  omega
+
+theorem diagSeq_split {u v a : ℕ} (h : a < u) :
+    (diagSeq u v).takeWhile (fun q => a < q.1) = diagSeq u v ∧
+      (diagSeq u v).dropWhile (fun q => a < q.1) = [] := by
+  constructor
+  · exact List.takeWhile_eq_self_iff.2 (by intro c hc; simpa using diagSeq_deep h c hc)
+  · exact List.dropWhile_eq_nil_iff.2 (by intro c hc; simpa using diagSeq_deep h c hc)
+
+theorem ddiagSeq_three {v : ℕ} (h : 1 ≤ v) :
+    ddiagSeq (v + 1)
+      = ((0, 0) : ℕ × ℕ) :: ((1, 0) : ℕ × ℕ) :: ((2, 1) : ℕ × ℕ) :: ddiagSeg 3 (v + 1) := by
+  rw [ddiagSeq_eq_seg, ddiagSeg_cons (show (0 : ℕ) ≤ v + 1 by omega),
+    ddiagSeg_cons (show (0 : ℕ) + 1 ≤ v + 1 by omega),
+    ddiagSeg_cons (show (0 : ℕ) + 1 + 1 ≤ v + 1 by omega)]
+  simp only [dcol, Nat.zero_add]
+
+/-- 2 列目以降の対角。梯子はもう敷いてあるので 1 列ずつ写る。 -/
+theorem convC_diag_tail : ∀ (k u v : ℕ), v + 1 - u ≤ k → 1 ≤ u →
+    convC (diagSeq u v) (u + 1) (u - 1) true false = ddiagSeg (u + 1) (v + 1) := by
+  intro k
+  induction k with
+  | zero =>
+    intro u v hk hu
+    rw [diagSeq_nil (by omega), ddiagSeg_nil (by omega), convC_nil]
+  | succ k ih =>
+    intro u v hk hu
+    by_cases huv : u ≤ v
+    · rw [diagSeq_cons huv, ddiagSeg_cons (by omega)]
+      obtain ⟨e1, e2⟩ := diagSeq_split (u := u + 1) (v := v) (a := u) (by omega)
+      have hnl : ladOf ((u, u) : ℕ × ℕ).2 (u + 1) (u - 1) true false = false := by
+        show ladOf u (u + 1) (u - 1) true false = false
+        unfold ladOf
+        simp only [Bool.and_eq_false_iff, decide_eq_false_iff_not, Bool.or_false]
+        right
+        omega
+      have hdd : ddOf ((u, u) : ℕ × ℕ).2 (u + 1) (u - 1) true false = u + 1 := by
+        show ddOf u (u + 1) (u - 1) true false = u + 1
+        unfold ddOf
+        rw [if_neg (by rw [show ladOf u (u + 1) (u - 1) true false = false from hnl]; simp),
+          if_neg (by rintro ⟨-, h2⟩; omega)]
+      rw [convC_cons_nolad ((u, u) : ℕ × ℕ) (diagSeq (u + 1) v) (u + 1) (u - 1) true false hnl]
+      simp only [hdd, e1, e2, convC_nil, List.append_nil]
+      have hf : (true && (((u, u) : ℕ × ℕ).2 == u - 1)) = false := by
+        simp only [Bool.true_and, beq_eq_false_iff_ne]
+        omega
+      rw [hf]
+      have hkey : convC (diagSeq (u + 1) v) (u + 1 + 1) u true false
+          = ddiagSeg (u + 1 + 1) (v + 1) := by
+        have h := ih (u + 1) v (by omega) (by omega)
+        rw [show (u + 1) - 1 = u by omega] at h
+        exact h
+      rw [hkey]
+      simp [dcol]
+    · rw [diagSeq_nil (by omega), ddiagSeg_nil (by omega), convC_nil]
+
+/-- **帰納法の底**: BMS の対角の像は DBMS の対角。 -/
+theorem conC_diagSeq (v : ℕ) :
+    conC (diagSeq 0 v) = if v = 0 then ddiagSeq 0 else ddiagSeq (v + 1) := by
+  have h0 : (0 : ℕ) ≤ v := Nat.zero_le v
+  obtain ⟨e1, e2⟩ := diagSeq_split (u := 1) (v := v) (a := 0) (by omega)
+  have hnl : ladOf ((0, 0) : ℕ × ℕ).2 0 0 true false = false := by
+    unfold ladOf; simp
+  have hdd : ddOf ((0, 0) : ℕ × ℕ).2 0 0 true false = 0 := by
+    unfold ddOf; rw [if_neg (by rw [hnl]; simp), if_neg (by intro hh; omega)]
+  rw [conC, diagSeq_cons h0,
+    convC_cons_nolad ((0, 0) : ℕ × ℕ) (diagSeq 1 v) 0 0 true false hnl]
+  simp only [hdd, e1, e2, convC_nil, List.append_nil]
+  by_cases hv : v = 0
+  · subst hv
+    rw [if_pos rfl, diagSeq_nil (by omega), convC_nil]
+    simp [ddiagSeq, dcol]
+  · rw [if_neg hv]
+    -- `(1,1)` は梯子になる
+    have h1v : (1 : ℕ) ≤ v := by omega
+    obtain ⟨f1, f2⟩ := diagSeq_split (u := 2) (v := v) (a := 1) (by omega)
+    have hl : ladOf ((1, 1) : ℕ × ℕ).2 1 0 true true = true := by
+      unfold ladOf; simp
+    have hcc : contrLen ((1, 1) : ℕ × ℕ)
+        ((diagSeq 2 v).dropWhile fun q => ((1, 1) : ℕ × ℕ).1 < q.1)
+        (sibRun ((1, 1) : ℕ × ℕ) ((diagSeq 2 v).dropWhile fun q => ((1, 1) : ℕ × ℕ).1 < q.1))
+        ((diagSeq 2 v).takeWhile fun q => ((1, 1) : ℕ × ℕ).1 < q.1) = none := by
+      simp only [show ((1, 1) : ℕ × ℕ).1 = 1 from rfl, f2]
+      unfold contrLen
+      simp
+    rw [show (true && (((0, 0) : ℕ × ℕ).2 == 0)) = true from rfl,
+      show (0 : ℕ) + 1 = 1 from rfl,
+      diagSeq_cons h1v,
+      convC_cons_lad_none ((1, 1) : ℕ × ℕ) (diagSeq 2 v) 1 0 true true hl hcc]
+    simp only [show ((1, 1) : ℕ × ℕ).1 = 1 from rfl, show ((1, 1) : ℕ × ℕ).2 = 1 from rfl,
+      f1, f2, convC_nil, List.append_nil]
+    rw [show (1 : ℕ) + 2 = 2 + 1 from rfl, show (1 : ℕ) = 2 - 1 from rfl,
+      convC_diag_tail (v + 1 - 2) 2 v (Nat.le_refl _) (by omega)]
+    rw [ddiagSeq_three h1v]
+
+/-- 対角の像は DBMS 標準形。 -/
+theorem ST_D_conC_diagSeq (v : ℕ) : ST_D (conC (diagSeq 0 v)) := by
+  rw [conC_diagSeq]
+  split
+  · exact ST_D.diag 0
+  · exact ST_D.diag (v + 1)
 
 /-! ## 8. 仮定は BMS 標準形なら自動で成り立つ
 
