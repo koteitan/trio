@@ -92,6 +92,64 @@ def mk_run_first(argsplit, run_on_succ=False):
     return lambda cols: go(cols, True)
 
 
+def mk_chain4(argsplit, dual=True):
+    """連の各段に、後続を**深さで振り分ける**版。
+
+    連 c_0..c_k は段 c_1.1 … c_k.1 のノードの入れ子になる。
+    連のあとに続く列は、その行 0（深さ）に対応する段のノードの後続になる。
+    連より浅い列は、連全体の後続。
+    """
+    def go(cols, first, plev):
+        if not cols:
+            return ('Z',)
+        p, rest0 = cols[0], cols[1:]
+        if first and p[1] == plev:
+            k, top = runlen(p, rest0)
+        else:
+            k, top = 0, p
+        run = [p] + rest0[:k]
+        tail = rest0[k:]
+        i = argsplit(top, tail)
+        arg = go(tail[:i], True, top[1])
+        rest = tail[i:]
+
+        # 二役（梯子 + 本体）の判定
+        j = 0
+        while j < len(rest) and rest[j][0] == top[0] and rest[j][1] == top[1]:
+            j += 1
+        r2 = rest[j:]
+        if k >= 1 and dual and r2 and r2[0][0] == top[0] and r2[0][1] < top[1]:
+            m = 0
+            while m < len(r2) and r2[m][0] >= top[0]:
+                m += 1
+            inner = go([top] + tail[:i] + rest[:j] + r2[:m], True, p[1])
+            succ = ('P', p[1], inner, go(r2[m:], False, plev))
+            for _ in range(j):
+                succ = ('P', top[1], ('Z',), succ)
+            node = ('P', top[1], arg, succ)
+            for t in range(k - 1, 0, -1):
+                node = ('P', run[t][1], node, ('Z',))
+            return node
+
+        # 深さごとに後続を切り分ける
+        succs = []
+        for t in range(k, 0, -1):
+            n = 0
+            while n < len(rest) and rest[n][0] >= run[t][0]:
+                n += 1
+            succs.append(rest[:n])
+            rest = rest[n:]
+        node = ('P', top[1], arg,
+                go(succs[0], False, top[1]) if k >= 1 else go(rest, False, plev))
+        for idx, t in enumerate(range(k - 1, 0, -1)):
+            node = ('P', run[t][1], node, go(succs[idx + 1], False, run[t][1]))
+        if k >= 1:
+            node = (node[0], node[1], node[2],
+                    go(rest, False, plev) if node[3] == ('Z',) else node[3])
+        return node
+    return lambda cols: go(cols, True, 0)
+
+
 def mk_chain3(argsplit, dual=True):
     """`mk_chain2` の 2 点直し。
 
@@ -316,6 +374,7 @@ CANDS = {
     '連は添字の鎖（二役なし）': (None, None),
     '底が影かを親の段で判定': (None, None),
     '後続は鎖の外・二役は引数の後ろで判定': (None, None),
+    '後続を深さで振り分ける': (None, None),
 }
 
 
@@ -341,6 +400,8 @@ def main():
             f = mk_chain2(split_row0, dual=True)
         elif name == '後続は鎖の外・二役は引数の後ろで判定':
             f = mk_chain3(split_row0, dual=True)
+        elif name == '後続を深さで振り分ける':
+            f = mk_chain4(split_row0, dual=True)
         else:
             f = mk(sub, split)
         ok = 0
