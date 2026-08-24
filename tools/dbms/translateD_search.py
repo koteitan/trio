@@ -92,6 +92,85 @@ def mk_run_first(argsplit, run_on_succ=False):
     return lambda cols: go(cols, True)
 
 
+def mk_chain2(argsplit, dual=True):
+    """連の底が「影」か「本物の列」かを、**親の段と同じか**で見分ける版。
+
+    影は親と同じ段に置く足場なので `p.行1 = 親の行1`。
+    親より段が下がっていれば、それは新しい加算項の頭であって影ではない。
+    """
+    def go(cols, first, plev):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        if first and p[1] == plev:
+            k, top = runlen(p, rest)
+        else:
+            k, top = 0, p
+        tail = rest[k:]
+        i = argsplit(top, tail)
+        if k >= 1 and dual and i == 0:
+            j = 0
+            while j < len(tail) and tail[j][0] == top[0] and tail[j][1] == top[1]:
+                j += 1
+            after = tail[j:]
+            if after and after[0][0] == top[0] and after[0][1] < top[1]:
+                m = 0
+                while m < len(after) and after[m][0] >= top[0]:
+                    m += 1
+                inner = go([top] + tail[:j] + after[:m], True, p[1])
+                node = ('P', p[1], inner, go(after[m:], False, plev))
+                for _ in range(j + 1):
+                    node = ('P', top[1], ('Z',), node)
+                return node
+        node = ('P', top[1], go(tail[:i], True, top[1]), go(tail[i:], False, plev))
+        for t in range(k - 1, 0, -1):
+            node = ('P', rest[t - 1][1], node, ('Z',))
+        return node
+    return lambda cols: go(cols, True, 0)
+
+
+def mk_chain(argsplit, dual=True):
+    """連は 1 ノードではなく**添字の鎖**として読む。
+
+    連 c_0..c_k（`(+1,+1)` で続く）は、添字 c_1.1, c_2.1, …, c_k.1 のノードを
+    引数側に入れ子にした鎖になる。DBMS の対角 (1,0)(2,1)(3,2) が
+    `P1(P2(Z,Z),Z)` と読まれるのはこれ。
+
+    さらに、連の兄弟が尽きたあと同じ深さで段が下がる列が来るときは、
+    連が「梯子 + 本体」の二役を果たしている（縮約の逆）ので開き直す。
+    """
+    def go(cols, first):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        if first:
+            k, top = runlen(p, rest)
+        else:
+            k, top = 0, p
+        tail = rest[k:]
+        i = argsplit(top, tail)
+        if k >= 1 and dual and i == 0:
+            j = 0
+            while j < len(tail) and tail[j][0] == top[0] and tail[j][1] == top[1]:
+                j += 1
+            after = tail[j:]
+            if after and after[0][0] == top[0] and after[0][1] < top[1]:
+                m = 0
+                while m < len(after) and after[m][0] >= top[0]:
+                    m += 1
+                inner = go([top] + tail[:j] + after[:m], True)
+                node = ('P', p[1], inner, go(after[m:], False))
+                for _ in range(j + 1):
+                    node = ('P', top[1], ('Z',), node)
+                return node
+        node = ('P', top[1], go(tail[:i], True), go(tail[i:], False))
+        # 連の途中の段を、引数側に入れ子で積む
+        for t in range(k - 1, 0, -1):
+            node = ('P', rest[t - 1][1], node, ('Z',))
+        return node
+    return lambda cols: go(cols, True)
+
+
 def mk_run_dual2(argsplit):
     """連が「梯子 + 本体」の二役を果たす場合を、兄弟の連なりごと開く版。
 
@@ -190,6 +269,9 @@ CANDS = {
     '連は最初の子のときだけ': (None, None),
     '連が二役の場合を開く': (None, None),
     '二役を兄弟ごと開く': (None, None),
+    '連は添字の鎖': (None, None),
+    '連は添字の鎖（二役なし）': (None, None),
+    '底が影かを親の段で判定': (None, None),
 }
 
 
@@ -207,6 +289,12 @@ def main():
             f = mk_run_dual(split_row0)
         elif name == '二役を兄弟ごと開く':
             f = mk_run_dual2(split_row0)
+        elif name == '連は添字の鎖':
+            f = mk_chain(split_row0, dual=True)
+        elif name == '連は添字の鎖（二役なし）':
+            f = mk_chain(split_row0, dual=False)
+        elif name == '底が影かを親の段で判定':
+            f = mk_chain2(split_row0, dual=True)
         else:
             f = mk(sub, split)
         ok = 0
