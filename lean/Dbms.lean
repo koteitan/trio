@@ -1296,6 +1296,19 @@ theorem convC_nodip : ∀ (n : ℕ) (L : PairSeq), L.length ≤ n → ∀ (d ple
         rintro ⟨-, h2, -⟩
         exact hcase (by simpa using h2)
 
+/-- `contrLen` が返す `rest2` / `Bq` は元の後続ブロックの部分列。 -/
+theorem contrLen_sublists {p : ℕ × ℕ} {B A rest2 Bq : PairSeq} {k : ℕ}
+    (h : contrLen p B k A = some (rest2, Bq)) :
+    rest2.Sublist B ∧ Bq.Sublist B := by
+  obtain ⟨q, r2, hd, -, -, hAq, hBq, -, -, -⟩ := contrLen_spec h
+  have hdrop : (q :: r2).Sublist B := hd ▸ List.drop_sublist k B
+  have hr2 : r2.Sublist B := (List.sublist_cons_self q r2).trans hdrop
+  constructor
+  · have h1 : rest2.Sublist (contrPre p k A ++ rest2) := (contrPre p k A).sublist_append_right rest2
+    have h2 : (contrPre p k A ++ rest2).Sublist r2 := hAq ▸ List.takeWhile_sublist _
+    exact (h1.trans h2).trans hr2
+  · exact (hBq ▸ List.dropWhile_sublist (l := r2) _).trans hr2
+
 /-! ### 縮約つきの主定理
 
     readC (convC M d plev first force) first plev = translate M
@@ -1452,6 +1465,98 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
         · -- 縮約あり
           rw [convC_cons_lad_some (bd, y) r d plev true force hl (by rw [← hAdef, ← hBdef]; exact hcc)]
           simp only [← hAdef, ← hBdef]
+          obtain ⟨q, r2', hdq, hq2, hq1, hAq, hBq, hr2ne, hr2d, hr2l⟩ := contrLen_spec hcc
+          set k := sibRun ((bd, y) : ℕ × ℕ) B with hk
+          set X := convC A (d + 2) y true false with hX
+          set Y := convC rest2 (d + 1) y false false with hY
+          set Z := convC Bq d y false false with hZ
+          set top : ℕ × ℕ := (d + 1, y) with htop
+          -- B の分解
+          have hBsplit : B = List.replicate k ((bd, y) : ℕ × ℕ) ++ (q :: r2') := by
+            conv_lhs => rw [sibRun_split ((bd, y) : ℕ × ℕ) B]
+            rw [← hk, hdq]
+          -- rest2 / Bq の性質
+          have hlr2 : rest2.length ≤ n := by
+            have := (contrLen_lt hcc).1; omega
+          have hlbq : Bq.length ≤ n := by
+            have := (contrLen_lt hcc).2; omega
+          have hcr2 : colOK rest2 := fun c hcm => hcB c ((contrLen_sublists hcc).1.subset hcm)
+          have hcbq : colOK Bq := fun c hcm => hcB c ((contrLen_sublists hcc).2.subset hcm)
+          -- ブロック規律と descOK を B から下ろす
+          have hqcons : blockok bd (q :: r2') ∧ descOK (q :: r2') := by
+            constructor
+            · refine blockok_replicate bd y (q :: r2') (Or.inr ?_) k ?_
+              · simp only [List.headI_cons]; omega
+              · rw [← hBsplit]; exact hbB
+            · refine descOK_replicate ((bd, y) : ℕ × ℕ) (q :: r2') (Or.inr ?_) k ?_
+              · simp only [List.headI_cons]; omega
+              · rw [← hBsplit]; exact hdB
+          obtain ⟨hbq, hdq2⟩ := hqcons
+          have hqe : q = (bd, q.2) := by
+            simp only [] at hq1
+            rw [← hq1]
+          have hbCP : blockok (bd + 1) (contrPre ((bd, y) : ℕ × ℕ) k A ++ rest2) := by
+            have h1 := blockok_arg (d := bd) (y := q.2) (r := r2') (by rw [← hqe]; exact hbq)
+            simp only [] at h1 hq1
+            rw [← hq1, hAq] at h1
+            rw [hq1] at h1
+            exact h1
+          obtain ⟨hdCPh, hdCPa, hdCP⟩ := descOK_cons.1 (by
+            have h1 := (descOK_cons.1
+              (show descOK ((bd, q.2) :: r2') by rw [← hqe]; exact hdq2)).2.1
+            simp only [] at h1 hq1
+            rw [← hq1, hAq] at h1
+            exact h1 : descOK (contrPre ((bd, y) : ℕ × ℕ) k A ++ rest2))
+          -- rest2 の blockok / descOK
+          have hAdeep : ∀ c ∈ shift1 A, bd + 1 < c.1 := by
+            intro c hcm
+            simp only [shift1, List.mem_map] at hcm
+            obtain ⟨c', hc', rfl⟩ := hcm
+            have h1 : bd < c'.1 := by
+              have := List.mem_takeWhile_imp (p := fun q : ℕ × ℕ => decide (((bd, y) : ℕ × ℕ).1 < q.1))
+                (by rw [hAdef] at hc'; exact hc')
+              simpa using this
+            simp only []
+            omega
+          have hRr : (List.replicate k ((bd + 1, y) : ℕ × ℕ) ++ rest2) = [] ∨
+              ¬ (bd + 1 < ((List.replicate k ((bd + 1, y) : ℕ × ℕ) ++ rest2).headI).1) := by
+            cases k with
+            | zero => right; simp only [List.replicate_zero, List.nil_append]; omega
+            | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+          have hCPe : contrPre ((bd, y) : ℕ × ℕ) k A ++ rest2
+              = (bd + 1, y) :: (shift1 A ++ (List.replicate k ((bd + 1, y) : ℕ × ℕ) ++ rest2)) := by
+            simp [contrPre]
+          obtain ⟨eCP1, eCP2⟩ := split_append (dd := bd + 1) hAdeep hRr
+          have hbr2 : blockok (bd + 1) rest2 := by
+            refine blockok_replicate (bd + 1) y rest2 (Or.inr (by omega)) k ?_
+            rw [hCPe] at hbCP
+            have h1 := blockok_tail (d := bd + 1) (y := y) hbCP
+            simp only [] at h1
+            rw [eCP2] at h1
+            exact h1
+          have hdCPfull : descOK ((bd + 1, y) ::
+              (shift1 A ++ (List.replicate k ((bd + 1, y) : ℕ × ℕ) ++ rest2))) := by
+            rw [← hCPe]
+            exact descOK_cons.2 ⟨hdCPh, hdCPa, hdCP⟩
+          have hdr2 : descOK rest2 := by
+            refine descOK_replicate ((bd + 1, y) : ℕ × ℕ) rest2 (Or.inr (by simp only []; omega)) k ?_
+            have h1 := (descOK_cons.1 hdCPfull).2.2
+            simp only [] at h1
+            rw [eCP2] at h1
+            exact h1
+          have hdbq : descOK Bq := by
+            rw [← hBq]
+            have h1 := (descOK_cons.1
+              (show descOK ((bd, q.2) :: r2') by rw [← hqe]; exact hdq2)).2.2
+            simp only [] at h1 hq1
+            rw [← hq1] at h1
+            exact h1
+          have hbbq : blockok bd Bq := by
+            rw [← hBq]
+            have h1 := blockok_tail (d := bd) (y := q.2) (by rw [← hqe]; exact hbq)
+            simp only [] at h1 hq1
+            rw [← hq1] at h1 ⊢
+            exact h1
           sorry
       · -- 影を挟まない
         have hdd0 : dd = ddOf y d plev first force := hdd
