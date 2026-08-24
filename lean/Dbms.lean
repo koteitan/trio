@@ -36,7 +36,7 @@ BMS と DBMS は**展開規則が完全に同一**で、違うのは標準形の
 
 つまり **`conv` は 2 行 BMS 標準形の上で順序を保ち単射で、項（順序数）を保つ**。
 
-## 縮約つきの `conC` / `readC`（定義のみ、定理はまだ）
+## 縮約つきの `conC` / `readC`
 
 `conv M` は DBMS の**標準形とは限らない**。BMS 2 行標準形 44653 個（≤8 列）のうち
 **120 個**で像が非標準になる（`(0,0)(1,1)(1,0)(2,1)(2,0)` 型。DBMS 側では
@@ -46,21 +46,24 @@ BMS と DBMS は**展開規則が完全に同一**で、違うのは標準形の
 |---|---|---|
 | シート 264 件に一致 | 245 | **264** |
 | 像が DBMS 標準形（≤8 列 44653 個） | 120 個が非標準 | **全部標準** |
-| `読み (変換 M) = translate M` | **定理**（本ファイル） | 全数検査のみ |
+| `読み (変換 M) = translate M` | **定理** | **定理** |
 
-`DbmsConv.lean` に 264 件の `conC A = E` と `readC E = translate A` の #guard。
+どちらも本ファイルで証明済み（`readD_conv_ST` / `readC_conC_ST`）。系として
+`conC_olt_iff_seqlex`（順序保存）と `conC_injective`（単射）も出る。
+`DbmsConv.lean` に 264 件の `conC A = E` と `readCon E = translate A` の #guard。
 
 ## 残る穴
 
-`conC` は DBMS 標準形 ≤6 列（358 個）には**全単射**だが、7 列で **6 個**外れる:
+1. **像が DBMS 標準形であること**は未証明（BMS 2 行標準形 ≤8 列 44653 個で全数確認のみ）。
+2. **全射でない**。DBMS 標準形 ≤6 列（358 個）には全単射だが、7 列で 6 個外れる:
 
-    DBMS 標準形  (0,0)(1,0)(2,1)(3,2)(2,1)(3,1)(2,0)   ← 逆像が無い
-    conC の像    (0,0)(1,0)(2,1)(3,2)(2,1)(3,1)(1,0)
+       DBMS 標準形  (0,0)(1,0)(2,1)(2,1)(2,1)(2,0)   ← 像に無い
+       conC の像    (0,0)(1,0)(2,1)(2,1)(2,1)(2,1)
 
-この 2 つは `readC` でも同じ項に読まれる（`readC` は DBMS 標準形の上では単射でない）。
-まだ機構が足りないのか、それとも DBMS 2 行が BMS 2 行より真に細かいのかが未決。
-`conC` 自身は ord の定義から来る共終性の検査（`tools/dbms/cofinal_check.py`）を
-BMS 2 行標準形 7256 個（≤7 列）で 1 件も落とさない。
+   後者が正しい像であることは ord の定義から確かめた
+   （前者は `f(M[3])` 以上になってしまい上界にならない）。
+   前者に対応する BMS 2 行標準形は 8 列までに存在しない。
+   DBMS 2 行が BMS 2 行より真に細かいのか、それとも逆像が長いだけなのかは未決。
 
 展開 `oper`・親子関係は `Pair/Pss.lean`（YAPSS 名前空間）のものをそのまま使う。
 -/
@@ -1501,13 +1504,12 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
               (fun hne => hdh hne)
         · -- 縮約あり
           rw [convC_cons_lad_some (bd, y) r d plev true force hl (by rw [← hAdef, ← hBdef]; exact hcc)]
-          simp only [← hAdef, ← hBdef]
+          simp only [← hAdef, ← hBdef, List.append_assoc]
           obtain ⟨q, r2', hdq, hq2, hq1, hAq, hBq, hr2ne, hr2d, hr2l⟩ := contrLen_spec hcc
           set k := sibRun ((bd, y) : ℕ × ℕ) B with hk
           set X := convC A (d + 2) y true false with hX
           set Y := convC rest2 (d + 1) y false false with hY
           set Z := convC Bq d y false false with hZ
-          set top : ℕ × ℕ := (d + 1, y) with htop
           -- B の分解
           have hBsplit : B = List.replicate k ((bd, y) : ℕ × ℕ) ++ (q :: r2') := by
             conv_lhs => rw [sibRun_split ((bd, y) : ℕ × ℕ) B]
@@ -1616,7 +1618,7 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
               simp
           have hYlev : (Y.headI).2 < y := by rw [hYhd]; simpa using hr2l
           have hYge : ∀ c ∈ Y, d + 1 ≤ c.1 := convC_ge' rest2 (d + 1) y false false
-          have hZsh : Z = [] ∨ ((Z.headI).1 ≤ d ∧ ¬ (Z.headI = top)) := by
+          have hZsh : Z = [] ∨ ((Z.headI).1 ≤ d ∧ ¬ (Z.headI = ((d + 1, y) : ℕ × ℕ))) := by
             cases hbe : Bq with
             | nil => left; rw [hZ, hbe, convC_nil]
             | cons c Bq' =>
@@ -1634,35 +1636,32 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
                 rw [if_neg (by rw [hcl]; simp), if_neg (by intro hh; omega)]
               have : Z.headI = (d, c.2) := by
                 rw [hZ, hbe, convC_headI, if_neg (by rw [hcl]; simp), hde]
-              rw [this, htop]
+              rw [this]
               exact ⟨Nat.le_refl d, by intro he; have := congrArg Prod.fst he; omega⟩
           -- 読みの分解
           have hXge : ∀ c ∈ X, d + 1 < c.1 := by
             intro c hcm
             have := convC_ge' A (d + 2) y true false c hcm
             omega
-          have hRest : (List.replicate k top ++ (Y ++ Z)) = [] ∨
-              ¬ (d + 1 < ((List.replicate k top ++ (Y ++ Z)).headI).1) := by
+          have hRest : (List.replicate k ((d + 1, y) : ℕ × ℕ) ++ (Y ++ Z)) = [] ∨
+              ¬ (d + 1 < ((List.replicate k ((d + 1, y) : ℕ × ℕ) ++ (Y ++ Z)).headI).1) := by
             cases k with
             | zero =>
               right
               simp only [List.replicate_zero, List.nil_append]
               rw [headI_append_left hYne, hYhd]
               omega
-            | succ k' => right; rw [List.replicate_succ, List.cons_append, htop]; simp
+            | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
           obtain ⟨eT1, eT2⟩ := split_append hXge hRest
           have hYZne : (Y ++ Z) ≠ [] := by
             intro he; exact hYne (List.append_eq_nil_iff.1 he).1
           have hYZhd : (Y ++ Z).headI = Y.headI := headI_append_left hYne
-          have hsib : ((List.replicate k top ++ (Y ++ Z)).takeWhile fun c => c = top)
-                = List.replicate k top
-              ∧ ((List.replicate k top ++ (Y ++ Z)).dropWhile fun c => c = top) = (Y ++ Z) := by
-            refine takeDrop_replicate top (Y ++ Z) ?_ k
+          have hsib := takeDrop_replicate ((d + 1, y) : ℕ × ℕ) (Y ++ Z) (by
             rw [hYZhd]
             intro he
-            rw [he, htop] at hYlev
+            rw [he] at hYlev
             simp only [] at hYlev
-            omega
+            omega) k
           -- 二役の条件
           have hdual : dipAt d y ((Y ++ Z)) := by
             refine ⟨hYZne, ?_, ?_⟩
@@ -1674,7 +1673,65 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
             · exact Or.inl h
             · exact Or.inr (by omega)
           obtain ⟨eD1, eD2⟩ := split_append_le hYZge hZh
-          sorry
+          -- 読み（外側）
+          rw [readC_dual (p := ((d, plev) : ℕ × ℕ)) (top := ((d + 1, y) : ℕ × ℕ))
+            rfl rfl (by simp [hyp])
+            (by
+              simp only []
+              rw [eT2, hsib.2]
+              exact hdual)]
+          simp only []
+          rw [eT1, eT2, hsib.1, hsib.2, eD1, eD2]
+          simp only [List.append_assoc, List.length_replicate]
+          -- 読み（内側）: 影ではないので素直に割れる
+          have hinner : readC (((d + 1, y) : ℕ × ℕ) ::
+                (X ++ (List.replicate k ((d + 1, y) : ℕ × ℕ) ++ Y))) true plev
+              = Three.P y (readC X true y) (wrapN k y (readC Y false y)) := by
+            have hRest2 : (List.replicate k ((d + 1, y) : ℕ × ℕ) ++ Y) = [] ∨
+                ¬ (d + 1 < ((List.replicate k ((d + 1, y) : ℕ × ℕ) ++ Y).headI).1) := by
+              cases k with
+              | zero =>
+                right
+                simp only [List.replicate_zero, List.nil_append, hYhd]
+                omega
+              | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+            obtain ⟨eI1, eI2⟩ := split_append hXge hRest2
+            rw [readC_plain (p := ((d + 1, y) : ℕ × ℕ)) (first := true) (plev := plev)
+              (by rintro ⟨-, h2, -⟩; simp only [] at h2; omega)]
+            simp only []
+            rw [eI1, eI2]
+            rw [readC_replicate ((d + 1, y) : ℕ × ℕ) Y (Or.inr (by rw [hYhd]; simp)) k y]
+          rw [hinner, iA (d + 2) false (by omega), iR,
+            readC_plev Z plev y, iQ]
+          -- BMS 側
+          have hAdeep2 : ∀ c ∈ A, bd < c.1 := by
+            intro c hcm
+            have := List.mem_takeWhile_imp
+              (p := fun q : ℕ × ℕ => decide (((bd, y) : ℕ × ℕ).1 < q.1))
+              (by rw [hAdef] at hcm; exact hcm)
+            simpa using this
+          have hTB : translate B = wrapN k y (translate (q :: r2')) := by
+            rw [hBsplit]
+            exact translate_replicate ((bd, y) : ℕ × ℕ) (q :: r2')
+              (Or.inr (by simp only [List.headI_cons]; omega)) k
+          have hTq : translate (q :: r2')
+              = Three.P q.2 (translate (contrPre ((bd, y) : ℕ × ℕ) k A ++ rest2))
+                  (translate Bq) := by
+            conv_lhs => rw [hqe]
+            rw [translate]
+            simp only []
+            simp only [] at hq1
+            rw [← hq1, hAq, hBq]
+            simp only [hq1]
+          have hTCP : translate (contrPre ((bd, y) : ℕ × ℕ) k A ++ rest2)
+              = Three.P y (translate A) (wrapN k y (translate rest2)) :=
+            translate_contrPre ((bd, y) : ℕ × ℕ) k A rest2 hAdeep2
+              (Or.inr (by simp only []; omega))
+          rw [translate]
+          simp only []
+          rw [← hAdef, ← hBdef, hTB, hTq, hTCP]
+          have hqp : q.2 = plev := by omega
+          rw [hqp]
       · -- 影を挟まない
         have hdd0 : dd = ddOf y d plev first force := hdd
         rw [convC_cons_nolad (bd, y) r d plev first force (by simpa using hl)]
@@ -1810,9 +1867,18 @@ theorem descOK_of_cnf : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → cnf (tra
 theorem descOK_ST_PS {M : PairSeq} (hM : ST_PS M) : descOK M :=
   descOK_of_cnf M.length M (Nat.le_refl _) (cnf_ST_PS hM)
 
-/-- **主結果**: BMS 2 行標準形なら、変換は無条件に読みを保つ。 -/
+/-- **主結果（縮約なし）**: BMS 2 行標準形なら、変換は無条件に読みを保つ。 -/
 theorem readD_conv_ST {M : PairSeq} (hM : ST_PS M) : readD (conv M) true 0 = translate M :=
   readD_conv (blockok_ST_PS hM) (colOK_ST_PS hM) (descOK_ST_PS hM)
+
+/-- 縮約つきの変換も読みを保つ。 -/
+theorem readC_conC {M : PairSeq} (hb : blockok 0 M) (hc : colOK M) (hd : descOK M) :
+    readCon (conC M) = translate M :=
+  readC_convC M.length M (Nat.le_refl _) 0 0 0 true false hb (Nat.le_refl 0) hc hd
+
+/-- **主結果（縮約つき）**: BMS 2 行標準形なら、`conC` は無条件に読みを保つ。 -/
+theorem readC_conC_ST {M : PairSeq} (hM : ST_PS M) : readCon (conC M) = translate M :=
+  readC_conC (blockok_ST_PS hM) (colOK_ST_PS hM) (descOK_ST_PS hM)
 
 /-! ## 9. 順序 -/
 
@@ -1834,6 +1900,27 @@ theorem conv_injective {M N : PairSeq} (hM : ST_PS M) (hN : ST_PS N)
     rw [h] at this
     exact olt_irrefl _ this
   · have := (conv_olt_iff_seqlex hN hM (Ne.symm hne)).2 hs
+    rw [h] at this
+    exact olt_irrefl _ this
+
+open Three in
+/-- 縮約つきの変換も順序を保つ。 -/
+theorem conC_olt_iff_seqlex {M N : PairSeq} (hM : ST_PS M) (hN : ST_PS N) (hne : M ≠ N) :
+    (readCon (conC M) <o readCon (conC N) ↔ seqlex M N) := by
+  rw [readC_conC_ST hM, readC_conC_ST hN]
+  exact olt_iff_seqlex (blockok_ST_PS hM) (blockok_ST_PS hN) hne
+
+open Three in
+/-- 縮約つきの変換も単射。 -/
+theorem conC_injective {M N : PairSeq} (hM : ST_PS M) (hN : ST_PS N)
+    (h : conC M = conC N) : M = N := by
+  by_contra hne
+  rcases seqlex_total M N with he | hs | hs
+  · exact hne he
+  · have := (conC_olt_iff_seqlex hM hN hne).2 hs
+    rw [h] at this
+    exact olt_irrefl _ this
+  · have := (conC_olt_iff_seqlex hN hM (Ne.symm hne)).2 hs
     rw [h] at this
     exact olt_irrefl _ this
 
