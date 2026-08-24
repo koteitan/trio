@@ -320,4 +320,45 @@ open YAPSS.Three in
 #guard transD [(0,0),(1,0),(2,1),(2,0)]
     = P 0 (P 1 Z (P 0 (P 1 Z (P 0 Z Z)) Z)) Z
 
+/-! ## 5. 次の関門: `oltD_iff_seqlex`
+
+目標は
+
+    theorem oltD_iff_seqlex {M N : PairSeq} (bM : blockokD M) (bN : blockokD N) (hne : M ≠ N) :
+        transD M <o transD N ↔ seqlex M N
+
+これが通れば、順序保存は両側の `_iff_seqlex` から、単射性は `seqlex_total` +
+`olt_irrefl` から出る（`Pair/Term.lean` / `Pair/Seqlex.lean`）。
+
+### 障害
+
+既存の `Seqlex.lean:233 seqlex_arg_or_tail` は、分割の述語 `(d < ·.1)` が
+**列ごとに独立**であることに依存している。`transD` の連の切れ目は後続を見て決まる
+（`runLen`）ので、そのままでは移らない。
+
+連の分割について同じ形の補題を作ろうとすると、次の反例で壊れる:
+
+    p = (0,0),  r = [(1,1)],  r' = [(2,0)]
+    seqlex r r' は成立（pairlt (1,1) (2,0)、1 < 2）
+    runLen p r  = 1  （(1,1) = (0+1,0+1)）
+    runLen p r' = 0  （(2,0) ≠ (1,1)）
+    r.take 1 = [(1,1)]、r'.take 0 = []
+    seqlex [(1,1)] [] は **偽**
+
+つまり「連の部分どうしを seqlex で比べる」形の分岐は取れない。
+連の長さが違うとき、項の**形**が変わる（鎖の段数が変わる）ので、
+比較は seqlex ではなく `olt` の添字優先の規則で決まる。
+
+### 分かっていること
+
+* 連は先頭からの接頭辞（`runLen_le`）
+* 連の長さは、先頭から順に見て決まるので、`r` と `r'` が先頭 `m` 列で一致すれば
+  連の長さも `m` まで一致する
+* したがって連の長さが違うのは、最初に列が違う位置**以降**だけ
+
+この 3 つを使って、連の長さが違う場合を `olt` の側で直接処理する形に
+組み直す必要がある。
+
+-/
+
 end DBMS
