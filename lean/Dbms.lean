@@ -574,35 +574,78 @@ def contrLen (p : ℕ × ℕ) (B : PairSeq) (k : ℕ) (A : PairSeq) : Option (Pa
                 else none
       else none
 
-/-- BMS 2 行 -> DBMS 2 行（縮約つき）。停止は燃料で回す
-（縮約の枝で残りが短くなることの証明は後回し。列数を渡せば足りる）。 -/
-def convCF : ℕ → PairSeq → ℕ → ℕ → Bool → Bool → PairSeq
-  | 0, _, _, _, _, _ => []
-  | _, [], _, _, _, _ => []
-  | Nat.succ fuel, p :: r, d, plev, first, force =>
-      let A := r.takeWhile fun q => p.1 < q.1
-      let B := r.dropWhile fun q => p.1 < q.1
+/-- 縮約の枝で残る列は元より短い（停止性に使う）。 -/
+theorem contrLen_lt {p : ℕ × ℕ} {B A rest2 Bq : PairSeq} {k : ℕ}
+    (h : contrLen p B k A = some (rest2, Bq)) :
+    rest2.length < B.length ∧ Bq.length < B.length := by
+  unfold contrLen at h
+  rcases hd : B.drop k with _ | ⟨q, r2⟩ <;> rw [hd] at h
+  · simp at h
+  · have hr2 : r2.length < B.length := by
+      have hl : (B.drop k).length = B.length - k := List.length_drop
+      rw [hd] at hl
+      simp only [List.length_cons] at hl
+      omega
+    simp only [] at h
+    split at h
+    · split at h
+      · simp at h
+      · split at h
+        · simp at h
+        · split at h
+          · simp only [Option.some.injEq, Prod.mk.injEq] at h
+            obtain ⟨h1, h2⟩ := h
+            subst h1; subst h2
+            constructor
+            · have e2 : (r2.takeWhile fun x => q.1 < x.1).length ≤ r2.length :=
+                (List.takeWhile_sublist _).length_le
+              simp only [List.length_drop]
+              omega
+            · have e2 : (r2.dropWhile fun x => q.1 < x.1).length ≤ r2.length :=
+                List.length_dropWhile_le _ r2
+              omega
+          · simp at h
+    · simp at h
+
+/-- BMS 2 行 -> DBMS 2 行（縮約つき）。 -/
+def convC : PairSeq → ℕ → ℕ → Bool → Bool → PairSeq
+  | [], _, _, _, _ => []
+  | p :: r, d, plev, first, force =>
       if ladOf p.2 d plev first force then
-        let k := sibRun p B
-        match contrLen p B k A with
+        match hc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (sibRun p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) with
         | some (rest2, Bq) =>
             [(d, plev), (d + 1, p.2)]
-              ++ convCF fuel A (d + 2) p.2 true false
-              ++ List.replicate k ((d + 1, p.2) : ℕ × ℕ)
-              ++ convCF fuel rest2 (d + 1) p.2 false false
-              ++ convCF fuel Bq d p.2 false false
+              ++ convC (r.takeWhile fun q => p.1 < q.1) (d + 2) p.2 true false
+              ++ List.replicate (sibRun p (r.dropWhile fun q => p.1 < q.1))
+                   ((d + 1, p.2) : ℕ × ℕ)
+              ++ convC rest2 (d + 1) p.2 false false
+              ++ convC Bq d p.2 false false
         | none =>
             [(d, plev), (d + 1, p.2)]
-              ++ convCF fuel A (d + 2) p.2 true false
-              ++ convCF fuel B d p.2 false false
+              ++ convC (r.takeWhile fun q => p.1 < q.1) (d + 2) p.2 true false
+              ++ convC (r.dropWhile fun q => p.1 < q.1) d p.2 false false
       else
         [(ddOf p.2 d plev first force, p.2)]
-          ++ convCF fuel A (ddOf p.2 d plev first force + 1) p.2 true
-               (first && (p.2 == plev))
-          ++ convCF fuel B d p.2 false false
+          ++ convC (r.takeWhile fun q => p.1 < q.1)
+               (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev))
+          ++ convC (r.dropWhile fun q => p.1 < q.1) d p.2 false false
+  termination_by M => M.length
+  decreasing_by
+  all_goals
+    first
+      | exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+      | exact Nat.lt_succ_of_le (List.length_dropWhile_le _ r)
+      | (rename_i hc
+         have h1 := (contrLen_lt hc).1
+         have h2 := (contrLen_lt hc).2
+         have h3 := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+         simp only [List.length_cons]
+         omega)
 
 /-- 縮約つきの変換の入口。 -/
-def conC (M : PairSeq) : PairSeq := convCF (M.length + 1) M 0 0 true false
+def conC (M : PairSeq) : PairSeq := convC M 0 0 true false
 
 /-! ### 縮約つきの読み `readC`
 
@@ -627,35 +670,78 @@ def wrapN : ℕ → ℕ → Three → Three
   | Nat.succ n, s, t => P s Z (wrapN n s t)
 
 open Three in
-def readCF : ℕ → PairSeq → Bool → ℕ → Three
-  | 0, _, _, _ => Z
-  | _, [], _, _ => Z
-  | Nat.succ fuel, p :: rest, first, plev =>
-      let shadow := first = true ∧ p.2 = plev ∧ rest.headI = (p.1 + 1, p.2 + 1)
-      let top := if shadow then rest.headI else p
-      let tail := if shadow then rest.tail else rest
-      let i := argLen top.1 tail
-      let arg := readCF fuel (tail.take i) true top.2
-      let after := tail.drop i
-      let j := sibRun top after
-      let r2 := after.drop j
-      if shadow ∧ r2 ≠ [] ∧ (r2.headI).1 = top.1 ∧ (r2.headI).2 < top.2 then
-        let m := deepLen top.1 r2
-        let inner := readCF fuel (top :: (tail.take i ++ after.take j ++ r2.take m)) true p.2
-        P top.2 arg (wrapN j top.2 (P p.2 inner (readCF fuel (r2.drop m) false plev)))
+/-- 縮約つきの読み。`readD` に「梯子が二役を兼ねている枝」を足したもの。 -/
+def readC : PairSeq → Bool → ℕ → Three
+  | [], _, _ => Z
+  | p :: rest, first, plev =>
+      if first = true ∧ p.2 = plev ∧ rest.headI = (p.1 + 1, p.2 + 1) then
+        match rest with
+        | [] => Z
+        | top :: tail =>
+            let arg := tail.takeWhile fun q => top.1 < q.1
+            let after := tail.dropWhile fun q => top.1 < q.1
+            let sib := after.takeWhile fun q => q = top
+            let r2 := after.dropWhile fun q => q = top
+            if r2 ≠ [] ∧ (r2.headI).1 = top.1 ∧ (r2.headI).2 < top.2 then
+              P top.2 (readC arg true top.2)
+                (wrapN sib.length top.2
+                  (P p.2
+                    (readC (top :: (arg ++ sib ++ (r2.takeWhile fun q => top.1 ≤ q.1)))
+                      true p.2)
+                    (readC (r2.dropWhile fun q => top.1 ≤ q.1) false plev)))
+            else
+              P top.2 (readC arg true top.2) (readC after false top.2)
       else
-        P top.2 arg (readCF fuel after false top.2)
+        P p.2 (readC (rest.takeWhile fun q => p.1 < q.1) true p.2)
+              (readC (rest.dropWhile fun q => p.1 < q.1) false p.2)
+  termination_by l => l.length
+  decreasing_by
+  all_goals
+    (first
+      | (simp only [List.length_cons]
+         have e1 : (List.takeWhile (fun q => decide (top.1 < q.1)) tail).length
+             + (List.dropWhile (fun q => decide (top.1 < q.1)) tail).length = tail.length := by
+           rw [← List.length_append, List.takeWhile_append_dropWhile]
+         have e2 : (List.takeWhile (fun q => decide (q = top))
+               (List.dropWhile (fun q => decide (top.1 < q.1)) tail)).length
+             + (List.dropWhile (fun q => decide (q = top))
+               (List.dropWhile (fun q => decide (top.1 < q.1)) tail)).length
+             = (List.dropWhile (fun q => decide (top.1 < q.1)) tail).length := by
+           rw [← List.length_append, List.takeWhile_append_dropWhile]
+         have e3 := (List.takeWhile_sublist (fun q : ℕ × ℕ => decide (top.1 ≤ q.1))
+           (l := List.dropWhile (fun q => decide (q = top))
+             (List.dropWhile (fun q => decide (top.1 < q.1)) tail))).length_le
+         have e4 := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (top.1 ≤ q.1))
+           (List.dropWhile (fun q => decide (q = top))
+             (List.dropWhile (fun q => decide (top.1 < q.1)) tail))
+         simp only [List.length_append]
+         omega)
+      | (simp only [List.length_cons]
+         have e1 := (List.takeWhile_sublist (fun q : ℕ × ℕ => decide (top.1 < q.1))
+           (l := tail)).length_le
+         have e2 := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (top.1 < q.1)) tail
+         omega)
+      | (simp only [List.length_cons]
+         have a1 := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (top.1 < q.1)) tail
+         have a2 := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (q = top))
+           (List.dropWhile (fun q => decide (top.1 < q.1)) tail)
+         have a3 := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (top.1 ≤ q.1))
+           (List.dropWhile (fun q => decide (q = top))
+             (List.dropWhile (fun q => decide (top.1 < q.1)) tail))
+         omega)
+      | exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+      | exact Nat.lt_succ_of_le (List.length_dropWhile_le _ rest))
 
-/-- 縮約つきの読み。 -/
-def readC (l : PairSeq) : Three := readCF (2 * l.length + 2) l true 0
+/-- 縮約つきの読みの入口。 -/
+def readCon (l : PairSeq) : Three := readC l true 0
 
 /-! ### 動作確認（readC） -/
 
-#guard readC (conC [(0,0),(1,1),(1,0),(2,1),(2,0)]) = translate [(0,0),(1,1),(1,0),(2,1),(2,0)]
-#guard readC (conC [(0,0),(1,1),(2,2)]) = translate [(0,0),(1,1),(2,2)]
-#guard readC (conC [(0,0),(1,1),(1,1),(1,0),(2,1),(2,1),(2,0)])
+#guard readCon (conC [(0,0),(1,1),(1,0),(2,1),(2,0)]) = translate [(0,0),(1,1),(1,0),(2,1),(2,0)]
+#guard readCon (conC [(0,0),(1,1),(2,2)]) = translate [(0,0),(1,1),(2,2)]
+#guard readCon (conC [(0,0),(1,1),(1,1),(1,0),(2,1),(2,1),(2,0)])
      = translate [(0,0),(1,1),(1,1),(1,0),(2,1),(2,1),(2,0)]
-#guard readC (conC [(0,0),(1,1),(2,2),(1,0),(2,1),(3,2),(2,0)])
+#guard readCon (conC [(0,0),(1,1),(2,2),(1,0),(2,1),(3,2),(2,0)])
      = translate [(0,0),(1,1),(2,2),(1,0),(2,1),(3,2),(2,0)]
 
 /-! ### 動作確認（縮約） -/
