@@ -1296,6 +1296,197 @@ theorem convC_nodip : ∀ (n : ℕ) (L : PairSeq), L.length ≤ n → ∀ (d ple
         rintro ⟨-, h2, -⟩
         exact hcase (by simpa using h2)
 
+/-! ### 縮約つきの主定理
+
+    readC (convC M d plev first force) first plev = translate M
+
+仮定は `convD` のときと同じ（`blockok` / `bd ≤ d` / `colOK` / `descOK`）。 -/
+
+/-- 影を挟まないとき、出力の 2 列目は影の形にならない。 -/
+theorem convC_head_ne_shadow {A B : PairSeq} {dd d plev v : ℕ} {force : Bool}
+    (hdd : d ≤ dd) (hB : B = [] ∨ ¬ ((B.headI).2 = v + 1)) :
+    (convC A (dd + 1) v true true ++ convC B d plev force false).headI ≠ (dd + 1, v + 1) := by
+  cases A with
+  | cons q A' =>
+    have hXne : convC (q :: A') (dd + 1) v true true ≠ [] := by
+      simp only [ne_eq, convC_eq_nil_iff]; simp
+    rw [headI_append_left hXne, convC_headI]
+    by_cases hl : ladOf q.2 (dd + 1) v true true = true
+    · rw [if_pos hl]
+      intro he
+      have h2 := congrArg Prod.snd he
+      simp only [] at h2
+      omega
+    · rw [if_neg hl]
+      intro he
+      have h1 : q.2 = v + 1 := congrArg Prod.snd he
+      exact hl (by simp [ladOf, h1])
+  | nil =>
+    rw [convC_nil, List.nil_append]
+    cases B with
+    | nil => rw [convC_nil]; intro he; exact absurd (congrArg Prod.snd he) (by simp)
+    | cons q B' =>
+      rw [convC_headI]
+      by_cases hl : ladOf q.2 d plev force false = true
+      · rw [if_pos hl]
+        intro he
+        have h2 : d = dd + 1 := congrArg Prod.fst he
+        omega
+      · rw [if_neg hl]
+        intro he
+        have h1 : q.2 = v + 1 := congrArg Prod.snd he
+        rcases hB with h | h
+        · simp at h
+        · simp only [List.headI_cons] at h; exact h h1
+
+theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
+    ∀ (bd d plev : ℕ) (first force : Bool),
+      blockok bd M → bd ≤ d → colOK M → descOK M →
+      readC (convC M d plev first force) first plev = translate M := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM bd d plev first force _ _ _ _
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    rw [convC_nil, readC, translate]
+  | succ n ih =>
+    intro M hM bd d plev first force hb hbd hc hd
+    match M with
+    | [] => rw [convC_nil, readC, translate]
+    | p :: r =>
+      have hp : p.1 = bd := by simpa using hb.1 (by simp)
+      obtain ⟨y, rfl⟩ : ∃ y, p = (bd, y) := ⟨p.2, by rw [← hp]⟩
+      set A := r.takeWhile (fun q => ((bd, y) : ℕ × ℕ).1 < q.1) with hAdef
+      set B := r.dropWhile (fun q => ((bd, y) : ℕ × ℕ).1 < q.1) with hBdef
+      have hlA : A.length ≤ n := by
+        rw [hAdef]
+        have h1 := (List.takeWhile_sublist
+          (fun q : ℕ × ℕ => ((bd, y) : ℕ × ℕ).1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hM
+        omega
+      have hlB : B.length ≤ n := by
+        rw [hBdef]
+        have h1 := List.length_dropWhile_le (fun q : ℕ × ℕ => ((bd, y) : ℕ × ℕ).1 < q.1) r
+        simp only [List.length_cons] at hM
+        omega
+      have hbA : blockok (bd + 1) A := by rw [hAdef]; exact blockok_arg hb
+      have hbB : blockok bd B := by rw [hBdef]; exact blockok_tail hb
+      have hcA : colOK A := fun c hcm => by
+        rw [hAdef] at hcm
+        exact hc c (List.mem_cons_of_mem _ ((List.takeWhile_sublist _).subset hcm))
+      have hcB : colOK B := fun c hcm => by
+        rw [hBdef] at hcm
+        exact hc c (List.mem_cons_of_mem _ ((List.dropWhile_sublist _).subset hcm))
+      obtain ⟨hdh, hdA, hdB⟩ := descOK_cons.1 hd
+      rw [← hAdef] at hdA
+      rw [← hBdef] at hdh hdB
+      have hyd : y ≤ d := by
+        have h1 : ((bd, y) : ℕ × ℕ).2 ≤ ((bd, y) : ℕ × ℕ).1 := hc (bd, y) (by simp)
+        simp only [] at h1
+        omega
+      set dd := ddOf y d plev first force with hdd
+      have hddd : d ≤ dd := le_ddOf _ _ _ _ _
+      -- 後続側の像の先頭は深さ `dd` 以下
+      have hYshallow : convC B d y false false = [] ∨
+          ((convC B d y false false).headI).1 ≤ dd := by
+        cases hBe : B with
+        | nil => left; rw [convC_nil]
+        | cons q B' =>
+          right
+          have h1 := convC_head_le q B' d y false false
+          have hq2 : q.2 ≤ y := by
+            have h0 := hdh (by rw [hBe]; simp)
+            rw [hBe] at h0
+            simpa using h0
+          have h2 : ddOf q.2 d y false false ≤ dd := by
+            have hnl : ladOf q.2 d y false false = false := by simp [ladOf]
+            unfold ddOf
+            rw [if_neg (by rw [hnl]; simp)]
+            by_cases hcase : 0 < q.2 ∧ d ≤ q.2
+            · rw [if_pos hcase]
+              have hyy : y = d := by omega
+              have : dd = d + 1 := by
+                rw [hdd]
+                unfold ddOf
+                by_cases hl : ladOf y d plev first force = true
+                · rw [if_pos hl]
+                · rw [if_neg hl, if_pos ⟨by omega, by omega⟩]; omega
+              omega
+            · rw [if_neg hcase]; omega
+          omega
+      have iA : ∀ (dA : ℕ) (fo : Bool), bd + 1 ≤ dA →
+          readC (convC A dA y true fo) true y = translate A :=
+        fun dA fo h => ih A hlA (bd + 1) dA y true fo hbA h hcA hdA
+      have iB : readC (convC B d y false false) false y = translate B :=
+        ih B hlB bd d y false false hbB hbd hcB hdB
+      by_cases hl : ladOf y d plev first force = true
+      · -- 影を挟む。`ladOf` から段は親の +1、`first` は真
+        have hyp : y = plev + 1 := by simp [ladOf] at hl; omega
+        have hf : first = true := by simp [ladOf] at hl; tauto
+        have hdd1 : dd = d + 1 := by rw [hdd]; unfold ddOf; rw [if_pos hl]
+        subst hf
+        rcases hcc : contrLen (bd, y) B (sibRun (bd, y) B) A with _ | ⟨rest2, Bq⟩
+        · -- 縮約なし
+          rw [convC_cons_lad_none (bd, y) r d plev true force hl (by rw [← hAdef, ← hBdef]; exact hcc)]
+          simp only [← hAdef, ← hBdef]
+          have hXge : ∀ c ∈ convC A (d + 2) y true false, d + 1 < c.1 := by
+            intro c hcm
+            have := convC_ge' A (d + 2) y true false c hcm
+            omega
+          have hYh : convC B d y false false = [] ∨
+              ¬ (d + 1 < ((convC B d y false false).headI).1) := by
+            rcases hYshallow with h | h
+            · exact Or.inl h
+            · exact Or.inr (by omega)
+          obtain ⟨e1, e2⟩ := split_append hXge hYh
+          rw [readC_shadow (p := ((d, plev) : ℕ × ℕ)) (top := ((d + 1, y) : ℕ × ℕ))
+            rfl rfl (by simp [hyp]) ?hnd]
+          · simp only []
+            rw [e1, e2, iA (d + 2) false (by omega), iB, translate]
+          · case hnd =>
+            simp only []
+            rw [e2]
+            exact convC_nodip B.length B (Nat.le_refl _) d y hyd hdB
+              (fun hne => hdh hne)
+        · -- 縮約あり
+          rw [convC_cons_lad_some (bd, y) r d plev true force hl (by rw [← hAdef, ← hBdef]; exact hcc)]
+          simp only [← hAdef, ← hBdef]
+          sorry
+      · -- 影を挟まない
+        have hdd0 : dd = ddOf y d plev first force := hdd
+        rw [convC_cons_nolad (bd, y) r d plev first force (by simpa using hl)]
+        simp only [← hAdef, ← hBdef, ← hdd0]
+        have hXge : ∀ c ∈ convC A (dd + 1) y true (first && (y == plev)),
+            dd < c.1 := by
+          intro c hcm
+          have := convC_ge' A (dd + 1) y true (first && (y == plev)) c hcm
+          omega
+        have hYh : convC B d y false false = [] ∨
+            ¬ (dd < ((convC B d y false false).headI).1) := by
+          rcases hYshallow with h | h
+          · exact Or.inl h
+          · exact Or.inr (by omega)
+        obtain ⟨e1, e2⟩ := split_append hXge hYh
+        rw [readC_plain ?hne]
+        · simp only []
+          rw [e1, e2, iA (dd + 1) _ (by omega), iB, translate]
+        · rintro ⟨hf, hlv, hhd⟩
+          simp only [] at hlv hhd
+          have hforce : (first && (y == plev)) = true := by
+            rw [Bool.and_eq_true]
+            exact ⟨hf, by simp [hlv]⟩
+          rw [hforce] at hhd
+          refine convC_head_ne_shadow (A := A) (B := B) (dd := dd) (d := d) (v := y) hddd ?_ hhd
+          cases hBe : B with
+          | nil => exact Or.inl rfl
+          | cons q B' =>
+            right
+            have h0 := hdh (by rw [hBe]; simp)
+            rw [hBe] at h0
+            simp only [List.headI_cons] at h0 ⊢
+            omega
+
 /-! ## 8. 仮定は BMS 標準形なら自動で成り立つ
 
 `blockok 0` は `Pair/Seqlex.lean` の `blockok_ST_PS`。
