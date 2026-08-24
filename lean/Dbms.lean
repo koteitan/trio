@@ -146,4 +146,49 @@ def stair (M : PairSeq) : PairSeq :=
 #guard stair [(0,0),(1,1),(1,0)] = [(0,0),(1,0),(2,1),(1,0)]
 #guard stair [(0,0),(1,1),(1,0),(2,1)] = [(0,0),(1,0),(2,1),(1,0),(2,1)]
 
+/-! ## 4. DBMS の読み `translateD`
+
+`Pair/Term.lean` の `translate` は「行 1 = 添字、行 0 = 森」で BMS の行列を項に読む。
+DBMS では対角が `(j, j-1)` なので、読み方が変わる。264 件のシートの対で確かめた形:
+
+* 添字は行 1、森は行 0（ここは同じ）
+* **`(+1,+1)` で続く連**（DBMS の対角の段）は、添字を引数側に入れ子にした鎖になる。
+  例: `(1,0)(2,1)(3,2)` は `P1(P2(Z,Z),Z)`
+* 連を取るのは「親の最初の子」かつ「**底の段が親と同じ**」ときだけ。
+  段が下がっていればそれは影ではなく新しい加算項の頭
+* 連のあとに続く列は、その**行 0（深さ）に対応する段**のノードの後続になる。
+  連より浅い列は連全体の後続
+* 連の長さが 1 で、兄弟が尽きたあと**同じ深さで段が下がる**列が来るときは、
+  その連は BMS 側で「梯子」と「本体」の二役を兼ねている（縮約で 1 本に潰れている）ので
+  `P 影の段 (頂上から読み直したもの) (残り)` と開き直す
+
+Python 版は `tools/dbms/translateD_search.py` の `mk_chain4`（264/264）。
+-/
+
+/-- `p` から始まる連の長さ。`(+1,+1)` で続く限り伸びる。 -/
+def runLen (p : ℕ × ℕ) : PairSeq → ℕ
+  | [] => 0
+  | q :: r => if q.1 = p.1 + 1 ∧ q.2 = p.2 + 1 then runLen q r + 1 else 0
+
+/-- 連の頂上。 -/
+def runTop (p : ℕ × ℕ) : PairSeq → ℕ × ℕ
+  | [] => p
+  | q :: r => if q.1 = p.1 + 1 ∧ q.2 = p.2 + 1 then runTop q r else p
+
+/-- 連は先頭からの**接頭辞**である。あとで `seqlex` との整合を示すときに効く。 -/
+theorem runLen_le (p : ℕ × ℕ) (l : PairSeq) : runLen p l ≤ l.length := by
+  induction l generalizing p with
+  | nil => simp [runLen]
+  | cons q r ih =>
+    by_cases h : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1
+    · simpa [runLen, h] using Nat.succ_le_succ (ih q)
+    · simp [runLen, h]
+
+/-! ### 動作確認（連） -/
+
+#guard runLen (1, 0) [(2,1),(3,2)] = 2
+#guard runTop (1, 0) [(2,1),(3,2)] = (3, 2)
+#guard runLen (1, 0) [(2,1),(3,0)] = 1
+#guard runLen (0, 0) [(1,0)] = 0
+
 end DBMS
