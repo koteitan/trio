@@ -1296,6 +1296,43 @@ theorem convC_nodip : ∀ (n : ℕ) (L : PairSeq), L.length ≤ n → ∀ (d ple
         rintro ⟨-, h2, -⟩
         exact hcase (by simpa using h2)
 
+/-- 同じ列を `k` 本並べたあとが違う列なら、`takeWhile`/`dropWhile` はそこで切れる。 -/
+theorem takeDrop_replicate (c : ℕ × ℕ) (L : PairSeq) (hL : L.headI ≠ c) :
+    ∀ k, ((List.replicate k c ++ L).takeWhile fun x => x = c) = List.replicate k c ∧
+      ((List.replicate k c ++ L).dropWhile fun x => x = c) = L := by
+  intro k
+  induction k with
+  | zero =>
+    simp only [List.replicate_zero, List.nil_append]
+    cases hLe : L with
+    | nil => simp
+    | cons a L' =>
+      rw [hLe] at hL
+      simp only [List.headI_cons] at hL
+      exact ⟨List.takeWhile_cons_of_neg (by simpa using hL),
+        List.dropWhile_cons_of_neg (by simpa using hL)⟩
+  | succ k ih =>
+    rw [List.replicate_succ, List.cons_append,
+      List.takeWhile_cons_of_pos (by simp), List.dropWhile_cons_of_pos (by simp)]
+    exact ⟨by rw [ih.1], ih.2⟩
+
+/-- 深さでの切り分け（`≤` 版）。 -/
+theorem split_append_le {X Y : PairSeq} {dd : ℕ}
+    (hX : ∀ c ∈ X, dd ≤ c.1) (hY : Y = [] ∨ ¬ (dd ≤ (Y.headI).1)) :
+    ((X ++ Y).takeWhile fun q => dd ≤ q.1) = X ∧
+      ((X ++ Y).dropWhile fun q => dd ≤ q.1) = Y := by
+  have hYt : (Y.takeWhile fun q => dd ≤ q.1) = [] ∧ (Y.dropWhile fun q => dd ≤ q.1) = Y := by
+    rcases hY with rfl | h
+    · simp
+    · match Y with
+      | [] => simp
+      | q :: Y' =>
+        exact ⟨List.takeWhile_cons_of_neg (by simpa using h),
+          List.dropWhile_cons_of_neg (by simpa using h)⟩
+  refine ⟨?_, ?_⟩
+  · rw [takeWhile_append_all (by simpa using hX), hYt.1, List.append_nil]
+  · rw [dropWhile_append_all (by simpa using hX), hYt.2]
+
 /-- `contrLen` が返す `rest2` / `Bq` は元の後続ブロックの部分列。 -/
 theorem contrLen_sublists {p : ℕ × ℕ} {B A rest2 Bq : PairSeq} {k : ℕ}
     (h : contrLen p B k A = some (rest2, Bq)) :
@@ -1599,6 +1636,44 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
                 rw [hZ, hbe, convC_headI, if_neg (by rw [hcl]; simp), hde]
               rw [this, htop]
               exact ⟨Nat.le_refl d, by intro he; have := congrArg Prod.fst he; omega⟩
+          -- 読みの分解
+          have hXge : ∀ c ∈ X, d + 1 < c.1 := by
+            intro c hcm
+            have := convC_ge' A (d + 2) y true false c hcm
+            omega
+          have hRest : (List.replicate k top ++ (Y ++ Z)) = [] ∨
+              ¬ (d + 1 < ((List.replicate k top ++ (Y ++ Z)).headI).1) := by
+            cases k with
+            | zero =>
+              right
+              simp only [List.replicate_zero, List.nil_append]
+              rw [headI_append_left hYne, hYhd]
+              omega
+            | succ k' => right; rw [List.replicate_succ, List.cons_append, htop]; simp
+          obtain ⟨eT1, eT2⟩ := split_append hXge hRest
+          have hYZne : (Y ++ Z) ≠ [] := by
+            intro he; exact hYne (List.append_eq_nil_iff.1 he).1
+          have hYZhd : (Y ++ Z).headI = Y.headI := headI_append_left hYne
+          have hsib : ((List.replicate k top ++ (Y ++ Z)).takeWhile fun c => c = top)
+                = List.replicate k top
+              ∧ ((List.replicate k top ++ (Y ++ Z)).dropWhile fun c => c = top) = (Y ++ Z) := by
+            refine takeDrop_replicate top (Y ++ Z) ?_ k
+            rw [hYZhd]
+            intro he
+            rw [he, htop] at hYlev
+            simp only [] at hYlev
+            omega
+          -- 二役の条件
+          have hdual : dipAt d y ((Y ++ Z)) := by
+            refine ⟨hYZne, ?_, ?_⟩
+            · rw [hYZhd, hYhd]
+            · rw [hYZhd]; exact hYlev
+          have hYZge : ∀ c ∈ Y, d + 1 ≤ c.1 := hYge
+          have hZh : Z = [] ∨ ¬ (d + 1 ≤ ((Z.headI).1)) := by
+            rcases hZsh with h | ⟨h, -⟩
+            · exact Or.inl h
+            · exact Or.inr (by omega)
+          obtain ⟨eD1, eD2⟩ := split_append_le hYZge hZh
           sorry
       · -- 影を挟まない
         have hdd0 : dd = ddOf y d plev first force := hdd
