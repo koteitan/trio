@@ -16,6 +16,8 @@ tools/dbms/verify_gen.py --rows2 で生成した 4668 個で確認済み）。
 展開 `oper`・親子関係は `Pair/Pss.lean`（YAPSS 名前空間）のものをそのまま使う。
 -/
 import Pair.Pss
+import Pair.Term
+import Pair.Seqlex
 
 namespace DBMS
 
@@ -190,5 +192,132 @@ theorem runLen_le (p : ℕ × ℕ) (l : PairSeq) : runLen p l ≤ l.length := by
 #guard runTop (1, 0) [(2,1),(3,2)] = (3, 2)
 #guard runLen (1, 0) [(2,1),(3,0)] = 1
 #guard runLen (0, 0) [(1,0)] = 0
+
+/-! ### translateD 本体 -/
+
+/-- 深さ `a` の子（引数）になる先頭部分の長さ。 -/
+def argLen (a : ℕ) : PairSeq → ℕ
+  | [] => 0
+  | q :: r => if a < q.1 then argLen a r + 1 else 0
+
+/-- 同じ深さ・同じ段の兄弟の数。 -/
+def sibLen (t : ℕ × ℕ) : PairSeq → ℕ
+  | [] => 0
+  | q :: r => if q.1 = t.1 ∧ q.2 = t.2 then sibLen t r + 1 else 0
+
+/-- 深さが `a` 以上で続く先頭部分の長さ。 -/
+def deepLen (a : ℕ) : PairSeq → ℕ
+  | [] => 0
+  | q :: r => if a ≤ q.1 then deepLen a r + 1 else 0
+
+/-- 長さの上界（停止性に使う）。 -/
+theorem argLen_le (a : ℕ) (l : PairSeq) : argLen a l ≤ l.length := by
+  induction l with
+  | nil => simp [argLen]
+  | cons q r ih =>
+    by_cases h : a < q.1
+    · simpa [argLen, h] using Nat.succ_le_succ ih
+    · simp [argLen, h]
+
+theorem sibLen_le (t : ℕ × ℕ) (l : PairSeq) : sibLen t l ≤ l.length := by
+  induction l with
+  | nil => simp [sibLen]
+  | cons q r ih =>
+    by_cases h : q.1 = t.1 ∧ q.2 = t.2
+    · simpa [sibLen, h] using Nat.succ_le_succ ih
+    · simp [sibLen, h]
+
+theorem deepLen_le (a : ℕ) (l : PairSeq) : deepLen a l ≤ l.length := by
+  induction l with
+  | nil => simp [deepLen]
+  | cons q r ih =>
+    by_cases h : a ≤ q.1
+    · simpa [deepLen, h] using Nat.succ_le_succ ih
+    · simp [deepLen, h]
+
+/-- 連の列そのもの `[c_1, …, c_k]`（先頭 `p` は含まない）。 -/
+def runList (p : ℕ × ℕ) : PairSeq → PairSeq
+  | [] => []
+  | q :: r => if q.1 = p.1 + 1 ∧ q.2 = p.2 + 1 then q :: runList q r else []
+
+theorem runList_length (p : ℕ × ℕ) (l : PairSeq) : (runList p l).length ≤ l.length := by
+  induction l generalizing p with
+  | nil => simp [runList]
+  | cons q r ih =>
+    by_cases h : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1
+    · simpa [runList, h] using Nat.succ_le_succ (ih q)
+    · simp [runList, h]
+
+open YAPSS.Three in
+/-- 同じ段のノードを `n` 個、後続の向きに重ねる（連の兄弟ぶん）。 -/
+def wrapN : ℕ → ℕ → Three → Three
+  | 0, _, t => t
+  | Nat.succ n, s, t => P s Z (wrapN n s t)
+
+open YAPSS.Three in
+mutual
+
+/-- DBMS の読み（燃料つき）。`first` は「親の最初の子か」、`plev` は「親の段」。
+
+燃料は列の本数を渡す。`transD` がそれを噛ませる。停止性を構造で示すかわりに
+燃料で回すのは、連の切れ目が後続を見て決まるため（`runLen`）で、
+証明の側では `transD_spec`（燃料が足りていれば値が変わらない）で吸収する。 -/
+def transDF : ℕ → PairSeq → Bool → ℕ → Three
+  | _, [], _, _ => Z
+  | 0, _, _, _ => Z
+  | Nat.succ fuel, p :: rest, first, plev =>
+      let k := if first = true ∧ p.2 = plev then runLen p rest else 0
+      let top := if k = 0 then p else runTop p rest
+      let tail := rest.drop k
+      let i := argLen top.1 tail
+      let arg := transDF fuel (tail.take i) true top.2
+      let after := tail.drop i
+      let j := sibLen top after
+      let r2 := after.drop j
+      if k = 1 ∧ r2 ≠ [] ∧ (r2.headI).1 = top.1 ∧ (r2.headI).2 < top.2 then
+        -- 連が「梯子 + 本体」の二役。頂上から読み直す
+        let m := deepLen top.1 r2
+        let inner := transDF fuel (top :: (tail.take i ++ after.take j ++ r2.take m)) true p.2
+        P top.2 arg
+          (wrapN j top.2 (P p.2 inner (transDF fuel (r2.drop m) false plev)))
+      else if k ≤ 1 then
+        -- 段が 1 つなら振り分けるものがない。残りは全部この段の後続
+        P top.2 arg (transDF fuel after false top.2)
+      else
+        -- 連の各段に、後続を深さで振り分けて鎖にする
+        let n0 := deepLen top.1 after
+        let node0 := P top.2 arg (transDF fuel (after.take n0) false top.2)
+        chainDF fuel ((runList p rest).dropLast.reverse) node0 (after.drop n0) plev
+
+/-- 連の途中の段を、内側から外へ積む。後続はその段の深さで切り分ける。
+一番外の段には、連より浅い列（残り全部）が後続として付く。 -/
+def chainDF : ℕ → PairSeq → Three → PairSeq → ℕ → Three
+  | _, [], node, _, _ => node
+  | 0, _, node, _, _ => node
+  | Nat.succ fuel, [c], node, rest, plev =>
+      P c.2 node (transDF fuel rest false plev)
+  | Nat.succ fuel, c :: cs, node, rest, plev =>
+      let n := deepLen c.1 rest
+      chainDF fuel cs (P c.2 node (transDF fuel (rest.take n) false c.2))
+        (rest.drop n) plev
+
+end
+
+/-- DBMS の読み。 -/
+def transD (l : PairSeq) : Three := transDF (l.length + 1) l true 0
+
+/-! ### 動作確認（代表例。264 件の全数検査は `DbmsAll.lean`） -/
+
+open YAPSS.Three in
+#guard transD [(0,0)] = P 0 Z Z
+open YAPSS.Three in
+#guard transD [(0,0),(1,0),(2,1)] = P 0 (P 1 Z Z) Z
+open YAPSS.Three in
+#guard transD [(0,0),(1,0)] = P 0 (P 0 Z Z) Z
+open YAPSS.Three in
+#guard transD [(0,0),(1,0),(2,1),(3,2)] = P 0 (P 1 (P 2 Z Z) Z) Z
+open YAPSS.Three in
+#guard transD [(0,0),(1,0),(2,1),(2,0)]
+    = P 0 (P 1 Z (P 0 (P 1 Z (P 0 Z Z)) Z)) Z
 
 end DBMS
