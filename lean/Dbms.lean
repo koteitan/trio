@@ -1095,6 +1095,65 @@ theorem readC_replicate (c : ℕ × ℕ) (Y : PairSeq)
     rw [e1, e2, ih, wrapN]
     simp [readC]
 
+/-- 同じ列を `k` 本並べたあとに `L` が続くとき、`convC` は同じ列を `k` 本出す。 -/
+theorem convC_replicate (c : ℕ × ℕ) (L : PairSeq) (d : ℕ)
+    (hdd : ddOf c.2 d c.2 false false = d)
+    (hL : L = [] ∨ ¬ (c.1 < (L.headI).1)) :
+    ∀ k, convC (List.replicate k c ++ L) d c.2 false false
+        = List.replicate k ((d, c.2) : ℕ × ℕ) ++ convC L d c.2 false false := by
+  intro k
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hh : (List.replicate k c ++ L) = [] ∨ ¬ (c.1 < ((List.replicate k c ++ L).headI).1) := by
+      cases k with
+      | zero => simpa using hL
+      | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+    obtain ⟨e1, e2⟩ := head_stop (a := c.1) hh
+    rw [List.replicate_succ, List.cons_append,
+      convC_cons_nolad c _ d c.2 false false (by simp [ladOf])]
+    simp only [hdd, e1, e2, convC_nil, List.nil_append, ih, List.replicate_succ,
+      List.cons_append]
+
+/-- 同じ列を `k` 本剥がしても `descOK` は残る。 -/
+theorem descOK_replicate (c : ℕ × ℕ) (L : PairSeq)
+    (hL : L = [] ∨ ¬ (c.1 < (L.headI).1)) :
+    ∀ k, descOK (List.replicate k c ++ L) → descOK L := by
+  intro k
+  induction k with
+  | zero => intro h; simpa using h
+  | succ k ih =>
+    intro h
+    have hh : (List.replicate k c ++ L) = [] ∨ ¬ (c.1 < ((List.replicate k c ++ L).headI).1) := by
+      cases k with
+      | zero => simpa using hL
+      | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+    obtain ⟨-, e2⟩ := head_stop (a := c.1) hh
+    rw [List.replicate_succ, List.cons_append] at h
+    have := (descOK_cons.1 h).2.2
+    rw [e2] at this
+    exact ih this
+
+/-- 同じ列を `k` 本剥がしても `blockok` は残る。 -/
+theorem blockok_replicate (d y : ℕ) (L : PairSeq)
+    (hL : L = [] ∨ ¬ (d < (L.headI).1)) :
+    ∀ k, blockok d (List.replicate k ((d, y) : ℕ × ℕ) ++ L) → blockok d L := by
+  intro k
+  induction k with
+  | zero => intro h; simpa using h
+  | succ k ih =>
+    intro h
+    have hh : (List.replicate k ((d, y) : ℕ × ℕ) ++ L) = [] ∨
+        ¬ (d < ((List.replicate k ((d, y) : ℕ × ℕ) ++ L).headI).1) := by
+      cases k with
+      | zero => simpa using hL
+      | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+    obtain ⟨-, e2⟩ := head_stop (a := d) hh
+    rw [List.replicate_succ, List.cons_append] at h
+    have h2 := blockok_tail h
+    rw [e2] at h2
+    exact ih h2
+
 theorem steps1_drop : ∀ (n : ℕ) {L : PairSeq}, steps1 L → steps1 (L.drop n) := by
   intro n
   induction n with
@@ -1108,6 +1167,34 @@ theorem steps1_drop : ∀ (n : ℕ) {L : PairSeq}, steps1 L → steps1 (L.drop n
 theorem blockok_drop {d n : ℕ} {L : PairSeq} (h : blockok d L)
     (hh : L.drop n ≠ [] → ((L.drop n).headI).1 = d) : blockok d (L.drop n) :=
   ⟨hh, fun c hc => h.2.1 c ((List.drop_sublist n L).subset hc), steps1_drop n h.2.2⟩
+
+open Three in
+/-- 縮約で使い回される前置きの読み。BMS 側の「2 度目」がこの形になる。 -/
+theorem translate_contrPre (p : ℕ × ℕ) (k : ℕ) (A rest2 : PairSeq)
+    (hA : ∀ c ∈ A, p.1 < c.1)
+    (hr : rest2 = [] ∨ ¬ (p.1 + 1 < (rest2.headI).1)) :
+    translate (contrPre p k A ++ rest2)
+      = P p.2 (translate A) (wrapN k p.2 (translate rest2)) := by
+  have hsh : ∀ c ∈ shift1 A, p.1 + 1 < c.1 := by
+    intro c hc
+    simp only [shift1, List.mem_map] at hc
+    obtain ⟨c', hc', rfl⟩ := hc
+    have := hA c' hc'
+    simp only []
+    omega
+  have hrest : (List.replicate k ((p.1 + 1, p.2) : ℕ × ℕ) ++ rest2) = [] ∨
+      ¬ (p.1 + 1 < ((List.replicate k ((p.1 + 1, p.2) : ℕ × ℕ) ++ rest2).headI).1) := by
+    cases k with
+    | zero => simpa using hr
+    | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+  have he : contrPre p k A ++ rest2
+      = (p.1 + 1, p.2) :: (shift1 A ++ (List.replicate k ((p.1 + 1, p.2) : ℕ × ℕ) ++ rest2)) := by
+    simp [contrPre]
+  obtain ⟨e1, e2⟩ := split_append (dd := p.1 + 1) hsh hrest
+  rw [he, translate]
+  simp only []
+  rw [e1, e2, translate_shift1 A.length A (Nat.le_refl _),
+    translate_replicate ((p.1 + 1, p.2) : ℕ × ℕ) rest2 (by simpa using hr) k]
 
 /-! ## 8. 仮定は BMS 標準形なら自動で成り立つ
 
