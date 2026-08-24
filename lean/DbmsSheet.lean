@@ -62,20 +62,10 @@ theorem runLen_le (p : ℕ × ℕ) (l : PairSeq) : runLen p l ≤ l.length := by
 
 /-! ### translateD 本体 -/
 
-/-- 深さ `a` の子（引数）になる先頭部分の長さ。 -/
-def argLen (a : ℕ) : PairSeq → ℕ
-  | [] => 0
-  | q :: r => if a < q.1 then argLen a r + 1 else 0
-
 /-- 同じ深さ・同じ段の兄弟の数。 -/
 def sibLen (t : ℕ × ℕ) : PairSeq → ℕ
   | [] => 0
   | q :: r => if q.1 = t.1 ∧ q.2 = t.2 then sibLen t r + 1 else 0
-
-/-- 深さが `a` 以上で続く先頭部分の長さ。 -/
-def deepLen (a : ℕ) : PairSeq → ℕ
-  | [] => 0
-  | q :: r => if a ≤ q.1 then deepLen a r + 1 else 0
 
 /-- 長さの上界（停止性に使う）。 -/
 theorem argLen_le (a : ℕ) (l : PairSeq) : argLen a l ≤ l.length := by
@@ -114,12 +104,6 @@ theorem runList_length (p : ℕ × ℕ) (l : PairSeq) : (runList p l).length ≤
     by_cases h : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1
     · simpa [runList, h] using Nat.succ_le_succ (ih q)
     · simp [runList, h]
-
-open YAPSS.Three in
-/-- 同じ段のノードを `n` 個、後続の向きに重ねる（連の兄弟ぶん）。 -/
-def wrapN : ℕ → ℕ → Three → Three
-  | 0, _, t => t
-  | Nat.succ n, s, t => P s Z (wrapN n s t)
 
 open YAPSS.Three in
 mutual

@@ -36,14 +36,31 @@ BMS と DBMS は**展開規則が完全に同一**で、違うのは標準形の
 
 つまり **`conv` は 2 行 BMS 標準形の上で順序を保ち単射で、項（順序数）を保つ**。
 
+## 縮約つきの `conC` / `readC`（定義のみ、定理はまだ）
+
+`conv M` は DBMS の**標準形とは限らない**。BMS 2 行標準形 44653 個（≤8 列）のうち
+**120 個**で像が非標準になる（`(0,0)(1,1)(1,0)(2,1)(2,0)` 型。DBMS 側では
+梯子が二役を兼ねて縮む）。これを入れたのが `conC` / `readC`:
+
+| | `conv` | `conC` |
+|---|---|---|
+| シート 264 件に一致 | 245 | **264** |
+| 像が DBMS 標準形（≤8 列 44653 個） | 120 個が非標準 | **全部標準** |
+| `読み (変換 M) = translate M` | **定理**（本ファイル） | 全数検査のみ |
+
+`DbmsConv.lean` に 264 件の `conC A = E` と `readC E = translate A` の #guard。
+
 ## 残る穴
 
-`conv M` は DBMS の**標準形とは限らない**。`tools/dbms/rows2.py` によれば、
-BMS 2 行標準形 5351 個（≤9 列）のうち **78 個**で像が DBMS 非標準になる
-（`(0,0)(1,1)(1,0)(2,1)(2,0)` 型。DBMS 側では梯子が二役を兼ねて 2 列に縮む）。
-シートの 264 件では 245 件が `conv A` とそのまま一致し、19 件が縮約を要する
-（`DbmsConv.lean` に全数の #guard）。縮約された標準形のための読みは
-`DbmsSheet.lean` の `transD`（シート 264 件に一致、証明はまだ）。
+`conC` は DBMS 標準形 ≤6 列（358 個）には**全単射**だが、7 列で **6 個**外れる:
+
+    DBMS 標準形  (0,0)(1,0)(2,1)(3,2)(2,1)(3,1)(2,0)   ← 逆像が無い
+    conC の像    (0,0)(1,0)(2,1)(3,2)(2,1)(3,1)(1,0)
+
+この 2 つは `readC` でも同じ項に読まれる（`readC` は DBMS 標準形の上では単射でない）。
+まだ機構が足りないのか、それとも DBMS 2 行が BMS 2 行より真に細かいのかが未決。
+`conC` 自身は ord の定義から来る共終性の検査（`tools/dbms/cofinal_check.py`）を
+BMS 2 行標準形 7256 個（≤7 列）で 1 件も落とさない。
 
 展開 `oper`・親子関係は `Pair/Pss.lean`（YAPSS 名前空間）のものをそのまま使う。
 -/
@@ -486,6 +503,173 @@ theorem readD_convD : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
 theorem readD_conv {M : PairSeq} (hb : blockok 0 M) (hc : colOK M) (hd : descOK M) :
     readD (conv M) true 0 = translate M :=
   readD_convD M.length M (Nat.le_refl _) 0 0 0 true false hb (Nat.le_refl 0) hc hd
+
+/-! ## 7.5 縮約つきの変換 `convC`
+
+`convD` の像は DBMS 標準形とは限らない（BMS 2 行標準形 ≤8 列 44653 個のうち 120 個）。
+足りないのは「梯子の二役」で、規則はこう:
+
+> 梯子を敷いた直後の後続が「段 `plev` のノードで、その引数が
+> いま書いた（梯子＋本体＋兄弟）を **1 段深くしただけ**で一致」し、
+> さらにそのあとに**同じ深さで段が下がる列**が来るとき、2 度目を書かない。
+
+`convC` はシートの 264 件に **264/264** 一致し（`convD` は 245）、
+像は BMS 2 行標準形 ≤8 列 44653 個すべてで DBMS 標準形になる
+（`tools/dbms/rows2.py`）。読み `readC` は `readD` に「頂上から読み直す枝」を
+足したもの。定理はまだ（`readC (convC M) = translate M` は Python で全数確認）。 -/
+
+/-- ブロックを 1 段深くする。 -/
+def shift1 (B : PairSeq) : PairSeq := B.map (fun c => (c.1 + 1, c.2))
+
+/-- `l` の先頭が「深さ `dep`・段 `s` の列 + 引数 `A`」なら、その本数を返す。 -/
+def unitLen (dep s : ℕ) (A : PairSeq) (l : PairSeq) : Option ℕ :=
+  match l with
+  | [] => none
+  | q :: r =>
+      if q.1 = dep ∧ q.2 = s ∧ (r.takeWhile fun x => dep < x.1) = A then
+        some (A.length + 1)
+      else none
+
+/-- 引数なしの単位を `k` 個剥がした本数。 -/
+def unitsLen (dep s : ℕ) : ℕ → PairSeq → Option ℕ
+  | 0, _ => some 0
+  | Nat.succ k, l =>
+      match unitLen dep s [] l with
+      | none => none
+      | some n =>
+          match unitsLen dep s k (l.drop n) with
+          | none => none
+          | some m => some (n + m)
+
+/-- 先頭と同じ列が何本続くか。 -/
+def sibRun (p : ℕ × ℕ) : PairSeq → ℕ
+  | [] => 0
+  | q :: r => if q = p then sibRun p r + 1 else 0
+
+theorem sibRun_le (p : ℕ × ℕ) (l : PairSeq) : sibRun p l ≤ l.length := by
+  induction l with
+  | nil => simp [sibRun]
+  | cons q r ih =>
+    by_cases h : q = p
+    · simpa [sibRun, h] using Nat.succ_le_succ ih
+    · simp [sibRun, h]
+
+/-- 縮約が発火するときに「読み直しの先」に残る列数。発火しなければ `none`。 -/
+def contrLen (p : ℕ × ℕ) (B : PairSeq) (k : ℕ) (A : PairSeq) : Option (PairSeq × PairSeq) :=
+  match B.drop k with
+  | [] => none
+  | q :: r2 =>
+      if q.2 = p.2 - 1 ∧ q.1 = p.1 then
+        let Aq := r2.takeWhile fun x => q.1 < x.1
+        let Bq := r2.dropWhile fun x => q.1 < x.1
+        match unitLen (p.1 + 1) p.2 (shift1 A) Aq with
+        | none => none
+        | some n0 =>
+            match unitsLen (p.1 + 1) p.2 k (Aq.drop n0) with
+            | none => none
+            | some n1 =>
+                let rest2 := Aq.drop (n0 + n1)
+                if rest2 ≠ [] ∧ (rest2.headI).1 = p.1 + 1 ∧ (rest2.headI).2 < p.2 then
+                  some (rest2, Bq)
+                else none
+      else none
+
+/-- BMS 2 行 -> DBMS 2 行（縮約つき）。停止は燃料で回す
+（縮約の枝で残りが短くなることの証明は後回し。列数を渡せば足りる）。 -/
+def convCF : ℕ → PairSeq → ℕ → ℕ → Bool → Bool → PairSeq
+  | 0, _, _, _, _, _ => []
+  | _, [], _, _, _, _ => []
+  | Nat.succ fuel, p :: r, d, plev, first, force =>
+      let A := r.takeWhile fun q => p.1 < q.1
+      let B := r.dropWhile fun q => p.1 < q.1
+      if ladOf p.2 d plev first force then
+        let k := sibRun p B
+        match contrLen p B k A with
+        | some (rest2, Bq) =>
+            [(d, plev), (d + 1, p.2)]
+              ++ convCF fuel A (d + 2) p.2 true false
+              ++ List.replicate k ((d + 1, p.2) : ℕ × ℕ)
+              ++ convCF fuel rest2 (d + 1) p.2 false false
+              ++ convCF fuel Bq d p.2 false false
+        | none =>
+            [(d, plev), (d + 1, p.2)]
+              ++ convCF fuel A (d + 2) p.2 true false
+              ++ convCF fuel B d p.2 false false
+      else
+        [(ddOf p.2 d plev first force, p.2)]
+          ++ convCF fuel A (ddOf p.2 d plev first force + 1) p.2 true
+               (first && (p.2 == plev))
+          ++ convCF fuel B d p.2 false false
+
+/-- 縮約つきの変換の入口。 -/
+def conC (M : PairSeq) : PairSeq := convCF (M.length + 1) M 0 0 true false
+
+/-! ### 縮約つきの読み `readC`
+
+`readD` に「梯子が二役を兼ねている枝」を足したもの。二役のときは
+頂上から読み直す（読み直す列は元より必ず 1 本以上短いので整礎だが、
+ここでは燃料で回す）。 -/
+
+/-- 深さ `a` の子（引数）になる先頭部分の長さ。 -/
+def argLen (a : ℕ) : PairSeq → ℕ
+  | [] => 0
+  | q :: r => if a < q.1 then argLen a r + 1 else 0
+
+/-- 深さが `a` 以上で続く先頭部分の長さ。 -/
+def deepLen (a : ℕ) : PairSeq → ℕ
+  | [] => 0
+  | q :: r => if a ≤ q.1 then deepLen a r + 1 else 0
+
+open Three in
+/-- 同じ段のノードを `n` 個、後続の向きに重ねる。 -/
+def wrapN : ℕ → ℕ → Three → Three
+  | 0, _, t => t
+  | Nat.succ n, s, t => P s Z (wrapN n s t)
+
+open Three in
+def readCF : ℕ → PairSeq → Bool → ℕ → Three
+  | 0, _, _, _ => Z
+  | _, [], _, _ => Z
+  | Nat.succ fuel, p :: rest, first, plev =>
+      let shadow := first = true ∧ p.2 = plev ∧ rest.headI = (p.1 + 1, p.2 + 1)
+      let top := if shadow then rest.headI else p
+      let tail := if shadow then rest.tail else rest
+      let i := argLen top.1 tail
+      let arg := readCF fuel (tail.take i) true top.2
+      let after := tail.drop i
+      let j := sibRun top after
+      let r2 := after.drop j
+      if shadow ∧ r2 ≠ [] ∧ (r2.headI).1 = top.1 ∧ (r2.headI).2 < top.2 then
+        let m := deepLen top.1 r2
+        let inner := readCF fuel (top :: (tail.take i ++ after.take j ++ r2.take m)) true p.2
+        P top.2 arg (wrapN j top.2 (P p.2 inner (readCF fuel (r2.drop m) false plev)))
+      else
+        P top.2 arg (readCF fuel after false top.2)
+
+/-- 縮約つきの読み。 -/
+def readC (l : PairSeq) : Three := readCF (2 * l.length + 2) l true 0
+
+/-! ### 動作確認（readC） -/
+
+#guard readC (conC [(0,0),(1,1),(1,0),(2,1),(2,0)]) = translate [(0,0),(1,1),(1,0),(2,1),(2,0)]
+#guard readC (conC [(0,0),(1,1),(2,2)]) = translate [(0,0),(1,1),(2,2)]
+#guard readC (conC [(0,0),(1,1),(1,1),(1,0),(2,1),(2,1),(2,0)])
+     = translate [(0,0),(1,1),(1,1),(1,0),(2,1),(2,1),(2,0)]
+#guard readC (conC [(0,0),(1,1),(2,2),(1,0),(2,1),(3,2),(2,0)])
+     = translate [(0,0),(1,1),(2,2),(1,0),(2,1),(3,2),(2,0)]
+
+/-! ### 動作確認（縮約） -/
+
+-- 縮約が起きる最小の形
+#guard conC [(0,0),(1,1),(1,0),(2,1),(2,0)] = [(0,0),(1,0),(2,1),(2,0)]
+#guard conv [(0,0),(1,1),(1,0),(2,1),(2,0)] = [(0,0),(1,0),(2,1),(1,0),(2,1),(2,0)]
+-- 起きない形では conv と同じ
+#guard conC [(0,0),(1,1),(1,0),(2,1)] = [(0,0),(1,0),(2,1),(1,0),(2,1)]
+#guard conC [(0,0),(1,1),(2,2)] = [(0,0),(1,0),(2,1),(3,2)]
+-- 引数が空でない縮約
+#guard conC [(0,0),(1,1),(2,2),(1,0),(2,1),(3,2),(2,0)] = [(0,0),(1,0),(2,1),(3,2),(2,0)]
+-- 兄弟つきの縮約
+#guard conC [(0,0),(1,1),(1,1),(1,0),(2,1),(2,1),(2,0)] = [(0,0),(1,0),(2,1),(2,1),(2,0)]
 
 /-! ## 8. 仮定は BMS 標準形なら自動で成り立つ
 
