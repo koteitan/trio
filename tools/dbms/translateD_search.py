@@ -92,6 +92,49 @@ def mk_run_first(argsplit, run_on_succ=False):
     return lambda cols: go(cols, True)
 
 
+def mk_chain3(argsplit, dual=True):
+    """`mk_chain2` の 2 点直し。
+
+    * 連の鎖の**後続は一番外のノードに付く**（内側の段に付けてはいけない）。
+    * 二役の判定は「引数を取り切ったあと」に、同じ深さで段が下がる列が来るかで見る
+      （引数が空とは限らない）。
+    """
+    def go(cols, first, plev):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        if first and p[1] == plev:
+            k, top = runlen(p, rest)
+        else:
+            k, top = 0, p
+        tail = rest[k:]
+        i = argsplit(top, tail)
+        arg = go(tail[:i], True, top[1])
+        after = tail[i:]
+        # 同じ深さ・同じ段の兄弟は飛ばしてから、段が下がるかを見る
+        j = 0
+        while j < len(after) and after[j][0] == top[0] and after[j][1] == top[1]:
+            j += 1
+        rest2 = after[j:]
+        if (k >= 1 and dual and rest2
+                and rest2[0][0] == top[0] and rest2[0][1] < top[1]):
+            m = 0
+            while m < len(rest2) and rest2[m][0] >= top[0]:
+                m += 1
+            inner = go([top] + tail[:i] + after[:j] + rest2[:m], True, p[1])
+            succ = ('P', p[1], inner, go(rest2[m:], False, plev))
+            for _ in range(j):
+                succ = ('P', top[1], ('Z',), succ)
+        else:
+            succ = go(after, False, plev)
+        node = ('P', top[1], arg, ('Z',))
+        for t in range(k - 1, 0, -1):
+            node = ('P', rest[t - 1][1], node, ('Z',))
+        # 後続は一番外に付ける
+        return (node[0], node[1], node[2], succ)
+    return lambda cols: go(cols, True, 0)
+
+
 def mk_chain2(argsplit, dual=True):
     """連の底が「影」か「本物の列」かを、**親の段と同じか**で見分ける版。
 
@@ -272,6 +315,7 @@ CANDS = {
     '連は添字の鎖': (None, None),
     '連は添字の鎖（二役なし）': (None, None),
     '底が影かを親の段で判定': (None, None),
+    '後続は鎖の外・二役は引数の後ろで判定': (None, None),
 }
 
 
@@ -295,6 +339,8 @@ def main():
             f = mk_chain(split_row0, dual=False)
         elif name == '底が影かを親の段で判定':
             f = mk_chain2(split_row0, dual=True)
+        elif name == '後続は鎖の外・二役は引数の後ろで判定':
+            f = mk_chain3(split_row0, dual=True)
         else:
             f = mk(sub, split)
         ok = 0
