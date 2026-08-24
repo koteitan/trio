@@ -143,9 +143,13 @@ def mk_chain4(argsplit, dual=True):
                 n += 1
             succs.append(rest[:n])
             rest = rest[n:]
-        node = ('P', top[1], arg, go(succs[0] + rest, False, top[1]))
+        # 余った浅い列は連全体の後続なので、一番**外**の段に付ける
+        node = ('P', top[1], arg,
+                go(succs[0] + (rest if k == 1 else []), False, top[1]))
         for idx, t in enumerate(range(k - 1, 0, -1)):
-            node = ('P', run[t][1], node, go(succs[idx + 1], False, run[t][1]))
+            extra = rest if t == 1 else []
+            node = ('P', run[t][1], node,
+                    go(succs[idx + 1] + extra, False, run[t][1]))
         return node
     return lambda cols: go(cols, True, 0)
 
