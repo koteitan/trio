@@ -80,6 +80,97 @@ def convD(M, d=0, plev=0, first=True, force=False):
             + convD(B, d, s, False, False))
 
 
+def shift1(B):
+    """ブロックを 1 段深くする（行 0 に +1）。"""
+    return [(a + 1, b) for a, b in B]
+
+
+def convC(M, d=0, plev=0, first=True, force=False):
+    """`convD` に**縮約（梯子の二役）**を足したもの。シート 264 件に 264/264 一致。
+
+    梯子を敷いた直後の後続が「段 plev のノードで、その引数が
+    いま書いた（梯子＋本体＋兄弟）とそっくり同じ」で、さらにそのあとに
+    同じ深さで段が下がる列が来るとき、DBMS では 2 度目を書かない。
+    """
+    if not M:
+        return []
+    p, r = M[0], M[1:]
+    s = p[1]
+    A, B = split(p, r)
+    lad = first and s == plev + 1 and (d <= s or force)
+    dd = d + 1 if lad else (s + 1 if (s > 0 and d <= s) else d)
+    cols = [(d, plev), (d + 1, s)] if lad else [(dd, s)]
+    if lad:
+        k = 0
+        while k < len(B) and B[k] == p:
+            k += 1
+        B2 = B[k:]
+        if B2:
+            q, r2 = B2[0], B2[1:]
+            Aq, Bq = split(q, r2)
+            if q[1] == plev and Aq:
+                ok, rest2 = True, Aq
+                for t in range(k + 1):
+                    if not rest2 or rest2[0][1] != s or rest2[0][0] != p[0] + 1:
+                        ok = False
+                        break
+                    a2, rest2 = split(rest2[0], rest2[1:])
+                    if a2 != (shift1(A) if t == 0 else []):
+                        ok = False
+                        break
+                if ok and rest2 and rest2[0][0] == p[0] + 1 and rest2[0][1] < s:
+                    return (cols + convC(A, dd + 1, s, True, False) + [(dd, s)] * k
+                            + convC(rest2, dd, s, False, False)
+                            + convC(Bq, d, s, False, False))
+    return (cols + convC(A, dd + 1, s, True, (not lad) and first and s == plev)
+                 + convC(B, d, s, False, False))
+
+
+def _sibLen(t, l):
+    n = 0
+    while n < len(l) and l[n] == t:
+        n += 1
+    return n
+
+
+def _deepLen(a, l):
+    n = 0
+    while n < len(l) and a <= l[n][0]:
+        n += 1
+    return n
+
+
+def readC(cols, first=True, plev=0):
+    """`readD` に**梯子二役の枝**を足した読み。`readC(convC M) = translate M`。"""
+    if not cols:
+        return ('Z',)
+    p, rest = cols[0], cols[1:]
+    shadow = first and p[1] == plev and rest and rest[0] == (p[0] + 1, p[1] + 1)
+    top, tail = (rest[0], rest[1:]) if shadow else (p, rest)
+    i = 0
+    while i < len(tail) and top[0] < tail[i][0]:
+        i += 1
+    arg = readC(tail[:i], True, top[1])
+    after = tail[i:]
+    j = _sibLen(top, after)
+    r2 = after[j:]
+    if shadow and r2 and r2[0][0] == top[0] and r2[0][1] < top[1]:
+        m = _deepLen(top[0], r2)
+        inner = readC([top] + tail[:i] + after[:j] + r2[:m], True, p[1])
+        succ = ('P', p[1], inner, readC(r2[m:], False, plev))
+        for _ in range(j):
+            succ = ('P', top[1], ('Z',), succ)
+        return ('P', top[1], arg, succ)
+    return ('P', top[1], arg, readC(after, False, top[1]))
+
+
+def untranslate(t, d=0):
+    """`translate` の逆（項 -> BMS の行列）。"""
+    if t[0] == 'Z':
+        return []
+    return [(d, t[1])] + untranslate(t[2], d + 1) + untranslate(t[3], d)
+
+
 # ---------------------------------------------------------------- 仮定
 def colOK(M):
     return all(c[1] <= c[0] for c in M)
@@ -108,20 +199,28 @@ def seqlex(a, b):
     return len(a) < len(b)
 
 
-def gen(ver, lim, nmax=3):
-    """対角から展開して、`lim` 列以下の標準形を集める。"""
-    res = set()
-    dq = collections.deque(diag(ver, v, 2) for v in range(1, lim + 1))
-    while dq:
-        m = dq.popleft()
-        if m in res or len(m) > lim:
-            continue
-        res.add(m)
-        for n in range(1, nmax + 1):
-            e = expand(m, n)
-            if len(e) <= lim and e not in res:
-                dq.append(e)
-    return res
+def gen(ver, lim):
+    """`lim` 列以下の標準形を**全部**集める。
+
+    標準形の接頭辞は標準形なので（7774 個で違反 0 を確認）、
+    1 列ずつ伸ばしながら `isstd` で篩えば漏れなく数え上げられる。
+    対角からの BFS は展開の n を打ち切ると取りこぼす（旧版はこれで数を誤った）。
+    """
+    cur = [()]
+    out = set()
+    for _ in range(lim):
+        nxt = []
+        for S in cur:
+            amax = (S[-1][0] + 1) if S else 0
+            for a in range(amax + 1):
+                bmax = a if ver == 'BMS' else max(a - 1, 0)
+                for b in range(bmax + 1):
+                    T = S + ((a, b),)
+                    if isstd(T, ver):
+                        nxt.append(T)
+                        out.add(T)
+        cur = nxt
+    return out
 
 
 # ---------------------------------------------------------------- 検査
@@ -139,9 +238,24 @@ def main(lim=9):
           sum(1 for i in range(len(A) - 1) if not seqlex(W[i], W[i + 1])))
 
     ns = [(m, w) for m, w in zip(A, W) if not isstd(w, 'DBMS')]
-    print('  像が DBMS 非標準:', len(ns), '（残る穴）')
+    print('  像が DBMS 非標準:', len(ns), '（縮約が要る）')
     for m, w in ns[:3]:
         print('    ', show(m), '->', show(w))
+
+    print('convC（縮約あり）:')
+    V = [tuple(convC(list(m))) for m in A]
+    print('  readC(convC M) != translate M:',
+          sum(1 for m, v in zip(A, V) if readC(list(v)) != translate(list(m))))
+    print('  像が DBMS 非標準:', sum(1 for v in V if not isstd(v, 'DBMS')))
+    print('  単射:', len(set(V)) == len(V))
+    print('  seqlex 順序保存 NG:',
+          sum(1 for i in range(len(A) - 1) if not seqlex(V[i], V[i + 1])))
+
+    print('全射（DBMS 標準形 -> readC -> untranslate -> convC で戻るか）:')
+    for k in range(3, lim + 1):
+        D = gen('DBMS', k)
+        bad = sum(1 for N in D if tuple(convC(untranslate(readC(list(N))))) != N)
+        print('  <=%d 列: %d 個中 戻らない %d' % (k, len(D), bad))
 
 
 if __name__ == '__main__':
