@@ -521,26 +521,6 @@ theorem readD_conv {M : PairSeq} (hb : blockok 0 M) (hc : colOK M) (hd : descOK 
 /-- ブロックを 1 段深くする。 -/
 def shift1 (B : PairSeq) : PairSeq := B.map (fun c => (c.1 + 1, c.2))
 
-/-- `l` の先頭が「深さ `dep`・段 `s` の列 + 引数 `A`」なら、その本数を返す。 -/
-def unitLen (dep s : ℕ) (A : PairSeq) (l : PairSeq) : Option ℕ :=
-  match l with
-  | [] => none
-  | q :: r =>
-      if q.1 = dep ∧ q.2 = s ∧ (r.takeWhile fun x => dep < x.1) = A then
-        some (A.length + 1)
-      else none
-
-/-- 引数なしの単位を `k` 個剥がした本数。 -/
-def unitsLen (dep s : ℕ) : ℕ → PairSeq → Option ℕ
-  | 0, _ => some 0
-  | Nat.succ k, l =>
-      match unitLen dep s [] l with
-      | none => none
-      | some n =>
-          match unitsLen dep s k (l.drop n) with
-          | none => none
-          | some m => some (n + m)
-
 /-- 先頭と同じ列が何本続くか。 -/
 def sibRun (p : ℕ × ℕ) : PairSeq → ℕ
   | [] => 0
@@ -554,63 +534,71 @@ theorem sibRun_le (p : ℕ × ℕ) (l : PairSeq) : sibRun p l ≤ l.length := by
     · simpa [sibRun, h] using Nat.succ_le_succ ih
     · simp [sibRun, h]
 
-/-- 縮約が発火するときに「読み直しの先」に残る列数。発火しなければ `none`。 -/
+/-- 縮約で使い回される前置き: 本体の列 + その引数 + 兄弟のコピー。 -/
+def contrPre (p : ℕ × ℕ) (k : ℕ) (A : PairSeq) : PairSeq :=
+  ((p.1 + 1, p.2) :: shift1 A) ++ List.replicate k ((p.1 + 1, p.2) : ℕ × ℕ)
+
+/-- 縮約が発火するか。発火するなら（読み直しの先, 外の後続）を返す。 -/
 def contrLen (p : ℕ × ℕ) (B : PairSeq) (k : ℕ) (A : PairSeq) : Option (PairSeq × PairSeq) :=
   match B.drop k with
   | [] => none
   | q :: r2 =>
-      if q.2 = p.2 - 1 ∧ q.1 = p.1 then
-        let Aq := r2.takeWhile fun x => q.1 < x.1
-        let Bq := r2.dropWhile fun x => q.1 < x.1
-        match unitLen (p.1 + 1) p.2 (shift1 A) Aq with
-        | none => none
-        | some n0 =>
-            match unitsLen (p.1 + 1) p.2 k (Aq.drop n0) with
-            | none => none
-            | some n1 =>
-                let rest2 := Aq.drop (n0 + n1)
-                if rest2 ≠ [] ∧ (rest2.headI).1 = p.1 + 1 ∧ (rest2.headI).2 < p.2 then
-                  some (rest2, Bq)
-                else none
+      let Aq := r2.takeWhile fun x => q.1 < x.1
+      let Bq := r2.dropWhile fun x => q.1 < x.1
+      let rest2 := Aq.drop (contrPre p k A).length
+      if q.2 + 1 = p.2 ∧ q.1 = p.1 ∧ Aq.take (contrPre p k A).length = contrPre p k A ∧
+          rest2 ≠ [] ∧ (rest2.headI).1 = p.1 + 1 ∧ (rest2.headI).2 < p.2 then
+        some (rest2, Bq)
       else none
+
+/-- `contrLen` が返す形を読み解く。 -/
+theorem contrLen_spec {p : ℕ × ℕ} {B A rest2 Bq : PairSeq} {k : ℕ}
+    (h : contrLen p B k A = some (rest2, Bq)) :
+    ∃ q r2, B.drop k = q :: r2 ∧ q.2 + 1 = p.2 ∧ q.1 = p.1 ∧
+      (r2.takeWhile fun x => q.1 < x.1) = contrPre p k A ++ rest2 ∧
+      (r2.dropWhile fun x => q.1 < x.1) = Bq ∧
+      rest2 ≠ [] ∧ (rest2.headI).1 = p.1 + 1 ∧ (rest2.headI).2 < p.2 := by
+  unfold contrLen at h
+  rcases hd : B.drop k with _ | ⟨q, r2⟩ <;> rw [hd] at h
+  · simp at h
+  · refine ⟨q, r2, rfl, ?_⟩
+    simp only [] at h
+    split at h
+    · rename_i hcond
+      obtain ⟨c1, c2, c3, c4, c5, c6⟩ := hcond
+      simp only [Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨h1, h2⟩ := h
+      subst h1; subst h2
+      refine ⟨c1, c2, ?_, rfl, c4, c5, c6⟩
+      conv_lhs => rw [← List.take_append_drop (contrPre p k A).length
+        (r2.takeWhile fun x => q.1 < x.1)]
+      rw [c3]
+    · simp at h
 
 /-- 縮約の枝で残る列は元より短い（停止性に使う）。 -/
 theorem contrLen_lt {p : ℕ × ℕ} {B A rest2 Bq : PairSeq} {k : ℕ}
     (h : contrLen p B k A = some (rest2, Bq)) :
     rest2.length < B.length ∧ Bq.length < B.length := by
-  unfold contrLen at h
-  rcases hd : B.drop k with _ | ⟨q, r2⟩ <;> rw [hd] at h
-  · simp at h
-  · have hr2 : r2.length < B.length := by
-      have hl : (B.drop k).length = B.length - k := List.length_drop
-      rw [hd] at hl
-      simp only [List.length_cons] at hl
-      omega
-    simp only [] at h
-    split at h
-    · split at h
-      · simp at h
-      · split at h
-        · simp at h
-        · split at h
-          · simp only [Option.some.injEq, Prod.mk.injEq] at h
-            obtain ⟨h1, h2⟩ := h
-            subst h1; subst h2
-            constructor
-            · have e2 : (r2.takeWhile fun x => q.1 < x.1).length ≤ r2.length :=
-                (List.takeWhile_sublist _).length_le
-              simp only [List.length_drop]
-              omega
-            · have e2 : (r2.dropWhile fun x => q.1 < x.1).length ≤ r2.length :=
-                List.length_dropWhile_le _ r2
-              omega
-          · simp at h
-    · simp at h
+  obtain ⟨q, r2, hd, -, -, hAq, hBq, -, -, -⟩ := contrLen_spec h
+  have hr2 : r2.length < B.length := by
+    have hl : (B.drop k).length = B.length - k := List.length_drop
+    rw [hd] at hl
+    simp only [List.length_cons] at hl
+    omega
+  have e2 : (r2.takeWhile fun x => q.1 < x.1).length ≤ r2.length :=
+    (List.takeWhile_sublist _).length_le
+  have e3 : (r2.dropWhile fun x => q.1 < x.1).length ≤ r2.length :=
+    List.length_dropWhile_le _ r2
+  rw [hAq] at e2
+  rw [hBq] at e3
+  simp only [List.length_append] at e2
+  omega
 
 /-- BMS 2 行 -> DBMS 2 行（縮約つき）。 -/
-def convC : PairSeq → ℕ → ℕ → Bool → Bool → PairSeq
-  | [], _, _, _, _ => []
-  | p :: r, d, plev, first, force =>
+def convC (M : PairSeq) (d plev : ℕ) (first force : Bool) : PairSeq :=
+  match M with
+  | [] => []
+  | p :: r =>
       if ladOf p.2 d plev first force then
         match hc : contrLen p (r.dropWhile fun q => p.1 < q.1)
             (sibRun p (r.dropWhile fun q => p.1 < q.1))
@@ -631,7 +619,7 @@ def convC : PairSeq → ℕ → ℕ → Bool → Bool → PairSeq
           ++ convC (r.takeWhile fun q => p.1 < q.1)
                (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev))
           ++ convC (r.dropWhile fun q => p.1 < q.1) d p.2 false false
-  termination_by M => M.length
+  termination_by M.length
   decreasing_by
   all_goals
     first
@@ -671,9 +659,10 @@ def wrapN : ℕ → ℕ → Three → Three
 
 open Three in
 /-- 縮約つきの読み。`readD` に「梯子が二役を兼ねている枝」を足したもの。 -/
-def readC : PairSeq → Bool → ℕ → Three
-  | [], _, _ => Z
-  | p :: rest, first, plev =>
+def readC (l : PairSeq) (first : Bool) (plev : ℕ) : Three :=
+  match l with
+  | [] => Z
+  | p :: rest =>
       if first = true ∧ p.2 = plev ∧ rest.headI = (p.1 + 1, p.2 + 1) then
         match rest with
         | [] => Z
@@ -694,7 +683,7 @@ def readC : PairSeq → Bool → ℕ → Three
       else
         P p.2 (readC (rest.takeWhile fun q => p.1 < q.1) true p.2)
               (readC (rest.dropWhile fun q => p.1 < q.1) false p.2)
-  termination_by l => l.length
+  termination_by l.length
   decreasing_by
   all_goals
     (first
@@ -756,6 +745,369 @@ def readCon (l : PairSeq) : Three := readC l true 0
 #guard conC [(0,0),(1,1),(2,2),(1,0),(2,1),(3,2),(2,0)] = [(0,0),(1,0),(2,1),(3,2),(2,0)]
 -- 兄弟つきの縮約
 #guard conC [(0,0),(1,1),(1,1),(1,0),(2,1),(2,1),(2,0)] = [(0,0),(1,0),(2,1),(2,1),(2,0)]
+
+/-! ## 7.9 縮約つきの正しさに向けた補題 -/
+
+@[simp] theorem convC_nil (d plev : ℕ) (first force : Bool) :
+    convC [] d plev first force = [] := by rw [convC]
+
+theorem convC_cons_nolad (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hl : ladOf p.2 d plev first force = false) :
+    convC (p :: r) d plev first force =
+      (ddOf p.2 d plev first force, p.2)
+        :: (convC (r.takeWhile fun q => p.1 < q.1)
+              (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev))
+            ++ convC (r.dropWhile fun q => p.1 < q.1) d p.2 false false) := by
+  rw [convC, if_neg (by rw [hl]; simp)]
+  simp
+
+theorem convC_cons_lad_none (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hl : ladOf p.2 d plev first force = true)
+    (hc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (sibRun p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) = none) :
+    convC (p :: r) d plev first force =
+      (d, plev) :: (d + 1, p.2)
+        :: (convC (r.takeWhile fun q => p.1 < q.1) (d + 2) p.2 true false
+            ++ convC (r.dropWhile fun q => p.1 < q.1) d p.2 false false) := by
+  rw [convC, if_pos hl]
+  split
+  · rename_i rest2 Bq h
+    rw [hc] at h
+    exact absurd h (by simp)
+  · rfl
+
+theorem convC_cons_lad_some (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool)
+    {rest2 Bq : PairSeq}
+    (hl : ladOf p.2 d plev first force = true)
+    (hc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (sibRun p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) = some (rest2, Bq)) :
+    convC (p :: r) d plev first force =
+      (d, plev) :: (d + 1, p.2)
+        :: (convC (r.takeWhile fun q => p.1 < q.1) (d + 2) p.2 true false
+            ++ List.replicate (sibRun p (r.dropWhile fun q => p.1 < q.1)) ((d + 1, p.2) : ℕ × ℕ)
+            ++ convC rest2 (d + 1) p.2 false false
+            ++ convC Bq d p.2 false false) := by
+  rw [convC, if_pos hl]
+  split
+  · rename_i rest2' Bq' h
+    rw [hc] at h
+    simp only [Option.some.injEq, Prod.mk.injEq] at h
+    obtain ⟨h1, h2⟩ := h
+    subst h1; subst h2
+    rfl
+  · rename_i h
+    rw [hc] at h
+    exact absurd h (by simp)
+
+/-- `convC` の出す列はどれも深さ `d` 以上。 -/
+theorem convC_ge : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → ∀ (d plev : ℕ) (first force : Bool),
+    ∀ c ∈ convC M d plev first force, d ≤ c.1 := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM d plev first force c hc
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    simp at hc
+  | succ n ih =>
+    intro M hM d plev first force c hc
+    match M with
+    | [] => simp at hc
+    | p :: r =>
+      have hA : (r.takeWhile fun q => p.1 < q.1).length ≤ n := by
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hM; omega
+      have hB : (r.dropWhile fun q => p.1 < q.1).length ≤ n := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hM; omega
+      by_cases hl : ladOf p.2 d plev first force = true
+      · rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (sibRun p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+        · rw [convC_cons_lad_none p r d plev first force hl hcc] at hc
+          simp only [List.mem_cons] at hc
+          rcases hc with rfl | rfl | hc
+          · exact Nat.le_refl _
+          · omega
+          rcases List.mem_append.1 hc with h | h
+          · have := ih _ hA (d + 2) p.2 true false c h; omega
+          · exact ih _ hB d p.2 false false c h
+        · rw [convC_cons_lad_some p r d plev first force hl hcc] at hc
+          have hr2 : rest2.length ≤ n := by
+            have := (contrLen_lt hcc).1; omega
+          have hbq : Bq.length ≤ n := by
+            have := (contrLen_lt hcc).2; omega
+          simp only [List.mem_cons] at hc
+          rcases hc with rfl | rfl | hc
+          · exact Nat.le_refl _
+          · omega
+          rcases List.mem_append.1 hc with h | h
+          · rcases List.mem_append.1 h with h | h
+            · rcases List.mem_append.1 h with h | h
+              · have := ih _ hA (d + 2) p.2 true false c h; omega
+              · rw [List.eq_of_mem_replicate h]; omega
+            · have := ih _ hr2 (d + 1) p.2 false false c h; omega
+          · exact ih _ hbq d p.2 false false c h
+      · rw [convC_cons_nolad p r d plev first force (by simpa using hl)] at hc
+        simp only [List.mem_cons] at hc
+        rcases hc with rfl | hc
+        · exact le_ddOf _ _ _ _ _
+        rcases List.mem_append.1 hc with h | h
+        · have := ih _ hA _ p.2 true _ c h
+          have := le_ddOf p.2 d plev first force
+          omega
+        · exact ih _ hB d p.2 false false c h
+
+theorem convC_ge' (M : PairSeq) (d plev : ℕ) (first force : Bool) :
+    ∀ c ∈ convC M d plev first force, d ≤ c.1 :=
+  convC_ge M.length M (Nat.le_refl _) d plev first force
+
+theorem convC_eq_nil_iff (M : PairSeq) (d plev : ℕ) (first force : Bool) :
+    convC M d plev first force = [] ↔ M = [] := by
+  match M with
+  | [] => simp
+  | p :: r =>
+    constructor
+    · intro h
+      by_cases hl : ladOf p.2 d plev first force = true
+      · rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (sibRun p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+        · rw [convC_cons_lad_none p r d plev first force hl hcc] at h; simp at h
+        · rw [convC_cons_lad_some p r d plev first force hl hcc] at h; simp at h
+      · rw [convC_cons_nolad p r d plev first force (by simpa using hl)] at h; simp at h
+    · intro h; simp at h
+
+/-- `convC` の先頭の列。 -/
+theorem convC_headI (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool) :
+    (convC (p :: r) d plev first force).headI =
+      (if ladOf p.2 d plev first force then (d, plev)
+       else (ddOf p.2 d plev first force, p.2)) := by
+  by_cases hl : ladOf p.2 d plev first force = true
+  · rw [if_pos hl]
+    rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+        (sibRun p (r.dropWhile fun q => p.1 < q.1))
+        (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+    · rw [convC_cons_lad_none p r d plev first force hl hcc]; rfl
+    · rw [convC_cons_lad_some p r d plev first force hl hcc]; rfl
+  · rw [if_neg hl, convC_cons_nolad p r d plev first force (by simpa using hl)]; rfl
+
+theorem convC_head_le (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool) :
+    ((convC (p :: r) d plev first force).headI).1 ≤ ddOf p.2 d plev first force := by
+  rw [convC_headI]
+  by_cases h : ladOf p.2 d plev first force = true
+  · rw [if_pos h]; exact le_ddOf _ _ _ _ _
+  · rw [if_neg h]
+
+@[simp] theorem shift1_nil : shift1 [] = [] := rfl
+
+@[simp] theorem shift1_cons (c : ℕ × ℕ) (l : PairSeq) :
+    shift1 (c :: l) = (c.1 + 1, c.2) :: shift1 l := rfl
+
+@[simp] theorem shift1_length (l : PairSeq) : (shift1 l).length = l.length := by
+  simp [shift1]
+
+theorem shift1_takeWhile (a : ℕ) (l : PairSeq) :
+    ((shift1 l).takeWhile fun q => a + 1 < q.1) = shift1 (l.takeWhile fun q => a < q.1) := by
+  induction l with
+  | nil => rfl
+  | cons c r ih =>
+    by_cases h : a < c.1
+    · rw [shift1_cons, List.takeWhile_cons_of_pos (by simp; omega),
+        List.takeWhile_cons_of_pos (by simpa using h), shift1_cons, ih]
+    · rw [shift1_cons, List.takeWhile_cons_of_neg (by simp; omega),
+        List.takeWhile_cons_of_neg (by simpa using h)]
+      rfl
+
+theorem shift1_dropWhile (a : ℕ) (l : PairSeq) :
+    ((shift1 l).dropWhile fun q => a + 1 < q.1) = shift1 (l.dropWhile fun q => a < q.1) := by
+  induction l with
+  | nil => rfl
+  | cons c r ih =>
+    by_cases h : a < c.1
+    · rw [shift1_cons, List.dropWhile_cons_of_pos (by simp; omega),
+        List.dropWhile_cons_of_pos (by simpa using h), ih]
+    · rw [shift1_cons, List.dropWhile_cons_of_neg (by simp; omega),
+        List.dropWhile_cons_of_neg (by simpa using h), shift1_cons]
+
+/-- 段を 1 つ深くしても読みは変わらない。 -/
+theorem translate_shift1 : ∀ (n : ℕ) (B : PairSeq), B.length ≤ n →
+    translate (shift1 B) = translate B := by
+  intro n
+  induction n with
+  | zero =>
+    intro B hB
+    have : B = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    rfl
+  | succ n ih =>
+    intro B hB
+    match B with
+    | [] => rfl
+    | p :: r =>
+      have h1 : (r.takeWhile fun q => p.1 < q.1).length ≤ n := by
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hB; omega
+      have h2 : (r.dropWhile fun q => p.1 < q.1).length ≤ n := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hB; omega
+      rw [shift1_cons, translate, translate]
+      simp only []
+      rw [shift1_takeWhile, shift1_dropWhile, ih _ h1, ih _ h2]
+
+open Three in
+/-- 影でないときの読み（`translate` と同じ形）。 -/
+theorem readC_plain {p : ℕ × ℕ} {rest : PairSeq} {first : Bool} {plev : ℕ}
+    (h : ¬ (first = true ∧ p.2 = plev ∧ rest.headI = (p.1 + 1, p.2 + 1))) :
+    readC (p :: rest) first plev
+      = P p.2 (readC (rest.takeWhile fun q => p.1 < q.1) true p.2)
+              (readC (rest.dropWhile fun q => p.1 < q.1) false p.2) := by
+  rw [readC.eq_def]
+  simp only []
+  rw [if_neg h]
+
+open Three in
+/-- 影のとき、`readC` は「影を捨てて頂上から」の形になる。二役かどうかで枝が分かれる。 -/
+theorem readC_shadow_eq {p top : ℕ × ℕ} {tail : PairSeq} {first : Bool} {plev : ℕ}
+    (hf : first = true) (hp : p.2 = plev) (htop : top = (p.1 + 1, p.2 + 1)) :
+    readC (p :: top :: tail) first plev
+      = (let arg := tail.takeWhile fun q => top.1 < q.1
+         let after := tail.dropWhile fun q => top.1 < q.1
+         let sib := after.takeWhile fun q => q = top
+         let r2 := after.dropWhile fun q => q = top
+         if r2 ≠ [] ∧ (r2.headI).1 = top.1 ∧ (r2.headI).2 < top.2 then
+           P top.2 (readC arg true top.2)
+             (wrapN sib.length top.2
+               (P p.2
+                 (readC (top :: (arg ++ sib ++ (r2.takeWhile fun q => top.1 ≤ q.1))) true p.2)
+                 (readC (r2.dropWhile fun q => top.1 ≤ q.1) false plev)))
+         else P top.2 (readC arg true top.2) (readC after false top.2)) := by
+  subst hf; subst htop
+  rw [readC.eq_def]
+  simp only []
+  rw [if_pos ⟨trivial, hp, by simp⟩]
+
+open Three in
+/-- 影のときの読み（二役でない場合）。 -/
+theorem readC_shadow {p top : ℕ × ℕ} {tail : PairSeq} {first : Bool} {plev : ℕ}
+    (hf : first = true) (hp : p.2 = plev) (htop : top = (p.1 + 1, p.2 + 1))
+    (hd : ¬ (((tail.dropWhile fun q => top.1 < q.1).dropWhile fun q => q = top) ≠ [] ∧
+          ((((tail.dropWhile fun q => top.1 < q.1).dropWhile fun q => q = top).headI).1 = top.1) ∧
+          ((((tail.dropWhile fun q => top.1 < q.1).dropWhile fun q => q = top).headI).2 < top.2))) :
+    readC (p :: top :: tail) first plev
+      = P top.2 (readC (tail.takeWhile fun q => top.1 < q.1) true top.2)
+                (readC (tail.dropWhile fun q => top.1 < q.1) false top.2) := by
+  rw [readC_shadow_eq hf hp htop]
+  simp only []
+  rw [if_neg hd]
+
+open Three in
+/-- 影のときの読み（梯子が二役を兼ねている場合）。 -/
+theorem readC_dual {p top : ℕ × ℕ} {tail : PairSeq} {first : Bool} {plev : ℕ}
+    (hf : first = true) (hp : p.2 = plev) (htop : top = (p.1 + 1, p.2 + 1))
+    (hd : ((tail.dropWhile fun q => top.1 < q.1).dropWhile fun q => q = top) ≠ [] ∧
+          ((((tail.dropWhile fun q => top.1 < q.1).dropWhile fun q => q = top).headI).1 = top.1) ∧
+          ((((tail.dropWhile fun q => top.1 < q.1).dropWhile fun q => q = top).headI).2 < top.2)) :
+    readC (p :: top :: tail) first plev
+      = (let arg := tail.takeWhile fun q => top.1 < q.1
+         let after := tail.dropWhile fun q => top.1 < q.1
+         let sib := after.takeWhile fun q => q = top
+         let r2 := after.dropWhile fun q => q = top
+         P top.2 (readC arg true top.2)
+           (wrapN sib.length top.2
+             (P p.2
+               (readC (top :: (arg ++ sib ++ (r2.takeWhile fun q => top.1 ≤ q.1))) true p.2)
+               (readC (r2.dropWhile fun q => top.1 ≤ q.1) false plev)))) := by
+  rw [readC_shadow_eq hf hp htop]
+  simp only []
+  rw [if_pos hd]
+
+/-- 先頭で止まるなら takeWhile は空、dropWhile は全部。 -/
+theorem head_stop {a : ℕ} {L : PairSeq} (h : L = [] ∨ ¬ (a < (L.headI).1)) :
+    (L.takeWhile fun q => a < q.1) = [] ∧ (L.dropWhile fun q => a < q.1) = L := by
+  rcases h with rfl | h
+  · simp
+  · match L with
+    | [] => simp
+    | q :: L' =>
+      exact ⟨List.takeWhile_cons_of_neg (by simpa using h),
+             List.dropWhile_cons_of_neg (by simpa using h)⟩
+
+@[simp] theorem sibRun_nil (p : ℕ × ℕ) : sibRun p [] = 0 := rfl
+
+theorem take_sibRun (p : ℕ × ℕ) (B : PairSeq) :
+    B.take (sibRun p B) = List.replicate (sibRun p B) p := by
+  induction B with
+  | nil => simp
+  | cons q r ih =>
+    by_cases h : q = p
+    · subst h
+      simp [sibRun, ih, List.replicate_succ]
+    · simp [sibRun, h]
+
+theorem sibRun_split (p : ℕ × ℕ) (B : PairSeq) :
+    B = List.replicate (sibRun p B) p ++ B.drop (sibRun p B) := by
+  conv_lhs => rw [← List.take_append_drop (sibRun p B) B]
+  rw [take_sibRun]
+
+open Three in
+theorem translate_replicate (c : ℕ × ℕ) (L : PairSeq)
+    (hL : L = [] ∨ ¬ (c.1 < (L.headI).1)) :
+    ∀ k, translate (List.replicate k c ++ L) = wrapN k c.2 (translate L) := by
+  intro k
+  induction k with
+  | zero => simp [wrapN]
+  | succ k ih =>
+    have hh : (List.replicate k c ++ L) = [] ∨ ¬ (c.1 < ((List.replicate k c ++ L).headI).1) := by
+      cases k with
+      | zero => simpa using hL
+      | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+    obtain ⟨e1, e2⟩ := head_stop (a := c.1) hh
+    rw [List.replicate_succ, List.cons_append, translate, e1, e2, ih, wrapN, translate]
+
+/-- `first = false` の読みは親の段に依らない。 -/
+theorem readC_plev (l : PairSeq) (plev plev' : ℕ) :
+    readC l false plev = readC l false plev' := by
+  match l with
+  | [] => simp [readC]
+  | p :: rest =>
+    rw [readC.eq_def, readC.eq_def]
+    simp only [Bool.false_eq_true, false_and, if_false]
+
+open Three in
+theorem readC_replicate (c : ℕ × ℕ) (Y : PairSeq)
+    (hY : Y = [] ∨ ¬ (c.1 < (Y.headI).1)) :
+    ∀ k (plev : ℕ), readC (List.replicate k c ++ Y) false plev = wrapN k c.2 (readC Y false c.2) := by
+  intro k
+  induction k with
+  | zero => intro plev; simpa using readC_plev Y plev c.2
+  | succ k ih =>
+    intro plev
+    have hh : (List.replicate k c ++ Y) = [] ∨ ¬ (c.1 < ((List.replicate k c ++ Y).headI).1) := by
+      cases k with
+      | zero => simpa using hY
+      | succ k' => right; rw [List.replicate_succ, List.cons_append]; simp
+    obtain ⟨e1, e2⟩ := head_stop (a := c.1) hh
+    rw [List.replicate_succ, List.cons_append, readC.eq_def]
+    simp only [Bool.false_eq_true, false_and, if_false]
+    rw [e1, e2, ih, wrapN]
+    simp [readC]
+
+theorem steps1_drop : ∀ (n : ℕ) {L : PairSeq}, steps1 L → steps1 (L.drop n) := by
+  intro n
+  induction n with
+  | zero => intro L h; simpa using h
+  | succ n ih =>
+    intro L h
+    match L with
+    | [] => simp
+    | p :: r => simpa using ih (steps1_tail h)
+
+theorem blockok_drop {d n : ℕ} {L : PairSeq} (h : blockok d L)
+    (hh : L.drop n ≠ [] → ((L.drop n).headI).1 = d) : blockok d (L.drop n) :=
+  ⟨hh, fun c hc => h.2.1 c ((List.drop_sublist n L).subset hc), steps1_drop n h.2.2⟩
 
 /-! ## 8. 仮定は BMS 標準形なら自動で成り立つ
 
