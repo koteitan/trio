@@ -92,6 +92,79 @@ def mk_run_first(argsplit, run_on_succ=False):
     return lambda cols: go(cols, True)
 
 
+def mk_run_dual2(argsplit):
+    """連が「梯子 + 本体」の二役を果たす場合を、兄弟の連なりごと開く版。
+
+    E の `(1,0)(2,1)(2,1)` は BMS の `(1,1)(1,1)`（梯子としての役）と
+    `(1,0)(2,1)(2,1)`（本体としての役）の両方を兼ねている（縮約で 1 本に潰れている）。
+    そこで
+      * まず同じ段の兄弟ぶんだけ `P 頂上の行1` を後続でつなぐ
+      * 最後に影の段のノード `P 影の行1` を置き、その引数で頂上から読み直す
+    段が下がる列が続くときだけこの形にする。
+    """
+    def go(cols, first):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        if first:
+            k, top = runlen(p, rest)
+        else:
+            k, top = 0, p
+        tail = rest[k:]
+        i = argsplit(top, tail)
+        arg = go(tail[:i], True)
+        if k >= 1 and i == 0:
+            # 同じ深さ・同じ段の兄弟
+            j = 0
+            while j < len(tail) and tail[j][0] == top[0] and tail[j][1] == top[1]:
+                j += 1
+            after = tail[j:]
+            if after and after[0][0] == top[0] and after[0][1] < top[1]:
+                # 影の段に属するのは、深さが頂上以上で続くところまで
+                m = 0
+                while m < len(after) and after[m][0] >= top[0]:
+                    m += 1
+                inner = go([top] + tail[:j] + after[:m], True)
+                node = ('P', p[1], inner, go(after[m:], False))
+                for _ in range(j + 1):
+                    node = ('P', top[1], ('Z',), node)
+                return node
+        return ('P', top[1], arg, go(tail[i:], False))
+    return lambda cols: go(cols, True)
+
+
+def mk_run_dual(argsplit):
+    """連が「影 + 本体」の二役を果たす場合を扱う版。
+
+    連 c_0..c_k のあとに、連の頂上と**同じ深さ**の列が続くとき、
+    その連は BMS 側では「影の列」と「本体の列」の 2 本ぶんの役をしている
+    （縮約で 1 本に潰れている）。そこで
+        P c_k.1 (引数) ( P c_0.1 (頂上から読み直したもの) Z )
+    と 2 段に開く。
+    """
+    def go(cols, first):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        if first:
+            k, top = runlen(p, rest)
+        else:
+            k, top = 0, p
+        tail = rest[k:]
+        i = argsplit(top, tail)
+        arg = go(tail[:i], True)
+        if (k >= 1 and i == 0 and tail and tail[0][0] == top[0]
+                and tail[0][1] < top[1]):
+            # 影の段に属するのは、頂上と同じ深さ以上で続くところまで
+            j = 0
+            while j < len(tail) and tail[j][0] >= top[0]:
+                j += 1
+            inner = go([top] + tail[:j], True)
+            return ('P', top[1], arg, ('P', p[1], inner, go(tail[j:], False)))
+        return ('P', top[1], arg, go(tail[i:], False))
+    return lambda cols: go(cols, True)
+
+
 def mk_run(argsplit):
     """階段の連を 1 ノードとして読む。添字は連の先頭ではなく**末尾**の行 1。"""
     def go(cols):
@@ -115,6 +188,8 @@ CANDS = {
     '連を 1 ノード（割りは行0 >）': (None, None),
     '連を 1 ノード（割りは行0 >=）': (None, None),
     '連は最初の子のときだけ': (None, None),
+    '連が二役の場合を開く': (None, None),
+    '二役を兄弟ごと開く': (None, None),
 }
 
 
@@ -128,6 +203,10 @@ def main():
             f = mk_run(split_row0_ge)
         elif name == '連は最初の子のときだけ':
             f = mk_run_first(split_row0)
+        elif name == '連が二役の場合を開く':
+            f = mk_run_dual(split_row0)
+        elif name == '二役を兄弟ごと開く':
+            f = mk_run_dual2(split_row0)
         else:
             f = mk(sub, split)
         ok = 0
