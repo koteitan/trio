@@ -118,7 +118,8 @@ def mk_chain4(argsplit, dual=True):
         while j < len(rest) and rest[j][0] == top[0] and rest[j][1] == top[1]:
             j += 1
         r2 = rest[j:]
-        if k >= 1 and dual and r2 and r2[0][0] == top[0] and r2[0][1] < top[1]:
+        # 二役が起きるのは連の長さが 1 のとき（影の子が 1 段だけ上がる形）だけ
+        if k == 1 and dual and r2 and r2[0][0] == top[0] and r2[0][1] < top[1]:
             m = 0
             while m < len(r2) and r2[m][0] >= top[0]:
                 m += 1
@@ -132,6 +133,9 @@ def mk_chain4(argsplit, dual=True):
             return node
 
         # 深さごとに後続を切り分ける
+        if k == 0:
+            return ('P', top[1], arg, go(rest, False, plev))
+        # 深さごとに後続を切り分ける。最後に余った浅い列は一番内側の兄弟鎖に繋ぐ
         succs = []
         for t in range(k, 0, -1):
             n = 0
@@ -139,13 +143,9 @@ def mk_chain4(argsplit, dual=True):
                 n += 1
             succs.append(rest[:n])
             rest = rest[n:]
-        node = ('P', top[1], arg,
-                go(succs[0], False, top[1]) if k >= 1 else go(rest, False, plev))
+        node = ('P', top[1], arg, go(succs[0] + rest, False, top[1]))
         for idx, t in enumerate(range(k - 1, 0, -1)):
             node = ('P', run[t][1], node, go(succs[idx + 1], False, run[t][1]))
-        if k >= 1:
-            node = (node[0], node[1], node[2],
-                    go(rest, False, plev) if node[3] == ('Z',) else node[3])
         return node
     return lambda cols: go(cols, True, 0)
 
