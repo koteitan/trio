@@ -1196,6 +1196,106 @@ theorem translate_contrPre (p : ℕ × ℕ) (k : ℕ) (A rest2 : PairSeq)
   rw [e1, e2, translate_shift1 A.length A (Nat.le_refl _),
     translate_replicate ((p.1 + 1, p.2) : ℕ × ℕ) rest2 (by simpa using hr) k]
 
+/-! ### 縮約が起きないときは、読みも二役の枝に入らない
+
+`convC L d plev false false` の先頭は `(ddOf s d plev false false, s)`（`s = L.headI.2`）。
+`s ≤ plev ≤ d` なので、深さが `d+1` になるのは `s = plev = d` のときだけで、
+そのとき段はちょうど `plev`。つまり「深さ `d+1` で段が `plev` 未満」の列は
+先頭には決して来ない。影の兄弟（`(d+1, plev)`）を剥がした先も同じで、
+剥がした直後は引数ブロック（深さ `d+2` 以上）か、次の後続の先頭になる。 -/
+
+/-- 二役の枝の判定。 -/
+def dipAt (d plev : ℕ) (W : PairSeq) : Prop :=
+  W ≠ [] ∧ (W.headI).1 = d + 1 ∧ (W.headI).2 < plev
+
+theorem headI_mem' {l : PairSeq} (h : l ≠ []) : l.headI ∈ l := by
+  match l with
+  | [] => exact absurd rfl h
+  | q :: r => simp
+
+/-- 先頭が `top` でなければ `dropWhile` はそこで止まる。 -/
+theorem dropWhile_stop {top : ℕ × ℕ} {W : PairSeq} (hne : W ≠ [])
+    (h : W.headI ≠ top) : (W.dropWhile fun q => q = top) = W := by
+  match W with
+  | [] => exact absurd rfl hne
+  | q :: W' => exact List.dropWhile_cons_of_neg (by simpa using h)
+
+/-- 深い接頭辞が付いていれば、影を剥がしても深いままなので二役にならない。 -/
+theorem nodip_of_deep {d plev : ℕ} {X Y : PairSeq} (hne : X ≠ [])
+    (hdeep : d + 1 < (X.headI).1) :
+    ¬ dipAt d plev ((X ++ Y).dropWhile fun q => q = (d + 1, plev)) := by
+  have hnx : X.headI ≠ ((d + 1, plev) : ℕ × ℕ) := by
+    intro he
+    rw [he] at hdeep
+    simp only [] at hdeep
+    omega
+  have hhd : (X ++ Y).headI = X.headI := headI_append_left hne
+  have hne2 : (X ++ Y) ≠ [] := by
+    intro he
+    exact hne (List.append_eq_nil_iff.1 he).1
+  rw [dropWhile_stop hne2 (by rw [hhd]; exact hnx)]
+  rintro ⟨-, h2, -⟩
+  rw [hhd] at h2
+  omega
+
+theorem convC_nodip : ∀ (n : ℕ) (L : PairSeq), L.length ≤ n → ∀ (d plev : ℕ), plev ≤ d →
+    descOK L → (L ≠ [] → (L.headI).2 ≤ plev) →
+    ¬ dipAt d plev ((convC L d plev false false).dropWhile fun q => q = (d + 1, plev)) := by
+  intro n
+  induction n with
+  | zero =>
+    intro L hL d plev _ _ _
+    have : L = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    rintro ⟨h, -, -⟩
+    exact h (by simp)
+  | succ n ih =>
+    intro L hL d plev hpd hd hhead
+    match L with
+    | [] => rintro ⟨h, -, -⟩; exact h (by simp)
+    | p :: r =>
+      have hs : p.2 ≤ plev := by simpa using hhead (by simp)
+      have hnl : ladOf p.2 d plev false false = false := by simp [ladOf]
+      have hB : (r.dropWhile fun q => p.1 < q.1).length ≤ n := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hL; omega
+      obtain ⟨hdh, hdA, hdB⟩ := descOK_cons.1 hd
+      set A := r.takeWhile (fun q => p.1 < q.1) with hAdef
+      set B := r.dropWhile (fun q => p.1 < q.1) with hBdef
+      set dd := ddOf p.2 d plev false false with hdd
+      set X := convC A (dd + 1) p.2 true (false && (p.2 == plev)) with hX
+      set Y := convC B d p.2 false false with hY
+      rw [convC_cons_nolad p r d plev false false hnl]
+      simp only [← hdd, ← hAdef, ← hBdef, ← hX, ← hY]
+      by_cases hcase : dd = d + 1
+      · -- 先頭は `(d+1, p.2)`。このとき `p.2 = plev = d`
+        have hpp : p.2 = plev := by
+          rw [hdd] at hcase
+          unfold ddOf at hcase
+          rw [if_neg (by rw [hnl]; simp)] at hcase
+          split at hcase
+          · omega
+          · omega
+        rw [List.dropWhile_cons_of_pos (by simp [hcase, hpp])]
+        by_cases hAe : X = []
+        · rw [hAe, List.nil_append]
+          have hYe : Y = convC B d plev false false := by rw [hY, hpp]
+          rw [hYe]
+          refine ih B hB d plev hpd hdB (fun hne => ?_)
+          have h1 := hdh hne
+          omega
+        · refine nodip_of_deep hAe ?_
+          have h1 := convC_ge' A (dd + 1) p.2 true (false && (p.2 == plev)) _
+            (headI_mem' (l := X) hAe)
+          omega
+      · -- 先頭の深さは `d+1` ではないので、そこで止まる
+        rw [List.dropWhile_cons_of_neg (by
+          simp only [decide_eq_true_eq]
+          intro he
+          exact hcase (congrArg Prod.fst he))]
+        rintro ⟨-, h2, -⟩
+        exact hcase (by simpa using h2)
+
 /-! ## 8. 仮定は BMS 標準形なら自動で成り立つ
 
 `blockok 0` は `Pair/Seqlex.lean` の `blockok_ST_PS`。
