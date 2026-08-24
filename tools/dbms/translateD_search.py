@@ -1,0 +1,150 @@
+"""DBMS の「読み」translateD の候補を、264 件の正解に当てて探す。
+
+trio-agent の指摘:
+  * translateD は「引数と後続に割る 2 分岐の構造再帰」でなければならない。
+    そうでないと Seqlex.lean の olt_iff_seqlex の証明が移植できない。
+  * translateD が決まれば f は Lean に書く必要すらない
+    （f := translateD (f M) = translate M をみたす唯一の DBMS 標準形）。
+
+正解データ: ~/proofs/trio/tmp/dbms2row_targets.json（264 件、A/E/target）
+"""
+import sys, os, json, itertools
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+DATA = os.path.expanduser('~/proofs/trio/tmp/dbms2row_targets.json')
+
+
+def tr(cols):
+    """BMS の読み（Term.lean:131 と同じ）。"""
+    if not cols:
+        return ('Z',)
+    p, rest = cols[0], cols[1:]
+    i = 0
+    while i < len(rest) and p[0] < rest[i][0]:
+        i += 1
+    return ('P', p[1], tr(rest[:i]), tr(rest[i:]))
+
+
+def show(t):
+    if t[0] == 'Z':
+        return 'Z'
+    return 'P%d(%s,%s)' % (t[1], show(t[2]), show(t[3]))
+
+
+def mk(sub, split):
+    """2 分岐の構造再帰。`sub(p, rest)` が添字、`split(p, rest)` が引数の長さ。"""
+    def go(cols):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        i = split(p, rest)
+        return ('P', sub(p, rest), go(rest[:i]), go(rest[i:]))
+    return go
+
+
+def split_row0(p, rest):
+    i = 0
+    while i < len(rest) and p[0] < rest[i][0]:
+        i += 1
+    return i
+
+
+def split_row0_ge(p, rest):
+    i = 0
+    while i < len(rest) and p[0] <= rest[i][0]:
+        i += 1
+    return i
+
+
+def split_row1(p, rest):
+    i = 0
+    while i < len(rest) and p[1] < rest[i][1]:
+        i += 1
+    return i
+
+
+def runlen(p, rest):
+    """`p` から始まる階段の連の長さ（`(+1,+1)` で続く限り）。"""
+    k = 0
+    cur = p
+    while k < len(rest) and rest[k][0] == cur[0] + 1 and rest[k][1] == cur[1] + 1:
+        cur = rest[k]; k += 1
+    return k, cur
+
+
+def mk_run_first(argsplit, run_on_succ=False):
+    """連を取るのは「親の最初の子」のときだけ。
+
+    引数（子）に降りるときは first=True、後続（兄弟）に進むときは first=False。
+    行列全体の先頭も first=True とする。
+    """
+    def go(cols, first):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        if first or run_on_succ:
+            k, top = runlen(p, rest)
+        else:
+            k, top = 0, p
+        tail = rest[k:]
+        i = argsplit(top, tail)
+        return ('P', top[1], go(tail[:i], True), go(tail[i:], False))
+    return lambda cols: go(cols, True)
+
+
+def mk_run(argsplit):
+    """階段の連を 1 ノードとして読む。添字は連の先頭ではなく**末尾**の行 1。"""
+    def go(cols):
+        if not cols:
+            return ('Z',)
+        p, rest = cols[0], cols[1:]
+        k, top = runlen(p, rest)
+        tail = rest[k:]
+        i = argsplit(top, tail)
+        return ('P', top[1], go(tail[:i]), go(tail[i:]))
+    return go
+
+
+CANDS = {
+    'BMS と同じ（対照）': (lambda p, r: p[1], split_row0),
+    '添字 = 行1+1': (lambda p, r: p[1] + 1, split_row0),
+    '添字 = 行0-行1': (lambda p, r: p[0] - p[1], split_row0),
+    '添字 = 行1、割りは行0 >=': (lambda p, r: p[1], split_row0_ge),
+    '添字 = 行1、割りは行1': (lambda p, r: p[1], split_row1),
+    '添字 = 行1+1、割りは行0 >=': (lambda p, r: p[1] + 1, split_row0_ge),
+    '連を 1 ノード（割りは行0 >）': (None, None),
+    '連を 1 ノード（割りは行0 >=）': (None, None),
+    '連は最初の子のときだけ': (None, None),
+}
+
+
+def main():
+    d = json.load(open(DATA))
+    print('正解 %d 件' % len(d))
+    for name, (sub, split) in CANDS.items():
+        if name == '連を 1 ノード（割りは行0 >）':
+            f = mk_run(split_row0)
+        elif name == '連を 1 ノード（割りは行0 >=）':
+            f = mk_run(split_row0_ge)
+        elif name == '連は最初の子のときだけ':
+            f = mk_run_first(split_row0)
+        else:
+            f = mk(sub, split)
+        ok = 0
+        bad = None
+        for x in d:
+            E = [tuple(c) for c in x['E']]
+            got = show(f(E))
+            if got == x['target']:
+                ok += 1
+            elif bad is None:
+                bad = (x['E'], x['target'], got)
+        print('%-26s %3d/%d' % (name, ok, len(d)))
+        if bad and ok < len(d):
+            print('     E %s' % bad[0])
+            print('     正 %s' % bad[1])
+            print('     得 %s' % bad[2])
+
+
+if __name__ == '__main__':
+    main()
