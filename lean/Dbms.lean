@@ -1557,6 +1557,48 @@ theorem readC_convC : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
             simp only [] at h1 hq1
             rw [← hq1] at h1 ⊢
             exact h1
+          -- 帰納法の仮定
+          have iR : readC Y false y = translate rest2 :=
+            ih rest2 hlr2 (bd + 1) (d + 1) y false false hbr2 (by omega) hcr2 hdr2
+          have iQ : readC Z false y = translate Bq :=
+            ih Bq hlbq bd d y false false hbbq hbd hcbq hdbq
+          -- 出力の各部分の深さ
+          have hYne : Y ≠ [] := by rw [hY, ne_eq, convC_eq_nil_iff]; exact hr2ne
+          have hYhd : Y.headI = (d + 1, (rest2.headI).2) := by
+            cases hre : rest2 with
+            | nil => exact absurd hre hr2ne
+            | cons c rest2' =>
+              rw [hY, hre, convC_headI]
+              have hcl : ladOf c.2 (d + 1) y false false = false := by simp [ladOf]
+              rw [if_neg (by rw [hcl]; simp)]
+              have hcy : c.2 < y := by rw [hre] at hr2l; simpa using hr2l
+              have : ddOf c.2 (d + 1) y false false = d + 1 := by
+                unfold ddOf
+                rw [if_neg (by rw [hcl]; simp), if_neg (by intro hh; omega)]
+              rw [this]
+              simp
+          have hYlev : (Y.headI).2 < y := by rw [hYhd]; simpa using hr2l
+          have hYge : ∀ c ∈ Y, d + 1 ≤ c.1 := convC_ge' rest2 (d + 1) y false false
+          have hZsh : Z = [] ∨ ((Z.headI).1 ≤ d ∧ ¬ (Z.headI = top)) := by
+            cases hbe : Bq with
+            | nil => left; rw [hZ, hbe, convC_nil]
+            | cons c Bq' =>
+              right
+              have hcy : c.2 ≤ q.2 := by
+                have h0 := (descOK_cons.1
+                  (show descOK ((bd, q.2) :: r2') by rw [← hqe]; exact hdq2)).1
+                simp only [] at h0 hq1
+                rw [← hq1, hBq, hbe] at h0
+                simpa using h0 (by simp)
+              have hcd : c.2 < d := by omega
+              have hcl : ladOf c.2 d y false false = false := by simp [ladOf]
+              have hde : ddOf c.2 d y false false = d := by
+                unfold ddOf
+                rw [if_neg (by rw [hcl]; simp), if_neg (by intro hh; omega)]
+              have : Z.headI = (d, c.2) := by
+                rw [hZ, hbe, convC_headI, if_neg (by rw [hcl]; simp), hde]
+              rw [this, htop]
+              exact ⟨Nat.le_refl d, by intro he; have := congrArg Prod.fst he; omega⟩
           sorry
       · -- 影を挟まない
         have hdd0 : dd = ddOf y d plev first force := hdd
