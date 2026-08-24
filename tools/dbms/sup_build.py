@@ -16,7 +16,7 @@ DBMS の N[m] は 1 対 1 ではない）ので、ずれ s を 0,1,2 と振っ�
 """
 import sys, os, itertools
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from core import expand, isstd, cmpmat, show, rows
+from core import expand, isstd, cmpmat, show, rows, diagcol
 import rule as R
 
 
@@ -24,19 +24,59 @@ def is_succ(m):
     return bool(m) and all(v == 0 for v in m[-1])
 
 
+def common_prefix(Ls):
+    """行列たちの最長共通接頭辞。基本列の像は G ++ 悪い部分の複製 という形なので、
+    n を増やしても この接頭辞は変わらない（有限の観測からの外挿）。"""
+    if not Ls:
+        return ()
+    q = Ls[0]
+    for L in Ls[1:]:
+        k = 0
+        while k < len(q) and k < len(L) and q[k] == L[k]:
+            k += 1
+        q = q[:k]
+    return q
+
+
+def surely_exceeds(A, Q):
+    """A が「Q を接頭辞に持つどんな行列」も超えるか。
+
+    A と Q を平らにして比べ、Q の長さの内側で A が上回っていれば、
+    その先に何を足しても A のほうが大きい。n をいくら増やしても追いつけない、
+    という決定的な判定になる（打ち切りではない）。
+    """
+    fa = [v for c in A for v in c]
+    fq = [v for c in Q for v in c]
+    for i in range(min(len(fa), len(fq))):
+        if fa[i] != fq[i]:
+            return fa[i] > fq[i]
+    return False
+
+
 def cand_cols(P, Y):
-    """P の末尾に足せる列の候補。各行は P に出た値 +1 まで。"""
-    hi = [max((c[y] for c in P), default=0) + 1 for y in range(Y)]
+    """P の末尾に足せる列の候補。
+
+    上限は 2 つある。
+      ・DBMS の対角: 位置 x では行 y は max(x-y, 0) まで（行 y は位置 y からしか立てない）
+      ・P に出た値 +1: 値は 1 つずつしか伸びない
+    厳しいほうを採る。
+    """
+    x = len(P)
+    dc = diagcol('DBMS', x, Y)
+    hi = [min(max((c[y] for c in P), default=0) + 1, dc[y]) for y in range(Y)]
+    # DBMS の列は「0 でない成分は厳密に減る」。
+    # c[y] > 0 なら c[y-1] > c[y]（対角 max(x-y,0) の帰結。シート全行で確認済み）。
     for a in range(hi[0] + 1):
-        for b in range(min(a, hi[1]) + 1):
+        for b in range(min(a - 1, hi[1]) + 1) if a > 0 else (0,):
             if Y < 3:
                 yield (a, b)
                 continue
-            for c in range(min(b, hi[2]) + 1):
+            for c in range(min(b - 1, hi[2]) + 1) if b > 0 else (0,):
                 yield (a, b, c)
 
 
 TRACE = bool(os.environ.get('SUPTRACE'))
+MMAX = int(os.environ.get('SUPMMAX', '6'))   # N[m] をどこまで伸ばして見るか
 
 
 def _t(msg):
@@ -68,6 +108,8 @@ def build(M, Y=3, K=5, conv=None):
     #   N はすべての f(M[n]) の上界であり、N[m] は f(M[n]) のどれかに収まる。
     # 条件を満たすうち**最小**が sup。
     top = L[-1]
+    Q = common_prefix(L)
+    _t('      基本列の共通接頭辞 Q = %s' % show(Q, 1)[:76])
     best = None
     # P は「基本列のどれかの接頭辞」でよい（接頭辞は元より小さいので上界を壊さない）
     seen = set()
@@ -90,11 +132,24 @@ def build(M, Y=3, K=5, conv=None):
             nstd += 1
             if any(cmpmat(a, N) >= 0 for a in L):      # 上界か
                 continue
+            # 「大きすぎないか」を m を伸ばしながら決定的に見る。
+            #   N[m] <= f(M[K])                     -> この m は問題なし
+            #   N[m] が Q の内側で Q を超える        -> どんな n でも追いつけない。棄却
+            #   どちらでもない                        -> 判断保留。m を伸ばす
+            ok = True
             try:
-                ok = all(cmpmat(expand(N, m), top) <= 0 for m in (2, 3))
+                for m in range(2, MMAX + 1):
+                    A = expand(N, m)
+                    if cmpmat(A, top) <= 0:
+                        continue          # この m は f(M[K]) に収まる
+                    # 収まらない。追いつけないと決まるか、判断保留か
+                    ok = False            # 保留はどちらも棄却に倒す（安全側）
+                    if surely_exceeds(A, Q):
+                        _t('        棄却（決定的）: N[%d] が Q を内側で超える' % m)
+                    break
             except Exception:
                 continue
-            if not ok:                                  # 大きすぎないか
+            if not ok:
                 continue
             _t('      候補 %s' % show(N, 1)[:76])
             best = N
