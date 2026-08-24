@@ -677,3 +677,76 @@ BMS の 4 列 `(2,1,0)(1,1,0)(2,2,1)(3,2,0)` が DBMS の 1 列 `(4,2,0)` に潰
 のように `(a,1,1)` で段の regime が開き直る形で、深さの状態をリセットすべきかが決まらない。
 リセットすると別の 8 列の形（`(0)(1,1,1)(2,1)(1,1)(2)(3,1,1)(4,1)(3,1)`）が壊れる。
 両者は「regime を開く直前の状態」が同じに見えるので、さらに別の特徴量が要る。
+
+---
+
+## 2 行（ψ_0(Ω_ω) 未満）を Lean で片づけた（2026-08-24）
+
+3 行の規則探しとは切り離して、**2 行だけ**を数学として片づけた。結果、
+2 行の変換は手続き（親・影の持ち回り）ではなく、`translate` とまったく同じ形の
+**2 分岐の構造再帰**で書けることが分かった。
+
+### 変換 `convD`
+
+```
+convD [] d plev first force = []
+convD (p :: r) d plev first force =
+    cols ++ convD (引数ブロック) (dd+1) p.2 true force'
+         ++ convD (後続)         d      p.2 false false
+  where
+    lad  = first ∧ p.2 = plev+1 ∧ (d ≤ p.2 ∨ force)   -- 影の列が要るか
+    dd   = if lad then d+1 else (if 0 < p.2 ∧ d ≤ p.2 then p.2+1 else d)
+    cols = if lad then [(d,plev),(d+1,p.2)] else [(dd,p.2)]
+    force' = ¬lad ∧ first ∧ p.2 = plev   -- 親の列が影と読まれる危険の伝達
+```
+
+`d` は DBMS 側のブロックの深さ、`plev` は親の段。`force` は
+「親の列が影と誤読されるので、影の形で書け」という指示。
+`convD M 0 0 true false` は旧 `stair`（手続き版）と**完全に一致**する
+（BMS 2 行標準形 5351 個で確認、`tools/dbms/rows2.py`）。
+
+### 読み `readD`
+
+`Pair/Term.lean` の `translate` に**節を 1 つ足しただけ**:
+
+> ブロックの先頭 `p` の段が親の段と同じで、次の列がちょうど `p + (1,1)` なら、
+> `p` は段を上げるための影である。捨てて次の列から読み直す。
+
+### 主定理（`lean/Dbms.lean`、sorry 0）
+
+```
+readD_conv_ST : ST_PS M → readD (conv M) true 0 = translate M
+conv_olt_iff_seqlex : readD (conv M) <o readD (conv N) ↔ seqlex M N
+conv_injective      : conv M = conv N → M = N
+```
+
+途中で要る 3 条件はどれも標準形なら自動:
+
+| 条件 | 出どころ |
+|---|---|
+| `blockok 0 M` | `Pair/Seqlex.lean` の `blockok_ST_PS`（既存） |
+| `colOK M`（どの列も 行1 ≤ 行0） | `colOK_ST_PS`（展開が行 1 を写すだけなので保存） |
+| `descOK M`（同じ深さの後続で段が増えない） | `Pair/Cnf.lean` の `cnf_ST_PS` から 30 行 |
+
+`descOK` が `cnf`（項の標準形）からそのまま出たのが効いた。
+最初に置いた `steps1r1`（行 1 も 1 段ずつ）は **DBMS 標準形で反例がある**
+（`(0,0)(1,0)(2,1)(3,2)(4,2)(5,0)(4,2)`）ので捨てた。生成して確かめたのが正解だった。
+
+### 残る穴: DBMS 側の縮約
+
+`conv M` は DBMS の**標準形とは限らない**。BMS 2 行標準形 5351 個（≤9 列）のうち
+**78 個**で像が非標準になる。最小のもの:
+
+```
+BMS  (0,0)(1,1)(1,0)(2,1)(2,0)
+conv (0,0)(1,0)(2,1)(1,0)(2,1)(2,0)   ← DBMS 非標準
+true (0,0)(1,0)(2,1)(2,0)             ← 梯子 (1,0)(2,1) が二役を兼ねて縮む
+```
+
+シートの 264 件では **245 件が `conv A` とそのまま一致**、19 件が縮約を要する
+（`lean/DbmsConv.lean` に 264 件の #guard）。縮約後の標準形を読むほうの関数は
+`lean/DbmsSheet.lean` の `transD`（シート 264 件に一致、証明はまだ）。
+
+### スクリプト
+
+`tools/dbms/rows2.py` … 生成・`convD`・`readD`・3 条件の全数検査（`python3 rows2.py 9`）。

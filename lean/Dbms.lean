@@ -6,12 +6,44 @@ BMS と DBMS は**展開規則が完全に同一**で、違うのは標準形の
     対角 diag[x][y]     BMS: x        DBMS: max(x-y, 0)
 
 2 行なら BMS の対角は (0,0)(1,1)(2,2)... 、DBMS の対角は (0,0)(1,0)(2,1)(3,2)... 。
-行 y は位置 y からしか立ち上がれないので、DBMS の列は「0 でない成分が厳密に減る」。
+行 y は位置 y からしか立ち上がれないので、DBMS の列は段を 1 つずつしか上げられない。
 
-目標は ψ_0(Ω_ω) 未満、すなわち **2 行 BMS の全体**で変換が正しいこと。
-その範囲で必要な機構は「階段」と「逐語重複の削除」だけである
-（深さ規則・梯子の敷き直し・後始末はどれも 3 行でしか要らない。
-tools/dbms/verify_gen.py --rows2 で生成した 4668 個で確認済み）。
+範囲は ψ_0(Ω_ω) 未満、すなわち **2 行 BMS の全体**。
+
+## この版の要点（2026-08-24）
+
+変換は、`Pair/Term.lean` の `translate` と**まったく同じ形の 2 分岐の構造再帰**
+`convD` で書ける（親子関係も影の管理も要らない）。読み `readD` も `translate` に
+**節を 1 つ足しただけ**である:
+
+> ブロックの先頭 `p` の段が親の段と同じで、次の列がちょうど `p + (1,1)` なら、
+> `p` は段を 1 つ上げるための**影**である。捨てて次の列から読み直す。
+
+主定理:
+
+    readD_conv_ST : ST_PS M → readD (conv M) true 0 = translate M
+
+仮定なし（BMS 2 行標準形であることだけ）。途中で要る 3 条件
+
+    blockok 0 M   BMS 側のブロック規律      … Pair/Seqlex.lean の blockok_ST_PS
+    colOK M       どの列も 行1 ≤ 行0        … colOK_ST_PS（本ファイル、展開で保存）
+    descOK M      同じ深さの後続で段が増えない … descOK_ST_PS（Pair/Cnf.lean の cnf から）
+
+はいずれも標準形なら自動で成り立つ。系として
+
+    conv_olt_iff_seqlex : readD (conv M) <o readD (conv N) ↔ seqlex M N
+    conv_injective      : conv M = conv N → M = N
+
+つまり **`conv` は 2 行 BMS 標準形の上で順序を保ち単射で、項（順序数）を保つ**。
+
+## 残る穴
+
+`conv M` は DBMS の**標準形とは限らない**。`tools/dbms/rows2.py` によれば、
+BMS 2 行標準形 5351 個（≤9 列）のうち **78 個**で像が DBMS 非標準になる
+（`(0,0)(1,1)(1,0)(2,1)(2,0)` 型。DBMS 側では梯子が二役を兼ねて 2 列に縮む）。
+シートの 264 件では 245 件が `conv A` とそのまま一致し、19 件が縮約を要する
+（`DbmsConv.lean` に全数の #guard）。縮約された標準形のための読みは
+`DbmsSheet.lean` の `transD`（シート 264 件に一致、証明はまだ）。
 
 展開 `oper`・親子関係は `Pair/Pss.lean`（YAPSS 名前空間）のものをそのまま使う。
 -/
@@ -37,479 +69,550 @@ inductive ST_D : PairSeq → Prop where
   | diag (v : ℕ) : ST_D (ddiagSeq v)
   | oper {M : PairSeq} {n : ℕ} : ST_D M → 1 ≤ n → ST_D (M⟦n⟧)
 
-/-! ## 2. 親（計算できる形）
+/-! ## 2. DBMS の読み `readD`
 
-`Pair/Pss.lean` の `nextrel0` / `nextrel1` は命題なので、変換を定義するために
-計算できる版を置く。`pim`（yaBMS の C 実装と同じ）と同じもの:
+`Pair/Term.lean` の `translate` は「行 1 = 添字、行 0 = 森」で BMS の行列を項に読む。
+DBMS の読みはそれに**節を 1 つ足しただけ**:
 
-* 行 0 の親 = `p < x` で `M[p].1 < M[x].1` となる最大の `p`
-* 行 1 の親 = 行 0 の親の鎖を遡り、最初に `M[p].2 < M[x].2` となる `p`
--/
+> ブロックの先頭 `p` の段が親の段と同じで、次の列がちょうど `p + (1,1)` なら、
+> `p` は段を 1 つ上げるための**影**である。捨てて次の列から読み直す。
 
-/-- 行 0 の親。無ければ `none`。 -/
-def par0 (M : PairSeq) (x : ℕ) : Option ℕ :=
-  let a := (M.getD x (0, 0)).1
-  let rec go : ℕ → Option ℕ
-    | 0 => none
-    | Nat.succ p => if (M.getD p (0, 0)).1 < a then some p else go p
-  go x
+`first` は「そのブロックの先頭か」、`plev` は「親の段」。 -/
 
-/-- 行 0 の親の鎖を `fuel` 段まで遡り、最初に行 1 の値が `b` 未満になる位置。 -/
-def climb (M : PairSeq) (b : ℕ) : ℕ → Option ℕ → Option ℕ
-  | _, none => none
-  | 0, some _ => none
-  | Nat.succ fuel, some p =>
-      if (M.getD p (0, 0)).2 < b then some p else climb M b fuel (par0 M p)
+open Three in
+def readD (l : PairSeq) (first : Bool) (plev : ℕ) : Three :=
+  match l with
+  | [] => Z
+  | p :: r =>
+      if first = true ∧ p.2 = plev ∧ r.headI = (p.1 + 1, p.2 + 1) then
+        readD r true plev
+      else
+        P p.2 (readD (r.takeWhile fun q => p.1 < q.1) true p.2)
+              (readD (r.dropWhile fun q => p.1 < q.1) false p.2)
+  termination_by l.length
+  decreasing_by
+  · simp only [List.length_cons]; omega
+  · exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+  · exact Nat.lt_succ_of_le (List.length_dropWhile_le _ r)
 
-/-- 行 1 の親。行 1 の値が `0` なら親なし。 -/
-def par1 (M : PairSeq) (x : ℕ) : Option ℕ :=
-  let b := (M.getD x (0, 0)).2
-  if b = 0 then none else climb M b (x + 1) (par0 M x)
+/-! ## 3. 変換 `convD`
 
-/-! ## 3. 変換（階段）
+`translate` と同じ引数／後続の 2 分岐で、BMS の列 1 本を DBMS の 1 本か 2 本に写す。
 
-元の列 `x` を 1 本ずつ写す。段が足りないところには**影の列**を挿す。
-影は親ごとに 1 回だけ作って使い回す（同じ親に吊るす 2 本目の列は既存の影に乗る）。
+* `d` はいま書いている DBMS 側のブロックの深さ、`plev` は親の段
+* `lad`（梯子）: 段が親の +1 で、その深さでは段 `s` を直接書けない（`d ≤ s`）か、
+  親の列が影と読まれてしまう（`force`）とき。影 `(d, plev)` を先に置く
+* `force`: 「親の列が影と読まれる危険があるので、影の形で書け」という指示 -/
 
-2 行では列 `(a,b)` の像はこうなる。
+/-- 影の列を挿すか。 -/
+def ladOf (s d plev : ℕ) (first force : Bool) : Bool :=
+  first && (s == plev + 1) && (decide (d ≤ s) || force)
 
-* `(0,0)`      -> `(0,0)`
-* `b = 0`      -> `(img(行0の親).1 + 1, 0)`
-* `b > 0`      -> 影 `s` を用意して `(max (img(行0の親).1 + 1) (s.1 + 1), s.2 + 1)`
-  影 `s` は「行 1 の親の像」。ただしその像が `(0,0)` のときだけ、
-  新しい列 `(1,0)` を挿してそれを影にする。
--/
+/-- 本体の列の深さ。 -/
+def ddOf (s d plev : ℕ) (first force : Bool) : ℕ :=
+  if ladOf s d plev first force then d + 1
+  else if 0 < s ∧ d ≤ s then s + 1 else d
 
-/-- 変換の途中状態。 -/
-structure CSt where
-  /-- ここまでに書いた DBMS の列（順方向）。 -/
-  out : PairSeq
-  /-- 元の列 `i` の像（順方向、`i` 番目が元の列 `i` に対応）。 -/
-  img : PairSeq
-  /-- 影を作った親の位置と、その影の値。 -/
-  sh : List (ℕ × ℕ × ℕ)
-  deriving Repr
+/-- BMS 2 行 -> DBMS 2 行。 -/
+def convD : PairSeq → ℕ → ℕ → Bool → Bool → PairSeq
+  | [], _, _, _, _ => []
+  | p :: r, d, plev, first, force =>
+      (if ladOf p.2 d plev first force then [(d, plev), (d + 1, p.2)]
+       else [(ddOf p.2 d plev first force, p.2)])
+      ++ convD (r.takeWhile fun q => p.1 < q.1)
+           (ddOf p.2 d plev first force + 1) p.2 true
+           (!ladOf p.2 d plev first force && first && (p.2 == plev))
+      ++ convD (r.dropWhile fun q => p.1 < q.1) d p.2 false false
+  termination_by M => M.length
+  decreasing_by
+  · exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+  · exact Nat.lt_succ_of_le (List.length_dropWhile_le _ r)
 
-/-- 空の状態。 -/
-def CSt.init : CSt := ⟨[], [], []⟩
-
-/-- 親 `p` の影を引く。無ければ `none`。 -/
-def CSt.lookSh (s : CSt) (p : ℕ) : Option (ℕ × ℕ) :=
-  (s.sh.find? (fun t => t.1 = p)).map (fun t => t.2)
-
-/-- 位置 `p` の像。 -/
-def CSt.imgAt (s : CSt) : Option ℕ → ℕ × ℕ
-  | none => (0, 0)
-  | some p => s.img.getD p (0, 0)
-
-/-- 列 `x` を 1 本写す。 -/
-def convStep (M : PairSeq) (s : CSt) (x : ℕ) : CSt :=
-  let c := M.getD x (0, 0)
-  if c = (0, 0) then
-    ⟨s.out ++ [(0, 0)], s.img ++ [(0, 0)], s.sh⟩
-  else if c.2 = 0 then
-    let v : ℕ × ℕ := ((s.imgAt (par0 M x)).1 + 1, 0)
-    ⟨s.out ++ [v], s.img ++ [v], s.sh⟩
-  else
-    let p1 := par1 M x
-    let pv := s.imgAt p1
-    -- 影: 親の像がそのまま使えるか、`(1,0)` を挿すか
-    match p1, s.lookSh (p1.getD 0) with
-    | some p, some sv =>
-        let v : ℕ × ℕ := (max ((s.imgAt (par0 M x)).1 + 1) (sv.1 + 1), sv.2 + 1)
-        ⟨s.out ++ [v], s.img ++ [v], s.sh⟩
-    | some p, none =>
-        if 1 ≤ pv.1 then
-          let v : ℕ × ℕ := (max ((s.imgAt (par0 M x)).1 + 1) (pv.1 + 1), pv.2 + 1)
-          ⟨s.out ++ [v], s.img ++ [v], (p, pv) :: s.sh⟩
-        else
-          let sv : ℕ × ℕ := (pv.1 + 1, 0)
-          let v : ℕ × ℕ := (max ((s.imgAt (par0 M x)).1 + 1) (sv.1 + 1), sv.2 + 1)
-          ⟨s.out ++ [sv, v], s.img ++ [v], (p, sv) :: s.sh⟩
-    | none, _ =>
-        let v : ℕ × ℕ := ((s.imgAt (par0 M x)).1 + 1, 1)
-        ⟨s.out ++ [v], s.img ++ [v], s.sh⟩
-
-/-- 階段。影の列を挿しながら元の列を 1 本ずつ写す。 -/
-def stair (M : PairSeq) : PairSeq :=
-  ((List.range M.length).foldl (convStep M) CSt.init).out
+/-- 変換の入口。 -/
+def conv (M : PairSeq) : PairSeq := convD M 0 0 true false
 
 /-! ### 動作確認 -/
 
--- `(0,0)(1,1)` -> `(0,0)(1,0)(2,1)`
-#guard stair [(0,0),(1,1)] = [(0,0),(1,0),(2,1)]
--- 2 本目の `(1,1)` は既存の影に乗る
-#guard stair [(0,0),(1,1),(1,1)] = [(0,0),(1,0),(2,1),(2,1)]
--- `(0,0)` で区切ると影が作り直される
-#guard stair [(0,0),(1,1),(0,0),(1,1)] = [(0,0),(1,0),(2,1),(0,0),(1,0),(2,1)]
--- 対角
-#guard stair [(0,0),(1,1),(2,2)] = [(0,0),(1,0),(2,1),(3,2)]
--- 行 1 が 0 の列はそのまま
-#guard stair [(0,0),(1,1),(1,0)] = [(0,0),(1,0),(2,1),(1,0)]
-#guard stair [(0,0),(1,1),(1,0),(2,1)] = [(0,0),(1,0),(2,1),(1,0),(2,1)]
+#guard conv [(0,0)] = [(0,0)]
+#guard conv [(0,0),(1,1)] = [(0,0),(1,0),(2,1)]
+#guard conv [(0,0),(1,1),(2,2)] = [(0,0),(1,0),(2,1),(3,2)]
+#guard conv [(0,0),(1,1),(1,1)] = [(0,0),(1,0),(2,1),(2,1)]
+#guard conv [(0,0),(1,1),(1,0),(2,1)] = [(0,0),(1,0),(2,1),(1,0),(2,1)]
+#guard conv [(0,0),(1,0),(2,1)] = [(0,0),(1,0),(2,0),(3,1)]
+#guard conv [(0,0),(0,0),(1,1)] = [(0,0),(0,0),(1,0),(2,1)]
 
-/-! ## 4. DBMS の読み `translateD`
+open Three in
+#guard readD (conv [(0,0),(1,1)]) true 0 = translate [(0,0),(1,1)]
+open Three in
+#guard readD (conv [(0,0),(1,1),(1,0),(2,1)]) true 0 = translate [(0,0),(1,1),(1,0),(2,1)]
+open Three in
+#guard readD (conv [(0,0),(1,0),(2,1)]) true 0 = translate [(0,0),(1,0),(2,1)]
 
-`Pair/Term.lean` の `translate` は「行 1 = 添字、行 0 = 森」で BMS の行列を項に読む。
-DBMS では対角が `(j, j-1)` なので、読み方が変わる。264 件のシートの対で確かめた形:
+/-! ## 4. 主定理の仮定
 
-* 添字は行 1、森は行 0（ここは同じ）
-* **`(+1,+1)` で続く連**（DBMS の対角の段）は、添字を引数側に入れ子にした鎖になる。
-  例: `(1,0)(2,1)(3,2)` は `P1(P2(Z,Z),Z)`
-* 連を取るのは「親の最初の子」かつ「**底の段が親と同じ**」ときだけ。
-  段が下がっていればそれは影ではなく新しい加算項の頭
-* 連のあとに続く列は、その**行 0（深さ）に対応する段**のノードの後続になる。
-  連より浅い列は連全体の後続
-* 連の長さが 1 で、兄弟が尽きたあと**同じ深さで段が下がる**列が来るときは、
-  その連は BMS 側で「梯子」と「本体」の二役を兼ねている（縮約で 1 本に潰れている）ので
-  `P 影の段 (頂上から読み直したもの) (残り)` と開き直す
+* `colOK M`: どの列も 行1 ≤ 行0（BMS 標準形は対角 `(x,x)` 以下なので成り立つ）
+* `descOK M`: 同じ深さの後続の鎖では段が増えない（CNF の降下条件） -/
 
-Python 版は `tools/dbms/translateD_search.py` の `mk_chain4`（264/264）。
--/
+/-- どの列も 行1 ≤ 行0。 -/
+def colOK (M : PairSeq) : Prop := ∀ c ∈ M, c.2 ≤ c.1
 
-/-- `p` から始まる連の長さ。`(+1,+1)` で続く限り伸びる。 -/
-def runLen (p : ℕ × ℕ) : PairSeq → ℕ
-  | [] => 0
-  | q :: r => if q.1 = p.1 + 1 ∧ q.2 = p.2 + 1 then runLen q r + 1 else 0
-
-/-- 連の頂上。 -/
-def runTop (p : ℕ × ℕ) : PairSeq → ℕ × ℕ
-  | [] => p
-  | q :: r => if q.1 = p.1 + 1 ∧ q.2 = p.2 + 1 then runTop q r else p
-
-/-- 連は先頭からの**接頭辞**である。あとで `seqlex` との整合を示すときに効く。 -/
-theorem runLen_le (p : ℕ × ℕ) (l : PairSeq) : runLen p l ≤ l.length := by
-  induction l generalizing p with
-  | nil => simp [runLen]
-  | cons q r ih =>
-    by_cases h : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1
-    · simpa [runLen, h] using Nat.succ_le_succ (ih q)
-    · simp [runLen, h]
-
-/-! ### 動作確認（連） -/
-
-#guard runLen (1, 0) [(2,1),(3,2)] = 2
-#guard runTop (1, 0) [(2,1),(3,2)] = (3, 2)
-#guard runLen (1, 0) [(2,1),(3,0)] = 1
-#guard runLen (0, 0) [(1,0)] = 0
-
-/-! ### translateD 本体 -/
-
-/-- 深さ `a` の子（引数）になる先頭部分の長さ。 -/
-def argLen (a : ℕ) : PairSeq → ℕ
-  | [] => 0
-  | q :: r => if a < q.1 then argLen a r + 1 else 0
-
-/-- 同じ深さ・同じ段の兄弟の数。 -/
-def sibLen (t : ℕ × ℕ) : PairSeq → ℕ
-  | [] => 0
-  | q :: r => if q.1 = t.1 ∧ q.2 = t.2 then sibLen t r + 1 else 0
-
-/-- 深さが `a` 以上で続く先頭部分の長さ。 -/
-def deepLen (a : ℕ) : PairSeq → ℕ
-  | [] => 0
-  | q :: r => if a ≤ q.1 then deepLen a r + 1 else 0
-
-/-- 長さの上界（停止性に使う）。 -/
-theorem argLen_le (a : ℕ) (l : PairSeq) : argLen a l ≤ l.length := by
-  induction l with
-  | nil => simp [argLen]
-  | cons q r ih =>
-    by_cases h : a < q.1
-    · simpa [argLen, h] using Nat.succ_le_succ ih
-    · simp [argLen, h]
-
-theorem sibLen_le (t : ℕ × ℕ) (l : PairSeq) : sibLen t l ≤ l.length := by
-  induction l with
-  | nil => simp [sibLen]
-  | cons q r ih =>
-    by_cases h : q.1 = t.1 ∧ q.2 = t.2
-    · simpa [sibLen, h] using Nat.succ_le_succ ih
-    · simp [sibLen, h]
-
-theorem deepLen_le (a : ℕ) (l : PairSeq) : deepLen a l ≤ l.length := by
-  induction l with
-  | nil => simp [deepLen]
-  | cons q r ih =>
-    by_cases h : a ≤ q.1
-    · simpa [deepLen, h] using Nat.succ_le_succ ih
-    · simp [deepLen, h]
-
-/-- 連の列そのもの `[c_1, …, c_k]`（先頭 `p` は含まない）。 -/
-def runList (p : ℕ × ℕ) : PairSeq → PairSeq
-  | [] => []
-  | q :: r => if q.1 = p.1 + 1 ∧ q.2 = p.2 + 1 then q :: runList q r else []
-
-theorem runList_length (p : ℕ × ℕ) (l : PairSeq) : (runList p l).length ≤ l.length := by
-  induction l generalizing p with
-  | nil => simp [runList]
-  | cons q r ih =>
-    by_cases h : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1
-    · simpa [runList, h] using Nat.succ_le_succ (ih q)
-    · simp [runList, h]
-
-open YAPSS.Three in
-/-- 同じ段のノードを `n` 個、後続の向きに重ねる（連の兄弟ぶん）。 -/
-def wrapN : ℕ → ℕ → Three → Three
-  | 0, _, t => t
-  | Nat.succ n, s, t => P s Z (wrapN n s t)
-
-open YAPSS.Three in
-mutual
-
-/-- DBMS の読み（燃料つき）。`first` は「親の最初の子か」、`plev` は「親の段」。
-
-燃料は列の本数を渡す。`transD` がそれを噛ませる。停止性を構造で示すかわりに
-燃料で回すのは、連の切れ目が後続を見て決まるため（`runLen`）で、
-証明の側では `transD_spec`（燃料が足りていれば値が変わらない）で吸収する。 -/
-def transDF : ℕ → PairSeq → Bool → ℕ → Three
-  | _, [], _, _ => Z
-  | 0, _, _, _ => Z
-  | Nat.succ fuel, p :: rest, first, plev =>
-      let k := if first = true ∧ p.2 = plev then runLen p rest else 0
-      let top := if k = 0 then p else runTop p rest
-      let tail := rest.drop k
-      let i := argLen top.1 tail
-      let arg := transDF fuel (tail.take i) true top.2
-      let after := tail.drop i
-      let j := sibLen top after
-      let r2 := after.drop j
-      if k = 1 ∧ r2 ≠ [] ∧ (r2.headI).1 = top.1 ∧ (r2.headI).2 < top.2 then
-        -- 連が「梯子 + 本体」の二役。頂上から読み直す
-        let m := deepLen top.1 r2
-        let inner := transDF fuel (top :: (tail.take i ++ after.take j ++ r2.take m)) true p.2
-        P top.2 arg
-          (wrapN j top.2 (P p.2 inner (transDF fuel (r2.drop m) false plev)))
-      else if k ≤ 1 then
-        -- 段が 1 つなら振り分けるものがない。残りは全部この段の後続
-        P top.2 arg (transDF fuel after false top.2)
-      else
-        -- 連の各段に、後続を深さで振り分けて鎖にする
-        let n0 := deepLen top.1 after
-        let node0 := P top.2 arg (transDF fuel (after.take n0) false top.2)
-        chainDF fuel ((runList p rest).dropLast.reverse) node0 (after.drop n0) plev
-
-/-- 連の途中の段を、内側から外へ積む。後続はその段の深さで切り分ける。
-一番外の段には、連より浅い列（残り全部）が後続として付く。 -/
-def chainDF : ℕ → PairSeq → Three → PairSeq → ℕ → Three
-  | _, [], node, _, _ => node
-  | 0, _, node, _, _ => node
-  | Nat.succ fuel, [c], node, rest, plev =>
-      P c.2 node (transDF fuel rest false plev)
-  | Nat.succ fuel, c :: cs, node, rest, plev =>
-      let n := deepLen c.1 rest
-      chainDF fuel cs (P c.2 node (transDF fuel (rest.take n) false c.2))
-        (rest.drop n) plev
-
-end
-
-/-- DBMS の読み。 -/
-def transD (l : PairSeq) : Three := transDF (l.length + 1) l true 0
-
-/-! ### 動作確認（代表例。264 件の全数検査は `DbmsAll.lean`） -/
-
-open YAPSS.Three in
-#guard transD [(0,0)] = P 0 Z Z
-open YAPSS.Three in
-#guard transD [(0,0),(1,0),(2,1)] = P 0 (P 1 Z Z) Z
-open YAPSS.Three in
-#guard transD [(0,0),(1,0)] = P 0 (P 0 Z Z) Z
-open YAPSS.Three in
-#guard transD [(0,0),(1,0),(2,1),(3,2)] = P 0 (P 1 (P 2 Z Z) Z) Z
-open YAPSS.Three in
-#guard transD [(0,0),(1,0),(2,1),(2,0)]
-    = P 0 (P 1 Z (P 0 (P 1 Z (P 0 Z Z)) Z)) Z
-
-/-! ## 5. DBMS のブロック規律 `blockokD`
-
-BMS 側の `blockok d B`（頭が `d`、全部 `d` 以上、行 0 は 1 段ずつ）に、
-DBMS 特有の 2 つを足す。どちらもシートの DBMS 列 1637 行で違反 0
-（trio-agent が全数検査）。
-
-* 対角の条件: 0 でない成分は厳密に減る（`c.2 > 0 → c.2 < c.1`）
-* 行 1 も 1 段ずつしか上がらない
-
-2 行に限れば行 1 は素の `steps1` で 0 違反。3 行に進むと行 0 が下がる列で破れるので、
-将来は「行 1 は行 0 の親に対して高々 +1」の形に替える（1637 行で 0 違反）。
--/
-
-/-- 行 1 が隣接で 1 段ずつしか上がらない。 -/
-def steps1r1 : PairSeq → Prop
+/-- 同じ深さの後続の鎖では段が増えない。 -/
+def descOK : PairSeq → Prop
   | [] => True
-  | [_] => True
-  | p :: q :: r => q.2 ≤ p.2 + 1 ∧ steps1r1 (q :: r)
+  | p :: r =>
+      ((r.dropWhile fun q => p.1 < q.1) ≠ [] →
+         ((r.dropWhile fun q => p.1 < q.1).headI).2 ≤ p.2) ∧
+      descOK (r.takeWhile fun q => p.1 < q.1) ∧
+      descOK (r.dropWhile fun q => p.1 < q.1)
+  termination_by M => M.length
+  decreasing_by
+  · exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+  · exact Nat.lt_succ_of_le (List.length_dropWhile_le _ r)
 
-/-- DBMS の列の条件: 0 でない成分は厳密に減る。 -/
-def dcolOK (c : ℕ × ℕ) : Prop := c.2 > 0 → c.2 < c.1
+theorem descOK_nil : descOK [] := by rw [descOK]; trivial
 
-/-- DBMS のブロック規律。 -/
-def blockokD (d : ℕ) (B : PairSeq) : Prop :=
-  blockok d B ∧ (∀ c ∈ B, dcolOK c) ∧ steps1r1 B
+theorem descOK_cons {p : ℕ × ℕ} {r : PairSeq} :
+    descOK (p :: r) ↔
+      ((r.dropWhile fun q => p.1 < q.1) ≠ [] →
+         ((r.dropWhile fun q => p.1 < q.1).headI).2 ≤ p.2) ∧
+      descOK (r.takeWhile fun q => p.1 < q.1) ∧
+      descOK (r.dropWhile fun q => p.1 < q.1) := by
+  rw [descOK]
 
-/-- 連が続くかどうかは、**隣り合う 2 列だけ**で決まる（接尾辞全体には依らない）。
-これが `seqlex` との整合の鍵で、先頭列が一致すれば連の長さも一致する。 -/
-theorem runLen_cons_pos {p q : ℕ × ℕ} {r : PairSeq}
-    (h : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1) :
-    runLen p (q :: r) = runLen q r + 1 := by
-  simp [runLen, h]
+theorem colOK_sublist {M N : PairSeq} (h : N.Sublist M) (hc : colOK M) : colOK N :=
+  fun c hcn => hc c (h.subset hcn)
 
-theorem runLen_cons_neg {p q : ℕ × ℕ} {r : PairSeq}
-    (h : ¬ (q.1 = p.1 + 1 ∧ q.2 = p.2 + 1)) :
-    runLen p (q :: r) = 0 := by
-  simp [runLen, h]
+/-! ## 5. `convD` の形についての補題 -/
 
-/-- 先頭列が同じなら連の長さも同じ。3 分岐の補題の 2 番目の枝で使う。 -/
-theorem runLen_congr_head {p : ℕ × ℕ} {q : ℕ × ℕ} {r r' : PairSeq}
-    (h : runLen q r = runLen q r') :
-    runLen p (q :: r) = runLen p (q :: r') := by
-  by_cases hc : q.1 = p.1 + 1 ∧ q.2 = p.2 + 1
-  · simp [runLen, hc, h]
-  · simp [runLen, hc]
+theorem le_ddOf (s d plev : ℕ) (first force : Bool) : d ≤ ddOf s d plev first force := by
+  unfold ddOf
+  split
+  · omega
+  · split
+    · omega
+    · exact Nat.le_refl d
 
-/-! ### 対角が `blockokD` を満たす（帰納法の底） -/
+@[simp] theorem convD_nil (d plev : ℕ) (first force : Bool) :
+    convD [] d plev first force = [] := by rw [convD]
 
-@[simp] theorem ddiagSeq_zero : ddiagSeq 0 = [(0, 0)] := by
-  simp [ddiagSeq, dcol]
+theorem convD_cons (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool) :
+    convD (p :: r) d plev first force =
+      (if ladOf p.2 d plev first force then [(d, plev), (d + 1, p.2)]
+       else [(ddOf p.2 d plev first force, p.2)])
+      ++ convD (r.takeWhile fun q => p.1 < q.1)
+           (ddOf p.2 d plev first force + 1) p.2 true
+           (!ladOf p.2 d plev first force && first && (p.2 == plev))
+      ++ convD (r.dropWhile fun q => p.1 < q.1) d p.2 false false := by
+  rw [convD]
 
-theorem ddiagSeq_succ (v : ℕ) : ddiagSeq (v + 1) = ddiagSeq v ++ [dcol (v + 1)] := by
-  simp [ddiagSeq, List.range_succ]
-
-theorem ddiagSeq_head (v : ℕ) : (ddiagSeq v).headI = (0, 0) := by
-  cases v with
-  | zero => simp
-  | succ n => simp [ddiagSeq, List.range_succ_eq_map, dcol]
-
-theorem dcolOK_dcol (j : ℕ) : dcolOK (dcol j) := by
-  intro h
-  simp only [dcol] at h ⊢
-  omega
-
-theorem ddiagSeq_dcolOK (v : ℕ) : ∀ c ∈ ddiagSeq v, dcolOK c := by
-  intro c hc
-  simp only [ddiagSeq, List.mem_map] at hc
-  obtain ⟨j, -, rfl⟩ := hc
-  exact dcolOK_dcol j
-
-theorem ddiagSeq_getLast (v : ℕ) : (ddiagSeq v).getLastD (0, 0) = dcol v := by
-  induction v with
-  | zero => simp [dcol]
-  | succ n _ => rw [ddiagSeq_succ]; simp
-
-theorem steps1_ddiagSeq (v : ℕ) : steps1 (ddiagSeq v) := by
-  induction v with
-  | zero => simp
+/-- 出てくる列はどれも深さ `d` 以上。 -/
+theorem convD_ge : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → ∀ (d plev : ℕ) (first force : Bool),
+    ∀ c ∈ convD M d plev first force, d ≤ c.1 := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM d plev first force c hc
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    simp at hc
   | succ n ih =>
-    rw [ddiagSeq_succ]
-    refine steps1_append.2 ⟨ih, by simp, Or.inr (Or.inr ?_)⟩
-    rw [ddiagSeq_getLast]
-    simp [dcol]
+    intro M hM d plev first force c hc
+    match M with
+    | [] => simp at hc
+    | p :: r =>
+      rw [convD_cons] at hc
+      have hA : (r.takeWhile fun q => p.1 < q.1).length ≤ n := by
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hM
+        omega
+      have hB : (r.dropWhile fun q => p.1 < q.1).length ≤ n := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hM
+        omega
+      rcases List.mem_append.1 hc with h | h
+      · rcases List.mem_append.1 h with h | h
+        · split at h
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+            rcases h with rfl | rfl
+            · exact Nat.le_refl d
+            · exact Nat.le_succ d
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+            subst h
+            exact le_ddOf _ _ _ _ _
+        · have := ih _ hA _ p.2 true _ c h
+          have hd := le_ddOf p.2 d plev first force
+          omega
+      · exact ih _ hB _ p.2 false false c h
 
-@[simp] theorem steps1r1_nil : steps1r1 [] := trivial
-@[simp] theorem steps1r1_single (p : ℕ × ℕ) : steps1r1 [p] := trivial
+theorem convD_eq_nil_iff (M : PairSeq) (d plev : ℕ) (first force : Bool) :
+    convD M d plev first force = [] ↔ M = [] := by
+  match M with
+  | [] => simp
+  | p :: r =>
+    rw [convD_cons]
+    constructor
+    · intro h
+      split at h <;> simp at h
+    · intro h; simp at h
 
-@[simp] theorem steps1r1_cons_cons {p q : ℕ × ℕ} {r : PairSeq} :
-    steps1r1 (p :: q :: r) ↔ q.2 ≤ p.2 + 1 ∧ steps1r1 (q :: r) := Iff.rfl
+/-- 先頭の列。 -/
+theorem convD_headI (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool) :
+    (convD (p :: r) d plev first force).headI =
+      (if ladOf p.2 d plev first force then (d, plev)
+       else (ddOf p.2 d plev first force, p.2)) := by
+  rw [convD_cons]
+  split <;> simp
 
-theorem steps1r1_append {A B : PairSeq} :
-    steps1r1 (A ++ B) ↔
-      steps1r1 A ∧ steps1r1 B ∧
-      (A = [] ∨ B = [] ∨ (B.headI).2 ≤ (A.getLastD (0, 0)).2 + 1) := by
-  induction A with
-  | nil => simp
-  | cons p A ih =>
-    cases A with
-    | nil =>
-      cases B with
-      | nil => simp
-      | cons q B' =>
-        simp only [List.nil_append, List.cons_append, steps1r1_cons_cons]
-        constructor
-        · rintro ⟨h1, h2⟩
-          exact ⟨trivial, h2, Or.inr (Or.inr (by simpa using h1))⟩
-        · rintro ⟨-, h2, (h | h | h)⟩
-          · simp at h
-          · simp at h
-          · exact ⟨by simpa using h, h2⟩
-    | cons p' A' =>
-      simp only [List.cons_append, steps1r1_cons_cons] at ih ⊢
-      constructor
-      · rintro ⟨h1, h2⟩
-        obtain ⟨hA, hB, hj⟩ := ih.1 h2
-        refine ⟨⟨h1, hA⟩, hB, ?_⟩
-        rcases hj with h | h | h
-        · simp at h
-        · exact Or.inr (Or.inl h)
-        · refine Or.inr (Or.inr ?_)
-          simpa [List.getLastD_cons] using h
-      · rintro ⟨⟨h1, hA⟩, hB, hj⟩
-        refine ⟨h1, ih.2 ⟨hA, hB, ?_⟩⟩
-        rcases hj with h | h | h
-        · simp at h
-        · exact Or.inr (Or.inl h)
-        · refine Or.inr (Or.inr ?_)
-          simpa [List.getLastD_cons] using h
+/-- 先頭の深さは本体の深さ以下。 -/
+theorem convD_head_le (p : ℕ × ℕ) (r : PairSeq) (d plev : ℕ) (first force : Bool) :
+    ((convD (p :: r) d plev first force).headI).1 ≤ ddOf p.2 d plev first force := by
+  rw [convD_headI]
+  by_cases h : ladOf p.2 d plev first force = true
+  · rw [if_pos h]
+    exact le_ddOf _ _ _ _ _
+  · rw [if_neg h]
 
-/-- 行 1 も 1 段ずつ（対角）。 -/
-theorem steps1r1_ddiagSeq (v : ℕ) : steps1r1 (ddiagSeq v) := by
-  induction v with
-  | zero => simp [ddiagSeq, dcol]
-  | succ n ih =>
-    rw [ddiagSeq_succ]
-    refine steps1r1_append.2 ⟨ih, by simp, Or.inr (Or.inr ?_)⟩
-    rw [ddiagSeq_getLast]
-    simp [dcol]
+/-- 出てくる列はどれも深さ `d` 以上（`n` を落とした形）。 -/
+theorem convD_ge' (M : PairSeq) (d plev : ℕ) (first force : Bool) :
+    ∀ c ∈ convD M d plev first force, d ≤ c.1 :=
+  convD_ge M.length M (Nat.le_refl _) d plev first force
+
+/-- 本体の深さは `d+1` か、あるいは「段を直接書ける」場合。 -/
+theorem ddOf_cases (s d plev : ℕ) (first force : Bool) (hs : s ≤ d) :
+    ddOf s d plev first force = d + 1 ∨ ¬ (0 < s ∧ d ≤ s) := by
+  by_cases hl : ladOf s d plev first force = true
+  · left; unfold ddOf; rw [if_pos hl]
+  · by_cases hcase : 0 < s ∧ d ≤ s
+    · left; unfold ddOf; rw [if_neg hl, if_pos hcase]; omega
+    · right; exact hcase
+
+/-- 深さでの切り分け。`X` が全部深く、`Y` の先頭が浅ければ、切れ目はちょうど `X | Y`。 -/
+theorem split_append {X Y : PairSeq} {dd : ℕ}
+    (hX : ∀ c ∈ X, dd < c.1) (hY : Y = [] ∨ ¬ (dd < (Y.headI).1)) :
+    ((X ++ Y).takeWhile fun q => dd < q.1) = X ∧
+      ((X ++ Y).dropWhile fun q => dd < q.1) = Y := by
+  have hYt : (Y.takeWhile fun q => dd < q.1) = [] ∧ (Y.dropWhile fun q => dd < q.1) = Y := by
+    rcases hY with rfl | h
+    · simp
+    · match Y with
+      | [] => simp
+      | q :: Y' =>
+        refine ⟨List.takeWhile_cons_of_neg (by simpa using h),
+          List.dropWhile_cons_of_neg (by simpa using h)⟩
+  refine ⟨?_, ?_⟩
+  · rw [takeWhile_append_all (by simpa using hX), hYt.1, List.append_nil]
+  · rw [dropWhile_append_all (by simpa using hX), hYt.2]
+
+/-! ## 6. 読みの 1 段（補題）
+
+`convD` が出す列 `cols ++ X ++ Y` を `readD` が読むと、ちょうど
+`P s (readD X true s) (readD Y false s)` になる。影を挟む場合と挟まない場合。 -/
+
+open Three in
+/-- 影を挟む場合。 -/
+theorem readD_lad {X Y : PairSeq} {d plev s : ℕ}
+    (hs : s = plev + 1)
+    (hXge : ∀ c ∈ X, d + 1 < c.1) (hYhead : Y = [] ∨ ¬ (d + 1 < (Y.headI).1)) :
+    readD ((d, plev) :: (d + 1, s) :: (X ++ Y)) true plev
+      = P s (readD X true s) (readD Y false s) := by
+  obtain ⟨h1, h2⟩ := split_append hXge hYhead
+  rw [readD, if_pos (by exact ⟨rfl, rfl, by simp [hs]⟩), readD,
+    if_neg (by rintro ⟨-, h, -⟩; simp only [] at h; omega)]
+  dsimp only
+  rw [h1, h2]
+
+open Three in
+/-- 影を挟まない場合。 -/
+theorem readD_dir {X Y : PairSeq} {dd plev s : ℕ} {first : Bool}
+    (hne : ¬ (first = true ∧ s = plev ∧ (X ++ Y).headI = (dd + 1, s + 1)))
+    (hXge : ∀ c ∈ X, dd < c.1) (hYhead : Y = [] ∨ ¬ (dd < (Y.headI).1)) :
+    readD ((dd, s) :: (X ++ Y)) first plev = P s (readD X true s) (readD Y false s) := by
+  obtain ⟨h1, h2⟩ := split_append hXge hYhead
+  rw [readD, if_neg (by dsimp only; exact hne)]
+  dsimp only
+  rw [h1, h2]
+
+/-- 後続の先頭は本体の深さより深くならない。 -/
+theorem convD_tail_head_le {B : PairSeq} {d s dd : ℕ}
+    (hs : s ≤ d) (hddd : d ≤ dd)
+    (hd1 : dd = d + 1 ∨ ¬ (0 < s ∧ d ≤ s))
+    (hq : B ≠ [] → (B.headI).2 ≤ s) :
+    convD B d s false false = [] ∨ ¬ (dd < ((convD B d s false false).headI).1) := by
+  match B with
+  | [] => left; rw [convD_nil]
+  | q :: B' =>
+    right
+    have h1 := convD_head_le q B' d s false false
+    have hq2 : q.2 ≤ s := by simpa using hq (by simp)
+    have h2 : ddOf q.2 d s false false ≤ dd := by
+      have hnl : ladOf q.2 d s false false = false := by simp [ladOf]
+      unfold ddOf
+      rw [if_neg (by rw [hnl]; simp)]
+      by_cases hcase : 0 < q.2 ∧ d ≤ q.2
+      · rw [if_pos hcase]
+        rcases hd1 with h | h
+        · omega
+        · exact absurd (⟨by omega, by omega⟩ : 0 < s ∧ d ≤ s) h
+      · rw [if_neg hcase]; omega
     omega
 
-/-- 対角は `blockokD 0` を満たす。**帰納法の底**。
+/-- 影を挟まないとき、続く列が影の形にならない（`force` を渡しているので）。 -/
+theorem head_ne_shadow (A Y : PairSeq) (dd s : ℕ)
+    (hY : Y = [] ∨ ¬ (dd < ((Y.headI).1))) :
+    (convD A (dd + 1) s true true ++ Y).headI ≠ (dd + 1, s + 1) := by
+  match A with
+  | [] =>
+    rw [convD_nil, List.nil_append]
+    rcases hY with rfl | h
+    · intro he
+      have h2 : ((0 : ℕ), (0 : ℕ)) = (dd + 1, s + 1) := he
+      rw [Prod.mk.injEq] at h2
+      omega
+    · intro he; rw [he] at h; simp only [] at h; omega
+  | q :: A' =>
+    rw [headI_append_left (by simp [convD_eq_nil_iff]), convD_headI]
+    by_cases hlq : ladOf q.2 (dd + 1) s true true = true
+    · rw [if_pos hlq]
+      intro he
+      have := congrArg Prod.snd he
+      simp only [] at this
+      omega
+    · rw [if_neg hlq]
+      intro he
+      have hq : q.2 = s + 1 := by
+        have := congrArg Prod.snd he
+        simpa using this
+      exact hlq (by simp [ladOf, hq])
 
-trio-agent の指摘どおり、`oper` の段は BMS 版の補題がそのまま使えるので、
-移植コストはこの底だけである（`Seqlex.lean:504 blockok_oper` に相当するものを
-DBMS 側でも用意すれば `blockokD_ST_D` が 4 行で書ける）。 -/
-theorem blockokD_ddiagSeq (v : ℕ) : blockokD 0 (ddiagSeq v) := by
-  refine ⟨⟨?_, ?_, steps1_ddiagSeq v⟩, ddiagSeq_dcolOK v, steps1r1_ddiagSeq v⟩
-  · intro _; rw [ddiagSeq_head]
-  · intro c _; exact Nat.zero_le _
+/-! ## 7. 主定理
 
-/-! ## 6. 次の関門: `oltD_iff_seqlex`
+    readD (convD M d plev first force) first plev = translate M
 
-目標は
+仮定は BMS 側のブロック規律 `blockok bd M` と `bd ≤ d`、`colOK M`、`descOK M`。
+BMS 2 行標準形 5351 個（≤9 列）で 3 条件はいずれも違反 0（`tools/dbms/rows2.py`）。 -/
 
-    theorem oltD_iff_seqlex {M N : PairSeq} (bM : blockokD M) (bN : blockokD N) (hne : M ≠ N) :
-        transD M <o transD N ↔ seqlex M N
+/-- 帰納法の 1 段。列 1 本ぶんの読み。 -/
+theorem readD_convD_step {p : ℕ × ℕ} {r : PairSeq} {d plev : ℕ} {first force : Bool}
+    (hyd : p.2 ≤ d)
+    (hArg : readD (convD (r.takeWhile fun q => p.1 < q.1)
+              (ddOf p.2 d plev first force + 1) p.2 true
+              (!ladOf p.2 d plev first force && first && (p.2 == plev))) true p.2
+            = translate (r.takeWhile fun q => p.1 < q.1))
+    (hTail : readD (convD (r.dropWhile fun q => p.1 < q.1) d p.2 false false) false p.2
+            = translate (r.dropWhile fun q => p.1 < q.1))
+    (hdesc : (r.dropWhile fun q => p.1 < q.1) ≠ [] →
+              ((r.dropWhile fun q => p.1 < q.1).headI).2 ≤ p.2) :
+    readD (convD (p :: r) d plev first force) first plev = translate (p :: r) := by
+  have hddd : d ≤ ddOf p.2 d plev first force := le_ddOf _ _ _ _ _
+  have hXge : ∀ c ∈ convD (r.takeWhile fun q => p.1 < q.1)
+      (ddOf p.2 d plev first force + 1) p.2 true
+      (!ladOf p.2 d plev first force && first && (p.2 == plev)),
+      ddOf p.2 d plev first force < c.1 := by
+    intro c hc
+    have := convD_ge' _ _ _ _ _ c hc
+    omega
+  have hYhead := convD_tail_head_le (B := r.dropWhile fun q => p.1 < q.1)
+    (d := d) (s := p.2) (dd := ddOf p.2 d plev first force) hyd hddd
+    (ddOf_cases p.2 d plev first force hyd) hdesc
+  rw [convD_cons]
+  by_cases hl : ladOf p.2 d plev first force = true
+  · -- 影を挟む
+    have hy : p.2 = plev + 1 := by simp [ladOf] at hl; omega
+    have hf : first = true := by simp [ladOf] at hl; tauto
+    subst hf
+    have hdd1 : ddOf p.2 d plev true force = d + 1 := by
+      unfold ddOf; rw [if_pos hl]
+    rw [if_pos hl]
+    rw [hdd1] at hXge hYhead hArg ⊢
+    simp only [List.cons_append, List.nil_append]
+    rw [readD_lad hy hXge hYhead, hArg, hTail, translate]
+  · -- 影を挟まない
+    rw [if_neg hl]
+    simp only [List.cons_append, List.nil_append]
+    rw [readD_dir ?hne hXge hYhead, hArg, hTail, translate]
+    case hne =>
+      rintro ⟨hf, hlv, hhd⟩
+      have hforce : (!ladOf p.2 d plev first force && first && (p.2 == plev)) = true := by
+        rw [Bool.and_eq_true, Bool.and_eq_true, Bool.not_eq_true']
+        exact ⟨⟨by simpa using hl, hf⟩, by simp [hlv]⟩
+      rw [hforce] at hhd
+      exact head_ne_shadow _ _ _ _ hYhead hhd
 
-これが通れば、順序保存は両側の `_iff_seqlex` から、単射性は `seqlex_total` +
-`olt_irrefl` から出る（`Pair/Term.lean` / `Pair/Seqlex.lean`）。
+theorem readD_convD : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
+    ∀ (bd d plev : ℕ) (first force : Bool),
+      blockok bd M → bd ≤ d → colOK M → descOK M →
+      readD (convD M d plev first force) first plev = translate M := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM bd d plev first force _ _ _ _
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    rw [convD_nil, readD, translate]
+  | succ n ih =>
+    intro M hM bd d plev first force hb hbd hc hd
+    match M with
+    | [] => rw [convD_nil, readD, translate]
+    | p :: r =>
+      have hp : p.1 = bd := by simpa using hb.1 (by simp)
+      obtain ⟨y, rfl⟩ : ∃ y, p = (bd, y) := ⟨p.2, by rw [← hp]⟩
+      have hlA : (r.takeWhile fun q => ((bd, y) : ℕ × ℕ).1 < q.1).length ≤ n := by
+        have h1 := (List.takeWhile_sublist
+          (fun q : ℕ × ℕ => ((bd, y) : ℕ × ℕ).1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hM
+        omega
+      have hlB : (r.dropWhile fun q => ((bd, y) : ℕ × ℕ).1 < q.1).length ≤ n := by
+        have h1 := List.length_dropWhile_le (fun q : ℕ × ℕ => ((bd, y) : ℕ × ℕ).1 < q.1) r
+        simp only [List.length_cons] at hM
+        omega
+      have hbA := blockok_arg hb
+      have hbB := blockok_tail hb
+      have hcA : colOK (r.takeWhile fun q => ((bd, y) : ℕ × ℕ).1 < q.1) := fun c hcm =>
+        hc c (List.mem_cons_of_mem _ ((List.takeWhile_sublist _).subset hcm))
+      have hcB : colOK (r.dropWhile fun q => ((bd, y) : ℕ × ℕ).1 < q.1) := fun c hcm =>
+        hc c (List.mem_cons_of_mem _ ((List.dropWhile_sublist _).subset hcm))
+      obtain ⟨hdhead, hdA, hdB⟩ := descOK_cons.1 hd
+      have hyd : y ≤ d := by
+        have h1 : ((bd, y) : ℕ × ℕ).2 ≤ ((bd, y) : ℕ × ℕ).1 := hc (bd, y) (by simp)
+        simp only [] at h1
+        omega
+      have hddd : d ≤ ddOf ((bd, y) : ℕ × ℕ).2 d plev first force := le_ddOf _ _ _ _ _
+      exact readD_convD_step (p := (bd, y)) hyd
+        (ih _ hlA (bd + 1) _ y true _ hbA (by omega) hcA hdA)
+        (ih _ hlB bd d y false false hbB hbd hcB hdB)
+        hdhead
 
-### 分割の補題は 3 分岐にする（trio-agent の助言）
+/-- 変換は読みを保つ。 -/
+theorem readD_conv {M : PairSeq} (hb : blockok 0 M) (hc : colOK M) (hd : descOK M) :
+    readD (conv M) true 0 = translate M :=
+  readD_convD M.length M (Nat.le_refl _) 0 0 0 true false hb (Nat.le_refl 0) hc hd
 
-`Seqlex.lean:233 seqlex_arg_or_tail` は述語が**列ごと**なのに対し、
-連の述語は**隣り合う 2 列ごと**。接尾辞全体には依らない（`runLen_cons_pos/neg`）ので、
-次の 3 分岐にすれば足りる。
+/-! ## 8. 仮定は BMS 標準形なら自動で成り立つ
 
-    seqlex (q :: s) (q' :: s') →
-        q ≠ q' ∧ pairlt q q'        -- 即決。連には入らない
-      ∨ q = q' ∧ 連の長さが一致 ∧ （引数が一致 → 後続を比較 / 違う → 引数を比較）
+`blockok 0` は `Pair/Seqlex.lean` の `blockok_ST_PS`。
+`colOK` は展開が行 1 を写すだけで行 0 は増えるだけなので保たれる。
+`descOK` は `Pair/Cnf.lean` の `cnf`（項の標準形）からそのまま出る。 -/
 
-2 番目の枝では先頭列が一致しているので連の長さも一致し（`runLen_congr_head`）、
-BMS 版の議論がそのまま通る。
+theorem colOK_entry {M : PairSeq} (h : colOK M) (j : ℕ) : entry M 1 j ≤ entry M 0 j := by
+  unfold entry
+  simp only [if_neg (by decide : ¬ (1 : ℕ) = 0)]
+  by_cases hj : j < M.length
+  · rw [getD_eq_getElem' M ((0 : ℕ), (0 : ℕ)) hj]
+    exact h _ (List.getElem_mem hj)
+  · have he : M.getD j ((0 : ℕ), (0 : ℕ)) = (0, 0) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]
+      rfl
+    rw [he]
+    exact Nat.le_refl 0
 
-### 連の長さが違う場合も決まる
+theorem colOK_sub {M N : PairSeq} (h : N.Sublist M) (hc : colOK M) : colOK N :=
+  fun c hcn => hc c (h.subset hcn)
 
-`M = p :: r`, `N = p :: r'` で連の長さが `k < m` のとき、決着するのは `k+1` 列目。
-連は `c_{j+1} = c_j + (1,1)` で強制されるので `min(k,m)` までは完全に一致している。
-`M` の `k+1` 列目を `q` とすると `pairlt q (c_k + (1,1))` で、場合は 2 つだけ。
+theorem colOK_diagSeq (v : ℕ) : colOK (diagSeq 0 v) := by
+  intro c hc
+  unfold diagSeq at hc
+  simp only [List.mem_map] at hc
+  obtain ⟨j, -, rfl⟩ := hc
+  exact Nat.le_refl j
 
-1. `q.1 ≤ c_k.1` — `q` は `c_k` の子でないので深さ `k` のノードの引数が空。
-   `M` 側は `Z`、`N` 側は `P … `。`olt` の「Z < P」で即決
-2. `q.1 = c_k.1 + 1` かつ `q.2 < c_k.2 + 1` — 同じ深さで添字が小さい。
-   `olt` の第 1 節（`a < e`）で即決
+theorem colOK_oper {M : PairSeq} {n : ℕ} (h : colOK M) : colOK (M⟦n⟧) := by
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]; exact h
+  · have hPred : Pred M = M.dropLast := by unfold Pred; rw [if_neg (by omega)]
+    by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0
+    · rw [oper_eq_pred_of_zero n hL hz, hPred]
+      exact colOK_sub (M.dropLast_sublist) h
+    · by_cases hp : hasParent M (idx1 M (M.length - 1)) (M.length - 1)
+      · rw [oper_bad_unfold n hL hz hp]
+        intro c hc
+        rcases List.mem_append.1 hc with hc | hc
+        · exact colOK_sub (List.take_sublist _ M) h c hc
+        · simp only [List.mem_flatMap, List.mem_map] at hc
+          obtain ⟨k, -, j, -, rfl⟩ := hc
+          have := colOK_entry h j
+          simp only []
+          omega
+      · rw [oper_eq_pred_of_noParent n hL hz hp, hPred]
+        exact colOK_sub (M.dropLast_sublist) h
 
-逆向き（`k > m`）を排除するのに `steps1r1`（行 1 も 1 段ずつ）が要る。
-`steps1` は行 0 しか縛らないので、`(4,1)` に対する `(4,2)` を通してしまう。
+theorem colOK_ST_PS {M : PairSeq} (hM : ST_PS M) : colOK M := by
+  induction hM with
+  | diag v => exact colOK_diagSeq v
+  | oper _ _ ih => exact colOK_oper ih
 
-なお、以前ここに書いた反例 `p=(0,0), r'=[(2,0)]` は `blockok` の下では**存在しない**
-（行 0 が 0 から 2 へ飛ぶので `steps1` 違反）。
+open Three in
+theorem descOK_of_cnf : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → cnf (translate M) → descOK M := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM _
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    rw [descOK]
+    trivial
+  | succ n ih =>
+    intro M hM hcnf
+    match M with
+    | [] => rw [descOK]; trivial
+    | p :: r =>
+      have hlA : (r.takeWhile fun q => p.1 < q.1).length ≤ n := by
+        have h1 := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hM
+        omega
+      have hlB : (r.dropWhile fun q => p.1 < q.1).length ≤ n := by
+        have h1 := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hM
+        omega
+      rw [translate] at hcnf
+      rw [descOK_cons]
+      match hBe : (r.dropWhile fun q => p.1 < q.1) with
+      | [] =>
+        rw [hBe] at hcnf
+        rw [translate] at hcnf
+        refine ⟨fun hne => absurd hBe hne, ih _ hlA (cnf_P_Z.1 hcnf), ?_⟩
+        rw [hBe]
+        exact descOK_nil
+      | q :: B' =>
+        rw [hBe] at hcnf
+        rw [translate] at hcnf
+        obtain ⟨h1, h2, h3⟩ := cnf_P_P.1 hcnf
+        refine ⟨fun _ => ?_, ih _ hlA h1, ?_⟩
+        · rw [hBe]
+          show q.2 ≤ p.2
+          by_contra hlt
+          exact h2 (olt_P_P.2 (Or.inl (by omega)))
+        · rw [hBe]
+          rw [← translate] at h3
+          exact ih _ (by rw [← hBe]; exact hlB) h3
 
--/
+theorem descOK_ST_PS {M : PairSeq} (hM : ST_PS M) : descOK M :=
+  descOK_of_cnf M.length M (Nat.le_refl _) (cnf_ST_PS hM)
+
+/-- **主結果**: BMS 2 行標準形なら、変換は無条件に読みを保つ。 -/
+theorem readD_conv_ST {M : PairSeq} (hM : ST_PS M) : readD (conv M) true 0 = translate M :=
+  readD_conv (blockok_ST_PS hM) (colOK_ST_PS hM) (descOK_ST_PS hM)
+
+/-! ## 9. 順序 -/
+
+open Three in
+/-- 変換は順序を保つ（項の順序 `<o` の意味で）。 -/
+theorem conv_olt_iff_seqlex {M N : PairSeq} (hM : ST_PS M) (hN : ST_PS N) (hne : M ≠ N) :
+    (readD (conv M) true 0 <o readD (conv N) true 0 ↔ seqlex M N) := by
+  rw [readD_conv_ST hM, readD_conv_ST hN]
+  exact olt_iff_seqlex (blockok_ST_PS hM) (blockok_ST_PS hN) hne
+
+open Three in
+/-- 変換は単射。 -/
+theorem conv_injective {M N : PairSeq} (hM : ST_PS M) (hN : ST_PS N)
+    (h : conv M = conv N) : M = N := by
+  by_contra hne
+  rcases seqlex_total M N with he | hs | hs
+  · exact hne he
+  · have := (conv_olt_iff_seqlex hM hN hne).2 hs
+    rw [h] at this
+    exact olt_irrefl _ this
+  · have := (conv_olt_iff_seqlex hN hM (Ne.symm hne)).2 hs
+    rw [h] at this
+    exact olt_irrefl _ this
 
 end DBMS
