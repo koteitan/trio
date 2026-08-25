@@ -1014,3 +1014,86 @@ ST_D_conC_holds_of_res : RDzeroRes → RDposRes → ∀ M, ST_PS M → 1 < |M| �
 | 禁止形 `noAdj3`（`rows2.gen('BMS',10)`） | 同上 |
 | 場合 (c) の証人の存在 | `blockok` ブロック ≤5 列、`d`/`plev` ≤ 3、`bd` ≤ 2 で 2482560 例 |
 | 場合 (d) の段 0 の可換性 | 標準形 ≤8 列の該当 5362 個、`n = 1,2,3` |
+
+## 2026-08-26（続き 4）: 段 > 0 の帰納を不変量つきで作り直し、残余は 3 つ（すべて真）
+
+### 到達点
+
+```
+reindexD_pos_block2 : RDlad2 → RDnopar → RDnode → （ブロック版の帰納・不変量つき）
+reindexD_pos_of2    : CtrRes → RDlad2 → RDnopar → RDnode → ReindexD_pos
+reindexD_holds_of_res2  : CtrRes → RDzeroRes2 → RDposRes2 → ReindexD
+ST_D_conC_holds_of_res2 : 同上 → ST_PS M → ST_D (conC M)
+```
+
+`RDposRes2 = RDlad2 ∧ RDnopar ∧ RDnode`。**旧 `RDposRes` は偽だったが、
+新しい 3 つはすべて全数検査で反例 0**（下の表）。`leanman check` は exit 0、`sorry` 0。
+
+### 段 0 でなかった不変量が 3 つ要った
+
+段 0 側（`reindexD_zero_block2`）の `argPatOK` / `hpOK` / `fOK` だけでは足りない。
+全数検査で反例を出しながら次の 3 つを足した:
+
+| 不変量 | これが無いときの反例 |
+|---|---|
+| `adjLev M`（隣で深さが 1 上がるなら段は高々 +1。`r1ok` の隣接版） | `B = (1,0)(2,2)`, `d = 1`（場合 (d) が 872 件壊れる） |
+| `dpOK bd d plev first`（`d = bd` なら `plev = 0` か `plev + 1 < bd`） | `B = (2,2)(2,1)(3,2)(3,1)`, `d = 2`, `plev = 1`（梯子・親なしの両方） |
+| `hcOK B plev first`（`ctrHeadOK`: 縮約の前置きが揃えば縮約は必ず発火する） | `B = (1,1)(1,0)(2,1)(2,1)`, `d = 1`, `plev = 0`, `first`（梯子つき兄弟） |
+
+* `adjLev` は `r1ok_ST_PS` から**証明済み**（`adjLev_of_r1ok` / `adjLev_ST_PS`）。
+  連続部分列に遺伝する（`adjLev_infix`）。
+* `dpOK` は `ddOf` の場合分けだけで伝播する（`dpOK_arg`）。根では自明。
+* `ctrHeadOK` だけ BMS 標準形の性質として未証明なので `CtrRes` に括り出した。
+
+### `CtrRes`（新しい残余）
+
+```
+def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
+```
+
+`argCtrOK` は「どの**引数ブロックの頭** `p` でも、その段が親の段 + 1 なら
+`ctrHeadOK` が成り立つ」という再帰的な述語（`argPatOK` と同じ形）。
+`ctrHeadOK B plev` は `contrLen' = contrLen`、すなわち
+
+    縮約の前置き `contrPre p U A` が兄弟 `q`（`q.2 + 1 = p.2`, `q.1 = p.1`）の
+    引数ブロックの接頭辞と一致し、その直後の列の深さが `p.1 + 1` なら、
+    その列の段は必ず `p.2` より小さい（＝縮約が本当に発火する）
+
+**引数ブロックの頭に限る**のが要点。無条件版（全部の節点で `ctrHead`）は**偽**で、
+≤7 列の標準形 7256 個中 21 個が反例（例 `(0,0)(1,1)(2,1)(1,1)(1,0)(2,1)(2,1)`。
+この反例のブロックは兄弟の位置＝`first = false` にしか現れない）。
+
+`CtrRes` は `Pair/ArgDom.lean` の `argDomCoreOn_ST_PS` から出るはずである。
+実際、`(u,w)` を `p` の親、`(u+e,w)` を `q`（`e = 1`）に取ると `A1 = p :: A ++ U` で
+`contrPre p U A = shiftr0 1 A1` なので、`sle B (shiftr0 1 (A1 ++ q :: (B ++ A2)))` は
+前置き `pre` の直後で `rest2.headI ≤ (p.1+1, p.2-1)` を強いる。これがちょうど
+「段が下がる」である。列で比べる `sle` から取り出す作業が残っている。
+
+### 残っている 4 つ（すべて真、実測で確認済み）
+
+| | 内容 | 実測 |
+|---|---|---|
+| `CtrRes` | BMS 標準形は `argCtrOK` | 標準形 ≤9 列 295014 個で違反 0 |
+| `RDzeroRes2` | 段 0・梯子つきの段での縮約 | ブロック ≤5 列 `bd ≤ 2` の 6374 例で反例 0 |
+| `RDlad2` | 段 > 0・梯子つきで兄弟へ降りる段での縮約（contr regime） | 710 例で反例 0 |
+| `RDnopar` | 段 > 0・末尾列に行 1 の親がない（弱めた `contrOK`） | 77950 例で反例 0 |
+| `RDnode` | 段 > 0・末尾列の親が節点（shift regime、ずれたコピーの補題） | 14827 例で反例 0 |
+
+（`RDlad2` / `RDnopar` / `RDnode` の実測はブロック ≤5 列・`bd ≤ 2`・`plev ≤ 3`、
+`d` は `bd`〜`bd+2`、`first` / `force` は両方。検査は `∃ m ≤ 14, ∃ n' ≤ n+5` で
+`n = 1,2,3` について。スクリプトは会話中の `check4.py` / `checkzero.py`。）
+
+さらに「標準形の右端の道の全節点でブロックの主張が成り立つ」ことも直接確かめた:
+標準形 ≤8 列 44653 個の右端の道の節点 115244 個（重複除去）で破れ 0。
+
+### 要らなかった不変量
+
+`hlOK`（頭の段 ≤ 親の段 + 1）、`plev ≤ d`、`d ≤ bd + 1` はどれも真で伝播もするが、
+残余を真にするのには不要だったので入れていない（抜き差しの実験で確認）。
+
+### 次にやること
+
+1. **`CtrRes` を `ArgDomCore` から証明する**（いちばん大きい残り）。
+2. `RDnode`（shift regime、ずれたコピーの補題）。
+3. `RDnopar`（`convC_dropLast_noParent_aux` の `contrOK` を梯子の位置だけに弱める）。
+4. `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）。
