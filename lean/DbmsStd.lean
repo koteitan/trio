@@ -5237,6 +5237,182 @@ theorem noAdj3_ST_PS {M : PairSeq} (hM : ST_PS M) : noAdj3 M := by
               omega
     · rw [oper_eq_pred_of_noParent n hL hz hp, hPred]; exact noAdj3_take _ ih
 
+
+/-! ## 4.13 `noAdj3` を `convC` の `force` に繋ぐ
+
+`convC` で `force` が効くのは、ある節点 `p` について
+
+* `p` が引数ブロックの頭（`first = true`）で `p.2 = plev`（親と同じ段）
+* `p` の引数ブロックの頭の段が `p.2 + 1`
+
+の 2 つが同時に成り立つときだけである。この形は `noAdj3` そのものなので、
+標準形では起こらない（根だけは `d = 0` で `convC_force` が使えるので別扱い）。
+
+ここでは
+* `noAdj3` が連続部分列に遺伝すること（`noAdj3_infix`）
+* 各節点でその条件を述べる遺伝的な述語 `argPatOK`（`argPatOK_ST_PS`）
+* `force` が効かないための弱い十分条件（`convC_force_head`）と
+  `argPatOK` からその条件を出す補題（`convC_arg_force_eq`）
+を用意する。ブロックの再帰に沿って `argPatOK` を運べば、
+場合 (d) の `force` と段 > 0 の `contrOK` が消える見込み。 -/
+
+/-- `noAdj3` は連続部分列に遺伝する。 -/
+theorem noAdj3_infix {L M : PairSeq} (h : L.IsInfix M) (hM : noAdj3 M) : noAdj3 L := by
+  obtain ⟨X, Y, hXY⟩ := h
+  have hlen : M.length = X.length + L.length + Y.length := by
+    rw [← hXY]; simp; omega
+  have hg : ∀ j, j < L.length → M.getD (X.length + j) (0, 0) = L.getD j (0, 0) := by
+    intro j hj
+    rw [← hXY, getD_append_left (by rw [List.length_append]; omega),
+      getD_append_right (Nat.le_add_right _ _), Nat.add_sub_cancel_left]
+  intro i hi hadj
+  refine hM (X.length + i) (by omega) ?_
+  unfold adj3 at hadj ⊢
+  rw [show X.length + i + 1 = X.length + (i + 1) by omega,
+    show X.length + i + 2 = X.length + (i + 2) by omega,
+    hg i (by omega), hg (i + 1) (by omega), hg (i + 2) (by omega)]
+  exact hadj
+
+/-- ブロック `B` の頭が親と同じ段なら、その引数ブロックの頭の段は「頭の段 + 1」ではない。 -/
+def headPatOK (B : PairSeq) (plev : ℕ) : Prop :=
+  ∀ p r, B = p :: r → p.2 = plev →
+    (r.takeWhile fun x => p.1 < x.1) ≠ [] →
+    ((r.takeWhile fun x => p.1 < x.1).headI).2 ≠ p.2 + 1
+
+/-- どの節点でも、その引数ブロックについて `headPatOK` が成り立つ。 -/
+def argPatOK : PairSeq → Prop
+  | [] => True
+  | p :: r =>
+      headPatOK (r.takeWhile fun q => p.1 < q.1) p.2 ∧
+      argPatOK (r.takeWhile fun q => p.1 < q.1) ∧
+      argPatOK (r.dropWhile fun q => p.1 < q.1)
+  termination_by M => M.length
+  decreasing_by
+  · exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+  · exact Nat.lt_succ_of_le (List.length_dropWhile_le _ r)
+
+theorem argPatOK_nil : argPatOK [] := by rw [argPatOK]; trivial
+
+theorem argPatOK_cons {p : ℕ × ℕ} {r : PairSeq} :
+    argPatOK (p :: r) ↔
+      headPatOK (r.takeWhile fun q => p.1 < q.1) p.2 ∧
+      argPatOK (r.takeWhile fun q => p.1 < q.1) ∧
+      argPatOK (r.dropWhile fun q => p.1 < q.1) := by
+  rw [argPatOK]
+
+theorem takeWhile_infix_cons (p : ℕ × ℕ) (r : PairSeq) :
+    ((r.takeWhile fun q => p.1 < q.1)).IsInfix (p :: r) :=
+  ⟨[p], r.dropWhile fun q => p.1 < q.1, by
+    simp only [List.singleton_append, List.cons_append, List.cons.injEq, true_and]
+    exact List.takeWhile_append_dropWhile⟩
+
+theorem dropWhile_infix_cons (p : ℕ × ℕ) (r : PairSeq) :
+    ((r.dropWhile fun q => p.1 < q.1)).IsInfix (p :: r) :=
+  ⟨p :: (r.takeWhile fun q => p.1 < q.1), [], by
+    simp only [List.append_nil, List.cons_append, List.cons.injEq, true_and]
+    exact List.takeWhile_append_dropWhile⟩
+
+/-- **`noAdj3` から `argPatOK` が出る。** -/
+theorem argPatOK_of_noAdj3 : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N → noAdj3 M → argPatOK M := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hMl _
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this; exact argPatOK_nil
+  | succ N ih =>
+    intro M hMl hM
+    match M with
+    | [] => exact argPatOK_nil
+    | p :: r =>
+      have hA : (r.takeWhile fun q => p.1 < q.1).length ≤ N := by
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hMl
+        omega
+      have hT : (r.dropWhile fun q => p.1 < q.1).length ≤ N := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hMl
+        omega
+      refine argPatOK_cons.2 ⟨?_, ih _ hA (noAdj3_infix (takeWhile_infix_cons p r) hM),
+        ih _ hT (noAdj3_infix (dropWhile_infix_cons p r) hM)⟩
+      -- `headPatOK`: `noAdj3` を先頭の 3 列に当てる
+      intro a s hAeq ha2 hne
+      cases r with
+      | nil => simp at hAeq
+      | cons x r' =>
+        by_cases hx : p.1 < x.1
+        · rw [List.takeWhile_cons_of_pos (by simpa using hx)] at hAeq
+          injection hAeq with hxa hs
+          subst hxa
+          subst hs
+          cases r' with
+          | nil => simp at hne
+          | cons y r'' =>
+            by_cases hy : p.1 < y.1
+            · rw [List.takeWhile_cons_of_pos (by simpa using hy)] at hne ⊢
+              by_cases hay : x.1 < y.1
+              · rw [List.takeWhile_cons_of_pos (by simpa using hay)]
+                intro hcon
+                have g0 : ((p :: x :: y :: r'').getD 0 (0, 0)) = p := rfl
+                have g1 : ((p :: x :: y :: r'').getD 1 (0, 0)) = x := rfl
+                have g2 : ((p :: x :: y :: r'').getD 2 (0, 0)) = y := rfl
+                refine hM 0 (by simp) ?_
+                unfold adj3
+                rw [show (0 : ℕ) + 1 = 1 from rfl, show (0 : ℕ) + 2 = 2 from rfl,
+                  g0, g1, g2]
+                exact ⟨hx, hay, ha2, by simpa using hcon⟩
+              · rw [List.takeWhile_cons_of_neg (by simpa using hay)] at hne
+                simp at hne
+            · rw [List.takeWhile_cons_of_neg (by simpa using hy)] at hne
+              simp at hne
+        · rw [List.takeWhile_cons_of_neg (by simpa using hx)] at hAeq
+          simp at hAeq
+
+/-- **BMS 2 行標準形は `argPatOK`。** -/
+theorem argPatOK_ST_PS {M : PairSeq} (hM : ST_PS M) : argPatOK M :=
+  argPatOK_of_noAdj3 M.length M (Nat.le_refl _) (noAdj3_ST_PS hM)
+
+/-- `force` が効かないための弱い十分条件（頭の列だけで済む）。 -/
+theorem convC_force_head {L : PairSeq} {d plev : ℕ}
+    (h : ∀ p r, L = p :: r → p.2 = plev + 1 → d ≤ p.2) (force force' : Bool) :
+    convC L d plev true force = convC L d plev true force' := by
+  match L with
+  | [] => rw [convC_nil, convC_nil]
+  | p :: r =>
+    have hlad : ladOf p.2 d plev true force = ladOf p.2 d plev true force' := by
+      unfold ladOf
+      by_cases hs : p.2 = plev + 1
+      · have hdp : d ≤ p.2 := h p r rfl hs
+        rw [decide_eq_true hdp]
+        simp
+      · rw [beq_eq_false_iff_ne.2 hs]
+        simp
+    have hdd : ddOf p.2 d plev true force = ddOf p.2 d plev true force' := by
+      unfold ddOf; rw [hlad]
+    by_cases hl : ladOf p.2 d plev true force = true
+    · rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+          (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+          (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+      · rw [convC_cons_lad_none p r d plev true force hl hcc,
+          convC_cons_lad_none p r d plev true force' (by rw [← hlad]; exact hl) hcc]
+      · rw [convC_cons_lad_some p r d plev true force hl hcc,
+          convC_cons_lad_some p r d plev true force' (by rw [← hlad]; exact hl) hcc]
+    · rw [convC_cons_nolad p r d plev true force (by simpa using hl),
+        convC_cons_nolad p r d plev true force' (by rw [← hlad]; simpa using hl), hdd]
+
+/-- **`headPatOK` があれば、節点 `p` から引数ブロックへ渡る `force` は効かない。** -/
+theorem convC_arg_force_eq {p : ℕ × ℕ} {r : PairSeq} {plev dd : ℕ}
+    (hhd : headPatOK (p :: r) plev) (hp : p.2 = plev) (b b' : Bool) :
+    convC (r.takeWhile fun q => p.1 < q.1) dd p.2 true b
+      = convC (r.takeWhile fun q => p.1 < q.1) dd p.2 true b' := by
+  refine convC_force_head ?_ b b'
+  intro a s hAeq ha
+  exfalso
+  have hne : (r.takeWhile fun x => p.1 < x.1) ≠ [] := by rw [hAeq]; simp
+  have hkey := hhd p r rfl hp hne
+  rw [hAeq] at hkey
+  exact hkey (by simpa using ha)
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -5355,3 +5531,8 @@ end DBMS
 #print axioms DBMS.noAdj3_diagSeq
 #print axioms DBMS.entry1_last_le_of_lt
 #print axioms DBMS.noAdj3_ST_PS
+#print axioms DBMS.noAdj3_infix
+#print axioms DBMS.argPatOK_of_noAdj3
+#print axioms DBMS.argPatOK_ST_PS
+#print axioms DBMS.convC_force_head
+#print axioms DBMS.convC_arg_force_eq
