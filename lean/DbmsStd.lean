@@ -5413,6 +5413,44 @@ theorem convC_arg_force_eq {p : ℕ × ℕ} {r : PairSeq} {plev dd : ℕ}
   rw [hAeq] at hkey
   exact hkey (by simpa using ha)
 
+
+/-- 頭の段が `plev + 1` でなければ梯子は立たない。 -/
+theorem ladOf_false_of_ne {s d plev : ℕ} (first force : Bool) (h : s ≠ plev + 1) :
+    ladOf s d plev first force = false := by
+  unfold ladOf
+  rw [beq_eq_false_iff_ne.2 h]
+  simp
+
+/-- 頭の段が `plev + 1` でなければ `force` は（`first` に依らず）効かない。
+`argPatOK` の系として、ブロックへ入ってくる `force` はこれで消える。 -/
+theorem convC_force_ne {L : PairSeq} {d plev : ℕ} (first force force' : Bool)
+    (h : ∀ p r, L = p :: r → p.2 ≠ plev + 1) :
+    convC L d plev first force = convC L d plev first force' := by
+  match L with
+  | [] => rw [convC_nil, convC_nil]
+  | p :: r =>
+    have hne : p.2 ≠ plev + 1 := h p r rfl
+    have hl0 : ladOf p.2 d plev first force = false := ladOf_false_of_ne first force hne
+    have hl0' : ladOf p.2 d plev first force' = false := ladOf_false_of_ne first force' hne
+    have hdd : ddOf p.2 d plev first force = ddOf p.2 d plev first force' := by
+      unfold ddOf; rw [hl0, hl0']
+    rw [convC_cons_nolad p r d plev first force hl0,
+      convC_cons_nolad p r d plev first force' hl0', hdd]
+
+/-- **`headPatOK` は、引数ブロックへ入ってくる `force` を消す。**
+節点 `p` が親と同じ段（`p.2 = plev`）なら、その引数ブロックの頭の段は
+`p.2 + 1` ではないので、そこで梯子は立たず `force` は効かない。 -/
+theorem convC_force_arg_ne {p : ℕ × ℕ} {r : PairSeq} {plev dd : ℕ}
+    (hhd : headPatOK (p :: r) plev) (hp : p.2 = plev) (first force force' : Bool) :
+    convC (r.takeWhile fun q => p.1 < q.1) dd p.2 first force
+      = convC (r.takeWhile fun q => p.1 < q.1) dd p.2 first force' := by
+  refine convC_force_ne first force force' ?_
+  intro a s hAeq
+  have hne : (r.takeWhile fun x => p.1 < x.1) ≠ [] := by rw [hAeq]; simp
+  have hkey := hhd p r rfl hp hne
+  rw [hAeq] at hkey
+  simpa using hkey
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -5536,3 +5574,6 @@ end DBMS
 #print axioms DBMS.argPatOK_ST_PS
 #print axioms DBMS.convC_force_head
 #print axioms DBMS.convC_arg_force_eq
+#print axioms DBMS.ladOf_false_of_ne
+#print axioms DBMS.convC_force_ne
+#print axioms DBMS.convC_force_arg_ne
