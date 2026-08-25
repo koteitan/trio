@@ -6127,6 +6127,156 @@ theorem reindexD_zero2 (H : RDzeroRes2) {M : PairSeq} (hM : ST_PS M)
   obtain ⟨m, n', h1, h2, h3⟩ := h
   exact ⟨m, n', h1, h2, by rw [conC, conC]; exact h3⟩
 
+
+/-! ## 4.14 段 > 0 の右端の道の帰納を不変量つきで作り直す
+
+旧版の残余 `RDposRes` は**偽**だった（計画書「続き 3」の反例
+`B = (1,1)(2,2)(2,1)(3,2)(3,1)`）。段 0 側（`reindexD_zero_block2`）と同じように
+不変量を足して作り直す。段 0 で足りた `argPatOK` / `hpOK` / `fOK` に加えて、
+段 > 0 では次の 3 つが要る（`tools/dbms` の全数検査で反例を見つけて足したもの）:
+
+* `adjLev`     隣り合う 2 列で深さが 1 上がるとき段は高々 1 しか上がらない
+               （`r1ok` の隣接版。無いと `(1,0)(2,2)` のようなブロックが混ざる）
+* `dpOK`       `d = bd` のときの親の段の制限
+               （無いと `(2,2)(2,1)(3,2)(3,1)` を `d = 2` で呼べてしまう）
+* `ctrHeadOK`  縮約の前置きが揃えば縮約は必ず発火する
+               （無いと `(1,1)(1,0)(2,1)(2,1)` を梯子の位置で呼べてしまう）
+
+最後のものだけ BMS 標準形の性質として未証明なので `CtrRes` に括り出す
+（`Pair/ArgDom.lean` の `ArgDomCore` から出るはず。実測は ≤9 列 295014 個で違反 0）。 -/
+
+/-- 隣り合う 2 列で深さが 1 上がるなら、段は高々 1 しか上がらない（`r1ok` の隣接版）。 -/
+def adjLev (M : PairSeq) : Prop :=
+  ∀ i, i + 1 < M.length →
+    (M.getD (i + 1) (0, 0)).1 = (M.getD i (0, 0)).1 + 1 →
+    (M.getD (i + 1) (0, 0)).2 ≤ (M.getD i (0, 0)).2 + 1
+
+/-- `r1ok` の証人は「深さがちょうど 1 下で間に谷なし」なので、隣なら証人は隣。 -/
+theorem adjLev_of_r1ok {M : PairSeq} (h : r1ok M) : adjLev M := by
+  intro i hi hd
+  have hpos : 0 < (M.getD (i + 1) (0, 0)).1 := by omega
+  obtain ⟨k, hk, hk1, hk2, hk3⟩ := h (i + 1) hi hpos
+  have hki : k = i := by
+    by_contra hne
+    have hlt : k < i := by omega
+    have h2 := hk2 i hlt (by omega)
+    omega
+  subst hki
+  exact hk3
+
+theorem adjLev_ST_PS {M : PairSeq} (hM : ST_PS M) : adjLev M :=
+  adjLev_of_r1ok (r1ok_ST_PS hM)
+
+/-- `adjLev` は連続部分列に遺伝する。 -/
+theorem adjLev_infix {L M : PairSeq} (h : L.IsInfix M) (hM : adjLev M) : adjLev L := by
+  obtain ⟨X, Y, hXY⟩ := h
+  have hlen : M.length = X.length + L.length + Y.length := by
+    rw [← hXY]; simp; omega
+  have hg : ∀ j, j < L.length → M.getD (X.length + j) (0, 0) = L.getD j (0, 0) := by
+    intro j hj
+    rw [← hXY, getD_append_left (by rw [List.length_append]; omega),
+      getD_append_right (Nat.le_add_right _ _), Nat.add_sub_cancel_left]
+  intro i hi hd
+  have e0 := hg i (by omega)
+  have e1 := hg (i + 1) (by omega)
+  have key := hM (X.length + i) (by omega)
+    (by rw [show X.length + i + 1 = X.length + (i + 1) by omega, e0, e1]; exact hd)
+  rw [show X.length + i + 1 = X.length + (i + 1) by omega, e0, e1] at key
+  exact key
+
+/-- `d = bd` のときの親の段の制限。引数ブロックへ降りるときだけ意味を持つ。 -/
+def dpOK (bd d plev : ℕ) (first : Bool) : Prop :=
+  first = true → d = bd → (plev = 0 ∨ plev + 1 < bd)
+
+theorem dpOK_false {bd d plev : ℕ} : dpOK bd d plev false := by
+  intro h; exact absurd h (by simp)
+
+/-- 引数ブロックへ降りるとき `dpOK` は保たれる。 -/
+theorem dpOK_arg {p : ℕ × ℕ} {bd d plev : ℕ} {first force : Bool}
+    (hp1 : p.1 = bd) (hbd : bd ≤ d) (hcol : p.2 ≤ p.1) :
+    dpOK (bd + 1) (ddOf p.2 d plev first force + 1) p.2 true := by
+  intro _ he
+  have hle := le_ddOf p.2 d plev first force
+  have hdd : ddOf p.2 d plev first force = bd := by omega
+  have hdbd : d = bd := by omega
+  unfold ddOf at hdd
+  by_cases hlad : ladOf p.2 d plev first force = true
+  · rw [if_pos hlad] at hdd; omega
+  · rw [if_neg hlad] at hdd
+    by_cases hs : 0 < p.2 ∧ d ≤ p.2
+    · rw [if_pos hs] at hdd; omega
+    · rcases Nat.eq_zero_or_pos p.2 with h0 | h0
+      · exact Or.inl h0
+      · right
+        have hnd : ¬ (d ≤ p.2) := fun hh => hs ⟨h0, hh⟩
+        omega
+
+/-- `contrLen` から「前置きの次の列の段が下がる」条件だけ外した版。 -/
+def contrLen' (p : ℕ × ℕ) (B : PairSeq) (k : ℕ) (A : PairSeq) : Option (PairSeq × PairSeq) :=
+  match B.drop k with
+  | [] => none
+  | q :: r2 =>
+      let Aq := r2.takeWhile fun x => q.1 < x.1
+      let Bq := r2.dropWhile fun x => q.1 < x.1
+      let pre := contrPre p (B.take k) A
+      let rest2 := Aq.drop pre.length
+      if q.2 + 1 = p.2 ∧ q.1 = p.1 ∧ Aq.take pre.length = pre ∧
+          rest2 ≠ [] ∧ (rest2.headI).1 = p.1 + 1 then
+        some (rest2, Bq)
+      else none
+
+/-- **縮約の前置きが揃えば縮約は必ず発火する**（段が下がる条件は自動）。
+梯子が立つのは頭の段が親の段 + 1 のときだけなので、その場合だけ課す。 -/
+def ctrHeadOK (B : PairSeq) (plev : ℕ) : Prop :=
+  ∀ p r, B = p :: r → p.2 = plev + 1 →
+    contrLen' p (r.dropWhile fun x => p.1 < x.1)
+        (unitsLen p (r.dropWhile fun x => p.1 < x.1)) (r.takeWhile fun x => p.1 < x.1)
+      = contrLen p (r.dropWhile fun x => p.1 < x.1)
+        (unitsLen p (r.dropWhile fun x => p.1 < x.1)) (r.takeWhile fun x => p.1 < x.1)
+
+/-- どの節点でも、その引数ブロックについて `ctrHeadOK` が成り立つ。 -/
+def argCtrOK : PairSeq → Prop
+  | [] => True
+  | p :: r =>
+      ctrHeadOK (r.takeWhile fun q => p.1 < q.1) p.2 ∧
+      argCtrOK (r.takeWhile fun q => p.1 < q.1) ∧
+      argCtrOK (r.dropWhile fun q => p.1 < q.1)
+  termination_by M => M.length
+  decreasing_by
+  · exact Nat.lt_succ_of_le (List.takeWhile_sublist _).length_le
+  · exact Nat.lt_succ_of_le (List.length_dropWhile_le _ r)
+
+theorem argCtrOK_nil : argCtrOK [] := by rw [argCtrOK]; trivial
+
+theorem argCtrOK_cons {p : ℕ × ℕ} {r : PairSeq} :
+    argCtrOK (p :: r) ↔
+      ctrHeadOK (r.takeWhile fun q => p.1 < q.1) p.2 ∧
+      argCtrOK (r.takeWhile fun q => p.1 < q.1) ∧
+      argCtrOK (r.dropWhile fun q => p.1 < q.1) := by
+  rw [argCtrOK]
+
+/-- ブロックの頭についての `ctrHeadOK`（`first = false` なら自明）。 -/
+def hcOK (B : PairSeq) (plev : ℕ) (first : Bool) : Prop :=
+  first = true → ctrHeadOK B plev
+
+theorem hcOK_false {B : PairSeq} {plev : ℕ} : hcOK B plev false := by
+  intro h; exact absurd h (by simp)
+
+/-- 根では `ctrHeadOK` は自明（頭が `(0,0)` なので段が `0 + 1` にならない）。 -/
+theorem ctrHeadOK_root {M : PairSeq} (hb : blockok 0 M) (hcol : colOK M) :
+    ctrHeadOK M 0 := by
+  intro p r hM hp
+  exfalso
+  have h1 : p.1 = 0 := by
+    have hh := hb.1 (by rw [hM]; simp)
+    rw [hM] at hh; simpa using hh
+  have h2 : p.2 ≤ p.1 := hcol p (by rw [hM]; simp)
+  omega
+
+/-- **`argCtrOK` は BMS 標準形の性質**（未証明。`ArgDomCore` から出るはず）。 -/
+def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
+
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -6261,3 +6411,12 @@ end DBMS
 #print axioms DBMS.argPatOK_cons
 #print axioms DBMS.takeWhile_infix_cons
 #print axioms DBMS.dropWhile_infix_cons
+#print axioms DBMS.adjLev_of_r1ok
+#print axioms DBMS.adjLev_ST_PS
+#print axioms DBMS.adjLev_infix
+#print axioms DBMS.dpOK_false
+#print axioms DBMS.dpOK_arg
+#print axioms DBMS.argCtrOK_nil
+#print axioms DBMS.argCtrOK_cons
+#print axioms DBMS.hcOK_false
+#print axioms DBMS.ctrHeadOK_root
