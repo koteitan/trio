@@ -31,6 +31,8 @@
 | `oper_append_convC`（**場合 (c) の段 0 が完成**） | `DbmsStd.lean` |
 | `oper_append_of_shallow1`（段 > 0 での局所化、証人は `le0` の鎖の上） | `DbmsStd.lean` |
 | `exists_greatest_lt` / `le0_head`（**ブロックの頭は中の全部の行 0 の祖先**） | `DbmsStd.lean` |
+| `convC_single` / `convC_dropLast_singleton`（末尾ブロックが 1 列） | `DbmsStd.lean` |
+| `convC_dropLast_arg` / `convC_dropLast_tail`（dropLast の帰納の 2 段） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
 
 いずれも sorry 0。
@@ -278,6 +280,16 @@ convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast
 * 梯子頭には親が立つので、親がないなら梯子頭でない（差 2 にならない）
 * 縮約が消える状況（`Bq = []` かつ `|rest2| = 1`）では、そこでの親は「中」にある
   （例: `(0,0)(1,1)(1,0)(2,1)(2,0)` の末尾 `(2,0)` の行 0 の親は `(1,0)`）
+
+dropLast の帰納の部品は 3 つ揃った:
+
+```
+convC_dropLast_singleton  末尾ブロックが 1 列 → 像でも 1 列（縮約は発火しない）
+convC_dropLast_arg        B が空 → 引数 A に帰着（縮約は発火しない）
+convC_dropLast_tail       梯子なし → 兄弟 B に帰着（縮約は発火しない）
+```
+
+残るのは**梯子ありで兄弟に降りる段**（縮約が発火しうる）だけ。
 
 なので (b) は
 

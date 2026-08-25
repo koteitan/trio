@@ -1162,6 +1162,116 @@ theorem oper_append_convC (A B : PairSeq) (n : ℕ) {bd d plev : ℕ}
     convC_exists_shallow B.length B (Nat.le_refl _) bd d plev hb hc hdo hbd hlast
   exact oper_append_of_shallow0 A _ n hT hz hi hp hk1 hk2
 
+/-! ## 2.79 末尾ブロックが 1 列のときの dropLast -/
+
+/-- 1 列だけの変換。`first = false` なら梯子も縮約も起きない。 -/
+theorem convC_single (c : ℕ × ℕ) (d plev : ℕ) :
+    convC [c] d plev false false = [(ddOf c.2 d plev false false, c.2)] := by
+  rw [convC_cons_nolad c [] d plev false false (by simp [ladOf])]
+  simp
+
+/-- 末尾ブロックが 1 列なら、その 1 列は像でも 1 列。 -/
+theorem convC_dropLast_singleton (p c : ℕ × ℕ) (A : PairSeq) (d plev : ℕ)
+    (first force : Bool) (hA : ∀ x ∈ A, p.1 < x.1) (hc : ¬ (p.1 < c.1)) :
+    convC (p :: (A ++ [c])) d plev first force
+      = convC (p :: A) d plev first force ++ [(ddOf c.2 d p.2 false false, c.2)] := by
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := [c]) (dd := p.1) hA (Or.inr (by simpa using hc))
+  obtain ⟨e3, e4⟩ := split_append (X := A) (Y := []) (dd := p.1) hA (Or.inl rfl)
+  simp only [List.append_nil] at e3 e4
+  -- どちらの側でも縮約は起きない
+  have hnone2 : contrLen p [] (unitsLen p []) A = none := by
+    unfold contrLen; simp
+  have hnone1 : contrLen p [c] (unitsLen p [c]) A = none := by
+    by_cases hcp : c = p
+    · have hu : unitsLen p [c] = 1 := by
+        subst hcp
+        rw [unitsLen_cons_pos]
+        simp [unitsLen]
+      unfold contrLen
+      rw [hu]; simp
+    · have hu : unitsLen p [c] = 0 := unitsLen_cons_neg hcp
+      unfold contrLen
+      rw [hu]
+      simp only [List.drop_zero, List.take_zero]
+      refine if_neg ?_
+      rintro ⟨-, -, h3, -⟩
+      have hpre : contrPre p [] A ≠ [] := by simp [contrPre]
+      simp only [List.takeWhile_nil, List.take_nil] at h3
+      exact hpre h3.symm
+  by_cases hl : ladOf p.2 d plev first force = true
+  · rw [convC_cons_lad_none p (A ++ [c]) d plev first force hl (by rw [e1, e2]; exact hnone1),
+      convC_cons_lad_none p A d plev first force hl (by rw [e3, e4]; exact hnone2),
+      e1, e2, e3, e4, convC_nil, convC_single]
+    simp [List.append_assoc]
+  · rw [convC_cons_nolad p (A ++ [c]) d plev first force (by simpa using hl),
+      convC_cons_nolad p A d plev first force (by simpa using hl),
+      e1, e2, e3, e4, convC_nil, convC_single]
+    simp [List.append_assoc]
+
+theorem dropLast_cons_ne {α : Type*} {a : α} {l : List α} (h : l ≠ []) :
+    (a :: l).dropLast = a :: l.dropLast := by
+  match l with
+  | [] => exact absurd rfl h
+  | _ :: _ => rfl
+
+/-- 引数ブロックへ降りる段。`B` が空なら縮約は起きないので、そのまま `A` に帰着する。 -/
+theorem convC_dropLast_arg (p : ℕ × ℕ) (A : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hA : ∀ x ∈ A, p.1 < x.1) (hAne : A ≠ [])
+    (ih : ∀ (dA : ℕ) (fo : Bool),
+      convC (A.dropLast) dA p.2 true fo = (convC A dA p.2 true fo).dropLast) :
+    convC (p :: A.dropLast) d plev first force
+      = (convC (p :: A) d plev first force).dropLast := by
+  have hAd : ∀ x ∈ A.dropLast, p.1 < x.1 :=
+    fun x hx => hA x ((List.dropLast_sublist A).subset hx)
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := []) (dd := p.1) hA (Or.inl rfl)
+  obtain ⟨e3, e4⟩ := split_append (X := A.dropLast) (Y := []) (dd := p.1) hAd (Or.inl rfl)
+  simp only [List.append_nil] at e1 e2 e3 e4
+  have hnone : contrLen p [] (unitsLen p []) A = none := by unfold contrLen; simp
+  have hnone' : contrLen p [] (unitsLen p []) A.dropLast = none := by unfold contrLen; simp
+  by_cases hl : ladOf p.2 d plev first force = true
+  · have hXne : convC A (d + 2) p.2 true false ≠ [] := by
+      intro he; rw [convC_eq_nil_iff] at he; exact hAne he
+    rw [convC_cons_lad_none p A.dropLast d plev first force hl (by rw [e3, e4]; exact hnone'),
+      convC_cons_lad_none p A d plev first force hl (by rw [e1, e2]; exact hnone),
+      e1, e2, e3, e4, convC_nil]
+    simp only [List.append_nil]
+    rw [ih (d + 2) false, dropLast_cons_ne (by simp), dropLast_cons_ne hXne]
+  · have hXne : convC A (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev)) ≠ [] := by
+      intro he; rw [convC_eq_nil_iff] at he; exact hAne he
+    rw [convC_cons_nolad p A.dropLast d plev first force (by simpa using hl),
+      convC_cons_nolad p A d plev first force (by simpa using hl),
+      e1, e2, e3, e4, convC_nil]
+    simp only [List.append_nil]
+    rw [ih (ddOf p.2 d plev first force + 1) (first && (p.2 == plev)), dropLast_cons_ne hXne]
+
+/-- 兄弟の鎖へ降りる段（梯子なし）。縮約は起きないので、そのまま `B` に帰着する。 -/
+theorem convC_dropLast_tail (p : ℕ × ℕ) (A B : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hA : ∀ x ∈ A, p.1 < x.1) (hBne : B ≠ []) (hBd : B.dropLast ≠ [])
+    (hBh : ¬ (p.1 < (B.headI).1))
+    (hnl : ladOf p.2 d plev first force = false)
+    (ih : convC (B.dropLast) d p.2 false false = (convC B d p.2 false false).dropLast) :
+    convC (p :: (A ++ B.dropLast)) d plev first force
+      = (convC (p :: (A ++ B)) d plev first force).dropLast := by
+  have hhd : (B.dropLast).headI = B.headI := by
+    rcases B with _ | ⟨b, _ | ⟨b2, B'⟩⟩
+    · exact absurd rfl hBne
+    · simp at hBd
+    · rfl
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := p.1) hA (Or.inr hBh)
+  obtain ⟨e3, e4⟩ := split_append (X := A) (Y := B.dropLast) (dd := p.1) hA
+    (Or.inr (by rw [hhd]; exact hBh))
+  have hYne : convC B d p.2 false false ≠ [] := by
+    intro he; rw [convC_eq_nil_iff] at he; exact hBne he
+  rw [convC_cons_nolad p (A ++ B.dropLast) d plev first force (by simpa using hnl),
+    convC_cons_nolad p (A ++ B) d plev first force (by simpa using hnl),
+    e1, e2, e3, e4, ih]
+  rw [dropLast_cons_ne (by
+    intro he
+    obtain ⟨-, h2⟩ := List.append_eq_nil_iff.1 he
+    exact hYne h2)]
+  congr 1
+  exact (List.dropLast_append_of_ne_nil hYne).symm
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -1286,3 +1396,6 @@ end DBMS
 #print axioms DBMS.oper_append_convC
 #print axioms DBMS.oper_append_of_shallow1
 #print axioms DBMS.le0_head
+#print axioms DBMS.convC_dropLast_singleton
+#print axioms DBMS.convC_dropLast_arg
+#print axioms DBMS.convC_dropLast_tail
