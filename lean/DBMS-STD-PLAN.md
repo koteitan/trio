@@ -640,3 +640,95 @@ conC ((range n).flatMap (fun k => (k*a, 0) :: shift0 (k*a) R))
 | `tools/dbms/scan_std.py` | 像が DBMS 標準形かの全数走査（≤10 列、違反 0） |
 | `tools/dbms/localize.py` | 局所化が DBMS 側で破れることの検査 |
 | `tools/dbms/rows2.py` | 変換の参照実装（Lean と同じ） |
+
+## 2026-08-26（続き）: `contrOK` が段 0 で消え、場合 (c) の降下が 4 通りとも揃った
+
+### 1. `contrOK` は段 0 では自動（`contrOK_of_last_zero`）
+
+`contrOK` が問題にする縮約の形 `some ([x], [])` では、`rest2 = [x]` と `Bq = []` から
+`r2 = pre ++ [x]` になり、**`x` は `M` の末尾列そのもの**である
+（`contr_single_getLast`）。したがって
+
+    entry M 1 (|M|-1) = 0  ⟹  contrOK M
+
+が無条件に出る。これで場合 (b)(d) の局所仮定 `contrOK` は、**末尾列の段が 0 の
+場合には完全に消えた**。段 > 0 のためだけに `ST_PS M → contrOK M` が残る。
+
+### 2. 上位の組み立て（`reindexD_holds_of`）
+
+```
+reindexD_last_zero   末尾列 = (0,0)                     … (a)、無条件
+reindexD_root_zero   段 0 かつ 親が根                    … (d) の段 0、無条件（contrOK 不要）
+ReindexD_mid         残り（場合 (c) と (d) の段 > 0）     … 未証明の Prop
+reindexD_holds_of : ReindexD_mid → ReindexD
+ST_D_conC_holds_of : ReindexD_mid → ∀ M, ST_PS M → ST_D (conC M)
+```
+
+標準形では末尾列が `(0,0)` でなければ必ず親がある（`Pair/Column.lean` の `hp_last`）
+ので、**上位では場合 (b) は起きない**。
+
+### 3. 場合 (c) の降下（1 段）が 4 通りとも揃った
+
+```
+reindexD_descend    因子化 + 両側の局所化 + 帰納法の仮定 → 1 段
+reindexD_step_gen   降下の統一形（因子化の条件 P を引数に取る）
+reindexD_arg_nolad  梯子なしで引数へ
+reindexD_arg_lad    梯子つきで引数へ（兄弟が空なので縮約は起こりようがない）
+reindexD_sib_nolad  梯子なしで兄弟へ
+reindexD_sib_lad    梯子つきで兄弟へ（その段で縮約が起きないことを仮定）
+```
+
+要った道具（すべて sorry 0）:
+
+```
+oper_headI / oper_depth_gt      展開は先頭列を変えず、列を深くしかしない
+hasParent1_of_exists            行 1 版の親の存在（証人の最大元が親）
+idx1_convC                      idx1_conC の一般版
+convC_factor_sib / _arg         梯子なしの因子化（前置き C は T に依らない）
+convC_factor_sib_lad / _arg_lad 梯子つきの因子化
+contrLen_nil                    contrLen p [] k A = none
+convC_exists_shallow_gen        段 0 の証人（first/force が一般）
+oper_append_convC_gen           段 0 の局所化（first/force が一般）
+oper_append_convC_auto / 1_auto 親の存在も証人から作るので仮定に要らない
+```
+
+**要点**: 梯子が立つのは `first = true` の段（根と引数ブロックの頭）だけで、
+そこで縮約が発火するには兄弟が空でないことが要る。引数へ降りる段では兄弟が空なので
+`contrLen p [] k A = none` により縮約は起こりようがない。したがって
+**縮約が邪魔をするのは「梯子つきで兄弟へ降りる段」だけ**である。
+
+### 4. 降下が止まる場合（ブロック版）
+
+```
+reindexD_succ_gen        末尾が (0,0)（深さ 0 のブロック）      … (a)
+reindexD_noParent_gen    末尾列に親がない（contrOK つき）       … (b)
+reindexD_noParent_zero   同上、段 0 なら仮定なし
+```
+
+### 5. 残っていること
+
+1. **場合 (d) のブロック版（節点が親）**。いまあるのは根での段 0
+   （`reindexD_node0`）だけ。ブロック版には「コピーの補題」が要る:
+
+   ```
+   convC ((replicate n (p :: R)).flatten) d plev true force = ?
+   ```
+
+   `convC_run` は `first = false` 版しかない。`first = true` では最初のコピーだけ
+   梯子・`force` を受け取るので、影の列 1 本ぶんずれる（これが shift regime）。
+   段 0 でも、引数への `force = first && (p.2 == plev)` が最初のコピーだけ
+   `true` になりうるので、素直な `convC_run` では閉じない。
+
+2. **右端の道に沿った帰納の組み立て**。1 段の降下 4 通りと止まる場合 3 通りは
+   揃ったので、残るのは
+   * 節点ごとの場合分け（親が節点／引数の中／兄弟の中）
+   * 「末尾が兄弟の中なら親は引数の中にない」（床の補題 `le0_ge_of_append` の適用）
+   * `blockok` / `colOK` / `descOK` / `bd ≤ d` / `hz` の不変量の引き回し
+   * 添字の変換（ブロック内の添字 ↔ 全体の添字）
+
+3. **梯子つきで兄弟へ降りる段の縮約**（`reindexD_sib_lad` の仮定 `hnc`）。
+   実測では ≤10 列で 180 個だけの `contr` regime に対応する。
+
+4. **`ST_PS M → contrOK M`**（段 > 0 のためだけに要る）。
+   `r1ok` では出ない（`x.2 ≤ q.2 + 1` しか言えず、`x.2 = 0` は出ない）ので、
+   BMS 標準形のもっと強い性質が要る。
