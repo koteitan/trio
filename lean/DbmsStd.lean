@@ -426,6 +426,49 @@ theorem idx1_conC (M : PairSeq) :
     idx1 (conC M) ((conC M).length - 1) = idx1 M (M.length - 1) := by
   rw [idx1, idx1, entry_last, entry_last, conC_getLast_level]
 
+/-! ## 2.75 長さ -/
+
+theorem getLastD_mem {l : PairSeq} (h : l ≠ []) (dflt : ℕ × ℕ) : l.getLastD dflt ∈ l := by
+  rw [List.getLastD_eq_getLast?, List.getLast?_eq_getLast (h := h)]
+  simpa using List.getLast_mem h
+
+/-- 2 列以上なら像も 2 列以上。 -/
+theorem convC_length_ge_two {M : PairSeq} (h : 1 < M.length) (d plev : ℕ) (first force : Bool) :
+    1 < (convC M d plev first force).length := by
+  match M with
+  | [] => simp at h
+  | p :: r =>
+    have hr : r ≠ [] := by
+      intro he; rw [he] at h; simp at h
+    have hAB : (r.takeWhile fun q => p.1 < q.1) ++ (r.dropWhile fun q => p.1 < q.1) = r :=
+      List.takeWhile_append_dropWhile
+    have hne : convC (r.takeWhile fun q => p.1 < q.1) (ddOf p.2 d plev first force + 1) p.2 true
+          (first && (p.2 == plev))
+        ++ convC (r.dropWhile fun q => p.1 < q.1) d p.2 false false ≠ [] := by
+      intro he
+      obtain ⟨h1, h2⟩ := List.append_eq_nil_iff.1 he
+      rw [convC_eq_nil_iff] at h1 h2
+      rw [← hAB, h1, h2] at hr
+      simp at hr
+    by_cases hl : ladOf p.2 d plev first force = true
+    · rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+          (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+          (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+      · rw [convC_cons_lad_none p r d plev first force hl hcc]
+        simp only [List.length_cons]
+        omega
+      · rw [convC_cons_lad_some p r d plev first force hl hcc]
+        simp only [List.length_cons]
+        omega
+    · rw [convC_cons_nolad p r d plev first force (by simpa using hl)]
+      simp only [List.length_cons]
+      have hpos := List.length_pos_of_ne_nil hne
+      omega
+
+/-- `conC` の像も 2 列以上。 -/
+theorem conC_length_ge_two {M : PairSeq} (h : 1 < M.length) : 1 < (conC M).length :=
+  convC_length_ge_two h 0 0 true false
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -534,3 +577,4 @@ end DBMS
 #print axioms DBMS.idx1_conC
 #print axioms DBMS.oper_mono
 #print axioms DBMS.reindexD_succ_shape
+#print axioms DBMS.conC_length_ge_two

@@ -15,6 +15,7 @@
 | `reindexD_succ`（REINDEX の succ regime） | `DbmsStd.lean` |
 | `convC_getLast_level` / `idx1_conC`（末尾列の段が保たれる） | `DbmsStd.lean` |
 | `oper_mono`（基本列は添字について単調） | `DbmsStd.lean` |
+| `conC_length_ge_two`（2 列以上なら像も 2 列以上） | `DbmsStd.lean` |
 
 いずれも sorry 0。
 
@@ -68,6 +69,19 @@ M⟦n⟧   = G ++ (range n).flatMap (k ↦ ((v0,w0)::R) を行 0 に k*d0 ずら
   その出力開始位置 `off` と DBMS の親 `jD` の差は 0 か 1（まれに 3, 5）。
   差 1 は「ブロックの頭が梯子を要る」場合で、BMS のコピー k=0 が
   DBMS では梯子＋影に化ける。**これが shift regime の正体。**
+
+### shift regime の親（実測、≤9 列）
+
+`shift`（末尾列 = `(1,1)`）のとき、BMS の親 `jB` は**末尾の直前にある最後の `(0,0)` の位置**。
+`jB = 0` が大半（≤9 列で 25455 / 32615）だが、`(0,0)` が再び現れる形では `jB > 0`:
+
+```
+(0,0)(1,1)(2,2)(0,0)(1,1)(1,1)      jB = 3
+```
+
+良い部分は必ず `(conC A)⟦0⟧ = conC (A⟦0⟧) ++ [影]`（`+1 列`、≤8 列で例外 0）。
+`id` では `一致`（20738）と `+1 列`（11527）が混在し、`contr` では縮約のぶん短くなる。
+つまり「良い部分が 1 列長い」だけでは regime は決まらない。
 
 ### shift regime の仕組み（手で追った例）
 
