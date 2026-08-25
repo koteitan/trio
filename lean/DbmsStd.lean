@@ -2968,6 +2968,140 @@ theorem conC_dropLast_node1 {M A : PairSeq} (hMA : M = ((0, 0) : ℕ × ℕ) :: 
   rw [hMA, dropLast_cons_ne hAne, conC_cons_zero hR0, conC_cons_zero hA0,
     dropLast_cons_ne hXne, convC_dropLast_node1 hMA hA2 hco hlev hnr]
 
+/-! ## 3. 組み立て（その 1）: `contrOK` は段 0 では自動
+
+`contrOK M` は「縮約が『読み直しの先が 1 列・外の後続が空』の形で発火するなら
+その段は 0」だった。ところがこの形で発火したときの `x` は **`M` の末尾列そのもの**
+である（`rest2 = [x]` と `Bq = []` から `r2 = pre ++ [x]` で、`x` より後ろには
+何もない）。したがって
+
+    末尾列の段が 0  ⟹  contrOK M
+
+が無条件に出る。これで場合 (b)(d) の仮定 `contrOK` は、段 0 の場合には消える。 -/
+
+/-- `M.drop t` が `x` で終わるなら `M` も `x` で終わる。 -/
+theorem getLastD_of_drop_snoc {M : PairSeq} {t : ℕ} {x dflt : ℕ × ℕ}
+    (h : ∃ Z : PairSeq, M.drop t = Z ++ [x]) : M.getLastD dflt = x := by
+  obtain ⟨Z, hZ⟩ := h
+  have hM : M = (M.take t ++ Z) ++ [x] := by
+    conv_lhs => rw [← List.take_append_drop t M]
+    rw [hZ, List.append_assoc]
+  rw [hM]
+  simp
+
+/-- `B` の途中から先が `x` で終わるなら、`p :: (A ++ B)` も `x` で終わる。 -/
+theorem snoc_of_drop {p q x : ℕ × ℕ} {A B pre : PairSeq} {k : ℕ}
+    (hB : B.drop k = q :: (pre ++ [x])) :
+    p :: (A ++ B) = (p :: (A ++ (B.take k ++ (q :: pre)))) ++ [x] := by
+  conv_lhs => rw [← List.take_append_drop k B, hB]
+  simp [List.append_assoc]
+
+/-- **縮約が `some ([x], [])` の形で発火したなら、`x` は `M` の末尾列。** -/
+theorem contr_single_getLast {M : PairSeq} {t : ℕ} {p x : ℕ × ℕ} {r : PairSeq}
+    (ht : M.drop t = p :: r)
+    (hc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) = some ([x], [])) :
+    M.getLastD (0, 0) = x := by
+  obtain ⟨q, r2, hdr, -, -, hAq, hBq, -, -, -⟩ := contrLen_spec hc
+  have hr2 : r2 = (contrPre p ((r.dropWhile fun z => p.1 < z.1).take
+        (unitsLen p (r.dropWhile fun z => p.1 < z.1)))
+        (r.takeWhile fun z => p.1 < z.1)) ++ [x] := by
+    have hsp := List.takeWhile_append_dropWhile
+      (l := r2) (p := fun z : ℕ × ℕ => decide (q.1 < z.1))
+    rw [hAq, hBq, List.append_nil] at hsp
+    exact hsp.symm
+  have hdr2 : (r.dropWhile fun z => p.1 < z.1).drop
+      (unitsLen p (r.dropWhile fun z => p.1 < z.1))
+      = q :: ((contrPre p ((r.dropWhile fun z => p.1 < z.1).take
+          (unitsLen p (r.dropWhile fun z => p.1 < z.1)))
+          (r.takeWhile fun z => p.1 < z.1)) ++ [x]) := by
+    rw [hdr, hr2]
+  have hsplit : r = (r.takeWhile fun z => p.1 < z.1) ++ (r.dropWhile fun z => p.1 < z.1) :=
+    (List.takeWhile_append_dropWhile).symm
+  refine getLastD_of_drop_snoc (t := t) ?_
+  rw [ht, hsplit]
+  exact ⟨_, snoc_of_drop hdr2⟩
+
+/-- **末尾列の段が 0 なら `contrOK` は自動的に成り立つ。** -/
+theorem contrOK_of_last_zero {M : PairSeq} (h : entry M 1 (M.length - 1) = 0) : contrOK M := by
+  intro t p x r ht hc
+  rw [entry_last, contr_single_getLast ht hc] at h
+  exact h
+
+/-! ## 3.1 組み立て（その 2）: 標準形の頭は `(0,0)` -/
+
+theorem headI_zero_of_ST {M : PairSeq} (hM : ST_PS M) (hne : M ≠ []) :
+    M.headI = ((0, 0) : ℕ × ℕ) := by
+  have h1 : (M.headI).1 = 0 := (blockok_ST_PS hM).1 hne
+  have hg : M.getD 0 (0, 0) = M.headI := by
+    cases M with
+    | nil => exact absurd rfl hne
+    | cons a l => simp
+  have h2 : (M.headI).2 = 0 := by
+    rw [← hg]
+    exact z0ok_ST_PS hM 0 (List.length_pos_of_ne_nil hne) (by rw [hg]; exact h1)
+  have : M.headI = ((M.headI).1, (M.headI).2) := rfl
+  rw [this, h1, h2]
+
+/-! ## 3.2 組み立て（その 3）: 場合 (a) と場合 (d) の段 0 -/
+
+/-- **場合 (a)**（`succ` regime）を `ReindexD` の形で。 -/
+theorem reindexD_last_zero {M : PairSeq} (hM : ST_PS M) (hL : 1 < M.length) (n : ℕ)
+    (hz : M.getLastD (0, 0) = ((0, 0) : ℕ × ℕ)) :
+    ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧ (conC M)⟦m⟧ = conC (M⟦n'⟧) := by
+  have hne : M ≠ [] := by intro he; rw [he] at hL; simp at hL
+  have hg : M.getLast hne = ((0, 0) : ℕ × ℕ) := by
+    rw [List.getLastD_eq_getLast?, List.getLast?_eq_getLast (h := hne)] at hz
+    simpa using hz
+  have hsplit : M.dropLast ++ [((0, 0) : ℕ × ℕ)] = M := by
+    rw [← hg]; exact List.dropLast_append_getLast hne
+  have hdne : M.dropLast ≠ [] := by
+    intro he
+    have hlen : M.dropLast.length = M.length - 1 := List.length_dropLast
+    rw [he] at hlen
+    simp at hlen
+    omega
+  have hc : colOK M.dropLast := colOK_sublist (List.dropLast_sublist M) (colOK_ST_PS hM)
+  obtain ⟨m, n', h1, h2, h3⟩ := reindexD_succ_shape hdne hc n
+  rw [hsplit] at h3
+  exact ⟨m, n', h1, h2, h3⟩
+
+/-- **場合 (d) の段 0** を `ReindexD` の形で（`contrOK` の仮定はもう要らない）。 -/
+theorem reindexD_root_zero {M : PairSeq} (hM : ST_PS M) (hL : 1 < M.length) (n : ℕ) (hn : 1 ≤ n)
+    (hlev : entry M 1 (M.length - 1) = 0)
+    (hnr : nextrel0 M 0 (M.length - 1)) :
+    ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧ (conC M)⟦m⟧ = conC (M⟦n'⟧) :=
+  reindexD_node0_shape n hn hL (contrOK_of_last_zero hlev)
+    (headI_zero_of_ST hM (by intro he; rw [he] at hL; simp at hL)) hlev hnr
+
+/-! ## 3.3 組み立て（その 4）: 残っている場合
+
+場合 (a)（末尾 = `(0,0)`）と場合 (d) の段 0（親が根で末尾列の段が 0）は
+上で片付いた。残るのは「末尾列が `(0,0)` でなく、しかも『段 0 かつ親が根』でない」
+場合、すなわち計画書の場合 (c)（親がブロックの中）と場合 (d) の段 > 0 である。 -/
+
+/-- `ReindexD` に残っている場合（場合 (c) と場合 (d) の段 > 0）。 -/
+def ReindexD_mid : Prop :=
+  ∀ {A : PairSeq}, ST_PS A → 1 < A.length →
+    A.getLastD (0, 0) ≠ ((0, 0) : ℕ × ℕ) →
+    ¬ (entry A 1 (A.length - 1) = 0 ∧ nextrel0 A 0 (A.length - 1)) →
+    ∀ n : ℕ, 1 ≤ n →
+      ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧ (conC A)⟦m⟧ = conC (A⟦n'⟧)
+
+/-- **組み立て**: 残っている場合さえ埋まれば `ReindexD` が出る。 -/
+theorem reindexD_holds_of (H : ReindexD_mid) : ReindexD := by
+  intro A hA hL n hn
+  by_cases hz : A.getLastD (0, 0) = ((0, 0) : ℕ × ℕ)
+  · exact reindexD_last_zero hA hL n hz
+  · by_cases hd : entry A 1 (A.length - 1) = 0 ∧ nextrel0 A 0 (A.length - 1)
+    · exact reindexD_root_zero hA hL n hn hd.1 hd.2
+    · exact H hA hL hz hd n hn
+
+/-- **主定理の組み立て**: 残っている場合さえ埋まれば像は DBMS 標準形。 -/
+theorem ST_D_conC_holds_of (H : ReindexD_mid) {M : PairSeq} (hM : ST_PS M) :
+    ST_D (conC M) := ST_D_conC (reindexD_holds_of H) hM
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -3031,3 +3165,10 @@ end DBMS
 #print axioms DBMS.noParent_arg_node1
 #print axioms DBMS.convC_dropLast_node1
 #print axioms DBMS.conC_dropLast_node1
+#print axioms DBMS.contr_single_getLast
+#print axioms DBMS.contrOK_of_last_zero
+#print axioms DBMS.headI_zero_of_ST
+#print axioms DBMS.reindexD_last_zero
+#print axioms DBMS.reindexD_root_zero
+#print axioms DBMS.reindexD_holds_of
+#print axioms DBMS.ST_D_conC_holds_of
