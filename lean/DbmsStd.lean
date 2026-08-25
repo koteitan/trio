@@ -6588,6 +6588,17 @@ theorem ST_D_conC_holds_of_res2 (Hc : CtrRes) (H0 : RDzeroRes2) (H1 : RDposRes2)
   ST_D_conC (reindexD_holds_of_res2 Hc H0 H1) hM
 
 
+
+/-- 縮約の前置きは「節点 + 引数 + 兄弟ユニット」を丸ごと 1 段深くしたもの。
+`ArgDomCore` から `CtrRes` を出すときの最初の一歩（`ArgDomCore` の結論
+`sle B (shiftr0 e (A1 ++ (u+e,w) :: (B ++ A2)))` の `A1` が
+ちょうど `p :: (A ++ U)` になる）。 -/
+theorem contrPre_eq_shiftr0 (p : ℕ × ℕ) (U A : PairSeq) :
+    contrPre p U A = shiftr0 1 (p :: (A ++ U)) := by
+  unfold contrPre shift1 shiftr0
+  simp [List.map_append]
+
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -6735,3 +6746,4 @@ end DBMS
 #print axioms DBMS.reindexD_pos_of2
 #print axioms DBMS.reindexD_holds_of_res2
 #print axioms DBMS.ST_D_conC_holds_of_res2
+#print axioms DBMS.contrPre_eq_shiftr0
