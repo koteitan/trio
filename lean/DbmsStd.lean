@@ -421,6 +421,15 @@ theorem conC_getLast_level (M : PairSeq) :
 theorem entry_last {M : PairSeq} : entry M 1 (M.length - 1) = (M.getLastD (0, 0)).2 := by
   rw [entry, if_neg (by omega), getLastD_eq_getD]
 
+theorem entry_last0 {M : PairSeq} : entry M 0 (M.length - 1) = (M.getLastD (0, 0)).1 := by
+  rw [entry, if_pos rfl, getLastD_eq_getD]
+
+theorem entry_zero0 {M : PairSeq} : entry M 0 0 = (M.headI).1 := by
+  rw [entry, if_pos rfl]
+  cases M with
+  | nil => rfl
+  | cons a t => rfl
+
 /-- **`idx1` は両側で一致する。** `oper` がどちらの行で親を探すかが同じになる。 -/
 theorem idx1_conC (M : PairSeq) :
     idx1 (conC M) ((conC M).length - 1) = idx1 M (M.length - 1) := by
@@ -820,6 +829,38 @@ theorem hasParent_append_of_parent_ge (A T : PairSeq) {i j1 : ℕ}
   have : parent T i j1 = j0' := hunique _ (parent_nextR hpT)
   rw [this, ← hj0']
 
+/-- `nextrel0` の `j0` は「`j1` より浅い最後の添字」。だから浅い列があれば親はそれ以降。 -/
+theorem nextrel0_ge {N : PairSeq} {j0 j1 k : ℕ} (h : nextrel0 N j0 j1)
+    (hk : k < j1) (hlt : entry N 0 k < entry N 0 j1) : k ≤ j0 := by
+  by_contra hgt
+  push_neg at hgt
+  have := h.2.2.2.2 k ⟨hgt, hk⟩
+  omega
+
+/-- `nextrel1` の `j0` も同様（`le0` の鎖の上で「段がより小さい最後の添字」）。 -/
+theorem nextrel1_ge {N : PairSeq} {j0 j1 k : ℕ} (h : nextrel1 N j0 j1)
+    (hk : le0 N k j1) (hlt : entry N 1 k < entry N 1 j1) : k ≤ j0 := by
+  by_contra hgt
+  push_neg at hgt
+  have := h.2.2.2.2.2 k ⟨hgt, hk⟩
+  omega
+
+/-- **浅い（段が小さい）列が 1 つあれば、親はその位置以降にある。**
+`i = 0` なら深さ、`i = 1` なら段で測る。 -/
+theorem parent_ge_of_shallow {N : PairSeq} {i j1 k : ℕ} (hp : hasParent N i j1)
+    (hk0 : i = 0 → k < j1 ∧ entry N 0 k < entry N 0 j1)
+    (hk1 : i ≠ 0 → le0 N k j1 ∧ entry N 1 k < entry N 1 j1) :
+    k ≤ parent N i j1 := by
+  have hnr : nextR N i (parent N i j1) j1 := parent_nextR hp
+  unfold nextR at hnr
+  by_cases hi : i = 0
+  · rw [if_pos hi] at hnr
+    obtain ⟨h1, h2⟩ := hk0 hi
+    exact nextrel0_ge hnr h1 h2
+  · rw [if_neg hi] at hnr
+    obtain ⟨h1, h2⟩ := hk1 hi
+    exact nextrel1_ge hnr h1 h2
+
 /-- **接尾辞の中に `nextR` の証人が 1 つあれば、親は接尾辞にある。**
 `hasParent` は一意性つきなので、証人がそのまま親になる。 -/
 theorem parent_ge_of_witness (A T : PairSeq) {i j1 j0' : ℕ}
@@ -871,6 +912,30 @@ theorem oper_append_of_witness (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
     {j0' : ℕ} (hw : nextR T (idx1 T (T.length - 1)) j0' (T.length - 1)) :
     (A ++ T)⟦n⟧ = A ++ T⟦n⟧ :=
   oper_append_of_parent_ge A T n hT hz hp (parent_ge_of_witness A T hp hw)
+
+/-- 接尾辞の中に「末尾より浅い列」があれば局所化できる（段 0 の場合）。 -/
+theorem oper_append_of_shallow0 (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hi : idx1 T (T.length - 1) = 0)
+    (hp : hasParent (A ++ T) (idx1 T (T.length - 1)) (A.length + (T.length - 1)))
+    {k : ℕ} (hk : k < T.length - 1)
+    (hlt : entry T 0 k < entry T 0 (T.length - 1)) :
+    (A ++ T)⟦n⟧ = A ++ T⟦n⟧ := by
+  refine oper_append_of_parent_ge A T n hT hz hp ?_
+  have h := parent_ge_of_shallow (N := A ++ T) (i := idx1 T (T.length - 1))
+    (j1 := A.length + (T.length - 1)) (k := A.length + k) hp
+    (fun _ => ⟨by omega, by rw [entry_append_right, entry_append_right]; exact hlt⟩)
+    (fun hne => absurd hi hne)
+  omega
+
+/-- 像の先頭が深さ `d` なら、それが「末尾より浅い列」の証人になる。 -/
+theorem convC_head_shallow {B : PairSeq} (hB : B ≠ []) {bd d plev : ℕ}
+    (hb : blockok bd B) (hbd : bd < (B.getLastD (0, 0)).1)
+    (hhd : ((convC B d plev false false).headI).1 = d) :
+    entry (convC B d plev false false) 0 0
+      < entry (convC B d plev false false) 0 ((convC B d plev false false).length - 1) := by
+  rw [entry_zero0, entry_last0, hhd]
+  exact convC_getLast_depth B.length B (Nat.le_refl _) bd d plev false false hb hbd
 
 /-! ## 2.8 基本列の単調性 -/
 
@@ -989,3 +1054,6 @@ end DBMS
 #print axioms DBMS.oper_append_of_parent_ge
 #print axioms DBMS.convC_getLast_depth
 #print axioms DBMS.oper_append_of_witness
+#print axioms DBMS.parent_ge_of_shallow
+#print axioms DBMS.oper_append_of_shallow0
+#print axioms DBMS.convC_head_shallow
