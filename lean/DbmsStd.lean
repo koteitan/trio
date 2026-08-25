@@ -469,6 +469,87 @@ theorem convC_length_ge_two {M : PairSeq} (h : 1 < M.length) (d plev : ℕ) (fir
 theorem conC_length_ge_two {M : PairSeq} (h : 1 < M.length) : 1 < (conC M).length :=
   convC_length_ge_two h 0 0 true false
 
+/-! ## 2.76 兄弟の並び（コピーが素直な繰り返しになる場合） -/
+
+/-- `first = false` の変換は親の段にも `force` にも依らない。 -/
+theorem convC_plev : ∀ (n : ℕ) (L : PairSeq), L.length ≤ n → ∀ (d plev plev' : ℕ)
+    (force force' : Bool),
+    convC L d plev false force = convC L d plev' false force' := by
+  intro n
+  induction n with
+  | zero =>
+    intro L hL d plev plev' force force'
+    have : L = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this; rw [convC_nil, convC_nil]
+  | succ n ih =>
+    intro L hL d plev plev' force force'
+    match L with
+    | [] => rw [convC_nil, convC_nil]
+    | p :: r =>
+      have hnl : ∀ pv : ℕ, ∀ fo : Bool, ladOf p.2 d pv false fo = false := by
+        intro pv fo; simp [ladOf]
+      have hdd : ∀ pv : ℕ, ∀ fo : Bool, ddOf p.2 d pv false fo = ddOf p.2 d plev false force := by
+        intro pv fo
+        simp only [ddOf, hnl, Bool.false_eq_true, if_false]
+      rw [convC_cons_nolad p r d plev false force (hnl plev force),
+        convC_cons_nolad p r d plev' false force' (hnl plev' force')]
+      rw [hdd plev' force']
+      simp only [Bool.false_and]
+
+/-- 同じブロックを `n` 本並べたあとに `rest` が続くとき、変換も同じ塊を `n` 本出す。 -/
+theorem convC_run (p : ℕ × ℕ) (R rest : PairSeq) (hR : ∀ c ∈ R, p.1 < c.1)
+    (hrest : rest = [] ∨ ¬ (p.1 < (rest.headI).1)) (d plev : ℕ) :
+    ∀ n : ℕ, convC ((List.replicate n (p :: R)).flatten ++ rest) d plev false false
+        = (List.replicate n ((ddOf p.2 d plev false false, p.2) ::
+             convC R (ddOf p.2 d plev false false + 1) p.2 true false)).flatten
+          ++ convC rest d plev false false := by
+  intro n
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hhd : ((List.replicate n (p :: R)).flatten ++ rest) = [] ∨
+        ¬ (p.1 < (((List.replicate n (p :: R)).flatten ++ rest).headI).1) := by
+      cases n with
+      | zero => simpa using hrest
+      | succ n' =>
+        right
+        rw [List.replicate_succ, List.flatten_cons, List.append_assoc, List.cons_append]
+        simp
+    obtain ⟨e1, e2⟩ := split_append (dd := p.1) hR hhd
+    rw [List.replicate_succ, List.flatten_cons, List.append_assoc, List.cons_append,
+      convC_cons_nolad p (R ++ ((List.replicate n (p :: R)).flatten ++ rest)) d plev false false
+        (by simp [ladOf]),
+      e1, e2]
+    simp only [Bool.false_and]
+    rw [convC_plev ((List.replicate n (p :: R)).flatten ++ rest).length _ (Nat.le_refl _)
+        d p.2 plev false false,
+      ih, List.replicate_succ, List.flatten_cons]
+    simp [List.append_assoc]
+
+/-- 定数の `flatMap` は `replicate` の `flatten`。 -/
+theorem flatMap_const (L : PairSeq) : ∀ n : ℕ,
+    (List.range n).flatMap (fun _ => L) = (List.replicate n L).flatten := by
+  intro n
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [List.range_succ, List.flatMap_append, ih, List.replicate_succ']
+    simp
+
+/-- **末尾列の段が 0 なら、基本列はブロックの素直な繰り返し**（`d0 = 0`）。 -/
+theorem oper_repeat {M : PairSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0))
+    (hp : hasParent M (idx1 M (M.length - 1)) (M.length - 1))
+    (h0 : idx1 M (M.length - 1) = 0) :
+    M⟦n⟧ = M.take (parent M (idx1 M (M.length - 1)) (M.length - 1))
+      ++ (List.replicate n
+            ((List.range' (parent M (idx1 M (M.length - 1)) (M.length - 1))
+              (M.length - 1 - parent M (idx1 M (M.length - 1)) (M.length - 1))).map
+              (fun j => ((entry M 0 j : ℕ), (entry M 1 j : ℕ))))).flatten := by
+  rw [oper_bad_unfold n hL hz hp, h0]
+  simp only [Nat.lt_irrefl, if_false, Nat.mul_zero, Nat.add_zero, h0]
+  rw [flatMap_const]
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -578,3 +659,5 @@ end DBMS
 #print axioms DBMS.oper_mono
 #print axioms DBMS.reindexD_succ_shape
 #print axioms DBMS.conC_length_ge_two
+#print axioms DBMS.convC_run
+#print axioms DBMS.oper_repeat

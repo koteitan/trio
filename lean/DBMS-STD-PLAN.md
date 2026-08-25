@@ -16,6 +16,9 @@
 | `convC_getLast_level` / `idx1_conC`（末尾列の段が保たれる） | `DbmsStd.lean` |
 | `oper_mono`（基本列は添字について単調） | `DbmsStd.lean` |
 | `conC_length_ge_two`（2 列以上なら像も 2 列以上） | `DbmsStd.lean` |
+| `convC_plev`（`first = false` の変換は親の段・`force` に依らない） | `DbmsStd.lean` |
+| `convC_run`（同じブロックの並びは同じ塊の並びに写る） | `DbmsStd.lean` |
+| `oper_repeat`（末尾の段が 0 なら基本列は素直な繰り返し） | `DbmsStd.lean` |
 
 いずれも sorry 0。
 
@@ -69,6 +72,24 @@ M⟦n⟧   = G ++ (range n).flatMap (k ↦ ((v0,w0)::R) を行 0 に k*d0 ずら
   その出力開始位置 `off` と DBMS の親 `jD` の差は 0 か 1（まれに 3, 5）。
   差 1 は「ブロックの頭が梯子を要る」場合で、BMS のコピー k=0 が
   DBMS では梯子＋影に化ける。**これが shift regime の正体。**
+
+### 末尾列の段による分割（実測、≤9 列）
+
+```
+lp = (0,0)          → succ  44653          （証明済み）
+lp の段 = 0, ≠(0,0) → id 123323 / contr 49  （d0 = 0、両側ともコピーは素直な繰り返し）
+lp の段 > 0         → id  94373 / shift 32615（shift ⟺ lp = (1,1)）
+```
+
+**段が 0 の場合はコピーが素直な繰り返しになる**（`d0 = 0`）。BMS 側は `oper_repeat`、
+DBMS 側も `idx1_conC` から同じく `d0' = 0`。変換側は `convC_run` が
+「同じブロックの並び → 同じ塊の並び」を与える。残るのは前置きの因子化:
+
+```
+conC (G ++ X) = P ++ convC X d plev first force      （P と params は G だけで決まる）
+```
+
+これは縮約が経路上で発火しない限り成り立つ（実測: `T not a call` は縮約の場合だけ）。
 
 ### shift regime の親（実測、≤9 列）
 
