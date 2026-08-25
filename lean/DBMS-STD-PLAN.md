@@ -30,6 +30,9 @@
 | `convC_exists_shallow`（**像の中に末尾より浅い列がある**） | `DbmsStd.lean` |
 | `oper_append_convC`（**場合 (c) の段 0 が完成**） | `DbmsStd.lean` |
 | `oper_append_of_shallow1`（段 > 0 での局所化、証人は `le0` の鎖の上） | `DbmsStd.lean` |
+| `rtg_lt_of_floor` / `le0_ge_of_append`（**床の補題**。行 0 の鎖はブロックの頭を越えない） | `DbmsStd.lean` |
+| `convC_exists_shallow1`（**段 > 0 の証人の存在**） | `DbmsStd.lean` |
+| `oper_append_convC1`（**場合 (c) の段 > 0 が完成**） | `DbmsStd.lean` |
 | `exists_greatest_lt` / `le0_head`（**ブロックの頭は中の全部の行 0 の祖先**） | `DbmsStd.lean` |
 | `convC_single` / `convC_dropLast_singleton`（末尾ブロックが 1 列） | `DbmsStd.lean` |
 | `convC_dropLast_arg` / `_tail` / `_lad_none` / `_contr`（**dropLast の帰納の 4 段**） | `DbmsStd.lean` |
@@ -434,11 +437,12 @@ convC_head_shallow          像の先頭が深さ d なら、それが証人
 `b = d = s = bd` の場合も含めて `convC_exists_shallow` で片付いた（兄弟の鎖に沿った帰納）。
 **場合 (c) の段 0 は `oper_append_convC` で完成**。）
 
-残るのは (c) の段 > 0（`i = 1`）、(b)、(d)。
+**(c) は段 0（`oper_append_convC`）・段 > 0（`oper_append_convC1`）とも完成。**
+残るのは (d)（(b) は 2026-08-26 に完成）。
 
-### (c) の段 > 0 で残ること
+### (c) の段 > 0（2026-08-26 完成）
 
-局所化の道具 `oper_append_of_shallow1` はある。要るのは証人:
+局所化の道具 `oper_append_of_shallow1` はあり、証人も出た。要ったのは:
 
 ```
 convC_exists_shallow1 :
@@ -455,20 +459,36 @@ convC_exists_shallow1 :
 証人が引数ブロックの中 → 引数の再帰は first = true なので梯子・縮約が出る ← ここが重い
 ```
 
-BMS 側で「証人が引数ブロックの中」は起こりうる（末尾も同じ引数の中にある場合）。
-
-`le0_head`（ブロックの頭は中の全部の行 0 の祖先）を用意した。これで
+**当初心配した「証人が引数ブロックの中で、末尾は兄弟の中」は起きない。**
+理由が**床の補題**である:
 
 ```
-兄弟の鎖が空       → 節点の列（梯子なら影）が祖先。段が t より小さければ証人
-兄弟の鎖が続く     → 鎖に帰納
+rtg_lt_of_floor / le0_ge_of_append :
+  T の頭の深さが bd、G の列が全部深さ bd 以上なら、
+  le0 (G ++ T) k j かつ |G| ≤ j ⟹ |G| ≤ k
 ```
 
-の枠組みが使える。`le0_head` の仮定「後ろが全部深い」は、
-兄弟の鎖が空のときにちょうど成り立つ。
+`blockok bd B` から「B の列は全部深さ bd 以上」、兄弟ブロックの頭は深さちょうど
+`bd`。行 0 の辺 `a → b` が `a < |G| ≤ b` をまたぐには
+`entry 0 a < entry 0 b ≤ entry 0 |G| = bd ≤ entry 0 a` が要り矛盾する。
+だから**末尾が兄弟の中なら証人も兄弟の中**で、右端の道の帰納がそのまま回る。
 
-もう 1 つ、`convC ((p :: Arg) ++ B⟦n⟧) = cols ++ convC Arg ++ convC (B⟦n⟧)` も要る。
-`B⟦n⟧` の先頭は `B` の先頭と同じなので切り分けは同じだが、縮約の判定が変わりうる。
+場合分けは 4 つ:
+
+```
+兄弟が空          → 証人は節点の列（梯子なら影 (d,plev)）か引数の中     shallow1_nil
+兄弟が続く        → 証人は兄弟の中                                      shallow1_step
+縮約あり Bq ≠ []  → 証人は Bq の中
+縮約あり Bq = []  → 証人は q か rest2 の中。q のときは q.2 = plev なので
+                    像の影の列（index 0）がそのまま証人
+```
+
+縮約の `Bq = []` の場合だけ床の補題を 2 回使う（1 回目は深さ `bd` の `q` で、
+2 回目は `q` の引数の中で深さ `bd+1` の `rest2` の頭で）。
+`pre` の列は全部深さ `bd+1` 以上なので、`pre` から `rest2` へは鎖が入れない。
+
+必要な仮定は **`blockok bd B` だけ**（`colOK` / `descOK` / `bd ≤ d` は要らない）。
+Python の全数検査（`blockok` の列 ≤5 列、`d`/`plev` ≤ 3、`bd` ≤ 2）で 2482560 例、違反 0。
 
 ### (d) 親がこの段
 親が節点そのものなら `G = []` で、`M⟦n⟧` は `M.dropLast` のコピー n 個。
