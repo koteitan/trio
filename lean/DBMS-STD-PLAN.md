@@ -29,6 +29,7 @@
 | `oper_append_of_shallow0` / `convC_head_shallow`（段 0 での局所化） | `DbmsStd.lean` |
 | `convC_exists_shallow`（**像の中に末尾より浅い列がある**） | `DbmsStd.lean` |
 | `oper_append_convC`（**場合 (c) の段 0 が完成**） | `DbmsStd.lean` |
+| `oper_append_of_shallow1`（段 > 0 での局所化、証人は `le0` の鎖の上） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
 
 いずれも sorry 0。
@@ -309,6 +310,27 @@ convC_head_shallow          像の先頭が深さ d なら、それが証人
 **場合 (c) の段 0 は `oper_append_convC` で完成**。）
 
 残るのは (c) の段 > 0（`i = 1`）、(b)、(d)。
+
+### (c) の段 > 0 で残ること
+
+局所化の道具 `oper_append_of_shallow1` はある。要るのは証人:
+
+```
+convC_exists_shallow1 :
+  B の中に「le0 の鎖の上で段が末尾より小さい列」があれば、
+  convC B d plev false false の中にも同じものがある
+```
+
+段 0 版（`convC_exists_shallow`）は深さだけで済んだので兄弟の鎖に沿った帰納で
+閉じたが、段 > 0 では BMS 側の証人がどこにあるかで分かれる:
+
+```
+証人が B の先頭        → 像の先頭が証人（le0 D 0 (|D|-1) を示す必要がある）
+証人が兄弟の鎖の中     → 鎖に帰納（le0 は le0_append_right_of で持ち上がる）
+証人が引数ブロックの中 → 引数の再帰は first = true なので梯子・縮約が出る ← ここが重い
+```
+
+BMS 側で「証人が引数ブロックの中」は起こりうる（末尾も同じ引数の中にある場合）。
 
 もう 1 つ、`convC ((p :: Arg) ++ B⟦n⟧) = cols ++ convC Arg ++ convC (B⟦n⟧)` も要る。
 `B⟦n⟧` の先頭は `B` の先頭と同じなので切り分けは同じだが、縮約の判定が変わりうる。

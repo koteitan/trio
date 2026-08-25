@@ -928,6 +928,22 @@ theorem oper_append_of_shallow0 (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
     (fun hne => absurd hi hne)
   omega
 
+/-- 接尾辞の中に「`le0` の鎖の上で段がより小さい列」があれば局所化できる（段 > 0 の場合）。 -/
+theorem oper_append_of_shallow1 (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hi : idx1 T (T.length - 1) ≠ 0)
+    (hp : hasParent (A ++ T) (idx1 T (T.length - 1)) (A.length + (T.length - 1)))
+    {k : ℕ} (hk : le0 T k (T.length - 1))
+    (hlt : entry T 1 k < entry T 1 (T.length - 1)) :
+    (A ++ T)⟦n⟧ = A ++ T⟦n⟧ := by
+  refine oper_append_of_parent_ge A T n hT hz hp ?_
+  have h := parent_ge_of_shallow (N := A ++ T) (i := idx1 T (T.length - 1))
+    (j1 := A.length + (T.length - 1)) (k := A.length + k) hp
+    (fun he => absurd he hi)
+    (fun _ => ⟨le0_append_right_of A T hk,
+      by rw [entry_append_right, entry_append_right]; exact hlt⟩)
+  omega
+
 /-- 像の先頭が深さ `d` なら、それが「末尾より浅い列」の証人になる。 -/
 theorem convC_head_shallow {B : PairSeq} (hB : B ≠ []) {bd d plev : ℕ}
     (hb : blockok bd B) (hbd : bd < (B.getLastD (0, 0)).1)
@@ -1208,3 +1224,4 @@ end DBMS
 #print axioms DBMS.convC_head_shallow
 #print axioms DBMS.convC_exists_shallow
 #print axioms DBMS.oper_append_convC
+#print axioms DBMS.oper_append_of_shallow1
