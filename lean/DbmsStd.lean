@@ -550,6 +550,65 @@ theorem oper_repeat {M : PairSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
   simp only [Nat.lt_irrefl, if_false, Nat.mul_zero, Nat.add_zero, h0]
   rw [flatMap_const]
 
+/-- `d ≤ plev + 1` なら `force` は効かない（`d ≤ s` が自動で立つ）。 -/
+theorem convC_force {L : PairSeq} {d plev : ℕ} (h : d ≤ plev + 1) (force force' : Bool) :
+    convC L d plev true force = convC L d plev true force' := by
+  match L with
+  | [] => rw [convC_nil, convC_nil]
+  | p :: r =>
+    have hlad : ladOf p.2 d plev true force = ladOf p.2 d plev true force' := by
+      unfold ladOf
+      by_cases hs : p.2 = plev + 1
+      · have hdp : d ≤ p.2 := by omega
+        rw [decide_eq_true hdp]
+        simp
+      · rw [beq_eq_false_iff_ne.2 hs]
+        simp
+    have hdd : ddOf p.2 d plev true force = ddOf p.2 d plev true force' := by
+      unfold ddOf; rw [hlad]
+    by_cases hl : ladOf p.2 d plev true force = true
+    · rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+          (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+          (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+      · rw [convC_cons_lad_none p r d plev true force hl hcc,
+          convC_cons_lad_none p r d plev true force' (by rw [← hlad]; exact hl) hcc]
+      · rw [convC_cons_lad_some p r d plev true force hl hcc,
+          convC_cons_lad_some p r d plev true force' (by rw [← hlad]; exact hl) hcc]
+    · rw [convC_cons_nolad p r d plev true force (by simpa using hl),
+        convC_cons_nolad p r d plev true force' (by rw [← hlad]; simpa using hl), hdd]
+
+/-- **根が `(0,0)` のブロックを `n` 本並べた列の変換**。`conC (blk^n) = blk'^n`。 -/
+theorem conC_run_top (R : PairSeq) (hR : ∀ c ∈ R, 0 < c.1) : ∀ n : ℕ,
+    conC ((List.replicate n (((0, 0) : ℕ × ℕ) :: R)).flatten)
+      = (List.replicate n (((0, 0) : ℕ × ℕ) :: convC R 1 0 true false)).flatten := by
+  intro n
+  match n with
+  | 0 => simp [conC]
+  | m + 1 =>
+    have hR' : ∀ c ∈ R, ((0, 0) : ℕ × ℕ).1 < c.1 := by
+      intro c hc; simpa using hR c hc
+    have hhd : ((List.replicate m (((0, 0) : ℕ × ℕ) :: R)).flatten) = [] ∨
+        ¬ (((0, 0) : ℕ × ℕ).1 < (((List.replicate m (((0, 0) : ℕ × ℕ) :: R)).flatten).headI).1) := by
+      cases m with
+      | zero => exact Or.inl rfl
+      | succ m' => right; rw [List.replicate_succ, List.flatten_cons, List.cons_append]; simp
+    obtain ⟨e1, e2⟩ := split_append (dd := ((0, 0) : ℕ × ℕ).1) hR' hhd
+    have hnl : ladOf ((0, 0) : ℕ × ℕ).2 0 0 true false = false := by simp [ladOf]
+    have hde : ddOf ((0, 0) : ℕ × ℕ).2 0 0 true false = 0 := by
+      unfold ddOf; rw [if_neg (by rw [hnl]; simp), if_neg (by simp)]
+    have hde2 : ddOf ((0, 0) : ℕ × ℕ).2 0 0 false false = 0 := by
+      unfold ddOf
+      rw [if_neg (by simp [ladOf]), if_neg (by simp)]
+    rw [List.replicate_succ, List.flatten_cons, List.cons_append, conC,
+      convC_cons_nolad ((0, 0) : ℕ × ℕ) (R ++ (List.replicate m (((0, 0) : ℕ × ℕ) :: R)).flatten)
+        0 0 true false hnl, hde, e1, e2]
+    simp only [Bool.and_true, beq_self_eq_true]
+    rw [convC_force (L := R) (d := 1) (plev := 0) (by omega) true false]
+    have := convC_run ((0, 0) : ℕ × ℕ) R [] hR' (Or.inl rfl) 0 0 m
+    simp only [List.append_nil, convC_nil, hde2] at this
+    rw [this, List.replicate_succ, List.flatten_cons]
+    simp
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -661,3 +720,5 @@ end DBMS
 #print axioms DBMS.conC_length_ge_two
 #print axioms DBMS.convC_run
 #print axioms DBMS.oper_repeat
+#print axioms DBMS.convC_force
+#print axioms DBMS.conC_run_top
