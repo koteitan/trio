@@ -246,6 +246,43 @@ g(1) = 1  ⟺  conC (A.dropLast) = (conC A).dropLast
 末尾 2 列が `(a,b)(a+1,b+1)` の形かどうかでは判定できない
 （その形でも可換なものが 20885 ある）。梯子が立つかは `ladOf` の文脈次第。
 
+## 4 つの場合の詰め方
+
+### (a) 末尾 = `(0,0)`
+`reindexD_succ` で証明済み（`convC_snoc_zero` + `oper_snoc_zero`）。
+
+### (b) BMS の親がない
+`M⟦n⟧ = Pred M = M.dropLast`（`1 < |M|`）。DBMS 側は `oper_one` で
+`(convC M)⟦1⟧ = (convC M).dropLast`。だから要るのは
+
+```
+convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast
+```
+
+これは**末尾列が梯子を敷かないとき**に成り立つ（実測: 非可換 5634 / 295013 は
+すべて梯子か縮約）。そして case (b) では末尾列は梯子を敷かない:
+梯子の頭は「段 = 親の段 + 1」で、その親ノードは行 1 の祖先だから `hasParent` が立つ。
+親がないなら梯子頭ではない。
+
+残る穴: 縮約が `M.dropLast` で変わりうること（shift regime の
+`A⟦2⟧` と `A⟦3⟧` の違いがまさにこれ）。
+
+### (c) 親が `Arg` / `B` の中
+両側とも `oper_append_of_parent_ge` で局所化して帰納できる。**道具は揃った。**
+残る穴はただ 1 つ:
+
+```
+BMS の親が B の中  →  |cols ++ convC Arg| ≤ parent (convC M ...) i (末尾)
+```
+
+（実測では例外 0。`convC B` の中に「段がより小さい行 0 の祖先」があることを言えばよい。）
+
+もう 1 つ、`convC ((p :: Arg) ++ B⟦n⟧) = cols ++ convC Arg ++ convC (B⟦n⟧)` も要る。
+`B⟦n⟧` の先頭は `B` の先頭と同じなので切り分けは同じだが、縮約の判定が変わりうる。
+
+### (d) 親がこの段
+基底。コピーの対応（`convC_run` / `conC_run_top` が段 0 の場合の道具）。
+
 ## 次にやる補題（順に）
 
 1. ~~`convC_getLast_level`~~ **済み**（`DbmsStd.lean`）。系として
