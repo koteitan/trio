@@ -338,7 +338,64 @@ DBMS は段 `s` の列を深さ `s+1` 以上に置くので `s ≤ d`、あわ�
 
     (convC M)⟦1⟧ = (convC M).dropLast = convC (M.dropLast) = convC (M⟦n⟧)
 
-で片付く。「親がない」は右端の道を下っても保たれる
+で片付く。
+
+### (b) 完了（2026-08-26）と、要った 1 つの仮定 `contrOK`
+
+`DbmsStd.lean` に次を追加した（すべて sorry 0）:
+
+```
+convC_dropLast_noParent_aux : contrOK M → 末尾列に親がない → 1 < |M| →
+  convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast
+convC_dropLast_noParent     : 上の、計画書の形（blockok / colOK / descOK / bd ≤ d つき）
+reindexD_noParent           : 系。m = 1, n' = n で (conC M)⟦1⟧ = conC (M⟦n⟧)
+```
+
+本体は **blockok / colOK / descOK / bd ≤ d を一切使わない**。右端の道の
+すべての行き先（`A`, `B`, `Bq`, `Bq = []` のときの `rest2`）は `M` の**接尾辞**なので、
+「末尾列に親がない」も仮定 `contrOK` も接尾辞に遺伝する
+（`noParent_suffix` / `contrOK_suffix`。前者は `Wset.hasParent_one_iff` /
+`hasParent_zero_iff` で行 0・行 1 の親を接尾辞から全体へ持ち上げる）。
+
+**当初の目標（`contrOK` なし）は偽だった。** 反例:
+
+```
+M = (2,2)(2,1)(3,2)(3,1)      d = 2, plev = 1, first = true, force = false
+blockok 2 M / colOK M / descOK M / bd ≤ d / 末尾 (3,1) に親なし  … 全部成り立つ
+convC M            = (2,1)(3,2)(3,1)
+(convC M).dropLast = (2,1)(3,2)
+convC (M.dropLast) = (2,1)(3,2)(2,1)(3,2)        ← 一致しない
+```
+
+これは「梯子あり・縮約あり・`Bq = []` かつ `|rest2| = 1`」の壊れる形そのもので、
+末尾列 `(3,1)` の**段が正**なので行 0 の親が立たず、局所の仮定だけでは排除できない
+（末尾列の行 0 の祖先は `(2,1)` の 1 つだけで、その段 1 は `< 1` でない）。
+計画書の「梯子は `s = 1` でしか立たない」は `force` 経由の道
+（節点の段 = 親の段、その引数の頭の段 = +1）を BMS 標準形が禁じることに依るので、
+局所の帰納では出せない。そこで局所仮定として切り出したのが
+
+```
+def contrOK (M : PairSeq) : Prop :=
+  ∀ t p x r, M.drop t = p :: r →
+    contrLen p (r.dropWhile (p.1 < ·)) (unitsLen p (r.dropWhile (p.1 < ·)))
+      (r.takeWhile (p.1 < ·)) = some ([x], []) → x.2 = 0
+```
+
+「縮約が『読み直しの先が 1 列・外の後続が空』で発火するなら、その段は 0」。
+実測（`tools/dbms/badcontr.py`、≤9 列）で 49 件すべて段 0 なので成り立つはずで、
+**残る仕事は `ST_PS M → contrOK M`**（＝「(0,0)(1,1)(2,1)(3,2) 型が標準形でない」）。
+上の反例 `(2,2)(2,1)(3,2)(3,1)` は `contrOK` を破る（`x = (3,1)`, `x.2 = 1 ≠ 0`）。
+
+途中で要った補助（すべて sorry 0）:
+
+```
+hasParent_last_append / noParent_suffix   親は接尾辞から全体へ、親なしは全体から接尾辞へ
+contrOK_suffix                            contrOK は接尾辞に遺伝
+convC_single_ne / convC_dropLast_arg_single   B = [] かつ |A| = 1（梯子が立てば親が立つ）
+convC_dropLast_arg'                       convC_dropLast_arg の ih を必要な 2 つに絞った版
+contrLen_dropLast_none                    縮約が起きないなら末尾を落としても起きない
+```
+「親がない」は右端の道を下っても保たれる
 （部分列の `nextR` は `nextR_append_right` で全体に持ち上がるので、
 全体に祖先がなければ部分列にもない）。
 

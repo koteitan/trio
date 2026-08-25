@@ -1612,6 +1612,463 @@ theorem ST_D_conC (H : ReindexD) {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
   obtain ⟨v, hv⟩ := diag_cofinal hM
   exact ST_D_descend H (diagSeq 0 v) (ST_PS.diag v) (ST_D_conC_diagSeq v) M hM hv
 
+/-! ## 2.85 場合 (b): 末尾列に親がないときの `dropLast`
+
+`convC` の再帰の右端の道に沿って `dropLast` が可換になることを示す。
+壊れるのは「梯子あり・縮約あり・`Bq = []` かつ `|rest2| = 1`」の 1 か所だけで、
+そこでの末尾列は深さ `p.1 + 1`・段 `< p.2`。段が 0 なら行 0 の親が立って
+「親がない」に矛盾するが、段が正の場合は局所の仮定だけでは排除できない。反例:
+
+    M = (2,2)(2,1)(3,2)(3,1)   d = 2, plev = 1, first, ¬force
+    blockok 2 / colOK / descOK / 末尾 (3,1) に親なし をすべて満たすが
+    convC M = (2,1)(3,2)(3,1)、convC M.dropLast = (2,1)(3,2)(2,1)(3,2)
+
+そこで「その形の縮約はどの接尾辞でも起きない」という仮定 `contrOK` を置く
+（BMS 標準形では実測 0、`tools/dbms/badcontr.py` の 49 件はすべて段 0）。 -/
+
+/-- 接尾辞の末尾列に親があれば、全体でも末尾列に親がある。 -/
+theorem hasParent_last_append (G T : PairSeq) (hT : T ≠ [])
+    (h : hasParent T (idx1 T (T.length - 1)) (T.length - 1)) :
+    hasParent (G ++ T) (idx1 (G ++ T) ((G ++ T).length - 1)) ((G ++ T).length - 1) := by
+  have hTl : 0 < T.length := List.length_pos_iff.mpr hT
+  have hlen : (G ++ T).length - 1 = G.length + (T.length - 1) := by
+    simp only [List.length_append]; omega
+  rw [hlen, idx1_append_right]
+  have hjl : T.length - 1 < T.length := by omega
+  have hjl' : G.length + (T.length - 1) < (G ++ T).length := by
+    simp only [List.length_append]; omega
+  unfold idx1 at h ⊢
+  by_cases hz : 0 < entry T 1 (T.length - 1)
+  · rw [if_pos hz] at h ⊢
+    rw [Wset.hasParent_one_iff hjl']
+    rw [Wset.hasParent_one_iff hjl] at h
+    obtain ⟨j0, hj1, hj2, hj3⟩ := h
+    refine ⟨G.length + j0, by omega, (le0_append_right G T j0 (T.length - 1)).2 hj2, ?_⟩
+    rw [entry_append_right, entry_append_right]; exact hj3
+  · rw [if_neg hz] at h ⊢
+    rw [Wset.hasParent_zero_iff hjl']
+    rw [Wset.hasParent_zero_iff hjl] at h
+    obtain ⟨k, hk1, hk2⟩ := h
+    refine ⟨G.length + k, by omega, ?_⟩
+    rw [entry_append_right, entry_append_right]; exact hk2
+
+/-- 「末尾列に親がない」は末尾を含む接尾辞に遺伝する。 -/
+theorem noParent_suffix {M T : PairSeq} (hT : T ≠ []) (hs : T <:+ M)
+    (h : ¬ hasParent M (idx1 M (M.length - 1)) (M.length - 1)) :
+    ¬ hasParent T (idx1 T (T.length - 1)) (T.length - 1) := by
+  obtain ⟨G, hG⟩ := hs
+  subst hG
+  exact fun hpar => h (hasParent_last_append G T hT hpar)
+
+/-- 縮約が「読み直しの先が 1 列だけ・その段が正・外の後続が空」という形で
+発火することが、どの接尾辞でも起きない。`dropLast` が壊れる唯一の形。 -/
+def contrOK (M : PairSeq) : Prop :=
+  ∀ (t : ℕ) (p x : ℕ × ℕ) (r : PairSeq), M.drop t = p :: r →
+    contrLen p (r.dropWhile fun q => p.1 < q.1)
+      (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+      (r.takeWhile fun q => p.1 < q.1) = some ([x], []) → x.2 = 0
+
+theorem drop_append_len (T : PairSeq) : ∀ (G : PairSeq) (t : ℕ),
+    (G ++ T).drop (t + G.length) = T.drop t := by
+  intro G
+  induction G with
+  | nil => intro t; simp
+  | cons a G ih =>
+    intro t
+    have he : t + (a :: G).length = (t + G.length) + 1 := by
+      simp only [List.length_cons]; omega
+    rw [List.cons_append, he, List.drop_succ_cons, ih]
+
+theorem contrOK_suffix {M T : PairSeq} (hs : T <:+ M) (h : contrOK M) : contrOK T := by
+  obtain ⟨G, hG⟩ := hs
+  subst hG
+  intro t p x r hdr hcc
+  refine h (t + G.length) p x r ?_ hcc
+  rw [drop_append_len T G t]
+  exact hdr
+
+/-- 1 列だけのブロックで段が親の +1 でないなら、梯子は立たず像も 1 列。 -/
+theorem convC_single_ne (c : ℕ × ℕ) (d plev : ℕ) (first force : Bool)
+    (h : ¬ (c.2 = plev + 1)) :
+    convC [c] d plev first force = [(ddOf c.2 d plev first force, c.2)] := by
+  have hne : (c.2 == plev + 1) = false := by simpa using h
+  have hl : ladOf c.2 d plev first force = false := by simp [ladOf, hne]
+  rw [convC_cons_nolad c [] d plev first force hl]
+  simp
+
+/-- `B` が空で引数が 1 列のとき。段が親の +1 でなければ像も 1 列で `dropLast` が合う。 -/
+theorem convC_dropLast_arg_single (p c : ℕ × ℕ) (d plev : ℕ) (first force : Bool)
+    (hpc : p.1 < c.1) (hne : ¬ (c.2 = p.2 + 1)) :
+    convC [p] d plev first force = (convC (p :: [c]) d plev first force).dropLast := by
+  obtain ⟨e1, e2⟩ := split_append (X := ([c] : PairSeq)) (Y := ([] : PairSeq)) (dd := p.1)
+    (by intro x hx; simp only [List.mem_singleton] at hx; subst hx; exact hpc) (Or.inl rfl)
+  simp only [List.append_nil] at e1 e2
+  have hn0 : ∀ X : PairSeq, contrLen p [] (unitsLen p []) X = none := by
+    intro X; unfold contrLen; simp
+  by_cases hl : ladOf p.2 d plev first force = true
+  · rw [convC_cons_lad_none p [c] d plev first force hl (by rw [e1, e2]; exact hn0 _),
+      convC_cons_lad_none p [] d plev first force hl
+        (by simp only [List.takeWhile_nil, List.dropWhile_nil]; exact hn0 _),
+      e1, e2]
+    simp only [List.takeWhile_nil, List.dropWhile_nil, convC_nil, List.append_nil,
+      List.nil_append]
+    rw [convC_single_ne c (d + 2) p.2 true false hne]
+    simp
+  · rw [convC_cons_nolad p [c] d plev first force (by simpa using hl),
+      convC_cons_nolad p [] d plev first force (by simpa using hl), e1, e2]
+    simp only [List.takeWhile_nil, List.dropWhile_nil, convC_nil, List.append_nil]
+    rw [convC_single_ne c (ddOf p.2 d plev first force + 1) p.2 true
+      (first && (p.2 == plev)) hne]
+    simp
+
+/-- `convC_dropLast_arg` の、帰納法の仮定を必要な 2 つに絞った版。 -/
+theorem convC_dropLast_arg' (p : ℕ × ℕ) (A : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hA : ∀ x ∈ A, p.1 < x.1) (hAne : A ≠ [])
+    (ih1 : convC (A.dropLast) (d + 2) p.2 true false
+        = (convC A (d + 2) p.2 true false).dropLast)
+    (ih2 : convC (A.dropLast) (ddOf p.2 d plev first force + 1) p.2 true
+             (first && (p.2 == plev))
+        = (convC A (ddOf p.2 d plev first force + 1) p.2 true
+             (first && (p.2 == plev))).dropLast) :
+    convC (p :: A.dropLast) d plev first force
+      = (convC (p :: A) d plev first force).dropLast := by
+  have hAd : ∀ x ∈ A.dropLast, p.1 < x.1 :=
+    fun x hx => hA x ((List.dropLast_sublist A).subset hx)
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := []) (dd := p.1) hA (Or.inl rfl)
+  obtain ⟨e3, e4⟩ := split_append (X := A.dropLast) (Y := []) (dd := p.1) hAd (Or.inl rfl)
+  simp only [List.append_nil] at e1 e2 e3 e4
+  have hnone : contrLen p [] (unitsLen p []) A = none := by unfold contrLen; simp
+  have hnone' : contrLen p [] (unitsLen p []) A.dropLast = none := by unfold contrLen; simp
+  by_cases hl : ladOf p.2 d plev first force = true
+  · have hXne : convC A (d + 2) p.2 true false ≠ [] := by
+      intro he; rw [convC_eq_nil_iff] at he; exact hAne he
+    rw [convC_cons_lad_none p A.dropLast d plev first force hl (by rw [e3, e4]; exact hnone'),
+      convC_cons_lad_none p A d plev first force hl (by rw [e1, e2]; exact hnone),
+      e1, e2, e3, e4, convC_nil]
+    simp only [List.append_nil]
+    rw [ih1, dropLast_cons_ne (by simp), dropLast_cons_ne hXne]
+  · have hXne : convC A (ddOf p.2 d plev first force + 1) p.2 true
+        (first && (p.2 == plev)) ≠ [] := by
+      intro he; rw [convC_eq_nil_iff] at he; exact hAne he
+    rw [convC_cons_nolad p A.dropLast d plev first force (by simpa using hl),
+      convC_cons_nolad p A d plev first force (by simpa using hl),
+      e1, e2, e3, e4, convC_nil]
+    simp only [List.append_nil]
+    rw [ih2, dropLast_cons_ne hXne]
+
+/-- 縮約が起きないなら、末尾の 1 列を落としても起きない。 -/
+theorem contrLen_dropLast_none (p : ℕ × ℕ) (A B : PairSeq)
+    (h : contrLen p B (unitsLen p B) A = none) :
+    contrLen p (B.dropLast) (unitsLen p (B.dropLast)) A = none := by
+  rcases hd : contrLen p (B.dropLast) (unitsLen p (B.dropLast)) A with _ | ⟨R0, Q0⟩
+  · rfl
+  exfalso
+  set D := B.dropLast with hD
+  set k := unitsLen p D with hk
+  obtain ⟨q, r2, hdq, hq2, hq1, hAq, hBq, hRne, hRd, hRl⟩ := contrLen_spec hd
+  set U := D.take k with hU
+  have hDne : D ≠ [] := by
+    intro he; rw [he] at hdq; simp at hdq
+  have hBne : B ≠ [] := by
+    intro he; rw [hD, he] at hDne; simp at hDne
+  have hklt : k < D.length := by
+    have h1 : (D.drop k).length = D.length - k := List.length_drop
+    rw [hdq] at h1
+    simp only [List.length_cons] at h1
+    omega
+  have hUlen : U.length = k := by rw [hU, List.length_take]; omega
+  have hUnits : Units p U := by rw [hU, hk]; exact units_take p D.length D (Nat.le_refl _)
+  have hqp : ¬ (q = p) := by intro he; rw [he] at hq2; omega
+  set z := B.getLast hBne with hz
+  have hBz : B = D ++ [z] := by
+    rw [hD, hz]; exact (List.dropLast_append_getLast hBne).symm
+  have hDsplit : D = U ++ (q :: r2) := by rw [hU, ← hdq, List.take_append_drop]
+  have hBsplit : B = U ++ (q :: (r2 ++ [z])) := by
+    rw [hBz, hDsplit, List.append_assoc, List.cons_append]
+  have hBtake : B.take k = U := by
+    conv_lhs => rw [hBsplit]
+    rw [← hUlen, List.take_left]
+  have hBdrop : B.drop k = q :: (r2 ++ [z]) := by
+    conv_lhs => rw [hBsplit]
+    rw [← hUlen, List.drop_left]
+  have hu : unitsLen p B = k := by
+    conv_lhs => rw [hBsplit]
+    rw [unitsLen_append_units hUnits
+      (Or.inr ⟨by simp only [List.headI_cons]; omega,
+        by simp only [List.headI_cons]; exact hqp⟩), hUlen]
+  -- `r2 ++ [z]` の切り分け（3 通りとも同じ形にまとめる）
+  have hkey : ∃ R V, ((r2 ++ [z]).takeWhile fun x => q.1 < x.1) = contrPre p U A ++ R ∧
+      ((r2 ++ [z]).dropWhile fun x => q.1 < x.1) = V ∧ R ≠ [] ∧ R.headI = R0.headI := by
+    by_cases hQ0 : Q0 = []
+    · -- 兄弟が空: `r2` は全部深い
+      have htw : (r2.takeWhile fun x => q.1 < x.1) = r2 := by
+        conv_rhs => rw [← List.takeWhile_append_dropWhile
+          (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) (l := r2)]
+        rw [hBq, hQ0, List.append_nil]
+      have hall : ∀ x ∈ r2, q.1 < x.1 := by
+        intro x hx
+        have := List.mem_takeWhile_imp (p := fun x : ℕ × ℕ => decide (q.1 < x.1))
+          (by rw [htw]; exact hx)
+        simpa using this
+      rw [htw] at hAq
+      by_cases hzq : q.1 < z.1
+      · have hallz : ∀ x ∈ r2 ++ [z], q.1 < x.1 := by
+          intro x hx
+          rcases List.mem_append.1 hx with hx | hx
+          · exact hall x hx
+          · simp only [List.mem_singleton] at hx; subst hx; exact hzq
+        obtain ⟨f1, f2⟩ := split_append (X := r2 ++ [z]) (Y := ([] : PairSeq))
+          (dd := q.1) hallz (Or.inl rfl)
+        simp only [List.append_nil] at f1 f2
+        refine ⟨R0 ++ [z], [], ?_, f2, by simp, ?_⟩
+        · rw [f1, hAq, List.append_assoc]
+        · rw [headI_append_left hRne]
+      · obtain ⟨f1, f2⟩ := split_append (X := r2) (Y := ([z] : PairSeq))
+          (dd := q.1) hall (Or.inr (by simpa using hzq))
+        exact ⟨R0, [z], by rw [f1, hAq], f2, hRne, rfl⟩
+    · -- 兄弟が空でない: 切れ目は `Q0` の頭のまま
+      have hQ0h : ¬ (q.1 < (Q0.headI).1) := by
+        rcases dropWhile_head_neg (a := q.1) r2 with hh | hh
+        · rw [hBq] at hh; exact absurd hh hQ0
+        · rw [hBq] at hh; exact hh
+      have hdeep : ∀ x ∈ (r2.takeWhile fun x => q.1 < x.1), q.1 < x.1 := by
+        intro x hx
+        have := List.mem_takeWhile_imp (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) hx
+        simpa using this
+      have hsp : r2 ++ [z] = (r2.takeWhile fun x => q.1 < x.1) ++ (Q0 ++ [z]) := by
+        conv_lhs => rw [← List.takeWhile_append_dropWhile
+          (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) (l := r2)]
+        rw [hBq, List.append_assoc]
+      obtain ⟨f1, f2⟩ := split_append (X := r2.takeWhile fun x => q.1 < x.1)
+        (Y := Q0 ++ [z]) (dd := q.1) hdeep
+        (Or.inr (by rw [headI_append_left hQ0]; exact hQ0h))
+      refine ⟨R0, Q0 ++ [z], ?_, ?_, hRne, rfl⟩
+      · rw [hsp, f1, hAq]
+      · rw [hsp, f2]
+  obtain ⟨R, V, hW, hV, hRne', hRhd⟩ := hkey
+  have ht : (contrPre p U A ++ R).take (contrPre p U A).length = contrPre p U A := by
+    rw [List.take_left]
+  have hdr : (contrPre p U A ++ R).drop (contrPre p U A).length = R := by
+    rw [List.drop_left]
+  have hsome : contrLen p B (unitsLen p B) A = some (R, V) := by
+    unfold contrLen
+    rw [hu, hBdrop, hBtake]
+    simp only [hW, hV]
+    rw [if_pos ⟨hq2, hq1, ht, by rw [hdr]; exact hRne',
+      by rw [hdr, hRhd]; exact hRd, by rw [hdr, hRhd]; exact hRl⟩, hdr]
+  rw [h] at hsome
+  simp at hsome
+
+theorem getLastD_snoc (G : PairSeq) (x dflt : ℕ × ℕ) : (G ++ [x]).getLastD dflt = x := by
+  simp
+
+/-- 頭 `p` に対する引数／後続の切り分けを、`takeWhile` を隠した形で取り出す。 -/
+theorem split_takeWhile (p : ℕ × ℕ) (r : PairSeq) :
+    ∃ A B : PairSeq, A ++ B = r ∧ (∀ x ∈ A, p.1 < x.1) ∧
+      (B = [] ∨ ¬ (p.1 < (B.headI).1)) := by
+  refine ⟨r.takeWhile fun q => p.1 < q.1, r.dropWhile fun q => p.1 < q.1,
+    List.takeWhile_append_dropWhile, ?_, dropWhile_head_neg r⟩
+  intro x hx
+  have := List.mem_takeWhile_imp (p := fun q : ℕ × ℕ => decide (p.1 < q.1)) hx
+  simpa using this
+
+/-- **場合 (b)**: 末尾列に親がなければ `convC` は `dropLast` と可換
+（壊れる 1 か所を除く仮定 `contrOK` のもとで）。 -/
+theorem convC_dropLast_noParent_aux : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → 1 < M.length →
+    ∀ (d plev : ℕ) (first force : Bool),
+      contrOK M →
+      ¬ hasParent M (idx1 M (M.length - 1)) (M.length - 1) →
+      convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM h1 _ _ _ _ _ _
+    omega
+  | succ n ih =>
+    intro M hM h1 d plev first force hco hnp
+    match M with
+    | [] => simp at h1
+    | p :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile p r
+      by_cases hBe : B = []
+      · -- 兄弟が空: 引数ブロック `A` に降りる
+        subst hBe
+        simp only [List.append_nil] at hco hnp ⊢
+        have hAlen : A.length ≤ n := by
+          simp only [List.length_cons, List.length_append, List.length_nil] at hM; omega
+        have hApos : 1 < A.length + 1 := by
+          simp only [List.length_cons, List.length_append, List.length_nil] at h1; omega
+        have hAne : A ≠ [] := by
+          intro he; rw [he] at hApos; simp at hApos
+        by_cases hA1 : A.length = 1
+        · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.1 hA1
+          have hpc : p.1 < c.1 := hAd c (by simp)
+          have he00 : entry (p :: [c] : PairSeq) 0 0 = p.1 := by simp [entry]
+          have he01 : entry (p :: [c] : PairSeq) 0 1 = c.1 := by simp [entry]
+          have he10 : entry (p :: [c] : PairSeq) 1 0 = p.2 := by simp [entry]
+          have he11 : entry (p :: [c] : PairSeq) 1 1 = c.2 := by simp [entry]
+          have hne : ¬ (c.2 = p.2 + 1) := by
+            intro heq
+            refine hnp ?_
+            have hlen : (p :: [c] : PairSeq).length - 1 = 1 := by simp
+            rw [hlen]
+            have hidx : idx1 (p :: [c] : PairSeq) 1 = 1 := by
+              unfold idx1; rw [if_pos (by rw [he11, heq]; omega)]
+            rw [hidx, Wset.hasParent_one_iff (by simp)]
+            refine ⟨0, by omega, ⟨by simp, by simp, ?_⟩, ?_⟩
+            · exact Relation.ReflTransGen.single
+                ⟨by simp, by simp, by omega, by rw [he00, he01]; exact hpc,
+                  fun j hj => by omega⟩
+            · rw [he10, he11, heq]; omega
+          have hdl : (p :: [c] : PairSeq).dropLast = [p] := rfl
+          rw [hdl]
+          exact convC_dropLast_arg_single p c d plev first force hpc hne
+        · have hA2 : 1 < A.length := by omega
+          have hcoA : contrOK A := contrOK_suffix ⟨[p], rfl⟩ hco
+          have hnpA : ¬ hasParent A (idx1 A (A.length - 1)) (A.length - 1) :=
+            noParent_suffix hAne ⟨[p], rfl⟩ hnp
+          rw [dropLast_cons_ne hAne]
+          exact convC_dropLast_arg' p A d plev first force hAd hAne
+            (ih A hAlen hA2 (d + 2) p.2 true false hcoA hnpA)
+            (ih A hAlen hA2 (ddOf p.2 d plev first force + 1) p.2 true
+              (first && (p.2 == plev)) hcoA hnpA)
+      · -- 兄弟が空でない: 末尾列は `B` の中
+        have hBhne : ¬ (p.1 < (B.headI).1) := hBh.resolve_left hBe
+        have hABne : A ++ B ≠ [] := by
+          intro he; exact hBe (List.append_eq_nil_iff.1 he).2
+        rw [dropLast_cons_ne hABne, List.dropLast_append_of_ne_nil hBe]
+        by_cases hB1 : B.length = 1
+        · obtain ⟨w, rfl⟩ := List.length_eq_one_iff.1 hB1
+          have hdl : ([w] : PairSeq).dropLast = [] := rfl
+          rw [hdl, List.append_nil]
+          have hw : ¬ (p.1 < w.1) := by simpa using hBhne
+          rw [convC_dropLast_singleton p w A d plev first force hAd hw]
+          simp
+        · have hB2 : 1 < B.length := by
+            have h0 : 0 < B.length := List.length_pos_iff.mpr hBe
+            omega
+          have hBlen : B.length ≤ n := by
+            simp only [List.length_cons, List.length_append] at hM; omega
+          have hBdlen : (B.dropLast).length = B.length - 1 := by simp
+          have hBdne : B.dropLast ≠ [] := by
+            intro he
+            rw [he] at hBdlen
+            simp only [List.length_nil] at hBdlen
+            omega
+          have hcoB : contrOK B := contrOK_suffix ⟨p :: A, rfl⟩ hco
+          have hnpB : ¬ hasParent B (idx1 B (B.length - 1)) (B.length - 1) :=
+            noParent_suffix hBe ⟨p :: A, rfl⟩ hnp
+          have ihB := ih B hBlen hB2 d p.2 false false hcoB hnpB
+          by_cases hl : ladOf p.2 d plev first force = true
+          · rcases hcc : contrLen p B (unitsLen p B) A with _ | ⟨rest2, Bq⟩
+            · exact convC_dropLast_lad_none p A B d plev first force hAd hBe hBdne hBhne hl
+                hcc (contrLen_dropLast_none p A B hcc) ihB
+            · obtain ⟨q, r2, hdq, hq2, hq1, hAq2, hBq2, hr2ne, hr2d, hr2l⟩ := contrLen_spec hcc
+              have hr2suf : r2 <:+ B := ⟨B.take (unitsLen p B) ++ [q], by
+                rw [List.append_assoc, List.singleton_append, ← hdq, List.take_append_drop]⟩
+              have hBsuf : B <:+ (p :: (A ++ B)) := ⟨p :: A, rfl⟩
+              by_cases hBqe : Bq = []
+              · subst hBqe
+                have hr2eq : r2 = contrPre p (B.take (unitsLen p B)) A ++ rest2 := by
+                  conv_lhs => rw [← List.takeWhile_append_dropWhile
+                    (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) (l := r2)]
+                  rw [hAq2, hBq2, List.append_nil]
+                have hRsuf0 : rest2 <:+ r2 :=
+                  ⟨contrPre p (B.take (unitsLen p B)) A, hr2eq.symm⟩
+                have hRsuf : rest2 <:+ (p :: (A ++ B)) :=
+                  (hRsuf0.trans hr2suf).trans hBsuf
+                by_cases hR1 : rest2.length = 1
+                · -- 壊れる形。`contrOK` から段は 0、そこで行 0 の親が立って矛盾
+                  exfalso
+                  obtain ⟨x, hrest⟩ := List.length_eq_one_iff.1 hR1
+                  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := p.1) hAd hBh
+                  have hx0 : x.2 = 0 := by
+                    refine hco 0 p x (A ++ B) (by simp) ?_
+                    rw [e2, e1, hcc, hrest]
+                  have hx1 : x.1 = p.1 + 1 := by
+                    rw [hrest] at hr2d; simpa using hr2d
+                  have hBform : B = B.take (unitsLen p B)
+                      ++ (q :: (contrPre p (B.take (unitsLen p B)) A ++ [x])) := by
+                    conv_lhs => rw [← List.take_append_drop (unitsLen p B) B]
+                    rw [hdq, hr2eq, hrest]
+                  have hMform : (p :: (A ++ B) : PairSeq)
+                      = (p :: (A ++ (B.take (unitsLen p B)
+                          ++ (q :: contrPre p (B.take (unitsLen p B)) A)))) ++ [x] := by
+                    conv_lhs => rw [hBform]
+                    simp [List.append_assoc]
+                  have hlastx : ((p :: (A ++ B) : PairSeq).getLastD (0, 0)) = x := by
+                    rw [hMform]; exact getLastD_snoc _ x (0, 0)
+                  have hMlen : 2 < (p :: (A ++ B) : PairSeq).length := by
+                    simp only [List.length_cons, List.length_append]; omega
+                  have hj : (p :: (A ++ B) : PairSeq).length - 1
+                      < (p :: (A ++ B) : PairSeq).length := by omega
+                  have hz : ¬ (0 < entry (p :: (A ++ B) : PairSeq) 1
+                      ((p :: (A ++ B) : PairSeq).length - 1)) := by
+                    rw [entry_last, hlastx, hx0]; omega
+                  have hidx : idx1 (p :: (A ++ B) : PairSeq)
+                      ((p :: (A ++ B) : PairSeq).length - 1) = 0 := by
+                    unfold idx1; rw [if_neg hz]
+                  refine hnp ?_
+                  rw [hidx]
+                  refine hasParent0_of_exists hj ⟨0, by omega, ?_⟩
+                  rw [entry_zero0, entry_last0, hlastx]
+                  simp only [List.headI_cons]
+                  omega
+                · have h0 : 0 < rest2.length := List.length_pos_iff.mpr hr2ne
+                  have hRdlen : (rest2.dropLast).length = rest2.length - 1 := by simp
+                  have hRd : rest2.dropLast ≠ [] := by
+                    intro he
+                    rw [he] at hRdlen
+                    simp only [List.length_nil] at hRdlen
+                    omega
+                  have hRlen : rest2.length ≤ n := by
+                    have := (contrLen_lt hcc).1; omega
+                  exact convC_dropLast_contr2 p A B d plev first force hAd hBh hl hcc hRd
+                    (ih rest2 hRlen (by omega) (d + 1) p.2 false false
+                      (contrOK_suffix hRsuf hco) (noParent_suffix hr2ne hRsuf hnp))
+              · have hQsuf0 : Bq <:+ r2 :=
+                  ⟨r2.takeWhile fun x => q.1 < x.1, by
+                    rw [← hBq2]; exact List.takeWhile_append_dropWhile⟩
+                have hQsuf : Bq <:+ (p :: (A ++ B)) :=
+                  (hQsuf0.trans hr2suf).trans hBsuf
+                have ihQ : convC (Bq.dropLast) d p.2 false false
+                    = (convC Bq d p.2 false false).dropLast := by
+                  by_cases hQ1 : Bq.length = 1
+                  · obtain ⟨w, hw⟩ := List.length_eq_one_iff.1 hQ1
+                    rw [hw]
+                    have hdl : ([w] : PairSeq).dropLast = [] := rfl
+                    rw [hdl, convC_nil, convC_single]
+                    simp
+                  · have h0 : 0 < Bq.length := List.length_pos_iff.mpr hBqe
+                    have hQlen : Bq.length ≤ n := by
+                      have := (contrLen_lt hcc).2; omega
+                    exact ih Bq hQlen (by omega) d p.2 false false
+                      (contrOK_suffix hQsuf hco) (noParent_suffix hBqe hQsuf hnp)
+                exact convC_dropLast_contr p A B d plev first force hAd hBh hl hcc hBqe ihQ
+          · exact convC_dropLast_tail p A B d plev first force hAd hBe hBdne hBhne
+              (by simpa using hl) ihB
+
+/-- 計画書の形（`blockok` / `colOK` / `descOK` / `bd ≤ d` つき）。
+本体はそれらを使わない `convC_dropLast_noParent_aux`。 -/
+theorem convC_dropLast_noParent : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → 1 < M.length →
+    ∀ (bd d plev : ℕ) (first force : Bool),
+      blockok bd M → colOK M → descOK M → bd ≤ d → contrOK M →
+      ¬ hasParent M (idx1 M (M.length - 1)) (M.length - 1) →
+      convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast :=
+  fun n M hM h1 _ d plev first force _ _ _ _ hco hnp =>
+    convC_dropLast_noParent_aux n M hM h1 d plev first force hco hnp
+
+/-- **場合 (b) の REINDEX**: 末尾列に親がなければ `m = 1`, `n' = n` で取れる。 -/
+theorem reindexD_noParent {M : PairSeq} (n : ℕ) (hL : 1 < M.length) (hco : contrOK M)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0))
+    (hnp : ¬ hasParent M (idx1 M (M.length - 1)) (M.length - 1)) :
+    ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧ (conC M)⟦m⟧ = conC (M⟦n'⟧) := by
+  refine ⟨1, n, Nat.le_refl 1, Nat.le_refl n, ?_⟩
+  rw [oper_one (conC_length_ge_two hL),
+    oper_eq_pred_of_noParent n (by omega) hz hnp, Pred, if_neg (by omega)]
+  unfold conC
+  exact (convC_dropLast_noParent_aux M.length M (Nat.le_refl _) hL 0 0 true false hco hnp).symm
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -1646,3 +2103,13 @@ end DBMS
 #print axioms DBMS.convC_dropLast_lad_none
 #print axioms DBMS.convC_dropLast_contr2
 #print axioms DBMS.hasParent0_of_exists
+#print axioms DBMS.hasParent_last_append
+#print axioms DBMS.noParent_suffix
+#print axioms DBMS.contrOK_suffix
+#print axioms DBMS.convC_single_ne
+#print axioms DBMS.convC_dropLast_arg_single
+#print axioms DBMS.convC_dropLast_arg'
+#print axioms DBMS.contrLen_dropLast_none
+#print axioms DBMS.convC_dropLast_noParent_aux
+#print axioms DBMS.convC_dropLast_noParent
+#print axioms DBMS.reindexD_noParent
