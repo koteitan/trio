@@ -289,7 +289,12 @@ convC_dropLast_arg        B が空 → 引数 A に帰着（縮約は発火し�
 convC_dropLast_tail       梯子なし → 兄弟 B に帰着
 convC_dropLast_lad_none   梯子あり・縮約なし → 兄弟 B に帰着
 convC_dropLast_contr      梯子あり・縮約あり・Bq ≠ [] → Bq に帰着
+convC_dropLast_contr2     梯子あり・縮約あり・Bq = [] かつ |rest2| ≥ 2 → rest2 に帰着
 ```
+
+**壊れるのは `Bq = []` かつ `|rest2| = 1` のときだけ。** そのとき末尾列は
+`rest2` のただ 1 列で、深さ `p.1+1`・段 `< p.2`。段 0 なら `q`（深さ `p.1`）が
+行 0 の親になるので場合 (b) ではない。段 > 0 の側の始末が残る。
 
 `convC_dropLast_contr` の要点は「`Bq ≠ []` なら縮約は消えない」:
 
