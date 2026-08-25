@@ -852,3 +852,97 @@ conC ((range n).flatMap (fun k => (k*a, 0) :: shift0 (k*a) R))
 という「行 0 を一様にずらしたコピーの並び」の補題が要る（§(d) の段 > 0 の壁）。
 
 **1 と 3 は同じ**（`reindexD_sib_lad` の仮定 `hnc`）。
+
+## 2026-08-26（続き 3）: BMS 標準形の局所的な事実を証明、`RDposRes` は偽と判明
+
+### 1. 証明したもの（`DbmsStd.lean`、sorry 0、`leanman check` exit 0）
+
+```
+adj3 / noAdj3          隣り合う 3 列の禁止形（深さ狭義増加・中の段 = 左の段・右の段 = 中の段 + 1）
+noAdj3_of_agree        列が一致する短い列に遺伝
+noAdj3_take            接頭辞に遺伝
+noAdj3_diagSeq         対角には現れない
+entry1_last_le_of_lt   末尾の直前が浅ければ行 0 の親 → nextrel1 の最小性
+noAdj3_ST_PS           ★ BMS 2 行標準形には禁止形が現れない
+noAdj3_infix           連続部分列に遺伝
+headPatOK / argPatOK   ブロック版の言い換え（各節点で「子の段 = 自分の段 ⟹ 孫の段 ≠ 子の段 + 1」）
+argPatOK_of_noAdj3     noAdj3 → argPatOK
+argPatOK_ST_PS         ★ 標準形は argPatOK
+convC_force_head       force が効かない条件を頭の列だけに弱めた版（convC_force の一般化）
+convC_arg_force_eq     headPatOK があれば引数へ渡る force は効かない
+```
+
+`noAdj3_ST_PS` が計画書で「BMS 標準形のより強い性質」と書いていたものである。
+これは
+「節点の段 = その親の段 かつ その引数ブロックの頭の段 = 節点の段 + 1」
+（`(0,0)(1,1)(2,1)(3,2)` 型）の**隣接による言い換え**で、
+節点が引数ブロックの頭なら親は直前の列・その引数ブロックの頭は直後の列だから
+純粋に局所的な形になる。
+
+証明は `oper` についての帰納（`oper_bad_blocks` の `copyExp` 分解を使う）:
+
+* コピーの内側では行 0 が一様にずれるだけなので形がそのまま元の行列に移る
+* `Pred` の枝は接頭辞なので `noAdj3_take`
+* コピーの境をまたぐ形は、いずれも
+  「`entry M 0 (j1-1) < entry M 0 j1` ⟹ `nextrel0 M (j1-1) j1` ⟹ `le0`
+  ⟹ `nextrel1` の最小性で `entry M 1 j1 ≤ entry M 1 (j1-1)`」
+  と `entry M 1 j0 < entry M 1 j1` の矛盾で潰れる（`d0 = 0` の枝は
+  `∀ x ∈ R, v0 < x.1` だけで潰れる）
+* ブロックが 1 列のときは行 1 が全部 `w0` なので「+1」になれない
+
+実測: ≤10 列 2073826 個で違反 0。
+
+### 2. **`RDposRes` は偽**（重要）
+
+`DbmsStd.lean` の `RDposRes` はそのままでは証明できない。反例:
+
+```
+B = (1,1)(2,2)(2,1)(3,2)(3,1)      bd = 1, d = 1, plev = 1, first = true
+```
+
+`blockok 1 B`, `colOK B`, `descOK B`, `bd ≤ d`, `p.1 = bd`, `2 ≤ |B|`,
+`0 < entry B 1 (|B|-1)` をすべて満たし、末尾列 `(3,1)` に行 1 の親がない
+（段が 0 の列がない）ので残余条件 `¬ hasParent` も満たす。ところが
+
+```
+convC B 1 1 true force  = (2,1)(3,1)(4,2)(4,1)          （4 列）
+B⟦n⟧ = (1,1)(2,2)(2,1)(3,2)  （n に依らない）
+convC (B⟦n⟧) 1 1 true force = (2,1)(3,1)(4,2)(3,1)(4,2) （5 列）
+```
+
+で、左辺の末尾 `(4,1)` にも行 1 の親がないから `(convC B)⟦m⟧` は
+`dropLast` で 3 列になるしかなく、5 列には決してならない。
+
+**この反例は `headPatOK B plev` が偽であることで排除される**:
+`p.2 = 1 = plev` なのに引数ブロックの頭 `(2,2)` の段が `p.2 + 1 = 2`。
+つまり `noAdj3` で禁じた形そのものである。
+
+同じことが `contrOK` でも起きる。標準形の中の「親なし・末尾の段 > 0」の
+ブロック 64419 個（≤8 列）のうち **142 個で `contrOK` が破れる**
+（例: `(4,4)(4,3)(5,4)(5,3)`）。したがって
+「段 > 0 では `ST_PS M → contrOK M`」は**偽**で、
+`convC_dropLast_noParent_aux` の仮定は
+「実際に梯子が立つ位置でしか縮約を見ない」形に弱める必要がある。
+
+### 3. 次にやること
+
+1. `reindexD_pos_block` / `reindexD_zero_block` を、不変量に
+   `first = true → headPatOK B plev` と（遺伝のための）`argPatOK B` を足して
+   作り直す。引数ブロックへ降りるときの `headPatOK A p.2` は
+   `argPatOK_cons` の第 1 成分そのもの、兄弟ブロックは `first = false` なので
+   要らない（`force` は `first = false` の枝では立たない）。
+   根だけは `d = 0 ≤ plev + 1` なので `convC_force` で片付く。
+2. `RDposRes` / `RDzeroRes` を上の不変量つきに書き直す
+   （いまの形は偽なので `reindexD_holds_of_res` の仮定は充足できない）。
+3. `reindexD_node0_gen` の `hfr` を `convC_arg_force_eq` で消した版を作る（場合 (d) の `force`）。
+4. `convC_dropLast_noParent_aux` の `contrOK` を梯子つきの位置だけに弱める（段 > 0 の場合 (b)）。
+5. 場合 (d) の段 > 0（ずれたコピーの補題、shift regime）と、
+   梯子つきの段の縮約（`reindexD_sib_lad` の `hnc`）は手つかずのまま。
+
+### 4. 検証スクリプト（このセッションで使ったもの）
+
+| | |
+|---|---|
+| 禁止形の全数走査 | `rows2.gen('BMS',10)` の 2073826 個で違反 0 |
+| `RDposRes` の反例探索 | ブロックを全列挙して `(convC B)⟦m⟧ = convC (B⟦n'⟧)` を探索（≤5 列） |
+| `contrOK` の反例 | 標準形の全ブロックで `contrLen … = some ([x],[])` を検査 |
