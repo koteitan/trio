@@ -1162,6 +1162,31 @@ theorem oper_append_convC (A B : PairSeq) (n : ℕ) {bd d plev : ℕ}
     convC_exists_shallow B.length B (Nat.le_refl _) bd d plev hb hc hdo hbd hlast
   exact oper_append_of_shallow0 A _ n hT hz hi hp hk1 hk2
 
+/-- **浅い列が 1 つでもあれば、行 0 の親は存在する**（一意性は `nextrel0` の最大性から）。 -/
+theorem hasParent0_of_exists {M : PairSeq} {j1 : ℕ} (hj : j1 < M.length)
+    (h : ∃ i, i < j1 ∧ entry M 0 i < entry M 0 j1) : hasParent M 0 j1 := by
+  obtain ⟨i, hi1, hi2, hi3⟩ := exists_greatest_lt
+    (P := fun i => entry M 0 i < entry M 0 j1) j1 h
+  have hnr : nextrel0 M i j1 :=
+    ⟨by omega, hj, hi1, hi2, fun k hk => by
+      have := hi3 k hk.1 hk.2
+      omega⟩
+  refine ⟨i, ?_, ?_⟩
+  · show nextR M 0 i j1
+    unfold nextR; rw [if_pos rfl]; exact hnr
+  · intro y hy
+    have hy' : nextrel0 M y j1 := by
+      have : nextR M 0 y j1 := hy
+      unfold nextR at this; rw [if_pos rfl] at this; exact this
+    clear hy
+    rename' hy' => hy
+    have h1 : i ≤ y := nextrel0_ge hy hi1 hi2
+    have h2 : y ≤ i := by
+      by_contra hgt
+      push_neg at hgt
+      exact hi3 y hgt hy.2.2.1 hy.2.2.2.1
+    omega
+
 /-! ## 2.79 末尾ブロックが 1 列のときの dropLast -/
 
 /-- 1 列だけの変換。`first = false` なら梯子も縮約も起きない。 -/
@@ -1620,3 +1645,4 @@ end DBMS
 #print axioms DBMS.convC_dropLast_contr
 #print axioms DBMS.convC_dropLast_lad_none
 #print axioms DBMS.convC_dropLast_contr2
+#print axioms DBMS.hasParent0_of_exists
