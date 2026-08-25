@@ -37,6 +37,7 @@ regime のうち **succ は証明済み**（`reindexD_succ`）:
     conC (M ++ [(0,0)]) = conC M ++ [(0,0)]        … convC_snoc_zero
     (M ++ [(0,0)])⟦n⟧   = M                        … oper_snoc_zero
     ⟹ (conC (M ++ [(0,0)]))⟦m⟧ = conC ((M ++ [(0,0)])⟦n⟧)   （m, n によらない）
+       ⟹ ReindexD の形（m = 1, n' = n）
 
 残るは id / shift / contr の 3 つ。
 -/
@@ -285,6 +286,12 @@ theorem reindexD_succ {M : PairSeq} (hM : M ≠ []) (hc : colOK M) (m n : ℕ) :
     exact hM
   rw [hsnoc, oper_snoc_zero hCne m, oper_snoc_zero hM n]
 
+/-- succ regime は `ReindexD` の形（`m = 1`, `n' = n`）を満たす。 -/
+theorem reindexD_succ_shape {M : PairSeq} (hM : M ≠ []) (hc : colOK M) (n : ℕ) :
+    ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (conC (M ++ [((0, 0) : ℕ × ℕ)]))⟦m⟧ = conC ((M ++ [((0, 0) : ℕ × ℕ)])⟦n'⟧) :=
+  ⟨1, n, Nat.le_refl 1, Nat.le_refl n, reindexD_succ hM hc 1 n⟩
+
 /-! ## 2.7 変換は末尾列の段を保つ -/
 
 /-- 末尾が空でない `++` の `getLastD`。空なら左側。 -/
@@ -419,6 +426,44 @@ theorem idx1_conC (M : PairSeq) :
     idx1 (conC M) ((conC M).length - 1) = idx1 M (M.length - 1) := by
   rw [idx1, idx1, entry_last, entry_last, conC_getLast_level]
 
+/-! ## 2.8 基本列の単調性 -/
+
+open Three in
+/-- 後ろに列を足すと `translate` は増える（`++` 版）。 -/
+theorem translate_append_le (C : PairSeq) : ∀ D : PairSeq,
+    translate C ≤o translate (C ++ D) := by
+  intro D
+  induction D using List.reverseRecOn with
+  | nil => simp only [List.append_nil]; exact ole_refl _
+  | append_singleton D m ih =>
+      rw [← List.append_assoc]
+      exact ole_trans ih (Or.inl (translate_snoc_increase (C ++ D) m))
+
+/-- **基本列は添字について単調。** `n ≤ n'` なら `M⟦n⟧ ≤ M⟦n'⟧`。 -/
+theorem oper_mono {M : PairSeq} {n n' : ℕ} (h : n ≤ n') :
+    translate (M⟦n⟧) ≤o translate (M⟦n'⟧) := by
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL, oper_eq_self_of_short n' hL]; exact ole_refl _
+  by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz, oper_eq_pred_of_zero n' hL hz]; exact ole_refl _
+  by_cases hp : hasParent M (idx1 M (M.length - 1)) (M.length - 1)
+  · rw [oper_bad_unfold n hL hz hp, oper_bad_unfold n' hL hz hp]
+    set j0 := parent M (idx1 M (M.length - 1)) (M.length - 1)
+    set j1 := M.length - 1
+    set d0 := if 0 < idx1 M j1 then entry M 0 j1 - entry M 0 j0 else 0
+    set d1 := if 1 < idx1 M j1 then entry M 1 j1 - entry M 1 j0 else 0
+    set f := fun k => (List.range' j0 (j1 - j0)).map fun j =>
+      ((entry M 0 j + k * d0 : ℕ), (entry M 1 j + k * d1 : ℕ)) with hf
+    have hsplit : List.range n' = List.range n ++ List.range' n (n' - n) := by
+      conv_lhs => rw [show n' = n + (n' - n) by omega]
+      rw [List.range_eq_range', List.range_eq_range',
+        ← List.range'_append (s := 0) (m := n) (n := n' - n) (step := 1)]
+      simp
+    rw [hsplit, List.flatMap_append, ← List.append_assoc]
+    exact translate_append_le _ _
+  · rw [oper_eq_pred_of_noParent n hL hz hp, oper_eq_pred_of_noParent n' hL hz hp]
+    exact ole_refl _
+
 /-! ## 3. 要 — REINDEX -/
 
 /-- **REINDEX**: `conC` の像の基本列は、BMS 側の基本列と絡み合う。
@@ -433,9 +478,7 @@ BMS の添字 `n' ≥ 1` があって
 （違反 0）。regime は succ / id / shift / contr の 4 つ。 -/
 def ReindexD : Prop :=
   ∀ {A : PairSeq}, ST_PS A → 1 < A.length → ∀ n : ℕ, 1 ≤ n →
-    ∃ m n' : ℕ, 1 ≤ m ∧ 1 ≤ n' ∧
-      (conC A)⟦m⟧ = conC (A⟦n'⟧) ∧
-      translate (A⟦n⟧) ≤o translate (A⟦n'⟧)
+    ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧ (conC A)⟦m⟧ = conC (A⟦n'⟧)
 
 /-! ## 4. 降下 -/
 
@@ -456,7 +499,9 @@ theorem ST_D_descend (H : ReindexD) :
         by_contra hL
         exact not_olt_len_one hM (by omega) hA hlt
       obtain ⟨n, hn, hMn⟩ := pss_cofinality_holds hA hM hlt
-      obtain ⟨m, n', hm, hn', heqC, hmono⟩ := H hA hL n hn
+      obtain ⟨m, n', hm, hnn, heqC⟩ := H hA hL n hn
+      have hn' : 1 ≤ n' := by omega
+      have hmono : translate (A⟦n⟧) ≤o translate (A⟦n'⟧) := oper_mono hnn
       have hA' : ST_PS (A⟦n'⟧) := ST_PS.oper hA hn'
       have hSD' : ST_D (conC (A⟦n'⟧)) := by
         rw [← heqC]; exact ST_D.oper hSD hm
@@ -487,3 +532,5 @@ end DBMS
 #print axioms DBMS.convC_snoc_zero
 #print axioms DBMS.convC_getLast_level
 #print axioms DBMS.idx1_conC
+#print axioms DBMS.oper_mono
+#print axioms DBMS.reindexD_succ_shape

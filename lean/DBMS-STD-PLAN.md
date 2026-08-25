@@ -14,6 +14,7 @@
 | `ST_D_descend` / `ST_D_conC`（`ReindexD` から標準形性） | `DbmsStd.lean` |
 | `reindexD_succ`（REINDEX の succ regime） | `DbmsStd.lean` |
 | `convC_getLast_level` / `idx1_conC`（末尾列の段が保たれる） | `DbmsStd.lean` |
+| `oper_mono`（基本列は添字について単調） | `DbmsStd.lean` |
 
 いずれも sorry 0。
 
@@ -21,8 +22,12 @@
 
 ```
 ReindexD : ∀ A, ST_PS A → 1 < A.length → ∀ n ≥ 1,
-  ∃ m n' ≥ 1, (conC A)⟦m⟧ = conC (A⟦n'⟧) ∧ translate (A⟦n⟧) ≤o translate (A⟦n'⟧)
+  ∃ m ≥ 1, ∃ n' ≥ n, (conC A)⟦m⟧ = conC (A⟦n'⟧)
 ```
+
+（`translate (A⟦n⟧) ≤o translate (A⟦n'⟧)` は `oper_mono` から出るので条件から外せた。）
+regime ごとの取り方: succ は `m=1, n'=n`、id は `m=n, n'=n`、
+shift は `m=n, n'=n+1`、contr は `m=n+1, n'=n`。
 
 実測（`tools/dbms/reindex.py`）:
 
@@ -64,7 +69,51 @@ M⟦n⟧   = G ++ (range n).flatMap (k ↦ ((v0,w0)::R) を行 0 に k*d0 ずら
   差 1 は「ブロックの頭が梯子を要る」場合で、BMS のコピー k=0 が
   DBMS では梯子＋影に化ける。**これが shift regime の正体。**
 
-### regime の対応表（≤9 列の実測）
+### shift regime の仕組み（手で追った例）
+
+```
+A = (0,0)(1,1)(2,2)(3,3)(3,2)(1,1)
+    BMS の親は index 0 の (0,0)。blk = (0,0)(1,1)(2,2)(3,3)(3,2)、d0 = 1
+
+N = conC A = (0,0)(1,0)(2,1)(3,2)(4,3)(4,2)(2,1)
+    DBMS の親は index 1 の (1,0) — これは**影**（内側ブロックの梯子）。
+    blk' = (1,0)(2,1)(3,2)(4,3)(4,2)、d0' = 1
+```
+
+BMS の親 `(0,0)` に対応するのは、DBMS では**影の列** `(1,0)` である。
+コピーを並べると:
+
+```
+A[1] = blk                        conC = (0,0) ++ blk'              = N[1]   g(1)=1
+A[2] = blk ++ (blk+1)             conC = (0,0) ++ blk' ++ blk'      ≠ N[2]
+A[3] = blk ++ (blk+1) ++ (blk+2)  縮約が最初の 2 コピーを 1 つに潰す
+                                  conC = (0,0) ++ blk' ++ (blk'+1)  = N[2]   g(2)=3
+```
+
+**縮約（梯子の二役）がコピーを 1 つ飲み込む。** これが shift regime の正体。
+`A[2]` で縮約が起きないのは `rest2` が空になるからで、コピーが 3 つ以上あって
+初めて発火する。
+
+したがって要る補題は「コピーの補題」:
+
+```
+ブロックの頭が梯子を要らない  … conC (G ++ blk を n 個) = G' ++ blk' を n 個      （id）
+ブロックの頭が梯子を要る      … conC (G ++ blk を n+1 個) = G' ++ blk' を n 個    （shift）
+```
+
+### regime の引き金（実測、≤10 列 2073826 個）
+
+* `succ`  ⟺ `A` の末尾列 = `(0,0)`
+* `shift` ⟺ `A` の末尾列 = `(1,1)`（このとき BMS の親は index 0 の `(0,0)`、`d0 = 1`、
+  `G = []` なので `A⟦n⟧` は `A.dropLast` のコピー n 個そのもの）
+* `contr` ⟺ 末尾で梯子が二役（180 個／≤10 列）
+* `id`    ⟺ それ以外
+
+DBMS 側の親の列は、`shift` と `contr` では**必ず影**（≤9 列で例外なし）。
+ただし `id` でも影のことがある（≤9 列で 125012 / 217696）ので、
+「親が影か」だけでは regime は決まらない。
+
+### regime の対応表（≤10 列の実測）
 
 | regime | 引き金 | g(m) | 個数（≤10 列） |
 |---|---|---|---|
