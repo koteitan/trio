@@ -3889,6 +3889,439 @@ theorem reindexD_noParent_zero {B : PairSeq} (d plev : ℕ) (first force : Bool)
       (convC B d plev first force)⟦m⟧ = convC (B⟦n'⟧) d plev first force :=
   reindexD_noParent_gen d plev first force hL (contrOK_of_last_zero hlev) hz hnp
 
+
+/-! ## 4.8 場合 (d) のブロック版（段 0・梯子なし）
+
+節点 `p` の列が親で末尾列の段が 0 なら、兄弟は空（`T = []`）でなければならない。
+実際、行 0 の親が index 0 なら途中の列は全部末尾列より深く、兄弟の頭は `p` より
+浅いからである。したがってブロックは `B = p :: A`（`A` は全部 `p` より深い）で、
+`B⟦n⟧` は `B.dropLast` の素直な繰り返しになる。像も同じ形になるので `m = n`,
+`n' = n` で一致する。
+
+梯子が立つ段（`shift` regime の正体）と、引数への `force` が最初のコピーだけ
+`true` になる場合は除く（仮定 `hnl` / `hfr`）。 -/
+
+/-- **最初のコピーだけ `first` / `force` を受け取る繰り返しの補題**（梯子なし版）。
+
+`convC_run` は `first = false` 版だったので、`conC` のように `first = true` で
+始まる並びには使えなかった。梯子が立たず、引数への `force` も立たなければ、
+最初のコピーも 2 番目以降と同じ塊に写る。 -/
+theorem convC_run_first (p : ℕ × ℕ) (R : PairSeq) (hR : ∀ c ∈ R, p.1 < c.1)
+    (d plev : ℕ) (first force : Bool)
+    (hnl : ladOf p.2 d plev first force = false)
+    (hfr : (first && (p.2 == plev)) = false) : ∀ n : ℕ,
+    convC ((List.replicate n (p :: R)).flatten) d plev first force
+      = (List.replicate n ((ddOf p.2 d plev first force, p.2)
+          :: convC R (ddOf p.2 d plev first force + 1) p.2 true false)).flatten := by
+  have hnl' : ladOf p.2 d p.2 false false = false := by simp [ladOf]
+  have hdd : ddOf p.2 d p.2 false false = ddOf p.2 d plev first force := by
+    unfold ddOf; rw [hnl', hnl]
+  intro n
+  match n with
+  | 0 => simp
+  | k + 1 =>
+    have hrest : (List.replicate k (p :: R)).flatten = [] ∨
+        ¬ (p.1 < (((List.replicate k (p :: R)).flatten).headI).1) := by
+      cases k with
+      | zero => exact Or.inl rfl
+      | succ k' =>
+        right
+        rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+        simp
+    obtain ⟨e1, e2⟩ := split_append (X := R) (dd := p.1) hR hrest
+    have hrun := convC_run p R [] hR (Or.inl rfl) d p.2 k
+    simp only [List.append_nil, convC_nil] at hrun
+    rw [hdd] at hrun
+    have hflat : (List.replicate (k + 1) (p :: R)).flatten
+        = p :: (R ++ (List.replicate k (p :: R)).flatten) := by
+      rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+    rw [hflat, convC_cons_nolad p _ d plev first force hnl, e1, e2, hfr, hrun,
+      List.replicate_succ, List.flatten_cons, List.cons_append]
+
+/-- **場合 (d) のブロック版（段 0・梯子なし）**: 節点が親なら両側とも
+`dropLast` の繰り返しになる。 -/
+theorem reindexD_node0_gen {p : ℕ × ℕ} {A : PairSeq} (hAne : A ≠ [])
+    (hA : ∀ c ∈ A, p.1 < c.1)
+    (hmin : ∀ c ∈ A, (A.getLastD (0, 0)).1 ≤ c.1)
+    (hlev : (A.getLastD (0, 0)).2 = 0)
+    (d plev : ℕ) (first force : Bool)
+    (hnl : ladOf p.2 d plev first force = false)
+    (hfr : (first && (p.2 == plev)) = false) (n : ℕ) :
+    (convC (p :: A) d plev first force)⟦n⟧ = convC ((p :: A)⟦n⟧) d plev first force := by
+  have hA1 : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+  have hMlen : (p :: A).length = A.length + 1 := by simp
+  have hL : 1 < (p :: A).length := by omega
+  have hlmem : A.getLastD (0, 0) ∈ A := getLastD_mem hAne _
+  have hplt : p.1 < (A.getLastD (0, 0)).1 := hA _ hlmem
+  -- `A` の列は添字で読める
+  have hgetA : ∀ j, j < A.length → (A.getLastD (0, 0)).1 ≤ entry A 0 j := by
+    intro j hj
+    have hmem : A.getD j (0, 0) ∈ A := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+      simpa using List.getElem_mem hj
+    rw [entry, if_pos rfl]
+    exact hmin _ hmem
+  -- 像の形
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := []) (dd := p.1) hA (Or.inl rfl)
+  simp only [List.append_nil] at e1 e2
+  have hconv : convC (p :: A) d plev first force
+      = (ddOf p.2 d plev first force, p.2)
+          :: convC A (ddOf p.2 d plev first force + 1) p.2 true false := by
+    rw [convC_cons_nolad p A d plev first force hnl, e1, e2, hfr]
+    simp only [convC_nil, List.append_nil]
+  -- BMS 側
+  have hlastM : ((p :: A).getLastD (0, 0)) = A.getLastD (0, 0) := getLastD_cons_ne p hAne _
+  have hlevM : entry (p :: A) 1 ((p :: A).length - 1) = 0 := by
+    rw [entry_last, hlastM]; exact hlev
+  have hnrM : nextrel0 (p :: A) 0 ((p :: A).length - 1) := by
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · rw [entry_zero0, entry_last0, hlastM]
+      exact hplt
+    · rintro j ⟨hj1, hj2⟩
+      obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+      rw [entry_last0, hlastM, entry_cons_succ]
+      exact hgetA j' (by omega)
+  have hbms : (p :: A)⟦n⟧ = (List.replicate n ((p :: A).dropLast)).flatten :=
+    oper_repeat_root n hL hlevM hnrM
+  have hMdl : (p :: A).dropLast = p :: A.dropLast := dropLast_cons_ne hAne
+  -- DBMS 側
+  have hXne : convC A (ddOf p.2 d plev first force + 1) p.2 true false ≠ [] := by
+    rw [ne_eq, convC_eq_nil_iff]; exact hAne
+  have hX1 : 1 ≤ (convC A (ddOf p.2 d plev first force + 1) p.2 true false).length :=
+    List.length_pos_of_ne_nil hXne
+  have hXd : ((convC A (ddOf p.2 d plev first force + 1) p.2 true false).getLastD (0, 0)).1
+      = ddOf p.2 d plev first force + 1 :=
+    convC_getLast_min A.length A (Nat.le_refl _) hAne hmin hlev _ p.2 true false
+  have hXl : ((convC A (ddOf p.2 d plev first force + 1) p.2 true false).getLastD (0, 0)).2
+      = 0 := by
+    rw [convC_getLast_level A.length A (Nat.le_refl _) _ p.2 true false]; exact hlev
+  have hDlen : ((ddOf p.2 d plev first force, p.2)
+      :: convC A (ddOf p.2 d plev first force + 1) p.2 true false).length
+      = (convC A (ddOf p.2 d plev first force + 1) p.2 true false).length + 1 := by simp
+  have hDL : 1 < ((ddOf p.2 d plev first force, p.2)
+      :: convC A (ddOf p.2 d plev first force + 1) p.2 true false).length := by omega
+  have hDlast : (((ddOf p.2 d plev first force, p.2)
+      :: convC A (ddOf p.2 d plev first force + 1) p.2 true false).getLastD (0, 0))
+      = (convC A (ddOf p.2 d plev first force + 1) p.2 true false).getLastD (0, 0) :=
+    getLastD_cons_ne _ hXne _
+  have hDlev : entry ((ddOf p.2 d plev first force, p.2)
+      :: convC A (ddOf p.2 d plev first force + 1) p.2 true false) 1
+      (((ddOf p.2 d plev first force, p.2)
+        :: convC A (ddOf p.2 d plev first force + 1) p.2 true false).length - 1) = 0 := by
+    rw [entry_last, hDlast]; exact hXl
+  have hDnr : nextrel0 ((ddOf p.2 d plev first force, p.2)
+      :: convC A (ddOf p.2 d plev first force + 1) p.2 true false) 0
+      (((ddOf p.2 d plev first force, p.2)
+        :: convC A (ddOf p.2 d plev first force + 1) p.2 true false).length - 1) := by
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · rw [entry_zero0, entry_last0, hDlast, hXd]
+      simp
+    · rintro j ⟨hj1, hj2⟩
+      obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+      rw [entry_last0, hDlast, hXd, entry_cons_succ]
+      have hj' : j' < (convC A (ddOf p.2 d plev first force + 1) p.2 true false).length := by
+        rw [hDlen] at hj2; omega
+      have hmem : (convC A (ddOf p.2 d plev first force + 1) p.2 true false).getD j' (0, 0)
+          ∈ convC A (ddOf p.2 d plev first force + 1) p.2 true false := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj']
+        simpa using List.getElem_mem hj'
+      rw [entry, if_pos rfl]
+      exact convC_ge' A _ p.2 true false _ hmem
+  have hdbms : ((ddOf p.2 d plev first force, p.2)
+      :: convC A (ddOf p.2 d plev first force + 1) p.2 true false)⟦n⟧
+      = (List.replicate n (((ddOf p.2 d plev first force, p.2)
+          :: convC A (ddOf p.2 d plev first force + 1) p.2 true false).dropLast)).flatten :=
+    oper_repeat_root n hDL hDlev hDnr
+  -- `dropLast` の可換
+  have hXdl : (convC A (ddOf p.2 d plev first force + 1) p.2 true false).dropLast
+      = convC (A.dropLast) (ddOf p.2 d plev first force + 1) p.2 true false := by
+    by_cases hA2 : 1 < A.length
+    · have hco : contrOK A := contrOK_of_last_zero (by rw [entry_last]; exact hlev)
+      have hiA : idx1 A (A.length - 1) = 0 := by
+        rw [idx1, if_neg (by rw [entry_last, hlev]; omega)]
+      have hnp : ¬ hasParent A (idx1 A (A.length - 1)) (A.length - 1) := by
+        rw [hiA]
+        rintro ⟨j0, hj0, -⟩
+        have hj0' : nextrel0 A j0 (A.length - 1) := by
+          have h : nextR A 0 j0 (A.length - 1) := hj0
+          unfold nextR at h; rw [if_pos rfl] at h; exact h
+        have h1 := hgetA j0 hj0'.1
+        have h2 := hj0'.2.2.2.1
+        rw [entry_last0] at h2
+        omega
+      exact (convC_dropLast_noParent_aux A.length A (Nat.le_refl _) hA2 _ p.2 true false
+        hco hnp).symm
+    · obtain ⟨lp, hlp⟩ : ∃ lp, A = [lp] := List.length_eq_one_iff.1 (by omega)
+      have hlp2 : lp.2 = 0 := by rw [hlp] at hlev; simpa using hlev
+      have hnl2 : ladOf lp.2 (ddOf p.2 d plev first force + 1) p.2 true false = false := by
+        rw [hlp2]; simp [ladOf]
+      rw [hlp]
+      simp [convC_cons_nolad lp [] (ddOf p.2 d plev first force + 1) p.2 true false hnl2]
+  -- 仕上げ
+  have hRdeep : ∀ c ∈ A.dropLast, p.1 < c.1 :=
+    fun c hc => hA c ((List.dropLast_sublist A).subset hc)
+  rw [hconv, hdbms, hbms, hMdl, dropLast_cons_ne hXne, hXdl,
+    convC_run_first p (A.dropLast) hRdeep d plev first force hnl hfr n]
+
+/-- 場合 (d) のブロック版（段 0・梯子なし）を `ReindexD` の形で。 -/
+theorem reindexD_node0_gen_shape {p : ℕ × ℕ} {A : PairSeq} (hAne : A ≠ [])
+    (hA : ∀ c ∈ A, p.1 < c.1)
+    (hmin : ∀ c ∈ A, (A.getLastD (0, 0)).1 ≤ c.1)
+    (hlev : (A.getLastD (0, 0)).2 = 0)
+    (d plev : ℕ) (first force : Bool)
+    (hnl : ladOf p.2 d plev first force = false)
+    (hfr : (first && (p.2 == plev)) = false) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: A) d plev first force)⟦m⟧ = convC ((p :: A)⟦n'⟧) d plev first force :=
+  fun n hn => ⟨n, n, hn, Nat.le_refl n,
+    reindexD_node0_gen hAne hA hmin hlev d plev first force hnl hfr n⟩
+
+/-! ## 4.9 場合 (d) のブロック版（段 0・梯子あり）
+
+梯子が立つ段では像の頭が影の列 `(d, plev)` になるので、DBMS 側の親は
+**index 1（梯子の本体 `(d+1, p.2)`）** になる。そこで `oper_repeat` を
+一般の親の位置で使えるようにしておく。
+
+このとき `ddOf p.2 d p.2 false false = p.2 + 1` なので、2 番目以降のコピーの頭が
+最初のコピーの本体 `(d+1, p.2)` と一致するには `d = p.2` が要る。これは
+`colOK`（`p.2 ≤ p.1`）・`blockok bd`（`bd = p.1`）・`bd ≤ d` と梯子の条件
+`d ≤ p.2` を合わせると
+
+    p.1 ≤ d ≤ p.2 ≤ p.1     すなわち     d = p.2 = p.1 = bd
+
+として自動的に出る（`force` 経由で梯子が立つ場合だけが残る）。 -/
+
+/-- **親の位置が一般の場合の `oper_repeat`。** 末尾列の段が 0 で行 0 の親が `j0` なら、
+基本列は「頭 `j0` 列 + `dropLast.drop j0` の繰り返し」。 -/
+theorem oper_repeat_at {M : PairSeq} (j0 n : ℕ) (hL : 1 < M.length)
+    (hlev : entry M 1 (M.length - 1) = 0)
+    (hnr : nextrel0 M j0 (M.length - 1)) :
+    M⟦n⟧ = M.take j0 ++ (List.replicate n (M.dropLast.drop j0)).flatten := by
+  have hi1 : idx1 M (M.length - 1) = 0 := by
+    rw [idx1, if_neg (by rw [hlev]; omega)]
+  have ha : 0 < entry M 0 (M.length - 1) :=
+    Nat.lt_of_le_of_lt (Nat.zero_le _) hnr.2.2.2.1
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0) := by
+    rintro ⟨h1, -⟩; omega
+  have hp : hasParent M 0 (M.length - 1) :=
+    hasParent0_of_exists (by omega) ⟨j0, hnr.2.2.1, hnr.2.2.2.1⟩
+  have hnR : nextR M 0 j0 (M.length - 1) := by
+    unfold nextR; rw [if_pos rfl]; exact hnr
+  have hj0 : parent M 0 (M.length - 1) = j0 := hp.unique (parent_nextR hp) hnR
+  have hj0lt : j0 < M.length - 1 := hnr.2.2.1
+  have hmap : (List.range' j0 (M.length - 1 - j0)).map
+      (fun j => ((entry M 0 j : ℕ), (entry M 1 j : ℕ))) = M.dropLast.drop j0 := by
+    rw [range'_map_entry M (by omega) (by omega), List.dropLast_eq_take]
+  have h := oper_repeat (M := M) n (by omega) hz (by rw [hi1]; exact hp) hi1
+  rw [hi1, hj0, hmap] at h
+  exact h
+
+/-- **同じブロックの並びはユニットで埋め尽くされる。** -/
+theorem unitsLen_replicate (p : ℕ × ℕ) (R : PairSeq) (hR : ∀ c ∈ R, p.1 < c.1) : ∀ k : ℕ,
+    unitsLen p ((List.replicate k (p :: R)).flatten)
+      = ((List.replicate k (p :: R)).flatten).length := by
+  intro k
+  induction k with
+  | zero => simp [unitsLen]
+  | succ k ih =>
+    have hrest : (List.replicate k (p :: R)).flatten = [] ∨
+        ¬ (p.1 < (((List.replicate k (p :: R)).flatten).headI).1) := by
+      cases k with
+      | zero => exact Or.inl rfl
+      | succ k' =>
+        right
+        rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+        simp
+    obtain ⟨e1, e2⟩ := split_append (X := R) (dd := p.1) hR hrest
+    have hflat : (List.replicate (k + 1) (p :: R)).flatten
+        = p :: (R ++ (List.replicate k (p :: R)).flatten) := by
+      rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+    rw [hflat, unitsLen_cons_pos, e1, e2, ih]
+    simp only [List.length_cons, List.length_append]
+    omega
+
+/-- ユニットで埋め尽くされていれば縮約は起きない。 -/
+theorem contrLen_of_drop_nil (p : ℕ × ℕ) (B : PairSeq) (k : ℕ) (A : PairSeq)
+    (h : B.drop k = []) : contrLen p B k A = none := by
+  rw [contrLen, h]
+
+/-- 末尾列がいちばん浅く段が 0 なら、`dropLast` は像と可換。 -/
+theorem convC_dropLast_min {A : PairSeq} (hAne : A ≠ [])
+    (hmin : ∀ c ∈ A, (A.getLastD (0, 0)).1 ≤ c.1)
+    (hlev : (A.getLastD (0, 0)).2 = 0) (d plev : ℕ) (first force : Bool) :
+    (convC A d plev first force).dropLast = convC (A.dropLast) d plev first force := by
+  have hgetA : ∀ j, j < A.length → (A.getLastD (0, 0)).1 ≤ entry A 0 j := by
+    intro j hj
+    have hmem : A.getD j (0, 0) ∈ A := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+      simpa using List.getElem_mem hj
+    rw [entry, if_pos rfl]
+    exact hmin _ hmem
+  by_cases hA2 : 1 < A.length
+  · have hco : contrOK A := contrOK_of_last_zero (by rw [entry_last]; exact hlev)
+    have hiA : idx1 A (A.length - 1) = 0 := by
+      rw [idx1, if_neg (by rw [entry_last, hlev]; omega)]
+    have hnp : ¬ hasParent A (idx1 A (A.length - 1)) (A.length - 1) := by
+      rw [hiA]
+      rintro ⟨j0, hj0, -⟩
+      have hj0' : nextrel0 A j0 (A.length - 1) := by
+        have h : nextR A 0 j0 (A.length - 1) := hj0
+        unfold nextR at h; rw [if_pos rfl] at h; exact h
+      have h1 := hgetA j0 hj0'.1
+      have h2 := hj0'.2.2.2.1
+      rw [entry_last0] at h2
+      omega
+    exact (convC_dropLast_noParent_aux A.length A (Nat.le_refl _) hA2 d plev first force
+      hco hnp).symm
+  · have hA1 : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+    obtain ⟨lp, hlp⟩ : ∃ lp, A = [lp] := List.length_eq_one_iff.1 (by omega)
+    have hlp2 : lp.2 = 0 := by rw [hlp] at hlev; simpa using hlev
+    have hnl2 : ladOf lp.2 d plev first force = false := by rw [hlp2]; simp [ladOf]
+    rw [hlp]
+    simp [convC_cons_nolad lp [] d plev first force hnl2]
+
+/-- **梯子つきの繰り返しの補題**（`d = p.2` のとき）。 -/
+theorem convC_run_lad (p : ℕ × ℕ) (R : PairSeq) (hR : ∀ c ∈ R, p.1 < c.1)
+    (d plev : ℕ) (first force : Bool)
+    (hlad : ladOf p.2 d plev first force = true) (hdp : d = p.2) : ∀ k : ℕ,
+    convC ((List.replicate (k + 1) (p :: R)).flatten) d plev first force
+      = (d, plev)
+        :: (List.replicate (k + 1) ((d + 1, p.2) :: convC R (d + 2) p.2 true false)).flatten := by
+  have hs : p.2 = plev + 1 := by
+    by_contra hne
+    rw [ladOf, beq_eq_false_iff_ne.2 hne] at hlad
+    simp at hlad
+  have hdd0 : ddOf p.2 d p.2 false false = d + 1 := by
+    unfold ddOf
+    rw [if_neg (by simp [ladOf]), if_pos ⟨by omega, by omega⟩]
+    omega
+  have hd2 : d + 1 + 1 = d + 2 := rfl
+  intro k
+  have hrest : (List.replicate k (p :: R)).flatten = [] ∨
+      ¬ (p.1 < (((List.replicate k (p :: R)).flatten).headI).1) := by
+    cases k with
+    | zero => exact Or.inl rfl
+    | succ k' =>
+      right
+      rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+      simp
+  obtain ⟨e1, e2⟩ := split_append (X := R) (dd := p.1) hR hrest
+  have hcn : contrLen p ((List.replicate k (p :: R)).flatten)
+      (unitsLen p ((List.replicate k (p :: R)).flatten)) R = none :=
+    contrLen_of_drop_nil _ _ _ _ (by rw [unitsLen_replicate p R hR k]; simp)
+  have hrun := convC_run p R [] hR (Or.inl rfl) d p.2 k
+  simp only [List.append_nil, convC_nil] at hrun
+  rw [hdd0, hd2] at hrun
+  have hflat : (List.replicate (k + 1) (p :: R)).flatten
+      = p :: (R ++ (List.replicate k (p :: R)).flatten) := by
+    rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+  rw [hflat, convC_cons_lad_none p _ d plev first force hlad (by rw [e1, e2]; exact hcn),
+    e1, e2, hrun, List.replicate_succ, List.flatten_cons, List.cons_append]
+
+/-- **場合 (d) のブロック版（段 0・梯子あり）**: `d = p.2` なら `m = n`, `n' = n`。 -/
+theorem reindexD_node0_lad {p : ℕ × ℕ} {A : PairSeq} (hAne : A ≠ [])
+    (hA : ∀ c ∈ A, p.1 < c.1)
+    (hmin : ∀ c ∈ A, (A.getLastD (0, 0)).1 ≤ c.1)
+    (hlev : (A.getLastD (0, 0)).2 = 0)
+    (d plev : ℕ) (first force : Bool)
+    (hlad : ladOf p.2 d plev first force = true) (hdp : d = p.2) (n : ℕ) (hn : 1 ≤ n) :
+    (convC (p :: A) d plev first force)⟦n⟧ = convC ((p :: A)⟦n⟧) d plev first force := by
+  have hA1 : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+  have hMlen : (p :: A).length = A.length + 1 := by simp
+  have hL : 1 < (p :: A).length := by omega
+  have hlmem : A.getLastD (0, 0) ∈ A := getLastD_mem hAne _
+  have hplt : p.1 < (A.getLastD (0, 0)).1 := hA _ hlmem
+  have hgetA : ∀ j, j < A.length → (A.getLastD (0, 0)).1 ≤ entry A 0 j := by
+    intro j hj
+    have hmem : A.getD j (0, 0) ∈ A := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+      simpa using List.getElem_mem hj
+    rw [entry, if_pos rfl]
+    exact hmin _ hmem
+  -- 像の形
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := []) (dd := p.1) hA (Or.inl rfl)
+  simp only [List.append_nil] at e1 e2
+  have hconv : convC (p :: A) d plev first force
+      = (d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false := by
+    rw [convC_cons_lad_none p A d plev first force hlad (by rw [e1, e2]; exact contrLen_nil _ _ _),
+      e1, e2]
+    simp only [convC_nil, List.append_nil]
+  -- BMS 側
+  have hlastM : ((p :: A).getLastD (0, 0)) = A.getLastD (0, 0) := getLastD_cons_ne p hAne _
+  have hlevM : entry (p :: A) 1 ((p :: A).length - 1) = 0 := by
+    rw [entry_last, hlastM]; exact hlev
+  have hnrM : nextrel0 (p :: A) 0 ((p :: A).length - 1) := by
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · rw [entry_zero0, entry_last0, hlastM]; exact hplt
+    · rintro j ⟨hj1, hj2⟩
+      obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+      rw [entry_last0, hlastM, entry_cons_succ]
+      exact hgetA j' (by omega)
+  have hbms : (p :: A)⟦n⟧ = (List.replicate n ((p :: A).dropLast)).flatten :=
+    oper_repeat_root n hL hlevM hnrM
+  have hMdl : (p :: A).dropLast = p :: A.dropLast := dropLast_cons_ne hAne
+  -- DBMS 側
+  have hXne : convC A (d + 2) p.2 true false ≠ [] := by
+    rw [ne_eq, convC_eq_nil_iff]; exact hAne
+  have hX1 : 1 ≤ (convC A (d + 2) p.2 true false).length := List.length_pos_of_ne_nil hXne
+  have hXd : ((convC A (d + 2) p.2 true false).getLastD (0, 0)).1 = d + 2 :=
+    convC_getLast_min A.length A (Nat.le_refl _) hAne hmin hlev _ p.2 true false
+  have hXl : ((convC A (d + 2) p.2 true false).getLastD (0, 0)).2 = 0 := by
+    rw [convC_getLast_level A.length A (Nat.le_refl _) _ p.2 true false]; exact hlev
+  have hYne : ((d + 1, p.2) :: convC A (d + 2) p.2 true false) ≠ [] := by simp
+  have hDlen : ((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false).length
+      = (convC A (d + 2) p.2 true false).length + 2 := by simp
+  have hDL : 1 < ((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false).length := by omega
+  have hDlast : (((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false).getLastD (0, 0))
+      = (convC A (d + 2) p.2 true false).getLastD (0, 0) := by
+    rw [getLastD_cons_ne _ hYne, getLastD_cons_ne _ hXne]
+  have hDlev : entry ((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false) 1
+      (((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false).length - 1) = 0 := by
+    rw [entry_last, hDlast]; exact hXl
+  have hDnr : nextrel0 ((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false) 1
+      (((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false).length - 1) := by
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · rw [entry_last0, hDlast, hXd, entry_cons_succ, entry_zero0]
+      simp
+    · rintro j ⟨hj1, hj2⟩
+      obtain ⟨j', rfl⟩ : ∃ j', j = j' + 2 := ⟨j - 2, by omega⟩
+      rw [entry_last0, hDlast, hXd, entry_cons_succ, entry_cons_succ]
+      have hj' : j' < (convC A (d + 2) p.2 true false).length := by
+        rw [hDlen] at hj2; omega
+      have hmem : (convC A (d + 2) p.2 true false).getD j' (0, 0)
+          ∈ convC A (d + 2) p.2 true false := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj']
+        simpa using List.getElem_mem hj'
+      rw [entry, if_pos rfl]
+      exact convC_ge' A _ p.2 true false _ hmem
+  have hdbms := oper_repeat_at (M := (d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false)
+    1 n hDL hDlev hDnr
+  have hDdl : ((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false).dropLast.drop 1
+      = (d + 1, p.2) :: (convC A (d + 2) p.2 true false).dropLast := by
+    rw [dropLast_cons_ne hYne, dropLast_cons_ne hXne]
+    simp
+  have hDtake : ((d, plev) :: (d + 1, p.2) :: convC A (d + 2) p.2 true false).take 1
+      = [((d, plev) : ℕ × ℕ)] := by simp
+  rw [hDdl, hDtake] at hdbms
+  -- 仕上げ
+  have hRdeep : ∀ c ∈ A.dropLast, p.1 < c.1 :=
+    fun c hc => hA c ((List.dropLast_sublist A).subset hc)
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  rw [hconv, hdbms, hbms, hMdl, convC_dropLast_min hAne hmin hlev (d + 2) p.2 true false,
+    convC_run_lad p (A.dropLast) hRdeep d plev first force hlad hdp k]
+  simp
+
+/-- 場合 (d) のブロック版（段 0・梯子あり）を `ReindexD` の形で。 -/
+theorem reindexD_node0_lad_shape {p : ℕ × ℕ} {A : PairSeq} (hAne : A ≠ [])
+    (hA : ∀ c ∈ A, p.1 < c.1)
+    (hmin : ∀ c ∈ A, (A.getLastD (0, 0)).1 ≤ c.1)
+    (hlev : (A.getLastD (0, 0)).2 = 0)
+    (d plev : ℕ) (first force : Bool)
+    (hlad : ladOf p.2 d plev first force = true) (hdp : d = p.2) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: A) d plev first force)⟦m⟧ = convC ((p :: A)⟦n'⟧) d plev first force :=
+  fun n hn => ⟨n, n, hn, Nat.le_refl n,
+    reindexD_node0_lad hAne hA hmin hlev d plev first force hlad hdp n hn⟩
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -3983,3 +4416,13 @@ end DBMS
 #print axioms DBMS.reindexD_succ_gen
 #print axioms DBMS.reindexD_noParent_gen
 #print axioms DBMS.reindexD_noParent_zero
+#print axioms DBMS.convC_run_first
+#print axioms DBMS.reindexD_node0_gen
+#print axioms DBMS.reindexD_node0_gen_shape
+#print axioms DBMS.oper_repeat_at
+#print axioms DBMS.unitsLen_replicate
+#print axioms DBMS.contrLen_of_drop_nil
+#print axioms DBMS.convC_dropLast_min
+#print axioms DBMS.convC_run_lad
+#print axioms DBMS.reindexD_node0_lad
+#print axioms DBMS.reindexD_node0_lad_shape
