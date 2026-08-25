@@ -24,6 +24,7 @@
 | `oper_one`（`M⟦1⟧ = M.dropLast`、枝によらず） | `DbmsStd.lean` |
 | `hasParent_append_of_parent_ge` / `oper_append_of_parent_ge`（**親が接尾辞にあれば局所化**） | `DbmsStd.lean` |
 | `convC_getLast_ge` / `convC_getLast_depth`（像の末尾列の深さ） | `DbmsStd.lean` |
+| `parent_ge_of_witness` / `oper_append_of_witness`（**証人が 1 つあれば局所化**） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
 
 いずれも sorry 0。
@@ -277,10 +278,19 @@ BMS の親が B の中  →  |cols ++ convC Arg| ≤ parent (convC M ...) i (末
 ```
 
 （実測では例外 0。`convC B` の中に「段がより小さい行 0 の祖先」があることを言えばよい。
-`nextR` の始点は一意なので、**接尾辞の中に 1 つ証人を出せば**それが親になる。
+`nextR` の始点は一意なので、**接尾辞の中に 1 つ証人を出せば**それが親になる
+（`parent_ge_of_witness` / `oper_append_of_witness`、証明済み）。
+
 段 0 の場合（`i = 0`）なら「`convC B` の中に末尾より浅い列がある」で足りる。
 `convC_getLast_depth` で末尾は深さ `d` より深いとわかるので、
-`convC B` の先頭が深さ `d` なら先頭が証人になる。残るのは先頭が `b+1` の場合。）
+`convC B` の先頭の深さ `ddOf b d s false false` が `d` なら先頭が証人。
+`b + 1` になるのは `0 < b ∧ d ≤ b` のときだけで、
+`colOK` の `s ≤ bd`、`descOK` の `b ≤ s`、仮定の `bd ≤ d` を合わせると
+
+    s ≤ bd ≤ d ≤ b ≤ s   すなわち   b = d = s = bd ≥ 1
+
+に限られる。つまり**節点が対角の列 `(bd,bd)` で、`B` の先頭もそれと同じ列**という
+狭い場合だけが残る。）
 
 もう 1 つ、`convC ((p :: Arg) ++ B⟦n⟧) = cols ++ convC Arg ++ convC (B⟦n⟧)` も要る。
 `B⟦n⟧` の先頭は `B` の先頭と同じなので切り分けは同じだが、縮約の判定が変わりうる。

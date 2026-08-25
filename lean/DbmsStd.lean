@@ -820,6 +820,17 @@ theorem hasParent_append_of_parent_ge (A T : PairSeq) {i j1 : ℕ}
   have : parent T i j1 = j0' := hunique _ (parent_nextR hpT)
   rw [this, ← hj0']
 
+/-- **接尾辞の中に `nextR` の証人が 1 つあれば、親は接尾辞にある。**
+`hasParent` は一意性つきなので、証人がそのまま親になる。 -/
+theorem parent_ge_of_witness (A T : PairSeq) {i j1 j0' : ℕ}
+    (hp : hasParent (A ++ T) i (A.length + j1))
+    (hw : nextR T i j0' j1) :
+    A.length ≤ parent (A ++ T) i (A.length + j1) := by
+  have h1 : nextR (A ++ T) i (A.length + j0') (A.length + j1) :=
+    (nextR_append_right A T i j0' j1).2 hw
+  have := hp.unique h1 (parent_nextR hp)
+  omega
+
 /-- **親が接尾辞にあるときの展開の局所化。** -/
 theorem oper_append_of_parent_ge (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
     (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
@@ -852,6 +863,14 @@ theorem oper_append_of_parent_ge (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
   apply List.flatMap_congr
   intro k _
   exact copyblock_append A T j0 (j1 - j0) k _ _
+
+/-- 証人から直接、展開の局所化を出す形。 -/
+theorem oper_append_of_witness (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hp : hasParent (A ++ T) (idx1 T (T.length - 1)) (A.length + (T.length - 1)))
+    {j0' : ℕ} (hw : nextR T (idx1 T (T.length - 1)) j0' (T.length - 1)) :
+    (A ++ T)⟦n⟧ = A ++ T⟦n⟧ :=
+  oper_append_of_parent_ge A T n hT hz hp (parent_ge_of_witness A T hp hw)
 
 /-! ## 2.8 基本列の単調性 -/
 
@@ -969,3 +988,4 @@ end DBMS
 #print axioms DBMS.oper_one
 #print axioms DBMS.oper_append_of_parent_ge
 #print axioms DBMS.convC_getLast_depth
+#print axioms DBMS.oper_append_of_witness
