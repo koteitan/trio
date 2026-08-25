@@ -85,6 +85,29 @@ def shift1(B):
     return [(a + 1, b) for a, b in B]
 
 
+def units_split(p, B):
+    """`B` の先頭から「`p` + その引数ブロック」を取れるだけ取る。
+
+    旧版は `p` そのものが並ぶ本数（`sibRun`）しか数えなかった。
+    兄弟が**引数を持つ**とそこで切れてしまい、縮約が発火しない。
+    11 列の反例
+    `(0,0)(1,1)(2,2)(1,1)(2,1)(1,0)(2,1)(3,2)(2,1)(3,1)(2,0)`
+    はこれが原因だった。
+    """
+    k = 0
+    while k < len(B) and B[k] == p:
+        s = k + 1
+        while s < len(B) and p[0] < B[s][0]:
+            s += 1
+        k = s
+    return B[:k], B[k:]
+
+
+def contrPre(p, U, A):
+    """縮約で使い回される前置き: 本体の列 + その引数 + 兄弟のユニット（全部 1 段深く）。"""
+    return [(p[0] + 1, p[1])] + shift1(A) + shift1(U)
+
+
 def convC(M, d=0, plev=0, first=True, force=False):
     """`convD` に**縮約（梯子の二役）**を足したもの。シート 264 件に 264/264 一致。
 
@@ -101,27 +124,19 @@ def convC(M, d=0, plev=0, first=True, force=False):
     dd = d + 1 if lad else (s + 1 if (s > 0 and d <= s) else d)
     cols = [(d, plev), (d + 1, s)] if lad else [(dd, s)]
     if lad:
-        k = 0
-        while k < len(B) and B[k] == p:
-            k += 1
-        B2 = B[k:]
+        U, B2 = units_split(p, B)
         if B2:
             q, r2 = B2[0], B2[1:]
             Aq, Bq = split(q, r2)
-            if q[1] == plev and Aq:
-                ok, rest2 = True, Aq
-                for t in range(k + 1):
-                    if not rest2 or rest2[0][1] != s or rest2[0][0] != p[0] + 1:
-                        ok = False
-                        break
-                    a2, rest2 = split(rest2[0], rest2[1:])
-                    if a2 != (shift1(A) if t == 0 else []):
-                        ok = False
-                        break
-                if ok and rest2 and rest2[0][0] == p[0] + 1 and rest2[0][1] < s:
-                    return (cols + convC(A, dd + 1, s, True, False) + [(dd, s)] * k
-                            + convC(rest2, dd, s, False, False)
-                            + convC(Bq, d, s, False, False))
+            if q[1] + 1 == s and q[0] == p[0]:
+                pre = contrPre(p, U, A)
+                if list(Aq[:len(pre)]) == pre:
+                    rest2 = list(Aq[len(pre):])
+                    if rest2 and rest2[0][0] == p[0] + 1 and rest2[0][1] < s:
+                        return (cols + convC(A, dd + 1, s, True, False)
+                                + convC(U, d, s, False, False)
+                                + convC(rest2, dd, s, False, False)
+                                + convC(Bq, d, s, False, False))
     return (cols + convC(A, dd + 1, s, True, (not lad) and first and s == plev)
                  + convC(B, d, s, False, False))
 
@@ -147,21 +162,29 @@ def readC(cols, first=True, plev=0):
     p, rest = cols[0], cols[1:]
     shadow = first and p[1] == plev and rest and rest[0] == (p[0] + 1, p[1] + 1)
     top, tail = (rest[0], rest[1:]) if shadow else (p, rest)
-    i = 0
-    while i < len(tail) and top[0] < tail[i][0]:
-        i += 1
-    arg = readC(tail[:i], True, top[1])
-    after = tail[i:]
-    j = _sibLen(top, after)
-    r2 = after[j:]
+    arg_l, after = split(top, list(tail))
+    arg = readC(arg_l, True, top[1])
+    U, r2 = units_split(top, after)
     if shadow and r2 and r2[0][0] == top[0] and r2[0][1] < top[1]:
         m = _deepLen(top[0], r2)
-        inner = readC([top] + tail[:i] + after[:j] + r2[:m], True, p[1])
+        inner = readC([top] + list(arg_l) + list(U) + list(r2[:m]), True, p[1])
         succ = ('P', p[1], inner, readC(r2[m:], False, plev))
-        for _ in range(j):
-            succ = ('P', top[1], ('Z',), succ)
+        for ua in reversed(_unit_args(top, U)):
+            succ = ('P', top[1], readC(ua, True, top[1]), succ)
         return ('P', top[1], arg, succ)
     return ('P', top[1], arg, readC(after, False, top[1]))
+
+
+def _unit_args(top, U):
+    """兄弟ユニットの引数ブロックを並べる。"""
+    out, k = [], 0
+    while k < len(U):
+        s = k + 1
+        while s < len(U) and top[0] < U[s][0]:
+            s += 1
+        out.append(list(U[k + 1:s]))
+        k = s
+    return out
 
 
 def untranslate(t, d=0):
