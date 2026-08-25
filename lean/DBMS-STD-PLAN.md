@@ -438,7 +438,8 @@ convC_head_shallow          像の先頭が深さ d なら、それが証人
 **場合 (c) の段 0 は `oper_append_convC` で完成**。）
 
 **(c) は段 0（`oper_append_convC`）・段 > 0（`oper_append_convC1`）とも完成。**
-残るのは (d)（(b) は 2026-08-26 に完成）。
+(b) は 2026-08-26 に完成、(d) も同日に**段 0 が完成**（`reindexD_node0`）。
+残るのは (d) の段 > 0。
 
 ### (c) の段 > 0（2026-08-26 完成）
 
@@ -500,6 +501,52 @@ D.dropLast = 節点の列 :: (引数の像).dropLast
 ```
 
 が要り、これは **(b) と同じ「dropLast の可換」** に帰着する。
+
+### (d) の段 0 完了（2026-08-26）
+
+`DbmsStd.lean` に追加（すべて sorry 0）:
+
+```
+entry_of_mem        列は添字で読める
+getLastD_cons_ne    空でない末尾の getLastD は頭を無視する
+convC_getLast_min   末尾列が最浅で段 0 なら、像の末尾列の深さはちょうど d
+oper_repeat_root    親が先頭の列で段 0 なら M⟦n⟧ = (replicate n M.dropLast).flatten
+conC_cons_zero      conC ((0,0) :: L) = (0,0) :: convC L 1 0 true false（L が全部深いとき）
+reindexD_node0      (conC M)⟦n⟧ = conC (M⟦n⟧)
+reindexD_node0_shape  ReindexD の形（m = n, n' = n）
+```
+
+`reindexD_node0` の仮定は
+
+```
+1 < |M|, contrOK M, M.headI = (0,0),
+entry M 1 (|M|-1) = 0        … 末尾列の段が 0
+nextrel0 M 0 (|M|-1)         … 行 0 の親が先頭の (0,0)
+```
+
+道筋:
+
+* BMS 側 … 親が index 0・段 0 なので `d0 = 0`、`oper_repeat` で
+  `M⟦n⟧ = (replicate n M.dropLast).flatten`（`oper_repeat_root`）
+* 像の形 … `M = (0,0) :: A` で `A` の列は全部末尾列と同じかそれより深いので
+  `conC M = (0,0) :: convC A 1 0 true false`（`conC_cons_zero` + `convC_force`）
+* DBMS 側の親 … `idx1_conC` で段 0、`convC_getLast_min` で像の末尾列の深さは
+  ちょうど 1、`convC_ge'` で他の列は 1 以上、先頭は `(0,0)` なので
+  親は index 0。よって `oper_repeat_root` が DBMS 側にもそのまま効く
+* `dropLast` の可換 … `A` の末尾列には**親がない**（`A` の列はどれも末尾と
+  同じかそれより深いので `entry A 0 j0 < entry A 0 (末尾)` を満たす `j0` がない）。
+  だから (b) の `convC_dropLast_noParent_aux` がそのまま使える
+  （`contrOK` は `A <:+ M` から遺伝）。`|A| = 1` のときは末尾列の段が 0 なので
+  梯子が立たず、像も 1 列
+* 仕上げ … `conC_run_top` で `conC ((replicate n ((0,0) :: A.dropLast)).flatten)`
+  を `n` 個の塊に割り、両辺が一致
+
+実測（`/tmp` の使い捨てスクリプト、BMS 標準形 ≤8 列）: 場合 (d) の段 0 は 5362 個、
+`n = 1,2,3` で `(conC M)⟦n⟧ = conC (M⟦n⟧)` の違反 0（空の場合ではない）。
+
+**残るのは (d) の段 > 0**（`d0 > 0`）。コピーが入れ子になるので
+`oper_repeat` が使えず、`shift` regime（末尾列 = `(1,1)`、`m+1`）と
+`id` regime が混ざる。
 
 ### (b)(d) の共通の核: `conC (A.dropLast)` と `conC A`
 

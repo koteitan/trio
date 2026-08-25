@@ -2571,6 +2571,334 @@ theorem oper_append_convC1' (A B : PairSeq) (n : ℕ) {bd d plev : ℕ} {first f
     (A ++ convC B d plev first force)⟦n⟧ = A ++ (convC B d plev first force)⟦n⟧ :=
   oper_append_convC1 A B n hb (exists_shallow1_of_hasParent hpB) hT hz hi hp
 
+/-! ## 2.9 場合 (d): 親が節点そのもの（段 0）
+
+親が節点（index 0）なら `G = []` で、`M⟦n⟧` は `M.dropLast` のコピー `n` 個。
+段 0（`idx1 = 0`、`d0 = 0`）なら素直な繰り返しになるので、`oper_repeat` /
+`conC_run_top` がそのまま使える。DBMS 側も `idx1_conC` から段 0 で、
+親は先頭の `(0,0)`。要るのは 2 つ:
+
+* `convC_getLast_min` … 末尾列が最浅で段 0 なら、像の末尾列の深さはちょうど `d`
+  （これで DBMS 側の親が先頭の `(0,0)` だとわかる）
+* `convC_dropLast_noParent_aux` … 引数ブロック `A` の末尾列には親がないので
+  （`A` の列は全部末尾と同じかそれより深い）、`dropLast` が可換
+-/
+
+/-- 列は添字で読める。 -/
+theorem entry_of_mem {L : PairSeq} {c : ℕ × ℕ} (h : c ∈ L) :
+    ∃ i, i < L.length ∧ entry L 0 i = c.1 := by
+  obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.1 h
+  refine ⟨i, hi, ?_⟩
+  unfold entry
+  rw [if_pos rfl, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi]
+  rfl
+
+/-- 空でない末尾の `getLastD` は頭を無視する。 -/
+theorem getLastD_cons_ne (a : ℕ × ℕ) {l : PairSeq} (h : l ≠ []) (dflt : ℕ × ℕ) :
+    (a :: l).getLastD dflt = l.getLastD dflt :=
+  getLastD_append_right (A := [a]) h dflt
+
+/-- **末尾列がいちばん浅く、その段が 0 なら、像の末尾列の深さはちょうど `d`。**
+
+右端の道に沿った帰納。`B = []`（兄弟が空）なら引数も空でなければならない
+（引数の列は節点より深いのに、末尾は最浅だから）。縮約の枝でも同じ理由で
+`Bq = []` は起きない（`rest2` の列は節点より深い）。 -/
+theorem convC_getLast_min : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → M ≠ [] →
+    (∀ c ∈ M, (M.getLastD (0, 0)).1 ≤ c.1) → (M.getLastD (0, 0)).2 = 0 →
+    ∀ (d plev : ℕ) (first force : Bool),
+      ((convC M d plev first force).getLastD (0, 0)).1 = d := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM hne _ _ d plev first force
+    exact absurd (List.eq_nil_of_length_eq_zero (by omega)) hne
+  | succ n ih =>
+    intro M hM hne hmin hlev d plev first force
+    match M with
+    | [] => exact absurd rfl hne
+    | p :: r =>
+      set A := r.takeWhile (fun q => p.1 < q.1) with hA
+      set B := r.dropWhile (fun q => p.1 < q.1) with hB
+      have hAB : r = A ++ B := by rw [hA, hB, List.takeWhile_append_dropWhile]
+      have hlA : A.length ≤ n := by
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hM; rw [hA]; omega
+      have hlB : B.length ≤ n := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hM; rw [hB]; omega
+      have hMlast : (p :: r).getLastD (0, 0)
+          = if B = [] then (if A = [] then p else A.getLastD (0, 0)) else B.getLastD (0, 0) := by
+        by_cases hBe : B = []
+        · rw [if_pos hBe, hAB, hBe, List.append_nil]
+          by_cases hAe : A = []
+          · rw [if_pos hAe, hAe]; simp
+          · rw [if_neg hAe, List.getLastD_cons]
+            exact getLastD_ne_nil_indep hAe _ _
+        · rw [if_neg hBe, hAB, List.getLastD_cons, getLastD_append_right hBe]
+          exact getLastD_ne_nil_indep hBe _ _
+      have hple : ((p :: r).getLastD (0, 0)).1 ≤ p.1 := hmin p (by simp)
+      by_cases hBe : B = []
+      · -- 兄弟が空 → 引数も空（末尾が最浅だから）
+        have hAe : A = [] := by
+          by_contra hAe
+          have hlast : (p :: r).getLastD (0, 0) = A.getLastD (0, 0) := by
+            rw [hMlast, if_pos hBe, if_neg hAe]
+          have hmemA : A.getLastD (0, 0) ∈ A := getLastD_mem hAe _
+          rw [hA] at hmemA
+          have h1 : p.1 < (A.getLastD (0, 0)).1 := by
+            simpa using List.mem_takeWhile_imp hmemA
+          rw [hlast] at hple
+          omega
+        have hp2 : p.2 = 0 := by
+          rw [hMlast, if_pos hBe, if_pos hAe] at hlev; exact hlev
+        have hl0 : ladOf p.2 d plev first force = false := by
+          rw [hp2]; simp [ladOf]
+        have hdd : ddOf p.2 d plev first force = d := by
+          unfold ddOf
+          rw [if_neg (by rw [hl0]; simp), if_neg (by rw [hp2]; simp)]
+        rw [convC_cons_nolad p r d plev first force hl0, ← hA, ← hB, hAe, hBe]
+        simp [hdd]
+      · have hlastB : (p :: r).getLastD (0, 0) = B.getLastD (0, 0) := by
+          rw [hMlast, if_neg hBe]
+        have hmemB : ∀ c ∈ B, c ∈ p :: r := by
+          intro c hc
+          rw [hAB]
+          exact List.mem_cons_of_mem _ (List.mem_append_right _ hc)
+        have hminB : ∀ c ∈ B, (B.getLastD (0, 0)).1 ≤ c.1 := by
+          intro c hc; rw [← hlastB]; exact hmin c (hmemB c hc)
+        have hlevB : (B.getLastD (0, 0)).2 = 0 := by rw [← hlastB]; exact hlev
+        have key : ∀ (cs : PairSeq) (dA : ℕ) (fA gA : Bool),
+            ((cs ++ (convC A dA p.2 fA gA
+              ++ convC B d p.2 false false)).getLastD (0, 0)).1 = d := by
+          intro cs dA fA gA
+          rw [← List.append_assoc, getLastD_append_cases,
+            if_neg (by simp only [convC_eq_nil_iff]; exact hBe)]
+          exact ih B hlB hBe hminB hlevB d p.2 false false
+        by_cases hl : ladOf p.2 d plev first force = true
+        · rcases hcc : contrLen p B (unitsLen p B) A with _ | ⟨rest2, Bq⟩
+          · rw [convC_cons_lad_none p r d plev first force hl (by rw [← hA, ← hB]; exact hcc)]
+            rw [← hA, ← hB, ← List.cons_append, ← List.cons_append]
+            exact key [(d, plev), (d + 1, p.2)] (d + 2) true false
+          · obtain ⟨q, r2, hdq, hq2, hq1, hAq, hBq, hr2ne, hr2d, hr2l⟩ := contrLen_spec hcc
+            have hlbq : Bq.length ≤ n := by
+              have := (contrLen_lt hcc).2; omega
+            have hBsplit : B = B.take (unitsLen p B) ++ (q :: r2) := by
+              rw [← hdq, List.take_append_drop]
+            have hr2split : r2 = (contrPre p (B.take (unitsLen p B)) A ++ rest2) ++ Bq := by
+              conv_lhs => rw [← List.takeWhile_append_dropWhile
+                (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) (l := r2)]
+              rw [hAq, hBq]
+            have hMl2 : (p :: r).getLastD (0, 0)
+                = if Bq = [] then rest2.getLastD (0, 0) else Bq.getLastD (0, 0) := by
+              rw [hMlast, if_neg hBe]
+              conv_lhs => rw [hBsplit]
+              rw [getLastD_append_right (by simp) (0, 0), List.getLastD_cons]
+              have hr2ne' : r2 ≠ [] := by
+                intro he
+                rw [he] at hr2split
+                have hc : (contrPre p (B.take (unitsLen p B)) A ++ rest2) ++ Bq = [] :=
+                  hr2split.symm
+                simp only [List.append_eq_nil_iff] at hc
+                exact hr2ne hc.1.2
+              rw [getLastD_ne_nil_indep hr2ne' _ (0, 0), hr2split, getLastD_append_cases]
+              by_cases hbq : Bq = []
+              · rw [if_pos hbq, if_pos hbq, getLastD_append_right hr2ne]
+              · rw [if_neg hbq, if_neg hbq]
+            have hbqne : Bq ≠ [] := by
+              intro hbq
+              have hmem : rest2.getLastD (0, 0) ∈ rest2 := getLastD_mem hr2ne _
+              have hmem2 : rest2.getLastD (0, 0) ∈ r2.takeWhile (fun x => q.1 < x.1) := by
+                rw [hAq]; exact List.mem_append_right _ hmem
+              have hqlt : q.1 < (rest2.getLastD (0, 0)).1 := by
+                simpa using List.mem_takeWhile_imp hmem2
+              rw [hMl2, if_pos hbq] at hple
+              omega
+            have hmemBq : ∀ c ∈ Bq, c ∈ p :: r := by
+              intro c hc
+              have h1 : c ∈ r2 := by rw [hr2split]; exact List.mem_append_right _ hc
+              have h2 : c ∈ B := by
+                rw [hBsplit]; exact List.mem_append_right _ (List.mem_cons_of_mem _ h1)
+              exact hmemB c h2
+            have hlastBq : (p :: r).getLastD (0, 0) = Bq.getLastD (0, 0) := by
+              rw [hMl2, if_neg hbqne]
+            have hminBq : ∀ c ∈ Bq, (Bq.getLastD (0, 0)).1 ≤ c.1 := by
+              intro c hc; rw [← hlastBq]; exact hmin c (hmemBq c hc)
+            have hlevBq : (Bq.getLastD (0, 0)).2 = 0 := by rw [← hlastBq]; exact hlev
+            rw [convC_cons_lad_some p r d plev first force hl (by rw [← hA, ← hB]; exact hcc)]
+            rw [← hA, ← hB]
+            simp only [← List.cons_append, ← List.append_assoc]
+            rw [getLastD_append_cases, if_neg (by simp only [convC_eq_nil_iff]; exact hbqne)]
+            exact ih Bq hlbq hbqne hminBq hlevBq d p.2 false false
+        · rw [convC_cons_nolad p r d plev first force (by simpa using hl)]
+          rw [← hA, ← hB, ← List.cons_append]
+          exact key [(ddOf p.2 d plev first force, p.2)]
+            (ddOf p.2 d plev first force + 1) true (first && (p.2 == plev))
+
+/-- **親が先頭の列で段が 0 なら、基本列は `dropLast` の素直な繰り返し。** -/
+theorem oper_repeat_root {M : PairSeq} (n : ℕ) (hL : 1 < M.length)
+    (hlev : entry M 1 (M.length - 1) = 0)
+    (hnr : nextrel0 M 0 (M.length - 1)) :
+    M⟦n⟧ = (List.replicate n M.dropLast).flatten := by
+  have hi1 : idx1 M (M.length - 1) = 0 := by
+    rw [idx1, if_neg (by rw [hlev]; omega)]
+  have ha : 0 < entry M 0 (M.length - 1) :=
+    Nat.lt_of_le_of_lt (Nat.zero_le _) hnr.2.2.2.1
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0) := by
+    rintro ⟨h1, -⟩; omega
+  have hp : hasParent M 0 (M.length - 1) :=
+    hasParent0_of_exists (by omega) ⟨0, hnr.2.2.1, hnr.2.2.2.1⟩
+  have hnR : nextR M 0 0 (M.length - 1) := by
+    unfold nextR; rw [if_pos rfl]; exact hnr
+  have hj0 : parent M 0 (M.length - 1) = 0 := hp.unique (parent_nextR hp) hnR
+  have hmap : (List.range' 0 (M.length - 1 - 0)).map
+      (fun j => ((entry M 0 j : ℕ), (entry M 1 j : ℕ))) = M.dropLast := by
+    rw [range'_map_entry M (Nat.zero_le (M.length - 1)) (by omega), List.drop_zero,
+      List.dropLast_eq_take]
+  have h := oper_repeat (M := M) n (by omega) hz (by rw [hi1]; exact hp) hi1
+  rw [hi1, hj0, hmap] at h
+  rw [h]
+  simp
+
+/-- 先頭が `(0,0)`、残りが全部深いなら `conC` は先頭を切り出す。 -/
+theorem conC_cons_zero {L : PairSeq} (hL : ∀ c ∈ L, 0 < c.1) :
+    conC (((0, 0) : ℕ × ℕ) :: L) = ((0, 0) : ℕ × ℕ) :: convC L 1 0 true false := by
+  have hL' : ∀ c ∈ L, ((0, 0) : ℕ × ℕ).1 < c.1 := by
+    intro c hc; simpa using hL c hc
+  obtain ⟨e1, e2⟩ := split_append (X := L) (Y := []) (dd := ((0, 0) : ℕ × ℕ).1) hL' (Or.inl rfl)
+  simp only [List.append_nil] at e1 e2
+  have hnl : ladOf ((0, 0) : ℕ × ℕ).2 0 0 true false = false := by simp [ladOf]
+  have hde : ddOf ((0, 0) : ℕ × ℕ).2 0 0 true false = 0 := by
+    unfold ddOf
+    rw [if_neg (by rw [hnl]; simp), if_neg (by simp)]
+  rw [conC, convC_cons_nolad ((0, 0) : ℕ × ℕ) L 0 0 true false hnl, hde, e1, e2]
+  simp only [Bool.and_true, beq_self_eq_true, convC_nil, List.append_nil, Nat.zero_add]
+  rw [convC_force (L := L) (d := 1) (plev := 0) (by omega) true false]
+
+/-- **場合 (d) の段 0**: 先頭が `(0,0)`、末尾列の親が先頭で段が 0 なら、
+`m = n`, `n' = n` で像の基本列が一致する。 -/
+theorem reindexD_node0 {M : PairSeq} (n : ℕ) (hL : 1 < M.length)
+    (hco : contrOK M) (hhd : M.headI = ((0, 0) : ℕ × ℕ))
+    (hlev : entry M 1 (M.length - 1) = 0)
+    (hnr : nextrel0 M 0 (M.length - 1)) :
+    (conC M)⟦n⟧ = conC (M⟦n⟧) := by
+  obtain ⟨A, hMA⟩ : ∃ A, M = ((0, 0) : ℕ × ℕ) :: A := by
+    match M with
+    | [] => simp at hL
+    | p :: A =>
+      refine ⟨A, ?_⟩
+      have hp : p = ((0, 0) : ℕ × ℕ) := hhd
+      rw [hp]
+  have hMlen : M.length = A.length + 1 := by rw [hMA]; simp
+  have hAne : A ≠ [] := by
+    intro he; rw [he] at hMlen; simp at hMlen; omega
+  have hA1 : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+  have hshift : ∀ i : ℕ, entry M i (M.length - 1) = entry A i (A.length - 1) := by
+    intro i
+    have h1 : M.length - 1 = (A.length - 1) + 1 := by omega
+    rw [h1, hMA, entry_cons_succ]
+  -- `A` の列はどれも末尾列と同じかそれより深い
+  have hAidx : ∀ i, i < A.length → entry M 0 (M.length - 1) ≤ entry A 0 i := by
+    intro i hi
+    have he : entry A 0 i = entry M 0 (i + 1) := by rw [hMA, entry_cons_succ]
+    rcases Nat.lt_or_ge (i + 1) (M.length - 1) with hlt | hge
+    · rw [he]; exact hnr.2.2.2.2 (i + 1) ⟨by omega, hlt⟩
+    · have : i + 1 = M.length - 1 := by omega
+      rw [he, this]
+  have hAdeep : ∀ c ∈ A, entry M 0 (M.length - 1) ≤ c.1 := by
+    intro c hc
+    obtain ⟨i, hi, hei⟩ := entry_of_mem hc
+    rw [← hei]; exact hAidx i hi
+  have ha : 0 < entry M 0 (M.length - 1) :=
+    Nat.lt_of_le_of_lt (Nat.zero_le _) hnr.2.2.2.1
+  have hA0 : ∀ c ∈ A, 0 < c.1 := fun c hc => Nat.lt_of_lt_of_le ha (hAdeep c hc)
+  have hR0 : ∀ c ∈ A.dropLast, 0 < c.1 :=
+    fun c hc => hA0 c ((List.dropLast_sublist A).subset hc)
+  -- 像の形
+  have hconCM : conC M = ((0, 0) : ℕ × ℕ) :: convC A 1 0 true false := by
+    rw [hMA]; exact conC_cons_zero hA0
+  have hXne : convC A 1 0 true false ≠ [] := by
+    rw [ne_eq, convC_eq_nil_iff]; exact hAne
+  -- `A` に対する `convC_getLast_min` の仮定
+  have hminA : ∀ c ∈ A, (A.getLastD (0, 0)).1 ≤ c.1 := by
+    intro c hc
+    have : (A.getLastD (0, 0)).1 = entry M 0 (M.length - 1) := by
+      rw [hshift 0, entry_last0]
+    rw [this]; exact hAdeep c hc
+  have hlevA : (A.getLastD (0, 0)).2 = 0 := by
+    rw [← entry_last, ← hshift 1]; exact hlev
+  -- `A` の末尾列には親がない（どの列も末尾と同じかそれより深いから）
+  have hlastA : entry A 0 (A.length - 1) = entry M 0 (M.length - 1) := (hshift 0).symm
+  have hiA : idx1 A (A.length - 1) = 0 := by
+    rw [idx1, if_neg (by rw [← hshift 1, hlev]; omega)]
+  have hnpA : ¬ hasParent A (idx1 A (A.length - 1)) (A.length - 1) := by
+    rw [hiA]
+    rintro ⟨j0, hj0, -⟩
+    have hj0' : nextrel0 A j0 (A.length - 1) := by
+      have h : nextR A 0 j0 (A.length - 1) := hj0
+      unfold nextR at h; rw [if_pos rfl] at h; exact h
+    have h1 : entry M 0 (M.length - 1) ≤ entry A 0 j0 := hAidx j0 hj0'.1
+    have h2 : entry A 0 j0 < entry A 0 (A.length - 1) := hj0'.2.2.2.1
+    rw [hlastA] at h2
+    omega
+  -- `dropLast` の可換
+  have hX : convC (A.dropLast) 1 0 true false = (convC A 1 0 true false).dropLast := by
+    by_cases hA2 : 1 < A.length
+    · have hsuf : A <:+ M := by rw [hMA]; exact List.suffix_cons _ _
+      exact convC_dropLast_noParent_aux A.length A (Nat.le_refl _) hA2 1 0 true false
+        (contrOK_suffix hsuf hco) hnpA
+    · obtain ⟨lp, hlp⟩ : ∃ lp, A = [lp] := List.length_eq_one_iff.1 (by omega)
+      have hlp2 : lp.2 = 0 := by
+        have := hlevA
+        rw [hlp] at this
+        simpa using this
+      have hnl : ladOf lp.2 1 0 true false = false := by rw [hlp2]; simp [ladOf]
+      rw [hlp]
+      simp [convC_cons_nolad lp [] 1 0 true false hnl]
+  -- DBMS 側の親も先頭の (0,0)
+  have hNlen : (conC M).length = (convC A 1 0 true false).length + 1 := by
+    rw [hconCM]; simp
+  have hNle : 1 < (conC M).length := conC_length_ge_two hL
+  have hNlast : (conC M).getLastD (0, 0) = (convC A 1 0 true false).getLastD (0, 0) := by
+    rw [hconCM]; exact getLastD_cons_ne _ hXne (0, 0)
+  have hN0 : entry (conC M) 0 ((conC M).length - 1) = 1 := by
+    rw [entry_last0, hNlast]
+    exact convC_getLast_min A.length A (Nat.le_refl _) hAne hminA hlevA 1 0 true false
+  have hN1 : entry (conC M) 1 ((conC M).length - 1) = 0 := by
+    rw [entry_last, conC_getLast_level, ← entry_last]; exact hlev
+  have hhd0 : entry (conC M) 0 0 = 0 := by
+    rw [entry_zero0, hconCM]; rfl
+  have hNnr : nextrel0 (conC M) 0 ((conC M).length - 1) := by
+    refine ⟨by omega, by omega, by omega, by rw [hhd0, hN0]; omega, ?_⟩
+    rintro j ⟨hj1, hj2⟩
+    rw [hN0]
+    obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+    have hj' : j' < (convC A 1 0 true false).length := by omega
+    have hmem : (convC A 1 0 true false).getD j' (0, 0) ∈ convC A 1 0 true false := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj']
+      simpa using List.getElem_mem hj'
+    have h1 := convC_ge' A 1 0 true false _ hmem
+    rw [hconCM, entry_cons_succ, entry, if_pos rfl]
+    exact h1
+  -- 両側を組み立てる
+  have hbms : M⟦n⟧ = (List.replicate n M.dropLast).flatten :=
+    oper_repeat_root n hL hlev hnr
+  have hdbms : (conC M)⟦n⟧ = (List.replicate n (conC M).dropLast).flatten :=
+    oper_repeat_root n hNle hN1 hNnr
+  have hMdl : M.dropLast = ((0, 0) : ℕ × ℕ) :: A.dropLast := by
+    rw [hMA, dropLast_cons_ne hAne]
+  have hdl : (conC M).dropLast = ((0, 0) : ℕ × ℕ) :: convC (A.dropLast) 1 0 true false := by
+    rw [hconCM, dropLast_cons_ne hXne, hX]
+  rw [hdbms, hbms, hdl, hMdl, conC_run_top (A.dropLast) hR0 n]
+
+/-- 場合 (d) の段 0 は `ReindexD` の形（`m = n`, `n' = n`）を満たす。 -/
+theorem reindexD_node0_shape {M : PairSeq} (n : ℕ) (hn : 1 ≤ n) (hL : 1 < M.length)
+    (hco : contrOK M) (hhd : M.headI = ((0, 0) : ℕ × ℕ))
+    (hlev : entry M 1 (M.length - 1) = 0)
+    (hnr : nextrel0 M 0 (M.length - 1)) :
+    ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧ (conC M)⟦m⟧ = conC (M⟦n'⟧) :=
+  ⟨n, n, hn, Nat.le_refl n, reindexD_node0 n hL hco hhd hlev hnr⟩
+
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -2625,3 +2953,9 @@ end DBMS
 #print axioms DBMS.exists_shallow1_of_hasParent
 #print axioms DBMS.oper_append_convC1
 #print axioms DBMS.oper_append_convC1'
+#print axioms DBMS.entry_of_mem
+#print axioms DBMS.convC_getLast_min
+#print axioms DBMS.oper_repeat_root
+#print axioms DBMS.conC_cons_zero
+#print axioms DBMS.reindexD_node0
+#print axioms DBMS.reindexD_node0_shape
