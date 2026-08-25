@@ -134,7 +134,7 @@ def convC(M, d=0, plev=0, first=True, force=False):
                     rest2 = list(Aq[len(pre):])
                     if rest2 and rest2[0][0] == p[0] + 1 and rest2[0][1] < s:
                         return (cols + convC(A, dd + 1, s, True, False)
-                                + convC(U, d, s, False, False)
+                                + convC(U, d + 1, s, False, False)
                                 + convC(rest2, dd, s, False, False)
                                 + convC(Bq, d, s, False, False))
     return (cols + convC(A, dd + 1, s, True, (not lad) and first and s == plev)

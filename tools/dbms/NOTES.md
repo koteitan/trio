@@ -890,3 +890,34 @@ succ は `A[n]` が n によらないので問題ない）。
 2 行では core.py の上昇行列つき `expand` と一致することを確認した
 （BMS 標準形 <=8 列と conC 像の両方、n<=3、相違は 1 列の自明例外のみ）。
 なので Python の実測はそのまま Lean に移せる。
+
+## ユニット版の縮約を Lean に移植（2026-08-25）
+
+Lean の `convC` は「兄弟＝同じ列の連続」（旧 `sibRun`）のままで、11 列の反例
+
+    (0,0)(1,1)(2,2)(1,1)(2,1)(1,0)(2,1)(3,2)(2,1)(3,1)(2,0)
+
+で落ちていた。`tools/dbms/rows2.py` の `units_split` を移植した。要点:
+
+* `unitsLen p B` … `B` の先頭から「`p` + その引数ブロック」を取れるだけ取った長さ
+* `contrPre p U A = (p.1+1, p.2) :: shift1 A ++ shift1 U`（`replicate` を `shift1 U` に）
+* `convC` の縮約枝は兄弟を `convC (B.take k) (d+1) p.2 false false` で書く
+* 読み `readC` は**継続つき** `readK l first plev k` の `k = Z` の場合にした。
+  兄弟ユニットを読んだあとに二役の項を置くのに継続が要る（旧版の `wrapN` は
+  引数のない兄弟しか扱えない）。BMS 側も同型の `translateK` を用意。
+* 主定理も継続つきに一般化: `readK (convC M ...) first plev t = translateK M t`
+
+深さの引数は `d` ではなく `d+1` にした（`ddOf p.2 (d+1) p.2 false false = d+1` が
+`p.2 ≤ d` から無条件に出るので、兄弟の列が必ず `(d+1, p.2)` になる）。
+`d` 版と `d+1` 版は BMS 標準形 ≤9 列 295014 個で完全に一致することを確認済み。
+
+新しく要った補題: `split_append_gen` / `dropWhile_head_neg` / `translateK` /
+`translateK_Z` / `translateK_appendK` / `translateK_shift1` / `steps1_take` /
+`blockok_take` / `descOK_take` / `headI_take` / `descOK_units` / `Units`（帰納型）/
+`units_take` / `unitsLen_append_units` / `readK_append` / `units_convC`。
+
+**結果**: `Dbms.lean` は sorry 0 のまま green。シートの 264 件（`DbmsConv.lean` の
+547 個の #guard）も全部通る。11 列の反例も #guard で確認。
+
+`tools/dbms/scan_std.py` … 像が DBMS 標準形かの全数走査。
+**BMS 2 行標準形 ≤10 列 2073826 個すべてで像は DBMS 標準形。**
