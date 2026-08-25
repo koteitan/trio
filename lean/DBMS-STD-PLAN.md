@@ -732,3 +732,123 @@ reindexD_noParent_zero   同上、段 0 なら仮定なし
 4. **`ST_PS M → contrOK M`**（段 > 0 のためだけに要る）。
    `r1ok` では出ない（`x.2 ≤ q.2 + 1` しか言えず、`x.2 = 0` は出ない）ので、
    BMS 標準形のもっと強い性質が要る。
+
+## 2026-08-26（続き 2）: 右端の道の帰納が閉じ、`ReindexD` は残り 2 つの Prop に
+
+### 到達点
+
+```
+reindexD_holds_of_res : RDzeroRes → RDposRes → ReindexD
+ST_D_conC_holds_of_res : RDzeroRes → RDposRes → ST_PS M → ST_D (conC M)
+```
+
+**右端の道に沿った帰納（計画書の「組み立て」）は完全に閉じた。**
+場合分け・不変量の引き回し・添字の変換・床の補題の適用は全部済み。
+残っているのは局所の 5 つの事実だけで、それを 2 つの `Prop` に括り出してある。
+
+### 新しく証明したもの（すべて sorry 0）
+
+場合 (d) のブロック版（段 0）:
+
+```
+convC_run_first        最初のコピーだけ first/force を受け取る繰り返し（梯子なし）
+reindexD_node0_gen / _shape      梯子なし版（hfr: 引数への force が立たない）
+oper_repeat_at         親の位置が一般の oper_repeat（梯子の段では親が index 1）
+unitsLen_replicate     同じブロックの並びはユニットで埋め尽くされる
+contrLen_of_drop_nil   だから縮約は起きようがない
+convC_dropLast_min     末尾列が最浅・段 0 なら dropLast は像と可換
+convC_run_lad          梯子つきの繰り返し（d = p.2 のとき）
+reindexD_node0_lad / _shape      梯子あり版
+```
+
+`convC_run_lad` の `d = p.2` は、`colOK`（`p.2 ≤ p.1`）・`blockok bd`（`bd = p.1`）・
+`bd ≤ d` と梯子の条件 `d ≤ p.2`（`force = false` の道）を合わせると
+
+    p.1 ≤ d ≤ p.2 ≤ p.1     すなわち     d = p.2 = p.1 = bd
+
+として自動的に出る（組み立ての中でそう使っている）。
+
+組み立て:
+
+```
+dropWhile_head_not     dropWhile の先頭は述語を満たさない
+RDzeroRes (def)        段 0 で残っている 2 つの場合
+reindexD_zero_block    段 0 のブロック版の帰納
+reindexD_zero          段 0 の入口（標準形 → conC）
+ReindexD_pos (def)     段が正の場合
+reindexD_holds_of_zero : RDzeroRes → ReindexD_pos → ReindexD
+RDposRes (def)         段が正のときに残っている 3 つの場合
+reindexD_pos_block     段 > 0 のブロック版の帰納
+reindexD_pos_of        : RDposRes → ReindexD_pos
+reindexD_holds_of_res / ST_D_conC_holds_of_res
+```
+
+### 段 0 の帰納（`reindexD_zero_block`）
+
+`B = p :: (A ++ T)`（`A` = 引数ブロック、`T` = 兄弟ブロック）で場合分けする。
+
+```
+|B| = 1              段 0 なら梯子が立たないので像も 1 列、両側とも動かない
+末尾列 = (0,0)        (a) reindexD_succ_gen（bd = 0 ⟹ d = 0 の不変量が要る）
+親がない              (b) reindexD_noParent_zero（contrOK は段 0 で自動）
+T = [] かつ 親 = 節点  (d) reindexD_node0_gen / reindexD_node0_lad
+T = [] かつ 親 ∈ A    (c) reindexD_arg_nolad / reindexD_arg_lad で降りる
+T ≠ []               親は必ず T の中（下の理由）→ reindexD_sib_nolad / _lad
+```
+
+`T ≠ []` で親が `p` や `A` に入れない理由（行 0 なので床の補題は要らない）:
+親があるなら `entry B 0 (親) ≥ bd` と `entry B 0 (親) < entry B 0 (末尾)` から
+`entry B 0 (末尾) > bd`。ところが `T` の頭は深さ `≤ bd` で末尾より手前（または
+末尾そのもの）なので、`nextrel0` の最小性に反する。
+
+不変量は `blockok bd B`, `colOK B`, `descOK B`, `bd ≤ d`, `bd = 0 → d = 0`,
+`entry B 1 (|B|-1) = 0` の 6 つ。最後から 2 番目は (a) のために要る
+（深さ 0 の列があるブロックは根のブロックしかなく、そこでは `d = 0`）。
+
+### 段 > 0 の帰納（`reindexD_pos_block`）
+
+不変量は `blockok`, `colOK`, `descOK`, `bd ≤ d`, `2 ≤ |B|`,
+`0 < entry B 1 (|B|-1)`。`2 ≤ |B|` が要るのは、**1 列のブロックで梯子が立つと
+ブロック単位の主張が偽になる**から（像が `[(d,plev),(d+1,p.2)]` の 2 列になり、
+その基本列は元に戻らない）。降りる先は必ず 2 列以上なので不変量は保たれる:
+
+* 引数へ降りるのは `1 ≤ 親 < |A|` のときなので `|A| ≥ 2`
+* 兄弟へ降りるのは `|p::A| ≤ 親 < |A|+|T|` のときなので `|T| ≥ 2`
+
+**`T ≠ []` なら親は必ず `T` の中**。これが床の補題 `le0_ge_of_append` の出番で、
+`G = p :: A` の列は全部深さ `bd` 以上、`T` の頭はちょうど `bd` なので、
+行 0 の鎖は `G` と `T` の境をまたげない。`nextrel1` は `le0` を含むので
+行 1 の親にもそのまま効く。
+
+### 残っている 5 つ
+
+```
+RDzeroRes（段 0、2 つ）
+  1. 梯子つきの段で縮約が起こりうる           contr regime（実測 ≤10 列で 180 個）
+  2. 場合 (d) で force か first && (p.2 == plev) が立っている
+
+RDposRes（段 > 0、3 つ）
+  3. 梯子つきの段で縮約が起こりうる           同上
+  4. 親がない                                contrOK B が要る（段 0 では自動）
+  5. 親が節点                                ずれたコピーの補題が要る（shift regime）
+```
+
+**2 と 4 は同じ BMS 標準形の事実に帰着する。** すなわち
+
+    節点の段 = その親の段（`p.2 = plev`）かつ その引数ブロックの頭の段 = `p.2 + 1`
+
+という形は BMS 標準形に現れない（`(0,0)(1,1)(2,1)(3,2)` 型）。
+これが言えれば、2 では `convC_force`（`force` は効かない）が使え、
+4 では `contrOK` が出る（縮約が `some ([x],[])` で発火するには梯子が要り、
+梯子が立つには上の形が要る）。
+
+**5 が唯一の新しい計算**である。段 0 と違いコピーが入れ子になるので
+
+```
+conC ((range n).flatMap (fun k => (k*a, 0) :: shift0 (k*a) R))
+  = (0,0) :: (range n).flatMap (fun k => shift0 (k*a) (convC R 1 0 true false))
+```
+
+という「行 0 を一様にずらしたコピーの並び」の補題が要る（§(d) の段 > 0 の壁）。
+
+**1 と 3 は同じ**（`reindexD_sib_lad` の仮定 `hnc`）。
