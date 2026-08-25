@@ -827,3 +827,66 @@ f(M[3]) = (0,0)(1,0)(2,1)(2,1)(2,1)(2,0)(3,1)(3,1)(3,1)
 
 `tools/dbms/rows2.py` … 生成（正しい数え上げ）・`convD`/`readD`・`convC`/`readC`・
 仮定の全数検査・全射性の検査（`python3 rows2.py 7`）。
+
+## 標準形性の証明（2026-08-25）
+
+**目標**: `ST_PS M -> ST_D (conC M)`（像が DBMS 標準形）。
+
+### 素朴な帰納法は通らない
+
+`ST_PS` の帰納法（底 = 対角、段 = `oper`）だと、段で `conC (M[n])` が
+`conC M` から**何手で**届くかを言わねばならない。実測（`core.reach` の正式な
+到達判定）では届きはするが手数が一定でない:
+
+```
+BMS 標準形 <=7 列 7256 個 x n=1,2,3 の 21765 件
+  1 手 21085 / 3 手 179 / 4 手 202 / 5 手 195 / 6 手 84 / 7 手 20 / 届かない 0
+```
+
+### 通る道: 対角からの降下
+
+代わりに**対角から降ろす**。降下の停止性も、降下が像の外へ出ないことも、
+BMS 側の既証明（`pss_cofinality_holds` / `wf_olt_ST_PS_holds`）から出る。
+
+```
+A = 対角                              ST_D (conC A)  … conC_diagSeq で済み
+translate M <o translate A のとき
+  BMS 共終性  -> n>=1, translate M <=o translate (A[n])
+  REINDEX     -> m,n' >=1, (conC A)[m] = conC (A[n']) かつ A[n] <=o A[n']
+  ST_D.oper   -> ST_D (conC (A[n']))
+  m_step_decreases -> translate (A[n']) <o translate A   … 整礎帰納法が回る
+```
+
+`lean/DbmsStd.lean` にこの降下を書いた。**`ReindexD` を仮定して sorry 0**。
+
+### 要 = REINDEX
+
+```
+(conC A)[m] = conC (A[g(A,m)])
+```
+
+`tools/dbms/reindex.py` が全数検査。**BMS 標準形 <=9 列 295014 個・m<=5 で違反 0。**
+
+| regime | 引き金 | g(m) | ≤9 列の個数 |
+|---|---|---|---|
+| succ  | A の末尾列 = (0,0) | 0 （両側とも後続） | 44653 |
+| id    | それ以外の大多数 | m | 217696 |
+| shift | A の末尾列 = (1,1) | m+1（DBMS が 1 つ飛ばす） | 32615 |
+| contr | 末尾の梯子が二役 | m-1（DBMS が 1 つ余分に要る） | 49 |
+
+contr の例（末尾ブロックが `(1,1) B (1,0) shift1(B) (2,0)` の形）:
+
+```
+(0,0)(1,1)(2,2)(1,0)(2,1)(3,2)(2,0)  ->  (0,0)(1,0)(2,1)(3,2)(2,0)
+(0,0)(1,1)(1,0)(2,1)(2,0)            ->  (0,0)(1,0)(2,1)(2,0)
+```
+
+降下で使うのは `m := n+1` の一択でよい（4 regime すべてで `n' >= n`、
+succ は `A[n]` が n によらないので問題ない）。
+
+### Lean の oper = core.py の expand
+
+`Pair/Pss.lean` の `oper` には**上昇行列がない**（一律に `k*d0` を足す）。
+2 行では core.py の上昇行列つき `expand` と一致することを確認した
+（BMS 標準形 <=8 列と conC 像の両方、n<=3、相違は 1 列の自明例外のみ）。
+なので Python の実測はそのまま Lean に移せる。

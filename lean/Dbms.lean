@@ -54,13 +54,17 @@ BMS と DBMS は**展開規則が完全に同一**で、違うのは標準形の
 
 ## 残る穴
 
-**像が DBMS 標準形であること**は未証明（BMS 2 行標準形 ≤8 列 44653 個で全数確認のみ）。
-帰納法の底（対角）は済んでいる:
+**像が DBMS 標準形であること**は `DbmsStd.lean` へ移した。素朴な `ST_PS` の
+帰納法（段 = `conC (M⟦n⟧)` が `conC M` から 1 手で届く）は**成り立たない**
+（実測で 1〜7 手かかる）ので、対角からの**降下**に切り替えてある。
+降下そのものは証明済み（`ST_D_descend`, sorry 0）で、残る要は 1 つ:
+
+    ReindexD : (conC A)⟦m⟧ = conC (A⟦n'⟧)   … 像の基本列は BMS のそれと絡み合う
+
+帰納法の底（対角）は本ファイルで済んでいる:
 
     conC_diagSeq     : conC (diagSeq 0 v) = if v = 0 then ddiagSeq 0 else ddiagSeq (v + 1)
     ST_D_conC_diagSeq : ST_D (conC (diagSeq 0 v))
-
-残るのは `oper` の段、すなわち `conC (M⟦n⟧)` が `conC M` から展開で届くこと。
 
 全射性については Naruyoko 氏が `Trans`（PSS -> ブーフホルツ）で使った道が使える:
 逆写像を作らず、**両側の共終性**（降下性 + 基本列の関係）だけで全単射が出る。
