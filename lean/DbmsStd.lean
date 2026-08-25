@@ -609,6 +609,48 @@ theorem conC_run_top (R : PairSeq) (hR : ∀ c ∈ R, 0 < c.1) : ∀ n : ℕ,
     rw [this, List.replicate_succ, List.flatten_cons]
     simp
 
+/-! ## 2.77 添字 1 の基本列は末尾を落とすだけ -/
+
+theorem range_append_range' (j0 m : ℕ) :
+    List.range j0 ++ List.range' j0 m = List.range (j0 + m) := by
+  rw [List.range_eq_range', List.range_eq_range']
+  simpa using List.range'_append (s := 0) (m := j0) (n := m) (step := 1)
+
+theorem range'_map_entry (M : PairSeq) {j0 j1 : ℕ} (h0 : j0 ≤ j1) (h1 : j1 ≤ M.length) :
+    (List.range' j0 (j1 - j0)).map (fun j => ((entry M 0 j : ℕ), (entry M 1 j : ℕ)))
+      = (M.take j1).drop j0 := by
+  have hj : j0 + (j1 - j0) = j1 := by omega
+  have hr : List.range j0 ++ List.range' j0 (j1 - j0) = List.range j1 := by
+    rw [range_append_range', hj]
+  have hd : (List.range j1).drop j0 = List.range' j0 (j1 - j0) := by
+    rw [← hr, List.drop_left' (by simp)]
+  rw [← hd, List.map_drop, map_range_entry_eq_take M h1]
+
+/-- **`M⟦1⟧` はいつでも末尾を 1 列落とすだけ。** -/
+theorem oper_one {M : PairSeq} (hL : 1 < M.length) : M⟦1⟧ = M.dropLast := by
+  have hL1 : M.length - 1 ≠ 0 := by omega
+  have hdl : M.dropLast = M.take (M.length - 1) := List.dropLast_eq_take
+  by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0
+  · rw [oper_eq_pred_of_zero 1 hL1 hz, Pred, if_neg (by omega)]
+  by_cases hp : hasParent M (idx1 M (M.length - 1)) (M.length - 1)
+  · rw [oper_bad_unfold 1 hL1 hz hp]
+    set j0 := parent M (idx1 M (M.length - 1)) (M.length - 1) with hj0
+    set j1 := M.length - 1 with hj1
+    have hlt : j0 < j1 := nextR_index_lt (parent_nextR hp)
+    have hle : j1 ≤ M.length := by omega
+    have h1 : (List.range 1).flatMap
+        (fun k => (List.range' j0 (j1 - j0)).map
+          (fun j => ((entry M 0 j + k * (if 0 < idx1 M j1
+              then entry M 0 j1 - entry M 0 j0 else 0) : ℕ), (entry M 1 j : ℕ))))
+        = (M.take j1).drop j0 := by
+      simp only [List.range_one, List.flatMap_cons, List.flatMap_nil, List.append_nil,
+        Nat.zero_mul, Nat.add_zero]
+      exact range'_map_entry M (le_of_lt hlt) hle
+    rw [h1, hdl]
+    conv_rhs => rw [← List.take_append_drop j0 (M.take j1)]
+    rw [List.take_take, Nat.min_eq_left (le_of_lt hlt)]
+  · rw [oper_eq_pred_of_noParent 1 hL1 hz hp, Pred, if_neg (by omega)]
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -722,3 +764,4 @@ end DBMS
 #print axioms DBMS.oper_repeat
 #print axioms DBMS.convC_force
 #print axioms DBMS.conC_run_top
+#print axioms DBMS.oper_one
