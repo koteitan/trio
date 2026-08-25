@@ -921,3 +921,23 @@ Lean の `convC` は「兄弟＝同じ列の連続」（旧 `sibRun`）のまま
 
 `tools/dbms/scan_std.py` … 像が DBMS 標準形かの全数走査。
 **BMS 2 行標準形 ≤10 列 2073826 個すべてで像は DBMS 標準形。**
+
+### REINDEX の succ regime は証明済み（2026-08-25）
+
+`lean/DbmsStd.lean`:
+
+```
+convC_snoc_zero : convC (M ++ [(0,0)]) d plev first force
+                    = convC M d plev first force ++ [(d,0)]
+oper_snoc_zero  : (M ++ [(0,0)])⟦n⟧ = M
+reindexD_succ   : (conC (M ++ [(0,0)]))⟦m⟧ = conC ((M ++ [(0,0)])⟦n⟧)   -- m, n によらない
+```
+
+途中で要ったのは、末尾の `(0,0)` が縮約を壊さないこと:
+
+* `unitsLen_snoc` … `(0,0) ≠ p` かつ `¬(p.1 < 0)` なのでユニットの本数は変わらない
+* `contrLen_snoc` … 外の後続に `(0,0)` が付くだけ。ユニットが `B` を使い切った場合は
+  `q = (0,0)` になるが、`q.1 = p.1` から `p.1 = 0`、`colOK` から `p.2 = 0`、
+  一方で梯子は `p.2 = plev+1 ≥ 1` を要求するので発火しない。
+
+残りは id / shift / contr の 3 regime。

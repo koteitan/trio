@@ -31,6 +31,14 @@
 
 本ファイルは `ReindexD` を**仮定**として、そこから標準形性を完全に導く。
 `Pair/ArgDom.lean` の `ArgDomCore` と同じ「要を 1 つの `Prop` に括り出す」流儀。
+
+regime のうち **succ は証明済み**（`reindexD_succ`）:
+
+    conC (M ++ [(0,0)]) = conC M ++ [(0,0)]        … convC_snoc_zero
+    (M ++ [(0,0)])⟦n⟧   = M                        … oper_snoc_zero
+    ⟹ (conC (M ++ [(0,0)]))⟦m⟧ = conC ((M ++ [(0,0)])⟦n⟧)   （m, n によらない）
+
+残るは id / shift / contr の 3 つ。
 -/
 import Dbms
 import Pair.Final
@@ -85,6 +93,197 @@ theorem diag_cofinal {M : PairSeq} (hM : ST_PS M) :
       · exact ⟨v, ole_trans (Or.inl (m_step_decreases hL hn)) hv⟩
       · have : N⟦n⟧ = N := oper_eq_self_short n (by omega)
         rw [this]; exact ⟨v, hv⟩
+
+/-! ## 2.5 succ regime — 末尾が `(0,0)` のとき -/
+
+/-- 末尾に `(0,0)` を足しても、ユニットの本数は変わらない。 -/
+theorem unitsLen_snoc {p c : ℕ × ℕ} (hc : ¬ (p.1 < c.1)) (hcp : ¬ (c = p)) :
+    ∀ (n : ℕ) (B : PairSeq), B.length ≤ n → unitsLen p (B ++ [c]) = unitsLen p B := by
+  intro n
+  induction n with
+  | zero =>
+    intro B hB
+    have : B = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    simp only [List.nil_append]
+    rw [unitsLen_cons_neg hcp, unitsLen]
+  | succ n ih =>
+    intro B hB
+    match B with
+    | [] =>
+      simp only [List.nil_append]
+      rw [unitsLen_cons_neg hcp, unitsLen]
+    | b :: r =>
+      by_cases h : b = p
+      · subst h
+        obtain ⟨e1, e2⟩ := split_append_gen (dd := b.1) (Y := [c]) (Or.inr (by simpa using hc)) r
+        have hlen : (r.dropWhile fun x => b.1 < x.1).length ≤ n := by
+          have := List.length_dropWhile_le (fun x : ℕ × ℕ => b.1 < x.1) r
+          simp only [List.length_cons] at hB; omega
+        rw [List.cons_append, unitsLen_cons_pos, unitsLen_cons_pos, e1, e2,
+          ih _ hlen]
+      · rw [List.cons_append, unitsLen_cons_neg h, unitsLen_cons_neg h]
+
+/-- 末尾に `(0,0)` を足しても、縮約の判定は（外の後続に `(0,0)` が付くだけで）変わらない。 -/
+theorem contrLen_snoc {p : ℕ × ℕ} {B A : PairSeq} {k : ℕ}
+    (hk : k = unitsLen p B) (hkle : k ≤ B.length) (hp1 : 0 < p.2) (hpc : p.2 ≤ p.1) :
+    (contrLen p (B ++ [((0, 0) : ℕ × ℕ)]) k A
+      = match contrLen p B k A with
+        | none => none
+        | some (rest2, Bq) => some (rest2, Bq ++ [((0, 0) : ℕ × ℕ)])) := by
+  by_cases hlt : k < B.length
+  · -- `B.drop k` は空でない
+    have hdne : B.drop k ≠ [] := by
+      intro he
+      have := List.length_drop (l := B) (i := k)
+      rw [he] at this
+      simp at this
+      omega
+    match hde : B.drop k with
+    | [] => exact absurd hde hdne
+    | q :: r2 =>
+      have hdrop : (B ++ [((0, 0) : ℕ × ℕ)]).drop k = q :: (r2 ++ [((0, 0) : ℕ × ℕ)]) := by
+        rw [List.drop_append_of_le_length (by omega), hde, List.cons_append]
+      obtain ⟨e1, e2⟩ := split_append_gen (dd := q.1) (Y := [((0, 0) : ℕ × ℕ)])
+        (Or.inr (by simp)) r2
+      have htake : (B ++ [((0, 0) : ℕ × ℕ)]).take k = B.take k :=
+        List.take_append_of_le_length (by omega)
+      unfold contrLen
+      rw [hdrop, hde, htake]
+      simp only [e1, e2]
+      split
+      · rfl
+      · rfl
+  · -- ユニットが `B` を使い切っている: `q = (0,0)` になるので発火しない
+    have hkeq : k = B.length := by omega
+    have hde : B.drop k = [] := by rw [hkeq]; simp
+    have hdrop : (B ++ [((0, 0) : ℕ × ℕ)]).drop k = [((0, 0) : ℕ × ℕ)] := by
+      rw [hkeq, List.drop_left]
+    have hnone : contrLen p B k A = none := by unfold contrLen; rw [hde]
+    rw [hnone]
+    unfold contrLen
+    rw [hdrop]
+    simp only
+    refine if_neg ?_
+    rintro ⟨h1, h2, -⟩
+    omega
+
+/-- 末尾の `(0,0)` は変換でも末尾の `(0,0)` になる（深さは `d`）。 -/
+theorem convC_snoc_zero : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → colOK M →
+    ∀ (d plev : ℕ) (first force : Bool),
+      convC (M ++ [((0, 0) : ℕ × ℕ)]) d plev first force
+        = convC M d plev first force ++ [((d, 0) : ℕ × ℕ)] := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM _ d plev first force
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    simp only [List.nil_append, convC_nil]
+    rw [convC_cons_nolad ((0, 0) : ℕ × ℕ) [] d plev first force (by simp [ladOf])]
+    have : ddOf ((0, 0) : ℕ × ℕ).2 d plev first force = d := by
+      unfold ddOf
+      rw [if_neg (by simp [ladOf]), if_neg (by simp)]
+    rw [this]
+    simp
+  | succ n ih =>
+    intro M hM hc d plev first force
+    match M with
+    | [] =>
+      simp only [List.nil_append, convC_nil]
+      rw [convC_cons_nolad ((0, 0) : ℕ × ℕ) [] d plev first force (by simp [ladOf])]
+      have : ddOf ((0, 0) : ℕ × ℕ).2 d plev first force = d := by
+        unfold ddOf
+        rw [if_neg (by simp [ladOf]), if_neg (by simp)]
+      rw [this]
+      simp
+    | p :: r =>
+      obtain ⟨e1, e2⟩ := split_append_gen (dd := p.1) (Y := [((0, 0) : ℕ × ℕ)])
+        (Or.inr (by simp)) r
+      have hlB : (r.dropWhile fun q => p.1 < q.1).length ≤ n := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hM; omega
+      have hcB : colOK (r.dropWhile fun q => p.1 < q.1) := fun c hcm =>
+        hc c (List.mem_cons_of_mem _ ((List.dropWhile_sublist _).subset hcm))
+      have hpc : p.2 ≤ p.1 := hc p (by simp)
+      by_cases hl : ladOf p.2 d plev first force = true
+      · have hp1 : 0 < p.2 := by
+          have : p.2 = plev + 1 := by simp [ladOf] at hl; omega
+          omega
+        have hune : unitsLen p ((r.dropWhile fun q => p.1 < q.1) ++ [((0, 0) : ℕ × ℕ)])
+            = unitsLen p (r.dropWhile fun q => p.1 < q.1) :=
+          unitsLen_snoc (by simp) (by intro he; rw [← he] at hp1; simp at hp1)
+            (r.dropWhile fun q => p.1 < q.1).length _ (Nat.le_refl _)
+        have hkle : unitsLen p (r.dropWhile fun q => p.1 < q.1)
+            ≤ (r.dropWhile fun q => p.1 < q.1).length :=
+          unitsLen_le p _ _ (Nat.le_refl _)
+        have hcs := contrLen_snoc (p := p) (B := r.dropWhile fun q => p.1 < q.1)
+          (A := r.takeWhile fun q => p.1 < q.1)
+          (k := unitsLen p (r.dropWhile fun q => p.1 < q.1)) rfl hkle hp1 hpc
+        rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+        · -- 縮約なし
+          rw [convC_cons_lad_none p r d plev first force hl hcc]
+          rw [List.cons_append,
+            convC_cons_lad_none p (r ++ [((0, 0) : ℕ × ℕ)]) d plev first force hl (by
+              rw [e1, e2, hune, hcs, hcc])]
+          rw [e1, e2, ih _ hlB hcB d p.2 false false]
+          simp [List.append_assoc]
+        · -- 縮約あり
+          have hlbq : Bq.length ≤ n := by
+            have := (contrLen_lt hcc).2
+            have h2 := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+            simp only [List.length_cons] at hM
+            omega
+          have hcbq : colOK Bq := fun c hcm =>
+            hcB c ((contrLen_sublists hcc).2.subset hcm)
+          rw [convC_cons_lad_some p r d plev first force hl hcc]
+          rw [List.cons_append,
+            convC_cons_lad_some p (r ++ [((0, 0) : ℕ × ℕ)]) d plev first force hl (by
+              rw [e1, e2, hune, hcs, hcc])]
+          have htk : ((r.dropWhile fun q => p.1 < q.1) ++ [((0, 0) : ℕ × ℕ)]).take
+                (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+              = (r.dropWhile fun q => p.1 < q.1).take
+                (unitsLen p (r.dropWhile fun q => p.1 < q.1)) :=
+            List.take_append_of_le_length hkle
+          rw [e1, e2, hune, htk, ih Bq hlbq hcbq d p.2 false false]
+          simp [List.append_assoc]
+      · rw [convC_cons_nolad p r d plev first force (by simpa using hl)]
+        rw [List.cons_append,
+          convC_cons_nolad p (r ++ [((0, 0) : ℕ × ℕ)]) d plev first force (by simpa using hl)]
+        rw [e1, e2, ih _ hlB hcB d p.2 false false]
+        simp [List.append_assoc]
+
+/-- 末尾が `(0,0)` の列は、どの `n` でも末尾を落とすだけ。 -/
+theorem oper_snoc_zero {M : PairSeq} (hM : M ≠ []) (n : ℕ) :
+    (M ++ [((0, 0) : ℕ × ℕ)])⟦n⟧ = M := by
+  have hlen : (M ++ [((0, 0) : ℕ × ℕ)]).length = M.length + 1 := by simp
+  have hpos : 0 < M.length := List.length_pos_of_ne_nil hM
+  have hL : (M ++ [((0, 0) : ℕ × ℕ)]).length - 1 ≠ 0 := by omega
+  have hidx : (M ++ [((0, 0) : ℕ × ℕ)]).length - 1 = M.length := by omega
+  have hget : (M ++ [((0, 0) : ℕ × ℕ)]).getD ((M ++ [((0, 0) : ℕ × ℕ)]).length - 1) (0, 0)
+      = ((0, 0) : ℕ × ℕ) := by
+    rw [hidx, List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega)]
+    simp
+  have hz : entry (M ++ [((0, 0) : ℕ × ℕ)]) 0 ((M ++ [((0, 0) : ℕ × ℕ)]).length - 1) = 0 ∧
+      entry (M ++ [((0, 0) : ℕ × ℕ)]) 1 ((M ++ [((0, 0) : ℕ × ℕ)]).length - 1) = 0 := by
+    constructor
+    · rw [entry, if_pos rfl, hget]
+    · rw [entry, if_neg (by omega), hget]
+  rw [oper_eq_pred_of_zero n hL hz, Pred, if_neg (by omega)]
+  simp
+
+/-- **succ regime**: 末尾が `(0,0)` なら、両側とも「末尾を落とす」で一致する。 -/
+theorem reindexD_succ {M : PairSeq} (hM : M ≠ []) (hc : colOK M) (m n : ℕ) :
+    (conC (M ++ [((0, 0) : ℕ × ℕ)]))⟦m⟧ = conC ((M ++ [((0, 0) : ℕ × ℕ)])⟦n⟧) := by
+  have hsnoc : conC (M ++ [((0, 0) : ℕ × ℕ)]) = conC M ++ [((0, 0) : ℕ × ℕ)] := by
+    rw [conC, conC]
+    exact convC_snoc_zero M.length M (Nat.le_refl _) hc 0 0 true false
+  have hCne : conC M ≠ [] := by
+    rw [conC, ne_eq, convC_eq_nil_iff]
+    exact hM
+  rw [hsnoc, oper_snoc_zero hCne m, oper_snoc_zero hM n]
 
 /-! ## 3. 要 — REINDEX -/
 
@@ -150,3 +349,5 @@ end DBMS
 #print axioms DBMS.ST_D_conC
 #print axioms DBMS.ST_D_descend
 #print axioms DBMS.diag_cofinal
+#print axioms DBMS.reindexD_succ
+#print axioms DBMS.convC_snoc_zero
