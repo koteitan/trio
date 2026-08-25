@@ -5577,3 +5577,11 @@ end DBMS
 #print axioms DBMS.ladOf_false_of_ne
 #print axioms DBMS.convC_force_ne
 #print axioms DBMS.convC_force_arg_ne
+#print axioms DBMS.drop_append_len
+#print axioms DBMS.getLastD_snoc
+#print axioms DBMS.split_takeWhile
+#print axioms DBMS.getLastD_cons_ne
+#print axioms DBMS.argPatOK_nil
+#print axioms DBMS.argPatOK_cons
+#print axioms DBMS.takeWhile_infix_cons
+#print axioms DBMS.dropWhile_infix_cons

@@ -37,6 +37,19 @@
 | `convC_single` / `convC_dropLast_singleton`（末尾ブロックが 1 列） | `DbmsStd.lean` |
 | `convC_dropLast_arg` / `_tail` / `_lad_none` / `_contr`（**dropLast の帰納の 4 段**） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
+| `convC_dropLast_noParent_aux` / `_noParent`（**場合 (b): 親がなければ dropLast は可換**、`contrOK` つき） | `DbmsStd.lean` |
+| `contrOK`（def）/ `contrOK_suffix` / `contrOK_of_last_zero`（段 0 なら自動） | `DbmsStd.lean` |
+| `hasParent_last_append` / `noParent_suffix`（親のなさは接尾辞に遺伝） | `DbmsStd.lean` |
+| `convC_exists_shallow1` / `oper_append_convC1`（**場合 (c) の段 > 0**） | `DbmsStd.lean` |
+| `convC_getLast_min` / `oper_repeat_root` / `conC_cons_zero` / `reindexD_node0`（**場合 (d) の根・段 0**） | `DbmsStd.lean` |
+| `noParent_arg_node1` / `convC_dropLast_node1` / `conC_dropLast_node1` | `DbmsStd.lean` |
+| `convC_run_first` / `convC_run_lad` / `oper_repeat_at` / `convC_dropLast_min` | `DbmsStd.lean` |
+| `reindexD_node0_gen` / `reindexD_node0_lad`（**場合 (d) のブロック版・段 0**、梯子なし／あり） | `DbmsStd.lean` |
+| `reindexD_zero_block` / `reindexD_pos_block`（**右端の道に沿った帰納の組み立て**） | `DbmsStd.lean` |
+| `reindexD_holds_of_res` / `ST_D_conC_holds_of_res`（**残余 `RDzeroRes` / `RDposRes` から結論**） | `DbmsStd.lean` |
+| `adj3` / `noAdj3` / `noAdj3_ST_PS`（**BMS 標準形に禁止形 `(0,0)(1,1)(2,1)(3,2)` 型は現れない**） | `DbmsStd.lean` |
+| `headPatOK` / `argPatOK` / `argPatOK_ST_PS`（禁止形のブロック版） | `DbmsStd.lean` |
+| `convC_force_head` / `convC_arg_force_eq` / `convC_force_ne` / `convC_force_arg_ne`（`force` を消す道具） | `DbmsStd.lean` |
 
 いずれも sorry 0。
 
@@ -946,3 +959,58 @@ convC (B⟦n⟧) 1 1 true force = (2,1)(3,1)(4,2)(3,1)(4,2) （5 列）
 | 禁止形の全数走査 | `rows2.gen('BMS',10)` の 2073826 個で違反 0 |
 | `RDposRes` の反例探索 | ブロックを全列挙して `(convC B)⟦m⟧ = convC (B⟦n'⟧)` を探索（≤5 列） |
 | `contrOK` の反例 | 標準形の全ブロックで `contrLen … = some ([x],[])` を検査 |
+
+## 2026-08-26（検証）: 現状のまとめ
+
+`leanman check -m verify -C lean DbmsStd.lean` は **exit 0（green）**、`sorry` は 0、
+`#print axioms` は全部 `[propext, Classical.choice, Quot.sound]`（`sorryAx` なし）。
+`DbmsStd.lean` は 5587 行。
+
+### いま証明できている一番強い形
+
+```
+ST_D_conC_holds_of_res : RDzeroRes → RDposRes → ∀ M, ST_PS M → 1 < |M| → ST_D (conC M)
+```
+
+つまり **`ReindexD` は条件つきでしか出ていない**。無条件の `reindexD_holds` は未証明で、
+しかも現在の `RDposRes` はそのままでは**偽**（反例 `B = (1,1)(2,2)(2,1)(3,2)(3,1)`、
+「続き 3」参照）。ただしその反例は今回証明した `headPatOK` / `noAdj3_ST_PS` で
+排除されるので、直し方は分かっている。
+
+### 残り作業（優先順）
+
+1. `reindexD_zero_block` / `reindexD_pos_block` の不変量に
+   `argPatOK B` と `first = true → headPatOK B plev` と
+   `force = true → (B.headI).2 ≠ plev + 1` を足した**新しい版**を書く
+   （`DbmsStd.lean` は追記のみなので既存版は残したまま別名で作る）。
+   これに合わせて `RDzeroRes` / `RDposRes` も書き直す。道具は全部揃っている:
+   引数ブロックへ降りるときの `headPatOK` は `argPatOK_cons` の第 1 成分、
+   兄弟ブロックは `first = false` なので `force` が立たず不要、
+   根は `d = 0 ≤ plev + 1` で `convC_force`。各 200 行程度の機械的な作業。
+2. `convC_dropLast_noParent_aux` の仮定 `contrOK` を「梯子が実際に立つ位置でしか
+   縮約を見ない」形に弱める（段 > 0 の場合 (b)）。
+   **`ST_PS M → contrOK M` は偽**（標準形 ≤8 列の「親なし・段 > 0」ブロック 64419 個中
+   142 個が反例、例 `(4,4)(4,3)(5,4)(5,3)`）なので、この弱化は避けられない。
+3. **ずれたコピーの補題**（場合 (d) の段 > 0、shift regime）:
+
+   ```
+   conC ((range n).flatMap (fun k => (k*a, 0) :: shift0 (k*a) R))
+     = (0,0) :: (range n).flatMap (fun k => shift0 (k*a) (convC R 1 0 true false))
+   ```
+
+   `a = d0 ≥ 2`、`R = A.dropLast`。段 0 と違いコピーの頭の深さが増えるので
+   コピー `k+1` はコピー `k` の木の中（兄弟の位置）に入る。
+   `M⟦n+1⟧ = M.dropLast ++ shift0 a (M⟦n⟧)` なので `n` の帰納には乗るが、
+   1 段ぶんが前置きの因子化 `conC (G ++ X) = P ++ convC X …` そのもので、
+   `first = true` の道で縮約が `X` を覗くと崩れる。
+4. **梯子つきの段で縮約が起こる場合**（`reindexD_sib_lad` の仮定 `hnc`、contr regime）。
+   実測では ≤10 列 2073826 個のうち 180 個だけ。
+
+### 実測の裏づけ（すべて違反 0）
+
+| | |
+|---|---|
+| `ReindexD` 本体（`tools/dbms/reindex.py`） | 標準形 ≤10 列 2073826 個 |
+| 禁止形 `noAdj3`（`rows2.gen('BMS',10)`） | 同上 |
+| 場合 (c) の証人の存在 | `blockok` ブロック ≤5 列、`d`/`plev` ≤ 3、`bd` ≤ 2 で 2482560 例 |
+| 場合 (d) の段 0 の可換性 | 標準形 ≤8 列の該当 5362 個、`n = 1,2,3` |
