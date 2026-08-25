@@ -3636,6 +3636,215 @@ theorem reindexD_arg_step {p : ℕ × ℕ} {Arg : PairSeq} {d plev : ℕ} {first
       exact oper_append_convC1_auto _ Arg m hb hpT1 hDlen hz
         (by rw [idx1_convC]; exact h0)
 
+/-! ## 4.4 1 段降りる補題（統一形）
+
+兄弟へ降りる場合と引数へ降りる場合の違いは、因子化が成り立つための
+「`T` についての条件 `P`」だけである（兄弟なら「先頭が浅い」、
+引数なら「全部深い」）。どちらも展開 `T ↦ T⟦n⟧` で保たれるので、
+1 つの補題にまとめられる。 -/
+
+/-- **右端の道を 1 段降りる（統一形）。** -/
+theorem reindexD_step_gen {G T C : PairSeq} {bd d plev d' plev' : ℕ}
+    {first force first' force' : Bool} {P : PairSeq → Prop}
+    (hfac : ∀ L : PairSeq, P L →
+        convC (G ++ L) d plev first force = C ++ convC L d' plev' first' force')
+    (hPT : P T) (hPop : 1 < T.length → ∀ n : ℕ, 1 ≤ n → P (T⟦n⟧))
+    (hb : blockok bd T) (hcT : colOK T) (hdT : descOK T) (hbd : bd ≤ d')
+    (hzT : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hpB : hasParent (G ++ T) (idx1 T (T.length - 1)) (G.length + (T.length - 1)))
+    (hgeB : G.length ≤ parent (G ++ T) (idx1 T (T.length - 1)) (G.length + (T.length - 1)))
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+            (convC T d' plev' first' force')⟦m⟧ = convC (T⟦n'⟧) d' plev' first' force') :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (G ++ T) d plev first force)⟦m⟧ = convC ((G ++ T)⟦n'⟧) d plev first force := by
+  have hlt := nextR_index_lt (parent_nextR hpB)
+  have hT2 : 2 ≤ T.length := by omega
+  have hT1 : 1 < T.length := by omega
+  obtain ⟨hpT, -⟩ := hasParent_append_of_parent_ge G T hpB hgeB
+  have hDlen : 2 ≤ (convC T d' plev' first' force').length := by
+    have := convC_length_ge_two hT1 d' plev' first' force'; omega
+  refine reindexD_descend (T := T) (G := G) (C := C)
+    (d' := d') (plev' := plev') (first' := first') (force' := force')
+    (hfac T hPT) (fun n hn => hfac (T⟦n⟧) (hPop hT1 n hn))
+    (fun n => oper_append_of_parent_ge G T n hT2 hzT hpB hgeB) ?_ IH
+  intro m
+  by_cases h0 : idx1 T (T.length - 1) = 0
+  · have hlast : bd < (T.getLastD (0, 0)).1 := by
+      obtain ⟨j0, hj0, -⟩ := hpT
+      rw [h0] at hj0
+      have hnr : nextrel0 T j0 (T.length - 1) := by
+        unfold nextR at hj0; rw [if_pos rfl] at hj0; exact hj0
+      have hmem : T.getD j0 (0, 0) ∈ T := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hnr.1]
+        simpa using List.getElem_mem hnr.1
+      have hge : bd ≤ entry T 0 j0 := by
+        rw [entry, if_pos rfl]; exact hb.2.1 _ hmem
+      have hgt := hnr.2.2.2.1
+      rw [entry_last0] at hgt
+      omega
+    have hz : ¬ (entry (convC T d' plev' first' force')
+                  0 ((convC T d' plev' first' force').length - 1) = 0 ∧
+                 entry (convC T d' plev' first' force')
+                  1 ((convC T d' plev' first' force').length - 1) = 0) := by
+      rintro ⟨h1, -⟩
+      have hgt := convC_getLast_depth T.length T (Nat.le_refl _) bd d' plev'
+        first' force' hb hlast
+      rw [entry_last0] at h1
+      omega
+    exact oper_append_convC_gen _ T m hb hcT hdT hbd hlast hDlen hz
+      (by rw [idx1_convC]; exact h0)
+  · have h1T : 0 < entry T 1 (T.length - 1) := by
+      by_contra hc
+      exact h0 (by rw [idx1, if_neg (by omega)])
+    have hpT1 : hasParent T 1 (T.length - 1) := by
+      have he : idx1 T (T.length - 1) = 1 := by rw [idx1, if_pos h1T]
+      rw [he] at hpT; exact hpT
+    have hz : ¬ (entry (convC T d' plev' first' force')
+                  0 ((convC T d' plev' first' force').length - 1) = 0 ∧
+                 entry (convC T d' plev' first' force')
+                  1 ((convC T d' plev' first' force').length - 1) = 0) := by
+      rintro ⟨-, h2⟩
+      rw [entry_last, convC_getLast_level T.length T (Nat.le_refl _) d' plev'
+        first' force'] at h2
+      rw [entry_last] at h1T
+      omega
+    exact oper_append_convC1_auto _ T m hb hpT1 hDlen hz
+      (by rw [idx1_convC]; exact h0)
+
+/-! ## 4.5 梯子が立つ段での因子化
+
+梯子が立つ段では像の頭が影の列 `(d, plev)` になる。兄弟が空なら縮約は
+起こりようがない（`contrLen p [] k A = none`）ので、引数へは無条件に降りられる。 -/
+
+theorem contrLen_nil (p : ℕ × ℕ) (k : ℕ) (A : PairSeq) : contrLen p [] k A = none := by
+  rw [contrLen]
+  simp
+
+/-- **梯子つきの引数への因子化。** -/
+theorem convC_factor_arg_lad (p : ℕ × ℕ) (Arg : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hlad : ladOf p.2 d plev first force = true) :
+    convC (p :: Arg) d plev first force
+      = [(d, plev), (d + 1, p.2)] ++ convC Arg (d + 2) p.2 true false := by
+  obtain ⟨e1, e2⟩ := split_append (dd := p.1) hArg (Or.inl (rfl : ([] : PairSeq) = []))
+  have hAt : (Arg.takeWhile fun q => p.1 < q.1) = Arg := by simpa using e1
+  have hAe : (Arg.dropWhile fun q => p.1 < q.1) = [] := by simpa using e2
+  rw [convC_cons_lad_none p Arg d plev first force hlad
+      (by rw [hAe]; exact contrLen_nil _ _ _), hAe, hAt]
+  simp
+
+/-- **梯子つきの兄弟への因子化**（縮約が起きない場合）。 -/
+theorem convC_factor_sib_lad (p : ℕ × ℕ) (Arg T : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hT : T = [] ∨ ¬ (p.1 < (T.headI).1))
+    (hlad : ladOf p.2 d plev first force = true)
+    (hnc : contrLen p T (unitsLen p T) Arg = none) :
+    convC (p :: (Arg ++ T)) d plev first force
+      = ((d, plev) :: (d + 1, p.2) :: convC Arg (d + 2) p.2 true false)
+        ++ convC T d p.2 false false := by
+  obtain ⟨e1, e2⟩ := split_append (dd := p.1) hArg hT
+  rw [convC_cons_lad_none p (Arg ++ T) d plev first force hlad (by rw [e1, e2]; exact hnc),
+    e1, e2]
+  simp
+
+/-! ## 4.6 4 通りの降下
+
+`convC` の再帰の 1 段で降りる先は「引数」か「兄弟」、
+その段で梯子が立つか立たないかで 4 通り。縮約が発火する段だけが残る。 -/
+
+/-- 梯子なしで引数へ。 -/
+theorem reindexD_arg_nolad {p : ℕ × ℕ} {Arg : PairSeq} {d plev : ℕ} {first force : Bool}
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hlad : ladOf p.2 d plev first force = false)
+    (hb : blockok (p.1 + 1) Arg) (hcA : colOK Arg) (hdA : descOK Arg) (hbd : p.1 ≤ d)
+    (hzA : ¬ (entry Arg 0 (Arg.length - 1) = 0 ∧ entry Arg 1 (Arg.length - 1) = 0))
+    (hpB : hasParent ([p] ++ Arg) (idx1 Arg (Arg.length - 1))
+             (([p] : PairSeq).length + (Arg.length - 1)))
+    (hgeB : ([p] : PairSeq).length ≤ parent ([p] ++ Arg) (idx1 Arg (Arg.length - 1))
+             (([p] : PairSeq).length + (Arg.length - 1)))
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+        (convC Arg (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev)))⟦m⟧
+          = convC (Arg⟦n'⟧) (ddOf p.2 d plev first force + 1) p.2 true
+              (first && (p.2 == plev))) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC ([p] ++ Arg) d plev first force)⟦m⟧
+        = convC (([p] ++ Arg)⟦n'⟧) d plev first force :=
+  reindexD_step_gen (P := fun L => ∀ x ∈ L, p.1 < x.1)
+    (fun L hL => convC_factor_arg p L d plev first force hL hlad)
+    hArg (fun _ n => fun _ => oper_depth_gt hArg n)
+    hb hcA hdA (by have := le_ddOf p.2 d plev first force; omega) hzA hpB hgeB IH
+
+/-- 梯子つきで引数へ（縮約は起こりようがない）。 -/
+theorem reindexD_arg_lad {p : ℕ × ℕ} {Arg : PairSeq} {d plev : ℕ} {first force : Bool}
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hlad : ladOf p.2 d plev first force = true)
+    (hb : blockok (p.1 + 1) Arg) (hcA : colOK Arg) (hdA : descOK Arg) (hbd : p.1 ≤ d)
+    (hzA : ¬ (entry Arg 0 (Arg.length - 1) = 0 ∧ entry Arg 1 (Arg.length - 1) = 0))
+    (hpB : hasParent ([p] ++ Arg) (idx1 Arg (Arg.length - 1))
+             (([p] : PairSeq).length + (Arg.length - 1)))
+    (hgeB : ([p] : PairSeq).length ≤ parent ([p] ++ Arg) (idx1 Arg (Arg.length - 1))
+             (([p] : PairSeq).length + (Arg.length - 1)))
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+        (convC Arg (d + 2) p.2 true false)⟦m⟧ = convC (Arg⟦n'⟧) (d + 2) p.2 true false) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC ([p] ++ Arg) d plev first force)⟦m⟧
+        = convC (([p] ++ Arg)⟦n'⟧) d plev first force :=
+  reindexD_step_gen (P := fun L => ∀ x ∈ L, p.1 < x.1)
+    (fun L hL => convC_factor_arg_lad p L d plev first force hL hlad)
+    hArg (fun _ n => fun _ => oper_depth_gt hArg n)
+    hb hcA hdA (by omega) hzA hpB hgeB IH
+
+/-- 梯子なしで兄弟へ。 -/
+theorem reindexD_sib_nolad {p : ℕ × ℕ} {Arg T : PairSeq} {d plev : ℕ} {first force : Bool}
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hTh : ¬ (p.1 < (T.headI).1))
+    (hlad : ladOf p.2 d plev first force = false)
+    (hb : blockok p.1 T) (hcT : colOK T) (hdT : descOK T) (hbd : p.1 ≤ d)
+    (hzT : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hpB : hasParent ((p :: Arg) ++ T) (idx1 T (T.length - 1))
+             ((p :: Arg).length + (T.length - 1)))
+    (hgeB : (p :: Arg).length ≤ parent ((p :: Arg) ++ T) (idx1 T (T.length - 1))
+             ((p :: Arg).length + (T.length - 1)))
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+            (convC T d p.2 false false)⟦m⟧ = convC (T⟦n'⟧) d p.2 false false) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC ((p :: Arg) ++ T) d plev first force)⟦m⟧
+        = convC (((p :: Arg) ++ T)⟦n'⟧) d plev first force :=
+  reindexD_step_gen (G := p :: Arg) (T := T) (P := fun L => ¬ (p.1 < (L.headI).1))
+    (fun L hL => by
+      rw [List.cons_append]
+      exact convC_factor_sib p Arg L d plev first force hArg (Or.inr hL) hlad)
+    hTh (fun hL n hn => by
+      show ¬ (p.1 < ((T⟦n⟧).headI).1)
+      rw [oper_headI hL hn]; exact hTh)
+    hb hcT hdT hbd hzT hpB hgeB IH
+
+/-- 梯子つきで兄弟へ（その段で縮約が起きない場合）。 -/
+theorem reindexD_sib_lad {p : ℕ × ℕ} {Arg T : PairSeq} {d plev : ℕ} {first force : Bool}
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hTh : ¬ (p.1 < (T.headI).1))
+    (hlad : ladOf p.2 d plev first force = true)
+    (hnc : ∀ L : PairSeq, contrLen p L (unitsLen p L) Arg = none)
+    (hb : blockok p.1 T) (hcT : colOK T) (hdT : descOK T) (hbd : p.1 ≤ d)
+    (hzT : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hpB : hasParent ((p :: Arg) ++ T) (idx1 T (T.length - 1))
+             ((p :: Arg).length + (T.length - 1)))
+    (hgeB : (p :: Arg).length ≤ parent ((p :: Arg) ++ T) (idx1 T (T.length - 1))
+             ((p :: Arg).length + (T.length - 1)))
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+            (convC T d p.2 false false)⟦m⟧ = convC (T⟦n'⟧) d p.2 false false) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC ((p :: Arg) ++ T) d plev first force)⟦m⟧
+        = convC (((p :: Arg) ++ T)⟦n'⟧) d plev first force :=
+  reindexD_step_gen (G := p :: Arg) (T := T) (P := fun L => ¬ (p.1 < (L.headI).1))
+    (fun L hL => by
+      rw [List.cons_append]
+      exact convC_factor_sib_lad p Arg L d plev first force hArg (Or.inr hL) hlad (hnc L))
+    hTh (fun hL n hn => by
+      show ¬ (p.1 < ((T⟦n⟧).headI).1)
+      rw [oper_headI hL hn]; exact hTh)
+    hb hcT hdT hbd hzT hpB hgeB IH
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -3719,3 +3928,11 @@ end DBMS
 #print axioms DBMS.oper_append_convC_gen
 #print axioms DBMS.oper_depth_gt
 #print axioms DBMS.reindexD_arg_step
+#print axioms DBMS.reindexD_step_gen
+#print axioms DBMS.contrLen_nil
+#print axioms DBMS.convC_factor_arg_lad
+#print axioms DBMS.convC_factor_sib_lad
+#print axioms DBMS.reindexD_arg_nolad
+#print axioms DBMS.reindexD_arg_lad
+#print axioms DBMS.reindexD_sib_nolad
+#print axioms DBMS.reindexD_sib_lad
