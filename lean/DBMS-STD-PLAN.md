@@ -23,6 +23,7 @@
 | `conC_run_top`（`conC (blk^n) = blk'^n`、`blk` の根が `(0,0)`） | `DbmsStd.lean` |
 | `oper_one`（`M⟦1⟧ = M.dropLast`、枝によらず） | `DbmsStd.lean` |
 | `hasParent_append_of_parent_ge` / `oper_append_of_parent_ge`（**親が接尾辞にあれば局所化**） | `DbmsStd.lean` |
+| `convC_getLast_ge` / `convC_getLast_depth`（像の末尾列の深さ） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
 
 いずれも sorry 0。
@@ -275,7 +276,11 @@ convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast
 BMS の親が B の中  →  |cols ++ convC Arg| ≤ parent (convC M ...) i (末尾)
 ```
 
-（実測では例外 0。`convC B` の中に「段がより小さい行 0 の祖先」があることを言えばよい。）
+（実測では例外 0。`convC B` の中に「段がより小さい行 0 の祖先」があることを言えばよい。
+`nextR` の始点は一意なので、**接尾辞の中に 1 つ証人を出せば**それが親になる。
+段 0 の場合（`i = 0`）なら「`convC B` の中に末尾より浅い列がある」で足りる。
+`convC_getLast_depth` で末尾は深さ `d` より深いとわかるので、
+`convC B` の先頭が深さ `d` なら先頭が証人になる。残るのは先頭が `b+1` の場合。）
 
 もう 1 つ、`convC ((p :: Arg) ++ B⟦n⟧) = cols ++ convC Arg ++ convC (B⟦n⟧)` も要る。
 `B⟦n⟧` の先頭は `B` の先頭と同じなので切り分けは同じだが、縮約の判定が変わりうる。
