@@ -3259,6 +3259,249 @@ theorem reindexD_descend {M T G C : PairSeq} {d plev d' plev' : ℕ}
   refine ⟨m, n', hm, hnn, ?_⟩
   rw [hconv, hDBMS, heq, hBMS, hconv' n' (le_trans hn hnn)]
 
+/-! ## 4.1 場合 (c): 兄弟ブロックへ 1 段降りる
+
+`M = (p :: Arg) ++ T`（`Arg` は `p` の引数、`T` は兄弟ブロック）で、
+BMS の親が `T` の中にあるとき、両側とも `T` / `convC T` に局所化できる。
+必要な仮定は「梯子が立たない」（`first = false` なら自動）とブロックの規律だけ。 -/
+
+/-- **場合 (c) の 1 段（兄弟ブロックへ降りる）。** -/
+theorem reindexD_sib_step {p : ℕ × ℕ} {Arg T : PairSeq} {d plev : ℕ} {first force : Bool}
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hTh : ¬ (p.1 < (T.headI).1))
+    (hlad : ladOf p.2 d plev first force = false)
+    (hb : blockok p.1 T) (hcT : colOK T) (hdT : descOK T) (hbd : p.1 ≤ d)
+    (hzT : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hpB : hasParent ((p :: Arg) ++ T) (idx1 T (T.length - 1))
+             ((p :: Arg).length + (T.length - 1)))
+    (hgeB : (p :: Arg).length ≤ parent ((p :: Arg) ++ T) (idx1 T (T.length - 1))
+             ((p :: Arg).length + (T.length - 1)))
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+            (convC T d p.2 false false)⟦m⟧ = convC (T⟦n'⟧) d p.2 false false) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC ((p :: Arg) ++ T) d plev first force)⟦m⟧
+        = convC (((p :: Arg) ++ T)⟦n'⟧) d plev first force := by
+  have hlt := nextR_index_lt (parent_nextR hpB)
+  have hT2 : 2 ≤ T.length := by omega
+  have hT1 : 1 < T.length := by omega
+  obtain ⟨hpT, -⟩ := hasParent_append_of_parent_ge (p :: Arg) T hpB hgeB
+  have hDlen : 2 ≤ (convC T d p.2 false false).length := by
+    have := convC_length_ge_two hT1 d p.2 false false; omega
+  refine reindexD_descend (T := T) (G := p :: Arg) (d' := d) (plev' := p.2)
+    (first' := false) (force' := false)
+    (C := (ddOf p.2 d plev first force, p.2)
+            :: convC Arg (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev)))
+    ?_ ?_ ?_ ?_ IH
+  · rw [List.cons_append]
+    exact convC_factor_sib p Arg T d plev first force hArg (Or.inr hTh) hlad
+  · intro n hn
+    rw [List.cons_append]
+    exact convC_factor_sib p Arg (T⟦n⟧) d plev first force hArg
+      (Or.inr (by rw [oper_headI hT1 hn]; exact hTh)) hlad
+  · intro n
+    exact oper_append_of_parent_ge (p :: Arg) T n hT2 hzT hpB hgeB
+  · intro m
+    by_cases h0 : idx1 T (T.length - 1) = 0
+    · have hlast : p.1 < (T.getLastD (0, 0)).1 := by
+        obtain ⟨j0, hj0, -⟩ := hpT
+        rw [h0] at hj0
+        have hnr : nextrel0 T j0 (T.length - 1) := by
+          unfold nextR at hj0; rw [if_pos rfl] at hj0; exact hj0
+        have hmem : T.getD j0 (0, 0) ∈ T := by
+          rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hnr.1]
+          simpa using List.getElem_mem hnr.1
+        have hge : p.1 ≤ entry T 0 j0 := by
+          rw [entry, if_pos rfl]; exact hb.2.1 _ hmem
+        have hgt := hnr.2.2.2.1
+        rw [entry_last0] at hgt
+        omega
+      have hz : ¬ (entry (convC T d p.2 false false)
+                    0 ((convC T d p.2 false false).length - 1) = 0 ∧
+                   entry (convC T d p.2 false false)
+                    1 ((convC T d p.2 false false).length - 1) = 0) := by
+        rintro ⟨h1, -⟩
+        have hgt := convC_getLast_depth T.length T (Nat.le_refl _) p.1 d p.2 false false hb hlast
+        rw [entry_last0] at h1
+        omega
+      exact oper_append_convC_auto _ T m hb hcT hdT hbd hlast hDlen hz
+        (by rw [idx1_convC]; exact h0)
+    · have h1T : 0 < entry T 1 (T.length - 1) := by
+        by_contra hc
+        exact h0 (by rw [idx1, if_neg (by omega)])
+      have hpT1 : hasParent T 1 (T.length - 1) := by
+        have he : idx1 T (T.length - 1) = 1 := by rw [idx1, if_pos h1T]
+        rw [he] at hpT; exact hpT
+      have hz : ¬ (entry (convC T d p.2 false false)
+                    0 ((convC T d p.2 false false).length - 1) = 0 ∧
+                   entry (convC T d p.2 false false)
+                    1 ((convC T d p.2 false false).length - 1) = 0) := by
+        rintro ⟨-, h2⟩
+        rw [entry_last,
+          convC_getLast_level T.length T (Nat.le_refl _) d p.2 false false] at h2
+        rw [entry_last] at h1T
+        omega
+      exact oper_append_convC1_auto _ T m hb hpT1 hDlen hz
+        (by rw [idx1_convC]; exact h0)
+
+/-! ## 4.2 段 0 の証人（`first` / `force` が一般の場合）
+
+`convC_exists_shallow` は `first = false` の呼び出しにしか使えなかったが、
+引数ブロックへ降りるときは `first = true` で呼ばれる。証明はほとんど同じで、
+**梯子が立つときは像の先頭が影の列 `(d, plev)` なので、先頭がそのまま証人**になる。
+残るのは「梯子なしで先頭が深さ `y + 1` に置かれる」場合だけで、
+これは `y = d = bd` に限られる（もとの証明と同じ）。 -/
+
+theorem convC_exists_shallow_gen : ∀ (n : ℕ) (B : PairSeq), B.length ≤ n →
+    ∀ (bd d plev : ℕ) (first force : Bool),
+    blockok bd B → colOK B → descOK B → bd ≤ d →
+    bd < (B.getLastD (0, 0)).1 →
+    ∃ k, k < (convC B d plev first force).length - 1 ∧
+      entry (convC B d plev first force) 0 k
+        < entry (convC B d plev first force) 0 ((convC B d plev first force).length - 1) := by
+  intro n
+  induction n with
+  | zero =>
+    intro B hB bd d plev first force _ _ _ _ hlast
+    have : B = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    exact absurd hlast (by simp)
+  | succ n ih =>
+    intro B hB bd d plev first force hb hc hd hbd hlast
+    match B with
+    | [] => exact absurd hlast (by simp)
+    | p :: r =>
+      have hp : p.1 = bd := by simpa using hb.1 (by simp)
+      obtain ⟨y, rfl⟩ : ∃ y, p = (bd, y) := ⟨p.2, by rw [← hp]⟩
+      have hy : y ≤ bd := hc (bd, y) (by simp)
+      have hlen2 : 1 < ((bd, y) :: r).length := by
+        by_contra hcon
+        have hr : r = [] := by
+          match r with
+          | [] => rfl
+          | _ :: _ => simp at hcon
+        rw [hr] at hlast
+        simp only [List.getLastD_cons, List.getLastD_nil] at hlast
+        omega
+      have hOlen : 1 < (convC ((bd, y) :: r) d plev first force).length :=
+        convC_length_ge_two hlen2 d plev first force
+      have hlastdep : d < ((convC ((bd, y) :: r) d plev first force).getLastD (0, 0)).1 :=
+        convC_getLast_depth ((bd, y) :: r).length _ (Nat.le_refl _) bd d plev first force hb hlast
+      by_cases hhd : ((convC ((bd, y) :: r) d plev first force).headI).1 = d
+      · refine ⟨0, by omega, ?_⟩
+        rw [entry_zero0, entry_last0, hhd]
+        exact hlastdep
+      · have hnl : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force = false := by
+          by_cases hcon : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force = true
+          · exact absurd (by rw [convC_headI, if_pos hcon] : _ = d) hhd
+          · simpa using hcon
+        set dd := ddOf ((bd, y) : ℕ × ℕ).2 d plev first force with hdd
+        have hhd2 : ((convC ((bd, y) :: r) d plev first force).headI).1 = dd := by
+          rw [convC_headI, if_neg (by rw [hnl]; simp)]
+        have hdc : dd ≠ d := fun he => hhd (by rw [hhd2, he])
+        have hcase : 0 < y ∧ d ≤ y := by
+          by_contra hcon
+          apply hdc
+          rw [hdd]
+          unfold ddOf
+          rw [if_neg (by rw [hnl]; simp), if_neg (by simpa using hcon)]
+        have hyd : y = d := by omega
+        have hdd1 : dd = d + 1 := by
+          rw [hdd]
+          unfold ddOf
+          rw [if_neg (by rw [hnl]; simp), if_pos hcase]
+          omega
+        set A := r.takeWhile (fun q => ((bd, y) : ℕ × ℕ).1 < q.1) with hA
+        set B' := r.dropWhile (fun q => ((bd, y) : ℕ × ℕ).1 < q.1) with hB'
+        have hAB : r = A ++ B' := by rw [hA, hB', List.takeWhile_append_dropWhile]
+        have hbB' : blockok bd B' := by rw [hB']; exact blockok_tail hb
+        have hMlast : ((bd, y) :: r).getLastD (0, 0)
+            = if B' = [] then (if A = [] then ((bd, y) : ℕ × ℕ) else A.getLastD (0, 0))
+              else B'.getLastD (0, 0) := by
+          rw [hAB]
+          by_cases hBe : B' = []
+          · rw [hBe]
+            simp only [List.append_nil]
+            by_cases hAe : A = []
+            · rw [hAe, if_pos rfl]; simp
+            · rw [if_neg hAe, List.getLastD_cons]
+              exact getLastD_ne_nil_indep hAe _ _
+          · rw [if_neg hBe, List.getLastD_cons, getLastD_append_right hBe]
+            exact getLastD_ne_nil_indep hBe _ _
+        set X := convC A (dd + 1) ((bd, y) : ℕ × ℕ).2 true
+          (first && (((bd, y) : ℕ × ℕ).2 == plev)) with hX
+        set Y := convC B' d ((bd, y) : ℕ × ℕ).2 false false with hY
+        have hout : convC ((bd, y) :: r) d plev first force
+            = ((dd, ((bd, y) : ℕ × ℕ).2) :: X) ++ Y := by
+          rw [convC_cons_nolad ((bd, y) : ℕ × ℕ) r d plev first force hnl]
+          rw [← hA, ← hB', ← hdd, ← hX, ← hY, List.cons_append]
+        by_cases hBe : B' = []
+        · have hAe : A ≠ [] := by
+            intro he
+            rw [if_pos hBe, if_pos he] at hMlast
+            rw [hMlast] at hlast
+            simp only [] at hlast
+            omega
+          have hXne : X ≠ [] := by rw [hX]; intro he; rw [convC_eq_nil_iff] at he; exact hAe he
+          have hYnil : Y = [] := by rw [hY, hBe, convC_nil]
+          refine ⟨0, by omega, ?_⟩
+          rw [entry_zero0, entry_last0, hout, hYnil, List.append_nil]
+          simp only [List.headI_cons]
+          have hlx : ((dd, ((bd, y) : ℕ × ℕ).2) :: X).getLastD (0, 0) = X.getLastD (0, 0) := by
+            rw [List.getLastD_cons]
+            exact getLastD_ne_nil_indep hXne _ _
+          rw [hlx]
+          have hmem : X.getLastD (0, 0) ∈ convC A (dd + 1) ((bd, y) : ℕ × ℕ).2 true
+              (first && (((bd, y) : ℕ × ℕ).2 == plev)) := by
+            rw [← hX]; exact getLastD_mem hXne (0, 0)
+          have := convC_ge' A (dd + 1) ((bd, y) : ℕ × ℕ).2 true
+            (first && (((bd, y) : ℕ × ℕ).2 == plev)) _ hmem
+          omega
+        · have hlB' : B'.length ≤ n := by
+            have := List.length_dropWhile_le (fun q : ℕ × ℕ => ((bd, y) : ℕ × ℕ).1 < q.1) r
+            simp only [List.length_cons] at hB; rw [hB']; omega
+          have hcB' : colOK B' := fun cc hcm => hc cc
+            (List.mem_cons_of_mem _ (by rw [hB'] at hcm; exact (List.dropWhile_sublist _).subset hcm))
+          have hdB' : descOK B' := by rw [hB']; exact (descOK_cons.1 hd).2.2
+          have hlB2 : bd < (B'.getLastD (0, 0)).1 := by
+            rw [if_neg hBe] at hMlast; rw [← hMlast]; exact hlast
+          obtain ⟨k, hk1, hk2⟩ := ih B' hlB' bd d ((bd, y) : ℕ × ℕ).2 false false
+            hbB' hcB' hdB' hbd hlB2
+          have hYne : Y ≠ [] := by rw [hY]; intro he; rw [convC_eq_nil_iff] at he; exact hBe he
+          have hYlen : 0 < Y.length := List.length_pos_of_ne_nil hYne
+          refine ⟨((dd, ((bd, y) : ℕ × ℕ).2) :: X).length + k, ?_, ?_⟩
+          · rw [hout]
+            simp only [List.length_append]
+            rw [← hY] at hk1
+            omega
+          · rw [hout]
+            have he1 : (((dd, ((bd, y) : ℕ × ℕ).2) :: X) ++ Y).length - 1
+                = ((dd, ((bd, y) : ℕ × ℕ).2) :: X).length + (Y.length - 1) := by
+              simp only [List.length_append]; omega
+            rw [he1, entry_append_right, entry_append_right, hY]
+            exact hk2
+
+/-- 段 0 の局所化（`first` / `force` が一般の場合）。 -/
+theorem oper_append_convC_gen (A B : PairSeq) (n : ℕ) {bd d plev : ℕ} {first force : Bool}
+    (hb : blockok bd B) (hc : colOK B) (hdo : descOK B) (hbd : bd ≤ d)
+    (hlast : bd < (B.getLastD (0, 0)).1)
+    (hT : 2 ≤ (convC B d plev first force).length)
+    (hz : ¬ (entry (convC B d plev first force)
+              0 ((convC B d plev first force).length - 1) = 0 ∧
+             entry (convC B d plev first force)
+              1 ((convC B d plev first force).length - 1) = 0))
+    (hi : idx1 (convC B d plev first force)
+            ((convC B d plev first force).length - 1) = 0) :
+    (A ++ convC B d plev first force)⟦n⟧ = A ++ (convC B d plev first force)⟦n⟧ := by
+  obtain ⟨k, hk1, hk2⟩ := convC_exists_shallow_gen B.length B (Nat.le_refl _) bd d plev
+    first force hb hc hdo hbd hlast
+  have hp : hasParent (A ++ convC B d plev first force) 0
+      (A.length + ((convC B d plev first force).length - 1)) := by
+    refine hasParent0_of_exists (by rw [List.length_append]; omega)
+      ⟨A.length + k, by omega, ?_⟩
+    rw [entry_append_right, entry_append_right]
+    exact hk2
+  exact oper_append_of_shallow0 A _ n hT hz hi (by rw [hi]; exact hp) hk1 hk2
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -3337,3 +3580,6 @@ end DBMS
 #print axioms DBMS.oper_append_convC_auto
 #print axioms DBMS.oper_append_convC1_auto
 #print axioms DBMS.reindexD_descend
+#print axioms DBMS.reindexD_sib_step
+#print axioms DBMS.convC_exists_shallow_gen
+#print axioms DBMS.oper_append_convC_gen
