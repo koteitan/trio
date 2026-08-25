@@ -651,6 +651,67 @@ theorem oper_one {M : PairSeq} (hL : 1 < M.length) : M⟦1⟧ = M.dropLast := by
     rw [List.take_take, Nat.min_eq_left (le_of_lt hlt)]
   · rw [oper_eq_pred_of_noParent 1 hL1 hz hp, Pred, if_neg (by omega)]
 
+/-! ## 2.78 親が接尾辞にあるときの展開の局所化 -/
+
+/-- 親が接尾辞の中にあるなら、`hasParent` と `parent` は接尾辞に移せる。
+`Pair/Column.lean` の `hasParent_append_right` は `entry T 0 0 = 0` を仮定するが、
+「親が接尾辞にある」だけで十分（一意性から、どの `nextR` の始点も接尾辞に入る）。 -/
+theorem hasParent_append_of_parent_ge (A T : PairSeq) {i j1 : ℕ}
+    (hp : hasParent (A ++ T) i (A.length + j1))
+    (hge : A.length ≤ parent (A ++ T) i (A.length + j1)) :
+    hasParent T i j1 ∧
+      parent (A ++ T) i (A.length + j1) = A.length + parent T i j1 := by
+  set j0 := parent (A ++ T) i (A.length + j1) with hj0
+  have hnr : nextR (A ++ T) i j0 (A.length + j1) := parent_nextR hp
+  obtain ⟨j0', hj0'⟩ : ∃ j0', j0 = A.length + j0' := ⟨j0 - A.length, by omega⟩
+  have hnrT : nextR T i j0' j1 := by
+    rw [← nextR_append_right A T i j0' j1]
+    rw [hj0'] at hnr
+    exact hnr
+  have hunique : ∀ y, nextR T i y j1 → y = j0' := by
+    intro y hy
+    have h1 : nextR (A ++ T) i (A.length + y) (A.length + j1) :=
+      (nextR_append_right A T i y j1).2 hy
+    have := hp.unique h1 hnr
+    omega
+  have hpT : hasParent T i j1 := ⟨j0', hnrT, hunique⟩
+  refine ⟨hpT, ?_⟩
+  have : parent T i j1 = j0' := hunique _ (parent_nextR hpT)
+  rw [this, ← hj0']
+
+/-- **親が接尾辞にあるときの展開の局所化。** -/
+theorem oper_append_of_parent_ge (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
+    (hp : hasParent (A ++ T) (idx1 T (T.length - 1)) (A.length + (T.length - 1)))
+    (hge : A.length ≤ parent (A ++ T) (idx1 T (T.length - 1)) (A.length + (T.length - 1))) :
+    (A ++ T)⟦n⟧ = A ++ T⟦n⟧ := by
+  have hlenAT : (A ++ T).length - 1 = A.length + (T.length - 1) := by
+    rw [List.length_append]; omega
+  set j1 := T.length - 1 with hj1
+  have hne_AT : ¬ (A.length + j1 = 0) := by omega
+  have hne_T : ¬ (j1 = 0) := by omega
+  have he0 : entry (A ++ T) 0 (A.length + j1) = entry T 0 j1 := entry_append_right A T 0 j1
+  have he1 : entry (A ++ T) 1 (A.length + j1) = entry T 1 j1 := entry_append_right A T 1 j1
+  have hidx : idx1 (A ++ T) (A.length + j1) = idx1 T j1 := idx1_append_right A T j1
+  obtain ⟨hpT, hpar⟩ := hasParent_append_of_parent_ge A T hp hge
+  unfold oper
+  rw [hlenAT, if_neg hne_AT, if_neg hne_T, he0, he1, if_neg hz, if_neg hz, hidx,
+    if_neg (not_not.2 hp), if_neg (not_not.2 hpT), hpar]
+  set j0 := parent T (idx1 T j1) j1 with hj0
+  simp only []
+  have hd0 : entry T 0 j1 - entry (A ++ T) 0 (A.length + j0) = entry T 0 j1 - entry T 0 j0 := by
+    rw [entry_append_right]
+  have hd1 : entry T 1 j1 - entry (A ++ T) 1 (A.length + j0) = entry T 1 j1 - entry T 1 j0 := by
+    rw [entry_append_right]
+  rw [hd0, hd1]
+  have hrange : (A.length + j1) - (A.length + j0) = j1 - j0 := by omega
+  rw [hrange, take_append_right, List.append_assoc]
+  congr 1
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  exact copyblock_append A T j0 (j1 - j0) k _ _
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -765,3 +826,4 @@ end DBMS
 #print axioms DBMS.convC_force
 #print axioms DBMS.conC_run_top
 #print axioms DBMS.oper_one
+#print axioms DBMS.oper_append_of_parent_ge

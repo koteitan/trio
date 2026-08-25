@@ -22,6 +22,7 @@
 | `convC_force`（`d ≤ plev+1` なら `force` は効かない） | `DbmsStd.lean` |
 | `conC_run_top`（`conC (blk^n) = blk'^n`、`blk` の根が `(0,0)`） | `DbmsStd.lean` |
 | `oper_one`（`M⟦1⟧ = M.dropLast`、枝によらず） | `DbmsStd.lean` |
+| `hasParent_append_of_parent_ge` / `oper_append_of_parent_ge`（**親が接尾辞にあれば局所化**） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
 
 いずれも sorry 0。
@@ -43,10 +44,31 @@ shift は `m=n, n'=n+1`、contr は `m=n+1, n'=n`。
 lim=10  標準形 2073826  regime {id: 1556322, succ: 295014, shift: 222309, contr: 180}  違反 0
 ```
 
-## 通らなかった道: ブロックごとの局所化
+## 局所化は使える（2026-08-25 に解決）
 
-`A = p :: (Arg ++ B)` で `B` に局所化して帰納、が素直だが **DBMS 側で破れる**。
-破れるのは梯子を敷いた段だけで、原因は影の列（`tools/dbms/localize.py`）:
+当初「DBMS 側で局所化が破れる」と書いたが、**破れていたのは `rsum` を仮定する
+`oper_append_gen` が使えないだけ**だった。`Pair/Column.lean` の `hasParent_append_right`
+は `entry T 0 0 = 0`（接尾辞の頭が最浅）を仮定するが、これは
+
+    「親が接尾辞の中にある」
+
+に置き換えられる。`hasParent` は一意性つきなので、親が接尾辞にあれば
+**どの `nextR` の始点も接尾辞に入る**からである。これで
+
+```
+oper_append_of_parent_ge :
+  2 ≤ |T| → 末尾が (0,0) でない → hasParent (A ++ T) i (|A| + j1) →
+  |A| ≤ parent (A ++ T) i (|A| + j1) → (A ++ T)⟦n⟧ = A ++ T⟦n⟧
+```
+
+が仮定なしで出る（`DbmsStd.lean`、証明済み）。実測でも
+「BMS の親が `B` の中 ⟺ DBMS の親が `convC B` の中」は例外 0 なので、
+場合 (c) の帰納は両側で回る。
+
+### もとの観察（なぜ `rsum` が効かないか）
+
+`A = p :: (Arg ++ B)` で梯子を敷いた段では、影の列が `convC B` の頭より浅いので
+`rsum` が偽になる（≤8 列で梯子ありの 11437 段中 7134 段）。実例:
 
 ```
 M = (1,1)(2,1)(1,1)(2,1)          (d=1, plev=0, first, force)
