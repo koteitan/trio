@@ -3502,6 +3502,140 @@ theorem oper_append_convC_gen (A B : PairSeq) (n : ℕ) {bd d plev : ℕ} {first
     exact hk2
   exact oper_append_of_shallow0 A _ n hT hz hi (by rw [hi]; exact hp) hk1 hk2
 
+/-! ## 4.3 場合 (c): 引数ブロックへ 1 段降りる -/
+
+/-- 展開は列を深くしかしない。 -/
+theorem oper_depth_gt {M : PairSeq} {a : ℕ} (h : ∀ x ∈ M, a < x.1) (n : ℕ) :
+    ∀ x ∈ M⟦n⟧, a < x.1 := by
+  classical
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]; exact h
+  have hlen : 1 < M.length := by omega
+  by_cases hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz, Pred, if_neg (by omega)]
+    exact fun x hx => h x ((List.dropLast_sublist M).subset hx)
+  by_cases hp : hasParent M (idx1 M (M.length - 1)) (M.length - 1)
+  · rw [oper_bad_unfold n hL hz hp]
+    have hlt : parent M (idx1 M (M.length - 1)) (M.length - 1) < M.length - 1 :=
+      nextR_index_lt (parent_nextR hp)
+    intro x hx
+    rcases List.mem_append.1 hx with hx | hx
+    · exact h x ((List.take_sublist _ M).subset hx)
+    · rw [List.mem_flatMap] at hx
+      obtain ⟨k, -, hx⟩ := hx
+      rw [List.mem_map] at hx
+      obtain ⟨j, hj, rfl⟩ := hx
+      have hjr := List.mem_range'.1 hj
+      have hjlt : j < M.length := by omega
+      have hmem : M.getD j (0, 0) ∈ M := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hjlt]
+        simpa using List.getElem_mem hjlt
+      have hgt : a < entry M 0 j := by
+        rw [entry, if_pos rfl]; exact h _ hmem
+      simp only []
+      omega
+  · rw [oper_eq_pred_of_noParent n hL hz hp, Pred, if_neg (by omega)]
+    exact fun x hx => h x ((List.dropLast_sublist M).subset hx)
+
+/-- **場合 (c) の 1 段（引数ブロックへ降りる）。** -/
+theorem reindexD_arg_step {p : ℕ × ℕ} {Arg : PairSeq} {d plev : ℕ} {first force : Bool}
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hlad : ladOf p.2 d plev first force = false)
+    (hb : blockok (p.1 + 1) Arg) (hcA : colOK Arg) (hdA : descOK Arg) (hbd : p.1 ≤ d)
+    (hpB : hasParent ([p] ++ Arg) (idx1 Arg (Arg.length - 1))
+             (([p] : PairSeq).length + (Arg.length - 1)))
+    (hgeB : ([p] : PairSeq).length ≤ parent ([p] ++ Arg) (idx1 Arg (Arg.length - 1))
+             (([p] : PairSeq).length + (Arg.length - 1)))
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+        (convC Arg (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev)))⟦m⟧
+          = convC (Arg⟦n'⟧) (ddOf p.2 d plev first force + 1) p.2 true
+              (first && (p.2 == plev))) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC ([p] ++ Arg) d plev first force)⟦m⟧
+        = convC (([p] ++ Arg)⟦n'⟧) d plev first force := by
+  have hlt := nextR_index_lt (parent_nextR hpB)
+  have hlen1 : ([p] : PairSeq).length = 1 := rfl
+  rw [hlen1] at hlt hgeB
+  have hT2 : 2 ≤ Arg.length := by omega
+  have hT1 : 1 < Arg.length := by omega
+  have hAne : Arg ≠ [] := by intro he; rw [he] at hT1; simp at hT1
+  obtain ⟨hpT, -⟩ := hasParent_append_of_parent_ge [p] Arg hpB hgeB
+  have hlastmem : Arg.getLastD (0, 0) ∈ Arg := getLastD_mem hAne (0, 0)
+  have hzA : ¬ (entry Arg 0 (Arg.length - 1) = 0 ∧ entry Arg 1 (Arg.length - 1) = 0) := by
+    rintro ⟨h1, -⟩
+    rw [entry_last0] at h1
+    have := hArg _ hlastmem
+    omega
+  have hbd' : p.1 + 1 ≤ ddOf p.2 d plev first force + 1 := by
+    have := le_ddOf p.2 d plev first force
+    omega
+  have hDlen : 2 ≤ (convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+      (first && (p.2 == plev))).length := by
+    have := convC_length_ge_two hT1 (ddOf p.2 d plev first force + 1) p.2 true
+      (first && (p.2 == plev))
+    omega
+  refine reindexD_descend (T := Arg) (G := [p])
+    (d' := ddOf p.2 d plev first force + 1) (plev' := p.2)
+    (first' := true) (force' := first && (p.2 == plev))
+    (C := [(ddOf p.2 d plev first force, p.2)])
+    ?_ ?_ ?_ ?_ IH
+  · exact convC_factor_arg p Arg d plev first force hArg hlad
+  · intro n hn
+    exact convC_factor_arg p (Arg⟦n⟧) d plev first force (oper_depth_gt hArg n) hlad
+  · intro n
+    exact oper_append_of_parent_ge [p] Arg n hT2 hzA hpB hgeB
+  · intro m
+    by_cases h0 : idx1 Arg (Arg.length - 1) = 0
+    · have hlast : p.1 + 1 < (Arg.getLastD (0, 0)).1 := by
+        obtain ⟨j0, hj0, -⟩ := hpT
+        rw [h0] at hj0
+        have hnr : nextrel0 Arg j0 (Arg.length - 1) := by
+          unfold nextR at hj0; rw [if_pos rfl] at hj0; exact hj0
+        have hmem : Arg.getD j0 (0, 0) ∈ Arg := by
+          rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hnr.1]
+          simpa using List.getElem_mem hnr.1
+        have hge : p.1 + 1 ≤ entry Arg 0 j0 := by
+          rw [entry, if_pos rfl]; exact hb.2.1 _ hmem
+        have hgt := hnr.2.2.2.1
+        rw [entry_last0] at hgt
+        omega
+      have hz : ¬ (entry (convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                     (first && (p.2 == plev))) 0
+                     ((convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                       (first && (p.2 == plev))).length - 1) = 0 ∧
+                   entry (convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                     (first && (p.2 == plev))) 1
+                     ((convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                       (first && (p.2 == plev))).length - 1) = 0) := by
+        rintro ⟨h1, -⟩
+        have hgt := convC_getLast_depth Arg.length Arg (Nat.le_refl _) (p.1 + 1)
+          (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev)) hb hlast
+        rw [entry_last0] at h1
+        omega
+      exact oper_append_convC_gen _ Arg m hb hcA hdA hbd' hlast hDlen hz
+        (by rw [idx1_convC]; exact h0)
+    · have h1T : 0 < entry Arg 1 (Arg.length - 1) := by
+        by_contra hc
+        exact h0 (by rw [idx1, if_neg (by omega)])
+      have hpT1 : hasParent Arg 1 (Arg.length - 1) := by
+        have he : idx1 Arg (Arg.length - 1) = 1 := by rw [idx1, if_pos h1T]
+        rw [he] at hpT; exact hpT
+      have hz : ¬ (entry (convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                     (first && (p.2 == plev))) 0
+                     ((convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                       (first && (p.2 == plev))).length - 1) = 0 ∧
+                   entry (convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                     (first && (p.2 == plev))) 1
+                     ((convC Arg (ddOf p.2 d plev first force + 1) p.2 true
+                       (first && (p.2 == plev))).length - 1) = 0) := by
+        rintro ⟨-, h2⟩
+        rw [entry_last, convC_getLast_level Arg.length Arg (Nat.le_refl _)
+          (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev))] at h2
+        rw [entry_last] at h1T
+        omega
+      exact oper_append_convC1_auto _ Arg m hb hpT1 hDlen hz
+        (by rw [idx1_convC]; exact h0)
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -3583,3 +3717,5 @@ end DBMS
 #print axioms DBMS.reindexD_sib_step
 #print axioms DBMS.convC_exists_shallow_gen
 #print axioms DBMS.oper_append_convC_gen
+#print axioms DBMS.oper_depth_gt
+#print axioms DBMS.reindexD_arg_step
