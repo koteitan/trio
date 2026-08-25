@@ -6277,6 +6277,317 @@ theorem ctrHeadOK_root {M : PairSeq} (hb : blockok 0 M) (hcol : colOK M) :
 def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 
 
+
+/-! ### 段 > 0 で残っている 3 つの場合
+
+不変量を足したので、旧 `RDposRes`（偽）と違いどれも**実際に真**である
+（`tools/dbms` の全数検査: ブロック ≤5 列・`bd ≤ 2`・`plev ≤ 3` で反例 0、
+`RDlad2` 710 件 / `RDnopar` 77950 件 / `RDnode` 14827 件）。 -/
+
+/-- **1. 梯子つきで兄弟へ降りる段で縮約が起こりうる**（contr regime）。 -/
+def RDlad2 : Prop :=
+  ∀ (p : ℕ × ℕ) (A T : PairSeq) (bd d plev : ℕ) (first force : Bool),
+    blockok bd (p :: (A ++ T)) → colOK (p :: (A ++ T)) → descOK (p :: (A ++ T)) →
+    bd ≤ d → p.1 = bd → 2 ≤ (p :: (A ++ T)).length →
+    (∀ x ∈ A, p.1 < x.1) → (T = [] ∨ ¬ (p.1 < (T.headI).1)) →
+    0 < entry (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1) →
+    argPatOK (p :: (A ++ T)) → argCtrOK (p :: (A ++ T)) → adjLev (p :: (A ++ T)) →
+    hpOK (p :: (A ++ T)) d plev first force → fOK (p :: (A ++ T)) d plev force →
+    dpOK bd d plev first → hcOK (p :: (A ++ T)) plev first →
+    T ≠ [] →
+    ladOf p.2 d plev first force = true →
+    ¬ (∀ L : PairSeq, contrLen p L (unitsLen p L) A = none) →
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: (A ++ T)) d plev first force)⟦m⟧
+        = convC ((p :: (A ++ T))⟦n'⟧) d plev first force
+
+/-- **2. 末尾列に行 1 の親がない**（弱めた `contrOK` が要る）。 -/
+def RDnopar : Prop :=
+  ∀ (p : ℕ × ℕ) (A T : PairSeq) (bd d plev : ℕ) (first force : Bool),
+    blockok bd (p :: (A ++ T)) → colOK (p :: (A ++ T)) → descOK (p :: (A ++ T)) →
+    bd ≤ d → p.1 = bd → 2 ≤ (p :: (A ++ T)).length →
+    (∀ x ∈ A, p.1 < x.1) → (T = [] ∨ ¬ (p.1 < (T.headI).1)) →
+    0 < entry (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1) →
+    argPatOK (p :: (A ++ T)) → argCtrOK (p :: (A ++ T)) → adjLev (p :: (A ++ T)) →
+    hpOK (p :: (A ++ T)) d plev first force → fOK (p :: (A ++ T)) d plev force →
+    dpOK bd d plev first → hcOK (p :: (A ++ T)) plev first →
+    ¬ hasParent (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1) →
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: (A ++ T)) d plev first force)⟦m⟧
+        = convC ((p :: (A ++ T))⟦n'⟧) d plev first force
+
+/-- **3. 末尾列の親が節点そのもの**（ずれたコピーの補題が要る。shift regime）。 -/
+def RDnode : Prop :=
+  ∀ (p : ℕ × ℕ) (A T : PairSeq) (bd d plev : ℕ) (first force : Bool),
+    blockok bd (p :: (A ++ T)) → colOK (p :: (A ++ T)) → descOK (p :: (A ++ T)) →
+    bd ≤ d → p.1 = bd → 2 ≤ (p :: (A ++ T)).length →
+    (∀ x ∈ A, p.1 < x.1) → (T = [] ∨ ¬ (p.1 < (T.headI).1)) →
+    0 < entry (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1) →
+    argPatOK (p :: (A ++ T)) → argCtrOK (p :: (A ++ T)) → adjLev (p :: (A ++ T)) →
+    hpOK (p :: (A ++ T)) d plev first force → fOK (p :: (A ++ T)) d plev force →
+    dpOK bd d plev first → hcOK (p :: (A ++ T)) plev first →
+    (T = [] ∧ parent (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1) = 0) →
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: (A ++ T)) d plev first force)⟦m⟧
+        = convC ((p :: (A ++ T))⟦n'⟧) d plev first force
+
+/-- **段が正の場合の組み立て**（ブロック版・不変量つき）。 -/
+theorem reindexD_pos_block2 (Hl : RDlad2) (Hn : RDnopar) (Hd : RDnode) :
+    ∀ (N : ℕ) (B : PairSeq), B.length ≤ N → ∀ (bd d plev : ℕ) (first force : Bool),
+      blockok bd B → colOK B → descOK B → bd ≤ d → 2 ≤ B.length →
+      0 < entry B 1 (B.length - 1) →
+      argPatOK B → argCtrOK B → adjLev B →
+      hpOK B d plev first force → fOK B d plev force →
+      dpOK bd d plev first → hcOK B plev first →
+      ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+        (convC B d plev first force)⟦m⟧ = convC (B⟦n'⟧) d plev first force := by
+  intro N
+  induction N with
+  | zero =>
+    intro B hB bd d plev first force _ _ _ _ h2 _ _ _ _ _ _ _ _ n hn
+    exact absurd hB (by omega)
+  | succ N ih =>
+    intro B hB bd d plev first force hb hc hd hbd h2 hlev hAP hAC hLB hHP hFC hDP hHC n hn
+    cases B with
+    | nil => exact absurd h2 (by simp)
+    | cons p r =>
+      have hp1 : p.1 = bd := by simpa using hb.1 (by simp)
+      obtain ⟨y, rfl⟩ : ∃ y, p = (bd, y) := ⟨p.2, by rw [← hp1]⟩
+      obtain ⟨A, T, hAd, hTd⟩ :
+          ∃ A T, A = (r.takeWhile fun q => ((bd, y) : ℕ × ℕ).1 < q.1) ∧
+                 T = (r.dropWhile fun q => ((bd, y) : ℕ × ℕ).1 < q.1) := ⟨_, _, rfl, rfl⟩
+      have hrAT : r = A ++ T := by
+        rw [hAd, hTd]; exact (List.takeWhile_append_dropWhile).symm
+      subst hrAT
+      have hAdeep : ∀ x ∈ A, ((bd, y) : ℕ × ℕ).1 < x.1 := by
+        intro x hx
+        rw [hAd] at hx
+        simpa using List.mem_takeWhile_imp hx
+      have hThd : T = [] ∨ ¬ (((bd, y) : ℕ × ℕ).1 < (T.headI).1) := by
+        rw [hTd]; exact dropWhile_head_not _ _
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := T) (dd := ((bd, y) : ℕ × ℕ).1)
+        hAdeep hThd
+      -- 新しい不変量を割る
+      obtain ⟨hAPh, hAPa, hAPt⟩ := argPatOK_cons.1 hAP
+      rw [e1] at hAPh hAPa
+      rw [e2] at hAPt
+      obtain ⟨hACh, hACa, hACt⟩ := argCtrOK_cons.1 hAC
+      rw [e1] at hACh hACa
+      rw [e2] at hACt
+      have hLA : adjLev A := by
+        have hx := adjLev_infix (takeWhile_infix_cons ((bd, y) : ℕ × ℕ) (A ++ T)) hLB
+        rw [e1] at hx; exact hx
+      have hLT : adjLev T := by
+        have hx := adjLev_infix (dropWhile_infix_cons ((bd, y) : ℕ × ℕ) (A ++ T)) hLB
+        rw [e2] at hx; exact hx
+      have hycol : ((bd, y) : ℕ × ℕ).2 ≤ ((bd, y) : ℕ × ℕ).1 := hc _ (by simp)
+      have hfA : fOK A (ddOf ((bd, y) : ℕ × ℕ).2 d plev first force + 1)
+          ((bd, y) : ℕ × ℕ).2 (first && (((bd, y) : ℕ × ℕ).2 == plev)) := by
+        intro hft
+        have hf1 : first = true := by
+          simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.1
+        have hpl : ((bd, y) : ℕ × ℕ).2 = plev := by
+          simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.2
+        rcases hHP hf1 with hh | ⟨hd0, hpl0, hfc0⟩
+        · left
+          intro a s hs
+          have hkey := hh ((bd, y) : ℕ × ℕ) (A ++ T) rfl hpl (by rw [e1, hs]; simp)
+          rw [e1, hs] at hkey
+          simpa using hkey
+        · right
+          subst hd0; subst hpl0; subst hfc0
+          have hy0 : y = 0 := by simpa using hpl
+          subst hy0
+          simp [ddOf, ladOf]
+      have hbA : blockok (bd + 1) A := by rw [← e1]; exact blockok_arg hb
+      have hbT : blockok bd T := by rw [← e2]; exact blockok_tail hb
+      have hcA : colOK A := colOK_sublist
+        (List.Sublist.cons _ ((List.sublist_append_left A T))) hc
+      have hcT : colOK T := colOK_sublist
+        (List.Sublist.cons _ ((List.sublist_append_right A T))) hc
+      obtain ⟨hdh, hdA, hdT⟩ := descOK_cons.1 hd
+      rw [e1] at hdA
+      rw [e2] at hdh hdT
+      have hlAT : A.length + T.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hB
+        omega
+      have hlen : ((bd, y) :: (A ++ T)).length = A.length + T.length + 1 := by simp
+      have hi1 : idx1 ((bd, y) :: (A ++ T)) (((bd, y) :: (A ++ T)).length - 1) = 1 := by
+        rw [idx1, if_pos hlev]
+      by_cases hpar : hasParent ((bd, y) :: (A ++ T)) 1
+          (((bd, y) :: (A ++ T)).length - 1)
+      · have hnr1 : nextrel1 ((bd, y) :: (A ++ T))
+            (parent ((bd, y) :: (A ++ T)) 1 (((bd, y) :: (A ++ T)).length - 1))
+            (((bd, y) :: (A ++ T)).length - 1) := by
+          have h := parent_nextR hpar
+          unfold nextR at h; rw [if_neg (by omega)] at h; exact h
+        by_cases hTe : T = []
+        · -- 兄弟が空: ブロックは p :: A
+          subst hTe
+          have hAne : A ≠ [] := by
+            intro he
+            rw [he] at h2
+            simp at h2
+          have hA1 : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+          have hlastA : ((bd, y) :: (A ++ [])).getLastD (0, 0) = A.getLastD (0, 0) := by
+            rw [List.append_nil]; exact getLastD_cons_ne _ hAne _
+          have hlevA : 0 < entry A 1 (A.length - 1) := by
+            rw [entry_last, ← hlastA, ← entry_last]; exact hlev
+          have hiA : idx1 A (A.length - 1) = 1 := by rw [idx1, if_pos hlevA]
+          have hzA : ¬ (entry A 0 (A.length - 1) = 0 ∧ entry A 1 (A.length - 1) = 0) := by
+            rintro ⟨-, h1⟩
+            omega
+          have hidx : ((bd, y) :: (A ++ [])).length - 1
+              = ([((bd, y) : ℕ × ℕ)] : PairSeq).length + (A.length - 1) := by
+            simp only [List.length_cons, List.length_nil, List.append_nil]
+            omega
+          have hBeq : ((bd, y) :: (A ++ [])) = [((bd, y) : ℕ × ℕ)] ++ A := by simp
+          by_cases hj00 : parent ((bd, y) :: (A ++ []))
+              1 (((bd, y) :: (A ++ [])).length - 1) = 0
+          · -- 場合 (d): 親が節点（ずれたコピーの補題が要る）
+            exact Hd ((bd, y) : ℕ × ℕ) A [] bd d plev first force hb hc hd hbd rfl h2
+              hAdeep (Or.inl rfl) hlev hAP hAC hLB hHP hFC hDP hHC ⟨rfl, hj00⟩ n hn
+          · -- 場合 (c): 引数ブロックへ降りる
+            have hlenA : ((bd, y) :: (A ++ [])).length - 1 = A.length := by simp
+            have hA2 : 2 ≤ A.length := by
+              have hj0lt := hnr1.2.2.1
+              have hj0ne : parent ((bd, y) :: (A ++ [])) 1
+                  (((bd, y) :: (A ++ [])).length - 1) ≠ 0 := hj00
+              omega
+            have hpB : hasParent ([((bd, y) : ℕ × ℕ)] ++ A) (idx1 A (A.length - 1))
+                (([((bd, y) : ℕ × ℕ)] : PairSeq).length + (A.length - 1)) := by
+              rw [hiA, ← hidx, ← hBeq]; exact hpar
+            have hgeB : ([((bd, y) : ℕ × ℕ)] : PairSeq).length
+                ≤ parent ([((bd, y) : ℕ × ℕ)] ++ A) (idx1 A (A.length - 1))
+                    (([((bd, y) : ℕ × ℕ)] : PairSeq).length + (A.length - 1)) := by
+              rw [hiA, ← hidx, ← hBeq]
+              show 1 ≤ parent ((bd, y) :: (A ++ [])) 1 (((bd, y) :: (A ++ [])).length - 1)
+              omega
+            by_cases hlad : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force = true
+            · have hIH := ih A (by omega) (bd + 1) (d + 2) ((bd, y) : ℕ × ℕ).2 true false
+                hbA hcA hdA (by omega) hA2 hlevA hAPa hACa hLA
+                (hpOK_of_headPatOK hAPh) fOK_false
+                (fun _ he => absurd he (by omega)) (fun _ => hACh)
+              obtain ⟨m, n', k1, k2, k3⟩ := reindexD_arg_lad (p := ((bd, y) : ℕ × ℕ))
+                hAdeep hlad hbA hcA hdA (by omega) hzA hpB hgeB hIH n hn
+              exact ⟨m, n', k1, k2, by rw [← hBeq] at k3; exact k3⟩
+            · have hnl : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force = false := by
+                cases hx : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force with
+                | false => rfl
+                | true => exact absurd hx hlad
+              have hIH := ih A (by omega) (bd + 1)
+                (ddOf ((bd, y) : ℕ × ℕ).2 d plev first force + 1)
+                ((bd, y) : ℕ × ℕ).2 true (first && (((bd, y) : ℕ × ℕ).2 == plev))
+                hbA hcA hdA
+                (by have := le_ddOf ((bd, y) : ℕ × ℕ).2 d plev first force; omega)
+                hA2 hlevA hAPa hACa hLA (hpOK_of_headPatOK hAPh) hfA
+                (dpOK_arg (p := ((bd, y) : ℕ × ℕ)) rfl hbd hycol) (fun _ => hACh)
+              obtain ⟨m, n', k1, k2, k3⟩ := reindexD_arg_nolad (p := ((bd, y) : ℕ × ℕ))
+                hAdeep hnl hbA hcA hdA (by omega) hzA hpB hgeB hIH n hn
+              exact ⟨m, n', k1, k2, by rw [← hBeq] at k3; exact k3⟩
+        · -- 兄弟が空でない: 床の補題で親は兄弟の中
+          have hTne : T ≠ [] := hTe
+          have hT1 : 1 ≤ T.length := List.length_pos_of_ne_nil hTne
+          have hTh : ¬ (((bd, y) : ℕ × ℕ).1 < (T.headI).1) := by
+            rcases hThd with h | h
+            · exact absurd h hTne
+            · exact h
+          have hBeq : ((bd, y) :: (A ++ T)) = (((bd, y) : ℕ × ℕ) :: A) ++ T := by simp
+          have hidx : ((bd, y) :: (A ++ T)).length - 1
+              = (((bd, y) : ℕ × ℕ) :: A).length + (T.length - 1) := by
+            simp only [List.length_cons, List.length_append]
+            omega
+          have hlastT : ((bd, y) :: (A ++ T)).getLastD (0, 0) = T.getLastD (0, 0) := by
+            rw [hBeq]; exact getLastD_append_right hTne _
+          have hlevT : 0 < entry T 1 (T.length - 1) := by
+            rw [entry_last, ← hlastT, ← entry_last]; exact hlev
+          have hiT : idx1 T (T.length - 1) = 1 := by rw [idx1, if_pos hlevT]
+          have hzT : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0) := by
+            rintro ⟨-, h1⟩
+            omega
+          -- 床の補題
+          have hlowG : ∀ c ∈ (((bd, y) : ℕ × ℕ) :: A), bd ≤ c.1 := by
+            intro c hcm
+            refine hb.2.1 c ?_
+            rw [hBeq]
+            exact List.mem_append_left _ hcm
+          have hhead : (T.headI).1 = bd := hbT.1 hTne
+          have hle0 : le0 ((((bd, y) : ℕ × ℕ) :: A) ++ T)
+              (parent ((bd, y) :: (A ++ T)) 1 (((bd, y) :: (A ++ T)).length - 1))
+              (((bd, y) :: (A ++ T)).length - 1) := by
+            rw [← hBeq]; exact hnr1.2.2.2.2.1
+          have hgeT : (((bd, y) : ℕ × ℕ) :: A).length
+              ≤ parent ((bd, y) :: (A ++ T)) 1 (((bd, y) :: (A ++ T)).length - 1) :=
+            le0_ge_of_append hTne hlowG hhead hle0 (by rw [hidx]; omega)
+          have hj0lt := hnr1.2.2.1
+          have hT2 : 2 ≤ T.length := by
+            simp only [List.length_cons, List.length_append] at hj0lt hgeT
+            omega
+          have hpB : hasParent ((((bd, y) : ℕ × ℕ) :: A) ++ T) (idx1 T (T.length - 1))
+              ((((bd, y) : ℕ × ℕ) :: A).length + (T.length - 1)) := by
+            rw [hiT, ← hidx, ← hBeq]; exact hpar
+          have hgeB : (((bd, y) : ℕ × ℕ) :: A).length
+              ≤ parent ((((bd, y) : ℕ × ℕ) :: A) ++ T) (idx1 T (T.length - 1))
+                  ((((bd, y) : ℕ × ℕ) :: A).length + (T.length - 1)) := by
+            rw [hiT, ← hidx, ← hBeq]; exact hgeT
+          have hIH := ih T (by omega) bd d ((bd, y) : ℕ × ℕ).2 false false
+            hbT hcT hdT hbd hT2 hlevT hAPt hACt hLT hpOK_false fOK_false
+            dpOK_false hcOK_false
+          by_cases hlad : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force = true
+          · by_cases hnc : ∀ L : PairSeq,
+                contrLen ((bd, y) : ℕ × ℕ) L (unitsLen ((bd, y) : ℕ × ℕ) L) A = none
+            · obtain ⟨m, n', k1, k2, k3⟩ := reindexD_sib_lad (p := ((bd, y) : ℕ × ℕ))
+                hAdeep hTh hlad hnc hbT hcT hdT (by omega) hzT hpB hgeB hIH n hn
+              rw [← hBeq] at k3
+              exact ⟨m, n', k1, k2, k3⟩
+            · exact Hl ((bd, y) : ℕ × ℕ) A T bd d plev first force hb hc hd hbd rfl h2
+                hAdeep hThd hlev hAP hAC hLB hHP hFC hDP hHC hTne hlad hnc n hn
+          · have hnl : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force = false := by
+              cases hx : ladOf ((bd, y) : ℕ × ℕ).2 d plev first force with
+              | false => rfl
+              | true => exact absurd hx hlad
+            obtain ⟨m, n', k1, k2, k3⟩ := reindexD_sib_nolad (p := ((bd, y) : ℕ × ℕ))
+              hAdeep hTh hnl hbT hcT hdT (by omega) hzT hpB hgeB hIH n hn
+            rw [← hBeq] at k3
+            exact ⟨m, n', k1, k2, k3⟩
+      · -- 場合 (b): 親がない（弱めた contrOK が要る）
+        exact Hn ((bd, y) : ℕ × ℕ) A T bd d plev first force hb hc hd hbd rfl h2
+          hAdeep hThd hlev hAP hAC hLB hHP hFC hDP hHC hpar n hn
+
+
+/-- 段が正の場合も 3 つの残余だけに絞られた（`argCtrOK` は `CtrRes` から）。 -/
+theorem reindexD_pos_of2 (Hc : CtrRes) (Hl : RDlad2) (Hn : RDnopar) (Hd : RDnode) :
+    ReindexD_pos := by
+  intro A hA hL hlev n hn
+  have h := reindexD_pos_block2 Hl Hn Hd A.length A (Nat.le_refl _) 0 0 0 true false
+    (blockok_ST_PS hA) (colOK_ST_PS hA) (descOK_ST_PS hA) (Nat.le_refl 0)
+    (by omega) hlev (argPatOK_ST_PS hA) (Hc hA) (adjLev_ST_PS hA)
+    (fun _ => Or.inr ⟨rfl, rfl, rfl⟩) fOK_false (fun _ _ => Or.inl rfl)
+    (fun _ => ctrHeadOK_root (blockok_ST_PS hA) (colOK_ST_PS hA)) n hn
+  obtain ⟨m, n', h1, h2, h3⟩ := h
+  exact ⟨m, n', h1, h2, by rw [conC, conC]; exact h3⟩
+
+/-- 段 > 0 で残っている 3 つをまとめたもの。 -/
+def RDposRes2 : Prop := RDlad2 ∧ RDnopar ∧ RDnode
+
+/-- **到達点**: `ReindexD` は
+  * `CtrRes`（BMS 標準形は `argCtrOK`）
+  * `RDzeroRes2`（段 0 の梯子つきの段での縮約）
+  * `RDposRes2`（段 > 0 の 3 つ）
+だけに絞られた。旧 `RDposRes` は偽だったが、こちらは全数検査で反例 0。 -/
+theorem reindexD_holds_of_res2 (Hc : CtrRes) (H0 : RDzeroRes2) (H1 : RDposRes2) :
+    ReindexD := by
+  intro A hA hL n hn
+  by_cases hz : entry A 1 (A.length - 1) = 0
+  · exact reindexD_zero2 H0 hA hz n hn
+  · exact reindexD_pos_of2 Hc H1.1 H1.2.1 H1.2.2 hA hL (by omega) n hn
+
+/-- 同じ形で主定理まで。 -/
+theorem ST_D_conC_holds_of_res2 (Hc : CtrRes) (H0 : RDzeroRes2) (H1 : RDposRes2)
+    {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
+  ST_D_conC (reindexD_holds_of_res2 Hc H0 H1) hM
+
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -6420,3 +6731,7 @@ end DBMS
 #print axioms DBMS.argCtrOK_cons
 #print axioms DBMS.hcOK_false
 #print axioms DBMS.ctrHeadOK_root
+#print axioms DBMS.reindexD_pos_block2
+#print axioms DBMS.reindexD_pos_of2
+#print axioms DBMS.reindexD_holds_of_res2
+#print axioms DBMS.ST_D_conC_holds_of_res2
