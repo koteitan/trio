@@ -548,6 +548,66 @@ nextrel0 M 0 (|M|-1)         … 行 0 の親が先頭の (0,0)
 `oper_repeat` が使えず、`shift` regime（末尾列 = `(1,1)`、`m+1`）と
 `id` regime が混ざる。
 
+### (d) の段 > 0 の実測（2026-08-26、BMS 標準形 ≤9 列）
+
+親が節点（`nextrel0`/`nextrel1` の始点が index 0）の場合を段で分けて数えた。
+
+```
+段 0（idx1 = 0）  33734    ← reindexD_node0 で証明済み
+段 > 0（idx1 = 1）64592
+```
+
+段 > 0 では**末尾列は必ず `(a, 1)`**（段は必ず 1）で、`d0 = a`。regime は
+`a` だけで決まる（≤8 列 9491 個）:
+
+```
+lp = (1,1)  a = 1  shift  3922   g = (1, なし, 2, 3)   … n' = n+1（n ≥ 2）
+lp = (a,1)  a ≥ 2  id     5569   g = (m)               … n' = n
+```
+
+DBMS 側の親は**必ず index 1 の影の列 `(1,0)`**（行 1 で探す）で、
+**`d0D = d0`**（≤9 列で例外 0）。つまり
+
+```
+conC M      = (0,0) :: X                     X = convC A 1 0 true false, A = M.tail
+(conC M)⟦m⟧ = (0,0) :: （X.dropLast を行 0 に k*d0 ずらしたコピー m 個）
+M⟦n⟧        = （M.dropLast を行 0 に k*d0 ずらしたコピー n 個）
+```
+
+また、場合 (d) では（段 0 でも段 > 0 でも）**根以外の列は全部深さ > 0**
+（≤9 列で例外 0）なので `conC_cons_zero` が使える。
+
+### (d) の段 > 0 で済んだこと（2026-08-26）
+
+```
+noParent_arg_node1   引数ブロック A = M.tail の末尾列には親がない
+convC_dropLast_node1 よって (b) の convC_dropLast_noParent_aux が効き、dropLast が可換
+conC_dropLast_node1  conC (M.dropLast) = (conC M).dropLast
+```
+
+「`A` に親がない」の理由: `A` の中の親候補は行 0 の鎖ごと `M` に持ち上がる
+（`le0_append_right_of`）ので、`nextrel1 M 0 (|M|-1)` の最小性
+（`0 < j` かつ `le0 M j (|M|-1)` なら `entry M 1 (|M|-1) ≤ entry M 1 j`）に反する。
+
+### (d) の段 > 0 に残っている壁: **ずれたコピーの補題**
+
+段 0 と違い、コピーは**入れ子になる**。コピー `k` の頭は `(k*d0, 0)` で
+深さが増えていくので、コピー `k+1` はコピー `k` の木の中（`convC` の再帰では
+どこかの兄弟の位置）に入る。したがって要るのは
+
+```
+conC ((range n).flatMap (fun k => (k*a, 0) :: shift0 (k*a) R))
+  = (0,0) :: (range n).flatMap (fun k => shift0 (k*a) (convC R 1 0 true false))
+      （a ≥ 2、shift0 t L = L.map (fun c => (c.1 + t, c.2))、R = A.dropLast）
+```
+
+という「**行 0 を一様にずらしたコピーの並び**」の補題（計画書 §次にやる補題 の 4）。
+`M⟦n+1⟧ = M.dropLast ++ shift0 a (M⟦n⟧)` と書けるので `n` の帰納には乗るが、
+1 段ぶんが**前置きの因子化** `conC (G ++ X) = P ++ convC X ...` そのもので、
+`first = true` の道で縮約が `X` を覗くと崩れる（§証明の骨組み）。
+`a = 1`（shift regime）では実際に崩れて、縮約がコピーを 1 つ飲み込む
+（`g(m) = m+1` の正体）。**ここが (d) の段 > 0 の唯一の壁。**
+
 ### (b)(d) の共通の核: `conC (A.dropLast)` と `conC A`
 
 実測（`tools/dbms/droplast.py`、BMS 標準形 ≤9 列 295013 個）:

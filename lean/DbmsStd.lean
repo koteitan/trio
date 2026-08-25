@@ -2899,6 +2899,75 @@ theorem reindexD_node0_shape {M : PairSeq} (n : ℕ) (hn : 1 ≤ n) (hL : 1 < M.
   ⟨n, n, hn, Nat.le_refl n, reindexD_node0 n hL hco hhd hlev hnr⟩
 
 
+/-! ## 2.95 場合 (d) の段 > 0 に向けて: 引数ブロックの `dropLast`
+
+段 > 0（`idx1 = 1`）で親が節点（index 0）なら、**引数ブロック `A = M.tail` の
+末尾列には親がない**。行 0 の鎖は接尾辞から全体へ持ち上がる（`le0_append_right_of`）
+ので、`A` の中の親候補は `M` でも行 1 の祖先になり、`nextrel1 M 0 (|M|-1)` の
+最小性（`0 < j` かつ `le0 M j (|M|-1)` なら `entry M 1 (|M|-1) ≤ entry M 1 j`）に
+反するからである。したがって (b) の `convC_dropLast_noParent_aux` がそのまま効く。 -/
+
+/-- **場合 (d) の段 > 0**: 引数ブロックの末尾列には親がない。 -/
+theorem noParent_arg_node1 {M A : PairSeq} (hMA : M = ((0, 0) : ℕ × ℕ) :: A) (hAne : A ≠ [])
+    (hlev : 0 < entry M 1 (M.length - 1))
+    (hnr : nextrel1 M 0 (M.length - 1)) :
+    ¬ hasParent A (idx1 A (A.length - 1)) (A.length - 1) := by
+  have hMlen : M.length = A.length + 1 := by rw [hMA]; simp
+  have hA1 : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+  have hshift : ∀ i : ℕ, entry M i (M.length - 1) = entry A i (A.length - 1) := by
+    intro i
+    have h1 : M.length - 1 = (A.length - 1) + 1 := by omega
+    rw [h1, hMA, entry_cons_succ]
+  have hlift : ∀ j0 j1 : ℕ, le0 A j0 j1 → le0 M (j0 + 1) (j1 + 1) := by
+    intro j0 j1 h
+    have h2 := le0_append_right_of [((0, 0) : ℕ × ℕ)] A h
+    have e0 : ([((0, 0) : ℕ × ℕ)]).length + j0 = j0 + 1 := by
+      simp only [List.length_cons, List.length_nil]; omega
+    have e1 : ([((0, 0) : ℕ × ℕ)]).length + j1 = j1 + 1 := by
+      simp only [List.length_cons, List.length_nil]; omega
+    rw [e0, e1] at h2
+    rw [hMA]
+    exact h2
+  have hiA : idx1 A (A.length - 1) = 1 := by
+    rw [idx1, if_pos (by rw [← hshift 1]; exact hlev)]
+  rw [hiA]
+  rintro ⟨j0, hj0, -⟩
+  have hj0' : nextrel1 A j0 (A.length - 1) := by
+    have h : nextR A 1 j0 (A.length - 1) := hj0
+    unfold nextR at h; rw [if_neg (by omega)] at h; exact h
+  have hle : le0 M (j0 + 1) ((A.length - 1) + 1) := hlift j0 (A.length - 1) hj0'.2.2.2.2.1
+  have hidx : (A.length - 1) + 1 = M.length - 1 := by omega
+  rw [hidx] at hle
+  have hmin := hnr.2.2.2.2.2 (j0 + 1) ⟨by omega, hle⟩
+  have hent : entry M 1 (j0 + 1) = entry A 1 j0 := by rw [hMA, entry_cons_succ]
+  rw [hent, hshift 1] at hmin
+  have := hj0'.2.2.2.1
+  omega
+
+/-- 場合 (d) の段 > 0 でも `dropLast` は可換（引数ブロックの側）。 -/
+theorem convC_dropLast_node1 {M A : PairSeq} (hMA : M = ((0, 0) : ℕ × ℕ) :: A)
+    (hA2 : 1 < A.length) (hco : contrOK M)
+    (hlev : 0 < entry M 1 (M.length - 1))
+    (hnr : nextrel1 M 0 (M.length - 1)) :
+    convC (A.dropLast) 1 0 true false = (convC A 1 0 true false).dropLast :=
+  convC_dropLast_noParent_aux A.length A (Nat.le_refl _) hA2 1 0 true false
+    (contrOK_suffix (by rw [hMA]; exact List.suffix_cons _ _) hco)
+    (noParent_arg_node1 hMA (by intro he; rw [he] at hA2; simp at hA2) hlev hnr)
+
+/-- 場合 (d) の段 > 0 での `conC` の `dropLast` 可換（`m = 1`, `n' = 1` の形）。 -/
+theorem conC_dropLast_node1 {M A : PairSeq} (hMA : M = ((0, 0) : ℕ × ℕ) :: A)
+    (hA2 : 1 < A.length) (hco : contrOK M) (hA0 : ∀ c ∈ A, 0 < c.1)
+    (hlev : 0 < entry M 1 (M.length - 1))
+    (hnr : nextrel1 M 0 (M.length - 1)) :
+    conC (M.dropLast) = (conC M).dropLast := by
+  have hAne : A ≠ [] := by intro he; rw [he] at hA2; simp at hA2
+  have hR0 : ∀ c ∈ A.dropLast, 0 < c.1 :=
+    fun c hc => hA0 c ((List.dropLast_sublist A).subset hc)
+  have hXne : convC A 1 0 true false ≠ [] := by
+    rw [ne_eq, convC_eq_nil_iff]; exact hAne
+  rw [hMA, dropLast_cons_ne hAne, conC_cons_zero hR0, conC_cons_zero hA0,
+    dropLast_cons_ne hXne, convC_dropLast_node1 hMA hA2 hco hlev hnr]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -2959,3 +3028,6 @@ end DBMS
 #print axioms DBMS.conC_cons_zero
 #print axioms DBMS.reindexD_node0
 #print axioms DBMS.reindexD_node0_shape
+#print axioms DBMS.noParent_arg_node1
+#print axioms DBMS.convC_dropLast_node1
+#print axioms DBMS.conC_dropLast_node1
