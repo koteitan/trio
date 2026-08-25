@@ -285,6 +285,140 @@ theorem reindexD_succ {M : PairSeq} (hM : M ≠ []) (hc : colOK M) (m n : ℕ) :
     exact hM
   rw [hsnoc, oper_snoc_zero hCne m, oper_snoc_zero hM n]
 
+/-! ## 2.7 変換は末尾列の段を保つ -/
+
+/-- 末尾が空でない `++` の `getLastD`。空なら左側。 -/
+theorem getLastD_append_cases {A B : PairSeq} (dflt : ℕ × ℕ) :
+    (A ++ B).getLastD dflt = if B = [] then A.getLastD dflt else B.getLastD dflt := by
+  by_cases h : B = []
+  · rw [if_pos h, h]; simp
+  · rw [if_neg h]; exact getLastD_append_right h dflt
+
+/-- **変換は末尾列の段を保つ。** これで `idx1` が両側で一致する。 -/
+theorem convC_getLast_level : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
+    ∀ (d plev : ℕ) (first force : Bool),
+      ((convC M d plev first force).getLastD (0, 0)).2 = (M.getLastD (0, 0)).2 := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM d plev first force
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    rw [convC_nil]
+  | succ n ih =>
+    intro M hM d plev first force
+    match M with
+    | [] => rw [convC_nil]
+    | p :: r =>
+      set A := r.takeWhile (fun q => p.1 < q.1) with hA
+      set B := r.dropWhile (fun q => p.1 < q.1) with hB
+      have hAB : r = A ++ B := by rw [hA, hB, List.takeWhile_append_dropWhile]
+      have hlA : A.length ≤ n := by
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hM; rw [hA]; omega
+      have hlB : B.length ≤ n := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hM; rw [hB]; omega
+      have hMlast : ((p :: r).getLastD (0, 0)).2
+          = (if B = [] then (if A = [] then p else A.getLastD (0, 0)) else B.getLastD (0, 0)).2 := by
+        rw [hAB]
+        by_cases hBe : B = []
+        · rw [hBe]
+          simp only [List.append_nil, if_pos rfl]
+          by_cases hAe : A = []
+          · rw [hAe, if_pos rfl]; simp
+          · rw [if_neg hAe, List.getLastD_cons]
+            exact congrArg Prod.snd (getLastD_ne_nil_indep hAe _ _)
+        · rw [if_neg hBe, List.getLastD_cons, getLastD_append_right hBe]
+          exact congrArg Prod.snd (getLastD_ne_nil_indep hBe _ _)
+      have key : ∀ (cs : PairSeq) (dA dB : ℕ) (fA fB gA gB : Bool),
+          cs ≠ [] → (cs.getLastD (0, 0)).2 = p.2 →
+          ((cs ++ (convC A dA p.2 fA gA ++ convC B dB p.2 fB gB)).getLastD (0, 0)).2
+            = ((p :: r).getLastD (0, 0)).2 := by
+        intro cs dA dB fA fB gA gB hcs hcsl
+        rw [hMlast]
+        by_cases hBe : B = []
+        · rw [if_pos hBe, hBe, convC_nil, List.append_nil]
+          by_cases hAe : A = []
+          · rw [if_pos hAe, hAe, convC_nil, List.append_nil]
+            exact hcsl
+          · rw [if_neg hAe, getLastD_append_cases,
+              if_neg (by simp only [convC_eq_nil_iff]; exact hAe)]
+            exact ih A hlA dA p.2 fA gA
+        · rw [if_neg hBe, ← List.append_assoc, getLastD_append_cases,
+            if_neg (by simp only [convC_eq_nil_iff]; exact hBe)]
+          exact ih B hlB dB p.2 fB gB
+      by_cases hl : ladOf p.2 d plev first force = true
+      · rcases hcc : contrLen p B (unitsLen p B) A with _ | ⟨rest2, Bq⟩
+        · rw [convC_cons_lad_none p r d plev first force hl (by rw [← hA, ← hB]; exact hcc)]
+          rw [← hA, ← hB, ← List.cons_append, ← List.cons_append]
+          exact key [(d, plev), (d + 1, p.2)] (d + 2) d true false false false
+            (by simp) (by simp)
+        · -- 縮約あり: 末尾は `convC Bq`（空なら `convC rest2`）
+          obtain ⟨q, r2, hdq, hq2, hq1, hAq, hBq, hr2ne, hr2d, hr2l⟩ := contrLen_spec hcc
+          have hlr2 : rest2.length ≤ n := by
+            have := (contrLen_lt hcc).1; omega
+          have hlbq : Bq.length ≤ n := by
+            have := (contrLen_lt hcc).2; omega
+          have hBne : B ≠ [] := by
+            intro he
+            rw [he] at hdq
+            simp at hdq
+          -- 入力側の末尾
+          have hlast : ((p :: r).getLastD (0, 0)).2
+              = (if Bq = [] then rest2.getLastD (0, 0) else Bq.getLastD (0, 0)).2 := by
+            rw [hMlast, if_neg hBne]
+            have hBsplit : B = B.take (unitsLen p B) ++ (q :: r2) := by
+              rw [← hdq, List.take_append_drop]
+            have hr2split : r2 = (contrPre p (B.take (unitsLen p B)) A ++ rest2) ++ Bq := by
+              conv_lhs => rw [← List.takeWhile_append_dropWhile
+                (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) (l := r2)]
+              rw [hAq, hBq]
+            have hqr2ne : (q :: r2) ≠ [] := by simp
+            rw [hBsplit, getLastD_append_right hqr2ne, List.getLastD_cons]
+            have hr2ne' : r2 ≠ [] := by
+              intro he
+              rw [he] at hr2split
+              have : (contrPre p (B.take (unitsLen p B)) A ++ rest2) ++ Bq = [] := hr2split.symm
+              simp only [List.append_eq_nil_iff] at this
+              exact hr2ne this.1.2
+            rw [getLastD_ne_nil_indep hr2ne' _ (0, 0), hr2split, getLastD_append_cases]
+            by_cases hbq : Bq = []
+            · rw [if_pos hbq, if_pos hbq, getLastD_append_right hr2ne]
+            · rw [if_neg hbq, if_neg hbq]
+          rw [convC_cons_lad_some p r d plev first force hl (by rw [← hA, ← hB]; exact hcc)]
+          rw [← hA, ← hB, hlast]
+          by_cases hbq : Bq = []
+          · rw [if_pos hbq, hbq, convC_nil, List.append_nil]
+            simp only [← List.cons_append, ← List.append_assoc]
+            rw [getLastD_append_cases,
+              if_neg (by simp only [convC_eq_nil_iff]; exact hr2ne)]
+            exact ih rest2 hlr2 (d + 1) p.2 false false
+          · rw [if_neg hbq]
+            simp only [← List.cons_append, ← List.append_assoc]
+            rw [getLastD_append_cases,
+              if_neg (by simp only [convC_eq_nil_iff]; exact hbq)]
+            exact ih Bq hlbq d p.2 false false
+      · rw [convC_cons_nolad p r d plev first force (by simpa using hl)]
+        rw [← hA, ← hB, ← List.cons_append]
+        exact key [(ddOf p.2 d plev first force, p.2)]
+          (ddOf p.2 d plev first force + 1) d true false (first && (p.2 == plev)) false
+          (by simp) (by simp)
+
+/-- 変換は末尾列の段を保つ（入口）。 -/
+theorem conC_getLast_level (M : PairSeq) :
+    ((conC M).getLastD (0, 0)).2 = (M.getLastD (0, 0)).2 :=
+  convC_getLast_level M.length M (Nat.le_refl _) 0 0 true false
+
+/-- 末尾の `entry` は `getLastD`。 -/
+theorem entry_last {M : PairSeq} : entry M 1 (M.length - 1) = (M.getLastD (0, 0)).2 := by
+  rw [entry, if_neg (by omega), getLastD_eq_getD]
+
+/-- **`idx1` は両側で一致する。** `oper` がどちらの行で親を探すかが同じになる。 -/
+theorem idx1_conC (M : PairSeq) :
+    idx1 (conC M) ((conC M).length - 1) = idx1 M (M.length - 1) := by
+  rw [idx1, idx1, entry_last, entry_last, conC_getLast_level]
+
 /-! ## 3. 要 — REINDEX -/
 
 /-- **REINDEX**: `conC` の像の基本列は、BMS 側の基本列と絡み合う。
@@ -351,3 +485,5 @@ end DBMS
 #print axioms DBMS.diag_cofinal
 #print axioms DBMS.reindexD_succ
 #print axioms DBMS.convC_snoc_zero
+#print axioms DBMS.convC_getLast_level
+#print axioms DBMS.idx1_conC
