@@ -272,8 +272,20 @@ convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast
 梯子の頭は「段 = 親の段 + 1」で、その親ノードは行 1 の祖先だから `hasParent` が立つ。
 親がないなら梯子頭ではない。
 
-残る穴: 縮約が `M.dropLast` で変わりうること（shift regime の
-`A⟦2⟧` と `A⟦3⟧` の違いがまさにこれ）。
+**実測では場合 (b) の dropLast の可換は例外 0**（`tools/dbms/bcase.py`、
+`convC` の再帰の各段・右端の道、≤8 列で 52870 / 52870）。理由は 2 つ:
+
+* 梯子頭には親が立つので、親がないなら梯子頭でない（差 2 にならない）
+* 縮約が消える状況（`Bq = []` かつ `|rest2| = 1`）では、そこでの親は「中」にある
+  （例: `(0,0)(1,1)(1,0)(2,1)(2,0)` の末尾 `(2,0)` の行 0 の親は `(1,0)`）
+
+なので (b) は
+
+    (convC M)⟦1⟧ = (convC M).dropLast = convC (M.dropLast) = convC (M⟦n⟧)
+
+で片付く。「親がない」は右端の道を下っても保たれる
+（部分列の `nextR` は `nextR_append_right` で全体に持ち上がるので、
+全体に祖先がなければ部分列にもない）。
 
 ### (c) 親が `Arg` / `B` の中
 両側とも `oper_append_of_parent_ge` で局所化して帰納できる。**道具は揃った。**
