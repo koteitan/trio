@@ -913,6 +913,66 @@ theorem oper_append_of_witness (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
     (A ++ T)⟦n⟧ = A ++ T⟦n⟧ :=
   oper_append_of_parent_ge A T n hT hz hp (parent_ge_of_witness A T hp hw)
 
+/-! ### `le0`（行 0 の祖先）の道具 -/
+
+/-- `j` 未満で `P` を満たすものがあるなら、そのうち最大のものがある。 -/
+theorem exists_greatest_lt {P : ℕ → Prop} : ∀ (j : ℕ), (∃ i, i < j ∧ P i) →
+    ∃ i, i < j ∧ P i ∧ ∀ i', i < i' → i' < j → ¬ P i' := by
+  intro j
+  induction j with
+  | zero => rintro ⟨i, hi, -⟩; omega
+  | succ j ih =>
+    intro h
+    by_cases hPj : P j
+    · exact ⟨j, by omega, hPj, fun i' h1 h2 => by omega⟩
+    · obtain ⟨i, hi, hPi⟩ := h
+      have hij : i < j := by
+        rcases Nat.lt_or_ge i j with h' | h'
+        · exact h'
+        · exfalso
+          have hie : i = j := by omega
+          rw [hie] at hPi; exact hPj hPi
+      obtain ⟨i0, h1, h2, h3⟩ := ih ⟨i, hij, hPi⟩
+      refine ⟨i0, by omega, h2, fun i' ha hb => ?_⟩
+      rcases Nat.lt_or_ge i' j with hc | hc
+      · exact h3 i' ha hc
+      · have hie : i' = j := by omega
+        rw [hie]; exact hPj
+
+theorem entry_cons_succ (c : ℕ × ℕ) (R : PairSeq) (i j : ℕ) :
+    entry (c :: R) i (j + 1) = entry R i j := by
+  unfold entry
+  rw [List.getD_cons_succ]
+
+/-- **ブロックの頭は、その中のどの列の行 0 の祖先でもある。** -/
+theorem le0_head {c : ℕ × ℕ} {R : PairSeq} (hR : ∀ x ∈ R, c.1 < x.1) :
+    ∀ (j : ℕ), j < (c :: R).length → le0 (c :: R) 0 j := by
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hj
+    rcases Nat.eq_zero_or_pos j with rfl | hpos
+    · exact ⟨by simp, by simp, Relation.ReflTransGen.refl⟩
+    · obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+      have hj'R : j' < R.length := by simp only [List.length_cons] at hj; omega
+      have hmem : R.getD j' (0, 0) ∈ R := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj'R]
+        simpa using List.getElem_mem hj'R
+      have h0 : entry (c :: R) 0 0 < entry (c :: R) 0 (j' + 1) := by
+        rw [entry_cons_succ]
+        have h1 : entry (c :: R) 0 0 = c.1 := by unfold entry; rw [if_pos rfl]; rfl
+        have h2 : entry R 0 j' = (R.getD j' (0, 0)).1 := by unfold entry; rw [if_pos rfl]
+        rw [h1, h2]
+        exact hR _ hmem
+      obtain ⟨i, hi1, hi2, hi3⟩ := exists_greatest_lt
+        (P := fun i => entry (c :: R) 0 i < entry (c :: R) 0 (j' + 1)) (j' + 1) ⟨0, hpos, h0⟩
+      have hnr : nextrel0 (c :: R) i (j' + 1) :=
+        ⟨by omega, hj, hi1, hi2, fun k hk => by
+          have := hi3 k hk.1 hk.2
+          omega⟩
+      have hle : le0 (c :: R) 0 i := ih i hi1 (by omega)
+      exact ⟨hle.1, hj, hle.2.2.tail hnr⟩
+
 /-- 接尾辞の中に「末尾より浅い列」があれば局所化できる（段 0 の場合）。 -/
 theorem oper_append_of_shallow0 (A T : PairSeq) (n : ℕ) (hT : 2 ≤ T.length)
     (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0))
@@ -1225,3 +1285,4 @@ end DBMS
 #print axioms DBMS.convC_exists_shallow
 #print axioms DBMS.oper_append_convC
 #print axioms DBMS.oper_append_of_shallow1
+#print axioms DBMS.le0_head

@@ -30,6 +30,7 @@
 | `convC_exists_shallow`（**像の中に末尾より浅い列がある**） | `DbmsStd.lean` |
 | `oper_append_convC`（**場合 (c) の段 0 が完成**） | `DbmsStd.lean` |
 | `oper_append_of_shallow1`（段 > 0 での局所化、証人は `le0` の鎖の上） | `DbmsStd.lean` |
+| `exists_greatest_lt` / `le0_head`（**ブロックの頭は中の全部の行 0 の祖先**） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
 
 いずれも sorry 0。
@@ -331,6 +332,16 @@ convC_exists_shallow1 :
 ```
 
 BMS 側で「証人が引数ブロックの中」は起こりうる（末尾も同じ引数の中にある場合）。
+
+`le0_head`（ブロックの頭は中の全部の行 0 の祖先）を用意した。これで
+
+```
+兄弟の鎖が空       → 節点の列（梯子なら影）が祖先。段が t より小さければ証人
+兄弟の鎖が続く     → 鎖に帰納
+```
+
+の枠組みが使える。`le0_head` の仮定「後ろが全部深い」は、
+兄弟の鎖が空のときにちょうど成り立つ。
 
 もう 1 つ、`convC ((p :: Arg) ++ B⟦n⟧) = cols ++ convC Arg ++ convC (B⟦n⟧)` も要る。
 `B⟦n⟧` の先頭は `B` の先頭と同じなので切り分けは同じだが、縮約の判定が変わりうる。
