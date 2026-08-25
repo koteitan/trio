@@ -3102,6 +3102,163 @@ theorem reindexD_holds_of (H : ReindexD_mid) : ReindexD := by
 theorem ST_D_conC_holds_of (H : ReindexD_mid) {M : PairSeq} (hM : ST_PS M) :
     ST_D (conC M) := ST_D_conC (reindexD_holds_of H) hM
 
+/-! ## 4. 場合 (c) の帰納の道具
+
+`convC` の 1 段は、梯子が立たなければ **`T` に依らない前置き `C`** で因子化できる:
+
+    convC (p :: (Arg ++ T)) d plev first force = C ++ convC T d p.2 false false
+
+`T` を `T⟦n⟧` に取り替えても `C` は変わらない（展開は先頭列を変えないから）。
+あとは両側の局所化を合わせれば、右端の道に沿って 1 段降りられる。 -/
+
+/-- **展開は先頭列を変えない。** -/
+theorem oper_headI {T : PairSeq} (hL : 1 < T.length) {n : ℕ} (hn : 1 ≤ n) :
+    (T⟦n⟧).headI = T.headI := by
+  obtain ⟨R, hR, -⟩ := oper_eq_dropLast_append hL hn
+  obtain ⟨a, l, rfl⟩ : ∃ a l, T = a :: l := by
+    cases T with
+    | nil => simp at hL
+    | cons a l => exact ⟨a, l, rfl⟩
+  have hlne : l ≠ [] := by
+    intro he; rw [he] at hL; simp at hL
+  rw [hR, dropLast_cons_ne hlne]
+  simp
+
+/-- 展開は先頭列の深さを変えない。 -/
+theorem oper_head_depth {T : PairSeq} (hL : 1 < T.length) {n : ℕ} (hn : 1 ≤ n) :
+    ((T⟦n⟧).headI).1 = (T.headI).1 := by rw [oper_headI hL hn]
+
+/-- **行 1 版の `hasParent0_of_exists`**: `le0` の鎖の上に段のより小さい列が
+1 つでもあれば、行 1 の親は存在する（最大のものが親になる）。 -/
+theorem hasParent1_of_exists {M : PairSeq} {j1 : ℕ} (hj : j1 < M.length)
+    (h : ∃ k, le0 M k j1 ∧ entry M 1 k < entry M 1 j1) : hasParent M 1 j1 := by
+  classical
+  have h' : ∃ i, i < j1 ∧ (le0 M i j1 ∧ entry M 1 i < entry M 1 j1) := by
+    obtain ⟨k, hk1, hk2⟩ := h
+    have hkle : k ≤ j1 := le0_le hk1
+    have hne : k ≠ j1 := by intro he; rw [he] at hk2; omega
+    exact ⟨k, by omega, hk1, hk2⟩
+  obtain ⟨i, hi1, ⟨hi2, hi3⟩, hi4⟩ := exists_greatest_lt
+    (P := fun i => le0 M i j1 ∧ entry M 1 i < entry M 1 j1) j1 h'
+  have hnr : nextrel1 M i j1 := by
+    refine ⟨by omega, hj, hi1, hi3, hi2, ?_⟩
+    rintro j ⟨hj1, hj2⟩
+    rcases Nat.lt_or_ge j j1 with hlt | hge
+    · rcases Nat.lt_or_ge (entry M 1 j) (entry M 1 j1) with hc | hc
+      · exact absurd ⟨hj2, hc⟩ (hi4 j hj1 hlt)
+      · exact hc
+    · have hle : j ≤ j1 := le0_le hj2
+      have hje : j = j1 := by omega
+      rw [hje]
+  refine ⟨i, ?_, ?_⟩
+  · show nextR M 1 i j1
+    unfold nextR; rw [if_neg one_ne_zero]; exact hnr
+  · intro y hy
+    have hy' : nextrel1 M y j1 := by
+      have h2 : nextR M 1 y j1 := hy
+      unfold nextR at h2; rw [if_neg one_ne_zero] at h2; exact h2
+    have hle1 : i ≤ y := nextrel1_ge hy' hi2 hi3
+    have hle2 : y ≤ i := by
+      by_contra hgt
+      push_neg at hgt
+      exact hi4 y hgt hy'.2.2.1 ⟨hy'.2.2.2.2.1, hy'.2.2.2.1⟩
+    omega
+
+/-- `idx1` は `convC` で保たれる（`idx1_conC` の一般版）。 -/
+theorem idx1_convC (M : PairSeq) (d plev : ℕ) (first force : Bool) :
+    idx1 (convC M d plev first force) ((convC M d plev first force).length - 1)
+      = idx1 M (M.length - 1) := by
+  rw [idx1, idx1, entry_last, entry_last,
+    convC_getLast_level M.length M (Nat.le_refl _) d plev first force]
+
+/-- **兄弟への因子化。** 前置き `C` は `T` に依らない。 -/
+theorem convC_factor_sib (p : ℕ × ℕ) (Arg T : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hT : T = [] ∨ ¬ (p.1 < (T.headI).1))
+    (hlad : ladOf p.2 d plev first force = false) :
+    convC (p :: (Arg ++ T)) d plev first force
+      = ((ddOf p.2 d plev first force, p.2)
+          :: convC Arg (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev)))
+        ++ convC T d p.2 false false := by
+  obtain ⟨e1, e2⟩ := split_append (dd := p.1) hArg hT
+  rw [convC_cons_nolad p (Arg ++ T) d plev first force hlad, e1, e2]
+  simp
+
+/-- **引数への因子化**（兄弟が空のとき）。 -/
+theorem convC_factor_arg (p : ℕ × ℕ) (Arg : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hArg : ∀ x ∈ Arg, p.1 < x.1)
+    (hlad : ladOf p.2 d plev first force = false) :
+    convC (p :: Arg) d plev first force
+      = [(ddOf p.2 d plev first force, p.2)]
+        ++ convC Arg (ddOf p.2 d plev first force + 1) p.2 true (first && (p.2 == plev)) := by
+  have h := convC_factor_sib p Arg [] d plev first force hArg (Or.inl rfl) hlad
+  simpa using h
+
+/-- 段 0 の局所化。親の存在も証人から作るので、仮定に要らない。 -/
+theorem oper_append_convC_auto (A B : PairSeq) (n : ℕ) {bd d plev : ℕ}
+    (hb : blockok bd B) (hc : colOK B) (hdo : descOK B) (hbd : bd ≤ d)
+    (hlast : bd < (B.getLastD (0, 0)).1)
+    (hT : 2 ≤ (convC B d plev false false).length)
+    (hz : ¬ (entry (convC B d plev false false)
+              0 ((convC B d plev false false).length - 1) = 0 ∧
+             entry (convC B d plev false false)
+              1 ((convC B d plev false false).length - 1) = 0))
+    (hi : idx1 (convC B d plev false false)
+            ((convC B d plev false false).length - 1) = 0) :
+    (A ++ convC B d plev false false)⟦n⟧ = A ++ (convC B d plev false false)⟦n⟧ := by
+  obtain ⟨k, hk1, hk2⟩ :=
+    convC_exists_shallow B.length B (Nat.le_refl _) bd d plev hb hc hdo hbd hlast
+  have hp : hasParent (A ++ convC B d plev false false) 0
+      (A.length + ((convC B d plev false false).length - 1)) := by
+    refine hasParent0_of_exists (by rw [List.length_append]; omega)
+      ⟨A.length + k, by omega, ?_⟩
+    rw [entry_append_right, entry_append_right]
+    exact hk2
+  exact oper_append_convC A B n hb hc hdo hbd hlast hT hz hi (by rw [hi]; exact hp)
+
+/-- 段 > 0 の局所化。親の存在も証人から作る。 -/
+theorem oper_append_convC1_auto (A B : PairSeq) (n : ℕ) {bd d plev : ℕ} {first force : Bool}
+    (hb : blockok bd B) (hpB : hasParent B 1 (B.length - 1))
+    (hT : 2 ≤ (convC B d plev first force).length)
+    (hz : ¬ (entry (convC B d plev first force)
+              0 ((convC B d plev first force).length - 1) = 0 ∧
+             entry (convC B d plev first force)
+              1 ((convC B d plev first force).length - 1) = 0))
+    (hi : idx1 (convC B d plev first force)
+            ((convC B d plev first force).length - 1) ≠ 0) :
+    (A ++ convC B d plev first force)⟦n⟧ = A ++ (convC B d plev first force)⟦n⟧ := by
+  obtain ⟨k, hk1, hk2⟩ := convC_exists_shallow1 B.length B (Nat.le_refl _) bd d plev first force
+    hb (exists_shallow1_of_hasParent hpB)
+  have hp : hasParent (A ++ convC B d plev first force) 1
+      (A.length + ((convC B d plev first force).length - 1)) := by
+    refine hasParent1_of_exists (by rw [List.length_append]; omega) ⟨A.length + k, ?_, ?_⟩
+    · exact le0_append_right_of A _ hk1
+    · rw [entry_append_right, entry_append_right]; exact hk2
+  have hi1 : idx1 (convC B d plev first force)
+      ((convC B d plev first force).length - 1) = 1 := by
+    have := idx1_le1 (convC B d plev first force)
+      ((convC B d plev first force).length - 1)
+    omega
+  exact oper_append_convC1' A B n hb hpB hT hz hi (by rw [hi1]; exact hp)
+
+/-- **降下の骨格。** 因子化・両側の局所化・帰納法の仮定を合わせる。 -/
+theorem reindexD_descend {M T G C : PairSeq} {d plev d' plev' : ℕ}
+    {first force first' force' : Bool}
+    (hconv : convC M d plev first force = C ++ convC T d' plev' first' force')
+    (hconv' : ∀ n : ℕ, 1 ≤ n → convC (G ++ T⟦n⟧) d plev first force
+                = C ++ convC (T⟦n⟧) d' plev' first' force')
+    (hBMS : ∀ n : ℕ, M⟦n⟧ = G ++ T⟦n⟧)
+    (hDBMS : ∀ m : ℕ, (C ++ convC T d' plev' first' force')⟦m⟧
+                = C ++ (convC T d' plev' first' force')⟦m⟧)
+    (IH : ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+            (convC T d' plev' first' force')⟦m⟧ = convC (T⟦n'⟧) d' plev' first' force') :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC M d plev first force)⟦m⟧ = convC (M⟦n'⟧) d plev first force := by
+  intro n hn
+  obtain ⟨m, n', hm, hnn, heq⟩ := IH n hn
+  refine ⟨m, n', hm, hnn, ?_⟩
+  rw [hconv, hDBMS, heq, hBMS, hconv' n' (le_trans hn hnn)]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -3172,3 +3329,11 @@ end DBMS
 #print axioms DBMS.reindexD_root_zero
 #print axioms DBMS.reindexD_holds_of
 #print axioms DBMS.ST_D_conC_holds_of
+#print axioms DBMS.oper_headI
+#print axioms DBMS.hasParent1_of_exists
+#print axioms DBMS.idx1_convC
+#print axioms DBMS.convC_factor_sib
+#print axioms DBMS.convC_factor_arg
+#print axioms DBMS.oper_append_convC_auto
+#print axioms DBMS.oper_append_convC1_auto
+#print axioms DBMS.reindexD_descend
