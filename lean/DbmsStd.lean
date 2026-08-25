@@ -937,6 +937,155 @@ theorem convC_head_shallow {B : PairSeq} (hB : B ≠ []) {bd d plev : ℕ}
   rw [entry_zero0, entry_last0, hhd]
   exact convC_getLast_depth B.length B (Nat.le_refl _) bd d plev false false hb hbd
 
+/-- **段 0 のときの証人の存在。** `B` の末尾が根より深ければ、
+`convC B d plev false false` の中に「末尾より浅い列」がある。 -/
+theorem convC_exists_shallow : ∀ (n : ℕ) (B : PairSeq), B.length ≤ n →
+    ∀ (bd d plev : ℕ), blockok bd B → colOK B → descOK B → bd ≤ d →
+    bd < (B.getLastD (0, 0)).1 →
+    ∃ k, k < (convC B d plev false false).length - 1 ∧
+      entry (convC B d plev false false) 0 k
+        < entry (convC B d plev false false) 0 ((convC B d plev false false).length - 1) := by
+  intro n
+  induction n with
+  | zero =>
+    intro B hB bd d plev _ _ _ _ hlast
+    have : B = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this
+    exact absurd hlast (by simp)
+  | succ n ih =>
+    intro B hB bd d plev hb hc hd hbd hlast
+    match B with
+    | [] => exact absurd hlast (by simp)
+    | p :: r =>
+      have hp : p.1 = bd := by simpa using hb.1 (by simp)
+      obtain ⟨y, rfl⟩ : ∃ y, p = (bd, y) := ⟨p.2, by rw [← hp]⟩
+      have hy : y ≤ bd := hc (bd, y) (by simp)
+      set A := r.takeWhile (fun q => ((bd, y) : ℕ × ℕ).1 < q.1) with hA
+      set B' := r.dropWhile (fun q => ((bd, y) : ℕ × ℕ).1 < q.1) with hB'
+      have hAB : r = A ++ B' := by rw [hA, hB', List.takeWhile_append_dropWhile]
+      have hbB' : blockok bd B' := by rw [hB']; exact blockok_tail hb
+      have hMlast : ((bd, y) :: r).getLastD (0, 0)
+          = if B' = [] then (if A = [] then ((bd, y) : ℕ × ℕ) else A.getLastD (0, 0))
+            else B'.getLastD (0, 0) := by
+        rw [hAB]
+        by_cases hBe : B' = []
+        · rw [hBe]
+          simp only [List.append_nil]
+          by_cases hAe : A = []
+          · rw [hAe, if_pos rfl]; simp
+          · rw [if_neg hAe, List.getLastD_cons]
+            exact getLastD_ne_nil_indep hAe _ _
+        · rw [if_neg hBe, List.getLastD_cons, getLastD_append_right hBe]
+          exact getLastD_ne_nil_indep hBe _ _
+      have hnl : ladOf ((bd, y) : ℕ × ℕ).2 d plev false false = false := by simp [ladOf]
+      set dd := ddOf ((bd, y) : ℕ × ℕ).2 d plev false false with hdd
+      set X := convC A (dd + 1) ((bd, y) : ℕ × ℕ).2 true false with hX
+      set Y := convC B' d ((bd, y) : ℕ × ℕ).2 false false with hY
+      have hout : convC ((bd, y) :: r) d plev false false
+          = ((dd, ((bd, y) : ℕ × ℕ).2) :: X) ++ Y := by
+        rw [convC_cons_nolad ((bd, y) : ℕ × ℕ) r d plev false false hnl]
+        simp only [Bool.false_and]
+        rw [← hA, ← hB', ← hdd, ← hX, ← hY, List.cons_append]
+      have hlastdep : d < ((convC ((bd, y) :: r) d plev false false).getLastD (0, 0)).1 :=
+        convC_getLast_depth ((bd, y) :: r).length _ (Nat.le_refl _) bd d plev false false hb hlast
+      have hlen2 : 1 < ((bd, y) :: r).length := by
+        by_contra hcon
+        have : r = [] := by
+          match r with
+          | [] => rfl
+          | _ :: _ => simp at hcon
+        rw [this] at hlast
+        simp only [List.getLastD_cons, List.getLastD_nil] at hlast
+        omega
+      have hOlen : 1 < (convC ((bd, y) :: r) d plev false false).length :=
+        convC_length_ge_two hlen2 d plev false false
+      by_cases hdc : dd = d
+      · -- 先頭が深さ `d`: それが証人
+        refine ⟨0, by omega, ?_⟩
+        rw [entry_zero0, entry_last0]
+        have hhd : ((convC ((bd, y) :: r) d plev false false).headI).1 = d := by
+          rw [hout]
+          simp only [List.cons_append, List.headI_cons]
+          exact hdc
+        rw [hhd]
+        exact hlastdep
+      · -- `dd = y + 1` で `y = bd = d`
+        have hcase : 0 < y ∧ d ≤ y := by
+          by_contra hcon
+          rw [hdd] at hdc
+          unfold ddOf at hdc
+          rw [if_neg (by rw [hnl]; simp), if_neg (by simpa using hcon)] at hdc
+          exact hdc rfl
+        have hyd : y = d := by omega
+        have hdd1 : dd = d + 1 := by
+          rw [hdd]; unfold ddOf
+          rw [if_neg (by rw [hnl]; simp), if_pos hcase]
+          simp only []
+          omega
+        by_cases hBe : B' = []
+        · -- 末尾は `X` の中（深さ ≥ dd+1）
+          have hAe : A ≠ [] := by
+            intro he
+            rw [if_pos hBe, if_pos he] at hMlast
+            rw [hMlast] at hlast
+            simp only [] at hlast
+            omega
+          have hXne : X ≠ [] := by rw [hX]; intro he; rw [convC_eq_nil_iff] at he; exact hAe he
+          have hYnil : Y = [] := by rw [hY, hBe, convC_nil]
+          refine ⟨0, by omega, ?_⟩
+          rw [entry_zero0, entry_last0, hout, hYnil, List.append_nil]
+          simp only [List.headI_cons]
+          have hlx : ((dd, ((bd, y) : ℕ × ℕ).2) :: X).getLastD (0, 0) = X.getLastD (0, 0) := by
+            rw [List.getLastD_cons]
+            exact getLastD_ne_nil_indep hXne _ _
+          rw [hlx]
+          have hmem : X.getLastD (0, 0) ∈ convC A (dd + 1) ((bd, y) : ℕ × ℕ).2 true false := by
+            rw [← hX]; exact getLastD_mem hXne (0, 0)
+          have := convC_ge' A (dd + 1) ((bd, y) : ℕ × ℕ).2 true false _ hmem
+          omega
+        · -- 末尾は `Y` の中: `B'` に帰納
+          have hlB' : B'.length ≤ n := by
+            have := List.length_dropWhile_le (fun q : ℕ × ℕ => ((bd, y) : ℕ × ℕ).1 < q.1) r
+            simp only [List.length_cons] at hB; rw [hB']; omega
+          have hcB' : colOK B' := fun cc hcm => hc cc
+            (List.mem_cons_of_mem _ (by rw [hB'] at hcm; exact (List.dropWhile_sublist _).subset hcm))
+          have hdB' : descOK B' := by rw [hB']; exact (descOK_cons.1 hd).2.2
+          have hlB2 : bd < (B'.getLastD (0, 0)).1 := by
+            rw [if_neg hBe] at hMlast; rw [← hMlast]; exact hlast
+          obtain ⟨k, hk1, hk2⟩ := ih B' hlB' bd d ((bd, y) : ℕ × ℕ).2 hbB' hcB' hdB' hbd hlB2
+          have hYne : Y ≠ [] := by rw [hY]; intro he; rw [convC_eq_nil_iff] at he; exact hBe he
+          have hYlen : 0 < Y.length := List.length_pos_of_ne_nil hYne
+          refine ⟨((dd, ((bd, y) : ℕ × ℕ).2) :: X).length + k, ?_, ?_⟩
+          · rw [hout]
+            simp only [List.length_append]
+            rw [← hY] at hk1
+            omega
+          · rw [hout]
+            have he1 : (((dd, ((bd, y) : ℕ × ℕ).2) :: X) ++ Y).length - 1
+                = ((dd, ((bd, y) : ℕ × ℕ).2) :: X).length + (Y.length - 1) := by
+              simp only [List.length_append]; omega
+            rw [he1, entry_append_right, entry_append_right, hY]
+            exact hk2
+
+/-- **場合 (c) の段 0（完成形）**: `B` の末尾が根より深ければ、
+`convC B` の像の上で展開は局所化できる。 -/
+theorem oper_append_convC (A B : PairSeq) (n : ℕ) {bd d plev : ℕ}
+    (hb : blockok bd B) (hc : colOK B) (hdo : descOK B) (hbd : bd ≤ d)
+    (hlast : bd < (B.getLastD (0, 0)).1)
+    (hT : 2 ≤ (convC B d plev false false).length)
+    (hz : ¬ (entry (convC B d plev false false)
+              0 ((convC B d plev false false).length - 1) = 0 ∧
+             entry (convC B d plev false false)
+              1 ((convC B d plev false false).length - 1) = 0))
+    (hi : idx1 (convC B d plev false false) ((convC B d plev false false).length - 1) = 0)
+    (hp : hasParent (A ++ convC B d plev false false)
+            (idx1 (convC B d plev false false) ((convC B d plev false false).length - 1))
+            (A.length + ((convC B d plev false false).length - 1))) :
+    (A ++ convC B d plev false false)⟦n⟧ = A ++ (convC B d plev false false)⟦n⟧ := by
+  obtain ⟨k, hk1, hk2⟩ :=
+    convC_exists_shallow B.length B (Nat.le_refl _) bd d plev hb hc hdo hbd hlast
+  exact oper_append_of_shallow0 A _ n hT hz hi hp hk1 hk2
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -1057,3 +1206,5 @@ end DBMS
 #print axioms DBMS.parent_ge_of_shallow
 #print axioms DBMS.oper_append_of_shallow0
 #print axioms DBMS.convC_head_shallow
+#print axioms DBMS.convC_exists_shallow
+#print axioms DBMS.oper_append_convC

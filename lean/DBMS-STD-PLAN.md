@@ -27,6 +27,8 @@
 | `parent_ge_of_witness` / `oper_append_of_witness`（**証人が 1 つあれば局所化**） | `DbmsStd.lean` |
 | `nextrel0_ge` / `nextrel1_ge` / `parent_ge_of_shallow`（浅い列 1 つで親の下界） | `DbmsStd.lean` |
 | `oper_append_of_shallow0` / `convC_head_shallow`（段 0 での局所化） | `DbmsStd.lean` |
+| `convC_exists_shallow`（**像の中に末尾より浅い列がある**） | `DbmsStd.lean` |
+| `oper_append_convC`（**場合 (c) の段 0 が完成**） | `DbmsStd.lean` |
 | `range'_map_entry` / `range_append_range'` | `DbmsStd.lean` |
 
 いずれも sorry 0。
@@ -303,10 +305,10 @@ oper_append_of_shallow0     段 0 のとき、接尾辞に浅い列があれば�
 convC_head_shallow          像の先頭が深さ d なら、それが証人
 ```
 
-残るのは `b = d = s = bd` の場合に、`convC B` の中の浅い列を見つけること。
-そこでは像の先頭は `(d+1, s)` なので、`B` の兄弟の鎖をたどって
-段が `s` より小さい要素（像は深さ `d`）を探すか、鎖が全部段 `s` なら
-末尾が引数ブロックの中（深さ ≥ d+2）なので先頭 `(d+1,s)` が証人になる。）
+`b = d = s = bd` の場合も含めて `convC_exists_shallow` で片付いた（兄弟の鎖に沿った帰納）。
+**場合 (c) の段 0 は `oper_append_convC` で完成**。）
+
+残るのは (c) の段 > 0（`i = 1`）、(b)、(d)。
 
 もう 1 つ、`convC ((p :: Arg) ++ B⟦n⟧) = cols ++ convC Arg ++ convC (B⟦n⟧)` も要る。
 `B⟦n⟧` の先頭は `B` の先頭と同じなので切り分けは同じだが、縮約の判定が変わりうる。
