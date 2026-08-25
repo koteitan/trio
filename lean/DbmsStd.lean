@@ -3845,6 +3845,50 @@ theorem reindexD_sib_lad {p : ℕ × ℕ} {Arg T : PairSeq} {d plev : ℕ} {firs
       rw [oper_headI hL hn]; exact hTh)
     hb hcT hdT hbd hzT hpB hgeB IH
 
+/-! ## 4.7 降下が止まる場合（ブロック版）
+
+右端の道を降りていくと、いつかは「親がこのブロックの中にない」ところで止まる。
+止まり方は 3 通り: 末尾が `(0,0)`（(a)）、親がない（(b)）、親が節点そのもの（(d)）。
+(a) と (b) はブロックのままで片付く。 -/
+
+/-- **場合 (a) のブロック版**（`d = 0`、つまり深さ 0 のブロック）。 -/
+theorem reindexD_succ_gen {B : PairSeq} (plev : ℕ) (first force : Bool)
+    (hB : B ≠ []) (hc : colOK B) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (B ++ [((0, 0) : ℕ × ℕ)]) 0 plev first force)⟦m⟧
+        = convC ((B ++ [((0, 0) : ℕ × ℕ)])⟦n'⟧) 0 plev first force := by
+  intro n hn
+  refine ⟨1, n, Nat.le_refl 1, Nat.le_refl n, ?_⟩
+  have hsnoc : convC (B ++ [((0, 0) : ℕ × ℕ)]) 0 plev first force
+      = convC B 0 plev first force ++ [((0, 0) : ℕ × ℕ)] :=
+    convC_snoc_zero B.length B (Nat.le_refl _) hc 0 plev first force
+  have hCne : convC B 0 plev first force ≠ [] := by
+    rw [ne_eq, convC_eq_nil_iff]; exact hB
+  rw [hsnoc, oper_snoc_zero hCne 1, oper_snoc_zero hB n]
+
+/-- **場合 (b) のブロック版**: 末尾列に親がなければ `m = 1`, `n' = n`。 -/
+theorem reindexD_noParent_gen {B : PairSeq} (d plev : ℕ) (first force : Bool)
+    (hL : 1 < B.length) (hco : contrOK B)
+    (hz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0))
+    (hnp : ¬ hasParent B (idx1 B (B.length - 1)) (B.length - 1)) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC B d plev first force)⟦m⟧ = convC (B⟦n'⟧) d plev first force := by
+  intro n _
+  refine ⟨1, n, Nat.le_refl 1, Nat.le_refl n, ?_⟩
+  rw [oper_one (convC_length_ge_two hL d plev first force),
+    oper_eq_pred_of_noParent n (by omega) hz hnp, Pred, if_neg (by omega)]
+  exact (convC_dropLast_noParent_aux B.length B (Nat.le_refl _) hL d plev first force
+    hco hnp).symm
+
+/-- 段 0 なら `contrOK` は自動なので、場合 (b) は仮定なしで片付く。 -/
+theorem reindexD_noParent_zero {B : PairSeq} (d plev : ℕ) (first force : Bool)
+    (hL : 1 < B.length) (hlev : entry B 1 (B.length - 1) = 0)
+    (hz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0))
+    (hnp : ¬ hasParent B (idx1 B (B.length - 1)) (B.length - 1)) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC B d plev first force)⟦m⟧ = convC (B⟦n'⟧) d plev first force :=
+  reindexD_noParent_gen d plev first force hL (contrOK_of_last_zero hlev) hz hnp
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -3936,3 +3980,6 @@ end DBMS
 #print axioms DBMS.reindexD_arg_lad
 #print axioms DBMS.reindexD_sib_nolad
 #print axioms DBMS.reindexD_sib_lad
+#print axioms DBMS.reindexD_succ_gen
+#print axioms DBMS.reindexD_noParent_gen
+#print axioms DBMS.reindexD_noParent_zero
