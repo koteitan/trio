@@ -1272,6 +1272,133 @@ theorem convC_dropLast_tail (p : ℕ × ℕ) (A B : PairSeq) (d plev : ℕ) (fir
   congr 1
   exact (List.dropLast_append_of_ne_nil hYne).symm
 
+/-- 梯子ありで兄弟に降りる段（縮約が発火する場合）。`Bq ≠ []` なら縮約は消えない。 -/
+theorem convC_dropLast_contr (p : ℕ × ℕ) (A B : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hA : ∀ x ∈ A, p.1 < x.1) (hBh : B = [] ∨ ¬ (p.1 < (B.headI).1))
+    (hl : ladOf p.2 d plev first force = true)
+    {rest2 Bq : PairSeq}
+    (hcc : contrLen p B (unitsLen p B) A = some (rest2, Bq))
+    (hBqne : Bq ≠ [])
+    (ih : convC (Bq.dropLast) d p.2 false false = (convC Bq d p.2 false false).dropLast) :
+    convC (p :: (A ++ B.dropLast)) d plev first force
+      = (convC (p :: (A ++ B)) d plev first force).dropLast := by
+  obtain ⟨q, r2, hdq, hq2, hq1, hAq, hBq, hr2ne, hr2d, hr2l⟩ := contrLen_spec hcc
+  set k := unitsLen p B with hk
+  set U := B.take k with hU
+  have hkle : k ≤ B.length := unitsLen_le p B.length B (Nat.le_refl _)
+  have hUlen : U.length = k := by rw [hU, List.length_take]; omega
+  have hBsplit : B = U ++ (q :: r2) := by rw [hU, ← hdq, List.take_append_drop]
+  have hr2split : r2 = (r2.takeWhile fun x => q.1 < x.1) ++ Bq := by
+    conv_lhs => rw [← List.takeWhile_append_dropWhile
+      (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) (l := r2)]
+    rw [hBq]
+  have hr2ne' : r2 ≠ [] := by
+    intro he
+    rw [he] at hr2split
+    exact hBqne (List.append_eq_nil_iff.1 hr2split.symm).2
+  have hAqdeep : ∀ x ∈ (r2.takeWhile fun x => q.1 < x.1), q.1 < x.1 := by
+    intro x hx
+    have := List.mem_takeWhile_imp (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) hx
+    simpa using this
+  have hBqh : Bq = [] ∨ ¬ (q.1 < (Bq.headI).1) := by
+    rcases dropWhile_head_neg (a := q.1) r2 with h | h
+    · rw [hBq] at h; exact Or.inl h
+    · rw [hBq] at h; exact Or.inr h
+  have hBqdh : Bq.dropLast = [] ∨ ¬ (q.1 < ((Bq.dropLast).headI).1) := by
+    rcases hBqh with h | h
+    · exact Or.inl (by rw [h]; rfl)
+    · rcases Bq with _ | ⟨b, _ | ⟨b2, Bq'⟩⟩
+      · exact Or.inl rfl
+      · exact Or.inl rfl
+      · exact Or.inr (by simpa using h)
+  -- `B.dropLast` の分解
+  have hBdrop : B.dropLast = U ++ (q :: r2.dropLast) := by
+    rw [hBsplit, List.dropLast_append_of_ne_nil (by simp), dropLast_cons_ne hr2ne']
+  have hr2drop : r2.dropLast = (r2.takeWhile fun x => q.1 < x.1) ++ Bq.dropLast := by
+    conv_lhs => rw [hr2split]
+    rw [List.dropLast_append_of_ne_nil hBqne]
+  have hqp : ¬ (q = p) := by
+    intro he; rw [he] at hq2; omega
+  have hUnits : Units p U := by rw [hU, hk]; exact units_take p B.length B (Nat.le_refl _)
+  have hu' : unitsLen p (B.dropLast) = k := by
+    rw [hBdrop, unitsLen_append_units hUnits (Or.inr ⟨by simp only [List.headI_cons]; omega,
+      by simp only [List.headI_cons]; exact hqp⟩), hUlen]
+  -- 縮約は同じように発火する
+  have hcc' : contrLen p (B.dropLast) (unitsLen p (B.dropLast)) A = some (rest2, Bq.dropLast) := by
+    obtain ⟨eA, eB⟩ := split_append (X := (r2.takeWhile fun x => q.1 < x.1))
+      (Y := Bq.dropLast) (dd := q.1) hAqdeep hBqdh
+    have htk : (B.dropLast).take k = U := by rw [hBdrop, ← hUlen, List.take_left]
+    have hdk : (B.dropLast).drop k = q :: r2.dropLast := by
+      rw [hBdrop, ← hUlen, List.drop_left]
+    unfold contrLen
+    rw [hu', hdk, htk]
+    simp only [hr2drop, eA, eB]
+    have hpre : (r2.takeWhile fun x => q.1 < x.1) = contrPre p U A ++ rest2 := hAq
+    rw [hpre]
+    have hlen : (contrPre p U A ++ rest2).take (contrPre p U A).length = contrPre p U A := by
+      rw [List.take_left]
+    have hdrp : (contrPre p U A ++ rest2).drop (contrPre p U A).length = rest2 := by
+      rw [List.drop_left]
+    rw [if_pos ⟨hq2, hq1, hlen, by rw [hdrp]; exact hr2ne, by rw [hdrp]; exact hr2d,
+      by rw [hdrp]; exact hr2l⟩, hdrp]
+  -- 出力の比較
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := p.1) hA hBh
+  have hBdh : B.dropLast = [] ∨ ¬ (p.1 < ((B.dropLast).headI).1) := by
+    right
+    rw [hBdrop]
+    by_cases hUe : U = []
+    · rw [hUe]; simp only [List.nil_append, List.headI_cons]; omega
+    · rw [headI_append_left hUe]
+      have hle : (U.headI).1 ≤ p.1 := by
+        rcases hUnits.head_eq with h | h
+        · exact absurd h hUe
+        · rw [h]
+      omega
+  obtain ⟨e3, e4⟩ := split_append (X := A) (Y := B.dropLast) (dd := p.1) hA hBdh
+  have hYne : convC Bq d p.2 false false ≠ [] := by
+    intro he; rw [convC_eq_nil_iff] at he; exact hBqne he
+  rw [convC_cons_lad_some p (A ++ B.dropLast) d plev first force hl (by rw [e3, e4]; exact hcc'),
+    convC_cons_lad_some p (A ++ B) d plev first force hl (by rw [e1, e2]; exact hcc),
+    e1, e2, e3, e4, hu', ← hk, ← hU]
+  have htk : (B.dropLast).take k = U := by rw [hBdrop, ← hUlen, List.take_left]
+  rw [htk, ih]
+  rw [dropLast_cons_ne (by simp), dropLast_cons_ne (by
+    intro he
+    simp only [List.append_eq_nil_iff] at he
+    exact hYne he.2)]
+  congr 2
+  exact (List.dropLast_append_of_ne_nil hYne).symm
+
+/-- 梯子ありで縮約なしの、兄弟に降りる段。 -/
+theorem convC_dropLast_lad_none (p : ℕ × ℕ) (A B : PairSeq) (d plev : ℕ) (first force : Bool)
+    (hA : ∀ x ∈ A, p.1 < x.1) (hBne : B ≠ []) (hBd : B.dropLast ≠ [])
+    (hBh : ¬ (p.1 < (B.headI).1))
+    (hl : ladOf p.2 d plev first force = true)
+    (hc1 : contrLen p B (unitsLen p B) A = none)
+    (hc2 : contrLen p (B.dropLast) (unitsLen p (B.dropLast)) A = none)
+    (ih : convC (B.dropLast) d p.2 false false = (convC B d p.2 false false).dropLast) :
+    convC (p :: (A ++ B.dropLast)) d plev first force
+      = (convC (p :: (A ++ B)) d plev first force).dropLast := by
+  have hhd : (B.dropLast).headI = B.headI := by
+    rcases B with _ | ⟨b, _ | ⟨b2, B'⟩⟩
+    · exact absurd rfl hBne
+    · simp at hBd
+    · rfl
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := p.1) hA (Or.inr hBh)
+  obtain ⟨e3, e4⟩ := split_append (X := A) (Y := B.dropLast) (dd := p.1) hA
+    (Or.inr (by rw [hhd]; exact hBh))
+  have hYne : convC B d p.2 false false ≠ [] := by
+    intro he; rw [convC_eq_nil_iff] at he; exact hBne he
+  rw [convC_cons_lad_none p (A ++ B.dropLast) d plev first force hl (by rw [e3, e4]; exact hc2),
+    convC_cons_lad_none p (A ++ B) d plev first force hl (by rw [e1, e2]; exact hc1),
+    e1, e2, e3, e4, ih]
+  rw [dropLast_cons_ne (by simp), dropLast_cons_ne (by
+    intro he
+    obtain ⟨-, h2⟩ := List.append_eq_nil_iff.1 he
+    exact hYne h2)]
+  congr 2
+  exact (List.dropLast_append_of_ne_nil hYne).symm
+
 /-! ## 2.8 基本列の単調性 -/
 
 open Three in
@@ -1399,3 +1526,5 @@ end DBMS
 #print axioms DBMS.convC_dropLast_singleton
 #print axioms DBMS.convC_dropLast_arg
 #print axioms DBMS.convC_dropLast_tail
+#print axioms DBMS.convC_dropLast_contr
+#print axioms DBMS.convC_dropLast_lad_none
