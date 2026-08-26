@@ -12701,6 +12701,212 @@ theorem convC_eq_shift : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
         show bd + e + 1 = (bd + 1) + e by omega, hihA, hihB]
       simp [shiftr0_cons, shiftr0_append, hp1]
 
+/-! ## 4.27 展開は深さの平行移動と可換
+
+`oper` が絶対的な深さを見るのは「末尾列が `(0,0)`」の枝だけで、段 > 0 では
+その枝に入らない。`nextrel0` / `nextrel1` / `le0` / `parent` はどれも行 0 の
+**差**しか使わないので、行 0 を一様にずらしても変わらない。 -/
+
+@[simp] theorem length_shiftr0 (t : ℕ) (M : PairSeq) :
+    (shiftr0 t M).length = M.length := by
+  unfold shiftr0; simp
+
+theorem getD_shiftr0 {t : ℕ} {M : PairSeq} {j : ℕ} (hj : j < M.length) :
+    (shiftr0 t M).getD j (0, 0) = ((M.getD j (0, 0)).1 + t, (M.getD j (0, 0)).2) := by
+  unfold shiftr0
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_map, List.getElem?_eq_getElem hj]
+  rfl
+
+theorem entry_shiftr0_zero {t : ℕ} {M : PairSeq} {j : ℕ} (hj : j < M.length) :
+    entry (shiftr0 t M) 0 j = entry M 0 j + t := by
+  unfold entry
+  rw [if_pos rfl, if_pos rfl, getD_shiftr0 hj]
+
+@[simp] theorem entry_shiftr0_one (t : ℕ) (M : PairSeq) (j : ℕ) :
+    entry (shiftr0 t M) 1 j = entry M 1 j := by
+  by_cases hj : j < M.length
+  · unfold entry
+    rw [if_neg one_ne_zero, if_neg one_ne_zero, getD_shiftr0 hj]
+  · have h1 : (shiftr0 t M).getD j (0, 0) = (0, 0) := by
+      rw [List.getD_eq_getElem?_getD,
+        List.getElem?_eq_none (by rw [length_shiftr0]; omega)]
+      rfl
+    have h2 : M.getD j (0, 0) = (0, 0) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]
+      rfl
+    unfold entry
+    rw [if_neg one_ne_zero, if_neg one_ne_zero, h1, h2]
+
+theorem nextrel0_shiftr0 (t : ℕ) (M : PairSeq) (j0 j1 : ℕ) :
+    nextrel0 (shiftr0 t M) j0 j1 ↔ nextrel0 M j0 j1 := by
+  unfold nextrel0
+  rw [length_shiftr0]
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨h1, h2, h3, ?_, ?_⟩
+    · rw [entry_shiftr0_zero h1, entry_shiftr0_zero h2] at h4; omega
+    · intro j hj
+      have hjlen : j < M.length := by omega
+      have h := h5 j hj
+      rw [entry_shiftr0_zero h2, entry_shiftr0_zero hjlen] at h
+      omega
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨h1, h2, h3, ?_, ?_⟩
+    · rw [entry_shiftr0_zero h1, entry_shiftr0_zero h2]; omega
+    · intro j hj
+      have hjlen : j < M.length := by omega
+      rw [entry_shiftr0_zero h2, entry_shiftr0_zero hjlen]
+      have := h5 j hj; omega
+
+theorem le0_shiftr0 (t : ℕ) (M : PairSeq) (j0 j1 : ℕ) :
+    le0 (shiftr0 t M) j0 j1 ↔ le0 M j0 j1 := by
+  unfold le0
+  rw [length_shiftr0]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨h1, h2, Relation.ReflTransGen.mono
+      (fun a b h => (nextrel0_shiftr0 t M a b).1 h) h3⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨h1, h2, Relation.ReflTransGen.mono
+      (fun a b h => (nextrel0_shiftr0 t M a b).2 h) h3⟩
+
+theorem nextrel1_shiftr0 (t : ℕ) (M : PairSeq) (j0 j1 : ℕ) :
+    nextrel1 (shiftr0 t M) j0 j1 ↔ nextrel1 M j0 j1 := by
+  unfold nextrel1
+  rw [length_shiftr0]
+  simp only [entry_shiftr0_one]
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    exact ⟨h1, h2, h3, h4, (le0_shiftr0 t M j0 j1).1 h5,
+      fun j hj => h6 j ⟨hj.1, (le0_shiftr0 t M j j1).2 hj.2⟩⟩
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    exact ⟨h1, h2, h3, h4, (le0_shiftr0 t M j0 j1).2 h5,
+      fun j hj => h6 j ⟨hj.1, (le0_shiftr0 t M j j1).1 hj.2⟩⟩
+
+theorem nextR_shiftr0 (t : ℕ) (M : PairSeq) (i j0 j1 : ℕ) :
+    nextR (shiftr0 t M) i j0 j1 ↔ nextR M i j0 j1 := by
+  unfold nextR
+  by_cases hi : i = 0
+  · rw [if_pos hi, if_pos hi]; exact nextrel0_shiftr0 t M j0 j1
+  · rw [if_neg hi, if_neg hi]; exact nextrel1_shiftr0 t M j0 j1
+
+theorem idx1_shiftr0 (t : ℕ) (M : PairSeq) (j1 : ℕ) :
+    idx1 (shiftr0 t M) j1 = idx1 M j1 := by
+  unfold idx1; rw [entry_shiftr0_one]
+
+theorem hasParent_shiftr0 (t : ℕ) (M : PairSeq) (i j1 : ℕ) :
+    hasParent (shiftr0 t M) i j1 ↔ hasParent M i j1 := by
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, h1, h2⟩
+    exact ⟨j0, (nextR_shiftr0 t M i j0 j1).1 h1,
+      fun y hy => h2 y ((nextR_shiftr0 t M i y j1).2 hy)⟩
+  · rintro ⟨j0, h1, h2⟩
+    exact ⟨j0, (nextR_shiftr0 t M i j0 j1).2 h1,
+      fun y hy => h2 y ((nextR_shiftr0 t M i y j1).1 hy)⟩
+
+theorem parent_shiftr0 (t : ℕ) (M : PairSeq) (i j1 : ℕ) :
+    parent (shiftr0 t M) i j1 = parent M i j1 := by
+  unfold parent
+  congr 1
+  funext j0
+  exact propext (nextR_shiftr0 t M i j0 j1)
+
+theorem take_shiftr0 (t : ℕ) (M : PairSeq) (k : ℕ) :
+    (shiftr0 t M).take k = shiftr0 t (M.take k) := by
+  unfold shiftr0
+  simp [List.map_take]
+
+theorem Pred_shiftr0 (t : ℕ) (M : PairSeq) : Pred (shiftr0 t M) = shiftr0 t (Pred M) := by
+  unfold Pred
+  rw [length_shiftr0]
+  by_cases h : M.length ≤ 1
+  · rw [if_pos h, if_pos h]
+  · rw [if_neg h, if_neg h, List.dropLast_eq_take, List.dropLast_eq_take,
+      length_shiftr0, take_shiftr0]
+
+/-- 段 > 0 の展開を、`idx1 = 1` に特殊化して `if` を消した形。 -/
+theorem oper_bad_unfold1 {M : PairSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
+    (hlev : 0 < entry M 1 (M.length - 1))
+    (hp : hasParent M 1 (M.length - 1)) :
+    M⟦n⟧ = M.take (parent M 1 (M.length - 1))
+      ++ (List.range n).flatMap fun k =>
+          (List.range' (parent M 1 (M.length - 1))
+            (M.length - 1 - parent M 1 (M.length - 1))).map
+            fun j => (entry M 0 j + k * (entry M 0 (M.length - 1)
+                        - entry M 0 (parent M 1 (M.length - 1))), entry M 1 j) := by
+  have hi1 : idx1 M (M.length - 1) = 1 := by rw [idx1, if_pos hlev]
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0) := by
+    rintro ⟨-, h⟩; omega
+  have hp' : hasParent M (idx1 M (M.length - 1)) (M.length - 1) := by rw [hi1]; exact hp
+  rw [oper_bad_unfold n hL hz hp', hi1]
+  simp only [Nat.zero_lt_one, if_true]
+
+/-- 展開の本体（`flatMap`＋`map`）に平行移動を通す。 -/
+theorem shiftr0_oper_body (t : ℕ) (M : PairSeq) (n j0 L D : ℕ) :
+    shiftr0 t ((List.range n).flatMap fun k =>
+        (List.range' j0 L).map fun j => (entry M 0 j + k * D, entry M 1 j))
+      = (List.range n).flatMap fun k =>
+        (List.range' j0 L).map fun j => (entry M 0 j + k * D + t, entry M 1 j) := by
+  unfold shiftr0
+  rw [List.map_flatMap]
+  refine List.flatMap_congr ?_
+  intro k _
+  rw [List.map_map]
+  rfl
+
+/-- **展開は深さの平行移動と可換**（段 > 0）。 -/
+theorem oper_shiftr0 (t : ℕ) (M : PairSeq) (n : ℕ)
+    (hlev : 0 < entry M 1 (M.length - 1)) :
+    (shiftr0 t M)⟦n⟧ = shiftr0 t (M⟦n⟧) := by
+  by_cases hL : M.length - 1 = 0
+  · rw [oper_eq_self_of_short n (by rw [length_shiftr0]; exact hL),
+      oper_eq_self_of_short n hL]
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0) := by
+    rintro ⟨-, h⟩; omega
+  have hLs : (shiftr0 t M).length - 1 ≠ 0 := by rw [length_shiftr0]; exact hL
+  have hlevs : 0 < entry (shiftr0 t M) 1 ((shiftr0 t M).length - 1) := by
+    rw [length_shiftr0, entry_shiftr0_one]; exact hlev
+  have hzs : ¬ (entry (shiftr0 t M) 0 ((shiftr0 t M).length - 1) = 0
+      ∧ entry (shiftr0 t M) 1 ((shiftr0 t M).length - 1) = 0) := by
+    rintro ⟨-, h⟩; omega
+  have hi1 : idx1 M (M.length - 1) = 1 := by rw [idx1, if_pos hlev]
+  by_cases hp : hasParent M 1 (M.length - 1)
+  · have hps : hasParent (shiftr0 t M) 1 ((shiftr0 t M).length - 1) := by
+      rw [length_shiftr0]
+      exact (hasParent_shiftr0 t M _ _).2 hp
+    have hlt : parent M 1 (M.length - 1) < M.length - 1 := by
+      have hp2 : hasParent M (idx1 M (M.length - 1)) (M.length - 1) := by rw [hi1]; exact hp
+      have := nextR_index_lt (parent_nextR hp2)
+      rw [hi1] at this
+      exact this
+    have hj1 : M.length - 1 < M.length := by omega
+    have hj0 : parent M 1 (M.length - 1) < M.length := by omega
+    rw [oper_bad_unfold1 n hLs hlevs hps, oper_bad_unfold1 n hL hlev hp,
+      length_shiftr0, parent_shiftr0, shiftr0_append, take_shiftr0, shiftr0_oper_body]
+    congr 1
+    refine List.flatMap_congr ?_
+    intro k _
+    refine List.map_congr_left ?_
+    intro j hj
+    obtain ⟨i, hi, rfl⟩ := List.mem_range'.1 hj
+    have hjlen : parent M 1 (M.length - 1) + 1 * i < M.length := by omega
+    have hD : entry M 0 (M.length - 1) + t - (entry M 0 (parent M 1 (M.length - 1)) + t)
+        = entry M 0 (M.length - 1) - entry M 0 (parent M 1 (M.length - 1)) := by omega
+    simp only [entry_shiftr0_zero hjlen, entry_shiftr0_zero hj1, entry_shiftr0_zero hj0,
+      entry_shiftr0_one, hD, Prod.mk.injEq, and_true]
+    omega
+  · have hps : ¬ hasParent (shiftr0 t M) (idx1 (shiftr0 t M) ((shiftr0 t M).length - 1))
+        ((shiftr0 t M).length - 1) := by
+      rw [length_shiftr0, idx1_shiftr0, hi1]
+      intro h
+      exact hp ((hasParent_shiftr0 t M _ _).1 h)
+    have hp' : ¬ hasParent M (idx1 M (M.length - 1)) (M.length - 1) := by
+      rw [hi1]; exact hp
+    rw [oper_eq_pred_of_noParent n hLs hzs hps, oper_eq_pred_of_noParent n hL hz hp',
+      Pred_shiftr0]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -12936,3 +13142,6 @@ end DBMS
 #print axioms DBMS.noAdj3_append_sep
 #print axioms DBMS.noAdj3_of_argPatOK
 #print axioms DBMS.convC_eq_shift
+#print axioms DBMS.nextrel1_shiftr0
+#print axioms DBMS.parent_shiftr0
+#print axioms DBMS.oper_shiftr0
