@@ -12410,6 +12410,297 @@ theorem convC_append_tail_shift : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N �
           hkey E Z hZd hZh]
         simp [List.append_assoc]
 
+/-! ## 4.26 像は「深さの平行移動」そのもの（梯子も跳びもない範囲）
+
+`ladOf` の梯子も `ddOf` の「段へ跳ぶ」枝も、どちらも **`d ≤ 段`** を要求する
+（`force` の枝は `fOK` が潰す）。したがって「どの列も段が `深さ + e` より
+真に小さい」なら `convC` の再帰は一切分岐せず、像は
+
+    convC M (bd + e) plev first force = shiftr0 e M
+
+つまり **元のブロックを深さだけずらしたもの**になる。段 0 で影の列が挟まるのとは
+まったく違い、段 > 0 の主要部はこれで片付く。 -/
+
+/-- 深さの余裕: どの列も段が「深さ + `e`」より真に小さい。 -/
+def slackOK (e : ℕ) (M : PairSeq) : Prop := ∀ c ∈ M, c.2 < c.1 + e
+
+theorem slackOK_nil (e : ℕ) : slackOK e [] := by intro c hc; simp at hc
+
+/-- `e ≥ 1` なら `colOK` から自動。 -/
+theorem slackOK_of_one_le {M : PairSeq} {e : ℕ} (he : 1 ≤ e) (hc : colOK M) :
+    slackOK e M := fun c hcm => by have := hc c hcm; omega
+
+/-- 頭の列に余裕があればブロック全体に余裕がある（`adjLev` と `descOK` で伝わる）。 -/
+theorem slackOK_of_head : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    ∀ (bd e : ℕ), blockok bd M → colOK M → adjLev M → descOK M →
+      (M ≠ [] → (M.headI).2 < bd + e) → slackOK e M := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hM bd e _ _ _ _ _
+    have hMe : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hMe; exact slackOK_nil e
+  | succ N ih =>
+    intro M hM bd e hb hcol hLB hd hhd
+    match M with
+    | [] => exact slackOK_nil e
+    | c :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile c r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := c.1) hAd hBh
+      have hp1 : c.1 = bd := by have := hb.1 (by simp); simpa using this
+      have hc2 : c.2 < bd + e := hhd (by simp)
+      obtain ⟨hdh, hdA, hdB⟩ := descOK_cons.1 hd
+      rw [e1] at hdA
+      rw [e2] at hdh hdB
+      have hcolA : colOK A := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+      have hcolB : colOK B := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hLA : adjLev A := by
+        have hx := adjLev_infix (takeWhile_infix_cons c (A ++ B)) hLB
+        rw [e1] at hx; exact hx
+      have hLBB : adjLev B := by
+        have hx := adjLev_infix (dropWhile_infix_cons c (A ++ B)) hLB
+        rw [e2] at hx; exact hx
+      have hbA : blockok (bd + 1) A := blockok_arg' hb hp1 hAd
+      have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+      have hhdA : A ≠ [] → (A.headI).2 < (bd + 1) + e := by
+        intro hAne
+        obtain ⟨a, as, ha⟩ : ∃ a as, A = a :: as := by
+          cases A with
+          | nil => exact absurd rfl hAne
+          | cons a as => exact ⟨a, as, rfl⟩
+        have h1 : c.1 < a.1 := hAd a (by rw [ha]; simp)
+        have h2 : a.1 ≤ c.1 + 1 := by
+          have hs := hb.2.2
+          rw [ha] at hs
+          simp only [List.cons_append, steps1_cons_cons] at hs
+          exact hs.1
+        have hg0 : ((c :: (A ++ B)).getD 0 (0, 0)) = c := by simp
+        have hg1 : ((c :: (A ++ B)).getD 1 (0, 0)) = a := by rw [ha]; simp
+        have hlen : 0 + 1 < (c :: (A ++ B)).length := by
+          rw [ha]; simp only [List.length_cons, List.length_append]; omega
+        have hkey := hLB 0 hlen (by rw [hg0, hg1]; omega)
+        rw [hg0, hg1] at hkey
+        rw [ha]
+        simp only [List.headI]
+        omega
+      have hhdB : B ≠ [] → (B.headI).2 < bd + e := by
+        intro hBne
+        have := hdh hBne
+        omega
+      have hAlen : A.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      have hBlen : B.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      have hsA := ih A hAlen (bd + 1) e hbA hcolA hLA hdA hhdA
+      have hsB := ih B hBlen bd e hbB hcolB hLBB hdB hhdB
+      intro x hx
+      rcases List.mem_cons.1 hx with rfl | hx'
+      · omega
+      · rcases List.mem_append.1 hx' with h | h
+        · exact hsA x h
+        · exact hsB x h
+
+/-- 深さで分かれた 2 つのブロックをつないでも禁止形は現れない。 -/
+theorem noAdj3_append_sep {A B : PairSeq} {dd : ℕ}
+    (hAd : ∀ x ∈ A, dd < x.1) (hBh : B = [] ∨ ¬ (dd < (B.headI).1))
+    (hA : noAdj3 A) (hB : noAdj3 B) : noAdj3 (A ++ B) := by
+  have hmemA : ∀ j, j < A.length → A.getD j (0, 0) ∈ A := by
+    intro j hj
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    simpa using List.getElem_mem hj
+  intro i hi hadj
+  simp only [List.length_append] at hi
+  by_cases h2 : i + 2 < A.length
+  · refine hA i h2 ?_
+    unfold adj3 at hadj ⊢
+    rw [getD_append_left (show i < A.length by omega),
+      getD_append_left (show i + 1 < A.length by omega),
+      getD_append_left (show i + 2 < A.length by omega)] at hadj
+    exact hadj
+  · by_cases h0 : A.length ≤ i
+    · refine hB (i - A.length) (by omega) ?_
+      unfold adj3 at hadj ⊢
+      rw [getD_append_right (show A.length ≤ i by omega),
+        getD_append_right (show A.length ≤ i + 1 by omega),
+        getD_append_right (show A.length ≤ i + 2 by omega),
+        show i + 1 - A.length = (i - A.length) + 1 by omega,
+        show i + 2 - A.length = (i - A.length) + 2 by omega] at hadj
+      exact hadj
+    · exfalso
+      push_neg at h0 h2
+      obtain ⟨b, bs, hbs⟩ : ∃ b bs, B = b :: bs := by
+        cases B with
+        | nil => simp at hi; omega
+        | cons b bs => exact ⟨b, bs, rfl⟩
+      have hbd : ¬ (dd < b.1) := by
+        rcases hBh with h | h
+        · rw [hbs] at h; simp at h
+        · rw [hbs] at h; simpa using h
+      obtain ⟨ha1, ha2, -, -⟩ := hadj
+      rcases (show A.length = i + 1 ∨ A.length = i + 2 by omega) with hL | hL
+      · have g1 : (A ++ B).getD i (0, 0) = A.getD i (0, 0) :=
+          getD_append_left (by omega)
+        have g2 : (A ++ B).getD (i + 1) (0, 0) = b := by
+          rw [getD_append_right (by omega), show i + 1 - A.length = 0 by omega, hbs]
+          rfl
+        rw [g1, g2] at ha1
+        have := hAd _ (hmemA i (by omega))
+        omega
+      · have g2 : (A ++ B).getD (i + 1) (0, 0) = A.getD (i + 1) (0, 0) :=
+          getD_append_left (by omega)
+        have g3 : (A ++ B).getD (i + 2) (0, 0) = b := by
+          rw [getD_append_right (by omega), show i + 2 - A.length = 0 by omega, hbs]
+          rfl
+        rw [g2, g3] at ha2
+        have := hAd _ (hmemA (i + 1) (by omega))
+        omega
+
+/-- **`argPatOK` から `noAdj3` が出る**（`argPatOK_of_noAdj3` の逆）。 -/
+theorem noAdj3_of_argPatOK : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    argPatOK M → noAdj3 M := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hMl _
+    have hMe : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hMe
+    intro i hi; simp at hi
+  | succ N ih =>
+    intro M hMl hAP
+    match M with
+    | [] => intro i hi; simp at hi
+    | p :: r =>
+      obtain ⟨hHA, hAPA, hAPB⟩ := argPatOK_cons.1 hAP
+      have hAlen : (r.takeWhile fun q => p.1 < q.1).length ≤ N := by
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => p.1 < q.1) (l := r)).length_le
+        simp only [List.length_cons] at hMl
+        omega
+      have hBlen : (r.dropWhile fun q => p.1 < q.1).length ≤ N := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) r
+        simp only [List.length_cons] at hMl
+        omega
+      have hAd : ∀ x ∈ (r.takeWhile fun q => p.1 < q.1), p.1 < x.1 := by
+        intro x hx
+        have := List.mem_takeWhile_imp (p := fun q : ℕ × ℕ => decide (p.1 < q.1)) hx
+        simpa using this
+      have hnar : noAdj3 r := by
+        have h := noAdj3_append_sep (dd := p.1) hAd (dropWhile_head_neg r)
+          (ih _ hAlen hAPA) (ih _ hBlen hAPB)
+        rwa [List.takeWhile_append_dropWhile] at h
+      intro i hi hadj
+      match i with
+      | 0 =>
+        cases r with
+        | nil => simp at hi
+        | cons x r' =>
+          cases r' with
+          | nil => simp at hi
+          | cons y r'' =>
+            obtain ⟨h1, h2, h3, h4⟩ := hadj
+            have g0 : ((p :: x :: y :: r'').getD 0 (0, 0)) = p := rfl
+            have g1 : ((p :: x :: y :: r'').getD (0 + 1) (0, 0)) = x := rfl
+            have g2 : ((p :: x :: y :: r'').getD (0 + 2) (0, 0)) = y := rfl
+            rw [g0, g1] at h1 h3
+            rw [g1, g2] at h2 h4
+            have hx : p.1 < x.1 := h1
+            have hy : p.1 < y.1 := by omega
+            have hAeq : ((x :: y :: r'').takeWhile fun q => p.1 < q.1)
+                = x :: ((y :: r'').takeWhile fun q => p.1 < q.1) :=
+              List.takeWhile_cons_of_pos (by simpa using hx)
+            have hseq : ((y :: r'').takeWhile fun q => p.1 < q.1)
+                = y :: (r''.takeWhile fun q => p.1 < q.1) :=
+              List.takeWhile_cons_of_pos (by simpa using hy)
+            have hteq : (((y :: r'').takeWhile fun q => p.1 < q.1).takeWhile
+                  fun z => x.1 < z.1)
+                = y :: ((r''.takeWhile fun q => p.1 < q.1).takeWhile fun z => x.1 < z.1) := by
+              rw [hseq]
+              exact List.takeWhile_cons_of_pos (by simpa using h2)
+            have hkey := hHA x ((y :: r'').takeWhile fun q => p.1 < q.1) hAeq h3
+              (by rw [hteq]; simp)
+            rw [hteq] at hkey
+            simp only [List.headI_cons] at hkey
+            exact hkey h4
+      | j + 1 =>
+        refine hnar j (by simp only [List.length_cons] at hi; omega) ?_
+        unfold adj3 at hadj ⊢
+        have e1 : (p :: r).getD (j + 1) (0, 0) = r.getD j (0, 0) := List.getD_cons_succ
+        have e2 : (p :: r).getD (j + 1 + 1) (0, 0) = r.getD (j + 1) (0, 0) :=
+          List.getD_cons_succ
+        have e3 : (p :: r).getD (j + 1 + 2) (0, 0) = r.getD (j + 2) (0, 0) := by
+          rw [show j + 1 + 2 = (j + 2) + 1 by omega]
+          exact List.getD_cons_succ
+        rw [e1, e2, e3] at hadj
+        exact hadj
+
+/-- **像は深さの平行移動そのもの**（梯子も跳びもない範囲）。 -/
+theorem convC_eq_shift : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    ∀ (bd e plev : ℕ) (first force : Bool),
+      blockok bd M → slackOK e M → noAdj3 M →
+      hpOK M (bd + e) plev first force → fOK M (bd + e) plev force →
+      convC M (bd + e) plev first force = shiftr0 e M := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hM bd e plev first force _ _ _ _ _
+    have hMe : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hMe; simp
+  | succ N ih =>
+    intro M hM bd e plev first force hb hsl hna hHP hFC
+    match M with
+    | [] => simp
+    | c :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile c r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := c.1) hAd hBh
+      have hp1 : c.1 = bd := by have := hb.1 (by simp); simpa using this
+      have hc2 : c.2 < bd + e := by have := hsl c (by simp); omega
+      have hlad : ladOf c.2 (bd + e) plev first force = false :=
+        lad_false_of_levLt hc2 hFC (Nat.le_refl _)
+      have hdd : ddOf c.2 (bd + e) plev first force = bd + e :=
+        ddOf_of_levLt hc2 hFC (Nat.le_refl _)
+      have hbA : blockok (bd + 1) A := blockok_arg' hb hp1 hAd
+      have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+      have hslA : slackOK e A := fun x hx =>
+        hsl x (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+      have hslB : slackOK e B := fun x hx =>
+        hsl x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hnaA : noAdj3 A := by
+        have hx := noAdj3_infix (takeWhile_infix_cons c (A ++ B)) hna
+        rw [e1] at hx; exact hx
+      have hnaB : noAdj3 B := by
+        have hx := noAdj3_infix (dropWhile_infix_cons c (A ++ B)) hna
+        rw [e2] at hx; exact hx
+      have hAP : argPatOK (c :: (A ++ B)) :=
+        argPatOK_of_noAdj3 _ _ (Nat.le_refl _) hna
+      obtain ⟨hHA, -, -⟩ := argPatOK_cons.1 hAP
+      rw [e1] at hHA
+      have hHPA : hpOK A ((bd + 1) + e) c.2 true (first && (c.2 == plev)) :=
+        hpOK_of_headPatOK hHA
+      have hfA : fOK A ((bd + 1) + e) c.2 (first && (c.2 == plev)) := by
+        intro hft
+        have hf1 : first = true := by
+          simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.1
+        have hpl : c.2 = plev := by
+          simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.2
+        left
+        intro a s hs
+        rcases hHP hf1 with hh | ⟨hd0, -, -⟩
+        · have hkey := hh c (A ++ B) rfl hpl (by rw [e1, hs]; simp)
+          rw [e1, hs] at hkey
+          simpa using hkey
+        · omega
+      have hAlen : A.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      have hBlen : B.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      have hihA := ih A hAlen (bd + 1) e c.2 true (first && (c.2 == plev))
+        hbA hslA hnaA hHPA hfA
+      have hihB := ih B hBlen bd e c.2 false false hbB hslB hnaB hpOK_false fOK_false
+      rw [convC_factor_sib c A B (bd + e) plev first force hAd hBh hlad, hdd,
+        show bd + e + 1 = (bd + 1) + e by omega, hihA, hihB]
+      simp [shiftr0_cons, shiftr0_append, hp1]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -12641,3 +12932,7 @@ end DBMS
 #print axioms DBMS.convC_depth_shift
 #print axioms DBMS.oper_tower_at
 #print axioms DBMS.convC_append_tail_shift
+#print axioms DBMS.slackOK_of_head
+#print axioms DBMS.noAdj3_append_sep
+#print axioms DBMS.noAdj3_of_argPatOK
+#print axioms DBMS.convC_eq_shift
