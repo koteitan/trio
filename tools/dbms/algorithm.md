@@ -1,199 +1,360 @@
-# BMS 2 行標準形 -> DBMS 標準形の変換 `conC`
+# BMS 2 行標準形から DBMS 標準形への変換
 
-対象は 2 行のバシク行列（BM4）の標準形、つまり `psi_0(Omega_omega)` 未満。
-実装は [`rows2.py`](rows2.py)（参照実装）と [`bms2dbms.py`](bms2dbms.py)（CLI）、
-形式化は [`lean/Dbms.lean`](../../lean/Dbms.lean) と
-[`lean/DbmsStd.lean`](../../lean/DbmsStd.lean)。
+## 1. 記法
 
-## 0. なぜ変換が要るのか
+**列**とは $`p = (p_0, p_1) \in \mathbb{N}^2`$ のことで、$`p_0`$ を深さ、$`p_1`$ を段と呼ぶ。**行列**とは列の有限列
 
-BMS と DBMS は**展開規則が同じ**で、**対角だけが違う**。
-
-```
-BMS : diag[x][y] = x
-DBMS: diag[x][y] = max(x - y, 0)
+```math
+\mathrm{Seq} := (\mathbb{N}^2)^{<\omega}
 ```
 
-2 行で言うと、列 `(a, b)` の `a` が深さ、`b` が段。標準形が許す段の上限が違う。
+のことである。空列を $`\varepsilon`$、連結を $`\frown`$、長さを $`|M|`$、第 $`i`$ 成分を $`M_i`$、区間を $`M[i,j) := (M_i, \dots, M_{j-1})`$ と書く。$`M_{i,0}, M_{i,1}`$ は $`M_i`$ の第 0, 1 成分。
 
-```
-BMS  は 段 <= 深さ        (a, a) を書ける
-DBMS は 段 <  深さ        (a, a) は書けない（a = 0 を除く）
-```
+$`M \in \mathrm{Seq}`$ と列 $`p`$ に対し
 
-**これが違いのすべてである。** 変換の仕事は「段が深さに追いついている列を、
-1 つ深いところへ押し下げる」ことに尽きる。
-
-## 1. 共通の的 — 読み `translate`
-
-両方の行列が指す先を、入れ子の木 `Three` として取り出す。
-
-```
-inductive Three
-  | Z                                 葉
-  | P : N -> Three -> Three -> Three  (段, 引数, 兄弟)
+```math
+\mathrm{arg}_p(M) := M[0, k), \qquad \mathrm{sib}_p(M) := M[k, |M|), \qquad
+k := \min \{\, i \le |M| \mid i = |M| \lor M_{i,0} \le p_0 \,\}
 ```
 
-BMS の読みは素直な構造再帰である。先頭の列より深い列が引数、それ以外が兄弟。
+とおく。$`M = \mathrm{arg}_p(M) \frown \mathrm{sib}_p(M)`$ であり、$`\mathrm{arg}_p(M)`$ は「$`p`$ より真に深い列だけからなる最長の接頭辞」である。深さの平行移動を
 
-```
-translate []          = Z
-translate (p :: rest) = P p.2 (translate 引数) (translate 兄弟)
-
-  引数 = rest の中で深さが p.1 より大きい最長の接頭辞
-  兄弟 = その残り
+```math
+\sigma^e(M) := \bigl((M_{0,0}+e,\ M_{0,1}),\ \dots,\ (M_{|M|-1,0}+e,\ M_{|M|-1,1})\bigr),
+\qquad \sigma := \sigma^1
 ```
 
-変換の正しさは「**変換しても読んだ木が変わらない**」という形で述べる。
+と書く。真偽値は $`\top, \bot`$。
 
-```
-     BMS 標準形 M  --conC-->  DBMS 標準形
-         |                       |
-      translate               readCon
-         |                       |
-         v                       v
-        Three   ============   Three
-```
+## 2. 標準形
 
-## 2. 芯 — `convD`
+BMS と DBMS は展開規則が同一で、対角だけが異なる。2 行では
 
-`translate` とまったく同じ 2 分岐で書ける。持ち回るのは 4 つ。
-
-| | |
-|---|---|
-| `d` | いま書いているブロックの深さ |
-| `plev` | 親の段 |
-| `first` | ブロックの先頭の列か |
-| `force` | 「影の形で書け」という親からの指示 |
-
-```
-convD [] d plev first force = []
-convD (p :: rest) d plev first force =
-    let s    = p.2
-    let A, B = 引数, 兄弟
-    let lad  = first && s == plev + 1 && (d <= s || force)
-    let dd   = if lad          then d + 1
-               else if s > 0 && d <= s then s + 1
-               else                          d
-    let cols = if lad then [(d, plev), (d + 1, s)] else [(dd, s)]
-    cols ++ convD A (dd + 1) s True  ((not lad) && first && s == plev)
-         ++ convD B d        s False False
+```math
+\mathrm{diag}_{\mathrm{B}}(x) = (x,\ x), \qquad
+\mathrm{diag}_{\mathrm{D}}(x) = (x,\ \max(x-1,\ 0)).
 ```
 
-深さの決め方 `dd` が 3 通りある。
+$`\mathrm{ST}_{\mathrm{B}}, \mathrm{ST}_{\mathrm{D}} \subseteq \mathrm{Seq}`$ をそれぞれの標準形の集合とすると
 
-**(a) 素通り** — 段が 0、または既に `d > s` なら、そのまま深さ `d` に書ける。
-
-**(b) 段へ跳ぶ** — 段 `s > 0` の列は DBMS では深さ `s + 1` 以上に居なければならない。
-`d <= s` なら深さを `s + 1` へ持ち上げる。
-
-**(c) 梯子** — ブロックの先頭で段が親のちょうど +1 のときは、跳ぶわけにいかない。
-木の形が変わってしまうからである。そこで**影の列を 1 本立てて**深さを稼ぐ。
-
-```
-(d, plev)      影。段は親と同じなので読みでは無視される
-(d + 1, s)     本体
+```math
+M \in \mathrm{ST}_{\mathrm{B}} \implies \forall i\ (M_{i,1} \le M_{i,0}),
+\qquad
+M \in \mathrm{ST}_{\mathrm{D}} \implies \forall i\ (M_{i,0} = 0 \lor M_{i,1} < M_{i,0}).
 ```
 
-`force` は「親の列が影と読まれてしまう危険があるから、影の形で書け」という指示で、
-引数ブロックへ降りるときだけ渡る。
+BMS は $`(x,x)`$ を許すが DBMS は許さない。段 $`s \gt 0`$ の列は DBMS では深さ $`s+1`$ 以上に置くしかない。これが変換の内容のすべてである。
 
-ここまでは `translate` と 1 対 1 に対応していて、特別扱いは無い。
+## 3. 木
 
-## 3. 継ぎ足し — 縮約（梯子の二役）
-
-`convD` の像は DBMS 標準形になり切らない。`<=9` 列の BMS 標準形 5351 個のうち
-**78 個**で像が非標準になる（`(0,0)(1,1)(1,0)(2,1)(2,0)` 型）。
-
-原因は、同じ梯子を 2 度立てる形が現れることである。DBMS では 1 本の柱が
-「親の段」と「子の段」を**兼ねられる**ので、2 度目を書かないのが正しい。
-これを縮約と呼ぶ。
-
-発火の条件は 4 つ全部が揃ったとき。
-
-```
-1. いま梯子を立てている                     lad
-2. 兄弟のユニット列 U のあとに q が来て、
-   q の段が s - 1、q の深さが p と同じ       q.2 + 1 == s, q.1 == p.1
-3. q の引数の頭が、いま書いた分とそっくり同じ
-       contrPre p U A = [(p.1+1, p.2)] ++ shift1 A ++ shift1 U
-4. その続き rest2 の頭が深さ p.1+1 で段が下がる
+```math
+\mathcal{T} \ni t ::= Z \ \mid\ P(s;\ t_1,\ t_2) \qquad (s \in \mathbb{N})
 ```
 
-揃ったら、`q` とその前置きを**まるごと書かず**に中身だけを続ける。
+$`P(s; t_1, t_2)`$ は「段 $`s`$ の節点、引数が $`t_1`$、兄弟が $`t_2`$」を表す。
 
-```
-cols ++ convC A     (dd+1) s False   引数
-     ++ convC U     (d+1)  s False   兄弟のユニット列
-     ++ convC rest2 dd     s False   q の引数の残り（前置きを飛ばした先）
-     ++ convC Bq    d      s False   q の兄弟
-```
+### 3.1 $`\mathrm{b2t} : \mathrm{Seq} \to \mathcal{T}`$
 
-ここで**ユニット**とは「1 本の柱 + その引数ブロック」のこと。数えるのが
-`units_split` である。旧版は柱が並ぶ本数しか数えておらず、兄弟が引数を持つと
-そこで切れて縮約が発火しなかった。11 列の反例で見つかった。
-
-```
-(0,0)(1,1)(2,2)(1,1)(2,1)(1,0)(2,1)(3,2)(2,1)(3,1)(2,0)
+```math
+\mathrm{b2t}(\varepsilon) := Z, \qquad
+\mathrm{b2t}(p \frown r) := P\bigl(p_1;\ \mathrm{b2t}(\mathrm{arg}_p(r)),\ \mathrm{b2t}(\mathrm{sib}_p(r))\bigr)
 ```
 
-**この枝 1 本が、標準形性の証明を 15000 行にした。** それ以外は素直に閉じる。
+### 3.2 $`\mathrm{t2b} : \mathcal{T} \times \mathbb{N} \to \mathrm{Seq}`$
 
-## 4. 読み戻し `readCon`
-
-DBMS 側の読みは `translate` に節を足したものである。
-
-**影を捨てる節** — 先頭が「段が親と同じで、次の列が `(p.1+1, p.2+1)`」なら、
-その列は梯子の影なので読み飛ばす。
-
-**二役の節** — さらにその先に「深さが同じで段が下がる列」が続くなら、
-1 本の柱が 2 つの節点を兼ねている。ほどいて 2 つに戻す。このために `readK` は
-継続 `k`（読み切った先に置く項）を持ち回る。
-
-逆変換はこの読みを経由する。
-
-```
-conC^{-1} = untranslate . readCon
-untranslate Z            = []
-untranslate (P s A B) d  = [(d, s)] ++ untranslate A (d+1) ++ untranslate B d
+```math
+\mathrm{t2b}(Z, d) := \varepsilon, \qquad
+\mathrm{t2b}\bigl(P(s; t_1, t_2),\ d\bigr) := \bigl((d, s)\bigr) \frown \mathrm{t2b}(t_1,\ d+1) \frown \mathrm{t2b}(t_2,\ d)
 ```
 
-`conC` の単射性は証明済みだが**全射性は未証明**なので、逆変換の結果は往復で
-確かめる必要がある（`bms2dbms.py -r` は自動でやる）。実測では DBMS 標準形
-`<=7` 列の 1740 個すべてに逆像がある。Naruyoko 氏が `Trans`（PSS -> ブーフホルツ）で
-使った道 — 逆写像を作らず**両側の共終性**だけで全単射を出す — がそのまま使えるはずで、
-その 2 条件は `cofinal_check.py` が `<=7` 列 7256 個で違反 0 を確認している。
+$`\mathrm{b2t}`$ は深さを捨て、$`\mathrm{t2b}`$ は入れ子の深さから復元する。同じ 2 本が DBMS 行列にもそのまま使える（$`\mathrm{b2t}(N)`$ を DBMSThree と呼ぶ）。
 
-## 5. 証明されていること
+## 4. $`\mathrm{b2d} : \mathrm{Seq} \to \mathrm{Seq}`$
 
-すべて `sorry` なし、`sorryAx` なし、公理は `[propext, Classical.choice, Quot.sound]` のみ。
+補助関数 $`\Gamma^{f,\varphi}_{d,\ell} : \mathrm{Seq} \to \mathrm{Seq}`$ を使う。$`d`$ は現在のブロックの深さ、$`\ell`$ は親の段、$`f`$ はブロック先頭か、$`\varphi`$ は親からの「影の形で書け」という指示。
 
-| 命題 | 場所 |
-|---|---|
-| `readC_conC_ST : ST_PS M -> readCon (conC M) = translate M` | `Dbms.lean` |
-| `ST_D_conC_final : ST_PS M -> ST_D (conC M)` | `DbmsStd.lean` |
-| `conC_olt_iff_seqlex : readCon (conC M) <o readCon (conC N) <-> seqlex M N` | `Dbms.lean` |
-| `conC_injective : conC M = conC N -> M = N` | `Dbms.lean` |
-
-`ST_PS` は BMS 2 行標準形、`ST_D` は DBMS 標準形、`<o` は項の順序、
-`seqlex` は行列の順序。仮定は `ST_PS M` だけである。
-**全射性（`ST_D N -> exists M, ST_PS M /\ conC M = N`）はまだ証明されていない。**
-
-要になったのは次の補題で、これを無条件に証明するのが一番重かった。
-
-```
-ReindexD : ST_PS A -> 1 < |A| -> forall n >= 1,
-    exists m >= 1, exists n' >= n,  (conC A)[m] = conC (A[n'])
+```math
+\mathrm{b2d}(M) := \Gamma^{\top,\bot}_{0,0}(M)
 ```
 
-「像の基本列は、もとの基本列の像で（添字をずらせば）覆える」。
-これがあれば整礎帰納で標準形性が降りてくる。
+### 4.1 ユニット
 
-## 6. 実測
+```math
+\mathrm{u}_p(\varepsilon) := 0, \qquad
+\mathrm{u}_p(q \frown r) := \begin{cases}
+  |\mathrm{arg}_p(r)| + 1 + \mathrm{u}_p(\mathrm{sib}_p(r)) & (q = p) \cr
+  0 & (q \ne p)
+\end{cases}
+```
 
-| | |
-|---|---|
-| 読みの一致 | BM4-Analysis シートの 547 例で `#guard` |
-| `ReindexD` | 標準形 `<=10` 列 2073826 個で違反 0 |
-| 像の標準形性 | 同上 |
-| 縮約が発火する例 | 同 2073826 個のうち 180 個 |
+**ユニット**とは「$`p`$ そのもの 1 本とその引数ブロック」であり、$`\mathrm{u}_p(B)`$ は $`B`$ の先頭から取れるユニットの総列数である。
+
+### 4.2 場合分け
+
+```
+Γ[f,φ][d,ℓ](M)
+├─ M = ε ································· (i)
+└─ M = p⌢r
+   ├─ λ = ⊤
+   │  ├─ κ = ⊤  縮約 ······················ (ii)
+   │  └─ κ = ⊥  梯子 ······················ (iii)
+   └─ λ = ⊥     素通り・跳び ·············· (iv)
+```
+
+$`M = p \frown r`$ のとき
+
+```math
+s := p_1, \qquad A := \mathrm{arg}_p(r), \qquad B := \mathrm{sib}_p(r)
+```
+
+```math
+\lambda := f \land (s = \ell + 1) \land (d \le s \lor \varphi)
+```
+
+```math
+d' := \begin{cases}
+  d + 1 & (\lambda) \cr
+  s + 1 & (\lnot\lambda \land 0 < s \land d \le s) \cr
+  d & (\text{otherwise})
+\end{cases}
+```
+
+縮約の条件 $`\kappa`$ は $`\lambda = \top`$ のもとで次で定める。
+
+```math
+U := B[0,\ \mathrm{u}_p(B)), \qquad
+B^{\ast} := B[\mathrm{u}_p(B),\ |B|), \qquad
+\pi := \bigl((p_0+1,\ p_1)\bigr) \frown \sigma(A) \frown \sigma(U)
+```
+
+$`B^{\ast} = q \frown r^{\ast}`$ と書けるとき
+
+```math
+\alpha := \mathrm{arg}_q(r^{\ast}), \qquad
+\beta := \mathrm{sib}_q(r^{\ast}), \qquad
+R := \alpha[\,|\pi|,\ |\alpha|)
+```
+
+```math
+\kappa := (B^{\ast} \ne \varepsilon) \land (q_1 + 1 = s) \land (q_0 = p_0)
+  \land \bigl(\alpha[0, |\pi|) = \pi\bigr) \land (R \ne \varepsilon)
+  \land (R_{0,0} = p_0 + 1) \land (R_{0,1} < s)
+```
+
+### 4.3 各枝の値
+
+```math
+\text{(i)} \qquad \Gamma^{f,\varphi}_{d,\ell}(\varepsilon) = \varepsilon
+```
+
+```math
+\text{(ii)} \qquad \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
+  \bigl((d,\ell),\ (d+1,s)\bigr)
+  \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
+  \frown \Gamma^{\bot,\bot}_{d+1,\ s}(U)
+  \frown \Gamma^{\bot,\bot}_{d+1,\ s}(R)
+  \frown \Gamma^{\bot,\bot}_{d,\ s}(\beta)
+```
+
+```math
+\text{(iii)} \qquad \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
+  \bigl((d,\ell),\ (d+1,s)\bigr)
+  \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
+  \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
+```
+
+```math
+\text{(iv)} \qquad \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
+  \bigl((d',\ s)\bigr)
+  \frown \Gamma^{\top,\ f \land (s = \ell)}_{d'+1,\ s}(A)
+  \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
+```
+
+(iii) の $`\bigl((d,\ell),(d+1,s)\bigr)`$ が**梯子**である。$`(d,\ell)`$ は段が親と同じなので木には残らない足場（影）で、$`(d+1,s)`$ が本体。(ii) では $`q`$ とその前置き $`\pi`$ をまるごと書かずに中身だけを続ける。これが**縮約**であり、DBMS では 1 本の柱が 2 つの節点を兼ねられることに対応する[^1]。
+
+## 5. $`\mathrm{d2t} : \mathrm{Seq} \to \mathcal{T}`$
+
+補助関数 $`\Delta^{f}_{\ell} : \mathrm{Seq} \times \mathcal{T} \to \mathcal{T}`$ を使う。第 2 引数 $`k`$ は「列を読み切った先に置く木」（継続）。
+
+```math
+\mathrm{d2t}(l) := \Delta^{\top}_{0}(l,\ Z)
+```
+
+### 5.1 場合分け
+
+```
+Δ[f][ℓ](l, k)
+├─ l = ε ·································· (I)
+└─ l = p⌢rest
+   ├─ μ = ⊥     素通り ···················· (II)
+   └─ μ = ⊤,  rest = t⌢tail
+      ├─ ν = ⊥  影を捨てる ················ (III)
+      └─ ν = ⊤  二役をほどく ·············· (IV)
+```
+
+```math
+\mu := f \land (p_1 = \ell) \land (\mathit{rest} \ne \varepsilon)
+  \land \bigl(\mathit{rest}_0 = (p_0 + 1,\ p_1 + 1)\bigr)
+```
+
+$`\mu = \top`$ のとき $`\mathit{rest} = t \frown \mathit{tail}`$ と書き
+
+```math
+a := \mathrm{arg}_t(\mathit{tail}), \qquad
+c := \mathrm{sib}_t(\mathit{tail}), \qquad
+S := c[0,\ \mathrm{u}_t(c)), \qquad
+R := c[\mathrm{u}_t(c),\ |c|)
+```
+
+```math
+\nu := (R \ne \varepsilon) \land (R_{0,0} = t_0) \land (R_{0,1} < t_1)
+```
+
+```math
+R^{-} := R[0, m), \qquad R^{+} := R[m, |R|), \qquad
+m := \min \{\, i \le |R| \mid i = |R| \lor R_{i,0} < t_0 \,\}
+```
+
+### 5.2 各枝の値
+
+```math
+\text{(I)} \qquad \Delta^{f}_{\ell}(\varepsilon,\ k) = k
+```
+
+```math
+\text{(II)} \qquad \Delta^{f}_{\ell}(p \frown \mathit{rest},\ k) =
+  P\bigl(p_1;\ \Delta^{\top}_{p_1}(\mathrm{arg}_p(\mathit{rest}),\ Z),\
+  \Delta^{\bot}_{p_1}(\mathrm{sib}_p(\mathit{rest}),\ k)\bigr)
+```
+
+```math
+\text{(III)} \qquad \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
+  P\bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\ \Delta^{\bot}_{t_1}(c,\ k)\bigr)
+```
+
+```math
+\text{(IV)} \qquad \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
+  P\Bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\
+  \Delta^{\bot}_{t_1}\bigl(S,\
+    P\bigl(p_1;\ \Delta^{\top}_{p_1}(t \frown a \frown S \frown R^{-},\ Z),\
+    \Delta^{\bot}_{\ell}(R^{+},\ k)\bigr)\bigr)\Bigr)
+```
+
+(III) で $`p`$（影）が消える。(IV) では 1 本の柱 $`t`$ が段 $`t_1`$ の節点と段 $`p_1`$ の節点を兼ねているので、$`t \frown a \frown S \frown R^{-}`$ を組み直して読み直すことで 2 つに戻す。継続 $`k`$ が要るのは、DBMS 行列で横に並ぶ兄弟が木の上では別の場所に来るためである。
+
+## 6. 定理
+
+すべて Lean 4 / Mathlib で証明済み。`sorry` なし、追加公理なし。$`A\langle n \rangle`$ は添字 $`n`$ の基本列、$`\lt_o`$ は木の順序、$`\lt_{\mathrm{lex}}`$ は行列の順序。
+
+```math
+M \in \mathrm{ST}_{\mathrm{B}} \implies \mathrm{d2t}(\mathrm{b2d}(M)) = \mathrm{b2t}(M)
+\tag{T1}
+```
+
+```math
+M \in \mathrm{ST}_{\mathrm{B}} \implies \mathrm{b2d}(M) \in \mathrm{ST}_{\mathrm{D}}
+\tag{T2}
+```
+
+```math
+M, N \in \mathrm{ST}_{\mathrm{B}},\ M \ne N \implies
+\bigl(\mathrm{d2t}(\mathrm{b2d}(M)) <_o \mathrm{d2t}(\mathrm{b2d}(N))
+\iff M <_{\mathrm{lex}} N\bigr)
+\tag{T3}
+```
+
+```math
+M, N \in \mathrm{ST}_{\mathrm{B}},\ \mathrm{b2d}(M) = \mathrm{b2d}(N) \implies M = N
+\tag{T4}
+```
+
+(T2) の要は次の補題である[^2]。
+
+```math
+A \in \mathrm{ST}_{\mathrm{B}},\ |A| > 1,\ n \ge 1 \implies
+\exists m \ge 1\ \exists n' \ge n\ \bigl(\mathrm{b2d}(A)\langle m \rangle = \mathrm{b2d}(A \langle n' \rangle)\bigr)
+\tag{R}
+```
+
+未証明のもの。
+
+```math
+N \in \mathrm{ST}_{\mathrm{D}} \implies \exists M \in \mathrm{ST}_{\mathrm{B}}\ \bigl(\mathrm{b2d}(M) = N\bigr)
+\tag{S}
+```
+
+$`\mathrm{ST}_{\mathrm{D}}`$ の $`|N| \le 7`$ の 1740 個すべてで成立を確認済み（違反 0）[^3]。
+
+## 7. 例
+
+### 7.1 梯子
+
+```math
+M = \bigl((0,0),(1,1)\bigr), \qquad \mathrm{b2d}(M) = \bigl((0,0),(1,0),(2,1)\bigr)
+```
+
+```math
+\begin{aligned}
+\mathrm{b2t}(M) &= P(0;\ P(1; Z, Z),\ Z) \cr
+\mathrm{b2t}(\mathrm{b2d}(M)) &= P(0;\ P(0;\ P(1;Z,Z),\ Z),\ Z) \cr
+\mathrm{d2t}(\mathrm{b2d}(M)) &= P(0;\ P(1;Z,Z),\ Z)
+\end{aligned}
+```
+
+$`(1,1)`$ は $`\mathrm{ST}_{\mathrm{D}}`$ に置けないので段 1 を深さ 2 へ押し下げ、足場 $`(1,0)`$ を挟む。$`\mathrm{d2t}`$ の (III) がその足場を捨てる。
+
+### 7.2 縮約
+
+```math
+M = \bigl((0,0),(1,1),(1,0),(2,1),(2,0)\bigr), \qquad
+\mathrm{b2d}(M) = \bigl((0,0),(1,0),(2,1),(2,0)\bigr)
+```
+
+```math
+\begin{aligned}
+\mathrm{b2t}(M) &= P\bigl(0; P(1; Z, P(0; P(1; Z, P(0;Z,Z)), Z)), Z\bigr) \cr
+\mathrm{b2t}(\mathrm{b2d}(M)) &= P\bigl(0; P(0; P(1; Z, P(0;Z,Z)), Z), Z\bigr)
+\end{aligned}
+```
+
+節点が 5 個から 4 個に減る。$`\mathrm{d2t}`$ の (IV) が 1 本の柱を 2 つの節点にほどいて $`\mathrm{b2t}(M)`$ を復元する。
+
+## 8. 実装との対応
+
+| 本稿 | Lean（`lean/`） | Python（`rows2.py`） |
+|---|---|---|
+| $`\mathrm{arg}_p, \mathrm{sib}_p`$ | `takeWhile` / `dropWhile` | `split` |
+| $`\sigma^e`$ | `shift1` / `shiftr0` | `shift1` |
+| $`\mathrm{u}_p`$ | `unitsLen` | `units_split` |
+| $`\pi`$ | `contrPre` | `contrPre` |
+| $`\lambda`$ | `ladOf` | `lad` |
+| $`d'`$ | `ddOf` | `dd` |
+| $`\kappa`$ | `contrLen` | 直書き |
+| $`\Gamma^{f,\varphi}_{d,\ell}`$ | `convC` | `convC` |
+| $`\mathrm{b2d}`$ | `conC` | `convC M 0 0 True False` |
+| $`\mathrm{b2t}`$ | `translate`（`Pair/Term.lean`） | `translate` |
+| $`\mathrm{t2b}`$ | — | `untranslate` |
+| $`\Delta^{f}_{\ell}`$ | `readK` | `readC` |
+| $`\mathrm{d2t}`$ | `readCon` | `readC` |
+| (T1) | `readC_conC_ST` | |
+| (T2) | `ST_D_conC_final` | |
+| (T3) | `conC_olt_iff_seqlex` | |
+| (T4) | `conC_injective` | |
+| (R) | `reindexD_holds` | |
+
+CLI は [`bms2dbms.py`](bms2dbms.py)、使い方は [README.md](README.md)。
+
+## 注釈
+
+[^1]: (R) を無条件に証明するのが全体で最も重く、`DbmsStd.lean` は 15471 行になった。
+    素直に閉じないのは (ii) の縮約の枝だけで、(iii) と (iv) は右端の道に沿った帰納で片付く。
+    経緯は [`lean/DBMS-STD-PLAN.md`](../../lean/DBMS-STD-PLAN.md) に残してある。
+
+[^2]: 命名について。この文書では変換を $`\mathrm{src2dst}`$ の形で呼ぶ。
+    Lean 側の `translate` / `conC` / `readCon` はこの規約より前の名前で、
+    どれが何から何への写像か名前から読めない。
+
+[^3]: 逆写像を作らず両側の共終性だけで全単射を出す道（Naruyoko 氏が $`\mathrm{Trans}`$ で
+    使ったもの）が使えると見込んでいる。その 2 条件は $`\mathrm{ST}_{\mathrm{B}}`$ の
+    $`|M| \le 7`$ の 7256 個で違反 0（`cofinal_check.py`）。
+    出典: ユーザーブログ:Naruyoko/ペア数列システムの停止性証明に用いられた変換写像の全単射性。
