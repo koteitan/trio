@@ -1110,6 +1110,93 @@ def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 4. `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）。
 
 
+## 2026-08-26（続き 10）: **`CtrPres2` を証明。`ReindexD` と主定理が無条件になった**
+
+`leanman check` は exit 0、`sorry` 0、`sorryAx` なし。`DbmsStd.lean` は 15038 → 15471 行。
+
+```
+ctrPres2_holds   : CtrPres2                              -- 最後の残余が定理になった
+reindexD_holds   : ReindexD                              -- **仮定なし**
+ST_D_conC_final  : ST_PS M → ST_D (conC M)               -- **仮定なし**
+```
+
+`ReindexD` の残余は 5 つ（続き 5）→ 2 つ（続き 7）→ 1 つ（続き 9）と減っていたが、
+これで **0** になった。`CtrRes` = `ctrRes_holds`、`RDnopar` = `rdNopar`、
+`RDnode` = `rdNode`、`CtrPres2` = `ctrPres2_holds` がすべて定理である。
+
+### `CtrPres2` の証明（位置の比較だけで済む）
+
+`CtrPres2` は「`T` で縮約が発火しないなら `T⟦n⟧` でも発火しない」。
+`contrLen_shape` で `T⟦n⟧` の側の証拠を
+
+```
+T⟦n⟧ = U ++ q :: (pre ++ z :: Z),   pre = contrPre p U A
+J := |U| + 1 + |pre|                （= z の位置）
+```
+
+と書く。`hcth`（= `ctrHeadOK`）から仮定は `contrLen' p T … = none`（**構造条件も
+揃わない**）に強められるので、示すべきは「`T` でも構造条件が揃う」か
+「そもそも `T⟦n⟧` で揃わない」のどちらか。鍵は `j1 := |T| - 1`（`T` と `T⟦n⟧` の
+共通の接頭辞の長さ）と `J` の比較で、場合分けは **3 つだけ**だった。
+
+#### 1. `J < j1`（証拠がまるごと `T` の中）
+
+`T` と `T⟦n⟧` は位置 `j1` 未満で一致するので `T.take (J+1) = U ++ q :: (pre ++ [z])`。
+これは `ctrPres_prefix`（接頭辞が合えば構造条件が揃う）でそのまま矛盾。
+`oper` の `Pred` 枝（末尾列が `(0,0)` / 行 `i1` に親がない）と `|T| ≤ 1` の枝も、
+`T⟦n⟧` が `T` の接頭辞なのでこの場合に落ちる。
+
+#### 2. `J ≥ j1` かつ**ずれが正**（`oper_bad_blocks` の `0 < d0`）
+
+`T⟦n⟧ = (G ++ blk) ++ shiftr0 d0 (copies d0 blk (n-1))`（`blk = (v0,w0) :: R`）。
+2 コピー目以降の列は `(c.1 + k·d0 + d0, c.2)`（`c ∈ blk`）なので深さは `v0 + d0` 以上。
+`z.1 = p.1 + 1 = bd + 1` と `bd ≤ v0`、`1 ≤ d0` から
+
+```
+v0 = bd,  d0 = 1,  c = blk の頭,  すなわち z = (bd+1, w0)
+```
+
+が強制される。同じ理由で `q`（深さ `bd`）は 1 コピー目の中にあり `|U| < j1`。
+2 コピー目の頭は `(v0+d0, w0) = (bd+1, w0)`。もし `J > j1` なら位置 `j1` は
+`pre` の内側なので、**`pre` の深さ `bd+1` の列の段は必ず `p.2`**（`contrPre_level`:
+`pre = (bd+1,p.2) :: shift1 A ++ shift1 U` で、`shift1 A` は深さ `bd+2` 以上、
+`shift1 U` の深さ `bd+1` はユニットの頭 `= p` だけ）から `w0 = p.2`。
+ところが `z.2 = w0 < p.2` なので矛盾。よって `J = j1`。
+このとき `G ++ blk = U ++ q :: pre` で `T = U ++ q :: (pre ++ [lp])`、
+`lp.1 = v0 + d0 = p.1 + 1` なので `T` で構造条件が揃う。
+
+#### 3. `J ≥ j1` かつ**ずれが 0**（`d0 = 0`、したがって `i1 = 0`）
+
+コピーはすべて同じなので `z ∈ blk`、つまり `z` は `T.dropLast` の中の位置
+`m = |G| + s`（`|G| ≤ m < j1`）にも現れる。
+
+* `m > |U|`: `z ∈ pre` で深さ `bd+1` ⟹ `z.2 = p.2`。`z.2 < p.2` に矛盾。
+* `m = |U|`: `z = q` だが深さが `bd+1 ≠ bd`。矛盾。
+* `m < |U|`: `|G| < |U|`。さらに `|U| ≥ j1` なら `q ∈ blk` かつ `q.1 = bd ≤ v0`
+  から `q = blk` の頭 `= T⟦n⟧[|G|]`、しかし位置 `|G| < |U|` はユニットの中なので
+  `Units.eq_of_depth` で `q = p`、`q.2 + 1 = p.2` に矛盾。よって `|G| < |U| < j1`。
+  ここで `nextrel0 T |G| j1` の**最小性**（`∀ j, |G| < j < j1 → entry T 0 j1 ≤ entry T 0 j`）
+  を `j = |U|` に当てると `lp.1 ≤ bd`。一方 `bd ≤ v0 < lp.1`。矛盾。
+
+つまり `d0 = 0` の場合はどれも矛盾で、そもそも `T⟦n⟧` で発火しない。
+
+### 追加した定理（commit ハッシュ、branch dbms）
+
+| commit | 定理 |
+|---|---|
+| 38a82a1 | `Units.eq_of_depth`（ユニット列の深さ `p.1` の列は `p`）/ **`contrPre_level`**（`contrPre` の深さ `p.1+1` の列の段は `p.2`）/ `contrLen'_of_shape` / `contrLen'_ne_none_gen` / **`ctrPres_prefix`** |
+| c883491 | `contr_ev_take` / `contr_ev_take2`（証拠の位置と接頭辞）/ **`ctrPres2_holds`** / **`reindexD_holds`** / **`ST_D_conC_final`** |
+
+証明に使った既存の道具は `contrLen_shape`、`oper_bad_blocks`、`copies_succ_front`、
+`mem_copies`、`mem_shiftr0`、`getD_shiftr0`、`getD_append_left/right`、`copies_length`
+だけで、新しい `oper` の補題は要らなかった。
+
+### 実測の裏づけ（過去セッション）
+
+* `CtrPres2` はブロック ≤7 列・`bd ≤ 2` の 447 万例で反例 0（`tools/dbms/ctrpres_check.py`）
+* 場合 2b（この節の場合 3 に対応）は 9 例あり、どれも `z` の段が `p.2` で発火しない
+* `ReindexD` 自体は標準形 ≤10 列 2073826 個で違反 0（`tools/dbms/reindex.py`）
+
 ## 2026-08-26（続き 9）: **`RDnode` を証明**。`ReindexD` の残余は `CtrPres2` だけ
 
 `leanman check` は exit 0、`sorry` 0、`sorryAx` なし。`DbmsStd.lean` は 12643 → 15038 行。
