@@ -14210,6 +14210,147 @@ theorem ST_D_conC_holds_of_res10 (Hp : CtrPres2) (Hc : RDnodeCtr)
     {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
   ST_D_conC_holds_of_res9 Hp (rdNode_of_ctr Hc) hM
 
+/-! ## 4.39 影 1 本を前に付けた列の展開（DBMS 側の階段）
+
+`RDnodeCtr` の DBMS 側は `convC B = (0,0) :: shiftr0 1 B` の形で、
+展開の親は **index 1**（影の次の列）になる。 -/
+
+theorem shiftr0_shiftr0 (s t : ℕ) (M : PairSeq) :
+    shiftr0 s (shiftr0 t M) = shiftr0 (s + t) M := by
+  unfold shiftr0
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro c _
+  simp only [Function.comp_apply, Prod.mk.injEq, and_true]
+  omega
+
+theorem shiftr0_copies (t d : ℕ) (V : PairSeq) (m : ℕ) :
+    shiftr0 t (copies d V m) = copies d (shiftr0 t V) m := by
+  unfold copies shiftr0
+  rw [List.map_flatMap]
+  refine List.flatMap_congr ?_
+  intro k _
+  rw [List.map_map, List.map_map]
+  refine List.map_congr_left ?_
+  intro c _
+  simp only [Function.comp_apply, Prod.mk.injEq, and_true]
+  omega
+
+theorem dropLast_shiftr0 (t : ℕ) (M : PairSeq) :
+    (shiftr0 t M).dropLast = shiftr0 t M.dropLast := by
+  rw [List.dropLast_eq_take, List.dropLast_eq_take, length_shiftr0, take_shiftr0]
+
+theorem nextrel0_cons_succ {x : ℕ × ℕ} {X : PairSeq} {a b : ℕ} :
+    nextrel0 (x :: X) (a + 1) (b + 1) ↔ nextrel0 X a b := by
+  unfold nextrel0
+  simp only [List.length_cons, entry_cons_succ]
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨by omega, by omega, by omega, h4, ?_⟩
+    intro j hj
+    have := h5 (j + 1) ⟨by omega, by omega⟩
+    rw [entry_cons_succ] at this
+    exact this
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨by omega, by omega, by omega, h4, ?_⟩
+    intro j hj
+    obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+    rw [entry_cons_succ]
+    exact h5 j' ⟨by omega, by omega⟩
+
+theorem rtg_cons_succ {x : ℕ × ℕ} {X : PairSeq} {a : ℕ} : ∀ {c : ℕ},
+    Relation.ReflTransGen (nextrel0 (x :: X)) (a + 1) c →
+      ∃ c', c = c' + 1 ∧ Relation.ReflTransGen (nextrel0 X) a c' := by
+  intro c h
+  induction h with
+  | refl => exact ⟨a, rfl, Relation.ReflTransGen.refl⟩
+  | tail _ hstep ih =>
+    obtain ⟨c', rfl, hrec⟩ := ih
+    rename_i d _
+    have hlt : c' + 1 < d := hstep.2.2.1
+    obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
+    exact ⟨d', rfl, hrec.tail (nextrel0_cons_succ.1 hstep)⟩
+
+theorem le0_cons_succ {x : ℕ × ℕ} {X : PairSeq} {a b : ℕ}
+    (h : le0 (x :: X) (a + 1) (b + 1)) : le0 X a b := by
+  obtain ⟨h1, h2, h3⟩ := h
+  simp only [List.length_cons] at h1 h2
+  obtain ⟨c', hc', hrec⟩ := rtg_cons_succ h3
+  have : c' = b := by omega
+  subst this
+  exact ⟨by omega, by omega, hrec⟩
+
+theorem nextrel1_cons_one {x : ℕ × ℕ} {X : PairSeq}
+    (hX2 : 2 ≤ X.length) (hXd : ∀ y ∈ X, x.1 < y.1)
+    (hnr : nextrel1 X 0 (X.length - 1)) :
+    nextrel1 (x :: X) 1 ((x :: X).length - 1) := by
+  have hlen : (x :: X).length - 1 = X.length := by simp
+  have hentl : entry (x :: X) 1 X.length = entry X 1 (X.length - 1) := by
+    have h : X.length = (X.length - 1) + 1 := by omega
+    conv_lhs => rw [h]
+    exact entry_cons_succ x X 1 (X.length - 1)
+  have hent1 : entry (x :: X) 1 1 = entry X 1 0 := by
+    rw [show (1 : ℕ) = 0 + 1 from rfl, entry_cons_succ]
+  rw [hlen]
+  refine ⟨by simp only [List.length_cons]; omega, by simp only [List.length_cons]; omega,
+    by omega, ?_, ?_, ?_⟩
+  · rw [hent1, hentl]; exact hnr.2.2.2.1
+  · have h := le0_append_right_of [x] X hnr.2.2.2.2.1
+    have heq : ([x] : PairSeq) ++ X = x :: X := by simp
+    rw [heq] at h
+    have hl1 : ([x] : PairSeq).length = 1 := by simp
+    rw [hl1] at h
+    have : 1 + (X.length - 1) = X.length := by omega
+    rw [this] at h
+    have h0 : 1 + 0 = 1 := by omega
+    rw [h0] at h
+    exact h
+  · rintro j ⟨hj1, hj2⟩
+    obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
+    have hi : le0 X i (X.length - 1) := by
+      refine le0_cons_succ (x := x) ?_
+      rw [show X.length - 1 + 1 = X.length by omega]
+      exact hj2
+    have h := hnr.2.2.2.2.2 i ⟨by omega, hi⟩
+    rw [hentl, entry_cons_succ]
+    exact h
+
+/-- **影 1 本を前に付けた列の展開**（親は index 1）。 -/
+theorem oper_cons_tower {x : ℕ × ℕ} {X : PairSeq} (m : ℕ)
+    (hX2 : 2 ≤ X.length)
+    (hXd : ∀ y ∈ X, x.1 < y.1)
+    (hlev : 0 < entry X 1 (X.length - 1))
+    (hnrX : nextrel1 X 0 (X.length - 1)) :
+    (x :: X)⟦m⟧
+      = [x] ++ copies (entry X 0 (X.length - 1) - entry X 0 0) X.dropLast m := by
+  have hXne : X ≠ [] := by
+    intro he; rw [he] at hX2; simp at hX2
+  have hL : 1 < (x :: X).length := by
+    simp only [List.length_cons]; omega
+  have hlen : (x :: X).length - 1 = X.length := by simp
+  have hE1 : entry (x :: X) 1 X.length = entry X 1 (X.length - 1) := by
+    have h : X.length = (X.length - 1) + 1 := by omega
+    conv_lhs => rw [h]
+    exact entry_cons_succ x X 1 (X.length - 1)
+  have hE0 : entry (x :: X) 0 X.length = entry X 0 (X.length - 1) := by
+    have h : X.length = (X.length - 1) + 1 := by omega
+    conv_lhs => rw [h]
+    exact entry_cons_succ x X 0 (X.length - 1)
+  have hlevM : 0 < entry (x :: X) 1 ((x :: X).length - 1) := by
+    rw [hlen, hE1]
+    exact hlev
+  have hnr : nextrel1 (x :: X) 1 ((x :: X).length - 1) := nextrel1_cons_one hX2 hXd hnrX
+  rw [oper_tower_at 1 m hL hlevM hnr]
+  have htk : (x :: X).take 1 = [x] := by simp
+  have hdl : (x :: X).dropLast.drop 1 = X.dropLast := by
+    rw [dropLast_cons_ne hXne]
+    simp
+  have he1 : entry (x :: X) 0 1 = entry X 0 0 := by
+    rw [show (1 : ℕ) = 0 + 1 from rfl, entry_cons_succ]
+  have he2 : entry (x :: X) 0 ((x :: X).length - 1) = entry X 0 (X.length - 1) := by
+    rw [hlen, hE0]
+  rw [htk, hdl, he1, he2]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -14466,3 +14607,7 @@ end DBMS
 #print axioms DBMS.rdNode_of_ctr
 #print axioms DBMS.reindexD_holds_of_res10
 #print axioms DBMS.ST_D_conC_holds_of_res10
+#print axioms DBMS.shiftr0_copies
+#print axioms DBMS.le0_cons_succ
+#print axioms DBMS.nextrel1_cons_one
+#print axioms DBMS.oper_cons_tower
