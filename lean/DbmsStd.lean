@@ -9704,6 +9704,201 @@ theorem zeroStop_shape {p q : ℕ × ℕ} {A U pre rest2 : PairSeq} {bd : ℕ}
   rw [htake, hdl] at hrep
   exact hrep
 
+/-! ## 4.19 `convC` の平行移動不変性
+
+`shift1`（行 0 に +1）はブロックの相対構造を変えないので、`convC` の像も変わらない。
+`RDzeroStop2`（コピー regime）と `RDnode`（ずれたコピー）の両方で使う。 -/
+
+/-- `first = false` なら `plev` と `force` は像に効かない。 -/
+theorem convC_first_false (M : PairSeq) (d plev plev' : ℕ) (force force' : Bool) :
+    convC M d plev false force = convC M d plev' false force' := by
+  cases M with
+  | nil => simp
+  | cons p r =>
+    have hl : ∀ (pl : ℕ) (fo : Bool), ladOf p.2 d pl false fo = false := by
+      intro pl fo; simp [ladOf]
+    have hdd : ∀ (pl : ℕ) (fo : Bool),
+        ddOf p.2 d pl false fo = (if 0 < p.2 ∧ d ≤ p.2 then p.2 + 1 else d) := by
+      intro pl fo
+      unfold ddOf
+      rw [if_neg (by rw [hl pl fo]; simp)]
+    rw [convC_cons_nolad p r d plev false force (hl plev force),
+      convC_cons_nolad p r d plev' false force' (hl plev' force'), hdd plev force,
+      hdd plev' force']
+    simp
+
+theorem shift1_append (X Y : PairSeq) : shift1 (X ++ Y) = shift1 X ++ shift1 Y := by
+  simp [shift1]
+
+theorem shift1_take (k : ℕ) (X : PairSeq) : (shift1 X).take k = shift1 (X.take k) := by
+  simp [shift1]
+
+theorem shift1_drop (k : ℕ) (X : PairSeq) : (shift1 X).drop k = shift1 (X.drop k) := by
+  simp [shift1]
+
+@[simp] theorem shift1_eq_nil_iff (X : PairSeq) : shift1 X = [] ↔ X = [] := by
+  cases X with
+  | nil => simp
+  | cons c l => simp
+
+theorem shift1_headI (X : PairSeq) (h : X ≠ []) :
+    (shift1 X).headI = ((X.headI).1 + 1, (X.headI).2) := by
+  cases X with
+  | nil => exact absurd rfl h
+  | cons c l => rfl
+
+theorem shift1_inj : ∀ {X Y : PairSeq}, shift1 X = shift1 Y → X = Y := by
+  intro X
+  induction X with
+  | nil =>
+    intro Y h
+    rw [eq_comm, ← shift1_eq_nil_iff, ← h]; rfl
+  | cons c l ih =>
+    intro Y h
+    cases Y with
+    | nil => simp at h
+    | cons e m =>
+      rw [shift1_cons, shift1_cons] at h
+      simp only [List.cons.injEq, Prod.mk.injEq] at h
+      obtain ⟨⟨h1, h2⟩, h3⟩ := h
+      have hce : c = e := Prod.ext (by omega) h2
+      rw [hce, ih h3]
+
+@[simp] theorem shift1_inj_iff (X Y : PairSeq) : shift1 X = shift1 Y ↔ X = Y :=
+  ⟨shift1_inj, fun h => by rw [h]⟩
+
+theorem unitsLen_shift1 : ∀ (n : ℕ) (p : ℕ × ℕ) (B : PairSeq), B.length ≤ n →
+    unitsLen ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 B) = unitsLen p B := by
+  intro n
+  induction n with
+  | zero =>
+    intro p B hB
+    have : B = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this; simp [unitsLen]
+  | succ n ih =>
+    intro p B hB
+    match B with
+    | [] => simp [unitsLen]
+    | c :: r =>
+      by_cases h : c = p
+      · rw [h]
+        have hlen : (r.dropWhile fun x => p.1 < x.1).length ≤ n := by
+          have := List.length_dropWhile_le (fun x : ℕ × ℕ => p.1 < x.1) r
+          simp only [List.length_cons] at hB; omega
+        rw [shift1_cons, unitsLen_cons_pos, unitsLen_cons_pos]
+        simp only []
+        rw [shift1_takeWhile p.1 r, shift1_dropWhile p.1 r, shift1_length, ih p _ hlen]
+      · rw [shift1_cons, unitsLen_cons_neg (by
+          intro hc
+          simp only [Prod.mk.injEq] at hc
+          exact h (Prod.ext (by omega) hc.2)), unitsLen_cons_neg h]
+
+theorem contrPre_shift1 (p : ℕ × ℕ) (U A : PairSeq) :
+    contrPre ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 U) (shift1 A)
+      = shift1 (contrPre p U A) := by
+  simp [contrPre, shift1_append]
+
+/-- 縮約の判定は平行移動で保たれる。 -/
+theorem contrLen_shift1 (p : ℕ × ℕ) (B A : PairSeq) (k : ℕ) :
+    contrLen ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 B) k (shift1 A)
+      = (contrLen p B k A).map (fun x => (shift1 x.1, shift1 x.2)) := by
+  rcases hd : B.drop k with _ | ⟨q, r2⟩
+  · rw [contrLen, contrLen, shift1_drop, hd]
+    simp
+  · have hds : (shift1 B).drop k = ((q.1 + 1, q.2) : ℕ × ℕ) :: shift1 r2 := by
+      rw [shift1_drop, hd, shift1_cons]
+    rw [contrLen, contrLen, hd, hds]
+    simp only []
+    rw [shift1_takeWhile q.1 r2, shift1_dropWhile q.1 r2, shift1_take k B,
+      contrPre_shift1 p (B.take k) A, shift1_length (contrPre p (B.take k) A),
+      shift1_drop (contrPre p (B.take k) A).length (r2.takeWhile fun x => q.1 < x.1)]
+    by_cases hne : ((r2.takeWhile fun x => q.1 < x.1).drop
+        (contrPre p (B.take k) A).length) = []
+    · rw [hne]
+      simp
+    · rw [shift1_headI _ hne, shift1_take (contrPre p (B.take k) A).length]
+      simp only [ne_eq, shift1_eq_nil_iff, shift1_inj_iff]
+      split_ifs with h1 h2 h2
+      · simp
+      · exact absurd ⟨h1.1, by omega, h1.2.2.1, h1.2.2.2.1, by omega, h1.2.2.2.2.2⟩ h2
+      · exact absurd ⟨h2.1, by omega, h2.2.2.1, h2.2.2.2.1, by omega, h2.2.2.2.2.2⟩ h1
+      · rfl
+
+/-- **`convC` は平行移動で変わらない**。 -/
+theorem convC_shift1 : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
+    ∀ (d plev : ℕ) (first force : Bool),
+    convC (shift1 M) d plev first force = convC M d plev first force := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM d plev first force
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this; simp
+  | succ n ih =>
+    intro M hM d plev first force
+    match M with
+    | [] => simp
+    | p :: r =>
+      have hlenr : r.length ≤ n := by simp only [List.length_cons] at hM; omega
+      have hTk : (r.takeWhile fun q => p.1 < q.1).length ≤ n :=
+        le_trans (List.takeWhile_sublist _).length_le hlenr
+      have hDr : (r.dropWhile fun q => p.1 < q.1).length ≤ n :=
+        le_trans (List.length_dropWhile_le _ r) hlenr
+      by_cases hl : ladOf p.2 d plev first force = true
+      · rcases hcc : contrLen p (r.dropWhile fun q => p.1 < q.1)
+            (unitsLen p (r.dropWhile fun q => p.1 < q.1))
+            (r.takeWhile fun q => p.1 < q.1) with _ | ⟨rest2, Bq⟩
+        · have hccs : contrLen ((p.1 + 1, p.2) : ℕ × ℕ)
+              ((shift1 r).dropWhile fun q => ((p.1 + 1, p.2) : ℕ × ℕ).1 < q.1)
+              (unitsLen ((p.1 + 1, p.2) : ℕ × ℕ)
+                ((shift1 r).dropWhile fun q => ((p.1 + 1, p.2) : ℕ × ℕ).1 < q.1))
+              ((shift1 r).takeWhile fun q => ((p.1 + 1, p.2) : ℕ × ℕ).1 < q.1) = none := by
+            simp only []
+            rw [shift1_dropWhile p.1 r, shift1_takeWhile p.1 r,
+              unitsLen_shift1 (r.dropWhile fun q => p.1 < q.1).length p _ (Nat.le_refl _),
+              contrLen_shift1, hcc]
+            simp
+          rw [shift1_cons,
+            convC_cons_lad_none ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 r) d plev first force
+              (by exact hl) hccs,
+            convC_cons_lad_none p r d plev first force hl hcc]
+          simp only []
+          rw [shift1_takeWhile p.1 r, shift1_dropWhile p.1 r, ih _ hTk, ih _ hDr]
+        · have hlt := contrLen_lt hcc
+          have hR2 : rest2.length ≤ n := by omega
+          have hBq : Bq.length ≤ n := by omega
+          have hTu : ((r.dropWhile fun q => p.1 < q.1).take
+              (unitsLen p (r.dropWhile fun q => p.1 < q.1))).length ≤ n :=
+            le_trans (List.take_sublist _ _).length_le hDr
+          have hccs : contrLen ((p.1 + 1, p.2) : ℕ × ℕ)
+              ((shift1 r).dropWhile fun q => ((p.1 + 1, p.2) : ℕ × ℕ).1 < q.1)
+              (unitsLen ((p.1 + 1, p.2) : ℕ × ℕ)
+                ((shift1 r).dropWhile fun q => ((p.1 + 1, p.2) : ℕ × ℕ).1 < q.1))
+              ((shift1 r).takeWhile fun q => ((p.1 + 1, p.2) : ℕ × ℕ).1 < q.1)
+              = some (shift1 rest2, shift1 Bq) := by
+            simp only []
+            rw [shift1_dropWhile p.1 r, shift1_takeWhile p.1 r,
+              unitsLen_shift1 (r.dropWhile fun q => p.1 < q.1).length p _ (Nat.le_refl _),
+              contrLen_shift1, hcc]
+            simp
+          rw [shift1_cons,
+            convC_cons_lad_some ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 r) d plev first force
+              (by exact hl) hccs,
+            convC_cons_lad_some p r d plev first force hl hcc]
+          simp only []
+          rw [shift1_takeWhile p.1 r, shift1_dropWhile p.1 r,
+            unitsLen_shift1 (r.dropWhile fun q => p.1 < q.1).length p _ (Nat.le_refl _),
+            shift1_take, ih _ hTk, ih _ hTu, ih _ hR2, ih _ hBq]
+      · have hnl : ladOf p.2 d plev first force = false := by
+          cases hx : ladOf p.2 d plev first force with
+          | false => rfl
+          | true => exact absurd hx hl
+        rw [shift1_cons,
+          convC_cons_nolad ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 r) d plev first force (by exact hnl),
+          convC_cons_nolad p r d plev first force hnl]
+        simp only []
+        rw [shift1_takeWhile p.1 r, shift1_dropWhile p.1 r, ih _ hTk, ih _ hDr]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -9886,3 +10081,9 @@ end DBMS
 #print axioms DBMS.reindexD_holds_of_res6
 #print axioms DBMS.ST_D_conC_holds_of_res6
 #print axioms DBMS.zeroStop_shape
+#print axioms DBMS.convC_first_false
+#print axioms DBMS.shift1_inj
+#print axioms DBMS.unitsLen_shift1
+#print axioms DBMS.contrPre_shift1
+#print axioms DBMS.contrLen_shift1
+#print axioms DBMS.convC_shift1
