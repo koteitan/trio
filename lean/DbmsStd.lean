@@ -12097,6 +12097,146 @@ theorem argPatOK_prefix : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
         have := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (p.1 < q.1)) x
         omega
 
+
+/-! ### `convC` は深さパラメタの平行移動に共変（跳ばない範囲で）
+
+`ddOf s d plev first force` の「段へ跳ぶ」枝 `0 < s ∧ d ≤ s → s + 1` だけが
+絶対的な深さを書くので、平行移動をこわすのはそこだけである。頭の段が `d` より
+真に小さければその枝は使われず、しかも
+
+* 引数の頭の段 ≤ 親の段 + 1（`adjLev`）、引数の深さは `d + 1`
+* 兄弟の頭の段 ≤ 親の段（`descOK`）、兄弟の深さは `d`
+
+なので「頭の段 < 深さ」は再帰の中で保たれる。`fOK` があれば梯子も立たない。 -/
+
+/-- 頭の段が深さパラメタより真に小さい。 -/
+def levLt (M : PairSeq) (d : ℕ) : Prop := M ≠ [] → ((M.headI).2 < d)
+
+theorem levLt_nil (d : ℕ) : levLt [] d := fun h => absurd rfl h
+
+/-- 跳ばない位置では梯子も立たない。 -/
+theorem lad_false_of_levLt {c : ℕ × ℕ} {r : PairSeq} {d plev D : ℕ} {first force : Bool}
+    (hlev : c.2 < d) (hf : fOK (c :: r) d plev force) (hD : d ≤ D) :
+    ladOf c.2 D plev first force = false := by
+  unfold ladOf
+  by_cases hfc : force = true
+  · have hne : c.2 ≠ plev + 1 := by
+      rcases hf hfc with h1 | h2
+      · exact h1 c r rfl
+      · omega
+    simp [beq_eq_false_iff_ne.2 hne]
+  · have hfc' : force = false := by cases force with
+      | true => exact absurd rfl hfc
+      | false => rfl
+    have hDc : ¬ (D ≤ c.2) := by omega
+    simp [hfc', hDc]
+
+/-- 跳ばない位置では本体の深さはそのまま。 -/
+theorem ddOf_of_levLt {c : ℕ × ℕ} {r : PairSeq} {d plev D : ℕ} {first force : Bool}
+    (hlev : c.2 < d) (hf : fOK (c :: r) d plev force) (hD : d ≤ D) :
+    ddOf c.2 D plev first force = D := by
+  unfold ddOf
+  rw [if_neg (by rw [lad_false_of_levLt hlev hf hD]; simp),
+    if_neg (by rintro ⟨-, h⟩; omega)]
+
+/-- **`convC` は深さパラメタの平行移動に共変**（「段へ跳ぶ」枝が使われない範囲で）。 -/
+theorem convC_depth_shift : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    ∀ (bd d e plev : ℕ) (first force : Bool),
+      blockok bd M → colOK M → adjLev M → descOK M → levLt M d → argPatOK M →
+      hpOK M d plev first force → fOK M d plev force →
+      convC M (d + e) plev first force = shiftr0 e (convC M d plev first force) := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hM bd d e plev first force _ _ _ _ _ _ _ _
+    have hMe : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hMe; simp
+  | succ N ih =>
+    intro M hM bd d e plev first force hb hcol hLB hd hlv hAP hHP hFC
+    match M with
+    | [] => simp
+    | c :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile c r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := c.1) hAd hBh
+      have hc2 : c.2 < d := hlv (by simp)
+      have hp1 : c.1 = bd := by have := hb.1 (by simp); simpa using this
+      obtain ⟨hHA, hAPA, hAPB⟩ := argPatOK_cons.1 hAP
+      rw [e1] at hHA hAPA
+      rw [e2] at hAPB
+      obtain ⟨hdh, hdA, hdB⟩ := descOK_cons.1 hd
+      rw [e1] at hdA
+      rw [e2] at hdh hdB
+      have hcolA : colOK A := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+      have hcolB : colOK B := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hLA : adjLev A := by
+        have hx := adjLev_infix (takeWhile_infix_cons c (A ++ B)) hLB
+        rw [e1] at hx; exact hx
+      have hLBB : adjLev B := by
+        have hx := adjLev_infix (dropWhile_infix_cons c (A ++ B)) hLB
+        rw [e2] at hx; exact hx
+      have hbA : blockok (bd + 1) A := blockok_arg' hb hp1 hAd
+      have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+      have hlvA : levLt A (d + 1) := by
+        intro hAne
+        obtain ⟨a, as, ha⟩ : ∃ a as, A = a :: as := by
+          cases A with
+          | nil => exact absurd rfl hAne
+          | cons a as => exact ⟨a, as, rfl⟩
+        have h1 : c.1 < a.1 := hAd a (by rw [ha]; simp)
+        have h2 : a.1 ≤ c.1 + 1 := by
+          have hs := hb.2.2
+          rw [ha] at hs
+          simp only [List.cons_append, steps1_cons_cons] at hs
+          exact hs.1
+        have hg0 : ((c :: (A ++ B)).getD 0 (0, 0)) = c := by simp
+        have hg1 : ((c :: (A ++ B)).getD 1 (0, 0)) = a := by rw [ha]; simp
+        have hlen : 0 + 1 < (c :: (A ++ B)).length := by
+          rw [ha]; simp only [List.length_cons, List.length_append]; omega
+        have hkey := hLB 0 hlen (by rw [hg0, hg1]; omega)
+        rw [hg0, hg1] at hkey
+        rw [ha]
+        simp only [List.headI]
+        omega
+      have hlvB : levLt B d := by
+        intro hBne
+        have := hdh hBne
+        omega
+      have hlad : ∀ D : ℕ, d ≤ D → ladOf c.2 D plev first force = false :=
+        fun D hD => lad_false_of_levLt hc2 hFC hD
+      have hddd : ddOf c.2 d plev first force = d := ddOf_of_levLt hc2 hFC (Nat.le_refl _)
+      have hdde : ddOf c.2 (d + e) plev first force = d + e :=
+        ddOf_of_levLt hc2 hFC (by omega)
+      have hHPA : hpOK A (d + 1) c.2 true (first && (c.2 == plev)) :=
+        hpOK_of_headPatOK hHA
+      have hfA : fOK A (d + 1) c.2 (first && (c.2 == plev)) := by
+        intro hft
+        have hf1 : first = true := by
+          simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.1
+        have hpl : c.2 = plev := by
+          simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.2
+        left
+        intro a s hs
+        rcases hHP hf1 with hh | ⟨hd0, -, -⟩
+        · have hkey := hh c (A ++ B) rfl hpl (by rw [e1, hs]; simp)
+          rw [e1, hs] at hkey
+          simpa using hkey
+        · omega
+      have hAlen : A.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      have hBlen : B.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      have hihA := ih A hAlen (bd + 1) (d + 1) e c.2 true (first && (c.2 == plev))
+        hbA hcolA hLA hdA hlvA hAPA hHPA hfA
+      have hihB := ih B hBlen bd d e c.2 false false hbB hcolB hLBB hdB hlvB hAPB
+        hpOK_false fOK_false
+      rw [convC_factor_sib c A B (d + e) plev first force hAd hBh (hlad _ (by omega)),
+        convC_factor_sib c A B d plev first force hAd hBh (hlad _ (Nat.le_refl _)),
+        hddd, hdde]
+      rw [show d + e + 1 = (d + 1) + e by omega, hihA, hihB, shiftr0_append]
+      simp [shiftr0_cons]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -12323,3 +12463,6 @@ end DBMS
 #print axioms DBMS.headPatOK_prefix
 #print axioms DBMS.blockok_prefix
 #print axioms DBMS.argPatOK_prefix
+#print axioms DBMS.lad_false_of_levLt
+#print axioms DBMS.ddOf_of_levLt
+#print axioms DBMS.convC_depth_shift
