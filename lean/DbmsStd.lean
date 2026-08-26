@@ -11333,6 +11333,400 @@ theorem reindexD_holds_of_res8 (Hp : CtrPres2) (Hn : RDnopar) (Hd : RDnode) : Re
 theorem ST_D_conC_holds_of_res8 (Hp : CtrPres2) (Hn : RDnopar) (Hd : RDnode)
     {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
   ST_D_conC_holds_of_res7 ctrRes_holds Hp Hn Hd hM
+
+/-! ## 4.21 `RDnopar`: `contrOK` を不変量に置き換える
+
+`convC_dropLast_noParent_aux` が要求する `contrOK` は**本当に偽になりうる**
+（`B = (2,2)(2,1)(3,2)(3,1)` は `contrOK` を満たさないが `RDnopar` の入力になる）。
+壊れる形は「梯子が立つ段で縮約が `some ([x], [])` に発火し `x.2 > 0`」だけで、
+`x.2 < p.2` だから `p.2 ≥ 2` が要る。ところが不変量から
+
+    梯子が立つ ⟹ p.2 ≤ 1        （`lad_lev_le_one`）
+
+が出る。実際、梯子は `d ≤ p.2 ∨ force` を要求し、`force` の場合は `fOK` が
+`d ≤ plev + 1 = p.2` を与える。`p.2 ≤ p.1 = bd ≤ d` と合わせて
+`d = p.2 = bd = p.1`、そこで `dpOK` が `plev = 0`（すなわち `p.2 = 1`）を強いる。
+
+そこで `contrOK` を `blockok` / `colOK` / `bd ≤ d` / `argPatOK` / `dpOK` /
+`hpOK` / `fOK` に置き換えた `convC_dropLast_noParent_aux2` を作る。 -/
+
+/-- **梯子が立つなら頭の段は 1 以下**（不変量から）。 -/
+theorem lad_lev_le_one {p : ℕ × ℕ} {r : PairSeq} {bd d plev : ℕ} {first force : Bool}
+    (hp1 : p.1 = bd) (hcol : p.2 ≤ p.1) (hbd : bd ≤ d)
+    (hdp : dpOK bd d plev first) (hf : fOK (p :: r) d plev force)
+    (hlad : ladOf p.2 d plev first force = true) : p.2 ≤ 1 := by
+  unfold ladOf at hlad
+  simp only [Bool.and_eq_true, beq_iff_eq, Bool.or_eq_true, decide_eq_true_eq] at hlad
+  obtain ⟨⟨hf1, hpl⟩, hor⟩ := hlad
+  have hdle : d ≤ p.2 := by
+    rcases hor with hh | hh
+    · exact hh
+    · rcases hf hh with h1 | h2
+      · exact absurd hpl (h1 p r rfl)
+      · omega
+  have hdbd : d = bd := by omega
+  rcases hdp hf1 hdbd with h | h <;> omega
+
+/-- 引数ブロックの `blockok`（頭を `(bd, y)` に分解しない版）。 -/
+theorem blockok_arg' {p : ℕ × ℕ} {A B : PairSeq} {bd : ℕ}
+    (hb : blockok bd (p :: (A ++ B))) (hp1 : p.1 = bd) (hAd : ∀ x ∈ A, p.1 < x.1) :
+    blockok (bd + 1) A := by
+  refine ⟨?_, fun x hx => by have := hAd x hx; omega, ?_⟩
+  · intro hne
+    obtain ⟨a, as, ha⟩ : ∃ a as, A = a :: as := by
+      cases A with
+      | nil => exact absurd rfl hne
+      | cons a as => exact ⟨a, as, rfl⟩
+    have h1 : p.1 < a.1 := hAd a (by rw [ha]; simp)
+    have h2 : a.1 ≤ p.1 + 1 := by
+      have hs := hb.2.2
+      rw [ha] at hs
+      simp only [List.cons_append, steps1_cons_cons] at hs
+      exact hs.1
+    rw [ha]; simp only [List.headI]; omega
+  · exact (steps1_append.1 (steps1_tail hb.2.2)).1
+
+/-- 兄弟ブロックの `blockok`。 -/
+theorem blockok_sib' {p : ℕ × ℕ} {A B : PairSeq} {bd : ℕ}
+    (hb : blockok bd (p :: (A ++ B))) (hp1 : p.1 = bd)
+    (hBh : B = [] ∨ ¬ (p.1 < (B.headI).1)) : blockok bd B := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro hne
+    have h1 : bd ≤ (B.headI).1 := hb.2.1 _ (List.mem_cons_of_mem _
+      (List.mem_append_right _ (headI_mem hne)))
+    have h2 : ¬ (p.1 < (B.headI).1) := hBh.resolve_left hne
+    omega
+  · intro x hx
+    exact hb.2.1 x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+  · exact (steps1_append.1 (steps1_tail hb.2.2)).2.1
+
+theorem steps1_suffix {L M : PairSeq} (h : L <:+ M) (hs : steps1 M) : steps1 L := by
+  obtain ⟨t, ht⟩ := h
+  rw [← ht] at hs
+  exact (steps1_append.1 hs).2.1
+
+theorem colOK_of_suffix {L M : PairSeq} (h : L <:+ M) (hc : colOK M) : colOK L :=
+  fun x hx => hc x (h.subset hx)
+
+/-- **場合 (b) の `dropLast`（不変量つき）**。`contrOK` は要らない。 -/
+theorem convC_dropLast_noParent_aux2 : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n → 1 < M.length →
+    ∀ (bd d plev : ℕ) (first force : Bool),
+      blockok bd M → colOK M → bd ≤ d → argPatOK M →
+      dpOK bd d plev first → hpOK M d plev first force → fOK M d plev force →
+      ¬ hasParent M (idx1 M (M.length - 1)) (M.length - 1) →
+      convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast := by
+  intro n
+  induction n with
+  | zero =>
+    intro M hM h1 _ _ _ _ _ _ _ _ _ _ _ _ _
+    omega
+  | succ n ih =>
+    intro M hM h1 bd d plev first force hb hcol hbd hAP hdp hHP hFC hnp
+    match M with
+    | [] => simp at h1
+    | p :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile p r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := p.1) hAd hBh
+      have hp1 : p.1 = bd := by have := hb.1 (by simp); simpa using this
+      have hcolp : p.2 ≤ p.1 := hcol p (by simp)
+      obtain ⟨hHA, hAPA, hAPB⟩ := argPatOK_cons.1 hAP
+      rw [e1] at hHA hAPA
+      rw [e2] at hAPB
+      by_cases hBe : B = []
+      · -- 兄弟が空: 引数ブロック `A` に降りる
+        subst hBe
+        simp only [List.append_nil] at hb hcol hAP hHP hFC hnp ⊢
+        have hAlen : A.length ≤ n := by
+          simp only [List.length_cons, List.length_append, List.length_nil] at hM; omega
+        have hApos : 1 < A.length + 1 := by
+          simp only [List.length_cons, List.length_append, List.length_nil] at h1; omega
+        have hAne : A ≠ [] := by
+          intro he; rw [he] at hApos; simp at hApos
+        by_cases hA1 : A.length = 1
+        · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.1 hA1
+          have hpc : p.1 < c.1 := hAd c (by simp)
+          have he00 : entry (p :: [c] : PairSeq) 0 0 = p.1 := by simp [entry]
+          have he01 : entry (p :: [c] : PairSeq) 0 1 = c.1 := by simp [entry]
+          have he10 : entry (p :: [c] : PairSeq) 1 0 = p.2 := by simp [entry]
+          have he11 : entry (p :: [c] : PairSeq) 1 1 = c.2 := by simp [entry]
+          have hne : ¬ (c.2 = p.2 + 1) := by
+            intro heq
+            refine hnp ?_
+            have hlen : (p :: [c] : PairSeq).length - 1 = 1 := by simp
+            rw [hlen]
+            have hidx : idx1 (p :: [c] : PairSeq) 1 = 1 := by
+              unfold idx1; rw [if_pos (by rw [he11, heq]; omega)]
+            rw [hidx, Wset.hasParent_one_iff (by simp)]
+            refine ⟨0, by omega, ⟨by simp, by simp, ?_⟩, ?_⟩
+            · exact Relation.ReflTransGen.single
+                ⟨by simp, by simp, by omega, by rw [he00, he01]; exact hpc,
+                  fun j hj => by omega⟩
+            · rw [he10, he11, heq]; omega
+          have hdl : (p :: [c] : PairSeq).dropLast = [p] := rfl
+          rw [hdl]
+          exact convC_dropLast_arg_single p c d plev first force hpc hne
+        · have hA2 : 1 < A.length := by omega
+          have hnpA : ¬ hasParent A (idx1 A (A.length - 1)) (A.length - 1) :=
+            noParent_suffix hAne ⟨[p], rfl⟩ hnp
+          have hbA : blockok (bd + 1) A :=
+            blockok_arg' (B := []) (by simpa using hb) hp1 hAd
+          have hcolA : colOK A := fun x hx => hcol x (List.mem_cons_of_mem _ hx)
+          have hHPA : ∀ (dd : ℕ) (fc : Bool), hpOK A dd p.2 true fc :=
+            fun dd fc => hpOK_of_headPatOK (by simpa using hHA)
+          have hdpA1 : dpOK (bd + 1) (d + 2) p.2 true := by intro _ he; omega
+          have hdpA2 : dpOK (bd + 1) (ddOf p.2 d plev first force + 1) p.2 true :=
+            dpOK_arg hp1 hbd hcolp
+          have hbdA1 : bd + 1 ≤ d + 2 := by omega
+          have hbdA2 : bd + 1 ≤ ddOf p.2 d plev first force + 1 := by
+            have := le_ddOf p.2 d plev first force; omega
+          have hAte : (A.takeWhile fun x => p.1 < x.1) = A := by simpa using e1
+          have hfA : fOK A (ddOf p.2 d plev first force + 1) p.2
+              (first && (p.2 == plev)) := by
+            intro hft
+            have hf1 : first = true := by
+              simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.1
+            have hpl : p.2 = plev := by
+              simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.2
+            rcases hHP hf1 with hh | ⟨hd0, hpl0, hfc0⟩
+            · left
+              intro a s hs
+              have hkey := hh p A rfl hpl (by rw [hAte, hs]; simp)
+              rw [hAte, hs] at hkey
+              simpa using hkey
+            · right
+              subst hd0; subst hpl0; subst hfc0
+              have hy0 : p.2 = 0 := hpl
+              have hz : ddOf p.2 0 0 first false = 0 := by
+                unfold ddOf ladOf; simp [hy0]
+              omega
+          rw [dropLast_cons_ne hAne]
+          exact convC_dropLast_arg' p A d plev first force hAd hAne
+            (ih A hAlen hA2 (bd + 1) (d + 2) p.2 true false hbA hcolA hbdA1 hAPA
+              hdpA1 (hHPA _ _) fOK_false hnpA)
+            (ih A hAlen hA2 (bd + 1) (ddOf p.2 d plev first force + 1) p.2 true
+              (first && (p.2 == plev)) hbA hcolA hbdA2 hAPA hdpA2 (hHPA _ _) hfA hnpA)
+      · -- 兄弟が空でない: 末尾列は `B` の中
+        have hBhne : ¬ (p.1 < (B.headI).1) := hBh.resolve_left hBe
+        have hABne : A ++ B ≠ [] := by
+          intro he; exact hBe (List.append_eq_nil_iff.1 he).2
+        have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+        have hcolB : colOK B :=
+          fun x hx => hcol x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+        rw [dropLast_cons_ne hABne, List.dropLast_append_of_ne_nil hBe]
+        by_cases hB1 : B.length = 1
+        · obtain ⟨w, rfl⟩ := List.length_eq_one_iff.1 hB1
+          have hdl : ([w] : PairSeq).dropLast = [] := rfl
+          rw [hdl, List.append_nil]
+          have hw : ¬ (p.1 < w.1) := by simpa using hBhne
+          rw [convC_dropLast_singleton p w A d plev first force hAd hw]
+          simp
+        · have hB2 : 1 < B.length := by
+            have h0 : 0 < B.length := List.length_pos_iff.mpr hBe
+            omega
+          have hBlen : B.length ≤ n := by
+            simp only [List.length_cons, List.length_append] at hM; omega
+          have hBdlen : (B.dropLast).length = B.length - 1 := by simp
+          have hBdne : B.dropLast ≠ [] := by
+            intro he
+            rw [he] at hBdlen
+            simp only [List.length_nil] at hBdlen
+            omega
+          have hnpB : ¬ hasParent B (idx1 B (B.length - 1)) (B.length - 1) :=
+            noParent_suffix hBe ⟨p :: A, rfl⟩ hnp
+          have ihB := ih B hBlen hB2 bd d p.2 false false hbB hcolB hbd hAPB
+            dpOK_false hpOK_false fOK_false hnpB
+          by_cases hl : ladOf p.2 d plev first force = true
+          · have hple : p.2 ≤ 1 := lad_lev_le_one hp1 hcolp hbd hdp hFC hl
+            rcases hcc : contrLen p B (unitsLen p B) A with _ | ⟨rest2, Bq⟩
+            · exact convC_dropLast_lad_none p A B d plev first force hAd hBe hBdne hBhne hl
+                hcc (contrLen_dropLast_none p A B hcc) ihB
+            · obtain ⟨q, r2, hdq, hq2, hq1, hAq2, hBq2, hr2ne, hr2d, hr2l⟩ := contrLen_spec hcc
+              have hr2suf : r2 <:+ B := ⟨B.take (unitsLen p B) ++ [q], by
+                rw [List.append_assoc, List.singleton_append, ← hdq, List.take_append_drop]⟩
+              have hBsuf : B <:+ (p :: (A ++ B)) := ⟨p :: A, rfl⟩
+              -- `B = U ++ q :: r2` と、そこから来る不変量
+              have hBform2 : (B.take (unitsLen p B)) ++ (q :: r2) = B := by
+                conv_rhs => rw [← List.take_append_drop (unitsLen p B) B]
+                rw [hdq]
+              have hUge : ∀ c ∈ (B.take (unitsLen p B)), p.1 ≤ c.1 := by
+                intro c hc
+                have := hbB.2.1 c ((List.take_sublist _ _).subset hc)
+                omega
+              have hUhead : (B.take (unitsLen p B)) = []
+                  ∨ ((B.take (unitsLen p B)).headI).1 ≤ p.1 := by
+                by_cases hUe : (B.take (unitsLen p B)) = []
+                · exact Or.inl hUe
+                · right
+                  have hh : (B.headI).1 = ((B.take (unitsLen p B)).headI).1 := by
+                    conv_lhs => rw [← List.take_append_drop (unitsLen p B) B]
+                    rw [headI_append_left hUe]
+                  have hB0 := hbB.1 hBe
+                  omega
+              have hqL : (q :: r2) = [] ∨ ¬ (p.1 < ((q :: r2).headI).1) := by
+                right; simp only [List.headI]; omega
+              have hAPq : argPatOK (q :: r2) :=
+                argPatOK_drop p.1 (q :: r2) hqL (B.take (unitsLen p B)).length
+                  (B.take (unitsLen p B)) (Nat.le_refl _) hUge hUhead
+                  (by rw [hBform2]; exact hAPB)
+              obtain ⟨-, hAPAq, hAPBq⟩ := argPatOK_cons.1 hAPq
+              rw [hAq2] at hAPAq
+              rw [hBq2] at hAPBq
+              by_cases hBqe : Bq = []
+              · subst hBqe
+                have hr2eq : r2 = contrPre p (B.take (unitsLen p B)) A ++ rest2 := by
+                  conv_lhs => rw [← List.takeWhile_append_dropWhile
+                    (p := fun x : ℕ × ℕ => decide (q.1 < x.1)) (l := r2)]
+                  rw [hAq2, hBq2, List.append_nil]
+                have hRsuf0 : rest2 <:+ r2 :=
+                  ⟨contrPre p (B.take (unitsLen p B)) A, hr2eq.symm⟩
+                have hRsuf : rest2 <:+ (p :: (A ++ B)) :=
+                  (hRsuf0.trans hr2suf).trans hBsuf
+                by_cases hR1 : rest2.length = 1
+                · -- 壊れる形。不変量から `p.2 ≤ 1`、よって段は 0、行 0 の親が立って矛盾
+                  exfalso
+                  obtain ⟨x, hrest⟩ := List.length_eq_one_iff.1 hR1
+                  have hx0 : x.2 = 0 := by
+                    rw [hrest] at hr2l; simp only [List.headI_cons] at hr2l; omega
+                  have hx1 : x.1 = p.1 + 1 := by
+                    rw [hrest] at hr2d; simpa using hr2d
+                  have hBform : B = B.take (unitsLen p B)
+                      ++ (q :: (contrPre p (B.take (unitsLen p B)) A ++ [x])) := by
+                    conv_lhs => rw [← List.take_append_drop (unitsLen p B) B]
+                    rw [hdq, hr2eq, hrest]
+                  have hMform : (p :: (A ++ B) : PairSeq)
+                      = (p :: (A ++ (B.take (unitsLen p B)
+                          ++ (q :: contrPre p (B.take (unitsLen p B)) A)))) ++ [x] := by
+                    conv_lhs => rw [hBform]
+                    simp [List.append_assoc]
+                  have hlastx : ((p :: (A ++ B) : PairSeq).getLastD (0, 0)) = x := by
+                    rw [hMform]; exact getLastD_snoc _ x (0, 0)
+                  have hMlen : 2 < (p :: (A ++ B) : PairSeq).length := by
+                    simp only [List.length_cons, List.length_append]; omega
+                  have hj : (p :: (A ++ B) : PairSeq).length - 1
+                      < (p :: (A ++ B) : PairSeq).length := by omega
+                  have hz : ¬ (0 < entry (p :: (A ++ B) : PairSeq) 1
+                      ((p :: (A ++ B) : PairSeq).length - 1)) := by
+                    rw [entry_last, hlastx, hx0]; omega
+                  have hidx : idx1 (p :: (A ++ B) : PairSeq)
+                      ((p :: (A ++ B) : PairSeq).length - 1) = 0 := by
+                    unfold idx1; rw [if_neg hz]
+                  refine hnp ?_
+                  rw [hidx]
+                  refine hasParent0_of_exists hj ⟨0, by omega, ?_⟩
+                  rw [entry_zero0, entry_last0, hlastx]
+                  simp only [List.headI_cons]
+                  omega
+                · have h0 : 0 < rest2.length := List.length_pos_iff.mpr hr2ne
+                  have hRdlen : (rest2.dropLast).length = rest2.length - 1 := by simp
+                  have hRd : rest2.dropLast ≠ [] := by
+                    intro he
+                    rw [he] at hRdlen
+                    simp only [List.length_nil] at hRdlen
+                    omega
+                  have hRlen : rest2.length ≤ n := by
+                    have := (contrLen_lt hcc).1; omega
+                  have hrd : ∀ c ∈ rest2, p.1 < c.1 := by
+                    intro c hc
+                    have hcm : c ∈ (r2.takeWhile fun x => q.1 < x.1) := by
+                      rw [hAq2]; exact List.mem_append_right _ hc
+                    have := List.mem_takeWhile_imp
+                      (p := fun z : ℕ × ℕ => decide (q.1 < z.1)) hcm
+                    simp only [decide_eq_true_eq] at this
+                    omega
+                  have hbR : blockok (p.1 + 1) rest2 := by
+                    refine ⟨fun _ => hr2d, fun c hc => by have := hrd c hc; omega, ?_⟩
+                    exact steps1_suffix hRsuf hb.2.2
+                  have hcolR : colOK rest2 :=
+                    colOK_of_suffix hRsuf hcol
+                  have hpreall : ∀ c ∈ contrPre p (B.take (unitsLen p B)) A, p.1 + 1 ≤ c.1 := by
+                    intro c hc
+                    rw [contrPre] at hc
+                    rcases List.mem_append.1 hc with hc1 | hc1
+                    · rcases List.mem_cons.1 hc1 with hc2 | hc2
+                      · rw [hc2]
+                      · obtain ⟨y, hy, hyc⟩ := List.mem_map.1 hc2
+                        have := hAd y hy
+                        rw [← hyc]; simp only []; omega
+                    · obtain ⟨y, hy, hyc⟩ := List.mem_map.1 hc1
+                      have := hUge y hy
+                      rw [← hyc]; simp only []; omega
+                  have hpreh : (contrPre p (B.take (unitsLen p B)) A) = []
+                      ∨ ((contrPre p (B.take (unitsLen p B)) A).headI).1 ≤ p.1 + 1 := by
+                    right; simp [contrPre]
+                  have hrestL : rest2 = [] ∨ ¬ (p.1 + 1 < (rest2.headI).1) :=
+                    Or.inr (by rw [hr2d]; omega)
+                  have hAPR : argPatOK rest2 :=
+                    argPatOK_drop (p.1 + 1) rest2 hrestL
+                      (contrPre p (B.take (unitsLen p B)) A).length
+                      (contrPre p (B.take (unitsLen p B)) A) (Nat.le_refl _) hpreall hpreh
+                      hAPAq
+                  exact convC_dropLast_contr2 p A B d plev first force hAd hBh hl hcc hRd
+                    (ih rest2 hRlen (by omega) (p.1 + 1) (d + 1) p.2 false false
+                      hbR hcolR (by omega) hAPR dpOK_false hpOK_false fOK_false
+                      (noParent_suffix hr2ne hRsuf hnp))
+              · have hQsuf0 : Bq <:+ r2 :=
+                  ⟨r2.takeWhile fun x => q.1 < x.1, by
+                    rw [← hBq2]; exact List.takeWhile_append_dropWhile⟩
+                have hQsuf : Bq <:+ (p :: (A ++ B)) :=
+                  (hQsuf0.trans hr2suf).trans hBsuf
+                have ihQ : convC (Bq.dropLast) d p.2 false false
+                    = (convC Bq d p.2 false false).dropLast := by
+                  by_cases hQ1 : Bq.length = 1
+                  · obtain ⟨w, hw⟩ := List.length_eq_one_iff.1 hQ1
+                    rw [hw]
+                    have hdl : ([w] : PairSeq).dropLast = [] := rfl
+                    rw [hdl, convC_nil, convC_single]
+                    simp
+                  · have h0 : 0 < Bq.length := List.length_pos_iff.mpr hBqe
+                    have hQlen : Bq.length ≤ n := by
+                      have := (contrLen_lt hcc).2; omega
+                    have hQh : ¬ (q.1 < (Bq.headI).1) := by
+                      rcases dropWhile_head_neg (a := q.1) r2 with hh | hh
+                      · exact absurd (by rw [← hBq2]; exact hh) hBqe
+                      · rw [hBq2] at hh; exact hh
+                    have hbQ : blockok bd Bq := by
+                      refine ⟨?_, ?_, ?_⟩
+                      · intro hne
+                        have h1 : bd ≤ (Bq.headI).1 :=
+                          hb.2.1 _ (hQsuf.subset (headI_mem hne))
+                        have h2 : ¬ (q.1 < (Bq.headI).1) := hQh
+                        omega
+                      · intro c hc
+                        exact hb.2.1 c (hQsuf.subset hc)
+                      · exact steps1_suffix hQsuf hb.2.2
+                    exact ih Bq hQlen (by omega) bd d p.2 false false hbQ
+                      (colOK_of_suffix hQsuf hcol) hbd hAPBq dpOK_false hpOK_false fOK_false
+                      (noParent_suffix hBqe hQsuf hnp)
+                exact convC_dropLast_contr p A B d plev first force hAd hBh hl hcc hBqe ihQ
+          · exact convC_dropLast_tail p A B d plev first force hAd hBe hBdne hBhne
+              (by simpa using hl) ihB
+
+/-- **`RDnopar` は定理**。`contrOK` を不変量に置き換えた `dropLast` 補題から出る。 -/
+theorem rdNopar : RDnopar := by
+  intro p A T bd d plev first force hb hc _hd2 hbd _hp1 hlen2 _hAd _hTh hlev hAP _hAC _hadj
+    hHP hFC hdp _hhc hnopar n _hn
+  have hL : 1 < (p :: (A ++ T)).length := by omega
+  have hidx : idx1 (p :: (A ++ T)) ((p :: (A ++ T)).length - 1) = 1 := by
+    unfold idx1; rw [if_pos hlev]
+  have hnp : ¬ hasParent (p :: (A ++ T)) (idx1 (p :: (A ++ T)) ((p :: (A ++ T)).length - 1))
+      ((p :: (A ++ T)).length - 1) := by rw [hidx]; exact hnopar
+  have hz : ¬ (entry (p :: (A ++ T)) 0 ((p :: (A ++ T)).length - 1) = 0
+      ∧ entry (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1) = 0) := by
+    rintro ⟨-, h2⟩; omega
+  refine ⟨1, n, Nat.le_refl 1, Nat.le_refl n, ?_⟩
+  rw [oper_one (convC_length_ge_two hL d plev first force),
+    oper_eq_pred_of_noParent n (by omega) hz hnp, Pred, if_neg (by omega)]
+  exact (convC_dropLast_noParent_aux2 (p :: (A ++ T)).length (p :: (A ++ T))
+    (Nat.le_refl _) hL bd d plev first force hb hc hbd hAP hdp hHP hFC hnp).symm
+
+/-- **到達点**: `ReindexD` の残余は `CtrPres2` / `RDnode` の 2 つ。 -/
+theorem reindexD_holds_of_res9 (Hp : CtrPres2) (Hd : RDnode) : ReindexD :=
+  reindexD_holds_of_res8 Hp rdNopar Hd
+
+/-- 同じ形で主定理まで。 -/
+theorem ST_D_conC_holds_of_res9 (Hp : CtrPres2) (Hd : RDnode)
+    {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
+  ST_D_conC_holds_of_res8 Hp rdNopar Hd hM
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -11540,3 +11934,10 @@ end DBMS
 #print axioms DBMS.ctrRes_holds
 #print axioms DBMS.reindexD_holds_of_res8
 #print axioms DBMS.ST_D_conC_holds_of_res8
+#print axioms DBMS.lad_lev_le_one
+#print axioms DBMS.blockok_arg'
+#print axioms DBMS.blockok_sib'
+#print axioms DBMS.convC_dropLast_noParent_aux2
+#print axioms DBMS.rdNopar
+#print axioms DBMS.reindexD_holds_of_res9
+#print axioms DBMS.ST_D_conC_holds_of_res9
