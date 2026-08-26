@@ -14351,6 +14351,210 @@ theorem oper_cons_tower {x : ℕ × ℕ} {X : PairSeq} (m : ℕ)
     rw [hlen, hE0]
   rw [htk, hdl, he1, he2]
 
+/-! ## 4.40 階段の中で縮約が発火する段の計算（`RDnodeCtr` の本体）
+
+`B = (0,0) :: A`、`A` の末尾列が深さ 1（`d0 = 1`）のとき、`B⟦k⟧` の引数ブロックは
+
+    R ++ shiftr0 1 (copies 1 W k')      (W = (0,0) :: R, R = A.dropLast)
+
+で、その頭 `(1,1)` に梯子が立ち、2 コピー目の頭 `(1,0)` が縮約の相手になる。
+前置き `contrPre` はちょうど `shiftr0 1 R` なので縮約が発火し、残余は 3 コピー目
+以降になる。結果は **`shiftr0 1 (copies 1 W k')` そのもの**。 -/
+
+theorem shift1_eq_shiftr0 (M : PairSeq) : shift1 M = shiftr0 1 M := by
+  have h := shiftr0_succ 0 M
+  rw [shiftr0_zero] at h
+  exact h.symm
+
+/-- 深さ `a.1` の列が全部 `a` に等しければユニット列。 -/
+theorem Units_of_diag : ∀ (N : ℕ) (T : PairSeq), T.length ≤ N →
+    ∀ (a : ℕ × ℕ), blockok a.1 T → (∀ c ∈ T, c.1 = a.1 → c = a) → Units a T := by
+  intro N
+  induction N with
+  | zero =>
+    intro T hT a _ _
+    have : T = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this; exact Units.nil
+  | succ N ih =>
+    intro T hT a hb hdg
+    match T with
+    | [] => exact Units.nil
+    | c :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile c r
+      have hp1 : c.1 = a.1 := by have := hb.1 (by simp); simpa using this
+      have hce : c = a := hdg c (by simp) hp1
+      have hbB : blockok a.1 B := blockok_sib' hb hp1 hBh
+      have hdgB : ∀ x ∈ B, x.1 = a.1 → x = a := fun x hx =>
+        hdg x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hBlen : B.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hT; omega
+      have heq : (c :: (A ++ B)) = a :: (A ++ B) := by rw [hce]
+      rw [heq]
+      exact Units.cons (by rw [← hce]; exact hAd) (ih B hBlen a hbB hdgB)
+
+theorem convC_tower_ctr {R : PairSeq} {j : ℕ} {φ : Bool}
+    (hRne : R ≠ [])
+    (hbR : blockok 1 R) (hcolR : colOK R) (hnaR : noAdj3 R)
+    (hdgR : ∀ c ∈ R, c.1 = 1 → c = ((1, 1) : ℕ × ℕ))
+    (hbCj : blockok 0 (copies 1 (((0, 0) : ℕ × ℕ) :: R) (j + 1)))
+    (hcolCj : colOK (copies 1 (((0, 0) : ℕ × ℕ) :: R) (j + 1)))
+    (hnaCj : noAdj3 (copies 1 (((0, 0) : ℕ × ℕ) :: R) (j + 1))) :
+    convC (R ++ shiftr0 1 (copies 1 (((0, 0) : ℕ × ℕ) :: R) (j + 2))) 1 0 true φ
+      = shiftr0 1 (copies 1 (((0, 0) : ℕ × ℕ) :: R) (j + 2)) := by
+  set W : PairSeq := ((0, 0) : ℕ × ℕ) :: R with hWd
+  set Y : PairSeq := shiftr0 2 (copies 1 W (j + 1)) with hYd
+  have hCjne : copies 1 W (j + 1) ≠ [] := by
+    rw [copies_succ_front]
+    intro he
+    have : W = [] := by
+      cases hW : W with
+      | nil => rfl
+      | cons w ws => rw [hW] at he; simp at he
+    rw [hWd] at this; simp at this
+  have hYne : Y ≠ [] := by rw [hYd]; simpa using hCjne
+  have hYdeep : ∀ x ∈ Y, 2 ≤ x.1 := by
+    intro x hx
+    rw [hYd] at hx
+    obtain ⟨y, hy, rfl⟩ := mem_shiftr0.1 hx
+    simp only []; omega
+  have hYhead : Y.headI = ((2, 0) : ℕ × ℕ) := by
+    rw [hYd, headI_shiftr0 hCjne, headI_copies (by rw [hWd]; simp) (by omega), hWd]
+    simp
+  have hZ : shiftr0 1 (copies 1 W (j + 2)) = ((1, 0) : ℕ × ℕ) :: (shiftr0 1 R ++ Y) := by
+    rw [show j + 2 = (j + 1) + 1 from rfl, copies_succ_front, shiftr0_append,
+      shiftr0_shiftr0, ← hYd, hWd, shiftr0_cons]
+    simp
+  -- `R` の分解
+  obtain ⟨a, rest, hRa⟩ : ∃ a rest, R = a :: rest := by
+    cases hR : R with
+    | nil => exact absurd hR hRne
+    | cons a rest => exact ⟨a, rest, rfl⟩
+  have ha1 : a.1 = 1 := by have := hbR.1 hRne; rw [hRa] at this; simpa using this
+  have hae : a = ((1, 1) : ℕ × ℕ) := hdgR a (by rw [hRa]; simp) ha1
+  obtain ⟨A', T'', hsp, hA'd, hT''h⟩ := split_takeWhile a rest
+  have hReq : R = a :: (A' ++ T'') := by rw [hRa, hsp]
+  have hbA' : blockok 2 A' := by
+    have h := blockok_arg' (bd := 1) (by rw [← hReq]; exact hbR) ha1 hA'd
+    simpa using h
+  have hbT'' : blockok 1 T'' := blockok_sib' (by rw [← hReq]; exact hbR) ha1 hT''h
+  have hcolA' : colOK A' := fun x hx =>
+    hcolR x (by rw [hReq]; exact List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+  have hcolT'' : colOK T'' := fun x hx =>
+    hcolR x (by rw [hReq]; exact List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+  have hnaA' : noAdj3 A' := by
+    have h := noAdj3_infix (takeWhile_infix_cons a (A' ++ T'')) (by rw [← hReq]; exact hnaR)
+    obtain ⟨e1, -⟩ := split_append (X := A') (Y := T'') (dd := a.1) hA'd hT''h
+    rw [e1] at h; exact h
+  have hnaT'' : noAdj3 T'' := by
+    have h := noAdj3_infix (dropWhile_infix_cons a (A' ++ T'')) (by rw [← hReq]; exact hnaR)
+    obtain ⟨-, e2⟩ := split_append (X := A') (Y := T'') (dd := a.1) hA'd hT''h
+    rw [e2] at h; exact h
+  have hdgT'' : ∀ c ∈ T'', c.1 = a.1 → c = a := by
+    intro c hc hc1
+    rw [hae]
+    refine hdgR c (by rw [hReq]; exact List.mem_cons_of_mem _ (List.mem_append_right _ hc)) ?_
+    rw [← ha1]; exact hc1
+  have hUnits : Units a T'' := Units_of_diag T''.length T'' (Nat.le_refl _) a
+    (by rw [ha1]; exact hbT'') hdgT''
+  -- 深さの下限
+  have hRdeep : ∀ x ∈ R, 1 ≤ x.1 := hbR.2.1
+  have hSRdeep : ∀ x ∈ shiftr0 1 R, 2 ≤ x.1 := by
+    intro x hx
+    obtain ⟨y, hy, rfl⟩ := mem_shiftr0.1 hx
+    have := hRdeep y hy
+    simp only []; omega
+  -- 縮約の前置き
+  have hpre : contrPre a T'' A' = shiftr0 1 R := by
+    rw [contrPre, hReq, shiftr0_cons, shift1_eq_shiftr0, shift1_eq_shiftr0,
+      shiftr0_append, ha1, hae]
+    simp
+  -- `T'' ++ Z` の頭
+  have hTZh : (T'' ++ shiftr0 1 (copies 1 W (j + 2))) = []
+      ∨ ¬ (a.1 < ((T'' ++ shiftr0 1 (copies 1 W (j + 2))).headI).1) := by
+    right
+    by_cases hTe : T'' = []
+    · rw [hTe, List.nil_append, hZ]
+      simp only [List.headI_cons]
+      rw [ha1]; omega
+    · obtain ⟨t, ts, hts⟩ : ∃ t ts, T'' = t :: ts := by
+        cases hT : T'' with
+        | nil => exact absurd hT hTe
+        | cons t ts => exact ⟨t, ts, rfl⟩
+      have hTh : ¬ (a.1 < (T''.headI).1) := hT''h.resolve_left hTe
+      rw [hts] at hTh ⊢
+      simpa using hTh
+  -- `unitsLen`
+  have hUL : unitsLen a (T'' ++ shiftr0 1 (copies 1 W (j + 2))) = T''.length := by
+    refine unitsLen_append_units hUnits ?_
+    right
+    rw [hZ]
+    constructor
+    · simp only [List.headI_cons]; rw [ha1]; omega
+    · rw [hae]; simp only [List.headI_cons]; intro h; simp at h
+  -- 縮約が発火する
+  have hdrop : (T'' ++ shiftr0 1 (copies 1 W (j + 2))).drop T''.length
+      = shiftr0 1 (copies 1 W (j + 2)) := by simp
+  have htake : (T'' ++ shiftr0 1 (copies 1 W (j + 2))).take T''.length = T'' := by simp
+  have hr2take : (shiftr0 1 R ++ Y).takeWhile (fun x => decide (((1, 0) : ℕ × ℕ).1 < x.1))
+      = shiftr0 1 R ++ Y := by
+    refine List.takeWhile_eq_self_iff.2 ?_
+    intro x hx
+    rcases List.mem_append.1 hx with h | h
+    · have := hSRdeep x h; simp only [decide_eq_true_eq]; omega
+    · have := hYdeep x h; simp only [decide_eq_true_eq]; omega
+  have hr2drop : (shiftr0 1 R ++ Y).dropWhile (fun x => decide (((1, 0) : ℕ × ℕ).1 < x.1))
+      = [] := by
+    refine List.dropWhile_eq_nil_iff.2 ?_
+    intro x hx
+    rcases List.mem_append.1 hx with h | h
+    · have := hSRdeep x h; simp only [decide_eq_true_eq]; omega
+    · have := hYdeep x h; simp only [decide_eq_true_eq]; omega
+  have hctr : contrLen a (T'' ++ shiftr0 1 (copies 1 W (j + 2)))
+      (unitsLen a (T'' ++ shiftr0 1 (copies 1 W (j + 2)))) A' = some (Y, []) := by
+    rw [contrLen, hUL, hdrop, htake, hZ]
+    simp only []
+    rw [hr2take, hr2drop, hpre]
+    have hlen : (shiftr0 1 R ++ Y).take (shiftr0 1 R).length = shiftr0 1 R := by simp
+    have hlen2 : (shiftr0 1 R ++ Y).drop (shiftr0 1 R).length = Y := by simp
+    rw [hlen, hlen2]
+    rw [if_pos]
+    refine ⟨by rw [hae], by rw [ha1], rfl, hYne, ?_, ?_⟩
+    · rw [hYhead, ha1]
+    · rw [hYhead, hae]; simp
+  -- 本体
+  have hcons : R ++ shiftr0 1 (copies 1 W (j + 2))
+      = a :: (A' ++ (T'' ++ shiftr0 1 (copies 1 W (j + 2)))) := by
+    rw [hReq]; simp [List.append_assoc]
+  have hlad : ladOf a.2 1 0 true φ = true := by
+    rw [hae]; unfold ladOf; simp
+  obtain ⟨e1, e2⟩ := split_append (X := A') (Y := T'' ++ shiftr0 1 (copies 1 W (j + 2)))
+    (dd := a.1) hA'd hTZh
+  have hAP : argPatOK R := argPatOK_of_noAdj3 _ _ (Nat.le_refl _) hnaR
+  obtain ⟨e1R, e2R⟩ := split_append (X := A') (Y := T'') (dd := a.1) hA'd hT''h
+  have hHA' : headPatOK A' a.2 := by
+    rw [hReq] at hAP
+    obtain ⟨h, -, -⟩ := argPatOK_cons.1 hAP
+    rw [e1R] at h; exact h
+  have hA'shift : convC A' (1 + 2) a.2 true false = shiftr0 1 A' := by
+    rw [hae]
+    exact convC_eq_shift A'.length A' (Nat.le_refl _) 2 1 1 true false hbA'
+      (slackOK_of_one_le (Nat.le_refl 1) hcolA') hnaA'
+      (hpOK_of_headPatOK (by rw [hae] at hHA'; exact hHA')) fOK_false
+  have hT''shift : convC T'' (1 + 1) a.2 false false = shiftr0 1 T'' := by
+    rw [hae]
+    exact convC_eq_shift T''.length T'' (Nat.le_refl _) 1 1 1 false false hbT''
+      (slackOK_of_one_le (Nat.le_refl 1) hcolT'') hnaT'' hpOK_false fOK_false
+  have hYshift : convC Y (1 + 1) a.2 false false = Y := by
+    rw [hae, hYd, convC_shiftr0]
+    exact convC_eq_shift (copies 1 W (j + 1)).length (copies 1 W (j + 1)) (Nat.le_refl _)
+      0 2 1 false false hbCj (slackOK_of_one_le (by omega) hcolCj) hnaCj
+      hpOK_false fOK_false
+  rw [hcons, convC_cons_lad_some a (A' ++ (T'' ++ shiftr0 1 (copies 1 W (j + 2))))
+      1 0 true φ hlad (by rw [e1, e2]; exact hctr),
+    e1, e2, hUL, htake, hA'shift, hT''shift, hYshift, convC_nil, hZ, hReq,
+    shiftr0_cons, shiftr0_append, ha1, hae]
+  simp [List.append_assoc]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -14611,3 +14815,5 @@ end DBMS
 #print axioms DBMS.le0_cons_succ
 #print axioms DBMS.nextrel1_cons_one
 #print axioms DBMS.oper_cons_tower
+#print axioms DBMS.Units_of_diag
+#print axioms DBMS.convC_tower_ctr
