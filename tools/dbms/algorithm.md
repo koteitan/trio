@@ -1,5 +1,7 @@
 # BMS 2 行標準形から DBMS 標準形への変換
 
+[← 戻る](README.md) | [Japanese](algorithm.md) | [English](algorithm-en.md)
+
 ## 1. 記法
 
 **列**とは $`p = (p_0, p_1) \in \mathbb{N}^2`$ のことで、$`p_0`$ を深さ、$`p_1`$ を段と呼ぶ。**行列**とは列の有限列
@@ -288,8 +290,8 @@ CLI は [`bms2dbms.py`](bms2dbms.py)、使い方は [README.md](README.md)。
 ## 注釈
 
 [^1]: (R) を無条件に証明するのが全体で最も重く、`DbmsStd.lean` は 15471 行になった。
-    素直に閉じないのは縮約の枝だけで、残りは右端の道に沿った帰納で片付く。
-    経緯は [`lean/DBMS-STD-PLAN.md`](../../lean/DBMS-STD-PLAN.md) に残してある。
+    素直な帰納で閉じない枝は 2 つ。縮約の枝と、末尾列の親が節点そのもので
+    段が正の場合（「ずれたコピー」）である。経緯は [`lean/DBMS-STD-PLAN.md`](../../lean/DBMS-STD-PLAN.md) に残してある。
 
 [^2]: 命名について。この文書では変換を `src2dst` の形で呼ぶ。
     Lean 側の `translate` / `conC` / `readCon` はこの規約より前の名前で、

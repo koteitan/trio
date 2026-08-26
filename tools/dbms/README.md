@@ -1,11 +1,18 @@
 # bms2dbms / dbms2yseq / bms2yseq
 
-BMS 2 行標準形（= `psi_0(Omega_omega)` 未満）と DBMS 標準形を相互に変換する CLI。
+[← 戻る](../../README.md) | [Japanese](README.md) | [English](README-en.md)
 
-変換 `conC` の正しさは Lean 4 / Mathlib で証明済みで、`sorry` も追加公理も無い。
-アルゴリズムは [algorithm.md](algorithm.md)、形式化は
-[`lean/Dbms.lean`](../../lean/Dbms.lean) と
-[`lean/DbmsStd.lean`](../../lean/DbmsStd.lean)。
+BMS 2 行標準形・DBMS 標準形・Y 数列を相互に変換する CLI 3 本。
+
+```
+BMS 2 行標準形  --conC-->  DBMS 標準形  --順位を数える-->  Y 数列
+                bms2dbms                dbms2yseq
+                \________________ bms2yseq ________________/
+```
+
+左半分 `conC` の正しさは Lean 4 / Mathlib で証明済みで、`sorry` も追加公理も無い。
+右半分は 巨大数研究 Wiki の
+ユーザーブログ:Koteitan/Dimensional BMS の定義とY数列との対応 の定義そのまま。
 
 ## 必要なもの
 
@@ -20,15 +27,19 @@ tools/dbms/core.py        展開規則と標準形判定（BMS / DBMS 共通）
 ```
 
 ```
-BMS 2 行標準形  --conC-->  DBMS 標準形  --順位を数える-->  Y 数列
-                bms2dbms                dbms2yseq
-                \________________ bms2yseq ________________/
-```
-
-```
 $ ./bms2yseq.py "(0,0)(1,1)(2,2)"
 (0,0)(1,1)(2,2)  ->  Y(1,2,4,7)
 ```
+
+---
+
+# bms2dbms
+
+BMS 2 行標準形（= `psi_0(Omega_omega)` 未満）と DBMS 標準形を相互に変換する CLI。
+
+アルゴリズムは [algorithm.md](algorithm.md)（[English](algorithm-en.md)）、形式化は
+[`lean/Dbms.lean`](../../lean/Dbms.lean) と
+[`lean/DbmsStd.lean`](../../lean/DbmsStd.lean)。
 
 ## 使い方
 
