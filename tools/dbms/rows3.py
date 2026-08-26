@@ -18,7 +18,7 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
   (3) 性質 R: 任意の n に対し、ある m と n'>=n で 像<m> = 像(M<n'>)
   (4) z=0 の断片で 2 行版 `rows2.convC` と完全一致
 
-**到達点（<=5 列 1018 個）**: (2) 違反 0、(4) 違反 0、(1) 違反 2、(3) 違反 98。
+**到達点（<=5 列 1018 個）**: (2) 違反 0、(4) 違反 0、(1) 違反 1、(3) 違反 74。
 
 使い方:
     python3 rows3.py [列数上限]
@@ -123,32 +123,61 @@ def predlab(y, z):
     return (0, 0)
 
 
-def shiftE(B, e):
-    return [(a + 1, b + e, c) for a, b, c in B]
+def shiftE(B, e, ps0):
+    """写しのずれ。行 0 は必ず +1、行 1 は**親より深い段の柱だけ** +e。
+
+    展開の delta は上昇行列 am が 1 の行にしか効かないので、行 1 が親の段
+    `ps0` 以下の柱は行 1 が上がらない。
+    """
+    return [(a + 1, b + (e if b > ps0 else 0), c) for a, b, c in B]
 
 
-def contrPre(p, U, A, e):
-    return [(p[0] + 1, p[1] + e, p[2])] + shiftE(A, e) + shiftE(U, e)
+def contrPre(p, U, A, e, ps0):
+    return ([(p[0] + 1, p[1] + e, p[2])]
+            + shiftE(A, e, ps0) + shiftE(U, e, ps0))
 
 
-def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False):
-    """設計 v6: 2 行の変換を**行 (0,1) と行 (1,2) の二重**に効かせる。
+def ok_place(ST, x, w):
+    """深さ `x` に行 1 が `w` の柱を置けるか（行 1 の値 = 行 1 の入れ子の深さ）。"""
+    if w == 0:
+        return True
+    if x <= w:
+        return False                      # DBMS は 行1 < 行0
+    for y in range(min(x, len(ST)) - 1, -1, -1):
+        if ST[y][0] < w:
+            return ST[y][0] == w - 1
+    return False
 
-    BMS でも DBMS でも標準形の第 y 行の値は**その行の入れ子の深さ**に等しい
-    （3 行 <=6 列で違反 0）。だから行 1 の値は保存されるものではなく、
-    行 1 の木に影を挟めばその分だけずれる。
 
-    `L[k]` = もとの行 1 の深さ `k` の祖先について
-             (像での行 1, その行 2, 子に渡す force1)
-    `F[k]` = 行 1 の深さ `k` の次の柱がその行 1 ブロックの先頭か
+def fit(ST, d, w):
+    """深さ `d` 以上で行 1 が `w` になれる最小の深さ。無ければ None。"""
+    for x in range(d, len(ST) + 1):
+        if ok_place(ST, x, w):
+            return x
+    return None
+
+
+def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
+          ST=()):
+    """設計 v8: 行 0 も行 1 も「入れ子の深さ」として扱い、行 1 の祖先を持ち回る。
+
+    `L[k]` もとの行 1 の深さ `k` の祖先が像で持つ (行 1, 行 2, 子に渡す force1)
+    `F[k]` 行 1 の深さ `k` の次の柱がその行 1 ブロックの先頭か
+    `ST[x]` **像で**深さ `x` に居る祖先の (行 1, 行 2)（＝いまの祖先の鎖）
+
+    行 1 の値は行 1 の入れ子の深さなので、行 1 が `w` の柱は、
+    行 1 が `w` 未満の直近の祖先の行 1 がちょうど `w-1` になる深さにしか置けない。
+    `ST` がそれを与える。
 
     1 本の BMS 列は最大 3 本の柱になる:
-        (d,   pw0,  pw1)       行 0 の影  … 段が親と同じ足場
-        (d+1, base, pl2)       行 1 の影  … 行 1 の深さ base を埋める足場
-        (dd,  e1,   e2)        本体
+        (d,   pw0,  pw1)       行 0 の影
+        (dd,  base, pl2)       行 1 の影
+        (dd', e1,   e2)        本体
+
+    戻り値は (柱の並び, 更新した ST)。
     """
     if not M:
-        return []
+        return [], ST
     p, r = M[0], M[1:]
     v, s2 = p[1], p[2]
     A, B = split0(p, r)
@@ -168,13 +197,22 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False):
     cols = []
     if lad0:
         cols.append((d, pw[0], pw[1]))
+        ST = ST[:d] + ((pw[0], pw[1]),)
         dd = d + 1
     else:
-        dd = h1 + 1 if (h1 > 0 and d <= h1) else d
+        dd = fit(ST, d, h1)
+        if dd is None:
+            dd = max(d, len(ST))
     if lad1:
         cols.append((dd, base, pl2))
+        ST = ST[:dd] + ((base, pl2),)
         dd += 1
+    if not ok_place(ST, dd, e1):
+        x = fit(ST, dd, e1)
+        if x is not None:
+            dd = x
     cols.append((dd, e1, e2))
+    ST = ST[:dd] + ((e1, e2),)
 
     fc = (not lad1) and first1 and s2 == pl2
     f0 = (not lad0) and first and (v, s2) == ps
@@ -191,29 +229,30 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False):
             if (q[1], q[2]) != qlab or q[0] != p[0]:
                 continue
             Aq, Bq = split0(q, r2)
-            pre = contrPre(p, U, A, e)
+            pre = contrPre(p, U, A, e, ps[0])
             if list(Aq[:len(pre)]) != pre:
                 continue
             rest2 = list(Aq[len(pre):])
             if not (rest2 and rest2[0][0] == p[0] + 1
                     and (rest2[0][1], rest2[0][2]) < (v + e, s2)):
                 continue
-            # 写しが行 1 でもずれているとき（e=1）、写しの頭は**行 1 の影**が
+            # 写しが行 1 でもずれているとき（e=1）、写しの頭は行 1 の影が
             # 兼ねるので、残余の行 1 の親は影（= base）になる。
             Lr = L[:v] + (((base, pl2, fc) if e else (e1, s2, fc)),)
-            return (cols
-                    + conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False)
-                    + conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False)
-                    + conv3(rest2, d + 1 + e, Lr, (False,) * 12, (v, s2), (e1, e2), False, False)
-                    + conv3(Bq, d, L, FA, (v, s2), (e1, e2), False, False))
+            cA, ST = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False, ST)
+            cU, ST = conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, ST)
+            cR, ST = conv3(rest2, d + 1 + e, Lr, (False,) * 12,
+                           (v, s2), (e1, e2), False, False, ST)
+            cB, ST = conv3(Bq, d, L, FA, (v, s2), (e1, e2), False, False, ST)
+            return cols + cA + cU + cR + cB, ST
 
-    return (cols
-            + conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, f0)
-            + conv3(B, d, L, FA, (v, s2), (e1, e2), False, False))
+    cA, ST = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, f0, ST)
+    cB, ST = conv3(B, d, L, FA, (v, s2), (e1, e2), False, False, ST)
+    return cols + cA + cB, ST
 
 
 def b2d3(M):
-    return tuple(conv3(list(M)))
+    return tuple(conv3(list(M))[0])
 
 
 # ---------------------------------------------------------------- 検査
