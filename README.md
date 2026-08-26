@@ -17,6 +17,8 @@ tools/   実行可能な BM4 モデルと検証
 
 ## 資料
 
+- [tools/dbms/README.md](tools/dbms/README.md) — CLI `bms2dbms`（BMS 2 行標準形 <-> DBMS 標準形）の使い方、
+  [algorithm.md](tools/dbms/algorithm.md) — その変換アルゴリズムと証明されていること
 - [dom.md](dom.md) — 拡張ブーフホルツ OCF の `dom` 関数と BM4 展開分岐の対応
 - `tools/normalize_sheet.py` — BM4-Analysis シートのラベルを形式だけ正規化して
   `tmp/fixed-sheet/`（バージョン管理外）と `tools/omega_alpha_rows.tsv` を作る
