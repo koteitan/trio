@@ -14770,6 +14770,126 @@ theorem reindexD_holds_of_res11 (Hp : CtrPres2) : ReindexD :=
 theorem ST_D_conC_holds_of_res11 (Hp : CtrPres2) {M : PairSeq} (hM : ST_PS M) :
     ST_D (conC M) := ST_D_conC_holds_of_res10 Hp rdNodeCtr_holds hM
 
+/-! ## 4.42 最後の残余 `CtrPres2` を潰す
+
+`CtrPres2` は「`T` で縮約が発火しないなら `T⟦n⟧` でも発火しない」。
+発火の証拠は `T⟦n⟧ = U ++ q :: (pre ++ z :: Z)` の位置 `J = |U| + 1 + |pre|` まで
+（`z` まで）で決まるので、`T` と `T⟦n⟧` の共通の接頭辞の長さ `j1 = |T| - 1` と
+`J` を比べればよい。
+
+* `J < j1`   証拠がまるごと `T` の中に入る ⟹ `T` でも**構造条件**が揃う。
+  仮定 `contrLen' p T … = contrLen p T … = none` に矛盾。
+* `J ≥ j1`   展開の階段（`oper_bad_blocks`）の形から潰す。
+  ずれが正なら 2 コピー目以降は深さが `bd + 2` 以上なので `J = j1` に絞られ、
+  そこでは `T` の末尾列が証拠の続きになる。ずれが 0 ならコピーはすべて同じなので
+  `z` は `T.dropLast` の中にも現れ、それが `pre` の中なら段が `p.2` で矛盾、
+  ユニットの中なら末尾列の行 0 の親の最小性に矛盾する。 -/
+
+/-- ユニット列の中で深さが `p.1` の列は `p` そのもの。 -/
+theorem Units.eq_of_depth {p : ℕ × ℕ} {U : PairSeq} (h : Units p U) :
+    ∀ u ∈ U, u.1 = p.1 → u = p := by
+  induction h with
+  | nil => intro u hu _; exact absurd hu (by simp)
+  | @cons A V hA _ ih =>
+    intro u hu hdd
+    rcases List.mem_cons.1 hu with h1 | hu'
+    · exact h1
+    · rcases List.mem_append.1 hu' with hu2 | hu2
+      · exact absurd hdd (by have := hA u hu2; omega)
+      · exact ih u hu2 hdd
+
+/-- `contrPre` の中で深さが `p.1 + 1` の列は段が `p.2`。 -/
+theorem contrPre_level {p : ℕ × ℕ} {U A : PairSeq} (hU : Units p U)
+    (hA : ∀ x ∈ A, p.1 < x.1) :
+    ∀ x ∈ contrPre p U A, x.1 = p.1 + 1 → x.2 = p.2 := by
+  intro x hx hdd
+  rw [contrPre] at hx
+  rcases List.mem_append.1 hx with h1 | h1
+  · rcases List.mem_cons.1 h1 with h2 | h2
+    · rw [h2]
+    · simp only [shift1, List.mem_map] at h2
+      obtain ⟨a, ha, rfl⟩ := h2
+      have := hA a ha
+      simp only [] at hdd
+      omega
+  · simp only [shift1, List.mem_map] at h1
+    obtain ⟨u, hu, rfl⟩ := h1
+    have hu1 : u.1 = p.1 := by simp only [] at hdd; omega
+    simp only []
+    rw [hU.eq_of_depth u hu hu1]
+
+/-- 縮約の**構造条件**が揃う形（`contrLen_of_shape` の段の条件なし版）。 -/
+theorem contrLen'_of_shape {p q : ℕ × ℕ} {Arg U pre rest2 L : PairSeq}
+    (hU : Units p U)
+    (hq2 : q.2 + 1 = p.2) (hq1 : q.1 = p.1)
+    (hpre : pre = contrPre p U Arg)
+    (hpd : ∀ x ∈ pre, p.1 < x.1)
+    (hrd : ∀ x ∈ rest2, p.1 < x.1)
+    (hrne : rest2 ≠ []) (hrh1 : (rest2.headI).1 = p.1 + 1)
+    (hL : L = [] ∨ ¬ (p.1 < (L.headI).1)) :
+    contrLen' p (U ++ q :: ((pre ++ rest2) ++ L))
+        (unitsLen p (U ++ q :: ((pre ++ rest2) ++ L))) Arg = some (rest2, L) := by
+  have hqp : ¬ (q = p) := by
+    intro h; rw [h] at hq2; omega
+  have hk : unitsLen p (U ++ q :: ((pre ++ rest2) ++ L)) = U.length :=
+    unitsLen_append_units hU (Or.inr ⟨by simp only [List.headI]; omega,
+      by simp only [List.headI]; exact hqp⟩)
+  have hdrop : (U ++ q :: ((pre ++ rest2) ++ L)).drop U.length
+      = q :: ((pre ++ rest2) ++ L) := by simp
+  have htake : (U ++ q :: ((pre ++ rest2) ++ L)).take U.length = U := by simp
+  have hall : ∀ x ∈ (pre ++ rest2), q.1 < x.1 := by
+    intro x hx
+    rw [hq1]
+    rcases List.mem_append.1 hx with h | h
+    · exact hpd x h
+    · exact hrd x h
+  have hLh : L = [] ∨ ¬ (q.1 < (L.headI).1) := by rw [hq1]; exact hL
+  obtain ⟨e1, e2⟩ := split_append (dd := q.1) hall hLh
+  rw [contrLen', hk, hdrop]
+  simp only [htake, e1, e2, ← hpre]
+  rw [if_pos ⟨hq2, hq1, by simp, by simpa using hrne, by simpa using hrh1⟩]
+  simp
+
+/-- 証拠が `U ++ q :: (pre ++ z :: Z)` の形なら構造条件は揃う。 -/
+theorem contrLen'_ne_none_gen {p q : ℕ × ℕ} {Arg U pre Z : PairSeq} {z : ℕ × ℕ}
+    (hU : Units p U) (hq2 : q.2 + 1 = p.2) (hq1 : q.1 = p.1)
+    (hpre : pre = contrPre p U Arg)
+    (hpd : ∀ x ∈ pre, p.1 < x.1) (hz1 : z.1 = p.1 + 1) :
+    contrLen' p (U ++ q :: (pre ++ z :: Z))
+        (unitsLen p (U ++ q :: (pre ++ z :: Z))) Arg ≠ none := by
+  obtain ⟨Z1, Z2, hZ, hZ1d, hZ2h⟩ : ∃ Z1 Z2, Z = Z1 ++ Z2 ∧ (∀ x ∈ Z1, p.1 < x.1) ∧
+      (Z2 = [] ∨ ¬ (p.1 < (Z2.headI).1)) :=
+    ⟨Z.takeWhile (fun x => p.1 < x.1), Z.dropWhile (fun x => p.1 < x.1),
+      (List.takeWhile_append_dropWhile).symm,
+      (fun x hx => by
+        have := List.mem_takeWhile_imp hx
+        simpa using this),
+      dropWhile_head_not p.1 Z⟩
+  subst hZ
+  have heq : U ++ q :: (pre ++ z :: (Z1 ++ Z2))
+      = U ++ q :: ((pre ++ (z :: Z1)) ++ Z2) := by
+    simp [List.append_assoc]
+  rw [heq, contrLen'_of_shape hU hq2 hq1 hpre hpd
+    (by intro x hx
+        rcases List.mem_cons.1 hx with h | h
+        · rw [h]; omega
+        · exact hZ1d x h)
+    (by simp) (by simp only [List.headI_cons]; exact hz1) hZ2h]
+  simp
+
+/-- 証拠の接頭辞が `T` の接頭辞と一致すれば `T` でも構造条件が揃う。 -/
+theorem ctrPres_prefix {p q : ℕ × ℕ} {A U pre T : PairSeq} {z : ℕ × ℕ}
+    (hU : Units p U) (hq2 : q.2 + 1 = p.2) (hq1 : q.1 = p.1)
+    (hpre : pre = contrPre p U A) (hpd : ∀ x ∈ pre, p.1 < x.1) (hz1 : z.1 = p.1 + 1)
+    (hT : T.take (U.length + 1 + pre.length + 1) = U ++ q :: (pre ++ [z])) :
+    contrLen' p T (unitsLen p T) A ≠ none := by
+  have hTe : T = U ++ q :: (pre ++ z :: T.drop (U.length + 1 + pre.length + 1)) := by
+    conv_lhs => rw [← List.take_append_drop (U.length + 1 + pre.length + 1) T]
+    rw [hT]
+    simp [List.append_assoc]
+  rw [hTe]
+  exact contrLen'_ne_none_gen hU hq2 hq1 hpre hpd hz1
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
