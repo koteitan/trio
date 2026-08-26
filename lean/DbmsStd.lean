@@ -11976,6 +11976,127 @@ theorem convC_append_tail : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
           hkey Z hZd hZh]
         simp [List.append_assoc]
 
+
+/-! ### 接頭辞への遺伝
+
+`RDnode` では `R = A.dropLast` に `convC_append_tail` を当てるので、
+`blockok` / `argPatOK` が接頭辞に遺伝することが要る。 -/
+
+/-- 接頭辞に切っても `takeWhile` の頭は変わらない。 -/
+theorem takeWhile_append_head {dd : ℕ} (X Y : PairSeq)
+    (h : (X.takeWhile fun q => dd < q.1) ≠ []) :
+    ((X ++ Y).takeWhile fun q => dd < q.1) ≠ [] ∧
+      (((X ++ Y).takeWhile fun q => dd < q.1)).headI
+        = ((X.takeWhile fun q => dd < q.1)).headI := by
+  match X with
+  | [] => simp at h
+  | a :: x =>
+    by_cases hq : dd < a.1
+    · constructor
+      · simp [List.takeWhile_cons, hq]
+      · simp [List.takeWhile_cons, hq]
+    · simp [List.takeWhile_cons, hq] at h
+
+/-- `headPatOK` は接頭辞に遺伝する。 -/
+theorem headPatOK_prefix {X Y : PairSeq} {plev : ℕ} (h : headPatOK (X ++ Y) plev) :
+    headPatOK X plev := by
+  intro p r hX hpl hne
+  subst hX
+  obtain ⟨hne', hhd⟩ := takeWhile_append_head (dd := p.1) r Y hne
+  have hkey := h p (r ++ Y) rfl hpl hne'
+  rw [hhd] at hkey
+  exact hkey
+
+/-- `blockok` は接頭辞に遺伝する。 -/
+theorem blockok_prefix {X Y : PairSeq} {bd : ℕ} (h : blockok bd (X ++ Y)) : blockok bd X := by
+  refine ⟨?_, ?_, (steps1_append.1 h.2.2).1⟩
+  · intro hne
+    obtain ⟨a, as, ha⟩ : ∃ a as, X = a :: as := by
+      cases X with
+      | nil => exact absurd rfl hne
+      | cons a as => exact ⟨a, as, rfl⟩
+    have hx := h.1 (by rw [ha]; simp)
+    rw [ha] at hx ⊢
+    simpa using hx
+  · exact fun c hc => h.2.1 c (List.mem_append_left _ hc)
+
+/-- `argPatOK` は接頭辞に遺伝する。 -/
+theorem argPatOK_prefix : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    ∀ X Y : PairSeq, M = X ++ Y → argPatOK M → argPatOK X := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hM X Y hXY _
+    have hMe : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    rw [hMe] at hXY
+    have hXe : X = [] := (List.append_eq_nil_iff.1 hXY.symm).1
+    rw [hXe]; exact argPatOK_nil
+  | succ N ih =>
+    intro M hM X Y hXY hA
+    match X with
+    | [] => exact argPatOK_nil
+    | p :: x =>
+      rw [hXY, List.cons_append] at hA hM
+      obtain ⟨h1, h2, h3⟩ := argPatOK_cons.1 hA
+      rw [argPatOK_cons]
+      have hlen : x.length + Y.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      by_cases hxd : (x.dropWhile fun q => p.1 < q.1) = []
+      · have hxt : (x.takeWhile fun q => p.1 < q.1) = x := by
+          conv_rhs => rw [← List.takeWhile_append_dropWhile
+            (p := fun q : ℕ × ℕ => decide (p.1 < q.1)) (l := x)]
+          rw [hxd, List.append_nil]
+        have hxall : ∀ c ∈ x, p.1 < c.1 := by
+          intro c hc
+          rw [← hxt] at hc
+          have := List.mem_takeWhile_imp hc
+          simpa using this
+        have hall : ∀ c ∈ x ++ (Y.takeWhile fun q => p.1 < q.1), p.1 < c.1 := by
+          intro c hc
+          rcases List.mem_append.1 hc with h | h
+          · exact hxall c h
+          · have := List.mem_takeWhile_imp h; simpa using this
+        obtain ⟨f1, f2⟩ := split_append (X := x ++ (Y.takeWhile fun q => p.1 < q.1))
+          (Y := (Y.dropWhile fun q => p.1 < q.1)) (dd := p.1) hall (dropWhile_head_neg _)
+        have heq : (x ++ (Y.takeWhile fun q => p.1 < q.1)) ++ (Y.dropWhile fun q => p.1 < q.1)
+            = x ++ Y := by
+          rw [List.append_assoc, List.takeWhile_append_dropWhile]
+        rw [heq] at f1 f2
+        rw [f1] at h1 h2
+        refine ⟨by rw [hxt]; exact headPatOK_prefix h1, ?_, by rw [hxd]; exact argPatOK_nil⟩
+        rw [hxt]
+        refine ih (x ++ (Y.takeWhile fun q => p.1 < q.1)) ?_ x _ rfl h2
+        simp only [List.length_append]
+        have := (List.takeWhile_sublist (fun q : ℕ × ℕ => decide (p.1 < q.1)) (l := Y)).length_le
+        omega
+      · have hxall : ∀ c ∈ (x.takeWhile fun q => p.1 < q.1), p.1 < c.1 := by
+          intro c hc
+          have := List.mem_takeWhile_imp hc; simpa using this
+        obtain ⟨b, bs, hbs⟩ : ∃ b bs, (x.dropWhile fun q => p.1 < q.1) = b :: bs := by
+          cases hc : (x.dropWhile fun q => p.1 < q.1) with
+          | nil => exact absurd hc hxd
+          | cons b bs => exact ⟨b, bs, rfl⟩
+        have hhd : ((x.dropWhile fun q => p.1 < q.1) ++ Y) = [] ∨
+            ¬ (p.1 < (((x.dropWhile fun q => p.1 < q.1) ++ Y).headI).1) := by
+          right
+          rcases dropWhile_head_neg (a := p.1) x with h | h
+          · exact absurd h hxd
+          · rw [hbs] at h ⊢
+            simpa using h
+        obtain ⟨f1, f2⟩ := split_append (X := (x.takeWhile fun q => p.1 < q.1))
+          (Y := (x.dropWhile fun q => p.1 < q.1) ++ Y) (dd := p.1) hxall hhd
+        have heq : (x.takeWhile fun q => p.1 < q.1)
+            ++ ((x.dropWhile fun q => p.1 < q.1) ++ Y) = x ++ Y := by
+          rw [← List.append_assoc, List.takeWhile_append_dropWhile]
+        rw [heq] at f1 f2
+        rw [f1] at h1 h2
+        rw [f2] at h3
+        refine ⟨h1, h2, ?_⟩
+        refine ih ((x.dropWhile fun q => p.1 < q.1) ++ Y) ?_ _ Y rfl h3
+        simp only [List.length_append]
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (p.1 < q.1)) x
+        omega
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -12198,3 +12319,7 @@ end DBMS
 #print axioms DBMS.rdNode_bms_shape
 #print axioms DBMS.lad_false_of_two_le
 #print axioms DBMS.convC_append_tail
+#print axioms DBMS.takeWhile_append_head
+#print axioms DBMS.headPatOK_prefix
+#print axioms DBMS.blockok_prefix
+#print axioms DBMS.argPatOK_prefix
