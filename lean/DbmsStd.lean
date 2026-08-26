@@ -12237,6 +12237,31 @@ theorem convC_depth_shift : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
       rw [show d + e + 1 = (d + 1) + e by omega, hihA, hihB, shiftr0_append]
       simp [shiftr0_cons]
 
+
+/-- **一般の位置での階段**（`oper_repeat_at` の段 > 0 版）。 -/
+theorem oper_tower_at {M : PairSeq} (j0 n : ℕ) (hL : 1 < M.length)
+    (hlev : 0 < entry M 1 (M.length - 1))
+    (hnr : nextrel1 M j0 (M.length - 1)) :
+    M⟦n⟧ = M.take j0
+      ++ copies (entry M 0 (M.length - 1) - entry M 0 j0) (M.dropLast.drop j0) n := by
+  have hi1 : idx1 M (M.length - 1) = 1 := by rw [idx1, if_pos hlev]
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0) := by
+    rintro ⟨-, h1⟩; omega
+  have hp : hasParent M 1 (M.length - 1) :=
+    hasParent1_of_exists (by omega) ⟨j0, hnr.2.2.2.2.1, hnr.2.2.2.1⟩
+  have hnR : nextR M 1 j0 (M.length - 1) := by
+    unfold nextR; rw [if_neg (by omega)]; exact hnr
+  have hjj : parent M 1 (M.length - 1) = j0 := hp.unique (parent_nextR hp) hnR
+  have hp' : hasParent M (idx1 M (M.length - 1)) (M.length - 1) := by rw [hi1]; exact hp
+  have hlt : j0 < M.length - 1 := hnr.2.2.1
+  rw [oper_bad_unfold n (by omega) hz hp', hi1, hjj]
+  simp only [Nat.zero_lt_one, if_true]
+  unfold copies
+  congr 1
+  refine List.flatMap_congr ?_
+  intro k _
+  rw [range'_map_entry_shift M (le_of_lt hlt) (by omega), List.dropLast_eq_take]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -12466,3 +12491,4 @@ end DBMS
 #print axioms DBMS.lad_false_of_levLt
 #print axioms DBMS.ddOf_of_levLt
 #print axioms DBMS.convC_depth_shift
+#print axioms DBMS.oper_tower_at
