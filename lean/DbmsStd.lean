@@ -13611,6 +13611,160 @@ theorem convC_lad_shift {p : ℕ × ℕ} {A T : PairSeq} {bd plev : ℕ} {first 
     show bd + 2 = (bd + 1) + 1 by omega, hihA, shiftr0_cons, shiftr0_append]
   simp [hp1]
 
+/-! ## 4.33 兄弟の鎖が全部対角であることを `nextrel1` の最小性から出す
+
+`descOK` から兄弟の鎖の段は下がる一方なので、対角でない兄弟があると
+**末尾列の行 1 の祖先に段の小さいもの**ができ、`nextrel1 B 0 (|B|-1)` の
+最小性に反する。 -/
+
+/-- 頭の段が `w` より小さければ、末尾列の行 0 の祖先に段が `w` より小さいものがある。 -/
+theorem anc_of_low : ∀ (N : ℕ) (X : PairSeq), X.length ≤ N →
+    ∀ (bd w : ℕ), blockok bd X → descOK X → X ≠ [] → ((X.headI).2 < w) →
+      ∃ k, le0 X k (X.length - 1) ∧ entry X 1 k < w := by
+  intro N
+  induction N with
+  | zero =>
+    intro X hX bd w _ _ hne _
+    exact absurd (List.eq_nil_of_length_eq_zero (by omega)) hne
+  | succ N ih =>
+    intro X hX bd w hb hd hne hlt
+    match X with
+    | [] => exact absurd rfl hne
+    | c :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile c r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := c.1) hAd hBh
+      obtain ⟨hdh, hdA, hdB⟩ := descOK_cons.1 hd
+      rw [e1] at hdA
+      rw [e2] at hdh hdB
+      have hc2 : c.2 < w := by simpa using hlt
+      have hp1 : c.1 = bd := by have := hb.1 (by simp); simpa using this
+      by_cases hBe : B = []
+      · subst hBe
+        refine ⟨0, ?_, ?_⟩
+        · refine le0_head (c := c) (R := A ++ []) ?_
+            ((c :: (A ++ ([] : PairSeq))).length - 1)
+            (by simp only [List.length_cons]; omega)
+          intro x hx
+          rcases List.mem_append.1 hx with h | h
+          · exact hAd x h
+          · exact absurd h (by simp)
+        · unfold entry; rw [if_neg one_ne_zero]; simpa using hc2
+      · have hBh2 : (B.headI).2 ≤ c.2 := hdh hBe
+        have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+        have hBlen : B.length ≤ N := by
+          simp only [List.length_cons, List.length_append] at hX; omega
+        obtain ⟨k, hk1, hk2⟩ := ih B hBlen bd w hbB hdB hBe (by omega)
+        refine ⟨(c :: A).length + k, ?_, ?_⟩
+        · have hlift := le0_append_right_of (c :: A) B hk1
+          have heq : (c :: A) ++ B = c :: (A ++ B) := by simp
+          rw [heq] at hlift
+          have hlen : (c :: A).length + (B.length - 1) = (c :: (A ++ B)).length - 1 := by
+            have hB1 : 1 ≤ B.length := List.length_pos_of_ne_nil hBe
+            simp only [List.length_cons, List.length_append]
+            omega
+          rw [hlen] at hlift
+          exact hlift
+        · have heq : (c :: A) ++ B = c :: (A ++ B) := by simp
+          rw [← heq, entry_append_right]
+          exact hk2
+
+/-- **兄弟の鎖は全部対角**（`nextrel1` の最小性から）。 -/
+theorem diagOK_of_min : ∀ (N : ℕ) (X : PairSeq), X.length ≤ N →
+    ∀ (bd w : ℕ), blockok bd X → colOK X → descOK X →
+      (X ≠ [] → (X.headI).2 = bd) → bd ≤ w →
+      (∀ k, le0 X k (X.length - 1) → w ≤ entry X 1 k) →
+      diagOK bd X := by
+  intro N
+  induction N with
+  | zero =>
+    intro X hX bd w _ _ _ _ _ _
+    have hXe : X = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hXe
+    intro c hc; simp at hc
+  | succ N ih =>
+    intro X hX bd w hb hcol hd hhd hbw hmin
+    match X with
+    | [] => intro c hc; simp at hc
+    | c :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile c r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := c.1) hAd hBh
+      obtain ⟨hdh, hdA, hdB⟩ := descOK_cons.1 hd
+      rw [e1] at hdA
+      rw [e2] at hdh hdB
+      have hp1 : c.1 = bd := by have := hb.1 (by simp); simpa using this
+      have hc2 : c.2 = bd := by have := hhd (by simp); simpa using this
+      have hcolB : colOK B := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+      have hBlen : B.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hX; omega
+      have hlift : ∀ k, le0 B k (B.length - 1) → B ≠ [] →
+          le0 (c :: (A ++ B)) ((c :: A).length + k) ((c :: (A ++ B)).length - 1) := by
+        intro k hk hBe
+        have h := le0_append_right_of (c :: A) B hk
+        have heq : (c :: A) ++ B = c :: (A ++ B) := by simp
+        rw [heq] at h
+        have hlen : (c :: A).length + (B.length - 1) = (c :: (A ++ B)).length - 1 := by
+          have hB1 : 1 ≤ B.length := List.length_pos_of_ne_nil hBe
+          simp only [List.length_cons, List.length_append]
+          omega
+        rw [hlen] at h
+        exact h
+      have hminB : ∀ k, le0 B k (B.length - 1) → w ≤ entry B 1 k := by
+        intro k hk
+        by_cases hBe : B = []
+        · rw [hBe] at hk; exact absurd hk.1 (by simp)
+        · have h := hmin _ (hlift k hk hBe)
+          have heq : (c :: A) ++ B = c :: (A ++ B) := by simp
+          rw [← heq, entry_append_right] at h
+          exact h
+      have hhdB : B ≠ [] → (B.headI).2 = bd := by
+        intro hBe
+        by_contra hne
+        have hlt : (B.headI).2 < w := by
+          have := hdh hBe
+          omega
+        obtain ⟨k, hk1, hk2⟩ := anc_of_low B.length B (Nat.le_refl _) bd w hbB hdB hBe hlt
+        have := hminB k hk1
+        omega
+      have hdgB : diagOK bd B := ih B hBlen bd w hbB hcolB hdB hhdB hbw hminB
+      intro x hx hx1
+      rcases List.mem_cons.1 hx with rfl | hx'
+      · exact hc2
+      · rcases List.mem_append.1 hx' with h | h
+        · have := hAd x h; omega
+        · exact hdgB x h hx1
+
+/-! ## 4.34 浅い頭 1 本を前に付けても展開は中で起こる -/
+
+theorem oper_cons_shallow {x : ℕ × ℕ} {X : PairSeq} (n : ℕ)
+    (hX2 : 2 ≤ X.length)
+    (hXd : ∀ y ∈ X, x.1 < y.1)
+    (hlev : 0 < entry X 1 (X.length - 1))
+    (hxlt : x.2 < entry X 1 (X.length - 1))
+    (hk : le0 X 0 (X.length - 1))
+    (hklt : entry X 1 0 < entry X 1 (X.length - 1)) :
+    (x :: X)⟦n⟧ = x :: X⟦n⟧ := by
+  have hi : idx1 X (X.length - 1) = 1 := by rw [idx1, if_pos hlev]
+  have hz : ¬ (entry X 0 (X.length - 1) = 0 ∧ entry X 1 (X.length - 1) = 0) := by
+    rintro ⟨-, h⟩; omega
+  have hent0 : entry (x :: X) 1 0 = x.2 := by
+    unfold entry; rw [if_neg one_ne_zero]; rfl
+  have hentl : entry (x :: X) 1 (1 + (X.length - 1)) = entry X 1 (X.length - 1) := by
+    rw [show 1 + (X.length - 1) = (X.length - 1) + 1 by omega, entry_cons_succ]
+  have hle0 : le0 (x :: X) 0 (1 + (X.length - 1)) := by
+    refine le0_head (c := x) (R := X) hXd (1 + (X.length - 1)) ?_
+    simp only [List.length_cons]; omega
+  have hp : hasParent (([x] : PairSeq) ++ X) (idx1 X (X.length - 1))
+      (([x] : PairSeq).length + (X.length - 1)) := by
+    rw [hi]
+    simp only [List.length_cons, List.length_nil, List.singleton_append]
+    refine hasParent1_of_exists (by simp only [List.length_cons]; omega) ⟨0, hle0, ?_⟩
+    rw [hent0, hentl]
+    exact hxlt
+  have h := oper_append_of_shallow1 [x] X n hX2 hz (by rw [hi]; omega) hp hk hklt
+  simpa using h
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -13856,3 +14010,6 @@ end DBMS
 #print axioms DBMS.rdNode_of_exc
 #print axioms DBMS.convC_eq_shift1
 #print axioms DBMS.convC_lad_shift
+#print axioms DBMS.anc_of_low
+#print axioms DBMS.diagOK_of_min
+#print axioms DBMS.oper_cons_shallow
