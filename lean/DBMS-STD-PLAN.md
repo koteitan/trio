@@ -1110,6 +1110,126 @@ def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 4. `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）。
 
 
+## 2026-08-26（続き 9）: **`RDnode` を証明**。`ReindexD` の残余は `CtrPres2` だけ
+
+`leanman check` は exit 0、`sorry` 0、`sorryAx` なし。`DbmsStd.lean` は 12643 → 15038 行。
+
+```
+rdNode                    : RDnode                    -- 定理になった
+reindexD_holds_of_res11   : CtrPres2 → ReindexD
+ST_D_conC_holds_of_res11  : CtrPres2 → ST_PS M → ST_D (conC M)
+```
+
+### 決定打: **段 > 0 では像は「深さの平行移動」そのもの**
+
+`ladOf`（梯子）も `ddOf` の「段へ跳ぶ」枝も、どちらも **`d ≤ 段`** を要求する。
+`force` の枝は `fOK` が潰す。したがって「どの列も段が `深さ + e` より真に小さい」
+（`slackOK e`）なら `convC` の再帰は一切分岐せず
+
+```
+convC_eq_shift : blockok bd M → slackOK e M → noAdj3 M → hpOK → fOK →
+                 convC M (bd + e) plev first force = shiftr0 e M
+```
+
+つまり **像 = 元のブロックを深さだけずらしたもの**。段 0 で影の列が挟まるのとは
+まったく違う。さらに
+
+```
+oper_shiftr0 : 0 < entry M 1 (|M|-1) → (shiftr0 t M)⟦n⟧ = shiftr0 t (M⟦n⟧)
+```
+
+（`oper` が絶対的な深さを見るのは「末尾列が `(0,0)`」の枝だけで、段 > 0 では
+その枝に入らない）。この 2 つで `RDnode` の主要部は
+
+```
+(convC B)⟦n⟧ = (shiftr0 E B)⟦n⟧ = shiftr0 E (B⟦n⟧) = convC (B⟦n⟧)
+```
+
+と 3 行で終わる（`m = n`, `n' = n`）。
+
+### 不変量の運び方（`argPatOK` ではなく `noAdj3` を運ぶ）
+
+`convC_eq_shift` の仮定は **`blockok` / `slackOK` / `noAdj3` / `hpOK` / `fOK` だけ**。
+`colOK` / `descOK` / `adjLev` / `argPatOK` は要らない。理由:
+
+* 梯子が立つのは「祖父 `e`・親 `c`・子 `a` が深さ `k, k+1, k+2`、段 `v, v, v+1`」の
+  ときだけで、これはちょうど `noAdj3`（`argPatOK_of_noAdj3` で `headPatOK` が出る）
+* `levLt` の伝播は `slackOK` が肩代わりする（`slackOK` は列ごとの条件なので
+  `copies` でも `shiftr0` でも自明に保たれる）
+
+そして `noAdj3` は展開で保たれる（`noAdj3_oper`。`noAdj3_ST_PS` の帰納段を
+単体の定理に切り出したもの）。`blockok` は `shiftl0` で深さを `bd` だけ下げて
+`blockok_oper` を借り、`oper_shiftr0` で戻す（`blockok_oper_gen`）。
+
+### 例外は 2 つだけ、どちらも「影 1 本 ＋ 深さ 1 ずらし」
+
+`rdshift`（`convC B = shiftr0 E B`）が使えないのは
+
+| 例外 | 形 | 道具 |
+|---|---|---|
+| 梯子が立つ | `lad_diag` + `lad_lev_le_one` で `p = (1,1)`・`bd = d = 1`・`plev = 0` | `rdNode_lad` |
+| 引数の頭が跳ぶ（`¬ levLt A (dd+1)`） | `adjLev`/`colOK`/`blockok` から `p = (0,0)`・`bd = d = 0`・`A.headI = (1,1)` | `rdNode_jmp` |
+
+の 2 つだけで、どちらも像は **`(d, plev) :: shiftr0 1 B`**（`convC_lad_shift`）。
+`x :: shiftr0 1 B` の展開は `oper_cons_shallow`（浅い頭 1 本は展開の外）で
+`x :: shiftr0 1 (B⟦n⟧)` になるので、やはり `m = n`, `n' = n`。
+
+`convC_lad_shift` の鍵は **`diagOK bd`（深さ `bd` の列は全部対角 `(bd,bd)`）**:
+
+* 対角でない兄弟があると、その像は跳ばないので 1 ずれない
+* 縮約の相手 `q` は `q.1 = bd`・`q.2 = bd - 1` なので、対角性がこれも潰す
+
+`diagOK` は `nextrel1 B 0 (|B|-1)` の最小性から出る（`anc_of_low` /
+`diagOK_of_min`）: 対角でない兄弟があると `descOK` で以降の兄弟の段も下がり、
+末尾列の行 0 の祖先に段の小さいものができてしまう。
+
+### 最後の場合（`RDnodeCtr`）: 階段の中で縮約が発火する
+
+`p = (0,0)`・`A.headI = (1,1)`・末尾列の深さが 1（`d0 = 1`）のときだけ、
+`B⟦k⟧` の中で縮約が発火する。`W = B.dropLast = (0,0) :: R` として
+
+```
+convC B                 = (0,0) :: shiftr0 1 B
+(convC B)⟦m⟧            = (0,0) :: copies 1 (shiftr0 1 W) m        -- 親は index 1
+convC (B⟦k⟧)            = (0,0) :: copies 1 (shiftr0 1 W) (k-1)    -- k ≥ 3
+```
+
+なので `m = n + 1`, `n' = n + 2`。BMS 側は `convC_tower_ctr`:
+2 コピー目の頭 `(1,0)` が縮約の相手 `q` になり、前置き `contrPre (1,1) T'' A'` が
+ちょうど `shiftr0 1 R` に一致するので発火し、残余は 3 コピー目以降。残りの 3 つの
+`convC` はすべて `convC_eq_shift` で平行移動になる。DBMS 側は `oper_cons_tower`
+（`nextrel1_cons_one` + `le0_cons_succ` で親が index 1 だと示す）。
+
+実測（`tools/dbms/node_ctr.py`、bd = 0・≤7 列の 11187 組）で 3 つの式とも反例 0。
+
+### 追加した主な定理
+
+| 節 | 定理 |
+|---|---|
+| 4.26 | `slackOK` / `slackOK_of_head` / `noAdj3_append_sep` / `noAdj3_of_argPatOK` / **`convC_eq_shift`** |
+| 4.27 | `entry_shiftr0_*` / `nextrel0_shiftr0` / `le0_shiftr0` / `nextrel1_shiftr0` / `parent_shiftr0` / `oper_bad_unfold1` / **`oper_shiftr0`** |
+| 4.28 | **`noAdj3_oper`** |
+| 4.29 | `shiftl0` / `blockok_shiftl0` / `blockok_shiftr0` / **`blockok_oper_gen`** / `mem_copies` / `slackOK_tower` / `deep_tower` / **`rdshift`** |
+| 4.30 | `headI_shiftr0` / `headI_copies` / `headPatOK_of_deep` / **`rdNode_reg`** |
+| 4.31 | `RDnodeExc` / **`rdNode_of_exc`** |
+| 4.32 | `diagOK` / **`convC_eq_shift1`** / `contrLen_none_of_diag` / **`convC_lad_shift`** |
+| 4.33 | **`anc_of_low`** / **`diagOK_of_min`** / **`oper_cons_shallow`** |
+| 4.34–4.35 | `colOK_copies` / **`rdNode_shift1`** / `nextrel1_of_parent_zero` / **`rdNode_lad`** |
+| 4.36–4.37 | **`convC_root_shift`** / **`rdNode_jmp`** |
+| 4.38 | `RDnodeCtr` / **`rdNodeExc_of_ctr`** / `rdNode_of_ctr` |
+| 4.39 | `shiftr0_shiftr0` / `shiftr0_copies` / `nextrel0_cons_succ` / `le0_cons_succ` / `nextrel1_cons_one` / **`oper_cons_tower`** |
+| 4.40 | `shift1_eq_shiftr0` / `Units_of_diag` / **`convC_tower_ctr`** |
+| 4.41 | `noAdj3_shiftr0` / **`rdNodeCtr_holds`** / **`rdNode`** / `reindexD_holds_of_res11` |
+
+### 追加した検査スクリプト
+
+| | |
+|---|---|
+| `tools/dbms/node_full.py` / `node_full2.py` | `RDnode` の `(m, n')` を regime ごとに測る |
+| `tools/dbms/node_h1.py` | 「`p.2 < d` なら `convC(copies) = copies(convC)`」の検査 |
+| `tools/dbms/node_exc.py` | 例外 2 つで `convC B = (d,plev) :: shiftr0 1 B` の検査 |
+| `tools/dbms/node_ctr.py` | 縮約 regime の 3 つの式の検査 |
+
 ## 2026-08-26（続き 8）: `RDnode` の道具立て。regime を実測で確定
 
 `RDnopar` は続き 7 で証明済み（`rdNopar`）。このセッションはその green を確認した
