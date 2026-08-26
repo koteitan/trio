@@ -11076,6 +11076,263 @@ theorem ST_D_conC_holds_of_res7 (Hc : CtrRes) (Hp : CtrPres2)
     (Hn : RDnopar) (Hd : RDnode) {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
   ST_D_conC (reindexD_holds_of_res7 Hc Hp Hn Hd) hM
 
+
+/-! ## 4.20 `CtrRes` を `ArgDomCore` から証明する
+
+`ctrHeadOK` の中身は「縮約の前置きが揃えば、その次の列の段は必ず下がる」。
+節点 `c = (u, w)` の引数ブロックの頭を `p` とすると `p = (u+1, w+1)` で、
+縮約の前置きが揃うとは「兄弟 `q = (u+1, w)` の引数が
+`contrPre p U A = shiftr0 1 (p :: (A ++ U))` で始まる」ということである。
+
+ここで `c` と `q` は**行 1 の値が同じ** `w` で、深さが `u` と `u+1`（`e = 1`）。
+その間の列（`p :: (A ++ U)`）はすべて深さ `≥ u+1` なので `SpineOK` は空虚に成り立つ。
+したがって `ArgDomCore` がそのまま使えて
+
+    sle Aq (shiftr0 1 ((p :: (A ++ U)) ++ q :: (Aq ++ Bq)))
+
+を得る。右辺の頭 `shiftr0 1 (p :: (A ++ U))` はちょうど `contrPre p U A`
+（`contrPre_eq_shiftr0`）なので、共通の前置きを `seqlex_append_cancel` で消すと
+
+    sle rest2 ((u+2, w) :: ...)
+
+が残る。`rest2` の頭の深さは `p.1 + 1 = u+2` なので列辞書式順序から段は `w` 以下。
+`p.2 = w + 1` だから `(rest2.headI).2 < p.2`、すなわち `ctrHeadOK` である。 -/
+
+/-- `contrLen'` が返す形を読み解く（`contrLen_spec` の段の条件なし版）。 -/
+theorem contrLen'_spec {p : ℕ × ℕ} {B A rest2 Bq : PairSeq} {k : ℕ}
+    (h : contrLen' p B k A = some (rest2, Bq)) :
+    ∃ q r2, B.drop k = q :: r2 ∧ q.2 + 1 = p.2 ∧ q.1 = p.1 ∧
+      (r2.takeWhile fun x => q.1 < x.1) = contrPre p (B.take k) A ++ rest2 ∧
+      (r2.dropWhile fun x => q.1 < x.1) = Bq ∧
+      rest2 ≠ [] ∧ (rest2.headI).1 = p.1 + 1 := by
+  unfold contrLen' at h
+  rcases hd : B.drop k with _ | ⟨q, r2⟩ <;> rw [hd] at h
+  · simp at h
+  · refine ⟨q, r2, rfl, ?_⟩
+    simp only [] at h
+    split at h
+    · rename_i hcond
+      obtain ⟨c1, c2, c3, c4, c5⟩ := hcond
+      simp only [Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨h1, h2⟩ := h
+      subst h1; subst h2
+      refine ⟨c1, c2, ?_, rfl, c4, c5⟩
+      conv_lhs => rw [← List.take_append_drop (contrPre p (B.take k) A).length
+        (r2.takeWhile fun x => q.1 < x.1)]
+      rw [c3]
+    · simp at h
+
+/-- 段が下がることさえ言えれば `contrLen'` と `contrLen` は一致する。 -/
+theorem contrLen_eq_of_head_lt (p : ℕ × ℕ) (B A : PairSeq) (k : ℕ)
+    (h : ∀ rest2 Bq : PairSeq, contrLen' p B k A = some (rest2, Bq) → (rest2.headI).2 < p.2) :
+    contrLen' p B k A = contrLen p B k A := by
+  unfold contrLen' at h ⊢
+  unfold contrLen
+  rcases hd : B.drop k with _ | ⟨q, r2⟩
+  · rfl
+  · rw [hd] at h
+    simp only [] at h ⊢
+    by_cases hc : q.2 + 1 = p.2 ∧ q.1 = p.1 ∧
+        (r2.takeWhile fun x => q.1 < x.1).take (contrPre p (B.take k) A).length
+          = contrPre p (B.take k) A ∧
+        (r2.takeWhile fun x => q.1 < x.1).drop (contrPre p (B.take k) A).length ≠ [] ∧
+        (((r2.takeWhile fun x => q.1 < x.1).drop
+            (contrPre p (B.take k) A).length).headI).1 = p.1 + 1
+    · have hlt := h _ _ (by rw [if_pos hc])
+      rw [if_pos hc, if_pos ⟨hc.1, hc.2.1, hc.2.2.1, hc.2.2.2.1, hc.2.2.2.2, hlt⟩]
+    · rw [if_neg hc, if_neg (by
+        intro hcc
+        exact hc ⟨hcc.1, hcc.2.1, hcc.2.2.1, hcc.2.2.2.1, hcc.2.2.2.2.1⟩)]
+
+/-- **`ArgDomCore` の一発適用**（分解済みの形）。`c` と `q` は行 1 が同じ `c.2`、
+深さが `c.1` と `c.1 + 1` なので、`e = 1` の `ArgDomCore` が使える。 -/
+theorem ctrHead_lt_core {M X A U Bq Z : PairSeq} {c p q : ℕ × ℕ} {rest2 : PairSeq}
+    (hM : ST_PS M)
+    (hMform : M = (X ++ c :: ((p :: (A ++ U))
+        ++ q :: ((contrPre p U A ++ rest2) ++ Bq))) ++ Z)
+    (hArgd : ∀ x ∈ ((p :: (A ++ U)) ++ q :: ((contrPre p U A ++ rest2) ++ Bq)), c.1 < x.1)
+    (hp1 : p.1 = c.1 + 1) (hq1 : q.1 = p.1) (hq2 : q.2 = c.2)
+    (hAqd : ∀ x ∈ (contrPre p U A ++ rest2), q.1 < x.1)
+    (hBqh : Bq = [] ∨ ¬ (q.1 < (Bq.headI).1))
+    (hZh : Z = [] ∨ ¬ (c.1 < (Z.headI).1))
+    (hrne : rest2 ≠ []) (hrh1 : (rest2.headI).1 = p.1 + 1) :
+    (rest2.headI).2 ≤ c.2 := by
+  have hqeq : q = ((c.1 + 1, c.2) : ℕ × ℕ) := by
+    have h1 : q.1 = c.1 + 1 := by omega
+    exact Prod.ext h1 hq2
+  have hST : ST_PS ((X ++ (c.1, c.2) :: ((p :: (A ++ U))
+      ++ (c.1 + 1, c.2) :: ((contrPre p U A ++ rest2) ++ Bq))) ++ Z) := by
+    rw [show ((c.1, c.2) : ℕ × ℕ) = c from rfl, ← hqeq, ← hMform]; exact hM
+  have hA1d : ∀ x ∈ (p :: (A ++ U)), c.1 < x.1 := by
+    intro x hx; exact hArgd x (List.mem_append_left _ hx)
+  have hBd : ∀ x ∈ (contrPre p U A ++ rest2), c.1 + 1 < x.1 := by
+    intro x hx
+    have := hAqd x hx
+    omega
+  have hA2d : ∀ x ∈ Bq, c.1 < x.1 := by
+    intro x hx
+    exact hArgd x (List.mem_append_right _ (List.mem_cons_of_mem _
+      (List.mem_append_right _ hx)))
+  have hA2h : Bq = [] ∨ (Bq.headI).1 ≤ c.1 + 1 := by
+    rcases hBqh with h | h
+    · exact Or.inl h
+    · exact Or.inr (by omega)
+  have hZh' : Z = [] ∨ (Z.headI).1 ≤ c.1 := by
+    rcases hZh with h | h
+    · exact Or.inl h
+    · exact Or.inr (by omega)
+  have hspine : SpineOK (p :: (A ++ U)) (c.1 + 1) c.2 := by
+    intro V W x hA1 hxlt _
+    exfalso
+    have hx : x ∈ (p :: (A ++ U)) := by rw [hA1]; exact List.mem_append_right _ (by simp)
+    have := hA1d x hx
+    omega
+  have hsle := argDomCore_holds (X := X) (A1 := p :: (A ++ U))
+    (B := contrPre p U A ++ rest2) (A2 := Bq) (Z := Z) (u := c.1) (w := c.2) (e := 1)
+    hST Nat.one_pos hA1d hBd hA2d hA2h hZh' hspine
+  have hRHS : shiftr0 1 ((p :: (A ++ U)) ++ (c.1 + 1, c.2) :: ((contrPre p U A ++ rest2) ++ Bq))
+      = contrPre p U A
+        ++ ((c.1 + 1 + 1, c.2) :: shiftr0 1 ((contrPre p U A ++ rest2) ++ Bq)) := by
+    rw [shiftr0_append 1 (p :: (A ++ U)) ((c.1 + 1, c.2) :: ((contrPre p U A ++ rest2) ++ Bq)),
+      ← contrPre_eq_shiftr0 p U A,
+      shiftr0_cons 1 ((c.1 + 1, c.2) : ℕ × ℕ) ((contrPre p U A ++ rest2) ++ Bq)]
+  rw [hRHS] at hsle
+  rcases rest2 with _ | ⟨z, rs⟩
+  · exact absurd rfl hrne
+  · have hz1 : z.1 = c.1 + 1 + 1 := by
+      simp only [List.headI_cons] at hrh1; omega
+    rcases hsle with heq2 | hlex
+    · have hcut : z :: rs
+          = (c.1 + 1 + 1, c.2) :: shiftr0 1 ((contrPre p U A ++ z :: rs) ++ Bq) :=
+        List.append_cancel_left heq2
+      rw [hcut]; simp
+    · rw [seqlex_append_cancel] at hlex
+      rcases hlex with hpl | ⟨hzz, -⟩
+      · rcases hpl with hlt | ⟨-, hlt⟩
+        · exfalso
+          have hlt' : z.1 < c.1 + 1 + 1 := hlt
+          omega
+        · have hlt' : z.2 < c.2 := hlt
+          simp only [List.headI_cons]
+          omega
+      · rw [hzz]; simp
+
+/-- 節点 `c` の引数ブロックについて `ctrHeadOK` が成り立つ。 -/
+theorem ctrHeadOK_arg_of_ST {M X r : PairSeq} {c : ℕ × ℕ}
+    (hM : ST_PS M) (heq : M = X ++ c :: r) :
+    ctrHeadOK (r.takeWhile fun x => c.1 < x.1) c.2 := by
+  intro p r' harg hp2
+  refine contrLen_eq_of_head_lt p _ _ _ ?_
+  intro rest2 Bq hcl
+  obtain ⟨q, r2, hdq, hq2, hq1, hAq, hBq, hrne, hrh1⟩ := contrLen'_spec hcl
+  have hArgd : ∀ x ∈ (r.takeWhile fun x => c.1 < x.1), c.1 < x.1 := by
+    intro x hx
+    simpa using List.mem_takeWhile_imp (p := fun z : ℕ × ℕ => decide (c.1 < z.1)) hx
+  have hrsplit : (r.takeWhile fun x => c.1 < x.1) ++ (r.dropWhile fun x => c.1 < x.1) = r :=
+    List.takeWhile_append_dropWhile
+  have hZh : (r.dropWhile fun x => c.1 < x.1) = []
+      ∨ ¬ (c.1 < ((r.dropWhile fun x => c.1 < x.1).headI).1) := dropWhile_head_neg r
+  have hr'split : (r'.takeWhile fun x => p.1 < x.1) ++ (r'.dropWhile fun x => p.1 < x.1) = r' :=
+    List.takeWhile_append_dropWhile
+  set Arg := r.takeWhile (fun x => c.1 < x.1) with hArgdef
+  set Z := r.dropWhile (fun x => c.1 < x.1) with hZdef
+  set A := r'.takeWhile (fun x => p.1 < x.1) with hAdef
+  set T := r'.dropWhile (fun x => p.1 < x.1) with hTdef
+  set k := unitsLen p T with hkdef
+  set U := T.take k with hUdef
+  have hTsplit : U ++ q :: r2 = T := by
+    rw [hUdef, ← hdq, List.take_append_drop]
+  have hr2split : ((contrPre p U A ++ rest2) ++ Bq) = r2 := by
+    rw [← hAq, ← hBq]; exact List.takeWhile_append_dropWhile
+  have hArgeq : Arg = (p :: (A ++ U)) ++ q :: ((contrPre p U A ++ rest2) ++ Bq) := by
+    rw [harg, hr2split, ← hr'split, ← hTsplit]
+    simp [List.append_assoc]
+  have hMform : M = ((X ++ c :: ((p :: (A ++ U))
+      ++ q :: ((contrPre p U A ++ rest2) ++ Bq))) ++ Z) := by
+    rw [← hArgeq, heq, ← hrsplit]
+    simp [List.append_assoc]
+  have hrp : r = p :: (r' ++ Z) := by rw [← hrsplit, harg]; simp
+  have hcp : c.1 < p.1 := hArgd p (by rw [harg]; simp)
+  have hp1 : p.1 = c.1 + 1 := by
+    have hsteps : steps1 M := (blockok_ST_PS hM).2.2
+    rw [heq, hrp] at hsteps
+    have h2 := (steps1_append.1 hsteps).2.1
+    have h3 := (steps1_cons_cons.1 h2).1
+    omega
+  have hArgd' : ∀ x ∈ ((p :: (A ++ U)) ++ q :: ((contrPre p U A ++ rest2) ++ Bq)),
+      c.1 < x.1 := by
+    rw [← hArgeq]; exact hArgd
+  have hAqd : ∀ x ∈ (contrPre p U A ++ rest2), q.1 < x.1 := by
+    intro x hx
+    rw [← hAq] at hx
+    simpa using List.mem_takeWhile_imp (p := fun z : ℕ × ℕ => decide (q.1 < z.1)) hx
+  have hBqh : Bq = [] ∨ ¬ (q.1 < (Bq.headI).1) := by
+    rw [← hBq]; exact dropWhile_head_neg r2
+  have hkey := ctrHead_lt_core hM hMform hArgd' hp1 hq1 (by omega) hAqd hBqh hZh hrne hrh1
+  omega
+
+/-- 全部の節点で `ctrHeadOK` が成り立てば `argCtrOK`。 -/
+theorem argCtrOK_of_nodes : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    (∀ (X r : PairSeq) (c : ℕ × ℕ), M = X ++ c :: r →
+      ctrHeadOK (r.takeWhile fun x => c.1 < x.1) c.2) → argCtrOK M := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hMl _
+    have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst this; exact argCtrOK_nil
+  | succ N ih =>
+    intro M hMl hN
+    match M with
+    | [] => exact argCtrOK_nil
+    | p :: r =>
+      have hlenT : (r.takeWhile fun q => p.1 < q.1).length ≤ N := by
+        have := (List.takeWhile_sublist (p := fun q : ℕ × ℕ => decide (p.1 < q.1))
+          (l := r)).length_le
+        simp only [List.length_cons] at hMl; omega
+      have hlenD : (r.dropWhile fun q => p.1 < q.1).length ≤ N := by
+        have := List.length_dropWhile_le (fun q : ℕ × ℕ => decide (p.1 < q.1)) r
+        simp only [List.length_cons] at hMl; omega
+      have hsplit : (r.takeWhile fun q => p.1 < q.1) ++ (r.dropWhile fun q => p.1 < q.1) = r :=
+        List.takeWhile_append_dropWhile
+      rw [argCtrOK_cons]
+      refine ⟨hN [] r p rfl, ?_, ?_⟩
+      · refine ih _ hlenT ?_
+        intro X r'' c hEq
+        have hcmem : c ∈ (r.takeWhile fun q => p.1 < q.1) := by rw [hEq]; simp
+        have hcd : p.1 < c.1 := by
+          simpa using List.mem_takeWhile_imp (p := fun z : ℕ × ℕ => decide (p.1 < z.1)) hcmem
+        have hDh : (r.dropWhile fun q => p.1 < q.1) = []
+            ∨ ¬ (c.1 < ((r.dropWhile fun q => p.1 < q.1).headI).1) := by
+          rcases dropWhile_head_neg (a := p.1) r with h | h
+          · exact Or.inl h
+          · exact Or.inr (by omega)
+        have hM2 : (p :: r) = (p :: X) ++ c :: (r'' ++ (r.dropWhile fun q => p.1 < q.1)) := by
+          conv_lhs => rw [← hsplit, hEq]
+          simp [List.append_assoc]
+        have hkey := hN (p :: X) (r'' ++ (r.dropWhile fun q => p.1 < q.1)) c hM2
+        rw [(split_append_gen hDh r'').1] at hkey
+        exact hkey
+      · refine ih _ hlenD ?_
+        intro X r'' c hEq
+        refine hN (p :: ((r.takeWhile fun q => p.1 < q.1) ++ X)) r'' c ?_
+        conv_lhs => rw [← hsplit, hEq]
+        simp [List.append_assoc]
+
+/-- **`CtrRes` は定理**（`ArgDomCore` から）。残余が 1 つ減る。 -/
+theorem ctrRes_holds : CtrRes := by
+  intro M hM
+  exact argCtrOK_of_nodes M.length M (Nat.le_refl _)
+    (fun X r c heq => ctrHeadOK_arg_of_ST hM heq)
+
+/-- **到達点**: `ReindexD` の残余は `CtrPres2` / `RDnopar` / `RDnode` の 3 つ。 -/
+theorem reindexD_holds_of_res8 (Hp : CtrPres2) (Hn : RDnopar) (Hd : RDnode) : ReindexD :=
+  reindexD_holds_of_res7 ctrRes_holds Hp Hn Hd
+
+/-- 同じ形で主定理まで。 -/
+theorem ST_D_conC_holds_of_res8 (Hp : CtrPres2) (Hn : RDnopar) (Hd : RDnode)
+    {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
+  ST_D_conC_holds_of_res7 ctrRes_holds Hp Hn Hd hM
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -11275,3 +11532,11 @@ end DBMS
 #print axioms DBMS.reindexD_zero5
 #print axioms DBMS.reindexD_holds_of_res7
 #print axioms DBMS.ST_D_conC_holds_of_res7
+#print axioms DBMS.contrLen'_spec
+#print axioms DBMS.contrLen_eq_of_head_lt
+#print axioms DBMS.ctrHead_lt_core
+#print axioms DBMS.ctrHeadOK_arg_of_ST
+#print axioms DBMS.argCtrOK_of_nodes
+#print axioms DBMS.ctrRes_holds
+#print axioms DBMS.reindexD_holds_of_res8
+#print axioms DBMS.ST_D_conC_holds_of_res8
