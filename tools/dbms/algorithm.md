@@ -137,40 +137,21 @@ R := \alpha[\,|\pi|,\ |\alpha|)
 
 - $`M = \varepsilon`$ の場合:
 
-  ```math
-  \Gamma^{f,\varphi}_{d,\ell}(\varepsilon) = \varepsilon
-  ```
+  $`\Gamma^{f,\varphi}_{d,\ell}(\varepsilon) = \varepsilon`$
 
 - $`M = p \frown r`$ の場合:
   - $`\lambda = \top`$ の場合（梯子を立てる）:
     - $`\kappa = \top`$ の場合（縮約する）:
 
-      ```math
-      \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
-        \bigl((d,\ell),\ (d+1,s)\bigr)
-        \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
-        \frown \Gamma^{\bot,\bot}_{d+1,\ s}(U)
-        \frown \Gamma^{\bot,\bot}_{d+1,\ s}(R)
-        \frown \Gamma^{\bot,\bot}_{d,\ s}(\beta)
-      ```
+      $`\Gamma^{f,\varphi}_{d,\ell}(p \frown r) = \bigl((d,\ell),\ (d+1,s)\bigr) \frown \Gamma^{\top,\bot}_{d+2,\ s}(A) \frown \Gamma^{\bot,\bot}_{d+1,\ s}(U) \frown \Gamma^{\bot,\bot}_{d+1,\ s}(R) \frown \Gamma^{\bot,\bot}_{d,\ s}(\beta)`$
 
     - $`\kappa = \bot`$ の場合（縮約しない）:
 
-      ```math
-      \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
-        \bigl((d,\ell),\ (d+1,s)\bigr)
-        \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
-        \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
-      ```
+      $`\Gamma^{f,\varphi}_{d,\ell}(p \frown r) = \bigl((d,\ell),\ (d+1,s)\bigr) \frown \Gamma^{\top,\bot}_{d+2,\ s}(A) \frown \Gamma^{\bot,\bot}_{d,\ s}(B)`$
 
   - $`\lambda = \bot`$ の場合（素通り、または段へ跳ぶ）:
 
-    ```math
-    \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
-      \bigl((d',\ s)\bigr)
-      \frown \Gamma^{\top,\ f \land (s = \ell)}_{d'+1,\ s}(A)
-      \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
-    ```
+    $`\Gamma^{f,\varphi}_{d,\ell}(p \frown r) = \bigl((d',\ s)\bigr) \frown \Gamma^{\top,\ f \land (s = \ell)}_{d'+1,\ s}(A) \frown \Gamma^{\bot,\bot}_{d,\ s}(B)`$
 
 $`\lambda = \top`$ で書かれる $`\bigl((d,\ell),(d+1,s)\bigr)`$ が**梯子**である。$`(d,\ell)`$ は段が親と同じなので木には残らない足場（影）で、$`(d+1,s)`$ が本体。$`\kappa = \top`$ の場合は $`q`$ とその前置き $`\pi`$ をまるごと書かずに中身だけを続ける。これが**縮約**であり、DBMS では 1 本の柱が 2 つの節点を兼ねられることに対応する[^1]。
 
@@ -215,36 +196,21 @@ m := \min \{\, i \le |R| \mid i = |R| \lor R_{i,0} \lt t_0 \,\}
 
 - $`l = \varepsilon`$ の場合:
 
-  ```math
-  \Delta^{f}_{\ell}(\varepsilon,\ k) = k
-  ```
+  $`\Delta^{f}_{\ell}(\varepsilon,\ k) = k`$
 
 - $`l = p \frown \mathit{rest}`$ の場合:
   - $`\mu = \bot`$ の場合（素通り）:
 
-    ```math
-    \Delta^{f}_{\ell}(p \frown \mathit{rest},\ k) =
-      P\bigl(p_1;\ \Delta^{\top}_{p_1}(\mathrm{arg}_p(\mathit{rest}),\ Z),\
-      \Delta^{\bot}_{p_1}(\mathrm{sib}_p(\mathit{rest}),\ k)\bigr)
-    ```
+    $`\Delta^{f}_{\ell}(p \frown \mathit{rest},\ k) = P\bigl(p_1;\ \Delta^{\top}_{p_1}(\mathrm{arg}_p(\mathit{rest}),\ Z),\ \Delta^{\bot}_{p_1}(\mathrm{sib}_p(\mathit{rest}),\ k)\bigr)`$
 
   - $`\mu = \top`$ の場合（$`p`$ は影）:
     - $`\nu = \bot`$ の場合（影を捨てるだけ）:
 
-      ```math
-      \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
-        P\bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\ \Delta^{\bot}_{t_1}(c,\ k)\bigr)
-      ```
+      $`\Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) = P\bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\ \Delta^{\bot}_{t_1}(c,\ k)\bigr)`$
 
     - $`\nu = \top`$ の場合（二役をほどく）:
 
-      ```math
-      \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
-        P\Bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\
-        \Delta^{\bot}_{t_1}\bigl(S,\
-          P\bigl(p_1;\ \Delta^{\top}_{p_1}(t \frown a \frown S \frown R^{-},\ Z),\
-          \Delta^{\bot}_{\ell}(R^{+},\ k)\bigr)\bigr)\Bigr)
-      ```
+      $`\Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) = P\Bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\ \Delta^{\bot}_{t_1}\bigl(S,\ P\bigl(p_1;\ \Delta^{\top}_{p_1}(t \frown a \frown S \frown R^{-},\ Z),\ \Delta^{\bot}_{\ell}(R^{+},\ k)\bigr)\bigr)\Bigr)`$
 
 $`\mu = \top`$ で $`p`$（影）が消える。$`\nu = \top`$ の場合は 1 本の柱 $`t`$ が段 $`t_1`$ の節点と段 $`p_1`$ の節点を兼ねているので、$`t \frown a \frown S \frown R^{-}`$ を組み直して読み直すことで 2 つに戻す。継続 $`k`$ が要るのは、DBMS 行列で横に並ぶ兄弟が木の上では別の場所に来るためである。
 
