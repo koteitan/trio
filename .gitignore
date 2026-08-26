@@ -2,3 +2,7 @@ lean/.lake/
 __pycache__/
 tmp/
 commit-msg.txt
+tools/dbms/depth_data.json
+tools/dbms/relay_labels.json
+tools/dbms/flip_data.json
+tools/dbms/flip_neg.json

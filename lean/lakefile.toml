@@ -8,4 +8,4 @@ rev = "v4.30.0"
 
 [[lean_lib]]
 name = "TRIO"
-roots = ["Trio", "Term", "Decrease", "Reduction", "Seqlex", "Cnf", "Lift", "Gcopy", "Goper", "Cofinality", "ArgDom", "Column", "Invariant", "Zjump", "Gtrans", "Peel2", "Core", "Wset", "Wchar", "Lcone", "Cgraft", "Aexp", "Wslift", "Wtower2", "Croot", "Xbar", "Gamma", "Lind", "Infcex", "Final", "Pair.Pss", "Pair.Term", "Pair.Decrease", "Pair.Reduction", "Pair.Cnf", "Pair.Seqlex", "Pair.Column", "Pair.Cofinality", "Pair.ArgDom", "Pair.Wset", "Pair.Final", "Pair.Bridge"]
+roots = ["Trio", "Term", "Decrease", "Reduction", "Seqlex", "Cnf", "Lift", "Gcopy", "Goper", "Cofinality", "ArgDom", "Column", "Invariant", "Zjump", "Gtrans", "Peel2", "Core", "Wset", "Wchar", "Lcone", "Cgraft", "Aexp", "Wslift", "Wtower2", "Croot", "Xbar", "Gamma", "Lind", "Infcex", "Final", "Pair.Pss", "Pair.Term", "Pair.Decrease", "Pair.Reduction", "Pair.Cnf", "Pair.Seqlex", "Pair.Column", "Pair.Cofinality", "Pair.ArgDom", "Pair.Wset", "Pair.Final", "Pair.Bridge", "Dbms", "DbmsSheet", "DbmsConv", "DbmsStd"]
