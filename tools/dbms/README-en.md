@@ -15,7 +15,7 @@ BMS 2-row standard form  --conC-->  DBMS standard form  --rank counting-->  Y se
 > `psi_0(Omega_omega)`. Three or more rows (trio sequences) are out of scope.
 
 The left half, `conC`, is proved correct in Lean 4 / Mathlib — no `sorry`, no
-extra axioms. The right half is exactly the definition given in
+extra axioms. The right half uses the **correspondence** stated in
 [User blog:Koteitan/Dimensional BMS の定義とY数列との対応](https://googology.fandom.com/ja/wiki/%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%83%96%E3%83%AD%E3%82%B0:Koteitan)
 on the Japanese Googology Wiki.
 
@@ -201,7 +201,11 @@ Converts between DBMS standard forms and Y sequences.
 > **2-row** DBMS standard forms with at most 7 columns. Three or more rows have
 > not been checked broadly.
 
-## Definition
+## Property
+
+The definition of Y sequences themselves is a different one. What follows is a
+**correspondence** that holds between Y sequences and DBMS standard forms — not
+the definition of Y sequences. It is what this tool computes.
 
 ```
 Y()  = DBMS(())

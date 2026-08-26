@@ -14,7 +14,8 @@
     conC_injective  : conC M = conC N -> M = N
 
 右半分は 巨大数研究 Wiki の
-ユーザーブログ:Koteitan/Dimensional BMS の定義とY数列との対応 の定義そのまま。
+ユーザーブログ:Koteitan/Dimensional BMS の定義とY数列との対応 に示された対応をそのまま使う。
+Y 数列そのものの定義は別にある。
 
 使い方は同じディレクトリの README.md を見ること。
 """

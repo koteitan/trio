@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """dbms2yseq — DBMS 標準形と Y 数列を相互に変換する CLI。
 
+Y 数列と DBMS 標準形の間に成り立つ対応を使う。Y 数列そのものの定義は別にある。
 出典: ユーザーブログ:Koteitan/Dimensional BMS の定義とY数列との対応（巨大数研究 Wiki）。
 
     Y()  = DBMS(())
@@ -186,7 +187,7 @@ def run_one(s, args, out):
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="dbms2yseq",
-        description="DBMS 標準形 <-> Y 数列（巨大数研究 Wiki の Koteitan 氏の定義）",
+        description="DBMS 標準形 <-> Y 数列（巨大数研究 Wiki の Koteitan 氏が示した対応）",
         epilog="引数を渡さないと標準入力を 1 行 1 件として読む。詳しくは README.md。")
     ap.add_argument("arg", nargs="*", help='例: "(0)(1)(2,1)(3,2,1)" 、-r なら "1,2,4,8"')
     ap.add_argument("-r", "--reverse", action="store_true", help="Y 数列 -> DBMS")
