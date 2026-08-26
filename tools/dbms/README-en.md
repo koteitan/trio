@@ -194,12 +194,10 @@ With several inputs the largest code is returned.
 
 Converts between DBMS standard forms and Y sequences.
 
-> **Two rows only, as far as the checking goes.** The procedure itself does not
-> care about the number of rows, and matrices such as `(0)(1)(2,1)(3,2,1)` work.
-> What has been checked in this repository, however, is the 31 worked examples of
-> the article (which do include 3-row columns) and an exhaustive scan of the
-> **2-row** DBMS standard forms with at most 7 columns. Three or more rows have
-> not been checked broadly.
+> **Two rows only.** An input or output with three or more rows (a non-zero third
+> row) is rejected with exit code 4. The **candidate enumeration**, however, still
+> runs over an unbounded number of rows: dropping rows would drop candidates and
+> shift the ranks — `(3,1,1)` sits between `(3,1)` and `(3,2)`.
 
 ## Property
 
@@ -237,11 +235,18 @@ dbms2yseq.py [-r] [-s] [-q] [-f] [--rows N] [--no-verify] [ARG ...]
 ## Examples
 
 ```
-$ ./dbms2yseq.py "(0)(1)(2,1)(3,2,1)"
-(0)(1)(2,1)(3,2,1)  ->  Y(1,2,4,8)
+$ ./dbms2yseq.py "(0)(1)(2,1)(3,2)"
+(0)(1)(2,1)(3,2)  ->  Y(1,2,4,7)
 
-$ ./dbms2yseq.py -r "1,2,4,8,9,8"
-Y(1,2,4,8,9,8)  ->  (0)(1)(2,1)(3,2,1)(4)(3,2,1)
+$ ./dbms2yseq.py -r "1,2,4,7"
+Y(1,2,4,7)  ->  (0)(1)(2,1)(3,2)
+```
+
+Anything that needs a third row is rejected.
+
+```
+$ ./dbms2yseq.py -r "1,2,4,8"
+dbms2yseq: (0)(1)(2,1)(3,2,1) is outside the 2-row fragment (row 3 is non-zero)
 ```
 
 `-s` shows how the counting goes.
@@ -276,12 +281,13 @@ skips it.
 | 1 | the input is not a DBMS standard form |
 | 2 | the round trip failed |
 | 3 | the input could not be parsed |
+| 4 | outside the 2-row fragment |
 
 ## Measurements
 
 | | |
 |---|---|
-| the 31 worked examples in the article | all match |
+| the 31 worked examples in the article (3-row columns included) | all match (checked by calling the conversion directly) |
 | 1740 DBMS standard forms with `<=7` columns | round trip 100%, no Y-sequence collision |
 
 ---

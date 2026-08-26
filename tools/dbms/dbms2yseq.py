@@ -14,6 +14,10 @@ Y 数列と DBMS 標準形の間に成り立つ対応を使う。Y 数列その�
 つまり DBMS -> Y は「各列が、そこに置ける列の中で何番目に小さいか」を数えるだけ。
 Y -> DBMS はその逆で、y 番目の候補を取って伸ばす。
 
+入出力は 2 行の断片に限る（3 行目が非ゼロなら終了コード 4）。ただし候補の
+数え上げ自体は一般の行数で行う。行を減らすと候補が抜けて順位がずれるためで、
+たとえば (3,1,1) は (3,1) と (3,2) の間に来る。
+
 列の大小は、後ろにゼロを補ってからの辞書式（(2)=(2,0) < (2,1)）。
 
 使い方は同じディレクトリの README.md を見ること。
@@ -33,10 +37,25 @@ EXIT_OK = 0
 EXIT_NOT_STANDARD = 1
 EXIT_MISMATCH = 2
 EXIT_USAGE = 3
+EXIT_OUT_OF_DOMAIN = 4
 
 
 class InputError(Exception):
     pass
+
+
+class DomainError(Exception):
+    """2 行の断片の外。"""
+
+
+def check_two_rows(M):
+    """3 行目以降が非ゼロなら弾く。候補の数え上げは一般の行数で行うが
+    （行が足りないと順位がずれる）、入出力は 2 行に限る。"""
+    for c in M:
+        if any(v != 0 for v in c[2:]):
+            raise DomainError(
+                "%s は 2 行の断片の外（3 行目が非ゼロ）" % show_dbms(M))
+    return M
 
 
 def trim(col):
@@ -150,6 +169,7 @@ def run_one(s, args, out):
     if args.reverse:
         seq = parse_y(s)
         X = y2dbms(seq, args.rows)
+        check_two_rows(X)
         Y = args.rows if args.rows is not None else max(len(seq), 1)
         src, dst = "Y(%s)" % ",".join(map(str, seq)), show_dbms(X)
         code = EXIT_OK
@@ -158,6 +178,7 @@ def run_one(s, args, out):
             code = EXIT_MISMATCH
     else:
         M = parse_dbms(s)
+        check_two_rows(M)
         Y = args.rows if args.rows is not None else rows_for(M)
         X = pad(M, Y)
         code = EXIT_OK
@@ -209,6 +230,9 @@ def main(argv=None):
     for s in items:
         try:
             worst = max(worst, run_one(s, args, sys.stdout))
+        except DomainError as e:
+            sys.stderr.write("dbms2yseq: %s\n" % e)
+            worst = max(worst, EXIT_OUT_OF_DOMAIN)
         except InputError as e:
             sys.stderr.write("dbms2yseq: %s\n" % e)
             worst = max(worst, EXIT_USAGE)
