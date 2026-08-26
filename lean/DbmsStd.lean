@@ -11830,6 +11830,152 @@ theorem rdNode_bms_shape {p : ℕ × ℕ} {A : PairSeq} (hAne : A ≠ [])
   have hdl : (p :: A).dropLast = p :: A.dropLast := dropLast_cons_ne hAne
   rw [oper_tower n hL hlev hp hj0, hlast, hhead, hdl]
 
+
+/-! ## 4.24 末尾へブロックを継ぎ足す（梯子が立たない範囲）
+
+`RDnode` では `B⟦n+1⟧ = p :: (R ++ shiftr0 d0 (B⟦n⟧))`（`R = A.dropLast`）なので、
+「`R` のうしろに深さ `ν` で始まるブロック `Z` を継ぎ足しても `R` の像は変わらない」
+という補題が要る。梯子（`ladOf`）が立つと `contrLen` が `Z` を見てしまうので
+一般には成り立たないが、`lad_diag` / `lad_lev_le_one` から
+
+    梯子が立つ ⟹ 頭 = (1,1)・ブロックの深さ = 1
+
+なので、**ブロックの深さが 2 以上なら梯子は立たない**。そこで
+「深さ 1 以上」かつ「深さ 1 なら頭で梯子が立たない」を仮定すると、
+再帰の中では引数（深さ +1）でも兄弟（`first = false`）でも梯子は立たない。 -/
+
+/-- ブロックの深さが 2 以上なら梯子は立たない。 -/
+theorem lad_false_of_two_le {p : ℕ × ℕ} {r : PairSeq} {bd d plev : ℕ} {first force : Bool}
+    (hb : blockok bd (p :: r)) (hcol : colOK (p :: r)) (hbd : bd ≤ d)
+    (hdp : dpOK bd d plev first) (hf : fOK (p :: r) d plev force) (h2 : 2 ≤ bd) :
+    ladOf p.2 d plev first force = false := by
+  cases hx : ladOf p.2 d plev first force with
+  | false => rfl
+  | true =>
+    exfalso
+    have hp1 : p.1 = bd := by have := hb.1 (by simp); simpa using this
+    have hcolp : p.2 ≤ p.1 := hcol p (by simp)
+    have h1 := lad_lev_le_one hp1 hcolp hbd hdp hf hx
+    obtain ⟨-, -, h32, h33, -⟩ := lad_diag hp1 hcolp hbd hf hx
+    omega
+
+/-- **末尾へブロックを継ぎ足しても前半の像は変わらない**（梯子が立たない範囲）。
+継ぎ足した分は `Z` に依らないパラメタ `(d', plev', first', force')` で書ける。 -/
+theorem convC_append_tail : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    ∀ (ν bd d plev : ℕ) (first force : Bool),
+      blockok bd M → colOK M → bd ≤ d → 1 ≤ bd → argPatOK M →
+      dpOK bd d plev first → hpOK M d plev first force → fOK M d plev force →
+      (2 ≤ bd ∨ ladOf ((M.headI).2) d plev first force = false) →
+      ∃ (d' plev' : ℕ) (first' force' : Bool),
+        ∀ Z : PairSeq, (∀ c ∈ Z, ν ≤ c.1) → (Z = [] ∨ (Z.headI).1 = ν) →
+          convC (M ++ Z) d plev first force
+            = convC M d plev first force ++ convC Z d' plev' first' force' := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hM ν bd d plev first force _ _ _ _ _ _ _ _ _
+    have hMe : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hMe
+    exact ⟨d, plev, first, force, fun Z _ _ => by simp⟩
+  | succ N ih =>
+    intro M hM ν bd d plev first force hb hcol hbd hbd1 hAP hdp hHP hFC hdisj
+    match M with
+    | [] => exact ⟨d, plev, first, force, fun Z _ _ => by simp⟩
+    | p :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile p r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := p.1) hAd hBh
+      have hp1 : p.1 = bd := by have := hb.1 (by simp); simpa using this
+      have hcolp : p.2 ≤ p.1 := hcol p (by simp)
+      obtain ⟨hHA, hAPA, hAPB⟩ := argPatOK_cons.1 hAP
+      rw [e1] at hHA hAPA
+      rw [e2] at hAPB
+      have hcolA : colOK A := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+      have hcolB : colOK B := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hlad : ladOf p.2 d plev first force = false := by
+        rcases hdisj with h2 | h2
+        · exact lad_false_of_two_le hb hcol hbd hdp hFC h2
+        · simpa using h2
+      by_cases hBe : B = []
+      · subst hBe
+        have hAte : (A.takeWhile fun x => p.1 < x.1) = A := by simpa using e1
+        have hbA : blockok (bd + 1) A := blockok_arg' (B := []) hb hp1 hAd
+        simp only [List.append_nil] at hb hcol hAP hHP hFC hM ⊢
+        have hAlen : A.length ≤ N := by
+          simp only [List.length_cons] at hM; omega
+        have hbdA : bd + 1 ≤ ddOf p.2 d plev first force + 1 := by
+          have := le_ddOf p.2 d plev first force; omega
+        have hdpA : dpOK (bd + 1) (ddOf p.2 d plev first force + 1) p.2 true :=
+          dpOK_arg hp1 hbd hcolp
+        have hHPA : hpOK A (ddOf p.2 d plev first force + 1) p.2 true
+            (first && (p.2 == plev)) := hpOK_of_headPatOK hHA
+        have hfA : fOK A (ddOf p.2 d plev first force + 1) p.2
+            (first && (p.2 == plev)) := by
+          intro hft
+          have hf1 : first = true := by
+            simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.1
+          have hpl : p.2 = plev := by
+            simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.2
+          rcases hHP hf1 with hh | ⟨hd0, -, -⟩
+          · left
+            intro a s hs
+            have hkey := hh p A rfl hpl (by rw [hAte, hs]; simp)
+            rw [hAte, hs] at hkey
+            simpa using hkey
+          · exact absurd hd0 (by omega)
+        by_cases hν : ν ≤ p.1
+        · refine ⟨d, p.2, false, false, ?_⟩
+          intro Z hZd hZh
+          have hZh' : Z = [] ∨ ¬ (p.1 < (Z.headI).1) := by
+            rcases hZh with h | h
+            · exact Or.inl h
+            · exact Or.inr (by omega)
+          rw [List.cons_append,
+            convC_factor_sib p A Z d plev first force hAd hZh' hlad,
+            convC_factor_arg p A d plev first force hAd hlad]
+          simp
+        · push_neg at hν
+          obtain ⟨d', plev', first', force', hkey⟩ :=
+            ih A hAlen ν (bd + 1) (ddOf p.2 d plev first force + 1) p.2 true
+              (first && (p.2 == plev)) hbA hcolA hbdA (by omega) hAPA hdpA hHPA hfA
+              (Or.inl (by omega))
+          refine ⟨d', plev', first', force', ?_⟩
+          intro Z hZd hZh
+          have hAZd : ∀ x ∈ A ++ Z, p.1 < x.1 := by
+            intro x hx
+            rcases List.mem_append.1 hx with h | h
+            · exact hAd x h
+            · exact lt_of_lt_of_le hν (hZd x h)
+          rw [List.cons_append,
+            convC_factor_arg p (A ++ Z) d plev first force hAZd hlad,
+            convC_factor_arg p A d plev first force hAd hlad,
+            hkey Z hZd hZh]
+          simp [List.append_assoc]
+      · have hBhne : ¬ (p.1 < (B.headI).1) := hBh.resolve_left hBe
+        have hBlen : B.length ≤ N := by
+          simp only [List.length_cons, List.length_append] at hM; omega
+        have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+        obtain ⟨d', plev', first', force', hkey⟩ :=
+          ih B hBlen ν bd d p.2 false false hbB hcolB hbd hbd1 hAPB
+            dpOK_false hpOK_false fOK_false (Or.inr (by simp [ladOf]))
+        refine ⟨d', plev', first', force', ?_⟩
+        intro Z hZd hZh
+        have hBZh : (B ++ Z) = [] ∨ ¬ (p.1 < ((B ++ Z).headI).1) := by
+          right
+          obtain ⟨b, bs, hbs⟩ : ∃ b bs, B = b :: bs := by
+            cases B with
+            | nil => exact absurd rfl hBe
+            | cons b bs => exact ⟨b, bs, rfl⟩
+          rw [hbs] at hBhne ⊢
+          simpa using hBhne
+        rw [show ((p :: (A ++ B)) ++ Z) = p :: (A ++ (B ++ Z)) by
+              simp [List.append_assoc],
+          convC_factor_sib p A (B ++ Z) d plev first force hAd hBZh hlad,
+          convC_factor_sib p A B d plev first force hAd hBh hlad,
+          hkey Z hZd hZh]
+        simp [List.append_assoc]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -12050,3 +12196,5 @@ end DBMS
 #print axioms DBMS.range'_map_entry_shift
 #print axioms DBMS.oper_tower
 #print axioms DBMS.rdNode_bms_shape
+#print axioms DBMS.lad_false_of_two_le
+#print axioms DBMS.convC_append_tail
