@@ -103,9 +103,9 @@ def main():
     for r, mb, md, Y in data:
         try:
             if mode == 'rule':
-                got = RULE.R1(mb, Y)
+                got = RULE.convert(mb, Y)
             elif mode == 'rule2':
-                got = RULE.R2(mb, Y)
+                got = RULE.R23(mb, Y)
             else:
                 CONV.stats['limit'] = 0
                 signal.alarm(int(os.environ.get('TMO','5')))
