@@ -11773,6 +11773,63 @@ theorem convC_shiftr0 (e : ℕ) (M : PairSeq) (d plev : ℕ) (first force : Bool
   | succ e ih =>
     rw [shiftr0_succ,
       convC_shift1 (shiftr0 e M).length (shiftr0 e M) (Nat.le_refl _) d plev first force, ih]
+
+/-! ## 4.23 `RDnode` の BMS 側の形（ずれたコピーの階段）
+
+末尾列の行 1 の親がブロックの頭（index 0）のとき、展開は
+
+    M⟦n⟧ = copies d0 M.dropLast n
+         = M.dropLast ++ shiftr0 d0 M.dropLast ++ shiftr0 (2 d0) M.dropLast ++ …
+
+という**ずれたコピーの階段**になる（`copies` は `Pair/Cnf.lean`、
+`copies_succ_front` が「1 段剥がす」補題）。段 0 の `oper_repeat_root` は
+`d0 = 0` の素直な繰り返しで、その一般化にあたる。 -/
+
+/-- 添字の並びの像を深さだけずらしたもの。 -/
+theorem range'_map_entry_shift (M : PairSeq) {j0 j1 : ℕ} (h0 : j0 ≤ j1) (h1 : j1 ≤ M.length)
+    (c : ℕ) :
+    (List.range' j0 (j1 - j0)).map (fun j => ((entry M 0 j + c : ℕ), (entry M 1 j : ℕ)))
+      = shiftr0 c ((M.take j1).drop j0) := by
+  rw [← range'_map_entry M h0 h1]
+  unfold shiftr0
+  rw [List.map_map]
+  rfl
+
+/-- **末尾列の行 1 の親が頭なら、展開はずれたコピーの階段**。 -/
+theorem oper_tower {M : PairSeq} (n : ℕ) (hL : 1 < M.length)
+    (hlev : 0 < entry M 1 (M.length - 1))
+    (hp : hasParent M 1 (M.length - 1))
+    (hj0 : parent M 1 (M.length - 1) = 0) :
+    M⟦n⟧ = copies (entry M 0 (M.length - 1) - entry M 0 0) M.dropLast n := by
+  have hi1 : idx1 M (M.length - 1) = 1 := by rw [idx1, if_pos hlev]
+  have hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0) := by
+    rintro ⟨-, h1⟩; omega
+  have hp' : hasParent M (idx1 M (M.length - 1)) (M.length - 1) := by rw [hi1]; exact hp
+  rw [oper_bad_unfold n (by omega) hz hp', hi1, hj0]
+  simp only [List.take_zero, List.nil_append, Nat.sub_zero,
+    Nat.zero_lt_one, if_true]
+  unfold copies
+  refine List.flatMap_congr ?_
+  intro k _
+  have hz0 : (M.length - 1) = (M.length - 1) - 0 := by omega
+  rw [hz0, range'_map_entry_shift M (Nat.zero_le _) (by omega), List.drop_zero,
+    List.dropLast_eq_take]
+
+/-- `RDnode` の配置での BMS 側の形。 -/
+theorem rdNode_bms_shape {p : ℕ × ℕ} {A : PairSeq} (hAne : A ≠ [])
+    (hlev : 0 < entry (p :: A) 1 ((p :: A).length - 1))
+    (hp : hasParent (p :: A) 1 ((p :: A).length - 1))
+    (hj0 : parent (p :: A) 1 ((p :: A).length - 1) = 0) (n : ℕ) :
+    (p :: A)⟦n⟧ = copies ((A.getLastD (0, 0)).1 - p.1) (p :: A.dropLast) n := by
+  have hL : 1 < (p :: A).length := by
+    have : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+    simp only [List.length_cons]; omega
+  have hlast : entry (p :: A) 0 ((p :: A).length - 1) = (A.getLastD (0, 0)).1 := by
+    rw [entry_last0, getLastD_cons_ne p hAne]
+  have hhead : entry (p :: A) 0 0 = p.1 := by rw [entry_zero0]; simp
+  have hdl : (p :: A).dropLast = p :: A.dropLast := dropLast_cons_ne hAne
+  rw [oper_tower n hL hlev hp hj0, hlast, hhead, hdl]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -11990,3 +12047,6 @@ end DBMS
 #print axioms DBMS.lad_diag
 #print axioms DBMS.shiftr0_succ
 #print axioms DBMS.convC_shiftr0
+#print axioms DBMS.range'_map_entry_shift
+#print axioms DBMS.oper_tower
+#print axioms DBMS.rdNode_bms_shape
