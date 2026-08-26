@@ -2,6 +2,8 @@
 
 [← 戻る](README.md) | [Japanese](algorithm.md) | [English](algorithm-en.md)
 
+> **2 行まで。** 本稿が扱うのは BMS の 2 行の断片（`psi_0(Omega_omega)` 未満）である。
+
 ## 1. 記法
 
 **列**とは $`p = (p_0, p_1) \in \mathbb{N}^2`$ のことで、$`p_0`$ を深さ、$`p_1`$ を段と呼ぶ。**行列**とは列の有限列

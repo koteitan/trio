@@ -11,6 +11,9 @@ BMS 2-row standard form  --conC-->  DBMS standard form  --rank counting-->  Y se
                          \______________________ bms2yseq _______________________/
 ```
 
+> **Two rows only.** The scope is the 2-row fragment of BMS, below
+> `psi_0(Omega_omega)`. Three or more rows (trio sequences) are out of scope.
+
 The left half, `conC`, is proved correct in Lean 4 / Mathlib — no `sorry`, no
 extra axioms. The right half is exactly the definition given in
 [User blog:Koteitan/Dimensional BMS の定義とY数列との対応](https://googology.fandom.com/ja/wiki/%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%83%96%E3%83%AD%E3%82%B0:Koteitan)
@@ -39,6 +42,10 @@ $ ./bms2yseq.py "(0,0)(1,1)(2,2)"
 
 Converts between BMS 2-row standard forms (below `psi_0(Omega_omega)`) and DBMS
 standard forms.
+
+> **Two rows only.** The BMS side accepts 2-row matrices only. Three or more rows
+> (trio sequences) are out of scope and give exit code 3. The correctness proofs
+> are about the 2-row fragment as well.
 
 The algorithm is described in [algorithm-en.md](algorithm-en.md); the formalisation
 lives in [`lean/Dbms.lean`](../../lean/Dbms.lean) and
@@ -187,6 +194,13 @@ With several inputs the largest code is returned.
 
 Converts between DBMS standard forms and Y sequences.
 
+> **Two rows only, as far as the checking goes.** The procedure itself does not
+> care about the number of rows, and matrices such as `(0)(1)(2,1)(3,2,1)` work.
+> What has been checked in this repository, however, is the 31 worked examples of
+> the article (which do include 3-row columns) and an exhaustive scan of the
+> **2-row** DBMS standard forms with at most 7 columns. Three or more rows have
+> not been checked broadly.
+
 ## Definition
 
 ```
@@ -272,6 +286,10 @@ skips it.
 
 Converts between BMS 2-row standard forms and Y sequences — the composition of
 `bms2dbms` and `dbms2yseq`.
+
+> **Two rows only.** The BMS side is 2 rows. Y sequences reach further than 2-row
+> BMS, so a Y sequence that needs a third row cannot be mapped back and gives
+> exit code 4 (for example `Y(1,2,4,8)`).
 
 ## Usage
 

@@ -2,6 +2,9 @@
 
 [← Back](README-en.md) | [Japanese](algorithm.md) | [English](algorithm-en.md)
 
+> **Two rows only.** This document covers the 2-row fragment of BMS, below
+> `psi_0(Omega_omega)`.
+
 ## 1. Notation
 
 A **column** is $`p = (p_0, p_1) \in \mathbb{N}^2`$; $`p_0`$ is its *depth* and $`p_1`$ its *level*. A **matrix** is a finite sequence of columns,
