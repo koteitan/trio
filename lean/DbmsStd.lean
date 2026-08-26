@@ -11749,6 +11749,30 @@ theorem lad_diag {p : ℕ × ℕ} {r : PairSeq} {bd d plev : ℕ} {first force :
       · exact absurd hpl (h1 p r rfl)
       · omega
   exact ⟨hf1, by omega, by omega, hp1, hpl⟩
+
+/-! ## 4.22 ずれたコピーの道具（`RDnode` 用の下ごしらえ）
+
+`RDnode`（段 > 0・末尾列の親が節点）では
+
+    B⟦n⟧ = W ++ shiftr0 d0 W ++ shiftr0 (2 d0) W ++ …       (W = B.dropLast)
+
+という**ずれたコピーの階段**になる（段 0 の `reindexD_node0_gen2` は `d0 = 0` で
+素直な繰り返しだった）。`convC` は深さの平行移動で変わらない（`convC_shift1`）ので、
+コピーの像は「ずれ」に依らず `(d, plev, first, force)` だけで決まる。 -/
+
+theorem shiftr0_succ (e : ℕ) (M : PairSeq) : shiftr0 (e + 1) M = shift1 (shiftr0 e M) := by
+  unfold shiftr0 shift1
+  rw [List.map_map]
+  rfl
+
+/-- **`convC` は深さの平行移動 `shiftr0` で変わらない**。 -/
+theorem convC_shiftr0 (e : ℕ) (M : PairSeq) (d plev : ℕ) (first force : Bool) :
+    convC (shiftr0 e M) d plev first force = convC M d plev first force := by
+  induction e with
+  | zero => simp
+  | succ e ih =>
+    rw [shiftr0_succ,
+      convC_shift1 (shiftr0 e M).length (shiftr0 e M) (Nat.le_refl _) d plev first force, ih]
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -11964,3 +11988,5 @@ end DBMS
 #print axioms DBMS.reindexD_holds_of_res9
 #print axioms DBMS.ST_D_conC_holds_of_res9
 #print axioms DBMS.lad_diag
+#print axioms DBMS.shiftr0_succ
+#print axioms DBMS.convC_shiftr0
