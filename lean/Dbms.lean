@@ -61,7 +61,11 @@ BMS 側も同じ形の `translateK` を用意してある（`translate L = trans
 `conC_olt_iff_seqlex`（順序保存）と `conC_injective`（単射）も出る。
 `DbmsConv.lean` に 264 件の `conC A = E` と `readCon E = translate A` の #guard。
 
-## 残る穴
+## 残る穴 — **2026-08-26 に埋まった**
+
+`DbmsStd.lean` の `ST_D_conC_final : ST_PS M → ST_D (conC M)` が
+**仮定なし**で成り立つ（`sorry` 0、`sorryAx` 0）。要だった `ReindexD` も
+同ファイルの `reindexD_holds` で定理になっている。以下は当時の記録。
 
 **像が DBMS 標準形であること**は `DbmsStd.lean` へ移した（実測は ≤10 列 2073826 個で
 違反 0、`tools/dbms/scan_std.py`）。素朴な `ST_PS` の

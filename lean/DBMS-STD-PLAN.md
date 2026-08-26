@@ -3,6 +3,49 @@
 対象: `ST_PS M → ST_D (conC M)`（BMS 2 行標準形の像が DBMS 2 行標準形）。
 関連ファイル: `Dbms.lean`（変換と正しさ）、`DbmsStd.lean`（標準形性）。
 
+## 【現在の到達点】2026-08-26 検証: **目標は仮定なしで証明済み**
+
+`leanman check -m verify -C lean DbmsStd.lean` は **exit 0**、`sorry` **0**、
+`sorryAx` **0**。`DbmsStd.lean` は 15471 行。
+
+```
+theorem reindexD_holds  : ReindexD                             -- 仮定なし
+theorem ST_D_conC_final {M : PairSeq} (hM : ST_PS M) : ST_D (conC M)   -- 仮定なし
+```
+
+* 主定理 `ST_D_conC_final` の仮定は **`ST_PS M`（`M` が BMS 2 行標準形）だけ**。
+  `ReindexD` はもう仮定ではなく定理（`reindexD_holds`）。
+* `#print axioms DBMS.ST_D_conC_final` = `[propext, Classical.choice, Quot.sound]`
+  （Lean / Mathlib の標準 3 つのみ）。
+* ファイル末尾の `#print axioms` は 274 行。内訳は
+  `depends on axioms` 270 行 ＋ `does not depend on any axioms` 4 行で、
+  **`sorryAx` は 1 件も無い**（使われている公理は上の 3 つと `propext` 単独 /
+  `propext, Quot.sound` の部分集合だけ）。
+* プロジェクトの `.lean`（`.lake/packages` を除く）に `sorry` も `axiom` 宣言も無い。
+
+### 残余がどう消えたか
+
+| かつての残余 | いまの状態 | 節 |
+|---|---|---|
+| `CtrRes` | 定理 `ctrRes_holds`（`ArgDomCore` の 1 発） | 続き 7 |
+| `RDnopar` | 定理 `rdNopar` | 続き 7 |
+| `RDnode` | 定理 `rdNode`（← `rdNodeCtr_holds`） | 続き 9 |
+| `CtrPres2` | 定理 `ctrPres2_holds` | 続き 10 |
+| `RDzeroRes2` / `RDlad2` | 帰納の組み替えで**消滅**（`reindexD_holds_of_res7`） | 続き 6 |
+| `RDzeroStop2` | 同上、`reindexD_zero5` に吸収されて消滅 | 続き 6 |
+| `RDposStop2` | 定理 `rdPosStop2` | 続き 5 |
+| `RDposRes` / `contrOK` | **偽**と判明。使わない版に置き換え済み（`convC_dropLast_noParent_aux2` 他） | 続き 3 / 続き 7 |
+
+到達までの筋（新しい順）:
+`reindexD_holds_of_res11 ctrPres2_holds` → `res10` → `res9` → `res8` →
+`res7` → `reindexD_zero5` / `reindexD_pos_of4`。
+
+> **以下の節はすべて当時の作業記録**である。「残っている」「未証明」「仮定」と
+> 書いてある箇所は過去形として読むこと。現在の残余は **0** で、
+> `ST_D_conC_final` が無条件に成り立つ。
+> なお節の並びは、この節のすぐ下が古い順（済んでいること … 続き 4）、
+> そのあとが新しい順（続き 10 … 続き 5）になっている。
+
 ## 済んでいること
 
 | | 場所 |
@@ -53,7 +96,7 @@
 
 いずれも sorry 0。
 
-## 残っているもの: `ReindexD`
+## 残っているもの: `ReindexD`（当時。2026-08-26 に `reindexD_holds` で証明済み）
 
 ```
 ReindexD : ∀ A, ST_PS A → 1 < A.length → ∀ n ≥ 1,
@@ -960,7 +1003,7 @@ convC (B⟦n⟧) 1 1 true force = (2,1)(3,1)(4,2)(3,1)(4,2) （5 列）
 | `RDposRes` の反例探索 | ブロックを全列挙して `(convC B)⟦m⟧ = convC (B⟦n'⟧)` を探索（≤5 列） |
 | `contrOK` の反例 | 標準形の全ブロックで `contrLen … = some ([x],[])` を検査 |
 
-## 2026-08-26（検証）: 現状のまとめ
+## 2026-08-26（検証）: 現状のまとめ（当時。最新は冒頭の【現在の到達点】）
 
 `leanman check -m verify -C lean DbmsStd.lean` は **exit 0（green）**、`sorry` は 0、
 `#print axioms` は全部 `[propext, Classical.choice, Quot.sound]`（`sorryAx` なし）。
