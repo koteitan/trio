@@ -1,6 +1,6 @@
 # trio
 
-トリオ数列（3 行バシク行列, BM4）の停止性の構文的証明。
+トリオ数列（3 行バシク行列, BM4）の停止性の構文的証明。(未完成です)
 [lean-yapss](https://github.com/koteitan/yet-another-pss-proof)（2 行 = ペア数列、完成）の続編。
 
 対象は一旦 z < 2 の断片。生成元は z 頭打ち対角列
