@@ -91,47 +91,25 @@ $`\mathrm{b2t}`$ は深さを捨て、$`\mathrm{t2b}`$ は入れ子の深さか�
 
 ### 4.2 記号
 
-$`M = p \frown r`$ のとき
+$`M = p \frown r`$ のとき、次の記号を使う。入れ子は「上の条件が成り立つ場合にだけ意味を持つ」ことを表す。
 
-```math
-s := p_1, \qquad A := \mathrm{arg}_p(r), \qquad B := \mathrm{sib}_p(r)
-```
+- 常に定める:
+  - $`s := p_1`$ … いま書く列の段
+  - $`A := \mathrm{arg}_p(r)`$ … $`p`$ の引数ブロック
+  - $`B := \mathrm{sib}_p(r)`$ … $`p`$ の兄弟ブロック
+  - $`\lambda := f \land (s = \ell + 1) \land (d \le s \lor \varphi)`$ … 梯子を立てるか
+  - $`d' := \begin{cases} d + 1 & (\lambda) \cr s + 1 & (\lnot\lambda \land 0 \lt s \land d \le s) \cr d & (\text{otherwise}) \end{cases}`$ … 本体を書く深さ
+- $`\lambda = \top`$ の場合にだけ定める:
+  - $`U := B[0,\ \mathrm{u}_p(B))`$ … $`B`$ の先頭のユニット列
+  - $`B^{\ast} := B[\mathrm{u}_p(B),\ |B|)`$ … その残り
+  - $`\pi := \bigl((p_0+1,\ p_1)\bigr) \frown \sigma(A) \frown \sigma(U)`$ … 縮約で使い回される前置き
+  - $`B^{\ast} = q \frown r^{\ast}`$ と書ける場合にだけ定める:
+    - $`\alpha := \mathrm{arg}_q(r^{\ast})`$ … $`q`$ の引数ブロック
+    - $`\beta := \mathrm{sib}_q(r^{\ast})`$ … $`q`$ の兄弟ブロック
+    - $`R := \alpha[\,|\pi|,\ |\alpha|)`$ … $`\alpha`$ から前置きを除いた残り
+    - $`\kappa := (q_1 + 1 = s) \land (q_0 = p_0) \land \bigl(\alpha[0, |\pi|) = \pi\bigr) \land (R \ne \varepsilon) \land (R_{0,0} = p_0 + 1) \land (R_{0,1} \lt s)`$ … 縮約するか
 
-```math
-\lambda := f \land (s = \ell + 1) \land (d \le s \lor \varphi)
-```
-
-```math
-d' := \begin{cases}
-  d + 1 & (\lambda) \cr
-  s + 1 & (\lnot\lambda \land 0 \lt s \land d \le s) \cr
-  d & (\text{otherwise})
-\end{cases}
-```
-
-さらに $`\lambda = \top`$ のとき
-
-```math
-U := B[0,\ \mathrm{u}_p(B)), \qquad
-B^{\ast} := B[\mathrm{u}_p(B),\ |B|), \qquad
-\pi := \bigl((p_0+1,\ p_1)\bigr) \frown \sigma(A) \frown \sigma(U)
-```
-
-とおき、$`B^{\ast} = q \frown r^{\ast}`$ と書けるとき
-
-```math
-\alpha := \mathrm{arg}_q(r^{\ast}), \qquad
-\beta := \mathrm{sib}_q(r^{\ast}), \qquad
-R := \alpha[\,|\pi|,\ |\alpha|)
-```
-
-```math
-\kappa := (B^{\ast} \ne \varepsilon) \land (q_1 + 1 = s) \land (q_0 = p_0)
-  \land \bigl(\alpha[0, |\pi|) = \pi\bigr) \land (R \ne \varepsilon)
-  \land (R_{0,0} = p_0 + 1) \land (R_{0,1} \lt s)
-```
-
-とおく。
+$`B^{\ast} = \varepsilon`$ の場合は $`\kappa := \bot`$ とする。
 
 ### 4.3 場合分け
 
@@ -165,32 +143,21 @@ $`\lambda = \top`$ で書かれる $`\bigl((d,\ell),(d+1,s)\bigr)`$ が**梯子*
 
 ### 5.1 記号
 
-$`l = p \frown \mathit{rest}`$ のとき
+$`l = p \frown \mathit{rest}`$ のとき、次の記号を使う。
 
-```math
-\mu := f \land (p_1 = \ell) \land (\mathit{rest} \ne \varepsilon)
-  \land \bigl(\mathit{rest}_0 = (p_0 + 1,\ p_1 + 1)\bigr)
-```
-
-さらに $`\mu = \top`$ のとき $`\mathit{rest} = t \frown \mathit{tail}`$ と書き
-
-```math
-a := \mathrm{arg}_t(\mathit{tail}), \qquad
-c := \mathrm{sib}_t(\mathit{tail}), \qquad
-S := c[0,\ \mathrm{u}_t(c)), \qquad
-R := c[\mathrm{u}_t(c),\ |c|)
-```
-
-```math
-\nu := (R \ne \varepsilon) \land (R_{0,0} = t_0) \land (R_{0,1} \lt t_1)
-```
-
-```math
-R^{-} := R[0, m), \qquad R^{+} := R[m, |R|), \qquad
-m := \min \{\, i \le |R| \mid i = |R| \lor R_{i,0} \lt t_0 \,\}
-```
-
-とおく。
+- 常に定める:
+  - $`\mu := f \land (p_1 = \ell) \land (\mathit{rest} \ne \varepsilon) \land \bigl(\mathit{rest}_0 = (p_0 + 1,\ p_1 + 1)\bigr)`$ … $`p`$ が梯子の影か
+- $`\mu = \top`$ の場合にだけ定める（$`\mathit{rest} = t \frown \mathit{tail}`$ と書く）:
+  - $`t`$ … 梯子の本体の列
+  - $`a := \mathrm{arg}_t(\mathit{tail})`$ … $`t`$ の引数ブロック
+  - $`c := \mathrm{sib}_t(\mathit{tail})`$ … $`t`$ の兄弟ブロック
+  - $`S := c[0,\ \mathrm{u}_t(c))`$ … $`c`$ の先頭のユニット列
+  - $`R := c[\mathrm{u}_t(c),\ |c|)`$ … その残り
+  - $`\nu := (R \ne \varepsilon) \land (R_{0,0} = t_0) \land (R_{0,1} \lt t_1)`$ … $`t`$ が二役か
+  - $`\nu = \top`$ の場合にだけ定める:
+    - $`m := \min \{\, i \le |R| \mid i = |R| \lor R_{i,0} \lt t_0 \,\}`$
+    - $`R^{-} := R[0, m)`$ … $`R`$ のうち $`t`$ より浅くならない部分
+    - $`R^{+} := R[m, |R|)`$ … その残り
 
 ### 5.2 場合分け
 
@@ -319,14 +286,14 @@ CLI は [`bms2dbms.py`](bms2dbms.py)、使い方は [README.md](README.md)。
 ## 注釈
 
 [^1]: (R) を無条件に証明するのが全体で最も重く、`DbmsStd.lean` は 15471 行になった。
-    素直に閉じないのは $`\kappa = \top`$（縮約）の枝だけで、残りは右端の道に沿った帰納で片付く。
+    素直に閉じないのは縮約の枝だけで、残りは右端の道に沿った帰納で片付く。
     経緯は [`lean/DBMS-STD-PLAN.md`](../../lean/DBMS-STD-PLAN.md) に残してある。
 
-[^2]: 命名について。この文書では変換を $`\mathrm{src2dst}`$ の形で呼ぶ。
+[^2]: 命名について。この文書では変換を `src2dst` の形で呼ぶ。
     Lean 側の `translate` / `conC` / `readCon` はこの規約より前の名前で、
     どれが何から何への写像か名前から読めない。
 
-[^3]: 逆写像を作らず両側の共終性だけで全単射を出す道（Naruyoko 氏が $`\mathrm{Trans}`$ で
-    使ったもの）が使えると見込んでいる。その 2 条件は $`\mathrm{ST}_{\mathrm{B}}`$ の
-    $`|M| \le 7`$ の 7256 個で違反 0（`cofinal_check.py`）。
+[^3]: 逆写像を作らず両側の共終性だけで全単射を出す道（Naruyoko 氏が `Trans` で
+    使ったもの）が使えると見込んでいる。その 2 条件は BMS 2 行標準形の
+    7 列以下の 7256 個で違反 0（`cofinal_check.py`）。
     出典: ユーザーブログ:Naruyoko/ペア数列システムの停止性証明に用いられた変換写像の全単射性。
