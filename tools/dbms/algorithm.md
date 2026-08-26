@@ -185,41 +185,43 @@ $`\mu = \top`$ で $`p`$（影）が消える。$`\nu = \top`$ の場合は 1 �
 
 すべて Lean 4 / Mathlib で証明済み。`sorry` なし、追加公理なし。$`A\langle n \rangle`$ は添字 $`n`$ の基本列、$`\lt_o`$ は木の順序、$`\lt_{\mathrm{lex}}`$ は行列の順序。
 
+**(T1) 読みを保つ。**
+
 ```math
 M \in \mathrm{ST}_{\mathrm{B}} \implies \mathrm{d2t}(\mathrm{b2d}(M)) = \mathrm{b2t}(M)
-\tag{T1}
 ```
+
+**(T2) 像は DBMS 標準形である。**
 
 ```math
 M \in \mathrm{ST}_{\mathrm{B}} \implies \mathrm{b2d}(M) \in \mathrm{ST}_{\mathrm{D}}
-\tag{T2}
 ```
+
+**(T3) 順序を保つ。**
 
 ```math
 M, N \in \mathrm{ST}_{\mathrm{B}},\ M \ne N \implies
-\bigl(\mathrm{d2t}(\mathrm{b2d}(M)) <_o \mathrm{d2t}(\mathrm{b2d}(N))
-\iff M <_{\mathrm{lex}} N\bigr)
-\tag{T3}
+\bigl(\mathrm{d2t}(\mathrm{b2d}(M)) \lt_o \mathrm{d2t}(\mathrm{b2d}(N))
+\iff M \lt_{\mathrm{lex}} N\bigr)
 ```
+
+**(T4) 単射である。**
 
 ```math
 M, N \in \mathrm{ST}_{\mathrm{B}},\ \mathrm{b2d}(M) = \mathrm{b2d}(N) \implies M = N
-\tag{T4}
 ```
 
-(T2) の要は次の補題である[^2]。
+**(R)** (T2) の要は次の補題である[^2]。像の基本列は、もとの基本列の像で添字をずらせば覆える。
 
 ```math
-A \in \mathrm{ST}_{\mathrm{B}},\ |A| > 1,\ n \ge 1 \implies
+A \in \mathrm{ST}_{\mathrm{B}},\ |A| \gt 1,\ n \ge 1 \implies
 \exists m \ge 1\ \exists n' \ge n\ \bigl(\mathrm{b2d}(A)\langle m \rangle = \mathrm{b2d}(A \langle n' \rangle)\bigr)
-\tag{R}
 ```
 
-未証明のもの。
+**(S)** 全射性は未証明である。
 
 ```math
 N \in \mathrm{ST}_{\mathrm{D}} \implies \exists M \in \mathrm{ST}_{\mathrm{B}}\ \bigl(\mathrm{b2d}(M) = N\bigr)
-\tag{S}
 ```
 
 $`\mathrm{ST}_{\mathrm{D}}`$ の $`|N| \le 7`$ の 1740 個すべてで成立を確認済み（違反 0）[^3]。
