@@ -13300,6 +13300,125 @@ theorem rdshift {p : ℕ × ℕ} {A : PairSeq} {bd d plev E : ℕ} {first force 
     show p.1 + E + 1 = (bd + 1) + E by omega, hkey, shiftr0_cons]
   simp
 
+/-! ## 4.30 `RDnode` の主要部（梯子も跳びもない節点）
+
+`rdshift` を `B` と `B⟦n⟧` の両方に当て、`oper_shiftr0` でつなぐ。 -/
+
+theorem headI_shiftr0 {t : ℕ} {L : PairSeq} (h : L ≠ []) :
+    (shiftr0 t L).headI = ((L.headI).1 + t, (L.headI).2) := by
+  cases L with
+  | nil => exact absurd rfl h
+  | cons a l => rw [shiftr0_cons]; simp
+
+theorem headI_copies {d : ℕ} {W : PairSeq} {m : ℕ} (hW : W ≠ []) (hm : 1 ≤ m) :
+    (copies d W m).headI = W.headI := by
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  rw [copies_succ_front]
+  cases W with
+  | nil => exact absurd rfl hW
+  | cons a w => simp
+
+theorem headPatOK_of_deep {p : ℕ × ℕ} {A' : PairSeq} {plev : ℕ}
+    (hAd : ∀ x ∈ A', p.1 < x.1)
+    (h : p.2 = plev → A' ≠ [] → ((A'.headI).2 ≠ p.2 + 1)) : headPatOK (p :: A') plev := by
+  intro q r hq hq2 hne
+  injection hq with h1 h2
+  subst h1; subst h2
+  obtain ⟨e1, -⟩ := split_append (X := A') (Y := []) (dd := p.1) hAd (Or.inl rfl)
+  simp only [List.append_nil] at e1
+  rw [e1] at hne ⊢
+  exact h hq2 hne
+
+theorem deep_of_headPatOK {p : ℕ × ℕ} {A' : PairSeq} {plev : ℕ}
+    (hAd : ∀ x ∈ A', p.1 < x.1) (h : headPatOK (p :: A') plev)
+    (hpl : p.2 = plev) (hne : A' ≠ []) : ((A'.headI).2 ≠ p.2 + 1) := by
+  obtain ⟨e1, -⟩ := split_append (X := A') (Y := []) (dd := p.1) hAd (Or.inl rfl)
+  simp only [List.append_nil] at e1
+  have hk := h p A' rfl hpl (by rw [e1]; exact hne)
+  rw [e1] at hk
+  exact hk
+
+/-- **`RDnode` の主要部**: 梯子も跳びもない節点では、像も展開後の像もどちらも
+`shiftr0 E` なので、`m = n`・`n' = n` で一致する。 -/
+theorem rdNode_reg {p : ℕ × ℕ} {A : PairSeq} {bd d plev E : ℕ} {first force : Bool}
+    (hAne : A ≠ [])
+    (hb : blockok bd (p :: A)) (hcol : colOK (p :: A)) (hAd : ∀ x ∈ A, p.1 < x.1)
+    (hna : noAdj3 (p :: A)) (hp1 : p.1 = bd)
+    (hlev : 0 < entry (p :: A) 1 ((p :: A).length - 1))
+    (hHP : hpOK (p :: A) d plev first force)
+    (hlad : ladOf p.2 d plev first force = false)
+    (hE : ddOf p.2 d plev first force = p.1 + E)
+    (hslA : slackOK E A)
+    (hpar : hasParent (p :: A) 1 ((p :: A).length - 1))
+    (hj0 : parent (p :: A) 1 ((p :: A).length - 1) = 0)
+    (n : ℕ) (hn : 1 ≤ n) :
+    (convC (p :: A) d plev first force)⟦n⟧ = convC ((p :: A)⟦n⟧) d plev first force := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have hp2 : p.2 ≤ p.1 := hcol p (by simp)
+  have hlmem : A.getLastD (0, 0) ∈ A := getLastD_mem hAne _
+  have hd01 : 1 ≤ (A.getLastD (0, 0)).1 - p.1 := by
+    have := hAd _ hlmem; omega
+  have hcop : (p :: A)⟦m + 1⟧
+      = p :: (A.dropLast
+          ++ shiftr0 ((A.getLastD (0, 0)).1 - p.1)
+              (copies ((A.getLastD (0, 0)).1 - p.1) (p :: A.dropLast) m)) := by
+    rw [rdNode_bms_shape hAne hlev hpar hj0 (m + 1), copies_succ_front, List.cons_append]
+  set R := A.dropLast with hRd
+  set d0 := (A.getLastD (0, 0)).1 - p.1 with hd0d
+  set Z := shiftr0 d0 (copies d0 (p :: R) m) with hZd
+  have hRsub : ∀ x ∈ R, x ∈ A := fun x hx => (List.dropLast_sublist A).subset hx
+  have hRd' : ∀ x ∈ R, p.1 < x.1 := fun x hx => hAd x (hRsub x hx)
+  have hAdn : ∀ x ∈ R ++ Z, p.1 < x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with h | h
+    · exact hRd' x h
+    · exact deep_tower hd01 hRd' m x h
+  have hslR : slackOK E R := fun x hx => hslA x (hRsub x hx)
+  have hslAn : slackOK E (R ++ Z) := by
+    intro x hx
+    rcases List.mem_append.1 hx with h | h
+    · exact hslR x h
+    · exact slackOK_tower hd01 hp2 hslR m x h
+  have hbn : blockok bd (p :: (R ++ Z)) := by
+    have h := blockok_oper_gen hb (Nat.le_add_left 1 m) hlev
+    rwa [hcop] at h
+  have hnan : noAdj3 (p :: (R ++ Z)) := by
+    have h := noAdj3_oper hna (m + 1) (Nat.le_add_left 1 m)
+    rwa [hcop] at h
+  have hHPn : hpOK (p :: (R ++ Z)) d plev first force := by
+    intro hf1
+    rcases hHP hf1 with hh | hroot
+    · left
+      refine headPatOK_of_deep hAdn ?_
+      intro hpl hne
+      by_cases hRne : R = []
+      · rw [hRne, List.nil_append] at hne ⊢
+        have hZne : copies d0 (p :: R) m ≠ [] := by
+          intro he; rw [hZd, he] at hne; exact hne rfl
+        have hm1 : 1 ≤ m := by
+          rcases Nat.eq_zero_or_pos m with rfl | h
+          · exact absurd rfl hZne
+          · exact h
+        rw [hZd, headI_shiftr0 hZne, headI_copies (by simp) hm1]
+        simp only [List.headI_cons]
+        omega
+      · have hRne' : R ≠ [] := hRne
+        obtain ⟨a, s, has⟩ : ∃ a s, R = a :: s := by
+          cases hRc : R with
+          | nil => exact absurd hRc hRne'
+          | cons a s => exact ⟨a, s, rfl⟩
+        have hAh : A.headI = a := headI_of_dropLast (by rw [← hRd, has])
+        have hkey := deep_of_headPatOK hAd hh hpl hAne
+        rw [hAh] at hkey
+        rw [has]
+        simpa using hkey
+    · right; exact hroot
+  have h1 : convC (p :: A) d plev first force = shiftr0 E (p :: A) :=
+    rdshift hb hAd hna hslA hp1 hHP hlad hE
+  have h2 : convC (p :: (R ++ Z)) d plev first force = shiftr0 E (p :: (R ++ Z)) :=
+    rdshift hbn hAdn hnan hslAn hp1 hHPn hlad hE
+  rw [h1, oper_shiftr0 E (p :: A) (m + 1) hlev, hcop, h2]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -13541,3 +13660,4 @@ end DBMS
 #print axioms DBMS.noAdj3_oper
 #print axioms DBMS.blockok_oper_gen
 #print axioms DBMS.rdshift
+#print axioms DBMS.rdNode_reg
