@@ -12907,6 +12907,399 @@ theorem oper_shiftr0 (t : ℕ) (M : PairSeq) (n : ℕ)
     rw [oper_eq_pred_of_noParent n hLs hzs hps, oper_eq_pred_of_noParent n hL hz hp',
       Pred_shiftr0]
 
+/-! ## 4.28 禁止形は展開で保たれる（`noAdj3_ST_PS` の帰納段を単体で）
+
+`noAdj3_ST_PS` の証明の帰納段はそのまま「`noAdj3 M0` なら `noAdj3 (M0⟦n⟧)`」を
+示している。段 > 0 の階段（`RDnode`）でも同じ事実が要るので、単体の定理にする。 -/
+
+/-- **禁止形は展開で保たれる**。 -/
+theorem noAdj3_oper {M0 : PairSeq} (ih : noAdj3 M0) (n : ℕ) (hn : 1 ≤ n) :
+    noAdj3 (M0⟦n⟧) := by
+  by_cases hL : M0.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]; exact ih
+  have hL2 : 1 < M0.length := by omega
+  have hPred : Pred M0 = M0.take (M0.length - 1) := by
+    unfold Pred
+    rw [if_neg (by omega), List.dropLast_eq_take]
+  by_cases hz : entry M0 0 (M0.length - 1) = 0 ∧ entry M0 1 (M0.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz, hPred]; exact noAdj3_take _ ih
+  by_cases hp : hasParent M0 (idx1 M0 (M0.length - 1)) (M0.length - 1)
+  · obtain ⟨G, v0, w0, R, d0, lp, hMeq, hWeq, hR, hlp, hcase, -⟩ :=
+      oper_bad_blocks hL2 hz hp hn
+    have hMlen : M0.length = G.length + ((v0, w0) :: R).length + 1 := by
+      rw [hMeq]; exact hostM_length _ _ _
+    have hbpge : 1 ≤ ((v0, w0) :: R).length := by simp
+    have hMpre : ∀ u, u < G.length → M0.getD u (0, 0) = G.getD u (0, 0) := by
+      intro u hu; rw [hMeq]; exact hostM_getD_pre hu
+    have hMblk : ∀ t, t < ((v0, w0) :: R).length →
+        M0.getD (G.length + t) (0, 0) = ((v0, w0) :: R).getD t (0, 0) := by
+      intro t ht; rw [hMeq]; exact hostM_getD_blk ht
+    have hMhead : M0.getD (G.length + 0) (0, 0) = (v0, w0) := by
+      rw [hMblk 0 (by simp)]; rfl
+    have hMlast : M0.getD (G.length + ((v0, w0) :: R).length) (0, 0) = lp := by
+      rw [hMeq, getD_append_right (by simp)]
+      simp
+    have hW : M0⟦n⟧ = copyExp G ((v0, w0) :: R) d0 n := by
+      unfold copyExp; exact hWeq
+    rw [hW]
+    intro i hi hadj
+    rw [copyExp_length] at hi
+    have hWpre : ∀ u, u < G.length →
+        (copyExp G ((v0, w0) :: R) d0 n).getD u (0, 0) = M0.getD u (0, 0) := by
+      intro u hu; rw [copyExp_getD_pre hu, hMpre u hu]
+    have hWcopy : ∀ k t, k < n → t < ((v0, w0) :: R).length →
+        (copyExp G ((v0, w0) :: R) d0 n).getD
+            (G.length + (k * ((v0, w0) :: R).length + t)) (0, 0)
+          = ((M0.getD (G.length + t) (0, 0)).1 + k * d0,
+             (M0.getD (G.length + t) (0, 0)).2) := by
+      intro k t hk ht
+      rw [copyExp_getD_copy hk ht, hMblk t ht]
+    have hWlow : ∀ u, u < G.length + ((v0, w0) :: R).length →
+        (copyExp G ((v0, w0) :: R) d0 n).getD u (0, 0) = M0.getD u (0, 0) := by
+      intro u hu
+      by_cases hug : u < G.length
+      · exact hWpre u hug
+      · have ht : u - G.length < ((v0, w0) :: R).length := by omega
+        have hc := hWcopy 0 (u - G.length) (by omega) ht
+        rw [show G.length + (0 * ((v0, w0) :: R).length + (u - G.length)) = u by omega,
+          show G.length + (u - G.length) = u by omega] at hc
+        rw [hc]
+        simp
+    by_cases hlow : i + 2 < G.length + ((v0, w0) :: R).length
+    · refine ih i (by omega) ?_
+      unfold adj3 at hadj ⊢
+      rw [hWlow i (by omega), hWlow (i + 1) (by omega), hWlow (i + 2) (by omega)] at hadj
+      exact hadj
+    · by_cases hbp1 : ((v0, w0) :: R).length = 1
+      · -- コピーが 1 列ずつ: 行 1 は全部 `w0` なので `+1` にはなれない
+        have hrow1 : ∀ u, G.length ≤ u → u < G.length + n →
+            ((copyExp G ((v0, w0) :: R) d0 n).getD u (0, 0)).2 = w0 := by
+          intro u h1 h2
+          have hc := hWcopy (u - G.length) 0 (by omega) (by omega)
+          rw [show G.length + ((u - G.length) * ((v0, w0) :: R).length + 0) = u by
+              rw [hbp1]; omega, hMhead] at hc
+          rw [hc]
+        rw [hbp1] at hi hlow
+        obtain ⟨-, -, -, h4⟩ := hadj
+        rw [hrow1 (i + 1) (by omega) (by omega),
+          hrow1 (i + 2) (by omega) (by omega)] at h4
+        omega
+      · have hbp2 : 2 ≤ ((v0, w0) :: R).length := by omega
+        have hRne : R ≠ [] := by
+          intro h; rw [h] at hbp2; simp at hbp2
+        have hig : G.length ≤ i := by omega
+        obtain ⟨k, t, hk, ht, hkt⟩ :=
+          index_decomp (L := ((v0, w0) :: R).length) (n := n) (i := i - G.length)
+            (by omega) (by omega)
+        have henext : (k + 1) * ((v0, w0) :: R).length
+            = k * ((v0, w0) :: R).length + ((v0, w0) :: R).length := by
+              rw [Nat.succ_mul]
+        have hlastmem : M0.getD (G.length + (((v0, w0) :: R).length - 1)) (0, 0) ∈ R := by
+          have hb : ((v0, w0) :: R).length - 1 = R.length := by simp
+          rw [hb, hMblk R.length (by simp)]
+          obtain ⟨m, hm⟩ : ∃ m, R.length = m + 1 :=
+            ⟨R.length - 1, by have := List.length_pos_of_ne_nil hRne; omega⟩
+          rw [hm, List.getD_cons_succ]
+          exact getD_mem (by omega)
+        have hkey : (M0.getD (G.length + (((v0, w0) :: R).length - 1)) (0, 0)).1 < v0 + d0 →
+            w0 < (M0.getD (G.length + (((v0, w0) :: R).length - 1)) (0, 0)).2 := by
+          intro hlt
+          rcases hcase with ⟨hd0, -⟩ | ⟨hd0, -, hlpe, hnr1⟩
+          · exfalso
+            have hv := hR _ hlastmem
+            omega
+          · have hj1 : M0.length - 1 = G.length + ((v0, w0) :: R).length := by omega
+            have he0 : entry M0 0 (M0.length - 1 - 1)
+                = (M0.getD (G.length + (((v0, w0) :: R).length - 1)) (0, 0)).1 := by
+              rw [entry, if_pos rfl, hj1,
+                show G.length + ((v0, w0) :: R).length - 1
+                  = G.length + (((v0, w0) :: R).length - 1) by omega]
+            have he1 : entry M0 0 (M0.length - 1) = v0 + d0 := by
+              rw [entry, if_pos rfl, hj1, hMlast, hlpe]
+            have he2 : entry M0 1 (M0.length - 1 - 1)
+                = (M0.getD (G.length + (((v0, w0) :: R).length - 1)) (0, 0)).2 := by
+              rw [entry, if_neg (by omega), hj1,
+                show G.length + ((v0, w0) :: R).length - 1
+                  = G.length + (((v0, w0) :: R).length - 1) by omega]
+            have hg1 : entry M0 1 G.length = w0 := by
+              rw [entry, if_neg (by omega),
+                show G.length = G.length + 0 by omega, hMhead]
+            have hstep := entry1_last_le_of_lt (M := M0) (j0 := G.length)
+              (j1 := M0.length - 1) hnr1 (by omega) (by rw [he0, he1]; exact hlt)
+            have hlt1 : entry M0 1 G.length < entry M0 1 (M0.length - 1) := hnr1.2.2.2.1
+            rw [hg1] at hlt1
+            rw [he2] at hstep
+            omega
+        by_cases htlow : t + 2 < ((v0, w0) :: R).length
+        · -- コピーの内側
+          refine ih (G.length + t) (by omega) ?_
+          have A0f : ((copyExp G ((v0, w0) :: R) d0 n).getD i (0, 0)).1
+              = (M0.getD (G.length + t) (0, 0)).1 + k * d0 := by
+            rw [show i = G.length + (k * ((v0, w0) :: R).length + t) by omega,
+              hWcopy k t hk (by omega)]
+          have A0s : ((copyExp G ((v0, w0) :: R) d0 n).getD i (0, 0)).2
+              = (M0.getD (G.length + t) (0, 0)).2 := by
+            rw [show i = G.length + (k * ((v0, w0) :: R).length + t) by omega,
+              hWcopy k t hk (by omega)]
+          have hc1 := hWcopy k (t + 1) hk (by omega)
+          rw [show G.length + (k * ((v0, w0) :: R).length + (t + 1)) = i + 1 by omega,
+            show G.length + (t + 1) = G.length + t + 1 by omega] at hc1
+          have hc2 := hWcopy k (t + 2) hk (by omega)
+          rw [show G.length + (k * ((v0, w0) :: R).length + (t + 2)) = i + 2 by omega,
+            show G.length + (t + 2) = G.length + t + 2 by omega] at hc2
+          have A1f : ((copyExp G ((v0, w0) :: R) d0 n).getD (i + 1) (0, 0)).1
+              = (M0.getD (G.length + t + 1) (0, 0)).1 + k * d0 := by rw [hc1]
+          have A1s : ((copyExp G ((v0, w0) :: R) d0 n).getD (i + 1) (0, 0)).2
+              = (M0.getD (G.length + t + 1) (0, 0)).2 := by rw [hc1]
+          have A2f : ((copyExp G ((v0, w0) :: R) d0 n).getD (i + 2) (0, 0)).1
+              = (M0.getD (G.length + t + 2) (0, 0)).1 + k * d0 := by rw [hc2]
+          have A2s : ((copyExp G ((v0, w0) :: R) d0 n).getD (i + 2) (0, 0)).2
+              = (M0.getD (G.length + t + 2) (0, 0)).2 := by rw [hc2]
+          obtain ⟨h1, h2, h3, h4⟩ := hadj
+          rw [A0f, A1f] at h1
+          rw [A1f, A2f] at h2
+          rw [A1s, A0s] at h3
+          rw [A2s, A1s] at h4
+          unfold adj3
+          exact ⟨by omega, by omega, h3, h4⟩
+        · -- コピーの境をまたぐ
+          have hkn : k + 1 < n := by
+            by_contra hcon
+            have hle : n ≤ k + 1 := by omega
+            have hmul : n * ((v0, w0) :: R).length
+                ≤ (k + 1) * ((v0, w0) :: R).length := Nat.mul_le_mul hle (le_refl _)
+            omega
+          have C1f : ((copyExp G ((v0, w0) :: R) d0 n).getD
+                (G.length + ((k + 1) * ((v0, w0) :: R).length + 0)) (0, 0)).1
+              = v0 + (k + 1) * d0 := by
+            rw [hWcopy (k + 1) 0 hkn (by omega), hMhead]
+          have C1s : ((copyExp G ((v0, w0) :: R) d0 n).getD
+                (G.length + ((k + 1) * ((v0, w0) :: R).length + 0)) (0, 0)).2 = w0 := by
+            rw [hWcopy (k + 1) 0 hkn (by omega), hMhead]
+          have Lf : ((copyExp G ((v0, w0) :: R) d0 n).getD
+                (G.length + (k * ((v0, w0) :: R).length
+                  + (((v0, w0) :: R).length - 1))) (0, 0)).1
+              = (M0.getD (G.length + (((v0, w0) :: R).length - 1)) (0, 0)).1 + k * d0 := by
+            rw [hWcopy k (((v0, w0) :: R).length - 1) hk (by omega)]
+          have Ls : ((copyExp G ((v0, w0) :: R) d0 n).getD
+                (G.length + (k * ((v0, w0) :: R).length
+                  + (((v0, w0) :: R).length - 1))) (0, 0)).2
+              = (M0.getD (G.length + (((v0, w0) :: R).length - 1)) (0, 0)).2 := by
+            rw [hWcopy k (((v0, w0) :: R).length - 1) hk (by omega)]
+          have hd0e : (k + 1) * d0 = k * d0 + d0 := by rw [Nat.succ_mul]
+          by_cases htA : t + 1 = ((v0, w0) :: R).length
+          · rw [show G.length + (k * ((v0, w0) :: R).length
+                + (((v0, w0) :: R).length - 1)) = i by omega] at Lf Ls
+            rw [show G.length + ((k + 1) * ((v0, w0) :: R).length + 0) = i + 1 by
+              omega] at C1f C1s
+            obtain ⟨h1, -, h3, -⟩ := hadj
+            rw [Lf, C1f] at h1
+            rw [C1s, Ls] at h3
+            have := hkey (by omega)
+            omega
+          · have htB : t + 2 = ((v0, w0) :: R).length := by omega
+            rw [show G.length + (k * ((v0, w0) :: R).length
+                + (((v0, w0) :: R).length - 1)) = i + 1 by omega] at Lf Ls
+            rw [show G.length + ((k + 1) * ((v0, w0) :: R).length + 0) = i + 2 by
+              omega] at C1f C1s
+            obtain ⟨-, h2, -, h4⟩ := hadj
+            rw [Lf, C1f] at h2
+            rw [C1s, Ls] at h4
+            have := hkey (by omega)
+            omega
+  · rw [oper_eq_pred_of_noParent n hL hz hp, hPred]; exact noAdj3_take _ ih
+
+/-! ## 4.29 深さを一様に下げる（`blockok` の一般化を `blockok_oper` から借りる）
+
+`blockok_oper`（`Pair/Seqlex.lean`）は `blockok 0` にしか使えない。段 > 0 の
+ブロックでは `shiftl0` で深さを `bd` だけ下げてから使い、`oper_shiftr0` で戻す。 -/
+
+/-- 深さを一様に下げる。 -/
+def shiftl0 (t : ℕ) : PairSeq → PairSeq := List.map fun p => (p.1 - t, p.2)
+
+@[simp] theorem length_shiftl0 (t : ℕ) (M : PairSeq) :
+    (shiftl0 t M).length = M.length := by unfold shiftl0; simp
+
+theorem getD_shiftl0 {t : ℕ} {M : PairSeq} {j : ℕ} (hj : j < M.length) :
+    (shiftl0 t M).getD j (0, 0) = ((M.getD j (0, 0)).1 - t, (M.getD j (0, 0)).2) := by
+  unfold shiftl0
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_map, List.getElem?_eq_getElem hj]
+  rfl
+
+@[simp] theorem entry_shiftl0_one (t : ℕ) (M : PairSeq) (j : ℕ) :
+    entry (shiftl0 t M) 1 j = entry M 1 j := by
+  by_cases hj : j < M.length
+  · unfold entry
+    rw [if_neg one_ne_zero, if_neg one_ne_zero, getD_shiftl0 hj]
+  · have h1 : (shiftl0 t M).getD j (0, 0) = (0, 0) := by
+      rw [List.getD_eq_getElem?_getD,
+        List.getElem?_eq_none (by rw [length_shiftl0]; omega)]
+      rfl
+    have h2 : M.getD j (0, 0) = (0, 0) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]
+      rfl
+    unfold entry
+    rw [if_neg one_ne_zero, if_neg one_ne_zero, h1, h2]
+
+theorem shiftr0_shiftl0 {t : ℕ} {M : PairSeq} (h : ∀ c ∈ M, t ≤ c.1) :
+    shiftr0 t (shiftl0 t M) = M := by
+  unfold shiftr0 shiftl0
+  rw [List.map_map]
+  conv_rhs => rw [← List.map_id M]
+  refine List.map_congr_left ?_
+  intro c hc
+  have hct := h c hc
+  simp only [Function.comp_apply, id_eq]
+  have he : c.1 - t + t = c.1 := by omega
+  rw [he]
+
+theorem blockok_shiftl0 {bd : ℕ} {M : PairSeq} (hb : blockok bd M) :
+    blockok 0 (shiftl0 bd M) := by
+  refine ⟨?_, fun c _ => Nat.zero_le _, ?_⟩
+  · intro hne
+    have hMne : M ≠ [] := by
+      intro he; rw [he] at hne; exact hne rfl
+    obtain ⟨x, xs, rfl⟩ : ∃ x xs, M = x :: xs := by
+      cases M with
+      | nil => exact absurd rfl hMne
+      | cons x xs => exact ⟨x, xs, rfl⟩
+    have h1 := hb.1 hMne
+    simp only [List.headI_cons] at h1
+    unfold shiftl0
+    simp only [List.map_cons, List.headI_cons]
+    omega
+  · rw [steps1_iff]
+    intro j hj
+    rw [length_shiftl0] at hj
+    rw [getD_shiftl0 (by omega), getD_shiftl0 (by omega)]
+    have h1 := steps1_iff.1 hb.2.2 j hj
+    have h2 : bd ≤ (M.getD j (0, 0)).1 := hb.2.1 _ (getD_mem (by omega))
+    simp only []
+    omega
+
+theorem blockok_shiftr0 {b t : ℕ} {X : PairSeq} (h : blockok b X) :
+    blockok (b + t) (shiftr0 t X) := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro hne
+    have hXne : X ≠ [] := by
+      intro he; rw [he] at hne; exact hne rfl
+    obtain ⟨x, xs, rfl⟩ : ∃ x xs, X = x :: xs := by
+      cases X with
+      | nil => exact absurd rfl hXne
+      | cons x xs => exact ⟨x, xs, rfl⟩
+    have h1 := h.1 hXne
+    simp only [List.headI_cons] at h1
+    rw [shiftr0_cons]
+    simp only [List.headI_cons]
+    omega
+  · intro c hc
+    obtain ⟨q, hq, rfl⟩ := mem_shiftr0.1 hc
+    have := h.2.1 q hq
+    simp only []
+    omega
+  · rw [steps1_iff]
+    intro j hj
+    rw [length_shiftr0] at hj
+    rw [getD_shiftr0 (by omega), getD_shiftr0 (by omega)]
+    have h1 := steps1_iff.1 h.2.2 j hj
+    simp only []
+    omega
+
+/-- **`blockok` は展開で保たれる**（段 > 0、任意の深さ）。 -/
+theorem blockok_oper_gen {bd : ℕ} {M : PairSeq} {n : ℕ} (hb : blockok bd M) (hn : 1 ≤ n)
+    (hlev : 0 < entry M 1 (M.length - 1)) : blockok bd (M⟦n⟧) := by
+  have hM : shiftr0 bd (shiftl0 bd M) = M := shiftr0_shiftl0 hb.2.1
+  have hlev' : 0 < entry (shiftl0 bd M) 1 ((shiftl0 bd M).length - 1) := by
+    rw [length_shiftl0, entry_shiftl0_one]; exact hlev
+  have h0 : blockok 0 ((shiftl0 bd M)⟦n⟧) := blockok_oper (blockok_shiftl0 hb) hn
+  have hkey : M⟦n⟧ = shiftr0 bd ((shiftl0 bd M)⟦n⟧) := by
+    conv_lhs => rw [← hM]
+    exact oper_shiftr0 bd (shiftl0 bd M) n hlev'
+  rw [hkey]
+  have h1 := blockok_shiftr0 (t := bd) h0
+  simpa using h1
+
+/-- 階段の列は「元のブロックの列を深さだけ下げたもの」。 -/
+theorem mem_copies {d : ℕ} {W : PairSeq} {n : ℕ} {x : ℕ × ℕ} (hx : x ∈ copies d W n) :
+    ∃ c ∈ W, ∃ k : ℕ, x = (c.1 + k * d, c.2) := by
+  unfold copies at hx
+  obtain ⟨k, -, hk⟩ := List.mem_flatMap.1 hx
+  obtain ⟨c, hc, hcx⟩ := mem_shiftr0.1 hk
+  exact ⟨c, hc, k, hcx.symm⟩
+
+/-- 2 コピー目以降には余裕がある（頭のコピーだけは深さがずれていない）。 -/
+theorem slackOK_tower {E d0 : ℕ} {p : ℕ × ℕ} {R : PairSeq} (hd0 : 1 ≤ d0)
+    (hp : p.2 ≤ p.1) (hR : slackOK E R) (m : ℕ) :
+    slackOK E (shiftr0 d0 (copies d0 (p :: R) m)) := by
+  intro x hx
+  obtain ⟨y, hy, rfl⟩ := mem_shiftr0.1 hx
+  obtain ⟨c, hc, k, rfl⟩ := mem_copies hy
+  rcases List.mem_cons.1 hc with rfl | hc'
+  · simp only []; omega
+  · have := hR c hc'
+    simp only []
+    omega
+
+/-- 2 コピー目以降は頭より深い。 -/
+theorem deep_tower {d0 : ℕ} {p : ℕ × ℕ} {R : PairSeq} (hd0 : 1 ≤ d0)
+    (hR : ∀ x ∈ R, p.1 < x.1) (m : ℕ) :
+    ∀ x ∈ shiftr0 d0 (copies d0 (p :: R) m), p.1 < x.1 := by
+  intro x hx
+  obtain ⟨y, hy, rfl⟩ := mem_shiftr0.1 hx
+  obtain ⟨c, hc, k, rfl⟩ := mem_copies hy
+  rcases List.mem_cons.1 hc with rfl | hc'
+  · simp only []; omega
+  · have := hR c hc'
+    simp only []
+    omega
+
+/-- **梯子も跳びもない節点の像は深さの平行移動**。 -/
+theorem rdshift {p : ℕ × ℕ} {A : PairSeq} {bd d plev E : ℕ} {first force : Bool}
+    (hb : blockok bd (p :: A)) (hAd : ∀ x ∈ A, p.1 < x.1)
+    (hna : noAdj3 (p :: A)) (hsl : slackOK E A) (hp1 : p.1 = bd)
+    (hHP : hpOK (p :: A) d plev first force)
+    (hlad : ladOf p.2 d plev first force = false)
+    (hE : ddOf p.2 d plev first force = p.1 + E) :
+    convC (p :: A) d plev first force = shiftr0 E (p :: A) := by
+  have hb' : blockok bd (p :: (A ++ [])) := by simpa using hb
+  have hbA : blockok (bd + 1) A := blockok_arg' hb' hp1 hAd
+  have hnaA : noAdj3 A := noAdj3_infix ⟨[p], [], by simp⟩ hna
+  have hAP : argPatOK (p :: A) := argPatOK_of_noAdj3 _ _ (Nat.le_refl _) hna
+  obtain ⟨eA, -⟩ := split_append (X := A) (Y := []) (dd := p.1) hAd (Or.inl rfl)
+  simp only [List.append_nil] at eA
+  obtain ⟨hHA, -, -⟩ := argPatOK_cons.1 hAP
+  rw [eA] at hHA
+  have hHPA : hpOK A (bd + 1 + E) p.2 true (first && (p.2 == plev)) := hpOK_of_headPatOK hHA
+  have hfA : fOK A (bd + 1 + E) p.2 (first && (p.2 == plev)) := by
+    intro hft
+    have hf1 : first = true := by
+      simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.1
+    have hpl : p.2 = plev := by
+      simp only [Bool.and_eq_true, beq_iff_eq] at hft; exact hft.2
+    left
+    intro a s hs
+    have hAne : A ≠ [] := by rw [hs]; simp
+    have hah : A.headI = a := by rw [hs]; simp
+    rcases hHP hf1 with hh | ⟨hd0, hpl0, -⟩
+    · have hkey := hh p A rfl hpl (by rw [eA, hs]; simp)
+      rw [eA, hs] at hkey
+      simpa using hkey
+    · have hlev0 : p.2 = 0 := by rw [hpl, hpl0]
+      have hdd0 : ddOf p.2 d plev first force = 0 := by
+        unfold ddOf
+        rw [if_neg (by rw [hlad]; simp), if_neg (by rintro ⟨h, -⟩; omega)]
+        exact hd0
+      have hE0 : p.1 + E = 0 := by rw [← hE, hdd0]
+      have ha1 : a.1 = bd + 1 := by rw [← hah]; exact hbA.1 hAne
+      have ha2 : a.2 < a.1 + E := hsl a (by rw [hs]; simp)
+      omega
+  have hkey := convC_eq_shift A.length A (Nat.le_refl _) (bd + 1) E p.2 true
+    (first && (p.2 == plev)) hbA hsl hnaA hHPA hfA
+  rw [convC_factor_arg p A d plev first force hAd hlad, hE,
+    show p.1 + E + 1 = (bd + 1) + E by omega, hkey, shiftr0_cons]
+  simp
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -13145,3 +13538,6 @@ end DBMS
 #print axioms DBMS.nextrel1_shiftr0
 #print axioms DBMS.parent_shiftr0
 #print axioms DBMS.oper_shiftr0
+#print axioms DBMS.noAdj3_oper
+#print axioms DBMS.blockok_oper_gen
+#print axioms DBMS.rdshift
