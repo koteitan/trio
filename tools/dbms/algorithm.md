@@ -89,17 +89,7 @@ $`\mathrm{b2t}`$ は深さを捨て、$`\mathrm{t2b}`$ は入れ子の深さか�
 
 **ユニット**とは「$`p`$ そのもの 1 本とその引数ブロック」であり、$`\mathrm{u}_p(B)`$ は $`B`$ の先頭から取れるユニットの総列数である。
 
-### 4.2 場合分け
-
-```
-Γ[f,φ][d,ℓ](M)
-├─ M = ε ································· (i)
-└─ M = p⌢r
-   ├─ λ = ⊤
-   │  ├─ κ = ⊤  縮約 ······················ (ii)
-   │  └─ κ = ⊥  梯子 ······················ (iii)
-   └─ λ = ⊥     素通り・跳び ·············· (iv)
-```
+### 4.2 記号
 
 $`M = p \frown r`$ のとき
 
@@ -114,12 +104,12 @@ s := p_1, \qquad A := \mathrm{arg}_p(r), \qquad B := \mathrm{sib}_p(r)
 ```math
 d' := \begin{cases}
   d + 1 & (\lambda) \cr
-  s + 1 & (\lnot\lambda \land 0 < s \land d \le s) \cr
+  s + 1 & (\lnot\lambda \land 0 \lt s \land d \le s) \cr
   d & (\text{otherwise})
 \end{cases}
 ```
 
-縮約の条件 $`\kappa`$ は $`\lambda = \top`$ のもとで次で定める。
+さらに $`\lambda = \top`$ のとき
 
 ```math
 U := B[0,\ \mathrm{u}_p(B)), \qquad
@@ -127,7 +117,7 @@ B^{\ast} := B[\mathrm{u}_p(B),\ |B|), \qquad
 \pi := \bigl((p_0+1,\ p_1)\bigr) \frown \sigma(A) \frown \sigma(U)
 ```
 
-$`B^{\ast} = q \frown r^{\ast}`$ と書けるとき
+とおき、$`B^{\ast} = q \frown r^{\ast}`$ と書けるとき
 
 ```math
 \alpha := \mathrm{arg}_q(r^{\ast}), \qquad
@@ -138,39 +128,51 @@ R := \alpha[\,|\pi|,\ |\alpha|)
 ```math
 \kappa := (B^{\ast} \ne \varepsilon) \land (q_1 + 1 = s) \land (q_0 = p_0)
   \land \bigl(\alpha[0, |\pi|) = \pi\bigr) \land (R \ne \varepsilon)
-  \land (R_{0,0} = p_0 + 1) \land (R_{0,1} < s)
+  \land (R_{0,0} = p_0 + 1) \land (R_{0,1} \lt s)
 ```
 
-### 4.3 各枝の値
+とおく。
 
-```math
-\text{(i)} \qquad \Gamma^{f,\varphi}_{d,\ell}(\varepsilon) = \varepsilon
-```
+### 4.3 場合分け
 
-```math
-\text{(ii)} \qquad \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
-  \bigl((d,\ell),\ (d+1,s)\bigr)
-  \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
-  \frown \Gamma^{\bot,\bot}_{d+1,\ s}(U)
-  \frown \Gamma^{\bot,\bot}_{d+1,\ s}(R)
-  \frown \Gamma^{\bot,\bot}_{d,\ s}(\beta)
-```
+- $`M = \varepsilon`$ の場合:
 
-```math
-\text{(iii)} \qquad \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
-  \bigl((d,\ell),\ (d+1,s)\bigr)
-  \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
-  \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
-```
+  ```math
+  \Gamma^{f,\varphi}_{d,\ell}(\varepsilon) = \varepsilon
+  ```
 
-```math
-\text{(iv)} \qquad \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
-  \bigl((d',\ s)\bigr)
-  \frown \Gamma^{\top,\ f \land (s = \ell)}_{d'+1,\ s}(A)
-  \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
-```
+- $`M = p \frown r`$ の場合:
+  - $`\lambda = \top`$ の場合（梯子を立てる）:
+    - $`\kappa = \top`$ の場合（縮約する）:
 
-(iii) の $`\bigl((d,\ell),(d+1,s)\bigr)`$ が**梯子**である。$`(d,\ell)`$ は段が親と同じなので木には残らない足場（影）で、$`(d+1,s)`$ が本体。(ii) では $`q`$ とその前置き $`\pi`$ をまるごと書かずに中身だけを続ける。これが**縮約**であり、DBMS では 1 本の柱が 2 つの節点を兼ねられることに対応する[^1]。
+      ```math
+      \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
+        \bigl((d,\ell),\ (d+1,s)\bigr)
+        \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
+        \frown \Gamma^{\bot,\bot}_{d+1,\ s}(U)
+        \frown \Gamma^{\bot,\bot}_{d+1,\ s}(R)
+        \frown \Gamma^{\bot,\bot}_{d,\ s}(\beta)
+      ```
+
+    - $`\kappa = \bot`$ の場合（縮約しない）:
+
+      ```math
+      \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
+        \bigl((d,\ell),\ (d+1,s)\bigr)
+        \frown \Gamma^{\top,\bot}_{d+2,\ s}(A)
+        \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
+      ```
+
+  - $`\lambda = \bot`$ の場合（素通り、または段へ跳ぶ）:
+
+    ```math
+    \Gamma^{f,\varphi}_{d,\ell}(p \frown r) =
+      \bigl((d',\ s)\bigr)
+      \frown \Gamma^{\top,\ f \land (s = \ell)}_{d'+1,\ s}(A)
+      \frown \Gamma^{\bot,\bot}_{d,\ s}(B)
+    ```
+
+$`\lambda = \top`$ で書かれる $`\bigl((d,\ell),(d+1,s)\bigr)`$ が**梯子**である。$`(d,\ell)`$ は段が親と同じなので木には残らない足場（影）で、$`(d+1,s)`$ が本体。$`\kappa = \top`$ の場合は $`q`$ とその前置き $`\pi`$ をまるごと書かずに中身だけを続ける。これが**縮約**であり、DBMS では 1 本の柱が 2 つの節点を兼ねられることに対応する[^1]。
 
 ## 5. $`\mathrm{d2t} : \mathrm{Seq} \to \mathcal{T}`$
 
@@ -180,24 +182,16 @@ R := \alpha[\,|\pi|,\ |\alpha|)
 \mathrm{d2t}(l) := \Delta^{\top}_{0}(l,\ Z)
 ```
 
-### 5.1 場合分け
+### 5.1 記号
 
-```
-Δ[f][ℓ](l, k)
-├─ l = ε ·································· (I)
-└─ l = p⌢rest
-   ├─ μ = ⊥     素通り ···················· (II)
-   └─ μ = ⊤,  rest = t⌢tail
-      ├─ ν = ⊥  影を捨てる ················ (III)
-      └─ ν = ⊤  二役をほどく ·············· (IV)
-```
+$`l = p \frown \mathit{rest}`$ のとき
 
 ```math
 \mu := f \land (p_1 = \ell) \land (\mathit{rest} \ne \varepsilon)
   \land \bigl(\mathit{rest}_0 = (p_0 + 1,\ p_1 + 1)\bigr)
 ```
 
-$`\mu = \top`$ のとき $`\mathit{rest} = t \frown \mathit{tail}`$ と書き
+さらに $`\mu = \top`$ のとき $`\mathit{rest} = t \frown \mathit{tail}`$ と書き
 
 ```math
 a := \mathrm{arg}_t(\mathit{tail}), \qquad
@@ -207,40 +201,52 @@ R := c[\mathrm{u}_t(c),\ |c|)
 ```
 
 ```math
-\nu := (R \ne \varepsilon) \land (R_{0,0} = t_0) \land (R_{0,1} < t_1)
+\nu := (R \ne \varepsilon) \land (R_{0,0} = t_0) \land (R_{0,1} \lt t_1)
 ```
 
 ```math
 R^{-} := R[0, m), \qquad R^{+} := R[m, |R|), \qquad
-m := \min \{\, i \le |R| \mid i = |R| \lor R_{i,0} < t_0 \,\}
+m := \min \{\, i \le |R| \mid i = |R| \lor R_{i,0} \lt t_0 \,\}
 ```
 
-### 5.2 各枝の値
+とおく。
 
-```math
-\text{(I)} \qquad \Delta^{f}_{\ell}(\varepsilon,\ k) = k
-```
+### 5.2 場合分け
 
-```math
-\text{(II)} \qquad \Delta^{f}_{\ell}(p \frown \mathit{rest},\ k) =
-  P\bigl(p_1;\ \Delta^{\top}_{p_1}(\mathrm{arg}_p(\mathit{rest}),\ Z),\
-  \Delta^{\bot}_{p_1}(\mathrm{sib}_p(\mathit{rest}),\ k)\bigr)
-```
+- $`l = \varepsilon`$ の場合:
 
-```math
-\text{(III)} \qquad \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
-  P\bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\ \Delta^{\bot}_{t_1}(c,\ k)\bigr)
-```
+  ```math
+  \Delta^{f}_{\ell}(\varepsilon,\ k) = k
+  ```
 
-```math
-\text{(IV)} \qquad \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
-  P\Bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\
-  \Delta^{\bot}_{t_1}\bigl(S,\
-    P\bigl(p_1;\ \Delta^{\top}_{p_1}(t \frown a \frown S \frown R^{-},\ Z),\
-    \Delta^{\bot}_{\ell}(R^{+},\ k)\bigr)\bigr)\Bigr)
-```
+- $`l = p \frown \mathit{rest}`$ の場合:
+  - $`\mu = \bot`$ の場合（素通り）:
 
-(III) で $`p`$（影）が消える。(IV) では 1 本の柱 $`t`$ が段 $`t_1`$ の節点と段 $`p_1`$ の節点を兼ねているので、$`t \frown a \frown S \frown R^{-}`$ を組み直して読み直すことで 2 つに戻す。継続 $`k`$ が要るのは、DBMS 行列で横に並ぶ兄弟が木の上では別の場所に来るためである。
+    ```math
+    \Delta^{f}_{\ell}(p \frown \mathit{rest},\ k) =
+      P\bigl(p_1;\ \Delta^{\top}_{p_1}(\mathrm{arg}_p(\mathit{rest}),\ Z),\
+      \Delta^{\bot}_{p_1}(\mathrm{sib}_p(\mathit{rest}),\ k)\bigr)
+    ```
+
+  - $`\mu = \top`$ の場合（$`p`$ は影）:
+    - $`\nu = \bot`$ の場合（影を捨てるだけ）:
+
+      ```math
+      \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
+        P\bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\ \Delta^{\bot}_{t_1}(c,\ k)\bigr)
+      ```
+
+    - $`\nu = \top`$ の場合（二役をほどく）:
+
+      ```math
+      \Delta^{f}_{\ell}(p \frown t \frown \mathit{tail},\ k) =
+        P\Bigl(t_1;\ \Delta^{\top}_{t_1}(a,\ Z),\
+        \Delta^{\bot}_{t_1}\bigl(S,\
+          P\bigl(p_1;\ \Delta^{\top}_{p_1}(t \frown a \frown S \frown R^{-},\ Z),\
+          \Delta^{\bot}_{\ell}(R^{+},\ k)\bigr)\bigr)\Bigr)
+      ```
+
+$`\mu = \top`$ で $`p`$（影）が消える。$`\nu = \top`$ の場合は 1 本の柱 $`t`$ が段 $`t_1`$ の節点と段 $`p_1`$ の節点を兼ねているので、$`t \frown a \frown S \frown R^{-}`$ を組み直して読み直すことで 2 つに戻す。継続 $`k`$ が要るのは、DBMS 行列で横に並ぶ兄弟が木の上では別の場所に来るためである。
 
 ## 6. 定理
 
@@ -301,7 +307,7 @@ M = \bigl((0,0),(1,1)\bigr), \qquad \mathrm{b2d}(M) = \bigl((0,0),(1,0),(2,1)\bi
 \end{aligned}
 ```
 
-$`(1,1)`$ は $`\mathrm{ST}_{\mathrm{D}}`$ に置けないので段 1 を深さ 2 へ押し下げ、足場 $`(1,0)`$ を挟む。$`\mathrm{d2t}`$ の (III) がその足場を捨てる。
+$`(1,1)`$ は $`\mathrm{ST}_{\mathrm{D}}`$ に置けないので段 1 を深さ 2 へ押し下げ、足場 $`(1,0)`$ を挟む。$`\mathrm{d2t}`$ の「$`\nu = \bot`$ の場合」がその足場を捨てる。
 
 ### 7.2 縮約
 
@@ -317,7 +323,7 @@ M = \bigl((0,0),(1,1),(1,0),(2,1),(2,0)\bigr), \qquad
 \end{aligned}
 ```
 
-節点が 5 個から 4 個に減る。$`\mathrm{d2t}`$ の (IV) が 1 本の柱を 2 つの節点にほどいて $`\mathrm{b2t}(M)`$ を復元する。
+節点が 5 個から 4 個に減る。$`\mathrm{d2t}`$ の「$`\nu = \top`$ の場合」が 1 本の柱を 2 つの節点にほどいて $`\mathrm{b2t}(M)`$ を復元する。
 
 ## 8. 実装との対応
 
@@ -347,7 +353,7 @@ CLI は [`bms2dbms.py`](bms2dbms.py)、使い方は [README.md](README.md)。
 ## 注釈
 
 [^1]: (R) を無条件に証明するのが全体で最も重く、`DbmsStd.lean` は 15471 行になった。
-    素直に閉じないのは (ii) の縮約の枝だけで、(iii) と (iv) は右端の道に沿った帰納で片付く。
+    素直に閉じないのは $`\kappa = \top`$（縮約）の枝だけで、残りは右端の道に沿った帰納で片付く。
     経緯は [`lean/DBMS-STD-PLAN.md`](../../lean/DBMS-STD-PLAN.md) に残してある。
 
 [^2]: 命名について。この文書では変換を $`\mathrm{src2dst}`$ の形で呼ぶ。
