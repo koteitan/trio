@@ -13906,6 +13906,205 @@ theorem rdNode_lad {p : ℕ × ℕ} {A : PairSeq} {d plev : ℕ} {first force : 
   rw [hcop]
   exact hCBn
 
+/-! ## 4.36 根 `(0,0)` で引数の頭が `(1,1)` の場合の像
+
+`ddOf` は跳ばない（段 0）ので頭の像は `(0,0)` のまま。引数ブロックの頭 `(1,1)` で
+梯子が立ち、そこから先は `convC_lad_shift` で深さが 1 ずれる。 -/
+
+theorem convC_root_shift {A : PairSeq} {plev : ℕ} {first force : Bool}
+    (hAne : A ≠ [])
+    (hb : blockok 0 (((0, 0) : ℕ × ℕ) :: A)) (hcol : colOK (((0, 0) : ℕ × ℕ) :: A))
+    (hna : noAdj3 (((0, 0) : ℕ × ℕ) :: A))
+    (hAd : ∀ x ∈ A, 0 < x.1)
+    (hdg : diagOK 1 A) (hhd : (A.headI).2 = 1) :
+    convC (((0, 0) : ℕ × ℕ) :: A) 0 plev first force
+      = ((0, 0) : ℕ × ℕ) :: shiftr0 1 (((0, 0) : ℕ × ℕ) :: A) := by
+  have hlad : ladOf ((0, 0) : ℕ × ℕ).2 0 plev first force = false := by
+    unfold ladOf; simp
+  have hdd : ddOf ((0, 0) : ℕ × ℕ).2 0 plev first force = 0 := by
+    unfold ddOf
+    rw [if_neg (by rw [hlad]; simp), if_neg (by rintro ⟨h, -⟩; simp at h)]
+  have hcolA : colOK A := fun x hx => hcol x (List.mem_cons_of_mem _ hx)
+  have hnaA : noAdj3 A := noAdj3_infix ⟨[((0, 0) : ℕ × ℕ)], [], by simp⟩ hna
+  have hbA : blockok 1 A := by
+    have h := blockok_arg' (p := ((0, 0) : ℕ × ℕ)) (A := A) (B := ([] : PairSeq))
+      (by rw [List.append_nil]; exact hb) rfl hAd
+    simpa using h
+  obtain ⟨a, rest, hArest⟩ : ∃ a rest, A = a :: rest := by
+    cases hA : A with
+    | nil => exact absurd hA hAne
+    | cons a rest => exact ⟨a, rest, rfl⟩
+  obtain ⟨A', T', hAT, hA'd, hT'h⟩ := split_takeWhile a rest
+  have hAeq : A = a :: (A' ++ T') := by rw [hArest, hAT]
+  have ha2 : a.2 = 1 := by rw [← hhd, hArest]; simp
+  have hlad2 : ladOf a.2 1 0 true (first && (((0, 0) : ℕ × ℕ).2 == plev)) = true := by
+    unfold ladOf; rw [ha2]; simp
+  have hkey : convC A 1 0 true (first && (((0, 0) : ℕ × ℕ).2 == plev))
+      = (1, 0) :: shiftr0 1 A := by
+    have h := convC_lad_shift (p := a) (A := A') (T := T') (bd := 1) (plev := 0)
+      (first := true) (force := (first && (((0, 0) : ℕ × ℕ).2 == plev)))
+      (by rw [← hAeq]; exact hbA) (by rw [← hAeq]; exact hcolA)
+      (by rw [← hAeq]; exact hnaA) (by rw [← hAeq]; exact hdg) (Nat.le_refl 1)
+      hA'd hT'h hlad2
+    rw [← hAeq] at h
+    exact h
+  rw [convC_factor_arg ((0, 0) : ℕ × ℕ) A 0 plev first force hAd hlad, hdd]
+  simp only [Nat.zero_add]
+  rw [hkey, shiftr0_cons]
+  simp
+
+/-! ## 4.37 `RDnode` の跳びの場合（末尾列の深さが 2 以上） -/
+
+theorem rdNode_jmp {A : PairSeq} {plev : ℕ} {first force : Bool}
+    (hAne : A ≠ [])
+    (hb : blockok 0 (((0, 0) : ℕ × ℕ) :: A)) (hcol : colOK (((0, 0) : ℕ × ℕ) :: A))
+    (hdesc : descOK (((0, 0) : ℕ × ℕ) :: A))
+    (hna : noAdj3 (((0, 0) : ℕ × ℕ) :: A))
+    (hAd : ∀ x ∈ A, 0 < x.1) (hhd : (A.headI).2 = 1)
+    (hlev : 0 < entry (((0, 0) : ℕ × ℕ) :: A) 1
+      ((((0, 0) : ℕ × ℕ) :: A).length - 1))
+    (hpar : hasParent (((0, 0) : ℕ × ℕ) :: A) 1
+      ((((0, 0) : ℕ × ℕ) :: A).length - 1))
+    (hj0 : parent (((0, 0) : ℕ × ℕ) :: A) 1
+      ((((0, 0) : ℕ × ℕ) :: A).length - 1) = 0)
+    (hd02 : 2 ≤ (A.getLastD (0, 0)).1)
+    (n : ℕ) (hn : 1 ≤ n) :
+    (convC (((0, 0) : ℕ × ℕ) :: A) 0 plev first force)⟦n⟧
+      = convC ((((0, 0) : ℕ × ℕ) :: A)⟦n⟧) 0 plev first force := by
+  have hA1 : 1 ≤ A.length := List.length_pos_of_ne_nil hAne
+  have hBlen : (((0, 0) : ℕ × ℕ) :: A).length - 1 = A.length - 1 + 1 := by
+    simp only [List.length_cons]; omega
+  have hnr : nextrel1 (((0, 0) : ℕ × ℕ) :: A) 0
+      ((((0, 0) : ℕ × ℕ) :: A).length - 1) := nextrel1_of_parent_zero hpar hj0
+  have hcolA : colOK A := fun x hx => hcol x (List.mem_cons_of_mem _ hx)
+  have hnaA : noAdj3 A := noAdj3_infix ⟨[((0, 0) : ℕ × ℕ)], [], by simp⟩ hna
+  have hbA : blockok 1 A := by
+    have h := blockok_arg' (p := ((0, 0) : ℕ × ℕ)) (A := A) (B := ([] : PairSeq))
+      (by rw [List.append_nil]; exact hb) rfl hAd
+    simpa using h
+  have hdescA : descOK A := by
+    obtain ⟨eA, -⟩ := split_append (X := A) (Y := ([] : PairSeq))
+      (dd := ((0, 0) : ℕ × ℕ).1) hAd (Or.inl rfl)
+    simp only [List.append_nil] at eA
+    obtain ⟨-, hdA, -⟩ := descOK_cons.1 hdesc
+    rw [eA] at hdA; exact hdA
+  -- 引数ブロックの側の段
+  have hentA : entry (((0, 0) : ℕ × ℕ) :: A) 1 ((((0, 0) : ℕ × ℕ) :: A).length - 1)
+      = entry A 1 (A.length - 1) := by
+    rw [hBlen, entry_cons_succ]
+  have hlevA : 0 < entry A 1 (A.length - 1) := by rw [← hentA]; exact hlev
+  -- `diagOK 1 A`
+  have hminA : ∀ k, le0 A k (A.length - 1) →
+      entry A 1 (A.length - 1) ≤ entry A 1 k := by
+    intro k hk
+    have hlift := le0_append_right_of [((0, 0) : ℕ × ℕ)] A hk
+    have heq : ([((0, 0) : ℕ × ℕ)] : PairSeq) ++ A = ((0, 0) : ℕ × ℕ) :: A := by simp
+    rw [heq] at hlift
+    have hl1 : ([((0, 0) : ℕ × ℕ)] : PairSeq).length = 1 := by simp
+    rw [hl1] at hlift
+    have hidx : 1 + (A.length - 1) = (((0, 0) : ℕ × ℕ) :: A).length - 1 := by
+      simp only [List.length_cons]; omega
+    rw [hidx] at hlift
+    have hmin := hnr.2.2.2.2.2 (1 + k) ⟨by omega, hlift⟩
+    rw [hentA] at hmin
+    have he : entry (((0, 0) : ℕ × ℕ) :: A) 1 (1 + k) = entry A 1 k := by
+      rw [show 1 + k = k + 1 by omega, entry_cons_succ]
+    rw [he] at hmin
+    exact hmin
+  have hdgA : diagOK 1 A :=
+    diagOK_of_min A.length A (Nat.le_refl _) 1 (entry A 1 (A.length - 1))
+      hbA hcolA hdescA (fun _ => hhd) (by omega) hminA
+  have hCB := convC_root_shift (plev := plev) (first := first) (force := force)
+    hAne hb hcol hna hAd hdgA hhd
+  -- 展開後
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have hlmem : A.getLastD (0, 0) ∈ A := getLastD_mem hAne _
+  have hd01 : 1 ≤ (A.getLastD (0, 0)).1 - ((0, 0) : ℕ × ℕ).1 := by
+    simp only []; omega
+  have hcop : (((0, 0) : ℕ × ℕ) :: A)⟦m + 1⟧
+      = ((0, 0) : ℕ × ℕ) :: (A.dropLast
+          ++ shiftr0 ((A.getLastD (0, 0)).1 - ((0, 0) : ℕ × ℕ).1)
+              (copies ((A.getLastD (0, 0)).1 - ((0, 0) : ℕ × ℕ).1)
+                (((0, 0) : ℕ × ℕ) :: A.dropLast) m)) := by
+    rw [rdNode_bms_shape hAne hlev hpar hj0 (m + 1), copies_succ_front, List.cons_append]
+  set R := A.dropLast with hRd
+  set d0 := (A.getLastD (0, 0)).1 - ((0, 0) : ℕ × ℕ).1 with hd0d
+  set Z := shiftr0 d0 (copies d0 (((0, 0) : ℕ × ℕ) :: R) m) with hZd
+  have hd0e : d0 = (A.getLastD (0, 0)).1 := by rw [hd0d]; simp
+  have hRsub : ∀ x ∈ R, x ∈ A := fun x hx => (List.dropLast_sublist A).subset hx
+  have hRd' : ∀ x ∈ R, ((0, 0) : ℕ × ℕ).1 < x.1 := fun x hx => hAd x (hRsub x hx)
+  have hRne : R ≠ [] := by
+    intro he
+    have hA1' : A.length = 1 := by
+      have : R.length = A.length - 1 := by rw [hRd]; simp
+      rw [he] at this; simp only [List.length_nil] at this; omega
+    obtain ⟨lp, hlp⟩ := List.length_eq_one_iff.1 hA1'
+    have : (A.getLastD (0, 0)).1 = 1 := by
+      rw [hlp]
+      have := hbA.1 (by rw [hlp]; simp)
+      rw [hlp] at this
+      simpa using this
+    omega
+  have hAdn : ∀ x ∈ R ++ Z, ((0, 0) : ℕ × ℕ).1 < x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with h | h
+    · exact hRd' x h
+    · exact deep_tower hd01 hRd' m x h
+  have hZdeep : ∀ x ∈ Z, d0 ≤ x.1 := by
+    intro x hx
+    obtain ⟨y, hy, rfl⟩ := mem_shiftr0.1 hx
+    simp only []
+    omega
+  have hbn : blockok 0 (((0, 0) : ℕ × ℕ) :: (R ++ Z)) := by
+    have h := blockok_oper_gen hb (Nat.le_add_left 1 m) hlev
+    rwa [hcop] at h
+  have hnan : noAdj3 (((0, 0) : ℕ × ℕ) :: (R ++ Z)) := by
+    have h := noAdj3_oper hna (m + 1) (Nat.le_add_left 1 m)
+    rwa [hcop] at h
+  have hcoln : colOK (((0, 0) : ℕ × ℕ) :: (R ++ Z)) := by
+    have hcW : colOK (((0, 0) : ℕ × ℕ) :: R) := by
+      intro x hx
+      rcases List.mem_cons.1 hx with rfl | hx'
+      · simp
+      · exact hcolA x (hRsub x hx')
+    intro x hx
+    rcases List.mem_cons.1 hx with rfl | hx'
+    · simp
+    · rcases List.mem_append.1 hx' with h | h
+      · exact hcolA x (hRsub x h)
+      · obtain ⟨y, hy, rfl⟩ := mem_shiftr0.1 h
+        obtain ⟨c, hc, k, rfl⟩ := mem_copies hy
+        have := hcW c hc
+        simp only []
+        omega
+  have hdgn : diagOK 1 (R ++ Z) := by
+    intro c hc hc1
+    rcases List.mem_append.1 hc with h | h
+    · exact hdgA c (hRsub c h) hc1
+    · have := hZdeep c h; omega
+  have hhdn : ((R ++ Z).headI).2 = 1 := by
+    obtain ⟨a, s, has⟩ : ∃ a s, R = a :: s := by
+      cases hR : R with
+      | nil => exact absurd hR hRne
+      | cons a s => exact ⟨a, s, rfl⟩
+    have hAh : A.headI = a := headI_of_dropLast (by rw [← hRd, has])
+    rw [has]
+    simp only [List.cons_append, List.headI_cons]
+    rw [← hAh]; exact hhd
+  have hAnne : R ++ Z ≠ [] := by
+    intro he
+    have : R = [] := by
+      cases hR : R with
+      | nil => rfl
+      | cons a s => rw [hR] at he; simp at he
+    exact hRne this
+  have hCBn := convC_root_shift (plev := plev) (first := first) (force := force)
+    hAnne hbn hcoln hnan hAdn hdgn hhdn
+  refine rdNode_shift1 (x := ((0, 0) : ℕ × ℕ)) (m + 1) hAne
+    (fun c hc => by have := hb.2.1 c hc; omega) hlev hnr (Nat.le_refl _) ?_ hCB ?_
+  · exact hlev
+  · rw [hcop]; exact hCBn
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -14156,3 +14355,5 @@ end DBMS
 #print axioms DBMS.oper_cons_shallow
 #print axioms DBMS.rdNode_shift1
 #print axioms DBMS.rdNode_lad
+#print axioms DBMS.convC_root_shift
+#print axioms DBMS.rdNode_jmp
