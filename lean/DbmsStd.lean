@@ -9611,6 +9611,99 @@ theorem ST_D_conC_holds_of_res6 (Hc : CtrRes) (Hp : CtrPres2) (H0 : RDzeroStop2)
     (Hn : RDnopar) (Hd : RDnode) {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
   ST_D_conC (reindexD_holds_of_res6 Hc Hp H0 Hn Hd) hM
 
+/-- **段 0 の Stop（コピー regime）の形**。縮約が発火して `Bq = []`、
+しかも末尾列の親が縮約の内側にあるなら、親はかならず `q` の位置で、
+展開は `q` から末尾列の 1 つ手前までのコピーの並びになる。 -/
+theorem zeroStop_shape {p q : ℕ × ℕ} {A U pre rest2 : PairSeq} {bd : ℕ}
+    (hb : blockok bd (p :: (A ++ (U ++ q :: (pre ++ rest2)))))
+    (hp1 : p.1 = bd) (hq1 : q.1 = p.1)
+    (hpd : ∀ x ∈ pre, p.1 < x.1) (hrd : ∀ x ∈ rest2, p.1 < x.1)
+    (hrne : rest2 ≠ []) (hrh1 : (rest2.headI).1 = p.1 + 1)
+    (hlev : entry (p :: (A ++ (U ++ q :: (pre ++ rest2)))) 1
+      ((p :: (A ++ (U ++ q :: (pre ++ rest2)))).length - 1) = 0)
+    (hpar : hasParent (p :: (A ++ (U ++ q :: (pre ++ rest2)))) 0
+      ((p :: (A ++ (U ++ q :: (pre ++ rest2)))).length - 1))
+    (hge : ¬ ((p :: (A ++ (U ++ q :: pre))).length
+        ≤ parent (p :: (A ++ (U ++ q :: (pre ++ rest2)))) 0
+            ((p :: (A ++ (U ++ q :: (pre ++ rest2)))).length - 1))) :
+    parent (p :: (A ++ (U ++ q :: (pre ++ rest2)))) 0
+          ((p :: (A ++ (U ++ q :: (pre ++ rest2)))).length - 1) = (p :: (A ++ U)).length
+      ∧ ∀ n : ℕ, (p :: (A ++ (U ++ q :: (pre ++ rest2))))⟦n⟧
+          = (p :: (A ++ U))
+            ++ (List.replicate n (q :: (pre ++ rest2.dropLast))).flatten := by
+  obtain ⟨r0, lp, rfl⟩ : ∃ r0 lp, rest2 = r0 ++ [lp] :=
+    ⟨rest2.dropLast, rest2.getLast hrne, (List.dropLast_append_getLast hrne).symm⟩
+  simp only [List.dropLast_concat]
+  obtain ⟨G0, hG0⟩ : ∃ G0, G0 = p :: (A ++ U) := ⟨_, rfl⟩
+  obtain ⟨G2, hG2⟩ : ∃ G2, G2 = p :: (A ++ (U ++ q :: pre)) := ⟨_, rfl⟩
+  obtain ⟨B, hBdef⟩ : ∃ B, B = p :: (A ++ (U ++ q :: (pre ++ (r0 ++ [lp])))) := ⟨_, rfl⟩
+  rw [← hBdef] at hb hlev hpar hge
+  rw [← hG2] at hge
+  rw [← hBdef, ← hG0]
+  have hB0 : B = G0 ++ (q :: (pre ++ (r0 ++ [lp]))) := by
+    rw [hBdef, hG0]; simp [List.append_assoc]
+  have hB2 : B = G2 ++ (r0 ++ [lp]) := by rw [hBdef, hG2]; simp [List.append_assoc]
+  have hBsnoc : B = (G0 ++ (q :: (pre ++ r0))) ++ [lp] := by
+    rw [hBdef, hG0]; simp [List.append_assoc]
+  have hlen02 : G2.length = G0.length + 1 + pre.length := by
+    rw [hG0, hG2]; simp only [List.length_cons, List.length_append]; omega
+  have hBlen : B.length = G2.length + (r0.length + 1) := by rw [hB2]; simp
+  have hG0len : 1 ≤ G0.length := by rw [hG0]; simp
+  have hL2 : 1 < B.length := by omega
+  obtain ⟨x, hx⟩ : ∃ x, x = B.length - 1 := ⟨_, rfl⟩
+  rw [← hx] at hpar hge hlev
+  obtain ⟨j0, hj0⟩ : ∃ j0, j0 = parent B 0 x := ⟨_, rfl⟩
+  rw [← hj0] at hge
+  rw [← hx, ← hj0]
+  have hnr0 : nextrel0 B j0 x := by
+    rw [hj0]
+    have h := parent_nextR hpar
+    unfold nextR at h; rw [if_pos rfl] at h; exact h
+  have hxlt : x < B.length := hnr0.2.1
+  have hj0lt : j0 < G2.length := by omega
+  have hlowG0 : ∀ c ∈ G0, bd ≤ c.1 := by
+    intro c hcm; exact hb.2.1 c (by rw [hB0]; exact List.mem_append_left _ hcm)
+  have hle0B : le0 (G0 ++ (q :: (pre ++ (r0 ++ [lp])))) j0 x := by
+    rw [← hB0]
+    exact ⟨hnr0.1, hnr0.2.1, Relation.ReflTransGen.single hnr0⟩
+  have hgeq : G0.length ≤ j0 :=
+    le0_ge_of_append (by simp) hlowG0 (by simp only [List.headI]; omega) hle0B (by omega)
+  have hheadR : entry B 0 G2.length = bd + 1 := by
+    rw [hB2, show G2.length = G2.length + 0 by omega, entry_append_right, entry_zero0]
+    omega
+  have hlt1 : entry B 0 j0 < bd + 1 := by
+    rw [← hheadR]
+    exact le0_interval_gt (Relation.ReflTransGen.single hnr0) G2.length ⟨hj0lt, by omega⟩
+  have hge1 : bd ≤ entry B 0 j0 := by
+    have hj0len : j0 < B.length := hnr0.1
+    have hmem : B.getD j0 (0, 0) ∈ B := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj0len]
+      simpa using List.getElem_mem hj0len
+    rw [entry, if_pos rfl]; exact hb.2.1 _ hmem
+  have hd0 : entry B 0 j0 = bd := by omega
+  have hjq : j0 = G0.length := by
+    by_contra hne
+    obtain ⟨i, hi⟩ : ∃ i, j0 = G0.length + 1 + i := ⟨j0 - G0.length - 1, by omega⟩
+    have hiP : i < pre.length := by omega
+    have hent : entry B 0 j0 = (pre.getD i (0, 0)).1 := by
+      rw [hB0, hi, show G0.length + 1 + i = G0.length + (i + 1) by omega,
+        entry_append_right, entry_cons_succ, entry, if_pos rfl, getD_append_left hiP]
+    have hmemP : pre.getD i (0, 0) ∈ pre := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hiP]
+      simpa using List.getElem_mem hiP
+    have hdp := hpd _ hmemP
+    omega
+  refine ⟨hjq, ?_⟩
+  intro n
+  have hnr0' : nextrel0 B (G0.length) (B.length - 1) := by rw [← hjq, ← hx]; exact hnr0
+  have hrep := oper_repeat_at (M := B) G0.length n hL2 (by rw [← hx]; exact hlev) hnr0'
+  have htake : B.take G0.length = G0 := by rw [hB0]; simp
+  have hdl : B.dropLast.drop G0.length = q :: (pre ++ r0) := by
+    rw [hBsnoc, List.dropLast_concat]
+    simp
+  rw [htake, hdl] at hrep
+  exact hrep
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -9792,3 +9885,4 @@ end DBMS
 #print axioms DBMS.reindexD_pos_of4
 #print axioms DBMS.reindexD_holds_of_res6
 #print axioms DBMS.ST_D_conC_holds_of_res6
+#print axioms DBMS.zeroStop_shape
