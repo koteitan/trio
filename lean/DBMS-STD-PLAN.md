@@ -1109,6 +1109,161 @@ def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 3. `RDnopar`（`convC_dropLast_noParent_aux` の `contrOK` を梯子の位置だけに弱める）。
 4. `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）。
 
+## 2026-08-26（続き 7）: `CtrRes` と `RDnopar` を証明。残余は 2 つ
+
+### 到達点
+
+```
+reindexD_holds_of_res9  : CtrPres2 → RDnode → ReindexD
+ST_D_conC_holds_of_res9 : 同上 → ST_PS M → ST_D (conC M)
+```
+
+`leanman check` は exit 0、`sorry` 0、`sorryAx` なし。`DbmsStd.lean` は 11966 行。
+
+| | 状態 |
+|---|---|
+| `CtrRes`（BMS 標準形は `argCtrOK`） | **証明した**（`ctrRes_holds`） |
+| `RDnopar`（段 > 0・末尾列に行 1 の親がない） | **証明した**（`rdNopar`） |
+| `CtrPres2`（縮約が発火しない状態は展開で保たれる） | 残余（場合 2b が未確定） |
+| `RDnode`（段 > 0・末尾列の親が節点＝ずれたコピー） | 残余 |
+
+### `CtrRes` は `ArgDomCore` の 1 発
+
+`ctrHeadOK` の中身は「縮約の前置きが揃えば、その次の列の段は必ず下がる」。
+節点 `c = (u, w)` の引数ブロックの頭を `p` とすると、`ctrHeadOK` の仮定は
+`p.2 = w + 1`、`steps1` から `p.1 = u + 1`。縮約の前置きが揃うとは
+「兄弟 `q = (u+1, w)` の引数が `contrPre p U A = shiftr0 1 (p :: (A ++ U))` で始まる」。
+
+ここで **`c` と `q` は行 1 の値が同じ `w` で、深さが `u` と `u+1`（`e = 1`）**。
+間の列 `A1 = p :: (A ++ U)` はすべて深さ `≥ u+1` なので `SpineOK A1 (u+1) w` は空虚。
+したがって `ArgDomCore`（`Pair/ArgDom.lean` の `argDomCore_holds`、証明済み）が
+
+```
+sle (q の引数) (shiftr0 1 (A1 ++ q :: (q の引数 ++ A2)))
+```
+
+を与える。`shiftr0 1 A1 = contrPre p U A`（`contrPre_eq_shiftr0`）なので、
+共通の前置き `pre` を `seqlex_append_cancel` で消すと
+
+```
+sle rest2 ((u+2, w) :: …)
+```
+
+が残る。`rest2` の頭の深さは `p.1 + 1 = u+2` なので列辞書式順序から段は `w` 以下、
+`p.2 = w + 1` より `(rest2.headI).2 < p.2`。これが `ctrHeadOK`。
+
+追加した定理: `contrLen'_spec`、`contrLen_eq_of_head_lt`、`ctrHead_lt_core`、
+`ctrHeadOK_arg_of_ST`、`argCtrOK_of_nodes`、`ctrRes_holds`。
+
+### **梯子が立つ条件はほとんど一意**（この節がいちばん再利用できる）
+
+```
+lad_diag       : blockok / colOK / bd ≤ d / fOK + 梯子 ⟹
+                 first = true ∧ d = p.2 ∧ p.2 = p.1 ∧ p.1 = bd ∧ p.2 = plev + 1
+lad_lev_le_one : さらに dpOK を足すと p.2 ≤ 1
+```
+
+理由: 梯子は `d ≤ p.2 ∨ force` を要求し、`force` の場合は `fOK` が
+`d ≤ plev + 1 = p.2` を与える。`colOK` の `p.2 ≤ p.1 = bd ≤ d` と合わせて
+**`d = p.2 = bd = p.1`**。さらに `dpOK` は `first ∧ d = bd` のとき
+`plev = 0 ∨ plev + 1 < bd` を要求するが、`plev + 1 = p.2 = bd` なので後者は偽、
+よって `plev = 0`、すなわち `p.2 = 1`。
+
+つまり **梯子は `p = (1,1)`・`bd = d = 1`・`plev = 0`・`first = true` でしか立たない**。
+実測でも、全不変量を満たす呼び出し（ブロック ≤5 列・`bd ≤ 3`・`plev ≤ 4`）のうち
+梯子が立つ組は `((1,1), bd=1, d=1, plev=0, first=true)` の 1 通りだけだった
+（`force` は両方あり）。根 `(0,0)` の引数ブロックがちょうどこれ。
+
+### `RDnopar`: `contrOK` は本当に偽になりうる
+
+`convC_dropLast_noParent_aux` は `contrOK M`（「縮約が `some ([x], [])` の形で
+発火することがどの接尾辞でも起きない」）を要求するが、これは
+**`RDnopar` の入力で実際に破れる**。反例 `B = (2,2)(2,1)(3,2)(3,1)`:
+`p = (2,2)`, `q = (2,1)`, `pre = [(3,2)]`, `rest2 = [(3,1)]`, `Bq = []` で
+`x = (3,1)`、`x.2 = 1 ≠ 0`。しかもこの `B` は `RDnopar` の仮定を満たす
+（末尾列 `(3,1)` の行 0 の祖先は `(2,1)` だけで段 `1 ≥ 1` なので行 1 の親はない）。
+
+壊れる形は `x.2 < p.2` を要求するので `p.2 ≥ 2` が要る。ところが上の
+`lad_lev_le_one` から**梯子が立つ段では `p.2 ≤ 1`**。したがって壊れる形は
+不変量つきの再帰では決して現れない。そこで `contrOK` を
+
+```
+blockok bd M / colOK M / bd ≤ d / argPatOK M / dpOK bd d plev first /
+hpOK M d plev first force / fOK M d plev force
+```
+
+に置き換えた `convC_dropLast_noParent_aux2` を作った（元の証明の構造そのままで、
+5 か所の再帰に不変量を配る）。配り方:
+
+| 降り先 | パラメタ | 道具 |
+|---|---|---|
+| 引数 `A` | `(bd+1, d+2 または ddOf+1, p.2, true, …)` | `blockok_arg'` / `dpOK_arg` / `hpOK_of_headPatOK` / `fOK` は `hpOK` から |
+| 兄弟 `B` | `(bd, d, p.2, false, false)` | `blockok_sib'` / `dpOK_false` / `hpOK_false` / `fOK_false` |
+| `rest2` | `(bd+1, d+1, p.2, false, false)` | `argPatOK_drop` を 2 回（`U` を剥がす・`pre` を剥がす） |
+| `Bq` | `(bd, d, p.2, false, false)` | `argPatOK_drop`（`U` を剥がす）＋ `argPatOK_cons` |
+
+`d + 2` の枝の `dpOK` は `d + 2 = bd + 1` が `bd ≤ d` と矛盾するので空虚。
+
+追加した定理: `lad_lev_le_one`、`lad_diag`、`blockok_arg'`、`blockok_sib'`、
+`steps1_suffix`、`colOK_of_suffix`、`convC_dropLast_noParent_aux2`、`rdNopar`。
+
+### 残っている 2 つ
+
+#### `CtrPres2`（場合 2b）
+
+`CtrPres2` は**梯子が立つ枝でしか使われない**（`reindexD_zero_block5` /
+`reindexD_pos_block4` の `hlad` の中）。だから上の `lad_diag` / `lad_lev_le_one` を
+使えば `p.1 = p.2`（`dpOK` があれば `p = (1,1)`, `bd = d = 1`, `plev = 0`）に
+特殊化した `CtrPres3` にできる。ただしそれだけでは場合 2b の 9 例は消えない
+（どの例も `p = (1,1)` か `(2,1)` か `(2,2)` で `p.1 = p.2` または `p.2 = 1`）。
+
+場合 2b の 9 例（ブロック ≤7 列・`bd ≤ 2`）は**きれいに 3 族**:
+
+```
+B = (v,w)^a ++ [(v,w-1)] ++ (v+1,w)^b ++ [(v+2,·)]     (A = [] , a ∈ {2,3})
+```
+
+たとえば `B = (1,1)(1,1)(1,0)(2,1)(3,0)`, `n = 3`:
+`T = (1,1)(1,0)(2,1)(3,0)`、`T⟦3⟧ = (1,1)(1,0)(2,1)(2,1)(2,1)`、
+`U_n = [(1,1)]`, `q_n = (1,0)`, `pre_n = (2,1)(2,1)`, `rest2 = [(2,1)]`。
+**`rest2` の頭の段は `1 = p.2`** なので段が下がらず `contrLen = none` になる。
+
+一般に、`A = []` のとき `pre_n = (p.1+1, p.2) :: shift1 U_n` で、`U_n` は `p` の
+ユニット列だから `pre_n` の深さ `p.1+1` の列はどれも段 `p.2`。`z = rest2` の頭は
+その直後で、コピー領域（周期 `L`、行 1 は周期的）の中にあるので
+`z.2 = S[j0 + t].2`（`t < L`）。9 例ではこれが `p.2` と一致する。
+**「コピー領域の中で `shift1 U_n` の走りの直後の列は段が `p.2` 以上」**が言えれば
+場合 2b は片付く。まだ言えていない。
+
+#### `RDnode`（ずれたコピー）
+
+`T = []`・`parent B 1 (末尾) = 0`・段 > 0。このとき行 1 の親が節点 `p` 自身なので
+`d0 = x.1 - p.1 ≥ 1` で、
+
+```
+B⟦n⟧ = W ++ shiftr0 d0 W ++ shiftr0 (2 d0) W ++ …    (W = B.dropLast)
+```
+
+という**ずれたコピーの階段**になる（段 0 の `reindexD_node0_gen2` は `d0 = 0` で
+素直な繰り返しだった）。像の側も同じ形の階段になるが、DBMS 側の親は index 0
+ではなく **`convC A` の先頭**（実測）で、`m = n` で合う例が大半、
+`n' > n` を取る必要がある例もある。
+
+使えそうな道具は `convC_shift1`（**`convC` は `shift1` で不変**）。これを繰り返せば
+`convC (shiftr0 e X) d plev first force = convC X d plev first force` になる。
+つまりコピーの像は「ずれ」に依らず `(d, plev, first, force)` だけで決まる。
+
+なお `¬ hasParent` の場合は `rdNopar` と同じ議論で片付く（`RDnode` は
+`hasParent` を仮定していないので、まずそこで場合分けする）。
+
+### 追加した検査スクリプト
+
+| | |
+|---|---|
+| `tools/dbms/nodeprobe.py`（会話中） | 梯子が立つパラメタの列挙と `RDnode` の `n ↔ m` |
+| `tools/dbms/case2b.py`（会話中） | `CtrPres2` の場合 2b の全例を詳細表示 |
+
+
 ## 2026-08-26（続き 6）: 梯子つきの縮約は**完全に消えた**。残余は 4 つ
 
 ### 到達点

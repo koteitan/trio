@@ -11727,6 +11727,28 @@ theorem reindexD_holds_of_res9 (Hp : CtrPres2) (Hd : RDnode) : ReindexD :=
 theorem ST_D_conC_holds_of_res9 (Hp : CtrPres2) (Hd : RDnode)
     {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
   ST_D_conC_holds_of_res8 Hp rdNopar Hd hM
+
+/-- **梯子が立つときの数値**（`dpOK` を使わない版）。`fOK` だけで
+`d = p.2 = p.1 = bd` かつ `p.2 = plev + 1` が出る（頭は対角の上）。
+`dpOK` も足すと `lad_lev_le_one` で `p.2 = 1`、すなわち
+**梯子は `p = (1,1)`・`bd = d = 1`・`plev = 0` でしか立たない**。
+（実測: ブロック ≤5 列・`bd ≤ 3`・`plev ≤ 4` の全不変量つきの呼び出しで
+梯子が立つ組は `(p,bd,d,plev,first) = ((1,1),1,1,0,true)` の 1 通りだけ。） -/
+theorem lad_diag {p : ℕ × ℕ} {r : PairSeq} {bd d plev : ℕ} {first force : Bool}
+    (hp1 : p.1 = bd) (hcol : p.2 ≤ p.1) (hbd : bd ≤ d)
+    (hf : fOK (p :: r) d plev force)
+    (hlad : ladOf p.2 d plev first force = true) :
+    first = true ∧ d = p.2 ∧ p.2 = p.1 ∧ p.1 = bd ∧ p.2 = plev + 1 := by
+  unfold ladOf at hlad
+  simp only [Bool.and_eq_true, beq_iff_eq, Bool.or_eq_true, decide_eq_true_eq] at hlad
+  obtain ⟨⟨hf1, hpl⟩, hor⟩ := hlad
+  have hdle : d ≤ p.2 := by
+    rcases hor with hh | hh
+    · exact hh
+    · rcases hf hh with h1 | h2
+      · exact absurd hpl (h1 p r rfl)
+      · omega
+  exact ⟨hf1, by omega, by omega, hp1, hpl⟩
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -11941,3 +11963,4 @@ end DBMS
 #print axioms DBMS.rdNopar
 #print axioms DBMS.reindexD_holds_of_res9
 #print axioms DBMS.ST_D_conC_holds_of_res9
+#print axioms DBMS.lad_diag
