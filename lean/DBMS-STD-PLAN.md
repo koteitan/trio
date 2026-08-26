@@ -1109,6 +1109,114 @@ def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 3. `RDnopar`（`convC_dropLast_noParent_aux` の `contrOK` を梯子の位置だけに弱める）。
 4. `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）。
 
+
+## 2026-08-26（続き 8）: `RDnode` の道具立て。regime を実測で確定
+
+`RDnopar` は続き 7 で証明済み（`rdNopar`）。このセッションはその green を確認した
+うえで、残る 2 つの残余のうち **`RDnode`（段 > 0・末尾列の親が節点）** の道具を作った。
+`leanman check` は exit 0、`sorry` 0、`sorryAx` なし。
+
+### 追加した定理（すべて `DbmsStd.lean` 末尾、branch dbms）
+
+| commit | 定理 | 内容 |
+|---|---|---|
+| 7cde883 | `range'_map_entry_shift` / `oper_tower` / `rdNode_bms_shape` | 末尾列の行 1 の親が頭（index 0）なら `M⟦n⟧ = copies d0 M.dropLast n`（`copies` は `Pair/Cnf.lean`）。段 0 の `oper_repeat_root`（`d0 = 0`）の一般化 |
+| b9db6a2 | `lad_false_of_two_le` / `convC_append_tail` | 「`M` のうしろに深さ `ν` で始まるブロック `Z` を継ぎ足しても `M` の像は変わらず、`Z` の像は `Z` に依らない `(d', plev', first', force')` で書ける」 |
+| a22d584 | `takeWhile_append_head` / `headPatOK_prefix` / `blockok_prefix` / `argPatOK_prefix` | 不変量が接頭辞に遺伝する（`R = A.dropLast` に上を当てるため） |
+| 73ef145 | `levLt` / `lad_false_of_levLt` / `ddOf_of_levLt` / `convC_depth_shift` | **`convC` は深さパラメタの平行移動に共変**（跳ばない範囲で） |
+| 300f0c9 | `oper_tower_at` | 一般の位置での階段（`oper_repeat_at` の段 > 0 版） |
+| 52ea717 | `convC_append_tail_shift` | 上の継ぎ足しの「`d` を `E` ずらすと `d'` も `E` ずれるだけ」版 |
+
+### `convC` の平行移動共変性（いちばん再利用できる）
+
+`ddOf s d plev first force = if lad then d+1 else if (0 < s ∧ d ≤ s) then s+1 else d` の
+**まん中の枝（段へ跳ぶ）だけが絶対的な深さを書く**ので、平行移動をこわすのはそこだけ。
+
+```
+levLt M d : M ≠ [] → (M.headI).2 < d      -- 頭の段 < 深さ（跳ばない）
+convC_depth_shift : blockok / colOK / adjLev / descOK / levLt M d / argPatOK /
+                    hpOK / fOK ⟹ convC M (d+e) plev first force
+                                  = shiftr0 e (convC M d plev first force)
+```
+
+`levLt` が再帰で保たれるのは
+* 引数は深さ `d+1`、頭の段は `adjLev` から「親の段 + 1」以下
+* 兄弟は深さ `d`、頭の段は `descOK` から「親の段」以下
+
+だから。さらに `fOK` があると `d ≤ s` が偽なので梯子も立たない（`lad_false_of_levLt`）。
+跳ぶのは **`c = (bd, bd)` かつ `d = bd`（対角の節点でぴったり）** のときだけである。
+
+### `RDnode` の regime（実測で確定）
+
+`B = p :: A`（`T = []`）、`W = B.dropLast = p :: R`（`R = A.dropLast`）、
+`lp = A` の末尾、`ν = lp.1`、`d0 = ν - p.1 ≥ 1`、`dd = ddOf p.2 d plev first force`。
+BMS 側は `B⟦n⟧ = copies d0 W n`（`rdNode_bms_shape`）。像について
+
+```
+convC (B⟦n⟧) d plev first force = copies e (convC W d plev first force) n      … (★)
+```
+
+が成り立つかを、ブロック ≤5 列・`bd ≤ 2`・`plev ≤ 2`・不変量つきの 5051 組で全数検査した
+（`tools/dbms/node_regime.py`）。結果は**きれいに一致**する:
+
+| 条件 | 件数 | (★) |
+|---|---|---|
+| `ladOf p.2 d plev first force = false` かつ `levLt R (dd+1)` | 4919 | **成立** |
+| `levLt R (dd+1)` が偽（＝ `bd = 0, p = (0,0), d = 0, R.headI = (1,1)`） | 180 | 不成立（縮約 regime） |
+| `ladOf p.2 d plev first force = true` | 152 | 不成立 |
+
+* **正則 regime**（`(★)` が成り立つ）: `m = n` で `(convC B)⟦m⟧ = convC (B⟦n⟧)` になる。
+  DBMS 側の親は index 0、`(convC B).dropLast = convC W`、ずれは同じ `e`。
+* **縮約 regime**: `p = (0,0)`・`R.headI = (1,1)` で `R` の頭に梯子が立ち、
+  2 個目以降のコピーで `contrLen` が発火してコピーを 1 つ食う（`m = n - 1`）。
+  例 `B = (0,0)(1,1)(2,2)(1,1)`, `d = plev = 0`:
+  `convC (B⟦3⟧)` は 9 列（`B⟦3⟧` は 12 列）。
+* **梯子 regime**: `p = (1,1)`・`bd = d = 1`・`plev = 0`・`first = true`（`lad_diag`）。
+
+### 正則 regime の証明の筋（次のセッション用）
+
+`copies_succ_front`（`Pair/Cnf.lean`）から `copies d0 W (n+1) = W ++ shiftr0 d0 (copies d0 W n)`、
+すなわち `B⟦n+1⟧ = p :: (R ++ Z_n)`、`Z_n := shiftr0 d0 (copies d0 W n)`。
+`Z_n` は深さ `ν` 以上・頭の深さちょうど `ν` なので `convC_append_tail_shift` が使えて
+
+```
+convC (B⟦n+1⟧) (d+E) plev first force
+  = [(dd+E, p.2)] ++ convC R (dd+1+E) p.2 true φ ++ convC (copies d0 W n) (d'+E) plev' first' force'
+                                                    （最後は convC_shiftr0）
+```
+
+（`φ = first && (p.2 == plev)`）。あとは
+
+1. `Ψ(n) := convC (copies d0 W n) d' plev' first' force'` が `shiftr0 e (Φ(n))` であること
+   （`e := dd' - dd`）。`n` についての帰納で、頭の 1 列は `ddOf` の差、残りは
+   `convC_depth_shift`（`R` について）と帰納法の仮定でつく。
+2. そのために `(d', plev', first', force')` が「同じ種類のパラメタ」に留まること。
+   実測（`tools/dbms/node_params.py`、正則 regime の 4919 組）では
+
+   ```
+   ν ≤ d'                                              4919/4919
+   first' ∧ (p.2 = plev')  ⟹  R = [] ∨ R.headI.2 ≠ p.2+1   例外 0
+   ```
+
+   後者はちょうど「`Z` の側の `hpOK` / `fOK`」で、**`convC_append_tail_shift` の結論に
+   `ν ≤ d'` と この 2 つを付け足せば**帰納が回る見込み。導出には
+   `argPatOK (M ++ Z)`（＝ 階段の `argPatOK`）が要りそうで、
+   「不変量が `copies` で保たれる」補題群（`blockok` / `colOK` / `adjLev` / `descOK` /
+   `argPatOK`）を作るのが素直。`blockok` の継ぎ目は `steps1 B` から
+   `ν ≤ W.getLast.1 + 1`、`adjLev` の継ぎ目は `p.2 < lp.2 ≤ W.getLast.2 + 1` で出る。
+3. DBMS 側: `convC B = convC W ++ convC [lp] d' plev' first' force'` なので
+   `(convC B).dropLast = convC W`（末尾の像が 1 列のとき）。
+   末尾列の行 1 の親が index 0 であること（`nextrel1 (convC B) 0 (len-1)`）を示せば
+   `oper_tower_at` で `(convC B)⟦m⟧ = copies e (convC W) m` になり、`m = n` で一致する。
+
+### 追加した検査スクリプト
+
+| | |
+|---|---|
+| `tools/dbms/node_copies.py` | `(★)` を `e` を探しながら全数検査 |
+| `tools/dbms/node_regime.py` | `(★)` が成り立つ regime の特定（上の表） |
+| `tools/dbms/node_params.py` | `convC_append_tail` の `(d', plev', first', force')` を再現して段 1 のフラグを見る |
+
 ## 2026-08-26（続き 7）: `CtrRes` と `RDnopar` を証明。残余は 2 つ
 
 ### 到達点
