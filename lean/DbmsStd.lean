@@ -13419,6 +13419,83 @@ theorem rdNode_reg {p : ℕ × ℕ} {A : PairSeq} {bd d plev E : ℕ} {first for
     rdshift hbn hAdn hnan hslAn hp1 hHPn hlad hE
   rw [h1, oper_shiftr0 E (p :: A) (m + 1) hlev, hcop, h2]
 
+/-! ## 4.31 `RDnode` を主要部と 2 つの例外に割る
+
+例外は
+* 梯子が立つ（`lad_diag` から `p = (1,1)`・`bd = d = 1`・`plev = 0`・`first`）
+* 引数ブロックの頭が跳ぶ（`¬ levLt A (dd+1)`。`adjLev` と `colOK` から
+  `p = (0,0)`・`bd = d = 0`・`A.headI = (1,1)` に限る）
+
+の 2 つだけ。 -/
+
+/-- `RDnode` の残る 2 つの場合。 -/
+def RDnodeExc : Prop :=
+  ∀ (p : ℕ × ℕ) (A : PairSeq) (bd d plev : ℕ) (first force : Bool),
+    blockok bd (p :: A) → colOK (p :: A) → descOK (p :: A) → adjLev (p :: A) →
+    bd ≤ d → p.1 = bd → A ≠ [] → (∀ x ∈ A, p.1 < x.1) →
+    0 < entry (p :: A) 1 ((p :: A).length - 1) →
+    argPatOK (p :: A) → argCtrOK (p :: A) →
+    hpOK (p :: A) d plev first force → fOK (p :: A) d plev force →
+    dpOK bd d plev first → hcOK (p :: A) plev first →
+    hasParent (p :: A) 1 ((p :: A).length - 1) →
+    parent (p :: A) 1 ((p :: A).length - 1) = 0 →
+    (ladOf p.2 d plev first force = true ∨
+      ¬ ((A.headI).2 < ddOf p.2 d plev first force + 1)) →
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: A) d plev first force)⟦m⟧ = convC ((p :: A)⟦n'⟧) d plev first force
+
+/-- **`RDnode` は 2 つの例外だけに落ちる**。 -/
+theorem rdNode_of_exc (H : RDnodeExc) : RDnode := by
+  intro p A T bd d plev first force hb hcol hdesc hbd hp1 hlen2 hAd hTh hlev hAP hAC hadj
+    hHP hFC hDP hHC hT n hn
+  by_cases hpar : hasParent (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1)
+  case neg =>
+    exact rdNopar p A T bd d plev first force hb hcol hdesc hbd hp1 hlen2 hAd hTh hlev
+      hAP hAC hadj hHP hFC hDP hHC hpar n hn
+  case pos =>
+  obtain ⟨hTe, hj0⟩ := hT
+  subst hTe
+  rw [List.append_nil] at hb hcol hdesc hlen2 hlev hAP hAC hadj hHP hFC hHC hj0 hpar ⊢
+  have hAne : A ≠ [] := by
+    intro he; rw [he] at hlen2; simp at hlen2
+  have hcolp : p.2 ≤ p.1 := hcol p (by simp)
+  by_cases hexc : ladOf p.2 d plev first force = true ∨
+      ¬ ((A.headI).2 < ddOf p.2 d plev first force + 1)
+  · exact H p A bd d plev first force hb hcol hdesc hadj hbd hp1 hAne hAd hlev hAP hAC
+      hHP hFC hDP hHC hpar hj0 hexc n hn
+  · push_neg at hexc
+    obtain ⟨hlad', hlt⟩ := hexc
+    have hlad : ladOf p.2 d plev first force = false := by
+      cases h : ladOf p.2 d plev first force with
+      | false => rfl
+      | true => exact absurd h hlad'
+    have hple : p.1 ≤ ddOf p.2 d plev first force := by
+      unfold ddOf
+      rw [if_neg (by rw [hlad]; simp)]
+      by_cases hj : 0 < p.2 ∧ d ≤ p.2
+      · rw [if_pos hj]; omega
+      · rw [if_neg hj]; omega
+    obtain ⟨eA, -⟩ := split_append (X := A) (Y := []) (dd := p.1) hAd (Or.inl rfl)
+    simp only [List.append_nil] at eA
+    have hb' : blockok bd (p :: (A ++ [])) := by rw [List.append_nil]; exact hb
+    have hbA : blockok (bd + 1) A := blockok_arg' hb' hp1 hAd
+    have hcolA : colOK A := fun x hx => hcol x (List.mem_cons_of_mem _ hx)
+    have hadjA : adjLev A := by
+      have hx := adjLev_infix (takeWhile_infix_cons p A) hadj
+      rw [eA] at hx; exact hx
+    have hdescA : descOK A := by
+      obtain ⟨-, hdA, -⟩ := descOK_cons.1 hdesc
+      rw [eA] at hdA; exact hdA
+    have hslA : slackOK (ddOf p.2 d plev first force - p.1) A := by
+      refine slackOK_of_head A.length A (Nat.le_refl _) (bd + 1)
+        (ddOf p.2 d plev first force - p.1) hbA hcolA hadjA hdescA ?_
+      intro _
+      omega
+    refine ⟨n, n, hn, Nat.le_refl n, ?_⟩
+    exact rdNode_reg hAne hb hcol hAd
+      (noAdj3_of_argPatOK _ _ (Nat.le_refl _) hAP) hp1 hlev hHP hlad
+      (by omega) hslA hpar hj0 n hn
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -13661,3 +13738,4 @@ end DBMS
 #print axioms DBMS.blockok_oper_gen
 #print axioms DBMS.rdshift
 #print axioms DBMS.rdNode_reg
+#print axioms DBMS.rdNode_of_exc
