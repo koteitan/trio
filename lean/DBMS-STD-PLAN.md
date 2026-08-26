@@ -1109,6 +1109,92 @@ def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 3. `RDnopar`（`convC_dropLast_noParent_aux` の `contrOK` を梯子の位置だけに弱める）。
 4. `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）。
 
+## 2026-08-26（続き 6）: 梯子つきの縮約は**完全に消えた**。残余は 4 つ
+
+### 到達点
+
+```
+reindexD_holds_of_res7  : CtrRes → CtrPres2 → RDnopar → RDnode → ReindexD
+ST_D_conC_holds_of_res7 : 同上 → ST_PS M → ST_D (conC M)
+```
+
+**旧 `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）は残余から消えた。**
+`leanman check` は exit 0、`sorry` 0、`sorryAx` なし。`DbmsStd.lean` は 11277 行。
+
+### 縮約が発火する段の扱い（全部証明済み）
+
+縮約が発火するとき兄弟ブロックは必ず `T = U ++ q :: ((pre ++ rest2) ++ Bq)` の形で
+（`contrLen_shape`）、`L` を取り替えても縮約はまったく同じように発火する
+（`contrLen_of_shape` / `convC_factor_contr`）。降り先は 3 通り:
+
+| | 降り先 | 道具 |
+|---|---|---|
+| `Bq ≠ []` | `q` の兄弟 `Bq` | `reindexD_sib_contr`（親は必ず `Bq` の中） |
+| `Bq = []`・親が `rest2` の中 | `rest2` | `reindexD_rest_contr` |
+| `Bq = []`・親が縮約の内側 | （降りない） | `rdZeroStop` / `rdPosStop2` |
+
+* **段 > 0 の Stop は起こらない**（`rdPosStop2`）。行 1 の親は `q` より後ろの
+  `rest2` の中に入る。使う道具は `le0_ge_of_append`・`le0_interval_gt` と
+  **`descOK_level_le_head`**（同じ深さの鎖では段が増えない）。
+* **段 0 の Stop は本当に起こる**が、そのときは親が必ず `q` の位置で
+  （`zeroStop_shape`）、展開は `oper_repeat_at` でコピーの並びになる:
+
+  ```
+  B⟦n⟧ = (p :: (A ++ U)) ++ (replicate n (q :: (pre ++ rest2.dropLast))).flatten
+  ```
+
+  DBMS 側は像の末尾列が深さ `d+1`・段 0 でその手前に深さ `d` 以下の列が
+  先頭の `(d, plev)` しかないので、**DBMS 側の親は index 0**。したがって
+
+  ```
+  (convC B)⟦m⟧ = (replicate m ((convC B).dropLast)).flatten
+  ```
+
+  で、`rest2` が 2 列以上なら `m = n`、1 列なら `m = n + 1`（計画書のいう
+  `g(m) = m - 1`）で合う（`rdZeroStop`）。
+
+### そのために証明した汎用の補題
+
+| | |
+|---|---|
+| `convC_shift1` | **`convC` は平行移動（`shift1`）で変わらない**（`RDnode` でも使えるはず） |
+| `contrLen_shift1` / `unitsLen_shift1` / `contrPre_shift1` | その土台 |
+| `convC_first_false` | `first = false` なら `plev` / `force` は像に効かない |
+| `convC_units_append` | ユニット列のうしろで像が切れる |
+| `convC_units_depth` | `d = p.2` ならユニット列の像は深さパラメタ +1 で変わらない |
+| `convC_contrPre` | `contrPre p U A` の像 = 梯子の本体 + `A` の像 + `U` の像 |
+| `convC_run_contr` | コピーの並びの像はブロックの像の並び |
+| `descOK_level_le_head` | ブロックの中で頭と同じ深さの列は頭より段が高くない |
+| `contrLen_of_shape_nil` | 前置きのあとに何も残らなければ縮約は発火しない |
+
+### 残っている 4 つ
+
+| | 内容 | 実測 |
+|---|---|---|
+| `CtrRes` | BMS 標準形は `argCtrOK` | 標準形 ≤9 列 295014 個で違反 0 |
+| `CtrPres2` | 縮約が発火しない状態は展開で保たれる（`ctrHeadOK` つき） | ブロック ≤7 列 `bd ≤ 2` の 447 万例で反例 0 |
+| `RDnopar` | 段 > 0・末尾列に行 1 の親がない | 77950 例で反例 0 |
+| `RDnode` | 段 > 0・末尾列の親が節点（ずれたコピー） | 14827 例で反例 0 |
+
+### `CtrPres2` の証明の筋（続き 5 の分析のまとめ・**場合 2b だけ未確定**）
+
+`W := T.dropLast` は `T` と `T⟦n⟧` の共通の接頭辞（`|W| = |T| - 1`）。
+`T⟦n⟧` での発火の証拠は接頭辞 `U_n ++ [q] ++ pre_n ++ [z]` だけで決まり
+（`|pre_n| = 1 + |A| + |U_n|`）、`z` の位置を `J := |U_n| + 1 + |pre_n|` とすると
+
+* **場合 1**（`J < |W|`）: 証拠がまるごと `W` の中 ⟹ `T` でも同じ証拠 ⟹ 矛盾（実測 0 件）
+* **場合 2a**（`J = |W|`）: `z` は 2 個目のコピーの頭 `(v0 + d0, w0)`。
+  `lp` の段 > 0 なら `v0 + d0 = lp` の深さなので `T` で構造条件が揃い `ctrHeadOK` で矛盾。
+  `lp` の段 = 0 なら `d0 = 0` で親 `T[r]` は `pre` の中の深さ `p.1+1` の列だが、
+  `pre = (p.1+1,p.2) :: shift1 A ++ shift1 U` の深さ `p.1+1` の列は
+  `pre[0]` と `shift1 U` のユニットの頭だけで**どれも段が `p.2`**。
+  段が下がる条件 `w0 < p.2` に矛盾（実測 17 件）
+* **場合 2b**（`J > |W|`）: `z` がコピーの奥（実測 9 件、例
+  `B = (1,1)(1,1)(1,0)(2,1)(3,0)`, `n = 3`）。どの例も `z` の段が `p.2` と同じ。
+  前置きの一致は `T⟦n⟧[s+i] = shift1 (T⟦n⟧[i])`（`s = |U_n| + |A| + 2`, `i < |U_n|`）
+  という自己相似を強いるので、コピーの周期性と合わせれば潰せるはずだが**未確定**。
+
+
 ## 2026-08-26（続き 5）: 梯子つきの縮約を潰した。残余は 5 つ
 
 ### 到達点
