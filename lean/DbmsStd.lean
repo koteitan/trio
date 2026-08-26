@@ -13496,6 +13496,121 @@ theorem rdNode_of_exc (H : RDnodeExc) : RDnode := by
       (noAdj3_of_argPatOK _ _ (Nat.le_refl _) hAP) hp1 hlev hHP hlad
       (by omega) hslA hpar hj0 n hn
 
+/-! ## 4.32 梯子が立つ段の像（兄弟の鎖が全部対角なら）
+
+`lad_diag` から梯子は `d = 段 = 深さ = ブロックの深さ` でしか立たない。その段では
+像の頭が影の列 `(d, plev)` になり、残りは **深さを 1 ずらしただけ**になる。
+兄弟の鎖（深さ `bd` の列）が全部対角 `(bd, bd)` であることが要る:
+* 対角でない兄弟があると、その像は跳ばないので 1 ずれない
+* 縮約の相手 `q` は `q.1 = bd`・`q.2 = bd - 1` なので、対角性がこれも潰す -/
+
+/-- ブロックの深さ `bd` の列は全部対角。 -/
+def diagOK (bd : ℕ) (M : PairSeq) : Prop := ∀ c ∈ M, c.1 = bd → c.2 = bd
+
+/-- **兄弟の鎖の像は深さを 1 ずらしただけ**（跳びが毎段起きる）。 -/
+theorem convC_eq_shift1 : ∀ (N : ℕ) (M : PairSeq), M.length ≤ N →
+    ∀ (bd plev : ℕ), blockok bd M → colOK M → noAdj3 M → diagOK bd M → 1 ≤ bd →
+      convC M bd plev false false = shiftr0 1 M := by
+  intro N
+  induction N with
+  | zero =>
+    intro M hM bd plev _ _ _ _ _
+    have hMe : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+    subst hMe; simp
+  | succ N ih =>
+    intro M hM bd plev hb hcol hna hdg hbd1
+    match M with
+    | [] => simp
+    | c :: r =>
+      obtain ⟨A, B, rfl, hAd, hBh⟩ := split_takeWhile c r
+      obtain ⟨e1, e2⟩ := split_append (X := A) (Y := B) (dd := c.1) hAd hBh
+      have hp1 : c.1 = bd := by have := hb.1 (by simp); simpa using this
+      have hc2 : c.2 = bd := hdg c (by simp) hp1
+      have hlad : ladOf c.2 bd plev false false = false := by simp [ladOf]
+      have hdd : ddOf c.2 bd plev false false = bd + 1 := by
+        unfold ddOf
+        rw [if_neg (by rw [hlad]; simp), if_pos (⟨by omega, by omega⟩ : 0 < c.2 ∧ bd ≤ c.2)]
+        omega
+      have hbA : blockok (bd + 1) A := blockok_arg' hb hp1 hAd
+      have hbB : blockok bd B := blockok_sib' hb hp1 hBh
+      have hcolA : colOK A := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+      have hcolB : colOK B := fun x hx =>
+        hcol x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hnaA : noAdj3 A := by
+        have hx := noAdj3_infix (takeWhile_infix_cons c (A ++ B)) hna
+        rw [e1] at hx; exact hx
+      have hnaB : noAdj3 B := by
+        have hx := noAdj3_infix (dropWhile_infix_cons c (A ++ B)) hna
+        rw [e2] at hx; exact hx
+      have hdgB : diagOK bd B := fun x hx =>
+        hdg x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+      have hAP : argPatOK (c :: (A ++ B)) := argPatOK_of_noAdj3 _ _ (Nat.le_refl _) hna
+      obtain ⟨hHA, -, -⟩ := argPatOK_cons.1 hAP
+      rw [e1] at hHA
+      have hihA := convC_eq_shift A.length A (Nat.le_refl _) (bd + 1) 1 c.2 true false
+        hbA (slackOK_of_one_le (Nat.le_refl 1) hcolA) hnaA (hpOK_of_headPatOK hHA) fOK_false
+      have hBlen : B.length ≤ N := by
+        simp only [List.length_cons, List.length_append] at hM; omega
+      have hihB := ih B hBlen bd c.2 hbB hcolB hnaB hdgB hbd1
+      rw [convC_factor_sib c A B bd plev false false hAd hBh hlad, hdd]
+      simp only [Bool.false_and]
+      rw [hihA, hihB, shiftr0_cons, shiftr0_append]
+      simp [hp1]
+
+/-- 兄弟の鎖が全部対角なら縮約は発火しない。 -/
+theorem contrLen_none_of_diag {p : ℕ × ℕ} {T A : PairSeq} {bd : ℕ}
+    (hdg : ∀ c ∈ T, c.1 = bd → c.2 = bd) (hp1 : p.1 = bd) (hp2 : p.2 = bd) :
+    contrLen p T (unitsLen p T) A = none := by
+  cases h : contrLen p T (unitsLen p T) A with
+  | none => rfl
+  | some x =>
+    exfalso
+    obtain ⟨rest2, Bq⟩ := x
+    obtain ⟨q, r2, hdrop, hq2, hq1, -⟩ := contrLen_spec h
+    have hqmem : q ∈ T := by
+      have hm : q ∈ T.drop (unitsLen p T) := by rw [hdrop]; simp
+      exact (List.drop_sublist (unitsLen p T) T).subset hm
+    have := hdg q hqmem (by omega)
+    omega
+
+/-- **梯子が立つ段の像**: 影の列 1 本＋深さを 1 ずらしたもの。 -/
+theorem convC_lad_shift {p : ℕ × ℕ} {A T : PairSeq} {bd plev : ℕ} {first force : Bool}
+    (hb : blockok bd (p :: (A ++ T))) (hcol : colOK (p :: (A ++ T)))
+    (hna : noAdj3 (p :: (A ++ T))) (hdg : diagOK bd (p :: (A ++ T))) (hbd1 : 1 ≤ bd)
+    (hAd : ∀ x ∈ A, p.1 < x.1) (hTh : T = [] ∨ ¬ (p.1 < (T.headI).1))
+    (hlad : ladOf p.2 bd plev first force = true) :
+    convC (p :: (A ++ T)) bd plev first force = (bd, plev) :: shiftr0 1 (p :: (A ++ T)) := by
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := T) (dd := p.1) hAd hTh
+  have hp1 : p.1 = bd := by have := hb.1 (by simp); simpa using this
+  have hp2 : p.2 = bd := hdg p (by simp) hp1
+  have hnc : contrLen p T (unitsLen p T) A = none :=
+    contrLen_none_of_diag
+      (fun c hc => hdg c (List.mem_cons_of_mem _ (List.mem_append_right _ hc))) hp1 hp2
+  have hbA : blockok (bd + 1) A := blockok_arg' hb hp1 hAd
+  have hbT : blockok bd T := blockok_sib' hb hp1 hTh
+  have hcolA : colOK A := fun x hx =>
+    hcol x (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+  have hcolT : colOK T := fun x hx =>
+    hcol x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+  have hnaA : noAdj3 A := by
+    have hx := noAdj3_infix (takeWhile_infix_cons p (A ++ T)) hna
+    rw [e1] at hx; exact hx
+  have hnaT : noAdj3 T := by
+    have hx := noAdj3_infix (dropWhile_infix_cons p (A ++ T)) hna
+    rw [e2] at hx; exact hx
+  have hdgT : diagOK bd T := fun x hx =>
+    hdg x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+  have hAP : argPatOK (p :: (A ++ T)) := argPatOK_of_noAdj3 _ _ (Nat.le_refl _) hna
+  obtain ⟨hHA, -, -⟩ := argPatOK_cons.1 hAP
+  rw [e1] at hHA
+  have hihA := convC_eq_shift A.length A (Nat.le_refl _) (bd + 1) 1 p.2 true false
+    hbA (slackOK_of_one_le (Nat.le_refl 1) hcolA) hnaA (hpOK_of_headPatOK hHA) fOK_false
+  have hihT := convC_eq_shift1 T.length T (Nat.le_refl _) bd p.2 hbT hcolT hnaT hdgT hbd1
+  rw [convC_factor_sib_lad p A T bd plev first force hAd hTh hlad hnc, hihT,
+    show bd + 2 = (bd + 1) + 1 by omega, hihA, shiftr0_cons, shiftr0_append]
+  simp [hp1]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -13739,3 +13854,5 @@ end DBMS
 #print axioms DBMS.rdshift
 #print axioms DBMS.rdNode_reg
 #print axioms DBMS.rdNode_of_exc
+#print axioms DBMS.convC_eq_shift1
+#print axioms DBMS.convC_lad_shift
