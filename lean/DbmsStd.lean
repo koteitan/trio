@@ -14105,6 +14105,111 @@ theorem rdNode_jmp {A : PairSeq} {plev : ℕ} {first force : Bool}
   · exact hlev
   · rw [hcop]; exact hCBn
 
+/-! ## 4.38 `RDnodeExc` の残りは「根で末尾列の深さが 1」の 1 つだけ
+
+例外 2 つを詰めると
+* 梯子 → `rdNode_lad`
+* 跳び → `p = (0,0)`・`bd = d = 0`・`A.headI = (1,1)`。末尾列の深さが 2 以上なら
+  `rdNode_jmp`、1 のときだけ縮約 regime が残る -/
+
+/-- 残る 1 つ: 根 `(0,0)` で末尾列の深さが 1（コピーが縮約を起こす）。 -/
+def RDnodeCtr : Prop :=
+  ∀ (A : PairSeq) (plev : ℕ) (first force : Bool),
+    blockok 0 (((0, 0) : ℕ × ℕ) :: A) → colOK (((0, 0) : ℕ × ℕ) :: A) →
+    descOK (((0, 0) : ℕ × ℕ) :: A) → adjLev (((0, 0) : ℕ × ℕ) :: A) →
+    noAdj3 (((0, 0) : ℕ × ℕ) :: A) →
+    A ≠ [] → (∀ x ∈ A, 0 < x.1) → ((A.headI).2 = 1) →
+    0 < entry (((0, 0) : ℕ × ℕ) :: A) 1 ((((0, 0) : ℕ × ℕ) :: A).length - 1) →
+    argCtrOK (((0, 0) : ℕ × ℕ) :: A) →
+    hpOK (((0, 0) : ℕ × ℕ) :: A) 0 plev first force →
+    fOK (((0, 0) : ℕ × ℕ) :: A) 0 plev force →
+    hcOK (((0, 0) : ℕ × ℕ) :: A) plev first →
+    hasParent (((0, 0) : ℕ × ℕ) :: A) 1 ((((0, 0) : ℕ × ℕ) :: A).length - 1) →
+    parent (((0, 0) : ℕ × ℕ) :: A) 1 ((((0, 0) : ℕ × ℕ) :: A).length - 1) = 0 →
+    (A.getLastD (0, 0)).1 = 1 →
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (((0, 0) : ℕ × ℕ) :: A) 0 plev first force)⟦m⟧
+        = convC ((((0, 0) : ℕ × ℕ) :: A)⟦n'⟧) 0 plev first force
+
+theorem rdNodeExc_of_ctr (H : RDnodeCtr) : RDnodeExc := by
+  intro p A bd d plev first force hb hcol hdesc hadj hbd hp1 hAne hAd hlev hAP hAC
+    hHP hFC hDP hHC hpar hj0 hexc n hn
+  have hcolp : p.2 ≤ p.1 := hcol p (by simp)
+  have hna : noAdj3 (p :: A) := noAdj3_of_argPatOK _ _ (Nat.le_refl _) hAP
+  have hb' : blockok bd (p :: (A ++ [])) := by rw [List.append_nil]; exact hb
+  by_cases hlad : ladOf p.2 d plev first force = true
+  · obtain ⟨hf1, hdp2, hp21, hp1bd, hplev1⟩ := lad_diag hp1 hcolp hbd hFC hlad
+    have hle1 := lad_lev_le_one hp1 hcolp hbd hDP hFC hlad
+    refine ⟨n, n, hn, Nat.le_refl n, ?_⟩
+    refine rdNode_lad hAne (by rw [show d = bd by omega]; exact hb) hcol hAd hna
+      (by omega) (by omega) (by omega) hlev hlad ?_ hpar hj0 n hn
+    omega
+  · have hlad' : ladOf p.2 d plev first force = false := by
+      cases h : ladOf p.2 d plev first force with
+      | false => rfl
+      | true => exact absurd h hlad
+    have hexc2 : ¬ ((A.headI).2 < ddOf p.2 d plev first force + 1) := by
+      rcases hexc with h | h
+      · exact absurd h hlad
+      · exact h
+    have hbA : blockok (bd + 1) A := blockok_arg' hb' hp1 hAd
+    have hAh1 : (A.headI).1 = bd + 1 := hbA.1 hAne
+    have hAh2le : (A.headI).2 ≤ (A.headI).1 :=
+      hcol _ (List.mem_cons_of_mem _ (headI_mem hAne))
+    have hg0 : ((p :: A).getD 0 (0, 0)) = p := by simp
+    have hg1 : ((p :: A).getD (0 + 1) (0, 0)) = A.headI := by
+      cases hA : A with
+      | nil => exact absurd hA hAne
+      | cons a s => simp
+    have hlen1 : 0 + 1 < (p :: A).length := by
+      have := List.length_pos_of_ne_nil hAne
+      simp only [List.length_cons]; omega
+    have hadj1 : (A.headI).2 ≤ p.2 + 1 := by
+      have h := hadj 0 hlen1 (by rw [hg0, hg1, hAh1, hp1])
+      rw [hg0, hg1] at h; exact h
+    have hnojump : ¬ (0 < p.2 ∧ d ≤ p.2) := by
+      intro hj
+      have hdd : ddOf p.2 d plev first force = p.2 + 1 := by
+        unfold ddOf; rw [if_neg (by rw [hlad']; simp), if_pos hj]
+      rw [hdd] at hexc2
+      omega
+    have hdd : ddOf p.2 d plev first force = d := by
+      unfold ddOf; rw [if_neg (by rw [hlad']; simp), if_neg hnojump]
+    rw [hdd] at hexc2
+    have hp20 : p.2 = 0 := by
+      by_contra hne
+      exact hnojump ⟨by omega, by omega⟩
+    have hbd0 : bd = 0 := by omega
+    have hd0 : d = 0 := by omega
+    have hAh2 : (A.headI).2 = 1 := by omega
+    have hpe : p = ((0, 0) : ℕ × ℕ) := by
+      have h : (p.1, p.2) = ((0 : ℕ), (0 : ℕ)) := by rw [hp1, hbd0, hp20]
+      simpa using h
+    subst hpe
+    subst hbd0
+    subst hd0
+    have hAd0 : ∀ x ∈ A, 0 < x.1 := hAd
+    have hlmem : A.getLastD (0, 0) ∈ A := getLastD_mem hAne _
+    by_cases hd02 : 2 ≤ (A.getLastD (0, 0)).1
+    · exact ⟨n, n, hn, Nat.le_refl n,
+        rdNode_jmp hAne hb hcol hdesc hna hAd0 hAh2 hlev hpar hj0 hd02 n hn⟩
+    · have hd0e : (A.getLastD (0, 0)).1 = 1 := by
+        have := hAd0 _ hlmem
+        omega
+      exact H A plev first force hb hcol hdesc hadj hna hAne hAd0 hAh2 hlev hAC
+        hHP hFC hHC hpar hj0 hd0e n hn
+
+/-- **`RDnode` の残余は `RDnodeCtr` 1 つ**。 -/
+theorem rdNode_of_ctr (H : RDnodeCtr) : RDnode := rdNode_of_exc (rdNodeExc_of_ctr H)
+
+/-- 到達点: `ReindexD` の残余は `CtrPres2` と `RDnodeCtr` の 2 つ。 -/
+theorem reindexD_holds_of_res10 (Hp : CtrPres2) (Hc : RDnodeCtr) : ReindexD :=
+  reindexD_holds_of_res9 Hp (rdNode_of_ctr Hc)
+
+theorem ST_D_conC_holds_of_res10 (Hp : CtrPres2) (Hc : RDnodeCtr)
+    {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
+  ST_D_conC_holds_of_res9 Hp (rdNode_of_ctr Hc) hM
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -14357,3 +14462,7 @@ end DBMS
 #print axioms DBMS.rdNode_lad
 #print axioms DBMS.convC_root_shift
 #print axioms DBMS.rdNode_jmp
+#print axioms DBMS.rdNodeExc_of_ctr
+#print axioms DBMS.rdNode_of_ctr
+#print axioms DBMS.reindexD_holds_of_res10
+#print axioms DBMS.ST_D_conC_holds_of_res10
