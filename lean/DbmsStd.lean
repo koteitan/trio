@@ -6805,6 +6805,333 @@ theorem reindexD_sib_lad2 {p : ℕ × ℕ} {Arg T : PairSeq} {d plev : ℕ} {fir
       rw [oper_headI hL hn]; exact hTh, hncE n hn⟩)
     hb hcT hdT hbd hzT hpB hgeB IH
 
+/-- 深さで切れる前置きを剥がしても `argPatOK` は残る（`descOK_units` の類似）。 -/
+theorem argPatOK_drop (a : ℕ) (L : PairSeq) (hL : L = [] ∨ ¬ (a < (L.headI).1)) :
+    ∀ (n : ℕ) (V : PairSeq), V.length ≤ n → (∀ c ∈ V, a ≤ c.1) → (V = [] ∨ (V.headI).1 ≤ a) →
+    argPatOK (V ++ L) → argPatOK L := by
+  intro n
+  induction n with
+  | zero =>
+      intro V hV _ _ h
+      have : V = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst this; simpa using h
+  | succ n ih =>
+      intro V hV hall hhd h
+      match V with
+      | [] => simpa using h
+      | p :: rest =>
+          have hp : p.1 = a := by
+            have h1 : a ≤ p.1 := hall p (by simp)
+            have h2 : p.1 ≤ a := by
+              rcases hhd with hh | hh
+              · exact absurd hh (by simp)
+              · simpa using hh
+            omega
+          have hrest : ∀ c ∈ rest, a ≤ c.1 := fun c hc => hall c (by simp [hc])
+          obtain ⟨e1, e2⟩ := split_append_gen (dd := p.1) (Y := L) (by rw [hp]; exact hL) rest
+          have hlen : (rest.dropWhile fun q => p.1 < q.1).length ≤ n := by
+            have := List.length_dropWhile_le (fun q : ℕ × ℕ => p.1 < q.1) rest
+            simp only [List.length_cons] at hV
+            omega
+          have hall' : ∀ c ∈ (rest.dropWhile fun q => p.1 < q.1), a ≤ c.1 :=
+            fun c hc => hrest c ((List.dropWhile_sublist _).subset hc)
+          have hhd' : (rest.dropWhile fun q => p.1 < q.1) = [] ∨
+              ((rest.dropWhile fun q => p.1 < q.1).headI).1 ≤ a := by
+            rcases dropWhile_head_neg (a := p.1) rest with hh | hh
+            · exact Or.inl hh
+            · exact Or.inr (by omega)
+          rw [List.cons_append] at h
+          have h2 := (argPatOK_cons.1 h).2.2
+          rw [e2] at h2
+          exact ih _ hlen hall' hhd' h2
+
+/-- ユニット列の要素は深さが `p.1` 以上（`Units.ge` の言い換え）。 -/
+theorem Units.head_le {p : ℕ × ℕ} {U : PairSeq} (h : Units p U) :
+    U = [] ∨ (U.headI).1 ≤ p.1 := by
+  rcases h.head_eq with he | he
+  · exact Or.inl he
+  · exact Or.inr (by rw [he])
+
+/-- 縮約が発火したときの兄弟ブロックの形。 -/
+theorem contrLen_shape {p : ℕ × ℕ} {T Arg rest2 Bq : PairSeq}
+    (h : contrLen p T (unitsLen p T) Arg = some (rest2, Bq)) :
+    ∃ (q : ℕ × ℕ) (U pre : PairSeq), Units p U ∧ T = U ++ q :: ((pre ++ rest2) ++ Bq) ∧
+      q.2 + 1 = p.2 ∧ q.1 = p.1 ∧ pre = contrPre p U Arg ∧
+      (∀ x ∈ pre, p.1 < x.1) ∧ (∀ x ∈ rest2, p.1 < x.1) ∧
+      (Bq = [] ∨ ¬ (p.1 < (Bq.headI).1)) ∧
+      rest2 ≠ [] ∧ (rest2.headI).1 = p.1 + 1 ∧ (rest2.headI).2 < p.2 := by
+  obtain ⟨q, r2, hdr, hq2, hq1, hAq, hBq, hrne, hrh1, hrh2⟩ := contrLen_spec h
+  refine ⟨q, T.take (unitsLen p T), contrPre p (T.take (unitsLen p T)) Arg,
+    units_take p T.length T (Nat.le_refl _), ?_, hq2, hq1, rfl, ?_, ?_, ?_, hrne, hrh1, hrh2⟩
+  · conv_lhs => rw [← List.take_append_drop (unitsLen p T) T]
+    rw [hdr]
+    rw [← hAq, ← hBq, List.takeWhile_append_dropWhile]
+  · intro x hx
+    have hm : x ∈ (r2.takeWhile fun x => q.1 < x.1) := by
+      rw [hAq]; exact List.mem_append_left _ hx
+    have h2 := List.mem_takeWhile_imp hm
+    simp only [decide_eq_true_eq] at h2
+    omega
+  · intro x hx
+    have hm : x ∈ (r2.takeWhile fun x => q.1 < x.1) := by
+      rw [hAq]; exact List.mem_append_right _ hx
+    have h2 := List.mem_takeWhile_imp hm
+    simp only [decide_eq_true_eq] at h2
+    omega
+  · rw [← hBq, ← hq1]
+    exact dropWhile_head_not _ _
+
+/-- 空でない列の先頭は元の列に属する。 -/
+theorem headI_mem {l : PairSeq} (h : l ≠ []) : l.headI ∈ l := by
+  cases l with
+  | nil => exact absurd rfl h
+  | cons a l => simp
+
+/-- **縮約が発火して、しかも末尾列の親が縮約の内側にある場合**（コピー regime）。
+`Bq = []`（`q` に兄弟がない）で、末尾列の親が `p :: (A ++ (U ++ q :: pre))` より
+前にあるとき。実測では標準形 ≤9 列の右端の道でこれが 67 節点。 -/
+def RDzeroStop : Prop :=
+  ∀ (p q : ℕ × ℕ) (A U pre rest2 : PairSeq) (bd d plev : ℕ) (first force : Bool),
+    blockok bd (p :: (A ++ (U ++ q :: (pre ++ rest2)))) →
+    colOK (p :: (A ++ (U ++ q :: (pre ++ rest2)))) →
+    descOK (p :: (A ++ (U ++ q :: (pre ++ rest2)))) →
+    bd ≤ d → p.1 = bd → (∀ x ∈ A, p.1 < x.1) →
+    Units p U → q.2 + 1 = p.2 → q.1 = p.1 → pre = contrPre p U A →
+    (∀ x ∈ pre, p.1 < x.1) → (∀ x ∈ rest2, p.1 < x.1) →
+    rest2 ≠ [] → (rest2.headI).1 = p.1 + 1 → (rest2.headI).2 < p.2 →
+    entry (p :: (A ++ (U ++ q :: (pre ++ rest2)))) 1
+      ((p :: (A ++ (U ++ q :: (pre ++ rest2)))).length - 1) = 0 →
+    argPatOK (p :: (A ++ (U ++ q :: (pre ++ rest2)))) →
+    ladOf p.2 d plev first force = true →
+    ¬ ((p :: (A ++ (U ++ q :: pre))).length
+        ≤ parent (p :: (A ++ (U ++ q :: (pre ++ rest2)))) 0
+            ((p :: (A ++ (U ++ q :: (pre ++ rest2)))).length - 1)) →
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: (A ++ (U ++ q :: (pre ++ rest2)))) d plev first force)⟦m⟧
+        = convC ((p :: (A ++ (U ++ q :: (pre ++ rest2))))⟦n'⟧) d plev first force
+
+/-- **縮約が発火する段（段 0）**。`Bq ≠ []` なら `q` の兄弟へ、`Bq = []` なら
+`rest2` へ降りる。降りられないのは「親が縮約の内側」のときだけ（`RDzeroStop`）。 -/
+theorem reindexD_zero_fire (Hs : RDzeroStop) (N : ℕ)
+    (ih : ∀ (B : PairSeq), B.length ≤ N → ∀ (bd d plev : ℕ) (first force : Bool),
+      blockok bd B → colOK B → descOK B → bd ≤ d → (bd = 0 → d = 0) →
+      entry B 1 (B.length - 1) = 0 →
+      argPatOK B → hpOK B d plev first force → fOK B d plev force →
+      ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+        (convC B d plev first force)⟦m⟧ = convC (B⟦n'⟧) d plev first force)
+    {p q : ℕ × ℕ} {A T U pre rest2 Bq : PairSeq} {bd d plev : ℕ} {first force : Bool}
+    (hlenN : (p :: (A ++ T)).length ≤ N + 1)
+    (hb : blockok bd (p :: (A ++ T))) (hc : colOK (p :: (A ++ T)))
+    (hd : descOK (p :: (A ++ T))) (hbd : bd ≤ d) (hz0 : bd = 0 → d = 0)
+    (hp1 : p.1 = bd)
+    (hlev : entry (p :: (A ++ T)) 1 ((p :: (A ++ T)).length - 1) = 0)
+    (hAP : argPatOK (p :: (A ++ T)))
+    (hAdeep : ∀ x ∈ A, p.1 < x.1)
+    (hlad : ladOf p.2 d plev first force = true)
+    (hpar : hasParent (p :: (A ++ T)) 0 ((p :: (A ++ T)).length - 1))
+    (hU : Units p U) (hTeq : T = U ++ q :: ((pre ++ rest2) ++ Bq))
+    (hq2 : q.2 + 1 = p.2) (hq1 : q.1 = p.1) (hpre : pre = contrPre p U A)
+    (hpd : ∀ x ∈ pre, p.1 < x.1) (hrd : ∀ x ∈ rest2, p.1 < x.1)
+    (hBqh : Bq = [] ∨ ¬ (p.1 < (Bq.headI).1))
+    (hrne : rest2 ≠ []) (hrh1 : (rest2.headI).1 = p.1 + 1) (hrh2 : (rest2.headI).2 < p.2) :
+    ∀ n : ℕ, 1 ≤ n → ∃ m n' : ℕ, 1 ≤ m ∧ n ≤ n' ∧
+      (convC (p :: (A ++ T)) d plev first force)⟦m⟧
+        = convC ((p :: (A ++ T))⟦n'⟧) d plev first force := by
+  intro n hn
+  -- 共通の下ごしらえ
+  have hnrp : nextrel0 (p :: (A ++ T))
+      (parent (p :: (A ++ T)) 0 ((p :: (A ++ T)).length - 1))
+      ((p :: (A ++ T)).length - 1) := by
+    have h := parent_nextR hpar
+    unfold nextR at h; rw [if_pos rfl] at h; exact h
+  have hj0ge : bd ≤ entry (p :: (A ++ T)) 0
+      (parent (p :: (A ++ T)) 0 ((p :: (A ++ T)).length - 1)) := by
+    have hj := hnrp.1
+    have hmem : (p :: (A ++ T)).getD
+        (parent (p :: (A ++ T)) 0 ((p :: (A ++ T)).length - 1)) (0, 0) ∈ (p :: (A ++ T)) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+      simpa using List.getElem_mem hj
+    rw [entry, if_pos rfl]
+    exact hb.2.1 _ hmem
+  have hlpgt : bd < ((p :: (A ++ T)).getLastD (0, 0)).1 := by
+    have h1 := hnrp.2.2.2.1
+    rw [entry_last0] at h1
+    omega
+  have hlplev : ((p :: (A ++ T)).getLastD (0, 0)).2 = 0 := by
+    rw [← entry_last]; exact hlev
+  have hTdeep : ∀ x ∈ (pre ++ rest2), p.1 < x.1 := by
+    intro x hx
+    rcases List.mem_append.1 hx with h | h
+    · exact hpd x h
+    · exact hrd x h
+  have hpreh : (pre.headI).1 = p.1 + 1 := by rw [hpre]; simp [contrPre, shift1]
+  have hThd : T = [] ∨ ¬ (p.1 < (T.headI).1) := by
+    right
+    rw [hTeq]
+    by_cases hUe : U = []
+    · rw [hUe]; simp only [List.nil_append, List.headI]; omega
+    · rw [headI_append_left hUe]
+      rcases hU.head_eq with h | h
+      · exact absurd h hUe
+      · rw [h]; omega
+  obtain ⟨e1, e2⟩ := split_append (X := A) (Y := T) (dd := p.1) hAdeep hThd
+  have hdT : descOK T := by
+    have hx := (descOK_cons.1 hd).2.2
+    rw [e2] at hx; exact hx
+  have hAPt : argPatOK T := by
+    have hx := (argPatOK_cons.1 hAP).2.2
+    rw [e2] at hx; exact hx
+  have hqL : (q :: ((pre ++ rest2) ++ Bq)) = []
+      ∨ ¬ (p.1 < ((q :: ((pre ++ rest2) ++ Bq)).headI).1) := by
+    right; simp only [List.headI]; omega
+  have hdQ : descOK (q :: ((pre ++ rest2) ++ Bq)) :=
+    descOK_units p.1 _ hqL U.length U (Nat.le_refl _) (Units.ge hU) (Units.head_le hU)
+      (by rw [← hTeq]; exact hdT)
+  have hAPq : argPatOK (q :: ((pre ++ rest2) ++ Bq)) :=
+    argPatOK_drop p.1 _ hqL U.length U (Nat.le_refl _) (Units.ge hU) (Units.head_le hU)
+      (by rw [← hTeq]; exact hAPt)
+  obtain ⟨f1, f2⟩ := split_append (X := (pre ++ rest2)) (Y := Bq) (dd := q.1)
+    (by rw [hq1]; exact hTdeep) (by rw [hq1]; exact hBqh)
+  have hdBq : descOK Bq := by
+    have hx := (descOK_cons.1 hdQ).2.2
+    rw [f2] at hx; exact hx
+  have hAPBq : argPatOK Bq := by
+    have hx := (argPatOK_cons.1 hAPq).2.2
+    rw [f2] at hx; exact hx
+  have hdPR : descOK (pre ++ rest2) := by
+    have hx := (descOK_cons.1 hdQ).2.1
+    rw [f1] at hx; exact hx
+  have hAPPR : argPatOK (pre ++ rest2) := by
+    have hx := (argPatOK_cons.1 hAPq).2.1
+    rw [f1] at hx; exact hx
+  have hrestL : rest2 = [] ∨ ¬ (p.1 + 1 < (rest2.headI).1) := Or.inr (by rw [hrh1]; omega)
+  have hpreall : ∀ c ∈ pre, p.1 + 1 ≤ c.1 := fun c hcc => by have := hpd c hcc; omega
+  have hpreh' : pre = [] ∨ (pre.headI).1 ≤ p.1 + 1 := Or.inr (by rw [hpreh])
+  have hdR : descOK rest2 :=
+    descOK_units (p.1 + 1) rest2 hrestL pre.length pre (Nat.le_refl _) hpreall hpreh' hdPR
+  have hAPR : argPatOK rest2 :=
+    argPatOK_drop (p.1 + 1) rest2 hrestL pre.length pre (Nat.le_refl _) hpreall hpreh' hAPPR
+  have hmemBq : ∀ c ∈ Bq, c ∈ (p :: (A ++ T)) := by
+    intro c hcc
+    refine List.mem_cons_of_mem _ (List.mem_append_right _ ?_)
+    rw [hTeq]
+    exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_append_right _ hcc))
+  have hmemR : ∀ c ∈ rest2, c ∈ (p :: (A ++ T)) := by
+    intro c hcc
+    refine List.mem_cons_of_mem _ (List.mem_append_right _ ?_)
+    rw [hTeq]
+    exact List.mem_append_right _ (List.mem_cons_of_mem _
+      (List.mem_append_left _ (List.mem_append_right _ hcc)))
+  have hcBq : colOK Bq := fun cc hcc => hc cc (hmemBq cc hcc)
+  have hcR : colOK rest2 := fun cc hcc => hc cc (hmemR cc hcc)
+  by_cases hBqe : Bq = []
+  · -- `Bq = []`: `rest2` へ降りるか、残余
+    obtain ⟨G2, hG2⟩ : ∃ G2 : PairSeq, G2 = p :: (A ++ (U ++ q :: pre)) := ⟨_, rfl⟩
+    have hBeq2 : (p :: (A ++ T)) = G2 ++ rest2 := by
+      rw [hG2, hTeq, hBqe]; simp [List.append_assoc]
+    have hBeq3 : (p :: (A ++ T)) = p :: (A ++ (U ++ q :: (pre ++ rest2))) := by
+      rw [hTeq, hBqe]; simp [List.append_assoc]
+    have hG2len : 1 ≤ G2.length := by rw [hG2]; simp
+    have hlenB2 : (p :: (A ++ T)).length = G2.length + rest2.length := by
+      rw [hBeq2]; simp
+    have hlast : (p :: (A ++ T)).getLastD (0, 0) = rest2.getLastD (0, 0) := by
+      rw [hBeq2]; exact getLastD_append_right hrne _
+    have hlevR : entry rest2 1 (rest2.length - 1) = 0 := by
+      rw [entry_last, ← hlast]; exact hlplev
+    have hzR : ¬ (entry rest2 0 (rest2.length - 1) = 0 ∧ entry rest2 1 (rest2.length - 1) = 0) := by
+      rintro ⟨h1, -⟩
+      rw [entry_last0, ← hlast] at h1
+      omega
+    have hbR : blockok (p.1 + 1) rest2 := by
+      refine ⟨fun _ => hrh1, fun cc hcc => by have := hrd cc hcc; omega, ?_⟩
+      exact (steps1_append.1 (by rw [← hBeq2]; exact hb.2.2)).2.1
+    by_cases hge2 : G2.length ≤ parent (p :: (A ++ T)) 0 ((p :: (A ++ T)).length - 1)
+    · have hiR : idx1 rest2 (rest2.length - 1) = 0 := by
+        rw [idx1, if_neg (by rw [hlevR]; omega)]
+      have hR1 : 1 ≤ rest2.length := List.length_pos_of_ne_nil hrne
+      have hidx : (p :: (A ++ T)).length - 1 = G2.length + (rest2.length - 1) := by omega
+      have hpB : hasParent (G2 ++ rest2) (idx1 rest2 (rest2.length - 1))
+          (G2.length + (rest2.length - 1)) := by
+        rw [hiR, ← hidx, ← hBeq2]; exact hpar
+      have hgeB : G2.length ≤ parent (G2 ++ rest2) (idx1 rest2 (rest2.length - 1))
+          (G2.length + (rest2.length - 1)) := by
+        rw [hiR, ← hidx, ← hBeq2]; exact hge2
+      rw [hG2] at hpB hgeB
+      have hIH := ih rest2 (by omega) (p.1 + 1) (d + 1) p.2 false false hbR hcR hdR
+        (by omega) (by omega) hlevR hAPR hpOK_false fOK_false
+      obtain ⟨m, n', k1, k2, k3⟩ := reindexD_rest_contr (Arg := A) (T := rest2)
+        hAdeep hU hq2 hq1 hpre hpd hrd hrne hrh1 hrh2 hlad hbR hcR hdR (by omega) hzR
+        hpB hgeB hIH n hn
+      refine ⟨m, n', k1, k2, ?_⟩
+      rw [← hG2, ← hBeq2] at k3
+      exact k3
+    · rw [hBeq3]
+      refine Hs p q A U pre rest2 bd d plev first force ?_ ?_ ?_ hbd hp1 hAdeep hU hq2 hq1
+        hpre hpd hrd hrne hrh1 hrh2 ?_ ?_ hlad ?_ n hn
+      · rw [← hBeq3]; exact hb
+      · rw [← hBeq3]; exact hc
+      · rw [← hBeq3]; exact hd
+      · rw [← hBeq3]; exact hlev
+      · rw [← hBeq3]; exact hAP
+      · rw [← hBeq3, ← hG2]; exact hge2
+  · -- `Bq ≠ []`: `q` の兄弟へ降りる
+    have hBqh' : ¬ (p.1 < (Bq.headI).1) := by
+      rcases hBqh with h | h
+      · exact absurd h hBqe
+      · exact h
+    obtain ⟨G1, hG1⟩ : ∃ G1 : PairSeq, G1 = p :: (A ++ (U ++ q :: (pre ++ rest2))) := ⟨_, rfl⟩
+    have hBeq1 : (p :: (A ++ T)) = G1 ++ Bq := by
+      rw [hG1, hTeq]; simp [List.append_assoc]
+    have hG1len : 1 ≤ G1.length := by rw [hG1]; simp
+    have hBq1 : 1 ≤ Bq.length := List.length_pos_of_ne_nil hBqe
+    have hlenB1 : (p :: (A ++ T)).length = G1.length + Bq.length := by
+      rw [hBeq1]; simp
+    have hlast : (p :: (A ++ T)).getLastD (0, 0) = Bq.getLastD (0, 0) := by
+      rw [hBeq1]; exact getLastD_append_right hBqe _
+    have hlevBq : entry Bq 1 (Bq.length - 1) = 0 := by
+      rw [entry_last, ← hlast]; exact hlplev
+    have hzBq : ¬ (entry Bq 0 (Bq.length - 1) = 0 ∧ entry Bq 1 (Bq.length - 1) = 0) := by
+      rintro ⟨h1, -⟩
+      rw [entry_last0, ← hlast] at h1
+      omega
+    have hbBq : blockok bd Bq := by
+      refine ⟨?_, fun cc hcc => hb.2.1 cc (hmemBq cc hcc), ?_⟩
+      · intro hne
+        have h1 : bd ≤ (Bq.headI).1 := hb.2.1 _ (hmemBq _ (headI_mem hne))
+        omega
+      · exact (steps1_append.1 (by rw [← hBeq1]; exact hb.2.2)).2.1
+    have hgeG1 : G1.length ≤ parent (p :: (A ++ T)) 0 ((p :: (A ++ T)).length - 1) := by
+      by_contra hlt
+      have hhead : entry (p :: (A ++ T)) 0 G1.length = (Bq.headI).1 := by
+        rw [hBeq1, show G1.length = G1.length + 0 by omega, entry_append_right, entry_zero0]
+      have hthead : (Bq.headI).1 ≤ bd := by omega
+      rcases Nat.lt_or_ge G1.length ((p :: (A ++ T)).length - 1) with hcase | hcase
+      · have hx := hnrp.2.2.2.2 G1.length ⟨by omega, hcase⟩
+        rw [entry_last0, hhead] at hx
+        omega
+      · have heq : G1.length = (p :: (A ++ T)).length - 1 := by omega
+        rw [heq, entry_last0] at hhead
+        omega
+    have hiBq : idx1 Bq (Bq.length - 1) = 0 := by
+      rw [idx1, if_neg (by rw [hlevBq]; omega)]
+    have hidx : (p :: (A ++ T)).length - 1 = G1.length + (Bq.length - 1) := by omega
+    have hpB : hasParent (G1 ++ Bq) (idx1 Bq (Bq.length - 1))
+        (G1.length + (Bq.length - 1)) := by
+      rw [hiBq, ← hidx, ← hBeq1]; exact hpar
+    have hgeB : G1.length ≤ parent (G1 ++ Bq) (idx1 Bq (Bq.length - 1))
+        (G1.length + (Bq.length - 1)) := by
+      rw [hiBq, ← hidx, ← hBeq1]; exact hgeG1
+    rw [hG1] at hpB hgeB
+    have hIH := ih Bq (by omega) bd d p.2 false false hbBq hcBq hdBq hbd hz0 hlevBq hAPBq
+      hpOK_false fOK_false
+    obtain ⟨m, n', k1, k2, k3⟩ := reindexD_sib_contr (Arg := A) (T := Bq)
+      hAdeep hU hq2 hq1 hpre hpd hrd hrne hrh1 hrh2 hBqh' hlad (by rw [hp1]; exact hbBq)
+      hcBq hdBq (by omega) hzBq
+      hpB hgeB hIH n hn
+    refine ⟨m, n', k1, k2, ?_⟩
+    rw [← hG1, ← hBeq1] at k3
+    exact k3
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -6958,3 +7285,8 @@ end DBMS
 #print axioms DBMS.reindexD_sib_contr
 #print axioms DBMS.reindexD_rest_contr
 #print axioms DBMS.reindexD_sib_lad2
+#print axioms DBMS.argPatOK_drop
+#print axioms DBMS.Units.head_le
+#print axioms DBMS.contrLen_shape
+#print axioms DBMS.headI_mem
+#print axioms DBMS.reindexD_zero_fire
