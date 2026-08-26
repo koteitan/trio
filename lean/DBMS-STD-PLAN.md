@@ -1108,3 +1108,142 @@ def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 2. `RDnode`（shift regime、ずれたコピーの補題）。
 3. `RDnopar`（`convC_dropLast_noParent_aux` の `contrOK` を梯子の位置だけに弱める）。
 4. `RDzeroRes2` / `RDlad2`（梯子つきの段での縮約）。
+
+## 2026-08-26（続き 5）: 梯子つきの縮約を潰した。残余は 5 つ
+
+### 到達点
+
+```
+reindexD_holds_of_res6  : CtrRes → CtrPres2 → RDzeroStop2 → RDnopar → RDnode → ReindexD
+ST_D_conC_holds_of_res6 : 同上 → ST_PS M → ST_D (conC M)
+```
+
+**旧 `RDzeroRes2` と `RDlad2`（梯子つきの段での縮約）は消えた。**
+代わりに入ったのは `CtrPres2`（両側で共通）と `RDzeroStop2`（段 0 だけ）で、
+段 > 0 側の対応物 `RDposStop2` は**定理として証明した**（`rdPosStop2`）。
+`leanman check` は exit 0、`sorry` 0、`sorryAx` なし。`DbmsStd.lean` は 9794 行。
+
+### 何が分かったか
+
+`reindexD_sib_lad` は「**どんな** `L` でも縮約が起きない」を要求していたが、
+因子化に実際に要るのは `T` と `T⟦n⟧` の 2 つだけである（`reindexD_sib_lad2`）。
+しかも `¬(∀ L, contrLen … = none)` は `p.2 ≥ 1` とほぼ同値なので、
+旧 `RDzeroRes2` は「梯子つきで兄弟がある場合」全部（標準形 ≤9 列の右端の道で
+52443 節点）を抱えていた。新しい割り方だと縮約が実際に発火する 151 節点だけになる。
+
+**縮約が発火する段では兄弟ブロックは必ず**
+
+```
+T = U ++ q :: ((pre ++ rest2) ++ Bq)      pre = contrPre p U A
+```
+
+の形で（`contrLen_shape`）、`L` を取り替えても縮約はまったく同じように発火する
+（`contrLen_of_shape` / `convC_factor_contr`）。だから
+
+* `Bq ≠ []` → `q` の兄弟ブロック `Bq` へ降りる（`reindexD_sib_contr`）
+* `Bq = []` → `rest2` へ降りる（`reindexD_rest_contr`）
+
+で `reindexD_step_gen` に乗る。降りられないのは「末尾列の親が縮約の内側にある」
+場合だけで、これが `RDzeroStop2` / `RDposStop2` である。
+
+`Bq ≠ []` のときは親が必ず `Bq` の中に入る（`Bq` の頭の深さが `bd`、
+末尾列の深さが `bd` より大きいことから）。
+
+### `rdPosStop2`（段 > 0 の Stop は起こらない）
+
+段 > 0 では行 1 の親 `j0` が縮約の内側に来ることはない:
+
+1. `q` は深さ `bd` なのでブロックの中に行 0 の親を持たない。よって
+   `le0_ge_of_append` で `j0 ≥ (p :: (A ++ U)).length`（= `q` の位置）。
+2. `pre` の列は深さ `bd + 1` 以上。`le0_interval_gt` を `k = |G2|`
+   （`rest2` の頭、深さ `bd+1`）に当てると `entry0 j0 < bd+1`、つまり `j0` の深さは
+   `bd`。深さ `bd` の列は `q` の位置までしかないので `j0 = q` の位置。
+3. `j0 = q` の位置なら `q.2 < entry1 x`、つまり `entry1 x ≥ p.2`。
+   一方、鎖の最初の一歩 `y` は深さ `bd+1` で `rest2` の中にあり、
+   `nextrel1` の最小性から `entry1 x ≤ entry1 y`、
+   `descOK`（同じ深さの鎖では段が増えない = **`descOK_level_le_head`**）から
+   `entry1 y ≤ rest2.headI.2 < p.2`。矛盾。
+
+段 0 では 3 が効かない（`x` の段が 0 なので `q.2 < entry1 x` が出ない）ので、
+`RDzeroStop2` は本物の場合として残る（標準形 ≤9 列の右端の道で 67 節点、
+ブロック ≤7 列・`bd ≤ 2` で 113 例）。
+
+### 残っている 5 つ
+
+| | 内容 | 実測 |
+|---|---|---|
+| `CtrRes` | BMS 標準形は `argCtrOK` | 標準形 ≤9 列 295014 個で違反 0 |
+| `CtrPres2` | 縮約が発火しない状態は展開で保たれる（`ctrHeadOK` つき） | ブロック ≤7 列 `bd ≤ 2` の 447 万例で反例 0 |
+| `RDzeroStop2` | 段 0・縮約が発火して親が縮約の内側（コピー regime） | 113 例で反例 0 |
+| `RDnopar` | 段 > 0・末尾列に行 1 の親がない | 77950 例で反例 0 |
+| `RDnode` | 段 > 0・末尾列の親が節点（ずれたコピー） | 14827 例で反例 0 |
+
+### `CtrPres2` について分かっていること
+
+**`ctrHeadOK` を落とすと偽**（反例 `B = (1,1)(1,0)(2,1)(2,1)`, `n = 2`:
+`T` では `rest2` の頭の段が `p.2` と同じなので発火しないが、`T⟦2⟧` では下がる）。
+`ctrHeadOK` を足すとブロック ≤7 列・`bd ≤ 2` の 447 万例で反例 0
+（`tools/dbms/ctrpres_check.py`）。
+
+**構造だけの版（`contrLen'`）も偽**（26 例。`tools/dbms/ctrpres_cases.py`）。
+つまり段が下がる条件を使わないと証明できない。
+
+証明の筋（`W := T.dropLast` は `T` と `T⟦n⟧` の共通の接頭辞、`|W| = |T| - 1`）:
+発火の証拠は `T⟦n⟧` の接頭辞 `U_n ++ [q] ++ pre_n ++ [z]` だけで決まる
+（`|pre_n| = 1 + |A| + |U_n|`）。`J := |U_n| + 1 + |pre_n|` を `z` の位置として
+
+* **場合 1**（`J < |W|`）: 証拠がまるごと `W` の中 ⟹ `T` でも同じ証拠が立つので
+  `contrLen T ≠ none`。仮定に矛盾。**（実測 0 件。証明も簡単）**
+* **場合 2a**（`J = |W|`）: `z` は `T⟦n⟧` では 2 個目のコピーの頭
+  `(v0 + d0, w0)`、`T` では末尾列 `lp`。
+  * `lp` の段 > 0 なら `v0 + d0 = lp` の深さなので、深さの条件は `lp` にも成り立ち、
+    `T` で構造条件が揃う ⟹ `ctrHeadOK` から `contrLen T ≠ none`。矛盾。
+  * `lp` の段 = 0 なら `d0 = 0` で `v0 = p.1 + 1`。親 `T[r]` は `pre` の中の
+    深さ `p.1+1` の列だが、`pre = (p.1+1, p.2) :: shift1 A ++ shift1 U` の
+    深さ `p.1+1` の列は `pre[0]` と `shift1 U` のユニットの頭だけで、
+    **どれも段が `p.2`**。段が下がる条件 `w0 < p.2` に矛盾。
+  **（実測 17 件。上の筋で潰せるはず）**
+* **場合 2b**（`J > |W|`）: `z` がコピーの奥。実測 9 件（例
+  `B = (1,1)(1,1)(1,0)(2,1)(3,0)`, `n = 3`, `T⟦3⟧ = (1,1)(1,0)(2,1)(2,1)(2,1)`）。
+  どの例も `z` の段が `p.2` と同じで段が下がらない。**ここだけ筋が未確定。**
+
+### `RDzeroStop2` について分かっていること
+
+配置は必ずこうなる（`hasParent` を足した版で証明できるはず）:
+`Bq = []`、末尾列の深さ = `bd + 1`、**親 = `q` の位置**。したがって
+`oper_repeat_at` で
+
+```
+B⟦n⟧ = (p :: (A ++ U)) ++ (List.replicate n V).flatten,  V = q :: (pre ++ rest2.dropLast)
+```
+
+DBMS 側は `convC B = C0 ++ convC rest2 (d+1) p.2 false false` で
+（`C0 = (d,plev) :: (d+1,p.2) :: (convC A (d+2) p.2 true false ++ convC U (d+1) p.2 false false)`）、
+像の末尾列は深さ `d+1`・段 0、その手前で深さが `d` 以下なのは先頭の `(d, plev)` だけなので
+**DBMS 側の親は index 0**。よって
+
+```
+(convC B)⟦m⟧ = (List.replicate m ((convC B).dropLast)).flatten
+```
+
+一方
+* `|rest2| ≥ 2`: `convC (B⟦n⟧) = D ++ convC ((replicate (n-1) V).flatten) d p.2 false false`
+  で `D = (convC B).dropLast`。`m = n` で合う。
+* `|rest2| = 1`: `T⟦n⟧` では縮約が発火せず
+  `convC (B⟦n⟧) = C0' ++ convC (U ++ (replicate n V).flatten) d p.2 false false`。
+  `d ≤ p.2` なら `ddOf p.2 d p.2 false false = ddOf p.2 (d+1) p.2 false false = p.2 + 1`
+  なので `convC U d p.2 false false = convC U (d+1) p.2 false false` となり、
+  結局 `(replicate (n+1) D).flatten`。`m = n + 1` で合う（計画書のいう `g(m) = m - 1`）。
+
+要るのは「ユニット列のコピーの並びの `convC`」の補題（`convC_run_lad` の親戚）と
+「`convC` の深さパラメタを 1 増やしてもユニット列の像は変わらない」補題。
+
+### 追加した検査スクリプト
+
+| | |
+|---|---|
+| `tools/dbms/walk_contr.py` | 標準形の右端の道で縮約が発火する節点を分類 |
+| `tools/dbms/ctrpres_check.py` | `CtrPres` / `CtrPres2` の全数検査 |
+| `tools/dbms/ctrpres_cases.py` | `CtrPres2` の場合 1 / 2a / 2b の分類 |
+| `tools/dbms/stop_check.py` | `Stop` の配置（段 0 / 段 > 0）を数える |
+| `tools/dbms/zerostop_check.py` | `RDzeroStop2` の配置と目標の恒等式の検査 |
