@@ -14890,6 +14890,308 @@ theorem ctrPres_prefix {p q : ℕ × ℕ} {A U pre T : PairSeq} {z : ℕ × ℕ}
   rw [hTe]
   exact contrLen'_ne_none_gen hU hq2 hq1 hpre hpd hz1
 
+/-- 発火の証拠 `S = U ++ q :: (pre ++ z :: Z)` の位置を読む。 -/
+theorem contr_ev_take {q z : ℕ × ℕ} {U pre Z S : PairSeq}
+    (hS : S = U ++ q :: (pre ++ z :: Z)) :
+    S.length = U.length + 1 + pre.length + 1 + Z.length ∧
+    S.take (U.length + 1 + pre.length + 1) = U ++ q :: (pre ++ [z]) ∧
+    S.getD U.length (0, 0) = q ∧
+    S.getD (U.length + 1 + pre.length) (0, 0) = z ∧
+    (∀ i, i < U.length → S.getD i (0, 0) ∈ U) ∧
+    (∀ i, U.length < i → i < U.length + 1 + pre.length → S.getD i (0, 0) ∈ pre) := by
+  have hS' : S = (U ++ [q]) ++ (pre ++ z :: Z) := by rw [hS]; simp
+  have hlq : (U ++ [q]).length = U.length + 1 := by simp
+  refine ⟨by rw [hS]; simp only [List.length_append, List.length_cons]; omega, ?_, ?_, ?_, ?_, ?_⟩
+  · have e1 : (U ++ [q]).take (U.length + 1 + pre.length + 1) = U ++ [q] :=
+      List.take_of_length_le (by rw [hlq]; omega)
+    have e2 : (pre ++ z :: Z).take (pre.length + 1) = pre ++ [z] := by
+      rw [List.take_append, List.take_of_length_le (Nat.le_succ _)]
+      simp
+    rw [hS', List.take_append, hlq, e1,
+      show U.length + 1 + pre.length + 1 - (U.length + 1) = pre.length + 1 by omega, e2]
+    simp
+  · rw [hS', getD_append_left (by rw [hlq]; omega), getD_append_right (le_refl _)]
+    simp
+  · rw [hS', getD_append_right (by rw [hlq]; omega), hlq,
+      show U.length + 1 + pre.length - (U.length + 1) = pre.length by omega,
+      getD_append_right (le_refl _)]
+    simp
+  · intro i hi
+    rw [hS', getD_append_left (by rw [hlq]; omega), getD_append_left hi,
+      getD_eq_getElem' U (0, 0) hi]
+    exact List.getElem_mem _
+  · intro i h1 h2
+    rw [hS', getD_append_right (by rw [hlq]; omega), hlq,
+      getD_append_left (by omega), getD_eq_getElem' pre (0, 0) (by omega)]
+    exact List.getElem_mem _
+
+/-- 証拠の `z` の手前までの接頭辞。 -/
+theorem contr_ev_take2 {q z : ℕ × ℕ} {U pre Z S : PairSeq}
+    (hS : S = U ++ q :: (pre ++ z :: Z)) :
+    S.take (U.length + 1 + pre.length) = U ++ q :: pre := by
+  have hS' : S = (U ++ [q]) ++ (pre ++ z :: Z) := by rw [hS]; simp
+  have hlq : (U ++ [q]).length = U.length + 1 := by simp
+  have e1 : (U ++ [q]).take (U.length + 1 + pre.length) = U ++ [q] :=
+    List.take_of_length_le (by rw [hlq]; omega)
+  have e2 : (pre ++ z :: Z).take pre.length = pre := by
+    rw [List.take_append, List.take_of_length_le (le_refl _), Nat.sub_self]
+    simp
+  rw [hS', List.take_append, hlq, e1,
+    show U.length + 1 + pre.length - (U.length + 1) = pre.length by omega, e2]
+  simp
+
+/-- **最後の残余 `CtrPres2` は定理**。 -/
+theorem ctrPres2_holds : CtrPres2 := by
+  intro p A T bd hb hcol hdesc hp1 hAdeep hThd hcth hnone n hn
+  have hent : ∀ (M : PairSeq) (j : ℕ), entry M 0 j = (M.getD j (0, 0)).1 := by
+    intro M j; unfold entry; rw [if_pos rfl]
+  have hnone' : contrLen' p T (unitsLen p T) A = none := by rw [hcth]; exact hnone
+  rcases hSv : contrLen p (T⟦n⟧) (unitsLen p (T⟦n⟧)) A with _ | ⟨rest2, Bq⟩
+  · rfl
+  exfalso
+  obtain ⟨q, U, pre, hU, hSeq0, hq2, hq1, hpre, hpd, hrd, hBqh, hrne, hrh1, hrh2⟩ :=
+    contrLen_shape hSv
+  obtain ⟨z, rest2', hrz⟩ : ∃ z r, rest2 = z :: r := by
+    cases rest2 with
+    | nil => exact absurd rfl hrne
+    | cons a l => exact ⟨a, l, rfl⟩
+  subst hrz
+  simp only [List.headI_cons] at hrh1 hrh2
+  have hSeq : T⟦n⟧ = U ++ q :: (pre ++ z :: (rest2' ++ Bq)) := by
+    rw [hSeq0]; simp
+  obtain ⟨hlenS, htakeS, hgq, hgz, hmU, hmpre⟩ := contr_ev_take hSeq
+  have hTdeep : ∀ x ∈ T, bd ≤ x.1 := fun x hx =>
+    hb.2.1 x (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
+  have hprelev : ∀ x ∈ pre, x.1 = p.1 + 1 → x.2 = p.2 := by
+    rw [hpre]; exact contrPre_level hU hAdeep
+  have hJlt : U.length + 1 + pre.length < (T⟦n⟧).length := by omega
+  -- 展開の分岐
+  by_cases hL1 : T.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL1, hnone] at hSv
+    simp at hSv
+  have hL1' : 1 < T.length := by omega
+  have hTne : T ≠ [] := fun h => by rw [h] at hL1'; simp at hL1'
+  have hpredcase : (T⟦n⟧) = Pred T → False := by
+    intro hP
+    rw [show Pred T = T.dropLast by unfold Pred; rw [if_neg (by omega)]] at hP
+    have hTsplit : T = (T⟦n⟧) ++ [T.getLast hTne] := by
+      rw [hP]; exact (List.dropLast_append_getLast hTne).symm
+    refine ctrPres_prefix hU hq2 hq1 hpre hpd hrh1 ?_ hnone'
+    rw [hTsplit, List.take_append_of_le_length (by omega), htakeS]
+  by_cases hzz : entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0
+  · exact hpredcase (oper_eq_pred_of_zero n hL1 hzz)
+  by_cases hpar : hasParent T (idx1 T (T.length - 1)) (T.length - 1)
+  swap
+  · exact hpredcase (oper_eq_pred_of_noParent n hL1 hzz hpar)
+  obtain ⟨G, v0, w0, R, d0, lp, hTeq, hSeq2, hRdeep, hv0lp, hdisj, hnextR⟩ :=
+    oper_bad_blocks hL1' hzz hpar hn
+  have hGB : T = (G ++ ((v0, w0) :: R)) ++ [lp] := hTeq
+  have hblen : ((v0, w0) :: R).length = R.length + 1 := by simp
+  have hGlen : (G ++ ((v0, w0) :: R)).length = G.length + (R.length + 1) := by simp
+  have hlenGB : (G ++ ((v0, w0) :: R)).length = T.length - 1 := by
+    rw [hTeq]
+    simp only [List.length_append, List.length_cons, List.length_nil]
+    omega
+  have hSc : T⟦n⟧ = G ++ copies d0 ((v0, w0) :: R) n := hSeq2
+  have hcopn : copies d0 ((v0, w0) :: R) n
+      = ((v0, w0) :: R) ++ shiftr0 d0 (copies d0 ((v0, w0) :: R) (n - 1)) := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    rw [hm]
+    simp only [Nat.add_sub_cancel]
+    exact copies_succ_front _ _ _
+  have hSsplit : T⟦n⟧
+      = (G ++ ((v0, w0) :: R)) ++ shiftr0 d0 (copies d0 ((v0, w0) :: R) (n - 1)) := by
+    rw [hSc, hcopn]; simp
+  have hlenS2 : (T⟦n⟧).length
+      = (T.length - 1) + (n - 1) * ((v0, w0) :: R).length := by
+    rw [hSsplit, List.length_append, hlenGB, length_shiftr0, copies_length]
+  have hv0bd : bd ≤ v0 := hTdeep (v0, w0) (by rw [hTeq]; simp)
+  have hagree : ∀ i, i < T.length - 1 → (T⟦n⟧).getD i (0, 0) = T.getD i (0, 0) := by
+    intro i hi
+    have e1 : (T⟦n⟧).getD i (0, 0) = (G ++ ((v0, w0) :: R)).getD i (0, 0) := by
+      rw [hSsplit, getD_append_left (by omega)]
+    have e2 : T.getD i (0, 0) = (G ++ ((v0, w0) :: R)).getD i (0, 0) := by
+      rw [hGB, getD_append_left (by omega)]
+    rw [e1, e2]
+  -- 場合 1: 証拠がまるごと `T` の中
+  by_cases hJ : U.length + 1 + pre.length < T.length - 1
+  · refine ctrPres_prefix hU hq2 hq1 hpre hpd hrh1 ?_ hnone'
+    have e1 : T.take (U.length + 1 + pre.length + 1)
+        = (G ++ ((v0, w0) :: R)).take (U.length + 1 + pre.length + 1) := by
+      rw [hGB, List.take_append_of_le_length (by omega)]
+    have e2 : (T⟦n⟧).take (U.length + 1 + pre.length + 1)
+        = (G ++ ((v0, w0) :: R)).take (U.length + 1 + pre.length + 1) := by
+      rw [hSsplit, List.take_append_of_le_length (by omega)]
+    rw [e1, ← e2, htakeS]
+  push_neg at hJ
+  -- 場合 2: 証拠が階段にはみ出す
+  have hpos : 0 < (n - 1) * ((v0, w0) :: R).length := by
+    rcases Nat.eq_zero_or_pos ((n - 1) * ((v0, w0) :: R).length) with h0 | h0
+    · exfalso; rw [h0] at hlenS2; omega
+    · exact h0
+  rcases hdisj with ⟨hd00, hi10⟩ | ⟨hd0p, hwlp, hlp1, hnr1⟩
+  · -- ずれが 0: コピーはすべて同じ
+    subst hd00
+    have hmemblk : ∀ i, T.length - 1 ≤ i → i < (T⟦n⟧).length →
+        (T⟦n⟧).getD i (0, 0) ∈ ((v0, w0) :: R) := by
+      intro i h1 h2
+      rw [hSsplit, getD_append_right (by omega), shiftr0_zero]
+      have hlt : i - (G ++ ((v0, w0) :: R)).length
+          < (copies 0 ((v0, w0) :: R) (n - 1)).length := by
+        rw [copies_length, hlenGB]; omega
+      have hmem : (copies 0 ((v0, w0) :: R) (n - 1)).getD
+          (i - (G ++ ((v0, w0) :: R)).length) (0, 0)
+          ∈ copies 0 ((v0, w0) :: R) (n - 1) := by
+        rw [getD_eq_getElem' _ _ hlt]; exact List.getElem_mem _
+      obtain ⟨c, hc, kc, hck⟩ := mem_copies hmem
+      rw [hck]
+      simpa using hc
+    have hzin : z ∈ ((v0, w0) :: R) := by
+      have h := hmemblk (U.length + 1 + pre.length) (by omega) hJlt
+      rw [hgz] at h; exact h
+    obtain ⟨s, hs, hsz⟩ : ∃ s, s < ((v0, w0) :: R).length ∧
+        ((v0, w0) :: R).getD s (0, 0) = z := by
+      obtain ⟨s, hs, hse⟩ := List.getElem_of_mem hzin
+      exact ⟨s, hs, by rw [getD_eq_getElem' _ _ hs]; exact hse⟩
+    have hgm : (T⟦n⟧).getD (G.length + s) (0, 0) = z := by
+      rw [hSsplit,
+        getD_append_left (by omega),
+        getD_append_right (Nat.le_add_right _ _), Nat.add_sub_cancel_left]
+      exact hsz
+    have hmlt : G.length + s < T.length - 1 := by omega
+    rcases Nat.lt_trichotomy (G.length + s) U.length with hm | hm | hm
+    · -- ユニットの中
+      have hkklt : U.length < T.length - 1 := by
+        by_contra hcon2
+        have hqin : q ∈ ((v0, w0) :: R) := by
+          have h := hmemblk U.length (by omega) (by omega)
+          rw [hgq] at h; exact h
+        have hqv0 : q = (v0, w0) := by
+          rcases List.mem_cons.1 hqin with h | h
+          · exact h
+          · exact absurd (hRdeep q h) (by omega)
+        have hg0 : (T⟦n⟧).getD G.length (0, 0) = q := by
+          rw [hSsplit, getD_append_left (by omega),
+            getD_append_right (le_refl _), Nat.sub_self, hqv0]
+          simp
+        have hinU : (T⟦n⟧).getD G.length (0, 0) ∈ U := hmU G.length (by omega)
+        rw [hg0] at hinU
+        have heqp := hU.eq_of_depth q hinU hq1
+        rw [heqp] at hq2
+        omega
+      have hnr0 : nextrel0 T G.length (T.length - 1) := by
+        unfold nextR at hnextR
+        rw [if_pos hi10] at hnextR
+        exact hnextR
+      have hmin := hnr0.2.2.2.2 U.length ⟨by omega, hkklt⟩
+      have he1 : entry T 0 U.length = bd := by
+        rw [hent, ← hagree U.length hkklt, hgq]
+        omega
+      have hlast : T.getD (T.length - 1) (0, 0) = lp := by
+        rw [← hlenGB]
+        conv_lhs => rw [hGB]
+        rw [getD_append_right (le_refl _), Nat.sub_self]
+        simp
+      have he2 : entry T 0 (T.length - 1) = lp.1 := by rw [hent, hlast]
+      omega
+    · -- `q` に一致
+      rw [hm, hgq] at hgm
+      rw [hgm] at hq1
+      omega
+    · -- `pre` の中
+      have hin : (T⟦n⟧).getD (G.length + s) (0, 0) ∈ pre := hmpre _ hm (by omega)
+      rw [hgm] at hin
+      have h2 := hprelev z hin hrh1
+      omega
+  · -- ずれが正: 2 コピー目以降は深い
+    have hn2 : 2 ≤ n := by
+      by_contra hcon2
+      rw [show n - 1 = 0 by omega] at hpos
+      simp at hpos
+    have hcopn2 : copies d0 ((v0, w0) :: R) (n - 1)
+        = ((v0, w0) :: R) ++ shiftr0 d0 (copies d0 ((v0, w0) :: R) (n - 2)) := by
+      obtain ⟨m, hm⟩ : ∃ m, n - 1 = m + 1 := ⟨n - 2, by omega⟩
+      rw [hm, show n - 2 = m by omega]
+      exact copies_succ_front _ _ _
+    have hreg : ∀ i, T.length - 1 ≤ i → i < (T⟦n⟧).length →
+        ∃ c ∈ ((v0, w0) :: R), ∃ kc : ℕ,
+          (T⟦n⟧).getD i (0, 0) = (c.1 + kc * d0 + d0, c.2) := by
+      intro i h1 h2
+      rw [hSsplit, getD_append_right (by omega)]
+      have hlt : i - (G ++ ((v0, w0) :: R)).length
+          < (shiftr0 d0 (copies d0 ((v0, w0) :: R) (n - 1))).length := by
+        rw [length_shiftr0, copies_length, hlenGB]; omega
+      have hmem : (shiftr0 d0 (copies d0 ((v0, w0) :: R) (n - 1))).getD
+          (i - (G ++ ((v0, w0) :: R)).length) (0, 0)
+          ∈ shiftr0 d0 (copies d0 ((v0, w0) :: R) (n - 1)) := by
+        rw [getD_eq_getElem' _ _ hlt]; exact List.getElem_mem _
+      obtain ⟨y, hy, hyx⟩ := mem_shiftr0.1 hmem
+      obtain ⟨c, hc, kc, hck⟩ := mem_copies hy
+      exact ⟨c, hc, kc, by rw [← hyx, hck]⟩
+    obtain ⟨c, hc, kc, hcz⟩ := hreg (U.length + 1 + pre.length) (by omega) hJlt
+    rw [hgz] at hcz
+    obtain ⟨t, ht⟩ : ∃ t, kc * d0 = t := ⟨_, rfl⟩
+    rw [ht] at hcz
+    have hc1 : v0 ≤ c.1 := by
+      rcases List.mem_cons.1 hc with h | h
+      · simp [h]
+      · exact le_of_lt (hRdeep c h)
+    have hz1' : c.1 + t + d0 = bd + 1 := by
+      have h : z.1 = c.1 + t + d0 := by rw [hcz]
+      omega
+    have hcbd : c.1 = bd := by omega
+    have hcc : c = (v0, w0) := by
+      rcases List.mem_cons.1 hc with h | h
+      · exact h
+      · exact absurd (hRdeep c h) (by omega)
+    have hv0eq : v0 = bd := by rw [hcc] at hcbd; exact hcbd
+    have hd0eq : d0 = 1 := by omega
+    have hzw : z.2 = w0 := by rw [hcz, hcc]
+    have hkklt : U.length < T.length - 1 := by
+      by_contra hcon2
+      obtain ⟨c2, hc2, kc2, hq2'⟩ := hreg U.length (by omega) (by omega)
+      rw [hgq] at hq2'
+      have hc21 : v0 ≤ c2.1 := by
+        rcases List.mem_cons.1 hc2 with h | h
+        · simp [h]
+        · exact le_of_lt (hRdeep c2 h)
+      obtain ⟨t2, ht2⟩ : ∃ t2, kc2 * d0 = t2 := ⟨_, rfl⟩
+      rw [ht2] at hq2'
+      have hqd : q.1 = c2.1 + t2 + d0 := by rw [hq2']
+      omega
+    have hhead : (T⟦n⟧).getD (T.length - 1) (0, 0) = (v0 + d0, w0) := by
+      rw [hSsplit, getD_append_right (by omega : (G ++ ((v0, w0) :: R)).length ≤ T.length - 1),
+        hlenGB, Nat.sub_self,
+        getD_shiftr0 (by rw [copies_length]; exact hpos), hcopn2,
+        getD_append_left (by simp)]
+      simp
+    have hJeq : U.length + 1 + pre.length = T.length - 1 := by
+      by_contra hne
+      have hin : (T⟦n⟧).getD (T.length - 1) (0, 0) ∈ pre :=
+        hmpre (T.length - 1) (by omega) (by omega)
+      rw [hhead] at hin
+      have hw : w0 = p.2 := hprelev _ hin (by show v0 + d0 = p.1 + 1; omega)
+      omega
+    have hGBeq : G ++ ((v0, w0) :: R) = U ++ q :: pre := by
+      rw [← contr_ev_take2 hSeq, hSsplit, List.take_append_of_le_length (by omega),
+        List.take_of_length_le (by omega)]
+    refine ctrPres_prefix hU hq2 hq1 hpre hpd (z := lp) (by omega) ?_ hnone'
+    rw [List.take_of_length_le (by omega), hGB, hGBeq]
+    simp
+
+/-! ## 4.43 到達点: `ReindexD` は無条件
+
+残余はすべて定理になった（`CtrRes` = `ctrRes_holds`、`RDnopar` = `rdNopar`、
+`RDnode` = `rdNode`、`CtrPres2` = `ctrPres2_holds`）ので、`ReindexD` と
+主定理 `ST_PS M → ST_D (conC M)` が仮定なしで出る。 -/
+
+/-- **`ReindexD` は定理**（仮定なし）。 -/
+theorem reindexD_holds : ReindexD := reindexD_holds_of_res11 ctrPres2_holds
+
+/-- **像は DBMS 標準形**（仮定なし）。 -/
+theorem ST_D_conC_final {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
+  ST_D_conC_holds_of_res11 ctrPres2_holds hM
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
@@ -15156,3 +15458,14 @@ end DBMS
 #print axioms DBMS.rdNode
 #print axioms DBMS.reindexD_holds_of_res11
 #print axioms DBMS.ST_D_conC_holds_of_res11
+
+#print axioms DBMS.Units.eq_of_depth
+#print axioms DBMS.contrPre_level
+#print axioms DBMS.contrLen'_of_shape
+#print axioms DBMS.contrLen'_ne_none_gen
+#print axioms DBMS.ctrPres_prefix
+#print axioms DBMS.contr_ev_take
+#print axioms DBMS.contr_ev_take2
+#print axioms DBMS.ctrPres2_holds
+#print axioms DBMS.reindexD_holds
+#print axioms DBMS.ST_D_conC_final
