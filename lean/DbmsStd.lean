@@ -9899,6 +9899,168 @@ theorem convC_shift1 : ∀ (n : ℕ) (M : PairSeq), M.length ≤ n →
         simp only []
         rw [shift1_takeWhile p.1 r, shift1_dropWhile p.1 r, ih _ hTk, ih _ hDr]
 
+/-- **ユニット列のうしろで像は切れる**（`first = false` の並び）。 -/
+theorem convC_units_append {t : ℕ × ℕ} : ∀ {V : PairSeq}, Units t V →
+    ∀ (L : PairSeq), (L = [] ∨ ¬ (t.1 < (L.headI).1)) →
+    ∀ (D plev plev' : ℕ),
+      convC (V ++ L) D plev false false
+        = convC V D plev false false ++ convC L D plev' false false := by
+  intro V hV
+  induction hV with
+  | nil =>
+    intro L hL D plev plev'
+    simp only [List.nil_append, convC_nil]
+    exact convC_first_false L D plev plev' false false
+  | @cons A U' hA hU ih =>
+    intro L hL D plev plev'
+    have hhd : U' ≠ [] → U'.headI = t := by
+      intro hne
+      rcases hU.head_eq with h | h
+      · exact absurd h hne
+      · exact h
+    have hUL : (U' ++ L) = [] ∨ ¬ (t.1 < ((U' ++ L).headI).1) := by
+      by_cases hne : U' = []
+      · rw [hne]; simpa using hL
+      · right
+        rw [headI_append_left hne, hhd hne]; omega
+    have hUe : U' = [] ∨ ¬ (t.1 < (U'.headI).1) := by
+      by_cases hne : U' = []
+      · exact Or.inl hne
+      · right; rw [hhd hne]; omega
+    obtain ⟨e1, e2⟩ := split_append (X := A) (Y := (U' ++ L)) (dd := t.1) hA hUL
+    obtain ⟨f1, f2⟩ := split_append (X := A) (Y := U') (dd := t.1) hA hUe
+    have hnl : ladOf t.2 D plev false false = false := by simp [ladOf]
+    have hshape : (t :: (A ++ U')) ++ L = t :: (A ++ (U' ++ L)) := by
+      simp [List.append_assoc]
+    rw [hshape, convC_cons_nolad t (A ++ (U' ++ L)) D plev false false hnl,
+      convC_cons_nolad t (A ++ U') D plev false false hnl, e1, e2, f1, f2,
+      ih L hL D t.2 plev']
+    simp [List.append_assoc]
+
+/-- ユニット列を平行移動してもユニット列。 -/
+theorem Units_shift1 {p : ℕ × ℕ} : ∀ {U : PairSeq}, Units p U →
+    Units ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 U) := by
+  intro U hU
+  induction hU with
+  | nil => simpa using Units.nil
+  | @cons A U' hA hU' ih =>
+    rw [shift1_cons, shift1_append]
+    refine Units.cons ?_ ih
+    intro c hc
+    obtain ⟨e, he, rfl⟩ := List.mem_map.1 hc
+    have := hA e he
+    simp only []
+    omega
+
+/-- **縮約の前置きの像**。`pre = contrPre p U A` の像は
+「梯子の本体 + `A` の像 + `U` の像」になる。 -/
+theorem convC_contrPre {p : ℕ × ℕ} {A U r0 : PairSeq} {d : ℕ}
+    (hA : ∀ c ∈ A, p.1 < c.1) (hU : Units p U) (hp2 : 1 ≤ p.2) (hdp : p.2 ≤ d)
+    (hr0 : r0 = [] ∨ ¬ ((p.1 + 1) < (r0.headI).1)) :
+    convC (contrPre p U A ++ r0) (d + 1) (p.2 - 1) true false
+      = (d + 1, p.2) :: (convC A (d + 2) p.2 true false
+          ++ convC U (d + 1) p.2 false false ++ convC r0 (d + 1) p.2 false false) := by
+  have hshape : contrPre p U A ++ r0
+      = ((p.1 + 1, p.2) : ℕ × ℕ) :: (shift1 A ++ (shift1 U ++ r0)) := by
+    unfold contrPre
+    simp [List.append_assoc]
+  have hUs : Units ((p.1 + 1, p.2) : ℕ × ℕ) (shift1 U) := Units_shift1 hU
+  have hAs : ∀ c ∈ shift1 A, ((p.1 + 1, p.2) : ℕ × ℕ).1 < c.1 := by
+    intro c hc
+    obtain ⟨e, he, rfl⟩ := List.mem_map.1 hc
+    have := hA e he
+    simp only []
+    omega
+  have hUr : (shift1 U ++ r0) = [] ∨ ¬ (((p.1 + 1, p.2) : ℕ × ℕ).1 < ((shift1 U ++ r0).headI).1) := by
+    by_cases hne : U = []
+    · rw [hne]
+      simp only [shift1_nil, List.nil_append]
+      simpa using hr0
+    · right
+      have hsne : shift1 U ≠ [] := by rw [ne_eq, shift1_eq_nil_iff]; exact hne
+      rw [headI_append_left hsne, shift1_headI U hne]
+      have he : U.headI = p := by
+        rcases hU.head_eq with h | h
+        · exact absurd h hne
+        · exact h
+      rw [he]
+      simp only []
+      omega
+  have hnl : ladOf (((p.1 + 1, p.2) : ℕ × ℕ)).2 (d + 1) (p.2 - 1) true false = false := by
+    have hnd : ¬ (d + 1 ≤ p.2) := by omega
+    simp [ladOf, hnd]
+  have hdd : ddOf (((p.1 + 1, p.2) : ℕ × ℕ)).2 (d + 1) (p.2 - 1) true false = d + 1 := by
+    unfold ddOf
+    rw [if_neg (by rw [hnl]; simp), if_neg (by simp only []; omega)]
+  obtain ⟨e1, e2⟩ := split_append (X := shift1 A) (Y := (shift1 U ++ r0))
+    (dd := ((p.1 + 1, p.2) : ℕ × ℕ).1) hAs hUr
+  rw [hshape, convC_cons_nolad _ _ (d + 1) (p.2 - 1) true false hnl, hdd, e1, e2]
+  have hfr : (true && ((((p.1 + 1, p.2) : ℕ × ℕ)).2 == p.2 - 1)) = false := by
+    simp only [Bool.true_and, beq_eq_false_iff_ne, ne_eq]
+    omega
+  rw [hfr, convC_units_append hUs r0 hr0 (d + 1) p.2 p.2,
+    convC_shift1 A.length A (Nat.le_refl _), convC_shift1 U.length U (Nat.le_refl _)]
+  simp [List.append_assoc]
+
+/-- **コピーの並びの像**（コピー regime の核心）。 -/
+theorem convC_run_contr {p q : ℕ × ℕ} {A U r0 : PairSeq} {d : ℕ}
+    (hA : ∀ c ∈ A, p.1 < c.1) (hU : Units p U)
+    (hq1 : q.1 = p.1) (hq2 : q.2 + 1 = p.2) (hdp : p.2 ≤ d)
+    (hr0 : r0 = [] ∨ (r0.headI).1 = p.1 + 1)
+    (hr0d : ∀ c ∈ r0, p.1 < c.1) :
+    ∀ (k plev₀ : ℕ),
+      convC ((List.replicate k (q :: (contrPre p U A ++ r0))).flatten) d plev₀ false false
+        = (List.replicate k (((d, q.2) : ℕ × ℕ) :: ((d + 1, p.2) : ℕ × ℕ) ::
+            (convC A (d + 2) p.2 true false ++ convC U (d + 1) p.2 false false
+              ++ convC r0 (d + 1) p.2 false false))).flatten := by
+  have hr0h : r0 = [] ∨ ¬ ((p.1 + 1) < (r0.headI).1) := by
+    rcases hr0 with h | h
+    · exact Or.inl h
+    · exact Or.inr (by omega)
+  have hpre : ∀ c ∈ (contrPre p U A ++ r0), q.1 < c.1 := by
+    intro c hc
+    rw [hq1]
+    rcases List.mem_append.1 hc with h | h
+    · unfold contrPre at h
+      rcases List.mem_append.1 h with h1 | h1
+      · rcases List.mem_cons.1 h1 with rfl | h2
+        · simp only []; omega
+        · obtain ⟨e, he, rfl⟩ := List.mem_map.1 h2
+          have := hA e he
+          simp only []; omega
+      · obtain ⟨e, he, rfl⟩ := List.mem_map.1 h1
+        have := hU.ge e he
+        simp only []; omega
+    · exact hr0d c h
+  intro k
+  induction k with
+  | zero => intro plev₀; simp
+  | succ k ih =>
+    intro plev₀
+    have hflat : (List.replicate (k + 1) (q :: (contrPre p U A ++ r0))).flatten
+        = q :: ((contrPre p U A ++ r0) ++ (List.replicate k
+            (q :: (contrPre p U A ++ r0))).flatten) := by
+      rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+    have hrest : (List.replicate k (q :: (contrPre p U A ++ r0))).flatten = []
+        ∨ ¬ (q.1 < (((List.replicate k (q :: (contrPre p U A ++ r0))).flatten).headI).1) := by
+      cases k with
+      | zero => exact Or.inl rfl
+      | succ k' =>
+        right
+        rw [List.replicate_succ, List.flatten_cons, List.cons_append]
+        simp
+    obtain ⟨e1, e2⟩ := split_append (X := (contrPre p U A ++ r0)) (dd := q.1) hpre hrest
+    have hnl : ladOf q.2 d plev₀ false false = false := by simp [ladOf]
+    have hdd : ddOf q.2 d plev₀ false false = d := by
+      unfold ddOf
+      rw [if_neg (by rw [hnl]; simp), if_neg (by omega)]
+    rw [hflat, convC_cons_nolad q _ d plev₀ false false hnl, hdd, e1, e2]
+    simp only [Bool.false_and]
+    rw [ih q.2]
+    have hq2' : q.2 = p.2 - 1 := by omega
+    rw [hq2', convC_contrPre hA hU (by omega) hdp hr0h, List.replicate_succ, List.flatten_cons]
+    simp [List.append_assoc]
+
 end DBMS
 
 #print axioms DBMS.ST_D_conC
