@@ -440,6 +440,84 @@ def par0(m, x):
     return -1
 
 
+def par0_w(m, x):
+    """行 0 の親をたどるが、途中の「x w」柱 (k,0,0) は素通りする（課題 P2）。
+
+    展開すると、加算ユニットの頭であるアンカー (1,1,0) は写しの中で (k,0,0) に
+    化ける。だから写しが 1 枚増えるたびに親の鎖に「x w」柱が 1 本ずつ挟まり、
+    `par0(m, x) == 0`（＝根に直付け）が写しの中で偽になる。「x w」柱を素通り
+    して根に着くかを見れば、この量は写しに同変になる。
+    """
+    q = par0(m, x)
+    while q > 0 and is_w_col(m[q]):
+        q = par0(m, q)
+    return q
+
+
+def wdepth(m, x):
+    """柱 `x` の行 0 の祖先の鎖にある「x w」柱 (k,0,0) の本数（課題 P2）。"""
+    n, q = 0, par0(m, x)
+    while q >= 0:
+        if is_w_col(m[q]):
+            n += 1
+        q = par0(m, q)
+    return n
+
+
+def is_diag(m, x):
+    """**写しに同変な**「対角柱」（課題 P2 の `hiblk`）。
+
+    もとの `hi_block` はブロックの頭を対角柱 (a,a,z) (a>=1) で拾うが、展開すると
+    行 0 だけが上がるので (1,1,1) が写しの中で (2,1,1) に化けて外れる。上がる
+    ぶんはちょうど「祖先の鎖に挟まった「x w」柱の本数」なので、引いてから
+    比べれば写しに同変になる。写しの中でない行列では (a,a,z) と完全に一致する。
+    """
+    return m[x][1] >= 1 and m[x][0] - wdepth(m, x) == m[x][1]
+
+
+def closes_w(m, x, nxt):
+    """次の柱が**化けたアンカー** (k,0,0) なら加算ユニットは閉じる（課題 P2）。"""
+    if nxt is None or not is_w_col(nxt):
+        return False
+    j = x + 1
+    if j >= len(m) or tuple(m[j]) != tuple(nxt):
+        return False        # 番兵 NOTLAST や飛んだ先は見ない
+    return par0_w(m, j) == 0
+
+
+def copy_src(Mo, off):
+    """`off` の柱が「直前の写しの同じ位置」に当たるなら、その添字（課題 P3）。
+
+    写しの周期 `L` と行 0 のずらし `d0 > 0` を**接頭辞だけから**読む。
+    「Mo[off-i] が Mo[off-L-i] を d0 だけ持ち上げたもの・行 2 が等しい
+    （＋ `cpyd1` なら行 1 のずらしも一定）」が左端に当たるまで続けば `off-L`。
+    """
+    for L in range(max(1, V15['cpylmin']), off + 1):
+        j = off - L
+        d0 = Mo[off][0] - Mo[j][0]
+        d1 = Mo[off][1] - Mo[j][1]
+        if Mo[off][2] != Mo[j][2]:
+            continue
+        if d0 < 0 or (d0 == 0 and not (V15['cpy_d0zero'] and d1 == 0)):
+            continue
+        ok = True
+        for i in range(1, L + 1):
+            a, b = off - i, j - i
+            if b < 0:
+                break
+            if V15['cpy_stop0'] and Mo[b][0] == 0 and Mo[a][0] != 0:
+                break
+            if Mo[a][0] - Mo[b][0] != d0 or Mo[a][2] != Mo[b][2]:
+                ok = False
+                break
+            if V15['cpyd1'] and Mo[a][1] - Mo[b][1] != d1:
+                ok = False
+                break
+        if ok:
+            return j
+    return None
+
+
 def hi_block(m, x):
     """`x` の属するブロック（直前のアンカーより後ろ）に行 2 を使う柱があるか。
 
@@ -591,6 +669,37 @@ V14 = {
 }
 
 
+# ---------------------------------------------------------------- v15 の候補条項
+# 3 人の提案者（P1 / P2 / P3）が別々の worktree で書いた条項を、旗で 1 本ずつ
+# 入れ切りできるようにしたもの。**既定は全部 off（＝ v14 と同じ像）**。
+# 環境変数 `V15FLAGS=a,b,c` を置くと、その並びが旗の全指定になる。
+V15 = {
+    # ---- P3「像の側から決める」: 写しの中の分岐列は写しのもとの柱と同じに綴る
+    'cpyspell': False,
+    'cpylmin': 2,           # 写しの周期の下限（1 だと梯子を写しと読む）
+    'cpyd1': True,          # 写しの見分けに「行 1 のずらしも一定」を足す
+    'cpy_endshal': True,    # 行列の末尾では深くしない（浅くするのは許す）
+    'cpy_d0zero': False,    # 逐語の繰り返しも写しと読む
+    'cpy_stop0': False,     # 後ろ向き走査を行 0 = 0 で打ち切る
+    'cpy_noanch': False,    # 間にアンカーがあったら渡さない
+    'cpy_notlast': False,   # closes_unit(nxt) のときは渡さない
+    'cpy_noend': False,     # 行列の末尾では何もしない
+    # ---- P2「1 ビット状態機械の入力を写しに同変にする」
+    'wterm_chain': False,   # wterm の par0(..)==0 を par0_w（「x w」素通し）に
+    'wroot': False,         # after_w / wchain の par0(..)==0 も par0_w に
+    'hiblk': False,         # hi_block の頭を写しに同変な対角柱 is_diag で拾う
+    'closesw': False,       # 化けたアンカー (k,0,0) もユニットを閉じる
+    # ---- P1「窓を広げる」
+    'wide0_anch': False,    # p0deep_ok の第 2 項を `not is_w_col(nxt)` に広げる
+    'wide0_noprev': False,  # 位置から読んで深くしたときは st['prev'] を上げない
+}
+if 'V15FLAGS' in os.environ:
+    _on = set(x for x in os.environ['V15FLAGS'].split(',') if x)
+    for _k in V15:
+        if isinstance(V15[_k], bool):
+            V15[_k] = _k in _on
+
+
 def term_top(Mo, j, _d=0):
     """柱 `j` が「行 1 の加算項の頭」か。課題 H1。
 
@@ -664,9 +773,17 @@ def closes_top(Mo, off, nxt):
 
 def hi_block2(m, x):
     """`hi_block` の写し補正。起点 `b` を「写しの頭の次の柱」まで進める。
-    写しの頭が 1 つも無ければ `hi_block` と完全に同じ。課題 H1。"""
-    b = max([q for q in range(x) if m[q][0] == m[q][1] and m[q][0] >= 1],
-            default=0)
+    写しの頭が 1 つも無ければ `hi_block` と完全に同じ。課題 H1。
+
+    旗 `V15['hiblk']`（課題 P2）を入れると、起点の対角柱の見分けも写しに
+    同変な `is_diag`（行 0 から祖先の「x w」柱の本数を引いて行 1 と比べる）に
+    なる。写しの中でない行列では (a,a,z) と一致するので無変化。
+    """
+    if V15['hiblk']:
+        b = max([q for q in range(x) if is_diag(m, q)], default=0)
+    else:
+        b = max([q for q in range(x) if m[q][0] == m[q][1] and m[q][0] >= 1],
+                default=0)
     for q in range(x):
         if q + 1 > b and copy_head(m, q):
             b = q + 1
@@ -692,7 +809,10 @@ def p0deep_ok(Mo, off, p, nxt):
         return False
     if nxt[0] >= p[0]:
         return True
-    return nxt[1] >= 1 and not anch_before(Mo, off)
+    # 旗 `wide0_anch`（課題 P1）: 第 2 項を `not is_w_col(nxt)` まで広げる
+    # （h1 の `nxt[1] >= 1` との差は nxt == (0,0,0) の 1 例だけ）。
+    ok2 = (not is_w_col(nxt)) if V15['wide0_anch'] else (nxt[1] >= 1)
+    return ok2 and not anch_before(Mo, off)
 
 
 def wchain_head(Mo, off):
@@ -736,11 +856,16 @@ def sib_ok(off, src, st):
 
 
 def _snap(st):
-    return (st['ST'], st['prev'], list(st['dmap']), st.get('nc', 0))
+    # P3 `cpyspell`: 下見（`leaves_mark_local`）の決定 `dec` も巻き戻す。
+    # 巻き戻さないと下見の決定が漏れて縮約の発火が変わる。
+    return (st['ST'], st['prev'], list(st['dmap']), st.get('nc', 0),
+            dict(st.get('dec', {})))
 
 
 def _restore(st, s):
     st['ST'], st['prev'], st['dmap'], st['nc'] = s[0], s[1], list(s[2]), s[3]
+    if len(s) > 4:
+        st['dec'] = dict(s[4])
 
 
 def leaves_mark(A, U, dd, d, LA, L, FA, v, s2, e1, e2, st, na, q, oA, oU):
@@ -884,7 +1009,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     # v14 wterm（試作, 既定 off）: 根に直付けの「x w」の柱 (k,0,0) も
     # 新しい加算項の頭なので段の状態を持ち越さない。生成 <=8 列の非標準 3 件
     # （`(0,0,0)(1,1,1)(2,1,0)(1,0,0)(2,1,1)(2,1,0)(3,2,1)X`）を狙う。
-    elif (V14['wterm'] and is_w_col(p) and par0(st['Mo'], off) == 0
+    elif (V14['wterm'] and is_w_col(p)
+            and (par0_w if V15['wterm_chain'] else par0)(st['Mo'], off) == 0
             and not (V14['wterm_anchbefore']
                      and any(tuple(c) == ANCHOR for c in st['Mo'][:off]))):
         st['prev'] = None
@@ -922,18 +1048,23 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             # v14 h1（課題 H1）: 写しの中で「段が 1 だけ浅い」と綴る病
             # （ImgClosedT の族 α）を直す。どれも `Mo` と `off` と次の柱だけで
             # 決まる（＝写しに同変）。
+            _w0 = False       # 位置から読んで深くしたか（P1 `wide0_noprev`）
             if V14['h1']:
                 hi = hi_block2(Mo, off)
                 cw = closes_top(Mo, off, nxt)
+                if V15['closesw'] and closes_w(Mo, off, nxt):
+                    cw = True     # P2 `closesw`: 化けたアンカーも閉じる
                 if cw:
                     shallow = True
                 elif st['prev'] == 0 and not closes_unit(nxt):
-                    shallow = not p0deep_ok(Mo, off, p, nxt)
+                    _w0 = p0deep_ok(Mo, off, p, nxt)
+                    shallow = not _w0
             # after_w（rule.py）: 直前が「x w」の柱 (k,0,0) で、しかもユニットの
             # 端にいるなら、段はふつう 1 に落ちる（浅い）。W_(w^2) 系（hi）で
             # 直前の柱が根に付いていないときだけ、段が残る（深い）。
+            _p0 = par0_w if V15['wroot'] else par0
             if st['prev'] == 1 and is_w_col(pv) and closes_unit(onx):
-                pnt = off > 0 and par0(Mo, off - 1) == 0
+                pnt = off > 0 and _p0(Mo, off - 1) == 0
                 shallow = not (hi and not pnt)
             # v13 wchain（課題 F2）: `after_w` の窓は**直前 1 本**しかない。
             # 「x w」の柱がもっと後ろにあって、そこから今までがぜんぶその子孫
@@ -943,13 +1074,35 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             elif V13['wchain'] and st['prev'] == 1 and closes_unit(onx):
                 j = wchain_head(Mo, off)
                 if j is not None:
-                    shallow = not (hi and not (par0(Mo, j) == 0))
+                    shallow = not (hi and not (_p0(Mo, j) == 0))
             # closes_hi_unit（rule.py）: (a,2,1)(a,2,0)(a,1,0) と積んだ直後が
             # アンカー (1,1,1) なら、段を上げずにユニットを閉じる（浅い）。
             if closes_hi_unit(p, onx, pv, pv2, hi, is_repeat(Mo, off)):
                 shallow = True
+            # P3 `cpyspell`: 写しの中の分岐列は、写しのもとの柱と同じに綴る。
+            # 縮約が飲んだ写しは決定を残さないので、写しの鎖をさかのぼる。
+            if (V15['cpyspell']
+                    and not (V15['cpy_notlast'] and closes_unit(nxt))
+                    and not (V15['cpy_noend'] and nxt is None)):
+                dec = st.setdefault('dec', {})
+                j, seen = copy_src(Mo, off), 0
+                while j is not None and j not in dec and seen < len(Mo):
+                    j, seen = copy_src(Mo, j), seen + 1
+                if j is not None and j in dec and not (
+                        V15['cpy_noanch']
+                        and any(tuple(c) == ANCHOR for c in Mo[j:off])):
+                    if not (V15['cpy_endshal'] and nxt is None and not dec[j]):
+                        shallow = dec[j]
+            if V15['cpyspell']:
+                st.setdefault('dec', {})[off] = shallow
             base = base_s if shallow else deep
-            st['prev'] = 0 if shallow else 1
+            # P1 `wide0_noprev`: 位置から読んで深くしたときは、深さは像に出るが
+            # 1 ビットの状態は 0 のまま置く（`prev == 1` は「ユニットがまだ
+            # 閉じていないので深く綴った」の意味で、`after_w` / `wchain` は
+            # それを見て発火する）。
+            if not (V15['wide0_noprev'] and not shallow
+                    and st['prev'] == 0 and _w0):
+                st['prev'] = 0 if shallow else 1
         else:
             st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い
             base = deep
