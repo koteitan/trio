@@ -284,8 +284,18 @@ namespace Conv3
 /-- 列。 -/
 abbrev Col := ℕ × ℕ × ℕ
 
-/-- 段の表 `L` の 1 項 `(深い側の行 1, その行 2, force1, 浅い側の行 1)`。 -/
-abbrev Lent := ℕ × ℕ × Bool × ℕ
+/-- 段の表 `L` の 1 項
+`(深い側の行 1, その行 2, force1, 浅い側の行 1, 兄弟だけが使える深い側)`。
+
+第 5 項は v13 の `sibL`（`rows3.py` の `L` の第 5 要素）。行 1 の影を立てた柱が
+**兄弟にだけ**渡す深い側である。Python では第 5 要素が「無い」4 つ組があって、
+そのとき `base_sd = e[0]` と読む約束なので、Lean では「無い」を
+**第 5 項 = 第 1 項**で表す。 -/
+abbrev Lent := ℕ × ℕ × Bool × ℕ × ℕ
+
+/-- 引数に渡す表 `LA` を作るときの潰し（Python の `tuple(t[:4] for t in LA)`）。
+第 5 項を第 1 項に戻す＝「兄弟の深い側は子には渡さない」。 -/
+def lentTrunc (t : Lent) : Lent := (t.1, t.2.1, t.2.2.1, t.2.2.2.1, t.1)
 
 /-- 線形に持ち回る状態（Python の辞書 `st`）。 -/
 structure St where
@@ -307,9 +317,10 @@ def Lat (L : List Lent) (k : ℕ) : Lent :=
   | some e => e
   | none =>
       match L.getLast? with
-      | none => (0, 0, false, 0)
+      | none => (0, 0, false, 0, 0)
       | some a =>
-          (a.1 + (k + 1 - L.length), a.2.1, false, a.2.2.2 + (k + 1 - L.length))
+          (a.1 + (k + 1 - L.length), a.2.1, false, a.2.2.2.1 + (k + 1 - L.length),
+            a.1 + (k + 1 - L.length))
 
 /-- `padL L v`: 長さ `v` まで `Lat` で埋めてから切る。 -/
 def padL (L : List Lent) (v : ℕ) : List Lent :=
@@ -381,6 +392,32 @@ def isRepeat (m : TrioSeq) (x : ℕ) : Bool := isRepeatAux m x ((x + 1) / 2)
 def closesHiUnit (c : Col) (nxt pv pv2 : Option Col) (hi rep : Bool) : Bool :=
   hi && !rep && nxt == some (1, 1, 1) && pv == some (c.1, 2, 0)
     && pv2 == some (c.1, 2, 1)
+
+/-- `wchainHead` の本体（添字を `off` から 1 つずつ下げる。燃料 = その添字）。 -/
+def wchainHeadAux (m : TrioSeq) (off : ℕ) : ℕ → Option ℕ
+  | 0 => none
+  | (j + 1) =>
+      let c := m.getD j (0, 0, 0)
+      if isWCol (some c) then
+        (if ((List.range (off + 1)).drop (j + 1)).all
+              (fun t => decide (c.1 < (m.getD t (0, 0, 0)).1)) then some j else none)
+      else if c.1 = 0 then none
+      else wchainHeadAux m off j
+
+/-- v13 `wchain`（`rows3.py` の `wchain_head`）。`off` から後ろへ「x w」の柱
+`(k,0,0)` をさがす。ただし**その柱から `off` までの柱がぜんぶ行 0 > k**
+（＝その柱の子孫）でなければならない。行 0 が 0 の柱（新しい加算項の頭）に
+当たったら諦める。
+
+直前 1 本だけを見る `after_w` を、写しの頭まで届くように広げたもの。 -/
+def wchainHead (m : TrioSeq) (off : ℕ) : Option ℕ := wchainHeadAux m off off
+
+/-- v13 `sib_anchbefore`（`rows3.py` の `sib_ok`）。兄弟から渡された深い側
+`base_sd` を使ってよいのは、この柱より前にアンカー `(1,1,0)` が 1 本も無い
+ときだけ。アンカーは行 1 の新しい加算ユニットの頭なので、「行 1 の最初の
+ユニットの中でだけ、影の深さは兄弟に効く」という読み方になる。 -/
+def sibOk (m : TrioSeq) (off : ℕ) : Bool :=
+  !((List.range off).any (fun j => m.getD j (0, 0, 0) == ((1, 1, 0) : Col)))
 
 /-! ### 縮約の道具（`rows3.py` の `units_split` / `copy_shift` / `contrPre`） -/
 
@@ -497,7 +534,7 @@ def contrFind (p : Col) (A B : TrioSeq) (ps : ℕ × ℕ) (v s2 prev0 : ℕ) :
 
 mutual
 
-/-- BMS 3 行 (z<2) -> DBMS 3 行。`rows3.py` の `conv3`（設計 v11）の写経。
+/-- BMS 3 行 (z<2) -> DBMS 3 行。`rows3.py` の `conv3`（設計 v13）の写経。
 
 Python の `conv3` は状態 `st` を**破壊的に**持ち回るので、Lean では
 `TrioSeq × St` を返して線形に渡す。`cA` を先に走らせて、その状態で `cU`,
@@ -518,27 +555,41 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
     let B := r.dropWhile (fun q => decide (p.1 < q.1))
     let ent := Lat L (v - 1)
     let base_d := if v = 0 then 0 else ent.1 + 1
-    let base_s := if v = 0 then 0 else ent.2.2.2 + 1
+    let base_s := if v = 0 then 0 else ent.2.2.2.1 + 1
+    -- v13 sibL: 兄弟だけが使える深い側（第 5 項）。無いときは第 1 項＝`base_d`。
+    let base_sd := if v = 0 then 0 else ent.2.2.2.2 + 1
     let pl2 := if v = 0 then 0 else ent.2.1
     let force1 := if v = 0 then false else ent.2.2.1
     let first1 := F.getD v true
     let bp : ℕ × ℕ :=
-      if isBranch p && (base_s != base_d) then
-        let nxt : Option Col := match r with | q :: _ => some q | [] => nx
-        let Mo := st.Mo
-        let pv : Option Col := if 1 ≤ off then some (Mo.getD (off - 1) (0,0,0)) else none
-        let pv2 : Option Col := if 2 ≤ off then some (Mo.getD (off - 2) (0,0,0)) else none
-        let onx : Option Col :=
-          if off + 1 < Mo.length then some (Mo.getD (off + 1) (0,0,0)) else none
-        let hi := hiBlock Mo off
-        let sh0 := (st.prev == 0) || closesUnit nxt
-        let sh1 :=
-          if (st.prev == 1) && isWCol pv && closesUnit onx then
-            let pnt := decide (0 < off) && (par0 Mo (off - 1) == some 0)
-            !(hi && !pnt)
-          else sh0
-        let sh := sh1 || closesHiUnit p onx pv pv2 hi (isRepeat Mo off)
-        if sh then (base_s, 0) else (base_d, 1)
+      if isBranch p then
+        -- v13 sibL: 深い側の候補は、兄弟から渡ってきた `base_sd` を使ってよければ
+        -- それ。門は「浅い側 != 深い側の候補」で開く（`base_d` ではなく `deep`）。
+        let deep := if (base_sd != base_d) && sibOk st.Mo off then base_sd else base_d
+        if base_s != deep then
+          let nxt : Option Col := match r with | q :: _ => some q | [] => nx
+          let Mo := st.Mo
+          let pv : Option Col := if 1 ≤ off then some (Mo.getD (off - 1) (0,0,0)) else none
+          let pv2 : Option Col := if 2 ≤ off then some (Mo.getD (off - 2) (0,0,0)) else none
+          let onx : Option Col :=
+            if off + 1 < Mo.length then some (Mo.getD (off + 1) (0,0,0)) else none
+          let hi := hiBlock Mo off
+          let sh0 := (st.prev == 0) || closesUnit nxt
+          let sh1 :=
+            if (st.prev == 1) && isWCol pv && closesUnit onx then
+              let pnt := decide (0 < off) && (par0 Mo (off - 1) == some 0)
+              !(hi && !pnt)
+            else if (st.prev == 1) && closesUnit onx then
+              -- v13 wchain: `after_w` の窓を「この写しの頭まで」広げる。
+              -- 判定式は `after_w` と同じで、親を見る柱だけ `(k,0,0)` 本人にする。
+              -- `after_w` が発火するときはそちらが優先（この `else if`）。
+              match wchainHead Mo off with
+              | some j => !(hi && !(par0 Mo j == some 0))
+              | none => sh0
+            else sh0
+          let sh := sh1 || closesHiUnit p onx pv pv2 hi (isRepeat Mo off)
+          if sh then (base_s, 0) else (deep, 1)
+        else (deep, st.prev)
       else (base_d, st.prev)
     let base := bp.1
     let lad1 := first1 && (s2 == pl2 + 1) && (decide (base ≤ s2) || force1)
@@ -561,9 +612,11 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
     let f0 := (!lad0) && first && (v == ps.1) && (s2 == ps.2)
     let Lb :=
       if (e1 == base + 1) && decide (1 ≤ v) then
-        padL L (v - 1) ++ [(base, pl2, false, (Lat L (v - 1)).2.2.2)]
+        padL L (v - 1) ++ [(base, pl2, false, (Lat L (v - 1)).2.2.2.1, base)]
       else L
-    let LA := padL Lb v ++ [(e1, s2, fc, e1)]
+    -- v13 sibL: 第 5 項は**子には渡さない**（渡すとアンカーを素通りして
+    -- 次の加算ユニットまで深い綴りが届く）。Python の `t[:4]` に対応。
+    let LA := (padL Lb v).map lentTrunc ++ [(e1, s2, fc, e1, e1)]
     let FA := F.take v ++ [false]
     match (if lad0 then contrFind p A B ps v s2 bp.2 else none) with
     | some (e, kU, kp, na) =>
@@ -575,7 +628,8 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
         let rest2 := Aq.drop kp
         let oU := off + 1 + A.length
         let oq := oU + U.length
-        let Lr := padL L v ++ [if e = 0 then (e1, s2, fc, e1) else (base, pl2, fc, base)]
+        let Lr :=
+          padL L v ++ [if e = 0 then (e1, s2, fc, e1, e1) else (base, pl2, fc, base, base)]
         let rA := conv3 A (dd2 + 1) LA FA (v, s2) (e1, e2) true false st1
                     (match U with | u :: _ => some u | [] => some na) (off + 1)
         let rU := conv3 U (d + 1) L FA (v, s2) (e1, e2) false false rA.2 (some na) oU
@@ -587,9 +641,16 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
         (cols ++ rA.1 ++ rU.1 ++ rR.1 ++ rB.1,
           { rB.2 with nc := rB.2.nc + 1 })
     | none =>
+        -- v13 sibL: 行 1 の影を立てたら、そのあとの**兄弟**にも「深い側」を渡す
+        -- （表の第 `v-1` 項の第 5 項に `base` を書く）。
+        let LS :=
+          if (e1 == base + 1) && decide (1 ≤ v) then
+            let eo := Lat L (v - 1)
+            padL L (v - 1) ++ [(eo.1, eo.2.1, eo.2.2.1, eo.2.2.2.1, base)] ++ L.drop v
+          else L
         let rA := conv3 A (dd2 + 1) LA FA (v, s2) (e1, e2) true f0 st1
                     (match B with | q :: _ => some q | [] => nx) (off + 1)
-        let rB := conv3 B d L FA (v, s2) (e1, e2) false false rA.2 nx (off + 1 + A.length)
+        let rB := conv3 B d LS FA (v, s2) (e1, e2) false false rA.2 nx (off + 1 + A.length)
         (cols ++ rA.1 ++ rB.1, rB.2)
   termination_by 2 * M.length
   decreasing_by
@@ -693,7 +754,7 @@ def b2d3 (M : TrioSeq) : TrioSeq :=
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (3,0,0), (4,1,0), (2,1,1), (1,1,1)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (5,0,0), (6,1,0), (4,2,1), (3,2,1)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,1), (3,3,1), (4,4,0), (3,2,1), (4,3,1)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,1), (5,4,1), (6,5,0), (5,3,1), (6,4,1)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,1), (3,3,1), (3,1,1), (4,0,0), (2,2,1)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,1), (5,4,1), (5,2,1), (6,0,0), (4,3,1)]
-#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (3,0,0), (4,1,1), (4,1,0), (5,2,1)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (5,0,0), (6,1,0), (7,2,1), (6,1,0), (7,2,1)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (3,0,0), (4,1,1), (4,1,0), (5,2,1)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (5,0,0), (6,1,0), (7,2,1), (7,2,0), (8,3,1)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,0), (3,1,0), (3,0,0), (1,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,2,0), (5,2,0), (5,0,0), (2,1,0), (3,0,0)]
 
 end Conv3
@@ -735,8 +796,8 @@ def STd : ℕ → List (ℕ × ℕ)
 
 /-- 尾の第 `k+2` 列を読む直前の段の表。長さは `k+2`。 -/
 def Ld : ℕ → List Lent
-  | 0 => [(1, 0, false, 0), (2, 1, false, 2)]
-  | (k + 1) => Ld k ++ [(k + 3, 1, true, k + 3)]
+  | 0 => [(1, 0, false, 0, 1), (2, 1, false, 2, 2)]
+  | (k + 1) => Ld k ++ [(k + 3, 1, true, k + 3, k + 3)]
 
 theorem STd_len (k : ℕ) : (STd k).length = k + 4 := by
   induction k with
@@ -747,6 +808,13 @@ theorem Ld_len (k : ℕ) : (Ld k).length = k + 2 := by
   induction k with
   | zero => rfl
   | succ k ih => simp [Ld, ih]
+
+/-- 対角の表は最初から「潰した形」（第 5 項 = 第 1 項）なので、`LA` を作る
+ときの `lentTrunc` は何もしない。 -/
+theorem Ld_trunc (k : ℕ) : (Ld k).map lentTrunc = Ld k := by
+  induction k with
+  | zero => rfl
+  | succ k ih => simp [Ld, ih, lentTrunc]
 
 theorem STd_take (k : ℕ) : (STd k).take (k + 4) = STd k := by
   have h := STd_len k
@@ -779,17 +847,17 @@ theorem fit_STd (k : ℕ) : fit (STd k) (k + 4) (k + 3) = some (k + 4) := by
 （`lad1` の第 2 条項 `s2 = pl2 + 1` が先に落ちるので `force1` は読まれない）。 -/
 def bLd (k : ℕ) : Bool := decide (k ≠ 0)
 
-theorem Lat_Ld (k : ℕ) : Lat (Ld k) (k + 1) = (k + 2, 1, bLd k, k + 2) := by
+theorem Lat_Ld (k : ℕ) : Lat (Ld k) (k + 1) = (k + 2, 1, bLd k, k + 2, k + 2) := by
   cases k with
   | zero => decide
   | succ k =>
       have hlen : (Ld k).length = k + 2 := Ld_len k
-      have h : ((Ld k) ++ [((k + 3 : ℕ), (1 : ℕ), true, (k + 3 : ℕ))])[k + 2]?
-          = some (k + 3, 1, true, k + 3) := by
+      have h : ((Ld k) ++ [((k + 3 : ℕ), (1 : ℕ), true, (k + 3 : ℕ), (k + 3 : ℕ))])[k + 2]?
+          = some (k + 3, 1, true, k + 3, k + 3) := by
         have := List.getElem?_concat_length (l := Ld k)
-          (a := ((k + 3 : ℕ), (1 : ℕ), true, (k + 3 : ℕ)))
+          (a := ((k + 3 : ℕ), (1 : ℕ), true, (k + 3 : ℕ), (k + 3 : ℕ)))
         rwa [hlen] at this
-      show Lat (Ld k ++ [((k + 3 : ℕ), (1 : ℕ), true, (k + 3 : ℕ))]) (k + 2) = _
+      show Lat (Ld k ++ [((k + 3 : ℕ), (1 : ℕ), true, (k + 3 : ℕ), (k + 3 : ℕ))]) (k + 2) = _
       unfold Lat
       rw [h]
       simp [bLd]
@@ -837,7 +905,7 @@ theorem Dt_dropWhile : ∀ (m a b : ℕ), a < b →
 
 theorem STd_succ (k : ℕ) : STd (k + 1) = STd k ++ [(k + 3, 1)] := rfl
 
-theorem Ld_succ (k : ℕ) : Ld (k + 1) = Ld k ++ [(k + 3, 1, true, k + 3)] := rfl
+theorem Ld_succ (k : ℕ) : Ld (k + 1) = Ld k ++ [(k + 3, 1, true, k + 3, k + 3)] := rfl
 
 set_option maxHeartbeats 1000000 in
 /-- 尾の 1 歩: 第 `k+2` 列 `(k+2,k+2,1)` は像の 1 列 `(k+4,k+3,1)` になり、
@@ -863,11 +931,11 @@ theorem conv3_tail_step (m k : ℕ) (st : St) (nx : Option Col) (off : ℕ)
   have hbeq : ((k + 1 : ℕ) == k) = false := by simp
   have hib : isBranch ((k : ℕ) + 2, (k : ℕ) + 2, (1 : ℕ)) = false := by simp [isBranch]
   rw [Dt_succ, conv3.eq_def]
-  simp only [hk1, if_neg hk0, hib, Lat_Ld, Bool.false_and, Bool.false_eq_true, if_false,
+  simp only [hk1, if_neg hk0, hib, Lat_Ld, Bool.false_eq_true, if_false,
     Dt_takeWhile m (k + 2) (k + 3) (by omega), Dt_dropWhile m (k + 2) (k + 3) (by omega),
     h]
-  simp [padL_Ld, rep_app, STd_take, fit_STd, okPlace_STd, STd_len, STd_succ, Ld_succ,
-    hbeq, h3, h5]
+  simp [padL_Ld, Ld_trunc, rep_app, STd_take, fit_STd, okPlace_STd, STd_len, STd_succ,
+    Ld_succ, hbeq, h3, h5]
 
 
 /-- 尾ぜんぶ: `(k+2,k+2,1)…` を `m` 本読むと像は `(k+4,k+3,1)…` の `m` 本。 -/
@@ -892,7 +960,7 @@ theorem conv3_tail (m : ℕ) : ∀ (k : ℕ) (st : St) (nx : Option Col) (off : 
 /-- 先頭の列 `(0,0,0)`。梯子は 2 つとも落ち、像は `(0,0,0)` 1 列。 -/
 theorem conv3_lvl0 (v : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST = []) :
     (conv3 ((0, 0, 0) :: Dt 1 v) 0 [] [] (0, 0) (0, 0) true false st nx off).1
-    = (0, 0, 0) :: (conv3 (Dt 1 v) 1 [(0, 0, true, 0)] [false] (0, 0) (0, 0) true true
+    = (0, 0, 0) :: (conv3 (Dt 1 v) 1 [(0, 0, true, 0, 0)] [false] (0, 0) (0, 0) true true
         ⟨[(0, 0)], st.prev, st.dmap.take 0 ++ [0], st.Mo, st.nc⟩ nx (off + 1)).1 := by
   rw [conv3.eq_def]
   simp [Dt_takeWhile v 0 1 (by omega), Dt_dropWhile v 0 1 (by omega), h,
@@ -901,13 +969,13 @@ theorem conv3_lvl0 (v : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST 
 /-- 2 列目 `(1,1,1)`。行 0 と行 1 の梯子が同時に立ち、1 列が 3 列になる。
 ここで祖先の鎖が `STd 0 = (0,0)(0,0)(1,0)(2,1)`、段の表が `Ld 0` になる。 -/
 theorem conv3_lvl1 (m : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST = [(0, 0)]) :
-    (conv3 (Dt 1 (m + 1)) 1 [(0, 0, true, 0)] [false] (0, 0) (0, 0) true true st nx off).1
+    (conv3 (Dt 1 (m + 1)) 1 [(0, 0, true, 0, 0)] [false] (0, 0) (0, 0) true true st nx off).1
     = (1, 0, 0) :: (2, 1, 0) :: (3, 2, 1) ::
       (conv3 (Dt 2 m) 4 (Ld 0) (List.replicate 2 false) (1, 1) (2, 1) true false
         ⟨STd 0, st.prev, st.dmap.take 1 ++ [3], st.Mo, st.nc⟩ nx (off + 1)).1 := by
   rw [Dt_succ, conv3.eq_def]
   simp [Dt_takeWhile m 1 2 (by omega), Dt_dropWhile m 1 2 (by omega), h,
-    okPlace, Lat, padL, STd, Ld, isBranch, contrFind_nil]
+    okPlace, Lat, padL, STd, Ld, isBranch, contrFind_nil, lentTrunc]
 
 
 theorem conv3_tail0 (m : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST = STd 0) :
