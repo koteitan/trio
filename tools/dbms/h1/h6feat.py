@@ -120,6 +120,48 @@ def atoms(Mo, off, extra=None):
     a['anch_before'] = any(tuple(c) == ANCHOR for c in Mo[:off])
     a['p0_ge4'] = p[0] >= 4
     a['p0_ge6'] = p[0] >= 6
+    # --- 行 2 の木（行 2 は展開で変わらないので完全に同変）------------
+    # 分岐列は 行 2 = 0 なので `par(.,.,2)` は -1 になる。代わりに
+    # 「直前の 行 2 > 0 の柱」を行 2 のブロックの頭として見る。
+    zp = z_before[-1] if z_before else None
+    a['zp_none'] = zp is None
+    zc = g(zp) if zp is not None else (-9,-9,-9)
+    a['zp_adj'] = zp is not None and off - zp == 1
+    a['zp_d2'] = zp is not None and off - zp == 2
+    a['zp_far'] = zp is not None and off - zp > 4
+    a['zp_anc'] = zp is not None and zc[0] < p[0]      # 行 0 で自分の祖先か
+    a['zp_r0_d1'] = zc[0] == p[0] - 1
+    a['zp_r0_d2'] = zc[0] == p[0] - 2
+    a['zp_r0_eq'] = zc[0] == p[0]
+    a['zp_r1_eq'] = zc[1] == p[1]
+    a['zp_r1_ge2'] = zc[1] >= 2
+    a['zp_diag'] = zc[0] == zc[1] and zc[0] >= 1
+    a['zp_par_root'] = zp is not None and par(Mo, zp, 0) == 0
+    a['zp_par_chead'] = zp is not None and par(Mo, zp, 0) >= 0 and copy_head(Mo, par(Mo, zp, 0))
+    a['zp_par_termtop'] = zp is not None and par(Mo, zp, 0) >= 0 and term_top(Mo, par(Mo, zp, 0))
+    a['zp_termtop_up'] = zp is not None and any(term_top(Mo, t) for t in range(zp + 1, off))
+    # 行 0 の祖先のうち 行 2 > 0 のものの本数（＝行 2 の深さ）
+    anc0 = []
+    j = off
+    while True:
+        j = par(Mo, j, 0)
+        if j < 0: break
+        anc0.append(j)
+    a['zdepth0'] = sum(1 for t in anc0 if Mo[t][2] > 0) == 0
+    a['zdepth1'] = sum(1 for t in anc0 if Mo[t][2] > 0) == 1
+    a['zdepth_ge2'] = sum(1 for t in anc0 if Mo[t][2] > 0) >= 2
+    # いまの「項」の中の 行 2 > 0 の本数
+    th = 0
+    for t in range(off - 1, -1, -1):
+        if term_top(Mo, t): th = t; break
+    a['zblk0'] = sum(1 for t in range(th, off) if Mo[t][2] > 0) == 0
+    a['zblk1'] = sum(1 for t in range(th, off) if Mo[t][2] > 0) == 1
+    a['zblk_ge2'] = sum(1 for t in range(th, off) if Mo[t][2] > 0) >= 2
+    a['th_adj'] = off - th <= 1
+    a['th_far'] = off - th > 4
+    a['th_chead'] = copy_head(Mo, th)
+    a['th_anch'] = tuple(Mo[th]) == ANCHOR
+    a['th_root'] = Mo[th][0] == 0
     if extra:
         a.update(extra)
     return {k: bool(v) for k, v in a.items()}
