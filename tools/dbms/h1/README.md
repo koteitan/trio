@@ -31,3 +31,12 @@
     python3 /tmp/h1work/mksib2.py        # 旗つきの写し rows3b.py（sibdd*/aw*）
 
 **族 β の証人は `A<m+1>` ではなく `d2b3(T)`。** 長さが揃うので柱ごとに整列できる。
+
+# 課題 H3 の道具
+
+    python3 /tmp/h1work/h3a1.py 3 3   # A1 の像を動かして ImgClosedT が立つか（全数）
+    python3 /tmp/h1work/h3ct.py       # closes_top の撃ちすぎの教師データ
+    python3 /tmp/h1work/h3cov.py <pkl> 3   # 汎用: fp=0 の連言で正例を覆う
+    python3 /tmp/h1work/mkctr2.py     # 縮約を止める／数える写し rows3c.py
+                                      #   CX = {noctr, no_res, no_rf, max1}
+                                      #   b2d3c(M) -> (像, 発火の内訳)
