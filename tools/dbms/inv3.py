@@ -16,55 +16,126 @@
   (iii) 行 1 を「行 1 の祖先の鎖のうち**行 1 の影でない**柱の本数」で数え直す。
         行 2 は変換で保存される（conv3 は e2 = s2）のでそのまま。
 
-(iii) の理由: 行 1 の影 (dd,base,pl2) は本体 (dd+1,base+1,s2) の行 1 の親で、
-その影の行 1 の親がもとの BMS の行 1 の親になる。影だけ数えなければ元に戻る。
-行 0 の影は親の段をそのまま写した柱なので、行 1 の鎖では 1 本ぶん数える
-（親の値に戻るだけ）。
+**縮約（梯子の二役）＝「同じ区間をもう一度読む」（2026-08-27）**
 
-**測った結果（2026-08-27）**
+2 行の `readC` は、縮約を「写しを作り直す」のではなく
+**同じ像の柱をもう一度、1 段深い文脈で読む**ことで戻していた
+（`inner = readC ([top] + arg_l + U + r2[:m])`）。3 行でも同じことが成り立つ。
 
-影の見分け（(i)）は**誤り 0**。落ちるのは**縮約（梯子の二役）だけ**。
+conv3 の縮約は BMS の
 
-| 検査 | 結果 |
-|---|---|
-| 影の見分け 生成 <=6 列 8387 個 = 65327 柱 | 誤り **0** |
-| 影の見分け シート 1354 対 = 13533 柱 | 誤り **0** |
-| `d2b3(b2d3(M)) == M`  <=5 列 1018 個 | 1013（縮約 5 件だけ落ちる） |
-| 同 <=6 列 8387 個 | 8343（縮約 44 件だけ落ちる） |
-| 同・**縮約が起きない行列に限れば** | 1013/1013 ・ **8343/8343** |
-| `d2b3(D) == B` シート 1358 対 | 1022 |
-| 同・縮約なし かつ b2d3 がシートと一致する 1021 対 | **1021/1021** |
+    [p] + A + U + [q] + pre + rest2 + Bq        pre = 写し([p]+A+U)
 
-つまり `d2b3(b2d3(M)) = M` は、縮約が起きない限り**全数で成り立つ**。
-d2b3 は像だけを見る関数なので、これはその範囲での `b2d3` の**単射性の証明**に
-なる（像の集合の大きさを数えるのとは別の、構成的な保証）。
+から **[q] + pre を書かない**。像に残るのは 共有部（= [p]+A+U の像）と
+残余（= rest2 の像）だけである。ここで
 
-縮約が起きた行列では、写しの `q + pre` が像に書かれないので、像から落ちた列を
-復元しないと戻らない。`d2b3x` は候補を構造的に並べて前向き写像で 1 つに絞る版。
+    **q の影** = e=1 なら行 1 の影、e=0 なら行 0 の影
 
-| 検査 | d2b3 | d2b3x |
-|---|---|---|
-| 生成 <=6 列の縮約 44 件 | 0 | 41 |
-| シート 1358 対 | 1022 | 1061 |
-| DBMS 標準形 <=5 列 100 個に逆像 | 85 | **100** |
-| 同 <=6 列 528 個 | 376 | 522 |
-| 同 <=7 列 3514 個 | 2058 | 3380 |
+を「影ではなく実際の柱」として数え直すと、同じ像の区間が
 
-**まだ無いもの**: 縮約の残余の切れ目 (jR,jB) を**像だけから**決める規則。
-342 サイトで測ると、前向き写像で篩えば通る候補は必ず 1 つだけだが、
-「BMS 標準形であること」だけを条件にすると候補が 3〜9 個残り、
-最短・最長・seqlex 最小・jR 最大／最小のどれで選んでも正解にならない
-（342 件中それぞれ 25/4/25/4/29 件しか当たらない）。ここが次の一手。
+    e=0 のとき 写し（行 1 のずれ無し）、e=1 のとき 写し（行 1 が +1）
+
+に化ける。行 0 も行 1 も**深さを数えるだけ**なので、
+「q の影を 1 本数える」だけで `copy_shift` の状態機械（浅い／深い、`prev`、
+`na`、`after_w` …）を一切再現しなくてよい。よって復元は
+
+    R = head + blk + [q] + two + tail
+      blk = 像[i0,jR) を**ふつうに**読む          （= [p]+A+U）
+      two = 像[i0,jB) を**q の影を数えて**読む    （= pre + rest2）
+      q   = (blk[0] の深さ, 行1(i0) + e, 像[i0] の行 2)
+      head/tail = 像[0,i0) / 像[jB,) をふつうに読む
+
+の 1 行で済む。`copy_shift` も `prev0`/`na`（旧 `PARAMS` の 16 通り）も要らない。
+**正解の (i0,jR,jB,e) を与えると 378 サイト全部で復元できる**（旧版は 335/378）。
+
+**(i0,jR,jB,e) の決め方**
+
+候補を全部並べ、次の**像だけを見る**条件で篩う:
+
+  * 復元 R が BMS 標準形（`isstd(R,'BMS')`）
+  * `blk = [p] + (p の引数ブロック) + (単位の並び U)` と切れていて、
+    その直後が q（深さ = p の深さ、段の対 = (行1(i0)+e, 行2(i0))）
+  * 残余は q より深く、尾部は q 以下の深さ
+  * conv3 の残余ガード（残余の先頭の深さ・段の対、残余が空なら e=1 かつ deep_end）
+  * 残余の像の深さ = 像[i0] の深さ + 1 + e（残余が「写しの真下」のとき）
+
+残ったものから **(i0 最小, jR 最小, jB 最大)** を選ぶ。
+これで 378 サイト全部が一意に当たる（`python3 inv3.py` が数える）。
+
+**測った結果（2026-08-27, `python3 inv3.py 7` = 278 秒）**
+
+往復 `d2b3(b2d3(M)) == M`（BMS 3 行 z<2 標準形）:
+
+| 列数 | 個数 | 一致 | 縮約が起きるもの | 落ちた分の正体 |
+|---|---|---|---|---|
+| <=4 |    144 |    144 |   0/0   | － |
+| <=5 |   1018 |   1018 |   5/5   | － |
+| <=6 |   8387 |   8380 |  44/44  | 7 件とも conv3 の単射性の破れ |
+| <=7 |  77282 |  77116 | 338/338 | 166 件とも conv3 の単射性の破れ |
+| シート 1354 対 | | 1352 | 333/333 | 2 件とも同じ |
+
+**縮約サイトは 5/5・44/44・338/338・333/333 で全部戻る**（旧版は 0/44）。
+`d2b3` が外すのは、下の「単射性の破れ」だけになった。
+影の見分けは <=7 列 687776 柱・シート 13533 柱で誤り 0（前と同じ）。
+
+逆向き `b2d3(d2b3(N)) == N`（DBMS 3 行 z<2 標準形。全射の目安）:
+
+| 列数 | 個数 | d2b3(N) が BMS 標準形 | 前向きで戻る | 率 | 旧 |
+|---|---|---|---|---|---|
+| <=5 |   100 |   100 |   100 | 100.0% | 85 |
+| <=6 |   528 |   528 |   524 |  99.2% | 376 |
+| <=7 |  3514 |  3514 |  3432 |  97.7% | 2058 |
+| <=8 | 27932 | 27930 | 26763 |  95.8% | － |
+
+戻らないものは**逆写像の失敗ではなく conv3 の全射性の穴**らしい。代表 3 つ
+
+    (0,0,0)(1,0,0)(2,1,0)(3,2,1)(3,y,0)(2,0,0)      y=0,1,2
+
+は、BMS 3 行 z<2 標準形 <=8 列 **781605 個を全数**当たっても逆像が無い
+（1 列ずつ伸ばしながら `b2d3` を当てる素朴な全数探索、8 列で 485 秒）。
+
+**副産物: conv3 v10 は単射でない（2026-08-27, 新しい発見）**
+
+    A = (0,0,0)(1,1,1)(2,1,0)(3,2,1)(3,0,0)(2,1,0)                     6 列
+    B = A (1,1,0)(2,2,1)(3,2,0)(4,3,1)(4,0,0)(3,2,0)                  12 列
+    どちらも BMS 標準形で b2d3(A) = b2d3(B)
+      = (0,0,0)(1,0,0)(2,1,0)(3,2,1)(4,2,0)(5,3,1)(5,0,0)(4,2,0)
+
+B は A に「q ＋ A の本体まるごとの写し」を継いだもの。conv3 の
+**残余なしの縮約**（`rest2` が空・`e=1`・`deep_end`）がそれをまるごと飲み込む。
+`rows3.check` の単射検査は**同じ列数の集合の中でしか比べない**ので、
+6 列 vs 12 列のこの衝突は見えない（NOTES の「全射性: 列数を揃えて比べては
+いけない」と同じ罠が単射側にもあった）。
+<=6 列で 7 件・<=7 列で 166 件・シートで 2 件。
+`d2b3` はこの手のとき長い方（縮約を戻した方）を返すので、往復が落ちる。
+
+**構造再帰になっているか（Lean に載せるための整理）**
+
+* **読みそのものは構造再帰**である。`_walk`/`_read` は像の木を左から降りて
+  祖先スタック（像深さ, 像レベル, BMS 深さ, BMS 行 1, 本体か）を持ち回るだけで、
+  `rows2.readC` の `(first, plev)` を 3 行ぶんに太らせたものに等しい。
+  縮約の枝も `readC` と**同じ形**（同じ区間をもう一度、深い文脈で読む）。
+  `copy_shift`・`prev`・`na`・`after_w`・`closes_hi_unit` は 1 つも要らない。
+* **切れ目 (i0,jR,jB,e) の決定だけが構造再帰でない**。下記。
+
+**まだ無いもの: 切れ目を局所に決める規則**
+
+2 行の `readC` は縮約の切れ目を `r2[0][1] < top[1]` という**局所の条件**で
+決めていた。3 行では見つかっていない。いまの `find_sites` は
+**復元 R が BMS 標準形であること**（大域の判定）に頼っている。
+これを安い局所条件（行 y の値 = その行の入れ子の深さ、colOK、行 0 は 1 段ずつ）
+に置き換えると <=5 列で 1018/1018 -> **113/1018** に落ちる（フィルタ無しと同じ）。
+つまり大域の標準形判定が実際に効いている。Lean に載せるときの残る穴はここ 1 つ。
 
 使い方:
-    python3 inv3.py          往復・シート・全射の全数検査（約 15 秒）
-    python3 inv3.py x        縮約を戻す版 d2b3x も測る
+    python3 inv3.py          往復・シート・全射の全数検査
+    python3 inv3.py 7        <=7 列まで
 """
 import sys, os, time, inspect
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import parse, show, isstd, cmpmat
 import rows3
-from rows3 import gen3, key, split0
+from rows3 import gen3, key, split0, is_branch
 
 S0, S1, BODY = 'S0', 'S1', 'B'
 
@@ -172,84 +243,187 @@ def rebuild(N, rs, Y, Dp):
     return tuple((Dp[i], Y[i], N[i][2]) for i in range(len(N)) if rs[i] == BODY)
 
 
-def d2b3(N):
-    """DBMS 3 行標準形 -> BMS 3 行標準形（**縮約は戻さない**版）。"""
+def d2b3p(N):
+    """縮約を戻さない素の読み（影を落として深さを数え直すだけ）。"""
     N = tuple(N)
     rs, P0, Y, Dp = prep(N)
     return rebuild(N, rs, Y, Dp)
 
 
-# ---------------------------------------------------------------- 縮約を戻す
-def blk_end(N, i):
-    """柱 i の部分木の終わり（i より深くない柱が来るところ）。"""
-    d = N[i][0]
-    for t in range(i + 1, len(N)):
-        if N[t][0] <= d:
-            return t
-    return len(N)
+# ---------------------------------------------------------------- 二役の読み
+def _walk(N, rs, lo, hi, ST, prom):
+    """区間 [lo,hi) の各柱に (BMS 深さ, BMS 行 1) を与える。
 
-
-def uncontract(N, pp, i0, jR, jB, e, prev0, na, ysh):
-    """行 0 の影 i0 のブロックで縮約を戻す。
-
-    conv3 の縮約の枝は、BMS の
-
-        [p] + A + U + [q] + pre + rest2 + Bq          pre = 写し([p]+A+U)
-
-    のうち **[q] + pre を書かない**。像に残るのは
-    cols(影+本体) + cA + cU + cR で、`cR`（= rest2 の像）はブロックの**後ろ側**に
-    来る。だから像のブロックを [i0,jR) = 共有部（= [p]+A+U）と
-    [jR,jB) = 残余（= rest2）に割り、q と写しを作り直せばよい。
-
-    * `q` の段の対は (親の行 1 + e, 親の行 2) = (Y[i0]+e, N[i0][2])
-    * 写しは `rows3.copy_shift`（前向きと同じ関数）
-    * 残余の行 0 は「刈り込んだ深さ + 1」（q が 1 段割り込むぶん）
+    `ST` は外側の祖先スタック [(像深さ, 像レベル, BMS 深さ, BMS 行 1, 本体か)]。
+    `prom` は「影だが**本体として数える**」添字の集合（縮約の q の影）。
+    深さも行 1 も「祖先のうち本体の本数」なので、q の影を 1 本数えるだけで
+    写し（1 段深く、行 1 が +e）が出てくる。
     """
-    rs, P0, Y, Dp = pp
-    col = lambda t: (Dp[t], Y[t], N[t][2])
-    head = [col(t) for t in range(0, i0) if rs[t] == BODY]
-    blk = [col(t) for t in range(i0, jR) if rs[t] == BODY]
+    st = list(ST)
+    bd, by, sts = {}, {}, {}
+    for t in range(lo, hi):
+        while st and st[-1][0] >= N[t][0]:
+            st.pop()
+        p = st[-1] if st else None
+        bd[t] = 0 if p is None else p[2] + (1 if p[4] else 0)
+        if N[t][1] == 0:
+            by[t] = 0
+        else:
+            j = None
+            for k in range(len(st) - 1, -1, -1):
+                if st[k][1] < N[t][1]:
+                    j = st[k]
+                    break
+            by[t] = (0 if j is None else j[3]) + \
+                    (0 if (rs[t] == S1 and t not in prom) else 1)
+        sts[t] = list(st)
+        st.append((N[t][0], N[t][1], bd[t], by[t],
+                   rs[t] == BODY or t in prom))
+    return bd, by, sts
+
+
+def _read(N, rs, lo, hi, ST, prom, sites):
+    """像の区間 [lo,hi) を BMS 列に読む。`sites` = {i0: (jR,jB,e)}。
+
+    縮約サイトでは、同じ区間 [i0,jB) を **q の影を数える文脈で**もう一度読む。
+    2 行の `rows2.readC` の `inner = readC ([top]+arg_l+U+r2[:m])` と同じ形。
+    """
+    bd, by, sts = _walk(N, rs, lo, hi, ST, prom)
+    out, t = [], lo
+    while t < hi:
+        s = sites.get(t)
+        if s is not None:
+            jR, jB, e = s
+            qi = t if e == 0 else t + 1
+            sub = {k: v for k, v in sites.items() if k != t}
+            blk = _read(N, rs, t, jR, sts[t], prom, sub)
+            q = (bd[t], by[t] + e, N[t][2])
+            two = _read(N, rs, t, jB, sts[t], prom | {qi}, sub)
+            out += blk + [q] + two
+            t = jB
+            continue
+        if rs[t] == BODY:
+            out.append((bd[t], by[t], N[t][2]))
+        t += 1
+    return out
+
+
+# ---------------------------------------------------------------- サイトの条件
+def _units_ok(p, U, q):
+    """`units_split(p, U+[q]+…, qlab)` がちょうど U で切れるか。"""
+    if q[0] != p[0]:
+        return False
+    qlab = (q[1], q[2])
+    k = 0
+    while k < len(U):
+        if U[k][0] != p[0] or (U[k][1], U[k][2]) == qlab:
+            return False
+        t = k + 1
+        while t < len(U) and p[0] < U[t][0]:
+            t += 1
+        k = t
+    return k == len(U)
+
+
+def _site_ok(N, rs, i0, jR, jB, e, blk, q, two, tail):
+    """conv3 の縮約枝がこの切れ目で発火することを、復元 R だけを見て確かめる。"""
+    if not blk:
+        return False
+    p = blk[0]
+    cp, res = two[:len(blk)], two[len(blk):]
+    if len(cp) != len(blk):
+        return False
+    A, U = split0(p, list(blk[1:]))
+    if not _units_ok(p, U, q):
+        return False
+    if any(c[0] <= q[0] for c in res):
+        return False
+    if tail and tail[0][0] > q[0]:
+        return False
+    # 写しの整合: 二役の読みで出た cp が、前向きの `copy_shift` の出力でもあること。
+    # 縮約が本当に発火するサイトでは必ず一致する（378 サイトで確認）。
+    # 偽のサイトはここで落ちる（分岐列の浅い／深いが `copy_shift` の
+    # 状態機械で作れない並びになる）。
+    ps0 = q[1] - e
+    if not any(list(rows3.copy_shift(blk, e, ps0, pv, na)) == list(cp)
+               for pv in (1, 0) for na in (q, rows3.NOTLAST)):
+        return False
+    v, s2 = p[1], p[2]
+    if res:
+        if res[0][0] < p[0] + 1:
+            return False
+        if (res[0][0] == p[0] + 1 and (res[0][1], res[0][2]) >= (v + e, s2)
+                and e == 0):
+            return False
+        # 残余の像は「写しの真下」なら深さ d+1+e に書かれる（conv3 の rd）
+        if res[0][0] == p[0] + 1 and N[jR][0] != N[i0][0] + 1 + e:
+            return False
+    else:
+        # 残余なしの縮約は「行 1 ずれ」かつ「残りが深く書かれた分岐列で終わる」
+        if e == 0 or not (is_branch(blk[-1]) and cp[-1][1] > blk[-1][1]):
+            return False
+    return True
+
+
+def _try(N, rs, sites, i0, jR, jB, e):
+    """サイト (i0,jR,jB,e) を足したときの復元 R。条件を満たさなければ None。"""
+    qi = i0 if e == 0 else i0 + 1
+    if qi >= len(N) or (e == 1 and rs[qi] != S1):
+        return None
+    st = dict(sites)
+    st[i0] = (jR, jB, e)
+    bd, by, sts = _walk(N, rs, 0, len(N), [], frozenset())
+    blk = _read(N, rs, i0, jR, sts[i0], frozenset(), sites)  # sites に i0 は無い
     if not blk:
         return None
-    res = [(Dp[t] + 1, Y[t] + (e if ysh and Y[t] > Y[i0] else 0), N[t][2])
-           for t in range(jR, jB) if rs[t] == BODY]
-    tail = [col(t) for t in range(jB, len(N)) if rs[t] == BODY]
-    q = (blk[0][0], Y[i0] + e, N[i0][2])
-    cp = rows3.copy_shift(blk, e, Y[i0], prev0, na)
-    return tuple(head + blk + [q] + cp + res + tail)
+    q = (bd[i0], by[i0] + e, N[i0][2])
+    two = _read(N, rs, i0, jB, sts[i0], frozenset({qi}), sites)
+    tail = (_read(N, rs, jB, len(N), sts[jB], frozenset(), sites)
+            if jB < len(N) else [])
+    if not _site_ok(N, rs, i0, jR, jB, e, blk, q, two, tail):
+        return None
+    R = tuple(_read(N, rs, 0, len(N), [], frozenset(), st))
+    if not isstd(R, 'BMS'):
+        return None
+    return R, st
 
 
-PARAMS = [(e, p, n, y) for e in (1, 0) for p in (1, 0)
-          for n in (None, rows3.NOTLAST) for y in (True, False)]
+def find_sites(N, rs):
+    """像だけを見て縮約サイトを決める。**(i0 最小, jR 最小, jB 最大)**。"""
+    sites = {}
+    for i0 in range(len(N)):
+        if rs[i0] != S0:
+            continue
+        best = None
+        for jR in range(i0 + 1, len(N) + 1):
+            for jB in range(len(N), jR - 1, -1):
+                for e in (1, 0):
+                    r = _try(N, rs, sites, i0, jR, jB, e)
+                    if r is not None:
+                        best = (jR, jB, e)
+                        break
+                if best:
+                    break
+            if best:
+                break
+        if best:
+            sites[i0] = best
+    return sites
+
+
+def d2b3(N):
+    """DBMS 3 行標準形 -> BMS 3 行標準形（縮約も戻す）。"""
+    N = tuple(N)
+    rs = roles_of(N)
+    if S0 not in rs:
+        return rebuild(N, rs, *prep(N)[2:])
+    sites = find_sites(N, rs)
+    return tuple(_read(N, rs, 0, len(N), [], frozenset(), sites))
 
 
 def d2b3x(N, verify=None):
-    """縮約を戻す版。候補を構造的に並べ、`verify` で 1 つに絞る。
-
-    `verify(M) -> bool` の既定は「前向き写像 `rows3.b2d3` で像に戻ること」。
-    つまりこれは**読み戻しではなく逆像の構成**（2 行の `onto.py` と同じ立場）。
-    残余の切れ目 (jR,jB) を像だけから決める規則はまだ見つかっていないので、
-    そこだけ探索している。342 サイトで測ると、通る候補は**必ず 1 つだけ**
-    （BMS 標準形であることだけを条件にすると 3 個前後に絞れない）。
-    """
-    N = tuple(N)
-    if verify is None:
-        verify = lambda M: rows3.b2d3(M) == N
-    R = d2b3(N)
-    if verify(R):
-        return R
-    pp = prep(N)
-    rs = pp[0]
-    for i0 in [t for t in range(len(N)) if rs[t] == S0]:
-        end = blk_end(N, i0)
-        b = i0 + 1 + (1 if i0 + 1 < len(N) and rs[i0 + 1] == S1 else 0)
-        for jR in range(b + 1, end + 1):
-            for jB in range(jR, end + 1):
-                for e, p, na, ysh in PARAMS:
-                    M = uncontract(N, pp, i0, jR, jB, e, p, na, ysh)
-                    if M is not None and verify(M):
-                        return M
-    return R
+    """互換用。いまの `d2b3` は縮約を戻すので、そのまま呼ぶだけ。"""
+    return d2b3(N)
 
 
 # ---------------------------------------------------------------- 正解の役割（追跡）
@@ -322,10 +496,11 @@ def trace_roles(M):
 
 
 # ---------------------------------------------------------------- 検査
-def check_gen(lim, xtra=False, verbose=3):
+def check_gen(lim, verbose=3):
     A = gen3('BMS', lim, zcap=1)
-    rok = cok = ok = okx = ncontr = 0
+    rok = ok = ncontr = cok = 0
     cols = colerr = 0
+    coll = []
     bad = []
     for M in A:
         N, rs, nc = trace_roles(M)
@@ -334,87 +509,99 @@ def check_gen(lim, xtra=False, verbose=3):
         cols += len(rs)
         colerr += sum(1 for x, y in zip(rs, pr) if x != y)
         ncontr += (nc > 0)
-        good = (d2b3(N) == tuple(M))
+        R = d2b3(N)
+        good = (R == tuple(M))
         ok += good
-        if nc == 0:
+        if nc > 0:
             cok += good
-        if xtra:
-            okx += (d2b3x(N) == tuple(M))
-        if not good and len(bad) < verbose:
-            bad.append((M, N, rs, pr))
+        if not good:
+            # conv3 が単射でないだけか（別の BMS 標準形が同じ像を持つ）
+            if isstd(R, 'BMS') and rows3.b2d3(R) == N:
+                coll.append((M, R, N))
+            elif len(bad) < verbose:
+                bad.append((M, N, R))
     print('BMS 3 行 z<2 標準形 <=%d 列: %d 個（うち縮約が起きるもの %d）'
           % (lim, len(A), ncontr))
     print('  影の見分け: 行列 %d/%d 一致   柱 %d 本中 誤り %d'
           % (rok, len(A), cols, colerr))
-    print('  d2b3(b2d3(M)) == M : %d/%d   （縮約なしに限れば %d/%d）'
-          % (ok, len(A), cok, len(A) - ncontr))
-    if xtra:
-        print('  d2b3x（縮約を戻す）  : %d/%d' % (okx, len(A)))
-    for M, N, rs, pr in bad:
-        print('    %-34s -> %s' % (show(M), show(N)))
-        print('      真 %s' % ' '.join(rs))
-        print('      予 %s' % ' '.join(pr))
-    return ok, len(A)
+    print('  d2b3(b2d3(M)) == M : %d/%d   （縮約が起きるもので %d/%d）'
+          % (ok, len(A), cok, ncontr))
+    print('  うち conv3 の単射性の破れ（別の標準形が同じ像）: %d' % len(coll))
+    for M, R, N in coll[:verbose]:
+        print('    %-34s と' % show(M))
+        print('    %-34s が同じ像 %s' % (show(R), show(N)))
+    for M, N, R in bad:
+        print('    %-34s -> %-30s (戻り %s)' % (show(M), show(N), show(R)))
+    return ok, len(A), len(coll)
 
 
-def check_sheet(xtra=False, verbose=3):
+def check_sheet(verbose=3):
     import sheet3
     T = sheet3.load(1)
-    ok = okx = cok = ncontr = nfwd = 0
+    ok = cok = ncontr = nfwd = 0
+    coll = []
     bad = []
     for row, b, d in T:
         N, rs, nc = trace_roles(b)
         if N != tuple(d):
             nfwd += 1
+            continue                      # シートの誤記 4 件は勘定に入れない
         ncontr += (nc > 0)
-        good = (d2b3(d) == tuple(b))
+        R = d2b3(d)
+        good = (R == tuple(b))
         ok += good
-        if nc == 0:
+        if nc > 0:
             cok += good
-        if xtra:
-            okx += (d2b3x(tuple(d)) == tuple(b))
-        if not good and len(bad) < verbose:
-            bad.append((row, b, d))
-    print('シート 3 行 z<=1: %d 対（b2d3 が外す %d、縮約が起きる %d）'
+        if not good:
+            if isstd(R, 'BMS') and rows3.b2d3(R) == tuple(d):
+                coll.append((row, b, R))
+            elif len(bad) < verbose:
+                bad.append((row, b, d, R))
+    n = len(T) - nfwd
+    print('シート 3 行 z<=1: %d 対（b2d3 が外す %d は除外、縮約が起きる %d）'
           % (len(T), nfwd, ncontr))
-    print('  d2b3(D) == B : %d/%d   （縮約なしに限れば %d/%d）'
-          % (ok, len(T), cok, len(T) - ncontr))
-    if xtra:
-        print('  d2b3x（縮約を戻す） : %d/%d' % (okx, len(T)))
-    for row, b, d in bad:
+    print('  d2b3(D) == B : %d/%d   （縮約が起きるもので %d/%d）'
+          % (ok, n, cok, ncontr))
+    print('  うち conv3 の単射性の破れ: %d' % len(coll))
+    for row, b, d, R in bad:
         print('  行%-5d D %s' % (row, show(d)))
         print('        正 %s' % show(b))
-        print('        誤 %s' % show(d2b3(d)))
-    return ok, len(T)
+        print('        誤 %s' % show(R))
+    return ok, n
 
 
 def check_dbms(lim, verbose=3):
     """逆向き: DBMS 標準形をぜんぶ読み戻して、前向きで戻るか（全射の検査）。"""
     D = gen3('DBMS', lim, zcap=1)
-    std = back = backx = 0
+    std = back = 0
+    bad = []
     for N in D:
         R = d2b3(N)
-        std += isstd(R, 'BMS')
+        s = isstd(R, 'BMS')
+        std += s
         b = (rows3.b2d3(R) == tuple(N))
         back += b
-        if not b:
-            backx += (rows3.b2d3(d2b3x(N)) == tuple(N))
+        if not b and len(bad) < verbose:
+            bad.append((N, R, s))
     print('DBMS 3 行 z<2 標準形 <=%d 列: %d 個' % (lim, len(D)))
     print('  d2b3(N) が BMS 標準形     : %d' % std)
-    print('  b2d3(d2b3(N)) == N        : %d' % back)
-    print('  d2b3x まで使えば逆像あり  : %d' % (back + backx))
-    return back + backx, len(D)
+    print('  b2d3(d2b3(N)) == N        : %d  (%.1f%%)'
+          % (back, 100.0 * back / max(1, len(D))))
+    for N, R, s in bad:
+        print('    %-32s -> %-32s (標準形 %s, 像 %s)'
+              % (show(N), show(R), s, show(rows3.b2d3(R))))
+    return back, len(D)
 
 
-def main(xtra=False):
+def main(lim=6):
     t0 = time.time()
-    for L in (5, 6):
-        check_gen(L, xtra)
-    check_sheet(xtra)
-    for L in (5, 6, 7):
+    for L in range(4, lim + 1):
+        check_gen(L)
+    check_sheet()
+    for L in range(5, lim + 2):
         check_dbms(L)
     print('%.1fs' % (time.time() - t0))
 
 
 if __name__ == '__main__':
-    main('x' in sys.argv[1:])
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else 6)

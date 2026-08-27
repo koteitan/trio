@@ -11,76 +11,115 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
 だから行 1 の値は保存されるものではなく、行 1 の木に影を挟めばその分ずれる。
 2 行の変換を「行 (0,1)」と「行 (1,2)」の**二重**に効かせるのが設計 v6 以降。
 
-**検査**（`main` が回す 6 つ = `check`）
+**検査**（`main` が回す = `check`）
 
   (1) 像が DBMS 標準形
-  (2) 単射・順序保存
+  (2) 単射・順序保存。**単射はこの集合の中でしか見ていない**（`gen3(lim)` なので
+      lim 列を超える相手との衝突は見えない）。それは (5) が拾う。
   (3) 性質 R: 任意の n に対し、ある m と n'>=n で 像<m> = 像(M<n'>)
-      **3 行では偽と分かっている**（NOTES §性質 R）ので、違反数は目安どまり。
+      **3 行では偽と確定している**（NOTES §性質 R）。目標にしてはいけないので
+      **既定では回さない**（`check(..., rprop=True)` で回る）。
   (4) z=0 の断片で 2 行版 `rows2.convC` と完全一致
-  (5) 逆写像 `inv3.d2b3` で戻る（`d2b3` は像だけを見る関数なので、通れば
-      その範囲での**単射性の構成的な証明**になる。縮約は既知の穴なので別勘定）
-  (6) 共終性 C1/C2 —— (3) の代わりに使うべきもの
+  (5) 逆写像 `inv3.d2b3` で戻る。落ちた分は 2 つに分ける:
+      **単射性の破れ**（戻り B が BMS 標準形で f(B) が同じ像 = 列数をまたぐ衝突）と
+      **本当の失敗**（B が逆像ですらない = 逆写像の欠陥）。
+  (6) 共終性 C1/C2
 
         C1: 任意の m<=mm に ある n<=nn で  f(M)<m> <= f(M<n>)
         C2: 任意の n<=nn に ある m<=mc で  f(M<n>) <= f(M)<m>
 
       **証明済みの 2 行版でちょうど 0 になる**（z=0 の 3 行標準形 <=6 列
       1285 個で C1 破れ 0・C2 破れ 0）。だから C1/C2 の違反は本物の欠陥。
+  (7) ImgClosedT: 任意の m>=1 に ある BMS 標準形 B で (f M)<m> = f B
+      **これが RD1（3 行版 ReindexD）の要**（NOTES §3 行の証明の骨組み）。
+      z=0 では破れ 0（3852 対）。既定は `imgclosed_fast`（逆写像を 1 発当てる
+      速い道）で、当たれば逆像の**構成的な証明**、外れは破れの**上界**。
+      `imgfull=True` で `m_imgclosed` の梯子つき探索まで降りる（重い）。
+      ImgClosedT は C1 より細かい: <=5 列で C1 の破れ 7 個は ImgClosedT の
+      破れ 28 個に**含まれる**。
 
-**到達点（2026-08-27, conv3 v10 = v9 ＋ resid/L/after_w/closes_hi_unit）**
+**到達点（2026-08-27, conv3 v11 = v10 ＋ アンカーで段をリセットしない）**
 
-| 検査 | v9（旧） | v10（いま） |
+v11 の変更は 1 行（`p == ANCHOR` での `st['prev'] = 0` を消しただけ）。
+**生成 <=7 列の 77282 個では像が 1 ビットも変わらない**ので、シート・非標準・
+単射・順序・z=0・往復はすべて v10 と同じ数字である。変わるのは展開を通して
+見える指標だけで、そこは**片側にしか動かない**（直すだけ・壊さない）。
+
+| 検査 | v10 | v11（いま） |
 |---|---|---|
-| シート 3 行 z<=1 (1358 対) | 1338 一致 | **1354 一致**（不一致 4） |
+| シート 3 行 z<=1 (1358 対) | 1354 一致 | **1354 一致**（不一致 4 はシート側の誤り） |
+| シートの `d2b3` 往復（1358 対） | 1356 / 単射の破れ 2 | 1356 / 単射の破れ 2 |
 | 生成 <=5 列 1018 個: 非標準 / 単射 / 順序 / z=0 | 0 / ok / 0 / 0 | 0 / ok / 0 / 0 |
-| 生成 <=6 列 8387 個: 非標準 / 単射 / 順序 / z=0 | 0 / ok / 0 / 0 | 0 / ok / 0 / 0 |
-| 生成 <=7 列 77282 個: 非標準 / 単射 / 順序 / z=0 | 3 / ok / 0 / 0 | 3 / ok / 0 / 0 |
-| 生成 <=8 列 781605 個: 非標準 / 単射 / 順序 / z=0 | （未測定） | 84 / ok / 0 / 0 |
-| 性質 R の違反（<=5 / <=6 / <=7 列） | 58 / 646 / － | 58 / 646 / 7151 |
-| 共終性 C1 / C2 の破れ（<=5 列） | － | 7 / 0 |
-| 同（<=6 列） | － | 136 / 0 |
-| 同（<=7 列） | － | 1897 / 2 |
-| `d2b3(b2d3(M)) == M`（<=6 / <=7 列） | － | 8343/8387 ・ 76944/77282（落ちるのは全部縮約） |
+| 生成 <=6 列 8387 個: 同 | 0 / ok / 0 / 0 | 0 / ok / 0 / 0 |
+| 生成 <=7 列 77282 個: 同 | 3 / ok / 0 / 0 | 3 / ok / 0 / 0 |
+| 生成 <=8 列 781605 個: 同 | 84 / ok / 0 / 0 | **84 / ok / 未測定 / 0** |
+| `d2b3` 往復（<=5 / <=6 / <=7 列） | 1018 / 8380 / 77116 | 同じ（落ちた 7・166 は**全部**単射性の破れ） |
+| 共終性 C1 の破れ（<=5 / <=6 / <=7 列） | 7 / 136 / 1897 | **7 / 121 / 1572** |
+| 共終性 C2 の破れ（<=5 / <=6 / <=7 列） | 0 / 0 / 2 | 0 / 0 / 2 |
+| ImgClosedT 破れ A（<=5 / <=6 / <=7 列） | 28 / 342 / — | **28 / 327 / 3779** |
+| 展開閉包 28158 個: 非標準 / 潰れ / 順序違反 | 103 / 1 / 4 | 103 / 1 / 4 |
+| 展開閉包の `d2b3` 往復（一致 / 単射の破れ / 本当の失敗） | 28031 / 125 / 2 | **28046 / 110 / 2** |
 
-4 条項を 1 つずつ足したときのシート成績（`python3 m_residue.py fix`）:
+v9 -> v10 の 4 条項（resid / L / after_w / closes_hi_unit）を 1 つずつ足した
+ときのシート成績は `python3 m_residue.py fix` で再現できる:
+v9 1338 / +resid 1350 / +L 1340 / resid+L 1352 / +after_w 1353 /
++closes_hi_unit 1353 / 4 つ全部（v10）1354。どの段でも <=6 列は 0 / ok / 0。
 
-| 足したもの | シート | <=6 列 非標準 / 単射 / 順序 |
-|---|---|---|
-| （なし・v9） | 1338/1358 | 0 / ok / 0 |
-| resid | 1350/1358 | 0 / ok / 0 |
-| L | 1340/1358 | 0 / ok / 0 |
-| resid + L | 1352/1358 | 0 / ok / 0 |
-| resid + L + after_w | 1353/1358 | 0 / ok / 0 |
-| resid + L + closes_hi_unit | 1353/1358 | 0 / ok / 0 |
-| 4 つ全部（v10） | **1354/1358** | 0 / ok / 0 |
+<=8 列の内訳（`gen3` を貯めずに流して測った, 699 秒 / RSS 0.7GB）: v10 と像が
+違うのは **8 列の 78 個だけ**（<=7 列は差 0）。非標準は 84（7 列 3 ＋ 8 列 81）で
+v10 と同数、像のハッシュ衝突 0（＝ 781605 個の中では単射）。順序保存だけは
+`key` 順に並べ直す必要があるので測っていない。
+z=0 の断片は **<=9 列 295014 個で 2 行版 `rows2.convC` と食い違い 0**
+（<=8 列 44653 個では v10 とも像の差 0）。z=0 は Lean で答えが確定している
+断片なので、ここが 0 であることが変換器の一番強い足場である。
 
-**残る不一致・非標準（2026-08-27 の全部）**
+ImgClosedT の内訳（m<=3, 速い道）: <=5 列 2996/3051 対（外れ 55 対 = 28 個の A。
+`m_imgclosed` の梯子つき全数探索でも同じ 55 対だったので**この範囲では確定**）、
+<=6 列 24505/25158 対（外れ A 327）、<=7 列 224178/231843 対（外れ A 3779。
+列数別に 4 列 2 / 5 列 26 / 6 列 299 / 7 列 3452）。
+外れの集合は v10 ⊇ v11（342 ⊃ 327）で、直った 15 個は逆像 B を実際に持つ。
 
-  シート 4 件（どれもシート側の誤り。直すところは無い）
-    行 592           E 列がそもそも DBMS 標準形でない（`isstd(d,'DBMS')` が偽）
-    行 891/897/898   シートの像は「長い綴りの双子」の像。合わせると単射が壊れる
-                     （`x_spell.evidence()` が 3 組とも再現する）
+**v11 を採用した根拠（課題 D5, `y_fix.py` の候補4）**
 
-  生成 <=7 列 3 件（同じ 1 系列）
-    (0,0,0)(1,1,1)(2,0,0)(3,1,1)(3,1,0)(4,2,1)(4,0,0)
-    (0,0,0)(1,1,1)(2,0,0)(3,1,1)(3,1,0)(4,2,1)(4,1,0)
-    (0,0,0)(1,1,1)(2,0,0)(3,1,1)(3,1,0)(4,2,1)(4,2,0)
-    足りないもの: 兄弟 (3,1,0) を「行 1 の影の横（深さ 5）」に付けるので像に
-    (5,1,0)(6,2,1)(5,1,0)(6,2,1) という**逐語重複**ができ、その後ろに深さ 6 の
-    柱を置けない（この 9 列接頭辞の 1 列 DBMS 拡張は (5,1,0) までしかない）。
-    (2,0,0) で段の表 `L` がリセットされて `base_s == base_d` になるため、
-    分岐列 (3,1,0) に「深い側」の選択肢そのものが無いのが直接の原因。
+型D の破れ = 「写しの中のアンカーで `prev` が 0 に戻り、もとでは深く綴られた
+分岐列が写しでは浅く綴られる」。段の状態機械が写しをまたいで一貫していない。
+リセットをやめると:
 
-  生成 <=8 列 84 件（4 列の接頭辞ごとの内訳。785 秒・RSS 7.1GB で全数）
-    (0,0,0)(1,1,1)(2,0,0)(3,1,1)                     42   <- 上の 3 件とその拡張
-    (0,0,0)(1,1,1)(x,y,z)(w,0,0)  の 14 通り  各 3   42   <- 下の別系列
-    後者の代表と像:
-      (0,0,0)(1,1,1)(1,1,1)(1,0,0)(2,1,1)(2,1,0)(3,2,1)(3,0,0)
-        -> (0,0,0)(1,0,0)(2,1,0)(3,2,1)(3,2,1)(1,0,0)(2,1,0)(3,2,1)(2,1,0)(3,2,1)(3,0,0)
-    こちらも像の末尾に (2,1,0)(3,2,1)(2,1,0)(3,2,1) の逐語重複ができ、その
-    10 列接頭辞の 1 列 DBMS 拡張は (2,1,0) までしかない（実測）ので、
-    最後の (3,0,0) が置けない。足りないものは上と同じ。
+  * 生成 <=7 列 77282 個で像は不変（差 0）。展開閉包 28158 個で変わるのは 45 個だけ
+  * 共終性 C1 の破れ 136 -> 121（<=6 列）、1897 -> 1572（<=7 列）。**破れ集合は真部分集合**
+  * ImgClosedT の外れ 342 -> 327（<=6 列）。**これも真部分集合**
+  * 像が変わった 45 個の `d2b3` 往復は 30/45 -> **45/45**（v10 の衝突 15 個が消える）。
+    閉包 28158 個ぜんぶで見ても 28031 -> 28046 一致・衝突 125 -> 110・
+    本当の失敗は 2 -> 2（v11 で新しく落ちたものは無い）
+  * 悪化した指標は 1 つも無い
+
+**残る欠陥（2026-08-27, v11 で残っている全部）**
+
+  (a) ImgClosedT の破れ（<=5 列で 28 個の A・55 対が**確定**。<=7 列で 3779 個）。
+      破れ方は 1 種類だけ: 目標 (f A)<m> の**末尾 1 列の行 1** が、届く像より
+      1 だけ大きい。性質 R の反例・C1 の型D と同じ病気。
+      足りないもの: 行 1 の入れ子を 1 段深く綴る規則。P6 では
+      `rule.convert` の綴り ...(6,2,1)(6,2,0)(7,3,1) が正解だと決まっている
+      （NOTES §D2）が、`rule.convert` は z=0 で 2 行版と 35 件食い違うので採れない。
+  (b) 共終性 C1 の破れ（<=6 列 121、<=7 列 1572）。型D 74 と型I 47 に割れる
+      （v10 の 136 での分類。v11 は型D を 15 直した残り）。
+      足りないもの: 型I は f(M<n>) が浅い柱を先に挟む（行 0 が像側で +1）ので、
+      行 0 の影の置き方の規則。型D は (a) と同根。
+  (c) 単射性の破れ（<=6 列 7 組、<=7 列 166 組、シート 2 組、閉包 110 組）。
+      A と「A ＋ q ＋ A の本体まるごとの写し」が同じ像になる。
+      足りないもの: 残余なしの縮約（rest2 が空・e=1・deep_end）のガード。
+  (d) 像が DBMS 非標準（<=7 列 3 件、<=8 列 84 件（v10 で測定）、閉包 103 件）。
+      足りないもの: 兄弟を「行 1 の影の横」ではなく「本体の横」に付ける規則。
+      ただし素朴な sibbody2 は共終性を新しく壊す（下の表）。
+  (e) 全射の穴: (0,0,0)(1,0,0)(2,1,0)(3,2,1)(3,y,0)(2,0,0) (y=0,1,2) は
+      BMS <=8 列 781605 個を全数当たっても逆像が無い（NOTES §逆写像）。
+  (f) 逆写像 `d2b3` の本当の失敗が閉包で 2 件（どちらも
+      (0,0,0)(1,1,1)(2,1,0)(3,0,0)(2,1,0) の反復系列で、戻りが 5 列短い）。
+      足りないもの: 縮約の切れ目を像だけから決める**局所**条件
+      （いまは大域の `core.isstd` に頼っており、Lean に載らない）。
+
+  シート 4 件（592, 891, 897, 898）はシート側の誤りなので欠陥ではない
+  （NOTES §シート行 891/897/898）。
 
 **採らなかった規則: sibbody2 / sibbody3（x_spell.py, 2026-08-27）**
 
@@ -88,7 +127,7 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
 付ける」規則。上の系列を狙い撃ちにするので生成の非標準は減るが、**共終性を
 新しく壊す**ので入れなかった。同じ土俵で測った表:
 
-| 検査 | v10（採用） | +sibbody2 |
+| 検査 | v10（当時の採用版） | +sibbody2 |
 |---|---|---|
 | シート | 1354/1358 | 1354/1358 |
 | 生成 <=6 列 非標準 / 単射 / 順序 | 0 / ok / 0 | 0 / ok / 0 |
@@ -110,12 +149,21 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
     v10       ...(6,2,1)(5,1,0)     C1 成立
     sibbody2  ...(6,2,1)(6,1,0)     像<2> が f(M<n>) をどの n でも追い越す
 
-`rule.convert` はこの系列に第 3 の像 ...(6,2,1)(6,2,0)(7,3,1) を出し、
-1 列拡張 10 個すべてで標準形になる。ただし機構（`rule.depths`）ごと移さないと
-使えない（`ruledepth` だけ差し込むとシートが 1112 に落ちる）。ここが次の一手。
+`rule.convert` はこの系列に第 3 の像 ...(6,2,1)(6,2,0)(7,3,1) を出す。
+**この綴りが P6 の正解であることは決着した**（課題 D2）: M<2> = P6 のとき
+DBMS 側の基本列 f(M)<2> がちょうどこの綴りになる。しかし `rule.convert`
+そのものは変換器としては採れない —— 展開閉包の z=0 の部分 3961 個で
+**証明済みの 2 行版 `rows2.convC` と 35 件食い違う**（直和が 1 個ぶんに潰れる）。
+だから足すべきは「行 1 の入れ子を 1 段深く綴る」規則だけで、`rule.depths` の
+機構ごと持ってくることではない。ここが次の一手（残る欠陥 (a)）。
 
 使い方:
-    python3 rows3.py [列数上限]
+    python3 rows3.py [列数上限] [ImgClosedT の m の上限] [full]
+
+      python3 rows3.py 5          <=5 列（15 秒）
+      python3 rows3.py 6          <=6 列（4 分）
+      python3 rows3.py 6 0        ImgClosedT を回さない（速い）
+      python3 rows3.py 5 3 full   ImgClosedT を梯子つき探索まで降ろす（重い）
 """
 import sys, os, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -418,8 +466,16 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
         base_d, pl2, force1, base_s = e[0] + 1, e[1], e[2], e[3] + 1
     first1 = F[v] if v < len(F) else True
 
-    if p == ANCHOR:
-        st['prev'] = 0
+    # v11: アンカー (1,1,0) での段のリセット `st['prev'] = 0` は**やめた**。
+    # 写しの中のアンカーで prev が 0 に戻ると、もとで「深い」と綴られた分岐列が
+    # 写しでは「浅い」と綴られ、f(M<n>) が像の展開に追いつかない（C1 の型D）。
+    # 課題 D5 の測定（2026-08-27）:
+    #   gen<=7 の 77282 個で像は 1 ビットも変わらない（7 列の 68895 個で差 0）
+    #   展開閉包 28158 個で像が変わるのは 45 個だけ。非標準 / 潰れ / 順序違反は
+    #     103 / 1 / 4 で v10 と同数
+    #   共終性 C1 の破れ（<=6 列）136 -> 121。破れ集合は 121 ⊂ 136（片側だけ）
+    #   ImgClosedT の速い道の外れ（<=6 列）342 -> 327 個、集合は 327 ⊂ 342
+    #   直った 15 個は逆像 B を実際に持っている（構成的）
     if is_branch(p) and base_s != base_d:
         nxt = M[1] if len(M) > 1 else nx
         shallow = (st['prev'] == 0) or closes_unit(nxt)
@@ -597,26 +653,74 @@ def two(M3):
     return [(c[0], c[1]) for c in M3]
 
 
-def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40):
-    """(1) 像が DBMS 標準形 (2) 順序保存 (3) 性質 R (4) z=0 で 2 行版と一致
-    (5) 逆写像 `inv3.d2b3` で戻る (6) 共終性 C1/C2。
+def imgclosed_fast(f, A, mmax=3, d2b3=None):
+    """ImgClosedT の**速い道**（逆写像 `inv3.d2b3` を 1 発当てるだけ）。
 
-    (6) は (3) の**代わりに使うべき**もの。性質 R（添字まで一致）は 3 行では
-    偽と分かっている（NOTES §性質 R）ので、違反数はほとんど添字のずれの雑音。
-    本当に要るのは共終性
+        ImgClosedT: 任意の BMS 標準形 A (|A|>1) と m>=1 に対し、ある BMS
+                    標準形 B があって  (f A)<m> = f B
+
+    T = (f A)<m> に `d2b3` を当て、出た B が BMS 3 行 z<2 標準形で
+    f(B) == T なら**逆像の存在の証明**（B そのものを持っている）。
+    外れは「この道では見つからなかった」だけなので破れの**上界**である。
+    ただし <=5 列 x m<=3 の 3051 対では、外れ 55 対が `m_imgclosed` の
+    梯子つき全数探索の破れ 55 対（相異なる A が 28 個）と**ちょうど一致**した
+    （2026-08-27 実測）。本物の破れかどうかは `m_imgclosed.py` で確かめる。
+
+    返り値 (当たり, 対の総数, 外れた A の集合)。"""
+    if d2b3 is None:
+        try:
+            from inv3 import d2b3
+        except Exception:
+            return 0, 0, set()
+    ok, tot, bad = 0, 0, set()
+    for i, M in enumerate(A):
+        if len(M) < 2:
+            continue
+        if i % 500 == 0:
+            # `d2b3` は `isstd` を大量に呼ぶ。<=7 列（77282 個）でここを
+            # 2000 ごとにすると RSS が 2.5GB を超えた（2026-08-27 実測）。
+            core._exp_memo.clear(); core._isstd_memo.clear(); core._flat_memo.clear()
+        N = f(M)
+        for m in range(1, mmax + 1):
+            T = tuple(expand(N, m))
+            tot += 1
+            try:
+                B = d2b3(T)
+            except Exception:
+                B = None
+            if (B and isstd(B, 'BMS') and all(c[2] <= 1 for c in B)
+                    and tuple(f(list(B))) == T):
+                ok += 1
+            else:
+                bad.add(tuple(M))
+    return ok, tot, bad
+
+
+def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
+          rprop=False, imgc=3, imgfull=False):
+    """(1) 像が DBMS 標準形 (2) 単射・順序保存 (4) z=0 で 2 行版と一致
+    (5) 逆写像 `inv3.d2b3` で戻る (6) 共終性 C1/C2 (7) ImgClosedT。
+
+    (3) 性質 R（添字まで一致）は **3 行では偽と確定している**（NOTES §性質 R）。
+    目標にしてはいけないので `rprop=True` のときだけ回す（既定は回さない）。
+    代わりに要るのは (6) と (7):
 
         C1: 任意の m<=mm に ある n<=nn で  f(M)<m> <= f(M<n>)
         C2: 任意の n<=nn に ある m<=mc で  f(M<n>) <= f(M)<m>
+        ImgClosedT: 任意の m>=1 に ある BMS 標準形 B で  (f M)<m> = f B
 
-    で、これは**証明済みの 2 行版でちょうど 0 になる**（z=0 の 3 行標準形
-    <=6 列 1285 個で C1 破れ 0・C2 破れ 0、2026-08-27 実測。
-    再現は `python3 x_spell.py cof 6`）。だから
-    C1/C2 の違反は変換器の本物の欠陥である。
+    C1/C2 は**証明済みの 2 行版でちょうど 0** になる（z=0 の 3 行標準形
+    <=6 列 1285 個で破れ 0）。ImgClosedT も z=0 では破れ 0（3852 対）。
+    だからどちらの違反も変換器の本物の欠陥である。ImgClosedT は C1 より
+    細かい: <=5 列で C1 の破れ 7 個は ImgClosedT の破れ 28 個に**含まれる**。
 
-    (5) は `d2b3` が**像だけを見る関数**なので、通れば その範囲での
-    単射性の構成的な証明になる（像の集合の大きさを数えるのとは別物）。
-    縮約が発火した行列は像から列が落ちるので `d2b3` では戻らない（既知の穴）。
-    そこは違反に数えず、別に件数だけ出す。
+    (2) の単射は `A` の中でしか比べていない。`A` は `gen3(lim)` なので
+    **lim 列を超える相手との衝突は見えない**（実例: 6 列と 12 列が同じ像。
+    NOTES §逆写像）。それは (5) が拾う: 往復が落ちて、しかも戻り B が
+    BMS 標準形で f(B) が同じ像なら、それは**単射性の破れの証拠**である。
+
+    `imgc` は ImgClosedT の m の上限（0 で回さない）。`imgfull=True` なら
+    `m_imgclosed` の梯子つき探索（速い道が外れたものだけ・**重い**）。
     """
     W = [f(M) for M in A]
     ns = [(M, N) for M, N in zip(A, W) if not isstd(N, 'DBMS')]
@@ -637,18 +741,19 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40):
         N = f(M)
         E = [tuple(expand(N, m)) for m in range(1, mc + 1)]
         G = [tuple(f(expand(M, np))) for np in range(1, nn + nr + 1)]
-        img = set(E[:mm])
-        for n in range(1, nr + 1):
-            if not any(g in img for g in G[n - 1:n + nn]):
-                rbad.append((M, n, N))
-                break
-        # (6) 共終性。R と同じ展開を使い回す。
+        if rprop:
+            img = set(E[:mm])
+            for n in range(1, nr + 1):
+                if not any(g in img for g in G[n - 1:n + nn]):
+                    rbad.append((M, n, N))
+                    break
+        # (6) 共終性。
         if any(not any(cmpmat(E[m], g) <= 0 for g in G[:nn]) for m in range(mm)):
             c1bad.append((M, N))
         if any(not any(cmpmat(g, e) <= 0 for e in E) for g in G[:nn]):
             c2bad.append((M, N))
     # (5) 逆写像。`inv3` は `rows3` を import するので、ここで遅延 import する。
-    rtbad, rtcon, d2b3 = [], 0, None
+    rtbad, rtinj, d2b3 = [], [], None
     if inv:
         try:
             from inv3 import d2b3
@@ -656,45 +761,85 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40):
             d2b3 = None
     if d2b3 is not None:
         for M, N in zip(A, W):
-            if d2b3(N) == tuple(M):
+            B = d2b3(N)
+            if B == tuple(M):
                 continue
-            if f is b2d3 and b2d3n(M)[1] > 0:
-                rtcon += 1              # 縮約は d2b3 の既知の穴。違反に数えない
+            if (B and isstd(B, 'BMS') and all(c[2] <= 1 for c in B)
+                    and tuple(f(list(B))) == tuple(N)):
+                rtinj.append((M, B, N))   # 別の BMS 標準形が同じ像 = 単射の破れ
             else:
                 rtbad.append((M, N))
+    # (7) ImgClosedT
+    icok = ictot = 0
+    icbad, iccap = set(), []
+    if imgc:
+        icok, ictot, icbad = imgclosed_fast(f, A, imgc, d2b3)
+        if imgfull and icbad:
+            # 速い道が外れたものだけ梯子つき探索に降ろす。梯子は **安いほう**
+            # （`LADDER_SCAN`）。既定の `LADDER` は 1 件あたり 54 万節点まで
+            # 歩くので、<=4 列でも 5 分・RSS 5GB を超えた（2026-08-27 実測）。
+            # 「なし」と出ても打ち切りが付いていれば探索不足の疑いが残る。
+            from m_imgclosed import find, LADDER_SCAN
+            still, iccap = set(), []
+            for M in sorted(icbad, key=key):
+                for m in range(1, imgc + 1):
+                    T = tuple(expand(f(M), m))
+                    _, B, _, _, cap = find(M, m, f=f, ladder=LADDER_SCAN, T=T)
+                    core._isstd_memo.clear(); core._flat_memo.clear()
+                    if B is None:
+                        still.add(tuple(M))
+                        if cap:
+                            iccap.append((tuple(M), m))
+            icbad = still
     print('  対象 %d 個' % len(A))
     print('  (1) 像が DBMS 非標準 : %d' % len(ns))
     for M, N in ns[:verbose]:
         print('        %-34s -> %s' % (show(M), show(N)))
-    print('  (2) 単射 : %s   順序保存の違反 : %d' % (inj, len(ordbad)))
+    print('  (2) 単射（この集合の中で） : %s   順序保存の違反 : %d'
+          % (inj, len(ordbad)))
     for i in ordbad[:verbose]:
         print('        %-34s -> %s' % (show(A[i]), show(W[i])))
         print('        %-34s -> %s' % (show(A[i + 1]), show(W[i + 1])))
-    print('  (3) 性質 R の違反 : %d' % len(rbad))
-    for M, n, N in rbad[:verbose]:
-        print('        %-30s -> %s  (n=%d で覆えない)' % (show(M), show(N), n))
+    if rprop:
+        print('  (3) 性質 R の違反 : %d   （3 行では偽。目安どまり）' % len(rbad))
+        for M, n, N in rbad[:verbose]:
+            print('        %-30s -> %s  (n=%d で覆えない)' % (show(M), show(N), n))
+    else:
+        print('  (3) 性質 R : 回さない（3 行では偽。rprop=True で回る）')
     print('  (4) z=0 で 2 行版と食い違い : %d' % len(z0bad))
     for M, N in z0bad[:verbose]:
         print('        %-34s -> %-30s (2 行版 %s)'
               % (show(M), show(N), show(pad(convC2(two(M))))))
-    print('  (5) d2b3(b2d3(M)) != M : %d   （うち縮約 %d = 既知の穴）'
-          % (len(rtbad) + rtcon, rtcon))
+    print('  (5) d2b3(b2d3(M)) != M : %d   （うち単射性の破れ %d = 別の '
+          'BMS 標準形が同じ像）' % (len(rtbad) + len(rtinj), len(rtinj)))
     for M, N in rtbad[:verbose]:
         print('        %-34s -> %-30s (戻り %s)' % (show(M), show(N), show(d2b3(N))))
+    for M, B, N in rtinj[:verbose]:
+        print('        %-34s と %s が同じ像 %s' % (show(M), show(B), show(N)))
     print('  (6) 共終性 C1 の破れ : %d   C2 の破れ : %d' % (len(c1bad), len(c2bad)))
     for M, N in (c1bad + c2bad)[:verbose]:
         print('        %-34s -> %s' % (show(M), show(N)))
+    if imgc:
+        print('  (7) ImgClosedT（m<=%d, %s）: 逆像あり %d / %d   '
+              '破れた A %d 個%s'
+              % (imgc, '梯子つき全数' if imgfull else '速い道のみ',
+                 icok, ictot, len(icbad),
+                 '   うち打ち切り %d' % len(iccap) if imgfull else ''))
+        for M in sorted(icbad, key=key)[:verbose]:
+            print('        %-34s -> %s' % (show(M), show(f(M))))
     return (len(ns) + len(ordbad) + len(rbad) + len(z0bad) + len(rtbad)
-            + len(c1bad) + len(c2bad))
+            + len(rtinj) + len(c1bad) + len(c2bad) + len(icbad))
 
 
-def main(lim=5):
+def main(lim=5, imgc=3, imgfull=False, rprop=False):
     t0 = time.time()
     A = sorted(gen3('BMS', lim, zcap=1), key=key)
     print('BMS 3 行 z<2 標準形 (<=%d 列): %d  (%.1fs)' % (lim, len(A), time.time() - t0))
-    n = check(b2d3, A)
+    n = check(b2d3, A, imgc=imgc, imgfull=imgfull, rprop=rprop)
     print('合計違反 %d  (%.1fs)' % (n, time.time() - t0))
 
 
 if __name__ == '__main__':
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 5)
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else 5,
+         imgc=int(sys.argv[2]) if len(sys.argv) > 2 else 3,
+         imgfull=len(sys.argv) > 3 and sys.argv[3] == 'full')
