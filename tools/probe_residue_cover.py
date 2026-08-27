@@ -533,7 +533,7 @@ def main(samples=100000, seed=20260828):
             continue
         if inWself(S, memo) is not True:
             continue
-        if inWself(C, memo) is not False:      # C が Wself で**ない**ものだけ
+        if inWself(C, memo) is True:           # C が Wself だと分かるものは除く
             continue
         rr = inWself(R, memo)
         if rr is None:
@@ -544,7 +544,7 @@ def main(samples=100000, seed=20260828):
                 ctl['VIOLATION'] += 1
                 if len(ctlex) < 3:
                     ctlex.append((S, p, C, R))
-    print('\n== (D2) 陽性対照: `C ∈ Wself` を落とした版（反例が出るはず）==')
+    print('\n== (D2) 陽性対照: `C ∈ Wself` を**課さない**版（反例が出るはず）==')
     for k in sorted(ctl):
         print(f'  {k:20s} {ctl[k]:9d}')
     for S, p, C, R in ctlex:
