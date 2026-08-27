@@ -816,6 +816,34 @@ def p0deep_ok(Mo, off, p, nxt):
     return ok2 and not anch_before(Mo, off)
 
 
+def p0_shallow(Mo, off):
+    """`prev == 0` の枝: 分岐列を浅く綴るか。課題 H6。
+
+        浅い  <=>  `off` が最後の柱  or  `term_top(Mo, off + 1)`
+
+    つまり**次の柱が「行 1 の加算項の頭」なら浅い**。`term_top` は課題 H1 で
+    作った述語（根 / アンカー (1,1,0) / 根の写し (k,0,0) / アンカーの写し (k,1,0)）
+    なので、これは `closes_unit` を写しの中まで届くように読み替えたものになる。
+
+    教師データ（シート 1354 行 ＋ ImgClosedT の目標）で測ると:
+
+        `prev == 0` の枝 6480 本 …… **食い違い 0**（浅い 4017 / 深い 2463）
+        「ずらしを全部見る」一致（lim=7, 305075 組）…… **新規 +12 / 壊れた 0**
+        ホールドアウト検定（行列で半分に割って当てはめ）…… 正例 1257/1257、
+        負例 1972 本に**誤発火 0**
+        `closes` の枝 6895 本でも**食い違い 0**
+
+    これ 1 本で `closes_top` / `closes_unit` / `p0deep_ok` の 3 段重ねを置き換え、
+    `p0deep_ok` が外していた 24 本も 0 本になる。
+    （`prev != 0` の枝には当てられない。`plain` 31126 本では 3192 本外す。）
+    """
+    if off + 1 >= len(Mo) or term_top(Mo, off + 1):
+        return True
+    # 課題 H7: 写しの頭が 1 つも前に無いなら浅い。`term_top` だけだと
+    # `conv3(A<n>) == (conv3 A)<n>`（ずれ 0）の対を 9 組壊す。
+    return not any(copy_head(Mo, t) for t in range(off))
+
+
 def wchain_head(Mo, off):
     """`off` から後ろへ「x w」の柱 (k,0,0) をさがす（課題 F2 の `wchain`）。
 
@@ -1055,11 +1083,14 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
                 cw = closes_top(Mo, off, nxt)
                 if V15['closesw'] and closes_w(Mo, off, nxt):
                     cw = True     # P2 `closesw`: 化けたアンカーも閉じる
-                if cw:
-                    shallow = True
-                elif st['prev'] == 0 and not closes_unit(nxt):
-                    _w0 = p0deep_ok(Mo, off, p, nxt)
+                if st['prev'] == 0:
+                    # 課題 H6: `prev == 0` の枝は `p0_shallow` 1 つで完全に決まる
+                    # （教師データ 6480 本で食い違い 0）。`closes_top` /
+                    # `closes_unit` / `p0deep_ok` の 3 段重ねを置き換える。
+                    _w0 = not p0_shallow(Mo, off)
                     shallow = not _w0
+                elif cw:
+                    shallow = True
             # after_w（rule.py）: 直前が「x w」の柱 (k,0,0) で、しかもユニットの
             # 端にいるなら、段はふつう 1 に落ちる（浅い）。W_(w^2) 系（hi）で
             # 直前の柱が根に付いていないときだけ、段が残る（深い）。
