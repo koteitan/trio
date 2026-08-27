@@ -693,6 +693,7 @@ V15 = {
     'wide0_anch': False,    # p0deep_ok の第 2 項を `not is_w_col(nxt)` に広げる
     'wide0_noprev': False,  # 位置から読んで深くしたときは st['prev'] を上げない
 }
+V15['cpylmin'] = int(os.environ.get('RS_CPYLMIN', V15['cpylmin']))
 if 'V15FLAGS' in os.environ:
     _on = set(x for x in os.environ['V15FLAGS'].split(',') if x)
     for _k in V15:
@@ -1175,7 +1176,13 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             # 写しの終わりの分岐列は、写しが吸収されるぶん深く書かれることがある。
             # 素直な「次の列 = q」と「深い側」の 2 通りを試す。
             for na in (q, NOTLAST):
-                pre = contrPre(p, U, A, e, ps[0], st['prev'], na)
+                # 課題 H5 (3): ここは `st['prev']` を読んでいたが、**読む必要が無い**。
+                # `None` / `1` / 行列から読んだ近似 のどれに替えても像は 1 ビットも
+                # 変わらない（gen<=7 の 77282 個、<=6 列の展開 33548 個（最長 30 列超）
+                # で差 0。lim=5 の 7 土俵も全部不変）。`0` に替えたときだけ 7 個変わり
+                # シートが 1354 -> 1112 に落ちるので、「0 でない」ことだけが効いている。
+                # 写しに同変でない読みを 1 つ減らすため、定数にする。
+                pre = contrPre(p, U, A, e, ps[0], None, na)
                 if list(Aq[:len(pre)]) == pre:
                     break
             else:
