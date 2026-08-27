@@ -15,14 +15,18 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
 
   (1) 像が DBMS 標準形
   (2) 単射・順序保存。**単射はこの集合の中でしか見ていない**（`gen3(lim)` なので
-      lim 列を超える相手との衝突は見えない）。それは (5) が拾う。
+      lim 列を超える相手との衝突は見えない）。それは (2b) と (5) が拾う。
+  (2b) **列数をまたいだ単射**（`inj_cross`）。長い相手（双子 `twin`・展開・
+      (5) が返した B）を自分で作ってから、像を辞書に貯めて衝突を数える。
+      判定は `f` だけを見るので逆写像 `inv3` の正しさに依存しない。
   (3) 性質 R: 任意の n に対し、ある m と n'>=n で 像<m> = 像(M<n'>)
       **3 行では偽と確定している**（NOTES §性質 R）。目標にしてはいけないので
       **既定では回さない**（`check(..., rprop=True)` で回る）。
   (4) z=0 の断片で 2 行版 `rows2.convC` と完全一致
-  (5) 逆写像 `inv3.d2b3` で戻る。落ちた分は 2 つに分ける:
-      **単射性の破れ**（戻り B が BMS 標準形で f(B) が同じ像 = 列数をまたぐ衝突）と
-      **本当の失敗**（B が逆像ですらない = 逆写像の欠陥）。
+  (5) 逆写像 `inv3.d2b3` で戻る。落ちた分は 3 つに分ける:
+      **単射性の破れ**（戻り B が BMS 標準形で f(B) が同じ像 = 列数をまたぐ衝突）、
+      **逆写像が古い**（B は BMS 標準形だが f(B) は別の像 = `inv3` が
+      いまの `conv3` に追いついていない）、**本当の失敗**（B が標準形ですらない）。
   (6) 共終性 C1/C2
 
         C1: 任意の m<=mm に ある n<=nn で  f(M)<m> <= f(M<n>)
@@ -32,91 +36,131 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
       1285 個で C1 破れ 0・C2 破れ 0）。だから C1/C2 の違反は本物の欠陥。
   (7) ImgClosedT: 任意の m>=1 に ある BMS 標準形 B で (f M)<m> = f B
       **これが RD1（3 行版 ReindexD）の要**（NOTES §3 行の証明の骨組み）。
-      z=0 では破れ 0（3852 対）。既定は `imgclosed_fast`（逆写像を 1 発当てる
-      速い道）で、当たれば逆像の**構成的な証明**、外れは破れの**上界**。
+      z=0 では破れ 0（3852 対）。既定は `imgfast.imgclosed_fast`（段 1 = 逆写像を
+      1 発当てる、段 2 = 誘導つき DFS、fork 並列）。当たれば逆像の**構成的な
+      証明**、外れは破れの**上界**。`fast=False` でこのファイルの逐次版に落ち、
       `imgfull=True` で `m_imgclosed` の梯子つき探索まで降りる（重い）。
       ImgClosedT は C1 より細かい: <=5 列で C1 の破れ 7 個は ImgClosedT の
       破れ 28 個に**含まれる**。
 
-**到達点（2026-08-27, conv3 v11 = v10 ＋ アンカーで段をリセットしない）**
+**到達点（2026-08-27, conv3 v12 = v11 ＋ mark ＋ newterm）**
 
-v11 の変更は 1 行（`p == ANCHOR` での `st['prev'] = 0` を消しただけ）。
-**生成 <=7 列の 77282 個では像が 1 ビットも変わらない**ので、シート・非標準・
-単射・順序・z=0・往復はすべて v10 と同じ数字である。変わるのは展開を通して
-見える指標だけで、そこは**片側にしか動かない**（直すだけ・壊さない）。
+v12 で足した条項は 2 つ。旗 `V12` で 1 つずつ入れ切りでき、**両方 False にすると
+v11 に戻る**（生成 <=8 列 781605 個で像の差 0 を確認した）。
 
-| 検査 | v10 | v11（いま） |
+  `mark`    （課題 E1, `z1.py`）残余なしの縮約は「写しを飲んだ印が像に残る」
+            ときだけ許す。印が残らないと `M` と `M ++ (1,1,0) ++ 写し` が
+            同じ像に潰れる（＝単射性の破れ）。既定は局所版
+            `leaves_mark_local`（Lean に載る形）で、大域版 `leaves_mark`
+            （2 通り走らせて像を比べる）と双子 3609 個・生成 <=7 列で差 0。
+  `newterm` （課題 E2, `z2.py`）行 0 が 0 の柱 (0,*,*) は**新しい加算項**の
+            頭なので、段の状態 `st['prev']` を持ち越さない。持ち越すと
+            A ++ A の 2 つ目の写しが浅く綴られ、f が和について加法的でなくなる。
+
+**どちらも片側にしか動かない。** 生成 <=7 列 77282 個では v11 と像が 1 ビットも
+変わらない（<=8 列で変わるのは 50 個、どれも `newterm` の側）。像が変わるのは
+双子（`mark`。3609 個中 24 個、全部「潰れていたものが分離した」側）と
+8 列以上（`newterm`）だけである。
+
+| 検査 | v11 | v12（いま） |
 |---|---|---|
-| シート 3 行 z<=1 (1358 対) | 1354 一致 | **1354 一致**（不一致 4 はシート側の誤り） |
-| シートの `d2b3` 往復（1358 対） | 1356 / 単射の破れ 2 | 1356 / 単射の破れ 2 |
-| 生成 <=5 列 1018 個: 非標準 / 単射 / 順序 / z=0 | 0 / ok / 0 / 0 | 0 / ok / 0 / 0 |
-| 生成 <=6 列 8387 個: 同 | 0 / ok / 0 / 0 | 0 / ok / 0 / 0 |
-| 生成 <=7 列 77282 個: 同 | 3 / ok / 0 / 0 | 3 / ok / 0 / 0 |
-| 生成 <=8 列 781605 個: 同 | 84 / ok / 0 / 0 | **84 / ok / 未測定 / 0** |
-| `d2b3` 往復（<=5 / <=6 / <=7 列） | 1018 / 8380 / 77116 | 同じ（落ちた 7・166 は**全部**単射性の破れ） |
-| 共終性 C1 の破れ（<=5 / <=6 / <=7 列） | 7 / 136 / 1897 | **7 / 121 / 1572** |
-| 共終性 C2 の破れ（<=5 / <=6 / <=7 列） | 0 / 0 / 2 | 0 / 0 / 2 |
-| ImgClosedT 破れ A（<=5 / <=6 / <=7 列） | 28 / 342 / — | **28 / 327 / 3779** |
-| 展開閉包 28158 個: 非標準 / 潰れ / 順序違反 | 103 / 1 / 4 | 103 / 1 / 4 |
-| 展開閉包の `d2b3` 往復（一致 / 単射の破れ / 本当の失敗） | 28031 / 125 / 2 | **28046 / 110 / 2** |
+| シート 3 行 z<=1 (1358 対) | 1354 | **1354**（不一致 4 はシート側の誤り） |
+| シートの `d2b3` 往復（1358 対） | 1356 / 単射の破れ 2 | 1356 / **単射の破れ 1** |
+| z=0 <=9 列 295014 個: `rows2.convC` と食い違い | 0 | **0** |
+| 生成 <=7 列 77282 個: 非標準 / 順序 / 像の衝突 | 3 / 0 / 0 | **3 / 0 / 0** |
+| 生成 <=8 列 781605 個: 非標準 / 像の衝突 | 84 / 0 | **84 / 0** |
+| 単射（列数をまたいで, 閉包 15611 / 127182 個） | 24 / 24 組 | **0 / 0 組** |
+| 単射（`d2b3` 往復 <=6 / <=7 列） | 7 / 166 組 | **0 / 2 組** |
+| ImgClosedT 破れ A（<=5 / <=6 / <=7 列） | 28 / 327 / 3779 | **26 / 294 / 3374** |
+| 共終性 C1 の破れ（<=5 / <=6 / <=7 列） | 7 / 121 / 1572 | **5 / 88 / 1167** |
+| 共終性 C2 の破れ（<=5 / <=6 / <=7 列） | 0 / 0 / 2 | **0 / 0 / 2** |
+| sandwich の下限 f(M)<n-1> <= f(M<n>)（<=6 列 41930 対） | 363 | **264** |
+| 展開閉包 22806 個: 非標準 / 潰れ / 順序違反 | 103 / 1 / 4 | **104 / 0 / 3** |
+| `ConvDiagT3`（対角の像 v=0..20） | 一致 | **一致** |
+
+破れの集合はどの欄も**真部分集合**（ImgClosedT・共終性 C1・sandwich の下限・
+単射は「直った」だけで「新しく壊れた」は 0）。ただし 1 つだけ両側に動く欄がある:
+**展開閉包の非標準が 103 -> 104**（`mark` のせい。`newterm` は 0）。増えた 1 件は
+
+    (0,0,0)(1,1,1)(2,1,0)(3,0,0)(2,1,0)(1,1,0)(2,2,1)(3,2,0)(4,0,0)(3,2,0)
+
+でちょうど双子である。v11 ではこれがもとの 5 列と同じ像に**潰れて**いた
+（＝単射性の破れ）。v12 は写しを綴り出して分離するが、その長い像が DBMS 非標準に
+なる。潰れ 1 と順序違反 1 を減らして非標準 1 を増やす取引で、**生成の非標準
+（<=7 列 3 / <=8 列 84）は 1 件も動かない**。
+
+**ImgClosedT の採点は逆写像 `inv3.d2b3` に足を引っ張られる。** `d2b3` は v11 に
+合わせて作ってあるので、`mark` を入れると目標 T に対して「双子」`W ++ (1,1,0) ++
+写し` を返す。いまの `conv3` ではその像はもう T ではないので、素の速い道だと
+それが破れに見える（<=6 列で 327 -> 328、<=7 列で 3374 -> 3381 に**増える**）。
+`preimage_try` は外れたときに `untwin`（加算項ごとに双子を `W` に戻す）と
+`B[:k]`（接頭辞）を当て直す。**当たりは f(B')==T を確かめてから返す**ので健全。
+それで測ると
+
+  ImgClosedT の破れ A（m<=3）  <=5 列  <=6 列  <=7 列
+    v11                          28     327    3779
+    `mark` だけ                  28     327    3779   （集合も v11 と同一）
+    `newterm` だけ               26     294    3374
+    v12                          26     294    3374   （v11 の真部分集合。
+                                                       直った 2 / 33 / 405、
+                                                       新しく壊れた 0 / 0 / 0）
+  v12 の破れの列数別: 4 列 2 / 5 列 24 / 6 列 268 / 7 列 3080
+
+`inv3` をまったく使わない辞書引き（像 -> BMS 標準形 の辞書 127182 個、`z1.py` の
+`imgclosed_dict` と同じ道）でも同じ結論になる: <=6 列で v11 617 / `mark` **617**
+（集合同一）/ `newterm` 584 / v12 **584**。
+つまり **`mark` は ImgClosedT を 1 ビットも動かさない**。
 
 v9 -> v10 の 4 条項（resid / L / after_w / closes_hi_unit）を 1 つずつ足した
 ときのシート成績は `python3 m_residue.py fix` で再現できる:
 v9 1338 / +resid 1350 / +L 1340 / resid+L 1352 / +after_w 1353 /
-+closes_hi_unit 1353 / 4 つ全部（v10）1354。どの段でも <=6 列は 0 / ok / 0。
++closes_hi_unit 1353 / 4 つ全部（v10）1354。
+v10 -> v11 は 1 行（`p == ANCHOR` での `st['prev'] = 0` を消しただけ）で、
+生成 <=7 列で像は不変・共終性 C1 は <=6 列 136 -> 121・ImgClosedT は 342 -> 327
+（どちらも真部分集合）だった（課題 D5, `y_fix.py`）。
 
-<=8 列の内訳（`gen3` を貯めずに流して測った, 699 秒 / RSS 0.7GB）: v10 と像が
-違うのは **8 列の 78 個だけ**（<=7 列は差 0）。非標準は 84（7 列 3 ＋ 8 列 81）で
-v10 と同数、像のハッシュ衝突 0（＝ 781605 個の中では単射）。順序保存だけは
-`key` 順に並べ直す必要があるので測っていない。
-z=0 の断片は **<=9 列 295014 個で 2 行版 `rows2.convC` と食い違い 0**
-（<=8 列 44653 個では v10 とも像の差 0）。z=0 は Lean で答えが確定している
-断片なので、ここが 0 であることが変換器の一番強い足場である。
+z=0 の断片は **<=9 列 295014 個で 2 行版 `rows2.convC` と食い違い 0**。
+z=0 は Lean で答えが確定している断片なので、ここが 0 であることが
+変換器の一番強い足場である。
 
-ImgClosedT の内訳（m<=3, 速い道）: <=5 列 2996/3051 対（外れ 55 対 = 28 個の A。
-`m_imgclosed` の梯子つき全数探索でも同じ 55 対だったので**この範囲では確定**）、
-<=6 列 24505/25158 対（外れ A 327）、<=7 列 224178/231843 対（外れ A 3779。
-列数別に 4 列 2 / 5 列 26 / 6 列 299 / 7 列 3452）。
-外れの集合は v10 ⊇ v11（342 ⊃ 327）で、直った 15 個は逆像 B を実際に持つ。
+**残る欠陥（2026-08-27, v12 で残っている全部）**
 
-**v11 を採用した根拠（課題 D5, `y_fix.py` の候補4）**
-
-型D の破れ = 「写しの中のアンカーで `prev` が 0 に戻り、もとでは深く綴られた
-分岐列が写しでは浅く綴られる」。段の状態機械が写しをまたいで一貫していない。
-リセットをやめると:
-
-  * 生成 <=7 列 77282 個で像は不変（差 0）。展開閉包 28158 個で変わるのは 45 個だけ
-  * 共終性 C1 の破れ 136 -> 121（<=6 列）、1897 -> 1572（<=7 列）。**破れ集合は真部分集合**
-  * ImgClosedT の外れ 342 -> 327（<=6 列）。**これも真部分集合**
-  * 像が変わった 45 個の `d2b3` 往復は 30/45 -> **45/45**（v10 の衝突 15 個が消える）。
-    閉包 28158 個ぜんぶで見ても 28031 -> 28046 一致・衝突 125 -> 110・
-    本当の失敗は 2 -> 2（v11 で新しく落ちたものは無い）
-  * 悪化した指標は 1 つも無い
-
-**残る欠陥（2026-08-27, v11 で残っている全部）**
-
-  (a) ImgClosedT の破れ（<=5 列で 28 個の A・55 対が**確定**。<=7 列で 3779 個）。
+  (a) ImgClosedT の破れ（<=5 列で 26 個の A が**確定**、<=6 列 294、<=7 列 3374）。
       破れ方は 1 種類だけ: 目標 (f A)<m> の**末尾 1 列の行 1** が、届く像より
-      1 だけ大きい。性質 R の反例・C1 の型D と同じ病気。
-      足りないもの: 行 1 の入れ子を 1 段深く綴る規則。P6 では
-      `rule.convert` の綴り ...(6,2,1)(6,2,0)(7,3,1) が正解だと決まっている
-      （NOTES §D2）が、`rule.convert` は z=0 で 2 行版と 35 件食い違うので採れない。
-  (b) 共終性 C1 の破れ（<=6 列 121、<=7 列 1572）。型D 74 と型I 47 に割れる
-      （v10 の 136 での分類。v11 は型D を 15 直した残り）。
-      足りないもの: 型I は f(M<n>) が浅い柱を先に挟む（行 0 が像側で +1）ので、
-      行 0 の影の置き方の規則。型D は (a) と同根。
-  (c) 単射性の破れ（<=6 列 7 組、<=7 列 166 組、シート 2 組、閉包 110 組）。
-      A と「A ＋ q ＋ A の本体まるごとの写し」が同じ像になる。
-      足りないもの: 残余なしの縮約（rest2 が空・e=1・deep_end）のガード。
-  (d) 像が DBMS 非標準（<=7 列 3 件、<=8 列 84 件（v10 で測定）、閉包 103 件）。
+      1 だけ大きい。足りないもの: 行 1 の入れ子を 1 段深く綴る規則。争点 P6 では
+      `rule.convert` の綴り ...(6,2,1)(6,2,0)(7,3,1) が正解だと決着している。
+      `z2.py` の `sibL` 条項はその綴りをちょうど出すが、**両側に動く**
+      （<=6 列で C1 が 49 直って 11 壊れる）。深い綴りが 1 列短い接頭辞へ次々に
+      伝染し、境目がいつまでも残るため（課題 E2 の「分かったこと 4」）。
+  (b) 共終性 C1 の破れ（<=5 列 5 / <=6 列 88 / <=7 列 1167）。C2 は 0 / 0 / 2。
+      C1 の破れは ImgClosedT の破れに含まれる。足りないものは (a) と同じ（型D）と、
+      行 0 の影の置き方（型I。f(M<n>) が浅い柱を先に挟む）。
+  (c) 単射性の破れが 2 組（<=7 列。v11 の 166 組から `mark` が 164 組直した）。
+
+        (0,0,0)(1,1,1)(2,1,0)(3,2,1)(3,2,0)(3,1,0)(1,1,1)                 7 列
+        相手 ...(3,1,0)(1,1,0)(2,2,1)(3,2,0)(4,3,1)(4,3,0)(4,1,0)(2,2,1) 13 列
+        (0,0,0)(1,1,1)(2,2,1)(3,2,1)(3,2,0)(3,1,0)(1,1,1)                 7 列
+        相手 ...(3,1,0)(1,1,0)(2,2,1)(3,3,1)(4,3,1)(4,3,0)(4,1,0)(2,2,1) 13 列
+
+      こちらは**残余ありの縮約**（`rest2` が空でない・`deep_end` が偽）で、
+      残余 (2,2,1) の像がもとの末尾 (1,1,1) の像 (3,2,1) と同じになって潰れる。
+      足りないもの: 残余ありの縮約にも `mark` と同じ「印」のガード。
+  (d) 像が DBMS 非標準（生成 <=7 列 3 件・<=8 列 84 件、展開閉包 22806 個で 104 件）。
       足りないもの: 兄弟を「行 1 の影の横」ではなく「本体の横」に付ける規則。
-      ただし素朴な sibbody2 は共終性を新しく壊す（下の表）。
+      ただし素朴な `sibbody2` は共終性を新しく壊す（下の表）。
   (e) 全射の穴: (0,0,0)(1,0,0)(2,1,0)(3,2,1)(3,y,0)(2,0,0) (y=0,1,2) は
       BMS <=8 列 781605 個を全数当たっても逆像が無い（NOTES §逆写像）。
-  (f) 逆写像 `d2b3` の本当の失敗が閉包で 2 件（どちらも
-      (0,0,0)(1,1,1)(2,1,0)(3,0,0)(2,1,0) の反復系列で、戻りが 5 列短い）。
-      足りないもの: 縮約の切れ目を像だけから決める**局所**条件
-      （いまは大域の `core.isstd` に頼っており、Lean に載らない）。
+  (f) 逆写像 `inv3.d2b3` が v11 のまま（`inv3.py` はこの課題では触っていない）。
+      `mark` を入れたので、生成 <=7 列の 164 件で `d2b3` は「双子」を返す
+      （v11 ではそれが正解だった）。`check` の (5) はこれを「逆写像が古い」
+      として本当の失敗と分けて数える。ImgClosedT の採点は `preimage_try`
+      （`untwin` と接頭辞の当て直し）で影響を消してある。
+      単射が実際に直っていることは (2b)（`inj_cross`。像を辞書に貯めて
+      衝突を数えるので `d2b3` に依存しない）が閉包 127182 個・衝突 0 で示す。
+      足りないもの: `inv3` の縮約の読み戻しに `leaves_mark_local` と同じガード。
+  (g) sandwich の下限 f(M)<n-1> <= f(M<n>) が <=6 列 41930 対で 264 件破れる
+      （v11 は 363 件。真部分集合）。これは Lean の `SandwichL`（相手が
+      ImgClosedT の出す B）とは別の、添字をそろえた自己整合の検査である。
 
   シート 4 件（592, 891, 897, 898）はシート側の誤りなので欠陥ではない
   （NOTES §シート行 891/897/898）。
@@ -410,6 +454,91 @@ def contrPre(p, U, A, e, ps0, prev0, nxt_after):
     return copy_shift([p] + list(A) + list(U), e, ps0, prev0, nxt_after)
 
 
+# ---------------------------------------------------------------- v12 の 2 条項
+# v11 -> v12 で足した条項。どちらも「7 つの土俵のどれも悪化させない」ことを
+# 測ってから入れた（課題 E1 / E2、`z1.py` / `z2.py`）。旗を両方 False にすると
+# v11 に戻る（gen<=8 の 781605 個で像の差 0 を確認済み）。
+V12 = {
+    'mark': True,       # 残余なしの縮約は「写しを飲んだ印が像に残る」ときだけ
+    'newterm': True,    # (0,*,*) の柱は新しい加算項の頭。段の状態を持ち越さない
+    'mark_global': False,   # `mark` の大域版（2 通り走らせて像を比べる。突き合わせ用）
+}
+
+
+def _snap(st):
+    return (st['ST'], st['prev'], list(st['dmap']), st.get('nc', 0))
+
+
+def _restore(st, s):
+    st['ST'], st['prev'], st['dmap'], st['nc'] = s[0], s[1], list(s[2]), s[3]
+
+
+def leaves_mark(A, U, dd, d, LA, L, FA, v, s2, e1, e2, st, na, q, oA, oU):
+    """残余なしの縮約が像に印を残すか（**大域版**、突き合わせ用）。
+
+    自然な綴り（次の列 = アンカー `q`）と強制の綴り（次の列 = `na = NOTLAST`）を
+    両方走らせ、像が違うときだけ縮約を許す。`st` は 2 回とも同じ状態から
+    始めて戻す。`leaves_mark_local` と gen<=7 の 77282 個で像の差 0。
+    """
+    s0 = _snap(st)
+    rec0 = dict(st['rec'])
+    a1 = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False, st,
+               U[0] if U else na, oA)
+    u1 = conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, st, na, oU)
+    _restore(st, s0)
+    a2 = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False, st,
+               U[0] if U else q, oA)
+    u2 = conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, st, q, oU)
+    _restore(st, s0)
+    st['rec'] = rec0
+    return (a1, u1) != (a2, u2)
+
+
+def leaves_mark_local(A, U, dd, d, LA, L, FA, v, s2, e1, e2, st, na, oA, oU,
+                      ob):
+    """残余なしの縮約が像に印を残すか（**局所版**、Lean に載せられる形）。
+
+    縮約は「写しを書かない代わりに、本体の末尾の分岐列を番兵 `NOTLAST` で
+    深く綴る」ことだけで写しを記録する。ところが本体の末尾がもともと深く
+    綴られていると（`after_w` の上書きなどで）、深くしても像は 1 ビットも
+    変わらず、写しが像から消える。すると `M` と `M ++ q ++ 写し` が同じ像に
+    潰れる（＝単射性の破れ。<=7 列で 166 組のうち 164 組がこれ）。
+
+    印が残る条件は局所に書ける。`q` はアンカー (1,1,0) なので
+    `closes_unit(q)` はつねに真、したがって上書きが無ければ
+
+        自然な綴り = 浅い、  強制の綴り = 深い <=> 決める直前の段 prev != 0
+
+    上書きは 2 つ（`after_w` と `closes_hi_unit`）で、どちらも 2 通りで
+    **同じ**結論を出すので、firing したら印は残らない。よって
+
+        印が残る <=> prev != 0 かつ after_w も closes_hi_unit も firing しない
+
+    （`prev` は None / 0 / 1 の 3 値。`'tie'` は浅い／深いの選択肢が
+    そもそも無かった柱で、そのときも印は残らない。）
+    """
+    s0 = _snap(st)
+    rec0 = dict(st['rec'])
+    conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False, st,
+          U[0] if U else na, oA)
+    conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, st, na, oU)
+    prev_in = st['rec'].get(ob, 'none')
+    _restore(st, s0)
+    st['rec'] = rec0
+    if prev_in == 0 or prev_in == 'tie' or prev_in == 'none':
+        return False        # prev==0 なら強制でも浅い / tie なら選択肢が無い
+    Mo = st['Mo']
+    c = Mo[ob]
+    pv = Mo[ob - 1] if ob >= 1 else None
+    pv2 = Mo[ob - 2] if ob >= 2 else None
+    onx = Mo[ob + 1] if ob + 1 < len(Mo) else None
+    if prev_in == 1 and is_w_col(pv) and closes_unit(onx):
+        return False                     # after_w が両方を同じにする
+    if closes_hi_unit(c, onx, pv, pv2, hi_block(Mo, ob), is_repeat(Mo, ob)):
+        return False                     # closes_hi_unit が両方を浅くする
+    return True
+
+
 def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
           st=None, nx=None, off=0):
     """設計 v10: 二重の梯子 ＋ 分岐列 (a,1,0) の 1 ビット状態機械。
@@ -450,7 +579,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
         (dd', e1,   e2)        本体
     """
     if st is None:
-        st = {'ST': (), 'prev': None, 'dmap': [], 'Mo': tuple(M), 'nc': 0}
+        st = {'ST': (), 'prev': None, 'dmap': [], 'Mo': tuple(M), 'nc': 0,
+              'rec': {}}
     if not M:
         return []
     p, r = M[0], M[1:]
@@ -466,6 +596,17 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
         base_d, pl2, force1, base_s = e[0] + 1, e[1], e[2], e[3] + 1
     first1 = F[v] if v < len(F) else True
 
+    # v12 newterm（課題 E2）: 行 0 が 0 の柱 (0,*,*) は**新しい加算項**の頭。
+    # ユニットが変わるのだから、直前の分岐列の選択は次の項に持ち越さない。
+    # 持ち越すと A ++ A の 2 つ目の写しで段が浅く綴られ、f が和について
+    # 加法的でなくなる（ImgClosedT と共終性 C1 の破れ）。実測（`z2.py`）:
+    #   gen<=7 の 77282 個で像の差 0、gen<=8 の 781605 個で 50 個だけ変わる
+    #   C1 の破れ <=5/<=6/<=7 列  7/121/1572 -> 5/88/1167（破れ集合は真部分集合）
+    #   ImgClosedT の破れ A       28/327/3779 -> 26/294/3374（同）
+    #   新しく壊れたものは 0
+    if V12['newterm'] and p[0] == 0:
+        st['prev'] = None
+
     # v11: アンカー (1,1,0) での段のリセット `st['prev'] = 0` は**やめた**。
     # 写しの中のアンカーで prev が 0 に戻ると、もとで「深い」と綴られた分岐列が
     # 写しでは「浅い」と綴られ、f(M<n>) が像の展開に追いつかない（C1 の型D）。
@@ -478,6 +619,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     #   直った 15 個は逆像 B を実際に持っている（構成的）
     if is_branch(p) and base_s != base_d:
         nxt = M[1] if len(M) > 1 else nx
+        # v12 mark: 局所版のガードのために「決める直前の段」を残す。
+        st['rec'][off] = st['prev']
         shallow = (st['prev'] == 0) or closes_unit(nxt)
         # ここから先はもとの行列 Mo を直接見る。ブロックに切ってしまうと
         # 「直前の柱」が見えなくなるが、段の規則は直前 2 本を見て決まる。
@@ -500,6 +643,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
         st['prev'] = 0 if shallow else 1
     else:
         base = base_d
+        if is_branch(p):
+            st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い
 
     lad1 = first1 and s2 == pl2 + 1 and (base <= s2 or force1)
     e1 = base + 1 if lad1 else (s2 + 1 if (s2 > 0 and base <= s2) else base)
@@ -576,6 +721,20 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
                 # 残余なしの縮約は「行 1 ずれ」かつ「残りが分岐列で終わる」ときだけ
                 # （NOTES §7 の strip_lift の適用条件と同じ）
                 continue
+            elif V12['mark'] and not (
+                    leaves_mark(A, U, dd, d, LA, L, FA, v, s2, e1, e2, st,
+                                na, q, oA, oU)
+                    if V12['mark_global'] else
+                    leaves_mark_local(A, U, dd, d, LA, L, FA, v, s2, e1, e2,
+                                      st, na, oA, oU, off + len(blk) - 1)):
+                # v12 mark（課題 E1）: 残余なしの縮約は「写しを飲んだ印が像に
+                # 残る」ときだけ許す。印が残らないと `M` と `M ++ q ++ 写し` が
+                # 同じ像に潰れる（単射性の破れ）。実測（`z1.py`）:
+                #   gen<=7 の 77282 個で像の差 0（変わるのは長い双子だけ）
+                #   双子 3609 個で 24 個の像が変わり、24 個ぜんぶが「潰れて
+                #   いたものが分離した」側。閉包 127182 個で衝突 24 -> 0
+                #   シート 1354 / z=0 / 非標準 / 順序 / ImgClosedT / 共終性は不変
+                continue
             Lr = padL(L, v) + (((base, pl2, fc, base) if e else (e1, s2, fc, e1)),)
             hd = lambda *ls: next((l[0] for l in ls if l), nx)
             # 写しは書かれないので、A から見た「次の列」は写しの後ろ
@@ -636,7 +795,8 @@ def conv_resid(rest, rd, Lr, ps, pw, st, nx, off):
 def b2d3n(M):
     """(像, 縮約が発火した回数) の対。回数は逆写像 `inv3.d2b3` の
     既知の穴（縮約は像から列が落ちるので読み戻せない）を数えるのに使う。"""
-    st = {'ST': (), 'prev': None, 'dmap': [], 'Mo': tuple(M), 'nc': 0}
+    st = {'ST': (), 'prev': None, 'dmap': [], 'Mo': tuple(M), 'nc': 0,
+          'rec': {}}
     return tuple(conv3(list(M), st=st)), st['nc']
 
 
@@ -651,6 +811,129 @@ def pad(M2):
 
 def two(M3):
     return [(c[0], c[1]) for c in M3]
+
+
+def twin(M):
+    """双子: `M ++ (1,1,0) ++ M[1:] の写し`（行 0 は +1、行 1 は 0 でなければ +1）。
+
+    単射の破れの相手はほとんどこの形（<=7 列の 166 組のうち 143 組がぴったり、
+    残り 23 組も「もと ++ アンカー ++ 写し」の変種。課題 E1 の実測）。
+    `M` より**倍近く長い**ので、`gen3(lim)` の中だけで比べても見つからない。
+    """
+    return tuple(M) + ((1, 1, 0),) + tuple(
+        (a + 1, (b + 1 if b > 0 else 0), c) for a, b, c in M[1:])
+
+
+def inj_cross(f, lim=6, tlim=6, elim=5, en=6, seeds=(), verbose=3):
+    """**列数をまたいだ**単射の検査（逆写像 `inv3` に頼らない）。
+
+    `check` の (2) は `gen3(lim)` の中でしか比べていないので、`lim` 列を超える
+    相手との衝突が見えない（実例: 6 列と 12 列が同じ像）。ここでは長い相手を
+    自分で作ってから、像を辞書に貯めて衝突を数える:
+
+        S1 = gen3(<=lim)                        短いほう
+        S2 = {twin(M) : M in gen3(<=tlim)}      長いほう（<=2*tlim 列）
+        S3 = {M<n> : M in gen3(<=elim), n<=en}  展開したもの
+        S4 = seeds                              外から渡した相手
+
+    `seeds` は「長い相手の候補」を外から足す口。`check` は (5) の逆写像
+    `d2b3` が返した B を渡す。`twin` の形から外れた相手（分岐列を 1 本だけ
+    浅く綴った変種など）は S2 では作れないので、この口で拾う。**衝突の判定
+    そのものは `f` だけを見る**ので、`d2b3` が正しいかどうかには依存しない。
+
+    返り値 (|S|, 衝突した (M, B, 像) の並び)。
+    """
+    S = set()
+    for T in seeds:
+        T = tuple(T)
+        if T and isstd(T, 'BMS') and all(c[2] <= 1 for c in T):
+            S.add(T)
+    for M in gen3('BMS', lim, zcap=1):
+        S.add(tuple(M))
+    for M in gen3('BMS', tlim, zcap=1):
+        T = twin(M)
+        if isstd(T, 'BMS') and all(c[2] <= 1 for c in T):
+            S.add(T)
+    for M in gen3('BMS', elim, zcap=1):
+        for n in range(1, en + 1):
+            T = tuple(expand(tuple(M), n))
+            if all(c[2] <= 1 for c in T):
+                S.add(T)
+    core._exp_memo.clear(); core._isstd_memo.clear(); core._flat_memo.clear()
+    seen, col = {}, []
+    for i, M in enumerate(sorted(S, key=key)):
+        if i % 20000 == 0:
+            core._exp_memo.clear(); core._isstd_memo.clear(); core._flat_memo.clear()
+        N = tuple(f(list(M)))
+        if N in seen:
+            col.append((seen[N], M, N))
+        else:
+            seen[N] = M
+    return len(S), col
+
+
+def terms0(B):
+    """行 0 が 0 の柱で切った**加算項**の並び。"""
+    out, cur = [], []
+    for c in B:
+        if c[0] == 0 and cur:
+            out.append(cur); cur = []
+        cur.append(c)
+    if cur:
+        out.append(cur)
+    return out
+
+
+def untwin(B):
+    """`B` の各加算項が `twin(W)` の形なら `W` に戻したもの（`inv3` の当て直し用）。
+
+    `V12['mark']` を入れる前の `d2b3` は「双子」`W ++ (1,1,0) ++ 写し` を返す。
+    いまの `conv3` では双子の像は長くなるので、正しい逆像はたいてい `W` の側。
+    加算項ごとに独立に戻す（`d2b3` は `W ++ W` に対して `twin(W) ++ twin(W)` を
+    返すので、末尾を切るだけでは戻らない）。
+    """
+    out, hit = [], False
+    for Z in terms0(B):
+        Z = tuple(Z)
+        for j in range(2, len(Z)):
+            if tuple(Z[j]) == ANCHOR and Z == twin(Z[:j]):
+                Z, hit = Z[:j], True
+                break
+        out.extend(Z)
+    return tuple(out) if hit else None
+
+
+def preimage_try(f, T, d2b3):
+    """目標 `T` の逆像を安く 1 つ。`d2b3(T)` を当て、外れたらその**接頭辞**も試す。
+
+    逆写像 `inv3.d2b3` は `conv3` の版に合わせて作られているので、`conv3` を
+    変えると古くなる。実際 `V12['mark']` を入れると `d2b3` は「双子」
+    `W ++ (1,1,0) ++ 写し` を返すが、いまの `conv3` ではその像は長くなる。
+    正しい逆像はたいていその `W` の側なので、`untwin`（加算項ごとに双子を
+    戻す）と `B[:k]`（接頭辞）を当て直す。**当たりは `f(B')==T` を確かめてから
+    返す**ので、この再挑戦は健全（偽の当たりを作らない）。
+
+    返り値 逆像 B'（無ければ None）。
+    """
+    try:
+        B = d2b3(T)
+    except Exception:
+        B = None
+    if not B:
+        return None
+    if (isstd(B, 'BMS') and all(c[2] <= 1 for c in B)
+            and tuple(f(list(B))) == tuple(T)):
+        return tuple(B)
+    cands = []
+    U = untwin(B)
+    if U:
+        cands.append(U)
+    cands.extend(tuple(B[:k]) for k in range(2, len(B)))
+    for P in cands:
+        if (isstd(P, 'BMS') and all(c[2] <= 1 for c in P)
+                and tuple(f(list(P))) == tuple(T)):
+            return P
+    return None
 
 
 def imgclosed_fast(f, A, mmax=3, d2b3=None):
@@ -684,12 +967,7 @@ def imgclosed_fast(f, A, mmax=3, d2b3=None):
         for m in range(1, mmax + 1):
             T = tuple(expand(N, m))
             tot += 1
-            try:
-                B = d2b3(T)
-            except Exception:
-                B = None
-            if (B and isstd(B, 'BMS') and all(c[2] <= 1 for c in B)
-                    and tuple(f(list(B))) == T):
+            if preimage_try(f, T, d2b3) is not None:
                 ok += 1
             else:
                 bad.add(tuple(M))
@@ -697,7 +975,7 @@ def imgclosed_fast(f, A, mmax=3, d2b3=None):
 
 
 def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
-          rprop=False, imgc=3, imgfull=False):
+          rprop=False, imgc=3, imgfull=False, injx=(6, 6, 5, 6), fast=True):
     """(1) 像が DBMS 標準形 (2) 単射・順序保存 (4) z=0 で 2 行版と一致
     (5) 逆写像 `inv3.d2b3` で戻る (6) 共終性 C1/C2 (7) ImgClosedT。
 
@@ -721,6 +999,12 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
 
     `imgc` は ImgClosedT の m の上限（0 で回さない）。`imgfull=True` なら
     `m_imgclosed` の梯子つき探索（速い道が外れたものだけ・**重い**）。
+    `fast=True` なら `imgfast.imgclosed_fast`（fork 並列 ＋ 誘導つき DFS の
+    救出。<=5 列で 10 分 -> 44 秒。答えは `m_imgclosed` と食い違い 0）を使う。
+
+    `injx=(lim, tlim, elim, en)` は **(2b) 列数をまたいだ単射**（`inj_cross`）。
+    `A` の中だけの (2) では見えない「もと ++ アンカー ++ 写し」の衝突を拾う。
+    `None` で回さない。
     """
     W = [f(M) for M in A]
     ns = [(M, N) for M, N in zip(A, W) if not isstd(N, 'DBMS')]
@@ -753,7 +1037,7 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
         if any(not any(cmpmat(g, e) <= 0 for e in E) for g in G[:nn]):
             c2bad.append((M, N))
     # (5) 逆写像。`inv3` は `rows3` を import するので、ここで遅延 import する。
-    rtbad, rtinj, d2b3 = [], [], None
+    rtbad, rtbad2, rtinj, d2b3 = [], [], [], None
     if inv:
         try:
             from inv3 import d2b3
@@ -769,11 +1053,25 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
                 rtinj.append((M, B, N))   # 別の BMS 標準形が同じ像 = 単射の破れ
             else:
                 rtbad.append((M, N))
+                rtbad2.append((M, N, B))
     # (7) ImgClosedT
     icok = ictot = 0
     icbad, iccap = set(), []
     if imgc:
-        icok, ictot, icbad = imgclosed_fast(f, A, imgc, d2b3)
+        icf = None
+        if fast:
+            try:
+                from imgfast import imgclosed_fast as icf
+            except Exception:
+                icf = None
+        if icf is not None:
+            # `imgfast` の段 1 にも `preimage_try`（接頭辞の当て直し）を通す。
+            # そうしないと古い `d2b3` のせいで破れが水増しされる（<=6 列で +1）。
+            icok, ictot, icbad = icf(
+                f, A, imgc,
+                (lambda T: preimage_try(f, T, d2b3)) if d2b3 else None)
+        else:
+            icok, ictot, icbad = imgclosed_fast(f, A, imgc, d2b3)
         if imgfull and icbad:
             # 速い道が外れたものだけ梯子つき探索に降ろす。梯子は **安いほう**
             # （`LADDER_SCAN`）。既定の `LADDER` は 1 件あたり 54 万節点まで
@@ -800,6 +1098,16 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
     for i in ordbad[:verbose]:
         print('        %-34s -> %s' % (show(A[i]), show(W[i])))
         print('        %-34s -> %s' % (show(A[i + 1]), show(W[i + 1])))
+    xcol = []
+    if injx:
+        # (5) の `d2b3` が返した相手も種に足す（判定は `f` だけを見る）。
+        seeds = [B for _, B, _ in rtinj] + [b for _, _, b in rtbad2 if b]
+        nS, xcol = inj_cross(f, *injx, seeds=seeds)
+        print('  (2b) 単射（列数をまたいで, 閉包 %d 個） : 衝突 %d 組'
+              % (nS, len(xcol)))
+        for a, b, N in xcol[:verbose]:
+            print('        %-34s と' % show(a))
+            print('        %-34s が同じ像 %s' % (show(b), show(N)))
     if rprop:
         print('  (3) 性質 R の違反 : %d   （3 行では偽。目安どまり）' % len(rbad))
         for M, n, N in rbad[:verbose]:
@@ -810,8 +1118,11 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
     for M, N in z0bad[:verbose]:
         print('        %-34s -> %-30s (2 行版 %s)'
               % (show(M), show(N), show(pad(convC2(two(M))))))
+    stale = sum(1 for M, N, B in rtbad2
+                if B and isstd(B, 'BMS') and all(c[2] <= 1 for c in B))
     print('  (5) d2b3(b2d3(M)) != M : %d   （うち単射性の破れ %d = 別の '
-          'BMS 標準形が同じ像）' % (len(rtbad) + len(rtinj), len(rtinj)))
+          'BMS 標準形が同じ像 / 逆写像が古い %d = 戻り B は BMS 標準形だが '
+          'f(B) が別の像）' % (len(rtbad) + len(rtinj), len(rtinj), stale))
     for M, N in rtbad[:verbose]:
         print('        %-34s -> %-30s (戻り %s)' % (show(M), show(N), show(d2b3(N))))
     for M, B, N in rtinj[:verbose]:
@@ -828,7 +1139,7 @@ def check(f, A, nr=6, mm=10, nn=24, verbose=3, inv=True, mc=40,
         for M in sorted(icbad, key=key)[:verbose]:
             print('        %-34s -> %s' % (show(M), show(f(M))))
     return (len(ns) + len(ordbad) + len(rbad) + len(z0bad) + len(rtbad)
-            + len(rtinj) + len(c1bad) + len(c2bad) + len(icbad))
+            + len(rtinj) + len(c1bad) + len(c2bad) + len(icbad) + len(xcol))
 
 
 def main(lim=5, imgc=3, imgfull=False, rprop=False):
