@@ -393,7 +393,8 @@ def isRepeatAux (m : TrioSeq) (x : ℕ) : ℕ → Bool
 /-- `m[..x]` の末尾が、その直前の同じ長さの区間の逐語コピーか。 -/
 def isRepeat (m : TrioSeq) (x : ℕ) : Bool := isRepeatAux m x ((x + 1) / 2)
 
-/-- `(a,2,1)(a,2,0)(a,1,0)` の直後が `(1,1,1)` なら段を上げずに閉じる。 -/
+/-- `(a,2,1)(a,2,0)(a,1,0)` の直後が `(1,1,1)` なら段を上げずに閉じる。
+**v14 で使うのをやめた**（NOTES §課題 G3）。`conv3` からは呼ばれない。 -/
 def closesHiUnit (c : Col) (nxt pv pv2 : Option Col) (hi rep : Bool) : Bool :=
   hi && !rep && nxt == some (1, 1, 1) && pv == some (c.1, 2, 0)
     && pv2 == some (c.1, 2, 1)
@@ -592,7 +593,10 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
               | some j => !(hi && !(par0 Mo j == some 0))
               | none => sh0
             else sh0
-          let sh := sh1 || closesHiUnit p onx pv pv2 hi (isRepeat Mo off)
+          -- v14: `closesHiUnit` は落とした（`rows3.V14['chu'] = False`）。
+          -- 浅い綴りと縮約の深い綴りが両立せず、双子の像が本体を追い越していた
+          -- （NOTES §課題 G3）。シート行 1532 はその誤りのほう。
+          let sh := sh1
           if sh then (base_s, 0) else (deep, 1)
         else (deep, st.prev)
       else (base_d, st.prev)
