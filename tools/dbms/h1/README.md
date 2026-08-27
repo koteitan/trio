@@ -40,3 +40,15 @@
     python3 /tmp/h1work/mkctr2.py     # 縮約を止める／数える写し rows3c.py
                                       #   CX = {noctr, no_res, no_rf, max1}
                                       #   b2d3c(M) -> (像, 発火の内訳)
+
+# 課題 H4 の道具（全射）
+
+    python3 /home/koteitan/proofs/dbms/tools/dbms/onto.py 7   # 全射の採点（数秒）
+    python3 /tmp/h1work/mkctr3.py   # 縮約の cB の深さ／梯子を旗で変える rows3d.py
+    python3 /tmp/h1work/mkctr4.py   # 縮約の cB を site ごとに強制する rows3e.py
+    python3 /tmp/h1work/mkctr5.py   # 縮約のどの門で落ちたかを記録する rows3g.py
+    python3 /tmp/h1work/mkctr6.py   # 縮約の cB に first/force を渡す rows3h.py
+    python3 /tmp/h1work/h4sites.py 7   # cB の付け場所の教師データ（**ラベルは壊れる。§24 を読むこと**）
+
+**落とし穴**: `d2b3` は単射でない。同じ B を複数の T に返すので、
+「T が外れた ⇒ B の綴りが悪い」と読むと教師データが壊れる（§24）。
