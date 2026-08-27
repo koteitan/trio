@@ -382,6 +382,91 @@ def hiBlock (m : TrioSeq) (x : ℕ) : Bool :=
   ((List.range x).drop (hiB m x + 1)).any
     (fun z => decide (0 < (m.getD z (0,0,0)).2.2))
 
+/-! ### v14 h1（課題 H1）: 「写しの頭」を行列から直に読む述語
+
+BMS の展開は「悪い部分を**上昇させて**写す」。上昇は行 0 に効くので、もとの根
+`(0,0,0)` は写しの中で `(k,0,0)` に、アンカー `(1,1,0)` は `(k,1,0)` に化ける。
+だから `(k,0,0)` の親の鎖をたどって根まで届けば、その柱は**写しの頭**である。
+どれも `Mo` と添字だけで決まるので**写しに同変**（`st` を持ち回らない）。
+
+もとの行列（写しの頭が 1 つも無いもの）では `termTop` は「根とアンカー」、
+`closesTop` は `closesUnit`、`hiBlock2` は `hiBlock` にそのまま戻る。
+だから**シートは 1 行も動かない**（`tools/dbms/H1-NOTES.md` §11）。 -/
+
+/-- `termTop` の本体（燃料つき。`par0` は添字を真に減らすので `j + 1` で足りる）。 -/
+def termTopAux (Mo : TrioSeq) : ℕ → ℕ → Bool
+  | _, 0 => false
+  | j, (f + 1) =>
+      let c := Mo.getD j (0, 0, 0)
+      if c.1 = 0 ∨ c = ((1, 1, 0) : Col) then true
+      else if c.2.2 ≠ 0 then false
+      else
+        match par0 Mo j with
+        | none => false
+        | some q =>
+            let pc := Mo.getD q (0, 0, 0)
+            if c.2.1 = 0 then termTopAux Mo q f          -- 根の写し `(k,0,0)`
+            else if c.2.1 = 1 then
+              -- アンカーの写し `(k,1,0)`。親が根そのものか、根の写しのときだけ。
+              decide (pc.1 = 0) || (decide (pc.2.1 = 0 ∧ pc.2.2 = 0) && termTopAux Mo q f)
+            else false
+
+/-- 柱 `j` が「行 1 の加算項の頭」か（`rows3.py` の `term_top`）。
+もとの行列では 根 `(0,*,*)` と アンカー `(1,1,0)` の 2 つ。 -/
+def termTop (Mo : TrioSeq) (j : ℕ) : Bool := termTopAux Mo j (j + 1)
+
+/-- 柱 `j` が**写しの頭**か（`rows3.py` の `copy_head`）。
+`(k,0,0)` `k ≥ 1` で、行 0 の親が「行 1 の加算項の頭」。 -/
+def copyHead (Mo : TrioSeq) (j : ℕ) : Bool :=
+  let c := Mo.getD j (0, 0, 0)
+  if c.2.1 = 0 ∧ c.2.2 = 0 ∧ 1 ≤ c.1 then
+    match par0 Mo j with
+    | none => false
+    | some q => termTop Mo q
+  else false
+
+/-- 柱 `j` が「いまの写しの根の直下」か（`rows3.py` の `top_level`）。 -/
+def topLevel (Mo : TrioSeq) (j : ℕ) : Bool :=
+  match par0 Mo j with
+  | none => true
+  | some q => decide ((Mo.getD q (0, 0, 0)).1 = 0) || copyHead Mo q
+
+/-- `off` より前にアンカー `(1,1,0)` が 1 本でもあるか（`rows3.py` の `anch_before`）。 -/
+def anchBefore (Mo : TrioSeq) (off : ℕ) : Bool :=
+  (List.range off).any (fun j => Mo.getD j (0, 0, 0) == ((1, 1, 0) : Col))
+
+/-- 写しの中まで届く `closesUnit`（`rows3.py` の `closes_top`）。
+写しの中ではアンカーが `(k,1,0)` に化けるので `nxt.1 ≤ 1` が当たらない。
+「次の柱が**いまの写しの根の直下**に戻る」と読み替える。 -/
+def closesTop (Mo : TrioSeq) (off : ℕ) : Option Col → Bool
+  | none => true
+  | some c =>
+      if c.2.2 ≠ 0 then false
+      else if c.1 ≤ 1 then true
+      else
+        let j := off + 1
+        if j < Mo.length ∧ Mo.getD j (0, 0, 0) = c then topLevel Mo j else false
+
+/-- `hiBlock` の起点を「写しの頭の次の柱」まで進める（`rows3.py` の `hi_block2`）。
+写しの頭が 1 つも無ければ `hiB` と完全に同じ。 -/
+def hiB2 (m : TrioSeq) (x : ℕ) : ℕ :=
+  (List.range x).foldl (fun b q => if b < q + 1 ∧ copyHead m q then q + 1 else b) (hiB m x)
+
+/-- `hiBlock` の写し補正（`rows3.py` の `hi_block2`）。 -/
+def hiBlock2 (m : TrioSeq) (x : ℕ) : Bool :=
+  ((List.range x).drop (hiB2 m x + 1)).any
+    (fun z => decide (0 < (m.getD z (0,0,0)).2.2))
+
+/-- `prev = 0` でも分岐列を深く綴るか（`rows3.py` の `p0deep_ok`）。
+
+    深い ⟺ nxt.1 ≥ p.1  または（自分より前にアンカーが 1 本も無く nxt.2.1 ≥ 1）
+
+教師データ（シート 1354 行 ＋ ImgClosedT の目標）の `prev = 0` の枝 9399 本で
+誤り 30 本、うち「深すぎ」＝いま正しい柱を壊す向きは **0 本**。 -/
+def p0deepOk (Mo : TrioSeq) (off : ℕ) (p : Col) : Option Col → Bool
+  | none => false
+  | some c => decide (p.1 ≤ c.1) || (decide (1 ≤ c.2.1) && !anchBefore Mo off)
+
 /-- `isRepeat` の本体（周期 `L = k+1` を下へ）。 -/
 def isRepeatAux (m : TrioSeq) (x : ℕ) : ℕ → Bool
   | 0 => false
@@ -405,7 +490,10 @@ def wchainHeadAux (m : TrioSeq) (off : ℕ) : ℕ → Option ℕ
   | (j + 1) =>
       let c := m.getD j (0, 0, 0)
       if isWCol (some c) then
-        (if ((List.range (off + 1)).drop (j + 1)).all
+        -- v14 h1: 鎖の頭が「写しの頭」なら、根 `(0,*,*)` に当たったのと同じ
+        -- （鎖はそこで切れる。写しの頭を「x w」の柱と読むのが誤りだった）。
+        (if copyHead m j then none
+         else if ((List.range (off + 1)).drop (j + 1)).all
               (fun t => decide (c.1 < (m.getD t (0, 0, 0)).1)) then some j else none)
       else if c.1 = 0 then none
       else wchainHeadAux m off j
@@ -567,6 +655,17 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
     let pl2 := if v = 0 then 0 else ent.2.1
     let force1 := if v = 0 then false else ent.2.2.1
     let first1 := F.getD v true
+    -- v12 `newterm`（課題 E2）: 行 0 が 0 の柱 `(0,*,*)` は**新しい加算項**の頭。
+    -- ユニットが変わるのだから、直前の分岐列の選択は次の項に持ち越さない
+    -- （持ち越すと `A ++ A` の 2 つ目の写しが浅く綴られ、`f` が和について
+    -- 加法的でなくなる）。`2` が Python の `None` にあたる。
+    -- v14 `wterm` ＋ `wterm_anchbefore`（課題 G3）: 根に直付けの「x w」の柱
+    -- `(k,0,0)` も新しい加算項の頭。ただし前にアンカー `(1,1,0)` が 1 本でも
+    -- あれば効かせない（`sib_anchbefore` と同じ伝染止め）。
+    let prev0 : ℕ :=
+      if p.1 = 0 then 2
+      else if isWCol (some p) && (par0 st.Mo off == some 0) && !anchBefore st.Mo off then 2
+      else st.prev
     let bp : ℕ × ℕ :=
       if isBranch p then
         -- v13 sibL: 深い側の候補は、兄弟から渡ってきた `base_sd` を使ってよければ
@@ -576,16 +675,21 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
           let nxt : Option Col := match r with | q :: _ => some q | [] => nx
           let Mo := st.Mo
           let pv : Option Col := if 1 ≤ off then some (Mo.getD (off - 1) (0,0,0)) else none
-          let pv2 : Option Col := if 2 ≤ off then some (Mo.getD (off - 2) (0,0,0)) else none
           let onx : Option Col :=
             if off + 1 < Mo.length then some (Mo.getD (off + 1) (0,0,0)) else none
-          let hi := hiBlock Mo off
-          let sh0 := (st.prev == 0) || closesUnit nxt
+          -- v14 h1（課題 H1）: `hiBlock` の起点を写しの頭の次まで進める。
+          let hi := hiBlock2 Mo off
+          -- v14 h1: `closesUnit` を写しの中まで届く `closesTop` に読み替え、
+          -- `prev = 0` の枝を「行列から直に読む述語」`p0deepOk` で決め直す。
+          let sh0 :=
+            if closesTop Mo off nxt then true
+            else if (prev0 == 0) && !closesUnit nxt then !(p0deepOk Mo off p nxt)
+            else (prev0 == 0) || closesUnit nxt
           let sh1 :=
-            if (st.prev == 1) && isWCol pv && closesUnit onx then
+            if (prev0 == 1) && isWCol pv && closesUnit onx then
               let pnt := decide (0 < off) && (par0 Mo (off - 1) == some 0)
               !(hi && !pnt)
-            else if (st.prev == 1) && closesUnit onx then
+            else if (prev0 == 1) && closesUnit onx then
               -- v13 wchain: `after_w` の窓を「この写しの頭まで」広げる。
               -- 判定式は `after_w` と同じで、親を見る柱だけ `(k,0,0)` 本人にする。
               -- `after_w` が発火するときはそちらが優先（この `else if`）。
@@ -598,8 +702,8 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
           -- （NOTES §課題 G3）。シート行 1532 はその誤りのほう。
           let sh := sh1
           if sh then (base_s, 0) else (deep, 1)
-        else (deep, st.prev)
-      else (base_d, st.prev)
+        else (deep, prev0)
+      else (base_d, prev0)
     let base := bp.1
     let lad1 := first1 && (s2 == pl2 + 1) && (decide (base ≤ s2) || force1)
     let e1 := if lad1 then base + 1 else (if 0 < s2 ∧ base ≤ s2 then s2 + 1 else base)
@@ -786,7 +890,7 @@ def b2d3 (M : TrioSeq) : TrioSeq :=
 
 /-! 7 列で v13 が v12 と違う 290 個からの抜き取り。 -/
 
-#guard Conv3.b2d3 [(0,0,0), (1,1,1), (1,1,1), (1,0,0), (2,1,1), (2,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (3,2,1), (1,0,0), (2,1,0), (3,2,1), (3,2,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,1), (1,0,0), (2,1,1), (2,1,0), (3,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,2,1), (1,0,0), (2,1,0), (3,2,1), (3,2,0), (4,1,0)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,0,0), (3,1,1), (3,1,0), (3,0,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,0,0), (5,1,0), (6,2,1), (6,2,0), (5,0,0), (4,0,0)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,0,0), (3,1,1), (3,1,0), (4,1,0), (3,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,0,0), (5,1,0), (6,2,1), (6,2,0), (7,1,0), (6,2,0)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,0,0), (3,1,1), (3,1,1), (3,1,0), (1,1,1)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,0,0), (5,1,0), (6,2,1), (6,2,1), (6,2,0), (3,2,1)]
@@ -796,6 +900,33 @@ def b2d3 (M : TrioSeq) : TrioSeq :=
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,1), (3,1,0), (4,0,0), (5,1,1), (5,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,2,1), (5,2,0), (6,0,0), (7,1,0), (8,2,1), (8,2,0)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (3,0,0), (4,1,1), (4,1,0), (4,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (5,0,0), (6,1,0), (7,2,1), (7,2,0), (6,0,0)]
 #guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,1), (2,0,0), (3,1,1), (4,1,0), (3,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,1), (4,0,0), (5,1,0), (6,2,1), (7,2,0), (6,2,0)]
+
+/-! **v14 h1 で像が変わる 7 列の 18 個ぜんぶ**（課題 H1 の 5 条項が効くところ）。
+
+`copy_head` を軸にした 5 条項（`termTop` / `copyHead` / `topLevel` / `closesTop` /
+`hiBlock2` / `wchainHead` / `p0deepOk`）は、写しの頭が 1 本も無い行列では元の
+定義に戻るので **<=6 列では像が 1 つも変わらない**（8387 個で実測）。7 列で
+初めて 18 個が変わる。どれも「写しの中の分岐列を 1 段深く綴る」向きである。 -/
+
+
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (1,1,1), (1,0,0), (2,1,1), (2,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (3,2,1), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (1,1,1), (1,0,0), (2,1,1), (2,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (3,2,1), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,0,0), (1,0,0), (2,1,1), (2,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,0,0), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,0,0), (1,0,0), (2,1,1), (2,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,0,0), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,0), (1,0,0), (2,1,1), (2,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,0), (1,0,0), (2,1,1), (2,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,1), (1,0,0), (2,1,1), (2,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,2,1), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,1), (1,0,0), (2,1,1), (2,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,2,1), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,1), (1,0,0), (2,1,1), (3,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,2,1), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,1,1), (1,0,0), (2,1,1), (3,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,2,1), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (1,0,0), (2,1,1), (2,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (1,0,0), (2,1,1), (2,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (1,0,0), (2,1,1), (3,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,0), (1,0,0), (2,1,1), (3,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,0), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,1), (1,0,0), (2,1,1), (2,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,1), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,1), (1,0,0), (2,1,1), (2,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,1), (1,0,0), (2,1,0), (3,2,1), (2,1,0), (2,1,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,1), (1,0,0), (2,1,1), (3,1,0), (2,0,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,1), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (2,0,0)]
+#guard Conv3.b2d3 [(0,0,0), (1,1,1), (2,2,1), (1,0,0), (2,1,1), (3,1,0), (2,1,0)] = [(0,0,0), (1,0,0), (2,1,0), (3,2,1), (4,3,1), (1,0,0), (2,1,0), (3,2,1), (4,1,0), (2,1,0)]
 
 end Conv3
 
@@ -975,7 +1106,7 @@ theorem conv3_tail_step (m k : ℕ) (st : St) (nx : Option Col) (off : ℕ)
     Dt_takeWhile m (k + 2) (k + 3) (by omega), Dt_dropWhile m (k + 2) (k + 3) (by omega),
     h]
   simp [padL_Ld, Ld_trunc, rep_app, STd_take, fit_STd, okPlace_STd, STd_len, STd_succ,
-    Ld_succ, hbeq, h3, h5]
+    Ld_succ, hbeq, h3, h5, isWCol]
 
 
 /-- 尾ぜんぶ: `(k+2,k+2,1)…` を `m` 本読むと像は `(k+4,k+3,1)…` の `m` 本。 -/
@@ -997,11 +1128,13 @@ theorem conv3_tail (m : ℕ) : ∀ (k : ℕ) (st : St) (nx : Option Col) (off : 
       rw [this, Ot_succ]
       simp
 
-/-- 先頭の列 `(0,0,0)`。梯子は 2 つとも落ち、像は `(0,0,0)` 1 列。 -/
+/-- 先頭の列 `(0,0,0)`。梯子は 2 つとも落ち、像は `(0,0,0)` 1 列。
+根は `p.1 = 0` なので v12 `newterm` が発火し、状態の `prev` は `2`（＝Python の
+`None`）に落ちる。 -/
 theorem conv3_lvl0 (v : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST = []) :
     (conv3 ((0, 0, 0) :: Dt 1 v) 0 [] [] (0, 0) (0, 0) true false st nx off).1
     = (0, 0, 0) :: (conv3 (Dt 1 v) 1 [(0, 0, true, 0, 0)] [false] (0, 0) (0, 0) true true
-        ⟨[(0, 0)], st.prev, st.dmap.take 0 ++ [0], st.Mo, st.nc⟩ nx (off + 1)).1 := by
+        ⟨[(0, 0)], 2, st.dmap.take 0 ++ [0], st.Mo, st.nc⟩ nx (off + 1)).1 := by
   rw [conv3.eq_def]
   simp [Dt_takeWhile v 0 1 (by omega), Dt_dropWhile v 0 1 (by omega), h,
     okPlace, fit, fitAux, padL]
@@ -1015,7 +1148,7 @@ theorem conv3_lvl1 (m : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST 
         ⟨STd 0, st.prev, st.dmap.take 1 ++ [3], st.Mo, st.nc⟩ nx (off + 1)).1 := by
   rw [Dt_succ, conv3.eq_def]
   simp [Dt_takeWhile m 1 2 (by omega), Dt_dropWhile m 1 2 (by omega), h,
-    okPlace, Lat, padL, STd, Ld, isBranch, contrFind_nil, lentTrunc]
+    okPlace, Lat, padL, STd, Ld, isBranch, isWCol, contrFind_nil, lentTrunc]
 
 
 theorem conv3_tail0 (m : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST = STd 0) :
