@@ -1859,6 +1859,99 @@ theorem ST_D3_conv3_of_parts' (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
     {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
   ST_D3_conv3_of_parts h2 he (ImgCofinalT3_of_ImgClosedT3 hI) hO hU hb hlen2 hd hM
 
+
+/-! ### 11.4 `ImgLenT3` の証明（課題 L2 (a)） -/
+
+namespace Conv3
+
+set_option maxHeartbeats 1000000 in
+/-- `conv3` は入力が空でなければ必ず 1 列以上を出す（本体の `cols` に
+`(dd2, e1, e2)` が必ず 1 本入る）。 -/
+theorem conv3_ne_nil (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ) :
+    (conv3 (p :: r) d L F ps pw first force st nx off).1 ≠ [] := by
+  rw [conv3.eq_def]
+  dsimp only
+  split <;>
+    simp only [ne_eq, List.append_eq_nil_iff, List.cons_ne_nil, and_false, false_and,
+      not_false_eq_true]
+
+theorem conv3_ne_nil' {M : TrioSeq} (hM : M ≠ []) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ) :
+    (conv3 M d L F ps pw first force st nx off).1 ≠ [] := by
+  obtain ⟨p, r, rfl⟩ := List.exists_cons_of_ne_nil hM
+  exact conv3_ne_nil p r d L F ps pw first force st nx off
+
+/-- `cols ++ w ++ w'` の長さの下界（`w` か `w'` の片方が空でなければ 2 以上）。 -/
+theorem two_le_app (u v : TrioSeq) (z : Col) (w w' : TrioSeq)
+    (h : w ≠ [] ∨ w' ≠ []) : 1 < ((u ++ v ++ [z]) ++ w ++ w').length := by
+  have key : 1 ≤ w.length + w'.length := by
+    rcases h with h | h
+    · cases w with
+      | nil => exact absurd rfl h
+      | cons a b => simp only [List.length_cons]; omega
+    · cases w' with
+      | nil => exact absurd rfl h
+      | cons a b => simp only [List.length_cons]; omega
+  simp only [List.length_append, List.length_cons, List.length_nil]
+  omega
+
+/-- `if X then Y else none = some Z` なら `X = true`（`lad0` を書き下さずに取り出す）。 -/
+theorem eq_true_of_ite_some {α : Type} {X : Bool} {Y : Option α} {Z : α}
+    (h : (if X = true then Y else none) = some Z) : X = true := by
+  cases X
+  · exact absurd h (by simp)
+  · rfl
+
+set_option maxHeartbeats 1000000 in
+/-- 入力が 2 列以上なら像も 2 列以上。 -/
+theorem conv3_len_two (p : Col) (r : TrioSeq) (hr : r ≠ []) (d : ℕ) (L : List Lent)
+    (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col)
+    (off : ℕ) :
+    1 < (conv3 (p :: r) d L F ps pw first force st nx off).1.length := by
+  have hAB : (r.takeWhile (fun q => decide (p.1 < q.1)))
+      ++ (r.dropWhile (fun q => decide (p.1 < q.1))) = r :=
+    List.takeWhile_append_dropWhile
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · -- 縮約の枝: `lad0 = true` なので `cols` は 2 列以上
+    rename_i heq
+    have hl := eq_true_of_ite_some heq
+    simp only [if_pos hl, List.length_append, List.length_cons, List.length_nil]
+    omega
+  · -- ふつうの枝: `A ++ B = r ≠ []` なので `rA` か `rB` の像が空でない
+    refine two_le_app _ _ _ _ _ ?_
+    by_cases hA : (r.takeWhile (fun q => decide (p.1 < q.1))) = []
+    · right
+      apply conv3_ne_nil'
+      intro hB
+      rw [hA, hB] at hAB
+      exact hr hAB.symm
+    · left
+      exact conv3_ne_nil' hA _ _ _ _ _ _ _ _ _ _
+
+end Conv3
+
+/-- **`ImgLenT3` は `Conv3.b2d3` について証明ずみ**（課題 L2 の (a)）。
+
+`conv3` の本体は `cols` に本体の柱 `(dd2, e1, e2)` を必ず 1 本積む。だから
+入力が空でなければ像も空でない（`Conv3.conv3_ne_nil`）。入力が 2 列以上なら
+* 縮約が発火する枝では `lad0` が真なので `cols` 自身が 2 列以上、
+* ふつうの枝では `A ++ B = r ≠ []` なので `A` か `B` の像が 1 列以上、
+のどちらかで 2 列以上になる。 -/
+theorem ImgLenT3_b2d3 : ImgLenT3 Conv3.b2d3 := by
+  intro A _hA hlen
+  obtain ⟨p, r, rfl⟩ : ∃ p r, A = p :: r := by
+    cases A with
+    | nil => simp at hlen
+    | cons a b => exact ⟨a, b, rfl⟩
+  have hr : r ≠ [] := by
+    intro h; rw [h] at hlen; simp at hlen
+  unfold Conv3.b2d3
+  exact Conv3.conv3_len_two p r hr _ _ _ _ _ _ _ _ _ _
+
+
 /-! ## 12. `OrderT3` を証明するには何が要るか
 
 2 行側の `conC_olt_iff_seqlex`（`Dbms.lean:2791`）は 2 行だけである:
