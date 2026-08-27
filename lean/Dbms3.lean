@@ -104,6 +104,79 @@ inductive ST_D3 : TrioSeq → Prop where
   | diag (v : ℕ) : ST_D3 (ddiagSeqT v)
   | oper {M : TrioSeq} {n : ℕ} : ST_D3 M → 1 ≤ n → ST_D3 (M⟦n⟧)
 
+/-! ### 1.1 `行 2 <= 行 1` は DBMS 側でも不変量（課題 L6）
+
+BMS 側の同じ命題は `lean/L6Inv.lean` の `TRIO.L6.r21_ST_TS`。`Dbms3.lean` は
+`lakefile.toml` の `roots` に入っていないので `L6Inv` を import できず、
+**展開の枝だけ写している**（`Wset.zle1_oper` / `L6.r21_oper` と同じ骨）。
+
+効き目は BMS 側と同じ: `Wset.no_hasParent_two_of_row1_zero` が使う
+「永久孤児」`(x,0,1)`（行 1 = 0 かつ 行 2 > 0）が**標準形には現れない**。
+
+実測（生成器の制約を使わず展開閉包を直に作ったもの）: DBMS 対角 `v = 0..7` から
+`n ∈ {1,2,3}` で 6 段展開した 2923 個で `行 2 > 行 1` の柱 **0 個**。 -/
+
+/-- 行 2 は行 1 を超えない（`Wset.zle1` より強い）。 -/
+def r21D (M : TrioSeq) : Prop := ∀ p ∈ M, p.2.2 ≤ p.2.1
+
+/-- DBMS の対角も満たす（`ddcolT j = (j, j-1, min (j-2) 1)`）。 -/
+theorem r21D_ddiagSeqT (v : ℕ) : r21D (ddiagSeqT v) := by
+  intro p hp
+  unfold ddiagSeqT at hp
+  rw [List.mem_map] at hp
+  obtain ⟨j, -, rfl⟩ := hp
+  unfold ddcolT
+  dsimp only
+  omega
+
+/-- 展開で保たれる（`oper` は行 1 に非負を足し、行 2 は逐語コピーする）。 -/
+theorem r21D_oper {B : TrioSeq} {n : ℕ} (h : r21D B) : r21D (B⟦n⟧) := by
+  by_cases hL : B.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]; exact h
+  · by_cases hp : hasParent B (srow B (B.length - 1)) (B.length - 1)
+    · have hpos : 0 < entry B 0 (B.length - 1) := by
+        by_contra hh
+        exact no_hasParent_of_row0_zero (by omega) hp
+      have hz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+          entry B 2 (B.length - 1) = 0) := by
+        rintro ⟨h1, -, -⟩; omega
+      rw [oper_gcopies n hL hz hp]
+      intro p hp'
+      rcases List.mem_append.mp hp' with hmem | hmem
+      · exact h p (List.mem_of_mem_take hmem)
+      · unfold gcopies at hmem
+        rw [List.mem_flatMap] at hmem
+        obtain ⟨k, -, hmem2⟩ := hmem
+        unfold gcopy at hmem2
+        rw [List.mem_map] at hmem2
+        obtain ⟨j, hj, rfl⟩ := hmem2
+        rw [List.mem_range'] at hj
+        have hjlt : j < B.length := by omega
+        have := h _ (Wset.entry_pair_mem hjlt)
+        dsimp only at this ⊢
+        omega
+    · have hB : B⟦n⟧ = Pred B := by
+        by_cases hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0
+        · exact oper_eq_pred_of_zero n hL hz
+        · exact oper_eq_pred_of_noParent n hL hz hp
+      rw [hB]
+      unfold Pred
+      split
+      · exact h
+      · exact fun p hp' => h p (List.dropLast_subset _ hp')
+
+/-- **`行 2 <= 行 1` は DBMS 3 行 `z<2` 標準形の不変量。** -/
+theorem r21D_ST_D3 {M : TrioSeq} (h : ST_D3 M) : r21D M := by
+  induction h with
+  | diag v => exact r21D_ddiagSeqT v
+  | oper _ _ ih => exact r21D_oper ih
+
+/-- 系: DBMS 標準形にも「永久孤児」`(x,0,1)` は現れない。 -/
+theorem no_permanent_orphan_ST_D3 {M : TrioSeq} (h : ST_D3 M) :
+    ∀ p ∈ M, p.2.1 = 0 → p.2.2 = 0 :=
+  fun p hp h1 => Nat.le_zero.mp (h1 ▸ r21D_ST_D3 h p hp)
+
 /-! ## 2. 変換器に課す 2 つの命題
 
 `conv3 : TrioSeq → TrioSeq` は「BMS 3 行標準形 -> DBMS 3 行行列」の変換器。
