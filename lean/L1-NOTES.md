@@ -1299,3 +1299,115 @@ axioms = `[propext, Classical.choice, Quot.sound]`）:
 * 機構の道具（`graft` / `Lift1` / `take` / `drop` / `dropLast`）が
   `row2 <= row1` を保つことも証明済みなので、**もしどこかで
   `(x,0,1)` を排除するだけで済む箇所があれば、そこには今すぐ使える**。
+
+
+---
+
+# 課題 L7: `SubstFree` を `W` の帰納で証明しに行った（2026-08-28）
+
+## 0. 結論を先に
+
+* **`Aop` の節 1 は証明できた**（`lean/L7Subst.lean` の `substProp_of_short`）。
+* **`SubstFree` は節 2 ＋ 節 3 に割れる**（`substFree_of_clauses`、機械検査ずみ）。
+  そこから `TRIO_terminates_of_clauses (h2 : Clause2) (h3 : Clause3) :
+  WellFounded stepRel`。
+* **止まる場所は `Subst1gReviveSelf` とまったく同じ「復活の場合」**だった。
+  `Wtower2.subst1g_of_revive`（`Wtower2.lean:3424`）が既に同じ帰納をやっており、
+  そこも同じところで止まっている。
+* ⟹ **側条件 6 本を落として得たのは「帰納のたびに側条件を建て直す手間が消える」
+  ことだけで、壁は動かない。**
+
+## 1. 何をしたか
+
+`Wself := {M | M ∈ W (lev M 0)}` で `W u` は `Aop` の最小不動点なので、
+`Wset.A2'`（「`Aop`-閉な集合は `W u` を含む」）が使える。
+
+    Ysub := {S | SubstProp S}
+    SubstProp S := ∀ p C, p < |S| → C ≠ [] → C ∈ Wself →
+                     S.take p ++ C ++ S.drop (p+1) ∈ Wself
+
+`A2'` を当てると `Aop` の 3 節がそのまま 3 つの場合になる（`lean/L7Subst.lean`）:
+
+    theorem substFree_of_clauses (h2 : Clause2) (h3 : Clause3) : SubstFree
+    theorem TRIO_terminates_of_clauses (h2 : Clause2) (h3 : Clause3) : WellFounded stepRel
+
+節 1 は証明した:
+
+    theorem substProp_of_short {S} (h : S.length ≤ 1) : SubstProp S
+
+（`p < |S|` から `|S| = 1, p = 0` なので `S.take 0 = []`、`S.drop 1 = []`、
+差し替えの結果は `C` そのもの。）
+
+## 2. 節 2 の中身 — 既存の帰納と同じ 4 分割
+
+`Wtower2.subst1g_of_revive` の doc（`Wtower2.lean:3405-3423`）がそのまま当てはまる。
+`D := S.drop (p+1)` として:
+
+| 場合 | 条件 | 閉じ方 |
+|---|---|---|
+| **clause 1** | `|S| ≤ 1` | **証明ずみ** |
+| **mirror** | `|D| ≥ 2` かつ `D` の末尾列が `D` の中で親を持つ | `Xbar.oper_append_inner` で `S⟦n⟧ = S.take (p+1) ++ D⟦n⟧`、`R⟦n⟧ = (S.take p ++ C) ++ D⟦n⟧`。帰納法の仮定が直に効く |
+| **orphan** | `D ≠ []` かつ `R` の末尾列が `R` の中でも孤児 | `R⟦n⟧ = Pred R = S.take p ++ C ++ D.dropLast` ＝ **接頭辞 `S.dropLast` への差し替え**。接頭辞パッケージが払う |
+| **revival** | それ以外（`R` では親を持つのに `D` の中では孤児／`D = []`） | **開いたまま** |
+
+### ⚠ 訂正: 接頭辞パッケージは捨てられていない
+
+`RESIDUE-PROBLEM.md §4.5` は「`hpre : ∀ k, k < |S| → SubstProp u (S.take k)` が
+呼び出し地点に実在し**捨てられている**」と書くが、実際には **orphan の場合で
+使われている**（`Wtower2.lean:3419-3421` の doc に明記）。捨てられているのは
+**revival の場合だけ**である。だから「側条件を落とせばパッケージが使える
+ようになる」という私の課題 L5 §9 の期待は**外れ**だった。
+
+## 3. 実測（`S, C ∈ Wself` の 103579 例）
+
+`R` を展開したときのバッドルート `j0` の位置で分類:
+
+| | 割合 | `R⟦n⟧ = subst (S⟦n⟧) p C` か |
+|---|---|---|
+| `R` が展開しない（`Pred`）＝ **orphan** | **54%** | —（`Pred` で閉じる） |
+| `j0` が `D` の中 ＝ **mirror** | 7% | **つねに成り立つ**（6944/6944） |
+| `j0` が `S.take p` の中 ＝ **revival** | 14% | 98.4% 成り立たない（14302/14487） |
+| `j0` が `C` の中 ＝ **revival** | 25% | 98.5% 成り立たない（25926/26310） |
+
+revival では `R` の展開が「`C` を含む区間の `n` 個のコピー」になるので、
+`S⟦n⟧` への **1 ブロックの差し替え**にならない（多ブロックになる）。
+しかも `d1 > 0`（コピーに行 1 のリフトが乗る）のが `S.take p` 側で **21%**、
+`C` 側で **24%**。そこを塔として処理しようとすると
+
+    C ∈ Wself → （ガード付き行 1 リフトした C）∈ Wself
+
+が要り、これが既知の核 `(WL)` `Wtower2.LiftStage` である。
+`RESIDUE-PROBLEM.md §4.8` の「どの顔も同じところに落ちる」と一致する。
+
+## 4. 詰まった場所を命題の形で
+
+    SubstFreeRevive :=
+      ∀ p S C, S ∈ Wself → p < |S| → C ≠ [] → C ∈ Wself →
+        （R := S.take p ++ C ++ S.drop (p+1) の末尾列が R の中で親を持ち、
+          自分のブロック（D = [] なら C、そうでなければ D）の中では孤児）→
+        R ∈ Wself
+
+これは `Wtower2.Subst1gReviveSelf` から**側条件 6 本を落としただけ**である
+（課題 L6 の `lean/L5Subst.lean` の `SubstFree` と `Subst1gReviveSelf` の関係と同じ）。
+つまり
+
+    L5 の測定:  Subst1gReviveSelf の側条件 6 本は真理値に効かない
+    L7 の帰納:  その 6 本は帰納の**止まる場所**も動かさない
+
+## 5. 判定
+
+**`SubstFree` は「命題としては真に強く、証明の難易度は同じ」だった。**
+利点は残る（側条件の建て直しが消える、`D = []` / `D ≠ []` の場合分けの
+うち側条件由来のものが消える）が、**新しい数学的入力にはならない**。
+`PROOF-STATUS.md §5` の「BM4 展開への新しい数学的入力が要る」は変わらない。
+
+## 6. 課題 L6（`行 2 <= 行 1`）について
+
+これは課題 L6 で回答ずみ。要点だけ:
+
+* **不変量としては正しく、証明した**（`lean/L6Inv.lean` / `lean/Dbms3.lean` §1.1）。
+  `graft` / `Lift1` / `take` / `drop` / `dropLast` が保つことも証明ずみ。
+* **しかし `natDom` ガードは戻らない。** `row2 ≤ row1` を課しても
+  `Wstar_closed` を壊す形が **309 個**残る（最小 `M = [(0,1,0),(1,1,1)]`）。
+* 障害は `(x,0,1)` ではなく**行 1 のタイ**。`row2 ≤ row1` が消すのは
+  `行 1 = 0` の境界だけ。
