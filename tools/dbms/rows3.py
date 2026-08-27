@@ -474,7 +474,11 @@ def closes_hi_unit(c, nxt, pv, pv2, hi, rep):
 
     ただしその区間が直前の逐語コピーなら、もとの深さを引き継ぐ（rep）。
     `rule.py` の closes_hi_unit と同じ。
+
+    旗 `V14['chu']` で切れる（課題 G3 の測定用。既定は True = v13 のまま）。
     """
+    if not V14['chu']:
+        return False
     return (hi and not rep and nxt is not None and tuple(nxt) == (1, 1, 1)
             and pv is not None and tuple(pv) == (c[0], 2, 0)
             and pv2 is not None and tuple(pv2) == (c[0], 2, 1))
@@ -563,6 +567,15 @@ V13 = {
     'wchain': True,
     'sibL': True,
     'sib_anchbefore': True,
+}
+
+
+# ---------------------------------------------------------------- v14 の旗
+# `chu` = v10 の条項 `closes_hi_unit`。既定 True で v13 のまま。
+# False にすると (a,2,1)(a,2,0)(a,1,0) の直後が (1,1,1) でも段が上がる。
+# 課題 G3 の測定用（`RS_NOCHU=1` を環境変数に置くと False で起動する）。
+V14 = {
+    'chu': os.environ.get('RS_NOCHU', '') != '1',
 }
 
 
