@@ -35,12 +35,15 @@ REPL = [
     ("                shallow = not (hi and not pnt)\n",
      "                shallow = not (hi and not pnt)\n"
      "                why = 'after_w'\n"),
-    ("                    shallow = not (hi and not (par0(Mo, j) == 0))\n",
-     "                    shallow = not (hi and not (par0(Mo, j) == 0))\n"
+    ("                    shallow = not (hi and not (_p0(Mo, j) == 0))\n",
+     "                    shallow = not (hi and not (_p0(Mo, j) == 0))\n"
      "                    why = 'wchain'\n"),
-    ("                shallow = True\n            base = base_s if shallow else deep\n",
+    ("            if closes_hi_unit(p, onx, pv, pv2, hi, is_repeat(Mo, off)):\n"
+     "                shallow = True\n",
+     "            if closes_hi_unit(p, onx, pv, pv2, hi, is_repeat(Mo, off)):\n"
      "                shallow = True\n"
-     "                why = (why or '?') + '+closes_hi'\n"
+     "                why = (why or '?') + '+closes_hi'\n"),
+    ("            base = base_s if shallow else deep\n",
      "            base = base_s if shallow else deep\n"
      "            why = (why or '?') + ('/shallow' if shallow else '/deep')\n"),
     ("            st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い\n",
@@ -85,7 +88,8 @@ head = ('"""rows3.conv3 の写し（出どころを PROV に記録する）。mk
         '                   copy_head, term_top, top_level, closes_top, hi_block2,\n'
         '                   anch_before, p0deep_ok,\n'
         '                   units_split, contrPre, leaves_mark,\n'
-        '                   leaves_mark_local, ANCHOR, NOTLAST, V12, V13, V14)\n'
+        '                   leaves_mark_local, ANCHOR, NOTLAST, copy_src, par0_w,\n'
+        '                   p0_shallow, closes_w, V12, V13, V14, V15)\n'
         'PROV = []\n'
         'CTX = []\n\n\n')
 tail = '''

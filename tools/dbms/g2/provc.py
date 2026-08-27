@@ -7,7 +7,8 @@ from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    copy_head, term_top, top_level, closes_top, hi_block2,
                    anch_before, p0deep_ok,
                    units_split, contrPre, leaves_mark,
-                   leaves_mark_local, ANCHOR, NOTLAST, V12, V13, V14)
+                   leaves_mark_local, ANCHOR, NOTLAST, copy_src, par0_w,
+                   p0_shallow, closes_w, V12, V13, V14, V15)
 PROV = []
 CTX = []
 
@@ -88,7 +89,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     # v14 wterm（試作, 既定 off）: 根に直付けの「x w」の柱 (k,0,0) も
     # 新しい加算項の頭なので段の状態を持ち越さない。生成 <=8 列の非標準 3 件
     # （`(0,0,0)(1,1,1)(2,1,0)(1,0,0)(2,1,1)(2,1,0)(3,2,1)X`）を狙う。
-    elif (V14['wterm'] and is_w_col(p) and par0(st['Mo'], off) == 0
+    elif (V14['wterm'] and is_w_col(p)
+            and (par0_w if V15['wterm_chain'] else par0)(st['Mo'], off) == 0
             and not (V14['wterm_anchbefore']
                      and any(tuple(c) == ANCHOR for c in st['Mo'][:off]))):
         st['prev'] = None
@@ -128,18 +130,26 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             # v14 h1（課題 H1）: 写しの中で「段が 1 だけ浅い」と綴る病
             # （ImgClosedT の族 α）を直す。どれも `Mo` と `off` と次の柱だけで
             # 決まる（＝写しに同変）。
+            _w0 = False       # 位置から読んで深くしたか（P1 `wide0_noprev`）
             if V14['h1']:
                 hi = hi_block2(Mo, off)
                 cw = closes_top(Mo, off, nxt)
-                if cw:
+                if V15['closesw'] and closes_w(Mo, off, nxt):
+                    cw = True     # P2 `closesw`: 化けたアンカーも閉じる
+                if st['prev'] == 0:
+                    # 課題 H6: `prev == 0` の枝は `p0_shallow` 1 つで完全に決まる
+                    # （教師データ 6480 本で食い違い 0）。`closes_top` /
+                    # `closes_unit` / `p0deep_ok` の 3 段重ねを置き換える。
+                    _w0 = not p0_shallow(Mo, off)
+                    shallow = not _w0
+                elif cw:
                     shallow = True
-                elif st['prev'] == 0 and not closes_unit(nxt):
-                    shallow = not p0deep_ok(Mo, off, p, nxt)
             # after_w（rule.py）: 直前が「x w」の柱 (k,0,0) で、しかもユニットの
             # 端にいるなら、段はふつう 1 に落ちる（浅い）。W_(w^2) 系（hi）で
             # 直前の柱が根に付いていないときだけ、段が残る（深い）。
+            _p0 = par0_w if V15['wroot'] else par0
             if st['prev'] == 1 and is_w_col(pv) and closes_unit(onx):
-                pnt = off > 0 and par0(Mo, off - 1) == 0
+                pnt = off > 0 and _p0(Mo, off - 1) == 0
                 shallow = not (hi and not pnt)
                 why = 'after_w'
             # v13 wchain（課題 F2）: `after_w` の窓は**直前 1 本**しかない。
@@ -150,16 +160,38 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             elif V13['wchain'] and st['prev'] == 1 and closes_unit(onx):
                 j = wchain_head(Mo, off)
                 if j is not None:
-                    shallow = not (hi and not (par0(Mo, j) == 0))
+                    shallow = not (hi and not (_p0(Mo, j) == 0))
                     why = 'wchain'
             # closes_hi_unit（rule.py）: (a,2,1)(a,2,0)(a,1,0) と積んだ直後が
             # アンカー (1,1,1) なら、段を上げずにユニットを閉じる（浅い）。
             if closes_hi_unit(p, onx, pv, pv2, hi, is_repeat(Mo, off)):
                 shallow = True
                 why = (why or '?') + '+closes_hi'
+            # P3 `cpyspell`: 写しの中の分岐列は、写しのもとの柱と同じに綴る。
+            # 縮約が飲んだ写しは決定を残さないので、写しの鎖をさかのぼる。
+            if (V15['cpyspell']
+                    and not (V15['cpy_notlast'] and closes_unit(nxt))
+                    and not (V15['cpy_noend'] and nxt is None)):
+                dec = st.setdefault('dec', {})
+                j, seen = copy_src(Mo, off), 0
+                while j is not None and j not in dec and seen < len(Mo):
+                    j, seen = copy_src(Mo, j), seen + 1
+                if j is not None and j in dec and not (
+                        V15['cpy_noanch']
+                        and any(tuple(c) == ANCHOR for c in Mo[j:off])):
+                    if not (V15['cpy_endshal'] and nxt is None and not dec[j]):
+                        shallow = dec[j]
+            if V15['cpyspell']:
+                st.setdefault('dec', {})[off] = shallow
             base = base_s if shallow else deep
             why = (why or '?') + ('/shallow' if shallow else '/deep')
-            st['prev'] = 0 if shallow else 1
+            # P1 `wide0_noprev`: 位置から読んで深くしたときは、深さは像に出るが
+            # 1 ビットの状態は 0 のまま置く（`prev == 1` は「ユニットがまだ
+            # 閉じていないので深く綴った」の意味で、`after_w` / `wchain` は
+            # それを見て発火する）。
+            if not (V15['wide0_noprev'] and not shallow
+                    and st['prev'] == 0 and _w0):
+                st['prev'] = 0 if shallow else 1
         else:
             st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い
             why = 'tie'
@@ -236,7 +268,13 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             # 写しの終わりの分岐列は、写しが吸収されるぶん深く書かれることがある。
             # 素直な「次の列 = q」と「深い側」の 2 通りを試す。
             for na in (q, NOTLAST):
-                pre = contrPre(p, U, A, e, ps[0], st['prev'], na)
+                # 課題 H5 (3): ここは `st['prev']` を読んでいたが、**読む必要が無い**。
+                # `None` / `1` / 行列から読んだ近似 のどれに替えても像は 1 ビットも
+                # 変わらない（gen<=7 の 77282 個、<=6 列の展開 33548 個（最長 30 列超）
+                # で差 0。lim=5 の 7 土俵も全部不変）。`0` に替えたときだけ 7 個変わり
+                # シートが 1354 -> 1112 に落ちるので、「0 でない」ことだけが効いている。
+                # 写しに同変でない読みを 1 つ減らすため、定数にする。
+                pre = contrPre(p, U, A, e, ps[0], None, na)
                 if list(Aq[:len(pre)]) == pre:
                     break
             else:
