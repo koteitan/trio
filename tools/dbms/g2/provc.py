@@ -1,11 +1,13 @@
 """rows3.conv3 の写し（出どころを PROV に記録する）。mkprov.py が生成。"""
 import sys
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
-from rows3 import (V14,split0, Lat, padL, is_branch, is_w_col, par0,
+from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    hi_block, is_repeat, closes_unit, closes_hi_unit,
                    wchain_head, sib_ok, ok_place, fit, dmap_at,
+                   copy_head, term_top, top_level, closes_top, hi_block2,
+                   anch_before, p0deep_ok,
                    units_split, contrPre, leaves_mark,
-                   leaves_mark_local, ANCHOR, NOTLAST, V12, V13)
+                   leaves_mark_local, ANCHOR, NOTLAST, V12, V13, V14)
 PROV = []
 CTX = []
 
@@ -86,7 +88,9 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     # v14 wterm（試作, 既定 off）: 根に直付けの「x w」の柱 (k,0,0) も
     # 新しい加算項の頭なので段の状態を持ち越さない。生成 <=8 列の非標準 3 件
     # （`(0,0,0)(1,1,1)(2,1,0)(1,0,0)(2,1,1)(2,1,0)(3,2,1)X`）を狙う。
-    elif V14['wterm'] and is_w_col(p) and par0(st['Mo'], off) == 0:
+    elif (V14['wterm'] and is_w_col(p) and par0(st['Mo'], off) == 0
+            and not (V14['wterm_anchbefore']
+                     and any(tuple(c) == ANCHOR for c in st['Mo'][:off]))):
         st['prev'] = None
 
     # v11: アンカー (1,1,0) での段のリセット `st['prev'] = 0` は**やめた**。
@@ -121,6 +125,16 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             pv2 = Mo[off - 2] if off >= 2 else None
             onx = Mo[off + 1] if off + 1 < len(Mo) else None
             hi = hi_block(Mo, off)
+            # v14 h1（課題 H1）: 写しの中で「段が 1 だけ浅い」と綴る病
+            # （ImgClosedT の族 α）を直す。どれも `Mo` と `off` と次の柱だけで
+            # 決まる（＝写しに同変）。
+            if V14['h1']:
+                hi = hi_block2(Mo, off)
+                cw = closes_top(Mo, off, nxt)
+                if cw:
+                    shallow = True
+                elif st['prev'] == 0 and not closes_unit(nxt):
+                    shallow = not p0deep_ok(Mo, off, p, nxt)
             # after_w（rule.py）: 直前が「x w」の柱 (k,0,0) で、しかもユニットの
             # 端にいるなら、段はふつう 1 に落ちる（浅い）。W_(w^2) 系（hi）で
             # 直前の柱が根に付いていないときだけ、段が残る（深い）。

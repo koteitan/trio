@@ -580,7 +580,119 @@ V14 = {
     # wterm の伝染止め: 前にアンカー (1,1,0) が 1 本も無いときだけ効く
     # （`sib_anchbefore` と同じ読み）。切ると <=8 列の非標準が 2 件増える。
     'wterm_anchbefore': os.environ.get('RS_WTERM_ALL', '') != '1',
+    # v14 h1（課題 H1）: 「写しの頭」`copy_head` を根と同じに読む 5 条項。
+    #   `closes_top`   次の柱が写しの根の直下ならユニットを閉じる
+    #   `copy_head`    親の鎖はアンカー (1,1,0) でも通る
+    #   `hi_block2`    hi_block の起点を写しの頭の次まで進める
+    #   `wchain_head`  鎖の頭が写しの頭なら根に当たったのと同じ（鎖が切れる）
+    #   `p0deep_ok`    prev == 0 の枝を「行列から直に読む述語」で決め直す
+    # `RS_NOH1=1` を環境変数に置くと v13 の綴りに戻る。
+    'h1': os.environ.get('RS_NOH1', '') != '1',
 }
+
+
+def term_top(Mo, j, _d=0):
+    """柱 `j` が「行 1 の加算項の頭」か。課題 H1。
+
+    もとの行列では 根 `(0,*,*)` と アンカー `(1,1,0)` の 2 つ。写しの中では
+    上昇で行 0 が上がるので、根は `(k,0,0)` に、アンカーは `(k,1,0)` に化ける。
+    親をたどって根まで届けば、化けたものも項の頭と認める。
+    """
+    if _d > 64:
+        return False
+    c = Mo[j]
+    if c[0] == 0 or tuple(c) == ANCHOR:
+        return True
+    if c[2] != 0:
+        return False
+    q = par0(Mo, j)
+    if q < 0:
+        return False
+    if c[1] == 0:
+        return term_top(Mo, q, _d + 1)          # 根の写し (k,0,0)
+    if c[1] == 1:
+        # アンカーの写し (k,1,0)。親が根そのものか、根の写し (k',0,0) のときだけ。
+        return (Mo[q][0] == 0
+                or (Mo[q][1] == 0 and Mo[q][2] == 0
+                    and term_top(Mo, q, _d + 1)))
+    return False
+
+
+def copy_head(Mo, j):
+    """柱 `j` が**写しの頭**か（もとの根 (0,*,*) が上昇して化けたもの）。課題 H1。
+
+    BMS の展開は「悪い部分を上昇させて写す」。上昇は**行 0 に効く**ので、
+    もとの根 `(0,0,0)` は写しの中で `(k,0,0)` になる。親をたどって
+    「行 1 の加算項の頭」に届けば、その `(k,0,0)` は写しの頭である。
+
+        (0,0,0)(1,1,1)(2,1,0)(2,1,0) | (1,0,0)(2,1,1)(3,1,0)(3,1,0) | (2,0,0)...
+         ^根                            ^写しの頭                      ^写しの頭
+
+    **行列から直に読める**（`st` を持ち回らない）ので写しに同変。
+    """
+    c = Mo[j]
+    if not (c[1] == 0 and c[2] == 0 and c[0] >= 1):
+        return False
+    q = par0(Mo, j)
+    return q >= 0 and term_top(Mo, q)
+
+
+def top_level(Mo, j):
+    """柱 `j` が「いまの写しの根の直下」か（もとの `nxt[0] <= 1` の写し版）。"""
+    q = par0(Mo, j)
+    return q < 0 or Mo[q][0] == 0 or copy_head(Mo, q)
+
+
+def closes_top(Mo, off, nxt):
+    """写しの中まで届く `closes_unit`。課題 H1。
+
+    写しの中ではアンカー `(1,1,0)` が `(k,1,0)` に、根 `(0,0,0)` が `(k,0,0)` に
+    化けるので `nxt[0] <= 1` が当たらない。「次の柱がいまの写しの根の直下に
+    戻る」と読み替える。もとの行列（写しの頭が無い）では `closes_unit` と同じ。
+    """
+    if nxt is None:
+        return True
+    if nxt[2] != 0:
+        return False
+    if nxt[0] <= 1:
+        return True
+    j = off + 1
+    if j >= len(Mo) or tuple(Mo[j]) != tuple(nxt):
+        return False        # ブロックの外（番兵）なら見ない
+    return top_level(Mo, j)
+
+
+def hi_block2(m, x):
+    """`hi_block` の写し補正。起点 `b` を「写しの頭の次の柱」まで進める。
+    写しの頭が 1 つも無ければ `hi_block` と完全に同じ。課題 H1。"""
+    b = max([q for q in range(x) if m[q][0] == m[q][1] and m[q][0] >= 1],
+            default=0)
+    for q in range(x):
+        if q + 1 > b and copy_head(m, q):
+            b = q + 1
+    return any(m[z][2] > 0 for z in range(b + 1, x))
+
+
+def anch_before(Mo, off):
+    """`off` より前にアンカー (1,1,0) が 1 本でもあるか。"""
+    return any(tuple(Mo[j]) == ANCHOR for j in range(off))
+
+
+def p0deep_ok(Mo, off, p, nxt):
+    """`prev == 0` でも分岐列を深く綴るか（課題 H1）。
+
+        深い <=> nxt[0] >= p[0]
+                 or（自分より前にアンカー (1,1,0) が 1 本も無く、かつ nxt[1] >= 1）
+
+    教師データ（シート 1354 行 ＋ ImgClosedT の目標 `(conv3 A)<m>`、
+    `prev == 0` の枝 9399 本）で誤り 30 本。うち「深すぎ」＝いま正しく綴れて
+    いる柱を壊す向きは **0 本**。比較: `nxt[0] >= p[0]` だけなら誤り 597 本。
+    """
+    if nxt is None:
+        return False
+    if nxt[0] >= p[0]:
+        return True
+    return nxt[1] >= 1 and not anch_before(Mo, off)
 
 
 def wchain_head(Mo, off):
@@ -597,6 +709,9 @@ def wchain_head(Mo, off):
     for j in range(off - 1, -1, -1):
         if is_w_col(Mo[j]):
             k = Mo[j][0]
+            # v14 h1: 鎖の頭が「写しの頭」なら、根 (0,*,*) に当たったのと同じ。
+            if V14['h1'] and copy_head(Mo, j):
+                return None
             if all(Mo[t][0] > k for t in range(j + 1, off + 1)):
                 return j
             return None
@@ -804,6 +919,16 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             pv2 = Mo[off - 2] if off >= 2 else None
             onx = Mo[off + 1] if off + 1 < len(Mo) else None
             hi = hi_block(Mo, off)
+            # v14 h1（課題 H1）: 写しの中で「段が 1 だけ浅い」と綴る病
+            # （ImgClosedT の族 α）を直す。どれも `Mo` と `off` と次の柱だけで
+            # 決まる（＝写しに同変）。
+            if V14['h1']:
+                hi = hi_block2(Mo, off)
+                cw = closes_top(Mo, off, nxt)
+                if cw:
+                    shallow = True
+                elif st['prev'] == 0 and not closes_unit(nxt):
+                    shallow = not p0deep_ok(Mo, off, p, nxt)
             # after_w（rule.py）: 直前が「x w」の柱 (k,0,0) で、しかもユニットの
             # 端にいるなら、段はふつう 1 に落ちる（浅い）。W_(w^2) 系（hi）で
             # 直前の柱が根に付いていないときだけ、段が残る（深い）。

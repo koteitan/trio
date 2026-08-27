@@ -82,6 +82,8 @@ head = ('"""rows3.conv3 の写し（出どころを PROV に記録する）。mk
         'from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,\n'
         '                   hi_block, is_repeat, closes_unit, closes_hi_unit,\n'
         '                   wchain_head, sib_ok, ok_place, fit, dmap_at,\n'
+        '                   copy_head, term_top, top_level, closes_top, hi_block2,\n'
+        '                   anch_before, p0deep_ok,\n'
         '                   units_split, contrPre, leaves_mark,\n'
         '                   leaves_mark_local, ANCHOR, NOTLAST, V12, V13, V14)\n'
         'PROV = []\n'
