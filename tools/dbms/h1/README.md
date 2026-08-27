@@ -98,3 +98,13 @@ H5 の結論: **縮約は触らない**。全射の外れ 82 個のうち `(conv
 
 **足切りは lim=7 で回すこと**（lim=6 の一致 50762 組では `aw3` を通してしまう。
 lim=7 の 305087 組なら 331 組の破れが見える）。約 140 秒。
+
+# 課題 H9 の道具（prev を行列から導く）
+
+    python3 /tmp/h1work/h9cmp.py  6 3        # spell と conv3 の prev を比べる（食い違い 170）
+    python3 /tmp/h1work/h9cmp2.py 6 3        # conv3 の nxt を渡した版（食い違い 10）
+    python3 /tmp/h1work/h9cmp3.py 6 3 root   # 切り方を「行 0 = 0」に（食い違い 1）
+    python3 /tmp/h1work/mkprevmat2.py        # prev を行列から導く rows3t2.py（PM['prevmat']）
+
+**結論**: `prev` は 99.994% 行列から決まる。残る非同変な読みは
+(1) 縮約が注入する `nxt` の番兵 `NOTLAST`、(2) 行 1 の梯子 `L` から出る `tie`。
