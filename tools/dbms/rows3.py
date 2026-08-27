@@ -22,10 +22,11 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
 
 | 検査 | 結果 |
 |---|---|
-| シート 3 行 z<=1 (1358 対) | 1228 一致 |
+| シート 3 行 z<=1 (1358 対) | **1338 一致**（不一致 20） |
 | 生成 <=6 列 8387 個: 像が DBMS 標準形 | 違反 0 |
 | 同: z=0 で 2 行版 convC と一致 | 違反 0 |
-| 同: 順序保存 | 違反 82（縮約が出過ぎる。詰め中） |
+| 同: 単射 | 違反 0 |
+| 同: 順序保存 | 違反 81（詰め中） |
 
 使い方:
     python3 rows3.py [列数上限]
@@ -130,23 +131,6 @@ def predlab(y, z):
     return (0, 0)
 
 
-def shiftE(B, e, ps0, br):
-    """写しのずれ。行 0 は必ず +1、行 1 は**親より深い段の柱だけ** +e。
-
-    展開の delta は上昇行列が 1 の行にしか効かないので、行 1 が親の段 `ps0`
-    以下の柱は行 1 が上がらない。分岐列 (a,1,0) は浅い／深いを選べるので、
-    上がる形 (`br=True`) と上がらない形 (`br=False`) の 2 通りを試す。
-    """
-    return [(a + 1,
-             b + (e if (b > ps0 and (br or not is_branch((a, b, c)))) else 0),
-             c) for a, b, c in B]
-
-
-def contrPre(p, U, A, e, ps0, br=True):
-    return ([(p[0] + 1, p[1] + e, p[2])]
-            + shiftE(A, e, ps0, br) + shiftE(U, e, ps0, br))
-
-
 def ok_place(ST, x, w):
     """深さ `x` に行 1 が `w` の柱を置けるか（行 1 の値 = 行 1 の入れ子の深さ）。"""
     if w == 0:
@@ -171,6 +155,22 @@ NOTLAST = (0, 0, 0)     # 「後ろに何かある（アンカーではない）
 ANCHOR = (1, 1, 0)      # アンカー。分岐列を浅くする合図
 
 
+def Lat(L, k):
+    """段の表 `L` の第 k 要素。表の外は 1 段ずつ伸ばして読む。"""
+    if k < len(L):
+        return L[k]
+    if not L:
+        return (0, 0, False, 0)
+    a = L[-1]
+    j = k - (len(L) - 1)
+    return (a[0] + j, a[1], False, a[3] + j)
+
+
+def is_branch(c):
+    """分岐列 (a,1,0) (a>=2)。浅い／深いを選ぶのはこの型だけ。"""
+    return c[1] == 1 and c[2] == 0 and c[0] >= 2
+
+
 def dmap_at(st, k):
     """もとの深さ `k` が像で何段目になるか。表の外は 1 段ずつ伸ばす。"""
     m = st['dmap']
@@ -179,9 +179,30 @@ def dmap_at(st, k):
     return m[k] if k < len(m) else m[-1] + (k - len(m) + 1)
 
 
-def is_branch(c):
-    """分岐列 (a,1,0) (a>=2)。浅い／深いを選ぶのはこの型だけ。"""
-    return c[1] == 1 and c[2] == 0 and c[0] >= 2
+def copy_shift(block, e, ps0, prev0, nxt_after):
+    """`block` の写し（深さ +1、行 1 は +e）。
+
+    行 1 が上がるのは「親の段 `ps0` より深い柱」だけ。ただし分岐列 (a,1,0) は
+    浅い／深いを選べるので、状態機械を同じ順に回して 1 本ずつ決める。
+    もとのブロックで浅く書かれた柱は、写しでも行 1 が上がらない。
+    """
+    out, prev = [], prev0
+    for i, c in enumerate(block):
+        nxt = block[i + 1] if i + 1 < len(block) else nxt_after
+        if c == ANCHOR:
+            prev = 0
+        if is_branch(c):
+            shallow = (prev == 0) or (nxt is None) or (nxt == ANCHOR)
+            prev = 0 if shallow else 1
+            dl = 0 if shallow else (e if c[1] > ps0 else 0)
+        else:
+            dl = e if c[1] > ps0 else 0
+        out.append((c[0] + 1, c[1] + dl, c[2]))
+    return out
+
+
+def contrPre(p, U, A, e, ps0, prev0, nxt_after):
+    return copy_shift([p] + list(A) + list(U), e, ps0, prev0, nxt_after)
 
 
 def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
@@ -216,7 +237,7 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
         base_d = base_s = 0
         pl2, force1 = 0, False
     else:
-        e = L[v - 1]
+        e = Lat(L, v - 1)
         base_d, pl2, force1, base_s = e[0] + 1, e[1], e[2], e[3] + 1
     first1 = F[v] if v < len(F) else True
 
@@ -264,7 +285,7 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     # 行 1 の影を立てたら、その影が「もとの行 1 の深さ v-1」の祖先を置き換える。
     # 浅い側（影を使わない選択肢）はもとの値を残しておく。
     if e1 == base + 1 and v >= 1:      # 行 1 が水増しされた（影を書いたかは問わない）
-        Lb = L[:v - 1] + ((base, pl2, False, L[v - 1][3]),)
+        Lb = L[:v - 1] + ((base, pl2, False, Lat(L, v - 1)[3]),)
     else:
         Lb = L
     LA = Lb[:v] + ((e1, s2, fc, e1),)
@@ -280,12 +301,17 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             if (q[1], q[2]) != qlab or q[0] != p[0]:
                 continue
             Aq, Bq = split0(q, r2)
-            for br in (True, False):
-                pre = contrPre(p, U, A, e, ps[0], br)
+            # 写しの終わりの分岐列は、写しが吸収されるぶん深く書かれることがある。
+            # 素直な「次の列 = q」と「深い側」の 2 通りを試す。
+            for na in (q, NOTLAST):
+                pre = contrPre(p, U, A, e, ps[0], st['prev'], na)
                 if list(Aq[:len(pre)]) == pre:
                     break
             else:
                 continue
+            blk = [p] + list(A) + list(U)
+            # 残りが「深く書かれた分岐列」で終わるか（NOTES §7 strip_lift の条件）
+            deep_end = is_branch(blk[-1]) and pre[-1][1] > blk[-1][1]
             rest2 = list(Aq[len(pre):])
             if rest2:
                 if rest2[0][0] < p[0] + 1:
@@ -293,7 +319,7 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
                 if (rest2[0][0] == p[0] + 1
                         and (rest2[0][1], rest2[0][2]) >= (v + e, s2) and e == 0):
                     continue
-            elif e == 0 or not br or not is_branch(([p] + list(A) + list(U))[-1]):
+            elif e == 0 or not deep_end:
                 # 残余なしの縮約は「行 1 ずれ」かつ「残りが分岐列で終わる」ときだけ
                 # （NOTES §7 の strip_lift の適用条件と同じ）
                 continue
@@ -303,11 +329,13 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             # 写しは書かれないので、A から見た「次の列」は写しの後ろ。
             # 何も無くても「レベルが後で綴られている」ので末尾扱いにはしない。
             cA = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False, st,
-                       (hd(rest2, Bq) or NOTLAST) if br else ANCHOR)
-            cU = conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, st,
-                       hd(B2))
-            cR = conv3(rest2, dmap_at(st, rest2[0][0] - 1) if rest2 else d + 1 + e,
-                       Lr, (False,) * 12,
+                       U[0] if U else na)
+            cU = conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, st, na)
+            # 写しの真下（もとの深さ p[0]+1）なら影の位置、さらに深ければ
+            # 「もとの深さ -> 像の深さ」の表で決める。
+            rd = (d + 1 + e if (not rest2 or rest2[0][0] == p[0] + 1)
+                  else dmap_at(st, rest2[0][0] - 1))
+            cR = conv3(rest2, rd, Lr, (False,) * 12,
                        (v, s2), (e1, e2), False, False, st, hd(Bq))
             cB = conv3(Bq, d, L, FA, (v, s2), (e1, e2), False, False, st, nx)
             return cols + cA + cU + cR + cB
