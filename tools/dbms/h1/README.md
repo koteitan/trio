@@ -52,3 +52,12 @@
 
 **落とし穴**: `d2b3` は単射でない。同じ B を複数の T に返すので、
 「T が外れた ⇒ B の綴りが悪い」と読むと教師データが壊れる（§24）。
+
+# 課題 H5 の道具（縮約の門）
+
+    python3 /tmp/h1work/mkctr7.py   # 縮約を lad0 から切り離す rows3i.py（GX = nolad0/nolad0_v/nolad0_f）
+    python3 /tmp/h1work/mkctr8.py   # 縮約の pre が読む prev を差し替える rows3j.py（HX）
+
+H5 の結論: **縮約は触らない**。全射の外れ 82 個のうち `(conv3 A)<m>` に現れるのは
+1 個だけで、縮約の入口を広げても全射は直らずシートが 38 行落ちる。
+`st['prev']` の読みだけは不要と分かったので rows3.py で定数にした。
