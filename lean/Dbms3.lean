@@ -314,6 +314,12 @@ structure St where
   Mo : TrioSeq
   /-- 縮約が発火した回数。 -/
   nc : ℕ
+  /-- v12 `mark` 用の記録（もとの添字 -> 「決める直前の段」）。
+  値の符号は `0` 浅い / `1` 深い / `2` まだ無い（Python の `None`）/
+  `3` 選択肢が無い（Python の `'tie'`）。引けなければ `4`（Python の `'none'`）。
+  **像には効かない**（読むのは `leavesMark` だけ）。名前が `rec` だと自動生成の
+  再帰子 `St.rec` とぶつかるので `rc`。 -/
+  rc : List (ℕ × ℕ)
 deriving Repr, DecidableEq
 
 /-- `Lat L k`: 段の表の第 `k` 項。表の外は 1 段ずつ伸ばして読む。 -/
@@ -514,6 +520,36 @@ def sibOk (m : TrioSeq) (off : ℕ) : Bool :=
   !((List.range off).any (fun j => m.getD j (0, 0, 0) == ((1, 1, 0) : Col)))
 
 /-! ### 縮約の道具（`rows3.py` の `units_split` / `copy_shift` / `contrPre`） -/
+
+/-- v12 `mark`: 記録 `st.rec` を引く。無ければ `4`（Python の `'none'`）。 -/
+def recAt (rc : List (ℕ × ℕ)) (i : ℕ) : ℕ :=
+  match rc.find? (fun e => e.1 == i) with
+  | some e => e.2
+  | none => 4
+
+/-- v12 `mark`（`rows3.py` の `leaves_mark_local`）。残余なしの縮約は
+「写しを飲んだ印が像に残る」ときだけ許す。印が残らないと `M` と
+`M ++ (1,1,0) ++ 写し` が同じ像に潰れる（＝単射性の破れ）。
+
+縮約は「写しを書かない代わりに、本体の末尾の分岐列を番兵 `NOTLAST` で深く綴る」
+ことだけで写しを記録する。ところが本体の末尾がもともと深く綴られていると、
+深くしても像は 1 ビットも変わらず、写しが像から消える。印が残る条件は局所に書ける:
+
+    印が残る <=> 決める直前の段 prev != 0 かつ `after_w` が発火しない
+
+`ob` は本体 `[p] ++ A ++ U` の最後の柱のもとの添字、`code` はそこで記録された
+「決める直前の段」（`recAt`）。`0` 浅い / `3` 選択肢が無い / `4` 記録なし の
+どれかなら印は残らない。
+
+v14 では `closes_hi_unit`（旗 `chu`）を落としたので、Python にあるその枝は
+つねに偽であり、ここには現れない。 -/
+def leavesMark (Mo : TrioSeq) (ob code : ℕ) : Bool :=
+  if code = 0 ∨ code = 3 ∨ code = 4 then false
+  else
+    let pv : Option Col := if 1 ≤ ob then some (Mo.getD (ob - 1) (0, 0, 0)) else none
+    let onx : Option Col :=
+      if ob + 1 < Mo.length then some (Mo.getD (ob + 1) (0, 0, 0)) else none
+    !(decide (code = 1) && isWCol pv && closesUnit onx)
 
 /-- アンカー（新しい加算ユニットの頭）。 -/
 def ANCHOR : Col := (1, 1, 0)
@@ -718,9 +754,16 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
     let cols : TrioSeq :=
       (if lad0 then [(d, pw.1, pw.2)] else []) ++
         (if lad1 then [(dd0, base, pl2)] else []) ++ [(dd2, e1, e2)]
+    -- v12 `mark`: 分岐列の「決める直前の段」を記録する（像には効かない）。
+    -- 門が開かなかった柱（`base_s == deep`）は `3`（Python の `'tie'`）。
+    let recNew : List (ℕ × ℕ) :=
+      if isBranch p then
+        let deep := if (base_sd != base_d) && sibOk st.Mo off then base_sd else base_d
+        if base_s != deep then (off, prev0) :: st.rc else (off, 3) :: st.rc
+      else st.rc
     let st1 : St :=
       { ST := ST2.take dd2 ++ [(e1, e2)], prev := bp.2,
-        dmap := st.dmap.take p.1 ++ [dd2], Mo := st.Mo, nc := st.nc }
+        dmap := st.dmap.take p.1 ++ [dd2], Mo := st.Mo, nc := st.nc, rc := recNew }
     let fc := (!lad1) && first1 && (s2 == pl2)
     let f0 := (!lad0) && first && (v == ps.1) && (s2 == ps.2)
     let Lb :=
@@ -731,7 +774,31 @@ def conv3 (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
     -- 次の加算ユニットまで深い綴りが届く）。Python の `t[:4]` に対応。
     let LA := (padL Lb v).map lentTrunc ++ [(e1, s2, fc, e1, e1)]
     let FA := F.take v ++ [false]
-    match (if lad0 then contrFind p A B ps v s2 bp.2 else none) with
+    -- v12 `mark`（課題 E1）: `contrFind` が返した候補を、残余なしのときだけ
+    -- 「写しを飲んだ印が像に残るか」で選り分ける。Python は `for e in (0,1)` の
+    -- 中で `continue` するが、`mark` が見られるのは `rest2 == []` かつ `e == 1`
+    -- のとき（＝ループの最後）だけなので、**後から候補を捨てる形と同値**である。
+    -- だから `contrOne` を `conv3` と相互再帰にする必要はない。
+    let cfm : Option (ℕ × ℕ × ℕ × Col) :=
+      if lad0 then
+        match contrFind p A B ps v s2 bp.2 with
+        | none => none
+        | some (e, kU, kp, na) =>
+          let U := B.take kU
+          let q := (B.drop kU).headD (0, 0, 0)
+          let r2 := (B.drop kU).tail
+          let Aq := r2.take (deepGe (q.1 + 1) r2)
+          let rest2 := Aq.drop kp
+          if rest2.isEmpty then
+            let rA0 := conv3 A (dd2 + 1) LA FA (v, s2) (e1, e2) true false st1
+                         (match U with | u :: _ => some u | [] => some na) (off + 1)
+            let rU0 := conv3 U (d + 1) L FA (v, s2) (e1, e2) false false rA0.2 (some na)
+                         (off + 1 + A.length)
+            let ob := off + A.length + U.length
+            if leavesMark st.Mo ob (recAt rU0.2.rc ob) then some (e, kU, kp, na) else none
+          else some (e, kU, kp, na)
+      else none
+    match cfm with
     | some (e, kU, kp, na) =>
         let U := B.take kU
         let q := (B.drop kU).headD (0, 0, 0)
@@ -800,7 +867,7 @@ end
 
 /-- 変換の入口（Python の `b2d3`）。 -/
 def b2d3 (M : TrioSeq) : TrioSeq :=
-  (conv3 M 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], M, 0⟩ none 0).1
+  (conv3 M 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], M, 0, []⟩ none 0).1
 
 
 /-! ### Python (`rows3.b2d3`) との突き合わせ。まず <=5 列から。 -/
@@ -1458,11 +1525,11 @@ theorem conv3_tail_step (m k : ℕ) (st : St) (nx : Option Col) (off : ℕ)
     = ((k + 4, k + 3, 1) ::
         (conv3 (Dt (k + 3) m) (k + 5) (Ld (k + 1)) (List.replicate (k + 3) false)
           (k + 2, 1) (k + 3, 1) true false
-          ⟨STd (k + 1), st.prev, st.dmap.take (k + 2) ++ [k + 4], st.Mo, st.nc⟩
+          ⟨STd (k + 1), st.prev, st.dmap.take (k + 2) ++ [k + 4], st.Mo, st.nc, st.rc⟩
           nx (off + 1)).1,
        (conv3 (Dt (k + 3) m) (k + 5) (Ld (k + 1)) (List.replicate (k + 3) false)
           (k + 2, 1) (k + 3, 1) true false
-          ⟨STd (k + 1), st.prev, st.dmap.take (k + 2) ++ [k + 4], st.Mo, st.nc⟩
+          ⟨STd (k + 1), st.prev, st.dmap.take (k + 2) ++ [k + 4], st.Mo, st.nc, st.rc⟩
           nx (off + 1)).2) := by
   have hk1 : k + 2 - 1 = k + 1 := by omega
   have hk0 : ¬(k + 2 = 0) := by omega
@@ -1491,7 +1558,7 @@ theorem conv3_tail (m : ℕ) : ∀ (k : ℕ) (st : St) (nx : Option Col) (off : 
       have e1 : k + 1 + 4 = k + 5 := by omega
       have e2 : k + 1 + 2 = k + 3 := by omega
       have e3 : k + 1 + 1 = k + 2 := by omega
-      have := ih (k + 1) ⟨STd (k + 1), st.prev, st.dmap.take (k + 2) ++ [k + 4], st.Mo, st.nc⟩
+      have := ih (k + 1) ⟨STd (k + 1), st.prev, st.dmap.take (k + 2) ++ [k + 4], st.Mo, st.nc, st.rc⟩
         nx (off + 1) rfl
       simp only [e1, e2, e3] at this
       rw [this, Ot_succ]
@@ -1503,10 +1570,10 @@ theorem conv3_tail (m : ℕ) : ∀ (k : ℕ) (st : St) (nx : Option Col) (off : 
 theorem conv3_lvl0 (v : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST = []) :
     (conv3 ((0, 0, 0) :: Dt 1 v) 0 [] [] (0, 0) (0, 0) true false st nx off).1
     = (0, 0, 0) :: (conv3 (Dt 1 v) 1 [(0, 0, true, 0, 0)] [false] (0, 0) (0, 0) true true
-        ⟨[(0, 0)], 2, st.dmap.take 0 ++ [0], st.Mo, st.nc⟩ nx (off + 1)).1 := by
+        ⟨[(0, 0)], 2, st.dmap.take 0 ++ [0], st.Mo, st.nc, st.rc⟩ nx (off + 1)).1 := by
   rw [conv3.eq_def]
   simp [Dt_takeWhile v 0 1 (by omega), Dt_dropWhile v 0 1 (by omega), h,
-    okPlace, fit, fitAux, padL]
+    okPlace, fit, fitAux, padL, isBranch]
 
 /-- 2 列目 `(1,1,1)`。行 0 と行 1 の梯子が同時に立ち、1 列が 3 列になる。
 ここで祖先の鎖が `STd 0 = (0,0)(0,0)(1,0)(2,1)`、段の表が `Ld 0` になる。 -/
@@ -1514,7 +1581,7 @@ theorem conv3_lvl1 (m : ℕ) (st : St) (nx : Option Col) (off : ℕ) (h : st.ST 
     (conv3 (Dt 1 (m + 1)) 1 [(0, 0, true, 0, 0)] [false] (0, 0) (0, 0) true true st nx off).1
     = (1, 0, 0) :: (2, 1, 0) :: (3, 2, 1) ::
       (conv3 (Dt 2 m) 4 (Ld 0) (List.replicate 2 false) (1, 1) (2, 1) true false
-        ⟨STd 0, st.prev, st.dmap.take 1 ++ [3], st.Mo, st.nc⟩ nx (off + 1)).1 := by
+        ⟨STd 0, st.prev, st.dmap.take 1 ++ [3], st.Mo, st.nc, st.rc⟩ nx (off + 1)).1 := by
   rw [Dt_succ, conv3.eq_def]
   simp [Dt_takeWhile m 1 2 (by omega), Dt_dropWhile m 1 2 (by omega), h,
     okPlace, Lat, padL, STd, Ld, isBranch, isWCol, contrFind_nil, lentTrunc]
@@ -2222,7 +2289,7 @@ end Conv3
 theorem ImgBlockT3_of_BlkInv (h : Conv3.BlkInv) : ImgBlockT3 Conv3.b2d3 := by
   intro A _hA
   obtain ⟨hs, -, -, hh, -⟩ :=
-    h A 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], A, 0⟩ none 0 (by simp)
+    h A 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], A, 0, []⟩ none 0 (by simp)
   refine ⟨?_, fun p _ => Nat.zero_le _, hs⟩
   intro hne
   simpa using hh hne
