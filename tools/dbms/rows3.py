@@ -576,6 +576,7 @@ V13 = {
 # 課題 G3 の測定用（`RS_NOCHU=1` を環境変数に置くと False で起動する）。
 V14 = {
     'chu': os.environ.get('RS_CHU', '') == '1',
+    'wterm': os.environ.get('RS_WTERM', '') == '1',
 }
 
 
@@ -761,6 +762,11 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     #   ImgClosedT の破れ A       28/327/3779 -> 26/294/3374（同）
     #   新しく壊れたものは 0
     if V12['newterm'] and p[0] == 0:
+        st['prev'] = None
+    # v14 wterm（試作, 既定 off）: 根に直付けの「x w」の柱 (k,0,0) も
+    # 新しい加算項の頭なので段の状態を持ち越さない。生成 <=8 列の非標準 3 件
+    # （`(0,0,0)(1,1,1)(2,1,0)(1,0,0)(2,1,1)(2,1,0)(3,2,1)X`）を狙う。
+    elif V14['wterm'] and is_w_col(p) and par0(st['Mo'], off) == 0:
         st['prev'] = None
 
     # v11: アンカー (1,1,0) での段のリセット `st['prev'] = 0` は**やめた**。
