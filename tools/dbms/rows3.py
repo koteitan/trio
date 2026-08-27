@@ -575,7 +575,7 @@ V13 = {
 # False にすると (a,2,1)(a,2,0)(a,1,0) の直後が (1,1,1) でも段が上がる。
 # 課題 G3 の測定用（`RS_NOCHU=1` を環境変数に置くと False で起動する）。
 V14 = {
-    'chu': os.environ.get('RS_NOCHU', '') != '1',
+    'chu': os.environ.get('RS_CHU', '') == '1',
 }
 
 
