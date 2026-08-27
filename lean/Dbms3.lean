@@ -2155,6 +2155,8 @@ theorem depths_ok {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
       rcases hc with rfl <;> simp <;> omega
 
+
+
 /-! ### 呼び出しごとの不変量 `BlkOK`
 
 `conv3` の 1 回の呼び出しについて、開始深さ `d` が祖先の鎖の長さ以下
@@ -2239,6 +2241,47 @@ theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
     · rw [getLastD_app hy]
       exact hg2 hy
 
+/-- `depths_ok` を `BlkOK` の形に包んだもの（`conv3` の 1 列ぶん）。 -/
+theorem cols_blk {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 dd2 prv nc : ℕ}
+    {pw : ℕ × ℕ} {lad0 lad1 : Bool} {cols : TrioSeq} {st : St} {dm : List ℕ}
+    {Mo : TrioSeq} {rcl : List (ℕ × ℕ)}
+    (hd : d ≤ st.ST.length) (hSTe : ST = st.ST)
+    (hST1 : ST1 = if lad0 then ST.take d ++ [(pw.1, pw.2)] else ST)
+    (hdd0 : dd0 = if lad0 then d + 1 else (fit ST d h1).getD (max d ST.length))
+    (hST2 : ST2 = if lad1 then ST1.take dd0 ++ [(base, pl2)] else ST1)
+    (hdd1 : dd1 = if lad1 then dd0 + 1 else dd0)
+    (hdd2 : dd2 = if okPlace ST2 dd1 e1 then dd1 else (fit ST2 dd1 e1).getD dd1)
+    (hcols : cols = (if lad0 then [((d : ℕ), pw.1, pw.2)] else []) ++
+                    (if lad1 then [(dd0, base, pl2)] else []) ++ [(dd2, e1, e2)]) :
+    BlkOK d st
+      (cols, { ST := ST2.take dd2 ++ [(e1, e2)], prev := prv, dmap := dm, Mo := Mo,
+               nc := nc, rc := rcl }) := by
+  subst hSTe
+  obtain ⟨hdd, hd2, hstep, hhead, hlast, -⟩ := depths_ok hd hST1 hdd0 hST2 hdd1 hdd2 hcols
+  have hst1 : (ST2.take dd2 ++ [(e1, e2)]).length = dd2 + 1 := len_take_app hd2 _
+  have hne : cols ≠ [] := by
+    rw [hcols]
+    simp only [ne_eq, List.append_eq_nil_iff, List.cons_ne_nil, and_false,
+      not_false_eq_true]
+  exact ⟨hstep, by simp only []; omega, fun h => absurd h hne, fun _ => hhead,
+    fun _ => by simp only []; omega⟩
+
+/-- `depths_ok` の深さの部分だけ（`cols` を含まない形）。
+
+`cols` を結論に含めると `e2` や `pw` が単一化で決まらないので、深さだけの
+形を別に用意しておく。 -/
+theorem depths_le {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 base pl2 dd0 dd1 dd2 : ℕ}
+    {pw : ℕ × ℕ} {lad0 lad1 : Bool}
+    (hd : d ≤ ST.length)
+    (hST1 : ST1 = if lad0 then ST.take d ++ [(pw.1, pw.2)] else ST)
+    (hdd0 : dd0 = if lad0 then d + 1 else (fit ST d h1).getD (max d ST.length))
+    (hST2 : ST2 = if lad1 then ST1.take dd0 ++ [(base, pl2)] else ST1)
+    (hdd1 : dd1 = if lad1 then dd0 + 1 else dd0)
+    (hdd2 : dd2 = if okPlace ST2 dd1 e1 then dd1 else (fit ST2 dd1 e1).getD dd1) :
+    d ≤ dd2 ∧ dd2 ≤ ST2.length :=
+  ⟨(depths_ok (e2 := 0) hd hST1 hdd0 hST2 hdd1 hdd2 rfl).1,
+   (depths_ok (e2 := 0) hd hST1 hdd0 hST2 hdd1 hdd2 rfl).2.1⟩
+
 /-! ### `blockok` の本体（**まだ証明していない — 仮定 `BlkInv` に落とした**）
 
 `conv3` の再帰に沿った不変量。`conv3.induct`（相互再帰版の関数帰納法）で
@@ -2259,12 +2302,14 @@ theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
 
 /-- `conv3` の呼び出しごとの不変量（**まだ証明していない**、課題 L2 (b)）。
 
-### 残りの補題
+### 残りの補題（課題 L3 で**縮約でない枝まで詰めた**）
 
 * 空の入力 … `conv3_nil` ＋ `BlkOK_nil`（**証明ずみ**）
-* 縮約でない枝 … `depths_ok` ＋ `BlkOK_app` ×2（**組み方は分かっている**。
-  項の大きさだけが問題）
-* 縮約の枝 … ここに 2 つの穴がある:
+* 縮約でない枝 … **証明ずみ**（`lean/L1-NOTES.md` の課題 L3 に戦術の全文がある。
+  `depths_le` ＋ `cols_blk` ＋ `BlkOK_app` ×2 で 6 行。項が巨大なので
+  `depths_ok` のように `cols` を結論に含む形だと単一化が `e2` / `pw` を
+  決められない。深さだけの `depths_le` を別に立てるのが鍵）
+* 縮約の枝 … **ここだけが残り**。2 つの穴がある:
   - **`contr_rd_ok`**: 残余の開始深さ `rd`（`d + 1 + e` か
     `dmapAt rU.2.dmap (rest2[0].1 - 1)`）が `d ≤ rd ≤ |rU.2.ST|` に収まる。
     前者は `dd2 ≥ d`（`depths_ok`）から出るが、**後者は `st.dmap`（もとの深さ ->

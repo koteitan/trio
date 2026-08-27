@@ -402,3 +402,215 @@ Python は `for e in (0, 1)` の中で `continue` するので、素朴には
 突き合わせ専用で、局所版と gen<=7 で差 0 なので移植しない。
 `V14['chu']`（`closes_hi_unit`）は Python 側も既定 off なので、`leavesMark` の
 Python にある 3 つ目の枝（`closes_hi_unit` が両方を浅くする）は現れない。
+
+
+---
+
+# 課題 L3: 残りの証明債務の地図（2026-08-28）
+
+## 0. まず全体の姿
+
+`lean/` は **自前 64299 行、`sorry` 0 個、`axiom` 宣言 0 個**。
+だから債務は全部「**`Prop` として定義されて、定理の仮定として開いたまま**」の形をしている。
+`grep sorry` で見つかるのは `Dbms.lean:67` と `:74` の**散文**（「sorry は 0 だ」と
+書いてある行）だけである。
+
+**トラックは 2 本ある。両者は独立で、いま合流していない。**
+
+| トラック | 目的 | 現状 |
+|---|---|---|
+| **A. 直接トラック**（`Final.lean` ほか） | 3 行 BMS の停止性そのもの | 残核 **1 本**（15 行の `Prop`） |
+| **B. DBMS トラック**（`Dbms3.lean`） | 像が DBMS 3 行標準形であること | 残り 5 本 |
+
+## 1. 最終定理はどこにあるか
+
+**ある。** `lean/Final.lean:57`（3 行 = トリオ）:
+
+```lean
+/-- **Trio sequences terminate.** -/
+theorem TRIO_terminates (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
+    WellFounded stepRel := step_terminates (wf_Rnf_holds h2 he)
+
+theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_holds h2 he)
+```
+
+**いまの頂点**（仮定 1 本）は `Final.lean:358`:
+
+```lean
+theorem TRIO_terminates_of_revive_self (h : Subst1gReviveSelf) : WellFounded stepRel
+theorem no_infinite_expansion_of_revive_self (h : Subst1gReviveSelf) : ¬ ∃ 無限展開列
+```
+
+2 行（ペア数列）は**無条件で完成**している（`Pair/Final.lean:54`
+`PSS_terminates_unconditional : WellFounded stepRel`、仮定なし）。
+
+`Reduction.lean:51` の `step_terminates (wfimg : WellFounded Rnf) : WellFounded stepRel`
+が「順序数側の整礎性 ⟹ 停止性」の橋で、減少 `m_step_decreases` は証明ずみ。
+つまり**停止性 ＝ `WellFounded Rnf`（標準形上の `<o` の整礎性）**である。
+
+## 2. DBMS 3 行の停止性 — **存在しない**
+
+`WellFounded` / `Acc` / `stepRel` と `ST_D` / `ST_D3` を結ぶ定理は**リポジトリに 1 本も無い**。
+`ST_D` / `ST_D3` を結論に持つ定理は 15 + 6 本あるが、**全部が「像が標準形である」型**
+（`ST_PS M → ST_D (conC M)` / `ST_TS M → ST_D3 (conv3 M)`）である。
+
+### ⚠ 依存の向きに注意（重要）
+
+**DBMS トラックは BMS の整礎性を「入力として消費している」。**
+
+```lean
+theorem ST_D3_conv3_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) … :=
+  ST_D3_conv3 (wf_olt_ST_TS_holds h2 he) H hd hM
+                --  ^^^^^^^^^^^^^^^^^^ BMS 3 行の整礎性
+```
+
+`ST_D3_descend`（`Dbms3.lean` §5）は `A` についての**整礎帰納法**である。降下先の
+`B` は `translate B <o translate A` としか分からないので、`ST_TS` の構成子に沿った
+構造帰納法にはできない（**性質 R が 3 行で偽**だから `B = A⟦n'⟧` に取れない、
+`tools/dbms/NOTES.md` §性質 R）。2 行側も同じで、`DbmsStd.lean:1582,1590` が
+`wf_olt_ST_PS_holds` と `pss_cofinality_holds` を使っている。
+
+したがって **`ST_D3 (conv3 M)` を完成させても、それだけでは停止性は出ない**。
+DBMS トラックの成果物は「像が DBMS 標準形である」という**特徴づけ**であって、
+停止性への**還元ではない**。停止性に効かせるには、どちらかが要る:
+
+1. **DBMS 3 行の整礎性を独立に証明する**（いまリポジトリに命題すら無い）。
+   そのうえで `OrderT3`（順序埋め込み）で BMS 側に移す。この道なら
+   `ST_D3_conv3` を**整礎性を使わずに**（＝ `ReindexT1` を経由せずに）
+   出し直す必要がある。
+2. あるいは DBMS トラックを「停止性の証明」ではなく「順序数の読みの検証」
+   （シート・Y 数列との対応）として位置づける。
+
+**これは Python 側に返す話ではない**（`conv3` の設計の問題ではなく、Lean の
+配線の問題）。ただし**課題の目的の再確認が要る**ので報告する。
+
+## 3. 債務の一覧
+
+### A. 直接トラック（停止性そのもの）
+
+| 命題 | いまの状態 | 大きさの見積もり | 依存 |
+|---|---|---|---|
+| `Reduction.step_terminates` | **証明済み** | — | `WellFounded Rnf` |
+| `Pair/Final.PSS_terminates_unconditional`（2 行） | **証明済み・無条件** | — | — |
+| `Final.TRIO_terminates_of_revive_self` | **証明済み**（仮定 1 本） | — | `Subst1gReviveSelf` |
+| **`Wtower2.Subst1gReviveSelf`** | **未証明・これが唯一の核** | 命題は `Wtower2.lean:3213-3230` の **15 行**。証明の大きさは未知（`PROOF-STATUS.md` §5 が「BM4 展開への新しい数学的入力が要る」と書く壁） | — |
+| `Wset.TowerGraft2` / `Wset.TowerExp` | 核から**導出済み**（`towerGraft2_of_liftStage` / `towerExp_of_substG` ほか） | — | `Subst1gReviveSelf` |
+| `Lind.CoreSingleton` / `CoreCap`、`Wtower2.WSnoc` / `Row1Mono` / `LowerLastParented`、`Wset.GraftAll` | 別ルートの核（同値な顔） | `RESIDUE-PROBLEM.md` §4.8 が「翻訳しても得は無い」と結論 | — |
+| `Gamma.InfEquip` | ⛔ **偽**（`Infcex.not_infEquip` で反証済み） | — | — |
+
+実測（`PROOF-STATUS.md` §4）: `(SUBST1g)` 210201 例 0 違反、`(TOW)` 164 万例 0 違反、
+`(GC)` 1221 万例 0 違反。ただし「`W` 所属の判定自体が停止性問題なので決定的でない」
+と明記されている。
+
+### B. DBMS トラック（`Dbms3.lean`, `ST_D3_conv3_of_parts` の 6 仮定）
+
+| 命題 | いまの状態 | 大きさの見積もり | 依存 |
+|---|---|---|---|
+| `ConvDiagT3 Conv3.b2d3` | **証明済み**（§9, §10） | 約 260 行 | — |
+| `ImgLenT3 Conv3.b2d3` | **証明済み**（§11.4, 課題 L2 (a)） | 約 45 行 | — |
+| `ImgBlockT3 Conv3.b2d3` | **`Conv3.BlkInv` 待ち**（§11.5）。空の枝と**縮約でない枝は証明ずみ** | 土台 約 200 行が済み。残りは縮約の枝 | `BlkInv` |
+| └ `Conv3.BlkInv` の残り | **縮約の枝だけ**。2 つの穴（`contr_rd_ok` と `convResid_blk`） | 数十〜数百行（`dmap` と `ST` の関係を不変量に足す） | — |
+| `SandwichUT3 Conv3.b2d3` | 未着手 | 5 本 (S1)-(S5) に分解（課題 L2 (d)）。(S2) が本丸 | `ImgBlockT3` ／ Python の H2 |
+| `OrderT3 Conv3.b2d3` | 未着手 | **2 行側の対応物が 2533 行**（`Dbms.lean` §5-§8 の `readK_convC` 446 行 ＋ その支え）。3 行は読み `read3` すら未定義で、行 1 と行 2 の 2 種類の影があるので**節が 2 つ**要る。**2 行より大きい** | `ReadT3` ＋ `ImgDokT3` ＋ `ReadLexT3` |
+| `ImgCofinalT3 Conv3.b2d3` | 未着手。**Python 側でまだ破れている**（`ImgClosedT` 破れ <=5 列 2 個 / <=6 列 54 個） | 2 行側は `ReindexD` に融合されていて **`DbmsStd.lean` の約 15000 行がまるごとこの証明** | 変換器 `conv3` の設計（Python の課題 H2/H5） |
+| `SandwichLT3` | **要らない**（`ReindexT1_of_block` / `_of_cofinal` が使わない） | — | — |
+| **DBMS 3 行の停止性** | **命題すら無い**（§2） | 2 行側にも無い。ゼロからの設計 | — |
+| `read3` / `dok`（`OrderT3` の道具） | **未定義** | 2 行の `readK` は 67 行（うち `decreasing_by` 47 行） | — |
+
+### C. 2 行 DBMS（参考・全部済み）
+
+| 命題 | 状態 |
+|---|---|
+| `DbmsStd.reindexD_holds : ReindexD` | **無条件で証明済み**（`DbmsStd.lean:15189`）。約 15000 行 |
+| `DbmsStd.ST_D_conC_final` | **無条件で証明済み**（`DbmsStd.lean:15192`） |
+| `Dbms.readC_conC_ST`（読みの保存） | **証明済み**（§5-§8 で 2533 行） |
+| `Dbms.conC_olt_iff_seqlex` | **証明済み**（3 行）。ただし右辺が **BMS 側の** `seqlex M N` で、`OrderT3` より**弱い** |
+
+**2 行には `SandwichU` / `SandwichL` に当たる命題が無い**。役目は `ReindexD` の中の
+`oper_mono`（上）と `m_step_decreases`（下）が直接果たしている。3 行では
+`ReindexD` の形（相手が `A⟦n'⟧`）が偽なので、相手を「ある標準形 `B`」に緩めた
+`ReindexT1` になり、そこで `oper_mono` が使えなくなった穴を埋めるために
+`SandwichUT3` を明示的に立てる必要が出た。**これが 2 行と 3 行の構造的な分岐点。**
+
+## 4. 運用上の注意（発見）
+
+* **`Dbms3.lean` は `lakefile.toml` の `roots` に入っていない。** つまり
+  `lake build` はこの file をビルドしない（`leanman check` で単体検査するだけ）。
+  `PROOF-STATUS.md` の「自前 40850 行に sorry 0」は**この file を数えていない**。
+* `Final.lean:5` の doc は残る仮定を `Wset.TowerOK` と **`Wset.TbOper`** と書くが、
+  `TbOper` はリポジトリのどこにも無い（古い記述）。
+
+## 5. 片づけたもの（課題 L3 (3)）: `BlkInv` の**縮約でない枝**
+
+いちばん安いのは `ImgBlockT3` の残り（`BlkInv`）だったので、そこを詰めた。
+
+新しく証明した道具（`Dbms3.lean` §11.5）:
+
+* **`Conv3.depths_le`** — `depths_ok` の深さの部分だけ（`cols` を結論に含まない形）。
+  **これが鍵**: `cols` を含む形だと `e2` や `pw` が結論に現れないので、
+  単一化がそれらを決められず「implicit argument を合成できない」で止まる。
+* **`Conv3.cols_blk`** — `depths_ok` を `BlkOK` の形に包んだもの。
+
+そのうえで、`BlkInv` の帰納の 1 歩のうち **空の枝と縮約でない枝は証明できた**。
+戦術の全文（scratch で機械検査ずみ。`· sorry` の 1 か所だけが縮約の枝）:
+
+```lean
+set_option maxHeartbeats 2000000 in
+/-- `BlkInv` の帰納の 1 歩（**縮約の枝はまだ `sorry`**）。 -/
+theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
+    (hd : d ≤ st.ST.length)
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → ∀ (d' : ℕ) (L' : List Lent)
+        (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool) (st' : St)
+        (nx' : Option Col) (off' : ℕ),
+        d' ≤ st'.ST.length →
+        BlkOK d' st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off')) :
+    BlkOK d st (conv3 (p :: r) d L F ps pw first force st nx off) := by
+  have hA : (r.takeWhile (fun q => decide (p.1 < q.1))).length ≤ r.length :=
+    (List.takeWhile_sublist _).length_le
+  have hB : (r.dropWhile (fun q => decide (p.1 < q.1))).length ≤ r.length :=
+    List.length_dropWhile_le _ r
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · sorry
+  · refine BlkOK_app (le_refl d)
+      (BlkOK_app ?_ (cols_blk hd rfl rfl rfl rfl rfl rfl rfl)
+        (IH _ hA _ _ _ _ _ _ _ _ _ _ ?_)) (IH _ hB _ _ _ _ _ _ _ _ _ _ ?_)
+    · exact Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1
+    · exact (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
+    · exact le_trans (Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1)
+        (IH _ hA _ _ _ _ _ _ _ _ _ _
+          (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge).2.1
+
+```
+
+### 通し方の勘所（課題 L2 で詰まった点の解決）
+
+* **枝の局所値を `intro` してはいけない。** `conv3.induct` の枝で `have` を
+  `intro` すると、仮定は fvar で、`conv3.eq_def` で開いた目標は生の式になり、
+  `rw` も defeq 検査も通らない（`whnf` が燃え尽きる）。
+* 代わりに **`conv3.eq_def` -> `dsimp only` -> `split` で生の項のまま進み、
+  補題の implicit を目標との単一化で決めさせる**。`BlkOK_app` / `cols_blk` /
+  `depths_le` はどれも結論から implicit が決まる形にしてある。
+* 帰納法は `conv3.induct` ではなく、**列数についての強い帰納法**（`IH` を仮定に
+  取る形）にする。そうすると枝の `have` が出てこない。
+* 側条件は全部 `?_` にして**あとで**片づける（先に書くと metavariable が
+  決まっていなくて `Nat.le_succ_of_le` の implicit が合成できない）。
+
+### 残り（縮約の枝の 2 つの穴）
+
+1. **`contr_rd_ok`**: 残余の開始深さ `rd` が `d ≤ rd ≤ |rU.2.ST|` に収まること。
+   `rd = d + 1 + e` の側は `depths_le` から出る。
+   `rd = dmapAt rU.2.dmap (rest2[0].1 - 1)` の側は
+   **`st.dmap` と `st.ST` の関係を `BlkOK` に足さないと出ない**。
+   候補: 「`k < |dmap|` なら `dmap[k] < |ST|`、かつ `dmap` は狭義単調」。
+2. **`convResid_blk`**: `convResid` の不変量。残余は**森**なので次の木で開始深さが
+   `rd - (m0 - tail[0].1)` と**下がる**。`BlkOK` の第 2 項（`d ≤ |res.2.ST|`）は
+   `convResid` については**そのままでは偽**なので、弱めた形が要る。
+
+なお `ResidBlk`（`rd` の上界を仮定しない形）は**偽**である: `rd > |st.ST|` だと
+`fit` が `none` を返して `dd0 = max rd |ST| = rd` になり、出した柱の行 0 が
+`|st.ST|` を超える。だから `rd` の上界は落とせない。
