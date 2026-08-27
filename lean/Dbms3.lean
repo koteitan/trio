@@ -64,6 +64,7 @@ import Decrease
 import Seqlex
 import Wset
 import Final
+import Cofidx
 
 namespace TRIO
 
@@ -1104,7 +1105,8 @@ theorem ST_D3_b2d3 (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
 
     ImgClosedT3 ＋ OrderT3 ＋ SandwichU ＋ 像の衛生（blockok と長さ）
 
-だけになる。**`SandwichL` 自体は像の衛生からは出ない**（`seqlex_oper` が言うのは
+だけになる。さらに `ImgClosedT3` は `ImgCofinalT3`（**いくらでも大きい `m`** で
+逆像がある）まで弱められる（§11.3 の `ReindexT1_of_cofinal`）。**`SandwichL` 自体は像の衛生からは出ない**（`seqlex_oper` が言うのは
 `(conv3 A)⟦n⟧ <seqlex conv3 A` であって、右辺が `conv3 (A⟦n+1⟧)` の版ではない）。
 `conv3` v12 は `SandwichL` を <=6 列 41930 対のうち 352 対（<=7 列 386405 対の
 うち 4696 対）で破っているので、実用上も `ReindexT1_of_block` の側を採るべきで
@@ -1234,6 +1236,52 @@ theorem conv3_injective {conv3 : TrioSeq → TrioSeq} (hO : OrderT3 conv3)
 
 /-! ### 11.3 主定理: `ReindexT1` の分解 -/
 
+/-- **像は展開で共終に閉じている**（`ImgClosedT3` の弱め）。
+
+`ReindexT1_of_block` が `ImgClosedT3` から実際に使うのは **`m := n + 1` ただ 1 つ**
+である。だから「すべての `m`」は要らず「**いくらでも大きい `m`**」で足りる。
+差を埋めるのは展開指数についての単調性 `oper_mono_idx`（`Cofidx.lean`）で、
+これは `oper` の定義が `M.take j0 ++ (List.range n).flatMap g` の形をしていること、
+つまり `M⟦n+1⟧` が `M⟦n⟧` の**接尾に足しただけ**であることから出る。 -/
+def ImgCofinalT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A : TrioSeq}, ST_TS A → 1 < A.length → ∀ m0 : ℕ,
+    ∃ m : ℕ, m0 ≤ m ∧ ∃ B : TrioSeq, ST_TS B ∧ (conv3 A)⟦m⟧ = conv3 B
+
+/-- 強い方から弱い方は出る。 -/
+theorem ImgCofinalT3_of_ImgClosedT3 {conv3 : TrioSeq → TrioSeq}
+    (h : ImgClosedT3 conv3) : ImgCofinalT3 conv3 := by
+  intro A hA hlen m0
+  obtain ⟨B, hB, heq⟩ := h hA hlen (max m0 1) (le_max_right _ _)
+  exact ⟨max m0 1, le_max_left _ _, B, hB, heq⟩
+
+/-- **`ReindexT1` は `ImgCofinalT3` から出る**（`ImgClosedT3` は要らない）。
+
+`ImgClosedT3` 版（下の `ReindexT1_of_block`）との差は 1 行、
+`conv3 (A⟦n⟧) ≤ (conv3 A)⟦n+1⟧ ≤ (conv3 A)⟦m⟧` の真ん中の `≤` である。 -/
+theorem ReindexT1_of_cofinal {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hO : OrderT3 conv3) (hU : SandwichUT3 conv3)
+    (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) :
+    ReindexT1 conv3 := by
+  intro A hA hlen n hn
+  obtain ⟨m, hm0, B, hB, heq⟩ := hI hA hlen (n + 1)
+  refine ⟨m, B, by omega, hB, ?_, ?_, heq⟩
+  · have h1 := hU hA hlen n hn
+    have h2 : sle3 ((conv3 A)⟦n + 1⟧) ((conv3 A)⟦m⟧) := oper_mono_idx hm0
+    have h3 : sle3 (conv3 (A⟦n⟧)) (conv3 B) := by
+      rw [← heq]
+      rcases h1 with e1 | s1
+      · rcases h2 with e2 | s2
+        · exact Or.inl (e1.trans e2)
+        · exact Or.inr (e1 ▸ s2)
+      · rcases h2 with e2 | s2
+        · exact Or.inr (e2 ▸ s1)
+        · exact Or.inr (seqlex_trans s1 s2)
+    exact ole_of_sle3 hO (ST_TS.oper hA hn) hB h3
+  · refine (hO hB hA).2 ?_
+    rw [← heq]
+    exact seqlex_oper (hb hA) (hlen2 hA hlen) (by omega)
+
+
 /-- **`ReindexT1` は `ImgClosedT3` ＋ `OrderT3` ＋ `SandwichT3` から出る。**
 
 `m := n + 1` を取り、`ImgClosedT3` が返す `B`（`(conv3 A)⟦n+1⟧ = conv3 B`）を使う。
@@ -1285,13 +1333,25 @@ theorem ReindexT1_of_block {conv3 : TrioSeq → TrioSeq}
     rw [← heq]
     exact seqlex_oper (hb hA) (hlen2 hA hlen) (by omega)
 
-/-- `ST_D3_conv3` を分解した形でまとめ直したもの。 -/
+/-- `ST_D3_conv3` を分解した形でまとめ直したもの。
+
+**Python が保証すべきものは `ImgCofinalT3`（いくらでも大きい `m`）であって
+`ImgClosedT3`（すべての `m`）ではない。** 強い方しか無いときは
+`ImgCofinalT3_of_ImgClosedT3` を挟めばよい。 -/
 theorem ST_D3_conv3_of_parts (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
+    {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hO : OrderT3 conv3) (hU : SandwichUT3 conv3)
+    (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3)
+    {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
+  ST_D3_conv3_holds h2 he (ReindexT1_of_cofinal hI hO hU hb hlen2) hd hM
+
+/-- 強い `ImgClosedT3` から直に。 -/
+theorem ST_D3_conv3_of_parts' (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
     {conv3 : TrioSeq → TrioSeq}
     (hI : ImgClosedT3 conv3) (hO : OrderT3 conv3) (hU : SandwichUT3 conv3)
     (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3)
     {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
-  ST_D3_conv3_holds h2 he (ReindexT1_of_block hI hO hU hb hlen2) hd hM
+  ST_D3_conv3_of_parts h2 he (ImgCofinalT3_of_ImgClosedT3 hI) hO hU hb hlen2 hd hM
 
 /-! ## 12. `OrderT3` を証明するには何が要るか
 
