@@ -978,6 +978,303 @@ theorem ST_D3_b2d3 (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
 #guard Conv3.b2d3 (diagSeqT 0 5) = ddiagSeqT 7
 #guard Conv3.b2d3 (diagSeqT 0 9) = ddiagSeqT 11
 
+
+/-! ## 11. `ReindexT1` の分解（課題 F4）
+
+`ReindexT1` は「像が展開で閉じている」＋「順序が保たれる」＋「挟み撃ち」の
+3 つに割れる。**3 つとも `conv3` だけの構文的命題**（順序数も読み `read3` も
+出てこない）ので、そのまま Python で全数採点できる。
+
+    ImgClosedT3 : 任意の A, m>=1 に ある BMS 標準形 B で (conv3 A)<m> = conv3 B
+    OrderT3     : translate M <o translate N  <->  seqlex (conv3 M) (conv3 N)
+    SandwichT3  : conv3 (A<n>) <=seqlex (conv3 A)<n+1>   （上, C2@1）
+                  (conv3 A)<n> <=seqlex conv3 (A<n+1>)   （下, C1@1）
+
+`ReindexT1` が要求する `B` の位置 `A<n> ≤o B <o A` は、この挟み撃ちの
+上下 2 本からちょうど出る（`ReindexT1_of_sandwich`）。
+
+`SandwichL` が担っているのは「`conv3 B = (conv3 A)⟦n+1⟧` が `conv3 A` より
+真に小さい」ことだけである。それは像が `blockok 0`（行 0 が 0 から始まり隣接
+段差 1 以下）で 2 列以上なら **`seqlex_oper` で証明できる**ので、`SandwichL`
+そのものを仮定しない版 `ReindexT1_of_block` が取れる。そちらで Python が
+保証すべきものは
+
+    ImgClosedT3 ＋ OrderT3 ＋ SandwichU ＋ 像の衛生（blockok と長さ）
+
+だけになる。**`SandwichL` 自体は像の衛生からは出ない**（`seqlex_oper` が言うのは
+`(conv3 A)⟦n⟧ <seqlex conv3 A` であって、右辺が `conv3 (A⟦n+1⟧)` の版ではない）。
+`conv3` v12 は `SandwichL` を <=6 列 41930 対のうち 352 対（<=7 列 386405 対の
+うち 4696 対）で破っているので、実用上も `ReindexT1_of_block` の側を採るべきで
+ある。`SandwichU` のほうは <=6 列で破れ 0（<=7 列で 8）。 -/
+
+/-- 列辞書式の「以下」。 -/
+def sle3 (M N : TrioSeq) : Prop := M = N ∨ seqlex M N
+
+theorem seqlex_irrefl (M : TrioSeq) : ¬ seqlex M M := by
+  induction M with
+  | nil => simp
+  | cons p M ih =>
+    rw [seqlex_cons_cons]
+    rintro (h | ⟨-, h⟩)
+    · exact absurd h (by simp [collt])
+    · exact ih h
+
+theorem ne_of_seqlex {M N : TrioSeq} (h : seqlex M N) : M ≠ N := by
+  rintro rfl
+  exact seqlex_irrefl _ h
+
+/-- **DBMS 側の展開は列辞書式を下げる。** 標準形性はいらない（`blockok` だけ）。
+`m_step_decreases`（`Decrease.lean:578`）と `olt_iff_seqlex`（`Seqlex.lean:408`）の
+組み合わせ。これが `SandwichL` の中身である。 -/
+theorem seqlex_oper {C : TrioSeq} {m : ℕ} (hb : blockok 0 C) (hL : 1 < C.length)
+    (hm : 1 ≤ m) : seqlex (C⟦m⟧) C := by
+  have h1 : translate (C⟦m⟧) <o translate C := m_step_decreases hL hm
+  have hne : C⟦m⟧ ≠ C := by
+    intro h
+    rw [h] at h1
+    exact olt_irrefl _ h1
+  exact (olt_iff_seqlex (blockok_oper hb hm) hb hne).1 h1
+
+/-! ### 11.1 3 つの命題 -/
+
+/-- **像は展開で閉じている**。`tools/dbms/imgfast.py` が測っている命題そのもの。
+いまの `conv3` v12 では <=5 列で 26 個・<=6 列で 294 個の A が反例
+（`python3 imgfast.py fast 5 / fast 6`）。
+
+下の分解が実際に使うのは `m = n + 1`、つまり **`m ≥ 2` だけ**である。ただし実測
+（<=5 列 x m<=3 の 3051 対）では破れは m=2 が 25 対・m=3 が 26 対で **m=1 の破れは
+0 件**なので、`1 ≤ m` を `2 ≤ m` に弱めても反例は 1 件も減らない。 -/
+def ImgClosedT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A : TrioSeq}, ST_TS A → 1 < A.length → ∀ m : ℕ, 1 ≤ m →
+    ∃ B : TrioSeq, ST_TS B ∧ (conv3 A)⟦m⟧ = conv3 B
+
+/-- **順序保存**。2 行の `conC_olt_iff_seqlex`（`Dbms.lean:2791`）の 3 行版だが、
+右辺が **DBMS 側の** 列辞書式であるところが違う（2 行版は BMS 側の `seqlex M N`
+で止めてある）。標準形の上では `translate` が `seqlex` への順序同型
+（`olt_ST_iff_seqlex`）なので、これは「`conv3` が列辞書式の順序埋め込み」と同値:
+
+    seqlex M N  <->  seqlex (conv3 M) (conv3 N)
+
+この形なら順序数を一切通さずに Python で採点できる（`OrderT3_iff_seqemb`）。
+**実測: `conv3` v12 は <=6 列 8387 個・<=7 列 77282 個で、辞書式に並べ替えても
+像の辞書式で並べ替えても順序が完全に同一（位置ずれ 0、像の重複も 0）。** -/
+def OrderT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {M N : TrioSeq}, ST_TS M → ST_TS N →
+    (translate M <o translate N ↔ seqlex (conv3 M) (conv3 N))
+
+/-- **挟み撃ちの上**（`m_cofinal.py` の C2@1）。シートの正解 f では 38880 対で
+反例 0。`conv3` v12 の実測は <=6 列 41930 対で破れ 0 / <=7 列 386405 対で破れ 8
+（n = 1..5）。その 8 対は **A が 2 個だけ**（n = 2..5 の 4 本ずつ）:
+
+    (0,0,0)(1,1,1)(2,1,0)(3,2,1)(3,2,0)(3,1,0)(1,1,1)
+    (0,0,0)(1,1,1)(2,2,1)(3,2,1)(3,2,0)(3,1,0)(1,1,1)
+
+これは `tools/dbms/rows3.py` の残る欠陥 (c)「残余ありの縮約」の 2 個と同じ行列で、
+食い違いは第 8 列の行 1 が 2 か 1 か（`f(A⟦n⟧)` が `(5,2,0)`、`(f A)⟦n+1⟧` が
+`(5,1,0)`）。ImgClosedT の破れと同じ「末尾の行 1 が 1 だけずれる」病である。 -/
+def SandwichUT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A : TrioSeq}, ST_TS A → 1 < A.length → ∀ n : ℕ, 1 ≤ n →
+    sle3 (conv3 (A⟦n⟧)) ((conv3 A)⟦n + 1⟧)
+
+/-- **挟み撃ちの下**（`m_cofinal.py` の C1@1）。シートの正解 f では 38880 対で
+反例 0 だが、`conv3` v12 の実測は <=6 列 41930 対で破れ 352 / <=7 列 386405 対で
+破れ 4696（n = 1..5）。**下の `ReindexT1_of_block` はこれを使わない。** -/
+def SandwichLT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A : TrioSeq}, ST_TS A → 1 < A.length → ∀ n : ℕ, 1 ≤ n →
+    sle3 ((conv3 A)⟦n⟧) (conv3 (A⟦n + 1⟧))
+
+/-- 挟み撃ち（上下）。 -/
+def SandwichT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  SandwichUT3 conv3 ∧ SandwichLT3 conv3
+
+/-- 像が `blockok 0`（行 0 が 0 から始まり、隣接する段差が 1 以下）。
+実測: `conv3` v12 は <=7 列 77282 個で破れ 0。 -/
+def ImgBlockT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A : TrioSeq}, ST_TS A → blockok 0 (conv3 A)
+
+/-- 像の長さ（`|A| > 1` なら像も 2 列以上）。
+実測: `conv3` v12 は <=7 列 77282 個で破れ 0。 -/
+def ImgLenT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A : TrioSeq}, ST_TS A → 1 < A.length → 1 < (conv3 A).length
+
+/-! ### 11.2 `OrderT3` から出る道具 -/
+
+/-- `conv3` の像で `≤` なら、もとの項も `≤o`。`conv3 M = conv3 N` の枝は
+`OrderT3` から出る単射性で潰す。 -/
+theorem ole_of_sle3 {conv3 : TrioSeq → TrioSeq} (hO : OrderT3 conv3)
+    {M N : TrioSeq} (hM : ST_TS M) (hN : ST_TS N)
+    (h : sle3 (conv3 M) (conv3 N)) : translate M ≤o translate N := by
+  rcases h with heq | hlt
+  · rcases seqlex_total M N with rfl | hs | hs
+    · exact ole_refl _
+    · exact Or.inl ((olt_ST_iff_seqlex hM hN (ne_of_seqlex hs)).2 hs)
+    · have h1 : translate N <o translate M :=
+        (olt_ST_iff_seqlex hN hM (ne_of_seqlex hs)).2 hs
+      have h2 : seqlex (conv3 N) (conv3 M) := (hO hN hM).1 h1
+      rw [heq] at h2
+      exact absurd h2 (seqlex_irrefl _)
+  · exact Or.inl ((hO hM hN).2 hlt)
+
+/-- `OrderT3` は単射性を含む。 -/
+theorem conv3_injective {conv3 : TrioSeq → TrioSeq} (hO : OrderT3 conv3)
+    {M N : TrioSeq} (hM : ST_TS M) (hN : ST_TS N) (h : conv3 M = conv3 N) : M = N := by
+  rcases seqlex_total M N with rfl | hs | hs
+  · rfl
+  · have h2 : seqlex (conv3 M) (conv3 N) :=
+      (hO hM hN).1 ((olt_ST_iff_seqlex hM hN (ne_of_seqlex hs)).2 hs)
+    rw [h] at h2
+    exact absurd h2 (seqlex_irrefl _)
+  · have h2 : seqlex (conv3 N) (conv3 M) :=
+      (hO hN hM).1 ((olt_ST_iff_seqlex hN hM (ne_of_seqlex hs)).2 hs)
+    rw [h] at h2
+    exact absurd h2 (seqlex_irrefl _)
+
+/-! ### 11.3 主定理: `ReindexT1` の分解 -/
+
+/-- **`ReindexT1` は `ImgClosedT3` ＋ `OrderT3` ＋ `SandwichT3` から出る。**
+
+`m := n + 1` を取り、`ImgClosedT3` が返す `B`（`(conv3 A)⟦n+1⟧ = conv3 B`）を使う。
+
+* 上: `SandwichU` の `n` 版が `conv3 (A⟦n⟧) ≤ conv3 B` を与え、`OrderT3` で
+  `translate (A⟦n⟧) ≤o translate B` になる。
+* 下: `SandwichL` の `n+1` 版が `conv3 B ≤ conv3 (A⟦n+2⟧)` を与え、`OrderT3` で
+  `translate B ≤o translate (A⟦n+2⟧)`。あとは `m_step_decreases` で
+  `translate (A⟦n+2⟧) <o translate A`。
+
+これが「Sandwich から `B` の位置 `A⟦n⟧ ≤o B <o A` が出る」の中身である。 -/
+theorem ReindexT1_of_sandwich {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgClosedT3 conv3) (hO : OrderT3 conv3) (hS : SandwichT3 conv3) :
+    ReindexT1 conv3 := by
+  obtain ⟨hU, hL⟩ := hS
+  intro A hA hlen n hn
+  obtain ⟨B, hB, heq⟩ := hI hA hlen (n + 1) (by omega)
+  refine ⟨n + 1, B, by omega, hB, ?_, ?_, heq⟩
+  · have h := hU hA hlen n hn
+    rw [heq] at h
+    exact ole_of_sle3 hO (ST_TS.oper hA hn) hB h
+  · have h := hL hA hlen (n + 1) (by omega)
+    rw [heq] at h
+    have h1 : translate B ≤o translate (A⟦n + 1 + 1⟧) :=
+      ole_of_sle3 hO hB (ST_TS.oper hA (by omega : 1 ≤ n + 1 + 1)) h
+    exact ole_olt_trans h1 (m_step_decreases hlen (by omega : 1 ≤ n + 1 + 1))
+
+/-- **下側の挟み撃ちは像の衛生から証明できる**（`SandwichL` を仮定しない版）。
+
+`SandwichL` の役目は「`conv3 B = (conv3 A)⟦n+1⟧` が `conv3 A` より真に小さい」
+ことを言うだけなので、像が `blockok 0` で 2 列以上なら `seqlex_oper` で出る。
+Python が保証すべきものは
+
+    ImgClosedT3 ＋ OrderT3 ＋ SandwichU ＋ ImgBlockT3 ＋ ImgLenT3
+
+だけになる。うしろ 2 つは変換器の出力の形の話（行 0 が 0 から始まって 1 段ずつ）で
+中身が無い。 -/
+theorem ReindexT1_of_block {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgClosedT3 conv3) (hO : OrderT3 conv3) (hU : SandwichUT3 conv3)
+    (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) :
+    ReindexT1 conv3 := by
+  intro A hA hlen n hn
+  obtain ⟨B, hB, heq⟩ := hI hA hlen (n + 1) (by omega)
+  refine ⟨n + 1, B, by omega, hB, ?_, ?_, heq⟩
+  · have h := hU hA hlen n hn
+    rw [heq] at h
+    exact ole_of_sle3 hO (ST_TS.oper hA hn) hB h
+  · refine (hO hB hA).2 ?_
+    rw [← heq]
+    exact seqlex_oper (hb hA) (hlen2 hA hlen) (by omega)
+
+/-- `ST_D3_conv3` を分解した形でまとめ直したもの。 -/
+theorem ST_D3_conv3_of_parts (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
+    {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgClosedT3 conv3) (hO : OrderT3 conv3) (hU : SandwichUT3 conv3)
+    (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3)
+    {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
+  ST_D3_conv3_holds h2 he (ReindexT1_of_block hI hO hU hb hlen2) hd hM
+
+/-! ## 12. `OrderT3` を証明するには何が要るか
+
+2 行側の `conC_olt_iff_seqlex`（`Dbms.lean:2791`）は 2 行だけである:
+
+    rw [readC_conC_ST hM, readC_conC_ST hN]
+    exact olt_iff_seqlex (blockok_ST_PS hM) (blockok_ST_PS hN) hne
+
+つまり中身は 2 つで、**どちらも 3 行にはまだ無い**。
+
+1. **読みの保存** `readCon (conC M) = translate M`（`Dbms.lean:2765`）。
+   `readC_convC` の証明は `Dbms.lean` の §5-§8、2600 行ぶんある。
+   3 行では読み `read3` そのものがまだ書かれていない（`readD` は
+   「ブロックの先頭で段が親と同じ・次が `p + (1,1)` なら影として捨てる」という
+   節を `translate` に 1 つ足したもの。3 行では行 1 の影と行 2 の影の 2 種類が
+   あるので節は 2 つ要る）。
+
+2. **DBMS 側の順序同型**。2 行版はここで `olt_iff_seqlex` を **BMS 側の**
+   `M`, `N` に当てて逃げている（右辺が `seqlex M N`）。`OrderT3` は右辺が
+   `seqlex (conv3 M) (conv3 N)` なので、DBMS 側で
+
+       read3 C <o read3 D  ↔  seqlex C D
+
+   が要る。`read3` は影の列を読み飛ばすので `translate` ではなく、
+   `olt_iff_seqlex` をそのまま当てることはできない。`blockok` に当たる
+   「影の作法」（影の直後には必ずその昇格列が来る、等）を DBMS 側の不変量
+   `dok` として立て、それが `conv3` の像で成り立つことと、`dok` の上で
+   `read3` が `seqlex` への順序同型になることを示す必要がある。
+
+下の `OrderT3_of_read` はこの 2 段をそのまま組んだもの（`read3` と `dok` は
+関数／述語の変数）。**証明は 3 行**で、仕事は全部 3 つの仮定の側にある。 -/
+
+/-- 読みの保存（2 行の `readC_conC_ST` の 3 行版）。 -/
+def ReadT3 (read3 : TrioSeq → Three) (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {M : TrioSeq}, ST_TS M → read3 (conv3 M) = translate M
+
+/-- 像は DBMS 側の作法 `dok` を満たす（2 行の `blockok_ST_PS` に当たる）。 -/
+def ImgDokT3 (dok : TrioSeq → Prop) (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {M : TrioSeq}, ST_TS M → dok (conv3 M)
+
+/-- `dok` の上で `read3` は列辞書式への順序同型（2 行の `olt_iff_seqlex` に当たる）。 -/
+def ReadLexT3 (read3 : TrioSeq → Three) (dok : TrioSeq → Prop) : Prop :=
+  ∀ {C D : TrioSeq}, dok C → dok D → (read3 C <o read3 D ↔ seqlex C D)
+
+/-- **`OrderT3` は「読みの保存」＋「DBMS 側の順序同型」から出る。**
+
+証明は 3 行で、仕事は全部 3 つの仮定の側にある。 -/
+theorem OrderT3_of_read {read3 : TrioSeq → Three} {dok : TrioSeq → Prop}
+    {conv3 : TrioSeq → TrioSeq}
+    (hr : ReadT3 read3 conv3) (hk : ImgDokT3 dok conv3) (hx : ReadLexT3 read3 dok) :
+    OrderT3 conv3 := by
+  intro M N hM hN
+  rw [← hr hM, ← hr hN]
+  exact hx (hk hM) (hk hN)
+
+/-! ### 12.1 `OrderT3` の順序数を通らない言い換え
+
+標準形の上では `translate` が `seqlex` への順序同型（`olt_ST_iff_seqlex`）なので、
+`OrderT3` は「`conv3` が列辞書式の順序埋め込みである」と**同値**である。
+こちらは項も読みも順序数も出てこないので、Python で
+
+    L を辞書式に並べ替えたもの  と  L を像の辞書式で並べ替えたもの  が一致するか
+
+を見るだけで全数採点できる（実測: `conv3` v12 は <=6 列 8387 個・<=7 列 77282 個で
+位置ずれ 0、像の重複も 0）。読み `read3` を書かずに `OrderT3` を証明する道があるなら
+この形（`conv3` の構造帰納法）だろう。 -/
+
+/-- `conv3` は列辞書式の順序埋め込み。 -/
+def SeqEmbT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {M N : TrioSeq}, ST_TS M → ST_TS N → (seqlex M N ↔ seqlex (conv3 M) (conv3 N))
+
+/-- **`OrderT3` と `SeqEmbT3` は同値。** -/
+theorem OrderT3_iff_seqemb {conv3 : TrioSeq → TrioSeq} :
+    OrderT3 conv3 ↔ SeqEmbT3 conv3 := by
+  constructor
+  · intro hO M N hM hN
+    by_cases h : M = N
+    · subst h
+      exact iff_of_false (seqlex_irrefl _) (seqlex_irrefl _)
+    · exact ((olt_ST_iff_seqlex hM hN h).symm).trans (hO hM hN)
+  · intro hE M N hM hN
+    by_cases h : M = N
+    · subst h
+      exact iff_of_false (olt_irrefl _) (seqlex_irrefl _)
+    · exact (olt_ST_iff_seqlex hM hN h).trans (hE hM hN)
+
 end TRIO
 
 #print axioms TRIO.not_olt_len_one_T
@@ -989,3 +1286,12 @@ end TRIO
 #print axioms TRIO.Conv3.b2d3_diagSeqT
 #print axioms TRIO.ConvDiagT3_b2d3
 #print axioms TRIO.ST_D3_b2d3
+
+#print axioms TRIO.seqlex_oper
+#print axioms TRIO.ole_of_sle3
+#print axioms TRIO.conv3_injective
+#print axioms TRIO.ReindexT1_of_sandwich
+#print axioms TRIO.ReindexT1_of_block
+#print axioms TRIO.ST_D3_conv3_of_parts
+#print axioms TRIO.OrderT3_of_read
+#print axioms TRIO.OrderT3_iff_seqemb
