@@ -18,7 +18,14 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
   (3) 性質 R: 任意の n に対し、ある m と n'>=n で 像<m> = 像(M<n'>)
   (4) z=0 の断片で 2 行版 `rows2.convC` と完全一致
 
-**到達点（<=5 列 1018 個）**: (2) 違反 0、(4) 違反 0、(1) 違反 1、(3) 違反 74。
+**到達点（2026-08-27）**
+
+| 検査 | 結果 |
+|---|---|
+| シート 3 行 z<=1 (1358 対) | 1228 一致 |
+| 生成 <=6 列 8387 個: 像が DBMS 標準形 | 違反 0 |
+| 同: z=0 で 2 行版 convC と一致 | 違反 0 |
+| 同: 順序保存 | 違反 82（縮約が出過ぎる。詰め中） |
 
 使い方:
     python3 rows3.py [列数上限]
@@ -123,18 +130,21 @@ def predlab(y, z):
     return (0, 0)
 
 
-def shiftE(B, e, ps0):
+def shiftE(B, e, ps0, br):
     """写しのずれ。行 0 は必ず +1、行 1 は**親より深い段の柱だけ** +e。
 
-    展開の delta は上昇行列 am が 1 の行にしか効かないので、行 1 が親の段
-    `ps0` 以下の柱は行 1 が上がらない。
+    展開の delta は上昇行列が 1 の行にしか効かないので、行 1 が親の段 `ps0`
+    以下の柱は行 1 が上がらない。分岐列 (a,1,0) は浅い／深いを選べるので、
+    上がる形 (`br=True`) と上がらない形 (`br=False`) の 2 通りを試す。
     """
-    return [(a + 1, b + (e if b > ps0 else 0), c) for a, b, c in B]
+    return [(a + 1,
+             b + (e if (b > ps0 and (br or not is_branch((a, b, c)))) else 0),
+             c) for a, b, c in B]
 
 
-def contrPre(p, U, A, e, ps0):
+def contrPre(p, U, A, e, ps0, br=True):
     return ([(p[0] + 1, p[1] + e, p[2])]
-            + shiftE(A, e, ps0) + shiftE(U, e, ps0))
+            + shiftE(A, e, ps0, br) + shiftE(U, e, ps0, br))
 
 
 def ok_place(ST, x, w):
@@ -157,36 +167,68 @@ def fit(ST, d, w):
     return None
 
 
+NOTLAST = (0, 0, 0)     # 「後ろに何かある（アンカーではない）」を表す番兵
+ANCHOR = (1, 1, 0)      # アンカー。分岐列を浅くする合図
+
+
+def dmap_at(st, k):
+    """もとの深さ `k` が像で何段目になるか。表の外は 1 段ずつ伸ばす。"""
+    m = st['dmap']
+    if not m:
+        return k
+    return m[k] if k < len(m) else m[-1] + (k - len(m) + 1)
+
+
+def is_branch(c):
+    """分岐列 (a,1,0) (a>=2)。浅い／深いを選ぶのはこの型だけ。"""
+    return c[1] == 1 and c[2] == 0 and c[0] >= 2
+
+
 def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
-          ST=()):
-    """設計 v8: 行 0 も行 1 も「入れ子の深さ」として扱い、行 1 の祖先を持ち回る。
+          st=None, nx=None):
+    """設計 v9: 二重の梯子 ＋ 分岐列 (a,1,0) の 1 ビット状態機械。
 
-    `L[k]` もとの行 1 の深さ `k` の祖先が像で持つ (行 1, 行 2, 子に渡す force1)
+    `L[k]` もとの行 1 の深さ `k` の祖先について
+           (深い側の行 1, その行 2, 子に渡す force1, 浅い側の行 1)
+           行 1 の影を立てると「深い側」だけが影の値に置き換わる。
     `F[k]` 行 1 の深さ `k` の次の柱がその行 1 ブロックの先頭か
-    `ST[x]` **像で**深さ `x` に居る祖先の (行 1, 行 2)（＝いまの祖先の鎖）
+    `st`   線形に持ち回る状態 {'ST': 祖先の鎖, 'prev': 直前の分岐列の選択}
+    `nx`   このブロックの**後ろ**に来る列（ブロック分割で見失うので持ち回る）
 
-    行 1 の値は行 1 の入れ子の深さなので、行 1 が `w` の柱は、
-    行 1 が `w` 未満の直近の祖先の行 1 がちょうど `w-1` になる深さにしか置けない。
-    `ST` がそれを与える。
+    分岐列 (a,1,0) (a>=2) だけが浅い／深いを選ぶ（NOTES §6 の観測）。
+        浅い <=> prev == 0 / 行列の末尾 / 次がアンカー (1,1,0)
+    アンカー (1,1,0) を通過するたびに prev := 0。
 
     1 本の BMS 列は最大 3 本の柱になる:
         (d,   pw0,  pw1)       行 0 の影
         (dd,  base, pl2)       行 1 の影
         (dd', e1,   e2)        本体
-
-    戻り値は (柱の並び, 更新した ST)。
     """
+    if st is None:
+        st = {'ST': (), 'prev': None, 'dmap': []}
     if not M:
-        return [], ST
+        return []
     p, r = M[0], M[1:]
     v, s2 = p[1], p[2]
     A, B = split0(p, r)
 
     if v == 0:
-        base, pl2, force1 = 0, 0, False
+        base_d = base_s = 0
+        pl2, force1 = 0, False
     else:
-        base, pl2, force1 = L[v - 1][0] + 1, L[v - 1][1], L[v - 1][2]
+        e = L[v - 1]
+        base_d, pl2, force1, base_s = e[0] + 1, e[1], e[2], e[3] + 1
     first1 = F[v] if v < len(F) else True
+
+    if p == (1, 1, 0):
+        st['prev'] = 0
+    if is_branch(p) and base_s != base_d:
+        nxt = M[1] if len(M) > 1 else nx
+        shallow = (st['prev'] == 0) or (nxt is None) or (nxt == (1, 1, 0))
+        base = base_s if shallow else base_d
+        st['prev'] = 0 if shallow else 1
+    else:
+        base = base_d
 
     lad1 = first1 and s2 == pl2 + 1 and (base <= s2 or force1)
     e1 = base + 1 if lad1 else (s2 + 1 if (s2 > 0 and base <= s2) else base)
@@ -194,6 +236,7 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     h1 = base if lad1 else e1
     lad0 = first and v == ps[0] + 1 and (d <= h1 or force)
 
+    ST = st['ST']
     cols = []
     if lad0:
         cols.append((d, pw[0], pw[1]))
@@ -213,10 +256,18 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             dd = x
     cols.append((dd, e1, e2))
     ST = ST[:dd] + ((e1, e2),)
+    st['ST'] = ST
+    st['dmap'] = st['dmap'][:p[0]] + [dd]      # もとの深さ -> 像の深さ
 
     fc = (not lad1) and first1 and s2 == pl2
     f0 = (not lad0) and first and (v, s2) == ps
-    LA = L[:v] + ((e1, s2, fc),)
+    # 行 1 の影を立てたら、その影が「もとの行 1 の深さ v-1」の祖先を置き換える。
+    # 浅い側（影を使わない選択肢）はもとの値を残しておく。
+    if e1 == base + 1 and v >= 1:      # 行 1 が水増しされた（影を書いたかは問わない）
+        Lb = L[:v - 1] + ((base, pl2, False, L[v - 1][3]),)
+    else:
+        Lb = L
+    LA = Lb[:v] + ((e1, s2, fc, e1),)
     FA = F[:v] + (False,)
 
     if lad0:
@@ -229,30 +280,46 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             if (q[1], q[2]) != qlab or q[0] != p[0]:
                 continue
             Aq, Bq = split0(q, r2)
-            pre = contrPre(p, U, A, e, ps[0])
-            if list(Aq[:len(pre)]) != pre:
+            for br in (True, False):
+                pre = contrPre(p, U, A, e, ps[0], br)
+                if list(Aq[:len(pre)]) == pre:
+                    break
+            else:
                 continue
             rest2 = list(Aq[len(pre):])
-            if not (rest2 and rest2[0][0] == p[0] + 1
-                    and (rest2[0][1], rest2[0][2]) < (v + e, s2)):
+            if rest2:
+                if rest2[0][0] < p[0] + 1:
+                    continue
+                if (rest2[0][0] == p[0] + 1
+                        and (rest2[0][1], rest2[0][2]) >= (v + e, s2) and e == 0):
+                    continue
+            elif e == 0 or not br or not is_branch(([p] + list(A) + list(U))[-1]):
+                # 残余なしの縮約は「行 1 ずれ」かつ「残りが分岐列で終わる」ときだけ
+                # （NOTES §7 の strip_lift の適用条件と同じ）
                 continue
-            # 写しが行 1 でもずれているとき（e=1）、写しの頭は行 1 の影が
-            # 兼ねるので、残余の行 1 の親は影（= base）になる。
-            Lr = L[:v] + (((base, pl2, fc) if e else (e1, s2, fc)),)
-            cA, ST = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False, ST)
-            cU, ST = conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, ST)
-            cR, ST = conv3(rest2, d + 1 + e, Lr, (False,) * 12,
-                           (v, s2), (e1, e2), False, False, ST)
-            cB, ST = conv3(Bq, d, L, FA, (v, s2), (e1, e2), False, False, ST)
-            return cols + cA + cU + cR + cB, ST
+            Lr = L[:v] + (((base, pl2, fc, base) if e else (e1, s2, fc, e1)),)
+            hd = lambda *ls: next((l[0] for l in ls if l), nx)
+            # 写しは書かれないので、A から見た「次の列」は写しの後ろ
+            # 写しは書かれないので、A から見た「次の列」は写しの後ろ。
+            # 何も無くても「レベルが後で綴られている」ので末尾扱いにはしない。
+            cA = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, False, st,
+                       (hd(rest2, Bq) or NOTLAST) if br else ANCHOR)
+            cU = conv3(U, d + 1, L, FA, (v, s2), (e1, e2), False, False, st,
+                       hd(B2))
+            cR = conv3(rest2, dmap_at(st, rest2[0][0] - 1) if rest2 else d + 1 + e,
+                       Lr, (False,) * 12,
+                       (v, s2), (e1, e2), False, False, st, hd(Bq))
+            cB = conv3(Bq, d, L, FA, (v, s2), (e1, e2), False, False, st, nx)
+            return cols + cA + cU + cR + cB
 
-    cA, ST = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, f0, ST)
-    cB, ST = conv3(B, d, L, FA, (v, s2), (e1, e2), False, False, ST)
-    return cols + cA + cB, ST
+    cA = conv3(A, dd + 1, LA, FA, (v, s2), (e1, e2), True, f0, st,
+               B[0] if B else nx)
+    cB = conv3(B, d, L, FA, (v, s2), (e1, e2), False, False, st, nx)
+    return cols + cA + cB
 
 
 def b2d3(M):
-    return tuple(conv3(list(M))[0])
+    return tuple(conv3(list(M)))
 
 
 # ---------------------------------------------------------------- 検査
