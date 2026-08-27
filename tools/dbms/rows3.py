@@ -26,7 +26,7 @@ DBMS 3 行の列は z<y<x（0 は例外）。「弱い降下」を「強い降�
 | 生成 <=6 列 8387 個: 像が DBMS 標準形 | 違反 0 |
 | 同: z=0 で 2 行版 convC と一致 | 違反 0 |
 | 同: 単射 | 違反 0 |
-| 同: 順序保存 | 違反 81（詰め中） |
+| 同: 順序保存 | 違反 0 |
 
 使い方:
     python3 rows3.py [列数上限]
@@ -151,8 +151,17 @@ def fit(ST, d, w):
     return None
 
 
-NOTLAST = (0, 0, 0)     # 「後ろに何かある（アンカーではない）」を表す番兵
-ANCHOR = (1, 1, 0)      # アンカー。分岐列を浅くする合図
+NOTLAST = (2, 2, 0)     # 「後ろにユニットを閉じない列がある」を表す番兵
+ANCHOR = (1, 1, 0)      # アンカー（新しい加算ユニットの頭）
+
+
+def closes_unit(nxt):
+    """次の列がこの加算ユニットを閉じるか（rule.py の closes_unit と同じ）。
+
+    閉じるのは (a) 次が無い (b) 次が根元に戻る（行 0 <= 1 かつ 行 2 = 0）。
+    アンカー (1,1,0) は (b) に含まれる。閉じるなら分岐列は浅い。
+    """
+    return nxt is None or (nxt[0] <= 1 and nxt[2] == 0)
 
 
 def Lat(L, k):
@@ -192,7 +201,7 @@ def copy_shift(block, e, ps0, prev0, nxt_after):
         if c == ANCHOR:
             prev = 0
         if is_branch(c):
-            shallow = (prev == 0) or (nxt is None) or (nxt == ANCHOR)
+            shallow = (prev == 0) or closes_unit(nxt)
             prev = 0 if shallow else 1
             dl = 0 if shallow else (e if c[1] > ps0 else 0)
         else:
@@ -245,7 +254,7 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
         st['prev'] = 0
     if is_branch(p) and base_s != base_d:
         nxt = M[1] if len(M) > 1 else nx
-        shallow = (st['prev'] == 0) or (nxt is None) or (nxt == (1, 1, 0))
+        shallow = (st['prev'] == 0) or closes_unit(nxt)
         base = base_s if shallow else base_d
         st['prev'] = 0 if shallow else 1
     else:
