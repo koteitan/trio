@@ -35,8 +35,29 @@ def lean_mat(M):
     return '[' + ', '.join(lean_col(c) for c in M) + ']'
 
 
+def pick7(seed=12345):
+    """7 列の三つ組: v12 と像が違う 290 個 ＋ 縮約が発火する 294 個 ＋ 無作為 5000。
+
+    v13 の 2 条項がいちばん効くところ（v12 との差）と、いちばん壊れやすいところ
+    （縮約）を全部入れる。`gen3` は 7 列で 68895 個あるので全数は載せない。
+    """
+    import random
+    G7 = [M for M in rows3.gen3('BMS', 7, zcap=1) if len(M) == 7]
+    i13 = [rows3.b2d3n(M) for M in G7]
+    rows3.V13['wchain'] = False
+    rows3.V13['sibL'] = False
+    i12 = [rows3.b2d3(M) for M in G7]
+    rows3.V13['wchain'] = True
+    rows3.V13['sibL'] = True
+    sel = {M for M, a, b in zip(G7, i13, i12) if a[0] != b}
+    sel |= {M for M, a in zip(G7, i13) if a[1] > 0}
+    rnd = random.Random(seed)
+    sel |= set(rnd.sample(G7, 5000))
+    return sorted(sel)
+
+
 def gen(lim, out):
-    G = rows3.gen3('BMS', lim, zcap=1)
+    G = pick7() if lim == 7 else rows3.gen3('BMS', lim, zcap=1)
     with open(os.path.join(out, 'py.txt'), 'w') as f:
         for M in G:
             f.write(enc(rows3.b2d3(M)) + '\n')
