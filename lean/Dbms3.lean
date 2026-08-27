@@ -1952,6 +1952,282 @@ theorem ImgLenT3_b2d3 : ImgLenT3 Conv3.b2d3 := by
   exact Conv3.conv3_len_two p r hr _ _ _ _ _ _ _ _ _ _
 
 
+
+/-! ### 11.5 `ImgBlockT3` の骨組み（課題 L2 (b)） -/
+
+namespace Conv3
+
+/-! ### `fit` の値の範囲 -/
+
+/-- `fitAux` が返す深さは `[x, x+k)` の中。 -/
+theorem fitAux_bounds {ST : List (ℕ × ℕ)} {w : ℕ} :
+    ∀ {k x y : ℕ}, fitAux ST w x k = some y → x ≤ y ∧ y < x + k := by
+  intro k
+  induction k with
+  | zero => intro x y h; simp [fitAux] at h
+  | succ k ih =>
+      intro x y h
+      rw [fitAux] at h
+      split at h
+      · have : x = y := by simpa using h
+        omega
+      · have := ih h
+        omega
+
+/-- `d ≤ |ST|` なら `fit` の返す深さは `[d, |ST|]` の中。 -/
+theorem fit_bounds {ST : List (ℕ × ℕ)} {d w y : ℕ} (hd : d ≤ ST.length)
+    (h : fit ST d w = some y) : d ≤ y ∧ y ≤ ST.length := by
+  rw [fit] at h
+  have := fitAux_bounds h
+  omega
+
+/-- `fit` の既定値 `e` も `[d, |ST|]` に入っているなら `getD` の値も入る。 -/
+theorem fit_getD_bounds {ST : List (ℕ × ℕ)} {d w e : ℕ} (hd : d ≤ ST.length)
+    (he1 : d ≤ e) (he2 : e ≤ ST.length) :
+    d ≤ (fit ST d w).getD e ∧ (fit ST d w).getD e ≤ ST.length := by
+  cases h : fit ST d w with
+  | none => simpa [h] using ⟨he1, he2⟩
+  | some y =>
+      have := fit_bounds hd h
+      simpa [h] using this
+
+/-- `ST.take d ++ [x]` の長さ（`d ≤ |ST|` のとき）。 -/
+theorem len_take_app {ST : List (ℕ × ℕ)} {d : ℕ} (hd : d ≤ ST.length) (x : ℕ × ℕ) :
+    (ST.take d ++ [x]).length = d + 1 := by
+  simp [Nat.min_eq_left hd]
+
+/-! ### 1 本の柱が出す `cols` の形
+
+`conv3` は 1 本の BMS 列から最大 3 本の柱を出す:
+
+    (d,   pw.1, pw.2)     行 0 の影   （`lad0` のとき）
+    (dd0, base, pl2)      行 1 の影   （`lad1` のとき）
+    (dd2, e1,   e2)       本体        （つねに）
+
+不変量は **`d ≤ |ST|`**（開始深さは祖先の鎖 `ST` の長さ以下）。これがあると
+`fit` の返す深さが `[d, |ST|]` に収まり、3 本の柱の行 0 は 1 ずつしか上がらない
+（`steps1`）。積んだ後の鎖の長さはちょうど「最後の柱の行 0 + 1」になる。 -/
+
+/-- `conv3` の 1 本ぶんの深さの計算が満たす性質。 -/
+theorem depths_ok {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 dd2 : ℕ}
+    {pw : ℕ × ℕ} {lad0 lad1 : Bool} {cols : TrioSeq}
+    (hd : d ≤ ST.length)
+    (hST1 : ST1 = if lad0 then ST.take d ++ [(pw.1, pw.2)] else ST)
+    (hdd0 : dd0 = if lad0 then d + 1 else (fit ST d h1).getD (max d ST.length))
+    (hST2 : ST2 = if lad1 then ST1.take dd0 ++ [(base, pl2)] else ST1)
+    (hdd1 : dd1 = if lad1 then dd0 + 1 else dd0)
+    (hdd2 : dd2 = if okPlace ST2 dd1 e1 then dd1 else (fit ST2 dd1 e1).getD dd1)
+    (hcols : cols = (if lad0 then [((d : ℕ), pw.1, pw.2)] else []) ++
+                    (if lad1 then [(dd0, base, pl2)] else []) ++ [(dd2, e1, e2)]) :
+    d ≤ dd2 ∧ dd2 ≤ ST2.length ∧ steps1 cols ∧ (cols.headI).1 ≤ ST.length ∧
+      (cols.getLastD (0, 0, 0)).1 = dd2 ∧ (∀ c ∈ cols, d ≤ c.1) := by
+  have hL1t : lad0 = true → ST1.length = d + 1 := by
+    intro h; rw [hST1, if_pos h]; exact len_take_app hd _
+  have hL1f : lad0 ≠ true → ST1.length = ST.length := by
+    intro h; rw [hST1, if_neg h]
+  have hdd0t : lad0 = true → dd0 = d + 1 := by intro h; rw [hdd0, if_pos h]
+  have hb0 : d ≤ dd0 ∧ dd0 ≤ ST1.length := by
+    by_cases h : lad0 = true
+    · rw [hdd0t h, hL1t h]; omega
+    · rw [hdd0, if_neg h, hL1f h]
+      exact fit_getD_bounds hd (by omega) (by omega)
+  have hL2t : lad1 = true → ST2.length = dd0 + 1 := by
+    intro h; rw [hST2, if_pos h]; exact len_take_app hb0.2 _
+  have hL2f : lad1 ≠ true → ST2.length = ST1.length := by
+    intro h; rw [hST2, if_neg h]
+  have hdd1t : lad1 = true → dd1 = dd0 + 1 := by intro h; rw [hdd1, if_pos h]
+  have hdd1f : lad1 ≠ true → dd1 = dd0 := by intro h; rw [hdd1, if_neg h]
+  have hb1 : dd0 ≤ dd1 ∧ dd1 ≤ ST2.length := by
+    by_cases h : lad1 = true
+    · rw [hdd1t h, hL2t h]; omega
+    · rw [hdd1f h, hL2f h]; exact ⟨le_refl _, hb0.2⟩
+  have hb2 : dd1 ≤ dd2 ∧ dd2 ≤ ST2.length := by
+    rw [hdd2]; split
+    · exact ⟨le_refl _, hb1.2⟩
+    · exact fit_getD_bounds hb1.2 (le_refl _) hb1.2
+  subst hcols
+  by_cases hA : lad0 = true <;> by_cases hB : lad1 = true
+  · -- 行 0 の影 ＋ 行 1 の影 ＋ 本体
+    have g0 := hdd0t hA; have g2 := hL2t hB
+    simp only [if_pos hA, if_pos hB, List.cons_append, List.nil_append]
+    refine ⟨by omega, hb2.2, ?_, ?_, ?_, ?_⟩
+    · simp only [steps1_cons_cons]; exact ⟨by omega, by omega, trivial⟩
+    · simpa using hd
+    · simp
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl | rfl <;> simp <;> omega
+  · -- 行 0 の影 ＋ 本体
+    have g0 := hdd0t hA; have g1 := hL1t hA; have g2 := hL2f hB
+    simp only [if_pos hA, if_neg hB, List.cons_append, List.nil_append, List.append_nil]
+    refine ⟨by omega, hb2.2, ?_, ?_, ?_, ?_⟩
+    · simp only [steps1_cons_cons]; exact ⟨by omega, trivial⟩
+    · simpa using hd
+    · simp
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl <;> simp <;> omega
+  · -- 行 1 の影 ＋ 本体
+    have g1 := hL1f hA; have g2 := hL2t hB
+    simp only [if_neg hA, if_pos hB, List.cons_append, List.nil_append]
+    refine ⟨by omega, hb2.2, ?_, ?_, ?_, ?_⟩
+    · simp only [steps1_cons_cons]; exact ⟨by omega, trivial⟩
+    · simp only [List.headI]; omega
+    · simp
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl <;> simp <;> omega
+  · -- 本体だけ
+    have g1 := hL1f hA; have g2 := hL2f hB
+    simp only [if_neg hA, if_neg hB, List.nil_append]
+    refine ⟨by omega, hb2.2, ?_, ?_, ?_, ?_⟩
+    · trivial
+    · simp only [List.headI]; omega
+    · simp
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl <;> simp <;> omega
+
+/-! ### 呼び出しごとの不変量 `BlkOK`
+
+`conv3` の 1 回の呼び出しについて、開始深さ `d` が祖先の鎖の長さ以下
+（`d ≤ |st.ST|`）なら:
+
+* 出した柱は `steps1`（行 0 の段差が 1 以下）、
+* 先頭の柱の行 0 は `|st.ST|` 以下（＝直前の柱の行 0 + 1 以下）、
+* 末尾の柱の行 0 + 1 はちょうど**終了時の**鎖の長さ、
+* 何も出さなかったら鎖の長さは変わらない、
+* 終了時の鎖の長さは `d` 以上。
+
+3 番目と 2 番目が噛み合うので、**連結しても `steps1` が保たれる**
+（`BlkOK_app`）。これが `blockok` の証明の骨である。 -/
+
+/-- `conv3` / `convResid` の 1 回の呼び出しが満たす不変量。 -/
+def BlkOK (d : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
+  steps1 res.1
+    ∧ d ≤ res.2.ST.length
+    ∧ (res.1 = [] → res.2.ST.length = st.ST.length)
+    ∧ (res.1 ≠ [] → (res.1.headI).1 ≤ st.ST.length)
+    ∧ (res.1 ≠ [] → (res.1.getLastD (0, 0, 0)).1 + 1 = res.2.ST.length)
+
+theorem BlkOK_nil {d : ℕ} {st : St} (hd : d ≤ st.ST.length) : BlkOK d st ([], st) :=
+  ⟨trivial, hd, fun _ => rfl, fun h => absurd rfl h, fun h => absurd rfl h⟩
+
+/-- 空でない `Y` に付ける既定値は `getLastD` の値に効かない。 -/
+theorem getLastD_indep {Y : TrioSeq} (hy : Y ≠ []) (a b : Col) :
+    Y.getLastD a = Y.getLastD b := by
+  cases Y with
+  | nil => exact absurd rfl hy
+  | cons c Y => rw [List.getLastD_cons, List.getLastD_cons]
+
+/-- `Y` が空でなければ `X ++ Y` の末尾は `Y` の末尾。 -/
+theorem getLastD_app {Y : TrioSeq} (hy : Y ≠ []) :
+    ∀ (X : TrioSeq) (dd : Col), (X ++ Y).getLastD dd = Y.getLastD dd := by
+  intro X
+  induction X with
+  | nil => intro dd; simp
+  | cons a X ih =>
+      intro dd
+      rw [List.cons_append, List.getLastD_cons, ih a]
+      exact getLastD_indep hy a dd
+
+/-- **連結の補題**。`X` を出した後の状態から `Y` を出したなら、`X ++ Y` も
+不変量を満たす。`steps1` の継ぎ目は「`Y` の先頭 ≤ 途中の鎖の長さ = `X` の末尾 + 1」
+でつながる。 -/
+theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
+    (hdd : d ≤ d') (hX : BlkOK d st (X, stm)) (hY : BlkOK d' stm (Y, st')) :
+    BlkOK d st (X ++ Y, st') := by
+  obtain ⟨hs1, hl1, he1, hh1, hg1⟩ := hX
+  obtain ⟨hs2, hl2, he2, hh2, hg2⟩ := hY
+  simp only at hs1 hl1 he1 hh1 hg1 hs2 hl2 he2 hh2 hg2
+  refine ⟨?_, (by omega : d ≤ st'.ST.length), ?_, ?_, ?_⟩
+  · refine steps1_append.mpr ⟨hs1, hs2, ?_⟩
+    by_cases hx : X = []
+    · exact Or.inl hx
+    · by_cases hy : Y = []
+      · exact Or.inr (Or.inl hy)
+      · exact Or.inr (Or.inr (by have := hh2 hy; have := hg1 hx; omega))
+  · intro h
+    have hx : X = [] := (List.append_eq_nil_iff.mp h).1
+    have hy : Y = [] := (List.append_eq_nil_iff.mp h).2
+    rw [he2 hy, he1 hx]
+  · intro _
+    by_cases hx : X = []
+    · subst hx
+      by_cases hy : Y = []
+      · subst hy; simp at *
+      · rw [List.nil_append]
+        have := hh2 hy
+        rw [he1 rfl] at this
+        exact this
+    · obtain ⟨a, X', rfl⟩ := List.exists_cons_of_ne_nil hx
+      simpa using hh1 (by simp)
+  · intro _
+    by_cases hy : Y = []
+    · subst hy
+      rw [List.append_nil, he2 rfl]
+      by_cases hx : X = []
+      · subst hx; simp at *
+      · exact hg1 hx
+    · rw [getLastD_app hy]
+      exact hg2 hy
+
+/-! ### `blockok` の本体（**まだ証明していない — 仮定 `BlkInv` に落とした**）
+
+`conv3` の再帰に沿った不変量。`conv3.induct`（相互再帰版の関数帰納法）で
+6 つの枝に割れる。土台（`depths_ok`）と継ぎ目（`BlkOK_app`）は証明ずみだが、
+**帰納法そのものはまだ通っていない**。未証明のかけらをファイルに残さないため、残りを
+`BlkInv` という 1 本の命題に括り出してある（`ST_D3_conv3_of_parts` が仮定を
+並べているのと同じ流儀）。詰まった点と残りの補題は `lean/L1-NOTES.md` の
+「課題 L2」に書いた。要点だけ:
+
+1. `conv3.induct` は使える（`intro` を 49 本入れると枝の局所値が全部名前つきで
+   手に入る）。空の枝は `conv3_nil` ＋ `BlkOK_nil` で**閉じた**。
+2. 縮約でない枝は `depths_ok` ＋ `BlkOK_app` ×2 で組めるが、最後に
+   `rw [conv3.eq_def]; dsimp only` で開いた**巨大な項**と、局所値で書いた
+   証明項との defeq 検査が `whnf` で燃え尽きる（2000000 heartbeats でも足りない）。
+   `conv3` の 1 列ぶんの本体を**名前つきの関数に括り出す**（`conv3Body` など）と
+   等式が構文的な書き換えになって解ける見込み。定義の意味は変えない。
+3. 縮約の枝は、さらに 2 つの補題が要る（下の doc を見よ）。 -/
+
+/-- `conv3` の呼び出しごとの不変量（**まだ証明していない**、課題 L2 (b)）。
+
+### 残りの補題
+
+* 空の入力 … `conv3_nil` ＋ `BlkOK_nil`（**証明ずみ**）
+* 縮約でない枝 … `depths_ok` ＋ `BlkOK_app` ×2（**組み方は分かっている**。
+  項の大きさだけが問題）
+* 縮約の枝 … ここに 2 つの穴がある:
+  - **`contr_rd_ok`**: 残余の開始深さ `rd`（`d + 1 + e` か
+    `dmapAt rU.2.dmap (rest2[0].1 - 1)`）が `d ≤ rd ≤ |rU.2.ST|` に収まる。
+    前者は `dd2 ≥ d`（`depths_ok`）から出るが、**後者は `st.dmap`（もとの深さ ->
+    像の深さ）と `st.ST` の関係を不変量にしないと出ない**。
+    候補: 「`k < |dmap|` なら `dmap[k] < |ST|`、かつ `dmap` は狭義単調」。
+  - **`convResid_blk`**: `convResid` の不変量。残余は**森**なので次の木で開始深さが
+    `rd - (m0 - tail[0].1)` と**下がる**。だから `BlkOK` の第 2 項
+    （`d ≤ |st'.ST|`）はそのままでは**偽**で、弱めた形が要る。そのうえで
+    縮約の枝の `rB`（開始深さ `d`）に必要な `d ≤ |rR.2.ST|` を別に出す必要がある。 -/
+def BlkInv : Prop :=
+  ∀ (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ)
+    (first force : Bool) (st : St) (nx : Option Col) (off : ℕ),
+    d ≤ st.ST.length → BlkOK d st (conv3 M d L F ps pw first force st nx off)
+
+end Conv3
+
+/-- **`ImgBlockT3` は `Conv3.BlkInv` から出る**（課題 L2 (b)）。
+
+入口 `b2d3` は `st.ST = []` で始めるので `|st.ST| = 0`、したがって
+`BlkOK` の「先頭の柱の行 0 ≤ `|st.ST|`」がそのまま「先頭の柱の行 0 = 0」になる。
+`∀ p ∈ B, 0 ≤ p.1` は ℕ なので自明。残りは `steps1` そのもの。 -/
+theorem ImgBlockT3_of_BlkInv (h : Conv3.BlkInv) : ImgBlockT3 Conv3.b2d3 := by
+  intro A _hA
+  obtain ⟨hs, -, -, hh, -⟩ :=
+    h A 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], A, 0⟩ none 0 (by simp)
+  refine ⟨?_, fun p _ => Nat.zero_le _, hs⟩
+  intro hne
+  simpa using hh hne
+
+
 /-! ## 12. `OrderT3` を証明するには何が要るか
 
 2 行側の `conC_olt_iff_seqlex`（`Dbms.lean:2791`）は 2 行だけである:
