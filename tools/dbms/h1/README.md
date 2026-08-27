@@ -61,3 +61,17 @@
 H5 の結論: **縮約は触らない**。全射の外れ 82 個のうち `(conv3 A)<m>` に現れるのは
 1 個だけで、縮約の入口を広げても全射は直らずシートが 38 行落ちる。
 `st['prev']` の読みだけは不要と分かったので rows3.py で定数にした。
+
+# 課題 H6 の道具（2 択の十分性 / 素性の機械生成）
+
+    python3 /tmp/h1work/h6coll.py 7 4        # 目標が base_s/deep/どれでもない のどれか
+    python3 /tmp/h1work/h6feat.py            # 素性の機械生成（249 個、行 0/1/2 の祖先の鎖など）
+    TGT=deep python3 /tmp/h1work/h6ct.py aw  # 教師データ（ct=closes_top / aw=after_w / p0=prev0）
+    python3 /tmp/h1work/h6cov.py <pkl> 3     # 定数・重複を落として fp=0 の連言で被覆
+    python3 /tmp/h1work/h6res.py <pkl> 5     # 残った正例だけを狙って深い連言を探す
+    python3 /tmp/h1work/h6ho.py  <pkl> 3     # **ホールドアウト検定**（過学習の確認）
+    python3 /tmp/h1work/mkveto.py            # closes_top の拒否権を旗で入れる rows3k.py
+
+**教訓**: 「局所では分けられない」と思ったら**素性を疑う**。手で 66 個並べて
+24/36 だったものが、祖先の鎖を機械生成したら 36/36 になった。
+そして必ず `h6ho.py` でホールドアウトを取ること。
