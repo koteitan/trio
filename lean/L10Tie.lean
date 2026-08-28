@@ -98,8 +98,50 @@ theorem coneV_root_false_ST_TS {M : TrioSeq} (h : ST_TS M) :
   rw [entry1_root_ST_TS h] at this
   omega
 
+/-! ### 課題 L11: 閾値を自由にしても何も買えない
+
+`Wslift.mlift_mem_W {m v d} : ∀ X ∈ W m, mlift X v d ∈ W (m + 2*d)` は
+**閾値 `v` が自由**である。だから `liftStage_of_tieFree` が `v = entry X 1 0 - 1`
+を選んでいるのは 1 つの選び方にすぎず、
+
+    MaskMatch X := ∃ v, ∀ j, coneV X v j ↔ le1 X 0 j
+
+があれば `Lift1 X d = mlift X v d` となって `(WL)` が出る（`d ≥ 1`）。
+`Cgraft.slift` の一般の階段 `Stair φ` まで広げても、持ち上げ量が `{0, d}` の
+2 値で `Stair.step` が単調性を課す以上、`φ` は閾値の指示関数しかありえないので
+`MaskMatch` が**この道で得られる最弱の十分条件**である。
+
+**ところが `MaskMatch` は `TieFree` と同値だった**（下の定理）。閾値を自由に
+しても 1 ミリも弱くならない。実測でも `v0 ≥ 1` の乱択 120000 個で
+`TieFree` 69607 / `MaskMatch` 69607、差は**両方向とも 0**。 -/
+
+/-- ある閾値で `coneV` の錐と `le1` の錐が一致する（`mlift_mem_W` の `v` は自由）。 -/
+def MaskMatch (X : TrioSeq) : Prop := ∃ v, ∀ j, coneV X v j ↔ le1 X 0 j
+
+/-- **閾値を自由にしても `TieFree` と同じ。**
+
+`le1 X 0 0` は反射的に真なので、一致する閾値 `v` は `coneV X v 0` を満たさねば
+ならず、根が自分の行 0 祖先だから `v < entry X 1 0`、つまり `v ≤ v0 - 1`。
+`coneV` は `v` について反単調なので `coneV (v0-1) ⊆ coneV v = le1`。
+逆包含は `coneV_of_le1`（無条件）。よって `coneV (v0-1) = le1`、すなわち
+`TieFree`。 -/
+theorem maskMatch_iff_tieFree {X : TrioSeq} (hv : 1 ≤ entry X 1 0)
+    (hne : 0 < X.length) : MaskMatch X ↔ TieFree X := by
+  constructor
+  · rintro ⟨v, hvj⟩ j hj
+    have hle0 : le1 X 0 0 := ⟨hne, hne, Relation.ReflTransGen.refl⟩
+    have hc0 : coneV X v 0 := (hvj 0).mpr hle0
+    have hvlt : v < entry X 1 0 := hc0 0 Relation.ReflTransGen.refl
+    refine (hvj j).mp ?_
+    intro y hy
+    have := hj y hy
+    omega
+  · intro h
+    refine ⟨entry X 1 0 - 1, fun j => ⟨h j, fun hl => coneV_of_le1 hv hl⟩⟩
+
 end L10
 end TRIO
 
 #print axioms TRIO.L10.entry_root_ST_TS
+#print axioms TRIO.L10.maskMatch_iff_tieFree
 #print axioms TRIO.L10.coneV_root_false_ST_TS
