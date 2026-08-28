@@ -18,7 +18,7 @@ G = [((0, 0, 0), (1, 1, 1), (2, 0, 0), (3, 1, 1), (3, 1, 0), (1, 1, 1)),
 B7 = sorted((tuple(map(tuple, M)) for M in gen3('BMS', 7, zcap=1)), key=key)
 
 
-def tails(PRE, maxlen=3, maxa=12):
+def tails(PRE, maxlen=2, maxa=10):
     out = []
 
     def rec(t):
@@ -48,7 +48,7 @@ for A in G:
     flo = tuple(map(tuple, rows3.b2d3(list(lo)))) if lo else None
     fhi = tuple(map(tuple, rows3.b2d3(list(hi)))) if hi else None
     cand = set()
-    for k in range(max(1, len(fA) - 3), len(fA)):
+    for k in range(max(1, len(fA) - 2), len(fA)):
         PRE = fA[:k]
         if not isstd(PRE, 'DBMS'):
             continue
@@ -59,7 +59,13 @@ for A in G:
            if (flo is None or cmpmat(flo, D) < 0)
            and (fhi is None or cmpmat(D, fhi) < 0)]
     ok = []
+    t1 = time.time()
     for D in win:
+        # 2 段: まず m=1..4 だけで篩う
+        pat = cofinal.hits(A, 4, f=lambda X: list(D)
+                           if tuple(map(tuple, X)) == A else rows3.b2d3(X))
+        if pat[-2:] != 'OO':
+            continue
         pat = cofinal.hits(A, 8, f=lambda X: list(D)
                            if tuple(map(tuple, X)) == A else rows3.b2d3(X))
         if pat[-3:] == 'OOO':
