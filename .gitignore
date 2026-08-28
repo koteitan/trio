@@ -23,3 +23,5 @@ tools/dbms/r4_*.log
 tools/dbms/r4_*.pkl
 tools/dbms/r5_*.log
 tools/dbms/r5_*.pkl
+tools/dbms/r6_*.log
+tools/dbms/r6_*.pkl
