@@ -60,3 +60,5 @@ tools/dbms/r4[01]*.log
 tools/dbms/r42.log
 tools/dbms/r43*.log
 tools/dbms/r4[456]*.log
+tools/dbms/r47.log
+tools/dbms/r48?.log
