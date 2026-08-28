@@ -3228,11 +3228,14 @@ u = 0, 1, 2 を C 4000 個・n=1..4・depth 10 で実行中（結果は下に追
 
 ⟹ `WSnoc` を u >= 1 で本当に試すなら **u >= 4** で測る必要がある。
 
-### この計測から出た **Lean 側に渡せる補題 3 本**
+### この計測から出た **Lean 側の補題**（既存かどうかを確認済み）
 
-反証器を書くために必要だった観察は、そのまま Lean の補題になる。
+反証器を書くために必要だった観察。**(W2)(W4) は既に Lean にある**
+（`Wset.lean` の `hgr [] (W_nil m) based_nil` が 6 箇所、
+`Wtower2.lean` の `oper_eq_graft_nil_of_domT` + `graft_nil` が 8 箇所）。
+**新しいのは (W1) と (W3) の 2 本**（`grep` では見つからなかった）。
 
-**(W1) `domT` の m は一意 —— 節 3 の存在量化は消せる**
+**(W1) `domT` の m は一意 —— 節 3 の存在量化は消せる** —— **見当たらない**
 
     domT M m  :=  lev M (|M|-1) = m + 1  /\  ¬ hasParent M (srow M (|M|-1)) (|M|-1)
 
@@ -3242,14 +3245,14 @@ u = 0, 1, 2 を C 4000 個・n=1..4・depth 10 で実行中（結果は下に追
       ↔  (0 < lev M (|M|-1)  /\  ¬ hasParent M (srow M (|M|-1)) (|M|-1)
            /\  lev M (|M|-1) - 1 < u  /\  P (lev M (|M|-1) - 1))
 
-**(W2) 節 3 ならば `M.dropLast ∈ X`**
+**(W2) 節 3 ならば `M.dropLast ∈ X`** —— **Lean に既にある**
 
 `|[]| = 0 ≤ 1` かつ `lev [] 0 = 0` なので **`[] ∈ W m`（節 1）**、`based []`（`based_nil`）、
 `graft M [] = M.dropLast`（`graft_nil`）。z := [] を代入するだけ。
 
     (∃ m < u, domT M m /\ ∀ z ∈ W m, based z → graft M z ∈ X)  →  M.dropLast ∈ X
 
-**(W3) (W2) から出る `W` の除去則**
+**(W3) (W2) から出る `W` の除去則** —— **見当たらない。これが本命**
 
     M ∈ W u → 2 ≤ |M| → (∀ n ≥ 1, M⟦n⟧ ∈ W u) ∨ M.dropLast ∈ W u
 
@@ -3257,7 +3260,8 @@ u = 0, 1, 2 を C 4000 個・n=1..4・depth 10 で実行中（結果は下に追
 **節 3 の `∀ z ∈ W m` という無限量化を `dropLast` 1 本に落とせる**ので、
 `WSnoc` の帰納で使える形になっているはず。
 
-**(W4) 孤児の塔（`Wlo` の中身。docstring の「orphan half is free」の一般形）**
+**(W4) 孤児の塔（`Wlo` の中身）** —— **Lean に既にある**
+（`oper_eq_graft_nil_of_domT`）。ここでは計算模型の下界として使った。
 
 最後の列が零列または親を持たないとき `M⟦n⟧ = Pred M`（n に依らない）なので
 
