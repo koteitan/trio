@@ -377,7 +377,38 @@ not raise the stage*.
   `R⟦1⟧ = R.dropLast`, so the clause-2 datum puts `p_{v,z}(R.dropLast)` in
   `W a`, and `R`'s trailing orphan is the one column appended.
 
-Probe `tools/probe_snoc.py`: 14455 instances, 0 violations. -/
+**Measurement.**  ⚠ The old figure (`tools/probe_snoc.py`: 14455 instances,
+0 violations) measured *nothing*: its `inW` omits clause 3 of `Aop`, so on
+decided inputs it collapses to `lev S[0] ≤ a`, and `(C ++ [p])[0] = C[0]`
+makes the implication a tautology.  Only 408 of its 5068 matrices had a
+certified `C ∈ W u`.
+
+The sound figure is `tools/dbms/r49.py`: **≈111000 instances, 0
+counterexamples, both sides certified** — `Wlo C = true` certifies `C ∈ W u`
+and `Wup (C ++ [p]) u = false` certifies `C ++ [p] ∉ W u`.  Cross-checked
+against the independent refuter `tools/refute.py` (the contrapositive of
+`TRIO.L47.W3`) on 4580 instances with 0 disagreements.
+
+⚠ `WSnoc` does **not** close under expansion to any fixed depth (the depth
+needed grows with `n`), so the measurement reads "no counterexample found",
+never "proved".
+
+⚠⚠ **Do not read `WSnoc` as "short, therefore promising"** (task L47).  Its
+own proof is circular: `C ++ [p] ∈ W u` can only be shown by clause 2
+(`TRIO.L47.wsnoc_clause2_iff` — clause 1 dies on `C ≠ []`, clause 3 on
+`domT`'s `¬ hasParent`), and
+
+    (C ++ [p])⟦n⟧ = C.take r ++ shTower (C.drop r) δ n
+
+where `r` is `p`'s parent.  For `r ≥ 1` a length induction closes it, but
+`r = 0` leaves `shTower C δ n ∈ W u`, which is `ShiftTowerClosed` verbatim —
+and `WSnoc → WCat → ShiftTowerClosed` (`wcat_of_snoc`,
+`shiftTowerClosed_of_cat`).  `r = 0` really happens: **9.65%** of 200299
+pairs whose `C` is certified by `zeroRow2_mem_Wself` (row 2 ≡ 0), e.g.
+`C = (1,0,0)(5,4,0)`, `p = (6,2,0)`.
+
+So `WSnoc` is a *shorter statement* than `Subst1gReviveSelf`, not a *weaker*
+one: it is the same knot. -/
 theorem TRIO_terminates_of_snoc (hsn : WSnoc) : WellFounded stepRel :=
   TRIO_terminates_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat (wcat_of_snoc hsn)))
     (towerExp_of_snoc hsn)
