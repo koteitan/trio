@@ -3922,3 +3922,51 @@ DBMS 側の `m_step_decreases` に当たるものも要らない（`seqlex_oper`
 あって停止性ではない。DBMS の停止性から BMS の停止性を出すには**順序の埋め込み**
 （`translate M <o translate N → seqlex (conv3 M) (conv3 N)`）が別に要り、
 そこは今日 24 件の反例が出た側である。
+
+
+---
+
+# 課題 L33 の続き: 引っかかりそうな 2 点への答え（2026-08-29）
+
+## Q1. `heq` の枝は `Inj3` で書き換えられるか
+
+**書き換える必要が無い。** `heq` の枝
+
+    · have hMA : M = A := by
+        by_contra hne; rcases seqlex_total M A with … olt_ST_iff_seqlex …
+
+は **`wf` を 1 度も使っていない**。`ST_D3_descend` の主張のうち `M` の側の仮定
+（`translate M ≤o translate A`）を BMS のまま残すなら、この枝は**そのまま**でよい。
+⟹ **`Inj3` は L33 には要らない。**
+
+（もし `M` の側も DBMS に移すなら別の話になるが、その必要は無い。`M` は
+「`A` 以下のすべての標準形」を回す変数で、整礎帰納の対象ではない。）
+
+## Q2. `trio_cofinality` の DBMS 版が要るか
+
+**要らない。** `trio_cofinality hA hM hlt` は `translate M <o translate A` から
+`n` と `translate M ≤o translate (A⟦n⟧)` を出すもので、**`M` と `A` の BMS 側の話**
+である。整礎帰納の関係とは無関係なので、そのまま残せる。
+
+⟹ **L33 で新しく要る DBMS 側の道具は 0 個。**`translateD` も
+DBMS 版 `m_step_decreases` も `trio_cofinality` の DBMS 版も要らない
+（整礎性を `seqlex` で取れば、下がることは `seqlex_oper` で既に出ている）。
+
+## 見積もりは据え置き: **90〜120 行**
+
+内訳は前節（課題 L33 §4）のとおり。**未測定は無い。**
+
+---
+
+# 課題 L34: `Bq.head.1 = p.1` を等号にする道具（2026-08-29）
+
+`head_eq_of_le_of_ge` を足した（`Dbms3.lean`, exit 0 / sorry 0）:
+
+    全柱が `a` 以上（`BlkLo` ＋ 部分列）＋ 先頭が `a` 以下（`deepGe_head_lt` ＋
+    `contrFind_q_eq`）⟹ **先頭はちょうど `a`**
+
+これで `Bq.head.1 = p.1` が出る。**`Dm12` の連結（`Dm12_app` は `m ≤ m'` を要求）で
+効く**: 5 重連結の `m'` は `cols` `p.1` / `rA` `p.1+1` / `rU` `p.1` / `rR` `≥ p.1+1` /
+`rB` `p.1` となり、**全部 `p.1` 以上**になるので `Dm12 p.1 st (全体)` が鎖でつながる。
+
+（`Bq.head.1 ≤ p.1` のままだと `rB` のところで `m' < m` になり、鎖が切れていた。）

@@ -3207,6 +3207,13 @@ theorem blkLo_take_deepGe {c : Col} {rs : TrioSeq} :
   · exact le_rfl
   · exact deepGe_take_ge rs x hm
 
+/-- 全柱が `a` 以上で先頭が `a` 以下なら、**先頭はちょうど `a`**。 -/
+theorem head_eq_of_le_of_ge {L : TrioSeq} {a : ℕ} {x : Col}
+    (hall : ∀ c ∈ L, a ≤ c.1) (hne : L ≠ []) (hle : (L.headD x).1 ≤ a) :
+    (L.headD x).1 = a := by
+  have := hall _ (headD_memT hne x)
+  omega
+
 /-- 全柱が `a` 以上で先頭が `a` 以下なら `BlkLo`（`Bq` に使う）。 -/
 theorem blkLo_of_le {L : TrioSeq} {a : ℕ} (hall : ∀ c ∈ L, a ≤ c.1)
     (hhd : L ≠ [] → (L.headI).1 ≤ a) : BlkLo L := by
