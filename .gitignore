@@ -42,3 +42,5 @@ tools/dbms/r23.log
 tools/dbms/r25_*.log
 tools/dbms/r24.log
 tools/dbms/r26_*.log
+tools/dbms/r27_*.log
+tools/dbms/r28.log
