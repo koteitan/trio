@@ -11,7 +11,7 @@ from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    p0_shallow, closes_w, sibnb_ok, _parK,
                    first_of, ps_of,
                    aw_flip,
-                   tie_sd,
+                   tie_sd, _DMAP_TRACE,
                    V12, V13, V14, V15, V16, V17, V18, V20)
 PROV = []
 CTX = []
@@ -248,6 +248,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     PROV.append(('body', off, why, tuple(CTX)))
     ST = ST[:dd] + ((e1, e2),)
     st['ST'] = ST
+    if _DMAP_TRACE is not None:               # 課題 R13: (D0') の計器
+        _DMAP_TRACE.append((off, p[0], dd, tuple(st['dmap'])))
     st['dmap'] = st['dmap'][:p[0]] + [dd]      # もとの深さ -> 像の深さ
 
     fc = (not lad1) and first1 and s2 == pl2
