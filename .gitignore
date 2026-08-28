@@ -35,3 +35,5 @@ tools/dbms/r14st.log
 tools/dbms/r15_*.log
 tools/dbms/r16_*.log
 tools/dbms/r17_*.log
+tools/dbms/r19_*.log
+tools/dbms/r17b.log
