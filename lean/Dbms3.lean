@@ -4461,6 +4461,25 @@ def ResidSideT : Prop :=
       ≤ (if rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1 then d + 1 + e
          else dmapAt stU.dmap ((rest2.headD (0, 0, 0)).1 - 1)) + c.1
 
+
+/-! ### ⚠⚠ 課題 L44: `DmapInT` / `ResidSideT` は**そのままでは偽**（2026-08-29）
+
+どちらも `stU` / `rest2` を**無制限に**全称化しているので、呼び出し点と無関係な
+状態を入れると破れる。実測（R1 / `l11_blkmeas.py`）は**呼び出し点で**測ったもので、
+Lean の `def` はそれより広い。⟹ **いまの `ImgBlockT3_of_resid` は空虚**である。
+
+下の 2 つの `example` がその証明。 -/
+
+example : ¬ ResidSideT := by
+  intro h
+  exact absurd (h 5 (0, 0, 0) ⟨[], 2, [0], [], 0, []⟩ [(2, 0, 0)] 0 (2, 0, 0) (by simp))
+    (by decide)
+
+example : ¬ DmapInT := by
+  intro h
+  have h2 := (h 0 (0, 0, 0) ⟨[], 2, [], [], 0, []⟩ [(5, 0, 0)] (by simp)).1
+  simp at h2
+
 theorem blkInv_aux (h2 : DmapInT) (h3 : ResidSideT) :
     ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → steps1 M → BlkLo M → ∀ (d : ℕ)
       (L : List Lent)
