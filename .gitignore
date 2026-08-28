@@ -16,3 +16,6 @@ tools/dbms/r2_*.bin
 tools/dbms/r2run9.log
 tools/dbms/r2gen8.log
 tools/dbms/r2ext*.log
+tools/dbms/r3_*.log
+tools/dbms/r3_*.pkl
+tools/dbms/r3s2_*.log
