@@ -31,3 +31,5 @@ tools/dbms/r7im_*.pkl
 tools/dbms/r12_*.log
 tools/dbms/r13_*.log
 tools/dbms/r14_*.log
+tools/dbms/r14st.log
+tools/dbms/r15_*.log
