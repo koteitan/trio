@@ -40,7 +40,7 @@ Lean（`lean/Wset.lean:171`）:
     かつ Wup(C ++ [p], u) = False（not in W u が**確定**）
     ⟹ **`WSnoc` の本物の反例**
 """
-import sys, time, random, itertools
+import sys, os, time, random, itertools
 from collections import Counter
 sys.path.insert(0, '/home/koteitan/proofs/trio/tools')
 import trio
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     for i, C in enumerate(T):
         if len(memo) > 3000000:           # memo が 4GB 級に育つので上限を切る
             memo.clear(); tot['memo を捨てた回数'] += 1
-        if time.time() - t0 > 2400:
+        if time.time() - t0 > (int(os.environ.get("R49BUDGET", 2400))):
             tot['**時間切れ（C を %d / %d まで）**' % (i, len(T))] += 1; break
         cand = [p for p in COLS if has_parent(C + (p,), len(C))]
         cand.sort(key=lambda q: 2 * q[1] + q[2], reverse=True)
