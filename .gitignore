@@ -49,3 +49,6 @@ tools/dbms/r30.log
 tools/dbms/r31.log
 tools/dbms/r32_*.log
 tools/dbms/r33.log
+tools/dbms/r34.log
+tools/dbms/r3[456]*.log
+tools/dbms/r35*.log
