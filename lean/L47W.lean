@@ -185,5 +185,19 @@ theorem shiftTowerClosed_iff_wself :
     rw [lev_shTower hQne e hn]
     exact hlev
 
+/-- **★ (c) `(TOW)` の `e = 0` は既に定理**（`Wset.W_flatMap_copies`、課題 L48）。
+
+`shTower Q 0 n = (range n).flatMap (fun _ => Q)` なので、持ち上げの無い塔は
+`W_add`（`rsum`）だけで積める。**`rsum` が通るのは写しが上昇しないから**である。
+
+⟹ **`(TOW)` の難しさは丸ごと `e ≥ 1`（上昇）にある。** -/
+theorem shiftTowerClosed_e_zero {u n : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u)
+    (hQr : ∀ p ∈ Q, entry Q 0 0 ≤ p.1) : shTower Q 0 n ∈ W u := by
+  have h : shTower Q 0 n = (List.range n).flatMap fun _ => Q := by
+    unfold shTower
+    simp
+  rw [h]
+  exact W_flatMap_copies hQ hQr n
+
 end L47
 end TRIO
