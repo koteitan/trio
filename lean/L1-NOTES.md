@@ -4680,3 +4680,62 @@ def DmST (st : St) : Prop := ∀ k, k < st.dmap.length → st.dmap.getD k 0 ≤ 
 | `dmST_resid` | **(N') 待ち** |
 | `dmST_aux` | 上が揃えば 30 行 |
 | `blk_step` の配線 | 最後 |
+
+
+---
+
+# 課題 L46: `ResidHeadT` は偽ではなく**私の off-by-one** だった（2026-08-29）
+
+## 1. 測定（team-lead、`tools/dbms/residhead.py`、呼び出し点 2386 件）
+
+    |dmap| == h      2082      （h = rest2.headI.1）
+    |dmap| == h + 1   243
+    |dmap| == h - 1    61      ← `h ≤ |dmap|` の破れ
+    その他              0
+    ⟹ **h ≤ |dmap| + 1 は 2386 / 2386 = 100%**
+
+## 2. 呼び出し点は Lean と一致している（確認ずみ）
+
+`rows3.py` 1513 `cA` → 1515 `cU` → 1519 `rd` → 1525 `conv_resid`。
+Lean も `rA` → `rU` → `rd`（`rU.2.dmap` から）→ `convResid`（`rU.2` から）。
+`st` を破壊的に持ち回るので **1519/1525 の `st['dmap']` は Lean の `rU.2.dmap`**。
+`rest2 != []` だけなので `cfm` の投機的な枝も混じらない。**測定は有効。**
+
+## 3. ★ 壊れていたのは私が書いた `ResidHeadT` だけ
+
+`R1-NOTES §4.3` の紙の証明の対象は **`h - 1 ≤ |dmap|`**（＝ `h ≤ |dmap| + 1`）で、
+`DmapInT` の第 1 項の書き方（`(rest2.headD).1 - 1 ≤ |stU.dmap|`）とも一致する。
+**私が課題 L45 で `h ≤ |dmap|` と 1 ずらして書いた。** 課題 L44 と同じ失敗
+（自分が新しく書いた `def` を確かめなかった）。
+
+## 4. 61 件は証明の中でも閉じる（`resid_rd_lb'`、緑）
+
+`h - 1 = |dmap|` のとき `dmapAt` は**外挿の枝**に入る:
+
+    rd = dmap.getLastD + (h-1 - |dmap| + 1) = dmap.getLastD + 1
+    Dm10 を**最後の添字** |dmap|-1 で読むと (d+1) + (|dmap|-1-m) ≤ dmap.getLastD
+    ⟹ rd ≥ d + |dmap| + 1 - m = d + h - m      ✓ ぴったり
+
+`m ≤ |dmap| - 1` は `else` の枝（`h ≠ m+1`）から `h ≥ m+2` ⟹ `|dmap| ≥ m+1` で出る。
+`dmap ≠ []` も同じ不等式から出るので **追加の仮定は要らない**。
+
+⟹ **`resid_rd_lb'` は `h ≤ |dmap| + 1` だけで成立する**（`DmOK` すら要らない）。
+
+## 5. (M)（`dmap` の非狭義単調性）は**もう要らない見込み**
+
+team-lead の (M) は陽性対照（`≤ dmap[j] - 1`）が鳴らず無効だったが、
+上のとおり `h ≤ |dmap|+1` ＋ `Dm10` の**最後の添字**だけで閉じるので、
+`dmap` の単調性は要らない。`Dm11` の側の `dmap[k] ≤ rd+1` も、`h-1` が
+`|dmap|-1` か `|dmap|` のどちらかなので **`DmOK` ＋ `DmST` で同じ形で出る見込み**。
+
+## 6. 残りの直し
+
+    resid_rd_lb'                                    **済み（緑）**
+    ResidHeadT を h ≤ |dmap| + 1 に直す              3 行
+    dm10_step / dm10_aux / dm10_holds / dm10_at_U /
+      dmST_step の hlen を **m ≤ |st.dmap| + 1** に  **120〜180 行**
+
+最後のが本体。`|st1.dmap| = min(p.1,|st.dmap|) + 1` が `p.1+1` と `p.1` の 2 通りに
+なるので、`Dm10_of_child'` が使えない場合（`p.1 = |st.dmap|+1`）に補題が 1 本要る。
+**その場合の `rA.2.dmap[p.1]` は A ブロックの最初の書き込み `dd2'`（`≥ dd2+1 ≥ d+1`）
+なので、結論自体は成り立つ。**

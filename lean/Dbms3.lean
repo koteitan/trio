@@ -4320,6 +4320,71 @@ theorem resid_rd_lb {rest : TrioSeq} {st' : St} {m d rd e : ℕ}
     have h9 := hpre ((rest.headD (0, 0, 0)).1 - 1) (by omega) hk
     omega
 
+/-- **★ 残余の開始深さ `rd` の下界（弱い仮定版、課題 L46）。**
+
+課題 L45 で `ResidHeadT` を `h ≤ |dmap|` と書いたのは **off-by-one** だった。
+実測（`residhead.py`、`gen3(BMS,<=8)` の呼び出し点 2386 件）:
+
+    |dmap| == h      2082
+    |dmap| == h + 1   243
+    |dmap| == h - 1    61     ← `h ≤ |dmap|` の破れ
+    その他              0
+    ⟹ **h ≤ |dmap| + 1 は 2386 / 2386 = 100%**
+
+そしてこれは **R1-NOTES §4.3 の紙の証明の対象そのもの**（`h - 1 ≤ |dmap|`）で、
+`DmapInT` の第 1 項の書き方とも一致する。**壊れていたのは私の `ResidHeadT` だけ。**
+
+`h - 1 = |dmap|` の 61 件でも下界は閉じる:
+
+    dmapAt は外挿の枝 ⟹ rd = dmap.getLastD + (h-1-|dmap|+1) = dmap.getLastD + 1
+    Dm10 を**最後の添字** |dmap|-1 で読むと
+      (d+1) + (|dmap|-1-m) ≤ dmap.getLastD
+    ⟹ rd ≥ d + |dmap| + 1 - m = d + h - m   ✓ ぴったり
+
+`m ≤ |dmap| - 1` は `else` の枝（`h ≠ m+1`）から `h ≥ m+2` ⟹ `|dmap| ≥ m+1` で出る。
+`dmap ≠ []` も同じ不等式から出るので、**追加の仮定は要らない**。 -/
+theorem resid_rd_lb' {rest : TrioSeq} {st' : St} {m d rd e : ℕ}
+    (hne : rest ≠ []) (hmem : ∀ c ∈ rest, m + 1 ≤ c.1)
+    (hhd : (rest.headI).1 ≤ st'.dmap.length + 1) (hpre : Dm10 (d + 1) m st')
+    (hrd : rd = if rest = [] ∨ (rest.headD (0, 0, 0)).1 = m + 1 then d + 1 + e
+                else dmapAt st'.dmap ((rest.headD (0, 0, 0)).1 - 1)) :
+    d + (rest.headI).1 ≤ rd + m := by
+  rw [headI_eq_headD] at hhd ⊢
+  have hm1 : m + 1 ≤ (rest.headD (0, 0, 0)).1 := hmem _ (headD_memT hne _)
+  rw [hrd]
+  by_cases hc : rest = [] ∨ (rest.headD (0, 0, 0)).1 = m + 1
+  · rw [if_pos hc]
+    rcases hc with h | h
+    · exact absurd h hne
+    · omega
+  · rw [if_neg hc]
+    have hne2 : (rest.headD (0, 0, 0)).1 ≠ m + 1 := fun h => hc (Or.inr h)
+    have hdm : st'.dmap ≠ [] := by
+      intro h
+      rw [h] at hhd
+      simp only [List.length_nil] at hhd
+      omega
+    have hlen1 : 1 ≤ st'.dmap.length := by
+      cases h : st'.dmap with
+      | nil => exact absurd h hdm
+      | cons a t => simp
+    by_cases hk : (rest.headD (0, 0, 0)).1 - 1 < st'.dmap.length
+    · have hval : dmapAt st'.dmap ((rest.headD (0, 0, 0)).1 - 1)
+          = st'.dmap.getD ((rest.headD (0, 0, 0)).1 - 1) 0 := by
+        rw [dmapAt, if_neg hdm, if_pos hk]
+      rw [hval]
+      have h9 := hpre ((rest.headD (0, 0, 0)).1 - 1) (by omega) hk
+      omega
+    · have heq : (rest.headD (0, 0, 0)).1 - 1 = st'.dmap.length := by omega
+      have hval : dmapAt st'.dmap ((rest.headD (0, 0, 0)).1 - 1)
+          = st'.dmap.getLastD 0 + 1 := by
+        rw [dmapAt, if_neg hdm, if_neg hk, heq]
+        omega
+      rw [hval]
+      have h9 := hpre (st'.dmap.length - 1) (by omega) (by omega)
+      rw [getD_last] at h9
+      omega
+
 /-- **★ 課題 L41 に残る唯一の債務**: `convResid` の入口で、残余の頭が
 `dmap` の範囲に届いていること。R1-NOTES §4.3（`|dmap| = 最後に処理した柱.1 + 1`）
 が材料で、**紙の証明がある**。`DmapInT` の第 1 項に対応する。 -/
