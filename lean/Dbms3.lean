@@ -1917,11 +1917,24 @@ theorem ImgCofinalT3_of_ImgClosedT3 {conv3 : TrioSeq → TrioSeq}
 `B` は `(conv3 A)⟦m⟧ = conv3 B` を満たすものに限られ、向きも (←) だけである。
 **課題 L24 の反例 24 対がこの形でないなら、Lean 側は通る。**（要測定） -/
 
-/-- **`ReindexT1` が実際に要求する順序の性質だけ**を取り出したもの。 -/
+/-- **単射性**（`ReindexT1` が要求する 3 本のうち、順序でない 1 本）。
+
+`ole_of_sle3` の `=` の枝を潰すためだけに要る。`OrderT3` からは出るが、
+**順序とは独立に測れる**ので分けておく。 -/
+def Inj3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {M N : TrioSeq}, ST_TS M → ST_TS N → conv3 M = conv3 N → M = N
+
+theorem inj3_of_orderT3 {conv3 : TrioSeq → TrioSeq} (hO : OrderT3 conv3) :
+    Inj3 conv3 := fun hM hN h => conv3_injective hO hM hN h
+
+/-- **`ReindexT1` が実際に要求する順序の性質だけ**を取り出したもの。
+
+⚠ **`(→)`（順序を保つ向き）は入っていない。** 入っているのは
+**`(←)`（像の辞書式から順序数へ戻す向き）だけ**で、しかも相手は
+`(conv3 A)⟦m⟧ = conv3 B` を満たす `B` に限られる。 -/
 def OrderReindexT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
   ∀ {A B : TrioSeq}, ST_TS A → ST_TS B → ∀ {n m : ℕ}, 1 ≤ n → n + 1 ≤ m →
     (conv3 A)⟦m⟧ = conv3 B →
-      (conv3 (A⟦n⟧) = conv3 B → A⟦n⟧ = B) ∧
       (seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B) ∧
       (seqlex (conv3 B) (conv3 A) → translate B <o translate A)
 
@@ -1929,8 +1942,7 @@ def OrderReindexT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
 theorem orderReindexT3_of_orderT3 {conv3 : TrioSeq → TrioSeq} (hO : OrderT3 conv3) :
     OrderReindexT3 conv3 := by
   intro A B hA hB n m hn hm heq
-  refine ⟨fun h => conv3_injective hO (ST_TS.oper hA hn) hB h, fun h => (hO (ST_TS.oper hA hn) hB).2 h,
-    fun h => (hO hB hA).2 h⟩
+  exact ⟨fun h => (hO (ST_TS.oper hA hn) hB).2 h, fun h => (hO hB hA).2 h⟩
 
 /-- `sle3` から `≤o`（単射性と (←) を直に受け取る版）。 -/
 theorem ole_of_sle3' {conv3 : TrioSeq → TrioSeq} {M N : TrioSeq}
@@ -1943,12 +1955,14 @@ theorem ole_of_sle3' {conv3 : TrioSeq → TrioSeq} {M N : TrioSeq}
 
 /-- **★ `ReindexT1` は `OrderT3` の代わりに `OrderReindexT3` で出る。** -/
 theorem ReindexT1_of_cofinal' {conv3 : TrioSeq → TrioSeq}
-    (hI : ImgCofinalT3 conv3) (hO : OrderReindexT3 conv3) (hU : SandwichUT3 conv3)
-    (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) :
+    (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3 conv3)
+    (hU : SandwichUT3 conv3) (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) :
     ReindexT1 conv3 := by
   intro A hA hlen n hn
   obtain ⟨m, hm0, B, hB, heq⟩ := hI hA hlen (n + 1)
-  obtain ⟨hinj, hr1, hr2⟩ := hO hA hB hn hm0 heq
+  obtain ⟨hr1, hr2⟩ := hO hA hB hn hm0 heq
+  have hinj : conv3 (A⟦n⟧) = conv3 B → A⟦n⟧ = B :=
+    fun h => hj (ST_TS.oper hA hn) hB h
   refine ⟨m, B, by omega, hB, ?_, ?_, heq⟩
   · have h1 := hU hA hlen n hn
     have h2 : sle3 ((conv3 A)⟦n + 1⟧) ((conv3 A)⟦m⟧) := oper_mono_idx hm0
@@ -2065,6 +2079,18 @@ theorem ST_D3_conv3_of_parts' (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
     {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
   ST_D3_conv3_of_parts h2 he (ImgCofinalT3_of_ImgClosedT3 hI) hO hU hb hlen2 hd hM
 
+
+/-- **★★ 弱い順序仮定版**（課題 L28）。`OrderT3` の代わりに
+`Inj3`（単射性）＋ `OrderReindexT3`（`(←)` だけ・相手は像の展開の逆像に限る）で足りる。
+
+`OrderT3` は `len ≤ 11` の母数で 24 件破れる（課題 L24/R9）が、
+**この 2 本が真なら Lean 側は通る**。 -/
+theorem ST_D3_conv3_of_parts'' (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
+    {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3 conv3)
+    (hU : SandwichUT3 conv3) (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3)
+    (hd : ConvDiagT3 conv3) {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
+  ST_D3_conv3_holds h2 he (ReindexT1_of_cofinal' hI hj hO hU hb hlen2) hd hM
 
 /-! ### 11.4 `ImgLenT3` の証明（課題 L2 (a)） -/
 

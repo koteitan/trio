@@ -3622,3 +3622,53 @@ a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / �
 Lean 側は `OrderReindexT3` を仮定して先に進める。陽性対照は
 「`m` の範囲を広げても見つからない」ことを別の母数で確かめること。
 EOF
+
+
+---
+
+# 課題 L29: `Inj3` を切り出し、6 仮定の表を更新（2026-08-29）
+
+## 0. 入れたもの（`Dbms3.lean`, exit 0 / sorry 0）
+
+    Inj3 conv3 := ∀ M N, ST_TS M → ST_TS N → conv3 M = conv3 N → M = N
+    inj3_of_orderT3 : OrderT3 → Inj3
+
+    OrderReindexT3 から単射性を抜いて**順序の 2 本だけ**にした:
+      (seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B)
+      (seqlex (conv3 B) (conv3 A) → translate B <o translate A)
+      （どちらも **(←) だけ**。相手は `(conv3 A)⟦m⟧ = conv3 B` を満たす `B` に限る）
+
+    ReindexT1_of_cofinal'   : ImgCofinalT3 ＋ **Inj3** ＋ **OrderReindexT3**
+                              ＋ SandwichUT3 ＋ ImgBlockT3 ＋ ImgLenT3 → ReindexT1
+    ST_D3_conv3_of_parts''  : 上を使う版（`OrderT3` を使わない）
+
+## 1. `ST_D3 (conv3 M)` の仮定の表（更新）
+
+| 仮定 | 状態 |
+|---|---|
+| `ConvDiagT3 Conv3.b2d3` | **証明ずみ**（約 260 行） |
+| `ImgLenT3 Conv3.b2d3` | **証明ずみ**（約 45 行） |
+| `ImgBlockT3 Conv3.b2d3` | `DmapInT` / `ResidSideT` の 2 本待ち。残り 160〜230 行 |
+| ~~`OrderT3`~~ → **`Inj3`** | Python で測れる（単射性）。**順序とは独立** |
+| ~~`OrderT3`~~ → **`OrderReindexT3`** | **(←) だけ・相手は像の展開の逆像に限る**。24 件の反例がこの形かは測定待ち |
+| `SandwichUT3 Conv3.b2d3` | 5 分割 (S1)-(S5)。(S2) は `t=2` で閉じた。(S4) が壁 |
+| `ImgCofinalT3 Conv3.b2d3` | Python 側の破れ待ち |
+
+⟹ **`OrderT3`（`len ≤ 11` で 24 件破れる）は仮定から消えた。**
+
+## 2. 参考: (D0') と 節 10（`Dm10`）は同じ対象の裏表
+
+チームリードの (D0')
+
+> `dmap[k] := dd` を書くとき、書く前の `dmap` に `k' > k` があって
+> `dmap[k'] ≤ dd` なら違反
+
+は `dmap` が**深さの順序を潰す**ことを禁じるもので、私が `ImgBlockT3` で
+使っている **節 10** `d + (j - m) ≤ dmap[j]` と同じ対象（`st.dmap`）の話である。
+
+* 「全部の対で `dmap[i] + (j - i) ≤ dmap[j]`」（傾き 1 以上）は**偽**
+  （課題 L18。狭義単調を含み、`gen3 <=6` で 38 件・7 列で 438 件破れる）。
+* (D0') は**書き込みの瞬間だけ**を見るので、破れが **90 / 1882196** と桁違いに少ない。
+
+⟹ **(D0') は「傾き 1 以上」の的を絞った版**である。`ImgBlockT3` の節 10 が
+証明で通れば、(D0') の Lean 版もそこから出る可能性がある（未検討）。
