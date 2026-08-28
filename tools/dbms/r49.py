@@ -92,6 +92,15 @@ def Wup(M, u, depth, memo, N, maxlen):
     if depth <= 0 or len(M) > maxlen:
         return None
     memo[key] = None                      # 循環よけ
+    # 節 3 を**先に**見る（`dropLast` は必ず縮むので安く、必ず止まる）。
+    # 節 2 は伸びるので高い。順序は結論に影響しない（どちらも選言）。
+    dm = domT_m(M)
+    c3 = False
+    if dm is not None and dm < u:
+        c3 = Wup(M[:-1], u, depth - 1, memo, N, maxlen)
+    if c3 is True:
+        memo[key] = True
+        return True
     c2 = True
     for n in range(1, N + 1):
         r = Wup(trio.expand(list(M), n), u, depth - 1, memo, N, maxlen)
@@ -101,13 +110,6 @@ def Wup(M, u, depth, memo, N, maxlen):
         if r is None:
             c2 = None
     if c2 is True:
-        memo[key] = True
-        return True
-    dm = domT_m(M)
-    c3 = False
-    if dm is not None and dm < u:
-        c3 = Wup(M[:-1], u, depth - 1, memo, N, maxlen)
-    if c3 is True:
         memo[key] = True
         return True
     out = False if (c2 is False and c3 is False) else None
@@ -139,6 +141,26 @@ def towers(cols, maxlen, cap):
     return out[:cap]
 
 
+def towers_deep(cols, lo, hi, cap, seed=11):
+    """**長い**孤児の塔を乱択で作る（BFS だと |C| <= 3 に偏るため）。"""
+    rng = random.Random(seed)
+    out = []; tries = 0
+    base = [c for c in cols if c[1] == 0 and c[2] == 0]
+    while len(out) < cap and tries < cap * 400:
+        tries += 1
+        C = (rng.choice(base),)
+        tgt = rng.randint(lo, hi)
+        while len(C) < tgt:
+            ok = [p for p in cols
+                  if p == (0, 0, 0) or not has_parent(C + (p,), len(C))]
+            if not ok:
+                break
+            C = C + (rng.choice(ok),)
+        if len(C) >= lo:
+            out.append(C)
+    return out
+
+
 if __name__ == '__main__':
     U = int(sys.argv[1]); N = int(sys.argv[2]); DEP = int(sys.argv[3])
     CAP = int(sys.argv[4]) if len(sys.argv) > 4 else 3000
@@ -146,7 +168,10 @@ if __name__ == '__main__':
     COLS = [(a, b, c) for a in range(6) for b in range(8) for c in range(2)]
     print('u=%d  節 2 の n = 1..%d  depth=%d  COLS=%d 列  maxlen=%d'
           % (U, N, DEP, len(COLS), MAXLEN), flush=True)
-    T = towers(COLS, 6, CAP)
+    DEEP = len(sys.argv) > 6 and sys.argv[6] == 'deep'
+    T = (towers_deep(COLS, 4, 12, CAP) if DEEP else towers(COLS, 6, CAP))
+    print('  C の長さ分布: %s'
+          % dict(sorted(Counter(len(C) for C in T).items())), flush=True)
     print('**C: Wlo が立つ孤児の塔 %d 個（C in W u が確定、任意の u）**' % len(T),
           flush=True)
     assert all(Wlo(C) for C in random.Random(1).sample(T, min(200, len(T))))
@@ -154,6 +179,8 @@ if __name__ == '__main__':
 
     memo = {}; tot = Counter(); ex = []; t0 = time.time()
     for i, C in enumerate(T):
+        if len(memo) > 3000000:           # memo が 4GB 級に育つので上限を切る
+            memo.clear(); tot['memo を捨てた回数'] += 1
         if time.time() - t0 > 2400:
             tot['**時間切れ（C を %d / %d まで）**' % (i, len(T))] += 1; break
         cand = [p for p in COLS if has_parent(C + (p,), len(C))]
