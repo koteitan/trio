@@ -2657,3 +2657,72 @@ R1 の節 11 `∀ k < |st.dmap|, st.dmap[k] ≤ |st.ST|` を `DmOK` に足そう
   `convResid` は `conv3 head` を `|head| ≤ |rest| < |M|` で呼ぶので
   `blkInv_aux` の強い帰納に入る。`convResid` についての相互再帰の補題を
   1 本書く（(H) の保存 ＋ `BlkOK_app'`）。見積もり **80〜120 行**。
+
+
+---
+
+# 課題 L15: `convResid` の block 性を**証明した**。残る仮定は 2 本（2026-08-28）
+
+## 0. 結論を先に
+
+* **`resid_blk` を証明した**（`Dbms3.lean`, exit 0 / sorry 0）。
+  課題 L13 の `ResidBlkT`（結論 `BlkOK rd`、**偽**）を結論 **`BlkOK d`** に直し、
+  側条件 (H) を付けたうえで、`conv3` の強い帰納の中で**証明できた**。
+  ⟹ **仮定から消えた。**
+* `ImgBlockT3 Conv3.b2d3` が依存するのは **2 本**:
+
+      ResidSideT   呼び出し点で側条件 (H) が出ること（R1-NOTES §3 / R2-3）
+      DmapInT      `dmapAt` の範囲内の枝（R1-NOTES 節 10 ＋ 節 11）
+
+## 1. `resid_blk`（課題 R2 の紙の証明を Lean に写したもの）
+
+    resid_blk (IH : conv3 の強い帰納の仮定) :
+      ∀ n rest, |rest| ≤ n → |rest| ≤ NN → ∀ rd Lr ps pw st nx off,
+        d ≤ |st.ST| → rd ≤ |st.ST| → DmOK st →
+        (∀ c ∈ rest, d + rest.head.1 ≤ rd + c.1) →      -- 側条件 (H)
+        BlkOK d st (convResid rest rd Lr ps pw st nx off)
+
+`rest.length` についての強い帰納。骨は R2 の紙の証明そのままである:
+
+* `rest = []` … `BlkOK_nil`
+* `rest = c :: rs` …
+  - (H) に `c' := c` を入れて **`d ≤ rd`**。
+  - 先頭の木は `conv3 head rd` で、`|head| ≤ |rest| ≤ NN` なので `IH` が使える。
+    `BlkOK rd` を `BlkOK_mono` で `BlkOK d` に落とす。
+  - `tail = []` … それで終わり。
+  - `tail ≠ []` … `rd' = rd - (c.1 - m1)` で再帰し、`BlkOK_app (le_refl d)` で連結。
+    **(H) の保存**は `omega` 1 発で出るが、そのために
+    **`m1 < c.1`**（次の木の頭は今の木の頭より浅い）が要る。これは
+    `deepGe` の定義そのものなので `deepGe_head_lt` として証明した:
+
+        deepGe_head_lt : rs.drop (deepGe a rs) ≠ [] →
+                         ((rs.drop (deepGe a rs)).headD x).1 < a
+
+    ℕ の切り捨て引き算は `omega` がそのまま扱うので、R2 の言う
+    「`max(0, ·)` は死んでいる」を別に証明する必要はなかった
+    （(H) から `c.1 - m1 ≤ rd - d` が出るので切り詰めが起きない、を
+    `omega` が内部で使う）。
+
+新しい補題: `headD_memT` / `deepGe_head_lt` / `resid_blk`。**60 行**。
+（課題 L14 の見積もり「80〜120 行」より小さかった。`omega` が ℕ の
+切り捨て引き算を全部飲んだため。）
+
+## 2. 残る 2 本と、その先
+
+    ResidSideT  補題 A（∀ c ∈ rest2, p.1+1 ≤ c.1）＋ 節 10 から出る（R1 §3）
+    DmapInT     第 1 項 k ≤ |dmap| は R1 §4.3、下界は節 10、上界は節 11
+
+**どちらも「`BlkOK` に節 10 を足す」ことに帰着する。** 節 10 は入力 `M` の
+先頭の深さを参照するので `BlkOK d st res` に引数を 1 本足す必要がある:
+
+    BlkOK d mo st res      mo : Option ℕ（入力の先頭の行 0。空なら none）
+    節 10  ∀ m ∈ mo, ∀ j, m ≤ j → j < |res.2.dmap| → d + (j - m) ≤ res.2.dmap[j]
+
+追随するもの: `BlkOK_nil` / `BlkOK_app` / `BlkOK_app'` / `BlkOK_mono` /
+`BlkOK_ST_ge` / `cols_blk` / `blk_contr` / `blk_step` / `resid_blk` /
+`blkInv_aux`。**`BlkOK_app` には側条件 `d + m_Y ≤ d' + m_X` が要る**
+（R1 の「4 つの再帰がどれも `d' + (j - m') ≥ d + (j - p.1)` の向きにずれている」）。
+見積もり **150〜200 行**。測定は R1 が全 `conv3` 呼び出し 13108043 回で済ませている。
+
+節 11（`∀ k < |dmap|, dmap[k] ≤ |ST|`）は課題 L14 §3 のとおり
+`∀ k < p.1, st.dmap[k] ≤ d` が要る。**R1 に測定を依頼中。**

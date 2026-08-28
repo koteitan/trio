@@ -2600,18 +2600,113 @@ theorem blk_contr {d dd2 nc' : ℕ} {st st1 stA stU stR stB : St}
     (BlkOK_app (le_refl d)
       (BlkOK_app (Nat.le_succ d) (BlkOK_app (by omega) hcols hA) hUok) hRok) hBok
 
+/-- `deepGe a rs` の直後の柱は行 0 が `a` 未満（`deepGe` の定義そのもの）。 -/
+theorem deepGe_head_lt {a : ℕ} : ∀ (rs : TrioSeq) (x : Col),
+    rs.drop (deepGe a rs) ≠ [] → ((rs.drop (deepGe a rs)).headD x).1 < a
+  | [], _, h => by simp [deepGe] at h
+  | q :: r, x, h => by
+      rw [deepGe] at h ⊢
+      split at h
+      · rename_i hq
+        rw [if_pos hq, List.drop_succ_cons] at *
+        exact deepGe_head_lt r x h
+      · rename_i hq
+        rw [if_neg hq, List.drop_zero, List.headD_cons]
+        omega
+
+/-- 空でないリストの `headD` はそのリストの元。 -/
+theorem headD_memT {l : TrioSeq} (h : l ≠ []) (x : Col) : l.headD x ∈ l := by
+  cases l with
+  | nil => exact absurd rfl h
+  | cons a t => simp
+
+set_option maxHeartbeats 1000000 in
+/-- **★ `convResid` は外側の `d` の block である**（課題 R1 §3 / R2）。
+
+`convResid` は残余を**森**として読み、次の木の開始深さは
+`rd - (c.1 - tail[0].1)` と**必ず下がる**（`tail[0]` は `deepGe` の定義から
+`c` より浅い）。だから `BlkOK rd` は偽である（課題 L13 の `ResidBlkT`、
+`<=8` 列に反例）。しかし側条件
+
+    (H)  ∀ c' ∈ rest, d + rest.head.1 ≤ rd + c'.1
+
+があれば、`c' := rest.head` から `d ≤ rd` が出て切り詰めが死に、(H) は
+再帰でそのまま保たれるので、**外側の `d`** については block になる。
+`convResid` は `conv3 head` を `|head| ≤ |rest|` で呼ぶので、
+`conv3` の強い帰納の仮定 `IH` がそのまま使える。 -/
+theorem resid_blk {NN d : ℕ}
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ NN → ∀ (d' : ℕ) (L' : List Lent)
+        (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool) (st' : St)
+        (nx' : Option Col) (off' : ℕ), d' ≤ st'.ST.length → DmOK st' →
+        BlkOK d' st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off')) :
+    ∀ (n : ℕ) (rest : TrioSeq), rest.length ≤ n → rest.length ≤ NN →
+      ∀ (rd : ℕ) (Lr : List Lent) (ps pw : ℕ × ℕ) (st : St) (nx : Option Col)
+        (off : ℕ), d ≤ st.ST.length → rd ≤ st.ST.length → DmOK st →
+        (∀ c ∈ rest, d + (rest.headD (0, 0, 0)).1 ≤ rd + c.1) →
+        BlkOK d st (convResid rest rd Lr ps pw st nx off) := by
+  intro n
+  induction n with
+  | zero =>
+      intro rest hn _ rd Lr ps pw st nx off hd _ hdm _
+      have hnil : rest = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil
+      rw [convResid.eq_def]
+      exact BlkOK_nil hd hdm
+  | succ n ih =>
+      intro rest hn hNN rd Lr ps pw st nx off hd hrd hdm hH
+      cases rest with
+      | nil => rw [convResid.eq_def]; exact BlkOK_nil hd hdm
+      | cons c rs =>
+          simp only [List.length_cons] at hn hNN
+          have hdrd : d ≤ rd := by
+            have h := hH c (by simp)
+            simp only [List.headD_cons] at h
+            omega
+          have hlen : ((c :: rs).take (1 + deepGe c.1 rs)).length ≤ NN := by
+            simp only [List.length_take, List.length_cons]
+            omega
+          have hrh0 := IH ((c :: rs).take (1 + deepGe c.1 rs)) hlen rd Lr
+            (List.replicate 12 false) ps pw false false st
+            (match (c :: rs).drop (1 + deepGe c.1 rs) with
+             | t :: _ => some t | [] => nx) off hrd hdm
+          rw [convResid.eq_def]
+          dsimp only
+          split
+          · exact BlkOK_mono hdrd hrh0
+          · rename_i hne
+            refine BlkOK_app (le_refl d) (BlkOK_mono hdrd hrh0)
+              (ih _ ?_ ?_ _ _ _ _ _ _ _ ?_ ?_ hrh0.2.2.2.2.2.2.2 ?_)
+            · simp only [List.length_drop, List.length_cons]; omega
+            · simp only [List.length_drop, List.length_cons]; omega
+            · have := hrh0.2.1; omega
+            · have := hrh0.2.1; omega
+            · intro c' hc'
+              have hnn : (c :: rs).drop (1 + deepGe c.1 rs) ≠ [] := by
+                intro hc; rw [hc] at hne; simp at hne
+              have hdr : (c :: rs).drop (1 + deepGe c.1 rs)
+                  = rs.drop (deepGe c.1 rs) := by
+                rw [Nat.add_comm, List.drop_succ_cons]
+              have hlt : (((c :: rs).drop (1 + deepGe c.1 rs)).headD
+                  ((0, 0, 0) : Col)).1 < c.1 := by
+                rw [hdr]
+                exact deepGe_head_lt rs (0, 0, 0) (by rw [← hdr]; exact hnn)
+              have h1 : c' ∈ c :: rs := List.mem_of_mem_drop hc'
+              have h2 := hH c' h1
+              have h3 := hH _ (List.mem_of_mem_drop (headD_memT hnn (0, 0, 0)))
+              simp only [List.headD_cons] at h2 h3
+              omega
+
 set_option maxHeartbeats 2000000 in
-/-- **`BlkInv` の帰納の 1 歩**（課題 L13）。
+/-- **`BlkInv` の帰納の 1 歩**（課題 L13 / L15）。
 
-残っている仮定は 2 本だけ:
+`hres`（`convResid` が外側の `d` の block）は **`resid_blk` で証明ずみ**なので
+仮定ではなく、`blkInv_aux` が強い帰納の中で渡す。残る仮定は 2 本:
 
-* `hres` … `convResid` が開始深さ `rd` の block であること。**森の枝**
-  （`convResid` の再帰）が `338` 発火で 0 回しか踏まれないので実測では真だが、
-  `tail.head` は `c` より必ず浅いので一般には偽。「残余は単一の木」が言えれば
-  消える（課題 H へ）。
-* `hdmin` … `dmapAt` の枝の**範囲内**の場合（`k < |dmap|`）。実測では
-  `<=6` 列で 0 回、7 列の縮約発火 294 個で **2 回**しか踏まれない。
-  `dmap` は狭義単調でも「全要素 < |ST|」でもないので道具が無い。 -/
+* `hside` … 呼び出し点で側条件 (H) が出ること（R1-NOTES §3 / R2-3。
+  補題 A ＋ 節 10 から出るはず）。
+* `hdmin` … `dmapAt` の枝の**範囲内**の場合（R1-NOTES 節 10 ＋ 節 11 から
+  出るはず）。⚠ 課題 L13 の「`k+1 < |dmap|` は空虚」は**誤り**で、
+  9 列で 3 例・10 列で 39 例踏まれる。 -/
 theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
     (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
     (hd : d ≤ st.ST.length)
@@ -2619,9 +2714,10 @@ theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Boo
         (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool) (st' : St)
         (nx' : Option Col) (off' : ℕ), d' ≤ st'.ST.length → DmOK st' →
         BlkOK d' st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off'))
-    (hres : ∀ (rest : TrioSeq) (rd : ℕ) (Lr : List Lent) (ps' pw' : ℕ × ℕ)
-        (st' : St) (nx' : Option Col) (off' : ℕ), d ≤ rd → rd ≤ st'.ST.length →
-        DmOK st' → (∀ c ∈ rest, d + (rest.headD (0, 0, 0)).1 ≤ rd + c.1) →
+    (hres : ∀ (rest : TrioSeq), rest.length ≤ r.length → ∀ (rd : ℕ)
+        (Lr : List Lent) (ps' pw' : ℕ × ℕ) (st' : St) (nx' : Option Col)
+        (off' : ℕ), d ≤ st'.ST.length → rd ≤ st'.ST.length → DmOK st' →
+        (∀ c ∈ rest, d + (rest.headD (0, 0, 0)).1 ≤ rd + c.1) →
         BlkOK d st' (convResid rest rd Lr ps' pw' st' nx' off'))
     (hside : ∀ (stU : St) (rest2 : TrioSeq) (e : ℕ), ∀ c ∈ rest2,
         d + (rest2.headD (0, 0, 0)).1
@@ -2660,9 +2756,7 @@ theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Boo
           (cols_blk hd rfl rfl rfl rfl rfl rfl rfl (by simp) (getLastD_snoc _ _ _))
           (IH _ hA _ _ _ _ _ _ _ _ _ _ ?_ ?_)
           (fun h1 h2 => IH _ ?_ _ _ _ _ _ _ _ _ _ _ h1 h2)
-          (fun h2 h3 h4 => hres _ _ _ _ _ _ _ _
-            (rd_bounds hee h2 h3 (h4 h3)
-              (fun hc => (hdmin _ _ hc).1) (fun hc => (hdmin _ _ hc).2)).1
+          (fun h2 h3 h4 => hres _ ?_ _ _ _ _ _ _ _ (by omega)
             (rd_bounds hee h2 h3 (h4 h3)
               (fun hc => (hdmin _ _ hc).1) (fun hc => (hdmin _ _ hc).2)).2
             h4 (fun c hc => hside _ _ _ c hc))
@@ -2671,6 +2765,7 @@ theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Boo
       · intro _
         rw [getLastD_snoc, len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _]
       · simp only [List.length_take]; omega
+      · simp only [List.length_drop, List.length_take, List.length_tail]; omega
       · simp only [List.length_drop, List.length_tail]; omega
   · refine BlkOK_app (le_refl d)
       (BlkOK_app ?_
@@ -2741,34 +2836,6 @@ def BlkInv : Prop :=
 `blk_step` を列数についての強い帰納法で回すと `BlkInv` が出る。
 残るのは次の 2 本で、どちらも**縮約の枝の中でしか使わない**。 -/
 
-/-- **(H2 の訂正版, 課題 R1/R2)** `convResid` は**外側の `conv3` の深さ `d`** の
-block である（開始深さ `rd` の block ではない）。
-
-⚠ **課題 L13 の `ResidBlkT`（結論が `BlkOK rd`）は偽だった。** `convResid` は
-残余を**森**として読み、次の木の開始深さは `rd - (c.1 - tail[0].1)` と必ず下がる。
-`<=7` 列で森の枝が 0 回だったのは母数の切り方の問題で、**`<=8` 列で 2414 発火中
-32 回**踏まれる（`tools/dbms/R1-NOTES.md` §2、最小の反例は 8 列）。
-
-    反例 (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(3,0,0)(2,0,0)
-         rest = (3,0,0)(2,0,0)   先頭より次が浅い ＝ 森
-
-課題 R1 §3 の測定: `BlkOK rd` は森の枝とちょうど 1 対 1 で節 6（と巻き添えの
-節 2）が破れるが、**`BlkOK d` に替えると 8 節すべてが全母集団で違反 0**
-（`gen3 <=8` 全数 2414 発火 / 接頭辞族 `<=10` 列 12872 発火・森 5253 を含む）。
-
-側条件 `H` は「木を 1 本降りるたびに開始深さが下がるが `d` を割らない」で、
-`convResid` の再帰でそのまま保たれる（R2-2）。`c := rest.head` を取ると
-`d ≤ rd` が出るので `max(0, ·)` の切り詰めも起きない（実測 0 回）。
-
-⚠ **これはまだ仮定である。** R1/R2 は「`convResid` は `conv3 head` を
-`|head| ≤ |rest| < |M|` で呼ぶので `blkInv_aux` の強い帰納に入る」＝
-**仮定から消せる**と見立てているが、その配線はまだ書いていない。 -/
-def ResidBlkD : Prop :=
-  ∀ (rest : TrioSeq) (d rd : ℕ) (Lr : List Lent) (ps pw : ℕ × ℕ) (st : St)
-    (nx : Option Col) (off : ℕ), rd ≤ st.ST.length → DmOK st →
-    (∀ c ∈ rest, d + (rest.headD (0, 0, 0)).1 ≤ rd + c.1) →
-    BlkOK d st (convResid rest rd Lr ps pw st nx off)
-
 /-- **(H1 の残り)** 残余の開始深さを `dmap` から読む枝で要る 3 つ。
 
 `rd = dmapAt stU.dmap ((rest2.head).1 - 1)` の枝について
@@ -2806,7 +2873,7 @@ def ResidSideT : Prop :=
       ≤ (if rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1 then d + 1 + e
          else dmapAt stU.dmap ((rest2.headD (0, 0, 0)).1 - 1)) + c.1
 
-theorem blkInv_aux (h1 : ResidBlkD) (h2 : DmapInT) (h3 : ResidSideT) :
+theorem blkInv_aux (h2 : DmapInT) (h3 : ResidSideT) :
     ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → ∀ (d : ℕ) (L : List Lent)
       (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool) (st : St)
       (nx : Option Col) (off : ℕ), d ≤ st.ST.length → DmOK st →
@@ -2827,15 +2894,16 @@ theorem blkInv_aux (h1 : ResidBlkD) (h2 : DmapInT) (h3 : ResidSideT) :
           have hr : r.length ≤ n := by simp only [List.length_cons] at hM; omega
           exact blk_step p r d L F ps pw first force st nx off hd
             (fun M' hM' => ih M' (le_trans hM' hr))
-            (fun rest rd Lr ps' pw' st' nx' off' _ hb hdm' hH =>
-              h1 rest d rd Lr ps' pw' st' nx' off' hb hdm' hH)
+            (fun rest hlen rd Lr ps' pw' st' nx' off' hd' hb hdm' hH =>
+              resid_blk (NN := n) (d := d) ih rest.length rest le_rfl
+                (le_trans hlen hr) rd Lr ps' pw' st' nx' off' hd' hb hdm' hH)
             (fun stU rest2 e c hc => h3 d p stU rest2 e c hc)
             (fun stU rest2 hc => h2 d p stU rest2 hc)
 
-/-- **★ `BlkInv` は 3 本の仮定から出る**（課題 L14）。 -/
-theorem blkInv_of (h1 : ResidBlkD) (h2 : DmapInT) (h3 : ResidSideT) : BlkInv :=
+/-- **★ `BlkInv` は 2 本の仮定から出る**（課題 L15）。 -/
+theorem blkInv_of (h2 : DmapInT) (h3 : ResidSideT) : BlkInv :=
   fun M d L F ps pw first force st nx off hd hdm =>
-    blkInv_aux h1 h2 h3 M.length M le_rfl d L F ps pw first force st nx off hd hdm
+    blkInv_aux h2 h3 M.length M le_rfl d L F ps pw first force st nx off hd hdm
 
 end Conv3
 
@@ -2853,19 +2921,18 @@ theorem ImgBlockT3_of_BlkInv (h : Conv3.BlkInv) : ImgBlockT3 Conv3.b2d3 := by
   intro hne
   simpa using hh hne
 
-/-- **★★ `ImgBlockT3` は 3 本の仮定から出る**（課題 L14、R1/R2 の訂正を反映）。
+/-- **★★ `ImgBlockT3` は 2 本の仮定から出る**（課題 L15）。
 
-    ResidBlkD    `convResid` は**外側の `d`** の block（`BlkOK rd` は**偽**）
-    ResidSideT   その呼び出し点の側条件 (H)
-    DmapInT      `dmapAt` の範囲内の枝（`k + 1 < |dmap|` は**空虚ではない**）
+    ResidSideT   `convResid` の呼び出し点の側条件 (H)（R1-NOTES §3 / R2-3）
+    DmapInT      `dmapAt` の範囲内の枝（R1-NOTES 節 10 ＋ 節 11）
 
-3 本とも `tools/dbms/R1-NOTES.md` が**全 `conv3` 呼び出し**（`gen3 <=8` 全数
-13108043 回）で違反 0・陽性対照つきで測っている。R1/R2 の見立てでは
-`ResidBlkD` と `ResidSideT` は帰納の中で消せ、`DmapInT` は `BlkOK` に
-節 10・節 11 を足せば消える。 -/
-theorem ImgBlockT3_of_resid (h1 : Conv3.ResidBlkD) (h2 : Conv3.DmapInT)
-    (h3 : Conv3.ResidSideT) : ImgBlockT3 Conv3.b2d3 :=
-  ImgBlockT3_of_BlkInv (Conv3.blkInv_of h1 h2 h3)
+`convResid` そのものの block 性（課題 L13 の `ResidBlkT`、結論が `BlkOK rd` で
+**偽**だったもの）は、結論を **`BlkOK d`** に直したうえで `resid_blk` として
+**証明した**ので仮定から消えた。残る 2 本はどちらも
+`tools/dbms/R1-NOTES.md` が全 `conv3` 呼び出し（`gen3 <=8` 全数 13108043 回）で
+違反 0・陽性対照つきで測っている。 -/
+theorem ImgBlockT3_of_resid (h2 : Conv3.DmapInT) (h3 : Conv3.ResidSideT) :
+    ImgBlockT3 Conv3.b2d3 := ImgBlockT3_of_BlkInv (Conv3.blkInv_of h2 h3)
 
 
 /-! ## 12. `OrderT3` を証明するには何が要るか
