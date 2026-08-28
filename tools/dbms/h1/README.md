@@ -140,3 +140,31 @@ lim=7 の 305087 組なら 331 組の破れが見える）。約 140 秒。
 
 **教訓**: 破れの現場を見るときは `n` を「像の長さが目標と揃うもの」で選ぶ。
 最長一致で選ぶと 105 対のうち 70 対が「像が短い」に落ちて柱まで届かない。
+
+# 課題 H12 の道具（縮約の残余 / 証人 d2b3(T) からの逆算）
+
+**注意**: `mksibnb.py` は H11 のときの `rows3.py`（v15）を patch する道具で、
+`sibnb` が本体に入った**いまは空打ちできない**（アンカーが消えた）。
+H11 の測定を再現したいときは `git show <H11 の前の commit>:tools/dbms/rows3.py` から。
+
+    python3 /tmp/h1work/mkresid.py    # conv_resid の渡す値を旗で差し替える rows3r.py
+                                      #   RFLAGS=rfirst,rps,rF,wdmap,sbody,sanchhead,...
+    python3 /tmp/h1work/mkflip.py     # 分岐列の決定を site ごとに強制する rows3v.py
+                                      #   b2d3v(M, {off: True/False/'sd'})
+    python3 /tmp/h1work/mkh12.py      # 条項 fA / fB / fC の写し rows3w.py（WFLAGS=...）
+
+    python3 /tmp/h1work/h10img.py     # まず破れを img54p.pkl に（70s）
+    python3 /tmp/h1work/h12w.py       # **証人 B = d2b3(T) と柱ごとに突き合わせる**
+    python3 /tmp/h1work/h12enr.py     # 濃縮率（対照 = lim=6 の全柱）
+    python3 /tmp/h1work/h12flip.py    # 証人が要求する「浅い／深い」を逆算 -> h12fix.pkl
+    python3 /tmp/h1work/h12teach.py   # クラス A/B/C の教師データ
+    TAG=fB WFLAGS=fB python3 /tmp/h1work/h12neg.py    # 壊れた一致から負例
+    CLS=B ADD=fB python3 /tmp/h1work/h12feat.py       # 素性表
+    python3 /tmp/h1work/h6cov.py /tmp/h1work/h12gB.pkl 3
+
+**教訓 1**: 破れの逆算は `A<n>` ではなく**証人 `d2b3(T)`** でやる。
+長さが揃うので（58/70）柱ごとに整列でき、`n` 選びの罠が無い。
+
+**教訓 2**: 集合被覆が「fp=0 の連言が 1 本も無い」「矛盾が N 個ある」と
+言ったら、それは**素性が足りない**か**規則の粒度が間違っている**という
+測定結果である。クラス B の矛盾 161 は「1 柱 1 決定では不可能」を意味する。
