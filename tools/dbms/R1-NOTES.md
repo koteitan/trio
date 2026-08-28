@@ -3384,3 +3384,47 @@ L47 が (W3) の対偶で `M not in W u` の健全な証明器 `refute.py` を�
     if len(M) == 1:  return lev_at(M, 0) <= u        # 健全で決定的
 
 u=0 では結果は変わらない（`lev <= 0` は元の節 1 と同値）。効くのは u >= 1。
+
+### `Final.lean:381` / `Wtower2.lean:2023` のコメント差し替え案
+
+いまの記述:
+
+    Probe `tools/probe_snoc.py`: 14455 instances, 0 violations.
+    計測 `tools/probe_snoc.py`: 14455 例違反 0（孤児側の対照は 34507 例違反 0）。
+
+これは **Lean の `W` を測った数ではない**（R29-4）。`probe_snoc.inW` は節 3 を
+実装せず、節 1 を `lev <= a` に緩めている。`C in W u` が確定している C は
+5068 個中 408 個（8%）だけ。差し替え案:
+
+```
+Probe `tools/dbms/r49.py`: 111000 instances, 0 counterexamples, with BOTH
+sides sound -- `C in W u` is certified by the orphan-tower rule (clause 2 is
+finite because `oper M n = Pred M` when the last column has no parent), and
+`C ++ [p] notin W u` would be certified by the three-valued unfolding whose
+`False` carries a finite witness `n`.  So a violation would be a genuine
+counterexample, which `tools/probe_snoc.py`'s `minstage` proxy could not
+produce.  Populations: 4000 orphan towers of length <= 3 (79022 decided) and
+1200 of length 4..12 (15938 decided, identical at `u = 0` and `u = 4`);
+`p` ranges over all 96 columns `a < 6, b < 8, c < 2` that acquire a parent.
+Cross-checked against `tools/refute.py` (the (W3) contrapositive): on 4580
+matrices where `refute` proves non-membership, `Wup` proves it too -- 0
+disagreements.
+```
+
+日本語版:
+
+```
+計測 `tools/dbms/r49.py`: 約 111000 例、反例 0。**両側とも健全**である ——
+`C in W u` は孤児の塔の規則で確定し（最後の列に親が無いとき
+`oper M n = Pred M` なので節 2 の `forall n` が有限で確かめきれる）、
+`C ++ [p] notin W u` は三値展開の `False`（有限の証人 n つき）で確定する。
+よって違反が出れば**本物の反例**であり、`probe_snoc.py` の `minstage` の
+代役では出せなかったもの。母集団は長さ <= 3 の孤児の塔 4000 個（決着 79022）と
+長さ 4..12 の 1200 個（決着 15938、`u = 0` と `u = 4` で完全一致）。
+`p` は親が付く 96 列（`a < 6, b < 8, c < 2`）全部。
+`tools/refute.py`（(W3) の対偶）と突き合わせ、`refute` が非所属を証明した
+4580 件すべてで一致（食い違い 0）。
+```
+
+**注意**: `WSnoc` が**固定段数では閉じない**ことも別に測ってある（上）。
+計測はあくまで「反例が無い」までで、証明の代わりにはならない。
