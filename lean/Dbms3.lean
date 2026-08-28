@@ -2392,6 +2392,41 @@ theorem Dm12_refl {m : ℕ} {st : St} : Dm12 m st ([], st) :=
 def Dm11 (d m : ℕ) (st : St) : Prop :=
   ∀ k, k < m → k < st.dmap.length → st.dmap.getD k 0 ≤ d + 1
 
+/-- **節 10 の付け替え**（課題 L20）: `(d', m')` の節 10 から `(d, m)` の節 10 へ。
+
+`j ≥ m'` の部分は**数の条件 `d + m' ≤ d' + m`** だけで移る。`m ≤ j < m'` の
+中間だけを別に与える。 -/
+theorem Dm10_shift {d d' m m' : ℕ} {res : TrioSeq × St}
+    (hmm : d + m' ≤ d' + m) (h : Dm10 d' m' res)
+    (hmid : ∀ j, m ≤ j → j < m' → j < res.2.dmap.length →
+      d + (j - m) ≤ res.2.dmap.getD j 0) : Dm10 d m res := by
+  intro j hj hlen
+  by_cases hjm : m' ≤ j
+  · have h5 := h j hjm hlen
+    omega
+  · exact hmid j hj (by omega) hlen
+
+/-- **`rA` の付け替え**（課題 L20 の要）。`cA` は深さ `dd2+1`・先頭 `p.1+1` で
+呼ばれるので、`d + 1 ≤ dd2` があれば `(d+1, p.1)` の節 10 に移せる:
+
+* `j > p.1` … `(dd2+1) + (j - p.1 - 1) ≥ (d+1) + (j - p.1)` ⟺ `d + 1 ≤ dd2`
+* `j = p.1` … `cA` は添字 `p.1` を触らない（`Dm12`）ので値は `dd2 ≥ d + 1`
+
+⟹ **課題 L18 で「鎖が閉じない」と報告した箇所はここで閉じる**
+（`cU` の入口が要求するのは `Dm10 (d+1) U.head.1 rA.2` で、
+課題 R1 の測定より `U.head.1 = p.1`（`<=7` 列で 6/6）だから）。 -/
+theorem Dm10_of_child {d dd2 m : ℕ} {st1 : St} {res : TrioSeq × St}
+    (hdd : d + 1 ≤ dd2) (h : Dm10 (dd2 + 1) (m + 1) res)
+    (h12 : Dm12 (m + 1) st1 res)
+    (hst1 : st1.dmap.getD m 0 = dd2) (hlen1 : m < st1.dmap.length) :
+    Dm10 (d + 1) m res := by
+  refine Dm10_shift (by omega) h ?_
+  intro j hj hjm hlen
+  have hjeq : j = m := by omega
+  subst hjeq
+  rw [h12 j (by omega) hlen hlen1, hst1]
+  omega
+
 /-- **節 10 の連結**。`X` を出した後で `Y` を出したなら、`X ++ Y` も節 10 を満たす。
 
 `j ≥ m'` は `Y` の節 10 と側条件 `d + m' ≤ d' + m` で出る。
