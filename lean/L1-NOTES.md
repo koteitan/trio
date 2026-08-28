@@ -3836,3 +3836,89 @@ EOF
 （`b2d3([list(c) for c in M])` だと縮約が発火しない。シート 1358 行のうち
 334 行で像が変わる）。**Lean 側の構造（`(→)` を 1 か所も使わない、
 `SandwichUT3` は 1 か所）は読解の結果なのでバグと無関係**である。
+
+
+---
+
+# 課題 L33: `wf` を DBMS 側に載せ替える見積もり（2026-08-29）
+
+## 0. 結論（見積もり）
+
+**書ける見込みは高い。95〜130 行。** しかも**副産物が 1 つある**（§3）。
+
+## 1. `wf` が使われるのは 1 か所。要るのは 3 つ組だけ
+
+`ST_D3_descend`（35 行）で `wf` を使うのは
+
+    induction A using wf.induction
+    exact ih B ⟨hB, hA, hBA⟩ hB hSD' M hM (ole_trans hMn hAnB)
+
+の 1 か所。`⟨hB, hA, hBA⟩` が再帰の根拠で、**`hBA : translate B <o translate A`
+だけが BMS の順序**である。他の 2 つ（`hB` / `hA`）は `ST_TS` の証拠。
+
+## 2. `heq` の枝は**変更不要**（チームリードの心配は当たらない）
+
+    · have hMA : M = A := by ... seqlex_total ... olt_ST_iff_seqlex ...
+
+この枝は **`wf` を一切使っていない**。`ST_D3_descend` の**主張**（`M` の側の仮定
+`translate M ≤o translate A`）を BMS のままにしておくなら、**そのまま残せる**。
+⟹ **`Inj3` は要らない。**
+
+## 3. ★ 副産物: **`OrderReindexT3` の第 2 成分が消える**
+
+DBMS 側の整礎性を **`seqlex` で**取る:
+
+    RD : TrioSeq → TrioSeq → Prop := fun x y => ST_D3 x ∧ ST_D3 y ∧ seqlex x y
+    wfD : WellFounded RD                    ← 新しい仮定（DBMS 3 行 z<2 の停止性）
+
+すると再帰の根拠は `RD (conv3 B) (conv3 A)`、すなわち
+
+    ST_D3 (conv3 B)                 … `hSD'`（既に手にある）
+    ST_D3 (conv3 A)                 … `hSD`（仮定）
+    seqlex (conv3 B) (conv3 A)      … `heqC` で `(conv3 A)⟦m⟧` に書き換えると
+                                      **`seqlex_oper (hb hA) (hlen2 hA hlen)`**
+
+**3 つ目は `ImgBlockT3` ＋ `ImgLenT3` から無料で出る**（`ReindexT1_of_cofinal''` の
+最後の行が既にそれを作っている）。⟹ `hBA` は要らなくなり、
+**`OrderReindexT3` の第 2 成分（`seqlex (conv3 B) (conv3 A) → translate B <o translate A`）
+が仮定から消える。**
+
+残るのは第 1 成分（`seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B`）
+だけで、これは `hAnB`（`M` を次の段へ渡すため）に要る。
+
+⚠ **`translateD` を新しく定義する必要は無い**（`seqlex` を使うので）。
+DBMS 側の `m_step_decreases` に当たるものも要らない（`seqlex_oper` が既にある）。
+
+## 4. 見積もりの内訳
+
+| やること | 行数 |
+|---|---|
+| `RD` / `wfD` の定義と `InvImage.wf` の適用 | 10 |
+| `ST_D3_descend_D`（`ST_D3_descend` の写しで根拠を差し替え） | 35〜45 |
+| `ReindexT1D`（`hBA` を落とした版）＋ `ReindexT1D_of_cofinal` | 25〜40 |
+| `ST_D3_conv3_D` / `ST_D3_conv3_of_parts_D` | 20〜25 |
+| **合計** | **90〜120 行** |
+
+**引っかかりそうな点**（順に）:
+
+1. `induction A using (InvImage.wf conv3 wfD).induction` が通るか（`InvImage.wf` は
+   Mathlib の標準。通るはず）
+2. `heqC` の向き（`(conv3 A)⟦m⟧ = conv3 B`）で `seqlex (conv3 B) (conv3 A)` を作るとき、
+   `rw [← heqC]` の位置
+3. `ReindexT1` の interface を 2 つに割る（既存の利用者を壊さないよう `ReindexT1D` を
+   別名で足す）
+
+**未測定は無い**（全部 Lean の中の話）。
+
+## 5. これで何が変わるか（正確に）
+
+| | いま | L33 が通ると |
+|---|---|---|
+| `ST_D3_conv3` の仮定 | **BMS の整礎性**（残核 `TowerGraft2` / `TowerExp`） | **DBMS の整礎性**（`wfD`） |
+| `OrderReindexT3` | 2 成分 | **1 成分**（第 1 成分だけ） |
+| 2 つの道 | 絡んでいる | **切り離せる** |
+
+⚠ **BMS の停止性が出るわけではない。** `ST_D3_conv3` の結論は「像が DBMS 標準形」で
+あって停止性ではない。DBMS の停止性から BMS の停止性を出すには**順序の埋め込み**
+（`translate M <o translate N → seqlex (conv3 M) (conv3 N)`）が別に要り、
+そこは今日 24 件の反例が出た側である。
