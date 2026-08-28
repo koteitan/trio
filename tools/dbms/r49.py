@@ -177,15 +177,18 @@ if __name__ == '__main__':
     assert all(Wlo(C) for C in random.Random(1).sample(T, min(200, len(T))))
     print('  陽性対照: 抜き取り 200 個すべてで Wlo = True  OK', flush=True)
 
+    BUD = int(os.environ.get('R49BUDGET', 2400))
     memo = {}; tot = Counter(); ex = []; t0 = time.time()
     for i, C in enumerate(T):
         if len(memo) > 3000000:           # memo が 4GB 級に育つので上限を切る
             memo.clear(); tot['memo を捨てた回数'] += 1
-        if time.time() - t0 > (int(os.environ.get("R49BUDGET", 2400))):
+        if time.time() - t0 > BUD:
             tot['**時間切れ（C を %d / %d まで）**' % (i, len(T))] += 1; break
         cand = [p for p in COLS if has_parent(C + (p,), len(C))]
         cand.sort(key=lambda q: 2 * q[1] + q[2], reverse=True)
         for p in cand:
+            if time.time() - t0 > BUD:       # 内側でも打ち切る（1 個の C で
+                break                        # 何百秒も食うことがある）
             r = Wup(C + (p,), U, DEP, memo, N, MAXLEN)
             if r is None:
                 tot['決まらず'] += 1
