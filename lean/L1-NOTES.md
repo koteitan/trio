@@ -4613,3 +4613,70 @@ def DmST (st : St) : Prop := ∀ k, k < st.dmap.length → st.dmap.getD k 0 ≤ 
     子   …  d ≤ |st.ST| も同じ帰納で運ぶ（dd2+1 = |st1.ST| かつ dd2 ≥ d）
 
 見積もり **130 行**（`dmKeep_holds` / `dm10_holds` と同じ型）。
+
+
+---
+
+# 課題 L45: `DmST`（節 11）の伝播 —— 1 歩は書けた。`convResid` の枝が測定待ち
+
+## 1. 書けたもの（`leanman check` exit 0 / sorry 0）
+
+    dm10_at_U    縮約の枝で Dm10 (d+1) p.1 rU.2 を出す 1 歩（ResidHeadT のみ）
+    StOK d st    := d ≤ |st.ST| ∧ DmST st
+    dm11_keep    Dm11 は **m ≤ |st.dmap| を足せば** DmKeep で伝わる
+    dmST_st1     1 列ぶんの状態は StOK (dd2+1)（DmST の要）
+    dm11_st1 / dm11_st1'
+    **dmST_step  DmST の帰納の 1 歩。仮定は hres（convResid）と ResidHeadT だけ**
+
+## 2. なぜ `Dm11` が要るか（1 行）
+
+> `st1.ST = ST2.take dd2 ++ [·]` で**スタックが `dd2` に切り詰められる**ので、
+> 古い `dmap[k]`（`k < p.1`）が `≤ dd2+1` であることを言う必要がある。
+
+`Dm11`（`dmap[k] ≤ d+1`）＋ `d ≤ dd2` でちょうど閉じる。
+
+⚠ **`Dm11` は `DmKeep` だけでは伝わらない**（`k < |st'.dmap|` から `k < |st.dmap|` が
+出ない ＝ 課題 R1 の 8 列の反例）。**`m ≤ |st.dmap|` を足すと伝わる**。
+呼び出し点では `|st1.dmap| = p.1 + 1` なので成り立っている。
+
+## 3. ★ 止まっている所 —— 測定 (N') 待ち
+
+`convResid` の中の木は下界 `c.1`・深さ `rd = dmap[c.1-1]` で回るので、そこでは
+`dmap[k] ≤ rd + 1`（`k < c.1`）が要る。
+
+    k < p.1        外側の Dm11 ＋ d ≤ rd     ⟹ OK
+    p.1 ≤ k < c.1  **dmap[k] ≤ dmap[c.1-1] + 1 ＝ dmap の（非狭義）単調性**が要る
+
+`dmap` の**狭義**単調性が偽なのは記録ずみ。**非狭義は未測定**。
+
+### R1 への依頼 (N')
+
+    (N')  convResid の呼び出し点で rest2 ≠ [] のとき  **|rU.2.dmap| = rest2.headI.1**
+    陽性対照: `= rest2.headI.1 + 1` と `= rest2.headI.1 - 1`
+    母数: gen3 <=8 全数 ＋ ST_TS 展開閉包
+
+**(N') が真なら 2 つ同時に片づく**:
+
+* `ResidHeadT` は等号の系
+* `c.1 - 1` が**最後の添字**になるので、`DmOK`（証明ずみ）と `DmST` から
+
+      dmap[k] ≤ |ST| = dmap.getLastD + 1 = dmap[c.1-1] + 1 = rd + 1   ✓
+
+  ⟹ **新しい不変量を 1 つも足さずに `Dm11` が閉じる。**
+
+代替（弱いほう。これでも足りる）:
+
+    (M)  ∀ k < j < |st.dmap|, st.dmap.getD k 0 ≤ st.dmap.getD j 0 + 1
+    陽性対照: `≤ dmap[j]`（狭義単調は偽と記録ずみなので**必ず鳴るはず**）
+
+## 4. `ImgBlockT3` の残り（更新）
+
+| | 状態 |
+|---|---|
+| `DmKeep` | **仮定ゼロ** |
+| `Dm10` / `dm10_at_U` | **`ResidHeadT` 1 本** |
+| `ResidSideR` / `DmapInR` | **仮定ゼロ** |
+| `dmST_step` | **`hres` ＋ `ResidHeadT`** |
+| `dmST_resid` | **(N') 待ち** |
+| `dmST_aux` | 上が揃えば 30 行 |
+| `blk_step` の配線 | 最後 |

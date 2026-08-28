@@ -4462,6 +4462,35 @@ def ResidSideT : Prop :=
          else dmapAt stU.dmap ((rest2.headD (0, 0, 0)).1 - 1)) + c.1
 
 
+
+/-- **縮約の枝で `rU.2` の節 10 を出す 1 歩**（課題 L45）。
+`A` の子から `Dm10_of_child` で `(d+1, p.1)` に付け替え、`U` の呼び出しに渡す。 -/
+theorem dm10_at_U (hhdT : ResidHeadT)
+    {p : Col} {A U : TrioSeq} {d dd2 : ℕ} {st st1 : St}
+    {LA LU : List Lent} {FA FU : List Bool} {psA pwA psU pwU : ℕ × ℕ}
+    {f1A f2A f1U f2U : Bool} {nxA nxU : Option Col} {oa ou : ℕ}
+    (hst1 : st1.dmap = st.dmap.take p.1 ++ [dd2])
+    (hdd : d + 1 ≤ dd2) (hlen : p.1 ≤ st.dmap.length)
+    (hsA : steps1 A) (hmA : ∀ c ∈ A, p.1 + 1 ≤ c.1)
+    (hhA : A ≠ [] → (A.headI).1 = p.1 + 1)
+    (hsU : steps1 U) (hmU : ∀ c ∈ U, p.1 ≤ c.1)
+    (hhU : U ≠ [] → (U.headI).1 = p.1) :
+    Dm10 (d + 1) p.1
+      (conv3 U (d + 1) LU FU psU pwU f1U f2U
+        (conv3 A (dd2 + 1) LA FA psA pwA f1A f2A st1 nxA oa).2 nxU ou).2 := by
+  have hmA' : ∀ c ∈ A, p.1 ≤ c.1 := fun c hc => le_trans (Nat.le_succ _) (hmA c hc)
+  have hlen1 : st1.dmap.length = p.1 + 1 := by rw [hst1, len_take_snoc hlen]
+  have hrA : Dm10 (d + 1) p.1
+      (conv3 A (dd2 + 1) LA FA psA pwA f1A f2A st1 nxA oa).2 := by
+    refine Dm10_of_child hdd
+      (dm10_holds hhdT A hsA hmA hhA _ _ _ _ _ _ _ _ _ (by omega)
+        (fun _ => dm10_vac (by omega)))
+      (Dm12_of_DmKeep (dmKeep_holds A hmA _ _ _ _ _ _ _ _ _ _)) ?_ (by omega)
+    rw [hst1]
+    exact getD_take_snoc hlen
+  exact dm10_holds hhdT U hsU hmU hhU _ _ _ _ _ _ _ _ _
+    (dmKeep_le (dmKeep_holds A hmA' _ _ _ _ _ _ _ _ _ _) (by omega)) (fun _ => hrA)
+
 /-! ### 課題 L44: `DmapInT` / `ResidSideT` の**制限版**（呼び出し点の文脈つき）
 
 上の 2 つの `example` のとおり、無制限の形は偽である。呼び出し点で分かっている
@@ -4543,6 +4572,303 @@ example : ¬ DmapInT := by
   intro h
   have h2 := (h 0 (0, 0, 0) ⟨[], 2, [], [], 0, []⟩ [(5, 0, 0)] (by simp)).1
   simp at h2
+
+/-! ### 課題 L45: 状態の不変量 `DmST`（節 11）の伝播
+
+`DmST`（`dmap` の値 ≤ `ST` の高さ）を保つには、`st1.ST = ST2.take dd2 ++ [·]` で
+**スタックが `dd2` に切り詰められる**ので、古い `dmap[k]`（`k < p.1`）が `≤ dd2+1`
+である必要がある。それを言うのが `Dm11`（`dmap[k] ≤ d+1`、`d ≤ dd2`）。
+
+⚠ `Dm11` は `DmKeep` だけでは伝わらない（`k < |st'.dmap|` から `k < |st.dmap|` が
+出ないから ＝ 課題 R1 の 8 列の反例）。**`m ≤ |st.dmap|` を足すと伝わる**
+（`dm11_keep`）。呼び出し点ではそれが成り立っている。 -/
+
+/-- 深さと `dmap` の 2 つの不変量を一緒に運ぶ。 -/
+def StOK (d : ℕ) (st : St) : Prop := d ≤ st.ST.length ∧ DmST st
+
+theorem StOK_mono {d d' : ℕ} {st : St} (h : d ≤ d') (hs : StOK d' st) : StOK d st :=
+  ⟨le_trans h hs.1, hs.2⟩
+
+theorem dm11_mono {d d' m : ℕ} {st : St} (h : d ≤ d') (hs : Dm11 d m st) :
+    Dm11 d' m st := fun k hk hl => le_trans (hs k hk hl) (by omega)
+
+theorem getD_take_lt {l : List ℕ} {j k : ℕ} (hk : k < j) :
+    (l.take j).getD k 0 = l.getD k 0 := by
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD]
+  first
+    | rw [List.getElem?_take hk]
+    | rw [List.getElem?_take_of_lt hk]
+    | simp [List.getElem?_take, hk]
+
+/-- **`Dm11` は `m ≤ |st.dmap|` があれば `DmKeep` で伝わる**。 -/
+theorem dm11_keep {d m : ℕ} {st st' : St} (hm : m ≤ st.dmap.length)
+    (h : Dm11 d m st) (hk : DmKeep m st st') : Dm11 d m st' := by
+  intro k hkm hlen
+  have h1 : k < st.dmap.length := by omega
+  rw [(hk k hkm h1).2]
+  exact h k hkm h1
+
+/-- **1 列ぶんの状態は `StOK (dd2+1)`**（`DmST` の要）。 -/
+theorem dmST_st1 {d dd2 j : ℕ} {st st1 : St} {ST2 : List (ℕ × ℕ)} {x : ℕ × ℕ}
+    (hdmap : st1.dmap = st.dmap.take j ++ [dd2])
+    (hST : st1.ST = ST2.take dd2 ++ [x])
+    (hdd2 : dd2 ≤ ST2.length) (hd : d ≤ dd2)
+    (hj : j ≤ st.dmap.length) (h11 : Dm11 d j st) :
+    StOK (dd2 + 1) st1 := by
+  have hlenST : st1.ST.length = dd2 + 1 := by rw [hST, len_take_app hdd2]
+  refine ⟨by omega, ?_⟩
+  intro k hk
+  rw [hlenST, hdmap]
+  rw [hdmap, len_take_snoc hj] at hk
+  by_cases hkj : k < j
+  · rw [getD_snoc_lt (by rw [List.length_take]; omega), getD_take_lt hkj]
+    have h9 := h11 k hkj (by omega)
+    omega
+  · have hkk : k = j := by omega
+    subst hkk
+    rw [getD_take_snoc hj]
+    omega
+
+/-- 子の呼び出しに渡す `Dm11`（深さ `dd2+1`、下界 `j+1`）。 -/
+theorem dm11_st1 {d dd2 j : ℕ} {st st1 : St}
+    (hdmap : st1.dmap = st.dmap.take j ++ [dd2])
+    (hd : d ≤ dd2) (hj : j ≤ st.dmap.length) (h11 : Dm11 d j st) :
+    Dm11 (dd2 + 1) (j + 1) st1 := by
+  intro k hk hlen
+  rw [hdmap] at hlen ⊢
+  rw [len_take_snoc hj] at hlen
+  by_cases hkj : k < j
+  · rw [getD_snoc_lt (by rw [List.length_take]; omega), getD_take_lt hkj]
+    have h9 := h11 k hkj (by omega)
+    omega
+  · have hkk : k = j := by omega
+    subst hkk
+    rw [getD_take_snoc hj]
+    omega
+
+/-- 同じ深さ・同じ下界の `Dm11` は `take` を越えて残る。 -/
+theorem dm11_st1' {d dd2 j : ℕ} {st st1 : St}
+    (hdmap : st1.dmap = st.dmap.take j ++ [dd2])
+    (hj : j ≤ st.dmap.length) (h11 : Dm11 d j st) : Dm11 d j st1 := by
+  intro k hk hlen
+  rw [hdmap] at hlen ⊢
+  rw [len_take_snoc hj] at hlen
+  rw [getD_snoc_lt (by rw [List.length_take]; omega), getD_take_lt hk]
+  exact h11 k hk (by omega)
+
+/-- **`DmST` の帰納の 1 歩**（課題 L45）。`convResid` の枝だけ仮定 `hres` に置く
+（測定 (N') 待ち）。 -/
+theorem dmST_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
+    (hs1 : steps1 (p :: r)) (hblo : BlkLo (p :: r))
+    (hlen : p.1 ≤ st.dmap.length) (hst : StOK d st) (h11 : Dm11 d p.1 st)
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → steps1 M' → ∀ (m' d' : ℕ),
+        (∀ c ∈ M', m' ≤ c.1) → (M' ≠ [] → (M'.headI).1 = m') →
+        ∀ (L' : List Lent) (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool)
+          (st' : St) (nx' : Option Col) (off' : ℕ),
+          m' ≤ st'.dmap.length → StOK d' st' → Dm11 d' m' st' →
+          StOK d' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off').2)
+    (hres : ∀ (rest : TrioSeq) (rd : ℕ) (Lr : List Lent) (ps' pw' : ℕ × ℕ) (st' : St)
+        (nx' : Option Col) (off' e : ℕ),
+        rest.length ≤ r.length → steps1 rest → (∀ c ∈ rest, p.1 + 1 ≤ c.1) →
+        p.1 ≤ st'.dmap.length → StOK (d + 1) st' → Dm11 (d + 1) p.1 st' →
+        (rest ≠ [] → (rest.headI).1 ≤ st'.dmap.length) →
+        rd = (if rest = [] ∨ (rest.headD (0, 0, 0)).1 = p.1 + 1 then d + 1 + e
+              else dmapAt st'.dmap ((rest.headD (0, 0, 0)).1 - 1)) →
+        StOK d (convResid rest rd Lr ps' pw' st' nx' off').2)
+    (hhdT : ResidHeadT) :
+    StOK d (conv3 (p :: r) d L F ps pw first force st nx off).2 := by
+  have hr1 : steps1 r := steps1_tailT hs1
+  have hmr : ∀ c ∈ r, p.1 ≤ c.1 := by
+    intro c hc
+    have h9 := hblo c (List.mem_cons_of_mem _ hc)
+    simpa using h9
+  have hAmem : ∀ c ∈ r.takeWhile (fun q => decide (p.1 < q.1)), p.1 + 1 ≤ c.1 := by
+    intro c hc
+    have hne : r.takeWhile (fun q => decide (p.1 < q.1)) ≠ [] := by
+      intro h; rw [h] at hc; simp at hc
+    have h1 := takeWhile_blkLo hs1 c hc
+    rw [takeWhile_head_eq hs1 hne] at h1
+    exact h1
+  have hAmem' : ∀ c ∈ r.takeWhile (fun q => decide (p.1 < q.1)), p.1 ≤ c.1 :=
+    fun c hc => le_trans (Nat.le_succ _) (hAmem c hc)
+  have hlen1 : ∀ x : ℕ, (st.dmap.take p.1 ++ [x]).length = p.1 + 1 :=
+    fun x => len_take_snoc hlen
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · -- 縮約の枝
+    rename_i ee kUv kpv nav he
+    have hlad0 := cond_of_ite_some he
+    rw [if_pos hlad0] at he
+    split at he
+    · simp at he
+    · rename_i e kU kp na hcf
+      have hw : ((e, kU, kp, na) : ℕ × ℕ × ℕ × Col) = (ee, kUv, kpv, nav) := by
+        rcases ite_some_pair he with h | h
+        · exact ite_some_none h
+        · exact h
+      have hk : kU = kUv := congrArg (fun t => t.2.1) hw
+      have hmRs : ∀ cc ∈ ((((r.dropWhile (fun q => decide (p.1 < q.1))).drop kUv).tail).take
+          (deepGe ((((r.dropWhile (fun q => decide (p.1 < q.1))).drop kUv).headD (0, 0, 0)).1 + 1)
+            (((r.dropWhile (fun q => decide (p.1 < q.1))).drop kUv).tail))).drop kpv,
+          p.1 + 1 ≤ cc.1 := by
+        intro cc hcc
+        have hne2 :
+            ((r.dropWhile (fun q => decide (p.1 < q.1))).drop kUv).tail ≠ [] := by
+          intro hc
+          rw [hc] at hcc
+          simp at hcc
+        have hnep : (r.dropWhile (fun q => decide (p.1 < q.1))).drop kUv ≠ [] := by
+          intro hc
+          rw [hc] at hne2
+          simp at hne2
+        have hqmem :
+            (((r.dropWhile (fun q => decide (p.1 < q.1))).drop kUv).headD (0, 0, 0)) ∈ r :=
+          ((List.drop_sublist _ _).trans (List.dropWhile_sublist _)).mem
+            (headD_memT hnep _)
+        have hq := hmr _ hqmem
+        have h1 := deepGe_take_ge _ cc ((List.drop_sublist _ _).mem hcc)
+        omega
+      refine IH _ ?lQ ?sQ p.1 d ?mQ ?hQ _ _ _ _ _ _ _ _ _ ?dQ ?sQ2 ?dm11Q
+      case lQ => exact List.Sublist.length_le (by subl_tac)
+      case sQ =>
+        repeat' first
+          | exact hr1
+          | apply steps1_takeT
+          | apply steps1_dropT
+          | apply steps1_takeWhileT
+          | apply steps1_dropWhileT
+          | apply steps1_tailT
+      case mQ => exact mem_le_of_sublist (by subl_tac) hmr
+      case hQ =>
+        intro hne
+        rw [headI_eq_headD]
+        refine head_eq_of_le_of_ge (x := (0, 0, 0)) ?_ hne ?_
+        · intro c hc
+          exact mem_le_of_sublist (by subl_tac) hmr c hc
+        · have h8 := deepGe_head_lt _ (0, 0, 0) hne
+          have hq := contrFind_q_eq hcf
+          rw [hk] at hq
+          omega
+      case dQ =>
+        exact dmKeep_le (dmKeep_resid_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _)
+          (dmKeep_le (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+            (dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _)
+              (by rw [hlen1]; omega)))
+      case dm11Q =>
+        refine dm11_keep ?_ ?_ (dmKeep_resid_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _)
+        · exact dmKeep_le (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+            (dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega))
+        · refine dm11_keep ?_ ?_ (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+          · exact dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega)
+          · exact dm11_keep (by rw [hlen1]; omega)
+              (dm11_st1' rfl hlen h11) (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _)
+      case sQ2 =>
+        refine hres _ _ _ _ _ _ _ _ _ ?lRs ?sRs hmRs ?dU ?sU ?d11U ?hhU rfl
+        case lRs => exact List.Sublist.length_le (by subl_tac)
+        case sRs =>
+          repeat' first
+            | exact hr1
+            | apply steps1_takeT
+            | apply steps1_dropT
+            | apply steps1_takeWhileT
+            | apply steps1_dropWhileT
+            | apply steps1_tailT
+        case dU =>
+          exact dmKeep_le (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+            (dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega))
+        case d11U =>
+          refine dm11_keep ?_ ?_ (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+          · exact dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega)
+          · exact dm11_mono (by omega)
+              (dm11_keep (by rw [hlen1]; omega) (dm11_st1' rfl hlen h11)
+                (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _))
+        case hhU =>
+          intro hne
+          refine hhdT _ _ p.1 d hne hmRs ?_ ?_
+          · exact dmKeep_le (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+              (dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega))
+          · refine dm10_at_U hhdT ?hq1 ?hq2 hlen
+              (steps1_takeWhileT hr1 _) hAmem (fun h => takeWhile_head_eq hs1 h) ?hq3
+              ?hq4 ?hq5
+            case hq1 => rfl
+            case hq2 => exact depths_le_lad0 hlad0 rfl rfl rfl
+            case hq3 =>
+              repeat' first
+                | exact hr1
+                | apply steps1_takeT
+                | apply steps1_dropT
+                | apply steps1_takeWhileT
+                | apply steps1_dropWhileT
+                | apply steps1_tailT
+            case hq4 => exact mem_le_of_sublist (by subl_tac) hmr
+            case hq5 =>
+              intro hne2
+              have hne3 : r.dropWhile (fun q => decide (p.1 < q.1)) ≠ [] := by
+                intro hc; rw [hc] at hne2; simp at hne2
+              rw [headI_take hne2]
+              exact dropWhile_head_eq hblo hne3
+        case sU =>
+          refine IH _ ?lU ?sU2 p.1 (d + 1) ?mU ?hU _ _ _ _ _ _ _ _ _ ?dA ?sA ?d11A
+          case lU => exact List.Sublist.length_le (by subl_tac)
+          case sU2 =>
+            repeat' first
+              | exact hr1
+              | apply steps1_takeT
+              | apply steps1_dropT
+              | apply steps1_takeWhileT
+              | apply steps1_dropWhileT
+              | apply steps1_tailT
+          case mU => exact mem_le_of_sublist (by subl_tac) hmr
+          case hU =>
+            intro hne
+            have hne2 : r.dropWhile (fun q => decide (p.1 < q.1)) ≠ [] := by
+              intro hc; rw [hc] at hne; simp at hne
+            rw [headI_take hne]
+            exact dropWhile_head_eq hblo hne2
+          case dA =>
+            exact dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _)
+              (by rw [hlen1]; omega)
+          case d11A =>
+            exact dm11_mono (by omega)
+              (dm11_keep (by rw [hlen1]; omega) (dm11_st1' rfl hlen h11)
+                (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _))
+          case sA =>
+            refine StOK_mono (d' := _) ?_
+              (IH _ ?lA ?sA2 (p.1 + 1) _ hAmem ?hA _ _ _ _ _ _ _ _ _ ?dA1 ?sA1 ?d11A1)
+            case lA => exact List.Sublist.length_le (by subl_tac)
+            case sA2 => exact steps1_takeWhileT hr1 _
+            case hA => exact fun h => takeWhile_head_eq hs1 h
+            case dA1 => rw [hlen1]
+            case sA1 =>
+              exact dmST_st1 rfl rfl (depths_le hst.1 rfl rfl rfl rfl rfl).2
+                (depths_le_lo rfl rfl rfl) hlen h11
+            case d11A1 => exact dm11_st1 rfl (depths_le_lo rfl rfl rfl) hlen h11
+            · exact Nat.le_succ_of_le (depths_le_lad0 hlad0 rfl rfl rfl)
+  · -- 縮約でない枝
+    refine IH _ ?lB ?sB p.1 d ?mB ?hB _ _ _ _ _ _ _ _ _ ?dAn ?sAn ?d11An
+    case lB => exact List.length_dropWhile_le _ r
+    case sB => exact steps1_dropWhileT hr1 _
+    case mB => exact mem_le_of_sublist (List.dropWhile_sublist _) hmr
+    case hB => exact dropWhile_head_eq hblo
+    case dAn =>
+      exact dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega)
+    case d11An =>
+      exact dm11_keep (by rw [hlen1]; omega) (dm11_st1' rfl hlen h11)
+        (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _)
+    case sAn =>
+      refine StOK_mono (d' := _) ?_
+        (IH _ ?lA2 ?sA3 (p.1 + 1) _ hAmem ?hA2 _ _ _ _ _ _ _ _ _ ?dA2 ?sA2b ?d11A2)
+      case lA2 => exact (List.takeWhile_sublist _).length_le
+      case sA3 => exact steps1_takeWhileT hr1 _
+      case hA2 => exact fun h => takeWhile_head_eq hs1 h
+      case dA2 => rw [hlen1]
+      case sA2b =>
+        exact dmST_st1 rfl rfl (depths_le hst.1 rfl rfl rfl rfl rfl).2
+          (depths_le_lo rfl rfl rfl) hlen h11
+      case d11A2 => exact dm11_st1 rfl (depths_le_lo rfl rfl rfl) hlen h11
+      · exact Nat.le_succ_of_le (depths_le_lo rfl rfl rfl)
 
 theorem blkInv_aux (h2 : DmapInT) (h3 : ResidSideT) :
     ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → steps1 M → BlkLo M → ∀ (d : ℕ)
