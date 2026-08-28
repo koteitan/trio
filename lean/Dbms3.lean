@@ -2308,10 +2308,22 @@ theorem steps1_tailT {B : TrioSeq} (h : steps1 B) : steps1 B.tail := by
 def Dm10 (d m : ℕ) (res : TrioSeq × St) : Prop :=
   ∀ j, m ≤ j → j < res.2.dmap.length → d + (j - m) ≤ res.2.dmap.getD j 0
 
-/-- **節 12**: ブロックは自分の先頭 `m` より浅い `dmap` の項に触らない。 -/
+/-- **節 12**: ブロックは自分の先頭 `m` より浅い `dmap` の項に触らない。
+
+⚠ **結論に `k < |st.dmap|` を含む強い形は偽**である（課題 R1）。`rB` 版だけでなく
+**`rA` 版も偽**で、最小反例は 8 列:
+
+    M = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,0,0)(5,0,0)
+    cA の呼び出し、p.1 = 4、k = 4
+    呼び出し前 dmap = [0,3,4,5]（長さ 4）、後 [0,3,4,5,6]（長さ 5）
+    k = 4 < p.1+1 = 5 かつ k < |res.dmap| = 5、だが k は |st.dmap| = 4 の外
+    破れ 0 / 11 / 349（`<=7` 列 / `<=8` 列 / `<=6` の展開閉包）
+
+`<=7` 列では 0 で、**8 列と展開閉包で初めて出る**。値は 1 つも変わらないので、
+`k < |st.dmap|` を**仮定に回した含意の形**にすると 3 母集団すべてで違反 0。 -/
 def Dm12 (m : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
-  ∀ k, k < m → k < res.2.dmap.length →
-    k < st.dmap.length ∧ res.2.dmap.getD k 0 = st.dmap.getD k 0
+  ∀ k, k < m → k < res.2.dmap.length → k < st.dmap.length →
+    res.2.dmap.getD k 0 = st.dmap.getD k 0
 
 /-- `(l ++ [x]).getD |l| 0 = x`。 -/
 theorem getD_snoc_len {l : List ℕ} {x : ℕ} : (l ++ [x]).getD l.length 0 = x := by
@@ -2343,14 +2355,13 @@ theorem Dm10_of_take {d m dd2 : ℕ} {dmo : List ℕ} {res : TrioSeq × St}
 
 /-- **`conv3` の 1 列ぶんの状態は節 12 を満たす**（`take` は下位の項に触らない）。 -/
 theorem Dm12_of_take {m dd2 : ℕ} {dmo : List ℕ} {st : St} {res : TrioSeq × St}
-    (hst : st.dmap = dmo) (hres : res.2.dmap = dmo.take m ++ [dd2])
-    (hm : m ≤ dmo.length) : Dm12 m st res := by
-  intro k hk hlen
+    (hst : st.dmap = dmo) (hres : res.2.dmap = dmo.take m ++ [dd2]) :
+    Dm12 m st res := by
+  intro k hk hlen hk0
   rw [hres] at hlen ⊢
-  rw [hst]
-  have hlt : (dmo.take m).length = m := by rw [List.length_take]; omega
-  refine ⟨by omega, ?_⟩
-  rw [getD_snoc_lt (by omega), List.getD_eq_getElem?_getD,
+  rw [hst] at hk0 ⊢
+  have hlt : k < (dmo.take m).length := by rw [List.length_take]; omega
+  rw [getD_snoc_lt hlt, List.getD_eq_getElem?_getD,
     List.getD_eq_getElem?_getD]
   first
     | rw [List.getElem?_take (by omega)]
@@ -2361,24 +2372,7 @@ theorem Dm10_nil {d m : ℕ} {st : St} (h : ∀ j, m ≤ j → j < st.dmap.lengt
     d + (j - m) ≤ st.dmap.getD j 0) : Dm10 d m ([], st) := h
 
 theorem Dm12_refl {m : ℕ} {st : St} : Dm12 m st ([], st) :=
-  fun _ _ hk => ⟨hk, rfl⟩
-
-/-- **節 12 の弱い版**（課題 R1 が測った形）。「古い項があるときだけ等号」。
-
-⚠ 強い版（`k < |st.dmap|` を**結論**に持つ）は**偽**である。反例（`<=7` 列で 4 件、
-全部 `convResid` の木の呼び出し）:
-
-    M = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,0,0)
-    木の頭 (4,0,0)、k = 3、呼び出し前 dmap = [0,3,4]（長さ 3）、後 [0,3,4,5]
-    k = 3 < m = 4 かつ k < |res.dmap| = 4 だが k は |st.dmap| = 3 の外
-
-値が変わるのではなく「もとに無かった添字が生えた」だけである。 -/
-def Dm12w (m : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
-  ∀ k, k < m → k < res.2.dmap.length → k < st.dmap.length →
-    res.2.dmap.getD k 0 = st.dmap.getD k 0
-
-theorem Dm12_to_w {m : ℕ} {st : St} {res : TrioSeq × St} (h : Dm12 m st res) :
-    Dm12w m st res := fun k h1 h2 _ => (h k h1 h2).2
+  fun _ _ _ _ => rfl
 
 /-- **状態の不変量（課題 R1 の「節 12''」）**: ブロックの頭より浅い `dmap` の項は
 `d + 1` 以下。
@@ -2415,7 +2409,8 @@ def Dm11 (d m : ℕ) (st : St) : Prop :=
 **そこは節 12 では埋まらない**。`resid_blk` が `Dm10 d p.1`（外側の頭）を
 直に出す形にするのが筋だが、まだ測っていない。 -/
 theorem Dm10_app {d d' m m' : ℕ} {stm st' : St} {X Y : TrioSeq}
-    (hmm : d + m' ≤ d' + m) (hX : Dm10 d m (X, stm))
+    (hmm : d + m' ≤ d' + m) (hstm : m' ≤ stm.dmap.length)
+    (hX : Dm10 d m (X, stm))
     (hY : Dm10 d' m' (Y, st')) (hY2 : Dm12 m' stm (Y, st')) :
     Dm10 d m (X ++ Y, st') := by
   intro j hj hlen
@@ -2424,8 +2419,9 @@ theorem Dm10_app {d d' m m' : ℕ} {stm st' : St} {X Y : TrioSeq}
   · have h5 := hY j hjm hlen
     simp only at h5
     omega
-  · obtain ⟨hk1, hk2⟩ := hY2 j (by omega) hlen
-    simp only at hk1 hk2
+  · have hk1 : j < stm.dmap.length := by omega
+    have hk2 := hY2 j (by omega) hlen hk1
+    simp only at hk2
     rw [hk2]
     have h6 := hX j hj hk1
     simp only at h6
@@ -2433,15 +2429,17 @@ theorem Dm10_app {d d' m m' : ℕ} {stm st' : St} {X Y : TrioSeq}
 
 /-- **節 12 の連結**（`m ≤ m'` が要る）。 -/
 theorem Dm12_app {m m' : ℕ} {st stm st' : St} {X Y : TrioSeq} (hle : m ≤ m')
+    (hstm : m ≤ stm.dmap.length)
     (hX : Dm12 m st (X, stm)) (hY : Dm12 m' stm (Y, st')) :
     Dm12 m st (X ++ Y, st') := by
-  intro k hk hlen
+  intro k hk hlen hk0
   simp only at hlen ⊢
-  obtain ⟨h1, h2⟩ := hY k (by omega) hlen
-  simp only at h1 h2
-  obtain ⟨h3, h4⟩ := hX k hk h1
-  simp only at h3 h4
-  exact ⟨h3, by rw [h2, h4]⟩
+  have h1 : k < stm.dmap.length := by omega
+  have h2 := hY k (by omega) hlen h1
+  simp only at h2
+  have h4 := hX k hk h1 hk0
+  simp only at h4
+  rw [h2, h4]
 
 /-- 状態の `dmap` 不変量: 最後に書いた像の深さ ＋ 1 が鎖の長さ。
 実測（`lean/l11_blkmeas.py`）: `<=6` 列 48997 呼び出し ＋ 7 列 1134 呼び出しで
