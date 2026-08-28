@@ -4507,3 +4507,79 @@ theorem TRIO_terminates_of_img_wf {conv3 : TrioSeq → TrioSeq}
 
 * **前提が真に弱い**（定理として強い）
 * **`ST_D3` の機構が停止性の道から外れる ⟹ 残るのは `ReindexT1D` 1 本**
+
+
+---
+
+# 課題 L44: `DmapInT` / `ResidSideT` は**偽**だった。制限版は仮定ゼロで出る（2026-08-29）
+
+## 1. ⚠⚠ 反証（`Dbms3.lean` に `example` として常駐、両方緑）
+
+    example : ¬ ResidSideT
+    example : ¬ DmapInT
+
+    ResidSideT  d=5, p=(0,0,0), stU.dmap=[0], rest2=[(2,0,0)], e=0, c=(2,0,0)
+                2 ≠ p.1+1 = 1 ⟹ else 枝、dmapAt [0] 1 = 0 + (1-1+1) = 1
+                LHS 5+2 = 7 ≤ RHS 1+2 = 3   **偽**
+    DmapInT     p=(0,0,0), stU.dmap=[], rest2=[(5,0,0)]
+                5 ≠ 1 ⟹ 番人が開く、第 1 項 5-1 = 4 ≤ 0   **偽**
+
+**原因**: どちらも `stU` / `rest2` を**無制限に全称化**していた。R1 と
+`l11_blkmeas.py` の実測は**呼び出し点で**測ったもので、Lean の `def` はそれより広い。
+
+⟹ **`ImgBlockT3_of_resid` は現状空虚。**「仮定 2 本」は嘘で「偽の仮定 2 本」だった。
+
+## 2. ★ 教訓（課題 L24 と同じ穴に落ちた）
+
+> **新しく仮定の `def` を書いたら、まずその `def` 自体に反例が無いか探す。**
+> 実測が「呼び出し点で」取られているなら、`def` も**呼び出し点の文脈を仮定に
+> 持たせる**こと。文脈を落として全称化すると、ほぼ確実に偽になる。
+
+課題 L24（`OrderT3`）で「全域の命題が偽でも証明が使う狭い形は真かもしれない」と
+書いたのに、**自分が書いた仮定で同じことをした**。
+
+## 3. 制限版は**両方とも仮定ゼロで証明できた**
+
+```lean
+theorem residSideR_holds : ResidSideR   -- 仮定ゼロ
+theorem dmapInR_holds    : DmapInR      -- 仮定ゼロ（DmST を文の中の仮定として持つ）
+```
+
+呼び出し点で分かっていることを足しただけ:
+
+    ∀ c ∈ rest2, p.1 + 1 ≤ c.1      dm10_step で証明ずみ（q.1 ≥ p.1 経由）
+    p.1 ≤ |stU.dmap|
+    Dm10 (d+1) p.1 stU               課題 L41(a) の dm10_holds
+    rest2 ≠ [] → rest2.headI.1 ≤ |stU.dmap|   ← ResidHeadT
+    DmST stU                          ← 節 11（下）
+
+* `ResidSideR` … `resid_rd_lb` が `d + h ≤ rd + p.1` をくれ、`c.1 ≥ p.1+1` で押し上げる。**3 行**。
+* `DmapInR` … 第 1 項は `ResidHeadT`、下界は `Dm10` を添字 `h-1` で読むだけ、
+  上界は `DmST` そのもの。**8 行**。
+
+```lean
+def DmST (st : St) : Prop := ∀ k, k < st.dmap.length → st.dmap.getD k 0 ≤ st.ST.length
+```
+⚠ これも**無制限に全称化した形は偽**（`st.ST = []`, `st.dmap = [5]`）。
+**呼び出しの鎖に沿って運ぶ状態の述語**として使うこと。
+
+## 4. `ImgBlockT3` に残るもの（3 つ、すべて形が分かっている）
+
+| | 状態 |
+|---|---|
+| **`ResidHeadT`** | R1-NOTES §4.3 に紙の証明。Lean 未 |
+| **`DmST` の伝播** | 新しい帰納 1 本（下） |
+| **配線** | `blk_step` の `hside` / `hdmin` を制限版に差し替え |
+
+### `DmST` の伝播は `Dm11` を**新しく回さなくてよい**
+
+`Dm11 d m st := ∀ k < m, k < |st.dmap| → st.dmap.getD k 0 ≤ d + 1` は
+**`DmKeep`（課題 L40）から只で伝わる**（`k < m` の値は変わらないから）。
+だから要る帰納は `DmST` の 1 本だけで、中身は
+
+    st1 …  |st1.ST| = dd2 + 1
+           k < p.1  … Dm11 で `≤ d+1 ≤ dd2+1`   ✓
+           k = p.1  … `dd2 ≤ dd2+1`             ✓
+    子   …  d ≤ |st.ST| も同じ帰納で運ぶ（dd2+1 = |st1.ST| かつ dd2 ≥ d）
+
+見積もり **130 行**（`dmKeep_holds` / `dm10_holds` と同じ型）。

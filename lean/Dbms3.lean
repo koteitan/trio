@@ -4462,6 +4462,70 @@ def ResidSideT : Prop :=
          else dmapAt stU.dmap ((rest2.headD (0, 0, 0)).1 - 1)) + c.1
 
 
+/-! ### 課題 L44: `DmapInT` / `ResidSideT` の**制限版**（呼び出し点の文脈つき）
+
+上の 2 つの `example` のとおり、無制限の形は偽である。呼び出し点で分かっている
+ことを仮定に足すと、**`ResidSideR` は仮定ゼロで、`DmapInR` は状態の不変量
+`DmST`（＝ 節 11）だけで出る**。 -/
+
+/-- **状態の不変量（R1 の節 11）**: `dmap` の値は `ST` の高さ以下。
+
+⚠ **`st` を無制限に全称化した形は偽**（`st.ST = []`, `st.dmap = [5]`）。
+呼び出しの鎖に沿って運ぶ述語として使うこと。実測は `gen3 <=8` の
+13108043 呼び出し x2 で違反 0（R1-NOTES 節 11）。 -/
+def DmST (st : St) : Prop :=
+  ∀ k, k < st.dmap.length → st.dmap.getD k 0 ≤ st.ST.length
+
+/-- **側条件 (H) の制限版**。 -/
+def ResidSideR : Prop :=
+  ∀ (d : ℕ) (p : Col) (stU : St) (rest2 : TrioSeq) (e : ℕ),
+    (∀ c ∈ rest2, p.1 + 1 ≤ c.1) → p.1 ≤ stU.dmap.length → Dm10 (d + 1) p.1 stU →
+    (rest2 ≠ [] → (rest2.headI).1 ≤ stU.dmap.length) →
+    ∀ c ∈ rest2,
+      d + (rest2.headD (0, 0, 0)).1
+        ≤ (if rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1 then d + 1 + e
+           else dmapAt stU.dmap ((rest2.headD (0, 0, 0)).1 - 1)) + c.1
+
+/-- **★ 側条件 (H) は制限すると仮定ゼロで出る**（課題 L44）。
+`resid_rd_lb` が `d + h ≤ rd + p.1` をくれ、`c.1 ≥ p.1 + 1` で押し上げるだけ。 -/
+theorem residSideR_holds : ResidSideR := by
+  intro d p stU rest2 e hmem hlen hpre hhd c hc
+  have hne : rest2 ≠ [] := by
+    intro h
+    rw [h] at hc
+    simp at hc
+  have h1 := resid_rd_lb (m := p.1) (d := d) (e := e) hne hmem (hhd hne) hpre rfl
+  rw [headI_eq_headD] at h1
+  have h2 := hmem c hc
+  omega
+
+/-- **`DmapInT` の制限版**。 -/
+def DmapInR : Prop :=
+  ∀ (d : ℕ) (p : Col) (stU : St) (rest2 : TrioSeq),
+    (∀ c ∈ rest2, p.1 + 1 ≤ c.1) → p.1 ≤ stU.dmap.length → Dm10 (d + 1) p.1 stU →
+    (rest2 ≠ [] → (rest2.headI).1 ≤ stU.dmap.length) → DmST stU →
+    ¬(rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1) →
+    ((rest2.headD (0, 0, 0)).1 - 1 ≤ stU.dmap.length ∧
+      ((rest2.headD (0, 0, 0)).1 - 1 + 1 < stU.dmap.length →
+        d ≤ stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ∧
+          stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ≤ stU.ST.length))
+
+/-- **★ `DmapInT` は制限すると `DmST`（節 11）だけから出る**（課題 L44）。
+第 1 項は `ResidHeadT`、下界は `Dm10` を添字 `h-1` で読むだけ、
+上界は `DmST` そのもの。 -/
+theorem dmapInR_holds : DmapInR := by
+  intro d p stU rest2 hmem hlen hpre hhd hst hc
+  have hne : rest2 ≠ [] := fun h => hc (Or.inl h)
+  have hne2 : (rest2.headD (0, 0, 0)).1 ≠ p.1 + 1 := fun h => hc (Or.inr h)
+  have hh := hhd hne
+  rw [headI_eq_headD] at hh
+  have hm1 : p.1 + 1 ≤ (rest2.headD (0, 0, 0)).1 := hmem _ (headD_memT hne _)
+  refine ⟨by omega, ?_⟩
+  intro hlt
+  refine ⟨?_, hst _ (by omega)⟩
+  have h9 := hpre ((rest2.headD (0, 0, 0)).1 - 1) (by omega) (by omega)
+  omega
+
 /-! ### ⚠⚠ 課題 L44: `DmapInT` / `ResidSideT` は**そのままでは偽**（2026-08-29）
 
 どちらも `stU` / `rest2` を**無制限に**全称化しているので、呼び出し点と無関係な
