@@ -35,7 +35,7 @@ IM = []
 for i, M in enumerate(P):
     if i % 20000 == 0:
         core._exp_memo.clear(); core._isstd_memo.clear(); core._flat_memo.clear()
-    IM.append(tuple(tuple(c) for c in b2d3([list(c) for c in M])))
+    IM.append(tuple(tuple(c) for c in b2d3(list(M))))
 print('  像 (%.0fs)' % (time.time() - t0), flush=True)
 
 brk = [i for i in range(len(P) - 1) if IM[i] >= IM[i + 1]]
@@ -77,7 +77,7 @@ for i in brk:
     # (ii) A⟦n⟧ = Y かつ (conv3 A)⟦m⟧ = conv3 X
     ok2 = False
     for A, n in pre.get(Y, []):
-        fA = tuple(tuple(c) for c in b2d3([list(c) for c in A]))
+        fA = tuple(tuple(c) for c in b2d3(list(A)))
         for m in range(n + 1, n + 8):
             T = tuple(map(tuple, expand(fA, m)))
             if not T or len(T) > len(fX) + 4:

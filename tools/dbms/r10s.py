@@ -13,7 +13,7 @@ for row, b, d, _ in D:
     if not all(c[2] <= 1 for c in b):
         continue
     tot += 1
-    got = tuple(tuple(c) for c in b2d3([list(c) for c in b]))
+    got = tuple(tuple(c) for c in b2d3(list(b)))
     if got == d:
         ok += 1
     else:

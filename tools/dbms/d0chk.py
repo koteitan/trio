@@ -26,7 +26,7 @@ print('母集団 ST_TS v<=%d len<=%d  %d 個  (%.0fs)' % (v, L, len(P), time.tim
 def viol(M):
     """(D0') の違反を (off, k, dd, ぶつかる段) で返す。"""
     rows3._DMAP_TRACE = []
-    img = tuple(tuple(c) for c in b2d3([list(c) for c in M]))
+    img = tuple(tuple(c) for c in b2d3(list(M)))
     out = []
     for off, k, dd, old in rows3._DMAP_TRACE:
         cl = [kk for kk in range(k + 1, len(old)) if old[kk] <= dd]

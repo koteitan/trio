@@ -20,6 +20,8 @@ print('母集団 ST_TS v<=%d len<=%d  %d 個  (%.0fs)' % (v, L, len(P), time.tim
 
 # (旗の場所, 鍵, 値) の並び。既定 = v20。
 CFG = [
+    ('v20 (いま)',      []),
+    ('v19  tlterm off', [(rows3.V20, 'tlterm', False)]),
     ('     h1 off',     [(rows3.V14, 'h1', False)]),
     ('v18  tlterm+awdown off',
                         [(rows3.V20, 'tlterm', False), (rows3.V17, 'awdown', False)]),
@@ -37,7 +39,7 @@ def run(name, sets):
     for i, M in enumerate(P):
         if i % 20000 == 0:
             core._exp_memo.clear(); core._isstd_memo.clear(); core._flat_memo.clear()
-        cur = tuple(tuple(c) for c in b2d3([list(c) for c in M]))
+        cur = tuple(tuple(c) for c in b2d3(list(M)))
         if prev is not None:
             a, b = prev[0], cur
             if a < b:
