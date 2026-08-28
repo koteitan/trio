@@ -82,8 +82,10 @@ if not tri:
 # --- 3 本を判定
 t0 = time.time()
 n1 = n2 = n3 = nS = 0
+p1 = p2 = p3 = 0        # 前提が成り立った回数（**空虚さの検査**）
 tot = 0
 ex = []
+JUDG = []               # 陽性対照に使う (fAn, T, An, B, fA)
 for A, m, B, fA, T in tri:
     for n in range(1, m):
         An = tuple(map(tuple, expand(A, n)))
@@ -91,24 +93,64 @@ for A, m, B, fA, T in tri:
             continue
         fAn = tuple(tuple(c) for c in b2d3(list(An)))
         tot += 1
-        if fAn == T and An != B:
-            n1 += 1
-            if len(ex) < 3: ex.append(('Inj', A, n, B))
-        if fAn < T and not (An < B):
-            n2 += 1
-            if len(ex) < 3: ex.append(('(2)', A, n, B))
-        if T < fA and not (B < A):
-            n3 += 1
-            if len(ex) < 3: ex.append(('(3)', A, n, B))
+        JUDG.append((fAn, T, An, B, fA, A))
+        if fAn == T:
+            p1 += 1
+            if An != B:
+                n1 += 1
+                if len(ex) < 3: ex.append(('Inj', A, n, B))
+        if fAn < T:
+            p2 += 1
+            if not (An < B):
+                n2 += 1
+                if len(ex) < 3: ex.append(('(2)', A, n, B))
+        if T < fA:
+            p3 += 1
+            if not (B < A):
+                n3 += 1
+                if len(ex) < 3: ex.append(('(3)', A, n, B))
         if not (fAn <= T):
             nS += 1
             if len(ex) < 3: ex.append(('SandU', A, n, B))
 print('判定 %d 回  (%.0fs)' % (tot, time.time() - t0), flush=True)
-print('=== **OrderReindexT3**', flush=True)
-print('  (1) 単射性の枝   破れ **%d**' % n1, flush=True)
-print('  (2) (←) A⟦n⟧ vs B 破れ **%d**' % n2, flush=True)
-print('  (3) (←) B vs A    破れ **%d**' % n3, flush=True)
-print('=== **SandwichUReindexT3**  破れ **%d**' % nS, flush=True)
+print('=== **OrderReindexT3**（前提が成り立った回数 / 破れ）', flush=True)
+print('  (1) 単射性の枝    前提 **%d** / 破れ **%d**%s'
+      % (p1, n1, '   ⚠ **空虚**' if p1 == 0 else ''), flush=True)
+print('  (2) (←) A⟦n⟧ vs B 前提 **%d** / 破れ **%d**%s'
+      % (p2, n2, '   ⚠ **空虚**' if p2 == 0 else ''), flush=True)
+print('  (3) (←) B vs A    前提 **%d** / 破れ **%d**%s'
+      % (p3, n3, '   ⚠ **空虚**' if p3 == 0 else ''), flush=True)
+print('=== **SandwichUReindexT3**  破れ **%d** / %d 回（前提なし）' % (nS, tot), flush=True)
+
+# --- 陽性対照: 相手 B を「三つ組でないもの」に取り替えると破れが出るか
+print(flush=True)
+print('=== 陽性対照（B を 1 つずらした行列に取り替える）', flush=True)
+c1 = c2 = c3 = cS = 0
+q1 = q2 = q3 = 0
+for i, (fAn, T, An, B, fA, A) in enumerate(JUDG):
+    B2 = PB[(PB.index(B) + 1) % len(PB)] if False else None
+    # index は O(n) なので使わない。代わりに「A 自身」を偽の相手にする
+    B2 = A
+    T2 = fA
+    if fAn == T2:
+        q1 += 1
+        if An != B2: c1 += 1
+    if fAn < T2:
+        q2 += 1
+        if not (An < B2): c2 += 1
+    if T2 < fA:
+        q3 += 1
+        if not (B2 < A): c3 += 1
+    if not (fAn <= T2):
+        cS += 1
+print('  (1) 前提 %d / 破れ **%d**' % (q1, c1), flush=True)
+print('  (2) 前提 %d / 破れ **%d**' % (q2, c2), flush=True)
+print('  (3) 前提 %d / 破れ **%d**' % (q3, c3), flush=True)
+print('  (S) 破れ **%d** / %d 回' % (cS, len(JUDG)), flush=True)
+print('  ⟹ 陽性対照が %s' % ('**効いている**' if c1 + c2 + c3 + cS > 0
+                             else '**効いていない。別の対照が要る**'), flush=True)
+
+print(flush=True)
 print('  ⟹ %s' % ('**この母数では全部真**' if n1 + n2 + n3 + nS == 0 else '**偽**'),
       flush=True)
 for k, A, n, B in ex:
