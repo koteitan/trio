@@ -19,3 +19,5 @@ tools/dbms/r2ext*.log
 tools/dbms/r3_*.log
 tools/dbms/r3_*.pkl
 tools/dbms/r3s2_*.log
+tools/dbms/r4_*.log
+tools/dbms/r4_*.pkl
