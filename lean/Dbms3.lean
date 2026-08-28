@@ -2392,6 +2392,17 @@ theorem Dm12_refl {m : ℕ} {st : St} : Dm12 m st ([], st) :=
 def Dm11 (d m : ℕ) (st : St) : Prop :=
   ∀ k, k < m → k < st.dmap.length → st.dmap.getD k 0 ≤ d + 1
 
+/-- **節 10 は `m` について上向きに単調**（`m` が大きいほど弱い）。
+
+`Dm10` は `res.2.dmap`（＝ 最後の状態）しか見ないので、5 重連結の**結論**は
+**いちばん最後のブロック**のものがそのまま使える。最後は `cB`（`m' = Bq.head.1 ≤ p.1`、
+深さも `d`）なので、これで `Dm10 d p.1` が出る。**中間の場合は結論側には現れない。** -/
+theorem Dm10_mono_m {d m m' : ℕ} {res : TrioSeq × St} (hle : m' ≤ m)
+    (h : Dm10 d m' res) : Dm10 d m res := by
+  intro j hj hlen
+  have h5 := h j (by omega) hlen
+  omega
+
 /-- **節 10 の付け替え**（課題 L20）: `(d', m')` の節 10 から `(d, m)` の節 10 へ。
 
 `j ≥ m'` の部分は**数の条件 `d + m' ≤ d' + m`** だけで移る。`m ≤ j < m'` の
