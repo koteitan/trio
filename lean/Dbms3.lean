@@ -4385,9 +4385,48 @@ theorem resid_rd_lb' {rest : TrioSeq} {st' : St} {m d rd e : ℕ}
       rw [getD_last] at h9
       omega
 
-/-- **★ 課題 L41 に残る唯一の債務**: `convResid` の入口で、残余の頭が
-`dmap` の範囲に届いていること。R1-NOTES §4.3（`|dmap| = 最後に処理した柱.1 + 1`）
-が材料で、**紙の証明がある**。`DmapInT` の第 1 項に対応する。 -/
+/-- ⚠⚠ **この形は偽である**（課題 L46）。1 だけ弱めた `h ≤ |dmap| + 1` が正しい。
+
+実測（team-lead `residhead.py`、`ST_TS ∩ {len<=8}` の呼び出し点 2386 件）:
+
+    h ≤ |dmap| + 1  : **2386 / 2386（100%）**   ← 正しい形
+    h ≤ |dmap|      : 2325（**破れ 61**）        ← この `def`。**偽**
+    h ≤ |dmap| - 1  : 243（破れ 2143）           ← 陽性対照
+
+⟹ **陽性対照が両方鳴っているので、100% は空虚ではない。**
+R1-NOTES §4.3 の紙の証明の対象は `h - 1 ≤ |dmap|`（＝ `h ≤ |dmap| + 1`）で、
+`DmapInR` の第 1 項の書き方とも一致する。**壊れているのはこの `def` だけ。**
+
+`resid_rd_lb'` は**正しい形だけで**証明ずみ（61 件も閉じる）。残るのは
+`dm10_step` / `dm10_aux` / `dm10_holds` / `dm10_at_U` / `dmST_step` の
+`hlen : m ≤ |st.dmap|` を **`m ≤ |st.dmap| + 1`** に一般化する作業（下の設計を見よ）。
+
+### 一般化の設計（課題 L46 §7）
+
+`|st1.dmap| = min p.1 |st.dmap| + 1` が **`p.1 + 1` と `p.1` の 2 通り**になる:
+
+    p.1 ≤ |st.dmap|      … |st1.dmap| = p.1 + 1   （いまの形）
+    p.1 = |st.dmap| + 1  … |st1.dmap| = p.1       （新しい場合）
+
+**只で通るもの**（`p.1 ≤ |st1.dmap| ≤ p.1 + 1` が両方の場合で成り立つから）:
+
+    A の呼び出しの入口   p.1 + 1 ≤ |st1.dmap| + 1        ✓
+    B / U / Bq の入口    p.1 ≤ |st1.dmap|                ✓
+    dm10_vac の空虚性    |st1.dmap| ≤ p.1 + 1            ✓
+
+**要るもの**: `Dm10_of_child'` / `Dm10_of_child` は添字 `p.1` の値が `dd2` である
+ことを使うので、`|st1.dmap| = p.1` の場合（添字 `p.1` が範囲外）に別の議論が要る。
+そのとき `rA.2.dmap[p.1]` は **A ブロックの最初の書き込み `dd2'`**（`≥ dd2 + 1 ≥ d + 1`）
+になる。つまり次の不変量を足せばよい:
+
+    def DmBot (d : ℕ) (st st' : St) : Prop :=
+      ∀ j, st.dmap.length ≤ j → j < st'.dmap.length → d ≤ st'.dmap.getD j 0
+
+「**入口の `dmap` の外側に書かれた値は、その呼び出しの深さ以上**」。
+
+連結のとき `[|st.dmap|, |st1.dmap|)` の範囲は `DmKeep` で凍る
+（`|st1.dmap| ≤ p.1 + 1` で、子の下界は `p.1` か `p.1+1`）。
+境目の添字 `p.1` だけ場合分けが要る。**見積もり 150〜200 行。** -/
 def ResidHeadT : Prop :=
   ∀ (rest : TrioSeq) (st' : St) (m d : ℕ), rest ≠ [] → (∀ c ∈ rest, m + 1 ≤ c.1) →
     m ≤ st'.dmap.length → Dm10 (d + 1) m st' → (rest.headI).1 ≤ st'.dmap.length
