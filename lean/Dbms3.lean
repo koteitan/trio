@@ -2252,10 +2252,19 @@ def BlkOK (d : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
     ∧ (res.1 ≠ [] → (res.1.headI).1 ≤ st.ST.length)
     ∧ (res.1 ≠ [] → (res.1.getLastD (0, 0, 0)).1 + 1 = res.2.ST.length)
     ∧ (∀ c ∈ res.1, d ≤ c.1)
+    ∧ (st.dmap ≠ [] → res.2.dmap ≠ [])
+    ∧ (res.2.dmap ≠ [] → res.2.dmap.getLastD 0 + 1 = res.2.ST.length)
 
-theorem BlkOK_nil {d : ℕ} {st : St} (hd : d ≤ st.ST.length) : BlkOK d st ([], st) :=
+/-- 状態の `dmap` 不変量: 最後に書いた像の深さ ＋ 1 が鎖の長さ。
+実測（`lean/l11_blkmeas.py`）: `<=6` 列 48997 呼び出し ＋ 7 列 1134 呼び出しで
+**違反 0**。`dmap` の狭義単調性や「全要素 < |ST|」は**偽**なので、真なのはこれだけ。 -/
+def DmOK (st : St) : Prop :=
+  st.dmap ≠ [] → st.dmap.getLastD 0 + 1 = st.ST.length
+
+theorem BlkOK_nil {d : ℕ} {st : St} (hd : d ≤ st.ST.length) (hdm : DmOK st) :
+    BlkOK d st ([], st) :=
   ⟨trivial, hd, fun _ => rfl, fun h => absurd rfl h, fun h => absurd rfl h,
-    fun _ hc => absurd hc (by simp)⟩
+    fun _ hc => absurd hc (by simp), fun h => h, hdm⟩
 
 /-- 空でない `Y` に付ける既定値は `getLastD` の値に効かない。 -/
 theorem getLastD_indep {Y : TrioSeq} (hy : Y ≠ []) (a b : Col) :
@@ -2281,10 +2290,10 @@ theorem getLastD_app {Y : TrioSeq} (hy : Y ≠ []) :
 theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
     (hdd : d ≤ d') (hX : BlkOK d st (X, stm)) (hY : BlkOK d' stm (Y, st')) :
     BlkOK d st (X ++ Y, st') := by
-  obtain ⟨hs1, hl1, he1, hh1, hg1, hlow1⟩ := hX
-  obtain ⟨hs2, hl2, he2, hh2, hg2, hlow2⟩ := hY
+  obtain ⟨hs1, hl1, he1, hh1, hg1, hlow1, hn1, hm1⟩ := hX
+  obtain ⟨hs2, hl2, he2, hh2, hg2, hlow2, hn2, hm2⟩ := hY
   simp only at hs1 hl1 he1 hh1 hg1 hlow1 hs2 hl2 he2 hh2 hg2 hlow2
-  refine ⟨?_, (by omega : d ≤ st'.ST.length), ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, (by omega : d ≤ st'.ST.length), ?_, ?_, ?_, ?_, fun h => hn2 (hn1 h), hm2⟩
   · refine steps1_append.mpr ⟨hs1, hs2, ?_⟩
     by_cases hx : X = []
     · exact Or.inl hx
@@ -2323,8 +2332,30 @@ theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
 /-- `BlkOK` は開始深さについて**下向きに単調**（節 2 と節 6 が緩むだけ）。 -/
 theorem BlkOK_mono {d d' : ℕ} {st : St} {res : TrioSeq × St} (h : d' ≤ d)
     (hb : BlkOK d st res) : BlkOK d' st res := by
-  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hb
-  exact ⟨h1, by omega, h3, h4, h5, fun x hx => le_trans h (h6 x hx)⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := hb
+  exact ⟨h1, by omega, h3, h4, h5, fun x hx => le_trans h (h6 x hx), h7, h8⟩
+
+/-- `(l ++ [x]).getLastD dflt = x`（型を選ばない版）。 -/
+theorem getLastD_snoc {α : Type} : ∀ (l : List α) (x dflt : α),
+    (l ++ [x]).getLastD dflt = x
+  | [], _, _ => rfl
+  | a :: t, x, _ => by rw [List.cons_append, List.getLastD_cons]; exact getLastD_snoc t x a
+
+/-- 空でないリストの `getLastD` はそのリストの元。 -/
+theorem getLastD_memT {l : TrioSeq} (h : l ≠ []) (dflt : Col) : l.getLastD dflt ∈ l := by
+  rw [List.getLastD_eq_getLast?, List.getLast?_eq_getLast (h := h)]
+  simpa using List.getLast_mem h
+
+/-- **出力の鎖の長さの下界**。入口の鎖が `k` 以上で `k ≤ d + 1` なら、出口も `k`
+以上。空なら鎖は変わらず、空でなければ末尾の柱の行 0 が `d` 以上（節 6）だから。 -/
+theorem BlkOK_ST_ge {d k : ℕ} {st : St} {res : TrioSeq × St} (h : BlkOK d st res)
+    (hst : k ≤ st.ST.length) (hk : k ≤ d + 1) : k ≤ res.2.ST.length := by
+  obtain ⟨-, -, h3, -, h5, h6, -, -⟩ := h
+  by_cases hn : res.1 = []
+  · rw [h3 hn]; exact hst
+  · have hl := h5 hn
+    have hm := h6 _ (getLastD_memT hn (0, 0, 0))
+    omega
 
 /-- **連結の補題（開始深さが下がってもよい版）**。
 
@@ -2336,10 +2367,10 @@ theorem BlkOK_app' {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
     (hfin : d ≤ st'.ST.length) (hlowY : ∀ c ∈ Y, d ≤ c.1)
     (hX : BlkOK d st (X, stm)) (hY : BlkOK d' stm (Y, st')) :
     BlkOK d st (X ++ Y, st') := by
-  obtain ⟨hs1, hl1, he1, hh1, hg1, hlow1⟩ := hX
-  obtain ⟨hs2, hl2, he2, hh2, hg2, hlow2⟩ := hY
+  obtain ⟨hs1, hl1, he1, hh1, hg1, hlow1, hn1, hm1⟩ := hX
+  obtain ⟨hs2, hl2, he2, hh2, hg2, hlow2, hn2, hm2⟩ := hY
   simp only at hs1 hl1 he1 hh1 hg1 hlow1 hs2 hl2 he2 hh2 hg2 hlow2
-  refine ⟨?_, hfin, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, hfin, ?_, ?_, ?_, ?_, fun h => hn2 (hn1 h), hm2⟩
   · refine steps1_append.mpr ⟨hs1, hs2, ?_⟩
     by_cases hx : X = []
     · exact Or.inl hx
@@ -2386,7 +2417,8 @@ theorem cols_blk {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 d
     (hdd1 : dd1 = if lad1 then dd0 + 1 else dd0)
     (hdd2 : dd2 = if okPlace ST2 dd1 e1 then dd1 else (fit ST2 dd1 e1).getD dd1)
     (hcols : cols = (if lad0 then [((d : ℕ), pw.1, pw.2)] else []) ++
-                    (if lad1 then [(dd0, base, pl2)] else []) ++ [(dd2, e1, e2)]) :
+                    (if lad1 then [(dd0, base, pl2)] else []) ++ [(dd2, e1, e2)])
+    (hdmne : dm ≠ []) (hdmlast : dm.getLastD 0 = dd2) :
     BlkOK d st
       (cols, { ST := ST2.take dd2 ++ [(e1, e2)], prev := prv, dmap := dm, Mo := Mo,
                nc := nc, rc := rcl }) := by
@@ -2399,7 +2431,8 @@ theorem cols_blk {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 d
     simp only [ne_eq, List.append_eq_nil_iff, List.cons_ne_nil, and_false,
       not_false_eq_true]
   exact ⟨hstep, by simp only []; omega, fun h => absurd h hne, fun _ => hhead,
-    fun _ => by simp only []; omega, hlow⟩
+    fun _ => by simp only []; omega, hlow, fun _ => hdmne,
+    fun _ => by simp only []; rw [hdmlast]; omega⟩
 
 /-- `depths_ok` の深さの部分だけ（`cols` を含まない形）。
 
@@ -2416,6 +2449,48 @@ theorem depths_le {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 base pl2 dd0 dd1 dd2
     d ≤ dd2 ∧ dd2 ≤ ST2.length :=
   ⟨(depths_ok (e2 := 0) hd hST1 hdd0 hST2 hdd1 hdd2 rfl).1,
    (depths_ok (e2 := 0) hd hST1 hdd0 hST2 hdd1 hdd2 rfl).2.1⟩
+
+/-- `fit` の値は既定値 `d` 以上（`fitAux` は `d` から上へ探すので）。 -/
+theorem fit_getD_ge {ST : List (ℕ × ℕ)} (d w : ℕ) : d ≤ (fit ST d w).getD d := by
+  cases h : fit ST d w with
+  | none => simp [h]
+  | some y =>
+      rw [fit] at h
+      have := fitAux_bounds h
+      simp only [h, Option.getD_some]
+      omega
+
+/-- `lad0 = true` なら本体の深さは `d + 1` 以上（行 0 の影を 1 本立てるから）。
+縮約の枝では `cfm` が `lad0` の中にしか無いので、これがつねに使える。 -/
+theorem depths_le_lad0 {ST ST2 : List (ℕ × ℕ)} {d h1 e1 dd0 dd1 dd2 : ℕ}
+    {lad0 lad1 : Bool} (hl0 : lad0 = true)
+    (hdd0 : dd0 = if lad0 then d + 1 else (fit ST d h1).getD (max d ST.length))
+    (hdd1 : dd1 = if lad1 then dd0 + 1 else dd0)
+    (hdd2 : dd2 = if okPlace ST2 dd1 e1 then dd1 else (fit ST2 dd1 e1).getD dd1) :
+    d + 1 ≤ dd2 := by
+  have h0 : dd0 = d + 1 := by rw [hdd0, if_pos hl0]
+  have h1' : dd0 ≤ dd1 := by rw [hdd1]; split <;> omega
+  have h2' : dd1 ≤ dd2 := by
+    rw [hdd2]; split
+    · exact le_rfl
+    · exact fit_getD_ge _ _
+  omega
+
+/-- `dmapAt` の両側の評価。範囲外は「ちょうど 1 個だけ外」のときに `|ST|` に
+ぴったり届く（`dmap.last + 1 = |ST|` から）。範囲内は仮定で受ける。 -/
+theorem dmapAt_bounds {dm : List ℕ} {k n d : ℕ} (hne : dm ≠ [])
+    (hlast : dm.getLastD 0 + 1 = n) (hd : d ≤ n) (hk : k ≤ dm.length)
+    (hin : k < dm.length → d ≤ dm.getD k 0 ∧ dm.getD k 0 ≤ n) :
+    d ≤ dmapAt dm k ∧ dmapAt dm k ≤ n := by
+  unfold dmapAt
+  rw [if_neg hne]
+  by_cases h : k < dm.length
+  · rw [if_pos h]; exact hin h
+  · rw [if_neg h]
+    have hkk : k = dm.length := by omega
+    subst hkk
+    simp only [Nat.sub_self]
+    omega
 
 /-! ### `blockok` の本体（**まだ証明していない — 仮定 `BlkInv` に落とした**）
 
@@ -2445,6 +2520,153 @@ theorem contrFind_e_le {p : Col} {A B : TrioSeq} {ps : ℕ × ℕ}
   · split at h
     · simp only [Option.some.injEq, Prod.mk.injEq] at h; omega
     · exact absurd h (by simp)
+
+/-- `if b then X else none` が `some` なら条件は真（巨大項に `simp` を当てずに
+条件だけ取り出す。`split at` は識別子の `simp` で燃え尽きる）。 -/
+theorem cond_of_ite_some {α : Type} {b : Bool} {X : Option α} {w : α}
+    (h : (if b = true then X else none) = some w) : b = true := by
+  cases b
+  · rw [if_neg (by simp)] at h; simp at h
+  · rfl
+
+/-- `if b then X else some u` が `some w` なら、どちらかの枝が当たっている。 -/
+theorem ite_some_pair {α : Type} {b : Bool} {X : Option α} {u w : α}
+    (h : (if b = true then X else some u) = some w) : X = some w ∨ u = w := by
+  cases b
+  · rw [if_neg (by simp)] at h; exact Or.inr (Option.some.inj h)
+  · rw [if_pos rfl] at h; exact Or.inl h
+
+/-- `if b then some u else none` が `some w` なら `u = w`。 -/
+theorem ite_some_none {α : Type} {b : Bool} {u w : α}
+    (h : (if b = true then some u else none) = some w) : u = w := by
+  cases b
+  · rw [if_neg (by simp)] at h; simp at h
+  · rw [if_pos rfl] at h; exact Option.some.inj h
+
+/-- **縮約の残余の開始深さ `rd` の両側。**
+
+`d + 1 + e` の枝は `e ≤ 1`（`contrFind_e_le`）と `d + 2 ≤ n` から出る。
+`dmapAt` の枝は `dmapAt_bounds` に落ちる: 範囲外が「ちょうど 1 個だけ外」なら
+`dmap.last + 1 = n` でぴったり `n` に届き、範囲内だけが仮定で残る。 -/
+theorem rd_bounds {d e k n : ℕ} {dm : List ℕ} {c : Prop} [Decidable c]
+    (he : e ≤ 1) (hn2 : d + 2 ≤ n) (hne : dm ≠ []) (hlast : dm.getLastD 0 + 1 = n)
+    (hk : ¬ c → k ≤ dm.length)
+    (hin : ¬ c → k < dm.length → d ≤ dm.getD k 0 ∧ dm.getD k 0 ≤ n) :
+    d ≤ (if c then d + 1 + e else dmapAt dm k)
+      ∧ (if c then d + 1 + e else dmapAt dm k) ≤ n := by
+  by_cases h : c
+  · rw [if_pos h]; omega
+  · rw [if_neg h]
+    exact dmapAt_bounds hne hlast (by omega) (hk h) (hin h)
+
+/-- **縮約の枝の 5 重連結**。局所値を全部変数にしてあるので、呼び出し側では
+巨大項に触らずに済む（`conv3` の本体で組み立てようとすると `whnf` が燃える）。 -/
+theorem blk_contr {d rd dd2 nc' : ℕ} {st st1 stA stU stR stB : St}
+    {cols A1 U1 R1 B1 : TrioSeq}
+    (hddd : d + 1 ≤ dd2) (hst1 : dd2 + 1 ≤ st1.ST.length) (hst1ne : st1.dmap ≠ [])
+    (hcols : BlkOK d st (cols, st1))
+    (hA : BlkOK (dd2 + 1) st1 (A1, stA))
+    (hU : d + 1 ≤ stA.ST.length → DmOK stA → BlkOK (d + 1) stA (U1, stU))
+    (hR : d ≤ rd → rd ≤ stU.ST.length → BlkOK rd stU (R1, stR))
+    (hrd : d + 2 ≤ stU.ST.length → stU.dmap ≠ [] → DmOK stU →
+      d ≤ rd ∧ rd ≤ stU.ST.length)
+    (hB : d ≤ stR.ST.length → DmOK stR → BlkOK d stR (B1, stB)) :
+    BlkOK d st (cols ++ A1 ++ U1 ++ R1 ++ B1, { stB with nc := nc' }) := by
+  have hA2 : d + 2 ≤ stA.ST.length := BlkOK_ST_ge (k := d + 2) hA (by omega) (by omega)
+  have hUok : BlkOK (d + 1) stA (U1, stU) := hU (by omega) hA.2.2.2.2.2.2.2
+  have hU2 : d + 2 ≤ stU.ST.length := BlkOK_ST_ge (k := d + 2) hUok (by omega) (by omega)
+  obtain ⟨hlo, hhi⟩ :=
+    hrd hU2 (hUok.2.2.2.2.2.2.1 (hA.2.2.2.2.2.2.1 hst1ne)) hUok.2.2.2.2.2.2.2
+  have hRok := hR hlo hhi
+  have hRlen : rd ≤ stR.ST.length := hRok.2.1
+  have hBok := hB (by omega) hRok.2.2.2.2.2.2.2
+  exact BlkOK_app (le_refl d)
+    (BlkOK_app hlo
+      (BlkOK_app (Nat.le_succ d) (BlkOK_app (by omega) hcols hA) hUok) hRok) hBok
+
+set_option maxHeartbeats 2000000 in
+/-- **`BlkInv` の帰納の 1 歩**（課題 L13）。
+
+残っている仮定は 2 本だけ:
+
+* `hres` … `convResid` が開始深さ `rd` の block であること。**森の枝**
+  （`convResid` の再帰）が `338` 発火で 0 回しか踏まれないので実測では真だが、
+  `tail.head` は `c` より必ず浅いので一般には偽。「残余は単一の木」が言えれば
+  消える（課題 H へ）。
+* `hdmin` … `dmapAt` の枝の**範囲内**の場合（`k < |dmap|`）。実測では
+  `<=6` 列で 0 回、7 列の縮約発火 294 個で **2 回**しか踏まれない。
+  `dmap` は狭義単調でも「全要素 < |ST|」でもないので道具が無い。 -/
+theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
+    (hd : d ≤ st.ST.length)
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → ∀ (d' : ℕ) (L' : List Lent)
+        (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool) (st' : St)
+        (nx' : Option Col) (off' : ℕ), d' ≤ st'.ST.length → DmOK st' →
+        BlkOK d' st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off'))
+    (hres : ∀ (rest : TrioSeq) (rd : ℕ) (Lr : List Lent) (ps' pw' : ℕ × ℕ)
+        (st' : St) (nx' : Option Col) (off' : ℕ), d ≤ rd → rd ≤ st'.ST.length →
+        BlkOK rd st' (convResid rest rd Lr ps' pw' st' nx' off'))
+    (hdmin : ∀ (stU : St) (rest2 : TrioSeq),
+        ¬(rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1) →
+        ((rest2.headD (0, 0, 0)).1 - 1 ≤ stU.dmap.length ∧
+          ((rest2.headD (0, 0, 0)).1 - 1 < stU.dmap.length →
+            d ≤ stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ∧
+              stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ≤ stU.ST.length))) :
+    BlkOK d st (conv3 (p :: r) d L F ps pw first force st nx off) := by
+  have hA : (r.takeWhile (fun q => decide (p.1 < q.1))).length ≤ r.length :=
+    (List.takeWhile_sublist _).length_le
+  have hB : (r.dropWhile (fun q => decide (p.1 < q.1))).length ≤ r.length :=
+    List.length_dropWhile_le _ r
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · rename_i ee kUv kpv nav he
+    have hlad0 := cond_of_ite_some he
+    rw [if_pos hlad0] at he
+    split at he
+    · simp at he
+    · rename_i e kU kp na hcf
+      have hw : ((e, kU, kp, na) : ℕ × ℕ × ℕ × Col) = (ee, kUv, kpv, nav) := by
+        rcases ite_some_pair he with h | h
+        · exact ite_some_none h
+        · exact h
+      have hee : ee ≤ 1 := by
+        have h1 : e = ee := congrArg (fun t => t.1) hw
+        have h2 := contrFind_e_le hcf
+        omega
+      refine blk_contr (depths_le_lad0 hlad0 rfl rfl rfl)
+          (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge (by simp)
+          (cols_blk hd rfl rfl rfl rfl rfl rfl rfl (by simp) (getLastD_snoc _ _ _))
+          (IH _ hA _ _ _ _ _ _ _ _ _ _ ?_ ?_)
+          (fun h1 h2 => IH _ ?_ _ _ _ _ _ _ _ _ _ _ h1 h2)
+          (fun h1 h2 => hres _ _ _ _ _ _ _ _ h1 h2)
+          (fun h2 h3 h4 => rd_bounds hee h2 h3 (h4 h3)
+            (fun hc => (hdmin _ _ hc).1) (fun hc => (hdmin _ _ hc).2))
+          (fun h1 h2 => IH _ ?_ _ _ _ _ _ _ _ _ _ _ h1 h2)
+      · exact (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
+      · intro _
+        rw [getLastD_snoc, len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _]
+      · simp only [List.length_take]; omega
+      · simp only [List.length_drop, List.length_tail]; omega
+  · refine BlkOK_app (le_refl d)
+      (BlkOK_app ?_
+        (cols_blk hd rfl rfl rfl rfl rfl rfl rfl (by simp) (getLastD_snoc _ _ _))
+        (IH _ hA _ _ _ _ _ _ _ _ _ _ ?_ ?_)) (IH _ hB _ _ _ _ _ _ _ _ _ _ ?_ ?_)
+    · exact Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1
+    · exact (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
+    · intro _
+      rw [getLastD_snoc, len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _]
+    · exact le_trans (Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1)
+        (IH _ hA _ _ _ _ _ _ _ _ _ _
+          (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
+          (by intro _
+              rw [getLastD_snoc,
+                len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _])).2.1
+    · exact (IH _ hA _ _ _ _ _ _ _ _ _ _
+        (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
+        (by intro _
+            rw [getLastD_snoc,
+              len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _])).2.2.2.2.2.2.2
 
 /-- `conv3` の呼び出しごとの不変量（**まだ証明していない**、課題 L2 (b)）。
 
@@ -2487,7 +2709,80 @@ file を作り、縮約の枝に計測を埋め込む（埋め込み先は `St.n
 def BlkInv : Prop :=
   ∀ (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ)
     (first force : Bool) (st : St) (nx : Option Col) (off : ℕ),
-    d ≤ st.ST.length → BlkOK d st (conv3 M d L F ps pw first force st nx off)
+    d ≤ st.ST.length → DmOK st →
+      BlkOK d st (conv3 M d L F ps pw first force st nx off)
+
+/-! ### 課題 L13: `BlkInv` に残る仮定は 2 本だけ
+
+`blk_step` を列数についての強い帰納法で回すと `BlkInv` が出る。
+残るのは次の 2 本で、どちらも**縮約の枝の中でしか使わない**。 -/
+
+/-- **(H2)** `convResid` が開始深さ `rd` の block であること。
+
+⚠ **一般には偽**: `convResid` は残余を**森**として読み、次の木の開始深さは
+`rd - (c.1 - tail[0].1)` と**必ず下がる**（`tail[0]` は `deepGe` の定義から
+`c` より浅い）。真になるのは残余が**単一の木**のとき、すなわち `convResid` の
+再帰（森）の枝に入らないときである。
+
+実測（`lean/l11_blkmeas.py`）:
+
+    <=6 列 全数 8387 個 ＋ 7 列の縮約発火 294 個 = **338 発火**
+    convResid が `tail = []` で終わる … 334 / **森の枝 … 0 回**
+    `BlkOK rd` の 5 節はすべて違反 0
+
+⟹ 「残余は常に単一の木」が言えればこの仮定は消える。**変換器側（課題 H）へ。** -/
+def ResidBlkT : Prop :=
+  ∀ (rest : TrioSeq) (rd : ℕ) (Lr : List Lent) (ps pw : ℕ × ℕ) (st : St)
+    (nx : Option Col) (off : ℕ), rd ≤ st.ST.length →
+    BlkOK rd st (convResid rest rd Lr ps pw st nx off)
+
+/-- **(H1 の残り)** 残余の開始深さを `dmap` から読む枝の、**範囲内**の場合。
+
+`rd = dmapAt stU.dmap ((rest2.head).1 - 1)` の枝は、範囲外（`k ≥ |dmap|`）なら
+`dmap.last + 1 = |ST|`（`BlkOK` の節 8、**証明ずみ**）から `k = |dmap|` のとき
+ちょうど `|ST|` に届く（`dmapAt_bounds`）。残るのは `k < |dmap|` のときだけで、
+`dmap` は狭義単調でも「全要素 < |ST|」でもない（どちらも実測で反例がある）ので
+道具が無い。
+
+実測: `<=6` 列では `dmapAt` の枝そのものが **0 回**、7 列の縮約発火 294 個で
+**6 回**。うち 4 回は `k = |dmap|`（上で閉じる）、**残り 2 回が `k < |dmap|`**。 -/
+def DmapInT : Prop :=
+  ∀ (d : ℕ) (p : Col) (stU : St) (rest2 : TrioSeq),
+    ¬(rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1) →
+    ((rest2.headD (0, 0, 0)).1 - 1 ≤ stU.dmap.length ∧
+      ((rest2.headD (0, 0, 0)).1 - 1 < stU.dmap.length →
+        d ≤ stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ∧
+          stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ≤ stU.ST.length))
+
+theorem blkInv_aux (h1 : ResidBlkT) (h2 : DmapInT) :
+    ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → ∀ (d : ℕ) (L : List Lent)
+      (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool) (st : St)
+      (nx : Option Col) (off : ℕ), d ≤ st.ST.length → DmOK st →
+      BlkOK d st (conv3 M d L F ps pw first force st nx off) := by
+  intro n
+  induction n with
+  | zero =>
+      intro M hM d L F ps pw first force st nx off hd hdm
+      have hnil : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil
+      rw [conv3_nil]
+      exact BlkOK_nil hd hdm
+  | succ n ih =>
+      intro M hM d L F ps pw first force st nx off hd hdm
+      cases M with
+      | nil => rw [conv3_nil]; exact BlkOK_nil hd hdm
+      | cons p r =>
+          have hr : r.length ≤ n := by simp only [List.length_cons] at hM; omega
+          exact blk_step p r d L F ps pw first force st nx off hd
+            (fun M' hM' => ih M' (le_trans hM' hr))
+            (fun rest rd Lr ps' pw' st' nx' off' _ hb =>
+              h1 rest rd Lr ps' pw' st' nx' off' hb)
+            (fun stU rest2 hc => h2 d p stU rest2 hc)
+
+/-- **★ `BlkInv` は 2 本の仮定から出る**（課題 L13）。 -/
+theorem blkInv_of (h1 : ResidBlkT) (h2 : DmapInT) : BlkInv :=
+  fun M d L F ps pw first force st nx off hd hdm =>
+    blkInv_aux h1 h2 M.length M le_rfl d L F ps pw first force st nx off hd hdm
 
 end Conv3
 
@@ -2498,11 +2793,18 @@ end Conv3
 `∀ p ∈ B, 0 ≤ p.1` は ℕ なので自明。残りは `steps1` そのもの。 -/
 theorem ImgBlockT3_of_BlkInv (h : Conv3.BlkInv) : ImgBlockT3 Conv3.b2d3 := by
   intro A _hA
-  obtain ⟨hs, -, -, hh, -, -⟩ :=
+  obtain ⟨hs, -, -, hh, -, -, -, -⟩ :=
     h A 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], A, 0, []⟩ none 0 (by simp)
+      (by intro hc; exact absurd rfl hc)
   refine ⟨?_, fun p _ => Nat.zero_le _, hs⟩
   intro hne
   simpa using hh hne
+
+/-- **★★ `ImgBlockT3` は課題 L13 の 2 本の仮定から出る。**
+`ResidBlkT`（残余が単一の木、実測 338 発火で森の枝 0 回）と
+`DmapInT`（`dmapAt` の範囲内の枝、実測 7 列で 2 回）。 -/
+theorem ImgBlockT3_of_resid (h1 : Conv3.ResidBlkT) (h2 : Conv3.DmapInT) :
+    ImgBlockT3 Conv3.b2d3 := ImgBlockT3_of_BlkInv (Conv3.blkInv_of h1 h2)
 
 
 /-! ## 12. `OrderT3` を証明するには何が要るか
