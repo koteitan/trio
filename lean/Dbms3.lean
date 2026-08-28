@@ -365,6 +365,82 @@ theorem ST_D3_conv3_D (wfD : WellFounded RD3)
   exact ST_D3_descend_D wfD H (diagSeqT 0 v) (ST_TS.diag v)
     (ST_D3_conv3_diag hd v) M hM hv
 
+/-! ## 5.6 課題 L38: **DBMS の停止性から BMS の停止性へ**
+
+`ReindexT1D` は `(conv3 B_i)⟦m⟧ = conv3 B_{i+1}` を**等式で**くれるので、
+DBMS 側の列は**定義から**展開列になる。⟹ **`conv3` の順序は 1 度も登場しない。**
+
+無限降下列を作らなくても、**`Acc` の入れ子**で直に書ける:
+
+    `Acc RD3 (conv3 A)` についての帰納で `Acc R A` を出す
+      `R a A`（＝ `translate a <o translate A`）が与えられたら
+        `trio_cofinality` で `n`、`ReindexT1D` で `B` を取る
+        `RD3 (conv3 B) (conv3 A)` は `ReindexT1D` の 3 つ目と `ST_D3.oper` で出る
+        帰納法の仮定から `Acc R B`
+        `translate a ≤o translate B` なので `Acc.inv` か `a = B` で `Acc R a` ∎ -/
+
+/-- **★ `Acc RD3 (conv3 A)` から `Acc` を BMS 側に移す。** -/
+theorem acc_olt_of_accD {conv3 : TrioSeq → TrioSeq} (H : ReindexT1D conv3) :
+    ∀ C : TrioSeq, Acc RD3 C → ∀ A : TrioSeq, ST_TS A → ST_D3 (conv3 A) →
+      conv3 A = C →
+      Acc (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) A := by
+  intro C hC
+  induction hC with
+  | intro C _ ih =>
+    intro A hA hSD hCA
+    refine Acc.intro _ ?_
+    intro a ha
+    obtain ⟨haS, -, hlt⟩ := ha
+    have hL : 1 < A.length := by
+      by_contra hL
+      exact not_olt_len_one_T haS (by omega) hA hlt
+    obtain ⟨n, hn, han⟩ := trio_cofinality hA haS hlt
+    obtain ⟨m, B, hm, hB, hAnB, hsq, heqC⟩ := H hA hL n hn
+    have hSD' : ST_D3 (conv3 B) := by rw [← heqC]; exact ST_D3.oper hSD hm
+    have hAccB : Acc (fun a b : TrioSeq =>
+        ST_TS a ∧ ST_TS b ∧ translate a <o translate b) B :=
+      ih (conv3 B) (by rw [← hCA]; exact ⟨hSD', hSD, hsq⟩) B hB hSD' rfl
+    rcases ole_trans han hAnB with hab | hab
+    · exact hAccB.inv ⟨haS, hB, hab⟩
+    · have haB : a = B := by
+        by_contra hne
+        rcases seqlex_total a B with he | hs | hs
+        · exact hne he
+        · exact olt_irrefl _ (hab ▸ (olt_ST_iff_seqlex haS hB hne).2 hs)
+        · exact olt_irrefl _ (hab ▸ (olt_ST_iff_seqlex hB haS (Ne.symm hne)).2 hs)
+      rw [haB]; exact hAccB
+
+/-- **★★★ DBMS 3 行 (z<2) の整礎性 ⟹ BMS 3 行 (z<2) の整礎性。**
+
+`Final.wf_Rnf_of_wf_TS` ＋ `Reduction.step_terminates` と繋げば
+**BMS 3 行 (z<2) の停止性**（`WellFounded stepRel`）になる。
+`Dbms3.lean` は `lakefile.toml` の `roots` に無いので、その 2 段は
+`Final.lean` の側で繋ぐこと。 -/
+theorem wf_olt_ST_TS_of_dbms (wfD : WellFounded RD3)
+    {conv3 : TrioSeq → TrioSeq} (H : ReindexT1D conv3) (hd : ConvDiagT3 conv3) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) := by
+  refine ⟨fun A => ?_⟩
+  by_cases hA : ST_TS A
+  · exact acc_olt_of_accD H (conv3 A) (wfD.apply _) A hA
+      (ST_D3_conv3_D wfD H hd hA) rfl
+  · exact Acc.intro _ (fun a h => absurd h.2.1 hA)
+
+/-- **★★★★ DBMS 3 行 (z<2) の停止性 ⟹ BMS 3 行 (z<2) の停止性。**
+
+`Final.wf_Rnf_of_wf_TS` ＋ `Reduction.step_terminates` で繋いだ形。
+**残核 `TowerGraft2` / `TowerExp` を使わない。** -/
+theorem TRIO_terminates_of_dbms_wf (wfD : WellFounded RD3)
+    {conv3 : TrioSeq → TrioSeq} (H : ReindexT1D conv3) (hd : ConvDiagT3 conv3) :
+    WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_dbms wfD H hd))
+
+/-- 同じものを「無限展開列は無い」の形で。 -/
+theorem no_infinite_expansion_of_dbms_wf (wfD : WellFounded RD3)
+    {conv3 : TrioSeq → TrioSeq} (H : ReindexT1D conv3) (hd : ConvDiagT3 conv3) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_dbms wfD H hd))
+
 /-! ## 6. 主定理 -/
 
 /-- **像は DBMS の 3 行標準形**（`ReindexT1` と `ConvDiagT3` を仮定）。 -/
@@ -2273,6 +2349,26 @@ theorem ST_D3_conv3_of_parts_D (wfD : WellFounded RD3)
     (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3)
     {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
   ST_D3_conv3_D wfD (ReindexT1D_of_cofinal hI hj hO hU hb hlen2) hd hM
+
+/-- **★★★★★ 仮定を全部並べた形の停止性**（課題 L38）。
+
+    wfD                 DBMS 3 行 (z<2) の整礎性（新しい問題）
+    ImgCofinalT3        像は展開で共終（Python 側で破れ 20）
+    Inj3                単射性（実測 1882196 個で衝突 0）
+    OrderReindexT3'     (←)・相手は像の展開の逆像に限る（実測 破れ 0）
+    SandwichUReindexT3  挟み撃ちの上・相手は同上（実測 破れ 0）
+    ImgBlockT3          像は `blockok 0`（残り 160〜230 行）
+    ImgLenT3            **証明ずみ**
+    ConvDiagT3          **証明ずみ**
+
+**`TowerGraft2` / `TowerExp` / `Subst1gReviveSelf` を使わない。**
+`PROOF-STATUS §5` の壁とは別の入り口である。 -/
+theorem TRIO_terminates_of_dbms_wf_parts (wfD : WellFounded RD3)
+    {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3' conv3)
+    (hU : SandwichUReindexT3 conv3) (hb : ImgBlockT3 conv3)
+    (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3) : WellFounded stepRel :=
+  TRIO_terminates_of_dbms_wf wfD (ReindexT1D_of_cofinal hI hj hO hU hb hlen2) hd
 
 /-! ### 11.4 `ImgLenT3` の証明（課題 L2 (a)） -/
 

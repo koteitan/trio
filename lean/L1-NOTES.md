@@ -4187,3 +4187,67 @@ DBMS 版 `m_step_decreases` も `trio_cofinality` の DBMS 版も要らない
 ⚠ **置き場所**: `Dbms3.lean` は `lakefile.toml` の `roots` に無いので
 `Final.lean` から import できない。**`Dbms3.lean` の側に置く**のが安全
 （`TRIO_terminates_of_dbms_wf` を `Dbms3.lean` の末尾に）。
+
+
+---
+
+# ★★ 課題 L38: **DBMS の停止性 ⟹ BMS の停止性**（書けた。2026-08-29）
+
+## 0. 結論
+
+    theorem TRIO_terminates_of_dbms_wf (wfD : WellFounded RD3)
+        (H : ReindexT1D conv3) (hd : ConvDiagT3 conv3) : **WellFounded stepRel**
+
+    theorem TRIO_terminates_of_dbms_wf_parts (wfD) (hI) (hj) (hO) (hU) (hb) (hlen2) (hd) :
+        WellFounded stepRel
+
+`Dbms3.lean`, exit 0 / `sorry` 0 / `axiom` 0。
+**`TowerGraft2` / `TowerExp` / `Subst1gReviveSelf` を使わない。**
+
+## 1. 列の構成は要らなかった —— **`Acc` の入れ子で 60 行**
+
+見積もりは 140〜230 行（無限降下列 ＋ 選択公理）だったが、**`Acc` で直に書けた**:
+
+    acc_olt_of_accD : ∀ C, Acc RD3 C → ∀ A, ST_TS A → ST_D3 (conv3 A) → conv3 A = C →
+                        Acc (BMS の関係) A
+
+`Acc RD3 (conv3 A)` についての帰納。`R a A`（`translate a <o translate A`）が
+与えられたら
+
+    not_olt_len_one_T           `1 < |A|`
+    trio_cofinality             `n` と `translate a ≤o translate (A⟦n⟧)`
+    ReindexT1D                  `B`、`(conv3 A)⟦m⟧ = conv3 B`、`seqlex (conv3 B) (conv3 A)`
+    ST_D3.oper                  `ST_D3 (conv3 B)`
+    ⟹ `RD3 (conv3 B) (conv3 A)` が 3 成分そろう ⟹ 帰納法の仮定で `Acc R B`
+    `translate a ≤o translate B` を `<o` と `=` に割って `Acc.inv` / `a = B`
+
+**選択公理も列も要らない。** `ReindexT1D` を使うと `seqlex (conv3 B) (conv3 A)` が
+付いてくるので、`RD3` の 3 成分がその場でそろうのが効いた。
+
+## 2. なぜ `conv3` の順序が要らないか（1 行）
+
+> **`ReindexT1D` が `(conv3 A)⟦m⟧ = conv3 B` を「等式で」くれるから。**
+> DBMS 側の降下は**定義から**展開であって、`conv3` が順序を保つかとは無関係。
+
+これが課題 L24 の 24 件（順序保存の反例）を迂回できる理由である。
+
+## 3. 何が変わったか
+
+| | いままで | いま |
+|---|---|---|
+| BMS 3 行 (z<2) の停止性の入り口 | `Subst1gReviveSelf` **1 本**（半年詰まっている） | **2 本**（もう 1 本は `wfD`） |
+| 変換の道の結論 | 像が DBMS 標準形 | **BMS の停止性**（`wfD` を仮定して） |
+| `conv3` の順序保存 | 要ると思っていた | **1 か所も要らない** |
+
+⚠ **`wfD`（DBMS 3 行 z<2 の停止性）は新しい問題**である。ただし DBMS は差分表現なので
+BMS とは別の道具が使える見込みがある。**`PROOF-STATUS §5` の壁とは独立の入り口。**
+
+## 4. 残っている仮定（`TRIO_terminates_of_dbms_wf_parts`）
+
+    wfD                 **未着手**（新しい問題）
+    ImgCofinalT3        Python 側で破れ 20（弱められない）
+    Inj3                実測 1882196 個で衝突 0
+    OrderReindexT3'     実測 破れ 0（前提 171422 回）
+    SandwichUReindexT3  実測 破れ 0（256006 回）
+    ImgBlockT3          仮定 2 本、残り 160〜230 行（課題 L25）
+    ImgLenT3 / ConvDiagT3   **証明ずみ**
