@@ -23,45 +23,17 @@ from rows3 import b2d3
 
 
 def stts_pool(vmax=None, maxlen=10, ns=None):
-    """対角 `diag(3, v, zcap=1)` から展開で到達できるもの（**`ST_TS`**）。
+    """**`tools/dbms/stts.py` の `stts` に一本化した**（課題 R26, 2026-08-29）。
 
-    ⚠ **既定引数が 2 つとも `ST_TS` の定義を狭めていた**（課題 R26, 2026-08-29）。
-    直したので、以後は既定のまま呼ぶこと。
+    既定引数 2 つ（`ns=(1,2,3)` / `vmax=5`）が `ST_TS` の定義を狭めていたので
+    直した。完全性の証明と、古い既定が何を落としていたかは `stts.py` の
+    docstring にある（`|S⟦n⟧| >= n` より `ns=1..maxlen` で完全、
+    `diagSeqT 0 v` は `v+1` 列なので `vmax=maxlen-1` で完全）。
 
-    `lean/Trio.lean:127`
-
-        inductive ST_TS : TrioSeq → Prop where
-          | diag (v : ℕ) : ST_TS (diagSeqT 0 v)
-          | oper {M} {n} : ST_TS M → **1 ≤ n** → ST_TS (M⟦n⟧)
-
-    * **`ns`（展開の添字）は `1` 以上のすべて。** 旧既定の `(1,2,3)` は真部分集合で、
-      `len<=8` で 19721 -> **25234**（×1.28）、`len<=9` で 44064 -> **61976**（×1.41）
-      と取りこぼしていた。
-      **上限は `maxlen` でよい**: `|S⟦n⟧| = r + n*bp` で `bp >= 1` なので
-      `|S⟦n⟧| >= n`、つまり `n > maxlen` の展開は必ず `maxlen` を超えて捨てられる。
-      実測でも `ns=1..maxlen` で飽和する（`1..maxlen` と `1..maxlen+3` が同数）。
-    * **`vmax`（対角の上限）も同じ。** `diagSeqT 0 v` は **`v+1` 列**なので、
-      `len <= maxlen` に入る対角は `v <= maxlen - 1`。旧既定の `vmax=5` は
-      `maxlen >= 7` で足りない。
-
-    旧い挙動が要るときだけ `ns=(1, 2, 3)` を明示的に渡すこと。
+    古い挙動が要るときだけ `ns=(1, 2, 3)`（と `vmax=5`）を明示的に渡すこと。
     """
-    if ns is None:
-        ns = range(1, maxlen + 1)
-    if vmax is None:
-        vmax = max(0, maxlen - 1)
-    seen, frontier = set(), []
-    for v in range(vmax + 1):
-        S = tuple(tuple(c) for c in trio.diag(3, v, zcap=1))
-        if S not in seen:
-            seen.add(S); frontier.append(S)
-    while frontier:
-        S = frontier.pop()
-        for n in ns:
-            T = tuple(tuple(c) for c in trio.expand(list(S), n))
-            if T and len(T) <= maxlen and T not in seen:
-                seen.add(T); frontier.append(T)
-    return sorted(seen)
+    from stts import stts as _stts
+    return _stts(maxlen, vmax=vmax, ns=ns)
 
 
 def adj(seq):
