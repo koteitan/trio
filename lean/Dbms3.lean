@@ -2314,6 +2314,50 @@ theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
     · rw [getLastD_app hy]
       exact hg2 hy
 
+/-- **連結の補題（開始深さが下がってもよい版）**。
+
+`convResid` は残余を**森**として読むので、次の木の開始深さは
+`rd - (c.1 - tail[0].1)` と**下がる**。そこでは `BlkOK_app` の `d ≤ d'` が
+使えない。`d ≤ d'` は結論の第 2 項 `d ≤ st'.ST.length` を出すためだけに
+使われているので、それを直に仮定に取る。 -/
+theorem BlkOK_app' {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
+    (hfin : d ≤ st'.ST.length) (hX : BlkOK d st (X, stm)) (hY : BlkOK d' stm (Y, st')) :
+    BlkOK d st (X ++ Y, st') := by
+  obtain ⟨hs1, hl1, he1, hh1, hg1⟩ := hX
+  obtain ⟨hs2, hl2, he2, hh2, hg2⟩ := hY
+  simp only at hs1 hl1 he1 hh1 hg1 hs2 hl2 he2 hh2 hg2
+  refine ⟨?_, hfin, ?_, ?_, ?_⟩
+  · refine steps1_append.mpr ⟨hs1, hs2, ?_⟩
+    by_cases hx : X = []
+    · exact Or.inl hx
+    · by_cases hy : Y = []
+      · exact Or.inr (Or.inl hy)
+      · exact Or.inr (Or.inr (by have := hh2 hy; have := hg1 hx; omega))
+  · intro h
+    have hx : X = [] := (List.append_eq_nil_iff.mp h).1
+    have hy : Y = [] := (List.append_eq_nil_iff.mp h).2
+    rw [he2 hy, he1 hx]
+  · intro _
+    by_cases hx : X = []
+    · subst hx
+      by_cases hy : Y = []
+      · subst hy; simp at *
+      · rw [List.nil_append]
+        have := hh2 hy
+        rw [he1 rfl] at this
+        exact this
+    · obtain ⟨a, X', rfl⟩ := List.exists_cons_of_ne_nil hx
+      simpa using hh1 (by simp)
+  · intro _
+    by_cases hy : Y = []
+    · subst hy
+      rw [List.append_nil, he2 rfl]
+      by_cases hx : X = []
+      · subst hx; simp at *
+      · exact hg1 hx
+    · rw [getLastD_app hy]
+      exact hg2 hy
+
 /-- `depths_ok` を `BlkOK` の形に包んだもの（`conv3` の 1 列ぶん）。 -/
 theorem cols_blk {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 dd2 prv nc : ℕ}
     {pw : ℕ × ℕ} {lad0 lad1 : Bool} {cols : TrioSeq} {st : St} {dm : List ℕ}
@@ -2389,9 +2433,28 @@ theorem depths_le {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 base pl2 dd0 dd1 dd2
     像の深さ）と `st.ST` の関係を不変量にしないと出ない**。
     候補: 「`k < |dmap|` なら `dmap[k] < |ST|`、かつ `dmap` は狭義単調」。
   - **`convResid_blk`**: `convResid` の不変量。残余は**森**なので次の木で開始深さが
-    `rd - (m0 - tail[0].1)` と**下がる**。だから `BlkOK` の第 2 項
-    （`d ≤ |st'.ST|`）はそのままでは**偽**で、弱めた形が要る。そのうえで
-    縮約の枝の `rB`（開始深さ `d`）に必要な `d ≤ |rR.2.ST|` を別に出す必要がある。 -/
+    `rd - (m0 - tail[0].1)` と**下がる**。連結のとき `BlkOK_app` の `d ≤ d'` が
+    使えないので、`BlkOK_app'`（結論の第 2 項を直に仮定する版、**証明ずみ**）で
+    受ける。そのうえで縮約の枝の `rB`（開始深さ `d`）に必要な `d ≤ |rR.2.ST|`
+    を別に出す必要がある。
+
+### ★ 課題 L11: 上の債務を**実際の呼び出し点で測った**（2026-08-28）
+
+`lean/l11_blkmeas.py` が `Dbms3.lean` の本文をそのまま貼った使い捨ての Lean
+file を作り、縮約の枝に計測を埋め込む（埋め込み先は `St.nc`。`nc` は像に
+一切効かない）。**10 本すべて違反 0**:
+
+    <=6 列 全数 8387 個   … 発火 44、違反 0、陽性対照 44/44
+    7 列 縮約発火 294 個  … 発火 294、違反 0、陽性対照 294/294
+    合計 338 発火 = 既知の発火（338/77282）を全部踏んでいる
+
+測った 10 本: `d ≤ rd` / `rd ≤ |rU.2.ST|`（＝ `contr_rd_ok`）、
+`BlkOK rd rU.2 (rR.1, rR.2)` の 5 節すべて（＝ `convResid_blk`）、
+`d ≤ |rR.2.ST|`、`dmap` が狭義単調、`dmap` の全要素 `< |ST|`。
+
+⟹ **`convResid_blk` は呼び出し点では `BlkOK` そのままで真**（弱めた形は
+要らない。`rd` の上界を落とした `ResidBlk` が偽なのとは別の話）。
+⟹ `BlkOK` に足す候補の `dmap` 不変量（狭義単調・`< |ST|`）も**真**。 -/
 def BlkInv : Prop :=
   ∀ (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ)
     (first force : Bool) (st : St) (nx : Option Col) (off : ℕ),
