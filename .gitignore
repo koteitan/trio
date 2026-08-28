@@ -52,3 +52,6 @@ tools/dbms/r33.log
 tools/dbms/r34.log
 tools/dbms/r3[456]*.log
 tools/dbms/r35*.log
+tools/dbms/r37.log
+tools/dbms/r37pat_*.pkl
+tools/dbms/r37_*.log
