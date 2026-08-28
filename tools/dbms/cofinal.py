@@ -53,20 +53,20 @@ from core import show, expand, isstd
 
 
 def hits(A, mmax=16, f=None):
-    """m = 1..mmax のうち `d2b3` で逆像が確定した m の集合（の文字列）。"""
+    """m = 1..mmax のうち逆像が**確定した** m の並び（'O' / '.'）。
+
+    段 1 は `rows3.preimage_try`（`d2b3` ＋ 双子戻し ＋ 接頭辞の当て直し）を使う。
+    素の `d2b3` だけだと `conv3` の版に追いつけず破れが水増しされる
+    （lim=6 で 40 対 34、差の 6 個は `preimage_try` が**逆像を実際に持って**救出する。
+    NOTES §課題 H13 の「基準線はひとつ」を読むこと）。
+    """
     from inv3 import d2b3
     f = f or rows3.b2d3
     fA = f(list(A))
     out = []
     for m in range(1, mmax + 1):
         T = tuple(expand(tuple(map(tuple, fA)), m))
-        try:
-            B = d2b3(T)
-        except Exception:
-            B = None
-        ok = (bool(B) and isstd(B, 'BMS') and all(c[2] <= 1 for c in B)
-              and tuple(f(list(B))) == T)
-        out.append('O' if ok else '.')
+        out.append('O' if rows3.preimage_try(f, T, d2b3) is not None else '.')
     return ''.join(out)
 
 
@@ -79,10 +79,11 @@ def cofinal_ok(pat, tail=4):
 
 def score(lim=5, mmax=16, imgmax=3, verbose=1, f=None):
     """(ImgClosedT の破れ, そのうち ImgCofinalT でも破れているもの) を返す。"""
-    import imgfast
+    import imgfast, inv3
     f = f or rows3.b2d3
     t0 = time.time()
-    r = imgfast.score(lim=lim, mmax=imgmax, verbose=0)
+    r = imgfast.score(lim=lim, mmax=imgmax, verbose=0, f=f,
+                      d2b3=(lambda T: rows3.preimage_try(f, T, inv3.d2b3)))
     bad = sorted(set(A for A, m, T in r.badpairs), key=rows3.key)
     still = []
     for A in bad:

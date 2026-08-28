@@ -381,17 +381,21 @@ def imgclosed_fast(f, A, mmax=3, d2b3=None, jobs=None, ladder=LADDER_FAST,
 
 
 def score(f=b2d3, lim=5, mmax=3, zcap=1, jobs=None, verbose=1,
-          ladder=LADDER_FAST, fallback=True):
+          ladder=LADDER_FAST, fallback=True, d2b3=None):
     """`gen3` を回してから採点。返り値は `Res`。
-    `fallback=False` なら段 1（`d2b3` を当てるだけ）で止める＝破れの甘い上界。"""
+    `fallback=False` なら段 1（`d2b3` を当てるだけ）で止める＝破れの甘い上界。
+
+    `d2b3` に `rows3.preimage_try` を包んだものを渡すと、`rows3.check` の (7) 欄と
+    同じ数（**基準線**）になる。素の `inv3.d2b3` のままだと lim=6 で 40（水増し 6）。
+    NOTES §課題 H13 を読むこと。"""
     t0 = time.time()
     A = [M for M in sorted(gen3('BMS', lim, zcap=zcap), key=key) if len(M) > 1]
     if verbose:
         print('BMS 3 行 z<=%d 標準形 (2..%d 列): %d 個 x m=1..%d = %d 対  (%.1fs)'
               % (zcap, lim, len(A), mmax, len(A) * mmax, time.time() - t0),
               flush=True)
-    r = imgclosed_fast(f, A, mmax, jobs=jobs, verbose=verbose, ladder=ladder,
-                       fallback=fallback)
+    r = imgclosed_fast(f, A, mmax, d2b3=d2b3, jobs=jobs, verbose=verbose,
+                       ladder=ladder, fallback=fallback)
     if verbose:
         print('  ' + r.line())
         print('  段: %s   並列 %d' % (sorted(r.stages.items()), r.njobs))
