@@ -1927,6 +1927,28 @@ def Inj3 (conv3 : TrioSeq → TrioSeq) : Prop :=
 theorem inj3_of_orderT3 {conv3 : TrioSeq → TrioSeq} (hO : OrderT3 conv3) :
     Inj3 conv3 := fun hM hN h => conv3_injective hO hM hN h
 
+/-- **(←) の向きだけの全域版**（`OrderT3` の半分）。
+
+⚠ **`OrderT3` より弱くはない。** `seqlex` も `<o` も `ST_TS` 上では相異なる 2 つを
+必ず比べる（`seqlex_total` / `olt_ST_iff_seqlex`）ので、**(→) と (←) は
+全域では同値**である（下の `orderT3_of_orderBackT3`）。
+⟹ **向きを制限しても何も買えない。買えるのは「相手を制限する」ほう**である
+（`OrderReindexT3`）。 -/
+def OrderBackT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {M N : TrioSeq}, ST_TS M → ST_TS N →
+    seqlex (conv3 M) (conv3 N) → translate M <o translate N
+
+/-- **(←) だけから (→) が出る**（`ST_TS` 上の三分律を使う）。
+⟹ `OrderBackT3` と `OrderT3` は同値。**向きの制限は無意味**である。 -/
+theorem orderT3_of_orderBackT3 {conv3 : TrioSeq → TrioSeq}
+    (hj : Inj3 conv3) (hb : OrderBackT3 conv3) : OrderT3 conv3 := by
+  intro M N hM hN
+  refine ⟨fun h => ?_, fun h => hb hM hN h⟩
+  rcases seqlex_total (conv3 M) (conv3 N) with heq | hs | hs
+  · exact absurd (hj hM hN heq ▸ h) (olt_irrefl _)
+  · exact hs
+  · exact absurd (hb hN hM hs) (fun h2 => olt_asymm h h2)
+
 /-- **`ReindexT1` が実際に要求する順序の性質だけ**を取り出したもの。
 
 ⚠ **`(→)`（順序を保つ向き）は入っていない。** 入っているのは
