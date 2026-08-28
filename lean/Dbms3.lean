@@ -2251,9 +2251,11 @@ def BlkOK (d : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
     ∧ (res.1 = [] → res.2.ST.length = st.ST.length)
     ∧ (res.1 ≠ [] → (res.1.headI).1 ≤ st.ST.length)
     ∧ (res.1 ≠ [] → (res.1.getLastD (0, 0, 0)).1 + 1 = res.2.ST.length)
+    ∧ (∀ c ∈ res.1, d ≤ c.1)
 
 theorem BlkOK_nil {d : ℕ} {st : St} (hd : d ≤ st.ST.length) : BlkOK d st ([], st) :=
-  ⟨trivial, hd, fun _ => rfl, fun h => absurd rfl h, fun h => absurd rfl h⟩
+  ⟨trivial, hd, fun _ => rfl, fun h => absurd rfl h, fun h => absurd rfl h,
+    fun _ hc => absurd hc (by simp)⟩
 
 /-- 空でない `Y` に付ける既定値は `getLastD` の値に効かない。 -/
 theorem getLastD_indep {Y : TrioSeq} (hy : Y ≠ []) (a b : Col) :
@@ -2279,10 +2281,10 @@ theorem getLastD_app {Y : TrioSeq} (hy : Y ≠ []) :
 theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
     (hdd : d ≤ d') (hX : BlkOK d st (X, stm)) (hY : BlkOK d' stm (Y, st')) :
     BlkOK d st (X ++ Y, st') := by
-  obtain ⟨hs1, hl1, he1, hh1, hg1⟩ := hX
-  obtain ⟨hs2, hl2, he2, hh2, hg2⟩ := hY
-  simp only at hs1 hl1 he1 hh1 hg1 hs2 hl2 he2 hh2 hg2
-  refine ⟨?_, (by omega : d ≤ st'.ST.length), ?_, ?_, ?_⟩
+  obtain ⟨hs1, hl1, he1, hh1, hg1, hlow1⟩ := hX
+  obtain ⟨hs2, hl2, he2, hh2, hg2, hlow2⟩ := hY
+  simp only at hs1 hl1 he1 hh1 hg1 hlow1 hs2 hl2 he2 hh2 hg2 hlow2
+  refine ⟨?_, (by omega : d ≤ st'.ST.length), ?_, ?_, ?_, ?_⟩
   · refine steps1_append.mpr ⟨hs1, hs2, ?_⟩
     by_cases hx : X = []
     · exact Or.inl hx
@@ -2313,6 +2315,16 @@ theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
       · exact hg1 hx
     · rw [getLastD_app hy]
       exact hg2 hy
+  · intro c hc
+    rcases List.mem_append.mp hc with h | h
+    · exact hlow1 c h
+    · exact le_trans hdd (hlow2 c h)
+
+/-- `BlkOK` は開始深さについて**下向きに単調**（節 2 と節 6 が緩むだけ）。 -/
+theorem BlkOK_mono {d d' : ℕ} {st : St} {res : TrioSeq × St} (h : d' ≤ d)
+    (hb : BlkOK d st res) : BlkOK d' st res := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hb
+  exact ⟨h1, by omega, h3, h4, h5, fun x hx => le_trans h (h6 x hx)⟩
 
 /-- **連結の補題（開始深さが下がってもよい版）**。
 
@@ -2321,12 +2333,13 @@ theorem BlkOK_app {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
 使えない。`d ≤ d'` は結論の第 2 項 `d ≤ st'.ST.length` を出すためだけに
 使われているので、それを直に仮定に取る。 -/
 theorem BlkOK_app' {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
-    (hfin : d ≤ st'.ST.length) (hX : BlkOK d st (X, stm)) (hY : BlkOK d' stm (Y, st')) :
+    (hfin : d ≤ st'.ST.length) (hlowY : ∀ c ∈ Y, d ≤ c.1)
+    (hX : BlkOK d st (X, stm)) (hY : BlkOK d' stm (Y, st')) :
     BlkOK d st (X ++ Y, st') := by
-  obtain ⟨hs1, hl1, he1, hh1, hg1⟩ := hX
-  obtain ⟨hs2, hl2, he2, hh2, hg2⟩ := hY
-  simp only at hs1 hl1 he1 hh1 hg1 hs2 hl2 he2 hh2 hg2
-  refine ⟨?_, hfin, ?_, ?_, ?_⟩
+  obtain ⟨hs1, hl1, he1, hh1, hg1, hlow1⟩ := hX
+  obtain ⟨hs2, hl2, he2, hh2, hg2, hlow2⟩ := hY
+  simp only at hs1 hl1 he1 hh1 hg1 hlow1 hs2 hl2 he2 hh2 hg2 hlow2
+  refine ⟨?_, hfin, ?_, ?_, ?_, ?_⟩
   · refine steps1_append.mpr ⟨hs1, hs2, ?_⟩
     by_cases hx : X = []
     · exact Or.inl hx
@@ -2357,6 +2370,10 @@ theorem BlkOK_app' {d d' : ℕ} {st stm st' : St} {X Y : TrioSeq}
       · exact hg1 hx
     · rw [getLastD_app hy]
       exact hg2 hy
+  · intro c hc
+    rcases List.mem_append.mp hc with h | h
+    · exact hlow1 c h
+    · exact hlowY c h
 
 /-- `depths_ok` を `BlkOK` の形に包んだもの（`conv3` の 1 列ぶん）。 -/
 theorem cols_blk {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 dd2 prv nc : ℕ}
@@ -2374,14 +2391,15 @@ theorem cols_blk {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 e2 base pl2 dd0 dd1 d
       (cols, { ST := ST2.take dd2 ++ [(e1, e2)], prev := prv, dmap := dm, Mo := Mo,
                nc := nc, rc := rcl }) := by
   subst hSTe
-  obtain ⟨hdd, hd2, hstep, hhead, hlast, -⟩ := depths_ok hd hST1 hdd0 hST2 hdd1 hdd2 hcols
+  obtain ⟨hdd, hd2, hstep, hhead, hlast, hlow⟩ :=
+    depths_ok hd hST1 hdd0 hST2 hdd1 hdd2 hcols
   have hst1 : (ST2.take dd2 ++ [(e1, e2)]).length = dd2 + 1 := len_take_app hd2 _
   have hne : cols ≠ [] := by
     rw [hcols]
     simp only [ne_eq, List.append_eq_nil_iff, List.cons_ne_nil, and_false,
       not_false_eq_true]
   exact ⟨hstep, by simp only []; omega, fun h => absurd h hne, fun _ => hhead,
-    fun _ => by simp only []; omega⟩
+    fun _ => by simp only []; omega, hlow⟩
 
 /-- `depths_ok` の深さの部分だけ（`cols` を含まない形）。
 
@@ -2416,6 +2434,17 @@ theorem depths_le {ST ST1 ST2 : List (ℕ × ℕ)} {d h1 e1 base pl2 dd0 dd1 dd2
    `conv3` の 1 列ぶんの本体を**名前つきの関数に括り出す**（`conv3Body` など）と
    等式が構文的な書き換えになって解ける見込み。定義の意味は変えない。
 3. 縮約の枝は、さらに 2 つの補題が要る（下の doc を見よ）。 -/
+
+/-- `contrFind` が返す `e` は `0` か `1`。 -/
+theorem contrFind_e_le {p : Col} {A B : TrioSeq} {ps : ℕ × ℕ}
+    {v s2 prev0 e kU kp : ℕ} {na : Col}
+    (h : contrFind p A B ps v s2 prev0 = some (e, kU, kp, na)) : e ≤ 1 := by
+  unfold contrFind at h
+  split at h
+  · simp only [Option.some.injEq, Prod.mk.injEq] at h; omega
+  · split at h
+    · simp only [Option.some.injEq, Prod.mk.injEq] at h; omega
+    · exact absurd h (by simp)
 
 /-- `conv3` の呼び出しごとの不変量（**まだ証明していない**、課題 L2 (b)）。
 
@@ -2469,7 +2498,7 @@ end Conv3
 `∀ p ∈ B, 0 ≤ p.1` は ℕ なので自明。残りは `steps1` そのもの。 -/
 theorem ImgBlockT3_of_BlkInv (h : Conv3.BlkInv) : ImgBlockT3 Conv3.b2d3 := by
   intro A _hA
-  obtain ⟨hs, -, -, hh, -⟩ :=
+  obtain ⟨hs, -, -, hh, -, -⟩ :=
     h A 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], A, 0, []⟩ none 0 (by simp)
   refine ⟨?_, fun p _ => Nat.zero_le _, hs⟩
   intro hne
