@@ -297,6 +297,74 @@ theorem ST_D3_descend
         · exact olt_irrefl _ (heq ▸ (olt_ST_iff_seqlex hA hM (Ne.symm hne)).2 hs)
       rw [hMA]; exact hSD
 
+/-! ## 5.5 課題 L36: **整礎性を DBMS 側に載せ替える**
+
+`ST_D3_descend` は **BMS の整礎性**（`Final.lean` の残核 `TowerGraft2` / `TowerExp`）を
+仮定している。つまり**変換の道が、証明したいものを仮定している**。これを切る。
+
+`wf` が使われるのは `ST_D3_descend` の 1 か所だけで、再帰の根拠は
+`translate B <o translate A`（BMS の順序）である。`B` は
+`(conv3 A)⟦m⟧ = conv3 B` を満たすので、**DBMS 側では `conv3 B` が `conv3 A` の
+基本列の元**である。そこで整礎性を **DBMS の `seqlex`** で取り、
+`InvImage` で `A` の帰納に載せ替える。
+
+★ **副産物**: 再帰の根拠の 3 つ目 `seqlex (conv3 B) (conv3 A)` は
+`ImgBlockT3` ＋ `ImgLenT3` から**無料で出る**（`seqlex_oper`）ので、
+**`OrderReindexT3` の第 2 成分（`seqlex (conv3 B) (conv3 A) → translate B <o translate A`）
+が仮定から消える**。
+
+⚠ `translateD` も DBMS 版 `m_step_decreases` も `trio_cofinality` の DBMS 版も
+**要らない**（`seqlex` で取るので下がることは `seqlex_oper` が言う）。
+`heq` の枝は `wf` を使っていないので**そのまま**である。 -/
+
+/-- **DBMS 3 行 (z<2) の整礎性**（`seqlex` 版）。BMS 側の
+`fun a b => ST_TS a ∧ ST_TS b ∧ translate a <o translate b` の DBMS 版。 -/
+def RD3 : TrioSeq → TrioSeq → Prop :=
+  fun x y => ST_D3 x ∧ ST_D3 y ∧ seqlex x y
+
+/-- `ReindexT1` の DBMS 版。`translate B <o translate A`（BMS の順序）を
+**像側の `seqlex`** に取り替えたもの。 -/
+def ReindexT1D (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A : TrioSeq}, ST_TS A → 1 < A.length → ∀ n : ℕ, 1 ≤ n →
+    ∃ (m : ℕ) (B : TrioSeq), 1 ≤ m ∧ ST_TS B ∧
+      translate (A⟦n⟧) ≤o translate B ∧
+      seqlex (conv3 B) (conv3 A) ∧
+      (conv3 A)⟦m⟧ = conv3 B
+
+/-- **★★ 降下を DBMS の整礎性で回す版**（`ST_D3_descend` の写し）。 -/
+theorem ST_D3_descend_D (wfD : WellFounded RD3)
+    {conv3 : TrioSeq → TrioSeq} (H : ReindexT1D conv3) :
+    ∀ A : TrioSeq, ST_TS A → ST_D3 (conv3 A) →
+      ∀ M : TrioSeq, ST_TS M → translate M ≤o translate A → ST_D3 (conv3 M) := by
+  intro A
+  induction A using (InvImage.wf conv3 wfD).induction with
+  | _ A ih =>
+    intro hA hSD M hM hle
+    rcases hle with hlt | heq
+    · have hL : 1 < A.length := by
+        by_contra hL
+        exact not_olt_len_one_T hM (by omega) hA hlt
+      obtain ⟨n, hn, hMn⟩ := trio_cofinality hA hM hlt
+      obtain ⟨m, B, hm, hB, hAnB, hsq, heqC⟩ := H hA hL n hn
+      have hSD' : ST_D3 (conv3 B) := by
+        rw [← heqC]; exact ST_D3.oper hSD hm
+      exact ih B ⟨hSD', hSD, hsq⟩ hB hSD' M hM (ole_trans hMn hAnB)
+    · have hMA : M = A := by
+        by_contra hne
+        rcases seqlex_total M A with he | hs | hs
+        · exact hne he
+        · exact olt_irrefl _ (heq ▸ (olt_ST_iff_seqlex hM hA hne).2 hs)
+        · exact olt_irrefl _ (heq ▸ (olt_ST_iff_seqlex hA hM (Ne.symm hne)).2 hs)
+      rw [hMA]; exact hSD
+
+/-- **★★★ 像は DBMS 標準形（DBMS の整礎性から）。BMS の残核を使わない。** -/
+theorem ST_D3_conv3_D (wfD : WellFounded RD3)
+    {conv3 : TrioSeq → TrioSeq} (H : ReindexT1D conv3) (hd : ConvDiagT3 conv3)
+    {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) := by
+  obtain ⟨v, hv⟩ := diag_cofinal_T hM
+  exact ST_D3_descend_D wfD H (diagSeqT 0 v) (ST_TS.diag v)
+    (ST_D3_conv3_diag hd v) M hM hv
+
 /-! ## 6. 主定理 -/
 
 /-- **像は DBMS の 3 行標準形**（`ReindexT1` と `ConvDiagT3` を仮定）。 -/
@@ -2172,6 +2240,39 @@ theorem ST_D3_conv3_of_parts''' (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
     (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3)
     {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
   ST_D3_conv3_holds h2 he (ReindexT1_of_cofinal'' hI hj hO hU hb hlen2) hd hM
+
+/-- **`OrderReindexT3` の第 1 成分だけ**（第 2 成分は `ReindexT1D` では要らない）。 -/
+def OrderReindexT3' (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A B : TrioSeq}, ST_TS A → ST_TS B → ∀ {n m : ℕ}, 1 ≤ n → n + 1 ≤ m →
+    (conv3 A)⟦m⟧ = conv3 B →
+      (seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B)
+
+theorem orderReindexT3'_of_orderReindexT3 {conv3 : TrioSeq → TrioSeq}
+    (h : OrderReindexT3 conv3) : OrderReindexT3' conv3 := by
+  intro A B hA hB n m hn hm heq
+  exact (h hA hB hn hm heq).1
+
+/-- **★ `ReindexT1D` は弱い 3 本から出る**（第 2 成分は使わない）。 -/
+theorem ReindexT1D_of_cofinal {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3' conv3)
+    (hU : SandwichUReindexT3 conv3) (hb : ImgBlockT3 conv3)
+    (hlen2 : ImgLenT3 conv3) : ReindexT1D conv3 := by
+  intro A hA hlen n hn
+  obtain ⟨m, hm0, B, hB, heq⟩ := hI hA hlen (n + 1)
+  refine ⟨m, B, by omega, hB, ?_, ?_, heq⟩
+  · exact ole_of_sle3' (fun h => hj (ST_TS.oper hA hn) hB h)
+      (hO hA hB hn hm0 heq) (hU hA hlen hB hn hm0 heq)
+  · rw [← heq]
+    exact seqlex_oper (hb hA) (hlen2 hA hlen) (by omega)
+
+/-- **仮定を全部並べた形（DBMS の整礎性版）。`TowerGraft2` / `TowerExp` を使わない。** -/
+theorem ST_D3_conv3_of_parts_D (wfD : WellFounded RD3)
+    {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3' conv3)
+    (hU : SandwichUReindexT3 conv3) (hb : ImgBlockT3 conv3)
+    (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3)
+    {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
+  ST_D3_conv3_D wfD (ReindexT1D_of_cofinal hI hj hO hU hb hlen2) hd hM
 
 /-! ### 11.4 `ImgLenT3` の証明（課題 L2 (a)） -/
 

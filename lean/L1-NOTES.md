@@ -4040,3 +4040,44 @@ DBMS 版 `m_step_decreases` も `trio_cofinality` の DBMS 版も要らない
 ## 3. 優先順位（チームリードの指定どおり）
 
     L25 `ImgBlockT3`  >  L33 `wf` の載せ替え  >  L35 `Inj3`
+
+
+---
+
+# 課題 L36: 整礎性を DBMS 側に載せ替えた（2026-08-29）
+
+## 0. 結論
+
+**`ST_D3 (conv3 M)` を BMS の残核（`TowerGraft2` / `TowerExp`）**なしで**出せるように
+なった**（`Dbms3.lean`, exit 0 / sorry 0）:
+
+    ST_D3_conv3_of_parts_D (wfD : WellFounded RD3)
+      (hI : ImgCofinalT3) (hj : Inj3) (hO : **OrderReindexT3'**)
+      (hU : SandwichUReindexT3) (hb : ImgBlockT3) (hlen2 : ImgLenT3)
+      (hd : ConvDiagT3) : ST_TS M → ST_D3 (conv3 M)
+
+    RD3 x y := ST_D3 x ∧ ST_D3 y ∧ seqlex x y        ← DBMS 3 行 z<2 の整礎性
+
+## 1. 入れたもの
+
+    RD3                        DBMS 側の整礎性の関係（`seqlex` 版）
+    ReindexT1D                 `translate B <o translate A` を **`seqlex (conv3 B) (conv3 A)`** に
+    OrderReindexT3'            `OrderReindexT3` の**第 1 成分だけ**
+    orderReindexT3'_of_orderReindexT3
+    ReindexT1D_of_cofinal      弱い 3 本から `ReindexT1D`
+    ST_D3_descend_D            `induction A using (InvImage.wf conv3 wfD).induction`
+    ST_D3_conv3_D / ST_D3_conv3_of_parts_D
+
+## 2. 効いたこと 2 つ
+
+* **`OrderReindexT3` の第 2 成分が消えた。** 再帰の根拠の 3 つ目
+  `seqlex (conv3 B) (conv3 A)` は `heq` で `(conv3 A)⟦m⟧` に書き換えて
+  **`seqlex_oper (hb hA) (hlen2 hA hlen)`** で出る（`ImgBlockT3` ＋ `ImgLenT3` だけ）。
+* **`heq` の枝も `trio_cofinality` も無傷。** `wf` を使っていないので写すだけだった。
+  **新しい DBMS 側の道具は 0 個**（`translateD` も DBMS 版 `m_step_decreases` も不要）。
+
+見積もり 90〜120 行に対し、実際は **約 95 行**。
+
+⚠ 書くときの注意: `RD3` / `ReindexT1D` / `ST_D3_descend_D` / `ST_D3_conv3_D` は §6 の前、
+`OrderReindexT3'` / `ReindexT1D_of_cofinal` / `ST_D3_conv3_of_parts_D` は §11 の後
+（`ImgCofinalT3` などの定義位置による）。実装で 2 回はまった。
