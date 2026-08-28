@@ -2590,6 +2590,20 @@ theorem Dm10_shift {d d' m m' : ℕ} {st : St}
     omega
   · exact hmid j hj (by omega) hlen
 
+/-- **`rA` の付け替え（弱い版）**。`d ≤ dd2` だけで `(d, p.1)` の節 10 に移せる
+（`d + 1 ≤ dd2` が要るのは結論を `(d+1, p.1)` にするときだけ）。非縮約の枝で使う。 -/
+theorem Dm10_of_child' {d dd2 m : ℕ} {st1 : St} {res : TrioSeq × St}
+    (hdd : d ≤ dd2) (h : Dm10 (dd2 + 1) (m + 1) res.2)
+    (h12 : Dm12 (m + 1) st1 res)
+    (hst1 : st1.dmap.getD m 0 = dd2) (hlen1 : m < st1.dmap.length) :
+    Dm10 d m res.2 := by
+  refine Dm10_shift (by omega) h ?_
+  intro j hj hjm hlen
+  have hjeq : j = m := by omega
+  subst hjeq
+  rw [h12 j (by omega) hlen hlen1, hst1]
+  omega
+
 /-- **`rA` の付け替え**（課題 L20 の要）。`cA` は深さ `dd2+1`・先頭 `p.1+1` で
 呼ばれるので、`d + 1 ≤ dd2` があれば `(d+1, p.1)` の節 10 に移せる:
 
