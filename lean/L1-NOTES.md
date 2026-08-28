@@ -4788,3 +4788,64 @@ theorem dmFirst_of (hmr) (hout : st.dmap.length < p.1) (hin : ...) :
 > **不変量が連結で壊れたら、命題を弱めるのではなく「本当に要る添字はどれか」を数える。**
 > `DmBot` は「`|st.dmap|` 以上の全部」を主張していたが、実際に要るのは
 > **`|st.dmap|` ちょうど 1 つ**だった。範囲を絞ったら連結の問題が消えた。
+
+
+---
+
+# 課題 L48: `hlen` の一般化を試みて**差し戻した**（2026-08-29）
+
+## 1. やったこと
+
+`dm10_step` の `hlen : p.1 ≤ |st.dmap|` を `≤ |st.dmap| + 1` に一般化し、
+`case pA` / `case pAn` を `by_cases hsm : p.1 ≤ st.dmap.length` で 2 つに割った。
+`p.1 = |st.dmap| + 1` の枝は `Dm10_shift` ＋ `dmFirst_of'` で埋める設計どおり。
+
+**結果は exit 2。差し戻した（`git checkout`）。** いまは `83c0903` の状態で緑。
+
+## 2. ★ 分かった 3 つ（見積もりを直す）
+
+### (a) **順序が逆だった**
+
+`conv3_via_st1` / `dmFirst_of` / `dmFirst_of'` は **`dm10_step` より後ろ**にある
+（課題 L44 のブロックの直前に入れたため）。`dm10_step` から呼べない。
+
+⚠ **前に動かすのは危ない**（課題 L40 §6: `blk_step` の前に宣言を足したら
+`blk_step` が heartbeat 超過で落ちた）。
+
+**⟹ 正しい直し方: `dmFirst_of'` を `dm10_step` の仮定として渡す**（`hres` と同じ形）。
+`dm10_aux` が後ろから供給すればよい。**移動は要らない。**
+
+### (b) `+1` は `dm10_resid` と `dm10_aux` にも波及する
+
+`dm10_step` だけ直しても 4526 行以降（`dm10_resid` / `dm10_aux`）で型が合わない。
+とくに `dm10_resid` は
+
+    hhd : rest ≠ [] → rest.headI.1 ≤ |st.dmap|      → **+1 に**
+    hc1 で `j < c.1 → j < |st.dmap|` を使っている    → **j = |st.dmap| の場合分けが要る**
+                                                      （そこは `dmFirst_of'` で埋まる）
+    hkeep' の `dmKeep_le ... hlen`                    → `m-1` で取り直す
+
+### (c) `by_cases` で `dm10_step` が heartbeat 超過する
+
+分割すると巨大項の goal が 2 倍になり、`isDefEq` / `whnf` が 200000 を超えた。
+**`set_option maxHeartbeats 800000 in` を `dm10_step` の前に置く**必要がある。
+
+## 3. 直した見積もり
+
+    もとの見積もり  60〜100 行
+    **正しい見積もり  150〜250 行 ＋ `set_option maxHeartbeats` ＋ 仮定の受け渡し**
+
+内訳:
+
+    dm10_step に hdmF（= dmFirst_of' の形）を仮定として足す        20 行
+    dm10_step の case pA / pAn を 2 つに割る                        60 行
+    dm10_resid の hhd を +1 にし、j = |st.dmap| の場合を足す        50 行
+    dm10_aux / dm10_holds の受け渡し                                30 行
+    set_option maxHeartbeats                                        1 行
+
+## 4. 教訓
+
+> **大きな証明に `by_cases` を足すときは、先に `set_option maxHeartbeats` を上げる。**
+> そして**新しい補題は「前に動かす」のではなく「仮定として受け取る」**。
+> このリポジトリでは宣言を前に動かすと後ろの巨大な証明が heartbeat で落ちる
+> （課題 L40 §6 と同じ現象を 2 回目に踏んだ）。
