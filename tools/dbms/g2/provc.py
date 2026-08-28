@@ -11,7 +11,8 @@ from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    p0_shallow, closes_w, sibnb_ok, _parK,
                    first_of, ps_of,
                    aw_flip,
-                   V12, V13, V14, V15, V16, V17)
+                   tie_sd,
+                   V12, V13, V14, V15, V16, V17, V18)
 PROV = []
 CTX = []
 
@@ -203,6 +204,11 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い
             why = 'tie'
             base = deep
+            # v18 tiesd（課題 H14）: `sib_ok` が閉じて `base_sd` が捨てられる
+            # 枝。門 `tie_sd` が開くときだけ深い側を使う。
+            if (V18['tiesd'] and base_sd != deep
+                    and tie_sd(st['Mo'], off)):
+                base = base_sd
     else:
         base = base_d
         # v16 sibnb（課題 H11）: 兄弟に渡す「深い側」は分岐列だけのもの

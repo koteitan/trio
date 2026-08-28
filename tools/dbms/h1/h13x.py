@@ -63,22 +63,23 @@ def far(Mo, off):
     return a
 
 
-names0, X0, Y0, META0 = pickle.load(open(sys.argv[1], 'rb'))
-X, Y, names = [], [], None
-for (Mo, off), y in zip(META0, Y0):
-    a = atoms(Mo, off)
-    a.update(extra(Mo, off))
-    a.update(far(Mo, off))
-    if names is None:
-        names = sorted(a)
-    X.append(tuple(bool(a[nm]) for nm in names))
-    Y.append(y)
-P = [i for i, y in enumerate(Y) if y]
-N = [i for i, y in enumerate(Y) if not y]
-nx = {}
-for i in N:
-    nx.setdefault(X[i], []).append(i)
-coll = [i for i in P if X[i] in nx]
-print('%s: 正例 %d / 負例 %d / 素性 %d -> **完全一致する正例 %d**'
-      % (os.path.basename(sys.argv[1]), len(P), len(N), len(names), len(coll)))
-pickle.dump((names, X, Y, META0), open(sys.argv[1].replace('.pkl', '_far.pkl'), 'wb'))
+if __name__ == '__main__':
+    names0, X0, Y0, META0 = pickle.load(open(sys.argv[1], 'rb'))
+    X, Y, names = [], [], None
+    for (Mo, off), y in zip(META0, Y0):
+        a = atoms(Mo, off)
+        a.update(extra(Mo, off))
+        a.update(far(Mo, off))
+        if names is None:
+            names = sorted(a)
+        X.append(tuple(bool(a[nm]) for nm in names))
+        Y.append(y)
+    P = [i for i, y in enumerate(Y) if y]
+    N = [i for i, y in enumerate(Y) if not y]
+    nx = {}
+    for i in N:
+        nx.setdefault(X[i], []).append(i)
+    coll = [i for i in P if X[i] in nx]
+    print('%s: 正例 %d / 負例 %d / 素性 %d -> **完全一致する正例 %d**'
+          % (os.path.basename(sys.argv[1]), len(P), len(N), len(names), len(coll)))
+    pickle.dump((names, X, Y, META0), open(sys.argv[1].replace('.pkl', '_far.pkl'), 'wb'))

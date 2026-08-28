@@ -735,6 +735,14 @@ V17 = {
 }
 
 
+# ---------------------------------------------------------------- v18 の旗
+# 課題 H14: `tie`（浅い／深いの選択肢が無い柱）で、兄弟から来た深い側
+# `base_sd` を使う条項。`RS_NOTIESD=1` で切る。
+V18 = {
+    'tiesd': os.environ.get('RS_NOTIESD', '') != '1',
+}
+
+
 def term_top(Mo, j, _d=0):
     """柱 `j` が「行 1 の加算項の頭」か。課題 H1。
 
@@ -1030,6 +1038,33 @@ def aw_flip(Mo, off):
     return False
 
 
+def tie_sd(Mo, off):
+    """課題 H14: `tie` の柱で兄弟から来た深い側 `base_sd` を使ってよいか。
+
+    `tie` は `base_s == deep` で選択肢が無い枝。残る破れ 18 個の現場で
+    **濃縮 4.8 倍**（対照 6.27% -> 現場 30.3%）で、証人 `d2b3(T)` が要求する
+    反転 12 本のうち 5 本がここだった。
+
+    門は集合被覆（`h1/h14teach.py` ＋ `h1/h6cov.py`、素性は最初から
+    **近傍 305 ＋ 遠く 63 = 368 本**）が 2 巡で出した 1 本の連言:
+
+        !a01_chead & nx1_r1_lt & z_before_ge3
+          a01_chead     行 0 の親が写しの頭 `copy_head`
+          nx1_r1_lt     次の柱の 行 1 がこの柱より小さい（次が無いときも真）
+          z_before_ge3  自分より前に 行 2 > 0 の柱が 3 本以上
+
+    教師データ: 正例 5（証人が要求する `sd`）/ 負例 9922
+    （シート由来は **0 本**。`tie` の枝はシートがまったく縛っていない）。
+    """
+    a01 = par0(Mo, off)
+    if a01 >= 0 and copy_head(Mo, a01):
+        return False
+    nx1 = Mo[off + 1][1] if off + 1 < len(Mo) else -9
+    if not (nx1 < Mo[off][1]):
+        return False
+    return sum(1 for t in range(off) if Mo[t][2] > 0) >= 3
+
+
 def _snap(st):
     # P3 `cpyspell`: 下見（`leaves_mark_local`）の決定 `dec` も巻き戻す。
     # 巻き戻さないと下見の決定が漏れて縮約の発火が変わる。
@@ -1288,6 +1323,11 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
         else:
             st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い
             base = deep
+            # v18 tiesd（課題 H14）: `sib_ok` が閉じて `base_sd` が捨てられる
+            # 枝。門 `tie_sd` が開くときだけ深い側を使う。
+            if (V18['tiesd'] and base_sd != deep
+                    and tie_sd(st['Mo'], off)):
+                base = base_sd
     else:
         base = base_d
         # v16 sibnb（課題 H11）: 兄弟に渡す「深い側」は分岐列だけのもの
