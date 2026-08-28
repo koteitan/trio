@@ -35,6 +35,17 @@ def conv_resid_probe(rest, rd, Lr, ps, pw, st, nx, off):
     bump('resid_calls')
     fr = sys._getframe(1).f_locals
     pp = fr.get('p')
+    blk = fr.get('blk'); pre = fr.get('pre')
+    if blk and pre:
+        dmn = len(st['dmap'])
+        if dmn == blk[-1][0] + 1:
+            bump('dm_eq_blklast')
+        else:
+            bump('dm_ne_blklast')
+            ex('DMNE', (CUR[0], dmn, tuple(blk), tuple(pre),
+                        list(st['dmap'])), lim=20)
+        if rest and not (rest[0][0] <= pre[-1][0] + 1):
+            bump('head_gt_prelast1')
     if rest and pp is not None:
         if rest[0][0] == pp[0] + 1:
             bump('resid_head_p1')
