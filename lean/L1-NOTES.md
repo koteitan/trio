@@ -3444,3 +3444,55 @@ a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / �
 
 ⟹ **`OrderT3` は `conv3` を直さないかぎり出ない。** 変換器側（課題 H）待ち。
 `Dbms3.lean` の `SeqEmbT3` の直前にも同じ警告を doc として置いた。
+
+
+---
+
+# 課題 L25: 側条件 a5 も証明になった（`contrOne` の門から）（2026-08-29）
+
+## 0. 結論
+
+    contrOne_q_eq  : contrOne … = some (kU, kp, na) → ((B.drop kU).headD).1 = p.1
+    contrFind_q_eq : contrFind … = some (e, kU, kp, na) → 同上
+
+`contrOne` は定義の中で
+
+    if (q.2.1, q.2.2) ≠ qlab ∨ q.1 ≠ p.1 then none
+
+と**明示的に弾いている**ので、`some` が返るなら `q.1 = p.1` である。
+⟹ `deepGe_head_lt`（`Bq.head.1 ≤ q.1`）と合わせて **側条件 a5 が証明になった**。
+
+取り出し方は課題 L13 の `contrFind_e_le` と同じ流儀だが、`contrOne` は本体が
+`let` の入れ子なので **`unfold` のあとに `dsimp only` で zeta 簡約**してから
+`split` する必要がある（`split` は `let` を割れない）。分岐の始末は
+
+    all_goals first
+      | exact (congrArg (fun t => t.1) (Option.some.inj h)).symm
+      | exact absurd h (by simp)
+
+の順で書くこと（逆にすると `by simp` が `¬(some _ = some _)` を部分簡約して
+ゴールを残し、`first` が戻らない）。
+
+## 1. 側条件 6 本の最終状態
+
+| # | 条件 | 状態 |
+|---|---|---|
+| a1 / b1 | `A.head.1 = p.1 + 1` | **証明**（`takeWhile_head_eq`、`steps1` から） |
+| b2 | `B.head.1 = p.1` | **証明**（`dropWhile_head_eq`、`BlkLo` から） |
+| a3 | `U.head.1 = p.1` | **証明**（`U = B.take kU` の頭は `B` の頭） |
+| a5 | `Bq.head.1 ≤ p.1` | **証明**（`contrFind_q_eq` ＋ `deepGe_head_lt`） |
+| a4 | `d + rest2.head.1 ≤ rd + p.1` | **仮定のまま**（`ResidSideT`。実測タイト、等号 369/2386） |
+
+⟹ **6 本のうち 5 本が証明になった。**
+
+## 2. `ImgBlockT3` の残り
+
+| やること | 行数 |
+|---|---|
+| `BlkInv` に `BlkLo M` を足して 4 再帰に通す（道具は全部揃った） | 40〜60 |
+| `BlkInv` に `Dm10` の conjunct、`blk_step` の 2 枝で結論 | 80〜110 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **200〜290 行** |
+
+**測定範囲**: R1 が `gen3 ≤8` 全数 ＋ 展開閉包（最長 24 列）。**未測定は無い。**

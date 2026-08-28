@@ -2726,6 +2726,56 @@ theorem dmapAt_bounds {dm : List ℕ} {k n d : ℕ} (hne : dm ≠ [])
    等式が構文的な書き換えになって解ける見込み。定義の意味は変えない。
 3. 縮約の枝は、さらに 2 つの補題が要る（下の doc を見よ）。 -/
 
+/-- **`contrOne` が見つける双子 `q` は `p` と同じ深さ**（定義の門そのもの）。
+
+`contrOne` は `if (q.2.1, q.2.2) ≠ qlab ∨ q.1 ≠ p.1 then none` で弾くので、
+`some` が返るなら `q.1 = p.1` である。これが課題 L16 の側条件 a5 の残り
+（`Bq.head.1 ≤ p.1`）を出す: `deepGe_head_lt` で `Bq.head.1 ≤ q.1` だから。 -/
+theorem contrOne_q_eq {p : Col} {A B : TrioSeq} {ps : ℕ × ℕ}
+    {v s2 prev0 e kU kp : ℕ} {na : Col}
+    (h : contrOne p A B ps v s2 prev0 e = some (kU, kp, na)) :
+    ((B.drop kU).headD (0, 0, 0)).1 = p.1 := by
+  unfold contrOne at h
+  dsimp only at h
+  split at h
+  · exact absurd h (by simp)
+  · rename_i q r2 hq
+    split at h
+    · exact absurd h (by simp)
+    · rename_i hne
+      have hkU : kU = unitsLen p.1 (ps.1 + e, ps.2) B := by
+        repeat' split at h
+        all_goals
+          first
+            | exact (congrArg (fun t => t.1) (Option.some.inj h)).symm
+            | exact absurd h (by simp)
+      rw [hkU, hq]
+      simp only [List.headD_cons]
+      push_neg at hne
+      exact hne.2
+
+/-- `contrFind` の双子も同じ深さ。 -/
+theorem contrFind_q_eq {p : Col} {A B : TrioSeq} {ps : ℕ × ℕ}
+    {v s2 prev0 e kU kp : ℕ} {na : Col}
+    (h : contrFind p A B ps v s2 prev0 = some (e, kU, kp, na)) :
+    ((B.drop kU).headD (0, 0, 0)).1 = p.1 := by
+  unfold contrFind at h
+  split at h
+  · rename_i x hx
+    obtain ⟨kU', kp', na'⟩ := x
+    simp only [Option.some.injEq, Prod.mk.injEq] at h
+    obtain ⟨-, h1, h2, h3⟩ := h
+    subst h1; subst h2; subst h3
+    exact contrOne_q_eq hx
+  · split at h
+    · rename_i x hx
+      obtain ⟨kU', kp', na'⟩ := x
+      simp only [Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨-, h1, h2, h3⟩ := h
+      subst h1; subst h2; subst h3
+      exact contrOne_q_eq hx
+    · exact absurd h (by simp)
+
 /-- `contrFind` が返す `e` は `0` か `1`。 -/
 theorem contrFind_e_le {p : Col} {A B : TrioSeq} {ps : ℕ × ℕ}
     {v s2 prev0 e kU kp : ℕ} {na : Col}
