@@ -4595,6 +4595,57 @@ theorem dm10_at_U (hhdT : ResidHeadT)
   exact dm10_holds hhdT U hsU hmU hhU _ _ _ _ _ _ _ _ _
     (dmKeep_le (dmKeep_holds A hmA' _ _ _ _ _ _ _ _ _ _) (by omega)) (fun _ => hrA)
 
+/-! ### 課題 L46 §8 の道具: 呼び出しは `st1` を経由する
+
+`hlen : p.1 ≤ |st.dmap| + 1` に一般化するとき、`p.1 = |st.dmap| + 1` の場合に
+`Dm10_of_child'` が使えない（添字 `p.1` が `st1.dmap` の範囲外）。そこでは
+`rA.2.dmap[p.1]` が **A ブロックの最初の書き込み**になる。
+
+それを言うのに要るのは「**呼び出しは `st1` を経由し、そこから先は `DmKeep p.1`**」
+という 1 本だけ。`dmKeep_step` の証明から最初の `DmKeep_take` を外した形である。 -/
+theorem conv3_via_st1 (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
+    (hmr : ∀ c ∈ r, p.1 ≤ c.1) :
+    ∃ (dd2 : ℕ) (st1 : St), st1.dmap = st.dmap.take p.1 ++ [dd2] ∧ d ≤ dd2 ∧
+      DmKeep p.1 st1 (conv3 (p :: r) d L F ps pw first force st nx off).2 := by
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · refine ⟨_, _, rfl, depths_le_lo rfl rfl rfl,
+      DmKeep_trans (dmKeep_holds _ ?mA _ _ _ _ _ _ _ _ _ _)
+        (DmKeep_trans (dmKeep_holds _ ?mU _ _ _ _ _ _ _ _ _ _)
+          (DmKeep_trans (dmKeep_resid_holds _ ?mR _ _ _ _ _ _ _)
+            (dmKeep_holds _ ?mQ _ _ _ _ _ _ _ _ _ _)))⟩
+    all_goals exact mem_le_of_sublist (by subl_tac) hmr
+  · refine ⟨_, _, rfl, depths_le_lo rfl rfl rfl,
+      DmKeep_trans (dmKeep_holds _ ?mA2 _ _ _ _ _ _ _ _ _ _)
+        (dmKeep_holds _ ?mB2 _ _ _ _ _ _ _ _ _ _)⟩
+    all_goals exact mem_le_of_sublist (by subl_tac) hmr
+
+/-- **★ 入口の `dmap` のすぐ外側の添字は、その呼び出しの深さ以上**（課題 L46 §8）。
+
+ブロックの下界 `p.1` が `|st.dmap|` より真に大きいとき、`st1` の最初の書き込みが
+ちょうど添字 `|st.dmap|` に `dd2 ≥ d` を置き、そこから先は `DmKeep p.1` が
+（`|st.dmap| < p.1` なので）その添字を凍らせる。 -/
+theorem dmFirst_of {p : Col} {r : TrioSeq} {d : ℕ} {L : List Lent} {F : List Bool}
+    {ps pw : ℕ × ℕ} {first force : Bool} {st : St} {nx : Option Col} {off : ℕ}
+    (hmr : ∀ c ∈ r, p.1 ≤ c.1) (hout : st.dmap.length < p.1)
+    (hin : st.dmap.length
+      < (conv3 (p :: r) d L F ps pw first force st nx off).2.dmap.length) :
+    d ≤ (conv3 (p :: r) d L F ps pw first force st nx off).2.dmap.getD
+      st.dmap.length 0 := by
+  obtain ⟨dd2, st1, hst1, hdd, hk⟩ :=
+    conv3_via_st1 p r d L F ps pw first force st nx off hmr
+  have htake : st.dmap.take p.1 = st.dmap := List.take_of_length_le (by omega)
+  have hlen1 : st1.dmap.length = st.dmap.length + 1 := by
+    rw [hst1, htake, List.length_append, List.length_singleton]
+  have hval : st1.dmap.getD st.dmap.length 0 = dd2 := by
+    rw [hst1, htake]
+    exact getD_snoc_len
+  have h9 := hk st.dmap.length (by omega) (by omega)
+  rw [h9.2, hval]
+  exact hdd
+
 /-! ### 課題 L44: `DmapInT` / `ResidSideT` の**制限版**（呼び出し点の文脈つき）
 
 上の 2 つの `example` のとおり、無制限の形は偽である。呼び出し点で分かっている

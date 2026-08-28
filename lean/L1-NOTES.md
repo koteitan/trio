@@ -4746,3 +4746,45 @@ team-lead の (M) は陽性対照（`≤ dmap[j] - 1`）が鳴らず無効だっ
 なるので、`Dm10_of_child'` が使えない場合（`p.1 = |st.dmap|+1`）に補題が 1 本要る。
 **その場合の `rA.2.dmap[p.1]` は A ブロックの最初の書き込み `dd2'`（`≥ dd2+1 ≥ d+1`）
 なので、結論自体は成り立つ。**
+
+## 10. `DmBot` の定式化は 3 回書き直して、**`conv3_via_st1` 1 本**に落ちた（課題 L46 §8）
+
+最初に考えた 3 つはどれも連結で壊れた:
+
+    DmBot d st st'   ∀ j ≥ |st.dmap|, j < |st'.dmap| → d ≤ st'.dmap[j]
+      ⟹ B の呼び出しで壊れる。B は take p.1 で添字 > p.1 を捨てて作り直すので、
+        rA.2 から rB.2 へ値が渡らない
+    DmGe d m st st'  上を j ≥ m に制限
+      ⟹ A の呼び出し（下界 p.1+1）が添字 p.1 を覆わない
+    DmHead d m st'   m < |st'.dmap| → d ≤ st'.dmap[m]
+      ⟹ 2 つの場合（st1 に添字 m がある/ない）で別の議論が要る
+
+**要るのは「入口の `dmap` の**すぐ外側**の 1 つの添字」だけだった。** そしてそれは
+
+```lean
+theorem conv3_via_st1 (hmr : ∀ c ∈ r, p.1 ≤ c.1) :
+    ∃ dd2 st1, st1.dmap = st.dmap.take p.1 ++ [dd2] ∧ d ≤ dd2 ∧
+      DmKeep p.1 st1 (conv3 (p :: r) d ...).2
+```
+
+「**呼び出しは `st1` を経由し、そこから先は `DmKeep p.1`**」の 1 本で出る
+（`dmKeep_step` の証明から最初の `DmKeep_take` を外しただけ、20 行）。
+
+```lean
+theorem dmFirst_of (hmr) (hout : st.dmap.length < p.1) (hin : ...) :
+    d ≤ (conv3 (p :: r) d ...).2.dmap.getD st.dmap.length 0
+```
+
+`p.1 > |st.dmap|` なので `st.dmap.take p.1 = st.dmap`、つまり `st1` の最初の書き込みが
+**ちょうど添字 `|st.dmap|`** に `dd2 ≥ d` を置く。そこから先は `|st.dmap| < p.1` なので
+`DmKeep p.1` がその添字を凍らせる。**15 行。**
+
+⟹ **課題 L46 の一般化に要る道具はこれで揃った。** 残りは `dm10_step` の
+`case pA` を 2 つに割る作業（`p.1 ≤ |st.dmap|` は現状のまま、
+`p.1 = |st.dmap| + 1` は `Dm10_shift` の隙間を `dmFirst_of` で埋める）。**60〜100 行。**
+
+## 11. 教訓（定式化について）
+
+> **不変量が連結で壊れたら、命題を弱めるのではなく「本当に要る添字はどれか」を数える。**
+> `DmBot` は「`|st.dmap|` 以上の全部」を主張していたが、実際に要るのは
+> **`|st.dmap|` ちょうど 1 つ**だった。範囲を絞ったら連結の問題が消えた。
