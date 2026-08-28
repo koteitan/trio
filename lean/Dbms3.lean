@@ -2305,8 +2305,8 @@ theorem steps1_tailT {B : TrioSeq} (h : steps1 B) : steps1 B.tail := by
 
 /-- **節 10**: もとの深さ `j` の像は、ブロックの先頭 `m` から数えて
 少なくとも `j - m` 段は深い。 -/
-def Dm10 (d m : ℕ) (res : TrioSeq × St) : Prop :=
-  ∀ j, m ≤ j → j < res.2.dmap.length → d + (j - m) ≤ res.2.dmap.getD j 0
+def Dm10 (d m : ℕ) (st : St) : Prop :=
+  ∀ j, m ≤ j → j < st.dmap.length → d + (j - m) ≤ st.dmap.getD j 0
 
 /-- **節 12**: ブロックは自分の先頭 `m` より浅い `dmap` の項に触らない。
 
@@ -2339,8 +2339,8 @@ theorem getD_snoc_lt {l : List ℕ} {x k : ℕ} (hk : k < l.length) :
 /-- **`conv3` の 1 列ぶんの状態は節 10 を満たす**。`dmap` の更新が
 `st.dmap.take p.1 ++ [dd2]` なので、`j ≥ p.1` で範囲内なのは `j = p.1` だけで、
 そこの値は `dd2 ≥ d`（`depths_le`）である。 -/
-theorem Dm10_of_take {d m dd2 : ℕ} {dmo : List ℕ} {res : TrioSeq × St}
-    (hres : res.2.dmap = dmo.take m ++ [dd2]) (hdd : d ≤ dd2) : Dm10 d m res := by
+theorem Dm10_of_take {d m dd2 : ℕ} {dmo : List ℕ} {st : St}
+    (hres : st.dmap = dmo.take m ++ [dd2]) (hdd : d ≤ dd2) : Dm10 d m st := by
   intro j hj hlen
   rw [hres] at hlen ⊢
   rw [List.length_append, List.length_take, List.length_singleton] at hlen
@@ -2369,7 +2369,7 @@ theorem Dm12_of_take {m dd2 : ℕ} {dmo : List ℕ} {st : St} {res : TrioSeq × 
     | simp [List.getElem?_take, show k < m by omega]
 
 theorem Dm10_nil {d m : ℕ} {st : St} (h : ∀ j, m ≤ j → j < st.dmap.length →
-    d + (j - m) ≤ st.dmap.getD j 0) : Dm10 d m ([], st) := h
+    d + (j - m) ≤ st.dmap.getD j 0) : Dm10 d m st := h
 
 theorem Dm12_refl {m : ℕ} {st : St} : Dm12 m st ([], st) :=
   fun _ _ _ _ => rfl
@@ -2397,8 +2397,8 @@ def Dm11 (d m : ℕ) (st : St) : Prop :=
 `Dm10` は `res.2.dmap`（＝ 最後の状態）しか見ないので、5 重連結の**結論**は
 **いちばん最後のブロック**のものがそのまま使える。最後は `cB`（`m' = Bq.head.1 ≤ p.1`、
 深さも `d`）なので、これで `Dm10 d p.1` が出る。**中間の場合は結論側には現れない。** -/
-theorem Dm10_mono_m {d m m' : ℕ} {res : TrioSeq × St} (hle : m' ≤ m)
-    (h : Dm10 d m' res) : Dm10 d m res := by
+theorem Dm10_mono_m {d m m' : ℕ} {st : St} (hle : m' ≤ m)
+    (h : Dm10 d m' st) : Dm10 d m st := by
   intro j hj hlen
   have h5 := h j (by omega) hlen
   omega
@@ -2407,10 +2407,10 @@ theorem Dm10_mono_m {d m m' : ℕ} {res : TrioSeq × St} (hle : m' ≤ m)
 
 `j ≥ m'` の部分は**数の条件 `d + m' ≤ d' + m`** だけで移る。`m ≤ j < m'` の
 中間だけを別に与える。 -/
-theorem Dm10_shift {d d' m m' : ℕ} {res : TrioSeq × St}
-    (hmm : d + m' ≤ d' + m) (h : Dm10 d' m' res)
-    (hmid : ∀ j, m ≤ j → j < m' → j < res.2.dmap.length →
-      d + (j - m) ≤ res.2.dmap.getD j 0) : Dm10 d m res := by
+theorem Dm10_shift {d d' m m' : ℕ} {st : St}
+    (hmm : d + m' ≤ d' + m) (h : Dm10 d' m' st)
+    (hmid : ∀ j, m ≤ j → j < m' → j < st.dmap.length →
+      d + (j - m) ≤ st.dmap.getD j 0) : Dm10 d m st := by
   intro j hj hlen
   by_cases hjm : m' ≤ j
   · have h5 := h j hjm hlen
@@ -2427,51 +2427,16 @@ theorem Dm10_shift {d d' m m' : ℕ} {res : TrioSeq × St}
 （`cU` の入口が要求するのは `Dm10 (d+1) U.head.1 rA.2` で、
 課題 R1 の測定より `U.head.1 = p.1`（`<=7` 列で 6/6）だから）。 -/
 theorem Dm10_of_child {d dd2 m : ℕ} {st1 : St} {res : TrioSeq × St}
-    (hdd : d + 1 ≤ dd2) (h : Dm10 (dd2 + 1) (m + 1) res)
+    (hdd : d + 1 ≤ dd2) (h : Dm10 (dd2 + 1) (m + 1) res.2)
     (h12 : Dm12 (m + 1) st1 res)
     (hst1 : st1.dmap.getD m 0 = dd2) (hlen1 : m < st1.dmap.length) :
-    Dm10 (d + 1) m res := by
+    Dm10 (d + 1) m res.2 := by
   refine Dm10_shift (by omega) h ?_
   intro j hj hjm hlen
   have hjeq : j = m := by omega
   subst hjeq
   rw [h12 j (by omega) hlen hlen1, hst1]
   omega
-
-/-- **節 10 の連結**。`X` を出した後で `Y` を出したなら、`X ++ Y` も節 10 を満たす。
-
-`j ≥ m'` は `Y` の節 10 と側条件 `d + m' ≤ d' + m` で出る。
-`m ≤ j < m'` は **`Y` が触っていない**（`Y` の節 12）ので `X` の節 10 で出る。
-⟹ **節 10 だけでは合成できず、節 12 が要る**（課題 L16 §2）。
-
-⚠ **`m < m'` の連結点でしか節 12 は要らない**。`conv3` の 5 重連結
-`cols ++ rA ++ rU ++ rR ++ rB` で `m < m'` になるのは
-
-    cols(m = p.1) ++ rA(m' = p.1 + 1)      … rA の保存は測って違反 0
-    … ++ rR(m' = rest2.head.1 ≥ p.1 + 1)   … **ここが未解決**
-
-の 2 か所だけである（`rU` / `rB` は `m' ≤ m` なので中間の場合が空）。
-`rR`（`convResid` の呼び出し）はまさに課題 R1 が `Dm12` の反例を見つけた形なので、
-**そこは節 12 では埋まらない**。`resid_blk` が `Dm10 d p.1`（外側の頭）を
-直に出す形にするのが筋だが、まだ測っていない。 -/
-theorem Dm10_app {d d' m m' : ℕ} {stm st' : St} {X Y : TrioSeq}
-    (hmm : d + m' ≤ d' + m) (hstm : m' ≤ stm.dmap.length)
-    (hX : Dm10 d m (X, stm))
-    (hY : Dm10 d' m' (Y, st')) (hY2 : Dm12 m' stm (Y, st')) :
-    Dm10 d m (X ++ Y, st') := by
-  intro j hj hlen
-  simp only at hlen ⊢
-  by_cases hjm : m' ≤ j
-  · have h5 := hY j hjm hlen
-    simp only at h5
-    omega
-  · have hk1 : j < stm.dmap.length := by omega
-    have hk2 := hY2 j (by omega) hlen hk1
-    simp only at hk2
-    rw [hk2]
-    have h6 := hX j hj hk1
-    simp only at h6
-    exact h6
 
 /-- **節 12 の連結**（`m ≤ m'` が要る）。 -/
 theorem Dm12_app {m m' : ℕ} {st stm st' : St} {X Y : TrioSeq} (hle : m ≤ m')
@@ -2831,6 +2796,31 @@ theorem blk_contr {d dd2 nc' : ℕ} {st st1 stA stU stR stB : St}
   exact BlkOK_app (le_refl d)
     (BlkOK_app (le_refl d)
       (BlkOK_app (Nat.le_succ d) (BlkOK_app (by omega) hcols hA) hUok) hRok) hBok
+
+/-- `dropWhile` の直後の柱は述語を満たさない。`B = r.dropWhile (p.1 < ·)` の
+先頭が `p.1` 以下であること（課題 L16 の側条件 b2）はこれから出る。 -/
+theorem dropWhile_headD_false {f : Col → Bool} : ∀ (l : TrioSeq) (x : Col),
+    l.dropWhile f ≠ [] → f ((l.dropWhile f).headD x) = false := by
+  intro l
+  induction l with
+  | nil => intro x h; simp at h
+  | cons a t ih =>
+      intro x h
+      rw [List.dropWhile_cons] at h ⊢
+      by_cases hf : f a = true
+      · rw [if_pos hf] at h ⊢
+        exact ih x h
+      · rw [if_neg hf] at h ⊢
+        simp only [List.headD_cons]
+        exact Bool.eq_false_iff.mpr hf
+
+/-- **側条件 b2 は証明できる**: `B = r.dropWhile (p.1 < ·)` の先頭は `p.1` 以下。 -/
+theorem dropWhile_headD_le {r : TrioSeq} {a : ℕ} {x : Col}
+    (h : (r.dropWhile (fun q => decide (a < q.1))) ≠ []) :
+    ((r.dropWhile (fun q => decide (a < q.1))).headD x).1 ≤ a := by
+  have := dropWhile_headD_false (f := fun q => decide (a < q.1)) r x h
+  simp only [decide_eq_false_iff_not, Nat.not_lt] at this
+  exact this
 
 /-- `deepGe a rs` の直後の柱は行 0 が `a` 未満（`deepGe` の定義そのもの）。 -/
 theorem deepGe_head_lt {a : ℕ} : ∀ (rs : TrioSeq) (x : Col),

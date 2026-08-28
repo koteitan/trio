@@ -3284,3 +3284,55 @@ R1 の測定どおりタイト（`dd2 = d+1` の場合があるので余裕は�
 
 道具はすべて証明ずみ: `Dm10_of_take` / `Dm12_of_take` / `Dm10_shift` /
 `Dm10_of_child` / `Dm10_mono_m` / `depths_le_lad0` / `Dm10_app` / `Dm12_app`。
+
+
+---
+
+# 課題 L22: `Dm10` を状態の述語に直し、側条件 b2 を**証明**した（2026-08-28）
+
+## 0. 結論
+
+* **`Dm10` は `res.2.dmap` しか見ない**ので、`TrioSeq × St` ではなく **`St` の述語**に
+  直した。これで `Dm10_app` が不要になり（削除）、配線の摩擦が減った。
+* **側条件 b2（`B.head.1 ≤ p.1`）は測定ではなく証明になった**
+  （`dropWhile_headD_false` / `dropWhile_headD_le`）。
+* 6 本の側条件のうち **4 本が証明可能**と分かった（下）。
+
+## 1. 側条件 6 本の現状
+
+| # | 条件 | 状態 |
+|---|---|---|
+| b2 | `B.head.1 ≤ p.1`（非縮約の `cB`） | **証明した**（`dropWhile_headD_le`） |
+| a1 / b1 | `A.head.1 ≤ p.1 + 1`（`cA`） | **証明できる**: `A = r.takeWhile (p.1 < ·)` なので `A.head = r.head`、`steps1 (p :: r)` から `r.head.1 ≤ p.1 + 1` ✓（`BlkInv` に `steps1` を足したのはこのため） |
+| a3 | `U.head.1 ≤ p.1 + 1`（`cU`） | **証明できる**: `U = B.take kU` なので `U.head = B.head`、b2 から ✓ |
+| a5 | `Bq.head.1 ≤ p.1`（縮約の `cB`） | **半分**: `deepGe_head_lt` で `Bq.head.1 ≤ q.1` は出る。残るのは **`q.1 ≤ p.1`**（`q = (B.drop kU).headD`）。実測は違反 0 |
+| a4 | `d + rest2.head.1 ≤ rd + p.1`（`cR`） | 実測 違反 0・**タイト**（等号 369/2386）。`ResidSideT` として仮定のまま |
+
+⟹ **残るのは a5 の後半（`q.1 ≤ p.1`）と a4 の 2 本だけ**である。
+a5 の後半は「縮約が探す双子 `q` は `p` より浅い」で、`contrFind` の構造から
+出るはず（`contrOne` が `B` の中を走る形）。
+
+## 2. 入っている道具（全部 exit 0 / sorry 0）
+
+    Dm10（St の述語）/ Dm12 / Dm11
+    Dm10_of_take / Dm12_of_take / Dm10_shift / Dm10_of_child / Dm10_mono_m
+    Dm12_app / getD_snoc_len / getD_snoc_lt / getD_last
+    depths_le_lad0 / deepGe_head_lt / dropWhile_headD_false / dropWhile_headD_le
+    steps1_prefixT / _suffixT / _takeT / _dropT / _takeWhileT / _dropWhileT / _tailT
+    headD_memT / getLastD_memT / getLastD_snoc / BlkOK_ST_ge / BlkOK_mono / BlkOK_app'
+    resid_blk（`convResid` は外側の `d` の block）
+
+## 3. 残りの配線（R1 の測定は全部揃っている）
+
+| やること | 行数 |
+|---|---|
+| a1/b1・a3 を `steps1` から出す（補題 2 本） | 20〜30 |
+| a5 の後半（`q.1 ≤ p.1`）を `contrFind` の構造から出す | 30〜50 |
+| `BlkInv` に `M ≠ [] → Dm10 d M.head.1 (…).2` を足す | 20〜30 |
+| `blk_step` の 2 枝で結論を出す（最後のブロックから `Dm10_mono_m`） | 60〜80 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **210〜310 行** |
+
+**測定範囲**: 側条件 6 本・節 10・節 12 とも `<=8` 列 ＋ 展開閉包（R1）。
+`U.head.1 = p.1` は **1270/1270**（`<=8` ＋ 閉包）。**未測定は無い。**
