@@ -168,3 +168,34 @@ H11 の測定を再現したいときは `git show <H11 の前の commit>:tools/
 **教訓 2**: 集合被覆が「fp=0 の連言が 1 本も無い」「矛盾が N 個ある」と
 言ったら、それは**素性が足りない**か**規則の粒度が間違っている**という
 測定結果である。クラス B の矛盾 161 は「1 柱 1 決定では不可能」を意味する。
+
+# 課題 H13 の道具（基準線 / 主指標 / after_w）
+
+    python3 /tmp/h1work/h13a.py 6        # 基準線 34 vs 40 の食い違いを潰す
+    python3 /tmp/h1work/h13b.py 8 0      # conv_resid のループが何周するか（lim=8 は 9 分）
+    python3 /tmp/h1work/mkguard.py       # 縮約の門と rest2 の深さを数える rows3g2.py
+    python3 /tmp/h1work/h13s2.py 6 real  # (S2) BadRootT3 の測定
+    python3 /tmp/h1work/h13s3.py 6       # 像のバッドルート r' は何なのか
+    python3 /tmp/h1work/h13c.py 6        # ImgCofinalT で本当に破れている A を pickle に
+    python3 /tmp/h1work/h13d.py          # その母数で証人 d2b3(T) の逆算
+
+条項 `awflip` を作った流れ:
+
+    python3 /tmp/h1work/mkaw13.py            # after_w を旗で動かす rows3a.py
+                                             #   AFLAGS=awinv/awoff/awdeep/awshal/awgate*
+    python3 /tmp/h1work/h13e.py              # after_w の発火頻度と証人が要求する反転
+    python3 /tmp/h1work/h13f.py              # シートからの負例（たった 2 本）
+    TAG=awg3 AFLAGS=awgate3 python3 /tmp/h1work/h13neg.py   # 壊れた一致から負例
+    ADD=awinv,awg,awg3 python3 /tmp/h1work/h13feat.py       # 素性表
+    python3 /tmp/h1work/h13x.py /tmp/h1work/h13g.pkl        # **遠くを見る素性を 63 本足す**
+    python3 /tmp/h1work/h6cov.py /tmp/h1work/h13g_far.pkl 3
+
+**教訓 3**: 「fp=0 の連言が出ない」ときは、まず
+**素性ベクトルが完全に一致する正例／負例の対**を数える（`h13x.py` がやる）。
+0 でないなら素性の窓が狭いだけで、規則の粒度の問題ではない。
+今回は近傍 305 素性で 14 本が衝突していて、**行列の末尾**を読む素性を
+足したら 0 になった。決定の場所は共通接頭辞 11 列の中（off=5）だった。
+
+**教訓 4**: 「新しい一致を作る」は**おまけ**、「壊れた 0」だけが要件。
+教師データでぶつかったら**負例を優先**する。両側から落とすと負例の拘束を
+捨ててしまい、ありもしない「矛盾」が出る（H12 の 161 がそれ）。
