@@ -2313,6 +2313,50 @@ def Dm12 (m : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
   ∀ k, k < m → k < res.2.dmap.length →
     k < st.dmap.length ∧ res.2.dmap.getD k 0 = st.dmap.getD k 0
 
+/-- `(l ++ [x]).getD |l| 0 = x`。 -/
+theorem getD_snoc_len {l : List ℕ} {x : ℕ} : (l ++ [x]).getD l.length 0 = x := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega)]
+  simp
+
+/-- `(l ++ [x]).getD k 0 = l.getD k 0`（`k < |l|`）。 -/
+theorem getD_snoc_lt {l : List ℕ} {x k : ℕ} (hk : k < l.length) :
+    (l ++ [x]).getD k 0 = l.getD k 0 := by
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_append_left hk]
+
+/-- **`conv3` の 1 列ぶんの状態は節 10 を満たす**。`dmap` の更新が
+`st.dmap.take p.1 ++ [dd2]` なので、`j ≥ p.1` で範囲内なのは `j = p.1` だけで、
+そこの値は `dd2 ≥ d`（`depths_le`）である。 -/
+theorem Dm10_of_take {d m dd2 : ℕ} {dmo : List ℕ} {res : TrioSeq × St}
+    (hres : res.2.dmap = dmo.take m ++ [dd2]) (hdd : d ≤ dd2) : Dm10 d m res := by
+  intro j hj hlen
+  rw [hres] at hlen ⊢
+  rw [List.length_append, List.length_take, List.length_singleton] at hlen
+  have hjm : j = m := by omega
+  subst hjm
+  have hlt : (dmo.take j).length = j := by rw [List.length_take]; omega
+  have hval : ((dmo.take j) ++ [dd2]).getD j 0 = dd2 := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega), hlt]
+    simp
+  rw [hval]
+  omega
+
+/-- **`conv3` の 1 列ぶんの状態は節 12 を満たす**（`take` は下位の項に触らない）。 -/
+theorem Dm12_of_take {m dd2 : ℕ} {dmo : List ℕ} {st : St} {res : TrioSeq × St}
+    (hst : st.dmap = dmo) (hres : res.2.dmap = dmo.take m ++ [dd2])
+    (hm : m ≤ dmo.length) : Dm12 m st res := by
+  intro k hk hlen
+  rw [hres] at hlen ⊢
+  rw [hst]
+  have hlt : (dmo.take m).length = m := by rw [List.length_take]; omega
+  refine ⟨by omega, ?_⟩
+  rw [getD_snoc_lt (by omega), List.getD_eq_getElem?_getD,
+    List.getD_eq_getElem?_getD]
+  first
+    | rw [List.getElem?_take (by omega)]
+    | rw [List.getElem?_take_of_lt (by omega)]
+    | simp [List.getElem?_take, show k < m by omega]
+
 theorem Dm10_nil {d m : ℕ} {st : St} (h : ∀ j, m ≤ j → j < st.dmap.length →
     d + (j - m) ≤ st.dmap.getD j 0) : Dm10 d m ([], st) := h
 
@@ -2733,11 +2777,11 @@ set_option maxHeartbeats 1000000 in
 `convResid` は `conv3 head` を `|head| ≤ |rest|` で呼ぶので、
 `conv3` の強い帰納の仮定 `IH` がそのまま使える。 -/
 theorem resid_blk {NN d : ℕ}
-    (IH : ∀ (M' : TrioSeq), M'.length ≤ NN → ∀ (d' : ℕ) (L' : List Lent)
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ NN → steps1 M' → ∀ (d' : ℕ) (L' : List Lent)
         (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool) (st' : St)
         (nx' : Option Col) (off' : ℕ), d' ≤ st'.ST.length → DmOK st' →
         BlkOK d' st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off')) :
-    ∀ (n : ℕ) (rest : TrioSeq), rest.length ≤ n → rest.length ≤ NN →
+    ∀ (n : ℕ) (rest : TrioSeq), rest.length ≤ n → rest.length ≤ NN → steps1 rest →
       ∀ (rd : ℕ) (Lr : List Lent) (ps pw : ℕ × ℕ) (st : St) (nx : Option Col)
         (off : ℕ), d ≤ st.ST.length → rd ≤ st.ST.length → DmOK st →
         (∀ c ∈ rest, d + (rest.headD (0, 0, 0)).1 ≤ rd + c.1) →
@@ -2745,13 +2789,13 @@ theorem resid_blk {NN d : ℕ}
   intro n
   induction n with
   | zero =>
-      intro rest hn _ rd Lr ps pw st nx off hd _ hdm _
+      intro rest hn _ _ rd Lr ps pw st nx off hd _ hdm _
       have hnil : rest = [] := List.eq_nil_of_length_eq_zero (by omega)
       subst hnil
       rw [convResid.eq_def]
       exact BlkOK_nil hd hdm
   | succ n ih =>
-      intro rest hn hNN rd Lr ps pw st nx off hd hrd hdm hH
+      intro rest hn hNN hs1 rd Lr ps pw st nx off hd hrd hdm hH
       cases rest with
       | nil => rw [convResid.eq_def]; exact BlkOK_nil hd hdm
       | cons c rs =>
@@ -2763,7 +2807,8 @@ theorem resid_blk {NN d : ℕ}
           have hlen : ((c :: rs).take (1 + deepGe c.1 rs)).length ≤ NN := by
             simp only [List.length_take, List.length_cons]
             omega
-          have hrh0 := IH ((c :: rs).take (1 + deepGe c.1 rs)) hlen rd Lr
+          have hrh0 := IH ((c :: rs).take (1 + deepGe c.1 rs)) hlen
+            (steps1_takeT hs1 _) rd Lr
             (List.replicate 12 false) ps pw false false st
             (match (c :: rs).drop (1 + deepGe c.1 rs) with
              | t :: _ => some t | [] => nx) off hrd hdm
@@ -2773,7 +2818,8 @@ theorem resid_blk {NN d : ℕ}
           · exact BlkOK_mono hdrd hrh0
           · rename_i hne
             refine BlkOK_app (le_refl d) (BlkOK_mono hdrd hrh0)
-              (ih _ ?_ ?_ _ _ _ _ _ _ _ ?_ ?_ hrh0.2.2.2.2.2.2.2 ?_)
+              (ih _ ?_ ?_ (steps1_dropT hs1 _) _ _ _ _ _ _ _ ?_ ?_
+                hrh0.2.2.2.2.2.2.2 ?_)
             · simp only [List.length_drop, List.length_cons]; omega
             · simp only [List.length_drop, List.length_cons]; omega
             · have := hrh0.2.1; omega
@@ -2807,12 +2853,12 @@ set_option maxHeartbeats 2000000 in
   9 列で 3 例・10 列で 39 例踏まれる。 -/
 theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
     (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
-    (hd : d ≤ st.ST.length)
-    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → ∀ (d' : ℕ) (L' : List Lent)
-        (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool) (st' : St)
-        (nx' : Option Col) (off' : ℕ), d' ≤ st'.ST.length → DmOK st' →
+    (hd : d ≤ st.ST.length) (hst1s : steps1 (p :: r))
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → steps1 M' → ∀ (d' : ℕ)
+        (L' : List Lent) (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool)
+        (st' : St) (nx' : Option Col) (off' : ℕ), d' ≤ st'.ST.length → DmOK st' →
         BlkOK d' st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off'))
-    (hres : ∀ (rest : TrioSeq), rest.length ≤ r.length → ∀ (rd : ℕ)
+    (hres : ∀ (rest : TrioSeq), rest.length ≤ r.length → steps1 rest → ∀ (rd : ℕ)
         (Lr : List Lent) (ps' pw' : ℕ × ℕ) (st' : St) (nx' : Option Col)
         (off' : ℕ), d ≤ st'.ST.length → rd ≤ st'.ST.length → DmOK st' →
         (∀ c ∈ rest, d + (rest.headD (0, 0, 0)).1 ≤ rd + c.1) →
@@ -2832,6 +2878,7 @@ theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Boo
     (List.takeWhile_sublist _).length_le
   have hB : (r.dropWhile (fun q => decide (p.1 < q.1))).length ≤ r.length :=
     List.length_dropWhile_le _ r
+  have hr1 : steps1 r := steps1_tailT hst1s
   rw [conv3.eq_def]
   dsimp only
   split
@@ -2852,34 +2899,61 @@ theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Boo
       refine blk_contr (depths_le_lad0 hlad0 rfl rfl rfl)
           (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge (by simp)
           (cols_blk hd rfl rfl rfl rfl rfl rfl rfl (by simp) (getLastD_snoc _ _ _))
-          (IH _ hA _ _ _ _ _ _ _ _ _ _ ?_ ?_)
-          (fun h1 h2 => IH _ ?_ _ _ _ _ _ _ _ _ _ _ h1 h2)
-          (fun h2 h3 h4 => hres _ ?_ _ _ _ _ _ _ _ (by omega)
+          (IH _ hA ?_ _ _ _ _ _ _ _ _ _ _ ?_ ?_)
+          (fun h1 h2 => IH _ ?_ ?_ _ _ _ _ _ _ _ _ _ _ h1 h2)
+          (fun h2 h3 h4 => hres _ ?_ ?_ _ _ _ _ _ _ _ (by omega)
             (rd_bounds hee h2 h3 (h4 h3)
               (fun hc => (hdmin _ _ hc).1) (fun hc => (hdmin _ _ hc).2)).2
             h4 (fun c hc => hside _ _ _ c hc))
-          (fun h1 h2 => IH _ ?_ _ _ _ _ _ _ _ _ _ _ h1 h2)
+          (fun h1 h2 => IH _ ?_ ?_ _ _ _ _ _ _ _ _ _ _ h1 h2)
+      · exact steps1_takeWhileT hr1 _
       · exact (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
       · intro _
         rw [getLastD_snoc, len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _]
       · simp only [List.length_take]; omega
+      ·
+        repeat' first
+          | exact hr1
+          | apply steps1_takeT
+          | apply steps1_dropT
+          | apply steps1_takeWhileT
+          | apply steps1_dropWhileT
+          | apply steps1_tailT
       · simp only [List.length_drop, List.length_take, List.length_tail]; omega
+      ·
+        repeat' first
+          | exact hr1
+          | apply steps1_takeT
+          | apply steps1_dropT
+          | apply steps1_takeWhileT
+          | apply steps1_dropWhileT
+          | apply steps1_tailT
       · simp only [List.length_drop, List.length_tail]; omega
+      ·
+        repeat' first
+          | exact hr1
+          | apply steps1_takeT
+          | apply steps1_dropT
+          | apply steps1_takeWhileT
+          | apply steps1_dropWhileT
+          | apply steps1_tailT
   · refine BlkOK_app (le_refl d)
       (BlkOK_app ?_
         (cols_blk hd rfl rfl rfl rfl rfl rfl rfl (by simp) (getLastD_snoc _ _ _))
-        (IH _ hA _ _ _ _ _ _ _ _ _ _ ?_ ?_)) (IH _ hB _ _ _ _ _ _ _ _ _ _ ?_ ?_)
+        (IH _ hA ?_ _ _ _ _ _ _ _ _ _ _ ?_ ?_)) (IH _ hB ?_ _ _ _ _ _ _ _ _ _ _ ?_ ?_)
     · exact Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1
+    · exact steps1_takeWhileT hr1 _
     · exact (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
     · intro _
       rw [getLastD_snoc, len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _]
+    · exact steps1_dropWhileT hr1 _
     · exact le_trans (Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1)
-        (IH _ hA _ _ _ _ _ _ _ _ _ _
+        (IH _ hA (steps1_takeWhileT hr1 _) _ _ _ _ _ _ _ _ _ _
           (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
           (by intro _
               rw [getLastD_snoc,
                 len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _])).2.1
-    · exact (IH _ hA _ _ _ _ _ _ _ _ _ _
+    · exact (IH _ hA (steps1_takeWhileT hr1 _) _ _ _ _ _ _ _ _ _ _
         (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
         (by intro _
             rw [getLastD_snoc,
@@ -2926,7 +3000,7 @@ file を作り、縮約の枝に計測を埋め込む（埋め込み先は `St.n
 def BlkInv : Prop :=
   ∀ (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ)
     (first force : Bool) (st : St) (nx : Option Col) (off : ℕ),
-    d ≤ st.ST.length → DmOK st →
+    d ≤ st.ST.length → DmOK st → steps1 M →
       BlkOK d st (conv3 M d L F ps pw first force st nx off)
 
 /-! ### 課題 L13: `BlkInv` に残る仮定は 2 本だけ
@@ -2972,36 +3046,37 @@ def ResidSideT : Prop :=
          else dmapAt stU.dmap ((rest2.headD (0, 0, 0)).1 - 1)) + c.1
 
 theorem blkInv_aux (h2 : DmapInT) (h3 : ResidSideT) :
-    ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → ∀ (d : ℕ) (L : List Lent)
+    ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → steps1 M → ∀ (d : ℕ) (L : List Lent)
       (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool) (st : St)
       (nx : Option Col) (off : ℕ), d ≤ st.ST.length → DmOK st →
       BlkOK d st (conv3 M d L F ps pw first force st nx off) := by
   intro n
   induction n with
   | zero =>
-      intro M hM d L F ps pw first force st nx off hd hdm
+      intro M hM _ d L F ps pw first force st nx off hd hdm
       have hnil : M = [] := List.eq_nil_of_length_eq_zero (by omega)
       subst hnil
       rw [conv3_nil]
       exact BlkOK_nil hd hdm
   | succ n ih =>
-      intro M hM d L F ps pw first force st nx off hd hdm
+      intro M hM hs1 d L F ps pw first force st nx off hd hdm
       cases M with
       | nil => rw [conv3_nil]; exact BlkOK_nil hd hdm
       | cons p r =>
           have hr : r.length ≤ n := by simp only [List.length_cons] at hM; omega
-          exact blk_step p r d L F ps pw first force st nx off hd
-            (fun M' hM' => ih M' (le_trans hM' hr))
-            (fun rest hlen rd Lr ps' pw' st' nx' off' hd' hb hdm' hH =>
-              resid_blk (NN := n) (d := d) ih rest.length rest le_rfl
-                (le_trans hlen hr) rd Lr ps' pw' st' nx' off' hd' hb hdm' hH)
+          exact blk_step p r d L F ps pw first force st nx off hd hs1
+            (fun M' hM' hs' => ih M' (le_trans hM' hr) hs')
+            (fun rest hlen hsr rd Lr ps' pw' st' nx' off' hd' hb hdm' hH =>
+              resid_blk (NN := n) (d := d)
+                (fun M' hM'' hs'' => ih M' hM'' hs'') rest.length rest le_rfl
+                (le_trans hlen hr) hsr rd Lr ps' pw' st' nx' off' hd' hb hdm' hH)
             (fun stU rest2 e c hc => h3 d p stU rest2 e c hc)
             (fun stU rest2 hc => h2 d p stU rest2 hc)
 
 /-- **★ `BlkInv` は 2 本の仮定から出る**（課題 L15）。 -/
 theorem blkInv_of (h2 : DmapInT) (h3 : ResidSideT) : BlkInv :=
-  fun M d L F ps pw first force st nx off hd hdm =>
-    blkInv_aux h2 h3 M.length M le_rfl d L F ps pw first force st nx off hd hdm
+  fun M d L F ps pw first force st nx off hd hdm hs =>
+    blkInv_aux h2 h3 M.length M le_rfl hs d L F ps pw first force st nx off hd hdm
 
 end Conv3
 
@@ -3014,7 +3089,7 @@ theorem ImgBlockT3_of_BlkInv (h : Conv3.BlkInv) : ImgBlockT3 Conv3.b2d3 := by
   intro A _hA
   obtain ⟨hs, -, -, hh, -, -, -, -⟩ :=
     h A 0 [] [] (0, 0) (0, 0) true false ⟨[], 2, [], A, 0, []⟩ none 0 (by simp)
-      (by intro hc; exact absurd rfl hc)
+      (by intro hc; exact absurd rfl hc) (blockok_ST_TS _hA).2.2
   refine ⟨?_, fun p _ => Nat.zero_le _, hs⟩
   intro hne
   simpa using hh hne

@@ -2896,3 +2896,60 @@ R1 の節 11 `∀ k < |st.dmap|, st.dmap[k] ≤ |st.ST|` を `DmOK` に足そう
 |---|---|---|
 | 節 10 | R1: `gen3<=8` 全数 13108043 ＋ 展開閉包 1181746、違反 0・陽性対照つき | — |
 | 側条件 6 本・節 12 | 私: `conv3` の全呼び出し（`gen3<=6` 全数 ＋ 7 列の縮約発火全数） | **8 列以上**（R1 に依頼中） |
+
+
+---
+
+# 課題 L16 の続き 2: 測定に依らない 2 本を書いた（2026-08-28）
+
+## 0. 結論
+
+**`sorry` 0 のまま、待ちが「—」の 2 本を両方入れた**（`Dbms3.lean` exit 0）。
+
+## 1. `cols_blk` の側（節 10 / 節 12 の 1 列ぶん）
+
+    getD_snoc_len : (l ++ [x]).getD |l| 0 = x
+    getD_snoc_lt  : k < |l| → (l ++ [x]).getD k 0 = l.getD k 0
+
+    Dm10_of_take (hres : res.2.dmap = dmo.take m ++ [dd2]) (hdd : d ≤ dd2) :
+      Dm10 d m res
+    Dm12_of_take (hst : st.dmap = dmo) (hres : res.2.dmap = dmo.take m ++ [dd2])
+      (hm : m ≤ |dmo|) : Dm12 m st res
+
+`Dm10_of_take` の骨は 1 行で言える: **`dmap` の更新が `take m ++ [dd2]` なので
+`|dmap| ≤ m + 1`、したがって `j ≥ m` で範囲内なのは `j = m` だけ**で、
+そこの値は `dd2 ≥ d`（`depths_le`）。`Dm12_of_take` は `take` が下位の項に
+触らないことそのもの。
+
+⚠ `Dm12_of_take` には **`m ≤ |dmo|`** が要る（`|dmo| < m` だと添字 `|dmo|` の
+値が `dd2` になり「入口と一致」が偽になる）。呼び出し点で `p.1 ≤ |st.dmap|` を
+出す必要がある。R1-NOTES §4.3 の `|dmap| = (最後に処理した柱).1 + 1` が
+その材料である。**未確認。**
+
+## 2. `BlkInv` に `steps1` を足した
+
+    BlkInv := ∀ M d L F ps pw first force st nx off,
+                d ≤ |st.ST| → DmOK st → **steps1 M** → BlkOK d st (conv3 M …)
+
+`blkInv_aux` / `blk_step` / `resid_blk` の 3 本に通した。呼び出し点は
+`steps1_takeWhileT` / `_dropWhileT` / `_takeT` / `_dropT` の 1 行か、
+巨大項のところは
+
+    repeat' first | exact hr1 | apply steps1_takeT | apply steps1_dropT
+                  | apply steps1_takeWhileT | apply steps1_dropWhileT | apply steps1_tailT
+
+で片づく（`Bq` や `rest2` は `take`/`drop`/`tail` の入れ子なので、
+`apply` を繰り返すだけで根の `steps1 r` に落ちる）。
+
+入口は `ImgBlockT3_of_BlkInv` が `(blockok_ST_TS _hA).2.2` で渡す。
+**`ImgBlockT3` の仮定は 2 本のまま**（`ResidSideT` / `DmapInT`）。
+
+## 3. 残り（測定待ち）
+
+| やること | 行数 | 待っているもの |
+|---|---|---|
+| `blk_step` / `blk_contr` / `resid_blk` を `∧ Dm10 ∧ Dm12` の形に | 80〜120 | 側条件 6 本の `<=8` 列確認 |
+| `Dm12` の外側連結（`m' ≤ m` の向き）の直し | 20〜40 | 同上 |
+| `Dm12_of_take` の `m ≤ |dmo|` を呼び出し点で出す | 20〜30 | R1 §4.3 の Lean 化 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 | 節 12 の `<=8` 列確認 |
+| **合計** | **160〜250 行** | |
