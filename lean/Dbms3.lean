@@ -2255,6 +2255,104 @@ def BlkOK (d : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
     ∧ (st.dmap ≠ [] → res.2.dmap ≠ [])
     ∧ (res.2.dmap ≠ [] → res.2.dmap.getLastD 0 + 1 = res.2.ST.length)
 
+/-! ### 課題 L16: `steps1` は接頭辞・接尾辞で保たれる
+
+節 10 の側条件 `A.head.1 ≤ p.1 + 1` は **BMS の隣接条件**（`steps1`）そのもの
+なので、`BlkInv` に `steps1 M` を足す必要がある。`conv3` の再帰は
+`takeWhile` / `dropWhile` / `take` / `drop` しか使わないので、
+接頭辞・接尾辞で保たれることを言えば帰納は回る。 -/
+
+theorem steps1_prefixT {A B : TrioSeq} (h : steps1 B) (hp : A <+: B) : steps1 A := by
+  obtain ⟨t, rfl⟩ := hp
+  exact (steps1_append.mp h).1
+
+theorem steps1_suffixT {A B : TrioSeq} (h : steps1 B) (hs : A <:+ B) : steps1 A := by
+  obtain ⟨t, rfl⟩ := hs
+  exact (steps1_append.mp h).2.1
+
+theorem steps1_takeT {B : TrioSeq} (h : steps1 B) (n : ℕ) : steps1 (B.take n) :=
+  steps1_prefixT h (List.take_prefix n B)
+
+theorem steps1_dropT {B : TrioSeq} (h : steps1 B) (n : ℕ) : steps1 (B.drop n) :=
+  steps1_suffixT h (List.drop_suffix n B)
+
+theorem steps1_takeWhileT {B : TrioSeq} (h : steps1 B) (f : Col → Bool) :
+    steps1 (B.takeWhile f) :=
+  steps1_prefixT h (List.takeWhile_prefix f)
+
+theorem steps1_dropWhileT {B : TrioSeq} (h : steps1 B) (f : Col → Bool) :
+    steps1 (B.dropWhile f) :=
+  steps1_suffixT h (List.dropWhile_suffix f)
+
+theorem steps1_tailT {B : TrioSeq} (h : steps1 B) : steps1 B.tail := by
+  cases B with
+  | nil => simpa using h
+  | cons p t => simpa using steps1_dropT h 1
+
+/-! ### 課題 L16: 節 10（`dmap` の下界）と 節 12（下位の項の保存）
+
+`BlkOK` に足すのではなく**別の述語**として立てる。`BlkOK` は 8 節のまま
+なので、既存の補題・射影がまったく動かない（`BlkOK` に引数を足すと
+`.2.2.2.2.2.2.2` のような射影が全部ずれる）。
+
+    節 10  Dm10 d m res   出力の `dmap` は「もとの深さ 1 段につき像も 1 段」
+    節 12  Dm12 m st res  ブロックは自分の先頭より浅い `dmap` の項に触らない
+
+実測（`tools/dbms/R1-NOTES.md` 節 10、`gen3 <=8` 全数 13108043 呼び出し ＋
+展開閉包 1181746 呼び出しで違反 0・陽性対照つき）／
+節 12 は課題 L16 の測定（`conv3` の全呼び出し、違反 0、陽性対照
+「添字を 1 つ広げる」で 27584 / 521 発火）。 -/
+
+/-- **節 10**: もとの深さ `j` の像は、ブロックの先頭 `m` から数えて
+少なくとも `j - m` 段は深い。 -/
+def Dm10 (d m : ℕ) (res : TrioSeq × St) : Prop :=
+  ∀ j, m ≤ j → j < res.2.dmap.length → d + (j - m) ≤ res.2.dmap.getD j 0
+
+/-- **節 12**: ブロックは自分の先頭 `m` より浅い `dmap` の項に触らない。 -/
+def Dm12 (m : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
+  ∀ k, k < m → k < res.2.dmap.length →
+    k < st.dmap.length ∧ res.2.dmap.getD k 0 = st.dmap.getD k 0
+
+theorem Dm10_nil {d m : ℕ} {st : St} (h : ∀ j, m ≤ j → j < st.dmap.length →
+    d + (j - m) ≤ st.dmap.getD j 0) : Dm10 d m ([], st) := h
+
+theorem Dm12_refl {m : ℕ} {st : St} : Dm12 m st ([], st) :=
+  fun _ _ hk => ⟨hk, rfl⟩
+
+/-- **節 10 の連結**。`X` を出した後で `Y` を出したなら、`X ++ Y` も節 10 を満たす。
+
+`j ≥ m'` は `Y` の節 10 と側条件 `d + m' ≤ d' + m` で出る。
+`m ≤ j < m'` は **`Y` が触っていない**（`Y` の節 12）ので `X` の節 10 で出る。
+⟹ **節 10 だけでは合成できず、節 12 が要る**（課題 L16 §2）。 -/
+theorem Dm10_app {d d' m m' : ℕ} {stm st' : St} {X Y : TrioSeq}
+    (hmm : d + m' ≤ d' + m) (hX : Dm10 d m (X, stm))
+    (hY : Dm10 d' m' (Y, st')) (hY2 : Dm12 m' stm (Y, st')) :
+    Dm10 d m (X ++ Y, st') := by
+  intro j hj hlen
+  simp only at hlen ⊢
+  by_cases hjm : m' ≤ j
+  · have h5 := hY j hjm hlen
+    simp only at h5
+    omega
+  · obtain ⟨hk1, hk2⟩ := hY2 j (by omega) hlen
+    simp only at hk1 hk2
+    rw [hk2]
+    have h6 := hX j hj hk1
+    simp only at h6
+    exact h6
+
+/-- **節 12 の連結**（`m ≤ m'` が要る）。 -/
+theorem Dm12_app {m m' : ℕ} {st stm st' : St} {X Y : TrioSeq} (hle : m ≤ m')
+    (hX : Dm12 m st (X, stm)) (hY : Dm12 m' stm (Y, st')) :
+    Dm12 m st (X ++ Y, st') := by
+  intro k hk hlen
+  simp only at hlen ⊢
+  obtain ⟨h1, h2⟩ := hY k (by omega) hlen
+  simp only at h1 h2
+  obtain ⟨h3, h4⟩ := hX k hk h1
+  simp only at h3 h4
+  exact ⟨h3, by rw [h2, h4]⟩
+
 /-- 状態の `dmap` 不変量: 最後に書いた像の深さ ＋ 1 が鎖の長さ。
 実測（`lean/l11_blkmeas.py`）: `<=6` 列 48997 呼び出し ＋ 7 列 1134 呼び出しで
 **違反 0**。`dmap` の狭義単調性や「全要素 < |ST|」は**偽**なので、真なのはこれだけ。 -/
