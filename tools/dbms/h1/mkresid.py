@@ -41,7 +41,7 @@ old = """        out += conv3(head, rd, Lr, (False,) * 12, ps, pw, False, False,
 new = """        Mo = st['Mo']
         _fi = first_mat(Mo, off) if RF['rfirst'] else False
         _ps = ps_mat(Mo, off) if RF['rps'] else ps
-        _F = (False,) * 12
+        _F = () if RF['rF'] else (False,) * 12
         out += conv3(head, rd, Lr, _F, _ps, pw, _fi, False,
                      st, nx2, off)"""
 assert src.count(old) == 1
@@ -99,7 +99,9 @@ src3 = src3.replace("      'sanchnone': False}",
                     "      'sanchnone': False,\n"
                     "      'wdmap': False, 'wdmap_all': False, 'wdmap_w': False,\n"
                     "      'wd_deep': False, 'wd_notroot': False, 'wd_chead': False,\n"
-                    "      'sbody': False, 'sbody_w': False}")
+                    "      'sbody': False, 'sbody_w': False, 'sb_gate': False,\n"
+                    "      'sb_p0ge2': False, 'sb_notroot': False, 'sb_chead': False,\n"
+                    "      'sb_cov': False}")
 # (a) wdmap: 「x w」柱の深さを dmap（もとの深さ -> 像の深さ）で下限を付ける
 old = """    ST = st['ST']
     cols = []"""
@@ -121,8 +123,11 @@ src3 = src3.replace(old, new, 1)
 # (b) sbody: 行 1 の影を立てた柱の兄弟を本体の横（dd）に付ける
 old2 = "    cB = conv3(B, d, LS, FA, (v, s2), (e1, e2), False, False, st, nx, oB)"
 new2 = ("    dB = d\n"
-        "    if RF['sbody'] and lad1 and B and (\n"
-        "            not RF['sbody_w'] or (B[0][1] == 0 and B[0][2] == 0)):\n"
+        "    if (RF['sbody'] and lad1 and B and dd > d\n"
+        "            and (not RF['sbody_w'] or (B[0][1] == 0 and B[0][2] == 0))\n"
+        "            and (SITES[0] is None or off in SITES[0])\n"
+        "            and (not RF['sb_gate'] or sb_gate(st['Mo'], off))):\n"
+        "        FIRE.append((off, tuple(p), d, dd, tuple(B[0])))\n"
         "        dB = dd\n"
         "    cB = conv3(B, dB, LS, FA, (v, s2), (e1, e2), False, False, st, nx, oB)")
 assert src3.count(old2) == 1
@@ -130,7 +135,13 @@ src3 = src3.replace(old2, new2, 1)
 open('/tmp/h1work/rows3r.py', 'w').write(src3)
 print('深さの旗も足した')
 
+GATE = "def _nA(Mo, off):\n    j = off + 1\n    while j < len(Mo) and Mo[j][0] > Mo[off][0]:\n        j += 1\n    return j - off - 1\n\n\ndef sb_gate(Mo, off):\n    # H12: sbody の門（影の兄弟を本体の横に付けてよいか）\n    if RF['sb_p0ge2'] and Mo[off][0] < 2:\n        return False\n    if RF['sb_notroot'] and par0(Mo, off) == 0:\n        return False\n    if RF['sb_chead'] and not copy_head(Mo, off + 1 + _nA(Mo, off)):\n        return False\n    if RF['sb_cov'] and not sb_cov(Mo, off):\n        return False\n    return True\n\n\ndef sb_cov(Mo, off):\n    return True\n\n\n"
+
 # ---------------------------------------------------------------- 発火の記録
+src3b = open('/tmp/h1work/rows3r.py').read()
+src3b = src3b.replace('def _snap(st):', GATE + 'def _snap(st):', 1)
+open('/tmp/h1work/rows3r.py', 'w').write(src3b)
+
 src4 = open('/tmp/h1work/rows3r.py').read()
 src4 = src4.replace("RF = {'rfirst'", "FIRE = []\nSITES = [None]\n\n\nRF = {'rfirst'", 1)
 old = """        if st['dmap']:

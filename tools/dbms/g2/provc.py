@@ -9,6 +9,7 @@ from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    units_split, contrPre, leaves_mark,
                    leaves_mark_local, ANCHOR, NOTLAST, copy_src, par0_w,
                    p0_shallow, closes_w, sibnb_ok, _parK,
+                   first_of, ps_of,
                    V12, V13, V14, V15, V16)
 PROV = []
 CTX = []
@@ -369,8 +370,13 @@ def conv_resid(rest, rd, Lr, ps, pw, st, nx, off):
             i += 1
         head, tail = rest[:i], rest[i:]
         nx2 = tail[0] if tail else nx
-        out += conv3(head, rd, Lr, (False,) * 12, ps, pw, False, False,
-                     st, nx2, off)
+        # v16（課題 H12）: `first` / `ps` は行列から読める。ここだけ
+        # `False` / 親でない `ps` を渡していたので、写しに同変な読みに直す。
+        # 実測: gen<=7 の 77282 個・lim=6 の展開 25158 個で**像の差 0**、
+        # lim=7 の一致も +0/-0 の完全な no-op。非同変な読みが 2 つ消える。
+        Mo_ = st['Mo']
+        out += conv3(head, rd, Lr, (False,) * 12, ps_of(Mo_, off), pw,
+                     first_of(Mo_, off), False, st, nx2, off)
         if not tail:
             break
         rd = max(0, rd - (m0 - tail[0][0]))   # もとの深さの差だけ浅くする

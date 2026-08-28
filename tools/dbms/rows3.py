@@ -709,6 +709,24 @@ if 'V15FLAGS' in os.environ:
         if isinstance(V15[_k], bool):
             V15[_k] = _k in _on
 
+# ---------------------------------------------------------------- v16 の旗 (2)
+# 課題 H12: P2 の 2 本は「写しに同変でない読みを、同変な読みに置き換える」
+# ものなので既定で入れる（`V15FLAGS` では切れない。下の環境変数で切る）。
+#
+#   `wroot`  `after_w` / `wchain` の `par0(Mo, j) == 0`（根に直付けか）を
+#            `par0_w`（途中の「x w」柱を素通りする）に。展開すると写しが
+#            1 枚増えるたびに親の鎖に「x w」柱が 1 本挟まるので、素の `par0`
+#            では写しの中で偽になる。**`after_w` は破れの現場で 1318 倍に
+#            濃縮する**（対照 0.03% -> 現場 37.1%）ので、ここは急所である。
+#   `hiblk`  `hi_block` の起点の対角柱 (a,a,z) を、写しの中で (a+k,a,z) に
+#            化けても拾える `is_diag`（行 0 から「x w」柱の本数を引く）で拾う。
+#
+# 実測: gen<=7 の 77282 個で**像の差 0**。lim=7 の一致 447604 -> **447612**
+#       （新規 +8 / 壊れた 0）、強い版 (n<=5,m<=8) 646971 -> **646983**（+12/-0）。
+#       シート 1354 / lim=5,6 の 7 土俵 / 全射 4,82 はすべて不変。
+V15['wroot'] = os.environ.get('RS_NOWROOT', '') != '1'
+V15['hiblk'] = os.environ.get('RS_NOHIBLK', '') != '1'
+
 
 def term_top(Mo, j, _d=0):
     """柱 `j` が「行 1 の加算項の頭」か。課題 H1。
@@ -948,6 +966,21 @@ def sibnb_ok(Mo, off):
     while j < n and Mo[j][0] > p[0]:
         j += 1
     return j - off - 1 >= 2
+
+
+def first_of(Mo, j):
+    """柱 `j` が行 0 の親の**第 1 子**か。conv3 の引数 `first` の行列読み。
+
+    課題 H11 の測定: 984203 柱のうち conv3 が持ち回る `first` と食い違うのは
+    4 か所だけで、全部が `conv_resid`（下で行列読みに置き換えた）。
+    """
+    return j == 0 or par0(Mo, j) == j - 1
+
+
+def ps_of(Mo, j):
+    """柱 `j` の行 0 の親の (行1, 行2)。conv3 の引数 `ps` の行列読み。"""
+    i = par0(Mo, j)
+    return (0, 0) if i < 0 else (Mo[i][1], Mo[i][2])
 
 
 def _snap(st):
@@ -1365,8 +1398,13 @@ def conv_resid(rest, rd, Lr, ps, pw, st, nx, off):
             i += 1
         head, tail = rest[:i], rest[i:]
         nx2 = tail[0] if tail else nx
-        out += conv3(head, rd, Lr, (False,) * 12, ps, pw, False, False,
-                     st, nx2, off)
+        # v16（課題 H12）: `first` / `ps` は行列から読める。ここだけ
+        # `False` / 親でない `ps` を渡していたので、写しに同変な読みに直す。
+        # 実測: gen<=7 の 77282 個・lim=6 の展開 25158 個で**像の差 0**、
+        # lim=7 の一致も +0/-0 の完全な no-op。非同変な読みが 2 つ消える。
+        Mo_ = st['Mo']
+        out += conv3(head, rd, Lr, (False,) * 12, ps_of(Mo_, off), pw,
+                     first_of(Mo_, off), False, st, nx2, off)
         if not tail:
             break
         rd = max(0, rd - (m0 - tail[0][0]))   # もとの深さの差だけ浅くする
