@@ -88,5 +88,102 @@ theorem wsnoc_clause2_iff {u : ℕ} {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hCne 
   · exact h2
   · exact absurd (hlen ▸ hpar) (hlen ▸ hdom.2)
 
+/-! ## 課題 L48: `(TOW)` の 2 つの還元（R1 の結果を Lean に） -/
+
+@[simp] theorem shTower_nil (e n : ℕ) : shTower ([] : TrioSeq) e n = [] := by
+  simp [shTower, shiftr01]
+
+/-- `shiftr01` は行 2 を動かさないので、塔も行 2 ≡ 0 のまま。 -/
+theorem shTower_zeroRow2 {Q : TrioSeq} (hz : ∀ p ∈ Q, p.2.2 = 0) (e n : ℕ) :
+    ∀ p ∈ shTower Q e n, p.2.2 = 0 := by
+  intro p hp
+  rw [shTower] at hp
+  simp only [List.mem_flatMap, List.mem_range] at hp
+  obtain ⟨k, -, hpk⟩ := hp
+  rw [shiftr01] at hpk
+  simp only [List.mem_map] at hpk
+  obtain ⟨q, hq, hqp⟩ := hpk
+  rw [← hqp]
+  exact hz q hq
+
+/-- `n ≥ 1` の塔は `Q` を接頭辞に持つ（`k = 0` の写しは持ち上げ 0）。 -/
+theorem shTower_prefix (Q : TrioSeq) (e : ℕ) :
+    ∀ n, 1 ≤ n → ∃ R, shTower Q e n = Q ++ R := by
+  intro n
+  induction n with
+  | zero => intro h; omega
+  | succ n ih =>
+      intro _
+      rcases Nat.eq_zero_or_pos n with hn | hn
+      · subst hn
+        exact ⟨[], by rw [shTower_one]; simp⟩
+      · obtain ⟨R, hR⟩ := ih hn
+        exact ⟨R ++ shiftr01 (n * e) 0 Q, by rw [shTower_succ, hR, List.append_assoc]⟩
+
+theorem lev_zero_append {A R : TrioSeq} (hne : A ≠ []) : lev (A ++ R) 0 = lev A 0 := by
+  cases A with
+  | nil => exact absurd rfl hne
+  | cons a t => simp [lev, entry]
+
+/-- `n ≥ 1` の塔の根のレベルは `Q` の根のレベル。 -/
+theorem lev_shTower {Q : TrioSeq} (hne : Q ≠ []) (e : ℕ) {n : ℕ} (hn : 1 ≤ n) :
+    lev (shTower Q e n) 0 = lev Q 0 := by
+  obtain ⟨R, hR⟩ := shTower_prefix Q e n hn
+  rw [hR, lev_zero_append hne]
+
+/-- **★ (a) `(TOW)` は行 2 ≡ 0 の `Q` では定理**（課題 L48）。
+**側条件（根が最浅）を 1 度も使わない。** -/
+theorem shiftTowerClosed_of_zeroRow2 {u e n : ℕ} {Q : TrioSeq}
+    (hQ : Q ∈ W u) (hz : ∀ p ∈ Q, p.2.2 = 0) : shTower Q e n ∈ W u := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn
+    rw [shTower_zero]
+    exact W_nil u
+  by_cases hQne : Q = []
+  · subst hQne
+    rw [shTower_nil]
+    exact W_nil u
+  rw [mem_Wself_iff]
+  refine ⟨zeroRow2_mem_Wself (shTower_zeroRow2 hz e n), ?_⟩
+  rw [lev_shTower hQne e hn]
+  exact lev_root_le_of_mem_W hQ hQne
+
+/-- **★ (b) 一般の `(TOW)` は段の添字 `u` の要らない文に還元できる**（課題 L48）。
+
+`Q ∈ W u` から `lev Q 0 ≤ u` が出て、`n ≥ 1` なら結論側の `lev 0` も同じなので
+`u` が消える。 -/
+theorem shiftTowerClosed_iff_wself :
+    ShiftTowerClosed ↔
+      ∀ (e n : ℕ) (Q : TrioSeq), Q ∈ Wself → (∀ p ∈ Q, entry Q 0 0 ≤ p.1) →
+        shTower Q e n ∈ Wself := by
+  constructor
+  · intro h e n Q hQ hs
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn
+      rw [shTower_zero]
+      exact show ([] : TrioSeq) ∈ W (lev ([] : TrioSeq) 0) from W_nil _
+    by_cases hQne : Q = []
+    · subst hQne
+      rw [shTower_nil]
+      exact show ([] : TrioSeq) ∈ W (lev ([] : TrioSeq) 0) from W_nil _
+    have h9 := h (lev Q 0) e n Q hQ hs
+    show shTower Q e n ∈ W (lev (shTower Q e n) 0)
+    rw [lev_shTower hQne e hn]
+    exact h9
+  · intro h u e n Q hQ hs
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn
+      rw [shTower_zero]
+      exact W_nil u
+    by_cases hQne : Q = []
+    · subst hQne
+      rw [shTower_nil]
+      exact W_nil u
+    obtain ⟨hself, hlev⟩ := (mem_Wself_iff u Q).mp hQ
+    rw [mem_Wself_iff]
+    refine ⟨h e n Q hself hs, ?_⟩
+    rw [lev_shTower hQne e hn]
+    exact hlev
+
 end L47
 end TRIO
