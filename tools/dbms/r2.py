@@ -54,10 +54,12 @@ def conv_resid_probe(rest, rd, Lr, ps, pw, st, nx, off):
     if len(trees) >= 2:
         bump('forest')
         bump('forest_%d_trees' % len(trees))
-        FOREST.append({'M': CUR[0], 'rest': tuple(tuple(c) for c in rest),
-                       'rd0': rd, 'd': outer_d, 'p': (tuple(p) if p else None),
-                       'off': off, 'trees': trees,
-                       'out': tuple(tuple(c) for c in out)})
+        if len(FOREST) < 500:
+                FOREST.append({'M': CUR[0], 'rest': tuple(tuple(c) for c in rest),
+                           'rd0': rd, 'd': outer_d,
+                           'p': (tuple(p) if p else None),
+                           'off': off, 'trees': trees,
+                           'out': tuple(tuple(c) for c in out)})
     # 主張の検定
     for t in trees:
         if t['omin'] is not None and t['omin'] < t['rd']:

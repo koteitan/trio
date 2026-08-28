@@ -433,3 +433,9 @@ BMS 3 行 z<2 の**標準形**（`core.isstd` で確認）。末尾を
     python3 tools/dbms/r1.py 8        # gen3 <=8 全数（生成に 500 秒）
     python3 tools/dbms/r1.py exp 6    # <=6 の展開閉包（最長 24 列）
     python3 tools/dbms/r1ext.py "((0,0,0),(1,1,1),(2,1,0),(1,1,0))" 10   # 森が 41%
+
+課題 R2（木ごとの `rd` と最小深さ、森の表）:
+
+    python3 tools/dbms/r2.py 8       # gen3 <=8 全数 -> 森の表
+    python3 tools/dbms/r2gen8.py     # 8 列全数を r2_e8.pkl に
+    tools/dbms/r2run9.sh             # 9 列全数を 4 分割で流す（貯めない）
