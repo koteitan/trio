@@ -6,3 +6,7 @@ tools/dbms/depth_data.json
 tools/dbms/relay_labels.json
 tools/dbms/flip_data.json
 tools/dbms/flip_neg.json
+
+tools/dbms/r1_*.pkl
+tools/dbms/r1_*.log
+tools/dbms/r1ext*.log
