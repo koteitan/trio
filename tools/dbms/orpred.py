@@ -122,16 +122,18 @@ print('  (3) (←) B vs A    前提 **%d** / 破れ **%d**%s'
       % (p3, n3, '   ⚠ **空虚**' if p3 == 0 else ''), flush=True)
 print('=== **SandwichUReindexT3**  破れ **%d** / %d 回（前提なし）' % (nS, tot), flush=True)
 
-# --- 陽性対照: 相手 B を「三つ組でないもの」に取り替えると破れが出るか
+# --- 陽性対照: 相手 B を「三つ組の相方ではない別の ST_TS 行列」に取り替える
+#     （B を 1 つ後ろの三つ組の B に差し替える。これなら (conv3 A)⟦m⟧ = conv3 B' は
+#      成り立たないので、条項が破れるはず。破れなければ計器が効いていない。）
 print(flush=True)
-print('=== 陽性対照（B を 1 つずらした行列に取り替える）', flush=True)
+print('=== 陽性対照（相手を別の三つ組の B に差し替える）', flush=True)
 c1 = c2 = c3 = cS = 0
 q1 = q2 = q3 = 0
+N = len(JUDG)
 for i, (fAn, T, An, B, fA, A) in enumerate(JUDG):
-    B2 = PB[(PB.index(B) + 1) % len(PB)] if False else None
-    # index は O(n) なので使わない。代わりに「A 自身」を偽の相手にする
-    B2 = A
-    T2 = fA
+    _, T2, _, B2, _, _ = JUDG[(i + 1) % N]
+    if B2 == B:
+        continue
     if fAn == T2:
         q1 += 1
         if An != B2: c1 += 1
@@ -146,9 +148,20 @@ for i, (fAn, T, An, B, fA, A) in enumerate(JUDG):
 print('  (1) 前提 %d / 破れ **%d**' % (q1, c1), flush=True)
 print('  (2) 前提 %d / 破れ **%d**' % (q2, c2), flush=True)
 print('  (3) 前提 %d / 破れ **%d**' % (q3, c3), flush=True)
-print('  (S) 破れ **%d** / %d 回' % (cS, len(JUDG)), flush=True)
+print('  (S) 破れ **%d** / %d 回' % (cS, N), flush=True)
 print('  ⟹ 陽性対照が %s' % ('**効いている**' if c1 + c2 + c3 + cS > 0
                              else '**効いていない。別の対照が要る**'), flush=True)
+
+# --- 三つ組の層別（難しい層に母数があるか）
+print(flush=True)
+print('=== 三つ組の層別（A の長さ / m / T の長さ）', flush=True)
+from collections import Counter
+cA = Counter(len(A) for A, m, B, fA, T in tri)
+cm = Counter(m for A, m, B, fA, T in tri)
+cT = Counter(len(T) for A, m, B, fA, T in tri)
+print('  A の長さ : %s' % dict(sorted(cA.items())), flush=True)
+print('  m        : %s' % dict(sorted(cm.items())), flush=True)
+print('  T の長さ : %s' % dict(sorted(cT.items())), flush=True)
 
 print(flush=True)
 print('  ⟹ %s' % ('**この母数では全部真**' if n1 + n2 + n3 + nS == 0 else '**偽**'),
