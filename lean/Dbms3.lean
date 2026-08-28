@@ -1900,6 +1900,72 @@ theorem ImgCofinalT3_of_ImgClosedT3 {conv3 : TrioSeq → TrioSeq}
   obtain ⟨B, hB, heq⟩ := h hA hlen (max m0 1) (le_max_right _ _)
   exact ⟨max m0 1, le_max_left _ _, B, hB, heq⟩
 
+/-! ### ★ 課題 L28: `ReindexT1` に**全域の順序保存は要らない**
+
+`ReindexT1_of_cofinal` の証明の中で `OrderT3` が使われるのは**3 か所だけ**で、
+しかも相手は任意の `M, N` ではなく **`ImgCofinalT3` が返した `B`** に限られる:
+
+    (1) `ole_of_sle3` の `=` の枝 … `conv3 (A⟦n⟧) = conv3 B → A⟦n⟧ = B`（**単射性だけ**）
+    (2) `ole_of_sle3` の `<` の枝 … `seqlex (conv3 (A⟦n⟧)) (conv3 B) → …`（**(←) だけ**）
+    (3) 最後の行            … `seqlex (conv3 B) (conv3 A) → …`（**(←) だけ**）
+
+**(→)（順序を保つ向き）は 1 か所も使っていない。** `conv3_injective` が (→) を
+使っているのは `ole_of_sle3` の `=` の枝を潰すためだけで、そこは単射性を
+直に仮定すれば済む（`ole_of_sle3'`）。
+
+⟹ 下の `OrderReindexT3` は `OrderT3` より**真に弱い**:
+`B` は `(conv3 A)⟦m⟧ = conv3 B` を満たすものに限られ、向きも (←) だけである。
+**課題 L24 の反例 24 対がこの形でないなら、Lean 側は通る。**（要測定） -/
+
+/-- **`ReindexT1` が実際に要求する順序の性質だけ**を取り出したもの。 -/
+def OrderReindexT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A B : TrioSeq}, ST_TS A → ST_TS B → ∀ {n m : ℕ}, 1 ≤ n → n + 1 ≤ m →
+    (conv3 A)⟦m⟧ = conv3 B →
+      (conv3 (A⟦n⟧) = conv3 B → A⟦n⟧ = B) ∧
+      (seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B) ∧
+      (seqlex (conv3 B) (conv3 A) → translate B <o translate A)
+
+/-- `OrderT3` は `OrderReindexT3` を含む（弱化であることの確認）。 -/
+theorem orderReindexT3_of_orderT3 {conv3 : TrioSeq → TrioSeq} (hO : OrderT3 conv3) :
+    OrderReindexT3 conv3 := by
+  intro A B hA hB n m hn hm heq
+  refine ⟨fun h => conv3_injective hO (ST_TS.oper hA hn) hB h, fun h => (hO (ST_TS.oper hA hn) hB).2 h,
+    fun h => (hO hB hA).2 h⟩
+
+/-- `sle3` から `≤o`（単射性と (←) を直に受け取る版）。 -/
+theorem ole_of_sle3' {conv3 : TrioSeq → TrioSeq} {M N : TrioSeq}
+    (hinj : conv3 M = conv3 N → M = N)
+    (hrefl : seqlex (conv3 M) (conv3 N) → translate M <o translate N)
+    (h : sle3 (conv3 M) (conv3 N)) : translate M ≤o translate N := by
+  rcases h with heq | hlt
+  · rw [hinj heq]; exact ole_refl _
+  · exact Or.inl (hrefl hlt)
+
+/-- **★ `ReindexT1` は `OrderT3` の代わりに `OrderReindexT3` で出る。** -/
+theorem ReindexT1_of_cofinal' {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hO : OrderReindexT3 conv3) (hU : SandwichUT3 conv3)
+    (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3) :
+    ReindexT1 conv3 := by
+  intro A hA hlen n hn
+  obtain ⟨m, hm0, B, hB, heq⟩ := hI hA hlen (n + 1)
+  obtain ⟨hinj, hr1, hr2⟩ := hO hA hB hn hm0 heq
+  refine ⟨m, B, by omega, hB, ?_, ?_, heq⟩
+  · have h1 := hU hA hlen n hn
+    have h2 : sle3 ((conv3 A)⟦n + 1⟧) ((conv3 A)⟦m⟧) := oper_mono_idx hm0
+    have h3 : sle3 (conv3 (A⟦n⟧)) (conv3 B) := by
+      rw [← heq]
+      rcases h1 with e1 | s1
+      · rcases h2 with e2 | s2
+        · exact Or.inl (e1.trans e2)
+        · exact Or.inr (e1 ▸ s2)
+      · rcases h2 with e2 | s2
+        · exact Or.inr (e2 ▸ s1)
+        · exact Or.inr (seqlex_trans s1 s2)
+    exact ole_of_sle3' hinj hr1 h3
+  · refine hr2 ?_
+    rw [← heq]
+    exact seqlex_oper (hb hA) (hlen2 hA hlen) (by omega)
+
 /-- **`ReindexT1` は `ImgCofinalT3` から出る**（`ImgClosedT3` は要らない）。
 
 `ImgClosedT3` 版（下の `ReindexT1_of_block`）との差は 1 行、
@@ -3479,7 +3545,7 @@ theorem OrderT3_of_read {read3 : TrioSeq → Three} {dok : TrioSeq → Prop}
 位置ずれ 0、像の重複も 0）。読み `read3` を書かずに `OrderT3` を証明する道があるなら
 この形（`conv3` の構造帰納法）だろう。 -/
 
-/-! ### ⚠ `OrderT3` は v18 の `conv3` では**偽**。ただし**達成可能**（課題 R7/R8）
+/-! ### ⚠ `OrderT3` は **未成立**（`len ≤ 11` で 24 件破れる）（課題 R7/R8/R9）
 
 `OrderT3_iff_seqemb`（下、**証明ずみ**）より `OrderT3 ↔ SeqEmbT3` なので、
 `SeqEmbT3` の反例は `OrderT3` の反例でもある。**証明しに行かないこと。**
@@ -3517,7 +3583,22 @@ theorem OrderT3_of_read {read3 : TrioSeq → Three} {dok : TrioSeq → Prop}
 接頭辞単調が破れる 22624 個も**同じ機構**（100% が `body` の柱、
 0% が縮約の中、98.6% が像の末尾 1 柱だけ、96.9% が「行 1 だけ違う」）。
 
-## ★ ただし **`OrderT3` は達成可能**（課題 R8, 2026-08-29）
+## ⚠ 訂正（課題 R9, 2026-08-29）: **3 旗オフでも成立しない**
+
+いったん「3 条項を切れば `SeqEmbT3` の破れ 41 -> 0」と測れたが、
+**母数を `len ≤ 11`（1882196 個）に広げると (→) 24 件 / (←) 24 件破れる**。
+
+    M1 = (0,0,0)(1,1,1)(1,1,1)(1,0,0)(2,1,1)(2,1,0)(3,1,0)(2,1,0)(3,1,0)(2,1,0)(3,1,0)
+    M2 = (0,0,0)(1,1,1)(1,1,1)(1,0,0)(2,1,1)(2,1,0)(3,1,0)(3,0,0)
+
+⟹ Lean の 6 仮定の表では **`OrderT3` は「未成立（`len ≤ 11` で 24 件）」**とする。
+**`len ≤ 10` で 0 だったのは母数が狭かっただけ**（今日 4 度目の同じ形）。
+
+## ★ ただし `ReindexT1` に**全域の順序保存は要らない**（課題 L28）
+
+下の `OrderReindexT3` / `ReindexT1_of_cofinal'` を見よ。**(→) は 1 か所も使わない。**
+
+## 参考: シート自身は完全に順序保存（課題 R8）
 
 **シート自身は完全に順序保存**である:
 

@@ -3384,14 +3384,16 @@ a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / �
 
 ---
 
-# ⚠ 課題 L24: `OrderT3` は v18 の `conv3` では**偽**。ただし**達成可能**（課題 R7/R8）
+# ⚠ 課題 L24: `OrderT3` は **未成立**（`len ≤ 11` で 24 件）（課題 R7/R8/R9）
 
 ## 0. これを最初に読むこと
 
 * **v18 の `conv3` では `OrderT3` / `SeqEmbT3` は偽**（反例は §1）。
-* **ただし諦めないこと。シート自身は完全に順序保存**なので `OrderT3` は
-  **達成可能**であり、**犯人は 3 条項（`tiesd` / `awflip` / `h1`）**である（§5）。
-  それらを切ると `SeqEmbT3` の破れは **41 -> 0**。
+* **⚠ 訂正（課題 R9）**: 「3 条項を切れば破れ 41 -> 0」は
+  **母数 `len ≤ 10` での話**だった。**`len ≤ 11`（1882196 個）で (→) 24 件 /
+  (←) 24 件破れる**。表では **「未成立（`len ≤ 11` で 24 件）」**とすること。
+* **ただし `ReindexT1` に全域の順序保存は要らない**（課題 L28、下）。
+  **(→) は 1 か所も使っていない。**
 * `OrderT3_iff_seqemb`（`Dbms3.lean`, **証明ずみ**）より両者は同値。
 
 ## 1. 反例（8 列 ＋ 9 列。どちらも `ST_TS`）
@@ -3564,3 +3566,59 @@ a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / �
 
 `ImgBlockT3_of_resid` の仮定は **2 本のまま**（`DmapInT` / `ResidSideT`）。
 道具は全部揃っている。**未測定は無い。**
+
+
+
+---
+
+# ★ 課題 L28: `ReindexT1` に**全域の順序保存は要らない**（2026-08-29）
+
+## 0. 結論
+
+**答えはチームリードの (b) の側**である。`ReindexT1_of_cofinal` の証明で
+`OrderT3` が使われるのは **3 か所だけ**で、相手は任意の `M, N` ではなく
+**`ImgCofinalT3` が返した `B`** に限られる。しかも
+
+    **(→)（順序を保つ向き）は 1 か所も使っていない。**
+
+`Dbms3.lean` に `OrderReindexT3` と `ReindexT1_of_cofinal'` を入れた
+（exit 0 / sorry 0）。**`OrderT3` は仮定から外せる。**
+
+## 1. `OrderT3` が使われる 3 か所（全部読んだ。合計 90 行）
+
+| 場所 | 使う向き | 相手 |
+|---|---|---|
+| `ole_of_sle3` の `=` の枝 | **単射性だけ**（`conv3 M = conv3 N → M = N`） | `(A⟦n⟧, B)` |
+| `ole_of_sle3` の `<` の枝 | **(←)** `seqlex 像 → <o` | `(A⟦n⟧, B)` |
+| `ReindexT1_of_cofinal` の最後の行 | **(←)** | `(B, A)` |
+
+`conv3_injective` が (→) を使っているのは「`=` の枝を潰す」ためだけなので、
+**単射性を直に仮定すれば (→) は完全に消える**（`ole_of_sle3'`）。
+
+## 2. 入れたもの
+
+    def OrderReindexT3 (conv3) : Prop :=
+      ∀ {A B}, ST_TS A → ST_TS B → ∀ {n m}, 1 ≤ n → n + 1 ≤ m →
+        (conv3 A)⟦m⟧ = conv3 B →
+          (conv3 (A⟦n⟧) = conv3 B → A⟦n⟧ = B) ∧
+          (seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B) ∧
+          (seqlex (conv3 B) (conv3 A) → translate B <o translate A)
+
+    orderReindexT3_of_orderT3 : OrderT3 → OrderReindexT3        （弱化の確認）
+    ole_of_sle3'              : 単射性 ＋ (←) から `sle3 → ≤o`
+    ReindexT1_of_cofinal'     : ImgCofinalT3 ＋ **OrderReindexT3** ＋ SandwichUT3
+                                ＋ ImgBlockT3 ＋ ImgLenT3 → ReindexT1
+
+## 3. 次に測ってほしいこと（Python へ。**これで 24 件が無害になるかが決まる**）
+
+反例 24 対が `OrderReindexT3` の形かどうか:
+
+    (i)  24 対の `(M1, M2)` に **`∃ m, (conv3 M1)⟦m⟧ = conv3 M2`** を満たすものがあるか
+    (ii) `(A⟦n⟧, B)` の形（`A` から `n` 回展開したものと、像の `m` 回展開の逆像）
+         になっているものがあるか
+    (iii) 向きは (←)（`seqlex 像 → 順序数`）か (→) か
+
+**(i)(ii) がどちらも 0 なら、24 件は `ReindexT1` に効かない**ので、
+Lean 側は `OrderReindexT3` を仮定して先に進める。陽性対照は
+「`m` の範囲を広げても見つからない」ことを別の母数で確かめること。
+EOF
