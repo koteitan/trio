@@ -4849,3 +4849,67 @@ theorem dmFirst_of (hmr) (hout : st.dmap.length < p.1) (hin : ...) :
 > そして**新しい補題は「前に動かす」のではなく「仮定として受け取る」**。
 > このリポジトリでは宣言を前に動かすと後ろの巨大な証明が heartbeat で落ちる
 > （課題 L40 §6 と同じ現象を 2 回目に踏んだ）。
+
+
+---
+
+# 課題 L50: `diagSeqT 0 v ∈ Wself` は停止性と**同値**（2026-08-29）
+
+## 1. 同値である（Lean で証明、`L47W.lean`）
+
+```lean
+theorem exists_stage_of_ST_TS (h : ∀ v, diagSeqT 0 v ∈ Wself) (hM : ST_TS M) : ∃ u, M ∈ W u
+theorem mem_Wself_of_diag (h : ∀ v, diagSeqT 0 v ∈ Wself) (hM : ST_TS M) (hne : M ≠ []) :
+    M ∈ Wself
+```
+
+`ST_TS` は**対角と `oper` だけ**で生成され（`Trio.lean` の inductive）、
+`oper_closed`（`Wset.lean:2103`、証明ずみ）は `W u` を `oper` で閉じる。逆は自明。
+
+⟹ **最小形ではあるが近道ではない。** 値打ちは
+**「どんな証明技法も `diagSeqT` を通せるかで安く篩にかけられる」**こと。
+
+## 2. ★ プロジェクト全体の最小の未解決例は **3 列**
+
+    v=0  singleton_mem_W          ✓
+    v=1  snoc_zeroRow2            ✓（M' = [(0,0,0)] は行 2 ≡ 0、t = (1,1,1)）
+    **v=2  (0,0,0)(1,1,1)(2,2,1)  ← 未解決。M' = (0,0,0)(1,1,1) の行 2 が 0 でない**
+
+## 3. 展開の形（team-lead の測定）と、なぜ既存の道具が届かないか
+
+    **D(v)⟦n⟧ = flatMap (k => shiftr01 (k*v) (k*v) (D(v-1)))**   （行 0 と行 1 を**両方**ずらす）
+
+    shTower / W_flatMap_copies … **行 0 だけ**。届かない
+    ulift_mem_W                  … 行 1 のシフトは段を **+2d** 上げる
+
+### ⚠ 段は本質ではない（`mem_Wself_iff`）
+
+根は `(0,0,0)` のままなので `lev (D(v)⟦n⟧) 0 = 0`。`mem_Wself_iff` より
+`D(v)⟦n⟧ ∈ W 0 ⟺ D(v)⟦n⟧ ∈ Wself`。**中身は `Wself` 所属であって段ではない。**
+
+### ★ しかし分解すると残核に着く
+
+    shiftr01 d d = shiftr01 d 0 ∘ shiftr01 0 d      （行 0 のシフト ∘ 行 1 のリフト）
+    行 0 のシフト … `W_shift`（Wset.lean:1320）**無料**
+    行 1 のリフト … `LiftStage`（(WL)）で段が **+2d**
+
+⟹ **k 枚目の写しは `W (2kv)` にいる。段の違う塊を `W 0` に連結する操作は
+`Aop` の節 3（`graft`）そのもの**であり、`W_mono` は上向きにしか使えない。
+
+> **⟹ `D(v)⟦n⟧` は graft の鎖である。その `W` 所属の証明は節 3 を通るしかなく、
+> それは残核（`SubstClosedG` / `Subst1gReviveSelf`）である。**
+
+## 4. 見積もり
+
+    (a) 既存の道具   **無い**（行 0 だけの道具しかない）
+    (b) v の帰納     自然だが、1 歩が「行 1 シフト版の (TOW)」＝ (TOW) より**強い**
+                     ⟹ **行数の上限は出せない**
+    (c) 残核と同値か **同値**（上の 1。Lean で証明ずみ）
+
+## 5. 今日の縮小の到達点
+
+    停止性 → 残核(15 行) → WSnoc(3 行) → (TOW) → WCat → W_add の緩和
+           → L49（行 2 版の証明書）→ **L50: diagSeqT 0 2（3 列）**
+
+**全部が同値か、同じ結び目。** `PROOF-STATUS §5` の「新しい数学的入力が要る」の
+**到達点が 3 列の行列 1 つ**になった、というのが今日の成果である。
