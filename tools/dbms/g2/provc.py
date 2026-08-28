@@ -12,7 +12,7 @@ from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    first_of, ps_of,
                    aw_flip,
                    tie_sd,
-                   V12, V13, V14, V15, V16, V17, V18)
+                   V12, V13, V14, V15, V16, V17, V18, V20)
 PROV = []
 CTX = []
 
