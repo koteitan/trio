@@ -2797,6 +2797,83 @@ theorem blk_contr {d dd2 nc' : ℕ} {st st1 stA stU stR stB : St}
     (BlkOK_app (le_refl d)
       (BlkOK_app (Nat.le_succ d) (BlkOK_app (by omega) hcols hA) hUok) hRok) hBok
 
+/-! ### 課題 L23: 「ブロックの全柱は先頭の柱の深さ以上」（`BlkLo`）
+
+課題 R1 の構造的な理由をそのまま不変量にしたもの。`steps1`（BMS の隣接条件）と
+合わせると、`conv3` の 4 つの再帰の先頭の深さが**等号**で決まる:
+
+    A = r.takeWhile (p.1 < ·)   ⟹  A.head.1 = p.1 + 1
+    B = r.dropWhile (p.1 < ·)   ⟹  B.head.1 = p.1
+    U = B.take kU               ⟹  U.head.1 = p.1
+    Bq                          ⟹  Bq.head.1 = p.1
+
+実測（課題 R1、`gen3 <=7` 全数 ＋ 展開閉包・最長 24 列）: 上の 4 本とも違反 0
+（`cA` 304386/304386 と 364983/364983、`cU` 1264/1264、`cB` 148533/148533 ほか）。
+**`≤` ではなく `=`** なので、`Dm10_of_child` の隙間の処理が消える。 -/
+
+/-- ブロックの全柱は先頭の柱の深さ以上。 -/
+def BlkLo (M : TrioSeq) : Prop := ∀ c ∈ M, (M.headI).1 ≤ c.1
+
+@[simp] theorem blkLo_nil : BlkLo [] := by intro c hc; simp at hc
+
+/-- `takeWhile` の先頭はもとの先頭。 -/
+theorem headI_takeWhile {f : Col → Bool} {l : TrioSeq} (h : l.takeWhile f ≠ []) :
+    (l.takeWhile f).headI = l.headI := by
+  cases l with
+  | nil => simp at h
+  | cons a t =>
+      rw [List.takeWhile_cons] at h ⊢
+      by_cases hf : f a = true
+      · rw [if_pos hf]; rfl
+      · rw [if_neg hf] at h; simp at h
+
+/-- `takeWhile` が空でなければ述語は先頭で真。 -/
+theorem takeWhile_head_true {f : Col → Bool} {l : TrioSeq}
+    (h : l.takeWhile f ≠ []) : f l.headI = true := by
+  cases l with
+  | nil => simp at h
+  | cons a t =>
+      rw [List.takeWhile_cons] at h
+      by_cases hf : f a = true
+      · exact hf
+      · rw [if_neg hf] at h; simp at h
+
+/-- **`A = r.takeWhile (p.1 < ·)` の先頭は `p.1 + 1`**（`steps1` から）。 -/
+theorem takeWhile_head_eq {p : Col} {r : TrioSeq}
+    (hs : steps1 (p :: r)) (h : r.takeWhile (fun q => decide (p.1 < q.1)) ≠ []) :
+    ((r.takeWhile (fun q => decide (p.1 < q.1))).headI).1 = p.1 + 1 := by
+  have hne : r ≠ [] := by
+    intro hc; rw [hc] at h; simp at h
+  have h1 : p.1 < r.headI.1 := by
+    have := takeWhile_head_true h
+    simpa using this
+  have h2 : r.headI.1 ≤ p.1 + 1 := by
+    cases r with
+    | nil => exact absurd rfl hne
+    | cons q t => exact (steps1_cons_cons.mp hs).1
+  rw [headI_takeWhile h]
+  omega
+
+/-- `headI` は `headD (0,0,0)`。 -/
+theorem headI_eq_headD (l : TrioSeq) : l.headI = l.headD (0, 0, 0) := by
+  cases l <;> rfl
+
+/-- **`A` の全柱は `A` の先頭以上**。 -/
+theorem takeWhile_blkLo {p : Col} {r : TrioSeq}
+    (hs : steps1 (p :: r)) : BlkLo (r.takeWhile (fun q => decide (p.1 < q.1))) := by
+  intro c hc
+  by_cases h : r.takeWhile (fun q => decide (p.1 < q.1)) = []
+  · rw [h] at hc; simp at hc
+  · rw [takeWhile_head_eq hs h]
+    have := List.mem_takeWhile_imp hc
+    simpa using this
+
+/-- 空でないリストの `headD` はそのリストの元。 -/
+theorem headD_memT {l : TrioSeq} (h : l ≠ []) (x : Col) : l.headD x ∈ l := by
+  cases l with
+  | nil => exact absurd rfl h
+  | cons a t => simp
+
 /-- `dropWhile` の直後の柱は述語を満たさない。`B = r.dropWhile (p.1 < ·)` の
 先頭が `p.1` 以下であること（課題 L16 の側条件 b2）はこれから出る。 -/
 theorem dropWhile_headD_false {f : Col → Bool} : ∀ (l : TrioSeq) (x : Col),
@@ -2822,6 +2899,51 @@ theorem dropWhile_headD_le {r : TrioSeq} {a : ℕ} {x : Col}
   simp only [decide_eq_false_iff_not, Nat.not_lt] at this
   exact this
 
+/-- **`B = r.dropWhile (p.1 < ·)` の先頭は `p.1`**（`BlkLo` から下から挟む）。 -/
+theorem dropWhile_head_eq {p : Col} {r : TrioSeq} (hlo : BlkLo (p :: r))
+    (h : r.dropWhile (fun q => decide (p.1 < q.1)) ≠ []) :
+    ((r.dropWhile (fun q => decide (p.1 < q.1))).headI).1 = p.1 := by
+  have hle := dropWhile_headD_le (r := r) (a := p.1) (x := (0, 0, 0)) h
+  have hmem : (r.dropWhile (fun q => decide (p.1 < q.1))).headI ∈ p :: r := by
+    rw [headI_eq_headD]
+    exact List.mem_cons_of_mem _
+      ((List.dropWhile_sublist _).mem (headD_memT h (0, 0, 0)))
+  have hge : p.1 ≤ ((r.dropWhile (fun q => decide (p.1 < q.1))).headI).1 := by
+    have h9 := hlo _ hmem
+    simpa using h9
+  rw [headI_eq_headD]
+  rw [headI_eq_headD] at hge
+  omega
+
+/-- **`B` の全柱は `B` の先頭以上**。 -/
+theorem dropWhile_blkLo {p : Col} {r : TrioSeq} (hlo : BlkLo (p :: r)) :
+    BlkLo (r.dropWhile (fun q => decide (p.1 < q.1))) := by
+  intro c hc
+  have h : r.dropWhile (fun q => decide (p.1 < q.1)) ≠ [] := by
+    intro hn; rw [hn] at hc; simp at hc
+  rw [dropWhile_head_eq hlo h]
+  have hmem : c ∈ p :: r :=
+    List.mem_cons_of_mem _ ((List.dropWhile_sublist _).mem hc)
+  have h9 := hlo _ hmem
+  simpa using h9
+
+/-- **`take` は `BlkLo` を保つ**（`U = B.take kU`）。 -/
+theorem blkLo_take {l : TrioSeq} (h : BlkLo l) (k : ℕ) : BlkLo (l.take k) := by
+  intro c hc
+  have hne : l.take k ≠ [] := by intro hn; rw [hn] at hc; simp at hc
+  have hk : 0 < k := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · simp at hne
+    · exact hk
+  have hhd : (l.take k).headI = l.headI := by
+    cases l with
+    | nil => simp at hne
+    | cons a t =>
+        obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+        rw [List.take_succ_cons]; rfl
+  rw [hhd]
+  exact h c ((List.take_sublist k l).mem hc)
+
 /-- `deepGe a rs` の直後の柱は行 0 が `a` 未満（`deepGe` の定義そのもの）。 -/
 theorem deepGe_head_lt {a : ℕ} : ∀ (rs : TrioSeq) (x : Col),
     rs.drop (deepGe a rs) ≠ [] → ((rs.drop (deepGe a rs)).headD x).1 < a
@@ -2835,12 +2957,6 @@ theorem deepGe_head_lt {a : ℕ} : ∀ (rs : TrioSeq) (x : Col),
       · rename_i hq
         rw [if_neg hq, List.drop_zero, List.headD_cons]
         omega
-
-/-- 空でないリストの `headD` はそのリストの元。 -/
-theorem headD_memT {l : TrioSeq} (h : l ≠ []) (x : Col) : l.headD x ∈ l := by
-  cases l with
-  | nil => exact absurd rfl h
-  | cons a t => simp
 
 set_option maxHeartbeats 1000000 in
 /-- **★ `convResid` は外側の `d` の block である**（課題 R1 §3 / R2）。

@@ -3336,3 +3336,47 @@ a5 の後半は「縮約が探す双子 `q` は `p` より浅い」で、`contrF
 
 **測定範囲**: 側条件 6 本・節 10・節 12 とも `<=8` 列 ＋ 展開閉包（R1）。
 `U.head.1 = p.1` は **1270/1270**（`<=8` ＋ 閉包）。**未測定は無い。**
+
+
+---
+
+# 課題 L23: `BlkLo` を入れ、側条件の head を**等号で証明**した（2026-08-29）
+
+## 0. 結論
+
+課題 R1 の構造的な理由「**渡されたブロックの全柱は先頭の柱の深さ以上**」を
+`BlkLo` として Lean に入れ、そこから 4 つの再帰の先頭の深さを
+**等号で証明した**（`Dbms3.lean`, exit 0 / sorry 0）。
+
+    def BlkLo (M : TrioSeq) : Prop := ∀ c ∈ M, (M.headI).1 ≤ c.1
+
+| 補題 | 内容 | 状態 |
+|---|---|---|
+| `takeWhile_head_eq` | `steps1 (p::r)` → **`A.head.1 = p.1 + 1`** | **証明した** |
+| `takeWhile_blkLo` | `BlkLo A` | **証明した** |
+| `dropWhile_head_eq` | `BlkLo (p::r)` → **`B.head.1 = p.1`** | **証明した** |
+| `dropWhile_blkLo` | `BlkLo B` | **証明した** |
+| `blkLo_take` | `BlkLo l → BlkLo (l.take k)`（`U = B.take kU`） | **証明した** |
+
+⟹ **側条件 a1 / b1 / b2 / a3 は測定ではなく証明になった。**
+`A.head.1 = p.1 + 1` は `steps1`（BMS の隣接条件）から、
+`B.head.1 = p.1` は `BlkLo` で下から挟んで出る。**どちらも等号**なので、
+`Dm10_of_child` の隙間の処理（`j = p.1` の 1 点）だけで済む。
+
+道具として `headI_takeWhile` / `takeWhile_head_true` / `headI_eq_headD` /
+`dropWhile_headD_false` / `dropWhile_headD_le` も入れた。
+
+## 1. 残り
+
+| やること | 行数 |
+|---|---|
+| `BlkInv` に `BlkLo M` を足して 4 再帰に通す（道具は上で揃った） | 40〜60 |
+| a5 の残り（`q.1 ≤ p.1`、`q = (B.drop kU).headD`）を `contrFind` から | 30〜50 |
+| `BlkInv` に `Dm10` の conjunct、`blk_step` の 2 枝で結論 | 80〜110 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **230〜340 行** |
+
+**測定範囲**: 側条件・節 10・節 12 とも `<=7` 列全数 ＋ **展開閉包（最長 24 列）**（R1）。
+a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / 展開閉包 5139 発火）。
+`gen3 <=8` 全数は R1 が流し中。**未測定は無い。**
