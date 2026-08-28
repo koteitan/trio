@@ -108,3 +108,35 @@ lim=7 の 305087 組なら 331 組の破れが見える）。約 140 秒。
 
 **結論**: `prev` は 99.994% 行列から決まる。残る非同変な読みは
 (1) 縮約が注入する `nxt` の番兵 `NOTLAST`、(2) 行 1 の梯子 `L` から出る `tie`。
+
+# 課題 H11 の道具（`first` / `ps` / `split0` の同変性 と 条項 `sibnb`）
+
+    mkdir -p /tmp/h1work && cp *.py /tmp/h1work/
+    python3 /tmp/h1work/mkLrec2.py             # 記録つきの写し rows3F.py
+                                               #   (off, first, force, ps, pw, d, L, F, nA, ctx)
+    python3 /tmp/h1work/h11m.py 6 3            # first/ps/nA を行列読みと突き合わせる
+    python3 /tmp/h1work/h10img.py              # ImgClosedT の破れを img54p.pkl に（65s）
+    python3 /tmp/h1work/h11x.py                # 破れの現場（**長さが揃う n を選ぶ**）
+    python3 /tmp/h1work/h11d.py 5              # 1 件ずつ詳しく
+    python3 /tmp/h1work/h11e.py                # 濃縮率（対照 = lim=6 の全柱）
+
+条項 `sibnb`（旗つきの写し）と足切り:
+
+    python3 /tmp/h1work/mksibnb.py             # rows3s.py（SBFLAGS=... で旗を立てる）
+                                               #   sibnb / sibnb_cov / sibnb_cov2 / sibnb_desc
+                                               #   b2d3f(M, sites=...) で発火場所を選べる
+    SBFLAGS=... python3 /tmp/h1work/h11cut.py  <tag> 7 rows3s        # lim=7 の一致
+    python3 /tmp/h1work/h11cut2.py <tag> 7 rows3s 5 8                # 強い版 n<=5 m<=8
+    SBFLAGS=... python3 /tmp/h1work/h11all.py rows3s dohyo 6         # 7 土俵
+    SBFLAGS=... python3 /tmp/h1work/h11all.py rows3s onto 7          # 全射
+    SBFLAGS=... python3 /tmp/h1work/h11fix.py rows3s                 # 破れ 105 対の当たり
+
+教師データ（正例/負例の場所）:
+
+    python3 /tmp/h1work/h11sit.py              # シート＋ImgClosedT からラベル
+    FL=... TAG=... python3 /tmp/h1work/h11neg.py   # lim=7 の一致の増減から場所を集める
+    H11ALL=cov,cov2 python3 /tmp/h1work/h11feat.py # 素性表（h6feat 275 ＋ 追加 30）
+    python3 /tmp/h1work/h6cov.py /tmp/h1work/h11fcov_cov2.pkl 3
+
+**教訓**: 破れの現場を見るときは `n` を「像の長さが目標と揃うもの」で選ぶ。
+最長一致で選ぶと 105 対のうち 70 対が「像が短い」に落ちて柱まで届かない。
