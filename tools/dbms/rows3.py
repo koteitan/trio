@@ -728,6 +728,13 @@ V15['wroot'] = os.environ.get('RS_NOWROOT', '') != '1'
 V15['hiblk'] = os.environ.get('RS_NOHIBLK', '') != '1'
 
 
+# ---------------------------------------------------------------- v17 の旗
+# 課題 H13: `after_w` の決定をひっくり返す条項。`RS_NOAWFLIP=1` で切る。
+V17 = {
+    'awflip': os.environ.get('RS_NOAWFLIP', '') != '1',
+}
+
+
 def term_top(Mo, j, _d=0):
     """柱 `j` が「行 1 の加算項の頭」か。課題 H1。
 
@@ -983,6 +990,46 @@ def ps_of(Mo, j):
     return (0, 0) if i < 0 else (Mo[i][1], Mo[i][2])
 
 
+def aw_flip(Mo, off):
+    """課題 H13: `after_w` が出した「浅い／深い」をひっくり返す場所。
+
+    `after_w` は破れの現場で**濃縮 1318 倍**（対照 0.03% -> 現場 37.1%）で、
+    このプロジェクトで測ったなかで最も鋭い的だった。発火自体は稀で
+    lim=6 で 27 回・lim=7 で 439 回しかないのに、証人 `d2b3(T)` が要求する
+    「1 か所ひっくり返せば当たる」24 件のうち **23 件がここ**にある。
+
+    門は集合被覆（`h1/h13f.py` ＋ `h1/h13x.py` の**遠くを見る素性** ＋
+    `h1/h6cov.py`）が 3 巡で出した 2 選言:
+
+        (chead_after0 & last_w)   自分より後ろに写しの頭が 1 つも無く、
+                                  かつ**行列の末尾列**が「x w」(k,0,0)
+        (!a01_far & x_sib_diag)   行 0 の親が近く（4 本以内）、かつ
+                                  直前の兄弟が対角柱 (a,a,z) (a>=1)
+
+    教師データ: 正例 22（ImgCofinalT の破れ 27 個の証人が要求する反転）/
+    負例 924（シート 1354 行 ＋ lim=7 の一致を壊す場所、3 巡ぶん）。
+
+    **`last_w` は行列の末尾を読む「遠い素性」である。** 近傍だけの 305 素性では
+    正例 14 本が負例と**素性ベクトルまで完全に一致**して分けられなかった
+    （共通接頭辞 11 列・決定の場所は off=5 でその中）。遠くを見る素性を
+    63 本足したら衝突は 0 になった。H6 の教訓「分けられないと思ったら
+    素性を疑う」がここでも当たった。
+    """
+    n = len(Mo)
+    if is_w_col(Mo[-1]) and not any(copy_head(Mo, t) for t in range(off + 1, n)):
+        return True
+    a01 = par0(Mo, off)
+    if a01 >= 0 and off - a01 > 3:
+        return False
+    p0 = Mo[off][0]
+    for t in range(off - 1, -1, -1):
+        if Mo[t][0] < p0:
+            return False
+        if Mo[t][0] == p0:                 # 直前の兄弟
+            return Mo[t][0] == Mo[t][1] and Mo[t][0] >= 1
+    return False
+
+
 def _snap(st):
     # P3 `cpyspell`: 下見（`leaves_mark_local`）の決定 `dec` も巻き戻す。
     # 巻き戻さないと下見の決定が漏れて縮約の発火が変わる。
@@ -1197,6 +1244,10 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             if st['prev'] == 1 and is_w_col(pv) and closes_unit(onx):
                 pnt = off > 0 and _p0(Mo, off - 1) == 0
                 shallow = not (hi and not pnt)
+                # v17 awflip（課題 H13）: 発火 27 回（lim=6）の稀な枝だが、
+                # 証人が要求する反転の 23/24 がここ。門は `aw_flip`。
+                if V17['awflip'] and aw_flip(Mo, off):
+                    shallow = not shallow
             # v13 wchain（課題 F2）: `after_w` の窓は**直前 1 本**しかない。
             # 「x w」の柱がもっと後ろにあって、そこから今までがぜんぶその子孫
             # なら、直前が「x w」だったのと同じに扱う（判定式は after_w と同じ、

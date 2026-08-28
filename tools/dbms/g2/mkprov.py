@@ -91,7 +91,8 @@ head = ('"""rows3.conv3 の写し（出どころを PROV に記録する）。mk
         '                   leaves_mark_local, ANCHOR, NOTLAST, copy_src, par0_w,\n'
         '                   p0_shallow, closes_w, sibnb_ok, _parK,\n'
         '                   first_of, ps_of,\n'
-        '                   V12, V13, V14, V15, V16)\n'
+        '                   aw_flip,\n'
+        '                   V12, V13, V14, V15, V16, V17)\n'
         'PROV = []\n'
         'CTX = []\n\n\n')
 tail = '''

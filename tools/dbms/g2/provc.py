@@ -10,7 +10,8 @@ from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    leaves_mark_local, ANCHOR, NOTLAST, copy_src, par0_w,
                    p0_shallow, closes_w, sibnb_ok, _parK,
                    first_of, ps_of,
-                   V12, V13, V14, V15, V16)
+                   aw_flip,
+                   V12, V13, V14, V15, V16, V17)
 PROV = []
 CTX = []
 
@@ -154,6 +155,10 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
                 pnt = off > 0 and _p0(Mo, off - 1) == 0
                 shallow = not (hi and not pnt)
                 why = 'after_w'
+                # v17 awflip（課題 H13）: 発火 27 回（lim=6）の稀な枝だが、
+                # 証人が要求する反転の 23/24 がここ。門は `aw_flip`。
+                if V17['awflip'] and aw_flip(Mo, off):
+                    shallow = not shallow
             # v13 wchain（課題 F2）: `after_w` の窓は**直前 1 本**しかない。
             # 「x w」の柱がもっと後ろにあって、そこから今までがぜんぶその子孫
             # なら、直前が「x w」だったのと同じに扱う（判定式は after_w と同じ、
