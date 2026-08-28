@@ -4455,3 +4455,55 @@ def ResidHeadT : Prop :=
 | `Dm10` | **`ResidHeadT` 1 本**（R1-NOTES §4.3 に紙の証明） |
 | `DmapInT` の下界・`ResidSideT` | `Dm10` から出る。**配線が残り** |
 | `DmapInT` の上界（節 11） | 未着手（`Dm11` を同じ型で回せば出るはず） |
+
+
+---
+
+# 課題 L41(b): `RD3` を**像に制限**すると `ST_D3` がまるごと落ちる（2026-08-29）
+
+（番号がぶつかったので、`Dm10` のほうを L41(a)、こちらを L41(b) と呼ぶ。）
+
+## 1. 結果 —— **一発で緑、65 行**
+
+```lean
+def RD3img (conv3 : TrioSeq → TrioSeq) : TrioSeq → TrioSeq → Prop :=
+  fun x y => (∃ M, ST_TS M ∧ x = conv3 M) ∧ (∃ N, ST_TS N ∧ y = conv3 N) ∧ seqlex x y
+
+theorem TRIO_terminates_of_img_wf {conv3 : TrioSeq → TrioSeq}
+    (wf : WellFounded (RD3img conv3)) (H : ReindexT1D conv3) : WellFounded stepRel
+```
+
+**仮定は `ReindexT1D` ただ 1 本。**
+
+## 2. なぜ `ST_D3` が全部落ちるか（1 行）
+
+> **`acc_olt_of_accD` が `ST_D3 (conv3 A)` を運んでいたのは、`RD3` の第 1・第 2 成分を
+> 埋めるためだけだった。** 像に制限すると `⟨B, hB, rfl⟩` / `⟨A, hA, rfl⟩` で自明に埋まる。
+
+しかも **`ReindexT1D` の定義は `ST_D3` に一切触れていない**（確認ずみ）。だから
+
+    落ちる   ST_D3_conv3_D / ST_D3_descend_D / **ConvDiagT3** / ST_D3 の機構ぜんぶ
+    残る     ReindexT1D ただ 1 本
+
+差分は `acc_olt_of_accD` から `hSD` / `hSD'` の 2 行を消しただけ。
+
+## 3. 代償が消える
+
+`conv3` は全射でない（R1: `<=6` 列 0.76% / `<=7` 列 2.3% / **`<=8` 列 4.2%**、
+`preimage_try` に替えても減らない本物）。だから `WellFounded RD3` は BMS の停止性より
+**形式的に強い**。`RD3img` は像の上だけなので**その代償を払わない**。
+
+## 4. L38 は L41(b) の系
+
+`wf_img_of_wfD : WellFounded RD3 → ReindexT1D → ConvDiagT3 → WellFounded (RD3img conv3)`
+（`Subrelation.wf` ＋ `ST_D3_conv3_D`、8 行）。**逆は言えない。**
+
+## 5. ⚠ 正直な限界
+
+`RD3img` の整礎性は、`Inj3` を通せば `ST_TS` 上の関係
+`M ≺ N ⟺ seqlex (conv3 M) (conv3 N)` の整礎性と**同じ**。
+**BMS の停止性より易しい保証は無い**（`OrderT3` が偽なので `seqlex M N` とは
+別の関係だが、強さが違うとは限らない）。値打ちは 2 つだけ:
+
+* **前提が真に弱い**（定理として強い）
+* **`ST_D3` の機構が停止性の道から外れる ⟹ 残るのは `ReindexT1D` 1 本**

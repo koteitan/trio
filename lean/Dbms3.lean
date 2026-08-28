@@ -441,6 +441,94 @@ theorem no_infinite_expansion_of_dbms_wf (wfD : WellFounded RD3)
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_dbms wfD H hd))
 
+/-! ### 課題 L41: `RD3` を**像に制限**すると `ST_D3` がまるごと落ちる
+
+`acc_olt_of_accD` が `ST_D3 (conv3 A)` を運んでいたのは、**`RD3` の第 1・第 2 成分を
+埋めるためだけ**だった。`RD3` を「`conv3` の像の上の `seqlex`」に取り替えると、
+その 2 成分は `⟨B, hB, rfl⟩` / `⟨A, hA, rfl⟩` で**自明に**埋まる。
+
+    落ちるもの   `ST_D3_conv3_D`（したがって `ST_D3_descend_D`）、`ConvDiagT3`、
+                 `ST_D3` の機構ぜんぶ
+    残るもの     `ReindexT1D` ただ 1 本
+
+そして**非全射の穴が消える**: `conv3` は全射でない（`<=8` 列で 1171/27932 ＝ 4.2%、
+率は列数とともに増える）ので `WellFounded RD3` は BMS の停止性より**形式的に強い**が、
+`WellFounded (RD3img conv3)` は像の上だけなので**その代償を払わない**。
+
+⚠ ただし `RD3img` の整礎性は、`Inj3` を通せば `ST_TS` 上の関係
+`M ≺ N ⟺ seqlex (conv3 M) (conv3 N)` の整礎性と同じで、
+**BMS の停止性より易しい保証は無い**（`OrderT3` が偽なので `seqlex M N` とは
+別の関係だが、強さが違うとは限らない）。値打ちは「前提が真に弱い」ことと
+「`ST_D3` の機構が停止性の道から外れる」ことにある。 -/
+def RD3img (conv3 : TrioSeq → TrioSeq) : TrioSeq → TrioSeq → Prop :=
+  fun x y => (∃ M, ST_TS M ∧ x = conv3 M) ∧ (∃ N, ST_TS N ∧ y = conv3 N) ∧ seqlex x y
+
+/-- **★ `Acc (RD3img conv3) (conv3 A)` から `Acc` を BMS 側に移す**（課題 L41）。
+`acc_olt_of_accD` から `ST_D3` の 2 行を落としただけ。 -/
+theorem acc_olt_of_accImg {conv3 : TrioSeq → TrioSeq} (H : ReindexT1D conv3) :
+    ∀ C : TrioSeq, Acc (RD3img conv3) C → ∀ A : TrioSeq, ST_TS A →
+      conv3 A = C →
+      Acc (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) A := by
+  intro C hC
+  induction hC with
+  | intro C _ ih =>
+    intro A hA hCA
+    refine Acc.intro _ ?_
+    intro a ha
+    obtain ⟨haS, -, hlt⟩ := ha
+    have hL : 1 < A.length := by
+      by_contra hL
+      exact not_olt_len_one_T haS (by omega) hA hlt
+    obtain ⟨n, hn, han⟩ := trio_cofinality hA haS hlt
+    obtain ⟨m, B, hm, hB, hAnB, hsq, heqC⟩ := H hA hL n hn
+    have hAccB : Acc (fun a b : TrioSeq =>
+        ST_TS a ∧ ST_TS b ∧ translate a <o translate b) B :=
+      ih (conv3 B) (by rw [← hCA]; exact ⟨⟨B, hB, rfl⟩, ⟨A, hA, rfl⟩, hsq⟩) B hB rfl
+    rcases ole_trans han hAnB with hab | hab
+    · exact hAccB.inv ⟨haS, hB, hab⟩
+    · have haB : a = B := by
+        by_contra hne
+        rcases seqlex_total a B with he | hs | hs
+        · exact hne he
+        · exact olt_irrefl _ (hab ▸ (olt_ST_iff_seqlex haS hB hne).2 hs)
+        · exact olt_irrefl _ (hab ▸ (olt_ST_iff_seqlex hB haS (Ne.symm hne)).2 hs)
+      rw [haB]; exact hAccB
+
+/-- **★★ 像の整礎性 ⟹ BMS の整礎性**（`ConvDiagT3` も `ST_D3` も要らない）。 -/
+theorem wf_olt_ST_TS_of_img {conv3 : TrioSeq → TrioSeq}
+    (wf : WellFounded (RD3img conv3)) (H : ReindexT1D conv3) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) := by
+  refine ⟨fun A => ?_⟩
+  by_cases hA : ST_TS A
+  · exact acc_olt_of_accImg H (conv3 A) (wf.apply _) A hA rfl
+  · exact Acc.intro _ (fun a h => absurd h.2.1 hA)
+
+/-- **★★★★ 像の整礎性 ⟹ BMS 3 行 (z<2) の停止性**（課題 L41）。
+仮定は **`ReindexT1D` ただ 1 本**。`ST_D3` / `ConvDiagT3` / 残核すべて不要。 -/
+theorem TRIO_terminates_of_img_wf {conv3 : TrioSeq → TrioSeq}
+    (wf : WellFounded (RD3img conv3)) (H : ReindexT1D conv3) : WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_img wf H))
+
+/-- 同じものを「無限展開列は無い」の形で。 -/
+theorem no_infinite_expansion_of_img_wf {conv3 : TrioSeq → TrioSeq}
+    (wf : WellFounded (RD3img conv3)) (H : ReindexT1D conv3) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_img wf H))
+
+/-- **課題 L38 は L41 の系**: `WellFounded RD3 → WellFounded (RD3img conv3)`。
+逆は言えない（`conv3` は全射でないので `RD3` のほうが真に強い）。 -/
+theorem wf_img_of_wfD (wfD : WellFounded RD3) {conv3 : TrioSeq → TrioSeq}
+    (H : ReindexT1D conv3) (hd : ConvDiagT3 conv3) :
+    WellFounded (RD3img conv3) := by
+  have hsub : Subrelation (RD3img conv3) RD3 := by
+    intro x y h
+    obtain ⟨⟨M, hM, hx⟩, ⟨N, hN, hy⟩, hsq⟩ := h
+    refine ⟨?_, ?_, hsq⟩
+    · rw [hx]; exact ST_D3_conv3_D wfD H hd hM
+    · rw [hy]; exact ST_D3_conv3_D wfD H hd hN
+  exact hsub.wf wfD
+
 /-! ## 6. 主定理 -/
 
 /-- **像は DBMS の 3 行標準形**（`ReindexT1` と `ConvDiagT3` を仮定）。 -/
