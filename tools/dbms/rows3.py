@@ -652,6 +652,10 @@ V13 = {
 # 書き込み後の dmap) の形で貯める。既定 `None` ＝ 何もしない。
 _DMAP_TRACE = None
 
+# 課題 L46 の計器: `None` でないと `conv_resid` の呼び出し点で
+# (|st.dmap|, rest2[0][0], p[0], dmap) を貯める。既定 `None` ＝ 何もしない。
+_RESID_TRACE = None
+
 # ---------------------------------------------------------------- v14 の旗
 # `chu` = v10 の条項 `closes_hi_unit`。既定 True で v13 のまま。
 # False にすると (a,2,1)(a,2,0)(a,1,0) の直後が (1,1,1) でも段が上がる。
@@ -1514,6 +1518,9 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             # 「もとの深さ -> 像の深さ」の表で決める。
             rd = (d + 1 + e if (not rest2 or rest2[0][0] == p[0] + 1)
                   else dmap_at(st, rest2[0][0] - 1))
+            if _RESID_TRACE is not None and rest2:   # 課題 L46: 測定 (N')
+                _RESID_TRACE.append((len(st['dmap']), rest2[0][0], p[0],
+                                     tuple(st['dmap'])))
             # 残余は 1 本の木ではなく**森**。深さをそろえずに読む（conv_resid）。
             cR = conv_resid(rest2, rd, Lr, (v, s2), (e1, e2), st, hd(Bq), oR)
             cB = conv3(Bq, d, L, FA, (v, s2), (e1, e2), False, False, st, nx,
