@@ -86,9 +86,19 @@ def Wup(M, u, depth, memo, N, maxlen):
     key = (M, u, depth)
     if key in memo:
         return memo[key]
-    if len(M) <= 1 and (len(M) == 0 or lev_at(M, 0) == 0):
-        memo[key] = True
+    if len(M) == 0:
+        memo[key] = True                  # [] in W u（節 1）
         return True
+    if len(M) == 1:
+        # `oper` は `j1 = 0` のとき **M 自身**を返す（`lean/Trio.lean:98`）。
+        # よって 1 列の節 2 は `M in X` という自己参照で、最小不動点では
+        # 所属を与えない。残るのは節 1 と節 3 だけ:
+        #   節 1: lev M 0 = 0
+        #   節 3: domT M m は m = lev M 0 - 1 を要求（1 列に親は無い）ので m < u
+        # ⟹ `lev M[0] <= u` と同値。**健全で決定的**（tools/refute.py と同じ底）。
+        r = lev_at(M, 0) <= u
+        memo[key] = r
+        return r
     if depth <= 0 or len(M) > maxlen:
         return None
     memo[key] = None                      # 循環よけ
