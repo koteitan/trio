@@ -8,7 +8,8 @@ from rows3 import (split0, Lat, padL, is_branch, is_w_col, par0,
                    anch_before, p0deep_ok,
                    units_split, contrPre, leaves_mark,
                    leaves_mark_local, ANCHOR, NOTLAST, copy_src, par0_w,
-                   p0_shallow, closes_w, V12, V13, V14, V15)
+                   p0_shallow, closes_w, sibnb_ok, _parK,
+                   V12, V13, V14, V15, V16)
 PROV = []
 CTX = []
 
@@ -198,6 +199,11 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             base = deep
     else:
         base = base_d
+        # v16 sibnb（課題 H11）: 兄弟に渡す「深い側」は分岐列だけのもの
+        # ではない。門は `sibnb_ok`（行列から読める 6 条件の連言）。
+        if (V16['sibnb'] and v >= 1 and base_sd != base_d
+                and sib_ok(off, src, st) and sibnb_ok(st['Mo'], off)):
+            base = base_sd
 
     lad1 = first1 and s2 == pl2 + 1 and (base <= s2 or force1)
     e1 = base + 1 if lad1 else (s2 + 1 if (s2 > 0 and base <= s2) else base)

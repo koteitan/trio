@@ -21,7 +21,7 @@ src = src.replace("sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))
 src = src.replace("V12 = {", "FIRE = []\nSITES = [None]\n\n\nV12 = {", 1)
 src = src.replace("V12 = {",
                   "SB = {'sibnb': False, 'sibnb_anch': False, 'sibnb_v1': False,\n"
-                  "      'sibnb_nosrc': False, 'sibnb_cov': False,\n      'sibnb_cov2': False}\n"
+                  "      'sibnb_nosrc': False, 'sibnb_cov': False,\n      'sibnb_cov2': False,\n      'sibnb_desc': False}\n"
                   "for _k in os.environ.get('SBFLAGS', '').split(','):\n"
                   "    if _k.strip():\n"
                   "        assert _k.strip() in SB, _k\n"
@@ -68,6 +68,18 @@ def sibnb_cov2(Mo, off):
     return off - th > 4
 
 
+def sibnb_desc(Mo, off):
+    \"\"\"H11 の 3 番目のゲート: `split0` の切れ目が 2 本以上（引数ブロックが長い）。
+
+    集合被覆が 1 素性で出した（cov & cov2 を通った 2130 正例を全部覆い、
+    143 負例を 1 つも通さない）。`nA_mat(Mo, off) >= 2` と同じもの。
+    \"\"\"
+    j = off + 1
+    while j < len(Mo) and Mo[j][0] > Mo[off][0]:
+        j += 1
+    return j - off - 1 >= 2
+
+
 def sib_ok(off, src, st):''', 1)
 old = "    else:\n        base = base_d\n\n    lad1 = first1"
 new = ("    else:\n"
@@ -78,7 +90,8 @@ new = ("    else:\n"
        "                and (SB['sibnb_nosrc'] or sib_ok(off, src, st))\n"
        "                and (SITES[0] is None or off in SITES[0])\n"
        "                and (not SB['sibnb_cov'] or sibnb_cov(st['Mo'], off))\n"
-       "                and (not SB['sibnb_cov2'] or sibnb_cov2(st['Mo'], off))):\n"
+       "                and (not SB['sibnb_cov2'] or sibnb_cov2(st['Mo'], off))\n"
+       "                and (not SB['sibnb_desc'] or sibnb_desc(st['Mo'], off))):\n"
        "            base = base_sd\n"
        "            FIRE.append((off, tuple(p), base_d, base_sd, src))\n\n    lad1 = first1")
 assert src.count(old) == 1, src.count(old)

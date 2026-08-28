@@ -694,6 +694,15 @@ V15 = {
     'wide0_noprev': False,  # 位置から読んで深くしたときは st['prev'] を上げない
 }
 V15['cpylmin'] = int(os.environ.get('RS_CPYLMIN', V15['cpylmin']))
+
+
+# ---------------------------------------------------------------- v16 の旗
+# 課題 H11: `sibL` が兄弟に渡す「深い側」を**分岐列でない柱**にも効かせる。
+# ImgClosedT の破れの 45/80 は兄弟のアンカー (1,1,0) が 1 段浅いことだった。
+# `RS_NOSIBNB=1` を環境変数に置くと v15 の綴りに戻る。
+V16 = {
+    'sibnb': os.environ.get('RS_NOSIBNB', '') != '1',
+}
 if 'V15FLAGS' in os.environ:
     _on = set(x for x in os.environ['V15FLAGS'].split(',') if x)
     for _k in V15:
@@ -882,6 +891,63 @@ def sib_ok(off, src, st):
         if any(tuple(Mo[j]) == ANCHOR for j in range(0, off)):
             return False
     return True
+
+
+def _parK(m, x, k):
+    """行 k の親（左にある、行 k の値がより小さい直近の柱）。無ければ -1。"""
+    for q in range(x - 1, -1, -1):
+        if m[q][k] < m[x][k]:
+            return q
+    return -1
+
+
+def sibnb_ok(Mo, off):
+    """課題 H11: 兄弟から渡ってきた「深い側」を**分岐列でない柱**にも使うか。
+
+    `sibL`（v13）は `base_sd` を分岐列 (a,1,0) にしか渡していなかった。
+    ところが ImgClosedT の破れの現場は **78/80 が `first == False`（兄弟）**で、
+    **45/80 は分岐列ですらない兄弟のアンカー (1,1,0)**、**66/80 は深さが
+    ちょうど 1 だけ浅い**。渡す先を非分岐にも広げると破れの 42/105 が直る。
+
+    ただし素のままだと撃ちすぎる（lim=7 の一致が -24870）。下の 5 つの門は
+    集合被覆（`h1/h11feat.py` の 305 素性 ＋ `h1/h6cov.py`）が出したもので、
+    教師データは
+
+        正例 = ImgClosedT の破れを直す場所 42 ＋ lim=7 で新しく一致する場所 2130
+        負例 = シート 1354 行の像を変える場所 410 ＋ lim=7 の一致を壊す場所 5277
+
+    どれも `Mo` と `off` だけから読める（＝**写しに同変**）。門を 1 つでも
+    落とすと lim=7 の一致が壊れる（-372 / -1883 / -12677）。
+    """
+    p = tuple(Mo[off])
+    n = len(Mo)
+    # (1) 行 1 の親は近い（4 本以内。無いのも可）
+    a11 = _parK(Mo, off, 1)
+    if a11 >= 0 and off - a11 > 3:
+        return False
+    # (2) 行 0 の親は遠い（4 本より前）
+    a01 = _parK(Mo, off, 0)
+    if not (a01 >= 0 and off - a01 > 3):
+        return False
+    # (3) その親の 行 2 は自分の 1 つ下ではない
+    if Mo[a01][2] == p[2] - 1:
+        return False
+    # (4) 次の柱の 行 2 > 0
+    if not (off + 1 < n and Mo[off + 1][2] > 0):
+        return False
+    # (5) いまの「行 1 の項の頭」が 4 本より遠い
+    th = 0
+    for t in range(off - 1, -1, -1):
+        if term_top(Mo, t):
+            th = t
+            break
+    if off - th <= 4:
+        return False
+    # (6) `split0` の切れ目が 2 本以上（引数ブロックが長い）
+    j = off + 1
+    while j < n and Mo[j][0] > p[0]:
+        j += 1
+    return j - off - 1 >= 2
 
 
 def _snap(st):
@@ -1140,6 +1206,11 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
             base = deep
     else:
         base = base_d
+        # v16 sibnb（課題 H11）: 兄弟に渡す「深い側」は分岐列だけのもの
+        # ではない。門は `sibnb_ok`（行列から読める 6 条件の連言）。
+        if (V16['sibnb'] and v >= 1 and base_sd != base_d
+                and sib_ok(off, src, st) and sibnb_ok(st['Mo'], off)):
+            base = base_sd
 
     lad1 = first1 and s2 == pl2 + 1 and (base <= s2 or force1)
     e1 = base + 1 if lad1 else (s2 + 1 if (s2 > 0 and base <= s2) else base)

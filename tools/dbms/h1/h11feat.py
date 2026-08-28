@@ -11,6 +11,11 @@ from rows3 import (par0, ANCHOR, is_branch, is_w_col, copy_head, term_top,
 from h6feat import atoms, par, chain, descend_end, next_term
 
 POS, NEG = pickle.load(open('/tmp/h1work/h11sites.pkl', 'rb'))
+if _os.environ.get('H11ONLY'):
+    t = _os.environ['H11ONLY']
+    POS = list(pickle.load(open('/tmp/h1work/h11pos_%s.pkl' % t, 'rb')))
+    NEG = list(pickle.load(open('/tmp/h1work/h11neg_%s.pkl' % t, 'rb')))
+    print('（%s を通った場所だけ）正例 %d / 負例 %d' % (t, len(POS), len(NEG)))
 import os as _os
 if _os.environ.get('H11ALL'):
     for t in _os.environ['H11ALL'].split(','):
@@ -96,7 +101,7 @@ for lab, S in ((1, POS), (0, NEG)):
         META.append((Mo, off))
 n = len(Y)
 print('site %d 個  正例 %d / 負例 %d  素性 %d' % (n, sum(Y), n - sum(Y), len(names)))
-pickle.dump((names, X, Y, META), open('/tmp/h1work/h11f%s.pkl' % _os.environ.get('H11ALL','').replace(',','_'), 'wb'))
+pickle.dump((names, X, Y, META), open('/tmp/h1work/h11f%s%s.pkl' % (_os.environ.get('H11ALL','').replace(',','_'), _os.environ.get('H11ONLY','')), 'wb'))
 res = []
 for i, nm in enumerate(names):
     h = sum(1 for x, y in zip(X, Y) if x[i] == y)

@@ -50,7 +50,13 @@ src = src.replace(old, new, 1)
 
 # ---- trace on the branch decision --------------------------------------
 old = """            base = base_s if shallow else deep
-            st['prev'] = 0 if shallow else 1
+            # P1 `wide0_noprev`: 位置から読んで深くしたときは、深さは像に出るが
+            # 1 ビットの状態は 0 のまま置く（`prev == 1` は「ユニットがまだ
+            # 閉じていないので深く綴った」の意味で、`after_w` / `wchain` は
+            # それを見て発火する）。
+            if not (V15['wide0_noprev'] and not shallow
+                    and st['prev'] == 0 and _w0):
+                st['prev'] = 0 if shallow else 1
         else:
             st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い
             base = deep"""
@@ -69,7 +75,9 @@ new = """            base = base_s if shallow else deep
                                  base_s=base_s, base_d=base_d, base_sd=base_sd,
                                  deep=deep, base=base, rule=_w, hi=hi,
                                  closes=closes_unit(nxt), onx=onx, pv=pv))
-            st['prev'] = 0 if shallow else 1
+            if not (V15['wide0_noprev'] and not shallow
+                    and st['prev'] == 0 and _w0):
+                st['prev'] = 0 if shallow else 1
         else:
             st['rec'][off] = 'tie'      # 浅い／深いの選択肢が無い
             base = deep
@@ -131,7 +139,7 @@ src = src.replace(old3, new3, 1)
 old5 = """            elif V13['wchain'] and st['prev'] == 1 and closes_unit(onx):
                 j = wchain_head(Mo, off)
                 if j is not None:
-                    shallow = not (hi and not (par0(Mo, j) == 0))"""
+                    shallow = not (hi and not (_p0(Mo, j) == 0))"""
 new5 = """            elif (V13['wchain'] and (VX['wch_free'] or (closes_unit(onx)
                     and (st['prev'] == 1 or VX['wch_anyprev'])))):
                 j = wchain_head(Mo, off)
@@ -141,7 +149,7 @@ new5 = """            elif (V13['wchain'] and (VX['wch_free'] or (closes_unit(on
                 if j is not None and VX['wch_repeat'] and is_repeat(Mo, off):
                     j = None
                 if j is not None:
-                    shallow = not (hi and not (par0(Mo, j) == 0))"""
+                    shallow = not (hi and not (_p0(Mo, j) == 0))"""
 assert old5 in src
 src = src.replace(old5, new5, 1)
 
