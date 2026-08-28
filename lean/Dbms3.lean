@@ -1975,6 +1975,48 @@ theorem ole_of_sle3' {conv3 : TrioSeq → TrioSeq} {M N : TrioSeq}
   · rw [hinj heq]; exact ole_refl _
   · exact Or.inl (hrefl hlt)
 
+/-- **`ReindexT1` が実際に要求する挟み撃ちの上だけ**（課題 L31）。
+
+`ReindexT1_of_cofinal'` の中で `SandwichUT3` が使われるのは **1 か所**で、
+しかも相手は `(conv3 A)⟦m⟧ = conv3 B` を満たす `B` に限られる。
+`SandwichUT3` は `ST_TS v<=4 len<=8` の判定 59157 回で **破れ 12**（課題 R10）だが、
+**この弱い版が真なら Lean 側は通る**。 -/
+def SandwichUReindexT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
+  ∀ {A B : TrioSeq}, ST_TS A → 1 < A.length → ST_TS B → ∀ {n m : ℕ},
+    1 ≤ n → n + 1 ≤ m → (conv3 A)⟦m⟧ = conv3 B →
+      sle3 (conv3 (A⟦n⟧)) (conv3 B)
+
+/-- `SandwichUT3` は `SandwichUReindexT3` を含む（弱化であることの確認）。 -/
+theorem sandwichUReindexT3_of_sandwichUT3 {conv3 : TrioSeq → TrioSeq}
+    (hU : SandwichUT3 conv3) : SandwichUReindexT3 conv3 := by
+  intro A B hA hlen hB n m hn hm heq
+  have h1 := hU hA hlen n hn
+  have h2 : sle3 ((conv3 A)⟦n + 1⟧) ((conv3 A)⟦m⟧) := oper_mono_idx hm
+  rw [← heq]
+  rcases h1 with e1 | s1
+  · rcases h2 with e2 | s2
+    · exact Or.inl (e1.trans e2)
+    · exact Or.inr (e1 ▸ s2)
+  · rcases h2 with e2 | s2
+    · exact Or.inr (e2 ▸ s1)
+    · exact Or.inr (seqlex_trans s1 s2)
+
+/-- **★★ `ReindexT1` は弱い 3 本（`Inj3` / `OrderReindexT3` / `SandwichUReindexT3`）
+で出る。** `OrderT3` も `SandwichUT3` も使わない。 -/
+theorem ReindexT1_of_cofinal'' {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3 conv3)
+    (hU : SandwichUReindexT3 conv3) (hb : ImgBlockT3 conv3)
+    (hlen2 : ImgLenT3 conv3) : ReindexT1 conv3 := by
+  intro A hA hlen n hn
+  obtain ⟨m, hm0, B, hB, heq⟩ := hI hA hlen (n + 1)
+  obtain ⟨hr1, hr2⟩ := hO hA hB hn hm0 heq
+  refine ⟨m, B, by omega, hB, ?_, ?_, heq⟩
+  · exact ole_of_sle3' (fun h => hj (ST_TS.oper hA hn) hB h) hr1
+      (hU hA hlen hB hn hm0 heq)
+  · refine hr2 ?_
+    rw [← heq]
+    exact seqlex_oper (hb hA) (hlen2 hA hlen) (by omega)
+
 /-- **★ `ReindexT1` は `OrderT3` の代わりに `OrderReindexT3` で出る。** -/
 theorem ReindexT1_of_cofinal' {conv3 : TrioSeq → TrioSeq}
     (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3 conv3)
@@ -2113,6 +2155,23 @@ theorem ST_D3_conv3_of_parts'' (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
     (hU : SandwichUT3 conv3) (hb : ImgBlockT3 conv3) (hlen2 : ImgLenT3 conv3)
     (hd : ConvDiagT3 conv3) {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
   ST_D3_conv3_holds h2 he (ReindexT1_of_cofinal' hI hj hO hU hb hlen2) hd hM
+
+/-- **★★★ いちばん弱い仮定版**（課題 L31）。`OrderT3` も `SandwichUT3` も使わない。
+
+    Inj3                 単射性（順序と無関係）
+    OrderReindexT3       (←) だけ・相手は像の展開の逆像に限る
+    SandwichUReindexT3   挟み撃ちの上・相手は同上
+
+3 本とも `OrderT3` / `SandwichUT3` から出る（弱化の確認は上の 3 定理）。
+どちらの強い版も実測では偽（`OrderT3` は `len ≤ 11` で 24 件、
+`SandwichUT3` は `v<=4 len<=8` で 12 件）。 -/
+theorem ST_D3_conv3_of_parts''' (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
+    {conv3 : TrioSeq → TrioSeq}
+    (hI : ImgCofinalT3 conv3) (hj : Inj3 conv3) (hO : OrderReindexT3 conv3)
+    (hU : SandwichUReindexT3 conv3) (hb : ImgBlockT3 conv3)
+    (hlen2 : ImgLenT3 conv3) (hd : ConvDiagT3 conv3)
+    {M : TrioSeq} (hM : ST_TS M) : ST_D3 (conv3 M) :=
+  ST_D3_conv3_holds h2 he (ReindexT1_of_cofinal'' hI hj hO hU hb hlen2) hd hM
 
 /-! ### 11.4 `ImgLenT3` の証明（課題 L2 (a)） -/
 

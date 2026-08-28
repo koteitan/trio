@@ -3743,3 +3743,62 @@ EOF
 まず「90 件が `OrderReindexT3` の相手の形になりうるか」を測るべきである
 （24 件と同じ切り方）。**そこが 0 なら (D0') を `OrderReindexT3` の範囲に
 制限した形で使える。**
+
+
+---
+
+# 課題 L31: `SandwichUT3` も弱められた。仮定 2 本が「偽」から降りた（2026-08-29）
+
+## 0. 結論
+
+`OrderT3` でやったのと同じことを `SandwichUT3` でもやった
+（`Dbms3.lean`, exit 0 / sorry 0）:
+
+    SandwichUReindexT3 conv3 :=
+      ∀ {A B}, ST_TS A → 1 < |A| → ST_TS B → ∀ {n m}, 1 ≤ n → n + 1 ≤ m →
+        (conv3 A)⟦m⟧ = conv3 B → sle3 (conv3 (A⟦n⟧)) (conv3 B)
+
+    sandwichUReindexT3_of_sandwichUT3 : SandwichUT3 → SandwichUReindexT3  （弱化の確認）
+    ReindexT1_of_cofinal''  : ImgCofinalT3 ＋ Inj3 ＋ OrderReindexT3
+                              ＋ **SandwichUReindexT3** ＋ ImgBlockT3 ＋ ImgLenT3
+                              → ReindexT1
+    ST_D3_conv3_of_parts''' : 上を使う版（**`OrderT3` も `SandwichUT3` も使わない**）
+
+理由は `OrderT3` のときとまったく同じ: `ReindexT1_of_cofinal'` の中で
+`SandwichUT3` が使われるのは **1 か所**（`h1` を `oper_mono_idx` と継いで `h3` を作る）
+だけで、しかも相手は `(conv3 A)⟦m⟧ = conv3 B` を満たす `B` に限られる。
+**その 1 か所の結論が `SandwichUReindexT3` そのもの**なので、置き換えは 3 行で済んだ。
+
+## 1. 仮定の表（更新）
+
+| 命題 | 強い版の実測 | Lean が実際に要求する弱い版 |
+|---|---|---|
+| `ConvDiagT3` | — | **証明ずみ** |
+| `ImgLenT3` | — | **証明ずみ** |
+| `ImgBlockT3` | — | 仮定 2 本、残り 160〜230 行 |
+| `OrderT3` | **偽**（`len ≤ 11` で 24 件） | **`Inj3` ＋ `OrderReindexT3`** |
+| `SandwichUT3` | **偽**（`v≤4 len≤8` で 12 件） | **`SandwichUReindexT3`** |
+| `ImgCofinalT3` | 破れ 20（lim=6） | — |
+
+⟹ **「偽」と分かっている 2 本が、どちらも仮定から消えた。**
+残るのは「弱い版が真か」で、それは**相手が `(conv3 A)⟦m⟧ = conv3 B` に限られる**
+という 1 点にかかっている。
+
+## 2. 弱められる理由は 2 本とも同じ（一般則として残す）
+
+> **`ReindexT1` は `ImgCofinalT3` が返した `B` としか話さない。**
+> だから `B` について全域で成り立つ性質を仮定する必要はなく、
+> **`(conv3 A)⟦m⟧ = conv3 B` を満たす `B` についてだけ**でよい。
+
+`OrderT3` も `SandwichUT3` も、この 1 点で弱まった。**次に「実測で偽」の仮定が
+出てきたら、まず `ReindexT1_of_cofinal` の証明の中で何回・どの相手に使われているかを
+数えること。** `OrderT3` は 3 か所（うち 1 つは単射性）、`SandwichUT3` は 1 か所だった。
+
+⚠ **`ImgCofinalT3` は弱められない**（`B` を作るのがこれ自身なので）。
+
+## 3. 保留（チームリードより）
+
+「24 件は `OrderReindexT3` を壊さない」の測定は**バグで保留**
+（`b2d3([list(c) for c in M])` だと縮約が発火しない。シート 1358 行のうち
+334 行で像が変わる）。**Lean 側の構造（`(→)` を 1 か所も使わない、
+`SandwichUT3` は 1 か所）は読解の結果なのでバグと無関係**である。
