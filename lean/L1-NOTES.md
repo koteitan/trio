@@ -4375,3 +4375,83 @@ heartbeat 超過（`whnf` / `isDefEq` timeout）で落ちた**。中身は 1 文
                          p.1 < |rA.2.dmap|                                    ✓
 
 残るのは **`rest2`（`convResid` の入力）の頭**だけ。ここは R1 の測定が要る。
+
+
+---
+
+# 課題 L41: `Dm10`（節 10）を**仮定 1 本**まで落とした（2026-08-29）
+
+## 1. 結果
+
+    dmKeep_holds      仮定ゼロ（課題 L40）
+    dm10_step         conv3 の 1 歩。縮約の枝も縮約でない枝も。仮定は hres だけ
+    dm10_resid        convResid の帰納。仮定は「頭が dmap に届く」の 1 本だけ
+    dm10_aux/holds    ★ **Dm10 は `ResidHeadT` だけから出る**
+
+`leanman check` **exit 0 / sorry 0**。
+
+```lean
+def ResidHeadT : Prop :=
+  ∀ (rest : TrioSeq) (st' : St) (m d : ℕ), rest ≠ [] → (∀ c ∈ rest, m + 1 ≤ c.1) →
+    m ≤ st'.dmap.length → Dm10 (d + 1) m st' → (rest.headI).1 ≤ st'.dmap.length
+```
+
+これは **`DmapInT` の第 1 項**（`k ≤ |dmap|`）に対応し、**R1-NOTES §4.3 に紙の
+証明がある**（`|dmap| = 最後に処理した柱.1 + 1`）。
+
+## 2. ★ 定式化で効いた 3 つ（課題 L25 で詰まっていた原因）
+
+### (a) 入口の仮定を「空のときだけ」にする
+
+    結論   Dm10 d m res.2
+    仮定   ∀ c ∈ M, m ≤ c.1 / M ≠ [] → M.headI.1 = m / m ≤ |st.dmap|
+           **M = [] → Dm10 d m st**   ← ここが要
+
+`M = []` なら `res.2 = st` なので入口の仮定がそのまま結論。
+⟹ **`A = []` / `B = []` / `U = []` / `Bq = []` の場合分けが 1 つも要らない。**
+
+実際 `dm10_step` の証明は入口の仮定を**一度も使わない**。だから空のときだけに
+弱められる。そしてこれが `convResid` の中で効く: `convResid` が呼ぶ `conv3` の
+入口 `Dm10 rd c.1 st` は**出せない**（`rd` の上界が要るので）が、
+`head ≠ []` なので**要らない**。
+
+### (b) `d ≤ dd2` は `d ≤ |ST|` を仮定しなくても出る（`depths_le_lo`）
+
+`fit` は `d` から上へ探し、既定値 `max d |ST|` も `d` 以上。
+⟹ **`Dm10` の帰納は `BlkOK` と完全に切り離せた**（`blk_step` の `hres` が
+`BlkOK` 経由で `d ≤ |st'.ST|` を要求していた鎖を断てる）。
+
+### (c) `Dm10` の付け替えは `DmKeep`（課題 L40）で全部出る
+
+    st1              |st1.dmap| = m + 1
+    A（頭 m+1、深さ dd2+1）  入口は**空虚**（範囲が m+1 まで）
+                     出口は Dm10_of_child'（非縮約）/ Dm10_of_child（縮約、d+1 ≤ dd2）
+    B / U / Bq       DmKeep で長さが降り、Dm10 はそのまま渡る
+
+## 3. `convResid` の中身（`dm10_resid`）
+
+    j < c.1   … `c.1 ≤ |st.dmap|` なので DmKeep で値が保存され、入口の Dm10 が効く
+    j ≥ c.1   … 子の `Dm10 rd c.1` を Dm10_shift で (d, m) に付け替える。
+                要るのは **d + c.1 ≤ rd + m**（`resid_rd_lb`）
+
+`resid_rd_lb` は `Dm10 (d+1) m st'` を添字 `h-1` で読むだけ:
+
+    h = m+1 の枝 … rd = d+1+e ≥ d+1        ⟹ d + h = d+m+1 ≤ rd+m   ✓
+    それ以外     … rd = dmap[h-1] ≥ (d+1)+(h-1-m) ⟹ d + h ≤ rd + m  ✓
+
+**再帰の中では頭の条件が自分で伝わる**（`deepGe_head_lt` で `tail.head.1 < c.1`、
+`DmKeep` で長さが降りる）。⟹ **`ResidHeadT` はいちばん外側でしか要らない。**
+
+## 4. 次（課題 L25 の残り）
+
+`ImgBlockT3` の 2 本（`DmapInT` / `ResidSideT`）は、課題 L35 §2 のとおり
+**`Dm10 (d+1) p.1 rU.2` の 1 本に帰着**する。これが `dm10_holds` で出るように
+なったので、あとは **`blk_step` の `hside` / `hdmin` を実際の `stU` で
+インスタンス化する配線**だけ（`blk_step` の署名変更）。
+
+| 命題 | 状態 |
+|---|---|
+| `DmKeep` | **証明ずみ（仮定ゼロ）** |
+| `Dm10` | **`ResidHeadT` 1 本**（R1-NOTES §4.3 に紙の証明） |
+| `DmapInT` の下界・`ResidSideT` | `Dm10` から出る。**配線が残り** |
+| `DmapInT` の上界（節 11） | 未着手（`Dm11` を同じ型で回せば出るはず） |
