@@ -648,6 +648,10 @@ V13 = {
 }
 
 
+# 課題 R13 の計器: `None` でないと `dmap` の書き込みを (off, もとの行 0, 像の行 0,
+# 書き込み後の dmap) の形で貯める。既定 `None` ＝ 何もしない。
+_DMAP_TRACE = None
+
 # ---------------------------------------------------------------- v14 の旗
 # `chu` = v10 の条項 `closes_hi_unit`。既定 True で v13 のまま。
 # False にすると (a,2,1)(a,2,0)(a,1,0) の直後が (1,1,1) でも段が上がる。
@@ -1405,6 +1409,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
     cols.append((dd, e1, e2))
     ST = ST[:dd] + ((e1, e2),)
     st['ST'] = ST
+    if _DMAP_TRACE is not None:               # 課題 R13: (D0') の計器
+        _DMAP_TRACE.append((off, p[0], dd, tuple(st['dmap'])))
     st['dmap'] = st['dmap'][:p[0]] + [dd]      # もとの深さ -> 像の深さ
 
     fc = (not lad1) and first1 and s2 == pl2
