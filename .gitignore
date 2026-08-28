@@ -10,3 +10,7 @@ tools/dbms/flip_neg.json
 tools/dbms/r1_*.pkl
 tools/dbms/r1_*.log
 tools/dbms/r1ext*.log
+tools/dbms/r2_*.pkl
+tools/dbms/r2_*.log
+tools/dbms/r2_*.bin
+tools/dbms/r2run9.log
