@@ -2276,3 +2276,108 @@ C2（`SandwichU` の実測）は `<=7` 列 386405 対で破れ 8 しかないの
 壊れている 12 対と同じ行列であろう。**そこが重なるなら、(S2) の破れは
 課題 H1/H2 の「写しの境目で状態が漏れる」病と同じもの**であり、
 `SandwichUT3` を Lean で追う前に Python 側を直すのが正しい順である。
+
+
+---
+
+# 課題 L13: `BlkInv` の帰納を全部通した。残る仮定は 1 本（2026-08-28）
+
+## 0. 結論を先に
+
+* **`blk_step`（帰納の 1 歩）を両方の枝とも証明した。** `leanman check` exit 0 /
+  `sorry` 0 / `axiom` 0。`blkInv_aux` / `blkInv_of` / `ImgBlockT3_of_resid` まで配線。
+* **`ImgBlockT3 Conv3.b2d3` が依存するのは名前つき 2 本だけ**になった:
+
+      ResidBlkT … `convResid` が開始深さ `rd` の block（**課題 H へ**）
+      DmapInT  … `dmapAt` の枝の `k + 1 < |dmap|` の場合（**338 発火で 0 回**）
+
+* **課題 L12 の `(H1)` は全部閉じた。** `d + 1 + e` の枝も、`dmapAt` の枝の
+  6 例（4 ＋ 2）も証明で閉じた。残るのは実測で一度も踏まれない場合だけ。
+
+## 1. 縮約の枝の壁は「`split` が巨大項で燃える」だった
+
+課題 L12 で詰まったのは、`he : (if lad0 then … else none) = some w` から
+`lad0 = true` を取り出すところだった。`split at he` も `split_ifs at he` も
+**識別子の `simp` が `maxSteps` を超えて燃え尽きる**（`conv3` の 1 列ぶんの
+`if` の入れ子は数百行の項になる）。
+
+**回避**: 汎用の補題を `he` に**当てて単一化させる**。項に `simp` を当てない。
+
+    cond_of_ite_some : (if b = true then X else none) = some w → b = true
+    ite_some_pair    : (if b = true then X else some u) = some w → X = some w ∨ u = w
+    ite_some_none    : (if b = true then some u else none) = some w → u = w
+
+これで `lad0 = true` と `contrFind … = some (e, kU, kp, na)` が取り出せ、
+`contrFind_e_le` から `e ≤ 1` が出る。**これが課題 L12 で外していた 1 手。**
+
+## 2. 5 重連結は「局所値を全部変数にした補題」に括り出す
+
+`cols ++ rA.1 ++ rU.1 ++ rR.1 ++ rB.1` を `conv3` の本体の中で組み立てようと
+すると、側条件の `have` が metavariable を決められない（課題 L2 で前任者が
+踏んだのと同じ穴）。**局所値を全部変数にした補題** `blk_contr` に括り出すと、
+呼び出し側は巨大項に触らずに済む:
+
+    blk_contr (hddd : d + 1 ≤ dd2) (hst1 : dd2 + 1 ≤ |st1.ST|) (hst1ne : st1.dmap ≠ [])
+      (hcols) (hA) (hU) (hR) (hrd) (hB) : BlkOK d st (cols ++ A1 ++ U1 ++ R1 ++ B1, …)
+
+`hU` / `hR` / `hB` は**関数**として受ける（前提を `blk_contr` の中で導出する）。
+これで側条件が 1 回ずつしか現れない。`d + 2 ≤ |stU.ST|` は
+`BlkOK_ST_ge`（`BlkOK` の節 6 から出る鎖長の下界）で内部導出する。
+
+⚠ **引数の順序が効く**: `rd` は結論に現れないので、`hR`（`rd` を含む
+`convResid` の項が結論に現れる側）を `hrd` より**先に**置かないと `rd` が
+metavariable のままになる。
+
+## 3. `dmapAt` の枝は 6 例とも閉じた
+
+`BlkOK` に足した節 8（`dmap.last + 1 = |ST|`、課題 L12 で唯一生き残った
+`dmap` 不変量）から、`dmapAt dm k` は
+
+| `k` | 値 | 閉じるか |
+|---|---|---|
+| `k = |dm|`（範囲外がちょうど 1 個外） | `dm.last + 1 = n` | **○** |
+| `k = |dm| - 1`（範囲内の最後） | `dm.last = n - 1` | **○** |
+| `k + 1 < |dm|` | 不明 | ✗（仮定 `DmapInT`） |
+
+実測（`<=6` 列全数 ＋ 7 列の縮約発火全数 = 338 発火）:
+
+    dmapAt の枝        0 / 6
+      k = |dmap|        0 / 4   ← 閉じた
+      k = |dmap| - 1    0 / 2   ← 閉じた
+      **k + 1 < |dmap|  0 / 0** ← 一度も踏まれない
+
+`k = |dmap| - 1` の 2 例（課題 L12 で「未解決」と報告したもの）:
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(3,0,0)
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(3,1,0)
+    どちらも d = 1, hh = (rest2.head).1 = 3, k = hh - 1 = 2,
+             |rU.2.dmap| = 3, dmap[2] = 4, |rU.2.ST| = 5
+    ⟹ k = |dmap| - 1 なので dmap[k] = dmap.last = |ST| - 1。閉じる。
+
+## 4. `ImgBlockT3` があと何を待っているか
+
+**`ResidBlkT` 1 本だけ**（`DmapInT` は実測で空虚）。
+
+    ResidBlkT := ∀ rest rd Lr ps pw st nx off, rd ≤ |st.ST| →
+                   BlkOK rd st (convResid rest rd Lr ps pw st nx off)
+
+一般には**偽**（森の枝で開始深さが必ず下がる）。真になるのは残余が
+**単一の木**のとき、すなわち `convResid` の再帰の枝に入らないとき。
+実測では 338 発火で森の枝は **0 回**。⟹ **「残余は常に単一の木」が言えれば
+`ImgBlockT3` は無条件になる。** 変換器側（課題 H）の性質である。
+
+## 5. 見積もりの書き方（課題 L11 の反省）
+
+課題 L11 の「250〜350 行。測ってある。書くだけ」が外れたのは
+**測定の範囲が呼び出し点に限られていた**からだった。以後、見積もりには
+
+* **どの範囲で測ったか**（呼び出し点だけ / 全呼び出し / 全入力）
+* **測っていない場合分けはどれか**
+
+を必ず添える。今回の測定範囲は:
+
+| 測ったもの | 範囲 |
+|---|---|
+| `BlkOK` の節 6・節 8、`d ≤ |st.ST|` | **全 `conv3` 呼び出し**（`<=6` 列 48997 ＋ 7 列 1134） |
+| 縮約の枝の債務 10 本、`dmapAt` の場合分け、`convResid` の森の枝 | **全縮約発火**（`<=6` 列 44 ＋ 7 列 294 = 338 = 既知の全発火） |
+| 未測定 | **8 列以上**。`ResidBlkT` の森の枝が 8 列で踏まれる可能性は否定できない |

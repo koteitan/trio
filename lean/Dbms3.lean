@@ -2476,16 +2476,35 @@ theorem depths_le_lad0 {ST ST2 : List (ℕ × ℕ)} {d h1 e1 dd0 dd1 dd2 : ℕ}
     · exact fit_getD_ge _ _
   omega
 
-/-- `dmapAt` の両側の評価。範囲外は「ちょうど 1 個だけ外」のときに `|ST|` に
-ぴったり届く（`dmap.last + 1 = |ST|` から）。範囲内は仮定で受ける。 -/
+/-- `getD` の最後の位置は `getLastD`。 -/
+theorem getD_last {dm : List ℕ} : dm.getD (dm.length - 1) 0 = dm.getLastD 0 := by
+  rw [List.getLastD_eq_getLast?, List.getLast?_eq_getElem?,
+    List.getD_eq_getElem?_getD]
+
+/-- **`dmapAt` の両側の評価。**
+
+`dmap.last + 1 = |ST|`（`BlkOK` の節 8）から、`k` が
+
+* `k = |dm|`（範囲外がちょうど 1 個だけ外） … `dmapAt = dm.last + 1 = n`
+* `k = |dm| - 1`（範囲内の**最後**）      … `dmapAt = dm.last = n - 1`
+
+のどちらでも閉じる。実測（`lean/l11_blkmeas.py`）ではこの 2 つしか起きない
+（`<=6` 列 0 回、7 列の縮約発火 294 個で 6 回 = 前者 4 ＋ 後者 2）。
+残るのは `k + 1 < |dm|` の場合だけで、**実測では 0 回**。 -/
 theorem dmapAt_bounds {dm : List ℕ} {k n d : ℕ} (hne : dm ≠ [])
-    (hlast : dm.getLastD 0 + 1 = n) (hd : d ≤ n) (hk : k ≤ dm.length)
-    (hin : k < dm.length → d ≤ dm.getD k 0 ∧ dm.getD k 0 ≤ n) :
+    (hlast : dm.getLastD 0 + 1 = n) (hd : d + 1 ≤ n) (hk : k ≤ dm.length)
+    (hin : k + 1 < dm.length → d ≤ dm.getD k 0 ∧ dm.getD k 0 ≤ n) :
     d ≤ dmapAt dm k ∧ dmapAt dm k ≤ n := by
   unfold dmapAt
   rw [if_neg hne]
   by_cases h : k < dm.length
-  · rw [if_pos h]; exact hin h
+  · rw [if_pos h]
+    by_cases h2 : k + 1 < dm.length
+    · exact hin h2
+    · have hkk : k = dm.length - 1 := by omega
+      subst hkk
+      rw [getD_last]
+      omega
   · rw [if_neg h]
     have hkk : k = dm.length := by omega
     subst hkk
@@ -2551,7 +2570,7 @@ theorem ite_some_none {α : Type} {b : Bool} {u w : α}
 theorem rd_bounds {d e k n : ℕ} {dm : List ℕ} {c : Prop} [Decidable c]
     (he : e ≤ 1) (hn2 : d + 2 ≤ n) (hne : dm ≠ []) (hlast : dm.getLastD 0 + 1 = n)
     (hk : ¬ c → k ≤ dm.length)
-    (hin : ¬ c → k < dm.length → d ≤ dm.getD k 0 ∧ dm.getD k 0 ≤ n) :
+    (hin : ¬ c → k + 1 < dm.length → d ≤ dm.getD k 0 ∧ dm.getD k 0 ≤ n) :
     d ≤ (if c then d + 1 + e else dmapAt dm k)
       ∧ (if c then d + 1 + e else dmapAt dm k) ≤ n := by
   by_cases h : c
@@ -2609,7 +2628,7 @@ theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Boo
     (hdmin : ∀ (stU : St) (rest2 : TrioSeq),
         ¬(rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1) →
         ((rest2.headD (0, 0, 0)).1 - 1 ≤ stU.dmap.length ∧
-          ((rest2.headD (0, 0, 0)).1 - 1 < stU.dmap.length →
+          ((rest2.headD (0, 0, 0)).1 - 1 + 1 < stU.dmap.length →
             d ≤ stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ∧
               stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ≤ stU.ST.length))) :
     BlkOK d st (conv3 (p :: r) d L F ps pw first force st nx off) := by
@@ -2744,13 +2763,25 @@ def ResidBlkT : Prop :=
 `dmap` は狭義単調でも「全要素 < |ST|」でもない（どちらも実測で反例がある）ので
 道具が無い。
 
-実測: `<=6` 列では `dmapAt` の枝そのものが **0 回**、7 列の縮約発火 294 個で
-**6 回**。うち 4 回は `k = |dmap|`（上で閉じる）、**残り 2 回が `k < |dmap|`**。 -/
+実測（`lean/l11_blkmeas.py`、`<=6` 列全数 8387 個 ＋ 7 列の縮約発火 294 個）:
+
+    縮約の発火                       44 / 294
+    `dmapAt` の枝                     0 /   6
+      うち `k = |dmap|`（範囲外 1 個外） 0 /   4   ← `dmapAt_bounds` で閉じた
+      うち `k = |dmap| - 1`（範囲内最後） 0 /   2   ← `dmapAt_bounds` で閉じた
+      **うち `k + 1 < |dmap|`（この仮定） 0 /   0**
+
+⟹ **この仮定は 338 発火で一度も踏まれない。** 2 例の中身は
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(3,0,0)
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(3,1,0)
+    どちらも d = 1, hh = 3, k = 2, |dmap| = 3, dmap[2] = 4, |ST| = 5
+    ⟹ k = |dmap| - 1 なので `dmap.last + 1 = |ST|` から閉じる -/
 def DmapInT : Prop :=
   ∀ (d : ℕ) (p : Col) (stU : St) (rest2 : TrioSeq),
     ¬(rest2 = [] ∨ (rest2.headD (0, 0, 0)).1 = p.1 + 1) →
     ((rest2.headD (0, 0, 0)).1 - 1 ≤ stU.dmap.length ∧
-      ((rest2.headD (0, 0, 0)).1 - 1 < stU.dmap.length →
+      ((rest2.headD (0, 0, 0)).1 - 1 + 1 < stU.dmap.length →
         d ≤ stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ∧
           stU.dmap.getD ((rest2.headD (0, 0, 0)).1 - 1) 0 ≤ stU.ST.length))
 
