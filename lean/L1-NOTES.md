@@ -4300,7 +4300,9 @@ BMS とは別の道具が使える見込みがある。**`PROOF-STATUS §5` の�
              `|st1.dmap| = min p.1 |st.dmap| + 1`
              ⟹ 要るのは **`p.1 ≤ |st.dmap| + 1`**
 
-### R1 に測ってほしいこと（1 本）
+### ⚠ この測定依頼は**取り下げ**（下の §5 を見よ）
+
+### （取り下げ）R1 に測ってほしかったこと（1 本）
 
     (L)  `conv3` の全呼び出しで  **p.1 ≤ |st.dmap| + 1**
          （＝ ブロックの頭の深さは、入口の `dmap` の長さより高々 1 だけ大きい）
@@ -4319,3 +4321,57 @@ R1-NOTES §4.3 の「`|dmap| = 最後に処理した柱.1 + 1`」が材料であ
 | それで `ResidSideT` と `DmapInT` の下界 | 課題 L35 §2 のとおり |
 | `Dm12` の鎖 | **(L) 待ち** |
 | `DmapInT` の上界（節 11）と `k ≤ |dmap|` | 未着手 |
+
+## 5. ★ 取り下げの理由: `Dm12` を**強い形 `DmKeep`** にすると長さが要らない（同日）
+
+`Dm12` が `k < res.2.dmap.length` を**仮定**に置いていたのは課題 R1 の反例のため
+だった。ところが**その仮定こそが `Dm12_app` に `m ≤ |stm.dmap|` を要求させていた**。
+`k < res.2.dmap.length` を**結論**に移すと、両方いっぺんに片づく:
+
+    def DmKeep (m : ℕ) (st st' : St) : Prop :=
+      ∀ k, k < m → k < st.dmap.length →
+        k < st'.dmap.length ∧ st'.dmap.getD k 0 = st.dmap.getD k 0
+
+* R1 の反例（`k=4`, `|st.dmap|=4`, `|res.dmap|=5`）は**仮定 `k < |st.dmap|` を
+  満たさない**ので反例にならない。
+* `DmKeep_trans` は**長さの仮定をまったく要らない**。
+* `Dm12_of_DmKeep` で `Dm10_of_child'` はそのまま使える。
+
+### 証明が短い理由（**この 2 つが効いた**）
+
+1. **`conv3` 全体で `dmap` を書く場所は 1 か所しかない**（`st1.dmap =
+   st.dmap.take p.1 ++ [dd2]`）。`convResid` は `dmap` を直に触らない。
+2. ブロックの下界 `m` を「先頭の行」ではなく**パラメータ**にすると、
+   再帰呼び出しがすべて同じ `m` で回るので、**`steps1` も `BlkLo` も要らない**。
+
+⟹ `dmKeep_holds`（**仮定ゼロ**、100 行）。`leanman check` **exit 0 / sorry 0**。
+
+## 6. ★ 落とし穴: 新しい宣言は `blk_step` の**後ろ**に置くこと
+
+`DmKeep` の一式を `blk_step` の**前**に置いたら、**`blk_step` が
+heartbeat 超過（`whnf` / `isDefEq` timeout）で落ちた**。中身は 1 文字も
+変えていない。`blk_step` の**後ろ**（`def BlkInv` の直前）に移したら緑になった。
+
+    前に置く … blk_step が exit 2（deterministic timeout at whnf, 200000 heartbeats）
+    後ろに置く … exit 0
+
+**`conv3` を `rw [conv3.eq_def]` で開く定理を増やすときは、必ず `blk_step` より
+後ろに置く。**
+
+## 7. `Dm10` に残るのは長さの事実 1 つ（`DmLen`）
+
+`Dm10` の帰納は `B = []` かつ `A ≠ []` の場合に `Dm10_of_child'` を使い、
+そこで `p.1 < |st1.dmap|` すなわち **`p.1 ≤ |st.dmap|`** が要る
+（`|st1.dmap| = min p.1 |st.dmap| + 1`）。これは R1-NOTES §4.3 の
+「`|dmap| = 最後に処理した柱.1 + 1`」そのもの。
+
+**`DmKeep` があるので伝播は出る**:
+
+    入口 b2d3          … st.dmap = [] かつ M.headI.1 = 0        ⟹ 0 ≤ 0     ✓
+    st1                … |st1.dmap| = p.1 + 1                                ✓
+    A の呼び出し（頭 p.1+1）… p.1 + 1 ≤ |st1.dmap| = p.1 + 1                 ✓
+    B / U の呼び出し（頭 p.1、状態 rA.2）
+                       … DmKeep (p.1+1) st1 rA.2 に k = p.1 を入れて
+                         p.1 < |rA.2.dmap|                                    ✓
+
+残るのは **`rest2`（`convResid` の入力）の頭**だけ。ここは R1 の測定が要る。

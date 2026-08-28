@@ -3647,6 +3647,185 @@ theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Boo
             rw [getLastD_snoc,
               len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _])).2.2.2.2.2.2.2
 
+/-! ### 課題 L40: `dmap` の下位保存 `DmKeep`（`Dm12` の強い版）
+
+`Dm12`（節 12）は `k < res.2.dmap.length` を**仮定**に置いた含意だった（課題 R1 の
+反例のため）。ところが `Dm12_app` はそのせいで中間状態の長さ `m ≤ |stm.dmap|` を
+要求し、**鎖がつながらない**。
+
+`k < res.2.dmap.length` を**結論**に移すと（下の `DmKeep`）、
+
+* 課題 R1 の反例（`k=4`, `|st.dmap|=4`, `|res.dmap|=5`）は**仮定 `k < |st.dmap|` を
+  満たさない**ので反例にならない。
+* 連結 `DmKeep_trans` は**長さの条件をまったく要らない**。
+
+⟹ **課題 L40 で R1 に頼んだ測定 (L)（`p.1 ≤ |st.dmap| + 1`）は不要になった。**
+
+証明が短いのは **`conv3` 全体で `dmap` を書く場所が 1 か所しかない**から
+（`st1.dmap = st.dmap.take p.1 ++ [dd2]`)。`convResid` は `dmap` を直に触らない。
+ブロックの下界 `m` を「先頭の行」ではなく**パラメータ**にすると、再帰呼び出しは
+すべて同じ `m` で回るので、`steps1` も `BlkLo` も要らない。 -/
+
+/-- **`dmap` の下位保存**: 入口で範囲内だった `m` 未満の添字は、値も範囲内であることも
+変わらない。 -/
+def DmKeep (m : ℕ) (st st' : St) : Prop :=
+  ∀ k, k < m → k < st.dmap.length →
+    k < st'.dmap.length ∧ st'.dmap.getD k 0 = st.dmap.getD k 0
+
+theorem DmKeep_refl {m : ℕ} {st : St} : DmKeep m st st :=
+  fun _ _ hk => ⟨hk, rfl⟩
+
+/-- **連結**。`Dm12_app` と違い**長さの仮定が要らない**のが要点。 -/
+theorem DmKeep_trans {m : ℕ} {a b c : St} (h1 : DmKeep m a b) (h2 : DmKeep m b c) :
+    DmKeep m a c := by
+  intro k hk hlen
+  obtain ⟨h3, h4⟩ := h1 k hk hlen
+  obtain ⟨h5, h6⟩ := h2 k hk h3
+  exact ⟨h5, by rw [h6, h4]⟩
+
+/-- **1 列ぶんの状態の更新**（`conv3` で `dmap` を書く唯一の場所）。 -/
+theorem DmKeep_take {m j : ℕ} {st st1 : St}
+    (hst1 : ∃ dd2, st1.dmap = st.dmap.take j ++ [dd2]) (hj : m ≤ j) : DmKeep m st st1 := by
+  obtain ⟨dd2, hst1⟩ := hst1
+  intro k hk hlen
+  have hlt : k < (st.dmap.take j).length := by rw [List.length_take]; omega
+  refine ⟨by rw [hst1, List.length_append]; omega, ?_⟩
+  rw [hst1, getD_snoc_lt hlt, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD]
+  first
+    | rw [List.getElem?_take (by omega)]
+    | rw [List.getElem?_take_of_lt (by omega)]
+    | simp [List.getElem?_take, show k < j by omega]
+
+/-- `DmKeep` は `Dm12`（節 12）を含む。 -/
+theorem Dm12_of_DmKeep {m : ℕ} {st : St} {res : TrioSeq × St}
+    (h : DmKeep m st res.2) : Dm12 m st res :=
+  fun k hk _ hk0 => (h k hk hk0).2
+
+theorem mem_le_of_sublist {m : ℕ} {X Y : TrioSeq} (hX : X.Sublist Y)
+    (h : ∀ c ∈ Y, m ≤ c.1) : ∀ c ∈ X, m ≤ c.1 := fun c hc => h c (hX.mem hc)
+
+/-- 部分列を作る道具。`A` / `B` / `U` / `rest2` / `Bq` はすべて `r` の部分列。 -/
+syntax "subl_tac" : tactic
+macro_rules
+  | `(tactic| subl_tac) =>
+    `(tactic|
+      repeat' first
+        | exact List.Sublist.refl _
+        | exact List.takeWhile_sublist _
+        | exact List.dropWhile_sublist _
+        | refine (List.take_sublist _ _).trans ?_
+        | refine (List.drop_sublist _ _).trans ?_
+        | refine (List.tail_sublist _).trans ?_)
+
+/-- **`conv3` の 1 列ぶんの `DmKeep`**。縮約の枝も縮約でない枝も、
+状態の鎖 `st → st1 → rA.2 → (rU.2 → rR.2 →) rB.2` を `DmKeep_trans` でつなぐだけ。 -/
+theorem dmKeep_step (p : Col) (r : TrioSeq) (m d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
+    (hm : ∀ c ∈ p :: r, m ≤ c.1)
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → (∀ c ∈ M', m ≤ c.1) →
+        ∀ (d' : ℕ) (L' : List Lent) (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool)
+          (st' : St) (nx' : Option Col) (off' : ℕ),
+          DmKeep m st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off').2)
+    (hres : ∀ (rest : TrioSeq), rest.length ≤ r.length → (∀ c ∈ rest, m ≤ c.1) →
+        ∀ (rd : ℕ) (Lr : List Lent) (ps' pw' : ℕ × ℕ) (st' : St) (nx' : Option Col)
+          (off' : ℕ), DmKeep m st' (convResid rest rd Lr ps' pw' st' nx' off').2) :
+    DmKeep m st (conv3 (p :: r) d L F ps pw first force st nx off).2 := by
+  have hmp : m ≤ p.1 := hm p (by simp)
+  have hmr : ∀ c ∈ r, m ≤ c.1 := fun c hc => hm c (List.mem_cons_of_mem _ hc)
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · -- 縮約の枝: st → st1 → rA.2 → rU.2 → rR.2 → rB.2
+    refine DmKeep_trans (DmKeep_take (j := p.1) ?hst hmp)
+      (DmKeep_trans (IH _ ?_ ?_ _ _ _ _ _ _ _ _ _ _)
+        (DmKeep_trans (IH _ ?_ ?_ _ _ _ _ _ _ _ _ _ _)
+          (DmKeep_trans (hres _ ?_ ?_ _ _ _ _ _ _ _)
+            (IH _ ?_ ?_ _ _ _ _ _ _ _ _ _ _))))
+    case hst => exact ⟨_, rfl⟩
+    all_goals
+      first
+        | exact List.Sublist.length_le (by subl_tac)
+        | exact mem_le_of_sublist (by subl_tac) hmr
+  · -- 縮約でない枝: st → st1 → rA.2 → rB.2
+    refine DmKeep_trans (DmKeep_take (j := p.1) ?hst hmp)
+      (DmKeep_trans (IH _ ?_ ?_ _ _ _ _ _ _ _ _ _ _)
+        (IH _ ?_ ?_ _ _ _ _ _ _ _ _ _ _))
+    case hst => exact ⟨_, rfl⟩
+    all_goals
+      first
+        | exact List.Sublist.length_le (by subl_tac)
+        | exact mem_le_of_sublist (by subl_tac) hmr
+
+/-- **`convResid` の `DmKeep`**。`convResid` は `dmap` を直に触らず、
+`conv3` を部分列に呼ぶだけ。 -/
+theorem dmKeep_resid {NN m : ℕ}
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ NN → (∀ c ∈ M', m ≤ c.1) →
+        ∀ (d' : ℕ) (L' : List Lent) (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool)
+          (st' : St) (nx' : Option Col) (off' : ℕ),
+          DmKeep m st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off').2) :
+    ∀ (n : ℕ) (rest : TrioSeq), rest.length ≤ n → rest.length ≤ NN →
+      (∀ c ∈ rest, m ≤ c.1) →
+      ∀ (rd : ℕ) (Lr : List Lent) (ps pw : ℕ × ℕ) (st : St) (nx : Option Col)
+        (off : ℕ), DmKeep m st (convResid rest rd Lr ps pw st nx off).2 := by
+  intro n
+  induction n with
+  | zero =>
+      intro rest hn _ _ rd Lr ps pw st nx off
+      have hnil : rest = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil
+      rw [convResid.eq_def]
+      exact DmKeep_refl
+  | succ n ih =>
+      intro rest hn hNN hmm rd Lr ps pw st nx off
+      cases rest with
+      | nil => rw [convResid.eq_def]; exact DmKeep_refl
+      | cons c rs =>
+          simp only [List.length_cons] at hn hNN
+          rw [convResid.eq_def]
+          dsimp only
+          split
+          · exact IH _ (by simp only [List.length_take, List.length_cons]; omega)
+              (mem_le_of_sublist (List.take_sublist _ _) hmm) _ _ _ _ _ _ _ _ _ _
+          · refine DmKeep_trans
+              (IH _ (by simp only [List.length_take, List.length_cons]; omega)
+                (mem_le_of_sublist (List.take_sublist _ _) hmm) _ _ _ _ _ _ _ _ _ _)
+              (ih _ ?_ ?_ (mem_le_of_sublist (List.drop_sublist _ _) hmm) _ _ _ _ _ _ _)
+            · simp only [List.length_drop, List.length_cons]; omega
+            · simp only [List.length_drop, List.length_cons]; omega
+
+/-- **★ `DmKeep` は `conv3` の全呼び出しで成り立つ**（仮定ゼロ）。 -/
+theorem dmKeep_aux (m : ℕ) :
+    ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → (∀ c ∈ M, m ≤ c.1) → ∀ (d : ℕ)
+      (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool) (st : St)
+      (nx : Option Col) (off : ℕ),
+      DmKeep m st (conv3 M d L F ps pw first force st nx off).2 := by
+  intro n
+  induction n with
+  | zero =>
+      intro M hM _ d L F ps pw first force st nx off
+      have hnil : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil
+      rw [conv3_nil]
+      exact DmKeep_refl
+  | succ n ih =>
+      intro M hM hmm d L F ps pw first force st nx off
+      cases M with
+      | nil => rw [conv3_nil]; exact DmKeep_refl
+      | cons p r =>
+          have hr : r.length ≤ n := by simp only [List.length_cons] at hM; omega
+          exact dmKeep_step p r m d L F ps pw first force st nx off hmm
+            (fun M' hM' hm' => ih M' (le_trans hM' hr) hm')
+            (fun rest hlen hm' => dmKeep_resid (NN := n)
+              (fun M' hM'' hm'' => ih M' hM'' hm'') rest.length rest le_rfl
+              (le_trans hlen hr) hm')
+
+/-- **★ `DmKeep`（仮定ゼロ、任意の下界 `m`）**。 -/
+theorem dmKeep_holds {m : ℕ} (M : TrioSeq) (hmm : ∀ c ∈ M, m ≤ c.1) (d : ℕ)
+    (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool) (st : St)
+    (nx : Option Col) (off : ℕ) :
+    DmKeep m st (conv3 M d L F ps pw first force st nx off).2 :=
+  dmKeep_aux m M.length M le_rfl hmm d L F ps pw first force st nx off
+
 /-- `conv3` の呼び出しごとの不変量（**まだ証明していない**、課題 L2 (b)）。
 
 ### 残りの補題（課題 L3 で**縮約でない枝まで詰めた**）
