@@ -199,5 +199,34 @@ theorem shiftTowerClosed_e_zero {u n : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u)
   rw [h]
   exact W_flatMap_copies hQ hQr n
 
+/-! ## 課題 L50: `diagSeqT 0 v ∈ Wself` は**定理そのもの**（同値）
+
+`ST_TS` は**対角と `oper` だけ**で生成される（`Trio.lean`）:
+
+    inductive ST_TS : TrioSeq → Prop where
+      | diag (v : ℕ) : ST_TS (diagSeqT 0 v)
+      | oper {M n} : ST_TS M → 1 ≤ n → ST_TS (M⟦n⟧)
+
+そして `oper_closed`（`Wset.lean:2103`、**証明ずみ**）は `W u` を `oper` で閉じる
+（段は上がらない）。⟹ **対角が全部 `Wself` に入れば、標準形は全部 `W` に入る。** -/
+
+/-- **★ 対角が `Wself` なら、すべての標準形にある段が付く**（課題 L50）。 -/
+theorem exists_stage_of_ST_TS (h : ∀ v : ℕ, diagSeqT 0 v ∈ Wself)
+    {M : TrioSeq} (hM : ST_TS M) : ∃ u, M ∈ W u := by
+  induction hM with
+  | diag v => exact ⟨lev (diagSeqT 0 v) 0, h v⟩
+  | oper hM' hn ih =>
+      obtain ⟨u, hu⟩ := ih
+      exact ⟨u, oper_closed hu hn⟩
+
+/-- **★★ `diagSeqT 0 v ∈ Wself`（∀v）⟹ すべての標準形が `Wself`**（課題 L50）。
+
+⟹ **`diagSeqT 0 v ∈ Wself` は 3 行 (z<2) の停止性と同値**である
+（逆向きは `ST_TS.diag` から自明）。**最小形ではあるが、近道ではない。** -/
+theorem mem_Wself_of_diag (h : ∀ v : ℕ, diagSeqT 0 v ∈ Wself)
+    {M : TrioSeq} (hM : ST_TS M) (hne : M ≠ []) : M ∈ Wself := by
+  obtain ⟨u, hu⟩ := exists_stage_of_ST_TS h hM
+  exact W_root_stage hu hne
+
 end L47
 end TRIO
