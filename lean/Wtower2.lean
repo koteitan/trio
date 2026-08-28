@@ -901,11 +901,39 @@ theorem le1_gexp_low {M : TrioSeq} {j0 Lb d0 d1 n p : ℕ}
     omega
   rw [← le1_take hj0len hp, htake, le1_take hj0 hp]
 
+/-! ### 課題 L11: `(WL)` は**塔の族の上でしか消費されない**
+
+下の `towerGraft2_of_liftStage` の証明の中で `hWL` が現れるのは**ただ 1 行**、
+`hmem` の行だけである。そこで消費される形だけを取り出したのが
+`LiftStageTower` で、`LiftStage` はこれを含む（`liftStageTower_of_liftStage`）。
+つまり **`TowerGraft2` に要るのは「すべての `X ∈ W m`」ではなく塔の族だけ**。
+
+実測（`tools/probe_tiefree_tower.py`、課題 L11）: 塔の 1 段は `TieFree` を
+**完全に保つ**（26412 サイト x 5 段、`TieFree(X_1) ⟺ TieFree(X_j)` が両向き
+0 違反。陽性対照: リフト量を `d1-1` にすると 2398 中 1604 で後から破れる）。
+残るのは土台 `TieFree ((0,v,z) :: R.dropLast)` だけだが、それは 29% で偽で
+あり、`X_1 ∈ W (2v+z)` を課しても消えない。`TowerGraft2` が `∀ v z` を走る
+以上、`v` は `R` の行 1 の値を必ず走るからである（`L11Fam.lean` の doc）。 -/
+
+/-- **(WL) の塔の族への制限**: `M = (0,v,z) :: R` の塔 `M⟦j⟧` の上でだけ
+段の法則を要求する。 -/
+def LiftStageTower : Prop :=
+  ∀ (v z m : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → domT R m →
+    srow R (R.length - 1) = 2 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ j : ℕ, ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧) ∈ W (2 * v + z) →
+      Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦j⟧) (entry R 1 (R.length - 1) - v)
+        ∈ W (2 * v + z + 2 * (entry R 1 (R.length - 1) - v))
+
+theorem liftStageTower_of_liftStage (h : LiftStage) : LiftStageTower :=
+  fun _ _ _ _ _ _ _ _ _ _ _ hj => h _ _ _ hj
+
 /-- **The row-2 tower falls to (WL) over the LIFT-FREE `Wstar`.**  The tower's
 induction only ever needs the single lift `d1`, so the `∀ s` strengthening (and
 with it `Wstar2`, `GraftAll`, `GX`) is unnecessary once the stage law is
-available. -/
-theorem towerGraft2_of_liftStage (hWL : LiftStage) : Wset.TowerGraft2 := by
+available.  課題 L11: 仮定は塔の族に絞ってある。 -/
+theorem towerGraft2_of_liftStageTower (hWL : LiftStageTower) :
+    Wset.TowerGraft2 := by
   classical
   intro v z m a R hR hRne hz1 hva hd hi1 hgr hpM n _
   set p0 : ℕ × ℕ × ℕ := (0, v, z) with hp0
@@ -966,13 +994,20 @@ theorem towerGraft2_of_liftStage (hWL : LiftStage) : Wset.TowerGraft2 := by
     induction j with
     | zero => rw [hM0]; exact W_nil _
     | succ j ih =>
-        have hmem : Lift1 (M⟦j⟧) d1 ∈ W (2 * v + z + 2 * d1) := hWL _ _ _ ih
+        have hmem : Lift1 (M⟦j⟧) d1 ∈ W (2 * v + z + 2 * d1) := by
+          rw [hd1, hMdef, hp0]
+          rw [hMdef, hp0] at ih
+          exact hWL v z m R hR hRne hz1 hd hi1 hpM j ih
         have hmem' : Lift1 (M⟦j⟧) d1 ∈ W m := W_mono hbound hmem
         have hb : based (Lift1 (M⟦j⟧) d1) := based_Lift1 _ (hbased j)
         rw [hstep j]
         exact hgr _ hmem' hb (argOK_graft hRne hR _) v z (2 * v + z) hz1
           (le_refl _)
   exact W_mono hva (key n)
+
+/-- 旧い形（`LiftStage` 全体を仮定する版）。 -/
+theorem towerGraft2_of_liftStage (hWL : LiftStage) : Wset.TowerGraft2 :=
+  towerGraft2_of_liftStageTower (liftStageTower_of_liftStage hWL)
 
 /-! ### 添字 0 からの錐輸送（`d0 > 0` の枝）
 

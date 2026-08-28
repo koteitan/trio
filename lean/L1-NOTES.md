@@ -1841,3 +1841,142 @@ revival では `R` の展開が「`C` を含む区間の `n` 個のコピー」�
 
 これは `PROOF-STATUS.md §5.7` の「タイ無しは **ST_TS 到達可能性そのもの**」を、
 `W` の機構の側から見た形にすぎない。⟹ 判定は変わらない。
+
+
+---
+
+# 課題 L11: `TieFree` は**弱められない**（証明した）。塔に絞っても閉じている（2026-08-28）
+
+## 0. 結論を先に
+
+* **(1) `liftStage_of_tieFree` は `TieFree` を `j` の全体で使っている。**
+  絞れる `j` の部分集合は無い。証明は 2 行で、`Lift1 X d = mlift X (v0-1) d` を
+  `List.map_congr_left` で**列ごと**に示すだけ。`TieFree` はその `if_neg` の枝、
+  すなわち **`le1 X 0 j` が偽の `j` すべて**で使う（対偶なのでそれが全内容）。
+* **(2) しかし弱められる方向が 1 つあった: `j` ではなく `X` の量詞。**
+  `(WL)` が消費されるのは `towerGraft2_of_liftStage` の**ただ 1 行**だけで、
+  相手は**塔の族**しかない。Lean で切り出した（`Wtower2.LiftStageTower`、exit 0）。
+  実測: **塔の 1 段は `TieFree` を完全に保つ**（30537 サイト x 5〜6 段、
+  両向き 0 違反、陽性対照つき）。残るのは**土台だけ**。
+* **(3) ところが土台は 29% で偽。しかも `TieFree` は「証明ずみのリフト言語」の
+  中では必要条件でもある**（`L11Fam.sliftMatch_iff_tieFree`、exit 0 / sorry 0）。
+  ⟹ **この道は完全に閉じた。**
+
+## 1. (1) `TieFree` はどの `j` で使われているか
+
+`Wtower2.liftStage_of_tieFree` の証明は 2 行:
+
+    rw [Lift1_eq_mlift_of_tieFree hv h d]     -- ここだけで TieFree を使う
+    exact mlift_mem_W X hX
+
+`Lift1_eq_mlift_of_tieFree` は
+
+    hif : (if le1 X 0 j then d else 0) = (if coneV X (v0-1) j then d else 0)
+
+を `List.map_congr_left` で `j ∈ List.range X.length` の**全体**について示す。
+`if_pos` の枝は `coneV_of_le1`（無条件）で片づき、**`TieFree` は `if_neg` の枝
+だけ**で使われる。つまり「`le1 X 0 j` が偽である `j`」——対偶なので `TieFree` の
+全内容そのもの。**部分集合には絞れない**（絞れば 2 つの列が実際に食い違う）。
+
+## 2. (3) `TieFree` は必要条件でもある — **証明した**
+
+`lean/L11Fam.lean`（`leanman check` exit 0 / sorry 0 / `#print axioms` は
+`propext, Classical.choice, Quot.sound` のみ）:
+
+    SliftMatch X d := ∃ φ, Stair φ ∧ slift X φ = Lift1 X d
+
+`Cgraft.slift` は「証明ずみのリフト法則 `Wslift.slift_mem_W_tight` が扱える
+リフト**すべて**」で、`mlift` はその特別な場合である。
+
+    TRIO.L11.sliftMatch_iff_tieFree :
+      0 < X.length → 1 ≤ d → 1 ≤ entry X 1 0 → (SliftMatch X d ↔ TieFree X)
+
+証明の骨（必要の向き）: 根は自分の行 1 錐に入る（`le1_refl`）ので階段は
+`amin 0 = entry X 1 0` でちょうど `d` 持ち上げねばならない。`Stair.step` は
+`φ m - m` の単調性を課すので、`amin` が根以上の列（＝ `coneV` の中）でも
+持ち上げ量は `d ≥ 1` 以上になる。`Lift1` はそこで `0` しか足さないから、
+その列は `le1` 錐に入っていなければならない。∎
+
+⟹ **`L10Tie.maskMatch_iff_tieFree`（閾値 `v` を自由にしても同じ）の一般化。**
+閾値どころか**階段そのものを自由にしても** `TieFree` より弱い十分条件は
+この言語の中に**存在しない**。「弱い述語を探して `oper`/`cons` の保存率を測る」
+という作戦は、**測るまでもなく**この定理で潰れる。
+
+## 3. (2) 弱められる唯一の方向: `X` の量詞 — 塔の族だけ
+
+`Wtower2.towerGraft2_of_liftStage` を読むと `hWL` が現れるのは**1 行だけ**:
+
+    have hmem : Lift1 (M⟦j⟧) d1 ∈ W (2*v+z+2*d1) := hWL _ _ _ ih
+
+`M = (0,v,z) :: R`、`d1 = row1(R[-1]) - v`、`M⟦0⟧ = []`、
+`M⟦j+1⟧ = (0,v,z) :: graft R (Lift1 (M⟦j⟧) d1)`（`hstep`）。
+
+Lean 側に切り出した（`Wtower2.LiftStageTower` / `towerGraft2_of_liftStageTower`、
+旧い `towerGraft2_of_liftStage` はその系として残してある。`Wtower2.lean`
+`Final.lean` とも exit 0）:
+
+    LiftStageTower := ∀ v z m R, argOK R → R ≠ [] → z ≤ 1 → domT R m →
+      srow R (R.length-1) = 2 → hasParent ((0,v,z)::R) … R.length →
+      ∀ j, ((0,v,z)::R)⟦j⟧ ∈ W (2v+z) →
+        Lift1 (((0,v,z)::R)⟦j⟧) d1 ∈ W (2v+z+2*d1)
+
+**これは課題 L10 の測定と量詞が違う。** L10 は `cons` を `∀ v` で盲目に走らせて
+50% 破れたが、塔では `v` は塔のデータで固定され、`cons` の相手も
+`graft R (Lift1 · d1)` に固定されている。
+
+### 実測（`tools/probe_tiefree_tower.py`）
+
+| | maxlen=3 r0=5 r1=5 J=5 | maxlen=2 r0=6 r1=7 J=6 |
+|---|---|---|
+| tower-2 サイト（`v ≥ 1`） | 26412 | 4125 |
+| 土台 `TieFree ((0,v,z)::R.dropLast)` | 18772 / **破れ 7640（29%）** | 3675 / **破れ 450（11%）** |
+| **土台 OK → 全段 OK** | 18772 / **後で破れる 0** | 3675 / **後で破れる 0** |
+| **土台 NG → 全段 NG** | 7640 / **途中で直る 0** | 450 / **途中で直る 0** |
+| 破れのうち `X_1 ∈ W(2v+z)` | **7640（全部）** | **450（全部）** |
+| 窓（`liftStage_of_window`） | 8872 / 破れ 17540 | 2625 / 破れ 1500 |
+
+**陽性対照**（測定は盲目でない）:
+
+| 対照 | 破れ |
+|---|---|
+| リフト量を `d1 - 1` にする | **9428 / 18772（50%）が「後から破れる」** |
+| リフト量を `d1 + 1` にする | 0（多く持ち上げるのは無害。正しい挙動） |
+| tower-2 の絞りを外した `(v,z,R)` | **160040 / 498708（32%）** |
+
+⟹ **塔の 1 段は `TieFree` を完全に保つ**（保つ方向も破る方向も 0 違反）。
+`d1` をちょうど 1 減らすと壊れるので、`d1` の値そのものが効いている。
+
+### ところが土台が落ちる
+
+土台 `X_1 = (0,v,z) :: R.dropLast` の破れは 29%。しかも
+
+* `X_1 ∈ W (2v+z)` を課しても**1 例も消えない**（7640 / 7640 が W に入る）。
+  最小反例 `v=1, z=0, R=[(1,1,0),(1,2,1)]` ⟹ `X_1 = [(0,1,0),(1,1,0)]`。
+* タイの正体は **7080/7640 が「`R` の中に行 1 がちょうど `v` の列がある」**。
+
+`TowerGraft2` は `∀ v z` を走るので、**`v` は `R` の行 1 の値を必ず走る**。
+これは課題 L10 の `cons` の反例と**同じ理由**であり、塔に絞っても消えない。
+窓（`liftStage_of_window`）は `TieFree` より**強い**ので当然覆えない。
+
+## 4. 判定: **打ち止め**
+
+停止性トラックの `(WL)` を「証明ずみのリフト言語」で出す道は、
+
+* 量詞 `j` を絞る → **絞れない**（証明が全称で使う）
+* 閾値 `v` を自由にする → **同値**（`L10Tie.maskMatch_iff_tieFree`）
+* 階段 `Stair φ` まで自由にする → **同値**（`L11Fam.sliftMatch_iff_tieFree`、新）
+* 量詞 `X` を塔の族に絞る → **絞れた。段は保つ。しかし土台が 29% で偽**（新）
+
+の 4 方向すべてで閉じた。課題 L5〜L10 の「量詞・側条件・帰納の形・不変量」と
+あわせて **`(WL)` に残る道は `Row1Mono` / `WConvex`（どちらも実測 0 違反の
+未証明予想）だけ**である。`PROOF-STATUS §5` の「BM4 展開への新しい数学的入力が
+要る」は変わらない。
+
+### 買えたもの（この課題で `lean/` に残るもの）
+
+    lean/L11Fam.lean            SliftMatch と sliftMatch_iff_tieFree（新定理）
+    lean/Wtower2.lean           LiftStageTower / towerGraft2_of_liftStageTower
+                                （開いた核を塔の族まで狭めた。旧形は系として存置）
+    tools/probe_tiefree_tower.py 塔の族の TieFree 測定（陽性対照 4 本つき）
+
+**`sorry` 0 / `axiom` 宣言 0 は維持**（`lean/` 自前 65221 行）。
