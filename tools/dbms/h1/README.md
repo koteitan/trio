@@ -199,3 +199,19 @@ H11 の測定を再現したいときは `git show <H11 の前の commit>:tools/
 **教訓 4**: 「新しい一致を作る」は**おまけ**、「壊れた 0」だけが要件。
 教師データでぶつかったら**負例を優先**する。両側から落とすと負例の拘束を
 捨ててしまい、ありもしない「矛盾」が出る（H12 の 161 がそれ）。
+
+# 課題 H14 の道具（もう一周）
+
+    python3 /tmp/h1work/h10img.py        # まず破れを img54p.pkl に
+    python3 /tmp/h1work/h13c.py 6        # ImgCofinalT で本当に破れている A -> cof6.pkl
+    python3 /tmp/h1work/h13d.py          # 証人 d2b3(T) の逆算（内訳）
+    python3 /tmp/h1work/h14enr.py        # 濃縮表
+    python3 /tmp/h1work/h14flip.py       # 証人が要求する反転 -> h14fix.pkl
+    python3 /tmp/h1work/mkh14.py         # クラス D/E の写し rows3d.py（DFLAGS=fD,fE,gDoff）
+    ADD=... python3 /tmp/h1work/h14teach.py   # 教師データ（素性は**最初から 368 本**）
+    TAG=... DFLAGS=... python3 /tmp/h1work/h14neg.py
+    python3 /tmp/h1work/mksb14.py        # 条項 sbody の写し rows3b.py（SBFLAGS2=sb,sb_w,sb_gate）
+    SBFLAGS2=sb,sb_w python3 /tmp/h1work/h14sb.py
+
+**注意**: `h13x.py` は `far()` を提供するモジュールでもある（`from h13x import far`）。
+`h14teach.py` / `h14sb.py` は最初から `atoms` ＋ `extra` ＋ `far` を使う。
