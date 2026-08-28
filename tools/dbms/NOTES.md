@@ -1743,6 +1743,16 @@ agree(f) = { (A, n, m) : conv3(A<n>) == (conv3 A)<m> }
 `d2b3` 往復・C1/C2 共終性・ImgClosedT。**どれか 1 つでも悪化したら落とす**。
 **C2（SandwichU）は要件、C1 は要件ではない。**
 
+### 2'. **主指標は `tools/dbms/cofinal.py`（ImgCofinalT）に変わった**
+
+課題 H13（2026-08-28）で差し替えた。`imgfast` の `ImgClosedT` は**要件より強い**。
+
+    python3 /home/koteitan/proofs/dbms/tools/dbms/cofinal.py 6 16
+    v16 の基準: lim=5 **2** / lim=6 **27**（ImgClosedT なら 2 / 34）
+
+**基準線はひとつ**: 段 1 に `rows3.preimage_try` を通した数を使う
+（素の `inv3.d2b3` だと lim=6 で 40 に水増しされる。H13 §1）。
+
 ### 3. `tools/dbms/onto.py`（全射）
 
 DBMS 標準形 <=6 列 528 個で外れ 4、<=7 列 3514 個で外れ 82。
@@ -2201,3 +2211,13 @@ lim=7 でも同じ（t=2 は 16046/16046 で 3 本とも成立、t=1 の `d0'` �
 
 **母数を絞っても `after_w` が的である**（H12 の濃縮 1318 倍と一致）。
 `cR`（残余）は 9/51 = 18%、`cA`（縮約の引数）は 16/51 = 31%。
+
+### `img` の取り方（計装は要らなかった）
+
+`rows3.b2d3` に出力を足す必要はない。**`g2/provc.py`** が柱ごとに
+`(kind, off, why, ctx)` を出力順に積んでいるので
+
+    img[j] = max{ i : PROV[i] = ('body', j, _, _) }
+
+で読める（`h1/h13s2.py` の `imgmap`）。`provc.py` は `g2/mkprov.py` が
+`rows3.py` から自動生成するので**版ずれしない**（自己検査つき）。
