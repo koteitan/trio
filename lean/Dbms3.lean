@@ -3826,6 +3826,293 @@ theorem dmKeep_holds {m : ℕ} (M : TrioSeq) (hmm : ∀ c ∈ M, m ≤ c.1) (d :
     DmKeep m st (conv3 M d L F ps pw first force st nx off).2 :=
   dmKeep_aux m M.length M le_rfl hmm d L F ps pw first force st nx off
 
+/-! ### 課題 L41: `Dm10`（節 10）を `conv3` の全呼び出しで出す
+
+**定式化の要点**（課題 L25 で詰まっていた「空リストの場合分け」を消す形）:
+
+    結論   Dm10 d m res.2
+    仮定   ∀ c ∈ M, m ≤ c.1      … ブロックの下界
+           M ≠ [] → M.headI.1 = m … 頭はちょうど m（BlkLo から）
+           m ≤ |st.dmap|          … dmap は下界まで届いている
+           Dm10 d m st            … 入口
+
+`M = []` のとき `res.2 = st` なので**入口の仮定がそのまま結論**になる。
+⟹ `A = []` / `B = []` / `U = []` / `Bq = []` の**場合分けが 1 つも要らない**。
+
+伝播はすべて `DmKeep`（課題 L40）で出る:
+
+    st1                 |st1.dmap| = m + 1              （m ≤ |st.dmap| から）
+    A の呼び出し（頭 m+1、深さ dd2+1）
+                        入口 Dm10 (dd2+1) (m+1) st1 は**空虚**（範囲が m+1 まで）
+                        出口を Dm10_of_child' で (d, m) に付け替える
+    B / U / Bq          DmKeep で長さが降り、Dm10 はそのまま渡る
+-/
+
+/-- `d ≤ dd2` は **`d ≤ |ST|` を仮定しなくても出る**（`fit` は `d` から上へ探し、
+既定値 `max d |ST|` も `d` 以上だから）。これで `Dm10` の帰納は `BlkOK` と
+切り離せる。 -/
+theorem depths_le_lo {ST ST2 : List (ℕ × ℕ)} {d h1 e1 dd0 dd1 dd2 : ℕ}
+    {lad0 lad1 : Bool}
+    (hdd0 : dd0 = if lad0 then d + 1 else (fit ST d h1).getD (max d ST.length))
+    (hdd1 : dd1 = if lad1 then dd0 + 1 else dd0)
+    (hdd2 : dd2 = if okPlace ST2 dd1 e1 then dd1 else (fit ST2 dd1 e1).getD dd1) :
+    d ≤ dd2 := by
+  have h0 : d ≤ dd0 := by
+    rw [hdd0]
+    split
+    · omega
+    · cases h : fit ST d h1 with
+      | none => simp [h]
+      | some y =>
+          rw [fit] at h
+          have := fitAux_bounds h
+          simp only [h, Option.getD_some]
+          omega
+  have h1' : dd0 ≤ dd1 := by rw [hdd1]; split <;> omega
+  have h2' : dd1 ≤ dd2 := by
+    rw [hdd2]; split
+    · exact le_rfl
+    · exact fit_getD_ge _ _
+  omega
+
+theorem getD_take_snoc {dm : List ℕ} {j x : ℕ} (hj : j ≤ dm.length) :
+    (dm.take j ++ [x]).getD j 0 = x := by
+  have h : (dm.take j).length = j := by rw [List.length_take]; omega
+  rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega), h]
+  simp
+
+theorem len_take_snoc {dm : List ℕ} {j x : ℕ} (hj : j ≤ dm.length) :
+    (dm.take j ++ [x]).length = j + 1 := by
+  simp only [List.length_append, List.length_take, List.length_singleton]
+  omega
+
+theorem dmKeep_lt {m k : ℕ} {st st' : St} (h : DmKeep m st st') (hk : k < m)
+    (hkl : k < st.dmap.length) : k < st'.dmap.length := (h k hk hkl).1
+
+theorem dmKeep_le {m : ℕ} {st st' : St} (h : DmKeep m st st')
+    (hm : m ≤ st.dmap.length) : m ≤ st'.dmap.length := by
+  cases m with
+  | zero => omega
+  | succ n => have := (h n (by omega) (by omega)).1; omega
+
+/-- `take` の先頭はもとの先頭。 -/
+theorem headI_take {l : TrioSeq} {n : ℕ} (h : l.take n ≠ []) :
+    (l.take n).headI = l.headI := by
+  cases l with
+  | nil => simp at h
+  | cons a t =>
+      cases n with
+      | zero => simp at h
+      | succ n => rfl
+
+/-- 範囲の外なら `Dm10` は空虚。 -/
+theorem dm10_vac {d j : ℕ} {st : St} (h : st.dmap.length ≤ j) : Dm10 d j st :=
+  fun _ hj hjl => absurd hjl (by omega)
+
+/-- `convResid` の `DmKeep`（仮定ゼロ）。 -/
+theorem dmKeep_resid_holds {m : ℕ} (rest : TrioSeq) (hmm : ∀ c ∈ rest, m ≤ c.1)
+    (rd : ℕ) (Lr : List Lent) (ps pw : ℕ × ℕ) (st : St) (nx : Option Col) (off : ℕ) :
+    DmKeep m st (convResid rest rd Lr ps pw st nx off).2 :=
+  dmKeep_resid (NN := rest.length) (fun M' _ hm' => dmKeep_holds M' hm')
+    rest.length rest le_rfl le_rfl hmm rd Lr ps pw st nx off
+
+/-- `Dm10` は `dmap` しか見ないので、`nc` だけ違う状態に移せる。 -/
+theorem dm10_congr {d j : ℕ} {st st' : St} (h : Dm10 d j st)
+    (hd : st'.dmap = st.dmap) : Dm10 d j st' := by
+  intro jj hj hjl
+  rw [hd] at hjl ⊢
+  exact h jj hj hjl
+
+/-- **`Dm10` の帰納の 1 歩**（課題 L41）。 -/
+theorem dm10_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
+    (hs1 : steps1 (p :: r)) (hblo : BlkLo (p :: r))
+    (hlen : p.1 ≤ st.dmap.length)
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → steps1 M' → ∀ (m' d' : ℕ),
+        (∀ c ∈ M', m' ≤ c.1) → (M' ≠ [] → (M'.headI).1 = m') →
+        ∀ (L' : List Lent) (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool)
+          (st' : St) (nx' : Option Col) (off' : ℕ),
+          m' ≤ st'.dmap.length → (M' = [] → Dm10 d' m' st') →
+          Dm10 d' m' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off').2)
+    (hres : ∀ (rest : TrioSeq) (rd : ℕ) (Lr : List Lent) (ps' pw' : ℕ × ℕ) (st' : St)
+        (nx' : Option Col) (off' e : ℕ),
+        (∀ c ∈ rest, p.1 ≤ c.1) → p.1 ≤ st'.dmap.length → Dm10 (d + 1) p.1 st' →
+        rd = (if rest = [] ∨ (rest.headD (0, 0, 0)).1 = p.1 + 1 then d + 1 + e
+              else dmapAt st'.dmap ((rest.headD (0, 0, 0)).1 - 1)) →
+        Dm10 d p.1 (convResid rest rd Lr ps' pw' st' nx' off').2) :
+    Dm10 d p.1 (conv3 (p :: r) d L F ps pw first force st nx off).2 := by
+  have hr1 : steps1 r := steps1_tailT hs1
+  have hmr : ∀ c ∈ r, p.1 ≤ c.1 := by
+    intro c hc
+    have h9 := hblo c (List.mem_cons_of_mem _ hc)
+    simpa using h9
+  have hAmem : ∀ c ∈ r.takeWhile (fun q => decide (p.1 < q.1)), p.1 + 1 ≤ c.1 := by
+    intro c hc
+    have hne : r.takeWhile (fun q => decide (p.1 < q.1)) ≠ [] := by
+      intro h; rw [h] at hc; simp at hc
+    have h1 := takeWhile_blkLo hs1 c hc
+    rw [takeWhile_head_eq hs1 hne] at h1
+    exact h1
+  have hAmem' : ∀ c ∈ r.takeWhile (fun q => decide (p.1 < q.1)), p.1 ≤ c.1 :=
+    fun c hc => le_trans (Nat.le_succ _) (hAmem c hc)
+  have hlen1 : ∀ x : ℕ, (st.dmap.take p.1 ++ [x]).length = p.1 + 1 :=
+    fun x => len_take_snoc hlen
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · -- 縮約の枝
+    rename_i ee kUv kpv nav he
+    have hlad0 := cond_of_ite_some he
+    rw [if_pos hlad0] at he
+    split at he
+    · simp at he
+    · rename_i e kU kp na hcf
+      have hw : ((e, kU, kp, na) : ℕ × ℕ × ℕ × Col) = (ee, kUv, kpv, nav) := by
+        rcases ite_some_pair he with h | h
+        · exact ite_some_none h
+        · exact h
+      have hk : kU = kUv := congrArg (fun t => t.2.1) hw
+      refine dm10_congr (IH _ ?lQ ?sQ p.1 d ?mQ ?hQ _ _ _ _ _ _ _ _ _ ?dQ ?pQ) rfl
+      case lQ => exact List.Sublist.length_le (by subl_tac)
+      case sQ =>
+        repeat' first
+          | exact hr1
+          | apply steps1_takeT
+          | apply steps1_dropT
+          | apply steps1_takeWhileT
+          | apply steps1_dropWhileT
+          | apply steps1_tailT
+      case mQ => exact mem_le_of_sublist (by subl_tac) hmr
+      case hQ =>
+        intro hne
+        rw [headI_eq_headD]
+        refine head_eq_of_le_of_ge (x := (0, 0, 0)) ?_ hne ?_
+        · intro c hc
+          exact mem_le_of_sublist (by subl_tac) hmr c hc
+        · have h8 := deepGe_head_lt _ (0, 0, 0) hne
+          have hq := contrFind_q_eq hcf
+          rw [hk] at hq
+          omega
+      case dQ =>
+        exact dmKeep_le (dmKeep_resid_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _)
+          (dmKeep_le (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+            (dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _)
+              (by rw [hlen1]; omega)))
+      case pQ =>
+        intro _
+        refine hres _ _ _ _ _ _ _ _ _ (mem_le_of_sublist (by subl_tac) hmr) ?dU ?pU rfl
+        case dU =>
+          exact dmKeep_le (dmKeep_holds _ (mem_le_of_sublist (by subl_tac) hmr) _ _ _ _ _ _ _ _ _ _)
+            (dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega))
+        case pU =>
+          refine IH _ ?lU ?sU p.1 (d + 1) ?mU ?hU
+            _ _ _ _ _ _ _ _ _ ?dA ?pA
+          case mU => exact mem_le_of_sublist (by subl_tac) hmr
+          case lU => exact List.Sublist.length_le (by subl_tac)
+          case sU =>
+            repeat' first
+              | exact hr1
+              | apply steps1_takeT
+              | apply steps1_dropT
+              | apply steps1_takeWhileT
+              | apply steps1_dropWhileT
+              | apply steps1_tailT
+          case hU =>
+            intro hne
+            have hne2 : r.dropWhile (fun q => decide (p.1 < q.1)) ≠ [] := by
+              intro hc; rw [hc] at hne; simp at hne
+            rw [headI_take hne]
+            exact dropWhile_head_eq hblo hne2
+          case dA =>
+            exact dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _)
+              (by rw [hlen1]; omega)
+          case pA =>
+            intro _
+            refine Dm10_of_child ?hdd
+              (IH _ ?lA ?sA (p.1 + 1) _ hAmem ?hA _ _ _ _ _ _ _ _ _ ?dA1 ?pA1)
+              (Dm12_of_DmKeep (dmKeep_holds _ hAmem _ _ _ _ _ _ _ _ _ _)) ?hv ?hl
+            case hdd => exact depths_le_lad0 hlad0 rfl rfl rfl
+            case lA => exact List.Sublist.length_le (by subl_tac)
+            case sA => exact steps1_takeWhileT hr1 _
+            case hA => exact fun h => takeWhile_head_eq hs1 h
+            case dA1 => rw [hlen1]
+            case pA1 => exact fun _ => dm10_vac (by rw [hlen1])
+            case hv => exact getD_take_snoc hlen
+            case hl => rw [hlen1]; omega
+  · -- 縮約でない枝
+    refine IH _ ?lB ?sB p.1 d ?mB ?hB _ _ _ _ _ _ _ _ _ ?dAn ?pAn
+    case lB => exact List.length_dropWhile_le _ r
+    case sB => exact steps1_dropWhileT hr1 _
+    case mB => exact mem_le_of_sublist (List.dropWhile_sublist _) hmr
+    case hB => exact dropWhile_head_eq hblo
+    case dAn =>
+      exact dmKeep_le (dmKeep_holds _ hAmem' _ _ _ _ _ _ _ _ _ _) (by rw [hlen1]; omega)
+    case pAn =>
+      intro _
+      refine Dm10_of_child' ?hdd2
+        (IH _ ?lA2 ?sA2 (p.1 + 1) _ hAmem ?hA2 _ _ _ _ _ _ _ _ _ ?dA2 ?pA2)
+        (Dm12_of_DmKeep (dmKeep_holds _ hAmem _ _ _ _ _ _ _ _ _ _)) ?hv2 ?hl2
+      case hdd2 => exact depths_le_lo rfl rfl rfl
+      case lA2 => exact (List.takeWhile_sublist _).length_le
+      case sA2 => exact steps1_takeWhileT hr1 _
+      case hA2 => exact fun h => takeWhile_head_eq hs1 h
+      case dA2 => rw [hlen1]
+      case pA2 => exact fun _ => dm10_vac (by rw [hlen1])
+      case hv2 => exact getD_take_snoc hlen
+      case hl2 => rw [hlen1]; omega
+
+/-- **`convResid` の節 10**（課題 L41 で残る唯一の債務）。`dm10_step` の `hres` を
+大域の命題として切り出したもの。 -/
+def ResidDm10 : Prop :=
+  ∀ (rest : TrioSeq) (rd : ℕ) (Lr : List Lent) (ps' pw' : ℕ × ℕ) (st' : St)
+    (nx' : Option Col) (off' e d m : ℕ),
+    (∀ c ∈ rest, m ≤ c.1) → m ≤ st'.dmap.length → Dm10 (d + 1) m st' →
+    rd = (if rest = [] ∨ (rest.headD (0, 0, 0)).1 = m + 1 then d + 1 + e
+          else dmapAt st'.dmap ((rest.headD (0, 0, 0)).1 - 1)) →
+    Dm10 d m (convResid rest rd Lr ps' pw' st' nx' off').2
+
+/-- **★ `Dm10`（節 10）は `ResidDm10` だけから出る**（課題 L41）。 -/
+theorem dm10_aux (hres : ResidDm10) :
+    ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → steps1 M → ∀ (m d : ℕ),
+      (∀ c ∈ M, m ≤ c.1) → (M ≠ [] → (M.headI).1 = m) →
+      ∀ (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool)
+        (st : St) (nx : Option Col) (off : ℕ),
+        m ≤ st.dmap.length → (M = [] → Dm10 d m st) →
+        Dm10 d m (conv3 M d L F ps pw first force st nx off).2 := by
+  intro n
+  induction n with
+  | zero =>
+      intro M hM _ m d _ _ L F ps pw first force st nx off _ hpre
+      have hnil : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst hnil
+      rw [conv3_nil]
+      exact hpre rfl
+  | succ n ih =>
+      intro M hM hs1 m d hmem hhd L F ps pw first force st nx off hlen hpre
+      cases M with
+      | nil => rw [conv3_nil]; exact hpre rfl
+      | cons p r =>
+          have hr : r.length ≤ n := by simp only [List.length_cons] at hM; omega
+          have hpm : p.1 = m := by
+            have h9 := hhd (by simp)
+            simpa using h9
+          subst hpm
+          exact dm10_step p r d L F ps pw first force st nx off hs1
+            (blkLo_of_le hmem (fun _ => le_rfl)) hlen
+            (fun M' hM' hs' m' d' hm' hh' => ih M' (le_trans hM' hr) hs' m' d' hm' hh')
+            (fun rest rd Lr ps' pw' st' nx' off' e =>
+              hres rest rd Lr ps' pw' st' nx' off' e d p.1)
+
+/-- **★ `Dm10`（節 10）** -/
+theorem dm10_holds (hres : ResidDm10) {m d : ℕ} (M : TrioSeq) (hs1 : steps1 M)
+    (hmem : ∀ c ∈ M, m ≤ c.1) (hhd : M ≠ [] → (M.headI).1 = m)
+    (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ) (first force : Bool) (st : St)
+    (nx : Option Col) (off : ℕ) (hlen : m ≤ st.dmap.length)
+    (hpre : M = [] → Dm10 d m st) :
+    Dm10 d m (conv3 M d L F ps pw first force st nx off).2 :=
+  dm10_aux hres M.length M le_rfl hs1 m d hmem hhd L F ps pw first force st nx off hlen
+    hpre
+
 /-- `conv3` の呼び出しごとの不変量（**まだ証明していない**、課題 L2 (b)）。
 
 ### 残りの補題（課題 L3 で**縮約でない枝まで詰めた**）
