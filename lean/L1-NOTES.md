@@ -3496,3 +3496,42 @@ a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / �
 | **合計** | **200〜290 行** |
 
 **測定範囲**: R1 が `gen3 ≤8` 全数 ＋ 展開閉包（最長 24 列）。**未測定は無い。**
+
+
+---
+
+# 課題 L26: `BlkLo` を `BlkInv` に通した（2026-08-29）
+
+## 0. 結論
+
+**`BlkLo M`（ブロックの全柱は先頭の柱の深さ以上）を `BlkInv` の仮定に足し、
+`blkInv_aux` / `blk_step` / `resid_blk` の 4 再帰すべてに通した。**
+`Dbms3.lean` exit 0 / `sorry` 0 / `axiom` 0。**新しい仮定は 1 つも増えていない。**
+
+## 1. 各呼び出し点の `BlkLo` の出どころ（全部証明）
+
+| 呼び出し | 出どころ |
+|---|---|
+| `cA`（`A = r.takeWhile`） | `takeWhile_blkLo hst1s`（`steps1` から） |
+| `cB`（`B = r.dropWhile`） | `dropWhile_blkLo hblo` |
+| `cU`（`U = B.take kU`） | `blkLo_take (dropWhile_blkLo hblo) _` |
+| **`cB`（縮約, `Bq`）** | `blkLo_of_le`: 全柱が `p.1` 以上（`hblo` ＋ 部分列）、先頭が `p.1` 以下（`deepGe_head_lt` ＋ **`contrFind_q_eq`**） |
+| `convResid` の木 | `blkLo_take_deepGe`（`deepGe` の定義そのもの） |
+| 入口（`ImgBlockT3_of_BlkInv`） | `blockok_ST_TS` の第 1 項（標準形の頭は行 0 が 0） |
+
+⚠ **`Bq` のところで `kU` と `kUv` が別の変数になる**（外の `match cfm` が束縛する
+`kUv` と、内の `contrFind` の `kU`）。`hw : (e,kU,kp,na) = (ee,kUv,kpv,nav)` から
+`congrArg (fun t => t.2.1) hw` で `kU = kUv` を出して `rw` しないと `omega` が
+別々の原子として扱って落ちる。**同じ落とし穴が `Dm10` の配線でも出るはず。**
+
+## 2. 残り
+
+| やること | 行数 |
+|---|---|
+| `BlkInv` に `Dm10` の conjunct、`blk_step` の 2 枝で結論 | 80〜110 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **160〜230 行** |
+
+`ImgBlockT3_of_resid` の仮定は **2 本のまま**（`DmapInT` / `ResidSideT`）。
+道具は全部揃っている。**未測定は無い。**
