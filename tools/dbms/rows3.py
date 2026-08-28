@@ -732,6 +732,12 @@ V15['hiblk'] = os.environ.get('RS_NOHIBLK', '') != '1'
 # 課題 H13: `after_w` の決定をひっくり返す条項。`RS_NOAWFLIP=1` で切る。
 V17 = {
     'awflip': os.environ.get('RS_NOAWFLIP', '') != '1',
+    # 課題 H20: `aw_flip` は **deep -> shallow の向きだけ**に使う。
+    # 門の `last_w`（行列の末尾列が「x w」）は「続きが seqlex で大きくなると
+    # 真 -> 偽」に落ちる条件なので、**deep 化**に使うと順序の逆転（減）を作る。
+    # 向きを片側に制限すると `ST_TS` 閉包の破れが 7 -> 3 に減る。
+    # `RS_NOAWDOWN=1` で両向きに戻る。
+    'awdown': os.environ.get('RS_NOAWDOWN', '') != '1',
 }
 
 
@@ -1288,7 +1294,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
                 shallow = not (hi and not pnt)
                 # v17 awflip（課題 H13）: 発火 27 回（lim=6）の稀な枝だが、
                 # 証人が要求する反転の 23/24 がここ。門は `aw_flip`。
-                if V17['awflip'] and aw_flip(Mo, off):
+                if (V17['awflip'] and aw_flip(Mo, off)
+                        and not (V17['awdown'] and shallow)):
                     shallow = not shallow
             # v13 wchain（課題 F2）: `after_w` の窓は**直前 1 本**しかない。
             # 「x w」の柱がもっと後ろにあって、そこから今までがぜんぶその子孫

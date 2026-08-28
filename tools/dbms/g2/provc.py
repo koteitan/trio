@@ -158,7 +158,8 @@ def conv3(M, d=0, L=(), F=(), ps=(0, 0), pw=(0, 0), first=True, force=False,
                 why = 'after_w'
                 # v17 awflip（課題 H13）: 発火 27 回（lim=6）の稀な枝だが、
                 # 証人が要求する反転の 23/24 がここ。門は `aw_flip`。
-                if V17['awflip'] and aw_flip(Mo, off):
+                if (V17['awflip'] and aw_flip(Mo, off)
+                        and not (V17['awdown'] and shallow)):
                     shallow = not shallow
             # v13 wchain（課題 F2）: `after_w` の窓は**直前 1 本**しかない。
             # 「x w」の柱がもっと後ろにあって、そこから今までがぜんぶその子孫
