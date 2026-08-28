@@ -5,7 +5,7 @@
 """
 import sys, os, time, pickle
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import r2, rows3
+import r2, rows3, core
 from core import isstd
 
 if __name__ == '__main__':
@@ -17,6 +17,10 @@ if __name__ == '__main__':
     for i, S in enumerate(E8):
         if i % nsh != shard:
             continue
+        # メモが青天井に伸びる（9 列は 1 個ずつしか問い合わせないので効かない）
+        if i % 20000 == 0:
+            core._isstd_memo.clear(); core._exp_memo.clear()
+            core._flat_memo.clear()
         amax = S[-1][0] + 1
         for a in range(amax + 1):
             for b in range(a + 1):
