@@ -4081,3 +4081,109 @@ DBMS 版 `m_step_decreases` も `trio_cofinality` の DBMS 版も要らない
 ⚠ 書くときの注意: `RD3` / `ReindexT1D` / `ST_D3_descend_D` / `ST_D3_conv3_D` は §6 の前、
 `OrderReindexT3'` / `ReindexT1D_of_cofinal` / `ST_D3_conv3_of_parts_D` は §11 の後
 （`ImgCofinalT3` などの定義位置による）。実装で 2 回はまった。
+
+
+---
+
+# 課題 L39: 2 行の筋は 3 行では**使えない**（`ReindexD` の結論そのものが偽）（2026-08-29）
+
+## 0. 結論を先に
+
+**2 行の `reindexD_holds` が仮定なしで通っているのは、結論が 3 行より強い形で
+書けるからである。その強い形は 3 行では偽**（性質 R）。⟹ **筋を借りられない。**
+
+    2 行  ReindexD := ∀ A, ST_PS A → 1 < |A| → ∀ n ≥ 1,
+            ∃ m n', 1 ≤ m ∧ n ≤ n' ∧ **(conC A)⟦m⟧ = conC (A⟦n'⟧)**
+                                        ^^^^^^^^^^^^^^^ 相手は **A 自身の展開**
+
+    3 行  ReindexT1 := … ∃ m B, … ∧ **(conv3 A)⟦m⟧ = conv3 B** ∧
+            translate (A⟦n⟧) ≤o translate B ∧ translate B <o translate A
+                                     ^^^ 相手は「ある標準形 B」まで緩めてある
+
+**`B = A⟦n'⟧` に取れないことが性質 R の否定**である
+（`tools/dbms/NOTES.md` §性質 R、`Dbms3.lean:34`、`SESSION-2026-08-28.md:17`）。
+
+## 1. `reindexD_holds` の骨格（10 行以内）
+
+1. `ReindexD` は「**像の展開は、A 自身の展開の像**」。相手を探さなくてよい。
+2. だから `ImgCofinalT` も `OrderT3` も `SandwichU` も**出てこない**
+   （`B` を作る／位置づける仕事が要らない）。
+3. 証明は **`A` の右端の道に沿った帰納**（`reindexD_zero_block` / `reindexD_pos_block`）。
+4. 末尾列の段が 0 か正かで 2 分岐（`reindexD_zero5` / `reindexD_pos_of4`）。
+5. `dropLast` の 4 段（`convC_dropLast_arg` / `_tail` / `_lad_none` / `_contr`）で
+   1 列ずつ剥がす。
+6. 剥がせない形は**禁止形**で潰す（`adj3` / `noAdj3_ST_PS` / `headPatOK` / `argPatOK`）。
+7. 浅い柱の**証人**（`convC_exists_shallow` / `_shallow1`）と床の補題
+   （`rtg_lt_of_floor` / `le0_ge_of_append`）で、剥がした先の深さを押さえる。
+8. 残余は `res11 → res10 → … → res7` と順に消えた（`CtrRes` / `RDnopar` /
+   `RDnode` / `CtrPres2` は定理化、`RDzeroRes2` などは帰納の組み替えで消滅）。
+9. **`RDposRes` / `contrOK` は偽と判明**し、使わない版に置き換えた。
+10. 全体 15471 行。
+
+## 2. 3 行でどこまで使えるか
+
+| 2 行の道具 | 3 行で |
+|---|---|
+| 右端の道に沿った帰納 | **使えない**。結論が `B = A⟦n'⟧` でないので「A の右端」を剥がしても相手に届かない |
+| `dropLast` の 4 段 | 形としては移せる。ただし行 2 の分岐が増える |
+| 禁止形 `adj3` / `noAdj3_ST_PS` | **3 行版は無い**。行 1 と行 2 の 2 本の道があるので禁止形の分類がやり直しになる |
+| 証人・床の補題 | 移せる見込み。`Dbms3.lean` の `depths_ok` / `fit_bounds` が近い |
+
+**「右端の道が 2 本になる」は壊れる原因ではない**（それだけなら場合分けが増えるだけ）。
+**壊れるのは結論の形**である。
+
+## 3. 見積もり: **いまの分解を捨てる価値は無い**
+
+2 行の筋を 3 行で通すには、まず **性質 R を回復する**必要がある。それは
+`conv3` の設計を変える話（課題 H）であって Lean の話ではない。
+⟹ **分解（`ImgCofinalT3` ほか）を捨てて 2 行の筋に乗り換える道は無い。**
+
+ただし **中間の形を測る価値はある**（Python へ）:
+
+> `ReindexT1` が返す `B` は、`A⟦n'⟧` からどれくらい遠いか。
+> **`B = A⟦n'⟧` になる割合**、ならないときの**差の形**（長さの差 / 末尾何列が違うか）。
+> もし「`B` は `A⟦n'⟧` の展開」や「`B` は `A⟦n'⟧` と末尾 1 列だけ違う」なら、
+> **性質 R の弱い版**が立ち、2 行の筋の一部が使えるかもしれない。
+
+⚠ `ImgCofinalT3` が破れ 20 で弱められないのは事実だが、**それは行き止まりの証拠では
+ない**。`ImgCofinalT3` は「像の展開の逆像が存在する」で、性質 R が偽である以上
+**その代わりに必要になったもの**である。破れ 20 を直すのは変換器側の仕事である。
+
+---
+
+# 課題 L38: 導出に穴は無い。見積もり 150〜250 行（2026-08-29）
+
+## 0. 型の確認（全部合っている）
+
+    trio_cofinality (hM : ST_TS M) (hN : ST_TS N) (h : translate N <o translate M) :
+      ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧)          ← 形は指摘どおり
+    not_olt_len_one_T (hM : ST_TS M) (hA : A.length ≤ 1) (hAst : ST_TS A)
+      (h : translate M <o translate A) : False
+    step_terminates (wfimg : WellFounded Rnf) : WellFounded stepRel
+      Rnf v u := v <o u ∧ u ∈ NF ∧ v ∈ NF                    ← 目標はこれ
+
+## 1. `1 < |B_i|` の始末（`≤o` なので 2 段要る）
+
+`translate A_{i+1} ≤o translate B_i` は `<o` **または** `=` である。
+
+* `<o` の側 … `not_olt_len_one_T` で直に矛盾 ✓
+* `=` の側 … `A_{i+1} = [(0,0,0)]` になるので `|A_{i+1}| = 1`。ところが無限列は
+  `A_{i+2}` へ続くので `translate A_{i+2} <o translate A_{i+1}` があり、
+  こんどは `not_olt_len_one_T`（`A := A_{i+1}`）で矛盾 ✓
+
+⟹ **穴は無い。ただし「列が次へ続く」ことを使う**ので、
+`Acc` の形ではなく**無限降下列の形**で書くのが素直である。
+
+## 2. 見積もり
+
+| やること | 行数 |
+|---|---|
+| `WellFounded` ↔ 無限降下列なし の言い換え | 30〜50 |
+| 列の構成（`Nat.rec` で `B_i` と不変量 `translate A_{i+1} ≤o translate B_i` を同時に） | 60〜100 |
+| `1 < |B_i|` の 2 段 | 20〜30 |
+| DBMS 側の無限列 → `wfD` と矛盾 | 30〜50 |
+| **合計** | **140〜230 行** |
+
+⚠ **置き場所**: `Dbms3.lean` は `lakefile.toml` の `roots` に無いので
+`Final.lean` から import できない。**`Dbms3.lean` の側に置く**のが安全
+（`TRIO_terminates_of_dbms_wf` を `Dbms3.lean` の末尾に）。
