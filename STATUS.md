@@ -1,40 +1,73 @@
-# 現在地（2026-08-30 昼）
+# 現在地（2026-08-30 夕）
 
-**3 行 z<2 バシク行列の停止性は、Lean 上で `CoreCap` 1 本に帰着している。**
-`CoreCap` は **`CoreSingleton` と同値**（`Lind.lean:181` / `:195`）で、
-**単独で `WellFounded stepRel` を出す**（`Final.lean:573 TRIO_terminates_of_cap`）。
+**残核は `LiftTieSelf`（＋ `TowerExp`）。** そして今日いちばん大きい構造の判明:
 
-    残核を日本語 1 行にすると:
-    **接頭辞を全部 W に持つ文脈 M の、最後の列の行 1・行 2 を「何に」差し替えても W に残る。**
-    段の上界 `a` は `(v,z,t)` だけで決まり、**`b, c` には依らない**。
-    ＝「親のある列は段を食わない」という原理そのもの。
+    **`CoreSingleton` ＝ `CoreCap` ＝ `GraftAll`**（同じ命題の 3 つの名前。全部緑）
+      `Lind.lean:181`/`:195`        `CoreSingleton ⟺ CoreCap`
+      `L105Cap.lean:§25`            **`coreCap_iff_graftAll : CoreCap ↔ GraftAll`**
+      `Lind.lean:169`               `graft M [(0,b,c)] = cap M b c` … `y` が 1 列に見えた理由
+      `Wset.lean:4085` docstring    「**The single Buchholz-(1) core**」
 
-## ★ `CoreCap` の展開は 3 分岐しかない —— 全部 Lean に無条件の等式がある（§137, R2 実測）
+## ⚠ 「仮定 1 本」は指標にならない（今日の最大の教訓。教訓 32/33）
 
-`|M|<=3` の全数 **1,333,584 件**（サンプリングなし、神託ゼロ）で `oper` の計算と照合、**破れ 0**:
+    `Final.lean:573`  `TRIO_terminates_of_cap (hc : CoreCap)`          … 仮定 **1 本**
+    `L53Subst:2506`   `TRIO_terminates_of_liftTie (hlt) (he : TowerExp)` … 仮定 2 本
 
-    j0 >= 1    24.0%  S⟦n⟧ = S[0] :: (S.tail)⟦n⟧   `oper_cons_nat`（`Wset.lean:2041`）
-    j0 = 0     31.0%  S⟦n⟧ = 根つき塔               `oper_cons_tower1/2`（`:2789`/`:3231`）
-    noparent   45.0%  S⟦n⟧ = S.dropLast             `oper_eq_pred_of_noParent`
+私は本数を 3 回引いて「`CoreCap` が唯一の 1 本の核」と書いたが、**緑の同値で否定された**。
+`CoreCap ⟺ GraftAll` の鎖の中に **`Wset.liftTowerExp2_of_graftAll`（`:4211`）＝ `TowerExp` 相当**
+があり、`liftTower1_of_graftAll`（`:4151`）＝ `TowerOK1` 相当もある。
+⟹ **`CoreCap` は `TowerExp` を避けているのではなく内側に畳んでいた。仕事量は同じ。**
 
-**4 つ目の分岐は無い。** ⟹ **`A ++ B`（独立な 2 元の連結 = `WCat` の形）は
-`CoreCap` の展開に現れない。⟹ `CoreCap` は `WCat` を要求しない。**
+さらに `TowerOK` の仮定 `Aop W u0 Wstar R` は**債務ではなく道具**（導出木へのアクセス）。
+本数を数えると**道具を持っている側が不利に見える**。
 
-## ⚠ `rsum` の壁は `CoreCap` には当たらない（私の §131/§133 の枠組みの誤り）
+## ★ 採用した路線: `LiftTieSelf` ＋ `TowerExp`
 
-    WSnoc   shTower Q e (n+1) = shTower Q e n ++ shiftr01 (n*e) 0 Q  ← **連結**。rsum が要る
-    CoreCap tow v z R (k+1)   = (0,v,z) :: graft R (tow v z R k)     ← **graft**。W_add を通らない
+    `LiftTieSelf`（`L105Cap.lean:§21`）… **4 量化 / 3 前提、段は `2v+z` に固定**。文が最小
+      ∀ d v z R, argOK R → (∃ p ∈ R, p.2.1 = v) → ((0,v,z) :: R) ∈ W (2v+z) →
+        Lift1 ((0,v,z) :: R) d ∈ W (2v+z + 2d)
 
-`graft` は末尾の孤児を差し替えるだけで `rsum` の側条件が発生しない。
-⟹ L3 の `not_rsum_*`（緑）は**真だが無害**。`W_add` が死んでいても路線は死なない。
-⟹ 私が STATUS に書いた「`j0=0` ⟹ rsum が破れる ⟹ 壁」は**誤り。撤回した。**
+    `towerOK2_of_liftTieSelf`  ★ `TowerOK2` ⟸ `LiftTieSelf`（緑）
+    `towerOK_of_liftTieSelf`   ★ `TowerOK` ⟸ `LiftTieSelf` ＋ `TowerExp`（緑）
 
-## ★★ 当たる壁は `TowerOK2`。残る債務は 3 つだけ（R2 実測）
+**`Wstar` の元はすべて `Wself`（`L53.Wstar_iff_Wself`）⟹ 狙う場所とちょうど一致。**
+攻撃面が極小: `liftStage_of_strict`（仮定ゼロ）が 88.5%、`liftStage_of_noTie`（仮定ゼロ）が 2.8%、
+`liftTie_case_tieFree` が 6.1% を覆い、**残りのタイはシート 4482 行のうち 24 節点 = 0.5%**。
 
-    ⛔ **(2)「`c >= 2` が未処理」と (3)「`argOK` が破れる」は、どちらも撤回された**（§139）。
-       (2) L3 が `tower2_stage_fits` を **`z < c`** に一般化 ⟹ `c >= 2` はむしろ**易しい側**
-       (3) R2 が起点を数え直し ⟹ 破れる起点は `srow=0` の塔だけで、そこは
-           `rsum_self_cons` ＋ `W_flatMap_copies` で**無条件に閉じている**
+## ⛔ `CoreCap ⟸ LiftTieSelf` は通らない（循環）
+
+`towerOK2_of_liftTieSelf` の前提のうち `CoreCap` の設定で供給できないのは
+**`hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar`** ただ 1 つで、
+これは **`GraftAll` そのものの形**。`CoreCap ⟺ GraftAll` なので**循環**。
+逃げ道の `Gamma.ctxOK_graft`（`:307`）も前提が `Y.dropLast ∈ GX` なので同じく循環。
+
+## ★ 今日の一手（課題 L115 / R94 / H59）
+
+    L115-1 … **`LiftTieSelf` を `L53.split_lastTie` で割る**。最後のタイを剥がして
+             残りが無タイなら `liftStage_of_noTie`（仮定ゼロ）が当たる
+    R94    … **タイの本数**が常に 1 本か（母集団は `domT` ∧ `srow=2` ∧ `hasParent` に限定）
+    H59-1  … `LiftTieSelf` に反証器（違反が出れば偽）
+
+## ★ どこで止まっていたか（§143。構文レベルで特定ずみ）
+
+> `j0 >= 1` の枝は `oper_cons_nat` で「尾が展開された同じ目標」に落ちるだけで、
+> `CoreCap` は尾の `W` 導出（`Aop W u0 Wstar R`）を仮定していないので、そこで測度が無くなる。
+
+降下の測度は **2 つあって別物**:
+
+    (A) `Wstar` … `W` の最小不動点の**導出木**（`A2'`）＝ `TowerOK` の `Aop W u0 Wstar R`
+    (B) `GX`    … `Lind.mem_GX_of_singletons` は **`y` の長さの強帰納**。展開 `⟦n⟧` は現れない
+
+⚠ 長さでは回らない（`oper` の長さは `j0 + n*(j1-j0)`。`n=1` で減り `n>=2` で増える）。
+
+## 反証器スイープ（H12、§144）: **全核で確定した反例ゼロ**
+
+⛔ 欄は 6 件 → **5 件**（`Row0Free` は偽ではなく強すぎるだけ）。
+⚠ 弱点 2 つ: **`TowerOK2` の決定率は 14%**（24 件で違反 0 は薄い）、
+**`Aop` の節 3 側は握れていない**（250 標本すべて未判定）——
+それは §143 で特定された「失われた測度」そのもの。
+
+---
 
 ## ★★★ 残核は **`LiftTieSelf`** 1 本（§141）
 
