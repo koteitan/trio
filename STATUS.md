@@ -36,20 +36,47 @@
        (3) R2 が起点を数え直し ⟹ 破れる起点は `srow=0` の塔だけで、そこは
            `rsum_self_cons` ＋ `W_flatMap_copies` で**無条件に閉じている**
 
-## ★★★ 残核は **`LiftTie`** 1 本（§140。§139 の「親が根でない」は誤りで撤回）
+## ★★★ 残核は **`LiftTieSelf`** 1 本（§141）
 
-`TowerOK2` の枝（`srow = 2`）は**段の議論が全部済んでいる**:
+    def LiftTieSelf …（`lean/L105Cap.lean` §21、L3）4 量化 / 3 前提、段は **`2v+z` に固定**
+      ∀ d v z R, argOK R → (∃ p ∈ R, p.2.1 = v) → ((0,v,z) :: R) ∈ W (2v+z) →
+        Lift1 ((0,v,z) :: R) d ∈ W (2v+z + 2d)
 
-    親は**必ず根**            `Wset.parent_cons_eq_zero`（`Wset.lean:2762`、証明ずみ）
-                              `domT R m` ＋ `hasParent` ⟹ `parent = 0`
-    ⟹ `z < c` が自動          `L53.tower2_zr`（`L53Subst.lean:2380`）
-    ⟹ **段は無条件に収まる**  `L53.tower2_stage_fits'`（`:2406`）
-                              docstring「段はいつでもちょうど収まる（`z=0` も `hz'=1` も要らない）」
-    ⟹ **残る仮定は `LiftTie` 1 本**  `L53.towerOK2_of_clause3`（`:2432`）の唯一の仮定
+    `towerOK2_of_liftTieSelf`   ★ **`TowerOK2` ⟸ `LiftTieSelf`**（緑）
+    `towerOK_of_liftTieSelf`    ★ `TowerOK` ⟸ `LiftTieSelf` ＋ `TowerExp`（緑）
 
-**`LiftTie`（`L53Subst.lean:2337`）＝「行 1 のタイがある根での (WL)」。**
-L2 の §L65/L66 の分析（`TieFree` / `Row1Mono` / `WConvex` はどれも同じタイを
-別の言葉で避けている、`Lift1` は `oper` と可換でない）が現在地の正確な記述。
+`X ∈ W m` から `X ∈ W (lev X 0)` は出ないので **`LiftTie` の真の弱化**。
+そして `Wstar` の元はすべて `Wself`（`L53.Wstar_iff_Wself`）⟹ **狙う場所とちょうど一致**。
+
+## ★ `CoreCap` の債務表（R2、|M|<=4 の全数 2400 万件、破れ 0）
+
+| 分岐 | 割合 | Lean | 状態 |
+|---|---|---|---|
+| `noparent` | 44.0% | `oper_eq_pred_of_noParent` | **無条件で閉** |
+| `j0>=1` | 28.3% | `oper_cons_nat`（`Wset:2041`） | **無条件で閉** |
+| `j0=0, srow=0` | — | `W_flatMap_copies`（`:2551`）＋ `rsum_self_cons`（`:2539`） | **無条件で閉** |
+| `j0=0, srow=1` | — | `oper_cons_tower1`（`:2789`） | `TowerOK1`（節 3 の与件がある場面で既済） |
+| **`j0=0, srow=2`** | — | `oper_cons_tower2`（`:3231`） | **`TowerOK2` ＝ 唯一の残核** |
+
+`j0=0` の割合は |M| を伸ばしても **44% 前後に漸近して消えない**（|M|<=3 56.4% → <=4 49.5% → L=6 44.0%）。
+
+## ★★ 今日の勝負どころ（課題 L113）: **`CoreCap ⟸ LiftTieSelf`**
+
+    `CoreCap` の残債務 = `j0=0, srow=2` = `TowerOK2`、そして `TowerOK2 ⟸ LiftTieSelf`
+    さらに `CoreCap` の経路（`coreSingleton_of_cap` `Lind:181` → `Final:559` → `:552`）は
+    **`Wstar` / `TowerOK` / `TowerExp` を通らない**（`GX` の経路。`CORES.md` の「経路」列 C）
+
+⟹ **通れば `LiftTieSelf` 単独で停止性が出る。文が最小で仮定 1 本という初めての形。**
+怪しいのは `TowerOK2` の前提 `hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar`
+（`CoreCap` の設定では `CtxOK` しか無い）。
+
+## 核の地図（仮定の本数。`Final.lean` より）
+
+    `TRIO_terminates_of_cap (hc : CoreCap)`                            … **1 本**
+    `TRIO_terminates_of_liftTie (hlt) (he : TowerExp)`                 … 2 本
+    `TRIO_terminates_of_row1down (h1) (h0) (he : TowerExp)`            … 3 本
+
+実測: シート 4482 行のうち `TowerOK2` のタイは **24 節点（0.5%）**（H11）。
 
 ## ⛔ 撤回された「穴」3 つ（全部 team-lead の誤り。§139-140）
 
