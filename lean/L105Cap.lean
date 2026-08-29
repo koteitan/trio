@@ -1161,6 +1161,111 @@ theorem tower2_root_z_zero' {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
 ただし `c ≥ 2` なら根はふたたび候補になる（`z = 1 < 2 ≤ c`）ので、
 **`c ≥ 2` はむしろ易しい側**である。 -/
 
+
+/-! ## 20. ★★★★★ 課題 L109-2: **`rsum` は「写す塊の根の行 0」だけで決まる**
+
+R2 の実測「木の下で `argOK` が破れる（訪問ノードの 5.6%）。反例
+`[(0,0,0),(1,0,0),(0,0,0),(1,0,0)]`。`d0 = 0` の塔が同じ塊を反復する。
+ただし `entry P 0 0 = 0` なので `rsum` は成り立つ側」を Lean で確定する。
+
+**二分法（接頭辞が根を含むとき）**:
+
+    写す塊 `Q` の根の行 0 = 0（＝ `based Q`）… `rsum A Q` は**自明に成り立つ**
+    写す塊 `Q` の根の行 0 ≥ 1               … `rsum A Q` は**必ず破れる**
+
+⟹ §14 の「`W_add` が死ぬ」と R2 の「`rsum` は成り立つ側」は**同じ二分法の裏表**。
+`argOK` が生きている（＝ 根だけが行 0 = 0）ところでは塊の根が深いので `rsum` が破れ、
+`argOK` が破れている（＝ 木の下に行 0 = 0 の列が湧く）ところでは塊が基づくので
+`rsum` が通る。**⟹ どちらの場合も詰まらない。** -/
+
+/-- **★ 写す塊が基づくなら `rsum` は自明**（ℕ なので `0 ≤ p.1`）。 -/
+theorem rsum_of_based {A Q : TrioSeq} (hb : based Q) : rsum A Q := by
+  intro p _
+  rw [hb]
+  exact Nat.zero_le _
+
+/-- `not_rsum_of_root_mem` の**必要最小**の形（`argOK Q` は要らない）。 -/
+theorem not_rsum_of_root_mem' {A Q : TrioSeq} (hQ : 0 < entry Q 0 0)
+    (hroot : ∃ p ∈ A, p.1 = 0) : ¬ rsum A Q := by
+  intro h
+  obtain ⟨p, hpA, hp0⟩ := hroot
+  have h1 := h p (List.mem_append.mpr (Or.inl hpA))
+  omega
+
+/-- **★★ 二分法**: 接頭辞が根を含むとき、`rsum` の成否は塊の根の行 0 だけで決まる。 -/
+theorem rsum_iff_based_of_root_mem {A Q : TrioSeq} (hroot : ∃ p ∈ A, p.1 = 0) :
+    rsum A Q ↔ entry Q 0 0 = 0 := by
+  refine ⟨fun h => ?_, fun h => rsum_of_based h⟩
+  by_contra hc
+  exact not_rsum_of_root_mem' (by omega) hroot h
+
+/-! ### 20.1 ⟹ **基づく塊の `PrefixCopies` は定理**（仮定ゼロ） -/
+
+theorem based_flatMap_copies {Q : TrioSeq} (hb : based Q) (n : ℕ) :
+    based ((List.range n).flatMap fun _ => Q) := by
+  by_cases hQ : Q = []
+  · subst hQ
+    simp [based, entry]
+  · have hlen : 0 < Q.length := List.length_pos_iff.mpr hQ
+    cases n with
+    | zero => simp [based, entry]
+    | succ n =>
+        rw [List.range_succ_eq_map, List.flatMap_cons]
+        show entry (Q ++ _) 0 0 = 0
+        rw [entry_append_left Q _ hlen]
+        exact hb
+
+/-- 基づく塊の写しは無条件で `W`（`W_flatMap_copies` の側条件が自明）。 -/
+theorem W_copies_of_based {u : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u) (hb : based Q)
+    (n : ℕ) : ((List.range n).flatMap fun _ => Q) ∈ W u :=
+  W_flatMap_copies hQ (fun p _ => by rw [hb]; exact Nat.zero_le _) n
+
+/-- **★★★★★ `PrefixCopies`（`L53Subst.lean:3599`）は、写す塊が基づく場合には
+仮定ゼロの定理である。** ⟹ R2 の「`argOK` が破れる 5.6%」はここで埋まる。 -/
+theorem prefixCopies_of_based {u n : ℕ} {A Q : TrioSeq}
+    (hA : A ∈ W u) (hQ : Q ∈ W u) (hb : based Q) :
+    A ++ ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  refine W_add hA (W_copies_of_based hQ hb n) ?_
+  intro p _
+  rw [based_flatMap_copies hb n]
+  exact Nat.zero_le _
+
+/-! ### 20.2 R2 の反例の確認
+
+`[(0,0,0),(1,0,0),(0,0,0),(1,0,0)]` は `Q = [(0,0,0),(1,0,0)]` の 2 個の写し。
+`based Q`（`entry Q 0 0 = 0`）なので `prefixCopies_of_based` がそのまま当たる。 -/
+
+def Qr : TrioSeq := [(0, 0, 0), (1, 0, 0)]
+
+theorem based_Qr : based Qr := rfl
+
+theorem rsum_Qr (A : TrioSeq) : rsum A Qr := rsum_of_based based_Qr
+
+theorem W_copies_Qr {u : ℕ} (hQ : Qr ∈ W u) (n : ℕ) :
+    ((List.range n).flatMap fun _ => Qr) ∈ W u :=
+  W_copies_of_based hQ based_Qr n
+
+
+/-- **★★ ⟹ `PrefixCopies` の残核は「写す塊が基づかない」場合だけ。** -/
+theorem prefixCopies_split {u n : ℕ} {A Q : TrioSeq} (hA : A ∈ W u) (hQ : Q ∈ W u)
+    (hopen : 0 < entry Q 0 0 → A ++ ((List.range n).flatMap fun _ => Q) ∈ W u) :
+    A ++ ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  rcases Nat.eq_zero_or_pos (entry Q 0 0) with h | h
+  · exact prefixCopies_of_based hA hQ h
+  · exact hopen h
+
+/-! ### 20.3 ⟹ `argOK` の生死がそのまま `rsum` の生死
+
+`srow = 0` の展開では写す塊は `C.drop j0` で、`entry (C.drop j0) 0 0 = entry C 0 j0`。
+
+    `argOK` が生きている（根だけが行 0 = 0）… `j0 ≥ 1` ⟹ `entry C 0 j0 ≥ 1`
+      （`capBase_entry0_pos`）⟹ **`rsum` は破れる**（§14）⟹ `PrefixCopies` の残核側
+    `argOK` が破れている（木の下に行 0 = 0 の列が湧く、R2 の 5.6%）
+      ⟹ 塊が基づく ⟹ **`rsum` は通る**（§20）⟹ `prefixCopies_of_based` で**無料**
+
+**⟹ R2 の 5.6% は障害ではなく、むしろ無料になる側。**
+`oper_cons_nat` が `argOK R` を要求して止まる場面は、まさにこの無料の側である。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
