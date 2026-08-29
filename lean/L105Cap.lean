@@ -3014,6 +3014,60 @@ theorem tower_row2_pred {v z m : ℕ} {R : TrioSeq} {P : ℕ → Prop} (hR : arg
 ⟹ **経路 D（`Wstar`）の残核は、経路 C（`GX` / `CoreCap` ⟺ `GraftAll`）と同じ
 「graft 閉包」1 点に合流した。** -/
 
+
+/-! ## 42. ★★★★ 課題 L122: `|R|` の長さ帰納で graft 閉包は作れるか
+
+team-lead の指摘は正しい: **`TowerExpBigRow2` は `R.dropLast ∈ Wstar` を仮定として
+持っており、それが §22 で「`CoreCap` には無い」と書いた尾の `W` 導出そのもの。**
+⟹ 経路 D から入るほうが測度がある。
+
+そこで「節 3 の義務を `R.dropLast ∈ Wstar` と `|R|` の帰納から作れるか」を見た。
+
+### 42.1 義務の形は **`graft (根つきブロック) y`**（`Wset.graft_cons` `:2545`）
+
+    `graft ((0,v',z') :: R) y = (0,v',z') :: graft R y`
+
+⟹ 節 3 の義務 `graft R y ∈ Wstar`、すなわち
+`((0,v',z') :: graft R y) ∈ W a'` は、**`graft ((0,v',z') :: R) y ∈ W a'` と同じ**。
+
+⟹ **「主ブロック `(0,v',z') :: R` を `y` で graft したものが `W a'`」**という形。 -/
+
+theorem graft_cons_obligation {v z : ℕ} {R y : TrioSeq} (hRne : R ≠ []) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: graft R y) = graft (((0, v, z) : ℕ × ℕ × ℕ) :: R) y :=
+  (graft_cons hRne).symm
+
+/-! ### 42.2 ⚠ **`|R|` の帰納が閉じない理由（1 行）**
+
+主ブロック `(0,v,z) :: R` について `Aop` の節 3 が使えれば、その義務がそのまま出る。
+ところが節 3 は **`domT ((0,v,z) :: R) m`**、すなわち
+**その末尾列が `(0,v,z) :: R` の中で孤児**であることを要求する。
+
+**しかし `TowerExpBig` の仮定は `hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R|`
+—— つまり「根が末尾列を復活させる」**である。両者は正面から矛盾する
+（`domT` の第 2 連言が `¬hasParent`、`Wset.lean:61`）。
+
+> **⟹ 主ブロックには節 3 が使えない。使えるのは節 2（展開して降りる）だけで、
+> 展開すると `oper_cons_tower1/2` の塔になり、その胴体にまた `graft R (…)` が現れる。
+> ⟹ 長さ `|R|` は減らない。**
+
+これは §16（`CoreCap` の残核でも節 3 が死ぬ）と**まったく同じ形**である。
+違いは、**経路 D では `R.dropLast ∈ Wstar` という尾の導出が手元にある**こと。
+
+### 42.3 ⟹ 「復活」がこの証明の唯一の結び目
+
+    節 3 が使える  ⟺ 末尾列が孤児（`domT`）
+    塔が起きる     ⟺ 根が末尾列を復活させる（`hasParent`）
+    **この 2 つは排他**。⟹ 塔の場面では節 3 が使えず、節 2 で降りるしかない。
+    そして節 2 で降りると胴体にまた `graft` が出る。
+
+`Xbar.graft_assoc`（`Xbar.lean:469`）`graft (graft M y) w = graft M (graft y w)` は
+**graft の合成を 1 本にまとめる**ので、塔の入れ子は `graft R (graft R (…))` の形に
+畳める。⟹ **測度になるのは `R` の長さではなく、`y` 側の `W m` の導出**である
+（`m < u` で段が下がる唯一の節が節 3 だから）。
+
+**⟹ 次のエージェントへ**: `R.dropLast ∈ Wstar` を「`y` 側の導出」に変換できるか。
+`graft_assoc` で入れ子を畳んだうえで、`W m` の `A2'` 帰納に載せるのが筋のはず。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
