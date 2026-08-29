@@ -5130,6 +5130,13 @@ theorem domT_of_rootBadScene {v z m : ℕ} {R : TrioSeq} (h : RootBadScene v z R
     (hlev : lev R (R.length - 1) = m + 1) : domT R m :=
   ⟨hlev, h.1⟩
 
+/-- **★★★★★★ 残差の場面では悪根は本当に根**（`lev R (|R|-1) ≥ 1` のとき）。
+`Wset.parent_cons_eq_zero`（`:2762`、緑）をそのまま当てる。 -/
+theorem parent_eq_zero_of_rootBadScene {v z m : ℕ} {R : TrioSeq} (hne : R ≠ [])
+    (h : RootBadScene v z R) (hlev : lev R (R.length - 1) = m + 1) :
+    parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length = 0 :=
+  parent_cons_eq_zero hne (domT_of_rootBadScene h hlev) (hasParent_rootBadScene hne h)
+
 /-- `lev = 0` なら `srow = 0`（行 1 も行 2 も 0）。 -/
 theorem srow_eq_zero_of_lev_zero {R : TrioSeq} {j : ℕ} (h : lev R j = 0) :
     srow R j = 0 := by
