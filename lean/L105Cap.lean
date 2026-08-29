@@ -5019,6 +5019,141 @@ theorem liftTieCoreZero_of_parented0 (h : LiftParented0) : LiftTieCoreZero :=
 ⟹ **得たのは場面の単純さだけで、新しい推論規則は増えていない。**
 段 0 でも本質は「親ありの 1 歩で `Lift1` と `oper` が可換でない」ところに集約される。 -/
 
+/-! ## 67. ★★★★★★ 課題 L136-3: **(WL) の 1 歩の残差は「悪根 ＝ 根」だけ**
+
+⚠ **新しい補題はひとつも証明していない。** 既存の `Lcone.liftInner_holds`（無条件・緑）を
+私の残差（§66）に当てただけである。だが**`LiftTieCore` の残差の位置が確定する。**
+
+`Wset.LiftInner`（`Wset.lean:4028`）は
+
+    `argOK R` ＋ `R ≠ []` ＋ **`hasParent R (srow R (|R|-1)) (|R|-1)`**
+      ⟹ `(Lift1 ((0,v,z) :: R) t)⟦n⟧ = Lift1 (((0,v,z) :: R)⟦n⟧) t`
+
+で、**`Lcone.liftInner_holds`（`Lcone.lean:507`）が仮定ゼロで証明している**。
+前提の `hasParent` は **`R` の中**の親、つまり `X = (0,v,z) :: R` で見て
+**悪根 `j0 ≥ 1`**（引数ブロックの内側）である。
+
+⟹ `X = (0,v,z) :: R` の **1 歩**については、可換でない可能性があるのは 1 通りだけ:
+
+    (A) `¬ hasParent X (srow X (|X|-1)) (|X|-1)` … `lift_oper_of_noParent` で**可換**
+    (B) `hasParent R (srow R (|R|-1)) (|R|-1)`   … **`liftInner_holds` で可換**
+    (C) どちらでもない                          … **残差 ＝ 悪根が根 (`j0 = 0`)**
+-/
+
+/-- (A) 親なしの枝（`Wtower2.lift_oper_of_noParent` の cons 版）。 -/
+theorem lift_oper_comm_cons_noParent {v z t n : ℕ} {R : TrioSeq} (hne : R ≠ [])
+    (hnp : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R) R.length) R.length) :
+    (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)⟦n⟧
+      = Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧) t := by
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hne
+  have h2 : 2 ≤ (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := by
+    simp only [List.length_cons]; omega
+  refine lift_oper_of_noParent h2 ?_
+  have hL : (((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1 = R.length := by
+    simp only [List.length_cons]
+    omega
+  rw [hL]
+  exact hnp
+
+/-- **★★★★★ (A) ∪ (B) では `Lift1` と `oper` は可換**。 -/
+theorem lift_oper_comm_cons {v z t n : ℕ} {R : TrioSeq} (hR : argOK R) (hne : R ≠ [])
+    (h : hasParent R (srow R (R.length - 1)) (R.length - 1) ∨
+        ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+            (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R) R.length) R.length) :
+    (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)⟦n⟧
+      = Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧) t := by
+  rcases h with hp | hnp
+  · exact liftInner_holds v z t n R hR hne hp
+  · exact lift_oper_comm_cons_noParent hne hnp
+
+/-- **★★★★★★ 残差の場面 (C)**: `R` の末尾列は `R` の中では**孤児**だが、
+根を足すと**親を持つ** ＝ **悪根が根**。 -/
+def RootBadScene (v z : ℕ) (R : TrioSeq) : Prop :=
+  ¬ hasParent R (srow R (R.length - 1)) (R.length - 1) ∧
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R) R.length) R.length
+
+/-- **★★★★★★ 残差の場面でなければ 1 歩は無料。** -/
+theorem lift_oper_comm_of_not_rootBad {v z t n : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hne : R ≠ []) (h : ¬ RootBadScene v z R) :
+    (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)⟦n⟧
+      = Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧) t := by
+  refine lift_oper_comm_cons hR hne ?_
+  by_cases hp : hasParent R (srow R (R.length - 1)) (R.length - 1)
+  · exact Or.inl hp
+  · exact Or.inr (fun hc => h ⟨hp, hc⟩)
+
+/-! ### 67.1 ⟹ 残差の場面は **`domT` の場面**（＝ 塔の場面）
+
+`RootBadScene` の第 1 成分は **`domT R m` の第 2 成分そのもの**である
+（`domT R m := lev R (|R|-1) = m+1 ∧ ¬ hasParent R (srow R (|R|-1)) (|R|-1)`）。 -/
+
+/-- `X = (0,v,z) :: R` の末尾列の `srow` は `R` の末尾列の `srow` と同じ。 -/
+theorem srow_cons_last {v z : ℕ} {R : TrioSeq} (hne : R ≠ []) :
+    srow (((0, v, z) : ℕ × ℕ × ℕ) :: R) R.length = srow R (R.length - 1) := by
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hne
+  have h1 : ∀ i, entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) i R.length
+      = entry R i (R.length - 1) := by
+    intro i
+    conv_lhs => rw [show R.length = (R.length - 1) + 1 from by omega]
+    exact entry_cons_succ i (R.length - 1)
+  unfold srow
+  rw [h1, h1]
+
+/-- ⟹ **残差の場面は `LiftTower1` / `LiftTowerExp2` の `hasParent` 前提そのもの**。 -/
+theorem hasParent_rootBadScene {v z : ℕ} {R : TrioSeq} (hne : R ≠ [])
+    (h : RootBadScene v z R) :
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length := by
+  have := h.2
+  rwa [srow_cons_last hne] at this
+
+theorem domT_of_rootBadScene {v z m : ℕ} {R : TrioSeq} (h : RootBadScene v z R)
+    (hlev : lev R (R.length - 1) = m + 1) : domT R m :=
+  ⟨hlev, h.1⟩
+
+/-- `lev = 0` なら `srow = 0`（行 1 も行 2 も 0）。 -/
+theorem srow_eq_zero_of_lev_zero {R : TrioSeq} {j : ℕ} (h : lev R j = 0) :
+    srow R j = 0 := by
+  unfold lev at h
+  unfold srow
+  rw [if_neg (by omega), if_neg (by omega)]
+
+/-! ### 67.2 ★★★★★★ ⟹ **`LiftTieCore` の残差 ＝ 既存の塔核 2 本**
+
+`RootBadScene v z R` のもとで `lev R (|R|-1)` を場合分けすると:
+
+    `lev R (|R|-1) = 0`     ⟹ `srow R (|R|-1) = 0`（`srow_eq_zero_of_lev_zero`）
+                              ⟹ **`snoc_flat_root` の場面 ＝ 無料**（§12.2）
+    `lev R (|R|-1) = m+1`   ⟹ **`domT R m`**（`domT_of_rootBadScene`）
+        `srow R (|R|-1) = 1` ⟹ **`Wset.LiftTower1`**（`Wset.lean:4034`）の前提そのもの
+        `srow R (|R|-1) = 2` ⟹ **`Wset.LiftTowerExp2`**（`Wset.lean:4045`）の前提そのもの
+
+⟹ **`LiftTieCore` の 1 歩の残差は、本線の既存核 `LiftTower1` / `LiftTowerExp2` と
+同じ場面である。** 私が §29 以来「経路 C」と呼んでいたものは、
+**`Wset.Wstar2_closed`（`Wset.lean:4221`、緑）が使っている分解と同じ場所に落ちる。**
+
+> **⟹ 核 (1)「`LiftTieCore`」と 核 (2)「塔が `Wself` に閉じる」は独立ではない。**
+> **同じ場面（悪根 ＝ 根、`srow ∈ {1,2}`）の 2 つの言い方である。**
+
+⚠ **ただし「(1) が (2) から出る」とはまだ言えない。** 上は **1 歩**の可換性の話で、
+`LiftTieCore` の帰納をこれで回すには `X = (0,v,z) :: R` という**形と `argOK R` が
+展開で保たれる**ことが要る。それを保つための道具が本線の `Wstar2`
+（`Wset.lean:3451`、`v z a t` を束ねた Π 命題）で、**その閉包定理
+`Wstar2_closed` はすでに `LiftInner ＋ LiftTower1 ＋ LiftTowerExp2` に還元済み**である。
+
+### 67.3 ⚠ (C) では本当に可換でない（`srow = 0` の具体例）
+
+`srow X (|X|-1) = 0` かつ悪根 `= 0` のとき `oper` の定義から
+`i1 = 0` ⟹ `d0 = 0` かつ `d1 = 0` なので、`X⟦n⟧` は **`X.dropLast` をそのまま `n` 個
+並べたもの**になる。各写しの先頭は行 0 が `0` なので**行 0 の根**であり、
+`k ≥ 1` の写しの列は `le0 (X⟦n⟧) 0 ·` を**満たさない** ⟹ `Lift1 (X⟦n⟧) 1` はそこを
+**持ち上げない**。一方 `(Lift1 X 1)⟦n⟧` は持ち上げ済みの値を全写しに複製する。
+⟹ **一致しない。**（この枝は `snoc_flat_root` が別経路で片づけるので害は無い。）
+
+⟹ **(C) は「可換性では閉じない」ことが定義から見える。** サンドイッチ
+（`Le1_Lift1_oper` / `Le1_oper_Lift1_shiftr01`）が要るのはここだけである。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
