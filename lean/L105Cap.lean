@@ -10625,6 +10625,59 @@ theorem le0_tower_root_col {Q : TrioSeq} {d e n k m q : ℕ}
 
 ⚠ **教訓 14**: (N1) は **道具**であって、(N3)（塔の塔）はまだ手つかずです。 -/
 
+/-! ## 149. ★★★★★★★ (N2) の下界: **復活の親は、条件を満たすどのブロック根よりも右**
+
+§148 (N1) ＋ §144（最小性の言い換え）を組む。 -/
+
+theorem mTower_entry1_root {Q : TrioSeq} {d e n k : ℕ} (hk : k < n) (hQ : 0 < Q.length) :
+    entry (mTower Q d e n) 1 (k * Q.length) = entry Q 1 0 + e * k := by
+  have h := mTower_entry (Q := Q) (d := d) (e := e) (n := n) (k := k) (q := 0)
+    (i := 1) hk hQ
+  rw [Nat.add_zero] at h
+  rw [h]
+  show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD 0 (0, 0, 0)).2.1 = _
+  rw [block_getD (d := d) (e := e) (n := k) hQ, if_pos (le1_refl hQ)]
+
+open Classical in
+/-- **(N2) の下界**: ブロック `k` の根の行 1 が的の行 1 より狭義に小さければ、
+行 1 の親の添字は `k * |Q|` 以上。 -/
+theorem nextrel1_tower_src_ge_blockRoot {Q : TrioSeq} {d e n k m q a : ℕ}
+    (hd : 0 < d) (hq : q < Q.length) (hkm : k ≤ m) (hm : m < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnr : nextrel1 (mTower Q d e n) a (m * Q.length + q))
+    (hlt : entry Q 1 0 + e * k < entry (mTower Q d e n) 1 (m * Q.length + q)) :
+    k * Q.length ≤ a := by
+  refine nextrel1_src_ge_of_candidate hnr
+    (le0_tower_root_col hd hq hkm hm hr0) ?_
+  rw [mTower_entry1_root (by omega) (by omega)]
+  exact hlt
+
+/-! ### 149.1 ⟹ (N2) は**下界**として書けました
+
+    **`entry Q 1 0 + e*k < （足す列の行 1）` を満たす `k` すべてについて、親は `k*|Q|` 以上**
+    **⟹ 最大の `k` を `k*` とすると、親はブロック `k*` 以降**
+
+**⟹ §145.4 で「保留」と書いた `k*` の話が、下界としては定理になりました。**
+
+⚠ **これは下界です。** 「親がちょうどブロック `k*` にある」は言っていません
+（§143 のとおり候補はブロック根だけではないので、親はもっと右にありえます）。
+**⟹ しかし (N3) の二重帰納にとって効くのは**下界**です:
+窓は `[親, 的]` なので、親が右にあるほど窓は短い。下界が窓の**上界**を与えます。**
+
+### 149.2 ⟹ 窓の長さの上界
+
+足す列がブロック `m`、位置 `q`。親は `k*|Q|` 以上。**⟹ 窓の長さ ≤ `(m - k)*|Q| + q`。**
+
+    **`k = m`（同じブロック）** ⟹ 窓 ≤ `q < |Q|` ⟹ **(ii)、測度が減る**
+    **`k = m - 1`**           ⟹ 窓 ≤ `|Q| + q < 2|Q|` ⟹ **2 ブロックぶん**
+    **`k` が小さい**           ⟹ 窓が長い ⟹ **塔の塔**
+
+> **⟹ `k*` が `m` に近いほど良い。そして `k*` は
+> `entry Q 1 0 + e*k < （足す列の行 1）` の最大解なので、
+> **`e` が大きいほど `k*` は `m` に近い**。**
+
+⚠ **教訓 14**: 上は **上界の式**であって、**(N3) の帰納ではありません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
