@@ -6049,6 +6049,110 @@ theorem hasParentInBlock_of_srow_two {Q : TrioSeq} (h2 : 2 ≤ Q.length)
 **⟹ 次に測るなら「塔のブロックの末尾列が段内で孤児になる割合」**（R2 向け）。
 私の予想は**低い**（`srow = 0` は 0%、`srow = 1` は根の行 1 が末尾以上のときだけ）。 -/
 
+/-! ## 80. ★★★★★★ `MTowerClosedS` の**残差 3 本**（無料枝を全部落とした形）
+
+§76（行 2 ≡ 0）・§77（`n ≤ 1`）・§79（`srow = 0` は孤児にならない）を踏まえて、
+`MTowerClosedS` を**証明の骨まで**分解する。まず §70 の `oper_mTower` の仮定
+`lev Q (|Q|-1) ≠ 0` を「**根が狭義に最浅**」に置き換える（`MTowerClosedS` の仮定に揃う）。 -/
+
+open Classical in
+/-- **§70 の改良版**: `lev ≠ 0` の代わりに「根が狭義に最浅」を使う。
+（末尾列の**行 0** が根より大きいので、末尾列は全零になりようがない。） -/
+theorem oper_mTower' {Q : TrioSeq} (h2 : 2 ≤ Q.length)
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hblk : L53.HasParentInBlock Q) (d e n m : ℕ) :
+    (mTower Q d e (n + 1))⟦m⟧
+      = mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n))⟦m⟧ := by
+  have hQ2 : Q.length - 1 ≠ 0 := by omega
+  have hNlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hNne : Lift1 (shiftr01 (d * n) 0 Q) (e * n) ≠ [] := by
+    intro hc
+    have hl : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = 0 := by rw [hc]; rfl
+    rw [hNlen] at hl; omega
+  have hN2 : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1 ≠ 0 := by
+    rw [hNlen]; exact hQ2
+  have hNblk : L53.HasParentInBlock (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) := by
+    refine hasParentInBlock_Lift1 ?_ (hasParentInBlock_shiftr01 hblk)
+    rw [shiftr01_length]; exact hQ2
+  have hlt : Q.length - 1 < Q.length := by omega
+  have hNz : ¬ (entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 0
+        ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1) = 0 ∧
+      entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1
+        ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1) = 0 ∧
+      entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 2
+        ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1) = 0) := by
+    rw [hNlen]
+    rintro ⟨h0, -, -⟩
+    rw [entry0_Lift1, entry0_shiftr01 hlt] at h0
+    have := hs (Q.length - 1) (by omega) hlt
+    omega
+  rw [mTower_succ, L53.comm_of_hasParentInBlock m hNne hN2 hNz hNblk]
+
+theorem mTower_mem_of_step' {a : ℕ} {Q : TrioSeq} {d e : ℕ} (h2 : 2 ≤ Q.length)
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hblk : L53.HasParentInBlock Q) (h : MTowerStep a Q d e) :
+    ∀ n, mTower Q d e n ∈ W a := by
+  intro n
+  cases n with
+  | zero => simpa using W_nil a
+  | succ n =>
+      refine mem_of_oper_mem (fun m hm => ?_)
+      rw [oper_mTower' h2 hs hblk d e n m, mTower_step_shift]
+      exact h n m hm
+
+/-- **残差 A**: 末尾列が段内に親を持つ場合の「塔 ＋ 1 ブロックの展開」。 -/
+def MTowerStepAll : Prop :=
+  ∀ (u d e : ℕ) (Q : TrioSeq), Q ∈ W u → 2 ≤ Q.length →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    L53.HasParentInBlock Q → MTowerStep u Q d e
+
+/-- **残差 B**: 末尾列が段内で**孤児**の場合（§79 で `srow ∈ {1,2}` に限る）。 -/
+def MTowerOrphan : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u → 2 ≤ Q.length →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    ¬ L53.HasParentInBlock Q → mTower Q d e n ∈ W u
+
+/-- **残差 C**: ブロックが 1 列（塔は等差の 1 列列になる）。 -/
+def MTowerSingle : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u → Q.length = 1 →
+    mTower Q d e n ∈ W u
+
+/-- **★★★★★★ `MTowerClosedS` は残差 3 本から出る。** -/
+theorem mTowerClosedS_of_residues (hA : MTowerStepAll) (hB : MTowerOrphan)
+    (hC : MTowerSingle) : MTowerClosedS := by
+  intro u d e n Q hQ hs
+  rcases Nat.lt_or_ge Q.length 2 with hsm | hbig
+  · rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
+    · have hnil : Q = [] := List.length_eq_zero_iff.mp h0
+      subst hnil
+      simpa using W_nil u
+    · exact hC u d e n Q hQ (by omega)
+  · by_cases hblk : L53.HasParentInBlock Q
+    · exact mTower_mem_of_step' hbig hs hblk (hA u d e Q hQ hbig hs hblk) n
+    · exact hB u d e n Q hQ hbig hs hblk
+
+/-! ### 80.1 ⟹ 3 本の内訳と難度の見立て
+
+    **A `MTowerStepAll`** … 本丸。`mTower Q d e n ++ shiftr01 (d*n) 0 ((Lift1 Q (e*n))⟦m⟧)`
+        **`n` の帰納も段の帳尻も無い 1 文**（§71）。連結が壁
+    **B `MTowerOrphan`** … §79 で `srow = 1` かつ根の行 1 が末尾以上、または
+        `srow = 2` かつ（錐の外 または 行 2 が根以下）に限る。**狭い**
+    **C `MTowerSingle`** … `Q = [(c,b,z)]` なら `mTower = [(c,b,z),(c+d,b+e,z),…]`
+        ＝ **等差の 1 列列**。`z = 0` なら §76 で無料。**残るのは `z ≥ 1` だけ**
+
+⟹ **C は `z ≥ 1` の等差列 1 本**なので、いちばん易しいはず。
+`Wchar.mem_iff_lev_le` と `Wset.singleton_mem_W` の周りで閉じる可能性がある。
+
+### 80.2 ⚠ まだ `MTowerClosedS` の証明ではない
+
+3 本とも未証明である。**やったのは「無料の枝を全部落として、残差を 3 つに名前をつけた」だけ。**
+`GraftAll` の代わりに置いた `MTowerClosedS`（§74）は、いま
+
+    **A（連結 1 文）＋ B（狭い孤児枝）＋ C（等差 1 列列、`z ≥ 1`）**
+
+に分かれている。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
