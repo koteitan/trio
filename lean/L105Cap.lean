@@ -9668,6 +9668,70 @@ theorem oper_mem_of_dropLast {M : TrioSeq} {u n j0 Lb : ℕ}
 
 **⟹ 今日の到達点は「F2b の残りは (a) と `hj0c` だけ」と、定理の形で言えたことです。** -/
 
+/-! ## 134. ⛔ **`hj0c : le1 M 0 j0` は外せません**（教訓 45: 反例の形を先に書く）
+
+§130/§133 に唯一残った外部前提 `hj0c` について、**「外せるか」を先に確かめる。**
+手筋は 教訓 45 のとおり **反例の形を先に書く**:
+
+> **`hj0c` が破れるとは、`le1_zero_iff`（`Lcone:36`）より
+> 「悪根 `j0` の非根の行 0 祖先に、行 1 が根以下の列がある」ということ。**
+> **その列こそ「ブロッカー」であり、`hasParent` を作る当の相手である。**
+
+**⟹ つまり `¬ hj0c` は「反例がありそう」ではなく「反例の材料が `M` の中に必ずある」。**
+以下でそれを定理にする。 -/
+
+open Classical in
+theorem badroot_blocker_anc {M : TrioSeq} {j0 Lb : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hj0 : 0 < j0)
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0e : parent M (srow M (M.length - 1)) (M.length - 1) = j0)
+    (hsr : 0 < srow M (M.length - 1))
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hnc : ¬ le1 M 0 j0) :
+    ∃ y, Relation.ReflTransGen (nextrel0 M) y (M.length - 1) ∧ y ≠ 0 ∧
+      entry M 1 y ≤ entry M 1 0 := by
+  have hj1 : M.length - 1 = j0 + Lb := by omega
+  have hnr : nextR M (srow M (M.length - 1)) j0 (M.length - 1) := by
+    rw [← hj0e]; exact parent_nextR hp
+  have hsr2 : srow M (M.length - 1) = 1 ∨ srow M (M.length - 1) = 2 := by
+    unfold srow at hsr ⊢; split_ifs at hsr ⊢ <;> omega
+  have hrtg : Relation.ReflTransGen (nextrel0 M) j0 (M.length - 1) := by
+    rcases hsr2 with hs | hs <;> rw [hs] at hnr <;> unfold nextR at hnr
+    · rw [if_neg (by omega), if_pos rfl] at hnr
+      exact hnr.2.2.2.2.1.2.2
+    · rw [if_neg (by omega), if_neg (by omega)] at hnr
+      exact rtg0_of_rtg1 hnr.2.2.2.2.1.2.2
+  obtain ⟨y, hy, hy0, hy1⟩ := (not_le1_zero_iff hr0 (show j0 < M.length from by omega)).mp hnc
+  exact ⟨y, hy.trans hrtg, hy0, hy1⟩
+
+/-! ### 134.1 ⟹ 判定: **`hj0c` は証明の都合ではなく、場面そのものの条件**
+
+    **`¬ hj0c`** ⟹ **`M` の末尾列の行 0 祖先に、行 1 が根以下の列 `y` がある**
+              ⟹ **それはまさに「末尾列が行 1 で孤児でない」配置の材料**
+
+> **⟹ `hj0c` を落とすと、結論（孤児）が偽になりうる側に入る。**
+> **⟹ §129/§130/§131/§133 の `hj0c` は外せません。前提として残します。**
+
+⚠ **教訓 14 を守ります。** 上は **「反例の材料がある」**であって
+**「反例がある」ではありません。** `y` が実際に `nextR` の**親**になる（最大性）ところまでは
+示していません。**⟹ R2 の (p1) の実測は、その意味でまだ有効です。**
+
+⚠ **そして §133 の `hC : (M⟦n⟧).dropLast ∈ W u` の側は別です。**
+そちらは **(a) そのもの**であり、外部前提というより**核**です。
+
+### 134.2 ⟹ 「対象が伸びる」問題の判定（§133 で約束した 1 行）
+
+`X ∈ W u` を `mem_of_oper_mem` で降ろすと `X⟦m⟧ ∈ W u` が要る。**`m = 1` なら
+`|X⟦1⟧| = |X| - 1` で短くなるが、`m ≥ 2` では `|X⟦m⟧| = j0 + m*Lb` で伸びる。**
+`Aop` の節 2 は **すべての `m ≥ 1`** を要求するので、**伸びる側も必ず現れる。**
+
+> **⟹ 節 2 だけで降り続ける道は、いま手元の道具では閉じません。**
+> **⟹ 降下は「すでに `W` に入っていると分かっている、より小さい対象」に着地しないといけない。
+> `snoc_orphan_W` がまさにその形で、着地先が `hC`（＝ (a)）です。**
+
+⚠ **これは「原理的に無理」ではなく「手元の道具では届かない」という意味です。**
+**節 1（`|M| ≤ 1`）には塔からは届かず、節 3（graft）は主線から外したところです。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
