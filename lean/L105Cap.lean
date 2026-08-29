@@ -6729,6 +6729,33 @@ R2 の箱は **`n, m ∈ {1,2}`**（`R2-NOTES.md` §R131 (x1)）。しかし復�
 **§79 が B を狭めているので、B は「末尾列が錐の外」または「行 2 が根以下」だけ**であり、
 **それは §88.2 の反例の形と同じ**である。⟹ **同じ 1 点を 2 方向から見ている。** -/
 
+/-! ## 89. 錐の列の行 1 の親も錐の中
+
+§87 を鎖に沿って繰り返すための 1 本。`nextrel1` の親は一意（`Wset.nextrel1_uniq_src`）なので、
+根からの鎖は必ずその親を通る。 -/
+
+theorem le1_zero_of_nextrel1 {T : TrioSeq} {a b : ℕ} (hb : le1 T 0 b) (hne : b ≠ 0)
+    (h : nextrel1 T a b) : le1 T 0 a := by
+  obtain ⟨h0, hblt, hchain⟩ := hb
+  rcases hchain.cases_tail with heq | ⟨c, hc1, hc2⟩
+  · exact absurd heq hne
+  · have hca : c = a := nextrel1_uniq_src hc2 h
+    subst hca
+    exact ⟨h0, h.1, hc1⟩
+
+/-! ### 89.1 ⟹ 鎖に沿って §87 を繰り返す形
+
+`le1 T 0 b`（塔全体の錐）＋ `b` がブロック `k` の**根以外**の列
+⟹ §87 で行 1 の親 `a` は同じブロック `k`、⟹ 上で `le1 T 0 a`
+⟹ `a` が根以外ならまた §87 …
+
+**⟹ 鎖はブロック `k` の根に着くまでブロックを出ない。**
+根に着いた後は前のブロックへ出るが、そこは `le1_mTower_block`（§85）と
+`tower_anc0_not_blocker`（§63）が押さえている領域である。
+
+⚠ **残るのは「`b` が錐の外」の場合だけ**（§87 の但し書き）。
+team-lead が R2 に「錐の外の `b` がどれだけ出るか」を測らせている。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
