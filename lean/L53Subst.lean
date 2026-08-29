@@ -1729,5 +1729,34 @@ theorem noTie_or_split {v : ℕ} (R : TrioSeq) :
     exact h ⟨p, hp, hpv⟩
 
 
+/-! ## 課題 L75: 無タイの `TowerOK2` —— 組み立ての骨と、残る 3 つの債務
+
+`oper_cons_tower2` を使った `n` の帰納は次の形になる:
+
+    n = 0     `⟦0⟧ = M.take j0`（写しが 0 個）。**`j0 = 0` なら `[]`**
+    n → n+1   `⟦n+1⟧ = (0,v,0) :: graft R (Lift1 (⟦n⟧) t)`
+              ⟹ `liftStage_of_noTie` で `Lift1 (⟦n⟧) t ∈ W (2v + 2t)`
+              ⟹ `tower2_stage_fits` で `2v + 2t ≤ m` ⟹ `W_mono` で `W m`
+              ⟹ `hgr`（節 3 の与件）で `graft R (…) ∈ Wstar`
+              ⟹ `Wstar` の定義で `(0,v,0) :: graft R (…) ∈ W (2v)`
+
+### 残る債務 3 つ（名前つき）
+
+1. **`j0 = 0`（親は根）**。`oper_cons_tower2` は結論に `⟦0⟧` を残さないので、
+   底のために別途要る。**証明できる**: `j0 ≥ 1` なら `nextR_append_right`
+   （`A = [(0,v,0)]`）で `nextR R i (j0-1) (|R|-1)` に移り、
+   `domT R m` の第 2 連言 `¬ hasParent R …` と矛盾する。
+   ⚠ `hasParent` は `∃!` なので、**一意性も移す**必要がある（存在だけでは足りない）。
+
+2. **`based (Lift1 (⟦n⟧) t)`**。`Lift1` は行 0 を動かさず、`⟦n⟧` の根は `(0,v,0)`
+   なので `entry _ 0 0 = 0`。`entry0_Lift1` があれば短い。
+
+3. **伝播**: 各段の尾 `graft R (Lift1 (⟦n⟧) t)` が `argOK` かつ**無タイ**。
+   `argOK` は `argOK_graft`（`Wset.lean:2526`）＋ `argOK` の `Lift1` 保存で出るはず。
+   **無タイは H11 に測ってもらう最後の 1 本**（`v = 0` なら「行 1 が全部 `≥ 1`」）。
+
+⟹ **1 と 2 は Lean だけで閉じる。3 の無タイだけが外からの入力。** -/
+
+
 end L53
 end TRIO
