@@ -1835,5 +1835,57 @@ theorem split_lastTie_len {R R₁ R₂ : TrioSeq} {tie : ℕ × ℕ × ℕ}
   omega
 
 
+/-! ## ★★★ 課題 L77: 伝播の急所 2 つ
+
+### 急所 1 の答え: **`Lift1` は根（添字 0）を持ち上げる**
+
+`le1 X 0 0` は `ReflTransGen` の**反射**なので `X ≠ []` なら成り立つ。
+⟹ `Lift1` のマスク `if le1 X 0 j then d else 0` は `j = 0` で `d` を返す。
+⟹ **`Lift1 (X⟦n⟧) t` の根の行 1 は `v + t`**（`t > 0` ならタイにならない）。
+
+### ★★ 急所 2 の答え: **狭義に取り直すと全 `v` で `liftStage_of_window` が直に効く**
+
+無タイ `∀ p ∈ R, p.2.1 ≠ v` を **狭義 `∀ p ∈ R, v < p.2.1`** に強めると:
+
+    `liftStage_of_window`（`Wtower2.lean:128`）の `hw`（行 1 で狭義最小）が
+    **そのまま**その条件である ⟹ **`v = 0` に限らず全 `v` で核なしに通る**
+
+⟹ **`TieFree` も `mlift` も経由しなくてよくなる。** `v = 0` では
+`p.2.1 ≠ 0 ⟺ 0 < p.2.1` なので `liftStage_of_noTie_zero` は影響を受けない。
+`v ≥ 1` では狭義のほうが強いが、**伝播（急所 2 の「元が `< v` の列」）を塞ぐには
+狭義が要る**ので、最初から狭義に取るのが正しい。 -/
+
+/-- **急所 1**: `le1 X 0 0` は反射で成り立つ。 -/
+theorem le1_zero_self {X : TrioSeq} (h : X ≠ []) : le1 X 0 0 := by
+  have hpos : 0 < X.length := List.length_pos_iff.mpr h
+  exact ⟨hpos, hpos, Relation.ReflTransGen.refl⟩
+
+/-- **急所 1 の帰結**: `Lift1` は根の行 1 を `+d` する。 -/
+theorem entry1_Lift1_zero {X : TrioSeq} (h : X ≠ []) (d : ℕ) :
+    entry (Lift1 X d) 1 0 = entry X 1 0 + d := by
+  have hpos : 0 < X.length := List.length_pos_iff.mpr h
+  rw [entry1_Lift1 hpos, if_pos (le1_zero_self h)]
+
+/-- **★★★ 急所 2: 狭義最小なら全 `v` で核なしに根リフトが通る**（課題 L77）。
+`TieFree` も `mlift` も経由しない。 -/
+theorem liftStage_of_strict {m d v z : ℕ} {R : TrioSeq} (hargOK : argOK R)
+    (hstrict : ∀ p ∈ R, v < p.2.1)
+    (hX : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W m) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (m + 2 * d) := by
+  refine liftStage_of_window hX (root_row0_min hargOK) ?_
+  intro l hl0 hl
+  simp only [List.length_cons] at hl
+  have hA1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+  rw [hA1]
+  obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+  rw [entry_cons]
+  have h8 := hstrict _ (entry_pair_mem (B := R) (show l' < R.length by omega))
+  simpa [entry] using h8
+
+/-- 狭義は無タイを含む。 -/
+theorem noTie_of_strict {v : ℕ} {R : TrioSeq} (h : ∀ p ∈ R, v < p.2.1) :
+    ∀ p ∈ R, p.2.1 ≠ v := fun p hp => by have := h p hp; omega
+
+
 end L53
 end TRIO
