@@ -11287,6 +11287,75 @@ theorem nextrel1_tower_src_ge_prev_block {Q : TrioSeq} {d e N n j a : ℕ}
 **`D_v` から実際に立つ塔の `(d, e)` を計算したわけではありません。**
 **⟹ R2 に「生成元から立つ塔の `e` は 1 以上か」を測ってもらう価値があります。** -/
 
+/-! ## 160. ★★★★★★★ (A) を閉じる 1 歩: **ブロッカーなしなら、核に「親は同じブロック」が無料でつく**
+
+§139（核の入口）＋ §154（ブロッカーなしなら全部ブロック内に親）＋ §141（ブロック内 ⟹ 同ブロック）
+を合成する。**`j ≥ 1` の段では「親は同じブロック」が**前提でなく結論**になる。** -/
+
+open Classical in
+theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
+    (h2root : entry Q 2 0 = 0)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (0 < j → n * Q.length ≤
+        parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  refine mTowerClosed_of_snocStepPar ?_
+  intro n j hj _ hC
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hClen : (mTower Q d e n ++ B.take j).length = n * Q.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hC1len : (mTower Q d e n ++ B.take (j + 1)).length = n * Q.length + (j + 1) := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  -- `srow` は接尾辞で決まる
+  have hsrow : srow (mTower Q d e n ++ B.take (j + 1))
+      (n * Q.length + j) = srow (B.take (j + 1)) j := by
+    unfold srow
+    rw [show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen],
+      entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
+  refine hstep n j hj (fun hj1 => ?_) hC
+  -- ブロック内に親（§154）⟹ 同じブロック（§141）
+  have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
+    block_blockParent_all hj hj1 hr0 hnb h2root
+  have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
+      (srow (B.take (j + 1)) j)
+      ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
+    rw [hC1len, show n * Q.length + (j + 1) - 1 = (mTower Q d e n).length + j from by
+      rw [hTlen]; omega]
+    exact hasParent_append_right_of _ _ hloc
+  have hres := snocStep_parent_sameBlock (d := d) (e := e) (n := n)
+    (i := srow (B.take (j + 1)) j) hj hloc hpar
+  rw [hC1len, show n * Q.length + (j + 1) - 1 = n * Q.length + j from by omega] at hres
+  rw [hClen, hsrow]
+  exact hres
+
+/-! ### 160.1 ⟹ (A) の核が「同じブロックの中で 1 列足す」になりました
+
+    §94  … すべての `j` について 1 列足す
+    §139 … 親を持つ `j` についてだけ
+    **§160 … しかも `j ≥ 1` では**親が同じブロックの中にある**ことが無料でつく**
+
+**⟹ ブロッカーなし ∧ 根の行 2 が 0 の `Q` については、核はこうなりました:**
+
+> **「塔にブロックの第 `j` 列を足す。`j ≥ 1` なら親は同じブロックの中。`j = 0` は別。」**
+
+⚠ **残っているのは 2 つだけです:**
+
+    **(A1)** **`j ≥ 1` の段**（親が同じブロック ⟹ 窓 `< |Q|` ⟹ §138 で測度あり）
+    **(A2)** **`j = 0` の段**（親はブロック `n-1` の中 ⟹ §157 で窓 `≤ |Q|`）
+
+⚠ **教訓 14**: **前提が無料になっただけで、`hstep` はまだ通っていません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
