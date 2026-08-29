@@ -832,4 +832,44 @@ theorem no_infinite_expansion_of_cap (hc : CoreCap) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_core (coreSingleton_of_cap hc)
 
+/-! ### ★★★★★★ 塔の閉包 1 本から停止性まで（`GraftAll` を使わない経路）
+
+`Lcone.Wstar2s_closed_of_graftAll` は `GraftAll` を要求するが、L3 の §73-75 は
+**同じ結論を `MTowerClosedS`（マスクつき行 0/行 1 コピー塔の閉包）だけ**から出す:
+
+    `L105.liftTower1_of_shiftTowerClosedS`   `(TOW)` ⟹ `Wset.LiftTower1`
+    `L105.liftTowerExp2_of_mTowerClosedS`    `(TOW2)` ⟹ `Wset.LiftTowerExp2`
+    `L105.shiftTowerClosedS_of_mTowerClosedS`  `(TOW2)` は `e = 0` で `(TOW)` を含む
+    `L105.wstar2s_closed_of_mTowerClosedS`   ＋ `Lcone.liftInner_holds`（無条件）
+
+`MTowerClosedS`（`L105Cap.lean` §74）は **5 量化 / 2 前提**:
+
+    `Q ∈ W u` ＋ 「根が狭義に最浅」 ⟹ `mTower Q d e n ∈ W u`
+
+`graft` も `y ∈ W u` の全称も現れない。 -/
+
+/-- **Well-foundedness of `olt` on standard forms, from the masked copy-tower
+closure alone** — no `GraftAll`, no `GX`. -/
+theorem wf_olt_ST_TS_of_mTowerClosedS (htow : L105.MTowerClosedS) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
+  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar2s) Wset.Wstar2s_le_Wstar
+    (fun u0 R hR => L105.wstar2s_closed_of_mTowerClosedS htow u0 R hR)
+    (fun hM hN h => trio_cofinality hM hN h)
+
+/-- **Trio sequences terminate**, modulo the masked copy-tower closure. -/
+theorem TRIO_terminates_of_mTowerClosedS (htow : L105.MTowerClosedS) :
+    WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_mTowerClosedS htow))
+
+/-- **No infinite expansion sequence**, from the masked copy-tower closure. -/
+theorem no_infinite_expansion_of_mTowerClosedS (htow : L105.MTowerClosedS) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_mTowerClosedS htow))
+
+/-! ⚠ `L105.mTower_mem_of_zeroRow2`（`L105Cap.lean` §76、**仮定ゼロ**）が行 2 ≡ 0 の枝を
+落とすので、残核はさらに **`L105.MTowerClosedRow2`（6 量化 / 3 前提）** に細る。
+その頂点定理（`TRIO_terminates_of_mTowerClosedRow2`）は **`leanman build` のあとで足す**
+（現在の olean は §76 より前）。 -/
+
 end TRIO
