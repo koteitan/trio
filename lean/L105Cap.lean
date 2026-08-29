@@ -7515,6 +7515,104 @@ theorem parent_ge_of_inner {A T : TrioSeq} {i y : ℕ} (hTne : T ≠ [])
 `j0` が「ブロック `n-1` のどこか」に依存するので、**`Lb = |Q|` を仮定して書くと
 3 割で偽の文になります**（§101.1）。**team-lead の計算の 1 か所だけが読み過ぎでした。** -/
 
+/-! ## 102. ★★★★★★ **F1 は最終列に限りません**（任意の `(k, q)` へ一般化）
+
+§100 は `k = n-1`, `q = Lb-1` に特殊化していたが、**証明はどこもそれを使っていない。**
+一般化すると **§94 の `j ≥ 1` の段にそのまま当たる。** -/
+
+open Classical in
+theorem gexp_orphan_row1 {M : TrioSeq} {Lb d0 d1 n k q : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hn : 0 < n)
+    (hk : k < n) (hq : q < Lb) (hq1 : 0 < q)
+    (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb))
+    (hf1 : entry M 1 (0 + q) ≤ entry M 1 0)
+    (horph : ¬ hasParent M 1 (0 + q)) :
+    ¬ hasParent (gexp M 0 Lb d0 d1 n) 1 (0 + (k * Lb + q)) := by
+  have hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l :=
+    fun l hl0 hl1 => hr0 l hl0 (by omega)
+  have hout : ¬ le1 M 0 (0 + q) := by
+    intro hc
+    have := le1_entry1_lt hc (show (0 : ℕ) ≠ 0 + q from by omega)
+    omega
+  have hlast1 : entry (gexp M 0 Lb d0 d1 n) 1 (0 + (k * Lb + q))
+      = entry M 1 (0 + q) := by
+    rw [gexp_entry1_mir hlen hk hq, if_neg hout]
+    omega
+  rintro ⟨a, ha, -⟩
+  have hnr : nextrel1 (gexp M 0 Lb d0 d1 n) a (0 + (k * Lb + q)) := by
+    unfold nextR at ha
+    rw [if_neg (by omega), if_pos rfl] at ha
+    exact ha
+  have hlt := hnr.2.2.2.1
+  rw [hlast1] at hlt
+  have hle0 := hnr.2.2.2.2.1
+  by_cases ha0 : a = 0
+  · subst ha0
+    have h10 : entry (gexp M 0 Lb d0 d1 n) 1 0 = entry M 1 0 :=
+      gexp_entry_root hlen hn hLb
+    rw [h10] at hlt
+    omega
+  · by_cases hain : k * Lb ≤ a
+    · obtain ⟨qa, hqa⟩ : ∃ qa, a = 0 + (k * Lb + qa) := ⟨a - k * Lb, by omega⟩
+      have haltp : a < 0 + (k * Lb + q) := hnr.2.2.1
+      have hqalt : qa < q := by omega
+      subst hqa
+      have hent : entry M 1 (0 + qa) ≤
+          entry (gexp M 0 Lb d0 d1 n) 1 (0 + (k * Lb + qa)) := by
+        rw [gexp_entry1_mir hlen hk (by omega)]
+        split_ifs <;> omega
+      obtain ⟨k', q', hk', hq', hxe, hcase⟩ :=
+        gexp_chain_inversion hlen hk hq hup hd0e _ hle0.2.2 (Nat.zero_le _)
+      have hk'e : k' = k := by
+        rcases Nat.lt_or_ge k' k with h | h
+        · exfalso
+          have : k' * Lb + Lb ≤ k * Lb := by
+            have h1 : (k' + 1) * Lb ≤ k * Lb := Nat.mul_le_mul_right _ (by omega)
+            have h2 : (k' + 1) * Lb = k' * Lb + Lb := Nat.succ_mul k' Lb
+            omega
+          omega
+        · omega
+      subst hk'e
+      have hq'e : q' = qa := by omega
+      have hM : Relation.ReflTransGen (nextrel0 M) (0 + qa) (0 + q) := by
+        rcases hcase with ⟨-, h⟩ | ⟨h, -⟩
+        · rw [hq'e] at h; exact h
+        · omega
+      exact horph (hasParent_one_of (b := 0 + q) (k := 0 + qa)
+        (by omega) (by omega) ⟨by omega, by omega, hM⟩ (by omega))
+    · have := gexp_outer_anc_row1 hlen hLb hk hq hd1pos hd0e hr0 hlp a
+        hle0.2.2 (by omega) ha0
+      omega
+
+/-! ### 102.1 ⟹ §94 の `j ≥ 1` の段への含意（team-lead の 30 分課題）
+
+足す列は **`(block n)[j]` ＝ `Q` の第 `j` 列の像**（`block_getD`、§94）。
+
+    **`Q` の第 `j` 列が `Q` の中で親を持つ** ⟹ その親の添字 `p < j`
+      ⟹ **像は土台 `mTower Q d e n ++ (block n).take j` の中にある**
+      ⟹ **足した列は親を持つ ⟹ 残差 (iii)。無料ではない**
+    **`Q` の第 `j` 列が `Q` の中で孤児**（行 1）かつ **行 1 が根以下**
+      ⟹ **上の `gexp_orphan_row1` が `k = n`, `q = j` でそのまま当たる**
+      ⟹ **塔でも孤児 ⟹ `snoc_orphan_W` で無料**
+
+> **⛔ team-lead の見立て（「`j ≥ 1` は `Q` の親関係を持ち上げるだけ」）は正しいが、
+> 「だから易しい」は逆である。持ち上がった親は**土台の中**にあるので、
+> **`j ≥ 1` は `Q` の第 `j` 列が親を持つたびに残差 (iii) に入る。**
+
+⚠ **`j = 0` だけが特別なのではありません。`Q` のどの列も、親を持てば残差です。**
+**無料なのは「`Q` の中で孤児で、かつ行 1 が根以下」の列だけ。**
+
+### 102.2 ⟹ 残差の正しい姿
+
+    **無料** … `Q` の第 `j` 列が行 1 の孤児 ∧ 行 1 が根以下 ⟹ `gexp_orphan_row1`（上、緑）
+    **残差** … それ以外の `j` 全部（`j = 0` を含む）
+
+**⟹ 残差は「ブロック境界」だけではなく、`Q` の親を持つ全部の列です。**
+**§95 の「`j = 0` は残差」は正しいが、`j = 0` に**限らない**。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
