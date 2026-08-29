@@ -1391,5 +1391,73 @@ theorem tower2_stage_fails {v m : ℕ} {R : TrioSeq} (hd : domT R m)
   omega
 
 
+/-! ## ★★★ 課題 L68: `z = 1` の核 —— **ちょうど 1 段足りない**
+
+`z<2` の断片では `entry R 2 (|R|-1) ≤ 1`、`srow = 2` なら `= 1`。よって
+
+    `domT R m` … `m + 1 = 2w + 1`  ⟹ **`m = 2w`**
+    要求        … 持ち上げた塊の根のレベル `2*(v+t) + z = 2w + z`
+
+    **z = 0 … `2w ≤ m = 2w`   ぴったり収まる（余裕ゼロ）**
+    **z = 1 … `2w + 1 ≤ 2w`   ちょうど 1 段足りない**
+
+⟹ **不足はちょうど 1 段。** しかも持ち上げた塊の根のレベルは `m + 1` で、
+これは `domT R m` が言う**孤児のレベルそのもの**である
+（＝「穴とちょうど同じ大きさの塊」を差し込もうとしている）。
+節 3 は `∀ y ∈ W m` を要求するので、**真に小さいことを要求している**のに等しい。 -/
+
+/-- **★★ `z = 1` では不足がちょうど 1 段**（課題 L68-a）。 -/
+theorem tower2_deficit_one {v m : ℕ} {R : TrioSeq} (hd : domT R m)
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (hvw : v ≤ entry R 1 (R.length - 1)) :
+    2 * (v + (entry R 1 (R.length - 1) - v)) + 1 = m + 1 := by
+  have h1 := hd.1
+  unfold lev at h1
+  omega
+
+/-- **`z = 0` はぴったり収まる（余裕ゼロ）**。 -/
+theorem tower2_exact_z0 {v m : ℕ} {R : TrioSeq} (hd : domT R m)
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (hvw : v ≤ entry R 1 (R.length - 1)) :
+    2 * (v + (entry R 1 (R.length - 1) - v)) + 0 = m := by
+  have h1 := hd.1
+  unfold lev at h1
+  omega
+
+/-! ### 課題 L68-b の判定: `m` は `domT` で釘付け。余裕は無い
+
+節 3 は `∃ m < u, domT M m ∧ ∀ y ∈ W m, based y → graft M y ∈ X`。
+`m` は `domT` の第 1 連言 `lev M (|M|-1) = m + 1` で**一意に決まる**ので、
+`W (m+1)` に緩める余地は無い（`u` には `m < u` の余裕があるが、
+要求されるのは `y ∈ W m` であって `y ∈ W u` ではない）。
+
+⟹ **段を別の場所から取ることはできない。** 残る道は
+「外側に節 3 でなく**節 2** を使う（さらに展開する）」だけ。
+
+### ★ 課題 L68-c: `z = 1` では**根が親になれない**
+
+`srow = 2` の親は行 2 で真に浅い列。`z<2` の断片で孤児の行 2 は `1` なので、
+親の行 2 は `0` でなければならない。根 `(0,v,1)` の行 2 は `1` ⟹ **根は候補外**。
+
+⟹ **`z = 1` の復活は、根そのものではなく `R` の中の行 2 が `0` の列が
+「根を付けたことで行 1 の祖先になった」ために起きる。**
+（`nextrel2` は `le1 M j0 j1` を要求するので、行 1 の祖先関係が根の追加で変わる。）
+
+これは `z = 0` の場合（根の行 2 が `0` なので根自身が親になれる）と**構造が違う**。
+⟹ **`z = 1` の核は「根が行 1 の祖先関係を変えて、`R` の中の列を親にする」現象**である。 -/
+
+/-- **★★ `z = 1` では復活の親は根ではない**（課題 L68-c）。 -/
+theorem tower2_parent_ne_root {v : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz' : entry R 2 (R.length - 1) = 1) {j0 : ℕ}
+    (h : nextR (((0, v, 1) : ℕ × ℕ × ℕ) :: R) 2 j0 R.length) : j0 ≠ 0 := by
+  intro hj0
+  subst hj0
+  rw [nextR] at h
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at h
+  have hlt := h.2.2.2.1
+  rw [entry_cons_last hRne 2, hz'] at hlt
+  simp [entry] at hlt
+
+
 end L53
 end TRIO
