@@ -10188,6 +10188,82 @@ theorem snocStep_parent_sameBlock {Q : TrioSeq} {d e n j i : ℕ}
 ⚠ **これは設計であって証明ではありません。**（`le1 Q 0 j` から (ii) を出すには
 「ブロック `n` の根が行 0 祖先である」も要る。§79 `le0_zero_of_shallow` の領域。） -/
 
+/-! ## 142. ★★★★★★★ **錐の中の列は、必ずブロックの中に親を持つ**（§141.2 の設計を定理に）
+
+§141 で「復活はブロックの中で孤児のときだけ」と出た。
+**では `Q` の錐の中の列はどうか。ブロックの根の行 1 は `entry Q 1 0 + e*n`、
+錐の中の列の行 1 は `entry Q 1 j + e*n` で、`le1_entry1_lt` より前者が狭義に小さい。**
+**⟹ ブロックの根が行 1 の候補親になる ⟹ ブロックの中に親がある ⟹ §141 で同ブロック。** -/
+
+open Classical in
+theorem block_blockParent_of_row1 {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hrow1 : entry Q 1 0 + e * n
+      < entry Q 1 j + (if le1 Q 0 j then e * n else 0)) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set T := B.take (j + 1) with hT
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : T.length = j + 1 := by rw [hT, List.length_take, hBlen]; omega
+  have hE0 : ∀ x, x < Q.length → entry B 0 x = entry Q 0 x + d * n := by
+    intro x hx
+    show (B.getD x (0, 0, 0)).1 = _
+    rw [hB, block_getD hx]
+  have hE1 : ∀ x, x < Q.length →
+      entry B 1 x = entry Q 1 x + (if le1 Q 0 x then e * n else 0) := by
+    intro x hx
+    show (B.getD x (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hx]
+  have hTE : ∀ i x, x < j + 1 → entry T i x = entry B i x := by
+    intro i x hx
+    exact Wset.entry_take (X := B) (l := j + 1) (i := i) (j := x) hx
+  have hshal : ∀ l, 1 ≤ l → l < T.length → entry T 0 0 < entry T 0 l := by
+    intro l hl0 hl1
+    rw [hTlen] at hl1
+    rw [hTE 0 0 (by omega), hTE 0 l (by omega), hE0 0 (by omega),
+      hE0 l (by omega)]
+    have := hr0 l (by omega) (by omega)
+    omega
+  have hle0 : le0 T 0 j := le0_zero_of_shallow hshal (by omega)
+  have hrefl : le1 Q 0 0 := le1_refl (by omega)
+  have hk2 : entry T 1 0 < entry T 1 j := by
+    rw [hTE 1 0 (by omega), hTE 1 j (by omega), hE1 0 (by omega),
+      hE1 j (by omega), if_pos hrefl]
+    exact hrow1
+  exact hasParent_one_of (by omega) (by omega) hle0 hk2
+
+/-! ### 142.1 ⟹ 錐の中の列は復活しません
+
+`le1 Q 0 j`（`j ≠ 0`）なら `le1_entry1_lt` より **`entry Q 1 0 < entry Q 1 j`**、
+よって `entry Q 1 0 + e*n < entry Q 1 j + e*n` ⟹ **上の `hrow1` が成り立つ。** -/
+
+open Classical in
+theorem block_blockParent_of_cone {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hcone : le1 Q 0 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j := by
+  have h1 : entry Q 1 0 < entry Q 1 j := le1_entry1_lt hcone (by omega)
+  refine block_blockParent_of_row1 (d := d) hj hj1 hr0 ?_
+  rw [if_pos hcone]
+  omega
+
+/-! ### 142.2 ⟹ **核が「錐の外で、行 1 が高い列」に絞れました**
+
+    **錐の中（`le1 Q 0 j`, `j ≠ 0`）** ⟹ §142 でブロック内に親 ⟹ §141 で同ブロック ⟹ **(ii)**
+    **錐の外で `entry Q 1 j ≤ entry Q 1 0`** ⟹ §102 / §137 で塔でも孤児 ⟹ **(i) 無料**
+    **錐の外で `entry Q 1 0 < entry Q 1 j ≤ entry Q 1 0 + e*n`**
+        ⟹ ブロックの根は候補でない ⟹ **(iii) 復活しうる ← 核**
+
+> **⟹ 核 ＝「`Q` の錐の外にあり、行 1 が根より上だが `e*n` ぶんの持ち上げには届かない列」。**
+> **⟹ しかも `n` が大きいほどこの帯は広い。`n` に依存する核である。**
+
+⚠ **教訓 14**: 上の 3 分割は **`srow = 1` の話**です。
+**`srow = 2`（F2b）と `srow = 0` は別の場合分けが要ります。**
+**`srow = 0` は §79 `hasParentInBlock_of_srow_zero`（緑）で必ずブロック内に親をもつので (ii)。
+残るのは `srow = 2`。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
