@@ -9,6 +9,7 @@ import Reduction
 import Gamma
 import Lind
 import Wtower2
+import L53Subst
 
 namespace TRIO
 
@@ -121,6 +122,43 @@ theorem TRIO_terminates_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
 theorem no_infinite_expansion_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_liftStage (liftStage_of_row1mono hM) he
+
+/-! ### ★★★★★ 課題 L84: 持ち上げ核は「行 1 のタイがある根」だけになった
+
+`L53.liftStage_of_noTie`（仮定ゼロ）が**無タイの全 `v`** を覆うので、`(WL)` のうち
+本当に要るのは `L53.LiftTie` ——「根の行 1 と等しい列が引数にある場合」だけ。
+H11 の全数（`TowerOK2` の場面 70557 件）:
+
+    狭義                 62476 (88.5%)   `L53.liftStage_of_strict`    ✅ 仮定ゼロ
+    無タイだが狭義でない  1950 ( 2.8%)   `L53.liftStage_of_noTie`     ✅ 仮定ゼロ
+    タイだが `TieFree`     (  6.1%)      `L53.liftTie_case_tieFree`   ✅ 既存定理
+    **残りのタイ                          `L53.LiftTie`               ← 核**
+
+シート 4482 行の側では `TowerOK2` / タイは **24 節点（0.5%）**。
+さらに `L53.liftTie_of_row1down` で核は `Row1DownLocal`（`Row1Mono` の**局所版**、
+`L53.row1DownLocal_of_row1mono` で `Row1Mono` より弱いことが証明ずみ）へ移る。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`LiftTie` と `TowerExp` を仮定すれば。**
+`LiftStage`（全部の根での `(WL)`）より**真に小さい核**: タイのある根だけ。 -/
+theorem TRIO_terminates_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L53.towerOK_of_liftTie hlt he)
+
+/-- **無限展開列は無い**、`LiftTie` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L53.towerOK_of_liftTie hlt he)
+
+/- ⚠ さらに `L53.liftTie_of_row1down`（課題 L83）を挟めば核は
+`Row1DownLocal` ＋ `Row1DownRoot0` ＋ `TowerExp` の 3 本まで落ちる。
+`L53Subst.olean` を作り直したあとで次の 3 行を足すこと（型は `L53Subst.lean` で緑）:
+
+```lean
+theorem TRIO_terminates_of_row1down (h1 : L53.Row1DownLocal)
+    (h0 : L53.Row1DownRoot0) (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_liftTie (L53.liftTie_of_row1down h1 h0) he
+```
+-/
 
 /-- **★★★★ Trio sequences terminate, modulo `(WCONVEX)` and `TowerExp`.**
 `(WCONVEX)` is strictly weaker in shape than `(ROW1MONO)`: it may assume a
