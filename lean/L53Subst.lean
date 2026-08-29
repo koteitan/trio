@@ -2515,5 +2515,107 @@ theorem TRIO_terminates_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
 の合成なので、型は合う。） -/
 
 
+/-! ## ★★★★ 課題 L83: `Lift1` は `mlift` の行 1 を `coneV \ le1` で下げたもの
+
+H11 の実測（H53）:
+
+    `Lift1` と `mlift` の差は **0 本 364 (6.1%) / 1 本 3749 / 2 本 1824 / 3 本 63**
+    差は**行 1 だけ**。量は `d`。**行 0 と行 2 は一切動かない**
+    `coneV \ le1` の列は行 1 がちょうど `v` が 89.6%、`> v` が 10.4%
+
+⟹ `Lift1_eq_mlift_of_tieFree` から `TieFree` を落とした**一般形**が書ける。 -/
+
+theorem coneV_out {X : TrioSeq} {w j : ℕ} (hj : X.length ≤ j) :
+    ¬ coneV X w j := by
+  intro h
+  have h2 := h j Relation.ReflTransGen.refl
+  rw [entry1_out hj] at h2
+  omega
+
+theorem le1_out {X : TrioSeq} {j : ℕ} (hj : X.length ≤ j) : ¬ le1 X 0 j := by
+  intro h; have := h.2.1; omega
+
+open Classical in
+/-- **★★ (L83-a) `TieFree` を落とした一般形**: `mlift` は `Lift1` の行 1 を
+`coneV \ le1` の列でちょうど `d` **上げた**もの。 -/
+theorem entry1_mlift_eq_Lift1 {X : TrioSeq} (hv : 1 ≤ entry X 1 0) (d j : ℕ) :
+    entry (mlift X (entry X 1 0 - 1) d) 1 j
+      = entry (Lift1 X d) 1 j
+        + (if coneV X (entry X 1 0 - 1) j ∧ ¬ le1 X 0 j then d else 0) := by
+  rcases Nat.lt_or_ge j X.length with hj | hj
+  · rw [entry1_mlift hj, entry1_Lift1 hj]
+    by_cases hc : coneV X (entry X 1 0 - 1) j
+    · by_cases hl : le1 X 0 j
+      · rw [if_pos hc, if_pos hl, if_neg (by tauto)]; omega
+      · rw [if_pos hc, if_neg hl, if_pos ⟨hc, hl⟩]; omega
+    · rw [if_neg hc, if_neg (fun h => hc (coneV_of_le1 hv h)), if_neg (by tauto)]
+  · rw [entry1_out (by rw [mlift_length]; omega),
+      entry1_out (by rw [Lift1_length]; omega), if_neg (by
+        rintro ⟨hc, -⟩; exact coneV_out hj hc)]
+
+/-- ⟹ 行 0・行 2・長さは完全に一致し、**行 1 だけ** `Lift1 ≤ mlift`。
+これがそのまま `Row1Mono` の入力の形。 -/
+theorem Lift1_le_mlift {X : TrioSeq} (hv : 1 ≤ entry X 1 0) (d : ℕ) :
+    (Lift1 X d).length = (mlift X (entry X 1 0 - 1) d).length ∧
+    (∀ j, entry (Lift1 X d) 0 j = entry (mlift X (entry X 1 0 - 1) d) 0 j) ∧
+    (∀ j, entry (Lift1 X d) 2 j = entry (mlift X (entry X 1 0 - 1) d) 2 j) ∧
+    (∀ j, entry (Lift1 X d) 1 j ≤ entry (mlift X (entry X 1 0 - 1) d) 1 j) := by
+  refine ⟨by rw [Lift1_length, mlift_length], fun j => ?_, fun j => ?_, fun j => ?_⟩
+  · rw [entry0_Lift1, entry0_mlift]
+  · rw [entry2_Lift1, entry2_mlift]
+  · rw [entry1_mlift_eq_Lift1 hv]; omega
+
+/-! ### L83-b: 核を `Row1DownLocal` に移す -/
+
+/-- **(ROW1DOWNLOCAL)**: `mlift` から `Lift1` へ ——
+行 1 を `coneV \ le1` の列（実測 1〜3 本）で `d` 下げても段は上がらない。
+**`Row1Mono` より真に弱い**: 対象はその 1〜3 本だけ、下げ幅は `d` で一定、
+行 0 と行 2 は一切動かない。 -/
+def Row1DownLocal : Prop :=
+  ∀ (a d : ℕ) (X : TrioSeq), 1 ≤ entry X 1 0 →
+    mlift X (entry X 1 0 - 1) d ∈ W a → Lift1 X d ∈ W a
+
+/-- 根の行 1 が `0` のときは `mlift` の閾値が届かないので一様シフトを台にする。 -/
+def Row1DownRoot0 : Prop :=
+  ∀ (a d : ℕ) (X : TrioSeq), entry X 1 0 = 0 →
+    shiftr01 0 d X ∈ W a → Lift1 X d ∈ W a
+
+/-- **★★★ (L83-b) 局所版から `(WL)` が出る。** -/
+theorem liftStage_of_row1down (h1 : Row1DownLocal) (h0 : Row1DownRoot0) :
+    LiftStage := by
+  intro m d X hX
+  rcases Nat.eq_zero_or_pos (entry X 1 0) with hv | hv
+  · exact h0 _ _ _ hv (ulift_mem_W X hX)
+  · exact h1 _ _ _ hv (mlift_mem_W X hX)
+
+/-- ⟹ **核が `Row1DownLocal` ＋ `Row1DownRoot0` に移る。** -/
+theorem liftTie_of_row1down (h1 : Row1DownLocal) (h0 : Row1DownRoot0) : LiftTie :=
+  liftTie_of_liftStage (liftStage_of_row1down h1 h0)
+
+/-- **`Row1Mono` より弱いことの証明**: `Row1Mono` から両方出る。 -/
+theorem row1DownLocal_of_row1mono (h : Row1Mono) : Row1DownLocal := by
+  intro a d X hv hm
+  obtain ⟨hl, h0, h2, h1⟩ := Lift1_le_mlift (X := X) hv d
+  exact h a _ _ hm hl h0 h2 h1
+
+theorem row1DownRoot0_of_row1mono (h : Row1Mono) : Row1DownRoot0 := by
+  intro a d X hv hs
+  refine h a _ _ hs (by rw [Lift1_length, shiftr01_length]) (fun j => ?_)
+    (fun j => ?_) (fun j => ?_)
+  · rw [entry0_Lift1, entry0_shiftr1]
+  · rw [entry2_Lift1, entry2_shiftr01]
+  · rcases Nat.lt_or_ge j X.length with hj | hj
+    · rw [entry1_Lift1 hj, entry1_shiftr1 hj]; split <;> omega
+    · rw [entry1_out (by rw [Lift1_length]; omega),
+        entry1_out (by rw [shiftr01_length]; omega)]
+
+/-! ### L83-c: `TieFree` が成り立つタイ場面（実測 6.1%）は無料 -/
+
+/-- タイがあっても `TieFree` が成り立てば `(WL)` は既存定理で通る。 -/
+theorem liftTie_case_tieFree {m d : ℕ} {X : TrioSeq} (hX : X ∈ W m)
+    (hv : 1 ≤ entry X 1 0) (h : TieFree X) : Lift1 X d ∈ W (m + 2 * d) :=
+  liftStage_of_tieFree hX hv h
+
+
 end L53
 end TRIO
