@@ -6286,6 +6286,108 @@ theorem mTowerSingle_holds : MTowerSingle := by
 
 ⟹ **`GraftAll` の代わりは A ＋ B の 2 本。** -/
 
+/-! ## 82. ★★★★★★ 残差 A を「塔に限った `GraftAll`」まで落とす
+
+### 82.1 ⚠ まず構造の自覚: **`catBlock` は `graft` そのもの**
+
+    `graft S y = S.dropLast ++ shiftr01 (entry S 0 (|S|-1)) 0 y`   （`Wset.lean:67`）
+    `catBlock`  … `A ++ shiftr01 c 0 B`
+
+**同じ形である。** ⟹ §78 の分解は **`Gamma.lean` の `GraftAll` 機械の再演**にあたる。
+
+> **⟹ C-1 と C-2 の差は「`y` の範囲」だけ。**
+> `GraftAll` … **すべての `y ∈ W u`** について要求する
+> `MTowerStep` … **`Lift1 Q (e*n)` の導出に出てくる `y`** だけでよい
+> **⟹ C-2 は `GraftAll` の真の制限版である。**（§74 で `GraftAll` 抜きの経路が
+> 緑になっているので、これは循環ではない。）
+
+### 82.2 ★ 段は 2 つに分かれる
+
+§78 の `A2'` は `B` の段と結論の段を**別々に取れる**（`aop_clause3_to_clause2` も
+`not_domT_nil` も `B` 側の段しか見ない）。⟹ **リフトで段が上がっても構わない。** -/
+
+open Classical in
+/-- **§78 の 2 段版**: 継ぐ側 `B` の段 `u'` と、全体の段 `u` は独立でよい。 -/
+theorem catBlock_of_escape' {u u' c : ℕ} {A : TrioSeq} (hA : A ∈ W u)
+    (hesc : ∀ B : TrioSeq, 1 ≤ B.length →
+      ¬ L53.HasParentInBlock (shiftr01 c 0 B) →
+      A ++ shiftr01 c 0 B ∈ W u) :
+    ∀ B : TrioSeq, B ∈ W u' → A ++ shiftr01 c 0 B ∈ W u := by
+  have hsub : W u' ⊆ {B : TrioSeq | A ++ shiftr01 c 0 B ∈ W u} := by
+    refine A2' ?_
+    rintro B (⟨hl, -⟩ | hop | ⟨m', hm', hd, hgr⟩)
+    · rcases Nat.eq_zero_or_pos B.length with h0 | hpos
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show A ++ shiftr01 c 0 ([] : TrioSeq) ∈ W u
+        simpa using hA
+      · refine hesc B (by omega) ?_
+        refine not_hasParentInBlock_of_short ?_
+        rw [shiftr01_length]; omega
+    · show A ++ shiftr01 c 0 B ∈ W u
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · have hres := hop 1 le_rfl
+        rwa [oper_eq_self_of_short 1 (by omega)] at hres
+      · by_cases hblk : L53.HasParentInBlock (shiftr01 c 0 B)
+        · exact catBlock_step hbig hblk (fun m hm => hop m hm)
+        · exact hesc B (by omega) hblk
+    · show A ++ shiftr01 c 0 B ∈ W u
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · have hBne : B ≠ [] := by
+          intro hc
+          rw [hc] at hd
+          exact not_domT_nil m' hd
+        have h1 : 0 < B.length := List.length_pos_iff.mpr hBne
+        refine hesc B (by omega) ?_
+        refine not_hasParentInBlock_of_short ?_
+        rw [shiftr01_length]; omega
+      · have hop := aop_clause3_to_clause2 hbig hd hgr
+        by_cases hblk : L53.HasParentInBlock (shiftr01 c 0 B)
+        · exact catBlock_step hbig hblk (fun m hm => hop m hm)
+        · exact hesc B (by omega) hblk
+  exact fun B hB => hsub hB
+
+/-! ### 82.3 ★★★★★★ ⟹ 残差 A は「塔に 1 列を継ぐ」だけになる
+
+`Q` に**リフト装備**（`∀ s, ∃ u', Lift1 Q s ∈ W u'`）があれば、
+`n` の帰納の各段で `catBlock_of_escape'` が使える。**装備は応用側で無料**である:
+`Q = Lift1 ((0,v,z) :: R.dropLast) t` なので
+`Lift1 Q s = Lift1 ((0,v,z) :: R.dropLast) (t+s)` は**接頭辞装備そのもの**。 -/
+
+open Classical in
+/-- **★★★★★★ 塔の閉包は「塔に 1 列を継ぐ」1 文に落ちる**（リフト装備つき）。 -/
+theorem mTowerClosed_of_escape {u : ℕ} {Q : TrioSeq} {d e : ℕ} (h2 : 2 ≤ Q.length)
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hblk : L53.HasParentInBlock Q)
+    (hlift : ∀ s : ℕ, ∃ u' : ℕ, Lift1 Q s ∈ W u')
+    (hesc : ∀ (n : ℕ) (B : TrioSeq), 1 ≤ B.length →
+      ¬ L53.HasParentInBlock (shiftr01 (d * n) 0 B) →
+      mTower Q d e n ∈ W u → mTower Q d e n ++ shiftr01 (d * n) 0 B ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  intro n
+  induction n with
+  | zero => simpa using W_nil u
+  | succ n ih =>
+      refine mem_of_oper_mem (fun m hm => ?_)
+      rw [oper_mTower' h2 hs hblk d e n m, mTower_step_shift]
+      obtain ⟨u', hu'⟩ := hlift (e * n)
+      have hQ2 : 2 ≤ (Lift1 Q (e * n)).length := by rw [Lift1_length]; exact h2
+      exact catBlock_of_escape' ih (fun B h1 hnb => hesc n B h1 hnb ih)
+        ((Lift1 Q (e * n))⟦m⟧) (oper_mem_of_mem hQ2 hu' m hm)
+
+/-! ### 82.4 ⟹ 残差の最終形（`GraftAll` との比較）
+
+    **`GraftAll`** … 装備つき文脈 `S` ＋ **任意の `y ∈ W u`** ⟹ `Lift1 ((0,v,z) :: graft S y) t ∈ W a`
+    **`hesc`**     … **塔 `mTower Q d e n`** ＋ **1 列（または段内で孤児の塊）** ⟹ 連結が `W u`
+
+    左が `W` の元**すべて**を相手にするのに対し、右は
+    **「塔」＋「継ぐ側が段内で孤児」**という 2 重の制限がついている。
+
+⚠ **`hesc` は `|B| = 1` のとき任意の列の snoc になる**（§78.2）ので、
+**`WSnoc` を含む**のは変わらない。ただし土台 `A` が**塔**に固定されたので、
+`Wtower2.snoc_orphan`（孤児なら無料）／`snoc_flat_root`（`srow=0` かつ親が根なら無料）
+の適用範囲が**塔の構造から決まる**。**そこが次に調べるところ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
