@@ -745,5 +745,86 @@ theorem le0_append_right {A N : TrioSeq} {a b : ℕ} :
     exact ⟨by omega, by omega, rtg0_to_append h3⟩
 
 
+/-- **`nextrel1` の移送**。最小性の `∀ j` は `le0 M j j1` から `j ≤ j1` に限られる。 -/
+theorem nextrel1_append_right {A N : TrioSeq} {a b : ℕ} :
+    nextrel1 (A ++ N) (A.length + a) (A.length + b) ↔ nextrel1 N a b := by
+  unfold nextrel1
+  simp only [List.length_append, entry_append_right, le0_append_right]
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    refine ⟨by omega, by omega, by omega, h4, h5, ?_⟩
+    intro j hj
+    have h9 := h6 (A.length + j) ⟨by omega, le0_append_right.mpr hj.2⟩
+    rwa [entry_append_right] at h9
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    refine ⟨by omega, by omega, by omega, h4, h5, ?_⟩
+    intro j hj
+    obtain ⟨j', rfl⟩ : ∃ j', j = A.length + j' := ⟨j - A.length, by omega⟩
+    have h9 := h6 j' ⟨by omega, le0_append_right.mp hj.2⟩
+    rwa [entry_append_right]
+
+theorem rtg1_of_append {A N : TrioSeq} {a c : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 (A ++ N)) (A.length + a) c) :
+    ∃ c', c = A.length + c' ∧ Relation.ReflTransGen (nextrel1 N) a c' := by
+  induction h with
+  | refl => exact ⟨a, rfl, Relation.ReflTransGen.refl⟩
+  | tail _ h2 ih =>
+      obtain ⟨c', hc, hchain⟩ := ih
+      subst hc
+      rename_i d _
+      obtain ⟨d', rfl⟩ : ∃ d', d = A.length + d' :=
+        ⟨d - A.length, by have := h2.2.2.1; omega⟩
+      exact ⟨d', rfl, hchain.tail (nextrel1_append_right.mp h2)⟩
+
+theorem rtg1_to_append {A N : TrioSeq} {a c : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 N) a c) :
+    Relation.ReflTransGen (nextrel1 (A ++ N)) (A.length + a) (A.length + c) := by
+  induction h with
+  | refl => exact Relation.ReflTransGen.refl
+  | tail _ h2 ih => exact ih.tail (nextrel1_append_right.mpr h2)
+
+/-- **★ `le1` の移送**（課題 L58 の 4 の後半）。 -/
+theorem le1_append_right {A N : TrioSeq} {a b : ℕ} :
+    le1 (A ++ N) (A.length + a) (A.length + b) ↔ le1 N a b := by
+  unfold le1
+  simp only [List.length_append]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    obtain ⟨c', hc, hchain⟩ := rtg1_of_append h3
+    have hb : c' = b := by omega
+    subst hb
+    exact ⟨by omega, by omega, hchain⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨by omega, by omega, rtg1_to_append h3⟩
+
+/-- **`nextrel2` の移送**。 -/
+theorem nextrel2_append_right {A N : TrioSeq} {a b : ℕ} :
+    nextrel2 (A ++ N) (A.length + a) (A.length + b) ↔ nextrel2 N a b := by
+  unfold nextrel2
+  simp only [List.length_append, entry_append_right, le1_append_right]
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    refine ⟨by omega, by omega, by omega, h4, h5, ?_⟩
+    intro j hj
+    have h9 := h6 (A.length + j) ⟨by omega, le1_append_right.mpr hj.2⟩
+    rwa [entry_append_right] at h9
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    refine ⟨by omega, by omega, by omega, h4, h5, ?_⟩
+    intro j hj
+    obtain ⟨j', rfl⟩ : ∃ j', j = A.length + j' := ⟨j - A.length, by omega⟩
+    have h9 := h6 j' ⟨by omega, le1_append_right.mp hj.2⟩
+    rwa [entry_append_right]
+
+/-- **★★ `nextR` の移送**（3 行ぶんまとめて）。 -/
+theorem nextR_append_right {A N : TrioSeq} {i a b : ℕ} :
+    nextR (A ++ N) i (A.length + a) (A.length + b) ↔ nextR N i a b := by
+  unfold nextR
+  split
+  · exact nextrel0_append_right
+  · split
+    · exact nextrel1_append_right
+    · exact nextrel2_append_right
+
+
 end L53
 end TRIO
