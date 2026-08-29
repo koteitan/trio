@@ -3216,5 +3216,77 @@ theorem wconvex1_of_wconvex (h : WConvex) : WConvex1 :=
   fun a A B C hA hC hAB hBC _ => h a A B C hA hC hAB hBC
 
 
+/-! ## ★★★★★ 課題 L92-b: **`WConvex1`（幅 1 の窓）だけで `(WL)` が出る**
+
+`liftStage_of_wconvex`（`Wtower2.lean`）を読むと、`WConvex` を使うのは
+`lift1_mem_of_wconvex` の**ただ 1 か所**:
+
+    `hconv (m+2d) (Lift1 (Y⟦n⟧) d) ((Lift1 Y d)⟦n⟧) (shiftr01 0 d (Y⟦n⟧))`
+      下端 = 帰納法の仮定 ／ 上端 = `(ULIFT)` ／ 真ん中 = 欲しいもの
+
+課題 L91 で `d = 1` に落ちたので、その 1 か所の**窓の幅は 1**（`sandwich_window_one`）。
+⟹ **`WConvex1` で足りる。** -/
+
+theorem lift1_mem_of_wconvex1 (hconv : WConvex1) {m : ℕ} {Y : TrioSeq}
+    (hop : ∀ n, 1 ≤ n → Y⟦n⟧ ∈ W m ∧ Lift1 (Y⟦n⟧) 1 ∈ W (m + 2 * 1)) :
+    Lift1 Y 1 ∈ W (m + 2 * 1) :=
+  mem_of_oper_mem (fun n hn =>
+    hconv (m + 2 * 1) (Lift1 (Y⟦n⟧) 1) ((Lift1 Y 1)⟦n⟧) (shiftr01 0 1 (Y⟦n⟧))
+      (hop n hn).2 (ulift_mem_W (Y⟦n⟧) (hop n hn).1)
+      (Le1_Lift1_oper Y 1 n) (Le1_oper_Lift1_shiftr01 Y 1 n)
+      (fun j => sandwich_window_one (Y⟦n⟧) j))
+
+/-- **★★★★★ 幅 1 の凸性だけで単位持ち上げが通る。** -/
+theorem liftStage1_of_wconvex1 (hconv : WConvex1) : LiftStage1 := by
+  intro m X hX
+  have hsub : W m ⊆ {Y : TrioSeq | Y ∈ W m ∧ Lift1 Y 1 ∈ W (m + 2 * 1)} := by
+    refine A2' ?_
+    rintro Y (⟨hl, hlev⟩ | hop | ⟨m', hm', hd', hgr⟩)
+    · refine ⟨A1_intro (Or.inl ⟨hl, hlev⟩), ?_⟩
+      rcases Nat.eq_zero_or_pos Y.length with h0 | hpos
+      · have hnil : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show Lift1 ([] : TrioSeq) 1 ∈ W (m + 2 * 1)
+        simpa using W_nil (m + 2 * 1)
+      · have h1 : Y.length = 1 := by omega
+        have hbc : 2 * entry Y 1 0 + entry Y 2 0 = 0 := by
+          unfold lev at hlev; omega
+        exact lift1_singleton_mem h1 (by omega)
+    · exact ⟨mem_of_oper_mem (fun n hn => (hop n hn).1),
+        lift1_mem_of_wconvex1 hconv (fun n hn => hop n hn)⟩
+    · have hY : Y ∈ W m :=
+        A1_intro (Or.inr (Or.inr ⟨m', hm', hd', fun z hz hb => (hgr z hz hb).1⟩))
+      refine ⟨hY, ?_⟩
+      rcases Nat.lt_or_ge Y.length 2 with hsm | hbig
+      · have hYne : Y ≠ [] := by
+          intro hc
+          rw [hc] at hd'
+          exact not_domT_nil m' hd'
+        have h1 : Y.length = 1 := by
+          have : 0 < Y.length := List.length_pos_iff.mpr hYne
+          omega
+        have hlev := hd'.1
+        rw [show Y.length - 1 = 0 from by omega] at hlev
+        unfold lev at hlev
+        exact lift1_singleton_mem h1 (by omega)
+      · exact lift1_mem_of_wconvex1 hconv (aop_clause3_to_clause2 hbig hd' hgr)
+  have h := (hsub hX).2
+  have he : m + 2 * 1 = m + 2 := by omega
+  rwa [he] at h
+
+/-- **★★★★★ ⟹ `(WL)` は幅 1 の凸性 1 本から出る**（既存の
+`liftStage_of_wconvex'` は幅の制限が無い `WConvex` を要求していた）。 -/
+theorem liftStage_of_wconvex1 (hconv : WConvex1) : LiftStage :=
+  liftStage_of_unit (liftStage1_of_wconvex1 hconv)
+
+theorem liftTie_of_wconvex1 (hconv : WConvex1) : LiftTie :=
+  liftTie_of_liftStage (liftStage_of_wconvex1 hconv)
+
+/-- **★★★★★ 核ちょうど 2 本の最終形**: 幅 1 の凸性 ＋ 節 2 の代入。 -/
+theorem towerOK_of_wconvex1_graft (hconv : WConvex1) (hg : GraftFromExp) :
+    TowerOK :=
+  towerOK_of_liftTie_graft (liftTie_of_wconvex1 hconv) hg
+
+
 end L53
 end TRIO
