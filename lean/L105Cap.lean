@@ -9940,6 +9940,91 @@ theorem snocStep_of_orphan {u : ℕ} {M : TrioSeq} {d e n j : ℕ}
 ⚠ **教訓 14**: これは **`hstep` の**一つの枝**です。
 **残るのは「足す列が親を持つ」枝**で、そこが (a) の本体です。 -/
 
+/-! ## 138. ★★★★★★★ **`hstep` の残りの枝**（足す列が親を持つ）**の姿**
+
+§137 で孤児の枝が閉じた。**残るのは「足す列が親を持つ」枝。**
+そこでは `snoc_orphan_W` が使えないので `mem_of_oper_mem` で降りる。
+**その展開の姿を、`gexp` の定義（`M.take j0 ++ gcopies …`）から取り出す。** -/
+
+open Classical in
+theorem snocStep_oper_prefix {M : TrioSeq} {d e n j p m : ℕ}
+    (hj : j < M.dropLast.length) (hpj : p < j)
+    (hz : ¬ (entry (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 0
+        ((mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 1
+        ((mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 2
+        ((mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)).length - 1) = 0))
+    (hpar : hasParent (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (srow (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        ((mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)).length - 1))
+      ((mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)).length - 1))
+    (hpe : parent (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (srow (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        ((mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)).length - 1))
+      ((mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)).length - 1)
+      = n * M.dropLast.length + p) :
+    ∃ C : TrioSeq,
+      (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))⟦m⟧
+      = (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take p) ++ C := by
+  set Q := M.dropLast with hQ
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set T := mTower Q d e n ++ B.take (j + 1) with hT
+  have hdl : Q.length = M.length - 1 := List.length_dropLast
+  have hLb : 0 < Q.length := by omega
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hTl : T.length = n * Q.length + (j + 1) := by
+    rw [hT, List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hL : T.length - 1 ≠ 0 := by omega
+  refine ⟨gcopies T (n * Q.length + p) (T.length - 1 - (n * Q.length + p))
+    (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1)
+      - entry T 0 (n * Q.length + p) else 0)
+    (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1)
+      - entry T 1 (n * Q.length + p) else 0) m, ?_⟩
+  rw [oper_eq_gexp_gen m hL hz hpar, hpe]
+  unfold gexp
+  congr 1
+  · rw [hT, List.take_append, ← hTlen, List.take_of_length_le (by omega),
+      hTlen, Nat.add_sub_cancel_left, List.take_take, Nat.min_eq_left (by omega)]
+
+/-! ### 138.1 ⟹ 残りの枝の姿が出ました
+
+    **`T_{j+1}⟦m⟧ = T_p ++ （窓 `[p, j]` の `m` 個のコピー）**
+
+**⟹ 接頭辞は `T_p`（`p < j` なので `j` について**厳密に小さい**）。**
+**⟹ しかしコピーの側は「部分ブロックの塔」であり、`m` を大きくすると伸びる。**
+
+★ **測度の候補は「窓の長さ `j - p`」である:**
+
+    **`p ≥ 1`** ⟹ 窓 `[p, j]` は**ブロックより短い** ⟹ **`|C|` が厳密に減る** ⟹ 整礎
+    **`p = 0`** ⟹ 窓 ＝ **ブロック全体** ⟹ **減らない**
+        （§121 の「親＝根は**塔の塔**（`n → n·m`）」がまさにこれ）
+
+> **⟹ 残りの枝は `p ≥ 1` と `p = 0` に割れ、`p ≥ 1` 側には整礎測度がある。**
+> **⟹ `p = 0`（親がブロックの根）だけが、測度の候補をもたない。**
+
+⚠ **教訓 14**: 上は **「`p ≥ 1` 側に測度の候補がある」**であって、
+**「`p ≥ 1` 側が通る」ではありません。**
+**⟹ R2 に「`p = 0` が何 % か」を測ってもらうのが、いちばん効きます。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
