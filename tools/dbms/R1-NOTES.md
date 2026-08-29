@@ -4472,3 +4472,78 @@ team-lead の標的変更（`WCat` -> `Wstar`）を受けて測った。**結論
 `WCat`（16 行）・塔（0〜24 行）を試したのは、**壁の位置としては正しかったが、
 越えるのではなく手前で曲がるのが正解**だった（team-lead の §60-61）。
 R69-a（`WCat` の弱形）・R69-b（残核の神託）は**目的が消えたので打ち切り**。
+
+---
+
+## R71-a —— **`Final.lean` の含意地図（22 本）と `TowerOK` の位置**
+
+`Final.lean` の `TRIO_terminates_of_*` 22 本と、それらをつなぐ `X_of_Y : Y → X` の
+補題を全部洗った。**`X_of_Y` は `Y → X` なので、矢印の元が強い（＝証明が難しい）。**
+
+### 1. 4 つの独立した経路
+
+**経路 A（置換の鎖）** —— 仮定 1 本で足りる
+
+    **Subst1gReviveSelf** --subst1gRevive_of_self--> Subst1gRevive
+      --subst1g_of_revive--> **Subst1g** --substClosedG_of_subst1g--> SubstClosedG
+        --shiftTowerClosedS_of_substG--> **ShiftTowerClosedS**
+          --liftStageParented_of_tower--> LiftStageParented
+            --liftStage_of_parented--> **LiftStage** --towerGraft2_of_liftStage--> TowerGraft2
+        --substClosed_of_substClosedG--> SubstClosed --towerExp2Root_of_subst--> TowerExp2Root
+                                                       --towerExp2Low_of_root--> TowerExp2Low
+    枝: Subst1g --subst1_of_subst1g--> Subst1 --substClosed_of_subst1--> SubstClosed
+        Row1Mono / WConvex / TieFree / noTie / strict / window / le1_closed --> LiftStage
+        srow1 の場合 --liftStageParented_of_srow1--> LiftStageParented（**証明ずみ**）
+
+**経路 B（連結の鎖）**
+
+    **WSnoc** --wcat_of_snoc--> **WCat** --shiftTowerClosed_of_cat--> ShiftTowerClosed
+                                  --shiftTowerClosedS_of_closed--> ShiftTowerClosedS  ⟹ 経路 A に合流
+    WSnoc --towerExp_of_snoc--> TowerExp / WCat --towerExp_of_cat--> TowerExp
+    行 2 ≡ 0 の場合 --shiftTowerClosed_of_zeroRow2--> ShiftTowerClosed（**証明ずみ**）
+
+**経路 C（文脈核）**
+
+    **CoreCap** --coreSingleton_of_cap--> **CoreSingleton**
+    (CoreCtxSuffixLift ∧ CorePlantCtxLift) --coreSingleton_of_cores--> CoreSingleton
+
+**経路 D（`Wstar`）** —— **他の 3 経路と合流しない独立枝**
+
+    **TowerOK1 ∧ TowerOK2** --towerOK_of_split--> **TowerOK**
+      --Wstar_closed--> Wstar が閉じる --mem_Wstar--> W_membership
+      --wf_olt_ST_TS_of_cofinality--> **wf**（`TRIO_terminates_of_towerOK`）
+
+### 2. 仮定が 1 本で足りるもの / 2 本要るもの
+
+    **1 本で足りる**: TowerOK / Row0Free / Subst1g / Subst1gRevive / Subst1gReviveSelf
+                     WSnoc / CoreSingleton / CoreCap
+    **2 本要る**（相方は `TowerExp` 系）: TowerGraft2 / LiftStage / Row1Mono / WConvex /
+                     LiftStageParented / ShiftTowerClosedS / WCat / SubstClosed / Subst1
+
+### 3. **`TowerOK` の位置 —— 他とは比較不能（独立枝）**
+
+`TowerOK` と経路 A/B/C をつなぐ補題は **1 本も無い**（`grep` で確認）。
+`TowerOK` だけが `Wstar_closed` 経由で **共終性を経ずに** `wf` に落ちる。
+⟹ **強い / 弱いの比較はできない。別の道。**
+
+### 4. **いま残っている債務がいちばん小さいのは `TowerOK2`**
+
+`TowerOK` は `srow` で 2 分割できる（`towerOK_of_split`、`L53Subst.lean:1136`）。
+`domT R m` が `lev R (|R|-1) = m+1 > 0` を要求するので **`srow ∈ {1,2}` だけ**、
+⟹ **分割は網羅的**。そして
+
+    **`TowerOK1`（srow=1）は `towerOK1_of_clause3`（`L53Subst.lean:1163`）で証明ずみ**
+    ⟹ **残る債務は `TowerOK2`（srow=2）1 本だけ**
+
+他の経路はどれも「命題まるごと 1 本」が未証明なのに対し、経路 D は**半分が済んでいる**。
+さらに H11 の測定で `TowerOK2` は根の `z` が 0 に強制され（624/624）、
+`TieFree` が 96.2% で立ち、**残る核はタイの場合 3.8% だけ**。
+
+⟹ **22 本の中で `TowerOK2` がいちばん小さい債務。** これが R71-a の答え。
+
+### 5. 私の測定との対応
+
+    §R42  `WCat` は残核より広い（`A ++ B = graft A z` は 0/6930）
+      ⟹ 経路 B は経路 A より強い（`wcat_of_snoc` の向きとも整合）
+    §R70  `Wstar3` の神託だけでラダー 4482/4482
+      ⟹ 経路 D は**証明書エンジンの届く範囲を全部覆う**。経路 A/B は 16〜26 行止まり
