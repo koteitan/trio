@@ -6756,6 +6756,96 @@ theorem le1_zero_of_nextrel1 {T : TrioSeq} {a b : ℕ} (hb : le1 T 0 b) (hne : b
 ⚠ **残るのは「`b` が錐の外」の場合だけ**（§87 の但し書き）。
 team-lead が R2 に「錐の外の `b` がどれだけ出るか」を測らせている。 -/
 
+/-! ## 90. ★★★★★★ §78.2 の壁を外す: **`hesc` の底は「決まった 1 列」**
+
+§78.2 で「`|B| = 1` のとき残差は任意の列の snoc ＝ `WSnoc` を含む」と判定した。
+**それは `B` を `W u'` 全体で回したからである。**
+
+**`oper` も `graft` も先頭列を変えない**（`Wset.oper_headD`（`:1509`、緑）／
+`graft M z = M.dropLast ++ …` で `|M| ≥ 2` なら先頭は残る）ので、
+**派生の途中の `B` はすべて出発点と同じ先頭列を持つ。**
+
+⟹ **`|B| = 1` に落ちたときの `B` は「出発点の先頭列 1 本」に確定する。**
+**⟹ 任意の snoc ではない。`WSnoc` は含まれない。** -/
+
+open Classical in
+/-- **★★★★★★ 先頭列を固定した `catBlock`**: 底が 1 つの決まった snoc になる。 -/
+theorem catBlock_of_escape_head {u u' c : ℕ} {A : TrioSeq} {p : ℕ × ℕ × ℕ}
+    (hA : A ∈ W u)
+    (hsnoc : A ++ [((p.1 + c, p.2.1, p.2.2) : ℕ × ℕ × ℕ)] ∈ W u)
+    (hesc : ∀ B : TrioSeq, 2 ≤ B.length →
+      ¬ L53.HasParentInBlock (shiftr01 c 0 B) →
+      A ++ shiftr01 c 0 B ∈ W u) :
+    ∀ B : TrioSeq, B ∈ W u' → (B ≠ [] → B.headD (0, 0, 0) = p) →
+      A ++ shiftr01 c 0 B ∈ W u := by
+  have hone : ∀ B : TrioSeq, B.length = 1 → (B ≠ [] → B.headD (0, 0, 0) = p) →
+      A ++ shiftr01 c 0 B ∈ W u := by
+    intro B h1 hd
+    obtain ⟨q, hq⟩ := List.length_eq_one_iff.mp h1
+    subst hq
+    have hqp : q = p := by
+      have := hd (by simp)
+      simpa using this
+    subst hqp
+    have hsh : shiftr01 c 0 [q] = [((q.1 + c, q.2.1, q.2.2) : ℕ × ℕ × ℕ)] := by
+      unfold shiftr01
+      simp
+    rw [hsh]
+    exact hsnoc
+  have hsub : W u' ⊆ {B : TrioSeq |
+      (B ≠ [] → B.headD (0, 0, 0) = p) → A ++ shiftr01 c 0 B ∈ W u} := by
+    refine A2' ?_
+    rintro B (⟨hl, -⟩ | hop | ⟨m', hm', hd, hgr⟩) hdd
+    · rcases Nat.eq_zero_or_pos B.length with h0 | hpos
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show A ++ shiftr01 c 0 ([] : TrioSeq) ∈ W u
+        simpa using hA
+      · exact hone B (by omega) hdd
+    · show A ++ shiftr01 c 0 B ∈ W u
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · rcases Nat.eq_zero_or_pos B.length with h0 | hpos
+        · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+          subst hnil
+          simpa using hA
+        · exact hone B (by omega) hdd
+      · have hhead : ∀ m, 1 ≤ m → A ++ shiftr01 c 0 (B⟦m⟧) ∈ W u := by
+          intro m hm
+          refine hop m hm ?_
+          intro _
+          rw [oper_headD B (by omega) hm]
+          exact hdd (by intro hc; rw [hc] at hbig; simp at hbig)
+        by_cases hblk : L53.HasParentInBlock (shiftr01 c 0 B)
+        · exact catBlock_step hbig hblk hhead
+        · exact hesc B hbig hblk
+    · show A ++ shiftr01 c 0 B ∈ W u
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · have hBne : B ≠ [] := by
+          intro hc
+          rw [hc] at hd
+          exact not_domT_nil m' hd
+        have h1 : 0 < B.length := List.length_pos_iff.mpr hBne
+        exact hone B (by omega) hdd
+      · have hop := aop_clause3_to_clause2 hbig hd hgr
+        have hhead : ∀ m, 1 ≤ m → A ++ shiftr01 c 0 (B⟦m⟧) ∈ W u := by
+          intro m hm
+          refine hop m hm ?_
+          intro _
+          rw [oper_headD B (by omega) hm]
+          exact hdd (by intro hc; rw [hc] at hbig; simp at hbig)
+        by_cases hblk : L53.HasParentInBlock (shiftr01 c 0 B)
+        · exact catBlock_step hbig hblk hhead
+        · exact hesc B hbig hblk
+  exact fun B hB hdd => hsub hB hdd
+
+/-! ### 90.1 ⚠ §78.2 の自己訂正
+
+> 「`hesc` は `|B| = 1` のとき任意の列の snoc になるので **`WSnoc` を含む**」
+
+**これは `B` を `W u'` 全体で回したときの話だった。**
+**派生の途中では先頭列が保たれる**（`oper_headD`）ので、**底は 1 つの決まった列**である。
+⟹ **`WSnoc` は含まれない。§78.2 の判定は撤回する。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
