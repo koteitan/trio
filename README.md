@@ -25,6 +25,9 @@ tools/   実行可能な BM4 モデルと検証
 - `tools/normalize_sheet.py` — BM4-Analysis シートのラベルを形式だけ正規化して
   `tmp/fixed-sheet/`（バージョン管理外）と `tools/omega_alpha_rows.tsv` を作る
 - 拡張ブーフホルツ psi ↔ トリオ数列
-  — 対応表 [α < ε₀](ebp2bms/sheet/1/README.md) / [ε₀ ≤ α < Λ](ebp2bms/sheet/2/README.md)、
+  — 対応表
+  [M ≤ ψ0(Ω_ω)](ebp2bms/sheet/0/README.md) /
+  [ψ0(Ω_ω) ≤ M < ψ0(Ω_ε₀)](ebp2bms/sheet/1/README.md) /
+  [ψ0(Ω_ε₀) ≤ M ≤ ψ0(Ω_Λ)](ebp2bms/sheet/2/README.md)、
   アルゴリズム [α < ε₀](ebp2bms/algorithm/1/README.md) / [ε₀ ≤ α < Λ](ebp2bms/algorithm/2/README.md)
-  （[English](ebp2bms/sheet/1/README-en.md)）
+  （[English](ebp2bms/sheet/0/README-en.md)）

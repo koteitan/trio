@@ -1,6 +1,6 @@
 # 拡張ブーフホルツ psi ↔ トリオ数列 対応表: ε₀ ≤ α < Λ
 
-[← 戻る](../../../README.md) | [Japanese](README.md) | [English](README-en.md) | [α < ε₀](../1/README.md) | [ε₀ ≤ α < Λ](README.md)
+[← 戻る](../../../README.md) | [Japanese](README.md) | [English](README-en.md) | [M <= ψ0(Ω_ω)](../0/README.md) | [ψ0(Ω_ω) <= M < ψ0(Ω_ε₀)](../1/README.md) | [ψ0(Ω_ε₀) ≤ M <= ψ0(Ω_Λ)](README.md)
 
 $`\psi_0(\Omega_\alpha)`$ とトリオ数列（z<2 断片）の標準形行列の対応、$`\varepsilon_0 \le \alpha \lt \Lambda`$（$`\Lambda`$ = 最小 $`\Omega`$ 不動点）。
 生成: `tools/build_omega_alpha.py`（BM4-Analysis シートと全数照合済み。
