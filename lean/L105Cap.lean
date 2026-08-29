@@ -494,6 +494,53 @@ theorem capSnocOpen'_of_capSnocOpen (h : CapSnocOpen) : CapSnocOpen' := by
   exact h M v z a t hM hM2 hz1 hctx hva q hq0 hpar hz2
 
 
+
+/-! ## 13. ★★★★★ **厳密な残核** `CapSnocOpenExact`（`CoreCap` と同値）
+
+⚠ `CapSnocOpen'` は `q` を自由に走らせているので、**`cap` のリフトから作れない `q`
+（例えば `q.2.1 < t` のもの）まで含む** ⟹ `CoreCap` より強いかもしれない。
+`q` の出自の等式を前提に入れると、**`CoreCap` とちょうど同値**になる。 -/
+
+def CapSnocOpenExact : Prop :=
+  ∀ (M : TrioSeq) (v z a t b c : ℕ), argOK M → 1 ≤ M.length → z ≤ 1 →
+    CtxOK M v z → 2 * (v + t) + z ≤ a →
+    ∀ q : ℕ × ℕ × ℕ,
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: cap M b c) t = capBase M v z t ++ [q] →
+      (∀ j, j < (capBase M v z t ++ [q]).length →
+        le0 (capBase M v z t ++ [q]) 0 j) →
+      hasParent (capBase M v z t ++ [q])
+        (srow (capBase M v z t ++ [q]) (capBase M v z t).length)
+        (capBase M v z t).length →
+      (∃ p ∈ capBase M v z t, 0 < p.2.2) →
+      capBase M v z t ++ [q] ∈ W a
+
+theorem coreCap_of_capSnocOpenExact (h : CapSnocOpenExact) : CoreCap := by
+  intro M hMarg hM2 v z hz1 hctx b c a t hva
+  obtain ⟨q, hEq, -, -, hle0⟩ := cap_snoc_setup hMarg hM2 v z t b c
+  rw [hEq]
+  refine snoc_of_open q (capBase_mem hctx hM2 hva) (capBase_ne M v z t) ?_
+  intro hpar hz2
+  exact h M v z a t b c hMarg hM2 hz1 hctx hva q hEq hle0 hpar hz2
+
+theorem capSnocOpenExact_of_coreCap (h : CoreCap) : CapSnocOpenExact := by
+  intro M v z a t b c hMarg hM2 hz1 hctx hva q hEq _ _ _
+  rw [← hEq]
+  exact h M hMarg hM2 v z hz1 hctx b c a t hva
+
+/-- **★★★★★ `CapSnocOpenExact` は `CoreCap` と同値** —— 「無料の枝を全部落として、
+`argOK` 由来の根祖先性を与件に加えた `CoreCap`」がこれ。 -/
+theorem capSnocOpenExact_iff_coreCap : CapSnocOpenExact ↔ CoreCap :=
+  ⟨coreCap_of_capSnocOpenExact, capSnocOpenExact_of_coreCap⟩
+
+theorem capSnocOpenExact_of_capSnocOpen' (h : CapSnocOpen') : CapSnocOpenExact := by
+  intro M v z a t b c hMarg hM2 hz1 hctx hva q hEq hle0 hpar hz2
+  obtain ⟨q', hEq', hq0', -, -⟩ := cap_snoc_setup hMarg hM2 v z t b c
+  have hqq : q' = q := by
+    have hcat : capBase M v z t ++ [q'] = capBase M v z t ++ [q] := hEq'.symm.trans hEq
+    simpa using List.append_cancel_left hcat
+  rw [hqq] at hq0'
+  exact h M v z a t hMarg hM2 hz1 hctx hva q hq0' hle0 hpar hz2
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
@@ -508,6 +555,9 @@ theorem capSnocOpen'_of_capSnocOpen (h : CapSnocOpen) : CapSnocOpen' := by
 
 に等しい。`t ≥ 1` はこれを `Lift1 · t` で写しただけで、**新しい要求はゼロ**
 （`Lift1_snoc`）。
+
+**厳密な形は `CapSnocOpenExact`（§13）で、`capSnocOpenExact_iff_coreCap` により
+`CoreCap` と `⟺`。** 無料の枝を全部落とし、`argOK` 由来の根祖先性を与件に加えてある。
 
 ### 12.2 場合分けの網羅（課題 L105 (1)）
 
