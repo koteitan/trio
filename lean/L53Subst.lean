@@ -3374,5 +3374,69 @@ theorem lowerOne_last_eq {S : TrioSeq} (hSne : S ≠ []) :
     List.dropLast_eq_take]
 
 
+/-! ## ★★★★★ 課題 L94 の判定: **`WConvex1` は 3 本目ではない。`WSnoc` から出る**
+
+team-lead の読みが当たっていた。`Wtower2.lean` に鎖が**すべて緑で**ある:
+
+    `WSnoc`             `Wtower2.lean:2049`
+      ─ `wcat_of_snoc`               `Wtower2.lean:2078`
+    `WCat`
+      ─ `shiftTowerClosed_of_cat`    `Wtower2.lean:1983`
+    `ShiftTowerClosed`
+      ─ `shiftTowerClosedS_of_closed` `Wtower2.lean:1776`
+    `ShiftTowerClosedS`
+      ─ `liftStageParented_of_tower`  `Wtower2.lean:1835`
+    `LiftStageParented`
+      ─ `liftStage_of_parented`       `Wtower2.lean:560`
+    **`LiftStage`**
+
+⟹ **`WSnoc` だけで `(WL)` が出る。** `WConvex1` は「`LiftStage` に至る別経路」であって、
+独立した 3 本目ではない（`LiftStage` が目的なら要らない）。
+
+**⟹ 今日の核は `Subst1gRevive` ＋ `WSnoc` の 2 本に収束する。** -/
+
+/-- **★★★★★ `WSnoc` だけで `(WL)`。** -/
+theorem liftStage_of_wsnoc (hsn : WSnoc) : LiftStage :=
+  liftStage_of_parented
+    (liftStageParented_of_tower
+      (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat (wcat_of_snoc hsn))))
+
+theorem liftTie_of_wsnoc (hsn : WSnoc) : LiftTie :=
+  liftTie_of_liftStage (liftStage_of_wsnoc hsn)
+
+/-- **★★★★★ 今日の最終形**: `TowerOK` は `WSnoc` ＋ `GraftFromExp` から出る。 -/
+theorem towerOK_of_wsnoc_graft (hsn : WSnoc) (hg : GraftFromExp) : TowerOK :=
+  towerOK_of_liftTie_graft (liftTie_of_wsnoc hsn) hg
+
+/-! ## ★ 今日の到達点: 未証明は 2 本（`STATUS.md` 用の正確な文）
+
+### 1. `Wset.WSnoc`（`Wtower2.lean:2049`）
+
+```lean
+def WSnoc : Prop :=
+  ∀ (u : ℕ) (C : TrioSeq) (p : ℕ × ℕ × ℕ), C ∈ W u → C ≠ [] →
+    hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length → C ++ [p] ∈ W u
+```
+
+**効く先 2 つ**: 持ち上げ側（上の鎖で `LiftStage`）と、
+`WstarSnoc`（`wstarSnoc_of_wsnoc`、この file）＝ `GraftFromExp` の 1 段。
+
+### 2. `Wtower2.Subst1gRevive`（`Wtower2.lean:3251
+3274`）
+
+1 列（`p` 番目）を `Wself` のブロック `C` に差し替えても段は上がらない、という形。
+`graft` の場面では側条件が構成から出る（`graft_cons_mem_of_revive`、この file）。
+
+### 参考: 今日作って**要らなくなった**もの
+
+    `Row1DownLocal` / `Row1DownRoot0`  … `MliftR` に畳まれた（課題 L85）
+    `MliftR`                            … `slift` 移植が閉じた（課題 L88）
+    `WConvex1`                          … `WSnoc` から `LiftStage` が出る（課題 L94）
+    `WstarCat`                          … `rsum` が根と両立しない（課題 L87）
+
+⚠ どれも「偽」ではなく「**要らない**」。`WConvex1` は `Row1Mono` より 2 段弱い
+命題として正しく、独立に証明できれば別経路になる。 -/
+
+
 end L53
 end TRIO
