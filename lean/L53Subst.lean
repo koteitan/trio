@@ -3577,6 +3577,185 @@ theorem wconvex1_of_unit (h : WConvexUnit) : WConvex1 := by
         · rw [← hje]; exact hD1k
         · rw [hD1ne j (by omega)]; exact hagree j (by omega)
 
+/-! ## ★★★★★ 課題 L97-c: 3 回着いた同じ形 —— **接頭辞つきコピー**
+
+今日、同じ形に 3 回着いた:
+
+    §49  `snoc_flat_root` の「親が根」＝ **`take j0` が空**
+    §96  `split_lastMin` の切れ目が `R.dropLast` の**中**に落ちる
+    §109 `srow = 0` 枝で増えるのは **`C.take j0`** だけ
+
+全部「**接頭辞との連結**」。ここを 1 本の `Prop` にする。
+
+⚠ 素朴に「`A ∈ W u` ＋ `P ∈ W u` ⟹ `A ++ P ∈ W u`」（`rsum` 無しの `WCat`）と
+書くのは**強すぎる**（`P` が `A` の浅い列の下に潜る）。実際に要るのはもっと狭い:
+
+    **`A ++ Q ∈ W u`（1 個ぶんは既に `W` にいる）⟹ `A ++ (Q の n 個のコピー)` も `W u`**
+
+これは `W_flatMap_copies`（`Wset.lean:2552`、**証明ずみ**）の **`A = []` を接頭辞つきに
+一般化しただけ**。⟹ 「証明ずみ定理の 1 段の一般化」という、今日ずっと出てきた形。 -/
+
+/-- **(PREFIXCOPIES)**: 接頭辞つきのコピー閉包。`A = []` は `W_flatMap_copies`。 -/
+def PrefixCopies : Prop :=
+  ∀ (u n : ℕ) (A Q : TrioSeq), A ++ Q ∈ W u →
+    (∀ q ∈ Q, entry Q 0 0 ≤ q.1) →
+    A ++ ((List.range n).flatMap fun _ => Q) ∈ W u
+
+/-- `A = []` の場合は**証明ずみ**（`W_flatMap_copies`）。 -/
+theorem prefixCopies_nil {u n : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u)
+    (hQr : ∀ q ∈ Q, entry Q 0 0 ≤ q.1) :
+    ([] : TrioSeq) ++ ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  rw [List.nil_append]
+  exact W_flatMap_copies hQ hQr n
+
+/-! ### `srow = 0` 枝は `PrefixCopies` で閉じる
+
+`srow = 0` では `d0 = d1 = 0`（`Trio.oper` の定義）なので、
+`oper_unfold` の写しは**逐語**になり
+
+    `(C ++ [t])⟦n⟧ = C.take j0 ++ （`C.drop j0` の n 個のコピー）`
+
+で、しかも `C.take j0 ++ C.drop j0 = C ∈ W u` が**手元にある**。
+⟹ `PrefixCopies` がそのまま当たる。 -/
+
+theorem entry_snoc_left {C : TrioSeq} {p : ℕ × ℕ × ℕ} {i j : ℕ} (hj : j < C.length) :
+    entry (C ++ [p]) i j = entry C i j := by
+  unfold entry
+  rw [getD_append_left hj]
+
+open Classical in
+/-- **★★★ `srow = 0` の展開は「接頭辞 ＋ 逐語コピー」**。 -/
+theorem oper_snoc_srow0 {C : TrioSeq} {p : ℕ × ℕ × ℕ} {j0 : ℕ} (hCne : C ≠ [])
+    (hz : ¬(entry (C ++ [p]) 0 C.length = 0 ∧ entry (C ++ [p]) 1 C.length = 0 ∧
+      entry (C ++ [p]) 2 C.length = 0))
+    (hsr : srow (C ++ [p]) C.length = 0)
+    (hpar : hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length)
+    (hj0 : j0 = parent (C ++ [p]) (srow (C ++ [p]) C.length) C.length)
+    (hj0le : j0 ≤ C.length) (n : ℕ) :
+    (C ++ [p])⟦n⟧
+      = C.take j0 ++ (List.range n).flatMap fun _ => (C.drop j0).take (C.length - j0) := by
+  have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
+  have hlen : (C ++ [p]).length - 1 = C.length := by simp
+  have hu := oper_unfold (M := C ++ [p]) (j1 := C.length) (i1 := 0) (j0 := j0)
+    (d0 := 0) (d1 := 0) hlen.symm (by omega) hz (by rw [hsr])
+    (by rw [hsr] at hpar; exact hpar) (by rw [hj0, hsr]) (by simp) (by simp) n
+  rw [hu]
+  congr 1
+  · rw [List.take_append_of_le_length hj0le]
+  · refine List.flatMap_congr ?_
+    intro k _
+    have hdrop : (C.drop j0).take (C.length - j0)
+        = (List.range' j0 (C.length - j0)).map fun j =>
+            ((entry C 0 j, entry C 1 j, entry C 2 j) : ℕ × ℕ × ℕ) := by
+      refine List.ext_getElem (by simp) ?_
+      intro i hi1 hi2
+      simp only [List.length_take, List.length_drop] at hi1
+      have hij : j0 + i < C.length := by omega
+      rw [List.getElem_take, List.getElem_drop]
+      rw [List.getElem_map, List.getElem_range']
+      simp only [Nat.one_mul]
+      exact (entry_triple hij).symm
+    rw [hdrop]
+    refine List.map_congr_left ?_
+    intro j hj
+    have hjlt : j < C.length := by
+      have := List.mem_range'.mp hj
+      omega
+    rw [entry_snoc_left hjlt, entry_snoc_left hjlt, entry_snoc_left hjlt]
+    simp
+
+
+open Classical in
+/-- **★★★★ `PrefixCopies` は `WSnoc` の `srow = 0` 枝を閉じる。** -/
+theorem wsnoc_srow0_of_prefixCopies (h : PrefixCopies) {u : ℕ} {C : TrioSeq}
+    {p : ℕ × ℕ × ℕ} (hC : C ∈ W u) (hCne : C ≠ [])
+    (hsr : srow (C ++ [p]) C.length = 0)
+    (hpar : hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length) :
+    C ++ [p] ∈ W u := by
+  have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
+  set j0 : ℕ := parent (C ++ [p]) (srow (C ++ [p]) C.length) C.length with hj0
+  -- 親の関係を `nextrel0` として取り出す
+  have hnr : nextrel0 (C ++ [p]) j0 C.length := by
+    have h1 := parent_nextR hpar
+    rw [← hj0, hsr, nextR, if_pos rfl] at h1
+    exact h1
+  have hj0lt : j0 < C.length := hnr.2.2.1
+  have hdeep : entry (C ++ [p]) 0 j0 < entry (C ++ [p]) 0 C.length := hnr.2.2.2.1
+  have hz : ¬(entry (C ++ [p]) 0 C.length = 0 ∧ entry (C ++ [p]) 1 C.length = 0 ∧
+      entry (C ++ [p]) 2 C.length = 0) := by
+    rintro ⟨h0, -, -⟩
+    omega
+  -- 落とすブロックは `C.drop j0`
+  have htk : (C.drop j0).take (C.length - j0) = C.drop j0 := by
+    apply List.take_of_length_le
+    simp
+  have hcat : C.take j0 ++ C.drop j0 = C := List.take_append_drop j0 C
+  have hdrop0 : entry (C.drop j0) 0 0 = entry C 0 j0 := by
+    have h1 : (C.drop j0).getD 0 (0, 0, 0) = C.getD j0 (0, 0, 0) := by
+      rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem (by simp; omega),
+        List.getElem?_eq_getElem hj0lt]
+      simp
+    show ((C.drop j0).getD 0 (0, 0, 0)).1 = (C.getD j0 (0, 0, 0)).1
+    rw [h1]
+  have hQr : ∀ q ∈ C.drop j0, entry (C.drop j0) 0 0 ≤ q.1 := by
+    intro q hq
+    rw [hdrop0]
+    obtain ⟨i, hi, hqe⟩ := List.mem_iff_getElem.mp hq
+    simp only [List.length_drop] at hi
+    have hidx : j0 + i < C.length := by omega
+    have hqv : q = C[j0 + i] := by rw [← hqe]; simp
+    rcases Nat.eq_zero_or_pos i with rfl | hipos
+    · rw [hqv]
+      have : entry C 0 (j0 + 0) = (C[j0 + 0]).1 := by
+        rw [← entry_triple (show j0 + 0 < C.length by omega)]
+      simp only [Nat.add_zero] at this ⊢
+      omega
+    · have hgap := hnr.2.2.2.2 (j0 + i) ⟨by omega, hidx⟩
+      rw [entry_snoc_left hidx] at hgap
+      rw [entry_snoc_left hj0lt] at hdeep
+      have hEq : entry C 0 (j0 + i) = (C[j0 + i]).1 := by
+        rw [← entry_triple hidx]
+      rw [hqv]
+      omega
+  refine mem_of_oper_mem (fun n hn => ?_)
+  rw [oper_snoc_srow0 hCne hz hsr hpar hj0 (by omega) n, htk]
+  exact h u n (C.take j0) (C.drop j0) (by rw [hcat]; exact hC) hQr
+
+
+/-- **★★★★★ `PrefixCopies` を認めると `WSnoc` は `srow ≥ 1` の枝だけ**（課題 L97）。 -/
+def WSnocOpen1 : Prop :=
+  ∀ (u : ℕ) (C : TrioSeq) (p : ℕ × ℕ × ℕ), C ∈ W u → C ≠ [] →
+    hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length →
+    (∃ q ∈ C, 0 < q.2.2) →
+    srow (C ++ [p]) C.length ≠ 0 →
+    C ++ [p] ∈ W u
+
+theorem wsnoc_of_prefixCopies (hpc : PrefixCopies) (h : WSnocOpen1) : WSnoc := by
+  classical
+  intro u C p hC hCne hpar
+  by_cases hs : srow (C ++ [p]) C.length = 0
+  · exact wsnoc_srow0_of_prefixCopies hpc hC hCne hs hpar
+  · by_cases hz2 : ∃ q ∈ C, 0 < q.2.2
+    · exact h u C p hC hCne hpar hz2 hs
+    · push_neg at hz2
+      have hself : (C ++ [p]) ∈ Wself :=
+        snoc_zeroRow2 (M' := C) (fun q hq => by have := hz2 q hq; omega) p
+      have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
+      have hlev : lev (C ++ [p]) 0 ≤ u := by
+        have hE : ∀ i, entry (C ++ [p]) i 0 = entry C i 0 := by
+          intro i; unfold entry; rw [getD_append_left hClen]
+        have h1 : lev (C ++ [p]) 0 = lev C 0 := by
+          unfold lev; rw [hE 1, hE 2]
+        rw [h1]
+        exact lev_root_le_of_mem_W hC hCne
+      exact W_mono hlev hself
+
+theorem towerOK_of_prefixCopies (hpc : PrefixCopies) (h : WSnocOpen1)
+    (hg : GraftFromExp) : TowerOK :=
+  towerOK_of_wsnoc_graft (wsnoc_of_prefixCopies hpc h) hg
+
+
 /-! ### 課題 L96-b: `srow = 0` の枝で **`snoc_flat_root` から増えるのは接頭辞だけ**
 
 `Trio.oper` の定義（`Trio.lean:98`）を読むと、`i1 = srow M j1` に対し
