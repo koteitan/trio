@@ -2003,6 +2003,78 @@ theorem liftTieCore_of_row1mono (h : Row1Mono) : LiftTieCore :=
 **`CoreCap` だけが単独**だが、§25 のとおり `TowerExp` 相当を内側に畳んでいる。
 ⟹ **仕事量は同じ。** 文の小ささでは `LiftTieCore` が今日の最小。 -/
 
+
+/-! ## 32. ★★★★★ **行 2 ≡ 0 なら (WL) は無条件に無料**（H12 の線への回答）
+
+H12 の「未判定 60016 件は `v=0` / `b=1` のタイに固まる。`snoc_zeroRow2` 系を伸ばせば
+片づくのでは」という見立てを、定義から確かめた。**もっと直接的な形で正しい。**
+
+`Lift1` は**行 2 を動かさない**（`Wset.entry2_Lift1`）。したがって `X` の行 2 が
+恒等的に `0` なら `Lift1 X d` の行 2 も `0` で、`Wtower2.zeroRow2_mem_Wself`（`:3011`）が
+そのまま `Wself` に入れる。そして
+
+    `lev (Lift1 X d) 0 = 2*(entry X 1 0 + d) + entry X 2 0 = lev X 0 + 2d ≤ m + 2d`
+
+（根は反射で必ず錐に入る: `L53.entry1_Lift1_zero`）。⟹ `W_mono` で終わり。
+
+**⟹ `(WL)` の「行 2 ≡ 0」の場合は、タイがあろうがなかろうが、`d` が何であろうが、
+仮定ゼロで成り立つ。**（既存の `snoc_zeroRow2` / `shTower_zeroRow2` の**リフト版**。
+`grep zeroRow2` では見つからなかったので新規。） -/
+
+theorem zeroRow2_Lift1 {X : TrioSeq} {d : ℕ} (h : ∀ p ∈ X, p.2.2 = 0) :
+    ∀ p ∈ Lift1 X d, p.2.2 = 0 := by
+  intro p hp
+  unfold Lift1 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨j, hj, hjp⟩ := hp
+  rw [List.mem_range] at hj
+  rw [← hjp]
+  show entry X 2 j = 0
+  exact h _ (entry_pair_mem (B := X) hj)
+
+/-- **★★★★★ 行 2 ≡ 0 なら `(WL)` は仮定ゼロで成り立つ。** -/
+theorem liftStage_of_zeroRow2 {m d : ℕ} {X : TrioSeq} (hz : ∀ p ∈ X, p.2.2 = 0)
+    (hX : X ∈ W m) : Lift1 X d ∈ W (m + 2 * d) := by
+  by_cases hne : X = []
+  · subst hne
+    simpa using W_nil (m + 2 * d)
+  · have hself : Lift1 X d ∈ Wself := zeroRow2_mem_Wself (zeroRow2_Lift1 hz)
+    have h1 : entry (Lift1 X d) 1 0 = entry X 1 0 + d := L53.entry1_Lift1_zero hne d
+    have h2 : entry (Lift1 X d) 2 0 = entry X 2 0 := entry2_Lift1 X d 0
+    have hlx : lev X 0 ≤ m := lev_root_le_of_mem_W hX hne
+    have hlev : lev (Lift1 X d) 0 ≤ m + 2 * d := by
+      unfold lev at hlx ⊢
+      rw [h1, h2]
+      omega
+    exact W_mono hlev hself
+
+/-! ### 32.1 ⟹ `LiftTieCore` は「行 2 に非零がある」場合だけ
+
+行 2 ≡ 0 の枝が落ちるので、残核はさらに細くなる。
+とくに**根の行 2 `z` が `0` の場合は、`R` に行 2 > 0 の列が要る**。 -/
+
+def LiftTieCoreRow2 : Prop :=
+  ∀ (v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+    ¬ (1 ≤ v ∧ TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)) →
+    (∃ p ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: R), 0 < p.2.2) →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z) →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 ∈ W (2 * v + z + 2)
+
+open Classical in
+theorem liftTieCore_of_row2 (h : LiftTieCoreRow2) : LiftTieCore := by
+  intro v z R hR ht htf hX
+  by_cases hz2 : ∃ p ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: R), 0 < p.2.2
+  · exact h v z R hR ht htf hz2 hX
+  · have hz : ∀ p ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: R), p.2.2 = 0 := by
+      intro p hp
+      by_contra hc
+      exact hz2 ⟨p, hp, by omega⟩
+    simpa using liftStage_of_zeroRow2 (d := 1) hz hX
+
+/-- ⟹ `TowerOK` は `LiftTieCoreRow2` ＋ `TowerExp` から出る。 -/
+theorem towerOK_of_liftTieCoreRow2 (h : LiftTieCoreRow2) (he : TowerExp) : TowerOK :=
+  towerOK_of_liftTieCore (liftTieCore_of_row2 h) he
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
