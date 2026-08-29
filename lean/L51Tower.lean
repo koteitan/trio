@@ -300,5 +300,84 @@ example : ¬ rsum Q0 (shiftr01 1 0 Q0) := by
   simp [entry, Q0, shiftr01] at h9
 
 
+/-! ### 課題 L51-b: `(TOWER)` の一般形（列ごとの増分 `D`）
+
+実測（`tools/dbms/ladder.py`、シート 4467 行を全数）では **99.96%** が
+
+    M⟦n⟧ = A ++ concat_{k<n} (Q + k*D)      A = M⟦1⟧、Q = 1 段目、D = 列ごとの増分
+
+の形。内訳は 一様シフト `D=(e,0,0)` 53.9% ／ 一様持ち上げ `D=(e,d,0)` 28.6% ／
+列ごとに違う増分 12.4% ／ 複製 `D=0` 5.0%。 -/
+
+/-- `Q` の `j` 番目の成分（`j < |Q|` のとき）。 -/
+theorem entry_getElem {Q : TrioSeq} {j : ℕ} (h : j < Q.length) :
+    entry Q 0 j = Q[j].1 ∧ entry Q 1 j = Q[j].2.1 ∧ entry Q 2 j = Q[j].2.2 := by
+  have hg : Q.getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = Q[j] := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h]
+    rfl
+  unfold entry
+  simp only []
+  rw [hg]
+  exact ⟨rfl, rfl, rfl⟩
+
+/-- **`k` 段目**: 列 `j` の行 0 に `k * D[j].0`、行 1 に `k * D[j].1` を足す。
+**行 2 は不変**（上昇行列 `A_xy` は行 2 に乗らない）。 -/
+noncomputable def bump (Q D : TrioSeq) (k : ℕ) : TrioSeq :=
+  (List.range Q.length).map fun j =>
+    ((entry Q 0 j + k * entry D 0 j, entry Q 1 j + k * entry D 1 j, entry Q 2 j) :
+      ℕ × ℕ × ℕ)
+
+/-- 列ごとの増分つきの塔。 -/
+noncomputable def mTower (Q D : TrioSeq) (n : ℕ) : TrioSeq :=
+  (List.range n).flatMap (bump Q D)
+
+/-- **増分が一様なら `bump` は `shiftr01`**。⟹ `mTower` は `gTower` に化ける。 -/
+theorem bump_const (Q : TrioSeq) (e d k : ℕ) :
+    bump Q (List.replicate Q.length ((e, d, 0) : ℕ × ℕ × ℕ)) k
+      = shiftr01 (e * k) (d * k) Q := by
+  unfold bump shiftr01
+  refine List.ext_getElem (by simp) ?_
+  intro j h1 h2
+  simp only [List.length_map, List.length_range] at h1
+  obtain ⟨e0, e1, e2⟩ := entry_getElem (Q := Q) h1
+  have hlr : j < (List.replicate Q.length ((e, d, 0) : ℕ × ℕ × ℕ)).length := by
+    simpa using h1
+  obtain ⟨d0, d1, -⟩ :=
+    entry_getElem (Q := List.replicate Q.length ((e, d, 0) : ℕ × ℕ × ℕ)) hlr
+  simp only [List.getElem_replicate] at d0 d1
+  have hD : entry (List.replicate Q.length ((e, d, 0) : ℕ × ℕ × ℕ)) 0 j = e ∧
+      entry (List.replicate Q.length ((e, d, 0) : ℕ × ℕ × ℕ)) 1 j = d := ⟨d0, d1⟩
+  simp only [List.getElem_map, List.getElem_range]
+  rw [e0, e1, e2, hD.1, hD.2]
+  simp [Nat.mul_comm]
+
+theorem mTower_const (Q : TrioSeq) (e d n : ℕ) :
+    mTower Q (List.replicate Q.length ((e, d, 0) : ℕ × ℕ × ℕ)) n = gTower Q e d n := by
+  unfold mTower gTower
+  congr 1
+  funext k
+  exact bump_const Q e d k
+
+/-- **(TOWER)** —— 実測が示す形をそのまま書き下したもの。**側条件はまだ確定していない**
+（ここに置いた 3 本は `W_flatMap_copies` が使っているものに合わせた最小の候補）。
+
+    D = 0（かつ A = Q）  `W_flatMap_copies`（`Wset.lean:2552`）**証明ずみ**
+    D = (e,0,0) 一様      `ShiftTowerClosed`（`gTower_shTower` で橋渡し）
+    D = (e,d,0) 一様      (LTOW)
+    D が列ごとに違う      (MTOW)
+
+⚠ **この形のままでは偽**（`D` が無制限）。側条件を決めるのが課題 L51-b の本体。 -/
+def Tower : Prop :=
+  ∀ (u n : ℕ) (A Q D : TrioSeq), A ∈ W u → Q ∈ W u →
+    (∀ p ∈ Q, entry Q 0 0 ≤ p.1) → A ++ mTower Q D n ∈ W u
+
+/-- **★ `(TOWER)` の `D = 0` かつ `A = []` は既に定理**。 -/
+theorem tower_zero {u n : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u)
+    (hQr : ∀ p ∈ Q, entry Q 0 0 ≤ p.1) :
+    mTower Q (List.replicate Q.length ((0, 0, 0) : ℕ × ℕ × ℕ)) n ∈ W u := by
+  rw [mTower_const]
+  exact gTow_zero hQ hQr
+
+
 end L51T
 end TRIO
