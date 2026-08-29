@@ -6,7 +6,10 @@
 
     **`TRIO_terminates_of_mTowerClosedRow2 (h : L105.MTowerClosedRow2) : WellFounded stepRel`**
 
-    **A 側 `TowerSnocRoot`**（`L105Cap:7806`、§105）… **塔が消えた 1 文。`z = 0` 側が重い**
+    **A 側 `TowerSnocRoot`**（`L105Cap:7806`、§105）… **`z = 0` 側が重い**
+      ⚠ **§110 で `MTowerClosedS` と同じ文だと判明**（`oper_snocRoot`、緑:
+        `(Q ++ [r])⟦m⟧ = mTower Q d e m` ＋ `Wchar.mem_iff_oper_mem`）
+      ⟹ **「塔が消えた」のは別問題にしたのではなく、同じ問題の最小形に書き直したもの**
       **`Q ∈ W u` ＋ `2 <= |Q|` ＋ 根が狭義最浅**
       **⟹ `Q ++ [(entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0)] ∈ W u`**
     **B 側 F2b（`z = 1`）**（§93）… **「命題が偽」＝ 復活を認めた上で示すしかない**
