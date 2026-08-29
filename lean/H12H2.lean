@@ -534,5 +534,104 @@ theorem snocStep_outOfCone {u : ℕ} {M : TrioSeq} {d e n j : ℕ}
   rw [List.append_assoc, ← hsplit, hCl, hsrow2]
   exact horph2
 
+
+/-! ## 9. ★★ **(a)(b) `hlp` / `hd1pos` / `hd0e` は `hpM` と `hr0` から出る**
+
+§254.3 の予想を証明する。`snocStep_outOfCone` の前提のうち
+
+    `hlp : le1 M 0 (0 + |M.dropLast|)`
+    `hd1pos : 0 < e`
+    `hd0e : entry M 0 (0 + |M.dropLast|) = entry M 0 0 + d`
+
+の 3 本は、**消費側が既に持っている `hpM`（悪根が根）と `hr0`（根が狭義最浅）から出る**。
+`d`, `e` は `L105Cap.oper_eq_mTower`（`L105Cap.lean:5228`）の定義そのもの（`srow = 2` の枝）。 -/
+
+/-- ★ `srow = 2` かつ悪根が根なら、**末尾列は根の行 1 錐の中**で、
+しかも**行 1 は狭義に増える**。 -/
+theorem lp_and_row1_lt_of_hpM {M : TrioSeq} (hM2 : 2 ≤ M.length)
+    (hi2 : srow M (M.length - 1) = 2)
+    (hpM : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0) :
+    le1 M 0 (M.length - 1) ∧ entry M 1 0 < entry M 1 (M.length - 1) := by
+  have hnr := parent_nextR hpM
+  rw [hj0, hi2] at hnr
+  have h2 : nextrel2 M 0 (M.length - 1) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  have hle : le1 M 0 (M.length - 1) := h2.2.2.2.2.1
+  exact ⟨hle, le1_entry1_lt hle (by omega)⟩
+
+/-- ⟹ **`hlp` は無料**（`0 + |M.dropLast| = |M| - 1`）。 -/
+theorem hlp_of_hpM {M : TrioSeq} (hM2 : 2 ≤ M.length)
+    (hi2 : srow M (M.length - 1) = 2)
+    (hpM : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0) :
+    le1 M 0 (0 + M.dropLast.length) := by
+  rw [Nat.zero_add, List.length_dropLast]
+  exact (lp_and_row1_lt_of_hpM hM2 hi2 hpM hj0).1
+
+/-- ⟹ **`hd1pos : 0 < e` は無料**（`e` は `oper_eq_mTower` の `srow = 2` の枝）。 -/
+theorem hd1pos_of_hpM {M : TrioSeq} (hM2 : 2 ≤ M.length)
+    (hi2 : srow M (M.length - 1) = 2)
+    (hpM : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0) :
+    0 < (if 1 < srow M (M.length - 1) then
+          entry M 1 (M.length - 1) - entry M 1 0 else 0) := by
+  rw [hi2, if_pos (by omega)]
+  have := (lp_and_row1_lt_of_hpM hM2 hi2 hpM hj0).2
+  omega
+
+/-- ⟹ **`hd0e` は `hr0` から無料**（`d` は `oper_eq_mTower` の `srow = 2` の枝）。 -/
+theorem hd0e_of_hr0 {M : TrioSeq} (hM2 : 2 ≤ M.length)
+    (hi2 : srow M (M.length - 1) = 2)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) :
+    entry M 0 (0 + M.dropLast.length) = entry M 0 0
+      + (if 0 < srow M (M.length - 1) then
+          entry M 0 (M.length - 1) - entry M 0 0 else 0) := by
+  rw [hi2, if_pos (by omega), Nat.zero_add, List.length_dropLast]
+  have := hr0 (M.length - 1) (by omega) (by omega)
+  omega
+
+
+/-! ## 10. ★★★★★★ **まとめ**: (C2) の枝は**消費側の前提だけ**で閉じる
+
+`d`, `e` は `L105Cap.oper_eq_mTower`（`L105Cap.lean:5228`）が出す値そのもの。 -/
+
+/-- `oper_eq_mTower` の `d`（行 0 のずれ）。 -/
+def dOf (M : TrioSeq) : ℕ :=
+  if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1) - entry M 0 0 else 0
+
+/-- `oper_eq_mTower` の `e`（行 1 のずれ）。 -/
+def eOf (M : TrioSeq) : ℕ :=
+  if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1) - entry M 1 0 else 0
+
+open Classical in
+/-- ★★★★★★ **(C2) の枝は消費側の前提だけで閉じる。**
+補助的な `hlp` / `hd1pos` / `hd0e` は `hpM` と `hr0` から出るので、
+残るのは **`hout`（錐の外）・`horph`（`Q` で孤児）・`hpos`（行 2 が正）** の
+「その列の性質」3 本だけ。 -/
+theorem snocStep_outOfCone_consumer {u : ℕ} {M : TrioSeq} {n j : ℕ}
+    (hM2 : 2 ≤ M.length)
+    (hi2 : srow M (M.length - 1) = 2)
+    (hpM : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hQ2 : 2 ≤ M.dropLast.length)
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (horph : ¬ hasParent M.dropLast 2 j)
+    (hpos : 0 < entry M.dropLast 2 j)
+    (hC : mTower M.dropLast (dOf M) (eOf M) n
+      ++ (Lift1 (shiftr01 (dOf M * n) 0 M.dropLast) (eOf M * n)).take j ∈ W u)
+    (hCne : mTower M.dropLast (dOf M) (eOf M) n
+      ++ (Lift1 (shiftr01 (dOf M * n) 0 M.dropLast) (eOf M * n)).take j ≠ []) :
+    mTower M.dropLast (dOf M) (eOf M) n
+      ++ (Lift1 (shiftr01 (dOf M * n) 0 M.dropLast) (eOf M * n)).take (j + 1) ∈ W u :=
+  snocStep_outOfCone hM2
+    (hd1pos_of_hpM hM2 hi2 hpM hj0)
+    (hd0e_of_hr0 hM2 hi2 hr0)
+    hr0 (hlp_of_hpM hM2 hi2 hpM hj0) hQ2 hj hj1 hout horph hpos hC hCne
+
 end H12H2
 end TRIO

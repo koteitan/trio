@@ -5849,3 +5849,56 @@ L3 は既に `TowerExpBigZ`（`L105Cap.lean:3831`）で「`zle1 R` を足した�
     (e) 錐の外でも `Q` の中で親を持つ列（実測 0.7%）… `horph` を満たさないので**射程外**
 
 **Lean**: `lean/H12H2.lean`（緑、定理 20 本、`sorry` 0）。**プログラム**: `h90.py`。
+
+## §255. ★★★★★★ **(C2) は消費側の前提だけで閉じた（緑）**
+
+§254 の (a)(b) を片づけた。`snocStep_outOfCone` の補助前提 3 本は**すべて無料**だった。
+
+### §255.1 (a) `hlp` と `hd1pos` は `hpM` から出る（緑）
+
+    `lp_and_row1_lt_of_hpM` :
+      `2 ≤ |M|`, `srow M (|M|-1) = 2`, `hpM`, **親 = 0**
+      ⟹ `le1 M 0 (|M|-1)` ∧ **`entry M 1 0 < entry M 1 (|M|-1)`**
+
+道具: `Decrease.parent_nextR`（`:244`）で `nextrel2 M 0 (|M|-1)` を取り出し、
+その第 5 成分が `le1`。行 1 の狭義増加は **`Wset.le1_entry1_lt`（`Wset.lean:3208`）**
+（`le1 X a b → a ≠ b → entry X 1 a < entry X 1 b`）。**どちらも既存**。
+
+⟹ `hlp_of_hpM`（`hlp` は無料）、`hd1pos_of_hpM`（**`0 < e` は無料**）。
+⟹ §254.3 の予想は**定理になった**。100% の実測には構造的理由があった。
+
+### §255.2 (b) `hd0e` は `hr0` から出る（緑）
+
+    `hd0e_of_hr0` : `2 ≤ |M|`, `srow = 2`, `hr0`
+      ⟹ `entry M 0 (0 + |M.dropLast|) = entry M 0 0 + dOf M`
+
+（`hr0` が `entry M 0 0 < entry M 0 (|M|-1)` を与えるので引き算が戻る。）
+
+### §255.3 ★ まとめ（緑、`sorry` 0）
+
+    dOf M := if 0 < srow M (|M|-1) then entry M 0 (|M|-1) - entry M 0 0 else 0
+    eOf M := if 1 < srow M (|M|-1) then entry M 1 (|M|-1) - entry M 1 0 else 0
+      （`L105Cap.oper_eq_mTower`（`:5228`）が出す値そのもの）
+
+    snocStep_outOfCone_consumer :
+      **消費側が持っているもの**: `2 ≤ |M|`, `srow M (|M|-1) = 2`, `hpM`,
+        **親 = 0**, `hr0`, `2 ≤ |M.dropLast|`
+      **その列の性質 3 本**: `j < |M.dropLast|` ∧ `0 < j`,
+        **`¬ le1 M 0 j`**（錐の外）, **`¬ hasParent M.dropLast 2 j`**（`Q` で孤児）,
+        **`0 < entry M.dropLast 2 j`**（行 2 が正）
+      **帰納法の仮定**: `mTower … ++ B.take j ∈ W u`, `… ≠ []`
+      ⟹ **`mTower … ++ B.take (j+1) ∈ W u`**
+
+> ⟹ **(C2)（錐の外の列）の枝は完全に閉じた。補助前提は 1 本も残っていない。**
+
+### §255.4 ⚠ **まだ残っているもの**（教訓 14）
+
+    (c) **`j = 0`**（`hj1 : 0 < j`）… 根の列。**未着手**
+    (d) **(C1)（錐の中の列）** … L3 の担当。`hstep` の本体はこちら。**私は触っていない**
+    (e) 錐の外でも `Q` の中で親を持つ列（実測 0.7%）… `horph` を満たさないので**射程外**
+        ⚠ この 0.7% は「錐の外だが根以外の祖先から行 2 の親を持つ」列。
+          `snocStep_outOfCone` では扱えない。**(C1) 側でも (C2) 側でもない第 3 の枝。**
+
+⟹ **`hstep` はまだ通っていない。** 通ったのは「錐の外 ∧ `Q` で孤児」の枝だけ。
+
+**Lean**: `lean/H12H2.lean`（緑、定理 25 本、`sorry` 0）。
