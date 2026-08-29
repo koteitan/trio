@@ -901,5 +901,74 @@ theorem outOfCone_parent_one_sameBlock {M : TrioSeq} {d e n' q : ℕ}
     exact hnr
   exact outOfCone_nextrel1_sameBlock hM2 hd1pos hd0e hr0 hlp hq hq1 hout h1
 
+
+/-! ## 15. ★★★★★★★ **行 0 も閉じる** —— ブロックの根が「行 0 の壁」になる
+
+`srow = 0` の列は `nextrel0` の親を探す。`nextrel0` は `le1` を要求しないので
+§257/§258 の議論は効かない。**が、別の理由で閉じる。**
+
+    `nextrel0 T j0 j1` の最小性: **`j0` と `j1` の間の列は全部 `j1` 以上の深さ**
+
+ところが第 `n` ブロックの**根**は位置 `n*|Q|` にあり、深さは `entry Q 0 0 + d*n`。
+`hr0`（根が狭義に最浅）より `entry Q 0 0 < entry Q 0 j`（`0 < j`）なので、
+**ブロックの根は目標の列より狭義に浅い**。
+
+⟹ 前のブロックに親があるとすると、その間にあるブロックの根が最小性を破る。
+⟹ **行 0 の親も同じブロック。**
+
+⚠ **この議論は `hout`（錐の外）を使わない** ⟹ **全ての `j > 0` で成り立つ。** -/
+
+/-- ★★★★★★★ **ブロックの根は行 0 の壁**: 塔の第 `n` ブロックの `j > 0` 番目の列の
+行 0 の親は、必ず同じブロックの中。（錐の中か外かによらない。） -/
+theorem window_row0_sameBlock {Q : TrioSeq} {d e n j a : ℕ}
+    (hQ0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (h : nextrel0 (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      a (n * Q.length + j)) :
+    n * Q.length ≤ a := by
+  rcases Nat.lt_or_ge a (n * Q.length) with hlt | hge
+  swap
+  · exact hge
+  exfalso
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hE : ∀ i, i < j + 1 → i < Q.length →
+      entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+        (n * Q.length + i) = entry Q 0 i + d * n := by
+    intro i hi1 hi2
+    rw [show n * Q.length + i = (mTower Q d e n).length + i from by rw [hTlen],
+      entry_append_right, entry_take hi1, entry0_Lift1, entry0_shiftr01 hi2]
+  have hmin := h.2.2.2.2 (n * Q.length) ⟨hlt, by omega⟩
+  have h0 : entry (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 (n * Q.length)
+      = entry Q 0 0 + d * n := by
+    simpa using hE 0 (by omega) (by omega)
+  rw [hE j (by omega) hj, h0] at hmin
+  have := hQ0 j hj1 hj
+  omega
+
+/-- ⟹ `hasParent` の言葉で（行 0）。 -/
+theorem window_row0_parent {Q : TrioSeq} {d e n j : ℕ}
+    (hQ0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hp : hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+      (n * Q.length + j)) :
+    n * Q.length ≤ parent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+      (n * Q.length + j) := by
+  have hnr := parent_nextR hp
+  have h0 : nextrel0 (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (parent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+        (n * Q.length + j))
+      (n * Q.length + j) := by
+    unfold nextR at hnr
+    rw [if_pos rfl] at hnr
+    exact hnr
+  exact window_row0_sameBlock hQ0 hj hj1 h0
+
 end H12H2
 end TRIO
