@@ -11287,6 +11287,122 @@ theorem nextrel1_tower_src_ge_prev_block {Q : TrioSeq} {d e N n j a : ℕ}
 **`D_v` から実際に立つ塔の `(d, e)` を計算したわけではありません。**
 **⟹ R2 に「生成元から立つ塔の `e` は 1 以上か」を測ってもらう価値があります。** -/
 
+/-! ## 161. ★★★★★★★ §154 の `entry Q 2 0 = 0` を外す（`z = 1` への対応）
+
+team-lead が消費側（`liftTowerExp2_of_mTowerClosedS`、`:5686`）を追って、
+**`z = 1` のとき `entry Q 2 0 = z = 1 ≠ 0`** ⟹ §154 の前提が破れる、と出した。
+
+**⟹ 正しい前提は「根の行 2 が 0」ではなく
+「`Q` の第 `j` 列が `Q` の中で行 2 の親を持つ」である。**
+（§154 は「根を候補にする」という**特別な作り方**をしていただけで、
+候補は根でなくてよい。）
+
+### 161.1 ブロックは `Q` の行 2 と `le1` をそのまま保つ
+
+    `entry2_shiftr01`（`Core:3416`）／`entry2_Lift1`（`Wset:955`） … **行 2 は不変**
+    `le1_shiftr01`（`Core:3470`）／`le1_Lift1`（`Wset:1213`） … **`le1` は不変**
+    `le1_take`（`Wset:909`） … `take` も不変
+
+**⟹ `nextrel2` が見るものは全部そのまま移る。** -/
+
+theorem le1_block_take {Q : TrioSeq} {d e n j a b : ℕ}
+    (hj : j < Q.length) (hb : b < j + 1) :
+    le1 ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) a b
+      ↔ le1 (Q.take (j + 1)) a b := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  rw [le1_take (by omega) hb, le1_take (by omega) hb, le1_Lift1, le1_shiftr01]
+
+theorem entry2_block_take {Q : TrioSeq} {d e n j x : ℕ} (hx : x < j + 1) :
+    entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 x
+      = entry (Q.take (j + 1)) 2 x := by
+  rw [Wset.entry_take (X := Lift1 (shiftr01 (d * n) 0 Q) (e * n)) (l := j + 1)
+      (i := 2) (j := x) hx,
+    Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := x) hx,
+    entry2_Lift1, entry2_shiftr01]
+
+open Classical in
+/-- **`Q` の中で行 2 の親を持てば、ブロックの中でも持つ**（§154 の一般化）。 -/
+theorem block_blockParent_row2' {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length)
+    (hloc : hasParent (Q.take (j + 1)) 2 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  obtain ⟨a, ha, -⟩ := hloc
+  have hnr : nextrel2 (Q.take (j + 1)) a j := by
+    unfold nextR at ha
+    rwa [if_neg (by omega), if_neg (by omega)] at ha
+  have haj : a < j := hnr.2.2.1
+  refine hasParent_two_of (by omega) haj ?_ ?_
+  · rw [hB, le1_block_take hj (by omega)]
+    exact hnr.2.2.2.2.1
+  · rw [hB, entry2_block_take (by omega), entry2_block_take (by omega)]
+    exact hnr.2.2.2.1
+
+open Classical in
+/-- **★★★★★★★ §154 の一般化**: `entry Q 2 0 = 0` の代わりに
+「行 2 が正なら `Q` の中で行 2 の親を持つ」を仮定する。 -/
+theorem block_blockParent_all' {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
+    (h2 : 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hE1 : entry (B.take (j + 1)) 1 j
+      = entry Q 1 j + (if le1 Q 0 j then e * n else 0) := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega)]
+    show (B.getD j (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hj]
+  have hE2 : entry (B.take (j + 1)) 2 j = entry Q 2 j := by
+    rw [hB, entry2_block_take (by omega),
+      Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := j) (by omega)]
+  have hcone : le1 Q 0 j := le1_zero_of_no_blocker hr0 hnb hj
+  have hn1 : entry Q 1 0 < entry Q 1 j := hnb j hj1 hj
+  unfold srow
+  by_cases h2p : 0 < entry (B.take (j + 1)) 2 j
+  · rw [if_pos h2p]
+    rw [hE2] at h2p
+    exact block_blockParent_row2' hj (h2 h2p)
+  · rw [if_neg h2p, if_pos (by rw [hE1, if_pos hcone]; omega)]
+    exact block_blockParent_of_cone hj hj1 hr0 hcone
+
+/-! ### 161.2 ⟹ `z = 1` でも使えるようになりました
+
+    §154 … 前提 **`entry Q 2 0 = 0`**（`z = 1` で破れる）
+    **§161 … 前提 **「行 2 が正なら `Q` の中で行 2 の親を持つ」****
+
+**⟹ これは `Q` の**局所的**な条件で、根の行 2 とは無関係です。**
+**⟹ そして「持たない」なら、その列は `Q` の中で行 2 の孤児 ⟹ §141 より復活しうる
+＝ まさに核（F2b）。⟹ 場合分けが尽きています。**
+
+### 161.3 ⟹ team-lead の 5 分課題への答え
+
+> **`Mono` の 4 条件のうち、窓の帰納が実際に使うのはどれか。とくに行 0 の狭義単調。**
+
+**使い所を数えました（手筋 10 回目）:**
+
+    **行 0 の狭義単調** … **どこでも使っていません**
+        （`le1_zero_of_mono` は `hm0` を **`a = 0` でしか**呼ばない ＝ `hr0` と同じ）
+    **行 1 の狭義単調** … **定理では使っていません**（`hnb` ＝ 根に対する条件だけで足りる）
+        `mTower_row1_mono_in_block`（§156）だけが使うが、それは**窓の中の**ブロッカーの
+        話（設計メモ）で、§152-§157/§160 の定理列は呼んでいない
+    **`hr0`（根が最浅）** … **使う。消費側が供給する**（`hQshallow`）
+    **`hnb`（ブロッカーなし）** … **使う。消費側は供給しない**
+    **`entry Q 2 0 = 0`** … **§161 で不要になった**
+    **`e ≥ 1`** … §153 で使う
+
+> **⟹ `Mono` の「狭義単調」2 条件は、定理列からは**落とせます**。**
+> **⟹ 残る「消費側が供給しない条件」は **`hnb`（ブロッカーなし）と `e ≥ 1`** の 2 つだけです。**
+
+⚠ **教訓 14**: 上は **使い所の数え上げ**であって、
+**「`hnb` だけで閉じる」ことを示したわけではありません。** -/
+
 /-! ## 160. ★★★★★★★ (A) を閉じる 1 歩: **ブロッカーなしなら、核に「親は同じブロック」が無料でつく**
 
 §139（核の入口）＋ §154（ブロッカーなしなら全部ブロック内に親）＋ §141（ブロック内 ⟹ 同ブロック）
@@ -11296,7 +11412,7 @@ open Classical in
 theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
-    (h2root : entry Q 2 0 = 0)
+    (h2 : ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j)
     (hstep : ∀ (n j : ℕ), j < Q.length →
       (0 < j → n * Q.length ≤
         parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -11326,7 +11442,7 @@ theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
   refine hstep n j hj (fun hj1 => ?_) hC
   -- ブロック内に親（§154）⟹ 同じブロック（§141）
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all hj hj1 hr0 hnb h2root
+    block_blockParent_all' hj hj1 hr0 hnb (h2 j hj)
   have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
