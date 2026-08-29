@@ -939,5 +939,75 @@ def ReviveBounded (k : ℕ) : Prop :=
     ∀ n : ℕ, m ≤ n → HasParentInBlock (N⟦n⟧)
 
 
+/-! ## ★★★ 課題 L62-a: `split_lastMin` の `TrioSeq` 版
+
+2 行の完成証明（`lean/Pair/Wset.lean:512`）は **「深い側に足す」を一度も証明していない。
+避けている。** その要が `split_lastMin`:
+
+> **いつも「最後の最上位の木」を剥がす**ので、その根は行列全体の最小深さにあり、
+> **`rsum` が構成から出る。** ⟹ `W_add` に深い `B` が渡ることは一度もない。
+
+`Pair` 版の証明は **`entry _ 0 _`（行 0）だけ**を見ており、行数に依存しない。
+⟹ **ほぼそのまま写せる。** -/
+
+/-- **★★ `split_lastMin`（3 行版）**: 空でない行列は、
+**根が全体で最浅**な接尾辞 `P` を持つように `A ++ P` に分けられる。
+`rsum A P` が**構成から**出るのが要点。 -/
+theorem split_lastMin : ∀ {M : TrioSeq}, M ≠ [] →
+    ∃ A P, M = A ++ P ∧ P ≠ [] ∧ rsum A P ∧ (∀ p ∈ P.tail, entry P 0 0 < p.1) := by
+  intro M
+  induction M using List.reverseRecOn with
+  | nil => intro h; exact absurd rfl h
+  | append_singleton M' q ih =>
+      intro _
+      by_cases hM' : M' = []
+      · subst hM'
+        refine ⟨[], [q], by simp, by simp, ?_, by simp⟩
+        intro p hp
+        simp only [List.nil_append, List.mem_singleton] at hp
+        subst hp
+        simp [entry]
+      · obtain ⟨A', P', hEq, hPne, hrs, htail⟩ := ih hM'
+        by_cases hq : q.1 ≤ entry P' 0 0
+        · refine ⟨M', [q], by simp, by simp, ?_, by simp⟩
+          intro p hp
+          have hq0 : entry ([q] : TrioSeq) 0 0 = q.1 := by simp [entry]
+          rw [hq0]
+          rcases List.mem_append.mp hp with hp | hp
+          · exact le_trans hq (hrs p (by rw [hEq] at hp; exact hp))
+          · simp only [List.mem_singleton] at hp
+            subst hp
+            exact le_rfl
+        · push Not at hq
+          refine ⟨A', P' ++ [q], by rw [hEq, List.append_assoc], by simp, ?_, ?_⟩
+          · have hhd : entry (P' ++ [q]) 0 0 = entry P' 0 0 := by
+              rcases P' with _ | ⟨p0, P''⟩
+              · exact absurd rfl hPne
+              · simp [entry]
+            intro p hp
+            rw [hhd]
+            rcases List.mem_append.mp hp with hp | hp
+            · exact hrs p (List.mem_append_left _ hp)
+            · rcases List.mem_append.mp hp with hp | hp
+              · exact hrs p (List.mem_append_right _ hp)
+              · simp only [List.mem_singleton] at hp
+                subst hp
+                omega
+          · have hhd : entry (P' ++ [q]) 0 0 = entry P' 0 0 := by
+              rcases P' with _ | ⟨p0, P''⟩
+              · exact absurd rfl hPne
+              · simp [entry]
+            intro p hp
+            rw [hhd]
+            rcases P' with _ | ⟨p0, P''⟩
+            · exact absurd rfl hPne
+            · simp only [List.cons_append, List.tail_cons] at hp
+              rcases List.mem_append.mp hp with hp | hp
+              · exact htail p (by simpa using hp)
+              · simp only [List.mem_singleton] at hp
+                subst hp
+                exact hq
+
+
 end L53
 end TRIO
