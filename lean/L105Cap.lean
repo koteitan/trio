@@ -758,6 +758,40 @@ theorem capBase_snoc_len (M : TrioSeq) (v z t : ℕ)
   rw [List.length_append, capBase_length]
   simp
 
+
+/-! ### 16.1 ⟹ 残核の**最終形**: 「展開が全部 `W a` にいる」
+
+節 2 しか無いので、残核は `mem_iff_oper_mem`（`Wchar.lean:75`）でそのまま
+展開の言葉に書き換えられる。**次のエージェントが攻めるべき対象はこれ。** -/
+
+def CapExpOpen : Prop :=
+  ∀ (M : TrioSeq) (v z a t b c : ℕ), argOK M → 1 ≤ M.length → z ≤ 1 →
+    CtxOK M v z → 2 * (v + t) + z ≤ a →
+    ∀ q : ℕ × ℕ × ℕ,
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: cap M b c) t = capBase M v z t ++ [q] →
+      (∀ j, j < (capBase M v z t ++ [q]).length →
+        le0 (capBase M v z t ++ [q]) 0 j) →
+      hasParent (capBase M v z t ++ [q])
+        (srow (capBase M v z t ++ [q]) (capBase M v z t).length)
+        (capBase M v z t).length →
+      (∃ p ∈ capBase M v z t, 0 < p.2.2) →
+      ∀ n, 1 ≤ n → (capBase M v z t ++ [q])⟦n⟧ ∈ W a
+
+theorem capSnocOpenExact_of_capExpOpen (h : CapExpOpen) : CapSnocOpenExact := by
+  intro M v z a t b c hM hM2 hz1 hctx hva q hEq hle0 hpar hz2
+  exact mem_of_oper_mem (h M v z a t b c hM hM2 hz1 hctx hva q hEq hle0 hpar hz2)
+
+theorem capExpOpen_of_coreCap (h : CoreCap) : CapExpOpen := by
+  intro M v z a t b c hM hM2 hz1 hctx hva q hEq _ _ _
+  refine oper_mem_of_mem (capBase_snoc_len M v z t q) ?_
+  rw [← hEq]
+  exact h M hM hM2 v z hz1 hctx b c a t hva
+
+/-- **★★★★★ 三者は同値**: `CoreCap` ⟺ `CapSnocOpenExact` ⟺ `CapExpOpen`。 -/
+theorem capExpOpen_iff_coreCap : CapExpOpen ↔ CoreCap :=
+  ⟨fun h => coreCap_of_capSnocOpenExact (capSnocOpenExact_of_capExpOpen h),
+   capExpOpen_of_coreCap⟩
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
