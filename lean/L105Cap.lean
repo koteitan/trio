@@ -7821,6 +7821,59 @@ def TowerSnocRoot : Prop :=
 
 **⟹ A と B は `z` について相補的。どちらか一方だけでは断片は閉じない。** -/
 
+/-! ## 106. ★★★★★★ §103.3 を Lean に: **F2a の同ブロックの枝は 3 行**
+
+索引で `nextrel2` を引いたら、**`le1` を経由する必要がありませんでした**:
+
+    **`L53.nextrel2_append_right`（`:801`、緑）** … `nextrel2 (A ++ N) (|A|+a) (|A|+b) ↔ nextrel2 N a b`
+    **`Wset.nextrel2_Lift1`（`:1244`、緑）** ／ **`Wset.nextrel2_shiftr01`（`:347`、緑）**
+    **`Invariant.nextrel2_unique`（`:746`、緑）**
+
+⟹ **`nextrel2` はブロックの中で `Q` のものと一致する**（`le1` の転送も `le1_block` も要らない）。 -/
+
+open Classical in
+/-- **★★★★★★ 最後のブロックの中に行 2 の親は無い**（`Q` の末尾列が行 2 の孤児なら）。 -/
+theorem nextrel2_lastBlock_absurd {Q A : TrioSeq} {d0' d1' qa b : ℕ}
+    (horph : ¬ hasParent Q 2 b)
+    (h : nextrel2 (A ++ Lift1 (shiftr01 d0' 0 Q) d1') (A.length + qa) (A.length + b)) :
+    False := by
+  rw [L53.nextrel2_append_right, nextrel2_Lift1, nextrel2_shiftr01] at h
+  have hnR : nextR Q 2 qa b := by
+    unfold nextR
+    rw [if_neg (by omega), if_neg (by omega)]
+    exact h
+  refine horph ⟨qa, hnR, ?_⟩
+  intro y hy
+  have hy' : nextR Q 2 y b := hy
+  unfold nextR at hy'
+  rw [if_neg (by omega), if_neg (by omega)] at hy'
+  exact nextrel2_unique hy' h
+
+/-- ⟹ 塔の言葉で。 -/
+theorem nextrel2_mTower_sameBlock {Q : TrioSeq} {d e n' qa b : ℕ}
+    (horph : ¬ hasParent Q 2 b)
+    (h : nextrel2 (mTower Q d e (n' + 1))
+      ((mTower Q d e n').length + qa) ((mTower Q d e n').length + b)) : False := by
+  rw [mTower_succ] at h
+  exact nextrel2_lastBlock_absurd horph h
+
+/-! ### 106.1 ⟹ F2a の残る穴は **`a` が前のブロック**の 1 点だけ
+
+    ✅ **`a` が最後のブロックの中** … 上で閉じた（**`le1` を通らない。`nextrel2` の転送だけ**）
+    ⛔ **`a` が前のブロック**       … §103.4 のとおり。越えるには **G2** の列が要る
+
+⚠ **私の §103.3 は `le1_append_right` ＋ `le1_block` ＋ `hasParent_two_of` の 3 段を考えていたが、
+`nextrel2_append_right` が最初から `nextrel2` を丸ごと運ぶので 1 段で済んだ。**
+**索引で `nextrel2` を全部見てから書いたのが効いた**（`grep nextrel2 LEMMA-INDEX.tsv`）。
+
+### 106.2 ⟹ F2a の全体像
+
+    `nextrel2 T a last` を仮定
+    §103.1-2 ⟹ **`a` も鎖の全ノードも塔の根の錐の外**
+    **`a` が最後のブロックの中 ⟹ §106（上）で矛盾**
+    `a` が前のブロック ⟹ **G2 の列で境界を越える必要がある**（§103.4）
+      ⟹ **R2 の (f1a)（`|M|` を 6, 7 まで、分母を先に）待ち** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
