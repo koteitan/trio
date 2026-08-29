@@ -8645,6 +8645,53 @@ R2 の §R139: **`r` が孤児にならないのは `z = 0 ∧ e ≥ 1` だけ**
 **⟹ そして `z = 0` では展開の `d1 = 0` が 100%（R2 の (2)）⟹ `shTower` の領域。**
 **⟹ §112-§117 で `(TOW)` に移ったのは、まさにこの枝に効きます。** -/
 
+/-! ## 118. ★★★★★ 橋渡し: **§115 を `shTower` の言葉へ**
+
+`shTower M.dropLast e n = mTower M.dropLast e 0 n = gexp M 0 |M.dropLast| e 0 n`
+（§112 ＋ §68）。⟹ §115（`hd1pos` 不要の壁）が `shTower` でそのまま使える。 -/
+
+theorem shTower_length (Q : TrioSeq) (e n : ℕ) :
+    (shTower Q e n).length = n * Q.length := by
+  rw [← mTower_e_zero_eq_shTower, mTower_length]
+
+theorem gexp_zero_eq_shTower {M : TrioSeq} {e n : ℕ} (hM2 : 2 ≤ M.length) :
+    gexp M 0 M.dropLast.length e 0 n = shTower M.dropLast e n := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  rw [gexp_zero_eq_mTower (by rw [hdl]; omega), hdl, ← List.dropLast_eq_take,
+    mTower_e_zero_eq_shTower]
+
+open Classical in
+/-- **★★★★★★ §115 の `shTower` 版**: 錐の外の列にはブロック外から行 1 の親が来ない。 -/
+theorem nextrel1_shTower_no_enter_out {M : TrioSeq} {e n' q c : ℕ} (hM2 : 2 ≤ M.length)
+    (hq : q < M.dropLast.length)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + e)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hout : ¬ le1 M 0 (0 + q))
+    (h : nextrel1 (shTower M.dropLast e (n' + 1))
+      c (n' * M.dropLast.length + q)) :
+    n' * M.dropLast.length ≤ c := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hlen : 0 + M.dropLast.length + 1 = M.length := by rw [hdl]; omega
+  have hLb : 0 < M.dropLast.length := by rw [hdl]; omega
+  refine nextrel1_gexp_no_enter_out' (M := M) (Lb := M.dropLast.length) (d0 := e)
+    (d1 := 0) (n := n' + 1) (k := n') (q := q) (c := c) hlen hLb (by omega) hq
+    hd0e hr0 hlp hout ?_
+  rw [gexp_zero_eq_shTower hM2, Nat.zero_add]
+  exact h
+
+/-! ### 118.1 ⟹ `e = 0` 版の F1 の材料が全部そろいました
+
+    **ブロック外** … **§118（上）**（`shTower` 座標、`hd1pos` 不要）
+    **同ブロック** … **§116 `nextrel1_lastBlock_absurd`**（`nextrel1_Lift1` が無条件）
+    **鎖の閉じ込め** … **§117 `le1_lastBlock_in_block`**（`hwall` を受け取る形）
+
+⚠ §117 は土台を `A ++ Lift1 (shiftr01 d0' 0 Q) d1'` の形で受ける。
+`shTower Q e (n'+1) = shTower Q e n' ++ shiftr01 (n'*e) 0 Q`（`shTower_succ`）で
+`shiftr01 (n'*e) 0 Q = Lift1 (shiftr01 (n'*e) 0 Q) 0`（`Lift1_zero`）と読めば一致する。
+
+**⟹ あとは組み立てるだけ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
