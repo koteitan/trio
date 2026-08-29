@@ -3825,6 +3825,84 @@ theorem prefixCopies_of_open (h : PrefixCopiesOpen) {u : ℕ} {A Q : TrioSeq}
 「`j0` がその切れ目以降か」がそのまま判定条件になる。R1 の R79 が測っている量。 -/
 
 
+/-! ## ★★★ 課題 L99-b: `j0 = 0` の必要条件（全 `srow` で一様）
+
+R1 の実測「**`j0 = 0` ⟹ `∀ 0<j<j1, M[0] の行 0 < M[j] の行 0`**、例外 0」を証明する。
+どの `srow` でも親の関係は行 0 の祖先鎖 `rtg0 M 0 j1` を含む
+（`nextrel0` は自分、`nextrel1` は `le0`、`nextrel2` は `le1 → rtg1 → rtg0`）ので、
+**行 0 の鎖の「窓」性**に落ちる。 -/
+
+/-- 行 0 の祖先鎖に沿って深さは単調。 -/
+theorem rtg0_entry0_mono {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 M) a b) : entry M 0 a ≤ entry M 0 b := by
+  induction h with
+  | refl => exact le_rfl
+  | tail _ hbc ih => exact le_trans ih (le_of_lt hbc.2.2.2.1)
+
+/-- **★★ 行 0 の鎖は窓を作る**: `0` から `j1` へ鎖があれば、間の列はすべて根より深い。 -/
+theorem rtg0_zero_window {M : TrioSeq} {j1 : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 M) 0 j1) :
+    ∀ j, 0 < j → j < j1 → entry M 0 0 < entry M 0 j := by
+  induction h with
+  | refl => intro j h0 hj; omega
+  | @tail b c hab hbc ih =>
+      intro j h0 hj
+      rcases Nat.lt_or_ge j b with hjb | hjb
+      · exact ih j h0 hjb
+      · rcases Nat.eq_or_lt_of_le hjb with heq | hbj
+        · subst heq
+          exact rtg0_entry0_lt hab (by omega)
+        · have hdip := hbc.2.2.2.2 j ⟨hbj, hj⟩
+          have hstep := hbc.2.2.2.1
+          have hmono := rtg0_entry0_mono hab
+          omega
+
+/-- どの行の親関係も行 0 の祖先鎖を含む。 -/
+theorem rtg0_of_nextR {M : TrioSeq} {i a b : ℕ} (h : nextR M i a b) :
+    Relation.ReflTransGen (nextrel0 M) a b := by
+  unfold nextR at h
+  split at h
+  · exact Relation.ReflTransGen.single h
+  · split at h
+    · exact h.2.2.2.2.1.2.2
+    · exact rtg1_to_rtg0 h.2.2.2.2.1.2.2
+
+open Classical in
+/-- **★★★ (L99-b) `j0 = 0` の必要条件**: バッドルートが根なら、
+根と末尾の間の列はすべて**根より深い**。 -/
+theorem badroot_zero_window {M : TrioSeq} {i j1 : ℕ} (hpar : hasParent M i j1)
+    (hj0 : parent M i j1 = 0) :
+    ∀ j, 0 < j → j < j1 → entry M 0 0 < entry M 0 j := by
+  have hnr := parent_nextR hpar
+  rw [hj0] at hnr
+  exact rtg0_zero_window (rtg0_of_nextR hnr)
+
+/-- ⚠ 逆は成り立たない（R1 の実測: 条件が真でも `j0 > 0` が 44.3%）。
+`M = [(0,0,0),(1,0,0),(2,0,0),(3,0,0)]` のように**深さが単調に増える**列では
+窓の条件は真だが、末尾の行 0 の親は**直前の列**であって根ではない。 -/
+example : True := trivial
+
+
+/-! ### ⚠ 課題 L99-a の判定（見立て、**Lean 未検証**）:
+**`PrefixCopies` と `WSnoc` の `srow = 0` 枝は同じ内容**
+
+片方向は緑（`wsnoc_srow0_of_prefixCopies`）。逆向きの構成は次のとおり:
+
+    `A ++ Q ∈ W u`、`Q` の根が `Q` 内で**狭義**最小（深さ `q0`）とする
+    `t := (q0 + 1, 0, 0)` を足すと
+      `srow (A ++ Q ++ [t]) |A ++ Q| = 0`（行 1・行 2 が 0）
+      行 0 の親は `|A|`（= `Q` の根）—— `q0 < q0+1` かつ `Q` の他の列は `≥ q0+1`
+    ⟹ `WSnoc` で `A ++ Q ++ [t] ∈ W u`
+    ⟹ `Wset.oper_closed`（`Wset.lean:2103`）で `(A ++ Q ++ [t])⟦n⟧ ∈ W u`
+    ⟹ `oper_snoc_srow0`（この file、緑）でそれは `A ++ Q^n`
+
+**⟹ `srow = 0` 枝を `PrefixCopies` に落としても、内容は減らない。**
+「逐語コピーだから扱いやすい」は形の話で、**難しさは同じ**。
+
+⚠ この逆向きは**まだ Lean で書いていない**（行 0 の親の一意性 `∃!` の構成が要る）。
+「見立て」として記録する。**R1 の測定でも、この構成が実際に作れるかを確かめると良い。** -/
+
+
 /-! ### 課題 L96-b: `srow = 0` の枝で **`snoc_flat_root` から増えるのは接頭辞だけ**
 
 `Trio.oper` の定義（`Trio.lean:98`）を読むと、`i1 = srow M j1` に対し
