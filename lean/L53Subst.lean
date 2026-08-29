@@ -1334,5 +1334,62 @@ structure Stair (φ : ℕ → ℕ) : Prop where                            -- `C
 ⟹ `Lift1` を使う必要が無く、タイの問題に触れずに済む。） -/
 
 
+/-! ## ★★★ 課題 L67: `TowerOK2` は `z` で割れる
+
+### L67-a/b の判定: **入れ子の深さは有界でない。`k ≤ Y` とは対応しない**
+
+    `oper_cons_tower2`:  ((0,v,z) :: R)⟦n+1⟧ = (0,v,z) :: graft R (Lift1 (…⟦n⟧) t)
+
+`⟦n⟧` を展開すると **`Lift1` が `n` 重**に入れ子になる。`n` は写しの本数なので**無限**。
+H11 の `k ≤ Y` は「**復活の連続回数**」＝ `Wstar` の帰納で `TowerOK` が入れ子に
+呼ばれる回数であり、**1 つの塔の中の写しの本数とは別の量**である。
+⟹ **L67-a は使えない。**
+
+### ★★ しかし段の勘定をすると、`z` で 2 つに割れる
+
+`graft R (Lift1 X t)` を節 3 で使うには、**持ち上げた塊が `W m` に入る**必要がある
+（`m` は `domT R m` の段）。持ち上げた塊の根は `(0, v+t, z)` で、
+`t = entry R 1 (|R|-1) - v` だから根のレベルは `2w + z`（`w = entry R 1 (|R|-1)`）。
+
+一方 `domT R m` より `m + 1 = lev R (|R|-1) = 2w + z'`（`z' = entry R 2 (|R|-1)`）。
+`srow = 2` なので **`z' ≥ 1`**。要るのは
+
+    2w + z ≤ m = 2w + z' - 1   ⟺   **z < z'**
+
+`z ≤ 1` かつ `z' ≤ 1`（z<2 の断片）なので
+
+    **z = 0 … `z' ≥ 1` が自動で成り立つ ⟹ 段がぴったり収まる**
+    **z = 1 … `z' ≥ 2` が要るが断片では不可能 ⟹ 収まらない**
+
+⟹ **`TowerOK2` の核は `z = 1`（根の行 2 が 1）だけ。** -/
+
+/-- `srow = 2` なら行 2 は正。 -/
+theorem srow_two_row2_pos {M : TrioSeq} {j : ℕ} (h : srow M j = 2) :
+    0 < entry M 2 j := by
+  by_contra hc
+  unfold srow at h
+  rw [if_neg hc] at h
+  split at h <;> omega
+
+/-- **★★ `z = 0` なら持ち上げた塊の段がちょうど `m` に収まる**（課題 L67）。 -/
+theorem tower2_stage_fits {v z m : ℕ} {R : TrioSeq} (hz0 : z = 0) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hvw : v ≤ entry R 1 (R.length - 1)) :
+    2 * (v + (entry R 1 (R.length - 1) - v)) + z ≤ m := by
+  have h1 := hd.1
+  have h2 := srow_two_row2_pos hi2
+  unfold lev at h1
+  omega
+
+/-- **⚠ `z = 1` では収まらない**（`z' ≥ 2` が要るが z<2 の断片では不可能）。 -/
+theorem tower2_stage_fails {v m : ℕ} {R : TrioSeq} (hd : domT R m)
+    (hz' : entry R 2 (R.length - 1) ≤ 1)
+    (hvw : v ≤ entry R 1 (R.length - 1)) :
+    ¬ (2 * (v + (entry R 1 (R.length - 1) - v)) + 1 ≤ m) := by
+  have h1 := hd.1
+  unfold lev at h1
+  omega
+
+
 end L53
 end TRIO
