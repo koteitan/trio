@@ -11626,6 +11626,59 @@ theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
 ⚠ **教訓 14**: **前提が減っただけで、`hstep` はまだ通っていません。**
 **そして `h2` が成り立つかは未確認です**（`Q` の行 2 の列が `Q` の中で親を持つか）。 -/
 
+/-! ## 164. ⟹ team-lead の指示どおり `PrefixCopies` の既存開発を読みました（再発明 11 回目の整理）
+
+`L53Subst:3599-3812` と `L105Cap:280-1330` を読んだ結果を、**射程つき**で書く。
+
+### 164.1 既存のもの（10 本）
+
+    `L53Subst:3599` **`def PrefixCopies`** … `A ++ Q ∈ W u` → （`Q` の根が最浅）→
+        **`A ++ Q^n ∈ W u`**（`Q^n` は **`flatMap fun _ => Q`** ＝ **平坦なコピー**）
+    `:3605` `prefixCopies_nil` … `A = []` は `W_flatMap_copies` で証明ずみ
+    `:3779` `prefixCopies_of_rsum` … `rsum` があれば定理（`W_flatMap_copies` の逐語の伸長）
+    `:3803` **`def PrefixCopiesOpen`** … 開いているのは
+        **「接頭辞に `Q` の根より浅い列がある」**場合だけ
+    `:3809` `prefixCopies_of_open` ／ `:3670` `wsnoc_srow0_of_prefixCopies` ／
+    `:3727` `WSnocOpen1` ／ `:3734` `wsnoc_of_prefixCopies` ／ `:3754` `towerOK_of_prefixCopies`
+    `L105Cap:1273` `rsum_iff_based_of_root_mem` ／ `:1294` **`prefixCopies_of_based`**
+        （**写す塊が基づくなら仮定ゼロの定理**）／ `:1319` `prefixCopies_split`
+    `L105Cap:287` **`coreCap_of_prefixCopies`**
+
+### 164.2 ⚠ **射程**: `PrefixCopies` は **平坦なコピー**（`d = e = 0`）です
+
+`def` の本体は **`(List.range n).flatMap fun _ => Q`** —— **ずらしも持ち上げもありません**。
+
+    **`srow = 0` の展開** … `d0 = d1 = 0`（`Trio.oper` の定義）⟹ **写しは逐語 ⟹ `PrefixCopies` の形**
+    **私の §124/§125（`v = 0`、平坦）** … **まさにこれ。team-lead の同定は正しい**
+    ⛔ **私の §163 の核（`mTower Q d e n`、`d, e` が正）** … **`PrefixCopies` の形ではない**
+
+> **⟹ team-lead の「あなたの (a) ＝ `PrefixCopiesOpen`」は、**`v = 0`／`srow = 0` の枝**について正しい。**
+> **⟹ しかし §163 の核（一般の `d, e`）は `PrefixCopies` の形ではないので、
+> 10 本の補題はそのままでは当たりません。**
+
+⚠ **これは「既存開発が無駄」という意味ではありません。**
+**`srow = 0` の枝（R2 の実測で 3.3%）は `PrefixCopies` で閉じます。**
+**⟹ そして §139 の場合分けで `srow = 0` は既に (ii) 側（§79 でブロック内に親）なので、
+いまの核には現れません。**
+
+### 164.3 ⟹ 私の §14.3 の記述を確認しました
+
+**`L105Cap:1319` `prefixCopies_split`**: `entry Q 0 0 = 0`（基づく）なら仮定ゼロの定理、
+`0 < entry Q 0 0` が残核。**⟹ 私は半年前にこの分割を書いていました。**
+
+**⟹ そして §125 の「`W_flatMap_copies` は全部 `W_add`」という診断は、
+`prefixCopies_of_rsum`（`:3779`）の**存在**そのものでした。**
+**⟹ 索引に docstring が無かったので名前が出てこなかった、という team-lead の分析どおりです。**
+
+### 164.4 ⟹ 結論（1 行）
+
+> **`PrefixCopies` は平坦（`d = e = 0`）の道具立てで、§163 の核（一般の `d, e`）には
+> そのままでは当たらない。当たるのは `srow = 0` の枝で、そこは既に (ii) 側に落ちている。**
+
+⚠ **教訓 14**: 上は **`def` の本体を読んだ結果**です。
+**「当たらない」は「使えない」ではなく「形が違う」という意味です。**
+**平坦化できる場面（`d = e = 0`）が出たら、そのとき 10 本が効きます。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
