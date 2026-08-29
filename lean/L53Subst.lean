@@ -1672,5 +1672,62 @@ theorem liftStage_of_noTie {m d v z : ℕ} {R : TrioSeq} (hargOK : argOK R)
   · exact liftStage_of_noTie_pos hv hargOK hne hX
 
 
+/-! ## ★★★ 課題 L74-a: タイで割る（行 1 版の `split_lastMin`）
+
+H11 の実測（タイ 120 件、例外ゼロ）:
+
+    **タイは常に 1 本**（2 本以上は 0 件）⟹ 帰納は **1 段**で済む
+    分解 `R = R₁ ++ [tie] ++ R₂` が **120/120** で通る
+      `R₁ ≠ []` / `R₂ ≠ []` / 両方 `argOK` / **`R₂` にタイが無い**
+      `R₂` の末尾が `R₂` 内で孤児 / `srow R₂ (末尾) = 2` / 根を付けると親ができる
+      **`(0,v,0) :: R₂` は無タイ** / **`(0,v,0) :: R₁` も無タイ**
+
+⟹ **`R₂` は `TowerOK2`（無タイ）の場面そのもの。**
+
+⚠ 「タイが持ち上げの壁になる」（課題 L71-b の予想）は**外れ**。`le1` の鎖はタイを
+**迂回**する（120/120）。壁ではないが、**分解はできる**。 -/
+
+/-- **★★ 最後のタイで割る**（課題 L74-a）。`R` に行 1 `= v` の列があれば、
+**いちばん右のもの**で `R = R₁ ++ [tie] ++ R₂` と割れ、**`R₂` にはタイが無い**。 -/
+theorem split_lastTie {v : ℕ} : ∀ {R : TrioSeq}, (∃ p ∈ R, p.2.1 = v) →
+    ∃ R₁ tie R₂, R = R₁ ++ [tie] ++ R₂ ∧ tie.2.1 = v ∧
+      (∀ p ∈ R₂, p.2.1 ≠ v) := by
+  intro R
+  induction R using List.reverseRecOn with
+  | nil => intro h; obtain ⟨p, hp, -⟩ := h; simp at hp
+  | append_singleton R' q ih =>
+      intro h
+      by_cases hq : q.2.1 = v
+      · exact ⟨R', q, [], by simp, hq, by simp⟩
+      · have h' : ∃ p ∈ R', p.2.1 = v := by
+          obtain ⟨p, hp, hpv⟩ := h
+          rcases List.mem_append.mp hp with hp | hp
+          · exact ⟨p, hp, hpv⟩
+          · simp only [List.mem_singleton] at hp
+            subst hp
+            exact absurd hpv hq
+        obtain ⟨R₁, tie, R₂, hEq, htie, hR₂⟩ := ih h'
+        refine ⟨R₁, tie, R₂ ++ [q], ?_, htie, ?_⟩
+        · rw [hEq, List.append_assoc, List.append_assoc]
+        · intro p hp
+          rcases List.mem_append.mp hp with hp | hp
+          · exact hR₂ p hp
+          · simp only [List.mem_singleton] at hp
+            subst hp
+            exact hq
+
+/-- **タイが無ければ分解は要らない**（対になる形）。 -/
+theorem noTie_or_split {v : ℕ} (R : TrioSeq) :
+    (∀ p ∈ R, p.2.1 ≠ v) ∨
+      ∃ R₁ tie R₂, R = R₁ ++ [tie] ++ R₂ ∧ tie.2.1 = v ∧
+        (∀ p ∈ R₂, p.2.1 ≠ v) := by
+  classical
+  by_cases h : ∃ p ∈ R, p.2.1 = v
+  · exact Or.inr (split_lastTie h)
+  · left
+    intro p hp hpv
+    exact h ⟨p, hp, hpv⟩
+
+
 end L53
 end TRIO
