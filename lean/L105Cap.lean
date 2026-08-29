@@ -1584,12 +1584,12 @@ theorem tower2_not_z1_c1 {v m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hd : domT 
                   ├ `Lcone.lean:687`  `Wstar2s_closed_of_graftAll (hga : GraftAll)`
                   │    └ `Wset.Wstar2s_closed` `:4347` に 3 本渡す:
                   │       `liftInner_holds`（**無条件**、`Lcone.lean`）
-                  │       **`Wset.liftTower1_of_graftAll hga`** `:4151`  ← `TowerOK1` 相当
-                  │       **`Wset.liftTowerExp2_of_graftAll hga`** `:4211` ← **`TowerExp` 相当**
+                  │       **`Wset.operTower1_of_graftAll hga`** `:4151`  ← `TowerOK1` 相当
+                  │       **`Wset.operTowerExp2_of_graftAll hga`** `:4211` ← **`TowerExp` 相当**
                   └ `trio_cofinality`（**無条件**）
 
 ⟹ **答えは (2)。** `TowerExp` に相当する債務は
-**`Wset.liftTowerExp2_of_graftAll`（`Wset.lean:4211`）として `GraftAll` から出ている**。
+**`Wset.operTowerExp2_of_graftAll`（`Wset.lean:4211`）として `GraftAll` から出ている**。
 `CoreCap` がタダにしているのではなく、**`GraftAll` が `TowerExp` の仕事をしていて、
 その `GraftAll` が `CoreCap` から出る**。
 
@@ -3375,7 +3375,7 @@ H12 の実測「`|R| = 1` では `srow = 2` の非孤児が 0 件」は、私の
 伸ばしたときに、`R.dropLast` の行 2 という**新しい条件**が要ることを確認している。 -/
 
 
-/-! ## 47. ⚠ 自己訂正 ＋ 課題 L126: `srow = 2` の塔は `liftTower`
+/-! ## 47. ⚠ 自己訂正 ＋ 課題 L126: `srow = 2` の塔は `operTower`
 
 ### 47.1 ⚠ **§45 は `L47W.lean` の再発明でした**
 
@@ -3401,21 +3401,21 @@ H12 の実測「`|R| = 1` では `srow = 2` の非孤児が 0 件」は、私の
       `d = entry R 0 (|R|-1)`,  `e' = entry R 1 (|R|-1) - v`
 
 `shTower_cons`（§43）は `shTower Q e (n+1) = Q ++ shiftr01 e 0 (shTower Q e n)` なので、
-**差は `Lift1 · e'` が 1 段ごとに挟まること**だけ。⟹ 下の `liftTower` が正確な形。 -/
+**差は `Lift1 · e'` が 1 段ごとに挟まること**だけ。⟹ 下の `operTower` が正確な形。 -/
 
 /-- **`srow = 2` の塔**（`shTower` の各段に `Lift1 · e` を挟んだもの）。 -/
-noncomputable def liftTower (Q : TrioSeq) (d e : ℕ) : ℕ → TrioSeq
+noncomputable def operTower (Q : TrioSeq) (d e : ℕ) : ℕ → TrioSeq
   | 0 => []
-  | n + 1 => Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e)
+  | n + 1 => Q ++ shiftr01 d 0 (Lift1 (operTower Q d e n) e)
 
 open Classical in
-/-- **★★★★★ `srow = 2` の塔は `liftTower` そのもの。** -/
-theorem tower2_eq_liftTower {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
+/-- **★★★★★ `srow = 2` の塔は `operTower` そのもの。** -/
+theorem tower2_eq_operTower {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
     (hRne : R ≠ []) (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
     (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
       R.length) :
     ∀ n, (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧
-      = liftTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast)
+      = operTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast)
           (entry R 0 (R.length - 1)) (entry R 1 (R.length - 1) - v) n := by
   intro n
   induction n with
@@ -3430,10 +3430,10 @@ theorem tower2_eq_liftTower {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
 /-! ### 47.3 ⟹ `srow = 1` と `srow = 2` の差は **`Lift1` 1 つ**
 
     `srow = 1` … `tow v z R n = shTower Q d n`            （§43、`Lift1` 無し）
-    `srow = 2` … `X⟦n⟧ = liftTower Q d e' n`               （上、各段に `Lift1 · e'`）
+    `srow = 2` … `X⟦n⟧ = operTower Q d e' n`               （上、各段に `Lift1 · e'`）
       どちらも `Q = (0,v,z) :: R.dropLast`, `d = entry R 0 (|R|-1)`
 
-⟹ **`e' = 0` なら `Lift1 X 0 = X`（`Wset.Lift1_zero`）で `liftTower = shTower`。**
+⟹ **`e' = 0` なら `Lift1 X 0 = X`（`Wset.Lift1_zero`）で `operTower = shTower`。**
 `e' = entry R 1 (|R|-1) - v` なので、**`entry R 1 (|R|-1) ≤ v` のとき両者は一致**する。
 ところが `srow = 2` の場面では `L53.tower2_vw` が **`v < entry R 1 (|R|-1)`** を与える
 （`domT` ＋ `hasParent` から自動）⟹ **`e' ≥ 1`。一致しない。**
@@ -3445,7 +3445,7 @@ theorem tower2_eq_liftTower {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
 
 `Lift1 W e'` が一様シフト `shiftr01 0 e'` に潰れるのは、根の `le1` 錐が全体のとき
 （`Lcone.le1_zero_iff`）＝ **ブロッカー（行 1 ≤ `v` の列）が無いとき**。
-潰れれば `liftTower` は行 0・行 1 の両方を一様にずらす塔になり、`shTower` と同じ扱いができる。
+潰れれば `operTower` は行 0・行 1 の両方を一様にずらす塔になり、`shTower` と同じ扱いができる。
 
 ⟹ **`|R| ≥ 2` の `srow = 2` 枝では、`Q = (0,v,z) :: R.dropLast` に
 「行 1 が `v` 以下の列があるか」がふたたび効く。**
@@ -3547,13 +3547,13 @@ theorem oper_shTower {Q : TrioSeq} (hQne : Q ≠ []) (hQ2 : Q.length - 1 ≠ 0)
 **そこが孤児かどうか**が節 3 の使えるかどうかを決める。**次はそこを見る。** -/
 
 
-/-! ## 49. ★★★★ 課題 L128: ブロッカーが無ければ `liftTower` は**一様 2 方向シフト塔**
+/-! ## 49. ★★★★ 課題 L128: ブロッカーが無ければ `operTower` は**一様 2 方向シフト塔**
 
 `Wtower2.Lift1_eq_shiftr1_of_window`（`:107`）:
 
     根が行 0 で狭義最浅かつ行 1 でも狭義最小 ⟹ **`Lift1 X d = shiftr01 0 d X`**
 
-⟹ `liftTower` の再帰 `Q ++ shiftr01 d 0 (Lift1 T e)` は
+⟹ `operTower` の再帰 `Q ++ shiftr01 d 0 (Lift1 T e)` は
 `Q ++ shiftr01 d e T` に潰れる（行 0 も行 1 も**一様**にずれる塔）。 -/
 
 theorem shiftr01_comp01 (b c : ℕ) (X : TrioSeq) :
@@ -3565,9 +3565,9 @@ theorem shiftr01_comp01 (b c : ℕ) (X : TrioSeq) :
   simp only [Function.comp_apply]
   refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> simp
 
-/-- **★★ collapse ステップ**: 窓条件があれば `liftTower` の 1 段は
+/-- **★★ collapse ステップ**: 窓条件があれば `operTower` の 1 段は
 `shiftr01 d e` に潰れる。 -/
-theorem liftTower_step_collapse {Q T : TrioSeq} {d e : ℕ}
+theorem operTower_step_collapse {Q T : TrioSeq} {d e : ℕ}
     (hr : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
     (hw : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l) :
     Q ++ shiftr01 d 0 (Lift1 T e) = Q ++ shiftr01 d e T := by
@@ -3622,11 +3622,11 @@ theorem shTower2_cons (Q : TrioSeq) (d e : ℕ) :
 
 /-! ### 49.1 ⟹ 残るのは窓条件の伝播だけ
 
-`liftTower Q d e (n+1) = Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e)` と
+`operTower Q d e (n+1) = Q ++ shiftr01 d 0 (Lift1 (operTower Q d e n) e)` と
 `shTower2 Q d e (n+1) = Q ++ shiftr01 d e (shTower2 Q d e n)` を見比べると、
-**`liftTower_step_collapse` を各段で使えれば `liftTower = shTower2`。**
+**`operTower_step_collapse` を各段で使えれば `operTower = shTower2`。**
 
-必要な窓条件（`T = liftTower Q d e n` について）:
+必要な窓条件（`T = operTower Q d e n` について）:
 
     (a) 根が行 0 で狭義最浅 … `Q = (0,v,z) :: (argOK)` と `d ≥ 1` から従うはず
     (b) 根が行 1 で狭義最小 … **`Q` にブロッカー（行 1 ≤ `v` の列）が無い**ことと
@@ -3635,7 +3635,7 @@ theorem shTower2_cons (Q : TrioSeq) (d e : ℕ) :
 ⚠ **(a)(b) の伝播はまだ証明していません。** 添字の場合分け（`entry (A ++ B)` の分解）が
 要るので分量があります。**そこが L128 の残りです。**
 
-⟹ 落ちれば `liftTower Q d e n = shTower2 Q d e n`（**`Lift1` が消えた一様 2 方向シフト塔**）で、
+⟹ 落ちれば `operTower Q d e n = shTower2 Q d e n`（**`Lift1` が消えた一様 2 方向シフト塔**）で、
 `srow = 2` 枝が `srow = 1` 枝と**同じ種類の対象**になります。
 残るのは **`Q` にブロッカーがある場合**＝ **`LiftTie` の場面**。 -/
 
@@ -3718,19 +3718,19 @@ theorem shTower2_window {Q : TrioSeq} (hQne : Q ≠ []) {d e v : ℕ}
           have := ihv j hj
           omega
 
-/-- **★★★★★★ ブロッカーが無ければ `liftTower` は `shTower2` に潰れる。** -/
-theorem liftTower_eq_shTower2 {Q : TrioSeq} (hQne : Q ≠ []) {d e v : ℕ}
+/-- **★★★★★★ ブロッカーが無ければ `operTower` は `shTower2` に潰れる。** -/
+theorem operTower_eq_shTower2 {Q : TrioSeq} (hQne : Q ≠ []) {d e v : ℕ}
     (hd : 1 ≤ d) (he : 1 ≤ e) (hr0 : entry Q 0 0 = 0) (hv : entry Q 1 0 = v)
     (h0 : ∀ l, 1 ≤ l → l < Q.length → 0 < entry Q 0 l)
     (h1 : ∀ l, 1 ≤ l → l < Q.length → v < entry Q 1 l) :
-    ∀ n, liftTower Q d e n = shTower2 Q d e n := by
+    ∀ n, operTower Q d e n = shTower2 Q d e n := by
   intro n
   induction n with
   | zero => rfl
   | succ n ih =>
-      show Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e) = _
+      show Q ++ shiftr01 d 0 (Lift1 (operTower Q d e n) e) = _
       rw [ih, shTower2_cons]
-      refine liftTower_step_collapse ?_ ?_
+      refine operTower_step_collapse ?_ ?_
       · intro l hl0 hl
         rcases Nat.eq_zero_or_pos n with rfl | hn
         · rw [shTower2_length] at hl; omega
@@ -3746,7 +3746,7 @@ theorem liftTower_eq_shTower2 {Q : TrioSeq} (hQne : Q ≠ []) {d e v : ℕ}
 
 /-! ### 50.1 ⟹ **`srow = 2` 枝は「ブロッカーがあるか」だけになった**
 
-    ブロッカー無し … `liftTower Q d e n = shTower2 Q d e n`（**`Lift1` が消える**）
+    ブロッカー無し … `operTower Q d e n = shTower2 Q d e n`（**`Lift1` が消える**）
                      ⟹ `srow = 1` 枝の `shTower` と**同じ種類の対象**
     ブロッカー有り … 残り ＝ **`LiftTie` の場面**
 
@@ -3963,7 +3963,7 @@ H12 が数え（0 件）、しかも証明した。母集団の前提は
 結論は**持ち上げ**（段 `+2d`）であって塔ではない。
 ⟹ 「ブロッカーが `< v` だけ」＝「タイが無い」であって、
 **一様シフトに潰れる（`Lift1` が消える）のはブロッカーが 1 本も無いときだけ**である
-（§50 `liftTower_eq_shTower2` の前提が `v < entry Q 1 l` ＝ ブロッカー無し）。**2 つは別条件。**
+（§50 `operTower_eq_shTower2` の前提が `v < entry Q 1 l` ＝ ブロッカー無し）。**2 つは別条件。**
 
 ### 52.6 ⚠ 自己訂正 3: (β) には `v ≥ 1` が要る
 
@@ -4106,8 +4106,8 @@ theorem towerExp2_of_shTower2Self (h : ShTower2Self) {v z m a : ℕ} {R : TrioSe
   have he1 : 1 ≤ entry R 1 (R.length - 1) - v := by
     have := L53.tower2_vw hRne hd hi2 hpM
     omega
-  rw [tower2_eq_liftTower hR hRne hd hi2 hpM n,
-    liftTower_eq_shTower2 hQne hd1 he1 hQ00 hQ10 hQ0 hQ1 n]
+  rw [tower2_eq_operTower hR hRne hd hi2 hpM n,
+    operTower_eq_shTower2 hQne hd1 he1 hQ00 hQ10 hQ0 hQ1 n]
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
   refine (mem_Wself_iff a _).mpr ⟨h _ _ _ _ hQself hQne ?_ ?_, ?_⟩
   · intro j hj1 hj2
@@ -4145,8 +4145,8 @@ theorem towerExp2_of_shTower2Self (h : ShTower2Self) {v z m a : ℕ} {R : TrioSe
 
     `L51Lift.liftTower Q e n = (range n).flatMap fun k => shiftr01 (e*k) **k** Q`
       … 行 1 も**一様に**ずらす（`shiftr01`）。`L51Lift.LiftTowerClosed`（`:63`）は未証明
-    **`L105.liftTower Q d e n`（§47）**
-      `= Q ++ shiftr01 d 0 (**Lift1** (liftTower Q d e n) e)`
+    **`L105.operTower Q d e n`（§47）**
+      `= Q ++ shiftr01 d 0 (**Lift1** (operTower Q d e n) e)`
       … 行 1 は**根の錐の上でだけ**上がる（`Lift1`）
 
 ⚠ `L51Lift` は roots に無いので import できず、名前空間も別（`TRIO.L51Lift` と `TRIO.L105`）。
@@ -4168,34 +4168,34 @@ theorem mTower_eq (Q : TrioSeq) (d0 d1 n : ℕ) :
   intro k _
   exact Lift1_shiftr01 (d0 * k) (d1 * k) Q
 
-/-! ### 55.3 ⚠ **`mTower` と `liftTower` が等しいことは証明されていません**
+/-! ### 55.3 ⚠ **`mTower` と `operTower` が等しいことは証明されていません**
 
     `mTower`     … マスクを**ブロックごとに `Q` の中で**計算する
-    `liftTower`  … マスクを**塔全体の上で**計算する（`oper_cons_tower2` が実際に作る形）
+    `operTower`  … マスクを**塔全体の上で**計算する（`oper_cons_tower2` が実際に作る形）
 
 `Wset.le1_take`（`:908`、緑）は**接頭辞局所性**しか与えないので、
 第 `k` ブロック（`k ≥ 1`）のマスクが `Q` だけで決まることは**出ません**。
 H12 の §211「マスクは全ブロックで同一」は**その主張の実測**である。
 
-⟹ **核は `liftTower`（`oper_cons_tower2` から Lean で出る形）で立てる。**
+⟹ **核は `operTower`（`oper_cons_tower2` から Lean で出る形）で立てる。**
 `mTower` で立てると**未証明の同一視を仮定に紛れ込ませる**ことになる（教訓 14）。 -/
 
-theorem lev_liftTower_root {Q : TrioSeq} (hQne : Q ≠ []) (d e n : ℕ) :
-    lev (liftTower Q d e (n + 1)) 0 = lev Q 0 := by
+theorem lev_operTower_root {Q : TrioSeq} (hQne : Q ≠ []) (d e n : ℕ) :
+    lev (operTower Q d e (n + 1)) 0 = lev Q 0 := by
   have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
-  show lev (Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e)) 0 = lev Q 0
+  show lev (Q ++ shiftr01 d 0 (Lift1 (operTower Q d e n) e)) 0 = lev Q 0
   unfold lev
   rw [entry_append_left Q _ hQlen, entry_append_left Q _ hQlen]
 
 /-- **★★★★★ (2) の核（マスクつき塔閉包）。段は現れない。** -/
-def LiftTowerSelf : Prop :=
+def OperTowerSelf : Prop :=
   ∀ (d e n : ℕ) (Q : TrioSeq), Q ∈ Wself → Q ≠ [] →
     (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
-    liftTower Q d e n ∈ Wself
+    operTower Q d e n ∈ Wself
 
 open Classical in
-/-- **★★★★★ `srow = 2` の枝は `LiftTowerSelf` だけで出る**（ブロッカーの有無に依らない）。 -/
-theorem towerExp2_of_liftTowerSelf (h : LiftTowerSelf) {v z m a : ℕ} {R : TrioSeq}
+/-- **★★★★★ `srow = 2` の枝は `OperTowerSelf` だけで出る**（ブロッカーの有無に依らない）。 -/
+theorem towerExp2_of_operTowerSelf (h : OperTowerSelf) {v z m a : ℕ} {R : TrioSeq}
     (hR : argOK R) (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
     (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
     (hdl : R.dropLast ∈ Wstar)
@@ -4226,20 +4226,20 @@ theorem towerExp2_of_liftTowerSelf (h : LiftTowerSelf) {v z m a : ℕ} {R : Trio
       simp [entry]
     rw [h00, entry_cons_succ]
     omega
-  rw [tower2_eq_liftTower hR hRne hd hi2 hpM n]
+  rw [tower2_eq_operTower hR hRne hd hi2 hpM n]
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
   refine (mem_Wself_iff a _).mpr ⟨h _ _ _ _ hQself hQne hQ0, ?_⟩
-  rw [lev_liftTower_root hQne, hQlev]
+  rw [lev_operTower_root hQne, hQlev]
   exact hva
 
-/-- ⟹ `TowerOK` の `srow = 2` 枝は `LiftTowerSelf` 1 本。 -/
-theorem liftTowerSelf_of_shTower2Self_noBlocker (h : ShTower2Self) {d e n : ℕ}
+/-- ⟹ `TowerOK` の `srow = 2` 枝は `OperTowerSelf` 1 本。 -/
+theorem operTowerSelf_of_shTower2Self_noBlocker (h : ShTower2Self) {d e n : ℕ}
     {Q : TrioSeq} (hQself : Q ∈ Wself) (hQne : Q ≠ []) (hd : 1 ≤ d) (he : 1 ≤ e)
     (hr0 : entry Q 0 0 = 0)
     (h0 : ∀ l, 1 ≤ l → l < Q.length → 0 < entry Q 0 l)
     (h1 : ∀ l, 1 ≤ l → l < Q.length → entry Q 1 0 < entry Q 1 l) :
-    liftTower Q d e n ∈ Wself := by
-  rw [liftTower_eq_shTower2 hQne hd he hr0 rfl h0 h1 n]
+    operTower Q d e n ∈ Wself := by
+  rw [operTower_eq_shTower2 hQne hd he hr0 rfl h0 h1 n]
   refine h d e n Q hQself hQne ?_ ?_
   · intro j hj1 hj2
     rw [hr0]
@@ -4250,11 +4250,11 @@ theorem liftTowerSelf_of_shTower2Self_noBlocker (h : ShTower2Self) {d e n : ℕ}
 
     **(1) `LiftTieCore`**（§29）… ブロック 1 個を持ち上げる。**経路 C と D で同じ命題**
         3 量化 / 4 前提、`d = 1`・自己段・タイあり・`¬TieFree`
-    **(2) `LiftTowerSelf`**（上）… マスクつき塔が `Wself` に閉じる。**段が現れない**
+    **(2) `OperTowerSelf`**（上）… マスクつき塔が `Wself` に閉じる。**段が現れない**
         4 量化 / 3 前提（`Q ∈ Wself` / `Q ≠ []` / 根が行 0 で狭義最浅）
 
     ブロッカーが無ければ (2) は **`ShTower2Self`**（`Lift1` が消えた一様 2 方向シフト塔）
-    に落ちる（`liftTowerSelf_of_shTower2Self_noBlocker`、上）。H12 実測で `|R|=5` の 16.8%。
+    に落ちる（`operTowerSelf_of_shTower2Self_noBlocker`、上）。H12 実測で `|R|=5` の 16.8%。
 
 ⚠ `L51Lift.LiftTowerClosed`（`:63`、未証明）は**行 1 も一様**な版なので、
 証明しても (2) は出ない（覆うのは 16.8% のほう）。**別物として立てた。** -/
@@ -4328,6 +4328,69 @@ theorem oper_shTower2 {Q : TrioSeq} (hQne : Q ≠ []) (hQ2 : Q.length - 1 ≠ 0)
 
 ⚠ 繋ぐのは連結で `rsum` は破れる（§14）。⟹ **`Aop` の節 3（graft）が唯一の道**という
 `srow = 1` 側（§48.1）とまったく同じ形。**(2) は `srow` に依らず 1 つの問題になった。** -/
+
+
+/-! ## 57. ★★★★★ 課題 L135: **3 つの「塔」の違い**（次の人が必ず引っかかる場所）
+
+| 名前 | 定義 | マスク | 由来 |
+|---|---|---|---|
+| `Wset.shTower Q e n` | `flatMap k => shiftr01 (k*e) 0 Q` | 無し（行 0 だけ） | `srow=1` の塔（§43、**証明ずみ**） |
+| `L105.shTower2 Q d e n` | `flatMap k => shiftr01 (k*d) (k*e) Q` | 無し（行 0・行 1 とも一様） | ブロッカー無しの `srow=2`（§50、**証明ずみ**） |
+| `L51Lift.liftTower Q e n` | `flatMap k => shiftr01 (e*k) k Q` | 無し（行 1 の増分が `k`） | `L51` の一様版。**roots に無い** |
+| **`L105.operTower Q d e n`** | `Q ++ shiftr01 d 0 (Lift1 (operTower …) e)` | **有り（塔全体の `le1` 錐）** | **`oper_cons_tower2` が実際に作る形**（§47、**証明ずみ**） |
+| `L105.mTower Q d0 d1 n` | `flatMap k => Lift1 (shiftr01 (d0*k) 0 Q) (d1*k)` | **有り（ブロックごとに `Q` の中）** | H12 / R2 の**実測**の形（§55、**同一視は未証明**） |
+
+⚠ **改名した**（旧 `L105.liftTower` → **`operTower`**）。`L51Lift.liftTower`（一様）とも
+`mTower`（ブロック局所）とも混ざらない名前にした。 -/
+
+/-! ### 57.1 ★★★ **`operTower` と `mTower` の違いは「どちら向きに割れるか」**
+
+`shTower` / `shTower2` / `mTower` は **flatMap** なので**両向きに割れる**:
+
+    cons 形（先頭を切る）… `Q ++ …`
+    succ 形（末尾を切る）… `… ++ (最後のブロック)`
+
+⚠ ところが **`operTower` は cons 形しか無い**（定義がその再帰）。
+**succ 形（末尾のブロックを切り出す）は、マスクがブロック局所でないと書けない。**
+
+⟹ そして **`oper_shTower`（§48）/ `oper_shTower2`（§56）の技法は
+`succ` 形（末尾を切る）を使う**（`comm_of_hasParentInBlock` の `A ++ N` で `N` が最後のブロック）。
+
+> **⟹ `operTower` には `oper_shTower` の技法が使えない。使えるようになる条件が
+> ちょうど `mTower = operTower`（マスクのブロック局所性）である。**
+
+⟹ **H12 / R2 に振った測定は、まさにこの一点を決める。** -/
+
+theorem mTower_succ (Q : TrioSeq) (d0 d1 n : ℕ) :
+    mTower Q d0 d1 (n + 1)
+      = mTower Q d0 d1 n ++ Lift1 (shiftr01 (d0 * n) 0 Q) (d1 * n) := by
+  unfold mTower
+  rw [List.range_succ, List.flatMap_append]
+  simp
+
+theorem mTower_zero (Q : TrioSeq) (d0 d1 : ℕ) : mTower Q d0 d1 0 = [] := rfl
+
+theorem mTower_one (Q : TrioSeq) (d0 d1 : ℕ) : mTower Q d0 d1 1 = Q := by
+  rw [show (1 : ℕ) = 0 + 1 from rfl, mTower_succ, mTower_zero, List.nil_append]
+  simp
+
+/-! ### 57.2 ⟹ `mTower = operTower` が真なら何が出るか
+
+`mTower_succ` があるので、`operTower = mTower` が分かれば **`operTower` にも succ 形**が付き、
+§56 とまったく同じ手順で
+
+    `(operTower Q d e (n+1))⟦m⟧
+      = operTower Q d e n ++ (Lift1 (shiftr01 (n*d) 0 Q) (n*e))⟦m⟧`
+
+が出る。あとは最後のブロックの展開だけを見ればよく、**それは `Q` 1 個の話**になる。
+⟹ **(2) の帰納が `srow = 1` 側とまったく同じ形になる。**
+
+⚠ 逆に偽なら、`operTower` の展開は `(Lift1 (塔全体) e)⟦m⟧` を見ることになり、
+**`Lift1` と `oper` の非可換性（`Wtower2.Le1_Lift1_oper` `:4415` /
+`Le1_oper_Lift1_shiftr01` `:4482` の挟み込みしか無い）**が正面から出る。
+⟹ **そのときは (2) が (1) と同じ壁（凸性）に落ちる。**
+
+**⟹ どちらに転んでも次の一手が決まる。測定待ち。** -/
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
