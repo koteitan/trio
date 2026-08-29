@@ -3546,6 +3546,99 @@ theorem oper_shTower {Q : TrioSeq} (hQne : Q ≠ []) (hQ2 : Q.length - 1 ≠ 0)
 `shTower Q e n` の末尾は `Q` の末尾（`n-1` 番目のブロックの最終列）なので、
 **そこが孤児かどうか**が節 3 の使えるかどうかを決める。**次はそこを見る。** -/
 
+
+/-! ## 49. ★★★★ 課題 L128: ブロッカーが無ければ `liftTower` は**一様 2 方向シフト塔**
+
+`Wtower2.Lift1_eq_shiftr1_of_window`（`:107`）:
+
+    根が行 0 で狭義最浅かつ行 1 でも狭義最小 ⟹ **`Lift1 X d = shiftr01 0 d X`**
+
+⟹ `liftTower` の再帰 `Q ++ shiftr01 d 0 (Lift1 T e)` は
+`Q ++ shiftr01 d e T` に潰れる（行 0 も行 1 も**一様**にずれる塔）。 -/
+
+theorem shiftr01_comp01 (b c : ℕ) (X : TrioSeq) :
+    shiftr01 b 0 (shiftr01 0 c X) = shiftr01 b c X := by
+  unfold shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro p _
+  simp only [Function.comp_apply]
+  refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> simp
+
+/-- **★★ collapse ステップ**: 窓条件があれば `liftTower` の 1 段は
+`shiftr01 d e` に潰れる。 -/
+theorem liftTower_step_collapse {Q T : TrioSeq} {d e : ℕ}
+    (hr : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hw : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l) :
+    Q ++ shiftr01 d 0 (Lift1 T e) = Q ++ shiftr01 d e T := by
+  rw [Lift1_eq_shiftr1_of_window hr hw e, shiftr01_comp01]
+
+/-- **行 0 と行 1 の両方を一様にずらす塔**（`shTower` の 2 方向版）。 -/
+def shTower2 (Q : TrioSeq) (d e : ℕ) (n : ℕ) : TrioSeq :=
+  (List.range n).flatMap fun k => shiftr01 (k * d) (k * e) Q
+
+@[simp] theorem shTower2_zero (Q : TrioSeq) (d e : ℕ) : shTower2 Q d e 0 = [] := rfl
+
+@[simp] theorem shTower2_one (Q : TrioSeq) (d e : ℕ) : shTower2 Q d e 1 = Q := by
+  unfold shTower2
+  simp
+
+theorem shTower2_succ (Q : TrioSeq) (d e n : ℕ) :
+    shTower2 Q d e (n + 1)
+      = shTower2 Q d e n ++ shiftr01 (n * d) (n * e) Q := by
+  unfold shTower2
+  rw [List.range_succ, List.flatMap_append]
+  simp
+
+theorem shiftr01_comp2 (b c b' c' : ℕ) (X : TrioSeq) :
+    shiftr01 b c (shiftr01 b' c' X) = shiftr01 (b + b') (c + c') X := by
+  unfold shiftr01
+  rw [List.map_map]
+  refine List.map_congr_left ?_
+  intro p _
+  simp only [Function.comp_apply]
+  refine Prod.ext ?_ (Prod.ext ?_ rfl) <;> simp <;> omega
+
+theorem shiftr01_append' (d0 d1 : ℕ) (A B : TrioSeq) :
+    shiftr01 d0 d1 (A ++ B) = shiftr01 d0 d1 A ++ shiftr01 d0 d1 B :=
+  shiftr01_append d0 d1 A B
+
+/-- **`shTower_cons` の 2 方向版。** -/
+theorem shTower2_cons (Q : TrioSeq) (d e : ℕ) :
+    ∀ n : ℕ, shTower2 Q d e (n + 1) = Q ++ shiftr01 d e (shTower2 Q d e n) := by
+  intro n
+  induction n with
+  | zero =>
+      rw [shTower2_zero, shiftr01_nil, List.append_nil]
+      exact shTower2_one Q d e
+  | succ n ih =>
+      rw [shTower2_succ Q d e (n + 1)]
+      conv_lhs => rw [ih]
+      rw [List.append_assoc]
+      congr 1
+      have hd : (n + 1) * d = d + n * d := by rw [Nat.succ_mul, Nat.add_comm]
+      have he : (n + 1) * e = e + n * e := by rw [Nat.succ_mul, Nat.add_comm]
+      rw [hd, he, ← shiftr01_comp2, ← shiftr01_append', ← shTower2_succ Q d e n]
+
+/-! ### 49.1 ⟹ 残るのは窓条件の伝播だけ
+
+`liftTower Q d e (n+1) = Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e)` と
+`shTower2 Q d e (n+1) = Q ++ shiftr01 d e (shTower2 Q d e n)` を見比べると、
+**`liftTower_step_collapse` を各段で使えれば `liftTower = shTower2`。**
+
+必要な窓条件（`T = liftTower Q d e n` について）:
+
+    (a) 根が行 0 で狭義最浅 … `Q = (0,v,z) :: (argOK)` と `d ≥ 1` から従うはず
+    (b) 根が行 1 で狭義最小 … **`Q` にブロッカー（行 1 ≤ `v` の列）が無い**ことと
+        `e ≥ 1`（塔の根が `Lift1` で `v → v+e` と上がる）から従うはず
+
+⚠ **(a)(b) の伝播はまだ証明していません。** 添字の場合分け（`entry (A ++ B)` の分解）が
+要るので分量があります。**そこが L128 の残りです。**
+
+⟹ 落ちれば `liftTower Q d e n = shTower2 Q d e n`（**`Lift1` が消えた一様 2 方向シフト塔**）で、
+`srow = 2` 枝が `srow = 1` 枝と**同じ種類の対象**になります。
+残るのは **`Q` にブロッカーがある場合**＝ **`LiftTie` の場面**。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
