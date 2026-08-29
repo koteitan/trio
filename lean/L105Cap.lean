@@ -5862,6 +5862,130 @@ theorem mTower_mem_of_le_one {u : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u) {d e n : �
 ⚠ **`CatBlock` は `WCat` の制限版**である。team-lead の規律「`WCat` を避ける」に
 触れるので、**進める前に判断を仰ぐ。** -/
 
+/-! ## 78. ★★★★★ 塔に 1 ブロックを継ぐ: **残差は「悪根が前半に逃げる」1 枝**
+
+§77.2 の骨組みを実際に組んだ。**`WCat` の制限版**（`A` は塔、`B` は同じ素材の派生）だが、
+**4 枝のうち 3 枝が既存の緑で落ちる**ことが確認できた。 -/
+
+/-- 段内に親があるなら末尾列は全零でない（全零なら `srow = 0` で行 0 の親が要り、
+`entry 0 j0 < 0` は不可能）。 -/
+theorem hz_of_hasParentInBlock {N : TrioSeq} (h : L53.HasParentInBlock N) :
+    ¬ (entry N 0 (N.length - 1) = 0 ∧ entry N 1 (N.length - 1) = 0 ∧
+      entry N 2 (N.length - 1) = 0) := by
+  rintro ⟨h0, h1, h2⟩
+  unfold L53.HasParentInBlock at h
+  have hsr : srow N (N.length - 1) = 0 := by
+    unfold srow
+    rw [if_neg (by omega), if_neg (by omega)]
+  rw [hsr] at h
+  obtain ⟨j0, hj0, -⟩ := h
+  unfold nextR at hj0
+  rw [if_pos rfl] at hj0
+  have := hj0.2.2.2.1
+  omega
+
+/-- 1 列の塊は段内に親を持たない。 -/
+theorem not_hasParentInBlock_of_short {N : TrioSeq} (h1 : N.length - 1 = 0) :
+    ¬ L53.HasParentInBlock N := by
+  unfold L53.HasParentInBlock
+  rintro ⟨j0, hj0, -⟩
+  have := nextR_index_lt hj0
+  omega
+
+/-- **★★★★★ 段内に親があるブロックは、前半 `A` を素通しする。** -/
+theorem catBlock_step {u c : ℕ} {A B : TrioSeq} (hB2 : 2 ≤ B.length)
+    (hblk : L53.HasParentInBlock (shiftr01 c 0 B))
+    (hop : ∀ m, 1 ≤ m → A ++ shiftr01 c 0 (B⟦m⟧) ∈ W u) :
+    A ++ shiftr01 c 0 B ∈ W u := by
+  refine mem_of_oper_mem (fun m hm => ?_)
+  have hNne : shiftr01 c 0 B ≠ [] := by
+    intro hc
+    have hl : (shiftr01 c 0 B).length = 0 := by rw [hc]; rfl
+    rw [shiftr01_length] at hl
+    omega
+  have hN2 : (shiftr01 c 0 B).length - 1 ≠ 0 := by
+    rw [shiftr01_length]; omega
+  rw [L53.comm_of_hasParentInBlock m hNne hN2 (hz_of_hasParentInBlock hblk) hblk,
+    oper_shiftr01]
+  exact hop m hm
+
+open Classical in
+/-- **★★★★★★ 塔に 1 ブロックを継ぐ問題は「悪根が前半に逃げる」1 枝に落ちる。**
+
+`hesc` は「継いだブロックの末尾列が**そのブロックの中では孤児**」の場合だけを引き受ける。
+それ以外（節 1 の空・節 2 の段内親あり・節 3）は**全部この証明の中で落ちる**。 -/
+theorem catBlock_of_escape {u c : ℕ} {A : TrioSeq} (hA : A ∈ W u)
+    (hesc : ∀ B : TrioSeq, 1 ≤ B.length →
+      ¬ L53.HasParentInBlock (shiftr01 c 0 B) →
+      A ++ shiftr01 c 0 B ∈ W u) :
+    ∀ B : TrioSeq, B ∈ W u → A ++ shiftr01 c 0 B ∈ W u := by
+  have hsub : W u ⊆ {B : TrioSeq | A ++ shiftr01 c 0 B ∈ W u} := by
+    refine A2' ?_
+    rintro B (⟨hl, -⟩ | hop | ⟨m', hm', hd, hgr⟩)
+    · rcases Nat.eq_zero_or_pos B.length with h0 | hpos
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show A ++ shiftr01 c 0 ([] : TrioSeq) ∈ W u
+        simpa using hA
+      · refine hesc B (by omega) ?_
+        refine not_hasParentInBlock_of_short ?_
+        rw [shiftr01_length]; omega
+    · show A ++ shiftr01 c 0 B ∈ W u
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · have hres := hop 1 le_rfl
+        rwa [oper_eq_self_of_short 1 (by omega)] at hres
+      · by_cases hblk : L53.HasParentInBlock (shiftr01 c 0 B)
+        · exact catBlock_step hbig hblk (fun m hm => hop m hm)
+        · exact hesc B (by omega) hblk
+    · show A ++ shiftr01 c 0 B ∈ W u
+      rcases Nat.lt_or_ge B.length 2 with hsm | hbig
+      · have hBne : B ≠ [] := by
+          intro hc
+          rw [hc] at hd
+          exact not_domT_nil m' hd
+        have h1 : 0 < B.length := List.length_pos_iff.mpr hBne
+        refine hesc B (by omega) ?_
+        refine not_hasParentInBlock_of_short ?_
+        rw [shiftr01_length]; omega
+      · have hop := aop_clause3_to_clause2 hbig hd hgr
+        by_cases hblk : L53.HasParentInBlock (shiftr01 c 0 B)
+        · exact catBlock_step hbig hblk (fun m hm => hop m hm)
+        · exact hesc B (by omega) hblk
+  exact fun B hB => hsub hB
+
+/-! ### 78.1 ⟹ 落ちた枝と残った枝
+
+    節 1 `B = []`         … `A ++ [] = A ∈ W u`                        **無料**
+    節 1 `|B| = 1`        … 1 列は段内に親を持たない ⟹ `hesc`          （残差に合流）
+    節 2 `|B| ≤ 1`        … `oper_eq_self_of_short` で `hop 1`          **無料**
+    節 2 段内に親あり     … **`L53.comm_of_hasParentInBlock` ＋ `oper_shiftr01`** **無料**
+    節 2 段内で孤児       … `hesc`                                      **残差**
+    節 3 `|B| ≤ 1`        … 同上                                        （残差に合流）
+    節 3 `|B| ≥ 2`        … **`Wchar.aop_clause3_to_clause2`** で節 2 に吸収 **無料**
+
+⟹ **残差は `hesc` 1 本**:
+
+    `A ∈ W u` ＋ **継ぐブロックの末尾列がそのブロックの中で孤児**
+      ⟹ `A ++ shiftr01 c 0 B ∈ W u`
+
+**これは §67 の「悪根 ＝ 根」と同じ現象**（悪根が自分のブロックを出て前半に逃げる）である。
+⟹ **`MTowerClosedRow2` と `hesc` は同じ 1 枝を見ている。**
+
+### 78.2 ⚠ `hesc` は `WSnoc` を含む
+
+`|B| = 1` のとき `A ++ shiftr01 c 0 [p] = A ++ [p']` は**任意の列の snoc** なので、
+`hesc` は **`WSnoc` を含んでしまう**。⟹ **このままでは核として弱くない。**
+
+    `Wtower2.snoc_orphan`（`:3053`）  … `A ++ [p']` で `p'` が**孤児のまま**なら無料
+    `Wtower2.snoc_flat_root`（`:2208`）… `srow = 0` かつ**親が根**なら無料
+    残るのは **`p'` が `A` の中に親を見つける**場合 ＝ 上と同じ現象
+
+⟹ **`hesc` をこのまま核にするのは筋が悪い。** §77.2 で挙げた懸念どおり
+**`WCat` / `WSnoc` に触れる。** ⟹ **`MTowerClosedRow2` 側から攻めるべき**で、
+そちらは `A` が**塔**であることを使える（`hesc` は `A` が何でもよい形になっている）。
+
+**⟹ この節は「素直な分解では `WSnoc` に落ちる」ことの記録である。次は使わない。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
