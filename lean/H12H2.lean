@@ -633,5 +633,83 @@ theorem snocStep_outOfCone_consumer {u : ℕ} {M : TrioSeq} {n j : ℕ}
     (hd0e_of_hr0 hM2 hi2 hr0)
     hr0 (hlp_of_hpM hM2 hi2 hpM hj0) hQ2 hj hj1 hout horph hpos hC hCne
 
+
+/-! ## 11. ⚠⚠ **自己訂正**: §254/§255 の `snocStep_outOfCone` は**核には要らない**
+
+`L105Cap.mTowerClosed_of_snocStepPar`（`L105Cap.lean:10040`）の**中身**を読み直した:
+
+    by_cases hP : hasParent … 
+    · exact hstep n j hj (Or.inl hP) hC
+    · rw [hsplit]
+      exact snoc_orphan_W _ hC hE (by rw [← hsplit]; exact hP)   ← **孤児はここで消える**
+
+⟹ **孤児の列は `hstep` に届かない。`snocStepPar` が内部で `snoc_orphan_W` で片づけている。**
+L3 も §139.1 に「§137 の 5 つの前提は場合分けにすれば要りませんでした」と書いている。
+
+⚠ **ところが `mTowerClosed_of_snocStepCone` はその情報を捨てている**:
+
+    refine mTowerClosed_of_snocStepPar ?_
+    intro n j hj _ hC        ← **`_` が「親がある ∨ 空」。捨てられている**
+
+⟹ **捨てずに `hstep` に渡せば、錐の外の孤児の枝は `hstep` の義務から消える。**
+⟹ **残る本当の残差は「錐の外 ∧ しかし親を持つ」列だけ。**
+
+> **⟹ §254/§255 の `snocStep_outOfCone` は「既に無料だったもの」を証明していた。**
+> **定理としては正しいが、核を減らす役には立たない。正直に記録する。**
+> （`mTower_orphan_row2_gen`（§253）は F2a の一般化として独立に残る。） -/
+
+open Classical in
+/-- ★★★ **`hstep` に「親がある ∨ 空」を渡す版**（`mTowerClosed_of_snocStepCone` は
+これを捨てている）。⟹ **錐の外の孤児は `hstep` の義務から消える。** -/
+theorem mTowerClosed_of_snocStepConePar {u : ℕ} {Q : TrioSeq} {d e : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hz0 : entry Q 2 0 = 0)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (hasParent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+        ∨ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
+      (0 < j → le1 Q 0 j → n * Q.length ≤
+        parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  refine mTowerClosed_of_snocStepPar ?_
+  intro n j hj hpar0 hC
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hClen : (mTower Q d e n ++ B.take j).length = n * Q.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hC1len : (mTower Q d e n ++ B.take (j + 1)).length
+      = n * Q.length + (j + 1) := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hsrow : srow (mTower Q d e n ++ B.take (j + 1))
+      (n * Q.length + j) = srow (B.take (j + 1)) j := by
+    unfold srow
+    rw [show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen],
+      entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
+  refine hstep n j hj hpar0 (fun hj1 hcone => ?_) hC
+  have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
+    block_blockParent_all_cone hj hj1 hr0 hcone
+      (fun hpos => h2_cone hz0 j hj1 hj hpos hcone)
+  have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
+      (srow (B.take (j + 1)) j)
+      ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
+    rw [hC1len, show n * Q.length + (j + 1) - 1 = (mTower Q d e n).length + j from by
+      rw [hTlen]; omega]
+    exact hasParent_append_right_of _ _ hloc
+  have hres := snocStep_parent_sameBlock (d := d) (e := e) (n := n)
+    (i := srow (B.take (j + 1)) j) hj hloc hpar
+  rw [hC1len, show n * Q.length + (j + 1) - 1 = n * Q.length + j from by omega] at hres
+  rw [hClen, hsrow]
+  exact hres
+
 end H12H2
 end TRIO

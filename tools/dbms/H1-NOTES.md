@@ -5902,3 +5902,57 @@ L3 は既に `TowerExpBigZ`（`L105Cap.lean:3831`）で「`zle1 R` を足した�
 ⟹ **`hstep` はまだ通っていない。** 通ったのは「錐の外 ∧ `Q` で孤児」の枝だけ。
 
 **Lean**: `lean/H12H2.lean`（緑、定理 25 本、`sorry` 0）。
+
+## §256. ⚠⚠ **自己訂正: §254/§255 は「既に無料だったもの」を証明していた**
+
+`L105Cap.mTowerClosed_of_snocStepPar`（`L105Cap.lean:10040`）の**中身**を読み直した:
+
+    by_cases hP : hasParent …
+    · exact hstep n j hj (Or.inl hP) hC
+    · rw [hsplit]
+      exact snoc_orphan_W _ hC hE (by rw [← hsplit]; exact hP)   ← **孤児はここで消える**
+
+⟹ **孤児の列は `hstep` に届かない。`snocStepPar` が内部で片づけている。**
+L3 も §139.1 に「§137 の 5 つの前提は場合分けにすれば要りませんでした」と書いていた。
+
+> **⟹ §254/§255 の `snocStep_outOfCone` は定理としては正しいが、核を減らす役には立たない。**
+> **私は「(C2) の枝が組み上がった」と報告したが、その枝はもともと無料だった。**
+> ⚠ **教訓 24（先に `grep`）を、`mTowerClosed_of_snocStepPar` の中身に対して
+> 　当てていなかった。署名だけ見て中身を読まなかった。**
+> （`mTower_orphan_row2_gen`（§253）は F2a の一般化として独立に残る。）
+
+### §256.1 ★ ただし、そこから**本物の改善**が出た
+
+⚠ **`mTowerClosed_of_snocStepCone` はその情報を捨てている**:
+
+    refine mTowerClosed_of_snocStepPar ?_
+    intro n j hj _ hC        ← **`_` が「親がある ∨ 空」。捨てられている**
+
+⟹ **捨てずに `hstep` に渡せば、錐の外の孤児の枝は `hstep` の義務から消える。**
+
+緑: `H12H2.mTowerClosed_of_snocStepConePar`（`hstep` に「親がある ∨ 空」を追加で渡す版）。
+本体は `L105Cap` と同一で、`intro n j hj _ hC` を `intro n j hj hpar0 hC` にして
+`hstep n j hj hpar0 …` と渡すだけ。
+
+### §256.2 ⟹ **本当の残差は 1 つだけ**
+
+`hstep` に届くのは「足す列が塔の中で親を持つ」場合だけ。⟹ 枝は 2 つ:
+
+    (C1) **錐の中** … 親は同じブロック ⟹ 窓 < |Q| ⟹ §138 の測度（L3 が担当）
+    (e)  **錐の外 ∧ しかし親を持つ** … ⟸ **ここだけが本当の残差**
+
+⚠ **(e) は「錐の外だが根以外の祖先から行 2 の親を持つ」列**（§252 の実測で 0.7%）。
+`snocStep_outOfCone` の `horph` を満たさないので**私の §254/§255 の射程外**でもある。
+
+⟹ **(e) の親が「同じブロック」なら (C1) の窓の議論がそのまま効き、残差は消える。
+「前のブロック」なら復活で、そこが核。`h91.py` で測定中。**
+
+### §256.3 L3 への差分（1 行）
+
+    intro n j hj _ hC      ⟹   intro n j hj hpar0 hC
+    refine hstep n j hj (fun hj1 hcone => ?_) hC
+                           ⟹   refine hstep n j hj hpar0 (fun hj1 hcone => ?_) hC
+
+（`hstep` の型に「親がある ∨ 空」の 1 項を足す。）
+
+**Lean**: `lean/H12H2.lean`（緑、`sorry` 0）。
