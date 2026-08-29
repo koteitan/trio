@@ -4157,6 +4157,51 @@ theorem graftTower1_zero {v z a' m : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R
     `srow = 2` … `LiftTie` ＋ 塔の元だけの graft 閉包            ← 未着手 -/
 
 
+/-! # ★★★★★ 課題 L103 の判定: **5 回目です。しかも一番大きい**
+
+## 1. 7 本はどれも**界面の再パッケージ**（減っていない）
+
+`CoreGpowPeel`（`Gamma.lean:499`）の docstring に、**私が課題 L102 で書いたのと
+同じ但し書きが既にありました**:
+
+> ⚠ **HONESTY (v0.118.52)**: by `gpow_dropLast_eq_tow` this subject is exactly
+> `tow (v+t) z Rt (k+1)`, so `CoreGpowPeel` is a *restatement* of "every level of
+> the row-1 tower is a `W`-package", **not a reduction** —
+> `tower1_mem2_fam` / `tower1_mem2_gpow` only re-index `k`.
+
+`towerGraft2_lift_fam`（`Wset.lean:3458`）も同型: `oper_cons_tower2` により
+仮定の添字 `j` は結論の `j+1` と同じもの。**買えるのは「界面が弱い」ことだけ**
+（`∀ y ∈ W m` が要らない ⟹ 段の押し上げ `m → m+2t` が消える）。
+
+⚠ 私の課題 L102 の「`srow = 2` には届かない」は `tower1_mem2_fam` については正しく、
+**行 2 版は `towerGraft2_lift_fam` として存在する**。そこは訂正。
+
+## 2. ★★★★★ 決定的: **`Final.lean` は既に「核 1 本」に到達している**
+
+```lean
+-- Lind.lean:132
+def CoreSingleton : Prop := ∀ b c : ℕ, [((0, b, c) : ℕ × ℕ × ℕ)] ∈ GX
+
+-- Final.lean:559（緑）
+theorem TRIO_terminates_of_core (hs : CoreSingleton) : WellFounded stepRel
+```
+
+**核は `[(0,b,c)] ∈ GX` の 1 本 —— 1 列についての 1 文**である。
+
+⟹ **今日ずっと作業していた `Wstar` 路線（`TowerOK` / `WSnoc` / `Subst1gRevive`）の
+核 2 本は、`GX` 路線（`Gamma` / `Lind`）の `CoreSingleton` より弱くない。**
+（両路線は仮定が比較不能なので「間違い」ではないが、**到達点としては劣る**。）
+
+## 3. ⟹ 明日の一手は路線の選択
+
+    路線 A（`GX` / `Gamma` / `Lind`）… **核 1 本** `CoreSingleton`
+    路線 B（`Wstar` / `TowerOK`）    … 核 2 本 `WSnoc` ＋ `Subst1gRevive`
+
+**`CoreSingleton` を攻めるほうが、対象が「1 列」なので圧倒的に小さい。**
+今日の成果（`liftStage_of_wsnoc` / `towerOK2_of_clause3` / `PrefixCopies` など）は
+路線 B の地図としては価値があるが、**停止性への最短路ではない**。 -/
+
+
 /-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
 
 ## 1. 上から下への連鎖（全部 Lean で緑）
