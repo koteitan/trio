@@ -3288,5 +3288,91 @@ theorem towerOK_of_wconvex1_graft (hconv : WConvex1) (hg : GraftFromExp) :
   towerOK_of_liftTie_graft (liftTie_of_wconvex1 hconv) hg
 
 
+/-! ## ★★★★ 課題 L93-b: **1 列 1 段の引き下げは `Subst1gRevive` から出る**
+
+`Subst1gRevive` の差し替えブロック `C` を**1 列**にすると、「その列の行 1 を
+1 だけ下げる」になる。側条件は次のとおり:
+
+    `C = [c] ≠ []`                    自動
+    `C ∈ W (lev S p)`                 自動（`singleton_mem_W`、下げるので `lev` は減る）
+    `entry C 0 0 = entry S 0 p`       自動（深さは変えない）
+    `∀ q ∈ C, entry S 0 p ≤ q.1`      自動
+    **`hasParent (結果) …`**           ← 残る（「復活」の場合であること）
+    **選言（尾が孤児終わり）**          ← `p = |S|-1` なら**自動**（1 列に親は無い）
+
+**⟹ 末尾列なら側条件は「下げたあとも親が居る」1 本だけ。**
+しかも**下端の witness は要らない**ので、`WConvexUnit` より強い形が出る。
+
+⚠ `WSnoc` は列を**足す**だけで既存の列を変えないので、こちらには効かない。 -/
+
+theorem not_hasParent_zero (M : TrioSeq) (i : ℕ) : ¬ hasParent M i 0 := by
+  rintro ⟨j0, hj0, -⟩
+  have := nextR_index_lt hj0
+  omega
+
+/-- 1 列だけ行 1 を 1 下げた列（`Subst1gRevive` の差し替えの形）。 -/
+def lowerOne (S : TrioSeq) (p : ℕ) : TrioSeq :=
+  S.take p ++ [((entry S 0 p, entry S 1 p - 1, entry S 2 p) : ℕ × ℕ × ℕ)]
+    ++ S.drop (p + 1)
+
+/-- **★★★ 1 列 1 段の引き下げ**（一般の位置、側条件 2 本）。 -/
+theorem lowerOne_of_revive (hrev : Subst1gRevive) {u p : ℕ} {S : TrioSeq}
+    (hS : S ∈ W u) (hp : p < S.length)
+    (hpar : hasParent (lowerOne S p)
+      (srow (lowerOne S p) ((lowerOne S p).length - 1))
+      ((lowerOne S p).length - 1))
+    (hdisj : S.drop (p + 1) = [] ∨
+      (S.drop (p + 1) ≠ [] ∧
+        ¬ hasParent (S.drop (p + 1))
+          (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
+          ((S.drop (p + 1)).length - 1))) :
+    lowerOne S p ∈ W u := by
+  classical
+  set c : ℕ × ℕ × ℕ := (entry S 0 p, entry S 1 p - 1, entry S 2 p) with hc
+  have hCne : ([c] : TrioSeq) ≠ [] := by simp
+  have hCW : ([c] : TrioSeq) ∈ W (lev S p) := by
+    have : lev S p = 2 * entry S 1 p + entry S 2 p := rfl
+    exact singleton_mem_W (by rw [this]; omega)
+  have hC0 : entry ([c] : TrioSeq) 0 0 = entry S 0 p := by simp [entry, hc]
+  have hCge : ∀ q ∈ ([c] : TrioSeq), entry S 0 p ≤ q.1 := by
+    intro q hq
+    simp only [List.mem_singleton] at hq
+    subst hq
+    simp [hc]
+  have hdisj' : ((S.drop (p + 1) = [] ∧
+      ¬ hasParent ([c] : TrioSeq) (srow ([c] : TrioSeq) (([c] : TrioSeq).length - 1))
+        (([c] : TrioSeq).length - 1)) ∨
+      (S.drop (p + 1) ≠ [] ∧
+        ¬ hasParent (S.drop (p + 1))
+          (srow (S.drop (p + 1)) ((S.drop (p + 1)).length - 1))
+          ((S.drop (p + 1)).length - 1))) := by
+    rcases hdisj with h | h
+    · exact Or.inl ⟨h, by simpa using not_hasParent_zero ([c] : TrioSeq) _⟩
+    · exact Or.inr h
+  exact hrev u p S [c] hS hp hCne hCW hC0 hCge hpar hdisj'
+
+/-- **★★★★ 末尾列なら側条件は 1 本だけ**（選言が自動で消える）。
+しかも**下端の witness を使わない** ⟹ `WConvexUnit` より強い。 -/
+theorem lowerLast_of_revive (hrev : Subst1gRevive) {u : ℕ} {S : TrioSeq}
+    (hSne : S ≠ []) (hS : S ∈ W u)
+    (hpar : hasParent (lowerOne S (S.length - 1))
+      (srow (lowerOne S (S.length - 1)) ((lowerOne S (S.length - 1)).length - 1))
+      ((lowerOne S (S.length - 1)).length - 1)) :
+    lowerOne S (S.length - 1) ∈ W u := by
+  have hSpos : 0 < S.length := List.length_pos_iff.mpr hSne
+  refine lowerOne_of_revive hrev hS (by omega) hpar (Or.inl ?_)
+  exact List.drop_eq_nil_of_le (by omega)
+
+/-- 末尾で下げた形は `dropLast ++ [下げた列]`。 -/
+theorem lowerOne_last_eq {S : TrioSeq} (hSne : S ≠ []) :
+    lowerOne S (S.length - 1)
+      = S.dropLast ++ [((entry S 0 (S.length - 1), entry S 1 (S.length - 1) - 1,
+          entry S 2 (S.length - 1)) : ℕ × ℕ × ℕ)] := by
+  have hSpos : 0 < S.length := List.length_pos_iff.mpr hSne
+  unfold lowerOne
+  rw [List.drop_eq_nil_of_le (by omega), List.append_nil,
+    List.dropLast_eq_take]
+
+
 end L53
 end TRIO
