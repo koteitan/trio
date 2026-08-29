@@ -8571,6 +8571,80 @@ theorem nextrel1_mTower_sameBlock {Q : TrioSeq} {d e n' qa b : ℕ}
 ⚠ **ブロック外の側は `gexp` 座標なので、`mTower`/`shTower` への橋渡しが要ります**
 （§109 の `le1_mTower_in_block` と同じ手順）。**そこが残りの作業です。** -/
 
+/-! ## 117. ★★★★★★ §108 の `houtc` から `gexp_cone_mir_zero` を外す
+
+§108 は「目標が錐の外なら鎖の途中も錐の外」を **§84 `gexp_cone_mir_zero`（`hd1pos` 必須）**で
+出していた。**最後のブロックに限れば、そこは `Q` の中の話に落ちる:**
+
+    **`nextrel1 (A ++ Lift1 (shiftr01 d0 0 Q) d1) (|A|+a) (|A|+b) ↔ nextrel1 Q a b`**
+      （`L53.nextrel1_append_right` ＋ `Wset.nextrel1_Lift1` ＋ `Core.nextrel1_shiftr01`。
+       **3 本とも無条件**）
+
+⟹ 鎖の 1 歩がブロックの中なら **`nextrel1 Q q' q`** になり、
+**「`q'` が `Q` の錐の中なら `q` も錐の中」は `Q` の中の推移律だけ**で出る。
+**⟹ `gexp_cone_mir_zero` も `hd1pos` も要らない。** -/
+
+theorem nextrel1_lastBlock_iff {Q A : TrioSeq} {d0' d1' a b : ℕ} :
+    nextrel1 (A ++ Lift1 (shiftr01 d0' 0 Q) d1') (A.length + a) (A.length + b)
+      ↔ nextrel1 Q a b := by
+  rw [L53.nextrel1_append_right, nextrel1_Lift1, nextrel1_shiftr01]
+
+open Classical in
+/-- **★★★★★★ 最後のブロックでの `le1` の閉じ込め**（`hd1pos` 不要）。
+ブロック外からの 1 歩を止める `hwall` だけを外から受け取る。 -/
+theorem le1_lastBlock_in_block {Q A : TrioSeq} {d0' d1' : ℕ}
+    (hwall : ∀ (q c : ℕ), q < Q.length → 0 < q → ¬ le1 Q 0 q →
+      nextrel1 (A ++ Lift1 (shiftr01 d0' 0 Q) d1') c (A.length + q) → A.length ≤ c) :
+    ∀ q, q < Q.length → 0 < q → ¬ le1 Q 0 q → ∀ a,
+      Relation.ReflTransGen (nextrel1 (A ++ Lift1 (shiftr01 d0' 0 Q) d1')) a
+        (A.length + q) →
+      A.length ≤ a := by
+  intro q
+  induction q using Nat.strong_induction_on with
+  | _ q ih =>
+    intro hq hq1 hout a ha
+    rcases ha.cases_tail with heq | ⟨c, hc1, hc2⟩
+    · omega
+    · have hcge : A.length ≤ c := hwall q c hq hq1 hout hc2
+      obtain ⟨q', hq'⟩ : ∃ q', c = A.length + q' := ⟨c - A.length, by omega⟩
+      subst hq'
+      have hQrel : nextrel1 Q q' q := nextrel1_lastBlock_iff.mp hc2
+      have hq'lt : q' < q := hQrel.2.2.1
+      have houtq' : ¬ le1 Q 0 q' := by
+        intro hcone
+        exact hout ⟨hcone.1, hQrel.2.1, hcone.2.2.tail hQrel⟩
+      rcases Nat.eq_zero_or_pos q' with rfl | hq'pos
+      · exact absurd (le1_refl (show 0 < Q.length from by omega)) houtq'
+      · exact ih q' hq'lt (by omega) hq'pos houtq' a hc1
+
+/-! ### 117.1 ⟹ §108 との差
+
+    §108 … `gexp` 座標。`houtc` に **`gexp_cone_mir_zero`（`hd1pos` 必須）**
+    **§117 … `A ++ ブロック` 座標。`houtc` は `Q` の中の推移律だけ。`hd1pos` 不要**
+
+⟹ **残る入力は `hwall`（ブロック外からの 1 歩を止める）だけ**で、それは
+
+    **`q` が `Q` の錐の中** … §87 `nextrel1_gexp_no_enter`（**`hd1pos` 不要**）
+    **`q` が `Q` の錐の外** … **§115 `nextrel1_gexp_no_enter_out'`（`hd1pos` 不要）**
+
+の 2 本で尽きている（どちらも `gexp` 座標なので、そこへの橋渡しが最後の作業）。
+
+⚠ **`hwall` は「錐の外」だけを受け取る形にしてある**（`hout` を引数に取る）ので、
+**§115 だけで足ります。§87 は要りません。**
+
+### 117.2 ⛔ §95.1 の射程、R2 の実測で確定
+
+R2 の §R139: **`r` が孤児にならないのは `z = 0 ∧ e ≥ 1` だけ**（そこでは 0.00%、分母 787,320）。
+
+    `z=0` ∧ `e=0`  … 孤児 **47.1〜50.1%**
+    `z=1` ∧ `e≥1`  … 孤児 **75.5〜86.0%** ⟹ `snoc_orphan_W` で無料
+    `z=1` ∧ `e=0`  … 孤児 **90.1〜94.4%**
+
+**⟹ 私が §105.1 で撤回した見出しの、正確な射程が出ました。**
+**⟹ `j = 0` の段の本当の残差は `z = 0 ∧ e ≥ 1` です。**
+**⟹ そして `z = 0` では展開の `d1 = 0` が 100%（R2 の (2)）⟹ `shTower` の領域。**
+**⟹ §112-§117 で `(TOW)` に移ったのは、まさにこの枝に効きます。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
