@@ -1966,6 +1966,43 @@ theorem not_le1_of_tie_window {X : TrioSeq}
 なので、**幅 1 の凸性（`WConvex1` / `WConvexUnit`）で足りるはず**である。
 `L53.liftStage_of_wconvex1` / `wconvex1_of_unit` が既にある。**そこが次の一手。** -/
 
+
+/-! ## 31. `LiftTieCore` の位置づけ（`CORES.md` の「より強いもの」列） -/
+
+/-- `LiftStage`（全部の根での (WL)）からは当然出る。 -/
+theorem liftTieCore_of_liftStage (h : LiftStage) : LiftTieCore :=
+  liftTieCore_of_liftTie (L53.liftTie_of_liftStage h)
+
+/-- `WConvexUnit`（1 列 1 段の凸性）からも出る
+（`L53.wconvex1_of_unit` → `L53.liftStage_of_wconvex1`）。 -/
+theorem liftTieCore_of_wconvexUnit (h : L53.WConvexUnit) : LiftTieCore :=
+  liftTieCore_of_liftStage (L53.liftStage_of_wconvex1 (L53.wconvex1_of_unit h))
+
+/-- `WConvex1`（幅 1 の凸性）からも出る。 -/
+theorem liftTieCore_of_wconvex1 (h : L53.WConvex1) : LiftTieCore :=
+  liftTieCore_of_liftStage (L53.liftStage_of_wconvex1 h)
+
+/-- `WSnoc` からも出る（`L53.liftStage_of_wsnoc`）。 -/
+theorem liftTieCore_of_wsnoc (h : WSnoc) : LiftTieCore :=
+  liftTieCore_of_liftStage (L53.liftStage_of_wsnoc h)
+
+/-- `Row1Mono` からも出る。 -/
+theorem liftTieCore_of_row1mono (h : Row1Mono) : LiftTieCore :=
+  liftTieCore_of_liftStage (liftStage_of_row1mono h)
+
+/-! ### 31.1 ⟹ 今日の核の一覧（`L105Cap.lean` の到達点）
+
+| 命題 | 場所 | ∀ | → | 単独か | より強いもの |
+|---|---|---|---|---|---|
+| **`LiftTieCore`** | §29 | **3** | **4** | `TowerExp` が要る | `LiftTie`, `LiftStage`, `WConvex1`, `WConvexUnit`, `WSnoc`, `Row1Mono` |
+| `LiftTieSelfUnit` | §28 | 3 | 3 | 同上 | `LiftTieCore` は前提が 1 本多い |
+| `LiftTieSelf` | §21 | 4 | 3 | 同上 | ↑ |
+| `L53.LiftTie` | `L53Subst:2337` | 5 | 3 | 同上 | ↑ |
+| **`CoreCap` ⟺ `Wset.GraftAll`** | §25 | 7 | 5 | **単独** | —— |
+
+**`CoreCap` だけが単独**だが、§25 のとおり `TowerExp` 相当を内側に畳んでいる。
+⟹ **仕事量は同じ。** 文の小ささでは `LiftTieCore` が今日の最小。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
