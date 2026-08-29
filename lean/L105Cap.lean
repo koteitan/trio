@@ -4704,6 +4704,73 @@ theorem operTower_succ (h : LiftFlatMapLocal) (Q : TrioSeq) (d e n : ℕ) :
 **R2 が 0 件と測った**（外のブロックにしか無いケース）。⟹ **機構は正しそう。**
 残るのは**なぜ外のブロックのブロッカーが効かないか**で、そこが証明の核心。 -/
 
+
+/-! ## 63. ★★★★★★ R2 の (D) に **機構が付きました**
+
+R2 が「機構は導けていない」と書いた (D)
+
+> **塔の第 `k` ブロック（`k ≥ 1`）の行 0 祖先鎖の、ブロック外の祖先は
+> 1 本もブロッカーでない（行 1 > `v`）**（346,320 件・例外 0）
+
+は、**塔の場面の仮定 `hasParent` からそのまま出ます。**
+
+### 63.1 骨（`le1_zero_iff` の直接の帰結）
+
+`srow = 2` の塔では `L53.tower2_root_spec`（`L53Subst.lean:2360`）が
+**`nextrel2 ((0,v,z) :: R) 0 |R|`** を与える。その第 5 連言が **`le1 X 0 |R|`**。
+そして `Lcone.le1_zero_iff`（`:36`、根が行 0 で狭義最浅 ＝ `L53.root_row0_min`）は
+
+    `le1 X 0 |R|` ⟺ **`|R|` の根以外の行 0 祖先 `y` がすべて `entry X 1 0 = v < entry X 1 y`**
+
+⟹ **`X` の末尾列の（根以外の）行 0 祖先は 1 本もブロッカーでない。** -/
+
+theorem tower_anc0_not_blocker {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ y, Relation.ReflTransGen (nextrel0 (((0, v, z) : ℕ × ℕ × ℕ) :: R)) y R.length →
+      y ≠ 0 → v < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 y := by
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hlt : R.length < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := by
+    simp only [List.length_cons]; omega
+  have hle1 : le1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 R.length :=
+    (L53.tower2_root_spec hRne hd hi2 hpM).2.2.2.2.1
+  have hv : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+  have hres := (le1_zero_iff (L53.root_row0_min hR) hlt).mp hle1
+  intro y hy hy0
+  have := hres y hy hy0
+  rwa [hv] at this
+
+/-! ### 63.2 ⟹ なぜそれが (D) になるか（設計図）
+
+塔のブロック `k`（`k ≥ 1`）の**根**は、`Q = (0,v,z) :: R.dropLast` の根を
+行 0 で `k*d` ずらしたもの（`d = entry R 0 (|R|-1)`）。
+一方 `X = (0,v,z) :: R` の**末尾列**は行 0 が `d`。
+
+⟹ **`k*d = d + (k-1)*d`** なので、**ブロック `k` の根は「`X` の末尾列をブロック `k-1` の
+座標系に置いたもの」**であり、その行 0 の親も同じ対応でうつる。
+
+⟹ **ブロック `k` の根のブロック外の祖先 ＝ `X` の末尾列の（根以外の）行 0 祖先の像。**
+そして上の `tower_anc0_not_blocker` がそれらを**すべて非ブロッカー**にする。
+（ブロック `k'` に落ちた像の行 1 は `Q` の行 1 ＋ `k'*e`（錐の上）で、**減らない** ⟹
+`v` より大きいまま。）
+
+⟹ **(D) の機構はこれ。R2 の実測 346,320 件・例外 0 と一致する。**
+
+⚠ **まだ (D) 自体の証明ではない。** 上の「対応」を Lean で書くには
+ブロックの添字づけ（`mTower` の flatMap の第 `k` 成分）を扱う必要がある。
+だが **機構が仮定から出ることは確定した**ので、
+**`LiftFlatMapLocal`（§62）は「実測で真」から「仮定から出るはず」に格上げされた。**
+
+### 63.3 ⟹ R2 の設計図の現状
+
+    1. `le1 Bk 0 i ↔ le1 Q 0 i`             ← **`le1_block`（§60、緑）**
+    2. 鎖のブロック内部分 ＝ 単体の鎖         ← `Core.le0_shiftr01` ＋ `Wset.le1_Lift1`（緑）で出るはず
+    3. **鎖のブロック外の祖先は行 1 > `v`**   ← **`tower_anc0_not_blocker`（上、緑）が中身**
+    4. 1+2+3 ＋ `le1_zero_iff` ⟹ (B) ⟹ §231 ⟹ `mTower = operTower`
+
+**⟹ 3 の「本当の補題」は塔の仮定から出た。残るのは 2 と、ブロック添字の機械的な扱いだけ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
