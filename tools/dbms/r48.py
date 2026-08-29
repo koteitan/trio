@@ -253,7 +253,12 @@ if __name__ == '__main__':
         # (2) 反証型: W 0 で C in W 0 かつ C+[p] not in W 0 を探す
         print('  反証型: NS=%s depth=%d COLS=%d 列' % (str(NS), DEP, len(WIDE)),
               flush=True)
-        inw0 = [C for C in P if inW(C, 0, DEP, memo, NS) is True]
+        # mC = 0 の C だけが W 0 の候補（他は inW(.,0) が False/None）
+        cand0 = [C for C in P if m2.get(0) is None and True]
+        cand0 = [C for C in P if minstage(C, m2, (1, 2)) == 0]
+        print('  W 0 の候補 %d 個を NS=%s で確認しなおす' % (len(cand0), str(NS)),
+              flush=True)
+        inw0 = [C for C in cand0 if inW(C, 0, DEP, memo, NS) is True]
         print('  **C in W 0（NS 全部で確認）: %d / %d**' % (len(inw0), len(P)),
               flush=True)
         tot = Counter(); ex = []; t0 = time.time()
@@ -261,7 +266,7 @@ if __name__ == '__main__':
             if time.time() - t0 > 2400: tot['時間切れ']+= 1; break
             cand = [p for p in WIDE if has_parent(C + [p], len(C))]
             cand.sort(key=lev, reverse=True)
-            for p in cand[:12]:          # 親が付く中で lev が大きい順
+            for p in cand[:int(sys.argv[5]) if len(sys.argv) > 5 else 12]:
                 r = inW(C + [p], 0, DEP, memo, NS)
                 if r is None: tot['undecided'] += 1
                 elif r is True: tot['C+[p] in W 0'] += 1
