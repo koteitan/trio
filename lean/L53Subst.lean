@@ -4202,6 +4202,63 @@ theorem TRIO_terminates_of_core (hs : CoreSingleton) : WellFounded stepRel
 路線 B の地図としては価値があるが、**停止性への最短路ではない**。 -/
 
 
+/-! # ★★★★★ 課題 L104: `CoreCap` と `TowerOK2` を並べる
+
+## 3.（先に）**`CoreCap` が偽である証拠は見つかりませんでした**
+
+    `git log -S'CoreCap' -- lean/` … 10 commit
+      `23b31fd v0.118.55/the residue loses GX: a pure W-level cap statement`
+      `3f9c945 v0.118.56/InfEquip is false; the residue drops to a single core`
+      `1daa491 v0.118.57/soundness probe for the single remaining core`      ← **健全性を測っている**
+      `8a7ffa3 v0.118.59/probe CoreCap with the stage included`              ← **段込みで測り直している**
+
+`InfEquip` は**結論に不等式 `entry M 2 p ≤ 1`** を含んでいたので反例で潰れた。
+`CoreCap` の結論は **`W` 所属**であって不等式ではないので、同じ潰れ方はしない。
+⚠ ただし `b c` が**無制限**（`c ≥ 2` も含む）なのは `InfEquip` と同じ危うさ。
+**H11 に「`c ≥ 2` の cap でも `W` に入るか」を測ってもらう価値がある。**
+
+## 1. 量化と前提の数
+
+    `CoreCap`（`Lind.lean:176`）   … 量化 **7**（`M v z b c a t`）／前提 **5**
+      `argOK M` / `1 ≤ |M|` / `z ≤ 1` / **`CtxOK M v z`** / `2(v+t)+z ≤ a`
+      結論 `Lift1 ((0,v,z) :: cap M b c) t ∈ W a`
+
+    `TowerOK2`（`L53Subst.lean`）  … 量化 **6**（`v z u0 a R n`）／前提 **9**
+      `argOK R` / `R ≠ []` / `z ≤ 1` / `2v+z ≤ a` / **`Aop W u0 Wstar R`** /
+      `∃ m, domT R m` / `srow = 2` / `hasParent` / `1 ≤ n`
+
+**⟹ `CoreCap` のほうが前提が 4 本少なく、`Aop` の選言も `domT` も `srow` の場合分けも
+入らない。** 主語は 1 列ではないが（`cap M b c` は `M` と同じ長さ）、**文は単純**。
+
+## 2. ★★ 今日の道具は `CoreCap` に効く: **`cap` は「接頭辞パッケージに 1 列 snoc」**
+
+`Lind.cap M b c = M.dropLast ++ [(entry M 0 (|M|-1), b, c)]`（`Lind.lean:166`）なので
+
+    `(0,v,z) :: cap M b c = ((0,v,z) :: M.dropLast) ++ [新しい列]`
+
+そして `CtxOK M v z` は `k = |M|-1` で **`(0,v,z) :: M.dropLast` がパッケージ**だと言う。
+⟹ **`t = 0` の `CoreCap` はちょうど `WSnoc`**（下の `cons_cap_of_wsnoc`、緑）。
+
+**⟹ 今日の `liftStage_of_wsnoc` / `wsnoc_of_open` / `wsnoc_of_prefixCopies` は
+経路 C でもそのまま効く。** `t > 0` の側だけが `Lift1` との噛み合わせで残る。 -/
+
+/-- **★★★ `t = 0` の `CoreCap` は `WSnoc` そのもの。**
+（`Lind` を import せずに書けるよう、`cap` の中身を展開した形で述べる。） -/
+theorem cons_cap_of_wsnoc (hsn : WSnoc) {u : ℕ} {v z : ℕ} {M : TrioSeq}
+    (hMne : M ≠ [])
+    (hpre : (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast) ∈ W u) (b c : ℕ) :
+    (((0, v, z) : ℕ × ℕ × ℕ)
+      :: (M.dropLast ++ [((entry M 0 (M.length - 1), b, c) : ℕ × ℕ × ℕ)]))
+      ∈ W u := by
+  have hEq : (((0, v, z) : ℕ × ℕ × ℕ)
+      :: (M.dropLast ++ [((entry M 0 (M.length - 1), b, c) : ℕ × ℕ × ℕ)]))
+      = ((((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast)
+          ++ [((entry M 0 (M.length - 1), b, c) : ℕ × ℕ × ℕ)]) := by
+    rw [List.cons_append]
+  rw [hEq]
+  exact snoc_step hsn _ hpre (by simp)
+
+
 /-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
 
 ## 1. 上から下への連鎖（全部 Lean で緑）
