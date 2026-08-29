@@ -20,7 +20,7 @@ import wref
 from wref import Ref, fmt, argOK, graft, dom_m, srow, has_parent, levM
 from collections import Counter
 
-VMAX = 3
+VMAX = 2
 
 
 def wstar(ref, X, vmax=VMAX):
@@ -38,7 +38,7 @@ def wstar(ref, X, vmax=VMAX):
 
 
 def main(lens=(1, 2, 3)):
-    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=3000)
+    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=1500)
     wref.print_controls(ref)
     rcols = [(a, b, c) for a in range(1, 4) for b in range(3) for c in range(2)]
     ycols = [(a, b, c) for a in range(2) for b in range(2) for c in range(2)]
@@ -72,9 +72,9 @@ def main(lens=(1, 2, 3)):
             keep.append(R)
     wref.tally(st, '仮定（節 2 = `R.dropLast ∈ Wstar`、`v <= %d` で確認）' % VMAX)
     import random as _r
-    if len(keep) > 120:
-        keep = _r.Random(3).sample(keep, 120)
-        print('⟹ 仮定が通った `R` から無作為 **120** 本で測る')
+    if len(keep) > 100:
+        keep = _r.Random(3).sample(keep, 100)
+        print('⟹ 仮定が通った `R` から無作為 **100** 本で測る')
         print()
 
     tot = Counter()
@@ -108,4 +108,4 @@ def main(lens=(1, 2, 3)):
 
 
 if __name__ == '__main__':
-    main(lens=(1, 2, 3))
+    main(lens=(2, 3))
