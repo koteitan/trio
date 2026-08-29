@@ -5789,3 +5789,63 @@ L3 は既に `TowerExpBigZ`（`L105Cap.lean:3831`）で「`zle1 R` を足した�
     (c) `q = 0`（`hq1 : 0 < q`）の場合。根の列は別扱い
 
 **Lean**: `lean/H12H2.lean`（緑）。**プログラム**: `tools/dbms/h1/h89.py`。
+
+## §254. ★★★★★ **(C2) の枝が組み上がった（緑）** —— 錐の外の列で `hstep` は無料
+
+§253 の `mTower_orphan_row2_gen`（任意の `j`）＋ 位置合わせ ＋
+`L105Cap.snoc_orphan_W`（`L105Cap.lean:144`）を繋いだ。
+
+### §254.1 位置合わせ（§7、緑）
+
+`hstep` の主語 `mTower Q d e n ++ B.take (j+1)` は**塔の接頭辞**そのもの:
+
+    mTower_append_take  : mTower Q d e n ++ B.take (j+1)
+                            = (mTower Q d e (n+1)).take (n*|Q| + (j+1))
+    take_append_add     : (A ++ B).take (|A| + m) = A ++ B.take m
+                          （core に この形が無いので自前。帰納法 3 行）
+    nextrel2_take_iff   : nextrel2 (M.take l) a b ↔ nextrel2 M a b  （`b < l`）
+    hasParent_two_take  : hasParent (M.take l) 2 p ↔ hasParent M 2 p （`p < l`）
+
+⚠ `nextrel2_take_iff` の最小性条件の移送には **`L105Cap.le1_le'`（`:933`）**
+（`le1 M a b → a ≤ b`）が要る。これも既存。
+
+### §254.2 ★ 本体（緑、`sorry` 0）
+
+    snocStep_outOfCone :
+      `2 ≤ |M|`, **`0 < e`**, `hd0e`, `hr0`, `hlp`, `2 ≤ |M.dropLast|`,
+      `j < |M.dropLast|`, `0 < j`,
+      **`¬ le1 M 0 j`**（錐の外）, **`¬ hasParent M.dropLast 2 j`**（`Q` で孤児）,
+      `0 < entry M.dropLast 2 j`,
+      `mTower … ++ B.take j ∈ W u`, `… ≠ []`
+      ⟹ **`mTower … ++ B.take (j+1) ∈ W u`**
+
+⟹ **`hstep` の (C2)（錐の外）の枝は閉じた。**
+
+### §254.3 空虚検査（`h90.py`）—— `0 < e` は本当に成り立つか
+
+`hd1pos : 0 < e` は `le1_mTower_in_block` が要求する。**`e = 0` の塔では使えない。**
+⟹ 実際の場面で成り立つかを測った（母集団 = §252 と同じ）。
+
+| `|R|` | **分母** | **`0 < e`** | 割合 | `0 < d` |
+|--:|--:|--:|--:|--:|
+| 2 | **24** | **24** | **100.0%** | 24 (100.0%) |
+| 3 | **368** | **368** | **100.0%** | 368 (100.0%) |
+
+⟹ **空虚ではない。** しかも 100% には**構造的な理由がある（未証明の予想）**:
+
+> `hpM : hasParent ((0,v,z)::R) 2 |R|` の親が根なら `nextrel2` は
+> **`le1 M 0 (|M|-1)`** を要求する（＝ `hlp` がタダ）。そしてその鎖は
+> `0 ≠ |M|-1` なので `nextrel1` を 1 回は通り、行 1 は狭義増加する。
+> ⟹ **`entry M 1 0 < entry M 1 (|M|-1)`、すなわち `e > 0`。**
+> ⟹ **`hlp` と `hd1pos` は両方とも `hpM` から出るはず。未証明。**
+
+### §254.4 ⚠ 残っているもの（正直に）
+
+    (a) **`hlp` と `hd1pos` を `hpM` から導く**（§254.3 の予想）。**未証明**
+    (b) `hd0e : entry M 0 (0 + |M.dropLast|) = entry M 0 0 + d`
+        … `d` の定義（`oper_eq_mTower`）からほぼ自動のはずだが**未確認**
+    (c) **`j = 0`**（`hj1 : 0 < j`）… 根の列。別扱いが要る
+    (d) **錐の中の列 (C1)** … L3 が担当。`snocStep_outOfCone` は触っていない
+    (e) 錐の外でも `Q` の中で親を持つ列（実測 0.7%）… `horph` を満たさないので**射程外**
+
+**Lean**: `lean/H12H2.lean`（緑、定理 20 本、`sorry` 0）。**プログラム**: `h90.py`。

@@ -400,5 +400,139 @@ theorem mTower_orphan_row2_of_gen {M : TrioSeq} {d e n' : ℕ} (hM2 : 2 ≤ M.le
       ((mTower M.dropLast d e n').length + (M.dropLast.length - 1)) :=
   mTower_orphan_row2_gen hM2 hd1pos hd0e hr0 hlp hQ2 (by omega) (by omega) hout horph
 
+
+/-! ## 7. **位置合わせ** —— `hstep` の主語は塔の接頭辞
+
+`hstep` の主語は `mTower Q d e n ++ B.take (j+1)`（`B = Lift1 (shiftr01 (d*n) 0 Q) (e*n)`）。
+`mTower_succ` により `mTower Q d e (n+1) = mTower Q d e n ++ B` なので、
+
+    `mTower Q d e n ++ B.take (j+1) = (mTower Q d e (n+1)).take (n*|Q| + (j+1))`
+
+⟹ **`hstep` の主語は塔の接頭辞**。そして `hasParent` は接頭辞と行き来する。 -/
+
+/-- `nextrel2` は接頭辞と行き来する（終点が接頭辞に入っていれば）。 -/
+theorem nextrel2_take_iff {M : TrioSeq} {l a b : ℕ} (hl : l ≤ M.length) (hb : b < l) :
+    nextrel2 (M.take l) a b ↔ nextrel2 M a b := by
+  have hlen : (M.take l).length = l := by rw [List.length_take]; omega
+  constructor
+  · rintro ⟨hal, hbl, hab, hent, hle, hmin⟩
+    rw [hlen] at hal hbl
+    refine ⟨by omega, by omega, hab, ?_, (le1_take hl hb).mp hle, ?_⟩
+    · rwa [entry_take (show a < l by omega), entry_take hb] at hent
+    · intro j hj
+      have hjb : j ≤ b := le1_le' hj.2
+      have hres := hmin j ⟨hj.1, (le1_take hl (show b < l from hb)).mpr hj.2⟩
+      rwa [entry_take hb, entry_take (show j < l by omega)] at hres
+  · rintro ⟨hal, hbl, hab, hent, hle, hmin⟩
+    refine ⟨by rw [hlen]; omega, by rw [hlen]; omega, hab, ?_,
+      (le1_take hl hb).mpr hle, ?_⟩
+    · rw [entry_take (show a < l by omega), entry_take hb]; exact hent
+    · intro j hj
+      have hjl : j < l := by
+        have := (le1_take hl hb).mp hj.2
+        have : j ≤ b := le1_le' this
+        omega
+      have hres := hmin j ⟨hj.1, (le1_take hl hb).mp hj.2⟩
+      rw [entry_take hb, entry_take hjl]
+      exact hres
+
+/-- ⟹ 行 2 の `hasParent` も接頭辞と行き来する。 -/
+theorem hasParent_two_take {M : TrioSeq} {l p : ℕ} (hl : l ≤ M.length) (hp : p < l) :
+    hasParent (M.take l) 2 p ↔ hasParent M 2 p := by
+  have hnR : ∀ (N : TrioSeq) (j : ℕ), nextR N 2 j p ↔ nextrel2 N j p := by
+    intro N j; unfold nextR; rw [if_neg (by omega), if_neg (by omega)]
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, hj0, hu⟩
+    refine ⟨j0, (hnR M j0).mpr ((nextrel2_take_iff hl hp).mp ((hnR _ j0).mp hj0)),
+      fun y hy => hu y ((hnR _ y).mpr ((nextrel2_take_iff hl hp).mpr ((hnR M y).mp hy)))⟩
+  · rintro ⟨j0, hj0, hu⟩
+    refine ⟨j0, (hnR _ j0).mpr ((nextrel2_take_iff hl hp).mpr ((hnR M j0).mp hj0)),
+      fun y hy => hu y ((hnR M y).mpr ((nextrel2_take_iff hl hp).mp ((hnR _ y).mp hy)))⟩
+
+/-- `(A ++ B).take (|A| + m) = A ++ B.take m`（core に この形が無いので自前）。 -/
+theorem take_append_add (A B : TrioSeq) (m : ℕ) :
+    (A ++ B).take (A.length + m) = A ++ B.take m := by
+  induction A with
+  | nil => simp
+  | cons a A' ih =>
+      simp only [List.cons_append, List.length_cons]
+      rw [show A'.length + 1 + m = (A'.length + m) + 1 from by omega,
+        List.take_succ_cons, ih]
+
+/-- **位置合わせ**: `hstep` の主語は塔の接頭辞そのもの。 -/
+theorem mTower_append_take (Q : TrioSeq) (d e n j : ℕ) :
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)
+      = (mTower Q d e (n + 1)).take (n * Q.length + (j + 1)) := by
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [mTower_succ, ← hTlen, take_append_add]
+
+
+/-! ## 8. ★★★★★ **(C2) の枝が組み上がった** —— 錐の外の列で `hstep` は無料
+
+§253 の `mTower_orphan_row2_gen`（任意の `j`）＋ §7 の位置合わせ ＋
+`L105Cap.snoc_orphan_W`（`L105Cap.lean:144`）を繋ぐ。 -/
+
+open Classical in
+/-- ★★★★★ **錐の外の 行 2 正の列では `hstep` は無料**（`W u` に自動で入る）。 -/
+theorem snocStep_outOfCone {u : ℕ} {M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hQ2 : 2 ≤ M.dropLast.length)
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (horph : ¬ hasParent M.dropLast 2 j)
+    (hpos : 0 < entry M.dropLast 2 j)
+    (hC : mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j ∈ W u)
+    (hCne : mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j ≠ []) :
+    mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1) ∈ W u := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).length
+      = M.dropLast.length := by rw [Lift1_length, shiftr01_length]
+  have hTlen : (mTower M.dropLast d e n).length = n * M.dropLast.length :=
+    mTower_length M.dropLast d e n
+  have hjB : j < (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).length := by
+    rw [hBlen]; omega
+  have hsplit : (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)
+      = (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j
+        ++ [(Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n))[j]'hjB] :=
+    List.take_succ_eq_append_getElem hjB
+  have hCl : (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length
+      = n * M.dropLast.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  -- ★ 行 2 が正 ⟹ `srow = 2`
+  have hpos' : 0 < entry (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 2
+      (n * M.dropLast.length + j) := by
+    rw [show n * M.dropLast.length + j = (mTower M.dropLast d e n).length + j from by
+        rw [hTlen],
+      entry_append_right, entry_take (by omega), entry2_Lift1, entry2_shiftr01]
+    exact hpos
+  have hsrow2 : srow (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (n * M.dropLast.length + j) = 2 := by
+    unfold srow; rw [if_pos hpos']
+  -- ★ 塔でも孤児（§253 の一般化 ＋ §7 の位置合わせ）
+  have horph2 : ¬ hasParent (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 2
+      (n * M.dropLast.length + j) := by
+    rw [mTower_append_take,
+      hasParent_two_take (by rw [mTower_length, Nat.succ_mul]; omega)
+        (show n * M.dropLast.length + j < n * M.dropLast.length + (j + 1) from by omega)]
+    have := mTower_orphan_row2_gen (n' := n) hM2 hd1pos hd0e hr0 hlp hQ2 hj hj1
+      hout horph
+    rwa [hTlen] at this
+  -- ★ 孤児 snoc は無料
+  rw [hsplit, ← List.append_assoc]
+  refine snoc_orphan_W _ hC hCne ?_
+  rw [List.append_assoc, ← hsplit, hCl, hsrow2]
+  exact horph2
+
 end H12H2
 end TRIO
