@@ -3840,6 +3840,105 @@ theorem towerExpBigZ_srow2_z_zero {v z m : ℕ} {R : TrioSeq}
 「`R.dropLast` の行 2 ≡ `z` ＝ `0`」枝は **`zeroRow2_mem_Wself` で無料**になる。
 残るのは **`R.dropLast` に行 2 = 1 の列がある**場合だけ。 -/
 
+
+/-! ## 52. ★★★★★★ 課題 L130: **ブロッカーがある場合の残核は `LiftTieCore` そのもの**
+
+H12 の閉じた形（ブロック `k` ＝ `Lift1 (shiftr01 (k·d) 0 B) (k·e)`）に、
+午後に削った**仮定ゼロ**の道具を当てる。
+
+まず `Lift1` と行 0 の一様シフトは**可換**（`Core.le1_shiftr01`（`:3470`）と
+`Core.entry0_shiftr01`（`:3401`）/ `entry1_shiftr01`（`:3407`）/ `entry2_shiftr01`（`:3416`）から）。
+⟹ **ブロックの所属は `B = (0,v,z) :: R.dropLast` についての `Lift1` に帰着する。**
+`B` は cons 形なので、`liftStage_of_strict` / `liftStage_of_noTie` /
+`liftTie_case_tieFree` / `liftStage_of_zeroRow2` が**そのまま当たる**。 -/
+
+theorem Lift1_shiftr01 (d e : ℕ) (X : TrioSeq) :
+    Lift1 (shiftr01 d 0 X) e = shiftr01 d 0 (Lift1 X e) := by
+  classical
+  have hlen : (Lift1 (shiftr01 d 0 X) e).length
+      = (shiftr01 d 0 (Lift1 X e)).length := by
+    rw [Lift1_length, shiftr01_length, shiftr01_length, Lift1_length]
+  refine List.ext_getElem hlen ?_
+  intro i hi1 _
+  rw [Lift1_length, shiftr01_length] at hi1
+  have hiS : i < (shiftr01 d 0 X).length := by rw [shiftr01_length]; exact hi1
+  have hiL : i < (Lift1 X e).length := by rw [Lift1_length]; exact hi1
+  have e0 : entry (Lift1 (shiftr01 d 0 X) e) 0 i
+      = entry (shiftr01 d 0 (Lift1 X e)) 0 i := by
+    rw [entry0_Lift1, entry0_shiftr01 hi1, entry0_shiftr01 hiL, entry0_Lift1]
+  have e1 : entry (Lift1 (shiftr01 d 0 X) e) 1 i
+      = entry (shiftr01 d 0 (Lift1 X e)) 1 i := by
+    rw [entry1_Lift1 hiS, entry1_shiftr01, entry1_shiftr01, entry1_Lift1 hi1,
+      le1_shiftr01]
+  have e2 : entry (Lift1 (shiftr01 d 0 X) e) 2 i
+      = entry (shiftr01 d 0 (Lift1 X e)) 2 i := by
+    rw [entry2_Lift1, entry2_shiftr01, entry2_shiftr01, entry2_Lift1]
+  rw [← entry_triple (X := Lift1 (shiftr01 d 0 X) e)
+      (by rw [Lift1_length, shiftr01_length]; exact hi1),
+    ← entry_triple (X := shiftr01 d 0 (Lift1 X e))
+      (by rw [shiftr01_length, Lift1_length]; exact hi1), e0, e1, e2]
+
+/-- **★★★ ブロックの所属は `B` についての `(WL)` に帰着する。** -/
+theorem block_mem_of_liftStage {B : TrioSeq} {m d e : ℕ}
+    (h : Lift1 B e ∈ W (m + 2 * e)) :
+    Lift1 (shiftr01 d 0 B) e ∈ W (m + 2 * e) := by
+  rw [Lift1_shiftr01]
+  exact W_shift h d
+
+/-! ### 52.1 ★ ブロッカーがある場合の 3 分割（`B = (0,v,z) :: R'`）
+
+**ブロッカー** ＝ 根以外で行 1 ≤ `v` の列。それがあるとき、さらに 3 つに割れる:
+
+    (α) **タイが無い**（`∀ p ∈ R', p.2.1 ≠ v`。ブロッカーは全部 `< v`）
+        ⟹ **`L53.liftStage_of_noTie`（仮定ゼロ）** で無料
+    (β) **タイがあり `TieFree`**（実測 6.1%）
+        ⟹ **`L53.liftTie_case_tieFree`（既存定理）** で無料
+    (γ) **行 2 ≡ 0**
+        ⟹ **`liftStage_of_zeroRow2`（§32、仮定ゼロ）** で無料（`d` にも `v` にも依らない）
+    (δ) 残り ＝ **タイあり ∧ `¬TieFree` ∧ 行 2 に非零** ＝ **`LiftTieCore`（§29）そのもの**
+
+⟹ **`TowerExpBig` のブロック所属の残核は、午後に `CoreCap` 側で削った
+`LiftTieCore` と同じ命題である。** -/
+
+open Classical in
+/-- **★★★★★★ ブロックの所属は `LiftTieCore` に帰着する。** -/
+theorem block_mem_of_liftTieCore (h : LiftTieCore) {v z d : ℕ} {R' : TrioSeq}
+    (hargOK : argOK R')
+    (hB : (((0, v, z) : ℕ × ℕ × ℕ) :: R') ∈ W (2 * v + z)) (e : ℕ) :
+    Lift1 (shiftr01 d 0 (((0, v, z) : ℕ × ℕ × ℕ) :: R')) e
+      ∈ W (2 * v + z + 2 * e) := by
+  refine block_mem_of_liftStage ?_
+  exact liftSelf_of_unit (liftTieSelfUnit_of_core h) e v z R' hargOK hB
+
+/-! ### 52.2 ⟹ **両路線は本当に 1 点で出会いました**
+
+    経路 C（`CoreCap` ⟺ `GraftAll`）… 残核は `LiftTieCore`（§29、`d=1`・自己段・タイ・`¬TieFree`）
+    経路 D（`TowerOK` ⟸ `TowerExpBig`）
+      ブロック 1 個を `W` に入れる … **`LiftTieCore`**（上、緑）
+      ブロックを繋ぐ               … `ShiftTowerClosedS`（§43）／`shTower2` 版
+
+⟹ **(1) は同じ命題。(2) だけが経路 D 固有。**
+そして (2) は `L47W.shiftTowerClosed_iff_wself`（緑・両向き）で **`Wself` の閉包 1 点**に落ちる。
+
+⚠ **(2) が `WCat` に落ちるかは未確認。** `CORES.md:38` は `ShiftTowerClosedS ⟸ WCat` と
+**上流**を記録しているだけで、逆（`ShiftTowerClosedS → WCat`）の補題は `grep` で見つからない。
+⟹ **`ShiftTowerClosedS` は `WCat` より弱い可能性が残っている。**
+`WCat` は任意の `A ++ B` を要求するが、`shTower` は**同じ 1 単位の反復**しか要求しないので、
+**弱いほうに賭ける価値がある**と思う。
+
+### 52.3 ⚠ 残核の割合について（H12 の数字への回答）
+
+H12 の「ブロッカーあり ＝ 残核が `|R|` とともに 37.5% → 83.2% と単調増加」は受け取った。
+⚠ ただし **上の 3 分割（α)(β)(γ) がその中をさらに削る**ので、
+**「ブロッカーあり」＝ 残核ではない。**
+
+    ブロッカーあり ∧ タイ無し   … (α) で無料
+    ブロッカーあり ∧ タイ ∧ `TieFree` … (β) で無料
+    行 2 ≡ 0                    … (γ) で無料（ブロッカーの有無に依らない）
+
+⟹ **H12 には「ブロッカーあり」をさらに (α)(β)(γ)(δ) に割って数えてもらうのが正確**。
+測るべきは **(δ) の割合**である。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
