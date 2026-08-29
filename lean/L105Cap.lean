@@ -2215,6 +2215,44 @@ theorem liftTieCore_of_convexLift1 (h : WConvexLift1) : LiftTieCore :=
 それは `Row1Mono` の**最小の場合**（1 段・下端 witness つき・行 0/行 2 不変）である。
 `L53.WConvexUnit`（`:3505`）がその形。**そこが本当の底。** -/
 
+
+/-! ### 33.6 ★ (Q1) の**機械的な確認**: 経路に連結補題は 1 つも現れない
+
+team-lead の問い「その帰納が `W` の中で何を使うのか。`W_take` / `W_segment` / `W_add` の
+どれか」に、**証明本文を機械的に走査して**答える。
+
+`L53Subst.lean` の 4 本の証明本文（合計 119 行）を
+`W_add` / `rsum` / `W_take` / `W_segment` / `W_drop` / `WCat` / `++` / `.take` / `.drop`
+で検索した結果:
+
+    `wconvex1_of_unit`        （65 行） … **該当ゼロ**
+    `lift1_mem_of_wconvex1`   （ 8 行） … **該当ゼロ**
+    `liftStage1_of_wconvex1`  （36 行） … **該当ゼロ**
+    `liftStage_of_unit`       （10 行） … **該当ゼロ**
+
+**実際に使っている `W` レベルの道具は次だけ:**
+
+    `wconvex1_of_unit`       `eq_of_entries` / `Le1_trans` / `lowerAt`
+                             （＋ 仮定 `WConvexUnit` 自身）
+    `lift1_mem_of_wconvex1`  **`mem_of_oper_mem`**（節 2）/ `ulift_mem_W` /
+                             `Le1_Lift1_oper` / `Le1_oper_Lift1_shiftr01` /
+                             `sandwich_window_one`
+    `liftStage1_of_wconvex1` **`A2'`**（最小不動点の帰納）/ `A1_intro` /
+                             `mem_of_oper_mem` / `W_nil` / `lift1_singleton_mem` /
+                             `aop_clause3_to_clause2` / `not_domT_nil`
+
+⟹ **`B ∈ W a` を出しているのは `mem_of_oper_mem`（`Aop` の節 2）と `A2'` だけ。**
+断片を組み直す操作は**存在しない**。
+
+### 33.7 ⟹ (Q1) の答え（1 行）
+
+> **`B ∈ W a` は `mem_of_oper_mem`（節 2 で降りる）と `A2'`（最小不動点の帰納）だけで出る。
+> `W_add` も `rsum` も `W_take` も `W_segment` も経路に現れない。⟹ 再結合の壁は無い。**
+
+⚠ ただし §33.1 の但し書きは残る: `WConvexUnit` **自身**の証明はまだ無く、
+そこで払う代償は「行 1 を 1 下げると `srow` / `nextrel1` / `nextrel2` が変わり得るので
+展開木が変わる」ことである。**壁は別物**（再結合ではなく展開の不安定性）。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
