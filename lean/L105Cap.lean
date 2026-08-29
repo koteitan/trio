@@ -11305,6 +11305,27 @@ theorem nextrel1_tower_src_ge_prev_block {Q : TrioSeq} {d e N n j a : ℕ}
 **「行 0 の親 vs 行 `srow` の親」と同じ**主語の取り違え**である。**
 **⟹ 定義（`Trio.lean:107`）を開かずに、自分の言い換えの上で推論した。** -/
 
+/-! ## 162.9 ★★★★★★ **錐の中では行 2 の親は無料**（H12 の `h2_cone`）
+
+H12 が `h2` の正体を割りました: **`h2` ⟺ `z = 0` ∧「行 2 が正の列は全部錐の中」**。
+**⟹ 錐の中の列については、`entry Q 2 0 = 0` だけで行 2 の親が出ます。**
+道具は `Wset.hasParent_two_of`（`Wset:1858`）を `k := 0`, `b := j` で呼ぶだけ。
+
+⚠ **H12 の注意: `(k := 0)` を明示しないと `k` がメタ変数のまま `omega` が走って落ちます。** -/
+
+theorem h2_cone {Q : TrioSeq} (hz0 : entry Q 2 0 = 0) :
+    ∀ j, 1 ≤ j → j < Q.length → 0 < entry Q 2 j → le1 Q 0 j →
+      hasParent (Q.take (j + 1)) 2 j := by
+  intro j hj1 hjl hpos hcone
+  have hlen : (Q.take (j + 1)).length = j + 1 := by
+    rw [List.length_take]; omega
+  refine hasParent_two_of (M := Q.take (j + 1)) (b := j) (k := 0)
+    (show j < (Q.take (j + 1)).length from by rw [hlen]; omega) (by omega) ?_ ?_
+  · exact (le1_take (by omega) (by omega)).mpr hcone
+  · rw [Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := 0) (by omega),
+      Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := j) (by omega), hz0]
+    omega
+
 /-! ## 161. ★★★★★★★ §154 の `entry Q 2 0 = 0` を外す（`z = 1` への対応）
 
 team-lead が消費側（`liftTowerExp2_of_mTowerClosedS`、`:5686`）を追って、
@@ -11442,8 +11463,7 @@ open Classical in
 theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
-    (h2 : ∀ j, 0 < j → j < Q.length → 0 < entry Q 2 j →
-      hasParent (Q.take (j + 1)) 2 j)
+    (hz0 : entry Q 2 0 = 0)
     (hstep : ∀ (n j : ℕ), j < Q.length →
       (0 < j → n * Q.length ≤
         parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -11473,7 +11493,8 @@ theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
   refine hstep n j hj (fun hj1 => ?_) hC
   -- ブロック内に親（§154）⟹ 同じブロック（§141）
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all' hj hj1 hr0 hnb (h2 j hj1 hj)
+    block_blockParent_all' hj hj1 hr0 hnb
+      (fun hpos => h2_cone hz0 j hj1 hj hpos (le1_zero_of_no_blocker hr0 hnb hj))
   have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
@@ -11598,8 +11619,7 @@ open Classical in
 /-- **★★★★★★★ 核の最終形**: `hnb` なし。**錐の中の列については「親は同じブロック」が無料**。 -/
 theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (h2 : ∀ j, 0 < j → j < Q.length → 0 < entry Q 2 j →
-      hasParent (Q.take (j + 1)) 2 j)
+    (hz0 : entry Q 2 0 = 0)
     (hstep : ∀ (n j : ℕ), j < Q.length →
       (0 < j → le1 Q 0 j → n * Q.length ≤
         parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -11628,7 +11648,8 @@ theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
       entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
   refine hstep n j hj (fun hj1 hcone => ?_) hC
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj1 hj)
+    block_blockParent_all_cone hj hj1 hr0 hcone
+      (fun hpos => h2_cone hz0 j hj1 hj hpos hcone)
   have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
@@ -11914,8 +11935,7 @@ open Classical in
 theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
     (hA : A ∈ W u)
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (h2 : ∀ j, 0 < j → j < Q.length → 0 < entry Q 2 j →
-      hasParent (Q.take (j + 1)) 2 j)
+    (hz0 : entry Q 2 0 = 0)
     (hstep : ∀ (n j : ℕ), j < Q.length →
       (0 < j → le1 Q 0 j → (A ++ mTower Q d e n).length ≤
         parent (A ++ mTower Q d e n
@@ -11948,7 +11968,8 @@ theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
     rw [entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
   refine hstep n j hj (fun hj1 hcone => ?_) hC
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj1 hj)
+    block_blockParent_all_cone hj hj1 hr0 hcone
+      (fun hpos => h2_cone hz0 j hj1 hj hpos hcone)
   have hpar : hasParent (A ++ mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((A ++ mTower Q d e n ++ B.take (j + 1)).length - 1) := by
@@ -12082,8 +12103,9 @@ open Classical in
 theorem prefixTowerClosed_final {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
     (hA : A ∈ W u)
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hz0 : entry Q 2 0 = 0)
     (hstep : ∀ (n j : ℕ), j < Q.length →
-      (0 < j → le1 Q 0 j → (0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) →
+      (0 < j → le1 Q 0 j →
         (A ++ mTower Q d e n).length ≤
           parent (A ++ mTower Q d e n
               ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -12115,9 +12137,10 @@ theorem prefixTowerClosed_final {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
       ((A ++ mTower Q d e n).length + j) = srow (B.take (j + 1)) j := by
     unfold srow
     rw [entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
-  refine hstep n j hj (fun hj1 hcone hlocal2 => ?_) hall
+  refine hstep n j hj (fun hj1 hcone => ?_) hall
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all_cone hj hj1 hr0 hcone hlocal2
+    block_blockParent_all_cone hj hj1 hr0 hcone
+      (fun hpos => h2_cone hz0 j hj1 hj hpos hcone)
   have hpar : hasParent (A ++ mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((A ++ mTower Q d e n ++ B.take (j + 1)).length - 1) := by
@@ -12581,6 +12604,45 @@ theorem nextrel1_block_sameBlock_out {A Q : TrioSeq} {d e n q y : ℕ}
 ⚠ **教訓 14**: **1 歩だけです。鎖はまだ書いていません。**
 **⟹ そして鎖を書くには「途中の列も `q ≥ 1` かつ（錐の中 or 行 1 が根より上）」が要ります。
 それが自動かはまだ見ていません。** -/
+
+/-! ## 178. ✅ **H12 の差分を入れました**: `h2` が **`entry Q 2 0 = 0`** に落ちました
+
+H12 が `h2` の正体を割りました（3 方向とも緑）:
+
+> **`h2` ⟺ `z = 0` ∧「行 2 が正の列は全部 行 1 の錐の中」**
+
+**そして核の中では `hcone : le1 Q 0 j` が**既にスコープにいる**ので、
+行 2 の親は `Wset.hasParent_two_of` を `k := 0` で呼ぶだけで出ます。**
+
+**⟹ `h2`（`∀ j` の主張）が `hz0 : entry Q 2 0 = 0`（**等式 1 本**）に落ちました。**
+
+    §160 `mTowerClosed_of_snocStepSameBlock`  … `h2` → `hz0`
+    §163 `mTowerClosed_of_snocStepCone`       … `h2` → `hz0`
+    §167 `prefixTowerClosed_of_snocStepCone`  … `h2` → `hz0`
+    §169 `prefixTowerClosed_final`            … `hstep` の第 3 引数を落として `hz0` へ
+
+**⟹ 今度は本当に前提が 1 本減りました**（`h2 ⟹ hz0` は R2 の導出、逆は成り立たない）。
+
+### 178.1 ⚠ H12 の但し書き 2 つ（そのまま）
+
+    **1** `hz0` は消費側では **`z = 0`**（`entry Q 2 0 = z`）。**`z = 1` は別扱いが要る**
+         ⟹ `zle1 R` があれば `towerExpBigZ_srow2_z_zero`（`:3840`）で空虚にできるが、
+           **`LiftTowerExp2` が `zle1 R` を供給できるかは未確認**
+    **2** **`h2` を消しても (C2)（錐の外の列）は残る**（実測 21.8 / 52.3%）
+
+### 178.2 ⟹ 残る核は 2 つだけになりました
+
+    **(C2)** **錐の外の行 2 の列**（孤児か復活）
+    **(Z1)** **`z = 1` の根**（`hz0` が偽になる）
+
+⚠ **そして §176.3 のとおり、この 2 つは**同じ場所**を指しています:**
+**錐の中で行 2 の孤児であるには `entry Q 2 0 = 1`（＝ `z = 1`）が要り、
+錐の外なら鎖がブロック内で終わる。**
+**⟹ **`z = 1` かつ錐の中の行 2 の列**が核。§176.4 と一致します。**
+
+⚠ **教訓（H12 との差）**: H12 は `h2` の**定義を開いて**「錐の中では無料」に気づきました。
+私は `h2` を**前提として動かす**（`∀ j` → 列ごと）ことしか考えていませんでした。
+**⟹ 前提を動かす前に、その前提が**何を言っているか**を開く。** -/
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
