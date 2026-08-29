@@ -29,7 +29,30 @@
 **道具は残る**（`srow_Lift1` / `liftStage_of_zeroRow2` / `le1_root_of_rtg0` / `srow_lowerAt` /
 `constRow2_mem_W` は `TowerExp` でも使える可能性が高い）。
 
-## ★ 次の一手（課題 L121 / R102）
+## ★★ さらに `TowerExpBig` まで絞れた（`L105Cap.lean:2752`、緑）
+
+    `towerExp_singleton`       ★ **`|R| = 1` の `TowerExp` は定理**（仮定ゼロ）
+    `oper_eq_dropLast_of_domT` `|R| >= 2` なら `domT` から `R⟦n⟧ = R.dropLast`
+    **`towerOK_of_towerExpBig (h : TowerExpBig) : TowerOK`**（`:2770`、緑）
+
+    def TowerExpBig
+      ∀ v z m a R, argOK R → **2 <= |R|** → z <= 1 → 2v+z <= a →
+        domT R m → **`R.dropLast ∈ Wstar`** →        ← **`∀ n` が消えた。仮定 1 本**
+        hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
+        ∀ n >= 1, ((0,v,z) :: R)⟦n⟧ ∈ W a
+
+## ★ 次の一手（課題 L121 / R102 / H64）
+
+**`|R| = 1` の証明の骨がどこで効かなくなるかを特定する:**
+
+    `|R| = 1`  … `R.dropLast = []` ⟹ `graft R y` は `y` の行 0 をずらすだけ
+                 ⟹ **塔の全列の行 2 が `z`** ⟹ 末尾は必ず孤児 ⟹ `oper` は `Pred`
+    `|R| >= 2` … `graft R y` の胴体に **`R.dropLast` が入る**
+                 ⟹ その行 2 は `z` とは限らない ⟹ **行 2 は定数でなくなる**
+
+⟹ **`|R| = 2` で `R.dropLast = [(d,b,c)]` の行 2 `c` が `z` と違うとき、
+何が末尾列の孤児性を保証するのか。そこが `TowerExpBig` の本体。**
+
 
     `domT R m` ⟹ `|R| >= 2` なら `R⟦n⟧ = R.dropLast`（全 `n`）
     ⟹ **仮定 `∀ n >= 1, R⟦n⟧ ∈ Wstar` は `R.dropLast ∈ Wstar` と同値**のはず
