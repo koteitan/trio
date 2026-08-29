@@ -2328,5 +2328,143 @@ theorem towerOK2_of_noTie' {v m : ℕ} {R : TrioSeq}
     (noTie_prop hR hRne hd hi2 hnt hvw hpM)
 
 
+/-! ## ★★★ 課題 L81: 核を「タイのある根」だけに絞る
+
+`liftStage_of_noTie`（緑・仮定ゼロ）が無タイの全 `v` を覆うので、
+(WL) の残りは**タイのある根**だけ。 -/
+
+/-- **残る唯一の持ち上げ核**: 行 1 のタイがある根での (WL)。 -/
+def LiftTie : Prop :=
+  ∀ (m d v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W m →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (m + 2 * d)
+
+open Classical in
+/-- タイ／無タイで場合分け ⟹ 根つきの (WL) が全部出る。 -/
+theorem liftStage_cons (h : LiftTie) {m d v z : ℕ} {R : TrioSeq} (hargOK : argOK R)
+    (hX : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W m) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (m + 2 * d) := by
+  by_cases ht : ∃ p ∈ R, p.2.1 = v
+  · exact h m d v z R hargOK ht hX
+  · exact liftStage_of_noTie hargOK (fun p hp hpv => ht ⟨p, hp, hpv⟩) hX
+
+/-- `LiftStage`（全体版）はもちろん `LiftTie` を含む。 -/
+theorem liftTie_of_liftStage (h : LiftStage) : LiftTie :=
+  fun m d _ _ _ _ _ hX => h m d _ hX
+
+/-- ⟹ `Row1Mono` からも出る（`liftStage_of_row1mono` 経由）。 -/
+theorem liftTie_of_row1mono (h : Row1Mono) : LiftTie :=
+  liftTie_of_liftStage (liftStage_of_row1mono h)
+
+/-! ### 親の関係から `z < r2` と `v < w` が出る ⟹ `hz'` / `hvw` は仮定に要らない -/
+
+open Classical in
+/-- 根が親なら `nextrel2` の中身がそのまま取れる。 -/
+theorem tower2_root_spec {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    nextrel2 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 R.length := by
+  have hp0 := parent_is_root_of_domT hRne hd hpM
+  obtain ⟨q0, hq0, -⟩ := hpM
+  have hex : ∃ j0, nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow R (R.length - 1)) j0 R.length := ⟨q0, hq0⟩
+  have hspec : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      (parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length)
+      R.length := Classical.epsilon_spec hex
+  rw [hp0, hi2, nextR] at hspec
+  simpa only [if_neg (by omega : (2 : ℕ) ≠ 0),
+    if_neg (by omega : (2 : ℕ) ≠ 1)] using hspec
+
+/-- **`z < entry R 2 (末尾)`**（親の行 2 の狭義増加）。 -/
+theorem tower2_zr {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    z < entry R 2 (R.length - 1) := by
+  have h := (tower2_root_spec hRne hd hi2 hpM).2.2.2.1
+  rw [entry_cons_last hRne 2] at h
+  have hz : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 = z := by simp [entry]
+  rw [hz] at h
+  exact h
+
+/-- **`v < entry R 1 (末尾)`**（`le1` 錐は行 1 の狭義増加 — 課題 L80）。 -/
+theorem tower2_vw {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    v < entry R 1 (R.length - 1) := by
+  have hRpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hle := (tower2_root_spec hRne hd hi2 hpM).2.2.2.2.1
+  have h := le1_entry1_lt hle (by omega : (0 : ℕ) ≠ R.length)
+  rw [entry_cons_last hRne 1] at h
+  have hv : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+  rw [hv] at h
+  exact h
+
+/-- **★★ 段はいつでもちょうど収まる**（`z = 0` も `hz' = 1` も要らない）。 -/
+theorem tower2_stage_fits' {v z m : ℕ} {R : TrioSeq} (hd : domT R m)
+    (hzr : z < entry R 2 (R.length - 1)) (hvw : v ≤ entry R 1 (R.length - 1)) :
+    2 * v + z + 2 * (entry R 1 (R.length - 1) - v) ≤ m := by
+  have h1 := hd.1
+  unfold lev at h1
+  omega
+
+/-- **`domT` なら末尾の `srow` は `0` でない**（`towerOK_of_split` の `h0`）。 -/
+theorem srow_ne_zero_of_domT (R : TrioSeq) (hRne : R ≠ [])
+    (hdom : ∃ m, domT R m) : srow R (R.length - 1) ≠ 0 := by
+  obtain ⟨m, hd⟩ := hdom
+  have h1 := hd.1
+  unfold lev at h1
+  intro h0
+  unfold srow at h0
+  split at h0
+  · omega
+  · split at h0
+    · omega
+    · omega
+
+open Classical in
+/-- **★★★★★ `TowerOK2` の節 3 側が `LiftTie` だけに落ちた**（課題 L81）。
+
+`towerOK2_of_noTie'` / `towerOK2_of_strict'` を両方含む一般形:
+`z` は一般、`hz'` と `hvw` は親の関係から自動、無タイ／狭義の場合分けも内蔵。 -/
+theorem towerOK2_of_clause3 {v z a m : ℕ} {R : TrioSeq} (hlt : LiftTie)
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n : ℕ, (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  have hvw : v < entry R 1 (R.length - 1) := tower2_vw hRne hd hi2 hpM
+  have hzr : z < entry R 2 (R.length - 1) := tower2_zr hRne hd hi2 hpM
+  have hfits : 2 * v + z + 2 * (entry R 1 (R.length - 1) - v) ≤ m :=
+    tower2_stage_fits' hd hzr (by omega)
+  have hzero := oper_cons_zero (v := v) (z := z) hR hRne hd hpM
+  have key : ∀ n : ℕ, (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W (2 * v + z) := by
+    intro n
+    induction n with
+    | zero => rw [hzero]; exact W_nil _
+    | succ n ih =>
+        rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+        have hin : Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+            (entry R 1 (R.length - 1) - v) ∈ W m := by
+          cases n with
+          | zero => rw [hzero]; simpa using W_nil m
+          | succ k =>
+              rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM] at ih ⊢
+              exact W_mono hfits (liftStage_cons hlt (argOK_graft hRne hR _) ih)
+        have hb : based (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+            (entry R 1 (R.length - 1) - v)) := by
+          refine based_Lift1 ?_
+          cases n with
+          | zero => rw [hzero]; exact based_nil
+          | succ k =>
+              rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+              exact based_cons_root v z _
+        exact hgr _ hin hb (argOK_graft hRne hR _) v z (2 * v + z) hz1 (by omega)
+  exact fun n => W_mono hva (key n)
+
+
 end L53
 end TRIO
