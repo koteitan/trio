@@ -5321,3 +5321,57 @@ docstring がそのまま言っている:
 
 `GraftFromExp` の一般形は L2 の L90 で `Subst1gRevive` ＋ `WSnoc` に落ちているので、
 **塔の元に限った版はそれより弱いはず**。そこが次の削りどころ。
+
+---
+
+## ★ R85 —— **「界面を落とす」変換は `srow = 2` 側にも既にある**
+
+### ★ R85-a **`towerGraft2_lift_fam`（`Wset.lean:3458`）**
+
+`tower2_mem2_fam` という名前は無いが、**同じものが別名で存在する**:
+
+    **`towerGraft2_lift_fam`（`Wset.lean:3458`）**
+    docstring: 「**The family form of the row-2 tower**: only the graft obligations of
+    the tower's own lifted elements are consumed — **no `∀ y ∈ W m` interface**.
+    **This is the interface the clause-2-origin towers (Core β) can hope to satisfy.**」
+
+    **`towerGraft2_lift_mem_fam`（`:3898`）** … その `mem` 版
+
+⟹ **`srow = 2` 側にも「塔自身の元だけに graft 義務を課す」形が既にある。**
+しかも docstring が **「節 2 由来の塔（Core β）が満たしうる界面」**と
+**名指しで `:4447` の状況を指している。**
+
+`srow = 1` 側との違いは `Lift1 … d1`（**行 1 の持ち上げ** `d1 = entry R 1 (|R|-1) - v`）が
+入ること（`oper_cons_tower2`、`:3231`）。family 形はその持ち上げ込みで書かれている。
+
+### R85-b `GX` の所在 —— `Gamma.lean:169`
+
+    `GX := {y | based y → ∀ M, argOK M → 1 ≤ |M| → ∀ v z, z ≤ 1 → CtxOK M v z →
+             ∀ i ≤ |y|, ∀ a t, 2(v+t)+z ≤ a →
+             Lift1 ((0,v,z) :: graft M (y.take i)) t ∈ W a}`
+    `GXs`（`:178`）… `GX` ＋ 階段持ち上げで閉じた版
+
+⟹ **`GX` は「その元と**そのすべての接頭辞**の graft 義務」を束ねた集合。**
+`tower1_mem2_fam` の `hgrF` は、まさに `GX` の元であることが供給する。
+`srow = 2` 側の `towerGraft2_lift_fam` の `hgrF` も同じ形（`Lift1` が入るだけ）。
+
+### ★ R85-c docstring の機械的な掃き出し —— **「界面を落とす」層が 7 本ある**
+
+`can be dropped` / `no ∀ y ∈ W m` / `family form` / `is what supplies` などで検索:
+
+| 場所 | 定理 | 内容 |
+|---|---|---|
+| `Wset.lean:3458` | **`towerGraft2_lift_fam`** | 行 2 の塔の族形。`∀ y ∈ W m` 無し |
+| `Wset.lean:3898` | `towerGraft2_lift_mem_fam` | その `mem` 版 |
+| `Wset.lean:4122` | **`tower1_mem2_fam`** | 行 1 の塔の族形（§R84） |
+| `Gamma.lean:238` | **`CoreT2EFam`** | **Core β の族形** |
+| `Gamma.lean:271` | **`coreT2E_of_fam`** | 「**β の ∀ 界面は族形に還元される**」 |
+| `Gamma.lean:471` | **`tower1_mem2_gpow`** | 行 1 の塔の**生成族形**。`∀ y ∈ W m` 無し |
+| `Gamma.lean:499` | **`CoreGpowPeel`** | **Core α の生成族形（v0.120）。`∀ y ∈ W m` も `GX` も無し** |
+
+参考: `Gamma.lean:2558` `corePlantCtxLift_of_graftAll`
+（「plant core は `GraftAll` より弱くない」＝ 強さの比較）
+
+⟹ **`∀ y ∈ W m` の界面を落とす変換は、行 1 / 行 2 の両方、Core α / β の両方で
+既に Lean にある。**`CoreGpowPeel` は **`GX` すら落としている**。
+**⟹ この層が使われているかを確認する価値がある**（team-lead の §122 の見立てどおり）。
