@@ -3988,6 +3988,65 @@ theorem natDom_not_domT {R : TrioSeq} {m : ℕ} (hnat : natDom R) : ¬ domT R m 
   hnat m
 
 
+/-! # ⛔ 課題 L101 の判定: **`natDom` のガードは足せない。理由は行 2 の非対称性**
+
+⚠ 新しいファイル `L101Guard.lean` は**作りませんでした**（道が閉じているため）。
+
+## 決め手: `Wset.lean:4470` は **`domT (p0 :: R) m` の下で節 2 を使う**
+
+```lean
+· have hdM : domT (p0 :: R) m := domT_cons_of_dead hRnil hd hpM
+  by_cases hma : m < a
+  · refine A1_intro (Or.inr (Or.inr ⟨m, hma, hdM, …⟩))        -- 節 3（m < a のとき）
+  · -- the stage is below the orphan: fall back on the successor route
+    refine A1_intro (Or.inr (Or.inl (fun n hn => ?_)))          -- ★ **節 2**（a ≤ m）
+```
+
+`domT (p0 :: R) m` は `natDom (p0 :: R)` の**否定そのもの**（`natDom M := ∀ m, ¬ domT M m`）。
+⟹ **ガードを付けるとこの枝が塞がる。**
+
+しかも節 2 のこの使い方は `mem_of_oper_mem` として **`Wtower2` 17 / `Wslift` 7 /
+この file 3 か所**で使われている。
+
+## ★ なぜ 2 行では要らないか: **行 1 の孤児は必ず根の段より下にいる**
+
+`Wset.entry1_le_of_dead_one`（`Wset.lean:2694`）の docstring:
+
+> 行 1 の孤児が根に復活してもらえないなら、その列の行 1 は高々 `v`。
+> ⟹ レベルは高々 `2v ≤ 2v+z` —— **孤児は自動的に根の段より下**。
+> **行 2 にはそのような上界が無い**（`no_hasParent_two_of_row1_zero` が
+> レベル 0 の根の下にレベル 1 の永久孤児を与える）。
+> **この非対称性こそが trio が yapss より難しい理由。**
+
+⟹ **2 行では `a ≤ m` の場合が起きない**ので、`m < a` の節 3 だけで足り、
+節 2 に `natDom` のガードを置ける。**3 行では行 2 の孤児が `a ≤ m` を作る**ので、
+節 2 の「後退路」が要る。
+
+**⟹ `natDom` は移植のときに落ちたのではなく、3 行では置けない。**
+
+## ⟹ `GraftFromExp`（＝ `TowerExp`）は本当に要る
+
+課題 L100 (3) の懸念のとおり。**`TowerOK` を `TowerOK2` に弱めることはできない。** -/
+
+/-- ガードが塞ぐ枝（`Wset.lean:4470`）。 -/
+theorem guard_blocks_fallback {v z m : ℕ} {R : TrioSeq}
+    (hdM : domT (((0, v, z) : ℕ × ℕ × ℕ) :: R) m) :
+    ¬ natDom (((0, v, z) : ℕ × ℕ × ℕ) :: R) := fun h => h m hdM
+
+/-- **★★ 行 1 の死んだ孤児は必ず根の段より下**（⟹ 節 3 で足りる）。 -/
+theorem dead_row1_stage_lt {v z a m : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hva : 2 * v + z ≤ a) (h2 : entry R 2 (R.length - 1) = 0)
+    (hnp : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 R.length)
+    (hlev : lev R (R.length - 1) = m + 1) : m < a := by
+  have h1 := entry1_le_of_dead_one hR hRne hnp
+  unfold lev at hlev
+  omega
+
+/-- ⚠ **行 2 では上界が無い**ので `a ≤ m` が起こりうる。
+そこだけが節 2 の「後退路」を必要とし、そこだけがガードを不可能にする。 -/
+example : True := trivial
+
+
 /-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
 
 ## 1. 上から下への連鎖（全部 Lean で緑）
