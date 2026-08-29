@@ -4662,3 +4662,54 @@ L2 の進捗（`towerOK2_of_strict'` / `towerOK2_of_noTie'` が仮定ゼロ、�
 「自然な」`v = p0[1]` でも 46.5% がタイ）だけで、事実自体は Lean 側が把握している。
 
 ⟹ **`towerOK2_of_tie` は最後の 1 本だが、隅の場合ではない。** 見積もりに注意。
+
+---
+
+## R73 —— **`TowerExp`（もう 1 本の核）**
+
+### R73-a 含意地図 ＋ **R71-a の訂正**
+
+    `towerOK_of`（`Wset.lean:4514`）: **TowerGraft2 → TowerExp → TowerOK**
+
+⟹ **§R71-a で「`TowerOK` は独立枝で比較不能」と書いたのは誤り。撤回する。**
+`TowerOK` は **`TowerGraft2 ∧ TowerExp` から導かれる ＝ その 2 本より弱い**。
+弱いほうが証明しやすいので、**標的として `TowerOK` が良いという結論はむしろ強まる。**
+
+`TowerExp` 系の内部（`Wtower2.lean`）:
+
+    **TowerExp1（srow=1）∧ TowerExp2（srow=2）→ TowerExp**   `towerExp_of_rows :1865`
+    **ShiftTowerClosedS → TowerExp1**                        `towerExp1_of_tower :1882`
+    **TowerExp2Root → TowerExp2**                            `towerExp2_of_root`
+    **TowerExp2Root → TowerExp2Low**                         `towerExp2Low_of_root`
+    **SubstClosed ∧ LiftStage → TowerExp2Root**              `towerExp2Root_of_subst`
+    外から: WSnoc → TowerExp / WCat(+TowerExp2Low) → TowerExp /
+            ShiftTowerClosedS(+TowerExp2) → TowerExp / SubstClosedG → TowerExp
+
+⟹ **`TowerExp` は §R71-a の経路 A / B の中にある**（「相方」として挙げた `TowerExp` 系そのもの）。
+⟹ **`Wstar` 路線も経路 A/B と切れていない。** これも §R71-a の訂正。
+
+**無条件で証明ずみの `TowerExp1` は無い**（`ShiftTowerClosedS` が要る）。
+ただし docstring のとおり `TowerExp1` は「根が深さ 0 ＝ 最浅が自明」なので
+**`(TOW)` の行 2 ≡ 0 版（`shiftTowerClosed_of_zeroRow2`、証明ずみ）で済む場合がある**。
+それがどれだけかを R73-b で測った。
+
+### R73-b **`TowerExp` の場面がどれだけ出るか**（母数: ブック 20415 行に `Wstar` を当てた `P = p0::R` の 20345 件）
+
+    `R` の最後の列の `srow`   0: 7442 (36.6%) / 1: 6806 (33.5%) / 2: 6097 (30.0%)
+    `R` で孤児（`domT` の前提）           **5028 (24.7%)**
+    `R` で親を持つ（`domT` でない）        15317 (75.3%)
+
+    **srow=1 の 6806 件の内訳**
+      **`Q0` が行 2 ≡ 0 ⟹ 証明ずみ `shiftTowerClosed_of_zeroRow2` で済む   2085（srow=1 の 30.6%）**
+      `Q0` に行 2 = 1 ⟹ **`(TOW)` の一般形が要る**                         4721（69.4%）
+
+    展開の族 × `Q0` の行 2:
+      F2/z2 599 · F2/¬z2 6843 · F3/z2 2085 · F3/¬z2 4721
+      F4/z2 573 · F4/¬z2 3850 · F5/¬z2 1674
+
+⟹ **`TowerExp1` の 3 割は既存の定理で落ちるが、7 割は `(TOW)` の一般形（行 2 に 1 を含む `Q`）が要る。**
+これは §R33-1b で「`(TOW)` の難所は行 2 の列だけ」と測ったのと**同じ 1 点**。
+
+⚠ 注意: 上の `domT` 24.7% は「私の `Wstar` 適用点の `R`」での割合であって、
+**`TowerOK` が実際に呼ばれる場所での割合ではない**（`mem_Wstar` は
+`mem_of_Aclosed` の不動点論法で内側の `R` に当てるため）。過大解釈しないこと（教訓 12）。
