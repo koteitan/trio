@@ -54,21 +54,28 @@ from wcert import lev, lev0, srow, has_parent, rsum, _base, _orphan, audit, marg
 __all__ = ['wself2', 'wcert2', 'why2_detail', 'lev0', 'rsum']
 
 _MEMO = {}
-_C13_MAXLEN = 24      # (C13) を試す M の長さ上限（費用の打ち切り）
-_C13_MAXEXP = 90      # (C13) で見る展開の長さ上限（費用の打ち切り）
+_C13_MAXLEN = 12      # (C13) を試す M の長さ上限（費用の打ち切り）
+_C13_MAXEXP = 40      # (C13) で見る展開の長さ上限（費用の打ち切り）
 TOW_ORACLE = False    # 旧 (C14) 用（R68 で (C15) に置き換え）
-ASSUME = set()        # {'TOW','LTOW','MTOW','MLIFT'} のうち**仮定として足すもの**
-                      # 空なら strict（Lean で証明ずみの規則だけ）
+ASSUME = set()        # 仮定として足すもの。空なら strict（Lean 証明ずみの規則だけ）
+                      #   'S'     (SNOC-flat) 平らな列を、親が根でなくても足せる
+                      #   'D'     深い側の連結（`rsum` と `lev0(B) <= u` を落とした `W_add`）
+                      #   'TOW' 'LTOW' 'MLIFT'  塔の族（行 2 = 1 を含む Q の場合）
 
 
 def _peel(M):
-    """(C6') `snoc_orphan` を末尾から 1 段ずつ。**各段で基礎を全部見る**。"""
+    """(C6') `snoc_orphan` を末尾から 1 段ずつ。**各段で基礎を全部見る**。
+
+    `'S'`（**(SNOC-flat)**）を仮定すると、**平らな列（srow = 0）**は
+    親が根でなくても剥がせる（`snoc_flat_root`（`Wtower2.lean:2208`）から
+    「親が根」を落としたもの）。"""
     b = _base(M)
     if b:
         return b
     X, k = M, 0
     while len(X) >= 2:
-        if not _orphan(X, len(X) - 1):
+        if not _orphan(X, len(X) - 1) and not (
+                'S' in ASSUME and srow(X, len(X) - 1) == 0):
             return None
         X = X[:-1]; k += 1
         b = _base(X)
@@ -114,45 +121,45 @@ def _noliftexp(M):
     return 'C12(j0=%d)' % j0
 
 
-def _clause2_induction(M, N=6):
-    """(C13) **節 2 を n について帰納で閉じる**。
+def _clause2_induction(M, N=4):
+    """(C13) **節 2 を n について帰納で閉じる**（R69 で族の形に一般化）。
 
-    `srow(最後) = 0` のとき `M⟦n⟧ = P ++ Q*n`（持ち上げ無し。C12 の検算と同じ）。
-    ⟹ **`X_{n+1} = X_n ++ Q`**。各段の `X_n ∈ Wself` が **同じ規則**で
-    `X_{n-1} ∈ Wself` から出るなら、`∀ n ≥ 1` が **Nat の帰納**で閉じ、
-    節 2（`Aop`、`lean/Wset.lean:171`）で `M ∈ W u` が出る。
+    `expfam` より `X_n := M⟦n⟧ = A0 ++ concat_{k<n} (Q0 + k*D)`。⟹
 
-    一様性の根拠（n に依らない量）:
-      * `X_n` の**列の集合**は n によらない（P の列 ∪ Q の列）
-        ⟹ 「根が最浅」「`lev`」「`rsum`」の判定は n に依らない
-      * 最後の列は常に `Q[-1]` で、その親は n >= 2 で一定（前に Q の写しが増えるだけ）
+        **X_{n+1} = X_n ++ (Q0 + n*D)**
+
+    各段の `X_n ∈ Wself` が**同じ規則**で `X_{n-1} ∈ Wself` から出るなら、
+    `∀ n ≥ 1` が **Nat の帰納**で閉じ、節 2（`Aop`、`lean/Wset.lean:171`）で `M ∈ W u`。
+
+    一様性の根拠: 継ぎ足す塊 `Q0 + n*D` は **列の `srow` と行 2 が n に依らない**
+    （`D` の行 2 成分は 0、行 0/行 1 は増えるだけ）。⟹ 「平らな列か」「孤児か」の
+    判定に使う量が n によらない。
 
     ⚠ **`∀n` の一様性は n = 1..N で確かめている**（`N` を振って不動なことを別途測る）。
-    ⟹ 各段は証明ずみの規則だが、**この規則自体はまだ Lean に無い**。L2 への依頼。
+    **この規則自体はまだ Lean に無い**（L2 への依頼、L55-b）。
     """
-    j1 = len(M) - 1
-    if j1 < 1 or srow(M, j1) != 0 or not has_parent(M, j1):
-        return None
     if len(M) > _C13_MAXLEN:
-        return None                              # 費用の打ち切り（N と上限を振って検査する）
+        return None
+    r = expfam(M)
+    if r is None:
+        return None
+    A0, Q0, D = r
+    if not Q0:
+        return None
     Es = []
     for n in range(1, N + 2):
-        E = tuple(tuple(x) for x in trio.expand([tuple(p) for p in M], n))
-        if not E or E == M or len(E) > _C13_MAXEXP:
+        X = A0 + tuple(tuple(Q0[i][j] + k * D[i][j] for j in range(3))
+                       for k in range(n) for i in range(len(Q0)))
+        if len(X) > _C13_MAXEXP:
             return None
-        Es.append(E)
-    D = Es[1][len(Es[0]):]                       # X_2 = X_1 ++ D
-    if not D or Es[0] + D != Es[1]:
-        return None
-    for n in range(1, N):                        # X_{n+1} = X_n ++ D が一様か
-        if Es[n] + D != Es[n + 1]:
-            return None
+        Es.append(X)
     cs = [wself2(E) for E in Es]
     if any(c is None for c in cs):
         return None
-    if len(set(cs[1:])) != 1:                    # n >= 2 の証明書が**同じ規則**か
+    kinds = [c.split('(')[0].split('+')[0] for c in cs[1:]]
+    if len(set(kinds)) != 1:                 # n >= 2 の証明書が**同じ規則**か
         return None
-    return 'C13(%s)' % cs[1]
+    return 'C13(%s)' % kinds[0]
 
 
 def _towexp(M):
@@ -238,7 +245,7 @@ def famname(D):
     return 'F5'                            # 行 1 も列ごとに違う
 
 
-_NEED = {'F2': None, 'F3': 'TOW', 'F4': 'LTOW', 'F5e': 'MTOW', 'F5': 'MLIFT'}
+_NEED = {'F2': None, 'F3': 'TOW', 'F4': 'LTOW', 'F5e': 'MLIFT', 'F5': 'MLIFT'}
 
 
 def _famcert(M):
@@ -256,21 +263,32 @@ def _famcert(M):
         return None
     fam = famname(D)
     need = _NEED[fam]
+    # **`shiftTowerClosed_of_zeroRow2`（`lean/L47W.lean:136`、証明ずみ）**:
+    #   Q ∈ W u → (∀ p ∈ Q, p.2.2 = 0) → shTower Q e n ∈ W u
+    #   **側条件（根が最浅）を 1 度も使わない。**
+    # ⟹ 一様シフト塔（F2/F3）で `Q0` が行 2 ≡ 0 なら **仮定が要らず、根が最浅も要らない**。
+    z2 = all(p[2] == 0 for p in Q0)
+    proven_tow = fam in ('F2', 'F3') and z2
+    if proven_tow:
+        need = None
     if need is not None and need not in ASSUME:
-        return None                        # strict では F2 以外は使えない
+        return None                        # strict では証明ずみの族しか使えない
     u = lev0(M)
-    if lev0(Q0) > u:
-        return None                        # mem_Wself_iff
-    if not all(Q0[0][0] <= p[0] for p in Q0):
+    deep = 'D' in ASSUME
+    if not deep and lev0(Q0) > u:
+        return None                        # mem_Wself_iff（塔が W u に入るのに必要）
+    if not proven_tow and not all(Q0[0][0] <= p[0] for p in Q0):
         return None                        # 塔の側条件（根が最浅）
     if wself2(Q0) is None:
         return None
     if A0:
-        if not all(Q0[0][0] <= p[0] for p in A0):
+        if not deep and not all(Q0[0][0] <= p[0] for p in A0):
             return None                    # rsum(A0, 塔)。n に依らない
         if wself2(A0) is None:
             return None
-    return 'C15/%s%s' % (fam, '' if need is None else '[%s]' % need)
+    return 'C15/%s%s%s' % (fam + ('z2' if proven_tow else ''),
+                           '' if need is None else '[%s]' % need,
+                           '[D]' if deep else '')
 
 
 def wself2(M, depth=0):
@@ -295,17 +313,18 @@ def wself2(M, depth=0):
         r = _famcert(M)                  # (C15) 展開の族による節 2（厳密）
     if r is None:
         u = lev0(M)                          # lev (A++B) 0 = lev A 0
+        deep = 'D' in ASSUME
         for k in range(1, len(M)):
             A, B = M[:k], M[k:]
-            if lev0(B) > u:                  # mem_Wself_iff: B ∈ W u に必要
+            if not deep and lev0(B) > u:     # mem_Wself_iff: B ∈ W u に必要
                 continue
-            if not rsum(A, B):               # W_add の側条件
+            if not deep and not rsum(A, B):  # W_add の側条件
                 continue
             if wself2(A, depth + 1) is None:
                 continue
             if wself2(B, depth + 1) is None:
                 continue
-            r = 'C11(k=%d)' % k              # W_add
+            r = ('C11d(k=%d)[D]' if deep else 'C11(k=%d)') % k   # W_add
             break
     _MEMO[M] = r
     return r
