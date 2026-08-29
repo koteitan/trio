@@ -6648,6 +6648,49 @@ theorem nextrel0_gexp_no_skip {M : TrioSeq} {Lb d0 d1 n k q y : ℕ}
 
 ⚠ **錐の外の `b` については別**（`+k*d1` が付かないので上の矛盾が出ない）。**そこが残る。** -/
 
+/-! ## 87. ★★★★★★ **錐の中の列には、ブロック外から行 1 の親は来ない**
+
+§86.2 の設計図の実装。`nextrel1` の極小性条項に**ブロック `k` の根**を代入する。
+根は必ず錐の中なので行 1 が `+k*d1` され、目標の列も錐の中なら同じだけ上がる
+⟹ 比較が `Q` の中の比較に戻り、`Lcone.le1_entry1_lt` で矛盾する。 -/
+
+open Classical in
+theorem nextrel1_gexp_no_enter {M : TrioSeq} {Lb d0 d1 n k q a : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hq1 : 0 < q) (hcone : le1 M 0 (0 + q))
+    (hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l)
+    (h : nextrel1 (gexp M 0 Lb d0 d1 n) a (0 + (k * Lb + q))) :
+    k * Lb ≤ a := by
+  by_contra hc
+  have hXlen : (gexp M 0 Lb d0 d1 n).length = 0 + n * Lb := gexp_length hlen
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hMq : Relation.ReflTransGen (nextrel0 M) (0 + 0) (0 + q) :=
+    rtg0_of_window (by omega) (by omega) (fun l hl0 hl1 => hup l hl0 (by omega))
+  have hrtg : Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n))
+      (0 + (k * Lb + 0)) (0 + (k * Lb + q)) :=
+    gexp_rtg0_mir hlen hk hMq q rfl hq
+  have hle0 : le0 (gexp M 0 Lb d0 d1 n) (0 + (k * Lb + 0)) (0 + (k * Lb + q)) :=
+    ⟨by rw [hXlen]; omega, by rw [hXlen]; omega, hrtg⟩
+  have hmin := h.2.2.2.2.2 (0 + (k * Lb + 0)) ⟨by omega, hle0⟩
+  rw [gexp_entry1_mir hlen hk hq, gexp_entry1_mir hlen hk hLb] at hmin
+  rw [if_pos hcone, if_pos (le1_refl (show (0 : ℕ) < M.length from by omega))] at hmin
+  have hlt := le1_entry1_lt hcone (show (0 : ℕ) ≠ 0 + q from by omega)
+  have he : entry M 1 (0 + 0) = entry M 1 0 := rfl
+  omega
+
+/-! ### 87.1 ⟹ 系: 錐の中の列への `le1` はブロックに閉じる
+
+`le1 T y b` は `nextrel1 T` の反射推移閉包なので、**最後の 1 歩**が
+`nextrel1 T a b` である。`b` が錐の中のブロック `k` の列（根以外）なら、上より
+`a` も同じブロックにある。⟹ **鎖はブロック `k` から出られない**（帰納で繰り返せる）。
+
+⚠ **`b` が錐の外なら別**（`+k*d1` が付かないので上の矛盾が出ない）。
+そこは `Q` 側で `le1 Q 0 b` が偽の場合で、**ブロッカーの向こう側**にあたる。
+**(B) の残りはそこだけ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
