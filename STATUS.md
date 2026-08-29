@@ -1,71 +1,94 @@
-# 現在地（2026-08-31 夕）
+# 現在地（2026-08-31 夜）
 
-## ★★★★★★ **残る核は 2 択。しかも排他**
+## ★★★★★★ **`GraftAll` が本線から降りた。核は `MTowerClosedS`**
 
-`Lcone.lean:686`（team-lead が開いて確認）:
+**`Final.lean:861`（team-lead が `leanman build` 809 jobs / exit 0 で検算）:**
 
-    /-- **Everything now rests on `GraftAll` alone.** -/
-    theorem Wstar2s_closed_of_graftAll (hga : Wset.GraftAll) :=
-      Wset.Wstar2s_closed liftInner_holds
-        (Wset.liftTower1_of_graftAll hga)      -- **Wset:4151、緑**
-        (Wset.liftTowerExp2_of_graftAll hga)   -- **Wset:4211、緑**
+    **`TRIO_terminates_of_mTowerClosedS (htow : L105.MTowerClosedS) : WellFounded stepRel`**
+    `Final.lean:866` `no_infinite_expansion_of_mTowerClosedS`
+    **`sorry` … 自作ファイル全体で 0**（`Dbms.lean` の 2 件は docstring の文字列）
 
-    **C-1** **`GraftAll`（＝ `CoreCap` ＝ `CoreSingleton`）… 1 本**
-           受け口 `Final.lean:827 TRIO_terminates_of_cap`。半年の残核
-    **C-2** **`LiftTower1`（`Wset:4036`）＋ `LiftTowerExp2`（`Wset:4046`）… 2 本**
-           両方を**無条件に**証明すれば `Wstar2s_closed` が無条件になり **`GraftAll` が消える**
-    **D**   `TowerExpBigRow2`（`Final.lean:378`）… 1 本
+```lean
+def MTowerClosedS : Prop :=                                   -- L105Cap:5618
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →   -- 根が狭義最浅
+    mTower Q d e n ∈ W u
+```
 
-> ⚠ **`LiftTowerExp2` だけを証明しても 0 点。** `LiftTower1` にも `GraftAll` が要り、
-> `GraftAll` があれば `LiftTowerExp2` も無料だから。**C-2 は「両方」で初めて意味がある。**
+| | 量化 | 前提 | |
+|---|---|---|---|
+| `GraftAll` ＝ `CoreCap` ＝ `CoreSingleton` | 7 | **5** | `y ∈ W u` を全部相手にする。**半年の残核** |
+| **`MTowerClosedS`** | 5 | **2** | `Q ∈ W u` と「根が狭義最浅」だけ |
+| **`MTowerClosedRow2`**（`:5794`、§76 で細った） | 6 | **3** | ＋「`Q` の行 2 に非零」 |
 
-**`LiftInner` は ✅ 緑・無条件**（`Lcone.lean:507 liftInner_holds`）。
+**`graft` も `y ∈ W u` の全称も出てこない。** 中身は
+「**`Q` のコピーを行 0 で `k*d` 沈め、行 1 を錐の上だけ `k*e` 持ち上げて `n` 個並べる**」だけ。
 
-## ★★★★ 今日落ちたもの（全部緑）
+**連鎖（全部緑）**: `MTowerClosedRow2` ⟹ `MTowerClosedS` ⟹ `ShiftTowerClosedS`（`e=0`）
+⟹ `LiftTower1` ／ `LiftTowerExp2` ＋ `liftInner_holds`（無条件）
+⟹ `Wstar2s_closed` ⟹ `∀ u, W u ⊆ Wstar2s` ⟹ **`WellFounded stepRel`**
 
-    **§64** `LiftTieCore` は**段抜き** ⟹ `v=0` の残核は **1 本**（`z` は文の形を変えない助変数）
-            `liftTieCoreSelf_iff_core`（`L105Cap:4879`）: `M ∈ Wself ⟹ Lift1 M 1 ∈ Wself`
-    **§65** **結論側の節 3 は無力** —— 節 3 ⟹ `¬hasParent` ⟹ `lift_oper_of_noParent` で
-            **すでに無料の場所**。⟹ R2 の実測「20% しか使えない」の正体
-    **§67** (WL) の 1 歩の残差は **「悪根 ＝ 根」だけ**（`liftInner_holds` が `j0>=1` を全部処理）
-            ⟹ **残差は `LiftTower1`（`srow=1`）/ `LiftTowerExp2`（`srow=2`）の前提そのもの**
-            ⟹ **核 (1) と核 (2) は同じ場面の 2 つの言い方**
-    **§68** **`M⟦n⟧ = mTower M.dropLast d0 d1 n`**（`oper_eq_mTower`、`L105Cap:5228`）
-    **§69** **`operTower = mTower` は定理** ＋ succ 形が無条件（`operTower_succ_tower2`、`:5324`）
+## ⚠⚠⚠ **ただし「閉じた」とは書かないこと。`MTowerClosedS` は未証明**
 
-## ⛔ 今日**不要になった**もの（二度と手を付けない）
+**そして `d, e, n` が自由**で、R2 が **`oper_mTower` の (P) 版で反例を見つけた形とそっくり**:
 
-    ⛔ **`LiftFlatMapLocal`** … §69 で結論が直接出た。**手段だった**
-       ⚠ ただし**一般の `Q d e n` で真かは依然未解決**。核から落とせるだけで、偽の可能性は残る
-    ⛔ **R2 の (A)(B)(C)(D) 分解**（(D) は R2 §R120 ＋ H12 が 152,208 件で独立検算した）
-    ⛔ **R115 の狙い撃ち陰性対照** ／ **課題 R119**
+    R2 の反例（§R129）… **(P) 根が狭義最浅**のみ、`d,e` 自由 ⟹ **12 件の反例**
+      **最小反例 `Q = (0,0,1)(1,1,0)(2,1,1)`, `d=2, e=2, n=1, m=2`**
+    `MTowerClosedS` … **(P)** ＋ **`Q ∈ W u`**、`d,e,n` 自由
 
-**⚠ 測定は無駄ではなかった: L3 が「(D) が必要十分」と確信したから `j0 = 0` に絞る価値が分かり、
-そこから定理が出た。測定が「証明すべき文」を特定し、証明がその測定を不要にした。**
+> **⟹ 違いは `Q ∈ W u` だけ。それが `d,e` の自由さを縛るかが急所。R2 が測っている（課題 R123）。**
 
-## ★ 次の一手（team-lead の読み。⚠ **定義を開いて確かめること**）
+**裏づけ（L3）**: `(TOW)`（＝`e=0`）は `probe_core1.py` (C) **6244 例・違反 0、`minstage` は等号**
+（`Wtower2:1763` docstring）／`e > 0` は R2 が **276,876 塔 / 1,245,942 ブロック**で扱っている。
 
-**`oper_eq_mTower`（`L105Cap:5228`）に `srow` の前提は無い。**前提は 4 つだけ:
-`hL` / `hz`（末尾列が (0,0,0) でない）/ `hp : hasParent` / **`hj0 : parent … = 0`（悪根＝根）**。
-`d0 = if 0 < srow …` / `d1 = if 1 < srow …` で **`srow = 0,1,2` を一様に扱っている。**
+## ★★★ 今日いちばん重要な形: **「文が場面より広い」が 2 例**
 
-> **⟹ `operTower_*_tower2` が `hi2 : srow = 2` を持つのは L3 の特殊化だから。
-> `hi2 : srow = 1` に差し替えた版がそのまま通るはず。**
-> **そして `srow = 1` では `1 < 1` が偽 ⟹ `e = 0` ⟹ ブロックは純粋な行 0 ずらし
-> ⟹ 行 1 が動かない ⟹ ブロックの根の `lev` が `k` によらず一定 ⟹ 段が上がらない。**
+    **1** `LiftFlatMapLocal`（§62）… H12 が反例を出し、**L3 が証明中だったのを止めた**
+    **2** `oper_mTower`（§70）… R2 が §R129 で。**場面では破れ 0（150 万件）だが、
+         `d,e` を自由にすると 3.90% の反例**
 
-`Wset:4036` の `LiftTower1` の docstring がそう書いている（"plain row-0 shifts"）。
-**⟹ `srow=2` でいちばん厄介だった段の追跡が、`srow=1` 側では要らないはず。**
+> **教訓 50: 「場面では成り立つ」で止めると、偽の文のまま進む。**
+> **実測で文を支えるときは、場面の中と外の両方を測る。**
+> **中だけなら結論は「場面で述べ直せ」であって「真だ」ではない。**
 
-    **L3**: C-2 を**両方**。`srow=1` 版の特殊化を先に 30 分で試す
-    **R2**: R120 —— (t1) `e=0` か / **(t2) ブロックの根の `lev` が一定か**（`srow=2` を対照に）
-            (t3) `LiftTower1` の前提 `Aop W u0 Wstar2 R` vs `LiftTowerExp2` の
-                 `∀ n, 1 <= n → R⟦n⟧ ∈ Wstar2` の強さ比べ
+**⟹ R2 の提案（L3 に渡した）: `oper_mTower` を「`d,e` が `R` から決まる形」で述べ直せば
+`hblk`（ブロック内に親がいる）を落とせる可能性。落とせれば孤児の場合が丸ごと消える。**
+⚠ **実測を仮定にしないこと（教訓 14）。証明が要る。**
 
-## 検算（team-lead 自身、2026-08-31 夕）
+## ★ 孤児の場合は測り終わっている（R2 §R129、`bafd358`）
 
-    `leanman build` **809 jobs / exit 0** ／ `lean/` に **`sorry` ゼロ**
-    `L105Cap.lean` 5451 行・280 定義/定理・sorry 0・警告 0
+**結論を式のまま照合（`d,e` は場面のもの、全数、行 2 を 2 段）:**
+
+| 枝 | 分母 | **破れ** |
+|---|--:|--:|
+| 前提 OK | 915,849 | **0** |
+| **`hblk` 破れ（＝ `Q` の末尾列が孤児）** | **506,889** | **0** |
+| `hlev` 破れ | 77,832 | **0** |
+
+**機構**: `Lift1` も `shiftr01` も `hasParent` を保つ ⟹ **`mTower` の最終列も孤児（100%）**
+⟹ **`⟦m⟧ = Pred` ＝ 末尾を落とすだけ**（L3 の読みが当たった）。
+
+## ⟹ 次の一手
+
+    **L3** 1 `TRIO_terminates_of_mTowerClosedRow2` を足す（build は済み）
+          2 **`oper_mTower` を「`d,e` が `R` から決まる形」で述べ直す** ← **孤児の場合より先**
+          3 孤児の場合を個別に ← **2 が通れば不要**
+    **R2** 課題 R123: **`MTowerClosedS` を壊しにいく**
+          **(w0) 最優先** 上の最小反例をそのまま当てる。**`Q ∈ W u` に入るかが急所**
+          (w1) `|Q|` を 1 段長く／(w2) 軸 `e>0`・`d=0`・行 2 を 3 段／(w3) 分母／
+          (w4) 陰性対照は「根が狭義最浅」を落とした版
+
+## ⚠ team-lead の今日の外し（5 件。全部エージェントが捕まえた）
+
+    1 「`srow=2, z=1` は起きない」… 死んだコード（自分で気づいた）
+    2 「塔を 1 段進めれば `v` が変わる」… `oper` は第 1 列を落とさない（R2 §R123）
+    **3** 「`srow=0` は `snoc_flat_root` で無料」… **主語違い**（`C ++ [p]` vs `(0,v,z) :: R`）（§R126）
+    4 「`Aop` があるほうが強い前提」… **`Aop` は弱い前提**（§R128）
+    **5** 「`hblk` 破れ ⟹ `lift_oper_of_noParent`」… **主語違い**（`Q` の条件 vs `X` の条件）（§R129）
+
+**当たったもの: `srow=1` で `e=0` ⟹ 段が動かない（定義を開いて読んだ）。**
+> **⟹ 定義を開いたものは当たり、開かずに構造から推測したものは 5 件とも外れた。**
+> **教訓 49: 課題を出す前に、相手の最新 commit を見る**（今日 3 回、的が動いたあとに課題を出した）。
 
 ## ⚠⚠ 次に計器担当を置くときの申し送り（H12 の最後の助言）
 
