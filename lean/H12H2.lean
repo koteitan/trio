@@ -163,5 +163,46 @@ theorem h2_not_derivable :
   rw [show entry (X 0) 0 0 = 0 from rfl, show entry (X 0) 0 1 = 1 from rfl]
   omega
 
+
+/-! ## 3. ★ **`h2` の残差はちょうど 2 つ** —— 根（`z=1`）と、行 1 の錐の外の列
+
+§248.3 の反例は**錐の外の列**だった。錐の中に限れば `h2` は**既存の緑の補題から無料**:
+
+    `Wset.hasParent_two_of`（`Wset.lean:1858`）
+      `b < |M|` → `k < b` → `le1 M k b` → `entry M 2 k < entry M 2 b` → `hasParent M 2 b`
+
+を `M = Q.take (j+1)`, `k = 0`, `b = j` で使うだけ。
+
+⟹ **`h2` を消費側で満たせない原因は、ちょうど次の 2 つに限られる:**
+
+    (i)  **`j = 0`（根）** … `entry Q 2 0 = z`。`z = 1` なら即座に偽
+    (ii) **錐の外の行 2 正の列** … `¬ le1 Q 0 j`（ブロッカーの向こう側）
+
+これは `L105Cap.lean` §79.1 が既に書いている「孤児の条件」と同じもの。
+⟹ **`h2` は新しい前提ではなく、`hnb`（ブロッカーなし）＋ `z = 0` の言い換え。** -/
+
+/-- ★ **錐の中の列では `h2` は無料**（`hasParent_two_of` そのもの）。 -/
+theorem h2_cone {Q : TrioSeq} (hz0 : entry Q 2 0 = 0) :
+    ∀ j, 1 ≤ j → j < Q.length → 0 < entry Q 2 j → le1 Q 0 j →
+      hasParent (Q.take (j + 1)) 2 j := by
+  intro j hj1 hjl hpos hcone
+  have hlen : (Q.take (j + 1)).length = j + 1 := by
+    rw [List.length_take]; omega
+  refine hasParent_two_of (M := Q.take (j + 1)) (b := j) (k := 0)
+    (show j < (Q.take (j + 1)).length from by rw [hlen]; omega) (by omega) ?_ ?_
+  · exact (le1_take (by omega) (by omega)).mpr hcone
+  · rw [entry_take (by omega), entry_take (by omega), hz0]
+    omega
+
+/-- ★★ **⟹ `h2` の残差はちょうど「根」と「錐の外」だけ。**
+`entry Q 2 0 = 0`（＝ `z = 0`）と「行 2 が正なら錐の中」があれば `h2` は成り立つ。 -/
+theorem h2_of_cone {Q : TrioSeq} (hz0 : entry Q 2 0 = 0)
+    (hcone : ∀ j, 1 ≤ j → j < Q.length → 0 < entry Q 2 j → le1 Q 0 j) :
+    ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j := by
+  intro j hjl hpos
+  rcases Nat.eq_zero_or_pos j with rfl | hj1
+  · exact absurd hz0 (by omega)
+  · exact h2_cone hz0 j hj1 hjl hpos (hcone j hj1 hjl hpos)
+
 end H12H2
 end TRIO
