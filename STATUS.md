@@ -1,79 +1,64 @@
-# 現在地（2026-08-30 深夜）
+# 現在地（2026-08-30 深夜 2）
 
-## ★★★★★★ **3 行 z<2 の停止性は `TowerExp` 1 本に落ちた**
+## ★★★★★★ **3 行 z<2 の停止性は `TowerExpBigRow2` 1 本**
 
-    `Final.lean:318`  **`TRIO_terminates_of_towerExp (he : Wset.TowerExp) : WellFounded stepRel`**
-    `L105Cap.lean:2705` `towerOK_of_towerExp := towerOK_of_exp he towerGraft2Single_holds`
+    `L105Cap.lean:2900` **`towerOK_of_towerExpBigRow2 (h : TowerExpBigRow2) : TowerOK`**（緑）
+    `Final.lean:318`    `TRIO_terminates_of_towerExp (he : Wset.TowerExp) : WellFounded stepRel`
     （team-lead 検算: `leanman build` **809 jobs / exit 0**、`leanman check Final.lean` **exit 0**）
 
-    def TowerExp（`Wset.lean:4506`）—— **開核 B**
-      ∀ v z m a R, argOK R → R ≠ [] → z <= 1 → 2v+z <= a → domT R m →
-        **(∀ n >= 1, R⟦n⟧ ∈ Wstar)** →
+    def TowerExpBigRow2（`L105Cap.lean:2880`）
+      ∀ v z m a R, argOK R → **2 <= |R|** → z <= 1 → 2v+z <= a → domT R m →
+        **R.dropLast ∈ Wstar** →
+        **(∃ p ∈ R.dropLast, p.2.2 ≠ z)** →
         hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
         ∀ n >= 1, ((0,v,z) :: R)⟦n⟧ ∈ W a
 
-### どうやって落ちたか（§163）
+## ★ 今日、**仮定ゼロ**で落ちた枝
 
-    1. R2 の §R98 … `domT R m` ⟹ 末尾は孤児 ⟹ `|R| >= 2` なら `R⟦n⟧ = R.dropLast`
-                     ⟹ **節 3 に `y := []` を入れると節 2 そのもの**（仮定ゼロ）
-                     ⟹ `TowerGraft2` が要るのは **`|R| = 1`** だけ
-    2. `Wchar.aop_clause3_to_clause2`（`Wchar.lean:39`）… **既に存在していた**
-    3. **`L105.towerGraft2Single_holds`**（仮定ゼロ、緑）… `|R| = 1` の `TowerGraft2` は**定理**
-         `|R|=1` ⟹ `R.dropLast = []` ⟹ `graft R y` は `y` の行 0 をずらすだけ
-         `Lift1` も `graft` も**行 2 を動かさない** ⟹ **塔の全列の行 2 が根の `z` に等しい**
-         行 2 が定数 ⟹ 末尾列は**必ず孤児** ⟹ `oper` は `Pred` ⟹ 根の単元まで剥ける
-    4. ⟹ **`towerOK_of_towerExp`**
+    `|R| = 1`                     `towerExp_singleton`（`oper` が恒等 ＋ `oper_mem_of_mem`）
+    `R.dropLast` の行 2 ≡ `z`     **`tower_of_row2const`**（`:2813`）
+                                  塔が行 2 定数 ⟹ 末尾は必ず孤児 ⟹ `oper` は `Pred`
+                                  ⟹ 長さの帰納で根の単元まで剥ける（`constRow2_mem_W`）
+                                  **`srow=1` でも `2` でも、graft 閉包を一切使わない**
+    `|R| >= 2` の節 3             `Wchar.aop_clause3_to_clause2`（`Wchar.lean:39`、既存）
+                                  **節 3 に `y := []` を入れると節 2 そのもの**
+    `|R| = 1` の節 3・`srow = 2`  `towerGraft2Single_holds`
 
-⟹ **`TowerGraft2` / `LiftTie` / `LiftTieSelf` / `LiftTieCore` / `WConvex` 系は
-核としては消えた。** 今日の午後ずっとそこを削っていたが**本線ではなかった**。
-**道具は残る**（`srow_Lift1` / `liftStage_of_zeroRow2` / `le1_root_of_rtg0` / `srow_lowerAt` /
-`constRow2_mem_W` は `TowerExp` でも使える可能性が高い）。
+`graft` の定義（`Wset.lean:66`）が鍵だった:
 
-## ★★ さらに `TowerExpBig` まで絞れた（`L105Cap.lean:2752`、緑）
+    `graft M z = M.dropLast ++ (z を行 0 でずらしたもの)`
+    ⟹ **`graft R y` の行 2 は `R.dropLast` の行 2 と `y` の行 2 の合併**
+    ⟹ `|R| = 1` では条件が空虚だっただけで、**行 2 の定数性は `|R|` によらず効く**
 
-    `towerExp_singleton`       ★ **`|R| = 1` の `TowerExp` は定理**（仮定ゼロ）
-    `oper_eq_dropLast_of_domT` `|R| >= 2` なら `domT` から `R⟦n⟧ = R.dropLast`
-    **`towerOK_of_towerExpBig (h : TowerExpBig) : TowerOK`**（`:2770`、緑）
+## ★★ 経路 C と経路 D が初めて 1 点で出会った
 
-    def TowerExpBig
-      ∀ v z m a R, argOK R → **2 <= |R|** → z <= 1 → 2v+z <= a →
-        domT R m → **`R.dropLast ∈ Wstar`** →        ← **`∀ n` が消えた。仮定 1 本**
-        hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
-        ∀ n >= 1, ((0,v,z) :: R)⟦n⟧ ∈ W a
+塔の胴体は `((0,v,z) :: R.dropLast) ++ (ずらした y)` で、**先頭は仮定からそのまま `W a`**。
+⚠ **`W_add` は死んでいる**（先頭は根（行 0 = 0）を含み、後ろの塊は `entry R 0 (|R|-1) >= 1` だけ
+深いので `rsum` が `1 <= 0` を要求。L3 の §14 `not_rsum_of_root_mem`）。
+⟹ **`Aop` の節 3（graft）が唯一の道で、そこが `GraftAll`（＝ `CoreCap`）と同じ場所。**
 
-## ★ 次の一手（課題 L121 / R102 / H64）
+**⚠ ただし条件が違う。ここが決定的:**
 
-**`|R| = 1` の証明の骨がどこで効かなくなるかを特定する:**
+> L3 が §143 で特定した「`CoreCap` はどこで止まるか」は
+> **「尾の `W` 導出（`Aop W u0 Wstar R`）を仮定していないので測度が無くなる」**だった。
+> **`TowerExpBigRow2` は `R.dropLast ∈ Wstar` を仮定として持っている。それがその尾の導出である。**
+> ⟹ **同じ 1 点でも、経路 D から入るほうが測度がある。**
 
-    `|R| = 1`  … `R.dropLast = []` ⟹ `graft R y` は `y` の行 0 をずらすだけ
-                 ⟹ **塔の全列の行 2 が `z`** ⟹ 末尾は必ず孤児 ⟹ `oper` は `Pred`
-    `|R| >= 2` … `graft R y` の胴体に **`R.dropLast` が入る**
-                 ⟹ その行 2 は `z` とは限らない ⟹ **行 2 は定数でなくなる**
+## ★ 次の一手（L122 / R103 / H64）
 
-⟹ **`|R| = 2` で `R.dropLast = [(d,b,c)]` の行 2 `c` が `z` と違うとき、
-何が末尾列の孤児性を保証するのか。そこが `TowerExpBig` の本体。**
+    L122 … **`|R|` の長さ帰納で graft 閉包を作れないか。**
+           `R.dropLast` は `R` より真に短く、仮定がその `Wstar` 所属を与える
+           (1) 節 3 の義務 `∀ y ∈ W m, based y → graft R y ∈ Wstar` を
+               `R.dropLast ∈ Wstar` ＋ 帰納法の仮定から作れるか
+           (2) `y` の側に何が要るか（`y ∈ W m` ∧ `based y` は与件）
+           (3) **`graft` の結合律のような補題はないか**（連結は死んでいるので `graft` を使うしかない）
+    R103 … 追加前提 `(∃ p ∈ R.dropLast, p.2.2 ≠ z)` は断片では 2 択:
+           `z = 0` ⟹ `R.dropLast` に行 2 = 1 の列 / `z = 1` ⟹ 行 2 = 0 の列
+           **(q3) `z = 1` の枝は空虚ではないか**（`srow=2` なら `nextrel2` が `1 < c` を要求するが
+           断片では行 2 <= 1）。**空虚なら核がもう 1 段縮む**
+    H64  … 同じ問いを別角度から（2 人の数字が食い違うかが検証）
 
-
-    `domT R m` ⟹ `|R| >= 2` なら `R⟦n⟧ = R.dropLast`（全 `n`）
-    ⟹ **仮定 `∀ n >= 1, R⟦n⟧ ∈ Wstar` は `R.dropLast ∈ Wstar` と同値**のはず
-    ⟹ `TowerExp` は実質 **「`R.dropLast ∈ Wstar` ⟹ `((0,v,z) :: R)⟦n⟧ ∈ W a`」**
-
-    L121 … 上の同値を緑に（`∀ n` が消えて量化子が 1 本減る）。
-           ⚠ **行 2 の定数性は `|R| >= 2` では効かないはず**（`graft R y` の胴体に
-           `R.dropLast` が入り、その行 2 は `z` とは限らない）。効かない場所の特定が本題
-    R102 … (m1) `((0,v,z)::R)⟦n⟧` の閉じた形を `|R|=2,3` で書き下す
-           **(m2) 塔の各列の行 2 —— `|R|=1` では定数 `z` だった。
-           `|R|>=2` で定数でなくなる場所の特定が本題**
-           (m3) それでも末尾列は孤児か (m4) `(0,0,0)(1,1,1)(2,2,1)` ＝ `D_1` を完全に
-
-## 残核の塔の閉じた形（R100、`|R| = 1` の場合）
-
-    **((0,v,z) :: [(d,b,c)])⟦n⟧ = [ (k*d, v + k*(b-v), z) | k = 0..n-1 ]**   900/900
-
-**`c` は塔に現れない**（1 段で行 2 が `z` に潰れる）。行 0 は公差 `d`、行 1 は公差 `b-v`。
-⟹ L3 の `towerGraft2Single_holds` の設計図になった。
-
-## 検算（team-lead 自身、2026-08-30 深夜）
+## 検算（team-lead 自身）
 
     `lean/` に **`sorry` は 1 つも無い**（`Dbms.lean` の 2 件はコメント内の言及）
     `leanman build` **809 jobs / exit 0** ⟹ **`sorryAx` 依存もゼロ**
