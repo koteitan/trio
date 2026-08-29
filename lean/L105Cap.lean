@@ -6564,6 +6564,41 @@ theorem gexp_cone_mir_zero {M : TrioSeq} {Lb d0 d1 n k q : ℕ}
 ⟹ **`srow = 1` の塔（`d1 = 0`）ではこの形は使えない。** そちらは
 `mTower Q d 0 n = shTower Q d n`（`Lift1` が消える）なので**そもそも錐が要らない**。 -/
 
+/-! ## 85. ★★★★★★ (D) を `mTower` の言葉に: **塔の錐はブロック局所**
+
+§68 の `gexp_zero_eq_mTower` で §84 を `mTower` に移す。 -/
+
+open Classical in
+/-- **★★★★★★ 塔の第 `k` ブロックの位置 `q` が根の錐に入る ⟺ `Q` の位置 `q` が入る。**
+＝ R2 の (A)+(B)、H12 の §231。 -/
+theorem le1_mTower_block {M : TrioSeq} {d e n k q : ℕ} (hM2 : 2 ≤ M.length)
+    (hup : ∀ l, 0 < l → l ≤ 0 + M.dropLast.length → entry M 0 0 < entry M 0 l)
+    (hd0pos : 0 < d) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hk : k < n) (hq : q < M.dropLast.length) :
+    le1 (mTower M.dropLast d e n) 0 (k * M.dropLast.length + q)
+      ↔ le1 M.dropLast 0 q := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hlen : 0 + M.dropLast.length + 1 = M.length := by rw [hdl]; omega
+  have hLb : 0 < M.dropLast.length := by rw [hdl]; omega
+  have hgexp : gexp M 0 M.dropLast.length d e n = mTower M.dropLast d e n := by
+    rw [gexp_zero_eq_mTower (by omega), hdl, ← List.dropLast_eq_take]
+  have hres := gexp_cone_mir_zero hlen hLb hk hq hup hd0pos hd1pos hd0e hr0 hlp
+  rw [hgexp, Nat.zero_add, Nat.zero_add] at hres
+  rw [hres, List.dropLast_eq_take, le1_take (by omega) (by rw [hdl] at hq; omega)]
+
+/-! ### 85.1 ⟹ これで (B)/(D) の障害が消えた
+
+§283 で私は「`Q` の中で孤児でも、塔の中では前のブロックに親が見つかりうる。
+それが無いことを言うには `le1` のブロック局所性が要る」と報告した。
+**その `le1` のブロック局所性が上で定理になった。**
+
+⚠ ただし上は**根からの錐 `le1 T 0 ·`** の局所性である。
+`nextrel2` が要求するのは **一般の `le1 T y ·`** なので、そのままでは (B) に直結しない。
+**次はそこ**（`le1 T y ·` の局所性、または `nextrel2` の候補が同ブロックに限ることの直接証明）。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
