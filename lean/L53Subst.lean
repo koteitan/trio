@@ -2882,5 +2882,75 @@ def AminROper : Prop :=
     aminR (M⟦n⟧) (j0 + (k * Lb + q)) = aminR M (j0 + q)
 
 
+/-! ## ★★★★ 課題 L87-a/b: `W_add` は**根と両立しない**（否定的、Lean で確認）
+
+`rsum A P := ∀ p ∈ A ++ P, entry P 0 0 ≤ p.1`（`Wset.lean:1317`）は
+「`P` は `A ++ P` の**本当の最上位接尾辞**」という意味。ところが `Wstar` は
+根 `(0,v,z)` を **深さ 0** に cons する。⟹ 根の `p.1 = 0` が `entry P 0 0 ≤ 0` を強制し、
+`argOK P`（全列の深さ `> 0`）と**両立しない**。
+
+**⟹ `A ++ B ∈ Wstar` を `W_add` で作る道は、`B ≠ []` では閉じている。**
+（R1 の実測「`split_lastMin` は `A = []` が 6131/6131」はこれの計測版。）
+
+さらに `WstarCat` を仮定しても `GraftFromExp` は出ない: `graft R y` の連結の
+`rsum` は **`d ≤ R.dropLast の全深さ`** を要求し、これは R1 の実測で
+**19455/20345 (95.6%) で破れる**（`rsum_graft_iff` が要求そのもの）。 -/
+
+/-- **★★ 根は `rsum` を壊す。** -/
+theorem not_rsum_cons_root {v z : ℕ} {A B : TrioSeq} (hB : argOK B) (hBne : B ≠ []) :
+    ¬ rsum (((0, v, z) : ℕ × ℕ × ℕ) :: A) B := by
+  intro h
+  have hroot : ((0, v, z) : ℕ × ℕ × ℕ)
+      ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: A) ++ B := by simp
+  have h1 := h _ hroot
+  cases B with
+  | nil => exact hBne rfl
+  | cons q t =>
+      have hq : 0 < q.1 := hB q (by simp)
+      have hE : entry (q :: t) 0 0 = q.1 := by simp [entry]
+      rw [hE] at h1
+      simp only at h1
+      omega
+
+/-- **★★ `graft` の連結が `rsum` になる条件**（R1 が測ったもの、そのもの）。 -/
+theorem rsum_graft_iff {R y : TrioSeq} (hb : based y) (hyne : y ≠ []) :
+    rsum R.dropLast (y.map fun p =>
+        ((p.1 + entry R 0 (R.length - 1), p.2.1, p.2.2) : ℕ × ℕ × ℕ))
+      ↔ ∀ p ∈ R.dropLast, entry R 0 (R.length - 1) ≤ p.1 := by
+  set d := entry R 0 (R.length - 1) with hd
+  set B := y.map fun p => ((p.1 + d, p.2.1, p.2.2) : ℕ × ℕ × ℕ) with hBdef
+  have hB0 : entry B 0 0 = d := by
+    cases y with
+    | nil => exact absurd rfl hyne
+    | cons q t =>
+        have hq : entry (q :: t) 0 0 = q.1 := by simp [entry]
+        rw [hb] at hq
+        simp only [hBdef, List.map_cons]
+        show q.1 + d = d
+        omega
+  constructor
+  · intro h p hp
+    have := h p (List.mem_append_left _ hp)
+    rw [hB0] at this
+    exact this
+  · intro h p hp
+    rw [hB0]
+    rcases List.mem_append.mp hp with hp | hp
+    · exact h p hp
+    · obtain ⟨q, -, rfl⟩ := List.mem_map.mp hp
+      simp only
+      omega
+
+/-- **`Wstar` の連結**（team-lead の L87-a の形）。上の 2 本より、
+`W_add` からは出ず、`GraftFromExp` にも直に効かない。 -/
+def WstarCat : Prop :=
+  ∀ (A B : TrioSeq), A ∈ Wstar → B ∈ Wstar → rsum A B → A ++ B ∈ Wstar
+
+/-- 空の側は自明（`WstarCat` が空虚でないことの確認）。 -/
+theorem wstarCat_nil (A : TrioSeq) (hA : A ∈ Wstar) :
+    A ++ ([] : TrioSeq) ∈ Wstar := by
+  rw [List.append_nil]; exact hA
+
+
 end L53
 end TRIO
