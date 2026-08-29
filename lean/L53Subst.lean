@@ -2190,5 +2190,143 @@ theorem towerOK2_of_strict' {v m : ℕ} {R : TrioSeq}
     (strict_prop hR hRne hd hi2 hst hpM)
 
 
+/-! ## ★★★ 課題 L80: `le1` 錐は行 1 の狭義増加
+
+H11 の全数（70557 件）が出した構造的理由:
+
+    **`Lift1` のマスクは `le1` 錐。`nextrel1` は行 1 の狭義増加を要求する。**
+    **⟹ 行 1 が根以下の列は錐に入らない ⟹ `Lift1` が一度も触れない。**
+
+⚠ 1 点だけ team-lead の文言を直す: `le1` は**反射的**なので `j = 0` は
+（行 1 が根と等しくても）錐に入る。よって `j ≠ 0` が要る。 -/
+
+/-- `le1` の鎖に沿って行 1 は単調。 -/
+theorem rtg1_entry1_mono {X : TrioSeq} {i j : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 X) i j) :
+    entry X 1 i ≤ entry X 1 j := by
+  induction h with
+  | refl => exact le_rfl
+  | tail _ hbc ih => exact le_trans ih (le_of_lt hbc.2.2.2.1)
+
+/-- 1 段でも進めば行 1 は**狭義**に増える。 -/
+theorem le1_entry1_lt {X : TrioSeq} {i j : ℕ} (h : le1 X i j) (hne : i ≠ j) :
+    entry X 1 i < entry X 1 j := by
+  obtain ⟨-, -, hr⟩ := h
+  cases hr with
+  | refl => exact absurd rfl hne
+  | tail hab hbc => exact lt_of_le_of_lt (rtg1_entry1_mono hab) hbc.2.2.2.1
+
+/-- **★★ 課題 L80 の鍵**: 行 1 が根以下の列は `le1` 錐に入らない。 -/
+theorem lift1_untouched_of_le {X : TrioSeq} {j : ℕ} (hj : j ≠ 0)
+    (h : entry X 1 j ≤ entry X 1 0) : ¬ le1 X 0 j := by
+  intro hle
+  have := le1_entry1_lt hle (Ne.symm hj)
+  omega
+
+open Classical in
+/-- ⟹ `Lift1` はその列の行 1 を**変えない**。 -/
+theorem entry1_Lift1_untouched {X : TrioSeq} {d j : ℕ} (hj : j ≠ 0)
+    (hlt : j < X.length) (h : entry X 1 j ≤ entry X 1 0) :
+    entry (Lift1 X d) 1 j = entry X 1 j := by
+  rw [entry1_Lift1 hlt, if_neg (lift1_untouched_of_le hj h), Nat.add_zero]
+
+/-! ### ⟹ 伝播は**無タイでも**閉じる（狭義は `liftStage_of_window` の都合だけ） -/
+
+/-- **無タイ条件**。 -/
+def NoTie (v : ℕ) (R : TrioSeq) : Prop := ∀ p ∈ R, p.2.1 ≠ v
+
+theorem noTie_dropLast {v : ℕ} {R : TrioSeq} (h : NoTie v R) :
+    NoTie v R.dropLast := fun p hp => h p (List.dropLast_subset _ hp)
+
+theorem noTie_graft {v : ℕ} {R y : TrioSeq} (hR : NoTie v R.dropLast)
+    (hy : NoTie v y) : NoTie v (graft R y) := by
+  intro p hp
+  simp only [graft, List.mem_append] at hp
+  rcases hp with h | h
+  · exact hR p h
+  · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h
+    exact hy q hq
+
+open Classical in
+/-- **★★★ 無タイの `Lift1` 保存**。`< v` の列は錐に入らないので触れられない。 -/
+theorem noTie_Lift1_cons {v z d : ℕ} {R : TrioSeq} (hd : 0 < d)
+    (hR : NoTie v R) :
+    NoTie v (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) := by
+  intro p hp
+  simp only [Lift1, List.mem_map, List.mem_range] at hp
+  obtain ⟨i, hi, rfl⟩ := hp
+  show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 i
+      + (if le1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 i then d else 0) ≠ v
+  have hroot : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := rfl
+  cases i with
+  | zero =>
+      rw [hroot, if_pos (le1_zero_self (by simp))]
+      omega
+  | succ k =>
+      have hk : k < R.length := by
+        simp only [List.length_cons] at hi; omega
+      have h1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 (k + 1) = entry R 1 k :=
+        entry_cons _ _ _ _
+      have hm : entry R 1 k ≠ v := hR _ (entry_pair_mem (B := R) hk)
+      rcases Nat.lt_or_ge (entry R 1 k) v with hlt | hge
+      · -- `< v` ⟹ 錐に入らない ⟹ `Lift1` は触れない
+        rw [if_neg (lift1_untouched_of_le (X := ((0, v, z) : ℕ × ℕ × ℕ) :: R)
+          (j := k + 1) (by omega) (by rw [h1, hroot]; omega))]
+        rw [h1]; omega
+      · -- `> v` ⟹ 足しても `v` を超えたまま
+        rw [h1]
+        split <;> omega
+
+/-- 1 段ぶんの伝播（無タイ版）。 -/
+theorem noTie_step {v z d : ℕ} {R Rn : TrioSeq} (hd : 0 < d)
+    (hR : NoTie v R) (hRn : NoTie v Rn) :
+    NoTie v (graft R (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: Rn) d)) :=
+  noTie_graft (noTie_dropLast hR) (noTie_Lift1_cons hd hRn)
+
+open Classical in
+/-- **★★★ 伝播（無タイ版）**。狭義は `liftStage_of_window` の都合だけだった。 -/
+theorem noTie_prop {v m : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2) (hnt : NoTie v R)
+    (hvw : v ≤ entry R 1 (R.length - 1))
+    (hpM : hasParent (((0, v, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n : ℕ,
+      argOK (graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v))) ∧
+      (∀ p ∈ graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v)), p.2.1 ≠ v) := by
+  have hRpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  have ht : 0 < entry R 1 (R.length - 1) - v := by
+    have := hnt _ (entry_pair_mem (B := R) (show R.length - 1 < R.length by omega))
+    simp only at this
+    omega
+  have hzero := oper_cons_zero (v := v) (z := 0) hR hRne hd hpM
+  intro n
+  refine ⟨argOK_graft hRne hR _, ?_⟩
+  induction n with
+  | zero =>
+      rw [hzero, Lift1_nil, graft_nil]
+      exact noTie_dropLast hnt
+  | succ k ih =>
+      rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+      exact noTie_step ht hnt ih
+
+open Classical in
+/-- **★★★★★ 仮定ゼロの無タイ `TowerOK2`**（課題 L80-2）。 -/
+theorem towerOK2_of_noTie' {v m : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (hvw : v ≤ entry R 1 (R.length - 1))
+    (hnt : NoTie v R)
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hpM : hasParent (((0, v, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n : ℕ, (((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W (2 * v) :=
+  towerOK2_of_noTie hR hRne hd hi2 hz' hvw hgr hpM
+    (noTie_prop hR hRne hd hi2 hnt hvw hpM)
+
+
 end L53
 end TRIO
