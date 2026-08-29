@@ -4913,3 +4913,79 @@ theorem mem_Wself_of_diag (h : ∀ v, diagSeqT 0 v ∈ Wself) (hM : ST_TS M) (hn
 
 **全部が同値か、同じ結び目。** `PROOF-STATUS §5` の「新しい数学的入力が要る」の
 **到達点が 3 列の行列 1 つ**になった、というのが今日の成果である。
+
+
+---
+
+# 課題 L51: 標的を `(0,0,0)(1,1,1)(2,1,1)` に差し替え。展開補題が通った（2026-08-29）
+
+## 1. 結果（`lean/L51Lift.lean`、`leanman check` exit 0 / sorry 0）
+
+    **oper_Mt (n) : Mt⟦n⟧ = liftTower At 2 n**
+    **Mt_mem_W_zero_of_tower (h : ∀ n ≥ 1, liftTower At 2 n ∈ W 0) : Mt ∈ W 0**
+    **Mt_mem_Wself_of_tower  (同) : Mt ∈ Wself**
+
+    At = (0,0,0)(1,1,1)     Mt = (0,0,0)(1,1,1)(2,1,1)
+    liftTower Q e n := (List.range n).flatMap (fun k => shiftr01 (e*k) k Q)
+
+⟹ **標的は「`∀ n ≥ 1, liftTower At 2 n ∈ W 0`」ただ 1 本**になった
+（`lev Mt 0 = 0` なので `W 0`、`W 0` に節 3 は無いので**節 2 一本**）。
+
+## 2. `Mt⟦n⟧` の正体（`oper` の定義から手で計算）
+
+    j1 = 2、entry Mt 2 2 = 1 > 0            ⟹ srow = 2
+    行 2 で entry Mt 2 j0 < 1 は j0 = 0 だけ ⟹ parent = 0
+    d0 = 2 - 0 = 2、d1 = 1 - 0 = 1、take 0 = []
+    コピーは range' 0 2 ＝ 列 0..1 ＝ At、le0 も le1 も 0 から届く
+
+⟹ **`Mt⟦n⟧` は `At` 自身の持ち上げ塔。** team-lead の
+`At ++ (range (n-1)).flatMap (shiftr01 (2k) k Q)`（`Q = (2,1,0)(3,2,1)`）と同じもの
+（`Q = shiftr01 2 1 At` なので `At` に吸収できる）。
+
+## 3. 証明した材料
+
+    le0_le / le1_le          le0・le1 の添字は単調（nextrel が j0 < j1 を含む）
+    nextrel0_Mt_01 / _12     行 0 の鎖 0 -> 1 -> 2
+    le0_Mt_00 / _01 / _02
+    nextrel1_Mt_01 / _02     行 1 の鎖（le0 が要る）
+    le1_Mt_00 / _01 / _02
+    nextrel2_Mt_02           行 2 の親候補
+    nextrel2_Mt_unique       entry Mt 2 j0 < 1 は j0 = 0 のみ
+    hasParent_Mt / parent_Mt （Classical.epsilon ＋ 一意性）
+    srow_Mt / entry_Mt_*
+
+## 4. ★ 技術メモ（`oper` を開くときの型）
+
+**`oper` の if は `rw [if_neg ...]` では潰せない。** 条件の中には `Decidable` の
+実例が入っていて、`simp only [h]` も `rw [h]` もそこを書き換えられない
+（`Mt.length - 1` が `2` に化けない）。
+
+**`split` を使うこと。** 条件は defeq なので、各枝で `exact absurd ... h` に
+そのまま食わせられる。本体に入ってから `rw [hp, hl]` で `parent` / `length` を潰す。
+
+    have hs : srow Mt (Mt.length - 1) = 2 := srow_Mt      ← defeq で通る
+    have hp : parent Mt (srow Mt (Mt.length - 1)) (Mt.length - 1) = 0 := parent_Mt
+
+**最後の `simp` で `Mt` を展開しないこと。** 展開すると `le0_Mt_00` などの
+補題（`Mt` で書いてある）が当たらなくなる。`entry_Mt_*` を `@[simp]` で足して
+`Mt` を畳んだまま計算する。
+
+## 5. ★ シェルの注意（今日踏んだ）
+
+**`git commit -m "..."` の中に逆引用符を書かない。** bash がコマンド置換として
+実行しようとして固まる（`rw [if_neg ...]` を実行しようとした）。
+**`git commit -F` ＋ 引用符つきヒアドキュメント**を使うこと。
+
+## 6. 残り —— (LTOW)
+
+    def LiftTowerClosed : Prop :=
+      ∀ u e n Q, Q ∈ W u → (∀ p ∈ Q, entry Q 0 0 ≤ p.1) → liftTower Q e n ∈ W u
+
+⚠ `Wset.ShiftTowerClosed`（行 0 だけ）と違い**行 1 が段ごとに上がる**。
+`ulift_mem_W` は行 1 のシフトで段を `+2d` 上げるので、**k 枚目の写しは `W (2k)`**。
+`mem_Wself_iff` より根の `lev` しか効かないので `W 0` に留まりうるが、
+**`+2d` を回避する道具がまだ無い**。これは課題 L50 §3 で「graft の鎖に着く」と
+書いたのと同じ場所である。
+
+`Mt` は 3 列なので、**`Q = At`, `e = 2` の 1 事例に絞って構成的に攻める**のが
+現実的だと思う。
