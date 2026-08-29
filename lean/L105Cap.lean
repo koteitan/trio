@@ -9406,6 +9406,88 @@ theorem gexp_orphan_row1_gen {M : TrioSeq} {j0 Lb d0 d1 n k q : ℕ}
 残りは **(i) 途中の対象が本当に `gexp T j0 …` の形か**（`oper_eq_gexp_gen` は緑なので形は出る）、
 **(ii) `hj0c` と `hd0pos` が各段で成り立つか**、の 2 点。**(ii) は R2 の実測向き。** -/
 
+/-! ## 130. ★★★★★★★ **F2b の 1 段**: 展開そのものに F1 を当てる
+
+§129 は `gexp` の言葉だった。**F2b の帰納で要るのは `M⟦n⟧` の言葉。**
+`oper_eq_gexp_gen`（`Lcone:487`、緑）で移すだけだが、**そのとき §129 の前提
+`hup` / `hd0pos` / `hd0e` / `hlp` が要る。**
+
+★ **ここで `Aexp.amin_oper_mir`（`:236`、緑）の証明を開いて数えた（手筋 7 回目）。**
+**そこでは 4 つとも `hp`（親がある）と `0 < srow` だけから導かれていた:**
+
+    `hrtg : ReflTransGen (nextrel0 M) j0 (j0+Lb)`  … `parent_nextR hp` から
+        （`srow = 0` は 1 歩、`= 1` は `.2.2.2.2.1.2.2`、`= 2` は `rtg0_of_rtg1`）
+    **`hup`     := `Lcone.window_of_rtg0 hrtg`**      ← **無条件**
+    **`hd0pos`  := `hup (j0+Lb)`**                     ← **`0 < srow` だけ**
+    **`hd0e`    := `omega`**                           ← **同上**
+    **`hlp`     := `hnr` の `srow` 場合分け**          ← **同上**
+
+> **⟹ R2 に測ってもらおうとした (p2)(p3) は、測るまでもなく定理でした。**
+> **⟹ 残る外部前提は `hj0c : le1 M 0 j0`（悪根が全体の根の錐に入る）ただ 1 つ。** -/
+
+open Classical in
+theorem oper_orphan_row1 {M : TrioSeq} {n j0 Lb k q : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hj0 : 0 < j0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0e : parent M (srow M (M.length - 1)) (M.length - 1) = j0)
+    (hsr : 0 < srow M (M.length - 1))
+    (hk : k < n) (hq : q < Lb) (hq1 : 0 < q)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hj0c : le1 M 0 j0)
+    (hf1 : entry M 1 (j0 + q) ≤ entry M 1 0)
+    (horph : ¬ hasParent M 1 (j0 + q)) :
+    ¬ hasParent (M⟦n⟧) 1 (j0 + (k * Lb + q)) := by
+  have hL : M.length - 1 ≠ 0 := by omega
+  have hj1 : M.length - 1 = j0 + Lb := by omega
+  have hnr : nextR M (srow M (M.length - 1)) j0 (M.length - 1) := by
+    rw [← hj0e]; exact parent_nextR hp
+  have hsr2 : srow M (M.length - 1) = 1 ∨ srow M (M.length - 1) = 2 := by
+    unfold srow at hsr ⊢; split_ifs at hsr ⊢ <;> omega
+  have hrtg : Relation.ReflTransGen (nextrel0 M) j0 (j0 + Lb) := by
+    rw [← hj1]
+    rcases hsr2 with hs | hs <;> rw [hs] at hnr <;> unfold nextR at hnr
+    · rw [if_neg (by omega), if_pos rfl] at hnr
+      exact hnr.2.2.2.2.1.2.2
+    · rw [if_neg (by omega), if_neg (by omega)] at hnr
+      exact rtg0_of_rtg1 hnr.2.2.2.2.1.2.2
+  have hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l :=
+    window_of_rtg0 hrtg (by omega)
+  have hd0pos : 0 < entry M 0 (j0 + Lb) - entry M 0 j0 := by
+    have := hup (j0 + Lb) (by omega) (le_refl _); omega
+  have hd0e : entry M 0 (j0 + Lb) = entry M 0 j0
+      + (entry M 0 (j0 + Lb) - entry M 0 j0) := by omega
+  have hle1 : le1 M j0 (j0 + Lb) := by
+    rcases hsr2 with hs | hs
+    · rw [hs, hj1] at hnr
+      unfold nextR at hnr
+      rw [if_neg (by omega), if_pos rfl] at hnr
+      exact ⟨hnr.1, hnr.2.1, Relation.ReflTransGen.single hnr⟩
+    · rw [hs, hj1] at hnr
+      unfold nextR at hnr
+      rw [if_neg (by omega), if_neg (by omega)] at hnr
+      exact hnr.2.2.2.2.1
+  have hsr' : 0 < srow M (j0 + Lb) := by rw [← hj1]; exact hsr
+  rw [oper_eq_gexp_gen n hL hz hp, hj0e,
+    show M.length - 1 - j0 = Lb from by omega, hj1, if_pos hsr']
+  exact gexp_orphan_row1_gen hlen hj0 hLb hk hq hq1 hup hd0pos hd0e hr0
+    hle1 hj0c hf1 horph
+
+/-! ### 130.1 ⟹ F2b の帰納で使える形になりました
+
+**`M⟦n⟧` の位置 `j0 + (k*Lb + q)` は、`M` の位置 `j0 + q` が行 1 の孤児なら孤児。**
+
+    ✅ **前提はすべて内部で導かれる**（`hup` `hd0pos` `hd0e` `hlp`）
+    ⚠ **外から要るのは `hj0c : le1 M 0 j0` 1 つだけ**
+    ⚠ **`hr0`（全体の根が最浅）は塔なら `Lcone.gexp_root_shallow` で出る**
+    ⚠ **`0 < srow`**（`srow = 0` は §121.2 / §86 の領域なので別扱い）
+
+**⟹ §127.3 の「足りない 1 本」は §129 で埋まり、§130 で `oper` の言葉になりました。**
+
+⚠ **教訓 14**: **これでも F2b は「通った」ではありません。**
+残るのは **`hj0c` が F2b の各段で成り立つか**、ただ 1 点です。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
