@@ -356,5 +356,61 @@ def SCommRow1 : Prop :=
         ≤ entry ((A ++ shiftBlk t z)⟦n⟧) 1 j)
 
 
+/-! ## 課題 L55-b: (C13) —— `srow = 0`（持ち上げ無し）の節 2 -/
+
+open Classical in
+/-- **★ `srow M j1 = 0` なら上昇が無いので、写しは `k` に依らない。** -/
+theorem oper_flat {M : TrioSeq} {j1 j0 : ℕ}
+    (hj1 : j1 = M.length - 1) (hj1ne : j1 ≠ 0)
+    (hz : ¬(entry M 0 j1 = 0 ∧ entry M 1 j1 = 0 ∧ entry M 2 j1 = 0))
+    (hsr : srow M j1 = 0) (hpar : hasParent M 0 j1) (hj0 : j0 = parent M 0 j1)
+    (n : ℕ) :
+    M⟦n⟧ = M.take j0 ++ (List.range n).flatMap fun _ =>
+      (List.range' j0 (j1 - j0)).map fun j =>
+        ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ) := by
+  rw [oper_unfold (i1 := 0) (d0 := 0) (d1 := 0) hj1 hj1ne hz hsr.symm hpar hj0
+    (by simp) (by simp) n]
+  simp
+
+/-- **★★ (C13)**: `srow = 0` の行は、節 2 が `W_flatMap_copies` ＋ `W_add` で
+`∀ n` いっぺんに閉じる。`rsum` が `n` に依らないのが要点。 -/
+theorem mem_W_of_flat {u : ℕ} {M Q : TrioSeq} {j1 j0 : ℕ}
+    (hj1 : j1 = M.length - 1) (hj1ne : j1 ≠ 0)
+    (hz : ¬(entry M 0 j1 = 0 ∧ entry M 1 j1 = 0 ∧ entry M 2 j1 = 0))
+    (hsr : srow M j1 = 0) (hpar : hasParent M 0 j1) (hj0 : j0 = parent M 0 j1)
+    (hQdef : Q = (List.range' j0 (j1 - j0)).map fun j =>
+      ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ))
+    (hA : M.take j0 ∈ W u) (hQ : Q ∈ W u) (hQr : ∀ p ∈ Q, entry Q 0 0 ≤ p.1)
+    (hrs : ∀ n : ℕ, rsum (M.take j0) ((List.range n).flatMap fun _ => Q)) :
+    M ∈ W u := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn
+  rw [oper_flat hj1 hj1ne hz hsr hpar hj0 n, ← hQdef]
+  exact W_add hA (W_flatMap_copies hQ hQr n) (hrs n)
+
+/-! ## ★ 課題 L55-a: 行 278 は **`rsum` が破れるので (C13) では落ちません**
+
+    行 278  (0,0,0)(1,1,1)(1,0,0)(2,1,0)
+    M⟦n⟧ = (0,0,0)(1,1,1) ++ [(1,0,0),(2,0,0),…,(n,0,0)]       ← 平らな梯子
+
+梯子 `Lad n` 自身に (C13) を当てると:
+
+    末尾 `(n,0,0)` は `srow = 0`                      ✓ `oper_flat` が使える
+    行 0 の親は **1 つ前の `(n-1,0,0)`**（増加列で谷が無いから）
+      ⟹ `j0 = |Lad n| - 2 ≠ 0` なので `mem_W_of_flat_root` は使えない
+    `Q = [(n-1,0,0)]`、`M.take j0` は `(0,0,0)` を含む
+      ⟹ **`rsum (M.take j0) (Q^m)` は `entry Q 0 0 = n-1 > 0 = (0,0,0).1` で破れる**
+
+⟹ **(C13) の側条件 `rsum` が、梯子では `k ≥ 2` から必ず破れる。**
+`snoc_flat_root`（親が根）が `k ≥ 2` で届かないのと**同じ理由**である
+（親が根から離れる ＝ 根が `Q` より浅くなる）。
+
+下の `example` がその形（`A = (0,0,0)(1,1,1)`、`B = [(1,0,0)]`）。 -/
+example : ¬ rsum [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1)] [((1, 0, 0) : ℕ × ℕ × ℕ)] := by
+  intro h
+  have h9 := h (0, 0, 0) (by simp)
+  simp [entry] at h9
+
+
 end L53
 end TRIO
