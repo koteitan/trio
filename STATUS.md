@@ -1,37 +1,59 @@
-# 現在地（2026-08-30 夜）
+# 現在地（2026-08-30 深夜）
 
-## ★★★★★ 残核は `LiftTieCore`（3 量化 / 4 前提）
+## ★★★★★★ **3 行 z<2 の停止性は `TowerExp` 1 本に落ちた**
 
-    def LiftTieCore（`lean/L105Cap.lean` §26-29、緑）
-      ∀ (v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
-        **¬ (1 <= v ∧ TieFree ((0,v,z) :: R))** →
-        ((0,v,z) :: R) ∈ W (2*v+z) →
-        **Lift1 ((0,v,z) :: R) 1 ∈ W (2*v+z + 2)**
+    `Final.lean:318`  **`TRIO_terminates_of_towerExp (he : Wset.TowerExp) : WellFounded stepRel`**
+    `L105Cap.lean:2705` `towerOK_of_towerExp := towerOK_of_exp he towerGraft2Single_holds`
+    （team-lead 検算: `leanman build` **809 jobs / exit 0**、`leanman check Final.lean` **exit 0**）
 
-    `towerOK_of_liftTieCore : LiftTieCore → TowerExp → TowerOK`   ← 緑
-    `Final.lean` に `TRIO_terminates_of_liftTieCore` / `no_infinite_expansion_of_liftTieCore`
-    （`leanman build` 809 jobs / exit 0、`leanman check Final.lean` exit 0 を team-lead が確認）
+    def TowerExp（`Wset.lean:4506`）—— **開核 B**
+      ∀ v z m a R, argOK R → R ≠ [] → z <= 1 → 2v+z <= a → domT R m →
+        **(∀ n >= 1, R⟦n⟧ ∈ Wstar)** →
+        hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
+        ∀ n >= 1, ((0,v,z) :: R)⟦n⟧ ∈ W a
 
-**持ち上げ量は `1` に固定、段は自己段（`Wself`）。** 今日 `CoreCap`（7 量化 / 5 前提）から
-ここまで削れた。落ちた枝（すべて既存の**仮定ゼロ**定理）:
+### どうやって落ちたか（§163）
 
-    狭義                `L53.liftStage_of_strict`
-    無タイだが狭義でない `L53.liftStage_of_noTie`
-    タイだが `TieFree`   `L53.liftTie_case_tieFree`（`L53Subst.lean:2615`）
-    **行 2 ≡ 0**         `L105.liftStage_of_zeroRow2`（§32、**今日の新規**。`d` にもタイにも依らない）
-    **残り = `LiftTieCoreRow2`（タイ ∧ `¬TieFree` ∧ 行 2 に非零）**
+    1. R2 の §R98 … `domT R m` ⟹ 末尾は孤児 ⟹ `|R| >= 2` なら `R⟦n⟧ = R.dropLast`
+                     ⟹ **節 3 に `y := []` を入れると節 2 そのもの**（仮定ゼロ）
+                     ⟹ `TowerGraft2` が要るのは **`|R| = 1`** だけ
+    2. `Wchar.aop_clause3_to_clause2`（`Wchar.lean:39`）… **既に存在していた**
+    3. **`L105.towerGraft2Single_holds`**（仮定ゼロ、緑）… `|R| = 1` の `TowerGraft2` は**定理**
+         `|R|=1` ⟹ `R.dropLast = []` ⟹ `graft R y` は `y` の行 0 をずらすだけ
+         `Lift1` も `graft` も**行 2 を動かさない** ⟹ **塔の全列の行 2 が根の `z` に等しい**
+         行 2 が定数 ⟹ 末尾列は**必ず孤児** ⟹ `oper` は `Pred` ⟹ 根の単元まで剥ける
+    4. ⟹ **`towerOK_of_towerExp`**
 
-⚠⚠ **「97.4% が落ちる / 残り 2.6%」は書かないこと（§154）。母集団依存だった:**
+⟹ **`TowerGraft2` / `LiftTie` / `LiftTieSelf` / `LiftTieCore` / `WConvex` 系は
+核としては消えた。** 今日の午後ずっとそこを削っていたが**本線ではなかった**。
+**道具は残る**（`srow_Lift1` / `liftStage_of_zeroRow2` / `le1_root_of_rtg0` / `srow_lowerAt` /
+`constRow2_mem_W` は `TowerExp` でも使える可能性が高い）。
 
-    H11（`Final.lean:145-155`、70,557 件、**シート由来**）  狭義 88.5% / 無タイ 2.8% / タイ **8.7%**
-    R2（1,821,258 件、**構成的な一様全数**）                狭義 33.0% / 無タイ 15.3% / タイ **51.7%**
+## ★ 次の一手（課題 L121 / R102）
 
-**証明はすべての場合を覆う必要があるので、Lean の債務としては構成的な全数のほうが実態に近い。**
-正しい「残り何%」は R2 が数え直し中（課題 R98。`liftStage_of_zeroRow2` を必ず入れる）。
+    `domT R m` ⟹ `|R| >= 2` なら `R⟦n⟧ = R.dropLast`（全 `n`）
+    ⟹ **仮定 `∀ n >= 1, R⟦n⟧ ∈ Wstar` は `R.dropLast ∈ Wstar` と同値**のはず
+    ⟹ `TowerExp` は実質 **「`R.dropLast ∈ Wstar` ⟹ `((0,v,z) :: R)⟦n⟧ ∈ W a`」**
 
-`∀ d` が消えた理由（§28）: `Wset.Lift1_Lift1`（`:1230`）＋ `Wset.lift_cons`（`:3656`）で
-`Lift1 X (d+1) = Lift1 ((0,v+1,z) :: ltail v z R 1) d`。**`Lift1 X 1 ∈ W (2(v+1)+z)` は
-また自己段**なので帰納法の仮定がそのまま当たり、`argOK_ltail`（`:3716`）で `argOK` も保たれる。
+    L121 … 上の同値を緑に（`∀ n` が消えて量化子が 1 本減る）。
+           ⚠ **行 2 の定数性は `|R| >= 2` では効かないはず**（`graft R y` の胴体に
+           `R.dropLast` が入り、その行 2 は `z` とは限らない）。効かない場所の特定が本題
+    R102 … (m1) `((0,v,z)::R)⟦n⟧` の閉じた形を `|R|=2,3` で書き下す
+           **(m2) 塔の各列の行 2 —— `|R|=1` では定数 `z` だった。
+           `|R|>=2` で定数でなくなる場所の特定が本題**
+           (m3) それでも末尾列は孤児か (m4) `(0,0,0)(1,1,1)(2,2,1)` ＝ `D_1` を完全に
+
+## 残核の塔の閉じた形（R100、`|R| = 1` の場合）
+
+    **((0,v,z) :: [(d,b,c)])⟦n⟧ = [ (k*d, v + k*(b-v), z) | k = 0..n-1 ]**   900/900
+
+**`c` は塔に現れない**（1 段で行 2 が `z` に潰れる）。行 0 は公差 `d`、行 1 は公差 `b-v`。
+⟹ L3 の `towerGraft2Single_holds` の設計図になった。
+
+## 検算（team-lead 自身、2026-08-30 深夜）
+
+    `lean/` に **`sorry` は 1 つも無い**（`Dbms.lean` の 2 件はコメント内の言及）
+    `leanman build` **809 jobs / exit 0** ⟹ **`sorryAx` 依存もゼロ**
 
 ## ⚠⚠⚠ 実測はもう誰も守らない —— 反証器は**全核に盲目**（§147）
 
