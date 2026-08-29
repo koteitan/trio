@@ -711,5 +711,64 @@ theorem mTowerClosed_of_snocStepConePar {u : ℕ} {Q : TrioSeq} {d e : ℕ}
   rw [hClen, hsrow]
   exact hres
 
+
+/-! ## 12. ★★★★★★ **(e) は消える** —— 錐の外の列の親は、必ず同じブロック
+
+§256.2 で残った本当の残差は **(e)「錐の外 ∧ しかし親を持つ」**だった。
+答えは `mTower_orphan_row2_gen` の証明の中に**既に入っていた**:
+
+    `L105Cap.le1_mTower_in_block`（`L105Cap.lean:8026`）
+      錐の外（`¬ le1 M 0 q`）の列の**行 1 の祖先は同じブロックから出ない**:
+      `∀ a, ReflTransGen (nextrel1 (mTower …)) a (k*|Q| + q) → k*|Q| ≤ a`
+
+そして `nextrel2` は `le1` を要求する（§248 の要点）。
+⟹ **行 2 の親も前のブロックからは来られない。**
+
+> ⟹ **(e) の親は必ず同じブロック ⟹ 窓 < |Q| ⟹ (C1) と同じ測度の議論が効く。**
+> ⟹ **「前のブロックからの復活」は起きない。第 3 の枝は消える。**
+
+実測（`h91.py`）: **復活 0 / 18798**（`|R| ∈ {2,3,4}`、`n ∈ {1,2,3}`）。
+内訳は「親なし」18654 件、「親は同じブロック」144 件、「前のブロック」**0 件**。 -/
+
+/-- ★★★★★★ **錐の外の列の行 2 の親は、必ず同じブロックの中**（前のブロックからは来ない）。 -/
+theorem outOfCone_nextrel2_sameBlock {M : TrioSeq} {d e n' q a : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hq : q < M.dropLast.length) (hq1 : 0 < q)
+    (hout : ¬ le1 M 0 (0 + q))
+    (h : nextrel2 (mTower M.dropLast d e (n' + 1)) a
+      ((mTower M.dropLast d e n').length + q)) :
+    (mTower M.dropLast d e n').length ≤ a := by
+  have hAlen : (mTower M.dropLast d e n').length = n' * M.dropLast.length := by
+    rw [mTower_length]
+  rw [hAlen] at h ⊢
+  exact le1_mTower_in_block (n := n' + 1) (k := n') hM2 hd1pos hd0e hr0 hlp
+    (by omega) hq hq1 hout a h.2.2.2.2.1.2.2
+
+/-- ⟹ **`hasParent` の言葉で**: 錐の外の列が塔で親を持つなら、その親は同じブロック。 -/
+theorem outOfCone_parent_sameBlock {M : TrioSeq} {d e n' q : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hq : q < M.dropLast.length) (hq1 : 0 < q)
+    (hout : ¬ le1 M 0 (0 + q))
+    (hp : hasParent (mTower M.dropLast d e (n' + 1)) 2
+      ((mTower M.dropLast d e n').length + q)) :
+    (mTower M.dropLast d e n').length
+      ≤ parent (mTower M.dropLast d e (n' + 1)) 2
+        ((mTower M.dropLast d e n').length + q) := by
+  have hnr := parent_nextR hp
+  have h2 : nextrel2 (mTower M.dropLast d e (n' + 1))
+      (parent (mTower M.dropLast d e (n' + 1)) 2
+        ((mTower M.dropLast d e n').length + q))
+      ((mTower M.dropLast d e n').length + q) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_neg (by omega)] at hnr
+    exact hnr
+  exact outOfCone_nextrel2_sameBlock hM2 hd1pos hd0e hr0 hlp hq hq1 hout h2
+
 end H12H2
 end TRIO
