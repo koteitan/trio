@@ -1315,6 +1315,87 @@ theorem prefixCopies_split {u n : ℕ} {A Q : TrioSeq} (hA : A ∈ W u) (hQ : Q 
 **⟹ R2 の 5.6% は障害ではなく、むしろ無料になる側。**
 `oper_cons_nat` が `argOK R` を要求して止まる場面は、まさにこの無料の側である。 -/
 
+
+/-! ## 21. ★★★★★ 課題 L109-3: **`LiftTie` は「自己段」だけで足りる**
+
+§19.0 の読み直しで、`TowerOK2` の残核は段ではなく **`LiftTie`**（`L53Subst.lean:2337`）
+だと確定した。そこでもう 1 段細くできる。
+
+`L53.towerOK2_of_clause3`（`:2432`）が `liftStage_cons` を呼ぶのは
+
+    `ih : ((0,v,z) :: graft R …) ∈ W (2*v+z)`   ← 塔の帰納 `key` は**自己段で回っている**
+
+の 1 か所だけで、**段 `m` は常に `2*v+z`（＝ その cons の `lev` 根）**である。
+⟹ `LiftTie` の `∀ m` は使われていない。**`m = 2v+z` の場合だけで足りる。**
+
+`X ∈ W m` から `X ∈ W (lev X 0)` は**出ない**（`W_mono` は逆向き）ので、
+これは真の弱化である。 -/
+
+/-- **`LiftTie` の自己段版**（`m = 2v+z` に固定）。 -/
+def LiftTieSelf : Prop :=
+  ∀ (d v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z) →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (2 * v + z + 2 * d)
+
+theorem liftTieSelf_of_liftTie (h : L53.LiftTie) : LiftTieSelf :=
+  fun d v z R hR ht hX => h (2 * v + z) d v z R hR ht hX
+
+/-- タイ／無タイの場合分け（`L53.liftStage_cons` の自己段版）。 -/
+theorem liftStage_cons_self (h : LiftTieSelf) {d v z : ℕ} {R : TrioSeq}
+    (hargOK : argOK R) (hX : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z)) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (2 * v + z + 2 * d) := by
+  by_cases ht : ∃ p ∈ R, p.2.1 = v
+  · exact h d v z R hargOK ht hX
+  · exact L53.liftStage_of_noTie hargOK (fun p hp hpv => ht ⟨p, hp, hpv⟩) hX
+
+open Classical in
+/-- **★★★★★ `TowerOK2` の節 3 側は `LiftTieSelf` だけで出る**
+（`L53.towerOK2_of_clause3` の仮定を `LiftTie` から `LiftTieSelf` に弱めたもの）。 -/
+theorem towerOK2_of_liftTieSelf {v z a m : ℕ} {R : TrioSeq} (hlt : LiftTieSelf)
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n : ℕ, (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  have hvw : v < entry R 1 (R.length - 1) := L53.tower2_vw hRne hd hi2 hpM
+  have hzr : z < entry R 2 (R.length - 1) := L53.tower2_zr hRne hd hi2 hpM
+  have hfits : 2 * v + z + 2 * (entry R 1 (R.length - 1) - v) ≤ m :=
+    L53.tower2_stage_fits' hd hzr (by omega)
+  have hzero := L53.oper_cons_zero (v := v) (z := z) hR hRne hd hpM
+  have key : ∀ n : ℕ, (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W (2 * v + z) := by
+    intro n
+    induction n with
+    | zero => rw [hzero]; exact W_nil _
+    | succ n ih =>
+        rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+        have hin : Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+            (entry R 1 (R.length - 1) - v) ∈ W m := by
+          cases n with
+          | zero => rw [hzero]; simpa using W_nil m
+          | succ k =>
+              rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM] at ih ⊢
+              exact W_mono hfits (liftStage_cons_self hlt (argOK_graft hRne hR _) ih)
+        have hb : based (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+            (entry R 1 (R.length - 1) - v)) := by
+          refine based_Lift1 _ ?_
+          cases n with
+          | zero => rw [hzero]; exact based_nil
+          | succ k =>
+              rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+              exact L53.based_cons_root v z _
+        exact hgr _ hin hb (argOK_graft hRne hR _) v z (2 * v + z) hz1 (by omega)
+  exact fun n => W_mono hva (key n)
+
+/-- ⟹ 開核 A（`TowerGraft2`）も `LiftTieSelf` だけで出る。 -/
+theorem towerGraft2_of_liftTieSelf (hlt : LiftTieSelf) : TowerGraft2 :=
+  fun _ _ _ _ _ hR hRne hz1 hva hd hi2 hgr hpM n _ =>
+    towerOK2_of_liftTieSelf hlt hR hRne hd hi2 hz1 hva hgr hpM n
+
+/-- ⟹ `TowerOK` は `LiftTieSelf` ＋ `TowerExp` から出る（`L53.towerOK_of_liftTie` の弱化）。 -/
+theorem towerOK_of_liftTieSelf (hlt : LiftTieSelf) (he : TowerExp) : TowerOK :=
+  towerOK_of (towerGraft2_of_liftTieSelf hlt) he
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
