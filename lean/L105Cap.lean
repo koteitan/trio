@@ -11964,6 +11964,77 @@ theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
 ⚠ **これが「足りないもの」です。構造的な穴ではなく、`hstep` の**渡し方**の問題です。**
 ⚠ **教訓 14: 「書き換えれば閉じる」とはまだ言えません。書き換えて初めて分かります。** -/
 
+/-! ## 168. ★★★★★★★ **強帰納版の `hstep`**（§167.2 で「足りない」と出したもの）
+
+§167.2 の穴は「`hstep` が `j` の 1 つ手前しか渡していない」ことだった。
+**降りたあとの接頭辞は `B.take p`（`p < j`）なので、`∀ j' ≤ j` が要る。** -/
+
+theorem prefixTowerClosed_of_snocStepStrong {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (∀ j', j' ≤ j →
+        A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) →
+      A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  intro n
+  induction n with
+  | zero => rw [mTower_zero, List.append_nil]; exact hA
+  | succ n ih =>
+      have key : ∀ j, j ≤ Q.length → ∀ j', j' ≤ j →
+          A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u := by
+        intro j
+        induction j with
+        | zero =>
+            intro _ j' hj'
+            have : j' = 0 := by omega
+            subst this
+            simpa using ih
+        | succ j ihj =>
+            intro hj j' hj'
+            rcases Nat.lt_or_ge j' (j + 1) with hlt | hge
+            · exact ihj (by omega) j' (by omega)
+            · have hje : j' = j + 1 := by omega
+              subst hje
+              exact hstep n j (by omega) (ihj (by omega))
+      have hfull := key Q.length le_rfl Q.length le_rfl
+      rw [List.take_of_length_le (by rw [Lift1_length, shiftr01_length])] at hfull
+      rw [mTower_succ, ← List.append_assoc]
+      exact hfull
+
+/-! ### 168.1 ⟹ **帰納の骨がすべて緑になりました**
+
+    §165 展開は **`接頭辞 ++ より短い塔`**（族が閉じる。前提は `j0 + Lb ≤ |M|` だけ）
+    §166 その族で **1 列ずつ剥がす**（孤児は `snoc_orphan_W` で無料）
+    §167 **錐の中の列では親は同じコピー**（`parent_ge_of_inner` から無料）
+    **§168 `hstep` が **`∀ j' ≤ j`** を受け取る（降りたあとの接頭辞 `B.take p` が渡せる）**
+
+### 168.2 ⟹ **残っているのは 2 つの「遺伝」だけです**
+
+`hstep` の中で `mem_of_oper_mem` ＋ §165 で降りると:
+
+    **`T_{j+1}⟦m⟧ = T_p ++ mTower V d0' d1' m`**（`V` ＝ 窓、`|V| = j − p ≤ |Q| − 2 < |Q|`）
+    **`T_p ∈ W u`** … **§168 の強帰納が渡す** ✅
+    **`|V| < |Q|`** … **外側の `|Q|` についての強帰納で受ける** ✅
+
+**⟹ 外＝`|Q|` の強帰納、内＝`j` の強帰納。両方そろいました。**
+**⟹ 残るのは、外側の帰納法の仮定を使うために `V` が前提を満たすこと:**
+
+    **(H1)** **`V` の根が `V` の中で狭義に最浅**
+        ⟹ **`Lcone.window_of_rtg0`（無条件・緑）から出る**（§130 で使ったもの）**はず**
+    **(H2)** **`V` の行 2 の列が `V` の中で行 2 の親を持つ**（§163 の `h2` の `V` 版）
+    **(H3)** **`V` の非根の列が `V` の根の錐に入る**（§163 の `hcone` の `V` 版）
+
+> **⟹ (H1) は既存の緑から出るはず。(H2)(H3) が本当の残りです。**
+> **⟹ そして (H3) こそ R2 の (y2) が測った穴**
+> **（`∃ q, q0 < q < |Q|, entry Q 1 q ≤ entry Q 1 q0` ＝ 窓の根が行 1 で最小でない）**
+> **＝ 私の §156 の条件そのものです。**
+
+⚠ **教訓 14**: **骨が緑になっただけで、(H2)(H3) は示していません。**
+**⟹ (H2)(H3) が「`Q` について仮定すれば `V` について出る」形かどうかが、次の 1 点です。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
