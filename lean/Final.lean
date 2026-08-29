@@ -68,6 +68,33 @@ theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
 `towerGraft2_of_liftStage` により、`LiftStage`（= (WL): 根リフトは段を
 ちょうど `2d` 上げる）から `TowerGraft2` が出る。⟹ 残核は `TowerExp` だけ。 -/
 
+/-- **★★★★★ 停止性は `TowerOK` ただ 1 本から出る**（課題 L70）。
+
+`TowerGraft2` / `TowerExp` を経由せず `Wstar_closed` に直に渡した形。
+`Wstar` 路線（2 行の完成証明と同じ道筋）では、共終性 `trio_cofinality` は無条件、
+`Wstar` の閉性は `Wstar_closed` が `TowerOK` だけを要求する。
+
+⟹ **3 行 z<2 の停止性 ＝ `TowerOK`。** そして課題 L64 / L69 のとおり
+
+    `srow = 1` の枝   … `towerOK1_of_clause3`（`L53Subst.lean`）で**証明ずみ**
+    `srow = 2, z = 1` … **起きない**（`tower2_root_z_zero`）
+    `srow = 2, z = 0` … 段は収まる（`tower2_stage_fits`）。残るはタイの場合だけ -/
+theorem wf_olt_ST_TS_of_towerOK (htow : Wset.TowerOK) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
+  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar) Set.Subset.rfl
+    (Wset.Wstar_closed htow)
+    (fun hM hN h => trio_cofinality hM hN h)
+
+/-- **★★★★★ トリオ数列は停止する、`TowerOK` を仮定して。** -/
+theorem TRIO_terminates_of_towerOK (htow : Wset.TowerOK) : WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_towerOK htow))
+
+/-- **無限展開列は無い**、`TowerOK` から。 -/
+theorem no_infinite_expansion_of_towerOK (htow : Wset.TowerOK) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_towerOK htow))
+
 /-- **Trio sequences terminate**, modulo the stage law `(WL)` and the
 successor-route tower core `TowerExp` — no `Wstar2`, no `GraftAll`, no `GX`. -/
 theorem TRIO_terminates_of_liftStage (hWL : LiftStage) (he : Wset.TowerExp) :
