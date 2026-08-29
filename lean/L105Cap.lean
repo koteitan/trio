@@ -7363,6 +7363,95 @@ theorem gexp_outer_anc_row1 {M : TrioSeq} {Lb d0 d1 n k q : ℕ}
 
 の 3 本で、**全部既存の緑**です。**⟹ F1 は道具が完全に揃いました。** -/
 
+/-! ## 100. ★★★★★★★ **F1 は定理**: ブロック内で行 1 の孤児なら、塔でも行 1 の孤児
+
+R2 の (z5) の F1（376,164 件・破れ 0）を Lean にする。§98-99 で「ブロック外」、
+`Gtrans.gexp_chain_inversion` ＋ `Wset.hasParent_one_of` の対偶で「ブロック内」。 -/
+
+open Classical in
+theorem gexp_last_orphan_row1 {M : TrioSeq} {Lb d0 d1 n : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hn : 0 < n) (hLb1 : 1 < Lb)
+    (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb))
+    (hf1 : entry M 1 (0 + (Lb - 1)) ≤ entry M 1 0)
+    (horph : ¬ hasParent M 1 (0 + (Lb - 1))) :
+    ¬ hasParent (gexp M 0 Lb d0 d1 n) 1
+      (0 + ((n - 1) * Lb + (Lb - 1))) := by
+  have hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l :=
+    fun l hl0 hl1 => hr0 l hl0 (by omega)
+  have hkn : n - 1 < n := by omega
+  have hqL : Lb - 1 < Lb := by omega
+  -- 末尾列は `M` の錐の外（F1 ＋ `le1_entry1_lt`）
+  have hout : ¬ le1 M 0 (0 + (Lb - 1)) := by
+    intro hc
+    have := le1_entry1_lt hc (show (0 : ℕ) ≠ 0 + (Lb - 1) from by omega)
+    omega
+  have hlast1 : entry (gexp M 0 Lb d0 d1 n) 1 (0 + ((n - 1) * Lb + (Lb - 1)))
+      = entry M 1 (0 + (Lb - 1)) := by
+    rw [gexp_entry1_mir hlen hkn hqL, if_neg hout]
+    omega
+  rintro ⟨a, ha, -⟩
+  have hnr : nextrel1 (gexp M 0 Lb d0 d1 n) a (0 + ((n - 1) * Lb + (Lb - 1))) := by
+    unfold nextR at ha
+    rw [if_neg (by omega), if_pos rfl] at ha
+    exact ha
+  have hlt := hnr.2.2.2.1
+  rw [hlast1] at hlt
+  have hle0 := hnr.2.2.2.2.1
+  by_cases ha0 : a = 0
+  · subst ha0
+    have h10 : entry (gexp M 0 Lb d0 d1 n) 1 0 = entry M 1 0 :=
+      gexp_entry_root hlen hn hLb
+    rw [h10] at hlt
+    omega
+  · by_cases hain : (n - 1) * Lb ≤ a
+    · -- ブロック `n-1` の中
+      obtain ⟨qa, hqa⟩ : ∃ qa, a = 0 + ((n - 1) * Lb + qa) :=
+        ⟨a - (n - 1) * Lb, by omega⟩
+      have haltp : a < 0 + ((n - 1) * Lb + (Lb - 1)) := hnr.2.2.1
+      have hqalt : qa < Lb - 1 := by omega
+      subst hqa
+      have hent : entry M 1 (0 + qa) ≤
+          entry (gexp M 0 Lb d0 d1 n) 1 (0 + ((n - 1) * Lb + qa)) := by
+        rw [gexp_entry1_mir hlen hkn (by omega)]
+        split_ifs <;> omega
+      obtain ⟨k', q', hk', hq', hxe, hcase⟩ :=
+        gexp_chain_inversion hlen hkn hqL hup hd0e _ hle0.2.2 (Nat.zero_le _)
+      have hk'e : k' = n - 1 := by
+        rcases Nat.lt_or_ge k' (n - 1) with h | h
+        · exfalso
+          have : k' * Lb + Lb ≤ (n - 1) * Lb := by
+            have h1 : (k' + 1) * Lb ≤ (n - 1) * Lb := Nat.mul_le_mul_right _ (by omega)
+            have h2 : (k' + 1) * Lb = k' * Lb + Lb := Nat.succ_mul k' Lb
+            omega
+          omega
+        · omega
+      subst hk'e
+      have hq'e : q' = qa := by omega
+      have hM : Relation.ReflTransGen (nextrel0 M) (0 + qa) (0 + (Lb - 1)) := by
+        rcases hcase with ⟨-, h⟩ | ⟨h, -⟩
+        · rw [hq'e] at h; exact h
+        · omega
+      exact horph (hasParent_one_of (b := 0 + (Lb - 1)) (k := 0 + qa)
+        (by omega) (by omega) ⟨by omega, by omega, hM⟩ (by omega))
+    · -- ブロック `n-1` の外
+      have := gexp_outer_anc_row1 hlen hLb hkn hqL hd1pos hd0e hr0 hlp a
+        hle0.2.2 (by omega) ha0
+      omega
+
+/-! ### 100.1 ⟹ R2 の (z5) の F1 が定理になりました
+
+    R2 の実測 **376,164 件・破れ 0** ⟹ **`gexp_last_orphan_row1`（上、緑）**
+
+**⟹ `oper_eq_pred_of_noParent`（`Decrease:37`）と合わせると、
+F1 の場面では `T⟦m⟧ = T.dropLast` ＝ 長さの帰納だけで B が閉じます。**
+
+⚠ **F2a（`srow = 2` ∧ 錐の外）は `nextrel2` 版が要ります。**
+`nextrel2` は `le1` を要求し、`le1` の最後の 1 歩が `nextrel1` なので**同じ骨**ですが、
+**`le1` の鎖をたどる分だけ余分な作業があります。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
