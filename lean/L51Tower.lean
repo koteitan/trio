@@ -536,5 +536,63 @@ theorem M316_mem_Wself_of_gtow (h : GTow) : M316 ∈ Wself := by
   exact M316_mem_W_zero_of_gtow h
 
 
+/-! ### 課題 L52-a: `W_add` の `rsum` を「深い側に足す」向きに緩めると `Aop` の節 3 になる
+
+`rsum A B := ∀ p ∈ A ++ B, entry B 0 0 ≤ p.1` は「**足す塊の根が全体で最浅**」を
+要求する。塔の写しは上昇して**深く**なるので、そこでは使えない
+（上の `example : ¬ rsum Q0 (shiftr01 1 0 Q0)`）。
+
+深い側は `Aop` の**節 3（`graft`）**が扱う場所である。下の `graft_snoc` が
+その同一視を明示する: **`graft (A ++ [t]) z = A ++ (z を `t` の行 0 の深さにずらしたもの)`。** -/
+
+/-- **`graft` を snoc の形で書き直したもの。** 末尾列 `t` を塊 `z` に置き換えると
+`A` のうしろに `z` を `t` の深さでぶら下げた形になる。 -/
+theorem graft_snoc (A : TrioSeq) (t : ℕ × ℕ × ℕ) (z : TrioSeq) :
+    graft (A ++ [t]) z
+      = A ++ z.map (fun p => ((p.1 + t.1, p.2.1, p.2.2) : ℕ × ℕ × ℕ)) := by
+  have h1 : (A ++ [t]).dropLast = A := by simp
+  have hlen : (A ++ [t]).length - 1 = A.length := by simp
+  have h2 : entry (A ++ [t]) 0 ((A ++ [t]).length - 1) = t.1 := by
+    rw [hlen]
+    have hg : (A ++ [t]).getD A.length ((0, 0, 0) : ℕ × ℕ × ℕ) = t := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega)]
+      simp
+    unfold entry
+    simp only []
+    rw [hg]
+    simp
+  unfold graft
+  rw [h1, h2]
+
+/-- **★ 「深い側に足す」は `Aop` の節 3 そのもの**（課題 L52-a）。
+節 3 のデータ `hgr` があれば、深い塊を足す操作は**そのまま出る**。 -/
+theorem wAddDeep_of_clause3 {u m : ℕ} {A : TrioSeq} {t : ℕ × ℕ × ℕ}
+    (hgr : ∀ z ∈ W m, based z → graft (A ++ [t]) z ∈ W u)
+    {z : TrioSeq} (hz : z ∈ W m) (hb : based z) :
+    A ++ z.map (fun p => ((p.1 + t.1, p.2.1, p.2.2) : ℕ × ℕ × ℕ)) ∈ W u := by
+  have h9 := hgr z hz hb
+  rwa [graft_snoc] at h9
+
+/-- **`W_add` の「深い側」版**（課題 L52-a で切り出したもの）。
+
+`W_add`（`Wset.lean:1682`）は `rsum`（浅い側）でしか足せない。こちらは
+**`A` の末尾より深い塊を足す**形で、`wAddDeep_of_clause3` のとおり
+**`Aop` の節 3 の結論そのもの**である。
+
+### 既存の仮定との関係
+
+    `WCat`（`A ++ B ∈ W u`、両方 `W u`）        … **浅い側**。`rsum` の一般化
+    `WSnoc`（1 列だけ足す）                      … `WCat` を含意（`wcat_of_snoc`）
+    `SubstClosedG`（任意の列を任意の塊に置換）   … **一般の置換**
+    **`WAddDeep`（末尾の 1 枠だけ置換）**        … `SubstClosedG` の**単一枠**の場合
+
+⟹ **`WAddDeep` は `SubstClosedG` より狭いが、同じ結び目**（残核 `Subst1gReviveSelf`）
+に属する。課題 L50 §3 / L51-c と同じ結論。 -/
+def WAddDeep : Prop :=
+  ∀ (u m : ℕ) (A : TrioSeq) (t : ℕ × ℕ × ℕ) (z : TrioSeq),
+    (A ++ [t]) ∈ W u → m < u → domT (A ++ [t]) m → z ∈ W m → based z →
+    A ++ z.map (fun p => ((p.1 + t.1, p.2.1, p.2.2) : ℕ × ℕ × ℕ)) ∈ W u
+
+
 end L51T
 end TRIO
