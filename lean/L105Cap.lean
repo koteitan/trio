@@ -10025,6 +10025,81 @@ theorem snocStep_oper_prefix {M : TrioSeq} {d e n j p m : ℕ}
 **「`p ≥ 1` 側が通る」ではありません。**
 **⟹ R2 に「`p = 0` が何 % か」を測ってもらうのが、いちばん効きます。** -/
 
+/-! ## 139. ★★★★★★★ **核を「親を持つ列」だけに絞る**
+
+§94 `mTowerClosed_of_snocStep` は **すべての** `j` について 1 列足すことを要求していた。
+**だが孤児の場合は `snoc_orphan_W`（`:144`、緑）が**前提なしで**片づける。**
+
+> **⟹ §137 のような前提（`hf1` / `horph` / `h2` / `h1`）は、
+> 「孤児であることを**示す**ため」に要っただけで、
+> **場合分けにすれば要らない。****
+
+**⟹ 核は「足す列が親を持つとき」だけになる。** -/
+
+open Classical in
+theorem mTowerClosed_of_snocStepPar {u : ℕ} {Q : TrioSeq} {d e : ℕ}
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (hasParent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+        ∨ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  refine mTowerClosed_of_snocStep ?_
+  intro n j hj hC
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
+    rw [List.take_add_one]
+    congr 1
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+    rfl
+  have hsplit : mTower Q d e n ++ B.take (j + 1)
+      = (mTower Q d e n ++ B.take j) ++ [B.getD j (0, 0, 0)] := by
+    rw [hBt, ← List.append_assoc]
+  by_cases hE : mTower Q d e n ++ B.take j = []
+  · exact hstep n j hj (Or.inr hE) hC
+  · by_cases hP : hasParent (mTower Q d e n ++ B.take (j + 1))
+        (srow (mTower Q d e n ++ B.take (j + 1))
+          (mTower Q d e n ++ B.take j).length)
+        (mTower Q d e n ++ B.take j).length
+    · exact hstep n j hj (Or.inl hP) hC
+    · rw [hsplit]
+      exact snoc_orphan_W _ hC hE (by rw [← hsplit]; exact hP)
+
+/-! ### 139.1 ⟹ 核が 1 段小さくなりました
+
+    §94  … **すべての** `j` について「塔に 1 列足す」
+    **§139 … **足す列が親を持つ** `j` についてだけ「塔に 1 列足す」**
+
+**⟹ §137 で入れた 5 つの前提（`hf1` / `horph` / `h2` / `h1` / `0 < j`）は、
+場合分けにすれば**要りません**でした。**
+
+⚠ **これは §137 が無駄だったという意味ではありません。**
+§137 は **「`Q` の孤児が塔でも孤児」**という**内容のある**定理で、
+§136 の `take` 不変性とあわせて **(T1) の道具**として残ります。
+**ここで消えたのは「核の前提」であって「定理」ではありません。**
+
+### 139.2 ⟹ そして §138 とつなぐと、核は 1 行になります
+
+    **足す列が親を持つ ⟹ `T_{j+1}⟦m⟧ = T_p ++ （窓 `[p, j]` の `m` 個のコピー）**（§138、緑）
+    **`p ≥ 1`** ⟹ 窓がブロックより短い ⟹ **測度あり**
+    **`p = 0`** ⟹ 窓 ＝ ブロック全体 ⟹ **測度なし**（§121 の「塔の塔」）
+
+⚠ **正確には 3 分岐です**（§138 の `hpe` は「親が同じブロックの中」を仮定しています）:
+
+    **(i)** 孤児                       … §139 で場合分けにより消える
+    **(ii)** 親が**同じブロック**の `p ≥ 1` … 窓 `[p, j]` はブロックより短い ⟹ **測度あり**
+    **(iii)** 親がブロックの**根**（`p = 0`）**または手前のブロック**
+        … 窓がブロック以上 ⟹ **測度なし**
+        （手前のブロックの場合が R2 の「`Lb' > |Q|` が 100%」＝ 復活。§121 の塔の塔と同じ姿）
+
+> **⟹ 核 ＝ (iii)「親がブロックの根、または手前のブロックにある列を、塔に足す」。**
+
+⚠ **教訓 14**: これは **核の姿**であって、**核が解けたのではありません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
