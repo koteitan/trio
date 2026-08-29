@@ -7018,6 +7018,68 @@ theorem f2b_forces_row2_root {Q : TrioSeq} (hsr : srow Q (Q.length - 1) = 2)
 ⚠ **§86 / §87 / 上の 3 本はいずれも `Wset.nextR_src_ge`（`:2573`、緑）の特殊化**である（§92）。
 **一般補題も「ブロックが自分の親を持つ」ことを要求するので、F2b（孤児）には同じく届かない。** -/
 
+/-! ## 94. ★★★★★★ 塔の閉包を **「1 列ずつ足す」2 重帰納**に落とす（team-lead の案）
+
+`catBlock` / `hesc` / リフト装備を全部使わない形。**外側は `n`、内側は「ブロック `n` の
+何列目まで足したか」`j`。** 段は 1 列の snoc で、**列は完全に決まっている。** -/
+
+/-- **★★★★★★ 塔の閉包 ＝ 1 列ずつの snoc（2 重帰納）。** -/
+theorem mTowerClosed_of_snocStep {u : ℕ} {Q : TrioSeq} {d e : ℕ}
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  intro n
+  induction n with
+  | zero => simpa using W_nil u
+  | succ n ih =>
+      have key : ∀ j, j ≤ Q.length →
+          mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u := by
+        intro j
+        induction j with
+        | zero => intro _; simpa using ih
+        | succ j ihj =>
+            intro hj
+            exact hstep n j (by omega) (ihj (by omega))
+      have hfull := key Q.length le_rfl
+      rw [List.take_of_length_le (by rw [Lift1_length, shiftr01_length])] at hfull
+      rw [mTower_succ]
+      exact hfull
+
+open Classical in
+/-- 足す列は完全に決まっている。 -/
+theorem block_getD {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length) :
+    (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).getD j (0, 0, 0)
+      = ((entry Q 0 j + d * n,
+          entry Q 1 j + (if le1 Q 0 j then e * n else 0), entry Q 2 j) : ℕ × ℕ × ℕ) := by
+  have hlt : j < (shiftr01 (d * n) 0 Q).length := by rw [shiftr01_length]; exact hj
+  rw [Lift1_getD hlt, entry0_shiftr01 hj, entry1_shiftr01, entry2_shiftr01, le1_shiftr01]
+
+/-! ### 94.1 ⟹ 何が良くなったか
+
+    **`catBlock_of_escape'`（§82）** … `B ∈ W u'` に `A2'` を回す。リフト装備が要る
+    **`catBlock_of_escape_head`（§90）** … 底が 1 列に確定。だが `A2'` は残る
+    **`mTowerClosed_of_snocStep`（上）** … **`A2'` も装備も無い。素の 2 重帰納**
+
+**段は「決まった 1 列の snoc」で、列は `block_getD` が明示する:**
+
+    **`(entry Q 0 j + d*n, entry Q 1 j + [錐なら e*n], entry Q 2 j)`**
+
+⟹ **`j = 0` が (A1)（ブロックの根）**、`j ≥ 1` がその続き。
+
+### 94.2 ⚠ 段が易しくなったわけではない
+
+**1 列の snoc は `WSnoc` の形である。** 無料なのは 2 つだけ:
+
+    **`snoc_orphan_W`（§4、緑）** … 足した列が**孤児のまま**なら段によらず無料
+    **`Wtower2.snoc_flat_root`（`:2208`）** … `srow = 0` かつ**親が根**なら無料
+
+**⟹ 残るのは「足した列が土台の中に親を見つける（根以外）」場合**で、
+**それは §88.1 / §91.2 と同じ 1 点である。**
+
+**⟹ 形は最小になった（`A2'` も装備も消えた）が、難所は動いていない。**
+**次に測るべきは「`j` ごとに、足した列が孤児か／親が根か／親が内部か」の 3 分割。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
