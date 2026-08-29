@@ -15,6 +15,12 @@ from wcert import wcert, rsum, lev0
 
 MAXLEN = 400
 MLIFT = False        # (MLIFT)「行 1 が列ごとに 0 か d だけ上がる持ち上げ」を仮定するか
+JUNCTION_RSUM = True     # **既定は True（健全側）**。False で旧測定を再現できる
+# ⚠ **教訓 12（R1 が指摘、2026-08-29）**
+# 既定（False）では、族の枝が返す証明書は `A ++ 塔 ∈ Wself` を丸ごと神託にしている。
+# これは `ShiftTowerClosed`（塔だけ、前置き無し）**より強く、`WCat`（深い側の連結）を
+# 含んでいる**。⟹ 「+MLIFT で 100%」は **WCat 込みの数字**である。
+# True にすると接ぎ目に `rsum(A, Q)` を要求し、`ShiftTowerClosed` 相当の弱い神託になる。
 NPROBE = 4          # 族の形を推定する n の個数
 NCHECK = 3          # 検算に使う追加の n
 
@@ -132,6 +138,8 @@ class Cert(object):
             return None
         if not rootmin(Q):
             return None
+        if JUNCTION_RSUM and A and not rsum(A, Q):
+            return None                     # 接ぎ目に W_add が要る（WCat を仮定しない）
         if e == 0 and d == 0 and A == Q:
             return 'C12+C10'                # W_flatMap_copies（証明ずみ）
         if uni and d == 0:
