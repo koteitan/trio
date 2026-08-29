@@ -224,5 +224,137 @@ def TowerNoRevive : Prop :=
     A ++ shiftBlk t z ∈ W u
 
 
+/-! ## 課題 L54-a: `Blk` —— 実際に現れる段だけに制限する
+
+実測（SESSION §47、シート 4467 行の 1 段目 `Q`）:
+
+    Q の中に親を持つ   3153  70.58%   節 2（SCOMM）
+    |Q| <= 1            734  16.43%   節 1（snoc_flat_root）
+    孤児で lev >= 1     578  12.94%   節 3（SDOM）
+    **Zgap の形            0   0.00%**
+
+⟹ **3 節がちょうど分割し、穴は 1 件も出ない。** 2 段目でも 0 件。 -/
+
+/-- **段のクラス**: `Zgap`（レベル 0 の孤児で `|z| > 1`）だけを除いたもの。 -/
+def Blk (z : TrioSeq) : Prop :=
+  z.length ≤ 1 ∨
+    hasParent z (srow z (z.length - 1)) (z.length - 1) ∨
+    (¬ hasParent z (srow z (z.length - 1)) (z.length - 1) ∧
+      1 ≤ lev z (z.length - 1))
+
+/-- **`Blk` は「`Zgap` の形を除く」と同値**。 -/
+theorem blk_iff (z : TrioSeq) :
+    Blk z ↔ ¬(1 < z.length ∧
+      ¬ hasParent z (srow z (z.length - 1)) (z.length - 1) ∧
+      lev z (z.length - 1) = 0) := by
+  classical
+  unfold Blk
+  constructor
+  · rintro (h | h | ⟨-, h⟩) ⟨h1, h2, h3⟩
+    · omega
+    · exact h2 h
+    · omega
+  · intro h
+    by_cases hp : hasParent z (srow z (z.length - 1)) (z.length - 1)
+    · exact Or.inr (Or.inl hp)
+    · by_cases hl : 1 ≤ lev z (z.length - 1)
+      · exact Or.inr (Or.inr ⟨hp, hl⟩)
+      · left
+        by_contra hc
+        exact h ⟨by omega, hp, by omega⟩
+
+/-- **`Zgap` は `Blk` でない**（除かれる形の証人）。 -/
+theorem Zgap_not_blk : ¬ Blk Zgap := by
+  rw [blk_iff]
+  intro h
+  exact h ⟨Zgap_len, Zgap_orphan, Zgap_lev⟩
+
+/-- **制限した置換補題**（課題 L54-a）。一般の `z ∈ W m` では `Zgap` があるので偽。
+`Blk z` を足すと実測の 100% が入る。 -/
+def SubstBlk : Prop :=
+  ∀ (u m : ℕ) (A : TrioSeq) (t : ℕ × ℕ × ℕ) (z : TrioSeq),
+    A ∈ W u → A ≠ [] → z ∈ W m → based z → Blk z →
+    A ++ shiftBlk t z ∈ W u
+
+/-- **`Blk` は展開と `graft` で閉じる**（実測では 2 段の深さまで確認）。
+`SubstBlk` の帰納を回すのに要る。 -/
+def BlkClosed : Prop :=
+  (∀ (z : TrioSeq) (n : ℕ), Blk z → 1 ≤ n → Blk (z⟦n⟧)) ∧
+  (∀ (z y : TrioSeq), Blk z → based y → Blk y → Blk (graft z y))
+
+/-! ## 課題 L54-b: (SDOM) は「`A` の側に真に浅い列が無い」だけで出る -/
+
+/-- **★ 真に浅い列が無ければ親は無い。** `nextrel0/1/2` はどれも
+「`entry M i j0 < entry M i j1`」を含むので、行 `i` で真に浅い列が無ければ即座に出る。 -/
+theorem not_hasParent_of_no_shallow {M : TrioSeq} {i j1 : ℕ}
+    (h : ∀ j, j < j1 → entry M i j1 ≤ entry M i j) : ¬ hasParent M i j1 := by
+  intro hp
+  obtain ⟨j0, hj0, -⟩ := hp
+  rw [nextR] at hj0
+  split at hj0
+  · rename_i hi
+    subst hi
+    have h1 := h j0 hj0.2.2.1
+    have h2 := hj0.2.2.2.1
+    omega
+  · split at hj0
+    · rename_i hi
+      subst hi
+      have h1 := h j0 hj0.2.2.1
+      have h2 := hj0.2.2.2.1
+      omega
+    · rename_i hi0 hi1
+      -- `entry` は `i ≥ 2` でどれも行 2 を返す
+      have he : ∀ j, entry M i j = entry M 2 j := fun j => by
+        simp [entry, hi0, hi1]
+      have h1 := h j0 hj0.2.2.1
+      rw [he, he] at h1
+      have h2 := hj0.2.2.2.1
+      omega
+
+/-- **(SDOM) の具体形**（課題 L54-b）。`z'` の末尾が `z'` の中で孤児でも、
+`A` が親を供給すると復活する。**供給しない条件は「`A` の側に真に浅い列が無い」だけ。** -/
+theorem sdom_of_no_shallow {A z' : TrioSeq}
+    (h : ∀ j, j < (A ++ z').length - 1 →
+      entry (A ++ z') (srow (A ++ z') ((A ++ z').length - 1))
+          ((A ++ z').length - 1)
+        ≤ entry (A ++ z') (srow (A ++ z') ((A ++ z').length - 1)) j) :
+    ¬ hasParent (A ++ z') (srow (A ++ z') ((A ++ z').length - 1))
+      ((A ++ z').length - 1) :=
+  not_hasParent_of_no_shallow h
+
+/-! ### `snoc_orphan` との違い
+
+    `snoc_orphan`（`Wtower2.lean:3053`）
+      仮定 `¬ hasParent (A ++ [t]) …`   ← **全体で孤児**であることを直に要求
+    `sdom_of_no_shallow`
+      仮定 「行 `srow` で真に浅い列が無い」 ← **`A` と `z'` を分けて確かめられる**
+
+⟹ (SDOM) は `snoc_orphan` の仮定を**確かめやすい形に分解したもの**。
+`z'` の側は `z` が孤児であることから、`A` の側は上の不等式から出る。 -/
+
+/-! ## 課題 L54-c: (SCOMM) のずれは行 1 だけ ＝ (MLIFT)
+
+H11 の実測（非一様な写し 556 件）: **100% が「行 0 は一様・行 1 だけ列ごと・行 2 は不動」**。
+⟹ `(A ++ z')⟦n⟧` と `A ++ (z⟦n⟧)'` の差は**行 1 のマスクつき持ち上げ**だけ。
+
+`mlift_mem_W`（`Wslift.lean:146`、**証明ずみ**）は行 1 の階段状持ち上げを
+`W (m + 2d)` へ運ぶ。⟹ **(SCOMM) と (MLIFT) は同じ 1 本。**
+橋は `Lift1_eq_mlift_of_tieFree`（`Wtower2.lean:76`）で、条件は `TieFree`
+（課題 L10 で標準形の族では空虚と判明）。 -/
+
+/-- **(SCOMM-R1)** ずれが行 1 だけであること。行 0 と行 2 は一致する。 -/
+def SCommRow1 : Prop :=
+  ∀ (A : TrioSeq) (t : ℕ × ℕ × ℕ) (z : TrioSeq) (n : ℕ), 1 ≤ n → 1 < z.length →
+    Blk z →
+    ((A ++ shiftBlk t z)⟦n⟧).length = (A ++ shiftBlk t (z⟦n⟧)).length ∧
+    (∀ j, entry ((A ++ shiftBlk t z)⟦n⟧) 0 j
+        = entry (A ++ shiftBlk t (z⟦n⟧)) 0 j) ∧
+    (∀ j, entry ((A ++ shiftBlk t z)⟦n⟧) 2 j
+        = entry (A ++ shiftBlk t (z⟦n⟧)) 2 j) ∧
+    (∀ j, entry (A ++ shiftBlk t (z⟦n⟧)) 1 j
+        ≤ entry ((A ++ shiftBlk t z)⟦n⟧) 1 j)
+
+
 end L53
 end TRIO
