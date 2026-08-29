@@ -10466,6 +10466,70 @@ theorem le0_block_in_tower {Q : TrioSeq} {d e n k a b : ℕ} (hk : k < n)
 
 ⚠ **教訓 14**: 上は **道**であって、まだ **定理ではありません。** -/
 
+/-! ## 147. ★★★★★★ (N1): **ブロック `k` の根は、ブロック `n'` の任意の列の行 0 祖先**
+
+§146 の土台の上に、§144 の下界と §79 の段内鎖を積む。 -/
+
+theorem mTower_entry {Q : TrioSeq} {d e n k q i : ℕ} (hk : k < n) (hq : q < Q.length) :
+    entry (mTower Q d e n) i (k * Q.length + q)
+      = entry (Lift1 (shiftr01 (d * k) 0 Q) (e * k)) i q := by
+  have hlen2 : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hmul : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hmul2 : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hbb : k * Q.length + q < (k + 1) * Q.length := by omega
+  rw [← Wset.entry_take (X := mTower Q d e n) (l := (k + 1) * Q.length)
+      (i := i) (j := k * Q.length + q) hbb,
+    mTower_take Q d e (show k + 1 ≤ n from by omega), mTower_succ,
+    ← mTower_length Q d e k]
+  exact entry_append_right _ _ i q
+
+/-- **ブロックの根の行 0 は `entry Q 0 0 + d*k`。** -/
+theorem mTower_entry0_root {Q : TrioSeq} {d e n k : ℕ} (hk : k < n)
+    (hQ : 0 < Q.length) :
+    entry (mTower Q d e n) 0 (k * Q.length) = entry Q 0 0 + d * k := by
+  have h := mTower_entry (Q := Q) (d := d) (e := e) (n := n) (k := k) (q := 0)
+    (i := 0) hk hQ
+  rw [Nat.add_zero] at h
+  rw [h]
+  show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD 0 (0, 0, 0)).1 = _
+  rw [block_getD (d := d) (e := e) (n := k) hQ]
+
+/-- **§79 をブロックに適用**: ブロックの根から、そのブロックのどの列にも行 0 の鎖が届く。 -/
+theorem le0_block_root {Q : TrioSeq} {d e n k q : ℕ} (hk : k < n) (hq : q < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    le0 (mTower Q d e n) (k * Q.length) (k * Q.length + q) := by
+  have hBlen : (Lift1 (shiftr01 (d * k) 0 Q) (e * k)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hE0 : ∀ x, x < Q.length →
+      entry (Lift1 (shiftr01 (d * k) 0 Q) (e * k)) 0 x = entry Q 0 x + d * k := by
+    intro x hx
+    show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD x (0, 0, 0)).1 = _
+    rw [block_getD hx]
+  have hshal : ∀ l, 1 ≤ l → l < (Lift1 (shiftr01 (d * k) 0 Q) (e * k)).length →
+      entry (Lift1 (shiftr01 (d * k) 0 Q) (e * k)) 0 0
+        < entry (Lift1 (shiftr01 (d * k) 0 Q) (e * k)) 0 l := by
+    intro l hl0 hl1
+    rw [hBlen] at hl1
+    rw [hE0 0 (by omega), hE0 l (by omega)]
+    have := hr0 l (by omega) hl1
+    omega
+  have h := le0_zero_of_shallow hshal (b := q) (by rw [hBlen]; exact hq)
+  have := le0_block_in_tower (Q := Q) (d := d) (e := e) (n := n) hk h
+  rwa [Nat.add_zero] at this
+
+/-! ### 147.1 ⟹ 残るのは「ブロック `k` の根 → ブロック `k+1` の根」の 1 歩
+
+上の 3 本で **段内**は完全に片づいた。**段を跨ぐ 1 歩**は §146.1 の道:
+
+    ブロック `k` の根が候補（`0 < d` が要る）⟹ §144 で親は `k*|Q|` 以上
+    ⟹ 親はブロック `k` の中 ⟹ `le0_block_root` でブロック `k` の根から届く
+
+⚠ **その 1 歩には `hasParent (塔) 0 ((k+1)*|Q|)` が要る**（親の存在）。
+**`hasParent_zero_iff` は「より浅い列が左にあれば親がある」なので、
+ブロック `k` の根がまさにそれ。⟹ `0 < d` があれば出る。**
+
+⚠ **教訓 14**: まだ **定理ではありません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
