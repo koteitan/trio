@@ -2914,6 +2914,106 @@ theorem towerOK_of_towerExpBigRow2 (h : TowerExpBigRow2) : TowerOK :=
     `|R| ≥ 2` の節 3                 … `Wchar.aop_clause3_to_clause2`（節 2 に落ちる）
     `|R| = 1` の節 3・`srow = 2`      … `towerGraft2Single_holds` -/
 
+
+/-! ## 41. ★★★★ 課題 L122: `|R| ≥ 2` で塔の行 2 はどうなるか
+
+`tower_of_row2const`（§40）の骨は「行 2 が定数」だけを使っている。同じ帰納を
+**任意の述語 `P`** で回せる。 -/
+
+/-- `constRow2_Lift1` の述語版。 -/
+theorem row2_pred_Lift1 {X : TrioSeq} {d : ℕ} {P : ℕ → Prop}
+    (h : ∀ p ∈ X, P p.2.2) : ∀ p ∈ Lift1 X d, P p.2.2 := by
+  intro p hp
+  unfold Lift1 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨j, hj, hjp⟩ := hp
+  rw [List.mem_range] at hj
+  rw [← hjp]
+  show P (entry X 2 j)
+  exact h _ (entry_pair_mem (B := X) hj)
+
+open Classical in
+/-- **★★★ 塔の行 2 は `{z} ∪ row2(R.dropLast)` の外に出ない。**
+（`tower_of_row2const` は `P := (· = z)` の場合。） -/
+theorem tower_row2_pred {v z m : ℕ} {R : TrioSeq} {P : ℕ → Prop} (hR : argOK R)
+    (hRne : R ≠ []) (hd : domT R m)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length)
+    (hz : P z) (hR2 : ∀ p ∈ R.dropLast, P p.2.2) :
+    ∀ n, ∀ p ∈ ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧), P p.2.2 := by
+  have hgraft : ∀ {y : TrioSeq}, (∀ p ∈ y, P p.2.2) →
+      ∀ p ∈ graft R y, P p.2.2 := by
+    intro y hy p hp
+    unfold graft at hp
+    rcases List.mem_append.mp hp with h | h
+    · exact hR2 p h
+    · rw [List.mem_map] at h
+      obtain ⟨q, hq, rfl⟩ := h
+      exact hy q hq
+  have hlevpos : 0 < lev R (R.length - 1) := by rw [hd.1]; omega
+  have hsr : srow R (R.length - 1) = 1 ∨ srow R (R.length - 1) = 2 := by
+    unfold srow
+    unfold lev at hlevpos
+    by_cases h2' : 0 < entry R 2 (R.length - 1)
+    · rw [if_pos h2']; exact Or.inr rfl
+    · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+  rcases hsr with h1 | h1
+  · intro n
+    rw [oper_cons_tower1 hR hRne hd h1 hpM]
+    induction n with
+    | zero => intro p hp; simp [tow] at hp
+    | succ k ih =>
+        intro p hp
+        simp only [tow, List.mem_cons] at hp
+        rcases hp with rfl | hp
+        · exact hz
+        · exact hgraft ih p hp
+  · have hzero := L53.oper_cons_zero (v := v) (z := z) hR hRne hd hpM
+    intro n
+    induction n with
+    | zero =>
+        rw [hzero]
+        intro p hp
+        simp at hp
+    | succ k ih =>
+        rw [oper_cons_tower2 (m := m) hR hRne hd h1 hpM]
+        intro p hp
+        rcases List.mem_cons.mp hp with rfl | hp
+        · exact hz
+        · exact hgraft (row2_pred_Lift1 ih) p hp
+
+/-! ### 41.1 ⚠ `|R| ≥ 2` で剥き落としが**効かなくなる理由**（team-lead の問いへの回答）
+
+`graft R y = R.dropLast ++ (y を行 0 でずらしたもの)` なので、塔は
+
+    `X⟦k+1⟧ = (0,v,z) :: R.dropLast ++ (ずらした X⟦k⟧)`
+
+⟹ **行 2 の列は `z, (R.dropLast の行 2), z, (R.dropLast の行 2), …` と周期的**になる。
+`|R| = 2`（`R.dropLast = [(d,b,c)]`）なら **`z, c, z, c, …`**。
+
+    `c = z` … **定数** ⟹ `tower_of_row2const`（§40）で**無料**
+    `c ≠ z` … **定数でない**
+
+そして剥き落とし（`oper = Pred`）が回るには、**どの接尾辞でも末尾列が行 2 の孤児**
+である必要がある ⟹ **行 2 が非増加**でなければならない。周期 `z, c, z, c, …` が
+非増加になるのは `c = z` のときだけ。
+
+⟹ **`c ≠ z` では剥き落としは原理的に効かない。** とくに `z < c` なら、末尾列
+（行 2 = `c`）に対して**根（行 2 = `z`）が行 2 の親の候補**になる。
+
+### 41.2 ★ ⟹ `TowerExpBig` の本体（1 行）
+
+> **`|R| ≥ 2` かつ `R.dropLast` の行 2 が `z` と違うとき、塔の行 2 は周期的になり、
+> 末尾列は行 2 の孤児でなくなる。⟹ `oper` は `Pred` にならず、塔は伸び続ける。
+> そこを支えるのは `Aop` の節 3（graft）しかない。**
+
+そして塔の胴体の先頭 `(0,v,z) :: R.dropLast` は仮定 `R.dropLast ∈ Wstar` から `W a` だが、
+**そこに後続を `W_add` で繋ぐ道は死んでいる**（`not_rsum_of_root_mem`、§14:
+先頭は根（行 0 = 0）を含み、後続は `entry R 0 (|R|-1) ≥ 1` だけ深い）。
+
+⟹ **経路 D（`Wstar`）の残核は、経路 C（`GX` / `CoreCap` ⟺ `GraftAll`）と同じ
+「graft 閉包」1 点に合流した。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
