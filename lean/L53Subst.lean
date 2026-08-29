@@ -143,5 +143,86 @@ theorem Zgap_not_domT (m' : ℕ) : ¬ domT Zgap m' := by
 
 ⟹ **`Subst1g` の本体は (SCOMM) と (SDOM) の 2 本＋隙間 1 つ**である。 -/
 
+/-! ## 課題 L53-c: 「逃げるかは 1 段目で決まる」は **`oper` の定義から出る**
+
+`oper M n` は `j1 = |M|-1`、`i1 = srow M j1`、`j0 = parent M i1 j1`、`d0`、`d1` を
+**`M` だけから**決め、`n` は `(List.range n).flatMap` にしか現れない。
+⟹ **バッドルートの位置も上昇量も `n` に依らない。**
+
+H11 の「K 感度ゼロ（K=1,2,4,8 で逃げる行の集合が完全に同一）」は、
+**同じ行列に対しては定義から自明**である（測定が確かめたのは、塔を伸ばしても
+逃げ方が変わらない、という**別の行列どうし**の話）。
+
+下の `oper_unfold` がその形。**3 つの `if` を潰した一般形**なので、
+個別の行列（`M275` / `M284` / `M316`）で手作業していた部分がこれ 1 本で済む。 -/
+
+open Classical in
+/-- **★ `oper` の展開（3 つの `if` を潰した一般形）。**
+
+`j0`（バッドルート）・`d0`・`d1` は **`M` だけで決まり `n` に依らない**。 -/
+theorem oper_unfold {M : TrioSeq} {j1 i1 j0 d0 d1 : ℕ}
+    (hj1 : j1 = M.length - 1) (hj1ne : j1 ≠ 0)
+    (hz : ¬(entry M 0 j1 = 0 ∧ entry M 1 j1 = 0 ∧ entry M 2 j1 = 0))
+    (hi1 : i1 = srow M j1) (hpar : hasParent M i1 j1)
+    (hj0 : j0 = parent M i1 j1)
+    (hd0 : d0 = if 0 < i1 then entry M 0 j1 - entry M 0 j0 else 0)
+    (hd1 : d1 = if 1 < i1 then entry M 1 j1 - entry M 1 j0 else 0) (n : ℕ) :
+    M⟦n⟧ = M.take j0 ++ (List.range n).flatMap fun k =>
+      (List.range' j0 (j1 - j0)).map fun j =>
+        ((entry M 0 j + (if le0 M j0 j then k * d0 else 0),
+          entry M 1 j + (if le1 M j0 j then k * d1 else 0),
+          entry M 2 j) : ℕ × ℕ × ℕ) := by
+  subst hj1
+  subst hi1
+  subst hj0
+  rw [oper]
+  dsimp only
+  rw [if_neg hj1ne, if_neg hz, if_neg (not_not_intro hpar)]
+  subst hd0
+  subst hd1
+  rfl
+
+open Classical in
+/-- **`n` に依らないことの系**: 2 つの展開は同じ接頭辞・同じ写しを共有する。 -/
+theorem oper_prefix_indep {M : TrioSeq} {j1 i1 j0 d0 d1 : ℕ}
+    (hj1 : j1 = M.length - 1) (hj1ne : j1 ≠ 0)
+    (hz : ¬(entry M 0 j1 = 0 ∧ entry M 1 j1 = 0 ∧ entry M 2 j1 = 0))
+    (hi1 : i1 = srow M j1) (hpar : hasParent M i1 j1)
+    (hj0 : j0 = parent M i1 j1)
+    (hd0 : d0 = if 0 < i1 then entry M 0 j1 - entry M 0 j0 else 0)
+    (hd1 : d1 = if 1 < i1 then entry M 1 j1 - entry M 1 j0 else 0) (n : ℕ) :
+    M⟦n + 1⟧ = M⟦n⟧ ++ (List.range' j0 (j1 - j0)).map fun j =>
+        ((entry M 0 j + (if le0 M j0 j then n * d0 else 0),
+          entry M 1 j + (if le1 M j0 j then n * d1 else 0),
+          entry M 2 j) : ℕ × ℕ × ℕ) := by
+  rw [oper_unfold hj1 hj1ne hz hi1 hpar hj0 hd0 hd1 (n + 1),
+    oper_unfold hj1 hj1ne hz hi1 hpar hj0 hd0 hd1 n]
+  rw [List.range_succ, List.flatMap_append]
+  simp [List.append_assoc]
+
+/-! ## 課題 L53-b: 復活なしの (TOWER)
+
+H11 の実測（構造だけ、所属判定を使わない、4482 行）:
+
+    段の幅 b >= 2 に限ると逃げるのは 577 / 3743 = 15.4%
+    **b >= 2 では逃げ先の 100% が `A` の中**（前の段に落ちるのは 0 件）
+    ⟹ **復活は塔の内部では起きない。段どうしの相互作用は考えなくてよい。**
+    (a) 一様な塔 逃げる 10.4% ／ (b) 行 1 に印つき 逃げる 43.9%
+    ⟹ (MLIFT) と (REVIVE) は同じ難所の 2 つの顔 -/
+
+/-- **復活しない**: `A ++ z'` のバッドルートが `z'` の側にある。 -/
+def NoRevive (A z' : TrioSeq) : Prop :=
+  A.length ≤ parent (A ++ z')
+    (srow (A ++ z') ((A ++ z').length - 1)) ((A ++ z').length - 1)
+
+/-- **(TOWER-NR)** 復活なしの版。実測では `b >= 2` の **84.6%**、
+一様な塔に限れば **89.6%** がここに入る。 -/
+def TowerNoRevive : Prop :=
+  ∀ (u : ℕ) (A : TrioSeq) (t : ℕ × ℕ × ℕ) (z : TrioSeq),
+    A ∈ W u → A ≠ [] → z ∈ Wself → based z → 1 < z.length →
+    NoRevive A (shiftBlk t z) →
+    A ++ shiftBlk t z ∈ W u
+
+
 end L53
 end TRIO
