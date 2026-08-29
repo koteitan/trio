@@ -8828,6 +8828,75 @@ theorem shTower_snoc_no_root_parent_row1 {Q : TrioSeq} {e n : ℕ} (hQne : Q ≠
 
 **⟹ 2 つの枝で「誰が親になるか」が構造的に違う。`z` の相補性（§105.5）の正体はこれ。** -/
 
+/-! ## 121. ⛔ `snoc_flat_root` の **`srow = 1` 版は無料ではありません**（＝ `(TOW)` そのもの）
+
+R2 の提案（`srow = 1` 版を作れば本丸の 47.6〜62.1% が無料）を、
+**`Wtower2.oper_snoc_flat_root` の証明を開いて確かめた。答えは否である。**
+
+`oper_snoc_flat_root` の中身は **`Wtower2.oper_of_srow0_par0`** で、
+docstring がその理由を書いている（`Wtower2:2176`）:
+
+> **`i1 = 0`（`d0 = d1 = 0`）かつ `j0 = 0` のときだけコピーが `C` そのものになり、
+> `W_flatMap_copies` で無条件に閉じる。他の枝（`j0 ≥ 1`、または `i1 ≥ 1`）は
+> コピーが持ち上がる／接頭辞が残るので核のまま。**
+
+**⟹ `srow = 1` では `d0 = entry M 0 last − entry M 0 0 ≥ 1` なので、
+コピーは `C` そのものではなく `shiftr01 (k*d0) 0 C` になる。**
+
+**そして `srow = 1` かつ親＝根の展開は、既に `Wtower2.oper_of_srow1_par0`（`:1733`、緑）が
+与えている:**
+
+    **`X⟦n⟧ = shTower X.dropLast (entry X 0 (|X|-1) − entry X 0 0) n`**
+
+> **⟹ 「`snoc_flat_root` の `srow = 1` 版」＝「`shTower C d0 n ∈ W u`」＝ `ShiftTowerClosedS`。**
+> **⟹ 無料ではなく、`(TOW)` そのもの。R2 の見積もり「47.6〜62.1% が落ちる」は成立しない。**
+
+### 121.1 ⟹ しかも (T1) の場合は**塔の塔**になります
+
+(T1) は `C = shTower Q e n`、`p = r`（行 0 が `entry Q 0 0 + n*e`）。親＝根なら
+`d0 = (entry Q 0 0 + n*e) − entry Q 0 0 = n*e` で
+
+    **`(shTower Q e n ++ [r])⟦m⟧ = shTower (shTower Q e n) (n*e) m = shTower Q e (n*m)`**
+
+（ブロックの行 0 オフセットが `0, e, …, (n-1)e` を `n*e` ずつ `m` 回 ⟹ `0, e, …, (nm-1)e`）。
+
+> **⟹ 展開しても同じ族に留まり、`n` が **増える**。`n` の帰納では降りない。**
+> **⟹ `(TOW)` が核である理由が、ここに直接見える。**
+
+### 121.2 ★ 一方 `d = 0` の枝は本当に無料です（R2 の導出を Lean に） -/
+
+theorem snoc_orphan_of_flat {Q : TrioSeq} {p : ℕ × ℕ × ℕ} {i : ℕ}
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hp0 : p.1 ≤ entry Q 0 0) :
+    ¬ hasParent (Q ++ [p]) i Q.length := by
+  rintro ⟨j0, hj0, -⟩
+  have hle0 : le0 (Q ++ [p]) j0 Q.length := nextR_le0 hj0
+  have hne : j0 ≠ Q.length := by
+    have := nextR_index_lt hj0
+    omega
+  have hlt := rtg0_entry0_lt hle0.2.2 hne
+  have hj0lt : j0 < Q.length := by
+    have := nextR_index_lt hj0
+    omega
+  have hleft : entry (Q ++ [p]) 0 j0 = entry Q 0 j0 := entry_append_left _ _ hj0lt
+  have hright : entry (Q ++ [p]) 0 Q.length = p.1 := by
+    rw [entry_snoc_last]; rfl
+  rw [hleft, hright] at hlt
+  rcases Nat.eq_zero_or_pos j0 with rfl | hj0pos
+  · omega
+  · have := hs j0 (by omega) hj0lt
+    omega
+
+/-! ### 121.3 ⟹ 帰結
+
+    ✅ **`d = 0`（足す列の行 0 が根と同じ）… 孤児 ⟹ `snoc_orphan_W` で無料**（上、緑）
+       R2 の実測「`d = 0` は孤児 100%」の導出が Lean になった
+    ⛔ **`srow = 1` かつ親＝根 … `(TOW)` そのもの。無料ではない**
+    **⟹ 本丸（`z=0` ∧ `d≥1` ∧ `e≥1`、残差 100%）は、やはり `(TOW)` に帰着する。**
+
+⚠ **R2 に「`srow = 1` 版は無料にならない」と伝えること。**
+**`oper_of_srow1_par0` が既にあり、それが `shTower` を返すのが理由。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
