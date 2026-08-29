@@ -1,0 +1,4 @@
+### R92b 残核 cons(j0>=1) の枝 972 件で予算を上げる
+  depth=  9 maxlen= 26 : ok    270  unknown    702  **VIOL      0**   (1.8s, memo=53874)
+  depth= 11 maxlen= 30 : ok    270  unknown    702  **VIOL      0**   (11.4s, memo=289629)
+  depth= 13 maxlen= 36 : ok    270  unknown    702  **VIOL      0**   (78.0s, memo=1697769)
