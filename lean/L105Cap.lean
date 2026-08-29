@@ -6388,6 +6388,64 @@ theorem mTowerClosed_of_escape {u : ℕ} {Q : TrioSeq} {d e : ℕ} (h2 : 2 ≤ Q
 `Wtower2.snoc_orphan`（孤児なら無料）／`snoc_flat_root`（`srow=0` かつ親が根なら無料）
 の適用範囲が**塔の構造から決まる**。**そこが次に調べるところ。** -/
 
+/-! ## 83. `hesc` の無料の枝と、今日の到達点
+
+`hesc`（§82）の `|B| = 1` の枝は、**継いだ列が孤児のままなら無料**である
+（`snoc_orphan_W`、§4、既存）。⟹ 残るのは「**継いだ塊が土台 `A` の中に親を見つける**」場合。 -/
+
+theorem hesc_single_orphan {u c : ℕ} {A : TrioSeq} (hA : A ∈ W u) (hAne : A ≠ [])
+    {B : TrioSeq} (h1 : B.length = 1)
+    (hnp : ¬ hasParent (A ++ shiftr01 c 0 B)
+      (srow (A ++ shiftr01 c 0 B) A.length) A.length) :
+    A ++ shiftr01 c 0 B ∈ W u := by
+  obtain ⟨q, hq⟩ := List.length_eq_one_iff.mp h1
+  subst hq
+  have hsh : shiftr01 c 0 [q] = [((q.1 + c, q.2.1, q.2.2) : ℕ × ℕ × ℕ)] := by
+    unfold shiftr01
+    simp
+  rw [hsh] at hnp ⊢
+  exact snoc_orphan_W _ hA hAne hnp
+
+/-! ### 83.1 ⟹ 今日の到達点（`GraftAll` の置き換え）
+
+    **`Final.TRIO_terminates_of_mTowerClosedS`**（緑）
+      ⟸ `L105.wstar2s_closed_of_mTowerClosedS`（§75、緑）
+        ⟸ `liftTower1_of_shiftTowerClosedS`（§73、緑）
+          ＋ `liftTowerExp2_of_mTowerClosedS`（§74、緑）
+          ＋ `Lcone.liftInner_holds`（無条件・緑）
+      ⟸ **`MTowerClosedS`**（§74、**未証明**、5 量化 / 2 前提）
+        無料の枝: 行 2 ≡ 0（§76）／`n ≤ 1`（§77）／`srow = 0` の孤児は起きない（§79）
+        **残差 C `MTowerSingle` … ⛔ 証明ずみ（§81）**
+        **残差 B `MTowerOrphan` … 未証明**（§79 で狭い条件に限る）
+        **残差 A `MTowerStepAll` … `hesc`（§82）1 文に落ちた**
+          さらに `hesc` の孤児 snoc の枝は無料（上）
+
+⟹ **未証明は 2 本**:
+
+    **(A') `hesc`** … 塔 `mTower Q d e n` に、段内で孤児の塊を継ぐ
+    **(B) `MTowerOrphan`** … `Q` の末尾列が段内で孤児のときの塔
+
+**どちらも「悪根／親が自分のブロックを出て前へ逃げる」という同じ現象**である
+（§67 の「悪根 ＝ 根」、R2 の (D)、H12 の §231 と同じ場所）。
+
+### 83.2 ⚠ 今日いちばん効いた道具（次の人へ）
+
+    **`Lcone.oper_eq_gexp_gen`（`:487`、任意の悪根、緑）**
+      —— `j0 = 0` で読むと `take` が空になり **`M⟦n⟧ = mTower M.dropLast d0 d1 n`**（§68）
+    **`Lcone.liftInner_holds`（`:507`、無条件、緑）**
+      —— `j0 ≥ 1` の可換性を**全部**片づける。残差が `j0 = 0` に絞れる（§67）
+    **`Wchar.mem_of_oper_mem` / `aop_clause3_to_clause2`**
+      —— 段と節 3 を消す。**帰納法が要らなくなる場面が多い**（§71、§82）
+    **`L53.comm_of_hasParentInBlock`（`L53Subst:922`、緑）**
+      —— 「段内に親があれば展開は前半を触らない」。塔の帰納の心臓
+
+### 83.3 ⚠ 今日の規律の失敗（記録）
+
+**既存補題の再発明が 7 回**（`shTower` 系 ×2、`srow_cons_last`、`entry_cons_last`、
+`mTower_one`、`srow_shiftr01`、`oper_of_srow1_par0` は寸前で回避）。
+**「新しい補題を書く前に `grep`」を毎回やること。** 2 回は `leanman check` の
+`already been declared` が救ってくれたが、名前が違うと通ってしまう。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
