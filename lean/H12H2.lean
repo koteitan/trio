@@ -335,5 +335,70 @@ theorem mTowerClosed_of_snocStepCone_zle1 {u : ℕ} {v z t m d e : ℕ} {R : Tri
     ∀ n, mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) d e n ∈ W u :=
   mTowerClosed_of_snocStepCone' hr0 (hz0_of_zle1 hRne hz1 hz hd hi2 hpM) hstep
 
+
+/-! ## 6. ★★★★ **F2a の一般化** —— 末尾列でなくてよい
+
+`L105Cap.mTower_orphan_row2`（`L105Cap.lean:8048`、「F2a」）は
+**`Q` の末尾列**（位置 `|Q| - 1`）にしか当たらない。
+ところが `hstep` が要るのは **任意の `j`** の位置（§252.3）。
+実測では `|R|=4` で**破れる列の 8 割が内側**なので、F2a だけでは届かない。
+
+⚠ ところが道具は既に一般だった:
+
+    `L105Cap.le1_mTower_in_block`（`L105Cap.lean:8026`）… **`q` は任意**（`hq`, `hq1`）
+    `L105Cap.nextrel2_lastBlock_absurd`（`L105Cap.lean:7836`）… **`b` は任意**
+
+⟹ **F2a は「`q := |Q| - 1` に固定した特殊化」だった。**一般化は下のとおり
+（`L105Cap` の証明本体をそのまま写して `M.dropLast.length - 1` を `q` にしただけ）。 -/
+
+open Classical in
+/-- ★★★★ **F2a の一般化**: `Q` の**任意の**列 `q` が「錐の外 ∧ 行 2 の孤児」なら、
+塔のその位置でも行 2 の孤児。（元の `mTower_orphan_row2` は `q = |Q| - 1` の場合。） -/
+theorem mTower_orphan_row2_gen {M : TrioSeq} {d e n' q : ℕ} (hM2 : 2 ≤ M.length)
+    (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hQ2 : 2 ≤ M.dropLast.length)
+    (hq : q < M.dropLast.length) (hq1 : 0 < q)
+    (hout : ¬ le1 M 0 (0 + q))
+    (horph : ¬ hasParent M.dropLast 2 q) :
+    ¬ hasParent (mTower M.dropLast d e (n' + 1)) 2
+      ((mTower M.dropLast d e n').length + q) := by
+  have hLb : 0 < M.dropLast.length := by omega
+  have hAlen : (mTower M.dropLast d e n').length = n' * M.dropLast.length := by
+    rw [mTower_length]
+  rintro ⟨a, ha, -⟩
+  have hnr : nextrel2 (mTower M.dropLast d e (n' + 1)) a
+      ((mTower M.dropLast d e n').length + q) := by
+    unfold nextR at ha
+    rw [if_neg (by omega), if_neg (by omega)] at ha
+    exact ha
+  have hge : n' * M.dropLast.length ≤ a := by
+    have h := le1_mTower_in_block (n := n' + 1) (k := n') hM2 hd1pos hd0e hr0 hlp
+      (by omega) hq hq1 hout a ?_
+    · exact h
+    · rw [hAlen] at hnr
+      exact hnr.2.2.2.2.1.2.2
+  have halt : a < (mTower M.dropLast d e n').length + q := hnr.2.2.1
+  obtain ⟨qa, hqa⟩ : ∃ qa, a = (mTower M.dropLast d e n').length + qa :=
+    ⟨a - n' * M.dropLast.length, by omega⟩
+  subst hqa
+  rw [mTower_succ] at hnr
+  exact nextrel2_lastBlock_absurd horph hnr
+
+/-- ⟹ 元の `mTower_orphan_row2` は上の `q := |M.dropLast| - 1` の場合。 -/
+theorem mTower_orphan_row2_of_gen {M : TrioSeq} {d e n' : ℕ} (hM2 : 2 ≤ M.length)
+    (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hQ2 : 2 ≤ M.dropLast.length)
+    (hout : ¬ le1 M 0 (0 + (M.dropLast.length - 1)))
+    (horph : ¬ hasParent M.dropLast 2 (M.dropLast.length - 1)) :
+    ¬ hasParent (mTower M.dropLast d e (n' + 1)) 2
+      ((mTower M.dropLast d e n').length + (M.dropLast.length - 1)) :=
+  mTower_orphan_row2_gen hM2 hd1pos hd0e hr0 hlp hQ2 (by omega) (by omega) hout horph
+
 end H12H2
 end TRIO
