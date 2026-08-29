@@ -1143,7 +1143,55 @@ theorem tower2_root_z_zero' {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
   have := tower2_root_z_lt hRne h
   omega
 
-/-! ### 19.1 ⟹ **`z = 1` は「起きない」のではなく「起きても構わない」**
+/-! ### 19.0 ⚠⚠ **自己訂正（重大）: §19 は既存補題の再発明だった**
+
+`L53Subst.lean` を読み直したところ、**上の 3 本はすべて L2 が既に書いていた**:
+
+    `L53.tower2_root_spec`     `:2360` 親は必ず根（`Wset.parent_cons_eq_zero` 経由）
+    `L53.tower2_zr`            `:2380` **`z < entry R 2 (|R|-1)`** ← 私の `tower2_root_z_lt`
+    `L53.tower2_stage_fits'`   `:2406` docstring:「**段はいつでもちょうど収まる
+                                       （`z = 0` も `hz' = 1` も要らない）**」
+                                       ← 私の `tower2_stage_fits_of_lt`
+
+しかも**生きている鎖**（`towerOK2_of_clause3` `:2432` → `towerGraft2_of_liftTie`
+→ `towerOK_of_liftTie`）は最初から `tower2_zr` ＋ `tower2_stage_fits'` を使っており、
+**`c` について一般**である。
+
+`tower2_root_z_zero`（`:1473`）は `tower2_z_zero_of_parent`（`:1486`）からしか
+呼ばれておらず、**そちらはどこからも呼ばれていない**（死んだコード）。
+`tower2_stage_fits`（`z = 0` 版、`:1375`）を使うのは旧版の
+`towerOK2_of_noTie` / `towerOK2_of_strict` だけで、`towerOK2_of_clause3` が両方を含む。
+
+⟹ **R2 の 69,876 件（`c ≥ 2` かつ `z = 1`）は最初から穴ではなかった。**
+穴だったのは `Final.lean` の**コメント**だけである。
+
+### 19.0.1 ⚠ さらに: 「親が根でない場合」は `TowerOK` の設定では**起きない**
+
+`Wset.parent_cons_eq_zero`（**証明ずみ**）:
+
+    `domT R m` ＋ `hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R|`
+    ⟹ **`parent ((0,v,z) :: R) (srow ...) |R| = 0`**（＝ 根）
+
+理由: `domT R m` は「末尾列が `R` の中では親を持たない」なので、
+`(0,v,z) :: R` での親が添字 `q'+1 ≥ 1` なら `R` の中の添字 `q'` が親になってしまう。
+
+⟹ **`TowerOK2` の設定では親は必ず根。「親が根でない」枝は存在しない。**
+私が前便で `Final.lean` に書いてもらった
+
+    `srow = 2, 親が根でない` … **残核**。`z = 1` かつ `c = 1` のときだけ起きる
+
+は**誤り**である。正しくは:
+
+    `srow = 2` … 親は必ず根（`parent_cons_eq_zero`）⟹ `z < c` ⟹ **段は無条件に収まる**
+                 残核は段ではなく **`LiftTie`**（`towerOK2_of_clause3` の仮定）
+
+⚠ ただし **`CoreCap` の snoc の残核では話が違う**: あちらは `domT` が成り立たない
+（§16、`hasParent` を仮定しているため）ので `parent_cons_eq_zero` が使えず、
+**`j0 ≥ 1` は実際に起きる**（R2 の実測 24.0%）。**2 つの設定を混同したのが誤りの原因。**
+
+⟹ 下の §19.1 も、`TowerOK` の設定については誤り。`CoreCap` の設定でのみ意味を持つ。 -/
+
+/-! ### 19.1 （`CoreCap` の設定でのみ）`z = 1` は「起きない」のではなく「起きても構わない」
 
 `Final.lean:81` と `STATUS.md` の
 
@@ -1156,9 +1204,10 @@ theorem tower2_root_z_zero' {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
 ⚠ したがって R2 の 69,876 件は**穴ではない**。`tower2_stage_fits` を
 `z = 0` ではなく `z < c` で書き直せば、`CoreCap` の `∀ c : ℕ` はそのまま通る。
 
-⚠ **残るのは「親が根でない」場合**（`L53.tower2_parent_ne_root`、
-`z = 1` かつ `c = 1` のとき根は候補外）。そこは `z < c` が使えないので別扱いが要る。
-ただし `c ≥ 2` なら根はふたたび候補になる（`z = 1 < 2 ≤ c`）ので、
+⚠ **`TowerOK` の設定では「親が根でない」は起きない**（§19.0.1、`parent_cons_eq_zero`）。
+起きるのは **`CoreCap` の snoc の残核**のほう（`domT` が無いので `j0 ≥ 1` が 24.0%）。
+そこでは `z < c` が使えないので別扱いが要る。
+ただし `c ≥ 2` なら根はふたたび行 2 の親候補になる（`z = 1 < 2 ≤ c`）ので、
 **`c ≥ 2` はむしろ易しい側**である。 -/
 
 
