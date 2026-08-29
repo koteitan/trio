@@ -7304,6 +7304,65 @@ F1（`srow Q (L-1) = 1` ∧ `entry Q 1 (L-1) ≤ entry Q 1 0`、`Q = M.dropLast`
 
 ⚠ **まだ証明ではない。** 上の「繰り返し」を Lean で書くのが次の作業である。 -/
 
+/-! ## 99. ★★★★★★ §86 を鎖に沿って繰り返す: **ブロック外の祖先は必ずブロックの根を通る** -/
+
+theorem gexp_anc_through_root {M : TrioSeq} {Lb d0 d1 n k : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) :
+    ∀ q, q < Lb → ∀ y,
+      Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n)) y (0 + (k * Lb + q)) →
+      y < k * Lb →
+      Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n)) y (0 + (k * Lb + 0)) := by
+  intro q
+  induction q using Nat.strong_induction_on with
+  | _ q ih =>
+    intro hq y hy hylt
+    rcases Nat.eq_zero_or_pos q with rfl | hqpos
+    · exact hy
+    · rcases hy.cases_tail with heq | ⟨c, hc1, hc2⟩
+      · omega
+      · have hcge : k * Lb ≤ c :=
+          nextrel0_gexp_no_skip hlen hLb hk hq hqpos hr0 hc2
+        have hclt : c < 0 + (k * Lb + q) := nextrel0_index_less hc2
+        obtain ⟨q', hq'⟩ : ∃ q', c = 0 + (k * Lb + q') := ⟨c - k * Lb, by omega⟩
+        subst hq'
+        exact ih q' (by omega) (by omega) y hc1 hylt
+
+/-! ### 99.1 ⟹ §98.1 の骨の「ブロック外」の枝が閉じました
+
+    §86 `nextrel0_gexp_no_skip`  … 1 歩
+    **§99 `gexp_anc_through_root` … 鎖全体**（`q` の強帰納）
+    **§98 `gexp_blockRoot_anc`   … ブロックの根の祖先は行 1 が塔の根より上**
+
+**⟹ 合成すると: ブロック `k` の位置 `q ≥ 1` の行 0 祖先 `y` がブロック外なら
+`entry T 1 y > entry M 1 0`。** -/
+
+open Classical in
+/-- **★★★★★★ ブロック外の行 0 祖先は、行 1 が塔の根より上。** -/
+theorem gexp_outer_anc_row1 {M : TrioSeq} {Lb d0 d1 n k q : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb)) :
+    ∀ y, Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n)) y (0 + (k * Lb + q)) →
+      y < k * Lb → y ≠ 0 →
+      entry M 1 0 < entry (gexp M 0 Lb d0 d1 n) 1 y := by
+  intro y hy hylt hy0
+  exact gexp_blockRoot_anc hlen hLb hk hd1pos hd0e hr0 hlp y
+    (gexp_anc_through_root hlen hLb hk hr0 q hq y hy hylt) hy0
+
+/-! ### 99.2 ⟹ 残るのは「ブロック内」の枝だけ
+
+§98.1 の骨のうち **「`a` がブロック `n-1` の外」の枝が上で閉じました。**
+残るのは **「`a` がブロック `n-1` の中」** で、そこは
+
+    `Gtrans.gexp_chain_inversion`（緑）で `a` は像 ⟹ `le0 M q_a (Lb-1)`
+    `Wset.hasParent_one_of` の対偶 ⟹ `entry M 1 q_a ≥ entry M 1 (Lb-1)`
+    `entry T 1 a ≥ entry M 1 q_a`（`Lift1` は行 1 を減らさない）
+
+の 3 本で、**全部既存の緑**です。**⟹ F1 は道具が完全に揃いました。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
