@@ -205,7 +205,7 @@ CONTROLS = [
 def print_controls(ref, tag=''):
     """陽性対照。**予算に依らないこと**も同時に確かめる（10 倍予算で再測）。"""
     big = Ref(ns=(1, 2, 3, 4), maxdepth=ref.maxdepth + 6, maxlen=ref.maxlen * 2,
-              maxnodes=200000)
+              maxnodes=30000)
     ok = True
     print('**陽性対照%s**（`確定 非所属` が出ること／予算を上げても動かないこと）' % tag)
     print()

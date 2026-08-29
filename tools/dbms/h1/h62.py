@@ -5,8 +5,8 @@
 
 `lean/Lind.lean` は**両向き**を証明していて、`leanman check` は緑（exit 0）:
 
-    `coreSingleton_of_cap  (h : CoreCap) : CoreSingleton`   `Lind.lean:190`
-    `cap_of_coreSingleton  (h : CoreSingleton) : CoreCap`   `Lind.lean:205`
+    `coreSingleton_of_cap  (h : CoreCap) : CoreSingleton`   `Lind.lean:181`
+    `cap_of_coreSingleton  (h : CoreSingleton) : CoreCap`   `Lind.lean:195`
 
 ⟹ `CORES.md` が別々の極小元として並べている 2 本は**同じ命題**。
 ⟹ **H56 の 220 万件（`CoreCap`）は、そのまま `CoreSingleton` の測定である。**

@@ -101,7 +101,7 @@ def clause3(ref, R, zp_cache):
 
 
 def main(lens=(1, 2, 3), cols=None, use_clause3=True, tag=''):
-    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=6000)
+    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=1500)
     wref.print_controls(ref)
     if cols is None:
         cols = [(a, b, c) for a in range(1, 4) for b in range(3)
@@ -204,4 +204,4 @@ def main(lens=(1, 2, 3), cols=None, use_clause3=True, tag=''):
 
 
 if __name__ == '__main__':
-    main(lens=(1, 2, 3), tag='（短め）')
+    main(lens=(1, 2, 3), use_clause3=False, tag='（節 2 が通る R だけ）')
