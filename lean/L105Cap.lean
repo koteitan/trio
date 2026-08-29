@@ -8160,6 +8160,81 @@ theorem oper_snocRoot {Q : TrioSeq} {d e m : ℕ} (hQ2 : 2 ≤ Q.length)
 右辺は `mTower Q d 0 m = shTower Q d m`（`Lift1` が消える）**
 ⟹ **`Wtower2.ShiftTowerClosedS` の領域。`e > 0` より易しいはず**（team-lead の読み）。 -/
 
+/-! ## 111. ★★★★★★ `TowerSnocRoot` の枝分け: **親が内側なら前半は触られない**
+
+`Q ++ [p]` の 3 分割（`p` の親の位置で決まる）:
+
+    **(A) 親なし**       … `snoc_orphan_W`（§4、緑）で**無料**。R2 実測 `z=1` で 74.2%
+    **(B) 親 ＝ 根**     … §110 `oper_snocRoot` で **`(Q++[p])⟦m⟧ = mTower Q d e m`**（塔）
+    **(C) 親が内側 `j0 ≥ 1`** … **下**（前半 `Q.take j0` は触られない ⟹ 短い `Q` に降りる）
+
+(C) の道具は §106 と同じ `L53.comm_of_hasParentInBlock` で、
+**`Q ++ [p] = Q.take j0 ++ (Q.drop j0 ++ [p])`** と分けるだけである。 -/
+
+open Classical in
+theorem snocRoot_comm_of_inner {Q : TrioSeq} {p : ℕ × ℕ × ℕ} {j0 m : ℕ}
+    (hj0lt : j0 < Q.length)
+    (hp : hasParent (Q ++ [p]) (srow (Q ++ [p]) Q.length) Q.length)
+    (hpar : parent (Q ++ [p]) (srow (Q ++ [p]) Q.length) Q.length = j0) :
+    (Q ++ [p])⟦m⟧ = Q.take j0 ++ (Q.drop j0 ++ [p])⟦m⟧ := by
+  set i : ℕ := srow (Q ++ [p]) Q.length with hi
+  set A : TrioSeq := Q.take j0 with hA
+  set T : TrioSeq := Q.drop j0 ++ [p] with hT
+  have hAlen : A.length = j0 := by rw [hA, List.length_take]; omega
+  have hTlen : T.length = Q.length - j0 + 1 := by
+    rw [hT, List.length_append, List.length_drop]; simp
+  have hdec : Q ++ [p] = A ++ T := by
+    rw [hA, hT, ← List.append_assoc, List.take_append_drop]
+  have hb : Q.length = A.length + (T.length - 1) := by rw [hAlen, hTlen]; omega
+  -- `T` は自分の中に親を持つ（添字 0 ＝ もとの `j0`）
+  have hnr : nextR (A ++ T) i (A.length + 0) (A.length + (T.length - 1)) := by
+    have h := parent_nextR hp
+    rw [hpar] at h
+    rw [← hdec, ← hb]
+    simpa [hAlen] using h
+  have hT0 : nextR T i 0 (T.length - 1) := (L53.nextR_append_right).mp hnr
+  have hTp : hasParent T i (T.length - 1) := by
+    refine ⟨0, hT0, ?_⟩
+    intro y hy
+    have hy' : nextR (A ++ T) i (A.length + y) (A.length + (T.length - 1)) :=
+      (L53.nextR_append_right).mpr hy
+    rw [← hdec, ← hb] at hy'
+    have := hp.unique hy' (by rw [← hdec, ← hb] at hnr; simpa using hnr)
+    omega
+  -- `srow` は末尾列だけで決まるので `T` のものと一致
+  have hsr : srow T (T.length - 1) = i := by
+    have hent : ∀ y, entry T y (T.length - 1) = entry (Q ++ [p]) y Q.length := by
+      intro y
+      rw [hdec, hb]
+      exact (L53.entry_append_right).symm
+    unfold srow
+    rw [hent, hent, hi]
+    rfl
+  have hblk : L53.HasParentInBlock T := by
+    unfold L53.HasParentInBlock
+    rw [hsr]
+    exact hTp
+  have hTne : T ≠ [] := by
+    intro hc
+    have hl : T.length = 0 := by rw [hc]; rfl
+    omega
+  have hT2 : T.length - 1 ≠ 0 := by omega
+  rw [hdec]
+  exact L53.comm_of_hasParentInBlock m hTne hT2 (hz_of_hasParentInBlock hblk) hblk
+
+/-! ### 111.1 ⟹ 3 分割の意味
+
+    **(A) 親なし** … **無料**（`snoc_orphan_W`）。R2: `z=1` で 74.2%、`z=0` で 31.1%
+    **(B) 親 ＝ 根** … §110 で **塔そのもの**（＝ `MTowerClosedS`）
+    **(C) 親が内側** … **前半 `Q.take j0` は触られない**（上）
+        ⟹ 残るのは **`Q.drop j0 ++ [p]`（短い `Q`）の展開**と、その前に `Q.take j0` を継ぐこと
+
+⟹ **(C) は `|Q|` の帰納で降りられる形**である。ただし**連結（`Q.take j0 ++ …`）が残る**ので、
+そこは §90 `catBlock_of_escape_head` の領域（底は「決まった 1 列」）。
+
+⚠ **(B) が本丸**である。そこは §110 で `MTowerClosedS` と同値と分かっている。
+**⟹ `TowerSnocRoot` の攻め方は「(A) 無料 ／ (C) 帰納 ／ (B) が核」。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
