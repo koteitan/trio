@@ -792,6 +792,208 @@ theorem capExpOpen_iff_coreCap : CapExpOpen ↔ CoreCap :=
   ⟨fun h => coreCap_of_capSnocOpenExact (capSnocOpenExact_of_capExpOpen h),
    capExpOpen_of_coreCap⟩
 
+
+/-! ## 17. ★★★★★ 課題 L107: **`srow` を決めているのは `(b, c)` そのもの**
+
+`srow` は末尾列の成分だけで決まる（`Trio.lean:81`）。cap 列の行 1 は `b`（＋リフト）、
+行 2 は `c` なので、**`∀ b c` はまさに `srow` の枝を生成している**。仮説は正しい。 -/
+
+theorem srow_snoc_last (C : TrioSeq) (q : ℕ × ℕ × ℕ) :
+    srow (C ++ [q]) C.length
+      = (if 0 < q.2.2 then 2 else if 0 < q.2.1 then 1 else 0) := by
+  unfold srow
+  rw [entry_snoc_last C q 2, entry_snoc_last C q 1]
+  rfl
+
+/-- `Lift1` が動かすのは足す列の**行 1 だけ**で、動く幅は `[0, d]`。 -/
+theorem Lift1_snoc_row1 {C : TrioSeq} {p q : ℕ × ℕ × ℕ} {d : ℕ}
+    (heq : Lift1 (C ++ [p]) d = Lift1 C d ++ [q]) :
+    p.2.1 ≤ q.2.1 ∧ q.2.1 ≤ p.2.1 + d := by
+  have hlt : C.length < (C ++ [p]).length := by simp
+  have hA : entry (Lift1 (C ++ [p]) d) 1 C.length
+      = p.2.1 + (if le1 (C ++ [p]) 0 C.length then d else 0) := by
+    rw [entry1_Lift1 hlt]
+    congr 1
+    simpa using entry_snoc_last C p 1
+  have hB : entry (Lift1 C d ++ [q]) 1 C.length = q.2.1 := by
+    have h := entry_snoc_last (Lift1 C d) q 1
+    rw [Lift1_length] at h
+    simpa using h
+  rw [heq, hB] at hA
+  by_cases hc : le1 (C ++ [p]) 0 C.length <;> simp [hc] at hA <;> omega
+
+/-- **★★★ `srow = 2 ⟺ `c ≥ 1`。** cap の行 2 が枝をそのまま決める。 -/
+theorem srow_cap_eq_two_iff {C : TrioSeq} {q : ℕ × ℕ × ℕ} {c : ℕ}
+    (hq2 : q.2.2 = c) :
+    srow (C ++ [q]) C.length = 2 ↔ 0 < c := by
+  rw [srow_snoc_last, hq2]
+  by_cases h : 0 < c
+  · simp [h]
+  · by_cases h1 : 0 < q.2.1 <;> simp [h, h1]
+
+/-- **★★★ `srow = 0` なら `b = 0` かつ `c = 0`。**（対偶: `(b,c) ≠ (0,0)` が
+`srow ≥ 1` を生む。リフト `t` は行 1 を**増やす**方向にしか動かさない。） -/
+theorem srow_cap_eq_zero {C : TrioSeq} {p q : ℕ × ℕ × ℕ} {d : ℕ}
+    (heq : Lift1 (C ++ [p]) d = Lift1 C d ++ [q]) (hq2 : q.2.2 = p.2.2)
+    (h0 : srow (C ++ [q]) C.length = 0) : p.2.1 = 0 ∧ p.2.2 = 0 := by
+  rw [srow_snoc_last] at h0
+  obtain ⟨hlo, -⟩ := Lift1_snoc_row1 heq
+  by_cases hc : 0 < q.2.2
+  · simp [hc] at h0
+  · by_cases hb : 0 < q.2.1
+    · simp [hc, hb] at h0
+    · omega
+
+/-! ### 17.1 ⚠ **`c ≤ 1` では `srow = 2` は消えない**（team-lead の期待への回答）
+
+`srow_cap_eq_two_iff` は **`0 < c`** が `srow = 2` の**必要十分**だと言っている。
+断片は行 2 ≤ 1 なので `c ∈ {0, 1}` だが、**`c = 1` はちゃんと `srow = 2` を出す。**
+
+⟹ **`c ≤ 1` に制限しても枝は 1 本も減らない。減らせるのは `c = 0` に制限したときだけで、
+それは cap の行 2 を殺すこと ＝ `CoreSingleton` の `[(0,b,0)]` しか出さないこと**であり、
+`Lind.mem_GX_of_singletons` の基底（`based y` の 1 列は `(0,b,c)` の**任意の** `c`）を
+満たさない。**⟹ `srow = 2` の枝は落とせない。**
+
+### 17.2 ★ `srow = 2` は**起きる**。しかも本線で起きる
+
+以下は残核の `srow = 2` の枝の**構文的な証人**（`CtxOK` 以外の前提はすべて Lean で証明）。
+
+    `Mw := [(1,1,1),(2,0,0)]`  … `argOK`、`|Mw| = 2`、`entry Mw 0 1 = 2`
+    `v = z = t = 0`, `b = c = 1`
+    土台 `capBase Mw 0 0 0 = [(0,0,0),(1,1,1)]`  ＝ **`ψ(Ω_ω)`（2 行 BMS の極限）**
+    主語 `Sw = [(0,0,0),(1,1,1),(2,1,1)]`        ＝ **`D_1` の 1 つ上、`D_2` の 1 つ下**
+
+**`Sw` は `L51Lift.lean` の `Mt` と同じ行列**（課題 L51 で既に解析ずみ:
+`srow_Mt` / `hasParent_Mt` / `parent_Mt = 0` / `oper_Mt`）。
+
+⟹ **`srow = 2` の枝は隅の場合ではなく、`(0,0,0)(1,1,1)` に 3 行目を足す
+＝ 2 行 BMS から 3 行 BMS に出る、その一歩そのもの。**
+これが「なぜ 3 行が 2 行より難しいか」の 3 本目である。 -/
+
+def Mw : TrioSeq := [(1, 1, 1), (2, 0, 0)]
+
+def Sw : TrioSeq := [(0, 0, 0), (1, 1, 1), (2, 1, 1)]
+
+theorem argOK_Mw : argOK Mw := by
+  intro p hp
+  have hp' : p = ((1, 1, 1) : ℕ × ℕ × ℕ) ∨ p = ((2, 0, 0) : ℕ × ℕ × ℕ) := by
+    simpa [Mw] using hp
+  rcases hp' with rfl | rfl
+  · show 0 < 1; omega
+  · show 0 < 2; omega
+
+theorem Mw_len : 1 ≤ Mw.length := by simp [Mw]
+
+theorem capBase_Mw : capBase Mw 0 0 0 = [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1)] := by
+  unfold capBase
+  rw [Lift1_zero]
+  rfl
+
+theorem cap_Mw : Lift1 (((0, 0, 0) : ℕ × ℕ × ℕ) :: cap Mw 1 1) 0 = Sw := by
+  rw [Lift1_zero]
+  rfl
+
+theorem Sw_split : Sw = capBase Mw 0 0 0 ++ [((2, 1, 1) : ℕ × ℕ × ℕ)] := by
+  rw [capBase_Mw]
+  rfl
+
+theorem srow_Sw : srow Sw 2 = 2 := by simp [srow, entry, Sw]
+
+theorem row2_pos_capBase_Mw : ∃ p ∈ capBase Mw 0 0 0, 0 < p.2.2 := by
+  rw [capBase_Mw]
+  refine ⟨((1, 1, 1) : ℕ × ℕ × ℕ), by simp, ?_⟩
+  show 0 < 1
+  omega
+
+
+/-! ### 17.3 証人の `hasParent`（`L51Lift.lean` の `Mt` と同じ手順） -/
+
+theorem le0_le' {M : TrioSeq} {a b : ℕ} (h : le0 M a b) : a ≤ b := rtg0_le h.2.2
+
+theorem le1_le' {M : TrioSeq} {a b : ℕ} (h : le1 M a b) : a ≤ b := rtg1_le h.2.2
+
+theorem nextrel0_Sw_01 : nextrel0 Sw 0 1 := by
+  refine ⟨by simp [Sw], by simp [Sw], by omega, by simp [entry, Sw], ?_⟩
+  intro j hj
+  omega
+
+theorem nextrel0_Sw_12 : nextrel0 Sw 1 2 := by
+  refine ⟨by simp [Sw], by simp [Sw], by omega, by simp [entry, Sw], ?_⟩
+  intro j hj
+  omega
+
+theorem le0_Sw_02 : le0 Sw 0 2 :=
+  ⟨by simp [Sw], by simp [Sw],
+    (Relation.ReflTransGen.single nextrel0_Sw_01).tail nextrel0_Sw_12⟩
+
+theorem nextrel1_Sw_02 : nextrel1 Sw 0 2 := by
+  refine ⟨by simp [Sw], by simp [Sw], by omega, by simp [entry, Sw], le0_Sw_02, ?_⟩
+  intro j hj
+  obtain ⟨hj1, hj2⟩ := hj
+  have h1 : j ≤ 2 := le0_le' hj2
+  rcases j with _ | _ | _ | j
+  · omega
+  · simp [entry, Sw]
+  · simp [entry, Sw]
+  · omega
+
+theorem le1_Sw_02 : le1 Sw 0 2 :=
+  ⟨by simp [Sw], by simp [Sw], Relation.ReflTransGen.single nextrel1_Sw_02⟩
+
+theorem nextrel2_Sw_02 : nextrel2 Sw 0 2 := by
+  refine ⟨by simp [Sw], by simp [Sw], by omega, by simp [entry, Sw], le1_Sw_02, ?_⟩
+  intro j hj
+  obtain ⟨hj1, hj2⟩ := hj
+  have h1 : j ≤ 2 := le1_le' hj2
+  rcases j with _ | _ | _ | j
+  · omega
+  · simp [entry, Sw]
+  · simp [entry, Sw]
+  · omega
+
+theorem nextrel2_Sw_unique {j : ℕ} (h : nextrel2 Sw j 2) : j = 0 := by
+  obtain ⟨-, -, hj2, hlt, -, -⟩ := h
+  rcases j with _ | _ | _ | j
+  · rfl
+  · simp [entry, Sw] at hlt
+  · omega
+  · omega
+
+theorem nextR_Sw_02 : nextR Sw 2 0 2 := by
+  rw [nextR]
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)]
+  exact nextrel2_Sw_02
+
+theorem hasParent_Sw : hasParent Sw 2 2 := by
+  refine ⟨0, nextR_Sw_02, ?_⟩
+  intro y hy
+  rw [nextR] at hy
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at hy
+  exact nextrel2_Sw_unique hy
+
+theorem capBase_Mw_len : (capBase Mw 0 0 0).length = 2 := by
+  rw [capBase_Mw]; rfl
+
+/-- **★★★★★ 残核の `srow = 2` の枝は空ではない。**
+`CtxOK Mw 0 0` 以外の前提はすべてここで証明されている。
+主語は `(0,0,0)(1,1,1)(2,1,1)`、土台は `(0,0,0)(1,1,1) = ψ(Ω_ω)`
+—— **2 行 BMS の極限に 3 行目を足す一歩そのもの**。 -/
+theorem srow2_branch_live :
+    argOK Mw ∧ 1 ≤ Mw.length ∧
+    Lift1 (((0, 0, 0) : ℕ × ℕ × ℕ) :: cap Mw 1 1) 0
+      = capBase Mw 0 0 0 ++ [((2, 1, 1) : ℕ × ℕ × ℕ)] ∧
+    srow (capBase Mw 0 0 0 ++ [((2, 1, 1) : ℕ × ℕ × ℕ)])
+      (capBase Mw 0 0 0).length = 2 ∧
+    hasParent (capBase Mw 0 0 0 ++ [((2, 1, 1) : ℕ × ℕ × ℕ)])
+      (srow (capBase Mw 0 0 0 ++ [((2, 1, 1) : ℕ × ℕ × ℕ)])
+        (capBase Mw 0 0 0).length) (capBase Mw 0 0 0).length ∧
+    (∃ p ∈ capBase Mw 0 0 0, 0 < p.2.2) := by
+  have hsplit : capBase Mw 0 0 0 ++ [((2, 1, 1) : ℕ × ℕ × ℕ)] = Sw := Sw_split.symm
+  refine ⟨argOK_Mw, Mw_len, ?_, ?_, ?_, row2_pos_capBase_Mw⟩
+  · rw [hsplit]; exact cap_Mw
+  · rw [hsplit, capBase_Mw_len]; exact srow_Sw
+  · rw [hsplit, capBase_Mw_len, srow_Sw]; exact hasParent_Sw
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
