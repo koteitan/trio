@@ -6599,6 +6599,55 @@ theorem le1_mTower_block {M : TrioSeq} {d e n k q : ℕ} (hM2 : 2 ≤ M.length)
 `nextrel2` が要求するのは **一般の `le1 T y ·`** なので、そのままでは (B) に直結しない。
 **次はそこ**（`le1 T y ·` の局所性、または `nextrel2` の候補が同ブロックに限ることの直接証明）。 -/
 
+/-! ## 86. ★★★★★ **ブロックの根は壁**（行 0 の鎖はブロックを飛び越せない）
+
+`le1 T y ·` の一般の局所性（§85.1 の次の一手）に向けた基本補題。
+**ブロック `k` の根は、そのブロックのどの列よりも狭義に浅い**ので、
+`nextrel0` の「途中に窪みなし」条項が、ブロック外からの 1 歩を禁じる。 -/
+
+theorem nextrel0_gexp_no_skip {M : TrioSeq} {Lb d0 d1 n k q y : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hq1 : 0 < q)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (h : nextrel0 (gexp M 0 Lb d0 d1 n) y (0 + (k * Lb + q))) :
+    k * Lb ≤ y := by
+  by_contra hc
+  have hmin := h.2.2.2.2 (0 + k * Lb) ⟨by omega, by omega⟩
+  rw [show (0 : ℕ) + k * Lb = 0 + (k * Lb + 0) from by omega] at hmin
+  rw [gexp_entry0_mir hlen hk hq, gexp_entry0_mir hlen hk hLb] at hmin
+  have hlt := hr0 (0 + q) (by omega) (by omega)
+  simp only [Nat.add_zero] at hmin
+  omega
+
+/-! ### 86.1 ⟹ 何が言えたか
+
+    **ブロック `k` の**根以外**の列 `p` の行 0 の親は、必ず同じブロック `k` の中にある。**
+
+⟹ ブロック `k` の列の行 0 の祖先鎖は、**ブロック `k` の根に着くまでブロックを出ない**。
+（根に着いた後は前のブロックへ出られる。それが `Gtrans.gexp_chain_inversion` の
+`k' < k` の枝。）
+
+### 86.2 ⟹ 次の一手（`le1 T y ·` の局所性）
+
+`nextrel1 T a b` は `le0 T a b` を要求し、極小性条項
+
+    `∀ j, a < j ∧ le0 T j b → entry T 1 b ≤ entry T 1 j`
+
+を持つ。`b` がブロック `k` の列なら、上より **ブロック `k` の根 `r_k` は `le0 T r_k b`**
+を満たすので、`a` がブロック外なら `a < r_k` で `j := r_k` が取れて
+
+    **`entry T 1 b ≤ entry T 1 r_k`**
+
+が必要になる。`r_k` の行 1 は `entry M 1 0 + k*d1`（根は必ず錐の中）。
+⟹ **`b` が `Q` の錐の中なら `entry M 1 (b の元) + k*d1 ≤ entry M 1 0 + k*d1`、
+つまり `entry M 1 (b の元) ≤ entry M 1 0` が必要**だが、
+錐の中なら `Lcone.le1_entry1_lt` で **`entry M 1 0 < entry M 1 (b の元)`** ⟹ **矛盾**。
+
+> **⟹ 「`b` が `Q` の錐の中」なら、`nextrel1` はブロック外から入れない。**
+> ⟹ そのとき `le1 T y b` は `y` を同じブロックに閉じ込める。**(B) の道具になる。**
+
+⚠ **錐の外の `b` については別**（`+k*d1` が付かないので上の矛盾が出ない）。**そこが残る。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
