@@ -382,5 +382,179 @@ theorem capSnocOpen_of_wsnoc (hsn : WSnoc) : CapSnocOpen := by
   intro M v z a t _ hM2 _ hctx hva q _ hpar _
   exact hsn a (capBase M v z t) q (capBase_mem hctx hM2 hva) (capBase_ne M v z t) hpar
 
+
+/-! ## 10. ★★★ `argOK` の payoff —— **根は行 0 で全列の祖先**
+
+`Wset.le0_cons_zero`（`Wset.lean:1907`、**既存・証明ずみ**）:
+
+    `argOK R → ∀ j < |R|, le0 ((0,v,z) :: R) 0 (j+1)`
+
+`Lift1` は行 0 も長さも変えない（`entry0_Lift1` / `Lift1_length`）ので、
+`le0` はリフトを透かす（`le0_Lift1`）。⟹ **`CoreCap` の `C ++ [q]` では
+根が全列（`q` 自身も含む）の行 0 祖先**である。
+
+これは一般の `WSnoc` の土台には**無い**情報で、次の 2 つに効く:
+
+1. 展開の親 `j0 = 0`（根）のとき、行 0 の増分 `k * d0` は
+   **`le0 (C++[q]) 0 j` が全 `j` で成り立つので窓全体に一様**にかかる
+   ⟹ その写しは「`C` を行 0 で一様シフトし、行 1 を根の錐でリフトしたもの」＝ **塔**。
+2. `W_flatMap_copies`（`Wset.lean:2552`、証明ずみ）の側条件
+   `∀ p ∈ Q, entry Q 0 0 ≤ p.1` は `j0 = 0` のとき **`entry C 0 0 = 0` から自明**。
+   ⟹ **`j0 = 0` かつ `srow = 0` の枝は `PrefixCopies` すら要らない。** -/
+
+theorem nextrel0_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    nextrel0 (Lift1 X d) a b ↔ nextrel0 X a b := by
+  unfold nextrel0
+  simp only [Lift1_length, entry0_Lift1]
+
+/-- **`le0` は `Lift1` を透かす**（行 0 も長さも変わらないため）。 -/
+theorem le0_Lift1 {X : TrioSeq} {d a b : ℕ} :
+    le0 (Lift1 X d) a b ↔ le0 X a b := by
+  unfold le0
+  simp only [Lift1_length]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨h1, h2, Relation.ReflTransGen.mono (fun _ _ h => nextrel0_Lift1.mp h) h3⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨h1, h2, Relation.ReflTransGen.mono (fun _ _ h => nextrel0_Lift1.mpr h) h3⟩
+
+theorem cap_length (M : TrioSeq) (b c : ℕ) :
+    (cap M b c).length = M.dropLast.length + 1 := by
+  unfold cap; simp
+
+/-- `argOK` は `cap` に遺伝する（差し替わるのは行 1・行 2 だけだから）。 -/
+theorem argOK_cap {M : TrioSeq} (hM : argOK M) (hM2 : 1 ≤ M.length) (b c : ℕ) :
+    argOK (cap M b c) := by
+  intro p hp
+  unfold cap at hp
+  rcases List.mem_append.mp hp with h | h
+  · exact argOK_dropLast hM p h
+  · rw [List.mem_singleton] at h
+    subst h
+    exact cap_col_entry0_pos hM hM2
+
+/-- **★★★ `CoreCap` の snoc の道具立て一式。**
+土台・足す列の行 0 と行 2・そして**根が行 0 で全列の祖先**であること。 -/
+theorem cap_snoc_setup {M : TrioSeq} (hM : argOK M) (hM2 : 1 ≤ M.length)
+    (v z t b c : ℕ) :
+    ∃ q : ℕ × ℕ × ℕ,
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: cap M b c) t = capBase M v z t ++ [q]
+      ∧ q.1 = entry M 0 (M.length - 1) ∧ q.2.2 = c
+      ∧ ∀ j, j < (capBase M v z t ++ [q]).length →
+          le0 (capBase M v z t ++ [q]) 0 j := by
+  obtain ⟨q, hq, hq0, hq2⟩ :=
+    Lift1_snoc (((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast)
+      ((entry M 0 (M.length - 1), b, c) : ℕ × ℕ × ℕ) t
+  have hsplit : (((0, v, z) : ℕ × ℕ × ℕ) :: cap M b c)
+      = ((((0, v, z) : ℕ × ℕ × ℕ) :: M.dropLast)
+          ++ [((entry M 0 (M.length - 1), b, c) : ℕ × ℕ × ℕ)]) :=
+    cons_cap_split M v z b c
+  have hEq : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: cap M b c) t
+      = capBase M v z t ++ [q] := by rw [hsplit]; exact hq
+  refine ⟨q, hEq, hq0, hq2, ?_⟩
+  intro j hj
+  rw [← hEq]
+  rw [← hEq] at hj
+  rw [Lift1_length, List.length_cons, cap_length] at hj
+  rcases Nat.eq_zero_or_pos j with rfl | hjpos
+  · exact ⟨by rw [Lift1_length]; simp, by rw [Lift1_length]; simp,
+      Relation.ReflTransGen.refl⟩
+  · obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := ⟨j - 1, by omega⟩
+    rw [le0_Lift1]
+    exact le0_cons_zero (argOK_cap hM hM2 b c) k (by rw [cap_length]; omega)
+
+/-! ## 11. ★★★★ 残核の最終形 `CapSnocOpen'`（根の行 0 祖先性つき）
+
+`cap_snoc_setup` が根の祖先性を無料で供給するので、残核はさらに 1 前提ぶん弱くできる。
+**この前提は `C ∈ W a` からは出ない**（`W_take` のときと違い、`argOK M` 由来）。 -/
+
+def CapSnocOpen' : Prop :=
+  ∀ (M : TrioSeq) (v z a t : ℕ), argOK M → 1 ≤ M.length → z ≤ 1 →
+    CtxOK M v z → 2 * (v + t) + z ≤ a →
+    ∀ q : ℕ × ℕ × ℕ, q.1 = entry M 0 (M.length - 1) →
+      (∀ j, j < (capBase M v z t ++ [q]).length →
+        le0 (capBase M v z t ++ [q]) 0 j) →
+      hasParent (capBase M v z t ++ [q])
+        (srow (capBase M v z t ++ [q]) (capBase M v z t).length)
+        (capBase M v z t).length →
+      (∃ p ∈ capBase M v z t, 0 < p.2.2) →
+      capBase M v z t ++ [q] ∈ W a
+
+/-- **★★★★★ `CapSnocOpen'` 1 本で `CoreCap`。**（この file の到達点。） -/
+theorem coreCap_of_capSnocOpen' (h : CapSnocOpen') : CoreCap := by
+  intro M hMarg hM2 v z hz1 hctx b c a t hva
+  obtain ⟨q, hEq, hq0, -, hle0⟩ := cap_snoc_setup hMarg hM2 v z t b c
+  rw [hEq]
+  refine snoc_of_open q (capBase_mem hctx hM2 hva) (capBase_ne M v z t) ?_
+  intro hpar hz2
+  exact h M v z a t hMarg hM2 hz1 hctx hva q hq0 hle0 hpar hz2
+
+theorem capSnocOpen'_of_capSnocOpen (h : CapSnocOpen) : CapSnocOpen' := by
+  intro M v z a t hM hM2 hz1 hctx hva q hq0 _ hpar hz2
+  exact h M v z a t hM hM2 hz1 hctx hva q hq0 hpar hz2
+
+
+/-! ## 12. ★★★★★ 課題 L105 の結論
+
+### 12.1 `CoreCap` の正体
+
+    **`CoreCap` = `WSnoc` を「装備つき主ブロック」に制限したもの。**
+
+`t = 0` では `capBase M v z 0 = (0,v,z) :: M.dropLast` なので、`CapSnocOpen'` は
+
+    土台 `C`  … `(0,v,z) :: R` の形（`argOK R`、`z ≤ 1`）＋ `CtxOK`
+    足す列 `q` … 行 0 は `entry M 0 (|M|-1)` に固定（行 1・行 2 は任意）
+    無料の追加与件 … **根が行 0 で全列の祖先**（`argOK` 由来）
+
+に等しい。`t ≥ 1` はこれを `Lift1 · t` で写しただけで、**新しい要求はゼロ**
+（`Lift1_snoc`）。
+
+### 12.2 場合分けの網羅（課題 L105 (1)）
+
+    `t` による場合分け        … **不要**（`Lift1_snoc` で吸収）
+    親なし（孤児）            … **無料**（`snoc_orphan_W`、段によらない）
+    `C` の行 2 ≡ 0            … **無料**（`snoc_zeroRow2` ＋ `W_mono`）
+    `srow = 0` かつ親が根      … **無料**（`snoc_flat_root`）
+    `srow = 0` かつ親が根でない … `PrefixCopies`（L2 の `wsnoc_srow0_of_prefixCopies`）
+    **`srow ≥ 1`**            … **残り**（`CapSnocOpen'`）
+
+### 12.3 `t ≥ 1` が余分に要求するもの（課題 L105 (2)）
+
+    **ゼロ。** `liftStage_of_noTie` / `liftStage_of_wsnoc` / `Lift1_Lift1` は
+    `CoreCap` には**要らない**。`Lift1` は snoc と可換なので、`t` は
+    「足す 1 列の行 1 の値」を変えるだけで、`W` 所属の議論には現れない。
+
+### 12.4 `CtxOK M v z` が要求するもの（課題 L105 (3)）
+
+    `∀ k < |M|, ∀ t, ∀ a ≥ 2(v+t)+z,  Lift1 ((0,v,z) :: M.take k) t ∈ W a`
+
+**使えるのは実質 `k = |M|-1` の 1 項だけ**だった:
+
+    `k < |M|-1` の項 … `Wset.W_take`（`Wset.lean:2120`）で `k = |M|-1` から**無料で出る**
+    `∀ t` の項      … 段 `a` が `2(v+t)+z` と一緒に動くので、
+                      塔の写し（段が `k` に比例して伸びる）には届かない
+
+⟹ **`CtxOK` は「`capBase M v z t ∈ W a`」1 行と同値に使える。**（§8 の空振り。）
+
+### 12.5 ⚠ `c ≤ 1` に制限できるか（SESSION §130.5 の申し送りへの回答）
+
+**Lean の文の上では制限できない。** `CoreCap` の `c` は `cap` の末尾列の行 2 で、
+`coreSingleton_of_cap`（`Lind.lean:181`）は `CoreSingleton = ∀ b c, [(0,b,c)] ∈ GX`
+の `∀ c` をそのまま要求する。そして `CorePlantCtxLift`（`Gamma.lean:723`）の `M` には
+**行 2 の上界がどこにも無い**（`argOK M := ∀ p ∈ M, 0 < p.1` は行 0 だけ、
+`CtxOK` は `W` 所属で根の `lev` しか抑えない）。
+⟹ 「断片では `c ≤ 1`」を使うには **`argOK` か `CtxOK` に行 2 ≤ 1 を足す**必要があり、
+それは `Gamma.lean` / `Lind.lean` の共有ファイルの変更になる。
+**H11 の実測（`c ≥ 2` でも違反 0）どおり、制限しなくても危険は無い。**
+
+### 12.6 次の一手
+
+1. **`CapSnocOpen'` の `srow = 1` 枝**: `oper` の定義から `d1 = 0`
+   （`d1 = if 1 < i1 then … else 0`）なので、写しは**行 0 だけが増える**。
+   `le0` の根祖先性（§10）と合わせると、親 `j0 = 0` の場合の写しは
+   **`C` の行 0 一様シフト**になる ⟹ `shiftr01 · 0` の `W` 不変性が効くはず。
+2. `srow = 2` 枝が本丸（`d1 > 0`）。ここが `LiftStage` と同じ結び目。
+-/
+
 end L105
 end TRIO
