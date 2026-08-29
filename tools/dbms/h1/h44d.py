@@ -22,6 +22,12 @@ def blk_parented(Q):
     return trio.parent(Q, h42.srow(Q, len(Q) - 1), len(Q) - 1) is not None
 
 
+def blk_srow_ne2(Q):
+    """段 `Q` の最後の列の `srow` が 2 でないか（リードの `srow` 説）。"""
+    Q = [tuple(c) for c in Q]
+    return bool(Q) and h42.srow(Q, len(Q) - 1) != 2
+
+
 class Cert2(ladder.Cert):
     """`ladder.Cert` に神託 `TOWEASY`（復活しない塔）を足したもの。"""
 
@@ -33,7 +39,10 @@ class Cert2(ladder.Cert):
         if f is None:
             return None
         A, Q, D = f
-        if not blk_parented(Q):
+        if 'SROW' in self.assume:
+            if not blk_srow_ne2(Q):
+                return None                   # `srow` 説の神託
+        elif not blk_parented(Q):
             return None                       # 復活する ⟹ (TOWER-易) は使えない
         if not self(A, depth - 1):
             return None
@@ -41,7 +50,7 @@ class Cert2(ladder.Cert):
             return None
         if not ladder.rootmin(Q):
             return None
-        return 'C12+TOWEASY'
+        return 'C12+SROW' if 'SROW' in self.assume else 'C12+TOWEASY'
 
 
 def run(name, cls, asm, ml=False):
@@ -69,6 +78,9 @@ for args in ((('なし（Lean 証明ずみのみ）'), ladder.Cert, ()),
              ('(TOW) + **(TOWER-易)**', Cert2, ('TOW', 'TOWEASY')),
              ('(TOW)+(LTOW)', ladder.Cert, ('TOW', 'LTOW')),
              ('(TOW)+(LTOW)+**(TOWER-易)**', Cert2, ('TOW', 'LTOW', 'TOWEASY')),
+             ('**(srow != 2)**', Cert2, ('SROW',)),
+             ('(TOW) + **(srow != 2)**', Cert2, ('TOW', 'SROW')),
+             ('(TOW)+(LTOW)+**(srow != 2)**', Cert2, ('TOW', 'LTOW', 'SROW')),
              ('(TOW)+(LTOW)+(MTOW)', ladder.Cert, ('TOW', 'LTOW', 'MTOW'))):
     nm, n, lead = run(args[0], args[1], args[2])
     print('| %s | %d (%.1f%%) | **%d** |' % (nm, n, 100.0 * n / len(T), lead))
