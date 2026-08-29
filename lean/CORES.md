@@ -22,7 +22,7 @@
 | 命題 | 場所 | ∀ | → | GX 込み | 主語 | 段 | 経路 | より強いもの（＝ここから出る） | 状態 |
 |---|---|---|---|---|---|---|---|---|---|
 | **`CoreSingleton`** | `L53Subst:4183` | 2 | 0 | **9 / 5** | **1 列** | - | C | `CoreCap`, (2 文脈核) | **極小・単独** |
-| **`CoreCap`** | `Lind:176` | 7 | 5 | 7 / 5 | 1 ブロックの末尾差し替え | - | C | - | **極小・単独・`GX` 無し** |
+| **`CoreCap`** | `Lind:176` | 7 | 5 | 7 / 5 | 1 ブロックの末尾差し替え | - | C | - | **極小・単独・`GX` 無し**。**R89: 展開は 3 分岐に尽き `WCat` を要求しない。残債務は `TowerOK2` ＋ `c>=2` の 2 点**（`R2-NOTES.md` §R89, commit `db140b2`） |
 | **`TowerOK`** | `L53Subst:1086` | 3 | 7 | 3 / 7 | `(0,v,z) :: R` の展開 | m/u | D | `TowerGraft2 ∧ TowerExp`, `TowerOK1 ∧ TowerOK2` | **極小・単独** |
 | `TowerOK2` | `L53Subst:1122` | 3 | 8 | 3 / 8 | 同上（`srow=2`） | m/u | D | - | `TowerOK1` は節 3 でのみ既済（§R83） |
 | `CoreCtxSuffixLift` | `Gamma:1278` | 4 | 8 | 11 / 13 | 文脈の接尾辞 | - | C | `CoreSingleton` | 対で使う |
@@ -83,3 +83,37 @@
 
 R1 の測定・読解: `tools/dbms/R1-NOTES.md` の §R71-a（含意地図 22 本）、§R73（`TowerExp`）、
 §R83（`TowerOK1` は節 3 の与件を要求）、§R86（`Gamma` の履歴）、§R87（両路線の合流）。
+
+## R89（R2, 2026-08-30）: `CoreCap` の展開の形を測った —— `WCat` は要らない
+
+根拠: `R2-NOTES.md` §R89、commit `bc72e75` / `db140b2`。
+プログラム `tools/dbms/r89.py` `r89b.py` `r89c.py` `r89d.py` `r89e.py` `r89ctl.py` `r89f.py`。
+
+`CoreCap` が見る形 `S = Lift1 ((0,v,z) :: cap M b c) t` の展開は **3 分岐で尽きる**。
+`|M|<=4` の**全数 24,008,400 件** ＋ `|M|∈{4,5,6}` のランダム標本 1,944,000 件で
+**破れ 0**、陰性対照（式を壊すと 100% VIOL）つき。
+
+| 分岐 | 割合(|M|<=4) | 展開の形 | Lean の等式 | 状態 |
+|---|---|---|---|---|
+| `noparent` | 44.0% | `S⟦n⟧ = S.dropLast` ＝ `CtxOK` の接頭辞 | `oper_eq_pred_of_noParent` | **無条件で閉** |
+| `j0 >= 1` | 28.3% | `S⟦n⟧ = (0,v,z) :: R⟦n⟧` | `oper_cons_nat`（`Wset:2041`） | **無条件で閉** |
+| `j0 = 0`, `srow=0` | — | `d0=d1=0` の反復 | `W_flatMap_copies`（`Wset:2551`）＋ `rsum_self_cons`（`:2539`） | **無条件で閉** |
+| `j0 = 0`, `srow=1` | — | 塔 `tow v z R n` | `oper_cons_tower1`（`Wset:2789`） | `TowerOK1`（節 3 の与件がある場面でのみ既済、§R83） |
+| **`j0 = 0`, `srow=2`** | — | `(0,v,z) :: graft R (Lift1 (M⟦n⟧) D1)` | `oper_cons_tower2`（`Wset:3231`） | **`TowerOK2` ＝ 残核** |
+
+⟹ **`A ++ B`（独立な 2 つの `W` 元の連結 ＝ `WCat` 形）は `CoreCap` の展開に現れない。**
+§131 の「塔 ⟹ `rsum` が破れる ⟹ `WCat` が要る」は **`WSnoc` 路線の話**で `CoreCap` には移らない:
+
+    WSnoc   shTower Q e (n+1) = shTower Q e n ++ shiftr01 (n*e) 0 Q   ← 連結。rsum が要る
+    CoreCap tow v z R (k+1)   = (0,v,z) :: graft R (tow v z R k)      ← graft。W_add を通らない
+
+### R89 で分かった注意点（他の核の判定にも効く）
+
+1. **`CtxOK` は母集団を絞らない。** 37,044 個の `(M,v,z)` すべてが装備ずみ
+   （確定 30,348 / 予算切れ 6,696 / **確定した非装備 0**）。`tools/probe_cap2.py` の
+   `ctx/not-equipped = 0` とも一致。⟹ 「`CtxOK` があるから悪い `M` は来ない」は言えない
+2. **`argOK` は展開の木の下で破れる**（訪問 1,705,886 ノードの 5.6%）。起点は
+   **`srow=0` の塔だけ**（他の分岐は `ok->VIOL` がゼロ）。そこは `W_flatMap_copies` で閉じている
+3. **`CoreCap` は `∀ c : ℕ` なので `c >= 2` が入り、`srow=2 & z=1` が起きる。**
+   `tower2_root_z_zero`（「`srow=2, z=1` は起きない」）は `c <= 1` を使っているので使えない
+4. `j0` は `n` に依存しない（`Trio.lean:98`）。`b, c` には依存する（二分が反転するのが 15.2%）
