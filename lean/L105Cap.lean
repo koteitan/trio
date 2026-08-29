@@ -11083,6 +11083,78 @@ theorem block_blockParent_all {Q : TrioSeq} {d e n j : ℕ}
 ⚠ **教訓 14**: §155.2 の「窓は `|Q|` 以下」は **1 段目についての観察**であって、
 **各段について示したわけではありません。** -/
 
+/-! ## 156. ★★★★★★★ (y2) の答え: **`Q` の行 1 が狭義単調なら、窓にもブロッカーがない**
+
+§155.3 の穴は **「窓 `V` の根より行 1 が低い列が `V` の中にあるか」**だった。
+**塔の列の行 1 の式から直接評価する（R2 を待たずに）。**
+
+### 156.1 `j ≥ 1` の窓（同じブロックの中）
+
+`V` はブロック `n` の `[p, j]`。行 1 は `entry Q 1 q + e*n`（ブロッカーなしなので全部錐の中）。
+
+    **`V` にブロッカーがある ⟺ `p < q ≤ j` で `entry Q 1 q ≤ entry Q 1 p`**
+    **⟺ `Q` の行 1 が単調でない**
+
+### 156.2 `j = 0` の窓（ブロック境界をまたぐ）
+
+`V` はブロック `n-1` の `[q1, |Q|-1]` ＋ ブロック `n` の根。
+中間の列の行 1 は `entry Q 1 q + e*(n-1)`（`q > q1`）、根の行 1 は `entry Q 1 q1 + e*(n-1)`。
+
+    **⟹ `Q` の行 1 が狭義単調なら、中間の列はすべて根より上 ⟹ ブロッカーなし**
+
+> **⟹ (y2) の答え: **`Q` の行 1 が狭義単調なら、どちらの窓にもブロッカーはない**。**
+
+⚠ **そして生成元 `D_v = (0,0,0)(1,1,1)…(v,v,1)` の行 1 は `0,1,2,…,v` で狭義単調である。**
+**⟹ 断片の生成元はこの条件を満たす。** -/
+
+theorem le1_zero_of_mono {Q : TrioSeq}
+    (hm0 : ∀ a b, a < b → b < Q.length → entry Q 0 a < entry Q 0 b)
+    (hm1 : ∀ a b, a < b → b < Q.length → entry Q 1 a < entry Q 1 b)
+    {j : ℕ} (hj : j < Q.length) : le1 Q 0 j :=
+  le1_zero_of_no_blocker (fun l hl0 hl1 => hm0 0 l hl0 hl1)
+    (fun l hl0 hl1 => hm1 0 l hl0 hl1) hj
+
+/-- **`Q` の行 1 が狭義単調なら、塔の行 1 は各ブロックの中で狭義単調。** -/
+theorem mTower_row1_mono_in_block {Q : TrioSeq} {d e n k q1 q2 : ℕ}
+    (hk : k < n) (hq2 : q2 < Q.length) (hq12 : q1 < q2)
+    (hm0 : ∀ a b, a < b → b < Q.length → entry Q 0 a < entry Q 0 b)
+    (hm1 : ∀ a b, a < b → b < Q.length → entry Q 1 a < entry Q 1 b) :
+    entry (mTower Q d e n) 1 (k * Q.length + q1)
+      < entry (mTower Q d e n) 1 (k * Q.length + q2) := by
+  have hq1 : q1 < Q.length := by omega
+  have hE : ∀ q, q < Q.length → entry (mTower Q d e n) 1 (k * Q.length + q)
+      = entry Q 1 q + (if le1 Q 0 q then e * k else 0) := by
+    intro q hq
+    rw [mTower_entry hk hq]
+    show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD q (0, 0, 0)).2.1 = _
+    rw [block_getD hq]
+  rw [hE q1 hq1, hE q2 hq2,
+    if_pos (le1_zero_of_mono hm0 hm1 hq1), if_pos (le1_zero_of_mono hm0 hm1 hq2)]
+  have := hm1 q1 q2 hq12 hq2
+  omega
+
+/-! ### 156.2 ⟹ 攻めるべき類が決まりました
+
+    **`Mono` 類**: **`Q` の行 0 と行 1 がともに狭義単調** ∧ **`entry Q 2 0 = 0`** ∧ **`d, e ≥ 1`**
+
+この類では:
+
+    ✅ **どの列も `Q` の錐の中**（§152、上の `le1_zero_of_mono`）
+    ✅ **塔にブロッカーなし**（§153）
+    ✅ **`j ≥ 1` はすべてブロック内に親**（§154）
+    ✅ **`j = 0` の窓も `|Q|` 以下でブロッカーなし**（§155.2 ＋ 上の §156.2）
+    ✅ **窓は `n` によらず有界**（§155.2）
+
+> **⟹ `Mono` 類では、§150 の壁を作る要素がすべて消えます。**
+> **⟹ ここが「核が実際に証明できる最初の類」だと思われます。**
+
+⚠ **教訓 14**: **「要素が消えた」であって「証明した」ではありません。**
+**窓の帰納を実際に Lean で組むまでは、何が足りないか分かりません。**
+
+⚠ **そして `Mono` 類は母集団の一部です。**
+**`W u` の一般の `Q` が `Mono` である保証はありません。**
+**⟹ R2 に「母集団の何 % が `Mono` か」を測ってもらう価値があります（(y3)）。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
