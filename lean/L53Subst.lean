@@ -1887,5 +1887,92 @@ theorem noTie_of_strict {v : ℕ} {R : TrioSeq} (h : ∀ p ∈ R, v < p.2.1) :
     ∀ p ∈ R, p.2.1 ≠ v := fun p hp => by have := h p hp; omega
 
 
+/-! ## ★★★ 課題 L77: `towerOK2_of_noTie` の組み立て -/
+
+/-- `srow` は根を cons しても末尾の列で変わらない。 -/
+theorem srow_cons_last {p : ℕ × ℕ × ℕ} {R : TrioSeq} (hRne : R ≠ []) :
+    srow (p :: R) R.length = srow R (R.length - 1) := by
+  unfold srow
+  rw [entry_cons_last hRne 2, entry_cons_last hRne 1]
+
+open Classical in
+/-- **底**: `⟦0⟧ = []`（親が根なので `take 0`）。 -/
+theorem oper_cons_zero {v z m : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hd : domT R m)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦0⟧ = [] := by
+  have hRpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hxpos : 0 < entry R 0 (R.length - 1) :=
+    hR _ (entry_pair_mem (B := R) (by omega))
+  rw [oper_unfold (M := ((0, v, z) : ℕ × ℕ × ℕ) :: R) (j1 := R.length)
+      (i1 := srow R (R.length - 1)) (j0 := 0)
+      (d0 := if 0 < srow R (R.length - 1) then
+        entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 R.length
+          - entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0 else 0)
+      (d1 := if 1 < srow R (R.length - 1) then
+        entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 R.length
+          - entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 else 0)
+      (by simp) (by omega) ?hz (srow_cons_last hRne).symm hpM
+      (parent_is_root_of_domT hRne hd hpM).symm rfl rfl 0]
+  · simp
+  · intro hc
+    have h1 := hc.1
+    rw [entry_cons_last hRne 0] at h1
+    omega
+
+
+open Classical in
+/-- **★★★★ 無タイの `TowerOK2`**（課題 L77）。伝播 `hprop` だけを仮定に残した形。
+
+H11 の実測（H50、標本 20000、`n = 1..12`）: **伝播は 100%**、対照も鳴っている
+（タイのある場面では無タイが 0/6000、持ち上げ量を `t±1` にすると `hstep` が 0/4000）。 -/
+theorem towerOK2_of_noTie {v m : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (hvw : v ≤ entry R 1 (R.length - 1))
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hpM : hasParent (((0, v, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length)
+    (hprop : ∀ n : ℕ,
+      argOK (graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v))) ∧
+      (∀ p ∈ graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v)), p.2.1 ≠ v)) :
+    ∀ n : ℕ, (((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W (2 * v) := by
+  have hfits : 2 * v + 2 * (entry R 1 (R.length - 1) - v) ≤ m := by
+    have h9 := tower2_stage_fits (v := v) (z := 0) rfl hd hi2 hvw
+    omega
+  have hzero := oper_cons_zero (v := v) (z := 0) hR hRne hd hpM
+  intro n
+  induction n with
+  | zero =>
+      rw [hzero]
+      exact W_nil _
+  | succ n ih =>
+      rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+      have hin : Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+          (entry R 1 (R.length - 1) - v) ∈ W m := by
+        cases n with
+        | zero =>
+            rw [hzero]
+            simpa using W_nil m
+        | succ k =>
+            rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM] at ih ⊢
+            exact W_mono hfits (liftStage_of_noTie (hprop k).1 (hprop k).2 ih)
+      have hb : based (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+          (entry R 1 (R.length - 1) - v)) := by
+        refine based_Lift1 ?_
+        cases n with
+        | zero =>
+            rw [hzero]
+            exact based_nil
+        | succ k =>
+            rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+            exact based_cons_root v 0 _
+      exact hgr _ hin hb (hprop n).1 v 0 (2 * v) (by omega) (by omega)
+
+
 end L53
 end TRIO
