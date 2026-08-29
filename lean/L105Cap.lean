@@ -10123,6 +10123,71 @@ theorem mTowerClosed_of_snocStepPar {u : ℕ} {Q : TrioSeq} {d e : ℕ}
 ⚠ **これは「(ii) が無意味」ではなく「(ii) の証明を先に書いても得がない」という意味です。**
 **測度が (ii) にあるという事実（§138）は、(iii) を解いたあと**そのまま**使えます。** -/
 
+/-! ## 141. ★★★★★★★ **復活は「ブロックの中で孤児」のときにしか起きない**
+
+§140 で「核は (iii) の復活だけ」と出した。**では復活はいつ起きるか。**
+`Wset.nextR_src_ge`（`:2573`、緑、**前提なし**）と §101 `parent_ge_of_inner` が答える:
+
+> **「接頭辞は、ブロック自身が親を持つときは `nextR` の前身を供給できない」**
+
+**⟹ 足す列が**自分のブロックの中で**親を持つなら、塔全体でも親は同じブロックの中。**
+**⟹ 復活が起きるのは、足す列が**自分のブロックの中では孤児**のときだけ。** -/
+
+open Classical in
+theorem snocStep_parent_sameBlock {Q : TrioSeq} {d e n j i : ℕ}
+    (hj : j < Q.length)
+    (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) i j)
+    (hp : hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) i
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)) :
+    n * Q.length ≤ parent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) i
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  have hTne : B.take (j + 1) ≠ [] := by
+    intro h
+    have h0 : (B.take (j + 1)).length = 0 := by rw [h]; rfl
+    omega
+  have hloc' : hasParent (B.take (j + 1)) i ((B.take (j + 1)).length - 1) := by
+    rw [hTlen]; simpa using hloc
+  have hres := parent_ge_of_inner (A := mTower Q d e n) hTne hloc' (parent_nextR hp)
+  rwa [mTower_length] at hres
+
+/-! ### 141.1 ⟹ **核が「ブロックの中で孤児な列」に絞れました**
+
+    **足す列がブロックの中で親を持つ** ⟹ 塔でも親は同じブロック ⟹ **(ii)、測度あり**
+    **足す列がブロックの中で孤児**     ⟹ **(i) 塔でも孤児（無料）** か **(iii) 復活**
+
+> **⟹ 核 ＝「`Q` の中で孤児な列が、塔では親を持つ」場合だけ。**
+
+★ **そしてその「親」は、鎖の上にある**ブロックの根**しかありえない**（§86 `nextrel0_gexp_no_skip`
+＋ §99 `gexp_anc_through_root`: ブロック外の行 0 祖先は必ずブロックの根を通る）。
+**⟹ 候補は `n+1` 個のブロック根だけ。**
+
+⚠ **教訓 14**: 「候補が絞れた」であって「解けた」ではありません。
+
+### 141.2 ⟹ ここから見える形（R2 に測ってもらう価値がある）
+
+ブロック `k` の根の行 1 は **`entry Q 1 0 + e*k`**（根は錐の中なのでリフトされる）。
+足す列（ブロック `n`、位置 `j`）の行 1 は **`entry Q 1 j + (if le1 Q 0 j then e*n else 0)`**。
+
+    **`le1 Q 0 j`（錐の中、`j ≠ 0`）** ⟹ `entry Q 1 0 < entry Q 1 j`（`le1_entry1_lt`）
+        ⟹ **ブロック `n` 自身の根が候補** ⟹ **親は同じブロック ⟹ (ii)**
+    **錐の外で `entry Q 1 j ≤ entry Q 1 0`** ⟹ **§102 で塔でも孤児 ⟹ (i) 無料**
+    **錐の外で `entry Q 1 0 < entry Q 1 j`** ⟹ リフトなし ⟹ 行 1 は `entry Q 1 j` のまま
+        ⟹ **`entry Q 1 0 + e*n` がそれを越えると、ブロック `n` の根は候補でなくなる**
+        ⟹ **手前のブロックの根が親 ＝ 復活**
+
+> **⟹ 復活の候補は「`Q` の錐の外で、行 1 が根より上の列」だけ。**
+
+⚠ **これは設計であって証明ではありません。**（`le1 Q 0 j` から (ii) を出すには
+「ブロック `n` の根が行 0 祖先である」も要る。§79 `le0_zero_of_shallow` の領域。） -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
