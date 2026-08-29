@@ -9202,6 +9202,210 @@ R2 の実測: 展開の末尾列の `srow` は **1 が 57.8%** ／ 2 が 38.9% �
 ⚠ **R2 の但し書きは守る: 上は「組める」であって「通る」ではない。**
 **`j0 ≥ 1` 版の F1 が書けるかは、まだ確かめていない。** -/
 
+/-! ## 128. ★★★★★★★ **`j0 ≥ 1` 版の道具は、`j0 = 0` 版より**先に**揃っていた**
+
+§127.3 で「足りないのは `j0 ≥ 1` 版の F1 1 本」と出した。**そこで手筋（開いて数える）を 6 回目。**
+
+    ✅ `Lcone.gexp_entry1_mir` / `Gtrans.gexp_entry_root` / `Gtrans.gexp_chain_inversion`
+       … **もともと `j0` は節変数。一般 `j0` で緑。**
+    ✅ **`Lcone.gexp_root_shallow`（`:76`）… 前提 `hj0 : 0 < j0`**
+    ✅ **`Lcone.gexp_cone_mir`（`:106`）… 前提 `hj0 : 0 < j0`**
+    ✅ **`Lcone.gexp_cone_mir_flat`（`:356`）… `hj0` あり、しかも `hd0pos`/`hd0e`/`hlp` なし**
+
+> **⟹ 私が §84 で書いた `gexp_root_shallow_zero` / `gexp_cone_mir_zero` は、
+> ライブラリの `j0 ≥ 1` 版が使えなかったから書いた `j0 = 0` の特別扱いだった。**
+> **⟹ つまり `j0 ≥ 1` 側は、`j0 = 0` 側より道具が**多い**。**
+
+**⟹ 残るのは私の §86 / §98 / §99 / §102 を `j0` について一般化するだけ。以下でやる。** -/
+
+theorem nextrel0_gexp_no_skip_gen {M : TrioSeq} {j0 Lb d0 d1 n k q y : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hq1 : 0 < q)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (h : nextrel0 (gexp M j0 Lb d0 d1 n) y (j0 + (k * Lb + q))) :
+    j0 + k * Lb ≤ y := by
+  by_contra hc
+  have hmin := h.2.2.2.2 (j0 + k * Lb) ⟨by omega, by omega⟩
+  rw [show j0 + k * Lb = j0 + (k * Lb + 0) from by omega] at hmin
+  rw [gexp_entry0_mir hlen hk hq, gexp_entry0_mir hlen hk hLb] at hmin
+  have hlt := hup (j0 + q) (by omega) (by omega)
+  simp only [Nat.add_zero] at hmin
+  omega
+
+/-- **ブロック外の行 0 祖先は、必ずブロックの根を通る**（§99 の `j0 ≥ 1` 版）。 -/
+theorem gexp_anc_through_root_gen {M : TrioSeq} {j0 Lb d0 d1 n k : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l) :
+    ∀ q, q < Lb → ∀ y,
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) y (j0 + (k * Lb + q)) →
+      y < j0 + k * Lb →
+      Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) y (j0 + (k * Lb + 0)) := by
+  intro q
+  induction q using Nat.strong_induction_on with
+  | _ q ih =>
+    intro hq y hy hylt
+    rcases Nat.eq_zero_or_pos q with rfl | hqpos
+    · exact hy
+    · rcases hy.cases_tail with heq | ⟨c, hc1, hc2⟩
+      · omega
+      · have hcge : j0 + k * Lb ≤ c :=
+          nextrel0_gexp_no_skip_gen hlen hLb hk hq hqpos hup hc2
+        have hclt : c < j0 + (k * Lb + q) := nextrel0_index_less hc2
+        obtain ⟨q', hq'⟩ : ∃ q', c = j0 + (k * Lb + q') := ⟨c - j0 - k * Lb, by omega⟩
+        subst hq'
+        exact ih q' (by omega) (by omega) y hc1 hylt
+
+open Classical in
+/-- **ブロック `k` の根は塔の（全体の）根の錐に入る**（§98 の `j0 ≥ 1` 版）。
+⚠ `j0 = 0` では `le1_refl` で自明だったところが、ここでは前提 `hj0c : le1 M 0 j0` になる。 -/
+theorem gexp_blockRoot_cone_gen {M : TrioSeq} {j0 Lb d0 d1 n k : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0) (hLb : 0 < Lb) (hk : k < n)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M j0 (j0 + Lb)) (hj0c : le1 M 0 j0) :
+    le1 (gexp M j0 Lb d0 d1 n) 0 (j0 + (k * Lb + 0)) := by
+  rw [gexp_cone_mir hlen hj0 hLb hk hLb hup hd0pos hd0e hr0 hlp]
+  simpa using hj0c
+
+open Classical in
+/-- **ブロックの根の行 0 祖先は、行 1 が塔の根より上**（§98 の `j0 ≥ 1` 版）。 -/
+theorem gexp_blockRoot_anc_gen {M : TrioSeq} {j0 Lb d0 d1 n k : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0) (hLb : 0 < Lb) (hk : k < n)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M j0 (j0 + Lb)) (hj0c : le1 M 0 j0) :
+    ∀ y, Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) y (j0 + (k * Lb + 0)) →
+      y ≠ 0 → entry M 1 0 < entry (gexp M j0 Lb d0 d1 n) 1 y := by
+  have hrX := gexp_root_shallow (d0 := d0) (d1 := d1) (n := n) hlen hj0 hLb hr0
+  have hbnd : k * Lb + 0 < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hplt : j0 + (k * Lb + 0) < (gexp M j0 Lb d0 d1 n).length := by
+    rw [gexp_length hlen]; omega
+  have h10 : entry (gexp M j0 Lb d0 d1 n) 1 0 = entry M 1 0 :=
+    gexp_entry_low hlen hj0
+  have hall := (le1_zero_iff hrX hplt).mp
+    (gexp_blockRoot_cone_gen hlen hj0 hLb hk hup hd0pos hd0e hr0 hlp hj0c)
+  intro y hy hy0
+  have hres := hall y hy hy0
+  rwa [h10] at hres
+
+open Classical in
+/-- **ブロック外の行 0 祖先は、行 1 が塔の根より上**（§99 の `j0 ≥ 1` 版）。 -/
+theorem gexp_outer_anc_row1_gen {M : TrioSeq} {j0 Lb d0 d1 n k q : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0) (hLb : 0 < Lb) (hk : k < n)
+    (hq : q < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M j0 (j0 + Lb)) (hj0c : le1 M 0 j0) :
+    ∀ y, Relation.ReflTransGen (nextrel0 (gexp M j0 Lb d0 d1 n)) y (j0 + (k * Lb + q)) →
+      y < j0 + k * Lb → y ≠ 0 →
+      entry M 1 0 < entry (gexp M j0 Lb d0 d1 n) 1 y := by
+  intro y hy hylt hy0
+  exact gexp_blockRoot_anc_gen hlen hj0 hLb hk hup hd0pos hd0e hr0 hlp hj0c y
+    (gexp_anc_through_root_gen hlen hLb hk hup q hq y hy hylt) hy0
+
+/-! ### 128.1 ⟹ ここまでで §86 / §98 / §99 の `j0 ≥ 1` 版がすべて緑
+
+⚠ **`j0 = 0` 版との違いは 1 つだけ**: 前提に **`hj0c : le1 M 0 j0`**（悪根が全体の根の錐に入る）
+が加わった。`j0 = 0` では `le1_refl` で自明だったところである。
+
+**⟹ 残るは §102 の `j0 ≥ 1` 版。そこでは `j0 = 0` になかった枝
+「祖先 `a` が接頭辞 `M.take j0` の中」が新しく出る。** -/
+
+/-! ## 129. ★★★★★★★ **F1 の `j0 ≥ 1` 版**（§127.3 で「足りない」と出した 1 本）
+
+⚠ **`j0 = 0` になかった枝「祖先 `a` が接頭辞 `M.take j0` の中」は、
+別扱いが要らない。** §128 の `gexp_outer_anc_row1_gen` の条件は `y < j0 + k * Lb` なので、
+**接頭辞（`y < j0`）も手前のブロック（`j0 ≤ y < j0 + k*Lb`）も同じ 1 本で片づく。** -/
+
+open Classical in
+theorem gexp_orphan_row1_gen {M : TrioSeq} {j0 Lb d0 d1 n k q : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0) (hLb : 0 < Lb)
+    (hk : k < n) (hq : q < Lb) (hq1 : 0 < q)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M j0 (j0 + Lb)) (hj0c : le1 M 0 j0)
+    (hf1 : entry M 1 (j0 + q) ≤ entry M 1 0)
+    (horph : ¬ hasParent M 1 (j0 + q)) :
+    ¬ hasParent (gexp M j0 Lb d0 d1 n) 1 (j0 + (k * Lb + q)) := by
+  have hroot1 : entry M 1 0 < entry M 1 j0 :=
+    le1_entry1_lt hj0c (by omega)
+  have hout : ¬ le1 M j0 (j0 + q) := by
+    intro hc
+    have := le1_entry1_lt hc (show j0 ≠ j0 + q from by omega)
+    omega
+  have hlast1 : entry (gexp M j0 Lb d0 d1 n) 1 (j0 + (k * Lb + q))
+      = entry M 1 (j0 + q) := by
+    rw [gexp_entry1_mir hlen hk hq, if_neg hout]
+    omega
+  rintro ⟨a, ha, -⟩
+  have hnr : nextrel1 (gexp M j0 Lb d0 d1 n) a (j0 + (k * Lb + q)) := by
+    unfold nextR at ha
+    rw [if_neg (by omega), if_pos rfl] at ha
+    exact ha
+  have hlt := hnr.2.2.2.1
+  rw [hlast1] at hlt
+  have hle0 := hnr.2.2.2.2.1
+  by_cases ha0 : a = 0
+  · subst ha0
+    have h10 : entry (gexp M j0 Lb d0 d1 n) 1 0 = entry M 1 0 :=
+      gexp_entry_low hlen hj0
+    rw [h10] at hlt
+    omega
+  · by_cases hain : j0 + k * Lb ≤ a
+    · obtain ⟨qa, hqa⟩ : ∃ qa, a = j0 + (k * Lb + qa) := ⟨a - j0 - k * Lb, by omega⟩
+      have haltp : a < j0 + (k * Lb + q) := hnr.2.2.1
+      have hqalt : qa < q := by omega
+      subst hqa
+      have hent : entry M 1 (j0 + qa) ≤
+          entry (gexp M j0 Lb d0 d1 n) 1 (j0 + (k * Lb + qa)) := by
+        rw [gexp_entry1_mir hlen hk (by omega)]
+        split_ifs <;> omega
+      obtain ⟨k', q', hk', hq', hxe, hcase⟩ :=
+        gexp_chain_inversion hlen hk hq hup hd0e _ hle0.2.2 (by omega)
+      have hk'e : k' = k := by
+        rcases Nat.lt_or_ge k' k with h | h
+        · exfalso
+          have : k' * Lb + Lb ≤ k * Lb := by
+            have h1 : (k' + 1) * Lb ≤ k * Lb := Nat.mul_le_mul_right _ (by omega)
+            have h2 : (k' + 1) * Lb = k' * Lb + Lb := Nat.succ_mul k' Lb
+            omega
+          omega
+        · omega
+      subst hk'e
+      have hq'e : q' = qa := by omega
+      have hM : Relation.ReflTransGen (nextrel0 M) (j0 + qa) (j0 + q) := by
+        rcases hcase with ⟨-, h⟩ | ⟨h, -⟩
+        · rw [hq'e] at h; exact h
+        · omega
+      exact horph (hasParent_one_of (b := j0 + q) (k := j0 + qa)
+        (by omega) (by omega) ⟨by omega, by omega, hM⟩ (by omega))
+    · have := gexp_outer_anc_row1_gen hlen hj0 hLb hk hq hup hd0pos hd0e hr0 hlp hj0c a
+        hle0.2.2 (by omega) ha0
+      omega
+
+/-! ### 129.1 ⟹ §127.3 の「足りない 1 本」が埋まりました
+
+    §127.3 ⛔ **`j0 ≥ 1` 版の F1** ← **これ 1 つ**
+    §129   ✅ **`gexp_orphan_row1_gen`（緑）**
+
+**⟹ F2b の整礎帰納の途中の対象（`gexp T j0 …`, `j0 ≥ 1`）にも F1 が当たる。**
+
+⚠ **`j0 = 0` 版との差は前提 2 つだけ**:
+
+    **`hj0c : le1 M 0 j0`** … **悪根が全体の根の錐に入る**（`j0 = 0` では `le1_refl`）
+    **`hd0pos : 0 < d0`** … `j0 = 0` 版では `hr0` から導けていた（§98）
+
+⚠ **教訓 14: これは「F1 が当たる」であって「F2b が通る」ではない。**
+残りは **(i) 途中の対象が本当に `gexp T j0 …` の形か**（`oper_eq_gexp_gen` は緑なので形は出る）、
+**(ii) `hj0c` と `hd0pos` が各段で成り立つか**、の 2 点。**(ii) は R2 の実測向き。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
