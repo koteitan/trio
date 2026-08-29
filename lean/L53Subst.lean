@@ -467,5 +467,71 @@ theorem mem_W_of_flat_root {u : ℕ} {M Q : TrioSeq} {j1 : ℕ}
 （課題 L52-a で Lean 同一視ずみ）。 -/
 
 
+/-! ## 課題 L56: 残余は `WCat` ただ 1 本
+
+R1 の測定（SESSION §50）:
+
+    神託なし        ラダー 10 行 / 覆い 10
+    (TOW) だけ      ラダー 10 行（**1 行も伸びない**）/ 覆い 50
+    **rsum を外す（＝ WCat）  ラダー 16 行** / 覆い 29
+    両方            ラダー 24 行 / 覆い 98
+
+⟹ **ラダーを伸ばすのは `WCat`。** そして `(TOW)` は `WCat` から出る
+（`shiftTowerClosed_of_cat`）ので **実質 `WCat` 1 本**。
+
+下の `mem_W_of_flat_cat` が、(C13) の `rsum` を `WCat` に置き換えたもの。
+**`rsum` は `W_add` の側条件でしかなく、`WCat` があれば要らない。** -/
+
+/-- **★★ (C13) の `WCat` 版**: `rsum` を仮定に持たない。 -/
+theorem mem_W_of_flat_cat {u : ℕ} {M Q : TrioSeq} {j1 j0 : ℕ} (hcat : WCat)
+    (hj1 : j1 = M.length - 1) (hj1ne : j1 ≠ 0)
+    (hz : ¬(entry M 0 j1 = 0 ∧ entry M 1 j1 = 0 ∧ entry M 2 j1 = 0))
+    (hsr : srow M j1 = 0) (hpar : hasParent M 0 j1) (hj0 : j0 = parent M 0 j1)
+    (hQdef : Q = (List.range' j0 (j1 - j0)).map fun j =>
+      ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ))
+    (hA : M.take j0 ∈ W u) (hQ : Q ∈ W u) (hQr : ∀ p ∈ Q, entry Q 0 0 ≤ p.1) :
+    M ∈ W u := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn
+  rw [oper_flat hj1 hj1ne hz hsr hpar hj0 n, ← hQdef]
+  exact hcat u _ _ hA (W_flatMap_copies hQ hQr n)
+
+/-- **(SNOC-flat)** —— `snoc_flat_root`（`Wtower2.lean:2208`）から
+**「親が根」`parent = 0` を外した**もの（課題 L56-a で切り出す命題）。 -/
+def SnocFlat : Prop :=
+  ∀ (u : ℕ) (C : TrioSeq) (p : ℕ × ℕ × ℕ), C ∈ W u → C ≠ [] →
+    srow (C ++ [p]) C.length = 0 →
+    hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length →
+    C ++ [p] ∈ W u
+
+/-- **`snoc_flat_root` は (SNOC-flat) の `parent = 0` の場合**。 -/
+theorem snocFlat_root_case {u : ℕ} {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hC : C ∈ W u)
+    (hCne : C ≠ []) (hsr : srow (C ++ [p]) C.length = 0)
+    (hbp : parent (C ++ [p]) (srow (C ++ [p]) C.length) C.length = 0)
+    (hpar : hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length) :
+    C ++ [p] ∈ W u :=
+  snoc_flat_root hC hCne hsr hbp hpar
+
+/-! ### 課題 L56-b: (SNOC-flat) と残核の関係
+
+`mem_W_of_flat_cat` のとおり、`j0 > 0` のときに要るのは **`M.take j0` と写しの連結**
+だけである。⟹ **`WCat` があれば (SNOC-flat) は出る**（`rsum` は要らない）。
+
+    `WCat`      `A ∈ W u → B ∈ W u → A ++ B ∈ W u`
+    `WSnoc`     1 列版。`wcat_of_snoc : WSnoc → WCat`
+    `SubstClosedG` / `Subst1gReviveSelf`   残核
+
+R1 の §R42 のとおり **`WCat` は残核より広い**ので、
+**残核に落ちるならそちらが標的**である。課題 L52-a で
+
+    「深い側に足す」＝ `Aop` の節 3（`graft`）　（`graft_snoc` / `wAddDeep_of_clause3`）
+
+を Lean 上で同一視したので、**(SNOC-flat) → `WCat` → 節 3 → 残核**という向きは付いている。
+逆（残核 → `WCat`）は `substClosed_of_substClosedG` 経由で既にある。
+
+⟹ **標的は `WCat`。(SNOC-flat) はその 1 列版であり、`mem_W_of_flat_cat` で
+`WCat` から機械的に出る。** -/
+
+
 end L53
 end TRIO
