@@ -11474,7 +11474,7 @@ theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
       mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
     ∀ n, mTower Q d e n ∈ W u := by
   refine mTowerClosed_of_snocStepPar ?_
-  intro n j hj _ hC
+  intro n j hj hpar0 hC
   set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
   have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
   have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
@@ -11621,6 +11621,11 @@ theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hz0 : entry Q 2 0 = 0)
     (hstep : ∀ (n j : ℕ), j < Q.length →
+      (hasParent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+        ∨ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
       (0 < j → le1 Q 0 j → n * Q.length ≤
         parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
           (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -11630,7 +11635,7 @@ theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
       mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
     ∀ n, mTower Q d e n ∈ W u := by
   refine mTowerClosed_of_snocStepPar ?_
-  intro n j hj _ hC
+  intro n j hj hpar0 hC
   set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
   have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
   have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
@@ -11646,7 +11651,7 @@ theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
     unfold srow
     rw [show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen],
       entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
-  refine hstep n j hj (fun hj1 hcone => ?_) hC
+  refine hstep n j hj hpar0 (fun hj1 hcone => ?_) hC
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
     block_blockParent_all_cone hj hj1 hr0 hcone
       (fun hpos => h2_cone hz0 j hj1 hj hpos hcone)
@@ -11937,6 +11942,16 @@ theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hz0 : entry Q 2 0 = 0)
     (hstep : ∀ (n j : ℕ), j < Q.length →
+      (hasParent (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+        ∨ A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
       (0 < j → le1 Q 0 j → (A ++ mTower Q d e n).length ≤
         parent (A ++ mTower Q d e n
             ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -11951,7 +11966,7 @@ theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
         ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
     ∀ n, A ++ mTower Q d e n ∈ W u := by
   refine prefixTowerClosed_of_snocStepPar hA ?_
-  intro n j hj _ hC
+  intro n j hj hpar0 hC
   set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
   have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
   have hPlen : (A ++ mTower Q d e n).length = A.length + n * Q.length := by
@@ -11966,7 +11981,7 @@ theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
       ((A ++ mTower Q d e n).length + j) = srow (B.take (j + 1)) j := by
     unfold srow
     rw [entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
-  refine hstep n j hj (fun hj1 hcone => ?_) hC
+  refine hstep n j hj hpar0 (fun hj1 hcone => ?_) hC
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
     block_blockParent_all_cone hj hj1 hr0 hcone
       (fun hpos => h2_cone hz0 j hj1 hj hpos hcone)
@@ -13004,6 +13019,45 @@ R2 の実測: **錐の外でも塔では親あり 1.687 / 2.411%**（`e ≥ 1` �
 
 **⟹ ですので `hall` を落とすときも、「錐の外 ⟹ 孤児」とは**書きません**。**
 **⟹ §180 で守った規律（「示したのは鎖の位置だけ」）をそのまま続けます。** -/
+
+/-! ## 185. ✅ **H12 の差分を入れました**: 捨てていた `hpar0` を `hstep` に渡す
+
+H12 の指摘: **`mTowerClosed_of_snocStepPar` は孤児を内部で片づけている**
+（`snoc_orphan_W` で）。**なのに `_Cone` 版はその情報（「親がある ∨ 空」）を
+`intro n j hj **`_`** hC` で捨てていた。**
+
+    `intro n j hj **`_`** hC`  ⟹  **`intro n j hj hpar0 hC`**
+    `refine hstep n j hj (fun … ) hC` ⟹ **`refine hstep n j hj **`hpar0`** (fun … ) hC`**
+
+**⟹ §163 `mTowerClosed_of_snocStepCone` と §167 `prefixTowerClosed_of_snocStepCone` の
+両方に入れました。緑。**
+
+### 185.1 ⟹ **`hstep` の義務が「親を持つ列だけ」に狭まりました**
+
+    **孤児の列は `hstep` に届かない**（`snocStepPar` が内部で片づける）
+    ⟹ 本当の残差は 2 つ:
+      **(C1)** 錐の中 … 親は同じブロック（無料）⟹ 窓 `< |Q|` ⟹ §138 の測度
+      **(e)**  **錐の外 ∧ しかし親を持つ** ←── **ここだけ**
+
+⚠ **そして (e) が R2 の (r1') の反例（§184）の正体でした。**
+**`Q = (0,1,0)(1,0,0)(1,1,1)(1,0,0)`, `j = 2` は `horph` を満たさない
+⟹ 「錐の外 ∧ 親を持つ」＝ (e)。**
+
+> **⟹ §184.2 の消去法（「`hlp` か `hd0e` が破れているはず」）は**外れ**でした。**
+> **⟹ 破れていたのは `horph` です。私は「`Q[1]` は行 0 が等しく祖先でない」と見て
+> `horph` が成り立つと判断しましたが、**根以外の祖先**を見落としていました。**
+> **⟹ R2 への問い（`hlp`/`hd0e` を確かめよ）は取り下げます。**
+
+### 185.2 ⚠ 今日 3 度目の同じ根（H12 と私で）
+
+    **私 §169** … `h2` を**動かす**ことしか考えず、定義を開かなかった
+    **私 §175** … `shiftr01_flatMap` を索引で引かずに書き始めた（再発明 12）
+    **H12 §254** … `snocStepPar` の**署名だけ見て中身を読まなかった**
+    **私 §184** … 反例の `horph` を「見た」つもりで、**根以外の祖先**を数えなかった
+
+> **⟹ 4 件とも「開く前に手を動かした」。**
+> **⟹ 教訓を広げます: **既存の補題の上に積むときは、その補題の**中身**を読む**。**
+> **⟹ そして**反例を追うときは、前提を 1 つずつ**定義に戻って**確かめる**。** -/
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
