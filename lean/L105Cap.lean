@@ -8766,6 +8766,68 @@ theorem shTower_orphan_row1 {M : TrioSeq} {e n' : ℕ} (hM2 : 2 ≤ M.length)
 
 **§110 `oper_snocRoot` の `e = 0`・土台が塔の場合。次はそこ。** -/
 
+/-! ## 120. ★★★★★ `(T1)` の構造: **足す列の親は「`Q` のブロッカーの像」しかありえない**
+
+`(T1)` は `shTower Q e n ++ [r]`、`r = (entry Q 0 0 + n*e, entry Q 1 0, entry Q 2 0)`。
+**`mTower` 側（§91 の (A1)）と決定的に違う点: `r` の行 1 が `entry Q 1 0` ちょうど**
+（`mTower` 側は `entry Q 1 0 + e*n` だった）。
+
+**⟹ 塔の根も、どのブロックの根も、行 1 が `entry Q 1 0` で `r` と同じ。**
+**⟹ `nextrel1` の狭義増加が破れるので、根は `r` の行 1 の親になれない。** -/
+
+open Classical in
+/-- **★★★★★ 塔の根は `r` の行 1 の親になれない**（行 1 が等しいから）。 -/
+theorem shTower_snoc_no_root_parent_row1 {Q : TrioSeq} {e n : ℕ} (hQne : Q ≠ []) :
+    ¬ nextrel1 (shTower Q e (n + 1)
+        ++ [((entry Q 0 0 + (n + 1) * e, entry Q 1 0, entry Q 2 0) : ℕ × ℕ × ℕ)])
+      0 (shTower Q e (n + 1)).length := by
+  intro h
+  have hAlen : 0 < (shTower Q e (n + 1)).length := by
+    rw [shTower_length]
+    have : 0 < Q.length := List.length_pos_iff.mpr hQne
+    have h1 : 0 < n + 1 := by omega
+    exact Nat.mul_pos h1 this
+  have h0 : entry (shTower Q e (n + 1)
+      ++ [((entry Q 0 0 + (n + 1) * e, entry Q 1 0, entry Q 2 0) : ℕ × ℕ × ℕ)]) 1 0
+      = entry Q 1 0 := by
+    rw [entry_append_left _ _ hAlen, entry_shTower_root hQne]
+  have hlast : entry (shTower Q e (n + 1)
+      ++ [((entry Q 0 0 + (n + 1) * e, entry Q 1 0, entry Q 2 0) : ℕ × ℕ × ℕ)]) 1
+      (shTower Q e (n + 1)).length = entry Q 1 0 := by
+    rw [entry_snoc_last]
+    rfl
+  have hlt := h.2.2.2.1
+  rw [h0, hlast] at hlt
+  omega
+
+/-! ### 120.1 ⟹ `(T1)` の残差は「`Q` にブロッカーがある」場合だけ
+
+`shTower` ではどのブロックの根も行 1 が `entry Q 1 0`（リフト無し）なので、上と同じ理由で
+**どのブロックの根も `r` の行 1 の親になれない。**
+
+⟹ `srow r = 1` のとき、`r` の行 1 の親になれるのは
+**行 1 が `entry Q 1 0` より狭義に小さい列** ＝ **`Q` のブロッカーの像**だけである。
+
+    **`Q` にブロッカーが無い**（＝ 非根の列がすべて 行 1 > `entry Q 1 0`）
+      ⟹ **`r` は行 1 の孤児 ⟹ `snoc_orphan_W`（§4、緑）で無料**
+    **`Q` にブロッカーがある**
+      ⟹ **その像が親になりうる ⟹ 残差**
+
+> **⟹ `(T1)` の残差は「`Q` にブロッカーがある」場合ちょうど。**
+> **⟹ 断片の残核が**ずっとブロッカーだった**という事実（(δ)、§52、§59.1）と一致する。**
+
+⚠ R2 の実測（`j = 0` の段、`z=0` ∧ `e=0`）で **孤児が 47.1〜50.1%** なのは、
+**約半分の `Q` にブロッカーが無い**ということ。**残り半分が `(T1)` の残差。**
+
+### 120.2 ⟹ `mTower` 側との対比
+
+    **`mTower`（`z=1`）** … `r` の行 1 は `entry Q 1 0 + e*n` ⟹ **ブロックの根より上**
+        ⟹ ブロックの根が親になれる（§95.1 の議論）⟹ **孤児にならない**（`e≥1` で 0%）
+    **`shTower`（`z=0`）** … `r` の行 1 は `entry Q 1 0` ちょうど ⟹ **根と同じ**
+        ⟹ **ブロッカーだけが親になれる** ⟹ ブロッカーが無ければ孤児
+
+**⟹ 2 つの枝で「誰が親になるか」が構造的に違う。`z` の相補性（§105.5）の正体はこれ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
