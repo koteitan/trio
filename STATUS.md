@@ -7,6 +7,16 @@
 
 ---
 
+## 0-0. ⚠ **最良の到達点は今日の作業の外にある**（§126）
+
+    `lean/Lind.lean:132`   **`CoreSingleton := ∀ b c, [(0,b,c)] ∈ GX`** —— **1 列についての 1 文**
+    `lean/Final.lean:559`  **`TRIO_terminates_of_core (hs : CoreSingleton) : WellFounded stepRel`**
+
+**これが今日より前からの到達点。今日 `Wstar` 路線で削った核（`TowerOK2` ほか）は
+これより弱くない。** 両路線は比較不能だが、**狙うなら `CoreSingleton` のほうが小さい。**
+
+⟹ **明日の最初の一手は「路線の選択」**。以下は今日の `Wstar` 路線の記録。
+
 ## 0. 検算（team-lead が自分で回した、2026-08-29）
 
     leanman check -C /home/koteitan/proofs/dbms/lean lean/Final.lean  ⟹ **exit 0（緑）**
