@@ -9098,6 +9098,60 @@ theorem mTower_zero_zero (Q : TrioSeq) (m : ℕ) :
 > **⚠ ただし §90 で示したとおり、底の列は**決まっている**ので `WSnoc` そのものではない。**
 > **「決まった 1 列を塔（またはその接頭辞）に足す」が、いまの断片の残核の姿である。** -/
 
+/-! ## 126. ★★★★★★ F2b の測度: **展開の末尾列は `M` の「1 つ手前」の列**
+
+R2 の §R143（F2b の再帰の深さが `|Q| − 2` で必ず有限）の**測度**を定理にする。
+
+`oper` は `M.take j0 ++（`[j0, j1)` の写し `n` 個）` で `j1 = |M|-1` なので、
+**結果の末尾列は最後の写しの末尾 ＝ `M[j1 - 1] = M[|M| - 2]` の像**である。
+**行 2 は写しで動かない**（`Lcone.gexp_entry2_mir`）ので、行 2 はそのまま移る。 -/
+
+open Classical in
+theorem oper_last_row2 {M : TrioSeq} {n : ℕ} (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1)) (hn : 0 < n) :
+    entry (M⟦n⟧) 2 ((M⟦n⟧).length - 1) = entry M 2 (M.length - 2) := by
+  have hj0lt : parent M (srow M (M.length - 1)) (M.length - 1) < M.length - 1 :=
+    nextR_index_lt (parent_nextR hp)
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+  set j0 := parent M (srow M (M.length - 1)) (M.length - 1) with hj0
+  set Lb := M.length - 1 - j0 with hLbdef
+  have hLbpos : 0 < Lb := by rw [hLbdef]; omega
+  have hlen : j0 + Lb + 1 = M.length := by rw [hLbdef]; omega
+  rw [oper_eq_gexp_gen (n' + 1) hL hz hp]
+  have hglen : (gexp M j0 Lb
+      (if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1) - entry M 0 j0 else 0)
+      (if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1) - entry M 1 j0 else 0)
+      (n' + 1)).length = j0 + (n' + 1) * Lb := gexp_length hlen
+  rw [hglen]
+  have hidx : j0 + (n' + 1) * Lb - 1 = j0 + (n' * Lb + (Lb - 1)) := by
+    have h : (n' + 1) * Lb = n' * Lb + Lb := Nat.succ_mul n' Lb
+    omega
+  rw [hidx, gexp_entry2_mir hlen (by omega) (by omega)]
+  congr 1
+  omega
+
+/-! ### 126.1 ⟹ これが R2 の「深さ `|Q| − 2`」の測度です
+
+    **展開のたびに、末尾列の出所が `M` の中で 1 つ左へ動く**（`|M|-1 → |M|-2`）
+    **行 2 は写しで動かない**（`gexp_entry2_mir`）
+    ⟹ **`srow = 2` が続くには、そのつど行 2 > 0 の列が要る**
+    ⟹ **`Q` の行 2 > 0 の列を左から使い切ったら終わり ⟹ 深さは `|Q|` で抑えられる**
+
+**⟹ R2 の実測「深さ ＝ `|Q| − 2` にちょうど一致、打ち切り 0 件」の機構である。**
+
+⚠ **R2 の但し書きをそのまま守る:「深さが有限」は「`W` に入る」ではない。**
+**`W` の節 2 は全 `m` を要求するので、これは**構造の深さ**であって所属ではない。**
+**⟹ 整礎帰納が**組める**ことが分かっただけで、F2b が証明できたわけではない。**
+
+### 126.2 ⟹ そして 57.8% は F1 の領域へ
+
+R2 の実測: 展開の末尾列の `srow` は **1 が 57.8%** ／ 2 が 38.9% ／ 0 が 3.3%。
+**⟹ 過半数は `srow = 1` に落ち、`gexp_orphan_row1`（§102、緑）／
+`shTower_orphan_row1`（§119、緑）の領域に入る。**
+**⟹ F2b の再帰でまた F2b になるのは 28.4% だけ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
