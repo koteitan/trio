@@ -5264,3 +5264,60 @@ R78 / R79 / R80 と **3 回続けて「長さで傾向が変わる」**が出た
     **`domT` だが根で復活しない … 0 件**（`domT` なら必ず根が復活させる）
 
 ⟹ **ガードを足す前は 10.9% が余分に開いている。足せば消える。**
+
+---
+
+## R84 —— **`TowerOK1`（節 2 側）には `towerOK1_of_clause3` 以外の道がある**
+
+### ⚠ まず教訓 20 の再発を認める
+
+§R83-b の「21/21 で `natDom` が立つ」は **私の証明書エンジンが節 2 を使う 21 か所**の話で、
+**塞がるのは `Wset.lean` の証明の中で節 2 を使う箇所**（`:4470` ほか 27 か所）。
+**母集団が違う。**私が §R81 で立てた教訓 20 に自分で反した（本日 10 件目の自己訂正）。
+⟹ **`AopG` は勧められない。**team-lead / L2 の判断が正しい。
+
+### R84-a 神託を 2 本にしても数字は変わらない
+
+    `TowerOK1`（節 2 側、`srow=1`、2223 = 10.9%）＋ `TowerOK2`（2805 = 13.8%）
+    ⟹ ラダーは **20415 / 20415**（`Wstar` の神託は同じものなので当然）
+
+⚠ これは**含意地図の符号化**であって独立の検証ではない（§R82 の但し書きと同じ）。
+
+### ★ R84-b **節 2 の与件は `R.dropLast ∈ Wstar` 1 個に潰れる**
+
+`domT R m` のとき `oper` は `Pred` に潰れるので:
+
+    **`domT R m` ⟹ `R⟦n⟧ = R.dropLast`（n によらない）**   検算 **290619 / 290619**
+
+⟹ `:4447` で節 2 がくれるのは **`R.dropLast ∈ Wstar` ただ 1 個**（族ではない）。
+これは L2 が `GraftFromExp` を特定したとき（§102）と**同じ構造**。
+
+### ★★ 道はある —— **`tower1_mem2_fam`（`Wset.lean:4122`）**
+
+    `tower1_mem2`（`:4094`）… `hgr : ∀ y ∈ W m, based y → … graft R y …`  ← **節 3 の与件**
+    **`tower1_mem2_fam`（`:4122`）… `hgrF : ∀ k a', 2v+z ≤ a' →
+        Lift1 ((0,v,z) :: graft R (**tow v z R k**)) 0 ∈ W a'`**
+
+docstring がそのまま言っている:
+
+> `tower1_mem2` applies its graft-closure hypothesis **ONLY to the tower's own
+> elements**, so the `∀ y ∈ W m` interface — and with it the stage `m` — can be
+> **dropped entirely**. What is left is exactly "the tower's own elements graft
+> into `R`", which is what the `GX` machine supplies.
+
+⟹ **`TowerOK1`（節 2 側）に要るのは `∀ y ∈ W m` ではなく、
+`y = tow v z R k`（塔自身の元）に限った graft 閉包だけ。**
+
+⟹ **`GraftFromExp` を「`y` が塔の元の場合」に制限した形**で足りる。
+一般の `GraftFromExp`（∀ y ∈ W m）より**真に弱い**。
+
+### ⟹ 現在地（訂正版）
+
+    開いているのは 2 つ:
+      **`TowerOK2`（`srow = 2`、13.8%）**
+      **`TowerOK1`（節 2 側、`srow = 1`、10.9%）
+        ⟸ `tower1_mem2_fam` の `hgrF`
+        ＝ `GraftFromExp` の「塔の元に限った版」（一般形より弱い）**
+
+`GraftFromExp` の一般形は L2 の L90 で `Subst1gRevive` ＋ `WSnoc` に落ちているので、
+**塔の元に限った版はそれより弱いはず**。そこが次の削りどころ。
