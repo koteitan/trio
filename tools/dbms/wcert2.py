@@ -337,6 +337,39 @@ def _wstar_cert(M):
     return 'C16/Wstar+W_add'
 
 
+def _towerok_cert(M):
+    """(C17) **`TowerOK` を神託にした証明書**（`'TOWEROK' in ASSUME` のときだけ）。
+
+        TowerOK := ∀ v z u0 a R, argOK R → R ≠ [] → z ≤ 1 → 2v+z ≤ a →
+                     Aop W u0 Wstar R → (∃ m, domT R m) →
+                     hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
+                     ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W a          （`lean/Wset.lean:4365`）
+
+    結論が `∀n, M⟦n⟧ ∈ W a` なので **節 2** で `M ∈ W a`。`a = lev M 0 = 2v+z` に取る。
+
+    ⚠ 教訓 14: **`cons` の形だけ**。連結は混ぜない。
+    ⚠ `Aop W u0 Wstar R` は私の証明書エンジンで `wself2(R)` に**近似**している
+      （`Aop` の節 2 が `∀n, R⟦n⟧ ∈ Wstar` なので、証明書があれば立つ見込み）。
+      ⟹ ここは**近似**であることを明記する。
+    """
+    if 'TOWEROK' not in ASSUME or len(M) < 2:
+        return None
+    p0, R = M[0], M[1:]
+    d0 = p0[0]
+    if not all(d0 < q[0] for q in R):        # 正規化して argOK R（`W_shift` で戻す）
+        return None
+    if p0[2] > 1:
+        return None                          # z <= 1
+    j = len(R) - 1
+    if 2 * R[j][1] + R[j][2] == 0 or has_parent(R, j):
+        return None                          # `∃ m, domT R m`（R の最後の列が孤児）
+    if not has_parent(M, len(R)):
+        return None                          # hasParent ((0,v,z) :: R) ... |R|
+    if wself2(R) is None:
+        return None                          # `Aop W u0 Wstar R` の**近似**
+    return 'C17/TowerOK'
+
+
 def wself2(M, depth=0):
     """`M ∈ Wself` の証明書の名前、無ければ None。**分割を全部試して再帰**。"""
     M = tuple(tuple(p) for p in M)
@@ -362,6 +395,8 @@ def wself2(M, depth=0):
         r = _famcert(M)                  # (C15) 展開の族による節 2（厳密）
     if r is None:
         r = _wstar_cert(M)               # (C16) `Wstar3` 神託 ＋ `split_lastMin`
+    if r is None:
+        r = _towerok_cert(M)             # (C17) `TowerOK` 神託（cons の形だけ）
     if r is None:
         u = lev0(M)                          # lev (A++B) 0 = lev A 0
         deep = 'D' in ASSUME
