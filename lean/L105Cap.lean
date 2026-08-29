@@ -3453,6 +3453,99 @@ theorem tower2_eq_liftTower {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
 `liftStage_of_zeroRow2`（行 2 ≡ 0、仮定ゼロ、§32）は **ここで再利用できる可能性が高い**。
 （`LiftTie` 系は `TowerOK` の核ではなくなったが、**道具としては生きている**。） -/
 
+
+/-! ## 48. ★★★★★★ 課題 L127: **予測は正しい。しかも既存の補題 2 本で出ます**
+
+team-lead の予測:
+
+> **`(shTower Q e n)⟦m⟧ = shTower Q e (n-1) ++ shiftr01 ((n-1)*e) 0 (Q⟦m⟧)`**
+> 「塔の展開は、最後のブロックだけを展開する」
+
+**正しい。** しかも道具は 2 本とも既存・緑:
+
+    **`L53.comm_of_hasParentInBlock`（`L53Subst.lean:922`）**
+      `(A ++ N)⟦n⟧ = A ++ N⟦n⟧`（`N` の中に親があれば `A` に逃げない）
+    **`Wset.oper_shiftr01`（`Wset.lean:434`）**
+      `(shiftr01 d 0 W)⟦n⟧ = shiftr01 d 0 (W⟦n⟧)`（行 0 の一様シフトは展開と可換）
+
+`shTower_succ` で `shTower Q e (n+1) = shTower Q e n ++ shiftr01 (n*e) 0 Q` と割り、
+`A := shTower Q e n`、`N := shiftr01 (n*e) 0 Q` に当てるだけ。 -/
+
+theorem srow_shiftr01 (d : ℕ) (W : TrioSeq) (j : ℕ) :
+    srow (shiftr01 d 0 W) j = srow W j := by
+  unfold srow
+  rw [entry2_shiftr01, entry1_shiftr01]
+
+theorem hasParentInBlock_shiftr01 {d : ℕ} {Q : TrioSeq}
+    (h : L53.HasParentInBlock Q) : L53.HasParentInBlock (shiftr01 d 0 Q) := by
+  unfold L53.HasParentInBlock at h ⊢
+  rw [shiftr01_length, srow_shiftr01, hasParent_shiftr01]
+  exact h
+
+/-- **★★★★★★ 塔の展開は「最後のブロックだけ」を展開する。** -/
+theorem oper_shTower {Q : TrioSeq} (hQne : Q ≠ []) (hQ2 : Q.length - 1 ≠ 0)
+    (hzQ : ¬(entry Q 0 (Q.length - 1) = 0 ∧ entry Q 1 (Q.length - 1) = 0 ∧
+      entry Q 2 (Q.length - 1) = 0))
+    (hblk : L53.HasParentInBlock Q) (e n m : ℕ) :
+    (shTower Q e (n + 1))⟦m⟧ = shTower Q e n ++ shiftr01 (n * e) 0 (Q⟦m⟧) := by
+  have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
+  have hNne : shiftr01 (n * e) 0 Q ≠ [] := by
+    intro hc
+    have hl := congrArg List.length hc
+    rw [shiftr01_length] at hl
+    exact hQne (List.length_eq_zero_iff.mp hl)
+  have hN2 : (shiftr01 (n * e) 0 Q).length - 1 ≠ 0 := by
+    rw [shiftr01_length]
+    exact hQ2
+  have hNz : ¬(entry (shiftr01 (n * e) 0 Q) 0
+        ((shiftr01 (n * e) 0 Q).length - 1) = 0 ∧
+      entry (shiftr01 (n * e) 0 Q) 1 ((shiftr01 (n * e) 0 Q).length - 1) = 0 ∧
+      entry (shiftr01 (n * e) 0 Q) 2 ((shiftr01 (n * e) 0 Q).length - 1) = 0) := by
+    rw [shiftr01_length]
+    rintro ⟨h0, h1, h2⟩
+    rw [entry1_shiftr01] at h1
+    rw [entry2_shiftr01] at h2
+    rw [entry0_shiftr01 (by omega : Q.length - 1 < Q.length)] at h0
+    exact hzQ ⟨by omega, h1, h2⟩
+  rw [shTower_succ,
+    L53.comm_of_hasParentInBlock m hNne hN2 hNz (hasParentInBlock_shiftr01 hblk),
+    oper_shiftr01]
+
+/-! ### 48.1 ⟹ `ShTowerSelf` の帰納の形
+
+`Aop` の節 2（`mem_of_oper_mem`）で `shTower Q e (n+1) ∈ Wself` を示すには
+`∀ m ≥ 1, (shTower Q e (n+1))⟦m⟧ ∈ W (lev Q 0)` が要る。上の定理で右辺は
+
+    **`shTower Q e n ++ shiftr01 (n*e) 0 (Q⟦m⟧)`**
+
+`Q ∈ Wself` から `Q⟦m⟧ ∈ W (lev Q 0)`（`Wchar.oper_mem_of_mem`、緑）、
+`shTower Q e n` は帰納法の仮定。**⟹ 両端は揃う。**
+
+⚠ **しかしそれを繋ぐのは連結**であり、`rsum` は破れる（§14、`not_rsum_of_root_mem`:
+`A = shTower Q e n` は `k=0` の塊として `Q` を含み根の行 0 = 0、
+`entry (shiftr01 (n*e) 0 (Q⟦m⟧)) 0 0 = n*e ≥ 1`）。
+⟹ **team-lead の但し書きどおり、右辺の連結で詰まる。**
+
+### 48.2 ★ ⟹ しかし `shTower` の形に閉じ込められます
+
+`shTower Q e n ++ shiftr01 (n*e) 0 (Q⟦m⟧)` を見ると:
+
+    前半 `shTower Q e n` … **`Q` を `e` ずつずらした `n` 個のブロック**
+    後半               … **`Q⟦m⟧` を `n*e` ずらしたもの**
+
+⟹ **「同じ 1 単位の反復」ではないが、「`Q` の `n` 個のブロック ＋ `Q⟦m⟧` の 1 個」**
+という形で、**周期の 1 単位が `Q` から `Q⟦m⟧` に変わるのは最後の 1 個だけ**。
+
+⟹ **`ShTowerSelf` の帰納は `n` について回り、各段で足されるのは
+`shiftr01 (n*e) 0 (Q⟦m⟧)` 1 ブロックだけ**である。
+⟹ **`Q⟦m⟧` は `Q` より「小さい」（`W` の導出が 1 段浅い）**ので、
+**測度は `(n, Q の導出)` の辞書式**になるはず。
+
+⚠ ただし **`shTower Q e n ++ (1 ブロック)` を `W` の中で作る操作**が要る。
+それが `WCat` / `rsum` で死んでいる ⟹ **`Aop` の節 3（graft）で作るしかない**。
+`shTower Q e n` の末尾は `Q` の末尾（`n-1` 番目のブロックの最終列）なので、
+**そこが孤児かどうか**が節 3 の使えるかどうかを決める。**次はそこを見る。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
