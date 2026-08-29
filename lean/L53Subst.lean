@@ -3438,5 +3438,222 @@ def WSnoc : Prop :=
 命題として正しく、独立に証明できれば別経路になる。 -/
 
 
+/-! ## ★★★★ 課題 L95-a: **複数列は反復で回る**（`W` の側では）
+
+⚠ まず: 課題 L94 で `WSnoc ⟹ LiftStage` が出たので、**本線では `WConvex1` は要らない**。
+以下は「`WSnoc` が難しかったときの保険経路」を閉じるための判定。
+
+差が `k` 本でも、**1 本ずつ下げる中間列**を作って `k` 回まわせる。下端の witness `A`
+は使い回せる（`Le1_trans`）。⟹ **`WConvexUnit ⟹ WConvex1`。**
+
+⚠ ただし `lowerOne_of_revive`（課題 L93-b）の側条件「下げたあとも親が居る」は
+**各段で立つ必要がある**。そこは反復では自動にならない。 -/
+
+/-- 1 列だけ行 1 を 1 下げた列（`W` 側の中間列）。 -/
+def lowerAt (C : TrioSeq) (j0 : ℕ) : TrioSeq :=
+  (List.range C.length).map fun j =>
+    ((entry C 0 j, entry C 1 j - (if j = j0 then 1 else 0),
+      entry C 2 j) : ℕ × ℕ × ℕ)
+
+@[simp] theorem lowerAt_length (C : TrioSeq) (j0 : ℕ) :
+    (lowerAt C j0).length = C.length := by simp [lowerAt]
+
+theorem lowerAt_getD {C : TrioSeq} {j0 i : ℕ} (hi : i < C.length) :
+    (lowerAt C j0).getD i (0, 0, 0)
+      = ((entry C 0 i, entry C 1 i - (if i = j0 then 1 else 0),
+          entry C 2 i) : ℕ × ℕ × ℕ) := by
+  rw [List.getD_eq_getElem?_getD,
+    List.getElem?_eq_getElem (by rw [lowerAt_length]; exact hi)]
+  unfold lowerAt
+  simp only [List.getElem_map, List.getElem_range]
+  rfl
+
+theorem entry0_lowerAt (C : TrioSeq) (j0 i : ℕ) :
+    entry (lowerAt C j0) 0 i = entry C 0 i := by
+  rcases Nat.lt_or_ge i C.length with hi | hi
+  · show ((lowerAt C j0).getD i (0, 0, 0)).1 = _
+    rw [lowerAt_getD hi]
+  · rw [entry_out (by rw [lowerAt_length]; omega), entry_out hi]
+
+theorem entry2_lowerAt (C : TrioSeq) (j0 i : ℕ) :
+    entry (lowerAt C j0) 2 i = entry C 2 i := by
+  rcases Nat.lt_or_ge i C.length with hi | hi
+  · show ((lowerAt C j0).getD i (0, 0, 0)).2.2 = _
+    rw [lowerAt_getD hi]
+  · rw [entry_out (by rw [lowerAt_length]; omega), entry_out hi]
+
+theorem entry1_lowerAt {C : TrioSeq} {j0 i : ℕ} (hi : i < C.length) :
+    entry (lowerAt C j0) 1 i = entry C 1 i - (if i = j0 then 1 else 0) := by
+  show ((lowerAt C j0).getD i (0, 0, 0)).2.1 = _
+  rw [lowerAt_getD hi]
+
+theorem entry1_lowerAt_le (C : TrioSeq) (j0 i : ℕ) :
+    entry (lowerAt C j0) 1 i ≤ entry C 1 i := by
+  rcases Nat.lt_or_ge i C.length with hi | hi
+  · rw [entry1_lowerAt hi]; omega
+  · rw [entry1_out (by rw [lowerAt_length]; omega)]; omega
+
+/-- 3 行とも一致すれば列は等しい。 -/
+theorem eq_of_entries {A B : TrioSeq} (hl : A.length = B.length)
+    (h0 : ∀ j, entry A 0 j = entry B 0 j) (h1 : ∀ j, entry A 1 j = entry B 1 j)
+    (h2 : ∀ j, entry A 2 j = entry B 2 j) : A = B := by
+  refine List.ext_getElem hl ?_
+  intro i hi1 hi2
+  rw [← entry_triple hi1, ← entry_triple (show i < B.length from hi2), h0, h1, h2]
+
+/-- **1 列 1 段の凸性**（下端の witness つき）。 -/
+def WConvexUnit : Prop :=
+  ∀ (a : ℕ) (A B C : TrioSeq) (j0 : ℕ), A ∈ W a → C ∈ W a → Le1 A B → Le1 B C →
+    (∀ j, j ≠ j0 → entry B 1 j = entry C 1 j) →
+    entry C 1 j0 = entry B 1 j0 + 1 →
+    B ∈ W a
+
+/-- **★★★★ 反復は回る**: 1 列 1 段の凸性から幅 1 の凸性が出る（課題 L95-a）。
+和や個数の計量は要らない —— **窓が幅 1 なので、各列はたかだか 1 回下げれば済む**。
+添字 `i` の帰納で「`i` 以上では一致」を下ろしていけばよい。 -/
+theorem wconvex1_of_unit (h : WConvexUnit) : WConvex1 := by
+  classical
+  intro a A B C hA hC hAB hBC hwin
+  suffices H : ∀ i : ℕ, ∀ C' : TrioSeq, C' ∈ W a → Le1 B C' → Le1 A C' →
+      (∀ j, entry C' 1 j ≤ entry A 1 j + 1) →
+      (∀ j, i ≤ j → entry C' 1 j = entry B 1 j) → B ∈ W a by
+    refine H C.length C hC hBC (Le1_trans hAB hBC) hwin (fun j hj => ?_)
+    rw [entry1_out (by omega), entry1_out (by rw [hBC.1]; omega)]
+  intro i
+  induction i with
+  | zero =>
+      intro C' hC' hBC' _ _ hagree
+      have : B = C' :=
+        eq_of_entries hBC'.1 hBC'.2.1 (fun j => (hagree j (Nat.zero_le j)).symm)
+          hBC'.2.2.1
+      rw [this]; exact hC'
+  | succ k ih =>
+      intro C' hC' hBC' hAC' hwin' hagree
+      by_cases hk : entry C' 1 k = entry B 1 k
+      · refine ih C' hC' hBC' hAC' hwin' (fun j hj => ?_)
+        rcases Nat.eq_or_lt_of_le hj with hje | hjl
+        · rw [← hje]; exact hk
+        · exact hagree j (by omega)
+      · -- 列 `k` はちょうど 1 だけ高い（窓が幅 1、かつ `A ≤ B`）
+        have hlt : entry B 1 k < entry C' 1 k := by
+          have := hBC'.2.2.2 k; omega
+        have hone : entry C' 1 k = entry B 1 k + 1 := by
+          have h1 := hwin' k
+          have h2 := hAB.2.2.2 k
+          omega
+        have hklen : k < C'.length := by
+          by_contra hc
+          have h1 : entry C' 1 k = 0 := entry1_out (by omega)
+          have h2 : entry B 1 k = 0 := entry1_out (by rw [hBC'.1]; omega)
+          omega
+        set D : TrioSeq := lowerAt C' k with hD
+        have hDlen : D.length = C'.length := lowerAt_length C' k
+        have hD1k : entry D 1 k = entry B 1 k := by
+          rw [hD, entry1_lowerAt hklen, if_pos rfl]; omega
+        have hD1ne : ∀ j, j ≠ k → entry D 1 j = entry C' 1 j := by
+          intro j hne
+          rcases Nat.lt_or_ge j C'.length with hj | hj
+          · rw [hD, entry1_lowerAt hj, if_neg hne]; omega
+          · rw [hD, entry1_out (by rw [lowerAt_length]; omega),
+              entry1_out (by omega)]
+        have hBD : Le1 B D := by
+          refine ⟨by rw [hDlen]; exact hBC'.1, fun j => ?_, fun j => ?_, fun j => ?_⟩
+          · rw [hD, entry0_lowerAt]; exact hBC'.2.1 j
+          · rw [hD, entry2_lowerAt]; exact hBC'.2.2.1 j
+          · by_cases hj : j = k
+            · subst hj; omega
+            · rw [hD1ne j hj]; exact hBC'.2.2.2 j
+        have hDC : Le1 D C' := by
+          refine ⟨hDlen, fun j => ?_, fun j => ?_, fun j => ?_⟩
+          · rw [hD, entry0_lowerAt]
+          · rw [hD, entry2_lowerAt]
+          · exact entry1_lowerAt_le C' k j
+        have hAD : Le1 A D := Le1_trans hAB hBD
+        have hDW : D ∈ W a :=
+          h a A D C' k hA hC' hAD hDC (fun j hj => hD1ne j hj) (by omega)
+        refine ih D hDW hBD hAD (fun j => le_trans (hDC.2.2.2 j) (hwin' j))
+          (fun j hj => ?_)
+        rcases Nat.eq_or_lt_of_le hj with hje | hjl
+        · rw [← hje]; exact hD1k
+        · rw [hD1ne j (by omega)]; exact hagree j (by omega)
+
+/-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
+
+## 1. 上から下への連鎖（全部 Lean で緑）
+
+```
+Final.TRIO_terminates_of_towerOK  (Wset.TowerOK → WellFounded stepRel)   Final.lean:90
+  └ Wset.towerOK_of  (TowerGraft2 → TowerExp → TowerOK)                  Wset.lean:4514
+      ├ 節 1                    矛盾（domT と両立しない）                  既済
+      ├ 節 3 / srow = 1         Wset.tower1_mem                           既済
+      ├ 節 3 / srow = 2 = TowerGraft2
+      │    └ L53.towerGraft2_of_liftTie   (LiftTie → TowerGraft2)         この file
+      │         └ L53.liftTie_of_wsnoc    (WSnoc → LiftTie)               この file
+      │              └ Wtower2 の鎖: wcat_of_snoc → shiftTowerClosed_of_cat
+      │                → shiftTowerClosedS_of_closed → liftStageParented_of_tower
+      │                → liftStage_of_parented                            全部既存・緑
+      └ 節 2 = TowerExp
+           └ L53.towerExp_of_graftFromExp (GraftFromExp → TowerGraft2 → TowerExp)
+                └ GraftFromExp ⟸ Subst1gRevive ＋ WstarSnoc
+                     L53.graft_cons_mem_of_revive（側条件は構成から、場合条件 2 本のみ残る）
+                     L53.wstarSnoc_of_wsnoc  (WSnoc → WstarSnoc)
+```
+
+**⟹ 未証明はちょうど 2 本。**
+
+## 2. 未証明 2 本の正確な文
+
+### (1) `Wset.WSnoc`（`Wtower2.lean:2049`）— **二重に効く**
+
+```lean
+def WSnoc : Prop :=
+  ∀ (u : ℕ) (C : TrioSeq) (p : ℕ × ℕ × ℕ), C ∈ W u → C ≠ [] →
+    hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length → C ++ [p] ∈ W u
+```
+
+* 持ち上げ側: `WSnoc → … → LiftStage → LiftTie → TowerGraft2`
+* 節 2 側: `WSnoc → WstarSnoc`（`R.dropLast ∈ Wstar` を `R ∈ Wstar` へ 1 段上げる）
+
+### (2) `Wtower2.Subst1gRevive`（`Wtower2.lean:3251`）
+
+1 列（`p` 番目）を `W (lev S p)` のブロック `C` に差し替えても段は上がらない。
+`graft` の場面では側条件（`entry C 0 0 = entry S 0 p` / 深さ / `lev`）が**構成から出る**。
+
+## 3. 今日証明した主な補題（この file）
+
+```
+towerOK2_of_clause3 / towerGraft2_of_liftTie   TowerGraft2 は LiftTie 1 本
+liftStage_of_wsnoc                              WSnoc だけで (WL)          ★
+strict_prop / noTie_prop                        伝播は仮定ゼロ
+liftStage_of_strict / liftStage_of_noTie        狭義 88.5% ＋ 無タイ 2.8%
+lift1_untouched_of_le / le1_entry1_lt           le1 錐は行 1 の狭義増加
+Lift1_eq_mliftR / coneV_root_vacuous            核は「閾値の off-by-one」
+liftStage_of_unit / liftStage_iff_unit          d は 1 に落ちる            ★
+liftStage_of_wconvex1                           幅 1 の凸性で足りる
+wconvex1_of_unit                                1 列 1 段 ⟹ 幅 1          ★
+lowerOne_of_revive / lowerLast_of_revive        1 列 1 段は Subst1gRevive から
+Wstar_iff_Wself / wstarSnoc_of_wsnoc            Wstar は根つき Wself
+graft_cons_mem_of_revive                        graft は残核の場面そのもの
+not_rsum_cons_root / rsum_graft_iff             W_add は根と両立しない（否定）
+tower2_stage_fits' / tower2_zr / tower2_vw      段はいつでも収まる
+```
+
+## 4. 作ったが**要らなくなった**もの（どれも偽ではない）
+
+```
+Row1DownLocal / Row1DownRoot0   MliftR に畳まれた（L85）
+MliftR / AminROper              slift 移植が閉じた。AminROper は**偽**（L88、反例つき）
+WConvex1 / WConvexUnit          WSnoc から LiftStage が出る（L94）。保険経路として有効
+WstarCat                        rsum が根と両立しない（L87）
+```
+
+## 5. 明日の最初の一手（候補）
+
+1. **`WSnoc`** —— 1 本で 2 か所に効くので、費用対効果が最大
+2. `graft_cons_mem_of_revive` に残る**場合条件 2 本**を潰して `GraftFromExp` を完成
+3. 保険: `WConvexUnit`（1 列 1 段の凸性）—— `Subst1gRevive` の「復活」条件つきなら出る
+-/
+
+
 end L53
 end TRIO
