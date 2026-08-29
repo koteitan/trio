@@ -1210,5 +1210,79 @@ def LiftNoCost : Prop :=
     Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft S y) t ∈ W a
 
 
+/-! ## ★★★ 課題 L65: 3 つの道の判定
+
+`Lift1_eq_mlift_of_tieFree`（`Wtower2.lean:76`）の中身を読んだ:
+
+```lean
+def TieFree (X) := ∀ j, coneV X (entry X 1 0 - 1) j → **le1 X 0 j**   -- coneV ⊆ le1
+theorem coneV_of_le1 (hv : 1 ≤ entry X 1 0) : le1 X 0 j → coneV X (...) j  -- **無条件**
+```
+
+    `Lift1 X d` … 根の **`le1` 錐**（行 1 の木の子孫）で行 1 を `d` 上げる
+    `mlift X v0 d` … **`coneV` 錐**（行 0 祖先が全部行 1 で `v0` 超）で上げる
+    `TieFree` … その 2 つが**一致**すること（片側 `le1 ⊆ coneV` は無条件で成立）
+
+## ★ L65-c の答え: 錐が階段でなくなるのは**タイ**のせい
+
+`coneV` は**値**の条件、`le1` は**木**の条件。**行 1 の値が等しい**と
+`nextrel1` の `entry X 1 j0 < entry X 1 j1` が破れて木の辺が消えるが、
+値の条件は満たしたままになる。⟹ `coneV ⊄ le1`。
+
+`L10Tie.lean:25` の最小例がまさにそれ:
+
+    M = [(0,1,1), (2,3,0)]   TieFree
+    M⟦2⟧ = [(0,1,1), (2,1,1)]  ← 列 1 の行 1 が根と**同じ 1**
+      `nextrel1 (M⟦2⟧) 0 1` は `1 < 1` を要求して**偽** ⟹ `le1` に入らない
+      しかし `coneV`（行 0 祖先の行 1 が全部 `≥ 1`）は**満たす**
+
+## ⚠ L65-a の判定: **死んでいる可能性が高い**
+
+`L10Tie.lean:35` の 2 つ目の反例は **`Wstar` の `cons` 操作そのもの**:
+
+    M = [(0,2,1), (4,1,0)]  TieFree
+    (0,2,0) :: (行 0 を +1 した M)  **破れる**
+
+`TowerOK2` で `TieFree` が要るのは `X = ((0,v,z) :: R)⟦n⟧`、つまり
+**根を cons した形**である。⟹ **反例と同じ形。**
+
+さらに `L10Tie` は「`TieFree` が中身を持つのは根の行 1 が 1 以上のとき、つまり
+`Wstar` の `(0,v,z) :: R`（`v ≥ 1`）」と書いている。⟹ **狙う場所でちょうど非空虚、
+かつちょうど破れる。** 局所化の見込みは薄い。
+
+**測るなら 1 本**: 実際の `TowerOK2` の事例で `TieFree (((0,v,z) :: R)⟦n⟧)` が
+立つ割合。陽性対照に `coneV ⊆ le1` の破れの個数。
+
+## ⚠ L65-b の判定: **`TieFree` は `Row1Mono` に置き換わるだけ**
+
+`TieFree` は**等式**のためにしか使っていない。ところが要るのは所属だけで、
+`le1 ⊆ coneV` は**無条件**だから
+
+    `Lift1 X d` は `mlift X v0 d` より**行 1 が小さい**（持ち上げる列が少ない）
+
+⟹ **`W` が行 1 の引き下げで閉じている**なら `mlift_mem_W` から出る。それは
+`Row1Mono` / `WConvex`（`Wtower2.lean:151 / :450`）である。
+
+⚠ ただし `Row1Mono` の計測（369068 / 773483 / 258507、違反 0）は
+**課題 L45 で ⛔ 空虚と判定した**（`inW` の退化）。⟹ **支えが無い。**
+
+## ⟹ 判定
+
+    L65-a 局所化    … 反例と同じ形。**薄い**（測定 1 本で決着可能）
+    L65-b 別の橋    … `TieFree` → `Row1Mono` / `WConvex` に**置き換わるだけ**。
+                      しかも `Row1Mono` の支えは空虚だった
+    L65-c なぜ階段でないか … **タイ**（行 1 の値が等しいと木の辺が消える）。**答えた**
+
+**⟹ 核は「行 1 のタイをどう扱うか」に落ちた。** `TieFree` も `Row1Mono` も
+`WConvex` も、**同じタイを別の言葉で避けようとしている**。 -/
+
+/-- **`Lift1` は `mlift` より行 1 が小さい**（`le1 ⊆ coneV` は無条件だから）。
+⟹ `W` が行 1 の引き下げで閉じていれば `LiftNoCost` は `mlift_mem_W` から出る。 -/
+def Row1Down : Prop :=
+  ∀ (u : ℕ) (X Y : TrioSeq), X ∈ W u → X.length = Y.length →
+    (∀ j, entry Y 0 j = entry X 0 j) → (∀ j, entry Y 2 j = entry X 2 j) →
+    (∀ j, entry Y 1 j ≤ entry X 1 j) → Y ∈ W u
+
+
 end L53
 end TRIO
