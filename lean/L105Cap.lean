@@ -6153,6 +6153,139 @@ theorem mTowerClosedS_of_residues (hA : MTowerStepAll) (hB : MTowerOrphan)
 
 に分かれている。 -/
 
+/-! ## 81. ★★★★★★ **残差 C（`MTowerSingle`）は定理**
+
+`|Q| = 1` なら塔は **1 列ずつの等差列**である。行 2 は塔全体で**一定**なので:
+
+    `z = 0` … §76（行 2 ≡ 0）で無料
+    `z ≥ 1` … 末尾列の `srow = 2` だが **`nextrel2` は行 2 の狭義増加を要求する**
+              ⟹ **行 2 が一定なら親は存在しない ⟹ `oper` は `Pred`（末尾を剥がすだけ）**
+              ⟹ `n` の帰納で閉じる
+
+**⟹ 残差 3 本のうち C は落ちた。** -/
+
+theorem row2_const_shiftr01 {Q : TrioSeq} {z d0 d1 : ℕ} (h : ∀ p ∈ Q, p.2.2 = z) :
+    ∀ p ∈ shiftr01 d0 d1 Q, p.2.2 = z := by
+  intro p hp
+  unfold shiftr01 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨q, hq, rfl⟩ := hp
+  exact h q hq
+
+theorem row2_const_Lift1 {X : TrioSeq} {z d : ℕ} (h : ∀ p ∈ X, p.2.2 = z) :
+    ∀ p ∈ Lift1 X d, p.2.2 = z := by
+  intro p hp
+  unfold Lift1 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨j, hj, hjp⟩ := hp
+  rw [List.mem_range] at hj
+  rw [← hjp]
+  show entry X 2 j = z
+  exact h _ (entry_pair_mem (B := X) hj)
+
+theorem row2_const_mTower {Q : TrioSeq} {z : ℕ} (h : ∀ p ∈ Q, p.2.2 = z) (d e n : ℕ) :
+    ∀ p ∈ mTower Q d e n, p.2.2 = z := by
+  intro p hp
+  unfold mTower at hp
+  rw [List.mem_flatMap] at hp
+  obtain ⟨k, -, hk⟩ := hp
+  exact row2_const_Lift1 (row2_const_shiftr01 h) p hk
+
+theorem entry2_of_const {M : TrioSeq} {z j : ℕ} (h : ∀ p ∈ M, p.2.2 = z)
+    (hj : j < M.length) : entry M 2 j = z :=
+  h _ (entry_pair_mem (B := M) hj)
+
+theorem mTower_length (Q : TrioSeq) (d e : ℕ) :
+    ∀ n, (mTower Q d e n).length = n * Q.length := by
+  intro n
+  induction n with
+  | zero => simp [mTower]
+  | succ n ih =>
+      rw [mTower_succ, List.length_append, ih, Lift1_length, shiftr01_length]
+      exact (Nat.succ_mul n Q.length).symm
+
+theorem mTower_dropLast_of_single {Q : TrioSeq} (h1 : Q.length = 1) (d e n : ℕ) :
+    (mTower Q d e (n + 1)).dropLast = mTower Q d e n := by
+  have hlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = 1 := by
+    rw [Lift1_length, shiftr01_length, h1]
+  obtain ⟨x, hx⟩ := List.length_eq_one_iff.mp hlen
+  rw [mTower_succ, hx, List.dropLast_concat]
+
+open Classical in
+/-- **行 2 が一定なら末尾列は行 2 の親を持たない**（`nextrel2` は狭義増加を要求）。 -/
+theorem not_hasParent_two_of_row2_const {M : TrioSeq} {z : ℕ}
+    (h : ∀ p ∈ M, p.2.2 = z) (hlen : 0 < M.length) :
+    ¬ hasParent M 2 (M.length - 1) := by
+  rintro ⟨j0, hj0, -⟩
+  unfold nextR at hj0
+  rw [if_neg (by omega), if_neg (by omega)] at hj0
+  have hj0lt : j0 < M.length := hj0.1
+  have hlt := hj0.2.2.2.1
+  rw [entry2_of_const h hj0lt, entry2_of_const h (by omega)] at hlt
+  omega
+
+open Classical in
+/-- **★★★★★★ 残差 C は定理。** -/
+theorem mTowerSingle_holds : MTowerSingle := by
+  intro u d e n Q hQ h1
+  have hQne : Q ≠ [] := by intro hc; rw [hc] at h1; simp at h1
+  set z : ℕ := entry Q 2 0 with hzdef
+  have hconstQ : ∀ p ∈ Q, p.2.2 = z := by
+    intro p hp
+    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hp
+    have hj0 : j = 0 := by omega
+    subst hj0
+    show (Q[0]'(by omega)).2.2 = entry Q 2 0
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+    simp
+  rcases Nat.eq_zero_or_pos z with hz0 | hzpos
+  · refine mTower_mem_of_zeroRow2 ?_ hQ d e n
+    intro p hp
+    rw [hconstQ p hp, hz0]
+  · induction n with
+    | zero => simpa using W_nil u
+    | succ n ih =>
+        rcases Nat.eq_zero_or_pos n with hn0 | hnpos
+        · subst hn0
+          rwa [mTower_one]
+        · have hconst := row2_const_mTower hconstQ d e (n + 1)
+          have hML : (mTower Q d e (n + 1)).length = n + 1 := by
+            rw [mTower_length, h1, Nat.mul_one]
+          have hMpos : 0 < (mTower Q d e (n + 1)).length := by omega
+          have hML1 : (mTower Q d e (n + 1)).length - 1 ≠ 0 := by omega
+          have hsr : srow (mTower Q d e (n + 1))
+              ((mTower Q d e (n + 1)).length - 1) = 2 := by
+            unfold srow
+            rw [if_pos (by rw [entry2_of_const hconst (by omega)]; omega)]
+          have hnp : ¬ hasParent (mTower Q d e (n + 1))
+              (srow (mTower Q d e (n + 1)) ((mTower Q d e (n + 1)).length - 1))
+              ((mTower Q d e (n + 1)).length - 1) := by
+            rw [hsr]
+            exact not_hasParent_two_of_row2_const hconst hMpos
+          have hzz : ¬ (entry (mTower Q d e (n + 1)) 0
+                ((mTower Q d e (n + 1)).length - 1) = 0 ∧
+              entry (mTower Q d e (n + 1)) 1
+                ((mTower Q d e (n + 1)).length - 1) = 0 ∧
+              entry (mTower Q d e (n + 1)) 2
+                ((mTower Q d e (n + 1)).length - 1) = 0) := by
+            rintro ⟨-, -, h2⟩
+            rw [entry2_of_const hconst (by omega)] at h2
+            omega
+          refine mem_of_oper_mem (fun m hm => ?_)
+          rw [oper_eq_pred_of_noParent m hML1 hzz hnp]
+          unfold Pred
+          rw [if_neg (by omega), mTower_dropLast_of_single h1]
+          exact ih
+
+/-! ### 81.1 ⟹ 残るのは A と B の 2 本
+
+    ⛔ **C `MTowerSingle`** … **落ちた**（上）
+    **A `MTowerStepAll`** … 本丸。「塔 ＋ 1 ブロックの展開」の連結 1 文
+    **B `MTowerOrphan`** … §79 で狭い条件（`srow ∈ {1,2}` かつ末尾列が根より上に行けない）
+
+⟹ **`GraftAll` の代わりは A ＋ B の 2 本。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
