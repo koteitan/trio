@@ -293,6 +293,50 @@ def _famcert(M):
                            '[D]' if deep else '')
 
 
+def lastmin_split(M):
+    """**`split_lastMin`（`lean/L53Subst.lean:956`）の構成**。
+
+        M ≠ [] → ∃ A P, M = A ++ P ∧ P ≠ [] ∧ **rsum A P** ∧ (∀ p ∈ P.tail, P[0].1 < p.1)
+
+    `P` は**大域最小の行 0 を最後に達成する位置**から始まる接尾辞。
+    ⟹ `P.tail` は全部それより真に深く、`rsum A P` は**構成から**出る。
+    """
+    m = min(p[0] for p in M)
+    i = max(j for j, p in enumerate(M) if p[0] == m)
+    return M[:i], M[i:]
+
+
+def _wstar_cert(M):
+    """(C16) **`Wstar3` を神託にした証明書**（`'WSTAR' in ASSUME` のときだけ）。
+
+        Wstar3 R := argOK R → ∀ v z, ((0,v,z) :: R) ∈ W (2v+z)      （`L53Subst.lean:1061`）
+
+    `tree_shift3`（`:1025`）＋ `W_shift`（`Wset.lean:1320`）＋ `argOK_normalize`（`:1044`）で
+    **`p0 :: R`（`R` の全列が `p0` より真に深い）** が `Wself` に入る。
+    それを `split_lastMin` の `P` に当て、`A` とは `W_add` で継ぐ
+    （**`rsum A P` は `split_lastMin` の構成から出る**）。
+
+    ⚠ 教訓 14: 神託は **`cons` の形だけ**。`A ++ B` は許さない
+    （連結は `split_lastMin` の分割 1 通りに限る）。
+    """
+    if 'WSTAR' not in ASSUME or len(M) < 1:
+        return None
+    A, P = lastmin_split(M)
+    if not P:
+        return None
+    # P = p0 :: R、R の全列は p0 より真に深い（構成から）⟹ Wstar の連鎖で Wself
+    if len(P) >= 2 and not all(P[0][0] < q[0] for q in P[1:]):
+        return None                          # 念のため（構成上は必ず成り立つ）
+    if not A:
+        return 'C16/Wstar'
+    u = lev0(M)
+    if lev0(P) > u:
+        return None                          # W_add に P ∈ W u が要る（mem_Wself_iff）
+    if wself2(A) is None:
+        return None
+    return 'C16/Wstar+W_add'
+
+
 def wself2(M, depth=0):
     """`M ∈ Wself` の証明書の名前、無ければ None。**分割を全部試して再帰**。"""
     M = tuple(tuple(p) for p in M)
@@ -317,9 +361,17 @@ def wself2(M, depth=0):
     if r is None:
         r = _famcert(M)                  # (C15) 展開の族による節 2（厳密）
     if r is None:
+        r = _wstar_cert(M)               # (C16) `Wstar3` 神託 ＋ `split_lastMin`
+    if r is None:
         u = lev0(M)                          # lev (A++B) 0 = lev A 0
         deep = 'D' in ASSUME
-        for k in range(1, len(M)):
+        # 教訓 14: `LASTMIN` を立てると**連結を `split_lastMin` の 1 通りに絞る**
+        # （`A ++ B` を自由に許すと `WCat` が黙って入る）
+        ks = ([len(lastmin_split(M)[0])] if 'LASTMIN' in ASSUME
+              else range(1, len(M)))
+        for k in ks:
+            if not (1 <= k < len(M)):
+                continue
             A, B = M[:k], M[k:]
             if not deep and lev0(B) > u:     # mem_Wself_iff: B ∈ W u に必要
                 continue
