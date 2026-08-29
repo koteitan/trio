@@ -5336,6 +5336,82 @@ theorem operTower_succ_tower2 {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
     operTower_eq_mTower_tower2 hR hRne hd hi2 hpM]
   exact mTower_succ _ _ _ _
 
+/-! ## 70. ★★★★★ **`mTower` の展開も「最後のブロックだけ」**（§56 のマスクつき版）
+
+§69 で `operTower = mTower`（塔の場面）が定理になったので、§56 の `oper_shTower2`
+（マスク無しの `shTower2` 版）を **`mTower` そのもの**に上げる。道具は同じ:
+
+    `L53.comm_of_hasParentInBlock`（`L53Subst.lean:922`、緑）
+    `hasParentInBlock_shiftr01`（§49、緑）＋ 下の `hasParentInBlock_Lift1`
+
+⚠ §56 では行 1 の一様シフト `shiftr01 0 e` に **`lev ≠ 0`** が要った
+（`Wset.oper_shiftr1` の前提）。**`Lift1` ではそれが要らない**: `Lift1` は
+`srow` も `hasParent` も**無条件で**保つ（`Wset.srow_Lift1` / `hasParent_Lift1`）。
+**⟹ マスクつきのほうが素直。** -/
+
+theorem hasParentInBlock_Lift1 {Q : TrioSeq} {e : ℕ} (hQ2 : Q.length - 1 ≠ 0)
+    (h : L53.HasParentInBlock Q) : L53.HasParentInBlock (Lift1 Q e) := by
+  unfold L53.HasParentInBlock at h ⊢
+  rw [Lift1_length, Wset.srow_Lift1 hQ2, hasParent_Lift1]
+  exact h
+
+open Classical in
+/-- **★★★★★★ `mTower` の展開は最後のブロックだけを展開する。** -/
+theorem oper_mTower {Q : TrioSeq} (hQne : Q ≠ []) (hQ2 : Q.length - 1 ≠ 0)
+    (hlev : lev Q (Q.length - 1) ≠ 0) (hblk : L53.HasParentInBlock Q)
+    (d e n m : ℕ) :
+    (mTower Q d e (n + 1))⟦m⟧
+      = mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n))⟦m⟧ := by
+  have hNlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hNne : Lift1 (shiftr01 (d * n) 0 Q) (e * n) ≠ [] := by
+    intro hc
+    have hl := congrArg List.length hc
+    rw [hNlen] at hl
+    exact hQne (List.length_eq_zero_iff.mp hl)
+  have hN2 : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1 ≠ 0 := by
+    rw [hNlen]; exact hQ2
+  have hNblk : L53.HasParentInBlock (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) := by
+    refine hasParentInBlock_Lift1 ?_ (hasParentInBlock_shiftr01 hblk)
+    rw [shiftr01_length]; exact hQ2
+  have hlt : Q.length - 1 < (shiftr01 (d * n) 0 Q).length := by
+    have : 0 < Q.length := List.length_pos_iff.mpr hQne
+    rw [shiftr01_length]; omega
+  have hNz : ¬ (entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 0
+        ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1) = 0 ∧
+      entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1
+        ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1) = 0 ∧
+      entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 2
+        ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length - 1) = 0) := by
+    rw [hNlen]
+    rintro ⟨-, h1, h2⟩
+    rw [entry2_Lift1, entry2_shiftr01] at h2
+    rw [entry1_Lift1 hlt, entry1_shiftr01] at h1
+    unfold lev at hlev
+    omega
+  rw [mTower_succ, L53.comm_of_hasParentInBlock m hNne hN2 hNz hNblk]
+
+/-! ### 70.1 ⟹ 核 (2) の帰納の 1 段が確定した
+
+    `mTower Q d e (n+1)` の展開 = `mTower Q d e n ++ (最後のブロック)⟦m⟧`
+
+⟹ **`mem_of_oper_mem` で `mTower Q d e (n+1) ∈ W a` を示すには、
+右辺が `W a` に入ることだけ言えばよい。** 左半分は帰納法の仮定
+（`mTower Q d e n`）、右半分は 1 ブロックの展開である。
+
+⚠ **残るのは連結**（`mTower Q d e n ++ (…)⟦m⟧` が `W a`）。**そこが `WCat` の壁**で、
+本線では `graft`（節 3）で回避している。**次の一手はそこ。**
+
+### 70.2 ⟹ §56 との差
+
+    §56 `oper_shTower2` … 行 1 も**一様**シフト。`Wset.oper_shiftr1` の
+                          **`lev Q (|Q|-1) ≠ 0`** が要る（`srow` が `0→1` に変わるため）
+    §70 `oper_mTower`   … 行 1 は**マスクつき**（`Lift1`）。`srow` は無条件で保たれるので
+                          `lev ≠ 0` は **`hNz`（末尾列が全零でない）にしか使わない**
+
+⟹ **マスクつきのほうが仮定が軽い。** §57 で「5 つの塔」を並べたとき
+`operTower`（＝ `mTower`）を核に選んだのは、この意味でも正しかった。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
