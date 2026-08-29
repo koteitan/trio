@@ -5375,3 +5375,65 @@ docstring がそのまま言っている:
 ⟹ **`∀ y ∈ W m` の界面を落とす変換は、行 1 / 行 2 の両方、Core α / β の両方で
 既に Lean にある。**`CoreGpowPeel` は **`GX` すら落としている**。
 **⟹ この層が使われているかを確認する価値がある**（team-lead の §122 の見立てどおり）。
+
+---
+
+## ★ R86 —— `Gamma.lean` の履歴（v0.103 → v0.118.56）**この路線は完走している**
+
+### ⚠ まず §R85 の熱を下げる —— **族形は同語反復だと既に記録されている**
+
+    **5689d2e v0.118.52/the generated-family reduction is a tautology (honest correction)**
+      - `gpow_dropLast_eq_tow`: 族の peel は **`tow v z R (k+1)` そのもの**
+        ⟹ `CoreGpowPeel` は「塔の各段が W パッケージ」の**言い換え**、
+          `tower1_mem2_fam` / `_gpow` は **k を振り直しただけ**
+      - **"labelled as a restatement not a reduction"**
+      - `GRAFTALL-PLAN.md 1.9.42`: 「なぜ族形が段の上げを外したように**見えた**か」を記録し、
+        次の探りを「**装備だけで `tow v z R k ∈ W m` が出せるか**」に振り直す
+
+⟹ **§R85 で私が挙げた 7 本のうち、少なくとも `CoreGpowPeel` / `tower1_mem2_fam` /
+`tower1_mem2_gpow` は「還元ではなく言い換え」だと team が既に確認ずみ。**
+L2 の「それ自体は何も減らさない」が正しい。**私の §R84/§R85 の期待は下げるべき。**
+
+`GRAFTALL-PLAN` の教訓もそのまま:「**還元先が結論と一致していないことを毎回確認する**」。
+
+### R86-a/b `Gamma.lean` の履歴（39 commit）
+
+    v0.103.0-3  Gamma: 持ち上げ義務の段、`CtxOK` / `GX` / `CoreBlocked` / `CoreT1L` / `CoreT2E`
+    v0.104.0    **GX の機械は 3 つの核を法として閉じる**
+    v0.105.1    **β が族核に狭まる**（`CoreT2EFam` / `coreT2E_of_fam`）
+                ⟹ `GX_closed` は `CoreBlocked` ＋ `CoreT1L` ＋ `CoreT2EFam` に乗る
+    …
+    v0.118.50   塔とコピー塊が**生成族**に潰れる
+    **v0.118.52  生成族還元は同語反復（honest correction）**
+    v0.118.53   **持ち上げの量化子が GX 核から落ちる**
+    v0.118.54   **`GX` 側の核が一列族 `[(0,b,c)] ∈ GX` に潰れた**（`gx_graft` は無条件の合成則）
+    **v0.118.56  `InfEquip` は偽（`Infcex.not_infEquip`、反例 `M = [(1,0,2),(2,0,0)]`）
+                 ⟹ 残渣は単一の核に落ちる**
+
+### ★ R86-c **途中で止まっていない。完走している。**
+
+v0.118.56 で:
+
+    `InfEquip` を仮定していた頂点定理は**空虚なので削除**
+    2 本の文脈核が**単元核ひとつ**から出る
+      （`corePlantCtxLift_of_core` / `coreCtxSuffixLift_of_core`）
+    **`TRIO_terminates_of_core (hs : CoreSingleton)`**  … `[(0,b,c)] ∈ GX`（**1 列**）
+    **`TRIO_terminates_of_cap (hc : CoreCap)`**        … **`GX` を含まない純 `W` の 1 文**
+
+⟹ **この路線は「単元核 `CoreSingleton`」および「`GX` 抜きの `CoreCap`」まで到達して完走。**
+
+### ⟹ 今日の到達点との比較
+
+| | 仮定 | 形 |
+|---|---|---|
+| 経路 D（今日） | **`TowerOK2`** | `srow=2` の塔（`∀ v z u0 a R` の 4 量化 ＋ 7 前提） |
+| **経路 C（v0.118.56）** | **`CoreSingleton`** | **`[(0,b,c)] ∈ GX`（1 列！）** |
+| 経路 C' | **`CoreCap`** | **`GX` を含まない純 `W` レベルの 1 文** |
+
+§R71-a の含意地図では経路 C と経路 D をつなぐ補題は無い（比較不能）。
+⟹ **どちらが証明しやすいかは地図からは決まらない**が、
+**`CoreSingleton` は「1 列の行列が `GX` に入る」という構文的にいちばん小さい文**。
+
+⟹ **`TowerOK2` だけを見ているのは、経路 C を忘れている可能性がある。**
+今日のラダー計測は `Wstar`（経路 D）でしか測っていないので、
+**`CoreSingleton` / `CoreCap` を神託にしたラダー**は未測定。
