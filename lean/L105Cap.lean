@@ -7229,6 +7229,81 @@ R2 の (z5) は F1 と F2a で破れ 0（合計 130 万件超）。**機構を�
 **後者（錐の外の列が前のブロックから行 0 祖先になる）が起きるかどうかが鍵。**
 **⚠ これは見立てであって証明ではない。** -/
 
+/-! ## 98. ★★★★★★ §97 の「足りない 1 文」は **§85 ＋ `le1_zero_iff` から出ます**
+
+§97 で必要だと特定したのは
+
+> **「ブロック `k` の根の（塔の中での）行 0 祖先（根 `0` を除く）は、すべて 行 1 が `entry M 1 0` より上」**
+
+**これは既存の 2 本の合成である:**
+
+    **(1) `le1 T 0 (ブロック `k` の根)` は真**（§84 の `q = 0` の場合 ＋ `le1_refl`）
+    **(2) `Lcone.le1_zero_iff`**（緑）… `le1 T 0 j` ⟺ `j` の非根の行 0 祖先が全部 行 1 > 根
+
+**⟹ (1) を (2) に入れるだけ。** -/
+
+open Classical in
+/-- **ブロック `k` の根は必ず塔の根の錐に入る。** -/
+theorem gexp_blockRoot_cone {M : TrioSeq} {Lb d0 d1 n k : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb)) :
+    le1 (gexp M 0 Lb d0 d1 n) 0 (0 + (k * Lb + 0)) := by
+  rw [gexp_cone_mir_zero hlen hLb hk hLb hd1pos hd0e hr0 hlp]
+  exact le1_refl (by omega)
+
+open Classical in
+/-- **★★★★★★ §97 の足りない 1 文**: ブロックの根の行 0 祖先は全部、塔の根より行 1 が上。 -/
+theorem gexp_blockRoot_anc {M : TrioSeq} {Lb d0 d1 n k : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb)) :
+    ∀ y, Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n)) y (0 + (k * Lb + 0)) →
+      y ≠ 0 → entry M 1 0 < entry (gexp M 0 Lb d0 d1 n) 1 y := by
+  have hn : 0 < n := by omega
+  have hd0pos : 0 < d0 := by
+    have h := hr0 (0 + Lb) (by omega) (by omega)
+    rw [hd0e] at h
+    omega
+  have hrX := gexp_root_shallow_zero (d1 := d1) hlen hn hLb hd0pos hr0
+  have hbnd : k * Lb + 0 < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hplt : 0 + (k * Lb + 0) < (gexp M 0 Lb d0 d1 n).length := by
+    rw [gexp_length hlen]; omega
+  have h10 : entry (gexp M 0 Lb d0 d1 n) 1 0 = entry M 1 0 :=
+    gexp_entry_root hlen hn hLb
+  have hall := (le1_zero_iff hrX hplt).mp
+    (gexp_blockRoot_cone hlen hLb hk hd1pos hd0e hr0 hlp)
+  intro y hy hy0
+  have hres := hall y hy hy0
+  rwa [h10] at hres
+
+/-! ### 98.1 ⟹ F1 の証明の骨（残るは行 0 の鎖のブロック分解だけ）
+
+F1（`srow Q (L-1) = 1` ∧ `entry Q 1 (L-1) ≤ entry Q 1 0`、`Q = M.dropLast`, `L = Lb`）で
+`nextrel1 T a last`（`last` ＝ ブロック `n-1` の最終列）を仮定する。§97 より
+**`entry T 1 last = entry M 1 (Lb-1)`**（錐の外なのでリフト無し）。
+
+    **`a` がブロック `n-1` の外** … §86（行 0 の壁）を繰り返すと `a` は
+        **ブロック `n-1` の根の行 0 祖先** ⟹ **上の `gexp_blockRoot_anc`** で
+        **`entry T 1 a > entry M 1 0 ≥ entry M 1 (Lb-1)`（F1）** ⟹ `entry T 1 a < entry T 1 last` と**矛盾**
+    **`a` がブロック `n-1` の中** … `Gtrans.gexp_chain_inversion`（緑）で `a` は像
+        ⟹ `le0 M q_a (Lb-1)` かつ `entry T 1 a ≥ entry M 1 q_a`
+        ⟹ `Q` の末尾列が行 1 で孤児（`Wset.hasParent_one_of` の対偶）より
+           **`entry M 1 q_a ≥ entry M 1 (Lb-1)`** ⟹ 同じく**矛盾**
+
+> **⟹ 残るのは「ブロック外の行 0 祖先は、ブロックの根の行 0 祖先である」1 本だけ。**
+> **それは §86（`nextrel0_gexp_no_skip`）を鎖に沿って繰り返した形である。**
+
+**⟹ F1 は道具がすべて揃った。F2a も `nextrel2` が `le1` を要求し、
+`le1` の最後の 1 歩が `nextrel1` なので同じ骨で通るはず。**
+
+⚠ **まだ証明ではない。** 上の「繰り返し」を Lean で書くのが次の作業である。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
