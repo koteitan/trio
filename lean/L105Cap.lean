@@ -5820,6 +5820,48 @@ theorem mTowerClosedS_of_row2 (h : MTowerClosedRow2) : MTowerClosedS := by
 
 **6 量化 / 3 前提。`graft` も `y ∈ W u` の全称も無い。** -/
 
+/-! ## 77. `MTowerClosedS` の自明な枝と、残差の形
+
+`n ≤ 1` は無料（`mTower_one`（§55、既存）が `mTower Q d e 1 = Q` を与える。
+**ここでも書きかけて既存を踏んだ —— grep 7 回目**）。⟹ 残差は `n ≥ 2`。 -/
+
+theorem mTower_mem_of_le_one {u : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u) {d e n : ℕ}
+    (hn : n ≤ 1) : mTower Q d e n ∈ W u := by
+  rcases Nat.eq_zero_or_pos n with rfl | hpos
+  · simpa [mTower] using W_nil u
+  · have h1 : n = 1 := by omega
+    subst h1
+    simpa [mTower_one] using hQ
+
+/-! ### 77.1 ⟹ 残差の表
+
+    `n ≤ 1`                    … **無料**（上）
+    `Q` の行 2 ≡ 0             … **無料**（§76、`|Q| ≤ 1` の枝もここ）
+    `Q` の末尾列が段内に親を持つ … §70-71 で **1 文**（`MTowerStep`）に落ちる
+    **`Q` の末尾列が段内で孤児** … **残差**（塔の悪根がブロックをまたぐ）
+
+⚠ 最後の枝が本当の残差である。`L53.comm_of_hasParentInBlock` は
+「最後のブロックの中に親がある」ときだけ展開を塔の前半から切り離すので、
+**孤児のときは悪根が前のブロックに逃げうる**。
+
+### 77.2 ⚠ その先は `WCat` の匂いがする（team-lead の判断待ち）
+
+素直な攻め方は「塔 `A` に、ブロックの**派生の途中** `B` を継ぐ」形で `B ∈ W u` に
+`A2'` を回すことである:
+
+    `CatBlock u c A := ∀ B ∈ W u, A ++ shiftr01 c 0 B ∈ W u`
+
+    節 1（`B` 短い）… `A ++ []` は `A`、`A ++ [(b+c,0,0)]` は **snoc**
+      （`Wtower2.snoc_orphan`（`:3053`）／`snoc_flat_root`（`:2208`）で
+        **親なし**と**親＝根**は無料。**親が内部**なら `PrefixCopies`）
+    節 2 で **`HasParentInBlock B`** … `comm_of_hasParentInBlock` で
+      `(A ++ shift B)⟦m⟧ = A ++ shift (B⟦m⟧)` ⟹ 帰納法の仮定
+    節 3 … `Wchar.aop_clause3_to_clause2` で節 2 に吸収される（`|B| ≥ 2`）
+    節 2 で **`¬ HasParentInBlock B`** … **残差**（同上）
+
+⚠ **`CatBlock` は `WCat` の制限版**である。team-lead の規律「`WCat` を避ける」に
+触れるので、**進める前に判断を仰ぐ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
