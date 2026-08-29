@@ -1,31 +1,5 @@
 # -*- coding: utf-8 -*-
-"""**ラダー到達行数** —— 節 2（展開の族認識）を入れた覆い（2026-08-29、課題 R67）。
-
-使い方:
-
-    from ladder import Cert
-    C = Cert(('TOW','LTOW','MTOW'))   # 仮定に足す規則。() なら Lean 証明ずみのみ
-    C(M, 60)                           # 証明書の名前 or None
-
-**スコアはシートを先頭から連続で何行覆えたか**（`psiI.json` の 3 行 z<2 4467 行、
-行番号順 ＝ 順序数順）。ランダムな小行列プールの覆い率は使わない（教訓 11）。
-
-実測（2026-08-29）:
-
-    strict           9 / 4467   最後 psi(W_w)*w^2   次 277 psi(W_w)*w^w
-    +TOW            12 / 4467   最後 psi(W_w)*psi(W_2)
-    +TOW,LTOW       63 / 4467   最後 psi(W_w*w+W_3)
-    +MTOW（全塔）   96 / 4467   最後 psi(W_w*W2)     次 364 psi(W_w*W2+W_w)
-
-族の内訳（4467 行全数）:
-
-    (F3) 一様シフト塔 d=0      2409  53.9%
-    (F4) 一様持ち上げ塔 d>=1   1278  28.6%
-    (F5) 列ごとに違う増分       554  12.4%
-    (F2) 複製 D=0               224   5.0%
-    族なし                        2   0.04%   ← `dropLast` 型（展開が伸びない）
-
-⟹ **`M⟦n⟧ = A ++ concat_k (Q + k*D)` が 99.96% を覆う。** 展開の形はこれ 1 つ。
+"""ラダー到達行数 —— 節 2（展開の族認識）を入れた覆い。
 
 健全性の向き:
   * 深さ切れ・長さ切れは **覆えない側**に倒す（False が安全）。
@@ -40,6 +14,7 @@ import trio
 from wcert import wcert, rsum, lev0
 
 MAXLEN = 400
+MLIFT = False        # (MLIFT)「行 1 が列ごとに 0 か d だけ上がる持ち上げ」を仮定するか
 NPROBE = 4          # 族の形を推定する n の個数
 NCHECK = 3          # 検算に使う追加の n
 
@@ -100,12 +75,16 @@ def seg_cert(A, Q):
         return None
     for j in range(len(A) - n + 1):
         seg = A[j:j + n]
-        dx = Q[0][0] - seg[0][0]
-        dy = Q[0][1] - seg[0][1]
-        if dx < 0 or dy < 0:
+        if any(Q[i][2] != seg[i][2] for i in range(n)):
             continue
-        if all(Q[i] == (seg[i][0] + dx, seg[i][1] + dy, seg[i][2]) for i in range(n)):
-            return 'C13'
+        dxs = [Q[i][0] - seg[i][0] for i in range(n)]
+        dys = [Q[i][1] - seg[i][1] for i in range(n)]
+        if any(v < 0 for v in dxs + dys):
+            continue
+        if len(set(dxs)) == 1 and len(set(dys)) == 1:
+            return 'C13'                     # 一様（証明ずみ: W_shift + ulift_mem_W）
+        if MLIFT and len(set(dxs)) == 1 and set(dys) <= {0, max(dys)}:
+            return 'C13m'                    # **(MLIFT) 仮定**: 行 1 が列ごとに 0 か d
     return None
 
 
