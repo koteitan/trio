@@ -674,6 +674,44 @@ theorem not_rsum_shTower {Q : TrioSeq} (hQne : Q ≠ []) (hb : based Q)
 theorem based_capBase (M : TrioSeq) (v z t : ℕ) : based (capBase M v z t) :=
   capBase_entry0_root M v z t
 
+
+/-! ## 15. ★★★★★ `CtxOK` の `∀ t` の正体 —— **土台についての `LiftStage` そのもの**
+
+`Wset.Lift1_Lift1`（`Wset.lean:1230`）`Lift1 (Lift1 X t) s = Lift1 X (t+s)` により
+
+    `Lift1 (capBase M v z t) e = capBase M v z (t + e)`
+
+なので、`CtxOK` の `∀ t` の項はそのまま
+
+    **`Lift1 (capBase M v z t) e ∈ W a`（`2(v+t+e)+z ≤ a`）**
+
+を与える。これは `LiftStage`（`Wtower2.lean:36`、`X ∈ W m → Lift1 X d ∈ W (m+2d)`）の
+**`X = capBase`、`m = 2(v+t)+z` の場合そのもの**（段の伸びも `+2e` で一致）。
+
+⟹ **`CoreCap` の残核では `LiftStage` は土台について「すでに成り立っている」。**
+塔の第 `k` 写しが要求する行 1 のリフト `k*d1` は、これで `W (a + 2k*d1)` に入る。
+**残っているのは段の帳尻**（`a + 2k d1` の族を段 `a` の 1 本にまとめること）だけで、
+それは §14 のとおり `W_add`（連結）では**絶対に**できない。
+⟹ **`Aop` の節 3（`domT` ＋ graft 閉包）が唯一の道。** -/
+
+theorem capBase_Lift1 (M : TrioSeq) (v z t e : ℕ) :
+    Lift1 (capBase M v z t) e = capBase M v z (t + e) := by
+  unfold capBase
+  rw [Lift1_Lift1]
+
+/-- **★★★★★ `CtxOK` は土台についての `LiftStage` を無料で配っている。** -/
+theorem liftStage_capBase {M : TrioSeq} {v z t e a : ℕ} (hctx : CtxOK M v z)
+    (hM2 : 1 ≤ M.length) (hva : 2 * (v + (t + e)) + z ≤ a) :
+    Lift1 (capBase M v z t) e ∈ W a := by
+  rw [capBase_Lift1]
+  exact capBase_mem hctx hM2 hva
+
+/-- 同じことを `LiftStage` の段の形で述べたもの（`m = 2(v+t)+z` のとき一致）。 -/
+theorem liftStage_capBase' {M : TrioSeq} {v z t e : ℕ} (hctx : CtxOK M v z)
+    (hM2 : 1 ≤ M.length) :
+    Lift1 (capBase M v z t) e ∈ W ((2 * (v + t) + z) + 2 * e) :=
+  liftStage_capBase hctx hM2 (by omega)
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
@@ -723,11 +761,11 @@ theorem based_capBase (M : TrioSeq) (v z t : ℕ) : based (capBase M v z t) :=
 ⚠ **訂正**: この file の初稿では「`CtxOK` は `capBase M v z t ∈ W a` 1 行と同値」と
 書いたが、**それは目標の `(a, t)` を固定したときの話**で、`∀ t` の項は落ちない。
 
-⟹ **`∀ t` の項が、この課題で使い残した唯一の資源。** そして塔の写し
-（第 `k` 写しは行 1 が `k * d1` だけ持ち上がる）が欲しがるのは、まさに
-`Lift1 (接頭辞) (t + k*d1)` の所属である。**段が `2(v+t+k d1)+z` まで伸びる**ので
-そのままでは `W a` に届かないが、`W_add` / `rsum` で写しを束ねる側の入力になる。
-**次のエージェントはここを見ること。**
+⟹ **`∀ t` の項の正体は「土台についての `LiftStage`」**（§15、`liftStage_capBase`）。
+`Lift1_Lift1` で `Lift1 (capBase M v z t) e = capBase M v z (t+e)` なので、
+`CtxOK` はそのまま `Lift1 (capBase) e ∈ W (2(v+t)+z + 2e)` を与える —— これは
+`LiftStage` の結論と**段まで一致**する。⟹ 塔の第 `k` 写しの行 1 リフト `k*d1` は
+無料。**残るのは段の帳尻だけ**で、それは §14 のとおり `W_add` では組めない。
 
 ⟹ 系: **`CapSnocOpen'` から `WSnoc` は出ない**（一般の `C ∈ W u` に対して
 `CtxOK` を作るには `LiftStage` が要る）。§8 の `SnocPrefixOpen` と違い、
