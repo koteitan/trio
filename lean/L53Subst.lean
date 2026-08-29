@@ -1148,5 +1148,67 @@ theorem towerOK_of_split (h1 : TowerOK1) (h2 : TowerOK2)
     exact h2 v z u0 a R hR hRne hz hva hAop hdom hs2 hpar n hn
 
 
+/-! ## ★★ 課題 L64: `TowerOK1` は既存定理に落ちる
+
+`Wset.lean` に**証明ずみ**で揃っている:
+
+    `oper_cons_tower1` `:2789`  `srow = 1` の塔の恒等式
+                                `((0,v,z) :: R)⟦n⟧ = tow v z R n`
+    `tower1_mem2`      `:4093`  その塔が `W a` に留まる（graft 閉包 `hgr` を仮定）
+    `Lift1_zero`                `Lift1 X 0 = X`
+
+⟹ **`TowerOK1` は `Aop` の節 3（graft の与件）だけで出る。** -/
+
+/-- **★★ `TowerOK1` は節 3 の与件から出る**（課題 L64-c）。 -/
+theorem towerOK1_of_clause3 {v z a m : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
+    (hd : domT R m) (hgr3 : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hi1 : srow R (R.length - 1) = 1)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  intro n _
+  rw [oper_cons_tower1 hR hRne hd hi1 hpM]
+  refine tower1_mem2 hR hRne hz1 hva hd hi1 ?_ hpM n
+  intro y hy hb hargOK a' ha'
+  rw [Lift1_zero]
+  exact hgr3 y hy hb hargOK v z a' hz1 ha'
+
+
+/-! ## ★★★ 課題 L64-d: `TowerOK2` の正体 —— 段が `+2t` 上がってしまう
+
+`oper_cons_tower2`（`Wset.lean:3231`、**証明ずみ**）:
+
+    ((0,v,z) :: R)⟦n+1⟧
+      = (0,v,z) :: graft R (**Lift1** (((0,v,z) :: R)⟦n⟧) **(entry R 1 (|R|-1) - v)**)
+
+`srow = 1` との差は **`Lift1` の持ち上げ量 `t = entry R 1 (|R|-1) - v`** ただ 1 つ:
+
+    srow = 1 … `t = 0`。`Lift1 X 0 = X` なので `tower1_mem2` がそのまま効く   ✓ 落ちた
+    srow = 2 … `t > 0`。`tower1_mem`（`:4088`）の形は
+               **`∀ a t, 2*(v+t)+z ≤ a → Lift1 ((0,v,z) :: graft S y) t ∈ W a`**
+               ＝ **段が `2t` 上がる**
+
+ところが `TowerOK2` の結論は `2v+z ≤ a` の `a` で `∈ W a` を要求する。
+⟹ **`+2t` を払わずに持ち上げを通す**必要がある。
+
+これが `ulift_mem_W`（`Wslift.lean:461`、`shiftr01 0 t X ∈ W (m + 2t)`）の `+2t` と
+同じもので、避ける道具が `mlift_mem_W`（`:146`、**階段マスク**なら段はそのまま）。
+橋は `Lift1_eq_mlift_of_tieFree`（`Wtower2.lean:76`）で、条件は **`TieFree`**。
+
+⟹ **`TowerOK2` ＝ 「`le1`-錐の持ち上げを段を上げずに通す」＝ (MLIFT) ＝ `TieFree` の壁。**
+課題 L52-b / L54-c / L57 で別々に着いた場所が、ここで 1 点に合流する。
+
+    **3 行が 2 行より難しい理由（最終形）**:
+    行 2 は写しで不変（`oper` の第 3 成分は `entry M 2 j` そのまま）なので、
+    `srow = 2` の塔では親が段の外に逃げ、その代償に**行 1 を `le1`-錐で持ち上げる**
+    必要が生じる。2 行にはそもそも行 2 が無いので `t = 0` しか起きない。 -/
+
+/-- **`TowerOK2` の残差**: 持ち上げを段を上げずに通せること。 -/
+def LiftNoCost : Prop :=
+  ∀ (v z a t : ℕ) (S y : TrioSeq), 2 * v + z ≤ a → argOK (graft S y) →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft S y) t ∈ W a
+
+
 end L53
 end TRIO
