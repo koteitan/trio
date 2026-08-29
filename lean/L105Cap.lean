@@ -8692,6 +8692,70 @@ theorem nextrel1_shTower_no_enter_out {M : TrioSeq} {e n' q c : ℕ} (hM2 : 2 �
 
 **⟹ あとは組み立てるだけ。** -/
 
+/-! ## 119. ★★★★★★★ **`e = 0` 版の F1**（`shTower` の孤児補題）
+
+§116（同ブロック）＋ §118（ブロック外）で組み立てる。**`hd1pos` はどこにも出てこない。**
+⚠ 行 1 の `hasParent` は **1 歩**の話なので、§117（鎖の反復）は要らない。 -/
+
+open Classical in
+theorem shTower_orphan_row1 {M : TrioSeq} {e n' : ℕ} (hM2 : 2 ≤ M.length)
+    (hQ2 : 2 ≤ M.dropLast.length)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + e)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hout : ¬ le1 M.dropLast 0 (M.dropLast.length - 1))
+    (horph : ¬ hasParent M.dropLast 1 (M.dropLast.length - 1)) :
+    ¬ hasParent (shTower M.dropLast e (n' + 1)) 1
+      ((shTower M.dropLast e n').length + (M.dropLast.length - 1)) := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hlt : M.dropLast.length - 1 < M.dropLast.length := by omega
+  have htake : M.take M.dropLast.length = M.dropLast := by
+    rw [hdl, ← List.dropLast_eq_take]
+  have hiff : le1 M.dropLast 0 (M.dropLast.length - 1)
+      ↔ le1 M 0 (M.dropLast.length - 1) := by
+    have h := le1_take (X := M) (l := M.dropLast.length) (a := 0)
+      (b := M.dropLast.length - 1) (by rw [hdl]; omega) hlt
+    rwa [htake] at h
+  have houtM : ¬ le1 M 0 (0 + (M.dropLast.length - 1)) := by
+    rw [Nat.zero_add]
+    exact fun hc => hout (hiff.mpr hc)
+  have hAlen : (shTower M.dropLast e n').length = n' * M.dropLast.length :=
+    shTower_length _ _ _
+  have hdec : shTower M.dropLast e (n' + 1)
+      = shTower M.dropLast e n' ++ Lift1 (shiftr01 (n' * e) 0 M.dropLast) 0 := by
+    rw [shTower_succ, Lift1_zero]
+  rintro ⟨a, ha, -⟩
+  have hnr : nextrel1 (shTower M.dropLast e (n' + 1)) a
+      ((shTower M.dropLast e n').length + (M.dropLast.length - 1)) := by
+    unfold nextR at ha
+    rw [if_neg (by omega), if_pos rfl] at ha
+    exact ha
+  have hge : n' * M.dropLast.length ≤ a := by
+    refine nextrel1_shTower_no_enter_out hM2 hlt hd0e hr0 hlp houtM ?_
+    rw [← hAlen]
+    exact hnr
+  have halt : a < (shTower M.dropLast e n').length + (M.dropLast.length - 1) :=
+    hnr.2.2.1
+  obtain ⟨qa, hqa⟩ : ∃ qa, a = (shTower M.dropLast e n').length + qa :=
+    ⟨a - n' * M.dropLast.length, by omega⟩
+  subst hqa
+  rw [hdec] at hnr
+  exact nextrel1_lastBlock_absurd horph hnr
+
+/-! ### 119.1 ⟹ `z = 0` の枝の孤児補題が定理になりました
+
+    §100/§102（F1、`mTower`、**`hd1pos` あり**）… `z = 1` 側の道具
+    **§119（F1、`shTower`、`hd1pos` なし）… `z = 0` 側の道具**
+
+**⟹ R2 の「`z = 0` なら展開の `d1 = 0` が 100%」と噛み合います。**
+**⟹ `(TOW)` の `(T2)`（孤児の枝）が閉じました。**
+
+⚠ **残るのは `(T1)`（底の snoc）だけ**:
+
+    `shTower Q e n ++ [(entry Q 0 0 + n*e, entry Q 1 0, entry Q 2 0)]`
+
+**§110 `oper_snocRoot` の `e = 0`・土台が塔の場合。次はそこ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
