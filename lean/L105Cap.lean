@@ -11442,7 +11442,8 @@ open Classical in
 theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
-    (h2 : ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j)
+    (h2 : ∀ j, 0 < j → j < Q.length → 0 < entry Q 2 j →
+      hasParent (Q.take (j + 1)) 2 j)
     (hstep : ∀ (n j : ℕ), j < Q.length →
       (0 < j → n * Q.length ≤
         parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -11472,7 +11473,7 @@ theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
   refine hstep n j hj (fun hj1 => ?_) hC
   -- ブロック内に親（§154）⟹ 同じブロック（§141）
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all' hj hj1 hr0 hnb (h2 j hj)
+    block_blockParent_all' hj hj1 hr0 hnb (h2 j hj1 hj)
   have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
@@ -11597,7 +11598,8 @@ open Classical in
 /-- **★★★★★★★ 核の最終形**: `hnb` なし。**錐の中の列については「親は同じブロック」が無料**。 -/
 theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (h2 : ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j)
+    (h2 : ∀ j, 0 < j → j < Q.length → 0 < entry Q 2 j →
+      hasParent (Q.take (j + 1)) 2 j)
     (hstep : ∀ (n j : ℕ), j < Q.length →
       (0 < j → le1 Q 0 j → n * Q.length ≤
         parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -11626,7 +11628,7 @@ theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
       entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
   refine hstep n j hj (fun hj1 hcone => ?_) hC
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj)
+    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj1 hj)
   have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
@@ -11908,7 +11910,8 @@ open Classical in
 theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
     (hA : A ∈ W u)
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (h2 : ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j)
+    (h2 : ∀ j, 0 < j → j < Q.length → 0 < entry Q 2 j →
+      hasParent (Q.take (j + 1)) 2 j)
     (hstep : ∀ (n j : ℕ), j < Q.length →
       (0 < j → le1 Q 0 j → (A ++ mTower Q d e n).length ≤
         parent (A ++ mTower Q d e n
@@ -11941,7 +11944,7 @@ theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
     rw [entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
   refine hstep n j hj (fun hj1 hcone => ?_) hC
   have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
-    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj)
+    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj1 hj)
   have hpar : hasParent (A ++ mTower Q d e n ++ B.take (j + 1))
       (srow (B.take (j + 1)) j)
       ((A ++ mTower Q d e n ++ B.take (j + 1)).length - 1) := by
@@ -12184,6 +12187,40 @@ theorem window_root_shallow {M : TrioSeq} {j0 Lb : ℕ} (hL : j0 + Lb ≤ M.leng
 本当に (H3) を与えるかは、書いてみないと分かりません。**
 ⚠ **そして消費側が行 1 の単調性を供給しないことは §162 で確認済みです。**
 **⟹ ですから (H3) は「仮定して先に進む」か「別の道を探す」かの分岐点です。** -/
+
+/-! ## 171. ✅ **`h2` を `0 < j` に制限しました**（R2 の `file:line` の根拠を自分で確かめて）
+
+R2 の指摘: **`h2` は `block_blockParent_all'`（`hj1 : 0 < j` を持つ）でしか使われていない。**
+
+**自分で数えました（`grep "(h2 j hj)"`、手筋 11 回目）:**
+
+    `:11475` `block_blockParent_all' hj hj1 hr0 hnb (h2 j hj)`      … §160
+    `:11629` `block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj)` … §163
+    `:11944` `block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj)` … §167
+
+**⟹ 3 か所とも `hj1 : 0 < j` が手元にある文脈でした。R2 の読みが正しい。**
+**⟹ `h2 : ∀ j, 0 < j → j < |Q| → …` に制限し、呼び出しを `h2 j hj1 hj` にしました。**
+
+### 171.1 ⟹ 効果
+
+    **「`h2` ⟹ `entry Q 2 0 = 0`」の含意が消えました**（`j = 0` の量化が無いので）
+    **R2 の実測: `z = 1` が 0.00% → 27.78 / 16.39 / 10.03%（`|Q|` = 3/4/5）**
+
+⚠ **それでも全体 18〜38% で `|Q|` とともに減るので、前提としては依然重いです。**
+
+### 171.2 ⚠ そして R2 の一点が重要です（そのまま引きます）
+
+> **`h2` が破れる機構は「行 2 が正の列が**錐の外**にある」で、(z3) の核 (C2) と**同じ 1 点**です。
+> ⟹ `h2` を消すことと (C2) を閉じることは同じ問題の 2 つの顔です。**
+
+**制限版でも破れる最小例（R2）: `Q = (0,0,0)(1,0,0)(1,0,0)(1,0,1)`**
+⟹ 末尾列 `(1,0,1)` は行 2 が正だが、`Q` の行 1 が全部 0 なので**錐の外** ⟹ 行 2 の親が持てない。
+
+> **⟹ `h2` は「別に片づける前提」ではありません。(C2) が閉じれば `h2` も消えます。**
+> **⟹ 逆に `h2` だけ先に消そうとしても (C2) に戻ります。**
+
+⚠ **これは §133 で「F2b は (a) を回避しない」と出したのと同じ形です。
+残っている前提が全部 1 点に戻る、という状況が続いています。** -/
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
