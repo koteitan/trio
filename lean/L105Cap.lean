@@ -12431,6 +12431,41 @@ theorem block_hasParent_row2_iff {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.lengt
 **とくに `shiftr01 c 0 (mTower V' d0 d1 m) = mTower (shiftr01 c 0 V') d0 d1 m` は
 まだ確かめていません。** -/
 
+/-! ## 175. ★★★★★★ **`shiftr01` は塔を通ります**（`A2'` の族の形を確定させる 1 本）
+
+§174.3 で「未確認」と書いた
+`shiftr01 c 0 (mTower V d e m) = mTower (shiftr01 c 0 V) d e m` を書く。
+道具は全部緑: **`shiftr01_flatMap`（`:4702`、私が §55 で書いていた）**／
+`Lift1_shiftr01`（`:3873`）／`shiftr01_comp`（`Wset:2744`）。
+
+⚠ **`shiftr01_flatMap` を書きかけて「already been declared」で止まりました。再発明 12 回目です。**
+**⟹ 索引を引いてから書く、が今日また守れていませんでした。** -/
+
+theorem shiftr01_mTower (c : ℕ) (V : TrioSeq) (d e m : ℕ) :
+    shiftr01 c 0 (mTower V d e m) = mTower (shiftr01 c 0 V) d e m := by
+  unfold mTower
+  rw [shiftr01_flatMap]
+  refine List.flatMap_congr ?_
+  intro k _
+  rw [← Lift1_shiftr01, shiftr01_comp, shiftr01_comp, Nat.add_comm c (d * k)]
+
+/-! ### 175.1 ⟹ `A2'` の族の形が確定しました
+
+§174.3 の鎖が全部緑になりました:
+
+    `(mTower M d e k)⟦m⟧ = mTower M d e (k-1) ++ shiftr01 c 0 ((Lift1 M f)⟦m⟧)`（§70/§71）
+    **§165** `(Lift1 M f)⟦m⟧ = (Lift1 M f).take j0 ++ mTower V' d0 d1 m`
+    `shiftr01_append`（緑）で `shiftr01` は `++` を通る
+    **§175（上）** `shiftr01 c 0 (mTower V' d0 d1 m) = mTower (shiftr01 c 0 V') d0 d1 m`
+
+> **⟹ 対象は `A' ++ mTower (shiftr01 c 0 V') d0 d1 m` の形。**
+> **⟹ **私の族（§166-§170）に完全に入ります**。**
+
+⚠ **残るのは「ずれ 2」（`(Lift1 M f)⟦m⟧` と `M⟦m⟧` のずれ ＝ `LiftTieCore`）だけです。**
+
+⚠ **教訓 14**: **形が一致しただけで、`A2'` が回ることは示していません。**
+**`Y` を接頭辞つきに定義する必要があり、その `Y` が `Aop`-閉であることも未確認です。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
