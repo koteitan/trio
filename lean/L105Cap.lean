@@ -9542,6 +9542,69 @@ theorem oper_last_orphan_row1 {M : TrioSeq} {n j0 Lb : ℕ}
 
 の 2 点が残ります。**(β) は既存の緑（`snoc_orphan_W`）なので、実質は (α) 1 つです。** -/
 
+/-! ## 132. ★★★★★★★ **展開の末尾列の `srow` は `M[|M|-2]` で決まる**
+
+§126 は行 2 だけだった。**行 1 も足すと `srow` が決まり、R2 の「57.8% が F1 に落ちる」が
+Lean の場合分けになる。**
+
+    行 2 … §126 `oper_last_row2`（**等号**）
+    行 1 … 以下 `oper_last_row1_ge`（**`≥`**。リフトで増えることはあっても減らない）
+
+**⟹ `entry M 2 (|M|-2) = 0` かつ `0 < entry M 1 (|M|-2)` なら `srow = 1`。** -/
+
+open Classical in
+theorem oper_last_row1_ge {M : TrioSeq} {n j0 Lb : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 1 < Lb) (hn : 0 < n)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0e : parent M (srow M (M.length - 1)) (M.length - 1) = j0) :
+    entry M 1 (M.length - 2) ≤ entry (M⟦n⟧) 1 ((M⟦n⟧).length - 1) := by
+  have hL : M.length - 1 ≠ 0 := by omega
+  have hG : M⟦n⟧ = gexp M j0 Lb
+      (if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1) - entry M 0 j0
+        else 0)
+      (if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1) - entry M 1 j0
+        else 0) n := by
+    rw [oper_eq_gexp_gen n hL hz hp, hj0e,
+      show M.length - 1 - j0 = Lb from by omega]
+  have hlen2 : (M⟦n⟧).length = j0 + n * Lb := by
+    rw [hG, gexp_length hlen]
+  have hsplit : (n - 1) * Lb + Lb = n * Lb := by
+    have h1 : (n - 1 + 1) * Lb = (n - 1) * Lb + Lb := Nat.succ_mul _ _
+    have h2 : n - 1 + 1 = n := by omega
+    rw [h2] at h1; omega
+  have hpos : (M⟦n⟧).length - 1 = j0 + ((n - 1) * Lb + (Lb - 1)) := by omega
+  have hsrc : M.length - 2 = j0 + (Lb - 1) := by omega
+  rw [hpos, hG, gexp_entry1_mir hlen (by omega) (show Lb - 1 < Lb from by omega),
+    hsrc]
+  split_ifs <;> omega
+
+open Classical in
+/-- **展開の末尾列が `srow = 1` になる条件は、`M` の最後から 2 番目の列だけで決まる。** -/
+theorem oper_last_srow_one {M : TrioSeq} {n j0 Lb : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 1 < Lb) (hn : 0 < n)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0e : parent M (srow M (M.length - 1)) (M.length - 1) = j0)
+    (h2 : entry M 2 (M.length - 2) = 0) (h1 : 0 < entry M 1 (M.length - 2)) :
+    srow (M⟦n⟧) ((M⟦n⟧).length - 1) = 1 := by
+  have hr2 := oper_last_row2 (by omega) hz hp hn
+  have hr1 := oper_last_row1_ge hlen hLb hn hz hp hj0e
+  unfold srow
+  rw [if_neg (by omega), if_pos (by omega)]
+
+/-! ### 132.1 ⟹ R2 の 57.8% が Lean の場合分けになりました
+
+**`M` の最後から 2 番目の列 `(x, y, w)` だけを見ればよい:**
+
+    **`w = 0` ∧ `y > 0`** ⟹ **`srow = 1`** ⟹ **§131 で孤児 ⟹ F1 の領域**（R2: 57.8%）
+    **`w > 0`**           ⟹ `srow = 2` ⟹ **測度が 1 減って再帰**（R2: 28.4%）
+    **`w = 0` ∧ `y = 0`** ⟹ `srow = 0` ⟹ §121.2 / §86 の領域（R2: 3.3%）
+
+**⟹ 三分岐が「実測の割合」から「`M[|M|-2]` の行 2 と行 1 を見る」に変わりました。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
