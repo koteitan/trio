@@ -2075,6 +2075,146 @@ theorem liftTieCore_of_row2 (h : LiftTieCoreRow2) : LiftTieCore := by
 theorem towerOK_of_liftTieCoreRow2 (h : LiftTieCoreRow2) (he : TowerExp) : TowerOK :=
   towerOK_of_liftTieCore (liftTieCore_of_row2 h) he
 
+
+/-! ## 33. ★★★★★ 課題 L117: `WConvexUnit` は**再結合の壁を避けている**
+
+### 33.1 (Q1) 避けています。理由は 1 行
+
+> **`WConvexUnit` 経路は列を一度も切らない。** `lift1_mem_of_wconvex1`
+> （`L53Subst.lean:3230`）は `mem_of_oper_mem`（`Aop` の節 2）で降り、各段で
+> **完全な列 3 本**（`Lift1 (Y⟦n⟧) 1` / `(Lift1 Y 1)⟦n⟧` / `shiftr01 0 1 (Y⟦n⟧)`）を
+> 比べるだけ。`take` / `drop` / `++` は**一度も出てこない**。
+> **切らないので、戻す必要が無い。**
+
+`wconvex1_of_unit`（`:3514`）も同じで、添字 `i` の帰納で**列全体**を 1 列ずつ下げ、
+`eq_of_entries` で終える。連結は現れない。
+
+⚠ **代わりに払う代償**（正直に）: `WConvexUnit` は「行 1 を 1 列だけ 1 下げても `W a`」で、
+**行 1 を動かすと `srow` / `nextrel1` / `nextrel2` が変わり得る**ので展開木ごと変わる。
+⟹ **難所は「再結合」ではなく「展開の不安定性」**。壁は避けているが、別の壁がある。
+
+### 33.2 (Q2) 幅 1 は本当に出る
+
+`L53.sandwich_window_one`（`L53Subst.lean:3200`）は **`d = 1` に固定して書かれている**:
+
+    `entry (shiftr01 0 1 Y) 1 j ≤ entry (Lift1 Y 1) 1 j + 1`
+
+そして `lift1_mem_of_wconvex1` はそれをそのまま `WConvex1` の窓条件に渡している。
+⟹ **`d = 1` への圧縮と噛み合っている。**
+（`L53.liftStage1_of_wconvex1` → `L53.liftStage_of_unit`（`:3174`）で全 `d` に戻る。
+**L2 は `LiftStage` について同じ `d = 1` 圧縮を既にやっていた**。私の §28 はその
+タイ版・自己段版。）
+
+### 33.3 (Q3) 挟み込みは閉じている（既存・緑）
+
+    `Wtower2.Le1_Lift1_oper`（`:4415`）        `Lift1 (X⟦n⟧) d ≤₁ (Lift1 X d)⟦n⟧`
+    `Wtower2.Le1_oper_Lift1_shiftr01`（`:4482`）`(Lift1 X d)⟦n⟧ ≤₁ shiftr01 0 d (X⟦n⟧)`
+    `Wslift.ulift_mem_W`                        上端は無料
+
+`L53.lift1_mem_of_wconvex1`（`:3230`）が**すでに緑で閉じている**。
+
+### 33.4 ⟹ 向きの心配への回答: **使う実例だけに絞れる**
+
+`WConvexUnit` / `WConvex1` は `LiftTieCore` より強い（`liftTieCore_of_wconvexUnit`）。
+だが `lift1_mem_of_wconvex1` が凸性を呼ぶのは **1 か所だけ**で、その 3 本は
+**`Y⟦n⟧` から作られた特定の列**である。⟹ その実例だけを核にできる。 -/
+
+/-- **★★★ `lift1_mem_of_wconvex1` が実際に使う凸性の実例だけ。**
+`Le1` の 2 本も窓条件も上端も既存定理で自動なので、残るのはこれだけ。 -/
+def WConvexLift1 : Prop :=
+  ∀ (m n : ℕ) (Y : TrioSeq), Y⟦n⟧ ∈ W m → Lift1 (Y⟦n⟧) 1 ∈ W (m + 2) →
+    (Lift1 Y 1)⟦n⟧ ∈ W (m + 2)
+
+theorem convexLift1_of_wconvex1 (h : L53.WConvex1) : WConvexLift1 := by
+  intro m n Y hY hL
+  refine h (m + 2) (Lift1 (Y⟦n⟧) 1) ((Lift1 Y 1)⟦n⟧) (shiftr01 0 1 (Y⟦n⟧)) hL ?_
+    (Le1_Lift1_oper Y 1 n) (Le1_oper_Lift1_shiftr01 Y 1 n)
+    (fun j => L53.sandwich_window_one (Y⟦n⟧) j)
+  have := ulift_mem_W (Y⟦n⟧) hY (d := 1)
+  simpa using this
+
+theorem lift1_mem_of_convexLift1 (h : WConvexLift1) {m : ℕ} {Y : TrioSeq}
+    (hop : ∀ n, 1 ≤ n → Y⟦n⟧ ∈ W m ∧ Lift1 (Y⟦n⟧) 1 ∈ W (m + 2 * 1)) :
+    Lift1 Y 1 ∈ W (m + 2 * 1) := by
+  refine mem_of_oper_mem (fun n hn => ?_)
+  have hres := h m n Y (hop n hn).1 (by simpa using (hop n hn).2)
+  simpa using hres
+
+open Classical in
+/-- **★★★★★ 使う実例だけで `LiftStage1` が出る**（`L53.liftStage1_of_wconvex1` の
+`WConvex1` を `WConvexLift1` に置き換えた版）。 -/
+theorem liftStage1_of_convexLift1 (h : WConvexLift1) : L53.LiftStage1 := by
+  intro m X hX
+  have hsub : W m ⊆ {Y : TrioSeq | Y ∈ W m ∧ Lift1 Y 1 ∈ W (m + 2 * 1)} := by
+    refine A2' ?_
+    rintro Y (⟨hl, hlev⟩ | hop | ⟨m', hm', hd', hgr⟩)
+    · refine ⟨A1_intro (Or.inl ⟨hl, hlev⟩), ?_⟩
+      rcases Nat.eq_zero_or_pos Y.length with h0 | hpos
+      · have hnil : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show Lift1 ([] : TrioSeq) 1 ∈ W (m + 2 * 1)
+        simpa using W_nil (m + 2 * 1)
+      · have h1 : Y.length = 1 := by omega
+        have hbc : 2 * entry Y 1 0 + entry Y 2 0 = 0 := by
+          unfold lev at hlev; omega
+        exact lift1_singleton_mem h1 (by omega)
+    · exact ⟨mem_of_oper_mem (fun n hn => (hop n hn).1),
+        lift1_mem_of_convexLift1 h (fun n hn => hop n hn)⟩
+    · have hY : Y ∈ W m :=
+        A1_intro (Or.inr (Or.inr ⟨m', hm', hd', fun z hz hb => (hgr z hz hb).1⟩))
+      refine ⟨hY, ?_⟩
+      rcases Nat.lt_or_ge Y.length 2 with hsm | hbig
+      · have hYne : Y ≠ [] := by
+          intro hc
+          rw [hc] at hd'
+          exact not_domT_nil m' hd'
+        have h1 : Y.length = 1 := by
+          have : 0 < Y.length := List.length_pos_iff.mpr hYne
+          omega
+        have hlev := hd'.1
+        rw [show Y.length - 1 = 0 from by omega] at hlev
+        unfold lev at hlev
+        exact lift1_singleton_mem h1 (by omega)
+      · exact lift1_mem_of_convexLift1 h (aop_clause3_to_clause2 hbig hd' hgr)
+  have hres := (hsub hX).2
+  have he : m + 2 * 1 = m + 2 := by omega
+  rwa [he] at hres
+
+/-- ⟹ `LiftTieCore` は `WConvexLift1` から出る。 -/
+theorem liftTieCore_of_convexLift1 (h : WConvexLift1) : LiftTieCore :=
+  liftTieCore_of_liftStage (L53.liftStage_of_unit (liftStage1_of_convexLift1 h))
+
+
+/-! ### 33.5 ⚠ 向きについての正直な結論
+
+`WConvexLift1` は「実際に使う実例」まで絞ったが、**それでも `LiftStage` 全体が出る**
+（`liftStage1_of_convexLift1` → `L53.liftStage_of_unit`）。理由は構造的である:
+
+> **凸性経路の帰納は `A2'`（`W m` の最小不動点）の上で回るので、`Y` は `W m` の
+> 元すべてを走る。`LiftTieCore` の制限（cons 形・自己段・タイあり・`¬TieFree`）は
+> `Y⟦n⟧` に受け継がれないので、帰納の中で保てない。**
+
+⟹ **凸性経路では `LiftTieCore` の弱さを保てない。** 強い側（`LiftStage`）を
+証明することになる。これは避けられない。
+
+**⟹ 選択肢は 2 つ:**
+
+    (i) 凸性経路を取る … `WConvexLift1`（＝ 実際に使う実例）を証明する。
+        目標より強いものを証明することになるが、**再結合の壁は無い**（§33.1）
+    (ii) `LiftTieCore` の弱さを活かす … タイ・自己段・`d=1`・行 2 非零という制限を
+        使う別の議論を探す。ただし §27 / §30 で「分解・再結合」は封じられている
+
+**私の見立て: (i) が現実的。** 理由は 3 つ:
+
+    `WConvexLift1` の 3 本は**同じ `Y⟦n⟧` から作った 2 つのリフト**で、
+      行 0 と行 2 は**完全に一致**し、行 1 だけが錐の外で 1 違う（`sandwich_window_one`）
+    上端 `shiftr01 0 1 (Y⟦n⟧)` は**無条件で `W`**（`ulift_mem_W`）
+    下端 `Lift1 (Y⟦n⟧) 1` は**帰納法の仮定**
+
+⟹ **要るのは「行 1 を錐の外で 1 だけ下げても `W` を保つ」ただ 1 点**であり、
+それは `Row1Mono` の**最小の場合**（1 段・下端 witness つき・行 0/行 2 不変）である。
+`L53.WConvexUnit`（`:3505`）がその形。**そこが本当の底。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
