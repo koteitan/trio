@@ -9732,6 +9732,48 @@ theorem badroot_blocker_anc {M : TrioSeq} {j0 Lb : ℕ}
 ⚠ **これは「原理的に無理」ではなく「手元の道具では届かない」という意味です。**
 **節 1（`|M| ≤ 1`）には塔からは届かず、節 3（graft）は主線から外したところです。** -/
 
+/-! ## 135. ⛔ **節 3（graft）は (a) の近道になりません**
+
+§134.2 で「節 2 だけでは降り続けられない。節 1 には塔から届かない」と出した。
+**残るのは節 3。そこで `domT` の定義を開いた（手筋 8 回目）:**
+
+    `domT M m := lev M (|M|-1) = m + 1 ∧ **¬ hasParent M (srow M (|M|-1)) (|M|-1)**`
+
+> **⟹ 節 3 は「末尾列が孤児」を要求する。**
+> **⟹ ところが末尾列が孤児なら、`snoc_orphan_W`（`:144`、緑）が
+> `dropLast ∈ W u` だけで済ませてしまう。**
+> **⟹ 節 3 の残り（`∀ z ∈ W m, based z → graft M z ∈ X`）は、それより**強い**要求である。**
+
+**⟹ 節 3 は (a) を弱めない。以下でそれを定理にする。** -/
+
+theorem mem_of_domT_dropLast {u m : ℕ} {M : TrioSeq} (hne : M ≠ [])
+    (hCne : M.dropLast ≠ []) (hd : domT M m) (hC : M.dropLast ∈ W u) :
+    M ∈ W u := by
+  have hEq : M.dropLast ++ [M.getLast hne] = M := List.dropLast_append_getLast hne
+  have hClen : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hres := snoc_orphan_W (M.getLast hne) hC hCne
+    (by rw [hEq, hClen]; exact hd.2)
+  rwa [hEq] at hres
+
+/-! ### 135.1 ⟹ 三つの節すべてについて判定が出ました
+
+    **節 1**（`|M| ≤ 1`）… 塔からは届かない（長さが 2 以上）
+    **節 2**（`∀ m ≥ 1, M⟦m⟧ ∈ X`）… §134.2。`m ≥ 2` で対象が伸びるので降り続けられない
+    **節 3**（graft）… **上のとおり `domT` が「末尾列が孤児」を含むので、
+      `snoc_orphan_W` より弱くならない**
+
+> **⟹ どの節から入っても、着地先は `dropLast ∈ W u` ＝ (a) である。**
+> **⟹ §110/§112/§121/§122/§124 の 5 方向に加えて、
+> **`Aop` の 3 つの節そのもの**からも同じ点に来ました。合計 8 方向。**
+
+⚠ **これは「原理的に無理」ではありません。** 意味はこうです:
+
+> **`W` に新しく入れるには「すでに `W` に入っている、より短いもの」に着地するしかなく、
+> 塔についてはその「より短いもの」が塔から 1 列削ったものである。
+> ⟹ 核は「長さについての帰納」に集約されており、その 1 段が (a) である。**
+
+**⟹ (a) は迂回路の問題ではなく、帰納の 1 段そのものです。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
