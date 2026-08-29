@@ -2466,5 +2466,54 @@ theorem towerOK2_of_clause3 {v z a m : ℕ} {R : TrioSeq} (hlt : LiftTie)
   exact fun n => W_mono hva (key n)
 
 
+/-! ## ★★★★★ 課題 L81-b: `TowerGraft2`（開核 A）が `LiftTie` に落ちる
+
+`Wset.towerOK_of (h2 : TowerGraft2) (he : TowerExp) : TowerOK` の構造:
+
+    節 1            矛盾（`domT` と両立しない）        既済
+    **節 2**        **`TowerExp`（開核 B）**            ← 別の核。手つかず
+    節 3 / srow=1   `tower1_mem`                        既済
+    **節 3 / srow=2** **`TowerGraft2`（開核 A）**        ← **これを閉じる**
+
+`TowerGraft2` は `towerOK2_of_clause3` と**同じ文**なので、そのまま繋がる。 -/
+
+/-- **★★★★★ 開核 A が `LiftTie` だけに落ちた。** -/
+theorem towerGraft2_of_liftTie (hlt : LiftTie) : TowerGraft2 :=
+  fun v z m a R hR hRne hz1 hva hd hi2 hgr hpM n _ =>
+    towerOK2_of_clause3 hlt hR hRne hd hi2 hz1 hva hgr hpM n
+
+/-- **⟹ `TowerOK` は `LiftTie` ＋ `TowerExp` から出る。**
+（既存の `towerOK_of (towerGraft2_of_liftStage hWL) he` より核が真に小さい:
+`LiftStage`（全部の根）→ **`LiftTie`（タイのある根だけ）**。） -/
+theorem towerOK_of_liftTie (hlt : LiftTie) (he : TowerExp) : TowerOK :=
+  towerOK_of (towerGraft2_of_liftTie hlt) he
+
+
+/-! ### ⚠ `Final.lean` への登録は build が要る（team-lead へ）
+
+`towerOK_of_liftTie` を `Final.TRIO_terminates_of_towerOK` に繋げば
+
+    **`LiftTie` ＋ `TowerExp` ⟹ `WellFounded stepRel`**
+
+が出る（`Final.TRIO_terminates_of_liftStage` より核が真に小さい）。ただし
+`Final.lean` から `L53Subst` を `import` するには `L53Subst.olean` が要り、それには
+`lakefile.toml` の `roots` に `"L53Subst"` を足して **1 回 build** する必要がある。
+私は `leanman check` しか許可されていないので、ここまでで止める。
+
+登録するときに足すのは次の 3 行だけ（`import L53Subst` の追加とセット）:
+
+```lean
+theorem TRIO_terminates_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates (L53.towerGraft2_of_liftTie hlt) he
+```
+
+（`Final.lean` に一時的に書いて `leanman check` した結果は
+`unknown module prefix 'L53Subst'` のみ ＝ 中身の型は未検証。上の 1 行は
+`towerGraft2_of_liftTie : LiftTie → TowerGraft2`（**この file で緑**）と
+`Final.TRIO_terminates : TowerGraft2 → TowerExp → WellFounded stepRel`
+の合成なので、型は合う。） -/
+
+
 end L53
 end TRIO
