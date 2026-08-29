@@ -78,8 +78,18 @@ theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
 ⟹ **3 行 z<2 の停止性 ＝ `TowerOK`。** そして課題 L64 / L69 のとおり
 
     `srow = 1` の枝   … `towerOK1_of_clause3`（`L53Subst.lean`）で**証明ずみ**
-    `srow = 2, z = 1` … **起きない**（`tower2_root_z_zero`）
-    `srow = 2, z = 0` … 段は収まる（`tower2_stage_fits`）。残るはタイの場合だけ -/
+    `srow = 2, 親が根` … **段は必ず収まる**（`L105Cap.tower2_stage_fits_root`）
+    `srow = 2, 親が根でない` … **残核**。`z = 1` かつ `c = 1` のときだけ起きる
+
+⚠ 2026-08-30 訂正（SESSION §139）: ここには以前
+
+        `srow = 2, z = 1` … **起きない**（`tower2_root_z_zero`）
+
+    と書いてあったが、`tower2_root_z_zero` の前提は `entry R 2 (|R|-1) = 1`、
+    すなわち **`c = 1` に限った言明**だった。段が収まる本当の条件は
+    **`z < c`**（`L105Cap.tower2_stage_fits_of_lt`）であり、それは
+    「根が行 2 の親」から自動で出る（`L105Cap.tower2_root_z_lt`）。
+    ⟹ `c >= 2` はむしろ**易しい側**（`z = 1 < 2 <= c`）。難しいのは `c = 1` かつ `z = 1`。 -/
 theorem wf_olt_ST_TS_of_towerOK (htow : Wset.TowerOK) :
     WellFounded
       (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
