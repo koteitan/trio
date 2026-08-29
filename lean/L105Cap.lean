@@ -3639,6 +3639,122 @@ theorem shTower2_cons (Q : TrioSeq) (d e : ℕ) :
 `srow = 2` 枝が `srow = 1` 枝と**同じ種類の対象**になります。
 残るのは **`Q` にブロッカーがある場合**＝ **`LiftTie` の場面**。 -/
 
+
+/-! ## 50. ★★★★★ 課題 L128 の残り: **窓条件は伝播する**
+
+`shTower2 Q d e n` について (a)(b) を `n` の帰納で示す。
+`shTower2_cons` で `Q ++ shiftr01 d e (shTower2 Q d e n)` に割り、
+前半は `Q` の仮定、後半は帰納法の仮定 ＋ シフト量（`d ≥ 1`, `e ≥ 1`）で出る。 -/
+
+theorem entry1_shift {d0 d1 : ℕ} {W : TrioSeq} {p : ℕ} (hp : p < W.length) :
+    entry (shiftr01 d0 d1 W) 1 p = entry W 1 p + d1 := by
+  show ((shiftr01 d0 d1 W).getD p (0, 0, 0)).2.1
+    = ((W.getD p (0, 0, 0)).2.1 : ℕ) + d1
+  rw [shiftr01_getD hp]
+
+theorem shTower2_root_entry {Q : TrioSeq} (hQne : Q ≠ []) (d e i n : ℕ) :
+    entry (shTower2 Q d e (n + 1)) i 0 = entry Q i 0 := by
+  rw [shTower2_cons]
+  exact entry_append_left Q _ (List.length_pos_iff.mpr hQne)
+
+theorem shTower2_length (Q : TrioSeq) (d e n : ℕ) :
+    (shTower2 Q d e n).length = n * Q.length := by
+  induction n with
+  | zero => simp [shTower2]
+  | succ n ih =>
+      rw [shTower2_succ, List.length_append, shiftr01_length, ih, Nat.succ_mul]
+
+/-- **★★★ 窓条件は塔の各段に伝播する。** -/
+theorem shTower2_window {Q : TrioSeq} (hQne : Q ≠ []) {d e v : ℕ}
+    (hd : 1 ≤ d) (he : 1 ≤ e) (hv : entry Q 1 0 = v)
+    (h0 : ∀ l, 1 ≤ l → l < Q.length → 0 < entry Q 0 l)
+    (h1 : ∀ l, 1 ≤ l → l < Q.length → v < entry Q 1 l) :
+    ∀ n, (∀ l, 1 ≤ l → l < (shTower2 Q d e n).length →
+              0 < entry (shTower2 Q d e n) 0 l)
+       ∧ (∀ l, 1 ≤ l → l < (shTower2 Q d e n).length →
+              v < entry (shTower2 Q d e n) 1 l)
+       ∧ (∀ l, l < (shTower2 Q d e n).length →
+              v ≤ entry (shTower2 Q d e n) 1 l) := by
+  have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
+  intro n
+  induction n with
+  | zero =>
+      refine ⟨fun l _ hl => ?_, fun l _ hl => ?_, fun l hl => ?_⟩ <;>
+        · rw [shTower2_length] at hl; omega
+  | succ n ih =>
+      obtain ⟨ih0, ih1, ihv⟩ := ih
+      have hsplit : shTower2 Q d e (n + 1) = Q ++ shiftr01 d e (shTower2 Q d e n) :=
+        shTower2_cons Q d e n
+      have hlen : (shTower2 Q d e (n + 1)).length
+          = Q.length + (shTower2 Q d e n).length := by
+        rw [hsplit, List.length_append, shiftr01_length]
+      refine ⟨fun l hl1 hl2 => ?_, fun l hl1 hl2 => ?_, fun l hl2 => ?_⟩
+      · rcases Nat.lt_or_ge l Q.length with hlt | hge
+        · rw [hsplit, entry_append_left Q _ hlt]
+          exact h0 l hl1 hlt
+        · obtain ⟨j, rfl⟩ : ∃ j, l = Q.length + j := ⟨l - Q.length, by omega⟩
+          rw [hlen] at hl2
+          rw [hsplit, entry_append_right]
+          rw [entry0_shiftr01 (by rw [shTower2_length] at hl2 ⊢; omega)]
+          omega
+      · rcases Nat.lt_or_ge l Q.length with hlt | hge
+        · rw [hsplit, entry_append_left Q _ hlt]
+          exact h1 l hl1 hlt
+        · obtain ⟨j, rfl⟩ : ∃ j, l = Q.length + j := ⟨l - Q.length, by omega⟩
+          rw [hlen] at hl2
+          have hj : j < (shTower2 Q d e n).length := by omega
+          rw [hsplit, entry_append_right, entry1_shift hj]
+          have := ihv j hj
+          omega
+      · rcases Nat.lt_or_ge l Q.length with hlt | hge
+        · rw [hsplit, entry_append_left Q _ hlt]
+          rcases Nat.eq_zero_or_pos l with rfl | hlpos
+          · rw [hv]
+          · exact le_of_lt (h1 l hlpos hlt)
+        · obtain ⟨j, rfl⟩ : ∃ j, l = Q.length + j := ⟨l - Q.length, by omega⟩
+          rw [hlen] at hl2
+          have hj : j < (shTower2 Q d e n).length := by omega
+          rw [hsplit, entry_append_right, entry1_shift hj]
+          have := ihv j hj
+          omega
+
+/-- **★★★★★★ ブロッカーが無ければ `liftTower` は `shTower2` に潰れる。** -/
+theorem liftTower_eq_shTower2 {Q : TrioSeq} (hQne : Q ≠ []) {d e v : ℕ}
+    (hd : 1 ≤ d) (he : 1 ≤ e) (hr0 : entry Q 0 0 = 0) (hv : entry Q 1 0 = v)
+    (h0 : ∀ l, 1 ≤ l → l < Q.length → 0 < entry Q 0 l)
+    (h1 : ∀ l, 1 ≤ l → l < Q.length → v < entry Q 1 l) :
+    ∀ n, liftTower Q d e n = shTower2 Q d e n := by
+  intro n
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      show Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e) = _
+      rw [ih, shTower2_cons]
+      refine liftTower_step_collapse ?_ ?_
+      · intro l hl0 hl
+        rcases Nat.eq_zero_or_pos n with rfl | hn
+        · rw [shTower2_length] at hl; omega
+        · obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+          rw [shTower2_root_entry hQne, hr0]
+          exact (shTower2_window hQne hd he hv h0 h1 (k + 1)).1 l hl0 hl
+      · intro l hl0 hl
+        rcases Nat.eq_zero_or_pos n with rfl | hn
+        · rw [shTower2_length] at hl; omega
+        · obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+          rw [shTower2_root_entry hQne, hv]
+          exact (shTower2_window hQne hd he hv h0 h1 (k + 1)).2.1 l hl0 hl
+
+/-! ### 50.1 ⟹ **`srow = 2` 枝は「ブロッカーがあるか」だけになった**
+
+    ブロッカー無し … `liftTower Q d e n = shTower2 Q d e n`（**`Lift1` が消える**）
+                     ⟹ `srow = 1` 枝の `shTower` と**同じ種類の対象**
+    ブロッカー有り … 残り ＝ **`LiftTie` の場面**
+
+`Q = (0,v,z) :: R.dropLast` なので、ブロッカーの有無は
+**`R.dropLast` に行 1 ≤ `v` の列があるか**である。
+`d = entry R 0 (|R|-1) ≥ 1` は `argOK R` から、`e = entry R 1 (|R|-1) - v ≥ 1` は
+`L53.tower2_vw` から**どちらも自動**。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
