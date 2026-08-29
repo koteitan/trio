@@ -3993,6 +3993,119 @@ team-lead が `Wset.lean` の変更を承認したが、**着手前に実現可�
 ⟹ **`tower2_not_z1_of_zle1` / `tower2_z_zero_of_zle1`（§51、緑）は、
 `zle1` が既知の場面での道具としてのみ有効**である。 -/
 
+
+/-! ## 54. ★★★★★ 課題 L132: **(2) の `shTower2` 版**
+
+`shTower2` も根が `Q` の根のまま（`shTower2_cons`）なので、`L47W` と同じ理由で
+**段は無料**。⟹ `Wself` の閉包 1 文にできる。 -/
+
+theorem lev_shTower2_root {Q : TrioSeq} (hQne : Q ≠ []) (d e n : ℕ) :
+    lev (shTower2 Q d e (n + 1)) 0 = lev Q 0 := by
+  have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
+  unfold lev
+  rw [shTower2_cons, entry_append_left Q _ hQlen, entry_append_left Q _ hQlen]
+
+/-- **`ShTowerSelf` の 2 方向シフト版**（段が現れない）。 -/
+def ShTower2Self : Prop :=
+  ∀ (d e n : ℕ) (Q : TrioSeq), Q ∈ Wself → Q ≠ [] →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 1 0 < entry Q 1 j) →
+    shTower2 Q d e n ∈ Wself
+
+theorem entry_cons_succ {p : ℕ × ℕ × ℕ} {L : TrioSeq} (i k : ℕ) :
+    entry (p :: L) i (k + 1) = entry L i k := by
+  unfold entry
+  simp
+
+open Classical in
+/-- **★★★★★ ブロッカーが無い `srow = 2` の枝は `ShTower2Self` だけで出る。** -/
+theorem towerExp2_of_shTower2Self (h : ShTower2Self) {v z m a : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
+    (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
+    (hdl : R.dropLast ∈ Wstar)
+    (hnb : ∀ p ∈ R.dropLast, v < p.2.1)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  intro n hn
+  have hdlarg : argOK R.dropLast := argOK_dropLast hR
+  have hQne : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ≠ [] := by simp
+  have hQlev : lev (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 = 2 * v + z :=
+    lev_cons_root v z _
+  have hQself : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ Wself := by
+    show (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast)
+      ∈ W (lev (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0)
+    rw [hQlev]
+    exact hdl hdlarg v z (2 * v + z) hz1 le_rfl
+  have hQ00 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 := by
+    simp [entry]
+  have hQ10 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 1 0 = v := by
+    simp [entry]
+  have hQ0 : ∀ l, 1 ≤ l → l < (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast).length →
+      0 < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 l := by
+    intro l hl1 hl2
+    obtain ⟨k, rfl⟩ : ∃ k, l = k + 1 := ⟨l - 1, by omega⟩
+    simp only [List.length_cons] at hl2
+    rw [entry_cons_succ]
+    have hk : k < R.dropLast.length := by omega
+    have := hdlarg _ (entry_pair_mem (B := R.dropLast) hk)
+    have hEq : entry R.dropLast 0 k
+        = (R.dropLast.getD k ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := rfl
+    omega
+  have hQ1 : ∀ l, 1 ≤ l → l < (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast).length →
+      v < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 1 l := by
+    intro l hl1 hl2
+    obtain ⟨k, rfl⟩ : ∃ k, l = k + 1 := ⟨l - 1, by omega⟩
+    simp only [List.length_cons] at hl2
+    rw [entry_cons_succ]
+    have hk : k < R.dropLast.length := by omega
+    have := hnb _ (entry_pair_mem (B := R.dropLast) hk)
+    have hEq : entry R.dropLast 1 k
+        = (R.dropLast.getD k ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 := rfl
+    omega
+  have hd1 : 1 ≤ entry R 0 (R.length - 1) := by
+    have hlt : R.length - 1 < R.length := by
+      have := List.length_pos_iff.mpr hRne
+      omega
+    have := hR _ (entry_pair_mem (B := R) hlt)
+    have hEq : entry R 0 (R.length - 1)
+        = (R.getD (R.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := rfl
+    omega
+  have he1 : 1 ≤ entry R 1 (R.length - 1) - v := by
+    have := L53.tower2_vw hRne hd hi2 hpM
+    omega
+  rw [tower2_eq_liftTower hR hRne hd hi2 hpM n,
+    liftTower_eq_shTower2 hQne hd1 he1 hQ00 hQ10 hQ0 hQ1 n]
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  refine (mem_Wself_iff a _).mpr ⟨h _ _ _ _ hQself hQne ?_ ?_, ?_⟩
+  · intro j hj1 hj2
+    rw [hQ00]
+    exact hQ0 j hj1 hj2
+  · intro j hj1 hj2
+    rw [hQ10]
+    exact hQ1 j hj1 hj2
+  · rw [lev_shTower2_root hQne, hQlev]
+    exact hva
+
+/-! ### 54.1 ⟹ 現在地（`TowerExpBig` の完全な分解）
+
+    `|R| = 1`                    … `towerExp_singleton`（**仮定ゼロ**、§39）
+    `R.dropLast` の行 2 ≡ `z`    … `tower_of_row2const`（**仮定ゼロ**、§40）
+    `srow = 1`                   … `shTower` ⟹ **`ShiftTowerClosedS`**（§43）
+                                   ⟸ `L47W.shiftTowerClosed_iff_wself`（**段は無料**）
+    `srow = 2`, ブロッカー無し    … `shTower2` ⟹ **`ShTower2Self`**（上、緑）
+    `srow = 2`, ブロッカー有り    … ブロック所属は **`LiftTieCore`**（§52）
+                                   ＋ 繋ぎは `ShTower2Self` の**リフト版**
+
+⟹ **(2) の側は `srow` によらず「同じ 1 単位を等差にずらして並べた塔が `Wself` に閉じる」
+1 文**（`ShiftTowerClosedS` / `ShTower2Self`）。**段はどこにも現れない。**
+
+⚠ `WCat` は使えない（H12 と私の独立の一致）: `WCat` は両辺に**同じ段**を要求するが、
+塔のブロック `k` の根は `lev = 2(v + k·e) + z` で `k` とともに上がり、
+`W_mono` は**上げる向きだけ**なので下ろせない。
+⟹ **`ShTower2Self` の形（「`Q` だけが `Wself` なら塔全体が `Wself`」——
+途中のブロックが `W` にいることを要求しない）が正しい上界。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
