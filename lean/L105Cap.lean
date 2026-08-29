@@ -1066,6 +1066,101 @@ theorem cap_ne (M : TrioSeq) (b c : ℕ) : cap M b c ≠ [] := by
   rw [cap_length] at hl
   omega
 
+
+/-! ## 19. ★★★★★ 課題 L109-1: **`c ≥ 2` は穴ではない**（`tower2_root_z_zero` の一般化）
+
+R2 の実測「`c ≥ 2` で `srow = 2` かつ `z = 1` が 69,876 件起きる。
+`L53.tower2_root_z_zero` は `c ≤ 1` を使っているので未処理」への回答。
+
+**未処理ではない。同じ算術がそのまま通る。** 定義を並べると:
+
+    `domT R m`（`Wset.lean:61`）… `lev R (|R|-1) = m + 1`
+                                   ＝ `2w + c = m + 1`   （`w := entry R 1 (|R|-1)`,
+                                                          `c := entry R 2 (|R|-1)`）
+    要求（`tower2_stage_fits`）  … `2 * (v + (w - v)) + z ≤ m` ＝ `2w + z ≤ m`
+    ⟹ **`2w + z ≤ 2w + c - 1` ⟺ `z < c`**
+
+そして **`z < c` は「根が行 2 の親である」ことから自動で出る**:
+`nextrel2` は `entry 2 j0 < entry 2 j1` を要求し、根の行 2 は `z`、孤児の行 2 は `c`。
+
+⟹ **段は `c` の値によらず、根が親である限り必ず収まる。**
+`tower2_root_z_zero`（`c = 1` ⟹ `z = 0`）は `z < c` の**特別な場合**にすぎず、
+`z = 0` という結論を経由していたのが `c ≤ 1` を要求していた原因。
+`z < c` を直接使えば `c ≥ 2` も `z = 1` も**そのまま通る**。 -/
+
+/-- **★★★ 段が収まる本当の条件は `z < c`**（`L53.tower2_stage_fits` の一般化。
+あちらは `z = 0` ＋ `0 < c` を使っていた）。 -/
+theorem tower2_stage_fits_of_lt {v z m : ℕ} {R : TrioSeq} (hd : domT R m)
+    (hzc : z < entry R 2 (R.length - 1))
+    (hvw : v ≤ entry R 1 (R.length - 1)) :
+    2 * (v + (entry R 1 (R.length - 1) - v)) + z ≤ m := by
+  have h1 := hd.1
+  unfold lev at h1
+  omega
+
+/-- **★★★ 根が行 2 の親なら `z < c`**（`L53.tower2_root_z_zero` の一般化。
+あちらは `c = 1` を仮定して `z = 0` を出していた）。 -/
+theorem tower2_root_z_lt {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (h : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 R.length) :
+    z < entry R 2 (R.length - 1) := by
+  rw [nextR] at h
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at h
+  have hlt := h.2.2.2.1
+  rw [entry_cons_last hRne 2] at hlt
+  have hz : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 = z := by simp [entry]
+  rw [hz] at hlt
+  exact hlt
+
+/-- **★★★★★ ⟹ `c ≥ 2` でも `z = 1` でも段は収まる。**
+`srow = 2` の塔で親が根であるかぎり、`c` にも `z` にも制限は要らない。 -/
+theorem tower2_stage_fits_root {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : domT R m) (hvw : v ≤ entry R 1 (R.length - 1))
+    (h : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 R.length) :
+    2 * (v + (entry R 1 (R.length - 1) - v)) + z ≤ m :=
+  tower2_stage_fits_of_lt hd (tower2_root_z_lt hRne h) hvw
+
+open Classical in
+/-- `parent = 0` の形（`L53.tower2_z_zero_of_parent` に対応）。
+`oper_cons_tower2` の場面では `Wset.parent_cons_eq_zero` が親 = 根を供給するので、
+**この形がそのまま当たる**。 -/
+theorem tower2_stage_fits_of_parent {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : domT R m) (hvw : v ≤ entry R 1 (R.length - 1))
+    (hpar : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 R.length)
+    (hp0 : parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 R.length = 0) :
+    2 * (v + (entry R 1 (R.length - 1) - v)) + z ≤ m := by
+  obtain ⟨p0, hp0', -⟩ := hpar
+  have hex : ∃ j0, nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 j0 R.length := ⟨p0, hp0'⟩
+  have hspec : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2
+      (parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 R.length) R.length :=
+    Classical.epsilon_spec hex
+  rw [hp0] at hspec
+  exact tower2_stage_fits_root hRne hd hvw hspec
+
+/-- 旧補題は特別な場合として復元できる（`c = 1` ⟹ `z < 1` ⟹ `z = 0`）。 -/
+theorem tower2_root_z_zero' {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (h : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 R.length) : z = 0 := by
+  have := tower2_root_z_lt hRne h
+  omega
+
+/-! ### 19.1 ⟹ **`z = 1` は「起きない」のではなく「起きても構わない」**
+
+`Final.lean:81` と `STATUS.md` の
+
+    `srow = 2`, `z = 1` … **起きない**（`tower2_root_z_zero`）
+
+は **`c = 1` に限った言明**だった。正しい形は
+
+    `srow = 2`, 親が根 … **`z < c` が自動 ⟹ 段は必ず収まる**（`c` にも `z` にも制限なし）
+
+⚠ したがって R2 の 69,876 件は**穴ではない**。`tower2_stage_fits` を
+`z = 0` ではなく `z < c` で書き直せば、`CoreCap` の `∀ c : ℕ` はそのまま通る。
+
+⚠ **残るのは「親が根でない」場合**（`L53.tower2_parent_ne_root`、
+`z = 1` かつ `c = 1` のとき根は候補外）。そこは `z < c` が使えないので別扱いが要る。
+ただし `c ≥ 2` なら根はふたたび候補になる（`z = 1 < 2 ≤ c`）ので、
+**`c ≥ 2` はむしろ易しい側**である。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
