@@ -11530,6 +11530,102 @@ theorem mTowerClosed_of_snocStepSameBlock {u : ℕ} {Q : TrioSeq} {d e : ℕ}
 ⚠ **そして §153（ブロッカーなしは塔に遺伝）は `hnb` を使うので、
 列ごとの場合分けに直すには書き直しが要ります。** -/
 
+/-! ## 163. ★★★★★★★ **列ごとの場合分け版**（`hnb` を使わない）
+
+§162.4 のとおり、`hnb`（`Q` 全体がブロッカーなし）は `hcone : le1 Q 0 j` を作るためだけに
+使われていた。**列ごとに `hcone` を仮定すれば `hnb` は要らない。** -/
+
+open Classical in
+/-- **錐の中の列は、行 2 の局所条件だけでブロック内に親を持つ**（`hnb` 不要）。 -/
+theorem block_blockParent_all_cone {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hcone : le1 Q 0 j)
+    (h2 : 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hn1 : entry Q 1 0 < entry Q 1 j := le1_entry1_lt hcone (by omega)
+  have hE1 : entry (B.take (j + 1)) 1 j
+      = entry Q 1 j + (if le1 Q 0 j then e * n else 0) := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega)]
+    show (B.getD j (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hj]
+  have hE2 : entry (B.take (j + 1)) 2 j = entry Q 2 j := by
+    rw [hB, entry2_block_take (by omega),
+      Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := j) (by omega)]
+  unfold srow
+  by_cases h2p : 0 < entry (B.take (j + 1)) 2 j
+  · rw [if_pos h2p]
+    rw [hE2] at h2p
+    exact block_blockParent_row2' hj (h2 h2p)
+  · rw [if_neg h2p, if_pos (by rw [hE1, if_pos hcone]; omega)]
+    exact block_blockParent_of_cone hj hj1 hr0 hcone
+
+open Classical in
+/-- **★★★★★★★ 核の最終形**: `hnb` なし。**錐の中の列については「親は同じブロック」が無料**。 -/
+theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h2 : ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (0 < j → le1 Q 0 j → n * Q.length ≤
+        parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  refine mTowerClosed_of_snocStepPar ?_
+  intro n j hj _ hC
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hClen : (mTower Q d e n ++ B.take j).length = n * Q.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hC1len : (mTower Q d e n ++ B.take (j + 1)).length
+      = n * Q.length + (j + 1) := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hsrow : srow (mTower Q d e n ++ B.take (j + 1))
+      (n * Q.length + j) = srow (B.take (j + 1)) j := by
+    unfold srow
+    rw [show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen],
+      entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
+  refine hstep n j hj (fun hj1 hcone => ?_) hC
+  have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
+    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj)
+  have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
+      (srow (B.take (j + 1)) j)
+      ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
+    rw [hC1len, show n * Q.length + (j + 1) - 1 = (mTower Q d e n).length + j from by
+      rw [hTlen]; omega]
+    exact hasParent_append_right_of _ _ hloc
+  have hres := snocStep_parent_sameBlock (d := d) (e := e) (n := n)
+    (i := srow (B.take (j + 1)) j) hj hloc hpar
+  rw [hC1len, show n * Q.length + (j + 1) - 1 = n * Q.length + j from by omega] at hres
+  rw [hClen, hsrow]
+  exact hres
+
+/-! ### 163.1 ⟹ **核の最終形**（消費側の `Q` にそのまま当たります）
+
+    **前提 1** `hr0`（根が狭義に最浅）… **消費側が供給**（`hQshallow`）
+    **前提 2** `h2`（行 2 が正なら `Q` の中で行 2 の親を持つ）… **`Q` の局所条件**
+    **核**   `hstep`（塔に 1 列足す）。ただし **`le1 Q 0 j` の列では「親は同じブロック」が無料**
+
+> **⟹ `hnb`（ブロッカーなし）は消えました。**
+> **⟹ `Mono` 類も要りません。消費側の `Q` にそのまま当たります。**
+
+⚠ **残っているのは 2 つ:**
+
+    **(C1)** **錐の中の列**（`le1 Q 0 j`）… 親は同じブロック ⟹ 窓 `< |Q|` ⟹ §138 で測度あり
+    **(C2)** **錐の外の列**（`¬ le1 Q 0 j`）… **孤児か復活。ここが核**
+
+⚠ **教訓 14**: **前提が減っただけで、`hstep` はまだ通っていません。**
+**そして `h2` が成り立つかは未確認です**（`Q` の行 2 の列が `Q` の中で親を持つか）。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
