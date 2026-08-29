@@ -4106,6 +4106,127 @@ theorem towerExp2_of_shTower2Self (h : ShTower2Self) {v z m a : ℕ} {R : TrioSe
 ⟹ **`ShTower2Self` の形（「`Q` だけが `Wself` なら塔全体が `Wself`」——
 途中のブロックが `W` にいることを要求しない）が正しい上界。** -/
 
+
+/-! ## 55. ★★★★★ 課題 L133: **マスクつき塔閉包**の定式化
+
+### 55.1 ⚠ `L51Lift.liftTower` は**一様版**で、我々のものとは別物
+
+    `L51Lift.liftTower Q e n = (range n).flatMap fun k => shiftr01 (e*k) **k** Q`
+      … 行 1 も**一様に**ずらす（`shiftr01`）。`L51Lift.LiftTowerClosed`（`:63`）は未証明
+    **`L105.liftTower Q d e n`（§47）**
+      `= Q ++ shiftr01 d 0 (**Lift1** (liftTower Q d e n) e)`
+      … 行 1 は**根の錐の上でだけ**上がる（`Lift1`）
+
+⚠ `L51Lift` は roots に無いので import できず、名前空間も別（`TRIO.L51Lift` と `TRIO.L105`）。
+**衝突はしないが、別物である**ことをここに明記しておく。
+H12 の実測どおり **一様版が当たるのは `|R| = 5` で 16.8%** で、残り 83.2% はマスクつき。
+
+### 55.2 H12 と R2 の閉じた形は同じ（`Lift1_shiftr01`、§52） -/
+
+/-- H12 の閉じた形（ブロックごとに `Lift1`）。 -/
+noncomputable def mTower (Q : TrioSeq) (d0 d1 : ℕ) (n : ℕ) : TrioSeq :=
+  (List.range n).flatMap fun k => Lift1 (shiftr01 (d0 * k) 0 Q) (d1 * k)
+
+/-- **H12 の形 ＝ R2 の形**（`Lift1` と行 0 の一様シフトが可換だから）。 -/
+theorem mTower_eq (Q : TrioSeq) (d0 d1 n : ℕ) :
+    mTower Q d0 d1 n
+      = (List.range n).flatMap fun k => shiftr01 (d0 * k) 0 (Lift1 Q (d1 * k)) := by
+  unfold mTower
+  refine List.flatMap_congr ?_
+  intro k _
+  exact Lift1_shiftr01 (d0 * k) (d1 * k) Q
+
+/-! ### 55.3 ⚠ **`mTower` と `liftTower` が等しいことは証明されていません**
+
+    `mTower`     … マスクを**ブロックごとに `Q` の中で**計算する
+    `liftTower`  … マスクを**塔全体の上で**計算する（`oper_cons_tower2` が実際に作る形）
+
+`Wset.le1_take`（`:908`、緑）は**接頭辞局所性**しか与えないので、
+第 `k` ブロック（`k ≥ 1`）のマスクが `Q` だけで決まることは**出ません**。
+H12 の §211「マスクは全ブロックで同一」は**その主張の実測**である。
+
+⟹ **核は `liftTower`（`oper_cons_tower2` から Lean で出る形）で立てる。**
+`mTower` で立てると**未証明の同一視を仮定に紛れ込ませる**ことになる（教訓 14）。 -/
+
+theorem lev_liftTower_root {Q : TrioSeq} (hQne : Q ≠ []) (d e n : ℕ) :
+    lev (liftTower Q d e (n + 1)) 0 = lev Q 0 := by
+  have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
+  show lev (Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e)) 0 = lev Q 0
+  unfold lev
+  rw [entry_append_left Q _ hQlen, entry_append_left Q _ hQlen]
+
+/-- **★★★★★ (2) の核（マスクつき塔閉包）。段は現れない。** -/
+def LiftTowerSelf : Prop :=
+  ∀ (d e n : ℕ) (Q : TrioSeq), Q ∈ Wself → Q ≠ [] →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    liftTower Q d e n ∈ Wself
+
+open Classical in
+/-- **★★★★★ `srow = 2` の枝は `LiftTowerSelf` だけで出る**（ブロッカーの有無に依らない）。 -/
+theorem towerExp2_of_liftTowerSelf (h : LiftTowerSelf) {v z m a : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
+    (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
+    (hdl : R.dropLast ∈ Wstar)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  intro n hn
+  have hdlarg : argOK R.dropLast := argOK_dropLast hR
+  have hQne : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ≠ [] := by simp
+  have hQlev : lev (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 = 2 * v + z :=
+    lev_cons_root v z _
+  have hQself : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ Wself := by
+    show (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast)
+      ∈ W (lev (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0)
+    rw [hQlev]
+    exact hdl hdlarg v z (2 * v + z) hz1 le_rfl
+  have hQ0 : ∀ j, 1 ≤ j → j < (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast).length →
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0
+        < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 j := by
+    intro j hj1 hj2
+    obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := ⟨j - 1, by omega⟩
+    simp only [List.length_cons] at hj2
+    have hk : k < R.dropLast.length := by omega
+    have hpos := hdlarg _ (entry_pair_mem (B := R.dropLast) hk)
+    have hEq : entry R.dropLast 0 k
+        = (R.dropLast.getD k ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := rfl
+    have h00 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 := by
+      simp [entry]
+    rw [h00, entry_cons_succ]
+    omega
+  rw [tower2_eq_liftTower hR hRne hd hi2 hpM n]
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  refine (mem_Wself_iff a _).mpr ⟨h _ _ _ _ hQself hQne hQ0, ?_⟩
+  rw [lev_liftTower_root hQne, hQlev]
+  exact hva
+
+/-- ⟹ `TowerOK` の `srow = 2` 枝は `LiftTowerSelf` 1 本。 -/
+theorem liftTowerSelf_of_shTower2Self_noBlocker (h : ShTower2Self) {d e n : ℕ}
+    {Q : TrioSeq} (hQself : Q ∈ Wself) (hQne : Q ≠ []) (hd : 1 ≤ d) (he : 1 ≤ e)
+    (hr0 : entry Q 0 0 = 0)
+    (h0 : ∀ l, 1 ≤ l → l < Q.length → 0 < entry Q 0 l)
+    (h1 : ∀ l, 1 ≤ l → l < Q.length → entry Q 1 0 < entry Q 1 l) :
+    liftTower Q d e n ∈ Wself := by
+  rw [liftTower_eq_shTower2 hQne hd he hr0 rfl h0 h1 n]
+  refine h d e n Q hQself hQne ?_ ?_
+  · intro j hj1 hj2
+    rw [hr0]
+    exact h0 j hj1 hj2
+  · exact h1
+
+/-! ### 55.4 ⟹ 今日の最終的な核（2 本）
+
+    **(1) `LiftTieCore`**（§29）… ブロック 1 個を持ち上げる。**経路 C と D で同じ命題**
+        3 量化 / 4 前提、`d = 1`・自己段・タイあり・`¬TieFree`
+    **(2) `LiftTowerSelf`**（上）… マスクつき塔が `Wself` に閉じる。**段が現れない**
+        4 量化 / 3 前提（`Q ∈ Wself` / `Q ≠ []` / 根が行 0 で狭義最浅）
+
+    ブロッカーが無ければ (2) は **`ShTower2Self`**（`Lift1` が消えた一様 2 方向シフト塔）
+    に落ちる（`liftTowerSelf_of_shTower2Self_noBlocker`、上）。H12 実測で `|R|=5` の 16.8%。
+
+⚠ `L51Lift.LiftTowerClosed`（`:63`、未証明）は**行 1 も一様**な版なので、
+証明しても (2) は出ない（覆うのは 16.8% のほう）。**別物として立てた。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
