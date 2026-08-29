@@ -6912,6 +6912,42 @@ theorem mTowerClosed_of_escape_head {u : ℕ} {Q : TrioSeq} {d e : ℕ} (h2 : 2 
 **どちらも「孤児が土台の中で親を見つけるか」**という同じ問いである（§88.1）。
 **⟹ A と B は (A1) を除いて同じ 1 点に集まった。** -/
 
+/-! ## 92. ⛔ 自己訂正（grep 8-9 回目）: §86 / §87 は **`Wset.nextR_src_ge` の特殊化**
+
+`Wset.nextR_src_ge`（`Wset.lean:2573`、**緑**）:
+
+    `nextR T i q j1` ＋ `nextR (A ++ T) i y (A.length + j1)` ⟹ **`A.length ≤ y`**
+    docstring:「**A prefix cannot supply a `nextR`-predecessor once the block itself has one**:
+    the minimality clause of the inner predecessor rules it out.
+    Unlike `nextR_src_in_T` this needs **no** anchoring hypothesis on `T`.」
+
+**行 0・行 1・行 2 を一度に扱い、`T` に錨も要らない。私の §86（行 0）と §87（行 1・錐の中）は
+どちらもこれの特殊化である。** 私は「ブロックの根の浅さ」「ブロックの根の行 1」という
+**具体的な witness** を使って `T` 側の親の存在を作ったが、
+**`nextR_src_ge` はその witness を引数に取る形で既に一般化されていた。**
+
+    §86 … `T` ＝ ブロック `k` 以降、`j1` ＝ ブロック内の位置、
+          `T` 側の親 ＝ **ブロック `k` の根**（`hasParent_zero_iff` で存在）
+    §87 … 同じで行 1。`T` 側の親 ＝ 錐の中なら `Q` の `nextrel1` の親の像
+
+⟹ **§86 / §87 は新しい内容を持たない。残す理由は「塔の言葉での具体形」だけ。**
+
+### 92.1 ⟹ それでも残る本質
+
+**`nextR_src_ge` は「`T` が自分の親を持つ」ことを要求する。**
+⟹ **`T` の末尾列が `T` の中で孤児のときは何も言わない。**
+**⟹ 残差（(A2) と B）はまさにそこ**であり、一般補題でも埋まらない。
+
+**⟹ 私が §86-87 で「錐の外は別」と書いた但し書きは、
+一般補題の射程の限界とちょうど一致していた。** 結論は変わらない。
+
+### 92.2 ⚠ 規律（通算 8-9 回目）
+
+**`nextrel` / `nextR` の「前置は親を供給できない」という形の補題を書く前に
+`grep "nextR_src\|src_ge\|src_in_T"` を打つこと。**
+今回は `W_flatMap_copies` を探していて**偶然** 3 行下に見つけた。
+**探して見つけたのではない。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
