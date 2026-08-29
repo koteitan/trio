@@ -200,6 +200,38 @@ theorem TRIO_terminates_of_liftTie' (hlt : L53.LiftTie) (he : Wset.TowerExp) :
     WellFounded stepRel :=
   TRIO_terminates_of_liftTieSelf (L105.liftTieSelf_of_liftTie hlt) he
 
+/-! ### ★★★★★ 課題 L115-1: 持ち上げ核は **`d = 1` の 1 文**まで細った
+
+`LiftTieSelf` からさらに 2 枝落ちる（`L105Cap.lean` §26 / §28、どちらも緑）:
+
+    `∀ d` が消える  … `Wset.Lift1_Lift1`（`Wset.lean:1230`）＋
+                      `Wset.lift_cons`（`:3656`）で `d` の帰納が回る:
+                      `Lift1 X (d+1) = Lift1 ((0,v+1,z) :: ltail v z R 1) d` で、
+                      `Lift1 X 1 ∈ W (2v+z+2) = W (2(v+1)+z)` は**また自己段**
+                      （`Wset.argOK_ltail`（`:3716`）で `argOK` も保たれる）
+    `TieFree` の枝  … `L53.liftTie_case_tieFree`（`L53Subst.lean:2615`、実測 6.1%）
+
+⟹ **`L105.LiftTieCore`**（`L105Cap.lean` §29）: **3 量化（`v z R`）／ 4 前提**
+
+    `argOK R` / **タイあり** `∃ p ∈ R, p.2.1 = v` /
+    **`¬ (1 ≤ v ∧ TieFree ((0,v,z) :: R))`** / **自己段** `((0,v,z) :: R) ∈ W (2v+z)`
+    ⟹ `Lift1 ((0,v,z) :: R) 1 ∈ W (2v+z+2)`
+
+上の表（`Final.lean:152`）の 88.5% ＋ 2.8% ＋ 6.1% が全部**仮定ゼロ定理**で落ち、
+残るのは「**タイかつ `¬TieFree`**」だけ。しかも持ち上げ量は **1** に固定。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`LiftTieCore` と `TowerExp` を仮定すれば。**
+`TRIO_terminates_of_liftTieSelf` よりさらに弱い（`d = 1` ＋ `TieFree` 除外）。 -/
+theorem TRIO_terminates_of_liftTieCore (h : L105.LiftTieCore) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_liftTieCore h he)
+
+/-- **無限展開列は無い**、`LiftTieCore` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_liftTieCore (h : L105.LiftTieCore)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_liftTieCore h he)
+
 /-! ### ⚠ 課題 L112/L113 の判定: **「仮定 1 本」は見かけだった**
 
 `L105.coreCap_iff_graftAll`（`L105Cap.lean` §25、緑）:
