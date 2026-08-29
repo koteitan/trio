@@ -2982,5 +2982,169 @@ theorem wstarCat_nil (A : TrioSeq) (hA : A ∈ Wstar) :
 閉じたのは「`slift`/`amin` の証明をそのまま移植する」道だけ。 -/
 
 
+/-! ## ★★★★ 課題 L90-b: `WstarSnoc` は `Wself` の `snoc` そのもの
+
+`Wself M := M ∈ W (lev M 0)`（`Wtower2.lean:2988`）で、根つき列なら
+`lev ((0,v,z) :: R) 0 = 2v + z` なので
+
+    **`Wstar R`  ⟺  `argOK R → ∀ v z, z ≤ 1 → ((0,v,z) :: R) ∈ Wself`**
+
+（前向きは `a := 2v+z`、後ろ向きは `W_mono`。）
+⟹ `Wstar R.dropLast → Wstar R` は `((0,v,z) :: R.dropLast) ++ [末尾列]` の形になり、
+**既存の `snoc_orphan` / `snoc_step` がそのまま当たる**。 -/
+
+theorem lev_cons_root (v z : ℕ) (R : TrioSeq) :
+    lev (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 = 2 * v + z := by
+  simp [lev, entry]
+
+/-- **★★ `Wstar` は根つき `Wself` の言い換え。** -/
+theorem Wstar_iff_Wself {R : TrioSeq} :
+    R ∈ Wstar ↔ (argOK R → ∀ v z : ℕ, z ≤ 1 →
+      (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself) := by
+  constructor
+  · intro h harg v z hz
+    show (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (lev (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0)
+    rw [lev_cons_root]
+    exact h harg v z (2 * v + z) hz le_rfl
+  · intro h harg v z a hz hva
+    have h1 := h harg v z hz
+    show (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W a
+    have h2 : (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        ∈ W (lev (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0) := h1
+    rw [lev_cons_root] at h2
+    exact W_mono hva h2
+
+/-- **末尾列を 1 本足し戻す**（課題 L90-b）。 -/
+def WstarSnoc : Prop :=
+  ∀ (R : TrioSeq), R ≠ [] → argOK R → R.dropLast ∈ Wstar → R ∈ Wstar
+
+/-- 根つき列を末尾で分ける。 -/
+theorem cons_dropLast_getLast {v z : ℕ} {R : TrioSeq} (hRne : R ≠ []) :
+    ((((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ++ [R.getLast hRne])
+      = ((0, v, z) : ℕ × ℕ × ℕ) :: R := by
+  rw [List.cons_append, List.dropLast_append_getLast hRne]
+
+/-- **★★★ 孤児の側は無料**（`snoc_orphan`）。 -/
+theorem wstarSnoc_orphan {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : R.dropLast ∈ Wstar) (harg : argOK R) (hz : z ≤ 1)
+    (hnp : ¬ hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1))
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1)) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself := by
+  have hargd : argOK R.dropLast := argOK_dropLast harg
+  have hA : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ Wself :=
+    Wstar_iff_Wself.mp hd hargd v z hz
+  have hEq := cons_dropLast_getLast (v := v) (z := z) hRne
+  have h := snoc_orphan hA (by simp) (R.getLast hRne) (by rw [hEq]; exact hnp)
+  rwa [hEq] at h
+
+/-- **★★★★ `WstarSnoc` は `WSnoc` から出る。**（親ありの側だけが開いている。） -/
+theorem wstarSnoc_of_wsnoc (hsn : WSnoc) : WstarSnoc := by
+  intro R hRne harg hd
+  refine Wstar_iff_Wself.mpr (fun _ v z hz => ?_)
+  have hargd : argOK R.dropLast := argOK_dropLast harg
+  have hA : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ Wself :=
+    Wstar_iff_Wself.mp hd hargd v z hz
+  have hlev : lev (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 = 2 * v + z :=
+    lev_cons_root v z _
+  have hA' : (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) ∈ W (2 * v + z) := by
+    rw [← hlev]; exact hA
+  have h := snoc_step hsn (u := 2 * v + z) (R.getLast hRne) hA' (by simp)
+  rw [cons_dropLast_getLast hRne] at h
+  show (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (lev (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0)
+  rw [lev_cons_root]
+  exact h
+
+/-- 行 2 が全部 `0` の側も無料（`snoc_zeroRow2`）。 -/
+theorem wstarSnoc_zeroRow2 {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz2 : ∀ p ∈ (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast), p.2.2 = 0) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself := by
+  have hEq := cons_dropLast_getLast (v := v) (z := z) hRne
+  have h := snoc_zeroRow2 hz2 (R.getLast hRne)
+  rwa [hEq] at h
+
+
+/-! ## ★★★★ 課題 L90-a: `graft` は残核 `Subst1gRevive` の場面そのもの
+
+R1 の実測（R76、母数 20344、全部 100%）どおり、側条件は**構成から出る**:
+
+    `S := (0,v,z) :: R`、`p := |R|`、`C := shiftr01 d 0 y`（`d := entry R 0 (|R|-1)`）
+    ⟹ `S.take p ++ C ++ S.drop (p+1) = (0,v,z) :: graft R y`
+
+    `entry C 0 0 = entry S 0 p`     ← `based y` と `d` ずらしから直に
+    `∀ q ∈ C, entry S 0 p ≤ q.1`    ← 同上
+    `C ∈ W (lev S p)`               ← `y ∈ W m` ＋ `W_shift` ＋ `domT` で `lev S p = m+1`
+
+**⟹ `rsum` は 95.6% で破れるのに残核は当たる**（課題 L87 の裏返し）。
+残核は「`C` の根が `A` の全列以下」ではなく「**宿主の列の深さと一致**」を要求する。 -/
+
+open Classical in
+/-- **★★★★ 残核 `Subst1gRevive` を `graft` に当てる**（課題 L90-a）。 -/
+theorem graft_cons_mem_of_revive (hrev : Subst1gRevive) {v z m : ℕ} {R y : TrioSeq}
+    (hRne : R ≠ []) (hd : domT R m) (hWR : R ∈ Wstar) (hR : argOK R)
+    (hz : z ≤ 1) (hy : y ∈ W m) (hb : based y) (hyne : y ≠ [])
+    (hpar : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: graft R y)
+      (srow (((0, v, z) : ℕ × ℕ × ℕ) :: graft R y)
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: graft R y).length - 1))
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: graft R y).length - 1))
+    (horph : ¬ hasParent (shiftr01 (entry R 0 (R.length - 1)) 0 y)
+      (srow (shiftr01 (entry R 0 (R.length - 1)) 0 y)
+        ((shiftr01 (entry R 0 (R.length - 1)) 0 y).length - 1))
+      ((shiftr01 (entry R 0 (R.length - 1)) 0 y).length - 1)) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: graft R y) ∈ W (2 * v + z) := by
+  have hRpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  set d : ℕ := entry R 0 (R.length - 1) with hddef
+  set S : TrioSeq := ((0, v, z) : ℕ × ℕ × ℕ) :: R with hSdef
+  set C : TrioSeq := shiftr01 d 0 y with hCdef
+  have hSlen : S.length = R.length + 1 := by rw [hSdef]; simp
+  have hp : R.length < S.length := by omega
+  have hSW : S ∈ W (2 * v + z) := hWR hR v z (2 * v + z) hz le_rfl
+  have htake : S.take R.length = ((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast := by
+    obtain ⟨k, hk⟩ : ∃ k, R.length = k + 1 := ⟨R.length - 1, by omega⟩
+    rw [hSdef, hk, List.take_succ_cons, List.dropLast_eq_take, hk]
+    simp
+  have hdrop : S.drop (R.length + 1) = [] := by
+    rw [hSdef, List.drop_succ_cons]
+    exact List.drop_eq_nil_of_le le_rfl
+  have hres : S.take R.length ++ C ++ S.drop (R.length + 1)
+      = ((0, v, z) : ℕ × ℕ × ℕ) :: graft R y := by
+    rw [htake, hdrop, List.append_nil, List.cons_append]
+    congr 1
+  have hCne : C ≠ [] := by
+    rw [hCdef, shiftr01]
+    exact fun h => hyne (List.map_eq_nil_iff.mp h)
+  have hlevSp : lev S R.length = m + 1 := by
+    have h1 : entry S 1 R.length = entry R 1 (R.length - 1) := entry_cons_last hRne 1
+    have h2 : entry S 2 R.length = entry R 2 (R.length - 1) := entry_cons_last hRne 2
+    unfold lev
+    rw [h1, h2]
+    exact hd.1
+  have hCW : C ∈ W (lev S R.length) := by
+    rw [hlevSp]
+    exact W_mono (by omega) (W_shift hy d)
+  have hSp0 : entry S 0 R.length = d := entry_cons_last hRne 0
+  have hC0 : entry C 0 0 = entry S 0 R.length := by
+    rw [hSp0, hCdef]
+    cases y with
+    | nil => exact absurd rfl hyne
+    | cons q t =>
+        have hq : entry (q :: t) 0 0 = q.1 := by simp [entry]
+        rw [hb] at hq
+        simp only [shiftr01, List.map_cons]
+        show q.1 + d = d
+        omega
+  have hCge : ∀ q ∈ C, entry S 0 R.length ≤ q.1 := by
+    intro q hq
+    rw [hSp0]
+    rw [hCdef, shiftr01, List.mem_map] at hq
+    obtain ⟨q', -, rfl⟩ := hq
+    simp only
+    omega
+  have hmain := hrev (2 * v + z) R.length S C hSW hp hCne hCW hC0 hCge
+    (by rw [hres]; exact hpar) (Or.inl ⟨hdrop, horph⟩)
+  rwa [hres] at hmain
+
+
 end L53
 end TRIO
