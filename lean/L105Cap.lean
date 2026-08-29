@@ -5523,6 +5523,227 @@ theorem mTower_mem_of_mTowerStep {a : ℕ} {Q : TrioSeq} {d e : ℕ} (hQne : Q �
 
 > **⟹ 唯一の開いた核は `GraftAll`（＝ 私の §25 の `CoreCap`）。そこに集中すべき。** -/
 
+/-! ## 73. ★★★★★★ **C-2 の前半: `LiftTower1` は `(TOW)` から出る**（`GraftAll` 不要）
+
+`STATUS.md` の **C-2**（`LiftTower1` ＋ `LiftTowerExp2` を無条件に）に対する第一歩。
+`srow = 1` では `oper` の `d1 = if 1 < i1 then … else 0` が **`0`** になるので、
+展開は**純粋な行 0 ずらしコピー塔**である —— これは既に
+**`Wtower2.oper_of_srow1_par0`（`:1732`、緑）** が与えている
+（**私の §68 `oper_eq_mTower` の `srow = 1` 特殊化にあたる。書く前に grep した**）。
+
+⟹ `LiftTower1` は
+
+    `M := Lift1 ((0,v,z) :: R) t`  の展開が `shTower (M.dropLast) d0 n`
+    `M.dropLast = Lift1 ((0,v,z) :: R.dropLast) t` は**接頭辞装備**から `W a`
+    その根は `argOK R` より**狭義に最浅**
+
+の 3 点で、**`Wtower2.ShiftTowerClosedS`（`(TOW)`）にそのまま落ちる。** -/
+
+open Classical in
+/-- **★★★★★★ `LiftTower1 ⟸ ShiftTowerClosedS`**（`GraftAll` を使わない）。 -/
+theorem liftTower1_of_shiftTowerClosedS (htow : ShiftTowerClosedS) : LiftTower1 := by
+  rintro v z u0 a t R hR hRne hz1 hva - hpre ⟨m, hd⟩ hi1 hpM
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hne0 : R.length ≠ 0 := by omega
+  have hMlen : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length = R.length + 1 := by
+    rw [Lift1_length, List.length_cons]
+  have hMl1 : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1 = R.length := by
+    rw [hMlen]; omega
+  have hsrL : srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 1 := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, hi1]
+  have hpL : hasParent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, hasParent_Lift1]
+    exact hpM
+  have hbpL : parent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, parent_Lift1]
+    exact parent_cons_eq_zero hRne hd hpM
+  have hQmem : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t ∈ W a := by
+    have hk : R.length - 1 < R.length := by omega
+    have hres := hpre (R.length - 1) hk (argOK_take' hR (R.length - 1)) v z a t hz1 hva
+    rwa [← List.dropLast_eq_take] at hres
+  have hQshallow : ∀ j, 1 ≤ j →
+      j < (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t).length →
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 0
+        < entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 j := by
+    intro j hj1 hjl
+    rw [Lift1_length, List.length_cons, List.length_dropLast] at hjl
+    rw [entry0_Lift1, entry0_Lift1,
+      show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 from by simp [entry]]
+    obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+    have hj'lt : j' < R.length - 1 := by omega
+    have hj'R : j' < R.length := by omega
+    rw [entry_cons_succ, List.dropLast_eq_take, entry_take hj'lt]
+    exact hR _ (entry_pair_mem (B := R) hj'R)
+  refine mem_of_oper_mem (fun n _ => ?_)
+  rw [oper_of_srow1_par0 (by rw [hMlen]; omega) hpL hbpL hsrL n, Lift1_dropLast,
+    dropLast_cons hRne]
+  exact htow a _ n _ hQmem hQshallow
+
+/-! ### 73.1 ⟹ C-2 の残りは `srow = 2` 側だけ
+
+    **`LiftTower1`** … **`ShiftTowerClosedS`（`(TOW)`）から出る**（上、緑）
+    **`LiftTowerExp2`** … `srow = 2` なので `d1 > 0`（`L53.tower2_vw`）⟹ 塔は
+        **`mTower`（マスクつき）**。`(TOW)` ではなく **§55 `OperTowerSelf` / §71
+        `MTowerStep`** が要る
+
+⟹ **C-2 ＝ 「`(TOW)`」＋「マスクつき塔の閉包」の 2 本。** どちらも
+**リフトを含まない／段を上げない**塔の閉包で、`GraftAll` より素直な形である。
+
+⚠ `(TOW)`（`Wtower2.ShiftTowerClosed`、`:1763`）は既知の核で、
+**実測は `tools/probe_core1.py` (C) の 6244 例・違反 0、しかも `minstage` は等号**
+（docstring より）。**塔は段を一切上げない。**
+
+### 73.2 ⚠ 私の §68 との関係（再発明ではない）
+
+`oper_of_srow1_par0`（`Wtower2:1732`）は **`srow = 1` 専用**、私の
+`oper_eq_mTower`（§68）は **`srow` の仮定が無い**（`d0`/`d1` の `if` で 0/1/2 を一様に扱う）。
+⟹ **§68 は `oper_of_srow1_par0` の一般化**であり、`srow = 2` 側でも使える。
+`srow = 1` 側は既存のものをそのまま使うのが正しい（上でそうした）。 -/
+
+/-! ## 74. ★★★★★★ **C-2 の後半: `LiftTowerExp2` はマスクつき塔の閉包から出る**
+
+§73 とまったく同じ骨で、`oper_of_srow1_par0`（`srow = 1` 専用）を
+**私の §68 `oper_eq_mTower`（`srow` の仮定なし）**に差し替えるだけである。 -/
+
+/-- **(TOW2)**: マスクつき（行 1 も段ごとに上がる）塔の閉包。
+`Wtower2.ShiftTowerClosedS`（`(TOW)`）の `Lift1` 版で、**`e = 0` なら `(TOW)` そのもの**
+（`Lift1 X 0 = X`）。根の `lev` は塔で変わらないので、段は `u` のままでよい。 -/
+def MTowerClosedS : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    mTower Q d e n ∈ W u
+
+/-- `(TOW2)` は `(TOW)` を含む（`e = 0` で `mTower = shTower`）。 -/
+theorem shiftTowerClosedS_of_mTowerClosedS (h : MTowerClosedS) : ShiftTowerClosedS := by
+  intro u e n Q hQ hs
+  have hres := h u e 0 n Q hQ hs
+  have heq : mTower Q e 0 n = shTower Q e n := by
+    unfold mTower shTower
+    refine List.flatMap_congr ?_
+    intro k _
+    rw [Nat.zero_mul, Lift1_zero, Nat.mul_comm]
+  rwa [heq] at hres
+
+open Classical in
+/-- **★★★★★★ `LiftTowerExp2 ⟸ MTowerClosedS`**（`GraftAll` を使わない）。 -/
+theorem liftTowerExp2_of_mTowerClosedS (htow : MTowerClosedS) : LiftTowerExp2 := by
+  rintro v z a t R hR hRne hz1 hva - hpre ⟨m, hd⟩ hi2 hpM
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hne0 : R.length ≠ 0 := by omega
+  have hMlen : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length = R.length + 1 := by
+    rw [Lift1_length, List.length_cons]
+  have hMl1 : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1 = R.length := by
+    rw [hMlen]; omega
+  have hpL : hasParent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, hasParent_Lift1]
+    exact hpM
+  have hbpL : parent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, parent_Lift1]
+    exact parent_cons_eq_zero hRne hd hpM
+  have hzz : ¬ (entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 ∧
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 1
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 ∧
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 2
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0) := by
+    rintro ⟨-, -, h⟩
+    rw [hMl1, entry2_Lift1, entry_cons_last hRne] at h
+    have := L53.srow_two_row2_pos hi2
+    omega
+  have hQmem : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t ∈ W a := by
+    have hk : R.length - 1 < R.length := by omega
+    have hres := hpre (R.length - 1) hk (argOK_take' hR (R.length - 1)) v z a t hz1 hva
+    rwa [← List.dropLast_eq_take] at hres
+  have hQshallow : ∀ j, 1 ≤ j →
+      j < (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t).length →
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 0
+        < entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 j := by
+    intro j hj1 hjl
+    rw [Lift1_length, List.length_cons, List.length_dropLast] at hjl
+    rw [entry0_Lift1, entry0_Lift1,
+      show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 from by simp [entry]]
+    obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+    have hj'lt : j' < R.length - 1 := by omega
+    have hj'R : j' < R.length := by omega
+    rw [entry_cons_succ, List.dropLast_eq_take, entry_take hj'lt]
+    exact hR _ (entry_pair_mem (B := R) hj'R)
+  refine mem_of_oper_mem (fun n _ => ?_)
+  rw [oper_eq_mTower n (by rw [hMl1]; omega) hzz hpL hbpL, Lift1_dropLast,
+    dropLast_cons hRne]
+  exact htow a _ _ n _ hQmem hQshallow
+
+/-! ## 75. ★★★★★★ **C-2 は塔の閉包 1 本に落ちた**
+
+§73 ＋ §74 ＋ 既存の `Lcone.liftInner_holds`（無条件・緑）を `Wset.Wstar2s_closed` に
+入れると、**`GraftAll` が消える**。 -/
+
+/-- **★★★★★★ `MTowerClosedS` だけで `Wstar2s` が閉じる**（`GraftAll` 不要）。 -/
+theorem wstar2s_closed_of_mTowerClosedS (htow : MTowerClosedS) :
+    ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 Wstar2s R → R ∈ Wstar2s :=
+  Wstar2s_closed liftInner_holds
+    (liftTower1_of_shiftTowerClosedS (shiftTowerClosedS_of_mTowerClosedS htow))
+    (liftTowerExp2_of_mTowerClosedS htow)
+
+/-- **★★★★★★ ⟹ `W` のすべての元が装備つき package になる。** -/
+theorem w_le_wstar2s_of_mTowerClosedS (htow : MTowerClosedS) (u : ℕ) :
+    W u ⊆ Wstar2s :=
+  A2' (fun R hR => wstar2s_closed_of_mTowerClosedS htow u R hR)
+
+/-! ### 75.1 ⟹ 何が起きたか
+
+    **`GraftAll`（半年の残核、7 量化 / 5 前提、`y ∈ W u` を全部相手にする）**
+      ↓ 置き換え
+    **`MTowerClosedS`（5 量化 / 2 前提、`Q ∈ W u` と「根が狭義最浅」だけ）**
+
+    `MTowerClosedS a d e n Q : Q ∈ W u → (根が狭義最浅) → mTower Q d e n ∈ W u`
+
+**⟹ `graft`（1 列を `W` の元で置換）も `y ∈ W u` の全称も出てこない。
+出てくるのは「`Q` のコピーを行 0 で沈め、行 1 を錐の上だけ持ち上げて `n` 個並べる」だけ。**
+
+⚠ **`(TOW)` は `MTowerClosedS` の `e = 0` の場合**（`shiftTowerClosedS_of_mTowerClosedS`、緑）
+なので、**C-2 の「両方」は 1 本にまとまる。** `STATUS.md` の
+「`LiftTowerExp2` だけ証明しても 0 点」は、**`MTowerClosedS` 1 本なら回避できる**。
+
+### 75.2 ⚠ 正直な但し書き
+
+**`MTowerClosedS` はまだ未証明**である。私はそれを `GraftAll` の**代わり**に立てただけで、
+偽である可能性も残る。ただし:
+
+    `(TOW)`（`e = 0` の場合）… `tools/probe_core1.py` (C) 6244 例・違反 0、
+      しかも **`minstage` は等号**（塔は段を一切上げない）—— `Wtower2:1763` docstring
+    `e > 0` の場合 … R2 が `mTower` を 276,876 塔・1,245,942 ブロックで扱っている
+
+**⟹ 実測の裏づけは `GraftAll` より厚い。** そして形が小さい（2 前提）。
+
+### 75.3 ⟹ 次の一手
+
+`MTowerClosedS` は §70-71 の道具がそのまま当たる:
+
+    `oper_mTower`（§70、緑）… `(mTower Q d e (n+1))⟦m⟧ = mTower Q d e n ++ (最後のブロック)⟦m⟧`
+    `mTower_mem_of_step`（§71、緑）… ⟹ **帰納なしで** `MTowerStep` 1 文に落ちる
+
+⚠ **ただし直結ではない。** `mTower_mem_of_step` は `Q ≠ []` / `|Q|-1 ≠ 0` /
+`lev Q (|Q|-1) ≠ 0` / `HasParentInBlock Q` の **4 つの場面仮定**を要求するが、
+`MTowerClosedS` の仮定は `Q ∈ W u` と「根が狭義最浅」の **2 つだけ**である。
+⟹ **`Q` の末尾列が孤児（`¬ HasParentInBlock`）の場合を別に片づける必要がある**
+（そこは `oper` が `Pred` になるので易しいはず。**未確認**）。
+
+**⟹ §70-71 は「本線では不要」ではなくなった。**
+（§72 の「§70-71 は不要」は **C-1 を選ぶ場合の話**で、**C-2 を選ぶなら本線の道具**である。） -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
