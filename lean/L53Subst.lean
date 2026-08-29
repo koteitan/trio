@@ -3929,6 +3929,65 @@ example : True := trivial
 （課題 L87 で見た「切れ目が中に落ちる」と同じ構造）。 -/
 
 
+/-! # ★★★★★ 課題 L100: 2 行と 3 行の `Wstar_closed` を分岐ごとに突き合わせた
+
+## 結論（3 点）
+
+### (1) `TowerOK` が要るのは **2 か所**（`Wset.lean:4447` と `:4461`）
+
+    `:4461` … **節 3 / srow = 2**（`oper_cons_tower2`）—— **本質**（塔の持ち上げ）
+    `:4447` … **節 2**（`Aop` の第 2 節から来た `R`）—— **本質ではない**（下記 (2)）
+
+R1 の読み「`srow = 2` の枝だけ」は `:4461` については正しいが、**`:4447` を見落としている**。
+
+### (2) ★★ `:4447` が生じる理由: **3 行の `Aop` の節 2 に `natDom` のガードが無い**
+
+```lean
+-- 2 行（`Pair/Wset.lean:179`）
+(M.length ≤ 1 ∧ entry M 1 0 = 0) ∨
+  (**natDom M** ∧ ∀ n, 1 ≤ n → M⟦n⟧ ∈ X) ∨
+  (∃ m, m < u ∧ domT M m ∧ …)
+
+-- 3 行（`Wset.lean:171`）
+(M.length ≤ 1 ∧ lev M 0 = 0) ∨
+  (∀ n, 1 ≤ n → M⟦n⟧ ∈ X) ∨                 -- ← **ガードが無い**
+  (∃ m, m < u ∧ domT M m ∧ …)
+```
+
+`natDom M ↔ lev M (末尾) = 0 ∨ hasParent M (srow …) (末尾)`（`Wset.lean:121`）なので、
+ガードがあれば `Wstar_closed` の節 2 の分岐で
+
+    `¬ hasParent R …`（`R` 内で孤児）**かつ** `lev R (末尾) ≠ 0`
+
+という場合が**起きえない**。ところがそこが `:4447`（塔）に落ちる唯一の枝である。
+⟹ **ガードを足せば `:4447` は消え、`TowerExp` / `GraftFromExp` が要らなくなる。**
+
+`natDom` は 3 行にも**定義がある**（`Wset.lean:83`）—— 節 2 で使っていないだけ。
+
+### (3) ⚠ ただし `Aop` を強めると `W` は**小さくなる**
+
+`W = lfpS (Aset W u)` なので、節 2 を狭めると `W` の要素が減る。
+⟹ **`mem_W_of_bound` / `W_membership`（ラダー側）が通るかを確かめる必要がある。**
+2 行では同じ設計で通っているが、3 行で確認していないので**未判定**。
+
+**⟹ team-lead の ⚠「`GraftFromExp` が本当に不要か慎重に」への答え:
+いまの `Aop` の定義のままなら `GraftFromExp` は要る。
+`Aop` の節 2 に `natDom` を足せば要らなくなるが、それは `W` の定義変更で、
+ラダー側の再検査が要る。** -/
+
+/-- **★★★ ガードがあれば節 2 の塔の枝は起きない。** -/
+theorem natDom_no_tower_branch {R : TrioSeq} (hnat : natDom R)
+    (hp : ¬ hasParent R (srow R (R.length - 1)) (R.length - 1))
+    (hw : lev R (R.length - 1) ≠ 0) : False := by
+  rcases natDom_iff.mp hnat with h | h
+  · exact hw h
+  · exact hp h
+
+/-- ⟹ ガード付きなら `domT R m` は起きない（節 2 と節 3 が排他になる）。 -/
+theorem natDom_not_domT {R : TrioSeq} {m : ℕ} (hnat : natDom R) : ¬ domT R m :=
+  hnat m
+
+
 /-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
 
 ## 1. 上から下への連鎖（全部 Lean で緑）
