@@ -10405,6 +10405,67 @@ theorem nextrel0_src_ge_of_candidate {X : TrioSeq} {a b k : ℕ}
 
 ⚠ **教訓 14**: 上はすべて **核の地図**であって、**核の解ではありません。** -/
 
+/-! ## 146. ★★★★★★ (N1) の土台: **ブロックの中の鎖は、塔の中でもそのまま鎖**
+
+§145.5 の (N1)（ブロック `k` の根がブロック `n` の列の行 0 祖先）を積むための下ごしらえ。
+**塔は「小さい塔 ＋ 残り」なので、`le0_append_right` と `le0_take` で持ち上がる。** -/
+
+theorem mTower_append (Q : TrioSeq) (d e : ℕ) : ∀ m n, m ≤ n →
+    ∃ R, mTower Q d e n = mTower Q d e m ++ R := by
+  intro m n
+  induction n with
+  | zero => intro h; exact ⟨[], by rw [show m = 0 from by omega, mTower_zero]; simp⟩
+  | succ n ih =>
+      intro h
+      rcases Nat.lt_or_ge m (n + 1) with hlt | hge
+      · obtain ⟨R, hR⟩ := ih (by omega)
+        exact ⟨R ++ Lift1 (shiftr01 (d * n) 0 Q) (e * n), by
+          rw [mTower_succ, hR, List.append_assoc]⟩
+      · exact ⟨[], by rw [show m = n + 1 from by omega]; simp⟩
+
+theorem mTower_take (Q : TrioSeq) (d e : ℕ) {m n : ℕ} (h : m ≤ n) :
+    (mTower Q d e n).take (m * Q.length) = mTower Q d e m := by
+  obtain ⟨R, hR⟩ := mTower_append Q d e m n h
+  rw [hR, ← mTower_length Q d e m, List.take_left]
+
+/-- **ブロック `k` の中の行 0 鎖は、塔 `mTower Q d e n`（`k < n`）の中でもそのまま鎖。** -/
+theorem le0_block_in_tower {Q : TrioSeq} {d e n k a b : ℕ} (hk : k < n)
+    (h : le0 (Lift1 (shiftr01 (d * k) 0 Q) (e * k)) a b) :
+    le0 (mTower Q d e n) (k * Q.length + a) (k * Q.length + b) := by
+  have hBlen : (Lift1 (shiftr01 (d * k) 0 Q) (e * k)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hblt : b < Q.length := by have := h.2.1; omega
+  have h1 : le0 (mTower Q d e k ++ Lift1 (shiftr01 (d * k) 0 Q) (e * k))
+      ((mTower Q d e k).length + a) ((mTower Q d e k).length + b) :=
+    le0_append_right_of _ _ h
+  rw [mTower_length, ← mTower_succ] at h1
+  have hlen1 : (mTower Q d e (k + 1)).length = (k + 1) * Q.length :=
+    mTower_length Q d e (k + 1)
+  have hlen2 : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hmul : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hmul2 : (k + 1) * Q.length ≤ n * Q.length :=
+    Nat.mul_le_mul_right _ (by omega)
+  have hbb : k * Q.length + b < (k + 1) * Q.length := by omega
+  have hle : (k + 1) * Q.length ≤ (mTower Q d e n).length := by omega
+  rw [← mTower_take Q d e (show k + 1 ≤ n from by omega)] at h1
+  exact (le0_take hle hbb).1 h1
+
+/-! ### 146.1 ⟹ (N1) へのあと 1 歩
+
+    ✅ **ブロック内の鎖は塔でも鎖**（上）
+    ✅ **ブロック内では根が最浅 ⟹ 根からどの列にも鎖**（§79 `le0_zero_of_shallow`）
+    ⛔ **残るのは「ブロック `k` の根 → ブロック `k+1` の根」の 1 歩**
+
+その 1 歩は §144 `nextrel0_src_ge_of_candidate` で下から押さえられる:
+
+    ブロック `k` の根の行 0 値 `entry Q 0 0 + d*k` < ブロック `k+1` の根の `entry Q 0 0 + d*(k+1)`
+    ⟹ **ブロック `k` の根は候補** ⟹ **ブロック `k+1` の根の行 0 親は添字 `k*|Q|` 以上**
+    ⟹ **その親はブロック `k` の中** ⟹ **§79 でブロック `k` の根から鎖が届く**
+
+⚠ **`d = 0` のときは候補にならない**（等しくなる）。**`0 < d` が要る。**
+
+⚠ **教訓 14**: 上は **道**であって、まだ **定理ではありません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
