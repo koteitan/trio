@@ -2388,6 +2388,120 @@ theorem nextrel1_lt_transfer {X : TrioSeq} {d a b : ℕ}
 そしてその配置は **`j` と `b` の間にブロッカー（行 1 ≤ `v` の列）がある**ことを意味する
 （§30 の `le1_root_of_rtg0` の対偶）。⟹ **タイの位置と直結している。** -/
 
+
+/-! ## 36. ★★★★ 課題 L118: `lowerAt`（1 列 1 段の引き下げ）が何を動かすか
+
+`L53.lowerAt C j0`（`L53Subst.lean:3453`）は **第 `j0` 列の行 1 を 1 だけ下げる**。
+`WConvexUnit` の `B` と `C` の関係はちょうどこれ。 -/
+
+/-- 行 1 は `j0` 以外では変わらない。 -/
+theorem entry1_lowerAt_ne {C : TrioSeq} {j0 j : ℕ} (h : j ≠ j0) :
+    entry (L53.lowerAt C j0) 1 j = entry C 1 j := by
+  rcases Nat.lt_or_ge j C.length with hj | hj
+  · rw [L53.entry1_lowerAt hj, if_neg h]
+    omega
+  · rw [entry1_out (by rw [L53.lowerAt_length]; omega), entry1_out hj]
+
+/-- 行 0 の木は `lowerAt` で不変（行 0 も長さも動かさない）。 -/
+theorem nextrel0_lowerAt {C : TrioSeq} {j0 a b : ℕ} :
+    nextrel0 (L53.lowerAt C j0) a b ↔ nextrel0 C a b := by
+  unfold nextrel0
+  simp only [L53.lowerAt_length, L53.entry0_lowerAt]
+
+theorem le0_lowerAt {C : TrioSeq} {j0 a b : ℕ} :
+    le0 (L53.lowerAt C j0) a b ↔ le0 C a b := by
+  unfold le0
+  simp only [L53.lowerAt_length]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨h1, h2, Relation.ReflTransGen.mono (fun _ _ h => nextrel0_lowerAt.mp h) h3⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨h1, h2, Relation.ReflTransGen.mono (fun _ _ h => nextrel0_lowerAt.mpr h) h3⟩
+
+/-! ### 36.1 ★ (Q1) `srow` が動くのは **「行 2 = 0 かつ 行 1 = 1」の 1 列だけ**
+
+team-lead の読みは正しい。`Trio.lean:81` の定義から:
+
+    行 2 > 0        … `srow = 2` のまま（`lowerAt` は行 2 を動かさない）
+    行 1 ≥ 2        … 下げても ≥ 1 なので `srow = 1` のまま
+    行 1 = 0        … 下げても 0（ℕ の切り捨て減算）なので `srow = 0` のまま
+    **行 2 = 0 かつ 行 1 = 1** … `1 → 0` で **`srow` が `1 → 0` に動く**  ← ここだけ -/
+
+theorem srow_lowerAt {C : TrioSeq} (j0 j : ℕ)
+    (h : ¬ (j = j0 ∧ entry C 2 j = 0 ∧ entry C 1 j = 1)) :
+    srow (L53.lowerAt C j0) j = srow C j := by
+  unfold srow
+  rw [L53.entry2_lowerAt]
+  by_cases h2 : 0 < entry C 2 j
+  · rw [if_pos h2, if_pos h2]
+  · rw [if_neg h2, if_neg h2]
+    by_cases hjj : j = j0
+    · subst hjj
+      have hz : entry C 2 j = 0 := by omega
+      have hne1 : entry C 1 j ≠ 1 := fun hc => h ⟨rfl, hz, hc⟩
+      rcases Nat.lt_or_ge j C.length with hj | hj
+      · rw [L53.entry1_lowerAt hj, if_pos rfl]
+        by_cases hp : 0 < entry C 1 j
+        · rw [if_pos (by omega), if_pos hp]
+        · rw [if_neg (by omega), if_neg hp]
+      · rw [entry1_out (by rw [L53.lowerAt_length]; omega), entry1_out hj]
+    · rw [entry1_lowerAt_ne hjj]
+
+/-! ### 36.2 ★ (Q2) `nextrel1` が動くのは **`j0` に触る場合だけ**
+
+`lowerAt` が変える成分は **1 つ**（第 `j0` 列の行 1）なので、`nextrel1 a b` の 5 連言のうち
+`j0` に触らないものは全部不変である:
+
+    `a < |M|` / `b < |M|` / `a < b` … 長さ不変 ⟹ **不変**
+    `le0 M a b`                     … **不変**（`le0_lowerAt`、上）
+    `entry M 1 a < entry M 1 b`     … `a ≠ j0` かつ `b ≠ j0` なら **不変**
+    最小性 `∀ j, a<j ∧ le0 j b → …` … `j0` がその範囲に無ければ **不変**
+
+⟹ 下が正確な形。 -/
+
+theorem nextrel1_lowerAt_of_avoid {C : TrioSeq} {j0 a b : ℕ}
+    (ha : a ≠ j0) (hb : b ≠ j0) (hmid : ¬ (a < j0 ∧ le0 C j0 b)) :
+    nextrel1 (L53.lowerAt C j0) a b ↔ nextrel1 C a b := by
+  have hjne : ∀ j, a < j → le0 C j b → j ≠ j0 := by
+    intro j hj1 hj2 hc
+    exact hmid ⟨hc ▸ hj1, hc ▸ hj2⟩
+  unfold nextrel1
+  rw [L53.lowerAt_length, entry1_lowerAt_ne ha, entry1_lowerAt_ne hb]
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    refine ⟨h1, h2, h3, h4, le0_lowerAt.mp h5, fun j hj => ?_⟩
+    have hres := h6 j ⟨hj.1, le0_lowerAt.mpr hj.2⟩
+    rwa [entry1_lowerAt_ne (hjne j hj.1 hj.2)] at hres
+  · rintro ⟨h1, h2, h3, h4, h5, h6⟩
+    refine ⟨h1, h2, h3, h4, le0_lowerAt.mpr h5, fun j hj => ?_⟩
+    have hj2 : le0 C j b := le0_lowerAt.mp hj.2
+    rw [entry1_lowerAt_ne (hjne j hj.1 hj2)]
+    exact h6 j ⟨hj.1, hj2⟩
+
+/-! ### 36.3 ★ (Q3) `Le1` は**差の上界を含んでいません**
+
+`Wtower2.Le1`（`:333`）:
+
+    `Le1 A B := |A| = |B| ∧ (∀j, entry A 0 j = entry B 0 j) ∧
+               (∀j, entry A 2 j = entry B 2 j) ∧ (∀j, entry A 1 j ≤ entry B 1 j)`
+
+**行 1 の差に上界はありません。** 幅 1 は `WConvex1` の**追加の前提**
+（`∀ j, entry C 1 j ≤ entry A 1 j + 1`）が持っており、それを供給するのが
+`L53.sandwich_window_one`（`L53Subst.lean:3200`、`d = 1` 固定）です。
+⟹ **`Le1` からは鎖の変化を抑えられません。** 抑えているのは `WConvexUnit` の
+「`B` と `C` は `j0` 以外で一致し、`j0` で差はちょうど 1」という**強い前提**のほうです。
+
+### 36.4 ⟹ 壁の高さ（課題 L118 の答え）
+
+    **`srow`**    … 動くのは **`j0` の 1 列だけ**、しかも「行 2 = 0 かつ 行 1 = 1」の場合だけ
+    **行 0 の木** … **不変**
+    **`nextrel1`** … 動くのは **`j0` に触る関係だけ**（端点が `j0`、または `j0` が
+                    最小性の範囲 `a < j0 ∧ le0 j0 b` に入る場合）
+    **`nextrel2`** … `le1` を通して `nextrel1` の変化を受け継ぐ（行 2 自体は不変）
+
+⟹ **「展開木が変わる」は「`j0` に触る関係だけが、高々 1 だけ動く」に落ちました。**
+壁の高さは測れています。**(ii) に移る必要はありません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
