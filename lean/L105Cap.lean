@@ -10307,6 +10307,52 @@ theorem block_blockParent_of_cone {Q : TrioSeq} {d e n j : ℕ}
 ⚠ **教訓 27 のとおり、自分の「100% になるはず」を先に壊しにいって正解でした。**
 **R2 に (t3)(t4) を測ってもらう前に気づけたので、実測は (t1)(t2) だけで足ります。** -/
 
+/-! ## 144. ★★★★★★ **親は、どの候補よりも右にある**（最小性節の言い換え）
+
+§143 で候補が絞れなかったので、**逆から攻める**: 候補が 1 つ見つかれば、
+**親はそれ以上の添字にある。** これは `nextrel1` の最小性節そのものである。 -/
+
+theorem nextrel1_src_ge_of_candidate {X : TrioSeq} {a b k : ℕ}
+    (h : nextrel1 X a b) (hk : le0 X k b) (hlt : entry X 1 k < entry X 1 b) :
+    k ≤ a := by
+  by_contra hc
+  have := h.2.2.2.2.2 k ⟨by omega, hk⟩
+  omega
+
+theorem nextrel2_src_ge_of_candidate {X : TrioSeq} {a b k : ℕ}
+    (h : nextrel2 X a b) (hk : le1 X k b) (hlt : entry X 2 k < entry X 2 b) :
+    k ≤ a := by
+  by_contra hc
+  have := h.2.2.2.2.2 k ⟨by omega, hk⟩
+  omega
+
+theorem nextrel0_src_ge_of_candidate {X : TrioSeq} {a b k : ℕ}
+    (h : nextrel0 X a b) (hkb : k < b) (hlt : entry X 0 k < entry X 0 b) :
+    k ≤ a := by
+  by_contra hc
+  have := h.2.2.2.2 k ⟨by omega, hkb⟩
+  omega
+
+/-! ### 144.1 ⟹ 使い方（復活の飛び先を 1 ブロックに抑える道）
+
+**ブロック `n-1` の最終列（添字 `n*|Q| - 1`）が候補になれば、親はそれ以上。**
+**⟹ 親はブロック `n-1` か `n` の中 ⟹ 窓は高々 2 ブロックぶん。**
+**⟹ 展開の接頭辞はブロック数が `n → n-1` と減る ⟹ **`n` についての整礎測度**。**
+
+候補であるための 2 条件:
+
+    **(c1)** `le0 塔 (n*|Q| - 1) (n*|Q| + j)`
+        … §143.1（ブロック `n` の根の行 0 親はブロック `n-1` の最終列）＋ ブロック内の鎖
+    **(c2)** `entry 塔 1 (n*|Q| - 1) < entry 塔 1 (n*|Q| + j)`
+        … ブロック `n-1` の最終列の行 1 ＝ `entry Q 1 (|Q|-1) + (錐なら e*(n-1))`
+          対して足す列の行 1 ＝ `entry Q 1 j`（錐の外なのでリフトなし）
+
+⚠ **(c2) は `Q` の最終列の行 1 が小さいときにしか成り立ちません。**
+**⟹ 一般には成り立たない。だから「高々 2 ブロック」は**条件つき**です。**
+
+⚠ **教訓 14**: 上は **道**であって **定理ではありません。**
+**(c1)(c2) を書くのが次の作業で、(c2) は `Q` に条件がつく可能性が高い。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
