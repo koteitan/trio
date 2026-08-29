@@ -4047,6 +4047,58 @@ theorem dead_row1_stage_lt {v z a m : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : 
 example : True := trivial
 
 
+/-! # ⚠ 課題 L101' の判定: **中間案も `GraftFromExp` に戻る**
+
+（team-lead の `git log -S` による訂正を受けて。ガードは
+`2643c7a v0.79.0` で **意図的に外された** —— `z=1` の dead root を節 2 で認めるため。）
+
+## 1. `dead root ⟹ M⟦n⟧ = M.dropLast` は**既存**（`live` でも同じ）
+
+`Wset.oper_eq_graft_nil_of_domT`（`Wset.lean:137`）は `1 < |M|` と **`domT M m`
+だけ**を要求する。`dead` か `live` かは効かない。⟹ 下の `domT_oper_dropLast`。
+
+## 2. ⛔ 「`:4447` に来る `R` は `live` だから節 3 が届く」は**使えない**
+
+**理由は `Aop` が選言だから。** `Wstar_closed` は
+
+```lean
+rcases AR with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+```
+
+で**渡された選言子だけ**を手に持つ。`R` が意味論的に節 3 も満たしていても、
+`hgr`（graft 閉包）は**手元に来ない**。節 2 の `hop` から `hgr` を作るのが
+まさに `GraftFromExp`（課題 L84-b）である。
+
+    `hop` が実際にくれるもの … `R.dropLast ∈ Wstar` の**1 個だけ**（`exp_gives_dropLast`）
+    塔が要るもの           … `∀ y ∈ W m, based y → graft R y ∈ Wstar` の**族**
+
+## 3. ⟹ `Aop` を触らずに `:4447` を消すには `GraftFromExp` が要る
+
+**中間案（`natDom M ∨ dead root` のガード）も同じ壁**に当たる:
+`:4447` の `R` は根に復活してもらう `live` な孤児を持つので、
+ガードの `dead root` の側では拾えず、`natDom` の側でも拾えない
+（`domT R m'` があるので `natDom R` は偽）。
+⟹ **ガードを緩めても `:4447` は残る。**
+
+## ⟹ 結論は課題 L94 の形のまま
+
+    `TowerOK` ┬ 節 3 / srow=2 = `TowerGraft2` ⟸ `LiftTie` ⟸ `WSnoc`
+              └ 節 2         = `TowerExp`     ⟸ `GraftFromExp`
+                                              ⟸ `Subst1gRevive` ＋ `WstarSnoc` ⟸ `WSnoc`
+
+**`WSnoc` が二重に効く形が最良。** -/
+
+/-- `domT` なら展開は `dropLast` に潰れる（`dead` / `live` を問わない）。 -/
+theorem domT_oper_dropLast {M : TrioSeq} {m n : ℕ} (hL : 1 < M.length)
+    (hd : domT M m) : M⟦n⟧ = M.dropLast := by
+  rw [oper_eq_graft_nil_of_domT hL hd, graft_nil]
+
+/-- `:4447` の `R` は `natDom` でも `dead root` でもない: `domT R m'` を持ち、
+かつ根に復活してもらう。⟹ **ガードをどう緩めても拾えない**。 -/
+theorem tower_branch_not_natDom {R : TrioSeq} {m : ℕ} (hd : domT R m) :
+    ¬ natDom R := fun h => h m hd
+
+
 /-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
 
 ## 1. 上から下への連鎖（全部 Lean で緑）
