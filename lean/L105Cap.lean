@@ -12725,8 +12725,9 @@ H12 の `hz0_of_zle1`（`tower2_z_zero_of_zle1`（`:3813`、私が §51 で書�
 
 open Classical in
 theorem le1_chain_in_block {A Q : TrioSeq} {d e n : ℕ}
-    (hall : ∀ q, 0 < q → q < Q.length →
-      hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (q + 1)) 1 q) :
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hhigh : ∀ q, 0 < q → q < Q.length → ¬ le1 Q 0 q →
+      entry Q 1 0 < entry Q 1 q) :
     ∀ j, j < Q.length → ¬ le1 Q 0 j → ∀ y,
       Relation.ReflTransGen (nextrel1 (A ++ mTower Q d e n
         ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)))
@@ -12749,7 +12750,9 @@ theorem le1_chain_in_block {A Q : TrioSeq} {d e n : ℕ}
       · exact h
     rcases hy.cases_tail with heq | ⟨c, hc1, hc2⟩
     · omega
-    · have hloc : hasParent (B.take (j + 1)) 1 j := hall j hj1 hj
+    · have hloc : hasParent (B.take (j + 1)) 1 j := by
+        rw [hB]
+        exact block_blockParent_row1_outcone hj hr0 hout (hhigh j hj1 hj hout)
       have hcge : (A ++ mTower Q d e n).length ≤ c :=
         nextrel1_block_sameBlock (A := A) (d := d) (e := e) (n := n) hloc hc2
       obtain ⟨q', hq'⟩ : ∃ q', c = (A ++ mTower Q d e n).length + q' :=
@@ -12791,7 +12794,28 @@ theorem le1_chain_in_block {A Q : TrioSeq} {d e n : ℕ}
         exact rtg1_take_mpr (by omega) hc1 (by omega)
       exact ih q' hq'lt (by omega) houtQ y hy''
 
-/-! ### 180.1 ⟹ (v3) が定理になりました（射程つき）
+/-! ### 180.0 ✅ `hall` を落としました（§185 のあと）
+
+**前提を逐語で写します**（team-lead の指示どおり、散文を書く前に）:
+
+    `hr0    : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l`
+    `hhigh  : ∀ q, 0 < q → q < Q.length → ¬ le1 Q 0 q → entry Q 1 0 < entry Q 1 q`
+    結論    : `∀ j, j < Q.length → ¬ le1 Q 0 j → ∀ y, （鎖）→ (A ++ mTower Q d e n).length ≤ y`
+
+**⟹ `hall`（ブロック内に行 1 の親がある）は `hhigh`（`Q` の行 1 の値の条件）に落ちました。**
+**⟹ §172 `block_blockParent_row1_outcone` が中で供給します。**
+
+⚠⚠ **射程を誤らないように、前提から逐語で言い直します:**
+
+> **この定理が言うのは「`hhigh` を満たす `Q` について、`¬ le1 Q 0 j` な `j` からの
+> `le1` の鎖が `A ++ mTower Q d e n` より右にとどまる」だけです。**
+
+⛔ **「これで錐の外は全部片づいた」ではありません。**
+**`hhigh` が破れる `Q` があります —— §184 の反例 `Q = (0,1,0)(1,0,0)(1,1,1)(1,0,0)` が
+まさにそれで、`j = 2` で `entry Q 1 0 = entry Q 1 2 = 1`（**等号**）です。**
+⛔ **そして「錐の外 ⟹ 孤児」でもありません**（H12 の (e) の枝、実測 0.7%）。
+
+### 180.1 ⟹ (v3) が定理になりました（射程つき）
 
     **`¬ le1 Q 0 j`（錐の外）∧ すべての `q ≥ 1` がブロック内に行 1 の親を持つ**
     **⟹ `le1` の鎖は `A ++ mTower Q d e n` より右にとどまる**
@@ -12799,10 +12823,11 @@ theorem le1_chain_in_block {A Q : TrioSeq} {d e n : ℕ}
 **⟹ `nextrel2` は `le1` の祖先性を要求するので、行 2 の親もブロック内。**
 **⟹ ブロック内で行 2 の孤児なら、塔でも孤児。**
 
-⚠ **前提 `hall`（すべての `q ≥ 1` がブロック内に行 1 の親を持つ）が要ります。**
-**⟹ §172 は「錐の外 ∧ 行 1 が根より上」で、§142 は「錐の中」で、それぞれ供給します。**
-**⟹ 残るのは「錐の外 ∧ 行 1 が根以下」の列で、そこは §102/§137 の**孤児**の領域です
-（＝ 鎖がそこで終わるので、実は `hall` は要らないはずですが、いまの形では前提です）。**
+⚠ **前提は `hhigh`（`Q` の行 1 が、錐の外の列で根より狭義に上）です**（§180.0）。
+**⟹ `hall` は落ちました。⟹ 残るのは `hhigh` が破れる `Q`、すなわち
+「錐の外で行 1 が根と**等しいか下**」の列を持つ `Q` です。**
+⚠ **そこは §102/§137 の孤児の領域**と書きたくなりますが、**H12 の (e) の枝（0.7%）が実在する**ので
+**そう書きません**。⟹ 未確認のまま残します。
 
 ⚠ **H12 の警告を守ります: ここで示したのは**鎖の位置**だけで、
 「錐の外 ＝ 行 2 の孤児」ではありません**（実測 98.8〜100%、100% ではない）。 -/
