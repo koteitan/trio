@@ -612,5 +612,78 @@ def TowerTwoStage : Prop :=
     ∀ n : ℕ, 1 ≤ n → M⟦n⟧ ∈ W u
 
 
+/-! ## 課題 L58: 交換律 (COMM) を `oper` の定義から計算する -/
+
+/-- **L58-a**: バッドルートが `B` の側なら `take` は `A` を丸ごと含む。 -/
+theorem take_append_of_le {A B : TrioSeq} {j0 : ℕ} (h : A.length ≤ j0) :
+    (A ++ B).take j0 = A ++ B.take (j0 - A.length) := by
+  rw [List.take_append, List.take_of_length_le h]
+
+/-- 右側の列の成分は `A` を付けても変わらない。 -/
+theorem entry_append_right {A B : TrioSeq} {i j : ℕ} :
+    entry (A ++ B) i (A.length + j) = entry B i j := by
+  unfold entry
+  simp only []
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_append_right (by omega)]
+  simp
+
+/-- `srow` も右側の列では変わらない。 -/
+theorem srow_append_right {A B : TrioSeq} {j : ℕ} :
+    srow (A ++ B) (A.length + j) = srow B j := by
+  unfold srow
+  rw [entry_append_right, entry_append_right]
+
+open Classical in
+/-- **★★ (COMM)**（課題 L58-c）。`oper` を 2 回開くだけの計算。
+
+仮定は **3 つだけ**:
+
+* `j0` が `|A|` ずれる（＝ バッドルートが `N` の中）… H43 の「印 = 1 なら 0/1329」
+* `le0` のマスクが一致する … H41 の「行 0 が非一様なものは 0 件」
+* `le1` のマスクが一致する … **ここだけがずれる ＝ (MLIFT)**
+
+**`d0` と `d1` の一致は仮定に要らない。** `j0` のずれと `entry_append_right` から
+自動的に出る（`d0`/`d1` は `entry` の差でしかないから）。 -/
+theorem comm_of_parts {A N : TrioSeq} {jN j0N iN : ℕ} (n : ℕ) (hNne : N ≠ [])
+    (hjN : jN = N.length - 1) (hjNne : jN ≠ 0)
+    (hzN : ¬(entry N 0 jN = 0 ∧ entry N 1 jN = 0 ∧ entry N 2 jN = 0))
+    (hiN : iN = srow N jN) (hparN : hasParent N iN jN) (hj0N : j0N = parent N iN jN)
+    (hparM : hasParent (A ++ N) iN (A.length + jN))
+    (hj0M : parent (A ++ N) iN (A.length + jN) = A.length + j0N)
+    (hle0 : ∀ j, le0 (A ++ N) (A.length + j0N) (A.length + j) ↔ le0 N j0N j)
+    (hle1 : ∀ j, le1 (A ++ N) (A.length + j0N) (A.length + j) ↔ le1 N j0N j) :
+    (A ++ N)⟦n⟧ = A ++ N⟦n⟧ := by
+  have hNpos : 0 < N.length := List.length_pos_iff.mpr hNne
+  have hlenM : (A ++ N).length - 1 = A.length + jN := by
+    rw [List.length_append, hjN]; omega
+  have hsrM : srow (A ++ N) (A.length + jN) = iN := by
+    rw [srow_append_right, hiN]
+  have hzM : ¬(entry (A ++ N) 0 (A.length + jN) = 0 ∧
+      entry (A ++ N) 1 (A.length + jN) = 0 ∧
+      entry (A ++ N) 2 (A.length + jN) = 0) := by
+    rw [entry_append_right, entry_append_right, entry_append_right]
+    exact hzN
+  rw [oper_unfold (M := A ++ N) (j1 := A.length + jN) (i1 := iN)
+      (j0 := A.length + j0N) hlenM.symm (by omega) hzM hsrM.symm hparM hj0M.symm
+      rfl rfl n,
+    oper_unfold (M := N) hjN hjNne hzN hiN hparN hj0N rfl rfl n,
+    take_append_of_le (by omega)]
+  have hsub : A.length + jN - (A.length + j0N) = jN - j0N := by omega
+  rw [hsub, Nat.add_sub_cancel_left, List.append_assoc]
+  refine congrArg (fun L => A ++ L) ?_
+  refine congrArg (fun L => N.take j0N ++ L) ?_
+  refine congrArg (fun f => (List.range n).flatMap f) ?_
+  funext k
+  rw [show List.range' (A.length + j0N) (jN - j0N)
+      = (List.range' j0N (jN - j0N)).map (A.length + ·) from
+    (List.map_add_range' _ _ _).symm, List.map_map]
+  refine List.map_congr_left ?_
+  intro j _
+  simp only [Function.comp_apply]
+  simp only [entry_append_right]
+  simp only [if_congr (hle0 j) rfl rfl, if_congr (hle1 j) rfl rfl]
+
+
 end L53
 end TRIO
