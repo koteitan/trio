@@ -10739,6 +10739,65 @@ theorem nextrel1_tower_src_ge_blockRoot {Q : TrioSeq} {d e n k m q a : ℕ}
 
 ⚠ **教訓 14**: 上の最後の 2 行は **推測**です。まだ何も確かめていません。 -/
 
+/-! ## 151. ★★★★★★★ **核の最小形**: 塔が `W` に入る ⟺ **宿主が `W` に入る**
+
+§150 で「新しい対象が要る」と書いた。**候補は 1 つしかない: 塔の**宿主** `M = Q ++ [c]`。**
+
+`Wchar.mem_iff_oper_mem`（`|M| ≥ 2`）… `M ∈ W u ↔ ∀ n ≥ 1, M⟦n⟧ ∈ W u`
+§68 `oper_eq_mTower`（悪根＝根）… `M⟦n⟧ = mTower M.dropLast d0 d1 n`
+
+**⟹ 2 つを重ねるだけで、核が「1 列足す」に化ける。** -/
+
+open Classical in
+theorem tower_mem_iff_host_mem {u : ℕ} {M : TrioSeq} (hM2 : 2 ≤ M.length)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0) :
+    M ∈ W u ↔ ∀ n, 1 ≤ n → mTower M.dropLast
+      (if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1) - entry M 0 0
+        else 0)
+      (if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1) - entry M 1 0
+        else 0)
+      n ∈ W u := by
+  rw [mem_iff_oper_mem hM2]
+  constructor
+  · intro h n hn
+    rw [← oper_eq_mTower n (by omega) hz hp hj0]
+    exact h n hn
+  · intro h n hn
+    rw [oper_eq_mTower n (by omega) hz hp hj0]
+    exact h n hn
+
+/-! ### 151.1 ⟹ 核の最小形
+
+    **`MTowerClosedS`（の該当する `(Q,d,e)`）** ⟺ **`Q ++ [c] ∈ W u`**
+    （`c` は `(d,e)` で決まる 1 列。悪根が根であるように取る。）
+
+> **⟹ 「塔に決まった 1 列を足す」ではなく、
+> **「`Q` に決まった 1 列を足す」**でした。塔は消えます。**
+> **⟹ §110 で「塔を消しても同じ文」と出したことの、`iff` 版です。**
+
+### 151.2 ⚠ そして、これは近道ではありません（正直に）
+
+`Q ++ [c] ∈ W u` を節 2 で降ろすと、また `mTower Q d e n` に戻ります（上の `iff` そのもの）。
+**⟹ 循環しています。**
+
+> **⟹ 収穫は「核の文が最小になった」ことだけです。**
+> **⟹ しかし最小形は大事です: 実測も、反例探しも、この 1 行に集中できます。**
+
+### 151.3 ⟹ 最小形で見ると、残る問いは 1 つ
+
+    **`Q ∈ W u` と「根が狭義に最浅」だけから、`Q ++ [c] ∈ W u` が出るか。**
+    **`c` は `Q` の根に親を持つ、`(d, e)` で決まる 1 列。**
+
+⚠ **`WSnoc`（任意の 1 列）は偽である。**
+**⟹ 効くとすれば「`c` の親が `Q` の根である」という一点だけ。**
+**⟹ §141 `snocStep_parent_sameBlock` の逆向き（接頭辞が親を供給する場合）が、
+ちょうどこの形である。そこが次に見る場所です。**
+
+⚠ **教訓 14**: 上の最後の 2 行は **推測**です。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
