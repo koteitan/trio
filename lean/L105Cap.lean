@@ -10858,6 +10858,76 @@ team-lead の §120 の地図に **「`z=0 ∧ v≥1` は `Q` にブロッカー
 
 ⚠ **箱・分母つきで。教訓 21/23/27。⚠ 反例の形を先に書いてから確かめる順で。** -/
 
+/-! ## 153. ★★★★★★★ (w2): **ブロッカーなしは塔に遺伝します**（`e ≥ 1` のとき）
+
+§152 の (w2)「内側の段でもブロッカーがないか」を確かめる。**塔の列の行 1 は**
+
+    ブロック `k`、位置 `q` の行 1 ＝ `entry Q 1 q + (錐なら e*k)`
+
+`Q` にブロッカーがなければ **どの列も錐の中**（§152）なので **`+ e*k` がつく**。
+
+    **`q ≠ 0`** ⟹ `entry Q 1 q > entry Q 1 0` ⟹ **ブロッカーでない**
+    **`q = 0`, `k ≥ 1`** ⟹ `entry Q 1 0 + e*k > entry Q 1 0`（**`e ≥ 1` が要る**）
+
+**⟹ `e ≥ 1` なら塔全体がブロッカーなし。** -/
+
+theorem mTower_no_blocker {Q : TrioSeq} {d e n : ℕ} (he : 0 < e) (hn : 0 < n)
+    (hQ : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l) :
+    ∀ l, 0 < l → l < (mTower Q d e n).length →
+      entry (mTower Q d e n) 1 0 < entry (mTower Q d e n) 1 l := by
+  intro l hl0 hl1
+  rw [mTower_length] at hl1
+  have hroot : entry (mTower Q d e n) 1 0 = entry Q 1 0 := by
+    have h := mTower_entry1_root (Q := Q) (d := d) (e := e) (n := n) (k := 0) hn hQ
+    rw [Nat.zero_mul, Nat.mul_zero, Nat.add_zero] at h
+    exact h
+  set k := l / Q.length with hk
+  set q := l % Q.length with hq
+  have hdm : k * Q.length + q = l := by
+    rw [hk, hq, Nat.mul_comm]; exact Nat.div_add_mod l Q.length
+  have hqlt : q < Q.length := Nat.mod_lt _ hQ
+  have hklt : k < n := by
+    by_contra hc
+    have : n * Q.length ≤ k * Q.length := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have hE1 : entry (mTower Q d e n) 1 l
+      = entry Q 1 q + (if le1 Q 0 q then e * k else 0) := by
+    rw [← hdm, mTower_entry hklt hqlt]
+    show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD q (0, 0, 0)).2.1 = _
+    rw [block_getD hqlt]
+  rw [hroot, hE1, if_pos (le1_zero_of_no_blocker hr0 hnb hqlt)]
+  rcases Nat.eq_zero_or_pos q with hq0 | hqpos
+  · have hkpos : 0 < k := by
+      rcases Nat.eq_zero_or_pos k with hk0 | hkpos
+      · exfalso
+        rw [hk0, hq0, Nat.zero_mul, Nat.add_zero] at hdm
+        omega
+      · exact hkpos
+    have hmul : 0 < e * k := Nat.mul_pos he hkpos
+    rw [hq0]
+    omega
+  · have := hnb q hqpos hqlt
+    omega
+
+/-! ### 153.1 ⟹ (w2) が定理になりました（`e ≥ 1`）
+
+    **`Q` がブロッカーなし ∧ `e ≥ 1` ⟹ 塔 `mTower Q d e n` もブロッカーなし**
+
+**⟹ 内側の段（展開の窓のコピー）も、行 1 は塔の値以上にしかならない
+（`Lift1` は錐の上で足すだけ）ので、ブロッカーなしが保たれます。**
+
+> **⟹ §152.1 の (w2) は `e ≥ 1` について埋まりました。**
+> **⟹ 残るのは (w1)『`srow = 2`（F2b）』だけです。**
+
+⚠ **`e = 0` は別**: そのときブロックの根の行 1 は `entry Q 1 0` のままで、
+**根と同じ ⟹ ブロッカー**になります。
+**⟹ `e = 0` は `shTower`（§112-§119）の領域で、そちらは別途 `z = 0` の道具が揃っています。**
+
+⚠ **教訓 14**: 上は **「ブロッカーが塔に現れない」**であって、
+**「`hstep` が閉じる」ではありません。** (w1) が残っています。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
