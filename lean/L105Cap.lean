@@ -4771,6 +4771,210 @@ theorem tower_anc0_not_blocker {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
 
 **⟹ 3 の「本当の補題」は塔の仮定から出た。残るのは 2 と、ブロック添字の機械的な扱いだけ。** -/
 
+/-! ## 64. ★★★★★★ 課題 L136-2: **`v = 0` の残核は 2 本ではなく 1 本**
+
+### 64.1 ⚠ §61.2 の自己訂正: 段は `z = 0` でも `z = 1` でも両側から消える
+
+私は §61.2 で「`z = 0` と `z = 1` は前提の段が `0` と `1` で違うから**別々に扱う**」と
+書いた。**文の形としては誤りである。** `LiftTieCore` は前提の段も結論の段も
+**根の `lev` ちょうど**なので、`Wtower2.mem_Wself_iff` で**両側から段が消える**:
+
+    `lev ((0,v,z) :: R) 0            = 2v + z`       （`lev_cons_root`、§46）
+    `lev (Lift1 ((0,v,z) :: R) d) 0  = 2(v+d) + z`   （下の `lev_cons_lift`）
+
+⟹ **`LiftTieCore` は段をまったく含まない 1 文と同値**であり、`z` は文の形を変えない。
+段の違いが効くのは**証明の道具**（前提側で節 3 が使えるか）だけで、**核の本数ではない**。 -/
+
+theorem lev_cons_lift (v z d : ℕ) (R : TrioSeq) :
+    lev (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) 0 = 2 * (v + d) + z := by
+  have hne : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ≠ [] := by simp
+  unfold lev
+  rw [L53.entry1_Lift1_zero hne, entry2_Lift1]
+  simp [entry]
+
+/-- **前提側の段は無料。** -/
+theorem cons_mem_W_iff_self (v z : ℕ) (R : TrioSeq) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z)
+      ↔ (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself := by
+  rw [mem_Wself_iff]
+  exact ⟨fun h => h.1, fun h => ⟨h, by rw [lev_cons_root]⟩⟩
+
+/-- **結論側の段も無料。** -/
+theorem lift_cons_mem_W_iff_self (v z d : ℕ) (R : TrioSeq) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (2 * (v + d) + z)
+      ↔ Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ Wself := by
+  rw [mem_Wself_iff]
+  exact ⟨fun h => h.1, fun h => ⟨h, by rw [lev_cons_lift]⟩⟩
+
+/-- **★★★★★★ `LiftTieCore` の段抜き版**: `W` の添字が 1 つも現れない。 -/
+def LiftTieCoreSelf : Prop :=
+  ∀ (v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+    ¬ (1 ≤ v ∧ TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)) →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 ∈ Wself
+
+/-- **★★★★★★ 段抜き版は元の核と同値。** -/
+theorem liftTieCoreSelf_iff_core : LiftTieCoreSelf ↔ LiftTieCore := by
+  have harith : ∀ v z : ℕ, 2 * v + z + 2 = 2 * (v + 1) + z := by intro v z; omega
+  constructor
+  · intro h v z R hR ht htf hX
+    rw [harith v z, lift_cons_mem_W_iff_self]
+    exact h v z R hR ht htf ((cons_mem_W_iff_self v z R).mp hX)
+  · intro h v z R hR ht htf hX
+    have hres := h v z R hR ht htf ((cons_mem_W_iff_self v z R).mpr hX)
+    rw [harith v z, lift_cons_mem_W_iff_self] at hres
+    exact hres
+
+/-! ### 64.1.1 ⟹ `v = 0` の残核は **1 文**（`z` は助変数）
+
+`z = 0` と `z = 1` を段抜きの形で書くと**まったく同じ文**になる。 -/
+
+/-- **★★★★★ `v = 0` の残核**（§59 の `LiftTieCoreZero` と §61 の `LiftTieCoreOne` を
+1 文にまとめたもの。段が消えているので `z` は形を変えない）。 -/
+def LiftTieZeroSelf : Prop :=
+  ∀ (z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = 0) →
+    (((0, 0, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself →
+    Lift1 (((0, 0, z) : ℕ × ℕ × ℕ) :: R) 1 ∈ Wself
+
+theorem liftTieZeroSelf_of_core (h : LiftTieCoreSelf) : LiftTieZeroSelf :=
+  fun z R hR ht hX => h 0 z R hR ht (by rintro ⟨h1, -⟩; omega) hX
+
+theorem liftTieCoreZero_of_zeroSelf (h : LiftTieZeroSelf) : LiftTieCoreZero := by
+  intro R hR ht hX
+  have hin : (((0, 0, 0) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * 0 + 0) := by simpa using hX
+  have hres := h 0 R hR ht ((cons_mem_W_iff_self 0 0 R).mp hin)
+  have hout := (lift_cons_mem_W_iff_self 0 0 1 R).mpr hres
+  simpa using hout
+
+theorem liftTieCoreOne_of_zeroSelf (h : LiftTieZeroSelf) : LiftTieCoreOne := by
+  intro R hR ht hX
+  have hin : (((0, 0, 1) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * 0 + 1) := by simpa using hX
+  have hres := h 1 R hR ht ((cons_mem_W_iff_self 0 1 R).mp hin)
+  have hout := (lift_cons_mem_W_iff_self 0 1 1 R).mpr hres
+  simpa using hout
+
+/-! ## 65. ⚠ 課題 L135-2 の答え: **結論側の節 3 は新しいものを与えません**
+
+team-lead の指示「**結論側の節 3 で作る**」を定義から詰めた。答えは**否**である。
+
+`Aop` の節 3 は `domT M m` を要求し、`domT` の第 2 成分は **`¬ hasParent`** である
+（`Wset.lean:61`）。そして `Lift1` は **長さも `srow` も `hasParent` も変えない**
+（`Lift1_length` / `Wset.srow_Lift1` / `Wset.hasParent_Lift1`）ので
+
+    **`domT (Lift1 X d) m` ⟹ `¬ hasParent X (srow X (|X|-1)) (|X|-1)`**
+
+そして親が無ければ `Wtower2.lift_oper_of_noParent` で **`Lift1` は `oper` と可換**、
+つまり **(WL) はそこではすでに無料**である。
+
+> **⟹ 結論側で節 3 が使える場所 ＝ すでに無料の場所。**
+> 節 3 は残差（親あり）にはまったく届かない。 -/
+
+theorem noParent_of_domT_Lift1 {X : TrioSeq} {d m : ℕ} (h2 : 2 ≤ X.length)
+    (h : domT (Lift1 X d) m) :
+    ¬ hasParent X (srow X (X.length - 1)) (X.length - 1) := by
+  have hlen : (Lift1 X d).length = X.length := Lift1_length X d
+  have hL : X.length - 1 ≠ 0 := by omega
+  have hnp := h.2
+  rw [hlen, Wset.srow_Lift1 hL, hasParent_Lift1] at hnp
+  exact hnp
+
+/-- ⟹ **節 3 が使える場面では `Lift1` と `oper` の可換性がすでに無料**。 -/
+theorem lift_oper_comm_of_domT_Lift1 {X : TrioSeq} {d m n : ℕ} (h2 : 2 ≤ X.length)
+    (h : domT (Lift1 X d) m) :
+    (Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d :=
+  lift_oper_of_noParent h2 (noParent_of_domT_Lift1 h2 h)
+
+/-! ## 66. ★★★★★ 段 0 の残差を**厳密に**書く
+
+`A2'` の帰納を段 0 で全部回すと、残るのは**ちょうど 1 つの場面**である。
+
+    節 1（`|X| ≤ 1`）     … 無料（`Lift1_of_length_one` ＋ `singleton_mem_W`）
+    節 3（`∃ m < 0`）     … **空**（段 0 なので）
+    節 2 の `|X| ≤ 1`     … 無料（`oper_eq_self_of_short`）
+    節 2 の **親なし**    … 無料（`lift_oper_of_noParent`）
+    節 2 の **親あり**    … **残差**
+
+帰納法の仮定は **2 成分**（`X⟦n⟧ ∈ W 0` と `Lift1 (X⟦n⟧) 1 ∈ W 2`）で持てるので、
+そこまで込みで書く。根の `lev` が `0` であることも `lev_root_le_of_mem_W` で無料。 -/
+
+/-- **★★★★★ 段 0 の残差**（`A2'` の帰納を全部回した後に残る 1 文）。 -/
+def LiftParented0 : Prop :=
+  ∀ (X : TrioSeq), 2 ≤ X.length → lev X 0 = 0 →
+    hasParent X (srow X (X.length - 1)) (X.length - 1) →
+    (∀ n, 1 ≤ n → X⟦n⟧ ∈ W 0 ∧ Lift1 (X⟦n⟧) 1 ∈ W 2) →
+    ∀ n, 1 ≤ n → (Lift1 X 1)⟦n⟧ ∈ W 2
+
+/-- **★★★★★ 段 0 の (WL) は残差だけから出る。** -/
+theorem liftStage0_of_parented0 (h : LiftParented0) :
+    ∀ X ∈ W 0, Lift1 X 1 ∈ W 2 := by
+  have hsub : W 0 ⊆ {X : TrioSeq | X ∈ W 0 ∧ Lift1 X 1 ∈ W 2} := by
+    refine A2' ?_
+    rintro X (⟨hl, hlev⟩ | hop | ⟨m', hm', -, -⟩)
+    · refine ⟨A1_intro (Or.inl ⟨hl, hlev⟩), ?_⟩
+      rcases Nat.eq_zero_or_pos X.length with h0 | hpos
+      · have hnil : X = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        show Lift1 ([] : TrioSeq) 1 ∈ W 2
+        simpa using W_nil 2
+      · have h1 : X.length = 1 := by omega
+        show Lift1 X 1 ∈ W 2
+        rw [Lift1_of_length_one h1 1]
+        have hbc : entry X 1 0 = 0 ∧ entry X 2 0 = 0 := by
+          unfold lev at hlev; omega
+        rw [hbc.1, hbc.2]
+        exact singleton_mem_W (by omega)
+    · have hX0 : X ∈ W 0 := mem_of_oper_mem (fun n hn => (hop n hn).1)
+      refine ⟨hX0, ?_⟩
+      rcases Nat.lt_or_ge X.length 2 with hsm | hbig
+      · have hres := (hop 1 le_rfl).2
+        rwa [oper_eq_self_of_short 1 (by omega)] at hres
+      · have hXne : X ≠ [] := by
+          intro hc
+          rw [hc] at hbig
+          simp at hbig
+        have hlev0 : lev X 0 = 0 := Nat.le_zero.mp (lev_root_le_of_mem_W hX0 hXne)
+        by_cases hp : hasParent X (srow X (X.length - 1)) (X.length - 1)
+        · exact mem_of_oper_mem (h X hbig hlev0 hp (fun n hn => hop n hn))
+        · refine mem_of_oper_mem (fun n hn => ?_)
+          rw [lift_oper_of_noParent hbig hp]
+          exact (hop n hn).2
+    · exact absurd hm' (Nat.not_lt_zero m')
+  exact fun X hX => (hsub hX).2
+
+/-- ⟹ **`v = 0, z = 0` の核は残差から出る**（`argOK` もタイも要らない）。 -/
+theorem liftTieCoreZero_of_parented0 (h : LiftParented0) : LiftTieCoreZero :=
+  fun _ _ _ hX => liftStage0_of_parented0 h _ hX
+
+/-! ### 66.1 ⟹ 残差の中身
+
+`LiftParented0` の場面では、`X ∈ W 0`（帰納法の仮定の第 1 成分から `mem_of_oper_mem`）
+なので **根は `(d, 0, 0)`**（`lev X 0 = 0`）。⟹ `Lcone.le1_zero_iff` により
+
+    **`le1 X 0 j` ⟺ `j` の（根以外の）行 0 祖先がすべて 行 1 ≥ 1**
+    **ブロッカー ＝ 行 1 が 0 の列**（`v = 0` なのでタイとブロッカーが一致。§59.1）
+
+そして残差の目標は `(Lift1 X 1)⟦n⟧ ∈ W 2` で、帰納法の仮定は
+`Lift1 (X⟦n⟧) 1 ∈ W 2`。両者は `Wtower2` のサンドイッチ
+
+    `Le1 (Lift1 (X⟦n⟧) 1) ((Lift1 X 1)⟦n⟧)`          （`Le1_Lift1_oper`、緑）
+    `Le1 ((Lift1 X 1)⟦n⟧) (shiftr01 0 1 (X⟦n⟧))`      （`Le1_oper_Lift1_shiftr01`、緑）
+
+で**上下から挟まれている**。⟹ **残差は「挟まれた中間が `W 2` に入る」ことに等しい**
+（上端は `ulift_mem_W` で無料、下端は帰納法の仮定）。
+
+⚠ **これは `WConvex` の段 0・`d = 1` の場合そのもの**なので、
+**この道は既知の核 `WConvex` に合流する**。段 0 だからといって近道にはならない。
+（`liftStage_of_wconvex`（`Wtower2.lean`、緑）が一般の段でこれをやっている。）
+
+### 66.2 ⟹ 段 0 で本当に得したもの
+
+    **節 3 が消える**（`∃ m < 0` が空）… `aop_clause3_to_clause2` を使わなくてよい
+    **根が `(d,0,0)` に固定**       … ブロッカー ＝ 行 1 が 0 の列（いちばん単純な錐）
+    **帰納法の仮定が 2 成分**       … `X⟦n⟧ ∈ W 0` も同時に持てる
+
+⟹ **得たのは場面の単純さだけで、新しい推論規則は増えていない。**
+段 0 でも本質は「親ありの 1 歩で `Lift1` と `oper` が可換でない」ところに集約される。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
