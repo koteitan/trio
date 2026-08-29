@@ -149,16 +149,42 @@ theorem no_infinite_expansion_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_towerOK (L53.towerOK_of_liftTie hlt he)
 
-/- ⚠ さらに `L53.liftTie_of_row1down`（課題 L83）を挟めば核は
-`Row1DownLocal` ＋ `Row1DownRoot0` ＋ `TowerExp` の 3 本まで落ちる。
-`L53Subst.olean` を作り直したあとで次の 3 行を足すこと（型は `L53Subst.lean` で緑）:
-
-```lean
+/-- **核が「より弱い方」へ動いた履歴**（課題 L83）。`Row1DownLocal` は
+`L53.row1DownLocal_of_row1mono` で `Row1Mono` から出るので、真に弱い。 -/
 theorem TRIO_terminates_of_row1down (h1 : L53.Row1DownLocal)
     (h0 : L53.Row1DownRoot0) (he : Wset.TowerExp) : WellFounded stepRel :=
   TRIO_terminates_of_liftTie (L53.liftTie_of_row1down h1 h0) he
-```
--/
+
+/-! ### ★★★★★ 課題 L86: 核は「閾値の off-by-one」1 つに畳まれた
+
+`Lcone.le1_zero_iff` は「根が行 0 で狭義最浅なら `le1 X 0 j` ⟺ **根以外の**行 0
+祖先がすべて `entry X 1 0` より上」と言う。`coneV X w j` は**根を含む**祖先が
+`w` より上。⟹ 根を判定から外した錐 `L53.coneVR` を入れると、両方が**同じ族**になる:
+
+    `mlift X w d` = `L53.mliftR X w d`（`w < v0`）  … `Wslift.mlift_mem_W` で**証明ずみ**
+    `Lift1 X d`   = `L53.mliftR X v0 d`             … 欲しいもの
+
+**⟹ 核 ＝ `L53.mliftR_mem_W_of_lt` を `w < v0` から `w = v0` へ 1 段伸ばすこと。**
+`TieFree` / `Row1Mono` / `WConvex` / `Row1DownLocal` / `Row1DownRoot0` が全部これに
+畳まれ、`v0 = 0` の場合分けも消える（`mliftR` は閾値に `v0 - 1` を使わない）。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`MliftR` と `TowerExp` を仮定すれば。**
+今日の到達点の最終形: 持ち上げ側の核は**閾値の 1 段**だけ。 -/
+theorem TRIO_terminates_of_mliftR (h : L53.MliftR) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_liftTie (L53.liftTie_of_mliftR h) he
+
+/-- **無限展開列は無い**、`MliftR` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_mliftR (h : L53.MliftR) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_liftTie (L53.liftTie_of_mliftR h) he
+
+/-- **★★★★★ 核ちょうど 2 本の形**: 持ち上げは `MliftR`（閾値の 1 段）、
+節 2 は `GraftFromExp`（連結 = `WCat` / `WSnoc`）。どちらも既存の証明ずみ定理の
+**1 段の一般化**。 -/
+theorem TRIO_terminates_of_mliftR_graft (h : L53.MliftR) (hg : L53.GraftFromExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L53.towerOK_of_mliftR_graft h hg)
 
 /-- **★★★★ Trio sequences terminate, modulo `(WCONVEX)` and `TowerExp`.**
 `(WCONVEX)` is strictly weaker in shape than `(ROW1MONO)`: it may assume a
