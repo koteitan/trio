@@ -6489,13 +6489,19 @@ open Classical in
 `Lcone.gexp_cone_mir` の `0 < j0` を **`0 < d0` ＋ `0 < d1`** に置き換えたもの。 -/
 theorem gexp_cone_mir_zero {M : TrioSeq} {Lb d0 d1 n k q : ℕ}
     (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
-    (hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l)
-    (hd0pos : 0 < d0) (hd1pos : 0 < d1)
+    (hd1pos : 0 < d1)
     (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
     (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
     (hlp : le1 M 0 (0 + Lb)) :
     le1 (gexp M 0 Lb d0 d1 n) 0 (0 + (k * Lb + q)) ↔ le1 M 0 (0 + q) := by
   classical
+  -- ★ R2 の (v): `hup` と `hd0pos` は `hr0` ＋ `hd0e` から出る（前提 2 本を削除）
+  have hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l :=
+    fun l hl0 hl1 => hr0 l hl0 (by omega)
+  have hd0pos : 0 < d0 := by
+    have h := hr0 (0 + Lb) (by omega) (by omega)
+    rw [hd0e] at h
+    omega
   have hn : 0 < n := by omega
   have hXlen : (gexp M 0 Lb d0 d1 n).length = 0 + n * Lb := gexp_length hlen
   have hbnd : k * Lb + q < n * Lb := by
@@ -6572,8 +6578,7 @@ open Classical in
 /-- **★★★★★★ 塔の第 `k` ブロックの位置 `q` が根の錐に入る ⟺ `Q` の位置 `q` が入る。**
 ＝ R2 の (A)+(B)、H12 の §231。 -/
 theorem le1_mTower_block {M : TrioSeq} {d e n k q : ℕ} (hM2 : 2 ≤ M.length)
-    (hup : ∀ l, 0 < l → l ≤ 0 + M.dropLast.length → entry M 0 0 < entry M 0 l)
-    (hd0pos : 0 < d) (hd1pos : 0 < e)
+    (hd1pos : 0 < e)
     (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
     (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
     (hlp : le1 M 0 (0 + M.dropLast.length))
@@ -6585,7 +6590,7 @@ theorem le1_mTower_block {M : TrioSeq} {d e n k q : ℕ} (hM2 : 2 ≤ M.length)
   have hLb : 0 < M.dropLast.length := by rw [hdl]; omega
   have hgexp : gexp M 0 M.dropLast.length d e n = mTower M.dropLast d e n := by
     rw [gexp_zero_eq_mTower (by omega), hdl, ← List.dropLast_eq_take]
-  have hres := gexp_cone_mir_zero hlen hLb hk hq hup hd0pos hd1pos hd0e hr0 hlp
+  have hres := gexp_cone_mir_zero hlen hLb hk hq hd1pos hd0e hr0 hlp
   rw [hgexp, Nat.zero_add, Nat.zero_add] at hres
   rw [hres, List.dropLast_eq_take, le1_take (by omega) (by rw [hdl] at hq; omega)]
 
@@ -7122,6 +7127,59 @@ theorem block_getD {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length) :
 ⚠ **これは設計の見立てであって証明ではない。** 悪根の位置（ブロック `n-1` の根か、
 それとも `Q` の中のより浅い列か）は **`R` の末尾列が `R` の中で最浅かどうか**に依存し、
 R2 の (n4) はそれが **27.5〜30.3% で偽**だと測っている。⟹ **2 通りある。** -/
+
+/-! ## 96. R2 の (v) と (a2) を取り込む
+
+### 96.1 ✅ (v): `gexp_cone_mir_zero` / `le1_mTower_block` の前提を **2 本削除**（実施ずみ）
+
+R2 の導出をそのまま入れた（`hup` と `hd0pos` は `hr0` ＋ `hd0e` から出る）:
+
+    `hup l hl0 hl1` … `l ≤ 0 + Lb` かつ `|M| = Lb + 1` ⟹ `l < |M|` ⟹ **`hr0 l`**
+    `hd0pos`       … `hr0 (0+Lb)` ＋ `hd0e` ⟹ `entry M 0 0 < entry M 0 0 + d0` ⟹ **`0 < d0`**
+
+⟹ **`gexp_cone_mir_zero` は 8 前提 → 6 前提、`le1_mTower_block` も同じ。**
+
+### 96.2 ★ (a2): 「錐の外」の閉じた形は **`Lcone.le1_zero_iff` の否定そのもの**
+
+R2 の閉じた形（「錐の外 ⟺ 行 1 の親鎖上に『行 1 が根以下』の列がある」）は、
+**既存の `le1_zero_iff`（`Lcone:36`、緑）をそのまま否定した形**である。 -/
+
+open Classical in
+/-- **「錐の外」の閉じた形**（`Lcone.le1_zero_iff` の否定）。 -/
+theorem not_le1_zero_iff {Q : TrioSeq}
+    (hr : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {q : ℕ} (hq : q < Q.length) :
+    ¬ le1 Q 0 q ↔ ∃ y, Relation.ReflTransGen (nextrel0 Q) y q ∧ y ≠ 0 ∧
+      entry Q 1 y ≤ entry Q 1 0 := by
+  rw [le1_zero_iff hr hq]
+  constructor
+  · intro h
+    by_contra hc
+    refine h (fun y hy hy0 => ?_)
+    by_contra hlt
+    exact hc ⟨y, hy, hy0, by omega⟩
+  · rintro ⟨y, hy, hy0, hle⟩ hall
+    have := hall y hy hy0
+    omega
+
+/-! ### 96.3 ⟹ R2 の (G1)/(G2) は**証人の位置**で分けているだけ
+
+    **(G1)** 証人が **`q` 自身**（`ReflTransGen` は反射的なので常に候補）
+             ＝ `entry Q 1 q ≤ entry Q 1 0`
+    **(G2)** 証人が **`q` より真に手前**（＝ 途中のブロッカー）
+
+**⟹ `not_le1_zero_iff` の `∃ y` が両方を 1 本にまとめている。**
+**R2 の「G1 と G2 を分けずに 1 本の帰納で扱える形がある」はこれのことである。**
+
+⚠ R2 の実測「G2 が `|M|` とともに増える（0.0 / 5.0 / 9.2%）」は
+**証人が `q` 自身でない場合が増える**ということで、**`∃ y` の形なら場合分けが要らない。**
+
+### 96.4 ⚠ ただし B（F2b）には効きません
+
+F2b は **`srow = 2` ∧ 錐の**中** ∧ 行 2 が根以下**である。
+**「錐の外」の閉じた形は F2a 側の道具**であり、
+**R2 の (z5) では F2a は破れ 0（933,768 件）＝ すでに無料の側**である。
+⟹ **本丸（F2b）には別の道具が要る**（§93 のとおり）。 -/
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
