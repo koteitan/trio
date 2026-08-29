@@ -7673,6 +7673,72 @@ R2 の (a2) の実測（§R133）:
 ⚠ **これは `hblk`（§88.2）と同じ形の指摘です。今日 2 回目。**
 **どちらも「反例が成立するには箱の端でしか出ない特徴が要る」という形です。** -/
 
+/-! ## 104. ★★★★★ 「土台に親を持つ列を足す」: **`j = 0` は特別。`j ≥ 1` は前半に触らない**
+
+team-lead の問い「`parent_ge_of_inner` の前提（`T` が自分の中に親を持つ）が
+`j ≥ 1` でも成り立つか」に答える。**答えは「`j ≥ 1` では成り立つ。`j = 0` では成り立たない」。**
+
+### 104.1 ⟹ 分け方が違います
+
+§94 の段で足す列は `(block n)[j]`。**土台と足す列を `A ++ T` に分けるとき:**
+
+    **`j = 0`** … `T = [(block n)[0]]` は **1 列**。1 列は自分の中に親を持てない
+                 （`not_hasParentInBlock_of_short`、§78）
+                 ⟹ **`T` を「ブロック `n-1` ＋ その列」に取り直すしかない**（§101 でそうした）
+                 ⟹ **`j = 0` は本当に特別。ブロック境界をまたぐ**
+    **`j ≥ 1`** … **`T = (block n).take (j+1)`** が取れる。**`|T| = j+1 ≥ 2`**
+                 ⟹ `Q[j]` が `Q` の中に親を持てば、その像が `T` の中にある
+                 ⟹ **`L53.HasParentInBlock T` が成り立つ**
+
+> **⟹ `j ≥ 1` では `A = mTower Q d e n`（ブロック `n` より前**全部**）が土台に取れて、
+> `L53.comm_of_hasParentInBlock` が「前半は触られない」を与える。**
+> **⟹ `oper_eq_gexp_gen` を持ち出す必要はありません。** -/
+
+open Classical in
+/-- **★★★★★ `j ≥ 1`: 展開はブロック `n` の接頭辞の中だけで起きる。** -/
+theorem oper_tower_blockPrefix {Q : TrioSeq} {d e n j m : ℕ} (hj : 1 ≤ j)
+    (hlen : j + 1 ≤ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length)
+    (hblk : L53.HasParentInBlock
+      ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))) :
+    (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))⟦m⟧
+      = mTower Q d e n
+        ++ ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))⟦m⟧ := by
+  have hTlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
+    rw [List.length_take]; omega
+  have hTne : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ≠ [] := by
+    intro hc
+    have hl : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = 0 := by
+      rw [hc]; rfl
+    omega
+  have hT2 : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 ≠ 0 := by
+    rw [hTlen]; omega
+  exact L53.comm_of_hasParentInBlock m hTne hT2 (hz_of_hasParentInBlock hblk) hblk
+
+/-! ### 104.2 ⟹ 3 分割（`j` と `Q[j]` の性質で決まる）
+
+    **`j = 0`**                       … 悪根は**前のブロック**（§101。`≥ (n-1)*|Q|`）
+    **`j ≥ 1` ∧ `Q[j]` が `Q` の中に親を持つ** … **悪根はブロック `n` の接頭辞の中**（上）
+                                       ⟹ **前半 `n` ブロックは触られない**
+    **`j ≥ 1` ∧ `Q[j]` が `Q` の中で孤児**   … `T` に親が無い ⟹ 悪根は前のブロックへ
+                                       ⟹ **§102 `gexp_orphan_row1` の場面**
+                                         （行 1 が根以下なら**塔でも孤児 ⟹ 無料**）
+
+> **⟹ team-lead の「`j = 0` は特別ではない」は誤りでした。`j = 0` だけが
+> 「土台の中に自分のブロックの仲間が 1 つも無い」状態で、そこだけ境界をまたぎます。**
+
+### 104.3 ⟹ そして `j ≥ 1` の枝は既存の機械にそのまま乗ります
+
+`comm_of_hasParentInBlock` で前半が切り離せるので、`mem_of_oper_mem` で
+
+    `A ++ (block n).take (j+1) ∈ W u` ⟸ `∀ m ≥ 1, A ++ ((block n).take (j+1))⟦m⟧ ∈ W u`
+
+となり、右辺は**ブロック `n` の接頭辞の導出に沿って降りる**。
+⟹ **§90 `catBlock_of_escape_head`（`c = d*n`）がそのまま当たる**形である。
+**⟹ 底は「決まった 1 列」、残りは孤児の枝。**
+
+⚠ **これは形の整理であって、残差が減ったわけではありません。**
+**`j = 0`（境界）と、`j ≥ 1` の孤児でない枝の底が、依然として残差です。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
