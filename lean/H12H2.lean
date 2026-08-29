@@ -970,5 +970,277 @@ theorem window_row0_parent {Q : TrioSeq} {d e n j : ℕ}
     exact hnr
   exact window_row0_sameBlock hQ0 hj hj1 h0
 
+
+/-! ## 16. **行 1 の接頭辞移送と窓** —— 行 2 版（§7・§258.1）の写し
+
+`nextrel1` は `le0` を使うので **`Wset.le0_take`（`Wset.lean:851`）**と
+**`L105Cap.le0_le'`（`:931`）**を使う。形は行 2 版と同じ。 -/
+
+/-- `nextrel1` は接頭辞と行き来する。 -/
+theorem nextrel1_take_iff {M : TrioSeq} {l a b : ℕ} (hl : l ≤ M.length) (hb : b < l) :
+    nextrel1 (M.take l) a b ↔ nextrel1 M a b := by
+  have hlen : (M.take l).length = l := by rw [List.length_take]; omega
+  constructor
+  · rintro ⟨hal, hbl, hab, hent, hle, hmin⟩
+    rw [hlen] at hal hbl
+    refine ⟨by omega, by omega, hab, ?_, (le0_take hl hb).mp hle, ?_⟩
+    · rwa [entry_take (show a < l by omega), entry_take hb] at hent
+    · intro j hj
+      have hjb : j ≤ b := le0_le' hj.2
+      have hres := hmin j ⟨hj.1, (le0_take hl hb).mpr hj.2⟩
+      rwa [entry_take hb, entry_take (show j < l by omega)] at hres
+  · rintro ⟨hal, hbl, hab, hent, hle, hmin⟩
+    refine ⟨by rw [hlen]; omega, by rw [hlen]; omega, hab, ?_,
+      (le0_take hl hb).mpr hle, ?_⟩
+    · rw [entry_take (show a < l by omega), entry_take hb]; exact hent
+    · intro j hj
+      have hjl : j < l := by
+        have h1 := (le0_take hl hb).mp hj.2
+        have h2 : j ≤ b := le0_le' h1
+        omega
+      have hres := hmin j ⟨hj.1, (le0_take hl hb).mp hj.2⟩
+      rw [entry_take hb, entry_take hjl]
+      exact hres
+
+/-- ⟹ 行 1 の `hasParent` も接頭辞と行き来する。 -/
+theorem hasParent_one_take {M : TrioSeq} {l p : ℕ} (hl : l ≤ M.length) (hp : p < l) :
+    hasParent (M.take l) 1 p ↔ hasParent M 1 p := by
+  have hnR : ∀ (N : TrioSeq) (j : ℕ), nextR N 1 j p ↔ nextrel1 N j p := by
+    intro N j; unfold nextR; rw [if_neg (by omega), if_pos rfl]
+  unfold hasParent
+  constructor
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, (hnR M j0).mpr ((nextrel1_take_iff hl hp).mp ((hnR _ j0).mp hj0)),
+      fun y hy => hu y ((hnR _ y).mpr ((nextrel1_take_iff hl hp).mpr ((hnR M y).mp hy)))⟩
+  · rintro ⟨j0, hj0, hu⟩
+    exact ⟨j0, (hnR _ j0).mpr ((nextrel1_take_iff hl hp).mpr ((hnR M j0).mp hj0)),
+      fun y hy => hu y ((hnR M y).mpr ((nextrel1_take_iff hl hp).mp ((hnR _ y).mp hy)))⟩
+
+/-- ⟹ 行 1 の `parent` も接頭辞と一致する。 -/
+theorem parent_one_take {M : TrioSeq} {l p : ℕ} (hl : l ≤ M.length) (hp : p < l)
+    (h : hasParent M 1 p) :
+    parent (M.take l) 1 p = parent M 1 p := by
+  have hnR : ∀ (N : TrioSeq) (j : ℕ), nextR N 1 j p ↔ nextrel1 N j p := by
+    intro N j; unfold nextR; rw [if_neg (by omega), if_pos rfl]
+  have ht : hasParent (M.take l) 1 p := (hasParent_one_take hl hp).mpr h
+  refine ht.unique (parent_nextR ht) ?_
+  exact (hnR _ _).mpr ((nextrel1_take_iff hl hp).mpr ((hnR M _).mp (parent_nextR h)))
+
+open Classical in
+/-- ★ **錐の外の `srow = 1` の列でも、親が居るなら窓は `< |Q|`。** -/
+theorem window_of_outOfCone_one {M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (hpar0 : hasParent (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 1
+      (n * M.dropLast.length + j)) :
+    n * M.dropLast.length
+      ≤ parent (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 1
+        (n * M.dropLast.length + j) := by
+  have hTlen : (mTower M.dropLast d e n).length = n * M.dropLast.length :=
+    mTower_length M.dropLast d e n
+  rw [mTower_append_take] at hpar0 ⊢
+  have hle : n * M.dropLast.length + (j + 1)
+      ≤ (mTower M.dropLast d e (n + 1)).length := by
+    rw [mTower_length, Nat.succ_mul]; omega
+  have hlt : n * M.dropLast.length + j < n * M.dropLast.length + (j + 1) := by omega
+  have hfull : hasParent (mTower M.dropLast d e (n + 1)) 1
+      (n * M.dropLast.length + j) := (hasParent_one_take hle hlt).mp hpar0
+  rw [parent_one_take hle hlt hfull]
+  have := outOfCone_parent_one_sameBlock (n' := n) hM2 hd1pos hd0e hr0 hlp hj hj1 hout
+    (by rwa [hTlen])
+  rwa [hTlen] at this
+
+
+/-! ## 17. ★★★★★★★★ **(h) 3 行を 1 本に** —— `hstep` の窓の前提から `le1` が落ちる -/
+
+/-- 塔の第 `n` ブロックの `j` 番目の列の行 2 は `Q` のそれと同じ。 -/
+theorem entry2_block (Q : TrioSeq) (d e n j : ℕ) (_hj : j < Q.length) :
+    entry (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+      (n * Q.length + j) = entry Q 2 j := by
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen],
+    entry_append_right, entry_take (by omega), entry2_Lift1, entry2_shiftr01]
+
+open Classical in
+/-- 行 2 版（素の `2` の形）。 -/
+theorem window_of_outOfCone_two {M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (hpar0 : hasParent (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 2
+      (n * M.dropLast.length + j)) :
+    n * M.dropLast.length
+      ≤ parent (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 2
+        (n * M.dropLast.length + j) := by
+  have hTlen : (mTower M.dropLast d e n).length = n * M.dropLast.length :=
+    mTower_length M.dropLast d e n
+  rw [mTower_append_take] at hpar0 ⊢
+  have hle : n * M.dropLast.length + (j + 1)
+      ≤ (mTower M.dropLast d e (n + 1)).length := by
+    rw [mTower_length, Nat.succ_mul]; omega
+  have hlt : n * M.dropLast.length + j < n * M.dropLast.length + (j + 1) := by omega
+  have hfull : hasParent (mTower M.dropLast d e (n + 1)) 2
+      (n * M.dropLast.length + j) := (hasParent_two_take hle hlt).mp hpar0
+  rw [parent_two_take hle hlt hfull]
+  have := outOfCone_parent_sameBlock (n' := n) hM2 hd1pos hd0e hr0 hlp hj hj1 hout
+    (by rwa [hTlen])
+  rwa [hTlen] at this
+
+open Classical in
+/-- ★★★★★★★★ **錐の外の列は、`srow` が何であっても窓が `< |Q|`。**
+⟹ `hstep` の窓の前提に **`le1 Q 0 j` は要らない**。 -/
+theorem window_of_outOfCone_all {M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (hpar0 : hasParent (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (srow (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (n * M.dropLast.length + j))
+      (n * M.dropLast.length + j)) :
+    n * M.dropLast.length
+      ≤ parent (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (srow (mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (n * M.dropLast.length + j))
+        (n * M.dropLast.length + j) := by
+  -- `Q = M.dropLast` の上の `hr0`
+  have hQ0 : ∀ l, 0 < l → l < M.dropLast.length →
+      entry M.dropLast 0 0 < entry M.dropLast 0 l := by
+    intro l hl0 hl1
+    have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+    rw [hdl] at hl1
+    rw [List.dropLast_eq_take, entry_take (show (0 : ℕ) < M.length - 1 by omega),
+      entry_take hl1]
+    exact hr0 l hl0 (by omega)
+  by_cases h2 : 0 < entry (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 2
+      (n * M.dropLast.length + j)
+  · have hs : srow (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (n * M.dropLast.length + j) = 2 := by unfold srow; rw [if_pos h2]
+    rw [hs] at hpar0 ⊢
+    exact window_of_outOfCone_two hM2 hd1pos hd0e hr0 hlp hj hj1 hout hpar0
+  · by_cases h1 : 0 < entry (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 1
+        (n * M.dropLast.length + j)
+    · have hs : srow (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (n * M.dropLast.length + j) = 1 := by
+        unfold srow; rw [if_neg h2, if_pos h1]
+      rw [hs] at hpar0 ⊢
+      exact window_of_outOfCone_one hM2 hd1pos hd0e hr0 hlp hj hj1 hout hpar0
+    · have hs : srow (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (n * M.dropLast.length + j) = 0 := by
+        unfold srow; rw [if_neg h2, if_neg h1]
+      rw [hs] at hpar0 ⊢
+      exact window_row0_parent hQ0 hj hj1 hpar0
+
+
+/-! ## 18. ★★★★★★★★ **核の最終形**: `hstep` から `le1` が消える
+
+    錐の中 … L3 の `block_blockParent_all_cone` ＋ `snocStep_parent_sameBlock`
+    錐の外 … §17 の `window_of_outOfCone_all`
+
+⟹ **`hstep` の窓の前提は `0 < j → 窓 < |Q|` の 1 本**（`le1 Q 0 j` は不要）。 -/
+
+open Classical in
+/-- ★★★★★★★★ **核の最終形**: `hstep` の窓の前提から **`le1` が消える**。 -/
+theorem mTowerClosed_of_snocStepNoCone {u : ℕ} {M : TrioSeq} {d e : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0M : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hr0 : ∀ l, 0 < l → l < M.dropLast.length →
+      entry M.dropLast 0 0 < entry M.dropLast 0 l)
+    (hz0 : entry M.dropLast 2 0 = 0)
+    (hstep : ∀ (n j : ℕ), j < M.dropLast.length →
+      (0 < j → n * M.dropLast.length ≤
+        parent (mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (srow (mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+            (mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+          (mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length) →
+      mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j ∈ W u →
+      mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, mTower M.dropLast d e n ∈ W u := by
+  refine mTowerClosed_of_snocStepPar ?_
+  intro n j hj hpar0 hC
+  set B := Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n) with hB
+  have hBlen : B.length = M.dropLast.length := by
+    rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower M.dropLast d e n).length = n * M.dropLast.length :=
+    mTower_length M.dropLast d e n
+  have hClen : (mTower M.dropLast d e n ++ B.take j).length
+      = n * M.dropLast.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hC1len : (mTower M.dropLast d e n ++ B.take (j + 1)).length
+      = n * M.dropLast.length + (j + 1) := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hsrow : srow (mTower M.dropLast d e n ++ B.take (j + 1))
+      (n * M.dropLast.length + j) = srow (B.take (j + 1)) j := by
+    unfold srow
+    rw [show n * M.dropLast.length + j = (mTower M.dropLast d e n).length + j from by
+        rw [hTlen],
+      entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
+  refine hstep n j hj (fun hj1 => ?_) hC
+  by_cases hcone : le1 M.dropLast 0 j
+  · -- ★ 錐の中: L3 の既存経路
+    have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
+      block_blockParent_all_cone hj hj1 hr0 hcone
+        (fun hpos => h2_cone hz0 j hj1 hj hpos hcone)
+    have hpar : hasParent (mTower M.dropLast d e n ++ B.take (j + 1))
+        (srow (B.take (j + 1)) j)
+        ((mTower M.dropLast d e n ++ B.take (j + 1)).length - 1) := by
+      rw [hC1len, show n * M.dropLast.length + (j + 1) - 1
+          = (mTower M.dropLast d e n).length + j from by rw [hTlen]; omega]
+      exact hasParent_append_right_of _ _ hloc
+    have hres := snocStep_parent_sameBlock (d := d) (e := e) (n := n)
+      (i := srow (B.take (j + 1)) j) hj hloc hpar
+    rw [hC1len, show n * M.dropLast.length + (j + 1) - 1
+      = n * M.dropLast.length + j from by omega] at hres
+    rw [hClen, hsrow]
+    exact hres
+  · -- ★ 錐の外: §17
+    have hjM : j < M.length - 1 := by
+      rw [List.length_dropLast] at hj; omega
+    have hout : ¬ le1 M 0 (0 + j) := by
+      rw [Nat.zero_add]
+      intro hc
+      exact hcone (by
+        rw [List.dropLast_eq_take]
+        exact (le1_take (by omega) (by omega)).mpr hc)
+    rw [hClen] at hpar0 ⊢
+    rcases hpar0 with hp | hE
+    · exact window_of_outOfCone_all hM2 hd1pos hd0e hr0M hlp hj hj1 hout hp
+    · exfalso
+      have : (mTower M.dropLast d e n ++ B.take j).length = 0 := by rw [hE]; rfl
+      rw [hClen] at this
+      omega
+
 end H12H2
 end TRIO

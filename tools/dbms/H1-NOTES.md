@@ -6119,3 +6119,53 @@ L3 も §139.1 に「§137 の 5 つの前提は場合分けにすれば要り�
 ⟹ **「前のブロック 0」は空虚ではない。**
 ⚠ `srow = 0` は**必ず親を持つ**（親なし 0 件）。`hasParentInBlock_of_srow_zero`
 （`L105Cap.lean:6002`）の「`srow = 0` の列は必ず段内に親を持つ」と整合。
+
+## §260. ★★★★★★★★ **核の最終形（緑）: `hstep` から `le1 Q 0 j` が消えた**
+
+§257–§259 の 3 行を 1 本にまとめた。
+
+### §260.1 行 1 の接頭辞移送（緑、行 2 版の写し）
+
+    nextrel1_take_iff / hasParent_one_take / parent_one_take
+    （`Wset.le0_take`（`:851`）と `L105Cap.le0_le'`（`:931`）を使う）
+
+### §260.2 ★ 錐の外は `srow` によらず窓が `< |Q|`（緑）
+
+    window_of_outOfCone_two  … `srow = 2`（§258.1 の素の形）
+    window_of_outOfCone_one  … `srow = 1`
+    window_row0_parent       … `srow = 0`（§259。`hout` すら要らない）
+    **window_of_outOfCone_all** … 上の 3 つを `srow` で場合分けして 1 本に
+
+### §260.3 ★★ 核の最終形（緑、`sorry` 0）
+
+    mTowerClosed_of_snocStepNoCone :
+      前提 `hM2`, `hd1pos`, `hd0e`, `hr0M`, `hlp`, `hr0`, `hz0`
+      核  `hstep : ∀ n j, j < |Q| →
+             (**0 < j → 窓 < |Q|**) →          ← **`le1 Q 0 j` が無い**
+             塔 ++ B.take j ∈ W u → 塔 ++ B.take (j+1) ∈ W u`
+      ⟹ `∀ n, mTower Q d e n ∈ W u`
+
+証明は 2 枝だけ:
+
+    錐の中 … L3 の `block_blockParent_all_cone` ＋ `snocStep_parent_sameBlock`（既存）
+    錐の外 … §260.2 の `window_of_outOfCone_all`（新）
+
+> ⟹ **L3 の (C1)/(C2) の場合分けは、核の前提からは消えた。**
+> `hstep` は「親があるなら窓は自分のブロックの中」という 1 つの主張になった。
+
+### §260.4 ⚠ 残っているもの（正直に）
+
+    (c) **`j = 0`**（ブロックの根）… `hstep` は `0 < j` でしか窓をもらえない。
+        根の列は `hstep` が無条件に処理しないといけない。**未着手**
+    (d) **`hstep` 本体（§138 の測度）** … **L3 の担当。私は触っていない**
+    ⚠ **`hstep` はまだ通っていない。** 通ったのは「前提の形」だけ。
+
+⚠ **前提の由来**（消費側が供給できるか）:
+
+    `hM2`, `hr0M`, `hlp`, `hd0e`, `hd1pos` … §255 で `hpM` ＋ `hr0` から出ると証明ずみ
+    `hr0`（`M.dropLast` 上）… `hr0M` から出る（`window_of_outOfCone_all` の中で証明ずみ）
+    `hz0` … §251 で `zle1 R` から出ると証明ずみ
+
+⟹ **前提はすべて消費側が持っている。**
+
+**Lean**: `lean/H12H2.lean`（緑、`sorry` 0）。
