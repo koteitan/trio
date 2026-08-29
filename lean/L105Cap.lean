@@ -8418,6 +8418,105 @@ team-lead の警告「`gexp_orphan_row1` は `hd1pos : 0 < d1` を持ってい�
 > **⟹ §113 の 2 本（`(T1)` 底の snoc ／ `(T2)` 孤児の枝）のうち、
 > `(T2)` は §102 が使えないので、`e = 0` 版を作るところから。** -/
 
+/-! ## 115. ★★★★★★★ **`hd1pos` は落とせます**: §107 を `hlp` だけで作り直す
+
+R2 の §R138 (3)（「`e = 0` も含めて 100% 閉じる」）に機構が付いた。
+**§107 が `hd1pos` を使っていたのは `gexp_outer_anc_row1`（§99 ← §98 ← §84）経由だけ**で、
+**そこは `hlp`（宿主の末尾列が `M` の錐の中）＋ `Gtrans.gexp_chain_inversion` で置き換わる。**
+
+    `c` がブロック `k` の外 ⟹ `gexp_chain_inversion` で `c = (k', q')`、`k' < k`、
+      **`RTG (nextrel0 M) (0+q') (0+Lb)`**（`M` の**末尾列**への鎖）
+    **`hlp` ＋ `Lcone.le1_zero_iff`** ⟹ **`q' ≠ 0` なら `entry M 1 0 < entry M 1 (0+q')`**
+    `Lift1` は行 1 を減らさない ⟹ **`entry T 1 c ≥ entry M 1 0`**（`q' = 0` の根も同じ）
+
+**⟹ `d1` の値をまったく使わない。** -/
+
+open Classical in
+theorem nextrel1_gexp_no_enter_out' {M : TrioSeq} {Lb d0 d1 n k q c : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb))
+    (hout : ¬ le1 M 0 (0 + q))
+    (h : nextrel1 (gexp M 0 Lb d0 d1 n) c (0 + (k * Lb + q))) :
+    k * Lb ≤ c := by
+  by_contra hc
+  have hn : 0 < n := by omega
+  have hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l :=
+    fun l hl0 hl1 => hr0 l hl0 (by omega)
+  have hXlen : (gexp M 0 Lb d0 d1 n).length = 0 + n * Lb := gexp_length hlen
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  -- 目標の行 1（錐の外なのでリフト無し）
+  have hb1 : entry (gexp M 0 Lb d0 d1 n) 1 (0 + (k * Lb + q)) = entry M 1 (0 + q) := by
+    rw [gexp_entry1_mir hlen hk hq, if_neg hout]
+    omega
+  -- ブロッカー
+  obtain ⟨y, hy, hy0, hyle⟩ := (not_le1_zero_iff hr0 (show 0 + q < M.length by omega)).mp hout
+  obtain ⟨y', hy'⟩ : ∃ y', y = 0 + y' := ⟨y, (Nat.zero_add y).symm⟩
+  subst hy'
+  have hyq : 0 + y' ≤ 0 + q := nextrel0_rtrancl_index_le hy
+  have hy'lt : y' < Lb := by omega
+  have hmir : Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n))
+      (0 + (k * Lb + y')) (0 + (k * Lb + q)) :=
+    gexp_rtg0_mir hlen hk hy q rfl hq
+  have hle0 : le0 (gexp M 0 Lb d0 d1 n) (0 + (k * Lb + y')) (0 + (k * Lb + q)) :=
+    ⟨by rw [hXlen]; omega, by rw [hXlen]; omega, hmir⟩
+  have houty : ¬ le1 M 0 (0 + y') := by
+    intro hcy
+    have := le1_entry1_lt hcy (show (0 : ℕ) ≠ 0 + y' from by omega)
+    omega
+  have hy1 : entry (gexp M 0 Lb d0 d1 n) 1 (0 + (k * Lb + y')) = entry M 1 (0 + y') := by
+    rw [gexp_entry1_mir hlen hk hy'lt, if_neg houty]
+    omega
+  have hmin := h.2.2.2.2.2 (0 + (k * Lb + y')) ⟨by omega, hle0⟩
+  rw [hb1, hy1] at hmin
+  have hlt := h.2.2.2.1
+  rw [hb1] at hlt
+  -- ★ `c` の行 1 が `entry M 1 0` 以上（`hd1pos` を使わない）
+  obtain ⟨k', q', hk'le, hq'lt, hxe, hcase⟩ :=
+    gexp_chain_inversion hlen hk hq hup hd0e c h.2.2.2.2.1.2.2 (Nat.zero_le c)
+  have hk'lt : k' < k := by
+    by_contra hcon
+    have hge : k * Lb ≤ k' * Lb := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have hMlast : Relation.ReflTransGen (nextrel0 M) (0 + q') (0 + Lb) := by
+    rcases hcase with ⟨he, -⟩ | ⟨-, hM⟩
+    · omega
+    · exact hM
+  have hcge : entry M 1 0 ≤ entry (gexp M 0 Lb d0 d1 n) 1 c := by
+    subst hxe
+    rw [gexp_entry1_mir hlen (by omega) hq'lt]
+    rcases Nat.eq_zero_or_pos q' with rfl | hq'pos
+    · rw [if_pos (le1_refl (show (0 : ℕ) < M.length from by omega))]
+      have he0 : entry M 1 (0 + 0) = entry M 1 0 := rfl
+      omega
+    · have hall := (le1_zero_iff hr0 (show 0 + Lb < M.length from by omega)).mp hlp
+      have := hall (0 + q') hMlast (by omega)
+      split_ifs <;> omega
+  omega
+
+/-! ### 115.1 ⟹ 何が変わったか
+
+    §107（旧） … `hd1pos` を要求。`gexp_outer_anc_row1`（§99 ← §98 ← §84）経由
+    **§115（新） … `hd1pos` 不要。`hlp` ＋ `gexp_chain_inversion` ＋ `le1_zero_iff`**
+
+**⟹ `e = 0`（`(TOW)`）でも錐の外の壁が立ちます。**
+**⟹ §114 で「死ぬ」と判定した 4 本のうち、少なくとも §107 は生き返りました。**
+
+⚠ **§108（鎖の反復）はまだ `gexp_cone_mir_zero`（§84、`hd1pos` 必須）を
+`houtc` の導出に使っています。そこは別途。**
+**ただし塔の**最後の**ブロックなら `le1_append_right` ＋ `le1_block`（どちらも `hd1pos` 不要）で
+置き換えられるはずです。**
+
+⚠ **R2 の「内部の列 `q < |Q|-1` は 7.05% 出る」との整合**: R2 の反例
+`Q=(0,1,0)(1,0,0)(1,1,0)(1,0,0)`, `d=2, e=0` は **`hlp` を満たしません**
+（`M` の末尾列の行 0 祖先 index 3 の行 1 が 0 ≤ 1 ＝ ブロッカー ⟹ `¬ le1 M 0 Lb`）。
+**⟹ R2 の測定は `hlp` を課していない母集団。上の定理と矛盾しません。**
+**⟹ そして `hlp` は塔の場面では `L53.tower2_root_spec` が与えます（§84 の前提）。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
