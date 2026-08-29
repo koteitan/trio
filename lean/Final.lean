@@ -10,6 +10,7 @@ import Gamma
 import Lind
 import Wtower2
 import L53Subst
+import L105Cap
 
 namespace TRIO
 
@@ -166,6 +167,57 @@ theorem TRIO_terminates_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
 theorem no_infinite_expansion_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_towerOK (L53.towerOK_of_liftTie hlt he)
+
+/-! ### ★★★★★ 課題 L115: 持ち上げ核の段は **自己段だけ**で足りる
+
+`L53.towerOK2_of_clause3`（`L53Subst.lean:2432`）が `L53.liftStage_cons`（`:2344`）を
+呼ぶのは **1 か所だけ**で、そこでの段は塔の帰納 `key` が自己段で回っているため
+**常に `2v+z`**（`ih : ((0,v,z) :: graft R …) ∈ W (2*v+z)`）。
+⟹ `L53.LiftTie` の `∀ m` は使われていない。
+
+    `L105.LiftTieSelf`（`L105Cap.lean:1335`）… 段を `m = 2v+z` に固定した `LiftTie`
+    `L105.liftTieSelf_of_liftTie`（`:1340`）  … `LiftTie ⟹ LiftTieSelf`
+    `L105.towerOK_of_liftTieSelf`（`:1396`）  … `LiftTieSelf ＋ TowerExp ⟹ TowerOK`
+
+`X ∈ W m` から `X ∈ W (lev X 0)` は出ない（`Wset.W_mono` は逆向き）ので、
+**逆は言えない ＝ 真の弱化**。しかも `Wstar` の元はすべて `Wself`
+（`L53.Wstar_iff_Wself`、`L53Subst.lean:3001`）なので、**狙う場所とちょうど一致**する。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`LiftTieSelf` と `TowerExp` を仮定すれば。**
+`TRIO_terminates_of_liftTie` より**真に弱い**仮定（段が自己段に固定）。 -/
+theorem TRIO_terminates_of_liftTieSelf (hlt : L105.LiftTieSelf)
+    (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_liftTieSelf hlt he)
+
+/-- **無限展開列は無い**、`LiftTieSelf` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_liftTieSelf (hlt : L105.LiftTieSelf)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_liftTieSelf hlt he)
+
+/-- 位置づけ: `LiftTie` 経路はこれを経由して再現できる。 -/
+theorem TRIO_terminates_of_liftTie' (hlt : L53.LiftTie) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_liftTieSelf (L105.liftTieSelf_of_liftTie hlt) he
+
+/-! ### ⚠ 課題 L112/L113 の判定: **「仮定 1 本」は見かけだった**
+
+`L105.coreCap_iff_graftAll`（`L105Cap.lean` §25、緑）:
+
+    **`CoreCap` ⟺ `Wset.GraftAll`**（`Wset.lean:4085`）
+
+`Lind.graft_singleton_eq_cap`（`Lind.lean:169`）が `graft M [(0,b,c)] = cap M b c` を
+与え、`GraftAll` の装備仮定は `Gamma.CtxOK`（`Gamma.lean:153`）の定義そのものなので、
+**`CoreCap` は `GraftAll` の「`y` が 1 列」の場合そのもの**である。
+
+そして `TRIO_terminates_of_cap` の鎖の中で `TowerExp` に相当する債務は
+**`Wset.liftTowerExp2_of_graftAll`（`Wset.lean:4211`）**として `GraftAll` から出ている
+（`Lcone.Wstar2s_closed_of_graftAll`（`Lcone.lean:687`）が
+`Wset.Wstar2s_closed`（`Wset.lean:4347`）に渡す 3 本のうちの 1 本）。
+
+⟹ **`CoreCap` は `TowerExp` を避けているのではなく、内側に畳んでいる。**
+「仮定 1 本」は本数の指標にすぎず、`CoreCap` ＝ `CoreSingleton` ＝ `GraftAll` は
+**同じ命題の 3 つの名前**である。 -/
 
 /-- **核が「より弱い方」へ動いた履歴**（課題 L83）。`Row1DownLocal` は
 `L53.row1DownLocal_of_row1mono` で `Row1Mono` から出るので、真に弱い。 -/
