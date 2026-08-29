@@ -1009,5 +1009,58 @@ theorem split_lastMin : ∀ {M : TrioSeq}, M ≠ [] →
                 exact hq
 
 
+/-! ## 課題 L62-b: `mem_W_of_bound_aux`（`Pair/Wset.lean:1489`）の 3 行版
+
+2 行の道筋:
+
+    1. `split_lastMin` で `M = A ++ (p0 :: R)`（`rsum` つき、`R` の全列が `p0` より深い）  ✓ **移植ずみ**
+    2. 正規化 `R.map (q => (q.1 - p0.1, q.2))` が `argOK`                                ✓ 下で 3 行版
+    3. **`mem_Wstar`**: `(0, p0.2) :: 正規化 R ∈ W p0.2`                                 ← **ここが本体**
+    4. `tree_shift` ＋ `W_shift` で押し戻す                                              ✓ 下で 3 行版
+    5. `W_mono` で `W u` へ、最後に `W_add`（`rsum` は 1 で無料）                        ✓ 既存
+
+⟹ **3 行で足りないのは 3 の `Wstar` だけ。** 1・2・4・5 は道具が揃っている。 -/
+
+/-- **`tree_shift` の 3 行版**: 根を `(0, v, z)` に正規化して行 0 をずらすと元に戻る。 -/
+theorem tree_shift3 {p0 : ℕ × ℕ × ℕ} {R : TrioSeq} (h : ∀ q ∈ R, p0.1 ≤ q.1) :
+    shiftr01 p0.1 0
+        (((0, p0.2.1, p0.2.2) : ℕ × ℕ × ℕ) ::
+          R.map fun q => ((q.1 - p0.1, q.2.1, q.2.2) : ℕ × ℕ × ℕ))
+      = p0 :: R := by
+  unfold shiftr01
+  simp only [List.map_cons, List.map_map]
+  congr 1
+  · simp
+  · conv_rhs => rw [← List.map_id R]
+    refine List.map_congr_left ?_
+    intro q hq
+    have h9 := h q hq
+    simp only [Function.comp_apply, id_eq]
+    have hq1 : q.1 - p0.1 + p0.1 = q.1 := by omega
+    rw [hq1]
+    simp
+
+/-- **正規化した引数ブロックは `argOK`**（3 行版）。 -/
+theorem argOK_normalize {p0 : ℕ × ℕ × ℕ} {R : TrioSeq} (h : ∀ q ∈ R, p0.1 < q.1) :
+    argOK (R.map fun q => ((q.1 - p0.1, q.2.1, q.2.2) : ℕ × ℕ × ℕ)) := by
+  intro q hq
+  rw [List.mem_map] at hq
+  obtain ⟨r, hr, hrq⟩ := hq
+  have h9 := h r hr
+  rw [← hrq]
+  simp only []
+  omega
+
+/-- **`Wstar` の 3 行版**（課題 L62-c）。根は `(0, v, z)` の 2 パラメータ。
+
+⚠ `L10Tie.lean:35` の警告: `Wstar` は `∀ v z` で `v` を**全部**走るので、
+`v` が `R` の行 1 の値とぶつかった瞬間にタイができる
+（反例 `M = [(0,2,1),(4,1,0)]` は `TieFree` だが `(0,2,0) :: (行 0 を +1 した M)` で破れる）。
+⟹ **`TieFree` の言語では `Wstar` を扱えない**。ただしこれは `TieFree` の限界であって、
+`Wstar` 自体が偽という意味ではない。 -/
+def Wstar3 : Set TrioSeq :=
+  {R | argOK R → ∀ v z : ℕ, (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z)}
+
+
 end L53
 end TRIO
