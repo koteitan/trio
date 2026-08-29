@@ -204,5 +204,42 @@ theorem mTowerClosedRow2_of_clause2'
     MTowerClosedRow2 :=
   mTowerClosedRow2_of_clause2 hcl2 hone_holds
 
+/-! ## `d = 0` の枝は無料（`e = 0` 側の退化）
+
+`mTower Q 0 0 n` は `Q` の**同一コピー** `n` 個の連結なので、
+`Wset.W_flatMap_copies`（`:2552`、既存）がそのまま効く。
+（`d = 0` は塔の場面では起きない —— `d = entry R 0 (|R|-1)` で `argOK R` から `d >= 1` ——
+　が、`MTowerClosedRow2` は `∀ d` なので命題としては入る。） -/
+
+theorem shiftr01_zero_zero (Q : TrioSeq) : shiftr01 0 0 Q = Q := by
+  unfold shiftr01
+  refine List.ext_getElem (by simp) ?_
+  intro i h1 h2
+  simp
+
+theorem mTower_zero_zero (Q : TrioSeq) (n : ℕ) :
+    mTower Q 0 0 n = (List.range n).flatMap fun _ => Q := by
+  unfold mTower
+  refine List.flatMap_congr ?_
+  intro k _
+  simp only [Nat.zero_mul, Lift1_zero, shiftr01_zero_zero]
+
+/-- **★ `d = 0` の枝は無料**（同一コピーの連結）。 -/
+theorem mTower_d0_mem {u : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u)
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) (n : ℕ) :
+    mTower Q 0 0 n ∈ W u := by
+  rw [mTower_zero_zero]
+  refine W_flatMap_copies hQ ?_ n
+  intro p hp
+  obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hp
+  -- `Wtower2.shiftTowerClosedS_of_closed` と同じ書き換え
+  have hval : entry Q 0 j = Q[j].1 := by
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    simp
+  rcases Nat.eq_zero_or_pos j with rfl | hjpos
+  · exact le_of_eq hval
+  · exact le_of_lt (by rw [← hval]; exact hs j hjpos hj)
+
 end H12A2
 end TRIO
