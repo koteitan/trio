@@ -56,6 +56,8 @@ __all__ = ['wself2', 'wcert2', 'why2_detail', 'lev0', 'rsum']
 _MEMO = {}
 _C13_MAXLEN = 24      # (C13) を試す M の長さ上限（費用の打ち切り）
 _C13_MAXEXP = 90      # (C13) で見る展開の長さ上限（費用の打ち切り）
+TOW_ORACLE = False    # True にすると (TOW) `ShiftTowerClosed` を**神託**として使う
+                      # （まだ Lean で証明されていないので、既定は False）
 
 
 def _peel(M):
@@ -152,6 +154,43 @@ def _clause2_induction(M, N=6):
     return 'C13(%s)' % cs[1]
 
 
+def _towexp(M):
+    """(C14) **`(TOW)` を神託にした節 2**（`TOW_ORACLE = True` のときだけ）。
+
+    `srow(最後) = 1` のとき `d1 = 0`（`1 < i1` が偽）で行 0 だけ持ち上がる:
+
+        **M⟦n⟧ = M.take j0 ++ shTower(Q, d0, n)**,  Q := M[j0:j1]  （検算 35744/35744）
+
+    `(TOW)`（`ShiftTowerClosed`、`lean/Wtower2.lean:1763`）が `shTower Q d0 n ∈ W (lev Q 0)`
+    を与え、前置きとの連結は `W_add`。`rsum` は `shTower` の列が `Q` の列以上なので
+    **n に依らない** ⟹ `∀n` が一様に閉じる。
+
+    ⚠ `(TOW)` は**未証明**。これは「もし `(TOW)` があればどこまで伸びるか」の測定用。
+    """
+    if not TOW_ORACLE:
+        return None
+    j1 = len(M) - 1
+    if j1 < 1 or srow(M, j1) != 1 or not has_parent(M, j1):
+        return None
+    j0 = trio.parent([tuple(p) for p in M], 1, j1)
+    if j0 is None or j0 >= j1:
+        return None
+    P, Q = M[:j0], M[j0:j1]
+    u = lev0(M)
+    if lev0(Q) > u:
+        return None
+    if not all(Q[0][0] <= p[0] for p in Q):        # (TOW) の側条件（根が最浅）
+        return None
+    if wself2(Q) is None:
+        return None
+    if P:
+        if not all(Q[0][0] <= p[0] for p in P):    # rsum（n に依らない）
+            return None
+        if wself2(P) is None:
+            return None
+    return 'C14/TOW(j0=%d)' % j0
+
+
 def wself2(M, depth=0):
     """`M ∈ Wself` の証明書の名前、無ければ None。**分割を全部試して再帰**。"""
     M = tuple(tuple(p) for p in M)
@@ -168,6 +207,8 @@ def wself2(M, depth=0):
         r = _noliftexp(M)                # (C12) 節 2（持ち上げ無し）
     if r is None:
         r = _clause2_induction(M)        # (C13) 節 2 を n について帰納
+    if r is None:
+        r = _towexp(M)                   # (C14) (TOW) を神託にした節 2
     if r is None:
         u = lev0(M)                          # lev (A++B) 0 = lev A 0
         for k in range(1, len(M)):
