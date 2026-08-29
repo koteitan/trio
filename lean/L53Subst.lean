@@ -1575,5 +1575,60 @@ theorem tieSyn_holds : TieSyn := by
   omega
 
 
+/-! ## ★★★ 課題 L72-a: `v = 0` では `TieFree` は要らない —— 無タイ ＝ **窓条件**
+
+⚠ `Lift1_eq_mlift_of_tieFree` は `hv : 1 ≤ entry X 1 0` を要求する。
+`Wtower2.lean:100` の doc いわく「`TieFree` は `mlift` の閾値が `v0 - 1` なので
+**`v0 = 0` では原理的に届かない**」。
+
+ところが H11 の実測では `TowerOK` の `srow=2` の場面は **624 件すべてが `(v,z) = (0,0)`**、
+つまり **`v = 0`**。⟹ `TieFree` の道は実例に当たらない。
+
+★ しかし `v = 0` には**別の道が既にある**:
+
+```lean
+theorem liftStage_of_window (hX : X ∈ W m)
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)   -- 行 0 で狭義最浅
+    (hw : ∀ l, 0 < l → l < X.length → entry X 1 0 < entry X 1 l) : -- **行 1 で狭義最小**
+    Lift1 X d ∈ W (m + 2 * d)                                       -- `Wtower2.lean:128`
+```
+
+`X = (0,0,z) :: R` なら `entry X 1 0 = 0` なので `hw` は
+**「`R` の全列の行 1 が `≥ 1`」** ＝ **`∀ p ∈ R, p.2.1 ≠ 0` ＝ 無タイ条件そのもの**。
+`hr` は `argOK R` から出る。
+
+⟹ **`v = 0` では無タイ条件がそのまま窓条件になり、`liftStage_of_window` が
+核なしで使える。** `TieFree` も `mlift` も経由しない。 -/
+
+/-- 根 `(0,v,z)` は行 0 で狭義最浅（`argOK R` から）。 -/
+theorem root_row0_min {v z : ℕ} {R : TrioSeq} (hargOK : argOK R) :
+    ∀ l, 0 < l → l < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length →
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0
+        < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 l := by
+  intro l hl0 hl
+  simp only [List.length_cons] at hl
+  have hA0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0 = 0 := by simp [entry]
+  rw [hA0]
+  obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+  rw [entry_cons]
+  exact hargOK _ (entry_pair_mem (B := R) (by omega))
+
+/-- **★★★ `v = 0` では無タイだけで根リフトが通る**（課題 L72-a）。
+`TieFree` も `mlift` も経由しない。 -/
+theorem liftStage_of_noTie_zero {m d z : ℕ} {R : TrioSeq} (hargOK : argOK R)
+    (hne : ∀ p ∈ R, p.2.1 ≠ 0)
+    (hX : (((0, 0, z) : ℕ × ℕ × ℕ) :: R) ∈ W m) :
+    Lift1 (((0, 0, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (m + 2 * d) := by
+  refine liftStage_of_window hX (root_row0_min hargOK) ?_
+  intro l hl0 hl
+  simp only [List.length_cons] at hl
+  have hA1 : entry (((0, 0, z) : ℕ × ℕ × ℕ) :: R) 1 0 = 0 := by simp [entry]
+  rw [hA1]
+  obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+  rw [entry_cons]
+  have h8 := hne _ (entry_pair_mem (B := R) (show l' < R.length by omega))
+  simpa [entry] using Nat.pos_of_ne_zero (by simpa [entry] using h8)
+
+
 end L53
 end TRIO
