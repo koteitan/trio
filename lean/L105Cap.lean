@@ -632,6 +632,48 @@ theorem not_rsum_capBase_split {M : TrioSeq} (hM : argOK M) {v z t j0 : ℕ}
   rw [List.length_drop] at hl
   omega
 
+
+/-! ### 14.4 ★ §131 の「塔は `W_add` で組めない」の Lean 版
+
+team-lead が §131 で算術で確定した
+
+    `shTower Q e (n+1) = shTower Q e n ++ shiftr01 (n*e) 0 Q`（`Wtower2.lean:1976`）
+    `rsum A B := ∀ p ∈ A ++ B, entry B 0 0 ≤ p.1`（`Wset.lean:1317`）
+    `A` は `k=0` の塊として `Q` を含む ⟹ 根（行 0 = 0）を含む
+    `entry B 0 0 = entry Q 0 0 + n*e = n*e ≥ 1`
+    ⟹ 側条件は `1 ≤ 0` を要求して破れる
+
+を、`not_rsum_of_root_mem` の 1 行の系として Lean に落とす。
+**`j0 = 0`（根が親）の `CoreCap` の展開もこの形**（`d0 = q.1 ≥ 1` は `argOK` から、
+`C` が基づくのは根が `(0, v+t, z)` だから）なので、**`j0 = 0` でも `W_add` は死ぬ**。
+⟹ **`CoreCap` の残核は `j0` の値によらず、連結では絶対に組めない。**
+残るのは `Aop` の節 3（`graft`）だけ（§132 の教訓 23 どおり、路線は死なない）。 -/
+
+theorem not_rsum_shTower {Q : TrioSeq} (hQne : Q ≠ []) (hb : based Q)
+    {e n : ℕ} (he : 1 ≤ e) (hn : 1 ≤ n) :
+    ¬ rsum (shTower Q e n) (shiftr01 (n * e) 0 Q) := by
+  have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
+  have hne : 0 < n * e := Nat.mul_pos hn he
+  refine not_rsum_of_root_mem ?_ ?_ ?_
+  · intro p hp
+    simp only [shiftr01, List.mem_map] at hp
+    obtain ⟨r, -, rfl⟩ := hp
+    simp only []
+    omega
+  · intro hnil
+    have hl : (shiftr01 (n * e) 0 Q).length = 0 := by rw [hnil]; rfl
+    simp only [shiftr01, List.length_map] at hl
+    omega
+  · refine ⟨Q[0], ?_, ?_⟩
+    · refine List.mem_flatMap.mpr ⟨0, List.mem_range.mpr hn, ?_⟩
+      simp
+    · rw [← entry_triple hQlen]
+      exact hb
+
+/-- `capBase` は基づく（根は `(0, v+t, z)`）。⟹ 上の系がそのまま当たる。 -/
+theorem based_capBase (M : TrioSeq) (v z t : ℕ) : based (capBase M v z t) :=
+  capBase_entry0_root M v z t
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
