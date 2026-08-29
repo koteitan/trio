@@ -54,6 +54,8 @@ from wcert import lev, lev0, srow, has_parent, rsum, _base, _orphan, audit, marg
 __all__ = ['wself2', 'wcert2', 'why2_detail', 'lev0', 'rsum']
 
 _MEMO = {}
+_C13_MAXLEN = 24      # (C13) を試す M の長さ上限（費用の打ち切り）
+_C13_MAXEXP = 90      # (C13) で見る展開の長さ上限（費用の打ち切り）
 
 
 def _peel(M):
@@ -128,10 +130,12 @@ def _clause2_induction(M, N=6):
     j1 = len(M) - 1
     if j1 < 1 or srow(M, j1) != 0 or not has_parent(M, j1):
         return None
+    if len(M) > _C13_MAXLEN:
+        return None                              # 費用の打ち切り（N と上限を振って検査する）
     Es = []
     for n in range(1, N + 2):
         E = tuple(tuple(x) for x in trio.expand([tuple(p) for p in M], n))
-        if not E or E == M:
+        if not E or E == M or len(E) > _C13_MAXEXP:
             return None
         Es.append(E)
     D = Es[1][len(Es[0]):]                       # X_2 = X_1 ++ D
