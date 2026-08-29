@@ -541,6 +541,97 @@ theorem capSnocOpenExact_of_capSnocOpen' (h : CapSnocOpen') : CapSnocOpenExact :
   rw [hqq] at hq0'
   exact h M v z a t hMarg hM2 hz1 hctx hva q hq0' hle0 hpar hz2
 
+
+/-! ## 14. ★★★★★ 課題 L106 への回答
+
+### 14.1 ⚠ (1)(2) について: **`CtxOK` の `∀ k`（接頭辞の鎖）は逃げ道にならない**
+
+§131 の課題 L106 は「土台が接頭辞の鎖を持つときだけの snoc」を新しい核として
+立てる案だったが、**その鎖は `Wset.W_take`（`Wset.lean:2120`）で無料**である。
+§8 の `wsnoc_of_snocPrefixOpen`（緑）がその証明:
+
+    `SnocPrefixOpen`（土台の全接頭辞が `W u`）**⟹ `WSnoc`**
+
+⟹ 接頭辞版は `WSnoc` と同値で、`wcat_of_snoc` を止められない。**この案は死ぬ。**
+
+### 14.2 ⟹ 生きているのは `∀ t`（リフト族）と**主語の形**の 2 つ
+
+    `CtxOK` の `∀ t` … `LiftStage` を接頭辞に限ったもの。**無料ではない**（§12.4）
+    主語の形       … 土台は `Lift1 ((0,v,z) :: R) t`（`argOK R`, `z ≤ 1`）。
+                     一般の `C ∈ W u` はこの形をしていない
+
+`wcat_of_snoc`（`Wtower2.lean:2078`）は**任意の `A ++ B` の接頭辞**に 1 列 snoc する
+必要があるので、この 2 つのどちらでも止まる。⟹ **`CapSnocOpenExact` から `WCat` は
+出ない**（証明ではなく、`wcat_of_snoc` の適用が構文的に不可能という観察）。
+
+### 14.3 ★ (3) について: **`PrefixCopies` は `W_add` では原理的に出ない**（算術で確定）
+
+`srow = 0` の枝の展開は `C.take j0 ++ (C.drop j0 の n 個の写し)`（`oper_snoc_srow0`）。
+
+    `j0 = 0` … 接頭辞が空。**`W_flatMap_copies`（`Wset.lean:2552`、証明ずみ）が
+                そのまま当たる**。側条件 `∀ p ∈ Q, entry Q 0 0 ≤ p.1` は
+                `entry C 0 0 = 0` から自明 ⟹ **無料**
+    `j0 ≥ 1` … 接頭辞 `C.take j0` は**根（行 0 = 0）を含む**。一方 `C.drop j0` は
+                `argOK` なので `entry (C.drop j0) 0 0 ≥ 1`。
+                ⟹ `rsum (C.take j0) (C.drop j0)` は `1 ≤ 0` を要求して**必ず破れる**
+
+**これは §131 の塔の算術（`n*e ≤ 0`）と同じ形の、2 本目の `rsum` 破れである。**
+違いは、あちらが「写しが深くなる」ことで破れるのに対し、こちらは
+**`argOK` が根を唯一の行 0 = 0 の列にしている**ことで破れる点。
+
+⟹ **`PrefixCopies` は `W_add` 経由では出ない。** `Aop` の節 3（`graft`）が唯一の道
+（§132 の訂正どおり、節が 1 つ死んでも路線は死なない）。
+
+以下がその Lean での確定（`Wset.not_rsum_cons_root` の一般化）。 -/
+
+/-- **根（行 0 = 0）を含む接頭辞に `argOK` のブロックは `rsum` で足せない。** -/
+theorem not_rsum_of_root_mem {A B : TrioSeq} (hB : argOK B) (hBne : B ≠ [])
+    (hroot : ∃ p ∈ A, p.1 = 0) : ¬ rsum A B := by
+  intro h
+  obtain ⟨p, hpA, hp0⟩ := hroot
+  have h1 := h p (List.mem_append.mpr (Or.inl hpA))
+  cases B with
+  | nil => exact hBne rfl
+  | cons q tl =>
+      have hq : 0 < q.1 := hB q (by simp)
+      have hE : entry (q :: tl) 0 0 = q.1 := by simp [entry]
+      rw [hE, hp0] at h1
+      omega
+
+theorem argOK_capBase_drop {M : TrioSeq} (hM : argOK M) {v z t j0 : ℕ}
+    (hj0 : 1 ≤ j0) : argOK ((capBase M v z t).drop j0) := by
+  intro p hp
+  obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hp
+  rw [List.length_drop] at hi
+  have hlt : j0 + i < (capBase M v z t).length := by omega
+  have hget : ((capBase M v z t).drop j0)[i]'(by rw [List.length_drop]; omega)
+      = (capBase M v z t)[j0 + i]'hlt := by rw [List.getElem_drop]
+  rw [hget, ← entry_triple hlt]
+  exact capBase_entry0_pos hM (by omega) hlt
+
+theorem capBase_root_mem_take {M : TrioSeq} {v z t j0 : ℕ} (hj0 : 1 ≤ j0) :
+    ∃ p ∈ (capBase M v z t).take j0, p.1 = 0 := by
+  have hlen : 0 < (capBase M v z t).length := by rw [capBase_length]; omega
+  have h0 : 0 < ((capBase M v z t).take j0).length := by
+    rw [List.length_take]; omega
+  refine ⟨((capBase M v z t).take j0)[0], List.getElem_mem h0, ?_⟩
+  have hget : ((capBase M v z t).take j0)[0] = (capBase M v z t)[0]'hlen := by
+    rw [List.getElem_take]
+  rw [hget, ← entry_triple hlen]
+  exact capBase_entry0_root M v z t
+
+/-- **★★★★★ `j0 ≥ 1` では `W_add` の側条件が必ず破れる。**
+⟹ `CoreCap` の `srow = 0` 枝（と、そもそも接頭辞つきコピー全般）は
+**連結（`W_add` / `rsum`）では絶対に組めない**。節 3（`graft`）だけが残る。 -/
+theorem not_rsum_capBase_split {M : TrioSeq} (hM : argOK M) {v z t j0 : ℕ}
+    (hj0 : 1 ≤ j0) (hj0lt : j0 < (capBase M v z t).length) :
+    ¬ rsum ((capBase M v z t).take j0) ((capBase M v z t).drop j0) := by
+  refine not_rsum_of_root_mem (argOK_capBase_drop hM hj0) ?_ (capBase_root_mem_take hj0)
+  intro hnil
+  have hl : ((capBase M v z t).drop j0).length = 0 := by rw [hnil]; rfl
+  rw [List.length_drop] at hl
+  omega
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
