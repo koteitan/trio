@@ -77,19 +77,27 @@ theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
 
 ⟹ **3 行 z<2 の停止性 ＝ `TowerOK`。** そして課題 L64 / L69 のとおり
 
-    `srow = 1` の枝   … `towerOK1_of_clause3`（`L53Subst.lean`）で**証明ずみ**
-    `srow = 2, 親が根` … **段は必ず収まる**（`L105Cap.tower2_stage_fits_root`）
-    `srow = 2, 親が根でない` … **残核**。`z = 1` かつ `c = 1` のときだけ起きる
+    `srow = 1` の枝 … `towerOK1_of_clause3`（`L53Subst.lean`）で**証明ずみ**
+    `srow = 2` の枝 … 親は**必ず根**（`Wset.parent_cons_eq_zero` `:2762`）
+                      ⟹ `z < c`（`L53.tower2_zr` `:2380`）
+                      ⟹ **段は無条件に収まる**（`L53.tower2_stage_fits'` `:2406`。
+                         docstring「段はいつでもちょうど収まる」。`c` にも `z` にも制限なし）
+                      ⟹ **残核は段ではなく `LiftTie`**
+                         （`L53.towerOK2_of_clause3` `:2432` の唯一の仮定）
 
-⚠ 2026-08-30 訂正（SESSION §139）: ここには以前
+⚠ 2026-08-30 訂正（SESSION §140）。ここには 2 度、誤った注記が入っていた。
 
-        `srow = 2, z = 1` … **起きない**（`tower2_root_z_zero`）
+    (旧 1)「`srow = 2, z = 1` は起きない（`tower2_root_z_zero`）」
+           ⟹ `tower2_root_z_zero` の前提は `entry R 2 (|R|-1) = 1`、
+              すなわち **`c = 1` に限った言明**。しかも**死んだコード**
+              （`tower2_z_zero_of_parent` からしか呼ばれず、そちらは誰も呼ばない）。
+              生きている鎖 `towerOK2_of_clause3` は最初から `c` について一般。
 
-    と書いてあったが、`tower2_root_z_zero` の前提は `entry R 2 (|R|-1) = 1`、
-    すなわち **`c = 1` に限った言明**だった。段が収まる本当の条件は
-    **`z < c`**（`L105Cap.tower2_stage_fits_of_lt`）であり、それは
-    「根が行 2 の親」から自動で出る（`L105Cap.tower2_root_z_lt`）。
-    ⟹ `c >= 2` はむしろ**易しい側**（`z = 1 < 2 <= c`）。難しいのは `c = 1` かつ `z = 1`。 -/
+    (旧 2)「`srow = 2, 親が根でない` … 残核。`z = 1` かつ `c = 1` のときだけ起きる」
+           ⟹ **誤り**。`domT R m` があれば `parent_cons_eq_zero` が親 = 根を
+              **無条件に**与えるので、`TowerOK2` の設定に「親が根でない」枝は**存在しない**。
+              team-lead が `TowerOK` の設定（`domT` あり）と `CoreCap` の snoc 残核
+              （`domT` が成り立たず `j0 >= 1` が起きる側）を混同して書き込んだもの。 -/
 theorem wf_olt_ST_TS_of_towerOK (htow : Wset.TowerOK) :
     WellFounded
       (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
