@@ -1811,5 +1811,29 @@ theorem based_cons_root (v z : ℕ) (R : TrioSeq) :
     based (((0, v, z) : ℕ × ℕ × ℕ) :: R) := by simp [based, entry]
 
 
+/-- **★ 債務 3 の `argOK` 側**: `Lift1` は行 0 を動かさないので `argOK` を保つ。 -/
+theorem argOK_Lift1 {X : TrioSeq} {d : ℕ} (h : argOK X) : argOK (Lift1 X d) := by
+  intro p hp
+  unfold Lift1 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨j, hj, hjp⟩ := hp
+  rw [List.mem_range] at hj
+  rw [← hjp]
+  show 0 < entry X 0 j
+  exact h _ (entry_pair_mem (B := X) hj)
+
+/-- **タイでの分解は長さを真に減らす** ⟹ **長さの帰納**が回る（課題 L76）。
+
+⚠ team-lead の §75.3 の訂正: 正しい母集団ではタイは**複数本あり得る**
+（1 本 1982 / 2 本 478 / 3 本 14）。⟹ 帰納は 1 段では止まらない。
+だが `split_lastTie` の `R₁` は `R` より**真に短い**ので、
+**長さについての帰納**なら本数を数えずに回る。 -/
+theorem split_lastTie_len {R R₁ R₂ : TrioSeq} {tie : ℕ × ℕ × ℕ}
+    (h : R = R₁ ++ [tie] ++ R₂) : R₁.length < R.length := by
+  rw [h]
+  simp only [List.length_append, List.length_singleton]
+  omega
+
+
 end L53
 end TRIO
