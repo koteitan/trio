@@ -9605,6 +9605,69 @@ theorem oper_last_srow_one {M : TrioSeq} {n j0 Lb : ℕ}
 
 **⟹ 三分岐が「実測の割合」から「`M[|M|-2]` の行 2 と行 1 を見る」に変わりました。** -/
 
+/-! ## 133. ★★★★★★★ **F2b の 1 段、`W` の言葉で**
+
+§131（孤児）＋ §132（`srow = 1`）＋ `snoc_orphan_W`（`:144`、緑）を合成する。 -/
+
+open Classical in
+theorem oper_mem_of_dropLast {M : TrioSeq} {u n j0 Lb : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 1 < Lb) (hj0 : 0 < j0) (hn : 0 < n)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0e : parent M (srow M (M.length - 1)) (M.length - 1) = j0)
+    (hsr : 0 < srow M (M.length - 1))
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hj0c : le1 M 0 j0)
+    (h2 : entry M 2 (M.length - 2) = 0) (h1 : 0 < entry M 1 (M.length - 2))
+    (hf1 : entry M 1 (M.length - 2) ≤ entry M 1 0)
+    (horph : ¬ hasParent M 1 (M.length - 2))
+    (hC : (M⟦n⟧).dropLast ∈ W u) :
+    M⟦n⟧ ∈ W u := by
+  have hL : M.length - 1 ≠ 0 := by omega
+  have hlen2 : (M⟦n⟧).length = j0 + n * Lb := by
+    rw [oper_eq_gexp_gen n hL hz hp,
+      gexp_length (by rw [hj0e]; omega), hj0e,
+      show M.length - 1 - j0 = Lb from by omega]
+  have hmul : Lb ≤ n * Lb := Nat.le_mul_of_pos_left _ hn
+  have hne : M⟦n⟧ ≠ [] := by
+    intro h
+    have h0 : (M⟦n⟧).length = 0 := by rw [h]; rfl
+    omega
+  have hClen : (M⟦n⟧).dropLast.length = (M⟦n⟧).length - 1 := List.length_dropLast
+  have hCne : (M⟦n⟧).dropLast ≠ [] := by
+    intro h
+    have h0 : (M⟦n⟧).dropLast.length = 0 := by rw [h]; rfl
+    omega
+  have hEq : (M⟦n⟧).dropLast ++ [(M⟦n⟧).getLast hne] = M⟦n⟧ :=
+    List.dropLast_append_getLast hne
+  have horph2 : ¬ hasParent (M⟦n⟧)
+      (srow (M⟦n⟧) ((M⟦n⟧).length - 1)) ((M⟦n⟧).length - 1) := by
+    rw [oper_last_srow_one hlen hLb hn hz hp hj0e h2 h1]
+    exact oper_last_orphan_row1 hlen hLb hj0 hn hz hp hj0e hsr hr0 hj0c hf1 horph
+  have hres := snoc_orphan_W ((M⟦n⟧).getLast hne) hC hCne
+    (by rw [hEq, hClen]; exact horph2)
+  rwa [hEq] at hres
+
+/-! ### 133.1 ⟹ **F2b の 1 段が `W` の言葉になりました**
+
+    **`(M⟦n⟧).dropLast ∈ W u` ⟹ `M⟦n⟧ ∈ W u`**
+
+⚠ **そして、ここで (a) と (b) が合流します。**
+`hC : (M⟦n⟧).dropLast ∈ W u` は、**まさに「塔（またはその接頭辞）」が `W` に入ること**です。
+**⟹ §110/§112/§121/§122/§124 の 5 方向が集まった「塔に決まった 1 列を足す」の、
+「塔の側」がこの前提そのもの。**
+
+> **⟹ F2b は (a) を回避しません。回避しないことが、いま定理として見えました。**
+> **⟹ ただし F2b は (a) に**帰着**します。それは「別の壁」ではなく「同じ壁」です。**
+
+⚠ **教訓 14 を守ります。** 残る外部前提は 2 つ:
+
+    **`hj0c : le1 M 0 j0`** … R2 に (p1) として実測を依頼中
+    **`hC : (M⟦n⟧).dropLast ∈ W u`** … **(a) そのもの**
+
+**⟹ 今日の到達点は「F2b の残りは (a) と `hj0c` だけ」と、定理の形で言えたことです。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
