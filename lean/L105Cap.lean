@@ -10928,6 +10928,104 @@ theorem mTower_no_blocker {Q : TrioSeq} {d e n : ℕ} (he : 0 < e) (hn : 0 < n)
 ⚠ **教訓 14**: 上は **「ブロッカーが塔に現れない」**であって、
 **「`hstep` が閉じる」ではありません。** (w1) が残っています。 -/
 
+/-! ## 154. ★★★★★★★ (w1): **ブロッカーなしなら、行 2 の列もブロック内に親を持つ**
+
+残っていたのは `srow = 2`（F2b）だけ。**ブロッカーなしの `Q` では、どの列も錐の中なので、
+`nextrel2` が要求する `le1` の祖先性が**ブロックの根**について自動的に立つ。**
+**あとは根の行 2 が的より小さければよい。** -/
+
+open Classical in
+theorem block_blockParent_row2 {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j) (hcone : le1 Q 0 j)
+    (h2 : entry Q 2 0 < entry Q 2 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  have hle1B : le1 B 0 j := by rw [hB, le1_Lift1, le1_shiftr01]; exact hcone
+  have hle1 : le1 (B.take (j + 1)) 0 j :=
+    (le1_take (by omega) (by omega)).mpr hle1B
+  have hE2 : ∀ x, x < Q.length → entry B 2 x = entry Q 2 x := by
+    intro x hx
+    show (B.getD x (0, 0, 0)).2.2 = _
+    rw [hB, block_getD hx]
+  have hk2 : entry (B.take (j + 1)) 2 0 < entry (B.take (j + 1)) 2 j := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 2) (j := 0) (by omega),
+      Wset.entry_take (X := B) (l := j + 1) (i := 2) (j := j) (by omega),
+      hE2 0 (by omega), hE2 j hj]
+    exact h2
+  exact hasParent_two_of (by omega) (by omega) hle1 hk2
+
+open Classical in
+theorem block_blockParent_row0 {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  have hE0 : ∀ x, x < Q.length → entry B 0 x = entry Q 0 x + d * n := by
+    intro x hx
+    show (B.getD x (0, 0, 0)).1 = _
+    rw [hB, block_getD hx]
+  refine (hasParent_zero_iff (by omega)).mpr ⟨0, by omega, ?_⟩
+  rw [Wset.entry_take (X := B) (l := j + 1) (i := 0) (j := 0) (by omega),
+    Wset.entry_take (X := B) (l := j + 1) (i := 0) (j := j) (by omega),
+    hE0 0 (by omega), hE0 j hj]
+  have := hr0 j hj1 hj
+  omega
+
+open Classical in
+/-- **★★★★★★★ ブロッカーなし ∧ 根の行 2 が 0 ⟹ 非根の列はすべてブロック内に親を持つ。** -/
+theorem block_blockParent_all {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
+    (h2root : entry Q 2 0 = 0) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hE1 : entry (B.take (j + 1)) 1 j
+      = entry Q 1 j + (if le1 Q 0 j then e * n else 0) := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega)]
+    show (B.getD j (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hj]
+  have hE2 : entry (B.take (j + 1)) 2 j = entry Q 2 j := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 2) (j := j) (by omega)]
+    show (B.getD j (0, 0, 0)).2.2 = _
+    rw [hB, block_getD hj]
+  have hcone : le1 Q 0 j := le1_zero_of_no_blocker hr0 hnb hj
+  have hn1 : entry Q 1 0 < entry Q 1 j := hnb j hj1 hj
+  unfold srow
+  by_cases h2 : 0 < entry (B.take (j + 1)) 2 j
+  · rw [if_pos h2]
+    rw [hE2] at h2
+    exact block_blockParent_row2 hj hj1 hcone (by omega)
+  · rw [if_neg h2, if_pos (by rw [hE1, if_pos hcone]; omega)]
+    exact block_blockParent_of_cone hj hj1 hr0 hcone
+
+/-! ### 154.1 ⟹ **ブロッカーなし ∧ 根の行 2 が 0 なら、復活はまったく起きません**
+
+    §141 `snocStep_parent_sameBlock` … ブロック内に親 ⟹ 塔でも親は同じブロック
+    **§154 `block_blockParent_all` … ブロッカーなし ∧ `entry Q 2 0 = 0` ⟹ 非根の列は**すべて**ブロック内に親**
+
+> **⟹ (i) 孤児にも (iii) 復活にもならず、**すべて (ii)**。**
+> **⟹ §138 より窓の長さが毎回厳密に減る。**
+> **⟹ §150 の壁（復活が測度を壊す）が、この `Q` については**完全に消えます**。**
+
+⚠ **`z < 2` の断片では、生成元 `D_v = (0,0,0)(1,1,1)…(v,v,1)` の根は `(0,0,0)` なので
+`entry Q 2 0 = 0` は自然な条件です。**
+
+⚠ **教訓 14**: これは **「復活が起きない」**であって、**「`hstep` が閉じた」ではありません。**
+**残るのは「窓の帰納を Lean で実際に組む」ことと、
+「内側の段でも `block_blockParent_all` の前提（ブロッカーなし・根の行 2 が 0）が成り立つか」です。**
+**前者は §138＋§139 の形が決まっているので機械的。後者は §153 で行 1 について済んでいます。**
+
+**⟹ 残りは「行 2 の側の遺伝」と「帰納の実装」の 2 つになりました。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
