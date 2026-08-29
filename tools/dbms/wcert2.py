@@ -56,8 +56,9 @@ __all__ = ['wself2', 'wcert2', 'why2_detail', 'lev0', 'rsum']
 _MEMO = {}
 _C13_MAXLEN = 24      # (C13) を試す M の長さ上限（費用の打ち切り）
 _C13_MAXEXP = 90      # (C13) で見る展開の長さ上限（費用の打ち切り）
-TOW_ORACLE = False    # True にすると (TOW) `ShiftTowerClosed` を**神託**として使う
-                      # （まだ Lean で証明されていないので、既定は False）
+TOW_ORACLE = False    # 旧 (C14) 用（R68 で (C15) に置き換え）
+ASSUME = set()        # {'TOW','LTOW','MTOW','MLIFT'} のうち**仮定として足すもの**
+                      # 空なら strict（Lean で証明ずみの規則だけ）
 
 
 def _peel(M):
@@ -191,6 +192,87 @@ def _towexp(M):
     return 'C14/TOW(j0=%d)' % j0
 
 
+def expfam(M):
+    """**`oper` の定義から厳密に**展開の族を取り出す（推定しない）。
+
+    `oper_unfold`（L2, commit 978c7a5）:
+
+        M⟦n⟧ = M.take j0 ++ (range n).flatMap (写し k)
+        写し k の第 i 列 = Q0[i] + k * D[i]   （**k について 1 次。j0/d0/d1 は M だけで決まる**）
+
+    ⟹ `M⟦1⟧` と `M⟦2⟧` の 2 つだけで `A0`, `Q0`, `D` が**確定**する:
+
+        j1 = |M| - 1,  |M⟦1⟧| = j1（＝ M.dropLast）,  |M⟦2⟧| = j1 + (j1 - j0)
+        ⟹ **j0 = 2*j1 - |M⟦2⟧|**,  A0 = M⟦1⟧[:j0],  Q0 = M⟦1⟧[j0:],  D = M⟦2⟧[j1:] - Q0
+
+    戻り値 (A0, Q0, D) または None（`Pred` に潰れる場合など）。
+    """
+    if len(M) < 2:
+        return None
+    E1 = tuple(tuple(x) for x in trio.expand([tuple(p) for p in M], 1))
+    E2 = tuple(tuple(x) for x in trio.expand([tuple(p) for p in M], 2))
+    j1 = len(M) - 1
+    if len(E1) != j1 or len(E2) <= len(E1):
+        return None                        # `Pred` 型（既存の孤児証明書の領分）
+    j0 = 2 * j1 - len(E2)
+    if not (0 <= j0 < j1):
+        return None
+    A0, Q0, Q1 = E1[:j0], E1[j0:], E2[j1:]
+    if len(Q1) != len(Q0):
+        return None
+    D = tuple((Q1[i][0] - Q0[i][0], Q1[i][1] - Q0[i][1], Q1[i][2] - Q0[i][2])
+              for i in range(len(Q0)))
+    if any(d[0] < 0 or d[1] < 0 or d[2] != 0 for d in D):
+        return None
+    return A0, Q0, D
+
+
+def famname(D):
+    """族の名前。(F2) 複製 / (F3) 一様シフト / (F4) 一様持ち上げ / (F5) 列ごと増分。"""
+    if all(d == (0, 0, 0) for d in D):
+        return 'F2'                        # W_flatMap_copies。**証明ずみ**
+    if len(set(D)) == 1:
+        return 'F3' if D[0][1] == 0 else 'F4'
+    if all(d[1] == 0 for d in D):
+        return 'F5e'                       # 行 0 だけ、列ごとに違う
+    return 'F5'                            # 行 1 も列ごとに違う
+
+
+_NEED = {'F2': None, 'F3': 'TOW', 'F4': 'LTOW', 'F5e': 'MTOW', 'F5': 'MLIFT'}
+
+
+def _famcert(M):
+    """(C15) **展開の族による節 2**。`oper_unfold` から厳密に取るので推定しない。
+
+    塔の部分 `concat_k (Q0 + k*D)` を規則（F2 は `W_flatMap_copies` で**証明ずみ**、
+    F3/F4/F5 は仮定）で `W (lev Q0 0)` に入れ、前置き `A0` は `W_add` で継ぐ。
+    `rsum(A0, 塔)` は塔の列が `Q0` の列以上なので **n に依らない**。
+    """
+    r = expfam(M)
+    if r is None:
+        return None
+    A0, Q0, D = r
+    if not Q0:
+        return None
+    fam = famname(D)
+    need = _NEED[fam]
+    if need is not None and need not in ASSUME:
+        return None                        # strict では F2 以外は使えない
+    u = lev0(M)
+    if lev0(Q0) > u:
+        return None                        # mem_Wself_iff
+    if not all(Q0[0][0] <= p[0] for p in Q0):
+        return None                        # 塔の側条件（根が最浅）
+    if wself2(Q0) is None:
+        return None
+    if A0:
+        if not all(Q0[0][0] <= p[0] for p in A0):
+            return None                    # rsum(A0, 塔)。n に依らない
+        if wself2(A0) is None:
+            return None
+    return 'C15/%s%s' % (fam, '' if need is None else '[%s]' % need)
+
+
 def wself2(M, depth=0):
     """`M ∈ Wself` の証明書の名前、無ければ None。**分割を全部試して再帰**。"""
     M = tuple(tuple(p) for p in M)
@@ -208,7 +290,9 @@ def wself2(M, depth=0):
     if r is None:
         r = _clause2_induction(M)        # (C13) 節 2 を n について帰納
     if r is None:
-        r = _towexp(M)                   # (C14) (TOW) を神託にした節 2
+        r = _towexp(M)                   # (C14) 旧（R68 で (C15) に置換）
+    if r is None:
+        r = _famcert(M)                  # (C15) 展開の族による節 2（厳密）
     if r is None:
         u = lev0(M)                          # lev (A++B) 0 = lev A 0
         for k in range(1, len(M)):
