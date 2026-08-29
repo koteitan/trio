@@ -56,6 +56,8 @@ __all__ = ['wself2', 'wcert2', 'why2_detail', 'lev0', 'rsum']
 _MEMO = {}
 _C13_MAXLEN = 12      # (C13) を試す M の長さ上限（費用の打ち切り）
 _C13_MAXEXP = 40      # (C13) で見る展開の長さ上限（費用の打ち切り）
+_BUDGET = [10 ** 7]   # 1 回の判定で回すノード数の上限。**尽きたら「覆えない」側に倒す**
+                      # （健全側。証明書が見つからないだけで非所属ではない）
 TOW_ORACLE = False    # 旧 (C14) 用（R68 で (C15) に置き換え）
 ASSUME = set()        # 仮定として足すもの。空なら strict（Lean 証明ずみの規則だけ）
                       #   'S'     (SNOC-flat) 平らな列を、親が根でなくても足せる
@@ -296,6 +298,9 @@ def wself2(M, depth=0):
     M = tuple(tuple(p) for p in M)
     if M in _MEMO:
         return _MEMO[M]
+    _BUDGET[0] -= 1
+    if _BUDGET[0] <= 0:
+        return None                          # 予算切れ。**健全側（覆えない）に倒す**
     if len(M) <= 1:
         _MEMO[M] = 'C1'                      # singleton_mem_W / W_nil
         return 'C1'
