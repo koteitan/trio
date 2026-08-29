@@ -2502,6 +2502,209 @@ theorem nextrel1_lowerAt_of_avoid {C : TrioSeq} {j0 a b : ℕ}
 ⟹ **「展開木が変わる」は「`j0` に触る関係だけが、高々 1 だけ動く」に落ちました。**
 壁の高さは測れています。**(ii) に移る必要はありません。** -/
 
+
+/-! ## 37. ★★★★★ 課題 L120: **`TowerGraft2` は `|R| = 1` だけになる**
+
+R2 の §R98 の骨は正しく、しかも**その道具は既に緑で存在する**:
+
+    `Wchar.aop_clause3_to_clause2`（`Wchar.lean:39`、**証明ずみ**）
+      `2 ≤ |M| → domT M m → (∀ z ∈ W m, based z → graft M z ∈ X) → ∀ n ≥ 1, M⟦n⟧ ∈ X`
+
+これは `TowerExp` の仮定 `(∀ n ≥ 1, R⟦n⟧ ∈ Wstar)` **そのもの**である。
+⟹ `Wset.towerOK_of`（`Wset.lean:4513`）の節 3・`srow = 2` の枝で `|R| ≥ 2` なら
+**`TowerGraft2` の代わりに `TowerExp` が使える**。
+
+⟹ **`TowerGraft2` が要るのは `|R| = 1` の場合だけ。** -/
+
+/-- `TowerGraft2` を `|R| = 1` に制限したもの。 -/
+def TowerGraft2Single : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → R.length = 1 → z ≤ 1 → 2 * v + z ≤ a →
+    domT R m → srow R (R.length - 1) = 2 →
+    (∀ y ∈ W m, based y → graft R y ∈ Wstar) →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+/-- **★★★★★ `TowerOK` は `TowerExp` ＋ `|R| = 1` の `TowerGraft2` から出る。**
+（`Wset.towerOK_of` は `TowerGraft2` を**全長**で要求していた。） -/
+theorem towerOK_of_exp (he : TowerExp) (h1 : TowerGraft2Single) : TowerOK := by
+  intro v z u0 a R hR hRne hz1 hva AR hdR hpM n hn
+  obtain ⟨m0, hm0⟩ := hdR
+  have hlevpos : 0 < lev R (R.length - 1) := by rw [hm0.1]; omega
+  have hsr : srow R (R.length - 1) = 1 ∨ srow R (R.length - 1) = 2 := by
+    unfold srow
+    unfold lev at hlevpos
+    by_cases h2' : 0 < entry R 2 (R.length - 1)
+    · rw [if_pos h2']; exact Or.inr rfl
+    · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+  rcases AR with ⟨hl, hw⟩ | hop | ⟨m, hm, hd, hgr⟩
+  · exfalso
+    have hR1 : R.length = 1 := by
+      have := List.length_pos_iff.mpr hRne
+      omega
+    have h := hm0.1
+    rw [hR1] at h
+    simp only [Nat.sub_self] at h
+    omega
+  · exact he v z m0 a R hR hRne hz1 hva hm0 hop hpM n hn
+  · rcases hsr with h1' | h1'
+    · rw [oper_cons_tower1 hR hRne hd h1' hpM]
+      exact tower1_mem hR hRne hz1 hva hd h1' hgr hpM n
+    · rcases Nat.lt_or_ge R.length 2 with hsm | hbig
+      · have hR1 : R.length = 1 := by
+          have := List.length_pos_iff.mpr hRne
+          omega
+        exact h1 v z m a R hR hR1 hz1 hva hd h1' hgr hpM n hn
+      · exact he v z m a R hR hRne hz1 hva hd
+          (aop_clause3_to_clause2 hbig hd hgr) hpM n hn
+
+/-- ⟹ `TowerGraft2` の全長版からも当然出る（位置づけ）。 -/
+theorem towerGraft2Single_of_towerGraft2 (h : TowerGraft2) : TowerGraft2Single :=
+  fun v z m a R hR hR1 hz1 hva hd hi2 hgr hpM n hn =>
+    h v z m a R hR (by intro hc; rw [hc] at hR1; simp at hR1) hz1 hva hd hi2 hgr hpM n hn
+
+
+/-! ## 38. ★★★★★★ 課題 L120-3: **`TowerGraft2Single` は定理**（仮定ゼロ）
+
+`|R| = 1` の塔を `oper_cons_tower2`（`Wset.lean:3231`）で展開すると
+
+    `X⟦n+1⟧ = (0,v,z) :: graft R (Lift1 (X⟦n⟧) e)`,  `X = (0,v,z) :: R`
+
+で、`|R| = 1` だから `R.dropLast = []` ⟹ **`graft R y` は `y` の行 0 をずらすだけ**。
+そして `Lift1` も `graft` も**行 2 を動かさない**。⟹ 帰納法で
+
+    **塔のすべての列の行 2 は `z`（根の行 2）に等しい。**
+
+行 2 が定数なら、末尾列は行 2 で真に浅い列を持たないので**必ず孤児** ⟹ `oper` は `Pred`
+⟹ 長さの帰納で根の単元まで剥け、そこは `lev = 2v+z ≤ a`。**仮定ゼロで閉じる。** -/
+
+theorem constRow2_Lift1 {X : TrioSeq} {d k : ℕ} (h : ∀ p ∈ X, p.2.2 = k) :
+    ∀ p ∈ Lift1 X d, p.2.2 = k := by
+  intro p hp
+  unfold Lift1 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨j, hj, hjp⟩ := hp
+  rw [List.mem_range] at hj
+  rw [← hjp]
+  show entry X 2 j = k
+  exact h _ (entry_pair_mem (B := X) hj)
+
+theorem graft_row2_single {R : TrioSeq} (hR1 : R.length = 1) {y : TrioSeq} {k : ℕ}
+    (hy : ∀ p ∈ y, p.2.2 = k) : ∀ p ∈ graft R y, p.2.2 = k := by
+  intro p hp
+  have hdl : R.dropLast = [] := by
+    rw [List.dropLast_eq_take, hR1]
+    simp
+  unfold graft at hp
+  rw [hdl, List.nil_append, List.mem_map] at hp
+  obtain ⟨q, hq, rfl⟩ := hp
+  exact hy q hq
+
+/-- **★★★ 行 2 が定数なら、根のレベルさえ収まれば `W`。**
+末尾列は行 2 で真に浅い列を持たないので必ず孤児 ⟹ `oper` は `Pred`。 -/
+theorem constRow2_mem_W_aux {c : ℕ} (hc : 1 ≤ c) :
+    ∀ (N : ℕ) (M : TrioSeq) (a : ℕ), M.length ≤ N → (∀ p ∈ M, p.2.2 = c) →
+      lev M 0 ≤ a → M ∈ W a := by
+  intro N
+  induction N with
+  | zero =>
+      intro M a hN _ _
+      have hnil : M = [] := List.length_eq_zero_iff.mp (by omega)
+      subst hnil
+      exact W_nil a
+  | succ N ih =>
+      intro M a hN hz hlev
+      rcases Nat.lt_or_ge M.length 2 with hsm | hbig
+      · rcases Nat.eq_zero_or_pos M.length with h0 | hpos
+        · have hnil : M = [] := List.length_eq_zero_iff.mp h0
+          subst hnil
+          exact W_nil a
+        · obtain ⟨q, rfl⟩ := List.length_eq_one_iff.mp (by omega : M.length = 1)
+          have hq : ([q] : TrioSeq) = [((q.1, q.2.1, q.2.2) : ℕ × ℕ × ℕ)] := by simp
+          rw [hq]
+          refine singleton_mem_W ?_
+          have hl : lev ([q] : TrioSeq) 0 = 2 * q.2.1 + q.2.2 := rfl
+          omega
+      · have hMne : 0 < M.length := by omega
+        have hlast : entry M 2 (M.length - 1) = c := by
+          have hmem : M.getD (M.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ M :=
+            entry_pair_mem (B := M) (by omega)
+          exact hz _ hmem
+        have hsr : srow M (M.length - 1) = 2 := by
+          unfold srow
+          rw [if_pos (by omega : 0 < entry M 2 (M.length - 1))]
+        have hnz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+            entry M 2 (M.length - 1) = 0) := by
+          rintro ⟨-, -, h3⟩
+          omega
+        have hnp : ¬ hasParent M (srow M (M.length - 1)) (M.length - 1) := by
+          rw [hsr]
+          rintro ⟨j0, hj0, -⟩
+          rw [nextR] at hj0
+          simp only [if_neg (by omega : (2 : ℕ) ≠ 0),
+            if_neg (by omega : (2 : ℕ) ≠ 1)] at hj0
+          have hjlt : j0 < M.length := hj0.1
+          have hlt := hj0.2.2.2.1
+          have : entry M 2 j0 = c :=
+            hz _ (entry_pair_mem (B := M) hjlt)
+          omega
+        refine mem_of_oper_mem (fun n _ => ?_)
+        rw [oper_eq_pred_of_noParent n (by omega) hnz hnp]
+        unfold Pred
+        rw [if_neg (by omega)]
+        refine ih M.dropLast a (by rw [List.length_dropLast]; omega)
+          (fun p hp => hz p (List.dropLast_subset M hp)) ?_
+        have hd0 : ∀ i, entry M.dropLast i 0 = entry M i 0 := by
+          intro i
+          rw [List.dropLast_eq_take]
+          exact Wset.entry_take (by omega)
+        unfold lev at hlev ⊢
+        rw [hd0 1, hd0 2]
+        exact hlev
+
+theorem constRow2_mem_W {M : TrioSeq} {c a : ℕ} (hz : ∀ p ∈ M, p.2.2 = c)
+    (hlev : lev M 0 ≤ a) : M ∈ W a := by
+  rcases Nat.eq_zero_or_pos c with rfl | hc
+  · exact W_mono hlev (zeroRow2_mem_Wself hz)
+  · exact constRow2_mem_W_aux hc M.length M a le_rfl hz hlev
+
+open Classical in
+/-- **★★★★★★ `|R| = 1` の `TowerGraft2` は定理。** -/
+theorem towerGraft2Single_holds : TowerGraft2Single := by
+  intro v z m a R hR hR1 hz1 hva hd hi2 hgr hpM n hn
+  have hRne : R ≠ [] := by
+    intro hc
+    rw [hc] at hR1
+    simp at hR1
+  have hzero := L53.oper_cons_zero (v := v) (z := z) hR hRne hd hpM
+  have hrow2 : ∀ k, ∀ p ∈ ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦k⟧), p.2.2 = z := by
+    intro k
+    induction k with
+    | zero =>
+        rw [hzero]
+        intro p hp
+        simp at hp
+    | succ k ih =>
+        rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+        intro p hp
+        rcases List.mem_cons.mp hp with rfl | hp
+        · rfl
+        · exact graft_row2_single hR1 (constRow2_Lift1 ih) p hp
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  refine constRow2_mem_W (c := z) (hrow2 (k + 1)) ?_
+  rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+  show lev (((0, v, z) : ℕ × ℕ × ℕ) :: _) 0 ≤ a
+  have hl : lev (((0, v, z) : ℕ × ℕ × ℕ)
+      :: graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦k⟧)
+        (entry R 1 (R.length - 1) - v))) 0 = 2 * v + z := by
+    unfold lev
+    simp [entry]
+  rw [hl]
+  exact hva
+
+/-- **★★★★★★ ⟹ `TowerOK` は `TowerExp` 1 本から出る。** -/
+theorem towerOK_of_towerExp (he : TowerExp) : TowerOK :=
+  towerOK_of_exp he towerGraft2Single_holds
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
