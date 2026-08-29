@@ -5480,6 +5480,49 @@ theorem mTower_mem_of_mTowerStep {a : ℕ} {Q : TrioSeq} {d e : ℕ} (hQne : Q �
 
 **(2) は (1) の `srow = 2` を回すための道具**なので、独立ではない。 -/
 
+/-! ## 72. ⛔ **§71.2 の自己訂正: `LiftTower1` / `LiftTowerExp2` は開いた核ではない**
+
+§71.2 で「今日の核の一覧」に `LiftTower1`（`srow=1`）と `LiftTowerExp2`（`srow=2`）を
+**開いた核として**並べたが、**誤り**である。**両方とも `GraftAll` から出る定理**で、
+**すでに緑**である:
+
+    **`Wset.liftTower1_of_graftAll`（`Wset.lean:4151`、緑）**
+    **`Wset.liftTowerExp2_of_graftAll`（`Wset.lean:4211`、緑）**
+    `Lcone.Wstar2s_closed_of_graftAll`（`Lcone.lean:687`、緑）
+      ＝ `Wset.Wstar2s_closed liftInner_holds (liftTower1_of_graftAll hga)
+                                             (liftTowerExp2_of_graftAll hga)`
+    `Lcone.W_le_Wstar2s`（`:694`、緑）… `GraftAll ⟹ ∀ u, W u ⊆ Wstar2s`
+
+> **⟹ 本線は `GraftAll` **1 本**に乗っている。塔の枝はとっくに片づいている。**
+> **⟹ 私の §70-71（`oper_mTower` / `MTowerStep`）は「開いた核」ではなく、
+>   すでに閉じている枝の別証明である。**
+
+**また grep を怠った。**（§67 の `srow_cons_last`、§69 の `entry_cons_last` に続いて
+この節で 3 度目、通算 6 回目。**「核だ」と書く前に `grep _of_graftAll` を打つべきだった。**）
+
+### 72.1 ⟹ 私の §67-71 のうち何が残るか
+
+    **§67（(WL) の 1 歩の残差 ＝ 悪根 ＝ 根）** … 残る。`liftInner_holds` の**使い道**の話で、
+        `LiftTieCore`（L53 の核、経路 C）がどこに落ちるかを決める
+    **§68（`M⟦n⟧ = mTower M.dropLast d0 d1 n`）** … 残る。**新しい恒等式**
+    **§69（`operTower = mTower`）** … 残る。R2 の H73 を定理にした
+    §70-71（`oper_mTower` / `MTowerStep`）… **本線では不要**。`GraftAll` 経由で済む
+
+### 72.2 ⚠ ただし `LiftTieCore` は `GraftAll` の下流とは**まだ言えない**
+
+`GraftAll ⟹ W u ⊆ Wstar2s` は使えるが、`LiftTieCore` の場面では
+
+    仮定は **`(0,v,z) :: R ∈ W (2v+z)`**（`X` についての `W` 所属）
+    要るのは **`R ∈ Wstar2`**（`R` についての装備）
+
+で、**`X ∈ W u` から `R ∈ W u'` は出ない**（`argOK X` は根の行 0 が `0` なので偽 ⟹
+`W_le_Wstar2s` を `X` に当てても空虚）。**`R` 自身の導出が要る。**
+
+⟹ **経路 C（`LiftTieCore` / `TowerOK`）は本線とは別の入口**であり、
+**本線が `GraftAll` 1 本で閉じている以上、経路 C を追う理由は薄い。**
+
+> **⟹ 唯一の開いた核は `GraftAll`（＝ 私の §25 の `CoreCap`）。そこに集中すべき。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
