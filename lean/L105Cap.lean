@@ -7874,6 +7874,93 @@ theorem nextrel2_mTower_sameBlock {Q : TrioSeq} {d e n' qa b : ℕ}
     `a` が前のブロック ⟹ **G2 の列で境界を越える必要がある**（§103.4）
       ⟹ **R2 の (f1a)（`|M|` を 6, 7 まで、分母を先に）待ち** -/
 
+/-! ## 107. ★★★★★★★ **G2 があっても越境できません**: `nextrel1` の壁が完成しました
+
+§103.4 で「越境には G2 が要る」と絞ったが、**G2 でも越えられない。**
+**理由は「錐の外にする張本人（ブロッカー）が、同じブロックの中の行 0 祖先だから」。**
+
+    `b` が `M` の錐の外 ⟹ **`not_le1_zero_iff`（§96）** で
+      **`b` の行 0 祖先 `y ≠ 0` に `entry M 1 y ≤ entry M 1 0` のものがある**
+    その像はブロック `k` の中（`gexp_rtg0_mir`）で、`c` はブロック外 ⟹ **`c < 像`**
+    ⟹ **`nextrel1` の極小性が `entry T 1 b ≤ entry T 1 (像)` を要求**
+    `y` はブロッカー ⟹ **錐の外 ⟹ リフトされない** ⟹ `entry T 1 (像) = entry M 1 y ≤ entry M 1 0`
+    ⟹ **`entry T 1 b ≤ entry M 1 0`**
+    一方 `entry T 1 c < entry T 1 b ≤ entry M 1 0` で、`c` はブロック外 ⟹
+      **§99 `gexp_outer_anc_row1` が `entry M 1 0 < entry T 1 c`**（`c ≠ 0`）
+    ⟹ **矛盾**（`c = 0` なら `entry T 1 0 = entry M 1 0` で同じく矛盾）
+
+**⟹ §87（錐の中）と合わせて、`nextrel1` は根以外のどの列にも外から入れない。** -/
+
+open Classical in
+/-- **★★★★★★★ 錐の外の列にも、ブロック外から行 1 の親は来ない。** -/
+theorem nextrel1_gexp_no_enter_out {M : TrioSeq} {Lb d0 d1 n k q c : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb))
+    (hout : ¬ le1 M 0 (0 + q))
+    (h : nextrel1 (gexp M 0 Lb d0 d1 n) c (0 + (k * Lb + q))) :
+    k * Lb ≤ c := by
+  by_contra hc
+  have hn : 0 < n := by omega
+  -- 目標の行 1（錐の外なのでリフト無し）
+  have hb1 : entry (gexp M 0 Lb d0 d1 n) 1 (0 + (k * Lb + q)) = entry M 1 (0 + q) := by
+    rw [gexp_entry1_mir hlen hk hq, if_neg hout]
+    omega
+  -- ブロッカーを取り出す
+  obtain ⟨y, hy, hy0, hyle⟩ := (not_le1_zero_iff hr0 (show 0 + q < M.length by omega)).mp hout
+  obtain ⟨y', hy'⟩ : ∃ y', y = 0 + y' := ⟨y, (Nat.zero_add y).symm⟩
+  subst hy'
+  have hyq : 0 + y' ≤ 0 + q := nextrel0_rtrancl_index_le hy
+  have hy'lt : y' < Lb := by omega
+  -- ブロッカーの像はブロック `k` の中で、`b` の行 0 祖先
+  have hmir : Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n))
+      (0 + (k * Lb + y')) (0 + (k * Lb + q)) :=
+    gexp_rtg0_mir hlen hk hy q rfl hq
+  have hXlen : (gexp M 0 Lb d0 d1 n).length = 0 + n * Lb := gexp_length hlen
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hle0 : le0 (gexp M 0 Lb d0 d1 n) (0 + (k * Lb + y')) (0 + (k * Lb + q)) :=
+    ⟨by rw [hXlen]; omega, by rw [hXlen]; omega, hmir⟩
+  -- ブロッカーは錐の外なのでリフトされない
+  have houty : ¬ le1 M 0 (0 + y') := by
+    intro hcy
+    have := le1_entry1_lt hcy (show (0 : ℕ) ≠ 0 + y' from by omega)
+    omega
+  have hy1 : entry (gexp M 0 Lb d0 d1 n) 1 (0 + (k * Lb + y')) = entry M 1 (0 + y') := by
+    rw [gexp_entry1_mir hlen hk hy'lt, if_neg houty]
+    omega
+  -- 極小性
+  have hmin := h.2.2.2.2.2 (0 + (k * Lb + y')) ⟨by omega, hle0⟩
+  rw [hb1, hy1] at hmin
+  -- `c` の行 1
+  have hlt := h.2.2.2.1
+  rw [hb1] at hlt
+  by_cases hc0 : c = 0
+  · subst hc0
+    have h10 : entry (gexp M 0 Lb d0 d1 n) 1 0 = entry M 1 0 :=
+      gexp_entry_root hlen hn hLb
+    rw [h10] at hlt
+    omega
+  · have := gexp_outer_anc_row1 hlen hLb hk hq hd1pos hd0e hr0 hlp c
+      h.2.2.2.2.1.2.2 (by omega) hc0
+    omega
+
+/-! ### 107.1 ★★★★★★★ ⟹ `nextrel1` の壁が完成しました
+
+    **§87 `nextrel1_gexp_no_enter`** … 目標が**錐の中**のとき
+    **§107 `nextrel1_gexp_no_enter_out`** … 目標が**錐の外**のとき
+    **⟹ 場合分けが尽きた。`nextrel1` は根以外のどの列にも、ブロック外から入れない。**
+
+⟹ **`le1` の鎖もブロックを出られない**（§89 と合わせて帰納で回せる）
+⟹ **F2a の残る穴（§103.4）が閉じました。**
+
+⚠ **R2 の実測（`|Q|=6`・分母 117 万・破れ 0、G2 ありでも破れ 0）と一致します。**
+**そして機構は「G2 でも越えられない」で、R2 が示唆した方向そのものです。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
