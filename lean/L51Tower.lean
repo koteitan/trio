@@ -379,5 +379,162 @@ theorem tower_zero {u n : ℕ} {Q : TrioSeq} (hQ : Q ∈ W u)
   exact gTow_zero hQ hQr
 
 
+/-! ### 課題 L52-c: 行 316 `(0,0,0)(1,1,1)(1,1,1)` ＝ `gTower Q0 1 1 n` ＝ (LTOW) の最小事例 -/
+
+theorem le1_le {M : TrioSeq} {a b : ℕ} (h : le1 M a b) : a ≤ b := by
+  obtain ⟨-, -, h⟩ := h
+  induction h with
+  | refl => exact le_rfl
+  | tail _ h2 ih => exact le_trans ih (le_of_lt h2.2.2.1)
+
+/-- `(0,0,0)(1,1,1)(1,1,1)` ＝ `psi(W_w * 2)`。**(LTOW) の最小事例**。 -/
+def M316 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 1, 1)]
+
+@[simp] theorem entry_M316_00 : entry M316 0 0 = 0 := rfl
+@[simp] theorem entry_M316_10 : entry M316 1 0 = 0 := rfl
+@[simp] theorem entry_M316_20 : entry M316 2 0 = 0 := rfl
+@[simp] theorem entry_M316_01 : entry M316 0 1 = 1 := rfl
+@[simp] theorem entry_M316_11 : entry M316 1 1 = 1 := rfl
+@[simp] theorem entry_M316_21 : entry M316 2 1 = 1 := rfl
+@[simp] theorem entry_M316_02 : entry M316 0 2 = 1 := rfl
+@[simp] theorem entry_M316_12 : entry M316 1 2 = 1 := rfl
+@[simp] theorem entry_M316_22 : entry M316 2 2 = 1 := rfl
+
+theorem lev_M316 : lev M316 0 = 0 := by simp [lev, entry, M316]
+
+theorem srow_M316 : srow M316 2 = 2 := by simp [srow, entry, M316]
+
+theorem nextrel0_M316_01 : nextrel0 M316 0 1 := by
+  refine ⟨by simp [M316], by simp [M316], by omega, by simp [entry, M316], ?_⟩
+  intro j hj
+  omega
+
+theorem nextrel0_M316_02 : nextrel0 M316 0 2 := by
+  refine ⟨by simp [M316], by simp [M316], by omega, by simp [entry, M316], ?_⟩
+  intro j hj
+  have h1 : j = 1 := by omega
+  subst h1
+  simp [entry, M316]
+
+theorem le0_M316_00 : le0 M316 0 0 :=
+  ⟨by simp [M316], by simp [M316], Relation.ReflTransGen.refl⟩
+
+theorem le0_M316_01 : le0 M316 0 1 :=
+  ⟨by simp [M316], by simp [M316], Relation.ReflTransGen.single nextrel0_M316_01⟩
+
+theorem le0_M316_02 : le0 M316 0 2 :=
+  ⟨by simp [M316], by simp [M316], Relation.ReflTransGen.single nextrel0_M316_02⟩
+
+theorem nextrel1_M316_01 : nextrel1 M316 0 1 := by
+  refine ⟨by simp [M316], by simp [M316], by omega, by simp [entry, M316],
+    le0_M316_01, ?_⟩
+  intro j hj
+  have h1 : j ≤ 1 := le0_le hj.2
+  have h2 : j = 1 := by omega
+  subst h2
+  simp [entry, M316]
+
+theorem nextrel1_M316_02 : nextrel1 M316 0 2 := by
+  refine ⟨by simp [M316], by simp [M316], by omega, by simp [entry, M316],
+    le0_M316_02, ?_⟩
+  intro j hj
+  have h1 : j ≤ 2 := le0_le hj.2
+  have h3 : j < 3 := hj.2.1
+  rcases j with _ | _ | _ | j
+  · omega
+  · simp [entry, M316]
+  · simp [entry, M316]
+  · omega
+
+theorem le1_M316_00 : le1 M316 0 0 :=
+  ⟨by simp [M316], by simp [M316], Relation.ReflTransGen.refl⟩
+
+theorem le1_M316_01 : le1 M316 0 1 :=
+  ⟨by simp [M316], by simp [M316], Relation.ReflTransGen.single nextrel1_M316_01⟩
+
+theorem le1_M316_02 : le1 M316 0 2 :=
+  ⟨by simp [M316], by simp [M316], Relation.ReflTransGen.single nextrel1_M316_02⟩
+
+theorem nextrel2_M316_02 : nextrel2 M316 0 2 := by
+  refine ⟨by simp [M316], by simp [M316], by omega, by simp [entry, M316],
+    le1_M316_02, ?_⟩
+  intro j hj
+  have h1 : j ≤ 2 := le1_le hj.2
+  have h3 : j < 3 := hj.2.1
+  rcases j with _ | _ | _ | j
+  · omega
+  · simp [entry, M316]
+  · simp [entry, M316]
+  · omega
+
+theorem nextrel2_M316_unique {j : ℕ} (h : nextrel2 M316 j 2) : j = 0 := by
+  obtain ⟨hj3, -, -, hlt, -, -⟩ := h
+  simp only [M316] at hj3
+  simp at hj3
+  rcases j with _ | _ | _ | j
+  · rfl
+  · simp [entry, M316] at hlt
+  · simp [entry, M316] at hlt
+  · omega
+
+theorem nextR_M316_02 : nextR M316 2 0 2 := by
+  rw [nextR]
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)]
+  exact nextrel2_M316_02
+
+theorem hasParent_M316 : hasParent M316 2 2 := by
+  refine ⟨0, nextR_M316_02, ?_⟩
+  intro y hy
+  rw [nextR] at hy
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at hy
+  exact nextrel2_M316_unique hy
+
+theorem parent_M316 : parent M316 2 2 = 0 := by
+  have hex : ∃ j0, nextR M316 2 j0 2 := ⟨0, nextR_M316_02⟩
+  have hspec : nextR M316 2 (parent M316 2 2) 2 := Classical.epsilon_spec hex
+  rw [nextR] at hspec
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at hspec
+  exact nextrel2_M316_unique hspec
+
+/-- **★★ `M316⟦n⟧ = gTower Q0 1 1 n`**（行 0 も行 1 も段ごとに `+1`）。 -/
+theorem oper_M316 (n : ℕ) : M316⟦n⟧ = gTower Q0 1 1 n := by
+  have hl : M316.length - 1 = 2 := rfl
+  have hp : parent M316 (srow M316 (M316.length - 1)) (M316.length - 1) = 0 :=
+    parent_M316
+  rw [oper]
+  dsimp only
+  split
+  · exact absurd ‹M316.length - 1 = 0› (by decide)
+  split
+  · rename_i h
+    exact absurd h.1 (by simp [entry, M316])
+  split
+  · rename_i h
+    exact absurd hasParent_M316 h
+  rw [hp, hl]
+  have htake : M316.take 0 = [] := rfl
+  rw [htake, List.nil_append]
+  unfold gTower
+  congr 1
+  funext k
+  have hr : List.range' 0 2 = [0, 1] := rfl
+  rw [hr]
+  simp [Q0, shiftr01, srow_M316, le0_M316_00, le1_M316_00, le0_M316_01, le1_M316_01,
+    Nat.mul_comm]
+
+/-- **★★★ 行 316 は (LTOW)（＝ `GTow`）の最小事例**。
+実測ではこれ 1 本で覆いが 4.2% → 64.5% に跳ねる。 -/
+theorem M316_mem_W_zero_of_gtow (h : GTow) : M316 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn
+  rw [oper_M316]
+  exact h 0 1 1 n Q0 Q0_mem_W_zero Q0_root
+
+theorem M316_mem_Wself_of_gtow (h : GTow) : M316 ∈ Wself := by
+  show M316 ∈ W (lev M316 0)
+  rw [lev_M316]
+  exact M316_mem_W_zero_of_gtow h
+
+
 end L51T
 end TRIO
