@@ -12140,6 +12140,51 @@ theorem prefixTowerClosed_final {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
 ⚠ **そして team-lead の提案（「`hnb` を消した手を `h2` にも」）が当たりです。**
 **⟹ 同じ手筋が 2 回続けて効きました: `∀ j` を `hstep` の中の「その `j`」に落とす。** -/
 
+/-! ## 170. ✅ **(H1)**: 窓の根は窓の中で狭義に最浅（`window_of_rtg0` から無条件） -/
+
+theorem window_root_shallow {M : TrioSeq} {j0 Lb : ℕ} (hL : j0 + Lb ≤ M.length)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l) :
+    ∀ l, 0 < l → l < ((M.drop j0).take Lb).length →
+      entry ((M.drop j0).take Lb) 0 0 < entry ((M.drop j0).take Lb) 0 l := by
+  have hVlen : ((M.drop j0).take Lb).length = Lb := by
+    rw [List.length_take, List.length_drop]; omega
+  have hEV : ∀ x, x < Lb → entry ((M.drop j0).take Lb) 0 x = entry M 0 (j0 + x) := by
+    intro x hx
+    rw [Wset.entry_take (X := M.drop j0) (l := Lb) (i := 0) (j := x) hx, entry_drop]
+  intro l hl0 hl1
+  rw [hVlen] at hl1
+  rw [hEV 0 (by omega), hEV l hl1, Nat.add_zero]
+  exact hup (j0 + l) (by omega) (by omega)
+
+/-! ### 170.1 ⟹ (H1) が片づきました
+
+**そして `hup` は、悪根については `Lcone.window_of_rtg0`（無条件・緑）で自動です**
+（§130 でそう使いました: `hrtg : ReflTransGen (nextrel0 M) j0 (j0+Lb)` が
+`parent_nextR hp` から出て、`window_of_rtg0 hrtg` が `hup` を与える）。
+
+> **⟹ (H1) は前提として書く必要がありません。悪根であることから出ます。**
+
+### 170.2 ⟹ 残るのは (H2)(H3) の 2 つ
+
+    **(H2)** **`V` の行 2 の列が `V` の中で行 2 の親を持つか**
+        ⟹ §169 で**列ごと**になったので、要るのは「その列について」だけ
+        ⟹ **持たない（行 2 の孤児）なら、塔でも孤児か？** ← team-lead / H12 / R2 の (m2b)
+        ⟹ **孤児なら `snoc_orphan_W` で無料 ⟹ (H2) がまるごと消える**
+    **(H3)** **`V` の非根の列が `V` の根の錐に入るか**
+        ⟹ **R2 の (y2) が測った穴**（同じブロックの中で 6.3〜11.1% 破れる）
+        ⟹ 条件は `∃ q, q0 < q < |Q|, entry Q 1 q ≤ entry Q 1 q0`
+          ＝ **窓の根が行 1 で最小でない** ＝ 私の §156 の条件
+
+> **⟹ (H3) が本丸です。そして「窓の根が行 1 で最小」は、
+> `Q` の行 1 が（行 0 の鎖に沿って）狭義単調なら成り立ちます。**
+> **⟹ そしてその条件は**部分窓について遺伝します**（部分列を取るだけなので）。**
+> **⟹ R2 の「`Mono` は**展開**で保たれない」とは別の話です。帰納が要求するのは**窓**のほうです。**
+
+⚠ **教訓 14**: 上の最後の 3 行は **設計**です。**`Mono` の行 1 の条件が
+本当に (H3) を与えるかは、書いてみないと分かりません。**
+⚠ **そして消費側が行 1 の単調性を供給しないことは §162 で確認済みです。**
+**⟹ ですから (H3) は「仮定して先に進む」か「別の道を探す」かの分岐点です。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
