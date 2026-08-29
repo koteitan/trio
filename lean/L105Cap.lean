@@ -12519,6 +12519,69 @@ theorem shiftr01_mTower (c : ℕ) (V : TrioSeq) (d e m : ℕ) :
 ⚠ **team-lead の「書く前に確かめてください」が正しかったです。**
 **書いていたら `j = 0` で偽の定理を作るところでした。** -/
 
+/-! ## 177. ★★★★★★ **行 1 の 1 歩はブロックを出ない**（`q ≥ 1` かつブロック内に親があるとき）
+
+§176.3 の「錐の外なら鎖はブロック内で終わる」を組むための 1 歩目。
+道具は `Wset.nextR_src_ge`（`:2573`、**前提なし**）1 本。 -/
+
+open Classical in
+theorem nextrel1_block_sameBlock {A Q : TrioSeq} {d e n q y : ℕ}
+    (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (q + 1)) 1 q)
+    (hnr : nextrel1 (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (q + 1)) y
+      ((A ++ mTower Q d e n).length + q)) :
+    (A ++ mTower Q d e n).length ≤ y := by
+  obtain ⟨p, hp, -⟩ := hloc
+  have hy : nextR (A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (q + 1)) 1 y
+      ((A ++ mTower Q d e n).length + q) := by
+    unfold nextR
+    rw [if_neg (by omega), if_pos rfl]
+    exact hnr
+  exact nextR_src_ge hp hy
+
+open Classical in
+/-- **錐の中の列**（`q ≥ 1`）… 行 1 の 1 歩はブロックを出ない。 -/
+theorem nextrel1_block_sameBlock_cone {A Q : TrioSeq} {d e n q y : ℕ}
+    (hq : q < Q.length) (hq1 : 0 < q)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hcone : le1 Q 0 q)
+    (hnr : nextrel1 (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (q + 1)) y
+      ((A ++ mTower Q d e n).length + q)) :
+    (A ++ mTower Q d e n).length ≤ y :=
+  nextrel1_block_sameBlock (block_blockParent_of_cone hq hq1 hr0 hcone) hnr
+
+open Classical in
+/-- **錐の外で行 1 が根より上の列** … 同じく、行 1 の 1 歩はブロックを出ない。 -/
+theorem nextrel1_block_sameBlock_out {A Q : TrioSeq} {d e n q y : ℕ}
+    (hq : q < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hout : ¬ le1 Q 0 q) (hhigh : entry Q 1 0 < entry Q 1 q)
+    (hnr : nextrel1 (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (q + 1)) y
+      ((A ++ mTower Q d e n).length + q)) :
+    (A ++ mTower Q d e n).length ≤ y :=
+  nextrel1_block_sameBlock (block_blockParent_row1_outcone hq hr0 hout hhigh) hnr
+
+/-! ### 177.1 ⟹ 1 歩は片づきました。残るのは鎖
+
+**`Wset.nextR_src_ge`（前提なし）だけで出ました。**
+**⟹ 「ブロック内に親がある ⟹ 塔での 1 歩もブロック内」は、行 1 に限らず**任意の行**で成り立ちます**
+（`nextR_src_ge` は `i` について一般）。
+
+⚠ **残るのは §99 `gexp_anc_through_root` と同じ形の**鎖の帰納**です:**
+
+    **1 歩がブロックを出ない**（上）
+    **⟹ 鎖全体がブロックを出ない**（`Relation.ReflTransGen` の帰納）
+
+⚠ **そして §176.1 のとおり `q = 0`（ブロックの根）は別扱いです。**
+**⟹ 鎖が根に届いたら出ます。届かない条件が `¬ le1 Q 0 j`（錐の外）です。**
+
+⚠ **教訓 14**: **1 歩だけです。鎖はまだ書いていません。**
+**⟹ そして鎖を書くには「途中の列も `q ≥ 1` かつ（錐の中 or 行 1 が根より上）」が要ります。
+それが自動かはまだ見ていません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
