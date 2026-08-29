@@ -12301,6 +12301,64 @@ theorem block_blockParent_row1_outcone {Q : TrioSeq} {d e n j : ℕ}
 上の `srow = 1` の議論が**行 2 では効かない**ことを意味します
 （`nextrel2` は `le1` の祖先性を要求するので、行 0 の祖先である `y` では足りない）。** -/
 
+/-! ## 173. ★★★★★★ `srow = 2` へ: **行 2 の親の有無は `Q` とブロックで同値**
+
+§161 の道具（`entry2_block_take` / `le1_block_take`）はどちらも **iff** なので、
+`block_blockParent_row2'` の**逆**も同じ骨で出る。 -/
+
+open Classical in
+theorem block_hasParent_row2_iff {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 j
+      ↔ hasParent (Q.take (j + 1)) 2 j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  have hQlen : (Q.take (j + 1)).length = j + 1 := by
+    rw [List.length_take]; omega
+  constructor
+  · rintro ⟨a, ha, -⟩
+    have hnr : nextrel2 (B.take (j + 1)) a j := by
+      unfold nextR at ha
+      rwa [if_neg (by omega), if_neg (by omega)] at ha
+    have haj : a < j := hnr.2.2.1
+    refine hasParent_two_of (by omega) haj ?_ ?_
+    · rw [← le1_block_take (d := d) (e := e) (n := n) hj (by omega)]
+      exact hnr.2.2.2.2.1
+    · rw [← entry2_block_take (d := d) (e := e) (n := n) (x := a) (by omega),
+        ← entry2_block_take (d := d) (e := e) (n := n) (x := j) (by omega)]
+      exact hnr.2.2.2.1
+  · exact fun h => block_blockParent_row2' hj h
+
+/-! ### 173.1 ⟹ `srow = 2` の道が 1 本に決まりました
+
+    **`Q` の中で行 2 の親を持つ** ⟹ ブロックでも持つ（§161）⟹ §141 で**同ブロック** ⟹ **(ii)**
+    **`Q` の中で行 2 の孤児**   ⟹ **ブロックでも孤児**（上の逆向き）
+        ⟹ **塔でも孤児か？** ← ここだけが残り（team-lead / H12 / R2 の (m2b)）
+        ⟹ **孤児なら `snoc_orphan_W` で無料 ⟹ `h2` がまるごと消える**
+
+### 173.2 ★ そして「塔でも孤児」には道が見えます
+
+`nextrel2` は **`le1` の祖先性**を要求する。**⟹ 塔での行 2 の親は、塔での `le1` 祖先。**
+**⟹ もし「ブロック `n` の列の `le1` 祖先はブロック `n` の中だけ」が言えれば、
+ブロック内で行 2 の孤児なら塔でも孤児。**
+
+**そして行 1 については §172 で三分割が閉じています:**
+
+    錐の中                        ⟹ §142 ⟹ ブロック内に行 1 の親 ⟹ §141 で**同ブロック**
+    錐の外 ∧ 行 1 が根より上       ⟹ §172 ⟹ ブロック内に行 1 の親 ⟹ §141 で**同ブロック**
+    錐の外 ∧ 行 1 が根以下         ⟹ §102/§137 ⟹ **塔でも行 1 の孤児**（親が無い）
+
+> **⟹ どの場合でも「行 1 の 1 歩はブロックを出ない」。**
+> **⟹ `le1` の鎖はブロック `n` の中で閉じる ⟹ 行 2 の親もブロック `n` の中。**
+> **⟹ ブロック内で行 2 の孤児なら**塔でも孤児** ⟹ 無料。**
+
+⚠ **教訓 14**: **これは道であって定理ではありません。**
+**`le1` の鎖について帰納を回す 1 本（「1 歩がブロックを出ない」から「鎖全体が出ない」）が
+まだ書けていません。** §99 `gexp_anc_through_root` が行 0 でやったのと同じ形です。
+
+⚠ **そして (m2b) を H12 と R2 が別々に見ています。上はその**機構の候補**です。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
