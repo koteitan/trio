@@ -11697,6 +11697,91 @@ theorem mTowerClosed_of_snocStepCone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
 **「当たらない」は「使えない」ではなく「形が違う」という意味です。**
 **平坦化できる場面（`d = e = 0`）が出たら、そのとき 10 本が効きます。** -/
 
+/-! ## 165. ★★★★★★★ **`gexp` の `j0 > 0` 版**（R2 §R146 が 3 度依頼したもの）
+
+    **`gexp M j0 Lb d0 d1 n = M.take j0 ++ mTower ((M.drop j0).take Lb) d0 d1 n`**
+    **前提は `j0 + Lb ≤ M.length` だけ**（R2 の実測: 分母 69,984 / 2,099,520 / 5,598,720 で 100%）
+
+`gexp` は定義から `M.take j0 ++ gcopies …` なので、**`gcopy` の側を示せばよい。**
+中身は R2 の名指しどおり **`le1 M j0 (j0+i) ↔ le1 ((M.drop j0).take Lb) 0 i`** 1 本。 -/
+
+theorem le1_drop_take {M : TrioSeq} {j0 Lb i : ℕ} (hL : j0 + Lb ≤ M.length)
+    (hi : i < Lb) :
+    le1 ((M.drop j0).take Lb) 0 i ↔ le1 M j0 (j0 + i) := by
+  have hd : (M.drop j0).length = M.length - j0 := List.length_drop
+  have htl : (M.take j0).length = j0 := by rw [List.length_take]; omega
+  have hsplit : M.take j0 ++ M.drop j0 = M := List.take_append_drop j0 M
+  rw [le1_take (by omega) hi]
+  have hkey : le1 (M.take j0 ++ M.drop j0) ((M.take j0).length + 0)
+      ((M.take j0).length + i) ↔ le1 (M.drop j0) 0 i :=
+    le1_append_right (M.take j0) (M.drop j0) 0 i
+  rw [hsplit, htl, Nat.add_zero] at hkey
+  exact hkey.symm
+
+theorem gcopy_eq_lift_gen {M : TrioSeq} {j0 Lb d0 d1 k : ℕ}
+    (hL : j0 + Lb ≤ M.length) :
+    gcopy M j0 Lb d0 d1 k
+      = Lift1 (shiftr01 (d0 * k) 0 ((M.drop j0).take Lb)) (d1 * k) := by
+  have hVlen : ((M.drop j0).take Lb).length = Lb := by
+    rw [List.length_take, List.length_drop]; omega
+  have hSlen : (shiftr01 (d0 * k) 0 ((M.drop j0).take Lb)).length = Lb := by
+    rw [shiftr01_length, hVlen]
+  have hEV : ∀ y i, i < Lb → entry ((M.drop j0).take Lb) y i = entry M y (j0 + i) := by
+    intro y i hi
+    rw [Wset.entry_take (X := M.drop j0) (l := Lb) (i := y) (j := i) hi, entry_drop]
+  unfold gcopy Lift1
+  rw [hSlen]
+  refine List.ext_getElem ?_ ?_
+  · rw [List.length_map, List.length_map, List.length_range', List.length_range]
+  · intro i h1 h2
+    have hiLb : i < Lb := by
+      rw [List.length_map, List.length_range'] at h1; exact h1
+    rw [List.getElem_map, List.getElem_map, List.getElem_range', List.getElem_range]
+    have h0 : entry (shiftr01 (d0 * k) 0 ((M.drop j0).take Lb)) 0 i
+        = entry M 0 (j0 + i) + d0 * k := by
+      rw [entry0_shiftr01 (by rw [hVlen]; exact hiLb), hEV 0 i hiLb]
+    have h1' : entry (shiftr01 (d0 * k) 0 ((M.drop j0).take Lb)) 1 i
+        = entry M 1 (j0 + i) := by
+      rw [entry1_shiftr01, hEV 1 i hiLb]
+    have h2' : entry (shiftr01 (d0 * k) 0 ((M.drop j0).take Lb)) 2 i
+        = entry M 2 (j0 + i) := by
+      rw [entry2_shiftr01, hEV 2 i hiLb]
+    have hc : le1 (shiftr01 (d0 * k) 0 ((M.drop j0).take Lb)) 0 i
+        ↔ le1 M j0 (j0 + i) := by
+      rw [le1_shiftr01]; exact le1_drop_take hL hiLb
+    simp only [Nat.one_mul]
+    rw [h0, h1', h2']
+    have hif : (if le1 M j0 (j0 + i) then k * d1 else 0)
+        = (if le1 (shiftr01 (d0 * k) 0 ((M.drop j0).take Lb)) 0 i then d1 * k else 0) := by
+      by_cases hcone : le1 M j0 (j0 + i)
+      · rw [if_pos hcone, if_pos (hc.mpr hcone), Nat.mul_comm]
+      · rw [if_neg hcone, if_neg (fun hh => hcone (hc.mp hh))]
+    rw [hif, Nat.mul_comm k d0]
+
+/-- **★★★★★★★ `gexp` の `j0 > 0` 版**（前提は `j0 + Lb ≤ M.length` だけ）。 -/
+theorem gexp_eq_take_append_mTower {M : TrioSeq} {j0 Lb d0 d1 n : ℕ}
+    (hL : j0 + Lb ≤ M.length) :
+    gexp M j0 Lb d0 d1 n
+      = M.take j0 ++ mTower ((M.drop j0).take Lb) d0 d1 n := by
+  unfold gexp gcopies mTower
+  congr 1
+  exact List.flatMap_congr (fun k _ => gcopy_eq_lift_gen hL)
+
+/-! ### 165.1 ⟹ 何が開くか
+
+    §138 `snocStep_oper_prefix` … `T_{j+1}⟦m⟧ = T_p ++ （窓のコピー）`
+    **§165 … そのコピーが **`mTower V d0 d1 m`**（`V` ＝ 窓）だと分かる**
+
+> **⟹ 族が閉じます: 「塔」→「接頭辞 ＋ **より短い** `V` の塔」。**
+> **⟹ `|V| = Lb < |Q|`（同ブロックなら `j − p ≤ |Q| − 2`）なので、
+> **`|V|` についての強帰納**が回せる形になりました。**
+
+⚠ **`j0 = 0` を入れると `M.take 0 = []` で §68 `gexp_zero_eq_mTower` に戻ります。**
+**⟹ 真の一般化です。**
+
+⚠ **教訓 14**: これは **展開の形**であって、**`W` の所属ではありません。**
+**帰納を回すには「接頭辞 ＋ 塔」が `W` に入ることが要り、それが (a) です。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
