@@ -1841,6 +1841,131 @@ theorem liftTieCore_of_liftTie (h : L53.LiftTie) : LiftTieCore :=
     have := h (2 * v + z) 1 v z R hR ht hX
     simpa using this
 
+
+/-! ## 30. ★★★★ 課題 L116: 窓分解と `Lift1` の錐
+
+`Lcone.le1_zero_iff`（`Lcone.lean:36`）:
+
+    根が行 0 で狭義最浅なら
+    **`le1 X 0 j` ⟺ `j` の根以外の行 0 祖先 `y` がすべて `entry X 1 0 < entry X 1 y`**
+
+⟹ 錐は**行 0 の祖先について上方閉**（祖先が錐に無ければ子孫も無い）。
+対偶で言えば **「ブロッカー（行 1 ≤ v の列）は自分の行 0 部分木を丸ごと錐から外す」**。 -/
+
+/-- **★★ 錐は行 0 の祖先について上方閉。**（対偶: ブロッカーは部分木ごと外す。） -/
+theorem le1_root_of_rtg0 {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    {p i : ℕ} (hi : i < X.length)
+    (hpi : Relation.ReflTransGen (nextrel0 X) p i) (h : le1 X 0 i) :
+    le1 X 0 p := by
+  have hple : p ≤ i := nextrel0_rtrancl_index_le hpi
+  have hp : p < X.length := by omega
+  rw [le1_zero_iff hr hp]
+  rw [le1_zero_iff hr hi] at h
+  intro y hyp hy0
+  exact h y (hyp.trans hpi) hy0
+
+/-- **★ タイは錐に入らない**（`nextrel1` は行 1 の狭義増加を要求）。 -/
+theorem not_le1_of_tie {X : TrioSeq} {j : ℕ} (hj : (0 : ℕ) ≠ j)
+    (htie : entry X 1 j = entry X 1 0) : ¬ le1 X 0 j := by
+  intro h
+  have := le1_entry1_lt h hj
+  omega
+
+/-- **★★ ⟹ タイの行 0 部分木は丸ごと錐の外**（`Lift1` が触らない）。 -/
+theorem not_le1_of_tie_ancestor {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    {y i : ℕ} (hy0 : (0 : ℕ) ≠ y) (hi : i < X.length)
+    (hyi : Relation.ReflTransGen (nextrel0 X) y i)
+    (htie : entry X 1 y = entry X 1 0) : ¬ le1 X 0 i := by
+  intro h
+  exact not_le1_of_tie hy0 htie (le1_root_of_rtg0 hr hi hyi h)
+
+/-- **★★★ 窓の切れ目（行 0 の最小点）では錐の判定が「その列だけ」で済む。**
+`Lind.graft_take_drop`（`Lind.lean:63`）が切る位置 `p` は行 0 で最小なので、
+`p` の根以外の行 0 祖先は `p` 自身しかない。 -/
+theorem le1_root_at_min {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    {p : ℕ} (hp0 : 0 < p) (hp : p < X.length)
+    (hmin : ∀ j, 0 < j → j < X.length → entry X 0 p ≤ entry X 0 j) :
+    le1 X 0 p ↔ entry X 1 0 < entry X 1 p := by
+  rw [le1_zero_iff hr hp]
+  constructor
+  · intro h
+    exact h p Relation.ReflTransGen.refl (by omega)
+  · intro h y hyp hy0
+    have hyp' : y = p := by
+      rcases Relation.ReflTransGen.cases_tail hyp with heq | ⟨c, hyc, hcp⟩
+      · exact heq.symm
+      · exfalso
+        have hclt : c < p := hcp.2.2.1
+        have hdeep : entry X 0 c < entry X 0 p := hcp.2.2.2.1
+        rcases Nat.eq_zero_or_pos c with rfl | hcpos
+        · have := nextrel0_rtrancl_index_le hyc
+          omega
+        · have := hmin c hcpos (by omega)
+          omega
+    rw [hyp']
+    exact h
+
+/-! ### 30.1 ★★ **BMS では「行 0 の部分木」＝ 区間**（`Gcopy.rtg0_of_window` `:65`）
+
+    `rtg0_of_window : j < |M| → a ≤ j → (∀ l, a < l → l ≤ j → entry M 0 a < entry M 0 l)
+                    → ReflTransGen (nextrel0 M) a j`
+
+⟹ **`y` の行 0 部分木は区間 `[y, k)`**（`k` は `y` の次に行 0 が `≤ entry X 0 y` になる位置）。
+⟹ `Wtower2.W_segment`（`:2981`）`(M.drop j).take k ∈ W (lev M j)` と
+   `Wtower2.drop_rebase_mem_W`（`:3196`）が**そのまま当たる**。 -/
+
+/-- **★★ タイの部分木（区間）は丸ごと錐の外。** -/
+theorem not_le1_of_tie_window {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    {y i : ℕ} (hy0 : (0 : ℕ) ≠ y) (hyi : y ≤ i) (hi : i < X.length)
+    (hwin : ∀ l, y < l → l ≤ i → entry X 0 y < entry X 0 l)
+    (htie : entry X 1 y = entry X 1 0) : ¬ le1 X 0 i :=
+  not_le1_of_tie_ancestor hr hy0 hi (rtg0_of_window hi hyi hwin) htie
+
+/-! ### 30.2 ⚠ **自己訂正**: 分解はできる。止まるのは**再結合**
+
+初稿でここに「`Lind` の窓分解は行 0 の最小点で切るのでタイを分離できない、
+必要なのは区間ではない木の部分木分解だ」と書いたが、**誤りだった**。
+`Gcopy.rtg0_of_window`（`:65`）を開いたら **BMS では部分木は区間**であり、
+`W_segment` / `drop_rebase_mem_W` が**すでにある**。**分解はできる。**
+
+⟹ 止まるのは §27 とまったく同じ場所である:
+
+    タイの部分木 `[y, k)` は区間 ⟹ `W_segment` で `W (lev X y)` に置ける（分解 ✅）
+    `Lift1 X d` はその区間に触らない（`not_le1_of_tie_window`、上、緑）
+    **しかし `X.take y ++ (部分木) ++ X.drop k` に戻す操作が `WCat`**（再結合 ❌）
+
+### 30.3 ★ 止まる場所（1 行、§27 と同一）
+
+> **タイの部分木は区間なので分解はできる（`W_segment`）。だが `Lift1` の結論は
+> 列全体についてのものなので、分解した断片を `W` の中で戻す必要があり、
+> それが `WCat` になる。分解ではなく再結合が壁。**
+
+⟹ §27（`split_lastTie`、接頭辞で切る）も §30（窓分解、行 0 で切る）も
+**同じ壁**（`WCat`）に当たる。**`Lift1` の核は「分解して組み直す」形では取れない。**
+
+### 30.4 ⟹ 次のエージェントへ
+
+`Lift1` は列ごとの局所操作ではなく**根の錐という大域条件**なので、
+分解・再結合の路線は `WCat` に帰着する（§27・§30 で 2 回確認）。
+⟹ 残る道は **`Aop` の節 2 で降りる**（`mem_iff_oper_mem`、`Wchar.lean:75`）だけ:
+
+    `Lift1 X 1 ∈ W (m+2)` ⟸ `∀ n ≥ 1, (Lift1 X 1)⟦n⟧ ∈ W (m+2)`
+
+そして `Wtower2` には**その挟み込みが既にある**:
+
+    `Le1_Lift1_oper`（`Wtower2.lean:4408`）      `Lift1 (X⟦n⟧) d ≤₁ (Lift1 X d)⟦n⟧`
+    `Le1_oper_Lift1_shiftr01`（`:4457`）         `(Lift1 X d)⟦n⟧ ≤₁ shiftr01 0 d (X⟦n⟧)`
+    `Wslift.ulift_mem_W`（`:461`）               `shiftr01 0 d Y ∈ W (m+2d)`（**無条件**）
+
+⟹ **上界は無料。隙間を潰すのが `WConvex`**（`Wtower2.lean:450`、
+`liftStage_of_wconvex'` `:4473`）。**`d = 1` に落ちた今、隙間は行 1 で高々 1**
+なので、**幅 1 の凸性（`WConvex1` / `WConvexUnit`）で足りるはず**である。
+`L53.liftStage_of_wconvex1` / `wconvex1_of_unit` が既にある。**そこが次の一手。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
