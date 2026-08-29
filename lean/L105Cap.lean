@@ -11390,7 +11390,19 @@ theorem block_blockParent_all' {Q : TrioSeq} {d e n j : ℕ}
   · rw [if_neg h2p, if_pos (by rw [hE1, if_pos hcone]; omega)]
     exact block_blockParent_of_cone hj hj1 hr0 hcone
 
-/-! ### 161.2 ⟹ `z = 1` でも使えるようになりました
+/-! ### 161.2 ⛔⛔ **この節の主張は誤りでした**（R2 の導出。§169 参照）
+
+**`h2` は `∀ j`（`j = 0` を含む）なので、`entry Q 2 0 = 0` を**厳密に含意**します**
+（`hasParent (Q.take 1) 2 0` は `j0 < 0` を要求するので不可能）。
+**⟹ 「`entry Q 2 0 = 0` を捨てて `h2` に置き換えた」は成り立ちません。`h2` のほうが強い。**
+**⟹ `z = 1` は落ちたままでした。実測でも `z = 1` で `h2` 成立 0.00%（分母 52,488）。**
+
+**⟹ 正しい直し方は §169: `h2` を `hstep` の中の「その `j` について」に落とす
+（`0 < j` の下でしか呼ばれないので `j = 0` の量化が消える）。**
+
+⚠ **以下の旧記述は、誤りの記録として残します。**
+
+### 161.2（旧）⟹ `z = 1` でも使えるようになりました
 
     §154 … 前提 **`entry Q 2 0 = 0`**（`z = 1` で破れる）
     **§161 … 前提 **「行 2 が正なら `Q` の中で行 2 の親を持つ」****
@@ -12034,6 +12046,99 @@ theorem prefixTowerClosed_of_snocStepStrong {u : ℕ} {A Q : TrioSeq} {d e : ℕ
 
 ⚠ **教訓 14**: **骨が緑になっただけで、(H2)(H3) は示していません。**
 **⟹ (H2)(H3) が「`Q` について仮定すれば `V` について出る」形かどうかが、次の 1 点です。** -/
+
+/-! ## 169. ⛔ **§161 の主張は誤りでした**（R2 の導出）＋ 前提 `h2` を列ごとに移す
+
+### 169.1 R2 の導出（私が確かめました。正しいです）
+
+    `h2 : ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j`
+    **`∀ j` は `j = 0` を含む。**
+    `entry Q 2 0 > 0` なら `hasParent (Q.take 1) 2 0` が要る。
+    `hasParent M i j1 = ∃! j0, nextR M i j0 j1` は **`j0 < j1 = 0`** を要求 ⟹ **不可能**。∎
+
+> **⟹ `h2` ⟹ `entry Q 2 0 = 0`。**
+> **⟹ §161 の「`entry Q 2 0 = 0` を捨てて `h2` に置き換えた」は**成り立ちません**。**
+> **⟹ `h2` のほうが**強い**前提でした。私は前提を弱めたつもりで、強めていました。**
+
+⚠ **消費側は `entry Q 2 0 = z` で `z = 1` を渡すので、`z = 1` は落ちたままです。**
+**R2 の実測が一致: `z = 1` で `h2` 成立 0.00%（分母 52,488）。**
+
+### 169.2 ⟹ 直し方は §139 と同じ: **`∀ j` をやめて列ごとに、さらに場合分けに**
+
+`h2` は `block_blockParent_all_cone` の **`srow = 2` の枝でしか使いません**。
+**⟹ `hstep` の中に「その `j` について」の形で持ち込めば、`j = 0` の量化が外れます。**
+**⟹ そして持たない場合（行 2 の孤児、R2 の実測で 66.7%）は、
+`hstep` 自身が (i) 孤児か (iii) 復活として扱えばよい。** -/
+
+open Classical in
+/-- **★★★★★★★ 前提 `h2` を列ごとに移した最終形**（`entry Q 2 0 = 0` を含意しません）。 -/
+theorem prefixTowerClosed_final {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (0 < j → le1 Q 0 j → (0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) →
+        (A ++ mTower Q d e n).length ≤
+          parent (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (srow (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+              (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+            (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+      (∀ j', j' ≤ j →
+        A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) →
+      A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine prefixTowerClosed_of_snocStepStrong hA ?_
+  intro n j hj hall
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hPlen : (A ++ mTower Q d e n).length = A.length + n * Q.length := by
+    rw [List.length_append, mTower_length]
+  have hClen : (A ++ mTower Q d e n ++ B.take j).length
+      = (A ++ mTower Q d e n).length + j := by
+    rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hC1len : (A ++ mTower Q d e n ++ B.take (j + 1)).length
+      = (A ++ mTower Q d e n).length + (j + 1) := by
+    rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hsrow : srow (A ++ mTower Q d e n ++ B.take (j + 1))
+      ((A ++ mTower Q d e n).length + j) = srow (B.take (j + 1)) j := by
+    unfold srow
+    rw [entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
+  refine hstep n j hj (fun hj1 hcone hlocal2 => ?_) hall
+  have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
+    block_blockParent_all_cone hj hj1 hr0 hcone hlocal2
+  have hpar : hasParent (A ++ mTower Q d e n ++ B.take (j + 1))
+      (srow (B.take (j + 1)) j)
+      ((A ++ mTower Q d e n ++ B.take (j + 1)).length - 1) := by
+    rw [hC1len, show (A ++ mTower Q d e n).length + (j + 1) - 1
+      = (A ++ mTower Q d e n).length + j from by omega]
+    exact hasParent_append_right_of _ _ hloc
+  have hres := prefixSnocStep_parent_sameBlock (A := A) (d := d) (e := e) (n := n)
+    (i := srow (B.take (j + 1)) j) hj hloc hpar
+  rw [hC1len, show (A ++ mTower Q d e n).length + (j + 1) - 1
+    = (A ++ mTower Q d e n).length + j from by omega] at hres
+  rw [hClen, hsrow]
+  exact hres
+
+/-! ### 169.3 ⟹ これで `entry Q 2 0 = 0` の含意が消えました
+
+    §163 … `h2 : ∀ j, …`（**`j = 0` を含む ⟹ `entry Q 2 0 = 0` を含意**）
+    **§169 … `hstep` の中に「その `j` について」（**`j ≥ 1` でしか呼ばれない**）**
+
+**⟹ `0 < j` の下でしか `hlocal2` を要求しないので、`j = 0` の量化がありません。**
+**⟹ `z = 1` でも使えます（今度こそ）。**
+
+⚠ **教訓**: 私は §161 で「前提を弱めた」と書きましたが、**強めていました**。
+**`∀ j` の量化に `j = 0` が入っていることを見ていませんでした。**
+**⟹ R2 が `hasParent` の定義（`j0 < j1`）まで開いて潰しました。**
+**⟹ 私は「行 2 の親を持つ」という**散文**で考えて、`j = 0` を確かめませんでした。**
+
+⚠ **そして team-lead の提案（「`hnb` を消した手を `h2` にも」）が当たりです。**
+**⟹ 同じ手筋が 2 回続けて効きました: `∀ j` を `hstep` の中の「その `j`」に落とす。** -/
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
