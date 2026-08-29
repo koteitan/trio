@@ -4887,3 +4887,50 @@ L2 の進捗（`towerOK2_of_strict'` / `towerOK2_of_noTie'` が仮定ゼロ、�
 **`GraftFromExp` は残核 `Subst1gReviveSelf` と同じ置換の形で、側条件は 100% 自動。
 差は「宿主 `S` について何を仮定できるか」だけ**（`Wstar R` か `Wstar R.dropLast` か）。
 ⟹ **2 本の核は「残核 ＋ 1 段の `snoc`」に整理できる見込み。**
+
+---
+
+## R77 —— **最終分解の end-to-end 検算**（`tools/dbms/wcert2.py` に門を実装）
+
+L2 の L90 で `GraftFromExp` が既存の核 2 本に落ちたので、分解は
+
+    `TowerOK` ⟸ **`TowerGraft2`**（⟸ `LiftTie` ⟸ **`MliftR`**）
+               ∧ **`TowerExp`**（⟸ `GraftFromExp` ⟸ **`Subst1gRevive`** ＋ **`WSnoc`**）
+    `TowerOK` → `Wstar_closed` → `mem_Wstar` → **`Wstar`**
+
+教訓 17 に従い、**3 本そろって初めて `Wstar` が立つ門**を `_wstar_cert` に入れた。
+**C13（未 Lean 化）は常に外して測る。**
+
+### ★ 結果（母数: ブック全 7 シート 20415 行）
+
+| 神託 | ラダー |
+|---|---|
+| 対照: strict（核ゼロ） | **9 / 20415** |
+| **3 本そろえて（`MliftR` ＋ `Subst1gRevive` ＋ `WSnoc`）** | **20415 / 20415（100%）** |
+| 1 本抜き（`MliftR` を外す / `Subst1gRevive` を外す / `WSnoc` を外す） | **どれも 9** |
+| 1 本だけ（`MliftR` / `Subst1gRevive` / `WSnoc`） | **どれも 9** |
+
+    3 本のときの内訳: **C16/Wstar 20388** / C12 19 / C10 4 / C15/F3z2 2 / C5' 1 / C6' 1
+    ⟹ **`Wstar` 以外は全部 Lean で証明ずみの規則**
+       （C12 = 節 2 の持ち上げ無し ＋ `W_flatMap_copies` ＋ `W_add`、
+         C10 = `W_flatMap_copies`、C15/F3z2 = `shiftTowerClosed_of_zeroRow2`、
+         C5' = `snoc_zeroRow2`、C6' = `snoc_orphan`）
+
+⟹ **分解は正しい。3 本そろえば 20415、1 本でも欠ければ 9。穴は無い。**
+
+### ⚠ 自己訂正 —— **§R70 / §R72 の「対照 strict 4 行」は計器の artifact**
+
+同じ設定で予算と C13 を振ったら:
+
+    C13 あり 予算  20000 -> **4 行**   ← §R70/§R72 で報告した値
+    C13 あり 予算 500000 -> **10 行**
+    C13 なし 予算  20000 -> **9 行**
+    C13 なし 予算 500000 -> **9 行**
+
+⟹ **「4 行」は C13 が探索ノード予算（20000）を食い尽くしたせい**で、
+strict の真の値ではない。**正しい対照は Lean 換算（C13 なし）で 9 行**
+（予算に依らない）。`Wstar` 側は 20415（上限）なので影響なし。
+
+**教訓**: 費用の打ち切り（ノード予算）は**健全側に倒している**が、
+**対照の値を過小に見せる**ことがある。**対照は打ち切りに依らないことを必ず確かめる**
+（`Wstar` 側だけ確かめて対照を確かめていなかった）。教訓 12 の一族。

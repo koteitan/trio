@@ -319,7 +319,15 @@ def _wstar_cert(M):
     ⚠ 教訓 14: 神託は **`cons` の形だけ**。`A ++ B` は許さない
     （連結は `split_lastMin` の分割 1 通りに限る）。
     """
-    if 'WSTAR' not in ASSUME or len(M) < 1:
+    # 教訓 17: 命題が Lean で何を導くかまで追って門を置く。
+    #   `MliftR` → `LiftTie` → `TowerGraft2`
+    #   `Subst1gRevive` ＋ `WSnoc` → `GraftFromExp` → `TowerExp`   （L2、L90）
+    #   `TowerGraft2` ∧ `TowerExp` → `TowerOK`（`towerOK_of`）→ `Wstar_closed`
+    #     ＋ `mem_Wstar` → **`Wstar`**
+    # ⟹ **3 本そろって初めて** `Wstar` が立つ。片方だけでは立たない。
+    CORES = {'MLIFTR', 'REVIVE', 'WSNOC'}
+    ok = ('WSTAR' in ASSUME) or CORES.issubset(ASSUME)
+    if not ok or len(M) < 1:
         return None
     A, P = lastmin_split(M)
     if not P:
