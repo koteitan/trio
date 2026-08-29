@@ -153,10 +153,12 @@ theorem snoc_of_open {u : ℕ} {C : TrioSeq} (p : ℕ × ℕ × ℕ)
   by_cases hpar : hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length
   · by_cases hz2 : ∃ q ∈ C, 0 < q.2.2
     · exact hopen hpar hz2
-    · push_neg at hz2
+    · have hz2' : ∀ q ∈ C, q.2.2 = 0 := by
+        intro q hq
+        by_contra hc
+        exact hz2 ⟨q, hq, by omega⟩
       have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
-      have hself : (C ++ [p]) ∈ Wself :=
-        snoc_zeroRow2 (M' := C) (fun q hq => by have := hz2 q hq; omega) p
+      have hself : (C ++ [p]) ∈ Wself := snoc_zeroRow2 (M' := C) hz2' p
       have hlev : lev (C ++ [p]) 0 ≤ u := by
         have hE : ∀ i, entry (C ++ [p]) i 0 = entry C i 0 := by
           intro i; unfold entry; rw [getD_append_left hClen]
@@ -1738,6 +1740,106 @@ theorem towerOK_of_liftTieSelfOpen (h : LiftTieSelfOpen) (he : TowerExp) : Tower
 （`Lind.lean:63`、**窓分解**）の切り方である（行 0 が末尾最小の位置で切る）。
 `Lind` の長さ帰納がその切り方で回っているのは偶然ではない。
 ⟹ **`LiftTieSelf` を攻めるなら `split_lastTie` ではなく窓分解のほうが筋が良い。** -/
+
+
+/-! ## 28. ★★★★★ 課題 L115-1（続）: **`∀ d` は `d = 1` に落ちる**
+
+`split_lastTie` が繋がらない（§27）ので、別の方向で削る。
+
+`Wset.Lift1_Lift1`（`:1230`）`Lift1 (Lift1 X t) s = Lift1 X (t+s)` と
+`Wset.lift_cons`（`:3656`）`Lift1 ((0,v,z) :: R) t = (0,v+t,z) :: ltail v z R t` を
+合わせると、**`d` についての帰納が回る**:
+
+    `Lift1 X (d+1) = Lift1 (Lift1 X 1) d = Lift1 ((0,v+1,z) :: ltail v z R 1) d`
+
+しかも `Lift1 X 1 ∈ W (2v+z+2) = W (2(v+1)+z)` は**また自己段**なので、
+帰納法の仮定がそのまま当たる（`Wset.argOK_ltail`（`:3716`）で `argOK` も保たれる）。
+
+⟹ **核から `∀ d` が消える。** -/
+
+/-- **`d = 1` に固定した `LiftTieSelf`。** -/
+def LiftTieSelfUnit : Prop :=
+  ∀ (v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z) →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 ∈ W (2 * v + z + 2)
+
+open Classical in
+/-- タイ／無タイの場合分け（`d = 1` 版）。 -/
+theorem liftUnit_cons_self (h : LiftTieSelfUnit) {v z : ℕ} {R : TrioSeq}
+    (hargOK : argOK R) (hX : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z)) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 ∈ W (2 * v + z + 2) := by
+  by_cases ht : ∃ p ∈ R, p.2.1 = v
+  · exact h v z R hargOK ht hX
+  · have hres := L53.liftStage_of_noTie (d := 1) hargOK
+      (fun p hp hpv => ht ⟨p, hp, hpv⟩) hX
+    simpa using hres
+
+/-- **★★★★★ `d = 1` から全 `d` が出る**（`Lift1_Lift1` ＋ `lift_cons` の帰納）。 -/
+theorem liftSelf_of_unit (h : LiftTieSelfUnit) :
+    ∀ (d v z : ℕ) (R : TrioSeq), argOK R →
+      (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z) →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (2 * v + z + 2 * d) := by
+  intro d
+  induction d with
+  | zero => intro v z R _ hX; simpa using hX
+  | succ d ih =>
+      intro v z R hargOK hX
+      have hstep : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 ∈ W (2 * v + z + 2) :=
+        liftUnit_cons_self h hargOK hX
+      rw [lift_cons] at hstep
+      have hstep' : (((0, v + 1, z) : ℕ × ℕ × ℕ) :: ltail v z R 1)
+          ∈ W (2 * (v + 1) + z) := by
+        have he : 2 * (v + 1) + z = 2 * v + z + 2 := by omega
+        rw [he]
+        exact hstep
+      have hih := ih (v + 1) z (ltail v z R 1) (argOK_ltail hargOK) hstep'
+      have heq : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) (d + 1)
+          = Lift1 (((0, v + 1, z) : ℕ × ℕ × ℕ) :: ltail v z R 1) d := by
+        rw [← lift_cons, Lift1_Lift1]
+        congr 1
+        omega
+      rw [heq]
+      have he2 : 2 * v + z + 2 * (d + 1) = 2 * (v + 1) + z + 2 * d := by omega
+      rw [he2]
+      exact hih
+
+theorem liftTieSelf_of_unit (h : LiftTieSelfUnit) : LiftTieSelf :=
+  fun d v z R hargOK _ hX => liftSelf_of_unit h d v z R hargOK hX
+
+/-! ## 29. ★★★★★ **今日の最小核** `LiftTieCore`
+
+§26（`TieFree` の枝を落とす）と §28（`∀ d` を落とす）を合わせた形。 -/
+
+/-- **★★★★★ 最小核**: **`d = 1`・自己段・タイあり・`TieFree` でない**。
+3 量化（`v z R`）／ 4 前提。 -/
+def LiftTieCore : Prop :=
+  ∀ (v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+    ¬ (1 ≤ v ∧ TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)) →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z) →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 ∈ W (2 * v + z + 2)
+
+open Classical in
+theorem liftTieSelfUnit_of_core (h : LiftTieCore) : LiftTieSelfUnit := by
+  intro v z R hargOK ht hX
+  by_cases hc : 1 ≤ v ∧ TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+  · have hres := L53.liftTie_case_tieFree (d := 1) hX
+      (by show 1 ≤ entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0
+          simpa [entry] using hc.1) hc.2
+    simpa using hres
+  · exact h v z R hargOK ht hc hX
+
+theorem liftTieSelf_of_core (h : LiftTieCore) : LiftTieSelf :=
+  liftTieSelf_of_unit (liftTieSelfUnit_of_core h)
+
+/-- **★★★★★ `TowerOK` は `LiftTieCore` ＋ `TowerExp` から出る。** -/
+theorem towerOK_of_liftTieCore (h : LiftTieCore) (he : TowerExp) : TowerOK :=
+  towerOK_of_liftTieSelf (liftTieSelf_of_core h) he
+
+/-- 位置づけ: `L53.LiftTie` からはもちろん出る（前提を落とすだけ）。 -/
+theorem liftTieCore_of_liftTie (h : L53.LiftTie) : LiftTieCore :=
+  fun v z R hR ht _ hX => by
+    have := h (2 * v + z) 1 v z R hR ht hX
+    simpa using this
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
