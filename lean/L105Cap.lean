@@ -3893,9 +3893,8 @@ theorem block_mem_of_liftStage {B : TrioSeq} {m d e : ℕ}
         ⟹ **`L53.liftStage_of_noTie`（仮定ゼロ）** で無料
     (β) **タイがあり `TieFree`**（実測 6.1%）
         ⟹ **`L53.liftTie_case_tieFree`（既存定理）** で無料
-    (γ) **行 2 ≡ 0**
-        ⟹ **`liftStage_of_zeroRow2`（§32、仮定ゼロ）** で無料（`d` にも `v` にも依らない）
-    (δ) 残り ＝ **タイあり ∧ `¬TieFree` ∧ 行 2 に非零** ＝ **`LiftTieCore`（§29）そのもの**
+    (γ) ⛔ **行 2 ≡ 0 … 構造的に空虚**（H12 の 0 件、証明つき）。下の §52.4 を見よ
+    (δ) 残り ＝ **タイあり ∧ `¬TieFree`** ＝ **`LiftTieCore`（§29）そのもの**
 
 ⟹ **`TowerExpBig` のブロック所属の残核は、午後に `CoreCap` 側で削った
 `LiftTieCore` と同じ命題である。** -/
@@ -3939,6 +3938,39 @@ H12 の「ブロッカーあり ＝ 残核が `|R|` とともに 37.5% → 83.2%
 ⟹ **H12 には「ブロッカーあり」をさらに (α)(β)(γ)(δ) に割って数えてもらうのが正確**。
 測るべきは **(δ) の割合**である。 -/
 
+
+
+/-! ### 52.4 ⛔ **自己訂正: (γ)「行 2 ≡ 0」は構造的に空虚**
+
+H12 が数え（0 件）、しかも証明した。母集団の前提は
+**`∃ p ∈ R.dropLast, p.2.2 ≠ z`**（`TowerExpBigRow2` の定義、§40.1）なので:
+
+    `z = 1` … 根 `(0,v,1)` の行 2 が `1 ≠ 0` ⟹ **行 2 ≡ 0 は不可能**
+    `z = 0` … 前提が `∃ p ∈ R.dropLast, p.2.2 ≠ 0` を要求 ⟹ **行 2 ≡ 0 は不可能**
+
+⟹ **`liftStage_of_zeroRow2`（§32）は `TowerExpBigRow2` の場合分けに 1 件も寄与しない。**
+私が §52.1 で (γ) として挙げたのは**誤り**だった。**分母を数えていなかった。**
+
+⚠ **`tower_of_row2const`（§40、行 2 ≡ `z`）のほうは有効**である。混同しないこと:
+
+    `liftStage_of_zeroRow2`（§32）… **`= 0` 限定**・主語は**持ち上げ**・段が `+2d`
+    `tower_of_row2const`（§40）  … **`= z`**・主語は**塔そのもの**・段は `a` のまま・
+                                  `srow = 1` でも `2` でも
+
+### 52.5 ⚠ 自己訂正 2: (α) の範囲
+
+`L53.liftStage_of_noTie` の前提は **`∀ p ∈ R, p.2.1 ≠ v`（`R` 全体、`R.dropLast` ではない）**、
+結論は**持ち上げ**（段 `+2d`）であって塔ではない。
+⟹ 「ブロッカーが `< v` だけ」＝「タイが無い」であって、
+**一様シフトに潰れる（`Lift1` が消える）のはブロッカーが 1 本も無いときだけ**である
+（§50 `liftTower_eq_shTower2` の前提が `v < entry Q 1 l` ＝ ブロッカー無し）。**2 つは別条件。**
+
+### 52.6 ⚠ 自己訂正 3: (β) には `v ≥ 1` が要る
+
+`L53.liftTie_case_tieFree`（`L53Subst.lean:2615`）は **`1 ≤ entry X 1 0`（＝ `v ≥ 1`）**を要求する。
+⟹ **`v = 0` では使えない。** §26 の `LiftTieSelfOpen` / §29 の `LiftTieCore` は
+`¬(1 ≤ v ∧ TieFree …)` という形にしてあるので**そこは正しく扱っている**が、
+場合分けの割合を数えるときは `v = 0` と `v ≥ 1` を分ける必要がある。 -/
 
 /-! ## 53. ⛔ 課題 L131: **`zle1` は `Wstar_closed` に通せません**（変更前の判定）
 
@@ -4226,6 +4258,76 @@ theorem liftTowerSelf_of_shTower2Self_noBlocker (h : ShTower2Self) {d e n : ℕ}
 
 ⚠ `L51Lift.LiftTowerClosed`（`:63`、未証明）は**行 1 も一様**な版なので、
 証明しても (2) は出ない（覆うのは 16.8% のほう）。**別物として立てた。** -/
+
+
+/-! ## 56. ★★★★★ 課題 L134: **`shTower2` の展開も「最後のブロックだけ」**
+
+`oper_shTower`（§48、あなたの予測）の 2 方向版。道具はやはり既存:
+
+    `L53.comm_of_hasParentInBlock`（`L53Subst.lean:922`）
+    `Wset.oper_shiftr01`（`:434`）      行 0 の一様シフトは無条件で可換
+    **`Wset.oper_shiftr1`（`:730`）**   行 1 の一様シフトは
+                                       **末尾列の `lev ≠ 0`** のとき可換
+    `Wset.srow_shiftr1`（`:673`）/ `Wset.hasParent_shiftr1`（`:650`）
+
+⚠ 行 1 のシフトには **`lev Q (|Q|-1) ≠ 0`（＝ 末尾列の `srow ≥ 1`）**が要る。
+行 1 が 0 の列は `+e` で `srow` が `0 → 1` に変わるため。 -/
+
+theorem hasParentInBlock_shiftr1 {d : ℕ} {Q : TrioSeq}
+    (hlev : lev Q (Q.length - 1) ≠ 0) (h : L53.HasParentInBlock Q) :
+    L53.HasParentInBlock (shiftr01 0 d Q) := by
+  unfold L53.HasParentInBlock at h ⊢
+  rw [shiftr01_length, Wset.srow_shiftr1 hlev, hasParent_shiftr1]
+  exact h
+
+/-- **★★★★★ `shTower2` の展開も「最後のブロックだけ」を展開する。** -/
+theorem oper_shTower2 {Q : TrioSeq} (hQne : Q ≠ []) (hQ2 : Q.length - 1 ≠ 0)
+    (hlev : lev Q (Q.length - 1) ≠ 0) (hblk : L53.HasParentInBlock Q)
+    (d e n m : ℕ) :
+    (shTower2 Q d e (n + 1))⟦m⟧
+      = shTower2 Q d e n ++ shiftr01 (n * d) (n * e) (Q⟦m⟧) := by
+  have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
+  have hsplit : shiftr01 (n * d) (n * e) Q
+      = shiftr01 (n * d) 0 (shiftr01 0 (n * e) Q) := (shiftr01_comp01 _ _ Q).symm
+  have hNne : shiftr01 (n * d) (n * e) Q ≠ [] := by
+    intro hc
+    have hl := congrArg List.length hc
+    rw [shiftr01_length] at hl
+    exact hQne (List.length_eq_zero_iff.mp hl)
+  have hN2 : (shiftr01 (n * d) (n * e) Q).length - 1 ≠ 0 := by
+    rw [shiftr01_length]; exact hQ2
+  have hlevlt : Q.length - 1 < Q.length := by omega
+  have hNz : ¬(entry (shiftr01 (n * d) (n * e) Q) 0
+        ((shiftr01 (n * d) (n * e) Q).length - 1) = 0 ∧
+      entry (shiftr01 (n * d) (n * e) Q) 1
+        ((shiftr01 (n * d) (n * e) Q).length - 1) = 0 ∧
+      entry (shiftr01 (n * d) (n * e) Q) 2
+        ((shiftr01 (n * d) (n * e) Q).length - 1) = 0) := by
+    rw [shiftr01_length]
+    rintro ⟨-, h1, h2⟩
+    rw [entry1_shift hlevlt] at h1
+    rw [entry2_shiftr01] at h2
+    unfold lev at hlev
+    omega
+  have hNblk : L53.HasParentInBlock (shiftr01 (n * d) (n * e) Q) := by
+    rw [hsplit]
+    exact hasParentInBlock_shiftr01 (hasParentInBlock_shiftr1 hlev hblk)
+  rw [shTower2_succ,
+    L53.comm_of_hasParentInBlock m hNne hN2 hNz hNblk, hsplit, oper_shiftr01,
+    Wset.oper_shiftr1 hlev, shiftr01_comp01]
+
+/-! ### 56.1 ⟹ `ShTower2Self` の帰納の形（`srow = 1` 側と同じ）
+
+節 2（`mem_of_oper_mem`）で `shTower2 Q d e (n+1) ∈ Wself` を示すには
+
+    `∀ m ≥ 1, (shTower2 Q d e (n+1))⟦m⟧ ∈ W (lev Q 0)`
+    ＝ **`shTower2 Q d e n ++ shiftr01 (n*d) (n*e) (Q⟦m⟧) ∈ W (lev Q 0)`**
+
+`Q ∈ Wself` ⟹ `Q⟦m⟧ ∈ W (lev Q 0)`（`Wchar.oper_mem_of_mem`、緑）、
+`shTower2 Q d e n` は帰納法の仮定 ⟹ **両端は揃う。**
+
+⚠ 繋ぐのは連結で `rsum` は破れる（§14）。⟹ **`Aop` の節 3（graft）が唯一の道**という
+`srow = 1` 側（§48.1）とまったく同じ形。**(2) は `srow` に依らず 1 つの問題になった。** -/
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
