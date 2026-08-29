@@ -5437,3 +5437,55 @@ v0.118.56 で:
 ⟹ **`TowerOK2` だけを見ているのは、経路 C を忘れている可能性がある。**
 今日のラダー計測は `Wstar`（経路 D）でしか測っていないので、
 **`CoreSingleton` / `CoreCap` を神託にしたラダー**は未測定。
+
+---
+
+## ★ R87 —— **経路 C（`CoreSingleton` / `CoreCap`）も経路 D と同じ到達点**
+
+### 教訓 17: まず Lean で何を導くかを辿った
+
+    **経路 D**: `TowerOK` → `Wstar_closed` → **`W_membership (S := Wstar)`**
+    **経路 C**: `CoreCap` → `coreSingleton_of_cap` → **`CoreSingleton`**
+                → `corePlantCtxLift_of_core` / `coreCtxSuffixLift_of_core`
+                → `graftAll_of_cores` → `Wstar2s_closed_of_graftAll`
+                → **`W_membership (S := Wstar2s)`**（`Wstar2s ⊆ Wstar`）
+
+`wf_olt_ST_TS_of_cofinality`（`Wset.lean:4750`）は最後に
+
+    `wf_of_cofinality_and_membership hcof (**W_membership hSle hScl**)`
+
+を呼ぶ。⟹ **両路線は同じ `W_membership` に合流する。**
+`S` が `Wstar`（D）か `Wstar2s`（C）かの違いだけで、**どちらも `∀ R（zle1）, R ∈ Wstar` を与える。**
+
+### ★ 結果（母数: ブック全 7 シート 20415 行、C13 は常に外す）
+
+| 神託 | 予算 20000 | 予算 200000 |
+|---|---|---|
+| 対照: strict（核ゼロ） | **9** | **9** |
+| 経路 D: **`TowerOK2`** | **20415 / 20415** | **20415 / 20415** |
+| 経路 C: **`CoreCap`** | **20415 / 20415** | **20415 / 20415** |
+| 経路 C: **`CoreSingleton`** | **20415 / 20415** | **20415 / 20415** |
+
+⚠ 教訓 18: **予算を 10 倍にしても同じ。**
+
+### ⚠ この測定の位置づけ（§R82 と同じ但し書き）
+
+門は**含意地図を符号化したもの**なので、「どれでも 20415」は**地図の帰結**。
+**本物の中身は上の Lean 読解**（両路線が `W_membership` に合流する、という事実）。
+測定が確かめているのは「その仮定の下で残りの規則が全部証明ずみで済む」ことだけ。
+
+### ⟹ 結論 —— **どちらを狙ってもよい**
+
+    **2 つの独立な単一核が、同じ到達点（ブック全体 20415 ＋ `D_1..D_12`）を持つ。**
+    ⟹ **証明しやすいほうを選べる。**
+
+| | 仮定 | 形の大きさ |
+|---|---|---|
+| 経路 D | `TowerOK2` | `∀ v z u0 a R` の 4 量化 ＋ 7 前提（`srow=2` の塔） |
+| 経路 C | `CoreCap` | **`GX` を含まない純 `W` レベルの 1 文** |
+| 経路 C | **`CoreSingleton`** | **`[(0,b,c)] ∈ GX`（1 列！）** |
+
+⟹ **`CoreSingleton` が構文的にいちばん小さい。**
+ただし `GX` の定義（`Gamma.lean:169`）は `∀ M, ∀ v z, ∀ i, ∀ a t` と量化が多いので、
+**「1 列」なのは主語だけで、述語は小さくない**ことに注意（過大評価しない）。
+`CoreCap` は `GX` を含まないぶん、扱いやすい可能性がある。

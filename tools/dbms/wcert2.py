@@ -329,7 +329,16 @@ def _wstar_cert(M):
     # （`L53Subst.lean:1163`）で**証明ずみ**なので、`towerOK_of_split` で `TowerOK`、
     # そこから `Wstar_closed` → `mem_Wstar` → `Wstar`（教訓 17）。
     CORES = {'MLIFTR', 'REVIVE', 'WSNOC'}
-    ok = ('WSTAR' in ASSUME) or ('TOWEROK2' in ASSUME) or CORES.issubset(ASSUME)
+    # 経路 C（`Gamma`/`GX` 路線、v0.118.56）も同じ `mem_Wstar` に合流する:
+    #   `CoreCap` → `coreSingleton_of_cap` → **`CoreSingleton`**
+    #     → `corePlantCtxLift_of_core` / `coreCtxSuffixLift_of_core`
+    #     → `graftAll_of_cores` → `Wstar2s_closed_of_graftAll`
+    #     → `wf_olt_ST_TS_of_cofinality (S := Wstar2s)`（`Wstar2s ⊆ Wstar`）
+    #     → `mem_Wstar` ⟹ **∀ R（zle1）, R ∈ Wstar**
+    # ⟹ 経路 D（`TowerOK` → `Wstar_closed` → `mem_Wstar`）と**同じ入力**を与える。
+    ok = ('WSTAR' in ASSUME) or ('TOWEROK2' in ASSUME) \
+        or ('CORECAP' in ASSUME) or ('CORESINGLETON' in ASSUME) \
+        or CORES.issubset(ASSUME)
     if not ok or len(M) < 1:
         return None
     A, P = lastmin_split(M)
