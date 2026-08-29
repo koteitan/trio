@@ -216,11 +216,14 @@ L3 の副産物「**`CoreCap` の段リフト `t` は自由変数**。`t=0`/`t>=
 
 以下は今日の `Wstar` 路線の記録。
 
-## 0. 検算（team-lead が自分で回した、2026-08-29）
+## 0. 検算（team-lead が自分で回した、2026-08-30 夜に更新）
 
     leanman check -C /home/koteitan/proofs/dbms/lean lean/Final.lean  ⟹ **exit 0（緑）**
     `trio_cofinality`（`Core.lean:4602`）は仮定が `ST_TS M` / `ST_TS N` だけ ＝ **無条件**
-    `lean/` で `sorry` を含むのは **`Dbms.lean` 1 本だけ**（別路線。この連鎖に入らない）
+    ⚠ 訂正（2026-08-30 夜、team-lead 自身が検算）: **`lean/` に `sorry` は 1 つも無い。**
+    以前ここに「`Dbms.lean` 1 本だけ」と書いてあったが、`Dbms.lean` の 2 件は
+    **コメント内の言及**（`:67` `:74`）で、`sorry` 項ではない。
+    `leanman build` 809 jobs / exit 0 ＋ `sorry` トークンゼロ ⟹ **`sorryAx` 依存もゼロ。**
 
     連鎖: `TowerOK` → `Wstar_closed` → `wf_olt_ST_TS_of_cofinality`（＋無条件の共終性）
           → `wf_Rnf_of_wf_TS` → `step_terminates` → **`WellFounded stepRel`**
