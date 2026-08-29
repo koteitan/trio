@@ -19,37 +19,37 @@
 `∀` = 量化子の数、`→` = 前提の数（定義本体を数えた機械カウント）。
 **`GX` 込み**の列は `GX`（`Gamma.lean:169`）を展開した実効値（`+7 量化 / +5 前提`）。
 
-| 命題 | 場所 | ∀ | → | GX 込み | 主語 | 段 | 経路 | より強いもの（＝ここから出る） | 状態 |
-|---|---|---|---|---|---|---|---|---|---|
-| **`CoreSingleton`** | `L53Subst:4183` | 2 | 0 | **9 / 5** | **1 列** | - | C | `CoreCap`, (2 文脈核) | **極小・単独** |
-| **`CoreCap`** | `Lind:176` | 7 | 5 | 7 / 5 | 1 ブロックの末尾差し替え | - | C | - | **極小・単独・`GX` 無し**。**R89: 展開は 3 分岐に尽き `WCat` を要求しない。残債務は `TowerOK2` の 1 点**（`R2-NOTES.md` §R89, commit `592fd26`。`c>=2` は L109 で穴でないと判明） |
-| **`TowerOK`** | `L53Subst:1086` | 3 | 7 | 3 / 7 | `(0,v,z) :: R` の展開 | m/u | D | `TowerGraft2 ∧ TowerExp`, `TowerOK1 ∧ TowerOK2` | **極小・単独** |
-| `TowerOK2` | `L53Subst:1122` | 3 | 8 | 3 / 8 | 同上（`srow=2`） | m/u | D | - | `TowerOK1` は節 3 でのみ既済（§R83） |
-| `CoreCtxSuffixLift` | `Gamma:1278` | 4 | 8 | 11 / 13 | 文脈の接尾辞 | - | C | `CoreSingleton` | 対で使う |
-| `CorePlantCtxLift` | `Gamma:723` | 3 | 4 | 10 / 9 | 文脈の plant | - | C | `CoreSingleton` | 対で使う |
-| `Row0Free` | `Wtower2:262` | 3 | 4 | 3 / 4 | 行 1・行 2 が同じ 2 本 | - | — | - | **⚠ 強すぎ**（`mem_W_of_row0free` が全部出す） |
-| **`WCat`** | `Wtower2:1974` | 3 | 2 | 3 / 2 | `A ++ B` | - | B | `WSnoc` | **文は最小だが残核より広い**（§R42） |
-| `WSnoc` | `L53Subst:3416` | 1 | 3 | 1 / 3 | `C ++ [p]` | m/u | B | - | 循環（§R29-5）。`LiftStage` も出す |
-| `Subst1gReviveSelf` | `Wtower2:3274` | 3 | 10 | 3 / 10 | 置換 | - | A | - | 半年の残核 |
-| `Subst1gRevive` | `Wtower2:3251` | 2 | 8 | 2 / 8 | 置換 | m/u | A | `Subst1gReviveSelf` | |
-| `Subst1g` | `Wtower2:2720` | 2 | 8 | 2 / 8 | 置換 | m/u | A | `Subst1gRevive` | |
-| `Subst1` | `Wtower2:2656` | 3 | 8 | 3 / 8 | 置換 | m/u | A | `Subst1g` | 相方に `WCat` |
-| `SubstClosed` | `Wtower2:2623` | 8 | 14 | 8 / 14 | 置換閉包 | m/u | A | `Subst1`, `SubstClosedG` | 相方に `WCat` |
-| `ShiftTowerClosedS` | `Wtower2:1771` | 2 | 4 | 2 / 4 | `shTower` | m/u | A/B | `WCat`, `SubstClosedG` | 相方に `TowerExp` |
-| `LiftStageParented` | `Wtower2:551` | 3 | 5 | 3 / 5 | | m/u | A | `ShiftTowerClosedS` | 相方に `TowerExp` |
-| `LiftStage` | `Wtower2:36` | 1 | 1 | 1 / 1 | | m/u | A | 上の全部, `WSnoc`, `Row1Mono`, `WConvex`, `TieFree` … | **文は小さいが上流が多い** |
-| `TowerGraft2` | `Wset:4498` | 3 | 10 | 3 / 10 | | m/u | A | `LiftStage` | `TowerOK` の片割れ |
-| `TowerExp` | `Wset:4507` | 3 | 9 | 3 / 9 | | m/u | A/B | `TowerExp1 ∧ TowerExp2`, `WSnoc`, `WCat`, `SubstClosedG` | `TowerOK` の片割れ |
-| `TowerExp2` | `Wtower2:1859` | 3 | 10 | 3 / 10 | `srow=2` | m/u | A | `TowerExp2Root` | |
-| `TowerExp2Low` | `Wtower2:2247` | 3 | 11 | 3 / 11 | | m/u | A | `TowerExp2Root` | |
-| `TowerExp2Root` | `Wtower2:2257` | 3 | 11 | 3 / 11 | | - | A | `SubstClosed ∧ LiftStage` | |
-| `Row1Mono` | `Wtower2:151` | 4 | 5 | 4 / 5 | | - | A | `Row1DownLocal`, `Row1DownRoot0` | 相方に `TowerExp` |
-| `Row1DownLocal` | `L53Subst:2574` | 1 | 2 | 1 / 2 | | - | A | - | `Row1Mono` より弱い |
-| `Row1DownRoot0` | `L53Subst:2579` | 1 | 2 | 1 / 2 | | - | A | - | 同上 |
-| `WConvex` | `Wtower2:450` | 1 | 4 | 1 / 4 | | - | A | - | 相方に `TowerExp` |
-| `LiftTie` | `L53Subst:2337` | 2 | 3 | 2 / 3 | | m/u | D | `MliftR` | `TowerGraft2` 側 |
-| `MliftR` | `L53Subst:2765` | 1 | 1 | 1 / 1 | | m/u | D | - | |
-| `GraftFromExp` | `L53Subst:2644` | 3 | 6 | 3 / 6 | `graft R y` | m/u | D | `Subst1gRevive ∧ WSnoc` | §R76: 側条件は場面で自動 |
+| 命題 | 場所 | ∀ | → | GX 込み | 主語 | 段 | 経路 | より強いもの（＝ここから出る） | 状態 | **反証器**（R95） |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **`CoreSingleton`** | `L53Subst:4183` | 2 | 0 | **9 / 5** | **1 列** | - | C | `CoreCap`, (2 文脈核) | **極小・単独** | **鳴りえない**（結論 `∈ GX`。根 `(0,v+t,z)`、`lev=2(v+t)+z<=a` は前提） |
+| **`CoreCap`** | `Lind:176` | 7 | 5 | 7 / 5 | 1 ブロックの末尾差し替え | - | C | - | **極小・単独・`GX` 無し**。**R89: 展開は 3 分岐に尽き `WCat` を要求しない。残債務は `TowerOK2` の 1 点**（`R2-NOTES.md` §R89, commit `592fd26`。`c>=2` は L109 で穴でないと判明） | **鳴りえない**（根 `(0,v+t,z)`、`lev=2(v+t)+z<=a` は前提そのもの） |
+| **`TowerOK`** | `L53Subst:1086` | 3 | 7 | 3 / 7 | `(0,v,z) :: R` の展開 | m/u | D | `TowerGraft2 ∧ TowerExp`, `TowerOK1 ∧ TowerOK2` | **極小・単独** | **鳴りえない**（`oper` は第 1 列を落とさない ⟹ 根 `(0,v,z)`、`2v+z<=a` は前提） |
+| `TowerOK2` | `L53Subst:1122` | 3 | 8 | 3 / 8 | 同上（`srow=2`） | m/u | D | - | `TowerOK1` は節 3 でのみ既済（§R83） | **鳴りえない**（同上） |
+| `CoreCtxSuffixLift` | `Gamma:1278` | 4 | 8 | 11 / 13 | 文脈の接尾辞 | - | C | `CoreSingleton` | 対で使う | **鳴りえない**（結論 `∈ GX`） |
+| `CorePlantCtxLift` | `Gamma:723` | 3 | 4 | 10 / 9 | 文脈の plant | - | C | `CoreSingleton` | 対で使う | **鳴りえない**（結論 `∈ GX`） |
+| `Row0Free` | `Wtower2:262` | 3 | 4 | 3 / 4 | 行 1・行 2 が同じ 2 本 | - | — | - | **⚠ 強すぎ**（`mem_W_of_row0free` が全部出す） | **鳴りえない**（行 1・行 2 が同じ ⟹ `lev M' 0 = lev M 0 <= a`） |
+| **`WCat`** | `Wtower2:1974` | 3 | 2 | 3 / 2 | `A ++ B` | - | B | `WSnoc` | **文は最小だが残核より広い**（§R42） | **鳴りえない**（根は `A[0]`。`A ∈ W u` が `lev <= u` をくれる） |
+| `WSnoc` | `L53Subst:3416` | 1 | 3 | 1 / 3 | `C ++ [p]` | m/u | B | - | 循環（§R29-5）。`LiftStage` も出す | **鳴りえない**（根は `C[0]`） |
+| `Subst1gReviveSelf` | `Wtower2:3274` | 3 | 10 | 3 / 10 | 置換 | - | A | - | 半年の残核 | **鳴りえない**（結論 `∈ Wself` ＝ `M ∈ W (lev M 0)`。自明） |
+| `Subst1gRevive` | `Wtower2:3251` | 2 | 8 | 2 / 8 | 置換 | m/u | A | `Subst1gReviveSelf` | | **鳴りえない**（`p>=1` なら根 `S[0]`、`p=0` なら `C ∈ W (lev S 0)` が押さえる） |
+| `Subst1g` | `Wtower2:2720` | 2 | 8 | 2 / 8 | 置換 | m/u | A | `Subst1gRevive` | | **鳴りえない**（同上） |
+| `Subst1` | `Wtower2:2656` | 3 | 8 | 3 / 8 | 置換 | m/u | A | `Subst1g` | 相方に `WCat` | **鳴りえない**（同上） |
+| `SubstClosed` | `Wtower2:2623` | 8 | 14 | 8 / 14 | 置換閉包 | m/u | A | `Subst1`, `SubstClosedG` | 相方に `WCat` | **鳴りえない**（根は `(B 0)[0]`。前提が `Q[0]` に等しくする） |
+| `ShiftTowerClosedS` | `Wtower2:1771` | 2 | 4 | 2 / 4 | `shTower` | m/u | A/B | `WCat`, `SubstClosedG` | 相方に `TowerExp` | **鳴りえない**（根は `k=0` の写しの `Q[0]`、ずれ 0） |
+| `LiftStageParented` | `Wtower2:551` | 3 | 5 | 3 / 5 | | m/u | A | `ShiftTowerClosedS` | 相方に `TowerExp` | **鳴りえない**（根は `Lift1 X d` の根。前提と同じ根） |
+| `LiftStage` | `Wtower2:36` | 1 | 1 | 1 / 1 | | m/u | A | 上の全部, `WSnoc`, `Row1Mono`, `WConvex`, `TieFree` … | **文は小さいが上流が多い** | **鳴りえない**（根は錐に**反射で**入る ⟹ `lev +2d`、段も `+2d`） |
+| `TowerGraft2` | `Wset:4498` | 3 | 10 | 3 / 10 | | m/u | A | `LiftStage` | `TowerOK` の片割れ | **鳴りえない**（結論は `((0,v,z)::R)⟦n⟧`） |
+| `TowerExp` | `Wset:4507` | 3 | 9 | 3 / 9 | | m/u | A/B | `TowerExp1 ∧ TowerExp2`, `WSnoc`, `WCat`, `SubstClosedG` | `TowerOK` の片割れ | **鳴りえない**（同上） |
+| `TowerExp2` | `Wtower2:1859` | 3 | 10 | 3 / 10 | `srow=2` | m/u | A | `TowerExp2Root` | | **鳴りえない**（同上） |
+| `TowerExp2Low` | `Wtower2:2247` | 3 | 11 | 3 / 11 | | m/u | A | `TowerExp2Root` | | **鳴りえない**（同上） |
+| `TowerExp2Root` | `Wtower2:2257` | 3 | 11 | 3 / 11 | | - | A | `SubstClosed ∧ LiftStage` | | **鳴りえない**（段が `2v+z` ちょうど ⟹ **等号**） |
+| `Row1Mono` | `Wtower2:151` | 4 | 5 | 4 / 5 | | - | A | `Row1DownLocal`, `Row1DownRoot0` | 相方に `TowerExp` | **鳴りえない**（行 1 を下げるので `lev` は減る） |
+| `Row1DownLocal` | `L53Subst:2574` | 1 | 2 | 1 / 2 | | - | A | - | `Row1Mono` より弱い | **鳴りえない**（`coneV` が根で真 ⟹ 前提の `mlift` と同じ根） |
+| `Row1DownRoot0` | `L53Subst:2579` | 1 | 2 | 1 / 2 | | - | A | - | 同上 | **鳴りえない**（`entry X 1 0 = 0` ⟹ 前提の `shiftr01` と同じ根） |
+| `WConvex` | `Wtower2:450` | 1 | 4 | 1 / 4 | | - | A | - | 相方に `TowerExp` | **鳴りえない**（`Le1 B C` と `C ∈ W a` から `lev B0 <= lev C0 <= a`） |
+| `LiftTie` | `L53Subst:2337` | 2 | 3 | 2 / 3 | | m/u | D | `MliftR` | `TowerGraft2` 側 | **鳴りえない**（根 `(0,v+d,z)`、`lev = 2v+z+2d <= m+2d`） |
+| `MliftR` | `L53Subst:2765` | 1 | 1 | 1 / 1 | | m/u | D | - | | **鳴りえない**（`coneVR_zero` 緑 ⟹ 根は必ず `+d`） |
+| `GraftFromExp` | `L53Subst:2644` | 3 | 6 | 3 / 6 | `graft R y` | m/u | D | `Subst1gRevive ∧ WSnoc` | §R76: 側条件は場面で自動 | **鳴りえない**（結論 `∈ Wstar`。根 `(0,v,z)`、`2v+z<=a` は前提） |
 
 ## ⛔ 偽・空虚と判明したもの（**二度と候補に挙げない**）
 
@@ -194,3 +194,69 @@ R1 の測定・読解: `tools/dbms/R1-NOTES.md` の §R71-a（含意地図 22 �
    `tower2_root_z_zero`（`:1473`）は `tower2_z_zero_of_parent`（`:1486`）からしか
    呼ばれず、そちらはどこからも呼ばれていない（死んだコード。R2 が `grep` で確認）
 4. `j0` は `n` に依存しない（`Trio.lean:98`）。`b, c` には依存する（二分が反転するのが 15.2%）
+
+## ★★★★ R95 全核版（R2, commit `215a279` ＋ 本節）: **鳴りうる核は 0 本。反証のプログラムを閉じる**
+
+判定基準（team-lead の指示）: **結論の主語の根の `lev` が、前提から自動で結論の段以下になるか。**
+なる ⟹ **鳴りえない**（R94: 反証器が確定 `False` を返す ⟺ `lev S 0 > a`）。
+
+使える必要条件は 1 本だけ（`Wset.lean:2161` `lev_root_le_of_mem_W`、**無条件・緑**）:
+
+    `X ∈ W m` かつ `X ≠ []`  ⟹  `lev X 0 <= m`
+
+**A. 結論の形から構造的に鳴りえないもの**（測定不要。定義を開いた）
+
+    `∈ GX`    `Gamma:169`      結論は `Lift1 ((0,v,z) :: graft M (y.take i)) t ∈ W a`、`2(v+t)+z <= a`
+                                ⟹ 根 `(0,v+t,z)`、`lev` は**前提そのもの**
+                                （`CoreSingleton` / `CoreCtxSuffixLift` / `CorePlantCtxLift`）
+    `∈ Wstar` `Wset:2684`      結論は `((0,v,z) :: R) ∈ W a`、`2v+z <= a` ⟹ 同上（`GraftFromExp`）
+    `∈ Wself` `Wtower2:2987`   `M ∈ W (lev M 0)` ⟹ `lev M 0 <= lev M 0` は自明（`Subst1gReviveSelf`）
+
+**B. 乱択で確かめたもの**（`tools/dbms/r95all.py`、各 20 万件。
+前提の根の条件だけを満たす**上位集合**＝本物の事例を含む集合。上位集合で破れないなら本物でも破れない）
+
+| 核 | 本物 | 陽性対照（結論の段を 1 下げた偽物） |
+|---|--:|--:|
+| `CoreCap` ＝ `CoreSingleton` ＝ `GraftAll` | **0** | 40,184 |
+| `TowerOK` / `OK1` / `OK2` / `TowerGraft2` / `TowerExp` / `Exp2` / `Exp2Low` | **0** | 40,231 |
+| `TowerExp2Root` | **0** | 200,000 |
+| `Row0Free` | **0** | 52,858 |
+| `WCat` | **0** | 51,210 |
+| `WSnoc` | **0** | 52,817 |
+| `Subst1` / `Subst1g` / `Subst1gRevive` | **0** | 41,305 |
+| `SubstClosed` | **0** | 52,745 |
+| `ShiftTowerClosedS` | **0** | 52,825 |
+| `LiftStage` | **0** | 52,994 |
+| `LiftStageParented` | **0** | 52,877 |
+| `LiftTie` | **0** | 15,281 |
+| `LiftTieSelf` | **0** | 200,000 |
+| `MliftR` | **0** | 53,239 |
+| `Row1Mono` | **0** | 38,154 |
+| `WConvex` | **0** | 37,885 |
+| `Row1DownLocal` | **0** | 10,507 |
+| `Row1DownRoot0` | **0** | 15,235 |
+
+⟹ **全 32 核（表の 29 本 ＋ `LiftTieSelf` / `GraftAll` / `TowerOK1`）で鳴りうるものは 0 本。**
+
+### ⟹ 結論
+
+> **健全な反証器は存在するが、我々が気にしている核のすべてに対して盲目である。**
+> なぜなら我々の核はどれも「**段を保つ**」形に設計されているから。
+
+⟹ **反証のプログラム全体を閉じてよい。** 「違反 0」は状態欄の根拠にならない。
+⟹ **陰性対照「段を 1 下げる」も空虚**である。それは `lev S 0 > a` を人工的に作っているだけで、
+**計器がそれ以外を見られることの検証にはなっていない**。
+
+### 教訓 13 の 3 度目の書き直し（提案）
+
+    (旧 1) 健全な反証器は原理的に存在しない          ← §130 で撤回
+    (旧 2) 健全な反証器は存在する                    ← §130 の訂正。正しいが不十分
+    **(新) 存在するが射程は `lev S 0 > a` だけで、設計上どの核もそこに入らない**
+
+**計器を回す前に「この計器はこの主張を偽にできるか」を算術で確かめる。**
+陽性対照が鳴っても、それが「計器の射程が主張を覆っている」ことの証拠にはならない。
+
+### `InfEquip` だけが反証できた理由
+
+結論が `W` 所属ではなく**不等式** `entry M 2 p <= 1` だったから（射程外の別種の主張）。
+`Infcex.not_infEquip` は反証器ではなく **Lean の直接証明**である。H12 の §146-4 と同じ。
