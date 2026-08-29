@@ -5412,6 +5412,74 @@ theorem oper_mTower {Q : TrioSeq} (hQne : Q ≠ []) (hQ2 : Q.length - 1 ≠ 0)
 ⟹ **マスクつきのほうが仮定が軽い。** §57 で「5 つの塔」を並べたとき
 `operTower`（＝ `mTower`）を核に選んだのは、この意味でも正しかった。 -/
 
+/-! ## 71. ★★★★★★ 核 (2) は **帰納なしの 1 文**に落ちる
+
+§70 の `oper_mTower` は `mTower Q d e (n+1)` の**展開すべて**を書き下している。
+`Wchar.mem_of_oper_mem` は「展開が全部 `W a` なら本体も `W a`」なので、
+**帰納法すら要らない**: 各 `n` について展開を書き換えるだけでよい。 -/
+
+/-- **★★★★★★ 塔の `W` 所属は「1 段の連結」1 文に落ちる**（帰納なし）。 -/
+theorem mTower_mem_of_step {a : ℕ} {Q : TrioSeq} {d e : ℕ} (hQne : Q ≠ [])
+    (hQ2 : Q.length - 1 ≠ 0) (hlev : lev Q (Q.length - 1) ≠ 0)
+    (hblk : L53.HasParentInBlock Q)
+    (hstep : ∀ n m : ℕ, 1 ≤ m →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n))⟦m⟧ ∈ W a) :
+    ∀ n, mTower Q d e n ∈ W a := by
+  intro n
+  cases n with
+  | zero => simpa [mTower] using W_nil a
+  | succ n =>
+      refine mem_of_oper_mem (fun m hm => ?_)
+      rw [oper_mTower hQne hQ2 hlev hblk d e n m]
+      exact hstep n m hm
+
+/-- 尾は「行 0 の一様シフト ∘ 展開 ∘ 行 1 マスクリフト」に書き直せる
+（`Wset.oper_shiftr01` は無条件）。 -/
+theorem mTower_step_shift (Q : TrioSeq) (d e n m : ℕ) :
+    (Lift1 (shiftr01 (d * n) 0 Q) (e * n))⟦m⟧
+      = shiftr01 (d * n) 0 ((Lift1 Q (e * n))⟦m⟧) := by
+  rw [Lift1_shiftr01, oper_shiftr01]
+
+/-- **★★★★★★ 核 (2) の最終形**: 塔 ＋ 「持ち上げた `Q` の展開を行 0 でずらしたもの」。 -/
+def MTowerStep (a : ℕ) (Q : TrioSeq) (d e : ℕ) : Prop :=
+  ∀ n m : ℕ, 1 ≤ m →
+    mTower Q d e n ++ shiftr01 (d * n) 0 ((Lift1 Q (e * n))⟦m⟧) ∈ W a
+
+theorem mTower_mem_of_mTowerStep {a : ℕ} {Q : TrioSeq} {d e : ℕ} (hQne : Q ≠ [])
+    (hQ2 : Q.length - 1 ≠ 0) (hlev : lev Q (Q.length - 1) ≠ 0)
+    (hblk : L53.HasParentInBlock Q) (h : MTowerStep a Q d e) :
+    ∀ n, mTower Q d e n ∈ W a := by
+  refine mTower_mem_of_step hQne hQ2 hlev hblk (fun n m hm => ?_)
+  rw [mTower_step_shift]
+  exact h n m hm
+
+/-! ### 71.1 ⟹ 残るのは連結ひとつ
+
+    **`mTower Q d e n`** … 塔の**前半**（`n` ブロック）。§69 で `oper` そのものと判明
+    **`shiftr01 (d*n) 0 ((Lift1 Q (e*n))⟦m⟧)`** … **1 ブロックの展開**を行 0 でずらしたもの
+
+⟹ **核 (2) は「この 2 つの連結が `W a` に入る」1 文**である。`n` の帰納も
+`Wself` の段の帳尻も、もう出てこない。
+
+⚠ **これは `WCat`（連結の閉包）ではない。** 左は塔、右は 1 ブロックの展開で、
+**どちらも `Q` から作られる**。本線が `graft`（節 3）で連結を回避しているのと同じく、
+ここでも「左が右の**接頭辞**である」ことを使う余地がある:
+
+    `mTower Q d e (n+1) = mTower Q d e n ++ Lift1 (shiftr01 (d*n) 0 Q) (e*n)`（`mTower_succ`）
+
+**⟹ 目標は `mTower Q d e (n+1)` の「最後のブロックだけを展開したもの」**であり、
+**`graft` の形（`M.dropLast ++ 置換`）をブロック単位にしたもの**である。
+`Aop` の節 3 は 1 列の置換しか許さないので、そのままでは当たらない。**そこが次の壁。**
+
+### 71.2 ⟹ 今日の核の一覧（更新）
+
+    **(1) 悪根 ＝ 根の 1 歩**（§67）… `LiftTower1`（`srow=1`）/ `LiftTowerExp2`（`srow=2`）
+        `LiftTieCore` はここに合流した。`liftInner_holds` が `j0 ≥ 1` を全部処理する
+    **(2) `MTowerStep`**（上）… 塔 ＋ 1 ブロックの展開の連結。**帰納なし・段なし**
+    **(3) `GraftAll` ＝ `CoreCap`**（§25）
+
+**(2) は (1) の `srow = 2` を回すための道具**なので、独立ではない。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
