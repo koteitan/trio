@@ -3374,6 +3374,85 @@ H12 の実測「`|R| = 1` では `srow = 2` の非孤児が 0 件」は、私の
 `TowerExpBig` については正しい。私も `tower_of_row2const`（§40）で `|R|` 一般に
 伸ばしたときに、`R.dropLast` の行 2 という**新しい条件**が要ることを確認している。 -/
 
+
+/-! ## 47. ⚠ 自己訂正 ＋ 課題 L126: `srow = 2` の塔は `liftTower`
+
+### 47.1 ⚠ **§45 は `L47W.lean` の再発明でした**
+
+`grep shTower lean/L47W.lean` で確認した（**書く前にやるべきだった**）:
+
+    **`L47W.lev_shTower`（`L47W.lean:129`）** ＝ 私の `lev_shTower_root`（§45）
+    **`L47W.shiftTowerClosed_iff_wself`（`:155`）**
+      `ShiftTowerClosed ↔ ∀ e n Q, Q ∈ Wself → (∀ p ∈ Q, entry Q 0 0 ≤ p.1) →
+                            shTower Q e n ∈ Wself`
+      ＝ 私の `shiftTowerClosedS_of_self`（§45）の内容。しかも **`↔`（両向き）**
+    `L47W.shTower_prefix`（`:110`）/ `shTower_nil`（`:93`）/ `shTower_zeroRow2`（`:97`）
+    `L47W.shiftTowerClosed_of_zeroRow2`（`:137`）… 行 2 ≡ 0 なら `(TOW)` は定理
+
+⟹ **「段は無料、難所は `Wself` だけ」は課題 L48 の時点で既に書かれていた。**
+私の §45 は `ShiftTowerClosedS`（狭義側条件）版という差しかない。
+**H12 に「測る前に grep」と言った直後に、私が書く前に grep しませんでした。**
+
+### 47.2 ★ 課題 L126: `srow = 2` の塔は `shTower` **ではない**
+
+`Wset.oper_cons_tower2` に `graft_eq_shift` を入れると（`srow = 1` と同じ手順）
+
+    `X⟦n+1⟧ = ((0,v,z) :: R.dropLast) ++ shiftr01 d 0 (**Lift1** (X⟦n⟧) e')`
+      `d = entry R 0 (|R|-1)`,  `e' = entry R 1 (|R|-1) - v`
+
+`shTower_cons`（§43）は `shTower Q e (n+1) = Q ++ shiftr01 e 0 (shTower Q e n)` なので、
+**差は `Lift1 · e'` が 1 段ごとに挟まること**だけ。⟹ 下の `liftTower` が正確な形。 -/
+
+/-- **`srow = 2` の塔**（`shTower` の各段に `Lift1 · e` を挟んだもの）。 -/
+noncomputable def liftTower (Q : TrioSeq) (d e : ℕ) : ℕ → TrioSeq
+  | 0 => []
+  | n + 1 => Q ++ shiftr01 d 0 (Lift1 (liftTower Q d e n) e)
+
+open Classical in
+/-- **★★★★★ `srow = 2` の塔は `liftTower` そのもの。** -/
+theorem tower2_eq_liftTower {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n, (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧
+      = liftTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast)
+          (entry R 0 (R.length - 1)) (entry R 1 (R.length - 1) - v) n := by
+  intro n
+  induction n with
+  | zero =>
+      rw [L53.oper_cons_zero (v := v) (z := z) hR hRne hd hpM]
+      rfl
+  | succ k ih =>
+      rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM, ih, graft_eq_shift,
+        ← List.cons_append]
+      rfl
+
+/-! ### 47.3 ⟹ `srow = 1` と `srow = 2` の差は **`Lift1` 1 つ**
+
+    `srow = 1` … `tow v z R n = shTower Q d n`            （§43、`Lift1` 無し）
+    `srow = 2` … `X⟦n⟧ = liftTower Q d e' n`               （上、各段に `Lift1 · e'`）
+      どちらも `Q = (0,v,z) :: R.dropLast`, `d = entry R 0 (|R|-1)`
+
+⟹ **`e' = 0` なら `Lift1 X 0 = X`（`Wset.Lift1_zero`）で `liftTower = shTower`。**
+`e' = entry R 1 (|R|-1) - v` なので、**`entry R 1 (|R|-1) ≤ v` のとき両者は一致**する。
+ところが `srow = 2` の場面では `L53.tower2_vw` が **`v < entry R 1 (|R|-1)`** を与える
+（`domT` ＋ `hasParent` から自動）⟹ **`e' ≥ 1`。一致しない。**
+
+⟹ **`srow = 2` が `srow = 1` より真に難しい理由が 1 行で出た:
+`srow = 2` では根の復活が行 1 の狭義増加を強制するので、リフト量 `e'` が必ず正になる。**
+
+### 47.4 ⟹ タイの問題がここで**戻ってきます**
+
+`Lift1 W e'` が一様シフト `shiftr01 0 e'` に潰れるのは、根の `le1` 錐が全体のとき
+（`Lcone.le1_zero_iff`）＝ **ブロッカー（行 1 ≤ `v` の列）が無いとき**。
+潰れれば `liftTower` は行 0・行 1 の両方を一様にずらす塔になり、`shTower` と同じ扱いができる。
+
+⟹ **`|R| ≥ 2` の `srow = 2` 枝では、`Q = (0,v,z) :: R.dropLast` に
+「行 1 が `v` 以下の列があるか」がふたたび効く。**
+午後に削った `liftStage_of_strict`（狭義、仮定ゼロ）/ `liftStage_of_noTie`（無タイ、仮定ゼロ）/
+`liftStage_of_zeroRow2`（行 2 ≡ 0、仮定ゼロ、§32）は **ここで再利用できる可能性が高い**。
+（`LiftTie` 系は `TowerOK` の核ではなくなったが、**道具としては生きている**。） -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
