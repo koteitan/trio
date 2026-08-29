@@ -1396,6 +1396,120 @@ theorem towerGraft2_of_liftTieSelf (hlt : LiftTieSelf) : TowerGraft2 :=
 theorem towerOK_of_liftTieSelf (hlt : LiftTieSelf) (he : TowerExp) : TowerOK :=
   towerOK_of (towerGraft2_of_liftTieSelf hlt) he
 
+
+/-! ## 22. ★★★★★ 課題 L110 / L111: **`j0` の二分法と、降下が止まる場所**
+
+### 22.1 (L111-1) `j0 ≥ 1` ⟺ **尾の中に親がある**
+
+根つき列 `S = (0,v,z) :: R` の末尾の親 `j0` について、既存の 2 本が二分法を作る:
+
+    `Wset.parent_cons_eq_zero`  `domT R m`（＝ 尾の中に親が**無い**）⟹ **`j0 = 0`**（根）
+    `Wset.nextR_cons_uniq`      尾の中に親 `q` があれば、`S` での親は **`q + 1 ≥ 1`**
+
+⟹ **`j0 = 0` ⟺ 尾の中に親が無い（＝ 塔の枝）、`j0 ≥ 1` ⟺ 尾の中に親がある
+（＝ `oper_cons_nat` の枝）。**「親が根でない」は自動的に `oper_cons_nat` の枝に落ちる。 -/
+
+/-- **★ 親が根でない ⟹ 尾の中に親がある**（`parent_cons_eq_zero` の対偶）。 -/
+theorem hasParent_tail_of_parent_ne_zero {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hlev : 1 ≤ lev R (R.length - 1))
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length)
+    (hne : parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length ≠ 0) :
+    hasParent R (srow R (R.length - 1)) (R.length - 1) := by
+  by_contra hnp
+  exact hne (parent_cons_eq_zero (m := lev R (R.length - 1) - 1) hRne
+    ⟨by omega, hnp⟩ hpM)
+
+open Classical in
+/-- **★ 逆向き: 尾の中に親があれば `j0 = q + 1 ≥ 1`。** -/
+theorem parent_cons_ne_zero_of_hasParent {v z : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ [])
+    (hp : hasParent R (srow R (R.length - 1)) (R.length - 1)) :
+    parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length ≠ 0 := by
+  have hnrR : nextR R (srow R (R.length - 1))
+      (parent R (srow R (R.length - 1)) (R.length - 1)) (R.length - 1) :=
+    parent_nextR hp
+  have hex : ∃ j0, nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      j0 R.length :=
+    ⟨_, (nextR_cons_last hRne _ _).mpr hnrR⟩
+  have hspec := Classical.epsilon_spec hex
+  have := nextR_cons_uniq (v := v) (z := z) hR hRne hp _ hspec
+  show parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length ≠ 0
+  unfold parent
+  omega
+
+/-- **★★ `j0 ≥ 1` の枝の展開は無条件の等式**（`oper_cons_nat`）。 -/
+theorem oper_cons_of_parent_ne_zero {v z n : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hlev : 1 ≤ lev R (R.length - 1))
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length)
+    (hne : parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length ≠ 0) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ = ((0, v, z) : ℕ × ℕ × ℕ) :: R⟦n⟧ :=
+  oper_cons_nat hR hRne (hasParent_tail_of_parent_ne_zero hRne hlev hpM hne)
+
+/-! ### 22.2 (L111-2) ⚠ **等式は無条件だが、所属は閉じない**
+
+`oper_cons_of_parent_ne_zero` は**等式**を無条件で与える。しかし `Aop` の節 2 で要るのは
+
+    `∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W a`   ＝   **`∀ n ≥ 1, (0,v,z) :: R⟦n⟧ ∈ W a`**
+
+で、これは**元の目標と同じ形**（`R` を `R⟦n⟧` に置き換えただけ）である。
+⟹ **`oper_cons_nat` は目標を「同じ形の、尾が展開された目標」に書き換えるだけ。
+所属は 1 ミリも閉じていない。** R2 の「(P1) は閉じている」は**等式が無条件**の意味であり、
+**所属が閉じる意味ではない** —— team-lead の予想どおり。
+
+### 22.3 (L111-3 / L110-1,2) **降下は何の上で回るか**
+
+**長さでは回らない。** `oper` の長さは `j0 + n*(j1 - j0)` なので
+
+    `n = 1` … `j0 + (j1 - j0) = j1 = |M| - 1` ⟹ **1 減る**
+    `n ≥ 2` … **増える**
+
+`Aop` の節 2 は `∀ n ≥ 1` を要求するので、**長さは減りも増えもする ⟹ 測度にならない。**
+
+⟹ 実際に回っている測度は 2 つあり、**別々のもの**である:
+
+    (A) `Wstar` 路線 … **`W` の最小不動点の導出木**（`A2'` による帰納）。
+        `TowerOK` の仮定 **`Aop W u0 Wstar R`** がまさに「尾が自分の導出を持っている」
+        ことの表明で、`Wset.Wstar_closed` はこの上で回る
+    (B) `GX` 路線 … **`Lind.mem_GX_of_singletons`（`Lind.lean:79`）は
+        `y` の長さの強帰納**（窓分解 `graft_take_drop` で文脈 `y.take p`（長さ `p < |y|`）と
+        データ `shiftl0 … (y.drop p)`（長さ `|y| - p < |y|`）に割る）。
+        **展開 `⟦n⟧` はここには一度も現れない。**
+
+**(L110-2 への回答) 段のインフレは (B) の測度を壊さない。**
+`GX`（`Gamma.lean:169`）は `∀ M ∀ v z ∀ i ∀ a t` を**述語の中で**全称している。
+段 `a` とリフト `t` は帰納の**パラメータではない**ので、`a + 2k*d1` の族が出ても
+長さ `|y|` は動かない。**壊れない理由はこれ。**
+
+**(L110-3 への回答) 塔の再帰では段はインフレしない。**
+`L53.towerOK2_of_clause3` の `key` は
+
+    `∀ n, ((0,v,z) :: R)⟦n⟧ ∈ W (2*v+z)`   ← **段は `2v+z` に固定**
+
+の帰納で、各段で払うリフトは `e = w - v`（**`n` に依らない定数**）。
+節 3 に渡すのに要るのは `Lift1 (S⟦n⟧) e ∈ W m` で、
+`L53.tower2_stage_fits'` が `2v+z+2e ≤ m` を与える。⟹ **`m` で頭打ち。**
+私が §18 で書いた `a + 2k*d1` は `gcopy` から見た形で、**塔として見れば入れ子の
+リフトは 1 回ぶんに畳まれる**（`oper_cons_tower2` の再帰形）。**向きは逆ではない。**
+
+### 22.4 ★ **⟹ どこで止まるか（1 行）**
+
+> **`j0 ≥ 1` の枝は `oper_cons_nat` で「尾が展開された同じ目標」に落ちるだけで、
+> `CoreCap` は尾の `W` 導出（`Aop W u0 Wstar R`）を仮定していないので、
+> そこで測度が無くなる。**
+
+⚠ これは「原理的に不可能」の主張ではない（教訓 13）。**今ある道具立てでは
+測度が無い**という報告である。`j0 ≥ 1` の枝に必要なのは
+**「尾が自分の `W` 導出を持っている」** —— それがまさに `Wstar` 路線の
+`Aop W u0 Wstar R` であり、`TowerOK` が持っていて `CoreCap` が持っていないもの。
+
+⟹ **2 つの路線は合流させる必要がある**: データ側の長さ帰納は `Lind`（B）、
+文脈側の降下は `Wstar` の `A2'`（A）。`CoreCap` は (B) の**葉**であり、
+その葉で (A) が要る。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
