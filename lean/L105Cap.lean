@@ -11863,6 +11863,107 @@ theorem prefixTowerClosed_of_snocStepPar {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
 **⟹ そして §163 `block_blockParent_all_cone` は**任意の `Q`**について書いてあるので、
 `Q := V` として**そのまま**使えます。** -/
 
+/-! ## 167. ★★★★★★★ **接頭辞つきの族での「親は同じコピー」**（§141 ＋ §163 の `A ++` 版）
+
+`parent_ge_of_inner`（§101）は**任意の接頭辞**を取るので、`A ++ mTower Q d e n` でもそのまま。 -/
+
+open Classical in
+theorem prefixSnocStep_parent_sameBlock {A Q : TrioSeq} {d e n j i : ℕ}
+    (hj : j < Q.length)
+    (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) i j)
+    (hp : hasParent (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) i
+      ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)) :
+    (A ++ mTower Q d e n).length ≤ parent (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) i
+      ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  have hTne : B.take (j + 1) ≠ [] := by
+    intro h
+    have h0 : (B.take (j + 1)).length = 0 := by rw [h]; rfl
+    omega
+  have hloc' : hasParent (B.take (j + 1)) i ((B.take (j + 1)).length - 1) := by
+    rw [hTlen]; simpa using hloc
+  exact parent_ge_of_inner (A := A ++ mTower Q d e n) hTne hloc' (parent_nextR hp)
+
+open Classical in
+/-- **★★★★★★★ 接頭辞つき版の核**: `le1 Q 0 j` の列では「親は同じコピー」が無料。 -/
+theorem prefixTowerClosed_of_snocStepCone {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h2 : ∀ j, j < Q.length → 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (0 < j → le1 Q 0 j → (A ++ mTower Q d e n).length ≤
+        parent (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+      A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine prefixTowerClosed_of_snocStepPar hA ?_
+  intro n j hj _ hC
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hPlen : (A ++ mTower Q d e n).length = A.length + n * Q.length := by
+    rw [List.length_append, mTower_length]
+  have hClen : (A ++ mTower Q d e n ++ B.take j).length
+      = (A ++ mTower Q d e n).length + j := by
+    rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hC1len : (A ++ mTower Q d e n ++ B.take (j + 1)).length
+      = (A ++ mTower Q d e n).length + (j + 1) := by
+    rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hsrow : srow (A ++ mTower Q d e n ++ B.take (j + 1))
+      ((A ++ mTower Q d e n).length + j) = srow (B.take (j + 1)) j := by
+    unfold srow
+    rw [entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
+  refine hstep n j hj (fun hj1 hcone => ?_) hC
+  have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
+    block_blockParent_all_cone hj hj1 hr0 hcone (h2 j hj)
+  have hpar : hasParent (A ++ mTower Q d e n ++ B.take (j + 1))
+      (srow (B.take (j + 1)) j)
+      ((A ++ mTower Q d e n ++ B.take (j + 1)).length - 1) := by
+    rw [hC1len, show (A ++ mTower Q d e n).length + (j + 1) - 1
+      = (A ++ mTower Q d e n).length + j from by omega]
+    exact hasParent_append_right_of _ _ hloc
+  have hres := prefixSnocStep_parent_sameBlock (A := A) (d := d) (e := e) (n := n)
+    (i := srow (B.take (j + 1)) j) hj hloc hpar
+  rw [hC1len, show (A ++ mTower Q d e n).length + (j + 1) - 1
+    = (A ++ mTower Q d e n).length + j from by omega] at hres
+  rw [hClen, hsrow]
+  exact hres
+
+/-! ### 167.1 ⟹ **(A1)(A2) の外枠が完成しました**
+
+    §165 展開は **`接頭辞 ++ より短い塔`**（族が閉じる）
+    §166 その族で **1 列ずつ剥がす**（孤児は無料）
+    **§167 錐の中の列では **親は同じコピー**（無料）**
+
+**⟹ 帰納の 1 段は全部そろいました。**
+
+### 167.2 ⛔ **足りないもの（1 行）**
+
+> **`hstep` の中で `mem_of_oper_mem` ＋ §165 で降りたあと、
+> 新しい接頭辞 `(…).take j0` が `W u` に入ることが要る。**
+> **`j0` は最後のコピーの中（§167）なので、それは
+> **`A ++ mTower Q d e n ++ B.take p`（`p < j`）** ＝ **`j` の帰納の 1 つ手前**である。**
+> **⟹ `j` についての強帰納を `hstep` の中で使える形にすれば閉じる。**
+> **⟹ いまの `hstep` は「`j` の 1 つ手前」しか渡していない（`hC`）ので、
+> **強帰納版（`∀ j' ≤ j`）に書き換える**必要がある。**
+
+⚠ **これが「足りないもの」です。構造的な穴ではなく、`hstep` の**渡し方**の問題です。**
+⚠ **教訓 14: 「書き換えれば閉じる」とはまだ言えません。書き換えて初めて分かります。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
