@@ -994,6 +994,78 @@ theorem srow2_branch_live :
   · rw [hsplit, capBase_Mw_len]; exact srow_Sw
   · rw [hsplit, capBase_Mw_len, srow_Sw]; exact hasParent_Sw
 
+
+/-! ## 18. ★★★★★ 課題 L107 (3): `CtxOK` の `∀ t` を `srow ≥ 1` の写しに噛ませる
+
+`j0 = 0`（親が根）のとき、`oper` の写しは §10 の根祖先性により
+
+    第 `k` 写し = `shiftr01 (k*d0) 0 (Lift1 C (k*d1))`
+
+（行 0 は `le0 (C++[q]) 0 j` が全 `j` で成り立つので**一様**、行 1 は根の `le1` 錐＝`Lift1`）。
+そして `CtxOK` の `∀ t` は `Lift1 C (k*d1) = capBase M v z (t + k*d1)` を
+`W (2(v+t+k d1)+z)` に入れてくれる（§15）。`W_shift`（`Wset.lean:265` 付近、
+**行 0 のシフトは段を変えない**）で行 0 のずれも吸収される。
+
+⟹ **写しは 1 つ 1 つ、`CtxOK` から無料で `W` に入る。**
+残っているのは**段の帳尻だけ**（`W (a + 2k d1)` の族を段 `a` の 1 本にまとめる）で、
+それは §14 のとおり連結では絶対にできない。 -/
+
+/-- **★★★★ `j0 = 0` の第 `k` 写しは `CtxOK` から無料。** -/
+theorem copy_mem_of_ctxOK {M : TrioSeq} {v z t a k d0 d1 : ℕ} (hctx : CtxOK M v z)
+    (hM2 : 1 ≤ M.length) (hva : 2 * (v + (t + k * d1)) + z ≤ a) :
+    shiftr01 (k * d0) 0 (Lift1 (capBase M v z t) (k * d1)) ∈ W a :=
+  W_shift (liftStage_capBase hctx hM2 hva) (k * d0)
+
+/-! ### 18.1 `t = 0` かつ `j0 = 0` かつ `srow = 2` は **`oper_cons_tower2` そのもの**
+
+`Wset.oper_cons_tower2`（`Wset.lean:3231`、**証明ずみ**）:
+
+```lean
+theorem oper_cons_tower2 (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi1 : srow R (R.length - 1) = 2)
+    (hpM : hasParent ((0,v,z) :: R) (srow R (R.length - 1)) R.length) :
+    ((0,v,z) :: R)⟦n + 1⟧
+      = (0,v,z) :: graft R (Lift1 (((0,v,z) :: R)⟦n⟧) (entry R 1 (R.length-1) - v))
+```
+
+`R := cap M b c` と置くと前提は全部そろう:
+
+    `argOK R`     … `argOK_cap`（§10、緑）
+    `R ≠ []`      … `cap` は `M.dropLast ++ [1 列]`
+    `srow R (|R|-1) = 2` … **`0 < c`**（`srow_cap_last`、§17）
+    `hasParent`   … 残核の仮定そのもの
+    **`domT R m`**  … `¬ hasParent R (srow) (|R|-1)`
+                    ＝ **cap 列が `R` の中では親を持たない ＝ 親が根（`j0 = 0`）**
+
+⟹ **`j0 = 0` ⟺ `domT (cap M b c) m`**、そしてそのとき残核は
+
+    `S⟦n+1⟧ = (0,v,z) :: graft (cap M b c) (Lift1 (S⟦n⟧) (b - v))`
+
+という **`graft` の再帰**になる。これは `GX`（`Gamma.lean:169`）の義務そのもので、
+`Lind.mem_GX_of_singletons` の長さ帰納が回す形。**⟹ 設計どおりに閉じている。**
+
+⚠ ただし `S⟦n⟧ ∈ GX` を得るには `CoreSingleton`（＝ `CoreCap`）が要る。
+**循環ではなく、これが「長さの帰納」の姿**である（`Lind.lean` の設計）。 -/
+
+theorem srow_cap_last (M : TrioSeq) (b c : ℕ) :
+    srow (cap M b c) ((cap M b c).length - 1)
+      = (if 0 < c then 2 else if 0 < b then 1 else 0) := by
+  have hlen : (cap M b c).length - 1 = M.dropLast.length := by
+    rw [cap_length]; omega
+  rw [hlen]
+  unfold cap
+  exact srow_snoc_last M.dropLast ((entry M 0 (M.length - 1), b, c) : ℕ × ℕ × ℕ)
+
+theorem srow_cap_last_eq_two {M : TrioSeq} {b c : ℕ} (hc : 0 < c) :
+    srow (cap M b c) ((cap M b c).length - 1) = 2 := by
+  rw [srow_cap_last, if_pos hc]
+
+theorem cap_ne (M : TrioSeq) (b c : ℕ) : cap M b c ≠ [] := by
+  intro h
+  have hl : (cap M b c).length = 0 := by rw [h]; rfl
+  rw [cap_length] at hl
+  omega
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
@@ -1063,6 +1135,21 @@ theorem srow2_branch_live :
 ⟹ 「断片では `c ≤ 1`」を使うには **`argOK` か `CtxOK` に行 2 ≤ 1 を足す**必要があり、
 それは `Gamma.lean` / `Lind.lean` の共有ファイルの変更になる。
 **H11 の実測（`c ≥ 2` でも違反 0）どおり、制限しなくても危険は無い。**
+
+### 12.7 課題 L107 の回答（§17 / §18）
+
+    **`srow` を決めているのは `(b, c)` そのもの**（`srow_snoc_last`）
+      `srow = 2` ⟺ **`0 < c`**（`srow_cap_eq_two_iff`）
+      `srow = 0` ⟹ `b = 0` かつ `c = 0`（`srow_cap_eq_zero`）
+      リフト `t` は行 1 を**増やす**方向にしか動かさない（`Lift1_snoc_row1`）
+    ⚠ **`c ≤ 1` では `srow = 2` は消えない**（必要十分が `0 < c` なので `c = 1` で出る）
+    ★ **`srow = 2` は起きる。しかも本線で**（`srow2_branch_live`）
+      土台 `(0,0,0)(1,1,1) = ψ(Ω_ω)` に `(2,1,1)` を足す ＝ **2 行から 3 行に出る一歩**
+    ★ `j0 = 0` のとき写しは `CtxOK` から**無料**（`copy_mem_of_ctxOK`）。
+      残るのは**段の帳尻だけ**で、連結では組めない（§14）
+    ★ `t = 0` かつ `j0 = 0` かつ `srow = 2` は **`oper_cons_tower2` そのもの**（§18.1）。
+      `domT (cap M b c) m` ⟺ `j0 = 0`。そこでは残核が `graft` の再帰になる ＝
+      `GX` の義務そのもの ＝ `Lind` の長さ帰納の姿
 
 ### 12.6 次の一手
 
