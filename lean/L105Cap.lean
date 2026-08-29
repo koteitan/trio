@@ -10530,6 +10530,101 @@ theorem le0_block_root {Q : TrioSeq} {d e n k q : ℕ} (hk : k < n) (hq : q < Q.
 
 ⚠ **教訓 14**: まだ **定理ではありません。** -/
 
+/-! ## 148. ★★★★★★★ (N1) 完成: **ブロック `k` の根は、ブロック `m` の任意の列の行 0 祖先**
+
+§147 で段内が片づいた。**残る「段を跨ぐ 1 歩」を §144 の下界で押さえる。** -/
+
+open Classical in
+theorem le0_tower_root_succ {Q : TrioSeq} {d e n k : ℕ} (hk : k + 1 < n)
+    (hd : 0 < d) (hQ : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    le0 (mTower Q d e n) (k * Q.length) ((k + 1) * Q.length) := by
+  set T := mTower Q d e n with hT
+  have hTlen : T.length = n * Q.length := mTower_length Q d e n
+  have hmul : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hmul2 : (k + 2) * Q.length = (k + 1) * Q.length + Q.length :=
+    Nat.succ_mul (k + 1) Q.length
+  have hmul3 : (k + 2) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hblt : (k + 1) * Q.length < T.length := by omega
+  have hek : entry T 0 (k * Q.length) = entry Q 0 0 + d * k :=
+    mTower_entry0_root (by omega) hQ
+  have hek1 : entry T 0 ((k + 1) * Q.length) = entry Q 0 0 + d * (k + 1) :=
+    mTower_entry0_root (by omega) hQ
+  have hlt : entry T 0 (k * Q.length) < entry T 0 ((k + 1) * Q.length) := by
+    rw [hek, hek1]
+    have hms : d * (k + 1) = d * k + d := Nat.mul_succ d k
+    omega
+  have hp : hasParent T 0 ((k + 1) * Q.length) :=
+    (hasParent_zero_iff hblt).mpr ⟨k * Q.length, by omega, hlt⟩
+  set a := parent T 0 ((k + 1) * Q.length) with ha
+  have hnr : nextrel0 T a ((k + 1) * Q.length) := by
+    have h := parent_nextR hp
+    unfold nextR at h
+    rwa [if_pos rfl] at h
+  have hage : k * Q.length ≤ a :=
+    nextrel0_src_ge_of_candidate hnr (by omega) hlt
+  have halt : a < (k + 1) * Q.length := nextrel0_index_less hnr
+  obtain ⟨q, hqe⟩ : ∃ q, a = k * Q.length + q := ⟨a - k * Q.length, by omega⟩
+  have hqlt : q < Q.length := by omega
+  have h1 : le0 T (k * Q.length) a := by
+    rw [hqe]; exact le0_block_root (by omega) hqlt hr0
+  have h2 : le0 T a ((k + 1) * Q.length) :=
+    ⟨by omega, by omega, Relation.ReflTransGen.single hnr⟩
+  exact le0_trans h1 h2
+
+open Classical in
+theorem le0_tower_root_le {Q : TrioSeq} {d e n : ℕ} (hd : 0 < d) (hQ : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ∀ m k, k ≤ m → m < n → le0 (mTower Q d e n) (k * Q.length) (m * Q.length) := by
+  intro m
+  induction m with
+  | zero =>
+      intro k hk hn
+      have hk0 : k = 0 := by omega
+      subst hk0
+      have h1 : Q.length ≤ n * Q.length :=
+        Nat.le_mul_of_pos_left Q.length (by omega)
+      have hlt : 0 * Q.length < (mTower Q d e n).length := by
+        rw [mTower_length, Nat.zero_mul]; omega
+      exact ⟨hlt, hlt, .refl⟩
+  | succ m ih =>
+      intro k hk hn
+      rcases Nat.lt_or_ge k (m + 1) with hlt | hge
+      · exact le0_trans (ih k (by omega) (by omega))
+          (le0_tower_root_succ (by omega) hd hQ hr0)
+      · have hke : k = m + 1 := by omega
+        subst hke
+        have hmul : (m + 2) * Q.length ≤ n * Q.length :=
+          Nat.mul_le_mul_right _ (by omega)
+        have hmul2 : (m + 2) * Q.length = (m + 1) * Q.length + Q.length :=
+          Nat.succ_mul (m + 1) Q.length
+        have hlt : (m + 1) * Q.length < (mTower Q d e n).length := by
+          rw [mTower_length]; omega
+        exact ⟨hlt, hlt, .refl⟩
+
+open Classical in
+/-- **(N1)**: ブロック `k` の根は、ブロック `m`（`k ≤ m < n`）の任意の列の行 0 祖先。 -/
+theorem le0_tower_root_col {Q : TrioSeq} {d e n k m q : ℕ}
+    (hd : 0 < d) (hq : q < Q.length) (hkm : k ≤ m) (hm : m < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    le0 (mTower Q d e n) (k * Q.length) (m * Q.length + q) :=
+  le0_trans (le0_tower_root_le hd (by omega) hr0 m k hkm hm)
+    (le0_block_root hm hq hr0)
+
+/-! ### 148.1 ⟹ (N1) が定理になりました
+
+    **`0 < d` ／ `q < |Q|` ／ `k ≤ m < n` ／ 根が段内で狭義に最浅**
+    **⟹ `le0 (mTower Q d e n) (k*|Q|) (m*|Q| + q)`**
+
+**⟹ §144 と組むと、復活の親の**下界**が言えます:**
+
+> **ブロック `k` の根の行 1 が足す列の行 1 より狭義に小さければ、
+> 親の添字は `k*|Q|` 以上。**
+
+⚠ **`0 < d` が要ります。** `d = 0` の塔（平坦）は別扱い（§124 `mTower_zero_zero`）。
+
+⚠ **教訓 14**: (N1) は **道具**であって、(N3)（塔の塔）はまだ手つかずです。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
