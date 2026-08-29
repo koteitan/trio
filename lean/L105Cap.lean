@@ -11782,6 +11782,87 @@ theorem gexp_eq_take_append_mTower {M : TrioSeq} {j0 Lb d0 d1 n : ℕ}
 ⚠ **教訓 14**: これは **展開の形**であって、**`W` の所属ではありません。**
 **帰納を回すには「接頭辞 ＋ 塔」が `W` に入ることが要り、それが (a) です。** -/
 
+/-! ## 166. ★★★★★★★ **接頭辞つきの族**: §94 / §139 を `A ++ …` に一般化
+
+§165 で「塔 → 接頭辞 ＋ より短い塔」と族が閉じた。**その族で剥がす機械を作る。**
+§94 `mTowerClosed_of_snocStep` と §139 の証明に `A ++` を前置するだけ。 -/
+
+theorem prefixTowerClosed_of_snocStep {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  intro n
+  induction n with
+  | zero => rw [mTower_zero, List.append_nil]; exact hA
+  | succ n ih =>
+      have key : ∀ j, j ≤ Q.length →
+          A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u := by
+        intro j
+        induction j with
+        | zero => intro _; simpa using ih
+        | succ j ihj => intro hj; exact hstep n j (by omega) (ihj (by omega))
+      have hfull := key Q.length le_rfl
+      rw [List.take_of_length_le (by rw [Lift1_length, shiftr01_length])] at hfull
+      rw [mTower_succ, ← List.append_assoc]
+      exact hfull
+
+open Classical in
+/-- **接頭辞つき版の §139**: 孤児は `snoc_orphan_W` が片づけるので、
+核は「足す列が親を持つ」場合だけ。 -/
+theorem prefixTowerClosed_of_snocStepPar {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (hasParent (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+        ∨ A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
+      A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine prefixTowerClosed_of_snocStep hA ?_
+  intro n j hj hC
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
+    rw [List.take_add_one]
+    congr 1
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+    rfl
+  have hsplit : A ++ mTower Q d e n ++ B.take (j + 1)
+      = (A ++ mTower Q d e n ++ B.take j) ++ [B.getD j (0, 0, 0)] := by
+    rw [hBt, ← List.append_assoc]
+  by_cases hE : A ++ mTower Q d e n ++ B.take j = []
+  · exact hstep n j hj (Or.inr hE) hC
+  · by_cases hP : hasParent (A ++ mTower Q d e n ++ B.take (j + 1))
+        (srow (A ++ mTower Q d e n ++ B.take (j + 1))
+          (A ++ mTower Q d e n ++ B.take j).length)
+        (A ++ mTower Q d e n ++ B.take j).length
+    · exact hstep n j hj (Or.inl hP) hC
+    · rw [hsplit]
+      exact snoc_orphan_W _ hC hE (by rw [← hsplit]; exact hP)
+
+/-! ### 166.1 ⟹ 族の中で剥がせるようになりました
+
+    §165 … 展開は **`接頭辞 ++ より短い塔`**
+    **§166 … その族で **1 列ずつ剥がす**機械（孤児は無料）**
+
+**⟹ (A1)(A2) の帰納の**外枠**がそろいました。**
+
+⚠ **残るのは「足す列が親を持つ」場合で、そこで `|V|` が減るかどうかです。**
+**⟹ 減るのは「親が最後のコピーの中」のときだけ**（§138 と同じ形）。
+**⟹ そして §163 `block_blockParent_all_cone` は**任意の `Q`**について書いてあるので、
+`Q := V` として**そのまま**使えます。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
