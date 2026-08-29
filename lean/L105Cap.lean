@@ -1564,6 +1564,101 @@ theorem tower2_not_z1_c1 {v m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hd : domT 
 ⚠ なお `srow = 0` かつ `j0 = 0`（＝ 親が根）の枝は **`Wtower2.snoc_flat_root` で
 無料**なので（§12.2）、この訂正で残核が増えることはない。 -/
 
+
+/-! ## 25. ★★★★★ 課題 L112 / L113 の答え: **`CoreCap ⟺ GraftAll`**
+
+### 25.1 (L112) `CoreCap` の鎖は `TowerExp` を「タダにしている」のではない
+
+`Final.lean` を開いて鎖を全部並べた（`file:line` はすべて実在を確認ずみ）:
+
+    `Final.lean:573`  `TRIO_terminates_of_cap (hc : CoreCap)`
+      └ `Lind.lean:181`   `coreSingleton_of_cap : CoreCap → CoreSingleton`
+      └ `Final.lean:559`  `TRIO_terminates_of_core (hs : CoreSingleton)`
+          └ `Final.lean:552` `wf_olt_ST_TS_of_core`
+              ├ `Lind.lean:215` `coreCtxSuffixLift_of_core : CoreSingleton → CoreCtxSuffixLift`
+              ├ `Lind.lean:208` `corePlantCtxLift_of_core  : CoreSingleton → CorePlantCtxLift`
+              └ `Final.lean:540` `wf_olt_ST_TS_of_cores`
+                  ├ `Gamma.lean:2625` `graftAll_of_cores : … → Wset.GraftAll`
+                  ├ `Lcone.lean:687`  `Wstar2s_closed_of_graftAll (hga : GraftAll)`
+                  │    └ `Wset.Wstar2s_closed` `:4347` に 3 本渡す:
+                  │       `liftInner_holds`（**無条件**、`Lcone.lean`）
+                  │       **`Wset.liftTower1_of_graftAll hga`** `:4151`  ← `TowerOK1` 相当
+                  │       **`Wset.liftTowerExp2_of_graftAll hga`** `:4211` ← **`TowerExp` 相当**
+                  └ `trio_cofinality`（**無条件**）
+
+⟹ **答えは (2)。** `TowerExp` に相当する債務は
+**`Wset.liftTowerExp2_of_graftAll`（`Wset.lean:4211`）として `GraftAll` から出ている**。
+`CoreCap` がタダにしているのではなく、**`GraftAll` が `TowerExp` の仕事をしていて、
+その `GraftAll` が `CoreCap` から出る**。
+
+`Wset.GraftAll`（`Wset.lean:4085`）の docstring もそう書いている:
+「**The single Buchholz-(1) core**: the graft closure of every block at every stage.」
+
+### 25.2 ★★★ `CoreCap` は `GraftAll` の **`y` が 1 列の場合そのもの**
+
+`Lind.graft_singleton_eq_cap`（`Lind.lean:169`）: **`graft M [(0,b,c)] = cap M b c`**。
+そして `GraftAll` の装備仮定は **`CtxOK M v z` の定義そのもの**（`Gamma.lean:153` と
+`Wset.lean:4086-4088` を並べると逐語で一致）。
+
+⟹ **`GraftAll` に `y := [(0,b,c)]` を入れると `CoreCap` になる**（下の `coreCap_of_graftAll`）。
+逆は上の鎖（`Lind` の長さ帰納 ＋ `Gamma` の `graftAll_of_GX`）。
+⟹ **`CoreCap ⟺ GraftAll`。** -/
+
+theorem coreCap_of_graftAll (hga : GraftAll) : CoreCap := by
+  intro M hMarg hM2 v z hz1 hctx b c a t hva
+  have hMne : M ≠ [] := by
+    intro h
+    rw [h] at hM2
+    simp at hM2
+  have hy : [((0, b, c) : ℕ × ℕ × ℕ)] ∈ W (2 * b + c) := mem_iff_lev_le.mpr le_rfl
+  have hb : based [((0, b, c) : ℕ × ℕ × ℕ)] := rfl
+  have harg : argOK (graft M [((0, b, c) : ℕ × ℕ × ℕ)]) := by
+    rw [graft_singleton_eq_cap]
+    exact argOK_cap hMarg hM2 b c
+  have hres := hga M hMarg hMne v z hz1 hctx (2 * b + c)
+    [((0, b, c) : ℕ × ℕ × ℕ)] hy hb harg a t hva
+  rwa [graft_singleton_eq_cap] at hres
+
+theorem graftAll_of_coreCap (hc : CoreCap) : GraftAll :=
+  graftAll_of_cores (coreCtxSuffixLift_of_core (coreSingleton_of_cap hc))
+    (corePlantCtxLift_of_core (coreSingleton_of_cap hc))
+
+/-- **★★★★★ `CoreCap` は `GraftAll` と同値。** -/
+theorem coreCap_iff_graftAll : CoreCap ↔ GraftAll :=
+  ⟨graftAll_of_coreCap, coreCap_of_graftAll⟩
+
+/-! ### 25.3 (L113) ⟹ **`CoreCap ⟸ LiftTieSelf` は通りません**
+
+`towerOK2_of_liftTieSelf`（§21）の前提のうち、`CoreCap` の設定で**供給できないのは
+`hgr`** ただ 1 つ:
+
+    `hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar`
+
+これは「**任意の `y ∈ W m` について graft 先が `W`**」で、`GraftAll`（`Wset.lean:4085`）
+そのものの形である。そして §25.2 で **`CoreCap ⟺ GraftAll`** なので、
+**`hgr` を供給することは `CoreCap` を仮定することと同じ**。⟹ 循環。
+
+⚠ `Gamma.ctxOK_graft`（`Gamma.lean:307`）で `CtxOK (graft M Y) v z` は出るが、
+その前提は **`hYd : Y.dropLast ∈ GX`** で、これも `CoreSingleton`（＝ `CoreCap`）
+からしか出ない。⟹ こちらも循環。
+
+**⟹ (L113 の答え) 通りません。足りないのは `hgr` ＝ `GraftAll` ＝ `CoreCap` 自身です。**
+
+### 25.4 ⟹ 3 つの核の正確な関係（今日の到達点）
+
+    **`CoreCap` ⟺ `GraftAll`**（§25.2、緑）… 仮定 1 本。`TowerExp` 相当を**内側に含む**
+    **`LiftTieSelf` ＋ `TowerExp`**（§21）… 仮定 2 本。`LiftTieSelf` は文が最小
+      （4 量化 / 3 前提、段は `2v+z` 固定）
+
+⟹ team-lead の (3) が正しい: **「仮定 1 本」は見かけで、`CoreCap` は
+`LiftTieSelf ∧ TowerExp` に相当する仕事を 1 本に畳んだもの**である。
+`GraftAll` の docstring が「the graft closure of every block at every stage」と
+言っているとおり、**`CoreCap` は全ブロック・全段の graft 閉包**であって、
+`y` が 1 列に見えるのは `graft` が末尾の孤児しか見ないからにすぎない。
+
+**⟹ 乗り換えの判断材料は揃った。** 文の小ささでは `LiftTieSelf`（＋`TowerExp`）、
+仮定の本数では `CoreCap`。**同じ仕事量**である。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
