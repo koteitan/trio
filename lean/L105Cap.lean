@@ -1510,6 +1510,60 @@ theorem oper_cons_of_parent_ne_zero {v z n : ℕ} {R : TrioSeq} (hR : argOK R)
 文脈側の降下は `Wstar` の `A2'`（A）。`CoreCap` は (B) の**葉**であり、
 その葉で (A) が要る。 -/
 
+
+/-! ## 23. ★★★★★ 課題 L111 の前提の訂正: **`z=1 ∧ c=1 ∧ 親が根でない` は起きない**
+
+team-lead が「残核」と名指した
+
+    `z = 1` かつ `c = 1` かつ `srow = 2` かつ「親が根でない」
+
+は、**`TowerOK2` の設定（`domT R m` がある）では空虚**である。理由は 2 つあり、
+どちらも既存の証明ずみ補題から 1 行で出る:
+
+    `Wset.parent_cons_eq_zero`  `domT R m` ⟹ **親は必ず根** ⟹「親が根でない」は起きない
+    `L53.tower2_zr`             `domT R m` ＋ `hasParent` ⟹ **`z < c`**
+                                ⟹ `z = 1` かつ `c = 1` は**矛盾** -/
+
+/-- **★ `TowerOK2` の設定では親は必ず根**（`parent_cons_eq_zero` の別名）。 -/
+theorem tower2_parent_is_root {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : domT R m)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length = 0 :=
+  parent_cons_eq_zero hRne hd hpM
+
+/-- **★★★ `z = 1` かつ `c = 1` は `TowerOK2` の設定では起きない。** -/
+theorem tower2_not_z1_c1 {v m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, 1) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length)
+    (hc : entry R 2 (R.length - 1) = 1) : False := by
+  have := L53.tower2_zr (v := v) (z := 1) hRne hd hi2 hpM
+  omega
+
+/-! ## 24. ⚠ 自己訂正: **`j0 = 0` は `srow ≥ 1` を含意しない**
+
+私は前便で
+
+> `d0 = q.1 = entry M 0 (|M|-1) ≥ 1` は `argOK` から**常に**成り立つので、
+> R2 の (d)「`d0 = 0` なら `rsum` が通る」は **`j0 = 0` では起きません**
+
+と書いたが、**誤り**である。`Cnf.lean:1060` の
+
+    `d0 := if 0 < i1 then entry M 0 j1 - entry M 0 j0 else 0`
+
+は `i1 = srow = 0` のとき **`j0` に関係なく `d0 = 0`**。そして `srow = 0`（足す列の
+行 1・行 2 が両方 0）と `j0 = 0`（根が行 0 の親）は**同時に起きる**:
+
+    `S = [(0,0,0), (5,0,0), (2,0,0)]`  … `argOK` の尾、`srow S 2 = 0`、
+      `nextrel0 S 0 2`（`0 < 2`、間の列 `5 ≥ 2`）⟹ `j0 = 0`、`d0 = 0`
+
+⟹ **team-lead と R2 の読みが正しく、私の主張が誤り。食い違いは私の側にあった。**
+（`d0 = q.1 ≥ 1` が言えるのは **`srow ≥ 1` かつ `j0 = 0`** のときだけ。）
+
+⚠ なお `srow = 0` かつ `j0 = 0`（＝ 親が根）の枝は **`Wtower2.snoc_flat_root` で
+無料**なので（§12.2）、この訂正で残核が増えることはない。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
