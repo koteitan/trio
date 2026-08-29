@@ -8301,6 +8301,71 @@ theorem mTowerClosedS0_iff : MTowerClosedS0 ↔ ShiftTowerClosedS := by
 > **⟹ 判定: `z = 0` の枝は `ShiftTowerClosedS` の言葉で書く。**
 > **論理的な利得はゼロだが、道具が 3 倍あり、頂点定理も既にある。`WCat` は強制されない。** -/
 
+/-! ## 113. ★★★★★★ `(TOW)` を 2 本に割る: **底の snoc ＋ 孤児の枝。装備は要りません**
+
+§112 で `z = 0` の核が `ShiftTowerClosedS`（＝ `(TOW)`）そのものと分かった。
+**そこに §48 `oper_shTower` と §90 `catBlock_of_escape_head` をそのまま当てる。**
+
+⚠ **`mTower` 側（§82）と違い、リフト装備（`∀ s, ∃ u', Lift1 Q s ∈ W u'`）が要りません。**
+**`e = 0` なので `Lift1` が出てこず、`Q⟦m⟧ ∈ W u` が `Q ∈ W u` から直接出るからです。** -/
+
+theorem headD_fst {Q : TrioSeq} : (Q.headD (0, 0, 0)).1 = entry Q 0 0 := by
+  rw [headD_eq_getD]; rfl
+
+theorem headD_snd {Q : TrioSeq} : (Q.headD (0, 0, 0)).2.1 = entry Q 1 0 := by
+  rw [headD_eq_getD]; rfl
+
+theorem headD_thd {Q : TrioSeq} : (Q.headD (0, 0, 0)).2.2 = entry Q 2 0 := by
+  rw [headD_eq_getD]; rfl
+
+open Classical in
+/-- **★★★★★★ `(TOW)` は「底の snoc」＋「孤児の枝」の 2 本に落ちる**（装備なし）。 -/
+theorem shTower_mem_of_escape {u e : ℕ} {Q : TrioSeq} (hQne : Q ≠ [])
+    (hQ2 : Q.length - 1 ≠ 0)
+    (hzQ : ¬ (entry Q 0 (Q.length - 1) = 0 ∧ entry Q 1 (Q.length - 1) = 0 ∧
+      entry Q 2 (Q.length - 1) = 0))
+    (hblk : L53.HasParentInBlock Q) (hQ : Q ∈ W u)
+    (hsnoc : ∀ n : ℕ, shTower Q e n ∈ W u →
+      shTower Q e n ++ [((entry Q 0 0 + n * e, entry Q 1 0, entry Q 2 0) : ℕ × ℕ × ℕ)]
+        ∈ W u)
+    (hesc : ∀ (n : ℕ) (B : TrioSeq), 2 ≤ B.length →
+      ¬ L53.HasParentInBlock (shiftr01 (n * e) 0 B) →
+      shTower Q e n ∈ W u → shTower Q e n ++ shiftr01 (n * e) 0 B ∈ W u) :
+    ∀ n, shTower Q e n ∈ W u := by
+  have hQlen : 2 ≤ Q.length := by
+    have : 0 < Q.length := List.length_pos_iff.mpr hQne
+    omega
+  intro n
+  induction n with
+  | zero => simpa using W_nil u
+  | succ n ih =>
+      refine mem_of_oper_mem (fun m hm => ?_)
+      rw [oper_shTower hQne hQ2 hzQ hblk e n m]
+      refine catBlock_of_escape_head (p := Q.headD (0, 0, 0)) ih ?_
+        (fun B hB2 hnb => hesc n B hB2 hnb ih) (Q⟦m⟧)
+        (oper_mem_of_mem hQlen hQ m hm) ?_
+      · rw [headD_fst, headD_snd, headD_thd]
+        exact hsnoc n ih
+      · intro _
+        exact oper_headD Q (by omega) hm
+
+/-! ### 113.1 ⟹ `(TOW)` の残差は 2 本
+
+    **(T1) 底の snoc** … `shTower Q e n ++ [(entry Q 0 0 + n*e, entry Q 1 0, entry Q 2 0)]`
+        **＝ 塔に「行 0 だけ `n*e` ずらした根」を 1 列足す**（**行 1 も行 2 も変わらない**）
+    **(T2) 孤児の枝** … `Q` の導出の途中 `B` が段内で孤児のときの連結
+
+⚠ **`mTower` 側の (A1)（§91）と比べると、`(T1)` は行 1 も動きません**
+（`mTower` 側は `entry Q 1 0 + e*n` でした）。⟹ **足す列は `Q` の根の行 0 だけをずらしたもの。**
+
+### 113.2 ⟹ そして `(T1)` は §110 と同じ形
+
+§110 `oper_snocRoot` は `Q ++ [(根の行0+d, 根の行1+e, 根の行2)]` の展開が `mTower Q d e m` だと言う。
+**`(T1)` は `e = 0` の場合で、土台が `Q` ではなく `shTower Q e n`。**
+⟹ **`(T1)` の展開も、同じ手順で書き下せるはず**（`oper_eq_gexp_gen` を悪根の位置で読む）。
+
+**⟹ `(TOW)` の攻め方: `(T1)` を §110 の手順で開き、`(T2)` は §102 の `e = 0` 版で。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
