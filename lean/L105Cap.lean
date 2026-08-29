@@ -8087,6 +8087,79 @@ theorem mTower_orphan_row2 {M : TrioSeq} {d e n' : ℕ} (hM2 : 2 ≤ M.length)
 **⟹ 残るのは F2b（`z = 1`）だけで、そこは §93 で「命題が偽」と確定しています。**
 **⟹ R2 の (z5)（F1 376,164 ＋ F2a 933,768 ＝ 130 万件・破れ 0）が定理になりました。** -/
 
+/-! ## 110. ★★★★★★★ **`TowerSnocRoot` と `MTowerClosedS` は同じ文でした**
+
+`TowerSnocRoot`（§105）は「`Q` に `r = (根の行0+d, 根の行1+e, 根の行2)` を 1 列足す」。
+**その `Q ++ [r]` に §68 `oper_eq_mTower` を当てると、右辺が `mTower Q d e m` そのものになる。**
+
+    `M := Q ++ [r]` ⟹ `|M| = |Q| + 1`、`M.dropLast = Q`
+    `d0 = entry M 0 (|M|-1) − entry M 0 0 = (entry Q 0 0 + d) − entry Q 0 0 = d`
+    `d1 = entry M 1 (|M|-1) − entry M 1 0 = (entry Q 1 0 + e) − entry Q 1 0 = e`
+
+**⟹ `(Q ++ [r])⟦m⟧ = mTower Q d e m`（悪根が根のとき）。**
+**⟹ `Wchar.mem_iff_oper_mem` で `Q ++ [r] ∈ W u ⟺ ∀ m ≥ 1, mTower Q d e m ∈ W u`。**
+**⟹ 2 つの残差は同じ 1 文。塔を消したのは「別の問題にした」のではなく「同じ問題の最小形」。** -/
+
+/-! ⚠ **再発明 10 回目を `leanman check` が止めました**: `entry_snoc_last` は
+**この file の `:62`（§2）に私自身が書いています**。索引を引く前に手が動きました。 -/
+
+open Classical in
+/-- **★★★★★★★ `Q` に「ずらした根」を足したものの展開は、塔そのもの。** -/
+theorem oper_snocRoot {Q : TrioSeq} {d e m : ℕ} (hQ2 : 2 ≤ Q.length)
+    (hz : ¬ (entry (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]) 0
+        ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1) = 0 ∧
+      entry (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]) 1
+        ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1) = 0 ∧
+      entry (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]) 2
+        ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1) = 0))
+    (hp : hasParent (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)])
+        (srow (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)])
+          ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1))
+        ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1))
+    (hj0 : parent (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)])
+        (srow (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)])
+          ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1))
+        ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1) = 0)
+    (hsr2 : 1 < srow (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)])
+        ((Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1)) :
+    (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)])⟦m⟧
+      = mTower Q d e m := by
+  have hlen : (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length
+      = Q.length + 1 := by
+    rw [List.length_append]; simp
+  have hl1 : (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]).length - 1
+      = Q.length := by rw [hlen]; omega
+  have hres := oper_eq_mTower m (by rw [hl1]; omega) hz hp hj0
+  rw [hl1] at hres hsr2
+  rw [hres, if_pos (show 0 < srow (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e,
+      entry Q 2 0) : ℕ × ℕ × ℕ)]) Q.length from by omega), if_pos hsr2,
+    entry_snoc_last, entry_snoc_last,
+    List.dropLast_concat]
+  have h0 : entry ([((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]) 0 0
+      = entry Q 0 0 + d := rfl
+  have h1 : entry ([((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]) 1 0
+      = entry Q 1 0 + e := rfl
+  have h0q : entry (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]) 0 0
+      = entry Q 0 0 := entry_append_left _ _ (by omega)
+  have h1q : entry (Q ++ [((entry Q 0 0 + d, entry Q 1 0 + e, entry Q 2 0) : ℕ × ℕ × ℕ)]) 1 0
+      = entry Q 1 0 := entry_append_left _ _ (by omega)
+  rw [h0, h1, h0q, h1q]
+  simp
+
+/-! ### 110.1 ⟹ A と B は同じ 1 文の 2 つの姿
+
+    **`TowerSnocRoot`（§105）** … `Q ++ [r] ∈ W u`
+    **`MTowerClosedS`（§74）**   … `∀ m, mTower Q d e m ∈ W u`
+    **`Wchar.mem_iff_oper_mem` ＋ 上 ⟹ 同値**（悪根が根で `srow = 2` のとき）
+
+**⟹ §105 で「塔が消えた」のは、別の問題にしたのではなく、同じ問題の最小形に書き直したもの。**
+**⟹ そして `mem_of_oper_mem` は片方向なので、証明としては
+「`Q ++ [r]` の展開が `W u` にある」を示せばよい ＝ 塔の閉包そのもの。**
+
+⚠ **`srow = 1`（`z = 0` かつ行 2 が 0）では `d1 = 0` になり、
+右辺は `mTower Q d 0 m = shTower Q d m`（`Lift1` が消える）**
+⟹ **`Wtower2.ShiftTowerClosedS` の領域。`e > 0` より易しいはず**（team-lead の読み）。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
