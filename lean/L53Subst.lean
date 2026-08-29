@@ -412,5 +412,60 @@ example : ¬ rsum [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1)] [((1, 0, 0) : ℕ
   simp [entry] at h9
 
 
+/-! ## 課題 L55'-a: `parent = 0` はどこで効いているか
+
+`snoc_flat_root` の docstring:「親が根なら**写しは `C` そのもの**なので、
+`W_flatMap_copies` が核を使わずに閉じる」。`oper_flat` で書き下すと理由が見える:
+
+    M⟦n⟧ = **M.take j0** ++ (range n).flatMap (fun _ => Q)
+
+    j0 = 0 … `M.take 0 = []` なので **`W_flatMap_copies` だけで閉じる。`rsum` は不要**
+    j0 > 0 … `W_add` が要り、その側条件 `rsum (M.take j0) (Q^n)` は
+             **`M.take j0` に `Q` の根より浅い列があると破れる**
+
+⟹ **`parent = 0` が効いているのは「`take` が空になる」ことだけ。**
+これが (SNOC-flat) の核である。 -/
+
+/-- **★ `j0 = 0`（親が根）なら `rsum` が要らない。** `M.take 0 = []` なので
+`W_flatMap_copies` がそのまま閉じる。 -/
+theorem mem_W_of_flat_root {u : ℕ} {M Q : TrioSeq} {j1 : ℕ}
+    (hj1 : j1 = M.length - 1) (hj1ne : j1 ≠ 0)
+    (hz : ¬(entry M 0 j1 = 0 ∧ entry M 1 j1 = 0 ∧ entry M 2 j1 = 0))
+    (hsr : srow M j1 = 0) (hpar : hasParent M 0 j1) (hj0 : parent M 0 j1 = 0)
+    (hQdef : Q = (List.range' 0 (j1 - 0)).map fun j =>
+      ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ))
+    (hQ : Q ∈ W u) (hQr : ∀ p ∈ Q, entry Q 0 0 ≤ p.1) : M ∈ W u := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn
+  rw [oper_flat (j0 := 0) hj1 hj1ne hz hsr hpar hj0.symm n, ← hQdef]
+  simp only [List.take_zero, List.nil_append]
+  exact W_flatMap_copies hQ hQr n
+
+/-! ## 課題 L55'-b: 「行 2 ≡ 0 ＋ 途中に任意の 1 列」は作れない（理由）
+
+行 278 の梯子は `(0,0,0)` `(1,1,1)` `(1,0,0)` `(2,0,0)` … で、
+**行 2 = 1 は添字 1 だけ**。`snoc_zeroRow2` は「行 2 ≡ 0 ＋ **末尾**に任意の 1 列」なので届かない。
+
+⚠ **「途中に 1 列」版は、いまの道具では作れない。** 理由は課題 L49 で確定している:
+
+`zeroRow2_mem_Wself`（`Wtower2.lean:3011`）の中身は
+
+    M を 2 行の `YAPSS.PairSeq` に落とす（行 2 ≡ 0 だから戻せる）
+    `YAPSS.Wset.mem_W_maxr1`（**2 行の定理を丸ごと**）
+    `PairBridge.emb_mem_W` で戻す
+
+つまり**技巧ではなく輸入**であり、行 2 = 1 の列が 1 本でも混ざると
+**2 行の断片から出てしまう**ので、この経路は使えない。
+
+`snoc_zeroRow2`（末尾 1 列）が通るのは、末尾の列が**展開で剥がれる**からで、
+途中の列は**悪い部分に入ると複製される**（`PROOF-STATUS §5` の「末尾 2 列は通らない」と同じ）。
+
+⟹ 行 278 の梯子で `(1,1,1)` が複製されないのは**この行列に固有の事情**（悪い部分が
+末尾側にある）であって、`Blk` のような**構文的な条件では捕まえられない**。
+
+**⟹ (SNOC-flat) は「`take` が空でない場合の `rsum`」＝ 節 3（graft）＝ 残核**
+（課題 L52-a で Lean 同一視ずみ）。 -/
+
+
 end L53
 end TRIO
