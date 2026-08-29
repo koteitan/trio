@@ -1518,8 +1518,61 @@ H11 の測定（食い違い **0 / 3120**、立つ割合 96.2%、`n` 感度ゼ�
 
 /-- **(TIE-SYN)** `TieFree` の構文的な十分条件（課題 L69-b。片側だけでよい）。 -/
 def TieSyn : Prop :=
-  ∀ (v z : ℕ) (R : TrioSeq), (∀ p ∈ R, p.2.1 ≠ v) →
+  ∀ (v z : ℕ) (R : TrioSeq), argOK R → (∀ p ∈ R, p.2.1 ≠ v) →
     TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+
+/-- **★★★ (TIE-SYN) の証明**（課題 L69-b）。
+
+`le1_zero_iff`（`Lcone.lean:36`）: 根が狭義最浅なら
+`le1 A 0 j ⟺ ∀ y ⟶₀ j, y ≠ 0 → entry A 1 0 < entry A 1 y`。
+
+`coneV A (v-1) j` は `∀ y ⟶₀ j, v - 1 < entry A 1 y`、すなわち `≥ v`。
+`R` に行 1 `= v` の列が無ければ `y ≠ 0` で `≠ v` なので **`> v`** になる。
+⟹ 2 つの錐が一致し `TieFree`。 -/
+theorem tieSyn_holds : TieSyn := by
+  intro v z R hargOK hne j hcone
+  have hA1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+  rw [hA1] at hcone
+  have hA0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0 = 0 := by simp [entry]
+  have hlen : (((0, v, z) : ℕ × ℕ × ℕ) :: R).length = R.length + 1 := by simp
+  have hrow1 : ∀ y, y ≠ 0 → y < R.length + 1 →
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 y = entry R 1 (y - 1) := by
+    intro y hy0 _
+    obtain ⟨y', rfl⟩ : ∃ y', y = y' + 1 := ⟨y - 1, by omega⟩
+    simpa using entry_cons ((0, v, z) : ℕ × ℕ × ℕ) R 1 y'
+  have hr : ∀ l, 0 < l → l < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length →
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0
+        < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 l := by
+    intro l hl0 hl
+    rw [hlen] at hl
+    rw [hA0]
+    obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    rw [entry_cons]
+    exact hargOK _ (entry_pair_mem (B := R) (by omega))
+  have hjlt : j < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := by
+    by_contra hc
+    push_neg at hc
+    have h9 := hcone j Relation.ReflTransGen.refl
+    have h0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 j = 0 := by
+      simp [entry, List.getElem?_eq_none hc]
+    rw [h0] at h9
+    omega
+  rw [le1_zero_iff hr hjlt, hA1]
+  intro y hyj hy0
+  have h1 := hcone y hyj
+  have hylt : y < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := by
+    by_contra hc
+    push_neg at hc
+    have h0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 y = 0 := by
+      simp [entry, List.getElem?_eq_none hc]
+    rw [h0] at h1
+    omega
+  rw [hlen] at hylt
+  rw [hrow1 y hy0 hylt] at h1 ⊢
+  have hmem : entry R 1 (y - 1) ≠ v := by
+    have h8 := hne _ (entry_pair_mem (B := R) (show y - 1 < R.length by omega))
+    simpa [entry] using h8
+  omega
 
 
 end L53
