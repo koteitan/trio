@@ -5107,17 +5107,9 @@ theorem lift_oper_comm_of_not_rootBad {v z t n : ℕ} {R : TrioSeq} (hR : argOK 
 `RootBadScene` の第 1 成分は **`domT R m` の第 2 成分そのもの**である
 （`domT R m := lev R (|R|-1) = m+1 ∧ ¬ hasParent R (srow R (|R|-1)) (|R|-1)`）。 -/
 
-/-- `X = (0,v,z) :: R` の末尾列の `srow` は `R` の末尾列の `srow` と同じ。 -/
-theorem srow_cons_last {v z : ℕ} {R : TrioSeq} (hne : R ≠ []) :
-    srow (((0, v, z) : ℕ × ℕ × ℕ) :: R) R.length = srow R (R.length - 1) := by
-  have hRlen : 0 < R.length := List.length_pos_iff.mpr hne
-  have h1 : ∀ i, entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) i R.length
-      = entry R i (R.length - 1) := by
-    intro i
-    conv_lhs => rw [show R.length = (R.length - 1) + 1 from by omega]
-    exact entry_cons_succ i (R.length - 1)
-  unfold srow
-  rw [h1, h1]
+/-! ⚠ **自己訂正（5 回目）**: ここで `srow_cons_last` と `entry_cons_last` を
+書きかけたが、**両方とも `Wset` に既にある**（`Wset.lean:1765` / `:1745`）。
+**書く前に grep** —— 自分で H12 に言った規律にまた違反した。以下は `Wset` のものを使う。 -/
 
 /-- ⟹ **残差の場面は `LiftTower1` / `LiftTowerExp2` の `hasParent` 前提そのもの**。 -/
 theorem hasParent_rootBadScene {v z : ℕ} {R : TrioSeq} (hne : R ≠ [])
@@ -5257,12 +5249,6 @@ theorem oper_eq_mTower {M : TrioSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
 > **★★★★★★ R2 の実測「`mTower = operTower` 100%（276,876 塔・例外 0）」は定理だった。**
 > **`LiftFlatMapLocal`（§62）を経由する必要はない。** -/
 
-theorem entry_cons_at_len {v z : ℕ} {R : TrioSeq} (hne : R ≠ []) (i : ℕ) :
-    entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) i R.length = entry R i (R.length - 1) := by
-  have hRlen : 0 < R.length := List.length_pos_iff.mpr hne
-  conv_lhs => rw [show R.length = (R.length - 1) + 1 from by omega]
-  exact entry_cons_succ i (R.length - 1)
-
 open Classical in
 /-- **★★★★★★ 塔の場面では `operTower` と `mTower` は等しい**（仮定は場面のみ）。 -/
 theorem operTower_eq_mTower_tower2 {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
@@ -5298,14 +5284,14 @@ theorem operTower_eq_mTower_tower2 {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
       entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2
         ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 0) := by
     rintro ⟨-, -, h⟩
-    rw [hXl1, entry_cons_at_len hRne] at h
+    rw [hXl1, entry_cons_last hRne] at h
     have := L53.srow_two_row2_pos hi2
     omega
   have hmt := oper_eq_mTower (M := ((0, v, z) : ℕ × ℕ × ℕ) :: R) n
     (by omega) hzz hp hj0
   rw [hsrow] at hmt
   rw [if_pos (show (0 : ℕ) < 2 from by omega), if_pos (show (1 : ℕ) < 2 from by omega),
-    hXl1, entry_cons_at_len hRne, entry_cons_at_len hRne, dropLast_cons hRne] at hmt
+    hXl1, entry_cons_last hRne, entry_cons_last hRne, dropLast_cons hRne] at hmt
   have hr0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0 = 0 := by simp [entry]
   have hr1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
   rw [hr0, hr1, Nat.sub_zero] at hmt
