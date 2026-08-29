@@ -12222,6 +12222,85 @@ R2 の指摘: **`h2` は `block_blockParent_all'`（`hj1 : 0 < j` を持つ）�
 ⚠ **これは §133 で「F2b は (a) を回避しない」と出したのと同じ形です。
 残っている前提が全部 1 点に戻る、という状況が続いています。** -/
 
+/-! ## 172. ★★★★★★★ **錐の外でも、行 1 が根より上ならブロック内に親を持つ**（`hcone` 不要）
+
+team-lead の「仮定するな、場合分けにしろ」を (H3) に当てる。
+
+**錐の外にいるとは、`le1_zero_iff` より「行 0 祖先に**行 1 が根以下の列 `y`**がある」こと。**
+**そして `y` は錐の外なので**持ち上げられない**。**
+**⟹ 足す列の行 1 が根より上なら `entry Q 1 y ≤ entry Q 1 0 < entry Q 1 j` ⟹ `y` が候補。** -/
+
+open Classical in
+theorem block_blockParent_row1_outcone {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hout : ¬ le1 Q 0 j)
+    (hhigh : entry Q 1 0 < entry Q 1 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  obtain ⟨y, hy, hy0, hy1⟩ := (not_le1_zero_iff hr0 hj).mp hout
+  have hyle : y ≤ j := nextrel0_rtrancl_index_le hy
+  have hylt : y < j := by
+    rcases Nat.lt_or_ge y j with h | h
+    · exact h
+    · exfalso
+      have hye : y = j := by omega
+      rw [hye] at hy1
+      omega
+  have hyQ : y < Q.length := by omega
+  have hle0Q : le0 Q y j := ⟨hyQ, hj, hy⟩
+  have hle0B : le0 (B.take (j + 1)) y j := by
+    refine (le0_take (by omega) (by omega)).mpr ?_
+    rw [hB]
+    exact le0_Lift1.mpr (le0_shiftr01.mpr hle0Q)
+  have houty : ¬ le1 Q 0 y := by
+    intro hc
+    have := le1_entry1_lt hc (show (0 : ℕ) ≠ y from by omega)
+    omega
+  have hE1 : ∀ x, x < Q.length →
+      entry B 1 x = entry Q 1 x + (if le1 Q 0 x then e * n else 0) := by
+    intro x hx
+    show (B.getD x (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hx]
+  have hk2 : entry (B.take (j + 1)) 1 y < entry (B.take (j + 1)) 1 j := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := y) (by omega),
+      Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega),
+      hE1 y hyQ, hE1 j hj, if_neg houty, if_neg hout]
+    omega
+  exact hasParent_one_of (by omega) hylt hle0B hk2
+
+/-! ### 172.1 ⟹ **`srow = 1` は錐の条件なしで完全に片づきました**
+
+    **錐の中**（`le1 Q 0 j`）             ⟹ §142 `block_blockParent_of_cone` ⟹ ブロック内に親
+    **錐の外 ∧ `entry Q 1 0 < entry Q 1 j`** ⟹ **§172（上）** ⟹ **ブロック内に親**
+    **錐の外 ∧ `entry Q 1 j ≤ entry Q 1 0`** ⟹ **§102 / §137** ⟹ **塔でも孤児 ⟹ 無料**
+
+> **⟹ `srow = 1` の列は、**どの場合でも**片づきます。`hcone` は要りません。**
+> **⟹ (H3) は `srow = 1` については**消えました**。**
+
+⚠ **§142 と §172 の分かれ目は「根が候補になるか」です:**
+
+    **錐の中** … ブロックの根の行 1 は `entry Q 1 0 + e*n`、足す列は `entry Q 1 j + e*n`
+              ⟹ **両方リフトされるので `e*n` が相殺** ⟹ 根が候補
+    **錐の外** … 足す列はリフトされない ⟹ 根（`+e*n`）は候補にならない
+              ⟹ **代わりにブロッカー `y`（同じく錐の外なのでリフトなし）が候補**
+
+**⟹ どちらの場合も「リフトされていない者どうし」を比べれば候補が見つかります。**
+
+### 172.2 ⟹ 残るのは `srow = 2` だけになりました
+
+    `srow = 0` … §154 `block_blockParent_row0`（`hr0` だけ）✅
+    `srow = 1` … §142 ＋ §172 ＋ §137（**錐の条件なし**）✅
+    **`srow = 2` … `h2`（`Q` の中で行 2 の親を持つ）が要る ⛔**
+
+⚠ **教訓 14**: **`srow = 2` については何も進んでいません。**
+**そして R2 の「`h2` が破れる機構は行 2 が正の列が錐の外」は、
+上の `srow = 1` の議論が**行 2 では効かない**ことを意味します
+（`nextrel2` は `le1` の祖先性を要求するので、行 0 の祖先である `y` では足りない）。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
