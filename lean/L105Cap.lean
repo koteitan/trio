@@ -2253,6 +2253,73 @@ team-lead の問い「その帰納が `W` の中で何を使うのか。`W_take`
 そこで払う代償は「行 1 を 1 下げると `srow` / `nextrel1` / `nextrel2` が変わり得るので
 展開木が変わる」ことである。**壁は別物**（再結合ではなく展開の不安定性）。 -/
 
+
+/-! ## 34. R2 の §R97 を補題にする ＋ 凸性経路の第一歩
+
+### 34.1 ★ **`TowerOK2` の場面では最終列はタイにならない**（R2 実測 0 / 1,821,258）
+
+R2 の算術は正しく、しかも**既存の `L53.tower2_vw`（`L53Subst.lean:2392`）1 本で出る**。 -/
+
+theorem last_not_tie {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    entry R 1 (R.length - 1) ≠ v := by
+  have := L53.tower2_vw hRne hd hi2 hpM
+  omega
+
+/-! ### 34.2 ★★★ 凸性経路の第一歩: **`Lift1` は `srow` を変えない**
+
+`WConvexUnit` / `WConvexLift1` の代償は「行 1 を動かすと `srow` / `nextrel1` /
+`nextrel2` が変わり展開木が変わる」ことだった（§33.1）。**そのうち `srow` は変わらない。**
+
+骨: `Lift1` は行 2 を不変にする（`entry2_Lift1`）。行 1 については、
+**根以外の列が錐に入るには行 1 が根より真に大きい必要がある**
+（`Wset.le1_entry1_lt`）ので、`0 < entry X 1 j` の真偽はリフトで**変わらない**
+（もともと正なら正のまま、0 なら錐に入れないのでリフトされない）。
+
+⟹ **悪い部分がどの行を見るかは、リフトで動かない。** -/
+
+theorem entry1_pos_Lift1 {X : TrioSeq} {d j : ℕ} (hj : (0 : ℕ) ≠ j) :
+    0 < entry (Lift1 X d) 1 j ↔ 0 < entry X 1 j := by
+  rcases Nat.lt_or_ge j X.length with hlt | hge
+  · rw [entry1_Lift1 hlt]
+    by_cases hc : le1 X 0 j
+    · have h := le1_entry1_lt hc hj
+      rw [if_pos hc]
+      omega
+    · rw [if_neg hc]
+      omega
+  · rw [entry1_out (by rw [Lift1_length]; omega), entry1_out hge]
+
+/-- **★★★ `Lift1` は（根以外の）`srow` を変えない。** -/
+theorem srow_Lift1 {X : TrioSeq} {d j : ℕ} (hj : (0 : ℕ) ≠ j) :
+    srow (Lift1 X d) j = srow X j := by
+  unfold srow
+  rw [entry2_Lift1]
+  by_cases h2 : 0 < entry X 2 j
+  · rw [if_pos h2, if_pos h2]
+  · rw [if_neg h2, if_neg h2]
+    by_cases h1 : 0 < entry X 1 j
+    · rw [if_pos ((entry1_pos_Lift1 hj).mpr h1), if_pos h1]
+    · rw [if_neg (fun hc => h1 ((entry1_pos_Lift1 hj).mp hc)), if_neg h1]
+
+/-- 長さ 2 以上なら悪い部分の添字 `|X|-1` は根でないので、上が当たる。 -/
+theorem srow_Lift1_last {X : TrioSeq} {d : ℕ} (h2 : 2 ≤ X.length) :
+    srow (Lift1 X d) ((Lift1 X d).length - 1) = srow X (X.length - 1) := by
+  rw [Lift1_length]
+  exact srow_Lift1 (by omega)
+
+/-! ### 34.3 ⟹ 残る不安定性は `nextrel1` / `nextrel2` だけ
+
+    行 0 の木 … **不変**（`nextrel0_Lift1` / `le0_Lift1`、§10）
+    `srow`   … **不変**（`srow_Lift1`、上）
+    行 2      … **不変**（`entry2_Lift1`）
+    長さ      … **不変**（`Lift1_length`）
+    **`nextrel1` / `nextrel2`** … 錐の内と外で行 1 の差が `d` ずれるので**変わりうる**
+
+⟹ `WConvexLift1` の難所は**行 1 の木だけ**に絞られた。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
