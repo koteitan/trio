@@ -6006,3 +6006,47 @@ L3 も §139.1 に「§137 の 5 つの前提は場合分けにすれば要り�
     (d) (C1) の測度の本体 … **L3 の担当**
 
 **Lean**: `lean/H12H2.lean`（緑、`sorry` 0）。**プログラム**: `tools/dbms/h1/h91.py`。
+
+## §258. ★★★★★★★ **(f)(g) `hstep` から `le1 Q 0 j` を落とせる（行 1・行 2 は緑）**
+
+§257.3 の帰結を実装した。
+
+### §258.1 (f) 行 2: 錐の外でも窓は `< |Q|`（緑）
+
+    parent_two_take     : `parent`（行 2）は接頭辞と一致する
+                          （`hasParent_two_take` ＋ `ExistsUnique.unique`）
+    window_of_outOfCone : **錐の外の 行 2 正の列でも、親が居るなら窓 `< |Q|`**
+
+⟹ **`hstep` の窓の前提から `le1 Q 0 j` を外せる**（行 2 の列について）。
+
+### §258.2 (g) 行 1 も同じ（緑）
+
+`le1_mTower_in_block` の結論は `ReflTransGen (nextrel1 …)` なので、
+**`nextrel1` 1 歩は `Relation.ReflTransGen.single` でそのまま入る**。
+
+    outOfCone_nextrel1_sameBlock ／ outOfCone_parent_one_sameBlock
+
+### §258.3 ⚠ **行 0（`srow = 0`）だけ残る**
+
+`nextrel0` は **`le1` を要求しない**（`Trio.lean:39`）。⟹ この議論は効かない。
+しかも塔ではブロックごとに行 0 が `d` ずつ上がるので、
+**行 0 の親は原理的にブロックを跨げる**。
+
+⟹ **`srow = 0` の錐の外の列が実際に起きるかを測る**（`h92.py`、実行中）。
+起きなければ (g) は閉じる。起きるなら**そこが最後の核**。
+
+⚠ `srow(c) = 0 ⟺ c.2.1 = 0 ∧ c.2.2 = 0`（`Trio.lean:81`）。
+錐の外の列は `Lift1` が触らないので **`Q` の行 1 がそのまま残る**
+⟹ `Q` に `(x,0,0)` の形の錐の外の列があれば起きうる。
+
+### §258.4 ⟹ 現在の枝の全体像
+
+    `hstep` に届くのは「足す列が塔で**親を持つ**」場合だけ（§256、`snocStepPar` の中身）
+
+    親あり × 錐の中          … `snocStep_parent_sameBlock`（L3、既存）  ✅
+    親あり × 錐の外 × `srow=2` … §258.1（緑）                          ✅
+    親あり × 錐の外 × `srow=1` … §258.2（緑）                          ✅
+    親あり × 錐の外 × `srow=0` … **未解決**                            ⛔
+    親なし                    … `snocStepPar` が内部処理              ✅
+
+**Lean**: `lean/H12H2.lean`（緑、`sorry` 0）。

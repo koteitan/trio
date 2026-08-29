@@ -770,5 +770,136 @@ theorem outOfCone_parent_sameBlock {M : TrioSeq} {d e n' q : ℕ}
     exact hnr
   exact outOfCone_nextrel2_sameBlock hM2 hd1pos hd0e hr0 hlp hq hq1 hout h2
 
+
+/-! ## 13. ★★★★★★★ **(f) `hstep` から `le1 Q 0 j` を落とす**
+
+§257.3 で「親があるなら、錐の中でも外でも親は同じブロック」が出た。
+⟹ `hstep` の窓の前提から **`le1 Q 0 j` を外せる**。
+
+必要なのは `parent` の接頭辞不変性（`hasParent_two_take` の `parent` 版）。 -/
+
+/-- `parent`（行 2）は接頭辞と一致する。 -/
+theorem parent_two_take {M : TrioSeq} {l p : ℕ} (hl : l ≤ M.length) (hp : p < l)
+    (h : hasParent M 2 p) :
+    parent (M.take l) 2 p = parent M 2 p := by
+  have hnR : ∀ (N : TrioSeq) (j : ℕ), nextR N 2 j p ↔ nextrel2 N j p := by
+    intro N j; unfold nextR; rw [if_neg (by omega), if_neg (by omega)]
+  have ht : hasParent (M.take l) 2 p := (hasParent_two_take hl hp).mpr h
+  refine ht.unique (parent_nextR ht) ?_
+  exact (hnR _ _).mpr ((nextrel2_take_iff hl hp).mpr ((hnR M _).mp (parent_nextR h)))
+
+open Classical in
+/-- ★★★★★★★ **錐の外の 行 2 正の列でも、親が居るなら窓は `< |Q|`。**
+（＝ `hstep` の窓の前提は `le1 Q 0 j` を要らない。） -/
+theorem window_of_outOfCone {M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (hpos : 0 < entry M.dropLast 2 j)
+    (hpar0 : hasParent (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (srow (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+      (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length) :
+    n * M.dropLast.length
+      ≤ parent (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (srow (mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+        (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).length
+      = M.dropLast.length := by rw [Lift1_length, shiftr01_length]
+  have hTlen : (mTower M.dropLast d e n).length = n * M.dropLast.length :=
+    mTower_length M.dropLast d e n
+  have hCl : (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length
+      = n * M.dropLast.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  -- 行 2 が正 ⟹ `srow = 2`
+  have hpos' : 0 < entry (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1)) 2
+      (n * M.dropLast.length + j) := by
+    rw [show n * M.dropLast.length + j = (mTower M.dropLast d e n).length + j from by
+        rw [hTlen],
+      entry_append_right, entry_take (by omega), entry2_Lift1, entry2_shiftr01]
+    exact hpos
+  have hsrow2 : srow (mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (n * M.dropLast.length + j) = 2 := by
+    unfold srow; rw [if_pos hpos']
+  rw [hCl, hsrow2] at hpar0 ⊢
+  -- 塔の接頭辞に直す
+  rw [mTower_append_take] at hpar0 ⊢
+  have hle : n * M.dropLast.length + (j + 1)
+      ≤ (mTower M.dropLast d e (n + 1)).length := by
+    rw [mTower_length, Nat.succ_mul]; omega
+  have hlt : n * M.dropLast.length + j < n * M.dropLast.length + (j + 1) := by omega
+  have hfull : hasParent (mTower M.dropLast d e (n + 1)) 2
+      (n * M.dropLast.length + j) := (hasParent_two_take hle hlt).mp hpar0
+  rw [parent_two_take hle hlt hfull]
+  have := outOfCone_parent_sameBlock (n' := n) hM2 hd1pos hd0e hr0 hlp hj hj1 hout
+    (by rwa [hTlen])
+  rwa [hTlen] at this
+
+
+/-! ## 14. **(g) 行 1 の列も同じ** —— `le1_mTower_in_block` が直接効く
+
+`le1_mTower_in_block` の結論は `ReflTransGen (nextrel1 …)` についてなので、
+**`nextrel1` 1 歩は `ReflTransGen.single` でそのまま入る**。
+⟹ 行 1 の親も前のブロックからは来られない。
+
+⚠ **行 0（`srow = 0`）は別**: `nextrel0` は `le1` を要求しないので、
+この議論は効かない。**未解決のまま残す。** -/
+
+/-- ★ **錐の外の列の行 1 の親も、必ず同じブロックの中**。 -/
+theorem outOfCone_nextrel1_sameBlock {M : TrioSeq} {d e n' q a : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hq : q < M.dropLast.length) (hq1 : 0 < q)
+    (hout : ¬ le1 M 0 (0 + q))
+    (h : nextrel1 (mTower M.dropLast d e (n' + 1)) a
+      ((mTower M.dropLast d e n').length + q)) :
+    (mTower M.dropLast d e n').length ≤ a := by
+  have hAlen : (mTower M.dropLast d e n').length = n' * M.dropLast.length := by
+    rw [mTower_length]
+  rw [hAlen] at h ⊢
+  exact le1_mTower_in_block (n := n' + 1) (k := n') hM2 hd1pos hd0e hr0 hlp
+    (by omega) hq hq1 hout a (Relation.ReflTransGen.single h)
+
+/-- ⟹ `hasParent` の言葉で（行 1）。 -/
+theorem outOfCone_parent_one_sameBlock {M : TrioSeq} {d e n' q : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hq : q < M.dropLast.length) (hq1 : 0 < q)
+    (hout : ¬ le1 M 0 (0 + q))
+    (hp : hasParent (mTower M.dropLast d e (n' + 1)) 1
+      ((mTower M.dropLast d e n').length + q)) :
+    (mTower M.dropLast d e n').length
+      ≤ parent (mTower M.dropLast d e (n' + 1)) 1
+        ((mTower M.dropLast d e n').length + q) := by
+  have hnr := parent_nextR hp
+  have h1 : nextrel1 (mTower M.dropLast d e (n' + 1))
+      (parent (mTower M.dropLast d e (n' + 1)) 1
+        ((mTower M.dropLast d e n').length + q))
+      ((mTower M.dropLast d e n').length + q) := by
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact hnr
+  exact outOfCone_nextrel1_sameBlock hM2 hd1pos hd0e hr0 hlp hq hq1 hout h1
+
 end H12H2
 end TRIO
