@@ -11267,141 +11267,43 @@ theorem nextrel1_tower_src_ge_prev_block {Q : TrioSeq} {d e N n j a : ℕ}
 **⟹ §150 の判定を 1 段精密にします: 「構文的測度では落ちない」は正しいが、
 「整礎構造が無い」は誤りでした。`W` の導出木がある。** -/
 
-/-! ## 159. ⚠ §152-§157 の射程: **`e ≥ 1`**。`z = 0` の枝は `e = 0` です
+/-! ## 159. ⛔ **この節は偽でした**（H12 の §244-§246 による。訂正して残します）
 
-§153 は **`e ≥ 1`** を要求する（`e = 0` だとブロックの根の行 1 が塔の根と**同じ** ⟹ ブロッカー）。
-**そして `e` は `d1 = if 1 < srow r then … else 0` から来る:**
+### 159.1 私が書いた鎖と、どこが壊れたか
 
-    **`z = 0`** ⟹ `srow r ≤ 1` ⟹ **`d1 = 0` ⟹ `e = 0`**
-    **`z ≥ 1`** ⟹ `srow r = 2` になりうる ⟹ `e ≥ 1` の側
+私はこう書いた:
 
-> **⟹ §152-§157（ブロッカーなし）が効くのは **`z ≥ 1`（`e ≥ 1`）** の枝です。**
-> **⟹ `z = 0` の枝は `e = 0`、すなわち `shTower`（§112-§119）の領域で、そこは別の道具です。**
+    **`z = 0` ⟹ `srow r ≤ 1` ⟹ `d1 = 0` ⟹ `e = 0`**
+    **⟹ §152-§157 が効くのは `z ≥ 1` の枝だけ**
 
-⚠ **team-lead の「生成元 `D_v` はブロッカーなし」は正しい**（行 1 が `0,1,…,v` で狭義増加、
-根は `(0,0,0)`）**が、`D_v` から作る塔の `e` が 1 以上かは別問題**である。
-**⟹ `D_v` の末尾列 `(v,v,1)` は行 2 が 1 なので `srow = 2` ⟹ `d1 ≥ 1` ⟹ `e ≥ 1`。**
-**⟹ 主脈（`z = 1`）は `e ≥ 1` 側に入る。**
+⛔ **前半 `z = 0 ⟹ srow r ≤ 1` が偽である。**
 
-⚠ **教訓 14**: 上の最後の 2 行は **`srow` の定義からの読み**であって、
-**`D_v` から実際に立つ塔の `(d, e)` を計算したわけではありません。**
-**⟹ R2 に「生成元から立つ塔の `e` は 1 以上か」を測ってもらう価値があります。** -/
+> **`z` は根 `(0, v, z)` の行 2、`srow r` は `R` の**末尾列**の行 2 の話で、**別物**である。**
+> **H12 の実測: `srow r = 2` かつ `z = 0` が 32 / 531 / 127 / 2817 件、そこで `e = 0` は 0 件。**
+> **最小の反例: `R = (1,0,1)(1,1,1)`, `v = 0`, `z = 0` ⟹ `srow r = 2` かつ `e = 1`。**
 
-/-! ## 161. ★★★★★★★ §154 の `entry Q 2 0 = 0` を外す（`z = 1` への対応）
+✅ **後半 `srow r ≤ 1 ⟹ d1 = 0` は定義そのもの（`Trio.lean:107`）で正しい**（H12 §246）。
 
-team-lead が消費側（`liftTowerExp2_of_mTowerClosedS`、`:5686`）を追って、
-**`z = 1` のとき `entry Q 2 0 = z = 1 ≠ 0`** ⟹ §154 の前提が破れる、と出した。
+**⟹ 訂正は 1 行: 「`z = 0`」を「`entry R 2 (|R|-1) = 0`」に直せばよい。**
 
-**⟹ 正しい前提は「根の行 2 が 0」ではなく
-「`Q` の第 `j` 列が `Q` の中で行 2 の親を持つ」である。**
-（§154 は「根を候補にする」という**特別な作り方**をしていただけで、
-候補は根でなくてよい。）
+    **正: `entry R 2 (|R|-1) = 0` ⟹ `srow r ≤ 1` ⟹ `d1 = 0` ⟹ `e = 0`**
 
-### 161.1 ブロックは `Q` の行 2 と `le1` をそのまま保つ
+### 159.2 ⟹ 結論も変わります（良いほうに）
 
-    `entry2_shiftr01`（`Core:3416`）／`entry2_Lift1`（`Wset:955`） … **行 2 は不変**
-    `le1_shiftr01`（`Core:3470`）／`le1_Lift1`（`Wset:1213`） … **`le1` は不変**
-    `le1_take`（`Wset:909`） … `take` も不変
+> **⟹ §152-§157 の射程は「`z ≥ 1` の枝だけ」ではありません。`z = 0` でも `e ≥ 1` は起きます。**
+> **⟹ 私が自分の結果を**狭く**見積もっていました。**
 
-**⟹ `nextrel2` が見るものは全部そのまま移る。** -/
+### 159.3 ⚠ そして §163 では `e ≥ 1` を使いません
 
-theorem le1_block_take {Q : TrioSeq} {d e n j a b : ℕ}
-    (hj : j < Q.length) (hb : b < j + 1) :
-    le1 ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) a b
-      ↔ le1 (Q.take (j + 1)) a b := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  rw [le1_take (by omega) hb, le1_take (by omega) hb, le1_Lift1, le1_shiftr01]
+**核の最終形 §163 `mTowerClosed_of_snocStepCone` の前提は `hr0` と `h2` だけで、
+`e ≥ 1` も `hnb` も入っていません。**
+**⟹ この節の射程の議論は、§163 に対しては**そもそも要りません**。**
+**⟹ `e ≥ 1` を使うのは §153（ブロッカーなしは塔に遺伝）だけで、
+それは §163 で使われなくなりました。**
 
-theorem entry2_block_take {Q : TrioSeq} {d e n j x : ℕ} (hx : x < j + 1) :
-    entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 x
-      = entry (Q.take (j + 1)) 2 x := by
-  rw [Wset.entry_take (X := Lift1 (shiftr01 (d * n) 0 Q) (e * n)) (l := j + 1)
-      (i := 2) (j := x) hx,
-    Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := x) hx,
-    entry2_Lift1, entry2_shiftr01]
-
-open Classical in
-/-- **`Q` の中で行 2 の親を持てば、ブロックの中でも持つ**（§154 の一般化）。 -/
-theorem block_blockParent_row2' {Q : TrioSeq} {d e n j : ℕ}
-    (hj : j < Q.length)
-    (hloc : hasParent (Q.take (j + 1)) 2 j) :
-    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 j := by
-  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
-  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
-  have hTlen : (B.take (j + 1)).length = j + 1 := by
-    rw [List.length_take, hBlen]; omega
-  obtain ⟨a, ha, -⟩ := hloc
-  have hnr : nextrel2 (Q.take (j + 1)) a j := by
-    unfold nextR at ha
-    rwa [if_neg (by omega), if_neg (by omega)] at ha
-  have haj : a < j := hnr.2.2.1
-  refine hasParent_two_of (by omega) haj ?_ ?_
-  · rw [hB, le1_block_take hj (by omega)]
-    exact hnr.2.2.2.2.1
-  · rw [hB, entry2_block_take (by omega), entry2_block_take (by omega)]
-    exact hnr.2.2.2.1
-
-open Classical in
-/-- **★★★★★★★ §154 の一般化**: `entry Q 2 0 = 0` の代わりに
-「行 2 が正なら `Q` の中で行 2 の親を持つ」を仮定する。 -/
-theorem block_blockParent_all' {Q : TrioSeq} {d e n j : ℕ}
-    (hj : j < Q.length) (hj1 : 0 < j)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
-    (h2 : 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) :
-    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
-  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
-  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
-  have hE1 : entry (B.take (j + 1)) 1 j
-      = entry Q 1 j + (if le1 Q 0 j then e * n else 0) := by
-    rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega)]
-    show (B.getD j (0, 0, 0)).2.1 = _
-    rw [hB, block_getD hj]
-  have hE2 : entry (B.take (j + 1)) 2 j = entry Q 2 j := by
-    rw [hB, entry2_block_take (by omega),
-      Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := j) (by omega)]
-  have hcone : le1 Q 0 j := le1_zero_of_no_blocker hr0 hnb hj
-  have hn1 : entry Q 1 0 < entry Q 1 j := hnb j hj1 hj
-  unfold srow
-  by_cases h2p : 0 < entry (B.take (j + 1)) 2 j
-  · rw [if_pos h2p]
-    rw [hE2] at h2p
-    exact block_blockParent_row2' hj (h2 h2p)
-  · rw [if_neg h2p, if_pos (by rw [hE1, if_pos hcone]; omega)]
-    exact block_blockParent_of_cone hj hj1 hr0 hcone
-
-/-! ### 161.2 ⟹ `z = 1` でも使えるようになりました
-
-    §154 … 前提 **`entry Q 2 0 = 0`**（`z = 1` で破れる）
-    **§161 … 前提 **「行 2 が正なら `Q` の中で行 2 の親を持つ」****
-
-**⟹ これは `Q` の**局所的**な条件で、根の行 2 とは無関係です。**
-**⟹ そして「持たない」なら、その列は `Q` の中で行 2 の孤児 ⟹ §141 より復活しうる
-＝ まさに核（F2b）。⟹ 場合分けが尽きています。**
-
-### 161.3 ⟹ team-lead の 5 分課題への答え
-
-> **`Mono` の 4 条件のうち、窓の帰納が実際に使うのはどれか。とくに行 0 の狭義単調。**
-
-**使い所を数えました（手筋 10 回目）:**
-
-    **行 0 の狭義単調** … **どこでも使っていません**
-        （`le1_zero_of_mono` は `hm0` を **`a = 0` でしか**呼ばない ＝ `hr0` と同じ）
-    **行 1 の狭義単調** … **定理では使っていません**（`hnb` ＝ 根に対する条件だけで足りる）
-        `mTower_row1_mono_in_block`（§156）だけが使うが、それは**窓の中の**ブロッカーの
-        話（設計メモ）で、§152-§157/§160 の定理列は呼んでいない
-    **`hr0`（根が最浅）** … **使う。消費側が供給する**（`hQshallow`）
-    **`hnb`（ブロッカーなし）** … **使う。消費側は供給しない**
-    **`entry Q 2 0 = 0`** … **§161 で不要になった**
-    **`e ≥ 1`** … §153 で使う
-
-> **⟹ `Mono` の「狭義単調」2 条件は、定理列からは**落とせます**。**
-> **⟹ 残る「消費側が供給しない条件」は **`hnb`（ブロッカーなし）と `e ≥ 1`** の 2 つだけです。**
-
-⚠ **教訓 14**: 上は **使い所の数え上げ**であって、
-**「`hnb` だけで閉じる」ことを示したわけではありません。** -/
+⚠ **教訓**: **`z`（根の行 2）と `srow r`（末尾列の行 2）を取り違えた。**
+**「行 0 の親 vs 行 `srow` の親」と同じ**主語の取り違え**である。**
+**⟹ 定義（`Trio.lean:107`）を開かずに、自分の言い換えの上で推論した。** -/
 
 /-! ## 160. ★★★★★★★ (A) を閉じる 1 歩: **ブロッカーなしなら、核に「親は同じブロック」が無料でつく**
 
