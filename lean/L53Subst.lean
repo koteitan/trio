@@ -1459,5 +1459,68 @@ theorem tower2_parent_ne_root {v : ℕ} {R : TrioSeq} (hRne : R ≠ [])
   simp [entry] at hlt
 
 
+/-! ## ★★★ 課題 L69-a: 根の `z` は `0` に強制される ⟹ `z = 1` の場合は起きない
+
+`srow = 2` なら孤児の行 2 は（`z<2` の断片で）`1`。行 2 の親は `entry2` が
+**真に小さい**列を要求するので、親の行 2 は `0`。親が根なら根の行 2 ＝ `z` = `0`。
+
+⟹ **課題 L68 の `tower2_stage_fails`（`z = 1` では段が収まらない）は真だが、
+その場合が起きない。** `TowerOK2` は `tower2_stage_fits`（`z = 0`）だけで済む。
+
+実測（H11、H47/H48）: `TowerOK` の `srow=2` の場面 **624 件すべてが `(v,z) = (0,0)`**。 -/
+
+/-- **★★ 根が行 2 の親なら `z = 0`**（課題 L69-a）。 -/
+theorem tower2_root_z_zero {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (h : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 R.length) : z = 0 := by
+  rw [nextR] at h
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at h
+  have hlt := h.2.2.2.1
+  rw [entry_cons_last hRne 2, hz'] at hlt
+  have hz : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 = z := by simp [entry]
+  rw [hz] at hlt
+  omega
+
+open Classical in
+/-- **同じことを `parent = 0` の形で。** -/
+theorem tower2_z_zero_of_parent {v z : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (hpar : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 R.length)
+    (hp0 : parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 R.length = 0) : z = 0 := by
+  obtain ⟨p0, hp0', -⟩ := hpar
+  have hex : ∃ j0, nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 j0 R.length := ⟨p0, hp0'⟩
+  have hspec : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2
+      (parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 R.length) R.length :=
+    Classical.epsilon_spec hex
+  rw [hp0] at hspec
+  exact tower2_root_z_zero hRne hz' hspec
+
+/-! ## 課題 L69-b/c: `TieFree` の構文的な同値形
+
+H11 の測定（食い違い **0 / 3120**、立つ割合 96.2%、`n` 感度ゼロ）:
+
+    **`TieFree ((0,v,z) :: R)` ⟺ `∀ p ∈ R, p.2.1 ≠ v`**
+
+理由の骨: `coneV X (v-1) j` は「`j` の行 0 祖先の行 1 が全部 `≥ v`」。
+`R` に行 1 `= v` の列が無ければ、それらは全部 **`> v`（真に大きい）**になるので、
+`nextrel1` の狭義不等式が通り、行 1 の鎖が根から届く ⟹ `le1 X 0 j`。
+
+⟹ **タイ（行 1 が根と同値）が無ければ 2 つの錐は一致する。**
+破れる最小は 行 331 `ψ(Ω_ω·ω+Ω_ω)`、`R = (1,1,1)(2,0,0)(1,1,1)`、破れる列は `(2,0,0)`。
+
+**⟹ 残る核は「`R` に行 1 = `v` の列がある」場合（3.8%）だけ。**
+
+### 使える数字（H11）
+
+    `R` に「`z=0` かつ行 1 で末尾の祖先」の列は 1 本も無い … **624/624**（`domT` より強い）
+    持ち上げ量 `w - v` は **99.5% が 1**（3 件だけ 2）
+      ⟹ **`d1 = 1` を先に落とすと 99.5% 片づく** -/
+
+/-- **(TIE-SYN)** `TieFree` の構文的な十分条件（課題 L69-b。片側だけでよい）。 -/
+def TieSyn : Prop :=
+  ∀ (v z : ℕ) (R : TrioSeq), (∀ p ∈ R, p.2.1 ≠ v) →
+    TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+
+
 end L53
 end TRIO
