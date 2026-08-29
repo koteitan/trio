@@ -38,30 +38,22 @@
 | ↑ の `n` の帰納 | 債務 1・2 は済み、**債務 3 が残り** | `L53Subst.lean` |
 | `srow = 2`, `z = 0`, タイ有り | 分解で割れる（実測 2474/2474）| `split_lastTie` |
 
-### 残る核は **2 本**（§107。還元は §114 で不動点に達した）
+### 残る核は **`TowerOK2`（`srow = 2` の枝）1 本**（§116 で §107 を訂正）
 
-    **`Subst1gRevive`**  既存の残核（`Wtower2.lean`）
-    **`WSnoc`**          既存の核（`Wtower2.lean:2049`）。**効く先が 2 つ**:
-                          持ち上げ側 `WSnoc → WCat → … → LiftStage`（鎖は全部既存・緑）
-                          連結側 `WstarSnoc`（`GraftFromExp` の「宿主の 1 段」）
+    `srow = 1`         **証明ずみ**（`towerOK1_of_clause3`）
+    `srow = 2`, `z=1`  **起きない**（`tower2_root_z_zero`）
+    `srow = 2`, 狭義   **証明ずみ・仮定ゼロ**（`towerOK2_of_strict'`）
+    `srow = 2`, 無タイ **証明ずみ・仮定ゼロ**（`towerOK2_of_noTie'`）
+    **`srow = 2`, タイ  残り**
 
-    ⚠ **`WSnoc` ⟸ `PrefixCopies` ＋ `WSnocOpen1`、そして
-    `PrefixCopies` ⟺ `WSnoc` の `srow=0` 枝**（§114）
-    ⟹ **互いに還元し合う ＝ 還元だけでは進めない。明日からは「証明」が要る。**
-    `PrefixCopies` が残核に落ちるのはラダーで **18.8%** だけ（§115）
+⚠ **§107 の「`Subst1gRevive` ＋ `WSnoc` の 2 本」は過剰還元だった**（§116）。
+2 行の `Wstar_closed` は**仮定ゼロ**で、鍵は `rsum_self_cons`（根の深さ 0 で自明）と
+`oper_cons_nat`（末尾が `R` 内で親を持てば cons が保たれコピーが出ない）。
+⟹ **「接頭辞つきコピー」は `Wstar` の道筋に原理的に現れない。**
+3 行にも道具は全部あるので、**2 行の分岐を逐語で移せば `TowerOK2` だけが残るはず**。
 
-    到達点: **`towerOK_of_wsnoc_graft`**（`L53Subst.lean`、緑）
-
-    **検算（R1、§104）: 3 本そろえてラダー 20415/20415、1 本でも欠ければ 9（＝ strict）。**
-    **⟹ 分解に穴は無い。**
-
-    今日新しく作った核（`LiftTie` / `MliftR` / `Row1DownLocal` / `Row1DownRoot0` /
-    `WConvex1` / `WstarCat` / `GraftFromExp` / `AminROper`）は、
-    **すべて「既存の 2 本に落ちる」か「偽」かのどちらかに決着した**（§107.4）。
-
-⚠ **「タイは 0.5%」は別の量**（§92）。`Wstar` は `∀v` なので、`R ≠ []` なら
-`v` を `R` の行 1 の値に取れば**必ずタイになる**（20345/20345 = 100%）。
-⟹ `towerOK2_of_tie` は**隅の場合ではない**。
+今日作った `PrefixCopies` / `WSnocOpen1` / `WstarSnoc` / `MliftR` / `WConvex1` は
+**道筋に現れない経路のもの**。道具として残すだけでよい。
 
 ### 実測はすべて通った
 
