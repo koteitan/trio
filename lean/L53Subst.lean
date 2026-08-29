@@ -3577,6 +3577,32 @@ theorem wconvex1_of_unit (h : WConvexUnit) : WConvex1 := by
         · rw [← hje]; exact hD1k
         · rw [hD1ne j (by omega)]; exact hagree j (by omega)
 
+/-! ### 課題 L96-b: `srow = 0` の枝で **`snoc_flat_root` から増えるのは接頭辞だけ**
+
+`Trio.oper` の定義（`Trio.lean:98`）を読むと、`i1 = srow M j1` に対し
+
+    `d0 := if 0 < i1 then entry M 0 j1 - entry M 0 j0 else 0`
+    `d1 := if 1 < i1 then entry M 1 j1 - entry M 1 j0 else 0`
+
+なので **`srow = 0` なら `d0 = d1 = 0`** ——**上昇が一切乗らない**。よって
+
+    `(C ++ [t])⟦n⟧ = C.take j0 ++ （`C.drop j0` の n 個の**逐語**コピー）`
+
+`j0 = 0` なら `take 0 = []` で `W_flatMap_copies` がそのまま効く（＝ `snoc_flat_root`）。
+**`j0 > 0` で増えるのは接頭辞 `C.take j0` ただ 1 つ**（team-lead が §49 で特定した点）。
+
+⟹ その枝を `W_add` で閉じるのに要るのは
+
+    **`rsum (C.take j0) (C.drop j0)`** ＝ **`C.take j0` の全列の深さが `entry C 0 j0` 以上**
+
+だけ。コピー側は自動:バッドルートの `nextrel0` の「谷なし」節から、
+`j0 < j < |C|` の列はどれも `t.1 > entry C 0 j0` 以上（`entry C 0 j0 < t.1 ≤ entry C 0 j`）。
+
+⚠ 接頭辞側は自動でない: `j0` より手前に**より浅い**列があり得る。
+**そこが `srow = 0` 枝の核**で、形は `split_lastMin` の切れ目の問題そのもの
+（課題 L87 で見た「切れ目が中に落ちる」と同じ構造）。 -/
+
+
 /-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
 
 ## 1. 上から下への連鎖（全部 Lean で緑）
@@ -3653,6 +3679,72 @@ WstarCat                        rsum が根と両立しない（L87）
 2. `graft_cons_mem_of_revive` に残る**場合条件 2 本**を潰して `GraftFromExp` を完成
 3. 保険: `WConvexUnit`（1 列 1 段の凸性）—— `Subst1gRevive` の「復活」条件つきなら出る
 -/
+
+
+/-! ## ★★★★ 課題 L96: `WSnoc` の**開いている場合**を切り出す
+
+`WSnoc`（`Wtower2.lean:2049`）で既に証明ずみなのは 3 本:
+
+    `snoc_orphan`（`:3053`）    足す列が**孤児**なら無料 —— `WSnoc` は `hasParent` を
+                                仮定するので、この枝は**そもそも現れない**
+    `snoc_zeroRow2`（`:3127`）  **`C` の行 2 ≡ 0** なら、足す列は任意で無料
+    `snoc_flat_root`（`:2208`） 足す列が**平ら（`srow = 0`）で親が根**なら無料
+
+⟹ 開いているのは次の 2 条件を**両方**満たす場合だけ:
+
+    (a) `C` に行 2 > 0 の列がある
+    (b) 「`srow = 0` かつ親が根」ではない
+
+場合の表（`t := 足す列`）:
+
+    `srow t = 0`（`t.2.1 = t.2.2 = 0`）… 親が根なら**無料**、親が根でなければ**開いている**
+    `srow t = 1`（`t.2.1 > 0`, `t.2.2 = 0`）… `C` の行 2 ≡ 0 なら無料、でなければ**開いている**
+    `srow t = 2`（`t.2.2 > 0`）           … 同上
+
+⚠ `srow` は `C ++ [t]` 上で測る（`entry (C ++ [t]) i |C| = t の成分`）ので、
+`t` の成分だけで決まる。 -/
+
+/-- **`WSnoc` の真の核**（課題 L96-a）。 -/
+def WSnocOpen : Prop :=
+  ∀ (u : ℕ) (C : TrioSeq) (p : ℕ × ℕ × ℕ), C ∈ W u → C ≠ [] →
+    hasParent (C ++ [p]) (srow (C ++ [p]) C.length) C.length →
+    (∃ q ∈ C, 0 < q.2.2) →
+    ¬ (srow (C ++ [p]) C.length = 0 ∧
+        parent (C ++ [p]) (srow (C ++ [p]) C.length) C.length = 0) →
+    C ++ [p] ∈ W u
+
+theorem entry_snoc_root {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hCne : C ≠ []) (i : ℕ) :
+    entry (C ++ [p]) i 0 = entry C i 0 := by
+  have hClen : 0 < C.length := List.length_pos_iff.mpr hCne
+  unfold entry
+  rw [getD_append_left hClen]
+
+/-- **★★★★ `WSnoc` は開いている場合だけ**（既存 3 本で他は埋まる）。 -/
+theorem wsnoc_of_open (h : WSnocOpen) : WSnoc := by
+  classical
+  intro u C p hC hCne hpar
+  by_cases hz2 : ∃ q ∈ C, 0 < q.2.2
+  · by_cases hflat : srow (C ++ [p]) C.length = 0 ∧
+        parent (C ++ [p]) (srow (C ++ [p]) C.length) C.length = 0
+    · exact snoc_flat_root hC hCne hflat.1 hflat.2 hpar
+    · exact h u C p hC hCne hpar hz2 hflat
+  · push_neg at hz2
+    have hself : (C ++ [p]) ∈ Wself :=
+      snoc_zeroRow2 (M' := C) (fun q hq => by have := hz2 q hq; omega) p
+    have hlev : lev (C ++ [p]) 0 ≤ u := by
+      have h1 : lev (C ++ [p]) 0 = lev C 0 := by
+        unfold lev
+        rw [entry_snoc_root hCne 1, entry_snoc_root hCne 2]
+      rw [h1]
+      exact lev_root_le_of_mem_W hC hCne
+    exact W_mono hlev hself
+
+/-- ⟹ **核 2 本のうち片方が `WSnocOpen` に細くなる。** -/
+theorem liftStage_of_wsnocOpen (h : WSnocOpen) : LiftStage :=
+  liftStage_of_wsnoc (wsnoc_of_open h)
+
+theorem towerOK_of_wsnocOpen_graft (h : WSnocOpen) (hg : GraftFromExp) : TowerOK :=
+  towerOK_of_wsnoc_graft (wsnoc_of_open h) hg
 
 
 end L53
