@@ -1,67 +1,73 @@
-# 現在地（2026-08-30 深夜 2）
+# 現在地（2026-08-31 未明）
 
-## ★★★★★★ **3 行 z<2 の停止性は `TowerExpBigRow2` 1 本**
+## ★★★★★★ **段は完全に消えた。残核は `Wself` の 1 文**
 
-    `L105Cap.lean:2900` **`towerOK_of_towerExpBigRow2 (h : TowerExpBigRow2) : TowerOK`**（緑）
-    `Final.lean:318`    `TRIO_terminates_of_towerExp (he : Wset.TowerExp) : WellFounded stepRel`
-    （team-lead 検算: `leanman build` **809 jobs / exit 0**、`leanman check Final.lean` **exit 0**）
+    `L105Cap.lean` §46 **`tower_mem_W_iff_self`**（緑）
+      **`((0,v,z) :: R)⟦n⟧ ∈ W a  ⟺  ∈ Wself`**（`srow=1` でも `srow=2` でも、`n >= 1`）
+    ⟹ `TowerExpBigRow2` は結論から `a` と `2v+z <= a` が消える。**段の勘定はどこにも無い。**
+    ⟹ **`srow = 1` と `srow = 2` は同じ形の問題**
 
-    def TowerExpBigRow2（`L105Cap.lean:2880`）
-      ∀ v z m a R, argOK R → **2 <= |R|** → z <= 1 → 2v+z <= a → domT R m →
-        **R.dropLast ∈ Wstar** →
-        **(∃ p ∈ R.dropLast, p.2.2 ≠ z)** →
-        hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
-        ∀ n >= 1, ((0,v,z) :: R)⟦n⟧ ∈ W a
+骨: 塔の根は `(0,v,z)` のまま（`lev_cons_root` / `lev_shTower_root`）⟹ `lev = 2v+z <= a` は
+前提そのもの ⟹ `Wtower2.mem_Wself_iff`（`:2990`、無条件・緑）で段が落ちる。
+`Wset.entry0_Lift1`（`:948`）で **`Lift1` は行 0 を動かさない**ので `srow=2` 側も同じ。
 
-## ★ 今日、**仮定ゼロ**で落ちた枝
+R2 の実測「**段は木のどこでも消費されない**」（I1/I2、170 万ノード、破れ 0）が Lean で確定。
 
-    `|R| = 1`                     `towerExp_singleton`（`oper` が恒等 ＋ `oper_mem_of_mem`）
-    `R.dropLast` の行 2 ≡ `z`     **`tower_of_row2const`**（`:2813`）
-                                  塔が行 2 定数 ⟹ 末尾は必ず孤児 ⟹ `oper` は `Pred`
-                                  ⟹ 長さの帰納で根の単元まで剥ける（`constRow2_mem_W`）
-                                  **`srow=1` でも `2` でも、graft 閉包を一切使わない**
-    `|R| >= 2` の節 3             `Wchar.aop_clause3_to_clause2`（`Wchar.lean:39`、既存）
-                                  **節 3 に `y := []` を入れると節 2 そのもの**
-    `|R| = 1` の節 3・`srow = 2`  `towerGraft2Single_holds`
+## ★ 塔の形は完全に分かっている（H12 (n3)、27720 件・100%、機構も定義から）
 
-`graft` の定義（`Wset.lean:66`）が鍵だった:
+> **`S⟦n⟧` は `n` 個のブロックの連結。ブロック 0 は `(0,v,z) :: R.dropLast` そのもの。
+> ブロック `k` は行 0 が `k·δ0` ずれ、行 2 は全ブロックで同一、行 1 は上昇マスク。**
+> `|S⟦n⟧| = n·|R|`。機構: `delta[y]` は `y < t <= 2` のときだけ
+> ⟹ **展開は行 2 を決して増やさない** ⟹ 行 2 は**周期 `|R|` で反復**
 
-    `graft M z = M.dropLast ++ (z を行 0 でずらしたもの)`
-    ⟹ **`graft R y` の行 2 は `R.dropLast` の行 2 と `y` の行 2 の合併**
-    ⟹ `|R| = 1` では条件が空虚だっただけで、**行 2 の定数性は `|R|` によらず効く**
+⚠ 「行 2 が定数」は誤りで正しくは「**周期 `|R|`**」。**`|R| = 1` は周期 1 ＝ 定数という特殊ケース。**
+⟹ **`towerGraft2Single_holds` が使っていたのは「周期 1」という特殊性だった。**
 
-## ★★ 経路 C と経路 D が初めて 1 点で出会った
+⟹ **仮定 `R.dropLast ∈ Wstar` はブロック 0 にそのまま当たる（無料、`|R|` に依らない）。
+残るのは「等差シフト塔の再結合」1 点** ＝ `ShTowerSelf`（`ShiftTowerClosedS` の `Wself` 版、
+`shiftTowerClosedS_of_self` で緑）。
 
-塔の胴体は `((0,v,z) :: R.dropLast) ++ (ずらした y)` で、**先頭は仮定からそのまま `W a`**。
-⚠ **`W_add` は死んでいる**（先頭は根（行 0 = 0）を含み、後ろの塊は `entry R 0 (|R|-1) >= 1` だけ
-深いので `rsum` が `1 <= 0` を要求。L3 の §14 `not_rsum_of_root_mem`）。
-⟹ **`Aop` の節 3（graft）が唯一の道で、そこが `GraftAll`（＝ `CoreCap`）と同じ場所。**
+## ⛔ 死んだ道（全部確認ずみ）
 
-**⚠ ただし条件が違う。ここが決定的:**
+    連結（`W_add`）… どの枠組みでも `rsum` が破れる
+                      `shTower Q e (n+1) = Q ++ shiftr01 e 0 (shTower Q e n)` で
+                      `entry B 0 0 = e >= 1`、`A = Q` は深さ 0 の根を含む ⟹ `e <= 0` を要求
+    **`|R|` の帰納** … 死んでいる（§42。節 3 の `domT` と仮定の `hasParent` が排他）
+    **導出の帰納**   … 立たない（§44。**`Wstar` は Π 命題で導出木が無い**。
+                      立てようとすると `Wstar_closed` そのもので、その残債務が `TowerOK` ⟹ 循環）
+    分解して組み直す … 接頭辞でも行 0 でも `WCat` に落ちる（§27 / §30）
 
-> L3 が §143 で特定した「`CoreCap` はどこで止まるか」は
-> **「尾の `W` 導出（`Aop W u0 Wstar R`）を仮定していないので測度が無くなる」**だった。
-> **`TowerExpBigRow2` は `R.dropLast ∈ Wstar` を仮定として持っている。それがその尾の導出である。**
-> ⟹ **同じ 1 点でも、経路 D から入るほうが測度がある。**
+## ★ いま検証中の予測（課題 L127 / H66 / R105。3 人に同じものを）
 
-## ★ 次の一手（L122 / R103 / H64）
+> **`(shTower Q e n)⟦m⟧ = shTower Q e (n-1) ++ shiftr01 ((n-1)*e) 0 (Q⟦m⟧)`**
+> **「塔の展開は、最後のブロックだけを展開する」**
 
-    L122 … **`|R|` の長さ帰納で graft 閉包を作れないか。**
-           `R.dropLast` は `R` より真に短く、仮定がその `Wstar` 所属を与える
-           (1) 節 3 の義務 `∀ y ∈ W m, based y → graft R y ∈ Wstar` を
-               `R.dropLast ∈ Wstar` ＋ 帰納法の仮定から作れるか
-           (2) `y` の側に何が要るか（`y ∈ W m` ∧ `based y` は与件）
-           (3) **`graft` の結合律のような補題はないか**（連結は死んでいるので `graft` を使うしかない）
-    R103 … 追加前提 `(∃ p ∈ R.dropLast, p.2.2 ≠ z)` は断片では 2 択:
-           `z = 0` ⟹ `R.dropLast` に行 2 = 1 の列 / `z = 1` ⟹ 行 2 = 0 の列
-           **(q3) `z = 1` の枝は空虚ではないか**（`srow=2` なら `nextrel2` が `1 < c` を要求するが
-           断片では行 2 <= 1）。**空虚なら核がもう 1 段縮む**
-    H64  … 同じ問いを別角度から（2 人の数字が食い違うかが検証）
+理由（team-lead の読み。定義は未確認）: 最終列は第 `n-1` 写しの最終列で、行 0 のシフトは
+行 1・行 2 を変えないので `srow` は `Q` の最終列と同じ。親が第 `n-1` 写しの内部にあるなら
+前の写しはそのまま接頭辞として残る。
+
+**本命は「右辺がまた `shTower Q' e' n'` の形に書けるか」。書ければ `n` の帰納が閉じる。**
+
+⟹ **R2 の (y8)（帰納の族には周期ブロックが要る）、L3 の §41（塔の行 2 は周期的）、
+§43（`srow=1` の塔は `shTower Q e n` で `Q` が周期の 1 単位）—— 3 つとも
+「周期の 1 単位を何に取るか」という同じ問いのはず。**
+
+## 教訓（H12 の整理。`CORES.md` 冒頭にも入れた）
+
+    21 「100% の不変量」は報告前に必ず 1 段長い母集団で壊す
+    22 陰性対照は壊し方を 2 種類以上、「どの葉で鳴ったか」を記録する
+    23 「反例ゼロ」の前に前提の充足率（分母）を数える
+    24 **候補補題を測る前に `grep` する**（今日 H12 は既証明の `Wset.le1_take` を 2245 万件測った）
+
+**21・22・23 は「測る前に、測れているかを測れ」の 3 面（母集団 / 対照 / 分母）。
+24 はその手前の「そもそも測る必要があるか」。**
 
 ## 検算（team-lead 自身）
 
-    `lean/` に **`sorry` は 1 つも無い**（`Dbms.lean` の 2 件はコメント内の言及）
-    `leanman build` **809 jobs / exit 0** ⟹ **`sorryAx` 依存もゼロ**
+    `lean/` に **`sorry` は 1 つも無い** ／ `leanman build` **809 jobs / exit 0**
+    `Final.lean:353` `TRIO_terminates_of_towerExpBigRow2`（**仮定 1 本**）
+    ⚠ `Final.lean:145-155` の「88.5% / 2.8% / 6.1%」は**シート由来の数字で債務ではない**と訂正ずみ
+      （正しい債務は構成的一様 **50.28%** / `graft` 形 **33.61%**。R2 の R98'）
 
 ## ⚠⚠⚠ 実測はもう誰も守らない —— 反証器は**全核に盲目**（§147）
 
