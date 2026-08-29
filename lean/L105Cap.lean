@@ -9488,6 +9488,60 @@ theorem oper_orphan_row1 {M : TrioSeq} {n j0 Lb k q : ℕ}
 ⚠ **教訓 14**: **これでも F2b は「通った」ではありません。**
 残るのは **`hj0c` が F2b の各段で成り立つか**、ただ 1 点です。 -/
 
+/-! ## 131. ★★★★★★★ **F2b の帰納の 1 段、最終列版**
+
+§126 が測度、§130 が仕組み。**両者をつなぐと「末尾列は 1 段ごとに `M` の中を 1 つ左へ動く」
+が、行 1 の孤児性についても言える。**
+
+    §126 `oper_last_row2`     … **行 2** が `M[|M|-2]` から移る
+    **§131（以下）             … **行 1 の孤児性** も `M[|M|-2]` から移る**
+
+**⟹ 末尾列の出所が `|M|-1 → |M|-2 → …` と左へ動く。これが整礎帰納の 1 段。** -/
+
+open Classical in
+theorem oper_last_orphan_row1 {M : TrioSeq} {n j0 Lb : ℕ}
+    (hlen : j0 + Lb + 1 = M.length) (hLb : 1 < Lb) (hj0 : 0 < j0) (hn : 0 < n)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0e : parent M (srow M (M.length - 1)) (M.length - 1) = j0)
+    (hsr : 0 < srow M (M.length - 1))
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hj0c : le1 M 0 j0)
+    (hf1 : entry M 1 (M.length - 2) ≤ entry M 1 0)
+    (horph : ¬ hasParent M 1 (M.length - 2)) :
+    ¬ hasParent (M⟦n⟧) 1 ((M⟦n⟧).length - 1) := by
+  have hL : M.length - 1 ≠ 0 := by omega
+  have hlen2 : (M⟦n⟧).length = j0 + n * Lb := by
+    rw [oper_eq_gexp_gen n hL hz hp,
+      gexp_length (by rw [hj0e]; omega), hj0e,
+      show M.length - 1 - j0 = Lb from by omega]
+  have hsplit : (n - 1) * Lb + Lb = n * Lb := by
+    have h1 : (n - 1 + 1) * Lb = (n - 1) * Lb + Lb := Nat.succ_mul _ _
+    have h2 : n - 1 + 1 = n := by omega
+    rw [h2] at h1; omega
+  have hpos : (M⟦n⟧).length - 1 = j0 + ((n - 1) * Lb + (Lb - 1)) := by omega
+  have hsrc : M.length - 2 = j0 + (Lb - 1) := by omega
+  rw [hpos]
+  rw [hsrc] at hf1 horph
+  exact oper_orphan_row1 hlen (by omega) hj0 hz hp hj0e hsr
+    (by omega) (by omega) (by omega) hr0 hj0c hf1 horph
+
+/-! ### 131.1 ⟹ 整礎帰納の骨が全部そろいました
+
+    **測度**   §126 `oper_last_row2`（行 2 が `M[|M|-2]` から移る）
+    **1 段**   §131 `oper_last_orphan_row1`（**行 1 の孤児性**も `M[|M|-2]` から移る）
+    **停止**   `srow ≤ 1` に落ちたら §102 / §119 / §121.2 の緑へ
+    **外部前提** **`hj0c : le1 M 0 j0` ただ 1 つ**
+
+⚠ **教訓 14 を守ります。** 上は **「1 段が書ける」**であって、
+**「`W` に入る」ではありません。** 各段で
+
+    **(α)** `hj0c` が成り立つか（**R2 に (p1) として実測を依頼中**）
+    **(β)** 孤児になった末尾列から `snoc_orphan_W` で本当に無料になるか
+
+の 2 点が残ります。**(β) は既存の緑（`snoc_orphan_W`）なので、実質は (α) 1 つです。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
