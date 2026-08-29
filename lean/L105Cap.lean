@@ -12699,6 +12699,98 @@ H12 の `hz0_of_zle1`（`tower2_z_zero_of_zle1`（`:3813`、私が §51 で書�
 
 ⚠ **教訓 14**: 上は **`zle1` が引き回せれば**の話です。**引き回せるかは書いてみないと分かりません。** -/
 
+/-! ## 180. ★★★★★★★ (v3): **錐の外なら `le1` の鎖はブロックを出ません**（§177 の鎖版）
+
+§177 は 1 歩。**鎖にするには「途中の節も条件を満たす」が要る。**
+**⟹ `not_le1_zero_src`（§103、緑）が効きます: 錐の外の列の祖先は全部錐の外。**
+
+⚠ **H12 の警告どおり、「錐の外 ＝ 行 2 の孤児」とは**書きません**。
+ここで示すのは **`le1` の鎖の位置**だけです。 -/
+
+open Classical in
+theorem le1_chain_in_block {A Q : TrioSeq} {d e n : ℕ}
+    (hall : ∀ q, 0 < q → q < Q.length →
+      hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (q + 1)) 1 q) :
+    ∀ j, j < Q.length → ¬ le1 Q 0 j → ∀ y,
+      Relation.ReflTransGen (nextrel1 (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)))
+        y ((A ++ mTower Q d e n).length + j) →
+      (A ++ mTower Q d e n).length ≤ y := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hj hout y hy
+    have hTlen : (B.take (j + 1)).length = j + 1 := by
+      rw [List.length_take, hBlen]; omega
+    have hXlen : (A ++ mTower Q d e n ++ B.take (j + 1)).length
+        = (A ++ mTower Q d e n).length + (j + 1) := by
+      rw [List.length_append, hTlen]
+    have hj1 : 0 < j := by
+      rcases Nat.eq_zero_or_pos j with h0 | h
+      · exfalso; apply hout; rw [h0]; exact le1_refl (by omega)
+      · exact h
+    rcases hy.cases_tail with heq | ⟨c, hc1, hc2⟩
+    · omega
+    · have hloc : hasParent (B.take (j + 1)) 1 j := hall j hj1 hj
+      have hcge : (A ++ mTower Q d e n).length ≤ c :=
+        nextrel1_block_sameBlock (A := A) (d := d) (e := e) (n := n) hloc hc2
+      obtain ⟨q', hq'⟩ : ∃ q', c = (A ++ mTower Q d e n).length + q' :=
+        ⟨c - (A ++ mTower Q d e n).length, by omega⟩
+      subst hq'
+      have hclt := hc2.2.2.1
+      have hq'lt : q' < j := by omega
+      have hnR : nextR (A ++ mTower Q d e n ++ B.take (j + 1)) 1
+          ((A ++ mTower Q d e n).length + q')
+          ((A ++ mTower Q d e n).length + j) := by
+        unfold nextR
+        rw [if_neg (by omega), if_pos rfl]
+        exact hc2
+      have hstep : nextrel1 (B.take (j + 1)) q' j := by
+        have h := (nextR_append_right (A ++ mTower Q d e n) (B.take (j + 1)) 1 q' j).mp hnR
+        unfold nextR at h
+        rwa [if_neg (by omega), if_pos rfl] at h
+      have houtB : ¬ le1 (B.take (j + 1)) 0 j := by
+        rw [hB, le1_block_take hj (by omega)]
+        rw [le1_take (by omega) (by omega)]
+        exact hout
+      have hle1 : le1 (B.take (j + 1)) q' j :=
+        ⟨by omega, by omega, Relation.ReflTransGen.single hstep⟩
+      have hout' : ¬ le1 (B.take (j + 1)) 0 q' := not_le1_zero_src hle1 houtB
+      have houtQ : ¬ le1 Q 0 q' := by
+        intro hc
+        refine hout' ?_
+        rw [hB, le1_block_take hj (by omega), le1_take (by omega) (by omega)]
+        exact hc
+      have hTake : (A ++ mTower Q d e n ++ B.take (j + 1)).take
+            ((A ++ mTower Q d e n).length + (q' + 1))
+          = A ++ mTower Q d e n ++ B.take (q' + 1) := by
+        rw [List.take_append, List.take_of_length_le (by omega),
+          Nat.add_sub_cancel_left, List.take_take, Nat.min_eq_left (by omega)]
+      have hy'' : Relation.ReflTransGen
+          (nextrel1 (A ++ mTower Q d e n ++ B.take (q' + 1)))
+          y ((A ++ mTower Q d e n).length + q') := by
+        rw [← hTake]
+        exact rtg1_take_mpr (by omega) hc1 (by omega)
+      exact ih q' hq'lt (by omega) houtQ y hy''
+
+/-! ### 180.1 ⟹ (v3) が定理になりました（射程つき）
+
+    **`¬ le1 Q 0 j`（錐の外）∧ すべての `q ≥ 1` がブロック内に行 1 の親を持つ**
+    **⟹ `le1` の鎖は `A ++ mTower Q d e n` より右にとどまる**
+
+**⟹ `nextrel2` は `le1` の祖先性を要求するので、行 2 の親もブロック内。**
+**⟹ ブロック内で行 2 の孤児なら、塔でも孤児。**
+
+⚠ **前提 `hall`（すべての `q ≥ 1` がブロック内に行 1 の親を持つ）が要ります。**
+**⟹ §172 は「錐の外 ∧ 行 1 が根より上」で、§142 は「錐の中」で、それぞれ供給します。**
+**⟹ 残るのは「錐の外 ∧ 行 1 が根以下」の列で、そこは §102/§137 の**孤児**の領域です
+（＝ 鎖がそこで終わるので、実は `hall` は要らないはずですが、いまの形では前提です）。**
+
+⚠ **H12 の警告を守ります: ここで示したのは**鎖の位置**だけで、
+「錐の外 ＝ 行 2 の孤児」ではありません**（実測 98.8〜100%、100% ではない）。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
