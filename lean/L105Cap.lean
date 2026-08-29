@@ -6446,6 +6446,124 @@ theorem hesc_single_orphan {u c : ℕ} {A : TrioSeq} (hA : A ∈ W u) (hAne : A 
 **「新しい補題を書く前に `grep`」を毎回やること。** 2 回は `leanman check` の
 `already been declared` が救ってくれたが、名前が違うと通ってしまう。 -/
 
+/-! ## 84. ★★★★★★ 課題 (E): **`j0 = 0` の錐輸送**（R2 の (D) そのもの）
+
+`Lcone.gexp_cone_mir`（`:106`、緑）は **`hj0 : 0 < j0`**（悪根がブロックの内側）を要求する。
+塔は **`j0 = 0`** なので当たらない —— それが R2 の (D)／H12 の §231 の正体である。
+
+**ところが `hj0` の使い所は 3 つしかない**（証明を読んだ）:
+
+    1 `gexp_root_shallow`（展開でも根が最浅）… **`0 < d0` が代わりになる**
+    2 `gexp_entry_low hlen hj0`（位置 0 は take 部）… **`gexp_entry_root` が代わりになる**
+    3 `y < j0` の枝 … **`j0 = 0` では空虚**
+
+そして `j0 = 0` で新たに要るのは **`0 < d1`** だけである
+（ブロック `k` の根が根の錐に入るために。`d1 = 0` だと**実際に偽**: ブロックの根の行 1 が
+上がらないので `nextrel1` の狭義増加が破れる）。⟹ **`srow = 2` の塔ではちょうど `d1 > 0`**
+（`L53.tower2_vw`）。 -/
+
+/-- **`j0 = 0` 版の「展開でも根が狭義に最浅」**: `0 < j0` の代わりに **`0 < d0`**。 -/
+theorem gexp_root_shallow_zero {M : TrioSeq} {Lb d0 d1 n : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hn : 0 < n) (hLb : 0 < Lb) (hd0pos : 0 < d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) :
+    ∀ l, 0 < l → l < (gexp M 0 Lb d0 d1 n).length →
+      entry (gexp M 0 Lb d0 d1 n) 0 0 < entry (gexp M 0 Lb d0 d1 n) 0 l := by
+  intro l hl0 hl1
+  rw [gexp_length hlen] at hl1
+  rw [gexp_entry_root hlen hn hLb]
+  obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hLb (Nat.zero_le l) hl1
+  rw [gexp_entry0_mir hlen hk hq, Nat.zero_add]
+  rcases Nat.eq_zero_or_pos q with rfl | hqpos
+  · have hk1 : 0 < k := by
+      by_contra hc
+      have hk0 : k = 0 := by omega
+      subst hk0
+      omega
+    have hkd : 0 < k * d0 := Nat.mul_pos hk1 hd0pos
+    omega
+  · have := hr0 q (by omega) (by omega)
+    omega
+
+open Classical in
+/-- **★★★★★★ 課題 (E) の答え: `j0 = 0` でも根の錐は位置対応どおりに移る。**
+`Lcone.gexp_cone_mir` の `0 < j0` を **`0 < d0` ＋ `0 < d1`** に置き換えたもの。 -/
+theorem gexp_cone_mir_zero {M : TrioSeq} {Lb d0 d1 n k q : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb)) :
+    le1 (gexp M 0 Lb d0 d1 n) 0 (0 + (k * Lb + q)) ↔ le1 M 0 (0 + q) := by
+  classical
+  have hn : 0 < n := by omega
+  have hXlen : (gexp M 0 Lb d0 d1 n).length = 0 + n * Lb := gexp_length hlen
+  have hbnd : k * Lb + q < n * Lb := by
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  have hplt : 0 + (k * Lb + q) < (gexp M 0 Lb d0 d1 n).length := by
+    rw [hXlen]; omega
+  have hqlt : 0 + q < M.length := by omega
+  have hrX := gexp_root_shallow_zero (d1 := d1) hlen hn hLb hd0pos hr0
+  have h10 : entry (gexp M 0 Lb d0 d1 n) 1 0 = entry M 1 0 :=
+    gexp_entry_root hlen hn hLb
+  have hMj0q : Relation.ReflTransGen (nextrel0 M) 0 (0 + q) :=
+    rtg0_of_window (by omega) (by omega) (fun l hl0 hl1 => hup l hl0 (by omega))
+  have hXj0p : Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n)) 0
+      (0 + (k * Lb + q)) :=
+    gexp_rtg0_root hlen hn hLb hup hd0pos _ (by omega) (by omega)
+  rw [le1_zero_iff hrX hplt, le1_zero_iff hr0 hqlt, h10]
+  constructor
+  · intro hXw y hyq hy0
+    have hyle : y ≤ 0 + q := nextrel0_rtrancl_index_le hyq
+    obtain ⟨q', hq'e⟩ : ∃ q', y = 0 + q' := ⟨y, by omega⟩
+    subst hq'e
+    have hq'lt : q' < Lb := by omega
+    have hmir : Relation.ReflTransGen (nextrel0 (gexp M 0 Lb d0 d1 n))
+        (0 + (k * Lb + q')) (0 + (k * Lb + q)) :=
+      gexp_rtg0_mir hlen hk hyq q rfl hq
+    have h := hXw (0 + (k * Lb + q')) hmir (by omega)
+    rw [gexp_entry1_mir hlen hk hq'lt] at h
+    by_cases hg : le1 M 0 (0 + q')
+    · have := le1_entry1_lt hg (by omega)
+      omega
+    · rw [if_neg hg] at h
+      omega
+  · intro hMw y hyp hy0
+    obtain ⟨k', q', hk', hq', hye, hcase⟩ :=
+      gexp_chain_inversion hlen hk hq hup hd0e y hyp (Nat.zero_le y)
+    subst hye
+    rw [gexp_entry1_mir hlen (by omega) hq']
+    rcases Nat.eq_zero_or_pos q' with rfl | hq'pos
+    · have hk'pos : 0 < k' := by
+        by_contra hc
+        have hk'0 : k' = 0 := by omega
+        subst hk'0
+        omega
+      rw [if_pos (le1_refl (show 0 + 0 < M.length by omega))]
+      have hkd : 0 < k' * d1 := Nat.mul_pos hk'pos hd1pos
+      have he : entry M 1 (0 + 0) = entry M 1 0 := rfl
+      omega
+    · have hbase : entry M 1 0 < entry M 1 (0 + q') := by
+        rcases hcase with ⟨-, hM⟩ | ⟨-, hM⟩
+        · exact hMw (0 + q') hM (by omega)
+        · have hchain : Relation.ReflTransGen (nextrel0 M) 0 (0 + q') :=
+            rtg0_of_window (by omega) (by omega)
+              (fun l hl0 hl1 => hup l hl0 (by omega))
+          exact le1_chain_window hlp.2.2 (0 + q') hchain hM (by omega)
+      split_ifs <;> omega
+
+/-! ### 84.1 ⟹ これが (D) である
+
+`gexp_cone_mir_zero` は「**塔の第 `k` ブロックの位置 `q` が根の錐に入る ⟺
+`M` の位置 `q` が根の錐に入る**」で、まさに R2 の (A)+(B)、H12 の §231 である。
+
+⚠ **`0 < d1` が本質的**である。`d1 = 0` だとブロック `k` の根の行 1 が上がらないので
+`nextrel1` の狭義増加が破れ、**文は実際に偽**になる（`k ≥ 1`, `q = 0`）。
+⟹ **`srow = 1` の塔（`d1 = 0`）ではこの形は使えない。** そちらは
+`mTower Q d 0 n = shTower Q d n`（`Lift1` が消える）なので**そもそも錐が要らない**。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
