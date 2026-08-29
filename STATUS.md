@@ -7,6 +7,18 @@
 
 ---
 
+## 0. 検算（team-lead が自分で回した、2026-08-29）
+
+    leanman check -C /home/koteitan/proofs/dbms/lean lean/Final.lean  ⟹ **exit 0（緑）**
+    `trio_cofinality`（`Core.lean:4602`）は仮定が `ST_TS M` / `ST_TS N` だけ ＝ **無条件**
+    `lean/` で `sorry` を含むのは **`Dbms.lean` 1 本だけ**（別路線。この連鎖に入らない）
+
+    連鎖: `TowerOK` → `Wstar_closed` → `wf_olt_ST_TS_of_cofinality`（＋無条件の共終性）
+          → `wf_Rnf_of_wf_TS` → `step_terminates` → **`WellFounded stepRel`**
+    併せて `no_infinite_expansion_of_towerOK`:
+      **¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i+1))**
+      ＝ 「z<2 の標準形に無限展開列は無い」そのもの
+
 ## 1. 到達点
 
     lean/Final.lean
