@@ -13084,6 +13084,92 @@ H12 の指摘: **`mTowerClosed_of_snocStepPar` は孤児を内部で片づけて
 > **⟹ 教訓を広げます: **既存の補題の上に積むときは、その補題の**中身**を読む**。**
 > **⟹ そして**反例を追うときは、前提を 1 つずつ**定義に戻って**確かめる**。** -/
 
+/-! ## 186. ★★★★★★★ (d) の測度: **同じブロックに親があれば窓は `j - p`**
+
+§138 は「展開 ＝ 接頭辞 ＋ 何か」までだった。**§165 が入ったので「何か」が塔だと書ける。**
+**⟹ 窓の長さが `j - p` だと**明示的に**出る。これが (d) の測度の本体。** -/
+
+open Classical in
+theorem snocStep_oper_tower {Q : TrioSeq} {d e n j p m : ℕ}
+    (hj : j < Q.length) (hpj : p < j)
+    (hz : ¬ (entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0))
+    (hpar : hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+    (hpe : parent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+      = n * Q.length + p) :
+    ∃ (V : TrioSeq) (d0 d1 : ℕ), V.length = j - p ∧
+      (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))⟦m⟧
+      = (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take p)
+        ++ mTower V d0 d1 m := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set T := mTower Q d e n ++ B.take (j + 1) with hT
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hTl : T.length = n * Q.length + (j + 1) := by
+    rw [hT, List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hL : T.length - 1 ≠ 0 := by omega
+  have hLb : T.length - 1 - (n * Q.length + p) = j - p := by omega
+  have hle : n * Q.length + p + (j - p) ≤ T.length := by omega
+  refine ⟨(T.drop (n * Q.length + p)).take (j - p),
+    (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1)
+      - entry T 0 (n * Q.length + p) else 0),
+    (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1)
+      - entry T 1 (n * Q.length + p) else 0), ?_, ?_⟩
+  · rw [List.length_take, List.length_drop]; omega
+  · rw [oper_eq_gexp_gen m hL hz hpar, hpe, hLb,
+      gexp_eq_take_append_mTower hle]
+    congr 1
+    rw [hT, List.take_append, ← hTlen, List.take_of_length_le (by omega),
+      hTlen, Nat.add_sub_cancel_left, List.take_take, Nat.min_eq_left (by omega)]
+
+/-! ### 186.1 ⟹ (d) の測度が明示的になりました
+
+    **`T_{j+1}⟦m⟧ = T_p ++ mTower V d0 d1 m`、`|V| = j − p`**
+
+**⟹ そして `p < j < |Q|` なので `|V| = j − p ≤ |Q| − 1`。**
+**⟹ さらに `0 < p` なら `|V| ≤ |Q| − 2`。**
+
+⚠ **前提を逐語で写します**（散文の前に）:
+
+    `hj : j < Q.length` ／ `hpj : p < j`
+    `hz` … 末尾列が全部 0 ではない ／ `hpar` … 末尾列が親を持つ
+    **`hpe` … その親が `n * Q.length + p`（＝ **同じブロックの中**）**
+
+> **⟹ この定理が言うのは「親が `n*|Q| + p` にあるとき、展開が
+> `T_p ++ mTower V d0 d1 m` の形で `|V| = j − p`」だけです。**
+
+⛔ **「窓が必ず減る」とは書きません。** `hpe` が「同じブロック」を**仮定**しています。
+**`j = 0` では親は手前のブロックにあり（§155.1）、この定理の射程外です。**
+
+⚠ **そして R2 の (n2)（`|V|` の強帰納は回らない、非減少の鎖が 50% の `Q` で作れる）は
+**この定理と両立します**。上は 1 段の形であって、鎖についての主張ではありません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
