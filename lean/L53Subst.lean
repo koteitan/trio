@@ -2082,5 +2082,113 @@ theorem towerOK2_of_strict {v m : ℕ} {R : TrioSeq}
       exact hgr _ hin hb (hprop n).1 v 0 (2 * v) (by omega) (by omega)
 
 
+/-! ## ★★★ 課題 L79: 狭義の伝播は自明に閉じる
+
+team-lead の骨（紙）をそのまま Lean に:
+
+    `R.dropLast`            … `R` の部分列 ⟹ `Strict R` から直に
+    `Lift1 (X⟦n⟧) t` の根   … `entry1_Lift1_zero` で `v + t`、`t > 0` ⟹ `v < v+t`
+    `Lift1` の残り          … 帰納法の仮定 ＋ `Lift1` は行 1 を**足すだけ**
+    `graft`                 … **行 0 しかずらさない**ので行 1 は不変
+
+**減る操作が 1 つも無い**ので `n` の帰納でそのまま出る。
+
+「無タイ（`≠ v`）」で閉じない理由も同じ骨で見える: `p.2.1 < v` の列が `+t` で
+**ちょうど `v`** になり得る。狭義なら「`v` より大きい」が上向きの操作で保たれる。 -/
+
+/-- **狭義条件**。 -/
+def Strict (v : ℕ) (R : TrioSeq) : Prop := ∀ p ∈ R, v < p.2.1
+
+theorem strict_dropLast {v : ℕ} {R : TrioSeq} (h : Strict v R) :
+    Strict v R.dropLast := fun p hp => h p (List.dropLast_subset _ hp)
+
+/-- `graft` は**行 0 しかずらさない**ので行 1 の狭義性は不変。 -/
+theorem strict_graft {v : ℕ} {R y : TrioSeq} (hR : Strict v R.dropLast)
+    (hy : Strict v y) : Strict v (graft R y) := by
+  intro p hp
+  simp only [graft, List.mem_append] at hp
+  rcases hp with h | h
+  · exact hR p h
+  · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h
+    exact hy q hq
+
+open Classical in
+/-- `Lift1` は行 1 を**足すだけ**。根は `v + d`、残りは帰納法の仮定。 -/
+theorem strict_Lift1_cons {v z d : ℕ} {R : TrioSeq} (hd : 0 < d)
+    (hR : Strict v R) :
+    Strict v (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) := by
+  intro p hp
+  simp only [Lift1, List.mem_map, List.mem_range] at hp
+  obtain ⟨i, hi, rfl⟩ := hp
+  show v < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 i
+      + (if le1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 i then d else 0)
+  cases i with
+  | zero =>
+      have h0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := rfl
+      rw [h0, if_pos (le1_zero_self (by simp))]
+      omega
+  | succ k =>
+      have hk : k < R.length := by
+        simp only [List.length_cons] at hi; omega
+      have h1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 (k + 1) = entry R 1 k :=
+        entry_cons _ _ _ _
+      have hm : v < entry R 1 k := hR _ (entry_pair_mem (B := R) hk)
+      rw [h1]
+      split <;> omega
+
+/-- 1 段ぶんの伝播。 -/
+theorem strict_step {v z d : ℕ} {R Rn : TrioSeq} (hd : 0 < d)
+    (hR : Strict v R) (hRn : Strict v Rn) :
+    Strict v (graft R (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: Rn) d)) :=
+  strict_graft (strict_dropLast hR) (strict_Lift1_cons hd hRn)
+
+open Classical in
+/-- **★★★ 伝播（課題 L79-2）**: 狭義なら `hprop` が `n` の帰納で出る。 -/
+theorem strict_prop {v m : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2) (hst : Strict v R)
+    (hpM : hasParent (((0, v, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n : ℕ,
+      argOK (graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v))) ∧
+      (∀ p ∈ graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v)), v < p.2.1) := by
+  have hRpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  have ht : 0 < entry R 1 (R.length - 1) - v := by
+    have := hst _ (entry_pair_mem (B := R) (show R.length - 1 < R.length by omega))
+    simp only at this
+    omega
+  have hzero := oper_cons_zero (v := v) (z := 0) hR hRne hd hpM
+  intro n
+  refine ⟨argOK_graft hRne hR _, ?_⟩
+  induction n with
+  | zero =>
+      rw [hzero, Lift1_nil, graft_nil]
+      exact strict_dropLast hst
+  | succ k ih =>
+      rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+      exact strict_step ht hst ih
+
+open Classical in
+/-- **★★★★★ 仮定ゼロの狭義 `TowerOK2`**（課題 L79-4）。`hprop` が消えた。 -/
+theorem towerOK2_of_strict' {v m : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (hst : Strict v R)
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hpM : hasParent (((0, v, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n : ℕ, (((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W (2 * v) := by
+  have hRpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hvw : v ≤ entry R 1 (R.length - 1) := by
+    have := hst _ (entry_pair_mem (B := R) (show R.length - 1 < R.length by omega))
+    simp only at this
+    omega
+  exact towerOK2_of_strict hR hRne hd hi2 hz' hvw hgr hpM
+    (strict_prop hR hRne hd hi2 hst hpM)
+
+
 end L53
 end TRIO
