@@ -5986,6 +5986,69 @@ theorem catBlock_of_escape {u c : ℕ} {A : TrioSeq} (hA : A ∈ W u)
 
 **⟹ この節は「素直な分解では `WSnoc` に落ちる」ことの記録である。次は使わない。** -/
 
+/-! ## 79. ★★★★★ **孤児の枝はほとんど起きない**（根が狭義最浅なら）
+
+§77-78 の残差は「継ぐブロックの末尾列が**そのブロックの中で孤児**」だった。
+ところが **`MTowerClosedS` は「根が狭義に最浅」を仮定している**ので、
+その枝はかなり狭い。道具は既存（`Wset.hasParent_zero_iff` `:1784` /
+`hasParent_one_of` `:1823` / `hasParent_two_of` `:1858` / `Lcone.rtg0_zero` `:27`）。 -/
+
+theorem le0_zero_of_shallow {Q : TrioSeq}
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    {b : ℕ} (hb : b < Q.length) : le0 Q 0 b :=
+  ⟨by omega, hb, rtg0_zero (fun l hl0 hl1 => hs l hl0 hl1) hb⟩
+
+/-- **`srow = 0` の末尾列は必ず段内に親を持つ**（根が狭義に最浅なので）。 -/
+theorem hasParentInBlock_of_srow_zero {Q : TrioSeq} (h2 : 2 ≤ Q.length)
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hsr : srow Q (Q.length - 1) = 0) : L53.HasParentInBlock Q := by
+  unfold L53.HasParentInBlock
+  rw [hsr, hasParent_zero_iff (by omega)]
+  exact ⟨0, by omega, hs (Q.length - 1) (by omega) (by omega)⟩
+
+/-- **`srow = 1`**: 根の行 1 が末尾列より狭義に小さければ段内に親を持つ。 -/
+theorem hasParentInBlock_of_srow_one {Q : TrioSeq} (h2 : 2 ≤ Q.length)
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hsr : srow Q (Q.length - 1) = 1)
+    (hlt : entry Q 1 0 < entry Q 1 (Q.length - 1)) : L53.HasParentInBlock Q := by
+  unfold L53.HasParentInBlock
+  rw [hsr]
+  exact hasParent_one_of (by omega) (by omega)
+    (le0_zero_of_shallow hs (by omega)) hlt
+
+/-- **`srow = 2`**: 末尾列が根の行 1 錐に入っていて、根の行 2 が狭義に小さければ
+段内に親を持つ。 -/
+theorem hasParentInBlock_of_srow_two {Q : TrioSeq} (h2 : 2 ≤ Q.length)
+    (hsr : srow Q (Q.length - 1) = 2)
+    (hcone : le1 Q 0 (Q.length - 1))
+    (hlt : entry Q 2 0 < entry Q 2 (Q.length - 1)) : L53.HasParentInBlock Q := by
+  unfold L53.HasParentInBlock
+  rw [hsr]
+  exact hasParent_two_of (by omega) (by omega) hcone hlt
+
+/-! ### 79.1 ⟹ 孤児の枝が残る条件（`|Q| ≥ 2`・根が狭義最浅）
+
+    `srow = 0` … **起きない**（`hasParentInBlock_of_srow_zero`）
+    `srow = 1` … **`entry Q 1 (|Q|-1) ≤ entry Q 1 0`** のときだけ
+    `srow = 2` … **`¬ le1 Q 0 (|Q|-1)`（末尾列が根の錐の外）** または
+                 **`entry Q 2 (|Q|-1) ≤ entry Q 2 0`** のときだけ
+
+⟹ **孤児は「末尾列が根より上に行けない」場合に限る。** `srow = 2` の側は
+**「末尾列がブロッカーの向こう側にある」**という §59.1 と同じ現象である。
+
+### 79.2 ⟹ `MTowerClosedRow2` の残差の最終形
+
+    `n ≥ 2` ／ `Q` の行 2 に非零 ／ **`|Q| ≥ 2` かつ末尾列が段内で孤児**
+      ＝ `srow Q (|Q|-1) = 1` かつ `entry Q 1 (|Q|-1) ≤ entry Q 1 0`、または
+        `srow Q (|Q|-1) = 2` かつ（錐の外 または 行 2 が根以下）
+
+⚠ **`srow = 2` かつ `entry Q 2 (|Q|-1) ≤ entry Q 2 0` は `z ≤ 1` の断片では
+`entry Q 2 0 = 1` を強いる**（`srow = 2` は `entry Q 2 (|Q|-1) ≥ 1`）。
+⟹ **`z = 1` に限る。** `z = 0` の塔では **錐の外**の場合しか残らない。
+
+**⟹ 次に測るなら「塔のブロックの末尾列が段内で孤児になる割合」**（R2 向け）。
+私の予想は**低い**（`srow = 0` は 0%、`srow = 1` は根の行 1 が末尾以上のときだけ）。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
