@@ -2780,6 +2780,140 @@ theorem towerOK_of_towerExpBig (h : TowerExpBig) : TowerOK :=
 
 `TowerGraft2` / `LiftTie` / `LiftTieSelf` / `LiftTieCore` / `WConvex` 系は**もう要らない**。 -/
 
+
+/-! ## 40. ★★★★★ 課題 L121-2/3: **行 2 の定数性は `|R| ≥ 2` でも効く**
+
+team-lead の問い「行 2 の定数性は `|R| ≥ 2` では効かないはず（`graft R y` の胴体に
+`R.dropLast` が入り、その行 2 は `z` とは限らない）」——
+**そのとおりだが、`R.dropLast` の行 2 が `z` に等しいときは効く。**
+`graft` の定義（`Wset.lean:66`）を開いた:
+
+    `graft M z = M.dropLast ++ z.map (fun p => (p.1 + entry M 0 (|M|-1), p.2.1, p.2.2))`
+
+⟹ `graft R y` の行 2 は **`R.dropLast` の行 2 と `y` の行 2 の合併**。
+`|R| = 1` では `R.dropLast = []` なので条件が空虚だった（§38）。**一般には条件が要る。**
+
+⟹ **`∀ p ∈ R.dropLast, p.2.2 = z` を足せば、`|R|` によらず塔は行 2 定数**で、
+`constRow2_mem_W`（§38）がそのまま当たる。**`srow = 1` でも `srow = 2` でも。** -/
+
+/-- `graft_row2_single`（§38）の一般化。 -/
+theorem graft_row2 {R : TrioSeq} {k : ℕ} (hR2 : ∀ p ∈ R.dropLast, p.2.2 = k)
+    {y : TrioSeq} (hy : ∀ p ∈ y, p.2.2 = k) : ∀ p ∈ graft R y, p.2.2 = k := by
+  intro p hp
+  unfold graft at hp
+  rcases List.mem_append.mp hp with h | h
+  · exact hR2 p h
+  · rw [List.mem_map] at h
+    obtain ⟨q, hq, rfl⟩ := h
+    exact hy q hq
+
+open Classical in
+/-- **★★★★★ `R.dropLast` の行 2 が根の `z` に等しければ、塔は仮定ゼロで `W a`。**
+`TowerExp` にも `TowerGraft2` にも同じ形で効く（graft 閉包 `hgr` を**使わない**）。 -/
+theorem tower_of_row2const {v z m a : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hva : 2 * v + z ≤ a) (hd : domT R m)
+    (hR2 : ∀ p ∈ R.dropLast, p.2.2 = z)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  have hlevpos : 0 < lev R (R.length - 1) := by rw [hd.1]; omega
+  have hsr : srow R (R.length - 1) = 1 ∨ srow R (R.length - 1) = 2 := by
+    unfold srow
+    unfold lev at hlevpos
+    by_cases h2' : 0 < entry R 2 (R.length - 1)
+    · rw [if_pos h2']; exact Or.inr rfl
+    · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+  rcases hsr with h1 | h1
+  · -- srow = 1: 塔は `tow v z R n`
+    have hrow2 : ∀ k, ∀ p ∈ tow v z R k, p.2.2 = z := by
+      intro k
+      induction k with
+      | zero => intro p hp; simp [tow] at hp
+      | succ k ih =>
+          intro p hp
+          simp only [tow, List.mem_cons] at hp
+          rcases hp with rfl | hp
+          · rfl
+          · exact graft_row2 hR2 ih p hp
+    intro n hn
+    rw [oper_cons_tower1 hR hRne hd h1 hpM]
+    refine constRow2_mem_W (c := z) (hrow2 n) ?_
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    show lev (tow v z R (k + 1)) 0 ≤ a
+    have hl : lev (tow v z R (k + 1)) 0 = 2 * v + z := by
+      simp only [tow]
+      unfold lev
+      simp [entry]
+    rw [hl]
+    exact hva
+  · -- srow = 2: 塔は `oper_cons_tower2` の再帰
+    have hzero := L53.oper_cons_zero (v := v) (z := z) hR hRne hd hpM
+    have hrow2 : ∀ k, ∀ p ∈ ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦k⟧), p.2.2 = z := by
+      intro k
+      induction k with
+      | zero =>
+          rw [hzero]
+          intro p hp
+          simp at hp
+      | succ k ih =>
+          rw [oper_cons_tower2 (m := m) hR hRne hd h1 hpM]
+          intro p hp
+          rcases List.mem_cons.mp hp with rfl | hp
+          · rfl
+          · exact graft_row2 hR2 (constRow2_Lift1 ih) p hp
+    intro n hn
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    refine constRow2_mem_W (c := z) (hrow2 (k + 1)) ?_
+    rw [oper_cons_tower2 (m := m) hR hRne hd h1 hpM]
+    show lev (((0, v, z) : ℕ × ℕ × ℕ) :: _) 0 ≤ a
+    have hl : lev (((0, v, z) : ℕ × ℕ × ℕ)
+        :: graft R (Lift1 ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦k⟧)
+          (entry R 1 (R.length - 1) - v))) 0 = 2 * v + z := by
+      unfold lev
+      simp [entry]
+    rw [hl]
+    exact hva
+
+/-! ### 40.1 ⟹ `TowerExpBig` の残核は「`R.dropLast` の行 2 が `z` でない」場合だけ -/
+
+/-- `TowerExpBig` を「`R.dropLast` に行 2 ≠ `z` の列がある」場合に絞ったもの。 -/
+def TowerExpBigRow2 : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → 2 ≤ R.length → z ≤ 1 → 2 * v + z ≤ a →
+    domT R m → R.dropLast ∈ Wstar →
+    (∃ p ∈ R.dropLast, p.2.2 ≠ z) →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+open Classical in
+theorem towerExpBig_of_row2 (h : TowerExpBigRow2) : TowerExpBig := by
+  intro v z m a R hR hbig hz1 hva hd hdl hpM n hn
+  by_cases hc : ∃ p ∈ R.dropLast, p.2.2 ≠ z
+  · exact h v z m a R hR hbig hz1 hva hd hdl hc hpM n hn
+  · have hR2 : ∀ p ∈ R.dropLast, p.2.2 = z := by
+      intro p hp
+      by_contra hne
+      exact hc ⟨p, hp, hne⟩
+    exact tower_of_row2const hR (by intro hcc; rw [hcc] at hbig; simp at hbig)
+      hva hd hR2 hpM n hn
+
+/-- **★★★★★★ `TowerOK` は `TowerExpBigRow2` 1 本から出る。** -/
+theorem towerOK_of_towerExpBigRow2 (h : TowerExpBigRow2) : TowerOK :=
+  towerOK_of_towerExpBig (towerExpBig_of_row2 h)
+
+/-! ### 40.2 ⟹ 現在地（`TowerOK` の唯一の核）
+
+    `∀ v z m a R, argOK R → **2 ≤ |R|** → z ≤ 1 → 2v+z ≤ a → domT R m →
+       **R.dropLast ∈ Wstar** → **(∃ p ∈ R.dropLast, p.2.2 ≠ z)** →
+       hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
+       ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W a`
+
+落ちた枝（全部仮定ゼロ）:
+
+    `|R| = 1`                       … `towerExp_singleton`（`oper` が恒等）
+    `R.dropLast` の行 2 ≡ `z`       … `tower_of_row2const`（塔が行 2 定数 ⟹ 末尾は必ず孤児）
+    `|R| ≥ 2` の節 3                 … `Wchar.aop_clause3_to_clause2`（節 2 に落ちる）
+    `|R| = 1` の節 3・`srow = 2`      … `towerGraft2Single_holds` -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
