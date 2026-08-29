@@ -685,5 +685,65 @@ theorem comm_of_parts {A N : TrioSeq} {jN j0N iN : ℕ} (n : ℕ) (hNne : N ≠ 
   simp only [if_congr (hle0 j) rfl rfl, if_congr (hle1 j) rfl rfl]
 
 
+/-! ## 課題 L58 の 4 / L59: 祖先関係の移送
+
+`nextrel0/1/2` の鎖は添字が増えるので `[j0, j1]` に留まる。⟹ `A` を前に足しても
+右側だけで決まる。**これが (COMM) の `le0` / `le1` の仮定を落とす鍵。** -/
+
+/-- **`nextrel0` の移送**。 -/
+theorem nextrel0_append_right {A N : TrioSeq} {a b : ℕ} :
+    nextrel0 (A ++ N) (A.length + a) (A.length + b) ↔ nextrel0 N a b := by
+  unfold nextrel0
+  simp only [List.length_append, entry_append_right]
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨by omega, by omega, by omega, h4, ?_⟩
+    intro j hj
+    have h9 := h5 (A.length + j) ⟨by omega, by omega⟩
+    rwa [entry_append_right] at h9
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨by omega, by omega, by omega, h4, ?_⟩
+    intro j hj
+    obtain ⟨j', rfl⟩ : ∃ j', j = A.length + j' := ⟨j - A.length, by omega⟩
+    have h9 := h5 j' ⟨by omega, by omega⟩
+    rwa [entry_append_right]
+
+/-- 右側から出た `nextrel0` の鎖は右側に留まる。 -/
+theorem rtg0_of_append {A N : TrioSeq} {a c : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 (A ++ N)) (A.length + a) c) :
+    ∃ c', c = A.length + c' ∧ Relation.ReflTransGen (nextrel0 N) a c' := by
+  induction h with
+  | refl => exact ⟨a, rfl, Relation.ReflTransGen.refl⟩
+  | tail _ h2 ih =>
+      obtain ⟨c', hc, hchain⟩ := ih
+      subst hc
+      rename_i d _
+      obtain ⟨d', rfl⟩ : ∃ d', d = A.length + d' :=
+        ⟨d - A.length, by have := h2.2.2.1; omega⟩
+      exact ⟨d', rfl, hchain.tail (nextrel0_append_right.mp h2)⟩
+
+/-- 右側の `nextrel0` の鎖は `A` を足しても鎖のまま。 -/
+theorem rtg0_to_append {A N : TrioSeq} {a c : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 N) a c) :
+    Relation.ReflTransGen (nextrel0 (A ++ N)) (A.length + a) (A.length + c) := by
+  induction h with
+  | refl => exact Relation.ReflTransGen.refl
+  | tail _ h2 ih => exact ih.tail (nextrel0_append_right.mpr h2)
+
+/-- **★ `le0` の移送**（課題 L58 の 4 の前半）。 -/
+theorem le0_append_right {A N : TrioSeq} {a b : ℕ} :
+    le0 (A ++ N) (A.length + a) (A.length + b) ↔ le0 N a b := by
+  unfold le0
+  simp only [List.length_append]
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    obtain ⟨c', hc, hchain⟩ := rtg0_of_append h3
+    have hb : c' = b := by omega
+    subst hb
+    exact ⟨by omega, by omega, hchain⟩
+  · rintro ⟨h1, h2, h3⟩
+    exact ⟨by omega, by omega, rtg0_to_append h3⟩
+
+
 end L53
 end TRIO
