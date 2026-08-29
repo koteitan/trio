@@ -1,52 +1,83 @@
-# 現在地（2026-08-30 夕）
+# 現在地（2026-08-30 夜）
 
-**残核は `LiftTieSelf`（＋ `TowerExp`）。** そして今日いちばん大きい構造の判明:
+## ★★★★★ 残核は `LiftTieCore`（3 量化 / 4 前提）
 
-    **`CoreSingleton` ＝ `CoreCap` ＝ `GraftAll`**（同じ命題の 3 つの名前。全部緑）
-      `Lind.lean:181`/`:195`        `CoreSingleton ⟺ CoreCap`
-      `L105Cap.lean:§25`            **`coreCap_iff_graftAll : CoreCap ↔ GraftAll`**
-      `Lind.lean:169`               `graft M [(0,b,c)] = cap M b c` … `y` が 1 列に見えた理由
-      `Wset.lean:4085` docstring    「**The single Buchholz-(1) core**」
+    def LiftTieCore（`lean/L105Cap.lean` §26-29、緑）
+      ∀ (v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+        **¬ (1 <= v ∧ TieFree ((0,v,z) :: R))** →
+        ((0,v,z) :: R) ∈ W (2*v+z) →
+        **Lift1 ((0,v,z) :: R) 1 ∈ W (2*v+z + 2)**
 
-## ⚠ 「仮定 1 本」は指標にならない（今日の最大の教訓。教訓 32/33）
+    `towerOK_of_liftTieCore : LiftTieCore → TowerExp → TowerOK`   ← 緑
+    `Final.lean` に `TRIO_terminates_of_liftTieCore` / `no_infinite_expansion_of_liftTieCore`
+    （`leanman build` 809 jobs / exit 0、`leanman check Final.lean` exit 0 を team-lead が確認）
 
-    `Final.lean:573`  `TRIO_terminates_of_cap (hc : CoreCap)`          … 仮定 **1 本**
-    `L53Subst:2506`   `TRIO_terminates_of_liftTie (hlt) (he : TowerExp)` … 仮定 2 本
+**持ち上げ量は `1` に固定、段は自己段（`Wself`）。** 今日 `CoreCap`（7 量化 / 5 前提）から
+ここまで削れた。落ちた枝（すべて既存の**仮定ゼロ**定理、`Final.lean:152` の H11 実測）:
 
-私は本数を 3 回引いて「`CoreCap` が唯一の 1 本の核」と書いたが、**緑の同値で否定された**。
-`CoreCap ⟺ GraftAll` の鎖の中に **`Wset.liftTowerExp2_of_graftAll`（`:4211`）＝ `TowerExp` 相当**
-があり、`liftTower1_of_graftAll`（`:4151`）＝ `TowerOK1` 相当もある。
-⟹ **`CoreCap` は `TowerExp` を避けているのではなく内側に畳んでいた。仕事量は同じ。**
+    狭義                88.5%   `L53.liftStage_of_strict`
+    無タイだが狭義でない 2.8%   `L53.liftStage_of_noTie`
+    タイだが `TieFree`   6.1%   `L53.liftTie_case_tieFree`（`L53Subst.lean:2615`）
+    **残り = 「タイかつ `¬TieFree`」で `d = 1`**
 
-さらに `TowerOK` の仮定 `Aop W u0 Wstar R` は**債務ではなく道具**（導出木へのアクセス）。
-本数を数えると**道具を持っている側が不利に見える**。
+`∀ d` が消えた理由（§28）: `Wset.Lift1_Lift1`（`:1230`）＋ `Wset.lift_cons`（`:3656`）で
+`Lift1 X (d+1) = Lift1 ((0,v+1,z) :: ltail v z R 1) d`。**`Lift1 X 1 ∈ W (2(v+1)+z)` は
+また自己段**なので帰納法の仮定がそのまま当たり、`argOK_ltail`（`:3716`）で `argOK` も保たれる。
 
-## ★ 採用した路線: `LiftTieSelf` ＋ `TowerExp`
+## ⚠⚠⚠ 実測はもう誰も守らない —— 反証器は**全核に盲目**（§147）
 
-    `LiftTieSelf`（`L105Cap.lean:§21`）… **4 量化 / 3 前提、段は `2v+z` に固定**。文が最小
-      ∀ d v z R, argOK R → (∃ p ∈ R, p.2.1 = v) → ((0,v,z) :: R) ∈ W (2v+z) →
-        Lift1 ((0,v,z) :: R) d ∈ W (2v+z + 2d)
+R2 の定理（定義からの算術、`R2-NOTES.md` §R94）:
 
-    `towerOK2_of_liftTieSelf`  ★ `TowerOK2` ⟸ `LiftTieSelf`（緑）
-    `towerOK_of_liftTieSelf`   ★ `TowerOK` ⟸ `LiftTieSelf` ＋ `TowerExp`（緑）
+    `oper`（`Trio.lean:98`）は**第 1 列を絶対に落とさない**
+      （`j0=0` でも flatMap の `k=0, j=0` の項が `M[0]` そのもの）
+    ⟹ 木のどのノードも先頭列は `S[0]` ⟹ **到達する単元は `[S[0]]` だけ**
+    ⟹ **反証器が False を返す ⟺ `lev S 0 > a`**
 
-**`Wstar` の元はすべて `Wself`（`L53.Wstar_iff_Wself`）⟹ 狙う場所とちょうど一致。**
-攻撃面が極小: `liftStage_of_strict`（仮定ゼロ）が 88.5%、`liftStage_of_noTie`（仮定ゼロ）が 2.8%、
-`liftTie_case_tieFree` が 6.1% を覆い、**残りのタイはシート 4482 行のうち 24 節点 = 0.5%**。
+結論の根の `lev` が前提から自動で上界に収まる核は**絶対に鳴らない**:
 
-## ⛔ `CoreCap ⟸ LiftTieSelf` は通らない（循環）
+    `WCat` `WSnoc` `CoreCap` `TowerOK*` `LiftTieSelf` `LiftTieCore` … **全部該当**
+    （`LiftTieCore` の根は `(0,v+1,z)`、`lev = 2v+z+2` ＝ 上界とちょうど等しい）
 
-`towerOK2_of_liftTieSelf` の前提のうち `CoreCap` の設定で供給できないのは
-**`hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar`** ただ 1 つで、
-これは **`GraftAll` そのものの形**。`CoreCap ⟺ GraftAll` なので**循環**。
-逃げ道の `Gamma.ctxOK_graft`（`:307`）も前提が `Y.dropLast ∈ GX` なので同じく循環。
+⟹ **H12 の「全核で確定した反例ゼロ」は空虚だった。**
+⚠ **陰性対照も空虚**（「段を 1 下げると鳴る」は計器が唯一見られる種類の偽を作っているだけ。
+**対照の設計は team-lead の指定。H12 の規律の問題ではない**）。
+⚠ `inW` のメモのバグ（`None` を深さ抜きで恒久保存、修正版 `tools/dbms/winw.py` の `inW2`）。
+`False` の健全性には影響しないが `ok`/`unknown` の内訳には影響する。
 
-## ★ 今日の一手（課題 L115 / R94 / H59）
+**⟹ `LiftTieCore` が真である外的証拠は、いま存在しない。残るのは Lean の証明だけ。**
 
-    L115-1 … **`LiftTieSelf` を `L53.split_lastTie` で割る**。最後のタイを剥がして
-             残りが無タイなら `liftStage_of_noTie`（仮定ゼロ）が当たる
-    R94    … **タイの本数**が常に 1 本か（母集団は `domT` ∧ `srow=2` ∧ `hasParent` に限定）
-    H59-1  … `LiftTieSelf` に反証器（違反が出れば偽）
+## 教訓 13（3 度目の書き直し）
+
+    1 度目 「健全な反証器は原理的に存在しない」 → 誤り（`Wchar.lean` にあった）
+    2 度目 「健全な反証器は存在する」           → 正しいが不十分
+    3 度目 **「存在するが射程は `lev S 0 > a` だけ。我々の核はどれも段を保つ形に
+            設計されているので、設計上どれ 1 つそこに入らない。反証器は全核に盲目。」**
+
+## ⛔ `split_lastTie` 路線は繋がらない（L3 の判定）
+
+> **タイの分解は接頭辞を短くするが、`Lift1` は列ごとではなく「根の錐」という大域的な
+> 条件で決まるので、接頭辞の結果を全体に戻せない。戻す操作が `WCat` になる。**
+
+（`Lcone.le1_zero_iff` `:36`: `le1 X 0 i` ⟺ `i` の根以外の行 0 祖先が全部 `row1 > v`。）
+
+## ★ 次の一手（課題 L116 / H60）
+
+**窓分解（`Lind.graft_take_drop`、`Lind.lean:63`）で切る** —— 行 0 の祖先鎖に沿って。
+`Lind` の長さ帰納がその切り方なのは偶然ではない（§143 の (B)）。
+
+    L116 … 窓の**外**が一様シフトに潰れるなら `ulift_mem_W` で無料。
+           窓の**内**だけが残るならそこが真の核。繋がらないなら**どこで止まるか 1 行**
+    H60  … `LiftTieCore` の実例で **`Lift1` と一様シフト `shiftr01 0 1` の差分**を出す。
+           食い違う列の性質（行 0 祖先鎖のどこか、行 1 の値）を L116 と突き合わせる
+
+## 核の同値（今日判明。すべて緑）
+
+    **`CoreSingleton` ＝ `CoreCap` ＝ `GraftAll`** … 同じ命題の 3 つの名前
+      `Lind.lean:181`/`:195` ／ `L105Cap.lean` §25 `coreCap_iff_graftAll`
+      `graft M [(0,b,c)] = cap M b c`（`Lind.lean:169`）で `y` が 1 列に見えていた
+
+⚠ **核の大小は仮定の本数でも量化子数でも測れない**（教訓 33）。今日 2 通りとも壊れた。
+正しい比べ方は**鎖を `file:line` で開いて何が肩代わりされているかを見る**こと。
 
 ## ★ どこで止まっていたか（§143。構文レベルで特定ずみ）
 
