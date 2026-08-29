@@ -325,8 +325,11 @@ def _wstar_cert(M):
     #   `TowerGraft2` ∧ `TowerExp` → `TowerOK`（`towerOK_of`）→ `Wstar_closed`
     #     ＋ `mem_Wstar` → **`Wstar`**
     # ⟹ **3 本そろって初めて** `Wstar` が立つ。片方だけでは立たない。
+    # `TowerOK2`（srow=2 の枝）だけで足りる: `TowerOK1` は `towerOK1_of_clause3`
+    # （`L53Subst.lean:1163`）で**証明ずみ**なので、`towerOK_of_split` で `TowerOK`、
+    # そこから `Wstar_closed` → `mem_Wstar` → `Wstar`（教訓 17）。
     CORES = {'MLIFTR', 'REVIVE', 'WSNOC'}
-    ok = ('WSTAR' in ASSUME) or CORES.issubset(ASSUME)
+    ok = ('WSTAR' in ASSUME) or ('TOWEROK2' in ASSUME) or CORES.issubset(ASSUME)
     if not ok or len(M) < 1:
         return None
     A, P = lastmin_split(M)
