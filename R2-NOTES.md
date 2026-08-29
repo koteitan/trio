@@ -632,3 +632,94 @@ R92b/R92c で「深さ 9 → 11 → 13 に上げても `unknown` が 702 のま�
 2. `split_lastTie_len`（長さの帰納）が必要。回数は `<= |R| - 1`
 3. **最終列は絶対にタイでない**（算術で出る）⟹ `split_lastTie` の `R₂` は**必ず空でない**。
    これを補題にすれば帰納が 1 段軽くなる可能性がある
+
+---
+
+## §R98 ★★★★ `TowerExp` は 100% 呼ばれる。**`TowerGraft2` が要るのは `|R| = 1` の 1 列族だけ**
+
+（team-lead は「課題 R97」と呼んだが、私の §R97（タイの本数）と衝突するので §R98 と改番。）
+
+### 分岐の実体（`Wset.lean:4527-4536` を読んだ）
+
+`towerOK_of (h2 : TowerGraft2) (he : TowerExp) : TowerOK` は `AR : Aop W u0 Wstar R` を
+`rcases` する:
+
+    節 1 `|R|<=1 ∧ lev R 0 = 0`     … `domT` と矛盾（`exfalso`）
+    節 2 `∀ n>=1, R⟦n⟧ ∈ Wstar`     … **`he` ＝ `TowerExp`**
+    節 3 `∃ m<u0, domT R m ∧ ∀ y ∈ W m, based y → graft R y ∈ Wstar`
+           `srow=1` … `tower1_mem`（**証明ずみ**）
+           `srow=2` … **`h2` ＝ `TowerGraft2`**
+
+### ★ (x1) 答え: **`|R| >= 2` では 節 3 ⟹ 節 2。だから `TowerExp` だけで足りる**
+
+算術（測定ではなく定義。使う補題はすべて緑）:
+
+    `domT R m` ⟹ `¬ hasParent R (srow R (|R|-1)) (|R|-1)` かつ `lev R (|R|-1) = m+1 > 0`
+    ⟹ `oper_eq_pred_of_noParent`（`Decrease.lean:37`、**`|R|-1 ≠ 0` が要る**）より
+       **`|R| >= 2` なら `R⟦n⟧ = Pred R = R.dropLast`（全 `n`）**
+    `graft_nil`（`Wset.lean:76`, `@[simp]`）  **`graft R [] = R.dropLast`**
+    `W_nil`（`Wset.lean:259`）               **`[] ∈ W m`**
+    `based_nil`（`Wset.lean:74`, `@[simp]`)  **`based []`**
+
+    ⟹ 節 3 に **`y := []`** を入れると `R.dropLast ∈ Wstar` が出る
+    ⟹ それは `|R| >= 2` では 節 2（`∀n>=1, R⟦n⟧ ∈ Wstar`）**そのもの**
+
+**⟹ `|R| >= 2` では `TowerGraft2` を使う必要がない。`TowerExp` に流せる。**
+
+### 実測（母集団は定理が実際に見る形だけ。教訓 19/20）
+
+母集団: `argOK R` ∧ `R ≠ []` ∧ `z<=1` ∧ `domT R m` ∧
+`hasParent ((0,v,z)::R) (srow R (|R|-1)) |R|`。
+列 行0∈{1,2,3}×行1∈{0,1,2,3}×行2∈{0,1,2}（36 列）、`|R|<=4`、`v∈{0..3}`, `z∈{0,1}`。
+**場面は全数 2,964,906 件。**
+
+    `graft R [] = R.dropLast`                2,964,906 / 2,964,906  **100%**
+    `|R|>=2`: `R⟦n⟧ = R.dropLast`（n=1..5）  2,964,816 / 2,964,816  **100%**
+    `|R|=1`:  `R⟦n⟧ = R`（Lean の恒等）              90 /        90  **100%**
+
+**どの核が本当に要るか:**
+
+    `|R| >= 2` ⟹ 節 3 から節 2 が出る ⟹ **`TowerExp` だけで足りる**   2,964,816  (100.0%)
+    `|R| = 1` かつ `srow = 1` ⟹ `tower1_mem`（証明ずみ）                     36  (  0.0%)
+    **`|R| = 1` かつ `srow = 2` ⟹ `TowerGraft2` が要る**                    54  (  0.0%)
+
+### ★★ しかも `|R| = 1` では `TowerExp` は**定理**（仮定ゼロ）
+
+`|R| = 1` のとき Lean の `oper` は**恒等**（`Trio.lean:98` の `if j1 = 0 then M`）なので
+
+    節 2 ＝ `R ∈ Wstar` ＝ `argOK R → ∀ v z a, z<=1 → 2v+z<=a → ((0,v,z)::R) ∈ W a`
+    結論 ＝ `∀ n>=1, ((0,v,z)::R)⟦n⟧ ∈ W a`
+    `|(0,v,z)::R| = 2 >= 2` なので `oper_mem_of_mem`（`Wchar.lean:63`、**緑**）が
+    前者から後者を**無条件で**出す
+
+⟹ **`TowerExp` の `|R|=1` の場合は証明ずみの補題から直接出る。**
+
+### ⟹ 残るのは **`|R| = 1` かつ `srow = 2` かつ 節 3** の 1 列族だけ
+
+その族は完全に書き下せる:
+
+    **`R = [(d, b, c)]`，`d >= 1`（argOK），`c >= 1`（srow=2），
+      `v < b` かつ `z < c`（根が孤児を復活させる `nextrel1` / `nextrel2` の条件）**
+
+実例: `R = [(1,1,1)]`, `v = 0`, `z = 0`, `m = 2`。
+このとき `(0,0,0) :: R = (0,0,0)(1,1,1)` ＝ **psi(Omega_omega)**（L3 の `srow2_branch_live` と同じ列）。
+
+⟹ **`TowerGraft2` の攻撃面は「1 列の `R`」だけ。** 一般の `TowerGraft2` を証明する必要はない。
+
+### (x3) `GraftFromExp` は**向きが逆**
+
+`GraftFromExp`（`L53Subst.lean:2644`）は **節 2 ⟹ 節 3**（`∀n, R⟦n⟧ ∈ Wstar` ⟹
+`∀y ∈ W m, based y → graft R y ∈ Wstar`）。
+`towerExp_of_graftFromExp (h2 : TowerGraft2) (hg : GraftFromExp) : TowerExp` は
+`TowerExp` を `TowerGraft2` から作る道。
+
+**私の結果は逆向き（節 3 ⟹ 節 2）で、しかも仮定ゼロ**（`y := []` を入れるだけ）。
+⟹ **`GraftFromExp` は要らない。** `TowerExp` を仮定するほうが素直で、
+`TowerGraft2` はその特別な場合（`|R|=1`）に縮む。
+
+### ⚠ 計器の注意（実際にここで偽の違反 90 件を出した）
+
+`tools/trio.py` の `expand` は**長さ 1 で `[]` を返す**が、Lean の `oper` は
+**`j1 = 0` で `M` そのもの（恒等）**。`|R| = 1` の場面を数える測定でここを間違えると
+**偽の違反が出る**（最初の実行で `|R|=1: R⟦n⟧ = R` が 90 件 VIOL になった）。
+`r98.py` に `oper_lean` を書いて直した。**`probe_cap2.py` の docstring が同じ注意を書いている。**
