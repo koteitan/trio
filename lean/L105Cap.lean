@@ -2320,6 +2320,74 @@ theorem srow_Lift1_last {X : TrioSeq} {d : ℕ} (h2 : 2 ≤ X.length) :
 
 ⟹ `WConvexLift1` の難所は**行 1 の木だけ**に絞られた。 -/
 
+
+/-! ## 35. ★★★★ 凸性経路の第二歩: **`Lift1` は行 1 の辺を増やさない**
+
+§34.3 で残った不安定性は `nextrel1` / `nextrel2` だけ。そこをさらに絞る。
+
+`Lift1 X d` の第 `j` 列の行 1 の増分は `c j := if le1 X 0 j then d else 0`。
+§30 の `le1_root_of_rtg0`（錐は行 0 の祖先について上方閉）より、
+**`b` が錐にいれば祖先 `a` も錐にいる** ⟹ **`c b ≤ c a`**（増分は祖先のほうが大きい）。
+
+⟹ `nextrel1` の**狭義不等式**の部分について:
+
+    `entry (Lift1 X d) 1 a < entry (Lift1 X d) 1 b`  ⟹  `entry X 1 a < entry X 1 b`
+
+すなわち **`Lift1` は行 0 の祖先鎖に沿った行 1 の辺を「増やさない」**。 -/
+
+theorem Lift1_mask_ge {X : TrioSeq} {d a b : ℕ}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    (hb : b < X.length) (hab : Relation.ReflTransGen (nextrel0 X) a b) :
+    (if le1 X 0 b then d else 0) ≤ (if le1 X 0 a then d else 0) := by
+  by_cases hcb : le1 X 0 b
+  · rw [if_pos hcb, if_pos (le1_root_of_rtg0 hr hb hab hcb)]
+  · rw [if_neg hcb]
+    exact Nat.zero_le _
+
+/-- **★★★ `Lift1` は行 0 の祖先鎖に沿った行 1 の辺を増やさない。** -/
+theorem entry1_lt_of_Lift1_lt {X : TrioSeq} {d a b : ℕ}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    (ha : a < X.length) (hb : b < X.length)
+    (hab : Relation.ReflTransGen (nextrel0 X) a b)
+    (h : entry (Lift1 X d) 1 a < entry (Lift1 X d) 1 b) :
+    entry X 1 a < entry X 1 b := by
+  rw [entry1_Lift1 ha, entry1_Lift1 hb] at h
+  have hm := Lift1_mask_ge (d := d) hr hb hab
+  omega
+
+/-- ⟹ `nextrel1` の狭義不等式の部分は `Lift1` で保たれる（片側）。 -/
+theorem nextrel1_lt_transfer {X : TrioSeq} {d a b : ℕ}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    (h : nextrel1 (Lift1 X d) a b) : entry X 1 a < entry X 1 b := by
+  have ha : a < X.length := by
+    have := h.1
+    rwa [Lift1_length] at this
+  have hb : b < X.length := by
+    have := h.2.1
+    rwa [Lift1_length] at this
+  refine entry1_lt_of_Lift1_lt hr ha hb ?_ h.2.2.2.1
+  have hle0 : le0 X a b := le0_Lift1.mp h.2.2.2.2.1
+  exact hle0.2.2
+
+/-! ### 35.1 ⟹ 不安定性の最終形: **最小性の節だけ**
+
+`nextrel1 M a b` の 5 つの連言のうち、`Lift1` で動くのは最後の 1 本だけになった:
+
+    `a < |M|` / `b < |M|` / `a < b` … 長さ不変（`Lift1_length`）⟹ **不変**
+    `entry M 1 a < entry M 1 b`      … **辺は増えない**（`entry1_lt_of_Lift1_lt`、上）
+    `le0 M a b`                      … **不変**（`le0_Lift1`、§10）
+    **`∀ j, a < j ∧ le0 M j b → entry M 1 b ≤ entry M 1 j`** … ここだけ動く
+
+そして動く向きも一方向である: `b` が錐の**外**にいるとき（`c b = 0`）、祖先 `j` が
+錐の**中**にいる（`c j = d`）と、最小性の要求が `entry X 1 b ≤ entry X 1 j + d` に
+**緩む**。⟹ **`Lift1` は行 1 の辺を「増やさない」が、最小性が緩んで
+新しい辺が立つことはある。**
+
+⟹ **`WConvexLift1` の残る不安定性は「最小性の緩み」1 点。**
+`b` が錐の外・祖先 `j` が錐の中、という配置でしか起きない。
+そしてその配置は **`j` と `b` の間にブロッカー（行 1 ≤ `v` の列）がある**ことを意味する
+（§30 の `le1_root_of_rtg0` の対偶）。⟹ **タイの位置と直結している。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
