@@ -870,5 +870,74 @@ theorem comm_of_noRevive {A N : TrioSeq} (n : ℕ) (hNne : N ≠ [])
     (fun j => le0_append_right) (fun j => le1_append_right)
 
 
+/-! ## ★★★ 課題 L61-a: 「段の中に親がある」だけで (COMM) が出る
+
+H11 の判別子（H44、`b>=2` の 3743 行、`t = 0/1/2` すべてで食い違い 0）:
+
+    段の最後の列が**段の中で親を持つ** ⟹ 復活 **0 / 3166**
+    段の最後の列が**段の中では孤児**   ⟹ 復活 **577 / 577**
+
+これは Lean で**証明できる**。理由は `nextrel` の**最小性**:
+
+> `N` 単体で親 `p0` があるなら、`A ++ N` の中で `|A| + p0` は
+> どの `j0 < |A|` より右にあり、しかも `entry` が真に小さい。
+> ⟹ `j0` の最小性の条件（間に自分より小さい列があってはいけない）を**破る**。
+> ⟹ `j0 < |A|` は親になれない。
+
+⟹ **`comm_of_noRevive` の `hall` は `hparN` から出る。仮定は「段内に親がある」1 本。** -/
+
+/-- **★★ 段内に親があれば、`A` を前に足しても親は `A` に逃げない。** -/
+theorem noRevive_of_hasParent {A N : TrioSeq} {i b : ℕ} (h : hasParent N i b)
+    {j0 : ℕ} (hj0 : nextR (A ++ N) i j0 (A.length + b)) : A.length ≤ j0 := by
+  by_contra hlt
+  push_neg at hlt
+  obtain ⟨p0, hp0, -⟩ := h
+  have hM : nextR (A ++ N) i (A.length + p0) (A.length + b) := nextR_append_right.mpr hp0
+  rw [nextR] at hj0 hM
+  by_cases hi0 : i = 0
+  · rw [if_pos hi0] at hj0 hM
+    have h1 := hj0.2.2.2.2 (A.length + p0) ⟨by omega, hM.2.2.1⟩
+    have h2 := hM.2.2.2.1
+    omega
+  · rw [if_neg hi0] at hj0 hM
+    by_cases hi1 : i = 1
+    · rw [if_pos hi1] at hj0 hM
+      have h1 := hj0.2.2.2.2.2 (A.length + p0) ⟨by omega, hM.2.2.2.2.1⟩
+      have h2 := hM.2.2.2.1
+      omega
+    · rw [if_neg hi1] at hj0 hM
+      have h1 := hj0.2.2.2.2.2 (A.length + p0) ⟨by omega, hM.2.2.2.2.1⟩
+      have h2 := hM.2.2.2.1
+      omega
+
+/-- **段内に親がある**（H11 の判別子。`MarkOne` の置き換え）。 -/
+def HasParentInBlock (N : TrioSeq) : Prop :=
+  hasParent N (srow N (N.length - 1)) (N.length - 1)
+
+open Classical in
+/-- **★★★ (COMM) は「段内に親がある」1 本だけで出る**（課題 L61-a）。
+
+`MarkOne`（`srow = 1`）は**十分条件**でしかなかった（`t = 1` で 274/2060 の例外）。
+`HasParentInBlock` が**必要十分**（実測は食い違い 0）で、しかも Lean で証明できる。 -/
+theorem comm_of_hasParentInBlock {A N : TrioSeq} (n : ℕ) (hNne : N ≠ [])
+    (hjNne : N.length - 1 ≠ 0)
+    (hzN : ¬(entry N 0 (N.length - 1) = 0 ∧ entry N 1 (N.length - 1) = 0 ∧
+      entry N 2 (N.length - 1) = 0))
+    (hblk : HasParentInBlock N) :
+    (A ++ N)⟦n⟧ = A ++ N⟦n⟧ :=
+  comm_of_noRevive n hNne hjNne hzN hblk
+    (fun _ hj0 => noRevive_of_hasParent hblk hj0)
+
+/-! ## 課題 L61-d: 復活は高々 3 回
+
+H11 の実測: 0 回 70.67% / 1 回 22.99% / 2 回 5.31% / **3 回 1.03% / 4 回以上 0 件**。
+⟹ 帰納法は**有限段**で閉じる（無限降下を作らなくてよい）。 -/
+
+/-- **(REV-k)**: 復活の回数に上限 `k` があること。実測では `k = 3`。 -/
+def ReviveBounded (k : ℕ) : Prop :=
+  ∀ (N : TrioSeq), ∃ m : ℕ, m ≤ k ∧
+    ∀ n : ℕ, m ≤ n → HasParentInBlock (N⟦n⟧)
+
+
 end L53
 end TRIO
