@@ -3212,6 +3212,92 @@ H12 が 2245 万件で測った「`le1 X 0 j ⟺ le1 (X.take k) 0 j`（`j < k �
 ⟹ **`TowerExpBigRow2` を割る新しい測度は、今日の道具では見つかりませんでした。**
 ⚠「原理的に不可能」ではない（教訓 13）。**今ある道具立てでは立たない**、の報告。 -/
 
+
+/-! ## 45. ★★★★★ 課題 L125: **塔の段は無料。難所は `Wself` だけ**
+
+team-lead の観察を定義から確かめた。**正しい。**
+
+`shTower Q e (n+1) = Q ++ shiftr01 e 0 (shTower Q e n)`（§43 `shTower_cons`）なので
+**塔の根は `Q` の根のまま**。⟹ `lev (shTower Q e (n+1)) 0 = lev Q 0`。
+
+そして `Wtower2.mem_Wself_iff`（`:2990`、**無条件・緑**）
+`M ∈ W u ↔ (M ∈ Wself ∧ lev M 0 ≤ u)` により
+
+> **`shTower Q e n ∈ W u` ⟺ `shTower Q e n ∈ Wself`（`lev Q 0 ≤ u` のもとで）。
+> ⟹ 段の勘定は完全に無料。残るのは `Wself` の閉包 1 点。** -/
+
+theorem entry_shTower_root {Q : TrioSeq} (hQne : Q ≠ []) (e n i : ℕ) :
+    entry (shTower Q e (n + 1)) i 0 = entry Q i 0 := by
+  rw [shTower_cons]
+  exact entry_append_left Q _ (List.length_pos_iff.mpr hQne)
+
+theorem lev_shTower_root {Q : TrioSeq} (hQne : Q ≠ []) (e n : ℕ) :
+    lev (shTower Q e (n + 1)) 0 = lev Q 0 := by
+  unfold lev
+  rw [entry_shTower_root hQne, entry_shTower_root hQne]
+
+/-- **`ShiftTowerClosedS` の `Wself` 版**（段を落とした形）。 -/
+def ShTowerSelf : Prop :=
+  ∀ (e n : ℕ) (Q : TrioSeq), Q ∈ Wself → Q ≠ [] →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    shTower Q e n ∈ Wself
+
+/-- **★★★★★ 段は無料**: `ShiftTowerClosedS` は `Wself` の閉包 1 点に落ちる。 -/
+theorem shiftTowerClosedS_of_self (h : ShTowerSelf) : ShiftTowerClosedS := by
+  intro u e n Q hQ hw
+  by_cases hQne : Q = []
+  · subst hQne
+    have : shTower ([] : TrioSeq) e n = [] := by
+      unfold shTower
+      simp
+    rw [this]
+    exact W_nil u
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · rw [shTower_zero]
+      exact W_nil u
+    · obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+      obtain ⟨hself, hlev⟩ := (mem_Wself_iff u Q).mp hQ
+      refine (mem_Wself_iff u _).mpr ⟨h e (k + 1) Q hself hQne hw, ?_⟩
+      rw [lev_shTower_root hQne]
+      exact hlev
+
+/-! ### 45.1 ⟹ `srow = 1` 枝は **`Wself` の塔閉包 1 点**
+
+§43 の `towerExp1_of_shiftTowerClosedS` と合わせると:
+
+    `TowerExp` の `srow = 1` 枝  ⟸ `ShiftTowerClosedS` ⟸ **`ShTowerSelf`**
+
+そして `ShTowerSelf` には**段が一切現れない**。R2 が実測した
+「段は木のどこでも消費されない」（170 万ノード、破れ 0）と一致する。
+
+### 45.2 ★ `srow = 2` 側でも段は無料
+
+`Wset.entry0_Lift1`（`:948`）`entry (Lift1 X d) 0 i = entry X 0 i` ——
+**`Lift1` は行 0 を動かさない**（team-lead の未確認点。開いて確認した。正しい）。
+そして `graft R y = R.dropLast ++ shiftr01 e 0 y` は行 0 を `e` ずらすだけ。
+
+⟹ `oper_cons_tower2` の塔 `(0,v,z) :: graft R (Lift1 (X⟦k⟧) e')` も
+
+    根は `(0,v,z)`（深さ 0）、それ以外は `R.dropLast`（`argOK` で深さ ≥ 1）と
+    `e = entry R 0 (|R|-1) ≥ 1` だけずれた列 ⟹ **深さ ≥ 1**
+
+で、**根が変わらない ⟹ `lev = 2v+z ≤ a`** ⟹ `mem_Wself_iff` で**段は無料**。
+（`lev` は行 1・行 2 だけを見るので、`Lift1` が根の行 1 を上げないことも要る ——
+塔の根は `graft` の外にある `(0,v,z)` なので影響を受けない。）
+
+⟹ **`srow = 1` でも `srow = 2` でも、段の勘定は完全に無料。難所は `Wself` の閉包だけ。**
+
+### 45.3 ⚠ `ShTowerSelf` も `W_add` では組めない
+
+§131（team-lead）の算術は `Wself` 版にもそのまま当たる:
+
+    `shTower Q e (n+1) = shTower Q e n ++ shiftr01 (n*e) 0 Q`（`Wtower2.shTower_succ`）
+    `A` は `k=0` の塊として `Q` を含み、`Q` の根は深さ 0（`Q = (0,v,z) :: …`）
+    `entry B 0 0 = 0 + n*e = n*e ≥ 1`（`n ≥ 1`, `e ≥ 1`）
+    ⟹ `not_rsum_of_root_mem`（§14）が当たり **`rsum` は破れる**
+
+⟹ **`Wself` の側を `Aop` の節 2／節 3 で直接攻めるしかない。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
