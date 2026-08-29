@@ -7961,6 +7961,132 @@ theorem nextrel1_gexp_no_enter_out {M : TrioSeq} {Lb d0 d1 n k q c : ℕ}
 ⚠ **R2 の実測（`|Q|=6`・分母 117 万・破れ 0、G2 ありでも破れ 0）と一致します。**
 **そして機構は「G2 でも越えられない」で、R2 が示唆した方向そのものです。** -/
 
+/-! ## 108. ★★★★★★★ **`le1` の鎖もブロックを出られません**（F2a の組み立ての最後の 1 本）
+
+§87（錐の中）＋ §107（錐の外）で `nextrel1` の 1 歩が塞がった。鎖に沿って繰り返す。
+
+⚠ **1 か所だけ注意**: `nextrel1` はブロックの**根**には外から入れる（§87/§107 は `q ≥ 1` を要求）。
+だが **`le1 T 0 (ブロックの根)` は真**（§98 `gexp_blockRoot_cone`）なので、
+**根が鎖に乗ると目標も錐の中になってしまう** ⟹ 目標が錐の外なら**根は鎖に乗らない**。 -/
+
+open Classical in
+theorem le1_gexp_in_block {M : TrioSeq} {Lb d0 d1 n k : ℕ}
+    (hlen : 0 + Lb + 1 = M.length) (hLb : 0 < Lb) (hk : k < n) (hd1pos : 0 < d1)
+    (hd0e : entry M 0 (0 + Lb) = entry M 0 0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + Lb)) :
+    ∀ q, q < Lb → 0 < q → ¬ le1 M 0 (0 + q) → ∀ a,
+      Relation.ReflTransGen (nextrel1 (gexp M 0 Lb d0 d1 n)) a (0 + (k * Lb + q)) →
+      k * Lb ≤ a := by
+  have hup : ∀ l, 0 < l → l ≤ 0 + Lb → entry M 0 0 < entry M 0 l :=
+    fun l hl0 hl1 => hr0 l hl0 (by omega)
+  intro q
+  induction q using Nat.strong_induction_on with
+  | _ q ih =>
+    intro hq hq1 hout a ha
+    rcases ha.cases_tail with heq | ⟨c, hc1, hc2⟩
+    · omega
+    · have hcge : k * Lb ≤ c := by
+        by_cases hcone : le1 M 0 (0 + q)
+        · exact absurd hcone hout
+        · exact nextrel1_gexp_no_enter_out hlen hLb hk hq hd1pos hd0e hr0 hlp hcone hc2
+      have hclt : c < 0 + (k * Lb + q) := hc2.2.2.1
+      obtain ⟨q', hq'⟩ : ∃ q', c = 0 + (k * Lb + q') := ⟨c - k * Lb, by omega⟩
+      subst hq'
+      have hq'lt : q' < Lb := by omega
+      -- 目標が錐の外なら `c` も錐の外（`c` が錐の中なら 1 歩で目標も錐の中になる）
+      have houtc : ¬ le1 M 0 (0 + q') := by
+        intro hcone'
+        refine hout ?_
+        rw [← gexp_cone_mir_zero hlen hLb hk hq hd1pos hd0e hr0 hlp]
+        have hcc : le1 (gexp M 0 Lb d0 d1 n) 0 (0 + (k * Lb + q')) := by
+          rw [gexp_cone_mir_zero hlen hLb hk hq'lt hd1pos hd0e hr0 hlp]
+          exact hcone'
+        exact ⟨hcc.1, hc2.2.1, hcc.2.2.tail hc2⟩
+      rcases Nat.eq_zero_or_pos q' with rfl | hq'pos
+      · exact absurd (le1_refl (by omega)) houtc
+      · exact ih q' (by omega) (by omega) hq'pos houtc a hc1
+
+/-! ### 108.1 ⟹ F2a の道具が全部揃いました
+
+    §103.1-2 `not_le1_zero_src` … `nextrel2 T a last` の `a` は錐の外
+    **§108（上）** … **`le1 T a last`（目標が錐の外）は `a` をブロックに閉じ込める**
+    §106 `nextrel2_lastBlock_absurd` … 同じブロックの中には行 2 の親は無い
+    **⟹ 矛盾。F2a は落ちます。**
+
+⚠ **`q' = 0`（ブロックの根）の枝は「`le1 M 0 (0+0)` は反射で真」なので
+`houtc` に矛盾して消えます** —— 根が鎖に乗ると目標が錐の中になってしまうからです。 -/
+
+/-! ## 109. ★★★★★★★ **F2a は定理**（塔の最後のブロック）
+
+§108 を `mTower` の言葉に移し（§85 と同じ手順）、§106 と合わせて組み立てる。 -/
+
+open Classical in
+/-- **§108 の `mTower` 版**: 目標が錐の外なら `le1` の祖先は同じブロックの中。 -/
+theorem le1_mTower_in_block {M : TrioSeq} {d e n k q : ℕ} (hM2 : 2 ≤ M.length)
+    (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hk : k < n) (hq : q < M.dropLast.length) (hq1 : 0 < q)
+    (hout : ¬ le1 M 0 (0 + q)) :
+    ∀ a, Relation.ReflTransGen (nextrel1 (mTower M.dropLast d e n)) a
+        (k * M.dropLast.length + q) →
+      k * M.dropLast.length ≤ a := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hlen : 0 + M.dropLast.length + 1 = M.length := by rw [hdl]; omega
+  have hLb : 0 < M.dropLast.length := by rw [hdl]; omega
+  have hgexp : gexp M 0 M.dropLast.length d e n = mTower M.dropLast d e n := by
+    rw [gexp_zero_eq_mTower (by omega), hdl, ← List.dropLast_eq_take]
+  intro a ha
+  refine le1_gexp_in_block hlen hLb hk hd1pos hd0e hr0 hlp q hq hq1 hout a ?_
+  rw [hgexp, Nat.zero_add]
+  exact ha
+
+open Classical in
+/-- **★★★★★★★ F2a**: `Q` の末尾列が「錐の外 ∧ 行 2 の孤児」なら、塔でも行 2 の孤児。 -/
+theorem mTower_orphan_row2 {M : TrioSeq} {d e n' : ℕ} (hM2 : 2 ≤ M.length)
+    (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hQ2 : 2 ≤ M.dropLast.length)
+    (hout : ¬ le1 M 0 (0 + (M.dropLast.length - 1)))
+    (horph : ¬ hasParent M.dropLast 2 (M.dropLast.length - 1)) :
+    ¬ hasParent (mTower M.dropLast d e (n' + 1)) 2
+      ((mTower M.dropLast d e n').length + (M.dropLast.length - 1)) := by
+  have hLb : 0 < M.dropLast.length := by omega
+  have hAlen : (mTower M.dropLast d e n').length = n' * M.dropLast.length := by
+    rw [mTower_length]
+  rintro ⟨a, ha, -⟩
+  have hnr : nextrel2 (mTower M.dropLast d e (n' + 1)) a
+      ((mTower M.dropLast d e n').length + (M.dropLast.length - 1)) := by
+    unfold nextR at ha
+    rw [if_neg (by omega), if_neg (by omega)] at ha
+    exact ha
+  have hge : n' * M.dropLast.length ≤ a := by
+    have h := le1_mTower_in_block (n := n' + 1) (k := n') hM2 hd1pos hd0e hr0 hlp
+      (by omega) (show M.dropLast.length - 1 < M.dropLast.length by omega)
+      (by omega) hout a ?_
+    · exact h
+    · rw [hAlen] at hnr
+      exact hnr.2.2.2.2.1.2.2
+  have halt : a < (mTower M.dropLast d e n').length + (M.dropLast.length - 1) :=
+    hnr.2.2.1
+  obtain ⟨qa, hqa⟩ : ∃ qa, a = (mTower M.dropLast d e n').length + qa :=
+    ⟨a - n' * M.dropLast.length, by omega⟩
+  subst hqa
+  rw [mTower_succ] at hnr
+  exact nextrel2_lastBlock_absurd horph hnr
+
+/-! ### 109.1 ⟹ B（`MTowerOrphan`）の 2 枝が両方定理になりました
+
+    **F1** … §102 `gexp_orphan_row1`（任意の `(k,q)`）
+    **F2a** … **§109（上）**
+
+**⟹ 残るのは F2b（`z = 1`）だけで、そこは §93 で「命題が偽」と確定しています。**
+**⟹ R2 の (z5)（F1 376,164 ＋ F2a 933,768 ＝ 130 万件・破れ 0）が定理になりました。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
