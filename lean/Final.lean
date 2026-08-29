@@ -867,9 +867,18 @@ theorem no_infinite_expansion_of_mTowerClosedS (htow : L105.MTowerClosedS) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_mTowerClosedS htow))
 
-/-! ⚠ `L105.mTower_mem_of_zeroRow2`（`L105Cap.lean` §76、**仮定ゼロ**）が行 2 ≡ 0 の枝を
-落とすので、残核はさらに **`L105.MTowerClosedRow2`（6 量化 / 3 前提）** に細る。
-その頂点定理（`TRIO_terminates_of_mTowerClosedRow2`）は **`leanman build` のあとで足す**
-（現在の olean は §76 より前）。 -/
+/-! `L105.mTower_mem_of_zeroRow2`（`L105Cap.lean` §76、**仮定ゼロ**）が行 2 ≡ 0 の枝を
+落とすので、残核はさらに **`L105.MTowerClosedRow2`（6 量化 / 3 前提）** に細る。 -/
+
+/-- **Trio sequences terminate**, modulo the masked copy-tower closure
+*restricted to blocks with a nonzero row 2*. -/
+theorem TRIO_terminates_of_mTowerClosedRow2 (h : L105.MTowerClosedRow2) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_mTowerClosedS (L105.mTowerClosedS_of_row2 h)
+
+/-- **No infinite expansion sequence**, from the row-2 restricted tower closure. -/
+theorem no_infinite_expansion_of_mTowerClosedRow2 (h : L105.MTowerClosedRow2) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_mTowerClosedS (L105.mTowerClosedS_of_row2 h)
 
 end TRIO
