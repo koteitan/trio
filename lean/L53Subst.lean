@@ -1974,5 +1974,113 @@ theorem towerOK2_of_noTie {v m : ℕ} {R : TrioSeq}
       exact hgr _ hin hb (hprop n).1 v 0 (2 * v) (by omega) (by omega)
 
 
+/-! ## ★★★ 課題 L78: 狭義版
+
+条件の整理:
+
+    `TieFree`（錐の包含）           … 狭義に取り直すと**要らなくなった**
+    無タイ `∀ p ∈ R, p.2.1 ≠ v`     … `tieSyn_holds` / `liftStage_of_noTie` が使う
+    **狭義 `∀ p ∈ R, v < p.2.1`**   … `liftStage_of_strict` が使う。**本線**
+
+⚠ team-lead の指摘どおり、**分解も直す必要がある**。狭義の否定は
+`∃ p ∈ R, p.2.1 ≤ v` なので、`= v` で割る `split_lastTie` では届かない。
+⟹ **述語版に一般化**して `≤ v` でも割れるようにする。 -/
+
+/-- **★★ 最後の `P` で割る**（`split_lastTie` の述語版）。 -/
+theorem split_last_pred {P : ℕ × ℕ × ℕ → Prop} [DecidablePred P] :
+    ∀ {R : TrioSeq}, (∃ p ∈ R, P p) →
+    ∃ R₁ q R₂, R = R₁ ++ [q] ++ R₂ ∧ P q ∧ (∀ p ∈ R₂, ¬ P p) := by
+  intro R
+  induction R using List.reverseRecOn with
+  | nil => intro h; obtain ⟨p, hp, -⟩ := h; simp at hp
+  | append_singleton R' q ih =>
+      intro h
+      by_cases hq : P q
+      · exact ⟨R', q, [], by simp, hq, by simp⟩
+      · have h' : ∃ p ∈ R', P p := by
+          obtain ⟨p, hp, hpv⟩ := h
+          rcases List.mem_append.mp hp with hp | hp
+          · exact ⟨p, hp, hpv⟩
+          · simp only [List.mem_singleton] at hp
+            subst hp
+            exact absurd hpv hq
+        obtain ⟨R₁, q', R₂, hEq, hq', hR₂⟩ := ih h'
+        refine ⟨R₁, q', R₂ ++ [q], ?_, hq', ?_⟩
+        · rw [hEq, List.append_assoc, List.append_assoc]
+        · intro p hp
+          rcases List.mem_append.mp hp with hp | hp
+          · exact hR₂ p hp
+          · simp only [List.mem_singleton] at hp
+            subst hp
+            exact hq
+
+/-- **狭義版の分解**: `v` 以下の列で割ると、右側は**狭義**になる。 -/
+theorem split_lastLe {v : ℕ} {R : TrioSeq} (h : ∃ p ∈ R, p.2.1 ≤ v) :
+    ∃ R₁ q R₂, R = R₁ ++ [q] ++ R₂ ∧ q.2.1 ≤ v ∧ (∀ p ∈ R₂, v < p.2.1) := by
+  obtain ⟨R₁, q, R₂, hEq, hq, hR₂⟩ :=
+    split_last_pred (P := fun p => p.2.1 ≤ v) h
+  exact ⟨R₁, q, R₂, hEq, hq, fun p hp => by have := hR₂ p hp; omega⟩
+
+/-- 狭義か、`≤ v` の列で割れるか。 -/
+theorem strict_or_split {v : ℕ} (R : TrioSeq) :
+    (∀ p ∈ R, v < p.2.1) ∨
+      ∃ R₁ q R₂, R = R₁ ++ [q] ++ R₂ ∧ q.2.1 ≤ v ∧ (∀ p ∈ R₂, v < p.2.1) := by
+  classical
+  by_cases h : ∃ p ∈ R, p.2.1 ≤ v
+  · exact Or.inr (split_lastLe h)
+  · left
+    intro p hp
+    by_contra hc
+    exact h ⟨p, hp, by omega⟩
+
+open Classical in
+/-- **★★★★ 狭義版の `TowerOK2`**（課題 L78-1）。`TieFree` も `mlift` も経由しない。 -/
+theorem towerOK2_of_strict {v m : ℕ} {R : TrioSeq}
+    (hR : argOK R) (hRne : R ≠ []) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hz' : entry R 2 (R.length - 1) = 1)
+    (hvw : v ≤ entry R 1 (R.length - 1))
+    (hgr : ∀ y ∈ W m, based y → graft R y ∈ Wstar)
+    (hpM : hasParent (((0, v, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length)
+    (hprop : ∀ n : ℕ,
+      argOK (graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v))) ∧
+      (∀ p ∈ graft R (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+        (entry R 1 (R.length - 1) - v)), v < p.2.1)) :
+    ∀ n : ℕ, (((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W (2 * v) := by
+  have hfits : 2 * v + 2 * (entry R 1 (R.length - 1) - v) ≤ m := by
+    have h9 := tower2_stage_fits (v := v) (z := 0) rfl hd hi2 hvw
+    omega
+  have hzero := oper_cons_zero (v := v) (z := 0) hR hRne hd hpM
+  intro n
+  induction n with
+  | zero =>
+      rw [hzero]
+      exact W_nil _
+  | succ n ih =>
+      rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+      have hin : Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+          (entry R 1 (R.length - 1) - v) ∈ W m := by
+        cases n with
+        | zero =>
+            rw [hzero]
+            simpa using W_nil m
+        | succ k =>
+            rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM] at ih ⊢
+            exact W_mono hfits (liftStage_of_strict (hprop k).1 (hprop k).2 ih)
+      have hb : based (Lift1 ((((0, v, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧)
+          (entry R 1 (R.length - 1) - v)) := by
+        refine based_Lift1 ?_
+        cases n with
+        | zero =>
+            rw [hzero]
+            exact based_nil
+        | succ k =>
+            rw [oper_cons_tower2 (m := m) hR hRne hd hi2 hpM]
+            exact based_cons_root v 0 _
+      exact hgr _ hin hb (hprop n).1 v 0 (2 * v) (by omega) (by omega)
+
+
 end L53
 end TRIO
