@@ -3756,6 +3756,75 @@ theorem towerOK_of_prefixCopies (hpc : PrefixCopies) (h : WSnocOpen1)
   towerOK_of_wsnoc_graft (wsnoc_of_prefixCopies hpc h) hg
 
 
+/-! ### 課題 L98-a: `W_flatMap_copies` が `A = []` を使うのは **`W_add` の `rsum` 1 か所**
+
+`Wset.W_flatMap_copies`（`Wset.lean:2552`）の証明:
+
+```
+| succ n ih =>
+    rw [List.range_succ, List.flatMap_append]     -- Q^(n+1) = Q^n ++ Q
+    refine W_add ih hQ ?_                         -- ← ここ
+    intro p hp; rcases … ; exact hQr p …          -- 全部の列が Q の列なので `hQr` で足りる
+```
+
+接頭辞 `A` を付けると `W_add` の `rsum` は `(A ++ Q^n) ++ Q` の**全列**に
+`entry Q 0 0 ≤ p.1` を要求する。`Q^n` と `Q` の列は `hQr` で足りるが、
+**`A` の列は足りない**。⟹ 増えるのはちょうど
+
+    **`∀ q ∈ A, entry Q 0 0 ≤ q.1`**（＝ `rsum A Q`）
+
+**それさえあれば証明は逐語で伸びる**（下の `prefixCopies_of_rsum`、緑）。 -/
+
+/-- **★★★ `rsum` があれば `PrefixCopies` は定理**（証明は `W_flatMap_copies` の逐語の伸長）。 -/
+theorem prefixCopies_of_rsum {u : ℕ} {A Q : TrioSeq} (hA : A ∈ W u) (hQ : Q ∈ W u)
+    (hQr : ∀ q ∈ Q, entry Q 0 0 ≤ q.1) (hAr : ∀ q ∈ A, entry Q 0 0 ≤ q.1) :
+    ∀ n : ℕ, A ++ ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  intro n
+  induction n with
+  | zero => simpa using hA
+  | succ k ih =>
+      have hsplit : A ++ ((List.range (k + 1)).flatMap fun _ => Q)
+          = (A ++ ((List.range k).flatMap fun _ => Q)) ++ Q := by
+        rw [List.range_succ, List.flatMap_append]
+        simp [List.append_assoc]
+      rw [hsplit]
+      refine W_add ih hQ ?_
+      intro p hp
+      rcases List.mem_append.mp hp with hp | hp
+      · rcases List.mem_append.mp hp with hp | hp
+        · exact hAr p hp
+        · rw [List.mem_flatMap] at hp
+          obtain ⟨-, -, hp⟩ := hp
+          exact hQr p hp
+      · exact hQr p hp
+
+/-- **⟹ `PrefixCopies` の**開いている**のは「接頭辞に `Q` の根より浅い列がある」場合だけ。**
+（`A ++ Q ∈ W u` から `A ∈ W u` は `W_take` で無料、`Q ∈ W u` は仮定に要る。） -/
+def PrefixCopiesOpen : Prop :=
+  ∀ (u n : ℕ) (A Q : TrioSeq), A ∈ W u → Q ∈ W u →
+    (∀ q ∈ Q, entry Q 0 0 ≤ q.1) →
+    (∃ q ∈ A, q.1 < entry Q 0 0) →
+    A ++ ((List.range n).flatMap fun _ => Q) ∈ W u
+
+theorem prefixCopies_of_open (h : PrefixCopiesOpen) {u : ℕ} {A Q : TrioSeq}
+    (hA : A ∈ W u) (hQ : Q ∈ W u) (hQr : ∀ q ∈ Q, entry Q 0 0 ≤ q.1) (n : ℕ) :
+    A ++ ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  classical
+  by_cases hc : ∃ q ∈ A, q.1 < entry Q 0 0
+  · exact h u n A Q hA hQ hQr hc
+  · push_neg at hc
+    exact prefixCopies_of_rsum hA hQ hQr (fun q hq => hc q hq) n
+
+/-! ### L98-b の見立て
+
+我々の場面では `A = C.take j0`、`Q = C.drop j0`、`entry Q 0 0 = entry C 0 j0` なので
+
+    `rsum A Q`  ⟺  **`j0` は `C` の最上位（深さ最小）の位置以降にある**
+
+`split_lastMin`（この file、緑）は `C` を**最後の最上位の木**で切るので、
+「`j0` がその切れ目以降か」がそのまま判定条件になる。R1 の R79 が測っている量。 -/
+
+
 /-! ### 課題 L96-b: `srow = 0` の枝で **`snoc_flat_root` から増えるのは接頭辞だけ**
 
 `Trio.oper` の定義（`Trio.lean:98`）を読むと、`i1 = srow M j1` に対し
