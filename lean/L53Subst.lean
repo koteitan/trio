@@ -3146,5 +3146,75 @@ theorem graft_cons_mem_of_revive (hrev : Subst1gRevive) {v z m : ℕ} {R y : Tri
   rwa [hres] at hmain
 
 
+/-! ## ★★★★★ 課題 L91: 持ち上げ核は **`d = 1`** に落ちる
+
+### L91-a の答え: `ulift_mem_W` の型の帰納は**節 2 で同じ壁**に当たる
+
+`ulift_mem_W`（`Wslift.lean:461`）は `A2'` で 3 節を追うが、節 2 と節 3 はどちらも
+`ulift_step`（`Wslift.lean` 内）に落ち、そこは
+`(shiftr01 0 d X)⟦n⟧` を `shiftr01 0 d (X⟦n⟧)` に直す —— **一様シフトの可換性**を使う。
+`mliftR` 版はそこで課題 L88 の非可換性（`j0 = 0` で 25.2% 破れ）に当たる。
+
+    節 1（底、`|X| ≤ 1`）  … `Lift1` でも同じに通る（列が 1 本なら錐は自明）
+    **節 2（展開）        … ⛔ 可換性が要る。ここが壁**
+    節 3（graft）          … `aop_clause3_to_clause2` で節 2 に落ちるので同じ壁
+
+### ★★ L91-b の副産物: **`d` は 1 に落とせる**
+
+`Wset.Lift1_Lift1 : Lift1 (Lift1 X t) s = Lift1 X (t + s)`（**既存・無条件**）は
+「錐は持ち上げで不変」を言っている。⟹ **`d` の帰納で単位持ち上げに還元できる。**
+サンドイッチ（`Le1_Lift1_oper` / `Le1_oper_Lift1_shiftr01`）の**窓の幅も 1 になる**ので、
+`WConvex` に要るのは「行 1 が高々 1 しか違わない上下の witness」の場合だけ。 -/
+
+/-- **単位持ち上げ**だけの (WL)。 -/
+def LiftStage1 : Prop :=
+  ∀ (m : ℕ) (X : TrioSeq), X ∈ W m → Lift1 X 1 ∈ W (m + 2)
+
+/-- **★★★★★ (WL) は単位持ち上げに還元される。** -/
+theorem liftStage_of_unit (h : LiftStage1) : LiftStage := by
+  intro m d X hX
+  induction d with
+  | zero => simpa using hX
+  | succ k ih =>
+      have h1 := h (m + 2 * k) (Lift1 X k) ih
+      rw [Lift1_Lift1] at h1
+      have he : m + 2 * k + 2 = m + 2 * (k + 1) := by omega
+      rw [he] at h1
+      exact h1
+
+/-- 逆も自明なので**同値**。 -/
+theorem liftStage1_of_liftStage (h : LiftStage) : LiftStage1 :=
+  fun m X hX => by simpa using h m 1 X hX
+
+theorem liftStage_iff_unit : LiftStage ↔ LiftStage1 :=
+  ⟨liftStage1_of_liftStage, liftStage_of_unit⟩
+
+/-- ⟹ **核も `d = 1` だけになる。** -/
+theorem liftTie_of_unit (h : LiftStage1) : LiftTie :=
+  liftTie_of_liftStage (liftStage_of_unit h)
+
+theorem towerOK_of_unit_graft (h : LiftStage1) (hg : GraftFromExp) : TowerOK :=
+  towerOK_of_liftTie_graft (liftTie_of_unit h) hg
+
+/-- **サンドイッチの窓は `d = 1` では幅 1**: 上端と下端は行 1 で高々 `1` しか違わない。 -/
+theorem sandwich_window_one (Y : TrioSeq) (j : ℕ) :
+    entry (shiftr01 0 1 Y) 1 j ≤ entry (Lift1 Y 1) 1 j + 1 := by
+  classical
+  rcases Nat.lt_or_ge j Y.length with hj | hj
+  · rw [entry1_shiftr1 hj, entry1_Lift1 hj]
+    split <;> omega
+  · rw [entry1_out (by rw [shiftr01_length]; omega),
+      entry1_out (by rw [Lift1_length]; omega)]
+    omega
+
+/-- 幅 1 の窓しか要らない凸性。`WConvex` より真に短い文。 -/
+def WConvex1 : Prop :=
+  ∀ (a : ℕ) (A B C : TrioSeq), A ∈ W a → C ∈ W a → Le1 A B → Le1 B C →
+    (∀ j, entry C 1 j ≤ entry A 1 j + 1) → B ∈ W a
+
+theorem wconvex1_of_wconvex (h : WConvex) : WConvex1 :=
+  fun a A B C hA hC hAB hBC _ => h a A B C hA hC hAB hBC
+
+
 end L53
 end TRIO
