@@ -2680,5 +2680,108 @@ theorem towerOK_of_liftTie_graft (hlt : LiftTie) (hg : GraftFromExp) : TowerOK :
 （`GraftFromExp`）で、そこは `TowerExp2Root` でも消えていない。 -/
 
 
+/-! ## ★★★★★ 課題 L85-c: 核は「閾値の 1 段ぶん」だった
+
+`le1_zero_iff`（`Lcone.lean:36`、緑）は、根が行 0 で狭義最浅なら
+
+    `le1 X 0 j`  ⟺  **根以外の**行 0 祖先がすべて `entry X 1 0` より上
+
+と言う。一方 `coneV X w j` は**根を含む**祖先すべてが `w` より上。
+⟹ 根を判定から外した錐 `coneVR` を入れると、両方が**同じ 1 つの族**になる:
+
+    `mlift X w d`  = `mliftR X w d`（`w < v0` のとき）  … **`mlift_mem_W` で証明ずみ**
+    `Lift1 X d`    = `mliftR X v0 d`                     … **これが欲しい**
+
+**⟹ 核は「閾値を `v0 - 1` から `v0` へ 1 段上げてよいか」だけ。**
+`Row1Mono` も `Row1DownLocal` も経由しない、いちばん鋭い形。 -/
+
+/-- 根を閾値の判定から**外した**行 1 錐。 -/
+def coneVR (X : TrioSeq) (w j : ℕ) : Prop :=
+  ∀ y, Relation.ReflTransGen (nextrel0 X) y j → y ≠ 0 → w < entry X 1 y
+
+theorem coneVR_zero (X : TrioSeq) (w : ℕ) : coneVR X w 0 := by
+  intro y hy hy0
+  have := nextrel0_rtrancl_index_le hy
+  omega
+
+/-- `w < 根の行 1` なら 2 つの錐は一致する。 -/
+theorem coneV_iff_coneVR {X : TrioSeq} {w j : ℕ} (hw : w < entry X 1 0) :
+    coneV X w j ↔ coneVR X w j := by
+  constructor
+  · intro h y hy _; exact h y hy
+  · intro h y hy
+    by_cases hy0 : y = 0
+    · subst hy0; exact hw
+    · exact h y hy hy0
+
+open Classical in
+/-- 根を外した閾値のマスクリフト。 -/
+noncomputable def mliftR (X : TrioSeq) (w d : ℕ) : TrioSeq :=
+  (List.range X.length).map fun j =>
+    ((entry X 0 j, entry X 1 j + (if coneVR X w j then d else 0),
+      entry X 2 j) : ℕ × ℕ × ℕ)
+
+open Classical in
+/-- **★★ `Lift1` は閾値 `v0` の `mliftR` そのもの。** -/
+theorem Lift1_eq_mliftR {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l) (d : ℕ) :
+    Lift1 X d = mliftR X (entry X 1 0) d := by
+  unfold Lift1 mliftR
+  refine List.map_congr_left ?_
+  intro j hj
+  rw [List.mem_range] at hj
+  have hif : (if le1 X 0 j then d else 0)
+      = (if coneVR X (entry X 1 0) j then d else 0) := by
+    by_cases hc : le1 X 0 j
+    · have hcv : coneVR X (entry X 1 0) j := (le1_zero_iff hr hj).mp hc
+      rw [if_pos hc, if_pos hcv]
+    · have hcv : ¬ coneVR X (entry X 1 0) j :=
+        fun h => hc ((le1_zero_iff hr hj).mpr h)
+      rw [if_neg hc, if_neg hcv]
+  rw [hif]
+
+open Classical in
+/-- **`mlift` は閾値 `w < v0` の `mliftR`。** -/
+theorem mlift_eq_mliftR {X : TrioSeq} {w : ℕ} (hw : w < entry X 1 0) (d : ℕ) :
+    mlift X w d = mliftR X w d := by
+  unfold mlift mliftR
+  refine List.map_congr_left ?_
+  intro j _
+  have hif : (if coneV X w j then d else 0)
+      = (if coneVR X w j then d else 0) := by
+    by_cases hc : coneV X w j
+    · rw [if_pos hc, if_pos ((coneV_iff_coneVR hw).mp hc)]
+    · rw [if_neg hc, if_neg (fun h => hc ((coneV_iff_coneVR hw).mpr h))]
+  rw [hif]
+
+/-- **証明ずみの範囲**: 閾値が根の行 1 より**真に下**なら `mliftR` は `W` を運ぶ。 -/
+theorem mliftR_mem_W_of_lt {m w d : ℕ} {X : TrioSeq} (hw : w < entry X 1 0)
+    (hX : X ∈ W m) : mliftR X w d ∈ W (m + 2 * d) := by
+  rw [← mlift_eq_mliftR hw]
+  exact mlift_mem_W X hX
+
+/-- **★★★★★ 核の正確な形**: 上の `mliftR_mem_W_of_lt` を閾値 `w = entry X 1 0`
+（＝ 1 段上）まで伸ばすこと。**それだけ。** -/
+def MliftR : Prop :=
+  ∀ (m w d : ℕ) (X : TrioSeq), X ∈ W m → mliftR X w d ∈ W (m + 2 * d)
+
+/-- **⟹ `LiftTie` は `MliftR` から出る。** -/
+theorem liftTie_of_mliftR (h : MliftR) : LiftTie := by
+  intro m d v z R hargOK _ hX
+  rw [Lift1_eq_mliftR (root_row0_min hargOK)]
+  exact h m _ d _ hX
+
+/-- **⟹ `(WL)` 全体も。**（`argOK` の根つき列に限る形で十分。） -/
+theorem liftStage_cons_of_mliftR (h : MliftR) {m d v z : ℕ} {R : TrioSeq}
+    (hargOK : argOK R) (hX : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W m) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (m + 2 * d) := by
+  rw [Lift1_eq_mliftR (root_row0_min hargOK)]
+  exact h m _ d _ hX
+
+/-- **⟹ `TowerOK` は `MliftR` ＋ `GraftFromExp` から出る。** -/
+theorem towerOK_of_mliftR_graft (h : MliftR) (hg : GraftFromExp) : TowerOK :=
+  towerOK_of_liftTie_graft (liftTie_of_mliftR h) hg
+
+
 end L53
 end TRIO
