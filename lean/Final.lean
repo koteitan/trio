@@ -323,6 +323,42 @@ theorem no_infinite_expansion_of_towerExp (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_towerOK (L105.towerOK_of_towerExp he)
 
+/-! ### ★★★★★★ 課題 L121/L122: 核を `TowerExpBigRow2` まで絞る
+
+`TowerExp` からさらに 2 枝が**仮定ゼロ**で落ちる（`L105Cap.lean` §39-40）:
+
+    `|R| = 1`                  … `L105.towerExp_singleton`
+                                 （`oper` は長さ 1 で恒等、`Wchar.oper_of_length_one` `:31`
+                                   ＋ `Wchar.oper_mem_of_mem` `:63`）
+    `R.dropLast` の行 2 ≡ `z`  … `L105.tower_of_row2const`
+                                 （`graft R y = R.dropLast ++ (y をずらしたもの)` なので
+                                   塔の行 2 は `{z} ∪ row2(R.dropLast)`。定数なら末尾列は
+                                   **必ず行 2 の孤児** ⟹ `oper` は `Pred` ⟹ 根の単元まで剥ける）
+
+さらに `|R| ≥ 2` では `domT` から `R⟦n⟧ = R.dropLast`（`L105.oper_eq_dropLast_of_domT`）
+なので、仮定の `∀ n` が消えて **`R.dropLast ∈ Wstar`** 1 本になる。
+
+⟹ **`L105.towerOK_of_towerExpBigRow2 (h : L105.TowerExpBigRow2) : Wset.TowerOK`**
+
+    `∀ v z m a R, argOK R → 2 ≤ |R| → z ≤ 1 → 2v+z ≤ a → domT R m →
+       **R.dropLast ∈ Wstar** → **(∃ p ∈ R.dropLast, p.2.2 ≠ z)** →
+       hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
+       ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W a`
+
+⚠ **`|R| ≥ 2` で剥き落としが効かない理由**（`L105.tower_row2_pred`、§41）:
+塔の行 2 は `z, (R.dropLast の行 2), z, …` と**周期的**になるので、
+非増加になるのは `R.dropLast` の行 2 が `z` に等しいときだけ。 -/
+
+/-- **★★★★★★ Trio 数列は停止する、`TowerExpBigRow2` **1 本**を仮定すれば。** -/
+theorem TRIO_terminates_of_towerExpBigRow2 (h : L105.TowerExpBigRow2) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_towerExpBigRow2 h)
+
+/-- **無限展開列は無い**、`TowerExpBigRow2` 1 本から。 -/
+theorem no_infinite_expansion_of_towerExpBigRow2 (h : L105.TowerExpBigRow2) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_towerExpBigRow2 h)
+
 /-! ### ⚠ 課題 L112/L113 の判定: **「仮定 1 本」は見かけだった**
 
 `L105.coreCap_iff_graftAll`（`L105Cap.lean` §25、緑）:
