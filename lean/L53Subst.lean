@@ -826,5 +826,49 @@ theorem nextR_append_right {A N : TrioSeq} {i a b : ℕ} :
     · exact nextrel2_append_right
 
 
+/-! ## ★★★ (COMM) の仮定は「復活しない」1 本だけ（課題 L58 完了） -/
+
+open Classical in
+/-- **`hasParent` と `parent` の移送**。仮定は「親の候補が `N` の中にしかない」だけ。 -/
+theorem hasParent_parent_append_right {A N : TrioSeq} {i b : ℕ}
+    (h : hasParent N i b)
+    (hall : ∀ j0, nextR (A ++ N) i j0 (A.length + b) → A.length ≤ j0) :
+    hasParent (A ++ N) i (A.length + b) ∧
+      parent (A ++ N) i (A.length + b) = A.length + parent N i b := by
+  obtain ⟨p0, hp0, huniq⟩ := h
+  have hexN : ∃ j0, nextR N i j0 b := ⟨p0, hp0⟩
+  have hspecN : nextR N i (parent N i b) b := Classical.epsilon_spec hexN
+  have hpN : parent N i b = p0 := huniq _ hspecN
+  have hM : nextR (A ++ N) i (A.length + p0) (A.length + b) :=
+    nextR_append_right.mpr hp0
+  have hMu : ∀ y, nextR (A ++ N) i y (A.length + b) → y = A.length + p0 := by
+    intro y hy
+    obtain ⟨y', rfl⟩ : ∃ y', y = A.length + y' := ⟨y - A.length, by
+      have := hall y hy; omega⟩
+    rw [huniq y' (nextR_append_right.mp hy)]
+  refine ⟨⟨A.length + p0, hM, hMu⟩, ?_⟩
+  have hexM : ∃ j0, nextR (A ++ N) i j0 (A.length + b) := ⟨A.length + p0, hM⟩
+  have hspec : nextR (A ++ N) i (parent (A ++ N) i (A.length + b)) (A.length + b) :=
+    Classical.epsilon_spec hexM
+  rw [hMu _ hspec, hpN]
+
+open Classical in
+/-- **★★★ (COMM)**: 仮定は **「バッドルートが `N` の中」1 本だけ**。
+
+team-lead の実測（SESSION §52）: 陽性 65841/65841（100%）、陰性対照 0/72617（0%）。
+⟹ **`j0 ≥ |A|` は必要十分条件**であり、`d0`・`d1`・マスクの一致は**全部自動**。 -/
+theorem comm_of_noRevive {A N : TrioSeq} (n : ℕ) (hNne : N ≠ [])
+    (hjNne : N.length - 1 ≠ 0)
+    (hzN : ¬(entry N 0 (N.length - 1) = 0 ∧ entry N 1 (N.length - 1) = 0 ∧
+      entry N 2 (N.length - 1) = 0))
+    (hparN : hasParent N (srow N (N.length - 1)) (N.length - 1))
+    (hall : ∀ j0, nextR (A ++ N) (srow N (N.length - 1)) j0
+      (A.length + (N.length - 1)) → A.length ≤ j0) :
+    (A ++ N)⟦n⟧ = A ++ N⟦n⟧ := by
+  obtain ⟨hparM, hj0M⟩ := hasParent_parent_append_right hparN hall
+  exact comm_of_parts n hNne rfl hjNne hzN rfl hparN rfl hparM hj0M
+    (fun j => le0_append_right) (fun j => le1_append_right)
+
+
 end L53
 end TRIO
