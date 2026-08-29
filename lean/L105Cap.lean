@@ -3068,6 +3068,96 @@ theorem graft_cons_obligation {v z : ℕ} {R y : TrioSeq} (hRne : R ≠ []) :
 **⟹ 次のエージェントへ**: `R.dropLast ∈ Wstar` を「`y` 側の導出」に変換できるか。
 `graft_assoc` で入れ子を畳んだうえで、`W m` の `A2'` 帰納に載せるのが筋のはず。 -/
 
+
+/-! ## 43. ★★★★★★ 課題 L123: **`srow = 1` の塔は `shTower` そのもの**
+
+team-lead の (3)「`graft` の結合律のような補題はないか」への答えは
+**`Xbar.graft_assoc`（`Xbar.lean:469`）`graft (graft M y) w = graft M (graft y w)`**（既存）。
+だが**もっと直接的な形が出た**。
+
+`Wset.graft_eq_shift`（`:2737`）: `graft M y = M.dropLast ++ shiftr01 (entry M 0 (|M|-1)) 0 y`。
+これを `Wset.tow`（`:2780`）`tow v z R (k+1) = (0,v,z) :: graft R (tow v z R k)` に入れると
+
+    `tow (k+1) = ((0,v,z) :: R.dropLast) ++ shiftr01 e 0 (tow k)`,  `e = entry R 0 (|R|-1)`
+
+⟹ **`tow v z R n = shTower ((0,v,z) :: R.dropLast) e n`**（`Wtower2.shTower` `:1688`）。
+
+⟹ **`srow = 1` の `TowerExp` は `ShiftTowerClosed`（`Wtower2.lean:1763`）そのもの。**
+しかも土台 `Q = (0,v,z) :: R.dropLast` は
+
+    `Q ∈ W a`      … 仮定 `R.dropLast ∈ Wstar` から**そのまま**
+    側条件         … `entry Q 0 0 = 0` なので `∀ p ∈ Q, entry Q 0 0 ≤ p.1` は**自明**
+    強い側条件     … `argOK R.dropLast` から `∀ j ≥ 1, 0 < entry Q 0 j` ＝ **`ShiftTowerClosedS` の形**
+
+**⟹ `TowerExp` の `srow = 1` 枝は `ShiftTowerClosedS`（`Wtower2.lean:1771`）に完全に一致する。** -/
+
+theorem shTower_cons (Q : TrioSeq) (e : ℕ) :
+    ∀ n : ℕ, shTower Q e (n + 1) = Q ++ shiftr01 e 0 (shTower Q e n) := by
+  intro n
+  induction n with
+  | zero =>
+      rw [shTower_zero, shiftr01_nil, List.append_nil]
+      exact shTower_one Q e
+  | succ n ih =>
+      rw [shTower_succ Q e (n + 1)]
+      conv_lhs => rw [ih]
+      rw [List.append_assoc]
+      congr 1
+      have he : (n + 1) * e = e + n * e := by
+        rw [Nat.succ_mul, Nat.add_comm]
+      rw [he, ← shiftr01_comp, ← shiftr01_append, ← shTower_succ Q e n]
+
+/-- **★★★★★ `srow = 1` の塔は `shTower` そのもの。** -/
+theorem tow_eq_shTower (v z : ℕ) (R : TrioSeq) :
+    ∀ n : ℕ, tow v z R n
+      = shTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast)
+          (entry R 0 (R.length - 1)) n := by
+  intro n
+  induction n with
+  | zero => simp [tow, shTower]
+  | succ n ih =>
+      show ((0, v, z) : ℕ × ℕ × ℕ) :: graft R (tow v z R n) = _
+      rw [graft_eq_shift, ih, shTower_cons, List.cons_append]
+
+open Classical in
+/-- **★★★★★★ `srow = 1` の `TowerExp` は `ShiftTowerClosedS` から出る。** -/
+theorem towerExp1_of_shiftTowerClosedS (hst : ShiftTowerClosedS)
+    {v z m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a) (hd : domT R m)
+    (hi1 : srow R (R.length - 1) = 1) (hdl : R.dropLast ∈ Wstar)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  intro n _
+  rw [oper_cons_tower1 hR hRne hd hi1 hpM, tow_eq_shTower]
+  refine hst a (entry R 0 (R.length - 1)) n _ (hdl (argOK_dropLast hR) v z a hz1 hva) ?_
+  intro j hj1 hj2
+  have h0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 := by
+    simp [entry]
+  rw [h0]
+  obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := ⟨j - 1, by omega⟩
+  simp only [List.length_cons] at hj2
+  have hk : k < R.dropLast.length := by omega
+  have hmem : R.dropLast.getD k ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ R.dropLast :=
+    entry_pair_mem (B := R.dropLast) hk
+  have hpos := argOK_dropLast hR _ hmem
+  show 0 < entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 (k + 1)
+  have he : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 (k + 1)
+      = entry R.dropLast 0 k := by
+    unfold entry
+    simp
+  rw [he]
+  exact hpos
+
+/-! ### 43.1 ⟹ `TowerExpBigRow2` の `srow = 2` 枝だけが残る
+
+    `srow = 1` … **`ShiftTowerClosedS`**（`Wtower2.lean:1771`、`CORES.md` の既知の核）に一致
+    `srow = 2` … `oper_cons_tower2` の塔（`Lift1` が入るので `shTower` ではない）
+
+⚠ `ShiftTowerClosedS` は `CORES.md:38` で「`WCat` / `SubstClosedG` から出る」と
+記録されている既知の核。**新しい核ではないが、`TowerExp` の半分がそこに一致することは
+今日まで書かれていなかった。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
