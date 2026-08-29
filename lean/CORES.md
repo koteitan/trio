@@ -62,10 +62,46 @@
 | `Row0Free` | ⚠ 強すぎ | `Wtower2.lean:269` の docstring:「これを仮定すると**すべての**列が `Wself` に入ってしまう」 |
 | （族形 3 本） | **同語反復** | v0.118.52。`CoreGpowPeel` / `tower1_mem2_fam` / `tower1_mem2_gpow` は**言い換えであって還元ではない** |
 
+## ★★★ H12（H57、2026-08-30）: **`CoreSingleton` と `CoreCap` は同値** —— 表は 1 行減る
+
+`lean/Lind.lean` が**両向き**を証明していて、`leanman check -C lean Lind.lean` は **exit 0（緑）**:
+
+    `coreSingleton_of_cap (h : CoreCap) : CoreSingleton`   `Lind.lean:181`
+    `cap_of_coreSingleton (h : CoreSingleton) : CoreCap`   `Lind.lean:195`
+
+`Final.lean:573` 自身が `TRIO_terminates_of_cap hc := TRIO_terminates_of_core (coreSingleton_of_cap hc)`
+と書いている。⟹ 上の表の 2 行（9/5 と 7/5）は**同じ命題の 2 つの書き方**であって、
+別々の極小元ではない。**極小元は 3 つではなく 2 つ**（`CoreSingleton` ＝ `CoreCap`、`TowerOK`）。
+⟹ 冒頭の警告「代理指標にすぎない」の**いちばん強い実例**（量化子数が 2 本を別物に見せた）。
+
+## ★★ H12（H57）: **健全な反証器を全核に当てた。1 本も落ちなかった**
+
+`tools/dbms/h1/wref.py` ＋ `h58`〜`h67`。記録は `tools/dbms/H1-NOTES.md` §151-165。
+
+| 核 | 決定した事例 | 未判定 | **違反** | 陰性対照（段 −1 など） |
+|---|--:|--:|--:|---|
+| `CoreSingleton` ＝ `CoreCap` | H56 の 222 万 ＋ 増幅版 133504 | 17696 | **0** | — |
+| `WCat` / `WSnoc` | 105694 / 954 | 7202 / 236 | **0** | **63270** / 42 |
+| `Subst1gRevive` / `…Self` | 3068 / 2305 | 1219 / 375 | **0** | **1617** |
+| `TowerOK`（節 2 側） | 1098 | 1338 | **0** | **3647 / 3647（100%）** |
+| **`TowerOK2`（`srow=2`）** | **24** | 144 | **0** | **27 / 27（100%）** |
+| `LiftStage` / `LiftTie` / `Row1Mono` / `WConvex` / `Row1Down*` / `ShiftTowerClosedS` / `Row0Free` | 各 216〜33763 | 0〜647 | **0** | **100%** |
+
+⚠ **`TowerOK2` の決定率は 14% しかない**（`srow=2` は反証器が届きにくい）。
+　ただし**同じ `M`・同じ予算**で段を 1 下げた版は 27/27 で確定違反になるので、
+　未判定は「計器が何も見えていない」からではない。
+
+⚠ **`Row0Free` は「偽」ではない**（33763 事例で違反 0）。⛔ 欄ではなく ⚠ 欄のまま。
+
+**未測定 6 本**: `CoreCtxSuffixLift` / `CorePlantCtxLift` / `LiftStageParented` /
+`TowerExp2Low` / `TowerExp2Root` / `GraftFromExp`（`h66.py` はあるが走り切らず）。
+前 2 本は `CoreSingleton` より**弱い**ので、反証を狙うならそちらが先。
+
 ## ★ 極小元（他のどの核からも出ない＝いちばん弱い）＝ **狙うべき候補**
 
-    **`CoreCap`**       … 単独で足りる。**`GX` を含まない純 `W` の 1 文**。7 量化 / 5 前提
-    **`CoreSingleton`** … 単独で足りる。主語は 1 列だが `GX` 込みで実効 9 量化 / 5 前提
+    **`CoreCap` ＝ `CoreSingleton`**（H57 で同値と判明。**1 本**）
+        … 単独で足りる。`CoreCap` は `GX` を含まない純 `W` の 1 文（7 量化 / 5 前提）、
+          `CoreSingleton` は同じものを 1 列の `GX` 所属として書いたもの
     **`TowerOK`**       … 単独で足りる。3 量化 / 7 前提。`TowerOK1`（節 3 側のみ既済）＋ `TowerOK2`
     `MliftR` / `Row1DownLocal` / `Row1DownRoot0` / `WConvex` … 経路 A の末端だが**相方が要る**
 
