@@ -9774,6 +9774,73 @@ theorem mem_of_domT_dropLast {u m : ℕ} {M : TrioSeq} (hne : M ≠ [])
 
 **⟹ (a) は迂回路の問題ではなく、帰納の 1 段そのものです。** -/
 
+/-! ## 136. ★★★★★★ **`take` 不変性**: §102/§129 を snoc の場面につなぐ 1 本
+
+§94 `mTowerClosed_of_snocStep`（緑）が扱う対象は **`塔 ++ (block n).take j`** であり、
+これは **完成した塔の接頭辞** `(mTower Q d e (n+1)).take (n*|Q| + j)` である。
+**⟹ §102/§129 は「完成した塔」の言葉なので、`take` を跨ぐ必要がある。**
+
+    ✅ `Wset.nextrel0_take` / `nextrel1_take` / `le1_take` … **iff で緑**
+    ⛔ **`nextrel2_take` / `nextR_take` / `hasParent_take` … なかった**
+
+**⟹ 以下で埋める。`nextrel1_take` の証明と同じ骨（`le0` を `le1` に、`rtg0_le` を `rtg1_le` に）。** -/
+
+theorem nextrel2_take {X : TrioSeq} {l a b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    nextrel2 (X.take l) a b ↔ nextrel2 X a b := by
+  have hlen : (X.take l).length = l := by rw [List.length_take]; omega
+  unfold nextrel2
+  rw [hlen]
+  constructor
+  · rintro ⟨ha, -, hab, hlt, hle, hmin⟩
+    refine ⟨by omega, by omega, hab, ?_, (le1_take hl hb).1 hle, ?_⟩
+    · rw [entry_take (by omega : a < l), entry_take hb] at hlt; exact hlt
+    · intro j hj
+      have hjb : j ≤ b := rtg1_le hj.2.2.2
+      have hres := hmin j ⟨hj.1, (le1_take hl hb).2 hj.2⟩
+      rw [entry_take hb, entry_take (by omega : j < l)] at hres
+      exact hres
+  · rintro ⟨ha, -, hab, hlt, hle, hmin⟩
+    refine ⟨by omega, hb, hab, ?_, (le1_take hl hb).2 hle, ?_⟩
+    · rw [entry_take (by omega : a < l), entry_take hb]; exact hlt
+    · intro j hj
+      have hjb : j ≤ b := rtg1_le ((le1_take hl hb).1 hj.2).2.2
+      have hres := hmin j ⟨hj.1, (le1_take hl hb).1 hj.2⟩
+      rw [entry_take hb, entry_take (by omega : j < l)]
+      exact hres
+
+theorem nextR_take {X : TrioSeq} {l i a b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    nextR (X.take l) i a b ↔ nextR X i a b := by
+  unfold nextR
+  split_ifs
+  · exact Wset.nextrel0_take hl hb
+  · exact nextrel1_take hl hb
+  · exact nextrel2_take hl hb
+
+theorem srow_take {X : TrioSeq} {l b : ℕ} (hb : b < l) :
+    srow (X.take l) b = srow X b := by
+  unfold srow
+  rw [entry_take hb, entry_take hb]
+
+theorem hasParent_take {X : TrioSeq} {l i b : ℕ} (hl : l ≤ X.length) (hb : b < l) :
+    hasParent (X.take l) i b ↔ hasParent X i b := by
+  unfold hasParent
+  constructor
+  · rintro ⟨a, ha, hu⟩
+    exact ⟨a, (nextR_take hl hb).1 ha, fun y hy => hu y ((nextR_take hl hb).2 hy)⟩
+  · rintro ⟨a, ha, hu⟩
+    exact ⟨a, (nextR_take hl hb).2 ha, fun y hy => hu y ((nextR_take hl hb).1 hy)⟩
+
+/-! ### 136.1 ⟹ これで §94 の `hstep` に §102/§129 が直接当たります
+
+    `塔 ++ (block n).take (j+1)` ＝ `(mTower Q d e (n+1)).take (n*|Q| + j + 1)`
+    **`hasParent_take` + `srow_take`** ⟹ **親の有無は完成した塔で判定してよい**
+    **⟹ §102 `gexp_orphan_row1`（`k = n`, `q = j`）がそのまま `hstep` の場面の判定になる**
+
+**⟹ §102.1（§102 の直後の設計メモ）が、設計から定理の適用に変わりました。**
+
+⚠ **教訓 14**: これは **「孤児の枝が繋がった」**であって、
+**「`hstep` が通った」ではありません。** 残るのは **足す列が親を持つ枝**です。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
