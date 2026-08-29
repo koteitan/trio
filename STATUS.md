@@ -13,12 +13,21 @@
     （`leanman build` 809 jobs / exit 0、`leanman check Final.lean` exit 0 を team-lead が確認）
 
 **持ち上げ量は `1` に固定、段は自己段（`Wself`）。** 今日 `CoreCap`（7 量化 / 5 前提）から
-ここまで削れた。落ちた枝（すべて既存の**仮定ゼロ**定理、`Final.lean:152` の H11 実測）:
+ここまで削れた。落ちた枝（すべて既存の**仮定ゼロ**定理）:
 
-    狭義                88.5%   `L53.liftStage_of_strict`
-    無タイだが狭義でない 2.8%   `L53.liftStage_of_noTie`
-    タイだが `TieFree`   6.1%   `L53.liftTie_case_tieFree`（`L53Subst.lean:2615`）
-    **残り = 「タイかつ `¬TieFree`」で `d = 1`**
+    狭義                `L53.liftStage_of_strict`
+    無タイだが狭義でない `L53.liftStage_of_noTie`
+    タイだが `TieFree`   `L53.liftTie_case_tieFree`（`L53Subst.lean:2615`）
+    **行 2 ≡ 0**         `L105.liftStage_of_zeroRow2`（§32、**今日の新規**。`d` にもタイにも依らない）
+    **残り = `LiftTieCoreRow2`（タイ ∧ `¬TieFree` ∧ 行 2 に非零）**
+
+⚠⚠ **「97.4% が落ちる / 残り 2.6%」は書かないこと（§154）。母集団依存だった:**
+
+    H11（`Final.lean:145-155`、70,557 件、**シート由来**）  狭義 88.5% / 無タイ 2.8% / タイ **8.7%**
+    R2（1,821,258 件、**構成的な一様全数**）                狭義 33.0% / 無タイ 15.3% / タイ **51.7%**
+
+**証明はすべての場合を覆う必要があるので、Lean の債務としては構成的な全数のほうが実態に近い。**
+正しい「残り何%」は R2 が数え直し中（課題 R98。`liftStage_of_zeroRow2` を必ず入れる）。
 
 `∀ d` が消えた理由（§28）: `Wset.Lift1_Lift1`（`:1230`）＋ `Wset.lift_cons`（`:3656`）で
 `Lift1 X (d+1) = Lift1 ((0,v+1,z) :: ltail v z R 1) d`。**`Lift1 X 1 ∈ W (2(v+1)+z)` は
