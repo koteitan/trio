@@ -9841,6 +9841,105 @@ theorem hasParent_take {X : TrioSeq} {l i b : ℕ} (hl : l ≤ X.length) (hb : b
 ⚠ **教訓 14**: これは **「孤児の枝が繋がった」**であって、
 **「`hstep` が通った」ではありません。** 残るのは **足す列が親を持つ枝**です。 -/
 
+/-! ## 137. ★★★★★★★ **§94 の `hstep`、孤児の枝**（`take` 不変性で繋いだ）
+
+§136 で `hasParent_take` / `srow_take` が入ったので、
+**§102 `gexp_orphan_row1`（完成した塔の言葉）が `hstep` の場面にそのまま当たる。** -/
+
+open Classical in
+theorem snocStep_of_orphan {u : ℕ} {M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hepos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hf1 : entry M 1 (0 + j) ≤ entry M 1 0)
+    (horph : ¬ hasParent M 1 (0 + j))
+    (h2 : entry M 2 j = 0) (h1 : 0 < entry M 1 j)
+    (hC : mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j ∈ W u) :
+    mTower M.dropLast d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1) ∈ W u := by
+  set Q := M.dropLast with hQ
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set X := mTower Q d e (n + 1) with hX
+  have hdl : Q.length = M.length - 1 := List.length_dropLast
+  have hlen : 0 + Q.length + 1 = M.length := by omega
+  have hLb : 0 < Q.length := by omega
+  have hBlen : B.length = Q.length := by
+    rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hXlen : X.length = (n + 1) * Q.length := mTower_length Q d e (n + 1)
+  have hXsucc : X = mTower Q d e n ++ B := mTower_succ Q d e n
+  have hmul : (n + 1) * Q.length = n * Q.length + Q.length := Nat.succ_mul n Q.length
+  have hTake : ∀ t, t ≤ Q.length →
+      X.take (n * Q.length + t) = mTower Q d e n ++ B.take t := by
+    intro t _
+    rw [hXsucc, ← hTlen, List.take_append,
+      List.take_of_length_le (by omega), Nat.add_sub_cancel_left]
+  have hQt : M.take Q.length = Q := by rw [hdl, hQ, ← List.dropLast_eq_take]
+  have hXg : gexp M 0 Q.length d e (n + 1) = X := by
+    rw [gexp_zero_eq_mTower (by omega), hQt]
+  -- 完成した塔での孤児性（§102）
+  have horph2 : ¬ hasParent X 1 (n * Q.length + j) := by
+    have h := gexp_orphan_row1 (M := M) (Lb := Q.length) (d0 := d) (d1 := e)
+      (n := n + 1) (k := n) (q := j) hlen hLb (by omega) (by omega) hj hj1
+      hepos hd0e hr0 hlp hf1 horph
+    rw [hXg, Nat.zero_add] at h
+    exact h
+  -- 完成した塔での `srow`（§132 と同じ二つの成分）
+  have he2 : entry X 2 (n * Q.length + j) = 0 := by
+    have h := gexp_entry2_mir (M := M) (j0 := 0) (Lb := Q.length) (n := n + 1)
+      (k := n) (q := j) hlen (by omega) hj d e
+    rw [hXg, Nat.zero_add, Nat.zero_add] at h
+    rw [h]; exact h2
+  have he1 : 0 < entry X 1 (n * Q.length + j) := by
+    have h := gexp_entry1_mir (M := M) (j0 := 0) (Lb := Q.length) (d0 := d) (d1 := e)
+      (n := n + 1) (k := n) (q := j) hlen (by omega) hj
+    rw [hXg, Nat.zero_add, Nat.zero_add] at h
+    rw [h]; split_ifs <;> omega
+  have hsrow : srow X (n * Q.length + j) = 1 := by
+    unfold srow; rw [if_neg (by omega), if_pos (by omega)]
+  -- `take` へ移す（§136）
+  have hbnd : n * Q.length + j < n * Q.length + j + 1 := by omega
+  have hle : n * Q.length + j + 1 ≤ X.length := by omega
+  have hT1 : X.take (n * Q.length + j + 1) = mTower Q d e n ++ B.take (j + 1) :=
+    hTake (j + 1) (by omega)
+  have hT0 : X.take (n * Q.length + j) = mTower Q d e n ++ B.take j :=
+    hTake j (by omega)
+  -- 足す 1 列
+  have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
+    rw [List.take_add_one]
+    congr 1
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+    rfl
+  have hsplit : mTower Q d e n ++ B.take (j + 1)
+      = (mTower Q d e n ++ B.take j) ++ [B.getD j (0, 0, 0)] := by
+    rw [hBt, ← List.append_assoc]
+  have hCne : mTower Q d e n ++ B.take j ≠ [] := by
+    intro h
+    have h0 : (mTower Q d e n ++ B.take j).length = 0 := by rw [h]; rfl
+    rw [List.length_append, hTlen, List.length_take, hBlen] at h0
+    omega
+  have hClen : (mTower Q d e n ++ B.take j).length = n * Q.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  rw [hsplit]
+  refine snoc_orphan_W _ hC hCne ?_
+  rw [hClen, ← hsplit, ← hT1, srow_take hbnd, hsrow, hasParent_take hle hbnd]
+  exact horph2
+
+/-! ### 137.1 ⟹ `hstep` の孤児の枝が緑になりました
+
+**足す列 `(block n)[j]` が「`Q` の第 `j` 列が行 1 の孤児」から来ていれば、
+塔に足しても無料。** 残る前提は `Q` の第 `j` 列の側だけ:
+
+    `hj1 : 0 < j`（根でない）／ `hf1 : entry M 1 j ≤ entry M 1 0`（行 1 が根以下）
+    `horph : ¬ hasParent M 1 j`（`M` の中で行 1 の孤児）
+    `h2 : entry M 2 j = 0`（行 2 が 0）／ `h1 : 0 < entry M 1 j`（行 1 が正）
+
+⚠ **教訓 14**: これは **`hstep` の**一つの枝**です。
+**残るのは「足す列が親を持つ」枝**で、そこが (a) の本体です。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
