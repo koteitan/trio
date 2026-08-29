@@ -1659,6 +1659,86 @@ theorem coreCap_iff_graftAll : CoreCap ↔ GraftAll :=
 **⟹ 乗り換えの判断材料は揃った。** 文の小ささでは `LiftTieSelf`（＋`TowerExp`）、
 仮定の本数では `CoreCap`。**同じ仕事量**である。 -/
 
+
+/-! ## 26. ★★★★ 課題 L115-1: `LiftTieSelf` を割る
+
+`Final.lean:152` の H11 実測（`TowerOK2` の場面 70557 件）:
+
+    狭義                 62476 (88.5%)  `L53.liftStage_of_strict`   ✅ 仮定ゼロ
+    無タイだが狭義でない  1950 ( 2.8%)  `L53.liftStage_of_noTie`    ✅ 仮定ゼロ
+    タイだが `TieFree`     ( 6.1%)      `L53.liftTie_case_tieFree`  ✅ 既存定理
+    **残りのタイ                         ← 核**
+
+無タイは `liftStage_cons_self`（§21）で既に落としてあるので、あと 1 枝
+（`TieFree` が立つタイ）を落とす。 -/
+
+/-- **`LiftTieSelf` の残核**: タイがあり、しかも `TieFree` でない場合だけ。
+（`v = 0` は `TieFree` が空虚に立つが `liftStage_of_tieFree` が `1 ≤ v` を要求するので、
+`1 ≤ v ∧ TieFree` を 1 つの条件にまとめてある。） -/
+def LiftTieSelfOpen : Prop :=
+  ∀ (d v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+    ¬ (1 ≤ v ∧ TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)) →
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z) →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (2 * v + z + 2 * d)
+
+open Classical in
+/-- **★★★ `TieFree` が立つタイ（実測 6.1%）は既存定理で落ちる。** -/
+theorem liftTieSelf_of_open (h : LiftTieSelfOpen) : LiftTieSelf := by
+  intro d v z R hR ht hX
+  by_cases hc : 1 ≤ v ∧ TieFree (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+  · refine L53.liftTie_case_tieFree hX ?_ hc.2
+    show 1 ≤ entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0
+    simpa [entry] using hc.1
+  · exact h d v z R hR ht hc hX
+
+/-- ⟹ `TowerOK` は `LiftTieSelfOpen` ＋ `TowerExp` から出る。 -/
+theorem towerOK_of_liftTieSelfOpen (h : LiftTieSelfOpen) (he : TowerExp) : TowerOK :=
+  towerOK_of_liftTieSelf (liftTieSelf_of_open h) he
+
+/-! ## 27. ⚠ 課題 L115-1 の `split_lastTie` 路線: **どこで止まるか**
+
+`L53.split_lastTie`（`L53Subst.lean:1692`）は `R = R₁ ++ [tie] ++ R₂` を与え、
+`L53.split_lastTie_len`（`:1831`）は `|R₁| < |R|` を与える。長さの帰納は回る。
+**しかし帰納の中身が繋がらない。** 定義を開いて確かめた:
+
+### 27.1 タイが何を壊しているか（`Lcone.le1_zero_iff` `:36`）
+
+    `le1 X 0 i` ⟺ `i` の**根以外の**行 0 祖先 `y` がすべて `entry X 1 0 < entry X 1 y`
+
+⟹ 行 1 が `v` **以下**の行 0 祖先が 1 つでもあれば `i` は錐に入らない。
+タイ（`= v`）はその最小の壊し方である。
+`liftStage_of_window`（`Wtower2.lean:128`）はこの条件が**全列**で成り立つときに
+`Lift1 X d = shiftr01 0 d X`（**一様シフト**）に潰れ、`Wslift.ulift_mem_W` で無料になる。
+
+### 27.2 ⚠ 長さの帰納が繋がらない理由
+
+`split_lastTie` で得た `R₁` に帰納法の仮定を当てると
+
+    `Lift1 ((0,v,z) :: R₁) d ∈ W (2v+z+2d)`     （`W_take` で `(0,v,z) :: R₁ ∈ W (2v+z)`）
+
+は出る。**しかし目標は `Lift1 ((0,v,z) :: R₁ ++ [tie] ++ R₂) d`** であり、
+接頭辞の結果から全体を復元するには **`[tie] ++ R₂` を連結し直す**必要がある。
+それは `WCat`（`Wtower2.lean:1974`、`CORES.md:31`「残核より広い」）である。
+
+⟹ **`split_lastTie` は「タイを 1 本ずつ剥がす」ための道具だが、
+剥がした後に戻す操作が `WCat` になる。** ここで止まる。
+
+### 27.3 ⟹ 止まる場所（1 行）
+
+> **タイの分解は接頭辞を短くするが、`Lift1` は列ごとではなく
+> 「根の錐」という大域的な条件で決まるので、接頭辞の結果を全体に戻せない。
+> 戻す操作が `WCat` になる。**
+
+⚠ 「原理的に不可能」ではない（教訓 13）。**この分解の向きでは繋がらない**、の報告。
+
+### 27.4 ⟹ 繋がりそうな向き（未着手、次のエージェントへ）
+
+`split_lastTie` は**接頭辞**を切るが、`Lift1` の錐は**行 0 の祖先鎖**で決まる。
+⟹ 切るなら**行 0 の祖先鎖に沿って**切るべきで、それは `Lind.graft_take_drop`
+（`Lind.lean:63`、**窓分解**）の切り方である（行 0 が末尾最小の位置で切る）。
+`Lind` の長さ帰納がその切り方で回っているのは偶然ではない。
+⟹ **`LiftTieSelf` を攻めるなら `split_lastTie` ではなく窓分解のほうが筋が良い。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
