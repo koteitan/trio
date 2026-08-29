@@ -4099,6 +4099,64 @@ theorem tower_branch_not_natDom {R : TrioSeq} {m : ℕ} (hd : domT R m) :
     ¬ natDom R := fun h => h m hd
 
 
+/-! # ★★★★ 課題 L102: `tower1_mem2_fam` の `hgrF` を切り出す
+
+R1 の見つけた抜け道（`Wset.tower1_mem2_fam`、`Wset.lean:4122`）:
+
+    `tower1_mem2`     … `hgr : ∀ y ∈ W m, based y → …`     ← **節 3 の与件**（族）
+    `tower1_mem2_fam` … `hgrF : ∀ k a', 2v+z ≤ a' →
+        Lift1 ((0,v,z) :: graft R (tow v z R k)) 0 ∈ W a'`  ← **塔の元だけ**
+
+⟹ `∀ y ∈ W m` の族が要らず、段 `m` も落ちる。**`GraftFromExp` の一般形より真に弱い。**
+
+⚠ ただし `tow v z R (k+1) = (0,v,z) :: graft R (tow v z R k)`（`Wset.lean:2780`）なので、
+`hgrF k a` は **`tow v z R (k+1) ∈ W a` そのもの**。`tower1_mem2_fam` は
+**再パッケージ**であって、それ自体は何も減らさない。値打ちは
+「**要るのは塔の元だけ**」という**弱い十分条件に名前が付く**ことにある。
+
+## `:4447` から供給できるのは `k = 0` だけ
+
+    `k = 0` … `tow v z R 0 = []`、`graft R [] = R.dropLast`
+              ⟹ `R.dropLast ∈ Wstar`（`exp_gives_dropLast`）で**無料**
+    `k ≥ 1` … `tow v z R k` は空でないので、節 2 の 1 個では届かない ⟹ **開いている**
+
+⟹ 下の `GraftTower1` が「塔の元に限った節 2 の graft 閉包」。 -/
+
+/-- **塔の元に限った graft 閉包**（`srow = 1` 側、`GraftFromExp` より真に弱い）。 -/
+def GraftTower1 : Prop :=
+  ∀ (v z : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 →
+    (∃ m, domT R m) → (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) →
+    ∀ k a' : ℕ, 2 * v + z ≤ a' →
+      Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft R (tow v z R k)) 0 ∈ W a'
+
+/-- **★★★ `TowerExp1`（節 2 の `srow = 1` 側）は `GraftTower1` から出る。** -/
+theorem towerExp1_of_graftTower1 (h : GraftTower1) : TowerExp1 := by
+  intro v z m a R hR hRne hz1 hva hd hop hi1 hpM n _
+  rw [oper_cons_tower1 hR hRne hd hi1 hpM]
+  exact tower1_mem2_fam hRne hva (h v z R hR hRne hz1 ⟨m, hd⟩ hop) n
+
+/-- **★★ `k = 0` は節 2 から無料**（`graft R [] = R.dropLast`）。 -/
+theorem graftTower1_zero {v z a' m : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hL : 1 < R.length) (hd : domT R m)
+    (hop : ∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) (ha' : 2 * v + z ≤ a') :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: graft R (tow v z R 0)) 0 ∈ W a' := by
+  rw [Lift1_zero]
+  have h0 : tow v z R 0 = ([] : TrioSeq) := rfl
+  rw [h0, graft_nil]
+  exact exp_gives_dropLast hL hd hop (argOK_dropLast hR) v z a' hz1 ha'
+
+/-! ### ⚠ `srow = 2` の側は別
+
+`:4447` は `srow` によらないので、`srow = 2` のときは `oper_cons_tower2` の
+`Lift1 … t`（`t > 0`）が出る。`tower1_mem2_fam` は `Lift1 … 0` の形なので**届かない**。
+⟹ `srow = 2` 側は `LiftTie`（課題 L81）と同じ持ち上げが要る。
+
+**⟹ 節 2 の内訳:**
+
+    `srow = 1` … `GraftTower1`（塔の元だけ、`k = 0` は無料）    ← **今日縮んだ**
+    `srow = 2` … `LiftTie` ＋ 塔の元だけの graft 閉包            ← 未着手 -/
+
+
 /-! # ★★★★★ 今日の到達点（課題 L95-c、明日の再開点）
 
 ## 1. 上から下への連鎖（全部 Lean で緑）
