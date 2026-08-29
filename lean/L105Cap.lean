@@ -8517,6 +8517,60 @@ theorem nextrel1_gexp_no_enter_out' {M : TrioSeq} {Lb d0 d1 n k q c : ℕ}
 **⟹ R2 の測定は `hlp` を課していない母集団。上の定理と矛盾しません。**
 **⟹ そして `hlp` は塔の場面では `L53.tower2_root_spec` が与えます（§84 の前提）。** -/
 
+/-! ## 116. ★★★★★ 行 1 の「同ブロック」も 3 行でした（§106 の行 1 版）
+
+索引を引いたら **`Wset.nextrel1_Lift1`（`:1167`）が無条件**だった
+（`nextrel1 (Lift1 X d) a b ↔ nextrel1 X a b`）。**`Lift1` は行 1 を動かすのに、
+`nextrel1` は保たれる**（錐の上で一様に上がるので狭義増加も極小性も崩れない）。
+
+⟹ **`nextrel1` もブロックの中で `Q` のものとそのまま一致する。§106（行 2）と同じ形。**
+
+    `L53.nextrel1_append_right`（`:749`、緑）／`Wset.nextrel1_Lift1`（`:1167`）
+    `Core.nextrel1_shiftr01`（`:3464`）／`Wset.nextrel1_uniq_src`（`:1053`） -/
+
+open Classical in
+/-- **最後のブロックの中に行 1 の親は無い**（`Q` の末尾列が行 1 の孤児なら）。 -/
+theorem nextrel1_lastBlock_absurd {Q A : TrioSeq} {d0' d1' qa b : ℕ}
+    (horph : ¬ hasParent Q 1 b)
+    (h : nextrel1 (A ++ Lift1 (shiftr01 d0' 0 Q) d1') (A.length + qa) (A.length + b)) :
+    False := by
+  rw [L53.nextrel1_append_right, nextrel1_Lift1, nextrel1_shiftr01] at h
+  have hnR : nextR Q 1 qa b := by
+    unfold nextR
+    rw [if_neg (by omega), if_pos rfl]
+    exact h
+  refine horph ⟨qa, hnR, ?_⟩
+  intro y hy
+  have hy' : nextR Q 1 y b := hy
+  unfold nextR at hy'
+  rw [if_neg (by omega), if_pos rfl] at hy'
+  exact nextrel1_uniq_src hy' h
+
+/-- ⟹ 塔の言葉で（`mTower_succ` で最後のブロックを切り出す）。 -/
+theorem nextrel1_mTower_sameBlock {Q : TrioSeq} {d e n' qa b : ℕ}
+    (horph : ¬ hasParent Q 1 b)
+    (h : nextrel1 (mTower Q d e (n' + 1))
+      ((mTower Q d e n').length + qa) ((mTower Q d e n').length + b)) : False := by
+  rw [mTower_succ] at h
+  exact nextrel1_lastBlock_absurd horph h
+
+/-! ### 116.1 ⟹ 行 0・行 1・行 2 が揃いました（同ブロックの側）
+
+    **行 0** … `nextrel0_shiftr01` ＋ `nextrel0_Lift1`（行 0 は動かない）
+    **行 1** … **上（`nextrel1_Lift1` が無条件なのが鍵）**
+    **行 2** … §106 `nextrel2_lastBlock_absurd`
+
+⟹ **どの行でも「最後のブロックの中の親は `Q` の親」**。**`d1` の値に依りません。**
+
+### 116.2 ⟹ `e = 0` の orphan 補題への含意
+
+§100/§102（F1）は `gexp_chain_inversion` ＋ `hasParent_one_of` の対偶で同ブロックを処理したが、
+**上の `nextrel1_lastBlock_absurd` のほうが短く、`hd1pos` も要らない。**
+⟹ **`e = 0` 版の F1 は「同ブロック ＝ 上」＋「ブロック外 ＝ §87 / §115」で書ける。**
+
+⚠ **ブロック外の側は `gexp` 座標なので、`mTower`/`shTower` への橋渡しが要ります**
+（§109 の `le1_mTower_in_block` と同じ手順）。**そこが残りの作業です。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
