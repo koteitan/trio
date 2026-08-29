@@ -4458,6 +4458,75 @@ theorem mem_W_zero_iff {M : TrioSeq} :
 `v = 0, z = 0` でも **`R.dropLast` の行 2 は非零**（`TowerExpBigRow2` の前提）なので
 そのままでは当たらない。**そこが残る。** -/
 
+
+/-! ## 59. ★★★★★ 課題 L135-3: **`v = 0` の残核は「`W 0` から `Wself` へ」1 文**
+
+R2 の実測「`v = 0` には無料の枝が 1 本も無い（(α)(β)(γ) すべて 0 件）、
+しかも (δ) の 71.6% が `v = 0`」を受けて、そこだけ取り出す。
+
+`LiftTieCore`（§29）に `v = 0`, `z = 0` を入れると:
+
+    前提 `¬(1 ≤ v ∧ TieFree …)` … **`1 ≤ 0` が偽なので自動的に満たされる**
+    段 `2*v+z = 0`、結論の段 `2*v+z+2 = 2`
+
+⟹ **`((0,0,0) :: R) ∈ W 0` ⟹ `Lift1 ((0,0,0) :: R) 1 ∈ W 2`**
+
+そして `lev (Lift1 ((0,0,0) :: R) 1) 0 = 2*(0+1)+0 = 2` なので、
+`Wtower2.mem_Wself_iff` より **結論は `∈ Wself` と同値**。
+
+> **⟹ `v = 0` の残核は「`W 0` の元を 1 段持ち上げると `Wself` に入る」という 1 文。**
+> 段は `0 → 2` で、これは `lev` の増分ちょうど。**余裕はゼロ。** -/
+
+/-- **`LiftTieCore` の `v = 0`, `z = 0` の場合**（(δ) の 71.6%）。 -/
+def LiftTieCoreZero : Prop :=
+  ∀ (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = 0) →
+    (((0, 0, 0) : ℕ × ℕ × ℕ) :: R) ∈ W 0 →
+    Lift1 (((0, 0, 0) : ℕ × ℕ × ℕ) :: R) 1 ∈ W 2
+
+theorem liftTieCoreZero_of_core (h : LiftTieCore) : LiftTieCoreZero := by
+  intro R hR ht hX
+  have hres := h 0 0 R hR ht (by rintro ⟨h1, -⟩; omega) (by simpa using hX)
+  simpa using hres
+
+/-- **★ `v = 0` の残核の結論は `Wself` 所属と同値**（段はちょうど `lev`）。 -/
+theorem liftTieCoreZero_iff_wself {R : TrioSeq} :
+    Lift1 (((0, 0, 0) : ℕ × ℕ × ℕ) :: R) 1 ∈ W 2
+      ↔ Lift1 (((0, 0, 0) : ℕ × ℕ × ℕ) :: R) 1 ∈ Wself := by
+  have hne : (((0, 0, 0) : ℕ × ℕ × ℕ) :: R) ≠ [] := by simp
+  have hlev : lev (Lift1 (((0, 0, 0) : ℕ × ℕ × ℕ) :: R) 1) 0 = 2 := by
+    unfold lev
+    rw [L53.entry1_Lift1_zero hne, entry2_Lift1]
+    simp [entry]
+  rw [mem_Wself_iff]
+  constructor
+  · exact fun h => h.1
+  · exact fun h => ⟨h, by rw [hlev]⟩
+
+/-! ### 59.1 ⟹ `v = 0` の錐はいちばん単純な形
+
+`Lcone.le1_zero_iff`（`:36`）に `v = 0` を入れると
+
+    `le1 X 0 j` ⟺ **`j` の根以外の行 0 祖先がすべて 行 1 ≥ 1**
+
+⟹ **ブロッカー ＝ 行 1 が 0 の列**。R2 の実測「`v = 0` では
+ブロッカー ⟺ タイ（4,977/4,977）」は**この同値の言い換え**である
+（`v = 0` なので「行 1 ≤ v」と「行 1 = v」が同じ）。
+
+⟹ **`v = 0` の残核 ＝ 「行 1 が 0 の列がある `W 0` の元を 1 段持ち上げても `Wself`」**。
+
+### 59.2 ⚠ 段 0 の効き方（§58.4 の続き）
+
+段 0 では節 3 が使えないので、**前提 `((0,0,0) :: R) ∈ W 0` は
+「展開木が全部 `(d,0,0)` の単元に着く」以上の情報を持たない**
+（`Wchar.mem_iff_oper_mem` ＋ `mem_iff_lev_le`）。
+⟹ **前提から使えるのは「展開が終わる」ことだけ**で、graft の与件は無い。
+
+一方 **結論の段は 2** なので、そちらでは節 3 が使える（`m < 2` に `m = 0, 1` がある）。
+⟹ **前提側は節 2 だけ、結論側は節 2 と節 3 の両方**という**非対称**な形。
+
+⟹ **`v = 0` の残核を攻めるなら、結論側の節 3 を使って作るのが筋**である
+（前提側には無いので）。**次の一手はそこ。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
