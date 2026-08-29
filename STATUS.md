@@ -38,16 +38,21 @@
 | ↑ の `n` の帰納 | 債務 1・2 は済み、**債務 3 が残り** | `L53Subst.lean` |
 | `srow = 2`, `z = 0`, タイ有り | 分解で割れる（実測 2474/2474）| `split_lastTie` |
 
-### 残る核は **3 本**（§105、end-to-end 検算ずみ §104）
+### 残る核は **2 本**（§107）
 
-    **`WConvex1`**       幅 1 の凸性（持ち上げ側）。**`Row1Mono` より 2 段弱い**（§105）
-                        1 列 1 段の部分は `Subst1gRevive` から出る（§106）。
-                        **複数列・一般の位置**が残る
-    **`Subst1gRevive`**  既存の残核
-    **`WSnoc`**          既存の核（`snoc` の親あり側）
+    **`Subst1gRevive`**  既存の残核（`Wtower2.lean`）
+    **`WSnoc`**          既存の核（`Wtower2.lean:2049`）。**効く先が 2 つ**:
+                          持ち上げ側 `WSnoc → WCat → … → LiftStage`（鎖は全部既存・緑）
+                          連結側 `WstarSnoc`（`GraftFromExp` の「宿主の 1 段」）
+
+    到達点: **`towerOK_of_wsnoc_graft`**（`L53Subst.lean`、緑）
 
     **検算（R1、§104）: 3 本そろえてラダー 20415/20415、1 本でも欠ければ 9（＝ strict）。**
     **⟹ 分解に穴は無い。**
+
+    今日新しく作った核（`LiftTie` / `MliftR` / `Row1DownLocal` / `Row1DownRoot0` /
+    `WConvex1` / `WstarCat` / `GraftFromExp` / `AminROper`）は、
+    **すべて「既存の 2 本に落ちる」か「偽」かのどちらかに決着した**（§107.4）。
 
 ⚠ **「タイは 0.5%」は別の量**（§92）。`Wstar` は `∀v` なので、`R ≠ []` なら
 `v` を `R` の行 1 の値に取れば**必ずタイになる**（20345/20345 = 100%）。
