@@ -5179,6 +5179,177 @@ theorem srow_eq_zero_of_lev_zero {R : TrioSeq} {j : ℕ} (h : lev R j = 0) :
 ⟹ **(C) は「可換性では閉じない」ことが定義から見える。** サンドイッチ
 （`Le1_Lift1_oper` / `Le1_oper_Lift1_shiftr01`）が要るのはここだけである。 -/
 
+/-! ## 68. ★★★★★★ 課題 H73 の答え: **`mTower` は `oper` そのもの**
+
+§67 で残差が「**悪根 ＝ 根**」に絞れた。そこで `Lcone.oper_eq_gexp_gen`
+（`Lcone.lean:487`、**任意の悪根**、緑）を **`j0 = 0`** で読むと、`gexp` の
+`M.take j0` の部分が**空**になり
+
+    `M⟦n⟧ = gexp M 0 (|M|-1) d0 d1 n = gcopies M 0 (|M|-1) d0 d1 n`
+
+そして `gcopy M 0 L d0 d1 k` は定義から
+
+    `(range' 0 L).map fun j => (entry M 0 j + k*d0,
+                               entry M 1 j + (if le1 M 0 j then k*d1 else 0),
+                               entry M 2 j)`
+
+で、これは **`Lift1 (shiftr01 (d0*k) 0 (M.take L)) (d1*k)`** に等しい
+（`Core.le1_shiftr01` ＋ `Wset.le1_take` で錐が一致するから）。
+**⟹ `mTower` の第 `k` ブロックそのもの。**
+
+> **★★★★★★ `M⟦n⟧ = mTower M.dropLast d0 d1 n`。`mTower` は `oper` の別名だった。** -/
+
+theorem gcopy_zero_eq_lift {M : TrioSeq} {L d0 d1 k : ℕ} (hL : L ≤ M.length) :
+    gcopy M 0 L d0 d1 k = Lift1 (shiftr01 (d0 * k) 0 (M.take L)) (d1 * k) := by
+  have hlen : (shiftr01 (d0 * k) 0 (M.take L)).length = L := by
+    rw [shiftr01_length, List.length_take]; omega
+  unfold gcopy Lift1
+  rw [hlen, ← List.range_eq_range']
+  refine List.map_congr_left ?_
+  intro j hj
+  have hjL : j < L := List.mem_range.mp hj
+  have hjT : j < (M.take L).length := by rw [List.length_take]; omega
+  have h0 : entry (shiftr01 (d0 * k) 0 (M.take L)) 0 j = entry M 0 j + d0 * k := by
+    rw [entry0_shiftr01 hjT, entry_take hjL]
+  have h1 : entry (shiftr01 (d0 * k) 0 (M.take L)) 1 j = entry M 1 j := by
+    rw [entry1_shiftr01, entry_take hjL]
+  have h2 : entry (shiftr01 (d0 * k) 0 (M.take L)) 2 j = entry M 2 j := by
+    rw [entry2_shiftr01, entry_take hjL]
+  have hc : le1 (shiftr01 (d0 * k) 0 (M.take L)) 0 j ↔ le1 M 0 j := by
+    rw [le1_shiftr01, le1_take hL hjL]
+  have hif : (if le1 M 0 j then k * d1 else 0)
+      = (if le1 (shiftr01 (d0 * k) 0 (M.take L)) 0 j then d1 * k else 0) := by
+    by_cases hcone : le1 M 0 j
+    · rw [if_pos hcone, if_pos (hc.mpr hcone), Nat.mul_comm]
+    · rw [if_neg hcone, if_neg (fun hh => hcone (hc.mp hh))]
+  rw [h0, h1, h2, hif, Nat.mul_comm k d0]
+
+/-- **★★★★★ `j0 = 0` の `gexp` は `mTower`**。 -/
+theorem gexp_zero_eq_mTower {M : TrioSeq} {L d0 d1 n : ℕ} (hL : L ≤ M.length) :
+    gexp M 0 L d0 d1 n = mTower (M.take L) d0 d1 n := by
+  unfold gexp gcopies mTower
+  rw [List.take_zero, List.nil_append]
+  exact List.flatMap_congr (fun k _ => gcopy_zero_eq_lift hL)
+
+open Classical in
+/-- **★★★★★★ 悪根が根なら展開は `mTower` そのもの。** -/
+theorem oper_eq_mTower {M : TrioSeq} (n : ℕ) (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hj0 : parent M (srow M (M.length - 1)) (M.length - 1) = 0) :
+    M⟦n⟧ = mTower M.dropLast
+      (if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1) - entry M 0 0
+        else 0)
+      (if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1) - entry M 1 0
+        else 0) n := by
+  have hgen := oper_eq_gexp_gen (M := M) n hL hz hp
+  rw [hj0] at hgen
+  rw [hgen, show M.length - 1 - 0 = M.length - 1 from by omega,
+    gexp_zero_eq_mTower (by omega), List.dropLast_eq_take]
+
+/-! ## 69. ★★★★★★ **`operTower = mTower` は定理**（H73 / `LiftFlatMapLocal` は不要）
+
+§68 で `M⟦n⟧ = mTower M.dropLast d0 d1 n`（悪根が根）が出た。一方 §47 の
+`tower2_eq_operTower` は同じ `X⟦n⟧` を **`operTower`** で書いている。
+**⟹ 両者は同じものの 2 通りの書き方なので、等しい。仮定は要らない。**
+
+> **★★★★★★ R2 の実測「`mTower = operTower` 100%（276,876 塔・例外 0）」は定理だった。**
+> **`LiftFlatMapLocal`（§62）を経由する必要はない。** -/
+
+theorem entry_cons_at_len {v z : ℕ} {R : TrioSeq} (hne : R ≠ []) (i : ℕ) :
+    entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) i R.length = entry R i (R.length - 1) := by
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hne
+  conv_lhs => rw [show R.length = (R.length - 1) + 1 from by omega]
+  exact entry_cons_succ i (R.length - 1)
+
+open Classical in
+/-- **★★★★★★ 塔の場面では `operTower` と `mTower` は等しい**（仮定は場面のみ）。 -/
+theorem operTower_eq_mTower_tower2 {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) (n : ℕ) :
+    operTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) (entry R 0 (R.length - 1))
+        (entry R 1 (R.length - 1) - v) n
+      = mTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) (entry R 0 (R.length - 1))
+        (entry R 1 (R.length - 1) - v) n := by
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hXl1 : (((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1 = R.length := by
+    simp only [List.length_cons]; omega
+  have hsrow : srow (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 2 := by
+    rw [hXl1, srow_cons_last hRne, hi2]
+  have hp : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1))
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) := by
+    rw [hXl1, srow_cons_last hRne]
+    exact hpM
+  have hj0 : parent (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+      (srow (((0, v, z) : ℕ × ℕ × ℕ) :: R)
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1))
+      ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 0 := by
+    rw [hXl1, srow_cons_last hRne]
+    exact parent_cons_eq_zero hRne hd hpM
+  have hzz : ¬ (entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 0 ∧
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 0 ∧
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2
+        ((((0, v, z) : ℕ × ℕ × ℕ) :: R).length - 1) = 0) := by
+    rintro ⟨-, -, h⟩
+    rw [hXl1, entry_cons_at_len hRne] at h
+    have := L53.srow_two_row2_pos hi2
+    omega
+  have hmt := oper_eq_mTower (M := ((0, v, z) : ℕ × ℕ × ℕ) :: R) n
+    (by omega) hzz hp hj0
+  rw [hsrow] at hmt
+  rw [if_pos (show (0 : ℕ) < 2 from by omega), if_pos (show (1 : ℕ) < 2 from by omega),
+    hXl1, entry_cons_at_len hRne, entry_cons_at_len hRne, dropLast_cons hRne] at hmt
+  have hr0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 0 = 0 := by simp [entry]
+  have hr1 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := by simp [entry]
+  rw [hr0, hr1, Nat.sub_zero] at hmt
+  rw [← tower2_eq_operTower hR hRne hd hi2 hpM n, hmt]
+
+/-! ### 69.1 ⟹ `LiftFlatMapLocal` は**不要**になった
+
+§62 で「未証明の的」としていた `LiftFlatMapLocal` は、`operTower = mTower` を得るための
+**手段**だった。§69 でその結論が**直接**出たので、的そのものは要らない。
+
+    §62 の道筋（廃止）: `LiftFlatMapLocal`（未証明）⟹ `operTower_eq_mTower` ⟹ `operTower_succ`
+    §69 の道筋（緑）  : `oper_eq_gexp_gen`（緑）⟹ `oper_eq_mTower`（§68、緑）
+                        ＋ `tower2_eq_operTower`（§47、緑）⟹ **`operTower_eq_mTower_tower2`**
+
+⚠ **`LiftFlatMapLocal` が一般の `Q d e n` で真かどうかは、依然として未解決**である
+（§69 は**塔の場面の助変数**についてしか言っていない）。だが**塔の場面しか使わない**ので、
+**核から落とせる。**
+
+### 69.2 ⟹ `operTower` の succ 形も無条件で出る
+
+`mTower_succ`（§55）が `mTower Q d e (n+1) = mTower Q d e n ++ Lift1 (shiftr01 (d*n) 0 Q) (e*n)`
+を無条件で与えるので、`operTower_eq_mTower_tower2` を通せば **`operTower` の succ 形**が
+塔の場面で使える。⟹ §62.1 の「的が落ちたあとの道筋」が**そのまま開通**する:
+
+    `oper_shTower`（§48）/ `oper_shTower2`（§56）と同じ技法が使える
+    **(2) の帰納が `srow = 1` 側とまったく同じ形になる** -/
+
+open Classical in
+/-- **★★★★★ 塔の場面での `operTower` の succ 形**（`LiftFlatMapLocal` 不要）。 -/
+theorem operTower_succ_tower2 {v z m : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) (n : ℕ) :
+    operTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) (entry R 0 (R.length - 1))
+        (entry R 1 (R.length - 1) - v) (n + 1)
+      = operTower (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) (entry R 0 (R.length - 1))
+          (entry R 1 (R.length - 1) - v) n
+        ++ Lift1 (shiftr01 (entry R 0 (R.length - 1) * n) 0
+              (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast))
+            ((entry R 1 (R.length - 1) - v) * n) := by
+  rw [operTower_eq_mTower_tower2 hR hRne hd hi2 hpM,
+    operTower_eq_mTower_tower2 hR hRne hd hi2 hpM]
+  exact mTower_succ _ _ _ _
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
