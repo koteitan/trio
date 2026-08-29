@@ -2617,5 +2617,68 @@ theorem liftTie_case_tieFree {m d : ℕ} {X : TrioSeq} (hX : X ∈ W m)
   liftStage_of_tieFree hX hv h
 
 
+/-! ## ★★★★ 課題 L84-b: `TowerExp`（開核 B）は何を要求しているか
+
+`Wset.TowerExp` は `TowerGraft2` と**同じ結論**で、仮定だけが違う:
+
+    節 3（`TowerGraft2`）  `∀ y ∈ W m, based y → graft R y ∈ Wstar`   … **族ぜんぶ**
+    節 2（`TowerExp`）     `∀ n ≥ 1, R⟦n⟧ ∈ Wstar`                    … **1 個だけ**
+
+`domT R m` のとき末尾は孤児なので `R⟦n⟧ = graft R []`（`oper_eq_graft_nil_of_domT`）。
+⟹ **節 2 がくれるのは `y = []` の 1 個、すなわち `R.dropLast ∈ Wstar` だけ。**
+塔の段は空でないので、足りないのはちょうど
+
+    `R.dropLast ∈ Wstar` ＋ `y ∈ W m`（`based`） ⟹ `graft R y ∈ Wstar`
+
+で、`graft R y = R.dropLast ++ shiftBlk (末尾列) y` だから、これは
+**連結（`WCat` / `WSnoc`）そのもの**。⟹ `Wstar` 路線でも相方は軽くならない。 -/
+
+/-- 節 2 が実際にくれるもの（`|R| ≥ 2` のとき）。 -/
+theorem exp_gives_dropLast {m : ℕ} {R : TrioSeq} (hL : 1 < R.length) (hd : domT R m)
+    (hop : ∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) : R.dropLast ∈ Wstar := by
+  have h := hop 1 le_rfl
+  rw [oper_eq_graft_nil_of_domT hL hd, graft_nil] at h
+  exact h
+
+/-- **開核 B の正体**: `Aop` の節 2 から節 3 を作ること。 -/
+def GraftFromExp : Prop :=
+  ∀ (m : ℕ) (R : TrioSeq), R ≠ [] → argOK R → domT R m →
+    (∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) →
+    ∀ y ∈ W m, based y → graft R y ∈ Wstar
+
+/-- **★★★ `TowerExp` は `GraftFromExp` ＋ `TowerGraft2` に落ちる。**
+節 2 を節 3 に直せば、あとは `TowerOK` の節 3 側（`tower1_mem` は証明ずみ、
+`TowerGraft2` は課題 L81 で `LiftTie` に落ちた）と同じ。 -/
+theorem towerExp_of_graftFromExp (h2 : TowerGraft2) (hg : GraftFromExp) :
+    TowerExp := by
+  intro v z m a R hR hRne hz1 hva hd hop hpM n hn
+  have hgr := hg m R hRne hR hd hop
+  have hlevpos : 0 < lev R (R.length - 1) := by rw [hd.1]; omega
+  have hsr : srow R (R.length - 1) = 1 ∨ srow R (R.length - 1) = 2 := by
+    unfold srow
+    unfold lev at hlevpos
+    by_cases h2' : 0 < entry R 2 (R.length - 1)
+    · rw [if_pos h2']; exact Or.inr rfl
+    · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+  rcases hsr with h1 | h1
+  · rw [oper_cons_tower1 hR hRne hd h1 hpM]
+    exact tower1_mem hR hRne hz1 hva hd h1 hgr hpM n
+  · exact h2 v z m a R hR hRne hz1 hva hd h1 hgr hpM n hn
+
+/-- **★★★★★ 残る核は `LiftTie` と `GraftFromExp` のちょうど 2 本。** -/
+theorem towerOK_of_liftTie_graft (hlt : LiftTie) (hg : GraftFromExp) : TowerOK :=
+  towerOK_of (towerGraft2_of_liftTie hlt)
+    (towerExp_of_graftFromExp (towerGraft2_of_liftTie hlt) hg)
+
+/-! ### ⚠ 既存との重複の報告
+
+`Wset.row2_revival_gap`（`Wset.lean:3793`）が私の `tower2_vw` / `tower2_zr` と
+**同じ内容**（`v < entry R 1 (末尾) ∧ z < entry R 2 (末尾)`）だった。
+`Wtower2.TowerExp2Root`（`Wtower2.lean:2257`）はそれを仮定に取り込んだ形で、
+`towerExp2_of_root` / `towerExp2Low_of_root` も既にある。
+⟹ `TowerExp2` の側は `TowerExp2Root` まで削れている。残るのは節 2 の中身
+（`GraftFromExp`）で、そこは `TowerExp2Root` でも消えていない。 -/
+
+
 end L53
 end TRIO
