@@ -3755,6 +3755,91 @@ theorem liftTower_eq_shTower2 {Q : TrioSeq} (hQne : Q ≠ []) {d e v : ℕ}
 `d = entry R 0 (|R|-1) ≥ 1` は `argOK R` から、`e = entry R 1 (|R|-1) - v ≥ 1` は
 `L53.tower2_vw` から**どちらも自動**。 -/
 
+
+/-! ## 51. ★★★★★ 課題 L129 と、H12/R2 の閉じた形の食い違いへの回答
+
+### 51.1 ★ (team-lead の問い) **`Lift1 X (k*e)` と `Lift1^k X e` は同じです**
+
+`Wset.Lift1_Lift1`（`:1230`）`Lift1 (Lift1 X t) s = Lift1 X (t + s)` の帰納で出る。
+⟹ **H12 の `Lift1 (…) (k·δ1)` と R2 の `Lift1^j (…)` は同値。どちらでも使えます。** -/
+
+/-- `Lift1` を `k` 回かけるのは 1 回で `k * e` 持ち上げるのと同じ。 -/
+theorem Lift1_iterate (X : TrioSeq) (e : ℕ) :
+    ∀ k : ℕ, (fun Y => Lift1 Y e)^[k] X = Lift1 X (k * e) := by
+  intro k
+  induction k with
+  | zero => simp
+  | succ k ih =>
+      rw [Function.iterate_succ_apply', ih, Lift1_Lift1]
+      congr 1
+      rw [Nat.succ_mul, Nat.add_comm]
+
+/-! ### 51.2 ★ 課題 L129: **`zle1 R` を足すと `z = 1 ∧ srow = 2` は空虚**
+
+R2 の算術（`|R| ≤ 4` の全数 460,441 件で 0 件）を Lean で確定する。
+既存の `L53.tower2_zr`（`L53Subst.lean:2380`）が `z < entry R 2 (|R|-1)` を与えるので、
+`zle1 R`（`Wset.lean:2470`、`∀ p ∈ M, p.2.2 ≤ 1`）と合わせて `z ≤ 1` と矛盾する。 -/
+
+theorem tower2_not_z1_of_zle1 {v m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz : zle1 R) (hd : domT R m) (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, 1) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) : False := by
+  have hlt := L53.tower2_zr (v := v) (z := 1) hRne hd hi2 hpM
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hmem : R.getD (R.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ R :=
+    entry_pair_mem (B := R) (by omega)
+  have hle : entry R 2 (R.length - 1) ≤ 1 := hz _ hmem
+  omega
+
+/-- ⟹ `zle1 R` のもとでは `srow = 2` の塔は `z = 0` に限られる。 -/
+theorem tower2_z_zero_of_zle1 {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hz : zle1 R) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) : z = 0 := by
+  rcases Nat.lt_or_ge z 1 with h | h
+  · omega
+  · exfalso
+    have hz1' : z = 1 := by omega
+    subst hz1'
+    exact tower2_not_z1_of_zle1 hRne hz hd hi2 hpM
+
+/-! ### 51.3 ⟹ `zle1` つきの `TowerOK`
+
+`Wset.TowerOK` / `Wset.Wstar_closed`（`Wset.lean:4372`）は共有ファイルなので触らない。
+代わりに **`zle1 R` を足した版**を定義し、`z = 1` の枝が空虚であることを記録する。 -/
+
+/-- `TowerExpBigRow2` に `zle1 R` を足した版。 -/
+def TowerExpBigZ : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → 2 ≤ R.length → z ≤ 1 → zle1 R →
+    2 * v + z ≤ a → domT R m → R.dropLast ∈ Wstar →
+    (∃ p ∈ R.dropLast, p.2.2 ≠ z) →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+/-- **★ `zle1` つきの場面では `srow = 2` なら必ず `z = 0`。**
+⟹ `z = 1` の `srow = 2` の枝は**空虚**（R2 の実測 0/460,441 の算術）。 -/
+theorem towerExpBigZ_srow2_z_zero {v z m : ℕ} {R : TrioSeq}
+    (hRne : R ≠ []) (hz1 : z ≤ 1) (hz : zle1 R) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) : z = 0 :=
+  tower2_z_zero_of_zle1 hRne hz1 hz hd hi2 hpM
+
+/-! ### 51.4 ⚠ `zle1` を本線に入れるには `Wset.lean` の変更が要る
+
+`Wset.TowerOK`（`:4365` 付近）にも `Wset.Wstar_closed`（`:4372`）にも `zle1` の仮定が無い。
+消費側（`Wset.mem_of_Aclosed` `:4642` / `mem_Wstar` `:4646` / `mem_of_Aclosed_aux` `:4558`）は
+**`zle1` を持っている**（R2 の調査）ので、`Wstar_closed` の内部で `zle1 R` を引き回せれば
+足せるはず。⚠ **`Wset.lean` は共有ファイルなので私は触りません。team-lead の判断待ち。**
+
+上の `tower2_not_z1_of_zle1` / `tower2_z_zero_of_zle1` は**その判断が出たらすぐ使える形**で
+用意してある（どちらも `zle1 R` だけを追加仮定に取る）。
+
+⟹ 足せれば **`srow = 2` の枝は `z = 0` に限られ**、私の `tower_of_row2const`（§40）の
+「`R.dropLast` の行 2 ≡ `z` ＝ `0`」枝は **`zeroRow2_mem_Wself` で無料**になる。
+残るのは **`R.dropLast` に行 2 = 1 の列がある**場合だけ。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
