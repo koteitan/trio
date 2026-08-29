@@ -1630,5 +1630,47 @@ theorem liftStage_of_noTie_zero {m d z : ℕ} {R : TrioSeq} (hargOK : argOK R)
   simpa [entry] using Nat.pos_of_ne_zero (by simpa [entry] using h8)
 
 
+/-! ## ★★★ 課題 L73: `v` は強制されない。だが **`v` で割れば全 `v` で閉じる**
+
+### L73-a の判定: **`v = 0` は強制されない**
+
+`TowerOK2` の仮定は `srow R (|R|-1) = 2` ＋ 根が行 2 の親。`nextrel2` は
+`le1 M j0 j1` を要求するので、根が親なら `le1 M 0 |R|`、つまり行 1 の鎖が根から届く。
+`nextrel1` の狭義不等号から **`v < w`**（`w = entry R 1 (|R|-1)`）は出るが、
+**`v = 0` は出ない。**
+
+⟹ H11 の「シートに `v ≥ 1` の事例は 0 件」は**母集団の性質**であって、
+`TowerOK2` の仮定からの帰結ではない。
+
+### ★★ L73-c: `v` で割ると**両側とも閉じる**
+
+    `v = 0`  … 無タイ ＝ **窓条件** ⟹ `liftStage_of_window`（核なし）
+    `v ≥ 1`  … `tieSyn_holds` ⟹ `TieFree` ⟹ `Lift1_eq_mlift_of_tieFree`
+               （`hv : 1 ≤ entry X 1 0 = v` がちょうど満たされる）⟹ `mlift_mem_W`
+
+**⟹ `TieFree` の仕事は無駄にならない。`v ≥ 1` 側でちょうど使える。** -/
+
+/-- **`v ≥ 1` では `TieFree` の道が使える**（課題 L73-c）。 -/
+theorem liftStage_of_noTie_pos {m d v z : ℕ} {R : TrioSeq} (hv : 1 ≤ v)
+    (hargOK : argOK R) (hne : ∀ p ∈ R, p.2.1 ≠ v)
+    (hX : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W m) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (m + 2 * d) := by
+  have hv1 : 1 ≤ entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 := by
+    simpa [entry] using hv
+  rw [Lift1_eq_mlift_of_tieFree hv1 (tieSyn_holds v z R hargOK hne) d]
+  exact mlift_mem_W _ hX
+
+/-- **★★★ 無タイなら根リフトは全 `v` で通る**（課題 L73-c）。
+`v = 0` は窓、`v ≥ 1` は `TieFree`。**どちらも核なし。** -/
+theorem liftStage_of_noTie {m d v z : ℕ} {R : TrioSeq} (hargOK : argOK R)
+    (hne : ∀ p ∈ R, p.2.1 ≠ v)
+    (hX : (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W m) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (m + 2 * d) := by
+  rcases Nat.eq_zero_or_pos v with hv0 | hv
+  · subst hv0
+    exact liftStage_of_noTie_zero hargOK hne hX
+  · exact liftStage_of_noTie_pos hv hargOK hne hX
+
+
 end L53
 end TRIO
