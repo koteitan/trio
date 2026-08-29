@@ -2783,5 +2783,104 @@ theorem towerOK_of_mliftR_graft (h : MliftR) (hg : GraftFromExp) : TowerOK :=
   towerOK_of_liftTie_graft (liftTie_of_mliftR h) hg
 
 
+/-! ## ★★★★ 課題 L86-b: `w = v0` で壊れるのは**証明の 1 行ではなく、マスクの表現力**
+
+`mlift_mem_W` の鎖はこうなっている:
+
+    `mlift A v d = slift A (fun m => m + if v < m then d else 0)`   `Cgraft.lean:1033`
+      └ 途中で **`coneV_iff_amin : coneV A v j ↔ v < amin A j`**    `Cgraft.lean:863`
+    `slift_mem_W_tight (Stair φ) …`                                 `Wslift.lean:97`
+      └ 支えは **`amin_oper_mir`（(A2)：コピー列は同じ `amin`）**   `Aexp.lean:224`
+
+`amin A j = sInf {entry A 1 y | y は j の行 0 祖先}`（`Cgraft.lean:848`）で、
+**根は（`rtg0_zero` により）すべての列の行 0 祖先**。⟹ `amin A j ≤ entry A 1 0` が
+**常に成り立つ**。
+
+**⟹ 閾値を `w = v0` にすると `coneV` は空になり、`mlift X v0 d = X` に潰れる。**
+つまり「1 段伸ばす」は証明のどこかが壊れるのではなく、**`amin` マスクが
+根を含むせいで `v0` より上の閾値を表現できない**。要るのは根を除いた `aminR`。 -/
+
+/-- 根を除いた行 0 祖先の行 1 最小値。 -/
+noncomputable def aminR (X : TrioSeq) (j : ℕ) : ℕ :=
+  sInf {m | ∃ y, y ≠ 0 ∧ Relation.ReflTransGen (nextrel0 X) y j ∧ entry X 1 y = m}
+
+theorem aminR_le {X : TrioSeq} {j y : ℕ} (hy0 : y ≠ 0)
+    (h : Relation.ReflTransGen (nextrel0 X) y j) : aminR X j ≤ entry X 1 y :=
+  Nat.sInf_le ⟨y, hy0, h, rfl⟩
+
+theorem aminR_mem {X : TrioSeq} {j : ℕ} (hj : j ≠ 0) :
+    ∃ y, y ≠ 0 ∧ Relation.ReflTransGen (nextrel0 X) y j ∧ entry X 1 y = aminR X j := by
+  have hne : {m | ∃ y, y ≠ 0 ∧ Relation.ReflTransGen (nextrel0 X) y j
+      ∧ entry X 1 y = m}.Nonempty :=
+    ⟨entry X 1 j, j, hj, Relation.ReflTransGen.refl, rfl⟩
+  exact Nat.sInf_mem hne
+
+/-- **`coneVR` は `aminR` の閾値条件**（`coneV_iff_amin` の根を外した版）。 -/
+theorem coneVR_iff_aminR {X : TrioSeq} {w j : ℕ} (hj : j ≠ 0) :
+    coneVR X w j ↔ w < aminR X j := by
+  constructor
+  · intro h
+    obtain ⟨y, hy0, hy, hval⟩ := aminR_mem (X := X) hj
+    rw [← hval]; exact h y hy hy0
+  · intro h y hy hy0
+    exact lt_of_lt_of_le h (aminR_le hy0 hy)
+
+theorem amin_le_aminR {X : TrioSeq} {j : ℕ} (hj : j ≠ 0) : amin X j ≤ aminR X j := by
+  obtain ⟨y, -, hy, hval⟩ := aminR_mem (X := X) hj
+  rw [← hval]; exact amin_le hy
+
+/-- **★ `amin` は根で頭打ち**（根はすべての列の行 0 祖先）。 -/
+theorem amin_le_root {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    {j : ℕ} (hj : j < X.length) : amin X j ≤ entry X 1 0 :=
+  amin_le (rtg0_zero hr hj)
+
+/-- **★★ 壊れる箇所そのもの**: 閾値を `v0` にすると `coneV` は空になる。 -/
+theorem coneV_root_vacuous {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    {j : ℕ} (hj : j < X.length) : ¬ coneV X (entry X 1 0) j := by
+  intro h
+  have h1 := coneV_iff_amin.mp h
+  have h2 := amin_le_root hr hj
+  omega
+
+/-- ⟹ **素朴な「1 段上げ」は潰れる**: `mlift X v0 d` は `X` そのもの。 -/
+theorem mlift_root_eq_self {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l) (d : ℕ) :
+    mlift X (entry X 1 0) d = X := by
+  classical
+  refine List.ext_getElem (by rw [mlift_length]) ?_
+  intro i hi1 hi2
+  rw [mlift_length] at hi1
+  rw [← entry_triple (X := mlift X (entry X 1 0) d) (by rw [mlift_length]; omega),
+    ← entry_triple (X := X) hi1]
+  rw [entry0_mlift, entry2_mlift, entry1_mlift hi1,
+    if_neg (coneV_root_vacuous hr hi1), Nat.add_zero]
+
+/-- **`amin` は根の値と `aminR` の小さいほう。**「根で頭打ち」の正確な形。 -/
+theorem amin_eq_min_root {X : TrioSeq}
+    (hr : ∀ l, 0 < l → l < X.length → entry X 0 0 < entry X 0 l)
+    {j : ℕ} (hj0 : j ≠ 0) (hj : j < X.length) :
+    amin X j = min (entry X 1 0) (aminR X j) := by
+  refine le_antisymm (le_min (amin_le_root hr hj) (amin_le_aminR hj0)) ?_
+  obtain ⟨y, hy, hval⟩ := amin_mem X j
+  rw [← hval]
+  by_cases hy0 : y = 0
+  · subst hy0; exact min_le_left _ _
+  · exact le_trans (min_le_right _ _) (aminR_le hy0 hy)
+
+/-- **★★★ 伸ばすために要る 1 本**: `amin_oper_mir`（(A2)）の `aminR` 版。
+これが出れば `slift` の機械がそのまま `aminR` で回り、`MliftR` が出る。 -/
+def AminROper : Prop :=
+  ∀ (M : TrioSeq) (n j0 Lb k q : ℕ),
+    j0 + Lb + 1 = M.length → 0 < Lb → 0 < n →
+    ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0) →
+    hasParent M (srow M (M.length - 1)) (M.length - 1) →
+    parent M (srow M (M.length - 1)) (M.length - 1) = j0 →
+    k < n → q < Lb →
+    aminR (M⟦n⟧) (j0 + (k * Lb + q)) = aminR M (j0 + q)
+
+
 end L53
 end TRIO
