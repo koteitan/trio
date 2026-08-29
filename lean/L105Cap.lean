@@ -8897,6 +8897,55 @@ theorem snoc_orphan_of_flat {Q : TrioSeq} {p : ℕ × ℕ × ℕ} {i : ℕ}
 ⚠ **R2 に「`srow = 1` 版は無料にならない」と伝えること。**
 **`oper_of_srow1_par0` が既にあり、それが `shTower` を返すのが理由。** -/
 
+/-! ## 122. ★★★★★ `(T1)` の残差（ブロッカーあり）は **§111 がそのまま当たります**
+
+§120 より、`(T1)` で `r` の親になれるのは **`Q` のブロッカーの像**だけで、**根ではない**。
+⟹ **悪根 `j0 ≥ 1`** ⟹ **§111 `snocRoot_comm_of_inner` が土台を切り分ける。** -/
+
+open Classical in
+/-- **★★★★★ `(T1)` の展開: ブロッカーの像より手前は触られない。** -/
+theorem oper_towerSnoc_of_blocker {Q : TrioSeq} {e n j0 m : ℕ}
+    {r : ℕ × ℕ × ℕ} (hj0lt : j0 < (shTower Q e n).length)
+    (hp : hasParent (shTower Q e n ++ [r])
+      (srow (shTower Q e n ++ [r]) (shTower Q e n).length)
+      (shTower Q e n).length)
+    (hpar : parent (shTower Q e n ++ [r])
+      (srow (shTower Q e n ++ [r]) (shTower Q e n).length)
+      (shTower Q e n).length = j0) :
+    (shTower Q e n ++ [r])⟦m⟧
+      = (shTower Q e n).take j0 ++ ((shTower Q e n).drop j0 ++ [r])⟦m⟧ :=
+  snocRoot_comm_of_inner hj0lt hp hpar
+
+/-! ### 122.1 ⟹ `(T1)` の残差の形
+
+    **前半 `(shTower Q e n).take j0`** … **`Wset.W_take`（無条件）**で `W u`
+      （`shTower Q e n ∈ W u` は §113 の帰納法の仮定）
+    **後半 `((shTower Q e n).drop j0 ++ [r])⟦m⟧`** … **ブロック `n-1` の接尾辞 ＋ 1 列**の展開
+
+⟹ **`mem_of_oper_mem` で `(T1)` を落とすには、この連結が `W u` にあればよい。**
+
+### 122.2 ⟹ 今日の到達点（`z = 0` の枝）
+
+    ✅ **`d = 0`** … 無料（§121.2 `snoc_orphan_of_flat`）
+    ✅ **`Q` にブロッカーが無い** … `r` は孤児 ⟹ `snoc_orphan_W` で無料（§120）
+    ✅ **(T2) 孤児の枝** … §119 `shTower_orphan_row1`
+    **残差** … **`Q` にブロッカーがある場合の (T1)**
+       ⟹ **§122（上）で「前半は触られない」まで来た**
+       ⟹ 残るのは **「塔の接頭辞 ＋ 短い塊の展開」の連結**
+
+⚠ **これは `catBlock`（§78/§90）と同じ形だが、後半が `shiftr01 c 0 B` の形ではない**
+（`(shTower).drop j0 ++ [r]` の展開なので）。**そこが最後の違い。**
+
+### 122.3 ⚠ `(TOW)` は迂回できないことが 4 方向から確認されました
+
+    §110 `TowerSnocRoot` ＝ `MTowerClosedS`（塔を消しても同じ文）
+    §112 `MTowerClosedS0` ＝ `ShiftTowerClosedS`（`z=0` では同一）
+    §121 (T1) の**親＝根**の枝も `(TOW)`（塔の塔になり `n` が増える）
+    **§122 (T1) の**親＝ブロッカー**の枝は、塔の接頭辞との連結に落ちる**
+
+**⟹ どの方向から入っても「塔（またはその接頭辞）に何かを継ぐ」に戻る。**
+**⟹ それが `(TOW)` が半年の核である理由の、構造的な説明である。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
