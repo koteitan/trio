@@ -5744,6 +5744,82 @@ theorem w_le_wstar2s_of_mTowerClosedS (htow : MTowerClosedS) (u : ℕ) :
 **⟹ §70-71 は「本線では不要」ではなくなった。**
 （§72 の「§70-71 は不要」は **C-1 を選ぶ場合の話**で、**C-2 を選ぶなら本線の道具**である。） -/
 
+/-! ## 76. ★★★★★ `MTowerClosedS` の**無料の枝**: 行 2 ≡ 0
+
+§32 の `liftStage_of_zeroRow2` と同じ理屈。`mTower` は `Lift1` と `shiftr01 · 0` しか
+使わないので**行 2 を動かさない**。⟹ `Q` の行 2 が恒等的に `0` なら `mTower` もそうで、
+`Wtower2.zeroRow2_mem_Wself` がそのまま `Wself` に入れる。根の `lev` は `Q` のものと同じ。 -/
+
+@[simp] theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] := by
+  unfold mTower
+  simp
+
+theorem zeroRow2_shiftr01 {Q : TrioSeq} {d0 d1 : ℕ} (h : ∀ p ∈ Q, p.2.2 = 0) :
+    ∀ p ∈ shiftr01 d0 d1 Q, p.2.2 = 0 := by
+  intro p hp
+  unfold shiftr01 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨q, hq, rfl⟩ := hp
+  exact h q hq
+
+theorem zeroRow2_mTower {Q : TrioSeq} (h : ∀ p ∈ Q, p.2.2 = 0) (d e n : ℕ) :
+    ∀ p ∈ mTower Q d e n, p.2.2 = 0 := by
+  intro p hp
+  unfold mTower at hp
+  rw [List.mem_flatMap] at hp
+  obtain ⟨k, -, hk⟩ := hp
+  exact zeroRow2_Lift1 (zeroRow2_shiftr01 h) p hk
+
+theorem lev_mTower_root {Q : TrioSeq} (hQne : Q ≠ []) (d e n : ℕ) :
+    lev (mTower Q d e (n + 1)) 0 = lev Q 0 := by
+  have hQlen : 0 < Q.length := List.length_pos_iff.mpr hQne
+  rw [mTower_cons]
+  unfold lev
+  rw [entry_append_left _ _ hQlen, entry_append_left _ _ hQlen]
+
+/-- **★★★★★ `MTowerClosedS` の行 2 ≡ 0 の枝は仮定ゼロ。** -/
+theorem mTower_mem_of_zeroRow2 {u : ℕ} {Q : TrioSeq} (hz : ∀ p ∈ Q, p.2.2 = 0)
+    (hQ : Q ∈ W u) (d e n : ℕ) : mTower Q d e n ∈ W u := by
+  cases n with
+  | zero => simpa using W_nil u
+  | succ n =>
+      by_cases hQne : Q = []
+      · subst hQne; simpa using W_nil u
+      · rw [mem_Wself_iff]
+        refine ⟨zeroRow2_mem_Wself (zeroRow2_mTower hz d e (n + 1)), ?_⟩
+        rw [lev_mTower_root hQne]
+        exact lev_root_le_of_mem_W hQ hQne
+
+/-- ⟹ **`MTowerClosedS` は「`Q` の行 2 に非零がある」場合だけ**（§32.1 と同じ形）。 -/
+def MTowerClosedRow2 : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    (∃ p ∈ Q, 0 < p.2.2) →
+    mTower Q d e n ∈ W u
+
+open Classical in
+theorem mTowerClosedS_of_row2 (h : MTowerClosedRow2) : MTowerClosedS := by
+  intro u d e n Q hQ hs
+  by_cases hz2 : ∃ p ∈ Q, 0 < p.2.2
+  · exact h u d e n Q hQ hs hz2
+  · refine mTower_mem_of_zeroRow2 ?_ hQ d e n
+    intro p hp
+    by_contra hc
+    exact hz2 ⟨p, hp, by omega⟩
+
+/-! ### 76.1 ⟹ `MTowerClosedS` の残差
+
+    `|Q| ≤ 1` かつ `lev Q 0 = 0` … `Q = [(c,0,0)]` ⟹ **行 2 ≡ 0 ⟹ 無料**
+    行 2 ≡ 0                       … **無料**（上）
+    **行 2 に非零がある**          … **残差**（`MTowerClosedRow2`）
+
+⟹ **`GraftAll` の置き換えとして残るのは `MTowerClosedRow2` 1 本**:
+
+    `Q ∈ W u` ＋ 根が狭義最浅 ＋ **`Q` の行 2 に非零がある**
+      ⟹ `mTower Q d e n ∈ W u`
+
+**6 量化 / 3 前提。`graft` も `y ∈ W u` の全称も無い。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
