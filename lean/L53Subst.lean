@@ -1062,5 +1062,91 @@ def Wstar3 : Set TrioSeq :=
   {R | argOK R → ∀ v z : ℕ, (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z)}
 
 
+/-! ## ★★★ 課題 L63: **2 行の道筋は既に 3 行に移植ずみだった**
+
+`lean/Wset.lean` を数えたところ、`Wstar` の一式は**全部ある**:
+
+    Wstar              `Wset.lean:2684`
+    graft_cons         `:2545`     rsum_self_cons  `:2539`
+    based_cons         `:2536`     entry_cons      `:1708`
+    argOK_oper / argOK_graft / argOK_dropLast      `:2523 / :2526 / :2530`
+    oper_mem_ge / graft_mem_ge / graft_append      `:1536 / :1575 / :1434`
+    tow                `:2780`
+    oper_cons_nat      `:2041`     oper_cons_succ  `:2392`
+    oper_cons_tower1   `:2789`     oper_cons_tower2 `:3231`
+    **Wstar_closed (htow : TowerOK)  `:4372`**
+    mem_Wstar          `:4646`     mem_W_of_bound_aux / mem_W_of_bound `:4653 / :4732`
+
+⟹ **課題 L62-b で「足りないのは `mem_Wstar` だけ」と書いたが、それも既にある。
+残っているのは仮定 `TowerOK` ただ 1 本。**
+
+## ★ `TowerOK` は私の課題 L57 の分析そのもの
+
+```lean
+def TowerOK : Prop :=
+  ∀ v z u0 a R, argOK R → R ≠ [] → z ≤ 1 → 2*v+z ≤ a →
+    Aop W u0 Wstar R → (∃ m, domT R m) →
+    **hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R|** →      ← 根が R の末尾の孤児を**復活**させる
+    ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W a
+```
+
+その docstring:
+
+> **The one remaining core.** When the principal root **revives** `R`'s trailing orphan …
+> **For `srow = 1` the row-1 lift is `0`** and the plain `graft` recursion applies;
+> **for `srow = 2` the copies raise row 1 by `w - v` on the `le1`-cone of the root**,
+> so the substituted block is the *lifted* tower.
+
+⟹ **課題 L57 で書いた「`srow = 1` は段の中で閉じる／`srow = 2` は行 2 が不変なので逃げる」
+と逐語で一致する。** そして `TowerOK` の仮定の `hasParent ((0,v,z) :: R) …` は、
+`R` 単体では孤児（`¬ HasParentInBlock R`）なのに根を付けると親ができる、という
+**まさに復活の条件**である。
+
+## ⟹ 現在地（正確な形）
+
+    **非復活**（`HasParentInBlock R`）… `comm_of_hasParentInBlock` で閉じる  ← 課題 L61-a、**証明ずみ**
+    **復活**（`TowerOK` の仮定）      … `srow = 1` は graft の再帰で閉じるはず（docstring）
+                                        `srow = 2` が**唯一の核**
+
+⟹ **`TowerOK` を `srow` で 2 つに割り、`srow = 1` の側を落とすのが次の緑。** -/
+
+/-- **`TowerOK` の `srow = 1` の側**（docstring の「plain `graft` recursion」）。 -/
+def TowerOK1 : Prop :=
+  ∀ (v z u0 a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+    Aop W u0 Wstar R → (∃ m, domT R m) →
+    srow R (R.length - 1) = 1 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+/-- **`TowerOK` の `srow = 2` の側**（唯一の核。行 2 が写しで不変なので逃げる）。 -/
+def TowerOK2 : Prop :=
+  ∀ (v z u0 a : ℕ) (R : TrioSeq), argOK R → R ≠ [] → z ≤ 1 → 2 * v + z ≤ a →
+    Aop W u0 Wstar R → (∃ m, domT R m) →
+    srow R (R.length - 1) = 2 →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+theorem srow_le_two (M : TrioSeq) (j : ℕ) : srow M j ≤ 2 := by
+  unfold srow
+  split
+  · omega
+  · split <;> omega
+
+/-- **`TowerOK` は 2 つに割れる**（`srow = 0` は `domT` と両立しない）。 -/
+theorem towerOK_of_split (h1 : TowerOK1) (h2 : TowerOK2)
+    (h0 : ∀ (R : TrioSeq), R ≠ [] → (∃ m, domT R m) → srow R (R.length - 1) ≠ 0) :
+    TowerOK := by
+  intro v z u0 a R hR hRne hz hva hAop hdom hpar n hn
+  rcases Nat.lt_or_ge (srow R (R.length - 1)) 2 with hs | hs
+  · have hs1 : srow R (R.length - 1) = 1 := by
+      have := h0 R hRne hdom
+      omega
+    exact h1 v z u0 a R hR hRne hz hva hAop hdom hs1 hpar n hn
+  · have hs2 : srow R (R.length - 1) = 2 := by
+      have h9 := srow_le_two R (R.length - 1)
+      omega
+    exact h2 v z u0 a R hR hRne hz hva hAop hdom hs2 hpar n hn
+
+
 end L53
 end TRIO
