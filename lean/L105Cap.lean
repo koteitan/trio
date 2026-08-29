@@ -579,8 +579,10 @@ theorem capSnocOpenExact_of_capSnocOpen' (h : CapSnocOpen') : CapSnocOpenExact :
 違いは、あちらが「写しが深くなる」ことで破れるのに対し、こちらは
 **`argOK` が根を唯一の行 0 = 0 の列にしている**ことで破れる点。
 
-⟹ **`PrefixCopies` は `W_add` 経由では出ない。** `Aop` の節 3（`graft`）が唯一の道
-（§132 の訂正どおり、節が 1 つ死んでも路線は死なない）。
+⟹ **`PrefixCopies` は `W_add` 経由では出ない。**
+⚠ ただし「`Aop` の節 3 が唯一の道」と書くのは**誤り**（§16 参照）。
+残核そのものは `hasParent` を仮定しているので **節 3 は使えない**。
+節 3 が使えるのは、節 2 で降りた**展開先**である。
 
 以下がその Lean での確定（`Wset.not_rsum_cons_root` の一般化）。 -/
 
@@ -692,7 +694,7 @@ theorem based_capBase (M : TrioSeq) (v z t : ℕ) : based (capBase M v z t) :=
 塔の第 `k` 写しが要求する行 1 のリフト `k*d1` は、これで `W (a + 2k*d1)` に入る。
 **残っているのは段の帳尻**（`a + 2k d1` の族を段 `a` の 1 本にまとめること）だけで、
 それは §14 のとおり `W_add`（連結）では**絶対に**できない。
-⟹ **`Aop` の節 3（`domT` ＋ graft 閉包）が唯一の道。** -/
+⟹ 使えるのは `Aop` の**節 2 だけ**（§16）。 -/
 
 theorem capBase_Lift1 (M : TrioSeq) (v z t e : ℕ) :
     Lift1 (capBase M v z t) e = capBase M v z (t + e) := by
@@ -711,6 +713,50 @@ theorem liftStage_capBase' {M : TrioSeq} {v z t e : ℕ} (hctx : CtxOK M v z)
     (hM2 : 1 ≤ M.length) :
     Lift1 (capBase M v z t) e ∈ W ((2 * (v + t) + z) + 2 * e) :=
   liftStage_capBase hctx hM2 (by omega)
+
+
+/-! ## 16. ★★★★★ 残核では `Aop` の**節 2 しか生きていない**
+
+`Aop`（`Wset.lean:171`）の 3 節を残核の主語 `S := capBase ++ [q]` で潰す:
+
+    節 1 `|S| ≤ 1 ∧ lev S 0 = 0`  … `|S| = |M| + 1 ≥ 2` ⟹ **死** 
+    節 3 `∃ m < a, domT S m ∧ …`  … `domT S m` は
+        **`¬ hasParent S (srow S (|S|-1)) (|S|-1)`** を含む（`Wset.lean:61`）。
+        残核は `hasParent` を**仮定**しているので ⟹ **死**（`not_domT_of_hasParent`）
+    節 2 `∀ n ≥ 1, S⟦n⟧ ∈ W a`    … **これだけが生きている**
+
+⟹ **残核 `CapSnocOpenExact` は「すべての展開が `W a` にいる」に等しい**
+（`mem_of_oper_mem` / `mem_iff_oper_mem`、`Wchar.lean:73`/`:75`）。
+そして展開は `C.take j0 ++ 塔` で、§14 によりその**連結は `W_add` では組めない**。
+
+⟹ **道は 1 本しかない: 展開先 `S⟦n⟧` に対して `Aop` の節 3（`domT` ＋ graft 閉包）が
+使えるかを見る。** `S⟦n⟧` の末尾列が孤児かどうかが決め手。
+
+⚠ §14.3 の初稿で「節 3 が唯一の道」と書いたのは**主語を取り違えた誤り**。
+節 3 が使えるのは `S` ではなく `S⟦n⟧` である。 -/
+
+/-- **親を持つ列は `domT` を満たさない** ⟹ 残核では `Aop` の節 3 が使えない。 -/
+theorem not_domT_of_hasParent {M : TrioSeq} {m : ℕ}
+    (h : hasParent M (srow M (M.length - 1)) (M.length - 1)) : ¬ domT M m :=
+  fun hd => hd.2 h
+
+/-- 残核の主語での具体化。 -/
+theorem not_domT_capBase_snoc {M : TrioSeq} {v z t : ℕ} {q : ℕ × ℕ × ℕ}
+    (h : hasParent (capBase M v z t ++ [q])
+      (srow (capBase M v z t ++ [q]) (capBase M v z t).length)
+      (capBase M v z t).length) (m : ℕ) :
+    ¬ domT (capBase M v z t ++ [q]) m := by
+  refine not_domT_of_hasParent ?_
+  have hlen : (capBase M v z t ++ [q]).length - 1 = (capBase M v z t).length := by
+    simp
+  rw [hlen]
+  exact h
+
+/-- 節 1 も死んでいる（長さ ≥ 2）。 -/
+theorem capBase_snoc_len (M : TrioSeq) (v z t : ℕ)
+    (q : ℕ × ℕ × ℕ) : 2 ≤ (capBase M v z t ++ [q]).length := by
+  rw [List.length_append, capBase_length]
+  simp
 
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
