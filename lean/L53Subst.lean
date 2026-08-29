@@ -1758,5 +1758,58 @@ theorem noTie_or_split {v : ℕ} (R : TrioSeq) :
 ⟹ **1 と 2 は Lean だけで閉じる。3 の無タイだけが外からの入力。** -/
 
 
+open Classical in
+/-- **★★ 債務 1: 親は根**（課題 L75）。`domT R m` は「`R` の末尾は `R` の中では孤児」
+なので、`(0,v,z) :: R` で親ができるならそれは**根しかありえない**。
+
+`j0 ≥ 1` なら `nextR_append_right`（`A = [(0,v,z)]`）で `R` の中の親に移り、
+`domT` の第 2 連言と矛盾する。**一意性も同じ移送で移る**（`∃!` なので必要）。 -/
+theorem parent_is_root_of_domT {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hd : domT R m)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length = 0 := by
+  have hRpos : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hcons : ([((0, v, z) : ℕ × ℕ × ℕ)] ++ R) = ((0, v, z) : ℕ × ℕ × ℕ) :: R := rfl
+  have hAlen : ([((0, v, z) : ℕ × ℕ × ℕ)] : TrioSeq).length = 1 := rfl
+  have hidx : ([((0, v, z) : ℕ × ℕ × ℕ)] : TrioSeq).length + (R.length - 1)
+      = R.length := by rw [hAlen]; omega
+  obtain ⟨j0, hj0, huniq⟩ := hpM
+  have hex : ∃ y, nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) y
+      R.length := ⟨j0, hj0⟩
+  have hspec : nextR (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      (parent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length)
+      R.length := Classical.epsilon_spec hex
+  rw [huniq _ hspec]
+  by_contra hne0
+  refine absurd ?_ hd.2
+  obtain ⟨j0', hj0'⟩ : ∃ j0',
+      j0 = ([((0, v, z) : ℕ × ℕ × ℕ)] : TrioSeq).length + j0' :=
+    ⟨j0 - 1, by rw [hAlen]; omega⟩
+  refine ⟨j0', ?_, ?_⟩
+  · show nextR R (srow R (R.length - 1)) j0' (R.length - 1)
+    rw [← nextR_append_right (A := [((0, v, z) : ℕ × ℕ × ℕ)]) (N := R)]
+    rw [hcons, ← hj0', hidx]
+    exact hj0
+  · intro y hy
+    have h1 := nextR_append_right (A := [((0, v, z) : ℕ × ℕ × ℕ)]) (N := R)
+      (i := srow R (R.length - 1)) (a := y) (b := R.length - 1) |>.mpr hy
+    rw [hcons, hidx] at h1
+    have h2 := huniq _ h1
+    rw [hj0'] at h2
+    omega
+
+
+/-- **★ 債務 2: `Lift1` は `based` を保つ**（行 0 を動かさないから）。 -/
+theorem based_Lift1 {X : TrioSeq} {d : ℕ} (h : based X) : based (Lift1 X d) := by
+  unfold based at h ⊢
+  rw [entry0_Lift1]
+  exact h
+
+/-- 根が `(0,v,z)` の列は `based`。 -/
+theorem based_cons_root (v z : ℕ) (R : TrioSeq) :
+    based (((0, v, z) : ℕ × ℕ × ℕ) :: R) := by simp [based, entry]
+
+
 end L53
 end TRIO
