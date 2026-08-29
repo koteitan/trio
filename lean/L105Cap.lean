@@ -3298,6 +3298,82 @@ theorem shiftTowerClosedS_of_self (h : ShTowerSelf) : ShiftTowerClosedS := by
 
 ⟹ **`Wself` の側を `Aop` の節 2／節 3 で直接攻めるしかない。** -/
 
+
+/-! ## 46. ★★★★★ 課題 L125: **`srow = 2` 側でも段は無料**（塔全体で `Wself` 1 点）
+
+§45.2 の散文を定理にする。塔は `srow` によらず `(0,v,z) :: …` の形なので、
+根の `lev` は `2v+z` のまま。⟹ `Wtower2.mem_Wself_iff` で段が落ちる。 -/
+
+theorem lev_cons_root (v z : ℕ) (L : TrioSeq) :
+    lev (((0, v, z) : ℕ × ℕ × ℕ) :: L) 0 = 2 * v + z := by
+  unfold lev
+  simp [entry]
+
+open Classical in
+/-- **★★★★★ 塔は `Wself` かどうかだけ**（`srow = 1` でも `srow = 2` でも、段は無料）。 -/
+theorem tower_mem_W_iff_self {v z m a : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hRne : R ≠ []) (hva : 2 * v + z ≤ a) (hd : domT R m)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length)
+    {n : ℕ} (hn : 1 ≤ n) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+      ↔ (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ Wself := by
+  have hlevpos : 0 < lev R (R.length - 1) := by rw [hd.1]; omega
+  have hsr : srow R (R.length - 1) = 1 ∨ srow R (R.length - 1) = 2 := by
+    unfold srow
+    unfold lev at hlevpos
+    by_cases h2' : 0 < entry R 2 (R.length - 1)
+    · rw [if_pos h2']; exact Or.inr rfl
+    · rw [if_neg h2', if_pos (by omega)]; exact Or.inl rfl
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  have hlev : lev ((((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦k + 1⟧) 0 = 2 * v + z := by
+    rcases hsr with h1 | h1
+    · rw [oper_cons_tower1 hR hRne hd h1 hpM]
+      show lev (tow v z R (k + 1)) 0 = 2 * v + z
+      simp only [tow]
+      exact lev_cons_root v z _
+    · rw [oper_cons_tower2 (m := m) hR hRne hd h1 hpM]
+      exact lev_cons_root v z _
+  rw [mem_Wself_iff]
+  constructor
+  · exact fun h => h.1
+  · exact fun h => ⟨h, by rw [hlev]; exact hva⟩
+
+/-! ### 46.1 ⟹ `TowerExpBigRow2` は **`Wself` の 1 文**
+
+    `∀ v z m a R, argOK R → 2 ≤ |R| → z ≤ 1 → 2v+z ≤ a → domT R m →
+       R.dropLast ∈ Wstar → (∃ p ∈ R.dropLast, p.2.2 ≠ z) → hasParent … →
+       ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ **∈ Wself**`
+
+⟹ **`a` と `2v+z ≤ a` は結論から消える**（`tower_mem_W_iff_self`）。
+`srow = 1` でも `srow = 2` でも同じ。**段の勘定はどこにも残っていない。**
+
+### 46.2 ★ H12 の問い「`z = 0` のとき実際に何が効いているか」への回答（1 行）
+
+> **`z = 0` では剥き落とし（孤児性）は使っていません。`constRow2_mem_W`（§38）が
+> `c = 0` のとき `Wtower2.zeroRow2_mem_Wself`（`:3011`）に分岐するからです。**
+
+`constRow2_mem_W` の場合分け:
+
+    `c = 0` … **`zeroRow2_mem_Wself hz`（行 2 ≡ 0 ⟹ `Wself`）＋ `W_mono`**  ← `z = 0` はここ
+    `c ≥ 1` … `constRow2_mem_W_aux`（末尾は行 2 の孤児 ⟹ `Pred` で剥ける）  ← `z = 1` はここ
+
+⟹ H12 の実測（`z=1` は 100% 孤児、`z=0` は 0〜44%）と**完全に整合**する。
+`z = 0` で孤児性が成り立たないのは正しく、**そこでは別の定理を使っている**。
+（`srow = 0` の枝の `snoc_flat_root` は `CoreCap` 側（§12.2）の話で、
+`tower_of_row2const` とは無関係。H12 の推測はそこだけ外れています。）
+
+### 46.3 ⟹ `|R| = 1` に `srow = 2` が無いこと（H12 の実測）との整合
+
+H12 の実測「`|R| = 1` では `srow = 2` の非孤児が 0 件」は、私の `towerGraft2Single_holds`
+（`|R| = 1` の **`srow = 2`** の `TowerGraft2`）が**空虚に真**だという意味ではない。
+そちらは `TowerGraft2` の場面（節 3、`domT R m` ＋ 根が復活）で、H12 が測ったのは
+`TowerExpBigRow2` の場面（節 2）である。**母集団が違う。**
+
+⚠ ただし H12 の結論「**`|R| = 1` の証明を延長しても `srow = 2` の枝は出てこない**」は
+`TowerExpBig` については正しい。私も `tower_of_row2const`（§40）で `|R|` 一般に
+伸ばしたときに、`R.dropLast` の行 2 という**新しい条件**が要ることを確認している。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
