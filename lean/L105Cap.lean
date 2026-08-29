@@ -2705,6 +2705,81 @@ theorem towerGraft2Single_holds : TowerGraft2Single := by
 theorem towerOK_of_towerExp (he : TowerExp) : TowerOK :=
   towerOK_of_exp he towerGraft2Single_holds
 
+
+/-! ## 39. ★★★★★ 唯一の核 `TowerExp` を絞る
+
+`Wset.Wstar`（`Wset.lean:2684`）:
+
+    `Wstar R := argOK R → ∀ v z a, z ≤ 1 → 2*v+z ≤ a → ((0,v,z) :: R) ∈ W a`
+
+### 39.1 ★ `|R| = 1` の `TowerExp` は**定理**（R2 の §R98-2、仮定ゼロ）
+
+`|R| = 1` では `oper` は恒等（`Wchar.oper_of_length_one` `:31`）なので、仮定
+`∀ n ≥ 1, R⟦n⟧ ∈ Wstar` は `R ∈ Wstar` そのもの。それを `(v,z,a)` に当てると
+`((0,v,z) :: R) ∈ W a` が出て、`|(0,v,z) :: R| = 2` なので
+`Wchar.oper_mem_of_mem`（`:63`）が展開に配る。 -/
+
+theorem towerExp_singleton {v z a : ℕ} {R : TrioSeq} (hR : argOK R)
+    (hR1 : R.length = 1) (hz1 : z ≤ 1) (hva : 2 * v + z ≤ a)
+    (hop : ∀ n, 1 ≤ n → R⟦n⟧ ∈ Wstar) :
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a := by
+  have hRstar : R ∈ Wstar := by
+    have hres := hop 1 le_rfl
+    rwa [oper_of_length_one hR1 1] at hres
+  exact oper_mem_of_mem (by simp [hR1]) (hRstar hR v z a hz1 hva)
+
+/-! ### 39.2 ★ `|R| ≥ 2` では `domT` から `R⟦n⟧ = R.dropLast`（R2 の §R98-1）
+
+`domT R m` は末尾列が `R` の中で孤児だと言うので、`oper` は `Pred` に落ちる。 -/
+
+theorem oper_eq_dropLast_of_domT {R : TrioSeq} {m : ℕ} (hd : domT R m)
+    (hbig : 2 ≤ R.length) (n : ℕ) : R⟦n⟧ = R.dropLast := by
+  have hlev := hd.1
+  have hnz : ¬ (entry R 0 (R.length - 1) = 0 ∧ entry R 1 (R.length - 1) = 0 ∧
+      entry R 2 (R.length - 1) = 0) := by
+    rintro ⟨-, h1, h2⟩
+    unfold lev at hlev
+    omega
+  rw [oper_eq_pred_of_noParent n (by omega) hnz hd.2]
+  unfold Pred
+  rw [if_neg (by omega)]
+
+/-! ### 39.3 ⟹ `TowerExp` の最終形
+
+`|R| = 1` は落ちた（§39.1）。`|R| ≥ 2` では仮定が **`R.dropLast ∈ Wstar`** 1 本に潰れる。 -/
+
+/-- **`TowerExp` の残核**: `|R| ≥ 2`、仮定は `R.dropLast ∈ Wstar` だけ。 -/
+def TowerExpBig : Prop :=
+  ∀ (v z m a : ℕ) (R : TrioSeq), argOK R → 2 ≤ R.length → z ≤ 1 → 2 * v + z ≤ a →
+    domT R m → R.dropLast ∈ Wstar →
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length →
+    ∀ n, 1 ≤ n → (((0, v, z) : ℕ × ℕ × ℕ) :: R)⟦n⟧ ∈ W a
+
+theorem towerExp_of_big (h : TowerExpBig) : TowerExp := by
+  intro v z m a R hR hRne hz1 hva hd hop hpM n hn
+  rcases Nat.lt_or_ge R.length 2 with hsm | hbig
+  · have hR1 : R.length = 1 := by
+      have := List.length_pos_iff.mpr hRne
+      omega
+    exact towerExp_singleton hR hR1 hz1 hva hop n hn
+  · refine h v z m a R hR hbig hz1 hva hd ?_ hpM n hn
+    have hres := hop 1 le_rfl
+    rwa [oper_eq_dropLast_of_domT hd hbig 1] at hres
+
+/-- **★★★★★★ `TowerOK` は `TowerExpBig` 1 本から出る。** -/
+theorem towerOK_of_towerExpBig (h : TowerExpBig) : TowerOK :=
+  towerOK_of_towerExp (towerExp_of_big h)
+
+/-! ### 39.4 ⟹ 現在地
+
+    `TowerOK` ⟸ **`TowerExpBig`** 1 本
+      `∀ v z m a R, argOK R → 2 ≤ |R| → z ≤ 1 → 2v+z ≤ a →
+         domT R m → **R.dropLast ∈ Wstar** →
+         hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
+         ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W a`
+
+`TowerGraft2` / `LiftTie` / `LiftTieSelf` / `LiftTieCore` / `WConvex` 系は**もう要らない**。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
