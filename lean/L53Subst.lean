@@ -1284,5 +1284,55 @@ def Row1Down : Prop :=
     (∀ j, entry Y 1 j ≤ entry X 1 j) → Y ∈ W u
 
 
+/-! ## ★★★ 課題 L66: `coneV`（値）が入る場所の特定
+
+### L66-a の答え: 値依存は **`amin`** から入る
+
+```lean
+noncomputable def slift (A : TrioSeq) (φ : ℕ → ℕ) : TrioSeq :=      -- `Cgraft.lean:919`
+  (List.range A.length).map fun j =>
+    (entry A 0 j, entry A 1 j + **(φ (amin A j) - amin A j)**, entry A 2 j)
+
+structure Stair (φ : ℕ → ℕ) : Prop where                            -- `Cgraft.lean:883`
+  ge   : ∀ m, m ≤ φ m
+  step : ∀ m n, m ≤ n → **φ m - m ≤ φ n - n**
+  zero : φ 0 = 0
+```
+
+**持ち上げ量が `amin A j`（行 0 祖先鎖の行 1 の最小値）の関数**である。
+これが `mlift`（`Cgraft.lean:312`）を `slift` に落とす `mlift_eq_slift`（`:1033`）の中身で、
+使い所は **`slift_oper`（`Aexp.lean:394`）: `slift (A⟦n⟧) φ = (slift A φ)⟦n⟧`**。
+
+    ⟹ **`Stair.step` は「展開で写しが作られたとき持ち上げ量が整合する」ために要る。**
+       値の関数だからこそ、写しの `amin` が計算でき、`oper` と可換になる。
+
+### L66-b の答え: **`le1` 錐は階段マスクにならない。既に証明されている**
+
+`Lift1` を `slift` として書くには `φ (amin X j) - amin X j = d ⟺ j ∈ le1 錐` が要る。
+`amin` は値なので、これは**錐が値の閾値集合であること** ＝ `TieFree` そのもの。
+
+そして **`Lift1` は `oper` と可換ではない**。可換なのは `slift` だけで、`Lift1` については
+**サンドイッチ 2 本しか無く、しかもそれは既に証明ずみ**である:
+
+    `Le1_Lift1_oper`（`Wtower2.lean:4408`）        `Lift1 (X⟦n⟧) d ≤₁ (Lift1 X d)⟦n⟧`
+    `Le1_oper_Lift1_shiftr01`（`:4457`）           `(Lift1 X d)⟦n⟧ ≤₁ shiftr01 0 d (X⟦n⟧)`
+
+⟹ **`le1` 版の `slift_oper` は作れない（等式が成り立たない）。作れるのは挟み込みだけ。**
+そしてその**隙間を潰すのが `WConvex`**（`liftStage_of_wconvex'`、`Wtower2.lean:4473`）。
+
+## ⟹ 3 つの道が同じである理由（構造として）
+
+    `TieFree`   … 錐を**値の閾値**に寄せて `slift` の等式を使う
+    `mlift`     … 同上（`mlift_eq_slift`）
+    `Row1Mono` / `WConvex` … 挟み込みの**隙間を潰す**
+
+**どれも「行 1 のタイで `le1` の木の辺が消える」ことを別の言葉で避けている。**
+`oper` と可換なのは**値の持ち上げ**だけで、**木の持ち上げ（`le1`）は可換でない** ——
+これが `TowerOK2` の核であり、3 行が 2 行より難しい理由の最終形である。
+
+（2 行には行 2 が無いので `srow = 2` の枝が起きず、`t = 0` しか現れない。
+⟹ `Lift1` を使う必要が無く、タイの問題に触れずに済む。） -/
+
+
 end L53
 end TRIO
