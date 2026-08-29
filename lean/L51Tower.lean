@@ -157,5 +157,148 @@ theorem M275_mem_Wself : M275 ∈ Wself := by
   rw [lev_M275]
   exact M275_mem_W_zero
 
+/-! ### 課題 L51-b: 行 284 `(0,0,0)(1,1,1)(1,1,0)` ＝ `gTower Q0 1 0 n` ＝ `shTower` -/
+
+theorem le0_le {M : TrioSeq} {a b : ℕ} (h : le0 M a b) : a ≤ b := by
+  obtain ⟨-, -, h⟩ := h
+  induction h with
+  | refl => exact le_rfl
+  | tail _ h2 ih => exact le_trans ih (le_of_lt h2.2.2.1)
+
+/-- `(0,0,0)(1,1,1)(1,1,0)` ＝ `psi(W_w + W)`。 -/
+def M284 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 1, 0)]
+
+@[simp] theorem entry_M284_00 : entry M284 0 0 = 0 := rfl
+@[simp] theorem entry_M284_10 : entry M284 1 0 = 0 := rfl
+@[simp] theorem entry_M284_20 : entry M284 2 0 = 0 := rfl
+@[simp] theorem entry_M284_01 : entry M284 0 1 = 1 := rfl
+@[simp] theorem entry_M284_11 : entry M284 1 1 = 1 := rfl
+@[simp] theorem entry_M284_21 : entry M284 2 1 = 1 := rfl
+@[simp] theorem entry_M284_02 : entry M284 0 2 = 1 := rfl
+@[simp] theorem entry_M284_12 : entry M284 1 2 = 1 := rfl
+@[simp] theorem entry_M284_22 : entry M284 2 2 = 0 := rfl
+
+theorem lev_M284 : lev M284 0 = 0 := by simp [lev, entry, M284]
+
+/-- 末尾 `(1,1,0)` は行 2 が 0・行 1 が 1 なので **`srow = 1`**。⟹ `d1 = 0`。 -/
+theorem srow_M284 : srow M284 2 = 1 := by simp [srow, entry, M284]
+
+theorem nextrel0_M284_01 : nextrel0 M284 0 1 := by
+  refine ⟨by simp [M284], by simp [M284], by omega, by simp [entry, M284], ?_⟩
+  intro j hj
+  omega
+
+theorem nextrel0_M284_02 : nextrel0 M284 0 2 := by
+  refine ⟨by simp [M284], by simp [M284], by omega, by simp [entry, M284], ?_⟩
+  intro j hj
+  have h1 : j = 1 := by omega
+  subst h1
+  simp [entry, M284]
+
+theorem le0_M284_00 : le0 M284 0 0 :=
+  ⟨by simp [M284], by simp [M284], Relation.ReflTransGen.refl⟩
+
+theorem le0_M284_01 : le0 M284 0 1 :=
+  ⟨by simp [M284], by simp [M284], Relation.ReflTransGen.single nextrel0_M284_01⟩
+
+theorem le0_M284_02 : le0 M284 0 2 :=
+  ⟨by simp [M284], by simp [M284], Relation.ReflTransGen.single nextrel0_M284_02⟩
+
+theorem nextrel1_M284_02 : nextrel1 M284 0 2 := by
+  refine ⟨by simp [M284], by simp [M284], by omega, by simp [entry, M284],
+    le0_M284_02, ?_⟩
+  intro j hj
+  have h1 : j ≤ 2 := le0_le hj.2
+  have h3 : j < 3 := hj.2.1
+  rcases j with _ | _ | _ | j
+  · omega
+  · simp [entry, M284]
+  · simp [entry, M284]
+  · omega
+
+theorem nextrel1_M284_unique {j : ℕ} (h : nextrel1 M284 j 2) : j = 0 := by
+  obtain ⟨hj3, -, -, hlt, -, -⟩ := h
+  simp only [M284] at hj3
+  simp at hj3
+  rcases j with _ | _ | _ | j
+  · rfl
+  · simp [entry, M284] at hlt
+  · simp [entry, M284] at hlt
+  · omega
+
+theorem nextR_M284_02 : nextR M284 1 0 2 := by
+  rw [nextR]
+  simp only [if_neg (by omega : (1 : ℕ) ≠ 0), if_pos rfl]
+  exact nextrel1_M284_02
+
+theorem hasParent_M284 : hasParent M284 1 2 := by
+  refine ⟨0, nextR_M284_02, ?_⟩
+  intro y hy
+  rw [nextR] at hy
+  simp only [if_neg (by omega : (1 : ℕ) ≠ 0), if_pos rfl] at hy
+  exact nextrel1_M284_unique hy
+
+theorem parent_M284 : parent M284 1 2 = 0 := by
+  have hex : ∃ j0, nextR M284 1 j0 2 := ⟨0, nextR_M284_02⟩
+  have hspec : nextR M284 1 (parent M284 1 2) 2 := Classical.epsilon_spec hex
+  rw [nextR] at hspec
+  simp only [if_neg (by omega : (1 : ℕ) ≠ 0), if_pos rfl] at hspec
+  exact nextrel1_M284_unique hspec
+
+/-- **★★ `M284⟦n⟧ = gTower Q0 1 0 n = shTower Q0 1 n`**（行 0 だけ上がる）。 -/
+theorem oper_M284 (n : ℕ) : M284⟦n⟧ = gTower Q0 1 0 n := by
+  have hl : M284.length - 1 = 2 := rfl
+  have hp : parent M284 (srow M284 (M284.length - 1)) (M284.length - 1) = 0 :=
+    parent_M284
+  rw [oper]
+  dsimp only
+  split
+  · exact absurd ‹M284.length - 1 = 0› (by decide)
+  split
+  · rename_i h
+    exact absurd h.1 (by simp [entry, M284])
+  split
+  · rename_i h
+    exact absurd hasParent_M284 h
+  rw [hp, hl]
+  have htake : M284.take 0 = [] := rfl
+  rw [htake, List.nil_append]
+  unfold gTower
+  congr 1
+  funext k
+  have hr : List.range' 0 2 = [0, 1] := rfl
+  rw [hr]
+  simp [Q0, shiftr01, srow_M284, le0_M284_00, le0_M284_01, Nat.mul_comm]
+
+/-- **★ 行 284 は `(TOW)` そのもの**（`ShiftTowerClosed` を仮定すれば取れる）。 -/
+theorem M284_mem_W_zero_of_tow (h : ShiftTowerClosed) : M284 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn
+  rw [oper_M284, gTower_shTower]
+  exact h 0 1 n Q0 Q0_mem_W_zero Q0_root
+
+theorem M284_mem_Wself_of_tow (h : ShiftTowerClosed) : M284 ∈ Wself := by
+  show M284 ∈ W (lev M284 0)
+  rw [lev_M284]
+  exact M284_mem_W_zero_of_tow h
+
+/-! ### 課題 L51-c: `W_flatMap_copies` は **`e ≥ 1` で止まる**。止まる場所は `rsum`
+
+`W_flatMap_copies`（`Wset.lean:2552`）の中身は `W_add ih hQ (rsum ...)` で、
+
+    rsum A B := ∀ p ∈ A ++ B, entry B 0 0 ≤ p.1     （足す塊の根が**全体で最浅**）
+
+`e = 0` なら写しは `Q` そのものなので根が変わらず `rsum` が通る。**`e ≥ 1` だと
+`k` 枚目の写しの根は `e*k > 0` で、`Q` の根 `0` より深いので `rsum` が破れる。**
+下の `example` がその証明（`d ≥ 1` を待つまでもなく `e ≥ 1` で止まる）。
+
+⟹ **(GTOW) に要るのは「`W_add` の `rsum` を、深い側に足す形に緩めたもの」**であり、
+それは `Aop` の節 3（`graft`）＝ 残核である（課題 L50 §3 と同じ結論）。 -/
+example : ¬ rsum Q0 (shiftr01 1 0 Q0) := by
+  intro h
+  have h9 := h (0, 0, 0) (by simp [Q0, shiftr01])
+  simp [entry, Q0, shiftr01] at h9
+
+
 end L51T
 end TRIO
