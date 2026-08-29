@@ -6846,6 +6846,72 @@ theorem catBlock_of_escape_head {u u' c : ℕ} {A : TrioSeq} {p : ℕ × ℕ × 
 **派生の途中では先頭列が保たれる**（`oper_headD`）ので、**底は 1 つの決まった列**である。
 ⟹ **`WSnoc` は含まれない。§78.2 の判定は撤回する。** -/
 
+/-! ## 91. ★★★★★★ 塔に当てる: **底は「ブロック `n` の根を 1 本足す」だけ** -/
+
+theorem headD_eq_getD (l : TrioSeq) : l.headD (0, 0, 0) = l.getD 0 (0, 0, 0) := by
+  cases l <;> rfl
+
+open Classical in
+theorem headD_Lift1 {X : TrioSeq} {c : ℕ} (hne : X ≠ []) :
+    (Lift1 X c).headD (0, 0, 0)
+      = ((entry X 0 0, entry X 1 0 + c, entry X 2 0) : ℕ × ℕ × ℕ) := by
+  have h0 : 0 < X.length := List.length_pos_iff.mpr hne
+  rw [headD_eq_getD, Lift1_getD h0, if_pos (le1_refl h0)]
+
+open Classical in
+/-- **★★★★★★ 塔の閉包は「塔にブロックの根を 1 本足す」＋「段内で孤児の塊を継ぐ」の 2 本。** -/
+theorem mTowerClosed_of_escape_head {u : ℕ} {Q : TrioSeq} {d e : ℕ} (h2 : 2 ≤ Q.length)
+    (hs : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hblk : L53.HasParentInBlock Q)
+    (hlift : ∀ s : ℕ, ∃ u' : ℕ, Lift1 Q s ∈ W u')
+    (hbase : ∀ n : ℕ, mTower Q d e n ∈ W u →
+      mTower Q d e n
+        ++ [((entry Q 0 0 + d * n, entry Q 1 0 + e * n, entry Q 2 0) : ℕ × ℕ × ℕ)]
+        ∈ W u)
+    (hesc : ∀ (n : ℕ) (B : TrioSeq), 2 ≤ B.length →
+      ¬ L53.HasParentInBlock (shiftr01 (d * n) 0 B) →
+      mTower Q d e n ∈ W u → mTower Q d e n ++ shiftr01 (d * n) 0 B ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  have hQne : Q ≠ [] := by intro hc; rw [hc] at h2; simp at h2
+  intro n
+  induction n with
+  | zero => simpa using W_nil u
+  | succ n ih =>
+      refine mem_of_oper_mem (fun m hm => ?_)
+      rw [oper_mTower' h2 hs hblk d e n m, mTower_step_shift]
+      obtain ⟨u', hu'⟩ := hlift (e * n)
+      have hQ2 : 2 ≤ (Lift1 Q (e * n)).length := by rw [Lift1_length]; exact h2
+      have hLne : Lift1 Q (e * n) ≠ [] := by
+        intro hc
+        have hl : (Lift1 Q (e * n)).length = 0 := by rw [hc]; rfl
+        rw [Lift1_length] at hl
+        omega
+      refine catBlock_of_escape_head
+        (p := ((entry Q 0 0, entry Q 1 0 + e * n, entry Q 2 0) : ℕ × ℕ × ℕ))
+        ih ?_ (fun B hB2 hnb => hesc n B hB2 hnb ih)
+        ((Lift1 Q (e * n))⟦m⟧) (oper_mem_of_mem hQ2 hu' m hm) ?_
+      · exact hbase n ih
+      · intro _
+        rw [oper_headD _ (by rw [Lift1_length]; omega) hm, headD_Lift1 hQne]
+
+/-! ### 91.1 ⟹ 残差の最終形（A の側）
+
+    **(A1) 底**: `mTower Q d e n ++ [ブロック `n` の根] ∈ W u`
+        ＝ **`mTower Q d e (n+1)` の接頭辞**（`(n*|Q| + 1)` 列目まで）
+    **(A2) 継ぎ**: 段内で孤児の塊 `B`（`|B| ≥ 2`）を継ぐ
+
+**⟹ (A1) は「塔 ＋ 次のブロックの根 1 列」**という、いちばん小さい snoc である。
+任意の列ではない ⟹ **`WSnoc` を経由しない。**
+
+⚠ (A1) はそれでも自明ではない: `mTower Q d e (n+1) ∈ W u` から `Wset.W_take` で取れれば
+無料だが、それはいま証明しようとしているもの（同じ `n` で循環）。**別の議論が要る。**
+
+### 91.2 ⟹ B（`MTowerOrphan`）との関係
+
+(A2) は「段内で孤児の塊を継ぐ」で、**B は「`Q` の末尾列が段内で孤児のときの塔」**。
+**どちらも「孤児が土台の中で親を見つけるか」**という同じ問いである（§88.1）。
+**⟹ A と B は (A1) を除いて同じ 1 点に集まった。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
