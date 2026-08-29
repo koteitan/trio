@@ -4582,6 +4582,128 @@ H12 が要るのは
 ⚠ **H12 の実測 0 件は、上の形が母集団に入っていなければ当然**なので、
 **陰性対照を先に走らせてほしい**（今日 3 回、この手順で偽の候補を潰している）。 -/
 
+
+/-! ## 61. 課題 L136: `v = 0, z = 1` の版 ＋ H73 の的を `Prop` にする
+
+### 61.1 ★ `v = 0, z = 1` は本物（R2 が箱を振って確認）
+
+私の §58.1 の指摘どおり、H12 の「例外 0」は箱が行 2 ≤ 1 だったため。
+`zle1` は核に課せない（§53）ので **`v = 0, z = 1` は本物の場合**であり、
+そこでは前提の段が **1**、結論の段が **3** になる。 -/
+
+/-- **`LiftTieCore` の `v = 0`, `z = 1` の場合。** -/
+def LiftTieCoreOne : Prop :=
+  ∀ (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = 0) →
+    (((0, 0, 1) : ℕ × ℕ × ℕ) :: R) ∈ W 1 →
+    Lift1 (((0, 0, 1) : ℕ × ℕ × ℕ) :: R) 1 ∈ W 3
+
+theorem liftTieCoreOne_of_core (h : LiftTieCore) : LiftTieCoreOne := by
+  intro R hR ht hX
+  have hres := h 0 1 R hR ht (by rintro ⟨h1, -⟩; omega) (by simpa using hX)
+  simpa using hres
+
+theorem liftTieCoreOne_iff_wself {R : TrioSeq} :
+    Lift1 (((0, 0, 1) : ℕ × ℕ × ℕ) :: R) 1 ∈ W 3
+      ↔ Lift1 (((0, 0, 1) : ℕ × ℕ × ℕ) :: R) 1 ∈ Wself := by
+  have hne : (((0, 0, 1) : ℕ × ℕ × ℕ) :: R) ≠ [] := by simp
+  have hlev : lev (Lift1 (((0, 0, 1) : ℕ × ℕ × ℕ) :: R) 1) 0 = 3 := by
+    unfold lev
+    rw [L53.entry1_Lift1_zero hne, entry2_Lift1]
+    simp [entry]
+  rw [mem_Wself_iff]
+  constructor
+  · exact fun h => h.1
+  · exact fun h => ⟨h, by rw [hlev]⟩
+
+/-! ### 61.2 ⟹ `v = 0` の残核は **2 本**（段が違う）
+
+    `z = 0` … 前提の段 **0**（節 3 が**無い**）／結論の段 **2**（節 3 が使える）
+    `z = 1` … 前提の段 **1**（節 3 が `m = 0` で**使える**）／結論の段 **3**
+
+⟹ **前提側の道具が違う。** `z = 0` は「節 2 で降りるだけ」、
+`z = 1` は「前提側でも `m = 0` の graft が使える」。**別々に扱う。**
+
+## 62. ★★★★★ 課題 H73: R2 の機構を `Prop` にして、そこから先を全部繋ぐ
+
+R2 の機構「**錐の外の列は必ず自分のブロックの中にブロッカーを持つ**」
+（311,688 列、外のブロックにしか無い ＝ **0 件**）を Lean の 1 文にすると、
+**`Lift1` が flatMap を通り抜ける**ことである。 -/
+
+/-- **★ H73 の的**: `Lift1` が塔の flatMap を通り抜ける（＝ 錐がブロック局所）。
+R2 の実測 100%（塔 276,876 / ブロック 1,245,942 / 列 6,846,876、例外 0）。**未証明。** -/
+def LiftFlatMapLocal : Prop :=
+  ∀ (Q : TrioSeq) (d e n : ℕ),
+    Lift1 (mTower Q d e n) e
+      = (List.range n).flatMap fun k =>
+          Lift1 (Lift1 (shiftr01 (d * k) 0 Q) (e * k)) e
+
+theorem shiftr01_flatMap (d0 d1 : ℕ) (l : List ℕ) (f : ℕ → TrioSeq) :
+    shiftr01 d0 d1 (l.flatMap f) = l.flatMap fun k => shiftr01 d0 d1 (f k) := by
+  unfold shiftr01
+  rw [List.map_flatMap]
+
+theorem mTower_block_succ (Q : TrioSeq) (d e k : ℕ) :
+    Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))
+      = shiftr01 d 0 (Lift1 (Lift1 (shiftr01 (d * k) 0 Q) (e * k)) e) := by
+  have hd : d * (k + 1) = d + d * k := by rw [Nat.mul_succ, Nat.add_comm]
+  have he : e * (k + 1) = e * k + e := Nat.mul_succ e k
+  simp only [hd, he, Lift1_shiftr01, Lift1_Lift1, shiftr01_comp]
+
+theorem mTower_cons (Q : TrioSeq) (d e n : ℕ) :
+    mTower Q d e (n + 1)
+      = Q ++ (List.range n).flatMap fun k =>
+          Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) := by
+  unfold mTower
+  rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+  simp
+
+/-- **★★★★★ 的が落ちれば `operTower = mTower`。** -/
+theorem operTower_eq_mTower (h : LiftFlatMapLocal) (Q : TrioSeq) (d e : ℕ) :
+    ∀ n, operTower Q d e n = mTower Q d e n := by
+  intro n
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      show Q ++ shiftr01 d 0 (Lift1 (operTower Q d e n) e) = _
+      rw [ih, h Q d e n, mTower_cons]
+      congr 1
+      rw [shiftr01_flatMap]
+      refine List.flatMap_congr ?_
+      intro k _
+      exact (mTower_block_succ Q d e k).symm
+
+/-- ⟹ そのとき `operTower` に **succ 形**が付く（§57.1 の分かれ目）。 -/
+theorem operTower_succ (h : LiftFlatMapLocal) (Q : TrioSeq) (d e n : ℕ) :
+    operTower Q d e (n + 1)
+      = operTower Q d e n ++ Lift1 (shiftr01 (d * n) 0 Q) (e * n) := by
+  rw [operTower_eq_mTower h, operTower_eq_mTower h, mTower_succ]
+
+/-! ### 62.1 ⟹ 的が落ちたあとの道筋（全部緑で繋いである）
+
+    `LiftFlatMapLocal`（**未証明**、R2 の機構）
+      ⟹ `operTower_eq_mTower`（上、緑）
+      ⟹ **`operTower_succ`**（上、緑）＝ §57.1 の「succ 形が書ける」条件
+      ⟹ `oper_shTower`（§48）/ `oper_shTower2`（§56）と同じ技法が使える
+      ⟹ **(2) の帰納が `srow = 1` 側とまったく同じ形になる**
+
+⚠ **`LiftFlatMapLocal` 自体は未証明。** R2 の但し書きどおり、
+実測は「証明の目標」であって「証明」ではない。**`operTower` で核を立てたままにしてある。**
+
+### 62.2 ⟹ 証明の道（R2 の機構から）
+
+`Lcone.le1_zero_iff`（`:36`）で両辺を書き下すと、要るのは
+
+    **`le1 (mTower Q d e n) 0 (第 `k` ブロックの位置 `j`)`
+      ⟺ `le1 (第 `k` ブロック) 0 j`**
+
+で、`le1_block`（§60、緑）が右辺を **`le1 Q 0 j`** に直す。
+⟹ **残るのは「塔全体の錐がブロックに制限される」**で、R2 の機構は
+「**錐の外の列は必ず同ブロック内にブロッカーを持つ**」＝ その `⟸` 側である。
+
+⚠ 私の §60.2 の懸念（前のブロックのブロッカーで破れる可能性）は
+**R2 が 0 件と測った**（外のブロックにしか無いケース）。⟹ **機構は正しそう。**
+残るのは**なぜ外のブロックのブロッカーが効かないか**で、そこが証明の核心。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
