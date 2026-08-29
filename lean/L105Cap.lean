@@ -11155,6 +11155,67 @@ theorem mTower_row1_mono_in_block {Q : TrioSeq} {d e n k q1 q2 : ℕ}
 **`W u` の一般の `Q` が `Mono` である保証はありません。**
 **⟹ R2 に「母集団の何 % が `Mono` か」を測ってもらう価値があります（(y3)）。** -/
 
+/-! ## 157. ★★★★★★★ **「戻りは常に 1」を定理にする**（R2 §R157-3 / §R158-1 の 100% の理由）
+
+R2 の実測: **戻り（親のブロックと的のブロックの差）は `n = 7` まで常に 1、100%**。
+**窓 `last − par` は `< 2|Q|` が 100%。**
+
+**ブロッカーなしの `Q`（`e ≥ 1`）については、これは定理である:**
+
+    ブロック `n-1` の根の行 1 ＝ `entry Q 1 0 + e*(n-1)`
+    的（ブロック `n`、位置 `j`）の行 1 ＝ `entry Q 1 j + e*n`（錐の中なのでリフトつき）
+    **差 ＝ `entry Q 1 j + e − entry Q 1 0 > 0`**
+      （`j = 0` なら `e > 0` から、`j ≥ 1` ならブロッカーなしから）
+
+**⟹ ブロック `n-1` の根は**必ず**候補 ⟹ §149 より親は `(n-1)*|Q|` 以上。** -/
+
+open Classical in
+theorem nextrel1_tower_src_ge_prev_block {Q : TrioSeq} {d e N n j a : ℕ}
+    (hd : 0 < d) (he : 0 < e) (hj : j < Q.length)
+    (hn : 0 < n) (hnN : n < N)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnb : ∀ l, 0 < l → l < Q.length → entry Q 1 0 < entry Q 1 l)
+    (hnr : nextrel1 (mTower Q d e N) a (n * Q.length + j)) :
+    (n - 1) * Q.length ≤ a := by
+  have hcone : le1 Q 0 j := le1_zero_of_no_blocker hr0 hnb hj
+  have hE1 : entry (mTower Q d e N) 1 (n * Q.length + j)
+      = entry Q 1 j + e * n := by
+    rw [mTower_entry (by omega) hj]
+    show ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).getD j (0, 0, 0)).2.1 = _
+    rw [block_getD hj, if_pos hcone]
+  have hsucc : e * n = e * (n - 1) + e := by
+    have h1 : e * (n - 1 + 1) = e * (n - 1) + e := Nat.mul_succ e (n - 1)
+    have h2 : n - 1 + 1 = n := by omega
+    rw [h2] at h1; omega
+  have hlt : entry Q 1 0 + e * (n - 1) < entry (mTower Q d e N) 1 (n * Q.length + j) := by
+    rw [hE1, hsucc]
+    rcases Nat.eq_zero_or_pos j with hj0 | hjpos
+    · rw [hj0]; omega
+    · have := hnb j hjpos hj
+      omega
+  exact nextrel1_tower_src_ge_blockRoot hd hj (by omega) (by omega) hr0 hnr hlt
+
+/-! ### 157.1 ⟹ 窓の長さが `2|Q|` 未満であることが定理になりました
+
+的は `n*|Q| + j`、親は `(n-1)*|Q|` 以上 ⟹ **窓 ＝ 的 − 親 ≤ `|Q| + j ≤ 2|Q| − 1`。**
+
+> **⟹ R2 の「窓 `< 2|Q|` が 100%」（§R158-1、分母 25,776 ＋ 206,816）が、
+> ブロッカーなしの `Q` については**定理**になりました。**
+> **⟹ そして R2 自身が導出（`last − par = |Q| + j − p_rel`）を書いていて、一致します。**
+
+### 157.2 ⟹ `Mono` 類での見取り図（これで測度が揃いました）
+
+    **`j ≥ 1`** … §154 ＋ §141 ⟹ 親は**同じブロック** ⟹ 窓 `< |Q|`
+    **`j = 0`** … 上 ⟹ 親はブロック `n-1` の中 ⟹ 窓 `≤ |Q|`
+    **どちらも窓 `≤ |Q|`。`n` によらず有界。**
+    **さらに §156 より、その窓の中にブロッカーはない。**
+
+> **⟹ `Mono` 類では、窓の長さについての強帰納を回すための材料が全部そろいました。**
+
+⚠ **教訓 14**: **材料がそろっただけです。帰納は組んでいません。**
+⚠ **R2 の実測は一般の `Q` についてで、私の定理はブロッカーなしの `Q` についてです。
+母集団が違うので、100% の一致を「証明した」と読まないでください。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
