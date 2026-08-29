@@ -38,12 +38,17 @@
 | ↑ の `n` の帰納 | 債務 1・2 は済み、**債務 3 が残り** | `L53Subst.lean` |
 | `srow = 2`, `z = 0`, タイ有り | 分解で割れる（実測 2474/2474）| `split_lastTie` |
 
-### 残る核は **2 本**（§107）
+### 残る核は **2 本**（§107。還元は §114 で不動点に達した）
 
     **`Subst1gRevive`**  既存の残核（`Wtower2.lean`）
     **`WSnoc`**          既存の核（`Wtower2.lean:2049`）。**効く先が 2 つ**:
                           持ち上げ側 `WSnoc → WCat → … → LiftStage`（鎖は全部既存・緑）
                           連結側 `WstarSnoc`（`GraftFromExp` の「宿主の 1 段」）
+
+    ⚠ **`WSnoc` ⟸ `PrefixCopies` ＋ `WSnocOpen1`、そして
+    `PrefixCopies` ⟺ `WSnoc` の `srow=0` 枝**（§114）
+    ⟹ **互いに還元し合う ＝ 還元だけでは進めない。明日からは「証明」が要る。**
+    `PrefixCopies` が残核に落ちるのはラダーで **18.8%** だけ（§115）
 
     到達点: **`towerOK_of_wsnoc_graft`**（`L53Subst.lean`、緑）
 
