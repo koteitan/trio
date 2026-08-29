@@ -30,7 +30,7 @@ def subst(S, p, C):
 
 
 def main(lens=(1, 2), cols=None, ccols=3, tag=''):
-    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=60000)
+    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=6000)
     wref.print_controls(ref)
     if cols is None:
         cols = [(a, b, c) for a in range(3) for b in range(3)

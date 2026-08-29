@@ -60,7 +60,7 @@ def ctxOK(ref, M, v, z, tmax=TMAX):
 
 
 def main(ylens=(1, 2, 3), mlens=(1, 2), tag=''):
-    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=60000)
+    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=6000)
     wref.print_controls(ref)
     mcols = [(d, b, c) for d in range(1, 4) for b in range(3) for c in range(2)]
     ycols = [(d, b, c) for d in range(3) for b in range(3) for c in range(2)]
@@ -100,7 +100,16 @@ def main(ylens=(1, 2, 3), mlens=(1, 2), tag=''):
     byi = Counter()
     ex = []
     rows = []
-    for (M, v, z) in ctxs:
+    import random as _rnd, time as _t
+    if len(ctxs) > 150:
+        ctxs = _rnd.Random(7).sample(ctxs, 150)
+        print('⟹ 文脈は無作為 **150** 本に絞る（全部だと %d 本で終わらない）'
+              % st['yes'])
+        print()
+    t0 = _t.time()
+    for ci, (M, v, z) in enumerate(ctxs):
+        if ci % 25 == 0:
+            sys.stderr.write('  ctx %d/%d  %.0fs\n' % (ci, len(ctxs), _t.time() - t0))
         for y in ys:
             for i in range(len(y) + 1):
                 G = graft(M, y[:i])

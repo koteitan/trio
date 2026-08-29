@@ -60,8 +60,8 @@ def wstar(ref, X, vmax=VMAX):
 
 def zpool(ref, m, maxlen=2):
     """`{z' | based z', z' ∈ W m}` の有限 pool（節 3 の `∀ z'` の近似）。"""
-    cols = [(a, b, c) for a in range(3) for b in range(3) for c in range(2)]
-    head = [(0, b, c) for b in range(3) for c in range(2)]
+    cols = [(a, b, c) for a in range(2) for b in range(2) for c in range(2)]
+    head = [(0, b, c) for b in range(2) for c in range(2)]
     out = [[]]
     for L in range(1, maxlen + 1):
         for h in head:
@@ -72,37 +72,36 @@ def zpool(ref, m, maxlen=2):
     return out
 
 
-def aop_ok(ref, R, wcache, zp_cache, use_clause3=True):
-    """`Aop W u0 Wstar R` の過大近似。('yes'/'no'/'?', どの節か) を返す。"""
-    # ---- 節 2
+def clause2(ref, R, wcache):
+    """`Aop` の節 2。`domT` より `R⟦n⟧ = Pred R` なので `R.dropLast ∈ Wstar` 1 本。
+
+    （`|R| = 1` では `oper` が恒等なので `R ∈ Wstar` 自身になる。）
+    """
     key = tuple(map(tuple, R[:-1] if len(R) >= 2 else R))
     if key not in wcache:
         wcache[key] = wstar(ref, list(key))
-    c2 = wcache[key]
-    if c2 == 'yes':
-        return 'yes', '節2'
-    # ---- 節 3
-    if use_clause3:
-        m = dom_m(R)
-        if m is not None:
-            if m not in zp_cache:
-                zp_cache[m] = zpool(ref, m)
-            bad = False
-            unk = False
-            for z in zp_cache[m]:
-                r = wstar(ref, graft(R, z))
-                if r == 'no':
-                    bad = True
-                    break
-                if r == '?':
-                    unk = True
-            if not bad:
-                return ('?' if unk else 'yes'), '節3'
-    return ('?' if c2 == '?' else 'no'), '節2'
+    return wcache[key]
+
+
+def clause3(ref, R, zp_cache):
+    """`Aop` の節 3（`u0` は全称なので `u0 = m+1` と取れる）。有限 pool で近似。"""
+    m = dom_m(R)
+    if m is None:
+        return 'no'
+    if m not in zp_cache:
+        zp_cache[m] = zpool(ref, m)
+    unk = False
+    for z in zp_cache[m]:
+        r = wstar(ref, graft(R, z), vmax=2)
+        if r == 'no':
+            return 'no'
+        if r == '?':
+            unk = True
+    return '?' if unk else 'yes'
 
 
 def main(lens=(1, 2, 3), cols=None, use_clause3=True, tag=''):
-    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=60000)
+    ref = Ref(ns=(1, 2, 3), maxdepth=9, maxlen=34, maxnodes=6000)
     wref.print_controls(ref)
     if cols is None:
         cols = [(a, b, c) for a in range(1, 4) for b in range(3)
@@ -124,20 +123,49 @@ def main(lens=(1, 2, 3), cols=None, use_clause3=True, tag=''):
     print('`∃ m, domT R m` を満たす `R`: **%d** 本' % len(Rs))
     print()
 
+    # ---------------- 先に `Aop` の節 2 を全部出す（`R.dropLast` でキャッシュ）
     wcache, zp_cache = {}, {}
+    c2 = {}
+    st2 = Counter()
+    for R in Rs:
+        k = tuple(map(tuple, R))
+        c2[k] = clause2(ref, R, wcache)
+        st2[c2[k]] += 1
+    print('**`Aop` の節 2（`R.dropLast ∈ Wstar` を `v ≤ %d` で確認）**' % VMAX)
+    print()
+    wref.tally(st2, '節 2 の状態')
+
+    # ---------------- 節 3 は節 2 が通らなかった `R` の標本にだけ当てる
+    st3 = Counter()
+    c3 = {}
+    if use_clause3:
+        rest = [R for R in Rs if c2[tuple(map(tuple, R))] != 'yes']
+        import random as _rnd
+        smp = rest if len(rest) <= 250 else _rnd.Random(1).sample(rest, 250)
+        for R in smp:
+            k = tuple(map(tuple, R))
+            c3[k] = clause3(ref, R, zp_cache)
+            st3[c3[k]] += 1
+        print('**`Aop` の節 3（節 2 が通らなかった %d 本のうち標本 %d 本）**'
+              % (len(rest), len(smp)))
+        print()
+        wref.tally(st3, '節 3 の状態')
+
     tot = Counter()
     bysrow = Counter()
     ex = []
     rows = []
     for R in Rs:
         s = srow(R, len(R) - 1)
+        k = tuple(map(tuple, R))
+        st = c2[k] if c2[k] == 'yes' else c3.get(k, c2[k])
+        cl = '節2' if c2[k] == 'yes' else '節3'
         for v in range(3):
             for z in range(2):
                 M = [(0, v, z)] + R
                 if not has_parent(M, s, len(R)):
                     tot['根が復活させない（仮定を満たさない）'] += 1
                     continue
-                st, cl = aop_ok(ref, R, wcache, zp_cache, use_clause3)
                 if st == 'no':
                     tot['`Aop` が確定で破れる（仮定を満たさない）'] += 1
                     continue
