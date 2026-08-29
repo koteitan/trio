@@ -528,13 +528,27 @@ theorem capSnocOpen'_of_capSnocOpen (h : CapSnocOpen) : CapSnocOpen' := by
 
     `∀ k < |M|, ∀ t, ∀ a ≥ 2(v+t)+z,  Lift1 ((0,v,z) :: M.take k) t ∈ W a`
 
-**使えるのは実質 `k = |M|-1` の 1 項だけ**だった:
+2 つの全称を分けて読む:
 
-    `k < |M|-1` の項 … `Wset.W_take`（`Wset.lean:2120`）で `k = |M|-1` から**無料で出る**
-    `∀ t` の項      … 段 `a` が `2(v+t)+z` と一緒に動くので、
-                      塔の写し（段が `k` に比例して伸びる）には届かない
+    **`∀ k`（接頭辞）… 無料**。`Wset.W_take`（`Wset.lean:2120`）が
+      `M ∈ W u → M.take k ∈ W u` を無条件で与えるので、
+      `k = |M|-1` の項から `k < |M|-1` の項が全部出る（§8 の空振り）。
+    **`∀ t`（リフト）… 無料ではない**。これは
+      「`(0,v,z) :: M.dropLast` の**接頭辞たち**に限った `LiftStage`」そのもの
+      （`LiftStage : X ∈ W m → Lift1 X d ∈ W (m + 2d)`、`Wtower2.lean:36`）。
 
-⟹ **`CtxOK` は「`capBase M v z t ∈ W a`」1 行と同値に使える。**（§8 の空振り。）
+⚠ **訂正**: この file の初稿では「`CtxOK` は `capBase M v z t ∈ W a` 1 行と同値」と
+書いたが、**それは目標の `(a, t)` を固定したときの話**で、`∀ t` の項は落ちない。
+
+⟹ **`∀ t` の項が、この課題で使い残した唯一の資源。** そして塔の写し
+（第 `k` 写しは行 1 が `k * d1` だけ持ち上がる）が欲しがるのは、まさに
+`Lift1 (接頭辞) (t + k*d1)` の所属である。**段が `2(v+t+k d1)+z` まで伸びる**ので
+そのままでは `W a` に届かないが、`W_add` / `rsum` で写しを束ねる側の入力になる。
+**次のエージェントはここを見ること。**
+
+⟹ 系: **`CapSnocOpen'` から `WSnoc` は出ない**（一般の `C ∈ W u` に対して
+`CtxOK` を作るには `LiftStage` が要る）。§8 の `SnocPrefixOpen` と違い、
+`CapSnocOpen'` は本当に `WSnoc` より弱い。
 
 ### 12.5 ⚠ `c ≤ 1` に制限できるか（SESSION §130.5 の申し送りへの回答）
 
@@ -553,7 +567,11 @@ theorem capSnocOpen'_of_capSnocOpen (h : CapSnocOpen) : CapSnocOpen' := by
    （`d1 = if 1 < i1 then … else 0`）なので、写しは**行 0 だけが増える**。
    `le0` の根祖先性（§10）と合わせると、親 `j0 = 0` の場合の写しは
    **`C` の行 0 一様シフト**になる ⟹ `shiftr01 · 0` の `W` 不変性が効くはず。
-2. `srow = 2` 枝が本丸（`d1 > 0`）。ここが `LiftStage` と同じ結び目。
+2. `srow = 2` 枝が本丸（`d1 > 0`）。ここで `CtxOK` の `∀ t` を使う（§12.4）。
+3. 親 `j0 = 0`（根）の場合は塔恒等式 `oper_cons_tower1` / `oper_cons_tower2`
+   （`Wset.lean:2789` / `:3231`）がそのまま当たる形になっている。その証明中の
+   `key : gcopy M 0 (|M|-1) d0 0 k = shiftr01 (k*d0) 0 M.dropLast` は
+   §10 の「根が全列の行 0 祖先」と同じ内容。**⟹ 開いているのは `j0 ≥ 1`。**
 -/
 
 end L105
