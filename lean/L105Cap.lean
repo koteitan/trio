@@ -8235,6 +8235,72 @@ theorem snocRoot_comm_of_inner {Q : TrioSeq} {p : ℕ × ℕ × ℕ} {j0 m : ℕ
 ⚠ **(B) が本丸**である。そこは §110 で `MTowerClosedS` と同値と分かっている。
 **⟹ `TowerSnocRoot` の攻め方は「(A) 無料 ／ (C) 帰納 ／ (B) が核」。** -/
 
+/-! ## 112. ★ 15 分の判定: **`z = 0` の核は `ShiftTowerClosedS` そのものです**
+
+### 112.1 (1) 同値か ⟹ **同値どころか、同じ文です**
+
+`mTower Q d 0 n` の第 `k` ブロックは `Lift1 (shiftr01 (d*k) 0 Q) (0*k) = Lift1 (…) 0 = shiftr01 (d*k) 0 Q`
+（`Wset.Lift1_zero`）で、`shTower` の第 `k` ブロック `shiftr01 (k*d) 0 Q` と**同じ**。 -/
+
+theorem mTower_e_zero_eq_shTower (Q : TrioSeq) (d n : ℕ) :
+    mTower Q d 0 n = shTower Q d n := by
+  unfold mTower shTower
+  refine List.flatMap_congr ?_
+  intro k _
+  rw [Nat.zero_mul, Lift1_zero, Nat.mul_comm]
+
+/-- `MTowerClosedS` の `e = 0` への制限。 -/
+def MTowerClosedS0 : Prop :=
+  ∀ (u d n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    mTower Q d 0 n ∈ W u
+
+/-- **★★★★★ `z = 0` の核は `(TOW)` そのもの**（同値ではなく同一）。 -/
+theorem mTowerClosedS0_iff : MTowerClosedS0 ↔ ShiftTowerClosedS := by
+  constructor
+  · intro h u e n Q hQ hs
+    rw [← mTower_e_zero_eq_shTower]
+    exact h u e n Q hQ hs
+  · intro h u d n Q hQ hs
+    rw [mTower_e_zero_eq_shTower]
+    exact h u d n Q hQ hs
+
+/-! ### 112.2 (2) どちらが弱いか
+
+    `ShiftTowerClosedS` は **`MTowerClosedS` の `e = 0` への制限**である（上）
+    ⟹ **フルの `MTowerClosedS` より真に弱い**（`e > 0` を含まない）
+    ⟹ **しかし `z = 0` の枝に限れば、弱くも強くもない。同じ文。**
+
+**⟹ 「`z=0` を `ShiftTowerClosedS` に落とす」は、論理的には何も得ません。**
+**私の但し書き（「別の未証明に移るだけかもしれない」）が当たっていました。**
+
+### 112.3 (3) ⟹ **それでも進む価値があります: 道具の数が違う**
+
+索引で数えました（`grep shTower LEMMA-INDEX.tsv`）。**`shTower` 側の既存の緑:**
+
+    `Wtower2.shTower_succ` / `L105.shTower_cons`（§43）/ `L47W.shTower_prefix`
+    **`L105.oper_shTower`（§48）** … 展開は最後のブロックだけ
+    `L105.entry_shTower_root` / `lev_shTower_root`（§45）… 根の `lev` は不変
+    `L47W.shTower_zeroRow2` / `shiftTowerClosed_of_zeroRow2` … 行 2 ≡ 0 は無料
+    **`L47W.shiftTowerClosed_iff_wself`** … 段が消える（`Wself` 版と同値）
+    `Wtower2.lspOn_srow1_of_tower` / `liftStageParented_of_tower` / `towerExp1_of_tower`
+    **`Final.TRIO_terminates_of_tower` / `no_infinite_expansion_of_tower`（頂点定理が既にある）**
+
+**`mTower` 側は私が今日書いた §55-§111 だけです。**
+**⟹ 同じ文でも、`shTower` の言葉で書くほうが道具が 3 倍あります。**
+
+### 112.4 ⚠ `CORES.md` の「上流に `WCat`」について
+
+    `Wtower2.shiftTowerClosedS_of_closed : ShiftTowerClosed → ShiftTowerClosedS`
+    `Wtower2.shiftTowerClosedS_of_substG : SubstClosedG → ShiftTowerClosedS`
+
+**どちらも「X ⟹ `ShiftTowerClosedS`」＝ X は十分条件**です。
+**⟹ `ShiftTowerClosedS` を直接証明するのに `WCat` は要りません。**
+**`CORES.md` の「上流」は「そこから出せる」であって「そこを通らねばならない」ではない。**
+
+> **⟹ 判定: `z = 0` の枝は `ShiftTowerClosedS` の言葉で書く。**
+> **論理的な利得はゼロだが、道具が 3 倍あり、頂点定理も既にある。`WCat` は強制されない。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
