@@ -118,5 +118,165 @@ theorem entry_Mt : ∀ j < 3,
 
 theorem srow_Mt : srow Mt 2 = 2 := by simp [srow, entry, Mt]
 
+@[simp] theorem entry_Mt_00 : entry Mt 0 0 = 0 := rfl
+@[simp] theorem entry_Mt_10 : entry Mt 1 0 = 0 := rfl
+@[simp] theorem entry_Mt_20 : entry Mt 2 0 = 0 := rfl
+@[simp] theorem entry_Mt_01 : entry Mt 0 1 = 1 := rfl
+@[simp] theorem entry_Mt_11 : entry Mt 1 1 = 1 := rfl
+@[simp] theorem entry_Mt_21 : entry Mt 2 1 = 1 := rfl
+
+/-- `le0` の添字は単調（`nextrel0` が `j0 < j1` を含むから）。 -/
+theorem le0_le {M : TrioSeq} {a b : ℕ} (h : le0 M a b) : a ≤ b := by
+  obtain ⟨-, -, h⟩ := h
+  induction h with
+  | refl => exact le_rfl
+  | tail _ h2 ih => exact le_trans ih (le_of_lt h2.2.2.1)
+
+/-- `le1` の添字も単調。 -/
+theorem le1_le {M : TrioSeq} {a b : ℕ} (h : le1 M a b) : a ≤ b := by
+  obtain ⟨-, -, h⟩ := h
+  induction h with
+  | refl => exact le_rfl
+  | tail _ h2 ih => exact le_trans ih (le_of_lt h2.2.2.1)
+
+theorem nextrel0_Mt_01 : nextrel0 Mt 0 1 := by
+  refine ⟨by simp [Mt], by simp [Mt], by omega, by simp [entry, Mt], ?_⟩
+  intro j hj
+  omega
+
+theorem nextrel0_Mt_12 : nextrel0 Mt 1 2 := by
+  refine ⟨by simp [Mt], by simp [Mt], by omega, by simp [entry, Mt], ?_⟩
+  intro j hj
+  omega
+
+theorem le0_Mt_00 : le0 Mt 0 0 := ⟨by simp [Mt], by simp [Mt], Relation.ReflTransGen.refl⟩
+
+theorem le0_Mt_01 : le0 Mt 0 1 :=
+  ⟨by simp [Mt], by simp [Mt], Relation.ReflTransGen.single nextrel0_Mt_01⟩
+
+theorem le0_Mt_02 : le0 Mt 0 2 :=
+  ⟨by simp [Mt], by simp [Mt],
+    (Relation.ReflTransGen.single nextrel0_Mt_01).tail nextrel0_Mt_12⟩
+
+theorem nextrel1_Mt_01 : nextrel1 Mt 0 1 := by
+  refine ⟨by simp [Mt], by simp [Mt], by omega, by simp [entry, Mt], le0_Mt_01, ?_⟩
+  intro j hj
+  have h1 : j ≤ 1 := le0_le hj.2
+  have h2 : j = 1 := by omega
+  subst h2
+  simp [entry, Mt]
+
+theorem nextrel1_Mt_02 : nextrel1 Mt 0 2 := by
+  refine ⟨by simp [Mt], by simp [Mt], by omega, by simp [entry, Mt], le0_Mt_02, ?_⟩
+  intro j hj
+  have h1 : j ≤ 2 := le0_le hj.2
+  have h3 : j < 3 := hj.2.1
+  rcases j with _ | _ | _ | j
+  · omega
+  · simp [entry, Mt]
+  · simp [entry, Mt]
+  · omega
+
+theorem le1_Mt_00 : le1 Mt 0 0 := ⟨by simp [Mt], by simp [Mt], Relation.ReflTransGen.refl⟩
+
+theorem le1_Mt_01 : le1 Mt 0 1 :=
+  ⟨by simp [Mt], by simp [Mt], Relation.ReflTransGen.single nextrel1_Mt_01⟩
+
+theorem le1_Mt_02 : le1 Mt 0 2 :=
+  ⟨by simp [Mt], by simp [Mt], Relation.ReflTransGen.single nextrel1_Mt_02⟩
+
+theorem nextrel2_Mt_02 : nextrel2 Mt 0 2 := by
+  refine ⟨by simp [Mt], by simp [Mt], by omega, by simp [entry, Mt], le1_Mt_02, ?_⟩
+  intro j hj
+  have h1 : j ≤ 2 := le1_le hj.2
+  have h3 : j < 3 := hj.2.1
+  rcases j with _ | _ | _ | j
+  · omega
+  · simp [entry, Mt]
+  · simp [entry, Mt]
+  · omega
+
+/-- 行 2 の親は `0` しかない（`entry Mt 2 j0 < 1` は `j0 = 0` のみ）。 -/
+theorem nextrel2_Mt_unique {j : ℕ} (h : nextrel2 Mt j 2) : j = 0 := by
+  obtain ⟨hj3, -, -, hlt, -, -⟩ := h
+  simp only [Mt] at hj3
+  simp at hj3
+  rcases j with _ | _ | _ | j
+  · rfl
+  · simp [entry, Mt] at hlt
+  · simp [entry, Mt] at hlt
+  · omega
+
+theorem nextR_Mt_02 : nextR Mt 2 0 2 := by
+  rw [nextR]
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)]
+  exact nextrel2_Mt_02
+
+theorem hasParent_Mt : hasParent Mt 2 2 := by
+  refine ⟨0, nextR_Mt_02, ?_⟩
+  · intro y hy
+    rw [nextR] at hy
+    simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at hy
+    exact nextrel2_Mt_unique hy
+
+theorem parent_Mt : parent Mt 2 2 = 0 := by
+  have hex : ∃ j0, nextR Mt 2 j0 2 := ⟨0, nextR_Mt_02⟩
+  have hspec : nextR Mt 2 (parent Mt 2 2) 2 := Classical.epsilon_spec hex
+  rw [nextR] at hspec
+  simp only [if_neg (by omega : (2 : ℕ) ≠ 0), if_neg (by omega : (2 : ℕ) ≠ 1)] at hspec
+  exact nextrel2_Mt_unique hspec
+
+
+/-! ### ★ 展開補題（課題 L51 (3)） -/
+
+/-- **★★ `Mt⟦n⟧ = liftTower At 2 n`。**
+
+`oper` の `if` を順に潰すだけ:
+`j1 = 2` / 末尾は零でない / `srow = 2` / `hasParent`（親は `0`）/
+`d0 = 2`, `d1 = 1` / `take 0 = []` / コピーは列 `0..1` ＝ `At` /
+`le0 Mt 0 j` と `le1 Mt 0 j` は `j = 0, 1` で成り立つ。 -/
+theorem oper_Mt (n : ℕ) : Mt⟦n⟧ = liftTower At 2 n := by
+  have hl : Mt.length - 1 = 2 := rfl
+  have hs : srow Mt (Mt.length - 1) = 2 := srow_Mt
+  have hp : parent Mt (srow Mt (Mt.length - 1)) (Mt.length - 1) = 0 := parent_Mt
+  rw [oper]
+  dsimp only
+  split
+  · exact absurd ‹Mt.length - 1 = 0› (by decide)
+  split
+  · rename_i h
+    exact absurd h.1 (by simp [entry, Mt])
+  split
+  · rename_i h
+    exact absurd hasParent_Mt h
+  rw [hp, hl]
+  have htake : Mt.take 0 = [] := rfl
+  rw [htake, List.nil_append]
+  have hd0 : entry Mt 0 2 - entry Mt 0 0 = 2 := by simp [entry, Mt]
+  have hd1 : entry Mt 1 2 - entry Mt 1 0 = 1 := by simp [entry, Mt]
+  simp only [hs, if_pos (by omega : 0 < 2), if_pos (by omega : 1 < 2), Nat.sub_zero,
+    hd0, hd1]
+  unfold liftTower
+  congr 1
+  funext k
+  have hr : List.range' 0 2 = [0, 1] := rfl
+  rw [hr]
+  simp [At, shiftr01, srow_Mt, le0_Mt_00, le1_Mt_00, le0_Mt_01, le1_Mt_01,
+    Nat.mul_comm]
+
+/-- ⟹ **`Mt ∈ W 0` は「持ち上げ塔が `W 0` に留まるか」ただ 1 本になる**（節 2 一本）。 -/
+theorem Mt_mem_W_zero_of_tower
+    (h : ∀ n : ℕ, 1 ≤ n → liftTower At 2 n ∈ W 0) : Mt ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn
+  rw [oper_Mt]
+  exact h n hn
+
+/-- **★★★ 課題 L51 の標的は `(LTOW)` の 1 事例に落ちた。** -/
+theorem Mt_mem_Wself_of_tower
+    (h : ∀ n : ℕ, 1 ≤ n → liftTower At 2 n ∈ W 0) : Mt ∈ Wself :=
+  Mt_mem_Wself_iff.mpr (Mt_mem_W_zero_of_tower h)
+
+
 end L51
 end TRIO
