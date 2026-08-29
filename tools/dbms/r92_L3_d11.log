@@ -1,0 +1,14 @@
+### R92 残核 z=1,c=1,srow=2 |M|<=3 depth=11  (1349.4s, memo=16975885)
+  -- (R92-a) 残核の形 (z=1, c=1, srow=2) の分岐 --
+     cons(j0>=1)           26892
+     noparent             195372
+  -- (R92-b) **所属**（健全な判定器） --
+     cons(j0>=1)/ok                 4914
+     cons(j0>=1)/unknown           21978
+     noparent/ok                  190368
+     noparent/unknown               5004
+  -- (R92-c) 再帰は CoreCap の形に留まるか --
+     CtxOK/eq                  57276
+     CtxOK/unk                 23400
+     argOK/ok                  80676
+
