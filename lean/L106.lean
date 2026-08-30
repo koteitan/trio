@@ -9126,5 +9126,69 @@ theorem measOK_false : ¬ MeasOK := by
 ⚠ **教訓 14 ＋ 新運用**: **新しい残差を書いたら、その日の反例を全部当てる**。
 **⟹ ⛔ 今日 2 回目の同じ失敗です**（`RootZ1` のときも H12 の反例を当てていませんでした）。 -/
 
+/-! ## 278. ⛔⛔⛔⛔⛔ **`MeasOK2` も偽です** —— そして**原因が最終的に確定**しました
+
+§277.8 で `MeasOK` を測度そのもの（`MeasOK2`）に直しました。⟹ ⛔ **それも偽**です。
+**⟹ ★ 同じ `M0ce`（§262 の反例）で落ちます:**
+
+    `T = M0ce = [(0,0,0), (2,1,0), (3,0,0), (3,1,0)]`、`Q = Q0ce = [(2,1,0), (3,0,0)]`、`d = 1`、`e = 0`
+    ⟹ 親 = 0 ⟹ `V = M0ce.take 3`（`|V| = 3`）、`d0 = 3 - 0 = 3`、`d1 = 0`
+    ⟹ `towerMeas V 3 0 = 3·3 + rankDE 3 0 = 10`
+    ⟹ `towerMeas Q 1 0 = 3·2 + rankDE 1 0 = 7`
+    ⟹ ⛔ **`10 < 7` は偽** -/
+
+theorem measOK2_false : ¬ MeasOK2 := by
+  intro h
+  have hsr : srow M0ce 3 = 1 := by decide
+  have hlen : M0ce.length - 1 = 3 := rfl
+  have hpar : hasParent M0ce (srow M0ce (M0ce.length - 1)) (M0ce.length - 1) := by
+    rw [hlen, hsr]; exact M0ce_hasParent
+  have hc : parent M0ce 1 3 = 0 :=
+    M0ce_uniq (nextR_one_iff.mp (parent_nextR M0ce_hasParent))
+  have hres := h M0ce Q0ce 1 0 hpar
+  rw [hlen, hsr, hc] at hres
+  have hV : (M0ce.drop 0).take (3 - 0) = [((0 : ℕ), (0 : ℕ), (0 : ℕ)), (2, 1, 0), (3, 0, 0)] := by
+    unfold M0ce; rfl
+  rw [hV] at hres
+  have h1 : towerMeas [((0 : ℕ), (0 : ℕ), (0 : ℕ)), (2, 1, 0), (3, 0, 0)]
+      (if (0 : ℕ) < 1 then entry M0ce 0 3 - entry M0ce 0 0 else 0)
+      (if (1 : ℕ) < 1 then entry M0ce 1 3 - entry M0ce 1 0 else 0) = 10 := by decide
+  have h2 : towerMeas Q0ce 1 0 = 7 := by decide
+  rw [h1, h2] at hres
+  omega
+
+/-! ### 278.1 ⛔⛔⛔⛔⛔⛔ **原因の確定: `rsum` は 1 段で必ず壊れます**
+
+私の実測（`hr0(Q)` 真、`(d = 0 → e = 0)` を課したもの）:
+
+| `d` | `A = []` | `A ≠ []` |
+|---|---|---|
+| `d = 0` | ★ **破れ 0**（164 件） | ⛔ **破れ 1,080 / 1,736** |
+| `d = 1` | ★ **破れ 0**（580 件） | ⛔ **破れ 1,572 / 3,892** |
+| `d = 2` | ★ **破れ 0**（672 件） | ⛔ **破れ 1,240 / 3,928** |
+
+**⟹ ★★★★★ **`A = []` なら 1,416 / 1,416 で成立、`A ≠ []` なら 39% 破れる**。**
+**⟹ ⟹ ★ `d` で場合分けしても**変わりません**。⟹ ⛔ **`d = 0` の枝を戻しても直りません**。**
+
+**⟹ ★★★★★★★ そして **なぜ 1 段で壊れるか**が言えます:**
+
+    ★ 段 0 では `A = []` ⟹ **`rsum [] Q` は `hr0` から真** ✅
+    ★★ 段 1 では **`A' = A ++ mTower Q d e n ++ B.take p`**
+      ⟹ ★ そこには **ブロック 0 の根**（行 0 ＝ `entry Q 0 0`）が入っています
+      ⟹ ⟹ ★★ 一方 **窓 `V` の根**は行 0 ＝ `entry Q 0 p + d·n`
+      ⟹ ⟹ ⟹ ★★★ **`0 < d` かつ `0 < n` なら、ブロック 0 の根のほうが真に浅い**
+      ⟹ ⟹ ⟹ ⟹ ⛔ **`rsum A' V` は偽** ⟹ **段 1 で必ず壊れます**
+
+**⟹ ★★★★★★ ⟹ **今日死んだ 10 本すべてが、この 1 つの構造**です:**
+
+    `hbase` ／ `rsum` ／ `h1out` ／ `hnbQ` ／ `HeredNB` ／ `RootZ1` ／ `RootZ2` ／
+    `OrphOK` ／ `OrphOK0` ／ `HeredZ0` ／ `MeasOK` ／ `MeasOK2`
+
+**⟹ ★ 全部 **「接頭辞が今の `Q` の根より浅くなりうる」**で死んでいます。**
+**⟹ ⟹ ★★★ そして **それは塔を作った瞬間に必ず起きます**（前のブロックが残るから）。**
+
+⚠ **教訓 14**: これは **`MTowerClosedS` が偽**という意味ではありません。
+**⟹ ★ **この帰納法（窓に落として測度を減らす）が通らない**、という意味です。 -/
+
 end L106
 end TRIO
