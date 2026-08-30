@@ -9718,5 +9718,47 @@ theorem mTower_zero_e (Q : TrioSeq) (d n : ℕ) :
 
 ⚠ **教訓 14**: §285 は**言い換え**です。⟹ ★ **何も証明していません**。 -/
 
+/-! ## 286. ★★★★★ **`PrefixCopiesOpen` は「行 2 に 1 がある」場合だけ**です
+
+✅ **ビルドが更新され、`import H12Export` で H12 の最新分（294 本）が見えるようになりました**
+（探針で確認）。⟹ ★ **逐語の写しはもう要りません**。
+
+**⟹ ★ H12 の `prefix_mem_of_zeroRow2`（`W_add` を通らない唯一の扉）を当てます:**
+
+    `A ∈ W u` ∧ `A ≠ []` ∧ **`A` も `T` も行 2 ≡ 0** ⟹ `A ++ T ∈ W u`
+    ⟹ ★★ **`rsum` も `T ∈ W u` も要りません**（`mem_Wself_iff` ＋ `zeroRow2_mem_Wself` 経由） -/
+
+theorem prefixCopiesOpen_of_zeroRow2 {u n : ℕ} {A Q : TrioSeq}
+    (hzA : ∀ p ∈ A, p.2.2 = 0) (hzQ : ∀ p ∈ Q, p.2.2 = 0)
+    (hA : A ∈ W u) (hAne : A ≠ []) :
+    A ++ ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  refine H12Export.prefix_mem_of_zeroRow2 hzA ?_ hA hAne
+  intro p hp
+  rw [List.mem_flatMap] at hp
+  obtain ⟨-, -, hp⟩ := hp
+  exact hzQ p hp
+
+/-! ### 286.1 ⟹ ★★★ **ですから `PrefixCopiesOpen` の中身は「行 2 に 1 がある」場合だけ**
+
+**⟹ ⚠ そして **これは深い結果ではありません**。⟹ ★ **行 2 ≡ 0 の列は全部 `Wself` に入る**
+（`Wtower2.zeroRow2_mem_Wself`）ので、⟹ ★★ **`lev(根) ≤ u` さえあれば無条件**です。**
+
+**⟹ ★ ですが **開いている部分の場所が確定**します:**
+
+    ✅ **`A` も `Q` も行 2 ≡ 0** …… **無料**（§286、`rsum` 不要）
+    ⛔ **どちらかに行 2 = 1 がある** … **開いている**
+
+**⟹ ★★★ ⟹ そして **`z < 2` の断片では行 2 ∈ {0, 1}** なので、⟹ ★ **`z = 1` の列がある場合**が残差です。**
+**⟹ ⟹ ★ ＝ 生成元 `D_v = (0,0,0)(1,1,1)(2,2,1)…` の **`z = 1` の列**そのものです。**
+
+**⟹ ⚠ R2 の (PCO-2)「開いている側 65.81%」は、⟹ ★ **たぶん `rsum` の破れで数えたもの**です。**
+**⟹ ⟹ ★ ですから **「行 2 に 1 があるか」で数え直すと、もっと小さくなるはず**です。**
+
+    **(PCO-3) ★★★ R2 に: **`PrefixCopiesOpen` の分母のうち、`A` も `Q` も行 2 ≡ 0 の割合**
+      ⟹ ★ その分は **§286 で無料**です ⟹ ⟹ **本当に開いている分がわかります**
+
+⚠ **教訓 14**: §286 は緑ですが、**`PrefixCopiesOpen` を証明したのではありません**。
+**⟹ ★ **行 2 ≡ 0 の場合だけ**です。 -/
+
 end L106
 end TRIO
