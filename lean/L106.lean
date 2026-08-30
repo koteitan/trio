@@ -6117,5 +6117,78 @@ theorem hlocQ_row2_wnd {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) (hpj : p
 **⟹ ⚠ そして (COMP-a) の 66.8% の破れは、**窓の錐の外の列**に限られます。**
 **⟹ ★ R2 への注文はそこの分母です。⟹ **教訓 27**。** -/
 
+/-! ## 241. ★★★★★★ **`hlocQ` は「錐の中」では丸ごと無料**です
+
+§240.1 で**行 2 の成分**が錐の中で無料と分かりました。
+**⟹ ★★★ 実は**行 1 の成分も**そうです。⟹ ⟹ 2 つの理由が合わさります:**
+
+    (1) クラス条件 `(le1 Q 0 y → le1 Q 0 j)` は、**`le1 Q 0 j` が既にあれば空虚**
+    (2) `le1 Q 0 j` の**最後の 1 歩**（`nextrel1 Q y j`）が、証人 `y` をそのまま与える
+        ⟹ ★ `nextrel1` は定義に `le0 Q y j` と `entry Q 1 y < entry Q 1 j` を含む
+
+**⟹ ⟹ ⟹ ★★★★★★ ですから **`hlocQ` の中身は「錐の外の列」だけ**です。**
+**⟹ ★ (COMP-a) の破れ（行 1 90.9%、行 2 66.8%）は、**すべて錐の外**で起きています。** -/
+
+theorem hlocQ_row1_of_cone {Q : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hcone : le1 Q 0 j) :
+    ∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j ∧ (le1 Q 0 y → le1 Q 0 j) := by
+  rcases Relation.ReflTransGen.cases_tail hcone.2.2 with h | ⟨y, -, hstep⟩
+  · exact absurd h.symm (by omega)
+  · exact ⟨y, hstep.2.2.1, hstep.2.2.2.2.1, hstep.2.2.2.1, fun _ => hcone⟩
+
+open Classical in
+/-- ★★★★★★ **`hlocQ` は錐の外の列だけの条件**（`hz0` ＋ `hz1` のもとで）。 -/
+theorem hlocQ_iff_outOfCone {Q : TrioSeq}
+    (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1) (hz0 : entry Q 2 0 = 0) :
+    hlocQ Q ↔ ∀ j, 0 < j → j < Q.length → ¬ le1 Q 0 j →
+      ((0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) ∧
+       (entry Q 2 j = 0 → 0 < entry Q 1 j →
+         ∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j ∧ (le1 Q 0 y → le1 Q 0 j))) := by
+  constructor
+  · intro h j hj0 hj _; exact h j hj0 hj
+  · intro h j hj0 hj
+    by_cases hc : le1 Q 0 j
+    · exact ⟨fun hpos => hlocQ_row2_take_of_cone hj hj0 hz1 hz0
+        ((Wset.le1_take (X := Q) (l := j + 1) (by omega) (by omega)).mpr hc) hpos,
+        fun _ _ => hlocQ_row1_of_cone hj0 hc⟩
+    · exact h j hj0 hj hc
+
+/-! ### 241.1 ⟹ ★★★ 「錐の外」の列は**行 1 も行 0 も低い**
+
+**⟹ ★ ですから残差は**ブロッカーの部分木**に閉じ込められました。**
+**⟹ ⟹ ★ `L105.not_le1_zero_iff`（`L105Cap.lean:7149`）が「錐の外」を閉じた形にします:**
+
+    `¬ le1 Q 0 q ↔ ∃ y, ReflTransGen (nextrel0 Q) y q ∧ y ≠ 0 ∧ entry Q 1 y ≤ entry Q 1 0`
+
+**⟹ ★★ つまり **`q` の行 0 祖先のどこかにブロッカー `y` がいる**。**
+**⟹ ⟹ ★★★ そして R2 の (ADJ'-e) の破れの形（`[(0,0,0), (3,-2,0)]` など 28 種）は
+**すべて「行 0 は上がるが行 1 が根より下がる隣接列」＝ ブロッカー**でした。⟹ **一致します**。**
+
+⚠ **教訓 14**: 一致しただけです。**残差はまだ証明されていません。** -/
+
+/-! ### 241.2 ★★★★★ ⟹ **`t = 1` の条件の正体は「第 1 列が錐の中」**
+
+§239.4 は `t = 1` の証人の存在 ⟺ `entry V 1 0 < entry V 1 1` と言いました。
+§241 は `hlocQ` が錐の中で無料と言いました。
+**⟹ ★★★ 2 つを繋ぐと、**`t = 1` の条件はちょうど「第 1 列が錐の中」**になります。** -/
+
+theorem le1_zero_one_iff {V : TrioSeq} (hV : 1 < V.length)
+    (hr0V : ∀ l, 0 < l → l < V.length → entry V 0 0 < entry V 0 l) :
+    le1 V 0 1 ↔ entry V 1 0 < entry V 1 1 := by
+  constructor
+  · intro hc
+    obtain ⟨y, hy1, hy2, hy3, hy4⟩ := hlocQ_row1_of_cone (Q := V) (j := 1) (by omega) hc
+    exact (hlocQ_first_column_iff hV hr0V).mp ⟨y, hy1, hy2, hy3, hy4⟩
+  · intro h
+    obtain ⟨y, hy1, -, -, hy4⟩ := (hlocQ_first_column_iff hV hr0V).mpr h
+    exact hy4 (by rw [show y = 0 from by omega]; exact le1_self (by omega))
+
+/-! ⟹ ★★ ですから **R2 の (ADJ'-e) と (COMP) は同じものを測っています**:
+
+    `t = 1` の証人がある ⟺ `entry V 1 0 < entry V 1 1` ⟺ **`le1 V 0 1`（錐の中）**
+
+**⟹ ★ そして (ADJ'-e) の破れの形が全部ブロッカーだったのは、**定義そのもの**です。**
+**⟹ ⟹ ⚠ ですから (ADJ'-e) の 90.3% は **`hlocQ` の残差そのもの**で、
+**新しい情報ではありません**。⟹ **教訓 45**: 同じ量を 2 度測っても検算になりません。** -/
+
 end L106
 end TRIO
