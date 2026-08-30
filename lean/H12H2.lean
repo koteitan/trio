@@ -8282,5 +8282,165 @@ theorem lift_oper_comm_of_no_copy {M : TrioSeq} {t n : ℕ}
     · exact lift_oper_comm_of_short hL
     · exact lift_oper_of_noParent (by omega) h
 
+
+/-! ## 129. ★★★★★★★★★★ (W78): **`liftInner_holds` の一般化** —— 根の形に依存しない版
+
+L3 の `Lcone.liftInner_holds`（`Lcone:507`）は `M = (0,v,z) :: R`（`argOK R`）専用でした。
+⟹ ★★★★★ **cons の形が使われているのは「設定」の部分だけ**で、
+**本体（`gexp_cone_mir` を使う部分）は `hr0 M` と `0 < j0` しか要りません**。
+⟹ ⟹ ★★★★★★★★★★ ⟹ **その 2 つを仮定に置けば、一般の `M` で通ります**。 -/
+
+open Classical in
+/-- ★★★★★★★★★★ **(W78)**: **`LiftOperComm` の一般版**（根の形にも `argOK` にも依りません）。
+仮定は **`hr0 M`（根が狭義に最浅）** と **`0 < j0`（悪根が根そのものでない）** の 2 つだけ。 -/
+theorem lift_oper_comm_of_hr0 {M : TrioSeq} {t n : ℕ}
+    (hL : M.length - 1 ≠ 0)
+    (hz : ¬ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+      entry M 2 (M.length - 1) = 0))
+    (hpM : hasParent M (srow M (M.length - 1)) (M.length - 1))
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hj0pos : 0 < parent M (srow M (M.length - 1)) (M.length - 1)) :
+    (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t := by
+  classical
+  set j0 := parent M (srow M (M.length - 1)) (M.length - 1) with hj0def
+  have hnrM : nextR M (srow M (M.length - 1)) j0 (M.length - 1) := parent_nextR hpM
+  have hj0lt : j0 < M.length - 1 := nextR_index_lt hnrM
+  set Lb := M.length - 1 - j0 with hLbdef
+  have hLbpos : 0 < Lb := by omega
+  have hlenM : j0 + Lb + 1 = M.length := by omega
+  have hLbe : M.length - 1 - j0 = Lb := rfl
+  set N : TrioSeq := Lift1 M t with hNdef
+  have hNlen : N.length = M.length := by rw [hNdef]; exact Lift1_length M t
+  have hNe0 : ∀ y, entry N 0 y = entry M 0 y := fun y => by
+    rw [hNdef]; exact entry0_Lift1 M t y
+  have hNe2 : ∀ y, entry N 2 y = entry M 2 y := fun y => by
+    rw [hNdef]; exact entry2_Lift1 M t y
+  have hNe1 : ∀ y, y < M.length →
+      entry N 1 y = entry M 1 y + (if le1 M 0 y then t else 0) := by
+    intro y hy; rw [hNdef, Wset.entry1_Lift1 hy]
+  have hNlen1 : N.length - 1 = M.length - 1 := by rw [hNlen]
+  have hLN : N.length - 1 ≠ 0 := by rw [hNlen1]; exact hL
+  have hzN : ¬ (entry N 0 (N.length - 1) = 0 ∧ entry N 1 (N.length - 1) = 0 ∧
+      entry N 2 (N.length - 1) = 0) := by
+    rw [hNlen1, hNe0, hNe1 _ (by omega), hNe2]
+    rintro ⟨h1, h2, h3⟩
+    exact hz ⟨h1, by omega, h3⟩
+  have hsrN : srow N (N.length - 1) = srow M (M.length - 1) := by
+    rw [hNlen1, hNdef]; exact Wset.srow_Lift1 (by omega)
+  have hpN : hasParent N (srow N (N.length - 1)) (N.length - 1) := by
+    rw [hsrN, hNlen1, hNdef]; exact Wset.hasParent_Lift1.mpr hpM
+  have hparN : parent N (srow N (N.length - 1)) (N.length - 1) = j0 := by
+    rw [hsrN, hNlen1, hNdef, Wset.parent_Lift1]
+  have hlenN : j0 + Lb + 1 = N.length := by rw [hNlen]; exact hlenM
+  set D0 : ℕ := (if 0 < srow M (M.length - 1)
+    then entry M 0 (M.length - 1) - entry M 0 j0 else 0) with hD0
+  set D1 : ℕ := (if 1 < srow M (M.length - 1)
+    then entry M 1 (M.length - 1) - entry M 1 j0 else 0) with hD1
+  have hrtgx : Relation.ReflTransGen (nextrel0 M) j0 (M.length - 1) := by
+    unfold nextR at hnrM
+    by_cases h0 : srow M (M.length - 1) = 0
+    · rw [if_pos h0] at hnrM; exact Relation.ReflTransGen.single hnrM
+    · by_cases h1 : srow M (M.length - 1) = 1
+      · rw [if_neg h0, if_pos h1] at hnrM; exact hnrM.2.2.2.2.1.2.2
+      · rw [if_neg h0, if_neg h1] at hnrM; exact rtg1_rtg0 hnrM.2.2.2.2.1.2.2
+  have hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l := by
+    intro l hl0 hl1
+    exact window_of_rtg0 hrtgx (by omega) l hl0 (by omega)
+  have hD1N : (if 1 < srow N (N.length - 1)
+      then entry N 1 (N.length - 1) - entry N 1 j0 else 0) = D1 := by
+    rw [hsrN, hNlen1, hD1]
+    by_cases h2 : 1 < srow M (M.length - 1)
+    · rw [if_pos h2, if_pos h2]
+      unfold nextR at hnrM
+      rw [if_neg (by omega), if_neg (by omega)] at hnrM
+      have hle1jx : le1 M j0 (M.length - 1) := hnrM.2.2.2.2.1
+      have hiff : le1 M 0 (M.length - 1) ↔ le1 M 0 j0 :=
+        ⟨fun h => le1_of_le1_le1 h hle1jx hj0pos, fun h => le1_trans h hle1jx⟩
+      have hlt := le1_entry1_lt hle1jx (by omega)
+      rw [hNe1 _ (by omega), hNe1 _ (by omega)]
+      by_cases hc : le1 M 0 j0
+      · rw [if_pos hc, if_pos (hiff.mpr hc)]; omega
+      · rw [if_neg hc, if_neg (fun h => hc (hiff.mp h))]; omega
+    · rw [if_neg h2, if_neg h2]
+  have hD0N : (if 0 < srow N (N.length - 1)
+      then entry N 0 (N.length - 1) - entry N 0 j0 else 0) = D0 := by
+    rw [hsrN, hNlen1, hD0]
+    by_cases h0 : 0 < srow M (M.length - 1)
+    · rw [if_pos h0, if_pos h0, hNe0, hNe0]
+    · rw [if_neg h0, if_neg h0]
+  have hMe : M⟦n⟧ = gexp M j0 Lb D0 D1 n := by
+    have h := oper_eq_gexp_gen (M := M) n hL hz hpM
+    rw [← hj0def, hLbe] at h
+    rw [h, hD0, hD1]
+  have hNe : N⟦n⟧ = gexp N j0 Lb D0 D1 n := by
+    have h := oper_eq_gexp_gen (M := N) n hLN hzN hpN
+    rw [hparN, show N.length - 1 - j0 = Lb from by rw [hNlen1]] at h
+    rw [h, hD0N, hD1N]
+  have htrans : ∀ k q, k < n → q < Lb →
+      (le1 (gexp M j0 Lb D0 D1 n) 0 (j0 + (k * Lb + q)) ↔ le1 M 0 (j0 + q)) := by
+    intro k q hk hq
+    by_cases h0 : 0 < srow M (M.length - 1)
+    · have hlt0 : entry M 0 j0 < entry M 0 (M.length - 1) :=
+        hup (M.length - 1) (by omega) (by omega)
+      have hd0pos : 0 < D0 := by rw [hD0, if_pos h0]; omega
+      have hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + D0 := by
+        rw [hD0, if_pos h0, show j0 + Lb = M.length - 1 from by omega]
+        omega
+      have hlp : le1 M j0 (j0 + Lb) := by
+        rw [show j0 + Lb = M.length - 1 from by omega]
+        unfold nextR at hnrM
+        by_cases h1 : srow M (M.length - 1) = 1
+        · rw [if_neg (by omega), if_pos h1] at hnrM
+          exact ⟨hnrM.1, hnrM.2.1, Relation.ReflTransGen.single hnrM⟩
+        · rw [if_neg (by omega), if_neg h1] at hnrM
+          exact hnrM.2.2.2.2.1
+      exact gexp_cone_mir hlenM hj0pos hLbpos hk hq hup hd0pos hd0e hr0 hlp
+    · have hD0z : D0 = 0 := by rw [hD0, if_neg h0]
+      have hD1z : D1 = 0 := by rw [hD1, if_neg (by omega)]
+      rw [hD0z, hD1z]
+      exact gexp_cone_mir_flat hlenM hj0pos hLbpos hk hq hup hr0
+  rw [hNe, hMe]
+  have hXlenM : (gexp M j0 Lb D0 D1 n).length = j0 + n * Lb := gexp_length hlenM
+  have hXlenN : (gexp N j0 Lb D0 D1 n).length = j0 + n * Lb := gexp_length hlenN
+  refine list_ext_getD (by rw [hXlenN, Lift1_length, hXlenM]) ?_
+  intro i hi
+  rw [hXlenN] at hi
+  rw [Lift1_getD (by rw [hXlenM]; exact hi)]
+  rcases Nat.lt_or_ge i j0 with hij | hij
+  · rw [gexp_getD_low hlenN hij, hNdef, Lift1_getD (by omega),
+      gexp_entry_low hlenM hij, gexp_entry_low hlenM hij,
+      gexp_entry_low hlenM hij]
+    refine Prod.ext rfl (Prod.ext ?_ rfl)
+    dsimp only
+    rw [if_congr (gexp_cone_low hlenM hij) rfl rfl]
+  · obtain ⟨k, q, hk, hq, rfl⟩ := gexp_pos_decomp hLbpos hij hi
+    rw [gexp_getD_mir hlenN hk hq, gexp_entry0_mir hlenM hk hq,
+      gexp_entry1_mir hlenM hk hq, gexp_entry2_mir hlenM hk hq,
+      hNe0, hNe2, hNe1 _ (by omega)]
+    refine Prod.ext rfl (Prod.ext ?_ rfl)
+    dsimp only
+    rw [if_congr (Wset.le1_Lift1 (X := M) (d := t) (a := j0) (b := j0 + q)) rfl rfl,
+      if_congr (htrans k q hk hq) rfl rfl]
+    omega
+
+
+open Classical in
+/-- ★★★★★★★★★★ ⟹ **4 分岐すべてを合わせた形**:
+**`hr0 M`** ∧ **「親があるなら悪根は根でない」** ⟹ **`LiftOperComm` が成り立ちます**。
+⟹ ⛔ **残るのは `j0 = 0`（悪根が根そのもの）の場合だけ**です。 -/
+theorem lift_oper_comm_of_hr0_full {M : TrioSeq} {t n : ℕ}
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hj0 : hasParent M (srow M (M.length - 1)) (M.length - 1) →
+      0 < parent M (srow M (M.length - 1)) (M.length - 1)) :
+    (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t := by
+  by_cases hL : M.length - 1 = 0
+  · exact lift_oper_comm_of_short hL
+  · by_cases hz : (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0 ∧
+        entry M 2 (M.length - 1) = 0)
+    · exact lift_oper_comm_of_zeroLast hL hz
+    · by_cases hp : hasParent M (srow M (M.length - 1)) (M.length - 1)
+      · exact lift_oper_comm_of_hr0 hL hz hp hr0 (hj0 hp)
+      · exact lift_oper_of_noParent (by omega) hp
+
 end H12H2
 end TRIO
