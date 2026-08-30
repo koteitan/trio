@@ -6536,5 +6536,65 @@ theorem no_hasParent_blockRoot_of_e_zero (Q : TrioSeq) {d n k i : ℕ}
   · exact no_nextrel1_blockRoot_of_e_zero Q hQ hk hmin hy
   · exact no_nextrel2_blockRoot_of_e_zero Q hQ hk hmin hy
 
+
+/-- ★★★★★★★★★★ **(W85)**: `e = 0` ∧ **`j` が `Q` の中で行 1 の最小** ⟹
+**塔の第 `k` ブロックの `j` は、行 1 の孤児**。 -/
+theorem no_nextrel1_mTower_of_row1_min (Q : TrioSeq) {d n k j c : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n) (hj : j < Q.length)
+    (hmin : ∀ r, r < Q.length → entry Q 1 j ≤ entry Q 1 r) :
+    ¬ nextrel1 (mTower Q d 0 n) c (k * Q.length + j) := by
+  intro h
+  have hlen : (mTower Q d 0 n).length = n * Q.length := mTower_length Q d 0 n
+  have hclt : c < n * Q.length := by have := h.1; rw [hlen] at this; exact this
+  have hent : ∀ k'' i, k'' < n → i < Q.length →
+      entry (mTower Q d 0 n) 1 (k'' * Q.length + i) = entry Q 1 i := by
+    intro k'' i hk'' hi
+    rw [entry1_mTower_block_formula Q hk'' hi]
+    split_ifs <;> omega
+  have hk' : c / Q.length < n :=
+    Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm] at hclt; exact hclt)
+  have hr : c % Q.length < Q.length := Nat.mod_lt _ hQ
+  have hsplit : c = (c / Q.length) * Q.length + c % Q.length :=
+    (Nat.div_add_mod' c Q.length).symm
+  have hlt := h.2.2.2.1
+  rw [hsplit, hent _ _ hk' hr, hent _ _ hk hj] at hlt
+  have := hmin _ hr
+  omega
+
+/-- ★★★★★★★★★★ ⟹ **行 2 の親も無い**（源は `le1` 祖先）。 -/
+theorem no_nextrel2_mTower_of_row1_min (Q : TrioSeq) {d n k j c : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n) (hj : j < Q.length)
+    (hmin : ∀ r, r < Q.length → entry Q 1 j ≤ entry Q 1 r) :
+    ¬ nextrel2 (mTower Q d 0 n) c (k * Q.length + j) := by
+  intro h
+  have hlt : c < k * Q.length + j := h.2.2.1
+  rcases Relation.ReflTransGen.cases_tail h.2.2.2.2.1.2.2 with h1 | ⟨c1, hc1, hc2⟩
+  · exact absurd h1.symm (by omega)
+  · exact no_nextrel1_mTower_of_row1_min Q hQ hk hj hmin hc2
+
+/-- ★★★★★★★★★★ ⟹ **`hasParent` の形**（`i ≥ 1`）⟹ ★ **`snoc_orphan_W` へ**。 -/
+theorem no_hasParent_mTower_of_row1_min (Q : TrioSeq) {d n k j i : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n) (hj : j < Q.length) (hi : 0 < i)
+    (hmin : ∀ r, r < Q.length → entry Q 1 j ≤ entry Q 1 r) :
+    ¬ hasParent (mTower Q d 0 n) i (k * Q.length + j) := by
+  rintro ⟨y, hy, -⟩
+  unfold nextR at hy
+  rw [if_neg (by omega)] at hy
+  split_ifs at hy with h1
+  · exact no_nextrel1_mTower_of_row1_min Q hQ hk hj hmin hy
+  · exact no_nextrel2_mTower_of_row1_min Q hQ hk hj hmin hy
+
+/-- ★★★★★ ⟹ **「行 1 で最小」は「孤児 ∧ 非祖先の低い列も無い」と同じ**（1 行の説明）。
+⟹ ★ 祖先に低い列があれば `hasParent1_of_le0` で親ができ、
+⟹ ★ 非祖先に低い列があれば `cross_needs_nonancestor_low`（(W76)）の越境が起きます。 -/
+theorem row1_min_of_orphan_and_no_low {Q : TrioSeq} {j : ℕ} (hj : j < Q.length)
+    (horph : ¬ hasParent Q 1 j)
+    (hno : ∀ r, r < Q.length → entry Q 1 r < entry Q 1 j → le0 Q r j) :
+    ∀ r, r < Q.length → entry Q 1 j ≤ entry Q 1 r := by
+  intro r hr
+  by_contra hc
+  push Not at hc
+  exact horph (hasParent1_of_le0 hj (hno r hr hc) hc)
+
 end H12Export
 end TRIO
