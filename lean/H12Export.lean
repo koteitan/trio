@@ -931,28 +931,6 @@ theorem tower2_z_zero_of_last {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
   have hlt := L53.tower2_zr (v := v) (z := z) hRne hd hi2 hpM
   omega
 
-/-- ★★★ **`zle1 R` は「末尾列の行 2 ≤ 1」だけでよい**。 -/
-theorem tower2_z_zero_of_last {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
-    (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
-    (hi2 : srow R (R.length - 1) = 2)
-    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
-      R.length) : z = 0 := by
-  have hlt := L53.tower2_zr (v := v) (z := z) hRne hd hi2 hpM
-  omega
-
-/-- ⟹ **消費側の `hz0` は「`R` の末尾列の行 2 ≤ 1」1 本から出る。** -/
-theorem hz0_of_last {v z m t : ℕ} {R : TrioSeq} (hRne : R ≠ [])
-    (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
-    (hi2 : srow R (R.length - 1) = 2)
-    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
-      R.length) :
-    entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 2 0 = 0 := by
-  have hzz : z = 0 := tower2_z_zero_of_last hRne hz1 hlast hd hi2 hpM
-  rw [entry2_Lift1]
-  show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = 0
-  have : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = z := rfl
-  omega
-
 /-- ⟹ **消費側の `hz0` は「`R` の末尾列の行 2 ≤ 1」1 本から出る。** -/
 theorem hz0_of_last {v z m t : ℕ} {R : TrioSeq} (hRne : R ≠ [])
     (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
