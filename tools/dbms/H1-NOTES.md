@@ -7632,3 +7632,25 @@ L106 を読んだ。`hsnoc_zero_of_parent` の中で `hd : 0 < d` が使われ�
   - §298（`hsnoc_zero_of_parent` の `hd` は「末尾列が非零」1 か所）は事実。ただし `d = 0` では呼べない。
   - §296 の補題は全部正しい。`Q` の根が `A` に親を持たない枝は `snoc_orphan_W` で**無料**。
   - 残るのは「持つ」枝 ＝ `d = 0` の塔の本体。⟹ `Aop` の節 3（`graft`）しかないと見る。
+
+## §300 ★★★★★★★ **`d = 0` なら `e = 0`** —— `wd0 = 0 ⟹ wd1 = 0`
+
+    wd0 = if 0 < srow(末尾) then entry 0 (末尾) - entry 0 (親) else 0
+    wd1 = if 1 < srow(末尾) then entry 1 (末尾) - entry 1 (親) else 0
+
+⟹ `wd1 > 0` には `srow = 2` が要る。⟹ 親は `nextrel2` の始点。
+⟹ `nextrel2` は `le1` を、`le1` の各段（`nextrel1`）は `le0` を要求する。
+⟹ **親は末尾の `le0` 祖先で、しかも別の列** ⟹ **行 0 が狭義に小さい** ⟹ `wd0 > 0`。
+
+緑（全部 `H12Export.lean`）:
+
+    entry0_lt_of_le0_ne     : le0 M a b → a ≠ b → entry M 0 a < entry M 0 b
+    entry0_lt_of_nextrel1   : nextrel1 M a b → entry M 0 a < entry M 0 b
+    entry0_lt_of_le1_ne     : le1 M a b → a ≠ b → entry M 0 a < entry M 0 b
+    entry0_lt_of_nextrel2   : nextrel2 M a b → entry M 0 a < entry M 0 b
+    entry0_parent_lt_of_srow1/2 : nextR M 1/2 a b → entry M 0 a < entry M 0 b
+
+⟹ ★ **`wd0 = 0 ⟺ srow(末尾) = 0`**（親がある前提）。そして `srow = 0 ⟹ wd1 = 0`。
+⟹ ⟹ ★★★ **測度の再帰で `d = 0` が出るときは必ず `e = 0` も一緒**。
+⟹ ⟹ ⟹ `TowerP''` に **`d = 0 → e = 0`** を足せば、`ZeroDOK` は
+   **`d = e = 0`（＝同一コピーの連結）だけ**でよくなる ⟹ `PrefixCopies` に一本化。

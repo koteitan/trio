@@ -3279,5 +3279,64 @@ theorem blockRoot_nonzero_of_e_pos {Q : TrioSeq} {d e n k : ℕ}
     hQne he hk hk0
   omega
 
+
+/-! ## 45. ★★★★★★★ **`d = 0` なら `e = 0`** —— `wd0 = 0 ⟹ wd1 = 0`
+
+`wd0 P B j p = if 0 < srow(末尾) then entry 0 (末尾) - entry 0 (P.length+p) else 0`
+`wd1 P B j p = if 1 < srow(末尾) then entry 1 (末尾) - entry 1 (P.length+p) else 0`
+
+⟹ `wd1 > 0` には `srow = 2` が要る。⟹ そのとき親は `nextrel2` の始点で、
+`nextrel2` は `le1` を、`le1` の各段（`nextrel1`）は `le0` を要求する。
+⟹ **親は末尾の `le0` 祖先** ⟹ **行 0 が狭義に小さい** ⟹ `wd0 > 0`。
+
+⟹ ⟹ ★★★ **`wd0 = 0` なら `wd1 = 0`**。⟹ 測度の再帰で `d = 0` が出るときは
+**必ず `e = 0` も一緒**。⟹ `TowerP''` に `d = 0 → e = 0` を足せば、
+`ZeroDOK` は **`d = e = 0`（同一コピー）だけ**でよくなる。 -/
+
+/-- `le0` で真に上がると行 0 は狭義に増える。 -/
+theorem entry0_lt_of_le0_ne {M : TrioSeq} {a b : ℕ}
+    (h : le0 M a b) (hne : a ≠ b) : entry M 0 a < entry M 0 b := by
+  obtain ⟨-, -, hrt⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+  · exact absurd h1.symm hne
+  · exact Nat.lt_of_le_of_lt (rtg0_entry_mono hc1) hc2.2.2.2.1
+
+/-- `nextrel1` の始点は行 0 でも狭義に小さい。 -/
+theorem entry0_lt_of_nextrel1 {M : TrioSeq} {a b : ℕ}
+    (h : nextrel1 M a b) : entry M 0 a < entry M 0 b :=
+  entry0_lt_of_le0_ne h.2.2.2.2.1 (Nat.ne_of_lt h.2.2.1)
+
+/-- `le1` で真に上がると行 0 も狭義に増える。 -/
+theorem entry0_lt_of_le1_ne {M : TrioSeq} {a b : ℕ}
+    (h : le1 M a b) (hne : a ≠ b) : entry M 0 a < entry M 0 b := by
+  obtain ⟨-, -, hrt⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+  · exact absurd h1.symm hne
+  · refine Nat.lt_of_le_of_lt ?_ (entry0_lt_of_nextrel1 hc2)
+    clear hc2
+    induction hc1 with
+    | refl => exact le_refl _
+    | tail _ hstep ih => exact le_trans ih (le_of_lt (entry0_lt_of_nextrel1 hstep))
+
+/-- ★★★ `nextrel2` の始点は**行 0 でも狭義に小さい**。⟹ `wd0 > 0`。 -/
+theorem entry0_lt_of_nextrel2 {M : TrioSeq} {a b : ℕ}
+    (h : nextrel2 M a b) : entry M 0 a < entry M 0 b :=
+  entry0_lt_of_le1_ne h.2.2.2.2.1 (Nat.ne_of_lt h.2.2.1)
+
+/-- ★★★★★ **`srow = 2` の段では、親の行 0 は末尾の行 0 より狭義に小さい**。
+⟹ `wd0 = entry 0 (末尾) - entry 0 (親) > 0`。 -/
+theorem entry0_parent_lt_of_srow2 {M : TrioSeq} {a b : ℕ}
+    (h : nextR M 2 a b) : entry M 0 a < entry M 0 b := by
+  unfold nextR at h
+  rw [if_neg (by omega), if_neg (by omega)] at h
+  exact entry0_lt_of_nextrel2 h
+
+/-- 行 1 の段でも同じ（`srow = 1` のとき `wd0 > 0`）。 -/
+theorem entry0_parent_lt_of_srow1 {M : TrioSeq} {a b : ℕ}
+    (h : nextR M 1 a b) : entry M 0 a < entry M 0 b := by
+  unfold nextR at h
+  rw [if_neg (by omega), if_pos rfl] at h
+  exact entry0_lt_of_nextrel1 h
+
 end H12H2
 end TRIO
