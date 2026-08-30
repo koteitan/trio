@@ -3683,5 +3683,28 @@ theorem blocker_mTower_imp_Q {Q : TrioSeq} {d e n l : ℕ} (hQne : Q ≠ []) (hQ
     rw [hroot] at hb
     omega
 
+
+/-! ### 48.1 ★ 壁の弱め版: **接頭辞からの越境は必ずブロッカーに着く**
+
+`no_nextrel1_cross_of_cone` の対偶。⟹ `hnb` を**全列**について要求しなくても、
+「越境先がブロッカーでない」ことさえ言えれば壁が立つ。 -/
+
+/-- ★★ 行 1 で接頭辞から越境できる先は**ブロッカーだけ**。 -/
+theorem nextrel1_cross_is_blocker {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
+    (h : nextrel1 (A ++ T) c (A.length + m)) : entry T 1 m ≤ entry T 1 0 := by
+  by_contra hcon
+  exact no_nextrel1_cross_of_cone hmin hc hm hm0 (by omega) h
+
+/-- ★★ 行 2 版。 -/
+theorem nextrel2_cross_is_blocker {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
+    (h : nextrel2 (A ++ T) c (A.length + m)) : entry T 2 m ≤ entry T 2 0 := by
+  by_contra hcon
+  exact no_nextrel2_cross_of_cone hmin hnb hc hm hm0 (by omega) h
+
 end H12H2
 end TRIO
