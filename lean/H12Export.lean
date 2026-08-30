@@ -3845,5 +3845,52 @@ theorem row0_parent_ge_block {A Q : TrioSeq} {d e n j c : ℕ}
   push Not at hc
   exact absurd h (no_row0_parent_from_before_block hr0 hj hj0 hc)
 
+
+/-- `le0` はブロックの中で `Q` と同型（`nextrel0_mTower_intra_block` の鎖版）。 -/
+theorem rtg0_mTower_intra_block (Q : TrioSeq) {d e n k : ℕ} (hk : k < n)
+    {a b : ℕ} (_ha : a < Q.length) (hb : b < Q.length)
+    (h : Relation.ReflTransGen (nextrel0 Q) a b) :
+    Relation.ReflTransGen (nextrel0 (mTower Q d e n)) (k * Q.length + a) (k * Q.length + b) := by
+  induction h with
+  | refl => exact Relation.ReflTransGen.refl
+  | @tail c b hac hcb ih =>
+      have hc : c < Q.length := hcb.1
+      exact (ih hc).tail ((nextrel0_mTower_intra_block Q hk hc hb).mpr hcb)
+
+open Classical in
+/-- ★★★★★★ **行 1 の親は「錐の鎖の最後の 1 歩」以降**。
+⟹ ★ 仮定は `nextrel1 Q y j` **だけ**（`hr0` も `hnbQ` も `0 < e` も要りません）。
+⟹ ⟹ ★★ **証人が錐の中なら的も錐の中**（鎖が伸びる）⟹ ★ **両方が `+e*n` で相殺**、
+証人が錐の外なら **持ち上げが無いぶん低い** ⟹ ★ **どちらでも最小性に反します**。 -/
+theorem nextrel1_src_ge_of_cone_witness (Q : TrioSeq)
+    {d e n N j y c : ℕ} (hn : n < N) (hj : j < Q.length) (hy : nextrel1 Q y j)
+    (h : nextrel1 (mTower Q d e N) c (n * Q.length + j)) :
+    n * Q.length + y ≤ c := by
+  have hylt : y < j := hy.2.2.1
+  have hyQ : y < Q.length := by omega
+  have hlt : entry Q 1 y < entry Q 1 j := hy.2.2.2.1
+  have hle0 : le0 (mTower Q d e N) (n * Q.length + y) (n * Q.length + j) := by
+    have hlen : (mTower Q d e N).length = N * Q.length := mTower_length Q d e N
+    have hNq : (n + 1) * Q.length ≤ N * Q.length := Nat.mul_le_mul_right _ (by omega)
+    have hsk : (n + 1) * Q.length = n * Q.length + Q.length := Nat.succ_mul n Q.length
+    exact ⟨by omega, by omega,
+      rtg0_mTower_intra_block Q hn hyQ hj hy.2.2.2.2.1.2.2⟩
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2.2 (n * Q.length + y) ⟨by omega, hle0⟩
+  rw [entry1_mTower_block_formula Q hn hj, entry1_mTower_block_formula Q hn hyQ] at hmin
+  by_cases hcy : le1 Q 0 y
+  · have hcj : le1 Q 0 j := ⟨by omega, hj, hcy.2.2.tail hy⟩
+    rw [if_pos hcy, if_pos hcj] at hmin; omega
+  · rw [if_neg hcy] at hmin
+    split_ifs at hmin <;> omega
+
+/-- ★★★★★ ⟹ **親は今のブロックの中**（系）。接頭辞にも前のブロックにも行きません。 -/
+theorem nextrel1_src_in_block_of_cone (Q : TrioSeq)
+    {d e n N j y c : ℕ} (hn : n < N) (hj : j < Q.length) (hy : nextrel1 Q y j)
+    (h : nextrel1 (mTower Q d e N) c (n * Q.length + j)) :
+    n * Q.length ≤ c :=
+  le_trans (by omega) (nextrel1_src_ge_of_cone_witness Q hn hj hy h)
+
 end H12Export
 end TRIO
