@@ -8532,5 +8532,46 @@ theorem no_nextrel0_blockRoot_of_d_zero (Q : TrioSeq) {e n c : ℕ}
   · rw [h0] at hlt; omega
   · have := hr0 (c % Q.length) h0 hr; omega
 
+
+/-! ## 131. ★★★★★★★★★★ (W79'): **親は「直前のブロックの中」** —— (W79)(a) から両側で
+
+(W79)(a) が下限 `(n−1)|Q| ≤ c` を、`nextrel0` の定義が上限 `c < n|Q|` をくれます。
+⟹ ★★★★★ ⟹ **`c` は第 `n−1` ブロックの中**（根とは限りません）。
+⟹ ★ そして **snoc の形**（`mTower Q d e n ++ [第 `n` ブロックの根]`）にも、`take` で移せます。 -/
+
+/-- ★★★★★★★★★★ **(W79')**: `0 < d` ∧ `0 < n` ⟹ **親は第 `n−1` ブロックの中**（両側）。 -/
+theorem nextrel0_blockRoot_in_prev_block (Q : TrioSeq) {d e n c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (h : nextrel0 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    (n - 1) * Q.length ≤ c ∧ c < n * Q.length :=
+  ⟨nextrel0_blockRoot_src_ge_prev Q hQ hd hn h, h.2.2.1⟩
+
+/-- ★★★★★ ⟹ **窓は `|Q|` を超えません**（`|T| − 1 − 親 ≤ |Q|`）。 -/
+theorem window_le_of_blockRoot (Q : TrioSeq) {d e n c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (h : nextrel0 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    n * Q.length - c ≤ Q.length := by
+  have hge := nextrel0_blockRoot_src_ge_prev Q hQ hd hn h
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  omega
+
+/-- ★★★★★★★★ ⟹ **snoc の形に移した版**:
+**`mTower Q d e n ++ (第 `n` ブロック).take 1` の末尾列の行 0 の親は、第 `n−1` ブロックの中**。 -/
+theorem nextrel0_snoc_blockRoot_in_prev (Q : TrioSeq) {d e n c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (h : nextrel0 (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take 1)
+      c (n * Q.length)) :
+    (n - 1) * Q.length ≤ c ∧ c < n * Q.length := by
+  have hlen : (mTower Q d e (n + 1)).length = (n + 1) * Q.length :=
+    mTower_length Q d e (n + 1)
+  have hnq1 : (n + 1) * Q.length = n * Q.length + Q.length := Nat.succ_mul n Q.length
+  rw [show (1 : ℕ) = 0 + 1 from rfl, mTower_append_take Q d e n 0] at h
+  have h' : nextrel0 (mTower Q d e (n + 1)) c (n * Q.length) :=
+    (Wset.nextrel0_take (X := mTower Q d e (n + 1)) (l := n * Q.length + (0 + 1))
+      (by omega) (by omega)).mp h
+  exact nextrel0_blockRoot_in_prev_block Q hQ hd hn h'
+
 end H12H2
 end TRIO
