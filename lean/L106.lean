@@ -1892,5 +1892,96 @@ theorem towerClosed_of_snoc'' {u : ℕ}
 ⚠ **教訓 14**: `towerClosed_of_snoc''` は「`hsnoc` ならば」しか言っていません。
 **`hsnoc` はまだ証明されていません。**そして 6-9 の遺伝も示していません。** -/
 
+/-! ## 212. ★★★★★★★ `hsnoc` の `j ≥ 1` の枝を組みます
+
+§211 で親の位置は前提から消えました。**次は `hsnoc` そのものです。**
+
+**⟹ まず §211 の中で作った `hpT` を、名前つきで外に出します（再利用のため）。** -/
+
+theorem hr0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
+    ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l := by
+  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
+  subst hMQ
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  intro l hl0 hl1
+  rw [hdl] at hl1
+  rw [List.dropLast_eq_take, Wset.entry_take (show (0 : ℕ) < M.length - 1 by omega),
+    Wset.entry_take hl1]
+  exact hr0M l hl0 (by omega)
+
+/-- ★★ **`TowerP''` から「塔の中の親」が出ます**（§210 ＋ §162.9 の合成）。 -/
+theorem tower_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
+    (hP : TowerP'' Q d e) {j : ℕ} (hj : j < Q.length) (hj1 : 0 < j) :
+    hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (n * Q.length + j))
+      (n * Q.length + j) := by
+  have hr0Q := hr0_of_TowerP'' hP
+  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
+  subst hMQ
+  by_cases hc : le1 M.dropLast 0 j
+  · exact tower_hasParent_of_block (Q := M.dropLast) (d := d) (e := e) (n := n)
+      (block_blockParent_all_cone hj hj1 hr0Q hc
+        (fun hpos => h2_cone hz0 j hj1 hj hpos hc))
+  · exact tower_hasParent_of_block (Q := M.dropLast) (d := d) (e := e) (n := n)
+      (block_blockParent_all_outcone hj hj1 hr0Q hc
+        (fun hpos => h2out j hj1 hj hc hpos)
+        (fun hpos => h1out j hj1 hj hc hpos))
+
+/-! ### 212.1 §202 を**存在量化なし**で書き直します（証人を名前で呼ぶため） -/
+
+/-- 窓（§202 の明示の証人）。 -/
+def wnd (P B : TrioSeq) (j p : ℕ) : TrioSeq :=
+  ((P ++ B.take (j + 1)).drop (P.length + p)).take (j - p)
+
+/-- 新しい行 0 のリフト量。 -/
+noncomputable def wd0 (P B : TrioSeq) (j p : ℕ) : ℕ :=
+  if 0 < srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1) then
+    entry (P ++ B.take (j + 1)) 0 ((P ++ B.take (j + 1)).length - 1)
+      - entry (P ++ B.take (j + 1)) 0 (P.length + p) else 0
+
+/-- 新しい行 1 のリフト量。 -/
+noncomputable def wd1 (P B : TrioSeq) (j p : ℕ) : ℕ :=
+  if 1 < srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1) then
+    entry (P ++ B.take (j + 1)) 1 ((P ++ B.take (j + 1)).length - 1)
+      - entry (P ++ B.take (j + 1)) 1 (P.length + p) else 0
+
+theorem wnd_length {P B : TrioSeq} {j p : ℕ}
+    (hjB : j < B.length) (hpj : p < j) : (wnd P B j p).length = j - p := by
+  have hTl : (P ++ B.take (j + 1)).length = P.length + (j + 1) := by
+    rw [List.length_append, List.length_take, Nat.min_eq_left (by omega)]
+  unfold wnd
+  rw [List.length_take, List.length_drop, hTl]
+  omega
+
+open Classical in
+/-- ★ §202 の**証人つき**の形。 -/
+theorem snocStep_oper_pre_eq {P B : TrioSeq} {j p m : ℕ}
+    (hjB : j < B.length) (hpj : p < j)
+    (hz : ¬ (entry (P ++ B.take (j + 1)) 0 ((P ++ B.take (j + 1)).length - 1) = 0 ∧
+      entry (P ++ B.take (j + 1)) 1 ((P ++ B.take (j + 1)).length - 1) = 0 ∧
+      entry (P ++ B.take (j + 1)) 2 ((P ++ B.take (j + 1)).length - 1) = 0))
+    (hpar : hasParent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1))
+    (hpe : parent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) = P.length + p) :
+    (P ++ B.take (j + 1))⟦m⟧
+      = (P ++ B.take p) ++ mTower (wnd P B j p) (wd0 P B j p) (wd1 P B j p) m := by
+  set T := P ++ B.take (j + 1) with hT
+  have hTl : T.length = P.length + (j + 1) := by
+    rw [hT, List.length_append, List.length_take, Nat.min_eq_left (by omega)]
+  have hL : T.length - 1 ≠ 0 := by omega
+  have hLb : T.length - 1 - (P.length + p) = j - p := by omega
+  have hle : P.length + p + (j - p) ≤ T.length := by omega
+  unfold wnd wd0 wd1
+  rw [oper_eq_gexp_gen m hL hz hpar, hpe, hLb, gexp_eq_take_append_mTower hle]
+  congr 1
+  rw [hT, List.take_append, List.take_of_length_le (by omega),
+    Nat.add_sub_cancel_left, List.take_take, Nat.min_eq_left (by omega)]
+
 end L106
 end TRIO
