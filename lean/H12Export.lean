@@ -6873,5 +6873,33 @@ theorem window_le_of_blockRoot_row2 (Q : TrioSeq) {d e n c c1 : ℕ}
     subst hm; simp [Nat.succ_mul]
   omega
 
+
+/-- ★★★★★★★★★★ **(W91a) の還元**（`e` にも `d` にも依りません）:
+**直前ブロックの中に「行 1 が的より低い `le0` 祖先」があれば、`srow` の親も直前ブロックの中**。 -/
+theorem nextrel1_src_ge_prev_of_low_ancestor (Q : TrioSeq) {d e n c x : ℕ}
+    (hx1 : (n - 1) * Q.length ≤ x)
+    (hxanc : le0 (mTower Q d e (n + 1)) x (n * Q.length))
+    (hxlow : entry (mTower Q d e (n + 1)) 1 x
+      < entry (mTower Q d e (n + 1)) 1 (n * Q.length))
+    (h : nextrel1 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    (n - 1) * Q.length ≤ c :=
+  le_trans hx1 ((src_ge_of_ancestor_low (M := mTower Q d e (n + 1)) (c := c) (x := x)
+    (t := n * Q.length)).1 hxanc hxlow h)
+
+/-- ★★★★★ ⟹ **窓 `≤ |Q|`**（同じ還元から）。 -/
+theorem window_le_of_low_ancestor (Q : TrioSeq) {d e n c x : ℕ}
+    (hQ : 0 < Q.length) (hn : 0 < n)
+    (hx1 : (n - 1) * Q.length ≤ x)
+    (hxanc : le0 (mTower Q d e (n + 1)) x (n * Q.length))
+    (hxlow : entry (mTower Q d e (n + 1)) 1 x
+      < entry (mTower Q d e (n + 1)) 1 (n * Q.length))
+    (h : nextrel1 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    n * Q.length - c ≤ Q.length := by
+  have hge := nextrel1_src_ge_prev_of_low_ancestor Q hx1 hxanc hxlow h
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  omega
+
 end H12Export
 end TRIO
