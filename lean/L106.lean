@@ -5558,5 +5558,74 @@ theorem block_hasParent_one_of_Q_witness {Q : TrioSeq} {d e n j y : ℕ}
 **⟹ ★ ですが `hbase` / `rsum` / `h1out` / `hnbQ` と違い、**核の形で偽になりません**。**
 **⟹ ⟹ R2 に (LOCHER) として測ってもらう価値があります。** -/
 
+/-! ## 237. ★★★★★★★★★★ **`hlocQ` を定義して、`hloc` を全列で出します**
+
+§236.2 で `hloc`（行 1）が `Q` の言葉・`n` 非依存で書けると分かりました。
+**⟹ ★ 行 0（§154）・行 2（§173）と合わせて、**3 行そろえます**。**
+
+⚠ **1 つ確認しました**: ブロックの `srow` が 1 になるのは
+**`entry Q 2 j = 0` かつ `entry Q 1 j > 0`** のとき**だけ**です（`n` に依りません）。
+
+    `j` が**錐の中** ⟹ `le1_entry1_lt` で `entry Q 1 0 < entry Q 1 j` ⟹ **`entry Q 1 j > 0`**
+    `j` が**錐の外** ⟹ 持ち上がらないので `entry (block) 1 j = entry Q 1 j`
+
+**⟹ ★ ですから `srow` の判定は `Q` だけで決まります。** -/
+
+/-- ★★★ **`hlocQ`**: 「ブロックの中に親がいる」を `Q` の言葉で書いたもの（`d, e, n` に依らない）。 -/
+def hlocQ (Q : TrioSeq) : Prop :=
+  ∀ j, 0 < j → j < Q.length →
+    (0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) ∧
+    (entry Q 2 j = 0 → 0 < entry Q 1 j →
+      ∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j ∧ (le1 Q 0 y → le1 Q 0 j))
+
+open Classical in
+/-- ★★★★★ **`hlocQ` ⟹ ブロックの全列に親がいる**（`hloc` が全列で立つ）。 -/
+theorem block_hasParent_all_of_hlocQ {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h : hlocQ Q) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hE1 : entry (B.take (j + 1)) 1 j
+      = entry Q 1 j + (if le1 Q 0 j then e * n else 0) := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega)]
+    show (B.getD j (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hj]
+  have hE2 : entry (B.take (j + 1)) 2 j = entry Q 2 j := by
+    rw [hB, entry2_block_take (by omega),
+      Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := j) (by omega)]
+  obtain ⟨h2, h1⟩ := h j hj1 hj
+  unfold srow
+  by_cases h2p : 0 < entry (B.take (j + 1)) 2 j
+  · rw [if_pos h2p]
+    rw [hE2] at h2p
+    exact block_blockParent_row2' hj (h2 h2p)
+  · by_cases h1p : 0 < entry (B.take (j + 1)) 1 j
+    · rw [if_neg h2p, if_pos h1p]
+      rw [hE2] at h2p
+      -- ★ `entry Q 1 j > 0` を出す（錐の中なら `le1_entry1_lt`、外なら直接）
+      have hQ1j : 0 < entry Q 1 j := by
+        by_cases hc : le1 Q 0 j
+        · have := le1_entry1_lt hc (show (0 : ℕ) ≠ j from by omega)
+          omega
+        · rw [hE1, if_neg hc, Nat.add_zero] at h1p
+          exact h1p
+      obtain ⟨y, hyj, hle0, hlt, hcls⟩ := h1 (by omega) hQ1j
+      exact block_hasParent_one_of_Q_witness (d := d) (e := e) (n := n)
+        hj hyj hle0 hlt hcls
+    · rw [if_neg h2p, if_neg h1p]
+      exact block_blockParent_row0 hj hj1 hr0
+
+/-! ### 237.1 ⟹ ★★★ **`OrphOK` の枝が発火しなくなります**
+
+`towerClosed_of_hered` の `j ≥ 1` は `by_cases hloc` で 2 分岐していました。
+**⟹ ★ `hlocQ` があれば **`hloc` は常に真** ⟹ **`¬hloc` の枝が空**になります。**
+**⟹ ⟹ ★★ ですから **`OrphOK` も `orphOK_proved` も `hnbQ` も要りません**。**
+
+⚠ **教訓 14**: `hlocQ` の**遺伝**は測っても証明してもいません。
+**⟹ ★ ですが `hbase` / `rsum` / `h1out` / `hnbQ` と違い、**核の形（型 B）で偽になりません**。** -/
+
 end L106
 end TRIO
