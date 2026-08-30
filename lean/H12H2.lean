@@ -5260,5 +5260,80 @@ theorem exists_low_row1_of_prefix_parent {A T : TrioSeq}
     ∃ y, y < A.length ∧ entry (A ++ T) 1 y < entry T 1 0 :=
   ⟨c, hc, prefix_parent_row1_lt_root hr0 hm hm0 hnp h⟩
 
+
+/-! ### 72.1 ★★★★★★ (W23)(2) を **完全な特徴づけ**にする
+
+`T` の中で行 1 の孤児 ⟹ **`T` の中の `le0` 祖先は全部「的以上」**（`nextrel1_of_witness` の対偶）。
+⟹ ★ ですから `nextrel1` の最小性のうち **`T` 側は自動で満たされ**、
+残るのは**接頭辞側だけ**。⟹ ⟹ **接頭辞の親の存在が、単純な条件と同値**になる。 -/
+
+/-- ★★★★★ **行 1 の孤児の `le0` 祖先は、全部「的以上」**。 -/
+theorem orphan_row1_min {T : TrioSeq} {m : ℕ} (hnp : ¬ hasParent T 1 m) :
+    ∀ x, x < m → le0 T x m → entry T 1 m ≤ entry T 1 x := by
+  intro x hx hle0
+  by_contra hc
+  push Not at hc
+  obtain ⟨y', hy'⟩ := nextrel1_of_witness hx hle0 hc
+  refine hnp ⟨y', ?_, ?_⟩
+  · show nextR T 1 y' m
+    unfold nextR; rw [if_neg (by omega), if_pos rfl]; exact hy'
+  · intro b hb
+    unfold nextR at hb
+    rw [if_neg (by omega), if_pos rfl] at hb
+    exact nextrel1_src_unique hb hy'
+
+open Classical in
+/-- ★★★★★★★ **接頭辞の行 1 の親の存在は、単純な条件と同値**（孤児の前提の下で）。 -/
+theorem prefix_parent_iff_of_orphan {A T : TrioSeq} {m : ℕ}
+    (hm : m < T.length) (hnp : ¬ hasParent T 1 m) :
+    (∃ c, c < A.length ∧ nextrel1 (A ++ T) c (A.length + m))
+      ↔ (∃ y, y < A.length ∧ le0 (A ++ T) y (A.length + m) ∧
+           entry (A ++ T) 1 y < entry T 1 m) := by
+  constructor
+  · rintro ⟨c, hc, h⟩
+    refine ⟨c, hc, h.2.2.2.2.1, ?_⟩
+    have := h.2.2.2.1
+    rw [entry_append_right] at this
+    exact this
+  · rintro ⟨y0, hy0, hle00, hlt0⟩
+    have hTgt : A.length + m < (A ++ T).length := by
+      rw [List.length_append]; omega
+    have hyT : y0 ∈ (Finset.range A.length).filter
+        (fun y => le0 (A ++ T) y (A.length + m) ∧
+          entry (A ++ T) 1 y < entry T 1 m) := by
+      simp only [Finset.mem_filter, Finset.mem_range]
+      exact ⟨hy0, hle00, hlt0⟩
+    have hTne : ((Finset.range A.length).filter
+        (fun y => le0 (A ++ T) y (A.length + m) ∧
+          entry (A ++ T) 1 y < entry T 1 m)).Nonempty := ⟨y0, hyT⟩
+    have hmem := Finset.max'_mem _ hTne
+    simp only [Finset.mem_filter, Finset.mem_range] at hmem
+    obtain ⟨hcA, hcle0, hclt⟩ := hmem
+    refine ⟨_, hcA, hcle0.1, hTgt, by omega, ?_, hcle0, ?_⟩
+    · rw [entry_append_right]; exact hclt
+    · intro x hx
+      rw [entry_append_right]
+      rcases Nat.lt_or_ge x A.length with hxA | hxA
+      · by_contra hcon
+        push Not at hcon
+        have hxT : x ∈ (Finset.range A.length).filter
+            (fun y => le0 (A ++ T) y (A.length + m) ∧
+              entry (A ++ T) 1 y < entry T 1 m) := by
+          simp only [Finset.mem_filter, Finset.mem_range]
+          exact ⟨hxA, hx.2, hcon⟩
+        exact absurd (Finset.le_max' _ x hxT) (by omega)
+      · obtain ⟨x', rfl⟩ : ∃ x', x = A.length + x' := ⟨x - A.length, by omega⟩
+        rw [entry_append_right]
+        rcases Nat.eq_or_lt_of_le (show x' ≤ m from by
+          have := rtg0_index_le hx.2.2.2; omega) with hxe | hxlt
+        · rw [hxe]
+        · have hle0T : le0 T x' m := by
+            have hh := le0_drop_to (M := A ++ T) (p := A.length)
+              (show A.length ≤ A.length + x' from by omega) hx.2
+            have hdrop : (A ++ T).drop A.length = T := by simp
+            rwa [hdrop, show A.length + x' - A.length = x' from by omega,
+              show A.length + m - A.length = m from by omega] at hh
+          exact orphan_row1_min hnp x' hxlt hle0T
+
 end H12H2
 end TRIO
