@@ -4162,5 +4162,32 @@ theorem rankDE_lt_of_srow_lt {T T' : TrioSeq} {par par' last last' : ℕ}
         (if 1 < srow T last then entry T 1 last - entry T 1 par else 0) := by
   rw [rankDE_eq_srow hpar, rankDE_eq_srow hpar']; exact hlt
 
+
+/-- ⛔ **末尾が親を持つなら `domT` は偽**（節 3 に入れない）。1 行。 -/
+theorem not_domT_of_hasParent {T : TrioSeq} {m : ℕ}
+    (h : hasParent T (srow T (T.length - 1)) (T.length - 1)) : ¬ domT T m := fun hd => hd.2 h
+
+/-- ★★★★★★★★ **親が接頭辞の中なら、窓は「接頭辞を縮めた、同じ塔」**。
+⟹ ★ ⟹ **帰納の対象は `Q` ではなく `A`** になります。 -/
+theorem prefixTake_drop_of_le_prefix {A Q : TrioSeq} {d e n j c : ℕ} (hc : c ≤ A.length) :
+    (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c
+      = A.drop c ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) := by
+  rw [List.drop_append_of_le_length (by rw [List.length_append]; omega),
+    List.drop_append_of_le_length hc]
+
+/-- ★★★★★ ⟹ **窓の長さ**: 塔がまるごと入るので **`|Q|` より真に長い**（`0 < n`）。 -/
+theorem prefixTake_window_length_of_prefix {A Q : TrioSeq} {d e n j c : ℕ} (hc : c ≤ A.length) :
+    ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).length
+      = (A.length - c) + n * Q.length + min (j + 1) Q.length := by
+  rw [prefixTake_drop_of_le_prefix hc]
+  simp only [List.length_append, List.length_drop, List.length_take, Lift1_length,
+    shiftr01_length, mTower_length]
+
+/-- ★★★★★★ ⟹ **接頭辞が減る**: 新しい接頭辞は `A.drop c`。
+⟹ ★ **`0 < c` なら真に短く**なります。⟹ ⛔ **`c = 0` では減りません**（そこが本当の残差）。 -/
+theorem prefixTake_new_prefix_length {A : TrioSeq} {c : ℕ} (hc : c ≤ A.length) (hc0 : 0 < c) :
+    (A.drop c).length < A.length := by
+  rw [List.length_drop]; omega
+
 end H12Export
 end TRIO
