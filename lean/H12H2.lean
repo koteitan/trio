@@ -8851,9 +8851,15 @@ theorem no_hasParent_mTower_of_row1_min (Q : TrioSeq) {d n k j i : ℕ}
   · exact no_nextrel1_mTower_of_row1_min Q hQ hk hj hmin hy
   · exact no_nextrel2_mTower_of_row1_min Q hQ hk hj hmin hy
 
-/-- ★★★★★ ⟹ **「行 1 で最小」は「孤児 ∧ 非祖先の低い列も無い」と同じ**（1 行の説明）。
+/-- ★★★★★ **「孤児 ∧ 非祖先の低い列も無い」⟹「行 1 で最小」**（**片側だけ**）。
 ⟹ ★ 祖先に低い列があれば `hasParent1_of_le0` で親ができ、
-⟹ ★ 非祖先に低い列があれば `cross_needs_nonancestor_low`（(W76)）の越境が起きます。 -/
+⟹ ★ 非祖先に低い列があれば `cross_needs_nonancestor_low`（(W76)）の越境が起きます。
+⚠⚠ **逆は成り立ちません**（R2 の (R-C12)、27,732 件で **62.81〜78.55%**）。
+⟹ ⛔ **`⟺` ではありません**。⟹ ★ そして **判定は塔 `T` の側で**——
+**`Q` の側で `row1min` を判定すると `e > 0` で破れます**
+（反例: `Q = (0,0,0)(1,1,1)(2,2,1)(3,3,0)(4,3,0)`、`d=1, e=1, n=1`。
+`Lift1` が根の行 1 を `+e·n` するため ＝ 私の (W86) そのもの）。
+⟹ ✅ **私の `no_*_mTower_of_row1_min` は塔の側 ＋ `e = 0` なので無傷**です。 -/
 theorem row1_min_of_orphan_and_no_low {Q : TrioSeq} {j : ℕ} (hj : j < Q.length)
     (horph : ¬ hasParent Q 1 j)
     (hno : ∀ r, r < Q.length → entry Q 1 r < entry Q 1 j → le0 Q r j) :
