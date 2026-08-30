@@ -1553,5 +1553,124 @@ theorem prefix_window_of_outOfCone_noBase {A M : TrioSeq} {d e n j : ℕ}
 ⚠ **教訓 14**: **`prefix_window_of_outOfCone_noBase` は緑ですが、
 その `hpT` を**誰が出すのか**はまだ決まっていません。⟹ 穴が移動しただけかもしれません。** -/
 
+/-! ## 209. ★★★★★★★ `hbase` を落とした `hstep`（§201 の差し替え）
+
+§208 を §201 に差し込みます。**⟹ `hbase` が前提から消えます。**
+
+⚠ **`prefixTowerClosed_final`（§169、`L105Cap:12118`）自体は `hbase` を持っていません。**
+**⟹ `hbase` は H12 の錐の外の補題**だけ**から来ていました。⟹ そこを §208 に替えれば落ちます。**
+
+⚠ **値段**: `hstep` が受け取る親の前提が **`hasParent T`（塔の中）**になります。
+**⟹ `hasParent T → hasParent (A ++ T)` はただ（`Wset.hasParent_append_right_of`）なので、
+消費側は損しません。** -/
+
+open Classical in
+theorem prefixTowerClosed_final_noBase {u : ℕ} {A M : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u) (hM2 : 2 ≤ M.length) (he : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0M : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hz0 : entry M.dropLast 2 0 = 0)
+    (hstep : ∀ (n j : ℕ), j < M.dropLast.length →
+      (0 < j →
+        hasParent (mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (srow (mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+            (n * M.dropLast.length + j))
+          (n * M.dropLast.length + j) →
+        (A ++ mTower M.dropLast d e n).length ≤
+          parent (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+            (srow (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+              (A ++ mTower M.dropLast d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+            (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length) →
+      (∀ j', j' ≤ j →
+        A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j' ∈ W u) →
+      A ++ mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower M.dropLast d e n ∈ W u := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hr0Q : ∀ l, 0 < l → l < M.dropLast.length →
+      entry M.dropLast 0 0 < entry M.dropLast 0 l := by
+    intro l hl0 hl1
+    rw [hdl] at hl1
+    rw [List.dropLast_eq_take, Wset.entry_take (show (0 : ℕ) < M.length - 1 by omega),
+      Wset.entry_take hl1]
+    exact hr0M l hl0 (by omega)
+  refine prefixTowerClosed_final hA hr0Q hz0 ?_
+  intro n j hj hcone hall
+  refine hstep n j hj (fun hj1 hpT => ?_) hall
+  by_cases hc : le1 M 0 (0 + j)
+  · refine hcone hj1 ?_
+    rw [List.dropLast_eq_take]
+    refine (Wset.le1_take (X := M) (l := M.length - 1) (a := 0) (b := j)
+      (by omega) (by rw [hdl] at hj; omega)).mpr ?_
+    simpa using hc
+  · rw [prefixTake_length A M.dropLast d e n j hj]
+    exact prefix_window_of_outOfCone_noBase hM2 he hd0e hr0M hlp hj hj1 hc hpT
+
+/-! ### 209.1 ⟹ `TowerP` から `hbase` を落とした版 -/
+
+/-- ★ §209 の前提の束（`hbase` なし）。 -/
+def TowerP' (Q : TrioSeq) (d e : ℕ) : Prop :=
+  ∃ M : TrioSeq, M.dropLast = Q ∧ 2 ≤ M.length ∧ 0 < e ∧
+    entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d ∧
+    (∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) ∧
+    le1 M 0 (0 + M.dropLast.length) ∧
+    entry M.dropLast 2 0 = 0
+
+open Classical in
+/-- ★★★★★ **総組み立て（`hbase` なし）**。残る義務は `hsnoc` 1 本。 -/
+theorem towerClosed_of_snoc' {u : ℕ}
+    (hsnoc : ∀ (Q : TrioSeq) (d e : ℕ), TowerP' Q d e →
+      (∀ V d0 d1, TowerP' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+        ∀ A, A ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ (A : TrioSeq), A ∈ W u → ∀ (n j : ℕ), j < Q.length →
+        (0 < j →
+          hasParent (mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (srow (mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+              (n * Q.length + j))
+            (n * Q.length + j) →
+          (A ++ mTower Q d e n).length ≤
+            parent (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+              (srow (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+                (A ++ mTower Q d e n
+                  ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+              (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+        (∀ j', j' ≤ j →
+          A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) →
+        A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ Q d e, TowerP' Q d e → ∀ A, A ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine tower_of_measure_step (u := u) TowerP' towerMeas ?_
+  intro Q d e hP hIH A hA n
+  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0⟩ := hP
+  subst hMQ
+  refine prefixTowerClosed_final_noBase hA hM2 he hd0e hr0M hlp hz0 ?_ n
+  intro n' j hj hpar hall
+  exact hsnoc M.dropLast d e
+    ⟨M, rfl, hM2, he, hd0e, hr0M, hlp, hz0⟩ hIH A hA n' j hj hpar hall
+
+/-! ### 209.2 ⟹ ★ 残る穴は **2 本 ＋ 1 本**
+
+    ⛔ **`hlp(V)`** … 窓の根から末尾へ行 1 で到達（`TowerP'` の中）
+    ⛔ **`hz0(V)`** … `entry V 2 0 = 0`（既知の (H2')）
+    ⛔ **`hpT`（錐の外）** … 錐の外の列が**自分のブロックの中**に親を持つ（§208 で移動した穴）
+
+⚠ **`hpT` は「穴が減った」のではなく「置き換わった」ものです。**
+**⟹ ですが `hbase` は**必ず**破れました（§207、証明済み）。`hpT` は破れると決まっていません。**
+**⟹ ⟹ ★ H12 の実測では「錐の外 ＝ 行 2 の孤児」が 98.8〜100%。⟹ 見込みはあります。** -/
+
 end L106
 end TRIO
