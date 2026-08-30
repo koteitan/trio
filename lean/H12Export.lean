@@ -6631,5 +6631,74 @@ theorem row1_min_root_iff_budget {M : TrioSeq} {t : ℕ} (h0 : 0 < M.length) :
       ∀ r, r < (Lift1 M t).length → entry (Lift1 M t) 1 0 ≤ entry (Lift1 M t) 1 r :=
   row1_min_root_of_noTie h0
 
+
+/-- (W79)(b) の一般 `k` 版。 -/
+theorem nextrel0_blockRoot_prev_root' (Q : TrioSeq) {d e n k : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hk : k < n) (hk0 : 0 < k)
+    (hgap : ∀ r, 0 < r → r < Q.length → entry Q 0 0 + d ≤ entry Q 0 r) :
+    nextrel0 (mTower Q d e n) ((k - 1) * Q.length) (k * Q.length) := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hnq : (k - 1) * Q.length + Q.length = k * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  have hkn : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hdlt : d * (k - 1) < d * k := by
+    obtain ⟨m, hm⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+    subst hm; simp [Nat.mul_succ]; omega
+  have hd1 : d * k = d * (k - 1) + d := by
+    obtain ⟨m, hm⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+    subst hm; simp [Nat.mul_succ]
+  have e1 : entry (mTower Q d e n) 0 (k * Q.length) = entry Q 0 0 + d * k := by
+    simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n) (k := k) (i := 0) hk hQ
+  have e2 : entry (mTower Q d e n) 0 ((k - 1) * Q.length) = entry Q 0 0 + d * (k - 1) := by
+    simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n) (k := k - 1) (i := 0)
+      (by omega) hQ
+  refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+  · rw [e1, e2]; omega
+  · rintro j ⟨hj1, hj2⟩
+    obtain ⟨r, rfl⟩ : ∃ r, j = (k - 1) * Q.length + r := ⟨j - (k - 1) * Q.length, by omega⟩
+    have hr : r < Q.length := by omega
+    rw [e1, entry0_mTower_block' Q (show k - 1 < n by omega) hr]
+    have := hgap r (by omega) hr
+    omega
+
+/-- ★★★★★★★★★★ **`d ≤ 段差` なら、ブロック根の `le0` 祖先は前のブロック根だけ**。 -/
+theorem le0_ancestor_blockRoot (Q : TrioSeq) {d e n : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d)
+    (hgap : ∀ r, 0 < r → r < Q.length → entry Q 0 0 + d ≤ entry Q 0 r) :
+    ∀ k, k < n → ∀ c, Relation.ReflTransGen (nextrel0 (mTower Q d e n)) c (k * Q.length) →
+      ∃ k', k' ≤ k ∧ c = k' * Q.length := by
+  intro k
+  induction k with
+  | zero =>
+      intro _ c hc
+      have := rtg0_le hc
+      exact ⟨0, le_refl 0, by omega⟩
+  | succ m ih =>
+      intro hk c hc
+      rcases Relation.ReflTransGen.cases_tail hc with h1 | ⟨c0, hc1, hc2⟩
+      · exact ⟨m + 1, le_refl _, h1.symm⟩
+      · have hprev := nextrel0_blockRoot_prev_root' Q (e := e) hQ hd hk (by omega) hgap
+        simp only [Nat.add_sub_cancel] at hprev
+        have : c0 = m * Q.length := nextrel0_src_unique hc2 hprev
+        subst this
+        obtain ⟨k', hk', rfl⟩ := ih (by omega) c hc1
+        exact ⟨k', by omega, rfl⟩
+
+/-- ★★★★★★★★★★ **(W87)**: `d ≤ 段差` ⟹ **ブロック根に行 2 の親は無い**（＝ 孤児）。 -/
+theorem no_nextrel2_blockRoot_of_gap (Q : TrioSeq) {d e n k c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hk : k < n)
+    (hgap : ∀ r, 0 < r → r < Q.length → entry Q 0 0 + d ≤ entry Q 0 r) :
+    ¬ nextrel2 (mTower Q d e n) c (k * Q.length) := by
+  intro h
+  have hle0 : Relation.ReflTransGen (nextrel0 (mTower Q d e n)) c (k * Q.length) :=
+    rtg1_rtg0 h.2.2.2.2.1.2.2
+  obtain ⟨k', hk', rfl⟩ := le0_ancestor_blockRoot Q hQ hd hgap k hk c hle0
+  have hlt := h.2.2.2.1
+  rw [entry2_mTower_blockRoot Q d e n k' (by omega) hQ,
+    entry2_mTower_blockRoot Q d e n k hk hQ] at hlt
+  omega
+
 end H12Export
 end TRIO
