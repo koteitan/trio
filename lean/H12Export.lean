@@ -4679,5 +4679,82 @@ theorem rankDE_one_of_srow1_minimal {A : TrioSeq} {x v n : ℕ} {par : ℕ} (hv 
       = 1 := by
   rw [rankDE_eq_srow hpar, srow_last_of_append_replicate_one A x v n hv]
 
+
+/-- 写しの部分の値は、どこを見ても `q` そのもの。 -/
+theorem entry_replicate_of_lt {q : ℕ × ℕ × ℕ} {m i : ℕ} (hi : i < m) (r : ℕ) :
+    entry (List.replicate m q) r i = (if r = 0 then q.1 else if r = 1 then q.2.1 else q.2.2) := by
+  show (if r = 0 then _ else if r = 1 then _ else _) = _
+  rw [List.getD_eq_getElem?_getD,
+    List.getElem?_eq_getElem (by rw [List.length_replicate]; omega), List.getElem_replicate]
+  split_ifs <;> rfl
+
+/-- ★★★★★★★★ **`srow = 0` の最小形: 行 0 の親は必ず `A` の中**。 -/
+theorem nextrel0_src_lt_prefix_of_replicate {A : TrioSeq} {q : ℕ × ℕ × ℕ} {n c : ℕ}
+    (h : nextrel0 (A ++ List.replicate (n + 1) q)
+      c ((A ++ List.replicate (n + 1) q).length - 1)) : c < A.length := by
+  have hlen : (A ++ List.replicate (n + 1) q).length = A.length + (n + 1) := by
+    rw [List.length_append, List.length_replicate]
+  have hlt : entry (A ++ List.replicate (n + 1) q) 0 c
+      < entry (A ++ List.replicate (n + 1) q) 0 ((A ++ List.replicate (n + 1) q).length - 1) :=
+    h.2.2.2.1
+  have hclt : c < (A ++ List.replicate (n + 1) q).length := h.1
+  by_contra hc
+  push Not at hc
+  obtain ⟨s, rfl⟩ : ∃ s, c = A.length + s := ⟨c - A.length, by omega⟩
+  rw [show (A ++ List.replicate (n + 1) q).length - 1 = A.length + n from by omega,
+    entry_append_right, entry_append_right,
+    entry_replicate_of_lt (show s < n + 1 by omega) 0,
+    entry_replicate_of_lt (show n < n + 1 by omega) 0] at hlt
+  omega
+
+/-- ★★★★★★★★ **`srow = 1` の最小形: 行 1 の親も必ず `A` の中**。
+⟹ ★ ⟹ **写しは全部行 1 が等しい** ⟹ ⛔ **塔に候補が無い**。 -/
+theorem nextrel1_src_lt_prefix_of_replicate {A : TrioSeq} {q : ℕ × ℕ × ℕ} {n c : ℕ}
+    (h : nextrel1 (A ++ List.replicate (n + 1) q)
+      c ((A ++ List.replicate (n + 1) q).length - 1)) : c < A.length := by
+  have hlen : (A ++ List.replicate (n + 1) q).length = A.length + (n + 1) := by
+    rw [List.length_append, List.length_replicate]
+  have hlt : entry (A ++ List.replicate (n + 1) q) 1 c
+      < entry (A ++ List.replicate (n + 1) q) 1 ((A ++ List.replicate (n + 1) q).length - 1) :=
+    h.2.2.2.1
+  have hclt : c < (A ++ List.replicate (n + 1) q).length := h.1
+  by_contra hc
+  push Not at hc
+  obtain ⟨s, rfl⟩ : ∃ s, c = A.length + s := ⟨c - A.length, by omega⟩
+  rw [show (A ++ List.replicate (n + 1) q).length - 1 = A.length + n from by omega,
+    entry_append_right, entry_append_right,
+    entry_replicate_of_lt (show s < n + 1 by omega) 1,
+    entry_replicate_of_lt (show n < n + 1 by omega) 1] at hlt
+  omega
+
+/-- ★★★★★★★★ **行 2 も同じ** ⟹ ⟹ ★★★ **`srow` が何であれ、最小形の親は `A` の中**。 -/
+theorem nextrel2_src_lt_prefix_of_replicate {A : TrioSeq} {q : ℕ × ℕ × ℕ} {n c : ℕ}
+    (h : nextrel2 (A ++ List.replicate (n + 1) q)
+      c ((A ++ List.replicate (n + 1) q).length - 1)) : c < A.length := by
+  have hlen : (A ++ List.replicate (n + 1) q).length = A.length + (n + 1) := by
+    rw [List.length_append, List.length_replicate]
+  have hlt : entry (A ++ List.replicate (n + 1) q) 2 c
+      < entry (A ++ List.replicate (n + 1) q) 2 ((A ++ List.replicate (n + 1) q).length - 1) :=
+    h.2.2.2.1
+  have hclt : c < (A ++ List.replicate (n + 1) q).length := h.1
+  by_contra hc
+  push Not at hc
+  obtain ⟨s, rfl⟩ : ∃ s, c = A.length + s := ⟨c - A.length, by omega⟩
+  rw [show (A ++ List.replicate (n + 1) q).length - 1 = A.length + n from by omega,
+    entry_append_right, entry_append_right,
+    entry_replicate_of_lt (show s < n + 1 by omega) 2,
+    entry_replicate_of_lt (show n < n + 1 by omega) 2] at hlt
+  omega
+
+/-- ★★★★★★★★★ ⟹ **最小形では、どの行でも良い枝が起きません**（まとめ）。 -/
+theorem nextR_src_lt_prefix_of_replicate {A : TrioSeq} {q : ℕ × ℕ × ℕ} {n c : ℕ} {i : ℕ}
+    (h : nextR (A ++ List.replicate (n + 1) q) i
+      c ((A ++ List.replicate (n + 1) q).length - 1)) : c < A.length := by
+  unfold nextR at h
+  split_ifs at h
+  · exact nextrel0_src_lt_prefix_of_replicate h
+  · exact nextrel1_src_lt_prefix_of_replicate h
+  · exact nextrel2_src_lt_prefix_of_replicate h
+
 end H12Export
 end TRIO
