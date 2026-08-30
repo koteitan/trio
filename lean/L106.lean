@@ -586,6 +586,30 @@ theorem blockRoot_parent_prevBlock {Q : TrioSeq} {d e n k a : ℕ}
   have hmul : e * (k + 1) = e * k + e := Nat.mul_succ e k
   omega
 
+/-- 塔の第 `k` ブロックの根の行 2（`Lift1` も `shiftr01` も行 2 を変えない）。 -/
+theorem entry2_mTower_blockRoot (Q : TrioSeq) (d e : ℕ) :
+    ∀ (n k : ℕ), k < n → 0 < Q.length →
+      entry (mTower Q d e n) 2 (k * Q.length) = entry Q 2 0 := by
+  intro n
+  induction n with
+  | zero => intro k hk _; omega
+  | succ n ih =>
+      intro k hk hQ1
+      rw [mTower_succ]
+      rcases Nat.lt_or_ge k n with hkn | hkn
+      · have hlt : k * Q.length < (mTower Q d e n).length := by
+          rw [mTower_length]
+          calc k * Q.length < k * Q.length + Q.length := by omega
+            _ = (k + 1) * Q.length := by rw [Nat.succ_mul]
+            _ ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+        rw [entry_append_left _ _ hlt]
+        exact ih k hkn hQ1
+      · have hk0 : k = n := by omega
+        subst hk0
+        rw [show k * Q.length = (mTower Q d e k).length + 0 from by
+            rw [mTower_length]; omega,
+          entry_append_right, entry2_Lift1, entry2_shiftr01]
+
 /-- ★★ **`p_rel` の分割**: ブロックの根の行 1 の親は `k*|Q| + p_rel`（`p_rel < |Q|`）。 -/
 theorem blockRoot_parent_split {Q : TrioSeq} {d e n k : ℕ}
     (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hk : k + 1 < n)
@@ -786,6 +810,507 @@ theorem blockRoot_window_eq_iff {Q : TrioSeq} {d e n k : ℕ}
     have := blockRoot_window_lt_of_ne_root hQne hd he hk hr0 hp hne
     omega
   · exact fun hpe => blockRoot_window_eq_of_root hQ1 hpe
+
+open Classical in
+/-- ★★★★★★★★ **§186 の接頭辞つき版**: 塔に 1 列足したものの展開は
+**接頭辞 ＋ 短い塔**に分かれる。 -/
+theorem prefix_snocStep_oper_tower {A Q : TrioSeq} {d e n j p m : ℕ}
+    (hj : j < Q.length) (hpj : p < j) (hQ1 : 0 < Q.length)
+    (hbase : entry Q 0 0 = 0)
+    (hz : ¬ (entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0))
+    (hpar : hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+    (hpe : parent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+      = n * Q.length + p) :
+    ∃ (V : TrioSeq) (d0 d1 : ℕ), V.length = j - p ∧
+      (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))⟦m⟧
+      = (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take p)
+        ++ mTower V d0 d1 m := by
+  obtain ⟨V, d0, d1, hVlen, hVeq⟩ :=
+    snocStep_oper_tower (Q := Q) (d := d) (e := e) (n := n) (j := j) (p := p) (m := m)
+      hj hpj hz hpar hpe
+  refine ⟨V, d0, d1, hVlen, ?_⟩
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hT2 : 2 ≤ (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+    omega
+  have hroot : entry (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0 = 0 := by
+    rw [entry0_towerPrefix_root Q d e n j hQ1]; exact hbase
+  rw [List.append_assoc A (mTower Q d e n), oper_append_right _ _ m hT2 hroot,
+    hVeq, ← List.append_assoc, ← List.append_assoc]
+
+/-- `ℕ × ℕ` の辞書式順序は整礎。 -/
+theorem prodLexNat_wf :
+    WellFounded (Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop)) :=
+  WellFounded.prod_lex wellFounded_lt wellFounded_lt
+
+/-- ★★ **形 (b)**: `ℕ` の対についての強帰納の原理（L3 の指定）。 -/
+theorem prodLexNat_induction {P : ℕ × ℕ → Prop}
+    (h : ∀ p, (∀ q, Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop) q p → P q) → P p) :
+    ∀ p, P p :=
+  fun p => prodLexNat_wf.induction p h
+
+/-- ★★ **測度つき版**: `μ : α → ℕ × ℕ` を測度にした強帰納
+（`|V|` と `rankDE` を直に入れて使える形）。 -/
+theorem prodLexNat_measure_induction {α : Sort*} {μ : α → ℕ × ℕ} {P : α → Prop}
+    (h : ∀ a, (∀ b, Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop)
+        (μ b) (μ a) → P b) → P a) :
+    ∀ a, P a :=
+  fun a => (InvImage.wf μ prodLexNat_wf).induction a h
+
+/-- ★ **第 1 成分が減る**（`|V|` が減る段）。 -/
+theorem prodLexNat_fst {a₁ a₂ b₁ b₂ : ℕ} (h : a₁ < a₂) :
+    Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop) (a₁, b₁) (a₂, b₂) :=
+  Prod.Lex.left _ _ h
+
+/-- ★ **第 1 成分は同じで第 2 成分が減る**（`|V|` は同じで `rankDE` が減る段）。 -/
+theorem prodLexNat_snd {a b₁ b₂ : ℕ} (h : b₁ < b₂) :
+    Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop) (a, b₁) (a, b₂) :=
+  Prod.Lex.right _ h
+
+/-- ★★★ **⟹ 2 枝をそのまま渡せる形**（L3 の「場合分けの合成」に直結）。
+各段で「第 1 成分が減る」か「第 1 成分は同じで第 2 成分が減る」なら、帰納が回る。 -/
+theorem prodLexNat_induction_two {α : Sort*} {μ : α → ℕ × ℕ} {P : α → Prop}
+    (h : ∀ a, (∀ b, (μ b).1 < (μ a).1 ∨ ((μ b).1 = (μ a).1 ∧ (μ b).2 < (μ a).2) → P b) →
+      P a) :
+    ∀ a, P a := by
+  refine prodLexNat_measure_induction (μ := μ) (fun a ih => h a (fun b hb => ih b ?_))
+  rcases hb with hlt | ⟨heq, hlt⟩
+  · exact (Prod.mk.eta (p := μ b)) ▸ (Prod.mk.eta (p := μ a)) ▸ prodLexNat_fst hlt
+  · refine (Prod.mk.eta (p := μ b)) ▸ (Prod.mk.eta (p := μ a)) ▸ ?_
+    rw [heq]
+    exact prodLexNat_snd hlt
+
+/-- 定数の行 2 は `shiftr01` で保たれる。 -/
+theorem h12_constRow2_shiftr01 {Q : TrioSeq} {z d0 d1 : ℕ} (h : ∀ p ∈ Q, p.2.2 = z) :
+    ∀ p ∈ shiftr01 d0 d1 Q, p.2.2 = z := by
+  intro p hp
+  unfold shiftr01 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨q, hq, rfl⟩ := hp
+  exact h q hq
+
+/-- 定数の行 2 は塔で保たれる。 -/
+theorem h12_constRow2_mTower {Q : TrioSeq} {z : ℕ} (h : ∀ p ∈ Q, p.2.2 = z) (d e n : ℕ) :
+    ∀ p ∈ mTower Q d e n, p.2.2 = z := by
+  intro p hp
+  unfold mTower at hp
+  rw [List.mem_flatMap] at hp
+  obtain ⟨k, -, hk⟩ := hp
+  exact L105.constRow2_Lift1 (h12_constRow2_shiftr01 h) p hk
+
+/-- ★ **行 2 が定数なら塔は `W u` に入る**（`c = 0` も `c ≥ 1` も）。
+⟹ `MTowerClosedRow2` の「行 2 が定数」の場合を閉じる。 -/
+theorem mTower_mem_of_constRow2 {u : ℕ} {Q : TrioSeq} {c : ℕ}
+    (hz : ∀ p ∈ Q, p.2.2 = c) (hQ : Q ∈ W u) (d e n : ℕ) :
+    mTower Q d e n ∈ W u := by
+  by_cases hQne : Q = []
+  · have : mTower Q d e n = [] := by
+      refine List.eq_nil_of_length_eq_zero ?_
+      rw [mTower_length, hQne]
+      simp
+    rw [this]
+    simpa using W_nil u
+  rcases Nat.eq_zero_or_pos c with rfl | hc
+  · exact mTower_mem_of_zeroRow2 hz hQ d e n
+  · cases n with
+    | zero => simpa using W_nil u
+    | succ n =>
+        refine constRow2_mem_W (h12_constRow2_mTower hz d e (n + 1)) ?_
+        rw [lev_mTower_root hQne]
+        exact lev_root_le_of_mem_W hQ hQne
+
+/-- ★ **深さ 0 の列は行 2 の親を持てない**（行 0 の鎖が入って来られない）。 -/
+theorem not_hasParent_two_of_depth_zero {M : TrioSeq} {j : ℕ} (h : entry M 0 j = 0) :
+    ¬ hasParent M 2 j := by
+  rintro ⟨j0, hj0, -⟩
+  have h2 : nextrel2 M j0 j := by
+    unfold nextR at hj0
+    rw [if_neg (by omega), if_neg (by omega)] at hj0
+    exact hj0
+  have hlt : j0 < j := h2.2.2.1
+  have hrtg : Relation.ReflTransGen (nextrel0 M) j0 j := rtg1_to_rtg0 h2.2.2.2.2.1.2.2
+  rcases Relation.ReflTransGen.cases_tail hrtg with hEq | ⟨b, -, hb⟩
+  · omega
+  · have : entry M 0 b < entry M 0 j := hb.2.2.2.1
+    omega
+
+/-- ★★★ **接頭辞つき `MTowerSingle`（行 2 が正の場合）**。
+⟹ R2 の残差の **4.32%（`|V| = 1`）** を消す。 -/
+theorem prefix_mTowerSingle_row2 {u : ℕ} {A Q : TrioSeq}
+    (hA : A ∈ W u) (hAne : A ≠ []) (h1 : Q.length = 1)
+    (hbase : entry Q 0 0 = 0) (hzpos : 0 < entry Q 2 0) (d e : ℕ) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have hQne : Q ≠ [] := by intro hc; rw [hc] at h1; simp at h1
+  set z : ℕ := entry Q 2 0 with hzdef
+  have hconstQ : ∀ p ∈ Q, p.2.2 = z := by
+    intro p hp
+    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hp
+    have hj0 : j = 0 := by omega
+    subst hj0
+    show (Q[0]'(by omega)).2.2 = entry Q 2 0
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+    simp
+  intro n
+  induction n with
+  | zero =>
+      rw [show mTower Q d e 0 = ([] : TrioSeq) from rfl, List.append_nil]
+      exact hA
+  | succ n ih =>
+      have hTn : (mTower Q d e n).length = n := by rw [mTower_length, h1, Nat.mul_one]
+      have hTn1 : (mTower Q d e (n + 1)).length = n + 1 := by
+        rw [mTower_length, h1, Nat.mul_one]
+      have hconstT : ∀ p ∈ mTower Q d e (n + 1), p.2.2 = z :=
+        h12_constRow2_mTower hconstQ d e (n + 1)
+      obtain ⟨c, hc⟩ : ∃ c, Lift1 (shiftr01 (d * n) 0 Q) (e * n) = [c] := by
+        rw [← List.length_eq_one_iff, Lift1_length, shiftr01_length, h1]
+      have hCne : A ++ mTower Q d e n ≠ [] := by
+        intro h
+        exact hAne (List.append_eq_nil_iff.mp h).1
+      have hCl : (A ++ mTower Q d e n).length = A.length + n := by
+        rw [List.length_append, hTn]
+      -- 対象を `A ++ mTower Q d e (n+1)` に揃える
+      have hobj : A ++ mTower Q d e n ++ [c] = A ++ mTower Q d e (n + 1) := by
+        rw [mTower_succ, hc, List.append_assoc]
+      -- 末尾列の行 2 は `z > 0` ⟹ `srow = 2`
+      have hE2 : entry (A ++ mTower Q d e (n + 1)) 2 (A.length + n) = z := by
+        rw [entry_append_right]
+        exact hconstT _ (entry_pair_mem (by omega))
+      have hsrow : srow (A ++ mTower Q d e (n + 1)) (A.length + n) = 2 := by
+        unfold srow; rw [if_pos (by rw [hE2]; omega)]
+      -- 末尾列は行 2 の孤児
+      have horph : ¬ hasParent (A ++ mTower Q d e (n + 1)) 2 (A.length + n) := by
+        by_cases hd0 : entry (A ++ mTower Q d e (n + 1)) 0 (A.length + n) = 0
+        · exact not_hasParent_two_of_depth_zero hd0
+        · have hroot : entry (mTower Q d e (n + 1)) 0 0 = 0 := by
+            have := entry0_mTower_block Q d e (n + 1) 0 0 (by omega) (by omega)
+            simpa [hbase] using this
+          intro hp
+          have := (hasParent_append_right A (mTower Q d e (n + 1)) hroot
+            (show 0 < entry (A ++ mTower Q d e (n + 1)) 0 (A.length + n) by omega)).mp hp
+          exact L105.not_hasParent_two_of_row2_const hconstT (by omega)
+            (by rw [hTn1]; simpa using this)
+      rw [mTower_succ, ← List.append_assoc, hc]
+      refine snoc_orphan_W c ih hCne ?_
+      rw [hobj, hCl, hsrow]
+      exact horph
+
+/-- ★★★ **`zle1 R` は「末尾列の行 2 ≤ 1」だけでよい**。 -/
+theorem tower2_z_zero_of_last {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) : z = 0 := by
+  have hlt := L53.tower2_zr (v := v) (z := z) hRne hd hi2 hpM
+  omega
+
+/-- ⟹ **消費側の `hz0` は「`R` の末尾列の行 2 ≤ 1」1 本から出る。** -/
+theorem hz0_of_last {v z m t : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 2 0 = 0 := by
+  have hzz : z = 0 := tower2_z_zero_of_last hRne hz1 hlast hd hi2 hpM
+  rw [entry2_Lift1]
+  show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = 0
+  have : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = z := rfl
+  omega
+
+/-- ★★★ **錐の外の二分法**: ブロッカーが `j` 自身か、`j` より手前か。 -/
+theorem outOfCone_dichotomy {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (hj : j < Q.length) (hout : ¬ le1 Q 0 j) :
+    entry Q 1 j ≤ entry Q 1 0
+      ∨ ∃ y, y < j ∧ y ≠ 0 ∧ Relation.ReflTransGen (nextrel0 Q) y j
+          ∧ entry Q 1 y ≤ entry Q 1 0 := by
+  obtain ⟨y, hy, hy0, hy1⟩ := (L105.not_le1_zero_iff hr0 hj).mp hout
+  have hyle : y ≤ j := rtg0_le hy
+  rcases Nat.lt_or_ge y j with hlt | hge
+  · exact Or.inr ⟨y, hlt, hy0, hy, hy1⟩
+  · have : y = j := by omega
+    subst this
+    exact Or.inl hy1
+
+/-- ⟹ **`h1out` が破れるのは「`j` 自身がブロッカー」のときだけ**。 -/
+theorem h1out_holds_of_not_selfBlocker {Q : TrioSeq}
+    (_hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (_hj : j < Q.length) (_hout : ¬ le1 Q 0 j)
+    (hself : ¬ (entry Q 1 j ≤ entry Q 1 0)) :
+    entry Q 1 0 < entry Q 1 j := by omega
+
+/-- ★ **`j` 自身がブロッカーなら、根は行 1 の親になれない**（狭義増加が破れる）。 -/
+theorem root_not_nextrel1_of_selfBlocker {Q : TrioSeq} {j : ℕ}
+    (hself : entry Q 1 j ≤ entry Q 1 0) : ¬ nextrel1 Q 0 j := by
+  intro h
+  have := h.2.2.2.1
+  omega
+
+/-- ★★★ **行 0 版**: `srow = 0` のブロック根の行 0 の親は、1 つ前のブロックの中。
+⚠ **`le0` の鎖が要りません**（`nextrel0` の最小性は素の区間の上なので）。 -/
+theorem blockRoot_parent_prevBlock_row0 {Q : TrioSeq} {d e n k a : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hk : k + 1 < n)
+    (h : nextrel0 (mTower Q d e n) a ((k + 1) * Q.length)) :
+    k * Q.length ≤ a := by
+  by_contra hlt
+  have hE : ∀ i, i < n →
+      entry (mTower Q d e n) 0 (i * Q.length) = entry Q 0 0 + d * i := by
+    intro i hi
+    have := entry0_mTower_block Q d e n i 0 hi hQ1
+    simpa using this
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hmin := h.2.2.2.2 (k * Q.length) ⟨by omega, by omega⟩
+  rw [hE (k + 1) (by omega), hE k (by omega)] at hmin
+  have hmul : d * (k + 1) = d * k + d := Nat.mul_succ d k
+  omega
+
+/-- ⟹ `hasParent` の言葉で（行 0）。 -/
+theorem blockRoot_parent_prevBlock_row0' {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hk : k + 1 < n)
+    (hp : hasParent (mTower Q d e n) 0 ((k + 1) * Q.length)) :
+    k * Q.length ≤ parent (mTower Q d e n) 0 ((k + 1) * Q.length) := by
+  have hnr := parent_nextR hp
+  have h0 : nextrel0 (mTower Q d e n)
+      (parent (mTower Q d e n) 0 ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+    unfold nextR at hnr
+    rw [if_pos rfl] at hnr
+    exact hnr
+  exact blockRoot_parent_prevBlock_row0 hQ1 hd hk h0
+
+/-- ★ **(p1c) ブロック根の `srow` は `entry Q 1 0 + e*(k+1)` で決まる**
+（行 2 は `hz0` で 0）。⟹ **`srow = 0 ⟺ entry Q 1 0 = 0 ∧ e = 0`**。 -/
+theorem srow_mTower_blockRoot_zero {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hQne : Q ≠ []) (hk : k + 1 < n)
+    (hz0 : entry Q 2 0 = 0) (h1 : entry Q 1 0 = 0) (he : e = 0) :
+    srow (mTower Q d e n) ((k + 1) * Q.length) = 0 := by
+  have h2 : entry (mTower Q d e n) 2 ((k + 1) * Q.length) = 0 := by
+    rw [entry2_mTower_blockRoot Q d e n (k + 1) (by omega) hQ1]; exact hz0
+  have hr1 : entry (mTower Q d e n) 1 ((k + 1) * Q.length) = 0 := by
+    rw [entry1_mTower_blockRoot hQne d e n (k + 1) (by omega), h1, he]
+    omega
+  unfold srow
+  rw [if_neg (by omega), if_neg (by omega)]
+
+/-- 塔の第 `k` ブロックの `i` 列目の行 1 の**上界**（錐の中か外かによらない）。 -/
+theorem entry1_mTower_block_le (Q : TrioSeq) (d e : ℕ) :
+    ∀ (n k i : ℕ), k < n → i < Q.length →
+      entry (mTower Q d e n) 1 (k * Q.length + i) ≤ entry Q 1 i + e * k := by
+  intro n
+  induction n with
+  | zero => intro k i hk _; omega
+  | succ n ih =>
+      intro k i hk hi
+      rw [mTower_succ]
+      rcases Nat.lt_or_ge k n with hkn | hkn
+      · have hlt : k * Q.length + i < (mTower Q d e n).length := by
+          rw [mTower_length]
+          calc k * Q.length + i < k * Q.length + Q.length := by omega
+            _ = (k + 1) * Q.length := by rw [Nat.succ_mul]
+            _ ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+        rw [entry_append_left _ _ hlt]
+        exact ih k i hkn hi
+      · have hk0 : k = n := by omega
+        subst hk0
+        rw [show k * Q.length + i = (mTower Q d e k).length + i from by
+            rw [mTower_length],
+          entry_append_right]
+        show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD i (0, 0, 0)).2.1
+          ≤ entry Q 1 i + e * k
+        rw [L105.block_getD hi]
+        by_cases hc : le1 Q 0 i <;> simp [hc]
+
+/-- ★★★ **(q2a) 証人つき一般化**: 最小性の証人が**根でなくてよい**。
+⚠ **`0 < e` も `0 < d` も `hr0` も要りません。** -/
+theorem blockRoot_parent_prevBlock_gen {Q : TrioSeq} {d e n k a x : ℕ}
+    (hQne : Q ≠ []) (hk : k + 1 < n)
+    (hx : x < Q.length) (hxlow : entry Q 1 x < entry Q 1 0)
+    (hxle0 : le0 (mTower Q d e n) (k * Q.length + x) ((k + 1) * Q.length))
+    (h : nextrel1 (mTower Q d e n) a ((k + 1) * Q.length)) :
+    k * Q.length ≤ a := by
+  by_contra hlt
+  have hmin := h.2.2.2.2.2 (k * Q.length + x) ⟨by omega, hxle0⟩
+  rw [entry1_mTower_blockRoot hQne d e n (k + 1) (by omega)] at hmin
+  have hub := entry1_mTower_block_le Q d e n k x (by omega) hx
+  have hmul : e * (k + 1) = e * k + e := Nat.mul_succ e k
+  omega
+
+/-- 行 0 は行 0 の鎖に沿って**単調**。 -/
+theorem rtg0_entry_mono {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 M) a b) : entry M 0 a ≤ entry M 0 b := by
+  induction h with
+  | refl => omega
+  | @tail c d _ hcd ih => have := hcd.2.2.2.1; omega
+
+/-- ★ **鎖 ⟹ 窓**（`rtg0_of_window` の逆向き）。 -/
+theorem rtg0_window {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 M) a b) :
+    ∀ l, a < l → l ≤ b → entry M 0 a < entry M 0 l := by
+  induction h with
+  | refl => intro l h1 h2; omega
+  | @tail c d hac hcd ih =>
+      intro l h1 h2
+      rcases Nat.lt_or_ge c l with hcl | hlc
+      · have hmono : entry M 0 a ≤ entry M 0 c := rtg0_entry_mono hac
+        have hlt : entry M 0 c < entry M 0 d := hcd.2.2.2.1
+        rcases Nat.eq_or_lt_of_le h2 with heq | hld
+        · subst heq; omega
+        · have hmin := hcd.2.2.2.2 l ⟨hcl, hld⟩
+          omega
+      · exact ih l h1 hlc
+
+/-- ★★★★ **(q5)**: 遠いブロックの位置 `x` が `le0` で次のブロックの根に届くなら、
+**近いブロックの同じ位置も届く**。⚠ **`0 < d` も `0 < e` も `hr0` も要りません。** -/
+theorem le0_mTower_block_shift {Q : TrioSeq} {d e n m k x : ℕ}
+    (hQ1 : 0 < Q.length) (hm : m ≤ k) (hx : x < Q.length) (hk : k + 1 < n)
+    (h : le0 (mTower Q d e n) (m * Q.length + x) ((k + 1) * Q.length)) :
+    le0 (mTower Q d e n) (k * Q.length + x) ((k + 1) * Q.length) := by
+  have hE : ∀ j i, j < n → i < Q.length →
+      entry (mTower Q d e n) 0 (j * Q.length + i) = entry Q 0 i + d * j :=
+    fun j i hj hi => entry0_mTower_block Q d e n j i hj hi
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hw := rtg0_window h.2.2
+  have hlen1 : (k + 1) * Q.length < (mTower Q d e n).length := by
+    rw [hTlen]; exact Nat.mul_lt_mul_of_lt_of_le (by omega) (le_refl _) hQ1
+  refine ⟨by
+    rw [hTlen]
+    calc k * Q.length + x < k * Q.length + Q.length := by omega
+      _ = (k + 1) * Q.length := by rw [Nat.succ_mul]
+      _ < n * Q.length := by rw [hTlen] at hlen1; exact hlen1, hlen1, ?_⟩
+  refine rtg0_of_window hlen1 (by rw [Nat.succ_mul]; omega) ?_
+  intro l hl1 hl2
+  rw [hE k x (by omega) hx]
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  rcases Nat.eq_or_lt_of_le hl2 with heq | hlt
+  · -- l = (k+1)*|Q| : 証人は ブロック (m+1) の根
+    subst heq
+    have hmp : m * Q.length + x < (m + 1) * Q.length := by
+      rw [Nat.succ_mul]; omega
+    have hmle : (m + 1) * Q.length ≤ (k + 1) * Q.length :=
+      Nat.mul_le_mul_right _ (by omega)
+    have := hw ((m + 1) * Q.length) hmp hmle
+    rw [show m * Q.length + x = m * Q.length + x from rfl] at this
+    rw [hE m x (by omega) hx] at this
+    have h0 := hE (m + 1) 0 (by omega) hQ1
+    rw [Nat.add_zero] at h0
+    rw [h0] at this
+    have h1 := hE (k + 1) 0 (by omega) hQ1
+    rw [Nat.add_zero] at h1
+    rw [h1]
+    have hm1 : d * (m + 1) = d * m + d := Nat.mul_succ d m
+    have hk1 : d * (k + 1) = d * k + d := Nat.mul_succ d k
+    omega
+  · -- l = k*|Q| + i, x < i < |Q| : 証人は ブロック m の同じ位置 i
+    obtain ⟨i, hi, rfl⟩ : ∃ i, i < Q.length ∧ l = k * Q.length + i := by
+      refine ⟨l - k * Q.length, by omega, by omega⟩
+    have hmp : m * Q.length + x < m * Q.length + i := by omega
+    have hmle : m * Q.length + i ≤ (k + 1) * Q.length := by
+      have : m * Q.length ≤ k * Q.length := Nat.mul_le_mul_right _ hm
+      omega
+    have := hw (m * Q.length + i) hmp hmle
+    rw [hE m x (by omega) hx, hE m i (by omega) hi] at this
+    rw [hE k i (by omega) hi]
+    omega
+
+/-- `e = 0` なら塔の行 1 はブロックに依らない。 -/
+theorem entry1_mTower_block_e_zero (Q : TrioSeq) (d : ℕ) :
+    ∀ (n k i : ℕ), k < n → i < Q.length →
+      entry (mTower Q d 0 n) 1 (k * Q.length + i) = entry Q 1 i := by
+  intro n
+  induction n with
+  | zero => intro k i hk _; omega
+  | succ n ih =>
+      intro k i hk hi
+      rw [mTower_succ]
+      rcases Nat.lt_or_ge k n with hkn | hkn
+      · have hlt : k * Q.length + i < (mTower Q d 0 n).length := by
+          rw [mTower_length]
+          calc k * Q.length + i < k * Q.length + Q.length := by omega
+            _ = (k + 1) * Q.length := by rw [Nat.succ_mul]
+            _ ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+        rw [entry_append_left _ _ hlt]
+        exact ih k i hkn hi
+      · have hk0 : k = n := by omega
+        subst hk0
+        rw [show k * Q.length + i = (mTower Q d 0 k).length + i from by
+            rw [mTower_length],
+          entry_append_right]
+        show ((Lift1 (shiftr01 (d * k) 0 Q) (0 * k)).getD i (0, 0, 0)).2.1 = entry Q 1 i
+        rw [L105.block_getD hi]
+        by_cases hc : le1 Q 0 i <;> simp [hc]
+
+/-- ★★★ **`e = 0` の場合**（`0 < d` も `hr0` も要りません）。 -/
+theorem blockRoot_parent_prevBlock_e_zero {Q : TrioSeq} {d n k a : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k + 1 < n)
+    (h : nextrel1 (mTower Q d 0 n) a ((k + 1) * Q.length)) :
+    k * Q.length ≤ a := by
+  by_contra hlt
+  have hx0 : a % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hdiv : a / Q.length * Q.length + a % Q.length = a := Nat.div_add_mod' a Q.length
+  have hmk : a / Q.length ≤ k := by
+    have : a / Q.length * Q.length ≤ a := by omega
+    by_contra hc
+    have hge : (k + 1) * Q.length ≤ a / Q.length * Q.length :=
+      Nat.mul_le_mul_right _ (by omega)
+    have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+    omega
+  have hle0 : le0 (mTower Q d 0 n) (a / Q.length * Q.length + a % Q.length)
+      ((k + 1) * Q.length) := by rw [hdiv]; exact h.2.2.2.2.1
+  have hshift := le0_mTower_block_shift hQ1 hmk hx0 hk hle0
+  have hlt2 : k * Q.length + a % Q.length < (k + 1) * Q.length := by
+    have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+    omega
+  have hmin := h.2.2.2.2.2 (k * Q.length + a % Q.length) ⟨by omega, hshift⟩
+  rw [entry1_mTower_block_e_zero Q d n k (a % Q.length) (by omega) hx0] at hmin
+  have hstrict : entry (mTower Q d 0 n) 1 a
+      < entry (mTower Q d 0 n) 1 ((k + 1) * Q.length) := h.2.2.2.1
+  have ha : entry (mTower Q d 0 n) 1 a = entry Q 1 (a % Q.length) := by
+    have hh := entry1_mTower_block_e_zero Q d n (a / Q.length) (a % Q.length)
+      (by omega) hx0
+    rwa [hdiv] at hh
+  omega
+
+/-- ★★★★★ **(q3b) `he` を落とした版**: `0 < e` は要りません。 -/
+theorem blockRoot_parent_prevBlock_noE {Q : TrioSeq} {d e n k a : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (hk : k + 1 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h : nextrel1 (mTower Q d e n) a ((k + 1) * Q.length)) :
+    k * Q.length ≤ a := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  rcases Nat.eq_zero_or_pos e with rfl | he
+  · exact blockRoot_parent_prevBlock_e_zero hQ1 hk h
+  · exact blockRoot_parent_prevBlock hQne hd he hk hr0 h
 
 /-! ## 200. ★★★★★★★ 場合分けの接続: **どちらの枝でも辞書式 `(|V|, rankDE)` が減る**
 
