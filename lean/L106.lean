@@ -4102,7 +4102,7 @@ team-lead の依頼 1（「親は 1 ブロック手前まで」）を、**測度
 親がブロック根でないので §200 の `rankDE` も使えません（(s8) で確かめてもらっています）。** -/
 
 /-- 2 ブロック連結の行 2 は `Q` の行 2（`x` を `|Q|` で折り返す）。 -/
-theorem entry2_pair_le {Q : TrioSeq} {d e k x : ℕ} (hQ1 : 0 < Q.length)
+theorem entry2_pair_le {Q : TrioSeq} {d e k x : ℕ}
     (hx : x < Q.length + Q.length)
     (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1) :
     entry (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
@@ -4216,7 +4216,7 @@ theorem hsnoc_prev_of_parent {u : ℕ} {A Q : TrioSeq} {d e k jj p : ℕ}
     fun q hq => by
       rw [hlen] at hq
       rw [entry2_wnd_gen hplt (by omega)]
-      exact entry2_pair_le (Q := Q) (d := d) (e := e) (k := k) hQ1 (by omega) hz1⟩ ?_
+      exact entry2_pair_le (Q := Q) (d := d) (e := e) (k := k) (by omega) hz1⟩ ?_
     (P ++ (B0 ++ B1).take p) (hpre p (by omega))
     (by rw [prefix_append_wnd hplt]; exact hpre (Q.length + jj) le_rfl) m
   unfold towerMeas
