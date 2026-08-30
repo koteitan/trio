@@ -3423,5 +3423,22 @@ theorem no_nextR_srow_cross_of_cone {A T : TrioSeq}
       intro h
       exact absurd (nextrel0_cross_root hmin hc hm h) (by omega)
 
+
+/-- `srow` は接頭辞を付けても変わらない（右側の列について）。 -/
+theorem srow_append_right (A T : TrioSeq) (m : ℕ) :
+    srow (A ++ T) (A.length + m) = srow T m := by
+  unfold srow
+  rw [entry_append_right, entry_append_right]
+
+/-- ★★★★★★ **(H-CONE) `hasParent_peel_of_noCross` の入力そのもの**。
+的が錐の中なら、**接頭辞のどの列も `srow` の行の親になれない**。 -/
+theorem noCross_srow_of_cone {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hz0 : entry T 2 0 = 0)
+    {m : ℕ} (hm : m < T.length) (hm0 : 0 < m) (hcone : le1 T 0 m) :
+    ∀ y, y < A.length →
+      ¬ nextR (A ++ T) (srow (A ++ T) (A.length + m)) y (A.length + m) :=
+  fun _ hy => no_nextR_srow_cross_of_cone hmin hz0 hy hm hm0 hcone
+
 end H12Export
 end TRIO

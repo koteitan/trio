@@ -8272,3 +8272,15 @@ C4 ⟹ `hnz`（§323 の観察）なので、**行 1 = 0 の非根の列があ�
 
 ⟹ ⛔ 残るのは **錐の外の的だけ**。⟹ そこは §325 のとおり**原理的に立ちません**
 （前のブロックの根が行 2 = 0 なので、鎖が届けば親になる）。
+
+### §327.1 (H-CONE) L3 の `hasParent_peel_of_noCross` に直に嵌まる形（緑）
+
+    srow_append_right (A T) (m) : srow (A ++ T) (|A| + m) = srow T m
+    ★★★★★★ noCross_srow_of_cone (hmin) (hz0) (hm) (hm0) (hcone : le1 T 0 m) :
+      ∀ y, y < |A| → ¬ nextR (A ++ T) (srow (A ++ T) (|A|+m)) y (|A|+m)
+
+⟹ ★ これを L3 の `hasParent_peel_of_noCross` に食わせれば **`OrphOK` の錐の中が閉じる**。
+
+## ⚠ 運用の追加（team-lead の指示）
+**着手前に team-lead へ 1 行**（「これから X を書く」）。⟹ 今日 L3 と 5 本重複したため。
+そして **書く前に `grep` する**（L3 の運用）。
