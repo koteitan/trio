@@ -5618,5 +5618,48 @@ theorem amin_max_oper_invariant {B : TrioSeq} {n : ℕ} (hn : 1 ≤ n)
     exact this
   · rw [amin_root, amin_root, oper_head_row1 hn]
 
+
+/-! ## 79. ★★★★★★★ (W35) **行 2 が正の列の個数**は、窓で減る
+
+`d = wd0`・`e = wd1` は「今の末尾列と親」から作られ、**前の `d`・`e` と漸化式を持たない**
+⟹ ⛔ そのままでは減る量にならない。
+
+⟹ ★ ですが **`e > 0` には `srow = 2` が要る**（私の §300）。⟹ ⟹ ★★ そして:
+
+    ★ **行 2 は `Lift1` でも `shiftr01` でも変わらない**（`entry2_mTower_block`）
+    ★★ **窓は連続部分列** ⟹ 行 2 の値は増えない
+    ★★★ **`srow = 2` の段では、行 2 が正の末尾列が窓から外れる**
+    ⟹ ⟹ ★★★★ **`srow = 2` の段ごとに「行 2 が正の列の個数」が狭義に減る**
+    ⟹ ⟹ ⟹ ★ ですから **`e > 0` は有限回しか起きない**。 -/
+
+/-- 行 2 が正の列の個数。 -/
+def row2pos (M : TrioSeq) : ℕ := M.countP (fun p => 0 < p.2.2)
+
+/-- ★★★ **連続部分列で増えない**（`Sublist` の単調性）。 -/
+theorem row2pos_sublist_le {M N : TrioSeq} (h : M.Sublist N) : row2pos M ≤ row2pos N :=
+  h.countP_le
+
+/-- ★★★ `take` で増えない。 -/
+theorem row2pos_take_le (M : TrioSeq) (k : ℕ) : row2pos (M.take k) ≤ row2pos M :=
+  row2pos_sublist_le (List.take_sublist k M)
+
+/-- ★★★ `drop` で増えない。 -/
+theorem row2pos_drop_le (M : TrioSeq) (p : ℕ) : row2pos (M.drop p) ≤ row2pos M :=
+  row2pos_sublist_le (List.drop_sublist p M)
+
+/-- ★★★ 窓（`drop` ＋ `take`）で増えない。 -/
+theorem row2pos_window_le (M : TrioSeq) (p k : ℕ) :
+    row2pos ((M.drop p).take k) ≤ row2pos M :=
+  le_trans (row2pos_take_le _ k) (row2pos_drop_le M p)
+
+/-- ★★★★★ **行 2 が正の末尾列を落とすと狭義に減る**。 -/
+theorem row2pos_dropLast_lt {M : TrioSeq} {q : ℕ × ℕ × ℕ} (hq : 0 < q.2.2) :
+    row2pos M < row2pos (M ++ [q]) := by
+  unfold row2pos
+  rw [List.countP_append]
+  have h1 : List.countP (fun p => decide (0 < p.2.2)) [q] = 1 := by
+    simp [hq]
+  omega
+
 end H12H2
 end TRIO

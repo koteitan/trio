@@ -3786,5 +3786,35 @@ theorem amin_max_oper_invariant {B : TrioSeq} {n : ℕ} (hn : 1 ≤ n)
     exact this
   · rw [amin_root, amin_root, oper_head_row1 hn]
 
+
+/-- 行 2 が正の列の個数。 -/
+def row2pos (M : TrioSeq) : ℕ := M.countP (fun p => 0 < p.2.2)
+
+/-- ★★★ **連続部分列で増えない**（`Sublist` の単調性）。 -/
+theorem row2pos_sublist_le {M N : TrioSeq} (h : M.Sublist N) : row2pos M ≤ row2pos N :=
+  h.countP_le
+
+/-- ★★★ `take` で増えない。 -/
+theorem row2pos_take_le (M : TrioSeq) (k : ℕ) : row2pos (M.take k) ≤ row2pos M :=
+  row2pos_sublist_le (List.take_sublist k M)
+
+/-- ★★★ `drop` で増えない。 -/
+theorem row2pos_drop_le (M : TrioSeq) (p : ℕ) : row2pos (M.drop p) ≤ row2pos M :=
+  row2pos_sublist_le (List.drop_sublist p M)
+
+/-- ★★★ 窓（`drop` ＋ `take`）で増えない。 -/
+theorem row2pos_window_le (M : TrioSeq) (p k : ℕ) :
+    row2pos ((M.drop p).take k) ≤ row2pos M :=
+  le_trans (row2pos_take_le _ k) (row2pos_drop_le M p)
+
+/-- ★★★★★ **行 2 が正の末尾列を落とすと狭義に減る**。 -/
+theorem row2pos_dropLast_lt {M : TrioSeq} {q : ℕ × ℕ × ℕ} (hq : 0 < q.2.2) :
+    row2pos M < row2pos (M ++ [q]) := by
+  unfold row2pos
+  rw [List.countP_append]
+  have h1 : List.countP (fun p => decide (0 < p.2.2)) [q] = 1 := by
+    simp [hq]
+  omega
+
 end H12Export
 end TRIO
