@@ -10903,5 +10903,38 @@ theorem oper_de_of_srow_zero {M : TrioSeq} {t j0 : ℕ} (h : srow M t = 0) :
     (if 1 < srow M t then entry M 1 t - entry M 1 j0 else 0) = 0 :=
   ⟨oper_d0_eq_zero_of_srow_zero h, by rw [if_neg (by omega)]⟩
 
+/-! ### §312 行 1 で最小なら、行 2 の親も無い —— §303 と §310 の合流
+
+`nextrel2` は `le1 c t`（`c < t`）を含み、`le1` の鎖では行 1 が狭義に増える。
+⟹ ★ ですから **的が行 1 で（弱く）最小なら、`le1` 錐に自分より前の列が 1 つも無い**
+⟹ ⟹ ★★ **§303（行 2 の親 ⟺ 錐の中の `z = 0` の列）の右辺が空** ⟹ **行 2 の親も無い**。
+
+⟹ ★★★ **部品 4（`d <= 段差` ∧ `srow = 2` ⟹ 孤児）は、
+「ブロック根が塔の中で行 1 最小」に帰着します**。 -/
+
+/-- ★★★★★ **行 1 で（弱く）最小なら、行 2 の親も無い**（前提なし）。 -/
+theorem no_parent2_of_row1_min {M : TrioSeq} {t : ℕ}
+    (hmin : ∀ c, c < t → entry M 1 t ≤ entry M 1 c) : ¬ hasParent M 2 t := by
+  rintro ⟨c, hc, -⟩
+  rw [nextR_two] at hc
+  have hlt : entry M 1 c < entry M 1 t :=
+    H12Export.entry1_lt_of_le1_ne hc.2.2.2.2.1 (by have := hc.2.2.1; omega)
+  have := hmin c hc.2.2.1
+  omega
+
+/-- ⟹ **行 1 で最小なら、行 1 でも行 2 でも孤児**（`srow >= 1` の枝が全部落ちる）。 -/
+theorem no_parent_ge_one_of_row1_min {M : TrioSeq} {t i : ℕ} (hi : 1 ≤ i)
+    (hmin : ∀ c, c < t → entry M 1 t ≤ entry M 1 c) : ¬ hasParent M i t := by
+  rcases Nat.lt_or_ge i 2 with h1 | h2
+  · have : i = 1 := by omega
+    rw [this]
+    exact no_parent1_of_row1_min hmin
+  · rintro ⟨c, hc, -⟩
+    rw [nextR, if_neg (by omega), if_neg (by omega)] at hc
+    have hlt : entry M 1 c < entry M 1 t :=
+      H12Export.entry1_lt_of_le1_ne hc.2.2.2.2.1 (by have := hc.2.2.1; omega)
+    have := hmin c hc.2.2.1
+    omega
+
 end L106
 end TRIO
