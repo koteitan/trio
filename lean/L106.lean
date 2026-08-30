@@ -10112,5 +10112,35 @@ theorem good_window_lt_of_copies {A Q : TrioSeq} {n t : ℕ} (hm : 0 < Q.length)
   parent_dist_lt_of_periodic0 hm
     (fun x hx hxt => entry_copies_periodic hx (by omega)) hs hpar hc
 
+/-! ### §291 (L-OUT): 残差は「塔の根の行 0」を真に下げる
+
+**(L-OUT)** を調べる途中で出た、**2 行で出る新しい量**。
+`nextrel0` の最小性は「間の列はすべて的以上」なので、
+**親は、親と的の間にあるどの列よりも真に浅い**。
+⟹ 特に **残差（親が接頭辞 `A` の中）なら、親は塔の根より真に浅い**。
+⟹ ⟹ **残差のあとの新しい塔の根の行 0 は、真に小さくなる**（0 で下に有界）。 -/
+
+/-- **親は、親と的の間のどの列よりも真に浅い**（前提なし、2 行）。 -/
+theorem parent_lt_of_between {T : TrioSeq} {c r t : ℕ}
+    (h : nextrel0 T c t) (hcr : c < r) (hrt : r < t) :
+    entry T 0 c < entry T 0 r := by
+  have h1 := h.2.2.2.2 r ⟨hcr, hrt⟩
+  have h2 := h.2.2.2.1
+  omega
+
+/-- ★★★ **残差なら、親は塔の根より真に浅い**。
+
+`T = A ++ (塔)`、親 `c < |A|`、的 `t` は塔の中（`|A| < t`）のとき、
+新しい塔の根 `T[c]` の行 0 は、古い塔の根 `T[|A|]` の行 0 より真に小さい。
+⟹ **残差のたびに「塔の根の行 0」が真に減る**（`n` に依らない、0 で下に有界）。 -/
+theorem residue_root_lt {A P : TrioSeq} {c t : ℕ}
+    (h : nextrel0 (A ++ P) c t) (hc : c < A.length) (ht : A.length < t) :
+    entry (A ++ P) 0 c < entry P 0 0 := by
+  have hr : entry (A ++ P) 0 A.length = entry P 0 0 := by
+    have : A.length = A.length + 0 := by omega
+    rw [this, entry_append_right]
+  rw [← hr]
+  exact parent_lt_of_between h hc ht
+
 end L106
 end TRIO
