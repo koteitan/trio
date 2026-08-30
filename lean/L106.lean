@@ -10546,5 +10546,84 @@ theorem orphan_row2_of_zeros_outside_cone {M : TrioSeq} {t : ℕ}
   rw [nextR, if_neg (by decide), if_neg (by decide)] at hc
   exact h c hc.1 (row2_parent_zero_of_zle1 hz hc).1 hc.2.2.2.2.1
 
+/-! ### §303 (L-NC1 続) `z <= 1` では、行 2 の親の有無は「錐の中の `z = 0` の列」で決まる
+
+§302 の逆向き。`z <= 1` かつ `entry M 2 t = 1` のとき
+
+    **`hasParent M 2 t`  <=>  `∃ c < t, entry M 2 c = 0 ∧ le1 M c t`**
+
+が成り立つ。⟸ は **`le1` 錐の中の `z = 0` の列のうち、いちばん右のもの**を取れば
+最小性が自動的に通る（それより右の `le1` 祖先は `z = 1` しかないので）。
+一意性も同じ理由で出る（2 つあれば、左のものの最小性が右のもので破れる）。
+
+⟹ ★★★ **残差（行 2 の孤児）⟺ 錐の中に `z = 0` の列が 1 本も無い**。 -/
+
+/-- `nextR M 2 = nextrel2 M`（前提なし）。 -/
+theorem nextR_two (M : TrioSeq) (a b : ℕ) : nextR M 2 a b = nextrel2 M a b := by
+  simp [nextR]
+
+/-- `le1` の鎖は添字を増やさない向き（`j <= t`）。 -/
+theorem le1_index_le {M : TrioSeq} {j t : ℕ} (h : le1 M j t) : j ≤ t := by
+  refine Relation.ReflTransGen.head_induction_on h.2.2 (le_refl _) ?_
+  intro a b hab _ ih
+  have := hab.2.2.1
+  omega
+
+/-- `nextrel2` の始点は一意（`z <= 1` の下で、`z = 0` の列は高々 1 本しか候補にならない）。 -/
+theorem nextrel2_unique_of_zle1 {M : TrioSeq} {t c c' : ℕ}
+    (hz : ∀ j, j < M.length → entry M 2 j ≤ 1)
+    (h : nextrel2 M c t) (h' : nextrel2 M c' t) : c = c' := by
+  by_contra hne
+  have hz0 := (row2_parent_zero_of_zle1 hz h).1
+  have hz0' := (row2_parent_zero_of_zle1 hz h').1
+  rcases Nat.lt_or_ge c c' with hlt | hge
+  · have := row2_between_one_of_zle1 hz h hlt h'.2.2.2.2.1
+    omega
+  · have hlt' : c' < c := by omega
+    have := row2_between_one_of_zle1 hz h' hlt' h.2.2.2.2.1
+    omega
+
+/-- ★★★★★ **行 2 の親があること ⟺ 錐の中に `z = 0` の列があること**（`z <= 1`）。 -/
+theorem hasParent2_iff_zero_in_cone {M : TrioSeq} {t : ℕ}
+    (hz : ∀ j, j < M.length → entry M 2 j ≤ 1) (ht : t < M.length)
+    (ht1 : entry M 2 t = 1) :
+    hasParent M 2 t ↔ ∃ c, c < t ∧ entry M 2 c = 0 ∧ le1 M c t := by
+  classical
+  constructor
+  · rintro ⟨c, hc, -⟩
+    rw [nextR_two] at hc
+    exact ⟨c, hc.2.2.1, (row2_parent_zero_of_zle1 hz hc).1, hc.2.2.2.2.1⟩
+  · rintro ⟨c0, hc0t, hc0z, hc0le⟩
+    set P : ℕ → Prop := fun c => entry M 2 c = 0 ∧ le1 M c t with hP
+    have hPc0 : P c0 := ⟨hc0z, hc0le⟩
+    set g : ℕ := Nat.findGreatest P t with hg
+    have hgP : P g := Nat.findGreatest_spec (le_of_lt hc0t) hPc0
+    have hgt : g < t := by
+      rcases Nat.lt_or_ge g t with h | h
+      · exact h
+      · exfalso
+        have hgt' : g = t := le_antisymm (Nat.findGreatest_le t) h
+        rw [hgt'] at hgP
+        have := hgP.1
+        omega
+    have hkey : nextrel2 M g t := by
+      refine ⟨hgP.2.1, ht, hgt, by rw [hgP.1]; omega, hgP.2, ?_⟩
+      intro j hj
+      have hjt : j ≤ t := le1_index_le hj.2
+      rcases Nat.eq_or_lt_of_le hjt with rfl | hjlt
+      · omega
+      · have hnP : ¬ P j := Nat.findGreatest_is_greatest hj.1 (le_of_lt hjlt)
+        have hjz : entry M 2 j ≤ 1 := hz j hj.2.1
+        have hj0 : entry M 2 j ≠ 0 := by
+          intro h0
+          exact hnP ⟨h0, hj.2⟩
+        omega
+    refine ⟨g, by show nextR M 2 g t; rw [nextR_two]; exact hkey, ?_⟩
+    intro c' hc'
+    have hc'' : nextrel2 M c' t := by
+      have : nextR M 2 c' t := hc'
+      rwa [nextR_two] at this
+    exact nextrel2_unique_of_zle1 hz hc'' hkey
+
 end L106
 end TRIO
