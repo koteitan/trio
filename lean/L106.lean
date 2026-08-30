@@ -10625,5 +10625,33 @@ theorem hasParent2_iff_zero_in_cone {M : TrioSeq} {t : ℕ}
       rwa [nextR_two] at this
     exact nextrel2_unique_of_zle1 hz hc'' hkey
 
+/-! ### §304 `z <= 1` は塔で保たれる —— §302 / §303 を塔に持ち込むための接着剤
+
+§302 / §303 は `∀ j < |M|, entry M 2 j <= 1` を前提にしている。
+塔は行 2 を変えない（§298 `entry2_mTower`）ので、この前提は塔でもそのまま成り立つ。
+⟹ ★ ですから **残核の `Q` に対して、`mTower Q d e n` にも §302 / §303 が使える**。 -/
+
+/-- ★★★ **`z <= 1` は塔で保たれる**（前提なし）。 -/
+theorem zle1_mTower {Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hz : ∀ j, j < Q.length → entry Q 2 j ≤ 1) (d e n : ℕ) :
+    ∀ j, j < (mTower Q d e n).length → entry (mTower Q d e n) 2 j ≤ 1 := by
+  intro j hj
+  rw [entry2_mTower hQ1 d e n j hj]
+  exact hz _ (Nat.mod_lt _ hQ1)
+
+/-- ⟹ **塔の中でも「行 2 の親 ⟺ 錐の中の `z = 0` の列」**（`z <= 1`）。 -/
+theorem hasParent2_mTower_iff {Q : TrioSeq} {t : ℕ} (hQ1 : 0 < Q.length)
+    (hz : ∀ j, j < Q.length → entry Q 2 j ≤ 1) (d e n : ℕ)
+    (ht : t < (mTower Q d e n).length) (ht1 : entry (mTower Q d e n) 2 t = 1) :
+    hasParent (mTower Q d e n) 2 t ↔
+      ∃ c, c < t ∧ entry (mTower Q d e n) 2 c = 0 ∧ le1 (mTower Q d e n) c t :=
+  hasParent2_iff_zero_in_cone (zle1_mTower hQ1 hz d e n) ht ht1
+
+/-- ⟹ **塔の中の `z = 0` の位置は、`Q` の中の `z = 0` の位置で決まる**（周期）。 -/
+theorem row2_zero_mTower_iff {Q : TrioSeq} (hQ1 : 0 < Q.length) (d e n c : ℕ)
+    (hc : c < (mTower Q d e n).length) :
+    entry (mTower Q d e n) 2 c = 0 ↔ entry Q 2 (c % Q.length) = 0 := by
+  rw [entry2_mTower hQ1 d e n c hc]
+
 end L106
 end TRIO
