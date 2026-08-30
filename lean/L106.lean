@@ -7838,5 +7838,131 @@ end CE261
 
 **⟹ ★★ これは **`hnbQ` でも `hlocQ` でもない、第 3 の形**です。⟹ ⟹ ★ そこを詰めます。** -/
 
+/-! ## 262. ⛔⛔⛔⛔⛔ **`OrphOK0` も偽です** —— 原因は **接頭辞が `Q` の根より浅い**こと
+
+§261 と同じ道具で `j = 0` 版も落ちます。⟹ ★ しかも **100%**（正規化を外すと）。
+
+    `Q = [(2,1,0), (3,0,0)]`、`d = 1`、`e = 0`、`k = 0`、`A = [(0,0,0)]`
+    ⟹ `hr0(Q)` ✅ ／ `entry Q 2 0 = 0` ✅ ／ `zle1 Q` ✅ ／ `0 < d` ✅
+    ⟹ `mTower Q 1 0 1 = Q`、ブロックの根 `= (3,1,0)`
+    ⟹ `T = [(2,1,0), (3,0,0), (3,1,0)]` ⟹ ★ 添字 2 は **`T` の中で孤児**
+       （`(3,0,0)` は行 1 が小さいが `le0` 祖先でない: 行 0 が `3 = 3` で上がらない）
+    ⟹ ⛔ ところが `M = A ++ T = [(0,0,0),(2,1,0),(3,0,0),(3,1,0)]` では
+       **接頭辞の `(0,0,0)` が親**（行 1 = 0 < 1、`le0` は 0→1→3）
+
+**⟹ ★★★★★ **原因は「接頭辞が `Q` の根より浅い」こと**——⟹ ★ ＝ **`rsum` の破れ**です。**
+**⟹ ⟹ ⛔ そして `rsum` は遺伝しません（§227 で**証明**）。⟹ ⟹ **今日の全部の偽の芯**です。**
+
+⚠ **測定の注意（教訓 21）**: `entry Q 0 0 = 0` に正規化した箱では **破れ 0 / 624**、
+正規化を外すと **破れ 1248 / 1248（100%）**。⟹ ★ **正規化が反例を隠していました**。 -/
+
+section CE262
+private def Q0ce : TrioSeq := [(2, 1, 0), (3, 0, 0)]
+private def M0ce : TrioSeq := [(0, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0)]
+private def T0ce : TrioSeq := [(2, 1, 0), (3, 0, 0), (3, 1, 0)]
+
+private theorem M0ce_nr0_01 : nextrel0 M0ce 0 1 := by
+  refine ⟨by decide, by decide, by omega, by decide, ?_⟩
+  intro q hq; omega
+
+private theorem M0ce_nr0_13 : nextrel0 M0ce 1 3 := by
+  refine ⟨by decide, by decide, by omega, by decide, ?_⟩
+  intro q hq
+  rw [show q = 2 from by omega]; decide
+
+private theorem M0ce_le0_03 : le0 M0ce 0 3 :=
+  ⟨by decide, by decide, (Relation.ReflTransGen.single M0ce_nr0_01).tail M0ce_nr0_13⟩
+
+private theorem M0ce_no_le0_23 : ¬ le0 M0ce 2 3 := by
+  rintro ⟨-, -, hrt⟩
+  rcases Relation.ReflTransGen.cases_tail hrt with h | ⟨c, hc, hcs⟩
+  · omega
+  · have h1 : 2 ≤ c := le0_le' ⟨by decide, by simpa using hcs.1, hc⟩
+    have h2 : c < 3 := hcs.2.2.1
+    rw [show c = 2 from by omega] at hcs
+    exact absurd hcs.2.2.2.1 (by decide)
+
+private theorem M0ce_nr1_03 : nextrel1 M0ce 0 3 := by
+  refine ⟨by decide, by decide, by omega, by decide, M0ce_le0_03, ?_⟩
+  intro q ⟨hq1, hq2⟩
+  have hle := le0_le' hq2
+  rcases Nat.lt_or_ge q 2 with h | h
+  · rw [show q = 1 from by omega]; decide
+  · rcases Nat.lt_or_ge q 3 with h' | h'
+    · rw [show q = 2 from by omega] at hq2; exact absurd hq2 M0ce_no_le0_23
+    · rw [show q = 3 from by omega]
+
+private theorem M0ce_uniq {y : ℕ} (h : nextrel1 M0ce y 3) : y = 0 := by
+  have hy : y < 3 := h.2.2.1
+  rcases Nat.lt_or_ge y 1 with h0 | h1
+  · omega
+  · rcases Nat.lt_or_ge y 2 with h1' | h2
+    · rw [show y = 1 from by omega] at h; exact absurd h.2.2.2.1 (by decide)
+    · rw [show y = 2 from by omega] at h; exact absurd h.2.2.2.2.1 M0ce_no_le0_23
+
+private theorem M0ce_hasParent : hasParent M0ce 1 3 :=
+  ⟨0, nextR_one_iff.mpr M0ce_nr1_03, fun _ hy => M0ce_uniq (nextR_one_iff.mp hy)⟩
+
+private theorem T0ce_no_le0_12 : ¬ le0 T0ce 1 2 := by
+  rintro ⟨-, -, hrt⟩
+  rcases Relation.ReflTransGen.cases_tail hrt with h | ⟨c, hc, hcs⟩
+  · omega
+  · have h1 : 1 ≤ c := le0_le' ⟨by decide, by simpa using hcs.1, hc⟩
+    have h2 : c < 2 := hcs.2.2.1
+    rw [show c = 1 from by omega] at hcs
+    exact absurd hcs.2.2.2.1 (by decide)
+
+/-- ⛔⛔⛔ **`OrphOK0` は偽**（`hr0` ／ `hz0` ／ `zle1` ／ `0 < d` を全部満たす形で）。 -/
+theorem orphOK0_false : ¬ OrphOK0 := by
+  intro h
+  have hblk : (Lift1 (shiftr01 (1 * (0 + 1)) 0 Q0ce) (0 * (0 + 1))).take 1
+      = [((3 : ℕ), (1 : ℕ), (0 : ℕ))] := by
+    show (Lift1 (shiftr01 1 0 Q0ce) 0).take 1 = _
+    rw [Wset.Lift1_zero]; unfold Q0ce shiftr01; rfl
+  have htow : mTower Q0ce 1 0 (0 + 1) = Q0ce := by
+    unfold mTower
+    show ((List.range 1).flatMap fun k => Lift1 (shiftr01 (1 * k) 0 Q0ce) (0 * k)) = Q0ce
+    simp
+  have hT : mTower Q0ce 1 0 (0 + 1)
+      ++ (Lift1 (shiftr01 (1 * (0 + 1)) 0 Q0ce) (0 * (0 + 1))).take 1 = T0ce := by
+    rw [htow, hblk]; unfold Q0ce T0ce; rfl
+  have hidx : (0 + 1) * Q0ce.length = 2 := by unfold Q0ce; rfl
+  have hnp := h [((0 : ℕ), (0 : ℕ), (0 : ℕ))] Q0ce 1 0 0 (by omega) ?_
+  · rw [hT, hidx] at hnp
+    refine hnp ?_
+    show hasParent ([((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ T0ce)
+      (srow ([((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ T0ce) (1 + 2)) (1 + 2)
+    rw [show ([((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ T0ce) = M0ce from by unfold T0ce M0ce; rfl,
+      show (1 : ℕ) + 2 = 3 from rfl, show srow M0ce 3 = 1 from by decide]
+    exact M0ce_hasParent
+  · rw [hT, hidx, show srow T0ce 2 = 1 from by decide]
+    rintro ⟨y, hy, -⟩
+    rw [nextR_one_iff] at hy
+    have hy2 : y < 2 := hy.2.2.1
+    rcases Nat.lt_or_ge y 1 with h0 | h1
+    · rw [show y = 0 from by omega] at hy; exact absurd hy.2.2.2.1 (by decide)
+    · rw [show y = 1 from by omega] at hy; exact absurd hy.2.2.2.2.1 T0ce_no_le0_12
+
+end CE262
+
+/-! ### 262.1 ⛔⛔⛔⛔⛔ **今日の結論: 接頭辞の深さを無視した残差はすべて偽**
+
+| # | 残差 | 状態 |
+|---|---|---|
+| 1 | `HeredNB` | ⛔ 偽（§248） |
+| 2 | `RootZ1` | ⛔ 偽（§260） |
+| 3 | `RootZ2` | ⛔ 偽（§260） |
+| 4 | `OrphOK` | ⛔ 偽（§261） |
+| 5 | **`OrphOK0`** | ⛔ **偽**（§262） |
+
+**⟹ ★★★★★ **4 と 5 の原因は同じ**です: **接頭辞 `A` が `Q` の根より浅い**。**
+**⟹ ⟹ ★ ＝ **`rsum A Q` の破れ**（`rsum A P := ∀ p ∈ A ++ P, entry P 0 0 ≤ p.1`、`Wset:1317`）。**
+**⟹ ⟹ ⟹ ⛔ そして **`rsum` は遺伝しません**（§227 で証明）。**
+
+**⟹ ★★★ ですから **設計は「`A` の深さ」を運ぶ形に変えるしかありません**。⟹ ★ そこが明日の課題です。**
+
+⚠ **教訓 21 の再確認**: `entry Q 0 0 = 0` に正規化した箱では破れ **0 / 624**、
+正規化を外すと **1248 / 1248（100%）**。⟹ ★ **正規化が反例を完全に隠していました**。 -/
+
 end L106
 end TRIO
