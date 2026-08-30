@@ -1983,6 +1983,25 @@ theorem snocStep_oper_pre_eq {P B : TrioSeq} {j p m : ℕ}
   rw [hT, List.take_append, List.take_of_length_le (by omega),
     Nat.add_sub_cancel_left, List.take_take, Nat.min_eq_left (by omega)]
 
+/-- ★ **接頭辞 ＋ 窓 ＝ 1 つ長い接頭辞**（(U2) を消す鍵）。 -/
+theorem prefix_append_wnd {P B : TrioSeq} {j p : ℕ} (hpj : p < j) :
+    (P ++ B.take p) ++ wnd P B j p = P ++ B.take j := by
+  unfold wnd
+  have hd : (P ++ B.take (j + 1)).drop (P.length + p) = (B.take (j + 1)).drop p := by
+    rw [List.drop_append, List.drop_eq_nil_of_le (by omega), List.nil_append,
+      Nat.add_sub_cancel_left]
+  rw [hd, List.append_assoc]
+  congr 1
+  have h1 : ((B.take (j + 1)).drop p).take (j - p)
+      = ((B.take (j + 1)).take (p + (j - p))).drop p := by
+    rw [List.take_drop]
+  have h2 : p + (j - p) = j := by omega
+  rw [h1, h2, List.take_take, Nat.min_eq_left (by omega)]
+  have h3 : (B.take j).take p = B.take p := by
+    rw [List.take_take, Nat.min_eq_left (by omega)]
+  rw [← h3, List.take_append_drop]
+
+
 /-! ## 213. ★★★★★★★★★ **`hsnoc` の `j ≥ 1` の枝が緑になりました**
 
 材料が全部そろったので組みます。**残る前提は「窓に `TowerP''` が遺伝する」1 本だけです。** -/
@@ -1991,7 +2010,7 @@ open Classical in
 theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
     (hP : TowerP'' Q d e)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-      ∀ A', A' ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
     (hj : j < Q.length) (hj1 : 0 < j)
     (hbound : (A ++ mTower Q d e n).length ≤
       parent (A ++ mTower Q d e n
@@ -2058,7 +2077,8 @@ theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
   rw [heq]
   have hlen := wnd_length (P := P) (B := B) (j := j) (p := p) (by omega) hpj
   refine hIH (wnd P B j p) (wd0 P B j p) (wd1 P B j p) (hered p hpj) ?_
-    (P ++ B.take p) (hall p (by omega)) m
+    (P ++ B.take p) (hall p (by omega))
+    (by rw [prefix_append_wnd hpj]; exact hall j (le_refl j)) m
   unfold towerMeas
   refine natMeasure_lt (rankDE_le_two d e)
     (rankDE_le_two (wd0 P B j p) (wd1 P B j p)) ?_
@@ -2078,8 +2098,11 @@ H12 の `blockRoot_parent_prevBlock` の仕事なので、ここでは**前提**
 open Classical in
 theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 < d)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-      ∀ A', A' ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
     (hQ1 : 0 < Q.length)
+    (hprefull : A ++ mTower Q d e k
+      ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take Q.length ∈ W u)
     (hpre : A ++ mTower Q d e k
       ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
           ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u)
@@ -2172,7 +2195,9 @@ theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 <
   rw [heq]
   have hlen := wnd_length (P := P) (B := B0 ++ B1) (j := Q.length) (p := p)
     (by omega) hplt
-  refine hIH _ _ _ hered ?_ (P ++ (B0 ++ B1).take p) (by rw [hPdef] at hpre ⊢; exact hpre) m
+  refine hIH _ _ _ hered ?_ (P ++ (B0 ++ B1).take p)
+    (by rw [hPdef] at hpre ⊢; exact hpre)
+    (by rw [prefix_append_wnd hplt]; rw [hPdef] at hprefull ⊢; exact hprefull) m
   unfold towerMeas
   refine natMeasure_lt (rankDE_le_two d e) (rankDE_le_two _ _) ?_
   rcases Nat.eq_zero_or_pos p with hp0 | hp1
@@ -2288,8 +2313,8 @@ theorem hsnoc_zero {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hz0 : entry Q 2 0 = 0)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-      ∀ A', A' ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
-    (hpre : ∀ p, p < Q.length →
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hpre : ∀ p, p ≤ Q.length →
       A ++ mTower Q d e k
         ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
             ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u)
@@ -2380,8 +2405,8 @@ theorem hsnoc_zero {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
   set p := par - P.length with hpdef
   have hplt : p < Q.length := by omega
   have hpe : par = P.length + p := by omega
-  exact hsnoc_zero_of_parent hd hIH hQ1 (hpre p hplt) hplt hpar hpe
-    (hrank p) (hered p hplt)
+  exact hsnoc_zero_of_parent hd hIH hQ1 (hpre Q.length le_rfl) (hpre p (by omega)) hplt
+    hpar hpe (hrank p) (hered p hplt)
 
 /-! ## 217. ★★★★★★ (U4): `p = 0` のとき `rankDE` が減る（`hrank`）
 
@@ -2477,24 +2502,6 @@ theorem hrank_blockRoot {A Q : TrioSeq} {d e k : ℕ}
               **`A' ++ V = P ++ B.take j`** ⟹ `hall j` **そのもの** ✅
 
 ⟹ ⟹ ★★ **(U2) は「前提の置き方が悪かった」だけでした。** -/
-
-/-- ★ **接頭辞 ＋ 窓 ＝ 1 つ長い接頭辞**（(U2) を消す鍵）。 -/
-theorem prefix_append_wnd {P B : TrioSeq} {j p : ℕ} (hpj : p < j) :
-    (P ++ B.take p) ++ wnd P B j p = P ++ B.take j := by
-  unfold wnd
-  have hd : (P ++ B.take (j + 1)).drop (P.length + p) = (B.take (j + 1)).drop p := by
-    rw [List.drop_append, List.drop_eq_nil_of_le (by omega), List.nil_append,
-      Nat.add_sub_cancel_left]
-  rw [hd, List.append_assoc]
-  congr 1
-  have h1 : ((B.take (j + 1)).drop p).take (j - p)
-      = ((B.take (j + 1)).take (p + (j - p))).drop p := by
-    rw [List.take_drop]
-  have h2 : p + (j - p) = j := by omega
-  rw [h1, h2, List.take_take, Nat.min_eq_left (by omega)]
-  have h3 : (B.take j).take p = B.take p := by
-    rw [List.take_take, Nat.min_eq_left (by omega)]
-  rw [← h3, List.take_append_drop]
 
 /-! ### 218.1 ★★ 底のブロックをもらう版の外枠（§168 の差し替え） -/
 
