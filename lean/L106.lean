@@ -9662,5 +9662,61 @@ theorem snocStep_oper_srow_zero {T : TrioSeq} {c : ℕ} (m : ℕ)
 
 ⚠ **教訓 14**: §284 は緑ですが、**(G2) が閉じる保証はありません**。 -/
 
+/-! ## 285. ★★★★★★★★ **(G3): 残核を 2 本の既知の命題に落とします**
+
+§284 で `srow = 0` の段が「同一コピー」だと分かりました。⟹ ★ **3 通り全部を書きます**。
+
+| 末尾の `srow` | `(d0, d1)` | 後継の形 | 名前 |
+|---|---|---|---|
+| **0** | `(0, 0)` | `mTower V 0 0 m`（**同一コピー**） | **`PrefixCopies`**（`L53Subst:3599`） |
+| **1** | `(d0, 0)` | `mTower V d0 0 m`（**行 0 だけ**） | **`shTower`**（`Wtower2:1688`） |
+| **2** | 両方 > 0 | `mTower V d0 d1 m` | 一般（R2 実測: 残差 0 件） |
+
+**⟹ ★ `d0` / `d1` は `oper` の定義の番人（`if 0 < i1` / `if 1 < i1`）から**直接**出ます。** -/
+
+theorem wd1_zero_of_srow_one {T : TrioSeq} {c : ℕ} (h : srow T (T.length - 1) = 1) :
+    (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0) = 0 := by
+  rw [h]; simp
+
+/-- ★★★★★★ **`srow = 1` の段は「行 0 だけ持ち上げる塔」**（`e = 0`、＝ `shTower` の形）。 -/
+theorem snocStep_oper_srow_one {T : TrioSeq} {c : ℕ} (m : ℕ)
+    (hL : T.length - 1 ≠ 0)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0))
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c)
+    (h1 : srow T (T.length - 1) = 1) :
+    T⟦m⟧ = T.take c ++ mTower ((T.drop c).take (T.length - 1 - c))
+      (entry T 0 (T.length - 1) - entry T 0 c) 0 m := by
+  rw [snocStep_oper_gen_eq m hL hz hpar hpe, wd1_zero_of_srow_one (c := c) h1,
+    show (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
+      = entry T 0 (T.length - 1) - entry T 0 c from by rw [h1]; simp]
+
+/-- ★★★★ **`e = 0` の塔は `shTower`**（`Lift1 X 0 = X`、`shiftr01` の掛け算の向きだけ違います）。 -/
+theorem mTower_zero_e (Q : TrioSeq) (d n : ℕ) :
+    mTower Q d 0 n = (List.range n).flatMap fun k => shiftr01 (d * k) 0 Q := by
+  unfold mTower
+  refine List.flatMap_congr (fun k _ => ?_)
+  rw [Nat.zero_mul, Wset.Lift1_zero]
+
+/-! ### 285.1 ⟹ ★★★★★★★★ **残核の言い換え（証明ではありません）**
+
+    ★ **`srow = 0`** ⟹ 後継 ＝ **`V` の同一コピー `m` 個** ⟹ ★★ **`PrefixCopies` の形**
+    ★ **`srow = 1`** ⟹ 後継 ＝ **`shTower V d0 m`**（行 0 だけ） ⟹ ★★ **`ShiftTowerClosed` の形**
+    ⚠ **`srow = 2`** ⟹ 一般形。⟹ ★ R2 の実測では **残差 0 件** ⟹ ⛔ **型ではまだ言えていません**
+
+**⟹ ★★★ ⟹ ですから **`MTowerClosedS` の残核は、次の 2 本 ＋ 行 2 の 1 点**です:**
+
+    ⛔ **`PrefixCopiesOpen`**（`L53Subst:3801`）… 「**接頭辞に `Q` の根より浅い列がある**」場合
+      ⟹ ★ **今日 12 本の死から抽出した形と、逐語で同じ**でした
+      ⟹ ⚠ R2 実測: **開いている側が 65.81%**（分母 15,425）⟹ **corner case ではありません**
+    ⛔ **`ShiftTowerClosed`**（`L51Tower:21`）… `e = 0` の塔
+    ⚠ **行 2（`srow = 2`）で残差が本当に 0 か** … 実測のみ
+
+**⟹ ★ **どちらも既に名前がついていて、既に未証明として記録されている**ものです。**
+**⟹ ⟹ ★★ ですから **今日の探索は、既知の 2 本に戻ってきた**——⟹ ★ **問題の核は 1 つ**でした。**
+
+⚠ **教訓 14**: §285 は**言い換え**です。⟹ ★ **何も証明していません**。 -/
+
 end L106
 end TRIO
