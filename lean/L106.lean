@@ -10177,5 +10177,35 @@ theorem residue_root_lt {A P : TrioSeq} {c t : ℕ}
   rw [← hr]
   exact parent_lt_of_between h hc ht
 
+/-! ### §293 `nu`（相異なる行 0 の値の個数）が両枝で非増加な理由 —— 型で 3 行
+
+team-lead の (CAND-V)。`PrefixCopies`（`d = e = 0`）では **持ち上げが無い**ので、
+`A ++ Q^n` のどの列も **`A ++ Q` の列そのもの**。
+⟹ 接頭辞 `A' = T.take c` も窓 `V = (T.drop c).take (t−c)` も `T` の部分列なので、
+⟹ **`A' ++ V` の行 0 の値は `A ++ Q` の値の部分集合** ⟹ **`nu` は両枝で非増加**。
+
+⚠ **これは「非増加」だけである。「いつ減るか」は別問題**（R2 が測っている）。
+⚠ そして **`d > 0` では偽**（持ち上げが新しい行 0 の値を作る。実測 増 72〜79%）。 -/
+
+/-- **`A ++ Q^n` のどの列も `A ++ Q` の列**（前提なし）。 -/
+theorem mem_of_mem_copies {A Q : TrioSeq} {n : ℕ} {q : ℕ × ℕ × ℕ}
+    (h : q ∈ A ++ (List.range n).flatMap fun _ => Q) : q ∈ A ++ Q := by
+  rcases List.mem_append.mp h with hq | hq
+  · exact List.mem_append.mpr (Or.inl hq)
+  · rw [List.mem_flatMap] at hq
+    obtain ⟨-, -, hq⟩ := hq
+    exact List.mem_append.mpr (Or.inr hq)
+
+/-- ★★★ **接頭辞と窓を合わせても、新しい列は出ない**（`d = e = 0` の族、前提なし）。
+⟹ **`nu`（相異なる行 0 の値の個数）は両枝で非増加**。 -/
+theorem mem_of_mem_prefix_window {A Q : TrioSeq} {n c t : ℕ} {q : ℕ × ℕ × ℕ}
+    (h : q ∈ (A ++ (List.range n).flatMap fun _ => Q).take c
+          ++ (((A ++ (List.range n).flatMap fun _ => Q).drop c).take (t - c))) :
+    q ∈ A ++ Q := by
+  refine mem_of_mem_copies (A := A) (Q := Q) (n := n) ?_
+  rcases List.mem_append.mp h with hq | hq
+  · exact List.mem_of_mem_take hq
+  · exact List.mem_of_mem_drop (List.mem_of_mem_take hq)
+
 end L106
 end TRIO
