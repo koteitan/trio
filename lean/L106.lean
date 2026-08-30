@@ -7116,5 +7116,121 @@ theorem orphOK_row1_free {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1) (hjT : j1 < T
 
 ⚠ **教訓 14**: `OrphOK` はまだ証明されていません。**2 つの穴が残っています。** -/
 
+/-! ## 254. ★★★★★★ **(W16) は無料でした** —— 私の §242 がそのまま効きます
+
+H12 の `no_nextrel2_cross_of_anc` は **`nextrel1 (A ++ T)` の鎖**で `hanc` を要求し、
+`hanc_of_cone` は **`nextrel1 T` の鎖**で与えます。⟹ ⚠ 私は「繋がっていない」と書きました。
+
+**⟹ ★★★ ですが **繋がります**。⟹ ⟹ 鍵は 2 つ:**
+
+    (1) `nextrel1` は添字を**増やす**ので、`A.length + m'` から始まる鎖は
+        **すべて `A.length` 以上**にとどまる ⟹ ★ `A` に落ちない
+    (2) そして `T = ((A ++ T).drop A.length).take T.length` は**まさに窓**
+        ⟹ ★★ §242 `le1_window`（**前提なし**）がそのまま使える
+
+**⟹ ⟹ ★★★★★ ですから **(W16) は無料**です。H12 に渡せます。** -/
+
+/-! ★ H12 の鎖の補題（`H12Export.lean:2923〜3007` 逐語）を先に写します。 -/
+
+/-- `nextrel1` の始点は一意（最小性から）。 -/
+theorem nextrel1_src_unique {M : TrioSeq} {c1 c2 b : ℕ}
+    (h1 : nextrel1 M c1 b) (h2 : nextrel1 M c2 b) : c1 = c2 := by
+  obtain ⟨-, -, hc1, hlt1, hle1, hmin1⟩ := h1
+  obtain ⟨-, -, hc2, hlt2, hle2, hmin2⟩ := h2
+  rcases Nat.lt_trichotomy c1 c2 with h | h | h
+  · exact absurd (hmin1 c2 ⟨h, hle2⟩) (by omega)
+  · exact h
+  · exact absurd (hmin2 c1 ⟨h, hle1⟩) (by omega)
+
+
+theorem rtg1_index_le {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 M) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_refl _
+  | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.1)
+
+
+/-- ★★★ 鎖の一意性: 的の `le1` 祖先は、**根からの鎖の上にある**。 -/
+theorem rtg1_merge {M : TrioSeq} {m : ℕ}
+    (h0 : Relation.ReflTransGen (nextrel1 M) 0 m) :
+    ∀ m', Relation.ReflTransGen (nextrel1 M) m' m →
+      Relation.ReflTransGen (nextrel1 M) 0 m' := by
+  induction h0 with
+  | refl =>
+      intro m' h
+      have := rtg1_index_le h
+      have hm0 : m' = 0 := by omega
+      rw [hm0]
+  | @tail c m hac hcm ih =>
+      intro m' h
+      rcases Relation.ReflTransGen.cases_tail h with h1 | ⟨c', hc1, hc2⟩
+      · rw [← h1]
+        exact hac.tail hcm
+      · exact ih m' (by rw [nextrel1_src_unique hc2 hcm] at hc1; exact hc1)
+
+
+/-- ★★★★★★★ **`hanc` は「的が根の錐の中」1 本から出る**。 -/
+theorem hanc_of_cone {T : TrioSeq} {m : ℕ}
+    (hcone : Relation.ReflTransGen (nextrel1 T) 0 m) :
+    ∀ m', 0 < m' → Relation.ReflTransGen (nextrel1 T) m' m →
+      entry T 1 0 < entry T 1 m' := by
+  intro m' hm'0 hrt
+  have h0 := rtg1_merge hcone m' hrt
+  rcases Relation.ReflTransGen.cases_tail h0 with h1 | ⟨c, hc1, hc2⟩
+  · omega
+  · refine Nat.lt_of_le_of_lt ?_ hc2.2.2.2.1
+    clear hc2
+    induction hc1 with
+    | refl => exact le_refl _
+    | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.2.1)
+
+
+
+theorem drop_take_append_right (A T : TrioSeq) :
+    ((A ++ T).drop A.length).take T.length = T := by
+  rw [List.drop_left, List.take_of_length_le (le_refl _)]
+
+/-- ★★★★★★ **(W16)**: `A ++ T` の `le1` の鎖は `T` の `le1` の鎖に落ちる（**前提なし**）。 -/
+theorem le1_peel_append_right {A T : TrioSeq} {a b : ℕ}
+    (ha : a < T.length) (hb : b < T.length)
+    (h : le1 (A ++ T) (A.length + a) (A.length + b)) : le1 T a b := by
+  have hL : A.length + T.length ≤ (A ++ T).length := by
+    rw [List.length_append]
+  have := le1_window (T := A ++ T) (s := A.length) (L := T.length) hL ha hb h
+  rwa [drop_take_append_right] at this
+
+/-- ★★★★★ ⟹ **`rtg1` 版**（`hanc` の形に合わせたもの）。 -/
+theorem rtg1_peel_append_right {A T : TrioSeq} {a b : ℕ}
+    (ha : a < T.length) (hb : b < T.length)
+    (h : Relation.ReflTransGen (nextrel1 (A ++ T)) (A.length + a) (A.length + b)) :
+    Relation.ReflTransGen (nextrel1 T) a b :=
+  (le1_peel_append_right ha hb
+    ⟨by rw [List.length_append]; omega, by rw [List.length_append]; omega, h⟩).2.2
+
+/-! ### 254.1 ⟹ ★★★★ **`hanc` が `T` の中の話に落ちました**
+
+    H12 `no_nextrel2_cross_of_anc` の `hanc`（`A ++ T` の鎖）
+      ⟸ §254 `rtg1_peel_append_right`
+      ⟸ H12 `hanc_of_cone`（`T` の鎖）
+
+**⟹ ★★ ですから **行 2 の壁は「的が `T` の錐の中」だけ**で立ちます。**
+**⟹ ⟹ ★ そして §241/§243 が「錐の中なら祖先は全部非ブロッカー」を言います。**
+
+**⟹ ⟹ ⟹ ★★★★★ ですから **(O2) は消え、残差は (O1) だけ**になります:**
+
+    ⛔ **(O1) 行 1 で的がブロッカー**（`entry T 1 j1 ≤ entry T 1 0`）のとき、
+        接頭辞が親を供給しうる
+
+⚠ **教訓 14**: `hanc` の橋は緑ですが、**`OrphOK` はまだ証明されていません**。
+行 2 について「的が `T` の錐の中」を**誰が供給するか**は未解決です。 -/
+
+theorem hanc_bridge {A T : TrioSeq} {m : ℕ} (hm : m < T.length)
+    (hcone : Relation.ReflTransGen (nextrel1 T) 0 m) :
+    ∀ m', 0 < m' → m' < T.length →
+      Relation.ReflTransGen (nextrel1 (A ++ T)) (A.length + m') (A.length + m) →
+      entry T 1 0 < entry T 1 m' := by
+  intro m' hm'0 hm'T hrt
+  exact hanc_of_cone hcone m' hm'0 (rtg1_peel_append_right hm'T hm hrt)
+
 end L106
 end TRIO
