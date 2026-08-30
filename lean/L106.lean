@@ -5788,5 +5788,50 @@ theorem wnd_witness_transfer {P B : TrioSeq} {j p t y : ℕ}
 ⚠ **教訓 14**: 上は**分解**です。**(P1) はまだ組んでいません。**
 **⟹ ★ 組むには「`V` の中で候補を取り直す」ところを書く必要があります。** -/
 
+/-! ### 239.2 ★★★★ (P1) の**受け皿**: 証人が窓の中にあれば `hlocQ` が移ります
+
+team-lead の依頼 1 です。**「証人の距離 ≤ 2」（R2 の (ADJ)）は H12 が定理にしています。**
+**⟹ ★ こちらは「**証人が窓の中にある**」を前提にした**受け皿**を先に置きます。** -/
+
+open Classical in
+theorem hlocQ_wnd_of_witnesses {P B : TrioSeq} {j p : ℕ}
+    (hjB : j < B.length) (hpj : p < j)
+    (h2 : ∀ t, 0 < t → t < j - p → 0 < entry (wnd P B j p) 2 t →
+      hasParent ((wnd P B j p).take (t + 1)) 2 t)
+    (h1 : ∀ t, 0 < t → t < j - p →
+      entry (wnd P B j p) 2 t = 0 → 0 < entry (wnd P B j p) 1 t →
+      ∃ y, p ≤ y ∧ y < p + t ∧
+        le0 (P ++ B.take (j + 1)) (P.length + y) (P.length + (p + t)) ∧
+        entry (P ++ B.take (j + 1)) 1 (P.length + y)
+          < entry (P ++ B.take (j + 1)) 1 (P.length + (p + t)) ∧
+        (le1 (wnd P B j p) 0 (y - p) → le1 (wnd P B j p) 0 t)) :
+    hlocQ (wnd P B j p) := by
+  have hlen : (wnd P B j p).length = j - p := wnd_length hjB hpj
+  intro t ht0 htL
+  rw [hlen] at htL
+  refine ⟨h2 t ht0 htL, ?_⟩
+  intro hz hpos
+  obtain ⟨y, hy1, hy2, hle0, hlt, hcls⟩ := h1 t ht0 htL hz hpos
+  obtain ⟨hylt, hle0V, hltV⟩ :=
+    wnd_witness_transfer (P := P) (B := B) (j := j) (p := p) (t := t) (y := y)
+      hjB hpj htL hy1 hy2 hle0 hlt
+  exact ⟨y - p, hylt, hle0V, hltV, hcls⟩
+
+/-! ### 239.3 ⟹ ★ **(P1) の残りは「証人が `p` 以上に取れるか」1 つ**
+
+    ✅ **`le0` の移送** … §238 `le0_window`
+    ✅ **行 1 の移送** … `entry_window`
+    ✅ **受け皿** … §239.2（上）
+    ⛔ **証人が `p` 以上** … ★ **R2 の (ADJ)：距離 ≤ 2 ⟹ `t ≥ 2` なら自動**
+         ⚠ **`t = 1` のときだけ、証人が `p − 1`（窓の外）になりえます**
+         ⟹ ★ ですが **`t = 1` の証人が「窓の根 `p`」なら距離 1 で窓の中** ✅
+         ⟹ ⟹ ★★ ですから **「`t = 1` の証人が根に取れるか」**が最後の 1 点です
+
+**⟹ ★ team-lead の補足（「窓の根 `p` は候補になるはず」）と**同じ場所**に来ました。**
+**⟹ ⟹ ★★ R2 に **(ADJ'-d)**「窓の**第 1 列**（`t = 1`）の証人が**窓の根**に取れるか」を
+出してもらってください。⟹ ★ **100% なら (P1) が閉じます**。**
+
+⚠ **教訓 14**: §239.2 は**受け皿**です。**証人の存在は仮定しています。** -/
+
 end L106
 end TRIO
