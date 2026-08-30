@@ -1760,5 +1760,137 @@ theorem tower_hasParent_of_block {Q : TrioSeq} {d e n j : ℕ}
 
 ⚠ **教訓 14**: 上は**私の読み**です。H12 に確かめてもらいます。 -/
 
+/-! ## 211. ★★★★★★★★★ **親の位置の前提が完全に消えます**（`hstep` の最終形）
+
+§209 は `hstep` に `0 < j → **`hasParent T`** → 親 ≥ …` を渡していました。
+**⟹ §210 で `hasParent T` が（`Q` だけの 2 条件のもとで）出るようになりました。**
+**⟹ ⟹ ★ だから `hstep` に渡すのは **`0 < j → 親 ≥ …`** だけでよい。**
+
+**加わる前提は 2 本、どちらも `Q` **だけ**の条件です:**
+
+    **`h2out`** … 錐の外で行 2 が正なら、`Q.take (j+1)` の中に行 2 の親がいる
+    **`h1out`** … 錐の外で行 1 が正なら、根より行 1 が高い（＝ **ブロッカーでない**）
+
+⚠ **どちらも「`j ≥ 1` かつ**錐の外**の `j`」についてだけです（教訓 27、分母は小さい）。** -/
+
+open Classical in
+theorem prefixTowerClosed_final_full {u : ℕ} {A M : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u) (hM2 : 2 ≤ M.length) (he : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0M : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hz0 : entry M.dropLast 2 0 = 0)
+    (h2out : ∀ j, 0 < j → j < M.dropLast.length → ¬ le1 M.dropLast 0 j →
+      0 < entry M.dropLast 2 j → hasParent (M.dropLast.take (j + 1)) 2 j)
+    (h1out : ∀ j, 0 < j → j < M.dropLast.length → ¬ le1 M.dropLast 0 j →
+      0 < entry M.dropLast 1 j → entry M.dropLast 1 0 < entry M.dropLast 1 j)
+    (hstep : ∀ (n j : ℕ), j < M.dropLast.length →
+      (0 < j →
+        (A ++ mTower M.dropLast d e n).length ≤
+          parent (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+            (srow (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+              (A ++ mTower M.dropLast d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+            (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length) →
+      (∀ j', j' ≤ j →
+        A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j' ∈ W u) →
+      A ++ mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower M.dropLast d e n ∈ W u := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have hr0Q : ∀ l, 0 < l → l < M.dropLast.length →
+      entry M.dropLast 0 0 < entry M.dropLast 0 l := by
+    intro l hl0 hl1
+    rw [hdl] at hl1
+    rw [List.dropLast_eq_take, Wset.entry_take (show (0 : ℕ) < M.length - 1 by omega),
+      Wset.entry_take hl1]
+    exact hr0M l hl0 (by omega)
+  refine prefixTowerClosed_final_noBase hA hM2 he hd0e hr0M hlp hz0 ?_
+  intro n j hj hp hall
+  refine hstep n j hj (fun hj1 => ?_) hall
+  refine hp hj1 ?_
+  -- ★ `hpT` を作る
+  by_cases hc : le1 M.dropLast 0 j
+  · -- 錐の中: §163 `block_blockParent_all_cone` ＋ §162.9 `h2_cone`（H12 の 6 行）
+    exact tower_hasParent_of_block (Q := M.dropLast) (d := d) (e := e) (n := n)
+      (block_blockParent_all_cone hj hj1 hr0Q hc
+        (fun hpos => h2_cone hz0 j hj1 hj hpos hc))
+  · -- 錐の外: §210
+    exact tower_hasParent_of_block (Q := M.dropLast) (d := d) (e := e) (n := n)
+      (block_blockParent_all_outcone hj hj1 hr0Q hc
+        (fun hpos => h2out j hj1 hj hc hpos)
+        (fun hpos => h1out j hj1 hj hc hpos))
+
+/-! ### 211.1 ⟹ ★★★ **`TowerP''`**: 遺伝させるべき条件が**これで全部**です
+
+**⟹ ★ `hstep` に渡す親の位置の前提が**完全に消えました**。**
+**⟹ ⟹ 残るのは「この 6 本が窓 `V` に遺伝するか」だけです。** -/
+
+/-- ★★★ 遺伝させるべき条件の**最終形**（親の位置はもう前提に出てきません）。 -/
+def TowerP'' (Q : TrioSeq) (d e : ℕ) : Prop :=
+  ∃ M : TrioSeq, M.dropLast = Q ∧ 2 ≤ M.length ∧ 0 < e ∧
+    entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d ∧
+    (∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) ∧
+    le1 M 0 (0 + M.dropLast.length) ∧
+    entry Q 2 0 = 0 ∧
+    (∀ j, 0 < j → j < Q.length → ¬ le1 Q 0 j →
+      0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) ∧
+    (∀ j, 0 < j → j < Q.length → ¬ le1 Q 0 j →
+      0 < entry Q 1 j → entry Q 1 0 < entry Q 1 j)
+
+open Classical in
+/-- ★★★★★★ **総組み立ての最終形**。義務は `hsnoc` 1 本、しかも
+「親はこのブロックの中」は**前提ではなく定理**として渡ります。 -/
+theorem towerClosed_of_snoc'' {u : ℕ}
+    (hsnoc : ∀ (Q : TrioSeq) (d e : ℕ), TowerP'' Q d e →
+      (∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+        ∀ A, A ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ (A : TrioSeq), A ∈ W u → ∀ (n j : ℕ), j < Q.length →
+        (0 < j →
+          (A ++ mTower Q d e n).length ≤
+            parent (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+              (srow (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+                (A ++ mTower Q d e n
+                  ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+              (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+        (∀ j', j' ≤ j →
+          A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) →
+        A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine tower_of_measure_step (u := u) TowerP'' towerMeas ?_
+  intro Q d e hP hIH A hA n
+  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
+  subst hMQ
+  refine prefixTowerClosed_final_full hA hM2 he hd0e hr0M hlp hz0 h2out h1out ?_ n
+  intro n' j hj hpar hall
+  exact hsnoc M.dropLast d e
+    ⟨M, rfl, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ hIH A hA n' j hj hpar hall
+
+/-! ### 211.2 ⟹ ★ **穴の全体像（最終）**
+
+`TowerP''` の 9 成分のうち、消費側（`MTowerClosedS`）が渡すのは `hr0` だけです。
+
+    **1. `M.dropLast = Q`** … ✅ ただ（`M := Q ++ [c]`、`c` はこちらが選べる）
+    **2. `2 ≤ |M|`** … ✅ ただ（`|Q| ≤ 1` は §81、緑）
+    **3. `0 < e`** … ⚠ `e = 0` は §112 `MTowerClosedS0 = ShiftTowerClosedS`（別ルート既知）
+    **4. `hd0e`** … ✅ ただ（`c.0 := entry Q 0 0 + d`）
+    **5. `hr0M`** … ⚠ `l = |Q|` の分に **`0 < d`**
+    **6. `hlp`** … ⛔ **穴 (g1)**
+    **7. `hz0`** … ⛔ **穴 (g2)**（既知の (H2')）
+    **8. `h2out`** … ⛔ **穴 (g3)**（錐の外の行 2 の孤児）
+    **9. `h1out`** … ⛔ **穴 (g4)**（ブロッカー）
+
+⚠ **教訓 14**: `towerClosed_of_snoc''` は「`hsnoc` ならば」しか言っていません。
+**`hsnoc` はまだ証明されていません。**そして 6-9 の遺伝も示していません。** -/
+
 end L106
 end TRIO
