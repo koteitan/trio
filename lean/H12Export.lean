@@ -5818,5 +5818,29 @@ theorem Lift1_dropLast (X : TrioSeq) (d : ℕ) :
     · rw [if_pos (hc.mpr hcc), if_pos hcc]
     · rw [if_neg (fun hx => hcc (hc.mp hx)), if_neg hcc]
 
+
+/-- ★★★★★ **残差（`srow = 2`）の二分法**: **根が `z = 1`** か、**末尾が根の錐の外**か。
+⟹ ★ L3 の iff を仮定として受け取り、`c = 0` を入れるだけ（2 行）。 -/
+theorem residual_row2_dichotomy {Q : TrioSeq} (hQ2 : 2 ≤ Q.length)
+    (hiff : ∀ t, hasParent Q 2 t ↔ ∃ c, c < t ∧ entry Q 2 c = 0 ∧ le1 Q c t)
+    (hz1 : ∀ i, entry Q 2 i ≤ 1)
+    (horph : ¬ hasParent Q 2 (Q.length - 1)) :
+    entry Q 2 0 = 1 ∨ ¬ le1 Q 0 (Q.length - 1) := by
+  by_contra hc
+  push Not at hc
+  obtain ⟨h1, h2⟩ := hc
+  exact horph ((hiff _).mpr ⟨0, by omega, by have := hz1 0; omega, h2⟩)
+
+/-- ⛔ **(W74) の結論**: 末尾が「同じ写しの中」に閉じ込められる限り、
+**塔を積んでも `le1` の祖先集合は増えません**。
+⟹ ★ 証人があるとき（`prefix_mTower_nextrel1_src_ge`）⟹ **親は同じ写しの中**
+⟹ ⟹ ★★ ですから **`z = 0` の列に届く新しい道は、写しの中にしかありません**
+⟹ ⟹ ⟹ ⛔ **そして写しの中は `Q` と同型** ⟹ **`Q` で届かないなら塔でも届きません**。 -/
+theorem row2_parent_stays_in_block {A Q : TrioSeq} {d e n k j y c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hy : nextrel1 Q y j)
+    (h : nextrel1 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
+    A.length + (k * Q.length + y) ≤ c :=
+  prefix_mTower_nextrel1_src_ge hk hj hy h
+
 end H12Export
 end TRIO
