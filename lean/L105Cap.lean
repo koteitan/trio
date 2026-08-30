@@ -13773,6 +13773,75 @@ theorem nextrel1_j0_src_ge_prev_block {Q : TrioSeq} {d e n a : ℕ}
 
 ⚠ **教訓 14**: 上は **前提の形の提案**です。**`h2cone` が遺伝するかは測っていません。** -/
 
+/-! ## 198. ★★★★★★ R2 の測度 `rank` の 2 本（`hstep` とは独立に進められる部分）
+
+R2 の 6 行のうち、**`oper` の定義から直に出る部分**と
+**「行 2 は親になれない」**を Lean にする。 -/
+
+/-- **`rank(d,e) = (0<d) + (0<e) ∈ {0,1,2}`**（R2 の測度の第 2 成分）。 -/
+def rankDE (d e : ℕ) : ℕ := (if 0 < d then 1 else 0) + (if 0 < e then 1 else 0)
+
+theorem rankDE_le_two (d e : ℕ) : rankDE d e ≤ 2 := by
+  unfold rankDE; split_ifs <;> omega
+
+/-! ### 198.1 `oper` の `d0` / `d1` は `srow` で決まる（`Trio.lean:107-108` を開くだけ） -/
+
+theorem rankDE_oper_le_one {M : TrioSeq} {j0 : ℕ}
+    (h : srow M (M.length - 1) ≤ 1) :
+    rankDE (if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1) - entry M 0 j0
+        else 0)
+      (if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1) - entry M 1 j0
+        else 0) ≤ 1 := by
+  unfold rankDE
+  rw [if_neg (show ¬ (1 < srow M (M.length - 1)) from by omega)]
+  split_ifs <;> omega
+
+theorem rankDE_oper_eq_zero {M : TrioSeq} {j0 : ℕ}
+    (h : srow M (M.length - 1) = 0) :
+    rankDE (if 0 < srow M (M.length - 1) then entry M 0 (M.length - 1) - entry M 0 j0
+        else 0)
+      (if 1 < srow M (M.length - 1) then entry M 1 (M.length - 1) - entry M 1 j0
+        else 0) = 0 := by
+  unfold rankDE
+  rw [if_neg (show ¬ (0 < srow M (M.length - 1)) from by omega),
+    if_neg (show ¬ (1 < srow M (M.length - 1)) from by omega)]
+  simp
+
+/-! ### 198.2 **行 2 はブロック根どうしの親になれません**
+
+`shiftr01` も `Lift1` も行 2 を変えないので、**ブロックの根の行 2 は全部 `entry Q 2 0`**。
+**`nextrel2` は狭義不等号を要求するので、等しい値どうしでは立ちません。** -/
+
+theorem mTower_entry2_root {Q : TrioSeq} {d e n k : ℕ} (hk : k < n) (hQ : 0 < Q.length) :
+    entry (mTower Q d e n) 2 (k * Q.length) = entry Q 2 0 := by
+  have h := mTower_entry (Q := Q) (d := d) (e := e) (n := n) (k := k) (q := 0)
+    (i := 2) hk hQ
+  rw [Nat.add_zero] at h
+  rw [h]
+  show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD 0 (0, 0, 0)).2.2 = _
+  rw [block_getD (d := d) (e := e) (n := k) hQ]
+
+/-- **★ ブロック根どうしは行 2 で親子になれない。** -/
+theorem not_nextrel2_blockRoots {Q : TrioSeq} {d e n k m : ℕ}
+    (hk : k < n) (hm : m < n) (hQ : 0 < Q.length) :
+    ¬ nextrel2 (mTower Q d e n) (k * Q.length) (m * Q.length) := by
+  intro h
+  have hlt := h.2.2.2.1
+  rw [mTower_entry2_root hk hQ, mTower_entry2_root hm hQ] at hlt
+  omega
+
+/-! ### 198.3 ⟹ R2 の 6 行のうち 2 つが Lean になりました
+
+    ✅ **行 2 は決して親になれない** … `not_nextrel2_blockRoots`（上）
+    ✅ **`srow = 1` で `e' = 0`、`srow = 0` で `d' = e' = 0`** … `rankDE_oper_*`（上）
+    ⛔ **行 0 は `d > 0`、行 1 は `e > 0` が要る** … **未着手**
+    ⛔ **非減少 ⟺ `p_rel = 0`** … **未着手**
+    ⛔ **⟹ `rank` が非減少の段ごとに真に減る** … **未着手**（上の 3 つの合成）
+
+⚠ **教訓 14**: **2 本は「`oper` の定義を開いただけ」「行 2 が不変なだけ」です。**
+**残る 3 つが本体で、とくに「非減少 ⟺ `p_rel = 0`」は
+`|V| = |Q| − p_rel`（§187.2）の**両向き**が要ります。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
