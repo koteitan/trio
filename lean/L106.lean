@@ -2181,5 +2181,100 @@ theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 <
   · left
     rw [hlen]; omega
 
+/-! ## 215. ★★★★★★★★ (U1): **ブロックの根の親は高々 1 ブロック手前**（接頭辞つき）
+
+§214 で**前提**にしていた「親の位置」を証明します。**索引から 3 本見つけました:**
+
+    **`Wset.hasParent_one_of`**（`:1823`）… `le0` の鎖の上に行 1 が小さい列が 1 つあれば**親は存在する**
+    **`L105Cap.parent_ge_of_inner`**（`:7480`）… 塔の中に親がいれば、接頭辞は親になれない（**前提なし**）
+    **H12 `blockRoot_parent_prevBlock`** … 塔の中で「高々 1 ブロック手前」
+
+**⟹ ★ 3 本をつなぐだけで (U1) が出ます。** -/
+
+/-- `mTower Q d e (k+1) ++ 第 (k+1) ブロックの根 1 列` は `mTower Q d e (k+2)` の接頭辞。 -/
+theorem tower_snoc_root_eq_take (Q : TrioSeq) (d e k : ℕ) :
+    mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1
+      = (mTower Q d e (k + 2)).take ((k + 1) * Q.length + 1) := by
+  have hlen : (mTower Q d e (k + 1)).length = (k + 1) * Q.length :=
+    mTower_length Q d e (k + 1)
+  have hfull : (mTower Q d e (k + 1)).take ((k + 1) * Q.length + 1)
+      = mTower Q d e (k + 1) := List.take_of_length_le (by omega)
+  conv_rhs => rw [show k + 2 = (k + 1) + 1 from rfl, mTower_succ]
+  rw [List.take_append, hfull, hlen, Nat.add_sub_cancel_left]
+
+/-- ★★ **ブロックの根は行 1 の親を持つ**（証人は 1 つ前のブロックの根）。 -/
+theorem blockRoot_hasParent_prev {Q : TrioSeq} {d e k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    hasParent (mTower Q d e (k + 2)) 1 ((k + 1) * Q.length) := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  have hTlen : (mTower Q d e (k + 2)).length = (k + 2) * Q.length :=
+    mTower_length Q d e (k + 2)
+  have hb1 : k * Q.length < (mTower Q d e (k + 2)).length := by
+    rw [hTlen]
+    exact Nat.lt_of_lt_of_le
+      (show k * Q.length < (k + 1) * Q.length from by rw [Nat.succ_mul]; omega)
+      (Nat.mul_le_mul_right _ (by omega))
+  have hb2 : (k + 1) * Q.length < (mTower Q d e (k + 2)).length := by
+    rw [hTlen]
+    have h : (k + 2) * Q.length = (k + 1) * Q.length + Q.length :=
+      Nat.succ_mul (k + 1) Q.length
+    omega
+  refine hasParent_one_of hb2 (show k * Q.length < (k + 1) * Q.length from by
+      rw [Nat.succ_mul]; omega)
+    ⟨hb1, hb2, rtg0_blockRoot_succ hQne hd (show k + 1 < k + 2 by omega) hr0⟩ ?_
+  rw [entry1_mTower_blockRoot hQne d e (k + 2) k (by omega),
+    entry1_mTower_blockRoot hQne d e (k + 2) (k + 1) (by omega)]
+  have hmul : e * (k + 1) = e * k + e := Nat.mul_succ e k
+  omega
+
+/-- `take` を跨いで `parent` は同じ。 -/
+theorem parent_take {X : TrioSeq} {l i b : ℕ} (hl : l ≤ X.length) (hb : b < l)
+    (hp : hasParent (X.take l) i b) : parent (X.take l) i b = parent X i b := by
+  have hpX : hasParent X i b := (hasParent_take hl hb).mp hp
+  exact hpX.unique ((nextR_take hl hb).mp (parent_nextR hp)) (parent_nextR hpX)
+
+/-! ### 215.1 ★★★ (U1) 本体 -/
+
+open Classical in
+theorem blockRoot_parent_ge_prefix {A Q : TrioSeq} {d e k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    (A ++ mTower Q d e k).length ≤
+      parent (A ++ (mTower Q d e (k + 1)
+          ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1)) 1
+        (A.length + (k + 1) * Q.length) := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  set T := mTower Q d e (k + 1)
+      ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1 with hTdef
+  have hTeq : T = (mTower Q d e (k + 2)).take ((k + 1) * Q.length + 1) := by
+    rw [hTdef]; exact tower_snoc_root_eq_take Q d e k
+  have hTlen2 : (mTower Q d e (k + 2)).length = (k + 2) * Q.length :=
+    mTower_length Q d e (k + 2)
+  have hle : (k + 1) * Q.length + 1 ≤ (mTower Q d e (k + 2)).length := by
+    rw [hTlen2]
+    have h : (k + 2) * Q.length = (k + 1) * Q.length + Q.length :=
+      Nat.succ_mul (k + 1) Q.length
+    omega
+  -- ★ 塔の中に親がいる
+  have hpM := blockRoot_hasParent_prev (Q := Q) (d := d) (e := e) (k := k) hQne hd he hr0
+  have hpT : hasParent T 1 ((k + 1) * Q.length) := by
+    rw [hTeq]
+    exact (hasParent_take hle (by omega)).mpr hpM
+  -- ★ 親の位置（塔の中）
+  have hpe : parent T 1 ((k + 1) * Q.length)
+      = parent (mTower Q d e (k + 2)) 1 ((k + 1) * Q.length) := by
+    rw [hTeq] at hpT ⊢
+    exact parent_take hle (by omega) hpT
+  have hge : k * Q.length ≤ parent (mTower Q d e (k + 2)) 1 ((k + 1) * Q.length) := by
+    have hnr := parent_nextR hpM
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact blockRoot_parent_prevBlock hQne hd he (show k + 1 < k + 2 by omega) hr0 hnr
+  -- ★ 接頭辞を跨ぐ（前提なし）
+  rw [parent_append_right_of A T hpT, List.length_append, mTower_length, hpe]
+  omega
+
 end L106
 end TRIO
