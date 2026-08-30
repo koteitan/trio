@@ -7513,3 +7513,29 @@ team-lead の (q3):「`he` は落とせる。筋は『ブロックは平行移�
 ★ 参考（既知）: `not_rsum_shTower`（`L105Cap:674`）—— `e ≥ 1` の塔では `rsum` が破れる。
 ⟹ 連結（`W_add`）では絶対に組めない、が確定している。私の `prefix_mTower_d0_mem` が
 通るのは `d = e = 0`（ブロックが同一）＋ `based Q` で `rsum` が自明になるからだけ。
+
+## §296 ★★★★★★★ `ZeroDOK` の本丸（行 1）が解けた
+
+`srow_prefix_blockRoot_d_zero` から: `e ≥ 1` なら `k ≥ 1` のブロック根は必ず `srow = 1`。
+⟹ `ZeroDOK` の本体は**行 1**（行 0 版は `e = 0 ∧ entry Q 1 0 = 0` の隅にしか効かない）。
+
+**★ 塔が消える**（`nextrel1_prefix_blockRoot_iff_d_zero`、緑）:
+
+    nextrel1 M a (|A| + k*|Q|)
+      ⟺ a < |A| ∧ le0 M a |A| ∧ entry M 1 a < c_k
+         ∧ (∀ j < |A|, a < j → le0 M j |A| → c_k ≤ entry M 1 j)
+    c_k = entry Q 1 0 + e*k
+
+**★★ さらに親が 1 列に固定される**。鍵は `nextrel0_src_unique`（`nextrel0` の始点は
+最小性から一意）。⟹ `a0 < j < |A|` かつ `le0 M j |A|` な `j` は**存在しない**
+（`le0_le_parent0`）⟹ 最小性の条件が**空虚** ⟹
+
+    nextrel1_prefix_blockRoot_parent0 : ha0 : nextrel0 M a0 |A| →
+      entry M 1 a0 < c_k → nextrel1 M a0 (|A| + k*|Q|)
+    ★ hasParent1_prefix_blockRoot_d_zero : 同じ仮定で hasParent M 1 (|A|+k*|Q|)（一意性も）
+    no_hasParent1_prefix_blockRoot_d_zero : Q の根に行 0 の親が無ければ全ブロック根は孤児
+    no_hasParent0_prefix_blockRoot_d_zero : 行 0 も同様
+
+⟹ **`d = 0` の塔は二択**:
+  (1) `Q` の根に行 0 の親 `a0` が `A` の中にある ⟹ 閾値を超えたら全ブロック根の親は `a0`
+  (2) 無い ⟹ 全ブロック根が孤児 ⟹ `snoc_orphan_W`

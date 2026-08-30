@@ -1491,5 +1491,152 @@ theorem srow_prefix_blockRoot_e_zero {A Q : TrioSeq} {d n k : ℕ}
     exact entry2_mTower_blockRoot Q d 0 n k hk hQ1
   rw [h1, h2]
 
+
+theorem rtg0_index_le {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 M) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_refl _
+  | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.1)
+
+theorem entry1_prefix_blockRoot_d_zero {A Q : TrioSeq} {e n k : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hk : k < n) :
+    entry (A ++ mTower Q 0 e n) 1 (A.length + k * Q.length) = entry Q 1 0 + e * k := by
+  rw [entry_append_right]
+  exact entry1_mTower_blockRoot_d_zero hQne hQ1 hk
+
+/-- ★★ `le0` でブロック根に届く列は、自分自身か**接頭辞の中**。 -/
+theorem le0_prefix_blockRoot_src_d_zero {A Q : TrioSeq} {e n k a : ℕ}
+    (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (h : le0 (A ++ mTower Q 0 e n) a (A.length + k * Q.length))
+    (hne : a ≠ A.length + k * Q.length) : a < A.length := by
+  obtain ⟨-, -, hrt⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+  · exact absurd h1.symm hne
+  · exact Nat.lt_of_le_of_lt (rtg0_index_le hc1)
+      (nextrel0_prefix_blockRoot_src_d_zero hQ1 hr0 hk hc2)
+
+/-- ★★★★★★ **`d = 0`: `nextrel1` の条件から塔が消える**。
+右辺に現れるのは接頭辞 `A` の中の列と、閾値 `entry Q 1 0 + e*k` だけ。 -/
+theorem nextrel1_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k a : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n) :
+    nextrel1 (A ++ mTower Q 0 e n) a (A.length + k * Q.length)
+      ↔ (a < A.length ∧ le0 (A ++ mTower Q 0 e n) a A.length ∧
+          entry (A ++ mTower Q 0 e n) 1 a < entry Q 1 0 + e * k ∧
+          ∀ j, j < A.length → a < j → le0 (A ++ mTower Q 0 e n) j A.length →
+            entry Q 1 0 + e * k ≤ entry (A ++ mTower Q 0 e n) 1 j) := by
+  have hMlen : (A ++ mTower Q 0 e n).length = A.length + n * Q.length := by
+    rw [List.length_append, mTower_length]
+  have hnq : 0 < n * Q.length := Nat.mul_pos hn hQ1
+  have hkq : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hlt0 : A.length < (A ++ mTower Q 0 e n).length := by omega
+  have hltk : A.length + k * Q.length < (A ++ mTower Q 0 e n).length := by omega
+  have hval : entry (A ++ mTower Q 0 e n) 1 (A.length + k * Q.length)
+      = entry Q 1 0 + e * k := entry1_prefix_blockRoot_d_zero hQne hQ1 hk
+  constructor
+  · rintro ⟨ha, -, hab, hlt, hle0, hmin⟩
+    have hain : a < A.length :=
+      le0_prefix_blockRoot_src_d_zero hQ1 hr0 hk hle0 (by omega)
+    refine ⟨hain, (le0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk hain).mp hle0,
+      by rwa [hval] at hlt, ?_⟩
+    intro j hjA haj hj0
+    have := hmin j ⟨haj, (le0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk hjA).mpr hj0⟩
+    rwa [hval] at this
+  · rintro ⟨hain, hle0A, hlt, hmin⟩
+    refine ⟨by omega, hltk, by omega, by rw [hval]; exact hlt,
+      (le0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk hain).mpr hle0A, ?_⟩
+    intro j hj
+    rw [hval]
+    by_cases hje : j = A.length + k * Q.length
+    · rw [hje, hval]
+    · have hjA : j < A.length :=
+        le0_prefix_blockRoot_src_d_zero hQ1 hr0 hk hj.2 hje
+      exact hmin j hjA hj.1
+        ((le0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk hjA).mp hj.2)
+
+/-- `nextrel0` の始点は一意（最小性から）。 -/
+theorem nextrel0_src_unique {M : TrioSeq} {c1 c2 j1 : ℕ}
+    (h1 : nextrel0 M c1 j1) (h2 : nextrel0 M c2 j1) : c1 = c2 := by
+  obtain ⟨-, -, hc1, hlt1, hmin1⟩ := h1
+  obtain ⟨-, -, hc2, hlt2, hmin2⟩ := h2
+  rcases Nat.lt_trichotomy c1 c2 with h | h | h
+  · exact absurd (hmin1 c2 ⟨h, hc2⟩) (by omega)
+  · exact h
+  · exact absurd (hmin2 c1 ⟨h, hc1⟩) (by omega)
+
+/-- `le0` で `j1` に届く列は、その行 0 の親 `a0` 以下。 -/
+theorem le0_le_parent0 {M : TrioSeq} {a0 j j1 : ℕ}
+    (ha0 : nextrel0 M a0 j1) (h : le0 M j j1) (hne : j ≠ j1) : j ≤ a0 := by
+  obtain ⟨-, -, hrt⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+  · exact absurd h1.symm hne
+  · rw [← nextrel0_src_unique hc2 ha0]
+    exact rtg0_index_le hc1
+
+/-- ★★★★★★★ **`d = 0`: 閾値を超えたブロック根の行 1 の親は `a0` に固定**。 -/
+theorem nextrel1_prefix_blockRoot_parent0 {A Q : TrioSeq} {e n k a0 : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (ha0 : nextrel0 (A ++ mTower Q 0 e n) a0 A.length)
+    (hc : entry (A ++ mTower Q 0 e n) 1 a0 < entry Q 1 0 + e * k) :
+    nextrel1 (A ++ mTower Q 0 e n) a0 (A.length + k * Q.length) := by
+  have ha0A : a0 < A.length := ha0.2.2.1
+  refine (nextrel1_prefix_blockRoot_iff_d_zero hQne hQ1 hn hr0 hk).mpr
+    ⟨ha0A, ⟨ha0.1, ha0.2.1, Relation.ReflTransGen.single ha0⟩, hc, ?_⟩
+  intro j hjA haj hj0
+  exact absurd (le0_le_parent0 ha0 hj0 (by omega)) (by omega)
+
+/-- ★★★★★★★ **しかも一意** ⟹ `hasParent` が出る。 -/
+theorem hasParent1_prefix_blockRoot_d_zero {A Q : TrioSeq} {e n k a0 : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (ha0 : nextrel0 (A ++ mTower Q 0 e n) a0 A.length)
+    (hc : entry (A ++ mTower Q 0 e n) 1 a0 < entry Q 1 0 + e * k) :
+    hasParent (A ++ mTower Q 0 e n) 1 (A.length + k * Q.length) := by
+  refine ⟨a0, ?_, ?_⟩
+  · show nextR (A ++ mTower Q 0 e n) 1 a0 (A.length + k * Q.length)
+    unfold nextR
+    rw [if_neg (by omega), if_pos rfl]
+    exact nextrel1_prefix_blockRoot_parent0 hQne hQ1 hn hr0 hk ha0 hc
+  · intro b hb
+    unfold nextR at hb
+    rw [if_neg (by omega), if_pos rfl] at hb
+    obtain ⟨hbA, hb0, hblt, hbmin⟩ :=
+      (nextrel1_prefix_blockRoot_iff_d_zero hQne hQ1 hn hr0 hk).mp hb
+    have hup : b ≤ a0 := le0_le_parent0 ha0 hb0 (by omega)
+    rcases Nat.lt_or_ge b a0 with hlt | hge
+    · exact absurd (hbmin a0 ha0.2.2.1 hlt
+        ⟨ha0.1, ha0.2.1, Relation.ReflTransGen.single ha0⟩) (by omega)
+    · omega
+
+/-- ★★★ 逆に **`Q` の根に行 0 の親が無ければ、全ブロック根は行 1 でも孤児**。 -/
+theorem no_hasParent1_prefix_blockRoot_d_zero {A Q : TrioSeq} {e n k : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (hnp : ∀ a, ¬ nextrel0 (A ++ mTower Q 0 e n) a A.length) :
+    ¬ hasParent (A ++ mTower Q 0 e n) 1 (A.length + k * Q.length) := by
+  rintro ⟨b, hb, -⟩
+  unfold nextR at hb
+  rw [if_neg (by omega), if_pos rfl] at hb
+  obtain ⟨hbA, hb0, -, -⟩ :=
+    (nextrel1_prefix_blockRoot_iff_d_zero hQne hQ1 hn hr0 hk).mp hb
+  obtain ⟨-, -, hrt⟩ := hb0
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, -, hc2⟩
+  · omega
+  · exact hnp c hc2
+
+/-- ★★★ 行 0 も同様に孤児。 -/
+theorem no_hasParent0_prefix_blockRoot_d_zero {A Q : TrioSeq} {e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (hnp : ∀ a, ¬ nextrel0 (A ++ mTower Q 0 e n) a A.length) :
+    ¬ hasParent (A ++ mTower Q 0 e n) 0 (A.length + k * Q.length) := by
+  rintro ⟨b, hb, -⟩
+  unfold nextR at hb
+  rw [if_pos rfl] at hb
+  exact hnp b ((nextrel0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk).mp hb)
+
 end H12Export
 end TRIO
