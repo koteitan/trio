@@ -15278,3 +15278,26 @@ S = mTower Q d e n ／ p = 第 `n` ブロックの根（行 0 = entry Q 0 0 + d*
       ⟹ ⚠ **`d ≤ 段差` / `d > 段差`、`e = 0` / `e > 0` で分ける**
 
 **✅ build 緑 40 回目**: `BUILD_EXIT=0`、`H12Export` **460 本**、`L105Cap` **＋約 130 行**、`L106` **10,762 行**
+
+---
+
+## ★★★★★★★★★★ **H12 (W81, 2026-08-30): `j > 0` なら親は同じブロックの中（緑）**
+
+    ★★★★★ `blockRoot_shallow_mTower` … **`d > 0` ⟹ ブロック根は、そこから先の全列より狭義に浅い**
+      ★ **同じブロック**: `entry Q 0 r + d*k > entry Q 0 0 + d*k`（`hr0`）
+      ★ **後のブロック**: `entry Q 0 r + d*k' ≥ entry Q 0 0 + d*k' > entry Q 0 0 + d*k`（`d > 0`）
+    ★★★★★★★★★★ `nextrel0_src_ge_blockRoot_mTower` … ⟹ **行 0 の親は `k|Q|` 以降**
+      ⟹ ★ **私の `nextrel0_src_ge_of_shallow`（§310）が、そのまま当たりました**
+    ★★★★★ `window_lt_of_blockInner` … ⟹ **窓 `< |Q|`**
+
+### ⚠ **前提は `d > 0` と `hr0 Q` の 2 つ**
+
+    ⛔ **`d = 0` では成り立ちません**（全ブロックの行 0 が同じ ⟹ 根が「狭義に浅い」でなくなる）
+    ⟹ ★ R2 の「人工の箱で 0.73% 破れ」は、**`d = 0` の分**だと思います
+    ⟹ ⟹ ⚠ **測ってもらう価値があります**（`d > 0` に絞れば 100% になるはず）
+
+### ★★★ ⟹ **これで `TowerSnocStep` の 2 つの場合が、両方そろいました**
+
+    ✅ **`j = 0`** … `nextrel0_blockRoot_in_prev_block`（**直前のブロックの中**、(W79')）
+    ✅ **`j > 0`** … `nextrel0_src_ge_blockRoot_mTower`（**同じブロックの中**、(W81)）
+    ⟹ ★ **どちらも窓が `|Q|` 以下**（`window_le_of_blockRoot` / `window_lt_of_blockInner`）

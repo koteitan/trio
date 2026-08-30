@@ -6341,5 +6341,71 @@ theorem nextrel0_snoc_blockRoot_in_prev (Q : TrioSeq) {d e n c : ℕ}
       (by omega) (by omega)).mp h
   exact nextrel0_blockRoot_in_prev_block Q hQ hd hn h'
 
+
+/-- ★★★★★ **ブロック根は、そこから先の全列より狭義に浅い**（`d > 0`）。 -/
+theorem blockRoot_shallow_mTower (Q : TrioSeq) {d e n k : ℕ} (hd : 0 < d) (hk : k < n)
+    (hQ : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ∀ x, k * Q.length < x → x < (mTower Q d e n).length →
+      entry (mTower Q d e n) 0 (k * Q.length) < entry (mTower Q d e n) 0 x := by
+  intro x hx1 hx2
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [hlen] at hx2
+  have hk' : x / Q.length < n :=
+    Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm] at hx2; exact hx2)
+  have hr : x % Q.length < Q.length := Nat.mod_lt _ hQ
+  have hsplit : x = (x / Q.length) * Q.length + x % Q.length :=
+    (Nat.div_add_mod' x Q.length).symm
+  have e1 : entry (mTower Q d e n) 0 (k * Q.length) = entry Q 0 0 + d * k := by
+    simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n) (k := k) (i := 0) hk hQ
+  rw [e1, hsplit, entry0_mTower_block' Q hk' hr]
+  have hge : entry Q 0 0 ≤ entry Q 0 (x % Q.length) := by
+    rcases Nat.eq_zero_or_pos (x % Q.length) with h0 | h0
+    · rw [h0]
+    · exact le_of_lt (hr0 _ h0 hr)
+  rcases Nat.lt_or_ge k (x / Q.length) with hlt | hge2
+  · have : d * k < d * (x / Q.length) := by
+      have h1 : d * (k + 1) ≤ d * (x / Q.length) := Nat.mul_le_mul_left d (by omega)
+      have h2 : d * (k + 1) = d * k + d := Nat.mul_succ d k
+      omega
+    omega
+  · have hkq : x / Q.length = k := by
+      by_contra hne
+      have hlt2 : x / Q.length < k := by omega
+      have : (x / Q.length) * Q.length + Q.length ≤ k * Q.length := by
+        have h1 : (x / Q.length + 1) * Q.length ≤ k * Q.length :=
+          Nat.mul_le_mul_right _ (by omega)
+        have h2 : (x / Q.length + 1) * Q.length = (x / Q.length) * Q.length + Q.length :=
+          Nat.succ_mul _ _
+        omega
+      omega
+    rw [hkq]
+    have hr0pos : 0 < x % Q.length := by
+      by_contra hc
+      push Not at hc
+      have : x % Q.length = 0 := by omega
+      rw [hkq, this] at hsplit
+      omega
+    have := hr0 _ hr0pos hr
+    omega
+
+/-- ★★★★★★★★★★ **(W81)**: `d > 0` ∧ `0 < j` ⟹ **行 0 の親は同じブロックの中**。 -/
+theorem nextrel0_src_ge_blockRoot_mTower (Q : TrioSeq) {d e n k j c : ℕ}
+    (hd : 0 < d) (hk : k < n) (hj : j < Q.length) (hj0 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h : nextrel0 (mTower Q d e n) c (k * Q.length + j)) :
+    k * Q.length ≤ c :=
+  nextrel0_src_ge_of_shallow
+    (blockRoot_shallow_mTower Q hd hk (by omega) hr0) (by omega) h
+
+/-- ★★★★★ ⟹ **窓は `|Q|` 未満**（`j > 0` の版）。 -/
+theorem window_lt_of_blockInner (Q : TrioSeq) {d e n k j c : ℕ}
+    (hd : 0 < d) (hk : k < n) (hj : j < Q.length) (hj0 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h : nextrel0 (mTower Q d e n) c (k * Q.length + j)) :
+    k * Q.length + j - c < Q.length := by
+  have := nextrel0_src_ge_blockRoot_mTower Q hd hk hj hj0 hr0 h
+  omega
+
 end H12Export
 end TRIO
