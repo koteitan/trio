@@ -8739,5 +8739,62 @@ theorem nextR_mTower_src_ge_block_of_hasParent (Q : TrioSeq) {d n k j c i : ℕ}
   · exact nextrel1_mTower_src_ge_block_of_witness Q hk hj hy h
   · exact nextrel2_mTower_src_ge_block_of_witness Q hk hj hy h
 
+
+/-! ## 135. ★★★★★★★★★★ (W84): **`e = 0` のブロック根は、行 1 でも行 2 でも孤児**
+
+`e = 0` なら **塔の行 1 は `Q` の値の周期**（持ち上げ無し）。
+⟹ ★ **`Q` の根が行 1 で最小**（`∀ r, entry Q 1 0 ≤ entry Q 1 r`）なら、
+**ブロック根より行 1 が小さい列が塔に 1 つも無い**
+⟹ ⟹ ★★★★★ **`nextrel1` の親が無い** ⟹ ★ **`le1` の真の祖先も無い**
+⟹ ⟹ ⟹ ★★★★★★★★★★ ⟹ **`nextrel2` の親も無い**（源は `le1` 祖先なので）⟹ **孤児 ⟹ 無料**。 -/
+
+/-- ★★★★★★★★ **`e = 0` ⟹ ブロック根に行 1 の親は無い**（`Q` の根が行 1 で最小のとき）。 -/
+theorem no_nextrel1_blockRoot_of_e_zero (Q : TrioSeq) {d n k c : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n)
+    (hmin : ∀ r, r < Q.length → entry Q 1 0 ≤ entry Q 1 r) :
+    ¬ nextrel1 (mTower Q d 0 n) c (k * Q.length) := by
+  intro h
+  have hlen : (mTower Q d 0 n).length = n * Q.length := mTower_length Q d 0 n
+  have hclt : c < n * Q.length := by have := h.1; rw [hlen] at this; exact this
+  have hent : ∀ k'' j, k'' < n → j < Q.length →
+      entry (mTower Q d 0 n) 1 (k'' * Q.length + j) = entry Q 1 j := by
+    intro k'' j hk'' hj
+    rw [entry1_mTower_block_formula Q hk'' hj]
+    split_ifs <;> omega
+  have hk' : c / Q.length < n :=
+    Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm] at hclt; exact hclt)
+  have hr : c % Q.length < Q.length := Nat.mod_lt _ hQ
+  have hsplit : c = (c / Q.length) * Q.length + c % Q.length :=
+    (Nat.div_add_mod' c Q.length).symm
+  have hlt := h.2.2.2.1
+  rw [hsplit, hent _ _ hk' hr,
+    show k * Q.length = k * Q.length + 0 from by omega, hent _ _ hk hQ] at hlt
+  have := hmin _ hr
+  omega
+
+/-- ★★★★★★★★★★ ⟹ **行 2 の親も無い**（`nextrel2` の源は `le1` 祖先なので）。 -/
+theorem no_nextrel2_blockRoot_of_e_zero (Q : TrioSeq) {d n k c : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n)
+    (hmin : ∀ r, r < Q.length → entry Q 1 0 ≤ entry Q 1 r) :
+    ¬ nextrel2 (mTower Q d 0 n) c (k * Q.length) := by
+  intro h
+  have hlt : c < k * Q.length := h.2.2.1
+  rcases Relation.ReflTransGen.cases_tail h.2.2.2.2.1.2.2 with h1 | ⟨c1, hc1, hc2⟩
+  · exact absurd h1.symm (by omega)
+  · exact no_nextrel1_blockRoot_of_e_zero Q hQ hk hmin hc2
+
+/-- ★★★★★★★★★★ ⟹ **`hasParent` の形**（`i ≥ 1` ならブロック根は孤児）。
+⟹ ★ ⟹ **`snoc_orphan_W` にそのまま渡せます**。 -/
+theorem no_hasParent_blockRoot_of_e_zero (Q : TrioSeq) {d n k i : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n) (hi : 0 < i)
+    (hmin : ∀ r, r < Q.length → entry Q 1 0 ≤ entry Q 1 r) :
+    ¬ hasParent (mTower Q d 0 n) i (k * Q.length) := by
+  rintro ⟨y, hy, -⟩
+  unfold nextR at hy
+  rw [if_neg (by omega)] at hy
+  split_ifs at hy with h1
+  · exact no_nextrel1_blockRoot_of_e_zero Q hQ hk hmin hy
+  · exact no_nextrel2_blockRoot_of_e_zero Q hQ hk hmin hy
+
 end H12H2
 end TRIO
