@@ -7944,5 +7944,50 @@ theorem blocker_of_residual_last (Q : TrioSeq) {d e n k k' p : ℕ}
   blocker_of_large_k Q hk hk' hp (by omega) hinp
     (orphan_last_not_in_cone_le hr0 hQ2 hs horph) he hbig
 
+
+/-! ## 122. ★★★★★★★★ (W70 続き): **`n = 1` の可換性は無料です**
+
+`oper M 1 = M.dropLast`（親があるとき、`k = 0` なので持ち上げ 0）。
+⟹ ★ ですから **`n = 1` の可換性 ＝ `Lift1 (X.dropLast) d = (Lift1 X d).dropLast`**。
+⟹ ⟹ ★★★★★ そして **`Wset.le1_take` が「錐は `take` で変わらない」を無料でくれます**。 -/
+
+open Classical in
+/-- ★★★★★★★★ **`Lift1` は `dropLast` と可換**（＝ `n = 1` の可換性）。
+⟹ ★ 鍵は **`Wset.le1_take`**（錐は `take` で変わらない、前提は `b < l` だけ）。 -/
+theorem Lift1_dropLast (X : TrioSeq) (d : ℕ) :
+    Lift1 X.dropLast d = (Lift1 X d).dropLast := by
+  have hlen : X.dropLast.length = X.length - 1 := by simp
+  have hL : (Lift1 X d).length = X.length := Lift1_length X d
+  apply List.ext_getElem
+  · rw [Lift1_length, hlen, List.length_dropLast, hL]
+  · intro i h1 h2
+    have hi : i < X.length - 1 := by
+      rw [Lift1_length, hlen] at h1; exact h1
+    have hiX : i < X.length := by omega
+    have e0 : ∀ r, entry X.dropLast r i = entry X r i := by
+      intro r
+      rw [List.dropLast_eq_take]
+      exact Wset.entry_take (by omega)
+    have hc : le1 X.dropLast 0 i ↔ le1 X 0 i := by
+      rw [List.dropLast_eq_take]
+      exact Wset.le1_take (by omega) (by omega)
+    have hlhs : (Lift1 X.dropLast d)[i]
+        = (entry X.dropLast 0 i, entry X.dropLast 1 i
+            + (if le1 X.dropLast 0 i then d else 0), entry X.dropLast 2 i) := by
+      have h := Lift1_getD (X := X.dropLast) (d := d) (i := i) (by omega)
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1] at h
+      exact h
+    have hrhs : (Lift1 X d).dropLast[i]
+        = (entry X 0 i, entry X 1 i + (if le1 X 0 i then d else 0), entry X 2 i) := by
+      rw [List.getElem_dropLast]
+      have h := Lift1_getD (X := X) (d := d) (i := i) hiX
+      rw [List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem (show i < (Lift1 X d).length by rw [hL]; omega)] at h
+      exact h
+    rw [hlhs, hrhs, e0 0, e0 1, e0 2]
+    by_cases hcc : le1 X 0 i
+    · rw [if_pos (hc.mpr hcc), if_pos hcc]
+    · rw [if_neg (fun hx => hcc (hc.mp hx)), if_neg hcc]
+
 end H12H2
 end TRIO
