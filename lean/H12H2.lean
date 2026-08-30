@@ -6158,5 +6158,58 @@ theorem lev_eq_zero_of_srow0 {M : TrioSeq} {x : ℕ} (hx : srow M x = 0) : lev M
   have h2 : entry M 2 x = 0 := by unfold srow at hx; split_ifs at hx; omega
   unfold lev; omega
 
+
+/-! ## 89. ★★★★★★ (W51): **孤児でも `srow` は下がりません**
+
+`srow` は **`j` の行 1・行 2 の値だけ**の関数です。⟹ ⛔ **孤児かどうか（＝ 関係の話）は入りません**。
+⟹ ★ そして **`j ≥ 1` なら `srow(T の末尾) = srow Q j`**（持ち上げは行 1 を 0 から起こせない）。
+⟹ ⟹ ⛔ ですから **`rankDE` で吸収できません**。⟹ ★★ **そこが本当の残差**です。 -/
+
+/-- ★★★ `hr0` の下では、**`j ≥ 1` の列は必ず行 0 の親を持つ**（根が祖先なので）。
+⟹ ★ ⟹ **`srow = 0` の列は（`j ≥ 1` では）孤児になれません**。 -/
+theorem hasParent0_of_hr0 {Q : TrioSeq} {j : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j) : hasParent Q 0 j := by
+  have hle : le0 Q 0 j :=
+    le0_root_of_shallow (by omega) (fun x hx hxl => hr0 x (by omega) hxl) j hj0 hj
+  obtain ⟨-, -, hrt⟩ := hle
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+  · omega
+  · exact ⟨c, by simpa [nextR] using hc2,
+      fun y hy => nextrel0_src_unique (by simpa [nextR] using hy) hc2⟩
+
+open Classical in
+/-- ★★★★★★ **(W51)**: `j ≥ 1` なら **`srow`（`T` の末尾）＝ `srow Q j`**。
+⟹ ⛔ **持ち上げ `e*n` は行 1 を 0 から起こせません**（`le1 Q 0 j` は `entry Q 1 j > 0` を含意）。 -/
+theorem srow_prefixTake_last (A Q : TrioSeq) {d e n j : ℕ} (hj : j < Q.length) (hj0 : 0 < j) :
+    srow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+      = srow Q j := by
+  have hTlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
+    rw [List.length_take, Lift1_length, shiftr01_length]; omega
+  have hlen : (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1
+      = (A ++ mTower Q d e n).length + j := by
+    rw [List.length_append, hTlen]; omega
+  rw [hlen]
+  have h2 := entry2_prefixTake A Q (d := d) (e := e) (n := n) (j := j) (i := j) (by omega)
+  have h1 := entry1_prefixTake A Q (d := d) (e := e) (n := n) hj (i := j) (by omega)
+  have hlift : (0 < entry Q 1 j + (if le1 Q 0 j then e * n else 0)) ↔ (0 < entry Q 1 j) := by
+    constructor
+    · intro hpos
+      by_contra hz
+      have hzj : entry Q 1 j = 0 := by omega
+      by_cases hc : le1 Q 0 j
+      · exact absurd (entry1_lt_of_le1_ne hc (by omega)) (by omega)
+      · rw [if_neg hc] at hpos; omega
+    · intro hpos; omega
+  unfold srow
+  rw [h1, h2]
+  by_cases hq2 : 0 < entry Q 2 j
+  · rw [if_pos hq2, if_pos hq2]
+  · rw [if_neg hq2, if_neg hq2]
+    by_cases hq1 : 0 < entry Q 1 j
+    · rw [if_pos (hlift.mpr hq1), if_pos hq1]
+    · rw [if_neg (fun hx => hq1 (hlift.mp hx)), if_neg hq1]
+
 end H12H2
 end TRIO
