@@ -1348,8 +1348,12 @@ theorem prefixCopies_split {u n : ℕ} {A Q : TrioSeq} (hA : A ∈ W u) (hQ : Q 
 の 1 か所だけで、**段 `m` は常に `2*v+z`（＝ その cons の `lev` 根）**である。
 ⟹ `LiftTie` の `∀ m` は使われていない。**`m = 2v+z` の場合だけで足りる。**
 
-`X ∈ W m` から `X ∈ W (lev X 0)` は**出ない**（`W_mono` は逆向き）ので、
-これは真の弱化である。 -/
+⚠⚠ **2026-08-30 訂正（L3）。ここには「`X ∈ W m` から `X ∈ W (lev X 0)` は出ない
+（`W_mono` は逆向き）ので、これは真の弱化である」と書かれていたが、これは誤りである。**
+**`Wset.W_root_stage`（`Wset.lean:2304`）がまさにその向きを証明している**ので、
+自己段への制限は**弱化ではなく同値**であり、債務は 1 ミリも減っていない。
+R2 が `lean/R2LT.lean` で `liftTie_iff_liftTieSelf : L53.LiftTie ↔ L105.LiftTieSelf`
+として型でも確定させた。⟹ **`LiftTieSelf` は `LiftTie` と同じ重さである。** -/
 
 /-- **`LiftTie` の自己段版**（`m = 2v+z` に固定）。 -/
 def LiftTieSelf : Prop :=
