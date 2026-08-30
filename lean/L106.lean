@@ -5833,5 +5833,57 @@ theorem hlocQ_wnd_of_witnesses {P B : TrioSeq} {j p : ℕ}
 
 ⚠ **教訓 14**: §239.2 は**受け皿**です。**証人の存在は仮定しています。** -/
 
+/-! ### 239.4 ★★★★★ **`t = 1` は「1 つの不等式」と同値**です（証人は根しかありません）
+
+§239.3 で「`t = 1` の証人が窓の根に取れるか」が最後の 1 点だと書きました。
+**⟹ ★ 実は **`t = 1` では証人の候補が根しかありません**（`y < 1` ⟹ `y = 0`）。**
+**⟹ ⟹ ★★ ですから **同値**です。⟹ 測る前に**形が決まります**。** -/
+
+open Classical in
+theorem hlocQ_first_column_iff {V : TrioSeq} (hV : 1 < V.length)
+    (hr0V : ∀ l, 0 < l → l < V.length → entry V 0 0 < entry V 0 l) :
+    (∃ y, y < 1 ∧ le0 V y 1 ∧ entry V 1 y < entry V 1 1 ∧ (le1 V 0 y → le1 V 0 1))
+      ↔ entry V 1 0 < entry V 1 1 := by
+  constructor
+  · rintro ⟨y, hy, -, hlt, -⟩
+    have : y = 0 := by omega
+    subst this
+    exact hlt
+  · intro hlt
+    have hn0 : nextrel0 V 0 1 := by
+      refine ⟨by omega, by omega, by omega, hr0V 1 (by omega) hV, ?_⟩
+      intro j hj
+      omega
+    have hle0 : le0 V 0 1 := ⟨by omega, by omega, Relation.ReflTransGen.single hn0⟩
+    have hn1 : nextrel1 V 0 1 := by
+      refine ⟨by omega, by omega, by omega, hlt, hle0, ?_⟩
+      intro j hj
+      have hjle : j ≤ 1 := rtg0_le hj.2.2.2
+      have : j = 1 := by omega
+      subst this
+      omega
+    exact ⟨0, by omega, hle0, hlt,
+      fun _ => ⟨by omega, by omega, Relation.ReflTransGen.single hn1⟩⟩
+
+/-! ### 239.5 ⟹ ★★★★ **`hlocQ` の遺伝が「2 つの不等式」に決まりました**
+
+    **`t = 1`** … ★ **`entry V 1 0 < entry V 1 1`**（同値、上）
+         ⟹ ★ 証人は**根しかない**ので、これが**必要十分**です
+    **`t ≥ 2`** … ★ R2 の (ADJ)（距離 ≤ 2）で**証人は窓の中** ⟹ §239.2 の受け皿で移ります
+
+**⟹ ★★★ ですから **(P1) の残りは `entry V 1 0 < entry V 1 1` 1 本**です。**
+
+⚠ **そして `V` の第 1 列は「バッドルートの**次**の列」です。**
+**⟹ ★ 核の形（型 B）では `V = [(x0,a,0),(x1,0,0),(x2,b,0)]` ⟹ `entry V 1 0 = a`、`entry V 1 1 = 0`**
+**⟹ ⟹ ⛔ **`a < 0` は偽** ⟹ **型 B は `t = 1` で `hlocQ` を破ります**。**
+
+**⟹ ★★ ですが `t = 1` の列は `srow` が 0（行 1 も行 2 も 0）なので、
+`hlocQ` の行 1 の条件は **前件が偽**（`0 < entry V 1 1` が偽）⟹ **空虚に真** ✅**
+
+**⟹ ⟹ ★★★ ですから **型 B は `hlocQ` を破りません**。⟹ §236 の読みと一致します。**
+
+⚠ **教訓 14**: 上は**同値**の証明です。**遺伝そのものは、`t = 1` の不等式が
+窓ごとに成り立つかにかかっています。⟹ R2 の (ADJ'-d) が**それ**です。** -/
+
 end L106
 end TRIO
