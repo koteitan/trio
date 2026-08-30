@@ -5927,5 +5927,123 @@ theorem wnd_first_two_entry1 {P B : TrioSeq} {j p : ℕ} (hpj : p < j)
 ⚠ **教訓 14**: 上の表は **H12 の 4 通りの表と同じもの**です。
 **⟹ ★ 「同じブロックの中だから消える」は**十分ではありません**。⟹ ⟹ 錐のクラスが要ります。** -/
 
+/-! ## 240. ★★★★★ `hlocQ` の**行 2 の成分**を「祖先の存在」に書き換えます
+
+team-lead の (COMP-a): 行 2 の成分は **66.8% / 64.7%**、行 1 より **25 ポイント悪い**。
+**⟹ ★ そして team-lead の観察「行 2 の破れも定義から孤児」は**正しい**——それを定理にします。**
+
+`z < 2` の断片では `entry M 2 j ≤ 1` なので、`0 < entry M 2 j` は `entry M 2 j = 1`。
+**⟹ ★ すると `nextrel2` の始点は `entry M 2 y = 0` に限られ、最小性は
+「`y` と `j` の間の `le1` 祖先はすべて行 2 = 1」に化けます。**
+**⟹ ⟹ ★★★ ですから **親 = 「行 2 が 0 である最大の `le1` 祖先」**——一意性まで込みで同値です。** -/
+
+/-- **最大の証人**を取り出す道具（下向きの整列）。 -/
+theorem exists_max_below {j : ℕ} (P : ℕ → Prop) [DecidablePred P] (h : ∃ y, y < j ∧ P y) :
+    ∃ y, y < j ∧ P y ∧ ∀ z, y < z → z < j → ¬ P z := by
+  obtain ⟨y0, hy0, hPy0⟩ := h
+  have hex : ∃ k, k < j ∧ P (j - 1 - k) := by
+    refine ⟨j - 1 - y0, by omega, ?_⟩
+    rw [show j - 1 - (j - 1 - y0) = y0 from by omega]; exact hPy0
+  classical
+  set k0 := Nat.find hex with hk0
+  obtain ⟨hk0j, hk0P⟩ := Nat.find_spec hex
+  refine ⟨j - 1 - k0, by omega, hk0P, ?_⟩
+  intro z hz hzj hPz
+  have hlt : j - 1 - z < k0 := by omega
+  exact (Nat.find_min hex hlt) ⟨by omega, by rw [show j - 1 - (j - 1 - z) = z from by omega]; exact hPz⟩
+
+open Classical in
+/-- ★★★★★ **`z < 2` では「行 2 の親を持つ」＝「行 2 が 0 の `le1` 祖先がある」**。
+
+**⟹ ★ 一意性まで込みの**同値**です。⟹ ⟹ `hasParent` の存在＋一意性を、
+`le1` 祖先の**存在だけ**に落とします。** -/
+theorem hasParent_two_iff_of_z1 {M : TrioSeq} {j : ℕ} (hj : j < M.length)
+    (hz1 : ∀ q, q < M.length → entry M 2 q ≤ 1) (hpos : 0 < entry M 2 j) :
+    hasParent M 2 j ↔ ∃ y, y < j ∧ le1 M y j ∧ entry M 2 y = 0 := by
+  have hj1 : entry M 2 j = 1 := by have := hz1 j hj; omega
+  constructor
+  · rintro ⟨y, hy, -⟩
+    unfold nextR at hy
+    rw [if_neg (by omega), if_neg (by omega)] at hy
+    exact ⟨y, hy.2.2.1, hy.2.2.2.2.1, by have := hy.2.2.2.1; omega⟩
+  · intro hex
+    obtain ⟨y, hyj, ⟨hle1, hz⟩, hmax⟩ :=
+      exists_max_below (j := j) (fun y => le1 M y j ∧ entry M 2 y = 0)
+        (by obtain ⟨y, h1, h2, h3⟩ := hex; exact ⟨y, h1, h2, h3⟩)
+    have hnry : nextrel2 M y j := by
+      refine ⟨hle1.1, hj, hyj, by omega, hle1, ?_⟩
+      intro q ⟨hq1, hq2⟩
+      rcases Nat.lt_or_ge q j with hqj | hqj
+      · have hne := hmax q hq1 hqj
+        have hq0 : entry M 2 q ≠ 0 := fun h => hne ⟨hq2, h⟩
+        have := hz1 q hq2.1
+        omega
+      · have hle := le1_le' hq2
+        rw [show q = j from by omega]
+    -- `y` が最大なので最小性が立つ
+    refine ⟨y, hnry, ?_⟩
+    intro y' hy'
+    unfold nextR at hy'
+    rw [if_neg (by omega), if_neg (by omega)] at hy'
+    by_contra hne
+    have hy'z : entry M 2 y' = 0 := by have := hy'.2.2.2.1; omega
+    have hy'j : y' < j := hy'.2.2.1
+    rcases Nat.lt_or_ge y' y with hlt | hge
+    · -- `y'` の最小性を `y` に当てる ⟹ `entry M 2 j ≤ entry M 2 y = 0`
+      have := hy'.2.2.2.2.2 y ⟨hlt, hle1⟩
+      omega
+    · exact hmax y' (by omega) hy'j ⟨hy'.2.2.2.2.1, hy'z⟩
+
+/-! ### 240.1 ★★★★★ ⟹ **行 2 の成分は「錐の中」では無料**です
+
+§240 で「親を持つ ＝ 行 2 が 0 の `le1` 祖先がある」に落ちました。
+**⟹ ★★★ そして `hz0`（`entry Q 2 0 = 0`）は **根の行 2 が 0** と言っています。**
+**⟹ ⟹ ★★★★★ ですから **`j` が錐の中（`le1 Q 0 j`）なら、根そのものが証人**です。**
+
+**⟹ ⟹ ⟹ ★★ つまり **`hlocQ` の行 2 の成分は「錐の外の列」でしか中身がありません**。** -/
+
+theorem hlocQ_row2_of_cone {M : TrioSeq} {j : ℕ} (hj : j < M.length) (hj0 : 0 < j)
+    (hz1 : ∀ q, q < M.length → entry M 2 q ≤ 1) (hz0 : entry M 2 0 = 0)
+    (hcone : le1 M 0 j) (hpos : 0 < entry M 2 j) : hasParent M 2 j :=
+  (hasParent_two_iff_of_z1 hj hz1 hpos).mpr ⟨0, hj0, hcone, hz0⟩
+
+/-- ⟹ ★ 対偶: **行 2 の成分が破れる列は必ず錐の外**（`hz0` ＋ `hz1` の下で）。 -/
+theorem not_le1_zero_of_row2_break {M : TrioSeq} {j : ℕ} (hj : j < M.length) (hj0 : 0 < j)
+    (hz1 : ∀ q, q < M.length → entry M 2 q ≤ 1) (hz0 : entry M 2 0 = 0)
+    (hpos : 0 < entry M 2 j) (hnp : ¬ hasParent M 2 j) : ¬ le1 M 0 j :=
+  fun hc => hnp (hlocQ_row2_of_cone hj hj0 hz1 hz0 hc hpos)
+
+/-! ### 240.2 ⟹ ★★★★ **`Q.take (j+1)` 版**（`hlocQ` が要求する形そのもの）
+
+`hlocQ` の行 2 の成分は `hasParent (Q.take (j+1)) 2 j` です。
+**⟹ ★ `Q.take (j+1)` の根は `Q` の根なので `hz0` がそのまま効きます。** -/
+
+theorem hlocQ_row2_take_of_cone {Q : TrioSeq} {j : ℕ} (hj : j < Q.length) (hj0 : 0 < j)
+    (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1) (hz0 : entry Q 2 0 = 0)
+    (hcone : le1 (Q.take (j + 1)) 0 j) (hpos : 0 < entry Q 2 j) :
+    hasParent (Q.take (j + 1)) 2 j := by
+  have hlen : (Q.take (j + 1)).length = j + 1 := by
+    rw [List.length_take]; omega
+  refine hlocQ_row2_of_cone (by omega) hj0 ?_ ?_ hcone ?_
+  · intro q hq
+    rw [hlen] at hq
+    rw [Wset.entry_take (show q < j + 1 by omega)]
+    exact hz1 q (by omega)
+  · rw [Wset.entry_take (show 0 < j + 1 by omega)]; exact hz0
+  · rw [Wset.entry_take (show j < j + 1 by omega)]; exact hpos
+
+/-! ### 240.3 ⟹ ★★ **残差の形**（(ROW2) への注文）
+
+**⟹ ★ ですから (COMP-a) の 66.8% の破れは、**すべて次の形**のはずです:**
+
+    `entry Q 2 j = 1` ∧ **`¬ le1 (Q.take (j+1)) 0 j`（錐の外）**
+      ∧ `j` の `le1` 祖先が**すべて行 2 = 1**
+
+**⟹ ⚠ **教訓 27**: R2 には**分母**（`entry Q 2 j = 1` かつ錐の外である列の数）も
+一緒に測ってもらってください。⟹ **「0 件」なら分母が 0 かもしれません**。**
+
+⚠ そして **これは `hz0` を使っています**。`hz0` は `TowerP''` の中にあり、
+**遺伝は §213 で緑**なので、循環はありません。 -/
+
 end L106
 end TRIO
