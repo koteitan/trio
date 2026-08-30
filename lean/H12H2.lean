@@ -6363,5 +6363,60 @@ theorem nextrel0_blockRoot_src_lt_prefix {A Q : TrioSeq} {e n k c : ℕ}
     c < A.length :=
   nextrel0_src_lt_prefix_of_root_height hQmin hk hQ rfl h
 
+
+/-! ## 94. ★★★★★★★★ (W54): **行 2 ≡ 0 の `PrefixCopiesOpen` は、既に緑でした**
+
+`zeroRow2_mem_Wself`（`Wtower2:3011`）は **2 行プロジェクト `YAPSS.Wset.mem_W_maxr1` を借りて**、
+**行 2 ≡ 0 の列は無条件で `Wself`** と言います。⟹ ★★★★★ **前提が一切要りません**。
+⟹ ⟹ ★★★ そして私の §306 `prefix_mem_of_zeroRow2` が **`A ++ T`（`T` は任意）**を出します。
+⟹ ⟹ ⟹ ★★★★★★★★ **`PrefixCopiesOpen` の行 2 ≡ 0 版は、その系（1 行）**です。 -/
+
+/-- `zeroRow2` は `entry` の言葉でも（範囲外も含めて）成り立ちます。 -/
+theorem entry2_eq_zero_of_zeroRow2 {M : TrioSeq} (h : ∀ p ∈ M, p.2.2 = 0) (i : ℕ) :
+    entry M 2 i = 0 := by
+  show (M.getD i (0, 0, 0)).2.2 = 0
+  rw [List.getD_eq_getElem?_getD]
+  rcases Nat.lt_or_ge i M.length with hi | hi
+  · rw [List.getElem?_eq_getElem hi]; exact h _ (List.getElem_mem hi)
+  · rw [List.getElem?_eq_none (by omega)]; simp
+
+/-- 写しの列も行 2 ≡ 0。 -/
+theorem zeroRow2_flatMap {Q : TrioSeq} {n : ℕ} (hz : ∀ p ∈ Q, p.2.2 = 0) :
+    ∀ p ∈ ((List.range n).flatMap fun _ => Q), p.2.2 = 0 := by
+  intro p hp
+  rw [List.mem_flatMap] at hp
+  obtain ⟨-, -, hk⟩ := hp
+  exact hz p hk
+
+/-- ★★★★★ **塔も行 2 ≡ 0**（`Lift1` も `shiftr01` も行 2 を動かしません）。 -/
+theorem zeroRow2_mTower {Q : TrioSeq} {d e n : ℕ} (hz : ∀ p ∈ Q, p.2.2 = 0) :
+    ∀ p ∈ mTower Q d e n, p.2.2 = 0 := by
+  intro p hp
+  unfold mTower at hp
+  rw [List.mem_flatMap] at hp
+  obtain ⟨k, -, hk⟩ := hp
+  unfold Lift1 at hk
+  rw [List.mem_map] at hk
+  obtain ⟨i, -, rfl⟩ := hk
+  show entry (shiftr01 (d * k) 0 Q) 2 i = 0
+  rw [entry2_shiftr01]
+  exact entry2_eq_zero_of_zeroRow2 hz i
+
+/-- ★★★★★★★★ **(W54)**: **行 2 ≡ 0 の `PrefixCopiesOpen` は真**（`A ∈ W u` だけで出ます）。
+⟹ ★ **`Q ∈ W u` も、`Q` の根の条件も、`n` も要りません**。 -/
+theorem prefixCopiesOpen_of_zeroRow2 {u n : ℕ} {A Q : TrioSeq}
+    (hzA : ∀ p ∈ A, p.2.2 = 0) (hzQ : ∀ p ∈ Q, p.2.2 = 0)
+    (hA : A ∈ W u) (hopen : ∃ q ∈ A, q.1 < entry Q 0 0) :
+    A ++ ((List.range n).flatMap fun _ => Q) ∈ W u := by
+  obtain ⟨q, hq, -⟩ := hopen
+  exact prefix_mem_of_zeroRow2 hzA (zeroRow2_flatMap hzQ) hA (by rintro rfl; simp at hq)
+
+/-- ★★★★★★★★ ⟹ **一般の塔でも同じ**（`d`, `e` は何でもよい）。
+⟹ ★ ⟹ **行 2 ≡ 0 の断片では、塔閉包が完全に無料**です。 -/
+theorem prefix_mTower_of_zeroRow2 {u : ℕ} {A Q : TrioSeq} {d e n : ℕ}
+    (hzA : ∀ p ∈ A, p.2.2 = 0) (hzQ : ∀ p ∈ Q, p.2.2 = 0)
+    (hA : A ∈ W u) (hAne : A ≠ []) : A ++ mTower Q d e n ∈ W u :=
+  prefix_mem_of_zeroRow2 hzA (zeroRow2_mTower hzQ) hA hAne
+
 end H12H2
 end TRIO
