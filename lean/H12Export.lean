@@ -5878,5 +5878,57 @@ theorem nextrel1_mTower_src_ge_blockRoot (Q : TrioSeq)
     entry1_mTower_block_formula Q hk (by omega), if_pos hcone, if_pos hroot] at hmin
   omega
 
+
+/-- ★★★★★ **末尾の行 0 は正**（`hr0` ∧ `|Q| ≥ 2` ∧ `0 < n`）⟹ **全零テストを外せます**。 -/
+theorem entry0_mTower_last_pos {Q : TrioSeq} {d e n : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hQ2 : 2 ≤ Q.length) (hn : 0 < n) :
+    0 < entry (mTower Q d e n) 0 ((mTower Q d e n).length - 1) := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hidx : (mTower Q d e n).length - 1 = (n - 1) * Q.length + (Q.length - 1) := by
+    have h2 : (n - 1) * Q.length + Q.length = n * Q.length := by
+      obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+      simp [Nat.succ_mul]
+    omega
+  rw [hidx, entry0_mTower_block' Q (by omega) (by omega)]
+  have := hr0 (Q.length - 1) (by omega) (by omega)
+  omega
+
+/-- ★★★★★★★★★★ **(W75') の芯**: **塔の末尾が孤児 ⟹ `oper` は `dropLast`**。 -/
+theorem oper_mTower_eq_dropLast {Q : TrioSeq} {d e n m : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hQ2 : 2 ≤ Q.length) (hn : 0 < n)
+    (hnp : ¬ hasParent (mTower Q d e n) (srow (mTower Q d e n) ((mTower Q d e n).length - 1))
+      ((mTower Q d e n).length - 1)) :
+    (mTower Q d e n)⟦m⟧ = (mTower Q d e n).dropLast := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hnQ : 2 ≤ n * Q.length := by
+    have : 1 * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have hL : (mTower Q d e n).length - 1 ≠ 0 := by omega
+  have hz : ¬ (entry (mTower Q d e n) 0 ((mTower Q d e n).length - 1) = 0 ∧
+      entry (mTower Q d e n) 1 ((mTower Q d e n).length - 1) = 0 ∧
+      entry (mTower Q d e n) 2 ((mTower Q d e n).length - 1) = 0) := by
+    intro hc
+    have := entry0_mTower_last_pos hr0 hQ2 hn (d := d) (e := e)
+    omega
+  rw [oper_eq_pred_of_noParent m hL hz hnp]
+  unfold Pred
+  rw [if_neg (by omega)]
+
+/-- ★★★★★★★★ ⟹ **`dropLast` は「1 段低い塔 ＋ 最後のブロックの `dropLast`」**。
+⟹ ★ ⟹ **段数が真に減る形**です。 -/
+theorem dropLast_mTower_succ (Q : TrioSeq) (d e n : ℕ) (hQ : 0 < Q.length) :
+    (mTower Q d e (n + 1)).dropLast
+      = mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).dropLast := by
+  have hne : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) ≠ [] := by
+    intro hc
+    have h : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+      rw [Lift1_length, shiftr01_length]
+    rw [hc] at h
+    simp at h
+    omega
+  rw [mTower_succ, List.dropLast_append_of_ne_nil hne]
+
 end H12Export
 end TRIO
