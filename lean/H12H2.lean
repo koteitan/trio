@@ -4890,7 +4890,7 @@ theorem coneCtrV_not_cone : ¬ le1 coneCtrV 0 1 :=
 索引を引いたら**両方ありました**（今日 9 回目の「既にありました」）:
 
     `Wset.W_take`   （`Wset:2120`）… `M ∈ W u → M.take k ∈ W u`
-    `Wtower2.W_drop`（`Wtower2:2870`）… `M ∈ W u → M.drop j ∈ W (lev M j)`
+    `W_drop`（`Wtower2:2870`）… `M ∈ W u → M.drop j ∈ W (lev M j)`
 
 ⟹ ★★ 窓は `drop` ＋ `take` なので、**合成するだけ**。
 ⟹ ⟹ ★★★ **`W u` は連続部分列で閉じています**（水準は `lev M p` に変わる）。 -/
@@ -7542,6 +7542,54 @@ theorem liftTieSelf_iff_Wself_closed :
   · intro h d v z R hR ht hX
     exact (mem_W_lift_iff_Wself v z d R).mpr
       (h d v z R hR ht ((mem_W_selfStage_iff_Wself v z R).mp hX))
+
+
+/-! ## 112. ★★★★★★★★★★ (W65): **タイの列の `lev` は根以下 —— ですが再結合で詰まります**
+
+タイの列 `j`（`entry M 1 j = entry M 1 0`）の `lev` は **`2v + entry M 2 j`**。
+⟹ ★ **根の `lev` は `2v + z`** ⟹ ⟹ ★★ **行 2 が `z` 以下なら、タイの列の `lev` は根以下**。
+⟹ ★★★★★ そして **持ち上げ後は必ず真に小さい**（根だけ `+2d` されるので）。
+⟹ ⛔ **ですが「接頭辞と再結合する」ところで `W_add`（`rsum`）に戻ります**。 -/
+
+/-- タイの列の `lev`。 -/
+theorem lev_tie_eq {M : TrioSeq} {j : ℕ} (h : entry M 1 j = entry M 1 0) :
+    lev M j = 2 * entry M 1 0 + entry M 2 j := by unfold lev; rw [h]
+
+/-- ★★★★★ **行 2 が根以下なら、タイの列の `lev` は根以下**。 -/
+theorem lev_tie_le_root {M : TrioSeq} {j : ℕ} (h : entry M 1 j = entry M 1 0)
+    (hz : entry M 2 j ≤ entry M 2 0) : lev M j ≤ lev M 0 := by
+  rw [lev_tie_eq h]; unfold lev; omega
+
+/-- ★★★★★★★★ ⟹ **タイの列から後ろは、同じ `W u` に入ります**。 -/
+theorem tie_drop_mem_W {u : ℕ} {M : TrioSeq} {j : ℕ} (hM : M ∈ W u)
+    (h : entry M 1 j = entry M 1 0) (hz : entry M 2 j ≤ entry M 2 0) :
+    M.drop j ∈ W u :=
+  W_mono (le_trans (lev_tie_le_root h hz) ((mem_Wself_iff u M).mp hM).2)
+    (W_drop hM j)
+
+open Classical in
+/-- ★★★★★★★★★★ **持ち上げ後、タイの列の `lev` は根より真に小さい**（`0 < d`）。
+⟹ ★ ⟹ **帳簿を付け替える余地はあります**。 -/
+theorem lev_tie_lt_root_after_lift {M : TrioSeq} {d j : ℕ} (h0 : 0 < M.length)
+    (hj : j < M.length) (hj0 : 0 < j) (h : entry M 1 j = entry M 1 0)
+    (hz : entry M 2 j ≤ 1) (hd : 0 < d) :
+    lev (Lift1 M d) j < lev (Lift1 M d) 0 := by
+  have h1 : entry (Lift1 M d) 1 j = entry M 1 j := entry1_Lift1_of_tie hj hj0 h
+  have h1r : entry (Lift1 M d) 1 0 = entry M 1 0 + d := entry1_Lift1_root h0
+  have h2 : entry (Lift1 M d) 2 j = entry M 2 j := entry2_Lift1 _ _ _
+  have h2r : entry (Lift1 M d) 2 0 = entry M 2 0 := entry2_Lift1 _ _ _
+  unfold lev
+  rw [h1, h1r, h2, h2r, h]
+  omega
+
+/-- ★★★★★★★★ ⟹ **持ち上げ後も、タイの列から後ろは元の段に収まります**。
+⟹ ⛔ **詰まるのはここから先**（接頭辞との再結合に `W_add`／`rsum` が要ります）。 -/
+theorem tie_drop_mem_W_after_lift {u : ℕ} {M : TrioSeq} {d j : ℕ}
+    (hL : Lift1 M d ∈ W u) (h0 : 0 < M.length) (hj : j < M.length) (hj0 : 0 < j)
+    (h : entry M 1 j = entry M 1 0) (hz : entry M 2 j ≤ 1) (hd : 0 < d) :
+    (Lift1 M d).drop j ∈ W u :=
+  W_mono (le_of_lt (lt_of_lt_of_le (lev_tie_lt_root_after_lift h0 hj hj0 h hz hd)
+    ((mem_Wself_iff u (Lift1 M d)).mp hL).2)) (W_drop hL j)
 
 end H12H2
 end TRIO

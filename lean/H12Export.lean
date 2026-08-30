@@ -5458,5 +5458,46 @@ theorem liftTieSelf_iff_Wself_closed :
     exact (mem_W_lift_iff_Wself v z d R).mpr
       (h d v z R hR ht ((mem_W_selfStage_iff_Wself v z R).mp hX))
 
+
+/-- タイの列の `lev`。 -/
+theorem lev_tie_eq {M : TrioSeq} {j : ℕ} (h : entry M 1 j = entry M 1 0) :
+    lev M j = 2 * entry M 1 0 + entry M 2 j := by unfold lev; rw [h]
+
+/-- ★★★★★ **行 2 が根以下なら、タイの列の `lev` は根以下**。 -/
+theorem lev_tie_le_root {M : TrioSeq} {j : ℕ} (h : entry M 1 j = entry M 1 0)
+    (hz : entry M 2 j ≤ entry M 2 0) : lev M j ≤ lev M 0 := by
+  rw [lev_tie_eq h]; unfold lev; omega
+
+/-- ★★★★★★★★ ⟹ **タイの列から後ろは、同じ `W u` に入ります**。 -/
+theorem tie_drop_mem_W {u : ℕ} {M : TrioSeq} {j : ℕ} (hM : M ∈ W u)
+    (h : entry M 1 j = entry M 1 0) (hz : entry M 2 j ≤ entry M 2 0) :
+    M.drop j ∈ W u :=
+  W_mono (le_trans (lev_tie_le_root h hz) ((mem_Wself_iff u M).mp hM).2)
+    (W_drop hM j)
+
+open Classical in
+/-- ★★★★★★★★★★ **持ち上げ後、タイの列の `lev` は根より真に小さい**（`0 < d`）。
+⟹ ★ ⟹ **帳簿を付け替える余地はあります**。 -/
+theorem lev_tie_lt_root_after_lift {M : TrioSeq} {d j : ℕ} (h0 : 0 < M.length)
+    (hj : j < M.length) (hj0 : 0 < j) (h : entry M 1 j = entry M 1 0)
+    (hz : entry M 2 j ≤ 1) (hd : 0 < d) :
+    lev (Lift1 M d) j < lev (Lift1 M d) 0 := by
+  have h1 : entry (Lift1 M d) 1 j = entry M 1 j := entry1_Lift1_of_tie hj hj0 h
+  have h1r : entry (Lift1 M d) 1 0 = entry M 1 0 + d := entry1_Lift1_root h0
+  have h2 : entry (Lift1 M d) 2 j = entry M 2 j := entry2_Lift1 _ _ _
+  have h2r : entry (Lift1 M d) 2 0 = entry M 2 0 := entry2_Lift1 _ _ _
+  unfold lev
+  rw [h1, h1r, h2, h2r, h]
+  omega
+
+/-- ★★★★★★★★ ⟹ **持ち上げ後も、タイの列から後ろは元の段に収まります**。
+⟹ ⛔ **詰まるのはここから先**（接頭辞との再結合に `W_add`／`rsum` が要ります）。 -/
+theorem tie_drop_mem_W_after_lift {u : ℕ} {M : TrioSeq} {d j : ℕ}
+    (hL : Lift1 M d ∈ W u) (h0 : 0 < M.length) (hj : j < M.length) (hj0 : 0 < j)
+    (h : entry M 1 j = entry M 1 0) (hz : entry M 2 j ≤ 1) (hd : 0 < d) :
+    (Lift1 M d).drop j ∈ W u :=
+  W_mono (le_of_lt (lt_of_lt_of_le (lev_tie_lt_root_after_lift h0 hj hj0 h hz hd)
+    ((mem_Wself_iff u (Lift1 M d)).mp hL).2)) (W_drop hL j)
+
 end H12Export
 end TRIO
