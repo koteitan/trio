@@ -8697,5 +8697,47 @@ theorem nextrel1_blockRoot_src_ge_prev (Q : TrioSeq) {d e n c : ℕ}
     subst hm; simp [Nat.mul_succ]; omega
   omega
 
+
+/-! ## 134. ★★★★★★★★★★ (W82): **`j > 0` の `srow ≥ 1`** —— (W56) の接頭辞なし版
+
+`prefix_mTower_nextrel1_src_ge`（(W56)）を **`A = []`** で使うと、そのまま出ます。
+⟹ ★ **仮定は「`j` が `Q` の中で行 1 の親を持つ」だけ**（`d`, `e` は何でもよい）。
+⟹ ⛔ **`j` が `Q` の中で行 1 の孤児のときだけ、越境の可能性が残ります**（(W56) の穴と同じ）。 -/
+
+/-- ★★★★★★★★★★ **(W82) 行 1**: 証人があれば、**塔の行 1 の親は同じブロックの中**。 -/
+theorem nextrel1_mTower_src_ge_block_of_witness (Q : TrioSeq) {d e n k j y c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hy : nextrel1 Q y j)
+    (h : nextrel1 (mTower Q d e n) c (k * Q.length + j)) :
+    k * Q.length ≤ c := by
+  have h' : nextrel1 ([] ++ mTower Q d e n) c (([] : TrioSeq).length + (k * Q.length + j)) := by
+    simpa using h
+  have := prefix_mTower_nextrel1_src_ge (A := []) hk hj hy h'
+  simpa using le_trans (by omega) this
+
+/-- ★★★★★★★★ **(W82) 行 2**（`e = 0`）: 証人があれば、**行 2 の親も同じブロックの中**。 -/
+theorem nextrel2_mTower_src_ge_block_of_witness (Q : TrioSeq) {d n k j y c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hy : nextrel2 Q y j)
+    (h : nextrel2 (mTower Q d 0 n) c (k * Q.length + j)) :
+    k * Q.length ≤ c := by
+  have h' : nextrel2 ([] ++ mTower Q d 0 n) c (([] : TrioSeq).length + (k * Q.length + j)) := by
+    simpa using h
+  have := prefix_mTower_nextrel2_src_ge_of_e_zero (A := []) hk hj hy h'
+  simpa using le_trans (by omega) this
+
+/-- ★★★★★★★★★★ ⟹ **まとめ（`e = 0`）**: **`Q` の中で親を持てば、塔でも同じブロックの中**。
+⟹ ★ `i` は 0, 1, 2 のどれでもよい（行 0 は (W81) が `d > 0` で覆います）。 -/
+theorem nextR_mTower_src_ge_block_of_hasParent (Q : TrioSeq) {d n k j c i : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hj0 : 0 < j) (hd : 0 < d)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hpar : hasParent Q i j)
+    (h : nextR (mTower Q d 0 n) i c (k * Q.length + j)) :
+    k * Q.length ≤ c := by
+  obtain ⟨y, hy, -⟩ := hpar
+  unfold nextR at h hy
+  split_ifs at h hy with h0 h1
+  · exact nextrel0_src_ge_blockRoot_mTower Q hd hk hj hj0 hr0 h
+  · exact nextrel1_mTower_src_ge_block_of_witness Q hk hj hy h
+  · exact nextrel2_mTower_src_ge_block_of_witness Q hk hj hy h
+
 end H12H2
 end TRIO
