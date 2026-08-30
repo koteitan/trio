@@ -1712,5 +1712,60 @@ theorem blockRoot_window_eq_iff {Q : TrioSeq} {d e n k : ℕ}
     omega
   · exact fun hpe => blockRoot_window_eq_of_root hQ1 hpe
 
+
+/-! ## 25. **R2 の骨の 1 行を Lean に** —— 行 2 はリフトされないので親になれない
+
+R2 の 6 行のうち:
+
+> **塔のブロック根どうしは、その行がリフトを受けない限り値が等しい。**
+> **`nextrel_i` は狭義不等号を要求するので、親になれるのは「リフトを受けている行」だけ。**
+> **行 0 ＝ `shiftr01 (d*k)` ⟹ `d > 0` が要る。行 1 ＝ `Lift1 (e*k)` ⟹ `e > 0` が要る。**
+> **行 2 ＝ リフトされない ⟹ 決して親になれない。**
+
+⟹ 行 2 の分は `entry2_mTower_blockRoot`（§20）から直に出る。 -/
+
+/-- ★ **ブロック根どうしの行 2 は等しい**（`Lift1` も `shiftr01` も行 2 を変えない）。 -/
+theorem entry2_blockRoots_eq (Q : TrioSeq) (d e n k m : ℕ)
+    (hQ1 : 0 < Q.length) (hk : k < n) (hm : m < n) :
+    entry (mTower Q d e n) 2 (k * Q.length)
+      = entry (mTower Q d e n) 2 (m * Q.length) := by
+  rw [entry2_mTower_blockRoot Q d e n k hk hQ1,
+    entry2_mTower_blockRoot Q d e n m hm hQ1]
+
+/-- ★★ **行 2 ではブロック根はブロック根の親になれない**（狭義増加が破れる）。
+＝ R2 の「行 2 はリフトされない ⟹ 決して親になれない」。 -/
+theorem no_nextrel2_between_blockRoots {Q : TrioSeq} {d e n k m : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k < n) (hm : m < n) :
+    ¬ nextrel2 (mTower Q d e n) (k * Q.length) (m * Q.length) := by
+  intro h
+  have hlt : entry (mTower Q d e n) 2 (k * Q.length)
+      < entry (mTower Q d e n) 2 (m * Q.length) := h.2.2.2.1
+  rw [entry2_blockRoots_eq Q d e n k m hQ1 hk hm] at hlt
+  omega
+
+/-- ★ **行 1 では `e > 0` が要る**（`e = 0` ならブロック根の行 1 も等しく、親になれない）。 -/
+theorem no_nextrel1_between_blockRoots_of_e_zero {Q : TrioSeq} {d n k m : ℕ}
+    (hQne : Q ≠ []) (hk : k < n) (hm : m < n) :
+    ¬ nextrel1 (mTower Q d 0 n) (k * Q.length) (m * Q.length) := by
+  intro h
+  have hlt : entry (mTower Q d 0 n) 1 (k * Q.length)
+      < entry (mTower Q d 0 n) 1 (m * Q.length) := h.2.2.2.1
+  rw [entry1_mTower_blockRoot hQne d 0 n k hk,
+    entry1_mTower_blockRoot hQne d 0 n m hm] at hlt
+  omega
+
+/-- ★ **行 0 では `d > 0` が要る**（`d = 0` ならブロック根の行 0 も等しく、親になれない）。 -/
+theorem no_nextrel0_between_blockRoots_of_d_zero {Q : TrioSeq} {e n k m : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k < n) (hm : m < n) :
+    ¬ nextrel0 (mTower Q 0 e n) (k * Q.length) (m * Q.length) := by
+  intro h
+  have hlt : entry (mTower Q 0 e n) 0 (k * Q.length)
+      < entry (mTower Q 0 e n) 0 (m * Q.length) := h.2.2.2.1
+  have hk0 := entry0_mTower_block Q 0 e n k 0 hk hQ1
+  have hm0 := entry0_mTower_block Q 0 e n m 0 hm hQ1
+  rw [Nat.add_zero] at hk0 hm0
+  rw [hk0, hm0] at hlt
+  omega
+
 end H12H2
 end TRIO
