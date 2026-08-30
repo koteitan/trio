@@ -3874,5 +3874,27 @@ theorem blocker_out_out (Q : TrioSeq) {d e n k k' p j : ℕ}
     entry1_mTower_block_formula Q hk hp, if_neg houtp]
   omega
 
+
+open Classical in
+/-- ★★★★★★★ **表を 1 本にまとめたもの**（全 4 マス）。 -/
+theorem blocker_mTower_iff (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 j + (if le1 Q 0 j then e * k' else 0)
+          ≤ entry Q 1 p + (if le1 Q 0 p then e * k else 0) := by
+  rw [entry1_mTower_block_formula Q hk' hj, entry1_mTower_block_formula Q hk hp]
+
+/-- ★★★★★ **予算が 0 なら深さで一切変わらない**（`e = 0` または窓の根が第 0 ブロック）。
+⟹ ⛔ **`h1out` の遺伝が壊れるには `0 < e` かつ `1 ≤ k` が要る**。 -/
+theorem blocker_stable_of_budget_zero (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (hinp : le1 Q 0 p) (houtj : ¬ le1 Q 0 j) (hbudget : e * k = 0) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 j ≤ entry Q 1 p := by
+  rw [blocker_in_out Q hk hk' hp hj hinp houtj, hbudget]
+  omega
+
 end H12H2
 end TRIO
