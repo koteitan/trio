@@ -4809,5 +4809,56 @@ theorem row2pos_eq_zero_window {A Q : TrioSeq} {d e n p k : ℕ}
       (zeroRow2_append ((row2pos_eq_zero_iff A).mp hA)
         (zeroRow2_mTower ((row2pos_eq_zero_iff Q).mp hQ))))
 
+
+/-- 末尾の添字の分解。 -/
+theorem prefix_mTower_last_index (A Q : TrioSeq) (d e n : ℕ) (hQ : 0 < Q.length) (hn : 0 < n) :
+    (A ++ mTower Q d e n).length - 1
+      = A.length + ((n - 1) * Q.length + (Q.length - 1)) := by
+  have h1 : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have h2 : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    simp [Nat.succ_mul]
+  rw [List.length_append, h1]; omega
+
+/-- ★★★★★★★★ **(W61) の行 0**: `hr0 Q` ∧ `|Q| ≥ 2` なら、末尾の行 0 の親は **最後の写しの中**。
+⟹ ★ **`d`, `e` は何でもよい**。 -/
+theorem nextrel0_last_src_ge_last_block {A Q : TrioSeq} {d e n c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hQ2 : 2 ≤ Q.length) (hn : 0 < n)
+    (h : nextrel0 (A ++ mTower Q d e n) c ((A ++ mTower Q d e n).length - 1)) :
+    A.length + (n - 1) * Q.length ≤ c := by
+  rw [prefix_mTower_last_index A Q d e n (by omega) hn] at h
+  exact nextrel0_src_ge_block_of_deep (by omega) (by omega)
+    (hr0 (Q.length - 1) (by omega) (by omega)) h
+
+/-- ★★★★★★★★ **(W61) の行 1**: `Q` の末尾が `Q` の中で行 1 の親 `y` を持つなら、
+末尾の行 1 の親は **`|A| + (n−1)|Q| + y` 以降**（＝ **最後の写しの中**）。 -/
+theorem nextrel1_last_src_ge_last_block {A Q : TrioSeq} {d e n y c : ℕ}
+    (hQ : 0 < Q.length) (hn : 0 < n) (hy : nextrel1 Q y (Q.length - 1))
+    (h : nextrel1 (A ++ mTower Q d e n) c ((A ++ mTower Q d e n).length - 1)) :
+    A.length + ((n - 1) * Q.length + y) ≤ c := by
+  rw [prefix_mTower_last_index A Q d e n hQ hn] at h
+  exact prefix_mTower_nextrel1_src_ge (by omega) (by omega) hy h
+
+/-- ★★★★★ ⟹ **窓は最後の写しの中に収まります** ⟹ ★ **`|V| ≤ |Q|`**（行 0 版）。 -/
+theorem window_le_of_last_row0 {A Q : TrioSeq} {d e n c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hQ2 : 2 ≤ Q.length) (hn : 0 < n)
+    (h : nextrel0 (A ++ mTower Q d e n) c ((A ++ mTower Q d e n).length - 1)) :
+    (A ++ mTower Q d e n).length - 1 - c < Q.length := by
+  have hge := nextrel0_last_src_ge_last_block hr0 hQ2 hn h
+  rw [prefix_mTower_last_index A Q d e n (by omega) hn]
+  omega
+
+/-- ★★★★★ ⟹ **行 1 版**（証人 `y` があれば、窓は `|Q| − 1 − y` 以下）。 -/
+theorem window_le_of_last_row1 {A Q : TrioSeq} {d e n y c : ℕ}
+    (hQ : 0 < Q.length) (hn : 0 < n) (hy : nextrel1 Q y (Q.length - 1))
+    (h : nextrel1 (A ++ mTower Q d e n) c ((A ++ mTower Q d e n).length - 1)) :
+    (A ++ mTower Q d e n).length - 1 - c < Q.length := by
+  have hge := nextrel1_last_src_ge_last_block hQ hn hy h
+  have hylt : y < Q.length - 1 := hy.2.2.1
+  rw [prefix_mTower_last_index A Q d e n hQ hn]
+  omega
+
 end H12Export
 end TRIO
