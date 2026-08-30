@@ -1544,5 +1544,112 @@ theorem blockRoot_window_eq_of_root {Q : TrioSeq} {d e n k : ℕ}
   have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
   omega
 
+
+/-! ## 23. ★★★★★★★★ **接頭辞つき窓補題**（L3 の指名）
+
+L3 の `prefixTowerClosed_of_snocStepCone`（§167）は**接頭辞あり**だが `le1 Q 0 j` が残る。
+私の `window_of_outOfCone_all`（§17）は **`le1` を消す**が接頭辞なし。
+⟹ **足りないのはその接頭辞つき版 1 本。**
+
+⚠ L3 の指定した合成点（`prefixSnocStep_parent_sameBlock`）は **`hloc`（ブロック内に親）**を
+要求するが、**錐の外の列は 68.8% がブロック内で孤児**なので `hloc` は出ない。
+⟹ **別の道を使う**（索引を**型**で引いて見つけた。教訓: 名前ではなく型で引く）:
+
+    **`Column.hasParent_append_right`（`Column.lean:363`）**
+      `entry T 0 0 = 0` → `0 < entry (A ++ T) 0 (|A| + j1)` →
+      **`hasParent (A ++ T) i (|A| + j1) ↔ hasParent T i j1`**
+    **`Column.parent_append_right`（`Column.lean:384`）**
+      同じ前提 ＋ `hasParent T i j1` →
+      **`parent (A ++ T) i (|A| + j1) = |A| + parent T i j1`**
+
+⟹ **`T := mTower Q d e n ++ B.take (j+1)` と取れば、接頭辞 `A` がまるごと剥がれる。**
+⚠ `entry T 0 0 = entry Q 0 0` なので **`entry Q 0 0 = 0`（根が深さ 0）が要る**。
+　 消費側の `Q = Lift1 ((0,v,z) :: R.dropLast) t` では成り立つ。 -/
+
+/-- 塔＋途中ブロックの根の行 0 は `Q` の根の行 0。 -/
+theorem entry0_towerPrefix_root (Q : TrioSeq) (d e n j : ℕ) (hQ1 : 0 < Q.length) :
+    entry (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0
+      = entry Q 0 0 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [show mTower Q d e 0 = ([] : TrioSeq) from rfl, List.nil_append,
+      entry_take (by omega), entry0_Lift1, entry0_shiftr01 hQ1, Nat.mul_zero,
+      Nat.add_zero]
+  · have hlt : 0 < (mTower Q d e n).length := by
+      rw [mTower_length]; exact Nat.mul_pos hn hQ1
+    rw [entry_append_left _ _ hlt]
+    have := entry0_mTower_block Q d e n 0 0 hn hQ1
+    simpa using this
+
+open Classical in
+/-- ★★★★★★★★ **接頭辞つき窓補題**: 錐の外の列でも、親が居るなら
+窓は自分のブロックの中（＝ 親は `(A ++ mTower).length` 以上）。
+**`le1 Q 0 j` は不要。** -/
+theorem prefix_window_of_outOfCone_all {A M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hbase : entry M.dropLast 0 0 = 0)
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (hpar0 : hasParent (A ++ mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (srow (A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        ((A ++ mTower M.dropLast d e n).length + j))
+      ((A ++ mTower M.dropLast d e n).length + j)) :
+    (A ++ mTower M.dropLast d e n).length
+      ≤ parent (A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (srow (A ++ mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          ((A ++ mTower M.dropLast d e n).length + j))
+        ((A ++ mTower M.dropLast d e n).length + j) := by
+  set Q := M.dropLast with hQ
+  set T := mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) with hT
+  have hQ1 : 0 < Q.length := by omega
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hAT : (A ++ mTower Q d e n).length = A.length + n * Q.length := by
+    rw [List.length_append, hTlen]
+  -- ★ 結合を `A ++ (塔 ++ ブロック)` に直す
+  have hassoc : A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) = A ++ T := by
+    rw [hT, List.append_assoc]
+  have hpos' : (A ++ mTower Q d e n).length + j = A.length + (n * Q.length + j) := by
+    rw [hAT]; omega
+  -- ★ `hasParent_append_right` / `parent_append_right` の前提
+  have hroot : entry T 0 0 = 0 := by
+    rw [hT, entry0_towerPrefix_root Q d e n j hQ1]
+    exact hbase
+  have hTentry : entry T 0 (n * Q.length + j) = entry Q 0 j + d * n := by
+    rw [hT, show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen],
+      entry_append_right, entry_take (by omega), entry0_Lift1,
+      entry0_shiftr01 (by omega)]
+  have hQj : 0 < entry Q 0 j := by
+    have hjM : j < M.length := by
+      rw [hQ, List.length_dropLast] at hj; omega
+    have := hr0 j hj1 hjM
+    rw [hQ, List.dropLast_eq_take,
+      entry_take (show j < M.length - 1 by rw [hQ, List.length_dropLast] at hj; omega)]
+    omega
+  have hposA : 0 < entry (A ++ T) 0 (A.length + (n * Q.length + j)) := by
+    rw [entry_append_right, hTentry]; omega
+  -- ★ 接頭辞を剥がす
+  rw [hassoc, hpos'] at hpar0 ⊢
+  have hsrow : srow (A ++ T) (A.length + (n * Q.length + j))
+      = srow T (n * Q.length + j) := by
+    unfold srow
+    rw [entry_append_right, entry_append_right]
+  rw [hsrow] at hpar0 ⊢
+  have hpT : hasParent T (srow T (n * Q.length + j)) (n * Q.length + j) :=
+    (hasParent_append_right A T hroot hposA).mp hpar0
+  rw [parent_append_right A T hroot hposA hpT, hAT]
+  have hcore := window_of_outOfCone_all (M := M) (d := d) (e := e) (n := n) (j := j)
+    hM2 hd1pos hd0e hr0 hlp hj hj1 hout hpT
+  rw [← hQ, ← hT] at hcore
+  omega
+
 end H12H2
 end TRIO

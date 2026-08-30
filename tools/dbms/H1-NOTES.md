@@ -6556,3 +6556,42 @@ L3 の §190 より **`p_rel = 0` ⟹ 残るのは `Lift1 Q (e*(n-1)) ∈ W u`**
 
 ⟹ **これは team-lead の原理「その量は `n` に依存しますか」を
 リフトの族**全体**に当てたもの。今日 4 件目。**
+
+## §271. ★★★★★★★★ **接頭辞つき窓補題（緑）** —— `hstep` を止めていた最後の 1 本
+
+### §271.1 ⚠ L3 の指定した合成点は使えなかった
+
+L3 の指定: **`prefixSnocStep_parent_sameBlock`（§167）に流し込む**。
+⛔ ところがそれは **`hloc`（ブロック内に親がある）**を要求する。
+**錐の外の列は 68.8%（15944/23188）がブロック内で孤児**なので `hloc` は出ない。
+（`Wset.nextR_src_ge` も同じく「`T` 自身が前者を供給する」ことを要求する。）
+
+### §271.2 ⟹ 別の道を**型で索引を引いて**見つけた
+
+    **`Column.hasParent_append_right`（`Column.lean:363`）**
+      `entry T 0 0 = 0` → `0 < entry (A ++ T) 0 (|A| + j1)` →
+      **`hasParent (A ++ T) i (|A| + j1) ↔ hasParent T i j1`**
+    **`Column.parent_append_right`（`Column.lean:384`）**
+      **`parent (A ++ T) i (|A| + j1) = |A| + parent T i j1`**
+
+⟹ **`T := mTower Q d e n ++ B.take (j+1)` と取ると接頭辞 `A` がまるごと剥がれる。**
+⟹ **§17 の `window_of_outOfCone_all`（接頭辞なし）にそのまま帰着する。**
+
+⚠ **教訓が効いた**: team-lead に教わった「**名前ではなく型の列で索引を引く**」。
+`grep 'hasParent (A ++' LEMMA-INDEX.tsv` で 1 発だった。
+
+### §271.3 緑
+
+    entry0_towerPrefix_root      : 塔＋途中ブロックの根の行 0 ＝ `entry Q 0 0`
+    **prefix_window_of_outOfCone_all** :
+      前提 `hM2`, `0 < e`, `hd0e`, `hr0`, `hlp`, **`hbase : entry M.dropLast 0 0 = 0`**,
+           `j < |Q|`, `0 < j`, `hout`（錐の外）, `hpar0`（親がある）
+      ⟹ **`(A ++ mTower Q d e n).length ≤ parent (A ++ 塔 ++ B.take (j+1)) (srow …) (…)`**
+
+⚠ **`hbase`（根の深さ 0）を 1 本足した**。`hasParent_append_right` が要求する。
+消費側の `Q = Lift1 ((0,v,z) :: R.dropLast) t` では `entry Q 0 0 = 0` なので**無料**。
+
+⚠ **書いている途中で括弧の誤り**（`srow … X + j` が `(srow … X) + j` と解釈された）を
+1 回踏んだ。**Lean が型で捕まえた。**
+
+**Lean**: `lean/H12H2.lean`（緑、`sorry` 0、**定理 57 本**）。
