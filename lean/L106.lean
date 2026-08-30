@@ -10010,6 +10010,41 @@ theorem hasParent_append_of_noCross {A P : TrioSeq} {i j : ℕ} (hj : j < P.leng
 ★ **ただし 1 つ良い副産物**: **`NoCross` は `oper` で保たれます**（実測 **18,468 / 18,468**）。
 **⟹ ★ `rsum` も同じ（`oper_mem_ge`）なので、⟹ ⟹ **同値なら当然**です。** -/
 
+/-! ### §292 `hr0` は窓に受け継がれる —— 後継は必ず `PrefixCopies` の族に残る
+
+`oper` の窓は **`V = (T.drop c).take (t − c)`**（**親の列 `T[c]` を含む**）。
+`V[0] = T[c]` は親であり、`nextrel0` の最小性から `(c, t)` のどの列以下。
+⟹ **`hr0 V` は無料**（前提は `nextrel0` だけ）⟹ **族は保たれる**。
+
+⚠ 私は §290 までこの窓を `T[c+1 .. t−1]` と 1 つずらして測っていた。
+そのせいで「`hr0(V)` が 7.17% で偽」と報告したが、**それは誤り**である。
+正しい窓では `hr0 V` は**定理**（実測でも 6,998,760 / 6,998,760）。 -/
+
+/-- **窓の先頭は窓の中で最浅**（前提なし、`nextrel0` だけ）。 -/
+theorem hr0_window {T : TrioSeq} {c t : ℕ} (h : nextrel0 T c t) :
+    ∀ q ∈ (T.drop c).take (t - c), entry T 0 c ≤ q.1 := by
+  intro q hq
+  rw [List.mem_iff_getElem] at hq
+  obtain ⟨i, hi, rfl⟩ := hq
+  have hlen : ((T.drop c).take (t - c)).length ≤ t - c := by
+    simp [List.length_take]
+  have hit : i < t - c := lt_of_lt_of_le hi hlen
+  have hidx : ((T.drop c).take (t - c))[i] = T[c + i]'(by
+      have := h.2.1
+      omega) := by
+    rw [List.getElem_take, List.getElem_drop]
+  rw [hidx]
+  have hE : ∀ (j : ℕ) (hj : j < T.length), entry T 0 j = (T[j]'hj).1 := by
+    intro j hj
+    simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+  have hcj : c + i < T.length := by have := h.2.1; omega
+  rw [← hE (c + i) hcj]
+  rcases Nat.eq_zero_or_pos i with rfl | hipos
+  · simp
+  · have hmin := h.2.2.2.2 (c + i) ⟨by omega, by omega⟩
+    have := h.2.2.2.1
+    omega
+
 end L106
 end TRIO
 
