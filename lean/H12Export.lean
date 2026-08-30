@@ -5616,5 +5616,32 @@ theorem wd1_Lift1_invariant {X : TrioSeq} {d par last : ℕ} (hpar0 : 0 < par)
   · rw [if_neg hc, if_neg (fun hx => hc (hiff.mpr hx))]
     omega
 
+
+/-- ★★★ **`srow ≥ 1` なら `lev > 0`**。 -/
+theorem lev_pos_of_srow_pos {M : TrioSeq} {j : ℕ} (h : 0 < srow M j) : 0 < lev M j := by
+  unfold srow at h
+  unfold lev
+  split_ifs at h <;> omega
+
+/-- ★★★★★★★★★★ **残差の場合、`Q` は `domT` を満たします**。
+⟹ ★ ⟹ **`Aop` の節 3 と、`parent_cons_eq_zero` が使えます**。 -/
+theorem domT_of_residual {Q : TrioSeq}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (horph : ¬ L53.HasParentInBlock Q) :
+    domT Q (lev Q (Q.length - 1) - 1) := by
+  have hs : 0 < srow Q (Q.length - 1) := srow_pos_of_not_hasParentInBlock hr0 hQ2 horph
+  have hlev : 0 < lev Q (Q.length - 1) := lev_pos_of_srow_pos hs
+  exact ⟨by omega, horph⟩
+
+/-- ★★★★★★★★★★ ⟹ **残差では、`(0,v,z) :: Q` の末尾の親は必ず根**。
+⟹ ★ **`parent_cons_eq_zero` の `domT` が、残差から無料で出ます**。 -/
+theorem parent_cons_eq_zero_of_residual {v z : ℕ} {Q : TrioSeq}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (horph : ¬ L53.HasParentInBlock Q)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: Q) (srow Q (Q.length - 1)) Q.length) :
+    parent (((0, v, z) : ℕ × ℕ × ℕ) :: Q) (srow Q (Q.length - 1)) Q.length = 0 :=
+  parent_cons_eq_zero (by intro hc; rw [hc] at hQ2; simp at hQ2)
+    (domT_of_residual hr0 hQ2 horph) hpM
+
 end H12Export
 end TRIO

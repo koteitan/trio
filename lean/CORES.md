@@ -13410,3 +13410,25 @@ theorem nextrel1_snoc_prev_eq {C p A}
     **R2** … **(ROW2-4)** `Reach+` の核 1,436 件で標的の最終列・孤児構造（`srow` 別）／ (ROW2-1..3) も生きている
 
 **✅ build 緑 24 回目**: **811 jobs**（`R2LT` 追加）、`BUILD_EXIT=0`、`H12Export` **411 本**
+
+---
+
+## ★★★★★★★★★★ **H12 (2026-08-30): `MTowerClosedS` の残差は `domT` そのものです（緑）**
+
+### ★★★★★★★★★★ **これが今日いちばんの接続かもしれません**
+
+    `domT R m := lev R (|R|−1) = m+1 ∧ ¬ hasParent R (srow R (|R|−1)) (|R|−1)`（`Wset:61`）
+    **`MTowerClosedS` の残差 ＝ `¬ L53.HasParentInBlock Q` ＝ `domT` の後半そのもの**
+    ⟹ ★ 前半（`lev > 0`）は **(W68)（残差 ⟹ `srow ≥ 1`）** から出ます
+    ⟹ ⟹ ★★★★★★★★★★ **`domT_of_residual`（緑）: 残差 ⟹ `domT Q (lev Q (|Q|−1) − 1)`**
+
+### ★★★★★ ⟹ **ですから `parent_cons_eq_zero` は「残差でこそ」使えます**
+
+    ★★★★★★★★★★ `parent_cons_eq_zero_of_residual`（緑）
+      **残差では `(0,v,z) :: Q` の末尾の親は必ず根**
+    ★★★ `lev_pos_of_srow_pos`（道具）
+
+**⟹ ⚠ team-lead の心配（「それは `TowerOK` の設定（`domT` あり）の定理では」）は、**逆**でした。**
+**⟹ ★ **`domT` は残差の条件そのもの**です。⟹ ⟹ ★★ **`Aop` の節 3 も、`Q` については使えます**。**
+**⟹ ⟹ ⟹ ⚠ ただし **節 3 が使えるのは `Q` であって、塔 `mTower Q d e n` ではありません**
+（塔の末尾は `Q` の末尾の写しで、`domT` は塔全体について問われます）。⟹ ★ **そこは未確認**です。**
