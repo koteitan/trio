@@ -7166,5 +7166,47 @@ theorem prefix_mTower_src_ge_of_hasParent_of_e_zero {A Q : TrioSeq} {d n k j c i
   push Not at hcc
   exact prefix_mTower_cross_implies_orphan_of_e_zero hk hj hcc h hpar
 
+
+/-! ## 106. ★★★★★★ **良い枝の連鎖は `|Q|` 回で止まります**
+
+材料は 2 つとも既に緑です:
+⟹ ★ **(i) 良い枝は `|Q|` を無条件に真に減らす** … `window_le_of_last_row0` / `window_le_of_last_row1`（(W61)）
+⟹ ★ **(ii) `|Q| = 1` では良い枝が起きない** … `nextR_src_lt_prefix_of_replicate`（(W59)）
+⟹ ⟹ ★★★ あとは **「真に減る ℕ の列は有限」**を足すだけです。
+⚠ ⛔ **測度にはなりません**（`|A|` が良い枝で増えるため）。⟹ ★ **「連鎖が有限」という事実だけ**です。 -/
+
+/-- **真に減る ℕ の列は無限には続きません**。 -/
+theorem no_infinite_strict_desc (f : ℕ → ℕ) (hdec : ∀ i, f (i + 1) < f i) : False := by
+  have key : ∀ i, f i + i ≤ f 0 := by
+    intro i
+    induction i with
+    | zero => omega
+    | succ m ih => have := hdec m; omega
+  have := key (f 0 + 1)
+  omega
+
+/-- ★★★★★★ **連鎖の長さは初項で抑えられます** ⟹ ★ **良い枝は連続して高々 `|Q|` 回**。 -/
+theorem chain_length_le_of_strict_desc (f : ℕ → ℕ) (k : ℕ)
+    (hdec : ∀ i, i < k → f (i + 1) < f i) : k ≤ f 0 := by
+  have key : ∀ i, i ≤ k → f i + i ≤ f 0 := by
+    intro i
+    induction i with
+    | zero => intro _; omega
+    | succ m ih =>
+        intro hm
+        have h1 := ih (by omega)
+        have h2 := hdec m (by omega)
+        omega
+  have := key k (le_refl k)
+  omega
+
+/-- ★★★★★★★ **良い枝の連鎖は有限**（上の 2 本を、良い枝の言葉で）。
+`sz i` を第 `i` 段の基底の長さとすると、**良い枝が続く限り `sz` は真に減る**（(W61)）ので、
+⟹ ★ **`k` 回続いたなら `k ≤ sz 0`** ⟹ ⟹ ★★ **`|Q|` 回で止まります**。
+⟹ ⛔ そして **`sz = 1` では良い枝が起きません**（(W59)）⟹ ★ **底に達したら必ず残差**です。 -/
+theorem good_chain_le_initial (sz : ℕ → ℕ) (k : ℕ)
+    (hgood : ∀ i, i < k → sz (i + 1) < sz i) : k ≤ sz 0 :=
+  chain_length_le_of_strict_desc sz k hgood
+
 end H12H2
 end TRIO
