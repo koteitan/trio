@@ -4491,8 +4491,12 @@ theorem prefixCopies_row0_dichotomy {A Q : TrioSeq} {e n k r c : ℕ}
   · have heq : entry Q 0 r = entry Q 0 0 := le_antisymm hd (hQmin r hr)
     exact Or.inl ⟨heq, nextrel0_src_lt_prefix_of_root_height hQmin hk hr heq h⟩
 
-/-- ★★★★★ ⟹ **`hr0 Q` の下では、残差はブロック根だけ**（`r = 0`）。 -/
-theorem prefixCopies_residual_only_blockRoot {A Q : TrioSeq} {e n k r c : ℕ}
+/-- ★★★★★ ⟹ **`hr0 Q` の下では、`nextrel0`（行 0）の越境はブロック根だけ**（`r = 0`）。
+⚠⚠ **これは行 0 の親についてのみ**です。⛔ **`srow = 1` では偽**——
+R2 の実測で **`hr0(Q)` 真の残差 11,778 件のうち `j ≥ 1` が 44.9312%**、
+反例 `A = [(0,0,0),(1,0,0)]`、`Q = [(2,1,0),(3,1,0)]`、`n = 1`、`j = 1`、`srow = 1`。
+⟹ ★ `srow = 1` の側は (W56) `prefix_mTower_row1_cross_implies_orphan` を見てください。 -/
+theorem prefixCopies_row0_residual_only_blockRoot {A Q : TrioSeq} {e n k r c : ℕ}
     (hr0Q : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hk : k < n) (hr : r < Q.length) (hr0 : 0 < r)
     (h : nextrel0 (A ++ mTower Q 0 e n) c (A.length + (k * Q.length + r))) :
@@ -4565,6 +4569,57 @@ theorem prefix_mTower_row2_cross_implies_orphan {A Q : TrioSeq} {d e n k j c : �
     mTower_entry hk (show y < Q.length by omega), entry2_Lift1, entry2_Lift1,
     entry2_shiftr01, entry2_shiftr01] at hmin
   omega
+
+
+/-- 1 列の写しは `List.replicate`。 -/
+theorem flatMap_singleton_eq_replicate (q : ℕ × ℕ × ℕ) (n : ℕ) :
+    ((List.range n).flatMap fun _ => [q]) = List.replicate n q := by
+  induction n with
+  | zero => simp
+  | succ m ih => rw [List.range_succ, List.flatMap_append, ih]; simp [List.replicate_succ']
+
+/-- ★★★ **後継の窓は、写しが 1 つ減っただけ**。 -/
+theorem dropLast_append_replicate_succ (Y : TrioSeq) (q : ℕ × ℕ × ℕ) (n : ℕ) :
+    (Y ++ List.replicate (n + 1) q).dropLast = Y ++ List.replicate n q := by
+  rw [List.replicate_succ', ← List.append_assoc, List.dropLast_concat]
+
+/-- ★★★ **接頭辞を削っても写しは残る**。 -/
+theorem drop_append_replicate (A : TrioSeq) (q : ℕ × ℕ × ℕ) (n c : ℕ) (hc : c ≤ A.length) :
+    (A ++ List.replicate n q).drop c = A.drop c ++ List.replicate n q :=
+  List.drop_append_of_le_length hc
+
+/-- ★★★★★ **最小形の末尾は `srow = 0`**（行 1 も行 2 も 0）。
+⟹ ★ ⟹ **`wd0 = wd1 = 0`**（`if 0 < srow` の番人）⟹ ⟹ ★★ **後継の塔も持ち上げ 0**。 -/
+theorem srow_last_of_append_replicate (A : TrioSeq) (x n : ℕ) :
+    srow (A ++ List.replicate (n + 1) ((x, 0, 0) : ℕ × ℕ × ℕ))
+      ((A ++ List.replicate (n + 1) ((x, 0, 0) : ℕ × ℕ × ℕ)).length - 1) = 0 := by
+  have hlen : (A ++ List.replicate (n + 1) ((x, 0, 0) : ℕ × ℕ × ℕ)).length - 1
+      = A.length + n := by
+    rw [List.length_append, List.length_replicate]; omega
+  have hget : ∀ i, entry (A ++ List.replicate (n + 1) ((x, 0, 0) : ℕ × ℕ × ℕ)) i (A.length + n)
+      = entry (List.replicate (n + 1) ((x, 0, 0) : ℕ × ℕ × ℕ)) i n := fun i => by
+    rw [entry_append_right]
+  have hr : ∀ i, entry (List.replicate (n + 1) ((x, 0, 0) : ℕ × ℕ × ℕ)) i n
+      = (if i = 0 then x else 0) := by
+    intro i
+    show (if i = 0 then _ else if i = 1 then _ else _) = _
+    rw [List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem (by rw [List.length_replicate]; omega),
+      List.getElem_replicate]
+    split_ifs <;> rfl
+  rw [hlen]
+  unfold srow
+  rw [hget 2, hget 1, hr 2, hr 1]
+  simp
+
+/-- ★★★★★★★★ **(W57) の骨格**: 最小形の後継は **接頭辞が真に短い、同じ形**。
+⟹ ★ **`A' = A.take c`（`c < |A|`）**、**新しい基底 `V = A.drop c ++ replicate n (x,0,0)`**。
+⟹ ⟹ ★★★ ⟹ **`|A|` の帰納で外側が回ります**。
+⟹ ⟹ ⟹ ⛔ **ただし `V ∈ W u` を出すのに `n` の帰納が要ります**（`V` も同じ形）。 -/
+theorem minimal_successor_shape (A : TrioSeq) (x n c : ℕ) (hc : c ≤ A.length) :
+    ((A ++ List.replicate (n + 1) ((x, 0, 0) : ℕ × ℕ × ℕ)).drop c).dropLast
+      = A.drop c ++ List.replicate n ((x, 0, 0) : ℕ × ℕ × ℕ) := by
+  rw [drop_append_replicate A _ _ _ hc, dropLast_append_replicate_succ]
 
 end H12Export
 end TRIO
