@@ -11626,3 +11626,24 @@ oper_append_of_parent_in : バッドルートが `P` の中 ⟹ **`(A ++ P)⟦n�
 ---
 
 ## ✅ **build 緑 7 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **336 本**
+
+---
+
+## ★★★★★★★★ **H12 (W60, 2026-08-30): `row2pos = 0` の世界では `srow ≤ 1` が永久（緑）**
+
+    ★★★★★★★★ `srow_le_one_prefix_mTower` … **接頭辞つき塔のどの列も `srow ≤ 1`**（`n`,`d`,`e` 非依存）
+    ★★★★★★★★ `srow_le_one_window` …… **窓を取っても保たれる**（`drop`/`take` は部分列）
+    ★★★★★ `row2pos_eq_zero_window` …… **`row2pos = 0` の世界からは出られない**
+    ★★★ `row2pos_eq_zero_iff` / `srow_le_one_of_zeroRow2` / `zeroRow2_sublist` / `zeroRow2_append`
+
+**⟹ ★ 機構（1 行）: **行 2 は `Lift1` でも `shiftr01` でも動かない**（`entry2_Lift1` / `entry2_shiftr01`）。**
+
+### ★★★★★ ⟹ **ですから `row2pos = 0` の世界は完全に閉じています**
+
+    ✅ **`srow ≤ 1`**（(W60)）⟹ **2 族だけ**（`PrefixCopies` と `shTower`）
+    ✅ **塔閉包は無料**（(W54) `prefix_mTower_of_zeroRow2`）
+    ⟹ ⟹ ★★★★★★★★ ⟹ **`row2pos = 0` は、証明すべきことが残っていません**
+
+### ⛔ **ですから残核は「行 2 に 1 がある」場合の 1 点**（`z < 2` なので行 2 ∈ {0,1}）
+
+    ★ ＝ **生成元 `D_v` の `(k,k,1)` の列**（L3 の指摘）

@@ -4756,5 +4756,58 @@ theorem nextR_src_lt_prefix_of_replicate {A : TrioSeq} {q : ℕ × ℕ × ℕ} {
   · exact nextrel1_src_lt_prefix_of_replicate h
   · exact nextrel2_src_lt_prefix_of_replicate h
 
+
+/-- `row2pos M = 0` ⟺ **行 2 ≡ 0**。 -/
+theorem row2pos_eq_zero_iff (M : TrioSeq) : row2pos M = 0 ↔ ∀ p ∈ M, p.2.2 = 0 := by
+  unfold row2pos
+  rw [List.countP_eq_zero]
+  constructor
+  · intro h p hp; have := h p hp; simp at this; omega
+  · intro h p hp; simp [h p hp]
+
+/-- ★★★ **行 2 ≡ 0 なら `srow ≤ 1`**（どの列でも）。 -/
+theorem srow_le_one_of_zeroRow2 {M : TrioSeq} (h : ∀ p ∈ M, p.2.2 = 0) (j : ℕ) :
+    srow M j ≤ 1 := srow_le_one_of_row2_zero (entry2_eq_zero_of_zeroRow2 h j)
+
+/-- 行 2 ≡ 0 は **部分列**に遺伝します（窓・接頭辞・接尾辞すべて）。 -/
+theorem zeroRow2_sublist {M N : TrioSeq} (hs : M.Sublist N) (h : ∀ p ∈ N, p.2.2 = 0) :
+    ∀ p ∈ M, p.2.2 = 0 := fun p hp => h p (hs.mem hp)
+
+/-- 行 2 ≡ 0 は **連結**でも保たれます。 -/
+theorem zeroRow2_append {A B : TrioSeq} (hA : ∀ p ∈ A, p.2.2 = 0) (hB : ∀ p ∈ B, p.2.2 = 0) :
+    ∀ p ∈ A ++ B, p.2.2 = 0 := by
+  intro p hp
+  rcases List.mem_append.mp hp with h | h
+  · exact hA p h
+  · exact hB p h
+
+/-- ★★★★★★★★ **(W60)**: `row2pos A = 0` ∧ `row2pos Q = 0` なら、
+**接頭辞つき塔のどの列も `srow ≤ 1`**。⟹ ★ **`n`, `d`, `e` に依りません**。 -/
+theorem srow_le_one_prefix_mTower {A Q : TrioSeq} {d e n : ℕ}
+    (hA : row2pos A = 0) (hQ : row2pos Q = 0) (j : ℕ) :
+    srow (A ++ mTower Q d e n) j ≤ 1 :=
+  srow_le_one_of_zeroRow2
+    (zeroRow2_append ((row2pos_eq_zero_iff A).mp hA)
+      (zeroRow2_mTower ((row2pos_eq_zero_iff Q).mp hQ))) j
+
+/-- ★★★★★★★★ ⟹ **窓を取っても保たれます**（`drop` も `take` も部分列）。 -/
+theorem srow_le_one_window {A Q : TrioSeq} {d e n p k : ℕ}
+    (hA : row2pos A = 0) (hQ : row2pos Q = 0) (j : ℕ) :
+    srow (((A ++ mTower Q d e n).drop p).take k) j ≤ 1 :=
+  srow_le_one_of_zeroRow2
+    (zeroRow2_sublist ((List.take_sublist _ _).trans (List.drop_sublist _ _))
+      (zeroRow2_append ((row2pos_eq_zero_iff A).mp hA)
+        (zeroRow2_mTower ((row2pos_eq_zero_iff Q).mp hQ)))) j
+
+/-- ★★★★★ ⟹ **`row2pos` は窓で増えません**（部分列なので）。
+⟹ ★ ⟹ **`row2pos = 0` の世界からは、出られません**。 -/
+theorem row2pos_eq_zero_window {A Q : TrioSeq} {d e n p k : ℕ}
+    (hA : row2pos A = 0) (hQ : row2pos Q = 0) :
+    row2pos (((A ++ mTower Q d e n).drop p).take k) = 0 :=
+  (row2pos_eq_zero_iff _).mpr
+    (zeroRow2_sublist ((List.take_sublist _ _).trans (List.drop_sublist _ _))
+      (zeroRow2_append ((row2pos_eq_zero_iff A).mp hA)
+        (zeroRow2_mTower ((row2pos_eq_zero_iff Q).mp hQ))))
+
 end H12Export
 end TRIO
