@@ -8773,5 +8773,93 @@ theorem rtg0_last_step_ge_of_gap {M : TrioSeq} {a b c : ℕ}
   · omega
   · exact ⟨x, nextrel0_src_ge_of_gap hcb hlt hxb, hxb.2.2.1, hax, hxb⟩
 
+/-! ## 275. ★★★★★★★★ **一般の snoc 段**: 親の位置で場合分けしません
+
+§273 を**明示形**にしてから組みます。⟹ ★ **`hbound` も孤児の枝も要りません**。
+
+**⟹ ★★★ 骨: `T⟦m⟧ = T.take c ++ mTower V d0 d1 m`（`V = (T.drop c).take (|T|-1-c)`）で、**
+
+    `T.take c ∈ W u` ……………… ★ `T.dropLast ∈ W u` の接頭辞（`Wset.W_take`）
+    `T.take c ++ V = T.dropLast` … ★ **`List.take_add` でぴったり**
+    ⟹ ⟹ ★★★★ ですから `hIH` が **そのまま** `T⟦m⟧ ∈ W u` を与え、`mem_of_oper_mem` で `T ∈ W u`
+
+**⟹ ★★★★★ **義務は 2 つだけ**: **`TowerP'' V d0 d1`** と **測度の減少**。**
+**⟹ ⟹ ★ ＝ 今までの「良い手」と同じ 2 つ。⟹ ⟹ ★★ **越境の手も同じ枠に入ります**。** -/
+
+open Classical in
+/-- ★★★★★★ §273 の**明示形**（`V` と `d0`/`d1` を具体的に書いたもの）。 -/
+theorem snocStep_oper_gen_eq {T : TrioSeq} {c : ℕ} (m : ℕ)
+    (hL : T.length - 1 ≠ 0)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0))
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c) :
+    T⟦m⟧ = T.take c ++ mTower ((T.drop c).take (T.length - 1 - c))
+      (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
+      (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0) m := by
+  rw [oper_eq_gexp_gen m hL hz hpar, hpe,
+    gexp_eq_take_append_mTower (show c + (T.length - 1 - c) ≤ T.length from by
+      have hclt : c < T.length := by
+        rw [← hpe]
+        exact (nextR_index_lt (parent_nextR hpar)).trans_le (by omega)
+      omega)]
+
+/-- ★★ `T.take c ++ 窓 = T.dropLast`（`List.take_add`）。 -/
+theorem take_append_window {T : TrioSeq} {c : ℕ} (hc : c ≤ T.length - 1) :
+    T.take c ++ (T.drop c).take (T.length - 1 - c) = T.dropLast := by
+  rw [List.dropLast_eq_take, ← List.take_append_drop c (T.take (T.length - 1))]
+  congr 1
+  · rw [List.take_take, Nat.min_eq_left (by omega)]
+  · rw [List.drop_take]
+
+open Classical in
+/-- ★★★★★★★★ **一般の snoc 段**: 親の位置に条件なし。義務は `TowerP''` と測度だけ。 -/
+theorem hsnoc_gen {u : ℕ} {Q T : TrioSeq} {d e c : ℕ}
+    (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hL : T.length - 1 ≠ 0)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0))
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c)
+    (hpre : T.dropLast ∈ W u)
+    (hPV : TowerP'' ((T.drop c).take (T.length - 1 - c))
+      (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
+      (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0))
+    (hmeas : towerMeas ((T.drop c).take (T.length - 1 - c))
+        (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
+        (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0)
+      < towerMeas Q d e) :
+    T ∈ W u := by
+  have hclt : c < T.length := by
+    rw [← hpe]
+    exact (nextR_index_lt (parent_nextR hpar)).trans_le (by omega)
+  have hc1 : c ≤ T.length - 1 := by omega
+  have hTc : T.take c ∈ W u := by
+    have := Wset.W_take (u := u) (M := T.dropLast) hpre c
+    rwa [List.dropLast_eq_take, List.take_take, Nat.min_eq_left (by omega)] at this
+  have hcat : T.take c ++ (T.drop c).take (T.length - 1 - c) ∈ W u := by
+    rw [take_append_window hc1]; exact hpre
+  refine mem_of_oper_mem ?_
+  intro m _
+  rw [snocStep_oper_gen_eq m hL hz hpar hpe]
+  exact hIH _ _ _ hPV hmeas (T.take c) hTc hcat m
+
+/-! ### 275.1 ⟹ ★★★★★★★★ **設計が 1 本になりました**
+
+    ⛔ **旧**: `hbound`（親が最後のブロックの中）＋ **孤児の枝**（`OrphOK` / `OrphOK0`、**偽**）
+    ★★★★★ **新**: **`hsnoc_gen` 1 本**。義務は **`TowerP''` の遺伝**と **測度の減少**だけ
+
+**⟹ ★★★ **`OrphOK` も `OrphOK0` も `hbound` も要りません**。⟹ ⟹ ★ **偽の残差が 2 本消えます**。**
+
+**⟹ ⚠ 残る義務（どちらも未証明）:**
+
+    ⛔ **(O-A) `TowerP''` が窓 `(T.drop c).take (|T|-1-c)` に遺伝する**
+       ⟹ ★ `hr0` は §221（`hr0_wnd`）の一般化で出るはず（`window_of_rtg0` は親の位置に依らない）
+       ⟹ ⚠ `hz0` は **§263 で偽**（`HeredZ0`）⟹ ⛔ **ここが残ります**
+    ⛔ **(O-B) `|V| < |Q|`**（測度の減少）⟹ ★ 実測 208/208、⟹ ⚠ **未証明**
+
+⚠ **教訓 14**: §275 は緑ですが、**2 つの義務は未証明**です。⟹ **「閉じた」ではありません**。 -/
+
 end L106
 end TRIO
