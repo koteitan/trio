@@ -4189,5 +4189,55 @@ theorem prefixTake_new_prefix_length {A : TrioSeq} {c : ℕ} (hc : c ≤ A.lengt
     (A.drop c).length < A.length := by
   rw [List.length_drop]; omega
 
+
+/-- `zle1` なら行 2 の値は（範囲外も含めて）常に `≤ 1`。 -/
+theorem entry2_le_one_of_zle1 {M : TrioSeq} (h : zle1 M) (c : ℕ) : entry M 2 c ≤ 1 := by
+  show (M.getD c (0, 0, 0)).2.2 ≤ 1
+  rw [List.getD_eq_getElem?_getD]
+  rcases Nat.lt_or_ge c M.length with hc | hc
+  · rw [List.getElem?_eq_getElem hc]; exact h _ (List.getElem_mem hc)
+  · rw [List.getElem?_eq_none (by omega)]; simp
+
+/-- ✅ **`srow = 2`: 無条件**。`nextrel2` は行 2 を真に下げ、`le1` が行 1 も真に下げます。 -/
+theorem lev_parent_lt_of_srow2 {M : TrioSeq} {c x : ℕ} (h : nextR M 2 c x) :
+    lev M c < lev M x := by
+  unfold nextR at h
+  rw [if_neg (by omega), if_neg (by omega)] at h
+  have h2 : entry M 2 c < entry M 2 x := h.2.2.2.1
+  have h1 : entry M 1 c < entry M 1 x := entry1_lt_of_le1_ne h.2.2.2.2.1 (by have := h.2.2.1; omega)
+  unfold lev; omega
+
+/-- ★ **`srow = 1`: `zle1 M` が要ります**（行 2 ≤ 1）。⟹ z < 2 の断片では真。 -/
+theorem lev_parent_lt_of_srow1 {M : TrioSeq} {c x : ℕ}
+    (hz : zle1 M) (hx : srow M x = 1) (h : nextR M 1 c x) : lev M c < lev M x := by
+  unfold nextR at h
+  rw [if_neg (by omega), if_pos rfl] at h
+  have h1 : entry M 1 c < entry M 1 x := h.2.2.2.1
+  have hx2 : entry M 2 x = 0 := by
+    unfold srow at hx; split_ifs at hx <;> omega
+  have hc2 : entry M 2 c ≤ 1 := entry2_le_one_of_zle1 hz c
+  unfold lev; omega
+
+/-- ⛔ **`srow = 0`: 偽**。`lev(的) = 0` なので `lev(親) < 0` はあり得ません。 -/
+theorem lev_parent_not_lt_of_srow0 {M : TrioSeq} {c x : ℕ} (hx : srow M x = 0) :
+    ¬ lev M c < lev M x := by
+  have h1 : entry M 1 x = 0 := by unfold srow at hx; split_ifs at hx; omega
+  have h2 : entry M 2 x = 0 := by unfold srow at hx; split_ifs at hx; omega
+  unfold lev; omega
+
+/-- ★★★★★★★ ⟹ **まとめ**: `zle1 M` の下で、**`srow(的) ≥ 1` なら `lev(親) < lev(的)`**。 -/
+theorem lev_parent_lt_of_srow_pos {M : TrioSeq} {c x : ℕ}
+    (hz : zle1 M) (hx : 0 < srow M x) (h : nextR M (srow M x) c x) : lev M c < lev M x := by
+  have hle : srow M x ≤ 2 := srow_le_two M x
+  rcases (by omega : srow M x = 1 ∨ srow M x = 2) with hs | hs
+  · exact lev_parent_lt_of_srow1 hz hs (by rwa [hs] at h)
+  · exact lev_parent_lt_of_srow2 (by rwa [hs] at h)
+
+/-- ★★★ ⟹ **`srow(的) = 0` の段では、そもそも `lev(的) = 0`**。⟹ ★ 測度の底です。 -/
+theorem lev_eq_zero_of_srow0 {M : TrioSeq} {x : ℕ} (hx : srow M x = 0) : lev M x = 0 := by
+  have h1 : entry M 1 x = 0 := by unfold srow at hx; split_ifs at hx; omega
+  have h2 : entry M 2 x = 0 := by unfold srow at hx; split_ifs at hx; omega
+  unfold lev; omega
+
 end H12Export
 end TRIO
