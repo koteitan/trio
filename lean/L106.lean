@@ -3183,205 +3183,6 @@ def OrphOK : Prop :=
           ((A ++ mTower Q d e n).length + j))
         ((A ++ mTower Q d e n).length + j)
 
-/-! ### 220.2c ⛔⛔ `0 < d` / `0 < e` は**遺伝しません**（今日いちばん重い発見）
-
-`oper` の作る新しいリフト量は（§198 の逐語）
-
-    `srow = 2` … `wd0` も `wd1` も正になりうる
-    **`srow = 1` … `wd1 = 0`**（`¬ 1 < 1`）
-    **`srow = 0` … `wd0 = wd1 = 0`**
-
-**⟹ ⛔ ★ つまり `0 < e` は `srow ≤ 1` の段で**必ず**破れます。「ときどき」ではありません。**
-**⟹ ⟹ `0 < d` も `srow = 0` の段で必ず破れます。**
-
-**⟹ ★ ですからこの 2 つは `TowerP''` から**外し**、**別ルートの仮定**にします:**
-
-    `d = 0` … 行 0 のリフトが無い塔（`mTower Q 0 e n`）
-    `e = 0` … 行 1 のリフトが無い塔（`mTower Q d 0 n`）
-             ⟹ §112 `MTowerClosedS0 = ShiftTowerClosedS`（**プロジェクト既知の対象**）
-
-⚠ **これは「穴が増えた」のではなく「穴の位置が正しくなった」ものです。**
-**⟹ 私は `TowerP''` に `0 < d` / `0 < e` を入れたまま「遺伝は易しいはず」と書いていました。**
-**⟹ ⟹ ⛔ **誤り**でした。⟹ 必ず破れます。** -/
-
-/-- ⛔ **`d = 0` の塔**（行 0 のリフトなし）。 -/
-def ZeroDOK (u : ℕ) : Prop :=
-  ∀ (A Q : TrioSeq) (e : ℕ), TowerP'' Q 0 e → A ∈ W u → A ++ Q ∈ W u →
-    ∀ n, A ++ mTower Q 0 e n ∈ W u
-
-/-- ⛔ **`e = 0` の塔**（行 1 のリフトなし）。§112 で `ShiftTowerClosedS` と同一。 -/
-def ZeroEOK (u : ℕ) : Prop :=
-  ∀ (A Q : TrioSeq) (d : ℕ), TowerP'' Q d 0 → A ∈ W u → A ++ Q ∈ W u →
-    ∀ n, A ++ mTower Q d 0 n ∈ W u
-
-/-! ### 220.3 測度の強帰納（底のブロックをもらう版） -/
-
-theorem tower_of_measure_step2 {u : ℕ}
-    (P : TrioSeq → ℕ → ℕ → Prop) (meas : TrioSeq → ℕ → ℕ → ℕ)
-    (hstep : ∀ Q d e, P Q d e →
-      (∀ V d0 d1, P V d0 d1 → meas V d0 d1 < meas Q d e →
-        ∀ A, A ∈ W u → A ++ V ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
-      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u) :
-    ∀ Q d e, P Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
-      ∀ n, A ++ mTower Q d e n ∈ W u := by
-  have key : ∀ s Q d e, meas Q d e ≤ s → P Q d e →
-      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
-    intro s
-    induction s with
-    | zero =>
-      intro Q d e hle hP A hA hAQ n
-      exact hstep Q d e hP
-        (fun _ _ _ _ hlt _ _ _ _ => absurd hlt (by omega)) A hA hAQ n
-    | succ s ih =>
-      intro Q d e hle hP A hA hAQ n
-      exact hstep Q d e hP
-        (fun V d0 d1 hPV hlt A' hA' hAV m =>
-          ih V d0 d1 (by omega) hPV A' hA' hAV m) A hA hAQ n
-  intro Q d e hP A hA hAQ n
-  exact key (meas Q d e) Q d e (le_refl _) hP A hA hAQ n
-
-/-! ### 220.4 ★★★★★ **最終定理** -/
-
-open Classical in
-theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
-    (hzd : ZeroDOK u) (hze : ZeroEOK u) (hz2 : HeredZ2) :
-    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
-      ∀ n, A ++ mTower Q d e n ∈ W u := by
-  refine tower_of_measure_step2 (u := u) TowerP'' towerMeas ?_
-  intro Q d e hP hIH A hA hAQ
-  have hQne := ne_of_TowerP'' hP
-  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
-  have hz0 := hz0_of_TowerP'' hP
-  have hr0 := hr0_of_TowerP'' hP
-  rcases Nat.eq_zero_or_pos d with hd0 | hd
-  · subst hd0; exact hzd A Q e hP hA hAQ
-  rcases Nat.eq_zero_or_pos e with he0 | he
-  · subst he0; exact hze A Q d hP hA hAQ
-  refine prefixTowerClosed_of_snocStepStrong1 hA hAQ ?_
-  intro n j hn hj hall
-  rcases Nat.eq_zero_or_pos j with hj0 | hj1
-  · -- ★ `j = 0`: `n = k+1`
-    subst hj0
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    have hpre : ∀ p, p ≤ Q.length →
-        A ++ mTower Q d e k
-          ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-              ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u := by
-      intro p hp
-      exact prefix_block_take_mem hp (by simpa using hall 0 (le_refl 0))
-    exact hsnoc_zero hQne hd he hr0 hz0 hIH hpre
-      (fun p hp0 => by subst hp0; exact hrank_blockRoot hQne hd he hz0) hz2
-  · -- ★ `j ≥ 1`
-    set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
-    have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
-    by_cases hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j
-    · exact hsnoc_pos hP hIH hj hj1 hloc (parent_bound_pos hj hloc) hall hz2
-    · -- ⟹ ブロックの中で孤児 ⟹ `OrphOK` で全体でも孤児 ⟹ `snoc_orphan_W`
-      have hnp := horph A Q d e n j hj1 hj hloc
-      have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
-        rw [List.take_add_one]
-        congr 1
-        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
-        rfl
-      have hsplit : A ++ mTower Q d e n ++ B.take (j + 1)
-          = (A ++ mTower Q d e n ++ B.take j) ++ [B.getD j (0, 0, 0)] := by
-        rw [hBt, ← List.append_assoc]
-      have hClen : (A ++ mTower Q d e n ++ B.take j).length
-          = (A ++ mTower Q d e n).length + j := by
-        rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
-      have hCne : A ++ mTower Q d e n ++ B.take j ≠ [] := by
-        intro hc
-        have : (A ++ mTower Q d e n ++ B.take j).length = 0 := by rw [hc]; rfl
-        omega
-      rw [hsplit]
-      refine snoc_orphan_W _ (hall j (le_refl j)) hCne ?_
-      rw [hClen, ← hsplit]
-      exact hnp
-
-/-! ### 220.5 ⟹ ★★★★ **残る義務は 4 本**
-
-```lean
-theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
-    (hzd : ZeroDOK u) (hze : ZeroEOK u) (hz2 : HeredZ2) :
-    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
-      ∀ n, A ++ mTower Q d e n ∈ W u
-```
-
-    **`OrphOK`** … ブロックの中で孤児 ⟹ 全体でも孤児（**遺伝不要**）
-    **`ZeroDOK`** … `d = 0` の塔（行 0 のリフトなし）
-    **`ZeroEOK`** … `e = 0` の塔 ＝ §112 `ShiftTowerClosedS`
-    **`HeredZ2`** … ★ **窓の根の行 2 が 0**（＝ 既知の (H2')）
-
-### 220.6 ★★★ 遺伝の義務が **1 本**になりました
-
-`TowerP''` は 3 本（`0 < |Q|` / `hr0` / `hz0`）で、そのうち
-
-    `0 < |V|` … §221 `wnd_pos`（**無料**）
-    `hr0(V)`  … §221 `hr0_wnd`（**無料**、`Lcone.window_of_rtg0` から）
-    `hz0(V)`  … ⛔ **`HeredZ2`**（唯一の核）
-
-**⟹ ★★★ ⟹ **核は「窓の根の行 2 が 0 か」1 本**です。**
-
-⚠ **教訓 14**: **4 本のどれも証明していません。**
-**⟹ そして消費側（`MTowerClosedS`）への接続もまだです。** -/
-
-/-! ## 222. ★★★★★★★★★★ **消費側への接続** —— `MTowerClosedS` まで繋ぎます
-
-`MTowerClosedS`（`L105Cap:5618`）は
-
-    `∀ u d e n Q, Q ∈ W u → (∀ j, 1 ≤ j → j < |Q| → entry Q 0 0 < entry Q 0 j) → mTower Q d e n ∈ W u`
-
-**⟹ ★ §220 を `A = []` で使うと、足りないのは `entry Q 2 0 = 0` **1 つだけ**です。**
-
-    `[] ∈ W u` … `W_nil` ✅
-    `[] ++ Q = Q ∈ W u` … **消費側の仮定そのもの** ✅
-    `hr0` … **消費側の仮定そのもの** ✅
-    `0 < |Q|` … `|Q| = 0` なら `mTower = []` ✅
-    `entry Q 2 0 = 0` … ⛔ **供給されません**（team-lead: `z = 1` で破れる） -/
-
-/-- ⛔ **消費側の `hz0`**（`z = 0` に相当）。H12 の `hz0_of_zle1` が効くはずのところ。 -/
-def RootZ2 : Prop :=
-  ∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u →
-    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) → entry Q 2 0 = 0
-
-theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] :=
-  List.eq_nil_of_length_eq_zero (by rw [mTower_length]; simp)
-
-open Classical in
-/-- ★★★★★ **`MTowerClosedS` は 5 本から出ます。** -/
-theorem mTowerClosedS_of_residues (horph : OrphOK)
-    (hzd : ∀ u, ZeroDOK u) (hze : ∀ u, ZeroEOK u) (hz2 : HeredZ2) (hroot : RootZ2) :
-    MTowerClosedS := by
-  intro u d e n Q hQ hs
-  rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
-  · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
-    subst hnil
-    rw [mTower_nil]
-    exact W_nil u
-  · have hP : TowerP'' Q d e :=
-      ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hroot u Q hQ hs⟩
-    have h := towerClosed_of_hered (u := u) horph (hzd u) (hze u) hz2 Q d e hP []
-      (W_nil u) (by simpa using hQ) n
-    simpa using h
-
-/-! ### 222.1 ⟹ ★★★★★ **これで `MTowerClosedS` が 5 本の式になりました**
-
-    **(1) `OrphOK`** … ブロックの中で孤児 ⟹ 全体でも孤児（**遺伝不要**）
-    **(2) `ZeroDOK`** … `d = 0` の塔
-    **(3) `ZeroEOK`** … `e = 0` の塔 ＝ §112 `ShiftTowerClosedS`
-    **(4) `HeredZ2`** … 窓の根の行 2 が 0（＝ (H2')）
-    **(5) `RootZ2`** … 消費側の底の行 2 が 0（＝ `z = 0`）
-
-⚠ **教訓 14**: **5 本のどれも証明していません。**
-**⟹ ★ ですが `MTowerClosedS` は §80 で 3 本の残差に落ちていたので、
-これは**別の 5 本への言い換え**です。⟹ **どちらが易しいかは自明ではありません**。**
-
-⚠⚠ **正直に**: (5) `RootZ2` は team-lead が `z = 1` で破れると言っています。
-**⟹ ⟹ ですから `mTowerClosedS_of_residues` は**そのままでは使えません**。**
-**⟹ H12 の `hz0_of_zle1`（`zle1 R` があれば消費側の `hz0` は無料）が要ります。**
-**⟹ ⟹ ★ そして `zle1`（行 2 が全部 1 以下）は **`z < 2` の断片**そのものなので、
-プロジェクトの前提として使えるはずです。⟹ team-lead に確認します。** -/
-
 /-! ## 223. ★★★★★★★★★ `0 < e` を落とします —— H12 の (q3b) が効きました
 
 H12 が `blockRoot_parent_prevBlock_noE`（**`0 < e` 不要**）と
@@ -3540,6 +3341,316 @@ theorem hrank_blockRoot_noE {A Q : TrioSeq} {d e k : ℕ}
     unfold rankDE
     rw [if_pos he]
     split_ifs <;> omega
+
+/-! ### 223.2 ★★★★ `j = 0` の枝の `0 < e` なし版（§216 の差し替え） -/
+
+open Classical in
+theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
+    (horph0 : OrphOK0) (hQne : Q ≠ []) (hd : 0 < d)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hz0 : entry Q 2 0 = 0)
+    (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hpre : ∀ p, p ≤ Q.length →
+      A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u)
+    (hz2 : HeredZ2) :
+    A ++ mTower Q d e (k + 1)
+      ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1 ∈ W u := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  set P := A ++ mTower Q d e k with hPdef
+  set T := mTower Q d e (k + 1) ++ B1.take 1 with hTdef
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  have hB1len : B1.length = Q.length := by rw [hB1, Lift1_length, shiftr01_length]
+  have hBlen : (B0 ++ B1).length = Q.length + Q.length := by
+    rw [List.length_append, hB0len, hB1len]
+  have hPlen : P.length = A.length + k * Q.length := by
+    rw [hPdef, List.length_append, mTower_length]
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hre : A ++ mTower Q d e (k + 1) ++ B1.take 1
+      = P ++ (B0 ++ B1).take (Q.length + 1) := by
+    rw [hPdef, hB0, hB1, prefix_mTower_take_reassoc A Q d e k 1, List.append_assoc]
+  have hassoc : A ++ mTower Q d e (k + 1) ++ B1.take 1 = A ++ T := by
+    rw [hTdef, List.append_assoc]
+  set S := P ++ (B0 ++ B1).take (Q.length + 1) with hS
+  have hSlen : S.length = P.length + (Q.length + 1) := by
+    rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hSAT : S = A ++ T := by rw [← hre]; exact hassoc
+  have hTlen : T.length = (k + 1) * Q.length + 1 := by
+    rw [hTdef, List.length_append, mTower_length, List.length_take, hB1len,
+      Nat.min_eq_left (by omega)]
+  have hlastAT : (A ++ T).length - 1 = A.length + (k + 1) * Q.length := by
+    rw [List.length_append, hTlen]; omega
+  have hTeq : T = (mTower Q d e (k + 2)).take ((k + 1) * Q.length + 1) := by
+    rw [hTdef]; exact tower_snoc_root_eq_take Q d e k
+  have hTlen2 : (mTower Q d e (k + 2)).length = (k + 2) * Q.length :=
+    mTower_length Q d e (k + 2)
+  have hsucc2 : (k + 2) * Q.length = (k + 1) * Q.length + Q.length :=
+    Nat.succ_mul (k + 1) Q.length
+  have hle : (k + 1) * Q.length + 1 ≤ (mTower Q d e (k + 2)).length := by omega
+  have hsrowT : srow T ((k + 1) * Q.length)
+      = srow (mTower Q d e (k + 2)) ((k + 1) * Q.length) := by
+    rw [hTeq]; exact srow_take (by omega)
+  by_cases hpM : hasParent (mTower Q d e (k + 2))
+      (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length)) ((k + 1) * Q.length)
+  · -- ★ 親がある
+    have hpT : hasParent T (srow T ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+      rw [hsrowT, hTeq]
+      exact (hasParent_take hle (by omega)).mpr hpM
+    have hpTe : parent T (srow T ((k + 1) * Q.length)) ((k + 1) * Q.length)
+        = parent (mTower Q d e (k + 2))
+          (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+      rw [hsrowT] at hpT ⊢
+      rw [hTeq] at hpT ⊢
+      exact parent_take hle (by omega) hpT
+    have hparAT : hasParent (A ++ T) (srow T ((k + 1) * Q.length))
+        (A.length + (k + 1) * Q.length) := hasParent_append_right_of _ _ hpT
+    have hsrowAT : srow (A ++ T) (A.length + (k + 1) * Q.length)
+        = srow T ((k + 1) * Q.length) := srow_append_right A T _
+    have hpar : hasParent S (srow S (S.length - 1)) (S.length - 1) := by
+      rw [hSAT, hlastAT, hsrowAT]; exact hparAT
+    set par := parent S (srow S (S.length - 1)) (S.length - 1) with hpardef
+    have hpareq : par = A.length
+        + parent (mTower Q d e (k + 2))
+          (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+      rw [hpardef, hSAT, hlastAT, hsrowAT, parent_append_right_of A T hpT, hpTe]
+    have hge := blockRoot_parent_ge_noE (Q := Q) (d := d) (e := e) (n := k + 2)
+      (k := k) hQne hd (by omega) hr0 hz0 hpM
+    have hltAT : par < A.length + (k + 1) * Q.length := by
+      rw [hpardef]
+      have := nextR_index_lt (parent_nextR hpar)
+      rw [hSAT, hlastAT] at this ⊢
+      exact this
+    set p := par - P.length with hpdef
+    have hplt : p < Q.length := by omega
+    have hpe : par = P.length + p := by omega
+    refine hsnoc_zero_of_parent hd hIH hQ1 (hpre Q.length le_rfl) (hpre p (by omega))
+      hplt hpar hpe ?_ hz2
+    intro hp0
+    rw [hp0]
+    refine hrank_blockRoot_noE (A := A) hQne hd hz0 hpM ?_
+    omega
+  · -- ★ 孤児 ⟹ `snoc_orphan_W`
+    have hnpT : ¬ hasParent T (srow T ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+      rw [hsrowT, hTeq]
+      intro hc
+      exact hpM ((hasParent_take hle (by omega)).mp hc)
+    have hnp := horph0 A Q d e k hnpT
+    have hB1t : B1.take 1 = [B1.getD 0 (0, 0, 0)] := by
+      rw [show (1 : ℕ) = 0 + 1 from rfl, List.take_add_one, List.take_zero]
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+      rfl
+    have hCmem : A ++ mTower Q d e (k + 1) ∈ W u := by
+      have h := hpre Q.length le_rfl
+      rw [show (B0 ++ B1).take Q.length = B0 from by
+        rw [List.take_append, List.take_of_length_le (by omega), hB0len,
+          Nat.sub_self, List.take_zero, List.append_nil]] at h
+      rw [hPdef] at h
+      rw [show mTower Q d e (k + 1) = mTower Q d e k ++ B0 from by
+        rw [mTower_succ, ← hB0], ← List.append_assoc]
+      exact h
+    have hClen : (A ++ mTower Q d e (k + 1)).length = A.length + (k + 1) * Q.length := by
+      rw [List.length_append, mTower_length]
+    have hCne : A ++ mTower Q d e (k + 1) ≠ [] := by
+      intro hc
+      have : (A ++ mTower Q d e (k + 1)).length = 0 := by rw [hc]; rfl
+      omega
+    have hsp : A ++ mTower Q d e (k + 1) ++ B1.take 1
+        = (A ++ mTower Q d e (k + 1)) ++ [B1.getD 0 (0, 0, 0)] := by rw [hB1t]
+    rw [hsp]
+    refine snoc_orphan_W _ hCmem hCne ?_
+    rw [hClen, ← hsp, hassoc]
+    exact hnp
+
+/-! ### 220.2c ⛔⛔ `0 < d` / `0 < e` は**遺伝しません**（今日いちばん重い発見）
+
+`oper` の作る新しいリフト量は（§198 の逐語）
+
+    `srow = 2` … `wd0` も `wd1` も正になりうる
+    **`srow = 1` … `wd1 = 0`**（`¬ 1 < 1`）
+    **`srow = 0` … `wd0 = wd1 = 0`**
+
+**⟹ ⛔ ★ つまり `0 < e` は `srow ≤ 1` の段で**必ず**破れます。「ときどき」ではありません。**
+**⟹ ⟹ `0 < d` も `srow = 0` の段で必ず破れます。**
+
+**⟹ ★ ですからこの 2 つは `TowerP''` から**外し**、**別ルートの仮定**にします:**
+
+    `d = 0` … 行 0 のリフトが無い塔（`mTower Q 0 e n`）
+    `e = 0` … 行 1 のリフトが無い塔（`mTower Q d 0 n`）
+             ⟹ §112 `MTowerClosedS0 = ShiftTowerClosedS`（**プロジェクト既知の対象**）
+
+⚠ **これは「穴が増えた」のではなく「穴の位置が正しくなった」ものです。**
+**⟹ 私は `TowerP''` に `0 < d` / `0 < e` を入れたまま「遺伝は易しいはず」と書いていました。**
+**⟹ ⟹ ⛔ **誤り**でした。⟹ 必ず破れます。** -/
+
+/-- ⛔ **`d = 0` の塔**（行 0 のリフトなし）。 -/
+def ZeroDOK (u : ℕ) : Prop :=
+  ∀ (A Q : TrioSeq) (e : ℕ), TowerP'' Q 0 e → A ∈ W u → A ++ Q ∈ W u →
+    ∀ n, A ++ mTower Q 0 e n ∈ W u
+
+/-! ### 220.3 測度の強帰納（底のブロックをもらう版） -/
+
+theorem tower_of_measure_step2 {u : ℕ}
+    (P : TrioSeq → ℕ → ℕ → Prop) (meas : TrioSeq → ℕ → ℕ → ℕ)
+    (hstep : ∀ Q d e, P Q d e →
+      (∀ V d0 d1, P V d0 d1 → meas V d0 d1 < meas Q d e →
+        ∀ A, A ∈ W u → A ++ V ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u) :
+    ∀ Q d e, P Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have key : ∀ s Q d e, meas Q d e ≤ s → P Q d e →
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+    intro s
+    induction s with
+    | zero =>
+      intro Q d e hle hP A hA hAQ n
+      exact hstep Q d e hP
+        (fun _ _ _ _ hlt _ _ _ _ => absurd hlt (by omega)) A hA hAQ n
+    | succ s ih =>
+      intro Q d e hle hP A hA hAQ n
+      exact hstep Q d e hP
+        (fun V d0 d1 hPV hlt A' hA' hAV m =>
+          ih V d0 d1 (by omega) hPV A' hA' hAV m) A hA hAQ n
+  intro Q d e hP A hA hAQ n
+  exact key (meas Q d e) Q d e (le_refl _) hP A hA hAQ n
+
+/-! ### 220.4 ★★★★★ **最終定理** -/
+
+open Classical in
+theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
+    (hzd : ZeroDOK u) (hz2 : HeredZ2) :
+    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine tower_of_measure_step2 (u := u) TowerP'' towerMeas ?_
+  intro Q d e hP hIH A hA hAQ
+  have hQne := ne_of_TowerP'' hP
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  have hz0 := hz0_of_TowerP'' hP
+  have hr0 := hr0_of_TowerP'' hP
+  rcases Nat.eq_zero_or_pos d with hd0 | hd
+  · subst hd0; exact hzd A Q e hP hA hAQ
+  refine prefixTowerClosed_of_snocStepStrong1 hA hAQ ?_
+  intro n j hn hj hall
+  rcases Nat.eq_zero_or_pos j with hj0 | hj1
+  · -- ★ `j = 0`: `n = k+1`
+    subst hj0
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    have hpre : ∀ p, p ≤ Q.length →
+        A ++ mTower Q d e k
+          ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+              ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u := by
+      intro p hp
+      exact prefix_block_take_mem hp (by simpa using hall 0 (le_refl 0))
+    exact hsnoc_zero_noE horph0 hQne hd hr0 hz0 hIH hpre hz2
+  · -- ★ `j ≥ 1`
+    set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+    have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+    by_cases hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j
+    · exact hsnoc_pos hP hIH hj hj1 hloc (parent_bound_pos hj hloc) hall hz2
+    · -- ⟹ ブロックの中で孤児 ⟹ `OrphOK` で全体でも孤児 ⟹ `snoc_orphan_W`
+      have hnp := horph A Q d e n j hj1 hj hloc
+      have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
+        rw [List.take_add_one]
+        congr 1
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+        rfl
+      have hsplit : A ++ mTower Q d e n ++ B.take (j + 1)
+          = (A ++ mTower Q d e n ++ B.take j) ++ [B.getD j (0, 0, 0)] := by
+        rw [hBt, ← List.append_assoc]
+      have hClen : (A ++ mTower Q d e n ++ B.take j).length
+          = (A ++ mTower Q d e n).length + j := by
+        rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+      have hCne : A ++ mTower Q d e n ++ B.take j ≠ [] := by
+        intro hc
+        have : (A ++ mTower Q d e n ++ B.take j).length = 0 := by rw [hc]; rfl
+        omega
+      rw [hsplit]
+      refine snoc_orphan_W _ (hall j (le_refl j)) hCne ?_
+      rw [hClen, ← hsplit]
+      exact hnp
+
+/-! ### 220.5 ⟹ ★★★★★ **残る義務は 4 本**（`ZeroEOK` が消えました）
+
+```lean
+theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
+    (hzd : ZeroDOK u) (hz2 : HeredZ2) :
+    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u
+```
+
+    **`OrphOK`**  … `j ≥ 1` でブロックの中で孤児 ⟹ 全体でも孤児（**R2 実測 100%、374043**）
+    **`OrphOK0`** … `j = 0` で**塔の中**で孤児 ⟹ 接頭辞を付けても孤児
+    **`ZeroDOK`** … `d = 0` の塔（⟹ team-lead: `PrefixCopies`）
+    **`HeredZ2`** … 窓の根の行 2 が 0（＝ (H2')。**R2 実測 98.4〜99.8%**）
+
+**⟹ ★ `ZeroEOK`（`e = 0` の塔）は **H12 の (q3b)** で消えました。**
+
+### 220.6 ★★★ 遺伝の義務は **`hz0(V)` 1 本**
+
+`TowerP''` は `0 < |Q|` / `hr0` / `hz0` の 3 本で、
+
+    `0 < |V|` … §221 `wnd_pos`（**無料**）
+    `hr0(V)`  … §221 `hr0_wnd`（**無料**）
+    `hz0(V)`  … ⛔ **`HeredZ2`**（唯一の核）
+
+⚠ **教訓 14**: **4 本のどれも証明していません。** -/
+
+/-! ## 222. ★★★★★★★★★★ **消費側への接続** —— `MTowerClosedS` まで繋ぎます
+
+`MTowerClosedS`（`L105Cap:5618`）は
+
+    `∀ u d e n Q, Q ∈ W u → (∀ j, 1 ≤ j → j < |Q| → entry Q 0 0 < entry Q 0 j) → mTower Q d e n ∈ W u`
+
+**⟹ ★ §220 を `A = []` で使うと、足りないのは `entry Q 2 0 = 0` **1 つだけ**です。**
+
+    `[] ∈ W u` … `W_nil` ✅
+    `[] ++ Q = Q ∈ W u` … **消費側の仮定そのもの** ✅
+    `hr0` … **消費側の仮定そのもの** ✅
+    `0 < |Q|` … `|Q| = 0` なら `mTower = []` ✅
+    `entry Q 2 0 = 0` … ⛔ **供給されません**（team-lead: `z = 1` で破れる） -/
+
+/-- ⛔ **消費側の `hz0`**（`z = 0` に相当）。H12 の `hz0_of_zle1` が効くはずのところ。 -/
+def RootZ2 : Prop :=
+  ∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) → entry Q 2 0 = 0
+
+theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] :=
+  List.eq_nil_of_length_eq_zero (by rw [mTower_length]; simp)
+
+open Classical in
+/-- ★★★★★ **`MTowerClosedS` は 5 本から出ます。** -/
+theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
+    (hzd : ∀ u, ZeroDOK u) (hz2 : HeredZ2) (hroot : RootZ2) :
+    MTowerClosedS := by
+  intro u d e n Q hQ hs
+  rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
+  · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
+    subst hnil
+    rw [mTower_nil]
+    exact W_nil u
+  · have hP : TowerP'' Q d e :=
+      ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hroot u Q hQ hs⟩
+    have h := towerClosed_of_hered (u := u) horph horph0 (hzd u) hz2 Q d e hP []
+      (W_nil u) (by simpa using hQ) n
+    simpa using h
+
+/-! ### 222.1 ⟹ ★★★★★ **`MTowerClosedS` が 4 本の式になりました**
+
+    **(1) `OrphOK`**  … `j ≥ 1` でブロックの中で孤児 ⟹ 全体でも孤児
+         ⟹ ★ **R2 実測 100%（374043）**
+    **(2) `OrphOK0`** … `j = 0` で塔の中で孤児 ⟹ 接頭辞を付けても孤児
+         ⟹ R2 実測（`e = 0` でブロック根の親は一度も飛び越えない、0/732140）が支持
+    **(3) `ZeroDOK`** … `d = 0` の塔 ⟹ team-lead: **`PrefixCopies`**（`L53Subst:3599`）
+    **(4) `HeredZ2`** … 窓の根の行 2 が 0（＝ (H2')）⟹ **R2 実測 98.4〜99.8%** ← **唯一の数値上の穴**
+    **(5) `RootZ2`** … 消費側の底の行 2 が 0 ⟹ H12 `hz0_of_zle1`（`zle1` があれば無料）
+
+⚠ **教訓 14**: **5 本のどれも証明していません。**
+
+⚠ **`ZeroEOK`（`e = 0`）は H12 の (q3b) `blockRoot_parent_prevBlock_noE` で消えました。**
+**⟹ ★ 私が「§112 で既知」と 4 回書いた誤りは、**別ルートではなく直接**片づきました。** -/
 
 end L106
 end TRIO
