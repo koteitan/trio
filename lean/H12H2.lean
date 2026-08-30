@@ -2735,5 +2735,98 @@ theorem no_hasParent_blockRoot_d_zero {Q : TrioSeq} {e n k r : ℕ} (hQ1 : 0 < Q
       have := le1_blockRoot_d_zero hQ1 hr0 hk hle1
       omega
 
+
+/-! ### 40.2 ★★★★★ **`d = 0` なら、全ブロック根は `Q` の根と同じ親を持つ**
+
+§40.1 は「塔の中では親が無い」。⟹ **親があるとすれば接頭辞 `A` の中**。
+⟹ 行 0 が全ブロックで同じで、間の列は全部 `≥ entry Q 0 0` なので、
+`nextrel0` の最小性が **どのブロック根についても同じ列を選ぶ**。
+
+⟹ ⟹ ★ だから `ZeroDOK` の `j = 0`（ブロック根）は
+「`Q` の根の親がそのまま `(k+1)` 番目のブロック根の親になる」で処理できる。 -/
+
+/-- 塔の側の列は行 0 が `entry Q 0 0` 以上（接頭辞つき）。 -/
+theorem entry0_prefix_mTower_min_d_zero {A Q : TrioSeq} {e n m : ℕ} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hm1 : A.length ≤ m) (hm2 : m < (A ++ mTower Q 0 e n).length) :
+    entry Q 0 0 ≤ entry (A ++ mTower Q 0 e n) 0 m := by
+  obtain ⟨r, rfl⟩ : ∃ r, m = A.length + r := ⟨m - A.length, by omega⟩
+  rw [entry_append_right]
+  refine entry0_mTower_min_d_zero hQ1 hr0 ?_
+  rw [List.length_append] at hm2; omega
+
+/-- ブロック根の行 0（接頭辞つき）。 -/
+theorem entry0_prefix_blockRoot_d_zero {A Q : TrioSeq} {e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k < n) :
+    entry (A ++ mTower Q 0 e n) 0 (A.length + k * Q.length) = entry Q 0 0 := by
+  rw [entry_append_right]
+  exact entry0_mTower_blockRoot_d_zero hQ1 hk
+
+/-- ★★ ブロック根の `nextrel0` の親は**接頭辞の中にしかいない**。 -/
+theorem nextrel0_prefix_blockRoot_src_d_zero {A Q : TrioSeq} {e n k a : ℕ}
+    (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (h : nextrel0 (A ++ mTower Q 0 e n) a (A.length + k * Q.length)) :
+    a < A.length := by
+  obtain ⟨ha, -, -, hlt, -⟩ := h
+  by_contra hc
+  push_neg at hc
+  rw [entry0_prefix_blockRoot_d_zero hQ1 hk] at hlt
+  exact absurd (entry0_prefix_mTower_min_d_zero hQ1 hr0 hc ha) (by omega)
+
+/-- ★★★ **`nextrel0` の親は全ブロック根で共通**（`k` 番目 ⟺ `0` 番目、同じ列 `a`）。 -/
+theorem nextrel0_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k a : ℕ}
+    (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n) :
+    nextrel0 (A ++ mTower Q 0 e n) a (A.length + k * Q.length)
+      ↔ nextrel0 (A ++ mTower Q 0 e n) a A.length := by
+  have hMlen : (A ++ mTower Q 0 e n).length = A.length + n * Q.length := by
+    rw [List.length_append, mTower_length]
+  have hA0 : A.length = A.length + 0 * Q.length := by omega
+  have hek : entry (A ++ mTower Q 0 e n) 0 (A.length + k * Q.length) = entry Q 0 0 :=
+    entry0_prefix_blockRoot_d_zero hQ1 hk
+  have he0 : entry (A ++ mTower Q 0 e n) 0 A.length = entry Q 0 0 := by
+    rw [hA0]; exact entry0_prefix_blockRoot_d_zero hQ1 hn
+  have hnq : 0 < n * Q.length := Nat.mul_pos hn hQ1
+  have hkq : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hlt0 : A.length < (A ++ mTower Q 0 e n).length := by omega
+  have hltk : A.length + k * Q.length < (A ++ mTower Q 0 e n).length := by omega
+  constructor
+  · intro h
+    have hain := nextrel0_prefix_blockRoot_src_d_zero hQ1 hr0 hk h
+    obtain ⟨ha, -, -, hlt, hmin⟩ := h
+    refine ⟨ha, hlt0, hain, by rw [he0, ← hek]; exact hlt, ?_⟩
+    intro j hj
+    rw [he0, ← hek]
+    exact hmin j ⟨hj.1, by omega⟩
+  · rintro ⟨ha, -, hab, hlt, hmin⟩
+    refine ⟨ha, hltk, by omega, by rw [hek, ← he0]; exact hlt, ?_⟩
+    intro j hj
+    rw [hek]
+    rcases Nat.lt_or_ge j A.length with hjl | hjr
+    · have := hmin j ⟨hj.1, hjl⟩
+      rw [he0] at this; exact this
+    · exact entry0_prefix_mTower_min_d_zero hQ1 hr0 hjr (by omega)
+
+/-- ★★★★★ **`d = 0`: `k` 番目のブロック根が行 0 の親を持つ ⟺ `Q` の根が持つ**
+（しかも親の列は同じ）。 -/
+theorem hasParent0_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n) :
+    hasParent (A ++ mTower Q 0 e n) 0 (A.length + k * Q.length)
+      ↔ hasParent (A ++ mTower Q 0 e n) 0 A.length := by
+  have hiff : ∀ a, nextR (A ++ mTower Q 0 e n) 0 a (A.length + k * Q.length)
+      ↔ nextR (A ++ mTower Q 0 e n) 0 a A.length := by
+    intro a
+    unfold nextR
+    rw [if_pos rfl]
+    exact nextrel0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk
+  constructor
+  · rintro ⟨a, ha, hu⟩
+    exact ⟨a, (hiff a).mp ha, fun b hb => hu b ((hiff b).mpr hb)⟩
+  · rintro ⟨a, ha, hu⟩
+    exact ⟨a, (hiff a).mpr ha, fun b hb => hu b ((hiff b).mp hb)⟩
+
 end H12H2
 end TRIO

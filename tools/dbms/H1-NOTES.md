@@ -7466,3 +7466,15 @@ team-lead の (q3):「`he` は落とせる。筋は『ブロックは平行移�
    接頭辞 `A` が親を供給しうる（塔の中で孤児 ≠ `A ++ 塔` で孤児）。
    ⟹ 次の予想: **`d = 0` なら全ブロック根は `Q` の根と同じ親（`A` の中）を持つ**
    （`entry` が等しく、間の列は全部 `≥` なので `nextrel0` の最小性が同じ列を選ぶ）。
+
+### §294.2 予想は証明できた（全部緑）
+
+    entry0_prefix_mTower_min_d_zero    : 塔側の列は行 0 が entry Q 0 0 以上（接頭辞つき）
+    entry0_prefix_blockRoot_d_zero     : entry (A ++ mTower Q 0 e n) 0 (|A|+k*|Q|) = entry Q 0 0
+    nextrel0_prefix_blockRoot_src_d_zero : ブロック根の nextrel0 の親は必ず A の中
+    nextrel0_prefix_blockRoot_iff_d_zero : nextrel0 M a (|A|+k*|Q|) ⟺ nextrel0 M a |A|
+    ★ hasParent0_prefix_blockRoot_iff_d_zero :
+        hasParent M 0 (|A|+k*|Q|) ⟺ hasParent M 0 |A|   （親の列も同じ）
+
+⟹ `d = 0` の `j = 0`（ブロック根）は「`Q` の根の親がそのまま `k` 番目のブロック根の
+   親になる」で処理できる。親が無ければ全ブロック根が孤児（`snoc_orphan_W`）。
