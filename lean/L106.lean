@@ -11083,5 +11083,33 @@ theorem lexLt_of_window {Q V : TrioSeq} {e d e' d' : ℕ} (h : V.length < Q.leng
     LexLt (lexMeas V e' d') (lexMeas Q e d) :=
   lexLt_of_cases (Or.inl h)
 
+/-! ### §316 「オフセット >= 1 ⟹ 窓 < |Q|」—— 表の 3 行と 5 行の共通部品
+
+R2 の (R-C15) / (R-C18) が測った機構は、算術 1 本である:
+
+    親 `c` が第 `n-1` ブロックの中で、**オフセット `r := c - (n-1)|Q| >= 1`**
+    ⟹ **窓 ＝ `n|Q| - c ＝ |Q| - r <= |Q| - 1 < |Q|`**
+
+⟹ ★ ですから **表の 3 行（`srow = 1`, `e = 0`, `d > 段差`）と 5 行（`srow = 2`, `e > 0`, `d > 段差`）**は、
+**同じ 1 本**で片づく。⟹ ⟹ ★★ 要るのは「**親がブロック根ちょうどではない**」だけ。 -/
+
+/-- ★★★★★ **オフセットが正なら、窓は `|Q|` より真に短い**（前提なし、算術）。 -/
+theorem window_lt_of_offset_pos {L n c : ℕ} (_hL : 0 < L) (hn : 0 < n)
+    (hge : (n - 1) * L < c) (hlt : c < n * L) : n * L - c < L := by
+  have hsplit : (n - 1) * L + L = n * L := by
+    have : n - 1 + 1 = n := by omega
+    calc (n - 1) * L + L = ((n - 1) + 1) * L := by rw [Nat.succ_mul]
+      _ = n * L := by rw [this]
+  omega
+
+/-- ⟹ **窓が `|Q|` より短ければ、測度の第 1 成分が減る**（§315 と繋ぐ形）。 -/
+theorem lexLt_of_offset_pos {Q V : TrioSeq} {e d e' d' L n c : ℕ}
+    (hL : 0 < L) (hn : 0 < n) (hQ : Q.length = L)
+    (hge : (n - 1) * L < c) (hlt : c < n * L) (hV : V.length = n * L - c) :
+    LexLt (lexMeas V e' d') (lexMeas Q e d) := by
+  refine lexLt_of_window ?_
+  rw [hV, hQ]
+  exact window_lt_of_offset_pos hL hn hge hlt
+
 end L106
 end TRIO
