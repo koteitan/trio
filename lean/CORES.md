@@ -13506,3 +13506,24 @@ theorem nextrel1_snoc_prev_eq {C p A}
     ★ **核が 3 本 → 2 本**
 
 **✅ build 緑 25 回目**: 811 jobs、`BUILD_EXIT=0`、`H12Export` **415 本**、`L106` **10,384 行**
+
+---
+
+## ★★★★★★★★★★ **H12 (W70, 2026-08-30): `oper` の入力は全部 `Lift1` 不変 —— 残るのは出力側の錐 1 点**
+
+    ★★★★★★★★★★ `oper_inputs_Lift1_invariant`（緑、既存 6 本 ＋ 私の (W69) を 1 本に）
+      **`|M|` ／ 行 0 ／ 行 2 ／ `srow`（`j ≠ 0`）／ `hasParent` ／ `parent` ／ `le0` ／ `le1`**
+      ⟹ ★ **全部 `Lift1` 不変**（`Wset.srow_Lift1` / `hasParent_Lift1` / `parent_Lift1` /
+        `le0_Lift1` / `le1_Lift1` / `entry0_Lift1` / `entry2_Lift1`、**すべて仮定ゼロ**）
+    ✅ ＋ **`d0` 不変**（`wd0_Lift1_invariant`）／ **`d1` 不変**（`wd1_Lift1_invariant`、(W69)）
+
+### ⛔ **(W70) の答え: `oper` を開かずには出ません（残る 1 点）**
+
+    ★ `oper` の出力の各列は **`entry M 1 j + (if le1 M j0 j then k*d1 else 0)`**
+    ⟹ ★★ `Lift1 X d` 側 … `entry X 1 j + (錐なら d) + (if le1 X j0 j then k*d1 else 0)`
+    ⟹ ★★ `Lift1 (X⟦n⟧) d` 側 … `entry X 1 j + (if le1 X j0 j then k*d1 else 0) + (**`X⟦n⟧` の錐**なら d)`
+    ⟹ ⟹ ⛔ **一致するのは `le1 (X⟦n⟧) 0 idx ↔ le1 X 0 j` のときだけ**
+    ⟹ ⟹ ⟹ ★★★★★ ⟹ **残る 1 点 ＝ 「`X⟦n⟧` の錐が `X` の錐に対応するか」**
+
+**⟹ ★ ですから **教訓 26（`oper` を開かない不変量を探す）は当たりましたが、最後の 1 点だけは開く必要**があります。**
+**⟹ ⚠ そして **その 1 点は `oper` の定義の「出力側」**なので、⟹ ★ **`take j0` の部分と写しの部分を分けて見る**必要があります。**

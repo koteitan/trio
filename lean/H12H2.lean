@@ -7774,5 +7774,31 @@ theorem parent_cons_eq_zero_of_residual {v z : ℕ} {Q : TrioSeq}
   parent_cons_eq_zero (by intro hc; rw [hc] at hQ2; simp at hQ2)
     (domT_of_residual hr0 hQ2 horph) hpM
 
+
+/-! ## 118. ★★★★★★★★★★ (W70): **`oper` の入力は全部 `Lift1` 不変** —— 残るのは出力側の錐 1 点
+
+`oper M n`（`Trio.lean:98`）が使う量:
+**`|M|` ／ 末尾の行 0・1・2 ／ `srow` ／ `hasParent` ／ `parent` ／ `d0` ／ `d1` ／
+`M.take j0` ／ 窓の各列の行 0・1・2 ／ `le0 M j0 j` ／ `le1 M j0 j`**。
+⟹ ★★★★★ **このうち `Lift1` で動くのは「行 1 の値」だけ**で、それも**錐の中だけ `+d`**。
+⟹ ⟹ ★★★★★★★★★★ ⟹ **残る 1 点は「`X⟦n⟧` の錐が `X` の錐に対応するか」**です。 -/
+
+/-- ★★★★★★★★★★ **`oper` の入力の不変性（まとめ）**。既存 5 本 ＋ 私の (W69) を 1 本に。 -/
+theorem oper_inputs_Lift1_invariant {X : TrioSeq} {d : ℕ} :
+    (Lift1 X d).length = X.length
+      ∧ (∀ j : ℕ, entry (Lift1 X d) 0 j = entry X 0 j)
+      ∧ (∀ j : ℕ, entry (Lift1 X d) 2 j = entry X 2 j)
+      ∧ (∀ j : ℕ, j ≠ 0 → srow (Lift1 X d) j = srow X j)
+      ∧ (∀ i b : ℕ, hasParent (Lift1 X d) i b ↔ hasParent X i b)
+      ∧ (∀ i b : ℕ, parent (Lift1 X d) i b = parent X i b)
+      ∧ (∀ a b : ℕ, le0 (Lift1 X d) a b ↔ le0 X a b)
+      ∧ (∀ a b : ℕ, le1 (Lift1 X d) a b ↔ le1 X a b) :=
+  by
+  refine ⟨Lift1_length X d, fun j => ?_, fun j => ?_, fun j hj => Wset.srow_Lift1 hj,
+    fun _ _ => Wset.hasParent_Lift1, fun _ _ => Wset.parent_Lift1,
+    fun _ _ => Wset.le0_Lift1, fun _ _ => Wset.le1_Lift1⟩
+  · rw [entry0_Lift1]
+  · rw [entry2_Lift1]
+
 end H12H2
 end TRIO
