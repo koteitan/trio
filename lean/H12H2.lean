@@ -5761,5 +5761,122 @@ theorem nextrel1_src_in_block_of_cone (Q : TrioSeq)
     n * Q.length ≤ c :=
   le_trans (by omega) (nextrel1_src_ge_of_cone_witness Q hn hj hy h)
 
+
+/-! ## 82. ★★★★★★ 接頭辞つきの行 1 —— **`MeasOK` の行 1**（錐の証人があるとき）
+
+`snoc` の形 `A ++ mTower Q d e n ++ (最後のブロック).take (j+1)` で、
+**`j` が `Q` の中で行 1 の親を持つ**なら ⟹ ★ **親は最後のブロックの中**。
+⟹ ⟹ ★★ **`|T| - 1 - 親 ≤ j < |Q|`** ＝ **`MeasOK`**。 -/
+
+open Classical in
+/-- 最後の（部分）ブロックの行 1 の値。 -/
+theorem entry1_prefixTake (A Q : TrioSeq) {d e n j i : ℕ} (hj : j < Q.length) (hi : i < j + 1) :
+    entry (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1
+        ((A ++ mTower Q d e n).length + i)
+      = entry Q 1 i + (if le1 Q 0 i then e * n else 0) := by
+  rw [entry_append_right, Wset.entry_take hi,
+    Wset.entry1_Lift1 (by rw [shiftr01_length]; omega), entry1_shiftr01]
+  congr 1
+  by_cases hc : le1 Q 0 i
+  · rw [if_pos hc, if_pos ((le1_shiftr01 (d0 := d * n)).mpr hc)]
+  · rw [if_neg hc, if_neg (fun hx => hc ((le1_shiftr01 (d0 := d * n)).mp hx))]
+
+/-- ★★★★★★ **`MeasOK` の行 1**: `j` が `Q` の中で行 1 の親 `y` を持つなら、
+`snoc` の形での行 1 の親は **`|A| + n|Q| + y` 以降**。⟹ ★ **接頭酸にも前のブロックにも行きません**。
+⟹ ⚠ 仮定は `nextrel1 Q y j` **だけ**（`hr0` も `hnbQ` も `0 < e` も `0 < d` も不要）。 -/
+theorem prefixTake_nextrel1_src_ge {A Q : TrioSeq} {d e n j y c : ℕ}
+    (hj : j < Q.length) (hy : nextrel1 Q y j)
+    (h : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + y ≤ c := by
+  have hylt : y < j := hy.2.2.1
+  have hlt : entry Q 1 y < entry Q 1 j := hy.2.2.2.1
+  have hle0Q : le0 Q y j := hy.2.2.2.2.1
+  have hle0 : le0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      ((A ++ mTower Q d e n).length + y) ((A ++ mTower Q d e n).length + j) := by
+    refine le0_append_right_of _ _ ?_
+    rw [Wset.le0_take (by rw [Lift1_length, shiftr01_length]; omega) (by omega),
+      Wset.le0_Lift1, le0_shiftr01]
+    exact hle0Q
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2.2 ((A ++ mTower Q d e n).length + y) ⟨by omega, hle0⟩
+  rw [entry1_prefixTake A Q hj (by omega), entry1_prefixTake A Q hj (by omega)] at hmin
+  by_cases hcy : le1 Q 0 y
+  · have hcj : le1 Q 0 j := ⟨by omega, hj, hcy.2.2.tail hy⟩
+    rw [if_pos hcy, if_pos hcj] at hmin; omega
+  · rw [if_neg hcy] at hmin
+    split_ifs at hmin <;> omega
+
+/-- ★★★★★★★ ⟹ **`MeasOK` の行 1 そのもの**: 窓が `Q` より真に短い。 -/
+theorem window_lt_of_row1_parent {A Q : TrioSeq} {d e n j y c : ℕ}
+    (hj : j < Q.length) (hy : nextrel1 Q y j)
+    (h : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + j - c < Q.length := by
+  have := prefixTake_nextrel1_src_ge hj hy h
+  omega
+
+/-- ★★★★★ ⟹ **`j` が行 1 の孤児でなければ良い**（`amin` での言い換え）。 -/
+theorem window_lt_of_row1_parent' {A Q : TrioSeq} {d e n j c : ℕ}
+    (hj : j < Q.length) (hpar : hasParent Q 1 j)
+    (h : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + j - c < Q.length := by
+  obtain ⟨y, hy, -⟩ := hpar
+  exact window_lt_of_row1_parent hj (by simpa [nextR] using hy) h
+
+
+/-! ## 83. ★★★★★★ **`MeasOK` の行 2** —— 行 1 と同じ筋、しかも**もっと簡単**
+
+行 2 の値は `Lift1` でも `shiftr01` でも**動きません**。
+⟹ ★ ですから **`if` の場合分けすら要りません**。 -/
+
+/-- 最後の（部分）ブロックの行 2 の値 ＝ `Q` の値そのもの。 -/
+theorem entry2_prefixTake (A Q : TrioSeq) {d e n j i : ℕ} (hi : i < j + 1) :
+    entry (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+        ((A ++ mTower Q d e n).length + i) = entry Q 2 i := by
+  rw [entry_append_right, Wset.entry_take hi, Wset.entry2_Lift1, entry2_shiftr01]
+
+/-- ★★★★★★ **`MeasOK` の行 2**: `j` が `Q` の中で行 2 の親 `y` を持つなら、
+`snoc` の形での行 2 の親は **`|A| + n|Q| + y` 以降**。⟹ ★ **仮定は `nextrel2 Q y j` だけ**。 -/
+theorem prefixTake_nextrel2_src_ge {A Q : TrioSeq} {d e n j y c : ℕ}
+    (hj : j < Q.length) (hy : nextrel2 Q y j)
+    (h : nextrel2 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + y ≤ c := by
+  have hylt : y < j := hy.2.2.1
+  have hlt : entry Q 2 y < entry Q 2 j := hy.2.2.2.1
+  have hle1Q : le1 Q y j := hy.2.2.2.2.1
+  have hle1 : le1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      ((A ++ mTower Q d e n).length + y) ((A ++ mTower Q d e n).length + j) := by
+    refine (le1_append_right _ _ _ _).mpr ?_
+    rw [Wset.le1_take (by rw [Lift1_length, shiftr01_length]; omega) (by omega),
+      Wset.le1_Lift1, le1_shiftr01]
+    exact hle1Q
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2.2 ((A ++ mTower Q d e n).length + y) ⟨by omega, hle1⟩
+  rw [entry2_prefixTake A Q (by omega), entry2_prefixTake A Q (by omega)] at hmin
+  omega
+
+/-- ★★★★★★★ ⟹ **`MeasOK` の行 2 そのもの**: 窓が `Q` より真に短い。 -/
+theorem window_lt_of_row2_parent {A Q : TrioSeq} {d e n j y c : ℕ}
+    (hj : j < Q.length) (hy : nextrel2 Q y j)
+    (h : nextrel2 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + j - c < Q.length := by
+  have := prefixTake_nextrel2_src_ge hj hy h
+  omega
+
+/-- ★★★★★ ⟹ `hasParent` 版。 -/
+theorem window_lt_of_row2_parent' {A Q : TrioSeq} {d e n j c : ℕ}
+    (hj : j < Q.length) (hpar : hasParent Q 2 j)
+    (h : nextrel2 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + j - c < Q.length := by
+  obtain ⟨y, hy, -⟩ := hpar
+  exact window_lt_of_row2_parent hj (by simpa [nextR] using hy) h
+
 end H12H2
 end TRIO

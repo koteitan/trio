@@ -9624,3 +9624,46 @@ A = [(0,0,0)]、Q = [(2,1,0),(3,0,0)]、d = 1、e = 0、n = 1、j = 0
       ⟹ ★ **測度を差し替えれば再利用できる**
     ★★★★★★ **12 本の死が 1 つの構造に還元された**
     ⚠ **L3 の警告: 同じ枠で条件を探し続けると、13 本目が死ぬだけ**
+
+---
+
+## ★★★★★★★ **H12 (W40 完了, 2026-08-30): `MeasOK` の 3 行が全部落ちた —— ただし `j` が孤児でないとき**
+
+**⟹ ★ `MeasOK` ＝ `|T| - 1 - 親 < |Q|`。⟹ ★★ **`snoc` の形**
+`T = A ++ mTower Q d e n ++ (最後のブロック).take (j+1)`、的 ＝ `|A| + n|Q| + j`。**
+
+| 行 | 定理 | 仮定 | 状態 |
+|---|---|---|---|
+| **0** | `window_lt_of_row0_parent` | **`hr0 Q`** ＋ `0 < j` | ✅ 緑 |
+| **1** | `window_lt_of_row1_parent` | **`nextrel1 Q y j`**（`j` が `Q` で行 1 の親を持つ） | ✅ 緑 |
+| **2** | `window_lt_of_row2_parent` | **`nextrel2 Q y j`**（`j` が `Q` で行 2 の親を持つ） | ✅ 緑 |
+
+**⟹ ★★★★★ **行 1・行 2 は `hr0` も `hnbQ` も `0 < e` も `0 < d` も要りません**。**
+
+### ★★★★★★ 機構（行 1）
+
+    ★ **証人 `y` は今のブロックの中の `|A| + n|Q| + y`**（`le0 Q y j` が `take`/`Lift1`/`shiftr01` を通る）
+    ★★ `nextrel1` の**最小性**をそこに当てる ⟹ **親 `c ≥ |A| + n|Q| + y`**
+    ⟹ ★ **証人が錐の中 ⟹ 的も錐の中**（鎖が伸びる）⟹ **両方 `+e*n` で相殺**
+    ⟹ ★ **証人が錐の外** ⟹ **持ち上げが無いぶん低い**
+    ⟹ ⟹ ★★★ **どちらでも `entry Q 1 y < entry Q 1 j` が生きます** ⟹ **矛盾**
+    ⟹ ⟹ ⟹ ★ **`|T| - 1 - c ≤ j < |Q|`** ＝ **`MeasOK`**
+
+### ★★★ 機構（行 2）—— **もっと簡単**
+
+    ★ **行 2 の値は `Lift1` でも `shiftr01` でも動きません** ⟹ ⛔ **`if` の場合分けが要りません**
+
+### ⛔ **残る穴は 1 つ: `j` が `Q` の中で孤児のとき**
+
+    ⛔ 行 1 の孤児 ⟺ **`amin Q j = entry Q 1 j`**（`orphan_row1_iff_amin_eq`、H12 §333）
+    ⛔ 行 0 は `hr0 Q` ＋ `0 < j`
+    ⟹ ★★★★★★★ **そして L3 の `MeasOK` の反例は `j = 0`** ⟹ ⟹ ★ **3 行とも `j > 0` を要求します**
+      ⟹ ⚠ **`j > 0` に制限した `MeasOK` は、まだ生きているかもしれません**（L3 に確認中）
+
+### ★ 定理名（`H12Export.lean`、277 本）
+
+    entry1_prefixTake / prefixTake_nextrel1_src_ge / window_lt_of_row1_parent(')
+    entry2_prefixTake / prefixTake_nextrel2_src_ge / window_lt_of_row2_parent(')
+    entry1_mTower_block_formula / rtg0_mTower_intra_block
+    nextrel1_src_ge_of_cone_witness / nextrel1_src_in_block_of_cone（接頭辞なしの版）
+    window_lt_of_row0_parent / row0_parent_ge_block / no_row0_parent_from_before_block
