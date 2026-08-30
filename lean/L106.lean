@@ -947,5 +947,75 @@ theorem lex_step_blockRoot {Q : TrioSeq} {d e n k w r : ℕ}
 **理由: 枝 1 では `rankDE` について何も言えない（`r` は任意でよい）から。**
 **⟹ `hwle`（`w ≤ |Q|`）だけが両枝に共通の前提です。** -/
 
+/-! ## 201. ★★★★★★★★ `hstep` から **錐の条件が消えます**
+
+§169 `prefixTowerClosed_final` は `hstep` に
+
+    **`0 < j → le1 Q 0 j → 親 ≥ (A ++ mTower).length`**
+
+を渡していました。**`le1 Q 0 j`（錐の中）が付いていたのは、錐の外を扱えなかったからです。**
+
+**⟹ ★ H12 の `prefix_window_of_outOfCone_all'` が**錐の外**を埋めました。**
+**⟹ ⟹ 2 つを合わせると、`le1 Q 0 j` が**消えます**。**
+
+⚠ **1 つだけ弱くなります: 錐の外では `hasParent` が**ただでは出ません**。**
+**⟹ なので新しい形は `0 < j → hasParent … → 親 ≥ …` です。**
+**⟹ 消費側は §186 を使うときにどのみち `hasParent` を持っているので、実質は損しません。** -/
+
+open Classical in
+theorem prefixTowerClosed_final_noCone {u : ℕ} {A M : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u) (hM2 : 2 ≤ M.length) (he : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0M : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hbase : entry M.dropLast 0 0 = 0)
+    (hz0 : entry M.dropLast 2 0 = 0)
+    (hstep : ∀ (n j : ℕ), j < M.dropLast.length →
+      (0 < j →
+        hasParent (A ++ mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (srow (A ++ mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+            (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+          (A ++ mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length →
+        (A ++ mTower M.dropLast d e n).length ≤
+          parent (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+            (srow (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+              (A ++ mTower M.dropLast d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+            (A ++ mTower M.dropLast d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length) →
+      (∀ j', j' ≤ j →
+        A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j' ∈ W u) →
+      A ++ mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower M.dropLast d e n ∈ W u := by
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  -- `Q = M.dropLast` の上の行 0 の狭義単調
+  have hr0Q : ∀ l, 0 < l → l < M.dropLast.length →
+      entry M.dropLast 0 0 < entry M.dropLast 0 l := by
+    intro l hl0 hl1
+    rw [hdl] at hl1
+    rw [List.dropLast_eq_take, Wset.entry_take (show (0 : ℕ) < M.length - 1 by omega),
+      Wset.entry_take hl1]
+    exact hr0M l hl0 (by omega)
+  refine prefixTowerClosed_final hA hr0Q hz0 ?_
+  intro n j hj hcone hall
+  refine hstep n j hj (fun hj1 hpar0 => ?_) hall
+  by_cases hc : le1 M 0 (0 + j)
+  · -- 錐の中: §169 が渡してくれる前提をそのまま使う
+    refine hcone hj1 ?_
+    rw [List.dropLast_eq_take]
+    refine (Wset.le1_take (X := M) (l := M.length - 1) (a := 0) (b := j)
+      (by omega) (by rw [hdl] at hj; omega)).mpr ?_
+    simpa using hc
+  · -- 錐の外: H12 の窓補題
+    exact prefix_window_of_outOfCone_all' hM2 he hd0e hr0M hlp hbase hj hj1 hc hpar0
+
 end L106
 end TRIO
