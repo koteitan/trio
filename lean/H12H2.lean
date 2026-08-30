@@ -7591,5 +7591,27 @@ theorem tie_drop_mem_W_after_lift {u : ℕ} {M : TrioSeq} {d j : ℕ}
   W_mono (le_of_lt (lt_of_lt_of_le (lev_tie_lt_root_after_lift h0 hj hj0 h hz hd)
     ((mem_Wself_iff u (Lift1 M d)).mp hL).2)) (W_drop hL j)
 
+
+/-! ## 113. ★★★★★★★★ **`d1 = 0` ⟺ `srow ≤ 1`** —— 私の `e = 0` の仮定の正体
+
+L3 の §295（`entry1_lt_of_nextR_two`）は、私が (W44) で書いた
+`entry1_parent_lt_of_srow2` と**同じ文**です。⟹ ★ それを使うと `wd1` の値が決まります。 -/
+
+/-- ★★★★★★★★ **`wd1 = 0` ⟺ `srow ≤ 1`**（`wd1` を展開した形）。
+⟹ ★ ⟹ **私の `nextrel1_src_lt_prefix_of_singleton` の `d1 = 0` は、実質「`srow ≤ 1`」**でした。 -/
+theorem d1_zero_iff_srow_le_one {T : TrioSeq} {par s : ℕ}
+    (hs : srow T (T.length - 1) = s) (hpar : nextR T s par (T.length - 1)) :
+    (if 1 < s then entry T 1 (T.length - 1) - entry T 1 par else 0) = 0 ↔ s ≤ 1 := by
+  have hle : s ≤ 2 := by rw [← hs]; exact srow_le_two T _
+  constructor
+  · intro h
+    by_contra hc
+    have hs2 : s = 2 := by omega
+    subst hs2
+    rw [if_pos (by omega)] at h
+    have := entry1_parent_lt_of_srow2 hpar
+    omega
+  · intro h; rw [if_neg (by omega)]
+
 end H12H2
 end TRIO

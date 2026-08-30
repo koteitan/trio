@@ -12979,3 +12979,19 @@ docstring の「`X ∈ W m` から `X ∈ W (lev X 0)` は出ないので真の�
 **⟹ ★ **`LiftTie` と `MTowerClosedS` のどちらが軽いか**は、**H12 の (W65) の結果**で決める。**
 
 **✅ build 緑 20 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **399 本**
+
+---
+
+## ★★★★★★★★ **H12 (2026-08-30): `d1 = 0` ⟺ `srow ≤ 1`（緑）**
+
+    ★★★★★★★★ `d1_zero_iff_srow_le_one` … **`wd1 = 0` ⟺ `srow(末尾) ≤ 1`**
+    ⟹ ★ ⟹ **`nextrel1_src_lt_prefix_of_singleton` の `d1 = 0` は、実質「`srow ≤ 1`」**でした
+
+### ⚠ **重複の記録: L3 の §295 は、私の (W44) と同じ文です**
+
+    ★ **L3 `entry1_lt_of_nextR_two (h : nextR T 2 c t) : entry T 1 c < entry T 1 t`**（§295、3 行）
+    ★ **H12 `entry1_parent_lt_of_srow2 (h : nextR M 2 a b) : entry M 1 a < entry M 1 b`**（(W44)、commit `98d89af`）
+    ⟹ ⟹ ★★ **同じ文**（変数名だけ違う）⟹ ★ **`H12Export` に既にあり、build 済み**
+
+**⟹ ★★★ 教訓（自分に）: **納品した定理の「使い道」まで書いて渡す**と、⟹ ★ **重複が減ります**。**
+**⟹ ⟹ ⚠ 私は (W44) で「`rankDE = srow` の部品」としか書きませんでした。**
