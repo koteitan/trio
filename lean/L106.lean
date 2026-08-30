@@ -8135,5 +8135,117 @@ theorem orphOKW_false : ¬ OrphOKW := by
 
 **⟹ ★★★ ですから **(RSUM2') の答えは「遺伝は要らない。ただしそれでは足りない」**です。** -/
 
+/-! ## 265. ⛔⛔⛔⛔⛔ **`OrphOK0` も `W` ＋ `R1<=R0` を足しても偽**です
+
+§262 の反例 `Q = [(2,1,0), (3,0,0)]`、`A = [(0,0,0)]` を、**帰納法が持つ前提を全部足した形**で
+落とします。⟹ ★ さらに **R2 の `R1<=R0`（`∀ i, entry Q 1 i ≤ entry Q 0 i`）も満たします**:
+
+    列 0: `1 ≤ 2` ✅  ／  列 1: `0 ≤ 3` ✅
+
+**⟹ ⛔⛔ ですから **`Q` の側にどんな条件を足しても、`OrphOK0` は救えません**。**
+**⟹ ⟹ ★★★ **問題は `A`（接頭辞）の側**です。⟹ ⟹ **`A = [(0,0,0)]` は `W` の元**で、
+`Q` の根より **浅い**（行 0 が `0 < 2`）。⟹ ★ ＝ **`rsum` の破れ**。 -/
+
+private theorem Q0ce_zeroRow2 : ∀ p ∈ Q0ce, p.2.2 = 0 := by decide
+private theorem Q0ce_lev : lev Q0ce 0 = 2 := by unfold lev Q0ce entry; simp
+
+theorem Q0ce_mem_W {u : ℕ} (hu : 2 ≤ u) : Q0ce ∈ W u := by
+  rw [mem_Wself_iff]
+  exact ⟨zeroRow2_mem_Wself Q0ce_zeroRow2, by rw [Q0ce_lev]; omega⟩
+
+theorem Ace_mem_W (u : ℕ) : [((0 : ℕ), (0 : ℕ), (0 : ℕ))] ∈ W u := by
+  rw [mem_Wself_iff]
+  refine ⟨zeroRow2_mem_Wself (by decide), ?_⟩
+  show lev [((0 : ℕ), (0 : ℕ), (0 : ℕ))] 0 ≤ u
+  unfold lev entry; simp
+
+theorem AQ0ce_mem_W (u : ℕ) : [((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ Q0ce ∈ W u := by
+  rw [mem_Wself_iff]
+  refine ⟨zeroRow2_mem_Wself (by decide), ?_⟩
+  show lev ([((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ Q0ce) 0 ≤ u
+  unfold lev Q0ce entry; simp
+
+/-- ⛔ **`W` ＋ `R1<=R0` つきの `OrphOK0`**（帰納法が持つ前提を全部入れたもの）。 -/
+def OrphOK0W : Prop :=
+  ∀ (u : ℕ) (A Q : TrioSeq) (d e k : ℕ), A ∈ W u → Q ∈ W u → A ++ Q ∈ W u →
+    (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) →
+    entry Q 2 0 = 0 → (∀ q, q < Q.length → entry Q 2 q ≤ 1) →
+    (∀ i, i < Q.length → entry Q 1 i ≤ entry Q 0 i) → 0 < d →
+    ¬ hasParent (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1)
+      (srow (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1)
+        ((k + 1) * Q.length))
+      ((k + 1) * Q.length) →
+    ¬ hasParent (A ++ (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1))
+      (srow (A ++ (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1))
+        (A.length + (k + 1) * Q.length))
+      (A.length + (k + 1) * Q.length)
+
+/-- ⛔⛔⛔⛔⛔ **`W` ＋ `R1<=R0` を足しても偽**。 -/
+theorem orphOK0W_false : ¬ OrphOK0W := by
+  intro h
+  have hblk : (Lift1 (shiftr01 (1 * (0 + 1)) 0 Q0ce) (0 * (0 + 1))).take 1
+      = [((3 : ℕ), (1 : ℕ), (0 : ℕ))] := by
+    show (Lift1 (shiftr01 1 0 Q0ce) 0).take 1 = _
+    rw [Wset.Lift1_zero]; unfold Q0ce shiftr01; rfl
+  have htow : mTower Q0ce 1 0 (0 + 1) = Q0ce := by
+    unfold mTower
+    show ((List.range 1).flatMap fun k => Lift1 (shiftr01 (1 * k) 0 Q0ce) (0 * k)) = Q0ce
+    simp
+  have hT : mTower Q0ce 1 0 (0 + 1)
+      ++ (Lift1 (shiftr01 (1 * (0 + 1)) 0 Q0ce) (0 * (0 + 1))).take 1 = T0ce := by
+    rw [htow, hblk]; unfold Q0ce T0ce; rfl
+  have hidx : (0 + 1) * Q0ce.length = 2 := by unfold Q0ce; rfl
+  have hnp := h 2 [((0 : ℕ), (0 : ℕ), (0 : ℕ))] Q0ce 1 0 0 (Ace_mem_W 2)
+    (Q0ce_mem_W (le_refl 2)) (AQ0ce_mem_W 2)
+    (by intro l hl0 hl
+        have : l < 2 := by simpa [Q0ce] using hl
+        rw [show l = 1 from by omega]; decide)
+    (by decide)
+    (by intro q hq
+        have : q < 2 := by simpa [Q0ce] using hq
+        rcases Nat.lt_or_ge q 1 with hq' | hq'
+        · rw [show q = 0 from by omega]; decide
+        · rw [show q = 1 from by omega]; decide)
+    (by intro i hi
+        have : i < 2 := by simpa [Q0ce] using hi
+        rcases Nat.lt_or_ge i 1 with hi' | hi'
+        · rw [show i = 0 from by omega]; decide
+        · rw [show i = 1 from by omega]; decide)
+    (by omega) ?_
+  · rw [hT, hidx] at hnp
+    refine hnp ?_
+    show hasParent ([((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ T0ce)
+      (srow ([((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ T0ce) (1 + 2)) (1 + 2)
+    rw [show ([((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ T0ce) = M0ce from by unfold T0ce M0ce; rfl,
+      show (1 : ℕ) + 2 = 3 from rfl, show srow M0ce 3 = 1 from by decide]
+    exact M0ce_hasParent
+  · rw [hT, hidx, show srow T0ce 2 = 1 from by decide]
+    rintro ⟨y, hy, -⟩
+    rw [nextR_one_iff] at hy
+    have hy2 : y < 2 := hy.2.2.1
+    rcases Nat.lt_or_ge y 1 with h0 | h1
+    · rw [show y = 0 from by omega] at hy; exact absurd hy.2.2.2.1 (by decide)
+    · rw [show y = 1 from by omega] at hy; exact absurd hy.2.2.2.2.1 T0ce_no_le0_12
+
+/-! ### 265.1 ⟹ ★★★★★ **結論: `Q` 側の条件では閉じません**
+
+    ✅ **`Q ∈ W u`** ……………… 足しても偽（§264、§265）
+    ✅ **`hr0` ／ `hz0` ／ `zle1`** … 足しても偽
+    ✅ **`R1<=R0`（R2 の新条件）** … 足しても偽（§265）
+    ⟹ ⛔ **`OrphOK` / `OrphOK0` は、`Q` に何を課しても救えません**
+
+**⟹ ★★★ **問題は `A`（接頭辞）です**。⟹ ⟹ **`A = [(0,0,0)]` は `W` の元**なのに、
+`Q` の根より **浅い**（行 0 が `0 < 2`）。⟹ ★ ＝ **`rsum A Q` の破れ**。**
+
+**⟹ ★★★★★ ですから **設計は `A` に条件を課すか、`A` が親を供給しても構わない形にする**——
+⟹ ★ **その 2 つしかありません**。⟹ ⟹ ⛔ そして **`rsum` は運べません**（§227 ＋ 前のブロックの存在）。**
+
+**⟹ ⟹ ⟹ ★★★★★★ ですから **「`A` が親を供給しても構わない形」が唯一の道**です。**
+**⟹ ⚠ そこは `Aop` の節 3（graft）の話で、⟹ ★ **`Wset` / `L105Cap` の領域**です。** -/
+
 end L106
 end TRIO
