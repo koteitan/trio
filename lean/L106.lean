@@ -5885,5 +5885,47 @@ theorem hlocQ_first_column_iff {V : TrioSeq} (hV : 1 < V.length)
 ⚠ **教訓 14**: 上は**同値**の証明です。**遺伝そのものは、`t = 1` の不等式が
 窓ごとに成り立つかにかかっています。⟹ R2 の (ADJ'-d) が**それ**です。** -/
 
+/-! ### 239.6 ★★★ `t = 1` の条件を **ブロックの言葉**に落とします（team-lead の確認依頼）
+
+team-lead:「`t = 1` の比較は**同じブロックの中の 2 列**なので `e*k` が両辺で同じ ⟹ `k` が消える」
+
+**⟹ ★ 前半は正しいです（下で緑）。⟹ ⛔ ですが**後半は自動ではありません**。** -/
+
+theorem wnd_first_two_entry1 {P B : TrioSeq} {j p : ℕ} (hpj : p < j)
+    (hlen2 : 1 < j - p) :
+    (entry (wnd P B j p) 1 0 < entry (wnd P B j p) 1 1)
+      ↔ entry B 1 p < entry B 1 (p + 1) := by
+  have hE : ∀ t, t < j - p →
+      entry (wnd P B j p) 1 t = entry B 1 (p + t) := by
+    intro t ht
+    unfold wnd
+    rw [entry_window _ ht,
+      show P.length + p + t = P.length + (p + t) from by omega, entry_append_right,
+      Wset.entry_take (show p + t < j + 1 by omega)]
+  rw [hE 0 (by omega), hE 1 (by omega), Nat.add_zero]
+
+/-! ### 239.7 ⚠⚠ **`k` が消えるのは「錐のクラスが同じとき」だけ**です
+
+`entry B 1 x = entry Q 1 x + (if le1 Q 0 x then e*n else 0)` なので、`t = 1` の条件は
+
+    `entry Q 1 p + (if le1 Q 0 p then e*n else 0)
+      < entry Q 1 (p+1) + (if le1 Q 0 (p+1) then e*n else 0)`
+
+| `p`（窓の根） | `p+1` | `e*n` |
+|---|---|---|
+| 錐の中 | 錐の中 | ★ **消える** |
+| 錐の外 | 錐の外 | ★ **消える** |
+| 錐の外 | 錐の中 | ★ **緩む** |
+| **錐の中** | **錐の外** | ⛔ **`n` 依存** ← ★ **`blocker_of_large_k` の射程**（`hinp` ∧ `houtj`） |
+
+**⟹ ★ ですから team-lead の「`k` が消える」は **3/4 のマスでは正しく、1 マスで偽**です。**
+**⟹ ⟹ ★★ そして残る 1 マスは **`hcls` を `(p, p+1)` に当てたもの**そのものです。**
+
+**⟹ ⟹ ⟹ ★★★ ですから (FIN) の分母は「**窓の根が錐の中 ∧ 第 1 列が錐の外**」に絞れます。**
+**⟹ ★ そこが 0 件なら、`t = 1` の条件は `n` に依らず、`blocker_of_large_k` の射程外です。**
+
+⚠ **教訓 14**: 上の表は **H12 の 4 通りの表と同じもの**です。
+**⟹ ★ 「同じブロックの中だから消える」は**十分ではありません**。⟹ ⟹ 錐のクラスが要ります。** -/
+
 end L106
 end TRIO
