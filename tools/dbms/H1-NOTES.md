@@ -6638,3 +6638,42 @@ R2 の 6 行のうち **「親になれるのはリフトを受けている行�
 ⟹ **§271 の追加前提は消えた。前提はすべて消費側が持っているものだけになった。**
 
 **Lean**: `lean/H12H2.lean`（緑、`sorry` 0、**定理 66 本**）。
+
+## §275. ★★ **依存閉包を `lean/H12Export.lean` にまとめた（緑）** —— L3 が `L106` に写す用
+
+L3 の要請:「`L106.lean` は `H12H2` を import できないので**写す**しかない。
+依存が 1 本でも欠けると通らない。**依存閉包を 1 通で**。」
+
+⟹ **手で数えると落とす**ので、**「必要なものだけを集めたファイルを緑にする」**方法を取った。
+
+    **`lean/H12Export.lean`** … `import L105Cap` のみ。**exit 0、`sorry` 0、定理 31 本、710 行**
+    ⟹ **緑であること自体が「依存閉包に欠けが無い」証明**
+
+### §275.1 入れたもの（31 本、依存順）
+
+    接頭辞の移送: `take_append_add` / `mTower_append_take` / `prefixTake_length`
+    行 2 の移送: `nextrel2_take_iff` / `hasParent_two_take` / `parent_two_take`
+    行 1 の移送: `nextrel1_take_iff` / `hasParent_one_take` / `parent_one_take`
+    同ブロック: `outOfCone_nextrel2_sameBlock` / `outOfCone_parent_sameBlock`
+              `outOfCone_nextrel1_sameBlock` / `outOfCone_parent_one_sameBlock`
+              `window_row0_sameBlock` / `window_row0_parent`
+    窓（3 行）: `entry2_block` / `window_of_outOfCone_two` / `_one` / **`_all`**
+    塔の座標: `entry0_mTower_block` / `entry1_mTower_blockRoot` / `entry0_towerPrefix_root`
+    `j = 0`: `rtg0_blockRoot_succ` / `blockRoot_parent_prevBlock` / `blockRoot_parent_split`
+            `blockRoot_window_eq` / **`_lt_of_ne_root`** / `_eq_of_root` / **`_eq_iff`**
+    接頭辞つき: `prefix_window_of_outOfCone_all` / **`prefix_window_of_outOfCone_all'`**
+
+### §275.2 入れなかったもの（要らない ／ 衝突する）
+
+    `h2` 系・反例（`X` / `X_mem_W` …）・`snocStep_outOfCone` 系 … **要らない**
+    `h12_row2_const_mTower` … L3 の `L105Cap:6186` と**同名**
+    `entry2_mTower_blockRoot` … L3 の `mTower_entry2_root`（§198）と**同じ定理**
+    §273 の 4 本 … **L3 の §198-§199 と重複**（L3 の指摘、5 件目）
+
+⚠ **`L105Cap` / `Wset` / `Column` との名前衝突を機械的に確認した ⟹ 0 件。**
+
+### §275.3 ⚠ 重複を 5 件出した原因（L3 の分析に同意）
+
+「索引に見えなかった」ではない（`H12H2.lean` は索引に 57 件入っている）。
+**L3 が §198-§199 を書いたことを私に伝えていなかった**（L3 の自己申告）。
+⟹ **今後、`L105Cap`/`L106` に何か緑にしたら互いに 1 行で伝える**という運用にした。
