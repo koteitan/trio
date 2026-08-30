@@ -4369,5 +4369,48 @@ theorem entry1_prevBlock_lt (Q : TrioSeq) {d e n k r : ℕ}
     if_pos hcone, if_pos hcone, Nat.mul_succ]
   omega
 
+
+/-- 行 0 のブロックの式（`L106:476` と同じもの。`H12Export` は `L106` を import しないので再掲）。 -/
+theorem entry0_mTower_block' (Q : TrioSeq) {d e n k i : ℕ} (hk : k < n) (hi : i < Q.length) :
+    entry (mTower Q d e n) 0 (k * Q.length + i) = entry Q 0 i + d * k := by
+  rw [mTower_entry hk hi, entry0_Lift1,
+    entry0_shiftr01 (W := Q) (d0 := d * k) (d1 := 0) (p := i) (by simpa using hi)]
+
+/-- ★★★★★★★★ **(W53) の行 0**: `d = 0`（持ち上げ無し）で、`Q` の全列が根以上、
+かつ **的の行 0 が `Q` の根と同じ**なら、**行 0 の親は接頭辞 `A` の中にしかいません**。
+⟹ ★ **`n` にも `k` にも依りません**。⟹ ⟹ ★★ **これが `PrefixCopiesOpen` の開いている理由**です。 -/
+theorem nextrel0_src_lt_prefix_of_root_height {A Q : TrioSeq} {e n k r c : ℕ}
+    (hQmin : ∀ i, i < Q.length → entry Q 0 0 ≤ entry Q 0 i)
+    (hk : k < n) (hr : r < Q.length) (hreq : entry Q 0 r = entry Q 0 0)
+    (h : nextrel0 (A ++ mTower Q 0 e n) c (A.length + (k * Q.length + r))) :
+    c < A.length := by
+  by_contra hc
+  push Not at hc
+  have hQpos : 0 < Q.length := by omega
+  have hlt : c < A.length + (k * Q.length + r) := h.2.2.1
+  have hval : entry (A ++ mTower Q 0 e n) 0 c
+      < entry (A ++ mTower Q 0 e n) 0 (A.length + (k * Q.length + r)) := h.2.2.2.1
+  obtain ⟨s, rfl⟩ : ∃ s, c = A.length + s := ⟨c - A.length, by omega⟩
+  have hs : s < n * Q.length := by
+    have hkn : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+    have : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+    omega
+  have hk' : s / Q.length < n := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm] at hs; exact hs)
+  have hi' : s % Q.length < Q.length := Nat.mod_lt _ hQpos
+  have hsplit : s = (s / Q.length) * Q.length + s % Q.length := (Nat.div_add_mod' s Q.length).symm
+  rw [entry_append_right, entry_append_right, hsplit,
+    entry0_mTower_block' Q hk' hi', entry0_mTower_block' Q hk hr, hreq] at hval
+  have := hQmin _ hi'
+  omega
+
+/-- ★★★★★ ⟹ **ブロック根は必ずこの場合**（`r = 0`）。
+⟹ ⛔ **どの写しのブロック根も、行 0 の親は `A` の中**。 -/
+theorem nextrel0_blockRoot_src_lt_prefix {A Q : TrioSeq} {e n k c : ℕ}
+    (hQmin : ∀ i, i < Q.length → entry Q 0 0 ≤ entry Q 0 i)
+    (hQ : 0 < Q.length) (hk : k < n)
+    (h : nextrel0 (A ++ mTower Q 0 e n) c (A.length + (k * Q.length + 0))) :
+    c < A.length :=
+  nextrel0_src_lt_prefix_of_root_height hQmin hk hQ rfl h
+
 end H12Export
 end TRIO
