@@ -9890,5 +9890,104 @@ theorem oper_append_of_parent_in {A P : TrioSeq} {p : ℕ} (n : ℕ) (hP : 2 ≤
 
 ⚠ **教訓 14**: §288 は緑ですが、**`W_add` を弱めたわけではありません**。⟹ ★ **3 つのうち 1 つ**です。 -/
 
+/-! ## 289. ★★★★★★★★ **`hasParent_append_gen` を `rsum` なしに** —— これで `W_add` の 3 用途が全部動きます
+
+`Wset.lean` を読むと、**`rsum` の残り 2 用途も `hasParent_append_gen` 1 本に集約**されます:
+
+    `graft_append`（`Wset:1434`）… ★ **`rsum` を使いません**（`P ≠ []` だけ）
+    `domT_append`（`Wset:1487`）… ★ `rsum` は **`hasParent_append_gen` 経由だけ**
+
+**⟹ ★★★★★ ですから **`hasParent_append_gen` を弱められれば、`W_add` の 3 用途が全部動きます**。** -/
+
+theorem nextrel0_append_iff {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length) :
+    nextrel0 (A ++ P) (A.length + a) (A.length + b) ↔ nextrel0 P a b := by
+  have hL : A.length + P.length ≤ (A ++ P).length := by rw [List.length_append]
+  have := nextrel0_window (T := A ++ P) (s := A.length) (L := P.length) hL ha hb
+  rw [drop_take_append_right] at this
+  exact this.symm
+
+theorem nextrel2_append_of {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length)
+    (h : nextrel2 P a b) : nextrel2 (A ++ P) (A.length + a) (A.length + b) := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  refine ⟨by rw [List.length_append]; omega, by rw [List.length_append]; omega, by omega, ?_,
+    le1_append_of ha hb h5, ?_⟩
+  · rw [entry_append_right, entry_append_right]; exact h4
+  · intro q ⟨hq1, hq2⟩
+    have hqle : q ≤ A.length + b := le1_le' hq2
+    obtain ⟨q', rfl⟩ : ∃ q', q = A.length + q' := ⟨q - A.length, by omega⟩
+    have := h6 q' ⟨by omega, (le1_append_iff (by omega) hb).mp hq2⟩
+    rw [entry_append_right, entry_append_right]
+    exact this
+
+theorem nextrel1_append_iff {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length) :
+    nextrel1 (A ++ P) (A.length + a) (A.length + b) ↔ nextrel1 P a b := by
+  constructor
+  · intro h
+    refine ⟨ha, hb, by have := h.2.2.1; omega, ?_,
+      (le0_append_iff ha hb).mp h.2.2.2.2.1, ?_⟩
+    · have := h.2.2.2.1
+      rwa [entry_append_right, entry_append_right] at this
+    · intro q ⟨hq1, hq2⟩
+      have := h.2.2.2.2.2 (A.length + q)
+        ⟨by omega, (le0_append_iff (by exact hq2.1) hb).mpr hq2⟩
+      rwa [entry_append_right, entry_append_right] at this
+  · exact nextrel1_append_of ha hb
+
+theorem nextrel2_append_iff {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length) :
+    nextrel2 (A ++ P) (A.length + a) (A.length + b) ↔ nextrel2 P a b := by
+  constructor
+  · intro h
+    refine ⟨ha, hb, by have := h.2.2.1; omega, ?_,
+      (le1_append_iff ha hb).mp h.2.2.2.2.1, ?_⟩
+    · have := h.2.2.2.1
+      rwa [entry_append_right, entry_append_right] at this
+    · intro q ⟨hq1, hq2⟩
+      have := h.2.2.2.2.2 (A.length + q)
+        ⟨by omega, (le1_append_iff (by exact hq2.1) hb).mpr hq2⟩
+      rwa [entry_append_right, entry_append_right] at this
+  · exact nextrel2_append_of ha hb
+
+theorem nextR_append_iff {A P : TrioSeq} {i a b : ℕ} (ha : a < P.length) (hb : b < P.length) :
+    nextR (A ++ P) i (A.length + a) (A.length + b) ↔ nextR P i a b := by
+  unfold nextR
+  by_cases h0 : i = 0
+  · rw [if_pos h0, if_pos h0]; exact nextrel0_append_iff ha hb
+  · rw [if_neg h0, if_neg h0]
+    by_cases h1 : i = 1
+    · rw [if_pos h1, if_pos h1]; exact nextrel1_append_iff ha hb
+    · rw [if_neg h1, if_neg h1]; exact nextrel2_append_iff ha hb
+
+/-- ★★★★★★★★ **`rsum` なしの `hasParent_append`**（要るのは「行 0 で越境できない」だけ）。 -/
+theorem hasParent_append_of_noCross {A P : TrioSeq} {i j : ℕ} (hj : j < P.length)
+    (hnc : ∀ c, c < A.length → ¬ le0 (A ++ P) c (A.length + j)) :
+    hasParent (A ++ P) i (A.length + j) ↔ hasParent P i j := by
+  constructor
+  · intro h
+    exact hasParent_peel_of_noCross
+      (fun y hy => no_nextR_of_no_le0_cross (hnc y hy)) h
+  · rintro ⟨y, hy, huniq⟩
+    have hylt : y < P.length := by
+      have := nextR_index_lt hy; omega
+    refine ⟨A.length + y, (nextR_append_iff hylt hj).mpr hy, ?_⟩
+    intro y' hy'
+    rcases Nat.lt_or_ge y' A.length with hlt | hge
+    · exact absurd hy' (no_nextR_of_no_le0_cross (hnc y' hlt))
+    · obtain ⟨y'', rfl⟩ : ∃ y'', y' = A.length + y'' := ⟨y' - A.length, by omega⟩
+      have hy''lt : y'' < P.length := by
+        have := nextR_index_lt hy'; omega
+      rw [huniq y'' ((nextR_append_iff hy''lt hj).mp hy')]
+
+/-! ### 289.1 ⟹ ★★★★★★★★ **`W_add` の 3 用途が全部「行 0 の越境なし」に落ちました**
+
+    ✅ **節 2**（`oper`）…… §288 `oper_append_of_parent_in`（バッドルートが `P` の中）
+    ✅ **節 1**（長さ ≤ 1）… §289 `hasParent_append_of_noCross`
+    ✅ **節 3**（graft）…… `graft_append` は **`rsum` を使わず**、`domT_append` は §289 経由
+
+**⟹ ★★★ ⟹ ですから **`W_add` の `rsum` は「行 0 で越境できない」に弱められる**はずです。**
+**⟹ ⟹ ★ そして **`rsum ⟹ 行 0 で越境できない`** は言えますが、⟹ ★★ **逆は言えません**（真に弱い）。**
+
+⚠ **教訓 14**: §289 は緑ですが、**`W_add` を書き直したわけではありません**。
+**⟹ ★ `XA_closed` は `Wset.lean` にあり、私は触りません。⟹ ⟹ ★★ **`L106` に弱めた版を作る**必要があります。** -/
+
 end L106
 end TRIO
