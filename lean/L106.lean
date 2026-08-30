@@ -3756,5 +3756,64 @@ theorem heredZ2_of_srow2 {P B : TrioSeq} {j p : ℕ} (hpj : p < j)
 ⚠ **そして `p = 0` の無料化は Lean では書いていません**（`entry T 2 P.length = entry Q 2 0`
 の計算が要ります）。⟹ 上の `heredZ2_of_srow2` だけが緑です。 -/
 
+/-! ### 224.2 ★★ `p = 0` の段の `HeredZ2` も**ただ**（窓の根が `Q` の根） -/
+
+theorem entry2_block_root {Q : TrioSeq} (d e n : ℕ) (hQ1 : 0 < Q.length) :
+    entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 2 0 = entry Q 2 0 := by
+  show ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).getD 0 (0, 0, 0)).2.2 = _
+  rw [block_getD (d := d) (e := e) (n := n) hQ1]
+
+open Classical in
+/-- ★ **`j ≥ 1` の段で `p = 0`**（親がブロックの根）なら `HeredZ2` は `hz0(Q)` そのもの。 -/
+theorem heredZ2_of_p_zero {A Q : TrioSeq} {d e n j : ℕ}
+    (hQ1 : 0 < Q.length) (hj1 : 0 < j) (hz0 : entry Q 2 0 = 0) :
+    entry (wnd (A ++ mTower Q d e n)
+      (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j 0) 2 0 = 0 := by
+  set P := A ++ mTower Q d e n with hPdef
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  unfold wnd
+  rw [entry_window _ (show 0 < j - 0 by omega), Nat.add_zero, Nat.add_zero]
+  have h := entry_append_right P (B.take (j + 1)) 2 0
+  rw [Nat.add_zero] at h
+  rw [h, Wset.entry_take (show (0 : ℕ) < j + 1 by omega), hB,
+    entry2_block_root d e n hQ1]
+  exact hz0
+
+open Classical in
+/-- ★ **`j = 0` の段で `p = 0`**（親が 1 つ前のブロックの根）も同じ。 -/
+theorem heredZ2_of_p_zero_pair {A Q : TrioSeq} {d e k : ℕ}
+    (hQ1 : 0 < Q.length) (hz0 : entry Q 2 0 = 0) :
+    entry (wnd (A ++ mTower Q d e k)
+      (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+        ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length 0) 2 0 = 0 := by
+  set P := A ++ mTower Q d e k with hPdef
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  unfold wnd
+  rw [entry_window _ (show 0 < Q.length - 0 by omega), Nat.add_zero, Nat.add_zero]
+  have h := entry_append_right P ((B0 ++ B1).take (Q.length + 1)) 2 0
+  rw [Nat.add_zero] at h
+  rw [h, Wset.entry_take (show (0 : ℕ) < Q.length + 1 by omega),
+    entry_append_left _ _ (show (0 : ℕ) < B0.length by omega), hB0,
+    entry2_block_root d e k hQ1]
+  exact hz0
+
+/-! ### 224.3 ⟹ ★★★ **`HeredZ2` の残差が式で書けました**
+
+**§224 ＋ §224.2 より、`HeredZ2` が要るのは**
+
+    **`srow (末尾) ≤ 1` ∧ `p ≥ 1`**
+
+**の段**だけ**です。⟹ 他は全部無料:**
+
+    `srow = 2` … §224 `heredZ2_of_srow2`（`entry 2 (末尾) ≤ 1` のもとで）
+    `p = 0`    … §224.2 `heredZ2_of_p_zero` / `_pair`（`hz0(Q)` から）
+
+**⟹ ★★ ⟹ R2 の 98.4〜99.8% の残差 0.2〜1.6% は、この 1 か所に集中しているはずです。**
+
+⚠ **教訓 14**: 「集中しているはず」は**私の予想**です。**測ってもらいます。** -/
+
 end L106
 end TRIO
