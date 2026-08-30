@@ -4650,5 +4650,58 @@ theorem nextR_src_ge_of_cone {M : TrioSeq} {p a b r : ℕ}
     · rw [if_neg h1] at h
       exact nextrel2_src_ge_of_cone hcone hnb2 h
 
+
+/-! ## 60. ★★★★★★★ **`hcls` は障害にならない** —— 証人を「本当の親」に取れば自動
+
+R2 の (COMP-b)「クラス条件だけが合わないのは **0 件**」の理由:
+
+    ★ 証人を **`nextrel1` の親**に取ると、`hcls` は**推移律で自動**
+      （`le1 V 0 y` ∧ `le1 V y t` ⟹ `le1 V 0 t`）
+    ★★ 逆に、証人があれば **`nextrel1` の親も存在する**（`le0` 祖先の中の最大元）
+
+⟹ ⟹ ★★★ **`hlocQ` の行 1 の成分 ⟺ `hasParent V 1 t`** ⟹ **`hcls` は自由**。 -/
+
+/-- ★★★ 証人を `nextrel1` の親に取れば **`hcls` は推移律で自動**。 -/
+theorem witness_of_nextrel1 {V : TrioSeq} {y t : ℕ} (h : nextrel1 V y t) :
+    y < t ∧ le0 V y t ∧ entry V 1 y < entry V 1 t ∧ (le1 V 0 y → le1 V 0 t) := by
+  refine ⟨h.2.2.1, h.2.2.2.2.1, h.2.2.2.1, ?_⟩
+  intro hy
+  exact ⟨hy.1, h.2.1, hy.2.2.tail h⟩
+
+open Classical in
+/-- ★★★★★ 逆: **証人があれば `nextrel1` の親が存在する**（`le0` 祖先の最大元）。 -/
+theorem nextrel1_of_witness {V : TrioSeq} {y t : ℕ}
+    (hyt : y < t) (hle0 : le0 V y t) (hlt : entry V 1 y < entry V 1 t) :
+    ∃ y', nextrel1 V y' t := by
+  have ht : t < V.length := hle0.2.1
+  have hyl : y < V.length := hle0.1
+  have hyT : y ∈ (Finset.range t).filter
+      (fun x => le0 V x t ∧ entry V 1 x < entry V 1 t) := by
+    simp only [Finset.mem_filter, Finset.mem_range]
+    exact ⟨hyt, hle0, hlt⟩
+  have hTne : ((Finset.range t).filter
+      (fun x => le0 V x t ∧ entry V 1 x < entry V 1 t)).Nonempty := ⟨y, hyT⟩
+  have hmem := Finset.max'_mem _ hTne
+  simp only [Finset.mem_filter, Finset.mem_range] at hmem
+  obtain ⟨hmt, hmle0, hmlt⟩ := hmem
+  refine ⟨_, hmle0.1, ht, hmt, hmlt, hmle0, ?_⟩
+  intro x hx
+  by_contra hc
+  push Not at hc
+  have hxt : x < t := by
+    rcases Nat.lt_or_ge x t with h | h
+    · exact h
+    · exfalso
+      have := hx.2
+      have hxle : x ≤ t := rtg0_index_le this.2.2
+      have hxe : x = t := by omega
+      rw [hxe] at hc
+      omega
+  have hxT : x ∈ (Finset.range t).filter
+      (fun x => le0 V x t ∧ entry V 1 x < entry V 1 t) := by
+    simp only [Finset.mem_filter, Finset.mem_range]
+    exact ⟨hxt, hx.2, hc⟩
+  exact absurd (Finset.le_max' _ x hxT) (by omega)
+
 end H12H2
 end TRIO
