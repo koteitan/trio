@@ -1954,5 +1954,70 @@ theorem prodLexNat_induction_two {α : Sort*} {μ : α → ℕ × ℕ} {P : α �
     rw [heq]
     exact prodLexNat_snd hlt
 
+
+/-! ## 29. **(n1b) `MTowerClosedRow2` と `L106` の鎖の噛み合わせ**
+
+`Final.lean:875` が要るのは **`L105.MTowerClosedRow2`（`L105Cap:5794`）**:
+
+    ∀ (u d e n) (Q), **`Q ∈ W u`** → **`∀ j, 1 ≤ j → j < |Q| → entry Q 0 0 < entry Q 0 j`**
+      → **`∃ p ∈ Q, 0 < p.2.2`** → `mTower Q d e n ∈ W u`
+
+`L106` の鎖（`prefixTowerClosed_of_snocStepCone`、`L105Cap:11940`）が要るのは
+
+    `hA : A ∈ W u`, `hr0`, **`hz0 : entry Q 2 0 = 0`**, `hstep`
+
+⟹ ⛔ **`MTowerClosedRow2` は `hz0` を供給しない。**
+`∃ p ∈ Q, 0 < p.2.2` は「**どれかの**列の行 2 が正」であって、
+**根の行 2 が 0 とは言っていない**。
+
+### 29.1 ⟹ 覆えている場合と、覆えていない場合
+
+    **行 2 ≡ 0**       … `mTower_mem_of_zeroRow2`（`L105Cap:5781`、仮定ゼロ）✅
+                        （だから `MTowerClosedRow2` は「行 2 に非零」だけを見る）
+    **`entry Q 2 0 = 0` ∧ どれかが正** … **`L106` の鎖**（`hz0` が出る）✅
+    **行 2 ≡ c ≥ 1**   … 下の `mTower_mem_of_constRow2`（**この節で緑にした**）✅
+    ⛔ **`entry Q 2 0 > 0` ∧ 行 2 が定数でない** … **どれも当たらない ＝ 穴**
+
+⟹ **これが `Final.lean` に繋ぐときの最後の穴。** -/
+
+/-- 定数の行 2 は `shiftr01` で保たれる。 -/
+theorem h12_constRow2_shiftr01 {Q : TrioSeq} {z d0 d1 : ℕ} (h : ∀ p ∈ Q, p.2.2 = z) :
+    ∀ p ∈ shiftr01 d0 d1 Q, p.2.2 = z := by
+  intro p hp
+  unfold shiftr01 at hp
+  rw [List.mem_map] at hp
+  obtain ⟨q, hq, rfl⟩ := hp
+  exact h q hq
+
+/-- 定数の行 2 は塔で保たれる。 -/
+theorem h12_constRow2_mTower {Q : TrioSeq} {z : ℕ} (h : ∀ p ∈ Q, p.2.2 = z) (d e n : ℕ) :
+    ∀ p ∈ mTower Q d e n, p.2.2 = z := by
+  intro p hp
+  unfold mTower at hp
+  rw [List.mem_flatMap] at hp
+  obtain ⟨k, -, hk⟩ := hp
+  exact L105.constRow2_Lift1 (h12_constRow2_shiftr01 h) p hk
+
+/-- ★ **行 2 が定数なら塔は `W u` に入る**（`c = 0` も `c ≥ 1` も）。
+⟹ `MTowerClosedRow2` の「行 2 が定数」の場合を閉じる。 -/
+theorem mTower_mem_of_constRow2 {u : ℕ} {Q : TrioSeq} {c : ℕ}
+    (hz : ∀ p ∈ Q, p.2.2 = c) (hQ : Q ∈ W u) (d e n : ℕ) :
+    mTower Q d e n ∈ W u := by
+  by_cases hQne : Q = []
+  · have : mTower Q d e n = [] := by
+      refine List.eq_nil_of_length_eq_zero ?_
+      rw [mTower_length, hQne]
+      simp
+    rw [this]
+    simpa using W_nil u
+  rcases Nat.eq_zero_or_pos c with rfl | hc
+  · exact mTower_mem_of_zeroRow2 hz hQ d e n
+  · cases n with
+    | zero => simpa using W_nil u
+    | succ n =>
+        refine constRow2_mem_W (h12_constRow2_mTower hz d e (n + 1)) ?_
+        rw [lev_mTower_root hQne]
+        exact lev_root_le_of_mem_W hQ hQne
+
 end H12H2
 end TRIO

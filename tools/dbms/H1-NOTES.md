@@ -6749,3 +6749,60 @@ L3 の振り分け:「`snocStep_oper_tower`（`L105Cap:13093`、緑）は**接�
 
 > ★ **「証明の負担を、人間の数え上げから型検査に移す」**——team-lead が
 > `CORES.md` に技法として記録。
+
+## §278. ★★★ **(n1) `Final.lean` 側の接続を確かめた —— 穴が 1 つある**
+
+### §278.1 (n1a) 逐語
+
+**`Final.lean:875`**:
+
+    theorem TRIO_terminates_of_mTowerClosedRow2 (h : L105.MTowerClosedRow2) :
+        WellFounded stepRel :=
+      TRIO_terminates_of_mTowerClosedS (L105.mTowerClosedS_of_row2 h)
+
+**`L105Cap.lean:5794`**:
+
+    def MTowerClosedRow2 : Prop :=
+      ∀ (u d e n : ℕ) (Q : TrioSeq), **Q ∈ W u** →
+        (**∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j**) →
+        (**∃ p ∈ Q, 0 < p.2.2**) →
+        mTower Q d e n ∈ W u
+
+### §278.2 ⛔ (n1b) **噛み合いません。`hz0` が供給されない**
+
+`L106` の鎖（`prefixTowerClosed_of_snocStepCone`、`L105Cap:11940`）が要るのは
+
+    `hA : A ∈ W u` ／ `hr0` ／ **`hz0 : entry Q 2 0 = 0`** ／ `hstep`
+
+⟹ **`MTowerClosedRow2` は `hz0` を供給しない。**
+`∃ p ∈ Q, 0 < p.2.2` は「**どれかの**列の行 2 が正」であって、**根の行 2 が 0 とは言っていない**。
+
+⚠ `A := []` を取れば結論の形は合う（`W_nil` ＋ `[] ++ x = x`）。
+⚠ `hr0` の形も合う（`1 ≤ j` と `0 < l` は同じ）。**食い違うのは `hz0` 1 本だけ。**
+
+### §278.3 ⟹ 場合分けの現状（**穴は 1 つ**）
+
+    **行 2 ≡ 0**                      … `mTower_mem_of_zeroRow2`（`:5781`、仮定ゼロ）✅
+    **`entry Q 2 0 = 0` ∧ どれかが正** … **`L106` の鎖**（`hz0` が出る）✅
+    **行 2 ≡ c ≥ 1**（定数）          … **`mTower_mem_of_constRow2`（§278.4、今回緑）** ✅
+    ⛔ **`entry Q 2 0 > 0` ∧ 行 2 が定数でない** … **どれも当たらない ＝ 穴**
+
+⟹ ★ **断片（行 2 ∈ {0,1}）では「根の行 2 = 1、かつ 0 の列も 1 の列もある `Q`」。**
+⟹ ★★ **これは私が §248 で見つけた `z = 1` の問題と同じ場所**（`hz0` ⟺ `z = 0`）。
+　　核は `L106` の中ではなく、**`Final` に繋ぐ入口**に移っていた。
+
+### §278.4 緑（穴を 1 つ狭めた）
+
+    h12_constRow2_shiftr01 ／ h12_constRow2_mTower
+    **mTower_mem_of_constRow2** : 行 2 が定数（`c = 0` も `c ≥ 1` も）なら塔は `W u`
+      （`c = 0` は `mTower_mem_of_zeroRow2`、`c ≥ 1` は `constRow2_mem_W`（`:2682`）
+        ＋ `lev_mTower_root`（`:5773`）＋ `lev_root_le_of_mem_W`（`Wset:2161`））
+
+### §278.5 ✅ (n1c) **`import L106` は安全**
+
+    `Final.lean` は既に `import L105Cap`、`L106` も `import L105Cap` ⟹ **循環なし**
+    `L106` は **`namespace TRIO.L106`**（新しい名前空間）
+    **`L106` の定理名 × `Final.lean`** … **衝突 0**
+    **`L106` の定理名 × 索引の他ファイル全部** … **衝突 0**
+
+⟹ **`Final.lean` に `import L106` を足しても壊れるものはない**（実際には足していない）。
