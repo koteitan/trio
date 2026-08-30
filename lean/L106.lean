@@ -3992,5 +3992,86 @@ theorem rsumHered_false : ¬ RsumHered := by
 ⚠ **教訓 14**: **`rsumHered_false` は「窓の形の `RsumHered`」が偽であることだけを言います。**
 **⟹ `OrphOK` に `rsum` を足すこと自体が悪いのではなく、**帰納で運べない**のが問題です。** -/
 
+/-! ## 228. ★★★★★★★★ `rsum` の**代わり**: 「的が塔の根より**真に上**」
+
+§227 で `rsum` が使えないと分かりました。**⟹ 代わりを探して、見つかったと思います。**
+
+## 機構（`nextrel_i` の**最小性の節**を、塔の根で殴る）
+
+`nextrel0 (A ++ T) y (|A| + j1)` の最小性は
+
+    `∀ j, y < j ∧ j < |A| + j1 → entry (A ++ T) 0 (|A| + j1) ≤ entry (A ++ T) 0 j`
+
+**⟹ ★ ここに `j := |A|`（＝ **`T` の根**）を入れると `entry T 0 j1 ≤ entry T 0 0`。**
+**⟹ ⟹ ★★ ですから **`entry T 0 0 < entry T 0 j1`** なら、`A` の列は**行 0 の親になれません**。**
+
+**行 1 も同じです**（`nextrel1` の最小性は `le0` 祖先の上なので、`le0 (|A|) (|A|+j1)` が要ります）。
+
+> **⟹ ★★★ `hbase`（`entry T 0 0 = 0`）は「**0 は絶対的な壁**」でした。**
+> **⟹ ⟹ ★ これは「**塔の根が的より低ければ壁になる**」——**平行移動で不変**です。** -/
+
+theorem no_nextrel0_from_prefix {A T : TrioSeq} {y j1 : ℕ}
+    (hy : y < A.length) (hj1 : 0 < j1)
+    (hmin : entry T 0 0 < entry T 0 j1) :
+    ¬ nextrel0 (A ++ T) y (A.length + j1) := by
+  intro h
+  have hval := h.2.2.2.2 A.length ⟨by omega, by omega⟩
+  have h0 : entry (A ++ T) 0 (A.length + j1) = entry T 0 j1 := entry_append_right A T 0 j1
+  have h1 : entry (A ++ T) 0 A.length = entry T 0 0 := by
+    have := entry_append_right A T 0 0
+    rw [Nat.add_zero] at this
+    exact this
+  rw [h0, h1] at hval
+  omega
+
+theorem no_nextrel1_from_prefix {A T : TrioSeq} {y j1 : ℕ}
+    (hy : y < A.length) (hj1 : 0 < j1)
+    (hle0 : le0 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 1 0 < entry T 1 j1) :
+    ¬ nextrel1 (A ++ T) y (A.length + j1) := by
+  intro h
+  have hval := h.2.2.2.2.2 A.length ⟨by omega, hle0⟩
+  have h0 : entry (A ++ T) 1 (A.length + j1) = entry T 1 j1 := entry_append_right A T 1 j1
+  have h1 : entry (A ++ T) 1 A.length = entry T 1 0 := by
+    have := entry_append_right A T 1 0
+    rw [Nat.add_zero] at this
+    exact this
+  rw [h0, h1] at hval
+  omega
+
+theorem no_nextrel2_from_prefix {A T : TrioSeq} {y j1 : ℕ}
+    (hy : y < A.length) (hj1 : 0 < j1)
+    (hle1 : le1 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 2 0 < entry T 2 j1) :
+    ¬ nextrel2 (A ++ T) y (A.length + j1) := by
+  intro h
+  have hval := h.2.2.2.2.2 A.length ⟨by omega, hle1⟩
+  have h0 : entry (A ++ T) 2 (A.length + j1) = entry T 2 j1 := entry_append_right A T 2 j1
+  have h1 : entry (A ++ T) 2 A.length = entry T 2 0 := by
+    have := entry_append_right A T 2 0
+    rw [Nat.add_zero] at this
+    exact this
+  rw [h0, h1] at hval
+  omega
+
+/-! ### 228.1 ⟹ ★★★ **これが `rsum` の代わりです。しかも `Q` だけの条件です**
+
+**`OrphOK` が要るのは「`A` が親を供給しない」ことです。⟹ 上の 3 本で:**
+
+    **行 0** … `entry T 0 0 < entry T 0 j1` … ★ **`hr0` から出ます**（塔の根 ＝ `Q` の根）
+    **行 1** … `entry T 1 0 < entry T 1 j1` ＋ `le0` が塔の根を通る
+             ⟹ ★ **「的が塔の根より行 1 で上」＝ 錐の中** ⟹ **ブロッカーでは破れる**
+    **行 2** … `entry T 2 0 < entry T 2 j1` ＋ `le1` が塔の根を通る
+
+**⟹ ★★★ ⟹ R2 の実測（`OrphOK` が `rsum` 無しで **45.6% 破れる**）と辻褄が合います:**
+**⟹ ⟹ **破れるのはブロッカー**（行 1 が根以下の列）のはずです。**
+
+⚠ **そして R2 の反例 `A = [(0,5,0)]`（行 0 = 0 で浅いが**孤児のまま**）も説明できます:**
+**⟹ 行 0 では上の壁が効き、行 1 では `A` の列の行 1 が 5 で高すぎて `nextrel1` の狭義増加が取れない。**
+
+⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
+**⟹ `le0` / `le1` が**塔の根を通る**ことを別に示す必要があります**（`nextrel_i` の候補が
+`A` の中にあるとき、鎖が塔の根を経由するか）。⟹ ★ そこが次の仕事です。 -/
+
 end L106
 end TRIO
