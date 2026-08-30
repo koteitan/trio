@@ -8684,5 +8684,55 @@ theorem no_le0_cross_of_d_zero {Q : TrioSeq} {e n a k' q' : ℕ} (hQ : 0 < Q.len
 
 ⚠ **教訓 14**: §271/§272 は緑ですが、**`ZeroDOK` には届きません**。**⟹ 過大に読まないでください。** -/
 
+/-! ## 273. ★★★★★★★ **(L-GEN)**: `snocStep_oper_pre` の「親がどこでも」版
+
+§266 の訂正で「**`hbound` は必要より強い**」と分かりました。⟹ ★ 一般形を書きます。
+
+**⟹ ★ 材料は 2 本とも**一般**です:**
+
+    `Lcone.oper_eq_gexp_gen` … `M⟦n⟧ = gexp M (parent …) (|M|-1-parent …) d0 d1 n`（**親の位置は任意**）
+    `L105.gexp_eq_take_append_mTower` … `gexp M j0 Lb d0 d1 n = M.take j0 ++ mTower ((M.drop j0).take Lb) d0 d1 n`
+
+**⟹ ⟹ ★★★ ですから `P ++ B.take (j+1)` の形も `P.length + p` という書き方も、
+**もともと本質ではありませんでした**。** -/
+
+open Classical in
+theorem snocStep_oper_gen {T : TrioSeq} {c m : ℕ}
+    (hL : T.length - 1 ≠ 0)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0))
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c) :
+    ∃ (V : TrioSeq) (d0 d1 : ℕ), V.length = T.length - 1 - c ∧
+      T⟦m⟧ = T.take c ++ mTower V d0 d1 m := by
+  have hclt : c < T.length := by
+    rw [← hpe]
+    exact nextR_index_lt (parent_nextR hpar) |>.trans_le (by omega)
+  refine ⟨(T.drop c).take (T.length - 1 - c),
+    (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0),
+    (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0),
+    ?_, ?_⟩
+  · rw [List.length_take, List.length_drop]; omega
+  · rw [oper_eq_gexp_gen m hL hz hpar, hpe,
+      gexp_eq_take_append_mTower (show c + (T.length - 1 - c) ≤ T.length from by omega)]
+
+/-! ### 273.1 ⟹ ★★★★★★ **`hbound` を `|V| < |Q|` に置き換えられます**
+
+**⟹ ★ §273 は **親の位置に何も条件を課しません**。⟹ ⟹ ★★ ですから:**
+
+    ⛔ **旧**: `hbound`（`(A ++ mTower).length ≤ parent`）＝ **親が最後のブロックの中**
+    ★★★★★ **新**: **`T.length - 1 - c < |Q|`**（＝ **窓が `Q` より短い**）だけ
+
+**⟹ ★★★ そして **後者のほうが真に弱い**です:**
+
+    `hbound` ⟹ `c ≥ |A ++ mTower|` ⟹ `|V| = |A ++ mTower| + j - c ≤ j < |Q|` ✅
+    ⟹ ⛔ **逆は言えません**（親が 1 つ前のブロックの末尾にあっても `|V| < |Q|` はありえます）
+
+**⟹ ★★★★★ ⟹ ですから **越境の手も、窓さえ短ければ帰納法に乗ります**。**
+**⟹ ⟹ ★ そして **実測では越境 208 件すべてで `|V| < |Q|`** でした（§266 の訂正）。**
+
+⚠ **教訓 14**: §273 は緑ですが、**`|V| < |Q|` はまだ証明していません**（測定 208/208）。
+**⟹ ★ 次はそこです。⟹ ⟹ ★★ そして **`towerClosed_of_hered` の配線をやり直す**必要があります。** -/
+
 end L106
 end TRIO
