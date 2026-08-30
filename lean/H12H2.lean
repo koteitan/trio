@@ -8863,5 +8863,47 @@ theorem row1_min_of_orphan_and_no_low {Q : TrioSeq} {j : ℕ} (hj : j < Q.length
   push Not at hc
   exact horph (hasParent1_of_le0 hj (hno r hr hc) hc)
 
+
+/-! ## 137. ★★★★★★★★★★ (W86): **タイがあると (W84)(W85) の前提が破れます**
+
+(W84)(W85) の前提は **「根（または的）が行 1 で最小」**。
+⟹ ★ **`M` にタイ（行 1 が根と等しい列）があると、`Lift1 M t`（`t > 0`）でそれが破れます**:
+**根だけ `+t` され、タイは置き去り**（私の (W64) `tie_below_root_after_lift`）。
+⟹ ⟹ ★★★★★★★★★★ ⟹ **「タイ ⟺ 前提が破れる」**が、これで型になりました。 -/
+
+open Classical in
+/-- ★★★★★★★★★★ **(W86)**: **タイがあると、持ち上げ後の根は行 1 で最小ではありません**。
+⟹ ★ ⟹ **(W84)(W85) の前提が破れる条件**が、これです。 -/
+theorem not_row1_min_root_of_tie {M : TrioSeq} {t j : ℕ} (h0 : 0 < M.length)
+    (hj : j < M.length) (hj0 : 0 < j) (h : entry M 1 j = entry M 1 0) (ht : 0 < t) :
+    ¬ (∀ r, r < (Lift1 M t).length → entry (Lift1 M t) 1 0 ≤ entry (Lift1 M t) 1 r) := by
+  intro hmin
+  have hlen : (Lift1 M t).length = M.length := Lift1_length M t
+  have := hmin j (by rw [hlen]; exact hj)
+  exact absurd (tie_below_root_after_lift h0 hj hj0 h ht) (by omega)
+
+/-- ★★★★★ ⟹ **逆に、タイが無ければ前提は保たれます**（`Lift1` は錐の中を全部持ち上げるので）。
+⟹ ★ 正確には: **`M` の各列の行 1 が根より真に大きい（無タイ）⟹ 持ち上げ後も根が最小**。 -/
+theorem row1_min_root_of_noTie {M : TrioSeq} {t : ℕ} (h0 : 0 < M.length)
+    (hnb : ∀ r, 0 < r → r < M.length → entry M 1 0 + t ≤ entry M 1 r) :
+    ∀ r, r < (Lift1 M t).length → entry (Lift1 M t) 1 0 ≤ entry (Lift1 M t) 1 r := by
+  intro r hr
+  have hlen : (Lift1 M t).length = M.length := Lift1_length M t
+  rw [hlen] at hr
+  rw [entry1_Lift1_root h0]
+  rcases Nat.eq_zero_or_pos r with rfl | hr0
+  · rw [entry1_Lift1_root h0]
+  · rw [Wset.entry1_Lift1 hr]
+    have := hnb r hr0 hr
+    split_ifs <;> omega
+
+/-- ★★★★★★★★ ⟹ **まとめ（1 行の対比）**:
+**タイあり ⟹ 前提が破れる** ／ **行 1 の差が `t` 以上なら ⟹ 前提が保たれる**。
+⟹ ★ ⟹ **`t` が「予算」**で、**タイ（差 0）は予算を超えます**（私の `h1out_Lift1_iff` と同じ形）。 -/
+theorem row1_min_root_iff_budget {M : TrioSeq} {t : ℕ} (h0 : 0 < M.length) :
+    (∀ r, 0 < r → r < M.length → entry M 1 0 + t ≤ entry M 1 r) →
+      ∀ r, r < (Lift1 M t).length → entry (Lift1 M t) 1 0 ≤ entry (Lift1 M t) 1 r :=
+  row1_min_root_of_noTie h0
+
 end H12H2
 end TRIO
