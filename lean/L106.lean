@@ -10685,5 +10685,45 @@ theorem mTower_mem_of_never_parent {u : ℕ} {A Q : TrioSeq} {d e : ℕ} (hA : A
     exact List.eq_nil_of_length_eq_zero (by omega)
   exact hAne h1
 
+/-! ### §306 (L-A1) `MTowerStep` は「`Q` の塔 ＋ `Q⟦m⟧` の 1 ブロック」
+
+```lean
+def MTowerStep (a) (Q) (d e) : Prop :=
+  ∀ n m, 1 <= m → mTower Q d e n ++ **shiftr01 (d*n) 0 ((Lift1 Q (e*n))⟦m⟧)** ∈ W a
+```
+
+⟹ ★ **`(Lift1 X t)⟦m⟧ = Lift1 (X⟦m⟧) t`**（`Lift1` は `oper` と可換）を仮定すると、
+`Lift1_shiftr01`（`L105Cap:3873`、緑）と合わせて末尾が
+
+    **`Lift1 (shiftr01 (d*n) 0 (Q⟦m⟧)) (e*n)`**
+
+になる。⟹ ⟹ ★★★ これは **`Q⟦m⟧` を生成元とする塔の第 `n` ブロックそのもの**。
+⟹ ★ ですから `MTowerStep` は **「`Q` の塔 `n` 個 ＋ `Q⟦m⟧` の第 `n` ブロック 1 個」**である。
+
+⚠ 可換性 `LiftOperComm` は H12 が (W66)/(W69) で詰めている。ここでは仮定として置き、
+**それが来たときに何が言えるか**だけを書く（重複しない）。 -/
+
+/-- **`Lift1` と `oper` の可換性**（H12 の (W66)/(W69) の目標）。 -/
+def LiftOperComm : Prop := ∀ (M : TrioSeq) (t n : ℕ), (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t
+
+/-- ★★★★★ **可換性の下で、`MTowerStep` は「塔 ＋ `Q⟦m⟧` の 1 ブロック」に書き換わる**。 -/
+theorem mTowerStep_iff_of_comm (h : LiftOperComm) (a : ℕ) (Q : TrioSeq) (d e : ℕ) :
+    L105.MTowerStep a Q d e ↔
+      ∀ n m : ℕ, 1 ≤ m →
+        mTower Q d e n ++ Lift1 (shiftr01 (d * n) 0 (Q⟦m⟧)) (e * n) ∈ W a := by
+  unfold L105.MTowerStep
+  constructor <;> intro hh n m hm
+  · have := hh n m hm
+    rwa [h Q (e * n) m, ← L105.Lift1_shiftr01] at this
+  · have := hh n m hm
+    rwa [h Q (e * n) m, ← L105.Lift1_shiftr01]
+
+/-- ⟹ **`n = 0` は「`Q⟦m⟧` そのもの」**（塔が空、持ち上げ 0）。 -/
+theorem mTowerStep_zero_of_comm (h : LiftOperComm) {a : ℕ} {Q : TrioSeq} {d e : ℕ}
+    (hst : L105.MTowerStep a Q d e) (m : ℕ) (hm : 1 ≤ m) :
+    Lift1 (shiftr01 0 0 (Q⟦m⟧)) 0 ∈ W a := by
+  have := (mTowerStep_iff_of_comm h a Q d e).mp hst 0 m hm
+  simpa [mTower] using this
+
 end L106
 end TRIO
