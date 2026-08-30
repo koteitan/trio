@@ -2634,5 +2634,123 @@ theorem prefix_block_take_mem {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ}
   rw [hcut, hkey]
   exact W_take h _
 
+/-! ## 220. ★★★★★★★★★★ **最終配線** —— 残る義務は**遺伝 2 本**だけ
+
+### 220.1 ★ まず `0 < d` は `TowerP''` から**出ます**（`TowerP3` は要りませんでした）
+
+`hd0e` は `entry M 0 |Q| = entry M 0 0 + d`、`hr0M` は `entry M 0 0 < entry M 0 |Q|`。
+**⟹ ★ 2 つを合わせると `entry M 0 0 < entry M 0 0 + d` ⟹ `0 < d`。**
+
+⚠ **私は「`0 < d` は未確認の別ルート」と team-lead に書きました。⟹ **誤り**でした。**
+**⟹ 前提の束の中で**既に含意されて**いました。** -/
+
+theorem hd_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < d := by
+  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  have h := hr0M M.dropLast.length (by omega) (by omega)
+  rw [Nat.zero_add] at hd0e
+  omega
+
+/-! ### 220.2 遺伝（残る唯一の義務）を 2 本の述語にします -/
+
+/-- ⛔ **遺伝 (1)**: `j ≥ 1` の段の窓は、また `TowerP''` を満たす。 -/
+def HeredPos : Prop :=
+  ∀ (A Q : TrioSeq) (d e n j p : ℕ), TowerP'' Q d e → j < Q.length → p < j →
+    TowerP''
+      (wnd (A ++ mTower Q d e n) (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p)
+      (wd0 (A ++ mTower Q d e n) (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p)
+      (wd1 (A ++ mTower Q d e n) (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p)
+
+/-- ⛔ **遺伝 (2)**: `j = 0`（ブロックの根）の段の窓も、また `TowerP''` を満たす。 -/
+def HeredZero : Prop :=
+  ∀ (A Q : TrioSeq) (d e k p : ℕ), TowerP'' Q d e → p < Q.length →
+    TowerP''
+      (wnd (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+      (wd0 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+      (wd1 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+
+/-! ### 220.3 測度の強帰納（底のブロックをもらう版） -/
+
+theorem tower_of_measure_step2 {u : ℕ}
+    (P : TrioSeq → ℕ → ℕ → Prop) (meas : TrioSeq → ℕ → ℕ → ℕ)
+    (hstep : ∀ Q d e, P Q d e →
+      (∀ V d0 d1, P V d0 d1 → meas V d0 d1 < meas Q d e →
+        ∀ A, A ∈ W u → A ++ V ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u) :
+    ∀ Q d e, P Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have key : ∀ s Q d e, meas Q d e ≤ s → P Q d e →
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+    intro s
+    induction s with
+    | zero =>
+      intro Q d e hle hP A hA hAQ n
+      exact hstep Q d e hP
+        (fun _ _ _ _ hlt _ _ _ _ => absurd hlt (by omega)) A hA hAQ n
+    | succ s ih =>
+      intro Q d e hle hP A hA hAQ n
+      exact hstep Q d e hP
+        (fun V d0 d1 hPV hlt A' hA' hAV m =>
+          ih V d0 d1 (by omega) hPV A' hA' hAV m) A hA hAQ n
+  intro Q d e hP A hA hAQ n
+  exact key (meas Q d e) Q d e (le_refl _) hP A hA hAQ n
+
+/-! ### 220.4 ★★★★★ **最終定理** -/
+
+open Classical in
+theorem towerClosed_of_hered {u : ℕ} (hpos : HeredPos) (hzero : HeredZero) :
+    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine tower_of_measure_step2 (u := u) TowerP'' towerMeas ?_
+  intro Q d e hP hIH A hA hAQ
+  have hQne := ne_of_TowerP'' hP
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  have he := he_of_TowerP'' hP
+  have hd := hd_of_TowerP'' hP
+  have hz0 := hz0_of_TowerP'' hP
+  have hr0 := hr0_of_TowerP'' hP
+  refine prefixTowerClosed_of_snocStepStrong1 hA hAQ ?_
+  intro n j hn hj hall
+  rcases Nat.eq_zero_or_pos j with hj0 | hj1
+  · -- ★ `j = 0`: `n = k+1`
+    subst hj0
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    have hpre : ∀ p, p ≤ Q.length →
+        A ++ mTower Q d e k
+          ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+              ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u := by
+      intro p hp
+      exact prefix_block_take_mem hp (by simpa using hall 0 (le_refl 0))
+    exact hsnoc_zero hQne hd he hr0 hz0 hIH hpre
+      (fun p hp0 => by subst hp0; exact hrank_blockRoot hQne hd he hz0)
+      (fun p hp => hzero A Q d e k p hP hp)
+  · -- ★ `j ≥ 1`
+    exact hsnoc_pos hP hIH hj hj1 (parent_bound_pos hP hj hj1) hall
+      (fun p hp => hpos A Q d e n j p hP hj hp)
+
+/-! ### 220.5 ⟹ ★★★ **残る義務は `HeredPos` と `HeredZero` の 2 本だけ**
+
+**`towerClosed_of_hered` の中身（全部緑）:**
+
+    §218 `prefixTowerClosed_of_snocStepStrong1` … 外枠（底のブロックはもらう）
+    §213 `hsnoc_pos` … `j ≥ 1` の段
+    §216 `hsnoc_zero` … `j = 0` の段（`n = k+1`）
+    §219 `parent_bound_pos` … `j ≥ 1` の親の位置（`TowerP''` だけ）
+    §219 `prefix_block_take_mem` … 短い接頭辞（`Wset.W_take` でただ）
+    §217 `hrank_blockRoot` … `p = 0` で `rankDE` が減る
+    §220.3 `tower_of_measure_step2` … 測度の強帰納（`Nat` 1 本）
+
+⚠ **教訓 14**: **`HeredPos` / `HeredZero` は**証明していません**。**
+**⟹ この定理は「遺伝すれば閉じる」しか言っていません。**
+
+⚠ **そして消費側（`MTowerClosedS`）への接続もまだです。**
+**⟹ `A = []` で `TowerP''` を作れるか（`hlp` / `h2out` / `h1out`）が残っています。** -/
+
 end L106
 end TRIO
