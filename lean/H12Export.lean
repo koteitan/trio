@@ -4860,5 +4860,49 @@ theorem window_le_of_last_row1 {A Q : TrioSeq} {d e n y c : ℕ}
   rw [prefix_mTower_last_index A Q d e n hQ hn]
   omega
 
+
+/-- ★★★★★ **`rankDE = srow` の使いやすい形**（`srow` の値を外から与える）。 -/
+theorem rankDE_eq_of_srow_value {T : TrioSeq} {par s : ℕ}
+    (hs : srow T (T.length - 1) = s) (hpar : nextR T s par (T.length - 1)) :
+    rankDE (if 0 < s then entry T 0 (T.length - 1) - entry T 0 par else 0)
+        (if 1 < s then entry T 1 (T.length - 1) - entry T 1 par else 0) = s := by
+  subst hs; exact rankDE_eq_srow hpar
+
+/-- ★★★★★ **行 2 ＝ 1 の最小形の末尾は `srow = 2`**。 -/
+theorem srow_last_of_append_replicate_two (A : TrioSeq) (x v z n : ℕ) (hz : 0 < z) :
+    srow (A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ))
+      ((A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)).length - 1) = 2 := by
+  rw [srow_last_of_append_replicate_gen]
+  simp [hz]
+
+/-- ★★★★★★★★ ⟹ **行 2 ＝ 1 の最小形では `rankDE = 2`**（`d0 > 0`, `d1 > 0`）。
+⟹ ★ ですが **(W59) より良い枝は起きない**ので、⟹ ★★ **`(|A|, n)` の帰納は同じように回ります**。 -/
+theorem rankDE_two_of_srow2_minimal {A : TrioSeq} {x v z n par : ℕ} (hz : 0 < z)
+    (hpar : nextR (A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)) 2 par
+      ((A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)).length - 1)) :
+    rankDE
+      (if 0 < 2 then
+        entry (A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)) 0
+            ((A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)).length - 1)
+          - entry (A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)) 0 par else 0)
+      (if 1 < 2 then
+        entry (A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)) 1
+            ((A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)).length - 1)
+          - entry (A ++ List.replicate (n + 1) ((x, v, z) : ℕ × ℕ × ℕ)) 1 par else 0)
+      = 2 :=
+  rankDE_eq_of_srow_value (srow_last_of_append_replicate_two A x v z n hz) hpar
+
+/-- ★★★★★★★★★ ⟹ **最小形のまとめ**: `srow` は `q` の行 1・行 2 だけで決まり、
+**どの値でも良い枝は起きず**（(W59)）、**後継の形は同じ**（`minimal_successor_shape_gen`）。
+⟹ ★ ですから **`(|A|, n)` の二重帰納は、行 2 ＝ 1 でも回ります**。 -/
+theorem minimal_form_summary (A : TrioSeq) (q : ℕ × ℕ × ℕ) (n c : ℕ) (hc : c ≤ A.length) :
+    srow (A ++ List.replicate (n + 1) q) ((A ++ List.replicate (n + 1) q).length - 1)
+        = (if 0 < q.2.2 then 2 else if 0 < q.2.1 then 1 else 0)
+      ∧ ((A ++ List.replicate (n + 1) q).drop c).dropLast = A.drop c ++ List.replicate n q
+      ∧ ∀ i c', nextR (A ++ List.replicate (n + 1) q) i c'
+          ((A ++ List.replicate (n + 1) q).length - 1) → c' < A.length :=
+  ⟨srow_last_of_append_replicate_gen A q n, minimal_successor_shape_gen A q n c hc,
+    fun _ _ h => nextR_src_lt_prefix_of_replicate h⟩
+
 end H12Export
 end TRIO
