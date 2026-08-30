@@ -2383,5 +2383,84 @@ theorem hsnoc_zero {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
   exact hsnoc_zero_of_parent hd hIH hQ1 (hpre p hplt) hplt hpar hpe
     (hrank p) (hered p hplt)
 
+/-! ## 217. ★★★★★★ (U4): `p = 0` のとき `rankDE` が減る（`hrank`）
+
+§216 が残した `hrank` を証明します。**`p = 0` ＝ 親が第 `k` ブロックの根なので:**
+
+    `srow = 1` ⟹ `wd1 = 0`、`wd0 = entry S 0 (末尾) − entry S 0 (第 k ブロックの根)`
+             `= (entry Q 0 0 + d*(k+1)) − (entry Q 0 0 + d*k) = **d**`
+    ⟹ `rankDE d 0 = 1`（`0 < d`）、`rankDE d e = 2`（`0 < d`、`0 < e`）
+
+**⟹ ★ `1 < 2`。⟹ §200 の一般形と同じことを、この形で直接出します。** -/
+
+open Classical in
+theorem hrank_blockRoot {A Q : TrioSeq} {d e k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hz0 : entry Q 2 0 = 0) :
+    rankDE
+      (wd0 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length 0)
+      (wd1 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length 0)
+      < rankDE d e := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  set P := A ++ mTower Q d e k with hPdef
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  have hB1len : B1.length = Q.length := by rw [hB1, Lift1_length, shiftr01_length]
+  have hBlen : (B0 ++ B1).length = Q.length + Q.length := by
+    rw [List.length_append, hB0len, hB1len]
+  set S := P ++ (B0 ++ B1).take (Q.length + 1) with hS
+  have hSlen : S.length = P.length + (Q.length + 1) := by
+    rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hlast : S.length - 1 = P.length + Q.length := by omega
+  -- 末尾列（第 (k+1) ブロックの根）
+  have hEl : ∀ i, entry S i (P.length + Q.length) = entry B1 i 0 := by
+    intro i
+    rw [hS, entry_append_right, Wset.entry_take (show Q.length < Q.length + 1 by omega),
+      show Q.length = B0.length + 0 from by omega, entry_append_right]
+  -- 第 k ブロックの根
+  have hEr : ∀ i, entry S i P.length = entry B0 i 0 := by
+    intro i
+    have h := entry_append_right P ((B0 ++ B1).take (Q.length + 1)) i 0
+    simp only [Nat.add_zero] at h
+    rw [hS, h, Wset.entry_take (show (0 : ℕ) < Q.length + 1 by omega),
+      entry_append_left _ _ (show (0 : ℕ) < B0.length by omega)]
+  have hB1_0 : entry B1 0 0 = entry Q 0 0 + d * (k + 1) := by
+    rw [hB1, entry0_Lift1, entry0_shiftr01 (by omega)]
+  have hB1_1 : entry B1 1 0 = entry Q 1 0 + e * (k + 1) := by
+    rw [hB1]
+    show ((Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).getD 0 (0, 0, 0)).2.1 = _
+    rw [block_getD (d := d) (e := e) (n := k + 1) hQ1, if_pos (le1_refl hQ1)]
+  have hB1_2 : entry B1 2 0 = entry Q 2 0 := by
+    rw [hB1]
+    show ((Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).getD 0 (0, 0, 0)).2.2 = _
+    rw [block_getD (d := d) (e := e) (n := k + 1) hQ1]
+  have hB0_0 : entry B0 0 0 = entry Q 0 0 + d * k := by
+    rw [hB0, entry0_Lift1, entry0_shiftr01 (by omega)]
+  -- `srow` は 1
+  have hs1 : srow S (S.length - 1) = 1 := by
+    rw [hlast]
+    unfold srow
+    rw [hEl 2, hEl 1, hB1_2, hB1_1, hz0]
+    rw [if_neg (by omega), if_pos (by
+      have : 0 < e * (k + 1) := Nat.mul_pos he (by omega)
+      omega)]
+  -- 計算
+  have hw1 : wd1 P (B0 ++ B1) Q.length 0 = 0 := by
+    unfold wd1
+    rw [← hS, hs1, if_neg (by omega)]
+  have hw0 : wd0 P (B0 ++ B1) Q.length 0 = d := by
+    unfold wd0
+    rw [← hS, hs1, if_pos (by omega), hlast, hEl 0, Nat.add_zero, hEr 0, hB1_0, hB0_0]
+    have hmul : d * (k + 1) = d * k + d := Nat.mul_succ d k
+    omega
+  rw [hw0, hw1]
+  unfold rankDE
+  rw [if_pos he]
+  split_ifs <;> omega
+
 end L106
 end TRIO
