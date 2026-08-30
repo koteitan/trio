@@ -6083,5 +6083,39 @@ theorem parent_in_suffix_of_inner {A T : TrioSeq} {i j y : ℕ}
   by_contra hcon
   exact prefix_no_cross_of_inner hj hp y (by omega) hnr
 
+/-! ### 240.6 ★★★★ 行 2 の成分の**窓への遺伝**（`hlocQ_wnd_of_witnesses` の `h2` を埋めます）
+
+§240.2 を窓に当てるだけです。**⟹ ★ 要るのは 2 つ:**
+
+    (a) **窓の根の行 2 が 0** …… ★ §224（`heredZ2_of_srow2` / `heredZ2_of_p_zero`）
+    (b) **その列が窓の錐の中** …… ★ §240.1 で「錐の外でしか破れない」と分かったもの
+
+**⟹ ★★ ですから **行 2 の成分の残差は (b) だけ**です（(a) は §224 でほぼ済み）。** -/
+
+theorem hlocQ_row2_wnd {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) (hpj : p < j)
+    (hz0V : entry (wnd P B j p) 2 0 = 0)
+    (hz1V : ∀ q, q < j - p → entry (wnd P B j p) 2 q ≤ 1)
+    (hcone : ∀ t, 0 < t → t < j - p → 0 < entry (wnd P B j p) 2 t →
+      le1 (wnd P B j p) 0 t) :
+    ∀ t, 0 < t → t < j - p → 0 < entry (wnd P B j p) 2 t →
+      hasParent ((wnd P B j p).take (t + 1)) 2 t := by
+  have hlen : (wnd P B j p).length = j - p := wnd_length hjB hpj
+  intro t ht0 htL hpos
+  refine hlocQ_row2_take_of_cone (Q := wnd P B j p) (by omega) ht0
+    (fun q hq => hz1V q (by omega)) hz0V ?_ hpos
+  exact (Wset.le1_take (X := wnd P B j p) (l := t + 1) (by omega) (by omega)).mpr
+    (hcone t ht0 htL hpos)
+
+/-! ### 240.7 ⟹ ★★ **行 2 の残差は「窓の錐」だけ**になりました
+
+    ✅ **`hasParent` ⟹ 祖先の存在** …… §240 `hasParent_two_iff_of_z1`
+    ✅ **錐の中なら無料** …………… §240.1 `hlocQ_row2_of_cone`
+    ✅ **窓への受け皿** ……………… §240.6（上）
+    ✅ **窓の根の行 2 = 0** ………… §224（`srow = 2` の段 ／ `p = 0` の段）
+    ⛔ **窓の錐** …………………… ★ **`le1 (wnd P B j p) 0 t` が残る 1 点**
+
+**⟹ ⚠ そして (COMP-a) の 66.8% の破れは、**窓の錐の外の列**に限られます。**
+**⟹ ★ R2 への注文はそこの分母です。⟹ **教訓 27**。** -/
+
 end L106
 end TRIO
