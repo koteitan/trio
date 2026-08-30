@@ -6968,5 +6968,153 @@ H12 の `no_nextrel2_cross_of_anc`（行 2 の壁が「的の `le1` 祖先」に
 **⟹ ★ H12 の `nextR_src_ge_of_cone`（3 行そろいの壁）と `hanc_of_cone` が
 **`OrphOK` の錐の中の部分**を閉じます。⟹ ⟹ **残るのは錐の外の列だけ**。** -/
 
+/-! ## 252. ★ H12 の**壁**の補題を写します（`H12Export.lean:2713〜3008` 逐語）
+
+**⟹ ★★★★★★ `nextR_src_ge_of_cone` が「的が錐の中なら 3 行とも壁が立つ」と言います。**
+**⟹ ⟹ ★ これで `OrphOK` の**錐の中の部分**が閉じます。** -/
+
+/-- ★★★ **`nextrel0` の親は必ず窓の根以降**（`hr0_wnd` から）。 -/
+theorem nextrel0_src_ge_of_shallow {M : TrioSeq} {p a b : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hpb : p < b) (h : nextrel0 M a b) : p ≤ a := by
+  obtain ⟨-, hb, hab, hlt, hmin⟩ := h
+  by_contra hc
+  push Not at hc
+  exact absurd (hmin p ⟨hc, hpb⟩) (by
+    have := hshallow b hpb hb
+    omega)
+
+open Classical in
+
+/-- ★★★★★★★ **窓の根 `p` は、窓の全内部列の `le0` 祖先**。 -/
+theorem le0_root_of_shallow {M : TrioSeq} {p : ℕ} (hp : p < M.length)
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x) :
+    ∀ j, p < j → j < M.length → le0 M p j := by
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hpj hj
+    obtain ⟨a, haj, hpa, halt, hamax⟩ :
+        ∃ a, a < j ∧ p ≤ a ∧ entry M 0 a < entry M 0 j ∧
+          ∀ x, a < x → x < j → entry M 0 j ≤ entry M 0 x := by
+      classical
+      have hpT : p ∈ (Finset.range j).filter
+          (fun x => p ≤ x ∧ entry M 0 x < entry M 0 j) := by
+        simp only [Finset.mem_filter, Finset.mem_range]
+        exact ⟨hpj, le_refl _, hshallow j hpj hj⟩
+      have hTne : ((Finset.range j).filter
+          (fun x => p ≤ x ∧ entry M 0 x < entry M 0 j)).Nonempty := ⟨p, hpT⟩
+      have hmem := Finset.max'_mem _ hTne
+      simp only [Finset.mem_filter, Finset.mem_range] at hmem
+      refine ⟨Finset.max' _ hTne, hmem.1, hmem.2.1, hmem.2.2, ?_⟩
+      intro x hx1 hx2
+      by_contra hc
+      push Not at hc
+      have hxT : x ∈ (Finset.range j).filter
+          (fun x => p ≤ x ∧ entry M 0 x < entry M 0 j) := by
+        simp only [Finset.mem_filter, Finset.mem_range]
+        exact ⟨hx2, by omega, hc⟩
+      exact absurd (Finset.le_max' _ x hxT) (by omega)
+    have hstep : nextrel0 M a j :=
+      ⟨by omega, hj, haj, halt, fun x hx => hamax x hx.1 hx.2⟩
+    rcases Nat.eq_or_lt_of_le hpa with hpe | hplt
+    · refine ⟨hp, hj, ?_⟩
+      rw [hpe]
+      exact Relation.ReflTransGen.single hstep
+    · obtain ⟨-, -, hrt⟩ := ih a haj hplt (by omega)
+      exact ⟨hp, hj, hrt.tail hstep⟩
+
+
+/-- ★★★★ **行 1: 的が非ブロッカーなら、親の始点は必ずブロックの根以降**。 -/
+theorem nextrel1_src_ge_of_shallow {M : TrioSeq} {p a b : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hp : p < M.length) (hpb : p < b) (hb : b < M.length)
+    (hnb : entry M 1 p < entry M 1 b) (h : nextrel1 M a b) : p ≤ a := by
+  by_contra hc
+  push Not at hc
+  have hle0 : le0 M p b := le0_root_of_shallow hp hshallow b hpb hb
+  exact absurd (h.2.2.2.2.2 p ⟨hc, hle0⟩) (by omega)
+
+
+/-- ★★★★ **行 2: 的が行 1 の錐の中で行 2 も上なら、親の始点はブロックの根以降**。 -/
+theorem nextrel2_src_ge_of_cone {M : TrioSeq} {p a b : ℕ}
+    (hcone : le1 M p b) (hnb2 : entry M 2 p < entry M 2 b)
+    (h : nextrel2 M a b) : p ≤ a := by
+  by_contra hc
+  push Not at hc
+  exact absurd (h.2.2.2.2.2 p ⟨hc, hcone⟩) (by omega)
+
+
+/-- ★★★★★★ **3 行そろい**: 的が「行 0 で根より深い ∧ 行 1 で根より上 ∧ 行 2 で根より上」なら、
+**どの行でもブロックの根より前の列は親になれない**。 -/
+theorem nextR_src_ge_of_cone {M : TrioSeq} {p a b r : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hp : p < M.length) (hpb : p < b) (hb : b < M.length)
+    (hnb1 : entry M 1 p < entry M 1 b)
+    (hcone : le1 M p b) (hnb2 : entry M 2 p < entry M 2 b)
+    (h : nextR M r a b) : p ≤ a := by
+  unfold nextR at h
+  by_cases h0 : r = 0
+  · rw [if_pos h0] at h
+    exact nextrel0_src_ge_of_shallow hshallow hpb h
+  · rw [if_neg h0] at h
+    by_cases h1 : r = 1
+    · rw [if_pos h1] at h
+      exact nextrel1_src_ge_of_shallow hshallow hp hpb hb hnb1 h
+    · rw [if_neg h1] at h
+      exact nextrel2_src_ge_of_cone hcone hnb2 h
+
+
+
+/-! ## 253. ★★★★★ **`OrphOK` の行 1 の `hle0` が無料になりました**
+
+§228/§230 の `orphOK_row0/1/2` は既に**列 1 本の条件**で書けています:
+
+    `orphOK_row0` … `entry T 0 0 < entry T 0 j1`                       ⟹ ★ **これだけ**
+    `orphOK_row1` … ＋ **`le0 (A ++ T) A.length (A.length + j1)`**
+    `orphOK_row2` … ＋ **`le1 (A ++ T) A.length (A.length + j1)`**
+
+**⟹ ★★★★ §252 で写した H12 の `le0_root_of_shallow` が、**行 1 の `le0` を無料にします**。**
+**⟹ ⟹ ★ 「窓の根は窓の全内部列の `le0` 祖先」——`hr0(T)` だけから出ます。** -/
+
+theorem shallow_append_right {A T : TrioSeq}
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x) :
+    ∀ x, A.length < x → x < (A ++ T).length →
+      entry (A ++ T) 0 A.length < entry (A ++ T) 0 x := by
+  intro x hx1 hx2
+  rw [List.length_append] at hx2
+  obtain ⟨x', rfl⟩ : ∃ x', x = A.length + x' := ⟨x - A.length, by omega⟩
+  rw [show A.length = A.length + 0 from by omega, entry_append_right,
+    show A.length + 0 + x' = A.length + x' from by omega, entry_append_right]
+  exact hs x' (by omega) (by omega)
+
+/-- ★★★★★ **`orphOK_row1` の `hle0` は `hr0(T)` から無料**。 -/
+theorem le0_root_append_right {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1)
+    (hjT : j1 < T.length)
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x) :
+    le0 (A ++ T) A.length (A.length + j1) :=
+  le0_root_of_shallow (M := A ++ T) (p := A.length)
+    (by rw [List.length_append]; omega) (shallow_append_right (A := A) hs)
+    (A.length + j1) (by omega) (by rw [List.length_append]; omega)
+
+/-- ★★★★★ ⟹ **行 1 の `OrphOK` は「的が非ブロッカー」＋ `hr0(T)` だけ**。 -/
+theorem orphOK_row1_free {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1) (hjT : j1 < T.length)
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x)
+    (hmin : entry T 1 0 < entry T 1 j1)
+    (hnp : ¬ hasParent T 1 j1) : ¬ hasParent (A ++ T) 1 (A.length + j1) :=
+  orphOK_row1 (le0_root_append_right hj1 hjT hs) hmin hnp
+
+/-! ### 253.1 ⟹ ★★★ **`OrphOK` の残差は 2 つだけ**になりました
+
+    ✅ **行 0** ………… `orphOK_row0`（`entry T 0 0 < entry T 0 j1` だけ、**無料**）
+    ✅ **行 1（非ブロッカー）** … `orphOK_row1_free`（**`hr0(T)` ＋ 1 本の不等式**）
+    ⛔ **行 1（的がブロッカー）** … `entry T 1 j1 ≤ entry T 1 0` のとき
+    ⛔ **行 2** ………… `le1 (A ++ T) A.length (A.length + j1)` が要る
+
+**⟹ ★★ ですから **`hnbQ` の ∀ が「的 1 列」に縮みました**（H12 の (W13) の方向）。**
+**⟹ ⟹ ★ そして **行 2 の残差は「大きい列の中で的が塔の根の錐にいるか」**だけです。**
+
+⚠ **教訓 14**: `OrphOK` はまだ証明されていません。**2 つの穴が残っています。** -/
+
 end L106
 end TRIO
