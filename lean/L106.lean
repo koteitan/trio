@@ -7132,6 +7132,46 @@ H12 の `no_nextrel2_cross_of_anc` は **`nextrel1 (A ++ T)` の鎖**で `hanc` 
 
 /-! ★ H12 の越境の補題（`H12Export.lean:2870〜2920` 逐語）。 -/
 
+theorem no_row0_parent_from_before_block {A Q : TrioSeq} {d e n j c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j)
+    (hc : c < (A ++ mTower Q d e n).length) :
+    ¬ nextrel0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j) := by
+  set P := A ++ mTower Q d e n with hP
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set M := P ++ B.take (j + 1) with hM
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  have hMlen : M.length = P.length + (j + 1) := by
+    rw [hM, List.length_append, hTlen]
+  have hshallow : ∀ x, P.length < x → x < M.length →
+      entry M 0 P.length < entry M 0 x := by
+    intro x hx1 hx2
+    rw [hMlen] at hx2
+    obtain ⟨r, rfl⟩ : ∃ r, x = P.length + r := ⟨x - P.length, by omega⟩
+    have hr : 0 < r ∧ r < j + 1 := by omega
+    have e0 : entry M 0 P.length = entry Q 0 0 + d * n := by
+      have h : entry M 0 P.length = entry (B.take (j + 1)) 0 0 := by
+        rw [hM]; simpa using entry_append_right P (B.take (j + 1)) 0 0
+      rw [h, Wset.entry_take (show (0:ℕ) < j + 1 by omega), hB, entry0_Lift1,
+        entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := 0)
+          (by simpa using (show 0 < Q.length by omega))]
+    have er : entry M 0 (P.length + r) = entry Q 0 r + d * n := by
+      rw [hM, entry_append_right, Wset.entry_take (show r < j + 1 by omega), hB,
+        entry0_Lift1,
+        entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := r)
+          (by simpa using (show r < Q.length by omega))]
+    rw [e0, er]
+    have := hr0 r hr.1 (by omega)
+    omega
+  intro hcon
+  exact absurd (nextrel0_src_ge_of_shallow hshallow (by omega) hcon) (by omega)
+
+
+
+
 /-- ★★★ `le1` の鎖が接頭辞から `T` に入るなら、**越境点が取れる**。 -/
 theorem rtg1_cross_point {A T : TrioSeq} {y b : ℕ} (hy : y < A.length)
     (h : Relation.ReflTransGen (nextrel1 (A ++ T)) y b) :
@@ -7424,6 +7464,85 @@ theorem orphOK_of_no_le0_cross {A T : TrioSeq} {i j1 : ℕ}
 **⟹ ⟹ ★★ ですから **設計は正しく、残っているのは 1 点だけ**です:**
 
     ⛔ **「的がブロッカー」かつ「接頭辞の列が的の `le0` 祖先」** -/
+
+/-! ## 257. ★★★★★★ **接頭辞の `le0` の鎖は必ずブロックの根を通る**
+
+§256 で「接頭辞の唯一の入口は行 0 の越境」と分かりました。
+**⟹ ★★★ そして H12 の `no_row0_parent_from_before_block`（`hr0(Q)` だけ）が
+「**ブロックの内部列には接頭辞から `nextrel0` が入れない**」と言います。**
+**⟹ ⟹ ★★★★★ ですから **入口はブロックの根 1 つだけ**です。** -/
+
+theorem le0_cross_through_blockRoot {A Q : TrioSeq} {d e n j c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j)
+    (hc : c < (A ++ mTower Q d e n).length)
+    (h : le0 (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      c ((A ++ mTower Q d e n).length + j)) :
+    Relation.ReflTransGen (nextrel0 (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)))
+      (A ++ mTower Q d e n).length ((A ++ mTower Q d e n).length + j) := by
+  set P := A ++ mTower Q d e n with hP
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set M := P ++ B.take (j + 1) with hM
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hMlen : M.length = P.length + (j + 1) := by
+    rw [hM, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  obtain ⟨-, -, hrt⟩ := h
+  -- 鎖をたどり、**接頭辞から出た最初の一歩**を捕まえます
+  have key : ∀ z, Relation.ReflTransGen (nextrel0 M) c z →
+      z < P.length ∨ Relation.ReflTransGen (nextrel0 M) P.length z := by
+    intro z hz
+    induction hz with
+    | refl => exact Or.inl hc
+    | @tail x y hx hxy ih =>
+        rcases ih with hxlt | hxr
+        · rcases Nat.lt_or_ge y P.length with hy | hy
+          · exact Or.inl hy
+          · -- ★ `x` は接頭辞、`y` はブロック ⟹ H12 の定理で `y = P.length`
+            have hylt : y < M.length := hxy.2.1
+            have hyM : y - P.length < j + 1 := by omega
+            have hy0 : y = P.length := by
+              by_contra hne
+              have hj' : 0 < y - P.length := by omega
+              have hMt : M.take (P.length + (y - P.length) + 1)
+                  = P ++ B.take ((y - P.length) + 1) := by
+                rw [hM, List.take_append, List.take_of_length_le (by omega),
+                  show P.length + (y - P.length) + 1 - P.length
+                    = (y - P.length) + 1 from by omega, List.take_take,
+                  Nat.min_eq_left (by omega)]
+              have hstep : nextrel0 (P ++ B.take ((y - P.length) + 1)) x
+                  (P.length + (y - P.length)) := by
+                rw [← hMt]
+                refine (Wset.nextrel0_take (X := M)
+                  (l := P.length + (y - P.length) + 1) (by omega) (by omega)).mpr ?_
+                rw [show P.length + (y - P.length) = y from by omega]; exact hxy
+              exact no_row0_parent_from_before_block (A := A) (Q := Q) (d := d) (e := e)
+                (n := n) (j := y - P.length) (c := x) hr0 (by omega) hj' hxlt hstep
+            rw [hy0]
+            exact Or.inr Relation.ReflTransGen.refl
+        · exact Or.inr (hxr.tail hxy)
+  rcases key (P.length + j) hrt with hlt | hres
+  · omega
+  · exact hres
+
+/-! ### 257.1 ⟹ ★★★★★ **`OrphOK` の残差の完成形**
+
+    ✅ 的が `T` の錐の中 ……………………… §255（**3 行とも緑**）
+    ✅ 接頭辞が行 0 で越境できない ………… §256（**3 行とも緑**）
+    ✅ 越境は**ブロックの根 1 点だけ** …… §257（`hr0(Q)` だけ、**緑**）
+    ⛔ **残差**: 接頭辞の列 `c` が
+        「行 1 が的より小さい」∧「鎖がブロックの根を通って的に届く」
+
+**⟹ ★★★ そして **`nextrel1` の最小性が `q = P.length`（ブロックの根）に当たる**ので、
+そこから **`entry (block) 1 j ≤ entry (block) 1 0`**——つまり **的はブロックの根に対して
+ブロッカー**でなければなりません。⟹ ⟹ ★ ＝ **`hnbQ` を的 1 列に絞ったもの**です。**
+
+**⟹ ⟹ ★★★★★ ですから `OrphOK` の残差はこう書けます:**
+
+    ⛔ **「的がブロックの根に対してブロッカー」かつ「接頭辞に行 1 がもっと小さい `le0` 祖先がある」**
+
+⚠ **教訓 14**: §257 は緑ですが、**`OrphOK` はまだ証明されていません**。 -/
 
 end L106
 end TRIO
