@@ -8815,3 +8815,61 @@ Q = [(0,1,0),(1,1,0),(1,0,0)]、d=2、e=0、j=1
 
 **★ `hr0` の割合（H12 の注意に応えて）: `drop/take` で **77.54% / 71.57%**、
 シート行列そのもので **98.40% / 98.83%**。**
+
+---
+
+## H12 (W38, 2026-08-30): `H12Export.lean` 264 本の棚卸し —— (L-GEN) 後
+
+**前提**: L3 の `snocStep_oper_gen`（`4085780`、緑）で **`hbound` が `|V| < |Q|` に弱まる**
+⟹ **`OrphOK` / `OrphOK0` の枝が要らなくなる**。⟹ その仮定で 3 つに分けた。
+
+### ★★★★★ (C) **新しい残差「親が近い（`|V| < |Q|`）」に直に効くもの** ← 本線
+
+| 定理 | 前提 | 効き方 |
+|---|---|---|
+| **`no_row0_parent_from_before_block`** | **`hr0` だけ** | ★★★★★ **行 0 の親は必ずブロックの中** ⟹ **`|V| < |Q|` そのもの** |
+| `nextrel0_src_ge_of_shallow` | `hshallow`（＝ `hr0`） | 上の一般形（任意の `p`） |
+| `le0_root_of_shallow` / `le0_through_p` / `rtg0_through_p` | 同上 | 道は必ず `p` を通る／根は全列の `le0` 祖先 |
+| `nextrel1_src_ge_of_shallow` | ＋ 的が非ブロッカー | 行 1 の親もブロックの中 |
+| `nextrel2_src_ge_of_cone` | ＋ 的が錐の中 | 行 2 の親もブロックの中 |
+| **`nextR_src_ge_of_cone`** | 上の 3 つ | ★★★★ **3 行そろい**（＝「親が近い」） |
+| `window_witness_in_window` | `hr0_wnd` | 証人は必ず窓の中 |
+
+⟹ ★★★ **(C) は 7 本。`no_row0_parent_from_before_block` が本命**（前提が `hr0` だけ）。
+
+### ★★ (A) `hbound` に依らず生きる汎用の道具
+
+    **`amin` 系**（前提なし）: `hasParent1_iff_amin_lt` / `orphan_row1_iff_amin_eq`
+      / `amin_root` / `amin_le_root_of_shallow` / `amin_ge_of_row1_ge` / `amin_bounds`
+      / `entry_one_headD` / `oper_head_row1` / `amin_max_oper_invariant`
+    **窓の移送**: `entry_drop` / `nextrel0_drop`(_iff) / `rtg0_drop`(_of) / `le0_drop_of`(_to)
+      / `nextrel1_drop_of`(_to) / `rtg1_append_to` / `witness_survives_window`
+    **`Lift1`・塔・錐の式**: `entry1_Lift1_in`/`_out`/`_root` / `blocker_Lift1_*_iff`
+      / **`h1out_Lift1_iff`** / **`entry1_mTower_block_formula`** / `blocker_in_in`/`in_out`/`out_in`/`out_out`
+      / `blocker_mTower_iff` / `gap_shrinks_in_mTower` / `entry2_mTower_block*`
+    **鎖の一意性**: `nextrel0_src_unique` / `nextrel1_src_unique` / `rtg1_merge` / `hanc_of_cone`
+    **`W` の構造**: **`window_mem_W`** / `wnd_mem_W` / **`prefix_mem_of_zeroRow2`**
+    **証人の言い換え**: `witness_of_nextrel1` / `nextrel1_of_witness`
+    **`row2pos`**: `row2pos_sublist_le` / `_take_le` / `_drop_le` / `_window_le` / `_dropLast_lt`
+    **不変量の性質**: `hnz_drop` / `hnz_take` / `hnz_mTower` / `row1_zero_not_le1` / `row1_zero_block_iff`
+    **反例（永続の記録）**: `c4CtrM*`（`W_not_C4`）/ `c4CtrM2*`（`W_hnz_not_C4`）/ `coneCtrV*`
+      / `blocker_of_large_k` / `exists_k_blocker`
+
+### ⛔ (B) `OrphOK` 専用 —— 孤児の枝が消えるなら不要
+
+    **壁（接頭辞は親を供給しない）**: `nextrel0_cross_root` / `rtg0_through_root` / `le0_through_root`
+      / `no_nextrel1_cross_of_cone` / `nextrel1_cross_root` / `rtg1_through_root` / `le1_through_root`
+      / `no_nextrel2_cross_of_anc` / `rtg1_cross_point` / `no_nextR_cross_of_cone`
+      / `no_nextR_srow_cross`(`_of_cone`) / `noCross_srow_of_cone` / `tower_no_cross_of_hnbQ`
+      / `nextrel1_cross_is_blocker` / `nextrel2_cross_is_blocker`
+    **孤児の構造**: `row1_orphan_is_blocker` / `orphan_row1_min` / `prefix_parent_iff_of_orphan`(`_through_root`)
+      / `prefix_parent_row1_lt_root` / `no_prefix_row1_parent_of_high_A`(`_of_root_zero`)
+      / `exists_low_row1_of_prefix_parent` / `prefix_parent_of_low_root` / `orphOK_row1_fails_of_low_root`
+      / `no_row1_orphan_of_root_zero` / `rsum1_of_root_row1_zero`
+    **`hnbQ`/`hlocQ` 専用**: `le1_all_of_hnbQ` / `entry1_mTower_of_hnbQ` / `blocker_in_block_of_hnbQ`
+      / `row1_pos_in_block_of_hnbQ` / `hnbQ_window_iff_of_hnbQ` / `entry1_block_of_hnbQ`
+      / `hnb_block_of_hnbQ` / `le1_root_of_hlocQ` / `hanc_of_hlocQ` / `hlocQ_row1_of_nonblocker`
+      / `blocker_of_hlocQ_row1_fail` / `C4`系 / `hlocQ_row1_of_C4`
+
+⚠ **(B) は「孤児の枝が本当に消える」ことが前提**。⟹ L3 の確認が要る。
+⟹ ★ そして **(B) の中でも `le0_through_root` / `rtg1_append_to` は (A) の道具として再利用可能**。
