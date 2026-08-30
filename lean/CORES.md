@@ -11926,3 +11926,28 @@ A ++ (Q1^k1 ++ Q1[:y1]) ++ (Q2^k2 ++ Q2[:y2]) ++ … ++ mTower V d0 d1 m
 ---
 
 ## ✅ **build 緑 10 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **353 本**
+
+---
+
+## ★★★★★★★★ **H12 (2026-08-30): `le1` の写し内移送 —— `e = 0` なら通ります**
+
+    ★★★★★ `rtg0_le` … `nextrel0` の鎖は添字を増やす（道具）
+    ★★★★★ `rtg0_mTower_intra_block_rev` … **逆向きの `le0` 移送**（写しの中に閉じた鎖は `Q` に戻せる）
+    ★★★★★★★★ `nextrel1_mTower_intra_block_of_e_zero` … **`nextrel1` の写し内移送（`e = 0`）**
+    ★★★★★★★★ `le1_mTower_intra_block_of_e_zero` / `rtg1_mTower_intra_block_of_e_zero`
+    ★★★★★★★★ `prefix_mTower_row2_cross_implies_orphan_of_e_zero` … ⟹ **(W56) の `hcone` が消えました**
+    ★★★★★★★ `prefix_mTower_row2_src_ge_of_hasParent_e_zero` … 対偶（良い枝の側）
+
+### ★★★ **機構（1 行）: 最小性の候補が同じ写しに閉じ込められる**
+
+    ★ `nextrel1 Q u v`（`u < v < |Q|`）を移すとき、最小性の候補 `x` は **`k|Q|+u < x ≤ k|Q|+v`**
+    ⟹ ★★ **同じ写しの中** ⟹ ★ **逆向きの `le0` 移送**で `Q` の最小性がそのまま使えます
+
+### ⛔ **`e > 0` では詰まります（どこで詰まるか、1 行）**
+
+    ⛔ **`Lift1` は錐の中だけ `+e*k` する** ⟹ ★ 候補 `w` が**錐の外**、的 `v` が**錐の中**のとき
+    ⟹ ★★ `Q` の最小性は `entry Q 1 v ≤ entry Q 1 w` をくれますが、
+    ⟹ ⟹ ⛔ **要るのは `entry Q 1 v + e*k ≤ entry Q 1 w`** ⟹ **`e*k` の分だけ足りません**
+    ⟹ ⟹ ⟹ ★ **これは私の型の分類の①型（根との比較 ＝ 錐）が混ざるため**です
+
+**⟹ ⚠ ですから `e > 0` の行 2 の穴は、まだ空いています。⟹ ★ ただし `PrefixCopies`（`e = 0`）では埋まりました。**

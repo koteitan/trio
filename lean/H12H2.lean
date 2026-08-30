@@ -6913,5 +6913,115 @@ theorem minimal_form_summary (A : TrioSeq) (q : ℕ × ℕ × ℕ) (n c : ℕ) (
   ⟨srow_last_of_append_replicate_gen A q n, minimal_successor_shape_gen A q n c hc,
     fun _ _ h => nextR_src_lt_prefix_of_replicate h⟩
 
+
+/-! ## 103. ★★★★★★★★ `le1` の写し内移送 —— **`e = 0` なら通ります**
+
+`nextrel1` の最小性は **`le0` 祖先すべて**の上ですが、
+⟹ ★ 候補 `x` は **`k|Q|+u < x ≤ k|Q|+v`** に閉じ込められます（`u < v < |Q|`）
+⟹ ⟹ ★★ **同じ写しの中**です ⟹ ★ **逆向きの `le0` 移送**があれば最小性が移ります。
+
+⚠ **`e > 0` では詰まります**（下の注記）。 -/
+
+/-- `nextrel0` の鎖は添字を増やします。 -/
+theorem rtg0_le {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 M) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_refl a
+  | @tail c d _ hcd ih => exact le_trans ih (le_of_lt hcd.2.2.1)
+
+/-- ★★★★★ **逆向きの `le0` 移送**: 写しの中に閉じた鎖は、`Q` の鎖に戻せます。 -/
+theorem rtg0_mTower_intra_block_rev (Q : TrioSeq) {d e n k : ℕ} (hk : k < n)
+    {x y : ℕ} (hx : k * Q.length ≤ x) (hy : y < (k + 1) * Q.length)
+    (h : Relation.ReflTransGen (nextrel0 (mTower Q d e n)) x y) :
+    Relation.ReflTransGen (nextrel0 Q) (x - k * Q.length) (y - k * Q.length) := by
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  revert hy
+  induction h with
+  | refl => intro _; exact Relation.ReflTransGen.refl
+  | @tail c y' hxc hcy ih =>
+      intro hy'
+      have hcy' : c < y' := hcy.2.2.1
+      have hxc2 : x ≤ c := rtg0_le hxc
+      have hstep : nextrel0 Q (c - k * Q.length) (y' - k * Q.length) := by
+        have hcv : k * Q.length + (c - k * Q.length) = c := by omega
+        have hyv : k * Q.length + (y' - k * Q.length) = y' := by omega
+        refine (nextrel0_mTower_intra_block Q (d := d) (e := e) hk
+          (show c - k * Q.length < Q.length by omega)
+          (show y' - k * Q.length < Q.length by omega)).mp ?_
+        rw [hcv, hyv]; exact hcy
+      exact (ih (by omega)).tail hstep
+
+/-- ★★★★★★★★ **`nextrel1` の写し内移送（`e = 0`）**。
+⟹ ★ 最小性の候補は **同じ写しの中**に閉じるので、`Q` の最小性がそのまま移ります。 -/
+theorem nextrel1_mTower_intra_block_of_e_zero (Q : TrioSeq) {d n k : ℕ} (hk : k < n)
+    {u v : ℕ} (h : nextrel1 Q u v) :
+    nextrel1 (mTower Q d 0 n) (k * Q.length + u) (k * Q.length + v) := by
+  have hu : u < Q.length := h.1
+  have hv : v < Q.length := h.2.1
+  have huv : u < v := h.2.2.1
+  have hlen : (mTower Q d 0 n).length = n * Q.length := mTower_length Q d 0 n
+  have hkn : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hent : ∀ i, i < Q.length →
+      entry (mTower Q d 0 n) 1 (k * Q.length + i) = entry Q 1 i := by
+    intro i hi
+    rw [entry1_mTower_block_formula Q hk hi]
+    split_ifs <;> omega
+  refine ⟨by omega, by omega, by omega, ?_, ?_, ?_⟩
+  · rw [hent u hu, hent v hv]; exact h.2.2.2.1
+  · exact ⟨by omega, by omega, rtg0_mTower_intra_block Q hk hu hv h.2.2.2.2.1.2.2⟩
+  · intro x hx
+    obtain ⟨hlt, hle0⟩ := hx
+    have hxle : x ≤ k * Q.length + v := rtg0_le hle0.2.2
+    obtain ⟨w, rfl⟩ : ∃ w, x = k * Q.length + w := ⟨x - k * Q.length, by omega⟩
+    have hw : w < Q.length := by omega
+    have hle0Q : le0 Q w v := by
+      refine ⟨hw, hv, ?_⟩
+      have := rtg0_mTower_intra_block_rev Q hk (x := k * Q.length + w)
+        (y := k * Q.length + v) (by omega) (by omega) hle0.2.2
+      simpa using this
+    rw [hent v hv, hent w hw]
+    exact h.2.2.2.2.2 w ⟨by omega, hle0Q⟩
+
+/-- ★★★★★★★★ ⟹ **`le1` の写し内移送（`e = 0`）**。
+⟹ ★ ⟹ **(W56) の `hcone` と (W61) の行 2 の穴が、`e = 0` では埋まります**。 -/
+theorem rtg1_mTower_intra_block_of_e_zero (Q : TrioSeq) {d n k : ℕ} (hk : k < n) {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 Q) a b) :
+    Relation.ReflTransGen (nextrel1 (mTower Q d 0 n)) (k * Q.length + a) (k * Q.length + b) := by
+  induction h with
+  | refl => exact Relation.ReflTransGen.refl
+  | @tail c b' _ hcb ih => exact ih.tail (nextrel1_mTower_intra_block_of_e_zero Q hk hcb)
+
+/-- ★★★★★★★★ ⟹ **`le1` の写し内移送（`e = 0`）**。
+⟹ ★ ⟹ **(W56) の `hcone` と (W61) の行 2 の穴が、`e = 0` では埋まります**。 -/
+theorem le1_mTower_intra_block_of_e_zero (Q : TrioSeq) {d n k : ℕ} (hk : k < n)
+    {a b : ℕ} (h : le1 Q a b) :
+    le1 (mTower Q d 0 n) (k * Q.length + a) (k * Q.length + b) := by
+  have hlen : (mTower Q d 0 n).length = n * Q.length := mTower_length Q d 0 n
+  have hkn : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  obtain ⟨ha, hb, hrt⟩ := h
+  exact ⟨by omega, by omega, rtg1_mTower_intra_block_of_e_zero Q hk hrt⟩
+
+
+/-- ★★★★★★★★ ⟹ **(W56) の行 2 の穴が `e = 0` で埋まりました**（仮定 `hcone` が消えます）。 -/
+theorem prefix_mTower_row2_cross_implies_orphan_of_e_zero {A Q : TrioSeq} {d n k j c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hc : c < A.length)
+    (h : nextrel2 (A ++ mTower Q d 0 n) c (A.length + (k * Q.length + j))) :
+    ¬ hasParent Q 2 j := by
+  refine prefix_mTower_row2_cross_implies_orphan hk hj hc ?_ h
+  intro y hy
+  exact (le1_append_right _ _ _ _).mpr
+    (le1_mTower_intra_block_of_e_zero Q hk hy.2.2.2.2.1)
+
+/-- ★★★★★★★ ⟹ **良い枝の側（対偶）**: `Q` の中で行 2 の親を持てば、越境しません。 -/
+theorem prefix_mTower_row2_src_ge_of_hasParent_e_zero {A Q : TrioSeq} {d n k j c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hpar : hasParent Q 2 j)
+    (h : nextrel2 (A ++ mTower Q d 0 n) c (A.length + (k * Q.length + j))) :
+    A.length ≤ c := by
+  by_contra hcc
+  push Not at hcc
+  exact prefix_mTower_row2_cross_implies_orphan_of_e_zero hk hj hcc h hpar
+
 end H12H2
 end TRIO
