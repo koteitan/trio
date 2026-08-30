@@ -4814,5 +4814,38 @@ theorem row1_zero_blockRoot_iff {Q : TrioSeq} (hQne : Q ≠ []) {d e n k : ℕ} 
   rw [entry1_mTower_blockRoot hQne d e n k hk]
   omega
 
+
+/-! ## 64. ★★★★★ `hlocQ` の行 1 成分は **ブロッカーでしか破れない**
+
+`hr0`（根が行 0 で狭義最浅）の下では **根は全列の `le0` 祖先**（§310）。
+⟹ ★ ですから的が**非ブロッカー**（`entry V 1 0 < entry V 1 t`）なら、根が証人の候補になり、
+`nextrel1_of_witness` で**本当の親**が取れて、`witness_of_nextrel1` で `hcls` も自動。
+⟹ ⟹ ★★ **`hlocQ` の行 1 成分は、的がブロッカーのときしか破れない。**
+
+⚠ 逆は成り立たない（ブロッカーでも、もっと行 1 の小さい証人があれば通る）
+⟹ ★ ですから `hlocQ` は `hnbQ` より**真に弱い**。⟹ L3 の設計どおり。 -/
+
+/-- ★★★★★ **的が非ブロッカーなら `hlocQ` の行 1 成分は自動で立つ**。 -/
+theorem hlocQ_row1_of_nonblocker {V : TrioSeq}
+    (hr0V : ∀ l, 0 < l → l < V.length → entry V 0 0 < entry V 0 l)
+    {t : ℕ} (ht : t < V.length) (ht0 : 0 < t)
+    (hnb : entry V 1 0 < entry V 1 t) :
+    ∃ y, y < t ∧ le0 V y t ∧ entry V 1 y < entry V 1 t ∧ (le1 V 0 y → le1 V 0 t) := by
+  have hV : 0 < V.length := by omega
+  have hle0 : le0 V 0 t := le0_root_of_shallow hV hr0V t ht0 ht
+  obtain ⟨y', hy'⟩ := nextrel1_of_witness ht0 hle0 hnb
+  exact ⟨y', witness_of_nextrel1 hy'⟩
+
+/-- ★★★★★ 対偶: **`hlocQ` の行 1 成分が破れる列は、必ずブロッカー**。 -/
+theorem blocker_of_hlocQ_row1_fail {V : TrioSeq}
+    (hr0V : ∀ l, 0 < l → l < V.length → entry V 0 0 < entry V 0 l)
+    {t : ℕ} (ht : t < V.length) (ht0 : 0 < t)
+    (hfail : ¬ ∃ y, y < t ∧ le0 V y t ∧ entry V 1 y < entry V 1 t ∧
+      (le1 V 0 y → le1 V 0 t)) :
+    entry V 1 t ≤ entry V 1 0 := by
+  by_contra hc
+  push Not at hc
+  exact hfail (hlocQ_row1_of_nonblocker hr0V ht ht0 hc)
+
 end H12H2
 end TRIO
