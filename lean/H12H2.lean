@@ -2384,5 +2384,59 @@ theorem srow_mTower_blockRoot_zero {Q : TrioSeq} {d e n k : ℕ}
   unfold srow
   rw [if_neg (by omega), if_neg (by omega)]
 
+
+/-! ## 37. ★★★ **(q2a) `blockRoot_parent_prevBlock` の証人つき一般化**
+
+team-lead:「最小性の**証人**に『ブロック `k` の**根**』を入れているから `e` が要る。
+**根でない証人**なら `e = 0` でも矛盾が出る」。⟹ **一般化は正しく、通ります。**
+
+⚠ **道具**: `L105.block_getD`（`L105Cap:7056`）
+    `(Lift1 (shiftr01 (d*n) 0 Q) (e*n)).getD j = (entry Q 0 j + d*n,
+       **entry Q 1 j + (if le1 Q 0 j then e*n else 0)**, entry Q 2 j)`
+⟹ **行 1 は `entry Q 1 j + e*n` で上から押さえられる**（錐の中でも外でも）。 -/
+
+/-- 塔の第 `k` ブロックの `i` 列目の行 1 の**上界**（錐の中か外かによらない）。 -/
+theorem entry1_mTower_block_le (Q : TrioSeq) (d e : ℕ) :
+    ∀ (n k i : ℕ), k < n → i < Q.length →
+      entry (mTower Q d e n) 1 (k * Q.length + i) ≤ entry Q 1 i + e * k := by
+  intro n
+  induction n with
+  | zero => intro k i hk _; omega
+  | succ n ih =>
+      intro k i hk hi
+      rw [mTower_succ]
+      rcases Nat.lt_or_ge k n with hkn | hkn
+      · have hlt : k * Q.length + i < (mTower Q d e n).length := by
+          rw [mTower_length]
+          calc k * Q.length + i < k * Q.length + Q.length := by omega
+            _ = (k + 1) * Q.length := by rw [Nat.succ_mul]
+            _ ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+        rw [entry_append_left _ _ hlt]
+        exact ih k i hkn hi
+      · have hk0 : k = n := by omega
+        subst hk0
+        rw [show k * Q.length + i = (mTower Q d e k).length + i from by
+            rw [mTower_length],
+          entry_append_right]
+        show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD i (0, 0, 0)).2.1
+          ≤ entry Q 1 i + e * k
+        rw [L105.block_getD hi]
+        by_cases hc : le1 Q 0 i <;> simp [hc]
+
+/-- ★★★ **(q2a) 証人つき一般化**: 最小性の証人が**根でなくてよい**。
+⚠ **`0 < e` も `0 < d` も `hr0` も要りません。** -/
+theorem blockRoot_parent_prevBlock_gen {Q : TrioSeq} {d e n k a x : ℕ}
+    (hQne : Q ≠ []) (hk : k + 1 < n)
+    (hx : x < Q.length) (hxlow : entry Q 1 x < entry Q 1 0)
+    (hxle0 : le0 (mTower Q d e n) (k * Q.length + x) ((k + 1) * Q.length))
+    (h : nextrel1 (mTower Q d e n) a ((k + 1) * Q.length)) :
+    k * Q.length ≤ a := by
+  by_contra hlt
+  have hmin := h.2.2.2.2.2 (k * Q.length + x) ⟨by omega, hxle0⟩
+  rw [entry1_mTower_blockRoot hQne d e n (k + 1) (by omega)] at hmin
+  have hub := entry1_mTower_block_le Q d e n k x (by omega) hx
+  have hmul : e * (k + 1) = e * k + e := Nat.mul_succ e k
+  omega
+
 end H12H2
 end TRIO
