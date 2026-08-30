@@ -2117,5 +2117,61 @@ theorem no_nextR_srow_cross {A T : TrioSeq}
       intro h
       exact absurd (nextrel0_cross_root hmin hc hm h) (by omega)
 
+
+/-- ★ 窓の根は **`le0` 祖先の上でだけ**行 1 で狭義最小。 -/
+theorem window_root_row1_min_on_le0 {M : TrioSeq} {a b l : ℕ}
+    (h : nextrel1 M a b) (hl : a < l) (hle : le0 M l b) :
+    entry M 1 a < entry M 1 l := by
+  have hmin := h.2.2.2.2.2 l ⟨hl, hle⟩
+  have hlt := h.2.2.2.1
+  omega
+
+/-- 行 2 版（`le1` 祖先の上でだけ）。 -/
+theorem window_root_row2_min_on_le1 {M : TrioSeq} {a b l : ℕ}
+    (h : nextrel2 M a b) (hl : a < l) (hle : le1 M l b) :
+    entry M 2 a < entry M 2 l := by
+  have hmin := h.2.2.2.2.2 l ⟨hl, hle⟩
+  have hlt := h.2.2.2.1
+  omega
+
+/-- ★ 逆向き: **塔にブロッカーがあれば `Q` にもある**。⟹ `hnb(塔) ⟺ hnbQ`。 -/
+theorem blocker_mTower_imp_Q {Q : TrioSeq} {d e n l : ℕ} (hQne : Q ≠ []) (hQ1 : 0 < Q.length)
+    (he : 0 < e) (hl0 : 0 < l) (hl : l < (mTower Q d e n).length)
+    (hb : entry (mTower Q d e n) 1 l ≤ entry (mTower Q d e n) 1 0) :
+    ∃ i, 0 < i ∧ i < Q.length ∧ entry Q 1 i ≤ entry Q 1 0 := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [hlen] at hl
+  have hn : 0 < n := by
+    by_contra hc
+    have : n = 0 := by omega
+    rw [this] at hl; omega
+  have hroot : entry (mTower Q d e n) 1 0 = entry Q 1 0 := by
+    have := entry1_mTower_blockRoot hQne d e n 0 hn
+    simpa using this
+  have hi : l % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hk : l / Q.length < n := by
+    refine Nat.div_lt_of_lt_mul ?_
+    rw [Nat.mul_comm]; exact hl
+  have hsplit : l = (l / Q.length) * Q.length + l % Q.length := by
+    rw [Nat.mul_comm]; exact (Nat.div_add_mod l Q.length).symm
+  rcases Nat.eq_zero_or_pos (l % Q.length) with h0 | hp
+  · exfalso
+    have hk0 : 0 < l / Q.length := by
+      rcases Nat.eq_zero_or_pos (l / Q.length) with hc | hc
+      · exfalso; rw [hc, h0] at hsplit; simp at hsplit; omega
+      · exact hc
+    have heq : l = (l / Q.length) * Q.length := by omega
+    have hbr := entry1_mTower_blockRoot hQne d e n (l / Q.length) hk
+    rw [← heq] at hbr
+    rw [hbr, hroot] at hb
+    have : 0 < e * (l / Q.length) := Nat.mul_pos he hk0
+    omega
+  · refine ⟨l % Q.length, hp, hi, ?_⟩
+    have hge := entry1_mTower_ge (Q := Q) (d := d) (e := e) (n := n)
+      (k := l / Q.length) (i := l % Q.length) hk hi
+    rw [← hsplit] at hge
+    rw [hroot] at hb
+    omega
+
 end H12Export
 end TRIO
