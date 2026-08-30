@@ -7569,3 +7569,20 @@ team-lead の (q3):「`he` は落とせる。筋は『ブロックは平行移�
    `i* = max {i < |Q| : entry Q 0 i < entry Q 0 0 + d}`（未証明の観察）。
 ⟹ ⟹ `e = 0` では行 1 の値も周期的（`entry Q 1 i`）で閾値も一定（`entry Q 1 0`）なので、
    **`le0` 祖先の鎖ごと周期 `|Q|` で繰り返す**はず。⟹ 行 1 の親も固定相対位置。
+
+## §298 ★★★★★★ `hsnoc_zero_of_parent` の `0 < d` の正体
+
+L106 を読んだ。`hsnoc_zero_of_parent` の中で `hd : 0 < d` が使われているのは
+**ただ 1 か所**（本体 81 行目あたり）:
+
+    hz : ¬ (entry S 0 last = 0 ∧ entry S 1 last = 0 ∧ entry S 2 last = 0)
+    を `entry S 0 last = entry Q 0 0 + d*(k+1) > 0` から出す
+
+⟹ ★ **`0 < d` は「末尾列が非零」に弱められる。**
+⟹ ⟹ `d = 0` でも **`0 < e` なら行 1 が `entry Q 1 0 + e*(k+1) ≥ e ≥ 1`** で自動的に非零。
+
+    blockRoot_row1_pos_of_e_pos (緑) : 0 < e → 0 < k → 0 < entry (mTower Q d e n) 1 (k*|Q|)
+    blockRoot_nonzero_of_e_pos (緑)  : 上から hz が出る
+
+⚠ さらに: 末尾列が**全部 0 でも困らない**。`snoc_orphan_W` は `oper_eq_pred_of_zero` で
+その場合も処理する。⟹ `hz` は `hsnoc_zero_of_parent`（親がある枝）でだけ要る。

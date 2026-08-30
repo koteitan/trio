@@ -3248,5 +3248,36 @@ theorem nextrel0_blockRoot_shift (Q : TrioSeq) {d e n k i : ℕ}
     rw [hz1, hjeq, hr _ hjq k (by omega)]
     omega
 
+
+/-! ## 44. ★★★★★★ **`hsnoc_zero_of_parent` の `0 < d` は「末尾列が非零」だけ**
+
+`L106.hsnoc_zero_of_parent` の中で `hd : 0 < d` が使われているのは**ただ 1 か所**、
+
+    hz : ¬ (entry S 0 (last) = 0 ∧ entry S 1 (last) = 0 ∧ entry S 2 (last) = 0)
+
+を `entry S 0 (last) = entry Q 0 0 + d*(k+1) > 0` から出すところだけ。
+
+⟹ ★ **`0 < d` は「末尾列が非零」に弱められる**。
+⟹ ⟹ `d = 0` でも **`0 < e` なら行 1 が `entry Q 1 0 + e*(k+1) ≥ e ≥ 1` で自動的に非零**。 -/
+
+/-- ★★★ `d = 0` でも `0 < e` なら第 `k` ブロック（`k ≥ 1`）の根の行 1 は正。 -/
+theorem blockRoot_row1_pos_of_e_pos {Q : TrioSeq} {d e n k : ℕ}
+    (hQne : Q ≠ []) (he : 0 < e) (hk : k < n) (hk0 : 0 < k) :
+    0 < entry (mTower Q d e n) 1 (k * Q.length) := by
+  rw [entry1_mTower_blockRoot hQne d e n k hk]
+  have : 0 < e * k := Nat.mul_pos he hk0
+  omega
+
+/-- ★★★ したがって末尾列（ブロック根）は非零。⟹ `hsnoc_zero_of_parent` の `hz` が出る。 -/
+theorem blockRoot_nonzero_of_e_pos {Q : TrioSeq} {d e n k : ℕ}
+    (hQne : Q ≠ []) (he : 0 < e) (hk : k < n) (hk0 : 0 < k) :
+    ¬ (entry (mTower Q d e n) 0 (k * Q.length) = 0 ∧
+       entry (mTower Q d e n) 1 (k * Q.length) = 0 ∧
+       entry (mTower Q d e n) 2 (k * Q.length) = 0) := by
+  rintro ⟨-, h1, -⟩
+  have hp := blockRoot_row1_pos_of_e_pos (Q := Q) (d := d) (e := e) (n := n) (k := k)
+    hQne he hk hk0
+  omega
+
 end H12H2
 end TRIO
