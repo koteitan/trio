@@ -12,6 +12,7 @@ R2 の測度 **`(|V|, rankDE d e)`** の減少を組む場所。
 -/
 
 import L105Cap
+import H12Export
 
 namespace TRIO
 namespace L106
@@ -8044,6 +8045,95 @@ end CE263
     **(c)** **`W` が `z < 2` で閉じていない**（`RootZ1` / `RootZ2`）⟹ 目標に書けば消える
 
 **⟹ ★ (c) は §260 で直しました。⟹ ⛔ (a)(b) は**設計のやり直し**が要ります。** -/
+
+/-! ## 264. ⛔⛔⛔⛔ **`Q ∈ W u` を足しても `OrphOK` は偽**です
+
+team-lead の (c)/(RSUM2') に答えるための、決定的な検算です。
+
+**⟹ ★ 帰納法は `A' ++ V ∈ W u` を運ぶので、`Wtower2.W_drop` で **`V ∈ W (lev …)` が出ます**
+（H12 の `window_mem_W`）。⟹ ⟹ ★★ ですから **`Q ∈ W u` は各段で使えます**。**
+
+**⟹ ⛔ ですが §261 の反例 `Q = [(0,1,0),(1,1,0),(1,0,0)]` は **行 2 が全部 0** なので、
+`zeroRow2_mem_Wself` で **`W u` に入ります**（`lev Q 0 = 2`）。**
+**⟹ ⟹ ⛔⛔ ですから **`Q ∈ W u` を足しても `OrphOK` は偽**です。** -/
+
+private theorem Qce_zeroRow2 : ∀ p ∈ Qce, p.2.2 = 0 := by decide
+
+private theorem Qce_lev : lev Qce 0 = 2 := by unfold lev Qce entry; simp
+
+theorem Qce_mem_W {u : ℕ} (hu : 2 ≤ u) : Qce ∈ W u := by
+  rw [mem_Wself_iff]
+  exact ⟨zeroRow2_mem_Wself Qce_zeroRow2, by rw [Qce_lev]; omega⟩
+
+/-- ⛔ **`W` つきの `OrphOK`**（帰納法が実際に持っている前提を全部入れたもの）。 -/
+def OrphOKW : Prop :=
+  ∀ (u : ℕ) (A Q : TrioSeq) (d e n j : ℕ), A ∈ W u → Q ∈ W u → A ++ Q ∈ W u →
+    (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) →
+    entry Q 2 0 = 0 → (∀ q, q < Q.length → entry Q 2 q ≤ 1) → 0 < d →
+    0 < j → j < Q.length →
+    ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j →
+    ¬ hasParent (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((A ++ mTower Q d e n).length + j))
+        ((A ++ mTower Q d e n).length + j)
+
+/-- ⛔⛔⛔⛔ **`W` つきでも偽**。⟹ ★ §261 と同じ反例がそのまま通ります。 -/
+theorem orphOKW_false : ¬ OrphOKW := by
+  intro h
+  have hblk : Lift1 (shiftr01 (2 * 1) 0 Qce) (0 * 1) = [(2, 1, 0), (3, 1, 0), (3, 0, 0)] := by
+    show Lift1 (shiftr01 2 0 Qce) 0 = _
+    rw [Wset.Lift1_zero]; unfold Qce shiftr01; rfl
+  have htow : mTower Qce 2 0 1 = Qce := by
+    unfold mTower
+    show ((List.range 1).flatMap fun k => Lift1 (shiftr01 (2 * k) 0 Qce) (0 * k)) = Qce
+    simp
+  have hM : ([] : TrioSeq) ++ mTower Qce 2 0 1
+      ++ (Lift1 (shiftr01 (2 * 1) 0 Qce) (0 * 1)).take (1 + 1) = Mce := by
+    rw [htow, hblk]; unfold Qce Mce; rfl
+  have hlen : (([] : TrioSeq) ++ mTower Qce 2 0 1).length = 3 := by rw [htow]; rfl
+  have hnp := h 2 [] Qce 2 0 1 1 (W_nil 2) (Qce_mem_W (le_refl 2))
+    (by simpa using Qce_mem_W (le_refl 2))
+    (by intro l hl0 hl
+        have : l < 3 := by simpa [Qce] using hl
+        rcases Nat.lt_or_ge l 2 with h | h
+        · rw [show l = 1 from by omega]; decide
+        · rw [show l = 2 from by omega]; decide)
+    (by decide)
+    (by intro q hq
+        have : q < 3 := by simpa [Qce] using hq
+        rcases Nat.lt_or_ge q 1 with h | h
+        · rw [show q = 0 from by omega]; decide
+        · rcases Nat.lt_or_ge q 2 with h' | h'
+          · rw [show q = 1 from by omega]; decide
+          · rw [show q = 2 from by omega]; decide)
+    (by omega) (by omega) (by simp [Qce]) ?_
+  · rw [hM, hlen] at hnp
+    exact hnp (by
+      show hasParent Mce (srow Mce (3 + 1)) (3 + 1)
+      rw [show (3 : ℕ) + 1 = 4 from rfl, show srow Mce 4 = 1 from by decide]
+      exact Mce_hasParent)
+  · rw [hblk,
+      show (List.take (1 + 1) ([(2, 1, 0), (3, 1, 0), (3, 0, 0)] : TrioSeq))
+        = [(2, 1, 0), (3, 1, 0)] from rfl,
+      show srow ([(2, 1, 0), (3, 1, 0)] : TrioSeq) 1 = 1 from by decide]
+    rintro ⟨y, hy, -⟩
+    rw [nextR_one_iff] at hy
+    have : y < 1 := hy.2.2.1
+    rw [show y = 0 from by omega] at hy
+    exact absurd hy.2.2.2.1 (by decide)
+
+/-! ### 264.1 ⟹ ⛔ **(RSUM2') の答え: 遺伝は要りませんが、それでは足りません**
+
+    **(1)** 帰納法は **`A' ++ V ∈ W u`** を運びます（`hIH` の前提）
+    **(2)** ⟹ ★ `Wtower2.W_drop` ＋ `Wset.W_take` で **`V ∈ W (lev …)`**（H12 `window_mem_W`）
+    **(3)** ⟹ ★★ ですから **`∀ u, ∀ Q ∈ W u, P Q` の形の条件は、各段で無料で使えます**
+       ⟹ ⟹ ★ **遺伝を証明する必要はありません**（段 `u` が変わるので **`∀ u` は必須**）
+    **(4)** ⟹ ⛔ **ですが `OrphOKW` が偽**なので、⟹ **`W` を足しても閉じません**
+
+**⟹ ★★★ ですから **(RSUM2') の答えは「遺伝は要らない。ただしそれでは足りない」**です。** -/
 
 end L106
 end TRIO
