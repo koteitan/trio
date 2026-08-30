@@ -9066,5 +9066,57 @@ theorem mTowerClosedS_of_measOK (hmeas : MeasOK) : MTowerClosedS := by
 
 ⚠ **教訓 14**: **`MeasOK` が偽なら、この骨格も倒れます**。⟹ ★ **大きい箱で測ってください**。 -/
 
+/-! ### 277.6 ⛔⛔⛔⛔ **`MeasOK` も偽です** —— §262 の反例がそのまま効きます
+
+⚠ **30 分前に「今日はじめて偽と分かっていない残差」と書きました。⟹ ⛔ 誤りでした。**
+**⟹ ★ **自分の §262 の反例を当てるのを忘れていました**（運用「既知の反例を新しい残差に当てる」）。**
+
+    `A = [(0,0,0)]`、`Q = [(2,1,0),(3,0,0)]`、`d = 1`、`e = 0`、`n = 1`、`j = 0`
+    ⟹ `T = [(0,0,0), (2,1,0), (3,0,0), (3,1,0)]`（＝ §262 の `M0ce`）
+    ⟹ `|T| - 1 = 3`、`srow = 1`、**親 = 0**（接頭辞の中）
+    ⟹ ⛔ `|V| = 3 - 0 = 3`、`|Q| = 2` ⟹ **`3 < 2` は偽** -/
+
+theorem measOK_false : ¬ MeasOK := by
+  intro h
+  have hblk : (Lift1 (shiftr01 (1 * 1) 0 Q0ce) (0 * 1)).take (0 + 1)
+      = [((3 : ℕ), (1 : ℕ), (0 : ℕ))] := by
+    show (Lift1 (shiftr01 1 0 Q0ce) 0).take 1 = _
+    rw [Wset.Lift1_zero]; unfold Q0ce shiftr01; rfl
+  have htow : mTower Q0ce 1 0 1 = Q0ce := by
+    unfold mTower
+    show ((List.range 1).flatMap fun k => Lift1 (shiftr01 (1 * k) 0 Q0ce) (0 * k)) = Q0ce
+    simp
+  have hT : [((0 : ℕ), (0 : ℕ), (0 : ℕ))] ++ mTower Q0ce 1 0 1
+      ++ (Lift1 (shiftr01 (1 * 1) 0 Q0ce) (0 * 1)).take (0 + 1) = M0ce := by
+    rw [htow, hblk]; unfold Q0ce M0ce; rfl
+  have hlen : M0ce.length - 1 = 3 := rfl
+  have hsr : srow M0ce 3 = 1 := by decide
+  have hres := h [((0 : ℕ), (0 : ℕ), (0 : ℕ))] Q0ce 1 0 1 0 (by decide) (by decide) ?_
+  · rw [hT, hlen, hsr] at hres
+    rw [show parent M0ce 1 3 = 0 from
+      M0ce_uniq (nextR_one_iff.mp (parent_nextR M0ce_hasParent))] at hres
+    have : Q0ce.length = 2 := rfl
+    omega
+  · rw [hT, hlen, hsr]; exact M0ce_hasParent
+
+/-! ### 277.7 ⟹ ★★★★ **ですが骨格は生きています** —— 要るのは**弱い**測度条件です
+
+**⟹ ⛔ `MeasOK`（`|V| < |Q|`）は偽。⟹ ★ ですが **`towerClosed_gen` が本当に要るのは
+`towerMeas V d0 d1 < towerMeas Q d e`** であって、⟹ ★★ **`|V| < |Q|` はその十分条件**でした。**
+
+**⟹ ⚠ そして `natMeasure w r = 3w + r`（`r ≤ 2`）なので、⟹ ⛔ **`|V| ≥ |Q|` なら測度は減りません**。**
+**⟹ ⟹ ★★★ ですから **測度そのものを変えるしかありません**（team-lead の (M2)）。**
+
+**⟹ ★ ただし **骨格（§275 / §277）は測度に依りません**:**
+
+    `tower_of_measure_step2` は **任意の `meas : TrioSeq → ℕ → ℕ → ℕ`** で動きます
+    ⟹ ★★ ですから **`towerMeas` を差し替えるだけ**で、⟹ ★ **§277 の証明はそのまま通ります**
+
+**⟹ ★★★★ ⟹ ですから **今日の成果は「残差が `測度の減少` 1 本になった」**ことです。**
+**⟹ ⟹ ★ ＝ **R2 の (MEAS) が、はじめて正しい問い**になりました。**
+
+⚠ **教訓 14 ＋ 新運用**: **新しい残差を書いたら、その日の反例を全部当てる**。
+**⟹ ⛔ 今日 2 回目の同じ失敗です**（`RootZ1` のときも H12 の反例を当てていませんでした）。 -/
+
 end L106
 end TRIO
