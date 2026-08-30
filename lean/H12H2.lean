@@ -6273,5 +6273,45 @@ theorem hasParent0_of_argOK {M : TrioSeq} {v z j : ℕ} (h : argOK M)
   hasParent0_of_hr0 (fun l hl0 hl => hr0_of_argOK (v := v) (z := z) h l hl0 (by simpa using hl))
     (by simpa using hj) hj0
 
+
+/-! ## 92. ★★★★★★★★ (W52): **行 0 の祖先に行 1 が小さいものがあれば、行 1 の親がある**
+
+`hasParent1_iff_amin_lt`（§333、前提なし）＋ `Cgraft.amin_le` の 2 行の系。
+⟹ ★★★ **トリオ版の `DbmsStd.hasParent0_of_exists`（行 1 版）**です。
+⟹ ⟹ ★ ⟹ **(W52)（残差の次は良い群）を、証人 1 本に還元する道具**。 -/
+
+/-- ★★★★★★★★ **証人があれば行 1 の親がある**（前提は証人だけ）。 -/
+theorem hasParent1_of_le0_witness {M : TrioSeq} {j y : ℕ} (hj : j < M.length)
+    (hanc : Relation.ReflTransGen (nextrel0 M) y j) (hlt : entry M 1 y < entry M 1 j) :
+    hasParent M 1 j :=
+  (hasParent1_iff_amin_lt hj).mpr (lt_of_le_of_lt (amin_le hanc) hlt)
+
+/-- ★★★★★ `le0` 版（`le0` は `RTG` を第 3 成分に持ちます）。 -/
+theorem hasParent1_of_le0 {M : TrioSeq} {j y : ℕ} (hj : j < M.length)
+    (hanc : le0 M y j) (hlt : entry M 1 y < entry M 1 j) : hasParent M 1 j :=
+  hasParent1_of_le0_witness hj hanc.2.2 hlt
+
+/-- ★★★★★★★ ⟹ **(W52) の行 1**: 証人があれば **越境しません**（`row1_cross_implies_orphan` の対偶）。 -/
+theorem no_row1_cross_of_le0_witness {A Q : TrioSeq} {d e n j y c : ℕ}
+    (hj : j < Q.length) (hanc : le0 Q y j) (hlt : entry Q 1 y < entry Q 1 j)
+    (h : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length ≤ c := by
+  by_contra hc
+  push Not at hc
+  exact row1_cross_implies_orphan hj hc h (hasParent1_of_le0 hj hanc hlt)
+
+/-- ★★★★★★ ⟹ **塔の中の証人**: 第 `k` ブロック（`k ≥ 1`）の錐の中の列は、
+**1 つ前のブロックの同じ相対位置**が行 1 の証人になります（`0 < e`）。 -/
+theorem entry1_prevBlock_lt (Q : TrioSeq) {d e n k r : ℕ}
+    (hk : k < n) (hk0 : 0 < k) (hr : r < Q.length) (hcone : le1 Q 0 r) (he : 0 < e) :
+    entry (mTower Q d e n) 1 ((k - 1) * Q.length + r)
+      < entry (mTower Q d e n) 1 (k * Q.length + r) := by
+  obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  simp only [Nat.add_sub_cancel]
+  rw [entry1_mTower_block_formula Q (by omega) hr, entry1_mTower_block_formula Q hk hr,
+    if_pos hcone, if_pos hcone, Nat.mul_succ]
+  omega
+
 end H12H2
 end TRIO
