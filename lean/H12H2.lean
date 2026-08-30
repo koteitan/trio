@@ -4446,5 +4446,52 @@ theorem nextrel1_drop_of {M : TrioSeq} {p c d : ℕ} (hc : p + c < M.length)
     rw [entry_drop, entry_drop, show p + (x - p) = x from by omega] at h
     exact h
 
+
+/-! ## 56. ★★★★ (W15) **行 0 は `hr0` だけで封じられる**（`0 < d` も `hnb` も不要）
+
+`nextrel0_src_ge_of_shallow` を **`p := ブロックの根の位置`** に当てる。
+⟹ `hshallow` は「ブロックの根がそれ以降の全列より行 0 で狭義に浅い」＝ **`hr0` そのもの**
+（ブロックの行 0 は `entry Q 0 x + d*n` で `+d*n` は一様）。
+
+⟹ ★★ **接頭辞も塔も、ブロックの `j` 列目に行 0 の親を供給できない。**
+⟹ ⟹ ★ 前提は `hr0` だけ。**`0 < d` も `hnb` も要らない。** -/
+
+theorem no_row0_parent_from_before_block {A Q : TrioSeq} {d e n j c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j)
+    (hc : c < (A ++ mTower Q d e n).length) :
+    ¬ nextrel0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j) := by
+  set P := A ++ mTower Q d e n with hP
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set M := P ++ B.take (j + 1) with hM
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  have hMlen : M.length = P.length + (j + 1) := by
+    rw [hM, List.length_append, hTlen]
+  have hshallow : ∀ x, P.length < x → x < M.length →
+      entry M 0 P.length < entry M 0 x := by
+    intro x hx1 hx2
+    rw [hMlen] at hx2
+    obtain ⟨r, rfl⟩ : ∃ r, x = P.length + r := ⟨x - P.length, by omega⟩
+    have hr : 0 < r ∧ r < j + 1 := by omega
+    have e0 : entry M 0 P.length = entry Q 0 0 + d * n := by
+      have h : entry M 0 P.length = entry (B.take (j + 1)) 0 0 := by
+        rw [hM]; simpa using entry_append_right P (B.take (j + 1)) 0 0
+      rw [h, Wset.entry_take (show (0:ℕ) < j + 1 by omega), hB, entry0_Lift1,
+        entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := 0)
+          (by simpa using (show 0 < Q.length by omega))]
+    have er : entry M 0 (P.length + r) = entry Q 0 r + d * n := by
+      rw [hM, entry_append_right, Wset.entry_take (show r < j + 1 by omega), hB,
+        entry0_Lift1,
+        entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := r)
+          (by simpa using (show r < Q.length by omega))]
+    rw [e0, er]
+    have := hr0 r hr.1 (by omega)
+    omega
+  intro hcon
+  exact absurd (nextrel0_src_ge_of_shallow hshallow (by omega) hcon) (by omega)
+
 end H12H2
 end TRIO

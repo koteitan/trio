@@ -7971,3 +7971,24 @@ L3 の `hlocQ` の第 3 条件 `hcls : le1 Q 0 y → le1 Q 0 j` は、私の 4 �
 
 ⟹ ★ ですから「窓の錐は `Q` の錐と別物」なのは**部分列を取ったから**ではなく、
 **根が `0` から `p` に変わったから**だけ。⟹ 構造そのものは壊れていない。
+
+## §312 ★★★★ (W15) 行 0 は **`hr0` だけ**で封じられる（`0 < d` も `hnb` も不要）
+
+    ★★★★ no_row0_parent_from_before_block (hr0) (hj : j < |Q|) (hj0 : 0 < j)
+        (hc : c < (A ++ mTower Q d e n).length) :
+        ¬ nextrel0 (A ++ mTower Q d e n ++ block.take (j+1)) c ((A ++ mTower Q d e n).length + j)
+
+`nextrel0_src_ge_of_shallow` を **`p := ブロックの根の位置`** に当てるだけ。
+`hshallow` は「ブロックの根がそれ以降の全列より行 0 で狭義に浅い」＝ **`hr0` そのもの**。
+⟹ ★ **接頭辞も塔も、ブロックの `j` 列目に行 0 の親を供給できない。**
+⟹ ⟹ 前提は `hr0` だけ。**`0 < d` も `hnb` も要らない**（私の `no_nextR_srow_cross` は
+`hmin` に `hr0 + 0<d` を要求していた ⟹ **改善**）。
+
+## ⛔ ただし (W15b)「行 0 で封じれば行 1・行 2 も」は **成り立ちません**
+
+`nextrel1 M a b` は `le0 M a b` を要求するが、**`le0` の鎖はブロックの根を**通って**下へ伸びる**。
+⟹ `le0 M a b`（`a < p`）は**可能**。⟹ 行 0 を封じても行 1 は封じられない。
+
+⟹ ★ 行 1 に要るのは **的についての錐の条件だけ**（`entry M 1 p < entry M 1 b`）で、
+`hnb`（∀ の形）は要りません（`no_nextrel1_cross_of_cone` がその形）。
+⟹ ⛔ 行 2 は `le1` の鎖を追うので `hnb` が要ります（`le1_through_root`）。
