@@ -7496,3 +7496,20 @@ team-lead の (q3):「`he` は落とせる。筋は『ブロックは平行移�
 ⟹ `e > 0` だと `c_k` が増えるので、行 1 の親は `k` で**変わりうる**。
 ⟹ ただし `c_k → ∞` なので、十分大きい `k` では親は
    `S = {j < |A| : le0 M j |A|}` の**最大元**に**固定される**（未証明の観察）。
+
+## §295 `ZeroEOK`（`e = 0` の枝）
+
+    srow_prefix_blockRoot_e_zero (緑) :
+      srow (A ++ mTower Q d 0 n) (|A| + k*|Q|) = srow Q 0     （全ブロック共通）
+
+理由: `Lift1 _ 0 = id` なので行 1 は `entry Q 1 i` のまま（`entry1_mTower_block_e_zero`）、
+行 2 は `shiftr01` も `Lift1` も変えない（`entry2_mTower_blockRoot`）。
+
+⚠ `srow Q 0 = 1` の場合の行 1 の親が問題。閾値は `entry Q 1 0` で**一定**（`d = 0` と違う）
+なので iff の見込みはあるが、`t_{k+1}` の `le0` 祖先には前のブロックの**非根**の列が
+入りうる。その `j` について最小性 `entry Q 1 0 ≤ entry Q 1 (j mod |Q|)` が要る
+⟹ **「`Q` の根が行 1 でも最小」が要る**。`TowerP''` は持っていない。
+
+★ 参考（既知）: `not_rsum_shTower`（`L105Cap:674`）—— `e ≥ 1` の塔では `rsum` が破れる。
+⟹ 連結（`W_add`）では絶対に組めない、が確定している。私の `prefix_mTower_d0_mem` が
+通るのは `d = e = 0`（ブロックが同一）＋ `based Q` で `rsum` が自明になるからだけ。

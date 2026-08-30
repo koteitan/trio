@@ -2889,5 +2889,25 @@ theorem le0_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k j : ℕ}
       rw [hA0] at hc2 ⊢
       exact hc2
 
+
+/-! ## 41. `ZeroEOK`（`e = 0` の枝、`L106:3213`）
+
+`mTower Q d 0 n = shTower Q d n`。行 1 は全ブロックで `Q` と同じ
+（`entry1_mTower_block_e_zero`、§293）。行 2 は `shiftr01` も `Lift1` も変えない。 -/
+
+/-- ★★ `e = 0`: ブロック根の `srow` は `Q` の根の `srow` と同じ。 -/
+theorem srow_prefix_blockRoot_e_zero {A Q : TrioSeq} {d n k : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hk : k < n) :
+    srow (A ++ mTower Q d 0 n) (A.length + k * Q.length) = srow Q 0 := by
+  unfold srow
+  have h1 : entry (A ++ mTower Q d 0 n) 1 (A.length + k * Q.length) = entry Q 1 0 := by
+    rw [entry_append_right]
+    have := entry1_mTower_block_e_zero Q d n k 0 hk hQ1
+    rwa [Nat.add_zero] at this
+  have h2 : entry (A ++ mTower Q d 0 n) 2 (A.length + k * Q.length) = entry Q 2 0 := by
+    rw [entry_append_right]
+    exact entry2_mTower_blockRoot Q d 0 n k hk hQ1
+  rw [h1, h2]
+
 end H12H2
 end TRIO
