@@ -2076,8 +2076,7 @@ H12 の `blockRoot_parent_prevBlock` の仕事なので、ここでは**前提**
 **⟹ ⟹ そこだけが未完で、測度の側は下で緑になります。** -/
 
 open Classical in
-theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ}
-    (hP : TowerP'' Q d e) (hd : 0 < d)
+theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 < d)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
       ∀ A', A' ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
     (hQ1 : 0 < Q.length)
