@@ -5005,5 +5005,65 @@ theorem prefix_mTower_row2_src_ge_of_hasParent_e_zero {A Q : TrioSeq} {d n k j c
   push Not at hcc
   exact prefix_mTower_row2_cross_implies_orphan_of_e_zero hk hj hcc h hpar
 
+
+/-- ★★★★★★★★ **鎖は `c+m` を跨げません** ⟹ **`le0 T (c+m) t`**。 -/
+theorem rtg0_shift_of_periodic {T : TrioSeq} {a m c t : ℕ} (hm : 0 < m)
+    (hper : ∀ x, a ≤ x → x + m ≤ t → entry T 0 (x + m) = entry T 0 x)
+    (hc : a ≤ c) (hct : c + m ≤ t)
+    (h : Relation.ReflTransGen (nextrel0 T) c t) :
+    Relation.ReflTransGen (nextrel0 T) (c + m) t := by
+  have hcm : entry T 0 (c + m) = entry T 0 c := hper c hc hct
+  have key : ∀ z, Relation.ReflTransGen (nextrel0 T) z t →
+      c ≤ z → z ≤ c + m → entry T 0 c ≤ entry T 0 z →
+      Relation.ReflTransGen (nextrel0 T) (c + m) t := by
+    intro z hz
+    induction hz using Relation.ReflTransGen.head_induction_on with
+    | refl =>
+        intro _ h2 _
+        have : t = c + m := by omega
+        rw [this]
+    | @head z b h' hrest ih =>
+        intro hcz hzm hval
+        rcases eq_or_lt_of_le hzm with heq | hzlt
+        · rw [← heq]; exact hrest.head h'
+        · have hbm : b ≤ c + m := by
+            by_contra hb
+            push Not at hb
+            have hmin := h'.2.2.2.2 (c + m) ⟨by omega, by omega⟩
+            have hgt := h'.2.2.2.1
+            omega
+          exact ih (by have := h'.2.2.1; omega) hbm (by have := h'.2.2.2.1; omega)
+  exact key c h (le_refl c) (by omega) (le_refl _)
+
+/-- ★★★★★★★★★ **(行 1 版)**: 周期部分では **`nextrel1` の窓も周期より短い**。
+⟹ ★ 前提は **行 0 と行 1 の周期性**だけ（`le0` の仮定は要りません）。 -/
+theorem window_lt_of_periodic1 {T : TrioSeq} {a m c t : ℕ} (hm : 0 < m)
+    (hper0 : ∀ x, a ≤ x → x + m ≤ t → entry T 0 (x + m) = entry T 0 x)
+    (hper1 : ∀ x, a ≤ x → x + m ≤ t → entry T 1 (x + m) = entry T 1 x)
+    (hc : a ≤ c) (h : nextrel1 T c t) : t - c < m := by
+  by_contra hcon
+  push Not at hcon
+  have hlt : c < t := h.2.2.1
+  have htlen : t < T.length := h.2.1
+  have hct : c + m ≤ t := by omega
+  have hle0 : le0 T (c + m) t :=
+    ⟨by omega, htlen, rtg0_shift_of_periodic hm hper0 hc hct h.2.2.2.2.1.2.2⟩
+  have hmin := h.2.2.2.2.2 (c + m) ⟨by omega, hle0⟩
+  rw [hper1 c hc hct] at hmin
+  have := h.2.2.2.1
+  omega
+
+/-- ★★★★★ **`srow = 1` の親について述べた形**（L3 の `parent_dist_lt_of_periodic0` の行 1 版）。 -/
+theorem parent_dist_lt_of_periodic1 {T : TrioSeq} {a m t : ℕ} (hm : 0 < m)
+    (hper0 : ∀ x, a ≤ x → x + m ≤ t → entry T 0 (x + m) = entry T 0 x)
+    (hper1 : ∀ x, a ≤ x → x + m ≤ t → entry T 1 (x + m) = entry T 1 x)
+    (hs : srow T t = 1) (hpar : hasParent T (srow T t) t)
+    (hc : a ≤ parent T (srow T t) t) :
+    t - parent T (srow T t) t < m := by
+  have h1 := parent_nextR hpar
+  rw [hs] at h1 hc ⊢
+  rw [nextR, if_neg (by omega), if_pos rfl] at h1
+  exact window_lt_of_periodic1 hm hper0 hper1 hc h1
+
 end H12Export
 end TRIO

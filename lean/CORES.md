@@ -12051,3 +12051,30 @@ A ++ (Q1^k1 ++ Q1[:y1]) ++ (Q2^k2 ++ Q2[:y2]) ++ … ++ mTower V d0 d1 m
 ---
 
 ## ✅ **build 緑 11 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **357 本**
+
+---
+
+## ★★★★★★★★★ **H12 (2026-08-30): `window_lt_of_periodic0` の行 1 版（緑）—— L3 の穴が埋まりました**
+
+    ★★★★★★★★ `rtg0_shift_of_periodic` … **`le0 T c t` ∧ 行 0 の周期性 ⟹ `le0 T (c+m) t`**
+    ★★★★★★★★★ `window_lt_of_periodic1` … **周期部分では `nextrel1` の窓も周期より短い**
+      ⟹ ★ **前提は行 0 と行 1 の周期性だけ**（`le0` の仮定は要りません）
+    ★★★★★ `parent_dist_lt_of_periodic1` … `srow = 1` の親について（L3 の `parent_dist_lt_of_periodic0` の対）
+
+### ★★★★★★★★ **鍵（1 行）: 鎖は `c+m` を跨げません**
+
+    ★ `le0` の鎖の上で **行 0 は狭義に増えます**
+    ⟹ ★★ もし鎖が `c+m` を跨げば、その 1 歩の**最小性**が
+      **`entry T 0 (跨いだ先) ≤ entry T 0 (c+m) = entry T 0 c`** を強制します
+    ⟹ ⟹ ⛔ **`entry T 0 c ≤ entry T 0 (跨ぐ元) < entry T 0 (跨いだ先)`** と矛盾
+    ⟹ ⟹ ⟹ ★★★ ですから **`c+m` は必ず鎖の上**にあります ⟹ **`le0 T (c+m) t`**
+
+**⟹ ★ 実装: `Relation.ReflTransGen.head_induction_on` に不変量
+「`c ≤ z ≤ c+m` ∧ `entry T 0 c ≤ entry T 0 z`」を載せました。**
+
+### ⛔ **行 2 版は書けていません（どこで詰まるか、1 行）**
+
+    ⛔ `nextrel2` の最小性は **`le1` 祖先**の上 ⟹ ★ **`le1 T (c+m) t`** が要ります
+    ⟹ ★ 同じ議論をするには **`nextrel1` の 1 歩の最小性**を使う必要がありますが、
+    ⟹ ⟹ ⛔ それは **`le0` 祖先の上**なので、**`le0 T (c+m) b`（`b` は鎖の途中）**が要ります
+    ⟹ ⟹ ⟹ ⛔ **`z + m ≤ b` が保証できない**ので、`rtg0_shift_of_periodic` を当てられません
