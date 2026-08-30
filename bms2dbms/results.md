@@ -1,35 +1,45 @@
-# 未完了であること（先に）
-
-`conv3` は**まだ正しくない**。`ImgClosedT` の破れが `≤5` 列で 2 個・`≤6` 列で 54 個あり、
-必要な 7 性質のうち `OrderT3` と `SandwichUT3` は**現在の `conv3` では偽**である。
-証明ずみは `ConvDiagT3` と `ImgLenT3` の 2 本だけで、整礎性（BMS 側 `TowerExp` /
-DBMS 側 `WellFounded RD3`）はどちらも未証明である。
-
-Lean 側の `sorry` が 0 なのは、**未証明の性質を `sorry` ではなく仮定の引数として
-置いているから**であって、証明が閉じているという意味ではない。主定理はすべて条件つきである。
-`Conv3.conv3` は `def`（定義）なので証明義務を持たず、`#guard` 461 本は
-有限個の入力での答え合わせであって全称命題の証明ではない。
-
-以下はその前提で読める、再利用可能な部分である。
-
-
 # 成果の概略
 
-1. **3 行 DBMS（DTSS, `z ≤ 1`）の器が Lean で立ち、変換 `conv3` が定義として実装された。**
+1. **3 行 DBMS（DTSS, `z ≤ 1`）の器が Lean で立ち、変換 `conv3` が定義として
+   実装されているが、間違いを含んでいる。**
    対角・標準形・降下・主定理の骨組みがあり、Lean の `Conv3.conv3` は Python の
    `bms2dbms/tools/rows3.py` と同じ像を出す（`≤7` 列全数と、7 列で像が変わる 18 個に `#guard`）。
+   間違いの所在は `ImgClosedT` の破れ（`≤5` 列で 2 個、`≤6` 列で 54 個）と、
+   下の 2-2 / 2-3 が現在の `conv3` では偽であること。
 
-2. **「変換の道が、証明したい停止性を仮定する」という循環が切られた。**
-   BMS 側の整礎性の代わりに **DBMS 側の整礎性 `WellFounded RD3` を仮定してよい**。
-   さらに `WellFounded RD3` ＋ 変換の性質から **BMS 3 行の停止性が出る**
-   （`TRIO_terminates_of_dbms_wf`）。
+   **付記（器の性質）**: この器は、**整礎性を BMS 側でなく DBMS 側で取ってよい**形になっている。
+   `ST_D3_descend` が整礎性を使うのは 1 か所だけで、そこは
+   `(conv3 A)⟦m⟧ = conv3 B` により DBMS 側の基本列で置き換えられる。したがって
 
-3. **変換に必要な性質が 7 本に確定し、そのうち 2 本は証明ずみ、2 本は反証ずみ、
-   反証された 2 本を使わない形が用意された。**
-   証明ずみ: `ConvDiagT3` / `ImgLenT3`。偽: `OrderT3` / `SandwichUT3`。
-   それらを避ける `ST_D3_conv3_of_parts'''`（`Inj3` / `OrderReindexT3` / `SandwichUReindexT3` 版）がある。
+   * **もし** DBMS 側の整礎性 `WellFounded RD3` が証明できれば、
+     `ST_D3_conv3_of_parts_D` は BMS 側の残核（`TowerGraft2` / `TowerExp`）を使わない。
+   * **もし** さらに `conv3` が完成して 2-1〜2-6 が全部成り立てば、
+     `TRIO_terminates_of_dbms_wf_parts` により BMS 3 行 (`z ≤ 1`) の停止性が出る。
 
-4. **3 行 DBMS の対角が「`z` を 1 で頭打ちした形」だと確定した。**
+   `WellFounded RD3` は未証明であり、`conv3` も未完成なので、いずれも現時点では条件つきである。
+
+2. **変換に必要な性質が 7 本に確定した。**
+
+   | | 命題 | 状態 |
+   |---|---|---|
+   | **2-1** | `ImgCofinalT3 conv3` : `∀ A, ST_TS A → 1 < A.length → ∀ m0, ∃ m ≥ m0, ∃ B, ST_TS B ∧ (conv3 A)⟦m⟧ = conv3 B` | 未証明 |
+   | **2-2** | `OrderT3 conv3` : `∀ M N, ST_TS M → ST_TS N → (translate M <o translate N ↔ seqlex (conv3 M) (conv3 N))` | **偽**（`len ≤ 11` の 1,882,196 個で両向き各 24 件） |
+   | **2-3** | `SandwichUT3 conv3` : `∀ A, ST_TS A → 1 < A.length → ∀ n ≥ 1, sle3 (conv3 (A⟦n⟧)) ((conv3 A)⟦n+1⟧)` | **偽**（`≤7` 列 386,405 対で 8 件） |
+   | **2-4** | `ImgBlockT3 conv3` : `∀ A, ST_TS A → blockok 0 (conv3 A)` | 未証明（`≤7` 列 77,282 個で破れ 0） |
+   | **2-5** | `ImgLenT3 conv3` : `∀ A, ST_TS A → 1 < A.length → 1 < (conv3 A).length` | **証明ずみ**（`ImgLenT3_b2d3`） |
+   | **2-6** | `ConvDiagT3 conv3` : `∀ v, conv3 (diagSeqT 0 v) = if v = 0 then ddiagSeqT 0 else ddiagSeqT (v+2)` | **証明ずみ**（`ConvDiagT3_b2d3`） |
+   | **2-7** | 整礎性: BMS 側 `Wset.TowerGraft2 ∧ Wset.TowerExp`、または DBMS 側 `WellFounded RD3`（`RD3 x y := ST_D3 x ∧ ST_D3 y ∧ seqlex x y`） | どちらも未証明 |
+
+   偽である 2-2 / 2-3 を使わない形が用意されている。これらから出る弱い 3 本
+
+   * `Inj3 conv3` : `∀ M N, ST_TS M → ST_TS N → conv3 M = conv3 N → M = N`
+   * `OrderReindexT3 conv3` : (←) の向きだけ、相手を像の展開の逆像に限ったもの
+   * `SandwichUReindexT3 conv3` : 挟み撃ちの上、相手は同上
+
+   に置き換えた `ST_D3_conv3_of_parts'''` / `ST_D3_conv3_of_parts_D` がある
+   （弱化が出ることは Lean で証明ずみ）。この 3 本の真偽は未測定。
+
+3. **3 行 DBMS の対角が「`z` を 1 で頭打ちした形」だと確定した。**
    `ddiagSeqT v = ((j, j-1, min (j-2) 1))_{j=0..v}`。素の `(j, j-1, j-2)` は
    `z ≥ 2` に出るのでこの断片の対角にならない。
 

@@ -1,20 +1,10 @@
-# 未完了であること（先に）
-
-停止性は**まだ証明できていない**。`WellFounded stepRel` は閉包命題 1 本を仮定した
-条件つきの形でしか出ておらず、その 1 本（`TowerExp` または `MTowerClosedS`）は未証明である。
-
-Lean 側の `sorry` が 0 なのは、**未証明の命題を `sorry` ではなく仮定の引数として
-置いているから**であって、証明が閉じているという意味ではない。
-
-以下はその前提で読める、再利用可能な部分である。
-
-
 # 成果の概略
 
-1. **3 行トリオ数列（BM4 の `z ≤ 1` 断片）の停止性が、閉包命題 1 本に還元された。**
+1. **3 行トリオ数列（BM4 の `z ≤ 1` 断片）の停止性が、未証明の閉包命題 1 本に還元された。**
    `WellFounded stepRel` は `Wset.TowerExp` 1 本、または `L105.MTowerClosedS` 1 本から出る。
    分岐時点では `TowerGraft2` と `TowerExp` の 2 本が必要だった。差を埋めたのは
    `TowerGraft2Single`（`TowerGraft2` を `|R| = 1` に落とした形）が定理であること。
+   残る 1 本は未証明なので、停止性はいずれも条件つきの形でしか出ていない。
 
 2. **その 1 本に十数通りの十分条件が与えられ、含意関係がすべて Lean で証明された。**
    `TowerOK` / `LiftTie` / `LiftTieSelf` / `LiftTieCore` / `LiftTieCoreRow2` /
