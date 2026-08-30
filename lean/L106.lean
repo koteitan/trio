@@ -5318,5 +5318,60 @@ theorem hmin_tower {Q : TrioSeq} {d e n j : ℕ} (hQ1 : 0 < Q.length) (hd : 0 < 
 ⚠ **教訓 14**: 上は「`OrphOK` の**形**の補題」です。
 **`towerClosed_of_hered` の `OrphOK` を**これで置き換える**配線はまだしていません。** -/
 
+/-! ### 231.3 ★★★ 塔の形に入れた `OrphOK`（行 0 は**完全に無条件**） -/
+
+theorem orphOK_tower_row0 {A Q : TrioSeq} {d e n j : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnp : ¬ hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 (n * Q.length + j)) :
+    ¬ hasParent (A ++ (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))) 0
+      (A.length + (n * Q.length + j)) := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
+      = n * Q.length + (j + 1) := by
+    rw [List.length_append, mTower_length, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hmin := hmin_tower (Q := Q) (d := d) (e := e) (n := n) (j := j) hQ1 hd hj hr0
+  exact orphOK_row0 (by omega) (hmin (n * Q.length + j) (by omega) (by omega)) hnp
+
+theorem orphOK_tower_row1 {A Q : TrioSeq} {d e n j : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hcone : entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 0
+      < entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 (n * Q.length + j))
+    (hnp : ¬ hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 (n * Q.length + j)) :
+    ¬ hasParent (A ++ (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))) 1
+      (A.length + (n * Q.length + j)) := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
+      = n * Q.length + (j + 1) := by
+    rw [List.length_append, mTower_length, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hmin := hmin_tower (Q := Q) (d := d) (e := e) (n := n) (j := j) hQ1 hd hj hr0
+  exact orphOK_row1_cone hmin (by omega) (by omega) hcone hnp
+
+/-! ### 231.4 ⟹ ★ **状態のまとめ**
+
+    ✅ **行 0** … `orphOK_tower_row0`（**前提は `hQ1` / `0 < d` / `hj` / `0 < j` / `hr0` だけ**）
+    ✅ **行 1** … `orphOK_tower_row1`（＋ `hcone` ＝ **`h1out`（相対版）**）
+    ⛔ **行 2** … `hnb`（塔にブロッカーが無い）が要る ⟹ 未着手
+
+**⟹ ★ R2 の (s8): 破れは **100% が行 1**（行 0 と行 2 は 0 件）。**
+**⟹ ⟹ ★★ ですから **行 2 は起きていません**。⟹ 残差は `hcone`（行 1）1 本です。**
+
+⚠ **教訓 14**: これらは「接頭辞を跨がない」だけです。
+**`towerClosed_of_hered` の枝は「**ブロック**の中で孤児」から始まるので、
+「**塔**の中で孤児」への橋（H12 の実測 15944 ⟺ 15944）が別に要ります。** -/
+
 end L106
 end TRIO
