@@ -5493,5 +5493,70 @@ theorem block_hasParent_one_of_witness {Q : TrioSeq} {d e n j y : ℕ}
 矛盾するように見えます。⟹ ★ ですが H12 の母集団は**一様な箱の `Q`**で、
 **核の形（型 B）とは別**です。⟹ ⟹ 母集団を揃えて測り直す必要があります。** -/
 
+/-! ### 236.2 ★★★★ `hloc`（行 1）を **`Q` の言葉・`n` に依らない形**に落とします
+
+§236 で「要るのは **`le0` の祖先のどれかが行 1 で小さい**」と分かりました。
+**⟹ ★ それを `Q` の言葉に落とすと、`e*n` が消える条件が見えます。**
+
+`entry (block) 1 x = entry Q 1 x + (if le1 Q 0 x then e*n else 0)` なので:
+
+| 証人 `y` | 的 `j` | ブロックでの比較 | `n` |
+|---|---|---|---|
+| 錐の中 | 錐の中 | `entry Q 1 y < entry Q 1 j`（両辺 `+e*n`）| ★ **消える** |
+| 錐の外 | 錐の外 | `entry Q 1 y < entry Q 1 j` | ★ **消える** |
+| 錐の外 | 錐の中 | `entry Q 1 y < entry Q 1 j + e*n` | ★ **緩む**（`Q` の条件で十分） |
+| **錐の中** | **錐の外** | `entry Q 1 y + e*n < entry Q 1 j` | ⛔ **`n` 依存** |
+
+**⟹ ★★★ ですから **「証人が錐の中なら的も錐の中」**（`le1 Q 0 y → le1 Q 0 j`）を付ければ、
+**`n` が完全に消えます**。**
+
+**⟹ ⟹ ★ そして核の形（型 B）では、証人（第 1 列）も的（第 2 列）も**錐の外**なので
+この条件を**満たします**。⟹ ⟹ **核の形が通ります**。** -/
+
+open Classical in
+theorem block_hasParent_one_of_Q_witness {Q : TrioSeq} {d e n j y : ℕ}
+    (hj : j < Q.length) (hyj : y < j)
+    (hle0Q : le0 Q y j)
+    (hlt : entry Q 1 y < entry Q 1 j)
+    (hcls : le1 Q 0 y → le1 Q 0 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hE1 : ∀ x, x < Q.length →
+      entry B 1 x = entry Q 1 x + (if le1 Q 0 x then e * n else 0) := by
+    intro x hx
+    show (B.getD x (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hx]
+  have hle0B : le0 (B.take (j + 1)) y j := by
+    refine (le0_take (by omega) (by omega)).mpr ?_
+    rw [hB]
+    exact Wset.le0_Lift1.mpr (le0_shiftr01.mpr hle0Q)
+  refine block_hasParent_one_of_witness (d := d) (e := e) (n := n) hj hyj hle0B ?_
+  rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := y) (by omega),
+    Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega),
+    hE1 y (by omega), hE1 j hj]
+  by_cases hy : le1 Q 0 y
+  · rw [if_pos hy, if_pos (hcls hy)]; omega
+  · rw [if_neg hy]
+    split_ifs <;> omega
+
+/-! ### 236.3 ⟹ ★★★ **`hlocQ`: `Q` だけの、`n` に依らない条件**
+
+    **`hlocQ Q` … ∀ j ≥ 1, `srow` が 1 のとき
+      ∃ y < j, `le0 Q y j` ∧ `entry Q 1 y < entry Q 1 j` ∧ (`le1 Q 0 y → le1 Q 0 j`)**
+
+**⟹ ★ 行 0 は §154（`hr0` だけ）、行 2 は §173（`Q.take (j+1)` に落ちる）。**
+**⟹ ⟹ ★★ ですから **`hloc` は `Q` の言葉で書けます**。⟹ **`d, e, n` が消えます**。**
+
+**⟹ ⟹ ⟹ ★★★ そして核の形（型 B）は `y = 1`（第 1 列、行 1 ＝ 0、錐の外）で満たします:**
+
+    `le0 V 1 2` … 隣接（行 0 が狭義増加）✅
+    `entry V 1 1 = 0 < b = entry V 1 2` ✅（`b > 0` のとき）
+    `le1 V 0 1 → le1 V 0 2` … 前件が偽（第 1 列は錐の外）⟹ **空虚に真** ✅
+
+⚠ **教訓 14**: **`hlocQ` の遺伝は測っても証明してもいません**。
+**⟹ ★ ですが `hbase` / `rsum` / `h1out` / `hnbQ` と違い、**核の形で偽になりません**。**
+**⟹ ⟹ R2 に (LOCHER) として測ってもらう価値があります。** -/
+
 end L106
 end TRIO
