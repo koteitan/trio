@@ -2276,5 +2276,112 @@ theorem blockRoot_parent_ge_prefix {A Q : TrioSeq} {d e k : ℕ}
   rw [parent_append_right_of A T hpT, List.length_append, mTower_length, hpe]
   omega
 
+/-! ## 216. ★★★★★★★★★ §214 ＋ §215 —— `j = 0`（`n = k+1`）の枝が**前提なしで**閉じます
+
+§214 は「親の位置」を前提にしていました。§215 でそれが証明できたので、つなぎます。
+
+**⟹ ★ 残る前提は `hrank`（`p = 0` のとき `rankDE` が減る）と `hered`（遺伝）だけ。** -/
+
+open Classical in
+theorem hsnoc_zero {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hz0 : entry Q 2 0 = 0)
+    (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+      ∀ A', A' ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hpre : ∀ p, p < Q.length →
+      A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u)
+    (hrank : ∀ p, p = 0 →
+      rankDE (wd0 (A ++ mTower Q d e k)
+          (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+        (wd1 (A ++ mTower Q d e k)
+          (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+        < rankDE d e)
+    (hered : ∀ p, p < Q.length → TowerP''
+      (wnd (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+      (wd0 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+      (wd1 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)) :
+    A ++ mTower Q d e (k + 1)
+      ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1 ∈ W u := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  set P := A ++ mTower Q d e k with hPdef
+  set T := mTower Q d e (k + 1) ++ B1.take 1 with hTdef
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  have hB1len : B1.length = Q.length := by rw [hB1, Lift1_length, shiftr01_length]
+  have hBlen : (B0 ++ B1).length = Q.length + Q.length := by
+    rw [List.length_append, hB0len, hB1len]
+  have hPlen : P.length = A.length + k * Q.length := by
+    rw [hPdef, List.length_append, mTower_length]
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  -- ★ 2 通りの書き方が一致する
+  have hre : A ++ mTower Q d e (k + 1) ++ B1.take 1
+      = P ++ (B0 ++ B1).take (Q.length + 1) := by
+    rw [hPdef, hB0, hB1, prefix_mTower_take_reassoc A Q d e k 1, List.append_assoc]
+  have hassoc : A ++ mTower Q d e (k + 1) ++ B1.take 1 = A ++ T := by
+    rw [hTdef, List.append_assoc]
+  set S := P ++ (B0 ++ B1).take (Q.length + 1) with hS
+  have hSlen : S.length = P.length + (Q.length + 1) := by
+    rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hlast : S.length - 1 = A.length + (k + 1) * Q.length := by omega
+  -- ★ 末尾列の `srow` は 1
+  have hTeq : T = (mTower Q d e (k + 2)).take ((k + 1) * Q.length + 1) := by
+    rw [hTdef]; exact tower_snoc_root_eq_take Q d e k
+  have hTlen2 : (mTower Q d e (k + 2)).length = (k + 2) * Q.length :=
+    mTower_length Q d e (k + 2)
+  have hsucc2 : (k + 2) * Q.length = (k + 1) * Q.length + Q.length :=
+    Nat.succ_mul (k + 1) Q.length
+  have hE : ∀ i, entry (A ++ T) i (A.length + (k + 1) * Q.length)
+      = entry (mTower Q d e (k + 2)) i ((k + 1) * Q.length) := by
+    intro i
+    rw [entry_append_right, hTeq, Wset.entry_take (by omega)]
+  have hs1 : srow (A ++ T) (A.length + (k + 1) * Q.length) = 1 := by
+    unfold srow
+    rw [hE 2, hE 1, mTower_entry2_root (by omega) hQ1,
+      mTower_entry1_root (by omega) hQ1, hz0]
+    rw [if_neg (by omega), if_pos (by
+      have : 0 < e * (k + 1) := Nat.mul_pos he (by omega)
+      omega)]
+  -- ★ 親が居ること・親の位置
+  have hpT : hasParent T 1 ((k + 1) * Q.length) := by
+    rw [hTeq]
+    exact (hasParent_take (by omega) (by omega)).mpr
+      (blockRoot_hasParent_prev hQne hd he hr0)
+  have hparAT : hasParent (A ++ T) 1 (A.length + (k + 1) * Q.length) :=
+    hasParent_append_right_of _ _ hpT
+  have hgeAT : P.length ≤ parent (A ++ T) 1 (A.length + (k + 1) * Q.length) := by
+    rw [hPdef]
+    exact blockRoot_parent_ge_prefix hQne hd he hr0
+  have hltAT : parent (A ++ T) 1 (A.length + (k + 1) * Q.length)
+      < A.length + (k + 1) * Q.length := nextR_index_lt (parent_nextR hparAT)
+  -- ★ `S` の言葉に直す
+  have hSAT : S = A ++ T := by rw [← hre]; exact hassoc
+  have hTlen : T.length = (k + 1) * Q.length + 1 := by
+    rw [hTdef, List.length_append, mTower_length, List.length_take, hB1len,
+      Nat.min_eq_left (by omega)]
+  have hlastAT : (A ++ T).length - 1 = A.length + (k + 1) * Q.length := by
+    rw [List.length_append, hTlen]; omega
+  have hpar : hasParent S (srow S (S.length - 1)) (S.length - 1) := by
+    rw [hSAT, hlastAT, hs1]; exact hparAT
+  set par := parent S (srow S (S.length - 1)) (S.length - 1) with hpardef
+  have hpareq : par = parent (A ++ T) 1 (A.length + (k + 1) * Q.length) := by
+    rw [hpardef, hSAT, hlastAT, hs1]
+  set p := par - P.length with hpdef
+  have hplt : p < Q.length := by omega
+  have hpe : par = P.length + p := by omega
+  exact hsnoc_zero_of_parent hd hIH hQ1 (hpre p hplt) hplt hpar hpe
+    (hrank p) (hered p hplt)
+
 end L106
 end TRIO
