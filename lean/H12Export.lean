@@ -5388,5 +5388,75 @@ theorem tie_below_root_after_lift {M : TrioSeq} {d j : ℕ} (h0 : 0 < M.length)
   rw [entry1_Lift1_of_tie hj hj0 h, entry1_Lift1_root h0]
   omega
 
+
+/-- ★★★★★★★★★★ **1 列基底の塔では、どの列の `srow` も基底の 1 列の `srow`**（`d1 = 0`）。
+⟹ ★ ⟹ **`nextR_src_lt_prefix_of_singleton` の `i` は「`V` の 1 列の `srow`」**であって、
+**元の `p` の `srow` ではありません**。⟹ ⟹ ★★ **そこが実測との食い違いの正体**です。 -/
+theorem srow_mTower_singleton {A V : TrioSeq} {d0 m s : ℕ} (hV : V.length = 1) (hs : s < m) :
+    srow (A ++ mTower V d0 0 m) (A.length + s) = srow V 0 := by
+  have hlen : (mTower V d0 0 m).length = m * V.length := mTower_length V d0 0 m
+  have h1 : entry (A ++ mTower V d0 0 m) 1 (A.length + s) = entry V 1 0 := by
+    rw [entry_append_right, entry1_mTower_singleton hV hs]
+  have h2 : entry (A ++ mTower V d0 0 m) 2 (A.length + s) = entry V 2 0 := by
+    rw [entry_append_right, entry2_mTower_singleton hV hs]
+  unfold srow
+  rw [h1, h2]
+
+/-- `(0,v,z) :: R` の根の `lev` は `2v + z` ちょうど。 -/
+theorem lev_cons_root (v z : ℕ) (R : TrioSeq) :
+    lev (((0, v, z) : ℕ × ℕ × ℕ) :: R) 0 = 2 * v + z := by
+  show 2 * (((((0, v, z) : ℕ × ℕ × ℕ) :: R).getD 0 (0, 0, 0)).2.1)
+    + ((((0, v, z) : ℕ × ℕ × ℕ) :: R).getD 0 (0, 0, 0)).2.2 = _
+  rfl
+
+open Classical in
+/-- 持ち上げ後の根の `lev` は `2v + z + 2d` ちょうど。 -/
+theorem lev_Lift1_cons_root (v z d : ℕ) (R : TrioSeq) :
+    lev (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) 0 = 2 * v + z + 2 * d := by
+  have h0 : 0 < (((0, v, z) : ℕ × ℕ × ℕ) :: R).length := by simp
+  have h1 : entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) 1 0
+      = entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 + d := entry1_Lift1_root h0
+  have h2 : entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d) 2 0
+      = entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 := entry2_Lift1 _ _ _
+  have hv : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 1 0 = v := rfl
+  have hz : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R) 2 0 = z := rfl
+  unfold lev
+  rw [h1, h2, hv, hz]
+  omega
+
+/-- ★★★★★★★★ **仮定側の言い換え**: `∈ W (2v+z) ⟺ ∈ Wself`。 -/
+theorem mem_W_selfStage_iff_Wself (v z : ℕ) (R : TrioSeq) :
+    (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z)
+      ↔ (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself := by
+  rw [mem_Wself_iff, lev_cons_root]
+  exact ⟨fun h => h.1, fun h => ⟨h, le_refl _⟩⟩
+
+open Classical in
+/-- ★★★★★★★★ **結論側の言い換え**: `∈ W (2v+z+2d) ⟺ ∈ Wself`。 -/
+theorem mem_W_lift_iff_Wself (v z d : ℕ) (R : TrioSeq) :
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (2 * v + z + 2 * d)
+      ↔ Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ Wself := by
+  rw [mem_Wself_iff, lev_Lift1_cons_root]
+  exact ⟨fun h => h.1, fun h => ⟨h, le_refl _⟩⟩
+
+open Classical in
+/-- ★★★★★★★★★★ ⟹ **`LiftTieSelf` は `u` を含みません**:
+**「`Wself` がタイのある根の `Lift1` で閉じる」**と同値です。
+⟹ ★ ⟹ **段の帳簿がまるごと消えます**（私の (C1) の `mem_Wself_iff` が、ここで効きました）。 -/
+theorem liftTieSelf_iff_Wself_closed :
+    (∀ (d v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+        (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ W (2 * v + z) →
+        Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ W (2 * v + z + 2 * d))
+      ↔ (∀ (d v z : ℕ) (R : TrioSeq), argOK R → (∃ p ∈ R, p.2.1 = v) →
+        (((0, v, z) : ℕ × ℕ × ℕ) :: R) ∈ Wself →
+        Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) d ∈ Wself) := by
+  constructor
+  · intro h d v z R hR ht hX
+    exact (mem_W_lift_iff_Wself v z d R).mp
+      (h d v z R hR ht ((mem_W_selfStage_iff_Wself v z R).mpr hX))
+  · intro h d v z R hR ht hX
+    exact (mem_W_lift_iff_Wself v z d R).mpr
+      (h d v z R hR ht ((mem_W_selfStage_iff_Wself v z R).mp hX))
+
 end H12Export
 end TRIO
