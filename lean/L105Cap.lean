@@ -13842,6 +13842,56 @@ theorem not_nextrel2_blockRoots {Q : TrioSeq} {d e n k m : ℕ}
 **残る 3 つが本体で、とくに「非減少 ⟺ `p_rel = 0`」は
 `|V| = |Q| − p_rel`（§187.2）の**両向き**が要ります。** -/
 
+/-! ## 199. ★★★★★★ R2 の測度の 3 本目: **ブロック根の親になれるのは「リフトを受けている行」だけ**
+
+§198 で行 2 を片づけました。**行 0 と行 1 は「リフトが正のときだけ」親になれます。**
+**⟹ 行 0 は `shiftr01 (d*k)` なので `0 < d`、行 1 は `Lift1 (e*k)` なので `0 < e`。** -/
+
+theorem d_pos_of_nextrel0_blockRoots {Q : TrioSeq} {d e n k m : ℕ}
+    (hk : k < n) (hm : m < n) (hQ : 0 < Q.length)
+    (h : nextrel0 (mTower Q d e n) (k * Q.length) (m * Q.length)) : 0 < d := by
+  have hlt := h.2.2.2.1
+  rw [mTower_entry0_root hk hQ, mTower_entry0_root hm hQ] at hlt
+  by_contra hc
+  have hd0 : d = 0 := by omega
+  rw [hd0] at hlt
+  omega
+
+theorem e_pos_of_nextrel1_blockRoots {Q : TrioSeq} {d e n k m : ℕ}
+    (hk : k < n) (hm : m < n) (hQ : 0 < Q.length)
+    (h : nextrel1 (mTower Q d e n) (k * Q.length) (m * Q.length)) : 0 < e := by
+  have hlt := h.2.2.2.1
+  rw [mTower_entry1_root hk hQ, mTower_entry1_root hm hQ] at hlt
+  by_contra hc
+  have he0 : e = 0 := by omega
+  rw [he0] at hlt
+  omega
+
+/-! ### 199.1 ⟹ R2 の 6 行のうち **4 つ**が Lean になりました
+
+    ✅ **行 2 は決して親になれない** … §198 `not_nextrel2_blockRoots`
+    ✅ **行 0 は `0 < d` が要る** … `d_pos_of_nextrel0_blockRoots`（上）
+    ✅ **行 1 は `0 < e` が要る** … `e_pos_of_nextrel1_blockRoots`（上）
+    ✅ **`srow = 1` で `e' = 0`、`srow = 0` で `d' = e' = 0`** … §198 `rankDE_oper_*`
+    ⛔ **非減少 ⟺ `p_rel = 0`** … **H12 の `blockRoot_parent_split` 待ち**
+    ⛔ **⟹ `rank` が非減少の段ごとに真に減る** … 上の合成
+
+### 199.2 ⟹ 3 本を合わせると、**`rank` の減少が言えます**（形だけ先に）
+
+**非減少の段（`p_rel = 0`、親がブロック根）で、親の行 `i1 = srow` を考えると:**
+
+    **`i1 = 2`** … §198 より**不可能**
+    **`i1 = 1`** … `0 < e` が要る（上）。そして `oper` は **`e' = 0`**（§198）
+              ⟹ **`rank` が `1` 以上減る**
+    **`i1 = 0`** … `0 < d` が要る（上）。そして `oper` は **`d' = e' = 0`**（§198）
+              ⟹ **`rank` が `0` になる**
+
+> **⟹ ★ どちらの場合も `rank` は真に減ります。⟹ **非減少は高々 2 段**。**
+
+⚠ **教訓 14**: 上は **3 本の合成の**形**」です。**Lean では組んでいません**。**
+**⟹ 組むには「非減少 ⟺ `p_rel = 0`」（H12 待ち）と、
+`oper` の `d'`/`e'` が**次の段の `d`/`e`** であることの接続が要ります。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
