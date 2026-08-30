@@ -9,7 +9,7 @@
 """
 import sys, time
 from collections import Counter
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import wcert2
 from wcert2 import wself2, expfam, famname
 from wcert import wcert

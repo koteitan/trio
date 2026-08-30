@@ -6,7 +6,7 @@ BM4-Analysis シートの 2 行の対 264 件との全数照合。
 * `conv`（縮約なし）は 245 件一致し、19 件で縮約前の像を出す。
   その 19 件も何が出るかをここに固定しておく。
 
-生成: tools/dbms/rows2.py の convC / convD（Python 版）。
+生成: bms2dbms/tools/rows2.py の convC / convD（Python 版）。
 -/
 import Dbms
 

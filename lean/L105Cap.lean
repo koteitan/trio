@@ -4,7 +4,7 @@ L105Cap.lean: 課題 L105 —— **`CoreCap`（`Lind.lean:176`）を狙う**。
 ⚠⚠⚠ **このファイル全体への注意（2026-08-31、team-lead）**
 
 **本文中の「実測 N 件・例外 0」はすべて、特定の母集団（箱）で測ったものである。**
-箱は `tools/dbms/H1-NOTES.md`（H12）と `tools/dbms/R2-NOTES.md`（R2）に記録してあり、
+箱は `bms2dbms/tools/H1-NOTES.md`（H12）と `bms2dbms/tools/R2-NOTES.md`（R2）に記録してあり、
 **この file には転記されていないことがある。**
 
 > **⟹ 実測の数字を、前提のない `∀` 文の裏づけとして読んではいけない。**

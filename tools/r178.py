@@ -12,7 +12,7 @@ r177 の広い箱で出た「もう 1 段つながる」例は**全部 `n=1, j=0
 """
 import sys, time, random, itertools
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from collections import Counter
 from r171 import step_det
 

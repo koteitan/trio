@@ -7,7 +7,7 @@
 """
 import sys, os, json, time
 from collections import Counter
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import sheet3
 from core import parse, rows, isstd
 from wcert import wcert

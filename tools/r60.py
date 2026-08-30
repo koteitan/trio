@@ -17,7 +17,7 @@ team-lead が Lean を洗って見つけた見落とし（どれも証明ずみ�
 import sys, random
 from collections import Counter
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from r49 import has_parent
 
 

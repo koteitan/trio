@@ -302,7 +302,7 @@ example : ¬ rsum Q0 (shiftr01 1 0 Q0) := by
 
 /-! ### 課題 L51-b: `(TOWER)` の一般形（列ごとの増分 `D`）
 
-実測（`tools/dbms/ladder.py`、シート 4467 行を全数）では **99.96%** が
+実測（`bms2dbms/tools/ladder.py`、シート 4467 行を全数）では **99.96%** が
 
     M⟦n⟧ = A ++ concat_{k<n} (Q + k*D)      A = M⟦1⟧、Q = 1 段目、D = 列ごとの増分
 

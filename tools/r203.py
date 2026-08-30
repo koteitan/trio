@@ -12,7 +12,7 @@ r202: 深さ 1・2 で `h2cone(V)` が破れた状態（重複除去 54 個）�
 """
 import sys, itertools
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

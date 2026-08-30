@@ -107,7 +107,7 @@ ReindexD : ∀ A, ST_PS A → 1 < A.length → ∀ n ≥ 1,
 regime ごとの取り方: succ は `m=1, n'=n`、id は `m=n, n'=n`、
 shift は `m=n, n'=n+1`、contr は `m=n+1, n'=n`。
 
-実測（`tools/dbms/reindex.py`）:
+実測（`bms2dbms/tools/reindex.py`）:
 
 ```
 lim=10  標準形 2073826  regime {id: 1556322, succ: 295014, shift: 222309, contr: 180}  違反 0
@@ -333,7 +333,7 @@ convC (M.dropLast) d plev first force = (convC M d plev first force).dropLast
 梯子の頭は「段 = 親の段 + 1」で、その親ノードは行 1 の祖先だから `hasParent` が立つ。
 親がないなら梯子頭ではない。
 
-**実測では場合 (b) の dropLast の可換は例外 0**（`tools/dbms/bcase.py`、
+**実測では場合 (b) の dropLast の可換は例外 0**（`bms2dbms/tools/bcase.py`、
 `convC` の再帰の各段・右端の道、≤8 列で 52870 / 52870）。理由は 2 つ:
 
 * 梯子頭には親が立つので、親がないなら梯子頭でない（差 2 にならない）
@@ -354,7 +354,7 @@ convC_dropLast_contr2     梯子あり・縮約あり・Bq = [] かつ |rest2| �
 **壊れるのは `Bq = []` かつ `|rest2| = 1` のときだけ。** そのとき末尾列は
 `rest2` のただ 1 列で、深さ `p.1+1`・段 `< p.2`。
 
-実測（`tools/dbms/badcontr.py`、BMS 標準形 ≤9 列、右端の道）:
+実測（`bms2dbms/tools/badcontr.py`、BMS 標準形 ≤9 列、右端の道）:
 
 ```
 ('BAD', 段0=True, 親='中'): 49      ← 壊れる場合はすべて段 0 で親が「中」
@@ -382,7 +382,7 @@ DBMS は段 `s` の列を深さ `s+1` 以上に置くので `s ≤ d`、あわ�
 
 つまり **`plev = 0` すなわち `s = 1` の場合しか梯子は立たず、
 `rest2.headI.2 < 1` から段は 0 に強制される**。
-実測も ≤9 列で 49 件すべて段 0（`tools/dbms/badcontr.py`）。
+実測も ≤9 列で 49 件すべて段 0（`bms2dbms/tools/badcontr.py`）。
 
 `convC_dropLast_contr` の要点は「`Bq ≠ []` なら縮約は消えない」:
 
@@ -441,7 +441,7 @@ def contrOK (M : PairSeq) : Prop :=
 ```
 
 「縮約が『読み直しの先が 1 列・外の後続が空』で発火するなら、その段は 0」。
-実測（`tools/dbms/badcontr.py`、≤9 列）で 49 件すべて段 0 なので成り立つはずで、
+実測（`bms2dbms/tools/badcontr.py`、≤9 列）で 49 件すべて段 0 なので成り立つはずで、
 **残る仕事は `ST_PS M → contrOK M`**（＝「(0,0)(1,1)(2,1)(3,2) 型が標準形でない」）。
 上の反例 `(2,2)(2,1)(3,2)(3,1)` は `contrOK` を破る（`x = (3,1)`, `x.2 = 1 ≠ 0`）。
 
@@ -666,7 +666,7 @@ conC ((range n).flatMap (fun k => (k*a, 0) :: shift0 (k*a) R))
 
 ### (b)(d) の共通の核: `conC (A.dropLast)` と `conC A`
 
-実測（`tools/dbms/droplast.py`、BMS 標準形 ≤9 列 295013 個）:
+実測（`bms2dbms/tools/droplast.py`、BMS 標準形 ≤9 列 295013 個）:
 
 ```
 接頭辞・差 1        289379   可換（求める場合）
@@ -692,10 +692,10 @@ conC ((range n).flatMap (fun k => (k*a, 0) :: shift0 (k*a) R))
 
 | | |
 |---|---|
-| `tools/dbms/reindex.py` | REINDEX の全数検査（≤10 列 2073826 個、違反 0） |
-| `tools/dbms/scan_std.py` | 像が DBMS 標準形かの全数走査（≤10 列、違反 0） |
-| `tools/dbms/localize.py` | 局所化が DBMS 側で破れることの検査 |
-| `tools/dbms/rows2.py` | 変換の参照実装（Lean と同じ） |
+| `bms2dbms/tools/reindex.py` | REINDEX の全数検査（≤10 列 2073826 個、違反 0） |
+| `bms2dbms/tools/scan_std.py` | 像が DBMS 標準形かの全数走査（≤10 列、違反 0） |
+| `bms2dbms/tools/localize.py` | 局所化が DBMS 側で破れることの検査 |
+| `bms2dbms/tools/rows2.py` | 変換の参照実装（Lean と同じ） |
 
 ## 2026-08-26（続き）: `contrOK` が段 0 で消え、場合 (c) の降下が 4 通りとも揃った
 
@@ -1053,7 +1053,7 @@ ST_D_conC_holds_of_res : RDzeroRes → RDposRes → ∀ M, ST_PS M → 1 < |M| �
 
 | | |
 |---|---|
-| `ReindexD` 本体（`tools/dbms/reindex.py`） | 標準形 ≤10 列 2073826 個 |
+| `ReindexD` 本体（`bms2dbms/tools/reindex.py`） | 標準形 ≤10 列 2073826 個 |
 | 禁止形 `noAdj3`（`rows2.gen('BMS',10)`） | 同上 |
 | 場合 (c) の証人の存在 | `blockok` ブロック ≤5 列、`d`/`plev` ≤ 3、`bd` ≤ 2 で 2482560 例 |
 | 場合 (d) の段 0 の可換性 | 標準形 ≤8 列の該当 5362 個、`n = 1,2,3` |
@@ -1236,9 +1236,9 @@ v0 = bd,  d0 = 1,  c = blk の頭,  すなわち z = (bd+1, w0)
 
 ### 実測の裏づけ（過去セッション）
 
-* `CtrPres2` はブロック ≤7 列・`bd ≤ 2` の 447 万例で反例 0（`tools/dbms/ctrpres_check.py`）
+* `CtrPres2` はブロック ≤7 列・`bd ≤ 2` の 447 万例で反例 0（`bms2dbms/tools/ctrpres_check.py`）
 * 場合 2b（この節の場合 3 に対応）は 9 例あり、どれも `z` の段が `p.2` で発火しない
-* `ReindexD` 自体は標準形 ≤10 列 2073826 個で違反 0（`tools/dbms/reindex.py`）
+* `ReindexD` 自体は標準形 ≤10 列 2073826 個で違反 0（`bms2dbms/tools/reindex.py`）
 
 ## 2026-08-26（続き 9）: **`RDnode` を証明**。`ReindexD` の残余は `CtrPres2` だけ
 
@@ -1330,7 +1330,7 @@ convC (B⟦k⟧)            = (0,0) :: copies 1 (shiftr0 1 W) (k-1)    -- k ≥ 
 `convC` はすべて `convC_eq_shift` で平行移動になる。DBMS 側は `oper_cons_tower`
 （`nextrel1_cons_one` + `le0_cons_succ` で親が index 1 だと示す）。
 
-実測（`tools/dbms/node_ctr.py`、bd = 0・≤7 列の 11187 組）で 3 つの式とも反例 0。
+実測（`bms2dbms/tools/node_ctr.py`、bd = 0・≤7 列の 11187 組）で 3 つの式とも反例 0。
 
 ### 追加した主な定理
 
@@ -1355,10 +1355,10 @@ convC (B⟦k⟧)            = (0,0) :: copies 1 (shiftr0 1 W) (k-1)    -- k ≥ 
 
 | | |
 |---|---|
-| `tools/dbms/node_full.py` / `node_full2.py` | `RDnode` の `(m, n')` を regime ごとに測る |
-| `tools/dbms/node_h1.py` | 「`p.2 < d` なら `convC(copies) = copies(convC)`」の検査 |
-| `tools/dbms/node_exc.py` | 例外 2 つで `convC B = (d,plev) :: shiftr0 1 B` の検査 |
-| `tools/dbms/node_ctr.py` | 縮約 regime の 3 つの式の検査 |
+| `bms2dbms/tools/node_full.py` / `node_full2.py` | `RDnode` の `(m, n')` を regime ごとに測る |
+| `bms2dbms/tools/node_h1.py` | 「`p.2 < d` なら `convC(copies) = copies(convC)`」の検査 |
+| `bms2dbms/tools/node_exc.py` | 例外 2 つで `convC B = (d,plev) :: shiftr0 1 B` の検査 |
+| `bms2dbms/tools/node_ctr.py` | 縮約 regime の 3 つの式の検査 |
 
 ## 2026-08-26（続き 8）: `RDnode` の道具立て。regime を実測で確定
 
@@ -1407,7 +1407,7 @@ convC (B⟦n⟧) d plev first force = copies e (convC W d plev first force) n   
 ```
 
 が成り立つかを、ブロック ≤5 列・`bd ≤ 2`・`plev ≤ 2`・不変量つきの 5051 組で全数検査した
-（`tools/dbms/node_regime.py`）。結果は**きれいに一致**する:
+（`bms2dbms/tools/node_regime.py`）。結果は**きれいに一致**する:
 
 | 条件 | 件数 | (★) |
 |---|---|---|
@@ -1441,7 +1441,7 @@ convC (B⟦n+1⟧) (d+E) plev first force
    （`e := dd' - dd`）。`n` についての帰納で、頭の 1 列は `ddOf` の差、残りは
    `convC_depth_shift`（`R` について）と帰納法の仮定でつく。
 2. そのために `(d', plev', first', force')` が「同じ種類のパラメタ」に留まること。
-   実測（`tools/dbms/node_params.py`、正則 regime の 4919 組）では
+   実測（`bms2dbms/tools/node_params.py`、正則 regime の 4919 組）では
 
    ```
    ν ≤ d'                                              4919/4919
@@ -1463,9 +1463,9 @@ convC (B⟦n+1⟧) (d+E) plev first force
 
 | | |
 |---|---|
-| `tools/dbms/node_copies.py` | `(★)` を `e` を探しながら全数検査 |
-| `tools/dbms/node_regime.py` | `(★)` が成り立つ regime の特定（上の表） |
-| `tools/dbms/node_params.py` | `convC_append_tail` の `(d', plev', first', force')` を再現して段 1 のフラグを見る |
+| `bms2dbms/tools/node_copies.py` | `(★)` を `e` を探しながら全数検査 |
+| `bms2dbms/tools/node_regime.py` | `(★)` が成り立つ regime の特定（上の表） |
+| `bms2dbms/tools/node_params.py` | `convC_append_tail` の `(d', plev', first', force')` を再現して段 1 のフラグを見る |
 
 ## 2026-08-26（続き 7）: `CtrRes` と `RDnopar` を証明。残余は 2 つ
 
@@ -1586,7 +1586,7 @@ B = (v,w)^a ++ [(v,w-1)] ++ (v+1,w)^b ++ [(v+2,·)]     (A = [] , a ∈ {2,3})
 `U_n = [(1,1)]`, `q_n = (1,0)`, `pre_n = (2,1)(2,1)`, `rest2 = [(2,1)]`。
 **`rest2` の頭の段は `1 = p.2`** なので段が下がらず `contrLen = none` になる。
 
-9 例の**構造は完全に一様**（`tools/dbms/case2b.py` の追加出力で確認）:
+9 例の**構造は完全に一様**（`bms2dbms/tools/case2b.py` の追加出力で確認）:
 
 ```
 L = j1 - j0 = 1,  d0 = 0,  A = [],  z = S[J-1],  U_n.getLast = p,  z.2 = p.2
@@ -1629,8 +1629,8 @@ B⟦n⟧ = W ++ shiftr0 d0 W ++ shiftr0 (2 d0) W ++ …    (W = B.dropLast)
 
 | | |
 |---|---|
-| `tools/dbms/nodeprobe.py`（会話中） | 梯子が立つパラメタの列挙と `RDnode` の `n ↔ m` |
-| `tools/dbms/case2b.py`（会話中） | `CtrPres2` の場合 2b の全例を詳細表示 |
+| `bms2dbms/tools/nodeprobe.py`（会話中） | 梯子が立つパラメタの列挙と `RDnode` の `n ↔ m` |
+| `bms2dbms/tools/case2b.py`（会話中） | `CtrPres2` の場合 2b の全例を詳細表示 |
 
 
 ## 2026-08-26（続き 6）: 梯子つきの縮約は**完全に消えた**。残余は 4 つ
@@ -1793,9 +1793,9 @@ T = U ++ q :: ((pre ++ rest2) ++ Bq)      pre = contrPre p U A
 **`ctrHeadOK` を落とすと偽**（反例 `B = (1,1)(1,0)(2,1)(2,1)`, `n = 2`:
 `T` では `rest2` の頭の段が `p.2` と同じなので発火しないが、`T⟦2⟧` では下がる）。
 `ctrHeadOK` を足すとブロック ≤7 列・`bd ≤ 2` の 447 万例で反例 0
-（`tools/dbms/ctrpres_check.py`）。
+（`bms2dbms/tools/ctrpres_check.py`）。
 
-**構造だけの版（`contrLen'`）も偽**（26 例。`tools/dbms/ctrpres_cases.py`）。
+**構造だけの版（`contrLen'`）も偽**（26 例。`bms2dbms/tools/ctrpres_cases.py`）。
 つまり段が下がる条件を使わないと証明できない。
 
 証明の筋（`W := T.dropLast` は `T` と `T⟦n⟧` の共通の接頭辞、`|W| = |T| - 1`）:
@@ -1852,8 +1852,8 @@ DBMS 側は `convC B = C0 ++ convC rest2 (d+1) p.2 false false` で
 
 | | |
 |---|---|
-| `tools/dbms/walk_contr.py` | 標準形の右端の道で縮約が発火する節点を分類 |
-| `tools/dbms/ctrpres_check.py` | `CtrPres` / `CtrPres2` の全数検査 |
-| `tools/dbms/ctrpres_cases.py` | `CtrPres2` の場合 1 / 2a / 2b の分類 |
-| `tools/dbms/stop_check.py` | `Stop` の配置（段 0 / 段 > 0）を数える |
-| `tools/dbms/zerostop_check.py` | `RDzeroStop2` の配置と目標の恒等式の検査 |
+| `bms2dbms/tools/walk_contr.py` | 標準形の右端の道で縮約が発火する節点を分類 |
+| `bms2dbms/tools/ctrpres_check.py` | `CtrPres` / `CtrPres2` の全数検査 |
+| `bms2dbms/tools/ctrpres_cases.py` | `CtrPres2` の場合 1 / 2a / 2b の分類 |
+| `bms2dbms/tools/stop_check.py` | `Stop` の配置（段 0 / 段 > 0）を数える |
+| `bms2dbms/tools/zerostop_check.py` | `RDzeroStop2` の配置と目標の恒等式の検査 |

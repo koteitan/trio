@@ -31,7 +31,7 @@ team-lead の案（`hz0` 成立の `V`）は `srow != 2` なので**空虚**に�
 """
 import sys, itertools, random, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

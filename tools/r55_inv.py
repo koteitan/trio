@@ -4,7 +4,7 @@ import sys, random
 from collections import Counter
 sys.path.insert(0,'/home/koteitan/proofs/dbms/tools')
 import trio
-sys.path.insert(0,'/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0,'/home/koteitan/proofs/dbms/bms2dbms/tools')
 from r49 import Wup
 rng=random.Random(7)
 COLS=[(a,b,c) for a in range(7) for b in range(7) for c in range(2)]

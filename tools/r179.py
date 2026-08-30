@@ -10,7 +10,7 @@ r177 の例は**全部 `n=1, j=0` で `V = Q`（恒等段）、`(d,e) -> (d, 0)`
 """
 import sys, random
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from collections import Counter
 from r171 import step_det
 

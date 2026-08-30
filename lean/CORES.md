@@ -261,7 +261,7 @@
 
 ## ★★ H12（H57）: 健全な反証器を全核に当てた（⚠ 上の但し書きつき）
 
-`tools/dbms/h1/wref.py` ＋ `h58`〜`h67`。記録は `tools/dbms/H1-NOTES.md` §151-165。
+`bms2dbms/tools/h1/wref.py` ＋ `h58`〜`h67`。記録は `bms2dbms/tools/H1-NOTES.md` §151-165。
 
 | 核 | 決定した事例 | 未判定 | **違反** | 陰性対照（段 −1 など） |
 |---|--:|--:|--:|---|
@@ -321,7 +321,7 @@ H12 の §146（`v=0` / `b=1` が原理的に未判定）は、この定理の�
 ## ★★ H12（H58、2026-08-30）: **残核 1 点を全数 63936 件、確定した反例 0**
 
 残核 = **`z=1` かつ `c=1` かつ `srow=2` かつ「親が根でない」**、
-主語 `S = Lift1 ((0,v,z) :: cap M b c) t`。計器 `tools/dbms/h1/h68.py`、記録 `H1-NOTES` §166-173。
+主語 `S = Lift1 ((0,v,z) :: cap M b c) t`。計器 `bms2dbms/tools/h1/h68.py`、記録 `H1-NOTES` §166-173。
 
 | `|M|` | 残核（全数） | OK | 未判定 | **違反** | **陰性対照（段 −1）** |
 |--:|--:|--:|--:|--:|--:|
@@ -383,13 +383,13 @@ H12 の §146（`v=0` / `b=1` が原理的に未判定）は、この定理の�
 
 ## 出典
 
-R1 の測定・読解: `tools/dbms/R1-NOTES.md` の §R71-a（含意地図 22 本）、§R73（`TowerExp`）、
+R1 の測定・読解: `bms2dbms/tools/R1-NOTES.md` の §R71-a（含意地図 22 本）、§R73（`TowerExp`）、
 §R83（`TowerOK1` は節 3 の与件を要求）、§R86（`Gamma` の履歴）、§R87（両路線の合流）。
 
 ## R89（R2, 2026-08-30）: `CoreCap` の展開の形を測った —— `WCat` は要らない
 
 根拠: `R2-NOTES.md` §R89、commit `bc72e75` / `db140b2`。
-プログラム `tools/dbms/r89.py` `r89b.py` `r89c.py` `r89d.py` `r89e.py` `r89ctl.py` `r89f.py`。
+プログラム `bms2dbms/tools/r89.py` `r89b.py` `r89c.py` `r89d.py` `r89e.py` `r89ctl.py` `r89f.py`。
 
 `CoreCap` が見る形 `S = Lift1 ((0,v,z) :: cap M b c) t` の展開は **3 分岐で尽きる**。
 `|M|<=4` の**全数 24,008,400 件** ＋ `|M|∈{4,5,6}` のランダム標本 1,944,000 件で
@@ -442,7 +442,7 @@ R1 の測定・読解: `tools/dbms/R1-NOTES.md` の §R71-a（含意地図 22 �
     `∈ Wstar` `Wset:2684`      結論は `((0,v,z) :: R) ∈ W a`、`2v+z <= a` ⟹ 同上（`GraftFromExp`）
     `∈ Wself` `Wtower2:2987`   `M ∈ W (lev M 0)` ⟹ `lev M 0 <= lev M 0` は自明（`Subst1gReviveSelf`）
 
-**B. 乱択で確かめたもの**（`tools/dbms/r95all.py`、各 20 万件。
+**B. 乱択で確かめたもの**（`bms2dbms/tools/r95all.py`、各 20 万件。
 前提の根の条件だけを満たす**上位集合**＝本物の事例を含む集合。上位集合で破れないなら本物でも破れない）
 
 | 核 | 本物 | 陽性対照（結論の段を 1 下げた偽物） |
@@ -6603,7 +6603,7 @@ coneCtrV = [(1,5,0), (2,3,0)]
 
 ## ⚠⚠ **計器の故障 2 件 —— 2 人が独立に同じ限界に着いた**
 
-**【L3 が発見】`tools/dbms/winw.py` の `inW2` は **長さ 3 以上を判定できない**:**
+**【L3 が発見】`bms2dbms/tools/winw.py` の `inW2` は **長さ 3 以上を判定できない**:**
 
 | 行列 | depth 9 | depth 12 | maxlen 200, depth 7 |
 |---|---|---|---|
@@ -6703,9 +6703,9 @@ D_1 = [(0,0,0),(1,1,1)]        C4 真
 
 ---
 
-## ⛔⛔⛔⛔⛔ **シート（ground truth）で決着: `hlocQ` の窓遺伝は 5.12% 破れる**（L3、器具 `tools/dbms/l3_sheet_hlocq.py`）
+## ⛔⛔⛔⛔⛔ **シート（ground truth）で決着: `hlocQ` の窓遺伝は 5.12% 破れる**（L3、器具 `bms2dbms/tools/l3_sheet_hlocq.py`）
 
-**母集団: `tools/dbms/psiI.json` の DBMS 列、重複除いて **1637 個**。各接頭辞 `B = M.take (j+1)` の
+**母集団: `bms2dbms/tools/psiI.json` の DBMS 列、重複除いて **1637 個**。各接頭辞 `B = M.take (j+1)` の
 最終列の親 `p` を計算し、窓 `[p, j)` の `hlocQ` を測定。**
 
 | 量 | 値 |
@@ -6785,7 +6785,7 @@ H12 = (H-ORPH2) `OrphOK` の行 2 側 ／ R2 = (ORPH-SHEET)「**シートで**�
 
 ## ⛔⛔⛔ **(う) も死んだ —— 3 つの道が全滅し、残差は `OrphOK0` に一本化**（L3 §250.3、`62d3a27`）
 
-**(ORPH-SHEET) を L3 が自分で測定（器具 `tools/dbms/l3_sheet_hlocq.py`、コミット済み）:**
+**(ORPH-SHEET) を L3 が自分で測定（器具 `bms2dbms/tools/l3_sheet_hlocq.py`、コミット済み）:**
 
 | 量 | 値 |
 |---|---|
@@ -7312,7 +7312,7 @@ orphOK_of_cone (hs : hr0 T) (hz0 : entry T 2 0 = 0)
 **★ 理由: `nextrel0` は 1 歩、`nextrel1` は定義に `le0`、`nextrel2` は `le1` ⟹ `le0`。
 ⟹ ★★★ **行の区別が消えた** —— 今日ずっと 3 行を別々に扱ってきたが **1 本で済んだ**。**
 
-### ★★★★★★ **L3 のシート検算: 2 条件が破れと完全に相補**（器具 `tools/dbms/l3_sheet_orphok.py`）
+### ★★★★★★ **L3 のシート検算: 2 条件が破れと完全に相補**（器具 `bms2dbms/tools/l3_sheet_orphok.py`）
 
 **⚠ 母集団: シートの `M` を `A = M[:L]`, `T = M[L:]` に切り、**`hr0(T)` と `hz0(T)` が成り立つ
 切り方だけ**を分母に（＝ 組み立てで成り立つ条件）。**
@@ -10913,7 +10913,7 @@ H12 の `row2_cross_implies_orphan` ＋ `hasParent0_of_hr0` で言えるはず�
     ⛔ `drop/take` で母集団を確保しても **`A ++ Q^n` はほとんど `Reach` に入らない**（depth=6 で 42,294 件すべて F）
     ⛔ **`Reach` は下からの近似** ⟹ **「入らない」は `∉ W` の証明にならない**
 
-**✅ 道具: **`tools/dbms/core.py:163 isstd(b, ver)`**（標準形の判定器）／ **`~/code/yaBMS/c/bms -s -v DBMS`**。
+**✅ 道具: **`bms2dbms/tools/core.py:163 isstd(b, ver)`**（標準形の判定器）／ **`~/code/yaBMS/c/bms -s -v DBMS`**。
 ⚠⚠ **ただし「標準形」と「`W` の元」は同じではない** ⟹ ★ **先に較正**（正の対照 ＝ シート 1,637、
 負の対照 ＝ H12 の `c4CtrM` / `c4CtrM2`、L3 の反例 2 件）⟹ **どちら向きの含意が成り立つかを 1 行で**。**
 
@@ -11761,7 +11761,7 @@ oper_append_of_parent_in : バッドルートが `P` の中 ⟹ **`(A ++ P)⟦n�
 ⟹ ★ **回転窓かどうかは自明**（周期部分の連続窓は必ず巡回窓）⟹ **中身は長さのほう**。
 ⟹ ★★ **team-lead の「回転」より、L3 の「周期」のほうが短く強い**。**
 
-**★ 実測（`tools/dbms/l3_rot.py`）: 分母 **28,829,600**（`|Q| ≤ 4`、`n ≤ 5`、`A` 10 種、`srow` 0/1/2 全部）
+**★ 実測（`bms2dbms/tools/l3_rot.py`）: 分母 **28,829,600**（`|Q| ≤ 4`、`n ≤ 5`、`A` 10 種、`srow` 0/1/2 全部）
 ⟹ 非残差 11,059,650 件すべてで **`|V| < |Q|`**、**例外 0 件**。
 ⚠ **型ではまだ `srow = 0` だけ**（`nextrel1` の最小性が **`le0 T (c+m) t`** を要求するため）。**
 

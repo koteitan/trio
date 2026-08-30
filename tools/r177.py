@@ -17,7 +17,7 @@ r174 の広い箱では**段 2 が 2 本／5 本**出ていた。**つまり 0% 
 """
 import sys, time, random, argparse
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from collections import Counter
 from r171 import step_det
 

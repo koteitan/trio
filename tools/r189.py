@@ -9,7 +9,7 @@ r188: (M1)(M4) の破れが 0.54 → 0.84 → 1.73 → 2.69%（箱を広げる�
 """
 import sys, random
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

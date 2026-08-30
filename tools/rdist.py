@@ -15,12 +15,12 @@ L2 の解析:
 
 陽性対照: `r = |C|-1`（親が末尾）の割合も出す。**両方鳴るはず。**
 
-使い方: python3 tools/dbms/rdist.py [標本数]
+使い方: python3 bms2dbms/tools/rdist.py [標本数]
 """
 import sys, random
 from collections import Counter
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 
 

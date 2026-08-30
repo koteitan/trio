@@ -68,7 +68,7 @@ BMS 側も同じ形の `translateK` を用意してある（`translate L = trans
 同ファイルの `reindexD_holds` で定理になっている。以下は当時の記録。
 
 **像が DBMS 標準形であること**は `DbmsStd.lean` へ移した（実測は ≤10 列 2073826 個で
-違反 0、`tools/dbms/scan_std.py`）。素朴な `ST_PS` の
+違反 0、`bms2dbms/tools/scan_std.py`）。素朴な `ST_PS` の
 帰納法（段 = `conC (M⟦n⟧)` が `conC M` から 1 手で届く）は**成り立たない**
 （実測で 1〜7 手かかる）ので、対角からの**降下**に切り替えてある。
 降下そのものは証明済み（`ST_D_descend`, sorry 0）で、残る要は 1 つ:
@@ -82,12 +82,12 @@ BMS 側も同じ形の `translateK` を用意してある（`translate L = trans
 
 全射性については Naruyoko 氏が `Trans`（PSS -> ブーフホルツ）で使った道が使える:
 逆写像を作らず、**両側の共終性**（降下性 + 基本列の関係）だけで全単射が出る。
-`tools/dbms/cofinal_check.py` が見ているのがちょうどその 2 条件で、
+`bms2dbms/tools/cofinal_check.py` が見ているのがちょうどその 2 条件で、
 BMS 2 行標準形 7256 個（≤7 列）で違反 0。
 出典: ユーザーブログ:Naruyoko/ペア数列システムの停止性証明に用いられた変換写像の全単射性
 
 全射性は、DBMS 標準形 ≤6 列の 358 個すべてに逆像があることを確認した
-（`tools/dbms/onto.py`）。逆像は像より**長い**ことがあるので、
+（`bms2dbms/tools/onto.py`）。逆像は像より**長い**ことがあるので、
 列数を揃えて比べると全射でないように見える。例:
 
     N  = (0,0)(1,0)(2,1)(2,1)(2,1)(2,0)                    6 列
@@ -546,7 +546,7 @@ theorem head_ne_shadow (A Y : PairSeq) (dd s : ℕ)
     readD (convD M d plev first force) first plev = translate M
 
 仮定は BMS 側のブロック規律 `blockok bd M` と `bd ≤ d`、`colOK M`、`descOK M`。
-BMS 2 行標準形 5351 個（≤9 列）で 3 条件はいずれも違反 0（`tools/dbms/rows2.py`）。 -/
+BMS 2 行標準形 5351 個（≤9 列）で 3 条件はいずれも違反 0（`bms2dbms/tools/rows2.py`）。 -/
 
 /-- 帰納法の 1 段。列 1 本ぶんの読み。 -/
 theorem readD_convD_step {p : ℕ × ℕ} {r : PairSeq} {d plev : ℕ} {first force : Bool}
@@ -655,7 +655,7 @@ theorem readD_conv {M : PairSeq} (hb : blockok 0 M) (hc : colOK M) (hd : descOK 
 
 `convC` はシートの 264 件に **264/264** 一致し（`convD` は 245）、
 像は BMS 2 行標準形 ≤8 列 44653 個すべてで DBMS 標準形になる
-（`tools/dbms/rows2.py`）。読み `readC` は `readD` に「頂上から読み直す枝」を足したもの
+（`bms2dbms/tools/rows2.py`）。読み `readC` は `readD` に「頂上から読み直す枝」を足したもの
 （`readC_convC` で証明済み）。 -/
 
 /-- ブロックを 1 段深くする。 -/
@@ -668,7 +668,7 @@ def shift1 (B : PairSeq) : PairSeq := B.map (fun c => (c.1 + 1, c.2))
 
     (0,0)(1,1)(2,2)(1,1)(2,1)(1,0)(2,1)(3,2)(2,1)(3,1)(2,0)
 
-はこれが原因（`tools/dbms/rows2.py` の `units_split`）。 -/
+はこれが原因（`bms2dbms/tools/rows2.py` の `units_split`）。 -/
 def unitsLen (p : ℕ × ℕ) : PairSeq → ℕ
   | [] => 0
   | q :: r =>

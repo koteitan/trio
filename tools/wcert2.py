@@ -48,7 +48,7 @@ import sys
 sys.path.insert(0, '/home/koteitan/proofs/trio/tools')
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
 import trio
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from wcert import lev, lev0, srow, has_parent, rsum, _base, _orphan, audit, marginal
 
 __all__ = ['wself2', 'wcert2', 'why2_detail', 'lev0', 'rsum']

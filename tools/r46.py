@@ -12,7 +12,7 @@ BFS の枝刈り問題を避けるため、**`isstd` が内部で使っている
 `b ∈ ST_TS` が**構成的に**言える（`CLAUDE.md`: z 頭打ち対角は完全な対角の展開）。
 """
 import sys, time
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
 import core, trio
 from core import rows, diagcol, expand, cmpmat, fsindex, isstd

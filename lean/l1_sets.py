@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """課題 L1 の突き合わせ集合を作る（Lean `Conv3.b2d3` vs Python `rows3.b2d3`）。
 
-`tools/dbms/lean_v13_check.py`（課題 G4）の集合の作り方を、v14 の h1 ＋ wterm に
-合わせて広げたもの。**`tools/dbms/*.py` は読むだけ**なので、この file は
+`bms2dbms/tools/lean_v13_check.py`（課題 G4）の集合の作り方を、v14 の h1 ＋ wterm に
+合わせて広げたもの。**`bms2dbms/tools/*.py` は読むだけ**なので、この file は
 `lean/` に置いてある（旗は実行時に `rows3.V12` / `rows3.V14` を書き換えて切る。
 file は 1 バイトも触らない）。
 
@@ -20,7 +20,7 @@ file は 1 バイトも触らない）。
 import random
 import sys
 
-TOOLS = '/home/koteitan/proofs/dbms/tools/dbms'
+TOOLS = '/home/koteitan/proofs/dbms/bms2dbms/tools'
 sys.path.insert(0, TOOLS)
 import rows3                                                   # noqa: E402
 

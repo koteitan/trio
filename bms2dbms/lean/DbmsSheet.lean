@@ -4,9 +4,9 @@
 `Dbms.lean` の `readD` は**縮約前**の像（`convD` の出力）を読むためのもの。
 `transD` は BM4-Analysis シートの 2 行の対 264 件に合わせて決めた読みで、
 「梯子二役」の枝を持つ。2 行で縮約が要るのは 5351 個中 78 個
-（`tools/dbms/rows2.py`）。
+（`bms2dbms/tools/rows2.py`）。
 
-Python 版は `tools/dbms/translateD_search.py` の `mk_chain4`（264/264）。
+Python 版は `bms2dbms/tools/translateD_search.py` の `mk_chain4`（264/264）。
 -/
 import Dbms
 
@@ -31,7 +31,7 @@ DBMS では対角が `(j, j-1)` なので、読み方が変わる。264 件の�
   その連は BMS 側で「梯子」と「本体」の二役を兼ねている（縮約で 1 本に潰れている）ので
   `P 影の段 (頂上から読み直したもの) (残り)` と開き直す
 
-Python 版は `tools/dbms/translateD_search.py` の `mk_chain4`（264/264）。
+Python 版は `bms2dbms/tools/translateD_search.py` の `mk_chain4`（264/264）。
 -/
 
 /-- `p` から始まる連の長さ。`(+1,+1)` で続く限り伸びる。 -/

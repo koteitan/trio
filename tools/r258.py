@@ -2,7 +2,7 @@
 """★★★★★ **(C4 ＋ hz0(V)) ⟹ `hlocQ` の遺伝は 100% か**を全箱で確かめる。"""
 import sys, itertools, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

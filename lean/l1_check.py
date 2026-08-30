@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Lean の `Conv3.b2d3`（`lean/Dbms3.lean`）と Python の `rows3.b2d3`（v14 h1）の
-突き合わせ。課題 G4 の `tools/dbms/lean_v13_check.py` と同じやり方。
+突き合わせ。課題 G4 の `bms2dbms/tools/lean_v13_check.py` と同じやり方。
 
 `Dbms3.olean` はビルドされていないので import できない。そこで **`Dbms3.lean` の
 本文をそのまま貼った**使い捨ての Lean file を作り、末尾で `#eval` に全入力の像を
@@ -16,7 +16,7 @@
 import os
 import sys
 
-TOOLS = '/home/koteitan/proofs/dbms/tools/dbms'
+TOOLS = '/home/koteitan/proofs/dbms/bms2dbms/tools'
 sys.path.insert(0, TOOLS)
 import rows3                                                   # noqa: E402
 
@@ -59,7 +59,7 @@ def gen(inp, out):
                      % (nm, ',\n   '.join(lean_mat(M) for M in G[i:i + CHUNK])))
     tail = '''
 
-/-! Python (`tools/dbms/rows3.py` の `b2d3`, v14 h1) との突き合わせ用の使い捨て file。 -/
+/-! Python (`bms2dbms/tools/rows3.py` の `b2d3`, v14 h1) との突き合わせ用の使い捨て file。 -/
 open TRIO
 
 %s

@@ -3,7 +3,7 @@
 
 ## ⚠ 母集団の作り方（1 行）
 
-`tools/dbms/psiI.json` の **DBMS 列**を `core.parse` で 3 行に読み、重複を除き、
+`bms2dbms/tools/psiI.json` の **DBMS 列**を `core.parse` で 3 行に読み、重複を除き、
 **`|M| <= 26` かつ全列 `行 2 <= 1`**（z<2 断片）に絞る。
 各 `M` と各 `j`（`2 <= j < |M|`）について `B = M[:j+1]`、`s = srow(B,j)`、
 `p = parent(B, s, j)`（**一意**）、`j - p >= 2` の窓 `V = B[p:j]` を取る。
@@ -15,7 +15,7 @@
 """
 import sys, os, json, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from core import parse
@@ -31,7 +31,7 @@ def hloc_col(X, t):
 
 
 def load():
-    p = '/home/koteitan/proofs/dbms/tools/dbms/psiI.json'
+    p = '/home/koteitan/proofs/dbms/bms2dbms/tools/psiI.json'
     seen, mats = set(), []
     for r in json.load(open(p)):
         s = r.get('dbms')

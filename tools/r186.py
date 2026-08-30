@@ -8,7 +8,7 @@ r185: `hr0 ∧ hz0` で `j>=1` の非減少が **0 / 21,127**（`hnb` なし）�
 """
 import sys, random
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from collections import Counter
 from r183 import hr0, hnb, hz0, probe
 

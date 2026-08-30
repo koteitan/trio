@@ -8,7 +8,7 @@ R2 の測度 **`(|V|, rankDE d e)`** の減少を組む場所。
 **⟹ ここには `import` せず、必要な補題を**署名を逐語で**写す**（team-lead の規則）。
 
 ⚠ **本文中の割合はすべて特定の箱での実測である。**
-**箱は `tools/dbms/H1-NOTES.md`（H12）と `tools/dbms/R2-NOTES.md`（R2）にある。**
+**箱は `bms2dbms/tools/H1-NOTES.md`（H12）と `bms2dbms/tools/R2-NOTES.md`（R2）にある。**
 -/
 
 import L105Cap
@@ -6882,7 +6882,7 @@ end CE250
 **⟹ ⟹ ★★ ですから **`hlocQ` に何を足しても、道の外の列は救えません**。**
 ### ⛔⛔⛔⛔⛔ 250.2 **シート（ground truth）で確認しました** —— **(い) も死にました**
 
-`tools/dbms/psiI.json`（BM4-Analysis シートの DBMS 列、**重複を除いて 1637 個**）で、
+`bms2dbms/tools/psiI.json`（BM4-Analysis シートの DBMS 列、**重複を除いて 1637 個**）で、
 各接頭辞 `B = M.take (j+1)` の最終列の親 `p` を計算し、窓 `[p, j)` の `hlocQ` を測りました。
 
     **分母 6792**（`srow ≥ 1` ∧ 親が一意 ∧ 窓の長さ ≥ 2 の窓）
@@ -6912,7 +6912,7 @@ end CE250
 
 ### ⛔⛔⛔⛔⛔⛔ 250.3 **(う) も死にました** —— 窓の孤児は **100% 全体では孤児でない**
 
-`tools/dbms/l3_sheet_hlocq.py` の第 2 の測定です。
+`bms2dbms/tools/l3_sheet_hlocq.py` の第 2 の測定です。
 **窓で `hlocQ` を破る列（＝ 窓の中の孤児）の親が `B` のどこにいるか:**
 
     **分母 353**（窓で破れた列）
@@ -7444,7 +7444,7 @@ theorem orphOK_of_no_le0_cross {A T : TrioSeq} {i j1 : ℕ}
 
 ### ★★★★★ 256.2 **シートで検算しました** —— **(S1) と (S2) は破れと完全に相補的**
 
-`tools/dbms/l3_sheet_orphok.py`（新規）。シートの `M` を `A = M[:L]`, `T = M[L:]` に切り、
+`bms2dbms/tools/l3_sheet_orphok.py`（新規）。シートの `M` を `A = M[:L]`, `T = M[L:]` に切り、
 **`hr0(T)` と `hz0(T)` が成り立つ切り方だけ**を分母にしました（組み立てで成り立つ条件）。
 
     **分母 22563**（`(A, T, j1)` の三つ組）
@@ -7656,7 +7656,7 @@ theorem orphOK_row1_dichotomy {A T : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hjT : j <
 
 ### ★★★★★ 259.3 **測定: `OrphOK` の前件は、シートの標準形では一度も満たされません**
 
-`tools/dbms/l3_sheet_orphok.py` の器具で、**シートの `Q` そのもの**（長さ ≤ 8、行 2 ≤ 1）を見ました。
+`bms2dbms/tools/l3_sheet_orphok.py` の器具で、**シートの `Q` そのもの**（長さ ≤ 8、行 2 ≤ 1）を見ました。
 
     分母 **694**（そのうち **`hr0` を満たすもの 659**）
     ★ **`hr0` ∧ 接頭辞のどこかに孤児がある: 0 / 659（0.0000%）**
@@ -10055,7 +10055,7 @@ end TRIO
 ⟹ **良い枝では次の `Q` が真に短くなる**（`|Q'| = |V| < |Q|`）。
 
 実測（`|Q| <= 4`、`n <= 5`、`A` 10 種、`srow` 0/1/2 すべて、分母 28,829,600）:
-非残差 11,059,650 件すべてで `|V| < |Q|`、例外 0 件（`tools/dbms/l3_rot.py`）。
+非残差 11,059,650 件すべてで `|V| < |Q|`、例外 0 件（`bms2dbms/tools/l3_rot.py`）。
 以下は `srow = 0` の場合の**型での証明**。 -/
 
 namespace TRIO

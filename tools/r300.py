@@ -2,7 +2,7 @@
 """**(PREV-1) 強化ストレス —— Reach を深くして、(i,i,1) 以外の行 2 列を出す。**"""
 import sys, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r263 import load

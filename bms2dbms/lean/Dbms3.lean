@@ -14,7 +14,7 @@ BMS と完全に同一**で、違うのは標準形の対角だけ、という�
     b2d3 (0,0,0)(1,1,1)(2,2,1)              = (0,0,0)(1,0,0)(2,1,0)(3,2,1)(4,3,1)
     b2d3 (0,0,0)(1,1,1)(2,2,1)(3,3,1)       = (0,0,0)(1,0,0)(2,1,0)(3,2,1)(4,3,1)(5,4,1)
 
-（`tools/dbms/rows3.py` の `b2d3`, v = 0..20 で確認）。つまり DBMS 側の対角も
+（`bms2dbms/tools/rows3.py` の `b2d3`, v = 0..20 で確認）。つまり DBMS 側の対角も
 **z を 1 で頭打ちした** `((j, j-1, min (j-2) 1))_{j=0..v}` である。素の
 `(j, j-1, j-2)` は z ≥ 2 に出てしまうので、この断片の対角にはならない。
 
@@ -31,14 +31,14 @@ BMS 側で `diagSeqT 0 v` が 3 列のトリオ対角の一手展開なのと同
 
 * `ST_D3` : 3 行 DBMS の標準形（対角 + 展開の 2 構成子）。
 * `ReindexT1` : 2 行の `ReindexD`（`DbmsStd.lean:1557`）の 3 行版。
-  **性質 R（相手が `A⟦n'⟧` であること）は 3 行では偽**（`tools/dbms/NOTES.md`
+  **性質 R（相手が `A⟦n'⟧` であること）は 3 行では偽**（`bms2dbms/tools/NOTES.md`
   「性質 R（ReindexD）は 3 行で偽」）。降下が本当に要求しているのは
   「相手が BMS 標準形 `B` であること」だけなので、そこまで緩めてある。
 * `ST_D3_descend` / `ST_D3_conv3` : `DbmsStd.lean:1578-1613` の写経。
   `A⟦n'⟧` を `B` に置き換えると `oper_mono` の行が仮定 `translate (A⟦n⟧) ≤o
   translate B` に吸収されて消える。
 
-`conv3`（BMS -> DBMS の変換器、Python では `tools/dbms/rows3.py` の `b2d3`）は
+`conv3`（BMS -> DBMS の変換器、Python では `bms2dbms/tools/rows3.py` の `b2d3`）は
 §1-§7 では**関数変数として抽象化**してある。Python 側が保証すべき命題は
 `ReindexT1` と `ConvDiagT3` の 2 つだけになる。
 
@@ -47,7 +47,7 @@ BMS 側で `diagSeqT 0 v` が 3 列のトリオ対角の一手展開なのと同
 `conv3` の Lean 実装 `Conv3.conv3` / `Conv3.b2d3` を書いた（§8）。**縮約こみ**、
 つまり `rows3.py` の `conv3` 設計 **v13** まるごとの写経である（2026-08-28 に
 v13 の 2 条項 `wchain` / `sibL`+`sib_anchbefore` を足して追いつかせた）。
-Python との突き合わせ（`tools/dbms/lean_v13_check.py`。Lean に `#eval` させた
+Python との突き合わせ（`bms2dbms/tools/lean_v13_check.py`。Lean に `#eval` させた
 像を書き出して Python の像と行ごとに diff する）:
 
     <=6 列の BMS 3 行 z<2 標準形 **8387 個を全数**        食い違い 0（115 秒）
@@ -182,7 +182,7 @@ theorem no_permanent_orphan_ST_D3 {M : TrioSeq} (h : ST_D3 M) :
 `conv3 : TrioSeq → TrioSeq` は「BMS 3 行標準形 -> DBMS 3 行行列」の変換器。
 Lean の実装はまだ無いので関数変数のまま置く。 -/
 
-/-- **対角の像**（帰納法の底）。実測（`tools/dbms/rows3.py` の `b2d3`）:
+/-- **対角の像**（帰納法の底）。実測（`bms2dbms/tools/rows3.py` の `b2d3`）:
 
     conv3 (diagSeqT 0 0) = ddiagSeqT 0
     conv3 (diagSeqT 0 v) = ddiagSeqT (v + 2)     (v ≥ 1)
@@ -201,7 +201,7 @@ def ConvDiagT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
     (conv3 A)⟦m⟧ = conv3 B              … 像は展開で閉じている
 
 2 行版は `B = A⟦n'⟧`（`n ≤ n'`）だったが、**3 行ではそれが偽**である
-（`tools/dbms/NOTES.md`「性質 R（ReindexD）は 3 行で偽（2026-08-27, 確定）」。
+（`bms2dbms/tools/NOTES.md`「性質 R（ReindexD）は 3 行で偽（2026-08-27, 確定）」。
 反例 `M = (0,0,0)(1,1,1)(2,1,0)(3,0,0)` は `f(M)⟦m⟧` と `f(M⟦n⟧)` が末尾 1 列
 の行 1 で永久にすれ違う）。その反例でも `B_m = (0,0,0)(1,1,1)(2,1,0)^m
 (1,1,0)(2,2,1)(3,2,0)^m` を取れば `ReindexT1` は満たされる（m = 1..6 で確認）。
@@ -550,7 +550,7 @@ theorem ST_D3_conv3
 * `H`  … `ReindexT1`（変換器の像が展開で閉じ、順序でも挟まれる）。
 * `hd` … `ConvDiagT3`（対角の像が DBMS 対角）。
 
-`H` と `hd` の 2 つが、Python 側（`tools/dbms/rows3.py` の `b2d3`）が
+`H` と `hd` の 2 つが、Python 側（`bms2dbms/tools/rows3.py` の `b2d3`）が
 保証すべきものの全部である。 -/
 theorem ST_D3_conv3_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
     {conv3 : TrioSeq → TrioSeq} (H : ReindexT1 conv3) (hd : ConvDiagT3 conv3)
@@ -560,7 +560,7 @@ theorem ST_D3_conv3_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
 
 /-! ## 8. 変換器 `conv3` の Lean 実装
 
-`tools/dbms/rows3.py` の `conv3`（設計 v11）の写経。**縮約こみ**である。
+`bms2dbms/tools/rows3.py` の `conv3`（設計 v11）の写経。**縮約こみ**である。
 
 Python の `conv3` は状態 `st` を**破壊的に**持ち回るので、Lean では
 `TrioSeq × St` を返して線形に渡す。`cA` を先に走らせて、その状態で `cU`,
@@ -702,7 +702,7 @@ BMS の展開は「悪い部分を**上昇させて**写す」。上昇は行 0 
 
 もとの行列（写しの頭が 1 つも無いもの）では `termTop` は「根とアンカー」、
 `closesTop` は `closesUnit`、`hiBlock2` は `hiBlock` にそのまま戻る。
-だから**シートは 1 行も動かない**（`tools/dbms/H1-NOTES.md` §11）。 -/
+だから**シートは 1 行も動かない**（`bms2dbms/tools/H1-NOTES.md` §11）。 -/
 
 /-- `termTop` の本体（燃料つき。`par0` は添字を真に減らすので `j + 1` で足りる）。 -/
 def termTopAux (Mo : TrioSeq) : ℕ → ℕ → Bool
@@ -1947,13 +1947,13 @@ theorem ConvDiagT3_b2d3 : ConvDiagT3 Conv3.b2d3 := Conv3.b2d3_diagSeqT
 
 `Conv3.b2d3` は Python の `rows3.b2d3`（縮約つき v13）の写経なので、
 `ReindexT1 Conv3.b2d3` は Python 側で測っている性質そのものである。
-いまの v13 はこれをまだ満たしていない（`tools/dbms/NOTES.md` の
+いまの v13 はこれをまだ満たしていない（`bms2dbms/tools/NOTES.md` の
 「ImgClosedT の測定」: <=5 列で 4 個の反例が確定）。 -/
 theorem ST_D3_b2d3 (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
     (H : ReindexT1 Conv3.b2d3) {M : TrioSeq} (hM : ST_TS M) : ST_D3 (Conv3.b2d3 M) :=
   ST_D3_conv3_holds h2 he H ConvDiagT3_b2d3 hM
 
-/-! 対角の像を実際に計算して確かめる（`tools/dbms/rows3.py` の `b2d3` と一致）。 -/
+/-! 対角の像を実際に計算して確かめる（`bms2dbms/tools/rows3.py` の `b2d3` と一致）。 -/
 #guard Conv3.b2d3 (diagSeqT 0 0) = ddiagSeqT 0
 #guard Conv3.b2d3 (diagSeqT 0 1) = ddiagSeqT 3
 #guard Conv3.b2d3 (diagSeqT 0 2) = ddiagSeqT 4
@@ -2020,7 +2020,7 @@ theorem seqlex_oper {C : TrioSeq} {m : ℕ} (hb : blockok 0 C) (hL : 1 < C.lengt
 
 /-! ### 11.1 3 つの命題 -/
 
-/-- **像は展開で閉じている**。`tools/dbms/imgfast.py` が測っている命題そのもの。
+/-- **像は展開で閉じている**。`bms2dbms/tools/imgfast.py` が測っている命題そのもの。
 いまの `conv3` v12 では <=5 列で 26 個・<=6 列で 294 個の A が反例
 （`python3 imgfast.py fast 5 / fast 6`）。
 
@@ -2052,7 +2052,7 @@ def OrderT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
     (0,0,0)(1,1,1)(2,1,0)(3,2,1)(3,2,0)(3,1,0)(1,1,1)
     (0,0,0)(1,1,1)(2,2,1)(3,2,1)(3,2,0)(3,1,0)(1,1,1)
 
-これは `tools/dbms/rows3.py` の残る欠陥 (c)「残余ありの縮約」の 2 個と同じ行列で、
+これは `bms2dbms/tools/rows3.py` の残る欠陥 (c)「残余ありの縮約」の 2 個と同じ行列で、
 食い違いは第 8 列の行 1 が 2 か 1 か（`f(A⟦n⟧)` が `(5,2,0)`、`(f A)⟦n+1⟧` が
 `(5,1,0)`）。ImgClosedT の破れと同じ「末尾の行 1 が 1 だけずれる」病である。 -/
 def SandwichUT3 (conv3 : TrioSeq → TrioSeq) : Prop :=
@@ -2756,7 +2756,7 @@ theorem steps1_tailT {B : TrioSeq} (h : steps1 B) : steps1 B.tail := by
     節 10  Dm10 d m res   出力の `dmap` は「もとの深さ 1 段につき像も 1 段」
     節 12  Dm12 m st res  ブロックは自分の先頭より浅い `dmap` の項に触らない
 
-実測（`tools/dbms/R1-NOTES.md` 節 10、`gen3 <=8` 全数 13108043 呼び出し ＋
+実測（`bms2dbms/tools/R1-NOTES.md` 節 10、`gen3 <=8` 全数 13108043 呼び出し ＋
 展開閉包 1181746 呼び出しで違反 0・陽性対照つき）／
 節 12 は課題 L16 の測定（`conv3` の全呼び出し、違反 0、陽性対照
 「添字を 1 つ広げる」で 27584 / 521 発火）。 -/
@@ -5197,7 +5197,7 @@ theorem ImgBlockT3_of_BlkInv (h : Conv3.BlkInv) : ImgBlockT3 Conv3.b2d3 := by
 `convResid` そのものの block 性（課題 L13 の `ResidBlkT`、結論が `BlkOK rd` で
 **偽**だったもの）は、結論を **`BlkOK d`** に直したうえで `resid_blk` として
 **証明した**ので仮定から消えた。残る 2 本はどちらも
-`tools/dbms/R1-NOTES.md` が全 `conv3` 呼び出し（`gen3 <=8` 全数 13108043 回）で
+`bms2dbms/tools/R1-NOTES.md` が全 `conv3` 呼び出し（`gen3 <=8` 全数 13108043 回）で
 違反 0・陽性対照つきで測っている。 -/
 theorem ImgBlockT3_of_resid (h2 : Conv3.DmapInT) (h3 : Conv3.ResidSideT) :
     ImgBlockT3 Conv3.b2d3 := ImgBlockT3_of_BlkInv (Conv3.blkInv_of h2 h3)

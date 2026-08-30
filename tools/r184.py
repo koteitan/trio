@@ -9,7 +9,7 @@ r183: 無条件で `j>=1` の非減少が 17 / 43 件出たが、**全部 `hz0` 
 """
 import sys, random
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

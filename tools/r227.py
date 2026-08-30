@@ -16,7 +16,7 @@ r226 は前件を「**塔＋ブロック**で孤児」にしていた ⟹ **`A =
 """
 import sys, random, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

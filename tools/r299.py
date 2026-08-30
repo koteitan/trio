@@ -2,7 +2,7 @@
 """**(PREV-1) 続き —— シート 0% と Reach 100% の食い違いの正体。**"""
 import sys
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r263 import load

@@ -35,7 +35,7 @@ def LiftTowerExp2 : Prop := ∀ (v z a t : ℕ) (R : TrioSeq), argOK R → R ≠
 """
 import sys, itertools, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

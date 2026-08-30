@@ -1,6 +1,6 @@
 # 補題索引 — 書く前に grep する
 
-生成: `cd lean && python3 ../tools/dbms/mkindex.py`（team-lead、2026-08-30 再生成）
+生成: `cd lean && python3 ../bms2dbms/tools/mkindex.py`（team-lead、2026-08-30 再生成）
 3715 件 / 48 ファイル。形式: `file:line <TAB> kind name <TAB> 完全な型`
 
 ## 使い方

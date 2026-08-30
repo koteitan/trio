@@ -40,7 +40,7 @@
 """
 import sys
 
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
 import rows3                                                   # noqa: E402
 import trio                                                    # noqa: E402

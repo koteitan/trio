@@ -31,7 +31,7 @@ h2cone : ∀ j, 0 < j → j < |Q| → le1 Q 0 j → 0 < entry Q 2 j →
 """
 import sys, random, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

@@ -728,7 +728,7 @@ decided inputs it collapses to `lev S[0] ≤ a`, and `(C ++ [p])[0] = C[0]`
 makes the implication a tautology.  Only 408 of its 5068 matrices had a
 certified `C ∈ W u`.
 
-The sound figure is `tools/dbms/r49.py`: **≈111000 instances, 0
+The sound figure is `bms2dbms/tools/r49.py`: **≈111000 instances, 0
 counterexamples, both sides certified** — `Wlo C = true` certifies `C ∈ W u`
 and `Wup (C ++ [p]) u = false` certifies `C ++ [p] ∉ W u`.  Cross-checked
 against the independent refuter `tools/refute.py` (the contrapositive of

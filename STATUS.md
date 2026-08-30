@@ -105,7 +105,7 @@ Y := { Q | ∀ d e n, (hs) → (∃ p ∈ Q, 0 < p.2.2) → mTower Q d e n ∈ W
 
 ## ★★ 道具: **`lean/LEMMA-INDEX.tsv`**（2,993 件、型 ＋ **docstring**）
 
-`python3 tools/dbms/mkindex.py` で再生成。**効いた回数:**
+`python3 bms2dbms/tools/mkindex.py` で再生成。**効いた回数:**
 
     §98 「足りない 1 文」が既にあった ／ §106 **設計を 3 段から 1 段に**
     §114 **7 本の署名をまとめて写して `e=0` の生死の地図** ／ 名前の衝突を書く前に 2 回回避
@@ -185,7 +185,7 @@ R2 の定理（定義からの算術、`R2-NOTES.md` §R94）:
 ⟹ **H12 の「全核で確定した反例ゼロ」は空虚だった。**
 ⚠ **陰性対照も空虚**（「段を 1 下げると鳴る」は計器が唯一見られる種類の偽を作っているだけ。
 **対照の設計は team-lead の指定。H12 の規律の問題ではない**）。
-⚠ `inW` のメモのバグ（`None` を深さ抜きで恒久保存、修正版 `tools/dbms/winw.py` の `inW2`）。
+⚠ `inW` のメモのバグ（`None` を深さ抜きで恒久保存、修正版 `bms2dbms/tools/winw.py` の `inW2`）。
 `False` の健全性には影響しないが `ok`/`unknown` の内訳には影響する。
 
 **⟹ `LiftTieCore` が真である外的証拠は、いま存在しない。残るのは Lean の証明だけ。**
@@ -475,9 +475,9 @@ L3 の副産物「**`CoreCap` の段リフト `t` は自由変数**。`t=0`/`t>=
 
 ## 5. 計器（進捗指標）
 
-    `tools/dbms/ladder.py` … シートを先頭から連続で何行覆えたか（**`JUNCTION_RSUM=True` が健全**）
-    `tools/dbms/wcert2.py` / `r66.py` / `r68.py` … R1 の証明書エンジン
-    `tools/dbms/h1/h4*.py` … H11 の構造測定
+    `bms2dbms/tools/ladder.py` … シートを先頭から連続で何行覆えたか（**`JUNCTION_RSUM=True` が健全**）
+    `bms2dbms/tools/wcert2.py` / `r66.py` / `r68.py` … R1 の証明書エンジン
+    `bms2dbms/tools/h1/h4*.py` … H11 の構造測定
 
 **公式スコア（証明書エンジン路線）**: Lean 換算 **9 行**、C13 込み 10 行。
 ⚠ この指標は `W_add` で組み上げる路線のもの。**`Wstar` 路線の進捗指標ではない**（§69.1）。

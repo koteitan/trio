@@ -32,7 +32,7 @@ L3 の §165: **`T_{j+1}⟦m⟧ = T_p ++ mTower V d0' d1' m`**。
 """
 import sys, itertools, time, argparse
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

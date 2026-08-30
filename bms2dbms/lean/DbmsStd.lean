@@ -9,7 +9,7 @@
 
 素朴には `ST_PS` の帰納法（底 = 対角、段 = `conC (M⟦n⟧)`）だが、段が 1 手では
 つながらない。`conC (M⟦n⟧)` が `conC M` の**基本列の項そのもの**になるとは限らず、
-実測では 1〜7 手かかる（`tools/dbms/steps` 参照）。
+実測では 1〜7 手かかる（`bms2dbms/tools/steps` 参照）。
 
 そこで**対角からの降下**に切り替える。降下が像の外へ出ないこと、および降下の
 停止性は、どちらも BMS 側の既証明（`pss_cofinality_holds`, `wf_olt_ST_PS_holds`）
@@ -18,7 +18,7 @@
     ReindexD : 像の基本列は BMS の基本列と絡み合う
                `(conC A)⟦m⟧ = conC (A⟦n'⟧)` かつ `A⟦n⟧ ≤ A⟦n'⟧`
 
-これは `tools/dbms/reindex.py` が全数検査している式
+これは `bms2dbms/tools/reindex.py` が全数検査している式
 
     (conC A)⟦m⟧ = conC (A⟦g(A,m)⟧)
 
@@ -1563,7 +1563,7 @@ BMS の添字 `n' ≥ 1` があって
     (conC A)⟦m⟧ = conC (A⟦n'⟧)      … 像は展開で閉じている
     translate (A⟦n⟧) ≤o translate (A⟦n'⟧)   … BMS 側で追い越されない
 
-`tools/dbms/reindex.py` が ≤8 列の BMS 標準形 44653 個・`m ≤ 5` で全数検査ずみ
+`bms2dbms/tools/reindex.py` が ≤8 列の BMS 標準形 44653 個・`m ≤ 5` で全数検査ずみ
 （違反 0）。regime は succ / id / shift / contr の 4 つ。 -/
 def ReindexD : Prop :=
   ∀ {A : PairSeq}, ST_PS A → 1 < A.length → ∀ n : ℕ, 1 ≤ n →
@@ -1624,7 +1624,7 @@ theorem ST_D_conC (H : ReindexD) {M : PairSeq} (hM : ST_PS M) : ST_D (conC M) :=
     convC M = (2,1)(3,2)(3,1)、convC M.dropLast = (2,1)(3,2)(2,1)(3,2)
 
 そこで「その形の縮約はどの接尾辞でも起きない」という仮定 `contrOK` を置く
-（BMS 標準形では実測 0、`tools/dbms/badcontr.py` の 49 件はすべて段 0）。 -/
+（BMS 標準形では実測 0、`bms2dbms/tools/badcontr.py` の 49 件はすべて段 0）。 -/
 
 /-- 接尾辞の末尾列に親があれば、全体でも末尾列に親がある。 -/
 theorem hasParent_last_append (G T : PairSeq) (hT : T ≠ [])
@@ -4980,7 +4980,7 @@ theorem ST_D_conC_holds_of_res (H0 : RDzeroRes) (H1 : RDposRes)
 この形のときだけなので、これが残り 2 つ（場合 (d) の `force` と、
 段 > 0 の `contrOK`）の核になる。
 
-実測: `tools/dbms` の全数走査で ≤10 列 2073826 個、違反 0。
+実測: `bms2dbms/tools` の全数走査で ≤10 列 2073826 個、違反 0。
 
 証明は `oper` についての帰納。コピーの内側では形がそのまま元の行列に移り、
 コピーの境をまたぐ形は
@@ -6133,7 +6133,7 @@ theorem reindexD_zero2 (H : RDzeroRes2) {M : PairSeq} (hM : ST_PS M)
 旧版の残余 `RDposRes` は**偽**だった（計画書「続き 3」の反例
 `B = (1,1)(2,2)(2,1)(3,2)(3,1)`）。段 0 側（`reindexD_zero_block2`）と同じように
 不変量を足して作り直す。段 0 で足りた `argPatOK` / `hpOK` / `fOK` に加えて、
-段 > 0 では次の 3 つが要る（`tools/dbms` の全数検査で反例を見つけて足したもの）:
+段 > 0 では次の 3 つが要る（`bms2dbms/tools` の全数検査で反例を見つけて足したもの）:
 
 * `adjLev`     隣り合う 2 列で深さが 1 上がるとき段は高々 1 しか上がらない
                （`r1ok` の隣接版。無いと `(1,0)(2,2)` のようなブロックが混ざる）
@@ -6281,7 +6281,7 @@ def CtrRes : Prop := ∀ {M : PairSeq}, ST_PS M → argCtrOK M
 /-! ### 段 > 0 で残っている 3 つの場合
 
 不変量を足したので、旧 `RDposRes`（偽）と違いどれも**実際に真**である
-（`tools/dbms` の全数検査: ブロック ≤5 列・`bd ≤ 2`・`plev ≤ 3` で反例 0、
+（`bms2dbms/tools` の全数検査: ブロック ≤5 列・`bd ≤ 2`・`plev ≤ 3` で反例 0、
 `RDlad2` 710 件 / `RDnopar` 77950 件 / `RDnode` 14827 件）。 -/
 
 /-- **1. 梯子つきで兄弟へ降りる段で縮約が起こりうる**（contr regime）。 -/

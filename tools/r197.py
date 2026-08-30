@@ -7,7 +7,7 @@ r196 は `|Q|` と値域を**同時に**動かしていた（私の設計ミス�
 """
 import sys, random, time
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

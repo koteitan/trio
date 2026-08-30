@@ -2021,7 +2021,7 @@ theorem shiftTowerClosed_of_cat (hcat : WCat) : ShiftTowerClosed := by
 `lev S[0] ≤ a` に潰れ、`(C ++ [p])[0] = C[0]` だから恒真になる。
 5068 個のうち `C ∈ W u` が確定していたのは **408 個（8%）**だけ。
 
-健全な計測は `tools/dbms/r49.py`: **約 111000 例、反例 0、両側とも健全**
+健全な計測は `bms2dbms/tools/r49.py`: **約 111000 例、反例 0、両側とも健全**
 （`Wlo C` が `C ∈ W u` を、`Wup (C ++ [p]) u = false` が非所属を保証）。
 独立な計器 `tools/refute.py`（`TRIO.L47.W3` の対偶）と 4580 件で食い違い 0。
 

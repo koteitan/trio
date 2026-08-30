@@ -2,7 +2,7 @@
 """**残差の形の census。** `hlocQ(Q)` 真かつ `hlocQ(V)` 偽の `V` を正規化して数える。"""
 import sys, itertools
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r126 import srow

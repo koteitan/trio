@@ -19,7 +19,7 @@
 import sys, random
 from collections import Counter
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from r60 import why2, lev0, wadd_ok
 from r61 import cat_direct, cat_split
 from r49 import has_parent

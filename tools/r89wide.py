@@ -5,7 +5,7 @@
 とくに `c >= 2` / `z=1` / 深い行 0 を入れる。
 """
 import sys
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 from r89b import run as runb
 from r89 import run as runa
 

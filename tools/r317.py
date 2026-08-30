@@ -2,7 +2,7 @@
 """**⛔ §R290 の訂正 —— `W_drop` の箱で「残差 ⟹ 末尾の行 1 = 根」が破れる。`srow` 別に確定させる。**"""
 import sys, itertools
 sys.path.insert(0, '/home/koteitan/proofs/dbms/tools')
-sys.path.insert(0, '/home/koteitan/proofs/dbms/tools/dbms')
+sys.path.insert(0, '/home/koteitan/proofs/dbms/bms2dbms/tools')
 import trio
 from collections import Counter
 from r263 import load

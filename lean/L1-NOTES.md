@@ -71,7 +71,7 @@
 
 ---
 
-Lean の `Conv3.conv3`（`lean/Dbms3.lean` §8）を Python の `tools/dbms/rows3.py`
+Lean の `Conv3.conv3`（`lean/Dbms3.lean` §8）を Python の `bms2dbms/tools/rows3.py`
 （conv3 v14 ＋ 課題 H1 の 5 条項）に追いつかせた。
 
 ## 0. 出発点
@@ -157,10 +157,10 @@ Lean は状態を線形に渡すので、局所の値 `prev0` を 1 つ挟み、
 道具は `lean/l1_sets.py`（入力集合を作る）と `lean/l1_check.py`
 （`Dbms3.lean` の本文を貼った使い捨て file に `#eval ... IO.FS.writeFile` を
 足して `leanman check` で走らせ、Python の像と行 diff する）。課題 G4 の
-`tools/dbms/lean_v13_check.py` と同じやり方で、**Lean に計算させた結果**を
+`bms2dbms/tools/lean_v13_check.py` と同じやり方で、**Lean に計算させた結果**を
 比べている（Lean の定義を Python で書き直してはいない）。
 
-`tools/dbms/*.py` は読むだけなので、旗の切り替えは実行時に
+`bms2dbms/tools/*.py` は読むだけなので、旗の切り替えは実行時に
 `rows3.V12` / `rows3.V14` の辞書を書き換えて行う（file は触らない）。
 
     python3 lean/l1_sets.py 7 /tmp/l1work/s7.txt
@@ -223,7 +223,7 @@ h1 は写しの頭が 1 本も無い行列では元の定義に戻るので、**
 
 ## 8. 次にやるとき
 
-`tools/dbms/rows3.py` は課題 P1/P2/P3 の候補条項（旗 `V15`）を持ち始めた
+`bms2dbms/tools/rows3.py` は課題 P1/P2/P3 の候補条項（旗 `V15`）を持ち始めた
 （2026-08-28 04:35 の版）。**旗は全部既定 off** なので `b2d3` の像は v14 h1 の
 ままで、この突き合わせはその版でも食い違い 0 だった（再測ずみ）。`V15` の
 どれかが on になったら、この file の §2 と同じ形で Lean に足すこと。
@@ -540,7 +540,7 @@ theorem ST_D3_conv3_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) … :=
 `ST_D3_descend`（`Dbms3.lean` §5）は `A` についての**整礎帰納法**である。降下先の
 `B` は `translate B <o translate A` としか分からないので、`ST_TS` の構成子に沿った
 構造帰納法にはできない（**性質 R が 3 行で偽**だから `B = A⟦n'⟧` に取れない、
-`tools/dbms/NOTES.md` §性質 R）。2 行側も同じで、`DbmsStd.lean:1582,1590` が
+`bms2dbms/tools/NOTES.md` §性質 R）。2 行側も同じで、`DbmsStd.lean:1582,1590` が
 `wf_olt_ST_PS_holds` と `pss_cofinality_holds` を使っている。
 
 したがって **`ST_D3 (conv3 M)` を完成させても、それだけでは停止性は出ない**。
@@ -2265,7 +2265,7 @@ Lean 側に切り出した（`Wtower2.LiftStageTower` / `towerGraft2_of_liftStag
 
 ⟹ **`ImgBlockT3` は「書くだけ」ではなかった。**
 残るのは 2 つとも「`conv3` が残余をどう切るか」という**変換器の設計の性質**で、
-`BlkOK` の帰納の外にある。`tools/dbms/rows3.py` 側（課題 H）の知識が要る。
+`BlkOK` の帰納の外にある。`bms2dbms/tools/rows3.py` 側（課題 H）の知識が要る。
 
 ## 5. `SandwichUT3` の (S2) の**測定仕様**（課題 H11 へ）
 
@@ -3508,7 +3508,7 @@ a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / �
 98.6% が像の末尾 1 柱だけ、96.9% が「行 1 だけ違う」）。
 
 ⟹ **直すには変換器側で「分岐列の綴りを次の列に依存させない」必要がある**
-（`tools/dbms/NOTES.md` の「残る非同変な読み」と同じ的）。**Lean 側は待ち。**
+（`bms2dbms/tools/NOTES.md` の「残る非同変な読み」と同じ的）。**Lean 側は待ち。**
 
 ## 4. `OrderT3` の 2 つの道は**両方とも閉じた**
 
@@ -3751,7 +3751,7 @@ EOF
 
 ## 0. 測定結果（チームリードより。**正確な言い方で**残す）
 
-`tools/dbms/oreidx.py`、`ST_TS v<=5 len<=11`（1882196 個）:
+`bms2dbms/tools/oreidx.py`、`ST_TS v<=5 len<=11`（1882196 個）:
 
     順序 (→) の破れ                                        24 件
     (ii)  ∃A,n,m : A⟦n⟧ = Y かつ (conv3 A)⟦m⟧ = conv3 X   **0 / 24**
@@ -4138,7 +4138,7 @@ DBMS 版 `m_step_decreases` も `trio_cofinality` の DBMS 版も要らない
                                      ^^^ 相手は「ある標準形 B」まで緩めてある
 
 **`B = A⟦n'⟧` に取れないことが性質 R の否定**である
-（`tools/dbms/NOTES.md` §性質 R、`Dbms3.lean:34`、`SESSION-2026-08-28.md:17`）。
+（`bms2dbms/tools/NOTES.md` §性質 R、`Dbms3.lean:34`、`SESSION-2026-08-28.md:17`）。
 
 ## 1. `reindexD_holds` の骨格（10 行以内）
 
@@ -4693,7 +4693,7 @@ def DmST (st : St) : Prop := ∀ k, k < st.dmap.length → st.dmap.getD k 0 ≤ 
 
 # 課題 L46: `ResidHeadT` は偽ではなく**私の off-by-one** だった（2026-08-29）
 
-## 1. 測定（team-lead、`tools/dbms/residhead.py`、呼び出し点 2386 件）
+## 1. 測定（team-lead、`bms2dbms/tools/residhead.py`、呼び出し点 2386 件）
 
     |dmap| == h      2082      （h = rest2.headI.1）
     |dmap| == h + 1   243
