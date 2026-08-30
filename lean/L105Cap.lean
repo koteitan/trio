@@ -13374,6 +13374,65 @@ team-lead の問い:「`p_rel = 0` のとき `V` は `Q` のずらしではな�
 ⚠ **とくに「窓 ＝ ブロック `n-1` そのもの」は `p_rel = 0` に依存しています。
 `p_rel ≥ 1` では窓はブロックを跨ぎません（`|Q| - p_rel < |Q|`）。** -/
 
+/-! ## 191. ✅ R2 の (n2) 撤回を受けて: **窓の上界を 5 行で**＋ (H2')(H3') の答え
+
+### 191.1 R2 が名指しした「Lean 5 行」を書きました
+
+> **R2: 親が「いま足しているブロックの中」（`par ≥ n*|Q|`）なら
+> `|V| = last − par ≤ (n*|Q| + j) − n*|Q| = j < |Q|`。**
+> **対偶で「`|V| ≥ |Q|` ⟹ 親は塔の中（＝前のブロック）」。** -/
+
+theorem window_lt_of_parent_in_block {Q : TrioSeq} {d e n j par : ℕ}
+    (hj : j < Q.length) (hpar : n * Q.length ≤ par) :
+    (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - par
+      < Q.length := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hlen : (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
+      = n * Q.length + (j + 1) := by
+    rw [List.length_append, mTower_length, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  rw [hlen]; omega
+
+/-- **対偶**: 窓が `|Q|` 以上なら、親は**前のブロック**（＝ 復活）。 -/
+theorem parent_lt_of_window_ge {Q : TrioSeq} {d e n j par : ℕ}
+    (hj : j < Q.length)
+    (hw : Q.length ≤ (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - par) :
+    par < n * Q.length := by
+  by_contra hc
+  have h := window_lt_of_parent_in_block (Q := Q) (d := d) (e := e) (n := n)
+    (j := j) (par := par) hj (by omega)
+  omega
+
+/-! ### 191.2 ⟹ (H3')（`2 ≤ |V|`）は**要りません**。`|V| = 1` は既に緑です
+
+**索引を引きました（手筋 14 回目）:**
+
+    **`L105Cap` §81 `mTowerSingle_holds : MTowerSingle`（緑）**
+    `MTowerSingle : ∀ u d e n Q, Q ∈ W u → **`Q.length = 1`** → mTower Q d e n ∈ W u`
+
+**⟹ ★ `|V| = 1` の塔は**既に片づいています**。⟹ (H3') は要りません。**
+
+⚠ **ただし射程**: `MTowerSingle` は **`mTower V d e n ∈ W u`**（**接頭辞なし**）です。
+**私の族は `A ++ mTower V d e m` なので、そのままでは当たりません。**
+**⟹ ★ 「接頭辞つきの `MTowerSingle`」が要ります。⟹ そこは未着手です。**
+
+### 191.3 ⟹ (H2')（`entry V 2 0 = 0`）は **`srow = 2` では自動**です
+
+`V` の第 0 列は親の列 ＝ 塔の添字 `n*|Q| + p` ⟹ **行 2 ＝ `entry Q 2 p`**。
+
+    **足す列の `srow = 2`** … `nextrel2` は `entry 2 (親) < entry 2 (的)` を要求
+        断片（行 2 ∈ {0,1}）で `entry Q 2 j = 1` ⟹ **`entry Q 2 p = 0`** ✅ **自動**
+    **`srow ≤ 1`** … 親は行 0 / 行 1 の親 ⟹ **行 2 は縛られない** ⚠ **未確認**
+
+> **⟹ (H2') は `srow = 2` では無料、`srow ≤ 1` では**開いています**。**
+
+⚠ **教訓 14**: 上の `srow = 2` の議論は**断片（行 2 ≤ 1）**に依存しています。
+**`zle1` が無い場面では `entry Q 2 p` は `0` とは限りません。** -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
