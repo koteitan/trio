@@ -3350,5 +3350,78 @@ theorem W_hnz_not_C4 :
   intro h
   exact c4CtrM2_not_C4 (h 0 c4CtrM2 (c4CtrM2_mem_W 0) c4CtrM2_hnz)
 
+
+/-- `nextrel1` を連続部分列へ落とす向き（`M` ⟹ `M.drop p`）。 -/
+theorem nextrel1_drop_to {M : TrioSeq} {p c d : ℕ}
+    (h : nextrel1 M (p + c) (p + d)) : nextrel1 (M.drop p) c d := by
+  obtain ⟨hc, hd, hcd, hlt, hle0, hmin⟩ := h
+  have hlen : (M.drop p).length = M.length - p := List.length_drop
+  refine ⟨by rw [hlen]; omega, by rw [hlen]; omega, by omega, ?_, ?_, ?_⟩
+  · rw [entry_drop, entry_drop]; exact hlt
+  · have hh := le0_drop_to (M := M) (p := p) (show p ≤ p + c by omega) hle0
+    rwa [show p + c - p = c from by omega, show p + d - p = d from by omega] at hh
+  · intro x hx
+    rw [entry_drop, entry_drop]
+    refine hmin (p + x) ⟨by omega, ?_⟩
+    have hxl : x < (M.drop p).length := hx.2.1
+    rw [hlen] at hxl
+    exact le0_drop_of (by omega) (by omega) hx.2
+
+/-- ★★ 接頭辞つきの `le1` の鎖を、`T` の中の鎖に落とす。 -/
+theorem rtg1_append_to {A T : TrioSeq} {c d : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 (A ++ T)) (A.length + c) (A.length + d)) :
+    Relation.ReflTransGen (nextrel1 T) c d := by
+  have hdrop : (A ++ T).drop A.length = T := by simp
+  have key : ∀ (a b : ℕ), Relation.ReflTransGen (nextrel1 (A ++ T)) a b →
+      A.length ≤ a →
+      Relation.ReflTransGen (nextrel1 T) (a - A.length) (b - A.length) := by
+    intro a b hr ha
+    induction hr with
+    | refl => exact Relation.ReflTransGen.refl
+    | @tail x y hxy hy ih =>
+        refine ih.tail ?_
+        have hxge : A.length ≤ x := le_trans ha (rtg1_index_le hxy)
+        have hxy' : x < y := hy.2.2.1
+        have hstep := nextrel1_drop_to (M := A ++ T) (p := A.length)
+          (c := x - A.length) (d := y - A.length)
+          (by rw [show A.length + (x - A.length) = x from by omega,
+                show A.length + (y - A.length) = y from by omega]
+              exact hy)
+        rwa [hdrop] at hstep
+  have hk := key _ _ h (by omega)
+  rwa [show A.length + c - A.length = c from by omega,
+    show A.length + d - A.length = d from by omega] at hk
+
+/-- ★★★★★★ 前提は `hmin`（＝ `hr0`）＋ `hz0` ＋ **「的が錐の中」**だけ。 -/
+theorem no_nextR_srow_cross_of_cone {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hz0 : entry T 2 0 = 0)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
+    (hcone : le1 T 0 m) :
+    ¬ nextR (A ++ T) (srow (A ++ T) (A.length + m)) c (A.length + m) := by
+  have hnb1 : entry T 1 0 < entry T 1 m := entry1_lt_of_le1_ne hcone (by omega)
+  have e1 : entry (A ++ T) 1 (A.length + m) = entry T 1 m := entry_append_right A T 1 m
+  have e2 : entry (A ++ T) 2 (A.length + m) = entry T 2 m := entry_append_right A T 2 m
+  unfold srow
+  rw [e1, e2]
+  by_cases h2 : 0 < entry T 2 m
+  · rw [if_pos h2]
+    unfold nextR
+    rw [if_neg (by omega), if_neg (by omega)]
+    refine no_nextrel2_cross_of_anc hmin ?_ (by omega) hc hm hm0
+    intro m' hm'0 hm'l hrt
+    exact hanc_of_cone hcone.2.2 m' hm'0 (rtg1_append_to hrt)
+  · rw [if_neg h2]
+    by_cases h1 : 0 < entry T 1 m
+    · rw [if_pos h1]
+      unfold nextR
+      rw [if_neg (by omega), if_pos rfl]
+      exact no_nextrel1_cross_of_cone hmin hc hm hm0 hnb1
+    · rw [if_neg h1]
+      unfold nextR
+      rw [if_pos rfl]
+      intro h
+      exact absurd (nextrel0_cross_root hmin hc hm h) (by omega)
+
 end H12Export
 end TRIO
