@@ -1464,5 +1464,94 @@ theorem window_root_entry0_pos {Q : TrioSeq} {d e n j p : ℕ}
 **⟹ 作ってから 30 分で自分で見つけましたが、順序が逆です。**
 **⟹ ⟹ ★ **前提の束を定義したら、その場で消費側と突き合わせる**。** -/
 
+/-! ## 208. ★★★★★★★★★ **`hbase` は消せます** —— 剥がすのをやめて、**下から積む**
+
+§207 で `hbase` が遺伝しないと分かりました。**⟹ 索引を引いたら、直し方が既にありました。**
+
+    **`Wset.hasParent_append_right_of`**（`:2604`、**前提なし**）… `hasParent T → hasParent (A ++ T)`
+    **`Xbar.parent_append_right_of`**（`:34`、**前提なし**）… `parent (A ++ T) i (|A| + j) = |A| + parent T i j`
+
+**⟹ ★ どちらも `hroot`（`entry T 0 0 = 0`）を**要求しません**。**
+
+## なぜ `hbase` が要っていたか（向きの問題でした）
+
+    `hasParent_append_right`（`Column:363`）… **`hasParent (A ++ T) ↔ hasParent T`**、`hroot` **要る**
+    `hasParent_append_right_of`（`Wset:2604`）… **`hasParent T → hasParent (A ++ T)`**、`hroot` **要らない**
+
+**⟹ ⟹ ★ `hroot` が要るのは**難しいほうの向き**（`A ++ T` から `T` へ**剥がす**）だけです。**
+**⟹ ⟹ ⟹ 逆向き（`T` から `A ++ T` へ**積む**）は**ただ**です。**
+
+> **⟹ ★★ ならば消費側に「塔の中の親」`hasParent T` を出させればよい。**
+> **⟹ ⟹ そうすれば `hbase` は**一度も要りません**。**
+
+⚠ **値段は正直に書きます: 前提が `hasParent (A ++ T)` から `hasParent T` に**強く**なります。**
+**⟹ ですが `hasParent T → hasParent (A ++ T)` はただなので、消費側が損することはありません。** -/
+
+open Classical in
+/-- ★★★★ **`hbase` なしの接頭辞つき窓補題**。
+前提は「**塔の中**の親」（`hasParent T`）で、`entry Q 0 0 = 0` は**要りません**。 -/
+theorem prefix_window_of_outOfCone_noBase {A M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (hpT : hasParent (mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (srow (mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (n * M.dropLast.length + j))
+      (n * M.dropLast.length + j)) :
+    (A ++ mTower M.dropLast d e n).length
+      ≤ parent (A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (srow (A ++ mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          ((A ++ mTower M.dropLast d e n).length + j))
+        ((A ++ mTower M.dropLast d e n).length + j) := by
+  set Q := M.dropLast with hQ
+  set T := mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) with hT
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hAT : (A ++ mTower Q d e n).length = A.length + n * Q.length := by
+    rw [List.length_append, hTlen]
+  have hassoc : A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) = A ++ T := by
+    rw [hT, List.append_assoc]
+  have hpos' : (A ++ mTower Q d e n).length + j = A.length + (n * Q.length + j) := by
+    rw [hAT]; omega
+  rw [hassoc, hpos']
+  have hsrow : srow (A ++ T) (A.length + (n * Q.length + j))
+      = srow T (n * Q.length + j) := srow_append_right A T (n * Q.length + j)
+  rw [hsrow]
+  rw [parent_append_right_of A T hpT, hAT]
+  have hcore := window_of_outOfCone_all (M := M) (d := d) (e := e) (n := n) (j := j)
+    hM2 hd1pos hd0e hr0 hlp hj hj1 hout hpT
+  rw [← hQ, ← hT] at hcore
+  omega
+
+/-! ### 208.1 ⟹ ★ `TowerP` から `hbase` が落ちます
+
+**⟹ 残る穴は 2 本になりました:**
+
+    **`hlp(V) = le1 V 0 (|V|−1)`** … 窓の根から末尾へ行 1 で到達
+    **`hz0(V) = entry V 2 0 = 0`** … 既知の (H2')
+
+⚠⚠ **ただし値段があります。逐語で書きます:**
+
+**`hstep` が受け取る親の前提が `hasParent (A ++ T)` から `hasParent T`（塔の中）に変わります。**
+
+**⟹ 消費側は `hasParent T` を出さないといけません。⟹ ★ その出どころは:**
+
+    **錐の中** … `block_blockParent_all_cone`（ブロックの中）＋ `hasParent_append_right_of`（ただ）
+    **錐の外** … ⛔ **まだありません**
+
+**⟹ ⟹ ★ ⟹ `hbase` の穴が「錐の外で `hasParent` をブロックの中に出す」に**変わりました**。**
+**⟹ これは §172 `block_blockParent_row1_outcone`（緑）が部分的に答えています。**
+
+⚠ **教訓 14**: **`prefix_window_of_outOfCone_noBase` は緑ですが、
+その `hpT` を**誰が出すのか**はまだ決まっていません。⟹ 穴が移動しただけかもしれません。** -/
+
 end L106
 end TRIO
