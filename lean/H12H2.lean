@@ -7843,5 +7843,71 @@ theorem orphan_last_not_in_cone {Q : TrioSeq}
     (hQ2 : 2 ≤ Q.length) (heq : entry Q 1 (Q.length - 1) = entry Q 1 0) :
     ¬ le1 Q 0 (Q.length - 1) := tie_not_in_cone heq (by omega)
 
+
+/-! ## 120. ⛔⛔ **(W71) の「≥」は偽です** —— 反例（緑）
+
+`Q = [(0,2,0), (1,1,0)]`。⟹ ★ 行 2 ≡ 0 なので **`zeroRow2_mem_Wself` で `Q ∈ W 4`**（`lev Q 0 = 4`）。
+⟹ ★ **`hr0 Q`**（`0 < 1`）／ **`srow(末尾) = 1`**（行 1 = 1 > 0、行 2 = 0）
+⟹ ★ **末尾は行 1 の孤児**（候補は根だけで、行 1 が `2` なので `< 1` を満たさない）＝ **残差**
+⟹ ⟹ ⛔ **`entry Q 1 (末尾) = 1 < 2 = entry Q 1 0`** ⟹ **「末尾の行 1 ≥ 根の行 1」は偽**。
+
+⟹ ★★★ **私の `orphan_last_row1_le_root`（`≤`）とは整合**します（`1 ≤ 2`）。
+⟹ ⟹ ★ ですから **R2 の「100% が等号」は母集団の産物**です。 -/
+
+/-- (W71) の反例。 -/
+def w71Ctr : TrioSeq := [(0, 2, 0), (1, 1, 0)]
+
+theorem w71Ctr_zeroRow2 : ∀ p ∈ w71Ctr, p.2.2 = 0 := by decide
+
+theorem w71Ctr_lev : lev w71Ctr 0 = 4 := by decide
+
+theorem w71Ctr_mem : w71Ctr ∈ W 4 :=
+  (mem_Wself_iff 4 w71Ctr).mpr ⟨zeroRow2_mem_Wself w71Ctr_zeroRow2, by rw [w71Ctr_lev]⟩
+
+theorem w71Ctr_hr0 : ∀ j, 1 ≤ j → j < w71Ctr.length → entry w71Ctr 0 0 < entry w71Ctr 0 j := by
+  decide
+
+theorem w71Ctr_srow : srow w71Ctr (w71Ctr.length - 1) = 1 := by decide
+
+theorem w71Ctr_row1_lt : entry w71Ctr 1 (w71Ctr.length - 1) < entry w71Ctr 1 0 := by decide
+
+/-- ⛔⛔ **(W71) の「≥」は偽**（`hr0` ∧ `srow(末尾) = 1` ∧ `Q ∈ W u` でも破れます）。 -/
+theorem w71_ge_false :
+    ¬ (∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u →
+        (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+        srow Q (Q.length - 1) = 1 →
+        entry Q 1 0 ≤ entry Q 1 (Q.length - 1)) := by
+  intro h
+  exact absurd (h 4 w71Ctr w71Ctr_mem w71Ctr_hr0 w71Ctr_srow) (by
+    have := w71Ctr_row1_lt; omega)
+
+
+/-- ⛔⛔ **しかもこれは残差です**（末尾は行 1 の孤児）。
+⟹ ★ ですから **R2 の「残差では 100% が等号」も、この例で破れます**。 -/
+theorem w71Ctr_orphan : ¬ L53.HasParentInBlock w71Ctr := by
+  unfold L53.HasParentInBlock
+  rw [w71Ctr_srow]
+  have hlen : w71Ctr.length - 1 = 1 := by decide
+  rw [hlen]
+  rintro ⟨y, hy, -⟩
+  have hy' : nextrel1 w71Ctr y 1 := by simpa [nextR] using hy
+  have h1 : y < 1 := hy'.2.2.1
+  have hy0 : y = 0 := by omega
+  subst hy0
+  have h2 : entry w71Ctr 1 0 < entry w71Ctr 1 1 := hy'.2.2.2.1
+  revert h2
+  decide
+
+/-- ⛔⛔ ⟹ **「残差では末尾の行 1 ＝ 根の行 1」も偽**。 -/
+theorem w71_eq_false :
+    ¬ (∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u →
+        (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+        srow Q (Q.length - 1) = 1 → ¬ L53.HasParentInBlock Q →
+        entry Q 1 (Q.length - 1) = entry Q 1 0) := by
+  intro h
+  have := h 4 w71Ctr w71Ctr_mem w71Ctr_hr0 w71Ctr_srow w71Ctr_orphan
+  have hlt := w71Ctr_row1_lt
+  omega
+
 end H12H2
 end TRIO
