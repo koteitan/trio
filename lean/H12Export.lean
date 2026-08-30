@@ -1420,5 +1420,61 @@ theorem hasParent0_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k : ℕ}
   · rintro ⟨a, ha, hu⟩
     exact ⟨a, (hiff a).mpr ha, fun b hb => hu b ((hiff b).mp hb)⟩
 
+
+theorem entry1_mTower_blockRoot_d_zero {Q : TrioSeq} {e n k : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hk : k < n) :
+    entry (mTower Q 0 e n) 1 (k * Q.length) = entry Q 1 0 + e * k := by
+  have h := mTower_entry (Q := Q) (d := 0) (e := e) (n := n) (k := k) (q := 0) (i := 1) hk hQ1
+  rw [Nat.add_zero] at h
+  rw [h, Nat.zero_mul, h12_shiftr01_zero_zero, L53.entry1_Lift1_zero hQne]
+
+theorem entry2_mTower_blockRoot_d_zero {Q : TrioSeq} {e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k < n) :
+    entry (mTower Q 0 e n) 2 (k * Q.length) = entry Q 2 0 := by
+  have h := mTower_entry (Q := Q) (d := 0) (e := e) (n := n) (k := k) (q := 0) (i := 2) hk hQ1
+  rw [Nat.add_zero] at h
+  rw [h, Nat.zero_mul, h12_shiftr01_zero_zero, Wset.entry2_Lift1]
+
+/-- ★★ **`hz0` があればブロック根の `srow` は 0 か 1**（行 2 は使わない）。 -/
+theorem srow_prefix_blockRoot_d_zero {A Q : TrioSeq} {e n k : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hz0 : entry Q 2 0 = 0) (hk : k < n) :
+    srow (A ++ mTower Q 0 e n) (A.length + k * Q.length)
+      = if 0 < entry Q 1 0 + e * k then 1 else 0 := by
+  unfold srow
+  rw [entry_append_right, entry_append_right,
+    entry2_mTower_blockRoot_d_zero hQ1 hk, hz0,
+    entry1_mTower_blockRoot_d_zero hQne hQ1 hk]
+  simp
+
+/-- ★★★ **`le0` の祖先集合も全ブロック根で一致する**。 -/
+theorem le0_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k j : ℕ}
+    (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (hj : j < A.length) :
+    le0 (A ++ mTower Q 0 e n) j (A.length + k * Q.length)
+      ↔ le0 (A ++ mTower Q 0 e n) j A.length := by
+  have hMlen : (A ++ mTower Q 0 e n).length = A.length + n * Q.length := by
+    rw [List.length_append, mTower_length]
+  have hnq : 0 < n * Q.length := Nat.mul_pos hn hQ1
+  have hkq : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hlt0 : A.length < (A ++ mTower Q 0 e n).length := by omega
+  have hltk : A.length + k * Q.length < (A ++ mTower Q 0 e n).length := by omega
+  have hA0 : A.length = A.length + 0 * Q.length := by omega
+  constructor
+  · rintro ⟨hjl, -, hrt⟩
+    refine ⟨hjl, hlt0, ?_⟩
+    rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+    · omega
+    · exact hc1.tail
+        ((nextrel0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk).mp hc2)
+  · rintro ⟨hjl, -, hrt⟩
+    refine ⟨hjl, hltk, ?_⟩
+    rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+    · omega
+    · refine hc1.tail ((nextrel0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk).mpr ?_)
+      rw [hA0] at hc2 ⊢
+      exact hc2
+
 end H12Export
 end TRIO

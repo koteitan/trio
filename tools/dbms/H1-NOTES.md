@@ -7478,3 +7478,21 @@ team-lead の (q3):「`he` は落とせる。筋は『ブロックは平行移�
 
 ⟹ `d = 0` の `j = 0`（ブロック根）は「`Q` の根の親がそのまま `k` 番目のブロック根の
    親になる」で処理できる。親が無ければ全ブロック根が孤児（`snoc_orphan_W`）。
+
+### §294.3 `srow` と `le0` 祖先（緑）＋ 行 1 の障害
+
+    entry1_mTower_blockRoot_d_zero : entry (mTower Q 0 e n) 1 (k*|Q|) = entry Q 1 0 + e*k
+    entry2_mTower_blockRoot_d_zero : entry (mTower Q 0 e n) 2 (k*|Q|) = entry Q 2 0
+    srow_prefix_blockRoot_d_zero   : hz0 のもとで srow = if 0 < entry Q 1 0 + e*k then 1 else 0
+    le0_prefix_blockRoot_iff_d_zero: j < |A| なら le0 M j (|A|+k*|Q|) ⟺ le0 M j |A|
+
+⚠ **行 1 は iff にならない**（紙の上で確認）。`nextrel1 M a (|A|+k*|Q|)` は
+閾値 `c_k = entry Q 1 0 + e*k` に依存し、`c_k` は `k` で増える:
+
+    nextrel1 M a t_k ⟺ a < |A| ∧ le0 M a |A| ∧ entry M 1 a < c_k
+                       ∧ (∀ j < |A|, a < j → le0 M j |A| → c_k ≤ entry M 1 j)
+
+（`t_k` 自身は最小性を自明に満たし、`|A|` は `k > 0` では `t_k` の `le0` 祖先で**ない**。）
+⟹ `e > 0` だと `c_k` が増えるので、行 1 の親は `k` で**変わりうる**。
+⟹ ただし `c_k → ∞` なので、十分大きい `k` では親は
+   `S = {j < |A| : le0 M j |A|}` の**最大元**に**固定される**（未証明の観察）。
