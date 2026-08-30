@@ -1122,5 +1122,52 @@ theorem snocStep_oper_tower_pre {A Q : TrioSeq} {d e n j p m : ℕ}
 
 **⟹ (ii) が R2 の測った「残差 3.4〜6.2%、9〜10% で頭打ち」の正体です。** -/
 
+/-! ## 203. ★★★★★★★★ **`Prod.Lex` は要りません。`rankDE ≤ 2` なので `ℕ` に潰せます**
+
+§200 で辞書式 `(|V|, rankDE)` を使いました。**ですが `rankDE ≤ 2`（§198 `rankDE_le_two`）です。**
+
+> **⟹ ★ 辞書式は `3 * |V| + rankDE` で**ふつうの `ℕ`**に埋まります。**
+> **⟹ ⟹ 整礎性は `Nat` の強帰納だけ。`Prod.Lex` も `WellFounded` も要りません。**
+
+**確かめ（2 行）:**
+
+    `w < L` ⟹ `3w + r ≤ 3w + 2 < 3(w+1) ≤ 3L ≤ 3L + R`
+    `w = L ∧ r < R` ⟹ `3w + r < 3w + R`
+
+⚠ **「有界な第 2 成分をもつ辞書式は `ℕ` に潰せる」は一般の手筋です。**
+**⟹ 私は `Prod.Lex` を H12 に振ってしまいました。振る前に `rankDE ≤ 2` を思い出すべきでした。** -/
+
+def natMeasure (L r : ℕ) : ℕ := 3 * L + r
+
+theorem natMeasure_lt {L R w r : ℕ} (hR : R ≤ 2) (hr : r ≤ 2)
+    (h : w < L ∨ (w = L ∧ r < R)) :
+    natMeasure w r < natMeasure L R := by
+  unfold natMeasure
+  rcases h with h | ⟨h1, h2⟩ <;> omega
+
+/-- ★★ **§200 の合成を `ℕ` の測度で書き直したもの**（`Prod.Lex` なし）。 -/
+theorem natMeasure_step_blockRoot {Q : TrioSeq} {d e n k w : ℕ} {d0 d1 : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hk : k + 1 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hp : hasParent (mTower Q d e n) 1 ((k + 1) * Q.length))
+    (hw : w = (k + 1) * Q.length - parent (mTower Q d e n) 1 ((k + 1) * Q.length))
+    (hwle : w ≤ Q.length)
+    (hrank : parent (mTower Q d e n) 1 ((k + 1) * Q.length) = k * Q.length →
+      rankDE d0 d1 < rankDE d e) :
+    natMeasure w (rankDE d0 d1) < natMeasure Q.length (rankDE d e) := by
+  refine natMeasure_lt (rankDE_le_two d e) (rankDE_le_two d0 d1) ?_
+  by_cases hc : w = Q.length
+  · right
+    refine ⟨hc, hrank ?_⟩
+    exact (blockRoot_window_eq_iff hQne hd he hk hr0 hp).mp (by rw [← hw]; exact hc)
+  · left; omega
+
+/-! ### 203.1 ⟹ 整礎帰納は `Nat.strong_induction_on` **1 つ**で済みます
+
+**⟹ ★ H12 に振った `Prod.Lex` の整礎性は**不要**になりました。**
+
+⚠ **教訓（私の失敗）:** **振る前に「第 2 成分は有界か」を見る。**
+**有界なら辞書式は要りません。`rankDE ≤ 2` は §198 で**私が**証明していました。** -/
+
 end L106
 end TRIO
