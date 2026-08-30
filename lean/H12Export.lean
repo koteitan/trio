@@ -2365,5 +2365,28 @@ theorem blocker_stable_of_budget_zero (Q : TrioSeq) {d e n k k' p j : ℕ}
   rw [blocker_in_out Q hk hk' hp hj hinp houtj, hbudget]
   omega
 
+
+/-- ⛔⛔ **`k` が `entry Q 1 j` 以上なら、錐の外の列は必ずブロッカーになる**。 -/
+theorem blocker_of_large_k (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (hinp : le1 Q 0 p) (houtj : ¬ le1 Q 0 j)
+    (he : 0 < e) (hbig : entry Q 1 j ≤ k) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+      ≤ entry (mTower Q d e n) 1 (k * Q.length + p) := by
+  refine (blocker_in_out Q hk hk' hp hj hinp houtj).mpr ?_
+  have : k ≤ e * k := Nat.le_mul_of_pos_left k he
+  omega
+
+/-- ⛔⛔ **同じことを「十分大きい `k` が存在する」形で**。 -/
+theorem exists_k_blocker (Q : TrioSeq) {d e p j : ℕ}
+    (hp : p < Q.length) (hj : j < Q.length)
+    (hinp : le1 Q 0 p) (houtj : ¬ le1 Q 0 j) (he : 0 < e) :
+    ∃ k0, ∀ k k' n, k0 ≤ k → k < n → k' < n →
+      entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p) := by
+  refine ⟨entry Q 1 j, ?_⟩
+  intro k k' n hk0 hk hk'
+  exact blocker_of_large_k Q hk hk' hp hj hinp houtj he hk0
+
 end H12Export
 end TRIO
