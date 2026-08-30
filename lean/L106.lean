@@ -10875,5 +10875,33 @@ theorem no_parent_of_srow_min {M : TrioSeq} {t : ℕ}
       rw [ht] at hmin ⊢
       exact no_parent2_of_row2_min hmin
 
+/-! ### §311 測度 `(e, d)` の 2 部品目 —— `srow = 0` なら新しい `d` は 0
+
+R2 の (R-C10)（41,376 遷移、破れ 0）が見つけた測度は **`(e, d)` の辞書式**。
+その部品は 4 つで、機構は `Trio.lean:106-114` の `if` 2 つだけ:
+
+    `d' := if **0 < sr** then entry T 0 t - entry T 0 c else 0
+    `e' := if **1 < sr** then entry T 1 t - entry T 1 c else 0
+
+⟹ ★ **`sr <= 1` ⟹ `e' = 0`**（§309 の 2 本目、緑）
+⟹ ★ **`sr = 0` ⟹ `d' = 0`**（下、同じ形）
+⟹ ★ **`d = 0` ⟹ ブロック根は孤児**（H12 の `no_nextrel0_blockRoot_of_d_zero`、緑）
+⟹ ⚠ **`sr = 2` の枝は `d <= 段差` に来ない**（R2 の実測、型はまだ）
+
+⟹ ⟹ ★★★ **`e` は `sr <= 1` で 0 に落ち、そのあと `d` が `sr = 0` で 0 に落ち、
+そこで孤児になって終わる** ⟹ **鎖長 3 の説明**。 -/
+
+/-- ★★★ **`srow = 0` なら `oper` の新しい `d` は 0**（定義から直接）。 -/
+theorem oper_d0_eq_zero_of_srow_zero {M : TrioSeq} {t j0 : ℕ} (h : srow M t = 0) :
+    (if 0 < srow M t then entry M 0 t - entry M 0 j0 else 0) = 0 := by
+  rw [if_neg (by omega)]
+
+/-- ⟹ **`srow <= 1` なら `(d', e')` の第 2 成分は 0**、
+**`srow = 0` なら両方 0**（測度 `(e, d)` が狭義に減る根拠）。 -/
+theorem oper_de_of_srow_zero {M : TrioSeq} {t j0 : ℕ} (h : srow M t = 0) :
+    (if 0 < srow M t then entry M 0 t - entry M 0 j0 else 0) = 0 ∧
+    (if 1 < srow M t then entry M 1 t - entry M 1 j0 else 0) = 0 :=
+  ⟨oper_d0_eq_zero_of_srow_zero h, by rw [if_neg (by omega)]⟩
+
 end L106
 end TRIO
