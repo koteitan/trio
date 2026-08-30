@@ -1,8 +1,23 @@
+# 未完了であること（先に）
+
+`conv3` は**まだ正しくない**。`ImgClosedT` の破れが `≤5` 列で 2 個・`≤6` 列で 54 個あり、
+必要な 7 性質のうち `OrderT3` と `SandwichUT3` は**現在の `conv3` では偽**である。
+証明ずみは `ConvDiagT3` と `ImgLenT3` の 2 本だけで、整礎性（BMS 側 `TowerExp` /
+DBMS 側 `WellFounded RD3`）はどちらも未証明である。
+
+Lean 側の `sorry` が 0 なのは、**未証明の性質を `sorry` ではなく仮定の引数として
+置いているから**であって、証明が閉じているという意味ではない。主定理はすべて条件つきである。
+`Conv3.conv3` は `def`（定義）なので証明義務を持たず、`#guard` 461 本は
+有限個の入力での答え合わせであって全称命題の証明ではない。
+
+以下はその前提で読める、再利用可能な部分である。
+
+
 # 成果の概略
 
-1. **3 行 DBMS（DTSS, `z ≤ 1`）の器が Lean で立ち、変換 `conv3` が本体まで実装された。**
-   対角・標準形・降下・主定理の骨組みがあり、変換器 `Conv3.conv3` は Python の
-   `bms2dbms/tools/rows3.py` と同一の像を出す（`#guard` 461 本、`sorry` 0）。
+1. **3 行 DBMS（DTSS, `z ≤ 1`）の器が Lean で立ち、変換 `conv3` が定義として実装された。**
+   対角・標準形・降下・主定理の骨組みがあり、Lean の `Conv3.conv3` は Python の
+   `bms2dbms/tools/rows3.py` と同じ像を出す（`≤7` 列全数と、7 列で像が変わる 18 個に `#guard`）。
 
 2. **「変換の道が、証明したい停止性を仮定する」という循環が切られた。**
    BMS 側の整礎性の代わりに **DBMS 側の整礎性 `WellFounded RD3` を仮定してよい**。
@@ -37,7 +52,7 @@
 | `bms2dbms/tools/H1-NOTES.md` | 作業ノート（本体） |
 | `bms2dbms/tools/NOTES.md`, `R1-NOTES.md` | 同上 |
 
-`leanman build -C bms2dbms/lean` で緑（808 jobs、`sorry` 0）。
+`leanman build -C bms2dbms/lean` で緑（808 jobs）。
 BMS 側（`../lean` の `trio`）に対する依存は一方向で、循環はない。
 
 分岐前から存在するもの（このプロジェクトの成果ではない）:
