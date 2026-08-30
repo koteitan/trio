@@ -4486,6 +4486,58 @@ example : ¬ ResidHeadT' := by
   simp at h2
 
 
+/-! ### ★★ 課題 H-B1: 残差を **`dmap` の長さの下界 1 本**に落とす（H12、2026-08-30） -/
+
+/-- **`steps1` の連結版**: 直前のブロックの最後の柱から、残余の先頭は 1 段しか上がれない。 -/
+theorem steps1_head_le_getLast {U rest : TrioSeq} (h : steps1 (U ++ rest))
+    (hU : U ≠ []) (hr : rest ≠ []) :
+    (rest.headI).1 ≤ (U.getLastD (0, 0, 0)).1 + 1 := by
+  induction U with
+  | nil => exact absurd rfl hU
+  | cons p u ih =>
+      cases u with
+      | nil =>
+          cases rest with
+          | nil => exact absurd rfl hr
+          | cons q t => exact h.1
+      | cons a u' =>
+          exact ih h.2 (by simp)
+
+/-- **`dmap` の長さの下界**（課題 H-B1 に残る唯一の未証明の中身）。
+
+`|st1.dmap| = min p.1 |st.dmap| + 1` なので、最後に処理した柱の深さ `q.1` に対して
+`|res.dmap| = q.1 + 1` になるはずである。⚠ 縮約の枝（`convResid` ＋ `Q`）で
+最後の柱が `M.getLast` のままかは**未測定**。R2 に測ってもらう形はこれ:
+
+    ∀ conv3 の呼び出し、  (M.getLast).1 ≤ |res.dmap|      （さらに強く `= (M.getLast).1 + 1` か） -/
+def DmLenLo : Prop :=
+  ∀ (M : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ)
+    (first force : Bool) (st : St) (nx : Option Col) (off : ℕ) (m : ℕ),
+    M ≠ [] → steps1 M → (∀ c ∈ M, m ≤ c.1) → (M.headI).1 = m → m ≤ st.dmap.length →
+    (M.getLastD (0, 0, 0)).1
+      ≤ (conv3 M d L F ps pw first force st nx off).2.dmap.length
+
+/-- **`ResidHeadT` の正しい制限版**: `st'` を無制限に取らず、
+「**直前のブロック `U` を処理した出力**」として書く。 -/
+def ResidHeadR : Prop :=
+  ∀ (U rest : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool) (ps pw : ℕ × ℕ)
+    (first force : Bool) (st : St) (nx : Option Col) (off : ℕ) (m : ℕ),
+    U ≠ [] → rest ≠ [] → steps1 (U ++ rest) → (∀ c ∈ U, m ≤ c.1) →
+    (U.headI).1 = m → m ≤ st.dmap.length →
+    (rest.headI).1
+      ≤ (conv3 U d L F ps pw first force st nx off).2.dmap.length + 1
+
+/-- **★★ 残差は 1 本だけ**: `dmap` の長さの下界から、制限版の `ResidHead` が出る。
+
+`steps1 (U ++ rest)` が `(rest.headI).1 ≤ (U.getLast).1 + 1` をくれ、
+`DmLenLo` が `(U.getLast).1 ≤ |res.dmap|` をくれる。⟹ 足すだけ。 -/
+theorem residHeadR_of_dmLenLo (h : DmLenLo) : ResidHeadR := by
+  intro U rest d L F ps pw first force st nx off m hU hr hs hmem hhd hlen
+  have h1 := steps1_head_le_getLast hs hU hr
+  have h2 := h U d L F ps pw first force st nx off m hU
+    (steps1_prefixT hs ⟨rest, rfl⟩) hmem hhd hlen
+  omega
+
 /-- **★ `Dm10`（節 10）は `ResidHeadT` だけから出る**（課題 L41）。 -/
 theorem dm10_aux (hhdT : ResidHeadT) :
     ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → steps1 M → ∀ (m d : ℕ),
