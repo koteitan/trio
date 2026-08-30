@@ -14595,3 +14595,80 @@ def LiftOperComm : Prop := ∀ M t n, **(Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t*
 
 **⟹ ⛔ ⟹ **残るのは「末尾に親があり、全零でなく、`|M| ≥ 2`」の 1 分岐だけ**です。**
 **⟹ ★ そこが **写しを作る分岐** ⟹ ⟹ ★★ **crux は「`M⟦n⟧` の錐が `M` の錐に対応するか」**（(W70)）。**
+
+---
+
+# ⛔⛔ **【26 回目の「既にありました」——今日いちばん大きい】`Lcone.lean`**
+
+**⚠⚠ team-lead の発注ミス 2 回目。「`LiftOperComm` を証明してください」を grep せずに出した。**
+**⟹ ★ 規則を再掲: **「◯◯を書いてください」と発注する前に、まず grep する**。
+⟹ ★★ **今後、発注メッセージに `grep` の結果を必ず貼る**。**
+
+## ★★★★★★★★★★ **`Lcone.lean`（697 行、ビルド根、緑）— 冒頭 docstring**
+
+> **「根の行 1 錐 `le1 X 0 ·` の**展開輸送**。悪根 `j0` が引数ブロックの内部にあるとき、
+> **根 `0` の錐は展開で位置対応どおりに移る**。」**
+
+```lean
+★★★★★★★★★★ liftInner_holds : Wset.LiftInner        -- Lcone:507、仮定ゼロ、緑
+def LiftInner : Prop :=                              -- Wset:4028
+  ∀ (v z t n : ℕ) (R : TrioSeq), argOK R → R ≠ [] →
+    hasParent R (srow R (R.length - 1)) (R.length - 1) →
+    **(Lift1 ((0, v, z) :: R) t)⟦n⟧ = Lift1 ((((0, v, z)) :: R)⟦n⟧) t**
+```
+
+> ★★★★★★★★★★ **これは L3 の `LiftOperComm` を `M = (0,v,z) :: R` に制限したもの（逐語で一致）。**
+
+**⚠ 差は 3 つだけ（教訓 28 の実践 —— 逐語で並べる）:**
+
+    ⚠ 1. **`M` の形**: `(0, v, z) :: R`（**根の行 0 が 0**）／`LiftOperComm` は **任意の `M`**
+    ⚠ 2. **`argOK R`** が要る
+    ⚠ 3. **悪根が `R` の内部**（`j0 ≥ 1`）⟹ ⛔ **悪根が根そのものの場合は入っていない**
+
+## ★★★★★ **同じファイルの、まだ使っていない大物**
+
+```lean
+★★★★★★★★★★ gexp_cone_mir （Lcone:106）  -- H12 が次の 30 分で書こうとしていたもの、そのもの
+    (hlen : j0 + Lb + 1 = M.length) (hj0 : 0 < j0) (hLb : 0 < Lb) (hk : k < n) (hq : q < Lb)
+    (hup : ∀ l, j0 < l → l ≤ j0 + Lb → entry M 0 j0 < entry M 0 l)
+    (hd0pos : 0 < d0) (hd0e : entry M 0 (j0 + Lb) = entry M 0 j0 + d0)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M j0 (j0 + Lb)) :
+    **le1 (gexp M j0 Lb d0 d1 n) 0 (j0 + (k * Lb + q)) ↔ le1 M 0 (j0 + q)**
+★★★★★ gexp_cone_mir_flat （Lcone:356） … **`d0 = d1 = 0` 版** ⟹ **`e = 0` の残核用**
+★★★★★ oper_eq_gexp_gen （Lcone:487） … **`M⟦n⟧ = gexp M (親) (ブロック長) d0 d1 n`**
+    ⟹ **任意の悪根で `oper` を `gexp` に書き換えられる** ⟹ **`oper` を開く必要がない**
+★★★ le1_zero_iff （Lcone:36） … **根が狭義に最浅なら、根の錐は「窓の条件」だけ**
+    ⟹ **`le1` の極小性条項が消える** ⟹ ★ **H12 が詰まっていた点**
+★★★ gexp_flat_chain_inversion （Lcone:316） … **`j0` 以上の祖先はすべて鏡像**
+★★★ le1_of_le1_le1 （Lcone:462） … **共通の的の行 1 祖先は線形順序**
+```
+
+**⟹ ★ **`Lcone` は `Cgraft` と `Gamma` が import 済み**。⟹ ★★ **L105Cap / H12Export / L106 からは未使用**。**
+
+---
+
+## ★★★★★★★★★★ **(W77) 第 1 部**（H12、緑 `bf8e981`、448 本）
+
+    ★★★★★ **`le1_append_left` / `le0_append_left`** … **左側の錐は右に何を足しても不変**
+      ⟹ `Wset.le{0,1}_take` ＋ `List.take_left` の **2 行**（**25 回目の「既にありました」**）
+    ★★★★★★★★★★ **`cone_prefix_stable` / `cone0_prefix_stable`** … **`oper` の接頭辞部分では錐が `X` と一致**
+    ⟹ ★ **接頭辞側は完全に無料**でした ⟹ ✅ **(W78) でも残ります**
+
+**★★ H12 の絞り込み（正しい）: **`oper` の番人は `le0/le1 M j0 j`（親 `j0` からの錐、根からではない）**
+⟹ **`j0` は `Lift1` で不変**（`parent_Lift1`）、**`le1 (Lift1 X d) j0 j ↔ le1 X j0 j`** も仮定ゼロ（`le1_Lift1`）
+⟹ ★★★ **番人は `Lift1` で完全に不変** ⟹ **違うのは「最後に足す `d` がどこに掛かるか」だけ**。**
+
+**✅ H12 が `entry1_prevBlock_lt` の docstring に「適用条件: 両方が錐の中のときだけ」を明記（R2 の指摘）。**
+
+---
+
+## ★ **現在の割り当て**
+
+    **H12** … **(W78)** ★★★★★★★★★★ **`liftInner_holds` を、根の行 0 の値に依存しない形に一般化**
+      （**60 分、承認**。⛔ `j0 = 0`（悪根が根そのもの）だけ新規。⚠ `argOK` が本当に要るかも見る）
+    **L3** … **(L-A2)**。⟹ ★ **先に `Lcone.lean` を 1 回通して読む**（697 行、10 分）
+      ⟹ ★★ **`W` の元の根が必ず行 0 = 0 か**を grep で確かめる ⟹ **真なら `liftInner_holds` がそのまま刺さる**
+    **R2** … **(R-C1) `LiftOperComm` の実測** ⟹ ★ **一般版が真かどうかを先に出す**（(W78) の可否）
+
+**✅ build 緑 36 回目**: `BUILD_EXIT=0`、`H12Export` **448 本**、`L106` **10,729 行**
