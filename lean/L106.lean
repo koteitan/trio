@@ -7130,6 +7130,62 @@ H12 の `no_nextrel2_cross_of_anc` は **`nextrel1 (A ++ T)` の鎖**で `hanc` 
 
 **⟹ ⟹ ★★★★★ ですから **(W16) は無料**です。H12 に渡せます。** -/
 
+/-! ★ H12 の越境の補題（`H12Export.lean:2870〜2920` 逐語）。 -/
+
+/-- ★★★ `le1` の鎖が接頭辞から `T` に入るなら、**越境点が取れる**。 -/
+theorem rtg1_cross_point {A T : TrioSeq} {y b : ℕ} (hy : y < A.length)
+    (h : Relation.ReflTransGen (nextrel1 (A ++ T)) y b) :
+    b < A.length ∨ ∃ c m', c < A.length ∧ m' < T.length ∧
+      nextrel1 (A ++ T) c (A.length + m') ∧
+      Relation.ReflTransGen (nextrel1 (A ++ T)) (A.length + m') b := by
+  induction h with
+  | refl => exact Or.inl hy
+  | @tail c b _ hcb ih =>
+      rcases ih with hc | ⟨c0, m0, hc0, hm0, hcr, hrt⟩
+      · rcases Nat.lt_or_ge b A.length with hb | hb
+        · exact Or.inl hb
+        · have hblen : b < (A ++ T).length := hcb.2.1
+          have hbT : b - A.length < T.length := by
+            rw [List.length_append] at hblen; omega
+          have hbe : b = A.length + (b - A.length) := by omega
+          refine Or.inr ⟨c, b - A.length, hc, hbT, ?_, ?_⟩
+          · rw [← hbe]; exact hcb
+          · rw [← hbe]
+      · exact Or.inr ⟨c0, m0, hc0, hm0, hcr, hrt.tail hcb⟩
+
+
+/-- ★★★★★★ **行 2 の壁は「的の `le1` 祖先が非ブロッカー」＋ `hcone` だけで立つ**
+（`hnb` の ∀ が「的の祖先」に縮む）。 -/
+theorem no_nextrel2_cross_of_anc {A T : TrioSeq} {m : ℕ}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hanc : ∀ m', 0 < m' → m' < T.length →
+      Relation.ReflTransGen (nextrel1 (A ++ T)) (A.length + m') (A.length + m) →
+      entry T 1 0 < entry T 1 m')
+    (hcone : entry T 2 0 < entry T 2 m)
+    {c : ℕ} (hc : c < A.length) (_hm : m < T.length) (hm0 : 0 < m) :
+    ¬ nextrel2 (A ++ T) c (A.length + m) := by
+  intro h
+  obtain ⟨-, hlen, -, -, hle1, hmin2⟩ := h
+  obtain ⟨-, -, hrt⟩ := hle1
+  rcases rtg1_cross_point hc hrt with hb | ⟨c0, m0, hc0, hm0T, hcr, hrt2⟩
+  · omega
+  · rcases Nat.eq_zero_or_pos m0 with h0 | hp
+    · subst h0
+      have hA : A.length < (A ++ T).length := by
+        have := hcr.2.1; omega
+      have hroot : le1 (A ++ T) A.length (A.length + m) := by
+        refine ⟨hA, hlen, ?_⟩
+        have hh := hrt2
+        rwa [show A.length + 0 = A.length from by omega] at hh
+      have hval := hmin2 A.length ⟨by omega, hroot⟩
+      rw [entry_append_right, show A.length = A.length + 0 from by omega,
+        entry_append_right] at hval
+      omega
+    · have hbl := nextrel1_cross_is_blocker hmin hc0 hm0T hp hcr
+      exact absurd (hanc m0 hp hm0T hrt2) (by omega)
+
+
+
 /-! ★ H12 の鎖の補題（`H12Export.lean:2923〜3007` 逐語）を先に写します。 -/
 
 /-- `nextrel1` の始点は一意（最小性から）。 -/
@@ -7231,6 +7287,55 @@ theorem hanc_bridge {A T : TrioSeq} {m : ℕ} (hm : m < T.length)
       entry T 1 0 < entry T 1 m' := by
   intro m' hm'0 hm'T hrt
   exact hanc_of_cone hcone m' hm'0 (rtg1_peel_append_right hm'T hm hrt)
+
+/-! ## 255. ★★★★★★★ **`OrphOK` は「的が錐の中」なら 3 行とも成立**します
+
+§253（行 0・行 1）と §254（行 2 の橋）を合わせます。
+
+    **行 0** … `orphOK_row0` ………… `hr0(T)`
+    **行 1** … `orphOK_row1_free` … `hr0(T)` ＋ **`entry T 1 0 < entry T 1 j1`**
+    **行 2** … H12 `no_nextrel2_cross_of_anc` ＋ §254 `hanc_bridge` ＋ `hz0(T)`
+
+**⟹ ★★★ そして **錐の中なら `entry T 1 0 < entry T 1 j1` は自動**です
+（`hanc_of_cone` を的そのものに当てるだけ）。**
+**⟹ ⟹ ★★★★★ ですから **前提は `hr0(T)` ＋ `hz0(T)` ＋「的が `T` の錐の中」だけ**です。** -/
+
+open Classical in
+theorem orphOK_of_cone {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1) (hjT : j1 < T.length)
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x)
+    (hz0 : entry T 2 0 = 0)
+    (hcone : Relation.ReflTransGen (nextrel1 T) 0 j1)
+    (hnp : ¬ hasParent T (srow T j1) j1) :
+    ¬ hasParent (A ++ T) (srow T j1) (A.length + j1) := by
+  have hnb1 : entry T 1 0 < entry T 1 j1 :=
+    hanc_of_cone hcone j1 hj1 Relation.ReflTransGen.refl
+  by_cases h2 : 0 < entry T 2 j1
+  · -- ★ `srow = 2`
+    have hsr : srow T j1 = 2 := by unfold srow; rw [if_pos h2]
+    rw [hsr] at hnp ⊢
+    intro hp
+    refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+    unfold nextR at hc
+    rw [if_neg (by omega), if_neg (by omega)] at hc
+    exact no_nextrel2_cross_of_anc (A := A) (T := T) (m := j1) hs
+      (fun m' hm'0 hm'T hrt => hanc_bridge hjT hcone m' hm'0 hm'T hrt)
+      (by omega) hy hjT hj1 hc
+  · -- ★ `srow ≤ 1`。錐の中なので行 1 は正 ⟹ `srow = 1`
+    have hsr : srow T j1 = 1 := by
+      unfold srow; rw [if_neg h2, if_pos (by omega)]
+    rw [hsr] at hnp ⊢
+    exact orphOK_row1_free hj1 hjT hs hnb1 hnp
+
+/-! ### 255.1 ⟹ ★★★★★ **`OrphOK` の残差は「的が錐の外」1 本**
+
+    ✅ **的が `T` の錐の中** … §255（**3 行とも緑**）
+    ⛔ **的が `T` の錐の外**（＝ ブロッカー） … **残差**
+
+**⟹ ★ そして §247 が「**窓の根が錐の外 ⟹ 窓は丸ごと錐の外**」と言うので、
+錐の外の場合は **持ち上げが一切なく、`e*n` が消えます**。⟹ ⟹ **`Q` だけの話**です。**
+
+⚠ **教訓 14**: §255 は緑ですが、**`hcone` を誰が供給するかは未解決**です。
+**⟹ ⛔ `OrphOK` はまだ証明されていません。** -/
 
 end L106
 end TRIO
