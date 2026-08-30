@@ -11083,3 +11083,32 @@ H12 の `row2_cross_implies_orphan` ＋ `hasParent0_of_hr0` で言えるはず�
 
 **⟹ ★★★★★ ⟹ **`|A|` の帰納（team-lead の (P3)）で、(あ) の側が「同じ写しの中」に閉じます**。**
 **⟹ ⟹ ★ ⟹ **辞書式 `(|A|, r)` の第 2 成分が動く場面が、型で切り出せました**。**
+
+---
+
+## ★★★★★★★★ **H12 (W56, 2026-08-30): `srow = 1` の越境 ⟹ `Q` の中で行 1 の孤児（緑）**
+
+    ★★★★★★★★ `prefix_mTower_nextrel1_src_ge`
+      **証人 `nextrel1 Q y j` があれば、行 1 の親は `|A| + k|Q| + y` 以降**（＝ **同じ写しの中**）
+      ⟹ ★★★★★ **`d`, `e` は何でもよく、`hr0` も `hnbQ` も要りません**
+    ★★★★★★★★ `prefix_mTower_row1_cross_implies_orphan` … **越境 ⟹ `¬ hasParent Q 1 j`**
+    ★★★★★★★ `prefix_mTower_row1_src_ge_of_hasParent` … **対偶（使う形）**
+    ★★★★★★★ `prefix_mTower_row2_cross_implies_orphan` … **行 2 版**（`le1` の移送は仮定として外に出しました）
+
+### ★★★ **ですから `PrefixCopies` の残差は、`srow` ごとにこう特徴づけられます**
+
+| `srow(的)` | 越境の条件 | 定理 |
+|---|---|---|
+| **0** | **`entry Q 0 j = entry Q 0 0`**（根と同じ高さ） | `nextrel0_src_lt_prefix_of_root_height`（(W53)） |
+| **1** | **`amin Q j = entry Q 1 j`**（`Q` の中で行 1 の孤児） | `prefix_mTower_row1_cross_implies_orphan`（(W56)） |
+| **2** | **`Q` の中で行 2 の孤児**（`le1` の移送が要る） | `prefix_mTower_row2_cross_implies_orphan` |
+
+**⟹ ★★★★★ ⟹ **朝の L3 の穴（「的が `Q` の中で孤児」）と、夕方の残差が、同じ 1 点で繋がりました**。**
+**⟹ ⚠ **これは片側だけ**です（越境 ⟹ 孤児）。⟹ ⛔ **逆（孤児 ⟹ 越境）は書いていません**。**
+**⟹ ⟹ ★ 逆には「写しをまたぐ `le0` 祖先の行 1 が下がらない」ことの証明が要ります（`d = e = 0` なら真のはず）。**
+
+### ⚠ **行 2 版の限界**
+
+    ⛔ `nextrel2` の最小性は **`le1` 祖先**の上です ⟹ ★ **`le1` を写しの中で移す補題**が要ります
+    ⟹ ⟹ ★ 行 0（`rtg0_mTower_intra_block`）に相当する **`le1` 版を持っていません**
+    ⟹ ⟹ ⟹ ★★ ですから **仮定として外に出しました**（`hcone`）⟹ ⚠ **そこは埋まっていません**

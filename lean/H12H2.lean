@@ -6463,5 +6463,78 @@ theorem prefixCopies_residual_only_blockRoot {A Q : TrioSeq} {e n k r c : ℕ}
     A.length + k * Q.length ≤ c :=
   nextrel0_src_ge_block_of_deep hk hr (hr0Q r hr0 hr) h
 
+
+/-! ## 96. ★★★★★★★★ (W56): **`srow = 1` の的 —— 越境 ⟺ `Q` の中で行 1 の孤児**
+
+(W53) の行 1 版。⟹ ★ 私の `prefixTake_nextrel1_src_ge`（部分ブロック版）を、
+**`A ++ mTower Q d e n`（完全ブロックだけ）**に移したものです。
+⟹ ⟹ ★★★★★ **`d`, `e` は何でもよく、`hr0` も要りません**。 -/
+
+/-- ★★★★★★★★ **証人 `nextrel1 Q y j` があれば、行 1 の親は同じ写しの中**。
+⟹ ★ **`A` にも前の写しにも行きません**。⟹ ⟹ ★★ **仮定は証人だけ**です。 -/
+theorem prefix_mTower_nextrel1_src_ge {A Q : TrioSeq} {d e n k j y c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hy : nextrel1 Q y j)
+    (h : nextrel1 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
+    A.length + (k * Q.length + y) ≤ c := by
+  have hylt : y < j := hy.2.2.1
+  have hyQ : y < Q.length := by omega
+  have hlt : entry Q 1 y < entry Q 1 j := hy.2.2.2.1
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hkn : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hle0 : le0 (A ++ mTower Q d e n)
+      (A.length + (k * Q.length + y)) (A.length + (k * Q.length + j)) := by
+    refine le0_append_right_of _ _ ⟨by omega, by omega, ?_⟩
+    exact rtg0_mTower_intra_block Q hk hyQ hj hy.2.2.2.2.1.2.2
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2.2 (A.length + (k * Q.length + y)) ⟨by omega, hle0⟩
+  rw [entry_append_right, entry_append_right,
+    entry1_mTower_block_formula Q hk hj, entry1_mTower_block_formula Q hk hyQ] at hmin
+  by_cases hcy : le1 Q 0 y
+  · have hcj : le1 Q 0 j := ⟨by omega, hj, hcy.2.2.tail hy⟩
+    rw [if_pos hcy, if_pos hcj] at hmin; omega
+  · rw [if_neg hcy] at hmin
+    split_ifs at hmin <;> omega
+
+/-- ★★★★★★★★ ⟹ **(W56) の片側**: **越境 ⟹ `Q` の中で行 1 の孤児**。
+⟹ ★ 対偶: **`Q` の中で親を持てば、越境しません**（＝ **良い群**）。 -/
+theorem prefix_mTower_row1_cross_implies_orphan {A Q : TrioSeq} {d e n k j c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hc : c < A.length)
+    (h : nextrel1 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
+    ¬ hasParent Q 1 j := by
+  intro hpar
+  obtain ⟨y, hy, -⟩ := hpar
+  have hy' : nextrel1 Q y j := by simpa [nextR] using hy
+  have := prefix_mTower_nextrel1_src_ge hk hj hy' h
+  omega
+
+/-- ★★★★★★★ ⟹ **良い群の側**（対偶、使う形）。 -/
+theorem prefix_mTower_row1_src_ge_of_hasParent {A Q : TrioSeq} {d e n k j c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hpar : hasParent Q 1 j)
+    (h : nextrel1 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
+    A.length ≤ c := by
+  by_contra hc
+  push Not at hc
+  exact prefix_mTower_row1_cross_implies_orphan hk hj hc h hpar
+
+/-- ★★★★★★★ **行 2 版も同じ**（`nextrel2` は `le1` 祖先の上の最小性）。 -/
+theorem prefix_mTower_row2_cross_implies_orphan {A Q : TrioSeq} {d e n k j c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hc : c < A.length)
+    (hcone : ∀ y, nextrel2 Q y j → le1 (A ++ mTower Q d e n)
+      (A.length + (k * Q.length + y)) (A.length + (k * Q.length + j)))
+    (h : nextrel2 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
+    ¬ hasParent Q 2 j := by
+  intro hpar
+  obtain ⟨y, hy, -⟩ := hpar
+  have hy' : nextrel2 Q y j := by simpa [nextR] using hy
+  have hylt : y < j := hy'.2.2.1
+  have hlt : entry Q 2 y < entry Q 2 j := hy'.2.2.2.1
+  have hmin := h.2.2.2.2.2 (A.length + (k * Q.length + y)) ⟨by omega, hcone y hy'⟩
+  rw [entry_append_right, entry_append_right, mTower_entry hk hj,
+    mTower_entry hk (show y < Q.length by omega), entry2_Lift1, entry2_Lift1,
+    entry2_shiftr01, entry2_shiftr01] at hmin
+  omega
+
 end H12H2
 end TRIO
