@@ -4389,5 +4389,62 @@ theorem window_witness_in_window {M : TrioSeq} {p j : ℕ} (hp : p < M.length)
   ⟨le0_root_of_shallow hp hshallow j hpj hj,
    fun _ h => nextrel0_src_ge_of_shallow hshallow hpj h⟩
 
+
+/-! ## 55. ★★★★★★★ **窓（連続部分列）は `nextrel0`・`nextrel1`・`le0` を全部保つ** -/
+
+theorem nextrel0_drop_iff {M : TrioSeq} (p c d : ℕ) :
+    nextrel0 (M.drop p) c d ↔ nextrel0 M (p + c) (p + d) := by
+  have hlen : (M.drop p).length = M.length - p := List.length_drop
+  constructor
+  · rintro ⟨hc, hd, hcd, hlt, hmin⟩
+    rw [hlen] at hc hd
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · rw [entry_drop, entry_drop] at hlt; exact hlt
+    · intro x hx
+      have h := hmin (x - p) ⟨by omega, by omega⟩
+      rw [entry_drop, entry_drop, show p + (x - p) = x from by omega] at h
+      exact h
+  · rintro ⟨hc, hd, hcd, hlt, hmin⟩
+    refine ⟨by rw [hlen]; omega, by rw [hlen]; omega, by omega, ?_, ?_⟩
+    · rw [entry_drop, entry_drop]; exact hlt
+    · intro x hx
+      rw [entry_drop, entry_drop]
+      exact hmin (p + x) ⟨by omega, by omega⟩
+
+theorem rtg0_drop_of {M : TrioSeq} {p c d : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 (M.drop p)) c d) :
+    Relation.ReflTransGen (nextrel0 M) (p + c) (p + d) := by
+  induction h with
+  | refl => exact Relation.ReflTransGen.refl
+  | @tail x y _ hxy ih => exact ih.tail ((nextrel0_drop_iff p x y).mp hxy)
+
+theorem le0_drop_of {M : TrioSeq} {p c d : ℕ} (hc : p + c < M.length)
+    (hd : p + d < M.length) (h : le0 (M.drop p) c d) : le0 M (p + c) (p + d) := by
+  obtain ⟨-, -, hrt⟩ := h
+  exact ⟨hc, hd, rtg0_drop_of hrt⟩
+
+theorem le0_drop_to {M : TrioSeq} {p c d : ℕ} (hp : p ≤ c)
+    (h : le0 M c d) : le0 (M.drop p) (c - p) (d - p) := by
+  obtain ⟨hcl, hdl, hrt⟩ := h
+  have hlen : (M.drop p).length = M.length - p := List.length_drop
+  have hcd : c ≤ d := rtg0_index_le hrt
+  exact ⟨by rw [hlen]; omega, by rw [hlen]; omega, rtg0_drop hp hrt⟩
+
+/-- ★★★★★★★ **`nextrel1` も窓へ移る**（`le0` 祖先が両向きに移るから）。 -/
+theorem nextrel1_drop_of {M : TrioSeq} {p c d : ℕ} (hc : p + c < M.length)
+    (hd : p + d < M.length) (h : nextrel1 (M.drop p) c d) :
+    nextrel1 M (p + c) (p + d) := by
+  obtain ⟨-, -, hcd, hlt, hle0, hmin⟩ := h
+  refine ⟨hc, hd, by omega, ?_, le0_drop_of hc hd hle0, ?_⟩
+  · rw [entry_drop, entry_drop] at hlt; exact hlt
+  · intro x hx
+    have hxlt : x < M.length := hx.2.1
+    have hle : le0 (M.drop p) (x - p) d := by
+      have hh := le0_drop_to (p := p) (show p ≤ x by omega) hx.2
+      rwa [show p + d - p = d from by omega] at hh
+    have h := hmin (x - p) ⟨by omega, hle⟩
+    rw [entry_drop, entry_drop, show p + (x - p) = x from by omega] at h
+    exact h
+
 end H12H2
 end TRIO

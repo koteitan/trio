@@ -7959,3 +7959,15 @@ L3 の `hlocQ` の第 3 条件 `hcls : le1 Q 0 y → le1 Q 0 j` は、私の 4 �
 
 ⚠ `p` 自身が使えるのは `entry Q 1 p < entry Q 1 j` のとき（＝ `hnbQ(V)` の成分）。
 ⟹ ★ R2 の (ADJ)「証人の距離は最大 2」と合わせると、`j - p ≥ 2` なら証人は窓の中。
+
+## §311 ★★★★★★★ **窓（連続部分列）は `nextrel0`・`le0`・`nextrel1` を全部保つ**（緑）
+
+    ★★★ nextrel0_drop_iff : nextrel0 (M.drop p) c d ⟺ nextrel0 M (p+c) (p+d)   （**両向き**）
+    rtg0_drop_of / le0_drop_of / le0_drop_to : `le0` も両向き
+    ★★★★ nextrel1_drop_of : nextrel1 (M.drop p) c d → nextrel1 M (p+c) (p+d)
+
+理屈: `nextrel0` の最小性は**素の区間**なので部分列で不変。⟹ `le0` 祖先の集合が両向きに移る。
+⟹ ⟹ `nextrel1` の最小性は **`le0` 祖先の上**なので、それも移る。
+
+⟹ ★ ですから「窓の錐は `Q` の錐と別物」なのは**部分列を取ったから**ではなく、
+**根が `0` から `p` に変わったから**だけ。⟹ 構造そのものは壊れていない。
