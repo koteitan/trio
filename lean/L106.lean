@@ -6312,5 +6312,67 @@ theorem hlocQ_wnd_of_outOfCone {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) 
 
 ⚠ **教訓 14**: これは**形の確定**です。**まだ証明されていません。** -/
 
+/-! ## 243. ★★★★★★ **`hlocQ` の行 1 の成分は「行 1 の孤児でない」だけ**
+
+§241 で「錐の中なら無料」と分かりましたが、**もっと弱い十分条件**があります。
+
+**⟹ ★★★ `nextrel1 Q y j` が **1 本でもあれば** 行 1 の成分は立ちます。⟹ 理由:**
+
+    `nextrel1` の定義に `y < j`・`le0 Q y j`・`entry Q 1 y < entry Q 1 j` が**全部入っている**
+    ⟹ ★★ クラス条件 `le1 Q 0 y → le1 Q 0 j` も、**その 1 歩を継ぎ足すだけ**で出る
+
+**⟹ ⟹ ★★★★★ ですから **行 1 の成分が破れるのは「行 1 の孤児」だけ**です。**
+**⟹ ⟹ ⟹ ★ これは team-lead の (Q1)「破れる列は 100% 孤児」の**証明**です。** -/
+
+theorem hlocQ_row1_of_nextrel1 {Q : TrioSeq} {j y : ℕ} (h : nextrel1 Q y j) :
+    ∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j ∧ (le1 Q 0 y → le1 Q 0 j) :=
+  ⟨y, h.2.2.1, h.2.2.2.2.1, h.2.2.2.1,
+    fun hc => ⟨hc.1, h.2.1, hc.2.2.tail h⟩⟩
+
+/-- ⟹ ★ 対偶: **行 1 の成分が破れる列は行 1 の孤児**（`nextrel1` の始点が 1 つも無い）。 -/
+theorem no_nextrel1_of_row1_break {Q : TrioSeq} {j : ℕ}
+    (hbr : ¬ ∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j ∧
+      (le1 Q 0 y → le1 Q 0 j)) :
+    ∀ y, ¬ nextrel1 Q y j :=
+  fun _ h => hbr (hlocQ_row1_of_nextrel1 h)
+
+/-! ### 243.1 ⟹ ★★ **孤児 ⟹ 錐の外**（§241 との入れ子）
+
+`le1 Q 0 j` は `0 < j` なら **1 歩以上の鎖**なので、最後の 1 歩が `nextrel1` の始点を与えます。
+**⟹ ★ ですから **錐の中 ⟹ 孤児でない**。⟹ ⟹ **孤児 ⟹ 錐の外**（§241 の逆は言えません）。**
+**⟹ ⟹ ★★ つまり **「行 1 の孤児」は「錐の外」より真に強い条件**です。⟹ 残差がさらに縮みました。** -/
+
+theorem not_orphan_of_cone {Q : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hc : le1 Q 0 j) :
+    ∃ y, nextrel1 Q y j := by
+  rcases Relation.ReflTransGen.cases_tail hc.2.2 with h | ⟨y, -, hstep⟩
+  · exact absurd h.symm (by omega)
+  · exact ⟨y, hstep⟩
+
+/-! ### 243.2 ★★★ **行 2 の成分も同じ形**にできます
+
+§240 は「行 2 の親を持つ ⟺ 行 2 が 0 の `le1` 祖先がある」でした。
+**⟹ ★ ですから **行 1 の親が行 2 = 0 なら、それがそのまま証人**です。** -/
+
+theorem hlocQ_row2_of_nextrel1 {Q : TrioSeq} {j y : ℕ} (hj : j < Q.length)
+    (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1) (hpos : 0 < entry Q 2 j)
+    (h : nextrel1 Q y j) (hy2 : entry Q 2 y = 0) : hasParent Q 2 j :=
+  (hasParent_two_iff_of_z1 hj hz1 hpos).mpr
+    ⟨y, h.2.2.1, ⟨h.1, h.2.1, Relation.ReflTransGen.single h⟩, hy2⟩
+
+/-! ### 243.3 ⟹ ★★★★ **残差の最終形**
+
+    **行 1** … 破れるのは **`j` が行 1 の孤児**のときだけ（§243）
+    **行 2** … 破れるのは **`j` の `le1` 祖先が全部行 2 = 1** のときだけ（§240）
+              ⟹ ★ そして **`j` が行 1 の孤児なら `le1` 祖先は `j` 自身だけ** ⟹ 破れる
+              ⟹ ⟹ ★★ **行 2 も「行 1 の孤児」に帰着**します
+
+**⟹ ★★★★★ ですから **`hlocQ` の残差は「行 1 の孤児が出るか」1 点**です。**
+**⟹ ⟹ ★ team-lead の (Q1)「破れる列は 100% 孤児」は、**測るまでもなく定理**でした。**
+
+⚠ **教訓 45**: (Q1) は `hlocQ` の言い換えを測っていました。**独立な情報ではありません。**
+
+**⟹ ⚠ そして **孤児が出ないこと**は測定では出ません（H12 の `blocker_of_large_k` の教訓）。**
+**⟹ ★ ですから次に要るのは「**窓の中で行 1 の孤児は窓の根だけ**」の証明です。** -/
+
 end L106
 end TRIO
