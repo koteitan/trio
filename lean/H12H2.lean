@@ -5045,5 +5045,64 @@ theorem prefix_blockRoot_row2_zero {A Q : TrioSeq} (hQ1 : 0 < Q.length)
   rw [entry_append_right]
   exact blockRoot_row2_zero hQ1 hz0 hk
 
+
+/-! ## 70. ⛔⛔⛔ (H-KILL) **`W ∧ hnz ⟹ C4` も偽**（留保なしの反証、緑）
+
+R2 の 2 手の鎖の終点 `[(0,0,0),(1,1,0),(2,1,0)]` は
+
+    行 2 が全部 0 ⟹ `zeroRow2_mem_Wself` ＋ `lev = 0` ⟹ **∀ u, ∈ W u**（`D_1 ∈ W u` は不要）
+    行 1 = 0, 1, 1 ⟹ 非根は 1 と 1 ⟹ **`hnz` は真**
+    ⛔ `le0` は 1→2（隣接、最小性は空虚）で、行 1 は **1 と 1** ⟹ **C4 は偽**
+
+⟹ ★★★ ですから **C4 の道は留保なしで終わり**です。 -/
+
+def c4CtrM2 : TrioSeq := [(0, 0, 0), (1, 1, 0), (2, 1, 0)]
+
+theorem c4CtrM2_len : c4CtrM2.length = 3 := rfl
+
+theorem c4CtrM2_zeroRow2 : ∀ p ∈ c4CtrM2, p.2.2 = 0 := by decide
+
+theorem c4CtrM2_lev : lev c4CtrM2 0 = 0 := by
+  unfold lev c4CtrM2 entry
+  simp
+
+/-- ★★ **すべての `u` で `W u` の元**（`D_1 ∈ W u` は要りません）。 -/
+theorem c4CtrM2_mem_W (u : ℕ) : c4CtrM2 ∈ W u := by
+  rw [mem_Wself_iff]
+  exact ⟨zeroRow2_mem_Wself c4CtrM2_zeroRow2, by rw [c4CtrM2_lev]; omega⟩
+
+/-- ✅ **`hnz` は真**。 -/
+theorem c4CtrM2_hnz : ∀ i, 0 < i → i < c4CtrM2.length → 0 < entry c4CtrM2 1 i := by
+  intro i hi0 hi
+  rw [c4CtrM2_len] at hi
+  rcases (by omega : i = 1 ∨ i = 2) with h | h <;> subst h <;>
+    · unfold entry c4CtrM2
+      simp
+
+theorem c4CtrM2_le0 : le0 c4CtrM2 1 2 := by
+  refine ⟨by rw [c4CtrM2_len]; omega, by rw [c4CtrM2_len]; omega,
+    Relation.ReflTransGen.single ?_⟩
+  refine ⟨by rw [c4CtrM2_len]; omega, by rw [c4CtrM2_len]; omega, by omega, ?_, ?_⟩
+  · show entry c4CtrM2 0 1 < entry c4CtrM2 0 2
+    unfold entry c4CtrM2
+    simp
+  · intro j hj
+    omega
+
+/-- ⛔ それでも C4 は偽。 -/
+theorem c4CtrM2_not_C4 : ¬ C4 c4CtrM2 := by
+  intro h
+  have hlt := h 1 2 (by omega) (by rw [c4CtrM2_len]; omega) c4CtrM2_le0
+  have h1 : entry c4CtrM2 1 1 = 1 := by unfold entry c4CtrM2; simp
+  have h2 : entry c4CtrM2 1 2 = 1 := by unfold entry c4CtrM2; simp
+  omega
+
+/-- ⛔⛔⛔ **`W ∧ hnz ⟹ C4` は偽**（留保なし）。 -/
+theorem W_hnz_not_C4 :
+    ¬ (∀ u : ℕ, ∀ Q ∈ W u,
+        (∀ i, 0 < i → i < Q.length → 0 < entry Q 1 i) → C4 Q) := by
+  intro h
+  exact c4CtrM2_not_C4 (h 0 c4CtrM2 (c4CtrM2_mem_W 0) c4CtrM2_hnz)
+
 end H12H2
 end TRIO
