@@ -7654,3 +7654,28 @@ L106 を読んだ。`hsnoc_zero_of_parent` の中で `hd : 0 < d` が使われ�
 ⟹ ⟹ ★★★ **測度の再帰で `d = 0` が出るときは必ず `e = 0` も一緒**。
 ⟹ ⟹ ⟹ `TowerP''` に **`d = 0 → e = 0`** を足せば、`ZeroDOK` は
    **`d = e = 0`（＝同一コピーの連結）だけ**でよくなる ⟹ `PrefixCopies` に一本化。
+
+### §300.2 `d = 0` ⟺ `srow = 0`（＝ 素のコピー）
+
+`wd0 = if 0 < srow(末尾) then entry 0 (末尾) - entry 0 (親) else 0` なので:
+
+    srow = 0 ⟹ wd0 = 0（if が偽）
+    srow ≥ 1 ⟹ 親は nextR 1/2 の始点 ⟹ entry 0 親 < entry 0 末尾（§300）⟹ wd0 > 0
+
+⟹ ★ **`wd0 = 0 ⟺ srow(末尾) = 0`**（親がある前提）。そして `srow = 0 ⟹ wd1 = 0`。
+⟹ team-lead の「`0 < d` は `srow = 0` の段で必ず破れる」と完全に一致。
+   私の追加は「**`e = 0` も一緒に来る**」ことと、その証明。
+
+⟹ ⟹ `ZeroDOK` ＝ **`srow = 0` の段 ＝ リフト無しの素のコピー** ＝ `PrefixCopies`。
+
+### §300.3 `PrefixCopiesOpen` を 15 分見た結果
+
+`W_add`（`Wset:1682`）は `A2' + XA_closed` で、**`rsum A B`（`A ++ B` の全列が `B` の根以上の
+深さ）が構造的に要る**。`prefixCopies_of_rsum` はその逐語の伸長。
+⟹ `rsum` が無い場合（＝ `PrefixCopiesOpen`）は `W_add` の路線では**原理的に出ない**。
+
+⟹ 我々の場面では `Q` は窓（`wnd`）＝ 親の直後から始まる区間なので、
+   親 `a0 ∈ A` は必ず `Q` の根より浅い ⟹ **必ず `PrefixCopiesOpen` 側に落ちる**。
+   `based Q` も出ない（窓は再基底化されない）。
+
+⟹ ⛔ ここは L53 の核そのもの。H12 からは新しい入り口を見つけられなかった。
