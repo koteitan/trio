@@ -7701,3 +7701,22 @@ L106 §228.1（`OrphOK`）に「上の 3 本は緑ですが `OrphOK` を導い�
 
 ⟹ R2 の実測「`OrphOK` は `rsum` 無しで 45.6% 破れる、破れるのはブロッカー」と一致。
    行 0 は**無条件**、行 1・行 2 は**ブロッカーが無ければ**壁が立つ。
+
+## §302 ★★★★★★★ `OrphOK` の壁の最終形（緑）
+
+    entry1_Lift1_ge   : Lift1 は行 1 を下げない
+    entry1_mTower_ge  : entry Q 1 i ≤ entry (mTower Q d e n) 1 (k*|Q|+i)
+    ★ no_blocker_mTower : 塔にブロッカーが無い ⟸ **Q にブロッカーが無い ＋ 0 < e**
+    ★ shallowest_mTower : 塔の根が行 0 で狭義最浅 ⟸ **hr0 ＋ 0 < d**
+    ★★★ no_nextR_srow_cross :
+        hmin ＋ hnb ＋ hz0（塔の根の行 2 が 0）のもとで
+        ¬ nextR (A ++ T) (srow (A ++ T) (|A|+m)) c (|A|+m)   （c < |A|、0 < m）
+        ＝ **接頭辞は srow の行で親を供給しない**
+
+★ 行 2 の錐の条件は **`hz0` から自動**:
+  `entry T 2 m > 0` なら `entry T 2 0 = 0 < entry T 2 m` で錐の中。
+  `entry T 2 m = 0` なら `srow ≤ 1` なので行 2 は使わない。
+
+⟹ ⟹ `OrphOK` に要るのは結局 **`hnb`（Q にブロッカーが無い）だけ**。
+   `hmin` は `hr0 + 0<d`、行 2 は `hz0` から自動、`hr0`・`hz0` は `TowerP''` が持っている。
+⟹ ★ R2 の「45.6% 破れる、破れるのはブロッカー」と完全に一致。

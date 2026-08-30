@@ -1999,5 +1999,123 @@ theorem no_nextR_cross_of_cone {A T : TrioSeq}
     · rw [if_neg hr1] at h
       exact no_nextrel2_cross_of_cone hmin hnb hc hm hm0 (h2 m hm0 hm) h
 
+
+/-- `Lift1` は行 1 を下げない。 -/
+theorem entry1_Lift1_ge {X : TrioSeq} {t i : ℕ} (hi : i < X.length) :
+    entry X 1 i ≤ entry (Lift1 X t) 1 i := by
+  rw [Wset.entry1_Lift1 hi]
+  split <;> omega
+
+/-- 塔の各列の行 1 は `Q` の対応する列の行 1 以上。 -/
+theorem entry1_mTower_ge {Q : TrioSeq} {d e n k i : ℕ} (hk : k < n) (hi : i < Q.length) :
+    entry Q 1 i ≤ entry (mTower Q d e n) 1 (k * Q.length + i) := by
+  rw [mTower_entry hk hi]
+  refine le_trans ?_ (entry1_Lift1_ge (by rwa [shiftr01_length]))
+  rw [entry1_shiftr01]
+
+/-- ★★★ **塔にブロッカーが無い ⟸ `Q` にブロッカーが無い ＋ `0 < e`**。 -/
+theorem no_blocker_mTower {Q : TrioSeq} {d e n : ℕ} (hQne : Q ≠ []) (hQ1 : 0 < Q.length)
+    (he : 0 < e) (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i) :
+    ∀ l, 0 < l → l < (mTower Q d e n).length →
+      entry (mTower Q d e n) 1 0 < entry (mTower Q d e n) 1 l := by
+  intro l hl0 hl
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [hlen] at hl
+  have hroot : entry (mTower Q d e n) 1 0 = entry Q 1 0 := by
+    have hn : 0 < n := by
+      by_contra hc
+      have : n = 0 := by omega
+      rw [this] at hl; omega
+    have := entry1_mTower_blockRoot hQne d e n 0 hn
+    simpa using this
+  have hi : l % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hk : l / Q.length < n := by
+    refine Nat.div_lt_of_lt_mul ?_
+    rw [Nat.mul_comm]; exact hl
+  have hsplit : l = (l / Q.length) * Q.length + l % Q.length := by
+    rw [Nat.mul_comm]; exact (Nat.div_add_mod l Q.length).symm
+  rw [hroot]
+  rcases Nat.eq_zero_or_pos (l % Q.length) with h0 | hp
+  · -- ブロック根（`k ≥ 1`）: 行 1 は `entry Q 1 0 + e*k`
+    have hk0 : 0 < l / Q.length := by
+      rcases Nat.eq_zero_or_pos (l / Q.length) with hc | hc
+      · exfalso; rw [hsplit, hc, h0] at hl0; omega
+      · exact hc
+    have heq : l = (l / Q.length) * Q.length := by omega
+    have hbr := entry1_mTower_blockRoot hQne d e n (l / Q.length) hk
+    rw [← heq] at hbr
+    rw [hbr]
+    have : 0 < e * (l / Q.length) := Nat.mul_pos he hk0
+    omega
+  · -- ブロック内の非根の列: `Q` のブロッカー無しから
+    have hge := entry1_mTower_ge (Q := Q) (d := d) (e := e) (n := n)
+      (k := l / Q.length) (i := l % Q.length) hk hi
+    rw [← hsplit] at hge
+    exact Nat.lt_of_lt_of_le (hnbQ _ hp hi) hge
+
+/-- ★★★ 塔の根が行 0 で狭義最浅（`hmin`）⟸ `hr0` ＋ `0 < d`。 -/
+theorem shallowest_mTower {Q : TrioSeq} {d e n : ℕ} (hQ1 : 0 < Q.length) (hd : 0 < d)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ∀ l, 0 < l → l < (mTower Q d e n).length →
+      entry (mTower Q d e n) 0 0 < entry (mTower Q d e n) 0 l := by
+  intro l hl0 hl
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [hlen] at hl
+  have hn : 0 < n := by
+    by_contra hc
+    have : n = 0 := by omega
+    rw [this] at hl; omega
+  have hroot : entry (mTower Q d e n) 0 0 = entry Q 0 0 := by
+    have := entry0_mTower_block Q d e n 0 0 hn hQ1
+    simpa using this
+  have hi : l % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hk : l / Q.length < n := by
+    refine Nat.div_lt_of_lt_mul ?_
+    rw [Nat.mul_comm]; exact hl
+  have hsplit : l = (l / Q.length) * Q.length + l % Q.length := by
+    rw [Nat.mul_comm]; exact (Nat.div_add_mod l Q.length).symm
+  have hval := entry0_mTower_block Q d e n (l / Q.length) (l % Q.length) hk hi
+  rw [← hsplit] at hval
+  rw [hroot, hval]
+  rcases Nat.eq_zero_or_pos (l % Q.length) with h0 | hp
+  · have hk0 : 0 < l / Q.length := by
+      rcases Nat.eq_zero_or_pos (l / Q.length) with hc | hc
+      · exfalso; rw [hc, h0] at hsplit; simp at hsplit; omega
+      · exact hc
+    have : 0 < d * (l / Q.length) := Nat.mul_pos hd hk0
+    rw [h0]
+    omega
+  · have := hr0 _ hp hi
+    omega
+
+/-- ★★★★★★★ **接頭辞は `srow` の行で親を供給しない**（`OrphOK` の壁、最終形）。
+行 2 の錐の条件は **`hz0`（塔の根の行 2 が 0）から自動**で出る。 -/
+theorem no_nextR_srow_cross {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    (hz0 : entry T 2 0 = 0)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m) :
+    ¬ nextR (A ++ T) (srow (A ++ T) (A.length + m)) c (A.length + m) := by
+  have e1 : entry (A ++ T) 1 (A.length + m) = entry T 1 m := entry_append_right A T 1 m
+  have e2 : entry (A ++ T) 2 (A.length + m) = entry T 2 m := entry_append_right A T 2 m
+  unfold srow
+  rw [e1, e2]
+  by_cases h2 : 0 < entry T 2 m
+  · rw [if_pos h2]
+    unfold nextR
+    rw [if_neg (by omega), if_neg (by omega)]
+    exact no_nextrel2_cross_of_cone hmin hnb hc hm hm0 (by omega)
+  · rw [if_neg h2]
+    by_cases h1 : 0 < entry T 1 m
+    · rw [if_pos h1]
+      unfold nextR
+      rw [if_neg (by omega), if_pos rfl]
+      exact no_nextrel1_cross_of_cone hmin hc hm hm0 (hnb m hm0 hm)
+    · rw [if_neg h1]
+      unfold nextR
+      rw [if_pos rfl]
+      intro h
+      exact absurd (nextrel0_cross_root hmin hc hm h) (by omega)
+
 end H12Export
 end TRIO
