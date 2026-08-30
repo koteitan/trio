@@ -2227,5 +2227,53 @@ theorem W_not_zle1_closed :
     have : ((0, 0, 2) : ℕ × ℕ × ℕ).2.2 = 2 := rfl
     omega
 
+
+/-! ## 34. **(z0) 強めた `h1out` も偽** —— ただし team-lead の直しは**半分効く**
+
+team-lead:「`h1` の枝は `¬ (0 < entry (B.take (j+1)) 2 j)` の中なので、
+`entry Q 2 j = 0` を**タダで**前件に足せる」⟹ **正しいです。**
+
+    **✅ §32 の反例（`srow = 2`）は死にます**: `Q = (0,1,0)(1,0,0)(1,1,1)(1,0,0)`、`j = 2`
+      ⟹ `entry Q 2 2 = 1 ≠ 0` ⟹ 前件を満たさない ⟹ 空虚に真
+
+⛔ **しかし `srow = 1` のブロッカーが残ります**（行 2 = 0 で行 1 が根と等号）:
+
+    **`Q = (0,1,0)(1,1,0)`、`j = 1`**
+      錐の外 ✓（行 1 が根と**等号**）／ **`entry Q 2 1 = 0`** ✓（強めた前件も満たす）
+      `0 < entry Q 1 1 = 1` ✓ ／ `entry Q 1 0 < entry Q 1 1` ⟺ `1 < 1` ⟹ **偽**
+
+⚠ **この `Q` は `hr0` を満たします**（根の深さ 0 < 1）。⟹ 前提で除けません。
+
+⟹ ★ **分母は 16960 → 4428（`srow = 1`）に落ちるが、0 にはならない。**
+⟹ ⟹ **残る 4428 が、まさに「等号のブロッカー」＝ 私の (C2) の残差の源。** -/
+
+/-- 強めた `h1out` の反例（`srow = 1` の等号ブロッカー）。 -/
+def Qh1s : TrioSeq := [((0, 1, 0) : ℕ × ℕ × ℕ), ((1, 1, 0) : ℕ × ℕ × ℕ)]
+
+/-- ⛔ **`entry Q 2 j = 0` を足しても `h1out` は偽**。 -/
+theorem h1out_strong_false :
+    ¬ (∀ j, 0 < j → j < Qh1s.length → ¬ le1 Qh1s 0 j →
+        entry Qh1s 2 j = 0 → 0 < entry Qh1s 1 j →
+        entry Qh1s 1 0 < entry Qh1s 1 j) := by
+  intro h
+  have hout : ¬ le1 Qh1s 0 1 :=
+    L105.not_le1_of_tie (by omega)
+      (show entry Qh1s 1 1 = entry Qh1s 1 0 from rfl)
+  have hres := h 1 (by omega)
+    (show (1 : ℕ) < Qh1s.length from by rw [show Qh1s.length = 2 from rfl]; omega)
+    hout (show entry Qh1s 2 1 = 0 from rfl)
+    (show 0 < entry Qh1s 1 1 from by rw [show entry Qh1s 1 1 = 1 from rfl]; omega)
+  rw [show entry Qh1s 1 0 = 1 from rfl, show entry Qh1s 1 1 = 1 from rfl] at hres
+  omega
+
+/-- ⟹ ★ ただし `Qh1s` は `hr0`（根が狭義最浅）を**満たす** ⟹ 前提では除けない。 -/
+theorem Qh1s_hr0 : ∀ l, 0 < l → l < Qh1s.length → entry Qh1s 0 0 < entry Qh1s 0 l := by
+  intro l hl0 hll
+  rw [show Qh1s.length = 2 from rfl] at hll
+  have : l = 1 := by omega
+  subst this
+  rw [show entry Qh1s 0 0 = 0 from rfl, show entry Qh1s 0 1 = 1 from rfl]
+  omega
+
 end H12H2
 end TRIO
