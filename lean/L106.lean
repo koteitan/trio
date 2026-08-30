@@ -10062,6 +10062,8 @@ namespace TRIO
 namespace L106
 
 open Wset
+open L105
+open Classical
 
 /-- **周期部分では窓は周期より短い**（前提なし、`nextrel0`）。
 
@@ -10260,6 +10262,30 @@ theorem entry1_lt_of_nextR_two {T : TrioSeq} {c t : ℕ}
     (h : nextR T 2 c t) : entry T 1 c < entry T 1 t := by
   rw [nextR, if_neg (by decide), if_neg (by decide)] at h
   exact H12Export.entry1_lt_of_le1_ne h.2.2.2.2.1 (by have := h.2.2.1; omega)
+
+/-! ### §296 (L-TIE) 行 1 のタイは `lev` の帳簿を壊さない —— 塔の根は `Q` の根そのもの
+
+team-lead の (L-TIE)。H12 の `tie_below_root_after_lift`（`Lift1` は錐の外＝タイの列を
+置き去りにするので、持ち上げ後にタイの列は根より行 1 が真に低い）が `mTower` でも起きるか。
+
+⟹ ✅ **段の帳簿は壊れません**。`mem_Wself_iff : M ∈ W u ↔ M ∈ Wself ∧ lev M 0 ≤ u` の
+側条件は **根（添字 0）だけ**を見る。そして `mTower` のブロック 0 は `k = 0` なので
+持ち上げ量 0 ⟹ **塔の根は `Q` の根そのもの**。
+
+⚠ 20 回目の重複: **`mTower_entry{0,1,2}_root`（`L105Cap:10487 / 10632 / 13821`）が
+既にこれを言っていた**（`k = 0` を代入するだけ）。以下は `lev` への言い換えのみ。
+
+⚠ ただし **ブロック `k >= 1` の中ではタイの列が根より行 1 で低くなる**（H12 の指摘どおり）。
+それは `nextrel1` の形に効くので `oper` の解析では効くが、**段 `u` の帳簿には効かない**。 -/
+
+/-- ★★★ **段 `u` は塔で変わらない**（`mem_Wself_iff` の側条件）。 -/
+theorem lev_mTower_root {Q : TrioSeq} (hQ : 0 < Q.length) (d e n : ℕ) (hn : 0 < n) :
+    lev (mTower Q d e n) 0 = lev Q 0 := by
+  have h1 := mTower_entry1_root (Q := Q) (d := d) (e := e) (n := n) (k := 0) hn hQ
+  have h2 := mTower_entry2_root (Q := Q) (d := d) (e := e) (n := n) (k := 0) hn hQ
+  simp only [Nat.zero_mul, Nat.mul_zero, Nat.add_zero] at h1 h2
+  unfold lev
+  rw [h1, h2]
 
 end L106
 end TRIO
