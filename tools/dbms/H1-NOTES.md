@@ -7611,3 +7611,24 @@ L106 を読んだ。`hsnoc_zero_of_parent` の中で `hd : 0 < d` が使われ�
    ⟹ 測度のルートが原理的に死ぬ ⟹ **コピーのルート**（`prefix_mTower_d0_mem`、
    要 `based Q` ＋ `Q ∈ W u`）か `PrefixCopiesOpen` しかない。
    （窓が短くなるなら `natMeasure` の `3*L` で落ちるので、そちらでも可。）
+
+## §299.2 ⚠⚠ 自己訂正 9 件目 —— §299 の結論は誤り
+
+`blockRoot_parent_ge_prefix`（`L106:3066`）の**結論**は
+「親は最後の 2 ブロックの中」（`(A ++ mTower Q d e k).length ≤ parent …`）であり、
+`hsnoc_zero_of_parent` は `parent = P.length + p`（`p < |Q|`）を要求する。
+
+⛔ 私の `nextrel1_prefix_blockRoot_src_d_zero`（緑）は
+**`d = 0` では親が `A` の中（`< A.length`）**と言っている。
+⟹ **`d = 0` では `hsnoc_zero_of_parent` の枠そのものが使えない。**
+⟹ 親が `A` の中だと窓（`wnd`）が塔全体をまたぐので `natMeasure` が縮まない。
+⟹ ⟹ **`e` の値によらず `hsnoc_zero` の骨格では通らない。**
+
+**教訓 25**: 「`hd` を消せるか」は**仮定の使用箇所を数えることではない**。
+呼び出し先の補題の**結論が `d = 0` で成り立つか**を見ること。
+`blockRoot_parent_ge_prefix` は `hd` を仮定に持つだけでなく、結論が `d = 0` で**偽**だった。
+
+⟹ 残る正しい部分:
+  - §298（`hsnoc_zero_of_parent` の `hd` は「末尾列が非零」1 か所）は事実。ただし `d = 0` では呼べない。
+  - §296 の補題は全部正しい。`Q` の根が `A` に親を持たない枝は `snoc_orphan_W` で**無料**。
+  - 残るのは「持つ」枝 ＝ `d = 0` の塔の本体。⟹ `Aop` の節 3（`graft`）しかないと見る。
