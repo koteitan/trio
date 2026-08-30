@@ -6398,3 +6398,18 @@ L3 の §187.2 は「**親をブロック `n-1` の `(n-1)*|Q| + p_rel` とす�
     **`p_rel ≥ 1` の枝**            … L3 は「`|V|` が減る」と書くが
                                     **§188 で `|V|` の測度自体が死んでいる**
                                     ⟹ **何が減るのかは未確定**（L3 に質問中）
+
+## §266. **塔の座標補題を揃えた（緑）**
+
+索引で確認: **`entry (mTower …)` を結論に持つ定理はプロジェクトに 0 件**だった。
+⟹ どの測度が生き残るかによらず使えるので、揃えて置く。
+
+    entry0_mTower_block   : `entry (mTower Q d e n) 0 (k*|Q| + i) = entry Q 0 i + d*k`（無条件）
+    entry2_mTower_block   : `entry (mTower Q d e n) 2 (k*|Q| + i) = entry Q 2 i`（無条件）
+    entry1_mTower_blockRoot : `entry (mTower Q d e n) 1 (k*|Q|) = entry Q 1 0 + e*k`
+    row2_const_mTower     : `Q` の行 2 が一定 ⟹ 塔の行 2 も同じ値で一定
+
+⚠ **行 1 の一般版は無条件では書けない**（`Lift1` は錐の中の列だけ持ち上げる）。
+⟹ 根（`i = 0`、必ず錐の中）だけが無条件。**これが `Lift1` の非一様性そのもの。**
+
+**Lean**: `lean/H12H2.lean`（緑、`sorry` 0、**定理 51 本**）。

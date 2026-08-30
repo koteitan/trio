@@ -1440,5 +1440,61 @@ theorem blockRoot_parent_split {Q : TrioSeq} {d e n k : ℕ}
   exact ⟨parent (mTower Q d e n) 1 ((k + 1) * Q.length) - k * Q.length,
     by omega, by omega⟩
 
+
+/-! ## 21. **塔の座標補題を揃える**
+
+索引を引いた限り、**塔の中身を `(ブロック番号, ブロック内の添字)` で書く補題**は
+プロジェクトに無い（`entry (mTower …)` を結論に持つ定理が 0 件）。
+⟹ どの測度が生き残るかによらず使えるので、行 2 の一般版も入れておく。
+
+    行 0 … `entry0_mTower_block`（§19、無条件）
+    行 2 … 下（**無条件**。`Lift1` も `shiftr01` も行 2 を変えない）
+    ⚠ 行 1 … **無条件では書けない**（`Lift1` は錐の中の列だけ持ち上げる）
+             ⟹ 根（`i = 0`、必ず錐の中）だけが `entry1_mTower_blockRoot`（§19） -/
+
+/-- 塔の第 `k` ブロックの `i` 番目の列の行 2（無条件）。 -/
+theorem entry2_mTower_block (Q : TrioSeq) (d e : ℕ) :
+    ∀ (n k i : ℕ), k < n → i < Q.length →
+      entry (mTower Q d e n) 2 (k * Q.length + i) = entry Q 2 i := by
+  intro n
+  induction n with
+  | zero => intro k i hk _; omega
+  | succ n ih =>
+      intro k i hk hi
+      rw [mTower_succ]
+      rcases Nat.lt_or_ge k n with hkn | hkn
+      · have hlt : k * Q.length + i < (mTower Q d e n).length := by
+          rw [mTower_length]
+          calc k * Q.length + i < k * Q.length + Q.length := by omega
+            _ = (k + 1) * Q.length := by rw [Nat.succ_mul]
+            _ ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+        rw [entry_append_left _ _ hlt]
+        exact ih k i hkn hi
+      · have hk0 : k = n := by omega
+        subst hk0
+        rw [show k * Q.length + i = (mTower Q d e k).length + i from by
+            rw [mTower_length],
+          entry_append_right, entry2_Lift1, entry2_shiftr01]
+
+/-- ⟹ **`Q` の行 2 が一定なら、塔の行 2 も同じ値で一定**。 -/
+theorem row2_const_mTower (Q : TrioSeq) (d e n : ℕ) {c : ℕ}
+    (h : ∀ i, i < Q.length → entry Q 2 i = c) :
+    ∀ p, p < (mTower Q d e n).length → entry (mTower Q d e n) 2 p = c := by
+  intro p hp
+  rw [mTower_length] at hp
+  have hQ1 : 0 < Q.length := by
+    rcases Nat.eq_zero_or_pos Q.length with h0 | h0
+    · rw [h0, Nat.mul_zero] at hp; omega
+    · exact h0
+  have hk : p / Q.length < n :=
+    Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact hp)
+  have hi : p % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hpq : p / Q.length * Q.length + p % Q.length = p := Nat.div_add_mod' p Q.length
+  calc entry (mTower Q d e n) 2 p
+      = entry (mTower Q d e n) 2 (p / Q.length * Q.length + p % Q.length) := by
+        rw [hpq]
+    _ = entry Q 2 (p % Q.length) := entry2_mTower_block Q d e n _ _ hk hi
+    _ = c := h _ hi
+
 end H12H2
 end TRIO
