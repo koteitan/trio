@@ -70,6 +70,11 @@ def TowerExp : Prop :=
     ∀ n, 1 ≤ n → ((0, v, z) :: R)⟦n⟧ ∈ W a
 ```
 
+意味: **根 `(0,v,z)` の上に「良い引数 `R`」を載せた行列を展開しても、まだ良いまま**。
+「良い引数」とは、全列の行 0 が正（`argOK`）で、末尾に親があり（`hasParent`）、
+`R` 自身のどの展開も `Wstar` にいるもの。`W a` は段 `a` の良い行列の集合で、
+`2v + z ≤ a` が段の条件。
+
 `MTowerClosedS`（`L105Cap.lean:5622`）は 5 量化 / 2 前提:
 
 ```lean
@@ -79,7 +84,9 @@ def MTowerClosedS : Prop :=
     mTower Q d e n ∈ W u
 ```
 
-`mTower Q d e n` は `Q` を段ごとに行 0 を `+d`、行 1 を錐の中だけ `+e` して `n` 段積んだ塔。
+意味: **良い行列 `Q` から塔を積んでも、良いまま**。
+`mTower Q d e n` は `Q` を `n` 段積んだもので、段が上がるごとに行 0 を `+d`、
+行 1 を根の錐の中だけ `+e` する。2 番目の前提は「`Q` の根が行 0 で狭義にいちばん浅い」。
 
 ## 2. 入口の一覧（`Final.lean`）
 
@@ -119,7 +126,9 @@ theorem wstar2s_closed_of_mTowerClosedBased (htow : MTowerClosedBased) :
     ∀ u0 R, Aop W u0 Wstar2s R → R ∈ Wstar2s
 ```
 
-で `Final` まで届く。`W` の行 0 の下シフト閉性は不要である
+意味: **`MTowerClosedS` を「根の行 0 がちょうど 0 の `Q`」に限ってよい**。
+本線に出てくる `Q` はもともとその形なので、制限しても `Final` まで届く。
+`W` の行 0 の**下**シフト閉性は不要である
 （`W_shift`（`Wset.lean:1320`）が言うのは上シフトだけ）。
 
 ### 3.2 snoc 1 手への還元（`L106.lean` §307/§308）
@@ -130,10 +139,12 @@ theorem mTowerClosedBased_of_towerSnocStepBased (h : TowerSnocStepBased) :
     L105.MTowerClosedBased
 ```
 
-`TowerSnocStep(Based)` は「塔 ＋ ブロックの `take j`」に 1 列 snoc する 1 手。
+意味: **「塔全体が良い」を「塔に 1 列足しても良いまま」1 手に落とせる**。
+`TowerSnocStep(Based)` は「塔 ＋ ブロックの `take j`」が `W u` にいるとき、
+そこに `take (j+1)` の 1 列を snoc しても `W u` にいる、という命題。
 証明は `L105Cap.prefixTowerClosed_of_snocStepPar` を接頭辞 `A = []` で流したもの。
 その中で、snoc する列が孤児（`¬ hasParent`）の場合は `snoc_orphan_W` が引き取るので、
-`TowerSnocStep` には親を持つ列だけが渡る。
+`TowerSnocStep` には**親を持つ列だけ**が渡る。
 
 ### 3.3 辞書式測度（`L106.lean` §314–§317）
 
@@ -165,6 +176,14 @@ theorem window_lt_of_offset_pos {L n c} (hn : 0 < n)
 theorem lexLt_of_offset_pos
 ```
 
+意味: **測度 `(|Q|, e, d)` は自然数 3 つ組の辞書式順序なので整礎**（`lexLt_wf`）。
+`MTowerClosedAt u Q e d` は `MTowerClosedBased` を `(Q, e, d)` ごとに切ったもので、
+`mTowerClosedBased_of_lexStep` は「測度がより小さいものすべてで成り立つと仮定して
+`(Q, e, d)` で示せ」という形に変える。`lexLt_of_*` は、`oper` の場合分けの結果
+（`srow` の値、窓の長さ）から測度の減少を作る部品。
+`window_lt_of_offset_pos` は「親のブロック内オフセットが 1 以上なら窓は `|Q|` 未満」
+という算術（`窓 = |Q| - オフセット`）。
+
 ### 3.4 `oper` の 2 つの `if` から出る等式（`L106.lean` §309/§311、前提なし）
 
 `oper` の新しい段差は `d' := if 0 < srow then … else 0`、`e' := if 1 < srow then … else 0`。
@@ -188,8 +207,11 @@ theorem no_parent_of_srow_min      -- srow が何であれ、その行で最小�
 theorem no_parent_ge_one_of_row1_min (hi : 1 ≤ i)                           : ¬ hasParent M i t
 ```
 
-行 0 で（弱く）最浅なら `nextrel0`（狭義の不等号）が張れず、`nextrel1` / `nextrel2` は
-どちらも `le0` を含むので張れない、というのが `no_parent_of_shallowest` の内容である。
+意味: **ある行で（弱く）最小の列は、その行で親を持てない**。
+行 0 で最浅なら `nextrel0`（狭義の不等号）が張れず、`nextrel1` / `nextrel2` は
+どちらも `le0` を含むので張れない、というのが `no_parent_of_shallowest` の内容。
+親を持たない列（孤児）は `snoc_orphan_W` が無料で引き取るので、この形の補題は
+そのまま「この場合は考えなくてよい」に使える。
 
 ### 3.6 行 2 の親の必要十分条件（`L106.lean` §303/§304）
 
@@ -226,7 +248,9 @@ theorem no_hasParent_blockRoot_of_gap      -- 上の 2 つを合わせて i ≥ 
 theorem le0_ancestor_blockRoot             -- d ≤ 段差 ⟹ ブロック根の le0 祖先は前のブロック根だけ
 ```
 
-ここで `段差 := min_{i ≥ 1} (entry Q 0 i - entry Q 0 0)`。
+ここで `段差 := min_{i ≥ 1} (entry Q 0 i - entry Q 0 0)`（`Q` の根と、根以外の列との
+行 0 の差の最小値）。`d ≤ 段差` は「塔の段差が `Q` の内部の凹凸より浅い」という条件で、
+このとき塔のブロック根の親はちょうど 1 つ前のブロック根になる。
 
 行 1 / 行 2 の親については、`nextrel1` の源が `le0` 祖先、`nextrel2` の源が `le1` 祖先である
 ことを使って、行 0 の結果から移す:
@@ -240,6 +264,11 @@ theorem nextrel1_blockRoot_src_ge_prev       -- d > 0 ∧ e > 0 ⟹ 行 1 の親
 theorem nextrel2_blockRoot_src_ge_prev       -- e > 0 ⟹ 行 2 の親も同様
 theorem window_le_of_blockRoot_row1 / window_lt_of_blockRoot_row1_gap / window_le_of_low_ancestor
 ```
+
+意味: **行 1 / 行 2 の親の位置は、行 0 の親の位置から移せる**。
+`nextrel1` の源は `le0` 祖先、`nextrel2` の源は `le1` 祖先なので、
+「行 0 の親（または `le1` 祖先）が的より低ければ、それが最小性の候補になり、
+親はそれ以降にしか来られない」という形で下界が得られる。
 
 `nextrel1 M j0 j1` の最小性条項は `∀ j, j0 < j ∧ le0 M j j1 → entry M 1 j1 ≤ entry M 1 j`
 であり、これは「`j0` は行 1 が的より小さい `le0` 祖先のうち**添字が最大**のもの」を意味する。

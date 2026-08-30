@@ -20,21 +20,67 @@
 
 2. **変換に必要な性質が 7 本に確定した。**
 
-   | | 命題 | 状態 |
-   |---|---|---|
-   | **2-1** | `ImgCofinalT3 conv3` : `∀ A, ST_TS A → 1 < A.length → ∀ m0, ∃ m ≥ m0, ∃ B, ST_TS B ∧ (conv3 A)⟦m⟧ = conv3 B` | 未証明 |
-   | **2-2** | `OrderT3 conv3` : `∀ M N, ST_TS M → ST_TS N → (translate M <o translate N ↔ seqlex (conv3 M) (conv3 N))` | **偽**（`len ≤ 11` の 1,882,196 個で両向き各 24 件） |
-   | **2-3** | `SandwichUT3 conv3` : `∀ A, ST_TS A → 1 < A.length → ∀ n ≥ 1, sle3 (conv3 (A⟦n⟧)) ((conv3 A)⟦n+1⟧)` | **偽**（`≤7` 列 386,405 対で 8 件） |
-   | **2-4** | `ImgBlockT3 conv3` : `∀ A, ST_TS A → blockok 0 (conv3 A)` | 未証明（`≤7` 列 77,282 個で破れ 0） |
-   | **2-5** | `ImgLenT3 conv3` : `∀ A, ST_TS A → 1 < A.length → 1 < (conv3 A).length` | **証明ずみ**（`ImgLenT3_b2d3`） |
-   | **2-6** | `ConvDiagT3 conv3` : `∀ v, conv3 (diagSeqT 0 v) = if v = 0 then ddiagSeqT 0 else ddiagSeqT (v+2)` | **証明ずみ**（`ConvDiagT3_b2d3`） |
-   | **2-7** | 整礎性: BMS 側 `Wset.TowerGraft2 ∧ Wset.TowerExp`、または DBMS 側 `WellFounded RD3`（`RD3 x y := ST_D3 x ∧ ST_D3 y ∧ seqlex x y`） | どちらも未証明 |
+   **2-1 `ImgCofinalT3 conv3`** — 未証明
 
-   偽である 2-2 / 2-3 を使わない形が用意されている。これらから出る弱い 3 本
+   ```lean
+   ∀ A, ST_TS A → 1 < A.length → ∀ m0, ∃ m, m0 ≤ m ∧ ∃ B, ST_TS B ∧ (conv3 A)⟦m⟧ = conv3 B
+   ```
+   意味: **像を展開したものが、また別の標準形の像になっている** ——
+   そういう展開回数 `m` が**いくらでも大きく取れる**。
+   （「すべての `m` で」（`ImgClosedT3`）より弱く、必要なのはこちらだけ。）
 
-   * `Inj3 conv3` : `∀ M N, ST_TS M → ST_TS N → conv3 M = conv3 N → M = N`
-   * `OrderReindexT3 conv3` : (←) の向きだけ、相手を像の展開の逆像に限ったもの
-   * `SandwichUReindexT3 conv3` : 挟み撃ちの上、相手は同上
+   **2-2 `OrderT3 conv3`** — **偽**（`len ≤ 11` の 1,882,196 個で両向き各 24 件）
+
+   ```lean
+   ∀ M N, ST_TS M → ST_TS N → (translate M <o translate N ↔ seqlex (conv3 M) (conv3 N))
+   ```
+   意味: **変換が順序を保つ** —— BMS 側の順序数の大小と、DBMS 側の辞書式順序が一致する。
+
+   **2-3 `SandwichUT3 conv3`** — **偽**（`≤7` 列 386,405 対で 8 件）
+
+   ```lean
+   ∀ A, ST_TS A → 1 < A.length → ∀ n ≥ 1, sle3 (conv3 (A⟦n⟧)) ((conv3 A)⟦n+1⟧)
+   ```
+   意味: **展開してから写したものは、写してから 1 手多く展開したもの以下** ——
+   像の基本列が元の基本列を上から挟む。
+
+   **2-4 `ImgBlockT3 conv3`** — 未証明（`≤7` 列 77,282 個で破れ 0）
+
+   ```lean
+   ∀ A, ST_TS A → blockok 0 (conv3 A)
+   ```
+   意味: **像がブロック形をしている** —— 行 0 が 0 から始まり、隣り合う柱の行 0 の段差が 1 以下。
+
+   **2-5 `ImgLenT3 conv3`** — **証明ずみ**（`ImgLenT3_b2d3`）
+
+   ```lean
+   ∀ A, ST_TS A → 1 < A.length → 1 < (conv3 A).length
+   ```
+   意味: **変換が潰れない** —— 入力が 2 列以上なら像も 2 列以上。
+
+   **2-6 `ConvDiagT3 conv3`** — **証明ずみ**（`ConvDiagT3_b2d3`）
+
+   ```lean
+   ∀ v, conv3 (diagSeqT 0 v) = if v = 0 then ddiagSeqT 0 else ddiagSeqT (v + 2)
+   ```
+   意味: **基準点が合っている** —— BMS の対角の像が、DBMS の対角になる。
+
+   **2-7 整礎性** — どちらも未証明
+
+   ```lean
+   BMS 側: Wset.TowerGraft2 ∧ Wset.TowerExp
+   DBMS 側: WellFounded RD3        （RD3 x y := ST_D3 x ∧ ST_D3 y ∧ seqlex x y）
+   ```
+   意味: **無限に小さくなり続けることはない** —— 降下の帰納を回すための根拠。
+   `RD3` は「DBMS 標準形の上の辞書式順序」。
+
+   偽である 2-2 / 2-3 を使わない形が用意されている。これらから出る弱い 3 本:
+
+   * **`Inj3 conv3`** : `∀ M N, ST_TS M → ST_TS N → conv3 M = conv3 N → M = N`
+     — **変換が単射**。像が同じなら元も同じ。順序とは無関係。
+   * **`OrderReindexT3 conv3`** : `(conv3 A)⟦m⟧ = conv3 B` を満たす `B` にだけ相手を限り、
+     **DBMS 側の順序から BMS 側の順序を出す**（(←) の向きだけ）。
+   * **`SandwichUReindexT3 conv3`** : 同じ制限のもとでの挟み撃ちの上。
 
    に置き換えた `ST_D3_conv3_of_parts'''` / `ST_D3_conv3_of_parts_D` がある
    （弱化が出ることは Lean で証明ずみ）。この 3 本の真偽は未測定。
