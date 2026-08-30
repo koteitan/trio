@@ -1169,5 +1169,79 @@ theorem natMeasure_step_blockRoot {Q : TrioSeq} {d e n k w : ℕ} {d0 d1 : ℕ}
 ⚠ **教訓（私の失敗）:** **振る前に「第 2 成分は有界か」を見る。**
 **有界なら辞書式は要りません。`rankDE ≤ 2` は §198 で**私が**証明していました。** -/
 
+/-! ## 204. ★★★★★★★★ 測度による強帰納の**骨組み** —— 残る義務が **1 本**になります
+
+§200-§203 で「1 段で測度が減る」はそろいました。**それを `W` の membership に繋ぎます。**
+
+**⟹ ★ 骨組みは `W` の中身にも `mTower` の中身にも依りません。書けるのは:**
+
+> **「前提 `P` を満たす対象は、`P` を満たし測度の小さい対象がすべて片づいていれば、片づく」**
+> **⟹ ⟹ ならば `P` を満たす対象はすべて片づく。**
+
+**これは `Nat.strong_induction_on` そのものです。⟹ §203 で `Prod.Lex` を捨てたので `ℕ` 1 本。** -/
+
+theorem tower_of_measure_step {u : ℕ}
+    (P : TrioSeq → ℕ → ℕ → Prop) (meas : TrioSeq → ℕ → ℕ → ℕ)
+    (hstep : ∀ Q d e, P Q d e →
+      (∀ V d0 d1, P V d0 d1 → meas V d0 d1 < meas Q d e →
+        ∀ A, A ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ A, A ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u) :
+    ∀ Q d e, P Q d e → ∀ A, A ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have key : ∀ s Q d e, meas Q d e ≤ s → P Q d e →
+      ∀ A, A ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+    intro s
+    induction s with
+    | zero =>
+      intro Q d e hle hP A hA n
+      exact hstep Q d e hP
+        (fun _ _ _ _ hlt _ _ _ => absurd hlt (by omega)) A hA n
+    | succ s ih =>
+      intro Q d e hle hP A hA n
+      exact hstep Q d e hP
+        (fun V d0 d1 hPV hlt A' hA' m => ih V d0 d1 (by omega) hPV A' hA' m) A hA n
+  intro Q d e hP A hA n
+  exact key (meas Q d e) Q d e (le_refl _) hP A hA n
+
+/-! ### 204.1 ⟹ ★ **残る義務が `hstep` 1 本になりました**
+
+`tower_of_measure_step` に
+
+    `meas Q d e := natMeasure Q.length (rankDE d e) = 3 * |Q| + rankDE d e`（§203）
+    `P Q d e := `（§201 の前提の束）
+
+を入れると、証明すべきは **`hstep` だけ**です。そしてその中身は:
+
+    **`mem_of_oper_mem`** で `∀ m ≥ 1, S⟦m⟧ ∈ W u` に落とす
+    **§201** で `j ≥ 1` の親の位置（`≥ (A ++ mTower).length`）を得る（**錐の条件なし**）
+    **§202** で `S⟦m⟧ = (A ++ mTower Q d e n ++ B.take p) ++ mTower V d0 d1 m`、`|V| = j − p`
+    **§203** で測度が減ることを言う
+    **帰納法の仮定**を `V d0 d1` に当てる
+
+⚠⚠ **そのとき `P V d0 d1` が要ります。⟹ ★ これが**唯一残る穴**です（＝ 核）。**
+
+### 204.2 ★ そして `j = 0` は**場合分けではありません**（今日わかったこと）
+
+§202 は `P` と `B` について**完全に一般**です。`j = 0` の段は
+
+    `S = A ++ mTower Q d e n ++ B.take 1`
+      `= (A ++ mTower Q d e (n−1)) ++ (第 (n−1) ブロック ++ B).take (|Q| + 1)`
+
+と読み替えれば、**`P' := A ++ mTower Q d e (n−1)`、`j' := |Q|`、`p := p_rel`** で
+**同じ §202** が使えます。⟹ `|V| = |Q| − p_rel`。
+
+> **⟹ ★ ⟹ `j = 0` と `j ≥ 1` は「§202 の同じ 1 本」の**別の引数**です。**
+> **⟹ ⟹ 分かれるのは「`|V|` がいくつか」だけ:**
+>
+>     `j ≥ 1`                  ⟹ `|V| = j − p ≤ j < |Q|`  … **必ず減る**
+>     `j = 0` かつ `p_rel ≥ 1` ⟹ `|V| = |Q| − p_rel < |Q|` … **減る**
+>     `j = 0` かつ `p_rel = 0` ⟹ `|V| = |Q|`（減らない）  … **`rankDE` が減る**（§200）
+
+⚠ **team-lead に「排中律つきの尽くしが要る」と書きましたが、**言い過ぎでした**。**
+**⟹ §202 が一般なので、尽くす必要があるのは「`p` の値」だけです。⟹ `p < j` は
+`nextR_index_lt`（親 < 子）から**ただで**出ます。**
+
+⚠ **ただし `j = 0` の読み替え（`mTower_append` ＋ `take` の付け替え）は
+**Lean ではまだ書いていません**。⟹ そこは残っています。 -/
+
 end L106
 end TRIO
