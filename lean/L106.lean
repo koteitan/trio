@@ -10979,5 +10979,57 @@ theorem orphan_or_meas_drop_of_gap {M : TrioSeq} {t j0 : ℕ}
   · exact Or.inl h
   · exact Or.inr ⟨h, fun h0 => oper_d0_eq_zero_of_srow_zero h0⟩
 
+/-! ### §314 測度 `(|Q|, e, d)` の整礎帰納 —— `TowerSnocStepBased` の骨
+
+全枝の場合分け（今日、私と H12 と R2 で確定）:
+
+    `j > 0`                  … 孤児 or **`|V| < |Q|`** ⟹ 第 1 成分（⚠ `srow = 2` の前提だけ未確定）
+    `j = 0`, `d <= 段差`      … §313（孤児 or `e' = 0`、`srow = 0` なら `d' = 0` も）
+    `j = 0`, `d > 段差`, `e = 0` … 孤児 or **窓 < `|Q|`**（R2: 算術、機構不要）
+    `j = 0`, `d > 段差`, `e > 0` … 孤児 or 窓 < `|Q|` or **等号 ⟹ `srow = 1` ⟹ `e' = 0`**（§309）
+
+⟹ ★ ですから **測度 `(|Q|, e, d)` の辞書式**で回る。ここではその**整礎帰納の骨**を置く。
+⟹ ⚠ 枝の中身は仮定（`hstep`）に置く ⟹ **§305 の失敗（骨の形が違った）を踏まえた形**。 -/
+
+/-- 測度: `(|Q|, e, d)` の辞書式。 -/
+def lexMeas (Q : TrioSeq) (e d : ℕ) : ℕ × ℕ × ℕ := (Q.length, e, d)
+
+/-- 辞書式の順序（`Prod.Lex` の 3 段）。 -/
+def LexLt : ℕ × ℕ × ℕ → ℕ × ℕ × ℕ → Prop :=
+  Prod.Lex (· < ·) (Prod.Lex (· < ·) (· < ·))
+
+theorem lexLt_wf : WellFounded LexLt := by
+  unfold LexLt
+  exact WellFounded.prod_lex Nat.lt_wfRel.wf (WellFounded.prod_lex Nat.lt_wfRel.wf Nat.lt_wfRel.wf)
+
+/-- 第 1 成分が減れば辞書式で減る。 -/
+theorem lexLt_of_fst {a a' b b' c c' : ℕ} (h : a' < a) : LexLt (a', b', c') (a, b, c) :=
+  Prod.Lex.left _ _ h
+
+/-- 第 1 成分が同じで第 2 成分が減れば辞書式で減る。 -/
+theorem lexLt_of_snd {a b b' c c' : ℕ} (h : b' < b) : LexLt (a, b', c') (a, b, c) :=
+  Prod.Lex.right _ (Prod.Lex.left _ _ h)
+
+/-- 第 1・第 2 が同じで第 3 が減れば辞書式で減る。 -/
+theorem lexLt_of_trd {a b c c' : ℕ} (h : c' < c) : LexLt (a, b, c') (a, b, c) :=
+  Prod.Lex.right _ (Prod.Lex.right _ h)
+
+/-- ★★★★★ **`(|Q|, e, d)` の辞書式で回す整礎帰納**（骨）。
+`hstep` に「その測度より小さい全部で成り立つなら、自分でも成り立つ」を渡す。 -/
+theorem mTowerClosedBased_of_lex
+    (P : TrioSeq → ℕ → ℕ → Prop)
+    (hstep : ∀ Q e d, (∀ Q' e' d', LexLt (lexMeas Q' e' d') (lexMeas Q e d) → P Q' e' d') →
+      P Q e d) : ∀ Q e d, P Q e d := by
+  have hwf := lexLt_wf
+  intro Q e d
+  have key : ∀ m : ℕ × ℕ × ℕ, ∀ Q' e' d', lexMeas Q' e' d' = m → P Q' e' d' := by
+    intro m
+    induction m using WellFounded.induction (r := LexLt) hwf with
+    | _ m ih =>
+      intro Q' e' d' hm
+      refine hstep Q' e' d' (fun Q'' e'' d'' hlt => ?_)
+      exact ih (lexMeas Q'' e'' d'') (by rw [hm] at hlt; exact hlt) Q'' e'' d'' rfl
+  exact key (lexMeas Q e d) Q e d rfl
+
 end L106
 end TRIO
