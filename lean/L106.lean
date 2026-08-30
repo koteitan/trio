@@ -1983,5 +1983,88 @@ theorem snocStep_oper_pre_eq {P B : TrioSeq} {j p m : ℕ}
   rw [hT, List.take_append, List.take_of_length_le (by omega),
     Nat.add_sub_cancel_left, List.take_take, Nat.min_eq_left (by omega)]
 
+/-! ## 213. ★★★★★★★★★ **`hsnoc` の `j ≥ 1` の枝が緑になりました**
+
+材料が全部そろったので組みます。**残る前提は「窓に `TowerP''` が遺伝する」1 本だけです。** -/
+
+open Classical in
+theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
+    (hP : TowerP'' Q d e)
+    (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+      ∀ A', A' ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hbound : (A ++ mTower Q d e n).length ≤
+      parent (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((A ++ mTower Q d e n).length + j))
+        ((A ++ mTower Q d e n).length + j))
+    (hall : ∀ j', j' ≤ j →
+      A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u)
+    (hered : ∀ p, p < j →
+      TowerP'' (wnd (A ++ mTower Q d e n) (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p)
+        (wd0 (A ++ mTower Q d e n) (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p)
+        (wd1 (A ++ mTower Q d e n) (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p)) :
+    A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u := by
+  have hr0Q := hr0_of_TowerP'' hP
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set P := A ++ mTower Q d e n with hPdef
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hQ1 : 0 < Q.length := by omega
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hPlen : P.length = A.length + n * Q.length := by
+    rw [hPdef, List.length_append, hTlen]
+  set S := P ++ B.take (j + 1) with hS
+  have hSlen : S.length = P.length + (j + 1) := by
+    rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hlast : S.length - 1 = P.length + j := by omega
+  -- ★ 親が居ること（§212）
+  have hpT := tower_hasParent_of_TowerP'' (Q := Q) (d := d) (e := e) n hP hj hj1
+  have hassoc : S = A ++ (mTower Q d e n ++ B.take (j + 1)) := by
+    rw [hS, hPdef, List.append_assoc]
+  have hidx : A.length + (n * Q.length + j) = P.length + j := by omega
+  have hpar : hasParent S (srow S (S.length - 1)) (S.length - 1) := by
+    rw [hlast, hassoc, ← hidx]
+    rw [srow_append_right]
+    exact hasParent_append_right_of _ _ hpT
+  -- ★ 末尾列が全部 0 ではないこと
+  have hE0 : entry S 0 (P.length + j) = entry Q 0 j + d * n := by
+    rw [hS, show P.length + j = P.length + j from rfl, entry_append_right,
+      Wset.entry_take (show j < j + 1 by omega), hB, entry0_Lift1,
+      entry0_shiftr01 (by omega)]
+  have hQj : 0 < entry Q 0 j := by have := hr0Q j hj1 hj; omega
+  have hz : ¬ (entry S 0 (S.length - 1) = 0 ∧ entry S 1 (S.length - 1) = 0 ∧
+      entry S 2 (S.length - 1) = 0) := by
+    rw [hlast]
+    intro hc
+    rw [hE0] at hc
+    omega
+  -- ★ 親の位置
+  set par := parent S (srow S (S.length - 1)) (S.length - 1) with hpardef
+  have hbound' : P.length ≤ par := by rw [hpardef, hlast]; exact hbound
+  have hltp : par < S.length - 1 := nextR_index_lt (parent_nextR hpar)
+  set p := par - P.length with hpdef
+  have hpj : p < j := by omega
+  have hpe : par = P.length + p := by omega
+  -- ★ 展開して帰納法の仮定を当てる
+  refine mem_of_oper_mem ?_
+  intro m _
+  have heq := snocStep_oper_pre_eq (P := P) (B := B) (j := j) (p := p) (m := m)
+    (by omega) hpj hz hpar (by rw [← hpardef, hpe])
+  rw [← hS] at heq
+  rw [heq]
+  have hlen := wnd_length (P := P) (B := B) (j := j) (p := p) (by omega) hpj
+  refine hIH (wnd P B j p) (wd0 P B j p) (wd1 P B j p) (hered p hpj) ?_
+    (P ++ B.take p) (hall p (by omega)) m
+  unfold towerMeas
+  refine natMeasure_lt (rankDE_le_two d e)
+    (rankDE_le_two (wd0 P B j p) (wd1 P B j p)) ?_
+  left
+  rw [hlen]
+  omega
+
 end L106
 end TRIO
