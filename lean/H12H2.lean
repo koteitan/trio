@@ -7290,5 +7290,79 @@ theorem nextrel1_snoc_src_ge {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c : ℕ} (hC
   rw [hprev 1, hlast1] at hmin
   omega
 
+
+/-! ## 108. ★★★★★★★★★ (W62 続き): **直前が親でないとき —— `amin` が決めます**
+
+直前の列が条件を満たさないとき、行 0 の親 `c` はもっと前です。
+⟹ ★★★★★ そのとき **`|C|` の行 0 の祖先 ＝ `{|C|} ∪ (c の祖先)`**（`nextrel0` の始点は一意）
+⟹ ⟹ ★★★★★★★★ ですから **行 1 の親があるかどうかは `amin (C ++ [p]) c` と `p.2.1` の比較**で決まります。 -/
+
+/-- ★★★★★★★★ **`amin` が `p` の行 1 より小さければ、行 1 の親がある**。
+⟹ ★ 前提は **行 0 の親 `c` と、`c` での `amin`** だけ。 -/
+theorem hasParent1_snoc_of_amin {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c : ℕ}
+    (h : nextrel0 (C ++ [p]) c C.length) (hlt : amin (C ++ [p]) c < p.2.1) :
+    hasParent (C ++ [p]) 1 C.length := by
+  have hTlen : (C ++ [p]).length = C.length + 1 := by simp
+  have hlast1 : entry (C ++ [p]) 1 C.length = p.2.1 := by
+    have := entry_append_right C [p] 1 0
+    simp only [Nat.add_zero] at this
+    rw [this]; rfl
+  obtain ⟨y, hy, hey⟩ := amin_mem (C ++ [p]) c
+  refine hasParent1_of_le0_witness (by omega) (hy.tail h) ?_
+  rw [hey, hlast1]; exact hlt
+
+/-- ★★★★★★★★ ⟹ **対偶: 行 1 の孤児なら `amin` は `p` の行 1 以上**。 -/
+theorem amin_ge_of_orphan1_snoc {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c : ℕ}
+    (h : nextrel0 (C ++ [p]) c C.length)
+    (horph : ¬ hasParent (C ++ [p]) 1 C.length) : p.2.1 ≤ amin (C ++ [p]) c := by
+  by_contra hc
+  push Not at hc
+  exact horph (hasParent1_snoc_of_amin h hc)
+
+/-- ★★★★★ **直前の列は、行 0 の親でなくても `amin` の上界をくれます**
+（`c` から `|C|−1` までが `le0` で繋がっているとき）。 -/
+theorem amin_snoc_le_of_le0 {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c y : ℕ}
+    (hy : Relation.ReflTransGen (nextrel0 (C ++ [p])) y c) :
+    amin (C ++ [p]) c ≤ entry (C ++ [p]) 1 y := amin_le hy
+
+/-- ★★★★★★★★★ ⟹ **(W62) のまとめ（行 1）**: `srow = 1` の場合、
+**行 1 の親があるかどうかは `amin (C ++ [p]) c < p.2.1` と同値**（`c` ＝ 行 0 の親）。
+⟹ ★ **⟸ は上**、⟹ **⟹ は次**（親 `y` は `c` の祖先か `|C|` 自身）。 -/
+theorem hasParent1_snoc_iff_amin {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c : ℕ}
+    (h : nextrel0 (C ++ [p]) c C.length)
+    (huniq : ∀ y, Relation.ReflTransGen (nextrel0 (C ++ [p])) y C.length →
+      y = C.length ∨ Relation.ReflTransGen (nextrel0 (C ++ [p])) y c) :
+    hasParent (C ++ [p]) 1 C.length ↔ amin (C ++ [p]) c < p.2.1 := by
+  have hTlen : (C ++ [p]).length = C.length + 1 := by simp
+  have hlast1 : entry (C ++ [p]) 1 C.length = p.2.1 := by
+    have := entry_append_right C [p] 1 0
+    simp only [Nat.add_zero] at this
+    rw [this]; rfl
+  constructor
+  · intro hpar
+    rw [hasParent1_iff_amin_lt (by omega), hlast1] at hpar
+    obtain ⟨y, hy, hey⟩ := amin_mem (C ++ [p]) C.length
+    rcases huniq y hy with rfl | hyc
+    · rw [hlast1] at hey; omega
+    · exact lt_of_le_of_lt (amin_le hyc) (by rw [hey]; exact hpar)
+  · exact hasParent1_snoc_of_amin h
+
+
+/-- ★★★★★ **行 0 の祖先の分解**（`nextrel0` の始点の一意性から）:
+`t` の祖先は **`t` 自身か、その親 `c` の祖先**です。 -/
+theorem rtg0_ancestor_split {M : TrioSeq} {c t y : ℕ} (h : nextrel0 M c t)
+    (hy : Relation.ReflTransGen (nextrel0 M) y t) :
+    y = t ∨ Relation.ReflTransGen (nextrel0 M) y c := by
+  rcases Relation.ReflTransGen.cases_tail hy with h1 | ⟨c', hc1, hc2⟩
+  · exact Or.inl h1.symm
+  · exact Or.inr (by rw [← nextrel0_src_unique hc2 h]; exact hc1)
+
+/-- ★★★★★★★★★ ⟹ **(W62) の行 1、仮定なしの形**:
+**行 1 の親がある ⟺ `amin (C ++ [p]) c < p.2.1`**（`c` ＝ 行 0 の親）。 -/
+theorem hasParent1_snoc_iff_amin' {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c : ℕ}
+    (h : nextrel0 (C ++ [p]) c C.length) :
+    hasParent (C ++ [p]) 1 C.length ↔ amin (C ++ [p]) c < p.2.1 :=
+  hasParent1_snoc_iff_amin h (fun _ hy => rtg0_ancestor_split h hy)
+
 end H12H2
 end TRIO
