@@ -4358,7 +4358,10 @@ theorem no_row1_cross_of_le0_witness {A Q : TrioSeq} {d e n j y c : ℕ}
   exact row1_cross_implies_orphan hj hc h (hasParent1_of_le0 hj hanc hlt)
 
 /-- ★★★★★★ ⟹ **塔の中の証人**: 第 `k` ブロック（`k ≥ 1`）の錐の中の列は、
-**1 つ前のブロックの同じ相対位置**が行 1 の証人になります（`0 < e`）。 -/
+**1 つ前のブロックの同じ相対位置**が行 1 の証人になります（`0 < e`）。
+⚠⚠ **適用条件: 両方が錐の中のときだけ**です（仮定 `hcone : le1 Q 0 r` が両側に効きます）。
+⛔ **的が錐の外なら、的は持ち上がらないので「前が低い」ことに意味がありません**
+（R2 の指摘、2026-08-30）。⟹ ★ 私は「前が低い」と「相手が高い」を混同して (W74) を誤りました。 -/
 theorem entry1_prevBlock_lt (Q : TrioSeq) {d e n k r : ℕ}
     (hk : k < n) (hk0 : 0 < k) (hr : r < Q.length) (hcone : le1 Q 0 r) (he : 0 < e) :
     entry (mTower Q d e n) 1 ((k - 1) * Q.length + r)
@@ -5970,6 +5973,42 @@ theorem cross_needs_nonancestor_low (Q : TrioSeq) {d n k i c : ℕ}
   have hmin := h.2.2.2.2.2 (k * Q.length + c % Q.length) ⟨by omega, hle0⟩
   rw [hent _ _ hk hi, hent _ _ hk hr] at hmin
   omega
+
+
+/-- ★★★★★ **左側の錐は、右に何を足しても変わりません**。 -/
+theorem le1_append_left {A B : TrioSeq} {i : ℕ} (hi : i < A.length) :
+    le1 (A ++ B) 0 i ↔ le1 A 0 i := by
+  have h := Wset.le1_take (X := A ++ B) (l := A.length) (a := 0) (b := i)
+    (by rw [List.length_append]; omega) hi
+  rw [List.take_left] at h
+  exact h.symm
+
+/-- ★★★★★ **行 0 版**。 -/
+theorem le0_append_left {A B : TrioSeq} {i : ℕ} (hi : i < A.length) :
+    le0 (A ++ B) 0 i ↔ le0 A 0 i := by
+  have h := Wset.le0_take (X := A ++ B) (l := A.length) (a := 0) (b := i)
+    (by rw [List.length_append]; omega) hi
+  rw [List.take_left] at h
+  exact h.symm
+
+/-- ★★★★★★★★★★ **(W77) 第 1 部**: `oper` の接頭辞部分では、**錐が `X` と一致**します。
+⟹ ★ ⟹ **`Lift1` と `oper` の可換性のうち、接頭辞側は無料**です。 -/
+theorem cone_prefix_stable {X : TrioSeq} {j0 : ℕ} (B : TrioSeq) (hj0 : j0 ≤ X.length) {i : ℕ}
+    (hi : i < j0) : le1 (X.take j0 ++ B) 0 i ↔ le1 X 0 i := by
+  have hlen : (X.take j0).length = j0 := by rw [List.length_take]; omega
+  have h1 : le1 (X.take j0 ++ B) 0 i ↔ le1 (X.take j0) 0 i :=
+    le1_append_left (by rw [hlen]; exact hi)
+  have h2 : le1 (X.take j0) 0 i ↔ le1 X 0 i := Wset.le1_take hj0 hi
+  exact h1.trans h2
+
+/-- ★★★★★ **行 0 版**（`oper` の写しの番人 `le0 M j0 j` にも要ります）。 -/
+theorem cone0_prefix_stable {X : TrioSeq} {j0 : ℕ} (B : TrioSeq) (hj0 : j0 ≤ X.length) {i : ℕ}
+    (hi : i < j0) : le0 (X.take j0 ++ B) 0 i ↔ le0 X 0 i := by
+  have hlen : (X.take j0).length = j0 := by rw [List.length_take]; omega
+  have h1 : le0 (X.take j0 ++ B) 0 i ↔ le0 (X.take j0) 0 i :=
+    le0_append_left (by rw [hlen]; exact hi)
+  have h2 : le0 (X.take j0) 0 i ↔ le0 X 0 i := Wset.le0_take hj0 hi
+  exact h1.trans h2
 
 end H12Export
 end TRIO
