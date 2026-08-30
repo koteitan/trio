@@ -3926,5 +3926,99 @@ theorem exists_k_blocker (Q : TrioSeq) {d e p j : ℕ}
   intro k k' n hk0 hk hk'
   exact blocker_of_large_k Q hk hk' hp hj hinp houtj he hk0
 
+
+/-! ## 50. ★★★★★★★ (W7) R2 の「型 B」を式で解く
+
+R2 の (BREAK): 破れは 2 型に完全に分かれ、**型 B** は同型:
+
+    V = [(x0, a, 0), (x1, 0, 0), (x2, b, 0)]     x0 < x1 < x2、b ≤ a、**行 2 は全部 0**
+
+⟹ ★ 私の表を当てる。まず「ブロッカー ⟹ 錐の外」を出す。 -/
+
+/-- `le1` で真に上がると行 1 は狭義に増える。 -/
+theorem entry1_lt_of_le1_ne {M : TrioSeq} {a b : ℕ}
+    (h : le1 M a b) (hne : a ≠ b) : entry M 1 a < entry M 1 b := by
+  obtain ⟨-, -, hrt⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, hc1, hc2⟩
+  · exact absurd h1.symm hne
+  · refine Nat.lt_of_le_of_lt ?_ hc2.2.2.2.1
+    clear hc2
+    induction hc1 with
+    | refl => exact le_refl _
+    | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.2.1)
+
+/-- ★★★ **ブロッカーは必ず錐の外**（`not_le1_zero_iff` の易しいほうの向き）。 -/
+theorem blocker_not_le1 {M : TrioSeq} {j : ℕ} (hj : j ≠ 0)
+    (hb : entry M 1 j ≤ entry M 1 0) : ¬ le1 M 0 j := by
+  intro h
+  exact absurd (entry1_lt_of_le1_ne h (fun hc => hj hc.symm)) (by omega)
+
+/-- ★★★★★ **型 B の非根の列は 2 本とも錐の外**。⟹ `Lift1` は**根しか持ち上げない**。 -/
+theorem typeB_out_of_cone {V : TrioSeq} (_hlen : V.length = 3)
+    (h1 : entry V 1 1 ≤ entry V 1 0) (h2 : entry V 1 2 ≤ entry V 1 0) :
+    ¬ le1 V 0 1 ∧ ¬ le1 V 0 2 :=
+  ⟨blocker_not_le1 (by omega) h1, blocker_not_le1 (by omega) h2⟩
+
+open Classical in
+/-- ★★★★★★★ **型 B の塔の行 1 は完全に書ける**: 根だけが `+e*k`、他は据え置き。 -/
+theorem entry1_mTower_typeB {V : TrioSeq} (hlen : V.length = 3)
+    (hb1 : entry V 1 1 ≤ entry V 1 0) (hb2 : entry V 1 2 ≤ entry V 1 0)
+    {d e m k : ℕ} (hk : k < m) :
+    entry (mTower V d e m) 1 (k * V.length) = entry V 1 0 + e * k ∧
+      entry (mTower V d e m) 1 (k * V.length + 1) = entry V 1 1 ∧
+      entry (mTower V d e m) 1 (k * V.length + 2) = entry V 1 2 := by
+  obtain ⟨ho1, ho2⟩ := typeB_out_of_cone hlen hb1 hb2
+  refine ⟨?_, ?_, ?_⟩
+  · have h := entry1_mTower_block_formula V (d := d) (e := e) (n := m) (k := k) (i := 0)
+      hk (by omega)
+    rw [Nat.add_zero] at h
+    rw [h, if_pos (le1_self (by omega))]
+  · rw [entry1_mTower_block_formula V hk (by omega), if_neg ho1]
+    omega
+  · rw [entry1_mTower_block_formula V hk (by omega), if_neg ho2]
+    omega
+
+
+/-! ### 50.1 ★★★★★★★ **行 2 ≡ 0 なら接頭辞つきでも無料**
+
+`mTower_mem_of_zeroRow2`（`L105Cap:5781`）の中身を読んだら、機構は 2 行だった:
+
+    行 2 ≡ 0 ⟹ `Wself` に入る（`zeroRow2_mem_Wself`、`Wtower2:3011`）
+    ＋ 根の `lev ≤ u`（`mem_Wself_iff`、`Wtower2:2990`）
+
+⟹ ★ **どちらも接頭辞を付けても壊れない** ⟹ **接頭辞つきの版がそのまま出る**。 -/
+
+/-- ★★★★★★★ **`A` も塔も行 2 ≡ 0 なら、連結は仮定ゼロで `W u`**。 -/
+theorem prefix_mem_of_zeroRow2 {u : ℕ} {A T : TrioSeq}
+    (hzA : ∀ p ∈ A, p.2.2 = 0) (hzT : ∀ p ∈ T, p.2.2 = 0)
+    (hA : A ∈ W u) (hAne : A ≠ []) : A ++ T ∈ W u := by
+  have hA1 : 0 < A.length := List.length_pos_iff.mpr hAne
+  rw [mem_Wself_iff]
+  refine ⟨zeroRow2_mem_Wself ?_, ?_⟩
+  · intro p hp
+    rcases List.mem_append.mp hp with h | h
+    · exact hzA p h
+    · exact hzT p h
+  · have hlev : lev (A ++ T) 0 = lev A 0 := by
+      unfold lev
+      rw [entry_append_left A T hA1, entry_append_left A T hA1]
+    rw [hlev]
+    exact lev_root_le_of_mem_W hA hAne
+
+/-- ★★★★★★★ **型 B（行 2 ≡ 0）の塔は、接頭辞つきでも無料**。 -/
+theorem prefix_mTower_mem_of_zeroRow2 {u : ℕ} {A V : TrioSeq}
+    (hzA : ∀ p ∈ A, p.2.2 = 0) (hzV : ∀ p ∈ V, p.2.2 = 0)
+    (hA : A ∈ W u) (hAne : A ≠ []) (d e m : ℕ) :
+    A ++ mTower V d e m ∈ W u :=
+  prefix_mem_of_zeroRow2 hzA (zeroRow2_mTower hzV d e m) hA hAne
+
+
+/-- 行 2 が 0 の列の `srow` は 1 以下。⟹ ★ **`wd1 = 0`**（＝ 次の `e` が 0）。 -/
+theorem srow_le_one_of_row2_zero {M : TrioSeq} {j : ℕ} (h : entry M 2 j = 0) :
+    srow M j ≤ 1 := by
+  unfold srow
+  rw [if_neg (by omega)]
+  split <;> omega
+
 end H12H2
 end TRIO
