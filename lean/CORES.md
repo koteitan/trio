@@ -11068,3 +11068,18 @@ H12 の `row2_cross_implies_orphan` ＋ `hasParent0_of_hr0` で言えるはず�
 ---
 
 ## ✅ **build 緑 3 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **315 本**
+
+---
+
+## ★★★★★★★★ **H12 (W53 続き, 2026-08-30): `PrefixCopies` の行 0 は二分法で、中間がありません**
+
+    ★★★★★★★★ `nextrel0_src_ge_block_of_deep`（**(あ)**、`d` は何でもよい）
+      **`entry Q 0 0 < entry Q 0 r` ⟹ 親は `|A| + k|Q|` 以降**（＝ **同じ写しの中**）
+      ⟹ ★ 機構: **ブロック根が「同じ写しの中の、より浅い列」** ⟹ **最小性がそこで止まる**
+    ★★★★★★★★ `nextrel0_src_lt_prefix_of_root_height`（**(い)**、(W53)）
+      **`entry Q 0 r = entry Q 0 0` ⟹ 親は必ず `A` の中**
+    ★★★★★★★ `prefixCopies_row0_dichotomy` … ⟹ **二分法（中間なし）**
+    ★★★★★ `prefixCopies_residual_only_blockRoot` … ⟹ **`hr0 Q` なら残差はブロック根だけ**
+
+**⟹ ★★★★★ ⟹ **`|A|` の帰納（team-lead の (P3)）で、(あ) の側が「同じ写しの中」に閉じます**。**
+**⟹ ⟹ ★ ⟹ **辞書式 `(|A|, r)` の第 2 成分が動く場面が、型で切り出せました**。**

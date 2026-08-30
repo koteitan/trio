@@ -6418,5 +6418,50 @@ theorem prefix_mTower_of_zeroRow2 {u : ℕ} {A Q : TrioSeq} {d e n : ℕ}
     (hA : A ∈ W u) (hAne : A ≠ []) : A ++ mTower Q d e n ∈ W u :=
   prefix_mem_of_zeroRow2 hzA (zeroRow2_mTower hzQ) hA hAne
 
+
+/-! ## 95. ★★★★★★★★ (W53 続き): **(あ) の側 —— 根より深い列の親は、同じ写しの中**
+
+(W53) が **(い)（`entry Q 0 r = entry Q 0 0`）⟹ 親は必ず `A`** を言いました。
+⟹ ★ その裏側 **(あ)（`entry Q 0 0 < entry Q 0 r`）⟹ 親は同じ写しの中**を書きます。
+⟹ ⟹ ★★★★★ **ブロック根が「同じ写しの中の、より浅い列」**だからです（持ち上げが相殺）。 -/
+
+/-- ★★★★★★★★ **(あ)**: 的の行 0 が `Q` の根より深いなら、**行 0 の親は同じ写しの中**。
+⟹ ★ **`A` にも前の写しにも行きません**。⟹ ⟹ ★★ **`d` は何でもよい**（持ち上げが相殺）。 -/
+theorem nextrel0_src_ge_block_of_deep {A Q : TrioSeq} {d e n k r c : ℕ}
+    (hk : k < n) (hr : r < Q.length) (hdeep : entry Q 0 0 < entry Q 0 r)
+    (h : nextrel0 (A ++ mTower Q d e n) c (A.length + (k * Q.length + r))) :
+    A.length + k * Q.length ≤ c := by
+  have hQpos : 0 < Q.length := by omega
+  have hr0 : 0 < r := by rcases Nat.eq_zero_or_pos r with rfl | hp; · omega
+                         · exact hp
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2 (A.length + (k * Q.length + 0)) ⟨by omega, by omega⟩
+  rw [entry_append_right, entry_append_right,
+    entry0_mTower_block' Q hk hQpos, entry0_mTower_block' Q hk hr] at hmin
+  omega
+
+/-- ★★★★★★★ ⟹ **`PrefixCopiesOpen` の二分法（行 0）**:
+的の行 0 が `Q` の根と同じなら **必ず `A`**、深いなら **必ず同じ写しの中**。
+⟹ ★★★ **中間はありません**（`Q` の全列が根以上、という前提の下で）。 -/
+theorem prefixCopies_row0_dichotomy {A Q : TrioSeq} {e n k r c : ℕ}
+    (hQmin : ∀ i, i < Q.length → entry Q 0 0 ≤ entry Q 0 i)
+    (hk : k < n) (hr : r < Q.length)
+    (h : nextrel0 (A ++ mTower Q 0 e n) c (A.length + (k * Q.length + r))) :
+    (entry Q 0 r = entry Q 0 0 ∧ c < A.length)
+      ∨ (entry Q 0 0 < entry Q 0 r ∧ A.length + k * Q.length ≤ c) := by
+  rcases Nat.lt_or_ge (entry Q 0 0) (entry Q 0 r) with hd | hd
+  · exact Or.inr ⟨hd, nextrel0_src_ge_block_of_deep hk hr hd h⟩
+  · have heq : entry Q 0 r = entry Q 0 0 := le_antisymm hd (hQmin r hr)
+    exact Or.inl ⟨heq, nextrel0_src_lt_prefix_of_root_height hQmin hk hr heq h⟩
+
+/-- ★★★★★ ⟹ **`hr0 Q` の下では、残差はブロック根だけ**（`r = 0`）。 -/
+theorem prefixCopies_residual_only_blockRoot {A Q : TrioSeq} {e n k r c : ℕ}
+    (hr0Q : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hk : k < n) (hr : r < Q.length) (hr0 : 0 < r)
+    (h : nextrel0 (A ++ mTower Q 0 e n) c (A.length + (k * Q.length + r))) :
+    A.length + k * Q.length ≤ c :=
+  nextrel0_src_ge_block_of_deep hk hr (hr0Q r hr0 hr) h
+
 end H12H2
 end TRIO
