@@ -10238,5 +10238,28 @@ theorem entry0_lt_parent_of_srow_ne_zero {T : TrioSeq} {t : ℕ}
     entry T 0 (parent T (srow T t) t) < entry T 0 t :=
   entry0_lt_of_nextR_srow_ne_zero hs (parent_nextR hp)
 
+/-! ### §295 `srow = 2` は `d1 > 0` を強制する —— 「`d1 = 0` だから行 1 は全写しで同じ」は `srow = 1` のときだけ
+
+§294 の行 1 版。`oper` の `d1` は `if 1 < i1 then entry M 1 j1 - entry M 1 j0 else 0` なので、
+**`srow = 2` なら `d1 = entry T 1 t - entry T 1 c`**。そして `nextrel2` は `le1 c t` を含むので
+**`d1 > 0`**。⟹ **`srow = 2` の塔では、行 1 が写しごとに上がります**。
+
+⚠ ですから「`d1 = 0` なので行 1 は全写しで同じ ⟹ `srow >= 1` なら常に残差」は
+**`srow = 1`（`d1 = 0`）のときだけ**正しい。実測（分母 4,424,454、1 段目が `srow != 0`、直前が親）:
+
+    1 段目 srow=1（d1=0）／後継 srow=0 ⟹ 親は塔     1,464,750
+    1 段目 srow=1（d1=0）／後継 srow=1 ⟹ 親は接頭辞   279,384  ✅
+    1 段目 srow=1（d1=0）／後継 srow=2 ⟹ 親は接頭辞   239,070  ✅
+    1 段目 srow=2（d1>0）／後継 srow=1 ⟹ **親は塔**  2,441,250  ⛔
+
+⟹ `d1 = 0` の 3 行は「`srow >= 1` なら残差」を支持するが、
+   **`d1 > 0` の 1 行が反例**（例外 0 ではなく 2,441,250 件）。 -/
+
+/-- ★★★ **`srow = 2` の親は、行 1 でも真に浅い** ⟹ **`oper` の `d1` は正**。 -/
+theorem entry1_lt_of_nextR_two {T : TrioSeq} {c t : ℕ}
+    (h : nextR T 2 c t) : entry T 1 c < entry T 1 t := by
+  rw [nextR, if_neg (by decide), if_neg (by decide)] at h
+  exact H12Export.entry1_lt_of_le1_ne h.2.2.2.2.1 (by have := h.2.2.1; omega)
+
 end L106
 end TRIO
