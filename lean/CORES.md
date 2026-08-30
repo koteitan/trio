@@ -1620,3 +1620,45 @@ R2 が測ったのは**窓 `V`** で、消費側の `Q` とは**母集団が違�
 
 **⚠ H12 が「重複を 5 件出したので、今回は**着手前に可否を聞く**」と判断した。**
 **⟹ ★ 5 件の重複が、そのまま運用の改善になった形。**
+
+---
+
+## ★★★★★★ **`Column.lean` に「接頭辞を剥がす」族が 13 本そろっている**（2026-08-30 に発見）
+
+**H12 が 2 回続けて栓を抜いた道具が、実は**族**だった:**
+
+    `entry_append_right`（`Column.lean:130`） ／ `nextrel0_append_right`（`:135`）
+    `le0_append_right_of`（`:160`） ／ `le0_append_right`（`:181`）
+    `nextrel1_append_right`（`:240`） ／ `le1_append_right`（`:290`）
+    `nextrel2_append_right`（`:303`） ／ `nextR_append_right`（`:332`）
+    `srow_append_right`（`:342`）
+    ★ **`hasParent_append_right`（`:363`）** … 前提 **`entry T 0 0 = 0`**
+    ★ **`parent_append_right`（`:384`）** … 同上
+    `take_append_right`（`:393`） ／ `Pred_append_right`（`:422`）
+    ★ **`oper_append_right`（`:437`）** … 前提 `2 <= T.length`
+
+> **★★ ⟹ 「接頭辞つきにする」作業は**機械的**。前提は多くが **`entry T 0 0 = 0`** だけ。**
+> **⟹ 消費側では `entry Q 0 0 = 0` なので**無料**（`Lift1` が行 0 を素通しし、先頭が `(0,v,z)`）。**
+
+**⟹ ★ H12 が 2 回とも「**型の列で索引を引く**」で見つけた:**
+
+    `grep 'hasParent (A ++' lean/LEMMA-INDEX.tsv`   ⟹ §271 の窓補題（栓 1 本目）
+    ⟹ `oper_append_right`                          ⟹ `prefix_snocStep_oper_tower`（栓 2 本目）
+
+**⟹ ⚠ この族は最初から索引にあった。⟹ 今日の「引かずに書いた」4 件と同じ構図の**逆**。**
+
+---
+
+## ⟹ 状態（2026-08-30）
+
+    **`lean/L106.lean`** … **791 行**（L3 が 1906 行から**削った**）、`EXIT=0`、`sorry` 0
+    **`lean/H12Export.lean`** … 769 行、31 本、`import L105Cap` のみ、緑
+    **`lean/L105Cap.lean`** … 14,000 行、`EXIT=0`、`sorry` 0
+    **索引** … **3237 件**
+
+| 項目 | 状態 |
+|---|---|
+| R2 の 6 行の機構 | ✅ **全部緑** |
+| **`j >= 1` で `\|V\|` が減る（接頭辞つき）** | ✅ **`prefix_snocStep_oper_tower`**（H12） |
+| **測度 `(\|V\|, rankDE)` の整礎帰納** | ⛔ **残り 1 つ**（`Prod.Lex`＝H12 ／ 合成＝L3） |
+| (z3) 残差の `V` は帰納の中で到達可能か | ⛔ R2 が測定中 |
