@@ -4431,6 +4431,61 @@ def ResidHeadT : Prop :=
   ∀ (rest : TrioSeq) (st' : St) (m d : ℕ), rest ≠ [] → (∀ c ∈ rest, m + 1 ≤ c.1) →
     m ≤ st'.dmap.length → Dm10 (d + 1) m st' → (rest.headI).1 ≤ st'.dmap.length
 
+/-! ### ⚠⚠ 課題 H-B1: `ResidHeadT` は **off-by-one を直しても偽**（H12、2026-08-30）
+
+上の設計（課題 L46 §7）は「壊れているのは `h ≤ |dmap|` の off-by-one だけで、
+`h ≤ |dmap| + 1` なら 2386/2386 = 100%」と読んでいた。**それは実測の話**であって、
+Lean の `def` はそれより広い。`DmapInT` / `ResidSideT` とまったく同じ病気で、
+**`st'` を無制限に全称化している**ので、`rest` と `st'` を結ぶものが何もない。
+
+    st'.dmap = []、m = 0、rest = [(5,0,0)]
+    ⟹ `Dm10 (d+1) 0 st'` は `j < 0` なので **空虚に真**
+    ⟹ 結論は `5 ≤ 0`（off-by-one を直しても `5 ≤ 1`）  ⛔
+
+`dmap ≠ []` を足しても閉じない（`st'.dmap = [d+1]` で `5 ≤ 2`）。
+⟹ **off-by-one の修正は必要だが、十分ではない。** 下の 2 つの `example` がその証明。
+
+⚠ **`hhdT : ResidHeadT` を仮定する 4 本はすべて空虚**である:
+`dm10_aux` (4435) / `dm10_holds` (4473) / `dm10_at_U` (4572) / `dmST_step` (4816)。
+`ImgBlockT3_of_resid` が `DmapInT` / `ResidSideT` で空虚なのと同じ状態で、
+**節 10（`Dm10`）の側も、いまは何も出していない**。
+
+**直し方**は `DmapInR` / `ResidSideR` と同じ「呼び出し点の文脈つき」にすること。
+ただし `DmapInR` はこの結論（`(rest2.headI).1 ≤ |stU.dmap|`）を**仮定に持っている**ので、
+制限版の中身は「`st'` は直前のブロック `U` を処理した出力である」という形でしか書けない:
+
+    ResidHeadR : U ≠ [] → rest ≠ [] → steps1 (U ++ rest) → …
+      (rest.headI).1 ≤ (conv3 U d L F ps pw f1 f2 st nx off).2.dmap.length + 1
+
+`steps1 (U ++ rest)` が `(rest.headI).1 ≤ (U.getLastD _).1 + 1` をくれるので、
+残るのは **`dmap` の長さの下界**（`(U.getLastD _).1 ≤ |res.dmap| + ?`）1 本である。
+実測（`residhead.py` 2386 件）の `|dmap| ∈ {h-1, h, h+1}` はその形の証拠になっている。 -/
+
+/-- off-by-one を直した形（課題 L46 §7 が「正しい形」と呼んだもの）。 -/
+def ResidHeadT' : Prop :=
+  ∀ (rest : TrioSeq) (st' : St) (m d : ℕ), rest ≠ [] → (∀ c ∈ rest, m + 1 ≤ c.1) →
+    m ≤ st'.dmap.length → Dm10 (d + 1) m st' → (rest.headI).1 ≤ st'.dmap.length + 1
+
+example : ¬ ResidHeadT := by
+  intro h
+  have h2 := h [(5, 0, 0)] ⟨[], 2, [], [], 0, []⟩ 0 0 (by simp) (by decide) (by simp)
+    (by intro j _ hj; simp at hj)
+  simp at h2
+
+/-- **off-by-one を直しても偽**。しかも `dmap ≠ []` の枝で破れるので、
+「空の `dmap` を除けばよい」でも閉じない。 -/
+example : ¬ ResidHeadT' := by
+  intro h
+  have h2 := h [(5, 0, 0)] ⟨[], 2, [1], [], 0, []⟩ 0 0 (by simp) (by decide) (by simp)
+    (by
+      intro j _ hj
+      have hj1 : j < 1 := by simpa using hj
+      have hj0 : j = 0 := by omega
+      subst hj0
+      simp)
+  simp at h2
+
+
 /-- **★ `Dm10`（節 10）は `ResidHeadT` だけから出る**（課題 L41）。 -/
 theorem dm10_aux (hhdT : ResidHeadT) :
     ∀ (n : ℕ) (M : TrioSeq), M.length ≤ n → steps1 M → ∀ (m d : ℕ),

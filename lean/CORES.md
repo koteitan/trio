@@ -17812,3 +17812,55 @@ def nextrel1 (M : TrioSeq) (j0 j1 : ℕ) : Prop :=
 
 > ★★★★★★★★★★★★★★ **朝: 28 核、測度候補 19 個全滅、「何を証明すればよいかも分からない」。
 > ⟹ 夜: 証明の骨格が全部 Lean の中。穴は 2 つ、うち 1 つは機構まで見えている。**
+
+---
+
+# ⛔⛔ **【H12 / 課題 H-B1】`ResidHeadT` は偽 —— `Dbms3.lean` の節 10 の側も空虚だった**（2026-08-30）
+
+## ★ **まず (a) は既にありました（31 回目）**
+
+    ✅ **`ImgLenT3_b2d3`（`Dbms3.lean:2541`）は証明ずみ**。`Dbms3.lean` の `sorry` は **0 個**。
+    ⟹ `SESSION-2026-08-28.md` も 4 か所で「**証明ずみ**」と書いている。
+
+## ⛔ **(b) `ImgBlockT3` に至る道は、3 本とも偽の仮定に載っていた**
+
+    ⛔ `DmapInT`   … 偽（既知、課題 L44、`Dbms3.lean` に反例あり）
+    ⛔ `ResidSideT` … 偽（既知、課題 L44、同上）
+    ⛔ **`ResidHeadT` … 偽（新発見、H12、2026-08-30）**
+
+**`ResidHeadT` を仮定に取る 4 本はすべて空虚**:
+`dm10_aux` / `dm10_holds` / `dm10_at_U` / `dmST_step`。
+⟹ **`ImgBlockT3_of_resid` が空虚なのと同じ状態が、節 10（`Dm10`）の側にもあった。**
+
+## ★★ **「off-by-one を直せばよい」では閉じない —— そこが今日の中身**
+
+課題 L46 §7 は「壊れているのは `h ≤ |dmap|` の off-by-one だけ、`h ≤ |dmap| + 1` なら
+実測 2386/2386 = 100%」と読んでいた。**それは実測の話**で、Lean の `def` はそれより広い。
+
+    st'.dmap = []、m = 0、rest = [(5,0,0)]
+      ⟹ `Dm10 (d+1) 0 st'` は `j < 0` なので **空虚に真** ⟹ 結論は `5 ≤ 0`     ⛔
+    off-by-one を直した `ResidHeadT'`（`h ≤ |dmap| + 1`）でも `5 ≤ 1`            ⛔
+    `dmap ≠ []` を足しても閉じない（`st'.dmap = [1]` で `5 ≤ 2`）                 ⛔
+
+⟹ ★ **`DmapInT` / `ResidSideT` と同じ病気**（`st'` を無制限に全称化して、
+`rest` と `st'` を結ぶものが何もない）。**off-by-one の修正は必要だが十分ではない。**
+
+**Lean（`Dbms3.lean:4470-4487`、exit 0）**:
+
+    example : ¬ ResidHeadT   … 緑
+    example : ¬ ResidHeadT'  … 緑（off-by-one を直した形）
+
+## ★★★ **直し方（`DmapInR` / `ResidSideR` と同じ形にする）**
+
+⚠ ただし `DmapInR` は **この結論を仮定に持っている**（`rest2 ≠ [] → (rest2.headI).1 ≤ |stU.dmap|`）。
+⟹ **制限版は「`st'` は直前のブロック `U` を処理した出力である」としか書けない**:
+
+    ResidHeadR : U ≠ [] → rest ≠ [] → steps1 (U ++ rest) → …
+      (rest.headI).1 ≤ (conv3 U d L F ps pw f1 f2 st nx off).2.dmap.length + 1
+
+    ⟹ ★ `steps1 (U ++ rest)` が `(rest.headI).1 ≤ (U.getLastD _).1 + 1` をくれる
+    ⟹ ★★ **残るのは `dmap` の長さの下界 1 本**（`|st1.dmap| = min p.1 |st.dmap| + 1` から）
+    ⟹ ★★★ 実測 `residhead.py` の `|dmap| ∈ {h-1, h, h+1}`（2386 件）がその形の証拠
+
+> ★★★ **規則 12: 「実測 100%」は Lean の `def` の真偽ではない。
+> ⟹ `def` が実測より広く全称化していないか、反例を 1 つ書いて確かめる。**
