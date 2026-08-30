@@ -14000,5 +14000,149 @@ theorem e_pos_of_nextrel1_blockRoots {Q : TrioSeq} {d e n k m : ℕ}
    §10 の「根が全列の行 0 祖先」と同じ内容。**⟹ 開いているのは `j0 ≥ 1`。**
 -/
 
+
+/-! ## 77.5 ★★★★★★ **`based` 版**（`entry Q 0 0 = 0` に制限）—— L3 追記
+
+`MTowerClosedS` の消費者は `wstar2s_closed_of_mTowerClosedS` 経由の 2 本だけで、
+どちらも `Q = Lift1 ((0,v,z) :: R.dropLast) t` を渡す（両者の `hQmem`）。
+`Lift1` は行 0 を動かさないので **`entry Q 0 0 = 0`**。
+⟹ ★ **`based` に制限しても `Final` まで届く**。
+⟹ ⟹ ★★ そして **「根の行 0 が正の `Q`」＝ `prefixCopies_split` が開けたままの枝**が **本線から消える**。
+
+⚠ 既存の定理は 1 つも変更していない（追加のみ）。 -/
+
+def ShiftTowerClosedBased : Prop :=
+  ∀ (u e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    entry Q 0 0 = 0 → shTower Q e n ∈ W u
+
+def MTowerClosedBased : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    entry Q 0 0 = 0 → mTower Q d e n ∈ W u
+
+theorem shiftTowerClosedBased_of_mTowerClosedBased (h : MTowerClosedBased) :
+    ShiftTowerClosedBased := by
+  intro u e n Q hQ hs hb
+  have hres := h u e 0 n Q hQ hs hb
+  have heq : mTower Q e 0 n = shTower Q e n := by
+    unfold mTower shTower
+    refine List.flatMap_congr ?_
+    intro k _
+    rw [Nat.zero_mul, Lift1_zero, Nat.mul_comm]
+  rwa [heq] at hres
+
+open Classical in
+theorem liftTower1_of_shiftTowerClosedBased (htow : ShiftTowerClosedBased) : LiftTower1 := by
+  rintro v z u0 a t R hR hRne hz1 hva - hpre ⟨m, hd⟩ hi1 hpM
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hne0 : R.length ≠ 0 := by omega
+  have hMlen : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length = R.length + 1 := by
+    rw [Lift1_length, List.length_cons]
+  have hMl1 : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1 = R.length := by
+    rw [hMlen]; omega
+  have hsrL : srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 1 := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, hi1]
+  have hpL : hasParent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, hasParent_Lift1]
+    exact hpM
+  have hbpL : parent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, parent_Lift1]
+    exact parent_cons_eq_zero hRne hd hpM
+  have hQmem : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t ∈ W a := by
+    have hk : R.length - 1 < R.length := by omega
+    have hres := hpre (R.length - 1) hk (argOK_take' hR (R.length - 1)) v z a t hz1 hva
+    rwa [← List.dropLast_eq_take] at hres
+  have hQshallow : ∀ j, 1 ≤ j →
+      j < (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t).length →
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 0
+        < entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 j := by
+    intro j hj1 hjl
+    rw [Lift1_length, List.length_cons, List.length_dropLast] at hjl
+    rw [entry0_Lift1, entry0_Lift1,
+      show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 from by simp [entry]]
+    obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+    have hj'lt : j' < R.length - 1 := by omega
+    have hj'R : j' < R.length := by omega
+    rw [entry_cons_succ, List.dropLast_eq_take, entry_take hj'lt]
+    exact hR _ (entry_pair_mem (B := R) hj'R)
+  refine mem_of_oper_mem (fun n _ => ?_)
+  rw [oper_of_srow1_par0 (by rw [hMlen]; omega) hpL hbpL hsrL n, Lift1_dropLast,
+    dropLast_cons hRne]
+  have hQbased : entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 0 = 0 := by
+    rw [entry0_Lift1]
+    simp [entry]
+  exact htow a _ n _ hQmem hQshallow hQbased
+
+open Classical in
+theorem liftTowerExp2_of_mTowerClosedBased (htow : MTowerClosedBased) : LiftTowerExp2 := by
+  rintro v z a t R hR hRne hz1 hva - hpre ⟨m, hd⟩ hi2 hpM
+  have hRlen : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hne0 : R.length ≠ 0 := by omega
+  have hMlen : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length = R.length + 1 := by
+    rw [Lift1_length, List.length_cons]
+  have hMl1 : (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1 = R.length := by
+    rw [hMlen]; omega
+  have hpL : hasParent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, hasParent_Lift1]
+    exact hpM
+  have hbpL : parent (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+      (srow (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t)
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1))
+      ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 := by
+    rw [hMl1, Wset.srow_Lift1 hne0, srow_cons_last hRne, parent_Lift1]
+    exact parent_cons_eq_zero hRne hd hpM
+  have hzz : ¬ (entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 ∧
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 1
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0 ∧
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 2
+        ((Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length - 1) = 0) := by
+    rintro ⟨-, -, h⟩
+    rw [hMl1, entry2_Lift1, entry_cons_last hRne] at h
+    have := L53.srow_two_row2_pos hi2
+    omega
+  have hQmem : Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t ∈ W a := by
+    have hk : R.length - 1 < R.length := by omega
+    have hres := hpre (R.length - 1) hk (argOK_take' hR (R.length - 1)) v z a t hz1 hva
+    rwa [← List.dropLast_eq_take] at hres
+  have hQshallow : ∀ j, 1 ≤ j →
+      j < (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t).length →
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 0
+        < entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 j := by
+    intro j hj1 hjl
+    rw [Lift1_length, List.length_cons, List.length_dropLast] at hjl
+    rw [entry0_Lift1, entry0_Lift1,
+      show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 0 0 = 0 from by simp [entry]]
+    obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+    have hj'lt : j' < R.length - 1 := by omega
+    have hj'R : j' < R.length := by omega
+    rw [entry_cons_succ, List.dropLast_eq_take, entry_take hj'lt]
+    exact hR _ (entry_pair_mem (B := R) hj'R)
+  refine mem_of_oper_mem (fun n _ => ?_)
+  rw [oper_eq_mTower n (by rw [hMl1]; omega) hzz hpL hbpL, Lift1_dropLast,
+    dropLast_cons hRne]
+  have hQbased : entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 0 0 = 0 := by
+    rw [entry0_Lift1]
+    simp [entry]
+  exact htow a _ _ n _ hQmem hQshallow hQbased
+
+/-- ★★★★★★ **`based` 版だけで `Wstar2s` が閉じる**（`GraftAll` 不要）。 -/
+theorem wstar2s_closed_of_mTowerClosedBased (htow : MTowerClosedBased) :
+    ∀ (u0 : ℕ) (R : TrioSeq), Aop W u0 Wstar2s R → R ∈ Wstar2s :=
+  Wstar2s_closed liftInner_holds
+    (liftTower1_of_shiftTowerClosedBased (shiftTowerClosedBased_of_mTowerClosedBased htow))
+    (liftTowerExp2_of_mTowerClosedBased htow)
+
 end L105
 end TRIO
