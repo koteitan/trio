@@ -9888,3 +9888,45 @@ Q = [(2,1,0), (3,1,0)]、d = 1、e = 0、n = 1、**j = 1**、A = [(0,0,0)]
 **★★ そして **陽性対照は「器具」だけでなく「母集団」にも**要る。
 ⟹ ★★★ **既知の反例を母集団に直接入れて検出されるか見る**のが最速。
 ✅ **固定運用に追加した。**（反転した 4 回: (WIN-LEN) ／ (MEAS3) の `j≥1` ／ (MEAS-A) の `j≥1` ／ (W15)）**
+
+---
+
+## ★★★★★★★ **H12 (W44/W45/W46, 2026-08-30)**
+
+### ★★★★★★★ **(W46): `j = 0` の形 ＝ 1 段高い塔の take —— §7 に既にありました**
+
+    ★★★ `mTower_append_take`（§7、**ずっと前から export 済み**）
+      `mTower Q d e n ++ (Lift1 (shiftr01 (d*n) 0 Q) (e*n)).take (j+1)
+         = (mTower Q d e (n+1)).take (n*|Q| + (j+1))`
+    ★★★★★★★ **接頭辞つき** `prefix_mTower_snoc_eq_take`
+      `A ++ mTower Q d e n ++ (…).take (j+1) = (A ++ mTower Q d e (n+1)).take (|A| + (n*|Q| + (j+1)))`
+    ★★★★★★★ ⟹ `prefix_mTower_snoc_mem_W` … **`W_take` で無料**
+      `A ++ mTower Q d e (n+1) ∈ W u ⟹ A ++ mTower Q d e n ++ (…).take (j+1) ∈ W u`
+
+⟹ ⚠ **`j = 0` に限りません。任意の `j` で成り立ちます。**
+⟹ ★ **教訓: 「新しく要る」と言われたものが、既に自分の書庫にあった**（今日 13 回目の索引ヒット）。
+
+### ★★★★★★ **(W45): 越境は「的が `Q` の中で孤児」のときだけ**
+
+    ★★★ `prefixTake_shallow` ……… ブロック根は `hr0` でその先より浅い
+    ★★★★★ `prefixTake_le0_root` … ⟹ **ブロック根は同ブロック全列の `le0` 祖先**
+    ★★★★★★ `row1_cross_implies_le_blockRoot`
+      越境 ⟹ `entry Q 1 j + (錐なら e*n) ≤ entry Q 1 0 + e*n`
+      ⚠ **ブロック根も `e*n` だけ持ち上がります**（`le1 Q 0 0` は反射で真）—— 私は最初これを落としました
+    ★★★★★ `row1_cross_incone_le_root` … 的が錐の中 ⟹ **`entry Q 1 j ≤ entry Q 1 0`**（`n`・`e` 非依存）
+    ★★★★★★★ `row1_cross_implies_orphan` / `row2_cross_implies_orphan`
+      **越境 ⟹ `¬ hasParent Q i j`**（`hr0` すら不要）
+
+⟹ ★★★★★ **`window_lt_of_row{1,2}_parent` の対偶です。⟹ 穴が「`Q` の中の孤児」1 点に確定しました。**
+
+### ★★★★★★★ **(W44): `rankDE (wd0) (wd1) = srow(末尾)` —— `≤` ではなく `=`**
+
+    `srow = 0` ⟹ `wd0 = 0`, `wd1 = 0` ⟹ **`rankDE = 0`**
+    `srow = 1` ⟹ `wd0 > 0`（親は `le0` 祖先）, `wd1 = 0` ⟹ **`rankDE = 1`**
+    `srow = 2` ⟹ `wd0 > 0`, `wd1 > 0`（親は `le1` 祖先）⟹ **`rankDE = 2`**
+
+    ★★★★★★★ `rankDE_eq_srow` … `wd0`/`wd1` を展開した形（L3 は `unfold wd0 wd1` で当たります）
+    ★★★★★ `rankDE_lt_of_srow_lt` … ⟹ **`srow` が下がる段では測度が真に減る**
+    ★★★ `srow_le_two` / `entry1_parent_lt_of_srow2`（新）
+
+⟹ ★★★ **team-lead の読み（`srow=1 ⟹ rankDE=1`、`srow=2 ⟹ rankDE≤2`）は正しく、`srow=2` は `=2`** でした。

@@ -5878,5 +5878,187 @@ theorem window_lt_of_row2_parent' {A Q : TrioSeq} {d e n j c : ℕ}
   obtain ⟨y, hy, -⟩ := hpar
   exact window_lt_of_row2_parent hj (by simpa [nextR] using hy) h
 
+
+/-! ## 84. ★★★★★★★ (W46): **`j = 0` の形 ＝ 1 段高い塔の接頭辞** —— 既に §7 にありました
+
+`mTower_append_take`（§7、`H12Export` に export 済み）の `j = 0` の場合そのものです。
+⟹ ★ 接頭辞 `A` つきの形も `take_append_add` で出ます。 -/
+
+/-- ★★★★★★★ **(W46)**: `snoc` の形（`j = 0`）は **1 段高い塔の take**。 -/
+theorem mTower_snoc_zero_eq_take (Q : TrioSeq) (d e n : ℕ) :
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take 1
+      = (mTower Q d e (n + 1)).take (n * Q.length + 1) :=
+  mTower_append_take Q d e n 0
+
+/-- ★★★★★★★ **接頭辞つきの (W46)**: `A ++ (1 段高い塔)` の take そのもの。
+⟹ ★ ⟹ **`Wset.W_take` がそのまま効きます**（`j = 0` の枝が無料）。 -/
+theorem prefix_mTower_snoc_eq_take (A Q : TrioSeq) (d e n j : ℕ) :
+    A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)
+      = (A ++ mTower Q d e (n + 1)).take (A.length + (n * Q.length + (j + 1))) := by
+  rw [List.append_assoc, mTower_append_take, take_append_add]
+
+/-- ★★★★★★★ ⟹ **`j = 0` の枝は `W_take` で無料**。 -/
+theorem prefix_mTower_snoc_mem_W {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
+    (h : A ++ mTower Q d e (n + 1) ∈ W u) :
+    A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u := by
+  rw [prefix_mTower_snoc_eq_take]
+  exact Wset.W_take h _
+
+/-! ## 85. ★★★★★★ (W45): **越境するなら、的はブロック根より低い** -/
+
+/-- 最後の（部分）ブロックの根は、そこから先で **`hr0` により浅い**。 -/
+theorem prefixTake_shallow {A Q : TrioSeq} {d e n j : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hj : j < Q.length) :
+    ∀ x, (A ++ mTower Q d e n).length < x →
+      x < (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
+      entry (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+          (A ++ mTower Q d e n).length
+        < entry (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 x := by
+  set P := A ++ mTower Q d e n with hP
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by rw [List.length_take, hBlen]; omega
+  intro x hx1 hx2
+  rw [List.length_append, hTlen] at hx2
+  obtain ⟨r, rfl⟩ : ∃ r, x = P.length + r := ⟨x - P.length, by omega⟩
+  have e0 : entry (P ++ B.take (j + 1)) 0 P.length = entry Q 0 0 + d * n := by
+    have h : entry (P ++ B.take (j + 1)) 0 P.length = entry (B.take (j + 1)) 0 0 := by
+      simpa using entry_append_right P (B.take (j + 1)) 0 0
+    rw [h, Wset.entry_take (show (0:ℕ) < j + 1 by omega), hB, entry0_Lift1,
+      entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := 0)
+        (by simpa using (show 0 < Q.length by omega))]
+  have er : entry (P ++ B.take (j + 1)) 0 (P.length + r) = entry Q 0 r + d * n := by
+    rw [entry_append_right, Wset.entry_take (show r < j + 1 by omega), hB, entry0_Lift1,
+      entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := r)
+        (by simpa using (show r < Q.length by omega))]
+  rw [e0, er]
+  have := hr0 r (by omega) (by omega)
+  omega
+
+/-- ★★★★★ **ブロック根は、そのブロックの全列の `le0` 祖先**（`hr0` から）。 -/
+theorem prefixTake_le0_root {A Q : TrioSeq} {d e n j : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hj : j < Q.length) (hj0 : 0 < j) :
+    le0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (A ++ mTower Q d e n).length ((A ++ mTower Q d e n).length + j) := by
+  have hTlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
+    rw [List.length_take, Lift1_length, shiftr01_length]; omega
+  refine le0_root_of_shallow (by simp only [List.length_append, hTlen]; omega)
+    (prefixTake_shallow hr0 hj) _ (by omega) ?_
+  simp only [List.length_append, hTlen]; omega
+
+open Classical in
+/-- ★★★★★★ **(W45) の芯**: `hr0` ∧ `j ≥ 1` で **行 1 の親が最後のブロックの外にある**なら、
+**的の行 1 はブロック根の行 1 以下**（ブロック根も `e*n` だけ持ち上がることに注意）。
+⟹ ★ ⟹ **的が錐の中なら `entry Q 1 j ≤ entry Q 1 0`** —— **`n` にも `e` にも依りません**。 -/
+theorem row1_cross_implies_le_blockRoot {A Q : TrioSeq} {d e n j c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j)
+    (hc : c < (A ++ mTower Q d e n).length)
+    (h : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    entry Q 1 j + (if le1 Q 0 j then e * n else 0) ≤ entry Q 1 0 + e * n := by
+  have hz : le1 Q 0 0 := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  have hmin := h.2.2.2.2.2 (A ++ mTower Q d e n).length ⟨hc, prefixTake_le0_root hr0 hj hj0⟩
+  have e0 : entry (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1
+      (A ++ mTower Q d e n).length = entry Q 1 0 + e * n := by
+    have := entry1_prefixTake A Q (d := d) (e := e) (n := n) (i := 0) hj (by omega)
+    rw [if_pos hz] at this
+    simpa using this
+  rw [e0, entry1_prefixTake A Q hj (show j < j + 1 by omega)] at hmin
+  exact hmin
+
+/-- ★★★★★ ⟹ **的が錐の中なら、越境は `entry Q 1 j ≤ entry Q 1 0` を強制**（`n`・`e` 非依存）。 -/
+theorem row1_cross_incone_le_root {A Q : TrioSeq} {d e n j c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j) (hcone : le1 Q 0 j)
+    (hc : c < (A ++ mTower Q d e n).length)
+    (h : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    entry Q 1 j ≤ entry Q 1 0 := by
+  have := row1_cross_implies_le_blockRoot hr0 hj hj0 hc h
+  rw [if_pos hcone] at this
+  omega
+
+/-- ★★★★★★★ ⟹ **行 1 の越境は「的が `Q` の中で行 1 の孤児」のときだけ**。
+⟹ ★ 対偶が私の `window_lt_of_row1_parent`。⟹ ★★ **`hr0` ＋ `j ≥ 1` で穴が 1 点に絞れます**。 -/
+theorem row1_cross_implies_orphan {A Q : TrioSeq} {d e n j c : ℕ}
+    (hj : j < Q.length)
+    (hc : c < (A ++ mTower Q d e n).length)
+    (h : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    ¬ hasParent Q 1 j := by
+  intro hpar
+  obtain ⟨y, hy, -⟩ := hpar
+  have hy' : nextrel1 Q y j := by simpa [nextR] using hy
+  have := prefixTake_nextrel1_src_ge (A := A) (d := d) (e := e) hj hy' h
+  omega
+
+/-- ★★★★★★★ ⟹ **行 2 も同じ**: 越境は「的が `Q` の中で行 2 の孤児」のときだけ。 -/
+theorem row2_cross_implies_orphan {A Q : TrioSeq} {d e n j c : ℕ}
+    (hj : j < Q.length)
+    (hc : c < (A ++ mTower Q d e n).length)
+    (h : nextrel2 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    ¬ hasParent Q 2 j := by
+  intro hpar
+  obtain ⟨y, hy, -⟩ := hpar
+  have hy' : nextrel2 Q y j := by simpa [nextR] using hy
+  have := prefixTake_nextrel2_src_ge (A := A) (d := d) (e := e) hj hy' h
+  omega
+
+
+/-! ## 86. ★★★★★★★ (W44): **`rankDE = srow(末尾)`** —— ちょうど一致します
+
+`wd0` / `wd1` を展開した形で書きます（L3 は `unfold wd0 wd1` でそのまま当てられます）。
+
+    `srow = 0` ⟹ `wd0 = 0`, `wd1 = 0` ⟹ **`rankDE = 0`**
+    `srow = 1` ⟹ `wd0 > 0`（親は `le0` 祖先）, `wd1 = 0` ⟹ **`rankDE = 1`**
+    `srow = 2` ⟹ `wd0 > 0`, `wd1 > 0`（親は `le1` 祖先）⟹ **`rankDE = 2`**
+
+⟹ ★★★★★ **`≤` ではなく `=` です。** -/
+
+/-- `srow` は 0, 1, 2 のいずれか。 -/
+theorem srow_le_two (M : TrioSeq) (j : ℕ) : srow M j ≤ 2 := by
+  unfold srow; split_ifs <;> omega
+
+/-- ★★★ `srow = 2` の親は **行 1 でも狭義に小さい**（⟹ `wd1 > 0`）。 -/
+theorem entry1_parent_lt_of_srow2 {M : TrioSeq} {a b : ℕ}
+    (h : nextR M 2 a b) : entry M 1 a < entry M 1 b := by
+  unfold nextR at h
+  rw [if_neg (by omega), if_neg (by omega)] at h
+  exact entry1_lt_of_le1_ne h.2.2.2.2.1 (by have := h.2.2.1; omega)
+
+/-- ★★★★★★★ **(W44)**: **`rankDE (wd0) (wd1) = srow(末尾)`**。
+⟹ ★ ですから **`srow` が下がる段では `rankDE` が真に減ります**。 -/
+theorem rankDE_eq_srow {T : TrioSeq} {par last : ℕ}
+    (hpar : nextR T (srow T last) par last) :
+    rankDE (if 0 < srow T last then entry T 0 last - entry T 0 par else 0)
+        (if 1 < srow T last then entry T 1 last - entry T 1 par else 0)
+      = srow T last := by
+  have hle : srow T last ≤ 2 := srow_le_two T last
+  rcases (by omega : srow T last = 0 ∨ srow T last = 1 ∨ srow T last = 2) with hs | hs | hs
+  · rw [hs] at hpar ⊢; simp [rankDE]
+  · rw [hs] at hpar ⊢
+    have h0 : entry T 0 par < entry T 0 last := entry0_parent_lt_of_srow1 hpar
+    simp only [rankDE, if_pos (show 0 < 1 by omega), if_neg (show ¬ 1 < 1 by omega),
+      if_pos (show 0 < entry T 0 last - entry T 0 par by omega),
+      if_neg (show ¬ 0 < (0:ℕ) by omega)]
+  · rw [hs] at hpar ⊢
+    have h0 : entry T 0 par < entry T 0 last := entry0_parent_lt_of_srow2 hpar
+    have h1 : entry T 1 par < entry T 1 last := entry1_parent_lt_of_srow2 hpar
+    simp only [rankDE, if_pos (show 0 < 2 by omega), if_pos (show 1 < 2 by omega),
+      if_pos (show 0 < entry T 0 last - entry T 0 par by omega),
+      if_pos (show 0 < entry T 1 last - entry T 1 par by omega)]
+
+/-- ★★★★★ ⟹ **`srow` が下がれば `rankDE` も下がる**（測度が減る側）。 -/
+theorem rankDE_lt_of_srow_lt {T T' : TrioSeq} {par par' last last' : ℕ}
+    (hpar : nextR T (srow T last) par last) (hpar' : nextR T' (srow T' last') par' last')
+    (hlt : srow T' last' < srow T last) :
+    rankDE (if 0 < srow T' last' then entry T' 0 last' - entry T' 0 par' else 0)
+        (if 1 < srow T' last' then entry T' 1 last' - entry T' 1 par' else 0)
+      < rankDE (if 0 < srow T last then entry T 0 last - entry T 0 par else 0)
+        (if 1 < srow T last then entry T 1 last - entry T 1 par else 0) := by
+  rw [rankDE_eq_srow hpar, rankDE_eq_srow hpar']; exact hlt
+
 end H12H2
 end TRIO
