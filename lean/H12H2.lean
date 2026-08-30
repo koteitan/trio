@@ -4847,5 +4847,42 @@ theorem blocker_of_hlocQ_row1_fail {V : TrioSeq}
   push Not at hc
   exact hfail (hlocQ_row1_of_nonblocker hr0V ht ht0 hc)
 
+
+/-! ## 65. ⛔ (NZ2) **`hnz` は「錐の遺伝」を救いません**（反例、緑）
+
+team-lead の訂正 2 が正しい: **「全列が錐の中」（`le1 V 0 t`）は根との比較**。
+⟹ ★ 私の教訓（「根との比較は遺伝しない」）を**自分の提案に当てる**と、遺伝しないはず。
+⟹ ⟹ ★★ そして `hnz` は**成分の下限**しか言わないので、**根との比較を一切制御できない**。
+
+具体的な反例（下、緑）:
+
+    V = [(1,5,0), (2,3,0)]
+    `hnz V` … 行 1 は 5 と 3 ⟹ どちらも正 ✅
+    ⛔ `le1 V 0 1` … 的の行 1 = 3 ≤ 5 = 根の行 1 ⟹ **ブロッカー** ⟹ **錐の外**
+
+⟹ ★ そして この `V` は `Q = [(0,1,0),(1,5,0),(2,3,0)]` の `p = 1` からの窓で、
+   `Q` の側では列 2 は**錐の中**（`nextrel1 Q 0 2`: `1 < 3`、`le0` ✓、
+   最小性は `j = 1` で `3 ≤ 5` ✓）。⟹ ⟹ **`Q` で錐の中、`V` で錐の外**。
+   （`Q` 側は紙の上。`V` 側は下で緑。） -/
+
+/-- 反例の窓。 -/
+def coneCtrV : TrioSeq := [(1, 5, 0), (2, 3, 0)]
+
+theorem coneCtrV_len : coneCtrV.length = 2 := rfl
+
+/-- ✅ `hnz` は成り立つ。 -/
+theorem coneCtrV_hnz : ∀ i, 0 < i → i < coneCtrV.length → 0 < entry coneCtrV 1 i := by
+  intro i hi0 hi
+  rw [coneCtrV_len] at hi
+  have : i = 1 := by omega
+  subst this
+  show 0 < entry coneCtrV 1 1
+  unfold entry coneCtrV
+  simp
+
+/-- ⛔ それでも的は**錐の外**。⟹ **`hnz` は錐の遺伝を救わない**。 -/
+theorem coneCtrV_not_cone : ¬ le1 coneCtrV 0 1 :=
+  blocker_not_le1 (by omega) (by decide)
+
 end H12H2
 end TRIO

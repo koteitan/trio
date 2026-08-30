@@ -3163,5 +3163,25 @@ theorem blocker_of_hlocQ_row1_fail {V : TrioSeq}
   push Not at hc
   exact hfail (hlocQ_row1_of_nonblocker hr0V ht ht0 hc)
 
+
+/-- 反例の窓。 -/
+def coneCtrV : TrioSeq := [(1, 5, 0), (2, 3, 0)]
+
+theorem coneCtrV_len : coneCtrV.length = 2 := rfl
+
+/-- ✅ `hnz` は成り立つ。 -/
+theorem coneCtrV_hnz : ∀ i, 0 < i → i < coneCtrV.length → 0 < entry coneCtrV 1 i := by
+  intro i hi0 hi
+  rw [coneCtrV_len] at hi
+  have : i = 1 := by omega
+  subst this
+  show 0 < entry coneCtrV 1 1
+  unfold entry coneCtrV
+  simp
+
+/-- ⛔ それでも的は**錐の外**。⟹ **`hnz` は錐の遺伝を救わない**。 -/
+theorem coneCtrV_not_cone : ¬ le1 coneCtrV 0 1 :=
+  blocker_not_le1 (by omega) (by decide)
+
 end H12Export
 end TRIO
