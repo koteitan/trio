@@ -1290,5 +1290,94 @@ theorem prefix_mTower_take_reassoc (A Q : TrioSeq) (d e n j : ℕ) :
 この補題からは出ません。⟹ それは H12 の `blockRoot_parent_prevBlock` です。**
 **⟹ ⟹ そちらは `0 < d`・`0 < e`・`hr0` が要ります。** -/
 
+/-! ## 206. ★★★★★★★★★ **総組み立て** —— 残る義務を **`hsnoc` 1 本**に絞る
+
+§204 の骨組みに §201 を差し込みます。**そのために前提の束を述語 1 つにまとめます。**
+
+⚠ **§201 は `M` について述べていて、塔の底は `M.dropLast` です。**
+**⟹ `tower_of_measure_step` の `P` は `(Q, d, e)` だけの述語でないといけません。**
+**⟹ ⟹ `M` を**存在量化**して逃がします。** -/
+
+/-- ★ §201 `prefixTowerClosed_final_noCone` の前提の束（`M` は存在量化）。 -/
+def TowerP (Q : TrioSeq) (d e : ℕ) : Prop :=
+  ∃ M : TrioSeq, M.dropLast = Q ∧ 2 ≤ M.length ∧ 0 < e ∧
+    entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d ∧
+    (∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) ∧
+    le1 M 0 (0 + M.dropLast.length) ∧
+    entry M.dropLast 0 0 = 0 ∧ entry M.dropLast 2 0 = 0
+
+/-- ★ 測度（§203 のもの）。 -/
+def towerMeas (Q : TrioSeq) (d e : ℕ) : ℕ := natMeasure Q.length (rankDE d e)
+
+open Classical in
+/-- ★★★★★ **総組み立て**: 「1 段の snoc」だけ示せば、族全体が `W u` に入る。
+
+**残る義務は `hsnoc` 1 本です。**そしてその引数はすべてそろっています:
+
+    `TowerP Q d e`  … 前提の束
+    **帰納法の仮定** … 測度の小さい `(V, d0, d1)` は片づいている
+    `A ∈ W u` / `j < |Q|` / **親の位置**（`j ≥ 1`、**錐の条件なし**）/ 短い接頭辞は全部 `W u` -/
+theorem towerClosed_of_snoc {u : ℕ}
+    (hsnoc : ∀ (Q : TrioSeq) (d e : ℕ), TowerP Q d e →
+      (∀ V d0 d1, TowerP V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+        ∀ A, A ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ (A : TrioSeq), A ∈ W u → ∀ (n j : ℕ), j < Q.length →
+        (0 < j →
+          hasParent (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (srow (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+              (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+            (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length →
+          (A ++ mTower Q d e n).length ≤
+            parent (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+              (srow (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+                (A ++ mTower Q d e n
+                  ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+              (A ++ mTower Q d e n
+                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+        (∀ j', j' ≤ j →
+          A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) →
+        A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ Q d e, TowerP Q d e → ∀ A, A ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine tower_of_measure_step (u := u) TowerP towerMeas ?_
+  intro Q d e hP hIH A hA n
+  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hbase, hz0⟩ := hP
+  subst hMQ
+  refine prefixTowerClosed_final_noCone hA hM2 he hd0e hr0M hlp hbase hz0 ?_ n
+  intro n' j hj hpar hall
+  exact hsnoc M.dropLast d e
+    ⟨M, rfl, hM2, he, hd0e, hr0M, hlp, hbase, hz0⟩ hIH A hA n' j hj hpar hall
+
+/-! ### 206.1 ⟹ ★ ここまでで**何が残っているか**が定理の文になりました
+
+**`hsnoc` の証明の道筋（材料は全部緑です）:**
+
+    **1.** `Wchar.mem_of_oper_mem`（`|S| ≥ 2`）で `∀ m ≥ 1, S⟦m⟧ ∈ W u` に落とす
+    **2.** `j = 0` なら §205 `mTower_take_reassoc` で `j' = |Q|` に読み替える
+    **3.** 親の位置を得る（`j ≥ 1` は `hpar` の前提から、`j = 0` は H12 `blockRoot_parent_prevBlock`）
+    **4.** §202 `snocStep_oper_pre` で `S⟦m⟧ = (接頭辞) ++ mTower V d0 d1 m`、`|V| = j − p`
+    **5.** 接頭辞が `W u` に入るのは `hall`（`p < j` なので射程内）
+    **6.** §203 `natMeasure_lt` ＋ §200 `rankDE_lt_of_blockRoot_parent` で測度が減る
+    **7.** **帰納法の仮定 `hIH` を当てる**
+
+⚠⚠ **7 で `TowerP V d0 d1` が要ります。⟹ ★ これが**唯一残る穴**です。**
+
+**`TowerP V d0 d1` を開くと、`V` の上の 4 つ（＋ `M'` の存在）:**
+
+    **`hr0(V)`**  … `V` の行 0 が根から狭義単調
+    **`hz0(V)`**  … `entry V 2 0 = 0`（既知の (H2')）
+    **`hd0e(V)`** … `V` の末尾列の行 0 が「根 ＋ `d0`」
+    **`hlp(V)`**  … `le1 V 0 (末尾)`
+
+⚠ **教訓 14**: **`towerClosed_of_snoc` は「`hsnoc` ならば族が閉じる」しか言っていません。**
+**`hsnoc` が真であることは示していません。⟹ `hsnoc` は**まだ証明されていません**。** -/
+
 end L106
 end TRIO
