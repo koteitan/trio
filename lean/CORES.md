@@ -13119,3 +13119,86 @@ theorem nextrel1_snoc_prev_eq {C p A}
     ⟹ ⟹ ★★★ ですから **`oper` の分解（親の位置・窓・持ち上げ量）が `X` と `Lift1 X d` で一致するはず**
     ⟹ ⚠ **`wd1`（`srow = 2` のとき）だけ未確認**: `nextrel2` の辺では錐の所属が連動しません
     ⟹ ⛔ **これは見立てです**（`oper` の定義を追っていません）
+
+---
+
+# ★★★★★★★★★★ **【的が確定】`MTowerClosedRow2` —— 仮定 1 本、前置き無し、`Final` に直結**
+
+```lean
+★★★★★ def MTowerClosedRow2 （L105Cap:5794）
+  ∀ u d e n Q, Q ∈ W u →
+    (∀ j, 1 ≤ j → j < |Q| → entry Q 0 0 < entry Q 0 j) →   -- ★ 狭義 hr0
+    **(∃ p ∈ Q, 0 < p.2.2)** →                              -- ★★★ 「行 2 に 1 がある」
+    **mTower Q d e n ∈ W u**
+★ mTowerClosedS_of_row2（L105Cap:5801）⟹ TRIO_terminates_of_mTowerClosedS（Final:861）
+  ⟹ **Final:877 で直結ずみ**
+```
+
+**★ L3 の判定根拠（**仮定の本数**）:**
+
+    ⛔ `TRIO_terminates_of_liftTieSelf` / `_liftTieCore` / `_liftTieCoreRow2`
+      … **全部 `(he : Wset.TowerExp)` を追加で要求**（`Final:213 / 250 / 277`）⟹ **核が 2 本のまま**
+    ★★★★★ **`TRIO_terminates_of_mTowerClosedS` は仮定 1 本**（`Final:861`）
+      ⟹ ★ 配線は **`Wstar2s` 経由**（`wstar2s_closed_of_mTowerClosedS` ＋ **無条件の `trio_cofinality`**）
+      ⟹ ⟹ ★★ **`TowerOK` も `TowerExp` も迂回**
+    ✅ **H12 も独立に「`MTowerClosedS` を本線に」と推奨**（`LiftTie` は `W_add` の壁が構造的）
+
+**⟹ ★★★★★★★★★★ **核は 1 つで、名前が 4 つ**だった:
+**`PrefixCopiesOpen`**（`L53Subst:3801`）／ **`WSnocOpen1` ＝ `SnocPrefixOpen1`**（`L105Cap:271`）／
+**`MTowerClosedRow2`**（`L105Cap:5794`）／ **L3 の §286** ⟹ ★ **どれも「行 2 に 1 があるとき」**。**
+
+---
+
+## ★★★★★★★★★★ **残差の表は §77.1 に既にあった（21 回目）—— しかも今日の発見と逐語一致**
+
+```
+§77.1（L105Cap:5838、既存）
+    `n ≤ 1`                    … **無料**（`mTower_mem_of_le_one`）
+    `Q` の行 2 ≡ 0             … **無料**（§76、`zeroRow2_mem_Wself` 経由）
+    `Q` の末尾列が段内に親を持つ … §70-71 で **1 文**（`MTowerStep`）に落ちる
+    ★★★ **`Q` の末尾列が段内で孤児** … **残差**（**塔の悪根がブロックをまたぐ**）
+```
+
+**⟹ ★★★★★★★★★★ **R2 が今日 100% 両向きで確定した「的が `Q` の中で孤児」と、逐語で同じ**。
+⚠ そして **`lev_mTower_root` も `L105Cap:5773` に既にあった**（L3 の §296 は `L106:10282`）⟹ **21 回目**。**
+
+## ★★★★★★★★★★ **【team-lead の統合】残差は 2 条件に絞れる**
+
+    ★★★★★★★★★★ **`srow = 0` の孤児は起きない**
+      ⟹ ★ **H12 の `hasParent0_of_hr0`**（`hr0` ∧ `j ≥ 1` ⟹ 行 0 の親は必ずある、緑）
+      ⟹ ⟹ ★★ **`srow = 0` の孤児は `j = 0` だけ** ⟹ **末尾 ＝ 根** ⟹ **`|Q| = 1`** ⟹ **無料**
+    ★★★★★★★★ **「親を持つ」側は H12 の (W61) がそのまま**
+      （`nextrel0_last_src_ge_last_block` ／ `nextrel1_last_src_ge_last_block` ／ `window_le_of_last_row{0,1}`）
+      ⟹ ★ **`A = []`（前置き無し）なので「悪根がブロックをまたがない」そのもの**
+
+**⟹ ★★★★★★★★★★ ⟹ **残差 ＝ 「行 2 に 1 がある」＋「末尾列が行 1／行 2 で孤児」＝ 2 条件だけ**。**
+
+## ✅ **【§77.2 への team-lead の回答】`WCat` は追わない**
+
+**§77.2 に「その先は `WCat` の匂いがする（**team-lead の判断待ち**）」とあった（前セッションからの申し送り）。**
+
+    ⛔ **追わない**。⟹ ★ 理由: **§77.2 自身が「節 2 で `¬ HasParentInBlock B` … 残差（同上）」と書いている**
+      ⟹ ★★ **`CatBlock` を経由しても同じ孤児の枝に戻る**
+    ⟹ ⟹ ⛔ そして **`CatBlock u c A := ∀ B ∈ W u, A ++ shiftr01 c 0 B ∈ W u` は前置き `A` を持つ**
+      ⟹ ★★★ **今日 19 個を殺した構造が復活する**
+    ★★★★★ **`MTowerClosedRow2` は前置きが無い** ⟹ **そちらが軽い**
+
+---
+
+## ★ **現在の割り当て（的は 1 本）**
+
+    **L3** … **1.** `MTowerStep`（§70-71）を grep ⟹ H12 の (W61) がそのまま刺さるか
+      **2.** 残差を 2 条件に絞る（**`srow = 0` の孤児は起きない**を型で）
+      **3.** そこで H12 の `tie_not_in_cone` ＋ `blocker_of_large_k`
+    **H12** … **(W67)** `MTowerStep` に (W61) を繋ぐ ／ **(W68)** `srow = 0` の孤児は起きない（型で 1 本）
+      ⚠ **(W66)（`Lift1` と `oper` の可換性）は保留**（`LiftTie` は重いと確定）
+    **R2** … **(ROW2-1..3)** 3 条件（狭義 `hr0` ＋ 行 2 に 1 ＋ 末尾が孤児）を同時に満たす `Q` の割合と形
+      ⛔ **(LIFT-1)(LIFT-2)(PREV) 系は取り下げ**
+
+**★ H12 の自己教訓（`CORES.md` に採用）: **「納品した定理の『使い道』まで書いて渡す」**
+⟹ ★ team-lead の**教訓 24（伝言で仮定を落とさない）**と対。
+⚠ H12 が見つけた重複: **L3 の §295 ＝ H12 の (W44) `entry1_parent_lt_of_srow2`**（同じ文）。
+★ H12 の新しい緑: **`d1_zero_iff_srow_le_one`**（`wd1 = 0 ⟺ srow(末尾) ≤ 1`）
+⟹ ★ **H12 の `e = 0` の仮定は実質「`srow ≤ 1`」** ⟹ **地図が 1 枚正確になった**。**
+
+**✅ build 緑 22 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **405 本**
