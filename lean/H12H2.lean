@@ -5677,5 +5677,35 @@ theorem mTower_block_zero (Q : TrioSeq) (d e : ℕ) :
   simp only [Nat.mul_zero, Lift1_zero]
   exact h12_shiftr01_zero_zero Q
 
+
+/-! ## 80. ★★★★★★ (W40) **行 0 の親なら `|V| < |Q|`**（`hr0` だけ）
+
+L3 の `hsnoc_gen`（`8bf7990`）で残った義務 (O-B) は **`|V| < |Q|`**。
+⟹ ★ 行 0 は私の `no_row0_parent_from_before_block`（`hr0` だけ、緑）の**3 行の系**:
+
+    親 `c ≥ (A ++ mTower Q d e n).length`
+    ⟹ **`|V| = (A ++ mTower).length + j - c ≤ j < |Q|`** ✓ -/
+
+theorem window_lt_of_row0_parent {A Q : TrioSeq} {d e n j c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j)
+    (h : nextrel0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + j - c < Q.length := by
+  rcases Nat.lt_or_ge c (A ++ mTower Q d e n).length with hc | hc
+  · exact absurd h (no_row0_parent_from_before_block hr0 hj hj0 hc)
+  · omega
+
+/-- ★★★ 同じことを「親の位置」の形で。 -/
+theorem row0_parent_ge_block {A Q : TrioSeq} {d e n j c : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j)
+    (h : nextrel0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length ≤ c := by
+  by_contra hc
+  push Not at hc
+  exact absurd h (no_row0_parent_from_before_block hr0 hj hj0 hc)
+
 end H12H2
 end TRIO
