@@ -10012,3 +10012,105 @@ theorem hasParent_append_of_noCross {A P : TrioSeq} {i j : ℕ} (hj : j < P.leng
 
 end L106
 end TRIO
+
+/-! ## §290 (L-ROT): 良い枝の窓は `|Q|` より短い —— 周期性だけで出る
+
+**(L-ROT)** への答え。`T = A ++ Q^n` の周期部分は `|Q|` 周期なので、
+**親が接頭辞 `A` の外にあるなら、窓 `V` の長さは `|Q|` 未満**である。
+⟹ **良い枝では次の `Q` が真に短くなる**（`|Q'| = |V| < |Q|`）。
+
+実測（`|Q| <= 4`、`n <= 5`、`A` 10 種、`srow` 0/1/2 すべて、分母 28,829,600）:
+非残差 11,059,650 件すべてで `|V| < |Q|`、例外 0 件（`tools/dbms/l3_rot.py`）。
+以下は `srow = 0` の場合の**型での証明**。 -/
+
+namespace TRIO
+namespace L106
+
+open Wset
+
+/-- **周期部分では窓は周期より短い**（前提なし、`nextrel0`）。
+
+`c` 以降が周期 `m` で繰り返しているなら、`c` は `t` から `m` 未満の距離にある。
+理由: そうでなければ `c + m` が `(c, t]` に入り、そこの行 0 は `entry T 0 c` に等しい。
+`c + m = t` なら `entry T 0 c < entry T 0 t = entry T 0 c` で矛盾、
+`c + m < t` なら `nextrel0` の最小性から `entry T 0 t <= entry T 0 c` で矛盾。 -/
+theorem window_lt_of_periodic0 {T : TrioSeq} {a m c t : ℕ} (hm : 0 < m)
+    (hper : ∀ x, a ≤ x → x + m ≤ t → entry T 0 (x + m) = entry T 0 x)
+    (hc : a ≤ c) (h : nextrel0 T c t) : t - c < m := by
+  rcases Nat.lt_or_ge (t - c) m with hok | hcon
+  · exact hok
+  · exfalso
+    obtain ⟨-, -, hlt, hdeep, hmin⟩ := h
+    have hcm : c + m ≤ t := by omega
+    have heq : entry T 0 (c + m) = entry T 0 c := hper c hc hcm
+    rcases eq_or_lt_of_le hcm with h1 | h1
+    · rw [h1] at heq; omega
+    · have hmn := hmin (c + m) ⟨by omega, h1⟩
+      omega
+
+/-- 同じことを `srow = 0` の親について述べた形。 -/
+theorem parent_dist_lt_of_periodic0 {T : TrioSeq} {a m t : ℕ} (hm : 0 < m)
+    (hper : ∀ x, a ≤ x → x + m ≤ t → entry T 0 (x + m) = entry T 0 x)
+    (hs : srow T t = 0) (hpar : hasParent T (srow T t) t)
+    (hc : a ≤ parent T (srow T t) t) :
+    t - parent T (srow T t) t < m := by
+  have h1 := parent_nextR hpar
+  rw [hs] at h1 hc ⊢
+  rw [nextR, if_pos rfl] at h1
+  exact window_lt_of_periodic0 hm hper hc h1
+
+/-- 写しの列は `Q` を `|Q|` 周期で読む（前提なし）。 -/
+theorem getD_copies_mod {Q : TrioSeq} :
+    ∀ (n x : ℕ), x < n * Q.length →
+      ((List.range n).flatMap fun _ => Q).getD x (0, 0, 0) = Q.getD (x % Q.length) (0, 0, 0) := by
+  intro n
+  induction n with
+  | zero => intro x hx; simp at hx
+  | succ n ih =>
+    intro x hx
+    have hsplit : ((List.range (n + 1)).flatMap fun _ => Q)
+        = Q ++ ((List.range n).flatMap fun _ => Q) := by
+      rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+    rw [hsplit]
+    rcases Nat.lt_or_ge x Q.length with hlt | hge
+    · rw [getD_append_left hlt, Nat.mod_eq_of_lt hlt]
+    · obtain ⟨y, rfl⟩ : ∃ y, x = Q.length + y := ⟨x - Q.length, by omega⟩
+      rw [getD_append_right', Nat.add_mod_left]
+      refine ih y ?_
+      simp only [Nat.succ_mul] at hx
+      omega
+
+/-- `A ++ Q^n` の行 0 は、接頭辞より右で `|Q|` 周期（前提なし）。 -/
+theorem entry_copies_periodic {A Q : TrioSeq} {n x : ℕ}
+    (hx : A.length ≤ x) (hlt : x + Q.length < A.length + n * Q.length) :
+    entry (A ++ (List.range n).flatMap fun _ => Q) 0 (x + Q.length)
+      = entry (A ++ (List.range n).flatMap fun _ => Q) 0 x := by
+  have hE : ∀ (M : TrioSeq) (y : ℕ), entry M 0 y = (M.getD y (0, 0, 0)).1 := fun _ _ => rfl
+  have e1 : ∀ y, A.length ≤ y → y < A.length + n * Q.length →
+      entry (A ++ (List.range n).flatMap fun _ => Q) 0 y
+        = entry Q 0 ((y - A.length) % Q.length) := by
+    intro y hy hy2
+    obtain ⟨z, rfl⟩ : ∃ z, y = A.length + z := ⟨y - A.length, by omega⟩
+    rw [show A.length + z - A.length = z from by omega, entry_append_right, hE, hE,
+      getD_copies_mod n z (by omega)]
+  rw [e1 (x + Q.length) (by omega) hlt, e1 x hx (by omega)]
+  congr 1
+  have hxx : x + Q.length - A.length = (x - A.length) + Q.length := by omega
+  rw [hxx, Nat.add_mod_right]
+
+/-- ★★★ **(L-ROT) の答え（`srow = 0`）**: 親が接頭辞 `A` の外にあるなら、
+窓の長さは `|Q|` 未満。⟹ **良い枝では次の `Q` が真に短い**。 -/
+theorem good_window_lt_of_copies {A Q : TrioSeq} {n t : ℕ} (hm : 0 < Q.length)
+    (ht : t < A.length + n * Q.length)
+    (hs : srow (A ++ (List.range n).flatMap fun _ => Q) t = 0)
+    (hpar : hasParent (A ++ (List.range n).flatMap fun _ => Q)
+      (srow (A ++ (List.range n).flatMap fun _ => Q) t) t)
+    (hc : A.length ≤ parent (A ++ (List.range n).flatMap fun _ => Q)
+      (srow (A ++ (List.range n).flatMap fun _ => Q) t) t) :
+    t - parent (A ++ (List.range n).flatMap fun _ => Q)
+      (srow (A ++ (List.range n).flatMap fun _ => Q) t) t < Q.length :=
+  parent_dist_lt_of_periodic0 hm
+    (fun x hx hxt => entry_copies_periodic hx (by omega)) hs hpar hc
+
+end L106
+end TRIO
