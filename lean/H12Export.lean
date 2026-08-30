@@ -3286,5 +3286,20 @@ theorem W_not_C4 : ¬ (∀ u : ℕ, ∀ Q ∈ W u, C4 Q) := by
   intro h
   exact c4CtrM_not_C4 (h 0 c4CtrM (c4CtrM_mem_W 0))
 
+
+/-- ★★★ **塔の全ブロックの根は行 2 = 0**（`hz0` から）。⟹ 行 2 の親の候補になる。 -/
+theorem blockRoot_row2_zero {Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hz0 : entry Q 2 0 = 0) {d e n k : ℕ} (hk : k < n) :
+    entry (mTower Q d e n) 2 (k * Q.length) = 0 := by
+  rw [entry2_mTower_blockRoot Q d e n k hk hQ1]
+  exact hz0
+
+/-- ★★★ 接頭辞つき版。 -/
+theorem prefix_blockRoot_row2_zero {A Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hz0 : entry Q 2 0 = 0) {d e n k : ℕ} (hk : k < n) :
+    entry (A ++ mTower Q d e n) 2 (A.length + k * Q.length) = 0 := by
+  rw [entry_append_right]
+  exact blockRoot_row2_zero hQ1 hz0 hk
+
 end H12Export
 end TRIO

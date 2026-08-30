@@ -5018,5 +5018,32 @@ theorem W_not_C4 : ¬ (∀ u : ℕ, ∀ Q ∈ W u, C4 Q) := by
   intro h
   exact c4CtrM_not_C4 (h 0 c4CtrM (c4CtrM_mem_W 0))
 
+
+/-! ## 69. ★★★★★ (H-ORPH2) 行 2 の壁 —— **錐の外では原理的に立たない**（機構）
+
+`hz0`（`Q` の根の行 2 が 0）より、**塔の全ブロックの根は行 2 = 0**（下、緑）。
+⟹ ★ L3 の `hasParent_two_iff_of_z1`（`hz1` の下で
+`hasParent M 2 j ↔ ∃ y < j, le1 M y j ∧ entry M 2 y = 0`）と合わせると:
+
+    **`le1` の鎖が前のブロックの根に届けば、その根が行 2 の親になってしまう**
+
+⟹ ⟹ ★★ ですから行 2 の壁に要るのは「**鎖が前のブロックに戻らない**」ことで、
+それは私の `hanc`（＝ **的が錐の中**）と**同値**（私の §316.2）。
+⟹ ⟹ ⟹ ⛔ **錐の外では原理的に立ちません。** -/
+
+/-- ★★★ **塔の全ブロックの根は行 2 = 0**（`hz0` から）。⟹ 行 2 の親の候補になる。 -/
+theorem blockRoot_row2_zero {Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hz0 : entry Q 2 0 = 0) {d e n k : ℕ} (hk : k < n) :
+    entry (mTower Q d e n) 2 (k * Q.length) = 0 := by
+  rw [entry2_mTower_blockRoot Q d e n k hk hQ1]
+  exact hz0
+
+/-- ★★★ 接頭辞つき版。 -/
+theorem prefix_blockRoot_row2_zero {A Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hz0 : entry Q 2 0 = 0) {d e n k : ℕ} (hk : k < n) :
+    entry (A ++ mTower Q d e n) 2 (A.length + k * Q.length) = 0 := by
+  rw [entry_append_right]
+  exact blockRoot_row2_zero hQ1 hz0 hk
+
 end H12H2
 end TRIO
