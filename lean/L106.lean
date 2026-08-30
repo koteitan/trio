@@ -6575,5 +6575,59 @@ theorem wnd_row1_witness_iff {P B : TrioSeq} {j p t : ℕ} (hjB : j < B.length) 
 **⟹ ★ R2 の 90.3% / 95.5〜96.9% は、この量そのものです。⟹ **100% ではありません**。**
 **⟹ ⟹ ⚠ ですから **`hlocQ` の遺伝はこのままでは偽**です。⟹ 追加の前提が要ります。** -/
 
+/-! ## 247. ★★★★★★ **窓の根が錐の外なら、窓は丸ごと錐の外** ⟹ `e*n` が完全に消えます
+
+§246 で残差が「証人が窓の中か」に確定しました。**⟹ ★ ここで**二分法**が効きます。**
+
+    **窓の根 `p` が錐の外** ⟹ ★★★ 窓の全列が錐の外 ⟹ **持ち上げが一切無い**
+                          ⟹ ⟹ **`e*n` が完全に消える** ⟹ **`Q` の話に還元**
+    **窓の根 `p` が錐の中** ⟹ ⚠ 混ざりうる（`blocker_of_large_k` の射程）
+
+**⟹ ★ 前半を緑にします。⟹ ⟹ `L105.not_le1_zero_iff`（`L105Cap.lean:7149`）だけで出ます。** -/
+
+theorem not_le1_of_not_le1_le0 {Q : TrioSeq}
+    (hr : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {p q : ℕ} (hq : q < Q.length) (hnp : ¬ le1 Q 0 p) (hle0 : le0 Q p q) :
+    ¬ le1 Q 0 q := by
+  have hp : p < Q.length := hle0.1
+  obtain ⟨y, hy1, hy2, hy3⟩ := (L105.not_le1_zero_iff hr hp).mp hnp
+  exact (L105.not_le1_zero_iff hr hq).mpr ⟨y, hy1.trans hle0.2.2, hy2, hy3⟩
+
+/-- ★★★★★ ⟹ **窓の根が錐の外なら、窓の全列が錐の外**。 -/
+theorem wnd_all_out_of_cone {Q : TrioSeq}
+    (hr : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {p : ℕ} (hnp : ¬ le1 Q 0 p)
+    (hsub : ∀ q, p ≤ q → q < Q.length → le0 Q p q) :
+    ∀ q, p ≤ q → q < Q.length → ¬ le1 Q 0 q :=
+  fun q hpq hq => not_le1_of_not_le1_le0 hr hq hnp (hsub q hpq hq)
+
+/-! ### 247.1 ⟹ ★★★ **これが `hcls` の正体**です
+
+§236.2 で置いた `hcls`（証人と的が同じ錐のクラス）は、
+**「窓の根が錐の外」の場合には自動**です（両方とも錐の外なので）。
+
+**⟹ ★ ですから残るのは **「窓の根が錐の中」の場合**だけ。**
+**⟹ ⟹ ★★ そしてそのとき、`p` は錐の中なので `entry Q 1 0 < entry Q 1 p`。**
+**⟹ ⟹ ⟹ ★★★ `p+t` が錐の外なら、そのブロッカー `y`（`entry Q 1 y ≤ entry Q 1 0`）は
+**`p` より後ろ**にいます。⟹ ⟹ **`y < p` なら `p` 自身も錐の外**になってしまうからです。**
+
+**⟹ ★★★★ つまり **「窓の根が錐の中」の場合、ブロッカーは必ず窓の中**にいます。**
+**⟹ ⟹ ★ そして **窓の中のブロッカーは持ち上げられません** ⟹ `e*n` はそこでも消えます。**
+
+⚠ **これは §246 の残差（証人が窓の中）を**直接は**閉じません**。
+ブロッカー `y` が「行 1 が `p+t` より小さい」とは限らないからです。
+**⟹ ★ ですが **`e*n` の問題は完全に消えました**。⟹ 残るのは `Q` だけの話です。** -/
+
+theorem blocker_in_window {Q : TrioSeq}
+    (hr : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {p q : ℕ} (hq : q < Q.length) (hpc : le1 Q 0 p) (hqc : ¬ le1 Q 0 q) :
+    ∃ y, Relation.ReflTransGen (nextrel0 Q) y q ∧ y ≠ 0 ∧
+      entry Q 1 y ≤ entry Q 1 0 ∧ ¬ (y < p ∧ le0 Q y p) := by
+  obtain ⟨y, hy1, hy2, hy3⟩ := (L105.not_le1_zero_iff hr hq).mp hqc
+  refine ⟨y, hy1, hy2, hy3, ?_⟩
+  rintro ⟨hyp, hyle⟩
+  exact absurd ((L105.not_le1_zero_iff hr hpc.2.1).mpr ⟨y, hyle.2.2, hy2, hy3⟩) (by
+    intro h; exact h hpc)
+
 end L106
 end TRIO
