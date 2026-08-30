@@ -2800,5 +2800,62 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
 ⚠ **教訓 14**: **4 本のどれも証明していません。**
 **⟹ そして消費側（`MTowerClosedS`）への接続もまだです。** -/
 
+/-! ## 222. ★★★★★★★★★★ **消費側への接続** —— `MTowerClosedS` まで繋ぎます
+
+`MTowerClosedS`（`L105Cap:5618`）は
+
+    `∀ u d e n Q, Q ∈ W u → (∀ j, 1 ≤ j → j < |Q| → entry Q 0 0 < entry Q 0 j) → mTower Q d e n ∈ W u`
+
+**⟹ ★ §220 を `A = []` で使うと、足りないのは `entry Q 2 0 = 0` **1 つだけ**です。**
+
+    `[] ∈ W u` … `W_nil` ✅
+    `[] ++ Q = Q ∈ W u` … **消費側の仮定そのもの** ✅
+    `hr0` … **消費側の仮定そのもの** ✅
+    `0 < |Q|` … `|Q| = 0` なら `mTower = []` ✅
+    `entry Q 2 0 = 0` … ⛔ **供給されません**（team-lead: `z = 1` で破れる） -/
+
+/-- ⛔ **消費側の `hz0`**（`z = 0` に相当）。H12 の `hz0_of_zle1` が効くはずのところ。 -/
+def RootZ2 : Prop :=
+  ∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) → entry Q 2 0 = 0
+
+theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] :=
+  List.eq_nil_of_length_eq_zero (by rw [mTower_length]; simp)
+
+open Classical in
+/-- ★★★★★ **`MTowerClosedS` は 5 本から出ます。** -/
+theorem mTowerClosedS_of_residues (horph : OrphOK)
+    (hzd : ∀ u, ZeroDOK u) (hze : ∀ u, ZeroEOK u) (hz2 : HeredZ2) (hroot : RootZ2) :
+    MTowerClosedS := by
+  intro u d e n Q hQ hs
+  rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
+  · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
+    subst hnil
+    rw [mTower_nil]
+    exact W_nil u
+  · have hP : TowerP'' Q d e :=
+      ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hroot u Q hQ hs⟩
+    have h := towerClosed_of_hered (u := u) horph (hzd u) (hze u) hz2 Q d e hP []
+      (W_nil u) (by simpa using hQ) n
+    simpa using h
+
+/-! ### 222.1 ⟹ ★★★★★ **これで `MTowerClosedS` が 5 本の式になりました**
+
+    **(1) `OrphOK`** … ブロックの中で孤児 ⟹ 全体でも孤児（**遺伝不要**）
+    **(2) `ZeroDOK`** … `d = 0` の塔
+    **(3) `ZeroEOK`** … `e = 0` の塔 ＝ §112 `ShiftTowerClosedS`
+    **(4) `HeredZ2`** … 窓の根の行 2 が 0（＝ (H2')）
+    **(5) `RootZ2`** … 消費側の底の行 2 が 0（＝ `z = 0`）
+
+⚠ **教訓 14**: **5 本のどれも証明していません。**
+**⟹ ★ ですが `MTowerClosedS` は §80 で 3 本の残差に落ちていたので、
+これは**別の 5 本への言い換え**です。⟹ **どちらが易しいかは自明ではありません**。**
+
+⚠⚠ **正直に**: (5) `RootZ2` は team-lead が `z = 1` で破れると言っています。
+**⟹ ⟹ ですから `mTowerClosedS_of_residues` は**そのままでは使えません**。**
+**⟹ H12 の `hz0_of_zle1`（`zle1 R` があれば消費側の `hz0` は無料）が要ります。**
+**⟹ ⟹ ★ そして `zle1`（行 2 が全部 1 以下）は **`z < 2` の断片**そのものなので、
+プロジェクトの前提として使えるはずです。⟹ team-lead に確認します。** -/
+
 end L106
 end TRIO
