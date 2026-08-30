@@ -13226,3 +13226,72 @@ theorem nextrel1_snoc_prev_eq {C p A}
 **⟹ ★ 私の (W61) が効くのは **`mTower_mem_of_step` の中（`oper` の分解）**であって、`MTowerStep` の文ではありません。**
 **⟹ ⟹ ★★ **§77.1 の「末尾列が段内に親を持つ」は `HasParentInBlock Q`**（`Q` の中の話）——
 ⟹ ★ **私の (W61)（塔の中の親の位置）とは別の命題**でした。**
+
+---
+
+## ★★★★★ **§297: 残差 B が `srow ≥ 1` に絞れた —— 今日はじめて「絞った」1 本**（L3、緑 `780b3b3`、10,324 行）
+
+```lean
+★★★ srow_ne_zero_of_orphan (hbig : 2 ≤ |Q|) (hr0) (horph : ¬ HasParentInBlock Q) :
+    **srow Q (|Q| − 1) ≠ 0**            -- ★ **4 行**
+★ MTowerOrphan1 ／ ★★★ mTowerOrphan_of_orphan1 (h : MTowerOrphan1) : L105.MTowerOrphan
+```
+
+**★ 証明: `HasParentInBlock N = hasParent N (srow N (|N|−1)) (|N|−1)` ⟹ **`srow = 0` の孤児 ＝ 行 0 の親が無い**
+⟹ ★★ **H12 の `hasParent0_of_hr0` が矛盾を出す**（残差 B は `2 ≤ |Q|` を仮定 ⟹ `|Q| − 1 ≥ 1` ✓）。
+⟹ ★★★ **2 人の道具が噛み合った**。⟹ ★ **潰したのではなく絞った ＝ 今日はじめて**。**
+
+---
+
+## ★★★★★ **`MTowerClosedS` の残差 3 分割は既存（21 回目）**（`mTowerClosedS_of_residues`、`L105Cap:6122`）
+
+| 残差 | 中身 | 状態 |
+|---|---|---|
+| **A `MTowerStepAll`** | `HasParentInBlock Q` ⟹ `MTowerStep u Q d e` | ★ **骨は H12 の (W61)**、中身は未 |
+| **B `MTowerOrphan`** | 段内で孤児 | ✅ **`srow ≥ 1` に絞れた**（§297） |
+| **C `MTowerSingle`** | **`\|Q\| = 1`** | ★ **`z > 0` は済み**（H12 `prefix_mTowerSingle_row2`、`H12Export:890`）／ **`z = 0` が残り** |
+
+**★ (W61) は `MTowerStep` に刺さる（L3 が確認）: `nextrel0_last_src_ge_last_block`（`H12Export:4825`）は
+**`A` が任意** ⟹ **接頭辞に `mTower Q d e n` をそのまま置ける** ⟹ ★ `oper_mTower`（`L105Cap:5360`）が要求する
+**`hblk : HasParentInBlock Q`** を、**(W61) が「悪根がブロックをまたがない」という形で支える** ⟹ **残差 A の骨**。**
+
+**⚠ L3 の自己訂正 11 回目: **`MTowerStep` の定義に接頭辞が残る**
+（`mTower Q d e n ++ shiftr01 (d*n) 0 ((Lift1 Q (e*n))⟦m⟧) ∈ W a`）
+⟹ ★ **「目標については前置き無し、証明の中では出る」**が正確。
+⟹ ⟹ ★★★★★ ただし **今度の接頭辞は「同じ `Q` の塔」で、任意の `A` ではない**
+⟹ ★ ですから **`entry_copies_periodic`（§290）と `window_lt_of_periodic0/1` が効く**。**
+
+**★ L3 の明日の順序（承認済み）: **C → B → A**。最初の 1 本は **`MTowerSingle` の `Q = [(x,0,0)]`、`e = 0`**
+（`y > 0` 側は §295 より `d1 = 0` ⟹ H12 の `nextrel1_src_lt_prefix_of_singleton`（`e = 0` 版）がそのまま）。**
+
+---
+
+## ⚠⚠ **H12 の自己訂正 16 本目: (W64) の「難しさの説明」は誤り**（＋ team-lead の伝言ミス 3 回目）
+
+    ★★★★★★★★★★ **`Wset.nextrel1_Lift1`（`:1167`）**: `nextrel1 (Lift1 X d) a b ↔ nextrel1 X a b`
+    ★★★★★★★★★★ **`Wset.hasParent_Lift1`（`:1259`）**: `hasParent (Lift1 X d) i b ↔ hasParent X i b`
+    ⟹ ★ **どちらも仮定ゼロの iff** ⟹ ⟹ ★★★ **`Lift1` は親の構造を一切変えない**
+
+**⛔ ですから「持ち上げ後、根が行 1 の最小でなくなる ⟹ 帳簿が効かなくなる」は
+**値については真**（`tie_below_root_after_lift` は緑のまま）だが **`nextrel1` には効かない**。
+★★★★★ 理由（`cone_mono_along_nextrel1`、新、1 行）: **`nextrel1` の辺では錐の所属が連動する**
+⟹ **両端が同じだけ持ち上がる** ⟹ **不等式が保たれる**。
+⟹ ✅ **L3 の (L-TIE) の結論（段の帳簿は壊れない）は無事** ⟹ ⚠ **不要だったのは team-lead が渡した心配のほう**。**
+
+---
+
+## ★★★★★★★★★★ **(W69): `lift_oper` の「親なし」を落とす —— `LiftTie` 専用ではなく一般道具**（H12、着手承認）
+
+    ⚠ **可換性は既にあった（21 回目）**: **`Wtower2.lift_oper_of_noParent`（`:525`）**（末尾に親が無ければ
+      `(Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d`）／ **`L105Cap.lift_oper_comm_of_domT_Lift1`（`:4944`）**
+    ✅ **`wd0` 不変**（`wd0_Lift1_invariant`、緑）／ ✅ **`nextrel{0,1}`・`hasParent` 不変**（上の 2 本）
+    ✅ **`le0` は行 0 だけなので不変** ／ **`le1` は `nextrel1_Lift1` から不変** ⟹ ★ **番人も不変のはず**
+    ⚠ **残るは `wd1`（`srow = 2`）だけ**（`nextrel2` の辺では錐の所属が連動しない）
+    ⟹ ★ **`srow ≤ 1` 版でも、L3 の残差 B（`srow ≥ 1`）に十分**
+
+**⟹ ★★★★★★★★★★ **`mTower Q d e n` は `Lift1` の並び** ⟹ **無条件になれば L3 の残差 A/B/C でも直接効く**
+⟹ ★ ですから **`LiftTie` 専用ではなく一般道具**。⟹ ✅ **`Wtower2.lean` は触らず `H12H2` に書いて L3 に渡す**。**
+
+**★ 分担: **H12 ＝ 道具（(W69)）／ L3 ＝ 残差（C → B → A）／ R2 ＝ (ROW2-1..3)**（重複なし）。**
+
+**✅ build 緑 23 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **408 本**
