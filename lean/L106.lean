@@ -10703,26 +10703,32 @@ def MTowerStep (a) (Q) (d e) : Prop :=
 ⚠ 可換性 `LiftOperComm` は H12 が (W66)/(W69) で詰めている。ここでは仮定として置き、
 **それが来たときに何が言えるか**だけを書く（重複しない）。 -/
 
-/-- **`Lift1` と `oper` の可換性**（H12 の (W66)/(W69) の目標）。 -/
-def LiftOperComm : Prop := ∀ (M : TrioSeq) (t n : ℕ), (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t
+/-- ⚠⚠ **訂正（R2 の実測 (R-C1)）**: **一様版 `∀ M t n, (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t` は偽**。
+最小反例は **`M = (0,0,0)(1,0,0)`、`t = 1`、`n = 2`**
+（左辺 `(0,1,0)(0,1,0)` ／ 右辺 `(0,1,0)(0,0,0)`）で、**悪根が根そのもの**の場合。
+分ける軸は「**親が根かどうか**」1 本（`parent ≠ 0` なら 3 母集団すべてで 100%）。
+⟹ ★ ですから **点ごとの版**にし、使う場所で `M` を指定する。
+⟹ ★★ `parent ≠ 0` の枝は H12 の `lift_oper_comm_of_hr0`（緑）、
+`parent = 0` の枝は `Wset.oper_Lift1_root`（`Wset:3384`、右辺は `glift`）。 -/
+def LiftOperCommAt (M : TrioSeq) : Prop := ∀ (t n : ℕ), (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t
 
 /-- ★★★★★ **可換性の下で、`MTowerStep` は「塔 ＋ `Q⟦m⟧` の 1 ブロック」に書き換わる**。 -/
-theorem mTowerStep_iff_of_comm (h : LiftOperComm) (a : ℕ) (Q : TrioSeq) (d e : ℕ) :
+theorem mTowerStep_iff_of_comm {Q : TrioSeq} (h : LiftOperCommAt Q) (a : ℕ) (d e : ℕ) :
     L105.MTowerStep a Q d e ↔
       ∀ n m : ℕ, 1 ≤ m →
         mTower Q d e n ++ Lift1 (shiftr01 (d * n) 0 (Q⟦m⟧)) (e * n) ∈ W a := by
   unfold L105.MTowerStep
   constructor <;> intro hh n m hm
   · have := hh n m hm
-    rwa [h Q (e * n) m, ← L105.Lift1_shiftr01] at this
+    rwa [h (e * n) m, ← L105.Lift1_shiftr01] at this
   · have := hh n m hm
-    rwa [h Q (e * n) m, ← L105.Lift1_shiftr01]
+    rwa [h (e * n) m, ← L105.Lift1_shiftr01]
 
 /-- ⟹ **`n = 0` は「`Q⟦m⟧` そのもの」**（塔が空、持ち上げ 0）。 -/
-theorem mTowerStep_zero_of_comm (h : LiftOperComm) {a : ℕ} {Q : TrioSeq} {d e : ℕ}
+theorem mTowerStep_zero_of_comm {Q : TrioSeq} (h : LiftOperCommAt Q) {a : ℕ} {d e : ℕ}
     (hst : L105.MTowerStep a Q d e) (m : ℕ) (hm : 1 ≤ m) :
     Lift1 (shiftr01 0 0 (Q⟦m⟧)) 0 ∈ W a := by
-  have := (mTowerStep_iff_of_comm h a Q d e).mp hst 0 m hm
+  have := (mTowerStep_iff_of_comm h a d e).mp hst 0 m hm
   simpa [mTower] using this
 
 /-! ### §307 (L-A2) `MTowerClosedS` は「塔に 1 列足す」1 本に落ちる（`B = []` から始める）
