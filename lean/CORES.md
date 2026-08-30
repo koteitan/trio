@@ -2258,3 +2258,50 @@ window_root_entry0_pos: hr0 ∧ hbase(Q) ∧ p ≥ 1 ⟹ 0 < entry (窓) 0 0    
 > **`nextrel0` の最小性は「`j0` と `j1` の間の列が全部 `entry 0 j1` 以上」
 > ⟹ 接尾辞だけ深さを `δ` 上げると、**以前は満たしていた列が満たさなくなる**
 > ⟹ **親が消える／前に動く** ⟹ 構造が変わる。**
+
+---
+
+## ⛔★ **`0 < e` は落とせない。使い所は `omega` 1 つ**（team-lead が鎖を全部たどった、2026-08-30）
+
+    `TowerP.he` → `natMeasure_step_blockRoot`(`L106:1151`) → `blockRoot_window_eq_iff`(`H12Export:694`)
+      → `blockRoot_window_lt_of_ne_root`(`:544`) → `blockRoot_window_eq`(`:530`)
+      → `blockRoot_parent_split`(`:509`) → **`blockRoot_parent_prevBlock`(`:484`) ← 唯一の消費者**
+
+```lean
+  have hmin := h.2.2.2.2.2 (k * Q.length) ⟨by omega, hle0⟩
+  rw [entry1_mTower_blockRoot ... (k+1) ..., entry1_mTower_blockRoot ... k ...] at hmin
+  have hmul : e * (k + 1) = e * k + e := Nat.mul_succ e k
+  omega                                  -- ★ ここだけで he が効く
+```
+
+**⛔ `e = 0` ではこの定理が**偽**（怠慢ではなく機構）:**
+
+    `e = 0` ⟹ **ブロック根の行 1 が全部等しい** ⟹ `nextrel1` の最小性（`<=`）を遠い根でも満たせる
+    ⟹ **親が前ブロックを飛び越えて後ろへ跳ぶ** ⟹ 窓 `|V| = j - p` が `|Q|` を超えうる ⟹ **測度が壊れる**
+
+**⟹ ★ R2 の「`0 < e` を落とせば `(TOW)` は要らない」は**行き止まり**。**
+
+**⚠ そして `hd1pos : 0 < e` は `prefix_window_of_outOfCone_all` 系
+（`L106:160/177/210/227/353/391/422/670/747`）で**独立に**も使われている（別の鎖）。**
+
+### ★★ ただし `e = 0` の枝は「一般の `(TOW)`」ではない
+
+**`oper`（`Trio.lean:107-108`）: `d0 := if 0 < i1 …`, `d1 := if 1 < i1 …`**
+
+| `i1 = srow` | `d0` | `d1 = e'` | |
+|---|---|---|---|
+| `2` | >0 | >0 | §198 `not_nextrel2_blockRoots` で**不可能** |
+| **`1`** | **>0** | **`= 0`** | ★★ **`e0=0, d0>0` の枝は「これだけ」** |
+| `0` | 0 | 0 | 無料（`H12A2.lean:228 mTower_d0_mem`） |
+
+**⟹ ★★★ R2 の「64.3〜84.6% が `(TOW)` 本体」は、正確には**「`srow = 1` の段だけ」**。
+`V` は `oper` の出力なので**構造がついている**。**
+
+### ⟹ ★ 次の決め手（R2 に (e3) を発注）
+
+    **(e3d) ★★ `srow = 1` の段で `|V| < |Q|` になる割合**
+      ⟹ **100% なら測度は長さだけで減り、`rankDE` は不要**（`3|V| + rankDE`、`rankDE <= 2 < 3`）
+      ⟹ **`blockRoot_parent_prevBlock` を通らない ⟹ `0 < e` も `(TOW)` も要らない**
+    (e3a) `V` の行 1 は定数か（100% なら実質 2 行 ⟹ `lean-yapss` が効く）
+    (e3b) 定数でないなら `entry V 1 l` の値の個数
+    (e3c) `V` の行 2 は全部 0 か（`srow = 1` なので、の確認）
