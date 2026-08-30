@@ -7597,5 +7597,59 @@ theorem hasParent2_of_row1_parents {T : TrioSeq}
 ⚠ **教訓 27**: シートでの分母は 7930、行 2 の孤児は 0、`nextrel1` の親は 7930（100%）。
 **⟹ ⚠ ですが **100% は証明ではありません**。⟹ **`hpar` は前提として残っています**。 -/
 
+/-! ## 259. ★★★★★ **(L-O1)**: 接頭辞が行 1 の親になれるのは **的がブロッカーのときだけ**
+
+§253 は「的が非ブロッカーなら安全」でした。⟹ ★ その**逆**を証明します。
+
+**⟹ ★★★ 鍵は §253 の `le0_root_append_right`（`hr0(T)` だけ）です:**
+
+    `T` の根は **`T` の全内部列の `le0` 祖先** ⟹ ★ **`nextrel1` の最小性の候補に必ず入る**
+    ⟹ ⟹ ★★ 接頭辞の `c < A.length` から `nextrel1` が張れるなら、最小性を `q := A.length`
+      に当てて **`entry T 1 j ≤ entry T 1 0`** が出る ＝ **的はブロッカー** -/
+
+theorem prefix_row1_cross_blocker {A T : TrioSeq} {j c : ℕ} (hj0 : 0 < j) (hjT : j < T.length)
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x)
+    (hc : c < A.length)
+    (h : nextrel1 (A ++ T) c (A.length + j)) : entry T 1 j ≤ entry T 1 0 := by
+  have hroot : le0 (A ++ T) A.length (A.length + j) :=
+    le0_root_append_right hj0 hjT hs
+  have := h.2.2.2.2.2 A.length ⟨by omega, hroot⟩
+  rwa [show A.length = A.length + 0 from by omega, entry_append_right,
+    show A.length + 0 + j = A.length + j from by omega, entry_append_right] at this
+
+/-! ### 259.1 ⟹ ★★★★★ **行 1 の二分法が完成しました**（どちらも `hr0(T)` だけ）
+
+    ✅ **的が非ブロッカー** … §253 `orphOK_row1_free` ⟹ **接頭辞は親になれない**
+    ✅ **接頭辞が親になった** … §259 `prefix_row1_cross_blocker` ⟹ **的はブロッカー**
+
+**⟹ ★★★ ですから **`OrphOK` の行 1 の破れ ⟺ 的がブロッカー**（`hr0(T)` の下で、両向き）。**
+**⟹ ⟹ ★ シートの実測（分母 353、破れは 100% ブロッカー）と**完全に一致**します。** -/
+
+/-- ★★★★★ **`OrphOK` の行 1**: 的がブロッカーでなければ成立（§253 の言い換え、対偶つき）。 -/
+theorem orphOK_row1_dichotomy {A T : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hjT : j < T.length)
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x) :
+    (∃ c, c < A.length ∧ nextR (A ++ T) 1 c (A.length + j)) → entry T 1 j ≤ entry T 1 0 := by
+  rintro ⟨c, hc, hnr⟩
+  unfold nextR at hnr
+  rw [if_neg (by omega), if_pos rfl] at hnr
+  exact prefix_row1_cross_blocker hj0 hjT hs hc hnr
+
+/-! ### 259.2 ⟹ ★★★★★★ **`OrphOK` の残差の最終形（今日の到達点）**
+
+| 的 | 行 0 | 行 1 | 行 2 |
+|---|---|---|---|
+| **非ブロッカー** | ✅ §228 | ✅ §253 | ✅ §258（**行 1 の親から自動**） |
+| **ブロッカー** | ✅ §228（**無条件**） | ⛔ **残差** | ✅ §258（**行 1 の親があれば**） |
+
+**⟹ ★★★★★ ですから **`OrphOK` の残差は 1 マス**です:**
+
+    ⛔ **「的がブロッカー」かつ「`T` の中で行 1 の親が無い」かつ「接頭辞に親がある」**
+
+**⟹ ★ そして §257 が「**越境はブロックの根 1 点だけ**」と言うので、
+接頭辞の親 `c` は **ブロックの根を通って**しか届きません。**
+**⟹ ⟹ ★★ ですから **`c` は「行 1 がブロックの根より小さく、根の `le0` 祖先」**でなければなりません。**
+
+⚠ **教訓 14**: 二分法は緑ですが、**残差のマスは埋まっていません**。 -/
+
 end L106
 end TRIO
