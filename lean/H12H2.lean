@@ -4103,5 +4103,99 @@ theorem hnbQ_window_iff_of_hnbQ {Q : TrioSeq}
     have := h x hpx hxj
     omega
 
+
+/-! ## 52. ★★★★★★★ (W6) 「ブロック孤児 ⟹ 塔孤児」の機構
+
+`no_nextR_srow_cross` を **`A := mTower Q d e n`、`T := ブロックの接頭辞`** に当てる。
+⟹ ★ L3 の §232.2 の教訓に従い、**当てたあとに前提の強さを確かめる**。
+
+    hmin(ブロック) … `entry (block) 0 l = entry Q 0 l + d*n` ⟹ ★ **`hr0` そのもの**（`n` 非依存）
+    hz0(ブロック)  … 行 2 は `shiftr01`/`Lift1` で不変 ⟹ ★ **`hz0` そのもの**
+    hnb(ブロック)  … `entry (block) 1 l = entry Q 1 l + (if le1 Q 0 l then e*n else 0)`
+                    根は `entry Q 1 0 + e*n`
+      ⟹ ⛔ 錐の**外**なら `entry Q 1 0 + e*n < entry Q 1 l` ＝ **`n` で強くなる**（L3 の指摘）
+      ⟹ ★★★ ですが **`hnbQ` の下では全列が錐の中**（`le1_all_of_hnbQ`）
+      ⟹ ⟹ **`e*n` が両辺で消える** ⟹ ★ **`hnbQ` そのもの**（`n` 非依存）
+
+⟹ ★★★ **3 本とも `TowerP''` の中身と同じ強さ**。⟹ **壁の高さの問題は `hnbQ` が消している**。 -/
+
+open Classical in
+/-- ★★ ブロックの行 1（`hnbQ` の下）。⟹ **`e*n` が一様に乗るだけ**。 -/
+theorem entry1_block_of_hnbQ {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {d e n l : ℕ} (hl : l < Q.length) :
+    entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 l = entry Q 1 l + e * n := by
+  rw [Wset.entry1_Lift1 (by rwa [shiftr01_length]), entry1_shiftr01,
+    if_pos ((le1_shiftr01 (d0 := d * n)).mpr (le1_all_of_hnbQ hr0 hnbQ hl))]
+
+/-- ★★★ **`hnb`(ブロック) ＝ `hnbQ`**（`n`・`e`・`d` が消える）。 -/
+theorem hnb_block_of_hnbQ {Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {d e n : ℕ} :
+    ∀ l, 0 < l → l < (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length →
+      entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 0
+        < entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 l := by
+  intro l hl0 hl
+  rw [Lift1_length, shiftr01_length] at hl
+  rw [entry1_block_of_hnbQ hr0 hnbQ hl, entry1_block_of_hnbQ hr0 hnbQ hQ1]
+  have := hnbQ l hl0 hl
+  omega
+
+/-- ★★★ **`hmin`(ブロック) ＝ `hr0`**（`d*n` が一様に乗るだけ）。 -/
+theorem hmin_block_of_hr0 {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) {d e n : ℕ} :
+    ∀ l, 0 < l → l < (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length →
+      entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 0 0
+        < entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 0 l := by
+  intro l hl0 hl
+  rw [Lift1_length, shiftr01_length] at hl
+  have hQ1 : 0 < Q.length := by omega
+  rw [entry0_Lift1, entry0_Lift1,
+    entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := l) (by simpa using hl),
+    entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := 0) (by simpa using hQ1)]
+  have := hr0 l hl0 hl
+  omega
+
+/-- ★★ `hz0`(ブロック) ＝ `hz0`（行 2 は `shiftr01`・`Lift1` で不変）。 -/
+theorem hz0_block {Q : TrioSeq} (hz0 : entry Q 2 0 = 0) {d e n : ℕ} :
+    entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 2 0 = 0 := by
+  rw [Wset.entry2_Lift1, entry2_shiftr01]
+  exact hz0
+
+
+/-- ★★★★★★★ **(W6) の結論**: `hr0` ＋ `hnbQ` ＋ `hz0`（＝ `TowerP''` の中身）だけで、
+**塔は「足しているブロックの `j` 列目」に親を供給できない**。
+⟹ ★ **`n` にも `e` にも `d` にも依りません**（`hnbQ` が `e*n` を消すため）。 -/
+theorem tower_no_cross_of_hnbQ {Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    (hz0 : entry Q 2 0 = 0)
+    {d e n j c : ℕ} (hj : j < Q.length) (hj0 : 0 < j)
+    (hc : c < (mTower Q d e n).length) :
+    ¬ nextR (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((mTower Q d e n).length + j))
+        c ((mTower Q d e n).length + j) := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (B.take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen]; omega
+  refine no_nextR_srow_cross (A := mTower Q d e n) (T := B.take (j + 1)) ?_ ?_ ?_ hc ?_ hj0
+  · intro l hl0 hl
+    rw [hTlen] at hl
+    rw [Wset.entry_take (show (0:ℕ) < j + 1 by omega),
+      Wset.entry_take (show l < j + 1 by omega)]
+    exact hmin_block_of_hr0 hr0 l hl0 (by rw [hBlen]; omega)
+  · intro l hl0 hl
+    rw [hTlen] at hl
+    rw [Wset.entry_take (show (0:ℕ) < j + 1 by omega),
+      Wset.entry_take (show l < j + 1 by omega)]
+    exact hnb_block_of_hnbQ hQ1 hr0 hnbQ l hl0 (by rw [hBlen]; omega)
+  · rw [Wset.entry_take (show (0:ℕ) < j + 1 by omega)]
+    exact hz0_block hz0
+  · rw [hTlen]; omega
+
 end H12H2
 end TRIO
