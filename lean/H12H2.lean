@@ -7433,5 +7433,36 @@ theorem nextR_src_lt_prefix_of_singleton {A V : TrioSeq} {d0 m c t i : ℕ}
   · exact nextrel1_src_lt_prefix_of_singleton hV ht h
   · exact nextrel2_src_lt_prefix_of_singleton hV ht h
 
+
+/-! ## 110. ★★★★★★★★★★ (W64): **`LiftTie` の「タイ」は、必ず錐の外です**
+
+`LiftTie`（`L53Subst:2337`）:
+`∀ m d v z R, argOK R → (∃ p ∈ R, p.2.1 = v) → ((0,v,z) :: R) ∈ W m →`
+`Lift1 ((0,v,z) :: R) d ∈ W (m + 2*d)`
+
+⟹ ★★★★★ **`argOK R` は私の (C2) で `hr0 ((0,v,z) :: R)` そのもの**でした。
+⟹ ★★★★★★★★ そして **「タイ」（行 1 が根と等しい列）は、必ず錐の外**です（2 行）。
+⟹ ⟹ ★★★ ですから **`Lift1` はタイの列を持ち上げません** ⟹ ⛔ **根だけが `+d` される**
+⟹ ⟹ ⟹ ★★★★★★★★★★ ⟹ **持ち上げ後、根は行 1 で最小でなくなります**。⟹ ★ **それが `LiftTie` の難しさ**です。 -/
+
+/-- ★★★★★★★★ **タイの列は錐の外**（`nextrel1` は行 1 を狭義に増やすので）。 -/
+theorem tie_not_in_cone {M : TrioSeq} {j : ℕ} (h : entry M 1 j = entry M 1 0) (hj : 0 < j) :
+    ¬ le1 M 0 j := fun hc => absurd (entry1_lt_of_le1_ne hc (by omega)) (by omega)
+
+open Classical in
+/-- ★★★★★ ⟹ **`Lift1` はタイの列を持ち上げません**。 -/
+theorem entry1_Lift1_of_tie {M : TrioSeq} {d j : ℕ} (hj : j < M.length) (hj0 : 0 < j)
+    (h : entry M 1 j = entry M 1 0) : entry (Lift1 M d) 1 j = entry M 1 j := by
+  rw [Wset.entry1_Lift1 hj, if_neg (tie_not_in_cone h hj0)]
+  omega
+
+/-- ★★★★★★★★★★ ⟹ **`LiftTie` の芯**: **持ち上げ後、タイの列は根より行 1 が真に低い**。
+⟹ ★ ⟹ **根が行 1 の最小でなくなる** ⟹ ⟹ ★★ **`mem_Wself_iff` の `lev(根)` の帳簿が効かなくなります**。 -/
+theorem tie_below_root_after_lift {M : TrioSeq} {d j : ℕ} (h0 : 0 < M.length)
+    (hj : j < M.length) (hj0 : 0 < j) (h : entry M 1 j = entry M 1 0) (hd : 0 < d) :
+    entry (Lift1 M d) 1 j < entry (Lift1 M d) 1 0 := by
+  rw [entry1_Lift1_of_tie hj hj0 h, entry1_Lift1_root h0]
+  omega
+
 end H12H2
 end TRIO
