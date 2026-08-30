@@ -10320,5 +10320,65 @@ theorem mTowerOrphan_of_orphan1 (h : MTowerOrphan1) : L105.MTowerOrphan := by
   refine h u d e n Q hQ hbig hs horph ?_
   exact srow_ne_zero_of_orphan hbig (fun l hl0 hl => hs l (by omega) hl) horph
 
+/-! ### §298 残差 C（`MTowerSingle`）は証明できます —— 行 2 が一定だから
+
+`MTowerSingle`（`L105Cap:6117`）: `Q ∈ W u` ∧ `|Q| = 1` ⟹ `mTower Q d e n ∈ W u`。
+
+`|Q| = 1` なら **`Q` の行 2 は 1 つの値 `c`** で、`shiftr01` も `Lift1` も行 2 を変えないので
+**塔の全列の行 2 が `c`**。⟹ 場合分けは 2 つだけ:
+
+    `c = 0` ⟹ **`mTower_mem_of_zeroRow2`**（`L105Cap:5781`、緑）
+    `c >= 1` ⟹ **`constRow2_mem_W_aux`**（`L105Cap:2622`、緑）＋ 段は `lev_mTower_root`（§296）
+
+⟹ ★ どちらも既に緑でした。⟹ **残差 C は閉じます**。 -/
+
+/-- 塔は行 2 を変えない（`shiftr01` も `Lift1` も行 2 に触らない）。 -/
+theorem entry2_mTower {Q : TrioSeq} (hQ1 : 0 < Q.length) (d e n i : ℕ)
+    (hi : i < (mTower Q d e n).length) :
+    entry (mTower Q d e n) 2 i = entry Q 2 (i % Q.length) := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [hlen] at hi
+  have hk : i / Q.length < n := by
+    rw [Nat.div_lt_iff_lt_mul hQ1]; omega
+  have hq : i % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hidx : i = (i / Q.length) * Q.length + i % Q.length := by
+    rw [Nat.div_add_mod']
+  conv_lhs => rw [hidx]
+  rw [mTower_entry hk hq, entry2_Lift1, entry2_shiftr01]
+
+/-- ★★★ **塔の全列の行 2 は、`Q` の行 2 が一定ならその値**。 -/
+theorem row2_const_mTower {Q : TrioSeq} {c : ℕ} (hQ1 : 0 < Q.length)
+    (hc : ∀ q, q < Q.length → entry Q 2 q = c) (d e n : ℕ) :
+    ∀ p ∈ mTower Q d e n, p.2.2 = c := by
+  intro p hp
+  obtain ⟨i, hi, hpi⟩ := List.mem_iff_getElem.mp hp
+  have h1 : entry (mTower Q d e n) 2 i = p.2.2 := by
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, hpi]
+    simp
+  rw [← h1, entry2_mTower hQ1 d e n i hi]
+  exact hc _ (Nat.mod_lt _ hQ1)
+
+/-- ★★★★★ **残差 C（`MTowerSingle`）は既存の 2 本で閉じる**。 -/
+theorem mTowerSingle_holds : L105.MTowerSingle := by
+  intro u d e n Q hQ h1
+  obtain ⟨q0, rfl⟩ : ∃ q0, Q = [q0] := List.length_eq_one_iff.mp h1
+  have hQ1 : 0 < ([q0] : TrioSeq).length := by simp
+  have hc : ∀ q, q < ([q0] : TrioSeq).length → entry [q0] 2 q = q0.2.2 := by
+    intro q hq
+    have hq0 : q = 0 := by simpa using hq
+    subst hq0
+    simp [entry]
+  have hall := row2_const_mTower (c := q0.2.2) hQ1 hc d e n
+  rcases Nat.eq_zero_or_pos q0.2.2 with hz | hpos
+  · refine L105.mTower_mem_of_zeroRow2 (fun p hp => ?_) hQ d e n
+    have : p = q0 := by simpa using hp
+    rw [this, hz]
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa [mTower] using W_nil u
+    · refine L105.constRow2_mem_W_aux hpos (mTower [q0] d e n).length _ u (le_refl _) hall ?_
+      rw [lev_mTower_root hQ1 d e n hn]
+      exact lev_root_le_of_mem_W hQ (by simp)
+
 end L106
 end TRIO
