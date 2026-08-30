@@ -5169,5 +5169,78 @@ theorem good_chain_le_initial (sz : ℕ → ℕ) (k : ℕ)
     (hgood : ∀ i, i < k → sz (i + 1) < sz i) : k ≤ sz 0 :=
   chain_length_le_of_strict_desc sz k hgood
 
+
+/-- ★★★ **`snoc` の末尾の `srow`**（`p` の行 1・行 2 だけで決まります）。 -/
+theorem srow_snoc (C : TrioSeq) (p : ℕ × ℕ × ℕ) :
+    srow (C ++ [p]) C.length = if 0 < p.2.2 then 2 else if 0 < p.2.1 then 1 else 0 := by
+  have h : ∀ i, entry (C ++ [p]) i C.length = entry [p] i 0 := by
+    intro i; simpa using entry_append_right C [p] i 0
+  have hp : ∀ i, entry [p] i 0 = (if i = 0 then p.1 else if i = 1 then p.2.1 else p.2.2) := by
+    intro i; show (if i = 0 then _ else if i = 1 then _ else _) = _; split_ifs <;> rfl
+  unfold srow
+  rw [h 2, h 1, hp 2, hp 1]
+  simp
+
+/-- ★★★★★★★★ **直前の列が浅ければ、それが行 0 の親**（最小性の条件が空虚）。 -/
+theorem nextrel0_snoc_prev {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hC : C ≠ [])
+    (h : entry C 0 (C.length - 1) < p.1) :
+    nextrel0 (C ++ [p]) (C.length - 1) C.length := by
+  have hlen : 0 < C.length := List.length_pos_iff.mpr hC
+  have hTlen : (C ++ [p]).length = C.length + 1 := by simp
+  have hprev : ∀ i, entry (C ++ [p]) i (C.length - 1) = entry C i (C.length - 1) :=
+    fun i => entry_append_left C [p] (by omega)
+  have hlast : ∀ i, entry (C ++ [p]) i C.length
+      = (if i = 0 then p.1 else if i = 1 then p.2.1 else p.2.2) := by
+    intro i
+    have := entry_append_right C [p] i 0
+    simp only [Nat.add_zero] at this
+    rw [this]
+    show (if i = 0 then _ else if i = 1 then _ else _) = _
+    split_ifs <;> rfl
+  refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+  · rw [hprev 0, hlast 0]; simpa using h
+  · intro j hj; omega
+
+/-- ★★★★★★★★★ **`srow = 1` の場合: 直前の列が行 0 でも行 1 でも小さいなら、それが親**。
+⟹ ★ ⟹ **窓が空**（`|V| = 0`）⟹ ⟹ ★★ **`oper` は 1 列を繰り返すだけ**になります。 -/
+theorem nextrel1_snoc_prev {C : TrioSeq} {p : ℕ × ℕ × ℕ} (hC : C ≠ [])
+    (h0 : entry C 0 (C.length - 1) < p.1) (h1 : entry C 1 (C.length - 1) < p.2.1) :
+    nextrel1 (C ++ [p]) (C.length - 1) C.length := by
+  have hlen : 0 < C.length := List.length_pos_iff.mpr hC
+  have hTlen : (C ++ [p]).length = C.length + 1 := by simp
+  have hn0 := nextrel0_snoc_prev hC h0
+  have hprev : ∀ i, entry (C ++ [p]) i (C.length - 1) = entry C i (C.length - 1) :=
+    fun i => entry_append_left C [p] (by omega)
+  have hlast1 : entry (C ++ [p]) 1 C.length = p.2.1 := by
+    have := entry_append_right C [p] 1 0
+    simp only [Nat.add_zero] at this
+    rw [this]; rfl
+  refine ⟨by omega, by omega, by omega, ?_, ⟨by omega, by omega, Relation.ReflTransGen.single hn0⟩, ?_⟩
+  · rw [hprev 1, hlast1]; exact h1
+  · rintro x ⟨hx1, hx2⟩
+    have hxle : x ≤ C.length := rtg0_le hx2.2.2
+    have hxeq : x = C.length := by omega
+    subst hxeq
+    exact le_refl _
+
+/-- ★★★★★★★★ ⟹ **行 1 の親は直前の列より前には行けません**（証人があるとき）。 -/
+theorem nextrel1_snoc_src_ge {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c : ℕ} (hC : C ≠ [])
+    (h0 : entry C 0 (C.length - 1) < p.1) (h1 : entry C 1 (C.length - 1) < p.2.1)
+    (h : nextrel1 (C ++ [p]) c C.length) : C.length - 1 ≤ c := by
+  have hlen : 0 < C.length := List.length_pos_iff.mpr hC
+  by_contra hc
+  push Not at hc
+  have hn0 := nextrel0_snoc_prev hC h0
+  have hprev : ∀ i, entry (C ++ [p]) i (C.length - 1) = entry C i (C.length - 1) :=
+    fun i => entry_append_left C [p] (by omega)
+  have hlast1 : entry (C ++ [p]) 1 C.length = p.2.1 := by
+    have := entry_append_right C [p] 1 0
+    simp only [Nat.add_zero] at this
+    rw [this]; rfl
+  have hmin := h.2.2.2.2.2 (C.length - 1)
+    ⟨hc, by exact ⟨by simp; omega, by simp, Relation.ReflTransGen.single hn0⟩⟩
+  rw [hprev 1, hlast1] at hmin
+  omega
+
 end H12Export
 end TRIO
