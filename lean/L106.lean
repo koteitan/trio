@@ -8907,7 +8907,8 @@ def TowerR (Q : TrioSeq) (_d _e : ℕ) : Prop :=
   0 < Q.length ∧ (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
 
 open Classical in
-/-- ⛔ **残る唯一の義務**: 窓が `Q` より短い。 -/
+/-- ⛔ **残る唯一の義務（旧・強すぎる形）**: 窓が `Q` より短い。
+⚠ **§277.6 で偽と証明済み**。⟹ ★ 本当に要るのは §277.8 の `MeasOK2`（測度そのもの）です。 -/
 def MeasOK : Prop :=
   ∀ (A Q : TrioSeq) (d e n j : ℕ), 0 < Q.length → j < Q.length →
     hasParent (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -8927,11 +8928,24 @@ def MeasOK : Prop :=
             ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
       < Q.length
 
+open Classical in
+/-- ★★★★★ **本当の義務（§277.8）**: 窓の**測度**が減る。⟹ `|V| < |Q|` はその十分条件。 -/
+def MeasOK2 : Prop :=
+  ∀ (T Q : TrioSeq) (d e : ℕ),
+    hasParent T (srow T (T.length - 1)) (T.length - 1) →
+    towerMeas ((T.drop (parent T (srow T (T.length - 1)) (T.length - 1))).take
+        (T.length - 1 - parent T (srow T (T.length - 1)) (T.length - 1)))
+      (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1)
+        - entry T 0 (parent T (srow T (T.length - 1)) (T.length - 1)) else 0)
+      (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1)
+        - entry T 1 (parent T (srow T (T.length - 1)) (T.length - 1)) else 0)
+      < towerMeas Q d e
+
 /-! ### 277.1 ⟹ ★ **1 段の snoc**（`MeasOK` を仮定して） -/
 
 open Classical in
 theorem snocStep_gen {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
-    (hmeas : MeasOK) (hQ : 0 < Q.length) (hj : j < Q.length)
+    (hmeas : MeasOK2) (hj : j < Q.length)
     (hIH : ∀ V d0 d1, TowerR V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
       ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
     (hne : (A ++ mTower Q d e n
@@ -8980,13 +8994,7 @@ theorem snocStep_gen {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
         have hlt := nextR_index_lt (parent_nextR hpar)
         omega
       · -- 測度の減少
-        have hmm := hmeas A Q d e n j hQ hj (by rw [← hT] at *; exact hpar)
-        rw [← hT] at hmm
-        unfold towerMeas
-        refine natMeasure_lt (rankDE_le_two d e) (rankDE_le_two _ _) ?_
-        left
-        rw [List.length_take, List.length_drop]
-        omega
+        exact hmeas T Q d e hpar
     · -- ★ 孤児 ⟹ `snoc_orphan_W`
       rw [hsp]
       refine snoc_orphan_W _ (by rw [← hdl]; exact hpre) hne ?_
@@ -9001,14 +9009,14 @@ theorem snocStep_gen {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
 /-! ### 277.2 ⟹ ★★★★★★★★ **新しい骨格** -/
 
 open Classical in
-theorem towerClosed_gen {u : ℕ} (hmeas : MeasOK) :
+theorem towerClosed_gen {u : ℕ} (hmeas : MeasOK2) :
     ∀ Q d e, TowerR Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u := by
   refine tower_of_measure_step2 (u := u) TowerR towerMeas ?_
   intro Q d e hP hIH A hA hAQ
   refine prefixTowerClosed_of_snocStepStrong1 hA hAQ ?_
   intro n j hn hj hall
-  refine snocStep_gen (u := u) hmeas hP.1 hj hIH ?_ hall
+  refine snocStep_gen (u := u) hmeas hj hIH ?_ hall
   intro hc
   have : (A ++ mTower Q d e n
       ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length = 0 := by rw [hc]; rfl
@@ -9034,7 +9042,7 @@ theorem towerClosed_gen {u : ℕ} (hmeas : MeasOK) :
 `z < 2` の制限すら要りません（`RootZ1` / `RootZ2` が消えたので）。 -/
 
 open Classical in
-theorem mTowerClosedS_of_measOK (hmeas : MeasOK) : MTowerClosedS := by
+theorem mTowerClosedS_of_measOK (hmeas : MeasOK2) : MTowerClosedS := by
   intro u d e n Q hQ hs
   rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
   · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
