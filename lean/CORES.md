@@ -13612,3 +13612,25 @@ H12 は後者を `parent_cons_eq_zero_of_residual` の中で実際に使用）�
     **R2** … **(ROW2-7)** `W_drop` で根の行 2 を上げて `srow = 2` を測る ／ 残差 A の最小事例の周辺
 
 **✅ build 緑 26 回目**: 811 jobs、`BUILD_EXIT=0`、`H12Export` **418 本**
+
+---
+
+## ★★★★★★★★★★ **H12 (W71, 2026-08-30): 向きは「≤」です（緑）—— 「≥」は `hr0` からは出ません**
+
+    ★★★★★★★★★★ `orphan_last_row1_le_root`（緑）
+      **`hr0 Q` ∧ `|Q| ≥ 2` ∧ `srow(末尾) = 1` ∧ 残差 ⟹ `entry Q 1 (末尾) ≤ entry Q 1 0`**
+    ★★★★★ `orphan_last_row1_eq_root_of_ge` … R2 の「＝」と合わせると **等号**
+    ★★★★★★★★ `orphan_last_not_in_cone` … ⟹ **「末尾は根とタイ」＝「末尾は錐の外」**（(W64) と接続）
+
+### ★★★ **機構（3 行、team-lead の読みどおり）**
+
+    ★ `hr0 Q` ⟹ **根は全列の行 0 の祖先**（`le0_root_of_shallow`）⟹ **`amin Q j ≤ entry Q 1 0`**
+    ★ **`srow = 1` の孤児** ⟹ **`amin Q j = entry Q 1 j`**（`orphan_row1_iff_amin_eq`）
+    ⟹ ⟹ ★★★ **`entry Q 1 (末尾) ≤ entry Q 1 0`**
+
+### ⛔ **ですから「≥」は `hr0` からは出ません（1 行）**
+
+    ⛔ **`hnbQ`（`entry Q 1 0 < entry Q 1 i`）はシートで 41.9%** ⟹ ★ **`hr0` から行 1 の順序は出ません**
+    ⟹ ★★★ **R2 の「`< ` が 0 / 435,583」は、`W` の不変量の可能性**があります（**未証明**）
+    ⟹ ⟹ ★ **予想: `Q ∈ W u ⟹ ∀ j < |Q|, entry Q 1 0 ≤ entry Q 1 j`**（**根は行 1 で最小**）
+    ⟹ ⟹ ⟹ ⚠ **`A2'` で試すと節 2 で詰まります**（`M⟦1⟧ = M.dropLast` なので末尾列が消える）

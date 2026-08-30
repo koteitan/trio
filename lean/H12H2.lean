@@ -7800,5 +7800,48 @@ theorem oper_inputs_Lift1_invariant {X : TrioSeq} {d : ℕ} :
   · rw [entry0_Lift1]
   · rw [entry2_Lift1]
 
+
+/-! ## 119. ★★★★★★★★★★ (W71): **向きは「≤」です** —— 私の `amin` から出るのは団長の読みどおり
+
+`hr0 Q` ⟹ **根は全列の行 0 の祖先**（`le0_root_of_shallow`）⟹ ★ **`amin Q j ≤ entry Q 1 0`**。
+そして **`srow = 1` の孤児 ⟹ `amin Q j = entry Q 1 j`**（`orphan_row1_iff_amin_eq`）。
+⟹ ⟹ ★★★★★★★★★★ ⟹ **`entry Q 1 (末尾) ≤ entry Q 1 0`** —— **「≥」ではなく「≤」**です。
+⟹ ⛔ ですから **(W71) の「末尾の行 1 ≥ 根の行 1」は、`hr0` からは出ません**。
+⟹ ★ R2 の 100% は **「＝」** なので、**両側を合わせると等号**になります。 -/
+
+/-- ★★★★★★★★★★ **(W71) の証明できる向き**: `hr0 Q` ∧ `srow(末尾) = 1` ∧ 残差
+⟹ **末尾の行 1 は根の行 1 以下**。 -/
+theorem orphan_last_row1_le_root {Q : TrioSeq}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (hs : srow Q (Q.length - 1) = 1)
+    (horph : ¬ L53.HasParentInBlock Q) :
+    entry Q 1 (Q.length - 1) ≤ entry Q 1 0 := by
+  have hlast : Q.length - 1 < Q.length := by omega
+  have hle0 : le0 Q 0 (Q.length - 1) :=
+    le0_root_of_shallow (by omega) (fun x hx hxl => hr0 x (by omega) hxl)
+      (Q.length - 1) (by omega) hlast
+  have hamin : amin Q (Q.length - 1) ≤ entry Q 1 0 := amin_le hle0.2.2
+  have horph1 : ¬ hasParent Q 1 (Q.length - 1) := by
+    unfold L53.HasParentInBlock at horph; rwa [hs] at horph
+  have heq : amin Q (Q.length - 1) = entry Q 1 (Q.length - 1) :=
+    (orphan_row1_iff_amin_eq hlast).mp horph1
+  omega
+
+/-- ★★★★★ ⟹ **R2 の 100%（「＝」）と合わせると、残差では等号**になります。
+⟹ ★ **逆向き（`≥`）は `hr0` からは出ません** ⟹ ⚠ **`W` の不変量の可能性**（未証明）。 -/
+theorem orphan_last_row1_eq_root_of_ge {Q : TrioSeq}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (hs : srow Q (Q.length - 1) = 1)
+    (horph : ¬ L53.HasParentInBlock Q)
+    (hge : entry Q 1 0 ≤ entry Q 1 (Q.length - 1)) :
+    entry Q 1 (Q.length - 1) = entry Q 1 0 :=
+  le_antisymm (orphan_last_row1_le_root hr0 hQ2 hs horph) hge
+
+/-- ★★★★★★★★ ⟹ **そして「末尾は根とタイ」＝「末尾は錐の外」**（私の (W64)）。
+⟹ ★ ⟹ **`Lift1` は末尾を持ち上げません** ⟹ ⟹ ★★ **`LiftTie` の核と同じ場所**です。 -/
+theorem orphan_last_not_in_cone {Q : TrioSeq}
+    (hQ2 : 2 ≤ Q.length) (heq : entry Q 1 (Q.length - 1) = entry Q 1 0) :
+    ¬ le1 Q 0 (Q.length - 1) := tie_not_in_cone heq (by omega)
+
 end H12H2
 end TRIO
