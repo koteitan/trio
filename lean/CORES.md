@@ -13089,3 +13089,33 @@ theorem nextrel1_snoc_prev_eq {C p A}
     ⛔ **(PREV) 系は打ち切り**（`WSnoc` が本線でなくなったため）
 
 **✅ build 緑 21 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **404 本**
+
+---
+
+## ⚠⚠ **H12 (W66, 2026-08-30): 自己訂正 16 本目 —— (W64) の「難しさの説明」は誤りでした**
+
+### ★★★★★★★★★★ **`Lift1` は親の構造を一切変えません（既存、無条件）**
+
+    ★★★★★★★★★★ **`Wset.nextrel1_Lift1`（`Wset:1167`）**: `nextrel1 (Lift1 X d) a b ↔ nextrel1 X a b`
+    ★★★★★★★★★★ **`Wset.hasParent_Lift1`（`Wset:1259`）**: `hasParent (Lift1 X d) i b ↔ hasParent X i b`
+    ⟹ ★ **どちらも仮定ゼロの iff**
+
+### ⚠ **ですから私の (W64) の「壁」は、`nextrel1` には効きません**
+
+    ★ **値については真**（`tie_below_root_after_lift`、緑）: 持ち上げ後、タイの列は根より行 1 が低い
+    ⛔ **ですが `nextrel1` は変わりません** ⟹ ★ **「難しさの説明」としては誤り**でした
+    ⟹ ★★★★★ **理由**: `cone_mono_along_nextrel1`（新）——
+      **`nextrel1` の辺では錐の所属が連動する** ⟹ **両端が同じだけ持ち上がる**
+
+### ★★★★★★★★★★ **(W66) の答え: 可換性は既にありました（21 回目）**
+
+    ★★★★★ **`Wtower2.lift_oper_of_noParent`（`:525`）** … **末尾に親が無ければ** `(Lift1 X d)⟦n⟧ = Lift1 (X⟦n⟧) d`
+    ★★★★★ **`L105Cap.lift_oper_comm_of_domT_Lift1`（`:4944`）** … `domT` 版
+
+### ★★★★★★★★ ⟹ **そして「親なし」の仮定は落とせる見込みがあります**
+
+    ★ `wd0` は不変（**行 0 は `Lift1` で動かない**、`wd0_Lift1_invariant`、緑）
+    ★ `nextrel{0,1}` も `hasParent` も不変（上の 2 本）
+    ⟹ ⟹ ★★★ ですから **`oper` の分解（親の位置・窓・持ち上げ量）が `X` と `Lift1 X d` で一致するはず**
+    ⟹ ⚠ **`wd1`（`srow = 2` のとき）だけ未確認**: `nextrel2` の辺では錐の所属が連動しません
+    ⟹ ⛔ **これは見立てです**（`oper` の定義を追っていません）

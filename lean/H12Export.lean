@@ -5516,5 +5516,25 @@ theorem d1_zero_iff_srow_le_one {T : TrioSeq} {par s : ℕ}
     omega
   · intro h; rw [if_neg (by omega)]
 
+
+/-- ★★★★★ **`nextrel1` の辺では、始点が錐の中なら終点も錐の中**。
+⟹ ★ ⟹ **両端が同じだけ持ち上がる** ⟹ ⟹ ★★ **`nextrel1_Lift1` が無条件で成り立つ理由**です。 -/
+theorem cone_mono_along_nextrel1 {X : TrioSeq} {a b : ℕ} (h : nextrel1 X a b)
+    (ha : le1 X 0 a) : le1 X 0 b := ⟨ha.1, h.2.1, ha.2.2.tail h⟩
+
+/-- ★★★★★★★★ **行 0 は `Lift1` で動きません** ⟹ **`wd0` は不変**。 -/
+theorem wd0_Lift1_invariant {X : TrioSeq} {d : ℕ} (last par : ℕ) :
+    entry (Lift1 X d) 0 last - entry (Lift1 X d) 0 par
+      = entry X 0 last - entry X 0 par := by
+  rw [entry0_Lift1, entry0_Lift1]
+
+/-- ★★★★★★★★★★ ⟹ **`Lift1` は `nextrel{0,1}` も `hasParent` も変えません**（既存の 2 本のまとめ）。
+⟹ ★ ですから **`lift_oper_of_noParent`（`Wtower2:525`）の「親なし」の仮定は、
+落とせる見込みがあります**。⟹ ⚠ **これは見立てです**。 -/
+theorem lift_preserves_parents {X : TrioSeq} {d i b : ℕ} :
+    (hasParent (Lift1 X d) i b ↔ hasParent X i b)
+      ∧ (∀ a, nextrel1 (Lift1 X d) a b ↔ nextrel1 X a b) :=
+  ⟨Wset.hasParent_Lift1, fun _ => Wset.nextrel1_Lift1⟩
+
 end H12Export
 end TRIO
