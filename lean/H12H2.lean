@@ -3825,5 +3825,54 @@ theorem outOfCone_becomes_blocker_iff (Q : TrioSeq) {d e n k k' p j : ℕ}
   obtain ⟨h1, h2⟩ := gap_shrinks_in_mTower Q hk hk' hp hj hin hout
   rw [h1, h2]
 
+
+/-! ### 49.2 ★★★★★★★ **4 通りの表** —— 悪くなるのは 1 マスだけ
+
+窓の根が `(k, p)`、的が `(k', j)`（`k ≤ k'`）のとき、「的が窓の根に対してブロッカー」は: -/
+
+/-- ★★★ 根が錐の中・的が錐の中 ⟹ 深さで**良くなる**（`k ≤ k'` なので `e*k' ≥ e*k`）。 -/
+theorem blocker_in_in (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (hinp : le1 Q 0 p) (hinj : le1 Q 0 j) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 j + e * k' ≤ entry Q 1 p + e * k := by
+  rw [entry1_mTower_block_formula Q hk' hj, if_pos hinj,
+    entry1_mTower_block_formula Q hk hp, if_pos hinp]
+
+/-- ★★★ 根が錐の中・的が錐の**外** ⟹ ⛔ **深さで悪くなる唯一のマス**。 -/
+theorem blocker_in_out (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (hinp : le1 Q 0 p) (houtj : ¬ le1 Q 0 j) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 j ≤ entry Q 1 p + e * k := by
+  rw [entry1_mTower_block_formula Q hk' hj, if_neg houtj,
+    entry1_mTower_block_formula Q hk hp, if_pos hinp]
+  omega
+
+/-- ★★★ 根が錐の**外**・的が錐の中 ⟹ 深さで良くなる。 -/
+theorem blocker_out_in (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (houtp : ¬ le1 Q 0 p) (hinj : le1 Q 0 j) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 j + e * k' ≤ entry Q 1 p := by
+  rw [entry1_mTower_block_formula Q hk' hj, if_pos hinj,
+    entry1_mTower_block_formula Q hk hp, if_neg houtp]
+  omega
+
+/-- ★★★★★ 根が錐の**外**・的も錐の外 ⟹ ★ **`k`・`k'`・`e` に一切依らない**
+（＝ **深さで変わらない**）。 -/
+theorem blocker_out_out (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (houtp : ¬ le1 Q 0 p) (houtj : ¬ le1 Q 0 j) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 j ≤ entry Q 1 p := by
+  rw [entry1_mTower_block_formula Q hk' hj, if_neg houtj,
+    entry1_mTower_block_formula Q hk hp, if_neg houtp]
+  omega
+
 end H12H2
 end TRIO
