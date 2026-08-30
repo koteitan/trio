@@ -9598,5 +9598,51 @@ team-lead の最後の望み:「**良い群（`c ≥ |A|`）を IH なしで処�
 
 **⟹ ★★★★★ ⟹ **`tower_of_measure_step2/3` の枠は、閉じません**。⟹ ★ **枠ごと変えるしかありません**。** -/
 
+/-! ## 284. ★★★★★ **(G2) の土台**: `srow = 0` の段は **同一コピー**（＝ `PrefixCopies` の場面）
+
+§282 の撤回で「残差 → 残差 は `srow = 0` でだけ起きるかもしれない」と分かりました。
+**⟹ ★ その `srow = 0` の段が何かを、定義から書きます。** -/
+
+theorem wd0_zero_of_srow_zero {T : TrioSeq} {c : ℕ} (h : srow T (T.length - 1) = 0) :
+    (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0) = 0 := by
+  rw [h]; simp
+
+theorem wd1_zero_of_srow_zero {T : TrioSeq} {c : ℕ} (h : srow T (T.length - 1) = 0) :
+    (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0) = 0 := by
+  rw [h]; simp
+
+/-- ★★★★★ **`srow = 0` の段は「同一コピーの塔」**（`mTower V 0 0 m`）。 -/
+theorem snocStep_oper_srow_zero {T : TrioSeq} {c : ℕ} (m : ℕ)
+    (hL : T.length - 1 ≠ 0)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0))
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c)
+    (h0 : srow T (T.length - 1) = 0) :
+    T⟦m⟧ = T.take c ++ mTower ((T.drop c).take (T.length - 1 - c)) 0 0 m := by
+  rw [snocStep_oper_gen_eq m hL hz hpar hpe, wd0_zero_of_srow_zero (c := c) h0,
+    wd1_zero_of_srow_zero (c := c) h0]
+
+/-! ### 284.1 ⟹ ★★★★ **(G2) の形**
+
+    ★ **`srow = 0` の段** ⟹ **`mTower V 0 0 m` ＝ `V` の同一コピー `m` 個**
+      ⟹ ⟹ ★★ ＝ **`L53.PrefixCopies` の結論そのもの**
+      ⟹ ⟹ ⟹ ★ そして **`PrefixCopies` は接頭辞 `A` に条件を課しません**（私の §270）
+    ★★ **`srow ≥ 1` の段** ⟹ 私の実測では **残差 → 残差 が 0 件**（15,720 件、`srow ≥ 1` に限る）
+
+**⟹ ★★★★★ ⟹ ですから **(G2)「`srow = 0` は `PrefixCopies` に、`srow ≥ 1` は測度に」**の形が見えます。**
+
+**⟹ ⚠ ただし 3 つ確かめる必要があります:**
+
+    ⛔ **(a) `PrefixCopies` 自身が未証明**（`A = []` だけ緑: `prefixCopies_nil`）
+    ⛔ **(b) `srow ≥ 1` に限っても、2 段で減るか**は未確認（§282.2 は `srow ≥ 1` で 30.89% 増でした）
+    ⛔ **(c) 「残差 → 残差 は `srow = 0` でだけ」自体が未確認**（測定中）
+
+**⟹ ⚠ とくに (b) が厳しいです。⟹ ★ §282.2 は `srow ≥ 1` の箱でしたが、**それでも 30.89% 増**でした。**
+**⟹ ⟹ ⛔ ですから **`srow = 0` を外しても、`srow ≥ 1` の 2 段は減りません**。**
+**⟹ ⟹ ⟹ ★★ ですから **(G2) は「残差 → 残差 が無い」だけでは足りません**（§282.1 の指摘のとおり）。**
+
+⚠ **教訓 14**: §284 は緑ですが、**(G2) が閉じる保証はありません**。 -/
+
 end L106
 end TRIO
