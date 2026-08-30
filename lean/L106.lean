@@ -1831,8 +1831,8 @@ theorem prefixTowerClosed_final_full {u : ℕ} {A M : TrioSeq} {d e : ℕ}
 **⟹ ⟹ 残るのは「この 6 本が窓 `V` に遺伝するか」だけです。** -/
 
 /-- ★★★ 遺伝させるべき条件の**最終形**（親の位置はもう前提に出てきません）。 -/
-def TowerP'' (Q : TrioSeq) (d e : ℕ) : Prop :=
-  0 < Q.length ∧ 0 < d ∧ 0 < e ∧
+def TowerP'' (Q : TrioSeq) (_d _e : ℕ) : Prop :=
+  0 < Q.length ∧
     (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) ∧
     entry Q 2 0 = 0
 
@@ -1872,19 +1872,13 @@ def TowerP'' (Q : TrioSeq) (d e : ℕ) : Prop :=
 **⟹ まず §211 の中で作った `hpT` を、名前つきで外に出します（再利用のため）。** -/
 
 theorem hr0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
-    ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l := hP.2.2.2.1
+    ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l := hP.2.1
 
 theorem hz0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
-    entry Q 2 0 = 0 := hP.2.2.2.2
-
-theorem he_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < e :=
-  hP.2.2.1
+    entry Q 2 0 = 0 := hP.2.2
 
 theorem ne_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : Q ≠ [] :=
   List.ne_nil_of_length_pos hP.1
-
-theorem hd_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < d :=
-  hP.2.1
 
 /-- ★ **錐の中の列**は `TowerP''` だけでブロックの中に親を持つ（§163 ＋ §162.9）。 -/
 theorem block_hasParent_cone {Q : TrioSeq} {d e : ℕ} (n : ℕ)
@@ -2632,6 +2626,37 @@ def OrphOK : Prop :=
           ((A ++ mTower Q d e n).length + j))
         ((A ++ mTower Q d e n).length + j)
 
+/-! ### 220.2c ⛔⛔ `0 < d` / `0 < e` は**遺伝しません**（今日いちばん重い発見）
+
+`oper` の作る新しいリフト量は（§198 の逐語）
+
+    `srow = 2` … `wd0` も `wd1` も正になりうる
+    **`srow = 1` … `wd1 = 0`**（`¬ 1 < 1`）
+    **`srow = 0` … `wd0 = wd1 = 0`**
+
+**⟹ ⛔ ★ つまり `0 < e` は `srow ≤ 1` の段で**必ず**破れます。「ときどき」ではありません。**
+**⟹ ⟹ `0 < d` も `srow = 0` の段で必ず破れます。**
+
+**⟹ ★ ですからこの 2 つは `TowerP''` から**外し**、**別ルートの仮定**にします:**
+
+    `d = 0` … 行 0 のリフトが無い塔（`mTower Q 0 e n`）
+    `e = 0` … 行 1 のリフトが無い塔（`mTower Q d 0 n`）
+             ⟹ §112 `MTowerClosedS0 = ShiftTowerClosedS`（**プロジェクト既知の対象**）
+
+⚠ **これは「穴が増えた」のではなく「穴の位置が正しくなった」ものです。**
+**⟹ 私は `TowerP''` に `0 < d` / `0 < e` を入れたまま「遺伝は易しいはず」と書いていました。**
+**⟹ ⟹ ⛔ **誤り**でした。⟹ 必ず破れます。** -/
+
+/-- ⛔ **`d = 0` の塔**（行 0 のリフトなし）。 -/
+def ZeroDOK (u : ℕ) : Prop :=
+  ∀ (A Q : TrioSeq) (e : ℕ), TowerP'' Q 0 e → A ∈ W u → A ++ Q ∈ W u →
+    ∀ n, A ++ mTower Q 0 e n ∈ W u
+
+/-- ⛔ **`e = 0` の塔**（行 1 のリフトなし）。§112 で `ShiftTowerClosedS` と同一。 -/
+def ZeroEOK (u : ℕ) : Prop :=
+  ∀ (A Q : TrioSeq) (d : ℕ), TowerP'' Q d 0 → A ∈ W u → A ++ Q ∈ W u →
+    ∀ n, A ++ mTower Q d 0 n ∈ W u
+
 /-! ### 220.3 測度の強帰納（底のブロックをもらう版） -/
 
 theorem tower_of_measure_step2 {u : ℕ}
@@ -2662,6 +2687,7 @@ theorem tower_of_measure_step2 {u : ℕ}
 
 open Classical in
 theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
+    (hzd : ZeroDOK u) (hze : ZeroEOK u)
     (hpos : HeredPos) (hzero : HeredZero) :
     ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u := by
@@ -2669,10 +2695,12 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
   intro Q d e hP hIH A hA hAQ
   have hQne := ne_of_TowerP'' hP
   have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
-  have he := he_of_TowerP'' hP
-  have hd := hd_of_TowerP'' hP
   have hz0 := hz0_of_TowerP'' hP
   have hr0 := hr0_of_TowerP'' hP
+  rcases Nat.eq_zero_or_pos d with hd0 | hd
+  · subst hd0; exact hzd A Q e hP hA hAQ
+  rcases Nat.eq_zero_or_pos e with he0 | he
+  · subst he0; exact hze A Q d hP hA hAQ
   refine prefixTowerClosed_of_snocStepStrong1 hA hAQ ?_
   intro n j hn hj hall
   rcases Nat.eq_zero_or_pos j with hj0 | hj1
@@ -2716,41 +2744,41 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
       rw [hClen, ← hsplit]
       exact hnp
 
-/-! ### 220.5 ⟹ ★★★ **残る義務は 3 本**（`OrphOK` ＋ 遺伝 2 本）
+/-! ### 220.5 ⟹ ★★★ **残る義務は 5 本**
 
 ```lean
-theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (hpos : HeredPos) (hzero : HeredZero) :
+theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
+    (hzd : ZeroDOK u) (hze : ZeroEOK u) (hpos : HeredPos) (hzero : HeredZero) :
     ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u
 ```
 
-**中身（全部緑）:**
+    **`OrphOK`** … ブロックの中で孤児 ⟹ 全体でも孤児（**遺伝不要**）
+    **`ZeroDOK`** … `d = 0` の塔（行 0 のリフトなし）
+    **`ZeroEOK`** … `e = 0` の塔（行 1 のリフトなし）＝ §112 `ShiftTowerClosedS`
+    **`HeredPos` / `HeredZero`** … 窓 `V` に `TowerP''`（**3 本**）が遺伝する
 
-    §218 `prefixTowerClosed_of_snocStepStrong1` … 外枠（底のブロックは**もらう**）
-    §213 `hsnoc_pos` … `j ≥ 1` かつ**ブロックの中に親**がいる段
-    §140.1 `snoc_orphan_W` … `j ≥ 1` かつ**孤児**の段（`OrphOK` で全体の孤児に上げる）
-    §216 `hsnoc_zero` … `j = 0` の段（`n = k+1`）
-    §219 `parent_bound_pos` … `j ≥ 1` の親の位置（**`hloc` だけ**）
-    §219 `prefix_block_take_mem` … 短い接頭辞（`Wset.W_take` でただ）
-    §217 `hrank_blockRoot` … `p = 0` で `rankDE` が減る
-    §220.3 `tower_of_measure_step2` … 測度の強帰納（`Nat` 1 本）
+### 220.6 ★★ **`TowerP''` は 3 本になりました**
 
-### 220.6 ★★ **`TowerP''` は 5 本になりました**（遺伝の義務）
+    `0 < |Q|` ／ `hr0`（行 0 が根から狭義単調）／ `hz0`（`entry Q 2 0 = 0`）
 
-    `0 < |Q|` / `0 < d` / `0 < e` / `hr0`（行 0 が根から狭義単調）/ `hz0`（`entry Q 2 0 = 0`）
+**⟹ ★ 今日の朝は 9 本（`M` つき）でした。⟹ 消えたもの:**
 
-**⟹ ★ `h2out` / `h1out` は**遺伝させる必要がなくなりました**。**
-**⟹ ⟹ `OrphOK`（族全体についての 1 つの仮定）が肩代わりします。**
+    `hbase` … §208。剥がすのをやめて**下から積む**
+    `hd0e`  … `0 < d` に含意されていた ⟹ その `0 < d` も外れた
+    `hlp`   … **一度も使っていなかった**（§167 が窓補題より前提が少ない）
+    `h2out` / `h1out` … `OrphOK` が肩代わり
+    `0 < d` / `0 < e` … **遺伝しない**（§220.2c）⟹ 別ルートの仮定へ
 
-⚠ **`OrphOK` は「ブロックの中で孤児 ⟹ 接頭辞と塔を付けても孤児」です。**
-**⟹ ★ H12 の実測（`hloc` は錐の外で 68.8% 失敗）が**そのまま**この仮定の分母です。**
-**⟹ ⟹ 「失敗した列が全体でも孤児か」が測れれば、`OrphOK` の成否がわかります。**
+**⟹ ⟹ ★ 遺伝の義務は `0 < |Q|` / `hr0` / `hz0` の**3 本**だけです。**
+**⟹ ⟹ ⟹ そして `hz0` は既知の (H2')、`hr0` は R2 が測れます。**
 
-⚠ **教訓 14**: **`OrphOK` / `HeredPos` / `HeredZero` は**どれも証明していません**。**
-**この定理は「3 本が真ならば族が閉じる」しか言っていません。**
+⚠ **教訓 14**: **5 本のどれも証明していません。**
+**この定理は「5 本が真ならば族が閉じる」しか言っていません。**
 
-⚠ **そして消費側（`MTowerClosedS`）への接続もまだです。**
-**⟹ `A = []` で `TowerP''`（5 本）を作れるか。⟹ `0 < d` / `0 < e` / `hz0` が問題です。** -/
+⚠ **消費側（`MTowerClosedS`）への接続もまだです。**
+**⟹ `A = []` で `TowerP''`（3 本）を作れるか。⟹ `hz0` が問題です
+（H12 の `hz0_of_zle1` が効くはずです）。** -/
 
 end L106
 end TRIO
