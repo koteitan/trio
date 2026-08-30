@@ -4086,5 +4086,144 @@ theorem no_nextrel2_from_prefix {A T : TrioSeq} {y j1 : ℕ}
 **「偽の仮定による空虚」ではなくなりました**。⟹ ですが `OrphOK` は**実測で 3.5% 破れます**。
 **⟹ ⟹ ★ ですから **いまも「証明できていない」状態**です。そこは変わりません。** -/
 
+/-! ## 229. ★★★★★★★ **枠を緩めた `j ≥ 1` の段**（(s8) が 0 件なら、これで通ります）
+
+team-lead の依頼 1（「親は 1 ブロック手前まで」）を、**測度が通る形**で先に組んでおきます。
+
+**⟹ ★ 鍵は §205 `prefix_mTower_take_reassoc` が **`j` について一般**だったことです:**
+
+    `A ++ mTower Q d e (k+1) ++ block_{k+1}.take (jj+1)`
+      `= (A ++ mTower Q d e k) ++ (block_k ++ block_{k+1}).take (|Q| + jj + 1)`
+
+**⟹ ⟹ ★★ ですから「親が 1 ブロック手前」でも、**`P' := A ++ mTower Q d e k` から見れば
+`p' ≥ 0` の通常の場合**になります。⟹ §202 がそのまま使えます。**
+
+⚠ **測度は `|V| < |Q|`（**狭義**）を前提にします。`= |Q|` だと第 1 成分が減らず、
+親がブロック根でないので §200 の `rankDE` も使えません（(s8) で確かめてもらっています）。** -/
+
+/-- 2 ブロック連結の行 2 は `Q` の行 2（`x` を `|Q|` で折り返す）。 -/
+theorem entry2_pair_le {Q : TrioSeq} {d e k x : ℕ} (hQ1 : 0 < Q.length)
+    (hx : x < Q.length + Q.length)
+    (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1) :
+    entry (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+      ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) 2 x ≤ 1 := by
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  rcases Nat.lt_or_ge x Q.length with hlt | hge
+  · rw [entry_append_left _ _ (show x < B0.length by omega), hB0]
+    show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD x (0, 0, 0)).2.2 ≤ 1
+    rw [block_getD (d := d) (e := e) (n := k) hlt]
+    exact hz1 x hlt
+  · obtain ⟨y, rfl⟩ : ∃ y, x = B0.length + y := ⟨x - B0.length, by omega⟩
+    rw [entry_append_right, hB1]
+    show ((Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).getD y (0, 0, 0)).2.2 ≤ 1
+    rw [block_getD (d := d) (e := e) (n := k + 1) (show y < Q.length by omega)]
+    exact hz1 y (by omega)
+
+/-- 窓の行 2 は「元の列」の行 2（一般の `P` / `B`）。 -/
+theorem entry2_wnd_gen {P B : TrioSeq} {j p t : ℕ} (hpj : p < j) (ht : t < j - p) :
+    entry (wnd P B j p) 2 t = entry B 2 (p + t) := by
+  unfold wnd
+  rw [entry_window _ ht,
+    show P.length + p + t = P.length + (p + t) from by omega, entry_append_right,
+    Wset.entry_take (show p + t < j + 1 by omega)]
+
+open Classical in
+theorem hsnoc_prev_of_parent {u : ℕ} {A Q : TrioSeq} {d e k jj p : ℕ}
+    (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hP : TowerP'' Q d e) (hjj : jj < Q.length) (hjj1 : 0 < jj)
+    (hplt : p < Q.length + jj)
+    (hshort : Q.length + jj - p < Q.length)
+    (hpre : ∀ q, q ≤ Q.length + jj →
+      A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take q ∈ W u)
+    (hpar : hasParent
+      (A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
+      (srow (A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
+        ((A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
+              (Q.length + jj + 1)).length - 1))
+      ((A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
+              (Q.length + jj + 1)).length - 1))
+    (hpe : parent
+      (A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
+      (srow (A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
+        ((A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
+              (Q.length + jj + 1)).length - 1))
+      ((A ++ mTower Q d e k
+        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
+              (Q.length + jj + 1)).length - 1)
+      = (A ++ mTower Q d e k).length + p) :
+    A ++ mTower Q d e (k + 1)
+      ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (jj + 1) ∈ W u := by
+  have hQ1 : 0 < Q.length := by omega
+  have hr0 := hr0_of_TowerP'' hP
+  have hz1 := hz1_of_TowerP'' hP
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  set P := A ++ mTower Q d e k with hPdef
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  have hB1len : B1.length = Q.length := by rw [hB1, Lift1_length, shiftr01_length]
+  have hBlen : (B0 ++ B1).length = Q.length + Q.length := by
+    rw [List.length_append, hB0len, hB1len]
+  have hre : A ++ mTower Q d e (k + 1) ++ B1.take (jj + 1)
+      = P ++ (B0 ++ B1).take (Q.length + (jj + 1)) := by
+    rw [hPdef, hB0, hB1, prefix_mTower_take_reassoc A Q d e k (jj + 1), List.append_assoc]
+  have hidx : Q.length + (jj + 1) = Q.length + jj + 1 := by omega
+  rw [hre, hidx]
+  set S := P ++ (B0 ++ B1).take (Q.length + jj + 1) with hS
+  have hSlen : S.length = P.length + (Q.length + jj + 1) := by
+    rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hlast : S.length - 1 = P.length + (Q.length + jj) := by omega
+  -- ★ 末尾列は第 (k+1) ブロックの第 `jj` 列。`hr0` と `jj ≥ 1` で行 0 が正
+  have hEl : entry S 0 (P.length + (Q.length + jj)) = entry Q 0 jj + d * (k + 1) := by
+    rw [hS, entry_append_right,
+      Wset.entry_take (show Q.length + jj < Q.length + jj + 1 by omega),
+      show Q.length + jj = B0.length + jj from by omega, entry_append_right, hB1,
+      entry0_Lift1, entry0_shiftr01 (by omega)]
+  have hQj : 0 < entry Q 0 jj := by have := hr0 jj hjj1 hjj; omega
+  have hz : ¬ (entry S 0 (S.length - 1) = 0 ∧ entry S 1 (S.length - 1) = 0 ∧
+      entry S 2 (S.length - 1) = 0) := by
+    rw [hlast]; intro hc; rw [hEl] at hc; omega
+  -- ★ 展開して帰納法の仮定を当てる
+  refine mem_of_oper_mem ?_
+  intro m _
+  have heq := snocStep_oper_pre_eq (P := P) (B := B0 ++ B1) (j := Q.length + jj)
+    (p := p) (m := m) (by omega) hplt hz hpar hpe
+  rw [← hS] at heq
+  rw [heq]
+  have hlen := wnd_length (P := P) (B := B0 ++ B1) (j := Q.length + jj) (p := p)
+    (by omega) hplt
+  refine hIH _ _ _ ⟨by rw [hlen]; omega,
+    hr0_wnd (by omega) hplt hpar hpe,
+    fun q hq => by
+      rw [hlen] at hq
+      rw [entry2_wnd_gen hplt (by omega)]
+      exact entry2_pair_le (Q := Q) (d := d) (e := e) (k := k) hQ1 (by omega) hz1⟩ ?_
+    (P ++ (B0 ++ B1).take p) (hpre p (by omega))
+    (by rw [prefix_append_wnd hplt]; exact hpre (Q.length + jj) le_rfl) m
+  unfold towerMeas
+  refine natMeasure_lt (rankDE_le_two d e) (rankDE_le_two _ _) ?_
+  left
+  rw [hlen]
+  omega
+
 end L106
 end TRIO
