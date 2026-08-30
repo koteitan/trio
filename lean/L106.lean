@@ -10380,5 +10380,123 @@ theorem mTowerSingle_holds : L105.MTowerSingle := by
       rw [lev_mTower_root hQ1 d e n hn]
       exact lev_root_le_of_mem_W hQ (by simp)
 
+/-! ### §299 (L-B1) 残差 A・B は「行 2 が一定でない `Q`」だけで足りる
+
+⚠⚠ **22 回目の重複、しかも自分のファイルの中でした**: `mTower_mem_of_constRow2`
+（**`L106:936`**、私が今日の前半に書いたもの）が既に
+**「`Q` の行 2 が定数 ⟹ 塔は `W u`」**を言っている。⟹ §298 はこれを使えば 3 行だった。
+
+⟹ ★ ですから **`|Q| = 1` は本質ではなく、「行 2 が一定」が本質**だった。
+⟹ ⟹ ★★★ そして **`|Q|` に依らない**ので、**残差 A・B の両方**で
+「行 2 が一定」の場合が消える。
+⟹ ⟹ ⟹ ★ `MTowerClosedRow2` は既に「`∃ p ∈ Q, 0 < p.2.2`」に絞っているので、
+**残るのは「行 2 に 0 の列と正の列が両方ある `Q`」だけ**。 -/
+
+/-- **残差 B を「行 2 が一定でない `Q`」に制限した形**。 -/
+def MTowerOrphan2 : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u → 2 ≤ Q.length →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    ¬ L53.HasParentInBlock Q → srow Q (Q.length - 1) ≠ 0 →
+    (¬ ∃ c, ∀ p ∈ Q, p.2.2 = c) →
+    mTower Q d e n ∈ W u
+
+/-- ★★★ **残差 B は「行 2 が一定でない `Q`」だけで足りる**。 -/
+theorem mTowerOrphan_of_orphan2 (h : MTowerOrphan2) : L105.MTowerOrphan := by
+  intro u d e n Q hQ hbig hs horph
+  by_cases hconst : ∃ c, ∀ p ∈ Q, p.2.2 = c
+  · obtain ⟨c, hc⟩ := hconst
+    exact mTower_mem_of_constRow2 hc hQ d e n
+  · exact h u d e n Q hQ hbig hs horph
+      (srow_ne_zero_of_orphan hbig (fun l hl0 hl => hs l (by omega) hl) horph) hconst
+
+/-- **残差 A を「行 2 が一定でない `Q`」に制限した形**。 -/
+def MTowerStepAll2 : Prop :=
+  ∀ (u d e : ℕ) (Q : TrioSeq), Q ∈ W u → 2 ≤ Q.length →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    L53.HasParentInBlock Q →
+    (¬ ∃ c, ∀ p ∈ Q, p.2.2 = c) →
+    L105.MTowerStep u Q d e
+
+/-! ⚠ **残差 A の「行 2 が一定」の場合は、まだ 1 手足りません**。
+`MTowerStep u Q d e = ∀ n m, 1 <= m → mTower Q d e n ++ shiftr01 (d*n) 0 ((Lift1 Q (e*n))⟦m⟧) ∈ W u`
+は**連結**なので、`mTower_mem_of_constRow2` ではなく
+**`constRow2_mem_W`（`L105Cap:2686`、任意の列に効く）**を直に当てるべきである。
+⟹ ★ 要るのは **「`oper` は行 2 の値を保つ」**（`oper` は行 0・行 1 しか持ち上げない）だけ。
+⟹ ⚠ その補題をまだ書いていないので、ここは開けておく。 -/
+
+/-! ### §300 `oper` は行 2 の値を変えない —— 残差 A の「行 2 が一定」の場合が閉じる
+
+`oper` の定義（`Trio.lean:98`）の第 3 成分は **`entry M 2 j` そのまま**で、
+枝は `M` ／ `Pred M` ／ `M.take j0 ++ (添字 `j ∈ [j0, j1)` の写し)` の 3 つしかない。
+⟹ ★ **どの列の行 2 も `M` のどれかの列の行 2** ⟹ **一定なら一定**。 -/
+
+/-- `M` の行 2 が定数なら、添字でも定数。 -/
+theorem entry2_const_of_mem {M : TrioSeq} {c : ℕ} (h : ∀ p ∈ M, p.2.2 = c)
+    {j : ℕ} (hj : j < M.length) : entry M 2 j = c := by
+  have hm : M[j] ∈ M := List.getElem_mem hj
+  have : entry M 2 j = (M[j]).2.2 := by
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    simp
+  rw [this]
+  exact h _ hm
+
+/-- `Pred M` の列は `M` の列（前提なし）。 -/
+theorem mem_of_mem_Pred {M : TrioSeq} {p : ℕ × ℕ × ℕ} (hp : p ∈ Pred M) : p ∈ M := by
+  rw [Pred] at hp
+  split_ifs at hp with hle
+  · exact hp
+  · exact List.dropLast_subset M hp
+
+/-- ★★★ **`oper` は行 2 の値を変えない**（前提なし）。 -/
+theorem constRow2_oper {M : TrioSeq} {c : ℕ} (h : ∀ p ∈ M, p.2.2 = c) (n : ℕ) :
+    ∀ p ∈ M⟦n⟧, p.2.2 = c := by
+  intro p hp
+  rw [oper] at hp
+  simp only at hp
+  split_ifs at hp
+  all_goals try exact h p hp
+  all_goals try exact h p (mem_of_mem_Pred hp)
+  all_goals
+    rcases List.mem_append.mp hp with hq | hq
+    · exact h p (List.take_subset _ _ hq)
+    · rw [List.mem_flatMap] at hq
+      obtain ⟨k, -, hk⟩ := hq
+      rw [List.mem_map] at hk
+      obtain ⟨j, hj, rfl⟩ := hk
+      have hjlt : j < M.length := by
+        rw [List.mem_range'] at hj
+        omega
+      simpa using entry2_const_of_mem h hjlt
+
+/-! ### §301 ★★★ `MTowerClosedS` は「行 2 が一定でない `Q`」だけで出る
+
+`mTower_mem_of_constRow2`（`L106:936`）は `|Q|` にも `HasParentInBlock` にも依らない。
+⟹ ★ ですから **残差 3 本に割る前に、まず「行 2 が一定か」で割る**のが正しい。
+⟹ ⟹ ★★★ **一定なら無条件に閉じる** ⟹ **残るのは一定でない `Q` だけ**。
+
+そして `MTowerClosedRow2`（`L105Cap:5794`）は既に「`∃ p ∈ Q, 0 < p.2.2`」に絞っているので、
+両方合わせると **残核は「行 2 に 0 の列と正の列が両方ある `Q`」**である。
+（`z <= 1` の断片では ⟹ **`z = 0` の列と `z = 1` の列が両方ある `Q`**。） -/
+
+/-- **`MTowerClosedS` を「行 2 が一定でない `Q`」に制限した形**。 -/
+def MTowerClosedNonconst : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    (¬ ∃ c, ∀ p ∈ Q, p.2.2 = c) →
+    mTower Q d e n ∈ W u
+
+/-- ★★★★★ **行 2 が一定なら無条件に閉じるので、残核は一定でない `Q` だけ**。 -/
+theorem mTowerClosedS_of_nonconst (h : MTowerClosedNonconst) : L105.MTowerClosedS := by
+  intro u d e n Q hQ hs
+  by_cases hconst : ∃ c, ∀ p ∈ Q, p.2.2 = c
+  · obtain ⟨c, hc⟩ := hconst
+    exact mTower_mem_of_constRow2 hc hQ d e n
+  · exact h u d e n Q hQ hs hconst
+
+/-- ⟹ **`Final` まで通ります**（`TRIO_terminates_of_mTowerClosedS` に食わせるだけ）。 -/
+theorem mTowerClosedS_holds_of_nonconst (h : MTowerClosedNonconst) :
+    L105.MTowerClosedS := mTowerClosedS_of_nonconst h
+
 end L106
 end TRIO
