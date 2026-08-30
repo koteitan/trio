@@ -6684,5 +6684,118 @@ theorem heredNB_false : ¬ HeredNB := by
 
 **⟹ ⟹ ⟹ ★★★ ですから次の設計課題は **「窓は `W` の元か」**です。** -/
 
+/-! ## 249. ⛔⛔⛔ **`hpar` / `hpe` を足しても `HeredNB` は偽**です
+
+§248 の反例は `p = 1` を勝手に取っていました。⚠ ですが**使用箇所（`hsnoc_pos`）は
+`hpar`（親が居る）と `hpe`（親 ＝ `P.length + p`）を持っています**。
+**⟹ ★ 実際 §248 の `B` では **親は 2** なので、窓は長さ 1 になり `hlocQ` は空虚です。**
+**⟹ ⟹ ★★ ですから **`HeredNB` を締めれば直る**——と期待するのが自然です。**
+
+**⟹ ⛔⛔ ですが **締めても偽**です。⟹ ⟹ 別の反例を貼ります:**
+
+    `B = [(0,0,0), (1,5,0), (2,1,0), (2,9,0)]`
+    ⟹ 行 0 = [0,1,2,2]、行 1 = [0,5,1,9]、行 2 ≡ 0
+    ⟹ ★ 列 3 の `srow` は 1、**親は 1**（列 2 は `le0` 祖先でない: 行 0 が 2 = 2 で上がらない）
+    ⟹ ⟹ 窓 = `[(1,5,0), (2,1,0)]` ⟹ ⛔ `t = 1` で `entry V 1 0 = 5 < 1` は**偽**
+
+**⟹ ★★★ **列 2 は `j` の `le0` 祖先ではない**ので、`nextrel1` の最小性が効きません。**
+**⟹ ⟹ ★ これが「締めても直らない」理由です。⟹ **窓は `le0` の部分木で、親の道より広い**。** -/
+
+/-- 締めた `HeredNB`（使用箇所が実際に持っている前提つき）。 -/
+def HeredNB' : Prop :=
+  ∀ (P B : TrioSeq) (j p : ℕ), p < j → j < B.length →
+    hasParent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) (P.length + j)) (P.length + j) →
+    parent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) (P.length + j)) (P.length + j) = P.length + p →
+    hlocQ (wnd P B j p)
+
+section CE249
+private def Bce : TrioSeq := [(0, 0, 0), (1, 5, 0), (2, 1, 0), (2, 9, 0)]
+
+private theorem Bce_take : ([] : TrioSeq) ++ Bce.take (3 + 1) = Bce := by
+  unfold Bce; rfl
+
+private theorem Bce_nr0_13 : nextrel0 Bce 1 3 := by
+  refine ⟨by decide, by decide, by omega, by decide, ?_⟩
+  intro q hq
+  rw [show q = 2 from by omega]; decide
+
+private theorem Bce_no_le0_23 : ¬ le0 Bce 2 3 := by
+  rintro ⟨-, -, hrt⟩
+  rcases Relation.ReflTransGen.cases_tail hrt with h | ⟨c, hc, hcs⟩
+  · omega
+  · have h1 : 2 ≤ c := le0_le' ⟨by decide, by simpa using hcs.1, hc⟩
+    have h2 : c < 3 := hcs.2.2.1
+    rw [show c = 2 from by omega] at hcs
+    exact absurd hcs.2.2.2.1 (by decide)
+
+private theorem Bce_le0_q3 {q : ℕ} (h : le0 Bce q 3) (hq : 1 < q) : q = 3 := by
+  have hle := le0_le' h
+  rcases Nat.lt_or_ge q 3 with hlt | hge
+  · rw [show q = 2 from by omega] at h; exact absurd h Bce_no_le0_23
+  · omega
+
+private theorem Bce_nr1_13 : nextrel1 Bce 1 3 := by
+  refine ⟨by decide, by decide, by omega, by decide,
+    ⟨by decide, by decide, Relation.ReflTransGen.single Bce_nr0_13⟩, ?_⟩
+  intro q ⟨hq1, hq2⟩
+  rw [Bce_le0_q3 hq2 hq1]
+
+private theorem nextR_one_iff {M : TrioSeq} {a b : ℕ} : nextR M 1 a b ↔ nextrel1 M a b := by
+  unfold nextR; simp
+
+private theorem Bce_uniq {y : ℕ} (h : nextrel1 Bce y 3) : y = 1 := by
+  have hy3 : y < 3 := h.2.2.1
+  rcases Nat.lt_or_ge y 1 with h0 | h1
+  · rw [show y = 0 from by omega] at h
+    exact absurd (h.2.2.2.2.2 1 ⟨by omega,
+      ⟨by decide, by decide, Relation.ReflTransGen.single Bce_nr0_13⟩⟩) (by decide)
+  · rcases Nat.lt_or_ge y 2 with h1' | h2
+    · omega
+    · rw [show y = 2 from by omega] at h
+      exact absurd h.2.2.2.2.1 Bce_no_le0_23
+
+private theorem Bce_srow : srow Bce 3 = 1 := by decide
+
+private theorem Bce_hasParent : hasParent Bce 1 3 := by
+  refine ⟨1, nextR_one_iff.mpr Bce_nr1_13, fun y hy => Bce_uniq (nextR_one_iff.mp hy)⟩
+
+/-- ⛔⛔⛔ **締めた `HeredNB'` も偽**。 -/
+theorem heredNB'_false : ¬ HeredNB' := by
+  intro h
+  have hw : wnd ([] : TrioSeq) Bce 3 1 = [(1, 5, 0), (2, 1, 0)] := by
+    unfold wnd Bce; rfl
+  have hloc := h [] Bce 3 1 (by omega) (by decide) ?_ ?_
+  · rw [hw] at hloc
+    obtain ⟨-, hrow1⟩ := hloc 1 (by omega) (by decide)
+    obtain ⟨y, hy1, -, hylt, -⟩ := hrow1 (by decide) (by decide)
+    rw [show y = 0 from by omega] at hylt
+    exact absurd hylt (by decide)
+  · rw [Bce_take]
+    show hasParent Bce (srow Bce (0 + 3)) (0 + 3)
+    rw [show (0 : ℕ) + 3 = 3 from rfl, Bce_srow]
+    exact Bce_hasParent
+  · rw [Bce_take]
+    show parent Bce (srow Bce (0 + 3)) (0 + 3) = 0 + 1
+    rw [show (0 : ℕ) + 3 = 3 from rfl, Bce_srow, show (0 : ℕ) + 1 = 1 from rfl]
+    exact Bce_uniq (nextR_one_iff.mp (parent_nextR Bce_hasParent))
+
+end CE249
+
+/-! ### 249.1 ⟹ ★★★ **何が悪いのかが分かりました**
+
+    **窓 `[p, j)` は `p` の行 0 の部分木**（`j` への道だけではない）
+    ⟹ ★ `nextrel1 B p j` の最小性は **`j` の `le0` 祖先**にしか効かない
+    ⟹ ⟹ ⛔ **道から外れた列**（上の例の列 2）は**何の制約も受けない**
+    ⟹ ⟹ ⟹ ★★★ そこが `hlocQ` を破ります
+
+**⟹ ★ 逆に **`j` の `le0` 祖先の上では `hlocQ` は無料**です（次で緑にします）。** -/
+
+theorem hlocQ_row1_of_le0_path {B : TrioSeq} {p q j : ℕ}
+    (hnr : nextrel1 B p j) (hpq : p < q) (hq : le0 B q j) :
+    entry B 1 p < entry B 1 q :=
+  lt_of_lt_of_le hnr.2.2.2.1 (hnr.2.2.2.2.2 q ⟨hpq, hq⟩)
+
 end L106
 end TRIO
