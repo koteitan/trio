@@ -3342,11 +3342,57 @@ theorem hrank_blockRoot_noE {A Q : TrioSeq} {d e k : ℕ}
     rw [if_pos he]
     split_ifs <;> omega
 
+
+/-! ### 223.3 ★★★★ `d = 0` ならブロックの根は**必ず孤児**
+
+`d = 0` のとき塔は行 0 を**触りません**。⟹ 第 `k` ブロックの `q` 列目の行 0 は `entry Q 0 q`。
+
+**⟹ ★ `hr0` より、塔のどの列も行 0 は `entry Q 0 0` **以上**です。**
+**⟹ ⟹ ブロックの根の行 0 は `entry Q 0 0` ちょうど ⟹ **`nextrel0` の始点になれる列が無い**。**
+**⟹ ⟹ ⟹ `le0` の祖先が自分しか無い ⟹ 行 1・行 2 の親も持てない（`nextR_le0`）。**
+
+> **⟹ ★★ `ZeroDOK` は**要りません**。`d = 0` は「常に孤児」で `snoc_orphan_W` に落ちます。** -/
+
+theorem blockRoot_orphan_of_d_zero {Q : TrioSeq} {e n k i : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ¬ hasParent (mTower Q 0 e n) i (k * Q.length) := by
+  intro hp
+  have hTlen : (mTower Q 0 e n).length = n * Q.length := mTower_length Q 0 e n
+  have hroot : entry (mTower Q 0 e n) 0 (k * Q.length) = entry Q 0 0 := by
+    have := entry0_mTower_block Q 0 e n k 0 hk hQ1
+    rw [Nat.add_zero, Nat.zero_mul, Nat.add_zero] at this
+    exact this
+  -- 塔のどの列も行 0 は `entry Q 0 0` 以上
+  have hall : ∀ c, c < (mTower Q 0 e n).length →
+      entry Q 0 0 ≤ entry (mTower Q 0 e n) 0 c := by
+    intro c hc
+    rw [hTlen] at hc
+    have hq : c % Q.length < Q.length := Nat.mod_lt _ hQ1
+    have hk' : c / Q.length < n := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact hc)
+    have hdec : c / Q.length * Q.length + c % Q.length = c := Nat.div_add_mod' c Q.length
+    have h := entry0_mTower_block Q 0 e n (c / Q.length) (c % Q.length) hk' hq
+    rw [hdec, Nat.zero_mul, Nat.add_zero] at h
+    rw [h]
+    rcases Nat.eq_zero_or_pos (c % Q.length) with h0 | h0
+    · rw [h0]
+    · exact le_of_lt (hr0 _ h0 hq)
+  have hnr := parent_nextR hp
+  have hlt : parent (mTower Q 0 e n) i (k * Q.length) < k * Q.length :=
+    nextR_index_lt hnr
+  obtain ⟨-, hbM, hrtg⟩ := nextR_le0 hnr
+  rcases hrtg.cases_tail with heq | ⟨c, -, hcb⟩
+  · omega
+  · have h1 := hcb.2.2.2.1
+    have h2 := hall c hcb.1
+    rw [hroot] at h1
+    omega
+
 /-! ### 223.2 ★★★★ `j = 0` の枝の `0 < e` なし版（§216 の差し替え） -/
 
 open Classical in
 theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
-    (horph0 : OrphOK0) (hQne : Q ≠ []) (hd : 0 < d)
+    (horph0 : OrphOK0) (hQne : Q ≠ [])
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hz0 : entry Q 2 0 = 0)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
@@ -3396,7 +3442,13 @@ theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
     rw [hTeq]; exact srow_take (by omega)
   by_cases hpM : hasParent (mTower Q d e (k + 2))
       (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length)) ((k + 1) * Q.length)
-  · -- ★ 親がある
+  · -- ★ 親がある ⟹ `d = 0` ではありえない（§223.3）
+    have hd : 0 < d := by
+      by_contra hc
+      have hd0 : d = 0 := by omega
+      subst hd0
+      exact blockRoot_orphan_of_d_zero (Q := Q) (e := e) (n := k + 2) (k := k + 1)
+        (i := srow (mTower Q 0 e (k + 2)) ((k + 1) * Q.length)) hQ1 (by omega) hr0 hpM
     have hpT : hasParent T (srow T ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
       rw [hsrowT, hTeq]
       exact (hasParent_take hle (by omega)).mpr hpM
@@ -3486,11 +3538,6 @@ theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
 **⟹ 私は `TowerP''` に `0 < d` / `0 < e` を入れたまま「遺伝は易しいはず」と書いていました。**
 **⟹ ⟹ ⛔ **誤り**でした。⟹ 必ず破れます。** -/
 
-/-- ⛔ **`d = 0` の塔**（行 0 のリフトなし）。 -/
-def ZeroDOK (u : ℕ) : Prop :=
-  ∀ (A Q : TrioSeq) (e : ℕ), TowerP'' Q 0 e → A ∈ W u → A ++ Q ∈ W u →
-    ∀ n, A ++ mTower Q 0 e n ∈ W u
-
 /-! ### 220.3 測度の強帰納（底のブロックをもらう版） -/
 
 theorem tower_of_measure_step2 {u : ℕ}
@@ -3521,7 +3568,7 @@ theorem tower_of_measure_step2 {u : ℕ}
 
 open Classical in
 theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ZeroDOK u) (hz2 : HeredZ2) :
+    (hz2 : HeredZ2) :
     ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u := by
   refine tower_of_measure_step2 (u := u) TowerP'' towerMeas ?_
@@ -3530,8 +3577,6 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
   have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
   have hz0 := hz0_of_TowerP'' hP
   have hr0 := hr0_of_TowerP'' hP
-  rcases Nat.eq_zero_or_pos d with hd0 | hd
-  · subst hd0; exact hzd A Q e hP hA hAQ
   refine prefixTowerClosed_of_snocStepStrong1 hA hAQ ?_
   intro n j hn hj hall
   rcases Nat.eq_zero_or_pos j with hj0 | hj1
@@ -3544,7 +3589,7 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
               ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u := by
       intro p hp
       exact prefix_block_take_mem hp (by simpa using hall 0 (le_refl 0))
-    exact hsnoc_zero_noE horph0 hQne hd hr0 hz0 hIH hpre hz2
+    exact hsnoc_zero_noE horph0 hQne hr0 hz0 hIH hpre hz2
   · -- ★ `j ≥ 1`
     set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
     have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
@@ -3572,21 +3617,23 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
       rw [hClen, ← hsplit]
       exact hnp
 
-/-! ### 220.5 ⟹ ★★★★★ **残る義務は 4 本**（`ZeroEOK` が消えました）
+/-! ### 220.5 ⟹ ★★★★★★ **残る義務は 3 本**（`ZeroDOK` も消えました）
 
 ```lean
-theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ZeroDOK u) (hz2 : HeredZ2) :
+theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0) (hz2 : HeredZ2) :
     ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u
 ```
 
     **`OrphOK`**  … `j ≥ 1` でブロックの中で孤児 ⟹ 全体でも孤児（**R2 実測 100%、374043**）
     **`OrphOK0`** … `j = 0` で**塔の中**で孤児 ⟹ 接頭辞を付けても孤児
-    **`ZeroDOK`** … `d = 0` の塔（⟹ team-lead: `PrefixCopies`）
     **`HeredZ2`** … 窓の根の行 2 が 0（＝ (H2')。**R2 実測 98.4〜99.8%**）
 
-**⟹ ★ `ZeroEOK`（`e = 0` の塔）は **H12 の (q3b)** で消えました。**
+**⟹ ★ `ZeroEOK` は H12 の (q3b) で、`ZeroDOK` は §223.3 で消えました。**
+**⟹ ⟹ `0 < d` / `0 < e` は**仮定せず、必要なときだけ導出**します:**
+
+    `0 < d` … 親があるブロック根から（§223.3 の対偶）
+    `0 < e` … 親がブロック根のとき `nextrel1` から（§199）
 
 ### 220.6 ★★★ 遺伝の義務は **`hz0(V)` 1 本**
 
@@ -3596,7 +3643,7 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
     `hr0(V)`  … §221 `hr0_wnd`（**無料**）
     `hz0(V)`  … ⛔ **`HeredZ2`**（唯一の核）
 
-⚠ **教訓 14**: **4 本のどれも証明していません。** -/
+⚠ **教訓 14**: **3 本のどれも証明していません。** -/
 
 /-! ## 222. ★★★★★★★★★★ **消費側への接続** —— `MTowerClosedS` まで繋ぎます
 
@@ -3623,8 +3670,7 @@ theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] :=
 open Classical in
 /-- ★★★★★ **`MTowerClosedS` は 5 本から出ます。** -/
 theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ∀ u, ZeroDOK u) (hz2 : HeredZ2) (hroot : RootZ2) :
-    MTowerClosedS := by
+    (hz2 : HeredZ2) (hroot : RootZ2) : MTowerClosedS := by
   intro u d e n Q hQ hs
   rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
   · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
@@ -3633,24 +3679,33 @@ theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
     exact W_nil u
   · have hP : TowerP'' Q d e :=
       ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hroot u Q hQ hs⟩
-    have h := towerClosed_of_hered (u := u) horph horph0 (hzd u) hz2 Q d e hP []
+    have h := towerClosed_of_hered (u := u) horph horph0 hz2 Q d e hP []
       (W_nil u) (by simpa using hQ) n
     simpa using h
 
-/-! ### 222.1 ⟹ ★★★★★ **`MTowerClosedS` が 4 本の式になりました**
+/-! ### 222.1 ⟹ ★★★★★★ **`MTowerClosedS` が 4 本の式になりました**
 
     **(1) `OrphOK`**  … `j ≥ 1` でブロックの中で孤児 ⟹ 全体でも孤児
          ⟹ ★ **R2 実測 100%（374043）**
     **(2) `OrphOK0`** … `j = 0` で塔の中で孤児 ⟹ 接頭辞を付けても孤児
          ⟹ R2 実測（`e = 0` でブロック根の親は一度も飛び越えない、0/732140）が支持
-    **(3) `ZeroDOK`** … `d = 0` の塔 ⟹ team-lead: **`PrefixCopies`**（`L53Subst:3599`）
-    **(4) `HeredZ2`** … 窓の根の行 2 が 0（＝ (H2')）⟹ **R2 実測 98.4〜99.8%** ← **唯一の数値上の穴**
-    **(5) `RootZ2`** … 消費側の底の行 2 が 0 ⟹ H12 `hz0_of_zle1`（`zle1` があれば無料）
+    **(3) `HeredZ2`** … 窓の根の行 2 が 0（＝ (H2')）
+         ⟹ **R2 実測 98.4〜99.8%** ← **唯一の数値上の穴**
+    **(4) `RootZ2`** … 消費側の底の行 2 が 0 ⟹ H12 `hz0_of_zle1`（`zle1` があれば無料）
 
-⚠ **教訓 14**: **5 本のどれも証明していません。**
+⚠ **教訓 14**: **4 本のどれも証明していません。**
 
-⚠ **`ZeroEOK`（`e = 0`）は H12 の (q3b) `blockRoot_parent_prevBlock_noE` で消えました。**
-**⟹ ★ 私が「§112 で既知」と 4 回書いた誤りは、**別ルートではなく直接**片づきました。** -/
+### 222.2 ★ 消えたもの（今日）
+
+    `hbase` … §208。剥がすのをやめて**下から積む**
+    `hd0e` / `hlp` … 使っていなかった
+    `h2out` / `h1out` … `OrphOK` が肩代わり
+    `0 < d` / `0 < e` … **仮定せず、必要なときだけ導出**（§223.3 ＋ §199）
+    `ZeroEOK` … H12 の (q3b) `blockRoot_parent_prevBlock_noE`
+    `ZeroDOK` … §223.3（`d = 0` ならブロック根は**必ず孤児**）
+    `hr0(V)` の遺伝 … §221（`Lcone.window_of_rtg0`）
+
+**⟹ ★ 朝は 9 本 ＋ 3 残差でした。⟹ いまは **4 本**、うち**数値上の穴は 1 本**です。** -/
 
 end L106
 end TRIO
