@@ -1243,5 +1243,52 @@ theorem tower_of_measure_step {u : ℕ}
 ⚠ **ただし `j = 0` の読み替え（`mTower_append` ＋ `take` の付け替え）は
 **Lean ではまだ書いていません**。⟹ そこは残っています。 -/
 
+/-! ## 205. ★★★★★★ `j = 0` の読み替え —— **1 ブロック手前から見る**
+
+§204.2 で書いた読み替えを Lean にします。**これで `j = 0` の段も §202 の引数になります。**
+
+    `mTower Q d e (n+1) ++ block_{n+1}.take j`
+      `= mTower Q d e n ++ (block_n ++ block_{n+1}).take (|Q| + j)`
+
+**⟹ 左辺の `j = 0` は、右辺では `j' = |Q|`（`≥ 1`）です。**
+**⟹ ⟹ ★ 「`j = 0` だから親が前のブロック」という**例外**が、
+「`j' = |Q|` で親が同じ `B'` の中」という**通常の場合**になります。** -/
+
+theorem mTower_take_reassoc (Q : TrioSeq) (d e n j : ℕ) :
+    mTower Q d e (n + 1) ++ (Lift1 (shiftr01 (d * (n + 1)) 0 Q) (e * (n + 1))).take j
+      = mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)
+            ++ Lift1 (shiftr01 (d * (n + 1)) 0 Q) (e * (n + 1))).take (Q.length + j) := by
+  have hlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hfull : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (Q.length + j)
+      = Lift1 (shiftr01 (d * n) 0 Q) (e * n) :=
+    List.take_of_length_le (by omega)
+  rw [mTower_succ, List.append_assoc]
+  congr 1
+  rw [List.take_append, hfull, hlen, Nat.add_sub_cancel_left]
+
+/-- 接頭辞つきの形（消費側がそのまま使えるもの）。 -/
+theorem prefix_mTower_take_reassoc (A Q : TrioSeq) (d e n j : ℕ) :
+    A ++ mTower Q d e (n + 1)
+      ++ (Lift1 (shiftr01 (d * (n + 1)) 0 Q) (e * (n + 1))).take j
+      = A ++ (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)
+            ++ Lift1 (shiftr01 (d * (n + 1)) 0 Q) (e * (n + 1))).take (Q.length + j)) := by
+  rw [List.append_assoc, mTower_take_reassoc]
+
+/-! ### 205.1 ⟹ ★ これで **§202 の `p < j` が `j = 0` でも意味を持ちます**
+
+読み替えたあと `j' = |Q| + 0 = |Q| ≥ 1` なので、`p < j'` は
+`nextR_index_lt`（親 < 子）から**ただで**出ます。
+
+    親 `= (A ++ mTower Q d e n).length + p_rel`、`p_rel < |Q| = j'` ✓
+
+**⟹ §202 が使えて `|V| = j' − p_rel = |Q| − p_rel`。§204.2 の表のとおりです。**
+
+⚠ **ただし「親が `(A ++ mTower Q d e n).length` 以上」（＝ 1 ブロック手前で止まる）は
+この補題からは出ません。⟹ それは H12 の `blockRoot_parent_prevBlock` です。**
+**⟹ ⟹ そちらは `0 < d`・`0 < e`・`hr0` が要ります。** -/
+
 end L106
 end TRIO
