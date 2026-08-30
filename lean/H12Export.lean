@@ -4304,5 +4304,36 @@ theorem mem_W_of_Wself_tower {u : ℕ} {A Q : TrioSeq} {d e n : ℕ} (hA : A ≠
     (hself : A ++ mTower Q d e n ∈ Wself) (hu : lev A 0 ≤ u) : A ++ mTower Q d e n ∈ W u :=
   mem_W_of_Wself_append hA hself hu
 
+
+/-- ★★★★★★★★ **`argOK M` ⟹ `(0,v,z) :: M` は `hr0`**。
+⟹ ★ ⟹ **私の `hr0` 系（`window_lt_of_row0_parent`、`prefixTake_le0_root`、
+`hasParent0_of_hr0`、`no_row0_parent_from_before_block`）が `CoreCap` の文脈に全部効きます**。 -/
+theorem hr0_of_argOK {M : TrioSeq} {v z : ℕ} (h : argOK M) :
+    ∀ l, 0 < l → l < (((0, v, z) : ℕ × ℕ × ℕ) :: M).length →
+      entry (((0, v, z) : ℕ × ℕ × ℕ) :: M) 0 0 < entry (((0, v, z) : ℕ × ℕ × ℕ) :: M) 0 l := by
+  intro l hl0 hl
+  have h0 : entry (((0, v, z) : ℕ × ℕ × ℕ) :: M) 0 0 = 0 := rfl
+  rw [h0]
+  obtain ⟨r, rfl⟩ : ∃ r, l = r + 1 := ⟨l - 1, by omega⟩
+  have hr : r < M.length := by simpa using hl
+  show 0 < ((((0, v, z) : ℕ × ℕ × ℕ) :: M).getD (r + 1) (0, 0, 0)).1
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simpa using hl),
+    List.getElem_cons_succ]
+  exact h _ (List.getElem_mem hr)
+
+/-- ★★★★★ ⟹ **`CoreCap` の文脈では、末尾以外の全列が根の `le0` 子孫**。 -/
+theorem le0_root_of_argOK {M : TrioSeq} {v z : ℕ} (h : argOK M) :
+    ∀ j, 0 < j → j < (((0, v, z) : ℕ × ℕ × ℕ) :: M).length →
+      le0 (((0, v, z) : ℕ × ℕ × ℕ) :: M) 0 j :=
+  le0_root_of_shallow (by simp) (fun x hx hxl => hr0_of_argOK (v := v) (z := z) h x hx hxl)
+
+/-- ★★★★★★ ⟹ **`CoreCap` の末尾列は必ず行 0 の親を持つ** ⟹ ⛔ **`snoc_orphan` は使えません**
+（`srow = 0` の場合）。⟹ ★ **`cap` の末尾は `argOK` により根より深い**からです。 -/
+theorem hasParent0_of_argOK {M : TrioSeq} {v z j : ℕ} (h : argOK M)
+    (hj0 : 0 < j) (hj : j < (((0, v, z) : ℕ × ℕ × ℕ) :: M).length) :
+    hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: M) 0 j :=
+  hasParent0_of_hr0 (fun l hl0 hl => hr0_of_argOK (v := v) (z := z) h l hl0 (by simpa using hl))
+    (by simpa using hj) hj0
+
 end H12Export
 end TRIO

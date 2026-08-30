@@ -10482,3 +10482,43 @@ L3 の反例 2 件を直接 ／ シートで裏を取る）。分母 ＝ 行 1 �
 ## ✅ **build 緑 2 回目**（team-lead）
 
     **810 jobs、`BUILD_EXIT=0`、`H12Export` 302 本** ⟹ ★ **L3 から全部見える**
+
+---
+
+## ★★★★★★★★ **H12 (C2, 2026-08-30): `CoreCap` を塔の言葉で 1 行 —— そして `argOK` ＝ `hr0`**
+
+### ★ **定義（逐語で並べました）**
+
+    `argOK R := ∀ p ∈ R, 0 < p.1`                                   （`Wset:1314`）
+    `CtxOK M v z := ∀ k < |M|, ∀ a t, 2(v+t)+z ≤ a → Lift1 ((0,v,z) :: M.take k) t ∈ W a` （`Gamma:153`）
+    `cap M b c := M.dropLast ++ [(entry M 0 (|M|-1), b, c)]`         （`Lind:166`）
+    `CoreCap := ∀ M, argOK M → 1 ≤ |M| → ∀ v z, z ≤ 1 → CtxOK M v z →
+                 ∀ b c a t, 2(v+t)+z ≤ a → Lift1 ((0,v,z) :: cap M b c) t ∈ W a` （`Lind:176`）
+
+### ★★★★★ **1 行**: **「良い文脈 `(0,v,z) :: M` の、末尾 1 列の添字（行 1・行 2）を何に取り替えても `W a`」**
+
+    ★ `CtxOK` は **真の接頭辞 `M.take k`（`k < |M|`）だけ**をくれます ⟹ **`M` 自身は来ません**
+    ⟹ ⟹ ★★ **その 1 列ぶんが `CoreCap` の内容**（team-lead §128「接頭辞パッケージに 1 列 snoc」）
+
+### ★★★★★★★★ **`argOK M` ＝ `(0,v,z) :: M` の `hr0`**（新、緑）
+
+    ★★★★★★★★ `hr0_of_argOK` … **根の行 0 は 0、他は全部 > 0** ⟹ **`hr0` の仮定そのもの**
+    ★★★★★ `le0_root_of_argOK` … ⟹ **全列が根の `le0` 子孫**
+    ★★★★★★ `hasParent0_of_argOK` … ⟹ **末尾列は必ず行 0 の親を持つ**
+
+**⟹ ★★★★★ ⟹ **私の `hr0` 系が `CoreCap` の文脈に全部効きます**:**
+**`window_lt_of_row0_parent` ／ `no_row0_parent_from_before_block` ／ `prefixTake_le0_root` ／
+`prefixTake_shallow` ／ `hasParent0_of_hr0`。**
+
+### ⛔ **足りないもの（同じ壁）**
+
+    ⛔ `cap M b c` の末尾列は **行 0 が `entry M 0 (|M|-1) > 0`**（`argOK`）⟹ **根より深い**
+    ⟹ ★ ⟹ **必ず行 0 の親を持ちます** ⟹ ⛔ **`snoc_orphan`（孤児なら無料）が使えません**
+    ⟹ ⟹ ★★ ですから **`oper` が塔を作ります** ⟹ ⛔ **(C1) と同じ壁**
+
+### ⚠ **`argOK` と `rsum` は「同じ」ではありません（逆です）**
+
+    ★ `argOK M` … **根 `(0,v,z)` が唯一の最浅**（他は全部深い）
+    ⛔ `rsum A P` … **`P` の根が全体の最浅**
+    ⟹ ⟹ ★★★ **L3 の `argOK_rsum_incompatible` のとおり、両立しません**
+    ⟹ ⚠ 私は (W31) で「同じ」と言って訂正されました ⟹ ★ **今回は定義を並べてから書きました**
