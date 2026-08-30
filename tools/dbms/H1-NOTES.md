@@ -7679,3 +7679,25 @@ L106 を読んだ。`hsnoc_zero_of_parent` の中で `hd : 0 < d` が使われ�
    `based Q` も出ない（窓は再基底化されない）。
 
 ⟹ ⛔ ここは L53 の核そのもの。H12 からは新しい入り口を見つけられなかった。
+
+## §301 ★★★★★★★ L3 の「次の仕事」（`le0` / `le1` が塔の根を通る）を緑にした
+
+L106 §228.1（`OrphOK`）に「上の 3 本は緑ですが `OrphOK` を導いてはいません。
+⟹ `le0` / `le1` が塔の根を通ることを別に示す必要があります」とあった。⟹ 出た。
+
+    nextrel0_cross_root : 行 0 で接頭辞から塔に入れるのは塔の根だけ
+       （仮定は「塔の根が行 0 で狭義最浅」だけ。`Column.nextrel0_no_cross` の
+         `based T` は**要らない**）
+    rtg0_through_root / le0_through_root : le0 の鎖は塔の根を通る
+    no_nextrel1_cross_of_cone : 錐の中の的には接頭辞から行 1 の親は来ない
+    nextrel1_cross_root / rtg1_through_root / le1_through_root
+       （行 1 版はブロッカー無し `entry T 1 0 < entry T 1 l` が要る）
+    no_nextrel2_cross_of_cone
+    ★ no_nextR_cross_of_cone : 3 行そろい —— **接頭辞は親を供給しない**
+
+証明の芯は 1 行: `nextrel0 (A++T) c (A.length+m)` の最小性を **`l = A.length`（塔の根）**
+に当てると `entry T 0 m ≤ entry T 0 0` が出て、根の狭義最浅と矛盾する。
+行 1 は `le0` が根を通る ⟹ `nextrel1` の最小性を根に当てる。行 2 は `le1` で同じ。
+
+⟹ R2 の実測「`OrphOK` は `rsum` 無しで 45.6% 破れる、破れるのはブロッカー」と一致。
+   行 0 は**無条件**、行 1・行 2 は**ブロッカーが無ければ**壁が立つ。

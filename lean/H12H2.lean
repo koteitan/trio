@@ -3338,5 +3338,157 @@ theorem entry0_parent_lt_of_srow1 {M : TrioSeq} {a b : ℕ}
   rw [if_neg (by omega), if_pos rfl] at h
   exact entry0_lt_of_nextrel1 h
 
+
+/-! ## 46. ★★★★★★★ **`le0` は塔の根を通る** —— L3 の §228.1「次の仕事」
+
+L106 §228.1（`OrphOK`）に:
+
+  「上の 3 本は緑ですが、`OrphOK` を導いてはいません。
+   ⟹ **`le0` / `le1` が塔の根を通ることを別に示す必要があります**」
+
+とある。⟹ ★ **行 0 は `hr0`（塔の根が狭義最浅）だけで出る**。
+`Column.nextrel0_no_cross`（`Column:192`）は `based T`（`entry T 0 0 = 0`）を要求するが、
+**`based` は要らない**。「根が狭義最浅」で足りる。 -/
+
+/-- ★★ 行 0 で接頭辞から塔に入れるのは**塔の根だけ**。 -/
+theorem nextrel0_cross_root {A T : TrioSeq}
+    (hmin : ∀ m, 0 < m → m < T.length → entry T 0 0 < entry T 0 m)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length)
+    (h : nextrel0 (A ++ T) c (A.length + m)) : m = 0 := by
+  by_contra hm0
+  have hval := h.2.2.2.2 A.length ⟨hc, by omega⟩
+  rw [entry_append_right, show A.length = A.length + 0 from by omega,
+    entry_append_right] at hval
+  exact absurd (hmin m (by omega) hm) (by omega)
+
+/-- ★★★ `le0` の鎖が接頭辞から塔に入るなら、**塔の根を通る**。 -/
+theorem rtg0_through_root {A T : TrioSeq}
+    (hmin : ∀ m, 0 < m → m < T.length → entry T 0 0 < entry T 0 m)
+    {y : ℕ} (hy : y < A.length) {b : ℕ}
+    (h : Relation.ReflTransGen (nextrel0 (A ++ T)) y b) :
+    b < A.length ∨ Relation.ReflTransGen (nextrel0 (A ++ T)) A.length b := by
+  induction h with
+  | refl => exact Or.inl hy
+  | @tail c b _ hcb ih =>
+      rcases ih with hc | hc
+      · rcases Nat.lt_or_ge b A.length with hb | hb
+        · exact Or.inl hb
+        · have hblen : b < (A ++ T).length := hcb.2.1
+          have hbT : b - A.length < T.length := by
+            rw [List.length_append] at hblen; omega
+          have hbe : b = A.length + (b - A.length) := by omega
+          have hz := nextrel0_cross_root hmin hc hbT (by rw [← hbe]; exact hcb)
+          have hb0 : b = A.length := by omega
+          rw [hb0]
+          exact Or.inr Relation.ReflTransGen.refl
+      · exact Or.inr (hc.tail hcb)
+
+/-- ★★★★ **`le0` で接頭辞から塔の中に届くなら、塔の根も `le0` 祖先**。 -/
+theorem le0_through_root {A T : TrioSeq}
+    (hmin : ∀ m, 0 < m → m < T.length → entry T 0 0 < entry T 0 m)
+    {y m : ℕ} (hy : y < A.length) (hm : m < T.length)
+    (h : le0 (A ++ T) y (A.length + m)) :
+    le0 (A ++ T) A.length (A.length + m) := by
+  obtain ⟨-, hb, hrt⟩ := h
+  have hAlen : A.length < (A ++ T).length := by
+    rw [List.length_append]; omega
+  rcases rtg0_through_root hmin hy hrt with hc | hc
+  · omega
+  · exact ⟨hAlen, hb, hc⟩
+
+/-- ★★★★★★ **錐の中の的には、接頭辞から行 1 の親は来ない**。
+（`OrphOK` の行 1 の壁。`le0` が塔の根を通ることから出る。） -/
+theorem no_nextrel1_cross_of_cone {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
+    (hcone : entry T 1 0 < entry T 1 m) :
+    ¬ nextrel1 (A ++ T) c (A.length + m) := by
+  intro h
+  have hroot := le0_through_root hmin hc hm h.2.2.2.2.1
+  have hval := h.2.2.2.2.2 A.length ⟨hc, hroot⟩
+  rw [entry_append_right, show A.length = A.length + 0 from by omega,
+    entry_append_right] at hval
+  omega
+
+
+/-- ★★★ 行 1 で接頭辞から塔に入れるのは**塔の根だけ**（ブロッカーが無ければ）。 -/
+theorem nextrel1_cross_root {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length)
+    (h : nextrel1 (A ++ T) c (A.length + m)) : m = 0 := by
+  by_contra hm0
+  exact no_nextrel1_cross_of_cone hmin hc hm (by omega) (hnb m (by omega) hm) h
+
+/-- ★★★ `le1` の鎖が接頭辞から塔に入るなら、**塔の根を通る**。 -/
+theorem rtg1_through_root {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    {y : ℕ} (hy : y < A.length) {b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 (A ++ T)) y b) :
+    b < A.length ∨ Relation.ReflTransGen (nextrel1 (A ++ T)) A.length b := by
+  induction h with
+  | refl => exact Or.inl hy
+  | @tail c b _ hcb ih =>
+      rcases ih with hc | hc
+      · rcases Nat.lt_or_ge b A.length with hb | hb
+        · exact Or.inl hb
+        · have hblen : b < (A ++ T).length := hcb.2.1
+          have hbT : b - A.length < T.length := by
+            rw [List.length_append] at hblen; omega
+          have hbe : b = A.length + (b - A.length) := by omega
+          have hz := nextrel1_cross_root hmin hnb hc hbT (by rw [← hbe]; exact hcb)
+          have hb0 : b = A.length := by omega
+          rw [hb0]
+          exact Or.inr Relation.ReflTransGen.refl
+      · exact Or.inr (hc.tail hcb)
+
+/-- ★★★★ `le1` で接頭辞から塔の中に届くなら、塔の根も `le1` 祖先。 -/
+theorem le1_through_root {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    {y m : ℕ} (hy : y < A.length) (hm : m < T.length)
+    (h : le1 (A ++ T) y (A.length + m)) :
+    le1 (A ++ T) A.length (A.length + m) := by
+  obtain ⟨-, hb, hrt⟩ := h
+  have hAlen : A.length < (A ++ T).length := by
+    rw [List.length_append]; omega
+  rcases rtg1_through_root hmin hnb hy hrt with hc | hc
+  · omega
+  · exact ⟨hAlen, hb, hc⟩
+
+/-- ★★★★★★ **行 2 の壁**: 錐の中の的には、接頭辞から行 2 の親も来ない。 -/
+theorem no_nextrel2_cross_of_cone {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
+    (hcone : entry T 2 0 < entry T 2 m) :
+    ¬ nextrel2 (A ++ T) c (A.length + m) := by
+  intro h
+  have hroot := le1_through_root hmin hnb hc hm h.2.2.2.2.1
+  have hval := h.2.2.2.2.2 A.length ⟨hc, hroot⟩
+  rw [entry_append_right, show A.length = A.length + 0 from by omega,
+    entry_append_right] at hval
+  omega
+
+/-- ★★★★★★★ **接頭辞は親を供給しない**（`OrphOK` の壁、3 行そろい）。 -/
+theorem no_nextR_cross_of_cone {A T : TrioSeq}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    (h2 : ∀ l, 0 < l → l < T.length → entry T 2 0 < entry T 2 l)
+    {r c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m) :
+    ¬ nextR (A ++ T) r c (A.length + m) := by
+  intro h
+  unfold nextR at h
+  by_cases hr0 : r = 0
+  · rw [if_pos hr0] at h
+    exact absurd (nextrel0_cross_root hmin hc hm h) (by omega)
+  · rw [if_neg hr0] at h
+    by_cases hr1 : r = 1
+    · rw [if_pos hr1] at h
+      exact no_nextrel1_cross_of_cone hmin hc hm hm0 (hnb m hm0 hm) h
+    · rw [if_neg hr1] at h
+      exact no_nextrel2_cross_of_cone hmin hnb hc hm hm0 (h2 m hm0 hm) h
+
 end H12H2
 end TRIO
