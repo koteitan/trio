@@ -8595,5 +8595,69 @@ theorem no_nextrel0_cross_of_d_zero {Q : TrioSeq} {e n a k' q' : ℕ} (hQ : 0 < 
 `ZeroDOK` は `A ++ mTower Q 0 0 n ∈ W u` という **`W` の閉包**の主張で、
 上は **親の位置**についての主張です。⟹ ⟹ ★ **繋げるには `snoc_orphan_W` が要ります**。 -/
 
+/-! ## 272. ★★★★ **`d = 0` の保護の `le0` 版**（鎖にする）＋ ⚠ **保護の射程の正直な限界**
+
+§271 は 1 歩の話でした。⟹ ★ 鎖にします（`nextrel0` は添字を増やすので、境界を越える最初の 1 歩を捕まえる）。 -/
+
+theorem no_le0_cross_of_d_zero {Q : TrioSeq} {e n a k' q' : ℕ} (hQ : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (ha : a < k' * Q.length) :
+    ¬ Relation.ReflTransGen (nextrel0 (mTower Q 0 e n)) a (k' * Q.length + q') := by
+  intro h
+  -- 鎖の中で「はじめて `k' * |Q|` 以上になる」ノードを捕まえる
+  have key : ∀ z, Relation.ReflTransGen (nextrel0 (mTower Q 0 e n)) a z →
+      z < k' * Q.length ∨ False := by
+    intro z hz
+    induction hz with
+    | refl => exact Or.inl ha
+    | @tail x w hx hxw ih =>
+        rcases ih with hxlt | hf
+        · rcases Nat.lt_or_ge w (k' * Q.length) with hw | hw
+          · exact Or.inl hw
+          · -- ★ `w` はブロック `k'` 以降。⟹ `w` の属するブロックを取って §271 に当てる
+            exfalso
+            have hwlen : w < (mTower Q 0 e n).length := hxw.2.1
+            rw [mTower_length] at hwlen
+            set kw := w / Q.length with hkw
+            set qw := w % Q.length with hqw
+            have hweq : kw * Q.length + qw = w := by
+              rw [hkw, hqw, Nat.mul_comm]; exact Nat.div_add_mod w Q.length
+            have hqwlt : qw < Q.length := Nat.mod_lt _ hQ
+            have hkwlt : kw < n := by
+              rw [hkw]; exact (Nat.div_lt_iff_lt_mul hQ).mpr (by omega)
+            have hkwge : k' ≤ kw := by
+              rw [hkw]
+              exact (Nat.le_div_iff_mul_le hQ).mpr (by omega)
+            have hxlt' : x < kw * Q.length := by
+              have : k' * Q.length ≤ kw * Q.length := Nat.mul_le_mul_right _ hkwge
+              omega
+            refine no_nextrel0_cross_of_d_zero (Q := Q) (e := e) (n := n) (a := x)
+              (k' := kw) (q' := qw) hQ hr0 hkwlt hqwlt hxlt' ?_
+            rw [hweq]; exact hxw
+        · exact Or.inr hf
+  rcases key (k' * Q.length + q') h with hlt | hf
+  · omega
+  · exact hf
+
+/-! ### 272.1 ⚠⚠ **保護の射程の限界**（正直に書きます）
+
+**⟹ ★ §271/§272 は **塔の中どうし**の越境を禁じます（前提は `hr0(Q)` だけ）。**
+**⟹ ⛔ ですが **接頭辞 `A` からブロック `k'` の根への越境は禁じません**。⟹ 理由:**
+
+    `A` の列 `c` の行 0 が `entry Q 0 0` より**浅い**とき、
+    ⟹ ★ 的 ＝ ブロック `k'` の根（行 0 ＝ `entry Q 0 0`）に対して
+    ⟹ ⟹ **最小性は「間の列の行 0 ≥ `entry Q 0 0`」で済み**、`hr0` の下で**すべて成立**
+    ⟹ ⟹ ⟹ ⛔ **`nextrel0 c (A.length + k' * |Q|)` が張れてしまいます**
+
+**⟹ ⚠ ですから **`PrefixCopies` の「`A` に条件が要らない」理由は、これだけではありません**。**
+**⟹ ★ ⟹ **ブロック根が `A` に親を持ってもよい**——⟹ ★★ そこは `snoc_orphan_W` ではなく
+**graft の側**で処理されているはずです。⟹ ⟹ ★ **`W_flatMap_copies`（`A = []` で緑）の証明を読む**必要があります。**
+
+**⟹ ⛔ ですから **(L-ZD)「`prefixCopies_nil` を `A ≠ []` に持ち上げる」は、私の道具では届きません**。**
+**⟹ ⟹ ★ 届かない場所を明示します: **ブロック根が接頭辞に親を持つ場合**です。**
+**⟹ ⟹ ⟹ ★★ ＝ **今日ずっと問題だった場所と同じ**（`OrphOK0` の反例もその形でした）。**
+
+⚠ **教訓 14**: §271/§272 は緑ですが、**`ZeroDOK` には届きません**。**⟹ 過大に読まないでください。** -/
+
 end L106
 end TRIO
