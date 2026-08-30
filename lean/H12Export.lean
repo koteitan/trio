@@ -2463,5 +2463,75 @@ theorem srow_le_one_of_row2_zero {M : TrioSeq} {j : ℕ} (h : entry M 2 j = 0) :
   rw [if_neg (by omega)]
   split <;> omega
 
+
+/-- ★★★ `hnbQ` なら `Q` の全列が根の錐の中。 -/
+theorem le1_all_of_hnbQ {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {q : ℕ} (hq : q < Q.length) : le1 Q 0 q := by
+  by_contra hc
+  obtain ⟨y, hrt, hy0, hyb⟩ := (not_le1_zero_iff hr0 hq).mp hc
+  have hylt : y < Q.length := by
+    rcases Relation.ReflTransGen.cases_head hrt with h1 | ⟨c, hc1, -⟩
+    · omega
+    · exact hc1.1
+  exact absurd (hnbQ y (by omega) hylt) (by omega)
+
+open Classical in
+/-- ★★★★★ `hnbQ` なら塔の行 1 は **全列が `+e*k`**（`if` が常に真）。 -/
+theorem entry1_mTower_of_hnbQ {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {d e n k i : ℕ} (hk : k < n) (hi : i < Q.length) :
+    entry (mTower Q d e n) 1 (k * Q.length + i) = entry Q 1 i + e * k := by
+  rw [entry1_mTower_block_formula Q hk hi, if_pos (le1_all_of_hnbQ hr0 hnbQ hi)]
+
+/-- ★★★★★★★ **`e*n` が消える** —— 同じブロックの中の比較は `n`・`e` に依らない。
+⟹ L3 の「`hnbQ` は `n` 依存を消す唯一の形」を式にしたもの。 -/
+theorem blocker_in_block_of_hnbQ {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {d e n k p x : ℕ} (hk : k < n) (hp : p < Q.length) (hx : x < Q.length) :
+    entry (mTower Q d e n) 1 (k * Q.length + x)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 x ≤ entry Q 1 p := by
+  rw [entry1_mTower_of_hnbQ hr0 hnbQ hk hx, entry1_mTower_of_hnbQ hr0 hnbQ hk hp]
+  omega
+
+/-- ★★★★★★★ **`hnbQ` の下では、ブロックの非根の列の行 1 は正**。
+⟹ ⛔ **R2 の「型 B」（真ん中の列の行 1 が 0）は `hnbQ(Q)` の下では起きえない**。 -/
+theorem row1_pos_in_block_of_hnbQ {Q : TrioSeq}
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {d e n k x : ℕ} (hk : k < n) (hx : x < Q.length) (hx0 : 0 < x) :
+    0 < entry (mTower Q d e n) 1 (k * Q.length + x) := by
+  have hge := entry1_mTower_ge (Q := Q) (d := d) (e := e) (n := n) (k := k) (i := x) hk hx
+  have := hnbQ x hx0 hx
+  omega
+
+/-- ★★★★★★★ **`hnbQ(V)` は `Q` だけの条件に落ちる**（`n`・`e`・`d` が消える）。
+`j ≥ 1` の段では窓は 1 つのブロックの中（`parent_bound_pos`）なので、これがそのまま
+「窓のブロッカー無し」の判定式になる。 -/
+theorem hnbQ_window_iff_of_hnbQ {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {d e n k p j : ℕ} (hk : k < n) (hp : p < Q.length) (hj : j ≤ Q.length) :
+    (∀ x, p < x → x < j →
+        entry (mTower Q d e n) 1 (k * Q.length + p)
+          < entry (mTower Q d e n) 1 (k * Q.length + x))
+      ↔ (∀ x, p < x → x < j → entry Q 1 p < entry Q 1 x) := by
+  constructor
+  · intro h x hpx hxj
+    have hx : x < Q.length := by omega
+    have := h x hpx hxj
+    rw [entry1_mTower_of_hnbQ hr0 hnbQ hk hx,
+      entry1_mTower_of_hnbQ hr0 hnbQ hk hp] at this
+    omega
+  · intro h x hpx hxj
+    have hx : x < Q.length := by omega
+    rw [entry1_mTower_of_hnbQ hr0 hnbQ hk hx,
+      entry1_mTower_of_hnbQ hr0 hnbQ hk hp]
+    have := h x hpx hxj
+    omega
+
 end H12Export
 end TRIO
