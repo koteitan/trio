@@ -10498,5 +10498,53 @@ theorem mTowerClosedS_of_nonconst (h : MTowerClosedNonconst) : L105.MTowerClosed
 theorem mTowerClosedS_holds_of_nonconst (h : MTowerClosedNonconst) :
     L105.MTowerClosedS := mTowerClosedS_of_nonconst h
 
+/-! ### §302 (L-NC1) `z <= 1` では、行 2 の親は「`z = 0` の列」しかない
+
+残核は「行 2 に 0 の列と 1 の列が両方ある `Q`」（§301）。そこで `srow = 2` の親がどこかを見る。
+
+`nextrel2 M c t` は **`entry M 2 c < entry M 2 t`** を要求する。`z <= 1` の断片では
+値は 0 か 1 しかないので ⟹ **`entry M 2 c = 0` かつ `entry M 2 t = 1`**。
+そして最小性 `∀ j, c < j ∧ le1 M j t → entry M 2 t ≤ entry M 2 j` は
+⟹ **`(c, t)` の `le1` 祖先の行 2 はすべて 1**。
+
+⟹ ★★★ ですから **`z = 0` の列の位置が、行 2 の親の位置を完全に決めます**
+（`le1` の順で `t` から遡って最初の `z = 0` の列）。 -/
+
+/-- ★★★ **`z <= 1` なら、行 2 の親は `z = 0`、的は `z = 1`**（前提なし）。 -/
+theorem row2_parent_zero_of_zle1 {M : TrioSeq} {c t : ℕ}
+    (hz : ∀ j, j < M.length → entry M 2 j ≤ 1) (h : nextrel2 M c t) :
+    entry M 2 c = 0 ∧ entry M 2 t = 1 := by
+  have hct : entry M 2 c < entry M 2 t := h.2.2.2.1
+  have ht : entry M 2 t ≤ 1 := hz t h.2.1
+  exact ⟨by omega, by omega⟩
+
+/-- ★★★ **そして間の `le1` 祖先は、すべて `z = 1`**（前提なし）。 -/
+theorem row2_between_one_of_zle1 {M : TrioSeq} {c t j : ℕ}
+    (hz : ∀ i, i < M.length → entry M 2 i ≤ 1) (h : nextrel2 M c t)
+    (hj : c < j) (hle : le1 M j t) : entry M 2 j = 1 := by
+  have hmin := h.2.2.2.2.2 j ⟨hj, hle⟩
+  have h1 := (row2_parent_zero_of_zle1 hz h).2
+  have hjl : entry M 2 j ≤ 1 := hz j hle.1
+  omega
+
+/-- ⟹ **`z = 0` の列が無ければ、行 2 の親は存在しない**（＝ 孤児）。 -/
+theorem no_row2_parent_of_all_one {M : TrioSeq} {t : ℕ}
+    (hone : ∀ j, j < M.length → entry M 2 j = 1) : ¬ ∃ c, nextrel2 M c t := by
+  rintro ⟨c, h⟩
+  have hz : ∀ j, j < M.length → entry M 2 j ≤ 1 := fun j hj => le_of_eq (hone j hj)
+  have h0 := (row2_parent_zero_of_zle1 hz h).1
+  have h1 := hone c h.1
+  omega
+
+/-- ★★★★★ **残差（行 2 の孤児）の特徴づけ**: `z <= 1` なら
+「**`z = 0` の列がどれも末尾の `le1` 錐に入っていない**」⟹ **行 2 の親は無い**。 -/
+theorem orphan_row2_of_zeros_outside_cone {M : TrioSeq} {t : ℕ}
+    (hz : ∀ j, j < M.length → entry M 2 j ≤ 1)
+    (h : ∀ c, c < M.length → entry M 2 c = 0 → ¬ le1 M c t) :
+    ¬ hasParent M 2 t := by
+  rintro ⟨c, hc, -⟩
+  rw [nextR, if_neg (by decide), if_neg (by decide)] at hc
+  exact h c hc.1 (row2_parent_zero_of_zle1 hz hc).1 hc.2.2.2.2.1
+
 end L106
 end TRIO
