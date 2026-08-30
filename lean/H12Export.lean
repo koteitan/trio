@@ -3247,5 +3247,44 @@ theorem C4_take {M : TrioSeq} (hc4 : C4 M) (k : ℕ) : C4 (M.take k) := by
     rw [Wset.entry_take hjk, Wset.entry_take (show y < k by omega)]
     exact hc4 y j hyj hjM hle0'
 
+
+def c4CtrM : TrioSeq := [(0, 0, 0), (1, 0, 0)]
+
+theorem c4CtrM_len : c4CtrM.length = 2 := rfl
+
+theorem c4CtrM_zeroRow2 : ∀ p ∈ c4CtrM, p.2.2 = 0 := by decide
+
+theorem c4CtrM_lev : lev c4CtrM 0 = 0 := by
+  unfold lev c4CtrM entry
+  simp
+
+/-- ★★ 反例は **すべての `u` で `W u` に入る**。 -/
+theorem c4CtrM_mem_W (u : ℕ) : c4CtrM ∈ W u := by
+  rw [mem_Wself_iff]
+  exact ⟨zeroRow2_mem_Wself c4CtrM_zeroRow2, by rw [c4CtrM_lev]; omega⟩
+
+theorem c4CtrM_le0 : le0 c4CtrM 0 1 := by
+  refine ⟨by rw [c4CtrM_len]; omega, by rw [c4CtrM_len]; omega,
+    Relation.ReflTransGen.single ?_⟩
+  refine ⟨by rw [c4CtrM_len]; omega, by rw [c4CtrM_len]; omega, by omega, ?_, ?_⟩
+  · show entry c4CtrM 0 0 < entry c4CtrM 0 1
+    unfold entry c4CtrM
+    simp
+  · intro j hj
+    omega
+
+/-- ⛔⛔ **反例: `W` の元だが C4 が偽**。 -/
+theorem c4CtrM_not_C4 : ¬ C4 c4CtrM := by
+  intro h
+  have := h 0 1 (by omega) (by rw [c4CtrM_len]; omega) c4CtrM_le0
+  have h0 : entry c4CtrM 1 0 = 0 := by unfold entry c4CtrM; simp
+  have h1 : entry c4CtrM 1 1 = 0 := by unfold entry c4CtrM; simp
+  omega
+
+/-- ⛔⛔⛔ **`W ⟹ C4` は偽**。 -/
+theorem W_not_C4 : ¬ (∀ u : ℕ, ∀ Q ∈ W u, C4 Q) := by
+  intro h
+  exact c4CtrM_not_C4 (h 0 c4CtrM (c4CtrM_mem_W 0))
+
 end H12Export
 end TRIO
