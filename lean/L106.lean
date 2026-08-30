@@ -2801,9 +2801,8 @@ open Classical in
 theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
     (hP : TowerP'' Q d e)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-      ∀ A', A' ∈ W u → A' ++ V ∈ W u → rsum A' V →
-        ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
-    (hrsh : RsumHered) (hj : j < Q.length) (hj1 : 0 < j)
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hj : j < Q.length) (hj1 : 0 < j)
     (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
       (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j)
     (hbound : (A ++ mTower Q d e n).length ≤
@@ -2876,8 +2875,7 @@ theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
         rw [entry2_wnd hpj hq]
         exact hz1 (p + q) (by omega)⟩ ?_
     (P ++ B.take p) (hall p (by omega))
-    (by rw [prefix_append_wnd hpj]; exact hall j (le_refl j))
-    (hrsh P B j p hpj (by omega)) m
+    (by rw [prefix_append_wnd hpj]; exact hall j (le_refl j)) m
   unfold towerMeas
   refine natMeasure_lt (rankDE_le_two d e)
     (rankDE_le_two (wd0 P B j p) (wd1 P B j p)) ?_
@@ -2897,9 +2895,8 @@ H12 の `blockRoot_parent_prevBlock` の仕事なので、ここでは**前提**
 open Classical in
 theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 < d)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-      ∀ A', A' ∈ W u → A' ++ V ∈ W u → rsum A' V →
-        ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
-    (hrsh : RsumHered) (hQ1 : 0 < Q.length)
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hQ1 : 0 < Q.length)
     (hprefull : A ++ mTower Q d e k
       ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
           ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take Q.length ∈ W u)
@@ -2996,8 +2993,7 @@ theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 <
       exact hz1 (p + q) (by omega)⟩
     ?_ (P ++ (B0 ++ B1).take p)
     (by rw [hPdef] at hpre ⊢; exact hpre)
-    (by rw [prefix_append_wnd hplt]; rw [hPdef] at hprefull ⊢; exact hprefull)
-    (hrsh P (B0 ++ B1) Q.length p hplt (by omega)) m
+    (by rw [prefix_append_wnd hplt]; rw [hPdef] at hprefull ⊢; exact hprefull) m
   unfold towerMeas
   refine natMeasure_lt (rankDE_le_two d e) (rankDE_le_two _ _) ?_
   rcases Nat.eq_zero_or_pos p with hp0 | hp1
@@ -3326,7 +3322,7 @@ theorem prefix_block_take_mem {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ}
 
 /-- ⛔ **`OrphOK`**: ブロックの中で孤児なら、接頭辞と塔を付けても孤児のまま。 -/
 def OrphOK : Prop :=
-  ∀ (A Q : TrioSeq) (d e n j : ℕ), rsum A Q → 0 < j → j < Q.length →
+  ∀ (A Q : TrioSeq) (d e n j : ℕ), 0 < j → j < Q.length →
     ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
         (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j →
     ¬ hasParent (A ++ mTower Q d e n
@@ -3361,7 +3357,7 @@ def ZeroDOK (u : ℕ) : Prop :=
 /-- ⛔ **`OrphOK0`**: ブロックの根が**塔の中**で孤児なら、接頭辞を付けても孤児。
 ⚠ **`0 < d` が要ります**（`d = 0` では H12 の定理が反例を与えます。§223.6）。 -/
 def OrphOK0 : Prop :=
-  ∀ (A Q : TrioSeq) (d e k : ℕ), rsum A Q → 0 < d →
+  ∀ (A Q : TrioSeq) (d e k : ℕ), 0 < d →
     ¬ hasParent (mTower Q d e (k + 1)
         ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1)
       (srow (mTower Q d e (k + 1)
@@ -3593,13 +3589,12 @@ def Row2RootOrph : Prop :=
 
 open Classical in
 theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
-    (horph0 : OrphOK0) (hrs : rsum A Q) (hQne : Q ≠ []) (hdpos : 0 < d)
+    (horph0 : OrphOK0) (hQne : Q ≠ []) (hdpos : 0 < d)
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
     (hrow2 : Row2RootOrph) (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-      ∀ A', A' ∈ W u → A' ++ V ∈ W u → rsum A' V →
-        ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
-    (hrsh : RsumHered) (hpre : ∀ p, p ≤ Q.length →
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hpre : ∀ p, p ≤ Q.length →
       A ++ mTower Q d e k
         ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
             ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u)
@@ -3682,7 +3677,7 @@ theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
     have hsle : srow S (S.length - 1) ≤ 1 := by
       rw [hSAT, hlastAT, hsrowAT, hsrowT]
       exact blockRoot_srow_le_one hQ1 (show k + 1 < k + 2 by omega) hz0
-    refine hsnoc_zero_of_parent hd hIH hrsh hQ1 (hpre Q.length le_rfl) (hpre p (by omega))
+    refine hsnoc_zero_of_parent hd hIH hQ1 (hpre Q.length le_rfl) (hpre p (by omega))
       hplt hpar hpe hz1 ?_
     intro hp0
     rw [hp0]
@@ -3693,7 +3688,7 @@ theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
       rw [hsrowT, hTeq]
       intro hc
       exact hpM ((hasParent_take hle (by omega)).mp hc)
-    have hnp := horph0 A Q d e k hrs hdpos hnpT
+    have hnp := horph0 A Q d e k hdpos hnpT
     have hB1t : B1.take 1 = [B1.getD 0 (0, 0, 0)] := by
       rw [show (1 : ℕ) = 0 + 1 from rfl, List.take_add_one, List.take_zero]
       rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
@@ -3747,38 +3742,35 @@ theorem tower_of_measure_step2 {u : ℕ}
     (P : TrioSeq → ℕ → ℕ → Prop) (meas : TrioSeq → ℕ → ℕ → ℕ)
     (hstep : ∀ Q d e, P Q d e →
       (∀ V d0 d1, P V d0 d1 → meas V d0 d1 < meas Q d e →
-        ∀ A, A ∈ W u → A ++ V ∈ W u → rsum A V →
-          ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
-      ∀ A, A ∈ W u → A ++ Q ∈ W u → rsum A Q →
-        ∀ n, A ++ mTower Q d e n ∈ W u) :
-    ∀ Q d e, P Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u → rsum A Q →
+        ∀ A, A ∈ W u → A ++ V ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u) :
+    ∀ Q d e, P Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u := by
   have key : ∀ s Q d e, meas Q d e ≤ s → P Q d e →
-      ∀ A, A ∈ W u → A ++ Q ∈ W u → rsum A Q →
-        ∀ n, A ++ mTower Q d e n ∈ W u := by
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
     intro s
     induction s with
     | zero =>
-      intro Q d e hle hP A hA hAQ hrs n
+      intro Q d e hle hP A hA hAQ n
       exact hstep Q d e hP
-        (fun _ _ _ _ hlt _ _ _ _ _ => absurd hlt (by omega)) A hA hAQ hrs n
+        (fun _ _ _ _ hlt _ _ _ _ => absurd hlt (by omega)) A hA hAQ n
     | succ s ih =>
-      intro Q d e hle hP A hA hAQ hrs n
+      intro Q d e hle hP A hA hAQ n
       exact hstep Q d e hP
-        (fun V d0 d1 hPV hlt A' hA' hAV hrs' m =>
-          ih V d0 d1 (by omega) hPV A' hA' hAV hrs' m) A hA hAQ hrs n
-  intro Q d e hP A hA hAQ hrs n
-  exact key (meas Q d e) Q d e (le_refl _) hP A hA hAQ hrs n
+        (fun V d0 d1 hPV hlt A' hA' hAV m =>
+          ih V d0 d1 (by omega) hPV A' hA' hAV m) A hA hAQ n
+  intro Q d e hP A hA hAQ n
+  exact key (meas Q d e) Q d e (le_refl _) hP A hA hAQ n
 
 /-! ### 220.4 ★★★★★ **最終定理** -/
 
 open Classical in
 theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ZeroDOK u) (hrow2 : Row2RootOrph) (hrsh : RsumHered) :
-    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u → rsum A Q →
+    (hzd : ZeroDOK u) (hrow2 : Row2RootOrph) :
+    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u := by
   refine tower_of_measure_step2 (u := u) TowerP'' towerMeas ?_
-  intro Q d e hP hIH A hA hAQ hrs
+  intro Q d e hP hIH A hA hAQ
   have hQne := ne_of_TowerP'' hP
   have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
   have hr0 := hr0_of_TowerP'' hP
@@ -3796,14 +3788,14 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
               ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u := by
       intro p hp
       exact prefix_block_take_mem hp (by simpa using hall 0 (le_refl 0))
-    exact hsnoc_zero_noE horph0 hrs hQne hdpos hr0 hrow2 (hz1_of_TowerP'' hP) hIH hrsh hpre
+    exact hsnoc_zero_noE horph0 hQne hdpos hr0 hrow2 (hz1_of_TowerP'' hP) hIH hpre
   · -- ★ `j ≥ 1`
     set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
     have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
     by_cases hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j
-    · exact hsnoc_pos hP hIH hrsh hj hj1 hloc (parent_bound_pos hj hloc) hall
+    · exact hsnoc_pos hP hIH hj hj1 hloc (parent_bound_pos hj hloc) hall
     · -- ⟹ ブロックの中で孤児 ⟹ `OrphOK` で全体でも孤児 ⟹ `snoc_orphan_W`
-      have hnp := horph A Q d e n j hrs hj1 hj hloc
+      have hnp := horph A Q d e n j hj1 hj hloc
       have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
         rw [List.take_add_one]
         congr 1
@@ -3881,8 +3873,8 @@ theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] :=
 open Classical in
 /-- ★★★★★ **`MTowerClosedS` は 5 本から出ます。** -/
 theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ∀ u, ZeroDOK u) (hrow2 : Row2RootOrph) (hrsh : RsumHered)
-    (hrz1 : RootZ1) : MTowerClosedS := by
+    (hzd : ∀ u, ZeroDOK u) (hrow2 : Row2RootOrph) (hrz1 : RootZ1) :
+    MTowerClosedS := by
   intro u d e n Q hQ hs
   rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
   · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
@@ -3891,14 +3883,8 @@ theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
     exact W_nil u
   · have hP : TowerP'' Q d e :=
       ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hrz1 u Q hQ⟩
-    have hrs0 : rsum ([] : TrioSeq) Q := by
-      intro q hq
-      obtain ⟨t, ht, rfl⟩ := mem_index (by simpa using hq)
-      rcases Nat.eq_zero_or_pos t with h0 | h0
-      · subst h0; exact le_refl _
-      · exact le_of_lt (hs t h0 ht)
-    have h := towerClosed_of_hered (u := u) horph horph0 (hzd u) hrow2 hrsh
-      Q d e hP [] (W_nil u) (by simpa using hQ) hrs0 n
+    have h := towerClosed_of_hered (u := u) horph horph0 (hzd u) hrow2
+      Q d e hP [] (W_nil u) (by simpa using hQ) n
     simpa using h
 
 /-! ### 222.1 ⟹ ★★★★★★ **`MTowerClosedS` は 6 本の式です**
@@ -4072,6 +4058,33 @@ theorem no_nextrel2_from_prefix {A T : TrioSeq} {y j1 : ℕ}
 ⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
 **⟹ `le0` / `le1` が**塔の根を通る**ことを別に示す必要があります**（`nextrel_i` の候補が
 `A` の中にあるとき、鎖が塔の根を経由するか）。⟹ ★ そこが次の仕事です。 -/
+
+/-! ### 227.2 ⟹ ★ ですから `rsum` は**帰納の中では運べません**。外しました
+
+**§226 で `OrphOK` / `OrphOK0` に `rsum A Q` を足しましたが、§227 で `RsumHered` が偽と分かりました。**
+**⟹ ⛔ 偽の仮定を残すと定理が**空虚**になります。⟹ ★ **`rsum` を外しました**。**
+
+**⟹ ⟹ ★ いまの `OrphOK` / `OrphOK0` は「証明されていない」であって「偽が証明された」ではありません。**
+
+⚠ **R2 の実測（`rsum` 無し）:**
+
+    `OrphOK`（`j ≥ 1`、`0 < d`）… **96.5% 上限**（`A` が空でも **3.5% 破れる**）
+         ⟹ ★ 破れの正体は **「親が 1 ブロック手前」**（R2: 100%、そして `|V| ≤ |Q|` も 100%）
+         ⟹ ⟹ **穴ではなく、`parent_bound_pos` の枠が狭い**（team-lead の読み）
+    `OrphOK0`（`j = 0`）… `rsum` があれば 100%、無ければ浅い `A` で 19〜31%
+
+**⟹ ★★ ですから次の一手は 2 つです:**
+
+    **(1)** `parent_bound_pos` を **`|V| ≤ |Q|`**（＝「親は高々 `|Q|` 列手前」）に緩める
+         ⚠ ★ ただし **`|V| = |Q|` になると測度の第 1 成分が減りません**。
+           ⟹ そこは `rankDE` を減らす必要があり、**親がブロック根でないので §200 が使えません**。
+           ⟹ ⟹ ★★ **R2 に「`j ≥ 1` で `|V| = |Q|` が起きるか」を聞く必要があります**。
+             起きないなら（`|V| < |Q|` が 100% なら）そのまま通ります。
+    **(2)** `OrphOK` を「**ブロック ＋ 1 つ前のブロック**の中で孤児」に書き換える
+
+⚠ **教訓 14**: `rsum` を外したので、`mTowerClosedS_of_residues` は
+**「偽の仮定による空虚」ではなくなりました**。⟹ ですが `OrphOK` は**実測で 3.5% 破れます**。
+**⟹ ⟹ ★ ですから **いまも「証明できていない」状態**です。そこは変わりません。** -/
 
 end L106
 end TRIO
