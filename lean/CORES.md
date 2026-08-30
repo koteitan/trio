@@ -2389,3 +2389,65 @@ def Wstar2 : Set TrioSeq :=
 
 **⟹ `z = 0` なら自明。`z = 1` でも `R.dropLast` の行 2 に 0 が現れなければ成り立つ。**
 **⟹ (m1) その確認、(m2) `hz0` の使い所を数える、(m3) 反例なら列を貼る —— を H12 に発注。**
+
+---
+
+## ✅ **循環していない**（team-lead が §208-§211 を読んだ、2026-08-30）
+
+**H12 の疑い:「`snocStepPar` は `hasParent (A ++ 塔 ++ block)` を渡す、`hstep` は
+`hasParent (塔 ++ block)` を要求する ⟹ 繋ぐのは剥がす向き ＝ `hroot` が要る」**
+
+**⛔ 前提が違った。⟹ `hstep` は **要求していない。自分で作っている**。**
+
+```
+① L106:1689  block_blockParent_all_outcone   hr0/hout/h2/h1 ⟹ hasParent(block)   接頭辞なし
+② L106:1721  tower_hasParent_of_block  【前提なし】 `exact hasParent_append_right_of _ _ hloc`
+③ L106:1493  prefix_window_of_outOfCone_noBase   `rw [parent_append_right_of A T hpT, hAT]`
+```
+
+**`prefixTowerClosed_final_full`（`L106:1777`）の中身:**
+
+```lean
+  refine hstep n j hj (fun hj1 => ?_) hall
+  refine hp hj1 ?_
+  -- ★ `hpT` を作る          ← ★★ 受け取っていない。その場で作っている
+  by_cases hc : le1 M.dropLast 0 j
+  · exact tower_hasParent_of_block (block_blockParent_all_cone hj hj1 hr0Q hc
+        (fun hpos => h2_cone hz0 j hj1 hj hpos hc))          -- 錐の中（H12 の 6 行）
+  · exact tower_hasParent_of_block (block_blockParent_all_outcone hj hj1 hr0Q hc
+        (fun hpos => h2out j hj1 hj hc hpos)
+        (fun hpos => h1out j hj1 hj hc hpos))                -- 錐の外（§210）
+```
+
+**⟹ ★ 「積む」向きだけ。「剥がす」向きは一度も出てこない。⟹ `hbase` は形を変えたのではなく消えた。**
+
+**⟹ H12 の (A)（行 1/2 の最小性を足す）の承認は**取り消し**。H12 が「着手前に確認します」と
+止めたのが正解だった（30 分を無駄にせずに済んだ）。**
+
+---
+
+## ★★★ **穴の全体像**（`prefixTowerClosed_final_full:1777` の署名から）
+
+| | 条件 | 状態 |
+|---|---|---|
+| `hM2` | `2 <= |M|` | 遺伝は自明 |
+| **`he`** | **`0 < e`** | ⛔ **1.9〜30.9%。`e = 0` では `blockRoot_parent_prevBlock` が**偽**** |
+| `hd0e` | `entry M 0 |Q| = entry M 0 0 + d` | R2: 100% |
+| `hr0M` | 根が行 0 で狭義最小 | R2: 100% |
+| `hlp` | `le1 M 0 |Q|` | R2: **100.0000%**（`0 < d` の下、分母 1,113,104） |
+| **`hz0`** | `entry Q 2 0 = 0` | ⚠ **(n3) で形が変わる（→ `hz0'` ＝ 行 2 版 `hr0`）** |
+| **`h2out`** | 錐の外で行 2 の孤児でない | ⛔ **未測定（R2 の (w3)）** |
+| **`h1out`** | 錐の外で**ブロッカー**でない | ⛔ **未測定（R2 の (w3)）** |
+
+**⟹ ★ 残るのは `he` / `hz0` / `h2out` / `h1out` の 4 つだけ。**
+**⟹ ⟹ そのうち **`he` だけが「機構として偽になりうる」**（他は「まだ測っていない」）。**
+
+### ⟹ `he` を外す唯一の道（team-lead の観察）
+
+    測度は `natMeasure = 3*|Q| + rankDE d e`、**`rankDE <= 2 < 3`**
+    ⟹ **`|V| < |Q|` なら `rankDE` の値によらず測度が減る**
+    ⟹ **`rankDE`（＝ `0 < e`）が要るのは `|V| = |Q|` のときだけ**
+    ⟹ ⟹ そこでだけ `0 < e` を**その場で導けば**前提から外せる
+    ⟹ ★ **`e_pos_of_nextrel1_blockRoots`（`L105Cap:13866`）が「導く」形の定理として既にある**
+       （「ブロック根どうしに `nextrel1` があるなら `0 < e`」）
+    ⚠ ただし `blockRoot_parent_prevBlock` は「親がブロック根**とは限らない**」場合を扱う。噛み合うかは未確認。
