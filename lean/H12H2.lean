@@ -1767,5 +1767,60 @@ theorem no_nextrel0_between_blockRoots_of_d_zero {Q : TrioSeq} {e n k m : ℕ}
   rw [hk0, hm0] at hlt
   omega
 
+
+/-! ## 26. **`hbase` は消費側で無料**（§271 で私が足した唯一の前提を消す）
+
+§271 の `prefix_window_of_outOfCone_all` に **`hbase : entry M.dropLast 0 0 = 0`** を
+足した。⟹ 消費側の `M = Lift1 ((0,v,z) :: R) t` では無料であることを示す。
+（**自分が足した前提は自分で消す。**） -/
+
+/-- `dropLast` は先頭列を変えない（`2 ≤ |M|` なら）。 -/
+theorem entry_dropLast_zero {M : TrioSeq} (hM2 : 2 ≤ M.length) (i : ℕ) :
+    entry M.dropLast i 0 = entry M i 0 := by
+  rw [List.dropLast_eq_take, entry_take (show (0 : ℕ) < M.length - 1 by omega)]
+
+/-- ★ **消費側では `hbase` は無料**: `M = Lift1 ((0,v,z) :: R) t` の根の行 0 は 0。 -/
+theorem hbase_of_consumer {v z t : ℕ} {R : TrioSeq}
+    (hM2 : 2 ≤ (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length) :
+    entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast 0 0 = 0 := by
+  rw [entry_dropLast_zero hM2, entry0_Lift1]
+  rfl
+
+open Classical in
+/-- ★★ ⟹ **消費側の形に特化した接頭辞つき窓補題**（`hbase` を落とした）。 -/
+theorem prefix_window_of_outOfCone_consumer {A : TrioSeq} {v z t : ℕ} {R : TrioSeq}
+    {d e n j : ℕ}
+    (hM2 : 2 ≤ (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length)
+    (hd1pos : 0 < e)
+    (hd0e : entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0
+        (0 + (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast.length)
+      = entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).length →
+      entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0 0
+        < entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0 l)
+    (hlp : le1 (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0
+      (0 + (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast.length))
+    (hj : j < (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t) 0 (0 + j))
+    (hpar0 : hasParent (A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0
+          (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast) (e * n)).take (j + 1))
+      (srow (A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0
+            (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast) (e * n)).take (j + 1))
+        ((A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n).length + j))
+      ((A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n).length + j)) :
+    (A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n).length
+      ≤ parent (A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0
+            (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast) (e * n)).take (j + 1))
+        (srow (A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0
+              (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast) (e * n)).take (j + 1))
+          ((A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n).length + j))
+        ((A ++ mTower (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t).dropLast d e n).length + j) :=
+  prefix_window_of_outOfCone_all hM2 hd1pos hd0e hr0 hlp (hbase_of_consumer hM2)
+    hj hj1 hout hpar0
+
 end H12H2
 end TRIO

@@ -6625,3 +6625,16 @@ R2 の 6 行のうち **「親になれるのはリフトを受けている行�
 ⚠ **残りは `oper` が次の段の `(d,e)` を決める部分**（R2 の 6 行目、L3 が担当）。
 
 **Lean**: `lean/H12H2.lean`（緑、`sorry` 0、**定理 63 本**）。
+
+## §274. **`hbase` を消した**（自分が足した前提を自分で消す）
+
+§271 で `prefix_window_of_outOfCone_all` に **`hbase : entry M.dropLast 0 0 = 0`** を
+足した。⟹ 消費側では無料であることを緑にした。
+
+    entry_dropLast_zero                  : `2 ≤ |M|` なら `dropLast` は先頭列を変えない
+    **hbase_of_consumer**                : `M = Lift1 ((0,v,z) :: R) t` の根の行 0 は **0**
+    **prefix_window_of_outOfCone_consumer** : ⟹ **`hbase` を落とした消費側特化版**
+
+⟹ **§271 の追加前提は消えた。前提はすべて消費側が持っているものだけになった。**
+
+**Lean**: `lean/H12H2.lean`（緑、`sorry` 0、**定理 66 本**）。
