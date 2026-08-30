@@ -3815,5 +3815,100 @@ theorem heredZ2_of_p_zero_pair {A Q : TrioSeq} {d e k : ℕ}
 
 ⚠ **教訓 14**: 「集中しているはず」は**私の予想**です。**測ってもらいます。** -/
 
+/-! ### 224.4 ★★★ 核を **`HeredZ2core`**（`srow ≤ 1` ∧ `p ≥ 1`）に絞る道具 -/
+
+/-- ⛔ **核（最小形）**: `srow ≤ 1` かつ `p ≥ 1` の段での「窓の根の行 2 が 0」。 -/
+def HeredZ2core : Prop :=
+  ∀ (P B : TrioSeq) (j p : ℕ), j < B.length → 0 < p → p < j →
+    srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1) ≤ 1 →
+    hasParent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) →
+    parent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) = P.length + p →
+    entry (wnd P B j p) 2 0 = 0
+
+/-- 塔 ＋ ブロック接頭辞の末尾列の行 2 は `Q` の行 2。 -/
+theorem entry2_tower_last {A Q : TrioSeq} (d e n : ℕ) {j : ℕ} :
+    entry (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+      ((A ++ mTower Q d e n).length + j) = entry Q 2 j := by
+  rw [entry_append_right, entry2_block_take (show j < j + 1 by omega),
+    Wset.entry_take (show j < j + 1 by omega)]
+
+open Classical in
+/-- ★★ **`j ≥ 1` の段の `HeredZ2` は核 ＋ `z < 2` から出る**。 -/
+theorem heredZ2_pos_of_core {A Q : TrioSeq} {d e n j p : ℕ}
+    (hz2 : HeredZ2core) (hQ1 : 0 < Q.length) (hz0 : entry Q 2 0 = 0)
+    (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1)
+    (hj : j < Q.length) (hj1 : 0 < j) (hpj : p < j)
+    (hpar : hasParent (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+    (hpe : parent (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+      = (A ++ mTower Q d e n).length + p) :
+    entry (wnd (A ++ mTower Q d e n)
+      (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p) 2 0 = 0 := by
+  set P := A ++ mTower Q d e n with hPdef
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTl : (P ++ B.take (j + 1)).length = P.length + (j + 1) := by
+    rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hlastidx : (P ++ B.take (j + 1)).length - 1 = P.length + j := by omega
+  rcases Nat.eq_zero_or_pos p with hp0 | hp1
+  · rw [hp0]; exact heredZ2_of_p_zero hQ1 hj1 hz0
+  · by_cases hs : 1 < srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1)
+    · refine heredZ2_of_srow2 hpj hpar hpe hs ?_
+      rw [hlastidx, hPdef, hB]
+      rw [entry2_tower_last (A := A) d e n]
+      exact hz1 j hj
+    · exact hz2 P B j p (by omega) hp1 hpj (by omega) hpar hpe
+
+/-! ### 224.5 ★★ `z < 2`（行 2 ≤ 1）は**窓に遺伝します** -/
+
+theorem entry2_wnd {A Q : TrioSeq} {d e n j p t : ℕ} (hpj : p < j)
+    (ht : t < j - p) :
+    entry (wnd (A ++ mTower Q d e n)
+      (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) j p) 2 t = entry Q 2 (p + t) := by
+  set P := A ++ mTower Q d e n with hPdef
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  unfold wnd
+  rw [entry_window _ ht,
+    show P.length + p + t = P.length + (p + t) from by omega, entry_append_right,
+    hB, entry2_block_take (show p + t < j + 1 by omega),
+    Wset.entry_take (show p + t < j + 1 by omega)]
+
+theorem entry2_wnd_pair {A Q : TrioSeq} {d e k p t : ℕ} (hp : p < Q.length)
+    (ht : t < Q.length - p) :
+    entry (wnd (A ++ mTower Q d e k)
+      (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+        ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p) 2 t
+      = entry Q 2 (p + t) := by
+  set P := A ++ mTower Q d e k with hPdef
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  unfold wnd
+  rw [entry_window _ ht,
+    show P.length + p + t = P.length + (p + t) from by omega, entry_append_right,
+    Wset.entry_take (show p + t < Q.length + 1 by omega),
+    entry_append_left _ _ (show p + t < B0.length by omega), hB0]
+  show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD (p + t) (0, 0, 0)).2.2 = _
+  rw [block_getD (d := d) (e := e) (n := k) (show p + t < Q.length by omega)]
+
 end L106
 end TRIO
