@@ -5730,5 +5730,63 @@ theorem outOfCone_witness_candidate {Q : TrioSeq}
 ⚠ **教訓 14**: 上の分解は緑ですが、**`hlocQ` の遺伝は証明していません**。
 **⟹ ★ team-lead の (ADJ)（証人が隣で取れるか）と合わせて決まります。** -/
 
+/-! ## 239. ★★★★★★ (P1) の骨: **窓の中の証人はそのまま移ります**
+
+R2 の (ADJ): **証人の距離は最大 2**、`hlocQ(V)` の遺伝は **95.5〜96.9%**、**`n` 依存なし**。
+**⟹ ★ ですから「証人が窓の中にある」なら、§238 の `le0_window` でそのまま移ります。**
+
+**⟹ ★★ 下は「証人が窓の中にある」を**前提**にした遺伝の骨です。**
+**⟹ ⟹ 残るのは **錐のクラス条件**（`V` の錐は `V` の根についてなので `B` のものと別）だけです。** -/
+
+open Classical in
+/-- ★★ **窓の中の証人は、行 0（`le0`）も行 1（`entry`）もそのまま移ります**。 -/
+theorem wnd_witness_transfer {P B : TrioSeq} {j p t y : ℕ}
+    (hjB : j < B.length) (hpj : p < j) (htL : t < j - p)
+    (hy1 : p ≤ y) (hy2 : y < p + t)
+    (hle0 : le0 (P ++ B.take (j + 1)) (P.length + y) (P.length + (p + t)))
+    (hlt : entry (P ++ B.take (j + 1)) 1 (P.length + y)
+      < entry (P ++ B.take (j + 1)) 1 (P.length + (p + t))) :
+    (y - p) < t ∧ le0 (wnd P B j p) (y - p) t ∧
+      entry (wnd P B j p) 1 (y - p) < entry (wnd P B j p) 1 t := by
+  have hTl : (P ++ B.take (j + 1)).length = P.length + (j + 1) := by
+    rw [List.length_append, List.length_take, Nat.min_eq_left (by omega)]
+  have hle : P.length + p + (j - p) ≤ (P ++ B.take (j + 1)).length := by omega
+  refine ⟨by omega, ?_, ?_⟩
+  · unfold wnd
+    have h := le0_window (T := P ++ B.take (j + 1)) (s := P.length + p) (L := j - p)
+      (a := y - p) (b := t) (by omega) (by omega) htL ?_
+    · exact h
+    · have e1 : P.length + p + (y - p) = P.length + y := by omega
+      have e2 : P.length + p + t = P.length + (p + t) := by omega
+      rw [e1, e2]; exact hle0
+  · unfold wnd
+    rw [entry_window _ (show y - p < j - p by omega), entry_window _ htL]
+    have e1 : P.length + p + (y - p) = P.length + y := by omega
+    have e2 : P.length + p + t = P.length + (p + t) := by omega
+    rw [e1, e2]
+    exact hlt
+
+/-! ### 239.1 ⟹ ★ **(P1) に残るのは錐のクラス条件だけ**
+
+    ✅ **`le0`** … §238 `le0_window`（窓は連続区間）
+    ✅ **行 1 の大小** … `entry_window`（§224.5）
+    ✅ **証人が窓の中** … R2 の (ADJ)（距離 ≤ 2）＋ `|V| ≥ 3`
+    ⛔ **錐のクラス** … `le1 V 0 (y−p) → le1 V 0 t`
+         ⚠ ★ **`V` の錐は `V` の根（＝ `B` の列 `p`）についてなので、`B` の錐とは別物**
+
+**⟹ ★★ §238.2 の分解が効きます:**
+
+    `t` が **`V` の錐の外** ⟹ `outOfCone_witness_candidate` が **`V` の中で錐の外の候補**を供給
+         ⟹ ★ クラス条件は**空虚に真** ⟹ **`B` から移す必要すらありません**
+    `t` が **`V` の錐の中** ⟹ 後件が真 ⟹ ★ **クラス条件は自動**
+
+**⟹ ★★★ ⟹ **どちらの場合もクラス条件は自動**です。⟹ ⟹ 残るのは
+「錐の外の候補が `entry V 1 y* < entry V 1 t` を満たすか」だけ。**
+
+**⟹ ★ そしてそれは §238.3 の「**行 1 が最小のブロッカーが的より小さいか**」そのものです。**
+
+⚠ **教訓 14**: 上は**分解**です。**(P1) はまだ組んでいません。**
+**⟹ ★ 組むには「`V` の中で候補を取り直す」ところを書く必要があります。** -/
+
 end L106
 end TRIO
