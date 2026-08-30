@@ -931,6 +931,15 @@ theorem tower2_z_zero_of_last {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
   have hlt := L53.tower2_zr (v := v) (z := z) hRne hd hi2 hpM
   omega
 
+/-- ★★★ **`zle1 R` は「末尾列の行 2 ≤ 1」だけでよい**。 -/
+theorem tower2_z_zero_of_last {v z m : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) : z = 0 := by
+  have hlt := L53.tower2_zr (v := v) (z := z) hRne hd hi2 hpM
+  omega
+
 /-- ⟹ **消費側の `hz0` は「`R` の末尾列の行 2 ≤ 1」1 本から出る。** -/
 theorem hz0_of_last {v z m t : ℕ} {R : TrioSeq} (hRne : R ≠ [])
     (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
@@ -942,6 +951,48 @@ theorem hz0_of_last {v z m t : ℕ} {R : TrioSeq} (hRne : R ≠ [])
   rw [entry2_Lift1]
   show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = 0
   have : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = z := rfl
+  omega
+
+/-- ⟹ **消費側の `hz0` は「`R` の末尾列の行 2 ≤ 1」1 本から出る。** -/
+theorem hz0_of_last {v z m t : ℕ} {R : TrioSeq} (hRne : R ≠ [])
+    (hz1 : z ≤ 1) (hlast : entry R 2 (R.length - 1) ≤ 1) (hd : domT R m)
+    (hi2 : srow R (R.length - 1) = 2)
+    (hpM : hasParent (((0, v, z) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1))
+      R.length) :
+    entry (Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) t) 2 0 = 0 := by
+  have hzz : z = 0 := tower2_z_zero_of_last hRne hz1 hlast hd hi2 hpM
+  rw [entry2_Lift1]
+  show entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = 0
+  have : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = z := rfl
+  omega
+
+/-- ★★★ **錐の外の二分法**: ブロッカーが `j` 自身か、`j` より手前か。 -/
+theorem outOfCone_dichotomy {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (hj : j < Q.length) (hout : ¬ le1 Q 0 j) :
+    entry Q 1 j ≤ entry Q 1 0
+      ∨ ∃ y, y < j ∧ y ≠ 0 ∧ Relation.ReflTransGen (nextrel0 Q) y j
+          ∧ entry Q 1 y ≤ entry Q 1 0 := by
+  obtain ⟨y, hy, hy0, hy1⟩ := (L105.not_le1_zero_iff hr0 hj).mp hout
+  have hyle : y ≤ j := rtg0_le hy
+  rcases Nat.lt_or_ge y j with hlt | hge
+  · exact Or.inr ⟨y, hlt, hy0, hy, hy1⟩
+  · have : y = j := by omega
+    subst this
+    exact Or.inl hy1
+
+/-- ⟹ **`h1out` が破れるのは「`j` 自身がブロッカー」のときだけ**。 -/
+theorem h1out_holds_of_not_selfBlocker {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (hj : j < Q.length) (hout : ¬ le1 Q 0 j)
+    (hself : ¬ (entry Q 1 j ≤ entry Q 1 0)) :
+    entry Q 1 0 < entry Q 1 j := by omega
+
+/-- ★ **`j` 自身がブロッカーなら、根は行 1 の親になれない**（狭義増加が破れる）。 -/
+theorem root_not_nextrel1_of_selfBlocker {Q : TrioSeq} {j : ℕ}
+    (hself : entry Q 1 j ≤ entry Q 1 0) : ¬ nextrel1 Q 0 j := by
+  intro h
+  have := h.2.2.2.1
   omega
 
 end H12Export
