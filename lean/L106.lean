@@ -3903,5 +3903,37 @@ theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
 ⚠ **教訓 14**: **5 本のどれも証明していません。**
 **とくに `Row2RootOrph` は R2 の実測 100% ですが、Lean では 1 行も書いていません。** -/
 
+/-! ### 225.1 ✅ `Row2RootOrph` の **`k = 0` は無条件で真**（下限の確認）
+
+**索引を引く前に、まず自分で確かめられる部分を切り出します。**
+**⟹ ★ ブロック 0 の根は添字 0 なので、`nextR` の始点（`< 0`）が存在しません。** -/
+
+theorem no_hasParent_zero {M : TrioSeq} {i : ℕ} : ¬ hasParent M i 0 := by
+  intro hp
+  have := nextR_index_lt (parent_nextR hp)
+  omega
+
+/-- ★ `Row2RootOrph` の `k = 0` の場合。 -/
+theorem row2RootOrph_zero {Q : TrioSeq} {d e n : ℕ} :
+    ¬ hasParent (mTower Q d e n) (srow (mTower Q d e n) (0 * Q.length)) (0 * Q.length) := by
+  rw [Nat.zero_mul]
+  exact no_hasParent_zero
+
+/-! ### 225.2 ⚠ `k ≥ 1` は**書けていません**。反例の形も作れませんでした
+
+**必要なのは「`entry Q 2 0 > 0` なら `nextrel2 M a (k*|Q|)` が取れない」です。**
+
+    `srow = 2` は無料（行 2 は `shiftr01` / `Lift1` で不変 ⟹ `entry M 2 (k*|Q|) = entry Q 2 0 > 0`）
+    `nextrel2` は **`entry M 2 a < entry Q 2 0`** と **`le1 M a (k*|Q|)`** を要求
+    ⟹ `zle1` の下では `entry Q 2 0 = 1` ⟹ `entry M 2 a = 0`
+    ⟹ ⛔ **残るのは「行 2 が 0 の列が、ブロック根に `le1` で届かない」**
+
+**⟹ ⚠ ★ ここは H12 の `not_nextrel2_blockRoots`（§198）では足りません。**
+**§198 は「**ブロック根どうし**」だけで、`a` が**非根**の場合を潰していません。**
+
+⚠ **反例の形も 15 分では作れませんでした**（教訓 45 の逆で、作れないことは証拠になりません）。
+**⟹ ★ R2 の 35,244 / 35,244（対照 0.83% / 17.63% で鳴る）だけが根拠です。**
+**⟹ ⟹ H12 に (A) として振りました。** -/
+
 end L106
 end TRIO
