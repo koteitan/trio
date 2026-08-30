@@ -5373,5 +5373,84 @@ theorem orphOK_tower_row1 {A Q : TrioSeq} {d e n j : ℕ}
 **`towerClosed_of_hered` の枝は「**ブロック**の中で孤児」から始まるので、
 「**塔**の中で孤児」への橋（H12 の実測 15944 ⟺ 15944）が別に要ります。** -/
 
+/-! ## 232. ★★★★★★★ 「**ブロックの中で孤児 ⟹ 塔の中でも孤児**」（§231 の自己適用）
+
+§231 は `A ++ T` の形で「接頭辞は親を供給しない」を言います。
+**⟹ ★ そこに `A := mTower Q d e n`、`T := ブロックの接頭辞` を入れると、そのまま出ます。**
+
+**⟹ ⟹ ★★ 前提は `hmin`（`T` の根が行 0 で狭義最浅）で、
+`T = (Lift1 (shiftr01 (d*n) 0 Q) (e*n)).take (j+1)` なら **`hr0(Q)` そのもの**です。**
+**（ブロックの行 0 は `entry Q 0 x + d*n` で、`+ d*n` は一様なので大小が保たれます。）** -/
+
+theorem entry0_block_take {Q : TrioSeq} {d e n j x : ℕ} (hx : x < j + 1)
+    (hxQ : x < Q.length) :
+    entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 x
+      = entry Q 0 x + d * n := by
+  rw [Wset.entry_take hx, entry0_Lift1, entry0_shiftr01 hxQ]
+
+/-- ★ ブロックの接頭辞の根は、行 0 で狭義最浅（`hr0` から）。 -/
+theorem hmin_block {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ∀ l, 0 < l → l < ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
+      entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0
+        < entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 l := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  intro l hl0 hlt
+  rw [List.length_take, hBlen, Nat.min_eq_left (by omega)] at hlt
+  rw [entry0_block_take (d := d) (e := e) (n := n) (by omega) (by omega),
+    entry0_block_take (d := d) (e := e) (n := n) hlt (by omega)]
+  have := hr0 l hl0 (by omega)
+  omega
+
+/-- ★★★ **行 0**: ブロックの中で孤児なら、塔を付けても孤児（**前提は `hr0` だけ**）。 -/
+theorem tower_orphan_of_block_row0 {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hloc : ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 j) :
+    ¬ hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 (n * Q.length + j) := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hmin := hmin_block (Q := Q) (d := d) (e := e) (n := n) (j := j) hj hr0
+  have h := orphOK_row0 (A := mTower Q d e n)
+    (T := (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) (j1 := j)
+    hj1 (hmin j hj1 (by omega)) hloc
+  rw [mTower_length] at h
+  exact h
+
+/-- ★★ **行 1**: ＋ ブロックの錐の条件（`h1out` 相対版）。 -/
+theorem tower_orphan_of_block_row1 {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hcone : entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 0
+      < entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j)
+    (hloc : ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j) :
+    ¬ hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 (n * Q.length + j) := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hmin := hmin_block (Q := Q) (d := d) (e := e) (n := n) (j := j) hj hr0
+  have h := orphOK_row1_cone (A := mTower Q d e n)
+    (T := (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) (m := j)
+    hmin (by omega) hj1 hcone hloc
+  rw [mTower_length] at h
+  exact h
+
+/-! ### 232.1 ⟹ ★★★ **これで「ブロック ⟹ 塔 ⟹ 全体」が繋がります**
+
+    **ブロック ⟹ 塔** … §232（上）… **前提は `hr0`（行 0）／ ＋ 錐（行 1）**
+    **塔 ⟹ 全体** … §231（`orphOK_tower_row0` / `_row1`）… **前提は `hr0` ＋ `0 < d`（行 0）／ ＋ 錐（行 1）**
+
+**⟹ ★★ どちらも**同じ 1 本**（§230 `hasParent_peel_of_noCross` ＋ §228 / H12 の壁）の適用です。**
+**⟹ ⟹ ★ 「接頭辞は親を供給しない」を **2 回**使っているだけでした。**
+
+⚠ **教訓 14**: **行 2 は書いていません**（`hnb` が要る）。
+**⟹ ですが R2 の (s8) では**行 2 の破れは 0 件**です。** -/
+
 end L106
 end TRIO
