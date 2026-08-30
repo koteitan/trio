@@ -2708,5 +2708,70 @@ theorem witness_survives_window {M : TrioSeq} {p y j : ℕ} (hpy : p ≤ y)
     show p + (j - p) = j from by omega]
   exact h1
 
+
+/-- ★★★ **`nextrel0` の親は必ず窓の根以降**（`hr0_wnd` から）。 -/
+theorem nextrel0_src_ge_of_shallow {M : TrioSeq} {p a b : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hpb : p < b) (h : nextrel0 M a b) : p ≤ a := by
+  obtain ⟨-, hb, hab, hlt, hmin⟩ := h
+  by_contra hc
+  push Not at hc
+  exact absurd (hmin p ⟨hc, hpb⟩) (by
+    have := hshallow b hpb hb
+    omega)
+
+open Classical in
+/-- ★★★★★★★ **窓の根 `p` は、窓の全内部列の `le0` 祖先**。 -/
+theorem le0_root_of_shallow {M : TrioSeq} {p : ℕ} (hp : p < M.length)
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x) :
+    ∀ j, p < j → j < M.length → le0 M p j := by
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hpj hj
+    obtain ⟨a, haj, hpa, halt, hamax⟩ :
+        ∃ a, a < j ∧ p ≤ a ∧ entry M 0 a < entry M 0 j ∧
+          ∀ x, a < x → x < j → entry M 0 j ≤ entry M 0 x := by
+      classical
+      have hpT : p ∈ (Finset.range j).filter
+          (fun x => p ≤ x ∧ entry M 0 x < entry M 0 j) := by
+        simp only [Finset.mem_filter, Finset.mem_range]
+        exact ⟨hpj, le_refl _, hshallow j hpj hj⟩
+      have hTne : ((Finset.range j).filter
+          (fun x => p ≤ x ∧ entry M 0 x < entry M 0 j)).Nonempty := ⟨p, hpT⟩
+      have hmem := Finset.max'_mem _ hTne
+      simp only [Finset.mem_filter, Finset.mem_range] at hmem
+      refine ⟨Finset.max' _ hTne, hmem.1, hmem.2.1, hmem.2.2, ?_⟩
+      intro x hx1 hx2
+      by_contra hc
+      push Not at hc
+      have hxT : x ∈ (Finset.range j).filter
+          (fun x => p ≤ x ∧ entry M 0 x < entry M 0 j) := by
+        simp only [Finset.mem_filter, Finset.mem_range]
+        exact ⟨hx2, by omega, hc⟩
+      exact absurd (Finset.le_max' _ x hxT) (by omega)
+    have hstep : nextrel0 M a j :=
+      ⟨by omega, hj, haj, halt, fun x hx => hamax x hx.1 hx.2⟩
+    rcases Nat.eq_or_lt_of_le hpa with hpe | hplt
+    · refine ⟨hp, hj, ?_⟩
+      rw [hpe]
+      exact Relation.ReflTransGen.single hstep
+    · obtain ⟨-, -, hrt⟩ := ih a haj hplt (by omega)
+      exact ⟨hp, hj, hrt.tail hstep⟩
+
+/-- ★★★★★★★ **(W12b) の答え**: 窓の根が行 0 で狭義最浅なら
+（＝ `hr0_wnd`、L3 の §221 で**無料**）、
+
+    ★ 窓の内部列 `j` の `nextrel0` の親は**必ず窓の中**
+    ★★ しかも **窓の根 `p` 自身が `j` の `le0` 祖先**
+
+⟹ ⟹ ★★★ **証人の候補は必ず窓の中にある**。⟹ 残るのは**行 1 の条件だけ**。 -/
+theorem window_witness_in_window {M : TrioSeq} {p j : ℕ} (hp : p < M.length)
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hpj : p < j) (hj : j < M.length) :
+    le0 M p j ∧ (∀ a, nextrel0 M a j → p ≤ a) :=
+  ⟨le0_root_of_shallow hp hshallow j hpj hj,
+   fun _ h => nextrel0_src_ge_of_shallow hshallow hpj h⟩
+
 end H12Export
 end TRIO
