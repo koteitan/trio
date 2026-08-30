@@ -10287,5 +10287,38 @@ theorem lev_mTower_root {Q : TrioSeq} (hQ : 0 < Q.length) (d e n : ℕ) (hn : 0 
   unfold lev
   rw [h1, h2]
 
+/-! ### §297 残差 B（`MTowerOrphan`）は `srow >= 1` だけ —— `srow = 0` の孤児は起きない
+
+`L105Cap:6111` の残差 B は「`Q` の末尾列が段内で孤児（`¬ HasParentInBlock Q`）」。
+`HasParentInBlock N = hasParent N (srow N (|N|-1)) (|N|-1)` なので、
+`srow = 0` の孤児は「行 0 の親が無い」ことを意味する。
+
+⟹ ⛔ **それは `hr0 Q` の下では起きない**（H12 の `hasParent0_of_hr0`:
+根が祖先なので `j >= 1` の列は必ず行 0 の親を持つ）。
+⟹ ★ そして残差 B は `2 <= |Q|` を仮定するので `|Q| - 1 >= 1`。
+⟹ ⟹ ★★★ **残差 B は `srow >= 1` の場合だけ**に絞れる。 -/
+
+/-- ★★★ **`hr0` ∧ `2 <= |Q|` の下では、段内の孤児は `srow >= 1` に限る**。 -/
+theorem srow_ne_zero_of_orphan {Q : TrioSeq} (hbig : 2 ≤ Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (horph : ¬ L53.HasParentInBlock Q) : srow Q (Q.length - 1) ≠ 0 := by
+  intro hs
+  refine horph ?_
+  rw [L53.HasParentInBlock, hs]
+  exact H12Export.hasParent0_of_hr0 hr0 (by omega) (by omega)
+
+/-- **残差 B を `srow >= 1` に制限した形**。 -/
+def MTowerOrphan1 : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u → 2 ≤ Q.length →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    ¬ L53.HasParentInBlock Q → srow Q (Q.length - 1) ≠ 0 →
+    mTower Q d e n ∈ W u
+
+/-- ★★★ **残差 B は `srow >= 1` だけで足りる**。 -/
+theorem mTowerOrphan_of_orphan1 (h : MTowerOrphan1) : L105.MTowerOrphan := by
+  intro u d e n Q hQ hbig hs horph
+  refine h u d e n Q hQ hbig hs horph ?_
+  exact srow_ne_zero_of_orphan hbig (fun l hl0 hl => hs l (by omega) hl) horph
+
 end L106
 end TRIO
