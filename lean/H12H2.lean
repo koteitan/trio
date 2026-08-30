@@ -9073,5 +9073,56 @@ theorem window_lt_of_blockRoot_gap (Q : TrioSeq) {d e n c : ℕ}
     subst hm; simp [Nat.succ_mul]
   omega
 
+
+/-! ## 141. ★★★★★★★★★★★★ (W90): **`srow` の窓** —— 行 0 の親を「候補」にして縛ります
+
+`oper` の窓を決めるのは **`srow` の親**（team-lead の指摘、正しいです）。
+⟹ ★★★★★ **行 0 の親 `c0` は `le0` 祖先**なので、**`nextrel1` の最小性の候補**になります。
+⟹ ⟹ ★★★★★★★★★★ **`c0` の行 1 が的より低ければ、`srow` の親は `c0` 以降**。
+⟹ ★ ⟹ **`c0 ≥ (n−1)|Q|`（(W79')）と合わせて、`srow` の窓が `|Q|` 以下**になります。 -/
+
+/-- ★★★★★★★★★★★★ **(W90) の芯**（一般、仮定は 2 つだけ）:
+**行 0 の親 `c0` の行 1 が的より低いなら、行 1 の親は `c0` 以降**。 -/
+theorem nextrel1_src_ge_of_row0_parent_low {M : TrioSeq} {c c0 t : ℕ}
+    (h0 : nextrel0 M c0 t) (hlow : entry M 1 c0 < entry M 1 t)
+    (h : nextrel1 M c t) : c0 ≤ c := by
+  by_contra hc
+  push Not at hc
+  have hle0 : le0 M c0 t := ⟨h0.1, h0.2.1, Relation.ReflTransGen.single h0⟩
+  have hmin := h.2.2.2.2.2 c0 ⟨hc, hle0⟩
+  omega
+
+/-- ★★★★★★★★★★★★ ⟹ **`srow = 1` のブロック根の窓**（`e`, `d` に依りません）:
+**行 0 の親が低ければ、行 1 の親も直前ブロックの中** ⟹ **窓 `≤ |Q|`**。 -/
+theorem window_le_of_blockRoot_row1 (Q : TrioSeq) {d e n c c0 : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (h0 : nextrel0 (mTower Q d e (n + 1)) c0 (n * Q.length))
+    (hlow : entry (mTower Q d e (n + 1)) 1 c0
+      < entry (mTower Q d e (n + 1)) 1 (n * Q.length))
+    (h : nextrel1 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    n * Q.length - c ≤ Q.length := by
+  have hge0 := nextrel0_blockRoot_src_ge_prev Q hQ hd hn h0
+  have hge := nextrel1_src_ge_of_row0_parent_low h0 hlow h
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  omega
+
+/-- ★★★★★★★★ ⟹ **`d > 段差` なら、窓は狭義に短い**（`srow = 1` 版）。 -/
+theorem window_lt_of_blockRoot_row1_gap (Q : TrioSeq) {d e n c c0 : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (hgap : ∃ r, 0 < r ∧ r < Q.length ∧ entry Q 0 r < entry Q 0 0 + d)
+    (h0 : nextrel0 (mTower Q d e (n + 1)) c0 (n * Q.length))
+    (hlow : entry (mTower Q d e (n + 1)) 1 c0
+      < entry (mTower Q d e (n + 1)) 1 (n * Q.length))
+    (h : nextrel1 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    n * Q.length - c < Q.length := by
+  have hgt := nextrel0_blockRoot_src_gt_prev_root Q hQ hd hn hgap h0
+  have hge := nextrel1_src_ge_of_row0_parent_low h0 hlow h
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  omega
+
 end H12H2
 end TRIO
