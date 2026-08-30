@@ -1895,5 +1895,64 @@ theorem prefix_snocStep_oper_tower {A Q : TrioSeq} {d e n j p m : ℕ}
   rw [List.append_assoc A (mTower Q d e n), oper_append_right _ _ m hT2 hroot,
     hVeq, ← List.append_assoc, ← List.append_assoc]
 
+
+/-! ## 28. ★★★★★★★★ **測度 `(|V|, rankDE)` の整礎帰納**（L3 の指名、形 (b)）
+
+L3 の指定:「形 **(b)**（`ℕ` の対についての強帰納の原理）が使いやすい」。
+
+⚠ **索引ではなく Mathlib を引いた**（L3 の指示）:
+
+    **`WellFounded.prod_lex`**（`Mathlib/Order/RelClasses.lean:180`）
+      `WellFounded ra → WellFounded rb → WellFounded (Prod.Lex ra rb)`
+    **`wellFounded_lt`** … `[WellFoundedLT α]` のとき `WellFounded (· < ·)`
+
+⟹ 作る必要はなく、繋ぐだけだった。 -/
+
+/-- `ℕ × ℕ` の辞書式順序は整礎。 -/
+theorem prodLexNat_wf :
+    WellFounded (Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop)) :=
+  WellFounded.prod_lex wellFounded_lt wellFounded_lt
+
+/-- ★★ **形 (b)**: `ℕ` の対についての強帰納の原理（L3 の指定）。 -/
+theorem prodLexNat_induction {P : ℕ × ℕ → Prop}
+    (h : ∀ p, (∀ q, Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop) q p → P q) → P p) :
+    ∀ p, P p :=
+  fun p => prodLexNat_wf.induction p h
+
+/-- ★★ **測度つき版**: `μ : α → ℕ × ℕ` を測度にした強帰納
+（`|V|` と `rankDE` を直に入れて使える形）。 -/
+theorem prodLexNat_measure_induction {α : Sort*} {μ : α → ℕ × ℕ} {P : α → Prop}
+    (h : ∀ a, (∀ b, Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop)
+        (μ b) (μ a) → P b) → P a) :
+    ∀ a, P a :=
+  fun a => (InvImage.wf μ prodLexNat_wf).induction a h
+
+/-! ### 28.1 **関係を作る側**（L3 が各段で使う形）
+
+`Prod.Lex` の構成子を、この場面の名前で置いておく。 -/
+
+/-- ★ **第 1 成分が減る**（`|V|` が減る段）。 -/
+theorem prodLexNat_fst {a₁ a₂ b₁ b₂ : ℕ} (h : a₁ < a₂) :
+    Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop) (a₁, b₁) (a₂, b₂) :=
+  Prod.Lex.left _ _ h
+
+/-- ★ **第 1 成分は同じで第 2 成分が減る**（`|V|` は同じで `rankDE` が減る段）。 -/
+theorem prodLexNat_snd {a b₁ b₂ : ℕ} (h : b₁ < b₂) :
+    Prod.Lex (· < · : ℕ → ℕ → Prop) (· < · : ℕ → ℕ → Prop) (a, b₁) (a, b₂) :=
+  Prod.Lex.right _ h
+
+/-- ★★★ **⟹ 2 枝をそのまま渡せる形**（L3 の「場合分けの合成」に直結）。
+各段で「第 1 成分が減る」か「第 1 成分は同じで第 2 成分が減る」なら、帰納が回る。 -/
+theorem prodLexNat_induction_two {α : Sort*} {μ : α → ℕ × ℕ} {P : α → Prop}
+    (h : ∀ a, (∀ b, (μ b).1 < (μ a).1 ∨ ((μ b).1 = (μ a).1 ∧ (μ b).2 < (μ a).2) → P b) →
+      P a) :
+    ∀ a, P a := by
+  refine prodLexNat_measure_induction (μ := μ) (fun a ih => h a (fun b hb => ih b ?_))
+  rcases hb with hlt | ⟨heq, hlt⟩
+  · exact (Prod.mk.eta (p := μ b)) ▸ (Prod.mk.eta (p := μ a)) ▸ prodLexNat_fst hlt
+  · refine (Prod.mk.eta (p := μ b)) ▸ (Prod.mk.eta (p := μ a)) ▸ ?_
+    rw [heq]
+    exact prodLexNat_snd hlt
+
 end H12H2
 end TRIO

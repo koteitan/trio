@@ -6710,3 +6710,42 @@ L3 の振り分け:「`snocStep_oper_tower`（`L105Cap:13093`、緑）は**接�
 
 ⚠ **L3 は既に §275 の 31 本を `L106.lean` に写しずみ**（索引で確認。`L106` は緑・`sorry` 0）。
 ⟹ **新しく要るのは `prefix_snocStep_oper_tower` 1 本だけ**（依存はすべて L3 の手元にある）。
+
+## §277. ★★★★★★★★ **測度 `(|V|, rankDE)` の整礎帰納（緑）** —— L3 の指名、形 (b)
+
+⚠ **索引ではなく Mathlib を引いた**（L3 の指示どおり）。**作る必要は無かった**:
+
+    **`WellFounded.prod_lex`**（`Mathlib/Order/RelClasses.lean:180`）
+      `WellFounded ra → WellFounded rb → WellFounded (Prod.Lex ra rb)`
+    **`wellFounded_lt`** … `[WellFoundedLT α]` のとき `WellFounded (· < ·)`
+
+### §277.1 緑（6 本）
+
+    prodLexNat_wf                 : `ℕ × ℕ` の辞書式は整礎
+    **prodLexNat_induction**      : **形 (b)**（L3 の指定）—— 対についての強帰納
+    prodLexNat_measure_induction  : **測度 `μ : α → ℕ × ℕ` つき**（`InvImage.wf`）
+    prodLexNat_fst / prodLexNat_snd : 関係を**作る**側（`Prod.Lex.left` / `.right`）
+    **prodLexNat_induction_two**  : ★ **2 枝をそのまま渡せる形**
+
+`prodLexNat_induction_two` の形（L3 の「場合分けの合成」に直結）:
+
+    (∀ a, (∀ b, **(μ b).1 < (μ a).1 ∨ ((μ b).1 = (μ a).1 ∧ (μ b).2 < (μ a).2)** → P b) → P a)
+    → ∀ a, P a
+
+⟹ **L3 は各段で「`|V|` が減る」か「`|V|` は同じで `rankDE` が減る」を示すだけでよい。**
+⟹ `Prod.Lex` を直接触る必要が無い。
+
+### §277.2 ⟹ `lean/H12Export.lean` を更新（**緑、定理 38 本、811 行**）
+
+⚠ 名前衝突を索引全体で確認 ⟹ **6 本とも新規**（`prefix_snocStep_oper_tower` も）。
+
+### §277.3 ★ L3 が `L106` を私の export に差し替えた
+
+    L3 の最初の版 … `H12H2.lean` を**まるごと**写した（**1906 行**）
+    差し替え後   … 私の export（**791 行**）、`leanman check` EXIT=0、warning 0、`sorry` 0
+
+**L3 の評価:「『必要なものだけを集めて緑にする』ほうが、手で数えるより確実で小さい。
+そして team-lead の『使うものだけ』が**削る作業なしで**満たされた。」**
+
+> ★ **「証明の負担を、人間の数え上げから型検査に移す」**——team-lead が
+> `CORES.md` に技法として記録。
