@@ -11111,5 +11111,34 @@ theorem lexLt_of_offset_pos {Q V : TrioSeq} {e d e' d' L n c : ℕ}
   rw [hV, hQ]
   exact window_lt_of_offset_pos hL hn hge hlt
 
+/-! ### §317 配線の型（明日の作業の枠）—— 測度つきの `MTowerClosedBased`
+
+§314 の整礎帰納を `MTowerClosedBased` に当てるための、点ごとの述語と接続。
+⟹ ★ **帰納は `(|Q|, e, d)` の辞書式**（§314）、**各段の減少は §315 / §316**、
+**枝の場合分けは 6 行の表**（§309 / §311 / §313 ／ H12 (W87) ／ R2 の算術）。
+
+⚠ 残っているのは **「`srow` の親の下界 `(n−1)|Q| ≤ c`」2 本**（`e = 0` ∧ `srow = 1` ／ `srow = 2`）。
+事実は R2 の 3 通りの測定で確定（(R-C15) 714/387、(R-C18) 8,667、(R-C5)/(R-C7) 188,933、いずれも 100%）。 -/
+
+/-- **点ごとの `MTowerClosedBased`**（測度 `(|Q|, e, d)` の 1 点）。 -/
+def MTowerClosedAt (u : ℕ) (Q : TrioSeq) (e d : ℕ) : Prop :=
+  Q ∈ W u → (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    entry Q 0 0 = 0 → ∀ n, mTower Q d e n ∈ W u
+
+/-- ★★★ **点ごとが全部成り立てば `MTowerClosedBased`**（自明な言い換え）。 -/
+theorem mTowerClosedBased_of_at (h : ∀ u Q e d, MTowerClosedAt u Q e d) :
+    L105.MTowerClosedBased := by
+  intro u d e n Q hQ hs hb
+  exact h u Q e d hQ hs hb n
+
+/-- ★★★★★ **配線の枠**: 「測度が小さい全部で成り立つなら、自分でも成り立つ」を示せば
+`MTowerClosedBased` が出る（§314 の整礎帰納を当てた形）。 -/
+theorem mTowerClosedBased_of_lexStep (u : ℕ)
+    (hstep : ∀ Q e d,
+      (∀ Q' e' d', LexLt (lexMeas Q' e' d') (lexMeas Q e d) → MTowerClosedAt u Q' e' d') →
+      MTowerClosedAt u Q e d) :
+    ∀ Q e d, MTowerClosedAt u Q e d :=
+  mTowerClosedBased_of_lex (fun Q e d => MTowerClosedAt u Q e d) hstep
+
 end L106
 end TRIO
