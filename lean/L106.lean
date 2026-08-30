@@ -8289,5 +8289,90 @@ theorem snocStep_oper_pre (hjB : j < B.length) (hpj : p < j) …
 ⚠ **教訓 14**: 上は**読解**であって証明ではありません。**⟹ ★ ですが `snocStep_oper_pre` の型が
 `V.length = j - p` を返している以上、`p` が `P` の外なら窓が伸びるのは**型から見えます**。 -/
 
+/-! ## 267. ★★★★★ **(L-AMIN)**: 残差を `amin` の言葉で 1 行にします
+
+H12 が `Cgraft.amin`（`Cgraft:848`、**行 0 祖先鎖の行 1 の最小値**）で
+**前提なしの同値**を出しました（`H12Export.lean:3689/3716`）:
+
+    `hasParent M 1 j ↔ amin M j < entry M 1 j`
+    `¬ hasParent M 1 j ↔ amin M j = entry M 1 j`
+
+**⟹ ★★★ ですから `OrphOK` の行 1 の残差が **1 本の不等式**になります。** -/
+
+/-! ⚠ **`import H12Export` は「最後にビルドされた版」しか見えません**。
+H12 の最新分（`amin` の 2 本）は未ビルドなので、⟹ ★ **今回は逐語で写します**
+（`H12Export.lean:3689 / 3716`）。⟹ ⟹ ★ ビルドが更新されたら `H12Export.` に差し替えます。 -/
+
+/-- ★★★★★★★ **行 1 の親の存在は `amin` で決まる**（前提なし）。 -/
+theorem hasParent1_iff_amin_lt {M : TrioSeq} {j : ℕ} (hj : j < M.length) :
+    hasParent M 1 j ↔ amin M j < entry M 1 j := by
+  constructor
+  · rintro ⟨y, hy, -⟩
+    unfold nextR at hy
+    rw [if_neg (by omega), if_pos rfl] at hy
+    exact Nat.lt_of_le_of_lt (amin_le hy.2.2.2.2.1.2.2) hy.2.2.2.1
+  · intro h
+    obtain ⟨y, hrt, heq⟩ := amin_mem M j
+    have hyj : y ≤ j := rtg0_index_le hrt
+    have hylt : y < j := by
+      rcases Nat.eq_or_lt_of_le hyj with he | hl
+      · exfalso
+        rw [he] at heq
+        omega
+      · exact hl
+    have hle0 : le0 M y j := ⟨by omega, hj, hrt⟩
+    obtain ⟨y', hy'⟩ := exists_nextrel1_of_le0_lt hj ⟨y, hylt, hle0, by omega⟩
+    exact ⟨y', by
+      show nextR M 1 y' j
+      unfold nextR; rw [if_neg (by omega), if_pos rfl]; exact hy', by
+      intro b hb
+      unfold nextR at hb
+      rw [if_neg (by omega), if_pos rfl] at hb
+      exact nextrel1_src_unique hb hy'⟩
+
+
+/-- ★★★★★ ⟹ **孤児 ⟺ `amin` が的の行 1 に等しい**。 -/
+theorem orphan_row1_iff_amin_eq {M : TrioSeq} {j : ℕ} (hj : j < M.length) :
+    ¬ hasParent M 1 j ↔ amin M j = entry M 1 j := by
+  rw [hasParent1_iff_amin_lt hj]
+  have hle : amin M j ≤ entry M 1 j := amin_le Relation.ReflTransGen.refl
+  omega
+
+
+
+/-- ★★★★★ **`OrphOK` の行 1 の破れ ＝ 「接頭辞が `amin` を下げる」**（前提なし）。 -/
+theorem orphOK_row1_break_iff_amin {A T : TrioSeq} {j : ℕ} (hjT : j < T.length) :
+    (¬ hasParent T 1 j ∧ hasParent (A ++ T) 1 (A.length + j))
+      ↔ (amin T j = entry T 1 j ∧
+          amin (A ++ T) (A.length + j) < entry (A ++ T) 1 (A.length + j)) := by
+  have hjM : A.length + j < (A ++ T).length := by rw [List.length_append]; omega
+  rw [orphan_row1_iff_amin_eq hjT, hasParent1_iff_amin_lt hjM]
+
+/-- ★★★★ ⟹ **入れ替えた形**（`entry` を `T` の言葉に揃えたもの）。 -/
+theorem orphOK_row1_break_amin_lt {A T : TrioSeq} {j : ℕ} (hjT : j < T.length)
+    (hnp : ¬ hasParent T 1 j) (hp : hasParent (A ++ T) 1 (A.length + j)) :
+    amin (A ++ T) (A.length + j) < amin T j := by
+  have hjM : A.length + j < (A ++ T).length := by rw [List.length_append]; omega
+  have h1 := (orphan_row1_iff_amin_eq hjT).mp hnp
+  have h2 := (hasParent1_iff_amin_lt hjM).mp hp
+  rw [show A.length + j = A.length + j from rfl, entry_append_right] at h2
+  omega
+
+/-! ### 267.1 ⟹ ★★★★★ **残差の最終形（1 行）**
+
+    ⛔ **`amin (A ++ T) (|A| + j) < amin T j`**
+    ＝ **「接頭辞が、`j` の行 0 祖先鎖の行 1 の最小値を下げる」**
+
+**⟹ ★ そして §257 が「越境はブロックの根 1 点だけ」と言うので、⟹ ★★ **鎖は必ず根を通ります**。**
+**⟹ ⟹ ★★★ ですから **下げられるのは「根より前の鎖の部分」だけ**です:**
+
+    `amin (A ++ T) (|A| + j) = min (amin T j) (amin (A ++ T) |A|)`   ← ★ **分解できるはず**
+
+**⟹ ★★★★ ⟹ ですから **残差は `amin (A ++ T) |A| < amin T j`**——⟹ ★ **`T` の根の鎖の話**です。**
+**⟹ ⟹ ★ ＝ **接頭辞に「`T` の根の行 0 祖先で、行 1 が `amin T j` より小さい列」がある**こと。**
+
+⚠ **`min` の分解は未証明**です（`amin` は `sInf` なので、鎖の分割補題が要ります）。
+**⟹ ★ H12 の `amin` まわりに既にあるかもしれません。⟹ **書く前に grep してください**。** -/
+
 end L106
 end TRIO
