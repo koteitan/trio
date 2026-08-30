@@ -11031,5 +11031,57 @@ theorem mTowerClosedBased_of_lex
       exact ih (lexMeas Q'' e'' d'') (by rw [hm] at hlt; exact hlt) Q'' e'' d'' rfl
   exact key (lexMeas Q e d) Q e d rfl
 
+/-! ### §315 表の 1・2 行を測度の減少に変換 —— 配線の部品
+
+6 行の表（team-lead ＋ H12 ＋ R2 ＋ 私で確定）のうち、
+**1 行（`srow = 0`）と 2 行（`srow = 1` ∧ `e > 0`）**は、
+`oper` の `if` の定義だけで **測度 `(|Q|, e, d)` の減少**になる。ここではその変換を置く。
+
+    0 行 `d = 0`                … 孤児（H12 `no_nextrel0_blockRoot_of_d_zero`）⟹ 無料
+    1 行 `srow = 0`             … **`d' = 0 < d`**（§311）＋ `e' = 0 ≤ e` ⟹ ★ 本節
+    2 行 `srow = 1` ∧ `e > 0`   … **`e' = 0 < e`**（§309）        ⟹ ★ 本節
+    3 行 `srow = 1` ∧ `e = 0`   … 窓 < `|Q|`（`d > 段差`、R2 の算術）
+    4 行 `srow = 2`             … 孤児（(W87)、`d <= 段差` or `e = 0`）⟹ 無料
+    5 行 `srow = 2` ∧ `e > 0` ∧ `d > 段差` … ⛔ 唯一の残り -/
+
+/-- 測度の減少を作る組み合わせ（前提なし）。 -/
+theorem lexLt_of_cases {Q V : TrioSeq} {e d e' d' : ℕ}
+    (h : V.length < Q.length ∨
+      (V.length = Q.length ∧ (e' < e ∨ (e' = e ∧ d' < d)))) :
+    LexLt (lexMeas V e' d') (lexMeas Q e d) := by
+  unfold lexMeas
+  rcases h with h | ⟨hlen, h⟩
+  · exact lexLt_of_fst h
+  · rw [hlen]
+    rcases h with h | ⟨he, hd⟩
+    · exact lexLt_of_snd h
+    · rw [he]
+      exact lexLt_of_trd hd
+
+/-- ★★★★★ **表の 1 行**: `srow = 0` なら `(e', d') = (0, 0)` で、`d > 0` なら測度が減る。 -/
+theorem lexLt_of_srow_zero {Q V : TrioSeq} {t j0 e d : ℕ}
+    (hlen : V.length = Q.length) (hs : srow Q t = 0) (hd : 0 < d) :
+    LexLt (lexMeas V (if 1 < srow Q t then entry Q 1 t - entry Q 1 j0 else 0)
+                     (if 0 < srow Q t then entry Q 0 t - entry Q 0 j0 else 0))
+          (lexMeas Q e d) := by
+  rw [if_neg (by omega), if_neg (by omega)]
+  refine lexLt_of_cases (Or.inr ⟨hlen, ?_⟩)
+  rcases Nat.eq_zero_or_pos e with rfl | he
+  · exact Or.inr ⟨rfl, hd⟩
+  · exact Or.inl he
+
+/-- ★★★★★ **表の 2 行**: `srow = 1` ∧ `e > 0` なら `e' = 0 < e` で測度が減る。 -/
+theorem lexLt_of_srow_one {Q V : TrioSeq} {t j0 e d d' : ℕ}
+    (hlen : V.length = Q.length) (hs : srow Q t = 1) (he : 0 < e) :
+    LexLt (lexMeas V (if 1 < srow Q t then entry Q 1 t - entry Q 1 j0 else 0) d')
+          (lexMeas Q e d) := by
+  rw [if_neg (by omega)]
+  exact lexLt_of_cases (Or.inr ⟨hlen, Or.inl he⟩)
+
+/-- ★★★ **表の 3 行の形**: 窓が真に短ければ、`(e', d')` が何であれ測度は減る。 -/
+theorem lexLt_of_window {Q V : TrioSeq} {e d e' d' : ℕ} (h : V.length < Q.length) :
+    LexLt (lexMeas V e' d') (lexMeas Q e d) :=
+  lexLt_of_cases (Or.inl h)
+
 end L106
 end TRIO
