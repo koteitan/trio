@@ -1672,5 +1672,93 @@ theorem towerClosed_of_snoc' {u : ℕ}
 **⟹ ですが `hbase` は**必ず**破れました（§207、証明済み）。`hpT` は破れると決まっていません。**
 **⟹ ⟹ ★ H12 の実測では「錐の外 ＝ 行 2 の孤児」が 98.8〜100%。⟹ 見込みはあります。** -/
 
+/-! ## 210. ★★★★★★★ §208 で移動した穴を**名前つきの 1 本**に詰めました
+
+§208/§209 で `hpT`（**塔の中**の親）が要るようになりました。**出どころを作ります。**
+
+**索引を引きました（手筋）。ブロックの中の親は**行ごとに**そろっています:**
+
+    **行 0** … §154 `block_blockParent_row0`（`hr0` だけ。**錐の条件なし**）✅
+    **行 2** … §173 `block_hasParent_row2_iff`（`Q.take (j+1)` に落ちる。**無条件**）✅
+    **行 1・錐の外** … §172 `block_blockParent_row1_outcone`
+              ⚠ **`hhigh : entry Q 1 0 < entry Q 1 j` が要る**
+
+**⟹ ★ ⟹ 残るのは 1 つだけです: **`0 < entry Q 1 j` かつ `entry Q 1 j ≤ entry Q 1 0`**。**
+**⟹ ⟹ これが「ブロッカー」（非根で行 1 が根以下の列）そのものです（§162.2 の語彙）。** -/
+
+theorem block_blockParent_all_outcone {Q : TrioSeq} {d e n j : ℕ}
+    (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hout : ¬ le1 Q 0 j)
+    (h2 : 0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j)
+    (h1 : 0 < entry Q 1 j → entry Q 1 0 < entry Q 1 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hE1 : entry (B.take (j + 1)) 1 j
+      = entry Q 1 j + (if le1 Q 0 j then e * n else 0) := by
+    rw [Wset.entry_take (X := B) (l := j + 1) (i := 1) (j := j) (by omega)]
+    show (B.getD j (0, 0, 0)).2.1 = _
+    rw [hB, block_getD hj]
+  have hE2 : entry (B.take (j + 1)) 2 j = entry Q 2 j := by
+    rw [hB, entry2_block_take (by omega),
+      Wset.entry_take (X := Q) (l := j + 1) (i := 2) (j := j) (by omega)]
+  unfold srow
+  by_cases h2p : 0 < entry (B.take (j + 1)) 2 j
+  · rw [if_pos h2p]
+    rw [hE2] at h2p
+    exact block_blockParent_row2' hj (h2 h2p)
+  · by_cases h1p : 0 < entry (B.take (j + 1)) 1 j
+    · rw [if_neg h2p, if_pos h1p]
+      rw [hE1, if_neg hout, Nat.add_zero] at h1p
+      exact block_blockParent_row1_outcone hj hr0 hout (h1 h1p)
+    · rw [if_neg h2p, if_neg h1p]
+      exact block_blockParent_row0 hj hj1 hr0
+
+/-! ### 210.1 ★ ブロックの中の親を**塔の中**へ持ち上げる（**前提なし**） -/
+
+theorem tower_hasParent_of_block {Q : TrioSeq} {d e n j : ℕ}
+    (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j) :
+    hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (n * Q.length + j))
+      (n * Q.length + j) := by
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hsrow : srow (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) (n * Q.length + j)
+      = srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j := by
+    rw [show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen]]
+    exact srow_append_right _ _ j
+  rw [hsrow, show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen]]
+  exact hasParent_append_right_of _ _ hloc
+
+/-! ### 210.2 ⟹ ★★ **`hpT` は「ブロッカー」1 本に詰まりました**
+
+**§210 ＋ §210.1 を合わせると、`j ≥ 1` の**錐の外**の列について `hpT` が出ます。前提は:**
+
+    `hr0`（消費側が渡す）
+    **`h2`** … `0 < entry Q 2 j → hasParent (Q.take (j+1)) 2 j`（**行 2 の孤児でない**）
+    **`h1`** … `0 < entry Q 1 j → entry Q 1 0 < entry Q 1 j`（**ブロッカーでない**）
+
+⚠ **`h1` と `h2` はどちらも `Q` **だけ**についての条件です。塔にも接頭辞にも依りません。**
+**⟹ ★ ⟹ だから `TowerP'` に足せます。⟹ ⟹ 問題は**遺伝するか**だけになります。**
+
+⚠⚠ **教訓 27**: **`h1` は `Q` の**すべての**`j` について要るわけではありません。**
+**「錐の外で `srow = 1` の `j`」だけです。⟹ 分母を小さく取れます。**
+
+### 210.3 ⟹ H12 の実測との突き合わせ
+
+> **H12 (C2)**: 「錐の外 ＝ 行 2 の孤児」は **98.8〜100%**、100% ではない。
+
+**⟹ ★ これは `h2` の残差（`0 < entry Q 2 j` なのに `Q.take (j+1)` の中に行 2 の親がいない）です。**
+**⟹ ⟹ そして「錐の外 ＝ 行 2 の孤児」が成り立つとき、`srow = 2` なので **`h1` は空**になります。**
+**⟹ ⟹ ⟹ つまり `h1` の分母は**その 0〜1.2%**の中にあります。⟹ **小さいはずです**。**
+
+⚠ **教訓 14**: 上は**私の読み**です。H12 に確かめてもらいます。 -/
+
 end L106
 end TRIO
