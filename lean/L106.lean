@@ -9368,5 +9368,69 @@ theorem hsnoc_gen3 {u : ℕ} {A Q T : TrioSeq} {d e c : ℕ}
 ⚠ **教訓 14**: 「6 個が駄目」であって「全部駄目」ではありません。
 **⟹ ★ ですが **`|A'| + |V|` が 0.00% 減**という事実は、**構造から出ています**（列が伸びる）。 -/
 
+/-! ## 280. ★★★★★★ **`lev(親) < lev(的)`** —— 行 1・行 2 は定義から出ます（行 0 は出ません）
+
+`Wset.lev M j = 2 · entry M 1 j + entry M 2 j`。⟹ ★ 親の水準を測度に使う案（team-lead ＋ 私）の
+**段内の事実**を先に緑にします。
+
+    **行 1** … `nextrel1` は `entry M 1 y < entry M 1 j` を与える
+      ⟹ ⚠ **行 2 は何も言わない** ⟹ ★ **`zle1`（行 2 ≤ 1）**の下でだけ `lev` が下がる
+    **行 2** … `nextrel2` は `entry M 2 y < entry M 2 j` ＋ `le1 M y j`（`y < j` なら行 1 も狭義に小さい）
+      ⟹ ★ **両方下がる** ⟹ **`zle1` すら要りません**
+    ⛔ **行 0** … `nextrel0` は行 1・行 2 について**何も言いません**
+      ⟹ ⟹ ★ しかも `srow = 0` は `entry M 1 j = 0 ∧ entry M 2 j = 0` ⟹ **`lev M j = 0`**
+      ⟹ ⟹ ⟹ ⛔ **`lev(親) < 0` は不可能** ⟹ **行 0 では原理的に出ません** -/
+
+theorem lev_lt_of_nextrel2 {M : TrioSeq} {y j : ℕ} (hyj : y < j) (h : nextrel2 M y j) :
+    lev M y < lev M j := by
+  have h2 : entry M 2 y < entry M 2 j := h.2.2.2.1
+  have h1 : entry M 1 y < entry M 1 j := by
+    -- `le1 M y j` は `y < j` なら 1 歩以上 ⟹ 行 1 が狭義に増える
+    obtain ⟨-, -, hrt⟩ := h.2.2.2.2.1
+    clear h h2
+    induction hrt with
+    | refl => omega
+    | @tail b c hab hbc ih =>
+        rcases Nat.lt_or_ge y b with hb | hb
+        · exact lt_trans (ih hb) hbc.2.2.2.1
+        · have : y = b := by
+            have := rtg1_index_le hab
+            omega
+          rw [this]; exact hbc.2.2.2.1
+  unfold lev; omega
+
+theorem lev_lt_of_nextrel1 {M : TrioSeq} {y j : ℕ}
+    (hz1 : entry M 2 y ≤ 1) (h : nextrel1 M y j) : lev M y < lev M j := by
+  have h1 : entry M 1 y < entry M 1 j := h.2.2.2.1
+  unfold lev; omega
+
+/-! ### 280.1 ⛔ **行 0 では出ません**（`srow = 0` なら `lev` が 0） -/
+
+theorem lev_zero_of_srow_zero {M : TrioSeq} {j : ℕ} (h : srow M j = 0) : lev M j = 0 := by
+  unfold srow at h
+  by_cases h2 : 0 < entry M 2 j
+  · rw [if_pos h2] at h; omega
+  · rw [if_neg h2] at h
+    by_cases h1 : 0 < entry M 1 j
+    · rw [if_pos h1] at h; omega
+    · unfold lev; omega
+
+/-! ### 280.2 ⟹ ★★ **段内は出ました。残るのは「段をまたいで推移するか」**
+
+    ✅ **行 1**（`zle1` の下） … §280 `lev_lt_of_nextrel1`
+    ✅ **行 2** ……………… §280 `lev_lt_of_nextrel2`（**前提なし**）
+    ⛔ **行 0** ……………… **原理的に出ません**（`lev(的) = 0`）
+
+**⟹ ⚠ そして **段をまたぐと比べる相手が変わります**:**
+
+    段 `k` の窓の根 ＝ **段 `k` の的の親** ⟹ ★ `lev` はその段の中では下がる
+    段 `k+1` の的 ＝ **`T` の末尾**（新しく snoc した列）⟹ ⛔ **段 `k` の的とは別物**
+    ⟹ ⟹ ⛔ ですから **段内の `lev(親) < lev(的)` からは、段をまたぐ減少は出ません**
+
+**⟹ ★ 測度に使うには **`lev V 0 < lev Q 0`**（窓の根 vs いまの `Q` の根）が要ります。**
+**⟹ ⟹ ⚠ そして **`Q` の根と的は別の列**なので、⟹ ★ **§280 は直接は効きません**。**
+
+⚠ **教訓 14**: §280 は緑ですが、**測度の減少ではありません**。⟹ ★ **段内の事実**だけです。 -/
+
 end L106
 end TRIO
