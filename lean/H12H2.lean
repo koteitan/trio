@@ -5447,5 +5447,39 @@ theorem prefix_parent_iff_of_orphan_through_root {A T : TrioSeq} {m : ℕ}
   · rintro ⟨y, hy, hle0, hlt⟩
     refine ⟨y, hy, ⟨hle0.1, hroot.2.1, hle0.2.2.trans hroot.2.2⟩, hlt⟩
 
+
+/-! ## 75. ⛔⛔ (W25) の帰結: **接頭辞に「行 1 = 0 の最浅の列」があると、必ず親ができる**
+
+(W25) で証人を「`T` の根の `le0` 祖先」に絞ったが、⟹ ⛔ **全体の根（添字 0）は常にその鎖の上**
+（`le0_root_of_shallow` を `p := 0` に当てるだけ）。
+⟹ ★ そして **全体の根の行 1 が 0** なら、⟹ ⟹ ★★ **それがそのまま証人**になる。
+
+⟹ ⟹ ★★★ ですから **行 1 の孤児がある限り、接頭辞は必ず親を供給します**。
+⟹ ⟹ ⟹ ⛔ **`OrphOK` の行 1 は「証明できていない」ではなく「偽」**です（この状況では）。 -/
+
+/-- ⛔⛔ **全体の根が行 1 = 0 で最浅なら、行 1 の孤児には必ず接頭辞から親が来る**。 -/
+theorem prefix_parent_of_low_root {A T : TrioSeq} {m : ℕ}
+    (hr0M : ∀ l, 0 < l → l < (A ++ T).length → entry (A ++ T) 0 0 < entry (A ++ T) 0 l)
+    (hA : 0 < A.length) (hroot1 : entry (A ++ T) 1 0 = 0)
+    (hm : m < T.length) (hm0 : 0 < m) (hnp : ¬ hasParent T 1 m)
+    (hpos : 0 < entry T 1 m) :
+    ∃ c, c < A.length ∧ nextrel1 (A ++ T) c (A.length + m) := by
+  have hMlen : 0 < (A ++ T).length := by rw [List.length_append]; omega
+  have htgt : A.length + m < (A ++ T).length := by rw [List.length_append]; omega
+  refine (prefix_parent_iff_of_orphan hm hnp).mpr ⟨0, hA, ?_, ?_⟩
+  · exact le0_root_of_shallow hMlen hr0M (A.length + m) (by omega) htgt
+  · rw [hroot1]; omega
+
+/-- ⛔⛔⛔ ⟹ **`OrphOK` の行 1 は、この状況では偽**。 -/
+theorem orphOK_row1_fails_of_low_root {A T : TrioSeq} {m : ℕ}
+    (hr0M : ∀ l, 0 < l → l < (A ++ T).length → entry (A ++ T) 0 0 < entry (A ++ T) 0 l)
+    (hA : 0 < A.length) (hroot1 : entry (A ++ T) 1 0 = 0)
+    (hm : m < T.length) (hm0 : 0 < m) (hnp : ¬ hasParent T 1 m)
+    (hpos : 0 < entry T 1 m) :
+    ¬ (∀ c, c < A.length → ¬ nextrel1 (A ++ T) c (A.length + m)) := by
+  intro h
+  obtain ⟨c, hc, hcn⟩ := prefix_parent_of_low_root hr0M hA hroot1 hm hm0 hnp hpos
+  exact h c hc hcn
+
 end H12H2
 end TRIO
