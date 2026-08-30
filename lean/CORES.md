@@ -14867,3 +14867,66 @@ Wset.oper_Lift1_root （Wset:3384、緑）
 
 **✅ L3 が未然に防いだ重複 2 回目**（`liftInner_holds` が刺さらないことを grep で確認）。
 **⟹ ★ 「grep してから書く」は今日 2 回効いた。26 回目は team-lead が grep せずに発注した分。**
+
+---
+
+# ★★★★★★★★★★★★ **【現在地】証明全体が「1 手」まで来た**
+
+    ✅ **`MTowerClosedS` ⟸ `TowerSnocStep`**（L3 §307、**仮定なし**）
+    ✅ **`TowerSnocStep` の `0 < j`（ブロック内部）は既に緑** ⟹ **`nextrel0_gexp_no_skip`（`L105Cap:6613`）**
+        `(hlen : 0 + Lb + 1 = |M|) (hq1 : 0 < q) (hr0 : 狭義)`
+        `(h : nextrel0 (gexp M 0 Lb d0 d1 n) y (0 + (k*Lb + q))) : **k * Lb ≤ y**`
+        ⟹ ★ **`j0 = 0` 版で、`d0, d1` にも依らない** ⟹ **「写しの内部を的にすると親は同じ写し以降」**
+        ⟹ ⟹ ★★ **親が同じブロック内 ⟹ そのブロックは `Q` の持ち上げコピー ⟹ `Q` の中の話**
+    ✅ **`j = 0` ∧ `d = 0`** … **全ブロック根が同値 ⟹ 行 0 の親なし ⟹ 孤児 ⟹ `snoc_orphan_W` で無料**
+    ⛔ **`j = 0` ∧ `d > 0`** … **親は前のブロックの根** ⟹ ★★★★★★★★★★ **唯一の残り**
+
+> ★★★★★★★★★★★★ **今朝「何を証明すればよいかも分からない」→ いまは 1 手。**（L3 の言葉）
+
+**⚠ team-lead の推測が外れ（今日 3 回目、L3 が読んで潰した）: `Lcone` の `flat` 系 4 本は `mTower` に当たらない。
+⟹ **`gexp_zero_eq_mTower`（`L105Cap:5220`）で `mTower` は `gexp` の `j0 = 0` の場合**、
+ところが `gexp_root_shallow` は `0 < j0`、`nextrel0_flat_root` は `y < j0`（空虚）、
+`gexp_flat_ge` / `gexp_flat_rtg0_root` は `d0 = d1 = 0` 限定。
+⟹ ★ **`Lcone` の flat 系は「宿主の接頭辞がある」場合の道具**。⟹ ★★ **測らずに文を読んで潰した**。**
+
+---
+
+# ★★★★★★★★★★ **`LiftOperComm` は 2 枝とも緑になった**
+
+```lean
+✅ 枝 1（parent ≠ 0）: **lift_oper_comm_of_hr0**（H12、(W78)、`ede73b1`、緑）
+  (hL : |M| - 1 ≠ 0) (hz : ¬ 末尾が全零) (hpM : hasParent …)
+  (hr0 : ∀ l, 0 < l → l < |M| → entry M 0 0 < entry M 0 l)
+  (**hj0pos : 0 < parent M (srow M (|M|-1)) (|M|-1)**) :
+  **(Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t**
+  ⟹ ★ **`argOK` も「根が `(0,v,z)`」も不要** ⟹ **`hr0` だけ**
+  ⟹ ★★ 中身: **`oper_eq_gexp_gen` で `gexp` へ ⟹ `srow = 0` なら `gexp_cone_mir_flat`、`srow ≥ 1` なら `gexp_cone_mir`**
+  ⟹ ⟹ ★ **`hup` / `hlp` / `hr0` は狭義 `hr0` と親の定義から全部出た**
+✅ **lift_oper_comm_of_hr0_full**（写しを作らない 3 分岐も込み）
+✅ 枝 2（parent = 0）: **`Wset.oper_Lift1_root`（`Wset:3384`、右辺は `glift`）**
+```
+
+**⛔⛔ H12 の自己訂正（重要）: **`gexp_cone_mir` の `hj0 : 0 < j0` は落としてはいけない**。
+⟹ H12 の言葉: 「**『落とすべき仮定』ではなく『本質的な境界』でした**」
+⟹ ★ **R2 の反例（`M = (0,0,0)(1,0,0)`、`parent = 0`）が、まさにその境界**。⟹ **落とすと偽になる**。
+⟹ ✅ H12 は自分の前便の提案（「L3 に落としてもらってください」）を**撤回**。⟹ L3 に伝達済み。**
+
+---
+
+## ★ **明日の順序（確定）**
+
+    **L3-1** ★★★★★ **§306 の `LiftOperComm` を「`parent ≠ 0` つき」に訂正**（偽の定義を残さない）
+      ⟹ ★ **H12 の `lift_oper_comm_of_hr0` をそのまま刺せる** ⟹ **§306 が「仮定つき」から緑に**
+    **L3-2** ★★★★★★★★★★ **`MTowerClosedBased` ＋ `L105Cap` の `Based` 版 3 本**
+      ⟹ ⚠ **`shiftTowerClosedS_of_mTowerClosedS`（`:5628`）が一般の `Q` で量化**しているので写しが要る
+      ⟹ ★ 見積もり（L3）: **3 本追加、各 5〜20 行**。**既存は消さず `Based` 版を並べる**（共有ファイル）
+    **L3-3** ★★★★★★★★★★ **`j = 0` ∧ `d > 0` の 1 手**（`wsnoc_clause2_iff` で `oper` を開く）
+    **H12 (W79)** ★★★★★★★★★★ **`mTower Q d e (n+1)` の第 `n` ブロックの根の行 0 の親は第 `n−1` ブロックの根**
+      ⟹ ★ 構造の話だけ（`W` は出ない）。**`srow` も出す**（L3 の場合分け用）。**`d = 0` は孤児**を 1 行で
+      ⟹ 手持ち: `mTower_entry0_root` ／ `le0_blockRoot_mTower` ／ `nextrel1_mTower_src_ge_blockRoot` ／ `rtg0_ancestor_split`
+      ⟹ **分担: H12 = 親がどこか（構造）／ L3 = `W` の所属** ⟹ **重複しない**
+    **R2 (R-C3)** ★★★★★ **`j = 0` の親の位置を `n` 別に実測**（`d > 0` / `d = 0` を分けて）
+    ⛔ **§306 はここで打ち止め**（`|Q| = 2` の残核は `parent = 0` ⟹ 最小核に効かない）。**本線は §307**
+
+**✅ build 緑 38 回目**: `BUILD_EXIT=0`、`H12Export` **454 本**、`L106` **10,757 行**
+**⚠ L3: 自己訂正 16 回／重複 24 回 ＋ 未然に防いだ 3 回（`Lift1_zero`、`liftInner_holds`、`Lcone` flat 系）**
