@@ -1497,5 +1497,52 @@ theorem h12_row2_const_mTower (Q : TrioSeq) (d e n : ℕ) {c : ℕ}
     _ = entry Q 2 (p % Q.length) := entry2_mTower_block Q d e n _ _ hk hi
     _ = c := h _ hi
 
+
+/-! ## 22. **`j = 0` の窓の式**（L3 の §187.2 の「窓 `= |Q| − p_rel`」）
+
+`blockRoot_parent_split`（§20）から、窓の値がそのまま出る。
+⟹ **`p_rel ≥ 1` なら窓 `< |Q|`**（L3 の「良い側」の枝）。
+⚠ **`p_rel = 0` は窓 `= |Q|`**（減らない側）。そこが核。 -/
+
+/-- ★ **`j = 0` の窓は `|Q| − p_rel`**（L3 の §187.2 の式）。 -/
+theorem blockRoot_window_eq {Q : TrioSeq} {d e n k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hk : k + 1 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hp : hasParent (mTower Q d e n) 1 ((k + 1) * Q.length)) :
+    ∃ p, p < Q.length ∧
+      parent (mTower Q d e n) 1 ((k + 1) * Q.length) = k * Q.length + p ∧
+      (k + 1) * Q.length - parent (mTower Q d e n) 1 ((k + 1) * Q.length)
+        = Q.length - p := by
+  obtain ⟨p, hplt, hpe⟩ := blockRoot_parent_split hQne hd he hk hr0 hp
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  exact ⟨p, hplt, hpe, by rw [hpe]; omega⟩
+
+/-- ★★ **`p_rel ≥ 1`（＝ 親がブロックの根でない）なら、窓は `< |Q|`。**
+（L3 の §187.2 の「良い側」。`|V|` が減る枝。） -/
+theorem blockRoot_window_lt_of_ne_root {Q : TrioSeq} {d e n k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hk : k + 1 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hp : hasParent (mTower Q d e n) 1 ((k + 1) * Q.length))
+    (hne : parent (mTower Q d e n) 1 ((k + 1) * Q.length) ≠ k * Q.length) :
+    (k + 1) * Q.length - parent (mTower Q d e n) 1 ((k + 1) * Q.length)
+      < Q.length := by
+  obtain ⟨p, hplt, hpe, hw⟩ := blockRoot_window_eq hQne hd he hk hr0 hp
+  rw [hw]
+  have hp0 : p ≠ 0 := by
+    intro hc
+    rw [hc, Nat.add_zero] at hpe
+    exact hne hpe
+  omega
+
+/-- ⚠ **`p_rel = 0`（親がブロックの根）なら窓は `= |Q|`**（減らない側 ＝ 核）。 -/
+theorem blockRoot_window_eq_of_root {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length)
+    (hpe : parent (mTower Q d e n) 1 ((k + 1) * Q.length) = k * Q.length) :
+    (k + 1) * Q.length - parent (mTower Q d e n) 1 ((k + 1) * Q.length)
+      = Q.length := by
+  rw [hpe]
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  omega
+
 end H12H2
 end TRIO
