@@ -3599,5 +3599,65 @@ theorem entry1_tower_append_root {Q B : TrioSeq} (hQne : Q ≠ []) {d e n : ℕ}
   have := entry1_mTower_blockRoot hQne d e n 0 hn
   simpa using this
 
+
+theorem rtg0_through_p {M : TrioSeq} {p y b : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hy : y < p) {h : Relation.ReflTransGen (nextrel0 M) y b} (hpb : p < b) :
+    Relation.ReflTransGen (nextrel0 M) y p ∧
+      Relation.ReflTransGen (nextrel0 M) p b := by
+  induction h with
+  | refl => omega
+  | @tail c b hyc hcb ih =>
+      have hpc : p ≤ c := nextrel0_src_ge_of_shallow hshallow hpb hcb
+      rcases Nat.eq_or_lt_of_le hpc with he | hlt
+      · refine ⟨?_, ?_⟩
+        · rw [he]; exact hyc
+        · rw [he]; exact Relation.ReflTransGen.single hcb
+      · obtain ⟨h1, h2⟩ := ih hlt
+        exact ⟨h1, h2.tail hcb⟩
+
+/-- ★★★★★ **`le0` 版**: 道は必ず `p` を通る。 -/
+theorem le0_through_p {M : TrioSeq} {p y j : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hp : p < M.length) (hy : y < p) (hpj : p < j)
+    (h : le0 M y j) : le0 M y p ∧ le0 M p j := by
+  obtain ⟨hyl, hjl, hrt⟩ := h
+  obtain ⟨h1, h2⟩ := rtg0_through_p hshallow hy (h := hrt) hpj
+  exact ⟨⟨hyl, hp, h1⟩, ⟨hp, hjl, h2⟩⟩
+
+/-- `hr0 T` から `A ++ T` の `hshallow`（`p := |A|`）を作る。 -/
+theorem hshallow_append_of_hr0 {A T : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l) :
+    ∀ x, A.length < x → x < (A ++ T).length →
+      entry (A ++ T) 0 A.length < entry (A ++ T) 0 x := by
+  intro x hx1 hx2
+  rw [List.length_append] at hx2
+  obtain ⟨r, rfl⟩ : ∃ r, x = A.length + r := ⟨x - A.length, by omega⟩
+  have e0 : entry (A ++ T) 0 A.length = entry T 0 0 := by
+    simpa using entry_append_right A T 0 0
+  have er : entry (A ++ T) 0 (A.length + r) = entry T 0 r := entry_append_right A T 0 r
+  rw [e0, er]
+  exact hr0 r (by omega) (by omega)
+
+/-- ★★★★★★ **(W25) 証人は「`T` の根の `le0` 祖先」に絞れる**。
+⟹ ★ 私の同値（§329）＋「道は必ず根を通る」（上）の合成。 -/
+theorem prefix_parent_iff_of_orphan_through_root {A T : TrioSeq} {m : ℕ}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hm : m < T.length) (hm0 : 0 < m) (hnp : ¬ hasParent T 1 m) :
+    (∃ c, c < A.length ∧ nextrel1 (A ++ T) c (A.length + m))
+      ↔ (∃ y, y < A.length ∧ le0 (A ++ T) y A.length ∧
+           entry (A ++ T) 1 y < entry T 1 m) := by
+  have hshallow := hshallow_append_of_hr0 (A := A) hr0
+  have hAlen : A.length < (A ++ T).length := by rw [List.length_append]; omega
+  have hroot : le0 (A ++ T) A.length (A.length + m) :=
+    le0_root_of_shallow hAlen hshallow (A.length + m) (by omega)
+      (by rw [List.length_append]; omega)
+  rw [prefix_parent_iff_of_orphan hm hnp]
+  constructor
+  · rintro ⟨y, hy, hle0, hlt⟩
+    exact ⟨y, hy, (le0_through_p hshallow hAlen hy (by omega) hle0).1, hlt⟩
+  · rintro ⟨y, hy, hle0, hlt⟩
+    refine ⟨y, hy, ⟨hle0.1, hroot.2.1, hle0.2.2.trans hroot.2.2⟩, hlt⟩
+
 end H12Export
 end TRIO
