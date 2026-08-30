@@ -4225,5 +4225,85 @@ theorem hsnoc_prev_of_parent {u : ℕ} {A Q : TrioSeq} {d e k jj p : ℕ}
   rw [hlen]
   omega
 
+/-! ## 230. ★★★★★★★ §228 を `OrphOK` に繋ぎます —— **行 0 は完全に閉じます**
+
+team-lead の読み（「穴は `j1 = 0`（塔の根）1 点かもしれない」）を受けて、
+§228 を「孤児が孤児のまま」に繋ぎました。
+
+**⟹ ★ まず「剥がす」を **`hroot` なしで**やる道具を作ります。**
+**⟹ ⟹ `hasParent_append_right`（`Column:363`）は `hroot` を要求しますが、
+**要るのは「接頭辞の列が `nextR` の始点になれない」だけ**です。** -/
+
+theorem hasParent_peel_of_noCross {A T : TrioSeq} {i j1 : ℕ}
+    (hnc : ∀ y, y < A.length → ¬ nextR (A ++ T) i y (A.length + j1))
+    (hp : hasParent (A ++ T) i (A.length + j1)) : hasParent T i j1 := by
+  obtain ⟨j0, hj0, huniq⟩ := hp
+  have hge : A.length ≤ j0 := by
+    by_contra hc
+    exact hnc j0 (by omega) hj0
+  obtain ⟨j0', rfl⟩ : ∃ j0', j0 = A.length + j0' := ⟨j0 - A.length, by omega⟩
+  refine ⟨j0', (nextR_append_right A T i j0' j1).1 hj0, ?_⟩
+  intro y hy
+  have := huniq (A.length + y) ((nextR_append_right A T i y j1).2 hy)
+  omega
+
+/-- ★★★ **行 0 の `OrphOK` は無条件**（`entry T 0 0 < entry T 0 j1` だけ）。 -/
+theorem orphOK_row0 {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1)
+    (hmin : entry T 0 0 < entry T 0 j1)
+    (hnp : ¬ hasParent T 0 j1) : ¬ hasParent (A ++ T) 0 (A.length + j1) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_pos rfl] at hc
+  exact no_nextrel0_from_prefix hy hj1 hmin hc
+
+/-- ★★ **行 1 の `OrphOK`**（`le0` が塔の根を通ることと、行 1 の大小が要る）。 -/
+theorem orphOK_row1 {A T : TrioSeq} {j1 : ℕ}
+    (hle0 : le0 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 1 0 < entry T 1 j1)
+    (hnp : ¬ hasParent T 1 j1) : ¬ hasParent (A ++ T) 1 (A.length + j1) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_neg (by omega), if_pos rfl] at hc
+  exact no_nextrel1_from_prefix hy hle0 hmin hc
+
+/-- ★★ **行 2 の `OrphOK`**（`le1` が塔の根を通ることと、行 2 の大小が要る）。 -/
+theorem orphOK_row2 {A T : TrioSeq} {j1 : ℕ}
+    (hle1 : le1 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 2 0 < entry T 2 j1)
+    (hnp : ¬ hasParent T 2 j1) : ¬ hasParent (A ++ T) 2 (A.length + j1) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_neg (by omega), if_neg (by omega)] at hc
+  exact no_nextrel2_from_prefix hy hle1 hmin hc
+
+/-! ### 230.1 ⟹ ★★★ **`hbase` の正体が分かりました**
+
+    `Column.hasParent_append_right`（`:363`）… `hroot : entry T 0 0 = 0` を要求
+    ★ **本当に要るのは「接頭辞の列が `nextR` の始点になれない」だけ**（`hasParent_peel_of_noCross`）
+    ⟹ ⟹ そして §228 の 3 本が、それを**行ごとに**与えます
+
+**⟹ ★★ ですから H12 の「`hbase` の弱化は行 1/2 で止まる」は、**`hr0` で殴ろうとしたから**でした。**
+**⟹ ⟹ ★ **行 1 には行 1 の条件、行 2 には行 2 の条件**を使えば、3 行とも同じ形で通ります。**
+
+### 230.2 ⟹ ★ `OrphOK` に必要なもの（行ごと）
+
+`OrphOK` の的は `T = mTower Q d e n ++ block.take (j+1)` の位置 `j1 = n*|Q| + j`（`j ≥ 1`）。
+
+    **`srow = 0`** … ✅ **無条件**。`entry T 0 0 = entry Q 0 0`、`entry T 0 j1 = entry Q 0 j + d*n`
+                  ⟹ **`hr0` と `j ≥ 1` で `<` が出ます** ⟹ **完全に閉じます**
+    **`srow = 1`** … ⛔ `le0` が塔の根を通ること ＋ **`entry Q 1 0 < entry T 1 j1`**
+                  ⟹ ★ 後者は「**的が錐の中**」＝ **ブロッカーでない** ⟹ H12 の `h1out` と同じもの
+    **`srow = 2`** … ⛔ `le1` が塔の根を通ること ＋ `entry Q 2 0 < entry T 2 j1`
+
+**⟹ ★★★ ⟹ R2 の実測（`OrphOK` が 3.5% 破れる）は、**`srow ≥ 1` の側**のはずです。**
+**⟹ ⟹ R2 に「破れを `srow` で切ってほしい」と伝えます。⟹ `srow = 0` が 1 件でも出たら
+私の証明か計器のどちらかが誤りです。**
+
+⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
+**`le0` / `le1` が塔の根を通ることと、行 1・行 2 の大小が残っています。** -/
+
 end L106
 end TRIO
