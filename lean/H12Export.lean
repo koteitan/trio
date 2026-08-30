@@ -3816,5 +3816,12 @@ theorem row2pos_dropLast_lt {M : TrioSeq} {q : ℕ × ℕ × ℕ} (hq : 0 < q.2.
     simp [hq]
   omega
 
+
+/-- 第 0 ブロックは `Q` そのもの。 -/
+theorem mTower_block_zero (Q : TrioSeq) (d e : ℕ) :
+    Lift1 (shiftr01 (d * 0) 0 Q) (e * 0) = Q := by
+  simp only [Nat.mul_zero, Lift1_zero]
+  exact h12_shiftr01_zero_zero Q
+
 end H12Export
 end TRIO

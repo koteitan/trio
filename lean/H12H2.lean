@@ -5661,5 +5661,21 @@ theorem row2pos_dropLast_lt {M : TrioSeq} {q : ℕ × ℕ × ℕ} (hq : 0 < q.2.
     simp [hq]
   omega
 
+
+/-! ### 79.1 ⚠ (W35') **塔では減りません**（`Q` が第 0 ブロックそのものなので）
+
+`mTower Q d e n` の第 0 ブロックは `Lift1 (shiftr01 (d*0) 0 Q) (e*0) = Lift1 Q 0 = Q`。
+⟹ ★ ですから **`Q` は塔の接頭辞** ⟹ ⟹ **`row2pos Q ≤ row2pos (mTower Q d e n)`**。
+
+⚠ **正確な `n` 倍の式は書けませんでした**（`Lift1` が `(range |X|).map` の形で、
+`countP` を添字の形に直す補題が要り、30 分に収まりませんでした）。
+⟹ ★ ですが **要点（塔で減らない）は下で足ります**。 -/
+
+/-- 第 0 ブロックは `Q` そのもの。 -/
+theorem mTower_block_zero (Q : TrioSeq) (d e : ℕ) :
+    Lift1 (shiftr01 (d * 0) 0 Q) (e * 0) = Q := by
+  simp only [Nat.mul_zero, Lift1_zero]
+  exact h12_shiftr01_zero_zero Q
+
 end H12H2
 end TRIO
