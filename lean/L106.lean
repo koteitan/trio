@@ -8374,5 +8374,82 @@ theorem orphOK_row1_break_amin_lt {A T : TrioSeq} {j : ℕ} (hjT : j < T.length)
 ⚠ **`min` の分解は未証明**です（`amin` は `sInf` なので、鎖の分割補題が要ります）。
 **⟹ ★ H12 の `amin` まわりに既にあるかもしれません。⟹ **書く前に grep してください**。** -/
 
+/-! ## 268. ★★★★★★ **(L-AMIN) の仕上げ**: 残差は「`T` の根の鎖」の話に落ちます
+
+§267 で残差は **`amin (A ++ T) (|A| + j) < amin T j`** になりました。
+**⟹ ★ ここで §253 の `shallow_append_right` ＋ H12 の `nextrel0_src_ge_of_shallow` が効きます。**
+
+⚠ **書く前に索引を引きました**: `Cgraft` に `amin_cons`（1 列の接頭辞）・`amin_graft_low`・
+`amin_take`・`amin_le1` はありますが、**一般の `A ++ T` の分解はありません**。⟹ ★ 書きます。 -/
+
+/-- ★★★★★ **接頭辞から出た行 0 の鎖は、必ず `T` の根を通る**（`hr0(T)` だけ）。 -/
+theorem rtg0_cross_through_root {A T : TrioSeq} {y j : ℕ}
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x)
+    (hy : y < A.length)
+    (h : Relation.ReflTransGen (nextrel0 (A ++ T)) y (A.length + j)) :
+    Relation.ReflTransGen (nextrel0 (A ++ T)) y A.length ∨ A.length + j < A.length := by
+  have hsh := shallow_append_right (A := A) hs
+  have key : ∀ z, Relation.ReflTransGen (nextrel0 (A ++ T)) y z →
+      z < A.length ∨ Relation.ReflTransGen (nextrel0 (A ++ T)) y A.length := by
+    intro z hz
+    induction hz with
+    | refl => exact Or.inl hy
+    | @tail x w hx hxw ih =>
+        rcases ih with hxlt | hres
+        · rcases Nat.lt_or_ge w A.length with hw | hw
+          · exact Or.inl hw
+          · rcases Nat.eq_or_lt_of_le hw with hw0 | hw0
+            · rw [hw0]; exact Or.inr (hx.tail hxw)
+            · exact absurd (nextrel0_src_ge_of_shallow hsh (by omega) hxw) (by omega)
+        · exact Or.inr hres
+  rcases key (A.length + j) h with hlt | hres
+  · exact Or.inr hlt
+  · exact Or.inl hres
+
+/-- ★★★★★★ ⟹ **残差は「`T` の根の `amin`」に落ちます**（`hr0(T)` だけ）。 -/
+theorem amin_break_at_root {A T : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hjT : j < T.length)
+    (hs : ∀ x, 0 < x → x < T.length → entry T 0 0 < entry T 0 x)
+    (h : amin (A ++ T) (A.length + j) < amin T j) :
+    amin (A ++ T) A.length < amin T j := by
+  obtain ⟨y, hrt, heq⟩ := amin_mem (A ++ T) (A.length + j)
+  rcases Nat.lt_or_ge y A.length with hy | hy
+  · -- ★ 最小を与える列が接頭辞の中 ⟹ 鎖は `T` の根を通る
+    rcases rtg0_cross_through_root (A := A) (T := T) hs hy hrt with hres | hbad
+    · exact lt_of_le_of_lt (amin_le hres) (by omega)
+    · omega
+  · -- ⛔ 最小を与える列が `T` の中 ⟹ `amin T j` がそれ以下なので矛盾
+    exfalso
+    obtain ⟨y', rfl⟩ : ∃ y', y = A.length + y' := ⟨y - A.length, by omega⟩
+    have hylt : y' ≤ j := by
+      have := rtg0_index_le hrt; omega
+    have hyT : y' < T.length := by omega
+    have hrtT : Relation.ReflTransGen (nextrel0 T) y' j := by
+      have hL : A.length + T.length ≤ (A ++ T).length := by rw [List.length_append]
+      have := le0_window (T := A ++ T) (s := A.length) (L := T.length) hL hyT hjT
+        ⟨by rw [List.length_append]; omega, by rw [List.length_append]; omega, hrt⟩
+      rw [drop_take_append_right] at this
+      exact this.2.2
+    have := amin_le hrtT
+    rw [entry_append_right] at heq
+    omega
+
+/-! ### 268.1 ⟹ ★★★★★★ **残差の最終形（今日の到達点）**
+
+    ⛔ **`amin (A ++ T) |A| < amin T j`**
+    ＝ **「接頭辞に、`T` の根の行 0 祖先で、行 1 が `amin T j` より小さい列がある」**
+
+**⟹ ★ **`j` が消えました**（左辺は `j` に依らない）。⟹ ⟹ ★★ ですから残差は:**
+
+    **`amin (A ++ T) |A| < min { amin T j : j は `T` の中で行 1 の孤児 }`**
+
+**⟹ ★★★ ＝ **「接頭辞の `amin` が、`T` の孤児の `amin` より小さい」** 1 本です。**
+**⟹ ⟹ ★ そして §262 の反例で確かめると: `A = [(0,0,0)]`、`T` の根は `(2,1,0)`**
+**⟹ ⟹ ⟹ `amin (A ++ T) 1 = min(0, 1) = 0`、`amin T 2 = 1` ⟹ ⛔ **`0 < 1`** ⟹ **破れます** ✓**
+
+**⟹ ★★★★ ですから **「接頭辞の `amin` を上から押さえる」**のが、次の設計で要るものです。**
+**⟹ ⚠ ⟹ ですがそれは **`rsum` の行 1 版**（H12 の `rsum1`）で、⟹ ⛔ **運べません**。**
+
+⚠ **教訓 14**: §268 は緑ですが、**残差は縮んだだけで、消えていません**。 -/
+
 end L106
 end TRIO
