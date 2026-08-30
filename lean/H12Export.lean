@@ -4286,5 +4286,23 @@ theorem srow_prefixTake_last (A Q : TrioSeq) {d e n j : ℕ} (hj : j < Q.length)
     · rw [if_pos (hlift.mpr hq1), if_pos hq1]
     · rw [if_neg (fun hx => hq1 (hlift.mp hx)), if_neg hq1]
 
+
+/-- ★★★★★ **右に足しても根の `lev` は動かない**（`A ≠ []`）。 -/
+theorem lev_append_left_zero (A B : TrioSeq) (hA : A ≠ []) : lev (A ++ B) 0 = lev A 0 := by
+  have h0 : 0 < A.length := List.length_pos_iff.mpr hA
+  unfold lev
+  rw [entry_append_left A B h0, entry_append_left A B h0]
+
+/-- ★★★★★★★ ⟹ **塔を積んでも要る `u` は増えません**。
+⟹ ★ ⟹ **`Wself` さえ出れば、`W u` は `lev(根) ≤ u` だけで全段いっぺんに出ます**。 -/
+theorem mem_W_of_Wself_append {u : ℕ} {A B : TrioSeq} (hA : A ≠ [])
+    (hself : A ++ B ∈ Wself) (hu : lev A 0 ≤ u) : A ++ B ∈ W u :=
+  (mem_Wself_iff u (A ++ B)).mpr ⟨hself, by rw [lev_append_left_zero A B hA]; exact hu⟩
+
+/-- ★★★★★ ⟹ **`n` に依らない**: 塔の段数がいくつでも、必要な `u` は `lev A 0` のまま。 -/
+theorem mem_W_of_Wself_tower {u : ℕ} {A Q : TrioSeq} {d e n : ℕ} (hA : A ≠ [])
+    (hself : A ++ mTower Q d e n ∈ Wself) (hu : lev A 0 ≤ u) : A ++ mTower Q d e n ∈ W u :=
+  mem_W_of_Wself_append hA hself hu
+
 end H12Export
 end TRIO
