@@ -8319,3 +8319,20 @@ C4 ⟹ `hnz`（§323 の観察）なので、**行 1 = 0 の非根の列があ�
 
 ⟹ ★ R2 の実測と整合: 「親は接頭辞の根ではない（100%）」⟹ **最大元だから根とは限らない** ✓
    「距離は最大 11、有界でない」⟹ **私の特徴づけは距離について何も言わない** ✓
+
+## §330 ★★★★★★★ (W24) **`entry T 1 0 = 0` だけで、行 1 の孤児の枝が空になる**（緑）
+
+team-lead の 1 行（`0 ≤ 何でも` ⟹ `rsum1` は自動）から、**もっと強い**ことが出た:
+
+    ★★★ rsum1_of_root_row1_zero (h : entry T 1 0 = 0) : ∀ y < |A|, entry T 1 0 ≤ entry (A++T) 1 y
+    ★★★★ no_prefix_row1_parent_of_root_zero : 壁の版（`hA` を「根の行 1 = 0」に）
+    ★★★★★★★ no_row1_orphan_of_root_zero (hr0) (hm) (hm0)
+        (hroot1 : entry T 1 0 = 0) (hpos : 0 < entry T 1 m) : **hasParent T 1 m**
+      ＝ **行 1 の孤児はそもそも存在しない**
+      （`row1_orphan_is_blocker`: 孤児 ⟹ `entry T 1 m ≤ 0` ⟹ `= 0` ⟹ `srow = 1` と矛盾）
+    ★ entry1_tower_append_root : `entry (mTower Q d e n ++ B) 1 0 = entry Q 1 0`
+      ⟹ **条件は `entry Q 1 0 = 0`**（`RootZ2` の行 1 版）
+
+⟹ ★★★ **壁を立てるまでもなく、枝が空になります。**
+⟹ ⛔ ただし **窓の根は行 1 が 0 とは限りません**（R2 の例 `[(2,1,0),(3,2,0),(4,1,0)]` は根の行 1 = 1）
+   ⟹ ★ ですから **`entry Q 1 0 = 0` が組み立てで成り立つか**が次の問い。

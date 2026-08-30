@@ -5335,5 +5335,50 @@ theorem prefix_parent_iff_of_orphan {A T : TrioSeq} {m : ℕ}
               show A.length + m - A.length = m from by omega] at hh
           exact orphan_row1_min hnp x' hxlt hle0T
 
+
+/-! ## 73. ★★★★★★★ (W24) **`entry T 1 0 = 0` だけで、行 1 の孤児の枝が空になる**
+
+team-lead の 1 行（`0 ≤ 何でも` なので `rsum1` は自動）から、**もっと強い**ことが出る:
+
+    私の `row1_orphan_is_blocker`: 孤児 ⟹ `entry T 1 m ≤ entry T 1 0`
+    ⟹ ★ 根の行 1 = 0 なら **`entry T 1 m = 0`** ⟹ ⛔ `srow = 1`（行 1 が正）と矛盾
+    ⟹ ⟹ ★★★★ **行 1 の孤児はそもそも存在しない** ⟹ **壁を立てるまでもない** -/
+
+/-- ★★★ (W24) team-lead の 1 行: **根の行 1 が 0 なら `rsum1` は自動**。 -/
+theorem rsum1_of_root_row1_zero {A T : TrioSeq} (h : entry T 1 0 = 0) :
+    ∀ y, y < A.length → entry T 1 0 ≤ entry (A ++ T) 1 y := by
+  intro y _
+  rw [h]
+  exact Nat.zero_le _
+
+/-- ★★★★ ⟹ 壁の版（`hA` を「根の行 1 = 0」に置き換えたもの）。 -/
+theorem no_prefix_row1_parent_of_root_zero {A T : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {m : ℕ} (hm : m < T.length) (hm0 : 0 < m)
+    (hnp : ¬ hasParent T 1 m) (hroot1 : entry T 1 0 = 0) :
+    ∀ c, c < A.length → ¬ nextrel1 (A ++ T) c (A.length + m) :=
+  no_prefix_row1_parent_of_high_A hr0 hm hm0 hnp (rsum1_of_root_row1_zero hroot1)
+
+/-- ★★★★★★★ **もっと強い**: 根の行 1 が 0 なら、**行 1 の孤児はそもそも存在しない**。 -/
+theorem no_row1_orphan_of_root_zero {T : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {m : ℕ} (hm : m < T.length) (hm0 : 0 < m)
+    (hroot1 : entry T 1 0 = 0) (hpos : 0 < entry T 1 m) :
+    hasParent T 1 m := by
+  by_contra hnp
+  have := row1_orphan_is_blocker hr0 hm hm0 hnp
+  omega
+
+/-- ★ 組み立ての形: **塔＋ブロックの根の行 1 は `Q` の根の行 1**。
+⟹ ですから条件は **`entry Q 1 0 = 0`**。 -/
+theorem entry1_tower_append_root {Q B : TrioSeq} (hQne : Q ≠ []) {d e n : ℕ} (hn : 0 < n) :
+    entry (mTower Q d e n ++ B) 1 0 = entry Q 1 0 := by
+  have hlen : 0 < (mTower Q d e n).length := by
+    rw [mTower_length]
+    exact Nat.mul_pos hn (List.length_pos_iff.mpr hQne)
+  rw [entry_append_left _ _ hlen]
+  have := entry1_mTower_blockRoot hQne d e n 0 hn
+  simpa using this
+
 end H12H2
 end TRIO
