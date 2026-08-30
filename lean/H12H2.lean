@@ -5481,5 +5481,51 @@ theorem orphOK_row1_fails_of_low_root {A T : TrioSeq} {m : ℕ}
   obtain ⟨c, hc, hcn⟩ := prefix_parent_of_low_root hr0M hA hroot1 hm hm0 hnp hpos
   exact h c hc hcn
 
+
+/-! ## 76. ★★★★★★★ **`amin` で行 1 の親の存在が完全に特徴づけられる**
+
+索引を引いたら **`amin`（`Cgraft:848`）があった**（今日 10 回目の「既にありました」）:
+
+    `amin A j` ＝ **行 0 祖先鎖（自身を含む）の行 1 値の最小値**
+    `amin_le`  … 祖先なら `amin ≤ その列の行 1`
+    `amin_mem` … 最小値を実現する祖先が存在する
+
+⟹ ★★★ ですから **`hasParent M 1 j ⟺ amin M j < entry M 1 j`**。
+⟹ ⟹ ★ 量化子なし。しかも **`hr0` すら要りません**。 -/
+
+/-- ★★★★★★★ **行 1 の親の存在は `amin` で決まる**（前提なし）。 -/
+theorem hasParent1_iff_amin_lt {M : TrioSeq} {j : ℕ} (hj : j < M.length) :
+    hasParent M 1 j ↔ amin M j < entry M 1 j := by
+  constructor
+  · rintro ⟨y, hy, -⟩
+    unfold nextR at hy
+    rw [if_neg (by omega), if_pos rfl] at hy
+    exact Nat.lt_of_le_of_lt (amin_le hy.2.2.2.2.1.2.2) hy.2.2.2.1
+  · intro h
+    obtain ⟨y, hrt, heq⟩ := amin_mem M j
+    have hyj : y ≤ j := rtg0_index_le hrt
+    have hylt : y < j := by
+      rcases Nat.eq_or_lt_of_le hyj with he | hl
+      · exfalso
+        rw [he] at heq
+        omega
+      · exact hl
+    have hle0 : le0 M y j := ⟨by omega, hj, hrt⟩
+    obtain ⟨y', hy'⟩ := nextrel1_of_witness hylt hle0 (by omega)
+    exact ⟨y', by
+      show nextR M 1 y' j
+      unfold nextR; rw [if_neg (by omega), if_pos rfl]; exact hy', by
+      intro b hb
+      unfold nextR at hb
+      rw [if_neg (by omega), if_pos rfl] at hb
+      exact nextrel1_src_unique hb hy'⟩
+
+/-- ★★★★★ ⟹ **孤児 ⟺ `amin` が的の行 1 に等しい**。 -/
+theorem orphan_row1_iff_amin_eq {M : TrioSeq} {j : ℕ} (hj : j < M.length) :
+    ¬ hasParent M 1 j ↔ amin M j = entry M 1 j := by
+  rw [hasParent1_iff_amin_lt hj]
+  have hle : amin M j ≤ entry M 1 j := amin_le Relation.ReflTransGen.refl
+  omega
+
 end H12H2
 end TRIO
