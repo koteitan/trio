@@ -4197,5 +4197,122 @@ theorem tower_no_cross_of_hnbQ {Q : TrioSeq} (hQ1 : 0 < Q.length)
     exact hz0_block hz0
   · rw [hTlen]; omega
 
+
+/-! ## 53. ★★★★★★★ (W9) `hlocQ` —— **`hcls` が「危ない 1 マス」をちょうど禁じる**
+
+L3 の `hlocQ` の第 3 条件 `hcls : le1 Q 0 y → le1 Q 0 j` は、
+私の 4 通りの表の **「証人が錐の中・的が錐の外」＝ `n` 依存の 1 マス**をちょうど除く。
+
+| 証人 `y` | 的 `j` | ブロックでの比較 |
+|---|---|---|
+| 錐の中 | 錐の中 | 両辺 `+e*n` ⟹ ★ **`n` が消える** |
+| 錐の外 | 錐の中 | 右辺だけ `+e*n` ⟹ ★ **緩む** |
+| 錐の外 | 錐の外 | 両辺そのまま ⟹ ★ **`n` が消える** |
+| **錐の中** | **錐の外** | ⛔ `entry Q 1 y + e*n < entry Q 1 j` ＝ **`n` 依存** ← `hcls` が禁じる |
+
+⟹ ★★★ ですから **`hcls` の下では `n`・`e` が完全に消える**。 -/
+
+open Classical in
+/-- ★★★★★★★ **`hcls` があれば、証人の行 1 の狭義増加はブロックへそのまま移る**
+（`n`・`e` が消える）。 -/
+theorem entry1_block_lt_of_hcls {Q : TrioSeq} {d e n y j : ℕ}
+    (hy : y < Q.length) (hj : j < Q.length)
+    (hlt : entry Q 1 y < entry Q 1 j)
+    (hcls : le1 Q 0 y → le1 Q 0 j) :
+    entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 y
+      < entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 j := by
+  have hey : entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 y
+      = entry Q 1 y + (if le1 Q 0 y then e * n else 0) := by
+    rw [Wset.entry1_Lift1 (by rwa [shiftr01_length]), entry1_shiftr01]
+    congr 1
+    by_cases h : le1 Q 0 y
+    · rw [if_pos h, if_pos ((le1_shiftr01 (d0 := d * n)).mpr h)]
+    · rw [if_neg h, if_neg (fun hc => h ((le1_shiftr01 (d0 := d * n)).mp hc))]
+  have hej : entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 j
+      = entry Q 1 j + (if le1 Q 0 j then e * n else 0) := by
+    rw [Wset.entry1_Lift1 (by rwa [shiftr01_length]), entry1_shiftr01]
+    congr 1
+    by_cases h : le1 Q 0 j
+    · rw [if_pos h, if_pos ((le1_shiftr01 (d0 := d * n)).mpr h)]
+    · rw [if_neg h, if_neg (fun hc => h ((le1_shiftr01 (d0 := d * n)).mp hc))]
+  rw [hey, hej]
+  by_cases hiy : le1 Q 0 y
+  · rw [if_pos hiy, if_pos (hcls hiy)]
+    omega
+  · rw [if_neg hiy]
+    split <;> omega
+
+/-- ★★★ **隣の列は `nextrel0` の最小性が空虚**（間に列が無い）。 -/
+theorem nextrel0_adjacent {M : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hj : j < M.length)
+    (h : entry M 0 (j - 1) < entry M 0 j) : nextrel0 M (j - 1) j := by
+  refine ⟨by omega, hj, by omega, h, ?_⟩
+  intro x hx
+  omega
+
+/-- ★★★★★★★ **(W9b) 隣の証人はブロックへそのまま移る**。
+⟹ ★ しかも**隣なので窓を切っても必ず窓に残る** ⟹ 遺伝が自明になる。 -/
+theorem block_witness_adjacent {Q : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hj : j < Q.length)
+    (h0 : entry Q 0 (j - 1) < entry Q 0 j)
+    (h1 : entry Q 1 (j - 1) < entry Q 1 j)
+    (hcls : le1 Q 0 (j - 1) → le1 Q 0 j) {d e n : ℕ} :
+    nextrel0 (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) (j - 1) j ∧
+      entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 (j - 1)
+        < entry (Lift1 (shiftr01 (d * n) 0 Q) (e * n)) 1 j := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  refine ⟨nextrel0_adjacent hj0 (by rw [hBlen]; exact hj) ?_, ?_⟩
+  · rw [entry0_Lift1, entry0_Lift1,
+      entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := j - 1) (by simpa using (by omega : j - 1 < Q.length)),
+      entry0_shiftr01 (W := Q) (d0 := d * n) (d1 := 0) (p := j) (by simpa using hj)]
+    omega
+  · exact entry1_block_lt_of_hcls (by omega) hj h1 hcls
+
+
+/-! ### 53.1 ★★★ (W9c) **証人が窓に残るか** —— 窓は `drop` ＋ `take`
+
+窓 `wnd P B j p = ((P ++ B.take (j+1)).drop (P.length + p)).take (j - p)`。
+⟹ ★ `take` 側は `Wset.entry_take` がある。⟹ `drop` 側を作る。 -/
+
+theorem entry_drop (M : TrioSeq) (i p x : ℕ) :
+    entry (M.drop p) i x = entry M i (p + x) := by
+  unfold entry
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_drop]
+
+/-- ★★★ `nextrel0` は**連続部分列**へそのまま移る（最小性の区間が中に収まるので）。 -/
+theorem nextrel0_drop {M : TrioSeq} {p a b : ℕ} (hp : p ≤ a)
+    (h : nextrel0 M a b) : nextrel0 (M.drop p) (a - p) (b - p) := by
+  obtain ⟨ha, hb, hab, hlt, hmin⟩ := h
+  have hlen : (M.drop p).length = M.length - p := by rw [List.length_drop]
+  refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+  · rw [entry_drop, entry_drop]
+    rw [show p + (a - p) = a from by omega, show p + (b - p) = b from by omega]
+    exact hlt
+  · intro x hx
+    rw [entry_drop, entry_drop, show p + (b - p) = b from by omega]
+    exact hmin (p + x) ⟨by omega, by omega⟩
+
+/-- ★★★★ **`le0` も連続部分列へ移る**（始点が切れ目以降なら）。 -/
+theorem rtg0_drop {M : TrioSeq} {p a b : ℕ} (hp : p ≤ a)
+    (h : Relation.ReflTransGen (nextrel0 M) a b) :
+    Relation.ReflTransGen (nextrel0 (M.drop p)) (a - p) (b - p) := by
+  induction h with
+  | refl => exact Relation.ReflTransGen.refl
+  | @tail c b hac hcb ih =>
+      exact ih.tail (nextrel0_drop (le_trans hp (rtg0_index_le hac)) hcb)
+
+/-- ★★★★★★★ **(W9c) 証人が窓に残る条件は「証人が窓の根以降」だけ**。
+⟹ ★ 隣の証人（`y = j - 1`）は**必ず**残る。 -/
+theorem witness_survives_window {M : TrioSeq} {p y j : ℕ} (hpy : p ≤ y)
+    (hle0 : le0 M y j) (h1 : entry M 1 y < entry M 1 j) :
+    le0 (M.drop p) (y - p) (j - p) ∧
+      entry (M.drop p) 1 (y - p) < entry (M.drop p) 1 (j - p) := by
+  obtain ⟨hy, hj, hrt⟩ := hle0
+  have hlen : (M.drop p).length = M.length - p := by rw [List.length_drop]
+  have hyj : y ≤ j := rtg0_index_le hrt
+  refine ⟨⟨by omega, by omega, rtg0_drop hpy hrt⟩, ?_⟩
+  rw [entry_drop, entry_drop, show p + (y - p) = y from by omega,
+    show p + (j - p) = j from by omega]
+  exact h1
+
 end H12H2
 end TRIO
