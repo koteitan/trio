@@ -2462,5 +2462,81 @@ theorem hrank_blockRoot {A Q : TrioSeq} {d e k : ℕ}
   rw [if_pos he]
   split_ifs <;> omega
 
+/-! ## 218. ★★★★★★★★★ (U2) を消します: **底のブロックは「作る」のではなく「もらう」**
+
+⚠ (U2)（`n = 0` かつ `j = 0` ＝ `A` に直接 snoc）は `WSnoc` の形で、手が出ませんでした。
+
+**⟹ ★ ですが `mTower Q d e 1 = Q`（§57 `mTower_one`）です。**
+**⟹ ⟹ 底のブロックを**1 列ずつ作る**のをやめて、**`A ++ Q ∈ W u` を前提としてもらえば**、
+`n = 0` の段は**そもそも現れません**。**
+
+**⟹ ★ そしてそれは**両側で無料**です:**
+
+    **消費側** … `A = []` なので `Q ∈ W u`。⟹ `MTowerClosedS` の仮定**そのもの** ✅
+    **帰納の中** … `A' = P ++ B.take p`、`V` は窓なので
+              **`A' ++ V = P ++ B.take j`** ⟹ `hall j` **そのもの** ✅
+
+⟹ ⟹ ★★ **(U2) は「前提の置き方が悪かった」だけでした。** -/
+
+/-- ★ **接頭辞 ＋ 窓 ＝ 1 つ長い接頭辞**（(U2) を消す鍵）。 -/
+theorem prefix_append_wnd {P B : TrioSeq} {j p : ℕ} (hpj : p < j) :
+    (P ++ B.take p) ++ wnd P B j p = P ++ B.take j := by
+  unfold wnd
+  have hd : (P ++ B.take (j + 1)).drop (P.length + p) = (B.take (j + 1)).drop p := by
+    rw [List.drop_append, List.drop_eq_nil_of_le (by omega), List.nil_append,
+      Nat.add_sub_cancel_left]
+  rw [hd, List.append_assoc]
+  congr 1
+  have h1 : ((B.take (j + 1)).drop p).take (j - p)
+      = ((B.take (j + 1)).take (p + (j - p))).drop p := by
+    rw [List.take_drop]
+  have h2 : p + (j - p) = j := by omega
+  rw [h1, h2, List.take_take, Nat.min_eq_left (by omega)]
+  have h3 : (B.take j).take p = B.take p := by
+    rw [List.take_take, Nat.min_eq_left (by omega)]
+  rw [← h3, List.take_append_drop]
+
+/-! ### 218.1 ★★ 底のブロックをもらう版の外枠（§168 の差し替え） -/
+
+theorem prefixTowerClosed_of_snocStepStrong1 {u : ℕ} {A Q : TrioSeq} {d e : ℕ}
+    (hA : A ∈ W u) (hA1 : A ++ Q ∈ W u)
+    (hstep : ∀ (n j : ℕ), 1 ≤ n → j < Q.length →
+      (∀ j', j' ≤ j →
+        A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) →
+      A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have key : ∀ n, A ++ mTower Q d e (n + 1) ∈ W u := by
+    intro n
+    induction n with
+    | zero => rw [mTower_one]; exact hA1
+    | succ n ih =>
+        have hall : ∀ j, j ≤ Q.length → ∀ j', j' ≤ j →
+            A ++ mTower Q d e (n + 1)
+              ++ (Lift1 (shiftr01 (d * (n + 1)) 0 Q) (e * (n + 1))).take j' ∈ W u := by
+          intro j
+          induction j with
+          | zero =>
+              intro _ j' hj'
+              have : j' = 0 := by omega
+              subst this
+              simpa using ih
+          | succ j ihj =>
+              intro hj j' hj'
+              rcases Nat.lt_or_ge j' (j + 1) with hlt | hge
+              · exact ihj (by omega) j' (by omega)
+              · have hje : j' = j + 1 := by omega
+                subst hje
+                exact hstep (n + 1) j (by omega) (by omega) (ihj (by omega))
+        have hfull := hall Q.length le_rfl Q.length le_rfl
+        rw [List.take_of_length_le (by rw [Lift1_length, shiftr01_length])] at hfull
+        rw [show n + 1 + 1 = (n + 1) + 1 from rfl, mTower_succ, ← List.append_assoc]
+        exact hfull
+  intro n
+  cases n with
+  | zero => rw [mTower_zero, List.append_nil]; exact hA
+  | succ n => exact key n
+
 end L106
 end TRIO
