@@ -8012,3 +8012,24 @@ L3 の `hlocQ` の第 3 条件 `hcls : le1 Q 0 y → le1 Q 0 j` は、私の 4 �
     行 0 … ✅ `hr0` だけ（無条件、`0<d` も不要）
     行 1 … ★ 的についての錐の条件 1 本（`hnbQ` の ∀ は不要）
     行 2 … ★ **的の `le1` 祖先が非ブロッカー** ＋ `hcone`（`hcone` は `hz0` から自動）
+
+## §314 ★★★★★★★ 行 2 の `hanc` は **「的が錐の中」1 本**に落ちた（緑）
+
+    nextrel1_src_unique : `nextrel1` の始点も**一意**（最小性から、`nextrel0` と同じ）
+    rtg1_index_le
+    ★★★ rtg1_merge : 鎖の一意性 ⟹ **的の `le1` 祖先は根からの鎖の上にある**
+    ★★★★★★★ hanc_of_cone :
+      `ReflTransGen (nextrel1 T) 0 m`（的が根の錐の中）
+        ⟹ ∀ m' > 0, 的の `le1` 祖先 → `entry T 1 0 < entry T 1 m'`
+
+⟹ ★★ ですから `no_nextrel2_cross_of_anc` の `hanc` は **「的が錐の中」1 本**で出ます。
+⟹ ⟹ ★★★ **行 1 と行 2 が同じ条件になりました**:
+
+    行 0 … ✅ `hr0` だけ（無条件）
+    行 1 … ★ 的について `entry T 1 0 < entry T 1 m`
+    行 2 … ★ 的について `le1 T 0 m`（錐の中）＋ `hcone`（`hz0` から自動）
+           ⟹ そして `le1 T 0 m` ⟹ `entry T 1 0 < entry T 1 m`（`entry1_lt_of_le1_ne`）
+           ⟹ ★★ **行 2 の条件のほうが強い ⟹ 1 本にまとまる**
+
+⟹ ★ 未知は **「的が根の錐の中か」** 1 本だけ。⟹ `not_le1_zero_iff` で
+「的の `le0` 祖先にブロッカーが無い」と同値。

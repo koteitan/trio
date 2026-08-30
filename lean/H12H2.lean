@@ -4547,5 +4547,63 @@ theorem no_nextrel2_cross_of_anc {A T : TrioSeq} {m : ℕ}
     · have hbl := nextrel1_cross_is_blocker hmin hc0 hm0T hp hcr
       exact absurd (hanc m0 hp hm0T hrt2) (by omega)
 
+
+/-! ## 58. ★★★★★★★ **行 2 の `hanc` は「的が錐の中」1 本に落ちる**
+
+`nextrel1` の始点も**一意**（`nextrel0` と同じ、最小性から）。
+⟹ ★ ですから `m` に入る `le1` の鎖は**一意** ⟹ 的の祖先は全部「根からの鎖」の上。
+⟹ ⟹ ★★ **`le1 T 0 m`（的が根の錐の中）なら、非根の祖先は全部
+`entry T 1 0 < entry T 1 m'`**（`le1` で行 1 は狭義増加）。
+⟹ ⟹ ⟹ ★★★ **`hanc` が「的が錐の中」1 本に縮む** ⟹ **行 1 と同じ条件**。 -/
+
+/-- `nextrel1` の始点は一意（最小性から）。 -/
+theorem nextrel1_src_unique {M : TrioSeq} {c1 c2 b : ℕ}
+    (h1 : nextrel1 M c1 b) (h2 : nextrel1 M c2 b) : c1 = c2 := by
+  obtain ⟨-, -, hc1, hlt1, hle1, hmin1⟩ := h1
+  obtain ⟨-, -, hc2, hlt2, hle2, hmin2⟩ := h2
+  rcases Nat.lt_trichotomy c1 c2 with h | h | h
+  · exact absurd (hmin1 c2 ⟨h, hle2⟩) (by omega)
+  · exact h
+  · exact absurd (hmin2 c1 ⟨h, hle1⟩) (by omega)
+
+theorem rtg1_index_le {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 M) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_refl _
+  | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.1)
+
+/-- ★★★ 鎖の一意性: 的の `le1` 祖先は、**根からの鎖の上にある**。 -/
+theorem rtg1_merge {M : TrioSeq} {m : ℕ}
+    (h0 : Relation.ReflTransGen (nextrel1 M) 0 m) :
+    ∀ m', Relation.ReflTransGen (nextrel1 M) m' m →
+      Relation.ReflTransGen (nextrel1 M) 0 m' := by
+  induction h0 with
+  | refl =>
+      intro m' h
+      have := rtg1_index_le h
+      have hm0 : m' = 0 := by omega
+      rw [hm0]
+  | @tail c m hac hcm ih =>
+      intro m' h
+      rcases Relation.ReflTransGen.cases_tail h with h1 | ⟨c', hc1, hc2⟩
+      · rw [← h1]
+        exact hac.tail hcm
+      · exact ih m' (by rw [nextrel1_src_unique hc2 hcm] at hc1; exact hc1)
+
+/-- ★★★★★★★ **`hanc` は「的が根の錐の中」1 本から出る**。 -/
+theorem hanc_of_cone {T : TrioSeq} {m : ℕ}
+    (hcone : Relation.ReflTransGen (nextrel1 T) 0 m) :
+    ∀ m', 0 < m' → Relation.ReflTransGen (nextrel1 T) m' m →
+      entry T 1 0 < entry T 1 m' := by
+  intro m' hm'0 hrt
+  have h0 := rtg1_merge hcone m' hrt
+  rcases Relation.ReflTransGen.cases_tail h0 with h1 | ⟨c, hc1, hc2⟩
+  · omega
+  · refine Nat.lt_of_le_of_lt ?_ hc2.2.2.2.1
+    clear hc2
+    induction hc1 with
+    | refl => exact le_refl _
+    | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.2.1)
+
 end H12H2
 end TRIO
