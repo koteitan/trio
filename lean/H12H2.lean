@@ -2275,5 +2275,57 @@ theorem Qh1s_hr0 : ∀ l, 0 < l → l < Qh1s.length → entry Qh1s 0 0 < entry Q
   rw [show entry Qh1s 0 0 = 0 from rfl, show entry Qh1s 0 1 = 1 from rfl]
   omega
 
+
+/-! ## 35. ★★★ **(あ) `h1out` の正体: 「`j` 自身がブロッカーでない」**
+
+team-lead の手（「その枝で何がタダで手元にあるか読む」）をもう一度当てた。
+`block_blockParent_row1_outcone`（`L105Cap:12276`）の証明の 1 行目:
+
+    `obtain ⟨y, hy, hy0, hy1⟩ := (**not_le1_zero_iff** hr0 hj).mp hout`
+
+    **`L105.not_le1_zero_iff`（`L105Cap:7149`、緑）**
+      `¬ le1 Q 0 q ↔ **∃ y, ReflTransGen (nextrel0 Q) y q ∧ y ≠ 0 ∧ entry Q 1 y ≤ entry Q 1 0**`
+
+⟹ ★ **錐の外 ⟺ ブロッカー `y` が存在する**（行 0 の祖先で、非根で、行 1 が根以下）。
+
+そして `hhigh : entry Q 1 0 < entry Q 1 j` は、証明の中で
+**`y = j` の場合を潰す**ためだけに使われている（`hylt : y < j` の導出）。
+
+> ★★ **⟹ `h1out` ⟺ 「ブロッカーは `j` 自身ではない」。**
+> ⟹ ⟹ **`h1out` が破れる ⟺ `j` 自身がブロッカー**（`entry Q 1 j ≤ entry Q 1 0`）。
+
+⟹ ★ **私の反例 `Q = (0,1,0)(1,1,0)`, `j = 1` は、まさに「`j` 自身がブロッカー」。**
+⟹ ⟹ そしてそのとき **根は行 1 の親になれない**（`nextrel1` は狭義増加を要求）。
+⟹ ⟹ ⟹ **「等号 ⟹ 親なし」の線（team-lead の (い)）は、ここから来る。** -/
+
+/-- ★★★ **錐の外の二分法**: ブロッカーが `j` 自身か、`j` より手前か。 -/
+theorem outOfCone_dichotomy {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (hj : j < Q.length) (hout : ¬ le1 Q 0 j) :
+    entry Q 1 j ≤ entry Q 1 0
+      ∨ ∃ y, y < j ∧ y ≠ 0 ∧ Relation.ReflTransGen (nextrel0 Q) y j
+          ∧ entry Q 1 y ≤ entry Q 1 0 := by
+  obtain ⟨y, hy, hy0, hy1⟩ := (L105.not_le1_zero_iff hr0 hj).mp hout
+  have hyle : y ≤ j := rtg0_le hy
+  rcases Nat.lt_or_ge y j with hlt | hge
+  · exact Or.inr ⟨y, hlt, hy0, hy, hy1⟩
+  · have : y = j := by omega
+    subst this
+    exact Or.inl hy1
+
+/-- ⟹ **`h1out` が破れるのは「`j` 自身がブロッカー」のときだけ**。 -/
+theorem h1out_holds_of_not_selfBlocker {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (hj : j < Q.length) (hout : ¬ le1 Q 0 j)
+    (hself : ¬ (entry Q 1 j ≤ entry Q 1 0)) :
+    entry Q 1 0 < entry Q 1 j := by omega
+
+/-- ★ **`j` 自身がブロッカーなら、根は行 1 の親になれない**（狭義増加が破れる）。 -/
+theorem root_not_nextrel1_of_selfBlocker {Q : TrioSeq} {j : ℕ}
+    (hself : entry Q 1 j ≤ entry Q 1 0) : ¬ nextrel1 Q 0 j := by
+  intro h
+  have := h.2.2.2.1
+  omega
+
 end H12H2
 end TRIO
