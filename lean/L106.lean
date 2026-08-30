@@ -1017,5 +1017,110 @@ theorem prefixTowerClosed_final_noCone {u : ℕ} {A M : TrioSeq} {d e : ℕ}
   · -- 錐の外: H12 の窓補題
     exact prefix_window_of_outOfCone_all' hM2 he hd0e hr0M hlp hbase hj hj1 hc hpar0
 
+/-! ## 202. ★★★★★★★★ §186 の**接頭辞つき**版 —— 実は**塔はいりません**
+
+§186 `snocStep_oper_tower` は「`mTower Q d e n ++ B.take (j+1)` の親が同じブロックにあれば、
+展開は `接頭辞 ++ mTower V d0 d1 m` で `|V| = j − p`」でした。
+
+**⟹ ★ 証明を読み直すと、使っているのは**長さの算術**と 2 本の一般補題だけです:**
+
+    `Lcone.oper_eq_gexp_gen` … 展開 ＝ `gexp`（`M` について完全に一般）
+    §165 `gexp_eq_take_append_mTower` … `gexp` ＝ `take ++ mTower`（同じく一般）
+
+**⟹ ⟹ `mTower Q d e n` の部分は**何でもよい**。`P ++ B.take (j+1)` で書けます。**
+**⟹ ⟹ ★ これで §186 も、その接頭辞つき版（`P := A ++ mTower Q d e n`）も、両方**同じ 1 本**です。**
+
+⚠ **これは「一般化したら簡単になった」例です。**
+**⟹ 私は §186 を `mTower` に貼りついた形で書いていました。塔は一度も使っていませんでした。** -/
+
+open Classical in
+theorem snocStep_oper_pre {P B : TrioSeq} {j p m : ℕ}
+    (hjB : j < B.length) (hpj : p < j)
+    (hz : ¬ (entry (P ++ B.take (j + 1)) 0 ((P ++ B.take (j + 1)).length - 1) = 0 ∧
+      entry (P ++ B.take (j + 1)) 1 ((P ++ B.take (j + 1)).length - 1) = 0 ∧
+      entry (P ++ B.take (j + 1)) 2 ((P ++ B.take (j + 1)).length - 1) = 0))
+    (hpar : hasParent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1))
+    (hpe : parent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) = P.length + p) :
+    ∃ (V : TrioSeq) (d0 d1 : ℕ), V.length = j - p ∧
+      (P ++ B.take (j + 1))⟦m⟧ = (P ++ B.take p) ++ mTower V d0 d1 m := by
+  set T := P ++ B.take (j + 1) with hT
+  have hTl : T.length = P.length + (j + 1) := by
+    rw [hT, List.length_append, List.length_take, Nat.min_eq_left (by omega)]
+  have hL : T.length - 1 ≠ 0 := by omega
+  have hLb : T.length - 1 - (P.length + p) = j - p := by omega
+  have hle : P.length + p + (j - p) ≤ T.length := by omega
+  refine ⟨(T.drop (P.length + p)).take (j - p),
+    (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1)
+      - entry T 0 (P.length + p) else 0),
+    (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1)
+      - entry T 1 (P.length + p) else 0), ?_, ?_⟩
+  · rw [List.length_take, List.length_drop]; omega
+  · rw [oper_eq_gexp_gen m hL hz hpar, hpe, hLb, gexp_eq_take_append_mTower hle]
+    congr 1
+    rw [hT, List.take_append, List.take_of_length_le (by omega),
+      Nat.add_sub_cancel_left, List.take_take, Nat.min_eq_left (by omega)]
+
+/-! ### 202.1 ⟹ §186 は 1 行の系になります（形の確認） -/
+
+open Classical in
+theorem snocStep_oper_tower_pre {A Q : TrioSeq} {d e n j p m : ℕ}
+    (hj : j < Q.length) (hpj : p < j)
+    (hz : ¬ (entry (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+        ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1
+        ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+        ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0))
+    (hpar : hasParent (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+    (hpe : parent (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+      = (A ++ mTower Q d e n).length + p) :
+    ∃ (V : TrioSeq) (d0 d1 : ℕ), V.length = j - p ∧
+      (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))⟦m⟧
+      = (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take p)
+        ++ mTower V d0 d1 m := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  exact snocStep_oper_pre (P := A ++ mTower Q d e n)
+    (B := Lift1 (shiftr01 (d * n) 0 Q) (e * n)) (by omega) hpj hz hpar hpe
+
+/-! ### 202.2 ⟹ **測度の帰納に必要な「1 段の形」がそろいました**
+
+    **`j ≥ 1` かつ親が同ブロック** … `snocStep_oper_tower_pre`（上）で `|V| = j − p < |Q|` ⟹ **枝 1**
+    **`j ≥ 1` の親の位置** … §201 `prefixTowerClosed_final_noCone`（錐の条件なし）
+    **`j = 0`** … H12 `blockRoot_window_eq_iff` ＋ §200 `rankDE_lt_of_blockRoot_parent` ⟹ **枝 2**
+    **辞書式** … §200 `lex_step_blockRoot`
+
+⚠ **残るのは 2 つだけです:**
+
+    **(i)** `Prod.Lex` の整礎性 … **H12 が並行**
+    **(ii)** 帰納の遺伝する前提（`hr0(V)` / `hz0(V)` / `hd0e(V)` / `hlp(V)`）… **核**
+
+**⟹ (ii) が R2 の測った「残差 3.4〜6.2%、9〜10% で頭打ち」の正体です。** -/
+
 end L106
 end TRIO
