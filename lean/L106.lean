@@ -1832,65 +1832,42 @@ theorem prefixTowerClosed_final_full {u : ℕ} {A M : TrioSeq} {d e : ℕ}
 
 /-- ★★★ 遺伝させるべき条件の**最終形**（親の位置はもう前提に出てきません）。 -/
 def TowerP'' (Q : TrioSeq) (d e : ℕ) : Prop :=
-  ∃ M : TrioSeq, M.dropLast = Q ∧ 2 ≤ M.length ∧ 0 < e ∧
-    entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d ∧
-    (∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l) ∧
-    le1 M 0 (0 + M.dropLast.length) ∧
+  0 < Q.length ∧ 0 < d ∧ 0 < e ∧
+    (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) ∧
     entry Q 2 0 = 0 ∧
     (∀ j, 0 < j → j < Q.length → ¬ le1 Q 0 j →
       0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) ∧
     (∀ j, 0 < j → j < Q.length → ¬ le1 Q 0 j →
       0 < entry Q 1 j → entry Q 1 0 < entry Q 1 j)
 
-open Classical in
-/-- ★★★★★★ **総組み立ての最終形**。義務は `hsnoc` 1 本、しかも
-「親はこのブロックの中」は**前提ではなく定理**として渡ります。 -/
-theorem towerClosed_of_snoc'' {u : ℕ}
-    (hsnoc : ∀ (Q : TrioSeq) (d e : ℕ), TowerP'' Q d e →
-      (∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-        ∀ A, A ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
-      ∀ (A : TrioSeq), A ∈ W u → ∀ (n j : ℕ), j < Q.length →
-        (0 < j →
-          (A ++ mTower Q d e n).length ≤
-            parent (A ++ mTower Q d e n
-                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-              (srow (A ++ mTower Q d e n
-                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-                (A ++ mTower Q d e n
-                  ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
-              (A ++ mTower Q d e n
-                ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
-        (∀ j', j' ≤ j →
-          A ++ mTower Q d e n
-            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) →
-        A ++ mTower Q d e n
-          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
-    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
-  refine tower_of_measure_step (u := u) TowerP'' towerMeas ?_
-  intro Q d e hP hIH A hA n
-  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
-  subst hMQ
-  refine prefixTowerClosed_final_full hA hM2 he hd0e hr0M hlp hz0 h2out h1out ?_ n
-  intro n' j hj hpar hall
-  exact hsnoc M.dropLast d e
-    ⟨M, rfl, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ hIH A hA n' j hj hpar hall
+/-! ### 211.2 ⟹ ★★ **`M` が消えました**（あとから分かったこと）
 
-/-! ### 211.2 ⟹ ★ **穴の全体像（最終）**
+⚠ **最初は `M`（`Q` の 1 列長い版）を存在量化していました。**
+**⟹ H12 の錐の外の窓補題（`hd0e` / `hlp` / `hbase` が要る）を使っていたからです。**
 
-`TowerP''` の 9 成分のうち、消費側（`MTowerClosedS`）が渡すのは `hr0` だけです。
+**⟹ ★ ですが §219 の `parent_bound_pos` は §167 `prefixSnocStep_parent_sameBlock` を使います。**
+**⟹ ⟹ §167 は **`hloc`（ブロックの中の親）だけ**で、錐の条件も `hbase` も `hd0e` も `hlp` も
+**要りません**。⟹ ⟹ ★ だから `M` ごと消せました。**
 
-    **1. `M.dropLast = Q`** … ✅ ただ（`M := Q ++ [c]`、`c` はこちらが選べる）
-    **2. `2 ≤ |M|`** … ✅ ただ（`|Q| ≤ 1` は §81、緑）
-    **3. `0 < e`** … ⚠ `e = 0` は §112 `MTowerClosedS0 = ShiftTowerClosedS`（別ルート既知）
-    **4. `hd0e`** … ✅ ただ（`c.0 := entry Q 0 0 + d`）
-    **5. `hr0M`** … ⚠ `l = |Q|` の分に **`0 < d`**
-    **6. `hlp`** … ⛔ **穴 (g1)**
-    **7. `hz0`** … ⛔ **穴 (g2)**（既知の (H2')）
-    **8. `h2out`** … ⛔ **穴 (g3)**（錐の外の行 2 の孤児）
-    **9. `h1out`** … ⛔ **穴 (g4)**（ブロッカー）
+    ⛔ ~~`hd0e`~~ … `0 < d` に置き換え（`hd0e` ＋ `hr0M` が含意していたもの）
+    ⛔ ~~`hlp`~~  … **一度も使っていませんでした**
+    ⛔ ~~`hbase`~~ … §208 で消した
 
-⚠ **教訓 14**: `towerClosed_of_snoc''` は「`hsnoc` ならば」しか言っていません。
-**`hsnoc` はまだ証明されていません。**そして 6-9 の遺伝も示していません。** -/
+**⟹ ⟹ ★★ 遺伝が問題になるのは **3 本**です:**
+
+    **`hz0`**   … `entry Q 2 0 = 0`（既知の (H2')）
+    **`h2out`** … 錐の外で行 2 が正なら `Q.take (j+1)` に行 2 の親（**行 2 の孤児でない**）
+    **`h1out`** … 錐の外で行 1 が正なら根より高い（**ブロッカーでない**）
+
+**そして残り 4 本は遺伝が**易しい**はずです:**
+
+    `0 < |Q|` / `0 < d` / `0 < e` / `hr0`（行 0 が根から狭義単調）
+
+⚠ **教訓 14**: **「易しいはず」は**測っても証明してもいません**。**
+
+⚠⚠ **そして H12 の錐の外の窓補題（`window_of_outOfCone_all` 系）は
+**この道では使いません**。⟹ H12 に伝える必要があります。**
+**⟹ 代わりに H12 の `blockRoot_parent_prevBlock` 系が §215 で効いています。** -/
 
 /-! ## 212. ★★★★★★★ `hsnoc` の `j ≥ 1` の枝を組みます
 
@@ -1899,15 +1876,7 @@ theorem towerClosed_of_snoc'' {u : ℕ}
 **⟹ まず §211 の中で作った `hpT` を、名前つきで外に出します（再利用のため）。** -/
 
 theorem hr0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
-    ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l := by
-  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
-  subst hMQ
-  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
-  intro l hl0 hl1
-  rw [hdl] at hl1
-  rw [List.dropLast_eq_take, Wset.entry_take (show (0 : ℕ) < M.length - 1 by omega),
-    Wset.entry_take hl1]
-  exact hr0M l hl0 (by omega)
+    ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l := hP.2.2.2.1
 
 /-- ★★ **`TowerP''` から「塔の中の親」が出ます**（§210 ＋ §162.9 の合成）。 -/
 theorem tower_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
@@ -1919,13 +1888,12 @@ theorem tower_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
         (n * Q.length + j))
       (n * Q.length + j) := by
   have hr0Q := hr0_of_TowerP'' hP
-  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
-  subst hMQ
-  by_cases hc : le1 M.dropLast 0 j
-  · exact tower_hasParent_of_block (Q := M.dropLast) (d := d) (e := e) (n := n)
+  obtain ⟨hQ1, hd, he, hr0M, hz0, h2out, h1out⟩ := hP
+  by_cases hc : le1 Q 0 j
+  · exact tower_hasParent_of_block (Q := Q) (d := d) (e := e) (n := n)
       (block_blockParent_all_cone hj hj1 hr0Q hc
         (fun hpos => h2_cone hz0 j hj1 hj hpos hc))
-  · exact tower_hasParent_of_block (Q := M.dropLast) (d := d) (e := e) (n := n)
+  · exact tower_hasParent_of_block (Q := Q) (d := d) (e := e) (n := n)
       (block_blockParent_all_outcone hj hj1 hr0Q hc
         (fun hpos => h2out j hj1 hj hc hpos)
         (fun hpos => h1out j hj1 hj hc hpos))
@@ -2552,19 +2520,13 @@ theorem prefixTowerClosed_of_snocStepStrong1 {u : ℕ} {A Q : TrioSeq} {d e : �
 **⟹ ⟹ 私は §168 の `hall` を**苦労して回して**いましたが、1 本で済みます。** -/
 
 theorem hz0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
-    entry Q 2 0 = 0 := by
-  obtain ⟨M, hMQ, -, -, -, -, -, hz0, -, -⟩ := hP; subst hMQ; exact hz0
+    entry Q 2 0 = 0 := hP.2.2.2.2.1
 
-theorem he_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < e := by
-  obtain ⟨M, hMQ, -, he, -, -, -, -, -, -⟩ := hP; exact he
+theorem he_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < e :=
+  hP.2.2.1
 
-theorem ne_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : Q ≠ [] := by
-  obtain ⟨M, hMQ, hM2, -, -, -, -, -, -, -⟩ := hP
-  subst hMQ
-  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
-  intro hc
-  have : M.dropLast.length = 0 := by rw [hc]; rfl
-  omega
+theorem ne_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : Q ≠ [] :=
+  List.ne_nil_of_length_pos hP.1
 
 /-- ★ `TowerP''` から**ブロックの中**の親（§210 ＋ §162.9）。 -/
 theorem block_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
@@ -2572,9 +2534,8 @@ theorem block_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
     hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
       (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
   have hr0Q := hr0_of_TowerP'' hP
-  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
-  subst hMQ
-  by_cases hc : le1 M.dropLast 0 j
+  obtain ⟨hQ1, hd, he, hr0M, hz0, h2out, h1out⟩ := hP
+  by_cases hc : le1 Q 0 j
   · exact block_blockParent_all_cone hj hj1 hr0Q hc
       (fun hpos => h2_cone hz0 j hj1 hj hpos hc)
   · exact block_blockParent_all_outcone hj hj1 hr0Q hc
@@ -2644,12 +2605,8 @@ theorem prefix_block_take_mem {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ}
 ⚠ **私は「`0 < d` は未確認の別ルート」と team-lead に書きました。⟹ **誤り**でした。**
 **⟹ 前提の束の中で**既に含意されて**いました。** -/
 
-theorem hd_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < d := by
-  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
-  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
-  have h := hr0M M.dropLast.length (by omega) (by omega)
-  rw [Nat.zero_add] at hd0e
-  omega
+theorem hd_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < d :=
+  hP.2.1
 
 /-! ### 220.2 遺伝（残る唯一の義務）を 2 本の述語にします -/
 
