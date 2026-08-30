@@ -3727,5 +3727,64 @@ theorem root_row1_zero_of_normR1R0 {T : TrioSeq} (hT : 0 < T.length)
   have h0 := h 0 hT
   omega
 
+
+/-- ★★★ **根の `amin` は根の行 1**（根の祖先は自分だけ）。 -/
+theorem amin_root {M : TrioSeq} : amin M 0 = entry M 1 0 := by
+  obtain ⟨y, hrt, heq⟩ := amin_mem M 0
+  have hy : y = 0 := by have := rtg0_index_le hrt; omega
+  rw [← heq, hy]
+
+/-- ★★★★ **`hr0` の下では `amin` の最大は根の行 1**。 -/
+theorem amin_le_root_of_shallow {M : TrioSeq} (hM : 0 < M.length)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    {j : ℕ} (hj : j < M.length) : amin M j ≤ entry M 1 0 := by
+  rcases Nat.eq_zero_or_pos j with h0 | hp
+  · rw [h0, amin_root]
+  · have hle0 := le0_root_of_shallow hM hr0 j hp hj
+    have := amin_mono (A := M) (j := j) (y := 0) hle0.2.2
+    rw [amin_root] at this
+    exact this
+
+/-- ★★★★ **行 1 の下限は `amin` にそのまま移る**（＝ `amin` の最小は行 1 の大域最小）。 -/
+theorem amin_ge_of_row1_ge {M : TrioSeq} {c : ℕ}
+    (h : ∀ i, i < M.length → c ≤ entry M 1 i)
+    {j : ℕ} (hj : j < M.length) : c ≤ amin M j := by
+  obtain ⟨y, hrt, heq⟩ := amin_mem M j
+  have hy : y ≤ j := rtg0_index_le hrt
+  rw [← heq]
+  exact h y (by omega)
+
+/-- ★★★★★ ⟹ **`amin` は「行 1 の大域最小」と「根の行 1」の間に閉じ込められる**。 -/
+theorem amin_bounds {M : TrioSeq} {c : ℕ} (hM : 0 < M.length)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlow : ∀ i, i < M.length → c ≤ entry M 1 i)
+    {j : ℕ} (hj : j < M.length) : c ≤ amin M j ∧ amin M j ≤ entry M 1 0 :=
+  ⟨amin_ge_of_row1_ge hlow hj, amin_le_root_of_shallow hM hr0 hj⟩
+
+theorem entry_one_headD (X : TrioSeq) : entry X 1 0 = (X.headD (0, 0, 0)).2.1 := by
+  cases X <;> simp [entry]
+
+/-- ★★★ **`oper` は先頭列の行 1 を保つ**。 -/
+theorem oper_head_row1 {B : TrioSeq} {n : ℕ} (hn : 1 ≤ n) :
+    entry (B⟦n⟧) 1 0 = entry B 1 0 := by
+  by_cases hL : 1 < B.length
+  · rw [entry_one_headD, entry_one_headD, oper_headD B hL hn]
+  · rw [oper_eq_self_of_short n (by omega)]
+
+/-- ★★★★★★ **(W33) max 側: `amin` の最大は `oper` で不変**。
+（`hr0` の下で最大 ＝ 根の行 1、そして `oper` は先頭列を保つ。） -/
+theorem amin_max_oper_invariant {B : TrioSeq} {n : ℕ} (hn : 1 ≤ n)
+    (hr0' : ∀ l, 0 < l → l < (B⟦n⟧).length → entry (B⟦n⟧) 0 0 < entry (B⟦n⟧) 0 l)
+    (hB' : 0 < (B⟦n⟧).length) :
+    (∀ j, j < (B⟦n⟧).length → amin (B⟦n⟧) j ≤ amin B 0) ∧
+      amin (B⟦n⟧) 0 = amin B 0 := by
+  constructor
+  · intro j hj
+    rw [amin_root]
+    have := amin_le_root_of_shallow hB' hr0' hj
+    rw [oper_head_row1 hn] at this
+    exact this
+  · rw [amin_root, amin_root, oper_head_row1 hn]
+
 end H12Export
 end TRIO
