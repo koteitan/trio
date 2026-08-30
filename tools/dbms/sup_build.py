@@ -158,6 +158,31 @@ def build(M, Y=3, K=5, conv=None):
     return best
 
 
+_MEMO = {}
+_DEPTH = int(os.environ.get('SUPDEPTH', '3'))   # 再帰の深さ上限
+
+
+def build_rec(M, Y=3, K=5, depth=None):
+    """構成器を再帰的に使う。f(M[n]) も規則版ではなく構成器で求める。
+
+    規則版に依存しないので、規則の誤りが基本列に伝播しない。
+    深さ上限に達したら規則版に落ちる（そこだけは規則を信じる）。
+    """
+    if depth is None:
+        depth = _DEPTH
+    key = (M, depth)
+    if key in _MEMO:
+        return _MEMO[key]
+    if depth <= 0:
+        return R.convert(M, Y)
+    conv = lambda z: build_rec(z, Y, K, depth - 1)
+    r = build(M, Y, K, conv=conv)
+    if r is None:
+        r = R.convert(M, Y)      # 構成できなければ規則版で埋める
+    _MEMO[key] = r
+    return r
+
+
 if __name__ == '__main__':
     from check_sheet import load
     import collections
@@ -174,7 +199,7 @@ if __name__ == '__main__':
         if len(mb) > cap:
             c['大きすぎて飛ばした'] += 1
             continue
-        b = build(mb)
+        b = (build_rec(mb) if os.environ.get('SUPREC') else build(mb))
         if b is None:
             c['構成できず'] += 1
         elif b == md:
