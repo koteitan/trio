@@ -6439,5 +6439,81 @@ theorem hlocQ_iff_simple {Q : TrioSeq} :
 
 ⚠ **教訓 45**: (COMP-b) は測る必要がありませんでした。**定義から出ます。** -/
 
+/-! ## 245. ★★★★★★ **「根が行 0 でも行 1 でも最小」なら錐は全体**
+
+§244 の `exists_nextrel1_of_le0_lt` を**繰り返し適用**するだけです。
+
+    `t > 0` なら根が候補（`le0 V 0 t` ＋ `entry V 1 0 < entry V 1 t`）⟹ `nextrel1` の始点 `y < t` が居る
+    ⟹ ★ 強い帰納法で `le1 V 0 y` ⟹ 1 歩継いで `le1 V 0 t`
+
+**⟹ ★★★★★ ですから **`hr0` ＋「根が行 1 で最小」⟹ 全列が錐の中**。**
+**⟹ ⟹ ★★ そして §241 が「錐の中なら `hlocQ` は無料」と言うので、**`hlocQ` が丸ごと出ます**。** -/
+
+theorem le1_root_of_root_lt {V : TrioSeq}
+    (hr0V : ∀ l, 0 < l → l < V.length → entry V 0 0 < entry V 0 l)
+    (h1 : ∀ l, 0 < l → l < V.length → entry V 1 0 < entry V 1 l) :
+    ∀ t, t < V.length → le1 V 0 t := by
+  intro t
+  induction t using Nat.strong_induction_on with
+  | _ t ih =>
+    intro ht
+    rcases Nat.eq_zero_or_pos t with rfl | ht0
+    · exact le1_self (by omega)
+    · obtain ⟨y, hy⟩ := exists_nextrel1_of_le0_lt (M := V) ht
+        ⟨0, ht0, L105.le0_zero_of_shallow (fun l hl1 hl => hr0V l (by omega) hl) ht,
+          h1 t ht0 ht⟩
+      have hyt : y < t := hy.2.2.1
+      exact ⟨by omega, ht, (ih y hyt (by omega)).2.2.tail hy⟩
+
+/-- ★★★★★★ ⟹ **`hlocQ` の十分条件**: `hr0` ＋ 根が行 1 で最小 ＋ `hz0` ＋ `hz1`。 -/
+theorem hlocQ_of_root_lt {V : TrioSeq}
+    (hr0V : ∀ l, 0 < l → l < V.length → entry V 0 0 < entry V 0 l)
+    (h1 : ∀ l, 0 < l → l < V.length → entry V 1 0 < entry V 1 l)
+    (hz0V : entry V 2 0 = 0) (hz1V : ∀ q, q < V.length → entry V 2 q ≤ 1) :
+    hlocQ V := by
+  refine (hlocQ_iff_outOfCone hz1V hz0V).mpr ?_
+  intro j hj0 hj hnc
+  exact absurd (le1_root_of_root_lt hr0V h1 j hj) hnc
+
+/-! ### 245.1 ⟹ ★★★★ **窓版**（残差が 1 本になりました）
+
+    ✅ `hr0(V)` …… §221 `hr0_wnd`（**前提なし**）
+    ✅ `hz0(V)` …… §224（`srow = 2` の段 ／ `p = 0` の段）
+    ✅ `hz1(V)` …… `entry2_wnd` ＋ `hz1(Q)`
+    ⛔ **根が行 1 で最小** … ★ **これだけ**（＝ **窓の根がブロッカーでない**） -/
+
+theorem hlocQ_wnd_of_root_lt {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) (hpj : p < j)
+    (hr0V : ∀ l, 0 < l → l < j - p →
+      entry (wnd P B j p) 0 0 < entry (wnd P B j p) 0 l)
+    (hz0V : entry (wnd P B j p) 2 0 = 0)
+    (hz1V : ∀ q, q < j - p → entry (wnd P B j p) 2 q ≤ 1)
+    (hroot1 : ∀ t, 0 < t → t < j - p →
+      entry (wnd P B j p) 1 0 < entry (wnd P B j p) 1 t) :
+    hlocQ (wnd P B j p) := by
+  have hlen : (wnd P B j p).length = j - p := wnd_length hjB hpj
+  exact hlocQ_of_root_lt
+    (fun l hl0 hl => hr0V l hl0 (by omega)) (fun l hl0 hl => hroot1 l hl0 (by omega))
+    hz0V (fun q hq => hz1V q (by omega))
+
+/-! ### 245.2 ⚠⚠ **残差 `hroot1` は `h1out` と同じもの**です —— **正直に書きます**
+
+**⟹ ⛔ `hroot1`（窓の根が行 1 で最小）は、私が §184 で潰し、H12 が `blocker_of_large_k` で
+「塔が伸びれば**必ず**壊れる」と証明した **`h1out` そのもの**です。**
+
+**⟹ ★ ただし §239.6/§239.7 で分かったとおり、`e*n` が効くのは**次の 1 マスだけ**です:**
+
+    **窓の根 `p` が錐の中** ∧ **`p+t` が錐の外**
+
+**⟹ ★★ そして §243 が「`p+t` が錐の外なら `nextrel1` の始点も錐の外」と言っています。**
+**⟹ ⟹ ⚠ ですが `hroot1` は**根を証人に固定**しているので、その逃げ道を使えません。**
+
+**⟹ ⟹ ⟹ ★★★ ですから **`hroot1` は強すぎます**。⟹ **§244 の 3 連言に戻すべき**です:**
+
+    `∃ y, y < t ∧ le0 V y t ∧ entry V 1 y < entry V 1 t`   ← ★ **証人は根でなくてよい**
+
+**⟹ ★ §245 は「一番強い十分条件」を緑にしたものです。⟹ **本命はこの弱い形**です。**
+
+⚠ **教訓 14**: `hlocQ_of_root_lt` は緑ですが、**前提が満たされる保証はありません**。 -/
+
 end L106
 end TRIO
