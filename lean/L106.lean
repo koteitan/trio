@@ -8476,7 +8476,7 @@ theorem argOK_rsum_incompatible {v z : ℕ} {M : TrioSeq} (hne : M ≠ [])
   have hM0 : M.getD 0 (0, 0, 0) ∈ M := by
     cases M with
     | nil => exact absurd rfl hne
-    | cons a t => simpa using Or.inl rfl
+    | cons a t => simp
   have := harg _ hM0
   have hent : entry M 0 0 = (M.getD 0 (0, 0, 0)).1 := by unfold entry; simp
   omega
