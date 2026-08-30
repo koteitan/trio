@@ -9151,5 +9151,43 @@ theorem src_ge_of_ancestor_low {M : TrioSeq} {c x t : ℕ} :
   have hmin := h.2.2.2.2.2 x ⟨hc, hx⟩
   omega
 
+
+/-! ## 143. ★★★★★★★★★★ (W91b): **`srow = 2` の親の下界**（`e > 0`）
+
+**行 1 の親 `c1` が `le1` 祖先**（1 歩なので）⟹ ★ **行 2 版の「候補で縛る」が使えます**。
+⟹ ★★ そして **`c1 ≥ (n−1)|Q|`**（私の (W81')）
+⟹ ⟹ ★★★★★★★★★★ ⟹ **`c1` の行 2 が的より低ければ、`srow` の親も `(n−1)|Q|` 以降**。 -/
+
+/-- ★★★★★★★★★★ **(W91b)**: `e > 0` ∧ **行 1 の親の行 2 が的より低い**
+⟹ **行 2 の親も直前ブロックの中**。 -/
+theorem nextrel2_blockRoot_src_ge_prev (Q : TrioSeq) {d e n c c1 : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (he : 0 < e) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h1 : nextrel1 (mTower Q d e (n + 1)) c1 (n * Q.length))
+    (hlow2 : entry (mTower Q d e (n + 1)) 2 c1
+      < entry (mTower Q d e (n + 1)) 2 (n * Q.length))
+    (h : nextrel2 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    (n - 1) * Q.length ≤ c := by
+  have hge1 := nextrel1_blockRoot_src_ge_prev Q hQ hd he hn hr0 h1
+  have hle1 : le1 (mTower Q d e (n + 1)) c1 (n * Q.length) :=
+    ⟨h1.1, h1.2.1, Relation.ReflTransGen.single h1⟩
+  have := nextrel2_src_ge_of_le1_ancestor_low hle1 hlow2 h
+  omega
+
+/-- ★★★★★ ⟹ **窓 `≤ |Q|`**（`srow = 2` 版）。 -/
+theorem window_le_of_blockRoot_row2 (Q : TrioSeq) {d e n c c1 : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (he : 0 < e) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h1 : nextrel1 (mTower Q d e (n + 1)) c1 (n * Q.length))
+    (hlow2 : entry (mTower Q d e (n + 1)) 2 c1
+      < entry (mTower Q d e (n + 1)) 2 (n * Q.length))
+    (h : nextrel2 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    n * Q.length - c ≤ Q.length := by
+  have hge := nextrel2_blockRoot_src_ge_prev Q hQ hd he hn hr0 h1 hlow2 h
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  omega
+
 end H12H2
 end TRIO
