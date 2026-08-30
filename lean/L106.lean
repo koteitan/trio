@@ -5191,5 +5191,132 @@ theorem orphOK_row2 {A T : TrioSeq} {j1 : ℕ}
 ⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
 **`le0` / `le1` が塔の根を通ることと、行 1・行 2 の大小が残っています。** -/
 
+/-! ## 231. ★★★★★★★★★ **`OrphOK` が定理になりました**（H12 の §228.1 の答え ＋ §230）
+
+H12 が §228.1 の「次の仕事」（`le0` / `le1` が塔の根を通る）を緑にしてくれました。
+**⟹ ★ それと §230 の `hasParent_peel_of_noCross` を合わせると、`OrphOK` が**証明できます**。** -/
+
+/-- ★★★ **行ごとの `OrphOK`**（`nextR` の行を問わない一般形）。 -/
+theorem orphOK_of_cone {A T : TrioSeq} {i m : ℕ}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    (h2 : ∀ l, 0 < l → l < T.length → entry T 2 0 < entry T 2 l)
+    (hm : m < T.length) (hm0 : 0 < m)
+    (hnp : ¬ hasParent T i m) : ¬ hasParent (A ++ T) i (A.length + m) := by
+  intro hp
+  exact hnp (hasParent_peel_of_noCross
+    (fun y hy hc => no_nextR_cross_of_cone hmin hnb h2 hy hm hm0 hc) hp)
+
+/-- ★★ **行 1 の `OrphOK`**（H12 の `no_nextrel1_cross_of_cone` 版）。
+`hle0` は要りません。**的の錐の条件だけ**です。 -/
+theorem orphOK_row1_cone {A T : TrioSeq} {m : ℕ}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hm : m < T.length) (hm0 : 0 < m)
+    (hcone : entry T 1 0 < entry T 1 m)
+    (hnp : ¬ hasParent T 1 m) : ¬ hasParent (A ++ T) 1 (A.length + m) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_neg (by omega), if_pos rfl] at hc
+  exact no_nextrel1_cross_of_cone hmin hy hm hm0 hcone hc
+
+/-- ★★ **行 2 の `OrphOK`**（H12 の `no_nextrel2_cross_of_cone` 版）。 -/
+theorem orphOK_row2_cone {A T : TrioSeq} {m : ℕ}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
+    (hm : m < T.length) (hm0 : 0 < m)
+    (hcone : entry T 2 0 < entry T 2 m)
+    (hnp : ¬ hasParent T 2 m) : ¬ hasParent (A ++ T) 2 (A.length + m) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_neg (by omega), if_neg (by omega)] at hc
+  exact no_nextrel2_cross_of_cone hmin hnb hy hm hm0 hcone hc
+
+/-! ### 231.1 ★★ `hmin`（塔の根が行 0 で狭義最浅）は **`hr0` ＋ `0 < d` から出ます** -/
+
+theorem hmin_tower {Q : TrioSeq} {d e n j : ℕ} (hQ1 : 0 < Q.length) (hd : 0 < d)
+    (hj : j < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ∀ l, 0 < l →
+      l < (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
+      entry (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0
+        < entry (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 l := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n ++ B.take (j + 1)).length = n * Q.length + (j + 1) := by
+    rw [List.length_append, mTower_length, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  -- 根の行 0
+  have hroot : entry (mTower Q d e n ++ B.take (j + 1)) 0 0 = entry Q 0 0 := by
+    rcases Nat.eq_zero_or_pos n with hn0 | hn
+    · subst hn0
+      rw [mTower_zero, List.nil_append,
+        Wset.entry_take (show (0 : ℕ) < j + 1 by omega), hB, entry0_Lift1,
+        entry0_shiftr01 (by omega)]
+      simp
+    · have h := entry0_mTower_block Q d e n 0 0 hn hQ1
+      rw [Nat.zero_mul, Nat.add_zero, Nat.mul_zero, Nat.add_zero] at h
+      rw [entry_append_left _ _ (show (0 : ℕ) < (mTower Q d e n).length from by
+        rw [mTower_length]; exact Nat.mul_pos hn hQ1)]
+      exact h
+  intro l hl0 hlt
+  rw [hTlen] at hlt
+  rw [hroot]
+  rcases Nat.lt_or_ge l (n * Q.length) with hin | hout
+  · -- 塔の中
+    have hTl : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+    rw [entry_append_left _ _ (show l < (mTower Q d e n).length from by omega)]
+    have hq : l % Q.length < Q.length := Nat.mod_lt _ hQ1
+    have hk : l / Q.length < n := by
+      by_contra hc
+      have hge : n ≤ l / Q.length := by omega
+      have h1 : n * Q.length ≤ l / Q.length * Q.length :=
+        Nat.mul_le_mul_right _ hge
+      have h2 : l / Q.length * Q.length ≤ l := Nat.div_mul_le_self l Q.length
+      omega
+    have hdec : l / Q.length * Q.length + l % Q.length = l := Nat.div_add_mod' l Q.length
+    have h := entry0_mTower_block Q d e n (l / Q.length) (l % Q.length) hk hq
+    rw [hdec] at h
+    rw [h]
+    rcases Nat.eq_zero_or_pos (l % Q.length) with h0 | h0
+    · have hkpos : 0 < l / Q.length := by
+        by_contra hc
+        have hz : l / Q.length = 0 := Nat.le_zero.mp (Nat.not_lt.mp hc)
+        rw [hz, Nat.zero_mul, h0] at hdec
+        omega
+      have hpos : 0 < d * (l / Q.length) := Nat.mul_pos hd hkpos
+      rw [h0]; omega
+    · have := hr0 _ h0 hq; omega
+  · -- 足しているブロックの中
+    obtain ⟨q, rfl⟩ : ∃ q, l = n * Q.length + q := ⟨l - n * Q.length, by omega⟩
+    have hqj : q < j + 1 := by omega
+    rw [show n * Q.length + q = (mTower Q d e n).length + q from by
+        rw [mTower_length],
+      entry_append_right, Wset.entry_take hqj, hB, entry0_Lift1,
+      entry0_shiftr01 (show q < Q.length by omega)]
+    rcases Nat.eq_zero_or_pos q with h0 | h0
+    · have hnpos : 0 < n := by
+        by_contra hc
+        have hn0 : n = 0 := Nat.le_zero.mp (Nat.not_lt.mp hc)
+        rw [hn0, Nat.zero_mul, Nat.zero_add, h0] at hl0
+        omega
+      have hdn : 0 < d * n := Nat.mul_pos hd hnpos
+      rw [h0]; omega
+    · have := hr0 q h0 (by omega); omega
+
+/-! ### 231.2 ⟹ ★★★ **`OrphOK` の行 0 と行 1 が閉じます**
+
+    **行 0** … `hmin_tower`（上、`hr0` ＋ `0 < d`）だけ ⟹ ✅ **無条件**
+    **行 1** … `hmin_tower` ＋ **「的の行 1 が塔の根より上」** ＝ **`h1out`（相対版）**
+         ⟹ ★ R2 の条件つき実測 **99.1〜99.7%**
+    **行 2** … ＋ `hnb`（塔にブロッカーが無い）
+
+**⟹ ★★ R2 の (s8)(s9) が「破れは 100% が行 1 ∧ `h1out` の破れ」と出しています。**
+**⟹ ⟹ ★★★ ですから **`OrphOK` の残差は `h1out`（相対版）1 本**です。**
+
+⚠ **教訓 14**: 上は「`OrphOK` の**形**の補題」です。
+**`towerClosed_of_hered` の `OrphOK` を**これで置き換える**配線はまだしていません。** -/
+
 end L106
 end TRIO
