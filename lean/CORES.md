@@ -12181,3 +12181,23 @@ def WSnocOpen1 : Prop :=
 
 **⟹ ★ **1 本も証明しなかった日**だが、⟹ ★★ **「この道は無い」を証明した日**。
 ⟹ ★★★ そして **的が 1 本に確定し、その形も分かっている**。**
+
+---
+
+## ★★★★★★★★★ **H12 (2026-08-30): `PrefixCopies`（`e = 0`）の 3 行を `nextR` 1 本に（緑）**
+
+    ★★★★★★★★★ `prefix_mTower_cross_implies_orphan_of_e_zero`
+      **`nextR (A ++ mTower Q d 0 n) i c (|A| + k|Q| + j)` ∧ `c < |A|` ⟹ `¬ hasParent Q i j`**
+      ⟹ ★ **`i` は 0, 1, 2 のどれでもよい**
+    ★★★★★★★★★ `prefix_mTower_src_ge_of_hasParent_of_e_zero` … **対偶（L3 が使う形）**
+      **`hasParent Q i j` ⟹ 越境しない（`|A| ≤ c`）**
+
+### ★ 行ごとの証人補題（すべて「証人があれば親は同じ写しの中」）
+
+    ★★★★★★★★ `prefix_mTower_nextrel0_src_ge`（行 0、**`d`, `e` 何でも**）
+    ★★★★★★★★ `prefix_mTower_nextrel1_src_ge`（行 1、**`d`, `e` 何でも**）
+    ★★★★★★★★ `prefix_mTower_nextrel2_src_ge_of_e_zero`（行 2、**`e = 0` のみ**）
+    ★★★★★★★★ `prefix_mTower_row0_cross_implies_orphan`（行 0 の孤児版）
+
+**⟹ ★★★ **3 行とも同じ 1 つの機構**でした: **証人が同じ写しの中にあるので、最小性がそこで止まる**。**
+**⟹ ⛔ **行 2 だけ `e = 0` が要ります**（`le1` の移送が `e > 0` では①型を含むため）。**

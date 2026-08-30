@@ -5065,5 +5065,75 @@ theorem parent_dist_lt_of_periodic1 {T : TrioSeq} {a m t : ℕ} (hm : 0 < m)
   rw [nextR, if_neg (by omega), if_pos rfl] at h1
   exact window_lt_of_periodic1 hm hper0 hper1 hc h1
 
+
+/-- ★★★★★★★★ **行 0 の写し内証人**（`d`, `e` は何でもよい）。 -/
+theorem prefix_mTower_nextrel0_src_ge {A Q : TrioSeq} {d e n k j y c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hy : nextrel0 Q y j)
+    (h : nextrel0 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
+    A.length + (k * Q.length + y) ≤ c := by
+  have hyQ : y < Q.length := hy.1
+  have hylt : y < j := hy.2.2.1
+  have hlt : entry Q 0 y < entry Q 0 j := hy.2.2.2.1
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2 (A.length + (k * Q.length + y)) ⟨by omega, by omega⟩
+  rw [entry_append_right, entry_append_right,
+    entry0_mTower_block' Q hk hj, entry0_mTower_block' Q hk hyQ] at hmin
+  omega
+
+/-- ★★★★★★★★ **行 0: 越境 ⟹ `Q` の中で行 0 の孤児**。 -/
+theorem prefix_mTower_row0_cross_implies_orphan {A Q : TrioSeq} {d e n k j c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hc : c < A.length)
+    (h : nextrel0 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
+    ¬ hasParent Q 0 j := by
+  intro hpar
+  obtain ⟨y, hy, -⟩ := hpar
+  have hy' : nextrel0 Q y j := by simpa [nextR] using hy
+  have := prefix_mTower_nextrel0_src_ge hk hj hy' h
+  omega
+
+/-- ★★★★★★★★★ **(まとめ) `PrefixCopies`（`e = 0`）の 3 行**:
+**越境 ⟹ 的は `Q` の中で（その行の）孤児**。⟹ ★ **`i` は 0, 1, 2 のどれでもよい**。 -/
+theorem prefix_mTower_nextrel2_src_ge_of_e_zero {A Q : TrioSeq} {d n k j y c : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hy : nextrel2 Q y j)
+    (h : nextrel2 (A ++ mTower Q d 0 n) c (A.length + (k * Q.length + j))) :
+    A.length + (k * Q.length + y) ≤ c := by
+  have hylt : y < j := hy.2.2.1
+  have hyQ : y < Q.length := by omega
+  have hlt : entry Q 2 y < entry Q 2 j := hy.2.2.2.1
+  by_contra hc
+  push Not at hc
+  have hle1 : le1 (A ++ mTower Q d 0 n)
+      (A.length + (k * Q.length + y)) (A.length + (k * Q.length + j)) :=
+    (le1_append_right _ _ _ _).mpr (le1_mTower_intra_block_of_e_zero Q hk hy.2.2.2.2.1)
+  have hmin := h.2.2.2.2.2 (A.length + (k * Q.length + y)) ⟨by omega, hle1⟩
+  rw [entry_append_right, entry_append_right, mTower_entry hk hj,
+    mTower_entry hk hyQ, entry2_Lift1, entry2_Lift1,
+    entry2_shiftr01, entry2_shiftr01] at hmin
+  omega
+
+/-- ★★★★★★★★★ **(まとめ) `PrefixCopies`（`e = 0`）の 3 行**:
+**越境 ⟹ 的は `Q` の中で（その行の）孤児**。⟹ ★ **`i` は 0, 1, 2 のどれでもよい**。 -/
+theorem prefix_mTower_cross_implies_orphan_of_e_zero {A Q : TrioSeq} {d n k j c i : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hc : c < A.length)
+    (h : nextR (A ++ mTower Q d 0 n) i c (A.length + (k * Q.length + j))) :
+    ¬ hasParent Q i j := by
+  intro hpar
+  obtain ⟨y, hy, -⟩ := hpar
+  unfold nextR at h hy
+  split_ifs at h hy with h0 h1
+  · have := prefix_mTower_nextrel0_src_ge hk hj hy h; omega
+  · have := prefix_mTower_nextrel1_src_ge hk hj hy h; omega
+  · have := prefix_mTower_nextrel2_src_ge_of_e_zero hk hj hy h; omega
+
+/-- ★★★★★★★★★ ⟹ **対偶（L3 が使う形）**: **`Q` の中で（その行の）親を持てば、越境しません**。 -/
+theorem prefix_mTower_src_ge_of_hasParent_of_e_zero {A Q : TrioSeq} {d n k j c i : ℕ}
+    (hk : k < n) (hj : j < Q.length) (hpar : hasParent Q i j)
+    (h : nextR (A ++ mTower Q d 0 n) i c (A.length + (k * Q.length + j))) :
+    A.length ≤ c := by
+  by_contra hcc
+  push Not at hcc
+  exact prefix_mTower_cross_implies_orphan_of_e_zero hk hj hcc h hpar
+
 end H12Export
 end TRIO
