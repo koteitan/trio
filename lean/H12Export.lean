@@ -6010,5 +6010,66 @@ theorem cone0_prefix_stable {X : TrioSeq} {j0 : ℕ} (B : TrioSeq) (hj0 : j0 ≤
   have h2 : le0 (X.take j0) 0 i ↔ le0 X 0 i := Wset.le0_take hj0 hi
   exact h1.trans h2
 
+
+open Classical in
+/-- ★★★★★ **全零テストは `Lift1` で保たれます**。
+⟹ ★ 理由: **`entry M 1 j1 = 0` なら `j1` は錐の外**（`nextrel1` は狭義増加）⟹ **持ち上がらない**。 -/
+theorem zeroLast_Lift1_iff {M : TrioSeq} {t : ℕ} (hL : M.length - 1 ≠ 0) :
+    (entry (Lift1 M t) 0 (M.length - 1) = 0 ∧ entry (Lift1 M t) 1 (M.length - 1) = 0
+        ∧ entry (Lift1 M t) 2 (M.length - 1) = 0)
+      ↔ (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0
+        ∧ entry M 2 (M.length - 1) = 0) := by
+  have hlt : M.length - 1 < M.length := by omega
+  have h0 : entry (Lift1 M t) 0 (M.length - 1) = entry M 0 (M.length - 1) := entry0_Lift1 _ _ _
+  have h2 : entry (Lift1 M t) 2 (M.length - 1) = entry M 2 (M.length - 1) := entry2_Lift1 _ _ _
+  have h1 : entry (Lift1 M t) 1 (M.length - 1)
+      = entry M 1 (M.length - 1) + (if le1 M 0 (M.length - 1) then t else 0) :=
+    Wset.entry1_Lift1 hlt
+  rw [h0, h2, h1]
+  constructor
+  · rintro ⟨a, b, c⟩; exact ⟨a, by omega, c⟩
+  · rintro ⟨a, b, c⟩
+    refine ⟨a, ?_, c⟩
+    rw [if_neg (not_in_cone_of_row1_le_root (by omega) (by omega))]
+    omega
+
+/-- ★★★★★★★★ **分岐 (2)**: 末尾が全零なら可換。 -/
+theorem lift_oper_comm_of_zeroLast {M : TrioSeq} {t n : ℕ} (hL : M.length - 1 ≠ 0)
+    (hz : entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0
+      ∧ entry M 2 (M.length - 1) = 0) :
+    (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t := by
+  have hlen : (Lift1 M t).length = M.length := Lift1_length M t
+  have hL' : (Lift1 M t).length - 1 ≠ 0 := by rw [hlen]; exact hL
+  have hz' : entry (Lift1 M t) 0 ((Lift1 M t).length - 1) = 0 ∧
+      entry (Lift1 M t) 1 ((Lift1 M t).length - 1) = 0 ∧
+      entry (Lift1 M t) 2 ((Lift1 M t).length - 1) = 0 := by
+    rw [hlen]; exact (zeroLast_Lift1_iff hL).mpr hz
+  rw [oper_eq_pred_of_zero n hL' hz', oper_eq_pred_of_zero n hL hz]
+  unfold Pred
+  rw [if_neg (by omega), if_neg (by omega), Lift1_dropLast]
+
+/-- ★★★★★ **分岐 (1)**: `|M| ≤ 1` なら可換。 -/
+theorem lift_oper_comm_of_short {M : TrioSeq} {t n : ℕ} (h : M.length - 1 = 0) :
+    (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t := by
+  have hlen : (Lift1 M t).length = M.length := Lift1_length M t
+  rw [oper_eq_self_of_short n (by rw [hlen]; exact h), oper_eq_self_of_short n h]
+
+/-- ★★★★★★★★★★ ⟹ **まとめ: 写しを作らない 3 分岐は、全部通ります**。
+⟹ ⛔ **残るのは「末尾に親があり、全零でなく、`|M| ≥ 2`」の 1 分岐だけ**です。 -/
+theorem lift_oper_comm_of_no_copy {M : TrioSeq} {t n : ℕ}
+    (h : M.length - 1 = 0 ∨
+      (entry M 0 (M.length - 1) = 0 ∧ entry M 1 (M.length - 1) = 0
+        ∧ entry M 2 (M.length - 1) = 0) ∨
+      ¬ hasParent M (srow M (M.length - 1)) (M.length - 1)) :
+    (Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t := by
+  rcases h with h | h | h
+  · exact lift_oper_comm_of_short h
+  · by_cases hL : M.length - 1 = 0
+    · exact lift_oper_comm_of_short hL
+    · exact lift_oper_comm_of_zeroLast hL h
+  · by_cases hL : M.length - 1 = 0
+    · exact lift_oper_comm_of_short hL
+    · exact lift_oper_of_noParent (by omega) h
+
 end H12Export
 end TRIO

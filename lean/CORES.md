@@ -14580,3 +14580,18 @@ def LiftOperComm : Prop := ∀ M t n, **(Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t*
 
 **✅ build 緑 35 回目**: `BUILD_EXIT=0`、`H12Export` **444 本**、`L106` **10,729 行**
 **⚠ 今日の緑（L3）47 本、うち §305 の 1 本は空虚。自己訂正 16 回／既存の重複 24 回。**
+
+---
+
+## ★★★★★★★★★★ **H12 (2026-08-30): `LiftOperComm` の易しい 3 分岐（緑）**
+
+    ★★★★★★★★★★ `lift_oper_comm_of_no_copy`
+      **`|M| ≤ 1` ∨ 末尾が全零 ∨ 末尾に親が無い ⟹ `(Lift1 M t)⟦n⟧ = Lift1 (M⟦n⟧) t`**
+    ★★★★★ `zeroLast_Lift1_iff` … **全零テストは `Lift1` で保たれる**
+      ⟹ ★ 理由: **`entry M 1 j1 = 0` なら `j1` は錐の外**（`nextrel1` は狭義増加）⟹ **持ち上がらない**
+      ⟹ ⟹ ★★ **team-lead の心配（「`Lift1` が全零を壊す」）は起きません**
+    ★★★★★★★★ `lift_oper_comm_of_zeroLast` / `lift_oper_comm_of_short`
+    ★ 分岐 (3) は既存の `Wtower2.lift_oper_of_noParent` がそのまま
+
+**⟹ ⛔ ⟹ **残るのは「末尾に親があり、全零でなく、`|M| ≥ 2`」の 1 分岐だけ**です。**
+**⟹ ★ そこが **写しを作る分岐** ⟹ ⟹ ★★ **crux は「`M⟦n⟧` の錐が `M` の錐に対応するか」**（(W70)）。**
