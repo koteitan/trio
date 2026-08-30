@@ -9256,5 +9256,94 @@ B = [(0,0,0),(1,0,0),(2,1,0),(3,2,0),(4,1,0),(3,2,0)]、p = 2、j = 5
 **⟹ ★★★ **今朝の `hlocQ` とまったく同じ機構**です（証人が窓の外に落ちる）。**
 **⟹ ⟹ ⛔ ですから **`NoOrph` も不変量として運べません**。⟹ ★ **H12 の穴は埋まりません**。** -/
 
+/-! ## 279. ★★★★★★★★ **(L-A) の答え ＋ `A` を含む測度への一般化**
+
+**(L-A) の答え（1 行）: 帰納法は `A` について **`A ∈ W u` と `A ++ Q ∈ W u` の 2 つ**を持っています。**
+**⟹ ★ ですが `tower_of_measure_step2` の `meas` は **`(Q, d, e)` しか見ません**。**
+**⟹ ⟹ ★★★ ですから **`meas` を `(A, Q, d, e)` に一般化**します。⟹ ★ **証明の骨は同じ**です。** -/
+
+theorem tower_of_measure_step3 {u : ℕ}
+    (P : TrioSeq → ℕ → ℕ → Prop) (meas : TrioSeq → TrioSeq → ℕ → ℕ → ℕ)
+    (hstep : ∀ A Q d e, P Q d e → A ∈ W u → A ++ Q ∈ W u →
+      (∀ A' V d0 d1, P V d0 d1 → meas A' V d0 d1 < meas A Q d e →
+        A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u) →
+      ∀ n, A ++ mTower Q d e n ∈ W u) :
+    ∀ A Q d e, P Q d e → A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have key : ∀ s A Q d e, meas A Q d e ≤ s → P Q d e → A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+    intro s
+    induction s with
+    | zero =>
+      intro A Q d e hle hP hA hAQ n
+      exact hstep A Q d e hP hA hAQ
+        (fun _ _ _ _ _ hlt _ _ _ => absurd hlt (by omega)) n
+    | succ s ih =>
+      intro A Q d e hle hP hA hAQ n
+      exact hstep A Q d e hP hA hAQ
+        (fun A' V d0 d1 hPV hlt hA' hAV m =>
+          ih A' V d0 d1 (by omega) hPV hA' hAV m) n
+  intro A Q d e hP hA hAQ n
+  exact key (meas A Q d e) A Q d e (le_refl _) hP hA hAQ n
+
+/-! ### 279.1 ⟹ ★★★★ **`hsnoc_gen` はそのまま使えます**
+
+§275 の `hsnoc_gen` は `hIH` を **述語 `P` について一般**に取っています。
+**⟹ ★ ですが `hIH` の型が **`meas V d0 d1 < meas Q d e`** で書かれています。**
+**⟹ ⟹ ★★ `(A, Q, d, e)` 版では **`meas A' V d0 d1 < meas A Q d e`** になります。**
+**⟹ ⟹ ⟹ ★ ですから **`hsnoc_gen` も測度を引数にする形に一般化**すれば、そのまま通ります。** -/
+
+open Classical in
+/-- ★★★★★★★ **`hsnoc_gen` の `(A, Q, d, e)` 測度版**。 -/
+theorem hsnoc_gen3 {u : ℕ} {A Q T : TrioSeq} {d e c : ℕ}
+    {P : TrioSeq → ℕ → ℕ → Prop} {meas : TrioSeq → TrioSeq → ℕ → ℕ → ℕ}
+    (hIH : ∀ A' V d0 d1, P V d0 d1 → meas A' V d0 d1 < meas A Q d e →
+      A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hL : T.length - 1 ≠ 0)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0))
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c)
+    (hpre : T.dropLast ∈ W u)
+    (hPV : P ((T.drop c).take (T.length - 1 - c))
+      (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
+      (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0))
+    (hmeas : meas (T.take c) ((T.drop c).take (T.length - 1 - c))
+        (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
+        (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0)
+      < meas A Q d e) :
+    T ∈ W u := by
+  have hclt : c < T.length := by
+    rw [← hpe]
+    exact (nextR_index_lt (parent_nextR hpar)).trans_le (by omega)
+  have hc1 : c ≤ T.length - 1 := by omega
+  have hTc : T.take c ∈ W u := by
+    have := Wset.W_take (u := u) (M := T.dropLast) hpre c
+    rwa [List.dropLast_eq_take, List.take_take, Nat.min_eq_left (by omega)] at this
+  have hcat : T.take c ++ (T.drop c).take (T.length - 1 - c) ∈ W u := by
+    rw [take_append_window hc1]; exact hpre
+  refine mem_of_oper_mem ?_
+  intro m _
+  rw [snocStep_oper_gen_eq m hL hz hpar hpe]
+  exact hIH (T.take c) _ _ _ hPV hmeas hTc hcat m
+
+/-! ### 279.2 ⟹ ★★★ **(b) の出発点がそろいました**
+
+    ✅ **帰納法の枠** …… §279 `tower_of_measure_step3`（`meas : (A, Q, d, e) → ℕ`）
+    ✅ **1 段の snoc** … §279.1 `hsnoc_gen3`（`A' = T.take c` が**自動で決まります**）
+    ⛔ **残る義務** …… **`meas (T.take c) V d0 d1 < meas A Q d e`** となる `meas` を見つけること
+
+**⟹ ★★★★★ ★ そして **`A'` は自由ではなく `T.take c`** です。⟹ ⟹ ★★ **測度の設計が楽になります**:**
+
+    ★ **`A` は伸びるだけではありません**: `A' = T.take c` で、⟹ **`c` は親の位置**
+    ⟹ ★★ 親がブロックの中 ⟹ `A'` は `A` より**長い**
+    ⟹ ⛔ 親が接頭辞の中 ⟹ `A'` は **`A` より短い**（`c < |A|`）
+    ⟹ ⟹ ★★★ ですから **`|A'|` は単調ではありません**（今日の測定と整合）
+
+**⟹ ★ ですが **`A' ++ V = T.dropLast`** なので、⟹ ★★ **`|A'| + |V| = |T| - 1`** です。**
+**⟹ ⟹ ⚠ そして `|T| - 1` は **snoc のたびに伸びます** ⟹ ⛔ **和も単調ではありません**。**
+
+⚠ **教訓 14**: 枠は緑ですが、**`meas` はまだ 1 つも見つかっていません**。 -/
+
 end L106
 end TRIO
