@@ -2327,5 +2327,62 @@ theorem root_not_nextrel1_of_selfBlocker {Q : TrioSeq} {j : ℕ}
   have := h.2.2.2.1
   omega
 
+
+/-! ## 36. ★★★ **(p1) `blockRoot_parent_prevBlock` の行 0 版**
+
+team-lead:「`srow = 0` のブロック根なら、行 1 の議論が**行 0**でできるのでは」。
+
+⚠ **(p1b) の答えを先に**: **行 0 のほうが**簡単**です。**
+
+    `nextrel1` の最小性 … **`le0` 祖先の上**だけ ⟹ `rtg0_blockRoot_succ`（鎖）が要った
+    **`nextrel0` の最小性 … `j0` と `j1` の**素の区間**の上** ⟹ **鎖が要らない**
+
+⟹ ★ ですから行 0 版は `le0` 条件なしで通ります。 -/
+
+/-- ★★★ **行 0 版**: `srow = 0` のブロック根の行 0 の親は、1 つ前のブロックの中。
+⚠ **`le0` の鎖が要りません**（`nextrel0` の最小性は素の区間の上なので）。 -/
+theorem blockRoot_parent_prevBlock_row0 {Q : TrioSeq} {d e n k a : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hk : k + 1 < n)
+    (h : nextrel0 (mTower Q d e n) a ((k + 1) * Q.length)) :
+    k * Q.length ≤ a := by
+  by_contra hlt
+  have hE : ∀ i, i < n →
+      entry (mTower Q d e n) 0 (i * Q.length) = entry Q 0 0 + d * i := by
+    intro i hi
+    have := entry0_mTower_block Q d e n i 0 hi hQ1
+    simpa using this
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hmin := h.2.2.2.2 (k * Q.length) ⟨by omega, by omega⟩
+  rw [hE (k + 1) (by omega), hE k (by omega)] at hmin
+  have hmul : d * (k + 1) = d * k + d := Nat.mul_succ d k
+  omega
+
+/-- ⟹ `hasParent` の言葉で（行 0）。 -/
+theorem blockRoot_parent_prevBlock_row0' {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hk : k + 1 < n)
+    (hp : hasParent (mTower Q d e n) 0 ((k + 1) * Q.length)) :
+    k * Q.length ≤ parent (mTower Q d e n) 0 ((k + 1) * Q.length) := by
+  have hnr := parent_nextR hp
+  have h0 : nextrel0 (mTower Q d e n)
+      (parent (mTower Q d e n) 0 ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+    unfold nextR at hnr
+    rw [if_pos rfl] at hnr
+    exact hnr
+  exact blockRoot_parent_prevBlock_row0 hQ1 hd hk h0
+
+/-- ★ **(p1c) ブロック根の `srow` は `entry Q 1 0 + e*(k+1)` で決まる**
+（行 2 は `hz0` で 0）。⟹ **`srow = 0 ⟺ entry Q 1 0 = 0 ∧ e = 0`**。 -/
+theorem srow_mTower_blockRoot_zero {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hQne : Q ≠ []) (hk : k + 1 < n)
+    (hz0 : entry Q 2 0 = 0) (h1 : entry Q 1 0 = 0) (he : e = 0) :
+    srow (mTower Q d e n) ((k + 1) * Q.length) = 0 := by
+  have h2 : entry (mTower Q d e n) 2 ((k + 1) * Q.length) = 0 := by
+    rw [entry2_mTower_blockRoot Q d e n (k + 1) (by omega) hQ1]; exact hz0
+  have hr1 : entry (mTower Q d e n) 1 ((k + 1) * Q.length) = 0 := by
+    rw [entry1_mTower_blockRoot hQne d e n (k + 1) (by omega), h1, he]
+    omega
+  unfold srow
+  rw [if_neg (by omega), if_neg (by omega)]
+
 end H12H2
 end TRIO

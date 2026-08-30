@@ -7235,3 +7235,36 @@ team-lead の手（「その枝で何がタダで手元にあるか読む」）�
 ⚠ 実測（§283、母集団 = 錐の外の列 × `n` = 23188）では
 **`srow = 1` の錐の外 4428 件のうち 3508 件（79.2%）が親なし、920 件（20.8%）が同ブロックに親あり**。
 ⟹ **「親なし」は多数派だが 100% ではない。**
+
+## §289. ★★★ **(p1) `blockRoot_parent_prevBlock` の行 0 版（緑）** —— 行 0 のほうが**簡単**だった
+
+### §289.1 ★ (p1b) の答え: **行 0 は `le0` の鎖が要らない**
+
+    **`nextrel1` の最小性** … **`le0` 祖先の上**だけ
+      ⟹ 行 1 版は `rtg0_blockRoot_succ`（ブロック根どうしの行 0 の鎖、§264）が要った
+    **`nextrel0` の最小性** … `j0` と `j1` の**素の区間**の上
+      ⟹ ★ **行 0 版は鎖が要らない。`x := k*|Q|` を最小性にそのまま入れるだけ。**
+
+⟹ **team-lead の見立て「行 1 版と同じ 12 行で通る」は当たり。しかも 1 段簡単だった。**
+
+### §289.2 緑
+
+    **blockRoot_parent_prevBlock_row0** :
+      `0 < |Q|`, **`0 < d`**, `k+1 < n`, `nextrel0 (mTower Q d e n) a ((k+1)*|Q|)`
+      ⟹ **`k*|Q| ≤ a`**
+    blockRoot_parent_prevBlock_row0' : `hasParent` の言葉で
+    **srow_mTower_blockRoot_zero** : `hz0` ∧ `entry Q 1 0 = 0` ∧ `e = 0`
+      ⟹ **`srow (mTower Q d e n) ((k+1)*|Q|) = 0`**
+
+### §289.3 ⟹ (p1c) ブロック根の `srow` の場合分けが揃った
+
+    **`srow = 0`** … `entry Q 1 0 = 0` ∧ `e = 0`（`srow_mTower_blockRoot_zero`）
+                  ⟹ **行 0 の議論**（`blockRoot_parent_prevBlock_row0`、**`0 < d` だけ**）
+    **`srow = 1`** … `0 < e`（`srow_mTower_blockRoot_succ`、§265）
+                  ⟹ 行 1 の議論（`blockRoot_parent_prevBlock`、§264）
+    **`srow = 2`** … `hz0` より **起きない**（行 2 が 0 なので）
+
+⟹ ★ **`0 < e` が要るのは `srow = 1` の段だけ。`srow = 0` は `0 < d` で済む。**
+
+⚠ **そして `srow = 0` かつ `e = 0` なら `mTower V d 0 m = shTower V d m`**
+⟹ **`d = 0` なら `H12A2.lean:228 mTower_d0_mem` で無料**（team-lead の整理どおり）。

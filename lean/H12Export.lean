@@ -505,6 +505,30 @@ theorem blockRoot_parent_prevBlock {Q : TrioSeq} {d e n k a : ℕ}
   have hmul : e * (k + 1) = e * k + e := Nat.mul_succ e k
   omega
 
+/-- 塔の第 `k` ブロックの根の行 2（`Lift1` も `shiftr01` も行 2 を変えない）。 -/
+theorem entry2_mTower_blockRoot (Q : TrioSeq) (d e : ℕ) :
+    ∀ (n k : ℕ), k < n → 0 < Q.length →
+      entry (mTower Q d e n) 2 (k * Q.length) = entry Q 2 0 := by
+  intro n
+  induction n with
+  | zero => intro k hk _; omega
+  | succ n ih =>
+      intro k hk hQ1
+      rw [mTower_succ]
+      rcases Nat.lt_or_ge k n with hkn | hkn
+      · have hlt : k * Q.length < (mTower Q d e n).length := by
+          rw [mTower_length]
+          calc k * Q.length < k * Q.length + Q.length := by omega
+            _ = (k + 1) * Q.length := by rw [Nat.succ_mul]
+            _ ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+        rw [entry_append_left _ _ hlt]
+        exact ih k hkn hQ1
+      · have hk0 : k = n := by omega
+        subst hk0
+        rw [show k * Q.length = (mTower Q d e k).length + 0 from by
+            rw [mTower_length]; omega,
+          entry_append_right, entry2_Lift1, entry2_shiftr01]
+
 /-- ★★ **`p_rel` の分割**: ブロックの根の行 1 の親は `k*|Q| + p_rel`（`p_rel < |Q|`）。 -/
 theorem blockRoot_parent_split {Q : TrioSeq} {d e n k : ℕ}
     (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hk : k + 1 < n)
@@ -972,6 +996,51 @@ theorem root_not_nextrel1_of_selfBlocker {Q : TrioSeq} {j : ℕ}
   intro h
   have := h.2.2.2.1
   omega
+
+/-- ★★★ **行 0 版**: `srow = 0` のブロック根の行 0 の親は、1 つ前のブロックの中。
+⚠ **`le0` の鎖が要りません**（`nextrel0` の最小性は素の区間の上なので）。 -/
+theorem blockRoot_parent_prevBlock_row0 {Q : TrioSeq} {d e n k a : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hk : k + 1 < n)
+    (h : nextrel0 (mTower Q d e n) a ((k + 1) * Q.length)) :
+    k * Q.length ≤ a := by
+  by_contra hlt
+  have hE : ∀ i, i < n →
+      entry (mTower Q d e n) 0 (i * Q.length) = entry Q 0 0 + d * i := by
+    intro i hi
+    have := entry0_mTower_block Q d e n i 0 hi hQ1
+    simpa using this
+  have hsucc : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hmin := h.2.2.2.2 (k * Q.length) ⟨by omega, by omega⟩
+  rw [hE (k + 1) (by omega), hE k (by omega)] at hmin
+  have hmul : d * (k + 1) = d * k + d := Nat.mul_succ d k
+  omega
+
+/-- ⟹ `hasParent` の言葉で（行 0）。 -/
+theorem blockRoot_parent_prevBlock_row0' {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hd : 0 < d) (hk : k + 1 < n)
+    (hp : hasParent (mTower Q d e n) 0 ((k + 1) * Q.length)) :
+    k * Q.length ≤ parent (mTower Q d e n) 0 ((k + 1) * Q.length) := by
+  have hnr := parent_nextR hp
+  have h0 : nextrel0 (mTower Q d e n)
+      (parent (mTower Q d e n) 0 ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+    unfold nextR at hnr
+    rw [if_pos rfl] at hnr
+    exact hnr
+  exact blockRoot_parent_prevBlock_row0 hQ1 hd hk h0
+
+/-- ★ **(p1c) ブロック根の `srow` は `entry Q 1 0 + e*(k+1)` で決まる**
+（行 2 は `hz0` で 0）。⟹ **`srow = 0 ⟺ entry Q 1 0 = 0 ∧ e = 0`**。 -/
+theorem srow_mTower_blockRoot_zero {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hQne : Q ≠ []) (hk : k + 1 < n)
+    (hz0 : entry Q 2 0 = 0) (h1 : entry Q 1 0 = 0) (he : e = 0) :
+    srow (mTower Q d e n) ((k + 1) * Q.length) = 0 := by
+  have h2 : entry (mTower Q d e n) 2 ((k + 1) * Q.length) = 0 := by
+    rw [entry2_mTower_blockRoot Q d e n (k + 1) (by omega) hQ1]; exact hz0
+  have hr1 : entry (mTower Q d e n) 1 ((k + 1) * Q.length) = 0 := by
+    rw [entry1_mTower_blockRoot hQne d e n (k + 1) (by omega), h1, he]
+    omega
+  unfold srow
+  rw [if_neg (by omega), if_neg (by omega)]
 
 end H12Export
 end TRIO
