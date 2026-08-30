@@ -8861,5 +8861,40 @@ theorem hsnoc_gen {u : ℕ} {Q T : TrioSeq} {d e c : ℕ}
 
 ⚠ **教訓 14**: §275 は緑ですが、**2 つの義務は未証明**です。⟹ **「閉じた」ではありません**。 -/
 
+/-! ## 276. ★★★★★ **(O-A) の 1/3**: `hr0` は窓に遺伝します（**親の位置に依らない**）
+
+§221 の `hr0_wnd` は `P.length + p` の形で書いていましたが、⟹ ★ 中身は
+**`le0 T (親) (末尾)` ＋ `Lcone.window_of_rtg0` ＋ `L105.window_root_shallow`** だけです。
+**⟹ ⟹ ★★★ ですから **親がどこにいても同じ**です。** -/
+
+open Classical in
+theorem hr0_wnd_gen {T : TrioSeq} {c : ℕ}
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c) :
+    ∀ l, 0 < l → l < ((T.drop c).take (T.length - 1 - c)).length →
+      entry ((T.drop c).take (T.length - 1 - c)) 0 0
+        < entry ((T.drop c).take (T.length - 1 - c)) 0 l := by
+  have hle0 : le0 T c (T.length - 1) := by
+    have h := nextR_le0 (parent_nextR hpar)
+    rw [hpe] at h; exact h
+  have hclt : c < T.length := hle0.1
+  have hlast : T.length - 1 < T.length := by
+    have := hle0.2.1; omega
+  refine window_root_shallow (M := T) (j0 := c) (Lb := T.length - 1 - c)
+    (by omega) ?_
+  intro l hl0 hl1
+  exact window_of_rtg0 hle0.2.2 (by omega) l hl0 (by omega)
+
+/-! ### 276.1 ⟹ ★ **(O-A) の残り**
+
+    ✅ **`hr0`** …… §276（**親の位置に依らない**、緑）
+    ✅ **`hz1`** …… `entry` は窓で不変（`Wset.entry_take` ＋ `entry_drop`）
+    ⛔ **`hz0`** …… **§263 で偽**（`HeredZ0`）⟹ ★ **ここだけが残ります**
+    ⛔ **`(d = 0 → e = 0)`** … §233 の一般化が要ります
+
+**⟹ ★★ ですから **(O-A) の本当の穴は `hz0` 1 つ**です。**
+**⟹ ⟹ ★ そして `hz0` は **§240.1 / §255 / §258 で使っています**（行 2 の証人の底）。**
+**⟹ ⟹ ⟹ ⚠ ですから **`hz0` を落とすと行 2 の議論が全部壊れます**。⟹ ★ **そこが次の設計課題**です。** -/
+
 end L106
 end TRIO
