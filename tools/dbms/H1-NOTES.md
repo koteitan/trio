@@ -6961,3 +6961,46 @@ L3 の §204 で残る義務は **`P V d0 d1`（前提の遺伝）1 本**。定�
          ⟹ ★ **`hlp` や `hz0` と噛み合う可能性**（`hz0` は行 2 の根が 0 ＝ 最小）
     **(B)** 接尾辞ずらしの `W` 閉包を**証明する**（§281.2 より、たぶん偽）
     **(C)** `Column.lean` を変える（**共有ファイル。team-lead の判断**）
+
+## §282. ★★★ **(n3) 答え: 消費側は `entry Q 2 0 = 0` を供給できない。`Wstar2` の定義に `z ≤ 1` が入っている**
+
+### §282.1 (n3a) 鎖
+
+    `Final.lean:875` `TRIO_terminates_of_mTowerClosedRow2`
+      → `L105.mTowerClosedS_of_row2`（`L105Cap:5801`）→ **`MTowerClosedS`**（`L105Cap:5618`）
+    **`MTowerClosedS` の消費者は 2 つだけ**:
+      `shiftTowerClosedS_of_mTowerClosedS`（`:5624`）→ `LiftTower1`
+      `liftTowerExp2_of_mTowerClosedS`（`:5636`）→ `LiftTowerExp2`
+    両方 → `Wstar2s_closed`（`Wset:4347`）→ `Wstar2_closed` → `A2'`（`L105Cap:5701`）
+
+### §282.2 (n3b) ⛔ **供給できません**
+
+両方の経路で **`Q = Lift1 ((0,v,z) :: R.dropLast) t`**、したがって
+**`entry Q 2 0 = z`**（`entry2_Lift1`。§248 で緑）。
+
+⟹ `entry Q 2 0 = 0` を供給する ⟺ **`z = 0` を示す**。
+
+### §282.3 (n3c) ★ **切れるのは `Wset.lean:3451`（`Wstar2` の定義）**
+
+```lean
+def Wstar2 : Set TrioSeq :=
+  {R | argOK R → ∀ v z a t : ℕ, **`z ≤ 1`** → 2 * (v + t) + z ≤ a →
+    Lift1 (((0, v, z) : ℕ × ℕ × ℕ) :: R) t ∈ W a}
+```
+
+> **⟹ ★ `z` は `z ≤ 1` で**全称量化**されている。⟹ **`z = 1` は必ず来る**。**
+> **⟹ ⟹ 消費側は `entry Q 2 0 = 0` を**原理的に**供給できない。**
+
+⚠ **既知の道（`tower2_z_zero_of_zle1`、`L105Cap:3813`）は `zle1 R` を要求し、
+それは team-lead が「`Aop` の節 3 では復元できない」と判定ずみ**（内在的な穴）。
+
+### §282.4 ⟹ **`zle1` のときと同じ形**
+
+    `zle1` … 穴は「どこで包むか」ではなく **`Aop` の節 3 の中**（内在的）
+    今回  … 穴は「どこで前提を足すか」ではなく **`Wstar2` の定義の中**（内在的）
+
+⟹ **`MTowerClosedRow2` に `entry Q 2 0 = 0` を足すには、`Wstar2` の定義を
+`z = 0` に狭めるしかない。⟹ 開発全体の射程が変わる。⟹ team-lead の判断。**
+
+⚠ **私の判定は「定義を開いた結果」で、R2 の実測（消費側 0/87,750）とは別種の証拠。**
+**実測は「起きない」、定義は「量化されている」。⟹ 量化されている以上、Lean では来る。**
