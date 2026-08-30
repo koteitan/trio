@@ -985,8 +985,8 @@ theorem outOfCone_dichotomy {Q : TrioSeq}
 
 /-- ⟹ **`h1out` が破れるのは「`j` 自身がブロッカー」のときだけ**。 -/
 theorem h1out_holds_of_not_selfBlocker {Q : TrioSeq}
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    {j : ℕ} (hj : j < Q.length) (hout : ¬ le1 Q 0 j)
+    (_hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (_hj : j < Q.length) (_hout : ¬ le1 Q 0 j)
     (hself : ¬ (entry Q 1 j ≤ entry Q 1 0)) :
     entry Q 1 0 < entry Q 1 j := by omega
 
@@ -1362,7 +1362,7 @@ theorem nextrel0_prefix_blockRoot_src_d_zero {A Q : TrioSeq} {e n k a : ℕ}
     a < A.length := by
   obtain ⟨ha, -, -, hlt, -⟩ := h
   by_contra hc
-  push_neg at hc
+  push Not at hc
   rw [entry0_prefix_blockRoot_d_zero hQ1 hk] at hlt
   exact absurd (entry0_prefix_mTower_min_d_zero hQ1 hr0 hc ha) (by omega)
 
@@ -1479,7 +1479,7 @@ theorem le0_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k j : ℕ}
 
 /-- ★★ `e = 0`: ブロック根の `srow` は `Q` の根の `srow` と同じ。 -/
 theorem srow_prefix_blockRoot_e_zero {A Q : TrioSeq} {d n k : ℕ}
-    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hk : k < n) :
+    (_hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hk : k < n) :
     srow (A ++ mTower Q d 0 n) (A.length + k * Q.length) = srow Q 0 := by
   unfold srow
   have h1 : entry (A ++ mTower Q d 0 n) 1 (A.length + k * Q.length) = entry Q 1 0 := by
@@ -1660,7 +1660,7 @@ theorem nextrel1_prefix_blockRoot_mono_d_zero {A Q : TrioSeq} {e n k k' a b : �
   obtain ⟨-, -, -, hbmin⟩ :=
     (nextrel1_prefix_blockRoot_iff_d_zero hQne hQ1 hn hr0 hk').mp hb
   by_contra hc
-  push_neg at hc
+  push Not at hc
   have hle : entry Q 1 0 + e * k ≤ entry Q 1 0 + e * k' := by
     have : e * k ≤ e * k' := Nat.mul_le_mul_left e hkk
     omega
@@ -1699,7 +1699,7 @@ theorem hasParent1_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k : ℕ}
         entry Q 1 0 + e * k ≤ entry M 1 j := by
       intro j hjA hbj hj0
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       have hjT : j ∈ T := by
         rw [hT, Finset.mem_filter, Finset.mem_range]
         exact ⟨hjA, hj0, hcon⟩
@@ -1910,7 +1910,7 @@ theorem le0_through_root {A T : TrioSeq}
 （`OrphOK` の行 1 の壁。`le0` が塔の根を通ることから出る。） -/
 theorem no_nextrel1_cross_of_cone {A T : TrioSeq}
     (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
-    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (_hm0 : 0 < m)
     (hcone : entry T 1 0 < entry T 1 m) :
     ¬ nextrel1 (A ++ T) c (A.length + m) := by
   intro h
@@ -1970,7 +1970,7 @@ theorem le1_through_root {A T : TrioSeq}
 theorem no_nextrel2_cross_of_cone {A T : TrioSeq}
     (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
     (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
-    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
+    {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (_hm0 : 0 < m)
     (hcone : entry T 2 0 < entry T 2 m) :
     ¬ nextrel2 (A ++ T) c (A.length + m) := by
   intro h
@@ -2180,7 +2180,8 @@ theorem nextrel1_cross_is_blocker {A T : TrioSeq}
     {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
     (h : nextrel1 (A ++ T) c (A.length + m)) : entry T 1 m ≤ entry T 1 0 := by
   by_contra hcon
-  exact no_nextrel1_cross_of_cone hmin hc hm hm0 (by omega) h
+  push Not at hcon
+  exact no_nextrel1_cross_of_cone hmin hc hm hm0 hcon h
 
 /-- ★★ 行 2 版。 -/
 theorem nextrel2_cross_is_blocker {A T : TrioSeq}
@@ -2189,7 +2190,8 @@ theorem nextrel2_cross_is_blocker {A T : TrioSeq}
     {c m : ℕ} (hc : c < A.length) (hm : m < T.length) (hm0 : 0 < m)
     (h : nextrel2 (A ++ T) c (A.length + m)) : entry T 2 m ≤ entry T 2 0 := by
   by_contra hcon
-  exact no_nextrel2_cross_of_cone hmin hnb hc hm hm0 (by omega) h
+  push Not at hcon
+  exact no_nextrel2_cross_of_cone hmin hnb hc hm hm0 hcon h
 
 end H12Export
 end TRIO
