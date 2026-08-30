@@ -3471,7 +3471,9 @@ theorem prefixTowerClosed_final_full {u : ℕ} {A M : TrioSeq} {d e : ℕ}
 def TowerP'' (Q : TrioSeq) (_d _e : ℕ) : Prop :=
   0 < Q.length ∧
     (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) ∧
-    (∀ q, q < Q.length → entry Q 2 q ≤ 1)
+    (∀ q, q < Q.length → entry Q 2 q ≤ 1) ∧
+    entry Q 2 0 = 0 ∧
+    (∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
 
 /-! ### 211.2 ⟹ ★★ **`M` が消えました**（あとから分かったこと）
 
@@ -3513,7 +3515,15 @@ theorem hr0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
 
 /-- ★ `z < 2` の断片（行 2 ≤ 1）。**窓に遺伝します**（§224.5）。 -/
 theorem hz1_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
-    ∀ q, q < Q.length → entry Q 2 q ≤ 1 := hP.2.2
+    ∀ q, q < Q.length → entry Q 2 q ≤ 1 := hP.2.2.1
+
+/-- ★ 根の行 2 が 0（＝ `z = 0`）。 -/
+theorem hz0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
+    entry Q 2 0 = 0 := hP.2.2.2.1
+
+/-- ★ `Q` にブロッカーが無い。⟹ §234 で `OrphOK` を定理にするのに要ります。 -/
+theorem hnbQ_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
+    ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i := hP.2.2.2.2
 
 theorem ne_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : Q ≠ [] :=
   List.ne_nil_of_length_pos hP.1
@@ -3905,6 +3915,333 @@ def RsumHered : Prop :=
   ∀ (P B : TrioSeq) (j p : ℕ), p < j → j < B.length →
     rsum (P ++ B.take p) (wnd P B j p)
 
+/-! ## 228. ★★★★★★★★ `rsum` の**代わり**: 「的が塔の根より**真に上**」
+
+§227 で `rsum` が使えないと分かりました。**⟹ 代わりを探して、見つかったと思います。**
+
+## 機構（`nextrel_i` の**最小性の節**を、塔の根で殴る）
+
+`nextrel0 (A ++ T) y (|A| + j1)` の最小性は
+
+    `∀ j, y < j ∧ j < |A| + j1 → entry (A ++ T) 0 (|A| + j1) ≤ entry (A ++ T) 0 j`
+
+**⟹ ★ ここに `j := |A|`（＝ **`T` の根**）を入れると `entry T 0 j1 ≤ entry T 0 0`。**
+**⟹ ⟹ ★★ ですから **`entry T 0 0 < entry T 0 j1`** なら、`A` の列は**行 0 の親になれません**。**
+
+**行 1 も同じです**（`nextrel1` の最小性は `le0` 祖先の上なので、`le0 (|A|) (|A|+j1)` が要ります）。
+
+> **⟹ ★★★ `hbase`（`entry T 0 0 = 0`）は「**0 は絶対的な壁**」でした。**
+> **⟹ ⟹ ★ これは「**塔の根が的より低ければ壁になる**」——**平行移動で不変**です。** -/
+
+theorem no_nextrel0_from_prefix {A T : TrioSeq} {y j1 : ℕ}
+    (hy : y < A.length) (hj1 : 0 < j1)
+    (hmin : entry T 0 0 < entry T 0 j1) :
+    ¬ nextrel0 (A ++ T) y (A.length + j1) := by
+  intro h
+  have hval := h.2.2.2.2 A.length ⟨by omega, by omega⟩
+  have h0 : entry (A ++ T) 0 (A.length + j1) = entry T 0 j1 := entry_append_right A T 0 j1
+  have h1 : entry (A ++ T) 0 A.length = entry T 0 0 := by
+    have := entry_append_right A T 0 0
+    rw [Nat.add_zero] at this
+    exact this
+  rw [h0, h1] at hval
+  omega
+
+theorem no_nextrel1_from_prefix {A T : TrioSeq} {y j1 : ℕ}
+    (hy : y < A.length)
+    (hle0 : le0 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 1 0 < entry T 1 j1) :
+    ¬ nextrel1 (A ++ T) y (A.length + j1) := by
+  intro h
+  have hval := h.2.2.2.2.2 A.length ⟨by omega, hle0⟩
+  have h0 : entry (A ++ T) 1 (A.length + j1) = entry T 1 j1 := entry_append_right A T 1 j1
+  have h1 : entry (A ++ T) 1 A.length = entry T 1 0 := by
+    have := entry_append_right A T 1 0
+    rw [Nat.add_zero] at this
+    exact this
+  rw [h0, h1] at hval
+  omega
+
+theorem no_nextrel2_from_prefix {A T : TrioSeq} {y j1 : ℕ}
+    (hy : y < A.length)
+    (hle1 : le1 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 2 0 < entry T 2 j1) :
+    ¬ nextrel2 (A ++ T) y (A.length + j1) := by
+  intro h
+  have hval := h.2.2.2.2.2 A.length ⟨by omega, hle1⟩
+  have h0 : entry (A ++ T) 2 (A.length + j1) = entry T 2 j1 := entry_append_right A T 2 j1
+  have h1 : entry (A ++ T) 2 A.length = entry T 2 0 := by
+    have := entry_append_right A T 2 0
+    rw [Nat.add_zero] at this
+    exact this
+  rw [h0, h1] at hval
+  omega
+
+/-! ### 228.1 ⟹ ★★★ **これが `rsum` の代わりです。しかも `Q` だけの条件です**
+
+**`OrphOK` が要るのは「`A` が親を供給しない」ことです。⟹ 上の 3 本で:**
+
+    **行 0** … `entry T 0 0 < entry T 0 j1` … ★ **`hr0` から出ます**（塔の根 ＝ `Q` の根）
+    **行 1** … `entry T 1 0 < entry T 1 j1` ＋ `le0` が塔の根を通る
+             ⟹ ★ **「的が塔の根より行 1 で上」＝ 錐の中** ⟹ **ブロッカーでは破れる**
+    **行 2** … `entry T 2 0 < entry T 2 j1` ＋ `le1` が塔の根を通る
+
+**⟹ ★★★ ⟹ R2 の実測（`OrphOK` が `rsum` 無しで **45.6% 破れる**）と辻褄が合います:**
+**⟹ ⟹ **破れるのはブロッカー**（行 1 が根以下の列）のはずです。**
+
+⚠ **そして R2 の反例 `A = [(0,5,0)]`（行 0 = 0 で浅いが**孤児のまま**）も説明できます:**
+**⟹ 行 0 では上の壁が効き、行 1 では `A` の列の行 1 が 5 で高すぎて `nextrel1` の狭義増加が取れない。**
+
+⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
+**⟹ `le0` / `le1` が**塔の根を通る**ことを別に示す必要があります**（`nextrel_i` の候補が
+`A` の中にあるとき、鎖が塔の根を経由するか）。⟹ ★ そこが次の仕事です。 -/
+
+/-! ### 227.2 ⟹ ★ ですから `rsum` は**帰納の中では運べません**。外しました
+
+**§226 で `OrphOK` / `OrphOK0` に `rsum A Q` を足しましたが、§227 で `RsumHered` が偽と分かりました。**
+**⟹ ⛔ 偽の仮定を残すと定理が**空虚**になります。⟹ ★ **`rsum` を外しました**。**
+
+**⟹ ⟹ ★ いまの `OrphOK` / `OrphOK0` は「証明されていない」であって「偽が証明された」ではありません。**
+
+⚠ **R2 の実測（`rsum` 無し）:**
+
+    `OrphOK`（`j ≥ 1`、`0 < d`）… **96.5% 上限**（`A` が空でも **3.5% 破れる**）
+         ⟹ ★ 破れの正体は **「親が 1 ブロック手前」**（R2: 100%、そして `|V| ≤ |Q|` も 100%）
+         ⟹ ⟹ **穴ではなく、`parent_bound_pos` の枠が狭い**（team-lead の読み）
+    `OrphOK0`（`j = 0`）… `rsum` があれば 100%、無ければ浅い `A` で 19〜31%
+
+**⟹ ★★ ですから次の一手は 2 つです:**
+
+    **(1)** `parent_bound_pos` を **`|V| ≤ |Q|`**（＝「親は高々 `|Q|` 列手前」）に緩める
+         ⚠ ★ ただし **`|V| = |Q|` になると測度の第 1 成分が減りません**。
+           ⟹ そこは `rankDE` を減らす必要があり、**親がブロック根でないので §200 が使えません**。
+           ⟹ ⟹ ★★ **R2 に「`j ≥ 1` で `|V| = |Q|` が起きるか」を聞く必要があります**。
+             起きないなら（`|V| < |Q|` が 100% なら）そのまま通ります。
+    **(2)** `OrphOK` を「**ブロック ＋ 1 つ前のブロック**の中で孤児」に書き換える
+
+⚠ **教訓 14**: `rsum` を外したので、`mTowerClosedS_of_residues` は
+**「偽の仮定による空虚」ではなくなりました**。⟹ ですが `OrphOK` は**実測で 3.5% 破れます**。
+**⟹ ⟹ ★ ですから **いまも「証明できていない」状態**です。そこは変わりません。** -/
+
+/-! ## 230. ★★★★★★★ §228 を `OrphOK` に繋ぎます —— **行 0 は完全に閉じます**
+
+team-lead の読み（「穴は `j1 = 0`（塔の根）1 点かもしれない」）を受けて、
+§228 を「孤児が孤児のまま」に繋ぎました。
+
+**⟹ ★ まず「剥がす」を **`hroot` なしで**やる道具を作ります。**
+**⟹ ⟹ `hasParent_append_right`（`Column:363`）は `hroot` を要求しますが、
+**要るのは「接頭辞の列が `nextR` の始点になれない」だけ**です。** -/
+
+theorem hasParent_peel_of_noCross {A T : TrioSeq} {i j1 : ℕ}
+    (hnc : ∀ y, y < A.length → ¬ nextR (A ++ T) i y (A.length + j1))
+    (hp : hasParent (A ++ T) i (A.length + j1)) : hasParent T i j1 := by
+  obtain ⟨j0, hj0, huniq⟩ := hp
+  have hge : A.length ≤ j0 := by
+    by_contra hc
+    exact hnc j0 (by omega) hj0
+  obtain ⟨j0', rfl⟩ : ∃ j0', j0 = A.length + j0' := ⟨j0 - A.length, by omega⟩
+  refine ⟨j0', (nextR_append_right A T i j0' j1).1 hj0, ?_⟩
+  intro y hy
+  have := huniq (A.length + y) ((nextR_append_right A T i y j1).2 hy)
+  omega
+
+/-- ★★★ **行 0 の `OrphOK` は無条件**（`entry T 0 0 < entry T 0 j1` だけ）。 -/
+theorem orphOK_row0 {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1)
+    (hmin : entry T 0 0 < entry T 0 j1)
+    (hnp : ¬ hasParent T 0 j1) : ¬ hasParent (A ++ T) 0 (A.length + j1) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_pos rfl] at hc
+  exact no_nextrel0_from_prefix hy hj1 hmin hc
+
+/-- ★★ **行 1 の `OrphOK`**（`le0` が塔の根を通ることと、行 1 の大小が要る）。 -/
+theorem orphOK_row1 {A T : TrioSeq} {j1 : ℕ}
+    (hle0 : le0 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 1 0 < entry T 1 j1)
+    (hnp : ¬ hasParent T 1 j1) : ¬ hasParent (A ++ T) 1 (A.length + j1) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_neg (by omega), if_pos rfl] at hc
+  exact no_nextrel1_from_prefix hy hle0 hmin hc
+
+/-- ★★ **行 2 の `OrphOK`**（`le1` が塔の根を通ることと、行 2 の大小が要る）。 -/
+theorem orphOK_row2 {A T : TrioSeq} {j1 : ℕ}
+    (hle1 : le1 (A ++ T) A.length (A.length + j1))
+    (hmin : entry T 2 0 < entry T 2 j1)
+    (hnp : ¬ hasParent T 2 j1) : ¬ hasParent (A ++ T) 2 (A.length + j1) := by
+  intro hp
+  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
+  unfold nextR at hc
+  rw [if_neg (by omega), if_neg (by omega)] at hc
+  exact no_nextrel2_from_prefix hy hle1 hmin hc
+
+/-! ### 230.1 ⟹ ★★★ **`hbase` の正体が分かりました**
+
+    `Column.hasParent_append_right`（`:363`）… `hroot : entry T 0 0 = 0` を要求
+    ★ **本当に要るのは「接頭辞の列が `nextR` の始点になれない」だけ**（`hasParent_peel_of_noCross`）
+    ⟹ ⟹ そして §228 の 3 本が、それを**行ごとに**与えます
+
+**⟹ ★★ ですから H12 の「`hbase` の弱化は行 1/2 で止まる」は、**`hr0` で殴ろうとしたから**でした。**
+**⟹ ⟹ ★ **行 1 には行 1 の条件、行 2 には行 2 の条件**を使えば、3 行とも同じ形で通ります。**
+
+### 230.2 ⟹ ★ `OrphOK` に必要なもの（行ごと）
+
+`OrphOK` の的は `T = mTower Q d e n ++ block.take (j+1)` の位置 `j1 = n*|Q| + j`（`j ≥ 1`）。
+
+    **`srow = 0`** … ✅ **無条件**。`entry T 0 0 = entry Q 0 0`、`entry T 0 j1 = entry Q 0 j + d*n`
+                  ⟹ **`hr0` と `j ≥ 1` で `<` が出ます** ⟹ **完全に閉じます**
+    **`srow = 1`** … ⛔ `le0` が塔の根を通ること ＋ **`entry Q 1 0 < entry T 1 j1`**
+                  ⟹ ★ 後者は「**的が錐の中**」＝ **ブロッカーでない** ⟹ H12 の `h1out` と同じもの
+    **`srow = 2`** … ⛔ `le1` が塔の根を通ること ＋ `entry Q 2 0 < entry T 2 j1`
+
+**⟹ ★★★ ⟹ R2 の実測（`OrphOK` が 3.5% 破れる）は、**`srow ≥ 1` の側**のはずです。**
+**⟹ ⟹ R2 に「破れを `srow` で切ってほしい」と伝えます。⟹ `srow = 0` が 1 件でも出たら
+私の証明か計器のどちらかが誤りです。**
+
+⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
+**`le0` / `le1` が塔の根を通ることと、行 1・行 2 の大小が残っています。** -/
+
+theorem entry0_block_take {Q : TrioSeq} {d e n j x : ℕ} (hx : x < j + 1)
+    (hxQ : x < Q.length) :
+    entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 x
+      = entry Q 0 x + d * n := by
+  rw [Wset.entry_take hx, entry0_Lift1, entry0_shiftr01 hxQ]
+
+/-- ★ ブロックの接頭辞の根は、行 0 で狭義最浅（`hr0` から）。 -/
+theorem hmin_block {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ∀ l, 0 < l → l < ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
+      entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0
+        < entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 l := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  intro l hl0 hlt
+  rw [List.length_take, hBlen, Nat.min_eq_left (by omega)] at hlt
+  rw [entry0_block_take (d := d) (e := e) (n := n) (by omega) (by omega),
+    entry0_block_take (d := d) (e := e) (n := n) hlt (by omega)]
+  have := hr0 l hl0 (by omega)
+  omega
+
+
+/-! ## 234. ★★★★★★★★★★ **配線**: `OrphOK` を `TowerP''` の中に取り込みます
+
+team-lead の最優先依頼です。**⟹ ★ 鍵は「1 回で剥がす」ことでした。**
+
+⚠ §232.2 で「2 段は難度が違う」と書きました。**⟹ ★ ですが**2 段に分けなければ**よいのです。**
+
+    **`A' := A ++ mTower Q d e n`**、**`T' := ブロックの接頭辞 `B.take (j+1)`**
+    ⟹ `S = A' ++ T'`、的は `A'.length + j`
+    ⟹ ★ 要る入力は **`¬ hasParent T' (srow T' j) j`** ＝ **`hloc` そのもの** ✅
+
+**⟹ ★★ そして H12 の `no_nextR_srow_cross` の 3 前提を `T' = B.take (j+1)` で見ると:**
+
+    `hmin` … `hmin_block`（§232、**`hr0` だけ**）✅
+    `hz0`  … `entry (B.take (j+1)) 2 0 = entry Q 2 0 = 0` ✅（`TowerP''`）
+    `hnb`  … `entry (block) 1 0 < entry (block) 1 l` ⟹ ⛔ **`n` に依存して見える**
+
+## ★★★ ⟹ ですが **`hnbQ`（`Q` にブロッカーが無い）があれば `n` が消えます**
+
+**`hnbQ` ⟹ `L105.not_le1_zero_iff` の右辺が偽 ⟹ **`Q` の全列が錐の中****
+**⟹ ⟹ ★ `block_getD` の `if le1 Q 0 x` が**常に真** ⟹ `entry (block) 1 x = entry Q 1 x + e*n`**
+**⟹ ⟹ ⟹ ★★ 両辺の `e*n` が消えて **`hnbQ` そのもの**になります。** -/
+
+/-- ★ `hnbQ`（ブロッカー無し）⟹ `Q` の全列が根の錐の中。 -/
+theorem le1_zero_all_of_noBlocker {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    {q : ℕ} (hq : q < Q.length) : le1 Q 0 q := by
+  by_contra hc
+  obtain ⟨y, hy, hy0, hy1⟩ := (not_le1_zero_iff hr0 hq).mp hc
+  have hyq : y ≤ q := nextrel0_rtrancl_index_le hy
+  have := hnbQ y (by omega) (by omega)
+  omega
+
+/-- ★★ `hnbQ` ⟹ ブロックの接頭辞にもブロッカーが無い（**`n` に依らない**）。 -/
+theorem hnb_block {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i) :
+    ∀ l, 0 < l → l < ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
+      entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 0
+        < entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 l := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hE : ∀ x, x < j + 1 → x < Q.length →
+      entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 x
+        = entry Q 1 x + e * n := by
+    intro x hx hxQ
+    rw [Wset.entry_take hx]
+    show ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).getD x (0, 0, 0)).2.1 = _
+    rw [block_getD hxQ, if_pos (le1_zero_all_of_noBlocker hr0 hnbQ hxQ)]
+  intro l hl0 hlt
+  rw [List.length_take, hBlen, Nat.min_eq_left (by omega)] at hlt
+  rw [hE 0 (by omega) (by omega), hE l hlt (by omega)]
+  have := hnbQ l hl0 (by omega)
+  omega
+
+/-- ★ ブロックの接頭辞の根の行 2 は `Q` の根の行 2。 -/
+theorem hz0_block {Q : TrioSeq} {d e n j : ℕ} (hQ1 : 0 < Q.length)
+    (hz0 : entry Q 2 0 = 0) :
+    entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 0 = 0 := by
+  rw [Wset.entry_take (show (0 : ℕ) < j + 1 by omega)]
+  show ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).getD 0 (0, 0, 0)).2.2 = 0
+  rw [block_getD (d := d) (e := e) (n := n) hQ1]
+  exact hz0
+
+/-- ★★★★★ **`OrphOK` が定理になりました**（`hnbQ` を前提に）。 -/
+theorem orphOK_proved {A Q : TrioSeq} {d e n j : ℕ}
+    (hQ1 : 0 < Q.length) (hj : j < Q.length) (hj1 : 0 < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hz0 : entry Q 2 0 = 0)
+    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    (hloc : ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j) :
+    ¬ hasParent (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n).length + j))
+      ((A ++ mTower Q d e n).length + j) := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
+    rw [List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  intro hp
+  have hsr : srow (A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      ((A ++ mTower Q d e n).length + j)
+      = srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j :=
+    srow_append_right _ _ j
+  rw [hsr] at hp
+  -- ★ 1 回で剥がす: `A' := A ++ mTower Q d e n`、`T' := ブロックの接頭辞`
+  refine hloc (hasParent_peel_of_noCross (A := A ++ mTower Q d e n)
+    (T := (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+    (i := srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j)
+    (fun y hy hc => ?_) hp)
+  rw [← hsr] at hc
+  exact no_nextR_srow_cross (hmin_block (d := d) (e := e) (n := n) hj hr0)
+    (hnb_block (d := d) (e := e) (n := n) hj hr0 hnbQ)
+    (hz0_block (d := d) (e := e) (n := n) (j := j) hQ1 hz0) hy (by omega) hj1 hc
+
+/-- ⛔ **遺伝 (1)**: 窓の根の行 2 が 0（＝ 旧 `HeredZ2`）。**R2 実測 98.4〜99.8%**。 -/
+def HeredZ0 : Prop :=
+  ∀ (P B : TrioSeq) (j p : ℕ), p < j → j < B.length →
+    hasParent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) →
+    parent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) = P.length + p →
+    entry (wnd P B j p) 2 0 = 0
+
+/-- ⛔ **遺伝 (2)**: 窓にブロッカーが無い。⟹ §234 で `OrphOK` を定理にするのに要ります。
+⚠ **`h1out`（錐の外だけ）より強い**（全列）。⟹ **遺伝は未測定**。 -/
+def HeredNB : Prop :=
+  ∀ (P B : TrioSeq) (j p : ℕ), p < j → j < B.length →
+    ∀ i, 0 < i → i < (wnd P B j p).length →
+      entry (wnd P B j p) 1 0 < entry (wnd P B j p) 1 i
+
 /-! ## 213. ★★★★★★★★★ **`hsnoc` の `j ≥ 1` の枝が緑になりました**
 
 材料が全部そろったので組みます。**残る前提は「窓に `TowerP''` が遺伝する」1 本だけです。** -/
@@ -3914,6 +4251,7 @@ theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
     (hP : TowerP'' Q d e)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
       ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hz0h : HeredZ0) (hnbh : HeredNB)
     (hj : j < Q.length) (hj1 : 0 < j)
     (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
       (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j)
@@ -3982,10 +4320,12 @@ theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
   have hlenV := wnd_length (P := P) (B := B) (j := j) (p := p) (by omega) hpj
   refine hIH (wnd P B j p) (wd0 P B j p) (wd1 P B j p)
     ⟨wnd_pos (by omega) hpj, hr0_wnd (by omega) hpj hpar (by rw [← hpardef]; exact hpe),
-      fun q hq => by
+      (fun q hq => by
         rw [hlenV] at hq
         rw [entry2_wnd hpj hq]
-        exact hz1 (p + q) (by omega)⟩ ?_
+        exact hz1 (p + q) (by omega)),
+      hz0h P B j p hpj (by omega) hpar (by rw [← hpardef]; exact hpe),
+      hnbh P B j p hpj (by omega)⟩ ?_
     (P ++ B.take p) (hall p (by omega))
     (by rw [prefix_append_wnd hpj]; exact hall j (le_refl j)) m
   unfold towerMeas
@@ -4048,6 +4388,7 @@ theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 <
               (Q.length + 1)).length - 1)
       = (A ++ mTower Q d e k).length + p)
     (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1)
+    (hz0h : HeredZ0) (hnbh : HeredNB)
     (hrank : p = 0 →
       rankDE (wd0 (A ++ mTower Q d e k)
           (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
@@ -4102,7 +4443,9 @@ theorem hsnoc_zero_of_parent {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ} (hd : 0 <
       rw [wnd_length (P := P) (B := B0 ++ B1) (j := Q.length) (p := p)
         (by omega) hplt] at hq
       rw [entry2_wnd_pair hplt hq]
-      exact hz1 (p + q) (by omega)⟩
+      exact hz1 (p + q) (by omega),
+    hz0h P (B0 ++ B1) Q.length p hplt (by omega) hpar hpe,
+    hnbh P (B0 ++ B1) Q.length p hplt (by omega)⟩
     ?_ (P ++ (B0 ++ B1).take p)
     (by rw [hPdef] at hpre ⊢; exact hpre)
     (by rw [prefix_append_wnd hplt]; rw [hPdef] at hprefull ⊢; exact hprefull) m
@@ -4703,7 +5046,8 @@ open Classical in
 theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
     (horph0 : OrphOK0) (hQne : Q ≠ []) (hdpos : 0 < d)
     (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hrow2 : Row2RootOrph) (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1)
+    (hz0 : entry Q 2 0 = 0) (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1)
+    (hz0h : HeredZ0) (hnbh : HeredNB)
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
       ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
     (hpre : ∀ p, p ≤ Q.length →
@@ -4753,9 +5097,6 @@ theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
       (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length)) ((k + 1) * Q.length)
   · -- ★ 親がある ⟹ `d = 0` ではありえない（§223.3）
     have hd : 0 < d := hdpos
-    have hz0 : entry Q 2 0 = 0 := by
-      by_contra hc
-      exact hrow2 Q d e (k + 2) (k + 1) hQ1 (by omega) (by omega) hpM
     have hpT : hasParent T (srow T ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
       rw [hsrowT, hTeq]
       exact (hasParent_take hle (by omega)).mpr hpM
@@ -4790,7 +5131,7 @@ theorem hsnoc_zero_noE {u : ℕ} {A Q : TrioSeq} {d e k : ℕ}
       rw [hSAT, hlastAT, hsrowAT, hsrowT]
       exact blockRoot_srow_le_one hQ1 (show k + 1 < k + 2 by omega) hz0
     refine hsnoc_zero_of_parent hd hIH hQ1 (hpre Q.length le_rfl) (hpre p (by omega))
-      hplt hpar hpe hz1 ?_
+      hplt hpar hpe hz1 hz0h hnbh ?_
     intro hp0
     rw [hp0]
     refine hrank_blockRoot_noE (A := A) hQne hd hz0 hpM ?_
@@ -4877,8 +5218,8 @@ theorem tower_of_measure_step2 {u : ℕ}
 /-! ### 220.4 ★★★★★ **最終定理** -/
 
 open Classical in
-theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ZeroDOK u) (hrow2 : Row2RootOrph) :
+theorem towerClosed_of_hered {u : ℕ} (horph0 : OrphOK0)
+    (hzd : ZeroDOK u) (hz0h : HeredZ0) (hnbh : HeredNB) :
     ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u := by
   refine tower_of_measure_step2 (u := u) TowerP'' towerMeas ?_
@@ -4900,14 +5241,16 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
               ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u := by
       intro p hp
       exact prefix_block_take_mem hp (by simpa using hall 0 (le_refl 0))
-    exact hsnoc_zero_noE horph0 hQne hdpos hr0 hrow2 (hz1_of_TowerP'' hP) hIH hpre
+    exact hsnoc_zero_noE horph0 hQne hdpos hr0 (hz0_of_TowerP'' hP)
+      (hz1_of_TowerP'' hP) hz0h hnbh hIH hpre
   · -- ★ `j ≥ 1`
     set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
     have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
     by_cases hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j
-    · exact hsnoc_pos hP hIH hj hj1 hloc (parent_bound_pos hj hloc) hall
-    · -- ⟹ ブロックの中で孤児 ⟹ `OrphOK` で全体でも孤児 ⟹ `snoc_orphan_W`
-      have hnp := horph A Q d e n j hj1 hj hloc
+    · exact hsnoc_pos hP hIH hz0h hnbh hj hj1 hloc (parent_bound_pos hj hloc) hall
+    · -- ⟹ ブロックの中で孤児 ⟹ §234 `orphOK_proved`（定理）で全体でも孤児
+      have hnp := orphOK_proved (A := A) (d := d) (e := e) (n := n)
+        hQ1 hj hj1 hr0 (hz0_of_TowerP'' hP) (hnbQ_of_TowerP'' hP) hloc
       have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
         rw [List.take_add_one]
         congr 1
@@ -4974,6 +5317,10 @@ theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0) (hz2 
 def RootZ1 : Prop :=
   ∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u → ∀ q, q < Q.length → entry Q 2 q ≤ 1
 
+/-- ⛔ **消費側のブロッカー無し**。⟹ §234 で `OrphOK` を定理にするのに要ります。 -/
+def RootNB : Prop :=
+  ∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u → ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i
+
 /-- ⛔ **消費側の `hz0`**（`z = 0` に相当）。H12 の `hz0_of_zle1` が効くはずのところ。 -/
 def RootZ2 : Prop :=
   ∀ (u : ℕ) (Q : TrioSeq), Q ∈ W u →
@@ -4984,9 +5331,9 @@ theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] :=
 
 open Classical in
 /-- ★★★★★ **`MTowerClosedS` は 5 本から出ます。** -/
-theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ∀ u, ZeroDOK u) (hrow2 : Row2RootOrph) (hrz1 : RootZ1) :
-    MTowerClosedS := by
+theorem mTowerClosedS_of_residues (horph0 : OrphOK0)
+    (hzd : ∀ u, ZeroDOK u) (hz0h : HeredZ0) (hnbh : HeredNB)
+    (hrz1 : RootZ1) (hroot : RootZ2) (hrnb : RootNB) : MTowerClosedS := by
   intro u d e n Q hQ hs
   rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
   · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
@@ -4994,863 +5341,53 @@ theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
     rw [mTower_nil]
     exact W_nil u
   · have hP : TowerP'' Q d e :=
-      ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hrz1 u Q hQ⟩
-    have h := towerClosed_of_hered (u := u) horph horph0 (hzd u) hrow2
+      ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hrz1 u Q hQ, hroot u Q hQ hs,
+        hrnb u Q hQ⟩
+    have h := towerClosed_of_hered (u := u) horph0 (hzd u) hz0h hnbh
       Q d e hP [] (W_nil u) (by simpa using hQ) n
     simpa using h
 
-/-! ### 222.1 ⟹ ★★★★★★ **`MTowerClosedS` は 6 本の式です**
+/-! ### 222.1 ⟹ ★★★★★★★ **`MTowerClosedS` は 6 本の式です**（`OrphOK` は**定理**になりました）
 
 ```lean
-theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
-    (hzd : ∀ u, ZeroDOK u) (hrow2 : Row2RootOrph) (hrsh : ∀ u, RsumHered u)
-    (hrz1 : RootZ1) : MTowerClosedS
+theorem mTowerClosedS_of_residues (horph0 : OrphOK0)
+    (hzd : ∀ u, ZeroDOK u) (hz0h : HeredZ0) (hnbh : HeredNB)
+    (hrz1 : RootZ1) (hroot : RootZ2) (hrnb : RootNB) : MTowerClosedS
 ```
 
-    **(1) `OrphOK`**（`j ≥ 1`、**`rsum A Q`**）… ブロックの中で孤児 ⟹ 全体でも孤児
-    **(2) `OrphOK0`**（`j = 0`、**`rsum A Q`**、`0 < d`）… 塔の中で孤児 ⟹ 接頭辞つきでも孤児
-         ⟹ ★ (1)(2) とも **R2 実測 100%（612,045、違反 0）** —— **`rsum` があれば**
-    **(3) `ZeroDOK`** … `d = 0` の塔 ⟹ `PrefixCopies`（`L53Subst:3599`）
-    **(4) `Row2RootOrph`** … 根の行 2 が正 ⟹ ブロック根は行 2 の孤児（R2 実測 **100%**、35,244）
-    **(5) `RsumHered`** … ⛔ ★ **新しい核**（R2 が今日見つけた）
-    **(6) `RootZ1`** … 消費側の行 2 が全部 ≤ 1（`zle1` 承認ずみ）
+    **(1) `OrphOK0`**（`j = 0`、`0 < d`）… 塔の中で孤児 ⟹ 接頭辞つきでも孤児
+    **(2) `ZeroDOK`** … `d = 0` の塔 ⟹ H12 が `PrefixCopiesOpen`（L53 の既知の核）に合流させた
+    **(3) `HeredZ0`** … 窓の根の行 2 が 0（旧 `HeredZ2`）⟹ **R2 実測 98.4〜99.8%**
+    **(4) `HeredNB`** … 窓にブロッカーが無い ⟹ ★ **新規。未測定**
+    **(5) `RootZ1` / (6) `RootZ2` / `RootNB`** … 消費側の 3 本（`zle1` は承認ずみ）
 
-### 222.2 ⛔⛔ ★ **`rsum` が唯一の共通の核でした**（R2、2026-08-30）
+**⟹ ★★★ ⟹ そして **`OrphOK`（`j ≥ 1`）は仮定から消えました**（§234 `orphOK_proved`）。**
 
-    `Wset.rsum A P := ∀ p ∈ A ++ P, entry P 0 0 ≤ p.1`
-    ＝「接頭辞にも `P` にも、**`P` の根より浅い列が無い**」
+### 222.2 ★★★★ `OrphOK` が定理になった仕組み（§228 / §230 / §234）
 
-**⟹ ★ R2 の実測: `rsum` があれば `OrphOK`/`OrphOK0` は **100%（612,045）**。**
-**⟹ ⛔ 無ければ **19.3〜54.4% で破れる**。⟹ ⟹ **私の `OrphOK` は前提が 1 つ足りませんでした**。**
+    ★ **§230 `hasParent_peel_of_noCross`** … 「剥がす」に要るのは
+       **`hroot` ではなく「接頭辞の列が `nextR` の始点になれない」だけ**
+    ★ **§228 の 3 本 ＋ H12 の `no_nextR_srow_cross`** … その壁を**行ごとに**立てる
+    ★ **§234** … **1 回で剥がす**（`A' := A ++ mTower`、`T' := ブロックの接頭辞`）
+       ⟹ 要る入力は **`hloc` そのもの**、要る前提は **`hr0` / `hz0` / `hnbQ`**
 
-⚠ **消費側では無料です**（`A = []` なら `hr0` から出る。`mTowerClosedS_of_residues` の中で証明ずみ）。
+**⟹ ★ そして `hnbQ`（`Q` にブロッカーが無い）は `Q` の全列を錐に入れるので、
+`Lift1` の `if le1 Q 0 x` が常に真になり、**`n` が消えます**。**
 
-⚠⚠ **遺伝は team-lead の見立てでは**しません**。⟹ そこが `RsumHered`（新しい核）です。**
-**⟹ ★ そして R2 が「`rsum` は **5 か所**に集まる」と示しました:**
-
-    `W_add`（連結）／`prefixCopies_of_rsum`（`L53Subst:3779`）／
-    `prefixCopies_of_open`（`:3809`）／`OrphOK`・`OrphOK0`（今日）／
-    `not_rsum_shTower`（`L105Cap:674`、`e ≥ 1` の塔では `rsum` が**必ず**破れる）
+⚠ **`hnbQ` は team-lead の `h1out`（錐の外だけ）より**強い**です。**
+**⟹ ★ ただし `hnbQ` の下では「錐の外」が空なので `h1out` は空虚に真です。**
+**⟹ ⟹ ⛔ **`HeredNB` の遺伝は未測定**。⟹ R2 に依頼が要ります。**
 
 ### 222.3 ★ 消えたもの（今日）
 
     `hbase`（§208）／ `hd0e`・`hlp`（未使用）／ `h2out`・`h1out`（`OrphOK` が肩代わり）
     `0 < d`・`0 < e`（**導出に変えた**）／ `ZeroEOK`（H12 の (q3b)）
-    `hz0`・`HeredZ2`・`RootZ2`（§225 `Row2RootOrph`）／ `hr0(V)` の遺伝（§221）
+    `hr0(V)` の遺伝（§221）／ **`OrphOK`（§234 で定理に）**
 
-⚠ **`ZeroDOK` は §223.3 で消したつもりが §223.6 で**戻りました**（私の誤り）。**
-⚠ **`OrphOK`/`OrphOK0` は §220.2b で作りましたが、§226 で **`rsum` を足しました**（R2 の実測）。**
+⚠ **`hz0` は §225 で `Row2RootOrph` に置き換えましたが、§234 が `hz0` を要求するので
+**`TowerP''` に戻しました**。⟹ `HeredZ0` がその遺伝です（旧 `HeredZ2`）。**
 
 ⚠ **教訓 14**: **6 本のどれも証明していません。** -/
-
-/-! ## 227. ⛔⛔⛔ **`RsumHered` は偽です**（反例、緑）
-
-前節で `RsumHered` を「窓の形」に限定しました。**⟹ ⛔ それでも偽でした。**
-
-**計算（`prefix_append_wnd`（§218、緑）を使うと 2 行）:**
-
-    `A ++ V = P ++ B.take j`（§218）
-    `entry V 0 0 = entry B 0 p`（§224.5 の `entry_window`）
-    ⟹ `rsum A V ⟺ **∀ q ∈ P ++ B.take j, entry B 0 p ≤ q.1**`
-
-**⟹ ★ `P` に `entry B 0 p` より浅い列が 1 つでもあれば**偽**です。**
-**⟹ ⟹ ⛔ そして塔の形では `P = A ++ mTower Q d e n` が**ブロック 0 の根**（行 0 ＝ `entry Q 0 0`）
-を含み、`entry B 0 p = entry Q 0 p + d*n`。⟹ `hr0` より `p ≥ 1` なら**必ず**大きい。**
-
-> **⟹ ★★★ ⟹ **`rsum` は 1 段で必ず壊れます**（`n ≥ 1` のすべての段で）。**
-> **⟹ ⟹ team-lead の見立てが正しく、`RsumHered` は**偽**です。** -/
-
-theorem rsumHered_false : ¬ RsumHered := by
-  intro h
-  have hc := h [((0, 0, 0) : ℕ × ℕ × ℕ)]
-    [((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ)]
-    2 1 (by omega) (by simp)
-  have hmem : ((0, 0, 0) : ℕ × ℕ × ℕ) ∈
-      ([((0, 0, 0) : ℕ × ℕ × ℕ)] ++ [((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ),
-        ((3, 0, 0) : ℕ × ℕ × ℕ)].take 1)
-      ++ wnd [((0, 0, 0) : ℕ × ℕ × ℕ)]
-        [((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ)] 2 1 := by
-    simp [wnd]
-  have := hc _ hmem
-  simp [wnd, entry] at this
-
-/-! ### 227.1 ⟹ ★★★ **ですから `OrphOK` / `OrphOK0` に `rsum` を足す道は閉じています**
-
-**R2 の実測は正しく、`rsum` があれば 100% です。⟹ ですが `rsum` は**帰納で保てません**。**
-
-**⟹ ★ 残る道は 2 つだと思います:**
-
-    **(あ)** `rsum` を**弱める** … R2 の (c)（浅い `A`）でも **45.6〜80.7% は破れない**
-         ⟹ ★ **「浅い列がある」だけでは反例にならない**（R2 の `A = [(0,5,0)]` の例）
-         ⟹ ⟹ **本当に効いている条件**を R2 に切り分けてもらう
-    **(い)** **H12 の二択**（`rsum` が破れる側の受け皿）
-         ⟹ 「親が `A` の中にある」場合を**別扱い**にする
-         ⟹ ★ H12 が `d = 0` で緑にしています（`nextrel1_prefix_blockRoot_iff_d_zero` ほか）
-
-⚠ **教訓 14**: **`rsumHered_false` は「窓の形の `RsumHered`」が偽であることだけを言います。**
-**⟹ `OrphOK` に `rsum` を足すこと自体が悪いのではなく、**帰納で運べない**のが問題です。** -/
-
-/-! ## 228. ★★★★★★★★ `rsum` の**代わり**: 「的が塔の根より**真に上**」
-
-§227 で `rsum` が使えないと分かりました。**⟹ 代わりを探して、見つかったと思います。**
-
-## 機構（`nextrel_i` の**最小性の節**を、塔の根で殴る）
-
-`nextrel0 (A ++ T) y (|A| + j1)` の最小性は
-
-    `∀ j, y < j ∧ j < |A| + j1 → entry (A ++ T) 0 (|A| + j1) ≤ entry (A ++ T) 0 j`
-
-**⟹ ★ ここに `j := |A|`（＝ **`T` の根**）を入れると `entry T 0 j1 ≤ entry T 0 0`。**
-**⟹ ⟹ ★★ ですから **`entry T 0 0 < entry T 0 j1`** なら、`A` の列は**行 0 の親になれません**。**
-
-**行 1 も同じです**（`nextrel1` の最小性は `le0` 祖先の上なので、`le0 (|A|) (|A|+j1)` が要ります）。
-
-> **⟹ ★★★ `hbase`（`entry T 0 0 = 0`）は「**0 は絶対的な壁**」でした。**
-> **⟹ ⟹ ★ これは「**塔の根が的より低ければ壁になる**」——**平行移動で不変**です。** -/
-
-theorem no_nextrel0_from_prefix {A T : TrioSeq} {y j1 : ℕ}
-    (hy : y < A.length) (hj1 : 0 < j1)
-    (hmin : entry T 0 0 < entry T 0 j1) :
-    ¬ nextrel0 (A ++ T) y (A.length + j1) := by
-  intro h
-  have hval := h.2.2.2.2 A.length ⟨by omega, by omega⟩
-  have h0 : entry (A ++ T) 0 (A.length + j1) = entry T 0 j1 := entry_append_right A T 0 j1
-  have h1 : entry (A ++ T) 0 A.length = entry T 0 0 := by
-    have := entry_append_right A T 0 0
-    rw [Nat.add_zero] at this
-    exact this
-  rw [h0, h1] at hval
-  omega
-
-theorem no_nextrel1_from_prefix {A T : TrioSeq} {y j1 : ℕ}
-    (hy : y < A.length)
-    (hle0 : le0 (A ++ T) A.length (A.length + j1))
-    (hmin : entry T 1 0 < entry T 1 j1) :
-    ¬ nextrel1 (A ++ T) y (A.length + j1) := by
-  intro h
-  have hval := h.2.2.2.2.2 A.length ⟨by omega, hle0⟩
-  have h0 : entry (A ++ T) 1 (A.length + j1) = entry T 1 j1 := entry_append_right A T 1 j1
-  have h1 : entry (A ++ T) 1 A.length = entry T 1 0 := by
-    have := entry_append_right A T 1 0
-    rw [Nat.add_zero] at this
-    exact this
-  rw [h0, h1] at hval
-  omega
-
-theorem no_nextrel2_from_prefix {A T : TrioSeq} {y j1 : ℕ}
-    (hy : y < A.length)
-    (hle1 : le1 (A ++ T) A.length (A.length + j1))
-    (hmin : entry T 2 0 < entry T 2 j1) :
-    ¬ nextrel2 (A ++ T) y (A.length + j1) := by
-  intro h
-  have hval := h.2.2.2.2.2 A.length ⟨by omega, hle1⟩
-  have h0 : entry (A ++ T) 2 (A.length + j1) = entry T 2 j1 := entry_append_right A T 2 j1
-  have h1 : entry (A ++ T) 2 A.length = entry T 2 0 := by
-    have := entry_append_right A T 2 0
-    rw [Nat.add_zero] at this
-    exact this
-  rw [h0, h1] at hval
-  omega
-
-/-! ### 228.1 ⟹ ★★★ **これが `rsum` の代わりです。しかも `Q` だけの条件です**
-
-**`OrphOK` が要るのは「`A` が親を供給しない」ことです。⟹ 上の 3 本で:**
-
-    **行 0** … `entry T 0 0 < entry T 0 j1` … ★ **`hr0` から出ます**（塔の根 ＝ `Q` の根）
-    **行 1** … `entry T 1 0 < entry T 1 j1` ＋ `le0` が塔の根を通る
-             ⟹ ★ **「的が塔の根より行 1 で上」＝ 錐の中** ⟹ **ブロッカーでは破れる**
-    **行 2** … `entry T 2 0 < entry T 2 j1` ＋ `le1` が塔の根を通る
-
-**⟹ ★★★ ⟹ R2 の実測（`OrphOK` が `rsum` 無しで **45.6% 破れる**）と辻褄が合います:**
-**⟹ ⟹ **破れるのはブロッカー**（行 1 が根以下の列）のはずです。**
-
-⚠ **そして R2 の反例 `A = [(0,5,0)]`（行 0 = 0 で浅いが**孤児のまま**）も説明できます:**
-**⟹ 行 0 では上の壁が効き、行 1 では `A` の列の行 1 が 5 で高すぎて `nextrel1` の狭義増加が取れない。**
-
-⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
-**⟹ `le0` / `le1` が**塔の根を通る**ことを別に示す必要があります**（`nextrel_i` の候補が
-`A` の中にあるとき、鎖が塔の根を経由するか）。⟹ ★ そこが次の仕事です。 -/
-
-/-! ### 227.2 ⟹ ★ ですから `rsum` は**帰納の中では運べません**。外しました
-
-**§226 で `OrphOK` / `OrphOK0` に `rsum A Q` を足しましたが、§227 で `RsumHered` が偽と分かりました。**
-**⟹ ⛔ 偽の仮定を残すと定理が**空虚**になります。⟹ ★ **`rsum` を外しました**。**
-
-**⟹ ⟹ ★ いまの `OrphOK` / `OrphOK0` は「証明されていない」であって「偽が証明された」ではありません。**
-
-⚠ **R2 の実測（`rsum` 無し）:**
-
-    `OrphOK`（`j ≥ 1`、`0 < d`）… **96.5% 上限**（`A` が空でも **3.5% 破れる**）
-         ⟹ ★ 破れの正体は **「親が 1 ブロック手前」**（R2: 100%、そして `|V| ≤ |Q|` も 100%）
-         ⟹ ⟹ **穴ではなく、`parent_bound_pos` の枠が狭い**（team-lead の読み）
-    `OrphOK0`（`j = 0`）… `rsum` があれば 100%、無ければ浅い `A` で 19〜31%
-
-**⟹ ★★ ですから次の一手は 2 つです:**
-
-    **(1)** `parent_bound_pos` を **`|V| ≤ |Q|`**（＝「親は高々 `|Q|` 列手前」）に緩める
-         ⚠ ★ ただし **`|V| = |Q|` になると測度の第 1 成分が減りません**。
-           ⟹ そこは `rankDE` を減らす必要があり、**親がブロック根でないので §200 が使えません**。
-           ⟹ ⟹ ★★ **R2 に「`j ≥ 1` で `|V| = |Q|` が起きるか」を聞く必要があります**。
-             起きないなら（`|V| < |Q|` が 100% なら）そのまま通ります。
-    **(2)** `OrphOK` を「**ブロック ＋ 1 つ前のブロック**の中で孤児」に書き換える
-
-⚠ **教訓 14**: `rsum` を外したので、`mTowerClosedS_of_residues` は
-**「偽の仮定による空虚」ではなくなりました**。⟹ ですが `OrphOK` は**実測で 3.5% 破れます**。
-**⟹ ⟹ ★ ですから **いまも「証明できていない」状態**です。そこは変わりません。** -/
-
-/-! ## 229. ★★★★★★★ **枠を緩めた `j ≥ 1` の段**（(s8) が 0 件なら、これで通ります）
-
-team-lead の依頼 1（「親は 1 ブロック手前まで」）を、**測度が通る形**で先に組んでおきます。
-
-**⟹ ★ 鍵は §205 `prefix_mTower_take_reassoc` が **`j` について一般**だったことです:**
-
-    `A ++ mTower Q d e (k+1) ++ block_{k+1}.take (jj+1)`
-      `= (A ++ mTower Q d e k) ++ (block_k ++ block_{k+1}).take (|Q| + jj + 1)`
-
-**⟹ ⟹ ★★ ですから「親が 1 ブロック手前」でも、**`P' := A ++ mTower Q d e k` から見れば
-`p' ≥ 0` の通常の場合**になります。⟹ §202 がそのまま使えます。**
-
-⚠ **測度は `|V| < |Q|`（**狭義**）を前提にします。`= |Q|` だと第 1 成分が減らず、
-親がブロック根でないので §200 の `rankDE` も使えません（(s8) で確かめてもらっています）。** -/
-
-/-- 2 ブロック連結の行 2 は `Q` の行 2（`x` を `|Q|` で折り返す）。 -/
-theorem entry2_pair_le {Q : TrioSeq} {d e k x : ℕ}
-    (hx : x < Q.length + Q.length)
-    (hz1 : ∀ q, q < Q.length → entry Q 2 q ≤ 1) :
-    entry (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-      ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) 2 x ≤ 1 := by
-  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
-  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
-  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
-  rcases Nat.lt_or_ge x Q.length with hlt | hge
-  · rw [entry_append_left _ _ (show x < B0.length by omega), hB0]
-    show ((Lift1 (shiftr01 (d * k) 0 Q) (e * k)).getD x (0, 0, 0)).2.2 ≤ 1
-    rw [block_getD (d := d) (e := e) (n := k) hlt]
-    exact hz1 x hlt
-  · obtain ⟨y, rfl⟩ : ∃ y, x = B0.length + y := ⟨x - B0.length, by omega⟩
-    rw [entry_append_right, hB1]
-    show ((Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).getD y (0, 0, 0)).2.2 ≤ 1
-    rw [block_getD (d := d) (e := e) (n := k + 1) (show y < Q.length by omega)]
-    exact hz1 y (by omega)
-
-/-- 窓の行 2 は「元の列」の行 2（一般の `P` / `B`）。 -/
-theorem entry2_wnd_gen {P B : TrioSeq} {j p t : ℕ} (hpj : p < j) (ht : t < j - p) :
-    entry (wnd P B j p) 2 t = entry B 2 (p + t) := by
-  unfold wnd
-  rw [entry_window _ ht,
-    show P.length + p + t = P.length + (p + t) from by omega, entry_append_right,
-    Wset.entry_take (show p + t < j + 1 by omega)]
-
-open Classical in
-theorem hsnoc_prev_of_parent {u : ℕ} {A Q : TrioSeq} {d e k jj p : ℕ}
-    (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
-      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
-    (hP : TowerP'' Q d e) (hjj : jj < Q.length) (hjj1 : 0 < jj)
-    (hplt : p < Q.length + jj)
-    (hshort : Q.length + jj - p < Q.length)
-    (hpre : ∀ q, q ≤ Q.length + jj →
-      A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take q ∈ W u)
-    (hpar : hasParent
-      (A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
-      (srow (A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
-        ((A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
-              (Q.length + jj + 1)).length - 1))
-      ((A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
-              (Q.length + jj + 1)).length - 1))
-    (hpe : parent
-      (A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
-      (srow (A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (Q.length + jj + 1))
-        ((A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
-              (Q.length + jj + 1)).length - 1))
-      ((A ++ mTower Q d e k
-        ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
-            ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take
-              (Q.length + jj + 1)).length - 1)
-      = (A ++ mTower Q d e k).length + p) :
-    A ++ mTower Q d e (k + 1)
-      ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take (jj + 1) ∈ W u := by
-  have hQ1 : 0 < Q.length := by omega
-  have hr0 := hr0_of_TowerP'' hP
-  have hz1 := hz1_of_TowerP'' hP
-  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
-  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
-  set P := A ++ mTower Q d e k with hPdef
-  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
-  have hB1len : B1.length = Q.length := by rw [hB1, Lift1_length, shiftr01_length]
-  have hBlen : (B0 ++ B1).length = Q.length + Q.length := by
-    rw [List.length_append, hB0len, hB1len]
-  have hre : A ++ mTower Q d e (k + 1) ++ B1.take (jj + 1)
-      = P ++ (B0 ++ B1).take (Q.length + (jj + 1)) := by
-    rw [hPdef, hB0, hB1, prefix_mTower_take_reassoc A Q d e k (jj + 1), List.append_assoc]
-  have hidx : Q.length + (jj + 1) = Q.length + jj + 1 := by omega
-  rw [hre, hidx]
-  set S := P ++ (B0 ++ B1).take (Q.length + jj + 1) with hS
-  have hSlen : S.length = P.length + (Q.length + jj + 1) := by
-    rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
-  have hlast : S.length - 1 = P.length + (Q.length + jj) := by omega
-  -- ★ 末尾列は第 (k+1) ブロックの第 `jj` 列。`hr0` と `jj ≥ 1` で行 0 が正
-  have hEl : entry S 0 (P.length + (Q.length + jj)) = entry Q 0 jj + d * (k + 1) := by
-    rw [hS, entry_append_right,
-      Wset.entry_take (show Q.length + jj < Q.length + jj + 1 by omega),
-      show Q.length + jj = B0.length + jj from by omega, entry_append_right, hB1,
-      entry0_Lift1, entry0_shiftr01 (by omega)]
-  have hQj : 0 < entry Q 0 jj := by have := hr0 jj hjj1 hjj; omega
-  have hz : ¬ (entry S 0 (S.length - 1) = 0 ∧ entry S 1 (S.length - 1) = 0 ∧
-      entry S 2 (S.length - 1) = 0) := by
-    rw [hlast]; intro hc; rw [hEl] at hc; omega
-  -- ★ 展開して帰納法の仮定を当てる
-  refine mem_of_oper_mem ?_
-  intro m _
-  have heq := snocStep_oper_pre_eq (P := P) (B := B0 ++ B1) (j := Q.length + jj)
-    (p := p) (m := m) (by omega) hplt hz hpar hpe
-  rw [← hS] at heq
-  rw [heq]
-  have hlen := wnd_length (P := P) (B := B0 ++ B1) (j := Q.length + jj) (p := p)
-    (by omega) hplt
-  refine hIH _ _ _ ⟨by rw [hlen]; omega,
-    hr0_wnd (by omega) hplt hpar hpe,
-    fun q hq => by
-      rw [hlen] at hq
-      rw [entry2_wnd_gen hplt (by omega)]
-      exact entry2_pair_le (Q := Q) (d := d) (e := e) (k := k) (by omega) hz1⟩ ?_
-    (P ++ (B0 ++ B1).take p) (hpre p (by omega))
-    (by rw [prefix_append_wnd hplt]; exact hpre (Q.length + jj) le_rfl) m
-  unfold towerMeas
-  refine natMeasure_lt (rankDE_le_two d e) (rankDE_le_two _ _) ?_
-  left
-  rw [hlen]
-  omega
-
-/-! ## 230. ★★★★★★★ §228 を `OrphOK` に繋ぎます —— **行 0 は完全に閉じます**
-
-team-lead の読み（「穴は `j1 = 0`（塔の根）1 点かもしれない」）を受けて、
-§228 を「孤児が孤児のまま」に繋ぎました。
-
-**⟹ ★ まず「剥がす」を **`hroot` なしで**やる道具を作ります。**
-**⟹ ⟹ `hasParent_append_right`（`Column:363`）は `hroot` を要求しますが、
-**要るのは「接頭辞の列が `nextR` の始点になれない」だけ**です。** -/
-
-theorem hasParent_peel_of_noCross {A T : TrioSeq} {i j1 : ℕ}
-    (hnc : ∀ y, y < A.length → ¬ nextR (A ++ T) i y (A.length + j1))
-    (hp : hasParent (A ++ T) i (A.length + j1)) : hasParent T i j1 := by
-  obtain ⟨j0, hj0, huniq⟩ := hp
-  have hge : A.length ≤ j0 := by
-    by_contra hc
-    exact hnc j0 (by omega) hj0
-  obtain ⟨j0', rfl⟩ : ∃ j0', j0 = A.length + j0' := ⟨j0 - A.length, by omega⟩
-  refine ⟨j0', (nextR_append_right A T i j0' j1).1 hj0, ?_⟩
-  intro y hy
-  have := huniq (A.length + y) ((nextR_append_right A T i y j1).2 hy)
-  omega
-
-/-- ★★★ **行 0 の `OrphOK` は無条件**（`entry T 0 0 < entry T 0 j1` だけ）。 -/
-theorem orphOK_row0 {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1)
-    (hmin : entry T 0 0 < entry T 0 j1)
-    (hnp : ¬ hasParent T 0 j1) : ¬ hasParent (A ++ T) 0 (A.length + j1) := by
-  intro hp
-  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
-  unfold nextR at hc
-  rw [if_pos rfl] at hc
-  exact no_nextrel0_from_prefix hy hj1 hmin hc
-
-/-- ★★ **行 1 の `OrphOK`**（`le0` が塔の根を通ることと、行 1 の大小が要る）。 -/
-theorem orphOK_row1 {A T : TrioSeq} {j1 : ℕ}
-    (hle0 : le0 (A ++ T) A.length (A.length + j1))
-    (hmin : entry T 1 0 < entry T 1 j1)
-    (hnp : ¬ hasParent T 1 j1) : ¬ hasParent (A ++ T) 1 (A.length + j1) := by
-  intro hp
-  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
-  unfold nextR at hc
-  rw [if_neg (by omega), if_pos rfl] at hc
-  exact no_nextrel1_from_prefix hy hle0 hmin hc
-
-/-- ★★ **行 2 の `OrphOK`**（`le1` が塔の根を通ることと、行 2 の大小が要る）。 -/
-theorem orphOK_row2 {A T : TrioSeq} {j1 : ℕ}
-    (hle1 : le1 (A ++ T) A.length (A.length + j1))
-    (hmin : entry T 2 0 < entry T 2 j1)
-    (hnp : ¬ hasParent T 2 j1) : ¬ hasParent (A ++ T) 2 (A.length + j1) := by
-  intro hp
-  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
-  unfold nextR at hc
-  rw [if_neg (by omega), if_neg (by omega)] at hc
-  exact no_nextrel2_from_prefix hy hle1 hmin hc
-
-/-! ### 230.1 ⟹ ★★★ **`hbase` の正体が分かりました**
-
-    `Column.hasParent_append_right`（`:363`）… `hroot : entry T 0 0 = 0` を要求
-    ★ **本当に要るのは「接頭辞の列が `nextR` の始点になれない」だけ**（`hasParent_peel_of_noCross`）
-    ⟹ ⟹ そして §228 の 3 本が、それを**行ごとに**与えます
-
-**⟹ ★★ ですから H12 の「`hbase` の弱化は行 1/2 で止まる」は、**`hr0` で殴ろうとしたから**でした。**
-**⟹ ⟹ ★ **行 1 には行 1 の条件、行 2 には行 2 の条件**を使えば、3 行とも同じ形で通ります。**
-
-### 230.2 ⟹ ★ `OrphOK` に必要なもの（行ごと）
-
-`OrphOK` の的は `T = mTower Q d e n ++ block.take (j+1)` の位置 `j1 = n*|Q| + j`（`j ≥ 1`）。
-
-    **`srow = 0`** … ✅ **無条件**。`entry T 0 0 = entry Q 0 0`、`entry T 0 j1 = entry Q 0 j + d*n`
-                  ⟹ **`hr0` と `j ≥ 1` で `<` が出ます** ⟹ **完全に閉じます**
-    **`srow = 1`** … ⛔ `le0` が塔の根を通ること ＋ **`entry Q 1 0 < entry T 1 j1`**
-                  ⟹ ★ 後者は「**的が錐の中**」＝ **ブロッカーでない** ⟹ H12 の `h1out` と同じもの
-    **`srow = 2`** … ⛔ `le1` が塔の根を通ること ＋ `entry Q 2 0 < entry T 2 j1`
-
-**⟹ ★★★ ⟹ R2 の実測（`OrphOK` が 3.5% 破れる）は、**`srow ≥ 1` の側**のはずです。**
-**⟹ ⟹ R2 に「破れを `srow` で切ってほしい」と伝えます。⟹ `srow = 0` が 1 件でも出たら
-私の証明か計器のどちらかが誤りです。**
-
-⚠ **教訓 14**: 上の 3 本は緑ですが、**`OrphOK` を導いてはいません**。
-**`le0` / `le1` が塔の根を通ることと、行 1・行 2 の大小が残っています。** -/
-
-/-! ## 231. ★★★★★★★★★ **`OrphOK` が定理になりました**（H12 の §228.1 の答え ＋ §230）
-
-H12 が §228.1 の「次の仕事」（`le0` / `le1` が塔の根を通る）を緑にしてくれました。
-**⟹ ★ それと §230 の `hasParent_peel_of_noCross` を合わせると、`OrphOK` が**証明できます**。** -/
-
-/-- ★★★ **行ごとの `OrphOK`**（`nextR` の行を問わない一般形）。 -/
-theorem orphOK_of_cone {A T : TrioSeq} {i m : ℕ}
-    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
-    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
-    (h2 : ∀ l, 0 < l → l < T.length → entry T 2 0 < entry T 2 l)
-    (hm : m < T.length) (hm0 : 0 < m)
-    (hnp : ¬ hasParent T i m) : ¬ hasParent (A ++ T) i (A.length + m) := by
-  intro hp
-  exact hnp (hasParent_peel_of_noCross
-    (fun y hy hc => no_nextR_cross_of_cone hmin hnb h2 hy hm hm0 hc) hp)
-
-/-- ★★ **行 1 の `OrphOK`**（H12 の `no_nextrel1_cross_of_cone` 版）。
-`hle0` は要りません。**的の錐の条件だけ**です。 -/
-theorem orphOK_row1_cone {A T : TrioSeq} {m : ℕ}
-    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
-    (hm : m < T.length) (hm0 : 0 < m)
-    (hcone : entry T 1 0 < entry T 1 m)
-    (hnp : ¬ hasParent T 1 m) : ¬ hasParent (A ++ T) 1 (A.length + m) := by
-  intro hp
-  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
-  unfold nextR at hc
-  rw [if_neg (by omega), if_pos rfl] at hc
-  exact no_nextrel1_cross_of_cone hmin hy hm hm0 hcone hc
-
-/-- ★★ **行 2 の `OrphOK`**（H12 の `no_nextrel2_cross_of_cone` 版）。 -/
-theorem orphOK_row2_cone {A T : TrioSeq} {m : ℕ}
-    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
-    (hnb : ∀ l, 0 < l → l < T.length → entry T 1 0 < entry T 1 l)
-    (hm : m < T.length) (hm0 : 0 < m)
-    (hcone : entry T 2 0 < entry T 2 m)
-    (hnp : ¬ hasParent T 2 m) : ¬ hasParent (A ++ T) 2 (A.length + m) := by
-  intro hp
-  refine hnp (hasParent_peel_of_noCross (fun y hy hc => ?_) hp)
-  unfold nextR at hc
-  rw [if_neg (by omega), if_neg (by omega)] at hc
-  exact no_nextrel2_cross_of_cone hmin hnb hy hm hm0 hcone hc
-
-/-! ### 231.1 ★★ `hmin`（塔の根が行 0 で狭義最浅）は **`hr0` ＋ `0 < d` から出ます** -/
-
-theorem hmin_tower {Q : TrioSeq} {d e n j : ℕ} (hQ1 : 0 < Q.length) (hd : 0 < d)
-    (hj : j < Q.length)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
-    ∀ l, 0 < l →
-      l < (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
-      entry (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0
-        < entry (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 l := by
-  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
-  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
-  have hTlen : (mTower Q d e n ++ B.take (j + 1)).length = n * Q.length + (j + 1) := by
-    rw [List.length_append, mTower_length, List.length_take, hBlen,
-      Nat.min_eq_left (by omega)]
-  -- 根の行 0
-  have hroot : entry (mTower Q d e n ++ B.take (j + 1)) 0 0 = entry Q 0 0 := by
-    rcases Nat.eq_zero_or_pos n with hn0 | hn
-    · subst hn0
-      rw [mTower_zero, List.nil_append,
-        Wset.entry_take (show (0 : ℕ) < j + 1 by omega), hB, entry0_Lift1,
-        entry0_shiftr01 (by omega)]
-      simp
-    · have h := entry0_mTower_block Q d e n 0 0 hn hQ1
-      rw [Nat.zero_mul, Nat.add_zero, Nat.mul_zero, Nat.add_zero] at h
-      rw [entry_append_left _ _ (show (0 : ℕ) < (mTower Q d e n).length from by
-        rw [mTower_length]; exact Nat.mul_pos hn hQ1)]
-      exact h
-  intro l hl0 hlt
-  rw [hTlen] at hlt
-  rw [hroot]
-  rcases Nat.lt_or_ge l (n * Q.length) with hin | hout
-  · -- 塔の中
-    have hTl : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
-    rw [entry_append_left _ _ (show l < (mTower Q d e n).length from by omega)]
-    have hq : l % Q.length < Q.length := Nat.mod_lt _ hQ1
-    have hk : l / Q.length < n := by
-      by_contra hc
-      have hge : n ≤ l / Q.length := by omega
-      have h1 : n * Q.length ≤ l / Q.length * Q.length :=
-        Nat.mul_le_mul_right _ hge
-      have h2 : l / Q.length * Q.length ≤ l := Nat.div_mul_le_self l Q.length
-      omega
-    have hdec : l / Q.length * Q.length + l % Q.length = l := Nat.div_add_mod' l Q.length
-    have h := entry0_mTower_block Q d e n (l / Q.length) (l % Q.length) hk hq
-    rw [hdec] at h
-    rw [h]
-    rcases Nat.eq_zero_or_pos (l % Q.length) with h0 | h0
-    · have hkpos : 0 < l / Q.length := by
-        by_contra hc
-        have hz : l / Q.length = 0 := Nat.le_zero.mp (Nat.not_lt.mp hc)
-        rw [hz, Nat.zero_mul, h0] at hdec
-        omega
-      have hpos : 0 < d * (l / Q.length) := Nat.mul_pos hd hkpos
-      rw [h0]; omega
-    · have := hr0 _ h0 hq; omega
-  · -- 足しているブロックの中
-    obtain ⟨q, rfl⟩ : ∃ q, l = n * Q.length + q := ⟨l - n * Q.length, by omega⟩
-    have hqj : q < j + 1 := by omega
-    rw [show n * Q.length + q = (mTower Q d e n).length + q from by
-        rw [mTower_length],
-      entry_append_right, Wset.entry_take hqj, hB, entry0_Lift1,
-      entry0_shiftr01 (show q < Q.length by omega)]
-    rcases Nat.eq_zero_or_pos q with h0 | h0
-    · have hnpos : 0 < n := by
-        by_contra hc
-        have hn0 : n = 0 := Nat.le_zero.mp (Nat.not_lt.mp hc)
-        rw [hn0, Nat.zero_mul, Nat.zero_add, h0] at hl0
-        omega
-      have hdn : 0 < d * n := Nat.mul_pos hd hnpos
-      rw [h0]; omega
-    · have := hr0 q h0 (by omega); omega
-
-/-! ### 231.2 ⟹ ★★★ **`OrphOK` の行 0 と行 1 が閉じます**
-
-    **行 0** … `hmin_tower`（上、`hr0` ＋ `0 < d`）だけ ⟹ ✅ **無条件**
-    **行 1** … `hmin_tower` ＋ **「的の行 1 が塔の根より上」** ＝ **`h1out`（相対版）**
-         ⟹ ★ R2 の条件つき実測 **99.1〜99.7%**
-    **行 2** … ＋ `hnb`（塔にブロッカーが無い）
-
-**⟹ ★★ R2 の (s8)(s9) が「破れは 100% が行 1 ∧ `h1out` の破れ」と出しています。**
-**⟹ ⟹ ★★★ ですから **`OrphOK` の残差は `h1out`（相対版）1 本**です。**
-
-⚠ **教訓 14**: 上は「`OrphOK` の**形**の補題」です。
-**`towerClosed_of_hered` の `OrphOK` を**これで置き換える**配線はまだしていません。** -/
-
-/-! ### 231.3 ★★★ 塔の形に入れた `OrphOK`（行 0 は**完全に無条件**） -/
-
-theorem orphOK_tower_row0 {A Q : TrioSeq} {d e n j : ℕ}
-    (hQ1 : 0 < Q.length) (hd : 0 < d) (hj : j < Q.length) (hj1 : 0 < j)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hnp : ¬ hasParent (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 (n * Q.length + j)) :
-    ¬ hasParent (A ++ (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))) 0
-      (A.length + (n * Q.length + j)) := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  have hTlen : (mTower Q d e n
-      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
-      = n * Q.length + (j + 1) := by
-    rw [List.length_append, mTower_length, List.length_take, hBlen,
-      Nat.min_eq_left (by omega)]
-  have hmin := hmin_tower (Q := Q) (d := d) (e := e) (n := n) (j := j) hQ1 hd hj hr0
-  exact orphOK_row0 (by omega) (hmin (n * Q.length + j) (by omega) (by omega)) hnp
-
-theorem orphOK_tower_row1 {A Q : TrioSeq} {d e n j : ℕ}
-    (hQ1 : 0 < Q.length) (hd : 0 < d) (hj : j < Q.length) (hj1 : 0 < j)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hcone : entry (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 0
-      < entry (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 (n * Q.length + j))
-    (hnp : ¬ hasParent (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 (n * Q.length + j)) :
-    ¬ hasParent (A ++ (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))) 1
-      (A.length + (n * Q.length + j)) := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  have hTlen : (mTower Q d e n
-      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
-      = n * Q.length + (j + 1) := by
-    rw [List.length_append, mTower_length, List.length_take, hBlen,
-      Nat.min_eq_left (by omega)]
-  have hmin := hmin_tower (Q := Q) (d := d) (e := e) (n := n) (j := j) hQ1 hd hj hr0
-  exact orphOK_row1_cone hmin (by omega) (by omega) hcone hnp
-
-/-! ### 231.4 ⟹ ★ **状態のまとめ**
-
-    ✅ **行 0** … `orphOK_tower_row0`（**前提は `hQ1` / `0 < d` / `hj` / `0 < j` / `hr0` だけ**）
-    ✅ **行 1** … `orphOK_tower_row1`（＋ `hcone` ＝ **`h1out`（相対版）**）
-    ⛔ **行 2** … `hnb`（塔にブロッカーが無い）が要る ⟹ 未着手
-
-**⟹ ★ R2 の (s8): 破れは **100% が行 1**（行 0 と行 2 は 0 件）。**
-**⟹ ⟹ ★★ ですから **行 2 は起きていません**。⟹ 残差は `hcone`（行 1）1 本です。**
-
-⚠ **教訓 14**: これらは「接頭辞を跨がない」だけです。
-**`towerClosed_of_hered` の枝は「**ブロック**の中で孤児」から始まるので、
-「**塔**の中で孤児」への橋（H12 の実測 15944 ⟺ 15944）が別に要ります。** -/
-
-/-! ## 232. ★★★★★★★ 「**ブロックの中で孤児 ⟹ 塔の中でも孤児**」（§231 の自己適用）
-
-§231 は `A ++ T` の形で「接頭辞は親を供給しない」を言います。
-**⟹ ★ そこに `A := mTower Q d e n`、`T := ブロックの接頭辞` を入れると、そのまま出ます。**
-
-**⟹ ⟹ ★★ 前提は `hmin`（`T` の根が行 0 で狭義最浅）で、
-`T = (Lift1 (shiftr01 (d*n) 0 Q) (e*n)).take (j+1)` なら **`hr0(Q)` そのもの**です。**
-**（ブロックの行 0 は `entry Q 0 x + d*n` で、`+ d*n` は一様なので大小が保たれます。）** -/
-
-theorem entry0_block_take {Q : TrioSeq} {d e n j x : ℕ} (hx : x < j + 1)
-    (hxQ : x < Q.length) :
-    entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 x
-      = entry Q 0 x + d * n := by
-  rw [Wset.entry_take hx, entry0_Lift1, entry0_shiftr01 hxQ]
-
-/-- ★ ブロックの接頭辞の根は、行 0 で狭義最浅（`hr0` から）。 -/
-theorem hmin_block {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
-    ∀ l, 0 < l → l < ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
-      entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0
-        < entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 l := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  intro l hl0 hlt
-  rw [List.length_take, hBlen, Nat.min_eq_left (by omega)] at hlt
-  rw [entry0_block_take (d := d) (e := e) (n := n) (by omega) (by omega),
-    entry0_block_take (d := d) (e := e) (n := n) hlt (by omega)]
-  have := hr0 l hl0 (by omega)
-  omega
-
-/-- ★★★ **行 0**: ブロックの中で孤児なら、塔を付けても孤児（**前提は `hr0` だけ**）。 -/
-theorem tower_orphan_of_block_row0 {Q : TrioSeq} {d e n j : ℕ}
-    (hj : j < Q.length) (hj1 : 0 < j)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hloc : ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 j) :
-    ¬ hasParent (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 (n * Q.length + j) := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  have hlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
-    rw [List.length_take, hBlen, Nat.min_eq_left (by omega)]
-  have hmin := hmin_block (Q := Q) (d := d) (e := e) (n := n) (j := j) hj hr0
-  have h := orphOK_row0 (A := mTower Q d e n)
-    (T := (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) (j1 := j)
-    hj1 (hmin j hj1 (by omega)) hloc
-  rw [mTower_length] at h
-  exact h
-
-/-- ★★ **行 1**: ＋ ブロックの錐の条件（`h1out` 相対版）。 -/
-theorem tower_orphan_of_block_row1 {Q : TrioSeq} {d e n j : ℕ}
-    (hj : j < Q.length) (hj1 : 0 < j)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hcone : entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 0
-      < entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j)
-    (hloc : ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 j) :
-    ¬ hasParent (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 (n * Q.length + j) := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  have hlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
-    rw [List.length_take, hBlen, Nat.min_eq_left (by omega)]
-  have hmin := hmin_block (Q := Q) (d := d) (e := e) (n := n) (j := j) hj hr0
-  have h := orphOK_row1_cone (A := mTower Q d e n)
-    (T := (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) (m := j)
-    hmin (by omega) hj1 hcone hloc
-  rw [mTower_length] at h
-  exact h
-
-/-! ### 232.1 ⟹ ★★★ **これで「ブロック ⟹ 塔 ⟹ 全体」が繋がります**
-
-    **ブロック ⟹ 塔** … §232（上）… **前提は `hr0`（行 0）／ ＋ 錐（行 1）**
-    **塔 ⟹ 全体** … §231（`orphOK_tower_row0` / `_row1`）… **前提は `hr0` ＋ `0 < d`（行 0）／ ＋ 錐（行 1）**
-
-**⟹ ★★ どちらも**同じ 1 本**（§230 `hasParent_peel_of_noCross` ＋ §228 / H12 の壁）の適用です。**
-**⟹ ⟹ ★ 「接頭辞は親を供給しない」を **2 回**使っているだけでした。**
-
-⚠ **教訓 14**: **行 2 は書いていません**（`hnb` が要る）。
-**⟹ ですが R2 の (s8) では**行 2 の破れは 0 件**です。** -/
-
-/-! ### 232.2 ⚠⚠ **2 段は難度が違います**（配線の前に気づきました）
-
-§232（ブロック ⟹ 塔）と §231（塔 ⟹ 全体）は、**行 1 の `hcone` の強さが違います**。
-
-## 壁の高さが違うからです
-
-    **§231（塔 ⟹ 全体）** … 壁は **塔の根**（添字 0）。行 1 は **`entry Q 1 0`**
-         ⟹ `hcone : entry Q 1 0 < entry Q 1 j` ＝ ★ **素の `h1out`**（`n` に依らない）✅
-    **§232（ブロック ⟹ 塔）** … 壁は **ブロックの根**（添字 `n*|Q|`）。行 1 は **`entry Q 1 0 + e*n`**
-         ⟹ `hcone : entry Q 1 0 + e*n < entry (block) 1 j` ⟹ ⛔ **`n` に依存し、ずっと強い**
-
-**⟹ ★ 錐の中の `j` なら `entry (block) 1 j = entry Q 1 j + e*n` なので両辺の `e*n` が消え、
-**`h1out` と同じ**になります。⟹ ⟹ 問題は**錐の外**です。**
-
-**⟹ ⛔ 錐の外では `entry (block) 1 j = entry Q 1 j`（持ち上げられない）なので、
-`entry Q 1 0 + e*n < entry Q 1 j` という **`n` とともに強くなる条件**になります。**
-
-## ⟹ ★ ですから「壁が高いほど、通り抜けやすい」
-
-**`nextrel_i` の最小性は「壁より低くない」を要求するので、**壁が高いと条件が緩む**（＝ 通れる）。**
-**⟹ ⟹ ★ `hbase`（壁 ＝ 深さ 0）が効いたのは、**壁がいちばん低かった**からです。**
-
-⚠ **H12 の実測（`hloc` 失敗 15944 件は塔でも孤児、100%）は正しいはずですが、
-**私の壁の議論では説明できません**。⟹ ★ 別の機構があるはずです。**
-
-**⟹ ⟹ ★★ ですから配線は保留します。⟹ R2 に (s11) を出します:**
-
-    **(s11)** 錐の外・`srow = 1`・ブロックの中で孤児 の列について、
-         **`entry Q 1 0 + e*n < entry Q 1 j`（強い条件）が成り立つ割合**
-         ⟹ ★ **高いなら §232 がそのまま使えます**
-         ⟹ ⛔ **低いのに塔でも孤児なら、別の機構**（そこを教えてください）
-
-⚠ **教訓（今日 10 件目、私のもの）: **同じ形の補題でも、当てる場所で前提の強さが変わる**。**
-**⟹ ★ 「自己適用で出た」と喜ぶ前に、**前提が同じ強さか**を見るべきでした。** -/
-
-/-! ## 233. ★★★ H12 の「`d = 0 ⟹ e = 0`」を窓の言葉で（`wd0 = 0 ⟹ wd1 = 0`）
-
-H12 の `entry0_parent_lt_of_srow2`（緑）を、私の `wd0` / `wd1` に当てます。
-
-    `wd1 > 0` ⟹ `1 < srow(末尾)` ⟹ `srow = 2` ⟹ 親は `nextrel2` の始点
-    ⟹ H12 `entry0_parent_lt_of_srow2` … **行 0 が狭義に小さい**
-    ⟹ `wd0 = entry 0 (末尾) − entry 0 (親) > 0`
-
-**⟹ ★ 対偶で **`wd0 = 0 ⟹ wd1 = 0`**。⟹ ⟹ **`d = 0` の塔は `d = e = 0` にしかならない**。** -/
-
-open Classical in
-theorem wd1_zero_of_wd0_zero {P B : TrioSeq} {j p : ℕ}
-    (hpar : hasParent (P ++ B.take (j + 1))
-      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
-      ((P ++ B.take (j + 1)).length - 1))
-    (hpe : parent (P ++ B.take (j + 1))
-      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
-      ((P ++ B.take (j + 1)).length - 1) = P.length + p)
-    (h0 : wd0 P B j p = 0) : wd1 P B j p = 0 := by
-  set T := P ++ B.take (j + 1) with hT
-  set s := srow T (T.length - 1) with hs
-  unfold wd1
-  rw [← hT, ← hs]
-  by_cases h2 : 1 < s
-  · exfalso
-    -- `srow = 2` ⟹ 親は `nextrel2` の始点 ⟹ 行 0 が狭義に小さい
-    have hnr := parent_nextR hpar
-    rw [hpe] at hnr
-    have hs2 : s = 2 := by
-      have : s = srow T (T.length - 1) := hs
-      unfold srow at this
-      split_ifs at this <;> omega
-    rw [hs2] at hnr
-    have hlt := entry0_parent_lt_of_srow2 hnr
-    have h0' := h0
-    unfold wd0 at h0'
-    rw [← hT, ← hs, if_pos (by omega)] at h0'
-    omega
-  · rw [if_neg h2]
-
-/-! ## 234. ★★★★★★★★★★ **配線**: `OrphOK` を `TowerP''` の中に取り込みます
-
-team-lead の最優先依頼です。**⟹ ★ 鍵は「1 回で剥がす」ことでした。**
-
-⚠ §232.2 で「2 段は難度が違う」と書きました。**⟹ ★ ですが**2 段に分けなければ**よいのです。**
-
-    **`A' := A ++ mTower Q d e n`**、**`T' := ブロックの接頭辞 `B.take (j+1)`**
-    ⟹ `S = A' ++ T'`、的は `A'.length + j`
-    ⟹ ★ 要る入力は **`¬ hasParent T' (srow T' j) j`** ＝ **`hloc` そのもの** ✅
-
-**⟹ ★★ そして H12 の `no_nextR_srow_cross` の 3 前提を `T' = B.take (j+1)` で見ると:**
-
-    `hmin` … `hmin_block`（§232、**`hr0` だけ**）✅
-    `hz0`  … `entry (B.take (j+1)) 2 0 = entry Q 2 0 = 0` ✅（`TowerP''`）
-    `hnb`  … `entry (block) 1 0 < entry (block) 1 l` ⟹ ⛔ **`n` に依存して見える**
-
-## ★★★ ⟹ ですが **`hnbQ`（`Q` にブロッカーが無い）があれば `n` が消えます**
-
-**`hnbQ` ⟹ `L105.not_le1_zero_iff` の右辺が偽 ⟹ **`Q` の全列が錐の中****
-**⟹ ⟹ ★ `block_getD` の `if le1 Q 0 x` が**常に真** ⟹ `entry (block) 1 x = entry Q 1 x + e*n`**
-**⟹ ⟹ ⟹ ★★ 両辺の `e*n` が消えて **`hnbQ` そのもの**になります。** -/
-
-/-- ★ `hnbQ`（ブロッカー無し）⟹ `Q` の全列が根の錐の中。 -/
-theorem le1_zero_all_of_noBlocker {Q : TrioSeq}
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
-    {q : ℕ} (hq : q < Q.length) : le1 Q 0 q := by
-  by_contra hc
-  obtain ⟨y, hy, hy0, hy1⟩ := (not_le1_zero_iff hr0 hq).mp hc
-  have hyq : y ≤ q := nextrel0_rtrancl_index_le hy
-  have := hnbQ y (by omega) (by omega)
-  omega
-
-/-- ★★ `hnbQ` ⟹ ブロックの接頭辞にもブロッカーが無い（**`n` に依らない**）。 -/
-theorem hnb_block {Q : TrioSeq} {d e n j : ℕ} (hj : j < Q.length)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i) :
-    ∀ l, 0 < l → l < ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length →
-      entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 0
-        < entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 l := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  have hE : ∀ x, x < j + 1 → x < Q.length →
-      entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1 x
-        = entry Q 1 x + e * n := by
-    intro x hx hxQ
-    rw [Wset.entry_take hx]
-    show ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).getD x (0, 0, 0)).2.1 = _
-    rw [block_getD hxQ, if_pos (le1_zero_all_of_noBlocker hr0 hnbQ hxQ)]
-  intro l hl0 hlt
-  rw [List.length_take, hBlen, Nat.min_eq_left (by omega)] at hlt
-  rw [hE 0 (by omega) (by omega), hE l hlt (by omega)]
-  have := hnbQ l hl0 (by omega)
-  omega
-
-/-- ★ ブロックの接頭辞の根の行 2 は `Q` の根の行 2。 -/
-theorem hz0_block {Q : TrioSeq} {d e n j : ℕ} (hQ1 : 0 < Q.length)
-    (hz0 : entry Q 2 0 = 0) :
-    entry ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2 0 = 0 := by
-  rw [Wset.entry_take (show (0 : ℕ) < j + 1 by omega)]
-  show ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).getD 0 (0, 0, 0)).2.2 = 0
-  rw [block_getD (d := d) (e := e) (n := n) hQ1]
-  exact hz0
-
-/-- ★★★★★ **`OrphOK` が定理になりました**（`hnbQ` を前提に）。 -/
-theorem orphOK_proved {A Q : TrioSeq} {d e n j : ℕ}
-    (hQ1 : 0 < Q.length) (hj : j < Q.length) (hj1 : 0 < j)
-    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
-    (hz0 : entry Q 2 0 = 0)
-    (hnbQ : ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i)
-    (hloc : ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j) :
-    ¬ hasParent (A ++ mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-      (srow (A ++ mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-        ((A ++ mTower Q d e n).length + j))
-      ((A ++ mTower Q d e n).length + j) := by
-  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
-    rw [Lift1_length, shiftr01_length]
-  have hlen : ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length = j + 1 := by
-    rw [List.length_take, hBlen, Nat.min_eq_left (by omega)]
-  intro hp
-  have hsr : srow (A ++ mTower Q d e n
-      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-      ((A ++ mTower Q d e n).length + j)
-      = srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j :=
-    srow_append_right _ _ j
-  rw [hsr] at hp
-  -- ★ 1 回で剥がす: `A' := A ++ mTower Q d e n`、`T' := ブロックの接頭辞`
-  refine hloc (hasParent_peel_of_noCross (A := A ++ mTower Q d e n)
-    (T := (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-    (i := srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j)
-    (fun y hy hc => ?_) hp)
-  rw [← hsr] at hc
-  exact no_nextR_srow_cross (hmin_block (d := d) (e := e) (n := n) hj hr0)
-    (hnb_block (d := d) (e := e) (n := n) hj hr0 hnbQ)
-    (hz0_block (d := d) (e := e) (n := n) (j := j) hQ1 hz0) hy (by omega) hj1 hc
 
 end L106
 end TRIO
