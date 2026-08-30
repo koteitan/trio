@@ -7909,5 +7909,40 @@ theorem w71_eq_false :
   have hlt := w71Ctr_row1_lt
   omega
 
+
+/-! ## 121. ★★★★★★★★★★ **残差の機構 ＝ `blocker_of_large_k`** —— 1 本に繋ぎました
+
+(W71) の「≤」だけで **「末尾は錐の外」**が出ます（等号は要りません）。
+⟹ ★ ⟹ **`Lift1` も塔の `+e*k` も末尾を動かさない**
+⟹ ⟹ ★★ 一方 **錐の中の列は `+e*k` で上がる**
+⟹ ⟹ ⟹ ★★★★★★★★★★ ⟹ **`blocker_of_large_k`（私の §305）が、そのまま残差の機構**です。 -/
+
+/-- ★★★★★ **行 1 が根以下なら錐の外**（等号でなくてよい、(W64) の一般形）。 -/
+theorem not_in_cone_of_row1_le_root {Q : TrioSeq} {j : ℕ} (hj0 : 0 < j)
+    (h : entry Q 1 j ≤ entry Q 1 0) : ¬ le1 Q 0 j :=
+  fun hc => absurd (entry1_lt_of_le1_ne hc (by omega)) (by omega)
+
+/-- ★★★★★★★★ ⟹ **残差の末尾は錐の外**（`srow = 1` の場合、等号を経由しません）。 -/
+theorem orphan_last_not_in_cone_le {Q : TrioSeq}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (hs : srow Q (Q.length - 1) = 1)
+    (horph : ¬ L53.HasParentInBlock Q) :
+    ¬ le1 Q 0 (Q.length - 1) :=
+  not_in_cone_of_row1_le_root (by omega) (orphan_last_row1_le_root hr0 hQ2 hs horph)
+
+/-- ★★★★★★★★★★ **残差の機構（1 本）**: 残差の末尾は、
+**錐の中のどの列より行 1 が低くなる**（`k` が十分大きいブロックで）。
+⟹ ★ ＝ **私の `blocker_of_large_k` を、残差の言葉で書き直したもの**。 -/
+theorem blocker_of_residual_last (Q : TrioSeq) {d e n k k' p : ℕ}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (hs : srow Q (Q.length - 1) = 1)
+    (horph : ¬ L53.HasParentInBlock Q)
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hinp : le1 Q 0 p)
+    (he : 0 < e) (hbig : entry Q 1 (Q.length - 1) ≤ k) :
+    entry (mTower Q d e n) 1 (k' * Q.length + (Q.length - 1))
+      ≤ entry (mTower Q d e n) 1 (k * Q.length + p) :=
+  blocker_of_large_k Q hk hk' hp (by omega) hinp
+    (orphan_last_not_in_cone_le hr0 hQ2 hs horph) he hbig
+
 end H12H2
 end TRIO
