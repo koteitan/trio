@@ -6045,5 +6045,43 @@ theorem hlocQ_row2_take_of_cone {Q : TrioSeq} {j : ℕ} (hj : j < Q.length) (hj0
 ⚠ そして **これは `hz0` を使っています**。`hz0` は `TowerP''` の中にあり、
 **遺伝は §213 で緑**なので、循環はありません。 -/
 
+/-! ### 240.4 ★★★★★ (R1) を**定理**にします —— **`hlocQ` があれば接頭辞は親を供給しない**
+
+team-lead の (R1)。⚠ そして R2 の (W15)「接頭辞は `hbase` が無いと 12.58% で親を供給する」
+との**整合**をここで取ります。
+
+**⟹ ★★★ 答え: `L105.parent_ge_of_inner`（`L105Cap.lean:7480`、前提なし）が
+「**後ろが自分の中に親を持てば**、接頭辞は親を供給できない」と言っています。**
+**⟹ ⟹ ★★★★ そして `hlocQ` は**まさにその前提**です。⟹ `hnbQ` の代役は要りません。**
+
+⚠ **R2 の 12.58% と矛盾しません**: あちらは**孤児の列**（塔の根が 89.2%）を数えています。
+**⟹ ★ `hlocQ` は「孤児でない」を言うので、12.58% の側には入りません。** -/
+
+theorem prefix_no_cross_of_inner {A T : TrioSeq} {i j : ℕ}
+    (hj : j + 1 = T.length) (hp : hasParent T i j) :
+    ∀ y, y < A.length → ¬ nextR (A ++ T) i y (A.length + j) := by
+  intro y hy hnr
+  have hTne : T ≠ [] := by intro h; rw [h] at hj; simp at hj
+  have hidx : (A ++ T).length - 1 = A.length + j := by
+    rw [List.length_append]; omega
+  have hT1 : T.length - 1 = j := by omega
+  have hge : A.length ≤ y :=
+    L105.parent_ge_of_inner (A := A) (T := T) (i := i) hTne
+      (by rw [hT1]; exact hp) (by rw [hidx]; exact hnr)
+  omega
+
+/-! ### 240.5 ⟹ ★★★ ですから **`hloc` があれば剥がせます**（§230 との合流）
+
+§230 の `hasParent_peel_of_noCross` は「接頭辞が `nextR` の始点でない」を受け取ります。
+**⟹ ★ §240.4 がそれを **`hasParent T` だけ**から出します。⟹ ⟹ 循環しません
+（前提は `T` の中の話、結論は `A ++ T` の話）。** -/
+
+/-- ★★ 実用形: `A ++ T` の親は必ず `T` の中にある。 -/
+theorem parent_in_suffix_of_inner {A T : TrioSeq} {i j y : ℕ}
+    (hj : j + 1 = T.length) (hp : hasParent T i j)
+    (hnr : nextR (A ++ T) i y (A.length + j)) : A.length ≤ y := by
+  by_contra hcon
+  exact prefix_no_cross_of_inner hj hp y (by omega) hnr
+
 end L106
 end TRIO
