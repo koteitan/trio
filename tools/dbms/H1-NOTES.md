@@ -6677,3 +6677,36 @@ L3 の要請:「`L106.lean` は `H12H2` を import できないので**写す**�
 「索引に見えなかった」ではない（`H12H2.lean` は索引に 57 件入っている）。
 **L3 が §198-§199 を書いたことを私に伝えていなかった**（L3 の自己申告）。
 ⟹ **今後、`L105Cap`/`L106` に何か緑にしたら互いに 1 行で伝える**という運用にした。
+
+## §276. ★★★★★★★★ **§186 の接頭辞つき版（緑）** —— 測度の帰納の最後の 1 つ
+
+L3 の振り分け:「`snocStep_oper_tower`（`L105Cap:13093`、緑）は**接頭辞なし**。
+測度の帰納は族 **`A ++ mTower V d e m`** の上で回すので**接頭辞つきが要る**。
+これを振る（私は持っていない）。」
+
+### §276.1 §23 と**同じ道**で出た（接頭辞をまるごと剥がす）
+
+    **`Column.oper_append_right`（`Column.lean:437`）**
+      `2 ≤ |T|` → **`entry T 0 0 = 0`** → **`oper (A ++ T) n = A ++ oper T n`**
+
+⟹ `T := mTower Q d e n ++ B.take (j+1)` と取ると `entry T 0 0 = entry Q 0 0`
+（§23 の `entry0_towerPrefix_root`）⟹ 消費側では `= 0`。
+⟹ **L3 の §186 をそのまま呼んで、`append_assoc` で並べ替えるだけ。一発で緑。**
+
+> ★ **`Column.lean` の「接頭辞を剥がす」3 本
+> （`hasParent_append_right` / `parent_append_right` / `oper_append_right`）が、
+> 接頭辞つき版を全部機械的にした。**
+> ⟹ **同じ道具で 2 回続けて栓が抜けた**（§271 の窓補題と §276 の展開）。
+
+### §276.2 緑
+
+    **prefix_snocStep_oper_tower** :
+      `hj`, `hpj`, `0 < |Q|`, **`hbase : entry Q 0 0 = 0`**, `hz`, `hpar`,
+      `hpe : parent … = n*|Q| + p`
+      ⟹ `∃ V d0 d1, |V| = j - p ∧`
+         **`(A ++ 塔 ++ B.take (j+1))⟦m⟧ = (A ++ 塔 ++ B.take p) ++ mTower V d0 d1 m`**
+
+### §276.3 `lean/H12Export.lean` を更新（**緑、定理 32 本、769 行**）
+
+⚠ **L3 は既に §275 の 31 本を `L106.lean` に写しずみ**（索引で確認。`L106` は緑・`sorry` 0）。
+⟹ **新しく要るのは `prefix_snocStep_oper_tower` 1 本だけ**（依存はすべて L3 の手元にある）。

@@ -1822,5 +1822,78 @@ theorem prefix_window_of_outOfCone_consumer {A : TrioSeq} {v z t : ℕ} {R : Tri
   prefix_window_of_outOfCone_all hM2 hd1pos hd0e hr0 hlp (hbase_of_consumer hM2)
     hj hj1 hout hpar0
 
+
+/-! ## 27. ★★★★★★★★ **§186 の接頭辞つき版**（L3 の指名。測度の帰納の最後の 1 つ）
+
+L3 の `snocStep_oper_tower`（`L105Cap:13093`、緑）は**接頭辞なし**。
+測度の帰納は族 **`A ++ mTower V d e m`** の上で回すので**接頭辞つきが要る**。
+
+⟹ §23 と**同じ道**（接頭辞をまるごと剥がす）で出る:
+
+    **`Column.oper_append_right`（`Column.lean:437`）**
+      `2 ≤ |T|` → **`entry T 0 0 = 0`** → **`oper (A ++ T) n = A ++ oper T n`**
+
+⟹ `T := mTower Q d e n ++ B.take (j+1)` と取れば、`entry T 0 0 = entry Q 0 0`
+（§23 の `entry0_towerPrefix_root`）なので、消費側では `= 0`。 -/
+
+open Classical in
+/-- ★★★★★★★★ **§186 の接頭辞つき版**: 塔に 1 列足したものの展開は
+**接頭辞 ＋ 短い塔**に分かれる。 -/
+theorem prefix_snocStep_oper_tower {A Q : TrioSeq} {d e n j p m : ℕ}
+    (hj : j < Q.length) (hpj : p < j) (hQ1 : 0 < Q.length)
+    (hbase : entry Q 0 0 = 0)
+    (hz : ¬ (entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 ∧
+      entry (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0))
+    (hpar : hasParent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+    (hpe : parent (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+      = n * Q.length + p) :
+    ∃ (V : TrioSeq) (d0 d1 : ℕ), V.length = j - p ∧
+      (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))⟦m⟧
+      = (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take p)
+        ++ mTower V d0 d1 m := by
+  obtain ⟨V, d0, d1, hVlen, hVeq⟩ :=
+    snocStep_oper_tower (Q := Q) (d := d) (e := e) (n := n) (j := j) (p := p) (m := m)
+      hj hpj hz hpar hpe
+  refine ⟨V, d0, d1, hVlen, ?_⟩
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hT2 : 2 ≤ (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+    omega
+  have hroot : entry (mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 0 0 = 0 := by
+    rw [entry0_towerPrefix_root Q d e n j hQ1]; exact hbase
+  rw [List.append_assoc A (mTower Q d e n), oper_append_right _ _ m hT2 hroot,
+    hVeq, ← List.append_assoc, ← List.append_assoc]
+
 end H12H2
 end TRIO
