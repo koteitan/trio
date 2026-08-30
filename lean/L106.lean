@@ -6515,5 +6515,65 @@ theorem hlocQ_wnd_of_root_lt {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) (h
 
 ⚠ **教訓 14**: `hlocQ_of_root_lt` は緑ですが、**前提が満たされる保証はありません**。 -/
 
+/-! ## 246. ★★★★★ **窓の `hlocQ` の行 1 の成分＝「証人が窓の中」** —— **同値**にします
+
+§244 で行 1 の成分は 3 連言になりました。⟹ ★ 窓と元の列で **`le0` は両方向に移ります**
+（§238 `le0_window` ／ §242 `le0_window'`、**どちらも前提なし**）。
+**⟹ ⟹ ★★★ ですから **残差はちょうど「証人が `p` 以上に取れるか」**——**同値**です。**
+
+⚠ **教訓 45**: **反例の形を先に書きます**。証人が `p` 未満なら**窓では本当に破れます**。 -/
+
+theorem wnd_row1_witness_iff {P B : TrioSeq} {j p t : ℕ} (hjB : j < B.length) (hpj : p < j)
+    (ht : t < j - p) :
+    (∃ y', y' < t ∧ le0 (wnd P B j p) y' t ∧
+       entry (wnd P B j p) 1 y' < entry (wnd P B j p) 1 t)
+      ↔ (∃ y, p ≤ y ∧ y < p + t ∧
+           le0 (P ++ B.take (j + 1)) (P.length + y) (P.length + (p + t)) ∧
+           entry (P ++ B.take (j + 1)) 1 (P.length + y)
+             < entry (P ++ B.take (j + 1)) 1 (P.length + (p + t))) := by
+  set T := P ++ B.take (j + 1) with hT
+  have hTl : T.length = P.length + (j + 1) := by
+    rw [hT, List.length_append, List.length_take, Nat.min_eq_left (by omega)]
+  have hL : P.length + p + (j - p) ≤ T.length := by omega
+  have hE : ∀ q, q < j - p →
+      entry (wnd P B j p) 1 q = entry T 1 (P.length + p + q) := by
+    intro q hq; unfold wnd; rw [← hT, entry_window T (i := 1) hq]
+  constructor
+  · rintro ⟨y', hy't, hle0, hlt⟩
+    refine ⟨p + y', by omega, by omega, ?_, ?_⟩
+    · have := le0_window' (T := T) (s := P.length + p) (L := j - p)
+        hL (show y' < j - p by omega) ht (by unfold wnd at hle0; rw [← hT] at hle0; exact hle0)
+      rw [show P.length + p + y' = P.length + (p + y') from by omega,
+        show P.length + p + t = P.length + (p + t) from by omega] at this
+      exact this
+    · rw [hE y' (by omega), hE t ht] at hlt
+      rw [show P.length + (p + y') = P.length + p + y' from by omega,
+        show P.length + (p + t) = P.length + p + t from by omega]
+      exact hlt
+  · rintro ⟨y, hpy, hyt, hle0, hlt⟩
+    refine ⟨y - p, by omega, ?_, ?_⟩
+    · unfold wnd; rw [← hT]
+      refine le0_window (T := T) (s := P.length + p) (L := j - p)
+        hL (show y - p < j - p by omega) ht ?_
+      rw [show P.length + p + (y - p) = P.length + y from by omega,
+        show P.length + p + t = P.length + (p + t) from by omega]
+      exact hle0
+    · rw [hE (y - p) (by omega), hE t ht,
+        show P.length + p + (y - p) = P.length + y from by omega,
+        show P.length + p + t = P.length + (p + t) from by omega]
+      exact hlt
+
+/-! ### 246.1 ⟹ ★★★ **残差の最終形**（`hlocQ` の行 1 の成分）
+
+    窓で `hlocQ` の行 1 が立つ ⟺ **`p+t` の証人を `[p, p+t)` の中に取れる**
+
+**⟹ ★ そして §244 の `exists_nextrel1_of_le0_lt` は**最大の証人**を作ります。**
+**⟹ ⟹ ★★ ですから **「最大の証人 `y*` が `p` 以上か」**が正確な残差です。**
+**⟹ ⟹ ⟹ ⛔ `y* < p` なら、`nextrel1` の最小性により
+**`[p, p+t)` の `le0` 祖先はすべて行 1 が `p+t` 以上**——⟹ **窓では本当に破れます**。**
+
+**⟹ ★ R2 の 90.3% / 95.5〜96.9% は、この量そのものです。⟹ **100% ではありません**。**
+**⟹ ⟹ ⚠ ですから **`hlocQ` の遺伝はこのままでは偽**です。⟹ 追加の前提が要ります。** -/
+
 end L106
 end TRIO
