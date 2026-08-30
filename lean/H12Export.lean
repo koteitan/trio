@@ -3116,5 +3116,29 @@ theorem hnz_mTower {Q : TrioSeq} (hQ1 : 0 < Q.length)
   · have := hnz _ hp hi
     omega
 
+
+/-- ★★★ (a) **行 1 が 0 の非根の列は、必ず錐の外**（`nextrel1` の単調性だけ）。 -/
+theorem row1_zero_not_le1 {Q : TrioSeq} {i : ℕ} (hi : 0 < i) (h : entry Q 1 i = 0) :
+    ¬ le1 Q 0 i :=
+  blocker_not_le1 (by omega) (by omega)
+
+open Classical in
+/-- ★★★★ (b) **ブロックの行 1 = 0 の列 ⟺ `Q` の行 1 = 0 の列**（非根について）。 -/
+theorem row1_zero_block_iff (Q : TrioSeq) {d e n k i : ℕ}
+    (hk : k < n) (hi : i < Q.length) (hi0 : 0 < i) :
+    entry (mTower Q d e n) 1 (k * Q.length + i) = 0 ↔ entry Q 1 i = 0 := by
+  rw [entry1_mTower_block_formula Q hk hi]
+  constructor
+  · intro h
+    split at h <;> omega
+  · intro h
+    rw [if_neg (row1_zero_not_le1 hi0 h), h]
+
+/-- ★★ ブロックの**根**の行 1 = 0 の条件（`e*k = 0` も要る）。 -/
+theorem row1_zero_blockRoot_iff {Q : TrioSeq} (hQne : Q ≠ []) {d e n k : ℕ} (hk : k < n) :
+    entry (mTower Q d e n) 1 (k * Q.length) = 0 ↔ entry Q 1 0 = 0 ∧ e * k = 0 := by
+  rw [entry1_mTower_blockRoot hQne d e n k hk]
+  omega
+
 end H12Export
 end TRIO
