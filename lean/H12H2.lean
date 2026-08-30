@@ -1651,5 +1651,66 @@ theorem prefix_window_of_outOfCone_all {A M : TrioSeq} {d e n j : ℕ}
   rw [← hQ, ← hT] at hcore
   omega
 
+
+/-! ## 24. **L3 の §167 の書き方に合わせた版** ＋ **二分法の `iff`**
+
+L3 の §167 は位置を **`(A ++ mTower Q d e n ++ B.take j).length`** と書く。
+私の §23 は **`(A ++ mTower Q d e n).length + j`**。値は同じなので橋を 1 本。 -/
+
+/-- 位置の書き換え（`B.take j` の長さは `j`）。 -/
+theorem prefixTake_length (A Q : TrioSeq) (d e n j : ℕ) (hj : j < Q.length) :
+    (A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+      = (A ++ mTower Q d e n).length + j := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+
+open Classical in
+/-- ★★ **§167 の書き方に合わせた接頭辞つき窓補題**（L3 がそのまま貼れる形）。 -/
+theorem prefix_window_of_outOfCone_all' {A M : TrioSeq} {d e n j : ℕ}
+    (hM2 : 2 ≤ M.length) (hd1pos : 0 < e)
+    (hd0e : entry M 0 (0 + M.dropLast.length) = entry M 0 0 + d)
+    (hr0 : ∀ l, 0 < l → l < M.length → entry M 0 0 < entry M 0 l)
+    (hlp : le1 M 0 (0 + M.dropLast.length))
+    (hbase : entry M.dropLast 0 0 = 0)
+    (hj : j < M.dropLast.length) (hj1 : 0 < j)
+    (hout : ¬ le1 M 0 (0 + j))
+    (hpar0 : hasParent (A ++ mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+      (srow (A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+      (A ++ mTower M.dropLast d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length) :
+    (A ++ mTower M.dropLast d e n).length
+      ≤ parent (A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+        (srow (A ++ mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take (j + 1))
+          (A ++ mTower M.dropLast d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length)
+        (A ++ mTower M.dropLast d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 M.dropLast) (e * n)).take j).length := by
+  rw [prefixTake_length A M.dropLast d e n j hj] at hpar0 ⊢
+  exact prefix_window_of_outOfCone_all hM2 hd1pos hd0e hr0 hlp hbase hj hj1 hout hpar0
+
+/-- ★★ **二分法の `iff`**（L3 の問い): 窓が `|Q|`（＝ 非減少）⟺ 親がブロックの根。 -/
+theorem blockRoot_window_eq_iff {Q : TrioSeq} {d e n k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hk : k + 1 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hp : hasParent (mTower Q d e n) 1 ((k + 1) * Q.length)) :
+    (k + 1) * Q.length - parent (mTower Q d e n) 1 ((k + 1) * Q.length)
+        = Q.length
+      ↔ parent (mTower Q d e n) 1 ((k + 1) * Q.length) = k * Q.length := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  constructor
+  · intro hw
+    by_contra hne
+    have := blockRoot_window_lt_of_ne_root hQne hd he hk hr0 hp hne
+    omega
+  · exact fun hpe => blockRoot_window_eq_of_root hQ1 hpe
+
 end H12H2
 end TRIO

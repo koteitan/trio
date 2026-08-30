@@ -6595,3 +6595,15 @@ L3 の指定: **`prefixSnocStep_parent_sameBlock`（§167）に流し込む**。
 1 回踏んだ。**Lean が型で捕まえた。**
 
 **Lean**: `lean/H12H2.lean`（緑、`sorry` 0、**定理 57 本**）。
+
+## §272. **§167 の書き方に合わせた版 ＋ 二分法の `iff`**（緑）
+
+    prefixTake_length                  : `(A ++ 塔 ++ B.take j).length = (A ++ 塔).length + j`
+    **prefix_window_of_outOfCone_all'** : §271 を **L3 の §167 の位置の書き方**に合わせた版
+                                         ⟹ **L3 がそのまま貼れる**
+    **blockRoot_window_eq_iff**        : **窓 `= |Q|`（＝ 非減少）⟺ 親がブロックの根**
+                                         （L3 の問い「もう `iff` になっているはず」への答え: **なっていた**）
+
+⟹ R2 の骨の 1 行目「**非減少 ⟺ 親が直前のブロックの根**」が**定理**になった。
+
+**Lean**: `lean/H12H2.lean`（緑、`sorry` 0、**定理 59 本**）。
