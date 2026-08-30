@@ -4703,5 +4703,40 @@ theorem nextrel1_of_witness {V : TrioSeq} {y t : ℕ}
     exact ⟨hxt, hx.2, hc⟩
   exact absurd (Finset.le_max' _ x hxT) (by omega)
 
+
+/-! ## 61. ★★★★★★★ (W18) **`hlocQ` ＋「行 1 が 0 の列が無い」⟹ 全列が錐の中**
+
+`hlocQ` の行 1 の成分は `hasParent V 1 t`（§316）⟹ **`nextrel1` の親が存在**。
+⟹ ★ 鎖を下へたどると、**行 1 が 0 の列**（そこでは `hlocQ` の前件が偽）か**根**で止まる。
+⟹ ⟹ ★★ ですから **「行 1 が 0 の列が無い」なら鎖は必ず根に届く** ⟹ **全列が錐の中**。
+
+⟹ ★★★ R2 の「破れの形はブロッカー ＝ **行 1 が 0 の列**」「それを封じる前提があれば埋まる」
+と**完全に一致**する。 -/
+
+theorem le1_root_of_hlocQ {V : TrioSeq}
+    (hpar : ∀ t, 0 < t → t < V.length → 0 < entry V 1 t → ∃ y, nextrel1 V y t)
+    (hnz : ∀ t, 0 < t → t < V.length → 0 < entry V 1 t) :
+    ∀ t, t < V.length → le1 V 0 t := by
+  intro t
+  induction t using Nat.strong_induction_on with
+  | _ t ih =>
+    intro ht
+    rcases Nat.eq_zero_or_pos t with h0 | hp
+    · subst h0
+      exact ⟨ht, ht, Relation.ReflTransGen.refl⟩
+    · obtain ⟨y, hy⟩ := hpar t hp ht (hnz t hp ht)
+      have hyt : y < t := hy.2.2.1
+      obtain ⟨-, -, hrt⟩ := ih y hyt (by omega)
+      exact ⟨by omega, ht, hrt.tail hy⟩
+
+/-- ★★★★★★★ ⟹ **`hlocQ` ＋「行 1 が 0 の列が無い」で、私の行 2 の壁の前提が出る**。 -/
+theorem hanc_of_hlocQ {V : TrioSeq}
+    (hpar : ∀ t, 0 < t → t < V.length → 0 < entry V 1 t → ∃ y, nextrel1 V y t)
+    (hnz : ∀ t, 0 < t → t < V.length → 0 < entry V 1 t)
+    {m : ℕ} (hm : m < V.length) :
+    ∀ m', 0 < m' → Relation.ReflTransGen (nextrel1 V) m' m →
+      entry V 1 0 < entry V 1 m' :=
+  hanc_of_cone (le1_root_of_hlocQ hpar hnz m hm).2.2
+
 end H12H2
 end TRIO
