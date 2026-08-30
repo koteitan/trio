@@ -9828,5 +9828,67 @@ theorem le1_append_iff {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b <
 
 ⚠ **残るのは「バッドルートが `P` の中」＝ `parent (A ++ P) i (|A|+|P|−1) = |A| + p`** です。 -/
 
+/-! ## 288. ★★★★★★★★ **(L-OPA)**: `oper (A ++ P) n = A ++ oper P n` を **`rsum` なしで**
+
+`Wset.oper_append_gen`（`Wset:1414`）は **`rsum A P`** を要求します。
+**⟹ ★ ですが本当に要るのは **「バッドルートが `P` の中」**だけです。**
+
+**⟹ ★★★ そして §273 の `snocStep_oper_gen_eq` を**両側に**当てるだけで出ます:**
+
+    `M⟦n⟧ = M.take c ++ mTower ((M.drop c).take (|M|−1−c)) d0 d1 n`（**親の位置は任意**）
+
+**⟹ ⟹ ★★★★★ **`mTower` の中の `Lift1` は「窓の中の `le1`」で判定**するので、⟹ ★ **接頭辞は効きません**。**
+**⟹ ⟹ ⟹ ★★ ですから **`rsum` は要りません**。⟹ ★ **§287 すら要りませんでした**（`gexp` が吸収済み）。 -/
+
+open Classical in
+theorem oper_append_of_parent_in {A P : TrioSeq} {p : ℕ} (n : ℕ) (hP : 2 ≤ P.length)
+    (hzP : ¬ (entry P 0 (P.length - 1) = 0 ∧ entry P 1 (P.length - 1) = 0 ∧
+      entry P 2 (P.length - 1) = 0))
+    (hparP : hasParent P (srow P (P.length - 1)) (P.length - 1))
+    (hpeP : parent P (srow P (P.length - 1)) (P.length - 1) = p)
+    (hparM : hasParent (A ++ P) (srow (A ++ P) ((A ++ P).length - 1))
+      ((A ++ P).length - 1))
+    (hpeM : parent (A ++ P) (srow (A ++ P) ((A ++ P).length - 1))
+      ((A ++ P).length - 1) = A.length + p) :
+    (A ++ P)⟦n⟧ = A ++ P⟦n⟧ := by
+  have hMlen : (A ++ P).length = A.length + P.length := List.length_append
+  have hlastM : (A ++ P).length - 1 = A.length + (P.length - 1) := by omega
+  have hplt : p < P.length := by
+    rw [← hpeP]
+    exact (nextR_index_lt (parent_nextR hparP)).trans_le (by omega)
+  have hE : ∀ i, entry (A ++ P) i ((A ++ P).length - 1) = entry P i (P.length - 1) := by
+    intro i; rw [hlastM, entry_append_right]
+  have hEc : ∀ i, entry (A ++ P) i (A.length + p) = entry P i p := by
+    intro i; rw [entry_append_right]
+  have hsr : srow (A ++ P) ((A ++ P).length - 1) = srow P (P.length - 1) := by
+    unfold srow; rw [hE 2, hE 1]
+  have hzM : ¬ (entry (A ++ P) 0 ((A ++ P).length - 1) = 0 ∧
+      entry (A ++ P) 1 ((A ++ P).length - 1) = 0 ∧
+      entry (A ++ P) 2 ((A ++ P).length - 1) = 0) := by
+    rw [hE 0, hE 1, hE 2]; exact hzP
+  rw [snocStep_oper_gen_eq n (by omega) hzM hparM hpeM,
+    snocStep_oper_gen_eq n (by omega) hzP hparP hpeP]
+  have hLb : (A ++ P).length - 1 - (A.length + p) = P.length - 1 - p := by omega
+  have hdrop : (A ++ P).drop (A.length + p) = P.drop p := by
+    rw [show A.length + p = A.length + p from rfl, ← List.drop_drop, List.drop_left]
+  have htake : (A ++ P).take (A.length + p) = A ++ P.take p := by
+    rw [List.take_append]
+    congr 1
+    · exact List.take_of_length_le (by omega)
+    · congr 1; omega
+  rw [hLb, hdrop, htake, hE 0, hE 1, hEc 0, hEc 1, hsr, List.append_assoc]
+
+/-! ### 288.1 ⟹ ★★★★★★★★ **`rsum` の 3 つの用途のうち 1 つが外れました**
+
+    ✅ **`oper_append_gen`** … **§288 で `rsum` なし**（バッドルートが `P` の中だけ）
+    ⛔ `hasParent_append_gen`（`Wset:1445`）… まだ `rsum`
+    ⛔ `domT_append` / `graft_append`（`Wset:1487`）… まだ `rsum`
+
+**⟹ ★ そして **`XA_closed` の節 2（`oper`）の枝が、`rsum` の `A` 側なしで通る**ことになります。**
+**⟹ ⟹ ⚠ ただし **`XA_closed` は 3 つの節すべてで `rsum` を使います** ⟹ ⛔ **1 つ外しても足りません**。**
+**⟹ ⟹ ⟹ ★ **残り 2 つも同じ手で外せるか**——⟹ ★★ **そこが次です**。**
+
+⚠ **教訓 14**: §288 は緑ですが、**`W_add` を弱めたわけではありません**。⟹ ★ **3 つのうち 1 つ**です。 -/
+
 end L106
 end TRIO
