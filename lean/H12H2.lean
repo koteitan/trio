@@ -1476,8 +1476,9 @@ theorem entry2_mTower_block (Q : TrioSeq) (d e : ℕ) :
             rw [mTower_length],
           entry_append_right, entry2_Lift1, entry2_shiftr01]
 
-/-- ⟹ **`Q` の行 2 が一定なら、塔の行 2 も同じ値で一定**。 -/
-theorem row2_const_mTower (Q : TrioSeq) (d e n : ℕ) {c : ℕ}
+/-- ⟹ **`Q` の行 2 が一定なら、塔の行 2 も同じ値で一定**。
+⚠ `L105Cap:6186` に**同名の別定理**があるので `h12_` を付けた（L3 の指摘）。 -/
+theorem h12_row2_const_mTower (Q : TrioSeq) (d e n : ℕ) {c : ℕ}
     (h : ∀ i, i < Q.length → entry Q 2 i = c) :
     ∀ p, p < (mTower Q d e n).length → entry (mTower Q d e n) 2 p = c := by
   intro p hp
