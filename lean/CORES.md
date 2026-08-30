@@ -13202,3 +13202,27 @@ theorem nextrel1_snoc_prev_eq {C p A}
 ⟹ ★ **H12 の `e = 0` の仮定は実質「`srow ≤ 1`」** ⟹ **地図が 1 枚正確になった**。**
 
 **✅ build 緑 22 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **405 本**
+
+---
+
+## ★★★★★★★★★★ **H12 (W67)(W68, 2026-08-30): `MTowerClosedS` の残差は `srow ≥ 1` だけ（緑）**
+
+### ★★★★★★★★★★ **(W68)**
+
+    ★★★★★★★★★★ `hasParentInBlock_of_srow0`
+      **`hr0 Q` ∧ `|Q| ≥ 2` ∧ `srow(末尾) = 0` ⟹ `L53.HasParentInBlock Q`**
+    ★★★★★★★★★★ `srow_pos_of_not_hasParentInBlock` … ⟹ **残差は `srow ≥ 1` のときだけ**
+    ★★★★★ `residual_needs_len_two` … `|Q| = 1` なら起きない
+
+**⟹ ★★★ ⟹ **残差の 3 条件**: **`|Q| ≥ 2`** ∧ **`srow(末尾) ≥ 1`** ∧ **段内で孤児**。**
+
+### ⛔ **(W67) の答え: (W61) は `MTowerStep` には直接刺さりません**
+
+    ★ `MTowerStep a Q d e := ∀ n m, 1 ≤ m → mTower Q d e n ++ shiftr01 (d*n) 0 ((Lift1 Q (e*n))⟦m⟧) ∈ W a`
+    ⟹ ⛔ これは **「連結が `W a` に入る」＝ 所属**の文です
+    ★ 私の (W61) は **「親がどこにいるか」＝ 位置**の文です
+    ⟹ ⟹ ⛔ **型が違うので、そのままは刺さりません**
+
+**⟹ ★ 私の (W61) が効くのは **`mTower_mem_of_step` の中（`oper` の分解）**であって、`MTowerStep` の文ではありません。**
+**⟹ ⟹ ★★ **§77.1 の「末尾列が段内に親を持つ」は `HasParentInBlock Q`**（`Q` の中の話）——
+⟹ ★ **私の (W61)（塔の中の親の位置）とは別の命題**でした。**

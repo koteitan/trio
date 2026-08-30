@@ -7643,5 +7643,37 @@ theorem lift_preserves_parents {X : TrioSeq} {d i b : ℕ} :
       ∧ (∀ a, nextrel1 (Lift1 X d) a b ↔ nextrel1 X a b) :=
   ⟨Wset.hasParent_Lift1, fun _ => Wset.nextrel1_Lift1⟩
 
+
+/-! ## 115. ★★★★★★★★★★ (W68): **`MTowerClosedS` の残差は `srow ≥ 1` だけ**
+
+`MTowerClosedS`（`L105Cap:5618`）の仮定は **`hr0 Q`**、
+`mTower_mem_of_mTowerStep`（`:5449`）の仮定は **`L53.HasParentInBlock Q`**
+＝ **「`Q` の末尾列が `Q` の中で親を持つ」**。
+⟹ ★★★★★★★★ **`srow = 0` なら、`hr0` だけでそれが出ます**（私の `hasParent0_of_hr0`）。
+⟹ ⟹ ★★★ ⟹ **残差は `srow ≥ 1` の孤児だけ**に絞れます。 -/
+
+/-- ★★★★★★★★★★ **`hr0 Q` ∧ `|Q| ≥ 2` ∧ `srow(末尾) = 0` ⟹ 末尾列は段内に親を持つ**。 -/
+theorem hasParentInBlock_of_srow0 {Q : TrioSeq}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (hs : srow Q (Q.length - 1) = 0) :
+    L53.HasParentInBlock Q := by
+  unfold L53.HasParentInBlock
+  rw [hs]
+  exact hasParent0_of_hr0 (fun l hl0 hl => hr0 l (by omega) hl) (by omega) (by omega)
+
+/-- ★★★★★★★★★★ ⟹ **残差（段内で孤児）は `srow ≥ 1` のときだけ起きます**。 -/
+theorem srow_pos_of_not_hasParentInBlock {Q : TrioSeq}
+    (hr0 : ∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j)
+    (hQ2 : 2 ≤ Q.length) (h : ¬ L53.HasParentInBlock Q) :
+    0 < srow Q (Q.length - 1) := by
+  by_contra hc
+  push Not at hc
+  exact h (hasParentInBlock_of_srow0 hr0 hQ2 (by omega))
+
+/-- ★★★★★ ⟹ **`|Q| ≤ 1` なら残差は起きません**（末尾 ＝ 根）。
+⟹ ★ ですから **残差は `|Q| ≥ 2` ∧ `srow ≥ 1` ∧ 段内で孤児**の 3 条件です。 -/
+theorem residual_needs_len_two {Q : TrioSeq} (hQ1 : Q.length = 1) :
+    L53.HasParentInBlock Q ∨ Q.length ≤ 1 := Or.inr (by omega)
+
 end H12H2
 end TRIO
