@@ -3440,5 +3440,58 @@ theorem noCross_srow_of_cone {A T : TrioSeq}
       ¬ nextR (A ++ T) (srow (A ++ T) (A.length + m)) y (A.length + m) :=
   fun _ hy => no_nextR_srow_cross_of_cone hmin hz0 hy hm hm0 hcone
 
+
+/-- ★★★★★ **行 1 の孤児は、必ず根に対してブロッカー**。
+（`hr0` の下では根が全列の `le0` 祖先なので、非ブロッカーなら親が作れてしまう。） -/
+theorem row1_orphan_is_blocker {T : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {m : ℕ} (hm : m < T.length) (hm0 : 0 < m)
+    (hnp : ¬ hasParent T 1 m) : entry T 1 m ≤ entry T 1 0 := by
+  by_contra hc
+  push Not at hc
+  have hle0 : le0 T 0 m := le0_root_of_shallow (by omega) hr0 m hm0 hm
+  obtain ⟨y', hy'⟩ := nextrel1_of_witness hm0 hle0 hc
+  refine hnp ⟨y', ?_, ?_⟩
+  · show nextR T 1 y' m
+    unfold nextR; rw [if_neg (by omega), if_pos rfl]; exact hy'
+  · intro b hb
+    unfold nextR at hb
+    rw [if_neg (by omega), if_pos rfl] at hb
+    exact nextrel1_src_unique hb hy'
+
+/-- ★★★★★ ⟹ **接頭辞から来る行 1 の親は、`T` の根より行 1 で下**。 -/
+theorem prefix_parent_row1_lt_root {A T : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {m c : ℕ} (hm : m < T.length) (hm0 : 0 < m)
+    (hnp : ¬ hasParent T 1 m)
+    (h : nextrel1 (A ++ T) c (A.length + m)) :
+    entry (A ++ T) 1 c < entry T 1 0 := by
+  have hb := row1_orphan_is_blocker hr0 hm hm0 hnp
+  have hlt := h.2.2.2.1
+  rw [entry_append_right] at hlt
+  omega
+
+/-- ★★★★★★ ⟹ **錐の外でも壁が立つ十分条件**:
+「**接頭辞の全列の行 1 が `T` の根の行 1 以上**」。
+⟹ ★ `rsum`（行 0 版）の**行 1 版**。⟹ ⟹ 行 1 の孤児について、接頭辞は親を供給できない。 -/
+theorem no_prefix_row1_parent_of_high_A {A T : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {m : ℕ} (hm : m < T.length) (hm0 : 0 < m)
+    (hnp : ¬ hasParent T 1 m)
+    (hA : ∀ y, y < A.length → entry T 1 0 ≤ entry (A ++ T) 1 y) :
+    ∀ c, c < A.length → ¬ nextrel1 (A ++ T) c (A.length + m) := by
+  intro c hc h
+  exact absurd (prefix_parent_row1_lt_root hr0 hm hm0 hnp h) (by
+    have := hA c hc; omega)
+
+/-- ★★★ 対偶: **壁が破れるなら、接頭辞に「`T` の根より行 1 が下の列」がある**。 -/
+theorem exists_low_row1_of_prefix_parent {A T : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    {m c : ℕ} (hm : m < T.length) (hm0 : 0 < m) (hc : c < A.length)
+    (hnp : ¬ hasParent T 1 m)
+    (h : nextrel1 (A ++ T) c (A.length + m)) :
+    ∃ y, y < A.length ∧ entry (A ++ T) 1 y < entry T 1 0 :=
+  ⟨c, hc, prefix_parent_row1_lt_root hr0 hm hm0 hnp h⟩
+
 end H12Export
 end TRIO
