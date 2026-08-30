@@ -6738,5 +6738,42 @@ theorem no_hasParent_blockRoot_of_gap (Q : TrioSeq) {d n k i : ℕ}
   · exact no_nextrel1_blockRoot_of_gap Q hQ hd hk hgap hy
   · exact no_nextrel2_blockRoot_of_gap Q hQ hd hk hgap hy
 
+
+/-- ★★★★★★★★★★★★ **(W89)**: **`d > 段差` ⟹ ブロック根の行 0 の親は、直前ブロックの根より後**。 -/
+theorem nextrel0_blockRoot_src_gt_prev_root (Q : TrioSeq) {d e n c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (hgap : ∃ r, 0 < r ∧ r < Q.length ∧ entry Q 0 r < entry Q 0 0 + d)
+    (h : nextrel0 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    (n - 1) * Q.length < c := by
+  have hge := nextrel0_blockRoot_src_ge_prev Q hQ hd hn h
+  rcases Nat.eq_or_lt_of_le hge with heq | hgt
+  · exfalso
+    obtain ⟨r, hr0, hr, hrlt⟩ := hgap
+    have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+      obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+      subst hm; simp [Nat.succ_mul]
+    have hd1 : d * n = d * (n - 1) + d := by
+      obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+      subst hm; simp [Nat.mul_succ]
+    have e1 : entry (mTower Q d e (n + 1)) 0 (n * Q.length) = entry Q 0 0 + d * n := by
+      simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n + 1) (k := n) (i := 0)
+        (by omega) hQ
+    have hmin := h.2.2.2.2 ((n - 1) * Q.length + r) ⟨by omega, by omega⟩
+    rw [e1, entry0_mTower_block' Q (show n - 1 < n + 1 by omega) hr] at hmin
+    omega
+  · exact hgt
+
+/-- ★★★★★★★★★★★★ ⟹ **窓は狭義に短い**（`d > 段差` のとき）。 -/
+theorem window_lt_of_blockRoot_gap (Q : TrioSeq) {d e n c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (hgap : ∃ r, 0 < r ∧ r < Q.length ∧ entry Q 0 r < entry Q 0 0 + d)
+    (h : nextrel0 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    n * Q.length - c < Q.length := by
+  have hgt := nextrel0_blockRoot_src_gt_prev_root Q hQ hd hn hgap h
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  omega
+
 end H12Export
 end TRIO
