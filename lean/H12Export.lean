@@ -6223,5 +6223,88 @@ theorem lift_oper_comm_of_hr0_full {M : TrioSeq} {t n : ℕ}
       · exact lift_oper_comm_of_hr0 hL hz hp hr0 (hj0 hp)
       · exact lift_oper_of_noParent (by omega) hp
 
+
+/-- ★★★★★★★★★★ **(W79)(a)**: `d > 0` なら、第 `n` ブロックの根の行 0 の親は
+**第 `n−1` ブロックの中**（＝ `(n−1)|Q|` 以降）。 -/
+theorem nextrel0_blockRoot_src_ge_prev (Q : TrioSeq) {d e n c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (h : nextrel0 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    (n - 1) * Q.length ≤ c := by
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  have hdlt : d * (n - 1) < d * n := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.mul_succ]; omega
+  have e1 : entry (mTower Q d e (n + 1)) 0 (n * Q.length) = entry Q 0 0 + d * n := by
+    simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n + 1) (k := n) (i := 0)
+      (by omega) hQ
+  have e2 : entry (mTower Q d e (n + 1)) 0 ((n - 1) * Q.length)
+      = entry Q 0 0 + d * (n - 1) := by
+    simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n + 1) (k := n - 1) (i := 0)
+      (by omega) hQ
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2 ((n - 1) * Q.length) ⟨by omega, by omega⟩
+  rw [e1, e2] at hmin
+  omega
+
+/-- ★★★★★★★★★★ **(W79)(b)**: さらに **`Q` の各列が根より `d` 以上深い**なら、
+**親はちょうど 1 つ前のブロックの根**。 -/
+theorem nextrel0_blockRoot_prev_root (Q : TrioSeq) {d e n : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hn : 0 < n)
+    (hgap : ∀ r, 0 < r → r < Q.length → entry Q 0 0 + d ≤ entry Q 0 r) :
+    nextrel0 (mTower Q d e (n + 1)) ((n - 1) * Q.length) (n * Q.length) := by
+  have hlen : (mTower Q d e (n + 1)).length = (n + 1) * Q.length :=
+    mTower_length Q d e (n + 1)
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  have hnq1 : (n + 1) * Q.length = n * Q.length + Q.length := Nat.succ_mul n Q.length
+  have hdlt : d * (n - 1) < d * n := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.mul_succ]; omega
+  have hd1 : d * n = d * (n - 1) + d := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.mul_succ]
+  have e1 : entry (mTower Q d e (n + 1)) 0 (n * Q.length) = entry Q 0 0 + d * n := by
+    simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n + 1) (k := n) (i := 0)
+      (by omega) hQ
+  have e2 : entry (mTower Q d e (n + 1)) 0 ((n - 1) * Q.length)
+      = entry Q 0 0 + d * (n - 1) := by
+    simpa using entry0_mTower_block' Q (d := d) (e := e) (n := n + 1) (k := n - 1) (i := 0)
+      (by omega) hQ
+  refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+  · rw [e1, e2]; omega
+  · rintro j ⟨hj1, hj2⟩
+    obtain ⟨r, rfl⟩ : ∃ r, j = (n - 1) * Q.length + r := ⟨j - (n - 1) * Q.length, by omega⟩
+    have hr : r < Q.length := by omega
+    rw [e1, entry0_mTower_block' Q (show n - 1 < n + 1 by omega) hr]
+    have := hgap r (by omega) hr
+    omega
+
+/-- ⛔ **(W79)(c)**: **`d = 0` なら、ブロック根に行 0 の親はありません**（＝ 孤児）。 -/
+theorem no_nextrel0_blockRoot_of_d_zero (Q : TrioSeq) {e n c : ℕ}
+    (hQ : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ¬ nextrel0 (mTower Q 0 e (n + 1)) c (n * Q.length) := by
+  intro h
+  have hlen : (mTower Q 0 e (n + 1)).length = (n + 1) * Q.length :=
+    mTower_length Q 0 e (n + 1)
+  have hclt : c < (n + 1) * Q.length := by have := h.1; rw [hlen] at this; exact this
+  have hlt := h.2.2.2.1
+  have hk : c / Q.length < n + 1 :=
+    Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm] at hclt; exact hclt)
+  have hr : c % Q.length < Q.length := Nat.mod_lt _ hQ
+  have hsplit : c = (c / Q.length) * Q.length + c % Q.length :=
+    (Nat.div_add_mod' c Q.length).symm
+  have e1 : entry (mTower Q 0 e (n + 1)) 0 (n * Q.length) = entry Q 0 0 := by
+    simpa using entry0_mTower_block' Q (d := 0) (e := e) (n := n + 1) (k := n) (i := 0)
+      (by omega) hQ
+  rw [hsplit, entry0_mTower_block' Q hk hr, e1] at hlt
+  rcases Nat.eq_zero_or_pos (c % Q.length) with h0 | h0
+  · rw [h0] at hlt; omega
+  · have := hr0 (c % Q.length) h0 hr; omega
+
 end H12Export
 end TRIO
