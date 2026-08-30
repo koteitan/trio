@@ -5487,5 +5487,45 @@ theorem tower_orphan_of_block_row1 {Q : TrioSeq} {d e n j : ℕ}
 ⚠ **教訓（今日 10 件目、私のもの）: **同じ形の補題でも、当てる場所で前提の強さが変わる**。**
 **⟹ ★ 「自己適用で出た」と喜ぶ前に、**前提が同じ強さか**を見るべきでした。** -/
 
+/-! ## 233. ★★★ H12 の「`d = 0 ⟹ e = 0`」を窓の言葉で（`wd0 = 0 ⟹ wd1 = 0`）
+
+H12 の `entry0_parent_lt_of_srow2`（緑）を、私の `wd0` / `wd1` に当てます。
+
+    `wd1 > 0` ⟹ `1 < srow(末尾)` ⟹ `srow = 2` ⟹ 親は `nextrel2` の始点
+    ⟹ H12 `entry0_parent_lt_of_srow2` … **行 0 が狭義に小さい**
+    ⟹ `wd0 = entry 0 (末尾) − entry 0 (親) > 0`
+
+**⟹ ★ 対偶で **`wd0 = 0 ⟹ wd1 = 0`**。⟹ ⟹ **`d = 0` の塔は `d = e = 0` にしかならない**。** -/
+
+open Classical in
+theorem wd1_zero_of_wd0_zero {P B : TrioSeq} {j p : ℕ}
+    (hpar : hasParent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1))
+    (hpe : parent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) = P.length + p)
+    (h0 : wd0 P B j p = 0) : wd1 P B j p = 0 := by
+  set T := P ++ B.take (j + 1) with hT
+  set s := srow T (T.length - 1) with hs
+  unfold wd1
+  rw [← hT, ← hs]
+  by_cases h2 : 1 < s
+  · exfalso
+    -- `srow = 2` ⟹ 親は `nextrel2` の始点 ⟹ 行 0 が狭義に小さい
+    have hnr := parent_nextR hpar
+    rw [hpe] at hnr
+    have hs2 : s = 2 := by
+      have : s = srow T (T.length - 1) := hs
+      unfold srow at this
+      split_ifs at this <;> omega
+    rw [hs2] at hnr
+    have hlt := entry0_parent_lt_of_srow2 hnr
+    have h0' := h0
+    unfold wd0 at h0'
+    rw [← hT, ← hs, if_pos (by omega)] at h0'
+    omega
+  · rw [if_neg h2]
+
 end L106
 end TRIO
