@@ -8646,5 +8646,56 @@ theorem window_lt_of_blockInner (Q : TrioSeq) {d e n k j c : ℕ}
   have := nextrel0_src_ge_blockRoot_mTower Q hd hk hj hj0 hr0 h
   omega
 
+
+/-! ## 133. ★★★★★★★★★★ (W81'): **`srow ≥ 1` でも親は直前のブロックの中**（`e > 0`）
+
+`nextrel1` の源は **`le0` 祖先**。⟹ ★ そして **(W79)(a) より行 0 の親は第 `n−1` ブロックの中**、
+**その先祖にブロック根がいる**（`le0_blockRoot_mTower`）⟹ ⟹ ★★ **ブロック根は `le0` 祖先**。
+⟹ ★★★★★ **`e > 0` なら、根の行 1 は `+e*(n−1)` で的（`+e*n`）より真に低い**
+⟹ ⟹ ★★★★★★★★★★ ⟹ **最小性が、根より前の候補を全部落とします**。 -/
+
+/-- ★★★★★★★★★★ **(W81')**: `d > 0` ∧ `e > 0` ⟹ **ブロック根の行 1 の親も、第 `n−1` ブロックの中**。 -/
+theorem nextrel1_blockRoot_src_ge_prev (Q : TrioSeq) {d e n c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (he : 0 < e) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (h : nextrel1 (mTower Q d e (n + 1)) c (n * Q.length)) :
+    (n - 1) * Q.length ≤ c := by
+  have hlen : (mTower Q d e (n + 1)).length = (n + 1) * Q.length :=
+    mTower_length Q d e (n + 1)
+  have hnq : (n - 1) * Q.length + Q.length = n * Q.length := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.succ_mul]
+  have hnq1 : (n + 1) * Q.length = n * Q.length + Q.length := Nat.succ_mul n Q.length
+  have hclt : c < n * Q.length := h.2.2.1
+  have hroot : le1 Q 0 0 := ⟨hQ, hQ, Relation.ReflTransGen.refl⟩
+  have e1 : ∀ k, k < n + 1 → entry (mTower Q d e (n + 1)) 1 (k * Q.length)
+      = entry Q 1 0 + e * k := by
+    intro k hk
+    have := entry1_mTower_block_formula Q (d := d) (e := e) (n := n + 1) (k := k) (i := 0) hk hQ
+    rw [if_pos hroot] at this
+    simpa using this
+  -- 行 0 の親は第 `n−1` ブロックの中（(W79)(a)）
+  have hle0 : le0 (mTower Q d e (n + 1)) ((n - 1) * Q.length) (n * Q.length) := by
+    rcases Relation.ReflTransGen.cases_tail h.2.2.2.2.1.2.2 with h1 | ⟨c0, hc1, hc2⟩
+    · exact absurd h1.symm (by omega)
+    · have hge := nextrel0_blockRoot_src_ge_prev Q hQ hd hn hc2
+      have hlt0 : c0 < n * Q.length := hc2.2.2.1
+      rcases Nat.eq_or_lt_of_le hge with heq | hgt
+      · exact ⟨by omega, by omega, by rw [heq]; exact Relation.ReflTransGen.single hc2⟩
+      · obtain ⟨r, rfl⟩ : ∃ r, c0 = (n - 1) * Q.length + r :=
+          ⟨c0 - (n - 1) * Q.length, by omega⟩
+        have hr : r < Q.length := by omega
+        have hb := le0_blockRoot_mTower Q (d := d) (e := e) (n := n + 1)
+          (k := n - 1) (i := r) hr0 (by omega) hr (by omega)
+        exact ⟨by omega, by omega, hb.2.2.tail hc2⟩
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2.2 ((n - 1) * Q.length) ⟨by omega, hle0⟩
+  rw [e1 n (by omega), e1 (n - 1) (by omega)] at hmin
+  have hdlt : e * (n - 1) < e * n := by
+    obtain ⟨m, hm⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    subst hm; simp [Nat.mul_succ]; omega
+  omega
+
 end H12H2
 end TRIO
