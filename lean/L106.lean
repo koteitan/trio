@@ -8524,5 +8524,76 @@ def PrefixCopies : Prop :=
 
 ⚠ **教訓 14**: 上は**読解**です。⟹ ★ ですが **`nextrel0` が狭義増加を要求する**のは定義です。 -/
 
+/-! ## 271. ★★★★★★ **`d = 0` の保護を定理にします** —— `PrefixCopies` が接頭辞に条件を要らない理由
+
+§270 で「`d = 0` なら `nextrel0` がブロックをまたげない」と読みました。⟹ ★ 証明します。
+
+    `d = 0` ⟹ ブロック `k` の列 `q` の行 0 は **`entry Q 0 q`**（`k` に依らない）
+    ⟹ ★ 的が **`k' * |Q| + q'`（`q' > 0`）**なら、最小性を **`j := k' * |Q|`（そのブロックの根）**に
+      当てて `entry Q 0 q' ≤ entry Q 0 0` ⟹ ⛔ `hr0` と矛盾
+    ⟹ ★ 的が **ブロックの根（`q' = 0`）**なら、始点の行 0 は `entry Q 0 (…) ≥ entry Q 0 0` なので
+      **狭義増加が取れません**
+    ⟹ ⟹ ★★★★★ ですから **どちらの場合も越境できません**。 -/
+
+theorem mTower_entry0_of_d_zero {Q : TrioSeq} {e n k q : ℕ} (hk : k < n) (hq : q < Q.length) :
+    entry (mTower Q 0 e n) 0 (k * Q.length + q) = entry Q 0 q := by
+  rw [mTower_entry hk hq]
+  show entry (Lift1 (shiftr01 (0 * k) 0 Q) (e * k)) 0 q = entry Q 0 q
+  rw [Wset.entry0_Lift1, Nat.zero_mul]
+  show entry (shiftr01 0 0 Q) 0 q = entry Q 0 q
+  rw [shiftr01_zero]
+
+/-- ★★★★★★ **`d = 0` では `nextrel0` はブロックをまたげません**（`hr0(Q)` だけ）。 -/
+theorem no_nextrel0_cross_of_d_zero {Q : TrioSeq} {e n a k' q' : ℕ} (hQ : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hk' : k' < n) (hq' : q' < Q.length) (ha : a < k' * Q.length) :
+    ¬ nextrel0 (mTower Q 0 e n) a (k' * Q.length + q') := by
+  intro h
+  have hlen : (mTower Q 0 e n).length = n * Q.length := mTower_length Q 0 e n
+  have halen : a < (mTower Q 0 e n).length := h.1
+  -- `a` を「ブロック `ka` の列 `qa`」と書く
+  set ka := a / Q.length with hka
+  set qa := a % Q.length with hqa
+  have haeq : ka * Q.length + qa = a := by
+    rw [hka, hqa, Nat.mul_comm]; exact Nat.div_add_mod a Q.length
+  have hqalt : qa < Q.length := Nat.mod_lt _ hQ
+  have hkalt : ka < n := by
+    rw [hlen] at halen
+    rw [hka]
+    exact (Nat.div_lt_iff_lt_mul hQ).mpr (by omega)
+  have hea : entry (mTower Q 0 e n) 0 a = entry Q 0 qa := by
+    rw [← haeq]; exact mTower_entry0_of_d_zero hkalt hqalt
+  have heb : entry (mTower Q 0 e n) 0 (k' * Q.length + q') = entry Q 0 q' :=
+    mTower_entry0_of_d_zero hk' hq'
+  have hlt := h.2.2.2.1
+  rw [hea, heb] at hlt
+  rcases Nat.eq_zero_or_pos q' with hq0 | hq0
+  · -- ★ 的がブロックの根 ⟹ `entry Q 0 qa < entry Q 0 0` は `hr0` に反する
+    rw [hq0] at hlt
+    rcases Nat.eq_zero_or_pos qa with h0 | h0
+    · rw [h0] at hlt; omega
+    · exact absurd (hr0 qa h0 hqalt) (by omega)
+  · -- ★ 的が内部列 ⟹ 最小性を「そのブロックの根」に当てる
+    have hroot : entry (mTower Q 0 e n) 0 (k' * Q.length) = entry Q 0 0 := by
+      have := mTower_entry0_of_d_zero (Q := Q) (e := e) (n := n) (k := k') (q := 0) hk' hQ
+      rwa [Nat.add_zero] at this
+    have hmin := h.2.2.2.2 (k' * Q.length) ⟨by omega, by omega⟩
+    rw [hroot, heb] at hmin
+    exact absurd (hr0 q' hq0 hq') (by omega)
+
+/-! ### 271.1 ⟹ ★★★★★ **これが `d = 0` の保護の正体**です
+
+**⟹ ★ `nextrel0` が越境できない ⟹ ★★ 私の §256（`no_nextR_of_no_le0_cross`）により、
+**`nextrel1` も `nextrel2` も越境できません**（どちらも `le0` を含むので）。**
+**⟹ ⟹ ★★★ ですから **`d = 0` の塔では、接頭辞がどれだけ浅くても親を供給できません**。**
+**⟹ ⟹ ⟹ ★★★★★ ＝ **`PrefixCopies` が `A` に条件を課さなくてよい理由**です。**
+
+**⟹ ⛔ そして **`d > 0` ではこの保護が消えます**（行 0 が `d*k` だけ上がるので越境できる）。**
+**⟹ ⟹ ★ ＝ **私の §256/§257 が扱っている場面**そのものです。**
+
+⚠ **教訓 14**: これは **`ZeroDOK` の証明ではありません**。⟹ ★ **`d = 0` の場合の道具**です。
+`ZeroDOK` は `A ++ mTower Q 0 0 n ∈ W u` という **`W` の閉包**の主張で、
+上は **親の位置**についての主張です。⟹ ⟹ ★ **繋げるには `snoc_orphan_W` が要ります**。 -/
+
 end L106
 end TRIO
