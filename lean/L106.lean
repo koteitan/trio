@@ -10789,5 +10789,38 @@ theorem mTowerClosedBased_of_towerSnocStepBased (h : TowerSnocStepBased) :
     simp only [List.nil_append] at hpar hmem ⊢
     exact h u Q d e n' j hQ hs hb hj hpar hmem
 
+/-! ### §309 「末尾が最浅なら、どの行でも孤児」—— 輪が切れる機構
+
+`d <= 段差` の枝は「`Q` の末尾列が `Q` の中で（弱く）最浅」と同値（team-lead の (W80) 経由の導出）。
+そして **最浅なら `nextrel0` が張れず、`nextrel1` / `nextrel2` も `le0` を含むので張れない**。
+⟹ ★★★ **どの行でも孤児** ⟹ **`oper = Pred`** ⟹ **`snoc_orphan_W` で無料**。
+
+⟹ ★ R2 の実測「鎖は 3 段以内に必ず孤児で終わる」（4 母集団、約 14.5 万鎖、破れ 0）の機構が、これ。 -/
+
+/-- ★★★★★ **的が（弱く）最浅なら、どの行でも親を持たない**（前提なし）。 -/
+theorem no_parent_of_shallowest {M : TrioSeq} {t : ℕ}
+    (hmin : ∀ c, c < t → entry M 0 t ≤ entry M 0 c) (i : ℕ) :
+    ¬ hasParent M i t := by
+  rintro ⟨c, hc, -⟩
+  have hlt : entry M 0 c < entry M 0 t ∧ c < t := by
+    rw [nextR] at hc
+    by_cases h0 : i = 0
+    · rw [if_pos h0] at hc
+      exact ⟨hc.2.2.2.1, hc.2.2.1⟩
+    · rw [if_neg h0] at hc
+      by_cases h1 : i = 1
+      · rw [if_pos h1] at hc
+        exact ⟨entry0_lt_of_le0_ne hc.2.2.2.2.1 (by have := hc.2.2.1; omega), hc.2.2.1⟩
+      · rw [if_neg h1] at hc
+        exact ⟨entry0_lt_of_le0_ne (le0_of_le1' hc.2.2.2.2.1)
+          (by have := hc.2.2.1; omega), hc.2.2.1⟩
+  have := hmin c hlt.2
+  omega
+
+/-- ⟹ **`srow <= 1` なら `oper` の新しい `e`（＝ `d1`）は 0**（定義から直接）。 -/
+theorem oper_d1_eq_zero_of_srow_le_one {M : TrioSeq} {t : ℕ} (h : srow M t ≤ 1) :
+    (if 1 < srow M t then entry M 1 t - entry M 1 (parent M (srow M t) t) else 0) = 0 := by
+  rw [if_neg (by omega)]
+
 end L106
 end TRIO
