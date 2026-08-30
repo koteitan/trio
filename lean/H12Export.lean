@@ -5309,5 +5309,64 @@ theorem hasParent1_snoc_iff_amin' {C : TrioSeq} {p : ℕ × ℕ × ℕ} {c : ℕ
     hasParent (C ++ [p]) 1 C.length ↔ amin (C ++ [p]) c < p.2.1 :=
   hasParent1_snoc_iff_amin h (fun _ hy => rtg0_ancestor_split h hy)
 
+
+/-- 1 列基底の塔の行 1（`d1 = 0` なら全写しで同じ）。 -/
+theorem entry1_mTower_singleton {V : TrioSeq} {d0 m s : ℕ} (hV : V.length = 1) (hs : s < m) :
+    entry (mTower V d0 0 m) 1 s = entry V 1 0 := by
+  have h : s = s * V.length + 0 := by rw [hV]; omega
+  rw [h, entry1_mTower_block_formula V hs (by omega)]
+  split_ifs <;> omega
+
+/-- 1 列基底の塔の行 2（何をしても同じ）。 -/
+theorem entry2_mTower_singleton {V : TrioSeq} {d0 d1 m s : ℕ} (hV : V.length = 1) (hs : s < m) :
+    entry (mTower V d0 d1 m) 2 s = entry V 2 0 := by
+  have h : s = s * V.length + 0 := by rw [hV]; omega
+  rw [h, mTower_entry hs (by omega), entry2_Lift1, entry2_shiftr01]
+
+/-- ★★★★★★★★★★ **(W63) の芯（行 1）**: **1 列基底 ∧ `d1 = 0` なら、行 1 の親は必ず接頭辞の中**。
+⟹ ★ ⟹ **良い枝は起きません** ⟹ ⟹ ★★ **`|A|` が真に減ります**。 -/
+theorem nextrel1_src_lt_prefix_of_singleton {A V : TrioSeq} {d0 m c t : ℕ}
+    (hV : V.length = 1) (ht : t < m)
+    (h : nextrel1 (A ++ mTower V d0 0 m) c (A.length + t)) : c < A.length := by
+  have hlen : (mTower V d0 0 m).length = m * V.length := mTower_length V d0 0 m
+  have hTlen : (A ++ mTower V d0 0 m).length = A.length + m := by
+    rw [List.length_append, hlen, hV]; omega
+  have hlt := h.2.2.2.1
+  have hclt : c < (A ++ mTower V d0 0 m).length := h.1
+  by_contra hc
+  push Not at hc
+  obtain ⟨s, rfl⟩ : ∃ s, c = A.length + s := ⟨c - A.length, by omega⟩
+  rw [entry_append_right, entry_append_right,
+    entry1_mTower_singleton hV (show s < m by omega),
+    entry1_mTower_singleton hV ht] at hlt
+  omega
+
+/-- ★★★★★★★★★★ **(W63) の芯（行 2）**: 行 2 は塔で一切動かないので、同じ結論。 -/
+theorem nextrel2_src_lt_prefix_of_singleton {A V : TrioSeq} {d0 d1 m c t : ℕ}
+    (hV : V.length = 1) (ht : t < m)
+    (h : nextrel2 (A ++ mTower V d0 d1 m) c (A.length + t)) : c < A.length := by
+  have hlen : (mTower V d0 d1 m).length = m * V.length := mTower_length V d0 d1 m
+  have hTlen : (A ++ mTower V d0 d1 m).length = A.length + m := by
+    rw [List.length_append, hlen, hV]; omega
+  have hlt := h.2.2.2.1
+  have hclt : c < (A ++ mTower V d0 d1 m).length := h.1
+  by_contra hc
+  push Not at hc
+  obtain ⟨s, rfl⟩ : ∃ s, c = A.length + s := ⟨c - A.length, by omega⟩
+  rw [entry_append_right, entry_append_right,
+    entry2_mTower_singleton hV (show s < m by omega),
+    entry2_mTower_singleton hV ht] at hlt
+  omega
+
+/-- ★★★★★ ⟹ **`srow ≥ 1` なら、1 列基底の塔では常に残差**（`d1 = 0`）。 -/
+theorem nextR_src_lt_prefix_of_singleton {A V : TrioSeq} {d0 m c t i : ℕ}
+    (hV : V.length = 1) (ht : t < m) (hi : 0 < i)
+    (h : nextR (A ++ mTower V d0 0 m) i c (A.length + t)) : c < A.length := by
+  unfold nextR at h
+  rw [if_neg (by omega)] at h
+  split_ifs at h with h1
+  · exact nextrel1_src_lt_prefix_of_singleton hV ht h
+  · exact nextrel2_src_lt_prefix_of_singleton hV ht h
+
 end H12Export
 end TRIO
