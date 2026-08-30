@@ -4025,7 +4025,7 @@ theorem no_nextrel0_from_prefix {A T : TrioSeq} {y j1 : ℕ}
   omega
 
 theorem no_nextrel1_from_prefix {A T : TrioSeq} {y j1 : ℕ}
-    (hy : y < A.length) (hj1 : 0 < j1)
+    (hy : y < A.length)
     (hle0 : le0 (A ++ T) A.length (A.length + j1))
     (hmin : entry T 1 0 < entry T 1 j1) :
     ¬ nextrel1 (A ++ T) y (A.length + j1) := by
@@ -4040,7 +4040,7 @@ theorem no_nextrel1_from_prefix {A T : TrioSeq} {y j1 : ℕ}
   omega
 
 theorem no_nextrel2_from_prefix {A T : TrioSeq} {y j1 : ℕ}
-    (hy : y < A.length) (hj1 : 0 < j1)
+    (hy : y < A.length)
     (hle1 : le1 (A ++ T) A.length (A.length + j1))
     (hmin : entry T 2 0 < entry T 2 j1) :
     ¬ nextrel2 (A ++ T) y (A.length + j1) := by
