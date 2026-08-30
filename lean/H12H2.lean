@@ -5527,5 +5527,22 @@ theorem orphan_row1_iff_amin_eq {M : TrioSeq} {j : ℕ} (hj : j < M.length) :
   have hle : amin M j ≤ entry M 1 j := amin_le Relation.ReflTransGen.refl
   omega
 
+
+/-! ## 77. ⛔ (W27) **正規化版 `R1<=R0` は「弱め」ではありません。むしろ強い**
+
+R2 の候補: **`∀ i, entry T 1 i ≤ entry T 0 i - entry T 0 0`**（正規化した `R1<=R0`）。
+⟹ ⛔ **`i = 0` を入れると `entry T 1 0 ≤ 0`** ⟹ **`entry T 1 0 = 0`**。
+⟹ ⟹ ★★ ですから **私の前提 `entry T 1 0 = 0` を含意します** ⟹ **弱めではなく強めです**。
+
+⚠ そして実測の数字も一致します: **正規化版の窓への遺伝 19.0409%** ＝
+**`entry Q 1 0 = 0` の窓での率 19.04%**。⟹ ★ **同じ条件**を測っていたことになります。 -/
+
+/-- ⛔ **正規化版 `R1<=R0` ⟹ `entry T 1 0 = 0`**（`i = 0` を入れるだけ）。 -/
+theorem root_row1_zero_of_normR1R0 {T : TrioSeq} (hT : 0 < T.length)
+    (h : ∀ i, i < T.length → entry T 1 i ≤ entry T 0 i - entry T 0 0) :
+    entry T 1 0 = 0 := by
+  have h0 := h 0 hT
+  omega
+
 end H12H2
 end TRIO
