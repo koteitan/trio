@@ -129,6 +129,54 @@ def main():
     print(f'  of which hlocQ(B) too : {brkH}')
     print(f'source matrices w/ break: {len(srcs)}')
     print(f'shortest example        : {shortest}')
+    orph(mats)
+
+
+def orph(mats):
+    '''窓で孤児になった列の親が、B のどこにいるかを数える。'''
+    import collections
+    cnt, ex, den = collections.Counter(), {}, 0
+    for M in mats:
+        if len(M) > 26 or any(c[2] > 1 for c in M):
+            continue
+        for j in range(2, len(M)):
+            B = M[:j + 1]
+            s = srow(B, j)
+            if s == 0:
+                continue
+            ps = parents(B, s, j)
+            if len(ps) != 1:
+                continue
+            p = ps[0]
+            if j - p < 2:
+                continue
+            V = B[p:j]
+            for t in range(1, len(V)):
+                if e(V, 2, t) > 0:
+                    ok = bool(parents(V, 2, t))
+                else:
+                    ok = e(V, 1, t) == 0 or any(
+                        le0(V, y, t) and e(V, 1, y) < e(V, 1, t)
+                        for y in range(t))
+                if ok:
+                    continue
+                den += 1
+                a = p + t
+                pb = parents(B, srow(B, a), a)
+                if not pb:
+                    k = 'orphan in B (snoc_orphan_W applies)'
+                elif all(y < p for y in pb):
+                    k = 'parent strictly before p (OrphOK)'
+                else:
+                    k = 'parent >= p'
+                cnt[k] += 1
+                ex.setdefault(k, (B, p, t, pb))
+    print()
+    print(f'breaking columns (denom): {den}')
+    for k, v in cnt.items():
+        print(f'  {k}: {v} ({100 * v / den:.4f}%)')
+    for k, v in ex.items():
+        print(f'  ex {k}: {v}')
 
 
 if __name__ == '__main__':
