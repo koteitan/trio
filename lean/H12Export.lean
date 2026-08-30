@@ -3197,5 +3197,55 @@ theorem wnd_mem_W {u : ℕ} {P B : TrioSeq} {j p : ℕ}
       ∈ W (lev (P ++ B.take (j + 1)) (P.length + p)) :=
   window_mem_W h (P.length + p) (j - p)
 
+
+/-- R2 の新条件 C4: **行 1 は `le0` の向きに狭義増加**。 -/
+def C4 (Q : TrioSeq) : Prop :=
+  ∀ y j, y < j → j < Q.length → le0 Q y j → entry Q 1 y < entry Q 1 j
+
+/-- ★★★★★★ **C4 ⟹ ブロッカーが無い**（根は全列の `le0` 祖先だから）。 -/
+theorem hnbQ_of_C4 {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hc4 : C4 Q) :
+    ∀ i, 0 < i → i < Q.length → entry Q 1 0 < entry Q 1 i := by
+  intro i hi0 hi
+  exact hc4 0 i hi0 hi (le0_root_of_shallow (by omega) hr0 i hi0 hi)
+
+/-- ★★★★★★★ **C4 ⟹ 全列が錐の中**。 -/
+theorem le1_all_of_C4 {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hc4 : C4 Q) {q : ℕ} (hq : q < Q.length) : le1 Q 0 q :=
+  le1_all_of_hnbQ hr0 (hnbQ_of_C4 hr0 hc4) hq
+
+/-- ★★★★★★★ **(C4-2) C4 ⟹ `hlocQ` の行 1 成分**（`hr0` の下）。 -/
+theorem hlocQ_row1_of_C4 {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hc4 : C4 Q) {t : ℕ} (ht : t < Q.length) (ht0 : 0 < t) :
+    ∃ y, y < t ∧ le0 Q y t ∧ entry Q 1 y < entry Q 1 t ∧ (le1 Q 0 y → le1 Q 0 t) :=
+  hlocQ_row1_of_nonblocker hr0 ht ht0 (hnbQ_of_C4 hr0 hc4 t ht0 ht)
+
+/-- ★★★★★ **(C4-1) C4 は `drop` で遺伝する**。 -/
+theorem C4_drop {M : TrioSeq} (hc4 : C4 M) (p : ℕ) : C4 (M.drop p) := by
+  intro y j hyj hj hle0
+  have hlen : (M.drop p).length = M.length - p := List.length_drop
+  rw [hlen] at hj
+  have hle0' : le0 M (p + y) (p + j) := by
+    have hh := le0_drop_of (M := M) (p := p) (c := y) (d := j) (by omega) (by omega) hle0
+    exact hh
+  have := hc4 (p + y) (p + j) (by omega) (by omega) hle0'
+  rw [entry_drop, entry_drop]
+  exact this
+
+/-- ★★★★★ **C4 は `take` でも遺伝する**。 -/
+theorem C4_take {M : TrioSeq} (hc4 : C4 M) (k : ℕ) : C4 (M.take k) := by
+  rcases Nat.lt_or_ge M.length k with hk | hk
+  · rwa [List.take_of_length_le (by omega)]
+  · intro y j hyj hj hle0
+    have hlen : (M.take k).length = min k M.length := List.length_take
+    have hjk : j < k := by omega
+    have hjM : j < M.length := by omega
+    have hle0' : le0 M y j := (le0_take (X := M) (l := k) (a := y) (b := j) hk hjk).mp hle0
+    rw [Wset.entry_take hjk, Wset.entry_take (show y < k by omega)]
+    exact hc4 y j hyj hjM hle0'
+
 end H12Export
 end TRIO
