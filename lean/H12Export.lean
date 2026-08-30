@@ -3183,5 +3183,19 @@ theorem coneCtrV_hnz : ∀ i, 0 < i → i < coneCtrV.length → 0 < entry coneCt
 theorem coneCtrV_not_cone : ¬ le1 coneCtrV 0 1 :=
   blocker_not_le1 (by omega) (by decide)
 
+
+/-- ★★★★★★★ **窓は `W` の元**（水準は `lev M p`）。 -/
+theorem window_mem_W {u : ℕ} {M : TrioSeq} (h : M ∈ W u) (p k : ℕ) :
+    (M.drop p).take k ∈ W (lev M p) :=
+  W_take (W_drop h p) k
+
+/-- ★★★★★ `wnd P B j p` の形に合わせたもの
+（`wnd P B j p = ((P ++ B.take (j+1)).drop (P.length + p)).take (j - p)`）。 -/
+theorem wnd_mem_W {u : ℕ} {P B : TrioSeq} {j p : ℕ}
+    (h : P ++ B.take (j + 1) ∈ W u) :
+    ((P ++ B.take (j + 1)).drop (P.length + p)).take (j - p)
+      ∈ W (lev (P ++ B.take (j + 1)) (P.length + p)) :=
+  window_mem_W h (P.length + p) (j - p)
+
 end H12Export
 end TRIO
