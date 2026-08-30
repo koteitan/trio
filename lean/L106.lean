@@ -5456,6 +5456,8 @@ theorem tower_of_measure_step2 {u : ℕ}
 /-! ### 220.4 ★★★★★ **最終定理** -/
 
 open Classical in
+/-- ⛔⛔ **使ってはいけません**: `OrphOK` / `OrphOK0` / `HeredZ0` は
+**すべて偽**です（§261-263）。⟹ **前提が満たせないので空虚**です。 -/
 theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (horph0 : OrphOK0)
     (hzd : ZeroDOK u) (hz0h : HeredZ0) :
     ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
@@ -5570,7 +5572,7 @@ theorem mTower_nil (d e n : ℕ) : mTower ([] : TrioSeq) d e n = [] :=
   List.eq_nil_of_length_eq_zero (by rw [mTower_length]; simp)
 
 open Classical in
-/-- ★★★★★ **`MTowerClosedS` は 5 本から出ます。** -/
+/-- ⛔⛔ **使ってはいけません**（§260 で `RootZ1` / `RootZ2` が偽、§261-263 で残りも偽）。 -/
 theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
     (hzd : ∀ u, ZeroDOK u) (hz0h : HeredZ0)
     (hrz1 : RootZ1) (hroot : RootZ2)
@@ -7709,7 +7711,8 @@ def MTowerClosedSZ : Prop :=
     mTower Q d e n ∈ W u
 
 open Classical in
-/-- ★★★★★ **`MTowerClosedSZ` は 5 本から出ます**（`RootZ1` / `RootZ2` が消えました）。 -/
+/-- ⛔⛔ **使ってはいけません**: `OrphOK`（§261）・`OrphOK0`（§262）・`HeredZ0`（§263）が
+**すべて偽と証明済み**なので、この定理は**空虚**です。⟹ ★ 記録として残します。 -/
 theorem mTowerClosedSZ_of_residues (horph : OrphOK) (horph0 : OrphOK0)
     (hzd : ∀ u, ZeroDOK u) (hz0h : HeredZ0)
     (hde : ∀ (u : ℕ) (Q : TrioSeq) (d e : ℕ), Q ∈ W u → d = 0 → e = 0) :
