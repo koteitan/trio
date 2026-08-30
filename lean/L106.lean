@@ -3720,7 +3720,7 @@ theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
 
 open Classical in
 /-- ★★ **`srow = 2` の段の `HeredZ2` は無料**（末尾列の行 2 が `≤ 1` なら）。 -/
-theorem heredZ2_of_srow2 {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) (hpj : p < j)
+theorem heredZ2_of_srow2 {P B : TrioSeq} {j p : ℕ} (hpj : p < j)
     (hpar : hasParent (P ++ B.take (j + 1))
       (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
       ((P ++ B.take (j + 1)).length - 1))
