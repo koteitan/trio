@@ -5831,16 +5831,52 @@ theorem residual_row2_dichotomy {Q : TrioSeq} (hQ2 : 2 ≤ Q.length)
   obtain ⟨h1, h2⟩ := hc
   exact horph ((hiff _).mpr ⟨0, by omega, by have := hz1 0; omega, h2⟩)
 
-/-- ⛔ **(W74) の結論**: 末尾が「同じ写しの中」に閉じ込められる限り、
-**塔を積んでも `le1` の祖先集合は増えません**。
-⟹ ★ 証人があるとき（`prefix_mTower_nextrel1_src_ge`）⟹ **親は同じ写しの中**
-⟹ ⟹ ★★ ですから **`z = 0` の列に届く新しい道は、写しの中にしかありません**
-⟹ ⟹ ⟹ ⛔ **そして写しの中は `Q` と同型** ⟹ **`Q` で届かないなら塔でも届きません**。 -/
+/-- ⚠⚠ **名前に反して、これは「証人 `hy` があるとき」だけの主張です**（(W56) の再掲）。
+⛔ **証人が無い列（＝ `Q` の中で行 1 の孤児）については、何も言いません**。
+⟹ ★ そこでは鎖がブロックを出られます（`row1_cross_implies_orphan` の対偶）。
+⟹ ⚠ **私は (W74) でこの仮定を落として誤った結論を出しました（自己訂正 18）。**
+⟹ ★★★ **本当の理由は (W61)**: **`le1 ⊆ le0` で、`le0` はブロック根で塞がれます**（L3 の指摘）。 -/
 theorem row2_parent_stays_in_block {A Q : TrioSeq} {d e n k j y c : ℕ}
     (hk : k < n) (hj : j < Q.length) (hy : nextrel1 Q y j)
     (h : nextrel1 (A ++ mTower Q d e n) c (A.length + (k * Q.length + j))) :
     A.length + (k * Q.length + y) ≤ c :=
   prefix_mTower_nextrel1_src_ge hk hj hy h
+
+
+/-- ★★★★★ 塔のブロック根は、そのブロックの列の `le0` 祖先（`hr0` から）。 -/
+theorem le0_blockRoot_mTower (Q : TrioSeq) {d e n k i : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hk : k < n) (hi : i < Q.length) (hi0 : 0 < i) :
+    le0 (mTower Q d e n) (k * Q.length) (k * Q.length + i) := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hkn : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hQ : le0 Q 0 i :=
+    le0_root_of_shallow (by omega) (fun x hx hxl => hr0 x hx hxl) i hi0 hi
+  have := rtg0_mTower_intra_block Q (d := d) (e := e) hk (a := 0) (b := i)
+    (by omega) hi hQ.2.2
+  exact ⟨by omega, by omega, by simpa using this⟩
+
+open Classical in
+/-- ★★★★★★★★★★ **(W75) の芯**: `hr0 Q` ∧ **的が `Q` の錐の中** なら、
+**塔の行 1 の親はブロック根以降**（＝ **同じブロックの中**）。
+⟹ ★ **証人は要りません**（(W56) と違う点）。⟹ ⟹ ★★ **L3 の「`le0` はブロック根で塞がれる」の行 1 版**。 -/
+theorem nextrel1_mTower_src_ge_blockRoot (Q : TrioSeq)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {d e n k i c : ℕ} (hk : k < n) (hi : i < Q.length) (hi0 : 0 < i)
+    (hcone : le1 Q 0 i)
+    (h : nextrel1 (mTower Q d e n) c (k * Q.length + i)) :
+    k * Q.length ≤ c := by
+  by_contra hc
+  push Not at hc
+  have hroot : le1 Q 0 0 := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  have hlt : entry Q 1 0 < entry Q 1 i := entry1_lt_of_le1_ne hcone (by omega)
+  have hmin := h.2.2.2.2.2 (k * Q.length)
+    ⟨by omega, by simpa using le0_blockRoot_mTower Q hr0 hk hi hi0⟩
+  rw [entry1_mTower_block_formula Q hk hi,
+    show k * Q.length = k * Q.length + 0 from by omega,
+    entry1_mTower_block_formula Q hk (by omega), if_pos hcone, if_pos hroot] at hmin
+  omega
 
 end H12Export
 end TRIO
