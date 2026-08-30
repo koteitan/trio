@@ -2019,5 +2019,98 @@ theorem mTower_mem_of_constRow2 {u : ℕ} {Q : TrioSeq} {c : ℕ}
         rw [lev_mTower_root hQne]
         exact lev_root_le_of_mem_W hQ hQne
 
+
+/-! ## 30. ★★★ **(n2) `MTowerSingle` の接頭辞つき版**
+
+R2 の測定: 消費側で降りて現れる `V` の残差のうち **4.32% が `|V| = 1`**。
+⟹ §81 `mTowerSingle_holds`（緑）が覆うが、**結論に接頭辞が無い**（L3 の §191.2）。
+
+⚠ 消費側は `MTowerClosedRow2` の枝なので **`∃ p ∈ Q, 0 < p.2.2`**、
+`|Q| = 1` なら **`0 < entry Q 2 0`**。⟹ **行 2 が正の場合だけでよい。**
+
+⟹ そのとき塔の**行 2 は定数で正**なので、末尾列は**必ず行 2 の孤児**:
+
+    `L105.not_hasParent_two_of_row2_const`（`L105Cap:6216`）
+    `L105.snoc_orphan_W`（`L105Cap:144`）… 孤児 snoc は段によらず無料
+
+⚠ 接頭辞を剥がすのに `Column.hasParent_append_right` を使うが、その `hpos`
+（列の行 0 が正）は **深さ 0 の列では破れる**。⟹ **深さ 0 は別に潰す**（下）。 -/
+
+/-- ★ **深さ 0 の列は行 2 の親を持てない**（行 0 の鎖が入って来られない）。 -/
+theorem not_hasParent_two_of_depth_zero {M : TrioSeq} {j : ℕ} (h : entry M 0 j = 0) :
+    ¬ hasParent M 2 j := by
+  rintro ⟨j0, hj0, -⟩
+  have h2 : nextrel2 M j0 j := by
+    unfold nextR at hj0
+    rw [if_neg (by omega), if_neg (by omega)] at hj0
+    exact hj0
+  have hlt : j0 < j := h2.2.2.1
+  have hrtg : Relation.ReflTransGen (nextrel0 M) j0 j := rtg1_to_rtg0 h2.2.2.2.2.1.2.2
+  rcases Relation.ReflTransGen.cases_tail hrtg with hEq | ⟨b, -, hb⟩
+  · omega
+  · have : entry M 0 b < entry M 0 j := hb.2.2.2.1
+    omega
+
+/-- ★★★ **接頭辞つき `MTowerSingle`（行 2 が正の場合）**。
+⟹ R2 の残差の **4.32%（`|V| = 1`）** を消す。 -/
+theorem prefix_mTowerSingle_row2 {u : ℕ} {A Q : TrioSeq}
+    (hA : A ∈ W u) (hAne : A ≠ []) (h1 : Q.length = 1)
+    (hbase : entry Q 0 0 = 0) (hzpos : 0 < entry Q 2 0) (d e : ℕ) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have hQne : Q ≠ [] := by intro hc; rw [hc] at h1; simp at h1
+  set z : ℕ := entry Q 2 0 with hzdef
+  have hconstQ : ∀ p ∈ Q, p.2.2 = z := by
+    intro p hp
+    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hp
+    have hj0 : j = 0 := by omega
+    subst hj0
+    show (Q[0]'(by omega)).2.2 = entry Q 2 0
+    unfold entry
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+    simp
+  intro n
+  induction n with
+  | zero =>
+      rw [show mTower Q d e 0 = ([] : TrioSeq) from rfl, List.append_nil]
+      exact hA
+  | succ n ih =>
+      have hTn : (mTower Q d e n).length = n := by rw [mTower_length, h1, Nat.mul_one]
+      have hTn1 : (mTower Q d e (n + 1)).length = n + 1 := by
+        rw [mTower_length, h1, Nat.mul_one]
+      have hconstT : ∀ p ∈ mTower Q d e (n + 1), p.2.2 = z :=
+        h12_constRow2_mTower hconstQ d e (n + 1)
+      obtain ⟨c, hc⟩ : ∃ c, Lift1 (shiftr01 (d * n) 0 Q) (e * n) = [c] := by
+        rw [← List.length_eq_one_iff, Lift1_length, shiftr01_length, h1]
+      have hCne : A ++ mTower Q d e n ≠ [] := by
+        intro h
+        exact hAne (List.append_eq_nil_iff.mp h).1
+      have hCl : (A ++ mTower Q d e n).length = A.length + n := by
+        rw [List.length_append, hTn]
+      -- 対象を `A ++ mTower Q d e (n+1)` に揃える
+      have hobj : A ++ mTower Q d e n ++ [c] = A ++ mTower Q d e (n + 1) := by
+        rw [mTower_succ, hc, List.append_assoc]
+      -- 末尾列の行 2 は `z > 0` ⟹ `srow = 2`
+      have hE2 : entry (A ++ mTower Q d e (n + 1)) 2 (A.length + n) = z := by
+        rw [entry_append_right]
+        exact hconstT _ (entry_pair_mem (by omega))
+      have hsrow : srow (A ++ mTower Q d e (n + 1)) (A.length + n) = 2 := by
+        unfold srow; rw [if_pos (by rw [hE2]; omega)]
+      -- 末尾列は行 2 の孤児
+      have horph : ¬ hasParent (A ++ mTower Q d e (n + 1)) 2 (A.length + n) := by
+        by_cases hd0 : entry (A ++ mTower Q d e (n + 1)) 0 (A.length + n) = 0
+        · exact not_hasParent_two_of_depth_zero hd0
+        · have hroot : entry (mTower Q d e (n + 1)) 0 0 = 0 := by
+            have := entry0_mTower_block Q d e (n + 1) 0 0 (by omega) (by omega)
+            simpa [hbase] using this
+          intro hp
+          have := (hasParent_append_right A (mTower Q d e (n + 1)) hroot
+            (show 0 < entry (A ++ mTower Q d e (n + 1)) 0 (A.length + n) by omega)).mp hp
+          exact L105.not_hasParent_two_of_row2_const hconstT (by omega)
+            (by rw [hTn1]; simpa using this)
+      rw [mTower_succ, ← List.append_assoc, hc]
+      refine snoc_orphan_W c ih hCne ?_
+      rw [hobj, hCl, hsrow]
+      exact horph
+
 end H12H2
 end TRIO
