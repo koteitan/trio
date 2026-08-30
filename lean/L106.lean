@@ -10207,5 +10207,36 @@ theorem mem_of_mem_prefix_window {A Q : TrioSeq} {n c t : ℕ} {q : ℕ × ℕ �
   · exact List.mem_of_mem_take hq
   · exact List.mem_of_mem_drop (List.mem_of_mem_take hq)
 
+/-! ### §294 (L-MIN2) 「直前が親」は最小形に帰着しない —— `srow != 0` が `d0 > 0` を強制する
+
+team-lead の (L-MIN2)。「的の直前の列が親」なら **窓は 1 列**（`|V| = 1`）で、
+H12 の最小形（`A ++ replicate n q`）に見える。⟹ ⛔ **だが `WSnocOpen1` では帰着しない**。
+
+理由: `WSnocOpen1` は **`srow != 0`** を仮定する。`oper` の `d0` は
+`if 0 < i1 then entry M 0 j1 - entry M 0 j0 else 0` なので、`srow != 0` なら
+`d0 = entry T 0 t - entry T 0 c`。そして **`nextrel1` は `le0 c t` を、`nextrel2` は
+`le1 c t` を含む**ので、`c != t` から **`entry T 0 c < entry T 0 t`** ⟹ **`d0 > 0`**。
+
+⟹ ★ 後継は `A ++ replicate m q`（持ち上げ 0）ではなく、
+**`A ++ [q, q+(d0,d1,0), q+(2d0,2d1,0), ...]`（1 列ずつ持ち上がる塔）**。
+⟹ ⚠ これは私の §291 の反例（`Q = [(1,0,0),(2,1,0)]`、omega の塔）そのものの形であり、
+**どの自然数値測度も同時に不変にする**族である。 -/
+
+/-- ★★★ **`srow != 0` の親は、行 0 でも真に浅い** ⟹ **`oper` の `d0` は正**。 -/
+theorem entry0_lt_of_nextR_srow_ne_zero {T : TrioSeq} {i c t : ℕ}
+    (hi : i ≠ 0) (h : nextR T i c t) : entry T 0 c < entry T 0 t := by
+  rw [nextR, if_neg hi] at h
+  by_cases h1 : i = 1
+  · rw [if_pos h1] at h
+    exact entry0_lt_of_le0_ne h.2.2.2.2.1 (by have := h.2.2.1; omega)
+  · rw [if_neg h1] at h
+    exact entry0_lt_of_le0_ne (le0_of_le1' h.2.2.2.2.1) (by have := h.2.2.1; omega)
+
+/-- 同じことを `srow` で述べた形（`WSnocOpen1` の場面）。 -/
+theorem entry0_lt_parent_of_srow_ne_zero {T : TrioSeq} {t : ℕ}
+    (hs : srow T t ≠ 0) (hp : hasParent T (srow T t) t) :
+    entry T 0 (parent T (srow T t) t) < entry T 0 t :=
+  entry0_lt_of_nextR_srow_ne_zero hs (parent_nextR hp)
+
 end L106
 end TRIO
