@@ -7586,3 +7586,28 @@ L106 を読んだ。`hsnoc_zero_of_parent` の中で `hd : 0 < d` が使われ�
 
 ⚠ さらに: 末尾列が**全部 0 でも困らない**。`snoc_orphan_W` は `oper_eq_pred_of_zero` で
 その場合も処理する。⟹ `hz` は `hsnoc_zero_of_parent`（親がある枝）でだけ要る。
+
+## §299 ★★★★★★★ `hrank_blockRoot` は `d = 0` でも通る（`0 < e` なら）
+
+`rankDE d e = (if 0 < d then 1 else 0) + (if 0 < e then 1 else 0)`（`L105Cap:13788`）
+`wd0 P B j p = if 0 < srow(末尾) then entry 0 (末尾) - entry 0 (P.length+p) else 0`（`L106:2425`）
+`wd1 P B j p = if 1 < srow(末尾) then ... else 0`（`L106:2431`）
+
+`hrank_blockRoot` は `j = |Q|`, `p = 0`, `P = A ++ mTower Q d e k` で使われる。
+⟹ `P.length + 0` = 第 k ブロックの根、`末尾` = 第 (k+1) ブロックの根。
+
+    wd0 = entry Q 0 0 + d*(k+1) - (entry Q 0 0 + d*k) = d
+    wd1 = 0                                  （`hz0` から srow ≤ 1）
+
+⟹ ★ **`d = 0` なら `wd0 = 0`**（`entry0_mTower_blockRoot_d_zero`: 行 0 が全ブロック同じ）。
+⟹ ⟹ `rankDE 0 0 = 0 < 1 = rankDE 0 e`（`0 < e`）⟹ **`hrank` が通る**。
+
+⟹ ⟹ ★★★ **`ZeroDOK` の `0 < e` は、既存の `hsnoc_zero` の骨格がそのまま使える**。
+   差し替えるのは 2 か所だけ:
+     `hd : 0 < d` → `he : 0 < e`（`hz`＝末尾列が非零、§298）
+     `blockRoot_hasParent_prev`（親は前のブロック）→ §296 の `d = 0` 版（親は `A` の固定列）
+
+⛔ **`d = e = 0` だけは別**。`rankDE 0 0 = 0` なので `rankDE _ _ < 0` は不可能
+   ⟹ 測度のルートが原理的に死ぬ ⟹ **コピーのルート**（`prefix_mTower_d0_mem`、
+   要 `based Q` ＋ `Q ∈ W u`）か `PrefixCopiesOpen` しかない。
+   （窓が短くなるなら `natMeasure` の `3*L` で落ちるので、そちらでも可。）
