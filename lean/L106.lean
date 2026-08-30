@@ -3382,5 +3382,164 @@ theorem mTowerClosedS_of_residues (horph : OrphOK)
 **⟹ ⟹ ★ そして `zle1`（行 2 が全部 1 以下）は **`z < 2` の断片**そのものなので、
 プロジェクトの前提として使えるはずです。⟹ team-lead に確認します。** -/
 
+/-! ## 223. ★★★★★★★★★ `0 < e` を落とします —— H12 の (q3b) が効きました
+
+H12 が `blockRoot_parent_prevBlock_noE`（**`0 < e` 不要**）と
+`blockRoot_parent_prevBlock_row0'`（**行 0 版**）を緑にしてくれました。
+
+**⟹ ★ これで `j = 0` の枝から `0 < e` が落ちます。⟹ `ZeroEOK` が要らなくなります。**
+
+⚠ **値段**: `0 < e` は **親の存在**にも使っていました（証人 ＝ 1 つ前のブロックの根）。
+**⟹ ⟹ 落とすと、親が**居ない**場合が出ます。⟹ そこは **`snoc_orphan_W` で無料**にします。**
+**⟹ ⟹ ⟹ ただし「塔の中で親なし ⟹ 全体でも親なし」が要ります（＝ `OrphOK0`）。**
+
+⚠ **R2 の実測**: **`e = 0` でもブロック根の親は一度も飛び越えない（0/732140）、
+核の形では親なし 100%** ⟹ **`OrphOK0` は見込みがあります**。 -/
+
+/-- ⛔ **`OrphOK0`**: ブロックの根が**塔の中**で孤児なら、接頭辞を付けても孤児。 -/
+def OrphOK0 : Prop :=
+  ∀ (A Q : TrioSeq) (d e k : ℕ),
+    ¬ hasParent (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1)
+      (srow (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1)
+        ((k + 1) * Q.length))
+      ((k + 1) * Q.length) →
+    ¬ hasParent (A ++ (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1))
+      (srow (A ++ (mTower Q d e (k + 1)
+        ++ (Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take 1))
+        (A.length + (k + 1) * Q.length))
+      (A.length + (k + 1) * Q.length)
+
+/-- ★ ブロックの根の `srow` は `hz0` から `≤ 1`。 -/
+theorem blockRoot_srow_le_one {Q : TrioSeq} {d e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k < n) (hz0 : entry Q 2 0 = 0) :
+    srow (mTower Q d e n) (k * Q.length) ≤ 1 := by
+  have h2 : entry (mTower Q d e n) 2 (k * Q.length) = 0 := by
+    rw [mTower_entry2_root hk hQ1]; exact hz0
+  unfold srow
+  rw [if_neg (by omega)]
+  split_ifs <;> omega
+
+/-- ★★ **`0 < e` なしのブロック根の親の位置**（塔の中）。 -/
+theorem blockRoot_parent_ge_noE {Q : TrioSeq} {d e n k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (hk : k + 1 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hz0 : entry Q 2 0 = 0)
+    (hp : hasParent (mTower Q d e n)
+      (srow (mTower Q d e n) ((k + 1) * Q.length)) ((k + 1) * Q.length)) :
+    k * Q.length ≤ parent (mTower Q d e n)
+      (srow (mTower Q d e n) ((k + 1) * Q.length)) ((k + 1) * Q.length) := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  have hs := blockRoot_srow_le_one (Q := Q) (d := d) (e := e) (n := n) (k := k + 1)
+    hQ1 (by omega) hz0
+  have hnr := parent_nextR hp
+  rcases Nat.eq_zero_or_pos (srow (mTower Q d e n) ((k + 1) * Q.length)) with h0 | h1
+  · rw [h0] at hnr hp ⊢
+    exact blockRoot_parent_prevBlock_row0' hQ1 hd hk hp
+  · have hs1 : srow (mTower Q d e n) ((k + 1) * Q.length) = 1 := by omega
+    rw [hs1] at hnr ⊢
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    exact blockRoot_parent_prevBlock_noE hQne hd hk hr0 hnr
+
+/-! ### 223.1 ★★ `p = 0` の `rankDE` の減少（`0 < e` なし） -/
+
+open Classical in
+theorem hrank_blockRoot_noE {A Q : TrioSeq} {d e k : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (hz0 : entry Q 2 0 = 0)
+    (hpM : hasParent (mTower Q d e (k + 2))
+      (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length)) ((k + 1) * Q.length))
+    (hpe0 : parent (mTower Q d e (k + 2))
+      (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length)) ((k + 1) * Q.length)
+      = k * Q.length) :
+    rankDE
+      (wd0 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length 0)
+      (wd1 (A ++ mTower Q d e k)
+        (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length 0)
+      < rankDE d e := by
+  have hQ1 : 0 < Q.length := List.length_pos_iff.mpr hQne
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  set P := A ++ mTower Q d e k with hPdef
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  have hB1len : B1.length = Q.length := by rw [hB1, Lift1_length, shiftr01_length]
+  have hBlen : (B0 ++ B1).length = Q.length + Q.length := by
+    rw [List.length_append, hB0len, hB1len]
+  set S := P ++ (B0 ++ B1).take (Q.length + 1) with hS
+  have hSlen : S.length = P.length + (Q.length + 1) := by
+    rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hlast : S.length - 1 = P.length + Q.length := by omega
+  have hEl : ∀ i, entry S i (P.length + Q.length) = entry B1 i 0 := by
+    intro i
+    rw [hS, entry_append_right, Wset.entry_take (show Q.length < Q.length + 1 by omega),
+      show Q.length = B0.length + 0 from by omega, entry_append_right]
+  have hEr : ∀ i, entry S i P.length = entry B0 i 0 := by
+    intro i
+    have h := entry_append_right P ((B0 ++ B1).take (Q.length + 1)) i 0
+    simp only [Nat.add_zero] at h
+    rw [hS, h, Wset.entry_take (show (0 : ℕ) < Q.length + 1 by omega),
+      entry_append_left _ _ (show (0 : ℕ) < B0.length by omega)]
+  have hB1_0 : entry B1 0 0 = entry Q 0 0 + d * (k + 1) := by
+    rw [hB1, entry0_Lift1, entry0_shiftr01 (by omega)]
+  have hB1_1 : entry B1 1 0 = entry Q 1 0 + e * (k + 1) := by
+    rw [hB1]
+    show ((Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).getD 0 (0, 0, 0)).2.1 = _
+    rw [block_getD (d := d) (e := e) (n := k + 1) hQ1, if_pos (le1_refl hQ1)]
+  have hB1_2 : entry B1 2 0 = entry Q 2 0 := by
+    rw [hB1]
+    show ((Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).getD 0 (0, 0, 0)).2.2 = _
+    rw [block_getD (d := d) (e := e) (n := k + 1) hQ1]
+  have hB0_0 : entry B0 0 0 = entry Q 0 0 + d * k := by
+    rw [hB0, entry0_Lift1, entry0_shiftr01 (by omega)]
+  -- `S` の末尾列の `srow` は `mTower Q d e (k+2)` のブロック根の `srow` と同じ
+  have hsS : srow S (S.length - 1)
+      = srow (mTower Q d e (k + 2)) ((k + 1) * Q.length) := by
+    rw [hlast]
+    unfold srow
+    rw [hEl 2, hEl 1, hB1_2, hB1_1,
+      mTower_entry2_root (show k + 1 < k + 2 by omega) hQ1,
+      entry1_mTower_blockRoot hQne d e (k + 2) (k + 1) (by omega)]
+  rcases Nat.eq_zero_or_pos (srow (mTower Q d e (k + 2)) ((k + 1) * Q.length))
+    with h0 | h1
+  · -- `srow = 0` ⟹ `wd0 = wd1 = 0`
+    have hw0 : wd0 P (B0 ++ B1) Q.length 0 = 0 := by
+      unfold wd0; rw [← hS, hsS, h0, if_neg (by omega)]
+    have hw1 : wd1 P (B0 ++ B1) Q.length 0 = 0 := by
+      unfold wd1; rw [← hS, hsS, h0, if_neg (by omega)]
+    rw [hw0, hw1]
+    unfold rankDE
+    rw [if_pos hd]
+    split_ifs <;> omega
+  · -- `srow = 1` ⟹ 親がブロック根なので `nextrel1` ⟹ `0 < e`
+    have hs1 : srow (mTower Q d e (k + 2)) ((k + 1) * Q.length) = 1 := by
+      have := blockRoot_srow_le_one (Q := Q) (d := d) (e := e) (n := k + 2)
+        (k := k + 1) hQ1 (by omega) hz0
+      omega
+    have hpe1 := hpe0
+    rw [hs1] at hpe1
+    have hnr := parent_nextR hpM
+    rw [hs1] at hnr
+    rw [hpe1] at hnr
+    unfold nextR at hnr
+    rw [if_neg (by omega), if_pos rfl] at hnr
+    have he : 0 < e := e_pos_of_nextrel1_blockRoots (by omega) (by omega) hQ1 hnr
+    have hw1 : wd1 P (B0 ++ B1) Q.length 0 = 0 := by
+      unfold wd1; rw [← hS, hsS, hs1, if_neg (by omega)]
+    have hw0 : wd0 P (B0 ++ B1) Q.length 0 = d := by
+      unfold wd0
+      rw [← hS, hsS, hs1, if_pos (by omega), hlast, hEl 0, Nat.add_zero, hEr 0,
+        hB1_0, hB0_0]
+      have hmul : d * (k + 1) = d * k + d := Nat.mul_succ d k
+      omega
+    rw [hw0, hw1]
+    unfold rankDE
+    rw [if_pos he]
+    split_ifs <;> omega
+
 end L106
 end TRIO
