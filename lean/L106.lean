@@ -9760,5 +9760,73 @@ theorem prefixCopiesOpen_of_zeroRow2 {u n : ℕ} {A Q : TrioSeq}
 ⚠ **教訓 14**: §286 は緑ですが、**`PrefixCopiesOpen` を証明したのではありません**。
 **⟹ ★ **行 2 ≡ 0 の場合だけ**です。 -/
 
+/-! ## 287. ★★★★★★ **(L-OPA) の下ごしらえ**: 祖先関係は `A ++ P` と `P` で**両方向**に一致します
+
+§242 で `le0` は両方向、`le1` は `M → 窓` が緑でした。⟹ ★ **`le1` の逆向き**を足します。
+
+**⟹ ★ 鍵（§254 と同じ）: `nextrel1 M (|A|+a) (|A|+b)` の最小性の候補 `q` は `q > |A|+a ≥ |A|`
+⟹ ⟹ ★★ **必ず `P` の範囲**にいます。⟹ ⟹ ⟹ **接頭辞は最小性に効きません**。** -/
+
+theorem le0_append_iff {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length) :
+    le0 (A ++ P) (A.length + a) (A.length + b) ↔ le0 P a b := by
+  have hL : A.length + P.length ≤ (A ++ P).length := by rw [List.length_append]
+  constructor
+  · intro h
+    have := le0_window (T := A ++ P) (s := A.length) (L := P.length) hL ha hb h
+    rwa [drop_take_append_right] at this
+  · intro h
+    refine le0_window' (T := A ++ P) (s := A.length) (L := P.length) hL ha hb ?_
+    rwa [drop_take_append_right]
+
+theorem nextrel1_append_of {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length)
+    (h : nextrel1 P a b) : nextrel1 (A ++ P) (A.length + a) (A.length + b) := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  refine ⟨by rw [List.length_append]; omega, by rw [List.length_append]; omega, by omega, ?_,
+    (le0_append_iff ha hb).mpr h5, ?_⟩
+  · rw [entry_append_right, entry_append_right]; exact h4
+  · intro q ⟨hq1, hq2⟩
+    have hqle : q ≤ A.length + b := le0_le' hq2
+    obtain ⟨q', rfl⟩ : ∃ q', q = A.length + q' := ⟨q - A.length, by omega⟩
+    have hq'b : q' ≤ b := by omega
+    have := h6 q' ⟨by omega, (le0_append_iff (by omega) hb).mp hq2⟩
+    rw [entry_append_right, entry_append_right]
+    exact this
+
+theorem le1_append_of {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length)
+    (h : le1 P a b) : le1 (A ++ P) (A.length + a) (A.length + b) := by
+  obtain ⟨-, -, hrt⟩ := h
+  refine ⟨by rw [List.length_append]; omega, by rw [List.length_append]; omega, ?_⟩
+  have key : ∀ c, Relation.ReflTransGen (nextrel1 P) a c → c < P.length →
+      Relation.ReflTransGen (nextrel1 (A ++ P)) (A.length + a) (A.length + c) := by
+    intro c hc
+    induction hc with
+    | refl => intro _; exact Relation.ReflTransGen.refl
+    | @tail x y hx hxy ih =>
+        intro hyP
+        have hxP : x < P.length := hxy.1
+        exact (ih hxP).tail (nextrel1_append_of hxP hyP hxy)
+  exact key b hrt hb
+
+theorem le1_append_iff {A P : TrioSeq} {a b : ℕ} (ha : a < P.length) (hb : b < P.length) :
+    le1 (A ++ P) (A.length + a) (A.length + b) ↔ le1 P a b := by
+  constructor
+  · intro h
+    have hL : A.length + P.length ≤ (A ++ P).length := by rw [List.length_append]
+    have := le1_window (T := A ++ P) (s := A.length) (L := P.length) hL ha hb h
+    rwa [drop_take_append_right] at this
+  · exact le1_append_of ha hb
+
+/-! ### 287.1 ⟹ ★★★★★ **これで `oper` の写しの `if` が一致します**
+
+`oper M n` の写しは
+
+    `(entry M 0 j + (if **le0 M j0 j** then k·d0 else 0), entry M 1 j + (if **le1 M j0 j** then k·d1 else 0), …)`
+
+**⟹ ★ `M = A ++ P`、`j0 = |A| + p`、`j = |A| + j'` のとき、⟹ ★★ §287 で
+**`le0 M j0 j ↔ le0 P p j'`** と **`le1 M j0 j ↔ le1 P p j'`**（**前提なし**）。**
+**⟹ ⟹ ★★★ ですから **写しの中身が `P` の側と一致**します。⟹ ★ **`rsum` は要りません**。**
+
+⚠ **残るのは「バッドルートが `P` の中」＝ `parent (A ++ P) i (|A|+|P|−1) = |A| + p`** です。 -/
+
 end L106
 end TRIO
