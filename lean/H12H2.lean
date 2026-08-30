@@ -3080,5 +3080,91 @@ theorem no_hasParent0_prefix_blockRoot_d_zero {A Q : TrioSeq} {e n k : ℕ}
   rw [if_pos rfl] at hb
   exact hnp b ((nextrel0_prefix_blockRoot_iff_d_zero hQ1 hn hr0 hk).mp hb)
 
+
+/-! ### 42.2 残りの枝（閾値を超える前の小さい `k`）
+
+閾値 `c_k = entry Q 1 0 + e*k` は `k` で増える。⟹ 親は `A` の中の `le0` 祖先の鎖を
+**上へ動くだけ**で、`c_k` が `entry M 1 a0` を超えた時点で `a0` に着く（§42.1）。 -/
+
+/-- ★ **ブロック根の行 1 の親は必ず接頭辞 `A` の中**（塔の列は決して親にならない）。 -/
+theorem nextrel1_prefix_blockRoot_src_d_zero {A Q : TrioSeq} {e n k a : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (h : nextrel1 (A ++ mTower Q 0 e n) a (A.length + k * Q.length)) :
+    a < A.length :=
+  ((nextrel1_prefix_blockRoot_iff_d_zero hQne hQ1 hn hr0 hk).mp h).1
+
+/-- ★★★ **親は `k` について単調に上がる**（鎖を `a0` に向かって上るだけ）。 -/
+theorem nextrel1_prefix_blockRoot_mono_d_zero {A Q : TrioSeq} {e n k k' a b : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hk : k < n) (hk' : k' < n) (hkk : k ≤ k')
+    (ha : nextrel1 (A ++ mTower Q 0 e n) a (A.length + k * Q.length))
+    (hb : nextrel1 (A ++ mTower Q 0 e n) b (A.length + k' * Q.length)) :
+    a ≤ b := by
+  obtain ⟨haA, ha0, halt, -⟩ :=
+    (nextrel1_prefix_blockRoot_iff_d_zero hQne hQ1 hn hr0 hk).mp ha
+  obtain ⟨-, -, -, hbmin⟩ :=
+    (nextrel1_prefix_blockRoot_iff_d_zero hQne hQ1 hn hr0 hk').mp hb
+  by_contra hc
+  push_neg at hc
+  have hle : entry Q 1 0 + e * k ≤ entry Q 1 0 + e * k' := by
+    have : e * k ≤ e * k' := Nat.mul_le_mul_left e hkk
+    omega
+  exact absurd (hbmin a haA hc ha0) (by omega)
+
+
+open Classical in
+/-- ★★★★★★★ **存在も完全に決まる**: ブロック根が行 1 の親を持つ ⟺
+`A` の中の `le0` 祖先で行 1 が閾値未満のものが 1 つでもある。 -/
+theorem hasParent1_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k : ℕ}
+    (hQne : Q ≠ []) (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n) :
+    hasParent (A ++ mTower Q 0 e n) 1 (A.length + k * Q.length)
+      ↔ ∃ j, j < A.length ∧ le0 (A ++ mTower Q 0 e n) j A.length ∧
+             entry (A ++ mTower Q 0 e n) 1 j < entry Q 1 0 + e * k := by
+  set M := A ++ mTower Q 0 e n with hM
+  have hiff := fun a => nextrel1_prefix_blockRoot_iff_d_zero
+    (A := A) (Q := Q) (e := e) (n := n) (k := k) (a := a) hQne hQ1 hn hr0 hk
+  constructor
+  · rintro ⟨a, ha, -⟩
+    unfold nextR at ha
+    rw [if_neg (by omega), if_pos rfl] at ha
+    obtain ⟨h1, h2, h3, -⟩ := (hiff a).mp ha
+    exact ⟨a, h1, h2, h3⟩
+  · rintro ⟨j0, hj0A, hj00, hj0c⟩
+    set T := (Finset.range A.length).filter
+      (fun j => le0 M j A.length ∧ entry M 1 j < entry Q 1 0 + e * k) with hT
+    have hj0T : j0 ∈ T := by
+      rw [hT, Finset.mem_filter, Finset.mem_range]
+      exact ⟨hj0A, hj00, hj0c⟩
+    have hTne : T.Nonempty := ⟨j0, hj0T⟩
+    set b := T.max' hTne with hb
+    have hbT : b ∈ T := T.max'_mem hTne
+    rw [hT, Finset.mem_filter, Finset.mem_range] at hbT
+    obtain ⟨hbA, hb0, hbc⟩ := hbT
+    have hbmax : ∀ j, j < A.length → b < j → le0 M j A.length →
+        entry Q 1 0 + e * k ≤ entry M 1 j := by
+      intro j hjA hbj hj0
+      by_contra hcon
+      push_neg at hcon
+      have hjT : j ∈ T := by
+        rw [hT, Finset.mem_filter, Finset.mem_range]
+        exact ⟨hjA, hj0, hcon⟩
+      exact absurd (T.le_max' j hjT) (by omega)
+    have hbn : nextrel1 M b (A.length + k * Q.length) :=
+      (hiff b).mpr ⟨hbA, hb0, hbc, hbmax⟩
+    refine ⟨b, ?_, ?_⟩
+    · show nextR M 1 b (A.length + k * Q.length)
+      unfold nextR; rw [if_neg (by omega), if_pos rfl]; exact hbn
+    · intro y hy
+      unfold nextR at hy
+      rw [if_neg (by omega), if_pos rfl] at hy
+      obtain ⟨hyA, hy0, hyc, hymin⟩ := (hiff y).mp hy
+      rcases Nat.lt_trichotomy y b with h | h | h
+      · exact absurd (hymin b hbA h hb0) (Nat.not_le.mpr hbc)
+      · exact h
+      · exact absurd (hbmax y hyA h hy0) (Nat.not_le.mpr hyc)
+
 end H12H2
 end TRIO

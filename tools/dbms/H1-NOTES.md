@@ -7539,3 +7539,17 @@ team-lead の (q3):「`he` は落とせる。筋は『ブロックは平行移�
 ⟹ **`d = 0` の塔は二択**:
   (1) `Q` の根に行 0 の親 `a0` が `A` の中にある ⟹ 閾値を超えたら全ブロック根の親は `a0`
   (2) 無い ⟹ 全ブロック根が孤児 ⟹ `snoc_orphan_W`
+
+### §296.2 ★★★ 存在まで完全に決まった（`ZeroDOK` の `j = 0` は閉じた）
+
+    nextrel1_prefix_blockRoot_src_d_zero  : 行 1 の親は必ず A の中（塔は決して親にならない）
+    nextrel1_prefix_blockRoot_mono_d_zero : 親は k について単調に上がる（鎖を a0 へ）
+    ★ hasParent1_prefix_blockRoot_iff_d_zero :
+        hasParent M 1 (|A|+k*|Q|)
+          ⟺ ∃ j < |A|, le0 M j |A| ∧ entry M 1 j < entry Q 1 0 + e*k
+
+証明: 候補集合 `T = {j < |A| : le0 M j |A| ∧ entry M 1 j < c_k}` の**最大元**が親。
+最大性から最小性の条件がそのまま出る。一意性は三分法。
+
+⟹ **`d = 0` のブロック根（`j = 0`）は完全に決まりました**。塔は 1 ミリも関与しません。
+すべて接頭辞 `A` の中の `le0` 祖先の鎖と、その行 1 の値だけの話です。
