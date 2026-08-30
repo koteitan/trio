@@ -25,7 +25,7 @@ Python 3 only. No external libraries.
 
 ```
 bms2dbms/tools/bms2dbms.py    BMS 2-row standard form <-> DBMS standard form
-bms2dbms/bms2dbms/tools2yseq.py   DBMS standard form <-> Y sequence
+bms2dbms/tools/dbms2yseq.py        DBMS standard form <-> Y sequence
 bms2dbms/tools/bms2yseq.py    BMS 2-row standard form <-> Y sequence (composition)
 bms2dbms/tools/rows2.py       reference implementation (1:1 with the Lean definitions)
 bms2dbms/tools/core.py        expansion rule and standard-form test (shared by BMS / DBMS)

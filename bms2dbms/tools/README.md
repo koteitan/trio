@@ -11,7 +11,8 @@ BMS 2 行標準形  --conC-->  DBMS 標準形  --順位を数える-->  Y 数列
 ```
 
 > **2 行まで。** 扱うのは BMS の 2 行の断片（`psi_0(Omega_omega)` 未満）である。
-> 3 行以上（トリオ数列）は範囲外。
+> 3 行（トリオ数列）は [`tss2dbms`](README-tss.md) が扱う。ただしそちらは
+> 正しさが証明されておらず、既知の誤りがある。
 
 左半分 `conC` の正しさは Lean 4 / Mathlib で証明済みで、`sorry` も追加公理も無い。
 右半分は 巨大数研究 Wiki の
@@ -23,7 +24,7 @@ Python 3 だけ。外部ライブラリは要らない。
 
 ```
 bms2dbms/tools/bms2dbms.py    BMS 2 行標準形 <-> DBMS 標準形
-bms2dbms/bms2dbms/tools2yseq.py   DBMS 標準形 <-> Y 数列
+bms2dbms/tools/dbms2yseq.py        DBMS 標準形 <-> Y 数列
 bms2dbms/tools/bms2yseq.py    BMS 2 行標準形 <-> Y 数列（上 2 つの合成）
 bms2dbms/tools/rows2.py       参照実装（Lean の定義と 1 対 1）
 bms2dbms/tools/core.py        展開規則と標準形判定（BMS / DBMS 共通）
