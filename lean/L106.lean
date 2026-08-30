@@ -5632,5 +5632,49 @@ theorem le0_window {T : TrioSeq} {s L a b : ℕ} (hL : s + L ≤ T.length)
 
 **⟹ ★ (a) は測定待ち、(b) は私が見ます。** -/
 
+/-! ### 238.2 ★★ 錐のクラス条件は、**的が錐の外なら自動で満たせます**
+
+`hlocQ` の `hcls : le1 Q 0 y → le1 Q 0 j` は、**証人 `y` が錐の外なら前件が偽**で
+**空虚に真**です。**⟹ ★ そして的 `j` が錐の外なら、`not_le1_zero_iff` が
+**錐の外の候補**（ブロッカー）を必ず 1 つ供給します。** -/
+
+/-- ★ ブロッカーは必ず錐の外（H12 の `blocker_not_le1` と同じもの、こちらで再証明）。 -/
+theorem blocker_out_of_cone {Q : TrioSeq} {y : ℕ} (hy0 : y ≠ 0)
+    (hy1 : entry Q 1 y ≤ entry Q 1 0) : ¬ le1 Q 0 y := by
+  intro hc
+  have := le1_entry1_lt hc (show (0 : ℕ) ≠ y from fun h => hy0 h.symm)
+  omega
+
+/-- ★★ **的が錐の外なら、錐の外の候補が必ず取れます**（`not_le1_zero_iff` から）。
+⟹ ★ その候補で `entry Q 1 y < entry Q 1 j` さえ言えれば、`hlocQ` の 3 条件が全部そろいます
+（`hcls` は**空虚に真**）。 -/
+theorem outOfCone_witness_candidate {Q : TrioSeq}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    {j : ℕ} (hj : j < Q.length) (hout : ¬ le1 Q 0 j) :
+    ∃ y, y ≤ j ∧ y ≠ 0 ∧ le0 Q y j ∧ entry Q 1 y ≤ entry Q 1 0 ∧ ¬ le1 Q 0 y := by
+  obtain ⟨y, hy, hy0, hy1⟩ := (not_le1_zero_iff hr0 hj).mp hout
+  have hyj : y ≤ j := nextrel0_rtrancl_index_le hy
+  exact ⟨y, hyj, hy0, ⟨by omega, hj, hy⟩, hy1, blocker_out_of_cone hy0 hy1⟩
+
+/-! ### 238.3 ⟹ ★★★ **`hlocQ` の残りは「行 1 の 1 つの比較」だけ**
+
+**的 `j` の錐の内外で分けると:**
+
+    **`j` が錐の中** … `hcls` の後件が真 ⟹ **`hcls` は自動**
+         ⟹ 残るのは「`le0` の祖先に行 1 が小さい列がある」だけ
+    **`j` が錐の外** … §238.2 が**錐の外の候補 `y`** を供給 ⟹ `hcls` は**空虚に真**
+         ⟹ 残るのは **`entry Q 1 y < entry Q 1 j`** だけ
+         ⚠ ★ 候補は `entry Q 1 y ≤ entry Q 1 0` なので、
+           **`entry Q 1 0 < entry Q 1 j` なら足ります** ⟹ ★ それは **`h1out` そのもの**
+         ⟹ ⟹ ⛔ ですが `h1out` は `blocker_of_large_k` で壊れます
+         ⟹ ⟹ ⟹ ★★ **候補を「行 1 が最小のブロッカー」に取り直せば、より弱くなります**
+
+**⟹ ★ ですから `hlocQ` の本体は「**ブロッカーのうち行 1 が最小のものが、的より小さいか**」です。**
+**⟹ ⟹ ★★ 核の形（型 B）では: ブロッカーは第 1 列（行 1 ＝ 0）、的は第 2 列（行 1 ＝ `b > 0`）**
+**⟹ ⟹ ⟹ **`0 < b`** ✅ ⟹ **通ります**。**
+
+⚠ **教訓 14**: 上の分解は緑ですが、**`hlocQ` の遺伝は証明していません**。
+**⟹ ★ team-lead の (ADJ)（証人が隣で取れるか）と合わせて決まります。** -/
+
 end L106
 end TRIO
