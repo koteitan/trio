@@ -8123,5 +8123,53 @@ theorem dropLast_mTower_succ (Q : TrioSeq) (d e n : ℕ) (hQ : 0 < Q.length) :
     omega
   rw [mTower_succ, List.dropLast_append_of_ne_nil hne]
 
+
+/-! ## 126. ★★★★★★★★★★ (W76): **「錐の外」の越境には、非祖先の低い列が要ります**
+
+`srow = 1` ⟹ `d1 = 0` ⟹ **`e = 0`**（L3 の §295）⟹ ★ **写しの行 1 は全部 `Q` と同じ**。
+⟹ ★★★★★ そのとき **越境の始点 `(k', r)` は、`Q` の中で `i` の `le0` 祖先ではあり得ません**:
+祖先なら **同じブロックの写し `(k, r)` が最小性で塞ぎます**。
+⟹ ⟹ ★★★★★★★★★★ ⟹ **越境には「`i` の祖先でないのに行 1 が低い列」が要ります**。 -/
+
+/-- ★★★★★★★★★★ **(W76)**: `e = 0` の塔で行 1 の越境が起きるなら、
+始点は **`entry Q 1 r < entry Q 1 i` かつ `¬ le0 Q r i`** の列（＝ **非祖先で低い列**）。
+⟹ ★ ⟹ **`Q` にそういう列が無ければ、越境は起きません**。 -/
+theorem cross_needs_nonancestor_low (Q : TrioSeq) {d n k i c : ℕ}
+    (hk : k < n) (hi : i < Q.length) (hc : c < k * Q.length)
+    (h : nextrel1 (mTower Q d 0 n) c (k * Q.length + i)) :
+    ∃ r, r < Q.length ∧ entry Q 1 r < entry Q 1 i ∧ ¬ le0 Q r i := by
+  have hQ : 0 < Q.length := by omega
+  have hent : ∀ k'' j, k'' < n → j < Q.length →
+      entry (mTower Q d 0 n) 1 (k'' * Q.length + j) = entry Q 1 j := by
+    intro k'' j hk'' hj
+    rw [entry1_mTower_block_formula Q hk'' hj]
+    split_ifs <;> omega
+  have hk' : c / Q.length < k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm] at hc; exact hc)
+  have hr : c % Q.length < Q.length := Nat.mod_lt _ hQ
+  have hsplit : c = (c / Q.length) * Q.length + c % Q.length :=
+    (Nat.div_add_mod' c Q.length).symm
+  have hlt : entry (mTower Q d 0 n) 1 c
+      < entry (mTower Q d 0 n) 1 (k * Q.length + i) := h.2.2.2.1
+  rw [hsplit, hent _ _ (by omega) hr, hent _ _ hk hi] at hlt
+  refine ⟨c % Q.length, hr, hlt, ?_⟩
+  intro hanc
+  have hrle : c % Q.length ≤ i := rtg0_le hanc.2.2
+  have hrlt : c % Q.length < i := by
+    rcases Nat.eq_or_lt_of_le hrle with heq | hlt2
+    · rw [heq] at hlt; omega
+    · exact hlt2
+  have hstep : (c / Q.length + 1) * Q.length = (c / Q.length) * Q.length + Q.length :=
+    Nat.succ_mul _ _
+  have hkq : (c / Q.length + 1) * Q.length ≤ k * Q.length :=
+    Nat.mul_le_mul_right _ (by omega)
+  have hlen : (mTower Q d 0 n).length = n * Q.length := mTower_length Q d 0 n
+  have hkn : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hle0 : le0 (mTower Q d 0 n) (k * Q.length + c % Q.length) (k * Q.length + i) :=
+    ⟨by omega, by omega, rtg0_mTower_intra_block Q hk hr hi hanc.2.2⟩
+  have hmin := h.2.2.2.2.2 (k * Q.length + c % Q.length) ⟨by omega, hle0⟩
+  rw [hent _ _ hk hi, hent _ _ hk hr] at hmin
+  omega
+
 end H12H2
 end TRIO
