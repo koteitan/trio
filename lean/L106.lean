@@ -6190,5 +6190,127 @@ theorem le1_zero_one_iff {V : TrioSeq} (hV : 1 < V.length)
 **⟹ ⟹ ⚠ ですから (ADJ'-e) の 90.3% は **`hlocQ` の残差そのもの**で、
 **新しい情報ではありません**。⟹ **教訓 45**: 同じ量を 2 度測っても検算になりません。** -/
 
+/-! ## 242. ★★★★★ **窓の錐は「大きい列の中で窓の根の子孫」から出ます**（前提なし）
+
+§241 で `hlocQ` の残差が「錐の外の列」だけになりました。
+**⟹ ★ 窓の側で必要なのは `le1 V 0 t`（窓の根の子孫）です。**
+**⟹ ⟹ ★★★ これは **`le1 T (s+0) (s+t)` から前提なしで出ます**。⟹ 以下で緑にします。**
+
+**⚠ 逆向き（窓 ⟹ 大きい列）は「根を飛び越えない」が要ります**——そちらは使いません。 -/
+
+/-- ★★ `le0` の**逆向き**（窓 ⟹ 元の列）。`nextrel0_window` の鎖を持ち上げるだけ。 -/
+theorem le0_window' {T : TrioSeq} {s L a b : ℕ} (hL : s + L ≤ T.length)
+    (ha : a < L) (hb : b < L) (h : le0 ((T.drop s).take L) a b) :
+    le0 T (s + a) (s + b) := by
+  have hlen := window_length hL
+  obtain ⟨-, -, hrtg⟩ := h
+  refine ⟨by omega, by omega, ?_⟩
+  have key : ∀ c, Relation.ReflTransGen (nextrel0 ((T.drop s).take L)) a c →
+      c < L ∧ Relation.ReflTransGen (nextrel0 T) (s + a) (s + c) := by
+    intro c hc
+    induction hc with
+    | refl => exact ⟨ha, Relation.ReflTransGen.refl⟩
+    | @tail x y hx hxy ih =>
+        have hyL : y < L := by
+          have := hxy.2.1; rw [hlen] at this; exact this
+        exact ⟨hyL, ih.2.tail ((nextrel0_window hL ih.1 hyL).mp hxy)⟩
+  exact (key b hrtg).2
+
+/-- ★★★★ **`nextrel1` は元の列から窓へ移ります**（前提なし）。
+
+最小性は `le0` の**逆向き**（`le0_window'`）で元の列の最小性に帰着します。 -/
+theorem nextrel1_window_of {T : TrioSeq} {s L a b : ℕ} (hL : s + L ≤ T.length)
+    (ha : a < L) (hb : b < L) (h : nextrel1 T (s + a) (s + b)) :
+    nextrel1 ((T.drop s).take L) a b := by
+  have hlen := window_length hL
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  refine ⟨by omega, by omega, by omega, ?_, le0_window hL ha hb h5, ?_⟩
+  · rw [entry_window T (i := 1) hb, entry_window T (i := 1) ha]; omega
+  · intro q ⟨hq1, hq2⟩
+    have hqL : q < L := by
+      have := hq2.1; rw [hlen] at this; omega
+    have := h6 (s + q) ⟨by omega, le0_window' hL hqL hb hq2⟩
+    rw [entry_window T (i := 1) hb, entry_window T (i := 1) hqL]
+    exact this
+
+/-- ★★★★★ ⟹ **`le1` も元の列から窓へ移ります**（前提なし）。 -/
+theorem le1_window {T : TrioSeq} {s L a b : ℕ} (hL : s + L ≤ T.length)
+    (ha : a < L) (hb : b < L) (h : le1 T (s + a) (s + b)) :
+    le1 ((T.drop s).take L) a b := by
+  have hlen := window_length hL
+  obtain ⟨-, -, hrtg⟩ := h
+  refine ⟨by omega, by omega, ?_⟩
+  have key : ∀ c, Relation.ReflTransGen (nextrel1 T) (s + a) c → c ≤ s + b →
+      ∃ c', c = s + c' ∧ c' < L ∧
+        Relation.ReflTransGen (nextrel1 ((T.drop s).take L)) a c' := by
+    intro c hc
+    induction hc with
+    | refl => intro _; exact ⟨a, rfl, ha, Relation.ReflTransGen.refl⟩
+    | @tail x y hx hxy ih =>
+        intro hyb
+        have hxle : x < y := hxy.2.2.1
+        obtain ⟨x', rfl, hx'L, hch⟩ := ih (by omega)
+        obtain ⟨y', rfl⟩ : ∃ y', y = s + y' := ⟨y - s, by omega⟩
+        exact ⟨y', rfl, by omega, hch.tail (nextrel1_window_of hL hx'L (by omega) hxy)⟩
+  obtain ⟨b', hb'eq, -, hres⟩ := key (s + b) hrtg (le_refl _)
+  rw [show b' = b from by omega] at hres
+  exact hres
+
+/-! ### 242.1 ⟹ ★★★ **`hlocQ_row2_wnd` の `hcone` が「大きい列の錐」に化けました**
+
+    `le1 (P ++ B.take (j+1)) (P.length + p) (P.length + p + t)`  ⟹  `le1 (wnd P B j p) 0 t`
+
+**⟹ ★★ ですから (CONE) の測るべき量は「**窓の根の行 1 の子孫か**」に確定しました。**
+**⟹ ⟹ ★ そして **前提が要りません**（「根を飛び越えない」は逆向きにしか要りません）。** -/
+
+theorem le1_wnd_of {P B : TrioSeq} {j p t : ℕ} (hjB : j < B.length) (hpj : p < j)
+    (ht : t < j - p)
+    (h : le1 (P ++ B.take (j + 1)) (P.length + p) (P.length + p + t)) :
+    le1 (wnd P B j p) 0 t := by
+  have hTl : (P ++ B.take (j + 1)).length = P.length + (j + 1) := by
+    rw [List.length_append, List.length_take, Nat.min_eq_left (by omega)]
+  unfold wnd
+  refine le1_window (T := P ++ B.take (j + 1)) (s := P.length + p) (L := j - p)
+    (by omega) (by omega) ht ?_
+  rw [Nat.add_zero]
+  exact h
+
+/-! ### 242.2 ★★★★★ **窓の `hlocQ` の受け皿**（§241 を窓に当てた形）
+
+§241 は「`hlocQ` は錐の中では丸ごと無料」と言いました。⟹ ★ 窓にもそのまま当たります。
+**⟹ ⟹ ★★★ ですから **窓の `hlocQ` に要るのは「窓の錐の外の列」だけ**です。** -/
+
+open Classical in
+theorem hlocQ_wnd_of_outOfCone {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) (hpj : p < j)
+    (hz0V : entry (wnd P B j p) 2 0 = 0)
+    (hz1V : ∀ q, q < j - p → entry (wnd P B j p) 2 q ≤ 1)
+    (hout : ∀ t, 0 < t → t < j - p → ¬ le1 (wnd P B j p) 0 t →
+      ((0 < entry (wnd P B j p) 2 t →
+          hasParent ((wnd P B j p).take (t + 1)) 2 t) ∧
+       (entry (wnd P B j p) 2 t = 0 → 0 < entry (wnd P B j p) 1 t →
+         ∃ y, y < t ∧ le0 (wnd P B j p) y t ∧
+           entry (wnd P B j p) 1 y < entry (wnd P B j p) 1 t ∧
+           (le1 (wnd P B j p) 0 y → le1 (wnd P B j p) 0 t)))) :
+    hlocQ (wnd P B j p) := by
+  have hlen : (wnd P B j p).length = j - p := wnd_length hjB hpj
+  refine (hlocQ_iff_outOfCone (Q := wnd P B j p) (fun q hq => hz1V q (by omega)) hz0V).mpr ?_
+  intro t ht0 htL hnc
+  exact hout t ht0 (by omega) hnc
+
+/-! ### 242.3 ⟹ ★★★ **(P1) の残りは 1 行で書けます**
+
+    ✅ **窓の根の行 2 = 0** ……… §224
+    ✅ **窓の行 2 ≤ 1** ………… `entry2_wnd` ＋ `hz1(Q)`
+    ✅ **錐の中は丸ごと無料** …… §241 ＋ §242.2（上）
+    ✅ **大きい列の錐 ⟹ 窓の錐** … §242 `le1_wnd_of`（**前提なし**）
+    ⛔ **窓の錐の外の列** ……… ★ **これだけ**
+
+**⟹ ★★ そして「窓の錐の外」は `L105.not_le1_zero_iff` で
+**「窓の根より行 1 が低い行 0 祖先がいる」**——**ブロッカーの部分木**です。**
+
+**⟹ ⟹ ★★★ ですから残差は **「ブロッカーの部分木の中で `hlocQ` が立つか」** 1 点です。**
+
+⚠ **教訓 14**: これは**形の確定**です。**まだ証明されていません。** -/
+
 end L106
 end TRIO
