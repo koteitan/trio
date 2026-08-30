@@ -1379,5 +1379,90 @@ theorem towerClosed_of_snoc {u : ℕ}
 ⚠ **教訓 14**: **`towerClosed_of_snoc` は「`hsnoc` ならば族が閉じる」しか言っていません。**
 **`hsnoc` が真であることは示していません。⟹ `hsnoc` は**まだ証明されていません**。** -/
 
+/-! ## 207. ⛔⛔⛔ **`hbase` は遺伝しません** —— `TowerP` の 7 本を全部監査しました
+
+§206 で `TowerP` を作りましたが、**それが本当に使えるかを確かめていませんでした**（14 回目の轍）。
+**⟹ 目標 `MTowerClosedS`（`L105Cap:5618`）が渡すのは 2 つだけです:**
+
+    `Q ∈ W u` ／ `∀ j, 1 ≤ j → j < |Q| → entry Q 0 0 < entry Q 0 j`
+
+**⟹ ★ `TowerP` の 7 本を 1 本ずつ監査しました:**
+
+    **1. `2 ≤ |M|`（⟺ `1 ≤ |Q|`）** … ✅ ただ（`|Q| ≤ 1` は §81 `mTowerSingle_holds`、緑）
+    **2. `0 < e`** … ⚠ `e = 0` は §112 `MTowerClosedS0 = ShiftTowerClosedS` ⟹ **別ルートで既知**
+    **3. `hd0e`** … ✅ ただ（`M := Q ++ [c]` の `c` を**こちらが選べる**。`c.0 := entry Q 0 0 + d`）
+    **4. `hr0M`（`l = |Q|` の分）** … ⚠ `entry Q 0 0 < entry Q 0 0 + d` ⟹ **`0 < d` が要る**
+    **5. `hlp : le1 M 0 |Q|`** … ⛔ `c` の選び方に強い制約。**穴**
+    **6. `hbase : entry Q 0 0 = 0`** … ⛔ 一般の `Q ∈ W u` では成りません。**穴**
+    **7. `hz0 : entry Q 2 0 = 0`** … ⛔ team-lead 済み（`z = 1` で破れる）。**穴**
+
+### 207.1 ⛔⛔ そして **6 は遺伝しません**。下で**証明します**（測定ではありません）
+
+§202 の窓は `V = (T.drop (P.length + p)).take (j − p)` なので、
+
+    **`entry V 0 0 = entry T 0 (P.length + p)`**（`entry_window`、下）
+
+塔の場合 `P.length = n*|Q|` で `entry T 0 (n*|Q| + p) = entry Q 0 p + d*n`。
+**⟹ `hr0` があれば `p ≥ 1` で `entry Q 0 0 < entry Q 0 p`。**
+
+> **⟹ ★ `hbase(Q)`（`= 0`）を仮定すると、`p ≥ 1` の窓では `entry V 0 0 > 0`。**
+> **⟹ ⟹ ⛔ **`hbase(V)` は偽**。**
+
+⚠ **これは残差ではありません。`p ≥ 1` の段では**必ず**破れます。** -/
+
+theorem entry_window (T : TrioSeq) {s L i t : ℕ} (ht : t < L) :
+    entry ((T.drop s).take L) i t = entry T i (s + t) := by
+  unfold entry
+  rw [getD_take_drop ht]
+
+/-- ★ 塔の中の窓の根の行 0（`p` 列目の値 ＋ 第 `n` ブロックのリフト）。 -/
+theorem window_root_entry0 {Q : TrioSeq} {d e n j p : ℕ}
+    (hjQ : j < Q.length) (hpj : p < j) :
+    entry (((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop
+        (n * Q.length + p)).take (j - p)) 0 0
+      = entry Q 0 p + d * n := by
+  rw [entry_window _ (show 0 < j - p by omega),
+    show n * Q.length + p + 0 = (mTower Q d e n).length + p from by
+      rw [mTower_length]; omega,
+    entry_append_right, Wset.entry_take (show p < j + 1 by omega), entry0_Lift1,
+    entry0_shiftr01 (by omega)]
+
+/-- ⛔⛔ **`hbase` は遺伝しません**: `p ≥ 1` の窓の根は行 0 が**正**。 -/
+theorem window_root_entry0_pos {Q : TrioSeq} {d e n j p : ℕ}
+    (hjQ : j < Q.length) (hp1 : 0 < p) (hpj : p < j)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hbase : entry Q 0 0 = 0) :
+    0 < entry (((mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop
+        (n * Q.length + p)).take (j - p)) 0 0 := by
+  rw [window_root_entry0 hjQ hpj]
+  have := hr0 p hp1 (by omega)
+  omega
+
+/-! ### 207.2 ⟹ ★ **これは `hbase` を消せという指示です**（設計の変更、核ではありません）
+
+`hbase` は H12 の窓補題の中で **1 か所**にしか使われていません（`L106:704`）:
+
+    `hroot : entry T 0 0 = 0` ⟹ `Column.hasParent_append_right` / `parent_append_right`
+    （接頭辞 `A` を剥がして「親は塔の中」に落とすため）
+
+**⟹ ★ 直し方の候補は 2 つです:**
+
+    **(a)** `hasParent_append_right` の `hroot` を**弱める**
+         （「根の行 0 が最小」など、**平行移動で不変**な条件に）
+    **(b)** `Wset.nextR_src_ge`（`:2573`、**前提なし・行に依らない**）で剥がす
+         ⚠ ただし `nextR_src_ge` は「塔の中に既に親がいる」を要求するので、
+           `hasParent (A ++ T) → hasParent T` の向きには**そのままでは使えません**
+
+**⟹ ⟹ (a) が本命です。`hbase` を `∀ l < |T|, entry T 0 0 ≤ entry T 0 l` に弱められれば、
+それは `hr0` の弱い形なので**遺伝の見込みがあります**。**
+
+### 207.3 ⚠ 私の失敗（14 回目と同じ）
+
+**§206 で `TowerP` を作ったとき、「消費側が渡せるか」を確かめていませんでした。**
+**⟹ 作ってから 30 分で自分で見つけましたが、順序が逆です。**
+**⟹ ⟹ ★ **前提の束を定義したら、その場で消費側と突き合わせる**。** -/
+
 end L106
 end TRIO
