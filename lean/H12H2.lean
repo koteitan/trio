@@ -4493,5 +4493,59 @@ theorem no_row0_parent_from_before_block {A Q : TrioSeq} {d e n j c : ℕ}
   intro hcon
   exact absurd (nextrel0_src_ge_of_shallow hshallow (by omega) hcon) (by omega)
 
+
+/-! ## 57. ★★★★★★ 行 2 の壁を **「的の `le1` 祖先」**に縮める -/
+
+/-- ★★★ `le1` の鎖が接頭辞から `T` に入るなら、**越境点が取れる**。 -/
+theorem rtg1_cross_point {A T : TrioSeq} {y b : ℕ} (hy : y < A.length)
+    (h : Relation.ReflTransGen (nextrel1 (A ++ T)) y b) :
+    b < A.length ∨ ∃ c m', c < A.length ∧ m' < T.length ∧
+      nextrel1 (A ++ T) c (A.length + m') ∧
+      Relation.ReflTransGen (nextrel1 (A ++ T)) (A.length + m') b := by
+  induction h with
+  | refl => exact Or.inl hy
+  | @tail c b _ hcb ih =>
+      rcases ih with hc | ⟨c0, m0, hc0, hm0, hcr, hrt⟩
+      · rcases Nat.lt_or_ge b A.length with hb | hb
+        · exact Or.inl hb
+        · have hblen : b < (A ++ T).length := hcb.2.1
+          have hbT : b - A.length < T.length := by
+            rw [List.length_append] at hblen; omega
+          have hbe : b = A.length + (b - A.length) := by omega
+          refine Or.inr ⟨c, b - A.length, hc, hbT, ?_, ?_⟩
+          · rw [← hbe]; exact hcb
+          · rw [← hbe]
+      · exact Or.inr ⟨c0, m0, hc0, hm0, hcr, hrt.tail hcb⟩
+
+/-- ★★★★★★ **行 2 の壁は「的の `le1` 祖先が非ブロッカー」＋ `hcone` だけで立つ**
+（`hnb` の ∀ が「的の祖先」に縮む）。 -/
+theorem no_nextrel2_cross_of_anc {A T : TrioSeq} {m : ℕ}
+    (hmin : ∀ l, 0 < l → l < T.length → entry T 0 0 < entry T 0 l)
+    (hanc : ∀ m', 0 < m' → m' < T.length →
+      Relation.ReflTransGen (nextrel1 (A ++ T)) (A.length + m') (A.length + m) →
+      entry T 1 0 < entry T 1 m')
+    (hcone : entry T 2 0 < entry T 2 m)
+    {c : ℕ} (hc : c < A.length) (_hm : m < T.length) (hm0 : 0 < m) :
+    ¬ nextrel2 (A ++ T) c (A.length + m) := by
+  intro h
+  obtain ⟨-, hlen, -, -, hle1, hmin2⟩ := h
+  obtain ⟨-, -, hrt⟩ := hle1
+  rcases rtg1_cross_point hc hrt with hb | ⟨c0, m0, hc0, hm0T, hcr, hrt2⟩
+  · omega
+  · rcases Nat.eq_zero_or_pos m0 with h0 | hp
+    · subst h0
+      have hA : A.length < (A ++ T).length := by
+        have := hcr.2.1; omega
+      have hroot : le1 (A ++ T) A.length (A.length + m) := by
+        refine ⟨hA, hlen, ?_⟩
+        have hh := hrt2
+        rwa [show A.length + 0 = A.length from by omega] at hh
+      have hval := hmin2 A.length ⟨by omega, hroot⟩
+      rw [entry_append_right, show A.length = A.length + 0 from by omega,
+        entry_append_right] at hval
+      omega
+    · have hbl := nextrel1_cross_is_blocker hmin hc0 hm0T hp hcr
+      exact absurd (hanc m0 hp hm0T hrt2) (by omega)
+
 end H12H2
 end TRIO
