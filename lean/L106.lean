@@ -10653,5 +10653,37 @@ theorem row2_zero_mTower_iff {Q : TrioSeq} (hQ1 : 0 < Q.length) (d e n c : ℕ)
     entry (mTower Q d e n) 2 c = 0 ↔ entry Q 2 (c % Q.length) = 0 := by
   rw [entry2_mTower hQ1 d e n c hc]
 
+/-! ### §305 「一度も親を持たない塔」は無料 —— `n` の帰納は既に書かれていた
+
+⚠⚠ **24 回目の「既にありました」**: `prefixTowerClosed_of_snocStepPar`（`L105Cap:11859`）が
+**snoc 鎖の `n` の帰納をすでに回しており、孤児は `snoc_orphan_W` で片づいている**。
+⟹ ★ 残っているのは **「足す列が親を持つ」場合だけ**。
+
+⟹ ★★★ ですから **「塔のどの snoc でも親が無い」なら、`hstep` は空虚に満たされ、無料**である。
+（(L-MIN4) の実測では、`srow = 1` の残核 8,424 手すべてがこの形だった。） -/
+
+/-- ★★★★★ **一度も親を持たない塔は無料**（`hstep` が空虚）。 -/
+theorem mTower_mem_of_never_parent {u : ℕ} {A Q : TrioSeq} {d e : ℕ} (hA : A ∈ W u)
+    (hnp : ∀ (n j : ℕ), j < Q.length →
+      ¬ hasParent (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+    (hAne : A ≠ []) :
+    ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine L105.prefixTowerClosed_of_snocStepPar hA ?_
+  intro n j hj hpar _
+  refine absurd (hpar.resolve_right ?_) (hnp n j hj)
+  intro hnil
+  have h1 : A = [] := by
+    have := congrArg List.length hnil
+    simp only [List.length_append, List.length_nil] at this
+    exact List.eq_nil_of_length_eq_zero (by omega)
+  exact hAne h1
+
 end L106
 end TRIO
