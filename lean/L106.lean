@@ -10822,5 +10822,58 @@ theorem oper_d1_eq_zero_of_srow_le_one {M : TrioSeq} {t : ℕ} (h : srow M t ≤
     (if 1 < srow M t then entry M 1 t - entry M 1 (parent M (srow M t) t) else 0) = 0 := by
   rw [if_neg (by omega)]
 
+/-! ### §310 行 1 / 行 2 の「最小なら孤児」—— §309 の各行版
+
+§309（行 0 で最浅なら全行で孤児）の、行 1 / 行 2 だけの版。
+`nextrel1` / `nextrel2` はそれぞれ行 1 / 行 2 の**狭義**増加を要求するので、
+**的がその行で（弱く）最小なら、その行の親は無い**。
+
+⟹ ★ 使い道: **`e = 0` の塔では、行 1 の値はどのブロックでも `Q` の値のまま**なので、
+**`Q` の根が行 1 で最小なら、ブロック根は行 1 の孤児**。
+実測（`e = 0`、ブロック根、`srow = 1`、分母 7,656）:
+
+    孤児 ∧ `Q` に根より行 1 の低い列なし … 4,776（62.38%）  ← ★ この補題が捕まえる
+    孤児 ∧ 低い列あり ………………………… 2,184（28.53%）  （`le0` が届かない場合）
+    親あり ∧ 低い列あり ……………………… 696（9.09%）
+    ⛔ **親あり ∧ 低い列なし … 0 件** ⟹ ★ **必要条件は 100% 成立** -/
+
+/-- ★★★ **行 1 で（弱く）最小なら、行 1 の親は無い**（前提なし）。 -/
+theorem no_parent1_of_row1_min {M : TrioSeq} {t : ℕ}
+    (hmin : ∀ c, c < t → entry M 1 t ≤ entry M 1 c) : ¬ hasParent M 1 t := by
+  rintro ⟨c, hc, -⟩
+  rw [nextR, if_neg (by decide), if_pos rfl] at hc
+  have h1 := hmin c hc.2.2.1
+  have h2 := hc.2.2.2.1
+  omega
+
+/-- ★★★ **行 2 で（弱く）最小なら、行 2 の親は無い**（前提なし）。 -/
+theorem no_parent2_of_row2_min {M : TrioSeq} {t : ℕ}
+    (hmin : ∀ c, c < t → entry M 2 t ≤ entry M 2 c) : ¬ hasParent M 2 t := by
+  rintro ⟨c, hc, -⟩
+  rw [nextR_two] at hc
+  have h1 := hmin c hc.2.2.1
+  have h2 := hc.2.2.2.1
+  omega
+
+/-- ⟹ **`srow` が何であれ、その行で最小なら孤児**（`HasParentInBlock` を潰す形）。 -/
+theorem no_parent_of_srow_min {M : TrioSeq} {t : ℕ}
+    (hmin : ∀ c, c < t → entry M (srow M t) t ≤ entry M (srow M t) c) :
+    ¬ hasParent M (srow M t) t := by
+  rcases Nat.lt_or_ge (srow M t) 1 with h0 | h1
+  · have hz : srow M t = 0 := by omega
+    rw [hz] at hmin ⊢
+    exact no_parent_of_shallowest hmin 0
+  · rcases Nat.lt_or_ge (srow M t) 2 with h1' | h2
+    · have ho : srow M t = 1 := by omega
+      rw [ho] at hmin ⊢
+      exact no_parent1_of_row1_min hmin
+    · have ht : srow M t = 2 := by
+        have hle : srow M t ≤ 2 := by
+          unfold srow
+          split_ifs <;> omega
+        omega
+      rw [ht] at hmin ⊢
+      exact no_parent2_of_row2_min hmin
+
 end L106
 end TRIO
