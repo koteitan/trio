@@ -10725,5 +10725,33 @@ theorem mTowerStep_zero_of_comm (h : LiftOperComm) {a : ℕ} {Q : TrioSeq} {d e 
   have := (mTowerStep_iff_of_comm h a Q d e).mp hst 0 m hm
   simpa [mTower] using this
 
+/-! ### §307 (L-A2) `MTowerClosedS` は「塔に 1 列足す」1 本に落ちる（`B = []` から始める）
+
+team-lead の助言どおり **`B = []` から 1 列ずつ**足す。それはちょうど
+`prefixTowerClosed_of_snocStepPar`（`L105Cap:11859`）を **`A = []`** で使うこと。
+⟹ ★ 孤児は `snoc_orphan_W` が片づけるので、残るのは **「足す列が親を持つ」1 本**。 -/
+
+/-- **塔に 1 列足す**（親を持つ場合だけ）。⟹ これ 1 本で `MTowerClosedS` が出る。 -/
+def TowerSnocStep : Prop :=
+  ∀ (u : ℕ) (Q : TrioSeq) (d e n j : ℕ), Q ∈ W u →
+    (∀ l, 1 ≤ l → l < Q.length → entry Q 0 0 < entry Q 0 l) → j < Q.length →
+    (hasParent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+      (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+      ∨ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u
+
+/-- ★★★★★ **`TowerSnocStep` 1 本から `MTowerClosedS` が出る**（`A = []` で流す）。 -/
+theorem mTowerClosedS_of_towerSnocStep (h : TowerSnocStep) : L105.MTowerClosedS := by
+  intro u d e n Q hQ hs
+  have hkey := L105.prefixTowerClosed_of_snocStepPar (A := []) (Q := Q) (d := d) (e := e)
+    (u := u) (by simpa using W_nil u) ?_ n
+  · simpa using hkey
+  · intro n' j hj hpar hmem
+    simp only [List.nil_append] at hpar hmem ⊢
+    exact h u Q d e n' j hQ hs hj hpar hmem
+
 end L106
 end TRIO
