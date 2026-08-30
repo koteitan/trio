@@ -9029,5 +9029,42 @@ theorem towerClosed_gen {u : ℕ} (hmeas : MeasOK) :
 
 ⚠ **教訓 14**: `MeasOK` は**未証明**です。⟹ ★ **偽かもしれません**。⟹ **大きい箱で測ってください**。 -/
 
+/-! ### 277.4 ★★★★★★★★★★ **`MTowerClosedS` は `MeasOK` 1 本から出ます**
+
+`z < 2` の制限すら要りません（`RootZ1` / `RootZ2` が消えたので）。 -/
+
+open Classical in
+theorem mTowerClosedS_of_measOK (hmeas : MeasOK) : MTowerClosedS := by
+  intro u d e n Q hQ hs
+  rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
+  · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
+    subst hnil
+    rw [mTower_nil]
+    exact W_nil u
+  · have h := towerClosed_gen (u := u) hmeas Q d e
+      ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1⟩ [] (W_nil u) (by simpa using hQ) n
+    simpa using h
+
+/-! ### 277.5 ⟹ ★★★★★★★★★★ **今日の到達点**
+
+    ⛔ **残差は `MeasOK` 1 本だけ**です（`z < 2` の制限も要りません）
+
+**⟹ ★ 消えたもの（今朝は 6 本、途中で 7 本まで増えたもの）:**
+
+    `HeredNB` ／ `RootNB` ／ `RootZ1` ／ `RootZ2` ／ `OrphOK` ／ `OrphOK0` ／
+    `HeredZ0` ／ `ZeroDOK` ／ `(d = 0 → e = 0)` ⟹ **全部不要**
+
+**⟹ ★★★ 理由は 1 つ: **`hbound`（親が最後のブロックの中）が本質ではなかった**からです。**
+**⟹ ⟹ ★ `snocStep_oper_pre` の型に書いてあった `P.length + p` を、⟹ ⛔ 私が「本質」と読み、**
+**⟹ ⟹ ⟹ ⛔⛔ **その周りに 6 本の（偽の）残差を積んでいました**。**
+
+**⟹ ⚠ そして `MeasOK` は **未証明**です。⟹ ★ **偽かもしれません**。**
+
+    ★ 実測 **208/208**（`|Q| ≤ 5`、`n ≤ 2`、`d ≤ 2`、`e ≤ 1`）
+    ★ §274 が **行 0 の場合の理由**（1 つ前のブロックの同位置が `0 < d` で真に浅い）
+    ⛔ **行 1・行 2 は未解決**（最小性が `le0` / `le1` 祖先の上なので）
+
+⚠ **教訓 14**: **`MeasOK` が偽なら、この骨格も倒れます**。⟹ ★ **大きい箱で測ってください**。 -/
+
 end L106
 end TRIO
