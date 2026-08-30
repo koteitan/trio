@@ -1834,11 +1834,7 @@ theorem prefixTowerClosed_final_full {u : ℕ} {A M : TrioSeq} {d e : ℕ}
 def TowerP'' (Q : TrioSeq) (d e : ℕ) : Prop :=
   0 < Q.length ∧ 0 < d ∧ 0 < e ∧
     (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) ∧
-    entry Q 2 0 = 0 ∧
-    (∀ j, 0 < j → j < Q.length → ¬ le1 Q 0 j →
-      0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) ∧
-    (∀ j, 0 < j → j < Q.length → ¬ le1 Q 0 j →
-      0 < entry Q 1 j → entry Q 1 0 < entry Q 1 j)
+    entry Q 2 0 = 0
 
 /-! ### 211.2 ⟹ ★★ **`M` が消えました**（あとから分かったこと）
 
@@ -1878,25 +1874,26 @@ def TowerP'' (Q : TrioSeq) (d e : ℕ) : Prop :=
 theorem hr0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
     ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l := hP.2.2.2.1
 
-/-- ★★ **`TowerP''` から「塔の中の親」が出ます**（§210 ＋ §162.9 の合成）。 -/
-theorem tower_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
-    (hP : TowerP'' Q d e) {j : ℕ} (hj : j < Q.length) (hj1 : 0 < j) :
-    hasParent (mTower Q d e n
-        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-      (srow (mTower Q d e n
-          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-        (n * Q.length + j))
-      (n * Q.length + j) := by
-  have hr0Q := hr0_of_TowerP'' hP
-  obtain ⟨hQ1, hd, he, hr0M, hz0, h2out, h1out⟩ := hP
-  by_cases hc : le1 Q 0 j
-  · exact tower_hasParent_of_block (Q := Q) (d := d) (e := e) (n := n)
-      (block_blockParent_all_cone hj hj1 hr0Q hc
-        (fun hpos => h2_cone hz0 j hj1 hj hpos hc))
-  · exact tower_hasParent_of_block (Q := Q) (d := d) (e := e) (n := n)
-      (block_blockParent_all_outcone hj hj1 hr0Q hc
-        (fun hpos => h2out j hj1 hj hc hpos)
-        (fun hpos => h1out j hj1 hj hc hpos))
+theorem hz0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
+    entry Q 2 0 = 0 := hP.2.2.2.2
+
+theorem he_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < e :=
+  hP.2.2.1
+
+theorem ne_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : Q ≠ [] :=
+  List.ne_nil_of_length_pos hP.1
+
+theorem hd_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < d :=
+  hP.2.1
+
+/-- ★ **錐の中の列**は `TowerP''` だけでブロックの中に親を持つ（§163 ＋ §162.9）。 -/
+theorem block_hasParent_cone {Q : TrioSeq} {d e : ℕ} (n : ℕ)
+    (hP : TowerP'' Q d e) {j : ℕ} (hj : j < Q.length) (hj1 : 0 < j)
+    (hc : le1 Q 0 j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j :=
+  block_blockParent_all_cone hj hj1 (hr0_of_TowerP'' hP) hc
+    (fun hpos => h2_cone (hz0_of_TowerP'' hP) j hj1 hj hpos hc)
 
 /-! ### 212.1 §202 を**存在量化なし**で書き直します（証人を名前で呼ぶため） -/
 
@@ -1980,6 +1977,8 @@ theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
     (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
       ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
     (hj : j < Q.length) (hj1 : 0 < j)
+    (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j)
     (hbound : (A ++ mTower Q d e n).length ≤
       parent (A ++ mTower Q d e n
           ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -2009,7 +2008,7 @@ theorem hsnoc_pos {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
     rw [hS, List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
   have hlast : S.length - 1 = P.length + j := by omega
   -- ★ 親が居ること（§212）
-  have hpT := tower_hasParent_of_TowerP'' (Q := Q) (d := d) (e := e) n hP hj hj1
+  have hpT := tower_hasParent_of_block (Q := Q) (d := d) (e := e) (n := n) hloc
   have hassoc : S = A ++ (mTower Q d e n ++ B.take (j + 1)) := by
     rw [hS, hPdef, List.append_assoc]
   have hidx : A.length + (n * Q.length + j) = P.length + j := by omega
@@ -2519,32 +2518,12 @@ theorem prefixTowerClosed_of_snocStepStrong1 {u : ℕ} {A Q : TrioSeq} {d e : �
 **⟹ ★ `W u` は**接頭辞で閉じています**。⟹ 「短い接頭辞は全部 `W u`」は**ただ**でした。**
 **⟹ ⟹ 私は §168 の `hall` を**苦労して回して**いましたが、1 本で済みます。** -/
 
-theorem hz0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
-    entry Q 2 0 = 0 := hP.2.2.2.2.1
-
-theorem he_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < e :=
-  hP.2.2.1
-
-theorem ne_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : Q ≠ [] :=
-  List.ne_nil_of_length_pos hP.1
-
-/-- ★ `TowerP''` から**ブロックの中**の親（§210 ＋ §162.9）。 -/
-theorem block_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
-    (hP : TowerP'' Q d e) {j : ℕ} (hj : j < Q.length) (hj1 : 0 < j) :
-    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
-      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
-  have hr0Q := hr0_of_TowerP'' hP
-  obtain ⟨hQ1, hd, he, hr0M, hz0, h2out, h1out⟩ := hP
-  by_cases hc : le1 Q 0 j
-  · exact block_blockParent_all_cone hj hj1 hr0Q hc
-      (fun hpos => h2_cone hz0 j hj1 hj hpos hc)
-  · exact block_blockParent_all_outcone hj hj1 hr0Q hc
-      (fun hpos => h2out j hj1 hj hc hpos) (fun hpos => h1out j hj1 hj hc hpos)
-
 open Classical in
 /-- ★★ `j ≥ 1` の段の**親の位置**（前提は `TowerP''` だけ）。 -/
 theorem parent_bound_pos {A Q : TrioSeq} {d e n j : ℕ}
-    (hP : TowerP'' Q d e) (hj : j < Q.length) (hj1 : 0 < j) :
+    (hj : j < Q.length)
+    (hloc : hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j) :
     (A ++ mTower Q d e n).length ≤
       parent (A ++ mTower Q d e n
           ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
@@ -2554,7 +2533,6 @@ theorem parent_bound_pos {A Q : TrioSeq} {d e n j : ℕ}
         ((A ++ mTower Q d e n).length + j) := by
   set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
   have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
-  have hloc := block_hasParent_of_TowerP'' (Q := Q) (d := d) (e := e) n hP hj hj1
   have hlen1 : (A ++ mTower Q d e n ++ B.take (j + 1)).length
       = (A ++ mTower Q d e n).length + (j + 1) := by
     rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
@@ -2605,8 +2583,7 @@ theorem prefix_block_take_mem {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ}
 ⚠ **私は「`0 < d` は未確認の別ルート」と team-lead に書きました。⟹ **誤り**でした。**
 **⟹ 前提の束の中で**既に含意されて**いました。** -/
 
-theorem hd_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < d :=
-  hP.2.1
+
 
 /-! ### 220.2 遺伝（残る唯一の義務）を 2 本の述語にします -/
 
@@ -2631,6 +2608,29 @@ def HeredZero : Prop :=
       (wd1 (A ++ mTower Q d e k)
         (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
           ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))) Q.length p)
+
+/-! ### 220.2b ★★★ `h2out` / `h1out` を**遺伝しない仮定**に置き換えます
+
+⚠ **H12 の実測**: **`hloc`（ブロックの中に親がいる）は錐の外の列で 68.8% 失敗**。
+**⟹ §210 は「`h2out` ∧ `h1out` ⟹ `hloc`」なので、`h2out`/`h1out` も 68.8% 以上失敗します。**
+
+**⟹ ★ ですが `hloc` が失敗する列が**全体でも孤児**なら、`snoc_orphan_W` で**無料**です。**
+**⟹ ⟹ だから要るのは「ブロックの中で孤児 ⟹ 全体でも孤児」だけ。**
+
+> **⟹ ★★ これは `Q` の性質ではなく**族全体についての 1 つの仮定**です。**
+> **⟹ ⟹ **遺伝させる必要がありません**。⟹ 遺伝の義務が 2 本減ります。** -/
+
+/-- ⛔ **`OrphOK`**: ブロックの中で孤児なら、接頭辞と塔を付けても孤児のまま。 -/
+def OrphOK : Prop :=
+  ∀ (A Q : TrioSeq) (d e n j : ℕ), 0 < j → j < Q.length →
+    ¬ hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j →
+    ¬ hasParent (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((A ++ mTower Q d e n).length + j))
+        ((A ++ mTower Q d e n).length + j)
 
 /-! ### 220.3 測度の強帰納（底のブロックをもらう版） -/
 
@@ -2661,7 +2661,8 @@ theorem tower_of_measure_step2 {u : ℕ}
 /-! ### 220.4 ★★★★★ **最終定理** -/
 
 open Classical in
-theorem towerClosed_of_hered {u : ℕ} (hpos : HeredPos) (hzero : HeredZero) :
+theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK)
+    (hpos : HeredPos) (hzero : HeredZero) :
     ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
       ∀ n, A ++ mTower Q d e n ∈ W u := by
   refine tower_of_measure_step2 (u := u) TowerP'' towerMeas ?_
@@ -2688,26 +2689,68 @@ theorem towerClosed_of_hered {u : ℕ} (hpos : HeredPos) (hzero : HeredZero) :
       (fun p hp0 => by subst hp0; exact hrank_blockRoot hQne hd he hz0)
       (fun p hp => hzero A Q d e k p hP hp)
   · -- ★ `j ≥ 1`
-    exact hsnoc_pos hP hIH hj hj1 (parent_bound_pos hP hj hj1) hall
-      (fun p hp => hpos A Q d e n j p hP hj hp)
+    set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+    have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+    by_cases hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j
+    · exact hsnoc_pos hP hIH hj hj1 hloc (parent_bound_pos hj hloc) hall
+        (fun p hp => hpos A Q d e n j p hP hj hp)
+    · -- ⟹ ブロックの中で孤児 ⟹ `OrphOK` で全体でも孤児 ⟹ `snoc_orphan_W`
+      have hnp := horph A Q d e n j hj1 hj hloc
+      have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
+        rw [List.take_add_one]
+        congr 1
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+        rfl
+      have hsplit : A ++ mTower Q d e n ++ B.take (j + 1)
+          = (A ++ mTower Q d e n ++ B.take j) ++ [B.getD j (0, 0, 0)] := by
+        rw [hBt, ← List.append_assoc]
+      have hClen : (A ++ mTower Q d e n ++ B.take j).length
+          = (A ++ mTower Q d e n).length + j := by
+        rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+      have hCne : A ++ mTower Q d e n ++ B.take j ≠ [] := by
+        intro hc
+        have : (A ++ mTower Q d e n ++ B.take j).length = 0 := by rw [hc]; rfl
+        omega
+      rw [hsplit]
+      refine snoc_orphan_W _ (hall j (le_refl j)) hCne ?_
+      rw [hClen, ← hsplit]
+      exact hnp
 
-/-! ### 220.5 ⟹ ★★★ **残る義務は `HeredPos` と `HeredZero` の 2 本だけ**
+/-! ### 220.5 ⟹ ★★★ **残る義務は 3 本**（`OrphOK` ＋ 遺伝 2 本）
 
-**`towerClosed_of_hered` の中身（全部緑）:**
+```lean
+theorem towerClosed_of_hered {u : ℕ} (horph : OrphOK) (hpos : HeredPos) (hzero : HeredZero) :
+    ∀ Q d e, TowerP'' Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u
+```
 
-    §218 `prefixTowerClosed_of_snocStepStrong1` … 外枠（底のブロックはもらう）
-    §213 `hsnoc_pos` … `j ≥ 1` の段
+**中身（全部緑）:**
+
+    §218 `prefixTowerClosed_of_snocStepStrong1` … 外枠（底のブロックは**もらう**）
+    §213 `hsnoc_pos` … `j ≥ 1` かつ**ブロックの中に親**がいる段
+    §140.1 `snoc_orphan_W` … `j ≥ 1` かつ**孤児**の段（`OrphOK` で全体の孤児に上げる）
     §216 `hsnoc_zero` … `j = 0` の段（`n = k+1`）
-    §219 `parent_bound_pos` … `j ≥ 1` の親の位置（`TowerP''` だけ）
+    §219 `parent_bound_pos` … `j ≥ 1` の親の位置（**`hloc` だけ**）
     §219 `prefix_block_take_mem` … 短い接頭辞（`Wset.W_take` でただ）
     §217 `hrank_blockRoot` … `p = 0` で `rankDE` が減る
     §220.3 `tower_of_measure_step2` … 測度の強帰納（`Nat` 1 本）
 
-⚠ **教訓 14**: **`HeredPos` / `HeredZero` は**証明していません**。**
-**⟹ この定理は「遺伝すれば閉じる」しか言っていません。**
+### 220.6 ★★ **`TowerP''` は 5 本になりました**（遺伝の義務）
+
+    `0 < |Q|` / `0 < d` / `0 < e` / `hr0`（行 0 が根から狭義単調）/ `hz0`（`entry Q 2 0 = 0`）
+
+**⟹ ★ `h2out` / `h1out` は**遺伝させる必要がなくなりました**。**
+**⟹ ⟹ `OrphOK`（族全体についての 1 つの仮定）が肩代わりします。**
+
+⚠ **`OrphOK` は「ブロックの中で孤児 ⟹ 接頭辞と塔を付けても孤児」です。**
+**⟹ ★ H12 の実測（`hloc` は錐の外で 68.8% 失敗）が**そのまま**この仮定の分母です。**
+**⟹ ⟹ 「失敗した列が全体でも孤児か」が測れれば、`OrphOK` の成否がわかります。**
+
+⚠ **教訓 14**: **`OrphOK` / `HeredPos` / `HeredZero` は**どれも証明していません**。**
+**この定理は「3 本が真ならば族が閉じる」しか言っていません。**
 
 ⚠ **そして消費側（`MTowerClosedS`）への接続もまだです。**
-**⟹ `A = []` で `TowerP''` を作れるか（`hlp` / `h2out` / `h1out`）が残っています。** -/
+**⟹ `A = []` で `TowerP''`（5 本）を作れるか。⟹ `0 < d` / `0 < e` / `hz0` が問題です。** -/
 
 end L106
 end TRIO
