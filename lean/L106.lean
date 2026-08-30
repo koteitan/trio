@@ -10936,5 +10936,48 @@ theorem no_parent_ge_one_of_row1_min {M : TrioSeq} {t i : ℕ} (hi : 1 ≤ i)
     have := hmin c hc.2.2.1
     omega
 
+/-! ### §313 `d <= 段差` の枝の 5 通りを 1 本に —— 「孤児か、`e' = 0` か」
+
+今日の表（実測、分母 56,214、例外 0）:
+
+    `srow = 0`、`e = 0`  … 親あり、`d' = 0`、`e' = 0`   7,830  ⟹ §311 ＋ H12 (W79)(c)
+    `srow = 1`、`e = 0`  … **孤児（無料）**              5,454  ⟹ H12 (W88)
+    `srow = 1`、`e > 0`  … 親あり、`d' = d`、`e' = 0`   26,568  ⟹ §309
+    `srow = 2`、`e = 0`  … **孤児（無料）**              5,454  ⟹ H12 (W87)
+    `srow = 2`、`e > 0`  … **孤児（無料）**             10,908  ⟹ H12 (W87)
+
+⟹ ★★★ **`srow = 2` は（`d <= 段差` の下で）常に孤児**、**`srow <= 1` は `e' = 0`**。
+⟹ ⟹ ★★★★★ ですから **枝は「孤児」か「`e' = 0`」の 2 択**にまとまる。 -/
+
+/-- ★★★★★ **`d <= 段差` の枝の 2 択**: **孤児**（＝ `snoc_orphan_W` で無料）か、
+**`oper` の新しい `e` が 0**（＝ 測度 `(e, d)` の第 1 成分が落ちる）か。
+
+`hgap2` は H12 の (W87)（`no_nextrel2_blockRoot_of_gap`）が供給する。 -/
+theorem orphan_or_e_zero_of_gap {M : TrioSeq} {t j0 : ℕ}
+    (hgap2 : srow M t = 2 → ¬ hasParent M 2 t) :
+    ¬ hasParent M (srow M t) t ∨
+      (if 1 < srow M t then entry M 1 t - entry M 1 j0 else 0) = 0 := by
+  rcases Nat.lt_or_ge (srow M t) 2 with h | h2
+  · exact Or.inr (by rw [if_neg (by omega)])
+  · have ht : srow M t = 2 := by
+      have hle : srow M t ≤ 2 := by
+        unfold srow
+        split_ifs <;> omega
+      omega
+    refine Or.inl ?_
+    rw [ht]
+    exact hgap2 ht
+
+/-- ⟹ **さらに `srow = 0` なら `d` も落ちる**（測度の第 2 成分）。 -/
+theorem orphan_or_meas_drop_of_gap {M : TrioSeq} {t j0 : ℕ}
+    (hgap2 : srow M t = 2 → ¬ hasParent M 2 t) :
+    ¬ hasParent M (srow M t) t ∨
+      ((if 1 < srow M t then entry M 1 t - entry M 1 j0 else 0) = 0 ∧
+        (srow M t = 0 →
+          (if 0 < srow M t then entry M 0 t - entry M 0 j0 else 0) = 0)) := by
+  rcases orphan_or_e_zero_of_gap (M := M) (t := t) (j0 := j0) hgap2 with h | h
+  · exact Or.inl h
+  · exact Or.inr ⟨h, fun h0 => oper_d0_eq_zero_of_srow_zero h0⟩
+
 end L106
 end TRIO
