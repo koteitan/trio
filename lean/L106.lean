@@ -8815,7 +8815,8 @@ theorem take_append_window {T : TrioSeq} {c : ℕ} (hc : c ≤ T.length - 1) :
 open Classical in
 /-- ★★★★★★★★ **一般の snoc 段**: 親の位置に条件なし。義務は `TowerP''` と測度だけ。 -/
 theorem hsnoc_gen {u : ℕ} {Q T : TrioSeq} {d e c : ℕ}
-    (hIH : ∀ V d0 d1, TowerP'' V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+    {P : TrioSeq → ℕ → ℕ → Prop}
+    (hIH : ∀ V d0 d1, P V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
       ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
     (hL : T.length - 1 ≠ 0)
     (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
@@ -8823,7 +8824,7 @@ theorem hsnoc_gen {u : ℕ} {Q T : TrioSeq} {d e c : ℕ}
     (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
     (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c)
     (hpre : T.dropLast ∈ W u)
-    (hPV : TowerP'' ((T.drop c).take (T.length - 1 - c))
+    (hPV : P ((T.drop c).take (T.length - 1 - c))
       (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
       (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0))
     (hmeas : towerMeas ((T.drop c).take (T.length - 1 - c))
@@ -8895,6 +8896,138 @@ theorem hr0_wnd_gen {T : TrioSeq} {c : ℕ}
 **⟹ ★★ ですから **(O-A) の本当の穴は `hz0` 1 つ**です。**
 **⟹ ⟹ ★ そして `hz0` は **§240.1 / §255 / §258 で使っています**（行 2 の証人の底）。**
 **⟹ ⟹ ⟹ ⚠ ですから **`hz0` を落とすと行 2 の議論が全部壊れます**。⟹ ★ **そこが次の設計課題**です。** -/
+
+/-! ## 277. ★★★★★★★★★ **新しい骨格**: 不変量は `hr0` だけ、義務は測度だけ
+
+§275（`hsnoc_gen`）と §276（`hr0` の遺伝）で、⟹ ★ **不変量から `hz0` / `hz1` / `(d=0→e=0)` が
+落とせるかもしれません**。⟹ ⟹ ★★ **`hsnoc_gen` はそれらを使わない**からです。 -/
+
+/-- ★★★ **新しい不変量**: `0 < |Q|` と `hr0` だけ。 -/
+def TowerR (Q : TrioSeq) (_d _e : ℕ) : Prop :=
+  0 < Q.length ∧ (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+
+open Classical in
+/-- ⛔ **残る唯一の義務**: 窓が `Q` より短い。 -/
+def MeasOK : Prop :=
+  ∀ (A Q : TrioSeq) (d e n j : ℕ), 0 < Q.length → j < Q.length →
+    hasParent (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+      ((A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) →
+    (A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1
+      - parent (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            ((A ++ mTower Q d e n
+              ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+          ((A ++ mTower Q d e n
+            ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+      < Q.length
+
+/-! ### 277.1 ⟹ ★ **1 段の snoc**（`MeasOK` を仮定して） -/
+
+open Classical in
+theorem snocStep_gen {u : ℕ} {A Q : TrioSeq} {d e n j : ℕ}
+    (hmeas : MeasOK) (hQ : 0 < Q.length) (hj : j < Q.length)
+    (hIH : ∀ V d0 d1, TowerR V d0 d1 → towerMeas V d0 d1 < towerMeas Q d e →
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hne : (A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j) ≠ [])
+    (hall : ∀ j', j' ≤ j →
+      A ++ mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j' ∈ W u) :
+    A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  set T := A ++ mTower Q d e n ++ B.take (j + 1) with hT
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hBt : B.take (j + 1) = B.take j ++ [B.getD j (0, 0, 0)] := by
+    rw [List.take_add_one]
+    congr 1
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)]
+    rfl
+  have hsp : T = (A ++ mTower Q d e n ++ B.take j) ++ [B.getD j (0, 0, 0)] := by
+    rw [hT, hBt, ← List.append_assoc]
+  have hdl : T.dropLast = A ++ mTower Q d e n ++ B.take j := by
+    rw [hsp, List.dropLast_concat]
+  have hpre : T.dropLast ∈ W u := by rw [hdl]; exact hall j (le_refl j)
+  have hprelen : 0 < (A ++ mTower Q d e n ++ B.take j).length :=
+    List.length_pos_iff.mpr hne
+  have hlen1 : T.length - 1 ≠ 0 := by
+    rw [hsp, List.length_append, List.length_singleton]; omega
+  by_cases hz : entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0
+  · -- ★ 末尾が全部 0 ⟹ `oper` は `Pred` ⟹ 接頭辞そのもの
+    refine mem_of_oper_mem ?_
+    intro m _
+    unfold oper
+    rw [if_neg hlen1, if_pos hz]
+    unfold Pred
+    rw [if_neg (by omega)]
+    exact hpre
+  · by_cases hpar : hasParent T (srow T (T.length - 1)) (T.length - 1)
+    · -- ★ 親がある ⟹ §275
+      refine hsnoc_gen (Q := Q) (T := T) (d := d) (e := e)
+        (c := parent T (srow T (T.length - 1)) (T.length - 1))
+        (fun V d0 d1 hPV hlt A' hA' hAV m => hIH V d0 d1 hPV hlt A' hA' hAV m)
+        hlen1 hz hpar rfl hpre ?_ ?_
+      · -- `TowerR` の遺伝
+        refine ⟨?_, hr0_wnd_gen hpar rfl⟩
+        rw [List.length_take, List.length_drop]
+        have hlt := nextR_index_lt (parent_nextR hpar)
+        omega
+      · -- 測度の減少
+        have hmm := hmeas A Q d e n j hQ hj (by rw [← hT] at *; exact hpar)
+        rw [← hT] at hmm
+        unfold towerMeas
+        refine natMeasure_lt (rankDE_le_two d e) (rankDE_le_two _ _) ?_
+        left
+        rw [List.length_take, List.length_drop]
+        omega
+    · -- ★ 孤児 ⟹ `snoc_orphan_W`
+      rw [hsp]
+      refine snoc_orphan_W _ (by rw [← hdl]; exact hpre) hne ?_
+      have hlen : (A ++ mTower Q d e n ++ B.take j).length = T.length - 1 := by
+        conv_rhs => rw [hsp]
+        rw [List.length_append]
+        simp
+        omega
+      rw [hlen, ← hsp]
+      exact hpar
+
+/-! ### 277.2 ⟹ ★★★★★★★★ **新しい骨格** -/
+
+open Classical in
+theorem towerClosed_gen {u : ℕ} (hmeas : MeasOK) :
+    ∀ Q d e, TowerR Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+  refine tower_of_measure_step2 (u := u) TowerR towerMeas ?_
+  intro Q d e hP hIH A hA hAQ
+  refine prefixTowerClosed_of_snocStepStrong1 hA hAQ ?_
+  intro n j hn hj hall
+  refine snocStep_gen (u := u) hmeas hP.1 hj hIH ?_ hall
+  intro hc
+  have : (A ++ mTower Q d e n
+      ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length = 0 := by rw [hc]; rfl
+  rw [List.length_append, List.length_append, mTower_length] at this
+  have : 0 < n * Q.length := Nat.mul_pos (by omega) hP.1
+  omega
+
+/-! ### 277.3 ⟹ ★★★★★★★★★ **残差が 1 本になりました**
+
+    ⛔ **`MeasOK`**（窓が `Q` より短い）——**それだけ**
+
+**⟹ ★ 消えたもの: `OrphOK` / `OrphOK0` / `HeredZ0` / `HeredNB` / `RootNB` / `ZeroDOK` /
+`RootZ1` / `RootZ2` / `(d = 0 → e = 0)`。⟹ ⟹ ★★★ **全部要りません**。**
+
+**⟹ ⚠ そして `MeasOK` は **今日はじめて「偽と分かっていない」新しい残差**です。**
+**⟹ ⟹ ★ 実測 **208/208**（`|Q| ≤ 5`、`n ≤ 2`）⟹ ⚠ **箱が小さい**。**
+**⟹ ⟹ ⟹ ★★ §274 が **行 0 の場合の理由**を与えます（1 つ前のブロックの同位置が真に浅い）。**
+
+⚠ **教訓 14**: `MeasOK` は**未証明**です。⟹ ★ **偽かもしれません**。⟹ **大きい箱で測ってください**。 -/
 
 end L106
 end TRIO
