@@ -7337,5 +7337,67 @@ theorem orphOK_of_cone {A T : TrioSeq} {j1 : ℕ} (hj1 : 0 < j1) (hjT : j1 < T.l
 ⚠ **教訓 14**: §255 は緑ですが、**`hcone` を誰が供給するかは未解決**です。
 **⟹ ⛔ `OrphOK` はまだ証明されていません。** -/
 
+/-! ## 256. ★★★★★★ **接頭辞の唯一の入口は「行 0 の越境」**です
+
+§255 で「的が錐の中」は閉じました。⟹ ★ 残るのは**錐の外**。⟹ そこを別の角度から見ます。
+
+**⟹ ★★★ `nextrel0` / `nextrel1` / `nextrel2` は**どれも `le0` を含みます**:**
+
+    `nextrel0 M c b` ⟹ 1 歩なので `le0 M c b`
+    `nextrel1 M c b` ⟹ 定義に `le0 M c b` が入っている
+    `nextrel2 M c b` ⟹ 定義に `le1 M c b`、そして `Gamma.le0_of_le1` で `le0 M c b`
+
+**⟹ ⟹ ★★★★★ ですから **接頭辞の列が親になるには、行 0 で越境するしかありません**。**
+**⟹ ⟹ ⟹ ★ 行の区別なしに、**1 本で**言えます。** -/
+
+/-- `le1` は `le0` を含む（`Gamma.lean:1119` と同じ証明。`Gamma` は `import` していない）。 -/
+theorem le0_of_le1' {X : TrioSeq} {a b : ℕ} (h : le1 X a b) : le0 X a b := by
+  obtain ⟨ha, hb, hch⟩ := h
+  refine ⟨ha, hb, ?_⟩
+  induction hch with
+  | refl => exact Relation.ReflTransGen.refl
+  | @tail y w hay hyw ih => exact (ih hyw.1).trans hyw.2.2.2.2.1.2.2
+
+theorem no_nextR_of_no_le0_cross {A T : TrioSeq} {i j1 c : ℕ}
+    (hnc : ¬ le0 (A ++ T) c (A.length + j1)) :
+    ¬ nextR (A ++ T) i c (A.length + j1) := by
+  intro h
+  unfold nextR at h
+  by_cases h0 : i = 0
+  · rw [if_pos h0] at h
+    exact hnc ⟨h.1, h.2.1, Relation.ReflTransGen.single h⟩
+  · rw [if_neg h0] at h
+    by_cases h1 : i = 1
+    · rw [if_pos h1] at h; exact hnc h.2.2.2.2.1
+    · rw [if_neg h1] at h; exact hnc (le0_of_le1' h.2.2.2.2.1)
+
+/-- ★★★★★★ ⟹ **行 0 で越境できなければ `OrphOK` は 3 行とも無料**。 -/
+theorem orphOK_of_no_le0_cross {A T : TrioSeq} {i j1 : ℕ}
+    (hnc : ∀ c, c < A.length → ¬ le0 (A ++ T) c (A.length + j1))
+    (hnp : ¬ hasParent T i j1) : ¬ hasParent (A ++ T) i (A.length + j1) := by
+  intro hp
+  exact hnp (hasParent_peel_of_noCross
+    (fun y hy => no_nextR_of_no_le0_cross (hnc y hy)) hp)
+
+/-! ### 256.1 ⟹ ★★★★ **`OrphOK` の残差の最終形**
+
+**⟹ ★ 2 つの十分条件が緑になりました（どちらか一方で足ります）:**
+
+    **(S1)** 的が **`T` の錐の中** ……………… §255 `orphOK_of_cone`
+    **(S2)** 接頭辞から **行 0 で越境できない** … §256 `orphOK_of_no_le0_cross`
+
+**⟹ ★★ そして (S2) は **`entry T 0 0 ≤ entry A 0 c`（＝ `rsum` の形）**から出ます:**
+**⟹ ⟹ ⛔ ですが `rsum` は遺伝しません（§227 で**証明**）。⟹ ⟹ そのままでは使えません。**
+
+**⟹ ★★★ ですから残差は **「的が錐の外 ∧ 接頭辞が行 0 で越境できる」**という
+**2 つの条件が同時に成り立つ場合**だけです。**
+
+**⟹ ⚠ R2 への注文はこの**積**です:**
+
+    **(BLK2) 「的がブロッカー」かつ「接頭辞の列が的の `le0` 祖先」——
+             この 2 つが同時に起きる割合。⟹ 分母は**ブロッカーの列の数**。**
+
+⚠ **教訓 27**: (W15) の分母は**全列**でした。⟹ **ブロッカーだけに絞ると分母が変わります**。 -/
+
 end L106
 end TRIO
