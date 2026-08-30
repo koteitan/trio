@@ -1242,5 +1242,6 @@ theorem mTowerClosed_of_snocStepNoCone {u : ℕ} {M : TrioSeq} {d e : ℕ}
       rw [hClen] at this
       omega
 
+
 end H12H2
 end TRIO
