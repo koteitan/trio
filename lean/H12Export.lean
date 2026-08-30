@@ -6700,5 +6700,37 @@ theorem no_nextrel2_blockRoot_of_gap (Q : TrioSeq) {d e n k c : ℕ}
     entry2_mTower_blockRoot Q d e n k hk hQ] at hlt
   omega
 
+
+/-- ★★★★★★★★★★★★ **(W88)**: `d ≤ 段差` ∧ `e = 0` ⟹ **ブロック根に行 1 の親は無い**。
+⟹ ★ **`Q` に「根より行 1 が低い列」があっても構いません**（`le0` が届かないので）。 -/
+theorem no_nextrel1_blockRoot_of_gap (Q : TrioSeq) {d n k c : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hk : k < n)
+    (hgap : ∀ r, 0 < r → r < Q.length → entry Q 0 0 + d ≤ entry Q 0 r) :
+    ¬ nextrel1 (mTower Q d 0 n) c (k * Q.length) := by
+  intro h
+  obtain ⟨k', hk', rfl⟩ :=
+    le0_ancestor_blockRoot Q hQ hd hgap k hk c h.2.2.2.2.1.2.2
+  have hent : ∀ k'' , k'' < n → entry (mTower Q d 0 n) 1 (k'' * Q.length) = entry Q 1 0 := by
+    intro k'' hk''
+    have := entry1_mTower_block_formula Q (d := d) (e := 0) (n := n) (k := k'') (i := 0) hk'' hQ
+    simp only [Nat.zero_mul, Nat.add_zero] at this
+    rw [show k'' * Q.length = k'' * Q.length + 0 from by omega]
+    split_ifs at this <;> simpa using this
+  have hlt := h.2.2.2.1
+  rw [hent k' (by omega), hent k hk] at hlt
+  omega
+
+/-- ★★★★★★★★★★★★ ⟹ **`i ≥ 1` の全部**（行 1 も行 2 も）⟹ ★ **`snoc_orphan_W` へ**。 -/
+theorem no_hasParent_blockRoot_of_gap (Q : TrioSeq) {d n k i : ℕ}
+    (hQ : 0 < Q.length) (hd : 0 < d) (hk : k < n) (hi : 0 < i)
+    (hgap : ∀ r, 0 < r → r < Q.length → entry Q 0 0 + d ≤ entry Q 0 r) :
+    ¬ hasParent (mTower Q d 0 n) i (k * Q.length) := by
+  rintro ⟨y, hy, -⟩
+  unfold nextR at hy
+  rw [if_neg (by omega)] at hy
+  split_ifs at hy with h1
+  · exact no_nextrel1_blockRoot_of_gap Q hQ hd hk hgap hy
+  · exact no_nextrel2_blockRoot_of_gap Q hQ hd hk hgap hy
+
 end H12Export
 end TRIO
