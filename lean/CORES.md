@@ -12604,3 +12604,93 @@ def WSnocOpen1 : Prop :=
 **⟹ ★★★ ⟹ **良い枝が起きない ⟹ `|A|` が真に減る**——⟹ ★ **`replicate` の最小形と同じ結論**です。**
 **⟹ ⛔ ただし **行 0（`srow = 0`）は別**: `d0 > 0` なので **前の写しに候補があり、良い枝が起きます**。**
 **⟹ ⟹ ★ そのときは **窓がまた 1 列**なので、⟹ ★★ **同じ形が繰り返します**（`|V| = 1` が保存）。**
+
+---
+
+# ★★★★★★★★★★ **【20 回目、そして最大】測度は最初から要らなかった**
+
+**L3 の (L-LFP) の結論:「所属を作るとは `Aop` 節 2 `∀ n, M⟦n⟧ ∈ X` の導出木を建てること ⟹ **その木は ω 分岐**
+⟹ 整礎にするには `o(M⟦m⟧) < o(M)` が**すべての `m`** で要る ⟹ **`o` は `{M⟦m⟧}` の上で有界**でなければならない
+⟹ ⛔ **`|M⟦m⟧|` は `m` に比例** ⟹ **19 個の候補は全部 `m` とともに増えていた ⟹ だから全部死んだ**」
+⟹ ★ **1 行の理由**。⟹ ⚠ そして「行き先は順序数、だが repo に `Ordinal` は 0（grep）」。**
+
+**⟹ ★★★★★★★★★★ team-lead が grep した答え: **順序数も ω 分岐の処理も、既にこの repo にある**。**
+
+```
+★★★★★ lean/Cnf.lean（923 行）／ Term.lean（423 行）／ Seqlex.lean（690 行）
+★★★★★ **`translate : TrioSeq → Term`** ＋ **`<o` / `≤o`** ⟹ **構文的順序数記法**
+      （Mathlib の `Ordinal` ではないので `grep Ordinal` が 0 だった）
+★ **兄弟 `lean-yapss` とまったく同じ設計**（あちらも `Ordinal` は 0、`Cnf`/`Term`/`Seqlex` がある）
+```
+
+```lean
+★★★★★★★★★★ Wset.wf_olt_ST_TS_of_cofinality（Wset.lean:4750）
+  {S} (hSle : S ⊆ Wstar) (hScl : ∀ u0 R, Aop W u0 S R → R ∈ S)
+      (hcof : ∀ {M N}, ST_TS M → ST_TS N → translate N <o translate M →
+        **∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧)**)      -- ★★★ **共終性**
+  : WellFounded (fun a b => ST_TS a ∧ ST_TS b ∧ translate a <o translate b)
+```
+
+**⟹ ★★★ **ω 分岐は「共終性」で処理する**——⟹ ★ **測度ではない**。
+⟹ ★ 意味: **`M` より小さいものは、必ずどれかの `M⟦n⟧` 以下**。⟹ **それだけで整礎が出る**。
+⟹ ★★ そして **`trio_cofinality` は無条件**（`Final.lean` の docstring）。**
+
+**⟹ ★★★★★★★★★★ ⟹ **停止性は `TowerOK` ただ 1 本から出る**（`Final.lean:110`
+`TRIO_terminates_of_towerOK`、課題 L70）。⟹ ★ 入口は他にも: `TowerGraft2`＋`TowerExp` ／
+`LiftStage`＋`TowerExp` ／ **`WSnoc`**（`Final:757`）／ `SubstMulti`（`L8Multi:112`）／ `SubstFree`（`L5Subst:58`）。**
+
+## ⚠⚠ **team-lead の失敗（明記）**
+
+**⟹ ⛔ **今日の測度探索 19 個は、そもそも不要な道**だった。⟹ ★ **`Final.lean` を先に読むべきだった**。
+⟹ ⚠ そして **`Final.lean` の docstring には、team-lead（前セッション）の誤りが 2 つ訂正されて残っている**:
+「**2026-08-30 訂正（SESSION §140）… team-lead が `TowerOK` の設定（`domT` あり）と
+`CoreCap` の snoc 残核（`domT` が成り立たない側）を混同して書き込んだもの**」
+⟹ ★ **今日も同じ混同を繰り返しかけた**。⟹ ★★★ **教訓 22: 方針を決める前に `Final.lean` を読む**。**
+
+## ★ **無駄にならなかったもの**
+
+    ★★★ **L3 の緑 10 本（§290–§293、すべて前提なし）** ⟹ **`TowerOK` 側でも使える**
+    ★★★★★★★★ **残差の完全な特徴づけ**（`c < |A|` ⟺ 的が `Q` の中で孤児、100% 両向き）
+    ★★★★★★★★ **良い枝の構造 6 点**（すべて 100%）
+    ★★★★★ **残核が 1 点に確定**（`WSnocOpen1` ＝ `SnocPrefixOpen1`、`z = 1` の列があるとき）
+    ★★★★★ **`prefixCopies_of_based`** ⟹ **`PrefixCopies` で開いているのは `0 < entry Q 0 0` だけ**
+    ★★★★★★★★★ **H12 の `hasParent1_snoc_iff_amin'`**（下記）
+    ★★★★★★★★ **R2 の 3 つの規則**（100% 警報 ／ 0% 警報 ／ 両群を並べる）⟹ **今日 6 回、誤りを止めた**
+
+---
+
+## ★★★★★★★★★ **(W62 続き): `srow = 1` の枝は `amin` の 1 つの不等式と完全同値**（H12、緑 `d256173`、385 本）
+
+```lean
+★★★★★★★★★ hasParent1_snoc_iff_amin'   -- ★ **仮定は行 0 の親 `c` だけ**
+    **`hasParent (C ++ [p]) 1 |C|` ⟺ `amin (C ++ [p]) c < p.2.1`**
+★★★ rtg0_ancestor_split（新、**4 行**）… 「`t` の行 0 の祖先 ＝ `t` 自身か、親 `c` の祖先」
+```
+
+    ★ `c` ＝ **`p.1` より浅い最後の列**（行 0 の親）／ `amin (C++[p]) c` ＝ **`c` の行 0 祖先の行 1 の最小値**
+    ⟹ ★★ **`amin < p.2.1` なら親がある（窓が有限）／ そうでなければ孤児**
+    ★ そして **「直前が親」（47.41% の形）は `c = |C|−1` の特別な場合** ⟹ **`amin` 版が一般形**
+
+**★ H12 の評価: **L3 の `hr0_window` は `nextrel0` の最小性だけから出ていて、自分の `prefixTake_shallow` より強い**
+⟹ ✅ **`prefixTake_le0_root` から `hr0` を落とす**のを承認。**
+
+---
+
+## ★★★★★★★★★★ **【新しい的】`LiftTie` —— `TowerOK` の残核 1 本**
+
+**`Final.lean` の docstring（課題 L70）より:**
+
+    ★ **`srow = 1` の枝** … **`towerOK1_of_clause3`（`L53Subst`）で証明ずみ**
+    ★ **`srow = 2` の枝** … 親は**必ず根**（`Wset.parent_cons_eq_zero:2762`）⟹ `z < c`（`L53.tower2_zr:2380`）
+      ⟹ **段は無条件に収まる**（`L53.tower2_stage_fits':2406`、「段はいつでもちょうど収まる」）
+      ⟹ ⟹ ★★★ **残核は段ではなく `LiftTie`**（`L53Subst.lean:2337`、`towerOK2_of_clause3:2432` の唯一の仮定）
+    ★ **`L105Cap §21`（課題 L109-3）: 「`LiftTie` は自己段（`m = 2v+z`）だけで足りる」** ⟹ **既に細い**
+
+**発注: **(W64) H12**（`LiftTie` を逐語で引き、道具が何を出すか。**まず grep**）／
+**(L-ROUTE) L3**（`TowerOK` と `WSnoc` のどちらが近いか、今日の緑 10 本がどちらで使えるか）／
+**(LT-1)(LT-2) R2**（`LiftTie` の場面をシートで測る、破れる例があるか／自己段だけで足りるかの裏取り）。
+⚠ **(AMIN-S) と (W62) の `srow = 2` の枝は保留**（`WSnoc` が本線でなくなったため）。**
+
+---
+
+## ✅ **build 緑 17 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **385 本**
