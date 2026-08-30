@@ -13588,6 +13588,75 @@ R2:「`|V|` は弱減少で、**等号は 2 段しか続かない**（3 段は 0
 ⚠ **そして `entry Q 2 p = 1` が実際に起きるかは測っていません。**
 **⟹ ★ R2 に測る価値があります: 「窓の根（親の列）の行 2 が 1 になる割合」。** -/
 
+/-! ## 195. ★★★★★★★ **`j = 0` の親はブロック `n-1` 以降**（§187.2 の未証明の仮定を埋めました）
+
+H12 の §263 の指摘: §187.2 は「親がブロック `n-1` にいる」を**仮定**していた。
+**§148 `le0_tower_root_le`（緑）があるので、`d ≥ 2` でも通ります。**
+**（H12 が詰まったのは `nextrel0` を**1 歩**で繋ごうとしたためで、
+§148 は「候補 ⟹ §144 で親の位置を下から押さえる ⟹ 鎖で届く」という作りです。）** -/
+
+open Classical in
+theorem nextrel1_j0_src_ge_prev_block {Q : TrioSeq} {d e n a : ℕ}
+    (hd : 0 < d) (he : 0 < e) (hQ : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hnr : nextrel1 (mTower Q d e n
+        ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take 1) a (n * Q.length)) :
+    (n - 1) * Q.length ≤ a := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hFull : (mTower Q d e (n + 1)).length = (n + 1) * Q.length :=
+    mTower_length Q d e (n + 1)
+  have hmul : (n + 1) * Q.length = n * Q.length + Q.length := Nat.succ_mul n Q.length
+  -- `T` は完成した塔の接頭辞
+  have hTake : (mTower Q d e (n + 1)).take (n * Q.length + 1)
+      = mTower Q d e n ++ B.take 1 := by
+    rw [mTower_succ, ← hTlen, List.take_append,
+      List.take_of_length_le (by omega), hTlen, Nat.add_sub_cancel_left]
+  -- ブロック `n-1` の根 → ブロック `n` の根（§148）
+  have hle0F : le0 (mTower Q d e (n + 1)) ((n - 1) * Q.length) (n * Q.length) :=
+    le0_tower_root_le hd hQ hr0 n (n - 1) (by omega) (by omega)
+  have hle0 : le0 (mTower Q d e n ++ B.take 1) ((n - 1) * Q.length) (n * Q.length) := by
+    rw [← hTake]
+    exact (le0_take (by rw [hFull]; omega) (by omega)).mpr hle0F
+  -- 行 1 の値
+  have hE : ∀ k, k < n + 1 →
+      entry (mTower Q d e n ++ B.take 1) 1 (k * Q.length)
+        = entry Q 1 0 + e * k := by
+    intro k hk
+    have hbnd : k * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+    rw [← hTake, Wset.entry_take (X := mTower Q d e (n + 1))
+      (l := n * Q.length + 1) (i := 1) (j := k * Q.length) (by omega)]
+    exact mTower_entry1_root (by omega) hQ
+  have hsucc : e * n = e * (n - 1) + e := by
+    have h1 : e * (n - 1 + 1) = e * (n - 1) + e := Nat.mul_succ e (n - 1)
+    have h2 : n - 1 + 1 = n := by omega
+    rw [h2] at h1; omega
+  have hlt : entry (mTower Q d e n ++ B.take 1) 1 ((n - 1) * Q.length)
+      < entry (mTower Q d e n ++ B.take 1) 1 (n * Q.length) := by
+    rw [hE (n - 1) (by omega), hE n (by omega)]
+    omega
+  exact nextrel1_src_ge_of_candidate hnr hle0 hlt
+
+/-! ### 195.1 ⟹ §187.2 の未証明の仮定が 1 つ埋まりました
+
+    **前提**: `0 < d` ／ `0 < e` ／ `0 < |Q|` ／ `0 < n` ／ `hr0`
+    **結論**: **ブロック `n` の根への `nextrel1` の始点は `(n-1)*|Q|` 以上**
+
+**⟹ ★ H12 の実測（19017 / 19017 で `parent ≥ (n-1)*|Q|`）が定理になりました。**
+**⟹ そして `d ≥ 2` の障害は消えました（§148 が 1 歩で繋がないため）。**
+
+⚠ **射程を逐語で書きます**（今日 9 回の元凶なので）:
+
+    **`nextrel1`（行 1）についてだけ**です。`srow = 0` / `srow = 2` は別です。
+    **`0 < e` が要ります。** `e = 0` では行 1 が動かないので候補になりません。
+    **`0 < d` が要ります**（§148 の前提）。
+    **⟹ H12 の「ブロックの根は必ず `srow = 1`」（`n ≥ 1 ∧ e ≥ 1` の下）と合わせると、
+    `j = 0` の場面はちょうどこの定理の射程です。**
+
+⚠ **教訓 14**: これは **`nextrel1` の始点の下界**であって、
+**`p_rel ≤ 1`（H12 の (w1)）は別の主張**です。§192 の表はまだそちらに乗っています。 -/
+
 /-! ## 12. ★★★★★ 課題 L105 の結論
 
 ### 12.1 `CoreCap` の正体
