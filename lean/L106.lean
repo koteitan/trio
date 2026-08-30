@@ -6374,5 +6374,70 @@ theorem hlocQ_row2_of_nextrel1 {Q : TrioSeq} {j y : ℕ} (hj : j < Q.length)
 **⟹ ⚠ そして **孤児が出ないこと**は測定では出ません（H12 の `blocker_of_large_k` の教訓）。**
 **⟹ ★ ですから次に要るのは「**窓の中で行 1 の孤児は窓の根だけ**」の証明です。** -/
 
+/-! ## 244. ★★★★★★ **クラス条件は無料**でした —— (COMP-b) の証明
+
+§243 で「`nextrel1` の始点が 1 本あれば行 1 の成分は立つ」と分かりました。
+**⟹ ★★★ そして **`nextrel1` の始点は「行 1 が小さい `le0` 祖先」から作れます**:**
+
+    候補のうち**最大のもの**を取れば、最小性 `∀ q, y < q ∧ le0 M q t → entry M 1 t ≤ entry M 1 q`
+    は**自動**（`q < t` なら最大性、`q = t` なら自明、`q > t` は `le0` の単調性で不可能）
+
+**⟹ ⟹ ★★★★★★ ですから **`hlocQ` の行 1 の成分は 3 つの連言に縮みます**:**
+
+    `∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j`     ← ★ **クラス条件が消える**
+
+**⟹ ★ これは R2 の (COMP-b)「クラス条件だけが合わない例は 0.0000%」の**証明**です。**
+**⟹ ⟹ ★★ そして **窓への移送が楽になります**（`le0_window` ＋ `entry_window` だけ）。** -/
+
+open Classical in
+theorem exists_nextrel1_of_le0_lt {M : TrioSeq} {t : ℕ} (ht : t < M.length)
+    (h : ∃ y, y < t ∧ le0 M y t ∧ entry M 1 y < entry M 1 t) :
+    ∃ y, nextrel1 M y t := by
+  obtain ⟨y, hyt, ⟨hle0, hlt⟩, hmax⟩ :=
+    exists_max_below (j := t) (fun y => le0 M y t ∧ entry M 1 y < entry M 1 t)
+      (by obtain ⟨y, h1, h2, h3⟩ := h; exact ⟨y, h1, h2, h3⟩)
+  refine ⟨y, hle0.1, ht, hyt, hlt, hle0, ?_⟩
+  intro q ⟨hq1, hq2⟩
+  rcases Nat.lt_or_ge q t with hqt | hqt
+  · by_contra hcon
+    exact hmax q hq1 hqt ⟨hq2, by omega⟩
+  · have := le0_le' hq2
+    rw [show q = t from by omega]
+
+/-- ★★★★★★ ⟹ **`hlocQ` の行 1 の成分は 3 連言と同値**（クラス条件は無料）。 -/
+theorem hlocQ_row1_iff {Q : TrioSeq} {j : ℕ} (hj : j < Q.length) :
+    (∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j ∧ (le1 Q 0 y → le1 Q 0 j))
+      ↔ (∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j) := by
+  constructor
+  · rintro ⟨y, h1, h2, h3, -⟩; exact ⟨y, h1, h2, h3⟩
+  · intro h
+    obtain ⟨y, hy⟩ := exists_nextrel1_of_le0_lt hj h
+    exact hlocQ_row1_of_nextrel1 hy
+
+/-! ### 244.1 ⟹ ★★★★ **`hlocQ` の書き換え形**
+
+**⟹ ★ `hlocQ` は次と同値です（`hz1` ＋ `hz0` は要りません）:** -/
+
+theorem hlocQ_iff_simple {Q : TrioSeq} :
+    hlocQ Q ↔ ∀ j, 0 < j → j < Q.length →
+      (0 < entry Q 2 j → hasParent (Q.take (j + 1)) 2 j) ∧
+      (entry Q 2 j = 0 → 0 < entry Q 1 j →
+        ∃ y, y < j ∧ le0 Q y j ∧ entry Q 1 y < entry Q 1 j) := by
+  constructor
+  · intro h j hj0 hj
+    exact ⟨(h j hj0 hj).1, fun hz hp => (hlocQ_row1_iff hj).mp ((h j hj0 hj).2 hz hp)⟩
+  · intro h j hj0 hj
+    exact ⟨(h j hj0 hj).1, fun hz hp => (hlocQ_row1_iff hj).mpr ((h j hj0 hj).2 hz hp)⟩
+
+/-! ### 244.2 ⟹ ★★★ **窓への移送が 2 本で済みます**
+
+    `le0` …… ✅ §238 `le0_window`（前提なし）
+    行 1 … ✅ `entry_window`（前提なし）
+
+**⟹ ★★ ですから残るのは **「証人 `y` を `p` 以上に取れるか」**だけ。⟹ (ADJ) そのものです。**
+**⟹ ⟹ ★ そして §239.4 で **`t = 1` なら候補は根しかない**と分かっています。**
+
+⚠ **教訓 45**: (COMP-b) は測る必要がありませんでした。**定義から出ます。** -/
+
 end L106
 end TRIO
