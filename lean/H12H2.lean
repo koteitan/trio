@@ -2152,5 +2152,42 @@ theorem hz0_of_last {v z m t : ℕ} {R : TrioSeq} (hRne : R ≠ [])
   have : entry (((0, v, z) : ℕ × ℕ × ℕ) :: R.dropLast) 2 0 = z := rfl
   omega
 
+
+/-! ## 32. ⛔ **`h1out` は偽** —— L3 自身の §184 の反例がそのまま効く
+
+L3 の §211 `prefixTowerClosed_final_full` が新しく置いた前提:
+
+    `h1out : ∀ j, 0 < j → j < |Q| → ¬ le1 Q 0 j →
+       0 < entry Q 1 j → **entry Q 1 0 < entry Q 1 j**`
+
+⚠ これは `hhigh`（L3 の §180 `le1_chain_in_block` の前提）に
+`0 < entry Q 1 j` を足しただけ。⟹ **L3 が §184 で見つけた反例がそのまま効く。**
+
+    **`Q = (0,1,0)(1,0,0)(1,1,1)(1,0,0)`、`j = 2`**
+      錐の外 ✓（行 1 が根と**等号** ⟹ `not_le1_of_tie`）
+      `entry Q 1 2 = 1 > 0` ✓（`h1out` の前件を満たす）
+      **`entry Q 1 0 = 1 < 1` は偽** ⟹ **`h1out` が破れる**
+
+⟹ ★ **等号のブロッカーは `0 < entry Q 1 j` を満たすので、前件では除けない。** -/
+
+/-- `h1out` の反例（L3 の §184 と同じ `Q`）。 -/
+def Qh1 : TrioSeq :=
+  [((0, 1, 0) : ℕ × ℕ × ℕ), ((1, 0, 0) : ℕ × ℕ × ℕ),
+   ((1, 1, 1) : ℕ × ℕ × ℕ), ((1, 0, 0) : ℕ × ℕ × ℕ)]
+
+/-- ⛔ **`h1out` は偽**。 -/
+theorem h1out_false :
+    ¬ (∀ j, 0 < j → j < Qh1.length → ¬ le1 Qh1 0 j →
+        0 < entry Qh1 1 j → entry Qh1 1 0 < entry Qh1 1 j) := by
+  intro h
+  have hout : ¬ le1 Qh1 0 2 :=
+    L105.not_le1_of_tie (by omega)
+      (show entry Qh1 1 2 = entry Qh1 1 0 from rfl)
+  have hres := h 2 (by omega)
+    (show (2 : ℕ) < Qh1.length from by rw [show Qh1.length = 4 from rfl]; omega)
+    hout (show 0 < entry Qh1 1 2 from by rw [show entry Qh1 1 2 = 1 from rfl]; omega)
+  rw [show entry Qh1 1 0 = 1 from rfl, show entry Qh1 1 2 = 1 from rfl] at hres
+  omega
+
 end H12H2
 end TRIO
