@@ -11422,3 +11422,26 @@ NoCross A B :⟺ ∀ c < |A|, ¬ le0 (A ++ B) c ((A ++ B).length − 1)
     ⛔ **`prefixCopies_residual_only_blockRoot` は行 0 についてのみ**
     ⟹ ★ 一般形は R2 が反証済み（`hr0(Q)` 真でも残差の **44.9312%** が `j ≥ 1`）
     ⟹ ★★ **改名 ＋ docstring に「行 0 のみ、`srow = 1` では偽」**
+
+---
+
+## ★★★★★★★★ **H12 (W57 続き, 2026-08-30): `srow = 1` の最小形は族をまたぎます**
+
+### ★ **形（`Q = [(x,v,0)]`、`0 < v`、`d = e = 0`）**
+
+    ★★★ `srow_last_of_append_replicate_gen` … 一般の `q` での末尾の `srow`
+      **`= if 0 < q.2.2 then 2 else if 0 < q.2.1 then 1 else 0`**
+    ★★★★★ `srow_last_of_append_replicate_one` … **`q = (x,v,0)`、`0 < v` ⟹ `srow = 1`**
+    ★★★★★★★★ `minimal_successor_shape_gen` … **後継の形は `q` に依らない**（写しが 1 つ減るだけ）
+    ★★★★★★★★ `rankDE_one_of_srow1_minimal` … ⟹ **`rankDE = 1`** ⟹ **`d0 > 0`, `d1 = 0`**
+
+### ★★★★★★★★ **結論: 三分割は独立ではありません**
+
+    ★ **`srow = 0` の最小形**（`q = (x,0,0)`）⟹ `rankDE = 0` ⟹ **後継も `PrefixCopies`**（閉じている）
+    ⛔ **`srow = 1` の最小形**（`q = (x,v,0)`、`0 < v`）⟹ **`rankDE = 1`** ⟹ **`d0 > 0`**
+      ⟹ ⟹ ★★★ **後継は純粋な写しではなく `shTower`**
+      ⟹ ⟹ ⟹ ⛔ **`PrefixCopies` の帰納法の中で `shTower` が要ります**
+
+**⟹ ★★★★★ ⟹ **`PrefixCopiesOpen` と `ShiftTowerClosed` は、別々には閉じません**。**
+**⟹ ⟹ ★ **同時に（相互再帰で）扱う必要があります**。⟹ ⚠ **これは私の見立てで、L3 の確認が要ります**。**
+**⟹ ⟹ ⟹ ★ そして **(W44)（`rankDE = srow`）が、その橋**でした。**

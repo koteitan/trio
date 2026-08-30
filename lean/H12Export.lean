@@ -4621,5 +4621,63 @@ theorem minimal_successor_shape (A : TrioSeq) (x n c : ℕ) (hc : c ≤ A.length
       = A.drop c ++ List.replicate n ((x, 0, 0) : ℕ × ℕ × ℕ) := by
   rw [drop_append_replicate A _ _ _ hc, dropLast_append_replicate_succ]
 
+
+/-- 一般の `q` での末尾の `srow`。 -/
+theorem srow_last_of_append_replicate_gen (A : TrioSeq) (q : ℕ × ℕ × ℕ) (n : ℕ) :
+    srow (A ++ List.replicate (n + 1) q) ((A ++ List.replicate (n + 1) q).length - 1)
+      = if 0 < q.2.2 then 2 else if 0 < q.2.1 then 1 else 0 := by
+  have hlen : (A ++ List.replicate (n + 1) q).length - 1 = A.length + n := by
+    rw [List.length_append, List.length_replicate]; omega
+  have hget : ∀ i, entry (A ++ List.replicate (n + 1) q) i (A.length + n)
+      = entry (List.replicate (n + 1) q) i n := fun i => by rw [entry_append_right]
+  have hr : ∀ i, entry (List.replicate (n + 1) q) i n
+      = (if i = 0 then q.1 else if i = 1 then q.2.1 else q.2.2) := by
+    intro i
+    show (if i = 0 then _ else if i = 1 then _ else _) = _
+    rw [List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem (by rw [List.length_replicate]; omega),
+      List.getElem_replicate]
+    split_ifs <;> rfl
+  rw [hlen]
+  unfold srow
+  rw [hget 2, hget 1, hr 2, hr 1]
+  simp
+
+/-- ★★★★★ **`srow = 1` の最小形**: `q = (x, 1, 0)` なら末尾の `srow = 1`。 -/
+theorem srow_last_of_append_replicate_one (A : TrioSeq) (x v n : ℕ) (hv : 0 < v) :
+    srow (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ))
+      ((A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)).length - 1) = 1 := by
+  rw [srow_last_of_append_replicate_gen]
+  simp [hv]
+
+/-- ★★★★★★★★ **後継の形は `q` に依りません**（写しが 1 つ減るだけ）。 -/
+theorem minimal_successor_shape_gen (A : TrioSeq) (q : ℕ × ℕ × ℕ) (n c : ℕ)
+    (hc : c ≤ A.length) :
+    ((A ++ List.replicate (n + 1) q).drop c).dropLast
+      = A.drop c ++ List.replicate n q := by
+  rw [drop_append_replicate A _ _ _ hc, dropLast_append_replicate_succ]
+
+/-- ★★★★★★★★ ⟹ **`srow = 1` の最小形では `rankDE = 1`** ⟹ **`d0 > 0`**
+⟹ ★ ⟹ **後継は純粋な写し（`PrefixCopies`）ではなく `shTower`**。
+⟹ ⟹ ★★★ **＝ 最小形が族をまたぎます**（三分割は独立ではありません）。 -/
+theorem rankDE_one_of_srow1_minimal {A : TrioSeq} {x v n : ℕ} {par : ℕ} (hv : 0 < v)
+    (hpar : nextR (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ))
+      (srow (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ))
+        ((A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)).length - 1))
+      par ((A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)).length - 1)) :
+    rankDE
+      (if 0 < srow (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ))
+            ((A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)).length - 1) then
+        entry (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)) 0
+            ((A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)).length - 1)
+          - entry (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)) 0 par else 0)
+      (if 1 < srow (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ))
+            ((A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)).length - 1) then
+        entry (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)) 1
+            ((A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)).length - 1)
+          - entry (A ++ List.replicate (n + 1) ((x, v, 0) : ℕ × ℕ × ℕ)) 1 par else 0)
+      = 1 := by
+  rw [rankDE_eq_srow hpar, srow_last_of_append_replicate_one A x v n hv]
+
 end H12Export
 end TRIO
