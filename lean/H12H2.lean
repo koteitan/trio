@@ -2189,5 +2189,43 @@ theorem h1out_false :
   rw [show entry Qh1 1 0 = 1 from rfl, show entry Qh1 1 2 = 1 from rfl] at hres
   omega
 
+
+/-! ## 33. **(z1)(z2)(z3) 行 2 は増えない。しかし `zle1` は `W u` の不変量ではない**
+
+team-lead:「行 2 はリフトされない ⟹ `zle1` を `W u` の不変量にできるのでは」。
+
+### (z1) ⚠ **既にありました**（今日 6 件目）
+
+    **`Wset.zle1_oper`（`Wset:2472`、緑）** … `zle1 B → zle1 (B⟦n⟧)`
+    **`Wset.zle1_ST_TS`（`:2516`、緑）** … `ST_TS M → zle1 M`（**標準形は `zle1`**）
+
+### (z2) `graft` も行 2 を**そのまま写す**
+
+    `Wset.graft`（`Wset:66`）:
+      `graft M z = M.dropLast ++ z.map (fun p => (p.1 + entry M 0 (|M|-1), **p.2.1, p.2.2**))`
+    ⟹ **行 2 は逐語コピー。増えません。**
+
+### (z3) ⛔ **それでも `zle1` は `W u` の不変量になりません**
+
+⚠ **障害は「増える箇所」ではなく、`W` の**基底**です:**
+
+    **`Wset.Om_mem_W (v z) : [(0,v,z)] ∈ W (2*v + z)`**（`Wset:1696`、緑）
+    ⟹ **`z` は任意**。⟹ `[(0,0,2)] ∈ W 2` で **`zle1` が破れる**。
+
+⟹ **`Aop` の節 3 は `∀ y ∈ W m` を走るので、`zle1` でない `y` が必ず来ます。**
+⟹ ★ **team-lead の元の判定（「全列の条件は復元できない」）は**正しかった**。**
+⟹ ⟹ ただし理由は「節 3 で作り直せない」ではなく「**`W` がそもそも `zle1` で閉じていない**」。 -/
+
+/-- ⛔ **`W u` は `zle1` で閉じていない**（基底 `Om_mem_W` に任意の `z` が入る）。 -/
+theorem W_not_zle1_closed :
+    ([((0, 0, 2) : ℕ × ℕ × ℕ)] ∈ W 2) ∧ ¬ zle1 [((0, 0, 2) : ℕ × ℕ × ℕ)] := by
+  refine ⟨?_, ?_⟩
+  · have := Om_mem_W 0 2
+    simpa using this
+  · intro h
+    have h2 := h ((0, 0, 2) : ℕ × ℕ × ℕ) (by simp)
+    have : ((0, 0, 2) : ℕ × ℕ × ℕ).2.2 = 2 := rfl
+    omega
+
 end H12H2
 end TRIO
