@@ -5560,5 +5560,61 @@ theorem srow_pos_of_not_hasParentInBlock {Q : TrioSeq}
 theorem residual_needs_len_two {Q : TrioSeq} (hQ1 : Q.length = 1) :
     L53.HasParentInBlock Q ∨ Q.length ≤ 1 := Or.inr (by omega)
 
+
+/-- ★★★★★ **行 1 の祖先の分解**（`nextrel1` の始点の一意性から）。 -/
+theorem rtg1_ancestor_split {M : TrioSeq} {c t y : ℕ} (h : nextrel1 M c t)
+    (hy : Relation.ReflTransGen (nextrel1 M) y t) :
+    y = t ∨ Relation.ReflTransGen (nextrel1 M) y c := by
+  rcases Relation.ReflTransGen.cases_tail hy with h1 | ⟨c', hc1, hc2⟩
+  · exact Or.inl h1.symm
+  · exact Or.inr (by rw [← nextrel1_unique hc2 h]; exact hc1)
+
+/-- `nextrel1` の鎖は添字を増やします。 -/
+theorem rtg1_le {M : TrioSeq} {a b : ℕ}
+    (h : Relation.ReflTransGen (nextrel1 M) a b) : a ≤ b := by
+  induction h with
+  | refl => exact le_refl a
+  | @tail c d _ hcd ih => exact le_trans ih (le_of_lt hcd.2.2.1)
+
+/-- ★★★★★★★★ **`le1` の道の上では、錐の所属が後ろへ伝わります**。 -/
+theorem cone_of_le1_to_cone {M : TrioSeq} {a b : ℕ} (hab : le1 M a b) (hb : le1 M 0 b)
+    (ha0 : 0 < a) : le1 M 0 a := by
+  obtain ⟨ha1, hb1, hrt⟩ := hab
+  have key : ∀ b', Relation.ReflTransGen (nextrel1 M) a b' → le1 M 0 b' → le1 M 0 a := by
+    intro b' h
+    induction h with
+    | refl => exact fun h0 => h0
+    | @tail c b'' hac hcb ih =>
+        intro hb''
+        refine ih ?_
+        have hale : a ≤ c := rtg1_le hac
+        rcases rtg1_ancestor_split hcb hb''.2.2 with h1 | h1
+        · exact absurd h1 (by have := hcb.2.2.1; omega)
+        · exact ⟨hb''.1, hcb.1, h1⟩
+  exact key b hrt hb
+
+open Classical in
+/-- ★★★★★★★★★★ **(W69) の穴が埋まりました**: `nextrel2 X par last` なら
+**`le1 X 0 par ↔ le1 X 0 last`** ⟹ **`wd1` は `Lift1` 不変**。 -/
+theorem wd1_Lift1_invariant {X : TrioSeq} {d par last : ℕ} (hpar0 : 0 < par)
+    (h : nextrel2 X par last) :
+    entry (Lift1 X d) 1 last - entry (Lift1 X d) 1 par
+      = entry X 1 last - entry X 1 par := by
+  have hle1 : le1 X par last := h.2.2.2.2.1
+  have hplen : par < X.length := h.1
+  have hllen : last < X.length := h.2.1
+  have hiff : le1 X 0 par ↔ le1 X 0 last := by
+    constructor
+    · intro hp; exact ⟨hp.1, hllen, hp.2.2.trans hle1.2.2⟩
+    · intro hl; exact cone_of_le1_to_cone hle1 hl hpar0
+  rw [Wset.entry1_Lift1 hllen, Wset.entry1_Lift1 hplen]
+  by_cases hc : le1 X 0 par
+  · rw [if_pos hc, if_pos (hiff.mp hc)]
+    have := h.2.2.2.2.1
+    have hlt : entry X 1 par < entry X 1 last := entry1_lt_of_le1_ne hle1 (by have := h.2.2.1; omega)
+    omega
+  · rw [if_neg hc, if_neg (fun hx => hc (hiff.mpr hx))]
+    omega
+
 end H12Export
 end TRIO

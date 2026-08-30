@@ -13295,3 +13295,29 @@ theorem nextrel1_snoc_prev_eq {C p A}
 **★ 分担: **H12 ＝ 道具（(W69)）／ L3 ＝ 残差（C → B → A）／ R2 ＝ (ROW2-1..3)**（重複なし）。**
 
 **✅ build 緑 23 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **408 本**
+
+---
+
+## ★★★★★★★★★★ **H12 (W69, 2026-08-30): `wd1` も `Lift1` 不変 —— 穴が埋まりました（緑）**
+
+    ★★★★★★★★★★ `wd1_Lift1_invariant`
+      **`nextrel2 X par last` ∧ `0 < par` ⟹
+        `entry (Lift1 X d) 1 last - entry (Lift1 X d) 1 par = entry X 1 last - entry X 1 par`**
+    ★★★★★★★★ `cone_of_le1_to_cone` … **`le1` の道の上では、錐の所属が後ろへ伝わる**
+    ★★★★★ `rtg1_ancestor_split` … **行 1 の祖先の分解**（`Invariant.nextrel1_unique` から、4 行）
+    ★★★ `rtg1_le`（道具）
+
+### ★★★★★★★★★★ **機構（1 行）: 錐は `nextrel1` の道に沿う**
+
+    ★ `nextrel2 X par last` は **`le1 X par last`** を含みます
+    ⟹ ★★ **`nextrel1` の始点は一意**（`Invariant.nextrel1_unique:735`）⟹ **後ろへの道は 1 本**
+    ⟹ ⟹ ★★★ ですから **`0` も `par` も同じ道の上** ⟹ **`le1 X 0 last ⟹ le1 X 0 par`**
+    ⟹ ⟹ ⟹ ★★★★★ ⟹ **両端が同じだけ持ち上がる** ⟹ **`wd1` は不変**
+
+### ★★★★★★★★★★ ⟹ **`lift_oper_of_noParent` の「親なし」を落とす材料が、これでそろいました**
+
+    ✅ **`wd0` 不変**（`wd0_Lift1_invariant`）／ ✅ **`wd1` 不変**（今回）
+    ✅ **`nextrel{0,1}`・`hasParent` 不変**（`Wset.nextrel1_Lift1` / `hasParent_Lift1`、仮定ゼロの iff）
+    ✅ **`le0` は行 0 だけ ⟹ 不変** ／ ✅ **`le1` は `nextrel1_Lift1` から不変**
+    ⟹ ⟹ ★★★ ⟹ **`oper` の分解の全成分が `Lift1` 不変** ⟹ ★ **可換性が無条件になるはず**
+    ⟹ ⚠ **`oper` の定義そのものを追ってはいません**（残りは L3 の枠）
