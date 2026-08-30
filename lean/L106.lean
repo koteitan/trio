@@ -7737,5 +7737,106 @@ theorem mTowerClosedSZ_of_residues (horph : OrphOK) (horph0 : OrphOK0)
 ⚠ **教訓 14**: `mTowerClosedS_of_residues`（制限なし版）は **前提が偽なので依然空虚**です。
 **⟹ ★ 残しますが、**使ってはいけません**。⟹ **使うのは `mTowerClosedSZ_of_residues` です**。 -/
 
+/-! ## 261. ⛔⛔⛔⛔ **`OrphOK` も偽です** —— 組み立ての形での反例（緑）
+
+§259 で「接頭辞が行 1 の親になれるのは的がブロッカーのときだけ」と示しました。
+**⟹ ⚠ ですが **ブロッカーのマスは空ではありません**。⟹ ★ 反例を貼ります。**
+
+    `Q = [(0,1,0), (1,1,0), (1,0,0)]`、`d = 2`、`e = 0`、`n = 1`、`A = []`、`j = 1`
+    ⟹ `hr0(Q)` ✅ ／ `entry Q 2 0 = 0` ✅ ／ `zle1 Q` ✅ ／ `0 < d` ✅
+    ⟹ `mTower Q 2 0 1 = Q`（`Lift1 X 0 = X`、`shiftr01 0 0 X = X`）
+    ⟹ ブロック `B = shiftr01 2 0 Q = [(2,1,0), (3,1,0), (3,0,0)]`
+    ⟹ `T = B.take 2 = [(2,1,0), (3,1,0)]` ⟹ ★ 列 1 は **`T` の中で孤児**（`1 < 1` は偽）
+    ⟹ ⛔ ところが `M = Q ++ T = [(0,1,0),(1,1,0),(1,0,0),(2,1,0),(3,1,0)]` では
+       **添字 2 の `(1,0,0)` が親**（行 1 = 0 < 1、`le0` は 2→3→4）
+
+**⟹ ⛔⛔ ですから **`OrphOK` は `TowerP''` の全条件を満たしても偽**です。** -/
+
+section CE261
+private def Qce : TrioSeq := [(0, 1, 0), (1, 1, 0), (1, 0, 0)]
+private def Mce : TrioSeq := [(0, 1, 0), (1, 1, 0), (1, 0, 0), (2, 1, 0), (3, 1, 0)]
+
+private theorem Mce_nr0_23 : nextrel0 Mce 2 3 := by
+  refine ⟨by decide, by decide, by omega, by decide, ?_⟩
+  intro q hq; omega
+
+private theorem Mce_nr0_34 : nextrel0 Mce 3 4 := by
+  refine ⟨by decide, by decide, by omega, by decide, ?_⟩
+  intro q hq; omega
+
+private theorem Mce_le0_24 : le0 Mce 2 4 :=
+  ⟨by decide, by decide, (Relation.ReflTransGen.single Mce_nr0_23).tail Mce_nr0_34⟩
+
+private theorem Mce_nr1_24 : nextrel1 Mce 2 4 := by
+  refine ⟨by decide, by decide, by omega, by decide, Mce_le0_24, ?_⟩
+  intro q ⟨hq1, hq2⟩
+  have hle := le0_le' hq2
+  rcases Nat.lt_or_ge q 4 with h | h
+  · rw [show q = 3 from by omega]; decide
+  · rw [show q = 4 from by omega]
+
+private theorem Mce_uniq {y : ℕ} (h : nextrel1 Mce y 4) : y = 2 := by
+  have hy : y < 4 := h.2.2.1
+  have hlt := h.2.2.2.1
+  rcases Nat.lt_or_ge y 2 with h2 | h2
+  · rcases Nat.lt_or_ge y 1 with h1 | h1
+    · rw [show y = 0 from by omega] at hlt; exact absurd hlt (by decide)
+    · rw [show y = 1 from by omega] at hlt; exact absurd hlt (by decide)
+  · rcases Nat.lt_or_ge y 3 with h3 | h3
+    · omega
+    · rw [show y = 3 from by omega] at hlt; exact absurd hlt (by decide)
+
+private theorem Mce_hasParent : hasParent Mce 1 4 :=
+  ⟨2, nextR_one_iff.mpr Mce_nr1_24, fun _ hy => Mce_uniq (nextR_one_iff.mp hy)⟩
+
+/-- ⛔⛔⛔ **`OrphOK` は偽**（`hr0` ／ `hz0` ／ `zle1` ／ `0 < d` を全部満たす形で）。 -/
+theorem orphOK_false : ¬ OrphOK := by
+  intro h
+  have hblk : Lift1 (shiftr01 (2 * 1) 0 Qce) (0 * 1) = [(2, 1, 0), (3, 1, 0), (3, 0, 0)] := by
+    show Lift1 (shiftr01 2 0 Qce) 0 = _
+    rw [Wset.Lift1_zero]
+    unfold Qce shiftr01
+    rfl
+  have htow : mTower Qce 2 0 1 = Qce := by
+    unfold mTower
+    show ((List.range 1).flatMap fun k => Lift1 (shiftr01 (2 * k) 0 Qce) (0 * k)) = Qce
+    simp
+  have hM : ([] : TrioSeq) ++ mTower Qce 2 0 1
+      ++ (Lift1 (shiftr01 (2 * 1) 0 Qce) (0 * 1)).take (1 + 1) = Mce := by
+    rw [htow, hblk]; unfold Qce Mce; rfl
+  have hlen : (([] : TrioSeq) ++ mTower Qce 2 0 1).length = 3 := by
+    rw [htow]; rfl
+  have hnp := h [] Qce 2 0 1 1 (by omega) (by decide) ?_
+  · rw [hM, hlen] at hnp
+    exact hnp (by
+      show hasParent Mce (srow Mce (3 + 1)) (3 + 1)
+      rw [show (3 : ℕ) + 1 = 4 from rfl, show srow Mce 4 = 1 from by decide]
+      exact Mce_hasParent)
+  · rw [hblk,
+      show (List.take (1 + 1) ([(2, 1, 0), (3, 1, 0), (3, 0, 0)] : TrioSeq))
+        = [(2, 1, 0), (3, 1, 0)] from rfl,
+      show srow ([(2, 1, 0), (3, 1, 0)] : TrioSeq) 1 = 1 from by decide]
+    rintro ⟨y, hy, -⟩
+    rw [nextR_one_iff] at hy
+    have : y < 1 := hy.2.2.1
+    rw [show y = 0 from by omega] at hy
+    exact absurd hy.2.2.2.1 (by decide)
+
+end CE261
+
+/-! ### 261.1 ⛔⛔⛔⛔ **残差 5 本のうち、また 1 本が偽でした**
+
+**⟹ ⚠ `mTowerClosedSZ_of_residues` も `horph : OrphOK` を取るので、**また空虚**です。**
+
+**⟹ ★★★ 直す方向は 1 つしかありません: **`OrphOK` に `Q ∈ W u` を足す**。**
+**⟹ ⟹ ⚠ 私の反例の `Q = [(0,1,0),(1,1,0),(1,0,0)]` が `W` に入るかは**未確認**です。**
+**⟹ ⟹ ⟹ ★ `W` 所属は有限判定できない（R2）ので、⟹ **Lean で調べるしかありません**。**
+
+**⟹ ★ そして §259 の二分法から、**足すべきものの形は決まっています**:**
+
+    ⛔ **「`Q` の中に、ブロックの根より行 1 が小さい `le0` 祖先をもつブロッカー列」が無いこと**
+
+**⟹ ★★ これは **`hnbQ` でも `hlocQ` でもない、第 3 の形**です。⟹ ⟹ ★ そこを詰めます。** -/
+
 end L106
 end TRIO
