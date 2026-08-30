@@ -10759,5 +10759,35 @@ theorem mTowerClosedS_of_towerSnocStep (h : TowerSnocStep) : L105.MTowerClosedS 
     simp only [List.nil_append] at hpar hmem ⊢
     exact h u Q d e n' j hQ hs hj hpar hmem
 
+/-! ### §308 `Based` 版の `TowerSnocStep`
+
+`L105Cap §77.5`（私の追記）で `MTowerClosedBased` が `Final` まで通ったので、
+§307 の `Based` 版を用意する。⟹ ★ `entry Q 0 0 = 0` を持ち回るだけ。 -/
+
+/-- **塔に 1 列足す**（`based` 版）。 -/
+def TowerSnocStepBased : Prop :=
+  ∀ (u : ℕ) (Q : TrioSeq) (d e n j : ℕ), Q ∈ W u →
+    (∀ l, 1 ≤ l → l < Q.length → entry Q 0 0 < entry Q 0 l) → entry Q 0 0 = 0 →
+    j < Q.length →
+    (hasParent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+      (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+      ∨ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u
+
+/-- ★★★★★★★★ **`TowerSnocStepBased` 1 本から `MTowerClosedBased` が出る**。
+⟹ `L105Cap.wstar2s_closed_of_mTowerClosedBased` に食わせれば `Final` まで届く。 -/
+theorem mTowerClosedBased_of_towerSnocStepBased (h : TowerSnocStepBased) :
+    L105.MTowerClosedBased := by
+  intro u d e n Q hQ hs hb
+  have hkey := L105.prefixTowerClosed_of_snocStepPar (A := []) (Q := Q) (d := d) (e := e)
+    (u := u) (by simpa using W_nil u) ?_ n
+  · simpa using hkey
+  · intro n' j hj hpar hmem
+    simp only [List.nil_append] at hpar hmem ⊢
+    exact h u Q d e n' j hQ hs hb hj hpar hmem
+
 end L106
 end TRIO
