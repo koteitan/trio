@@ -2538,5 +2538,94 @@ theorem prefixTowerClosed_of_snocStepStrong1 {u : ℕ} {A Q : TrioSeq} {d e : �
   | zero => rw [mTower_zero, List.append_nil]; exact hA
   | succ n => exact key n
 
+/-! ## 219. ★★★★★★ 最終配線のための小道具
+
+★ **索引を引いて `Wset.W_take`（`:2120`、`M ∈ W u → M.take k ∈ W u`）を見つけました。**
+**⟹ ★ `W u` は**接頭辞で閉じています**。⟹ 「短い接頭辞は全部 `W u`」は**ただ**でした。**
+**⟹ ⟹ 私は §168 の `hall` を**苦労して回して**いましたが、1 本で済みます。** -/
+
+theorem hz0_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) :
+    entry Q 2 0 = 0 := by
+  obtain ⟨M, hMQ, -, -, -, -, -, hz0, -, -⟩ := hP; subst hMQ; exact hz0
+
+theorem he_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : 0 < e := by
+  obtain ⟨M, hMQ, -, he, -, -, -, -, -, -⟩ := hP; exact he
+
+theorem ne_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (hP : TowerP'' Q d e) : Q ≠ [] := by
+  obtain ⟨M, hMQ, hM2, -, -, -, -, -, -, -⟩ := hP
+  subst hMQ
+  have hdl : M.dropLast.length = M.length - 1 := List.length_dropLast
+  intro hc
+  have : M.dropLast.length = 0 := by rw [hc]; rfl
+  omega
+
+/-- ★ `TowerP''` から**ブロックの中**の親（§210 ＋ §162.9）。 -/
+theorem block_hasParent_of_TowerP'' {Q : TrioSeq} {d e : ℕ} (n : ℕ)
+    (hP : TowerP'' Q d e) {j : ℕ} (hj : j < Q.length) (hj1 : 0 < j) :
+    hasParent ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      (srow ((Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) j) j := by
+  have hr0Q := hr0_of_TowerP'' hP
+  obtain ⟨M, hMQ, hM2, he, hd0e, hr0M, hlp, hz0, h2out, h1out⟩ := hP
+  subst hMQ
+  by_cases hc : le1 M.dropLast 0 j
+  · exact block_blockParent_all_cone hj hj1 hr0Q hc
+      (fun hpos => h2_cone hz0 j hj1 hj hpos hc)
+  · exact block_blockParent_all_outcone hj hj1 hr0Q hc
+      (fun hpos => h2out j hj1 hj hc hpos) (fun hpos => h1out j hj1 hj hc hpos)
+
+open Classical in
+/-- ★★ `j ≥ 1` の段の**親の位置**（前提は `TowerP''` だけ）。 -/
+theorem parent_bound_pos {A Q : TrioSeq} {d e n j : ℕ}
+    (hP : TowerP'' Q d e) (hj : j < Q.length) (hj1 : 0 < j) :
+    (A ++ mTower Q d e n).length ≤
+      parent (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (A ++ mTower Q d e n
+          ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((A ++ mTower Q d e n).length + j))
+        ((A ++ mTower Q d e n).length + j) := by
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hloc := block_hasParent_of_TowerP'' (Q := Q) (d := d) (e := e) n hP hj hj1
+  have hlen1 : (A ++ mTower Q d e n ++ B.take (j + 1)).length
+      = (A ++ mTower Q d e n).length + (j + 1) := by
+    rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hsrow : srow (A ++ mTower Q d e n ++ B.take (j + 1))
+      ((A ++ mTower Q d e n).length + j) = srow (B.take (j + 1)) j :=
+    srow_append_right _ _ j
+  rw [hsrow]
+  have hp : hasParent (A ++ mTower Q d e n ++ B.take (j + 1))
+      (srow (B.take (j + 1)) j)
+      ((A ++ mTower Q d e n ++ B.take (j + 1)).length - 1) := by
+    rw [hlen1, show (A ++ mTower Q d e n).length + (j + 1) - 1
+      = (A ++ mTower Q d e n).length + j from by omega]
+    exact hasParent_append_right_of _ _ hloc
+  have hres := prefixSnocStep_parent_sameBlock (A := A) (d := d) (e := e) (n := n)
+    (i := srow (B.take (j + 1)) j) hj hloc hp
+  rw [hlen1, show (A ++ mTower Q d e n).length + (j + 1) - 1
+    = (A ++ mTower Q d e n).length + j from by omega] at hres
+  exact hres
+
+/-- ★ 第 `k` ブロックの接頭辞は `W_take` でただ。 -/
+theorem prefix_block_take_mem {u : ℕ} {A Q : TrioSeq} {d e k p : ℕ}
+    (hp : p ≤ Q.length) (h : A ++ mTower Q d e (k + 1) ∈ W u) :
+    A ++ mTower Q d e k
+      ++ (Lift1 (shiftr01 (d * k) 0 Q) (e * k)
+          ++ Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1))).take p ∈ W u := by
+  set B0 := Lift1 (shiftr01 (d * k) 0 Q) (e * k) with hB0
+  set B1 := Lift1 (shiftr01 (d * (k + 1)) 0 Q) (e * (k + 1)) with hB1
+  have hB0len : B0.length = Q.length := by rw [hB0, Lift1_length, shiftr01_length]
+  have hcut : (B0 ++ B1).take p = B0.take p := by
+    rw [List.take_append, show p - B0.length = 0 from by omega, List.take_zero,
+      List.append_nil]
+  have hfull : (mTower Q d e k).take (k * Q.length + p) = mTower Q d e k :=
+    List.take_of_length_le (by rw [mTower_length]; omega)
+  have hkey : A ++ mTower Q d e k ++ B0.take p
+      = (A ++ mTower Q d e (k + 1)).take (A.length + (k * Q.length + p)) := by
+    rw [mTower_succ, ← hB0, take_append_right, List.take_append, hfull,
+      mTower_length, Nat.add_sub_cancel_left, List.append_assoc]
+  rw [hcut, hkey]
+  exact W_take h _
+
 end L106
 end TRIO
