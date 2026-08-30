@@ -7746,3 +7746,30 @@ L106 §228.1（`OrphOK`）に「上の 3 本は緑ですが `OrphOK` を導い�
 
 ⟹ `hnb` を**全列**について要求しなくても、「越境先がブロッカーでない」ことさえ
 言えれば壁が立つ。⟹ `OrphOK` の的（孤児の列 `j`）がブロッカーでなければよい。
+
+## §304 ★★★★★★★ `h1out` が遺伝しない機構を**定理**にした（(BLOCK) の Lean 側）
+
+R2 (s11) の機構「`Lift1` は錐の中だけ持ち上げる ⟹ 差が毎段 `e` ずつ縮む」を式にした。
+
+    le1_self / entry1_Lift1_out / entry1_Lift1_in / entry1_Lift1_root
+    ★ blocker_Lift1_out_iff : 錐の外の列は `entry X 1 j ≤ entry X 1 0 + t` でブロッカーになる
+    ★ blocker_Lift1_in_iff  : 錐の中の列はブロッカーかどうかが `t` で変わらない
+    ★★★ h1out_Lift1_iff    : `h1out (Lift1 X t)` の**両向きの特徴づけ**
+        錐の中 … 元のまま（`t` に依らない）
+        錐の外 … **差が `t` より真に大きい**ことが要る ⟹ ★ **`t` が予算**
+
+塔の閉じた式（索引に `le1_block`（`L105Cap:4556`）があり、ブロックの錐 ＝ `Q` の錐）:
+
+    ★★★★★ entry1_mTower_block_formula :
+      entry (mTower Q d e n) 1 (k*|Q|+i) = entry Q 1 i + (if le1 Q 0 i then e*k else 0)
+    ★★★★★★★ gap_shrinks_in_mTower :
+      窓の根が第 k ブロックの錐の中の列 p ⟹ 行 1 = entry Q 1 p + e*k（持ち上がる）
+      的が第 k' ブロックの錐の外の列 j ⟹ 行 1 = entry Q 1 j（**k' に依らない**）
+    ★★★★★★★ outOfCone_becomes_blocker_iff :
+      的がブロッカー ⟺ **entry Q 1 j ≤ entry Q 1 p + e*k**
+
+⟹ ★ 「いつ追いつかれるか」が**式**になった: 予算は `e*k`、距離は `entry Q 1 j - entry Q 1 p`。
+⟹ ⟹ ★★ R2 の (DEPTH)（深さで良くなる／悪くなる）は、この式で**予測できる**はず。
+   深さが増える ⟹ `k`（窓の根のブロック番号）が増える ⟹ 悪くなる
+   深さが増える ⟹ 窓が短くなる ⟹ 錐の外の列が減る ⟹ 良くなる
+   ⟹ ★ どちらが勝つかは `|V|` と `k` の同時測定で決まる（R2 の (DEPTH) がまさにそれ）。

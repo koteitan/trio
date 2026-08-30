@@ -3708,5 +3708,122 @@ theorem nextrel2_cross_is_blocker {A T : TrioSeq}
   push Not at hcon
   exact no_nextrel2_cross_of_cone hmin hnb hc hm hm0 hcon h
 
+
+/-! ## 49. ★★★★★★★ **`h1out` が遺伝しない機構を定理にする**
+
+R2 (s11) の機構: 「`Lift1 X t` は **`le1 X 0 j`（錐の中）の列だけ**に `t` を足す
+⟹ 根は必ず錐の中 ⟹ 根は `+t` される ⟹ ⛔ `h1out` の相手は**錐の外** ⟹ 持ち上がらない
+⟹ **差が毎段 `t` ずつ縮む**」 ⟹ ★ これを定理にする。「いつ追いつかれるか」が**式で出る**。 -/
+
+theorem le1_self {X : TrioSeq} (hX : 0 < X.length) : le1 X 0 0 :=
+  ⟨hX, hX, Relation.ReflTransGen.refl⟩
+
+/-- 錐の**外**の列は `Lift1` で持ち上がらない。 -/
+theorem entry1_Lift1_out {X : TrioSeq} {t i : ℕ} (hi : i < X.length) (hout : ¬ le1 X 0 i) :
+    entry (Lift1 X t) 1 i = entry X 1 i := by
+  rw [Wset.entry1_Lift1 hi, if_neg hout]
+  omega
+
+/-- 錐の**中**の列はちょうど `t` だけ持ち上がる。 -/
+theorem entry1_Lift1_in {X : TrioSeq} {t i : ℕ} (hi : i < X.length) (hin : le1 X 0 i) :
+    entry (Lift1 X t) 1 i = entry X 1 i + t := by
+  rw [Wset.entry1_Lift1 hi, if_pos hin]
+
+/-- 根は必ず錐の中なので、必ず `+t` される。 -/
+theorem entry1_Lift1_root {X : TrioSeq} {t : ℕ} (hX : 0 < X.length) :
+    entry (Lift1 X t) 1 0 = entry X 1 0 + t :=
+  entry1_Lift1_in hX (le1_self hX)
+
+/-- ★★★★★ **錐の外の列は、`t` が差に追いつくとブロッカーになる**（両向き）。 -/
+theorem blocker_Lift1_out_iff {X : TrioSeq} {t j : ℕ} (hX : 0 < X.length)
+    (hj : j < X.length) (hout : ¬ le1 X 0 j) :
+    entry (Lift1 X t) 1 j ≤ entry (Lift1 X t) 1 0
+      ↔ entry X 1 j ≤ entry X 1 0 + t := by
+  rw [entry1_Lift1_out hj hout, entry1_Lift1_root hX]
+
+/-- ★★ 錐の**中**の列は、ブロッカーかどうかが `t` で変わらない。 -/
+theorem blocker_Lift1_in_iff {X : TrioSeq} {t j : ℕ} (hX : 0 < X.length)
+    (hj : j < X.length) (hin : le1 X 0 j) :
+    entry (Lift1 X t) 1 j ≤ entry (Lift1 X t) 1 0
+      ↔ entry X 1 j ≤ entry X 1 0 := by
+  rw [entry1_Lift1_in hj hin, entry1_Lift1_root hX]
+  omega
+
+/-- ★★★★★★★ **`h1out` が `Lift1` を生き延びる条件（両向き、完全）**。
+錐の中の列は元のまま（`t` に依らない）／錐の外の列は **差が `t` より真に大きい**ことが要る。
+⟹ ★ **`t` が予算**。 -/
+theorem h1out_Lift1_iff {X : TrioSeq} {t : ℕ} (hX : 0 < X.length) :
+    (∀ j, 0 < j → j < (Lift1 X t).length →
+        entry (Lift1 X t) 1 0 < entry (Lift1 X t) 1 j)
+      ↔ (∀ j, 0 < j → j < X.length →
+            (le1 X 0 j → entry X 1 0 < entry X 1 j) ∧
+            (¬ le1 X 0 j → entry X 1 0 + t < entry X 1 j)) := by
+  have hlen : (Lift1 X t).length = X.length := Lift1_length X t
+  constructor
+  · intro h j hj0 hj
+    refine ⟨fun hin => ?_, fun hout => ?_⟩
+    · have hv := h j hj0 (by rw [hlen]; exact hj)
+      rw [entry1_Lift1_in hj hin, entry1_Lift1_root hX] at hv
+      omega
+    · have hv := h j hj0 (by rw [hlen]; exact hj)
+      rw [entry1_Lift1_out hj hout, entry1_Lift1_root hX] at hv
+      omega
+  · intro h j hj0 hj
+    rw [hlen] at hj
+    rw [entry1_Lift1_root hX]
+    by_cases hin : le1 X 0 j
+    · rw [entry1_Lift1_in hj hin]
+      have := (h j hj0 hj).1 hin
+      omega
+    · rw [entry1_Lift1_out hj hin]
+      exact (h j hj0 hj).2 hin
+
+
+/-! ### 49.1 ★★★★★★ 塔の行 1 の**閉じた式** ⟹ 「いつ追いつかれるか」が式で出る
+
+索引に `le1_block`（`L105Cap:4556`、`le1 (Lift1 (shiftr01 d0 0 Q) d1) a b ↔ le1 Q a b`）
+があった ⟹ **ブロックの錐 ＝ `Q` の錐**。⟹ 塔の行 1 が閉じた式になる。 -/
+
+open Classical in
+/-- ★★★★★ **塔の行 1 の閉じた式**: 錐の中なら `+e*k`、外なら `+0`。 -/
+theorem entry1_mTower_block_formula (Q : TrioSeq) {d e n k i : ℕ}
+    (hk : k < n) (hi : i < Q.length) :
+    entry (mTower Q d e n) 1 (k * Q.length + i)
+      = entry Q 1 i + (if le1 Q 0 i then e * k else 0) := by
+  rw [mTower_entry hk hi,
+    Wset.entry1_Lift1 (by rwa [shiftr01_length]), entry1_shiftr01]
+  congr 1
+  by_cases h : le1 Q 0 i
+  · rw [if_pos h, if_pos ((le1_shiftr01 (d0 := d * k)).mpr h)]
+  · rw [if_neg h, if_neg (fun hc => h ((le1_shiftr01 (d0 := d * k)).mp hc))]
+
+/-- ★★★★★★★ **差が `e*k` ずつ縮む**（R2 (s11) の機構、逐語）。
+
+窓の根が第 `k` ブロックの**錐の中**の列 `p`、的が第 `k'` ブロックの**錐の外**の列 `j`:
+
+    根の行 1 = `entry Q 1 p + e*k`   （持ち上がる）
+    的の行 1 = `entry Q 1 j`         （持ち上がらない、`k'` に依らない）
+
+⟹ ★ **`e*k` が `entry Q 1 j - entry Q 1 p` に追いついた瞬間に、的はブロッカーになる。** -/
+theorem gap_shrinks_in_mTower (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (hin : le1 Q 0 p) (hout : ¬ le1 Q 0 j) :
+    entry (mTower Q d e n) 1 (k * Q.length + p) = entry Q 1 p + e * k ∧
+      entry (mTower Q d e n) 1 (k' * Q.length + j) = entry Q 1 j := by
+  refine ⟨?_, ?_⟩
+  · rw [entry1_mTower_block_formula Q hk hp, if_pos hin]
+  · rw [entry1_mTower_block_formula Q hk' hj, if_neg hout]
+    omega
+
+/-- ★★★★★★★ **追いつく瞬間が式で出る**（両向き）。 -/
+theorem outOfCone_becomes_blocker_iff (Q : TrioSeq) {d e n k k' p j : ℕ}
+    (hk : k < n) (hk' : k' < n) (hp : p < Q.length) (hj : j < Q.length)
+    (hin : le1 Q 0 p) (hout : ¬ le1 Q 0 j) :
+    entry (mTower Q d e n) 1 (k' * Q.length + j)
+        ≤ entry (mTower Q d e n) 1 (k * Q.length + p)
+      ↔ entry Q 1 j ≤ entry Q 1 p + e * k := by
+  obtain ⟨h1, h2⟩ := gap_shrinks_in_mTower Q hk hk' hp hj hin hout
+  rw [h1, h2]
+
 end H12H2
 end TRIO
