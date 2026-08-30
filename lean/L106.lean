@@ -7544,5 +7544,58 @@ theorem le0_cross_through_blockRoot {A Q : TrioSeq} {d e n j c : ℕ}
 
 ⚠ **教訓 14**: §257 は緑ですが、**`OrphOK` はまだ証明されていません**。 -/
 
+/-! ## 258. ★★★★★★★ **(L-O2)**: 行 2 の孤児は「行 1 の親さえあれば」起きません
+
+team-lead / R2 の観測「**塔でも窓でも行 2 の孤児は 0 件**」（165 万件 ／ シート 7930 件）を
+定理にします。⟹ ★ §240 の同値と**強い帰納法**だけです。
+
+    `entry T 2 j = 1` の列 `j` に `nextrel1` の親 `y` があるとする
+    ⟹ ★ `entry T 2 y = 0` なら **`y` がそのまま行 2 の証人**（`le1` は 1 歩）
+    ⟹ ★★ `entry T 2 y = 1` なら **帰納法で `y` の証人 `y'` を取り、`le1` を継ぐ**
+    ⟹ ⟹ ★★★ 底は `y = 0`（`hz0` より行 2 = 0）⟹ **必ず止まります**
+
+**⟹ ★★★★★ ですから **(O2) の前提（行 2 の孤児）は、行 1 の親があれば満たされません**。**
+
+⚠ **私の最初の読み（「`nextrel1` の親の行 2 は 0」）は偽**です:
+`D_v` の列 2（`(2,2,1)`）の行 1 の親は列 1（`(1,1,1)`、行 2 = 1）。
+**⟹ ★ ですから **1 歩では足りず、鎖を登る**必要があります。⟹ シートの 100% は箱の産物でした。 -/
+
+theorem hasParent2_of_row1_parents {T : TrioSeq}
+    (hz0 : entry T 2 0 = 0)
+    (hz1 : ∀ q, q < T.length → entry T 2 q ≤ 1)
+    (hpar : ∀ t, 0 < t → t < T.length → 0 < entry T 2 t → ∃ y, nextrel1 T y t) :
+    ∀ j, 0 < j → j < T.length → 0 < entry T 2 j → hasParent T 2 j := by
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hj0 hj hpos
+    obtain ⟨y, hy⟩ := hpar j hj0 hj hpos
+    have hyj : y < j := hy.2.2.1
+    have hyl : y < T.length := hy.1
+    have hle1 : le1 T y j := ⟨hyl, hj, Relation.ReflTransGen.single hy⟩
+    rcases Nat.eq_zero_or_pos (entry T 2 y) with hz | hzp
+    · exact (hasParent_two_iff_of_z1 hj hz1 hpos).mpr ⟨y, hyj, hle1, hz⟩
+    · -- ★ `y` も行 2 が正 ⟹ `y > 0`（根は `hz0` で 0）⟹ 帰納法
+      have hy0 : 0 < y := by
+        rcases Nat.eq_zero_or_pos y with h0 | h0
+        · rw [h0] at hzp; omega
+        · exact h0
+      obtain ⟨y', hy'⟩ :=
+        (hasParent_two_iff_of_z1 hyl hz1 hzp).mp (ih y hyj hy0 hyl hzp)
+      exact (hasParent_two_iff_of_z1 hj hz1 hpos).mpr
+        ⟨y', by omega, ⟨hy'.2.1.1, hj, hy'.2.1.2.2.trans hle1.2.2⟩, hy'.2.2⟩
+
+/-! ### 258.1 ⟹ ★★★★★ **(O2) は「行 1 の親」に還元されました**
+
+    ⛔ **(O2) 旧**: 行 2 で的が錐の外のとき、接頭辞が親を供給しうる
+    ✅ **(O2) 新**: **行 2 の列に `nextrel1` の親があれば、行 2 の親も必ずある**
+       ⟹ ★ ですから **`OrphOK` の行 2 の枝は前提が満たされず、空**になります
+
+**⟹ ★★ 残るのは **「行 2 の列に行 1 の親があるか」**——⟹ ★ **行 1 の話に一本化**されました。**
+**⟹ ⟹ ★★★ ＝ **(O1) と同じ問い**です。⟹ ⟹ **`OrphOK` の残差が本当に 1 本**になりました。**
+
+⚠ **教訓 27**: シートでの分母は 7930、行 2 の孤児は 0、`nextrel1` の親は 7930（100%）。
+**⟹ ⚠ ですが **100% は証明ではありません**。⟹ **`hpar` は前提として残っています**。 -/
+
 end L106
 end TRIO
