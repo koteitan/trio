@@ -1718,5 +1718,80 @@ theorem hasParent1_prefix_blockRoot_iff_d_zero {A Q : TrioSeq} {e n k : ℕ}
       · exact h
       · exact absurd (hbmax y hyA h hy0) (Nat.not_le.mpr hyc)
 
+
+/-- ★★★ **ブロックの中の `nextrel0` は `Q` の中の `nextrel0` と同値**。 -/
+theorem nextrel0_mTower_intra_block (Q : TrioSeq) {d e n k i' i : ℕ}
+    (hk : k < n) (hi' : i' < Q.length) (hi : i < Q.length) :
+    nextrel0 (mTower Q d e n) (k * Q.length + i') (k * Q.length + i) ↔ nextrel0 Q i' i := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hkq : (k + 1) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have hsk : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have hb : ∀ m, m < Q.length → k * Q.length + m < (mTower Q d e n).length := by
+    intro m hm; omega
+  constructor
+  · rintro ⟨-, -, hab, hlt, hmin⟩
+    rw [entry0_mTower_block Q d e n k i' hk hi', entry0_mTower_block Q d e n k i hk hi] at hlt
+    refine ⟨hi', hi, by omega, by omega, ?_⟩
+    intro j hj
+    have hjq : j < Q.length := by omega
+    have := hmin (k * Q.length + j) ⟨by omega, by omega⟩
+    rw [entry0_mTower_block Q d e n k i hk hi, entry0_mTower_block Q d e n k _ hk hjq] at this
+    omega
+  · rintro ⟨-, -, hab, hlt, hmin⟩
+    refine ⟨hb i' hi', hb i hi, by omega, ?_, ?_⟩
+    · rw [entry0_mTower_block Q d e n k i' hk hi', entry0_mTower_block Q d e n k i hk hi]; omega
+    · intro j hj
+      have hjq : j - k * Q.length < Q.length := by omega
+      have hjeq : j = k * Q.length + (j - k * Q.length) := by omega
+      rw [entry0_mTower_block Q d e n k i hk hi, hjeq, entry0_mTower_block Q d e n k _ hk hjq]
+      have := hmin (j - k * Q.length) ⟨by omega, by omega⟩
+      omega
+
+/-- ★★★★ **ブロック根の行 0 の親は「前のブロックの固定された位置」**（`k` に依らない）。
+`d`・`e` に依らない一般の道具。 -/
+theorem nextrel0_blockRoot_shift (Q : TrioSeq) {d e n k i : ℕ}
+    (hQ1 : 0 < Q.length) (hi : i < Q.length) (hk2 : k + 2 < n) :
+    nextrel0 (mTower Q d e n) (k * Q.length + i) ((k + 1) * Q.length)
+      ↔ nextrel0 (mTower Q d e n) ((k + 1) * Q.length + i) ((k + 2) * Q.length) := by
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have h3 : (k + 3) * Q.length ≤ n * Q.length := Nat.mul_le_mul_right _ (by omega)
+  have e1 : (k + 1) * Q.length = k * Q.length + Q.length := Nat.succ_mul k Q.length
+  have e2 : (k + 2) * Q.length = (k + 1) * Q.length + Q.length := Nat.succ_mul (k + 1) Q.length
+  have e3 : (k + 3) * Q.length = (k + 2) * Q.length + Q.length := Nat.succ_mul (k + 2) Q.length
+  have hr : ∀ m, m < Q.length → ∀ j, j < n →
+      entry (mTower Q d e n) 0 (j * Q.length + m) = entry Q 0 m + d * j :=
+    fun m hm j hj => entry0_mTower_block Q d e n j m hj hm
+  have hz1 : entry (mTower Q d e n) 0 ((k + 1) * Q.length) = entry Q 0 0 + d * (k + 1) := by
+    have := hr 0 hQ1 (k + 1) (by omega); simpa using this
+  have hz2 : entry (mTower Q d e n) 0 ((k + 2) * Q.length) = entry Q 0 0 + d * (k + 2) := by
+    have := hr 0 hQ1 (k + 2) (by omega); simpa using this
+  have hi1 : entry (mTower Q d e n) 0 (k * Q.length + i) = entry Q 0 i + d * k :=
+    hr i hi k (by omega)
+  have hi2 : entry (mTower Q d e n) 0 ((k + 1) * Q.length + i) = entry Q 0 i + d * (k + 1) :=
+    hr i hi (k + 1) (by omega)
+  have hdk : d * (k + 1) = d * k + d := by rw [Nat.mul_succ]
+  have hdk2 : d * (k + 2) = d * (k + 1) + d := by rw [Nat.mul_succ]
+  constructor
+  · rintro ⟨-, -, hab, hlt, hmin⟩
+    rw [hi1, hz1] at hlt
+    refine ⟨by omega, by omega, by omega, by rw [hi2, hz2]; omega, ?_⟩
+    intro j hj
+    have hjq : j - (k + 1) * Q.length < Q.length := by omega
+    have hjeq : j = (k + 1) * Q.length + (j - (k + 1) * Q.length) := by omega
+    have hj1 := hmin (k * Q.length + (j - (k + 1) * Q.length)) ⟨by omega, by omega⟩
+    rw [hr _ hjq k (by omega), hz1] at hj1
+    rw [hz2, hjeq, hr _ hjq (k + 1) (by omega)]
+    omega
+  · rintro ⟨-, -, hab, hlt, hmin⟩
+    rw [hi2, hz2] at hlt
+    refine ⟨by omega, by omega, by omega, by rw [hi1, hz1]; omega, ?_⟩
+    intro j hj
+    have hjq : j - k * Q.length < Q.length := by omega
+    have hjeq : j = k * Q.length + (j - k * Q.length) := by omega
+    have hj1 := hmin ((k + 1) * Q.length + (j - k * Q.length)) ⟨by omega, by omega⟩
+    rw [hr _ hjq (k + 1) (by omega), hz2] at hj1
+    rw [hz1, hjeq, hr _ hjq k (by omega)]
+    omega
+
 end H12Export
 end TRIO
