@@ -7426,3 +7426,43 @@ team-lead の (q3):「`he` は落とせる。筋は『ブロックは平行移�
 > ⟹ ⟹ **§290 の「`srow = 1` ∧ `e = 0` ⟹ `(TOW)`」は、これで**回避できるはず**。**
 > ⚠ **教訓 14: `blockRoot_parent_prevBlock_noE` が緑になっただけで、
 > `TowerP''` から `0 < e` が実際に落ちたわけではない。L3 の接ぎ直しが要る。**
+
+## §294 `ZeroDOK`（接頭辞つき `d = 0`）— 答え
+
+**問**（team-lead）: `A ++ mTower Q 0 e n ∈ W u` は
+`L105Cap:1294 prefixCopies_of_based` / `L53Subst:3779 prefixCopies_of_rsum` /
+`L53Subst:3809 prefixCopies_of_open` から出るか。
+
+**答: `e = 0` かつ `based Q` なら出る。それ以外は出ない。**
+
+1. `d = e = 0` ⟹ 塔は同一コピーの連結（`h12_mTower_zero_zero`）。
+   ⟹ `prefixCopies_of_based`（仮定ゼロ）が直撃 ⟹ `prefix_mTower_d0_mem`（緑）。
+   ⛔ ただし要 `based Q`（`entry Q 0 0 = 0`）。`TowerP''` は `hr0`（狭義最浅）しか持たない。
+2. `based Q` なし ⟹ `PrefixCopies`（`L53Subst:3599`）。`rsum A Q`（接頭辞の全列が
+   `Q` の根以上の深さ）があれば定理（`prefixCopies_of_rsum`）だが、`TowerP''` にない。
+   残りは `PrefixCopiesOpen`（**未証明の核**、L53 の領分）。
+3. `e > 0` ⟹ ブロックが同一コピーでない ⟹ **コピー系の補題は一切効かない**。
+
+**★ 構造の発見**: `towerClosed_of_hered`（`L106:3247`）の `j ≥ 1` の枝は
+`hd`/`he` を**使っていない**。`0 < d` が要るのは `j = 0`（ブロック根）＝ `hsnoc_zero`
+の中の 4 箇所だけ（`blockRoot_hasParent_prev` / `blockRoot_parent_ge_prefix` /
+`hsnoc_zero_of_parent` / `hrank_blockRoot`）。
+
+**★★ そこで `d = 0` の機構を測ったら「反転」していた**（全部緑）:
+
+    entry0_mTower_block_d_zero : entry (mTower Q 0 e n) 0 (k*|Q|+q) = entry Q 0 q
+    entry0_mTower_min_d_zero   : entry Q 0 0 ≤ entry (mTower Q 0 e n) 0 m   （hr0 から）
+    no_nextrel0_blockRoot_d_zero / le0_blockRoot_d_zero
+    no_nextrel1_blockRoot_d_zero / le1_blockRoot_d_zero
+    no_hasParent_blockRoot_d_zero : ¬ hasParent (mTower Q 0 e n) r (k*|Q|)   （∀ r）
+
+⟹ `d = 0` では行 0 が全ブロックで同じ ⟹ ブロック根の行 0 は塔全体の最小 ⟹
+`nextrel0` が入れない ⟹ `nextrel1` は `le0` を、`nextrel2` は `le1` を要求するので
+**どの行でも親が無い**。`0 < d` の `blockRoot_hasParent_prev`（「前のブロックに親」）が
+`d = 0` では「**親が無い**」に反転する。
+
+⟹ ★ だから `ZeroDOK` は `hsnoc_zero` の焼き直しではなく **孤児の枝**（`snoc_orphan_W`）
+   で処理するのが筋。ただし `OrphOK` は `0 < j` 限定なので、`j = 0` 版が要る。
+   接頭辞 `A` が親を供給しうる（塔の中で孤児 ≠ `A ++ 塔` で孤児）。
+   ⟹ 次の予想: **`d = 0` なら全ブロック根は `Q` の根と同じ親（`A` の中）を持つ**
+   （`entry` が等しく、間の列は全部 `≥` なので `nextrel0` の最小性が同じ列を選ぶ）。
