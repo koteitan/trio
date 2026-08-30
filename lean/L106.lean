@@ -7668,5 +7668,74 @@ theorem orphOK_row1_dichotomy {A T : TrioSeq} {j : ℕ} (hj0 : 0 < j) (hjT : j <
 **⟹ ★ ＝ これが `RootNB` が偽で、しかもシートでは真に見える理由です。**
 **⟹ ⚠ **`W` は標準形の集合より真に大きい**——⟹ ★ そこを詰めるのが次の設計課題です。** -/
 
+/-! ## 260. ⛔⛔⛔ **`RootZ1` と `RootZ2` も偽です** —— 最終定理がまた空虚でした
+
+`Wset.Om_mem_W (v z) : [(0, v, z)] ∈ W (2*v + z)` は **任意の `z`** を許します。
+**⟹ ⛔ ですから `[(0,0,2)] ∈ W 2` で、⟹ ⟹ **行 2 が 2** です。**
+**⟹ ⟹ ⟹ ⛔⛔ **`RootZ1`（行 2 ≤ 1）も `RootZ2`（根の行 2 = 0）も偽**になります。**
+
+⚠ H12 の `W_not_zle1_closed`（`H12H2.lean:2220`）が**同じ観察**でした。
+**⟹ ★ 私はそれを「`W` は `zle1` で閉じない」としてだけ読み、
+⟹ ⛔ **自分の残差 `RootZ1` / `RootZ2` に当てていませんでした**。⟹ **教訓 14 の再発**です。 -/
+
+theorem rootZ1_false : ¬ RootZ1 := by
+  intro h
+  have hmem : [((0, 0, 2) : ℕ × ℕ × ℕ)] ∈ W 2 := by
+    have := Wset.Om_mem_W 0 2; simpa using this
+  have := h 2 [((0, 0, 2) : ℕ × ℕ × ℕ)] hmem 0 (by decide)
+  exact absurd this (by decide)
+
+theorem rootZ2_false : ¬ RootZ2 := by
+  intro h
+  have hmem : [((0, 0, 2) : ℕ × ℕ × ℕ)] ∈ W 2 := by
+    have := Wset.Om_mem_W 0 2; simpa using this
+  have := h 2 [((0, 0, 2) : ℕ × ℕ × ℕ)] hmem (by intro j hj1 hj; simp at hj; omega)
+  exact absurd this (by decide)
+
+/-! ### 260.1 ⟹ ★★★★ **直し方: `z < 2` を目標のほうに書く**
+
+⚠ `MTowerClosedS`（`L105Cap.lean:5618`）の前提は **`Q ∈ W u` と `hr0` の 2 つだけ**です。
+**⟹ ⛔ ですから `Q = [(0,0,2)]` が通ってしまいます。**
+
+**⟹ ★★★ ですが **このプロジェクトは `z < 2` の断片が対象**です（`CLAUDE.md`）。**
+**⟹ ⟹ ★★ ですから **`zle1 Q` と `entry Q 2 0 = 0` を目標の前提に書く**のが正しい形です。**
+**⟹ ⟹ ⟹ ★ そうすると **`RootZ1` と `RootZ2` は残差から消えます**（前提そのものになるので）。** -/
+
+/-- ★★★ **`z < 2` に制限した目標**（このプロジェクトの本来の対象）。 -/
+def MTowerClosedSZ : Prop :=
+  ∀ (u d e n : ℕ) (Q : TrioSeq), Q ∈ W u →
+    (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+    (∀ q, q < Q.length → entry Q 2 q ≤ 1) → entry Q 2 0 = 0 →
+    mTower Q d e n ∈ W u
+
+open Classical in
+/-- ★★★★★ **`MTowerClosedSZ` は 5 本から出ます**（`RootZ1` / `RootZ2` が消えました）。 -/
+theorem mTowerClosedSZ_of_residues (horph : OrphOK) (horph0 : OrphOK0)
+    (hzd : ∀ u, ZeroDOK u) (hz0h : HeredZ0)
+    (hde : ∀ (u : ℕ) (Q : TrioSeq) (d e : ℕ), Q ∈ W u → d = 0 → e = 0) :
+    MTowerClosedSZ := by
+  intro u d e n Q hQ hs hz1 hz0
+  rcases Nat.eq_zero_or_pos Q.length with h0 | hpos
+  · have hnil : Q = [] := List.eq_nil_of_length_eq_zero h0
+    subst hnil
+    rw [mTower_nil]
+    exact W_nil u
+  · have hP : TowerP'' Q d e :=
+      ⟨hpos, fun l hl0 hl1 => hs l hl0 hl1, hz1, hz0, hde u Q d e hQ⟩
+    have h := towerClosed_of_hered (u := u) horph horph0 (hzd u) hz0h
+      Q d e hP [] (W_nil u) (by simpa using hQ) n
+    simpa using h
+
+/-! ### 260.2 ⟹ ★ **残差は 5 本**になりました（`z < 2` の目標に対して）
+
+    `OrphOK` ／ `OrphOK0` ／ `ZeroDOK` ／ `HeredZ0` ／ `d = 0 → e = 0`
+
+**⟹ ⚠ 値段: **消費側（`Final.lean`）が `zle1 Q` と `entry Q 2 0 = 0` を供給する**必要があります。**
+**⟹ ★ ⟹ ですが **プロジェクトの対象が `z < 2` の断片**なので、⟹ ★★ **自然な前提**です。**
+**⟹ ⟹ ⚠ ただし **`Final.lean` 側の接続は未確認**です。⟹ team-lead の判断待ち。**
+
+⚠ **教訓 14**: `mTowerClosedS_of_residues`（制限なし版）は **前提が偽なので依然空虚**です。
+**⟹ ★ 残しますが、**使ってはいけません**。⟹ **使うのは `mTowerClosedSZ_of_residues` です**。 -/
+
 end L106
 end TRIO
