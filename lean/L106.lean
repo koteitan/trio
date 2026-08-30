@@ -3707,5 +3707,54 @@ theorem mTowerClosedS_of_residues (horph : OrphOK) (horph0 : OrphOK0)
 
 **⟹ ★ 朝は 9 本 ＋ 3 残差でした。⟹ いまは **4 本**、うち**数値上の穴は 1 本**です。** -/
 
+/-! ## 224. ★★★★★★ `HeredZ2` を **`srow ≤ 1` に絞ります**
+
+`HeredZ2` は「窓の根の行 2 が 0」＝「**バッドルートの列の行 2 が 0**」です。
+
+**⟹ ★ `srow = 2` の段は**ただ**です。`nextrel2` が `entry 2 (親) < entry 2 (末尾)` を要求し、
+`z < 2` の断片では `entry 2 (末尾) ≤ 1` なので `entry 2 (親) = 0`。**
+
+⚠ **`W u` は `zle1` で閉じていません**（H12 `W_not_zle1_closed`: `[(0,0,2)] ∈ W 2`）。
+**⟹ ですから `entry T 2 (末尾) ≤ 1` は**前提として渡す**必要があります。**
+**⟹ ⟹ プロジェクトは `z < 2` の断片が対象なので、これは自然な前提です。** -/
+
+open Classical in
+/-- ★★ **`srow = 2` の段の `HeredZ2` は無料**（末尾列の行 2 が `≤ 1` なら）。 -/
+theorem heredZ2_of_srow2 {P B : TrioSeq} {j p : ℕ} (hjB : j < B.length) (hpj : p < j)
+    (hpar : hasParent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1))
+    (hpe : parent (P ++ B.take (j + 1))
+      (srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+      ((P ++ B.take (j + 1)).length - 1) = P.length + p)
+    (hs2 : 1 < srow (P ++ B.take (j + 1)) ((P ++ B.take (j + 1)).length - 1))
+    (hlast : entry (P ++ B.take (j + 1)) 2
+      ((P ++ B.take (j + 1)).length - 1) ≤ 1) :
+    entry (wnd P B j p) 2 0 = 0 := by
+  set T := P ++ B.take (j + 1) with hT
+  have hnr := parent_nextR hpar
+  rw [hpe] at hnr
+  unfold nextR at hnr
+  rw [if_neg (by omega), if_neg (by omega)] at hnr
+  have hlt := hnr.2.2.2.1
+  unfold wnd
+  rw [← hT, entry_window T (show 0 < j - p by omega), Nat.add_zero]
+  omega
+
+/-! ### 224.1 ⟹ ★ **残るのは `srow ≤ 1` の段だけ**
+
+**⟹ そして `p = 0`（親がブロックの根）なら、窓の根は `Q` の根なので
+`entry V 2 0 = entry Q 2 0 = 0`（`hz0(Q)`）で**やはり無料**です。**
+
+**⟹ ⟹ ★★ ⟹ `HeredZ2` の残差は**
+
+    **`srow ≤ 1` ∧ `p ≥ 1`**（＝ バッドルートが**ブロックの非根**で、その行 2 が正）
+
+**⟹ ⟹ ⟹ ★ R2 の 98.4〜99.8% の残差 0.2〜1.6% は、ここに集中しているはずです。**
+
+⚠ **教訓 14**: 最後の 2 行は**私の予想**です。R2 に測ってもらいます。
+⚠ **そして `p = 0` の無料化は Lean では書いていません**（`entry T 2 P.length = entry Q 2 0`
+の計算が要ります）。⟹ 上の `heredZ2_of_srow2` だけが緑です。 -/
+
 end L106
 end TRIO
