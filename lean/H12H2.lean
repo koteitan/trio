@@ -2602,5 +2602,138 @@ theorem blockRoot_parent_prevBlock_noE {Q : TrioSeq} {d e n k a : ℕ}
   · exact blockRoot_parent_prevBlock_e_zero hQ1 hk h
   · exact blockRoot_parent_prevBlock hQne hd he hk hr0 h
 
+
+/-! ## 40. ★★★ **接頭辞つきの `d = e = 0` の枝は無料**（`ZeroDOK`）
+
+§290 の場合分けの最後の枝 `srow = 1` ∧ `e = 0` ∧ `d = 0` は、私の
+`H12A2.mTower_d0_mem` が覆うが**接頭辞なし**だった（team-lead の指摘）。
+
+⚠ **接頭辞つきは既にありました**（今日 8 件目）:
+
+    **`L105.prefixCopies_of_based`（`L105Cap:1294`、**仮定ゼロ**）**
+      `A ∈ W u` → `Q ∈ W u` → **`based Q`** → `A ++ (range n).flatMap (fun _ => Q) ∈ W u`
+
+⟹ `mTower Q 0 0 n` は**同一コピーの連結**なので、そのまま当たる。 -/
+
+/-- `d = e = 0` の塔は同一コピーの連結。 -/
+theorem h12_shiftr01_zero_zero (Q : TrioSeq) : shiftr01 0 0 Q = Q := by
+  unfold shiftr01
+  refine List.ext_getElem (by simp) ?_
+  intro i h1 h2
+  simp
+
+theorem h12_mTower_zero_zero (Q : TrioSeq) (n : ℕ) :
+    mTower Q 0 0 n = (List.range n).flatMap fun _ => Q := by
+  unfold mTower
+  congr 1
+  funext k
+  simp only [Nat.zero_mul, Lift1_zero, h12_shiftr01_zero_zero]
+
+/-- ★★★ **接頭辞つきの `d = e = 0` の枝は無料**。 -/
+theorem prefix_mTower_d0_mem {u : ℕ} {A Q : TrioSeq}
+    (hA : A ∈ W u) (hQ : Q ∈ W u) (hb : entry Q 0 0 = 0) (n : ℕ) :
+    A ++ mTower Q 0 0 n ∈ W u := by
+  rw [h12_mTower_zero_zero]
+  exact L105.prefixCopies_of_based hA hQ hb
+
+
+/-! ### 40.1 ★★★ **`d = 0` では機構が反転する** —— ブロック根は塔の中で**孤児**
+
+`ZeroDOK`（`L106:3208`）は `e` が**一般**なので、上の「同一コピー」は `e = 0` の枝しか
+覆わない。では `e > 0` はどうか。⟹ **`d = 0` の塔では、行 0 が全ブロックで同じ**:
+
+    `entry (mTower Q 0 e n) 0 (k*|Q| + q) = entry Q 0 q`
+
+⟹ `hr0`（根が狭義最浅）と合わせて、**ブロック根の行 0 は塔全体の最小値**。
+⟹ `nextrel0` は狭義増加を要求するので、**ブロック根に入る `nextrel0` は無い**。
+⟹ `nextrel1` は `le0` を要求し、`nextrel2` は `le1` を要求するので、
+   **どの行でもブロック根に親は無い**（塔の中では）。
+
+⚠ **`0 < d` のときの `blockRoot_hasParent_prev`（`L106`）は、`d = 0` では
+   「親がある」どころか「親が無い」に**反転**します。**
+⟹ ⟹ ★ だから `ZeroDOK` は `hsnoc_zero` の書き換えではなく、
+   **`snoc_orphan_W`（孤児の枝）で処理するのが筋**です。 -/
+
+theorem entry0_mTower_block_d_zero {Q : TrioSeq} {e n k q : ℕ}
+    (hk : k < n) (hq : q < Q.length) :
+    entry (mTower Q 0 e n) 0 (k * Q.length + q) = entry Q 0 q := by
+  rw [mTower_entry hk hq, entry0_Lift1, Nat.zero_mul, h12_shiftr01_zero_zero]
+
+theorem entry0_mTower_blockRoot_d_zero {Q : TrioSeq} {e n k : ℕ}
+    (hQ1 : 0 < Q.length) (hk : k < n) :
+    entry (mTower Q 0 e n) 0 (k * Q.length) = entry Q 0 0 := by
+  have := entry0_mTower_block_d_zero (Q := Q) (e := e) (n := n) (k := k) (q := 0) hk hQ1
+  simpa using this
+
+/-- ★ **ブロック根の行 0 は塔全体の最小値**。 -/
+theorem entry0_mTower_min_d_zero {Q : TrioSeq} {e n m : ℕ} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hm : m < (mTower Q 0 e n).length) :
+    entry Q 0 0 ≤ entry (mTower Q 0 e n) 0 m := by
+  have hlen : (mTower Q 0 e n).length = n * Q.length := mTower_length Q 0 e n
+  rw [hlen] at hm
+  have hq : m % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hk : m / Q.length < n := by
+    refine Nat.div_lt_of_lt_mul ?_
+    rw [Nat.mul_comm]; exact hm
+  have hsplit : m = (m / Q.length) * Q.length + m % Q.length := by
+    rw [Nat.mul_comm]; exact (Nat.div_add_mod m Q.length).symm
+  rw [hsplit, entry0_mTower_block_d_zero hk hq]
+  rcases Nat.eq_zero_or_pos (m % Q.length) with h0 | hp
+  · rw [h0]
+  · exact Nat.le_of_lt (hr0 _ hp hq)
+
+/-- ★★ **ブロック根に入る `nextrel0` は無い**。 -/
+theorem no_nextrel0_blockRoot_d_zero {Q : TrioSeq} {e n k a : ℕ} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n) :
+    ¬ nextrel0 (mTower Q 0 e n) a (k * Q.length) := by
+  rintro ⟨ha, -, -, hlt, -⟩
+  rw [entry0_mTower_blockRoot_d_zero hQ1 hk] at hlt
+  exact absurd (entry0_mTower_min_d_zero hQ1 hr0 ha) (by omega)
+
+/-- ★★ `le0` でブロック根に届くのは自分だけ。 -/
+theorem le0_blockRoot_d_zero {Q : TrioSeq} {e n k a : ℕ} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (h : le0 (mTower Q 0 e n) a (k * Q.length)) : a = k * Q.length := by
+  obtain ⟨-, -, hrt⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, -, hc⟩
+  · exact h1.symm
+  · exact absurd hc (no_nextrel0_blockRoot_d_zero hQ1 hr0 hk)
+
+/-- ★★ ブロック根に入る `nextrel1` も無い。 -/
+theorem no_nextrel1_blockRoot_d_zero {Q : TrioSeq} {e n k a : ℕ} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n) :
+    ¬ nextrel1 (mTower Q 0 e n) a (k * Q.length) := by
+  rintro ⟨-, -, hab, -, hle0, -⟩
+  have := le0_blockRoot_d_zero hQ1 hr0 hk hle0
+  omega
+
+/-- ★★ `le1` でブロック根に届くのも自分だけ。 -/
+theorem le1_blockRoot_d_zero {Q : TrioSeq} {e n k a : ℕ} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n)
+    (h : le1 (mTower Q 0 e n) a (k * Q.length)) : a = k * Q.length := by
+  obtain ⟨-, -, hrt⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hrt with h1 | ⟨c, -, hc⟩
+  · exact h1.symm
+  · exact absurd hc (no_nextrel1_blockRoot_d_zero hQ1 hr0 hk)
+
+/-- ★★★★★ **`d = 0` の塔では、ブロック根はどの行にも親を持たない（孤児）**。 -/
+theorem no_hasParent_blockRoot_d_zero {Q : TrioSeq} {e n k r : ℕ} (hQ1 : 0 < Q.length)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) (hk : k < n) :
+    ¬ hasParent (mTower Q 0 e n) r (k * Q.length) := by
+  rintro ⟨a, ha, -⟩
+  unfold nextR at ha
+  by_cases h0 : r = 0
+  · rw [if_pos h0] at ha
+    exact no_nextrel0_blockRoot_d_zero hQ1 hr0 hk ha
+  · rw [if_neg h0] at ha
+    by_cases h1 : r = 1
+    · rw [if_pos h1] at ha
+      exact no_nextrel1_blockRoot_d_zero hQ1 hr0 hk ha
+    · rw [if_neg h1] at ha
+      obtain ⟨-, -, hab, -, hle1, -⟩ := ha
+      have := le1_blockRoot_d_zero hQ1 hr0 hk hle1
+      omega
+
 end H12H2
 end TRIO
