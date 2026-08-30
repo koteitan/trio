@@ -8734,5 +8734,44 @@ theorem snocStep_oper_gen {T : TrioSeq} {c m : ℕ}
 ⚠ **教訓 14**: §273 は緑ですが、**`|V| < |Q|` はまだ証明していません**（測定 208/208）。
 **⟹ ★ 次はそこです。⟹ ⟹ ★★ そして **`towerClosed_of_hered` の配線をやり直す**必要があります。** -/
 
+/-! ## 274. ★★★★★★ **窓が短い理由**: 親は「的より浅い列」より後ろにいます
+
+§273 で残ったのは **`|V| < |Q|`**（＝ 親が末尾 `|Q|` 列の中）です。⟹ ★ その一般的な理由を書きます。
+
+**⟹ ★★★ `nextrel0` の最小性は「間の列は的より浅くない」と言います。**
+**⟹ ⟹ ★ ですから **的より真に浅い列 `c` があれば、親は `c` 以降**でなければなりません。** -/
+
+theorem nextrel0_src_ge_of_gap {M : TrioSeq} {y b c : ℕ}
+    (hcb : c < b) (hlt : entry M 0 c < entry M 0 b) (h : nextrel0 M y b) : c ≤ y := by
+  by_contra hc
+  exact absurd (h.2.2.2.2 c ⟨by omega, hcb⟩) (by omega)
+
+/-! ### 274.1 ⟹ ★★★★★ **塔での意味**
+
+塔の中で、的が **ブロック `n` の位置 `j`**（行 0 ＝ `entry Q 0 j + d·n`）のとき、
+**ブロック `n-1` の同じ位置 `j`**（行 0 ＝ `entry Q 0 j + d·(n-1)`）は、⟹ ★ **`0 < d` なら真に浅い**。
+
+**⟹ ★★★★★ ですから §274 より **行 0 の親は「1 つ前のブロックの同じ位置」以降**にいます。**
+**⟹ ⟹ ★★★ ＝ **`|V| ≤ |Q|`**（窓は高々 `Q` の長さ）。**
+
+**⟹ ⚠ ただし これは **`srow = 0`（行 0 の親）**のときだけです。**
+**⟹ ⟹ ★ `nextrel1` / `nextrel2` は最小性が `le0` / `le1` 祖先の上なので、⟹ ⛔ **同じ議論は通りません**。**
+**⟹ ⟹ ⟹ ★★ ですが **`nextrel1` も `nextrel2` も `le0 M y b` を含みます**（§256）。**
+**⟹ ⟹ ⟹ ⟹ ★★★ そして **`le0` の鎖の最後の 1 歩は `nextrel0`** なので、⟹ ★ **その始点は `c` 以降**。**
+**⟹ ⟹ ⟹ ⟹ ⟹ ⚠ **ですが `y` 自身が `c` 以降とは限りません**（鎖はもっと手前から来られます）。**
+
+**⟹ ★ ですから **行 1・行 2 は別の議論が要ります**。⟹ ⟹ **実測は 208/208 で `|V| < |Q|`** でした。**
+
+⚠ **教訓 14**: §274 は緑ですが、**`|V| < |Q|` の証明ではありません**（行 0 だけ、しかも `≤`）。 -/
+
+/-- ★★★ **`le0` の鎖の最後の 1 歩**（`nextrel0`）の始点も `c` 以降。 -/
+theorem rtg0_last_step_ge_of_gap {M : TrioSeq} {a b c : ℕ}
+    (hcb : c < b) (hlt : entry M 0 c < entry M 0 b) (hab : a < b)
+    (h : Relation.ReflTransGen (nextrel0 M) a b) :
+    ∃ x, c ≤ x ∧ x < b ∧ Relation.ReflTransGen (nextrel0 M) a x ∧ nextrel0 M x b := by
+  rcases Relation.ReflTransGen.cases_tail h with h0 | ⟨x, hax, hxb⟩
+  · omega
+  · exact ⟨x, nextrel0_src_ge_of_gap hcb hlt hxb, hxb.2.2.1, hax, hxb⟩
+
 end L106
 end TRIO
