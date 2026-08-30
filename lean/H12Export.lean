@@ -3075,5 +3075,46 @@ theorem hanc_of_hlocQ {V : TrioSeq}
       entry V 1 0 < entry V 1 m' :=
   hanc_of_cone (le1_root_of_hlocQ hpar hnz m hm).2.2
 
+
+/-- ★★★★★ **`hnz` は連続部分列へそのまま移る**（根が変わっても壊れない）。 -/
+theorem hnz_drop {M : TrioSeq} (p : ℕ)
+    (hnz : ∀ i, 0 < i → i < M.length → 0 < entry M 1 i) :
+    ∀ t, 0 < t → t < (M.drop p).length → 0 < entry (M.drop p) 1 t := by
+  intro t ht0 ht
+  rw [List.length_drop] at ht
+  rw [entry_drop]
+  exact hnz (p + t) (by omega) (by omega)
+
+/-- ★★★★★ **`hnz` は `take` でも壊れない**。 -/
+theorem hnz_take {M : TrioSeq} (k : ℕ)
+    (hnz : ∀ i, 0 < i → i < M.length → 0 < entry M 1 i) :
+    ∀ t, 0 < t → t < (M.take k).length → 0 < entry (M.take k) 1 t := by
+  intro t ht0 ht
+  rw [List.length_take] at ht
+  rw [Wset.entry_take (by omega)]
+  exact hnz t ht0 (by omega)
+
+/-- ★★★★★★ **`hnz` は塔へも移る**（`Lift1` は行 1 を下げず、`shiftr01` は変えない）。 -/
+theorem hnz_mTower {Q : TrioSeq} (hQ1 : 0 < Q.length)
+    (hnz : ∀ i, 0 < i → i < Q.length → 0 < entry Q 1 i)
+    (hroot : 0 < entry Q 1 0) {d e n : ℕ} :
+    ∀ l, 0 < l → l < (mTower Q d e n).length → 0 < entry (mTower Q d e n) 1 l := by
+  intro l hl0 hl
+  have hlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  rw [hlen] at hl
+  have hi : l % Q.length < Q.length := Nat.mod_lt _ hQ1
+  have hk : l / Q.length < n := by
+    refine Nat.div_lt_of_lt_mul ?_
+    rw [Nat.mul_comm]; exact hl
+  have hsplit : l = (l / Q.length) * Q.length + l % Q.length := by
+    rw [Nat.mul_comm]; exact (Nat.div_add_mod l Q.length).symm
+  have hge := entry1_mTower_ge (Q := Q) (d := d) (e := e) (n := n)
+    (k := l / Q.length) (i := l % Q.length) hk hi
+  rw [← hsplit] at hge
+  rcases Nat.eq_zero_or_pos (l % Q.length) with h0 | hp
+  · rw [h0] at hge; omega
+  · have := hnz _ hp hi
+    omega
+
 end H12Export
 end TRIO
