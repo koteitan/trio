@@ -5559,5 +5559,78 @@ theorem mTowerClosedS_of_residues (horph0 : OrphOK0)
 ⚠ **教訓 14**: **6 本のどれも証明していません。**
 **とくに `HeredNB`（＝ `hlocQ` の遺伝）は**測ってもいません**。** -/
 
+/-! ## 238. ★★★★★★★ `hlocQ` の遺伝の下ごしらえ: **`le0` は窓に移ります**
+
+team-lead の (ADJ)（証人が隣で取れるか）待ちですが、**どの証人でも要る道具**を先に作ります。
+
+**⟹ ★ 窓は**連続した区間**なので、`nextrel0` はそのまま移るはずです。**
+**⟹ ⟹ `nextrel0` の最小性は「間の列」についてで、**間の列は窓の中に全部ある**からです。** -/
+
+theorem window_length {T : TrioSeq} {s L : ℕ} (hL : s + L ≤ T.length) :
+    ((T.drop s).take L).length = L := by
+  rw [List.length_take, List.length_drop]
+  omega
+
+theorem nextrel0_window {T : TrioSeq} {s L a b : ℕ} (hL : s + L ≤ T.length)
+    (ha : a < L) (hb : b < L) :
+    nextrel0 ((T.drop s).take L) a b ↔ nextrel0 T (s + a) (s + b) := by
+  have hlen := window_length hL
+  constructor
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    rw [entry_window T (i := 0) hb, entry_window T (i := 0) ha] at h4
+    refine ⟨by omega, by omega, by omega, h4, ?_⟩
+    intro j hj
+    obtain ⟨j', rfl⟩ : ∃ j', j = s + j' := ⟨j - s, by omega⟩
+    have hj'L : j' < L := by omega
+    have := h5 j' ⟨by omega, by omega⟩
+    rw [entry_window T (i := 0) hb, entry_window T (i := 0) hj'L] at this
+    exact this
+  · rintro ⟨h1, h2, h3, h4, h5⟩
+    refine ⟨by omega, by omega, by omega, ?_, ?_⟩
+    · rw [entry_window T (i := 0) hb, entry_window T (i := 0) ha]; omega
+    · intro j hj
+      have := h5 (s + j) ⟨by omega, by omega⟩
+      rw [entry_window T (i := 0) hb, entry_window T (i := 0) (show j < L by omega)]
+      exact this
+
+/-- ★★ **`le0` は窓に移ります**（`nextrel0` の鎖は前へ進むので、窓から出ません）。 -/
+theorem le0_window {T : TrioSeq} {s L a b : ℕ} (hL : s + L ≤ T.length)
+    (ha : a < L) (hb : b < L) (h : le0 T (s + a) (s + b)) :
+    le0 ((T.drop s).take L) a b := by
+  have hlen := window_length hL
+  obtain ⟨-, -, hrtg⟩ := h
+  refine ⟨by omega, by omega, ?_⟩
+  -- 鎖の各ノードは `[s+a, s+b]` の中（`nextrel0` は添字を増やすので）
+  have key : ∀ c, Relation.ReflTransGen (nextrel0 T) (s + a) c → c ≤ s + b →
+      ∃ c', c = s + c' ∧ c' < L ∧
+        Relation.ReflTransGen (nextrel0 ((T.drop s).take L)) a c' := by
+    intro c hc
+    induction hc with
+    | refl => intro _; exact ⟨a, rfl, ha, Relation.ReflTransGen.refl⟩
+    | @tail x y hx hxy ih =>
+        intro hyb
+        have hxy' := hxy
+        have hxle : x < y := hxy.2.2.1
+        obtain ⟨x', rfl, hx'L, hch⟩ := ih (by omega)
+        obtain ⟨y', rfl⟩ : ∃ y', y = s + y' := ⟨y - s, by omega⟩
+        have hy'L : y' < L := by omega
+        exact ⟨y', rfl, hy'L,
+          hch.tail ((nextrel0_window hL hx'L hy'L).mpr hxy')⟩
+  obtain ⟨b', hb'eq, -, hres⟩ := key (s + b) hrtg (le_refl _)
+  have : b' = b := by omega
+  subst this
+  exact hres
+
+/-! ### 238.1 ⟹ ★ これで `hlocQ` の遺伝の**行 0 の部分**は移ります
+
+**残るのは 2 つです:**
+
+    **(a)** 証人 `y` が**窓の中**にあるか（＝ `p ≤ y`）… ★ **team-lead の (ADJ)**
+    **(b)** 錐のクラス条件 `le1 V 0 y' → le1 V 0 t` が、`Q` のものから出るか
+         ⚠ ★ **`V` の錐は `V` の根（＝ `Q` の列 `p`）についてなので、`Q` の錐とは別物です**
+         ⟹ ⟹ ★ **そこが残ります**
+
+**⟹ ★ (a) は測定待ち、(b) は私が見ます。** -/
+
 end L106
 end TRIO
