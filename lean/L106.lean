@@ -7964,5 +7964,83 @@ end CE262
 ⚠ **教訓 21 の再確認**: `entry Q 0 0 = 0` に正規化した箱では破れ **0 / 624**、
 正規化を外すと **1248 / 1248（100%）**。⟹ ★ **正規化が反例を完全に隠していました**。 -/
 
+/-! ## 263. ⛔⛔⛔⛔⛔⛔ **`HeredZ0` も偽です** —— 今日 6 本目
+
+`HeredZ0` は「窓の根の行 2 が 0」。⟹ ★ §224 は **`srow = 2` の段**と **`p = 0` の段**を
+潰しましたが、⟹ ⛔ **`srow = 1` かつ `p > 0`** が残っていました。⟹ そこが偽です。
+
+    `B = [(0,0,0), (1,1,1), (2,2,0)]`、`P = []`、`j = 2`、`p = 1`
+    ⟹ `hr0(B)` ✅ ／ `entry B 2 0 = 0` ✅ ／ `zle1 B` ✅
+    ⟹ `srow B 2 = 1`（行 2 = 0、行 1 = 2 > 0）、**親は添字 1**（行 1 = 1 < 2、一意）
+    ⟹ ⛔ 窓 `= [(1,1,1)]` ⟹ **`entry (wnd) 2 0 = 1 ≠ 0`**
+
+**⟹ ★ **`srow = 1` の親は行 2 について何も要求しません**（`nextrel1` の定義に行 2 が無い）。**
+**⟹ ⟹ ⛔ ですから **`z = 1` の列がバッドルートになれます**。⟹ ⟹ **`HeredZ0` は偽**です。** -/
+
+section CE263
+private def Bz : TrioSeq := [(0, 0, 0), (1, 1, 1), (2, 2, 0)]
+
+private theorem Bz_nr0_12 : nextrel0 Bz 1 2 := by
+  refine ⟨by decide, by decide, by omega, by decide, ?_⟩
+  intro q hq; omega
+
+private theorem Bz_le0_12 : le0 Bz 1 2 :=
+  ⟨by decide, by decide, Relation.ReflTransGen.single Bz_nr0_12⟩
+
+private theorem Bz_nr1_12 : nextrel1 Bz 1 2 := by
+  refine ⟨by decide, by decide, by omega, by decide, Bz_le0_12, ?_⟩
+  intro q ⟨hq1, hq2⟩
+  rw [show q = 2 from by have := le0_le' hq2; omega]
+
+private theorem Bz_uniq {y : ℕ} (h : nextrel1 Bz y 2) : y = 1 := by
+  have hy : y < 2 := h.2.2.1
+  rcases Nat.lt_or_ge y 1 with h0 | h1
+  · rw [show y = 0 from by omega] at h
+    exact absurd (h.2.2.2.2.2 1 ⟨by omega, Bz_le0_12⟩) (by decide)
+  · omega
+
+private theorem Bz_hasParent : hasParent Bz 1 2 :=
+  ⟨1, nextR_one_iff.mpr Bz_nr1_12, fun _ hy => Bz_uniq (nextR_one_iff.mp hy)⟩
+
+/-- ⛔⛔⛔ **`HeredZ0` は偽**。 -/
+theorem heredZ0_false : ¬ HeredZ0 := by
+  intro h
+  have hB : ([] : TrioSeq) ++ Bz.take (2 + 1) = Bz := by unfold Bz; rfl
+  have hlen : (([] : TrioSeq) ++ Bz.take (2 + 1)).length - 1 = 2 := by rw [hB]; rfl
+  have hsr : srow Bz 2 = 1 := by decide
+  have hres := h [] Bz 2 1 (by omega) (by decide) ?_ ?_
+  · rw [show wnd ([] : TrioSeq) Bz 2 1 = [((1 : ℕ), (1 : ℕ), (1 : ℕ))] from by
+      unfold wnd Bz; rfl] at hres
+    exact absurd hres (by decide)
+  · rw [hlen, hB, hsr]; exact Bz_hasParent
+  · rw [hlen, hB, hsr]
+    have := nextR_one_iff.mp (parent_nextR Bz_hasParent)
+    rw [Bz_uniq this]; rfl
+
+end CE263
+
+/-! ### 263.1 ⛔⛔⛔⛔⛔⛔ **今日の最終棚卸し: 6 本中 6 本が偽でした**
+
+| # | 残差 | 状態 | 原因 |
+|---|---|---|---|
+| 1 | `HeredNB` | ⛔ 偽（§248） | 証人が窓の外へ落ちる |
+| 2 | `RootZ1` | ⛔ 偽（§260） | `[(0,0,2)] ∈ W 2` |
+| 3 | `RootZ2` | ⛔ 偽（§260） | 同上 |
+| 4 | `OrphOK` | ⛔ 偽（§261） | 接頭辞が `Q` の根より浅い |
+| 5 | `OrphOK0` | ⛔ 偽（§262） | 同上 |
+| 6 | **`HeredZ0`** | ⛔ **偽**（§263） | `srow = 1` の親は行 2 を制約しない |
+
+**⟹ ⛔⛔ 残るのは **`ZeroDOK`** と **`d = 0 → e = 0`** の 2 本だけです。**
+**⟹ ⟹ ⚠ ですから **`mTowerClosedSZ_of_residues` は今も空虚**です。**
+
+**⟹ ★★★★★ ⟹ **今日の正味の成果は「設計が全部間違っていたと確定させたこと」**です。**
+**⟹ ⟹ ★ そして **どこが間違っていたか**も 3 つに整理できました:**
+
+    **(a)** **接頭辞の深さを無視した**（`OrphOK` / `OrphOK0`）⟹ `rsum` が要るが遺伝しない
+    **(b)** **窓の根が「元の根」と違うことを無視した**（`HeredNB` / `HeredZ0`）
+    **(c)** **`W` が `z < 2` で閉じていない**（`RootZ1` / `RootZ2`）⟹ 目標に書けば消える
+
+**⟹ ★ (c) は §260 で直しました。⟹ ⛔ (a)(b) は**設計のやり直し**が要ります。** -/
+
 end L106
 end TRIO
