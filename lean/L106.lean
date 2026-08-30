@@ -787,5 +787,165 @@ theorem blockRoot_window_eq_iff {Q : TrioSeq} {d e n k : ℕ}
     omega
   · exact fun hpe => blockRoot_window_eq_of_root hQ1 hpe
 
+/-! ## 200. ★★★★★★★ 場合分けの接続: **どちらの枝でも辞書式 `(|V|, rankDE)` が減る**
+
+R2 の測度（`(|V|, rank(d,e))` の辞書式）を Lean で組みます。**材料は全部そろっています:**
+
+    **枝 1（`p_rel ≥ 1`）** … `|V| < |Q|` … §186（`|V| = j − p`）／ H12 `blockRoot_window_lt_of_ne_root`
+    **枝 2（`p_rel = 0`）** … `|V| = |Q|` だが **`rankDE` が減る** … §198・§199 ＋ 下の `rankDE_lt_of_blockRoot_parent`
+    **二分法** … H12 `blockRoot_window_eq_iff`（窓 `= |Q|` ⟺ 親がブロック根）
+
+⚠ **`Prod.Lex` の整礎性そのものは H12 が並行で作っています。ここでは「1 段で減る」だけ。** -/
+
+/-! ### 200.1 まず抽象の合成（純粋に算術）
+
+**選言「第 1 成分が減る ∨（第 1 成分が同じ ∧ 第 2 成分が減る）」から `Prod.Lex`。** -/
+
+theorem lex_of_lt_or {a b a' b' : ℕ}
+    (h : a' < a ∨ (a' = a ∧ b' < b)) :
+    Prod.Lex (α := ℕ) (β := ℕ) (· < ·) (· < ·) (a', b') (a, b) := by
+  rcases h with h | ⟨h1, h2⟩
+  · exact Prod.Lex.left _ _ h
+  · subst h1; exact Prod.Lex.right _ h2
+
+/-! ### 200.2 枝 2 の本体: **親がブロック根なら `rankDE` が真に減る**
+
+`oper` の出す新しいリフト量は（§186 の逐語）
+
+    `d0 = if 0 < srow then entry 0 j1 − entry 0 j0 else 0`
+    `d1 = if 1 < srow then entry 1 j1 − entry 1 j0 else 0`
+
+**両方がブロック根（`j1 = m*|Q|`、`j0 = k*|Q|`）のとき、行ごとに:**
+
+    **`srow = 2`** … §198 `not_nextrel2_blockRoots` で**不可能**
+    **`srow = 1`** … `d1 = 0`（`¬ 1 < 1`）、`d0 = d*(m−k)`。
+                 §199 で `0 < e` ⟹ `rankDE d e ≥ (if 0<d) + 1 > rankDE d0 0`
+    **`srow = 0`** … `d0 = d1 = 0` ⟹ `rankDE = 0`。§199 で `0 < d` ⟹ `rankDE d e ≥ 1`
+
+**⟹ ★ どの場合も真に減ります。** -/
+
+theorem rankDE_lt_of_blockRoot_parent {Q : TrioSeq} {d e n k m : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n) (hm : m < n) (hkm : k < m)
+    (hnr : nextR (mTower Q d e n) (srow (mTower Q d e n) (m * Q.length))
+             (k * Q.length) (m * Q.length)) :
+    rankDE
+        (if 0 < srow (mTower Q d e n) (m * Q.length) then
+          entry (mTower Q d e n) 0 (m * Q.length)
+            - entry (mTower Q d e n) 0 (k * Q.length) else 0)
+        (if 1 < srow (mTower Q d e n) (m * Q.length) then
+          entry (mTower Q d e n) 1 (m * Q.length)
+            - entry (mTower Q d e n) 1 (k * Q.length) else 0)
+      < rankDE d e := by
+  have h0m : entry (mTower Q d e n) 0 (m * Q.length) = entry Q 0 0 + d * m :=
+    mTower_entry0_root hm hQ
+  have h0k : entry (mTower Q d e n) 0 (k * Q.length) = entry Q 0 0 + d * k :=
+    mTower_entry0_root hk hQ
+  -- 行 2 は不可能（§198）
+  have hs2 : ¬ (1 < srow (mTower Q d e n) (m * Q.length)) := by
+    intro hc
+    have hnr' := hnr
+    unfold nextR at hnr'
+    rw [if_neg (by omega), if_neg (by omega)] at hnr'
+    exact not_nextrel2_blockRoots hk hm hQ hnr'
+  rw [if_neg hs2]
+  rcases Nat.eq_zero_or_pos (srow (mTower Q d e n) (m * Q.length)) with hz | hp
+  · -- srow = 0 ⟹ d0 = d1 = 0、そして 0 < d（§199）
+    rw [if_neg (by omega)]
+    have hnr' := hnr
+    unfold nextR at hnr'
+    rw [if_pos hz] at hnr'
+    have hd : 0 < d := d_pos_of_nextrel0_blockRoots hk hm hQ hnr'
+    unfold rankDE
+    rw [if_pos hd]
+    split_ifs <;> omega
+  · -- srow = 1 ⟹ d1 = 0、d0 = d*(m−k)、そして 0 < e（§199）
+    have hs1 : srow (mTower Q d e n) (m * Q.length) = 1 := by omega
+    rw [if_pos hp]
+    have hnr' := hnr
+    unfold nextR at hnr'
+    rw [hs1] at hnr'
+    rw [if_neg (by omega), if_pos rfl] at hnr'
+    have he : 0 < e := e_pos_of_nextrel1_blockRoots hk hm hQ hnr'
+    rw [h0m, h0k]
+    have hdk : d * k ≤ d * m := Nat.mul_le_mul_left d (by omega)
+    have hsub : entry Q 0 0 + d * m - (entry Q 0 0 + d * k) = d * m - d * k := by omega
+    rw [hsub]
+    unfold rankDE
+    rw [if_pos he]
+    rcases Nat.eq_zero_or_pos d with hd0 | hd0
+    · have : d * m - d * k = 0 := by rw [hd0]; simp
+      rw [this]
+      split_ifs <;> omega
+    · have : 0 < d * m - d * k := by
+        have h1 : d * (k + 1) ≤ d * m := Nat.mul_le_mul_left d (by omega)
+        have h2 : d * (k + 1) = d * k + d := Nat.mul_succ d k
+        omega
+      rw [if_pos this, if_pos hd0]
+      split_ifs <;> omega
+
+/-- **`hasParent` ＋「親がブロック根」の形**（H12 の `blockRoot_window_eq_iff` の右辺に合う形）。 -/
+theorem rankDE_lt_of_blockRoot_parent' {Q : TrioSeq} {d e n k m : ℕ}
+    (hQ : 0 < Q.length) (hk : k < n) (hm : m < n) (hkm : k < m)
+    (hp : hasParent (mTower Q d e n) (srow (mTower Q d e n) (m * Q.length))
+            (m * Q.length))
+    (hpe : parent (mTower Q d e n) (srow (mTower Q d e n) (m * Q.length))
+            (m * Q.length) = k * Q.length) :
+    rankDE
+        (if 0 < srow (mTower Q d e n) (m * Q.length) then
+          entry (mTower Q d e n) 0 (m * Q.length)
+            - entry (mTower Q d e n) 0 (k * Q.length) else 0)
+        (if 1 < srow (mTower Q d e n) (m * Q.length) then
+          entry (mTower Q d e n) 1 (m * Q.length)
+            - entry (mTower Q d e n) 1 (k * Q.length) else 0)
+      < rankDE d e := by
+  have hnr := parent_nextR hp
+  rw [hpe] at hnr
+  exact rankDE_lt_of_blockRoot_parent hQ hk hm hkm hnr
+
+/-! ### 200.3 ★★ そして **枝 1 と枝 2 の合成**
+
+**H12 の `blockRoot_window_eq_iff` が二分法を与えるので、`j = 0` の段はこう割れます:**
+
+    **窓 `< |Q|`** ⟹ 第 1 成分が減る ⟹ `Prod.Lex` ✓
+    **窓 `= |Q|`** ⟹ 親はブロック根 ⟹ `rankDE` が減る（§200.2）⟹ `Prod.Lex` ✓
+
+**⟹ ★ 下がその合成です。前提は「窓の値」と「rankDE の値」だけで、
+`W` の話は一切入りません。⟹ 測度の部分だけが独立に緑になります。** -/
+
+theorem lex_step_blockRoot {Q : TrioSeq} {d e n k w r : ℕ}
+    (hQne : Q ≠ []) (hd : 0 < d) (he : 0 < e) (hk : k + 1 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hp : hasParent (mTower Q d e n) 1 ((k + 1) * Q.length))
+    (hw : w = (k + 1) * Q.length - parent (mTower Q d e n) 1 ((k + 1) * Q.length))
+    (hwle : w ≤ Q.length)
+    (hrank : parent (mTower Q d e n) 1 ((k + 1) * Q.length) = k * Q.length →
+      r < rankDE d e) :
+    Prod.Lex (α := ℕ) (β := ℕ) (· < ·) (· < ·) (w, r) (Q.length, rankDE d e) := by
+  refine lex_of_lt_or ?_
+  by_cases hc : w = Q.length
+  · right
+    refine ⟨hc, hrank ?_⟩
+    have hiff := blockRoot_window_eq_iff hQne hd he hk hr0 hp
+    exact hiff.mp (by rw [← hw]; exact hc)
+  · left; omega
+
+/-! ### 200.4 ⟹ R2 の 6 行が **全部** Lean になりました
+
+    ✅ **行 2 は決して親になれない** … §198 `not_nextrel2_blockRoots`
+    ✅ **行 0 は `0 < d` が要る** … §199 `d_pos_of_nextrel0_blockRoots`
+    ✅ **行 1 は `0 < e` が要る** … §199 `e_pos_of_nextrel1_blockRoots`
+    ✅ **`srow = 1` で `e' = 0`、`srow = 0` で `d' = e' = 0`** … §198 `rankDE_oper_*`
+    ✅ **非減少 ⟺ `p_rel = 0`** … H12 `blockRoot_window_eq_iff`
+    ✅ **⟹ `rank` が非減少の段ごとに真に減る** … `rankDE_lt_of_blockRoot_parent`（上）
+    ✅ **⟹ 辞書式が 1 段で減る** … `lex_step_blockRoot`（上）
+
+⚠ **教訓 14**: 上は **1 段**の話です。**「停止する」は言えていません。**
+**⟹ 残るのは (i) `Prod.Lex` の整礎性（H12 が並行）と
+(ii) その帰納を `W` の membership に接続する部分（§169 `prefixTowerClosed_final` の形）。**
+
+⚠ **そして `lex_step_blockRoot` の `hrank` は**含意**で渡しています。**
+**理由: 枝 1 では `rankDE` について何も言えない（`r` は任意でよい）から。**
+**⟹ `hwle`（`w ≤ |Q|`）だけが両枝に共通の前提です。** -/
+
 end L106
 end TRIO
