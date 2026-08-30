@@ -2968,5 +2968,43 @@ theorem hanc_of_cone {T : TrioSeq} {m : ℕ}
     | refl => exact le_refl _
     | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.2.1)
 
+
+/-- ★★★★ **行 1: 的が非ブロッカーなら、親の始点は必ずブロックの根以降**。 -/
+theorem nextrel1_src_ge_of_shallow {M : TrioSeq} {p a b : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hp : p < M.length) (hpb : p < b) (hb : b < M.length)
+    (hnb : entry M 1 p < entry M 1 b) (h : nextrel1 M a b) : p ≤ a := by
+  by_contra hc
+  push Not at hc
+  have hle0 : le0 M p b := le0_root_of_shallow hp hshallow b hpb hb
+  exact absurd (h.2.2.2.2.2 p ⟨hc, hle0⟩) (by omega)
+
+/-- ★★★★ **行 2: 的が行 1 の錐の中で行 2 も上なら、親の始点はブロックの根以降**。 -/
+theorem nextrel2_src_ge_of_cone {M : TrioSeq} {p a b : ℕ}
+    (hcone : le1 M p b) (hnb2 : entry M 2 p < entry M 2 b)
+    (h : nextrel2 M a b) : p ≤ a := by
+  by_contra hc
+  push Not at hc
+  exact absurd (h.2.2.2.2.2 p ⟨hc, hcone⟩) (by omega)
+
+/-- ★★★★★★ **3 行そろい**: 的が「行 0 で根より深い ∧ 行 1 で根より上 ∧ 行 2 で根より上」なら、
+**どの行でもブロックの根より前の列は親になれない**。 -/
+theorem nextR_src_ge_of_cone {M : TrioSeq} {p a b r : ℕ}
+    (hshallow : ∀ x, p < x → x < M.length → entry M 0 p < entry M 0 x)
+    (hp : p < M.length) (hpb : p < b) (hb : b < M.length)
+    (hnb1 : entry M 1 p < entry M 1 b)
+    (hcone : le1 M p b) (hnb2 : entry M 2 p < entry M 2 b)
+    (h : nextR M r a b) : p ≤ a := by
+  unfold nextR at h
+  by_cases h0 : r = 0
+  · rw [if_pos h0] at h
+    exact nextrel0_src_ge_of_shallow hshallow hpb h
+  · rw [if_neg h0] at h
+    by_cases h1 : r = 1
+    · rw [if_pos h1] at h
+      exact nextrel1_src_ge_of_shallow hshallow hp hpb hb hnb1 h
+    · rw [if_neg h1] at h
+      exact nextrel2_src_ge_of_cone hcone hnb2 h
+
 end H12Export
 end TRIO

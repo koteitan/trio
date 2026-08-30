@@ -8033,3 +8033,23 @@ L3 の `hlocQ` の第 3 条件 `hcls : le1 Q 0 y → le1 Q 0 j` は、私の 4 �
 
 ⟹ ★ 未知は **「的が根の錐の中か」** 1 本だけ。⟹ `not_le1_zero_iff` で
 「的の `le0` 祖先にブロッカーが無い」と同値。
+
+## §315 ★★★★★★ **親の始点はブロックの中**（行 1・行 2 版、緑）
+
+    ★★★★ nextrel1_src_ge_of_shallow :
+      `hshallow` ＋ **的が非ブロッカー**（`entry M 1 p < entry M 1 b`）
+        ⟹ `nextrel1 M a b` の始点は **`p ≤ a`**
+      （`le0 M p b` は `le0_root_of_shallow`（§310）から**無料**。最小性を `j := p` に当てる）
+
+    ★★★★ nextrel2_src_ge_of_cone :
+      **`le1 M p b`** ＋ `entry M 2 p < entry M 2 b` ⟹ `nextrel2 M a b` の始点は `p ≤ a`
+
+    ★★★★★★ nextR_src_ge_of_cone : 3 行そろい
+
+⟹ ★ **`hlocQ` の「中に親が居る」と同じ結論に、壁の側から到達**。
+⟹ ⟹ **前提は全部「的についての条件」**（∀ は 1 つも無い）。
+
+## ★ 運用: 定理名の生存確認（L3 の `wd1_zero_of_wd0_zero` 消失を受けて）
+
+`H12Export.lean` で今日の主要 10 本の生存を `grep` で確認（全部 OK）。
+⟹ 大きな編集のあとは必ずやる。
