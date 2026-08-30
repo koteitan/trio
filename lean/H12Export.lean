@@ -6819,5 +6819,27 @@ theorem window_lt_of_blockRoot_row1_gap (Q : TrioSeq) {d e n c c0 : ℕ}
     subst hm; simp [Nat.succ_mul]
   omega
 
+
+/-- ★★★★★★★★★★ **行 2 版の芯**（一般、仮定 3 つだけ）:
+**`le1` 祖先 `x` の行 2 が的より低いなら、行 2 の親は `x` 以降**。 -/
+theorem nextrel2_src_ge_of_le1_ancestor_low {M : TrioSeq} {c x t : ℕ}
+    (hx : le1 M x t) (hlow : entry M 2 x < entry M 2 t)
+    (h : nextrel2 M c t) : x ≤ c := by
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2.2 x ⟨hc, hx⟩
+  omega
+
+/-- ★★★★★ **行 1 版・行 2 版の対比**（1 本にまとめた形、L3 が使う入口）。
+⟹ ★ **行 1 は `le0` 祖先、行 2 は `le1` 祖先**——⟹ ★★ **そこだけが違います**。 -/
+theorem src_ge_of_ancestor_low {M : TrioSeq} {c x t : ℕ} :
+    (le0 M x t → entry M 1 x < entry M 1 t → nextrel1 M c t → x ≤ c)
+      ∧ (le1 M x t → entry M 2 x < entry M 2 t → nextrel2 M c t → x ≤ c) := by
+  refine ⟨fun hx hlow h => ?_, fun hx hlow h => nextrel2_src_ge_of_le1_ancestor_low hx hlow h⟩
+  by_contra hc
+  push Not at hc
+  have hmin := h.2.2.2.2.2 x ⟨hc, hx⟩
+  omega
+
 end H12Export
 end TRIO
