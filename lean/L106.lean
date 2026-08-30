@@ -6797,5 +6797,78 @@ theorem hlocQ_row1_of_le0_path {B : TrioSeq} {p q j : ℕ}
     entry B 1 p < entry B 1 q :=
   lt_of_lt_of_le hnr.2.2.2.1 (hnr.2.2.2.2.2 q ⟨hpq, hq⟩)
 
+/-! ## 250. ⛔⛔⛔⛔ **`hlocQ B` を足しても駄目**です —— `hlocQ` は「遺伝しない」が確定
+
+§249 の `Bce` について、⚠ **`hlocQ Bce` は成り立ちます**。⟹ ★ 下で緑にします。
+**⟹ ⟹ ⛔⛔⛔ ですから **親が `hlocQ` を満たしていても、窓は満たしません**。**
+**⟹ ⟹ ⟹ ★★★ これで **`hlocQ` は不変量として使えない**ことが**確定**しました。** -/
+
+section CE250
+open Classical in
+private theorem Bce_nr0_01 : nextrel0 Bce 0 1 :=
+  ⟨by decide, by decide, by omega, by decide, by intro q hq; omega⟩
+
+private theorem Bce_nr0_12 : nextrel0 Bce 1 2 :=
+  ⟨by decide, by decide, by omega, by decide, by intro q hq; omega⟩
+
+private theorem Bce_nr1_01 : nextrel1 Bce 0 1 := by
+  refine ⟨by decide, by decide, by omega, by decide,
+    ⟨by decide, by decide, Relation.ReflTransGen.single Bce_nr0_01⟩, ?_⟩
+  intro q ⟨hq1, hq2⟩
+  rw [show q = 1 from by have := le0_le' hq2; omega]
+
+private theorem Bce_le0_02 : le0 Bce 0 2 :=
+  ⟨by decide, by decide, (Relation.ReflTransGen.single Bce_nr0_01).tail Bce_nr0_12⟩
+
+private theorem Bce_nr1_02 : nextrel1 Bce 0 2 := by
+  refine ⟨by decide, by decide, by omega, by decide, Bce_le0_02, ?_⟩
+  intro q ⟨hq1, hq2⟩
+  have := le0_le' hq2
+  rcases Nat.lt_or_ge q 2 with h | h
+  · rw [show q = 1 from by omega]; decide
+  · rw [show q = 2 from by omega]
+
+/-- ★ **`hlocQ Bce` は成り立ちます**（親の側は健全）。 -/
+theorem Bce_hlocQ : hlocQ Bce := by
+  intro j hj0 hj
+  have hjlen : j < 4 := by simpa [Bce] using hj
+  refine ⟨fun hpos => absurd hpos ?_, fun _ _ => ?_⟩
+  · rcases Nat.lt_or_ge j 2 with h | h
+    · rw [show j = 1 from by omega]; decide
+    · rcases Nat.lt_or_ge j 3 with h' | h'
+      · rw [show j = 2 from by omega]; decide
+      · rw [show j = 3 from by omega]; decide
+  · rcases Nat.lt_or_ge j 2 with h | h
+    · rw [show j = 1 from by omega]; exact hlocQ_row1_of_nextrel1 Bce_nr1_01
+    · rcases Nat.lt_or_ge j 3 with h' | h'
+      · rw [show j = 2 from by omega]; exact hlocQ_row1_of_nextrel1 Bce_nr1_02
+      · rw [show j = 3 from by omega]; exact hlocQ_row1_of_nextrel1 Bce_nr1_13
+
+end CE250
+
+/-! ### 250.1 ⛔⛔⛔⛔ **結論: `hlocQ` は不変量として使えません**
+
+| 足した前提 | 結果 |
+|---|---|
+| 何も足さない（`HeredNB`） | ⛔ 偽（§248） |
+| ＋ `hpar` / `hpe`（使用箇所が持つもの） | ⛔ 偽（§249） |
+| ＋ **`hlocQ B`（親の側の健全性）** | ⛔ **偽**（§250、同じ `Bce`） |
+
+**⟹ ★★★ **原因は 1 つ**です（§249.1）:**
+
+    窓 `[p, j)` は **`p` の行 0 の部分木**であって「`j` への道」ではない
+    ⟹ `nextrel1 B p j` の最小性は **`j` の `le0` 祖先**にしか効かない
+    ⟹ ⛔ **道から外れた列は何の制約も受けない**
+
+**⟹ ⟹ ★★ ですから **`hlocQ` に何を足しても、道の外の列は救えません**。**
+**⟹ ⟹ ⟹ ★★★★ 直すなら **窓の取り方を変える**しかありません:**
+
+    **(あ)** 窓を **`j` への `le0` の道**に沿って切る（`hlocQ_row1_of_le0_path` が無料になる）
+    **(い)** **`B ∈ W u`** を足して、`W` の構造から「道の外の列」を排除する
+    **(う)** `hlocQ` を捨て、**孤児の枝**（`snoc_orphan_W`）に戻す
+
+**⚠ (あ) は展開規則が窓を `[p, j)` と決めているので、私には変えられません。**
+**⟹ ★ ですから **(い) か (う)**。⟹ ⟹ **(い) が本命**だと考えます。** -/
+
 end L106
 end TRIO
