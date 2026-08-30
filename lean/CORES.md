@@ -11079,7 +11079,7 @@ H12 の `row2_cross_implies_orphan` ＋ `hasParent0_of_hr0` で言えるはず�
     ★★★★★★★★ `nextrel0_src_lt_prefix_of_root_height`（**(い)**、(W53)）
       **`entry Q 0 r = entry Q 0 0` ⟹ 親は必ず `A` の中**
     ★★★★★★★ `prefixCopies_row0_dichotomy` … ⟹ **二分法（中間なし）**
-    ★★★★★ `prefixCopies_residual_only_blockRoot` … ⟹ **`hr0 Q` なら残差はブロック根だけ**
+    ★★★★★ `prefixCopies_row0_residual_only_blockRoot` … ⟹ **`hr0 Q` なら残差はブロック根だけ**
 
 **⟹ ★★★★★ ⟹ **`|A|` の帰納（team-lead の (P3)）で、(あ) の側が「同じ写しの中」に閉じます**。**
 **⟹ ⟹ ★ ⟹ **辞書式 `(|A|, r)` の第 2 成分が動く場面が、型で切り出せました**。**
@@ -11223,3 +11223,91 @@ H12 の `row2_cross_implies_orphan` ＋ `hasParent0_of_hr0` で言えるはず�
 ---
 
 ## ✅ **build 緑 4 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **320 本**
+
+---
+
+## ★★★★★★★★ **(L-OPA) 成功: `rsum` なしの `oper_append` —— 今日はじめて `Wset` の壁が動いた**（L3、緑 `8a3ee14`、9894 行、§288）
+
+```lean
+★★★★★★★★ oper_append_of_parent_in (n) (hP : 2 ≤ |P|) (hzP) (hparP) (hpeP : parent P … = p)
+    (hparM) (hpeM : parent (A ++ P) … = **A.length + p**) : (A ++ P)⟦n⟧ = A ++ P⟦n⟧
+```
+
+**★ 前提は **「バッドルートが `P` の中」だけ** ⟹ ⛔ **`rsum` は不要** ⟹ ★★ **`rsum` より真に弱い**。
+★★★ 証明は **§273 `snocStep_oper_gen_eq` を両側に当てるだけ**（`mTower` の `Lift1` は窓の中の `le1` で
+判定するので接頭辞が効かない）。⟹ ★ **今朝の道具が夕方に効いた**。
+⚠ L3:「**§287（祖先の両方向の移送）は書きすぎでした**——`gexp_eq_take_append_mTower` が既に吸収していた」
+⟹ ★ **17 回目の「既にありました」**。**
+
+**⛔ ただし `rsum` の 3 用途のうち外れたのは 1 つ（`Wset.lean:1609 XA_closed`）:**
+
+| 節 | 使う補題 | 状態 |
+|---|---|---|
+| **節 2**（`oper`） | `oper_append_gen`（`Wset:1414`） | ✅ **§288 で `rsum` なし** |
+| **節 1**（長さ ≤ 1） | `hasParent_append_gen`（`Wset:1445`） | ⛔ **まだ `rsum` —— ★ ここが核** |
+| **節 3**（graft） | `domT_append` / `graft_append`（`Wset:1487`） | ⛔ まだ `rsum`（道具はある） |
+
+---
+
+## ★★★★★★★★ **【核の最小形】節 1 ＝ `A ∈ W u` ⟹ `A ++ [(x,0,0)] ∈ W u`**
+
+    ★ 節 1 は **`|B| ≤ 1` ∧ `lev B 0 = 0`** ⟹ **`B = [(x, 0, 0)]`**（行 1 も行 2 も 0）
+    ⟹ ★ **`A` に行 0 が `x` より浅い列があれば ⟹ `nextrel0` の親ができる** ⟹ **開いている**
+    ⟹ ⟹ ★★★★★★★★ ＝ **`PrefixCopiesOpen` の `|Q| = 1` の場合** ＝ **今日追ってきた核の最小形**
+    ⟹ ★★★ そして `Q = [(x,0,0)]` なら **写しは全部同じ 1 列** ⟹ **`entry Q 0 r = entry Q 0 0` が常に真**
+      ⟹ ⟹ ★ ＝ **H12 の (い) の場合しかない** ⟹ **親は必ず `A` の中**（(W53)）⟹ **常に残差**
+
+**発注: **(L-CORE1) L3** … `lean/` を grep（`WSnoc` の `srow = 0` 枝がこれのはず）／
+**(L-CORE2) L3** … `|Q| = 1` の `PrefixCopiesOpen` を証明できるか／
+**(W57) H12** … 行 0 の二分法を最小形に当て、`|A'| < |A|` の帰納が回るか（後継が同じ形か）。**
+
+---
+
+## ★★★★★★★★ **(W56): 越境 ⟹ `Q` の中で行 1 の孤児**（H12、緑 `666e8eb`、327 本）
+
+```lean
+★★★★★★★★ prefix_mTower_nextrel1_src_ge … 証人 `nextrel1 Q y j` があれば
+    行 1 の親は `|A| + k|Q| + y` 以降（＝ **同じ写しの中**）
+  ⟹ ★★★★★ **`d`, `e` は何でもよく、`hr0` も `hnbQ` も要らない**
+★★★★★★★★ prefix_mTower_row1_cross_implies_orphan … **越境 ⟹ `¬ hasParent Q 1 j`**
+★★★★★★★ prefix_mTower_row1_src_ge_of_hasParent … **対偶（L3 が使う形）**
+```
+
+**★★★ 機構が team-lead の読みより強い: **「またげない」ではなく「同じ写しの中に証人があるから
+最小性がそこで止まる」** ⟹ ★ **持ち上げがあっても（`d`, `e` > 0）成り立つ** ⟹ **`shTower` にも一般の塔にも効く**。**
+
+**★★★ `PrefixCopies` の残差が `srow` ごとにそろった（片側）:**
+
+| `srow(的)` | 越境の条件 | 定理 |
+|---|---|---|
+| **0** | **`entry Q 0 j = entry Q 0 0`** | `nextrel0_src_lt_prefix_of_root_height`（(W53)） |
+| **1** | **`amin Q j = entry Q 1 j`**（孤児） | `prefix_mTower_row1_cross_implies_orphan`（(W56)） |
+| **2** | `Q` の中で行 2 の孤児 | `prefix_mTower_row2_cross_implies_orphan` ⚠ `hcone` つき |
+
+**⟹ ★★★★★ **朝の L3 の穴（「的が `Q` の中で孤児」）と、夕方の残差が同じ 1 点で繋がった**。**
+
+**⚠ H12 の限界表明（正確）: ⛔ **片側だけ**（越境 ⟹ 孤児。逆は未証明、使う側は片側で足りる）／
+⛔ **行 2 版は `hcone` を仮定に出した**（`nextrel2` の最小性は `le1` 祖先の上で、`le1` の写し内移送が無い。
+`d = e = 0` なら `Lift1 X 0 = X` で自明のはず）。**
+
+---
+
+## ★★★★★★★★ **(あ)/(い) の二分法が型で —— 中間なし**（H12、緑 `899c2c0`）
+
+    ★★★★★★★★ **`nextrel0_src_ge_block_of_deep`**（**(あ)**、`d` は何でもよい）
+      **`entry Q 0 0 < entry Q 0 r` ⟹ 親は `|A| + k|Q|` 以降** ＝ **同じ写しの中**
+      ⟹ ★ 機構: **ブロック根が「同じ写しの中の、より浅い列」** ⟹ **最小性がそこで止まる**
+    ★★★★★★★★ **`nextrel0_src_lt_prefix_of_root_height`**（**(い)**、(W53)）… **必ず `A`**
+    ★★★★★★★ **`prefixCopies_row0_dichotomy`** … ⟹ **二分法（中間なし）**
+
+**⚠⚠ **名前の危険**（team-lead が (W57a) で訂正を依頼）: **`prefixCopies_residual_only_blockRoot`** は
+**行 0 についてのみ**。⟹ ⛔ **一般形は R2 が実測で反証済み**（`hr0(Q)` 真でも残差の **44.9312%** が `j ≥ 1`、
+反例 `A = [(0,0,0),(1,0,0)]`, `Q = [(2,1,0),(3,1,0)]`, `j = 1`, `srow = 1`）。
+⟹ ★ **名前か docstring に「行 0 のみ、`srow = 1` では偽」と明記**すること。**
+
+**⚠ H12 の懸念（L3 へ）: 辞書式 `(|A|, r)` の第 2 成分について、**(あ) の段で `r' < r` の保証がまだ無い**
+（`r'` は**新しい窓 `V` の中の位置**で、`V` は `Q` と別の列 ⟹ **①型（基準が動く）**）。⟹ ★ いまは保留。**
+
+---
+
+## ✅ **build 緑 5 回目**: 810 jobs、`BUILD_EXIT=0`、`H12Export` **327 本**
