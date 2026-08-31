@@ -107,8 +107,145 @@ theorem M_mem : M ∈ W 0 := by
 /-- 同じことを段のない形で: `M ∈ Wself`（根のレベルが 0 なので `W 0` と同値）。 -/
 theorem M_mem_Wself : M ∈ Wself := ((mem_Wself_iff 0 M).mp M_mem).1
 
+/-! ## 梯子の次の段
+
+`X ++ (1,0,0)^m`（`X = (0,0,0)(1,1,1)`）は、末尾の `(1,0,0)` の親が必ず根なので
+`mem_W_of_flat_root` が毎回当たる。`m` の帰納法で全部 `W 0` に入り、その上で
+`X(1,0,0)(2,0,0)⟦n⟧ = X ++ (1,0,0)^n` だから規則 A で `X(1,0,0)(2,0,0)` も入る。 -/
+
+/-- `X ++ (1,0,0)^m`。 -/
+def Mm (m : ℕ) : TrioSeq := [(0, 0, 0), (1, 1, 1)] ++ List.replicate m (1, 0, 0)
+
+theorem Mm_len (m : ℕ) : (Mm m).length = m + 2 := by simp [Mm]
+
+theorem Mm_zero : Mm 0 = Q := by simp [Mm, Q]
+
+theorem Mm_succ (m : ℕ) : Mm (m + 1) = Mm m ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Mm, List.replicate_succ']
+
+theorem Mm_dropLast (m : ℕ) : (Mm (m + 1)).dropLast = Mm m := by
+  rw [Mm_succ]; simp
+
+theorem Mm_entry0 (m : ℕ) : entry (Mm m) 0 0 = 0 := by simp [Mm, entry]
+
+theorem Mm_entry_pos {m j : ℕ} (hj : 1 ≤ j) (hlt : j < m + 2) :
+    entry (Mm m) 0 j = 1 := by
+  have : (Mm m).getD j (0, 0, 0) = ((1, 1, 1) : ℕ × ℕ × ℕ) ∨
+      (Mm m).getD j (0, 0, 0) = ((1, 0, 0) : ℕ × ℕ × ℕ) := by
+    rcases Nat.lt_or_ge j 2 with h | h
+    · left
+      have : j = 1 := by omega
+      subst this; simp [Mm]
+    · right
+      have hj2 : j - 2 < m := by omega
+      simp only [Mm, List.getD_eq_getElem?_getD]
+      rw [List.getElem?_append_right (by simp; omega)]
+      simp [hj2]
+  rcases this with h | h <;> simp only [entry, h] <;> rfl
+
+/-- 3 行を並べたものは、その列そのもの。 -/
+theorem triple_entry (M : TrioSeq) {j : ℕ} (hj : j < M.length) :
+    ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ) = M[j] := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+
+/-- `mem_W_of_flat_root` が要求するブロックの形は、ただの `take`。 -/
+theorem map_range'_entry {M : TrioSeq} {k : ℕ} (hk : k ≤ M.length) :
+    (List.range' 0 k).map
+        (fun j => ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ))
+      = M.take k := by
+  apply List.ext_getElem
+  · simp; omega
+  · intro i h1 h2
+    have hik : i < k := by simpa using h1
+    simp only [List.getElem_map, List.getElem_range', List.getElem_take, Nat.zero_add, Nat.one_mul]
+    exact triple_entry M (lt_of_lt_of_le hik hk)
+
+theorem Mm_last (m : ℕ) : (Mm (m + 1))[m + 2]? = some ((1, 0, 0) : ℕ × ℕ × ℕ) := by
+  simp [Mm]
+
+theorem Mm_entry_last (m : ℕ) :
+    entry (Mm (m + 1)) 0 (m + 2) = 1 ∧ entry (Mm (m + 1)) 1 (m + 2) = 0 ∧
+      entry (Mm (m + 1)) 2 (m + 2) = 0 := by
+  have h : (Mm (m + 1)).getD (m + 2) (0, 0, 0) = ((1, 0, 0) : ℕ × ℕ × ℕ) := by
+    rw [List.getD_eq_getElem?_getD, Mm_last]; rfl
+  refine ⟨?_, ?_, ?_⟩ <;> simp only [entry, h] <;> rfl
+
+theorem Mm_srow (m : ℕ) : srow (Mm (m + 1)) (m + 2) = 0 := by
+  obtain ⟨-, h1, h2⟩ := Mm_entry_last m
+  simp [srow, h1, h2]
+
+theorem Mm_hasParent (m : ℕ) : hasParent (Mm (m + 1)) 0 (m + 2) := by
+  rw [hasParent_zero_iff (by rw [Mm_len]; omega)]
+  exact ⟨0, by omega, by rw [Mm_entry0, (Mm_entry_last m).1]; omega⟩
+
+theorem Mm_parent (m : ℕ) : parent (Mm (m + 1)) 0 (m + 2) = 0 := by
+  have h := parent_nextR (Mm_hasParent m)
+  rw [nextR, if_pos rfl] at h
+  obtain ⟨-, -, hlt, hval, -⟩ := h
+  by_contra hne
+  have h1 : 1 ≤ parent (Mm (m + 1)) 0 (m + 2) := by omega
+  rw [Mm_entry_pos h1 (by omega), (Mm_entry_last m).1] at hval
+  omega
+
+/-- **`X ++ (1,0,0)^m ∈ W 0`**（`m` の帰納法、各段が `mem_W_of_flat_root`）。 -/
+theorem Mm_mem : ∀ m, Mm m ∈ W 0
+  | 0 => by rw [Mm_zero]; exact Q_mem
+  | (m + 1) => by
+      obtain ⟨he0, -, -⟩ := Mm_entry_last m
+      refine L53.mem_W_of_flat_root (Q := Mm m) (j1 := m + 2)
+        (by rw [Mm_len]; omega) (by omega) (by rw [he0]; simp)
+        (Mm_srow m) (Mm_hasParent m) (Mm_parent m) ?_ (Mm_mem m) ?_
+      · rw [Nat.sub_zero, map_range'_entry (by rw [Mm_len]; omega),
+          ← Mm_dropLast m, List.dropLast_eq_take, Mm_len]
+        congr 1
+      · intro p _; rw [Mm_entry0]; exact Nat.zero_le _
+
+/-! ## 梯子の 2 段目: `X(1,0,0)(2,0,0)`
+
+展開はどの `n` でも `Mm n`。したがって規則 A（`mem_of_oper_mem`）で閉じる。 -/
+
+/-- `X ++ (1,0,0)(2,0,0)` = ψ(Ω_ω)·ω^ω の標準形。 -/
+def M2 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 0, 0), (2, 0, 0)]
+
+theorem M2_len : M2.length = 4 := by simp [M2]
+
+theorem M2_srow : srow M2 3 = 0 := by simp [srow, M2, entry]
+
+theorem M2_hasParent : hasParent M2 0 3 := by
+  rw [hasParent_zero_iff (by rw [M2_len]; omega)]
+  exact ⟨2, by omega, by simp [M2, entry]⟩
+
+/-- 親は 2 番目の列 `(1,0,0)`。手前の 2 列は最小性で外れる。 -/
+theorem M2_parent : parent M2 0 3 = 2 := by
+  have h := parent_nextR M2_hasParent
+  rw [nextR, if_pos rfl] at h
+  obtain ⟨-, -, hlt, -, hmin⟩ := h
+  have hcase : parent M2 0 3 = 0 ∨ parent M2 0 3 = 1 ∨ parent M2 0 3 = 2 := by omega
+  rcases hcase with h | h | h
+  · exact absurd (hmin 1 ⟨by omega, by omega⟩) (by simp [M2, entry])
+  · exact absurd (hmin 2 ⟨by omega, by omega⟩) (by simp [M2, entry])
+  · exact h
+
+theorem flatMap_singleton_range (a : ℕ × ℕ × ℕ) (n : ℕ) :
+    (List.range n).flatMap (fun _ => [a]) = List.replicate n a := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [List.range_succ, List.flatMap_append, ih]; simp [List.replicate_succ']
+
+theorem oper_M2 (n : ℕ) : M2⟦n⟧ = Mm n := by
+  have h3 : M2.length - 1 = 3 := by rw [M2_len]
+  simp only [oper, h3, M2_srow, M2_parent]
+  rw [if_neg (by omega), if_neg (by simp [M2, entry]),
+    if_neg (by rw [h3, M2_srow]; exact not_not_intro M2_hasParent)]
+  simp [Mm, M2, entry, flatMap_singleton_range]
+
+/-- **`X(1,0,0)(2,0,0) ∈ W 0`** — 梯子の 2 段目。 -/
+theorem M2_mem : M2 ∈ W 0 :=
+  mem_of_oper_mem (fun n _ => (oper_M2 n) ▸ Mm_mem n)
+
 #print axioms M_mem
-#print axioms M_mem_Wself
+#print axioms Mm_mem
+#print axioms M2_mem
 
 end Small
 end TRIO
