@@ -24,6 +24,10 @@ tools/   実行可能な BM4 モデルと検証
 - [dom.md](dom.md) — 拡張ブーフホルツ OCF の `dom` 関数と BM4 展開分岐の対応
 - `tools/normalize_sheet.py` — BM4-Analysis シートのラベルを形式だけ正規化して
   `tmp/fixed-sheet/`（バージョン管理外）と `tools/omega_alpha_rows.tsv` を作る
+- 拡張ブーフホルツ psi ↔ **DBMS 3 行**
+  — 対応表 [α < ε₀](ebp2dbms/sheet/1/README.md) / [ε₀ ≤ α](ebp2dbms/sheet/2/README.md)
+  （[English](ebp2dbms/sheet/1/README-en.md)）。変換関数は
+  [MrredsharkFan 氏の `bmsToDbms`](https://github.com/MrredsharkFan/w-Y-global-lngi)
 - 拡張ブーフホルツ psi ↔ トリオ数列
   — 対応表 [α < ε₀](ebp2bms/sheet/1/README.md) / [ε₀ ≤ α < Λ](ebp2bms/sheet/2/README.md)、
   アルゴリズム [α < ε₀](ebp2bms/algorithm/1/README.md) / [ε₀ ≤ α < Λ](ebp2bms/algorithm/2/README.md)
