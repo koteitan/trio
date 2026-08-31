@@ -15,13 +15,16 @@
 conv3 : BMS 3 行標準形  ->  DBMS 3 行標準形
 ```
 
-で、Python の参照実装が `tools/rows3.py` の `b2d3`、Lean の実装が
-`lean/Dbms3.lean` の `Conv3.b2d3` である。対象は `z ≤ 1`（行 2 が 0 か 1）の断片。
+である。対象は `z ≤ 1`（行 2 が 0 か 1）の断片。
 
-**現状: 変換は実装されているが未完成で、既知の誤りがある。**
-シート BM4-Analysis の 1358 件で 1354 件一致（4 件外す）、`ImgClosedT` の破れが
-`≤6` 列で 54 個、`OrderT3`（順序保存）は偽。2 行版（`conC`、`psi_0(Omega_omega)` 未満）は
-Lean で証明が完成しており、そちらは仮定なしで正しい。
+変換関数は MrredsharkFan 氏の `bmsToDbms` を使う
+（<https://github.com/MrredsharkFan/w-Y-global-lngi> の `conv.js`）。
+測った範囲（`≤8` 列）で単射・全射・順序保存であり、BMS 標準形と DBMS 標準形の間の
+順序同型になっている。詳しくは [results.md](results.md) と
+[mrredsharkfan/README.md](mrredsharkfan/README.md)。
+
+**現状: 残るのは DBMS 側の整礎性 `WellFounded RD3` で、こちらは未証明。**
+2 行版（`conC`、`psi_0(Omega_omega)` 未満）は Lean で証明が完成している。
 
 ## ディレクトリ
 
