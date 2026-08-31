@@ -8,8 +8,10 @@ A1 = ['w','w+1','w+2','w2','w2+1','w2+2','w2+3','w3','w4',
       'w^2','w^2+1','w^2+w','w^2+w+1','w^2*2','w^3',
       'w^w','w^w+1','w^(w+1)','w^w^w','w^w^w^w',
       'w^(w^2+w^2)','w^(w^2+w^2)+w^(w+w)']
-A2 = ['W','W_2','W_3','W_4','W_5','W_w','W_(w^2)','W_W','W_W_W',
-      'psi_0(W)','psi_0(W_w)','psi_0(W_(w^2))']
+A2 = ['psi_0(W)','psi_0(W_2)','psi_0(W_3)','psi_0(W_w)','psi_0(W_(w^2))',
+      'psi_0(W_(w^w))','psi_0(W_psi_0(W))',
+      'W','W+1','W+2','W+w','W+w^2','W*2','W*w','W^2','W^w','W^W','W^W^W',
+      'W_2','W_3','W_4','W_5','W_w','W_(w^2)','W_W','W_W_W']
 
 TEX = {
  'w': r'\omega', 'w+1': r'\omega+1', 'w+2': r'\omega+2',
@@ -27,8 +29,17 @@ TEX = {
  'W_4': r'\Omega_4', 'W_5': r'\Omega_5', 'W_w': r'\Omega_\omega',
  'W_(w^2)': r'\Omega_{\omega^2}', 'W_W': r'\Omega_{\Omega_1}',
  'W_W_W': r'\Omega_{\Omega_{\Omega_1}}',
- 'psi_0(W)': r'\psi_0(\Omega_1)', 'psi_0(W_w)': r'\psi_0(\Omega_\omega)',
+ 'psi_0(W)': r'\psi_0(\Omega_1)=\varepsilon_0',
+ 'psi_0(W_2)': r'\psi_0(\Omega_2)', 'psi_0(W_3)': r'\psi_0(\Omega_3)',
+ 'psi_0(W_w)': r'\psi_0(\Omega_\omega)',
  'psi_0(W_(w^2))': r'\psi_0(\Omega_{\omega^2})',
+ 'psi_0(W_(w^w))': r'\psi_0(\Omega_{\omega^\omega})',
+ 'psi_0(W_psi_0(W))': r'\psi_0(\Omega_{\varepsilon_0})',
+ 'W+1': r'\Omega_1+1', 'W+2': r'\Omega_1+2', 'W+w': r'\Omega_1+\omega',
+ 'W+w^2': r'\Omega_1+\omega^2', 'W*2': r'\Omega_1\cdot 2',
+ 'W*w': r'\Omega_1\cdot\omega', 'W^2': r'\Omega_1^2',
+ 'W^w': r'\Omega_1^\omega', 'W^W': r'\Omega_1^{\Omega_1}',
+ 'W^W^W': r'\Omega_1^{\Omega_1^{\Omega_1}}',
 }
 
 def alpha_tex(a):
@@ -86,6 +97,23 @@ $`\\begin{pmatrix}5\\cr 2\\cr 0\\end{pmatrix}`$）。
 
 $`\\Omega_X`$（$`X`$ が極限）は $`\\mathrm{shift}(B)`$ のあとに $`X`$ 自身の行列を
 平行移動して繋いだ形になる。
+
+### $`\\Omega_1 \\le \\alpha \\lt \\Omega_2`$
+
+この区間では **DBMS のほうが BMS より 2 列短い**（$`\\alpha \\lt \\varepsilon_0`$ では 2 列長かった）。
+そして**どの行も $`\\Omega_1`$ の 6 列で始まる**（表の全行で確認）。
+残りは $`\\alpha \\lt \\varepsilon_0`$ の表のユニットと同じ形をしている。たとえば
+$`\\Omega_1+1`$ の尾 $`\\begin{pmatrix}4 & 5\\cr 2 & 3\\cr 0 & 0\\end{pmatrix}`$ は
+$`\\omega+1`$ の 2 つめの加算ユニット（アンカー ＋ $`{+}1`$）とまったく同じである。
+
+| $`\\alpha`$ | BMS | DBMS |
+|---|---:|---:|
+| $`\\Omega_1`$ | 4 列 | **6 列** |
+| $`\\Omega_1+1`$ | 10 | **8** |
+| $`\\Omega_1\\cdot 2`$ | 12 | **10** |
+| $`\\Omega_1\\cdot\\omega`$ | 9 | **7** |
+| $`\\Omega_1^{\\Omega_1}`$ | 9 | **7** |
+| $`\\Omega_2`$ | 8 | **6** |
 '''),
  'en': ('''
 The **DBMS 3-row** standard form of $`\\psi_0(\\Omega_\\alpha)`$. The conversion function is
@@ -127,6 +155,23 @@ $`\\begin{pmatrix}5\\cr 2\\cr 0\\end{pmatrix}`$).
 
 For a limit $`X`$, $`\\Omega_X`$ is $`\\mathrm{shift}(B)`$ followed by the shifted matrix of
 $`X`$ itself.
+
+### $`\\Omega_1 \\le \\alpha \\lt \\Omega_2`$
+
+Here DBMS is **two columns shorter** than BMS (below $`\\varepsilon_0`$ it was two longer),
+and **every row starts with the six columns of $`\\Omega_1`$** (checked on every row).
+The rest has the same shape as the units of the $`\\alpha \\lt \\varepsilon_0`$ table: the tail of
+$`\\Omega_1+1`$, namely $`\\begin{pmatrix}4 & 5\\cr 2 & 3\\cr 0 & 0\\end{pmatrix}`$, is exactly the
+second add unit (anchor + $`{+}1`$) of $`\\omega+1`$.
+
+| $`\\alpha`$ | BMS | DBMS |
+|---|---:|---:|
+| $`\\Omega_1`$ | 4 cols | **6** |
+| $`\\Omega_1+1`$ | 10 | **8** |
+| $`\\Omega_1\\cdot 2`$ | 12 | **10** |
+| $`\\Omega_1\\cdot\\omega`$ | 9 | **7** |
+| $`\\Omega_1^{\\Omega_1}`$ | 9 | **7** |
+| $`\\Omega_2`$ | 8 | **6** |
 '''),
 }
 

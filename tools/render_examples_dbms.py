@@ -108,7 +108,33 @@ def render_omega(v, lang):
     return ub(seg, txt(lab['unit'])), [tuple(c) for c in full]
 
 
+# ---- Omega_1 <= alpha < Omega_2 ----
+TAIL_LAB = {
+ 'W+1': r'{+}1', 'W+2': r'{+}2', 'W+w': r'{+}\omega', 'W+w^2': r'{+}\omega^2',
+ 'W*2': r'\cdot 2', 'W*w': r'\cdot\omega', 'W^2': r'{}^{2}',
+ 'W^w': r'{}^{\omega}', 'W^W': r'{}^{\Omega_1}', 'W^W^W': r'{}^{\Omega_1^{\Omega_1}}',
+}
+
+
+def render_between(alpha, lang):
+    """`Omega_1 <= alpha < Omega_2`。頭の 6 列はどれも `Omega_1` そのもの（全数で確認）。
+
+    残りは `alpha < eps_0` の表のユニットと同じ形をしているので、ひとまとめに括る。
+    """
+    full = [tuple(c) for c in mrf3.b2d([tuple(c) for c in Many(alpha)])]
+    head, tail = full[:6], full[6:]
+    seg = ub(pmat(head), r'\Omega_1')
+    if tail:
+        seg += ub(pmat(tail), TAIL_LAB[alpha])
+    return seg, full
+
+
 def cell(alpha, lang, emb='P'):
+    if alpha in TAIL_LAB:
+        tex, flat = render_between(alpha, lang)
+        want = [tuple(c) for c in mrf3.b2d([tuple(c) for c in Many(alpha)])]
+        assert [tuple(c) for c in flat] == want, alpha
+        return MDEF + tex
     b = big_parse(alpha)
     if b and b[0] == 'psi':
         tex, flat = render_psi(b[1], lang, emb)
