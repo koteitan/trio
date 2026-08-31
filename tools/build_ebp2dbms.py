@@ -1,0 +1,198 @@
+# -*- coding: utf-8 -*-
+"""ebp2dbms/sheet/{1,2}/README{,-en}.md を作る。"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from render_examples_dbms import cell
+
+A1 = ['w','w+1','w+2','w2','w2+1','w2+2','w2+3','w3','w4',
+      'w^2','w^2+1','w^2+w','w^2+w+1','w^2*2','w^3',
+      'w^w','w^w+1','w^(w+1)','w^w^w','w^w^w^w',
+      'w^(w^2+w^2)','w^(w^2+w^2)+w^(w+w)']
+A2 = ['psi_0(W)','psi_0(W_2)','psi_0(W_3)','psi_0(W_w)','psi_0(W_(w^2))',
+      'psi_0(W_(w^w))','psi_0(W_psi_0(W))',
+      'W','W+1','W+2','W+w','W+w^2','W*2','W*w','W^2','W^w','W^W','W^W^W',
+      'W_2','W_3','W_4','W_5','W_w','W_(w^2)','W_W','W_W_W']
+
+TEX = {
+ 'w': r'\omega', 'w+1': r'\omega+1', 'w+2': r'\omega+2',
+ 'w2': r'\omega\cdot 2', 'w2+1': r'\omega\cdot 2+1',
+ 'w2+2': r'\omega\cdot 2+2', 'w2+3': r'\omega\cdot 2+3',
+ 'w3': r'\omega\cdot 3', 'w4': r'\omega\cdot 4',
+ 'w^2': r'\omega^2', 'w^2+1': r'\omega^2+1', 'w^2+w': r'\omega^2+\omega',
+ 'w^2+w+1': r'\omega^2+\omega+1', 'w^2*2': r'\omega^2\cdot 2', 'w^3': r'\omega^3',
+ 'w^w': r'\omega^\omega', 'w^w+1': r'\omega^\omega+1',
+ 'w^(w+1)': r'\omega^{\omega+1}', 'w^w^w': r'\omega^{\omega^\omega}',
+ 'w^w^w^w': r'\omega^{\omega^{\omega^\omega}}',
+ 'w^(w^2+w^2)': r'\omega^{\omega^2+\omega^2}',
+ 'w^(w^2+w^2)+w^(w+w)': r'\omega^{\omega^2+\omega^2}+\omega^{\omega+\omega}',
+ 'W': r'\Omega_1', 'W_2': r'\Omega_2', 'W_3': r'\Omega_3',
+ 'W_4': r'\Omega_4', 'W_5': r'\Omega_5', 'W_w': r'\Omega_\omega',
+ 'W_(w^2)': r'\Omega_{\omega^2}', 'W_W': r'\Omega_{\Omega_1}',
+ 'W_W_W': r'\Omega_{\Omega_{\Omega_1}}',
+ 'psi_0(W)': r'\psi_0(\Omega_1)=\varepsilon_0',
+ 'psi_0(W_2)': r'\psi_0(\Omega_2)', 'psi_0(W_3)': r'\psi_0(\Omega_3)',
+ 'psi_0(W_w)': r'\psi_0(\Omega_\omega)',
+ 'psi_0(W_(w^2))': r'\psi_0(\Omega_{\omega^2})',
+ 'psi_0(W_(w^w))': r'\psi_0(\Omega_{\omega^\omega})',
+ 'psi_0(W_psi_0(W))': r'\psi_0(\Omega_{\varepsilon_0})',
+ 'W+1': r'\Omega_1+1', 'W+2': r'\Omega_1+2', 'W+w': r'\Omega_1+\omega',
+ 'W+w^2': r'\Omega_1+\omega^2', 'W*2': r'\Omega_1\cdot 2',
+ 'W*w': r'\Omega_1\cdot\omega', 'W^2': r'\Omega_1^2',
+ 'W^w': r'\Omega_1^\omega', 'W^W': r'\Omega_1^{\Omega_1}',
+ 'W^W^W': r'\Omega_1^{\Omega_1^{\Omega_1}}',
+}
+
+def alpha_tex(a):
+    return TEX[a]
+
+HEAD = {
+ 'ja': ('# 拡張ブーフホルツ psi ↔ DBMS 3 行 対応表: %s',
+        '[← 戻る](../../../README.md) | [Japanese](README.md) | [English](README-en.md)'
+        ' | [α < ε₀](../1/README.md) | [ε₀ ≤ α](../2/README.md)'),
+ 'en': ('# Extended Buchholz psi <-> DBMS 3 rows: %s',
+        '[← Back](../../../README.md) | [Japanese](README.md) | [English](README-en.md)'
+        ' | [α < ε₀](../1/README-en.md) | [ε₀ ≤ α](../2/README-en.md)'),
+}
+
+BODY = {
+ 'ja': ('''
+$`\\psi_0(\\Omega_\\alpha)`$ の **DBMS 3 行**標準形。変換関数は
+[MrredsharkFan 氏の `bmsToDbms`](https://github.com/MrredsharkFan/w-Y-global-lngi)
+（このリポジトリでは `bms2dbms/tools/mrf3.py`）。
+生成: `tools/build_ebp2dbms.py`（各セルは `mrf3.b2d(Many(alpha))` と突き合わせている）。
+
+**トリオ数列（BMS）との違い**は 2 つ。
+
+1. 先頭のアンカー $`\\begin{pmatrix}0\\cr 0\\cr 0\\end{pmatrix}`$ の直後に
+   **梯子** $`\\begin{pmatrix}1 & 2\\cr 0 & 1\\cr 0 & 0\\end{pmatrix}`$ が入る。
+   DBMS の対角は $`(j,\\,j{-}1,\\,\\min(j{-}2,1))`$ で段が深さより 1 低いので、
+   段を 1 つ上げるのに影の柱が要る。
+2. 残りの柱は $`(x,y,z) \\mapsto (x{+}2,\\ y{+}1,\\ z)`$。ただし段が 0 の柱
+   （原始数列埋め込み $`\\mathrm{P}(\\gamma)`$ の柱）は $`(x,0,0) \\mapsto (x{+}2,0,0)`$ で段が上がらない。
+
+$`\\alpha \\lt \\varepsilon_0`$ ではこの 2 つだけで尽きる（下表の全行で確認）。
+
+**表記**: BMS 側と同じく、行列を加算ユニットごとに分け、その中をアンカー・梯子・根・
+乗算ユニット（桁 ＋ 埋め込み）に分けて underbrace で示す。
+''', '''
+$`\\Omega_v`$ の族はここで**構造が変わる**。BMS では
+
+```
+Omega_v = B ++ L(B) ++ … ++ L^(v-1)(B)        B は 4 列、全部で 4v 列
+```
+
+だったが、DBMS では**ブロックが 1 つ減る**。
+
+```
+Omega_v = shift(B) ++ shift(L(B)) ++ … ++ shift(L^(v-2)(B))      v >= 2
+          6 列        4 列                4 列                   全部で 4v-2 列
+```
+
+$`v = 2,\\dots,8`$ で確認した。縮約（DBMS では 1 列が 2 度の役を兼ねる）が
+最後のブロックを吸収するためである。
+
+$`\\Omega_1`$ だけは特別で、長さは $`\\Omega_2`$ と同じ 6 列だが末尾の柱の段が 1 低い
+（$`\\begin{pmatrix}5\\cr 1\\cr 0\\end{pmatrix}`$、$`\\Omega_2`$ は
+$`\\begin{pmatrix}5\\cr 2\\cr 0\\end{pmatrix}`$）。
+
+$`\\Omega_X`$（$`X`$ が極限）は $`\\mathrm{shift}(B)`$ のあとに $`X`$ 自身の行列を
+平行移動して繋いだ形になる。
+
+### $`\\Omega_1 \\le \\alpha \\lt \\Omega_2`$
+
+この区間では **DBMS のほうが BMS より 2 列短い**（$`\\alpha \\lt \\varepsilon_0`$ では 2 列長かった）。
+そして**どの行も $`\\Omega_1`$ の 6 列で始まる**（表の全行で確認）。
+残りは $`\\alpha \\lt \\varepsilon_0`$ の表のユニットと同じ形をしている。たとえば
+$`\\Omega_1+1`$ の尾 $`\\begin{pmatrix}4 & 5\\cr 2 & 3\\cr 0 & 0\\end{pmatrix}`$ は
+$`\\omega+1`$ の 2 つめの加算ユニット（アンカー ＋ $`{+}1`$）とまったく同じである。
+
+| $`\\alpha`$ | BMS | DBMS |
+|---|---:|---:|
+| $`\\Omega_1`$ | 4 列 | **6 列** |
+| $`\\Omega_1+1`$ | 10 | **8** |
+| $`\\Omega_1\\cdot 2`$ | 12 | **10** |
+| $`\\Omega_1\\cdot\\omega`$ | 9 | **7** |
+| $`\\Omega_1^{\\Omega_1}`$ | 9 | **7** |
+| $`\\Omega_2`$ | 8 | **6** |
+'''),
+ 'en': ('''
+The **DBMS 3-row** standard form of $`\\psi_0(\\Omega_\\alpha)`$. The conversion function is
+[MrredsharkFan's `bmsToDbms`](https://github.com/MrredsharkFan/w-Y-global-lngi)
+(here: `bms2dbms/tools/mrf3.py`).
+Generated by `tools/build_ebp2dbms.py`; every cell is cross-checked against
+`mrf3.b2d(Many(alpha))`.
+
+**Two differences from the trio sequence (BMS).**
+
+1. A **ladder** $`\\begin{pmatrix}1 & 2\\cr 0 & 1\\cr 0 & 0\\end{pmatrix}`$ is inserted right
+   after the leading anchor. The DBMS diagonal is $`(j,\\,j{-}1,\\,\\min(j{-}2,1))`$, whose
+   level sits one below the depth, so raising the level by one costs a shadow column.
+2. Every other column moves by $`(x,y,z) \\mapsto (x{+}2,\\ y{+}1,\\ z)`$, except columns at
+   level 0 (the primitive-sequence embedding $`\\mathrm{P}(\\gamma)`$), which move by
+   $`(x,0,0) \\mapsto (x{+}2,0,0)`$ and keep their level.
+
+For $`\\alpha \\lt \\varepsilon_0`$ these two account for everything (checked on every row below).
+''', '''
+The $`\\Omega_v`$ family is where the **structure changes**. In BMS
+
+```
+Omega_v = B ++ L(B) ++ … ++ L^(v-1)(B)        B is 4 columns, 4v in total
+```
+
+but in DBMS **one block disappears**.
+
+```
+Omega_v = shift(B) ++ shift(L(B)) ++ … ++ shift(L^(v-2)(B))      v >= 2
+          6 cols      4 cols              4 cols                 4v-2 in total
+```
+
+Checked for $`v = 2,\\dots,8`$. The contraction (one DBMS column doing double duty)
+absorbs the last block.
+
+$`\\Omega_1`$ is special: same length as $`\\Omega_2`$ (6 columns) but its last column sits
+one level lower ($`\\begin{pmatrix}5\\cr 1\\cr 0\\end{pmatrix}`$ against
+$`\\begin{pmatrix}5\\cr 2\\cr 0\\end{pmatrix}`$).
+
+For a limit $`X`$, $`\\Omega_X`$ is $`\\mathrm{shift}(B)`$ followed by the shifted matrix of
+$`X`$ itself.
+
+### $`\\Omega_1 \\le \\alpha \\lt \\Omega_2`$
+
+Here DBMS is **two columns shorter** than BMS (below $`\\varepsilon_0`$ it was two longer),
+and **every row starts with the six columns of $`\\Omega_1`$** (checked on every row).
+The rest has the same shape as the units of the $`\\alpha \\lt \\varepsilon_0`$ table: the tail of
+$`\\Omega_1+1`$, namely $`\\begin{pmatrix}4 & 5\\cr 2 & 3\\cr 0 & 0\\end{pmatrix}`$, is exactly the
+second add unit (anchor + $`{+}1`$) of $`\\omega+1`$.
+
+| $`\\alpha`$ | BMS | DBMS |
+|---|---:|---:|
+| $`\\Omega_1`$ | 4 cols | **6** |
+| $`\\Omega_1+1`$ | 10 | **8** |
+| $`\\Omega_1\\cdot 2`$ | 12 | **10** |
+| $`\\Omega_1\\cdot\\omega`$ | 9 | **7** |
+| $`\\Omega_1^{\\Omega_1}`$ | 9 | **7** |
+| $`\\Omega_2`$ | 8 | **6** |
+'''),
+}
+
+TITLE = {1: {'ja': 'α < ε₀', 'en': 'alpha < eps_0'},
+         2: {'ja': 'ε₀ ≤ α', 'en': 'eps_0 <= alpha'}}
+COL = {'ja': 'DBMS 3 行', 'en': 'DBMS 3 rows'}
+
+def build(part, lang):
+    al = A1 if part == 1 else A2
+    h, nav = HEAD[lang]
+    out = [h % TITLE[part][lang], '', nav, BODY[lang][part - 1], '',
+           '| $`\\alpha`$ | %s |' % COL[lang], '|---|---|']
+    for a in al:
+        out.append('| $`%s`$ | $`%s`$ |' % (alpha_tex(a), cell(a, lang)))
+    return '\n'.join(out) + '\n'
+
+if __name__ == '__main__':
+    base = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..',
+                        'ebp2dbms', 'sheet')
+    for part in (1, 2):
+        for lang, name in (('ja', 'README.md'), ('en', 'README-en.md')):
+            p = os.path.join(base, str(part), name)
+            open(p, 'w').write(build(part, lang))
+            print('書いた: %s' % os.path.relpath(p, os.path.join(base, '..', '..')))

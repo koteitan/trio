@@ -1,0 +1,19 @@
+/home/koteitan/proofs/dbms/tools/dbms/r89b.py:108: SyntaxWarning: "is not" with a literal. Did you mean "!="?
+  d = {x for x in dic if x is not 'noparent'}
+### R89b 形の検算 |M|<=3  (49.3s)
+  P1/ok                319680
+  P2/ok                413694
+  P3/ok                600210
+  -- (Q1) j0=0 は行 0 の親 p1=0 と同値か --
+     j0=0 & p1=0          351864
+     j0=0 & p1>=1          61830
+  -- (Q2) 二分 (j0=0 / j0>=1 / noparent) は (b,c) に依存するか --
+     mixed                111132
+  -- (Q3) j0=0 のときの (i1=srow, z) --
+     i1=0 z=0 :      29322
+     i1=0 z=1 :      29322
+     i1=1 z=0 :      69876
+     i1=1 z=1 :      69876
+     i1=2 z=0 :     145422
+     i1=2 z=1 :      69876
+

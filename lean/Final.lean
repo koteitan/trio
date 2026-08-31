@@ -9,6 +9,8 @@ import Reduction
 import Gamma
 import Lind
 import Wtower2
+import L53Subst
+import L105Cap
 
 namespace TRIO
 
@@ -68,6 +70,51 @@ theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp)
 `towerGraft2_of_liftStage` により、`LiftStage`（= (WL): 根リフトは段を
 ちょうど `2d` 上げる）から `TowerGraft2` が出る。⟹ 残核は `TowerExp` だけ。 -/
 
+/-- **★★★★★ 停止性は `TowerOK` ただ 1 本から出る**（課題 L70）。
+
+`TowerGraft2` / `TowerExp` を経由せず `Wstar_closed` に直に渡した形。
+`Wstar` 路線（2 行の完成証明と同じ道筋）では、共終性 `trio_cofinality` は無条件、
+`Wstar` の閉性は `Wstar_closed` が `TowerOK` だけを要求する。
+
+⟹ **3 行 z<2 の停止性 ＝ `TowerOK`。** そして課題 L64 / L69 のとおり
+
+    `srow = 1` の枝 … `towerOK1_of_clause3`（`L53Subst.lean`）で**証明ずみ**
+    `srow = 2` の枝 … 親は**必ず根**（`Wset.parent_cons_eq_zero` `:2762`）
+                      ⟹ `z < c`（`L53.tower2_zr` `:2380`）
+                      ⟹ **段は無条件に収まる**（`L53.tower2_stage_fits'` `:2406`。
+                         docstring「段はいつでもちょうど収まる」。`c` にも `z` にも制限なし）
+                      ⟹ **残核は段ではなく `LiftTie`**
+                         （`L53.towerOK2_of_clause3` `:2432` の唯一の仮定）
+
+⚠ 2026-08-30 訂正（SESSION §140）。ここには 2 度、誤った注記が入っていた。
+
+    (旧 1)「`srow = 2, z = 1` は起きない（`tower2_root_z_zero`）」
+           ⟹ `tower2_root_z_zero` の前提は `entry R 2 (|R|-1) = 1`、
+              すなわち **`c = 1` に限った言明**。しかも**死んだコード**
+              （`tower2_z_zero_of_parent` からしか呼ばれず、そちらは誰も呼ばない）。
+              生きている鎖 `towerOK2_of_clause3` は最初から `c` について一般。
+
+    (旧 2)「`srow = 2, 親が根でない` … 残核。`z = 1` かつ `c = 1` のときだけ起きる」
+           ⟹ **誤り**。`domT R m` があれば `parent_cons_eq_zero` が親 = 根を
+              **無条件に**与えるので、`TowerOK2` の設定に「親が根でない」枝は**存在しない**。
+              team-lead が `TowerOK` の設定（`domT` あり）と `CoreCap` の snoc 残核
+              （`domT` が成り立たず `j0 >= 1` が起きる側）を混同して書き込んだもの。 -/
+theorem wf_olt_ST_TS_of_towerOK (htow : Wset.TowerOK) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
+  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar) Set.Subset.rfl
+    (Wset.Wstar_closed htow)
+    (fun hM hN h => trio_cofinality hM hN h)
+
+/-- **★★★★★ トリオ数列は停止する、`TowerOK` を仮定して。** -/
+theorem TRIO_terminates_of_towerOK (htow : Wset.TowerOK) : WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_towerOK htow))
+
+/-- **無限展開列は無い**、`TowerOK` から。 -/
+theorem no_infinite_expansion_of_towerOK (htow : Wset.TowerOK) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_towerOK htow))
+
 /-- **Trio sequences terminate**, modulo the stage law `(WL)` and the
 successor-route tower core `TowerExp` — no `Wstar2`, no `GraftAll`, no `GX`. -/
 theorem TRIO_terminates_of_liftStage (hWL : LiftStage) (he : Wset.TowerExp) :
@@ -94,6 +141,304 @@ theorem TRIO_terminates_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
 theorem no_infinite_expansion_of_row1mono (hM : Row1Mono) (he : Wset.TowerExp) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_liftStage (liftStage_of_row1mono hM) he
+
+/-! ### ★★★★★ 課題 L84: 持ち上げ核は「行 1 のタイがある根」だけになった
+
+`L53.liftStage_of_noTie`（仮定ゼロ）が**無タイの全 `v`** を覆うので、`(WL)` のうち
+本当に要るのは `L53.LiftTie` ——「根の行 1 と等しい列が引数にある場合」だけ。
+⚠⚠ **2026-08-30 訂正（SESSION §154 / §174）。以下の「88.5% / 2.8% / 6.1%」は
+シート由来の母集団の数字であって、定理が引き受ける債務の割合ではない。**
+
+    H11（**シート由来** 70557 件）      狭義 88.5% / 無タイ 2.8% / TieFree 6.1% /（残り 2.6%）
+    R2 (A) **構成的一様** 383,904 件   狭義 14.29% / 無タイ 28.30% / TieFree 6.13% /
+                                       行2≡0 0.99% / **核 50.28%**
+    R2 (B) `TowerOK2` の場面 53,946 件 狭義 46.61% / 無タイ 16.28% / TieFree 0.80% /
+                                       行2≡0 0.00% / **核 36.30%**
+    R2 (C) **`graft` 形**（`towerOK2_of_clause3` `L53Subst:2457` で実際に渡るもの）269,676 件
+                                       狭義 46.60% / 無タイ 16.29% / TieFree 0.80% /
+                                       行2≡0 2.70% / **核 33.61%**
+
+**証明はすべての場合を覆う必要があるので、債務は (A) 50.28% か (C) 33.61%。
+「残り 2.6%」ではない。** `k` 別に割っても動かない（33.64% / 33.60% / 33.60%）ので
+**`graft` 形に特殊化しても残核は縮まない**。
+
+**主因は `v` の分布ではなく「`R` の行 1 の値が `v` を超えるか」**（R2 の (p2)）:
+`v` の範囲だけ変えても核は 37.1% → 33.9% としか動かないが、行 1 のアルファベットを
+上にずらすと 36.5% → 18.6% → **0.0%** と動く。シートの行列は行 1 が根の `v` より
+上の値ばかりなので狭義 88.5% になる。
+
+⚠ 「`W` の前提がタイを排除するのでは」も**反例で潰れている**（R2）:
+`R = [(1,0,0)]`, `v = 1`, `z = 0` ⟹ `X = (0,1,0)(1,0,0) ∈ W 2` かつ `R` の行 1 = 0 < v = 1。
+
+（以下は訂正前の記述。記録として残す。）
+H11 の全数（`TowerOK2` の場面 70557 件）:
+
+    狭義                 62476 (88.5%)   `L53.liftStage_of_strict`    ✅ 仮定ゼロ
+    無タイだが狭義でない  1950 ( 2.8%)   `L53.liftStage_of_noTie`     ✅ 仮定ゼロ
+    タイだが `TieFree`     (  6.1%)      `L53.liftTie_case_tieFree`   ✅ 既存定理
+    **残りのタイ                          `L53.LiftTie`               ← 核**
+
+シート 4482 行の側では `TowerOK2` / タイは **24 節点（0.5%）**。
+さらに `L53.liftTie_of_row1down` で核は `Row1DownLocal`（`Row1Mono` の**局所版**、
+`L53.row1DownLocal_of_row1mono` で `Row1Mono` より弱いことが証明ずみ）へ移る。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`LiftTie` と `TowerExp` を仮定すれば。**
+`LiftStage`（全部の根での `(WL)`）より**真に小さい核**: タイのある根だけ。 -/
+theorem TRIO_terminates_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L53.towerOK_of_liftTie hlt he)
+
+/-- **無限展開列は無い**、`LiftTie` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_liftTie (hlt : L53.LiftTie) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L53.towerOK_of_liftTie hlt he)
+
+/-! ### ★★★★★ 課題 L115: 持ち上げ核の段は **自己段だけ**で足りる
+
+`L53.towerOK2_of_clause3`（`L53Subst.lean:2432`）が `L53.liftStage_cons`（`:2344`）を
+呼ぶのは **1 か所だけ**で、そこでの段は塔の帰納 `key` が自己段で回っているため
+**常に `2v+z`**（`ih : ((0,v,z) :: graft R …) ∈ W (2*v+z)`）。
+⟹ `L53.LiftTie` の `∀ m` は使われていない。
+
+    `L105.LiftTieSelf`（`L105Cap.lean:1335`）… 段を `m = 2v+z` に固定した `LiftTie`
+    `L105.liftTieSelf_of_liftTie`（`:1340`）  … `LiftTie ⟹ LiftTieSelf`
+    `L105.towerOK_of_liftTieSelf`（`:1396`）  … `LiftTieSelf ＋ TowerExp ⟹ TowerOK`
+
+`X ∈ W m` から `X ∈ W (lev X 0)` は出ない（`Wset.W_mono` は逆向き）ので、
+**逆は言えない ＝ 真の弱化**。しかも `Wstar` の元はすべて `Wself`
+（`L53.Wstar_iff_Wself`、`L53Subst.lean:3001`）なので、**狙う場所とちょうど一致**する。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`LiftTieSelf` と `TowerExp` を仮定すれば。**
+`TRIO_terminates_of_liftTie` より**真に弱い**仮定（段が自己段に固定）。 -/
+theorem TRIO_terminates_of_liftTieSelf (hlt : L105.LiftTieSelf)
+    (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_liftTieSelf hlt he)
+
+/-- **無限展開列は無い**、`LiftTieSelf` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_liftTieSelf (hlt : L105.LiftTieSelf)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_liftTieSelf hlt he)
+
+/-- 位置づけ: `LiftTie` 経路はこれを経由して再現できる。 -/
+theorem TRIO_terminates_of_liftTie' (hlt : L53.LiftTie) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_liftTieSelf (L105.liftTieSelf_of_liftTie hlt) he
+
+/-! ### ★★★★★ 課題 L115-1: 持ち上げ核は **`d = 1` の 1 文**まで細った
+
+`LiftTieSelf` からさらに 2 枝落ちる（`L105Cap.lean` §26 / §28、どちらも緑）:
+
+    `∀ d` が消える  … `Wset.Lift1_Lift1`（`Wset.lean:1230`）＋
+                      `Wset.lift_cons`（`:3656`）で `d` の帰納が回る:
+                      `Lift1 X (d+1) = Lift1 ((0,v+1,z) :: ltail v z R 1) d` で、
+                      `Lift1 X 1 ∈ W (2v+z+2) = W (2(v+1)+z)` は**また自己段**
+                      （`Wset.argOK_ltail`（`:3716`）で `argOK` も保たれる）
+    `TieFree` の枝  … `L53.liftTie_case_tieFree`（`L53Subst.lean:2615`、実測 6.1%）
+
+⟹ **`L105.LiftTieCore`**（`L105Cap.lean` §29）: **3 量化（`v z R`）／ 4 前提**
+
+    `argOK R` / **タイあり** `∃ p ∈ R, p.2.1 = v` /
+    **`¬ (1 ≤ v ∧ TieFree ((0,v,z) :: R))`** / **自己段** `((0,v,z) :: R) ∈ W (2v+z)`
+    ⟹ `Lift1 ((0,v,z) :: R) 1 ∈ W (2v+z+2)`
+
+上の表（`Final.lean:152`）の 88.5% ＋ 2.8% ＋ 6.1% が全部**仮定ゼロ定理**で落ち、
+残るのは「**タイかつ `¬TieFree`**」だけ。しかも持ち上げ量は **1** に固定。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`LiftTieCore` と `TowerExp` を仮定すれば。**
+`TRIO_terminates_of_liftTieSelf` よりさらに弱い（`d = 1` ＋ `TieFree` 除外）。 -/
+theorem TRIO_terminates_of_liftTieCore (h : L105.LiftTieCore) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_liftTieCore h he)
+
+/-- **無限展開列は無い**、`LiftTieCore` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_liftTieCore (h : L105.LiftTieCore)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_liftTieCore h he)
+
+/-! ### ★★★★★ 課題 L118: **行 2 ≡ 0 の枝は仮定ゼロで落ちる**
+
+`L105.liftStage_of_zeroRow2`（`L105Cap.lean` §32、**仮定ゼロ**）:
+
+    `(∀ p ∈ X, p.2.2 = 0) → X ∈ W m → Lift1 X d ∈ W (m + 2 * d)`
+
+骨は 3 行: `Lift1` は**行 2 を動かさない**（`Wset.entry2_Lift1`）⟹ `Lift1 X d` も
+行 2 ≡ 0 ⟹ `Wtower2.zeroRow2_mem_Wself`（`Wtower2.lean:3011`）で `Wself`。
+`lev (Lift1 X d) 0 = lev X 0 + 2 * d ≤ m + 2 * d`（根は反射で必ず錐に入る:
+`L53.entry1_Lift1_zero`）⟹ `Wset.W_mono`。
+既存の `Wtower2.snoc_zeroRow2` / `L47W.shTower_zeroRow2` の**リフト版**。
+
+⟹ 残核は **タイ ∧ `¬TieFree` ∧ 行 2 に非零**（`L105.LiftTieCoreRow2`）。
+断片（行 2 ≤ 1）では **`z = 1`、または `R` に行 2 = 1 の列がある**場合だけ。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`LiftTieCoreRow2` と `TowerExp` を仮定すれば。**
+`LiftTieCore` から「行 2 ≡ 0」の枝を落とした版。 -/
+theorem TRIO_terminates_of_liftTieCoreRow2 (h : L105.LiftTieCoreRow2)
+    (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_liftTieCoreRow2 h he)
+
+/-- **無限展開列は無い**、`LiftTieCoreRow2` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_liftTieCoreRow2 (h : L105.LiftTieCoreRow2)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_liftTieCoreRow2 h he)
+
+/-! ### ★★★★ 課題 L117: 凸性経路の「実際に使う実例」だけの核
+
+`L53.lift1_mem_of_wconvex1`（`L53Subst.lean:3230`）が凸性を呼ぶのは **1 か所だけ**で、
+その 3 本は `Y⟦n⟧` から作った特定の列である。⟹ その実例だけを核にできる:
+
+    `L105.WConvexLift1 : ∀ m n Y, Y⟦n⟧ ∈ W m → Lift1 (Y⟦n⟧) 1 ∈ W (m+2) →
+                           (Lift1 Y 1)⟦n⟧ ∈ W (m+2)`
+
+`Le1` の 2 本（`Wtower2.Le1_Lift1_oper` `:4415` / `Le1_oper_Lift1_shiftr01` `:4482`）も
+窓条件（`L53.sandwich_window_one` `:3200`）も上端（`Wslift.ulift_mem_W`）も
+既存定理で自動なので、**残るのはこの 1 文だけ**。
+
+⚠ ただしこの経路の帰納は `A2'`（`W m` の最小不動点）の上で回るので、
+`Y` は `W m` 全体を走り、**`LiftTieCore` の制限は保てない**（`LiftStage` 全体が出る）。
+その代わり **証明本文に連結補題（`W_add` / `rsum` / `W_take` / `W_segment` / `++`）が
+1 つも現れない**（4 本 119 行を機械的に走査して該当ゼロ）ので、
+`Lift1` の分解・再結合の壁（`WCat`）には当たらない。 -/
+
+/-- **★★★★ Trio 数列は停止する、`WConvexLift1` と `TowerExp` を仮定すれば。** -/
+theorem TRIO_terminates_of_convexLift1 (h : L105.WConvexLift1)
+    (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_liftTieCore (L105.liftTieCore_of_convexLift1 h) he
+
+/-- **無限展開列は無い**、`WConvexLift1` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_convexLift1 (h : L105.WConvexLift1)
+    (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_liftTieCore (L105.liftTieCore_of_convexLift1 h) he
+
+/-! ### ★★★★★★ 課題 L120: **核は `TowerExp` 1 本になった**
+
+`Wset.towerOK_of`（`Wset.lean:4513`）は `TowerGraft2`（開核 A）と `TowerExp`（開核 B）の
+**2 本**を要求していた。ところが:
+
+**1. `|R| ≥ 2` では開核 A は開核 B に落ちる。**
+`Wchar.aop_clause3_to_clause2`（`Wchar.lean:39`、**証明ずみ**）
+
+    `2 ≤ |M| → domT M m → (∀ z ∈ W m, based z → graft M z ∈ X) → ∀ n ≥ 1, M⟦n⟧ ∈ X`
+
+は `TowerExp` の仮定 `(∀ n ≥ 1, R⟦n⟧ ∈ Wstar)` **そのもの**（`y := []` を入れた形）。
+⟹ `L105.towerOK_of_exp (he : TowerExp) (h1 : TowerGraft2Single) : TowerOK`。
+
+**2. `|R| = 1` の開核 A は定理**（`L105.towerGraft2Single_holds`、**仮定ゼロ**）。
+骨: `|R| = 1` ⟹ `R.dropLast = []` ⟹ `graft R y` は `y` の行 0 をずらすだけ。
+`Lift1` も `graft` も**行 2 を動かさない**（`Wset.entry2_Lift1`）⟹ 帰納法で
+**塔のすべての列の行 2 は根の行 2 `z` に等しい**。行 2 が定数なら末尾列は行 2 で
+真に浅い列を持たないので**必ず孤児** ⟹ `oper` は `Pred`（`Decrease.oper_eq_pred_of_noParent`）
+⟹ 長さの帰納で根の単元まで剥け、そこは `lev = 2v+z ≤ a`（`L105.constRow2_mem_W`）。
+
+⟹ **`L105.towerOK_of_towerExp (he : TowerExp) : TowerOK`。**
+
+⚠ したがって `TowerGraft2` / `L53.LiftTie` / `L105.LiftTieSelf` / `L105.LiftTieCore` /
+`WConvex` 系は **`TowerOK` には要らない**。上の `TRIO_terminates_of_liftTie` などは
+**歴史的な記録**として残す。 -/
+
+/-- **★★★★★★ Trio 数列は停止する、`TowerExp` **1 本**を仮定すれば。** -/
+theorem TRIO_terminates_of_towerExp (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_towerExp he)
+
+/-- **無限展開列は無い**、`TowerExp` 1 本から。 -/
+theorem no_infinite_expansion_of_towerExp (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_towerExp he)
+
+/-! ### ★★★★★★ 課題 L121/L122: 核を `TowerExpBigRow2` まで絞る
+
+`TowerExp` からさらに 2 枝が**仮定ゼロ**で落ちる（`L105Cap.lean` §39-40）:
+
+    `|R| = 1`                  … `L105.towerExp_singleton`
+                                 （`oper` は長さ 1 で恒等、`Wchar.oper_of_length_one` `:31`
+                                   ＋ `Wchar.oper_mem_of_mem` `:63`）
+    `R.dropLast` の行 2 ≡ `z`  … `L105.tower_of_row2const`
+                                 （`graft R y = R.dropLast ++ (y をずらしたもの)` なので
+                                   塔の行 2 は `{z} ∪ row2(R.dropLast)`。定数なら末尾列は
+                                   **必ず行 2 の孤児** ⟹ `oper` は `Pred` ⟹ 根の単元まで剥ける）
+
+さらに `|R| ≥ 2` では `domT` から `R⟦n⟧ = R.dropLast`（`L105.oper_eq_dropLast_of_domT`）
+なので、仮定の `∀ n` が消えて **`R.dropLast ∈ Wstar`** 1 本になる。
+
+⟹ **`L105.towerOK_of_towerExpBigRow2 (h : L105.TowerExpBigRow2) : Wset.TowerOK`**
+
+    `∀ v z m a R, argOK R → 2 ≤ |R| → z ≤ 1 → 2v+z ≤ a → domT R m →
+       **R.dropLast ∈ Wstar** → **(∃ p ∈ R.dropLast, p.2.2 ≠ z)** →
+       hasParent ((0,v,z) :: R) (srow R (|R|-1)) |R| →
+       ∀ n ≥ 1, ((0,v,z) :: R)⟦n⟧ ∈ W a`
+
+⚠ **`|R| ≥ 2` で剥き落としが効かない理由**（`L105.tower_row2_pred`、§41）:
+塔の行 2 は `z, (R.dropLast の行 2), z, …` と**周期的**になるので、
+非増加になるのは `R.dropLast` の行 2 が `z` に等しいときだけ。 -/
+
+/-- **★★★★★★ Trio 数列は停止する、`TowerExpBigRow2` **1 本**を仮定すれば。** -/
+theorem TRIO_terminates_of_towerExpBigRow2 (h : L105.TowerExpBigRow2) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L105.towerOK_of_towerExpBigRow2 h)
+
+/-- **無限展開列は無い**、`TowerExpBigRow2` 1 本から。 -/
+theorem no_infinite_expansion_of_towerExpBigRow2 (h : L105.TowerExpBigRow2) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_towerOK (L105.towerOK_of_towerExpBigRow2 h)
+
+/-! ### ⚠ 課題 L112/L113 の判定: **「仮定 1 本」は見かけだった**
+
+`L105.coreCap_iff_graftAll`（`L105Cap.lean` §25、緑）:
+
+    **`CoreCap` ⟺ `Wset.GraftAll`**（`Wset.lean:4085`）
+
+`Lind.graft_singleton_eq_cap`（`Lind.lean:169`）が `graft M [(0,b,c)] = cap M b c` を
+与え、`GraftAll` の装備仮定は `Gamma.CtxOK`（`Gamma.lean:153`）の定義そのものなので、
+**`CoreCap` は `GraftAll` の「`y` が 1 列」の場合そのもの**である。
+
+そして `TRIO_terminates_of_cap` の鎖の中で `TowerExp` に相当する債務は
+**`Wset.liftTowerExp2_of_graftAll`（`Wset.lean:4211`）**として `GraftAll` から出ている
+（`Lcone.Wstar2s_closed_of_graftAll`（`Lcone.lean:687`）が
+`Wset.Wstar2s_closed`（`Wset.lean:4347`）に渡す 3 本のうちの 1 本）。
+
+⟹ **`CoreCap` は `TowerExp` を避けているのではなく、内側に畳んでいる。**
+「仮定 1 本」は本数の指標にすぎず、`CoreCap` ＝ `CoreSingleton` ＝ `GraftAll` は
+**同じ命題の 3 つの名前**である。 -/
+
+/-- **核が「より弱い方」へ動いた履歴**（課題 L83）。`Row1DownLocal` は
+`L53.row1DownLocal_of_row1mono` で `Row1Mono` から出るので、真に弱い。 -/
+theorem TRIO_terminates_of_row1down (h1 : L53.Row1DownLocal)
+    (h0 : L53.Row1DownRoot0) (he : Wset.TowerExp) : WellFounded stepRel :=
+  TRIO_terminates_of_liftTie (L53.liftTie_of_row1down h1 h0) he
+
+/-! ### ★★★★★ 課題 L86: 核は「閾値の off-by-one」1 つに畳まれた
+
+`Lcone.le1_zero_iff` は「根が行 0 で狭義最浅なら `le1 X 0 j` ⟺ **根以外の**行 0
+祖先がすべて `entry X 1 0` より上」と言う。`coneV X w j` は**根を含む**祖先が
+`w` より上。⟹ 根を判定から外した錐 `L53.coneVR` を入れると、両方が**同じ族**になる:
+
+    `mlift X w d` = `L53.mliftR X w d`（`w < v0`）  … `Wslift.mlift_mem_W` で**証明ずみ**
+    `Lift1 X d`   = `L53.mliftR X v0 d`             … 欲しいもの
+
+**⟹ 核 ＝ `L53.mliftR_mem_W_of_lt` を `w < v0` から `w = v0` へ 1 段伸ばすこと。**
+`TieFree` / `Row1Mono` / `WConvex` / `Row1DownLocal` / `Row1DownRoot0` が全部これに
+畳まれ、`v0 = 0` の場合分けも消える（`mliftR` は閾値に `v0 - 1` を使わない）。 -/
+
+/-- **★★★★★ Trio 数列は停止する、`MliftR` と `TowerExp` を仮定すれば。**
+今日の到達点の最終形: 持ち上げ側の核は**閾値の 1 段**だけ。 -/
+theorem TRIO_terminates_of_mliftR (h : L53.MliftR) (he : Wset.TowerExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_liftTie (L53.liftTie_of_mliftR h) he
+
+/-- **無限展開列は無い**、`MliftR` と `TowerExp` から。 -/
+theorem no_infinite_expansion_of_mliftR (h : L53.MliftR) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_liftTie (L53.liftTie_of_mliftR h) he
+
+/-- **★★★★★ 核ちょうど 2 本の形**: 持ち上げは `MliftR`（閾値の 1 段）、
+節 2 は `GraftFromExp`（連結 = `WCat` / `WSnoc`）。どちらも既存の証明ずみ定理の
+**1 段の一般化**。 -/
+theorem TRIO_terminates_of_mliftR_graft (h : L53.MliftR) (hg : L53.GraftFromExp) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_towerOK (L53.towerOK_of_mliftR_graft h hg)
 
 /-- **★★★★ Trio sequences terminate, modulo `(WCONVEX)` and `TowerExp`.**
 `(WCONVEX)` is strictly weaker in shape than `(ROW1MONO)`: it may assume a
@@ -377,7 +722,38 @@ not raise the stage*.
   `R⟦1⟧ = R.dropLast`, so the clause-2 datum puts `p_{v,z}(R.dropLast)` in
   `W a`, and `R`'s trailing orphan is the one column appended.
 
-Probe `tools/probe_snoc.py`: 14455 instances, 0 violations. -/
+**Measurement.**  ⚠ The old figure (`tools/probe_snoc.py`: 14455 instances,
+0 violations) measured *nothing*: its `inW` omits clause 3 of `Aop`, so on
+decided inputs it collapses to `lev S[0] ≤ a`, and `(C ++ [p])[0] = C[0]`
+makes the implication a tautology.  Only 408 of its 5068 matrices had a
+certified `C ∈ W u`.
+
+The sound figure is `bms2dbms/tools/r49.py`: **≈111000 instances, 0
+counterexamples, both sides certified** — `Wlo C = true` certifies `C ∈ W u`
+and `Wup (C ++ [p]) u = false` certifies `C ++ [p] ∉ W u`.  Cross-checked
+against the independent refuter `tools/refute.py` (the contrapositive of
+`TRIO.L47.W3`) on 4580 instances with 0 disagreements.
+
+⚠ `WSnoc` does **not** close under expansion to any fixed depth (the depth
+needed grows with `n`), so the measurement reads "no counterexample found",
+never "proved".
+
+⚠⚠ **Do not read `WSnoc` as "short, therefore promising"** (task L47).  Its
+own proof is circular: `C ++ [p] ∈ W u` can only be shown by clause 2
+(`TRIO.L47.wsnoc_clause2_iff` — clause 1 dies on `C ≠ []`, clause 3 on
+`domT`'s `¬ hasParent`), and
+
+    (C ++ [p])⟦n⟧ = C.take r ++ shTower (C.drop r) δ n
+
+where `r` is `p`'s parent.  For `r ≥ 1` a length induction closes it, but
+`r = 0` leaves `shTower C δ n ∈ W u`, which is `ShiftTowerClosed` verbatim —
+and `WSnoc → WCat → ShiftTowerClosed` (`wcat_of_snoc`,
+`shiftTowerClosed_of_cat`).  `r = 0` really happens: **9.65%** of 200299
+pairs whose `C` is certified by `zeroRow2_mem_Wself` (row 2 ≡ 0), e.g.
+`C = (1,0,0)(5,4,0)`, `p = (6,2,0)`.
+
+So `WSnoc` is a *shorter statement* than `Subst1gReviveSelf`, not a *weaker*
+one: it is the same knot. -/
 theorem TRIO_terminates_of_snoc (hsn : WSnoc) : WellFounded stepRel :=
   TRIO_terminates_of_tower (shiftTowerClosedS_of_closed (shiftTowerClosed_of_cat (wcat_of_snoc hsn)))
     (towerExp_of_snoc hsn)
@@ -455,5 +831,54 @@ theorem TRIO_terminates_of_cap (hc : CoreCap) : WellFounded stepRel :=
 theorem no_infinite_expansion_of_cap (hc : CoreCap) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_core (coreSingleton_of_cap hc)
+
+/-! ### ★★★★★★ 塔の閉包 1 本から停止性まで（`GraftAll` を使わない経路）
+
+`Lcone.Wstar2s_closed_of_graftAll` は `GraftAll` を要求するが、L3 の §73-75 は
+**同じ結論を `MTowerClosedS`（マスクつき行 0/行 1 コピー塔の閉包）だけ**から出す:
+
+    `L105.liftTower1_of_shiftTowerClosedS`   `(TOW)` ⟹ `Wset.LiftTower1`
+    `L105.liftTowerExp2_of_mTowerClosedS`    `(TOW2)` ⟹ `Wset.LiftTowerExp2`
+    `L105.shiftTowerClosedS_of_mTowerClosedS`  `(TOW2)` は `e = 0` で `(TOW)` を含む
+    `L105.wstar2s_closed_of_mTowerClosedS`   ＋ `Lcone.liftInner_holds`（無条件）
+
+`MTowerClosedS`（`L105Cap.lean` §74）は **5 量化 / 2 前提**:
+
+    `Q ∈ W u` ＋ 「根が狭義に最浅」 ⟹ `mTower Q d e n ∈ W u`
+
+`graft` も `y ∈ W u` の全称も現れない。 -/
+
+/-- **Well-foundedness of `olt` on standard forms, from the masked copy-tower
+closure alone** — no `GraftAll`, no `GX`. -/
+theorem wf_olt_ST_TS_of_mTowerClosedS (htow : L105.MTowerClosedS) :
+    WellFounded
+      (fun a b : TrioSeq => ST_TS a ∧ ST_TS b ∧ translate a <o translate b) :=
+  Wset.wf_olt_ST_TS_of_cofinality (S := Wset.Wstar2s) Wset.Wstar2s_le_Wstar
+    (fun u0 R hR => L105.wstar2s_closed_of_mTowerClosedS htow u0 R hR)
+    (fun hM hN h => trio_cofinality hM hN h)
+
+/-- **Trio sequences terminate**, modulo the masked copy-tower closure. -/
+theorem TRIO_terminates_of_mTowerClosedS (htow : L105.MTowerClosedS) :
+    WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_mTowerClosedS htow))
+
+/-- **No infinite expansion sequence**, from the masked copy-tower closure. -/
+theorem no_infinite_expansion_of_mTowerClosedS (htow : L105.MTowerClosedS) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS (wf_olt_ST_TS_of_mTowerClosedS htow))
+
+/-! `L105.mTower_mem_of_zeroRow2`（`L105Cap.lean` §76、**仮定ゼロ**）が行 2 ≡ 0 の枝を
+落とすので、残核はさらに **`L105.MTowerClosedRow2`（6 量化 / 3 前提）** に細る。 -/
+
+/-- **Trio sequences terminate**, modulo the masked copy-tower closure
+*restricted to blocks with a nonzero row 2*. -/
+theorem TRIO_terminates_of_mTowerClosedRow2 (h : L105.MTowerClosedRow2) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_mTowerClosedS (L105.mTowerClosedS_of_row2 h)
+
+/-- **No infinite expansion sequence**, from the row-2 restricted tower closure. -/
+theorem no_infinite_expansion_of_mTowerClosedRow2 (h : L105.MTowerClosedRow2) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_mTowerClosedS (L105.mTowerClosedS_of_row2 h)
 
 end TRIO

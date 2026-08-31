@@ -1,0 +1,12 @@
+# BMS -> DBMS 変換（conv3）の Lean パッケージ。
+# BMS 側（停止性証明）は ../../lean の `trio` パッケージにあり、path require で参照する。
+name = "bms2dbms"
+defaultTargets = ["BMS2DBMS"]
+
+[[require]]
+name = "trio"
+path = "../../lean"
+
+[[lean_lib]]
+name = "BMS2DBMS"
+roots = ["Dbms", "DbmsSheet", "DbmsConv", "DbmsStd", "Dbms3", "Conv3M"]

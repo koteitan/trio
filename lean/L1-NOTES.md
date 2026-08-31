@@ -1,0 +1,4991 @@
+# 課題 L1 の作業ノート（2026-08-28）
+
+---
+
+# ★★★ 教訓 12（2026-08-29、課題 L45）—— **いちばん重い**
+
+> **計器が測っている量が、命題の量と同じかを確かめる。対照が必ず鳴ることを見る。**
+
+実例: `inW` は `Wset.lean:171` の `Aop` の**節 3（段の本体、`graft` の節）を
+落としていた**ため、判定できたときは必ず `lev(S[0]) <= a` に潰れる
+（第 1 列は展開で変わらないので、再帰は必ず `S[0]` に着地する）。
+`tools/inw_audit.py`: 標本 20000、判定 15609 のうち **15609 が一致、食い違い 0**。
+
+⟹ **27 個のプローブが `W` の中身を一度も測っていなかった。**
+`PROOF-STATUS §4` の「違反 0」の多くが空虚。
+
+## 見分け方（安い順）
+
+    1. **その計器で「破れが出た」実績があるか。** 出ていれば非退化の証明になる。
+       出たことのある計器: probe_wconvex_step（4.3〜9.4%）、Lift1/oper 可換性（47718）、
+       cnf のタイ（25）、既知不変量（1552）。**これらは無傷。**
+    2. **計器を単純な式と突き合わせる。** `inW` 対 `lev(S[0]) <= a` のように、
+       「もし計器が退化しているならこれと一致するはず」という式を書いて 100% 一致を見る。
+    3. **命題の仮定を壊した対照が False を返すか。**
+
+## ★ 追記（課題 L46）
+
+> **新しく `def` を書いたら、実測が「どの形」で取られたかを確かめる。**
+> `h - 1 ≤ |dmap|` と `h ≤ |dmap|` は **1 文字違いで、片方は真、片方は偽**だった
+> （2386 件中 61 件）。実測（R1-NOTES §4.3）は前者の形で取られていたのに、
+> 私は後者を `def` に書いた。**同じ日に 2 回（課題 L44 と L46）これをやった。**
+
+## ★ 教訓 11 との違い
+
+    11-a  母集団の**定義**が狭い       ⟹ 見落とす
+    11-b  母集団が**別の集合**         ⟹ 見落とす
+    11-c  母集団の**構成法**が経路を切る ⟹ 見落とす
+    **12   計器が命題と違う量を測っている ⟹ そもそも測っていない**
+
+---
+
+# ★★ 教訓（2026-08-29、課題 L28〜L31 で確立）
+
+> **仮定が偽だと分かったら、潰しに行く前に「その仮定が証明のどこで、どんな形で
+> 使われているか」を読む。全域の命題が偽でも、証明が使う狭い形は真かもしれない。**
+
+実例 2 つ（どちらも半日ぶんの作業を救った）:
+
+| 仮定 | 全域では | 証明の中では |
+|---|---|---|
+| `OrderT3` | **偽**（`ST_TS len ≤ 11` で 24 件） | **3 か所だけ**。しかも **(→) は 1 か所も使わない**。1 つは単射性 |
+| `SandwichUT3` | **偽**（`ST_TS v≤4 len≤8` で 12 件） | **1 か所だけ** |
+
+どちらも相手は `ImgCofinalT3` が返した `B`（`(conv3 A)⟦m⟧ = conv3 B`）に限られる。
+弱い版に差し替えたら、**実測の反例はどちらも当たらなかった**
+（`OrderT3` の 24 件は 0/24・0/24。R1 が `b2d3(list(M))` の正しい呼び方で再測定）。
+
+**手順**:
+
+    1. `grep` でその仮定の使用箇所を数える
+    2. 使用箇所ごとに「向き」と「相手」を書き出す
+    3. 相手が特定の族に限られていれば、その族に制限した述語を定義する
+    4. 「強い版 → 弱い版」を証明して弱化であることを裏づける
+    5. Python 側に「既知の反例が弱い版に当たるか」を測ってもらう
+
+⚠ **向きの制限だけでは何も買えない**（`orderT3_of_orderBackT3` で証明した。
+`ST_TS` 上では `seqlex` も `<o` も三分律を満たすので (→) と (←) は同値）。
+**買えるのは「相手の制限」のほうである。**
+
+⚠ **`ImgCofinalT3` は弱められない**（`B` を作る当人だから）。
+
+---
+
+Lean の `Conv3.conv3`（`lean/Dbms3.lean` §8）を Python の `bms2dbms/tools/rows3.py`
+（conv3 v14 ＋ 課題 H1 の 5 条項）に追いつかせた。
+
+## 0. 出発点
+
+    leanman check -C /home/koteitan/proofs/dbms/lean lean/Dbms3.lean
+      -> exit 0 / sorry 0（commit c6ad992）
+
+## 1. `St.prev` の 3 値化は**もう済んでいた**
+
+課題 G3 の報告は「`St.prev : ℕ` は Python の 3 値（None/0/1）を表せない」と
+書いていたが、実際の `Dbms3.lean` はすでに
+
+    /-- 直前の分岐列の選択。`0` 浅い / `1` 深い / `2` まだ無い（Python の `None`）。 -/
+    prev : ℕ
+
+で、入口 `b2d3` も `⟨[], 2, [], M, 0⟩` で始めていた（commit 5013ac3 の時点から）。
+`prev` は `== 0` と `== 1` でしか読まれないので、`2` を `None` と読む符号化で
+Python と完全に一致する。**だから 3 値化のための型の変更は要らなかった。**
+
+## 2. 足した条項
+
+### (a) v12 `newterm` ＋ v14 `wterm` / `wterm_anchbefore`
+
+Python は `conv3` の入口で `st['prev']` を**破壊的に** `None` に落とす。
+Lean は状態を線形に渡すので、局所の値 `prev0` を 1 つ挟み、以降の
+`st.prev` を全部 `prev0` に置き換えた（`sh0` / `sh1` の 3 か所と、
+分岐列でない柱・選択肢の無い柱が返す `bp.2` の 2 か所）。
+
+    let prev0 : ℕ :=
+      if p.1 = 0 then 2
+      else if isWCol (some p) && (par0 st.Mo off == some 0) && !anchBefore st.Mo off then 2
+      else st.prev
+
+第 1 の枝が `newterm`（行 0 が 0 の柱は新しい加算項の頭）、第 2 の枝が
+`wterm` ＋ `wterm_anchbefore`（根に直付けの「x w」の柱 `(k,0,0)` も加算項の頭。
+ただし前にアンカー `(1,1,0)` が 1 本でもあれば効かせない）。
+
+### (b) v14 h1（課題 H1）の 5 条項
+
+新しい定義（どれも `Mo` と添字だけで決まる＝**写しに同変**）:
+
+| Lean | Python |
+|---|---|
+| `termTopAux` / `termTop` | `term_top` |
+| `copyHead` | `copy_head` |
+| `topLevel` | `top_level` |
+| `anchBefore` | `anch_before` |
+| `closesTop` | `closes_top` |
+| `hiB2` / `hiBlock2` | `hi_block2` |
+| `p0deepOk` | `p0deep_ok` |
+
+`term_top` の Python 側は再帰の深さを 64 で打ち切るが、`par0` は添字を**真に
+減らす**ので、Lean では燃料 `j + 1` を渡せば同じ（64 列未満の行列では完全に
+同じ。いま扱うのは <=8 列）。
+
+`conv3` の中の変更は 2 か所だけ:
+
+    let hi := hiBlock2 Mo off                       -- hiBlock -> hiBlock2
+    let sh0 :=
+      if closesTop Mo off nxt then true
+      else if (prev0 == 0) && !closesUnit nxt then !(p0deepOk Mo off p nxt)
+      else (prev0 == 0) || closesUnit nxt
+
+と、`wchainHeadAux` の「鎖の頭が写しの頭なら `none`」（＝鎖はそこで切れる）。
+
+使わなくなった `pv2` は消した（`closesHiUnit` は v14 で呼ばれない。定義は
+記録として残してある）。`hiBlock` も `conv3` からは呼ばれなくなった。
+
+## 3. 既存の証明への波及（3 か所だけ）
+
+1. `conv3_lvl0`（先頭の `(0,0,0)`）: 根は `p.1 = 0` なので `newterm` が発火し、
+   子に渡る状態の `prev` が `st.prev` ではなく `2` になる。**言明を直した**。
+   `b2d3_diagSeqT` は `conv3_lvl1` を任意の `st` について使うので波及しない。
+2. `conv3_lvl1`（`(1,1,1)`）: `simp` に `isWCol` を足した
+   （`isWCol (some (1,1,1)) = false` を潰すため）。
+3. `conv3_tail_step`（`(k+2,k+2,1)`）: 同上。
+
+`decreasing_by` の停止性証明、`contrOne_nil` / `contrFind_nil`、§10〜§12 は
+**1 文字も触っていない**。
+
+## 4. Python との突き合わせ
+
+道具は `lean/l1_sets.py`（入力集合を作る）と `lean/l1_check.py`
+（`Dbms3.lean` の本文を貼った使い捨て file に `#eval ... IO.FS.writeFile` を
+足して `leanman check` で走らせ、Python の像と行 diff する）。課題 G4 の
+`bms2dbms/tools/lean_v13_check.py` と同じやり方で、**Lean に計算させた結果**を
+比べている（Lean の定義を Python で書き直してはいない）。
+
+`bms2dbms/tools/*.py` は読むだけなので、旗の切り替えは実行時に
+`rows3.V12` / `rows3.V14` の辞書を書き換えて行う（file は触らない）。
+
+    python3 lean/l1_sets.py 7 /tmp/l1work/s7.txt
+    python3 lean/l1_check.py gen /tmp/l1work/s7.txt /tmp/l1work/c7
+    leanman check -C lean /tmp/l1work/c7/l1check.lean
+    python3 lean/l1_check.py diff /tmp/l1work/c7
+
+## 5. 突き合わせの結果
+
+| 集合 | 個数 | 食い違い |
+|---|---|---|
+| <=6 列 BMS 3 行 z<2 標準形 **全数** | 8387 | **0** |
+| 7 列 **全数**（<=6 列と合わせて gen<=7 の 77282 個ぜんぶ） | 68895 | **0** |
+| 8 列（縮約発火 2076 ∪ h1 で像が変わる 352 ∪ 無作為 3000） | 5412 | **0** |
+
+旗ごとに「像が変わる行列」を数えた（Python 側の実測、`l1_sets.py`）:
+
+| 旗 | <=6 列 | 7 列 | 8 列 |
+|---|---|---|---|
+| h1 | **0** | **18** | **352** |
+| wterm ＋ wterm_anchbefore | 0 | **0** | **0** |
+| mark（v12, **Lean 未移植**） | 0 | **0** | **0** |
+
+`wterm` は <=8 列では像を 1 つも変えない（旗を落としても同じ）。ただし
+**枝そのものは発火する**（`is_w_col(p)` かつ `par0(Mo,off) == 0` かつ前に
+アンカー無し、という柱を持つ行列は <=7 列で 8913/77282 個ある）ので、
+7 列全数の突き合わせで Lean 側の `prev0` の第 2 の枝は十分に叩かれている。
+
+`mark` も <=8 列では像を 1 つも変えないので、Lean に無いことがこの範囲の
+突き合わせに影響しない（§7）。
+
+h1 は写しの頭が 1 本も無い行列では元の定義に戻るので、**<=6 列では像が
+1 つも変わらない**。だから既存の <=6 列の `#guard` はそのまま通る。
+
+## 6. `#guard`
+
+**h1 で像が変わる行列を全部**入れた（そこが今回の変更点だから）:
+7 列の **18 個** ＋ 8 列の **352 個**。`wterm` は像を変えないが、課題 G3 が
+名指しした <=8 列の非標準 3 個とその 7 列の接頭辞（`wterm` の枝が実際に発火
+する 4 個）も置いた。
+7 列で v13 が v12 と違う 290 個からの抜き取りのうち 1 本が h1 で像が変わる
+ものだったので、h1 の影響を受けない別の 1 本に差し替えた。
+
+`#guard` を 374 本足しても `leanman check` は 9 秒 -> 17 秒（ファイルは
+76 KB -> 154 KB）。<=6 列 8387 個の全数は**入れない**（既存の流儀どおり、
+外部の突き合わせ道具 `l1_check.py` で不一致 0 を確かめる）。
+
+## 7. 移植しなかったもの
+
+* **v12 `mark`**（`leaves_mark_local`）。残余なしの縮約を「写しを飲んだ印が
+  像に残る」ときだけ許す条項。Python は `st['rec']`（柱ごとに「決める直前の
+  `prev`」を記録する辞書）を読むので、Lean に載せるには `St` にもう 1 本
+  持ち回りを足す必要がある。課題 L1 のブリーフが「後回しでよい」としたもの。
+  <=8 列では像の差 **0**（実測。§5 の表）。だからこの範囲の突き合わせには
+  影響しないが、双子（`M ++ (1,1,0) ++ 写し`）や 9 列以上では効くはずなので、
+  単射性を Lean で言うときには要る。
+
+* v14 の旗 `chu`（`closes_hi_unit`）は Python 側も既定 off なので、Lean の
+  `closesHiUnit` は定義だけ残して呼んでいない（v14 のまま）。
+
+## 8. 次にやるとき
+
+`bms2dbms/tools/rows3.py` は課題 P1/P2/P3 の候補条項（旗 `V15`）を持ち始めた
+（2026-08-28 04:35 の版）。**旗は全部既定 off** なので `b2d3` の像は v14 h1 の
+ままで、この突き合わせはその版でも食い違い 0 だった（再測ずみ）。`V15` の
+どれかが on になったら、この file の §2 と同じ形で Lean に足すこと。
+
+---
+
+# 課題 L2 の作業ノート（2026-08-28）
+
+`ST_D3_conv3_of_parts` が取る 6 つの仮定を、軽い順に `Conv3.b2d3` について
+証明していく。出発点は `ConvDiagT3` だけが証明ずみの状態。
+
+## L2 (a) `ImgLenT3` — **証明した**
+
+    ∀ M, ST_TS M → 1 < |M| → 1 < |b2d3 M|
+
+道具 3 本（`Dbms3.lean` §11.4）:
+
+* `Conv3.conv3_ne_nil` 入力が空でなければ像も空でない。`conv3` の本体は
+  `cols` に本体の柱 `(dd2, e1, e2)` を**必ず**積むので、`conv3.eq_def` を
+  1 回開いて外側の `match` を `split` するだけで出る。
+* `Conv3.eq_true_of_ite_some` `(if X then Y else none) = some Z` から `X = true`。
+  縮約の枝で `lad0 = true` を取り出すのに使う。**`lad0` の巨大な式を書き下さずに
+  済ませる**のが肝（書き下すと 30 行を超える）。
+* `Conv3.two_le_app` `cols ++ w ++ w'` の長さの下界。
+
+証明は 2 枝:
+* 縮約の枝は `lad0` が真なので `cols` 自身が 2 列以上。
+* ふつうの枝は `A ++ B = r ≠ []`（`List.takeWhile_append_dropWhile`）なので
+  `A` か `B` の像が 1 列以上。
+
+## L2 (b) `ImgBlockT3` — **仮定 `Conv3.BlkInv` に落とした**（`sorry` は 0）
+
+    ∀ M, ST_TS M → blockok 0 (b2d3 M)
+    blockok 0 C = (C ≠ [] → C.headI.1 = 0) ∧ (∀ p ∈ C, 0 ≤ p.1) ∧ steps1 C
+
+### 見つけた不変量
+
+**`d ≤ |st.ST|`**（呼び出しの開始深さは、祖先の鎖の長さ以下）。これ 1 本で
+`blockok` がぜんぶ出る。理由:
+
+    lad0 なら ST1 := ST.take d ++ [pw]   |ST1| = d + 1
+    dd0    := fit の値（[d, |ST|] に収まる）または d+1
+    ST2    := ST1.take dd0 ++ [(base,pl2)]      |ST2| = dd0 + 1
+    dd2    := fit の値（[dd1, |ST2|] に収まる）
+    st1.ST := ST2.take dd2 ++ [(e1,e2)]         |st1.ST| = dd2 + 1
+
+つまり **「柱を 1 本置くと、置いた柱の行 0 + 1 がちょうど新しい鎖の長さ」**。
+そして次に置ける柱の行 0 は「その時点の鎖の長さ」以下。**この 2 つが噛み合って
+`steps1`（行 0 の段差 1 以下）になる**。入口は `st.ST = []` なので先頭の柱の
+行 0 は 0 以下 = 0。`∀ p ∈ C, 0 ≤ p.1` は ℕ だから自明。
+
+### 証明した土台（`Dbms3.lean` §11.5）
+
+| 名前 | 中身 |
+|---|---|
+| `Conv3.fitAux_bounds` | `fitAux ST w x k = some y → x ≤ y < x + k` |
+| `Conv3.fit_bounds` | `d ≤ |ST| → fit ST d w = some y → d ≤ y ≤ |ST|` |
+| `Conv3.fit_getD_bounds` | 既定値こみの版 |
+| `Conv3.len_take_app` | `(ST.take d ++ [x]).length = d + 1` |
+| **`Conv3.depths_ok`** | **1 本の柱ぶんの深さの計算がぜんぶ満たす性質**（上の表） |
+| `Conv3.BlkOK` | 呼び出しごとの不変量（下） |
+| `Conv3.BlkOK_nil` | 空の呼び出し |
+| **`Conv3.BlkOK_app`** | **連結の補題**（下） |
+| `Conv3.getLastD_app` / `getLastD_indep` | その道具 |
+| `ImgBlockT3_of_BlkInv` | 入口 `st.ST = []` から `blockok 0` |
+
+    BlkOK d st res :=
+      steps1 res.1
+      ∧ d ≤ |res.2.ST|
+      ∧ (res.1 = [] → |res.2.ST| = |st.ST|)
+      ∧ (res.1 ≠ [] → res.1.headI.1 ≤ |st.ST|)
+      ∧ (res.1 ≠ [] → (res.1.getLastD).1 + 1 = |res.2.ST|)
+
+`BlkOK_app` は `steps1_append`（`Seqlex.lean`）の継ぎ目条件
+「`Y` の先頭 ≤ `X` の末尾 + 1」を、**途中の鎖の長さ**を仲立ちにして埋める:
+
+    Y.headI.1 ≤ |stm.ST| = X.getLastD.1 + 1
+
+### 残り（`Conv3.BlkInv`）と、詰まった点
+
+1. **関数帰納法 `conv3.induct` は使える。** 相互再帰なので `fun_induction` は
+   通らない（`No functional induction theorem ... or function is mutually recursive`）が、
+   `refine conv3.induct (motive1 := ...) (motive2 := ...) ?_ ?_ ?_ ?_ ?_ ?_` は通る。
+   枝は 6 つ（conv3 の空 / 縮約 / ふつう、convResid の空 / 尾が空 / 尾が非空）。
+   **枝の中では `intro` を 49 本入れると、`have` で束ねられた局所値
+   （`v s2 A B ent base_d base_s base_sd pl2 force1 first1 prev0 bp base lad1 e1 e2
+   h1 lad0 ST1 dd0 ST2 dd1 dd2 st1 fc f0 Lb LA FA` ＋ `hcontr LS rA` ＋ 帰納法の
+   仮定 3 本 ＋ `hd`）が全部名前つきで手に入る。**
+2. 空の枝は `conv3_nil` ＋ `BlkOK_nil` で**閉じた**。
+3. **ふつうの枝は `depths_ok` ＋ `BlkOK_app` ×2 で組める**（組み方は上のとおり）。
+   ところが最後に `rw [conv3.eq_def]; dsimp only` で目標を開くと項が巨大になり、
+   局所値で書いた証明項との defeq 検査が `whnf` で燃え尽きる
+   （`maxHeartbeats 2000000` でも足りない。1 回の `leanman check` が 5 分）。
+   **次の一手: `conv3` の 1 列ぶんの本体を名前つきの関数
+   （`conv3Body` など）に括り出す。** そうすると `conv3.eq_def` が構文的な
+   書き換えになり、目標も証明項も小さいままになる。**定義の意味は変えない**ので
+   Python 側が動いていても安全（`#guard` が全部通ることで確かめられる）。
+4. 縮約の枝には、さらに 2 つの穴がある:
+   * **`contr_rd_ok`**: 残余の開始深さ `rd` が `d ≤ rd ≤ |rU.2.ST|` に収まる。
+     `rd = d + 1 + e` の側は `dd2 ≥ d`（`depths_ok`）から出る。
+     `rd = dmapAt rU.2.dmap (rest2[0].1 - 1)` の側は、**`st.dmap`（もとの深さ ->
+     像の深さ）と `st.ST` の関係を不変量にしないと出ない**。
+     候補: 「`k < |dmap|` なら `dmap[k] < |ST|`、かつ `dmap` は狭義単調」。
+   * **`convResid_blk`**: `convResid` の不変量。残余は**森**なので、次の木に移ると
+     開始深さが `rd - (m0 - tail[0].1)` と**下がる**。だから `BlkOK` の第 2 項
+     （`d ≤ |res.2.ST|`）は `convResid` については**そのままでは偽**である。
+     弱めた形（「最後の木の開始深さ ≤ 終了時の鎖の長さ」）にしたうえで、
+     縮約の枝が `rB` に必要とする `d ≤ |rR.2.ST|` を別途出す必要がある。
+
+**これは Python 側に返すべき発見ではない**（`conv3` の設計の欠陥ではなく、
+Lean 側の証明の組み方の問題）。実測では `blockok` の破れは <=7 列 77282 個で 0。
+
+## L2 (d) `SandwichUT3` の見積もり（証明はしていない）
+
+    SandwichUT3 f := ∀ A, ST_TS A → 1 < |A| → ∀ n ≥ 1,
+                       sle3 (f (A⟦n⟧)) ((f A)⟦n+1⟧)
+
+`oper`（`Trio.lean:98`）は BMS 側と DBMS 側で**同じ関数**なので、この命題は
+「変換 `f` と展開 `⟦·⟧` がどれだけ可換か」を測っている。`oper` の形は
+
+    M⟦n⟧ = M.take j0 ++ (n 個の写し)      写しは [j0, j1) を d0/d1 だけ持ち上げたもの
+
+なので、要る補題は次の 5 本になる（依存関係つき）。
+
+### (S1) `oper_split` — 展開は「接頭辞 ＋ 写し」
+
+    M⟦n+1⟧ = M⟦n⟧ ++ (n 番目の写し)
+
+`oper` の定義が `M.take j0 ++ (List.range n).flatMap g` なので
+`List.range_succ` と `flatMap_append` だけで出る。**`Cofidx.lean` の
+`oper_mono_idx` が実質これ**（`sle3 (M⟦n⟧) (M⟦m⟧)`, `n ≤ m`）。
+**依存: なし**（もう手元にある）。
+
+### (S2) `BadRootT3` — 悪い部分の対応
+
+    A の悪い部分 [j0, j1) の像が、conv3 A の悪い部分 [j0', j1') に対応する
+
+具体的には
+* `srow (conv3 A) (|conv3 A| - 1)` が `srow A (|A| - 1)` から決まること、
+* `parent (conv3 A) i1' (|conv3 A| - 1)` が、`parent A i1 (|A|-1)` の像の位置
+  （`st.dmap` の値）と一致すること、
+* 持ち上げ幅 `d0'`, `d1'` が `d0`, `d1` から決まること。
+
+**これが本丸**。`conv3` が最後の柱とその祖先をどう綴るかを追う必要がある。
+**依存: `ImgBlockT3`**（`parent` / `nextrel0` は行 0 の段差の性質を使う）。
+`OrderT3` には依存しない。
+
+### (S3) `PrefixT3` — 接頭辞の像は像の接頭辞
+
+    conv3 (M.take j) が conv3 M の接頭辞に一致する（j が「ユニットの切れ目」なら）
+
+`conv3` は次の柱を覗く（`nxt` / `onx` / `closes_unit` / `closesTop`）ので
+**素朴には偽**。切れ目を「加算ユニットの端」（`closesTop` が真になる位置）に
+限れば成り立つはず。`oper` の切り口 `j0` は悪いルートなので、この形で足りる
+見込み。**依存: なし**（`conv3` の構文だけ）。
+
+### (S4) `CopyEquivT3` — 写しの像は像の写し
+
+    conv3 (M.take j0 ++ 写し) = (conv3 M).take j0' ++ (像の写し)
+
+**これは Python 側の課題 H1 が追っている「写しに同変」そのもの**
+（`copy_head` / `term_top` / `closes_top` / `hi_block2` / `wchain_head` /
+`p0deep_ok` の 5 条項は、まさにこの同変性を回復するために入れた）。
+H1-NOTES §12 の実測では <=7 列 x m<=3 で 54068/… が同変、**壊れているのが 12 対**。
+つまり**この補題はいまの `conv3` ではまだ真ではない**。
+**依存: (S3)。そして Python 側の族 β（課題 H2）の決着待ち。**
+
+### (S5) `ExtraUnitT3` — 右辺の `n+1` の 1
+
+像は入力より「梯子 2 段」ぶん長い（`ConvDiagT3`: `conv3 (diagSeqT 0 v)
+= ddiagSeqT (v+2)`）。その 2 段のぶんだけ、像の側の写しは 1 個多く要る。
+`sle3` の等号側ではなく `seqlex` 側（真に小さい）で吸収する形になる。
+**依存: (S2), (S4), `ImgLenT3`。**
+
+### まとめ（依存グラフ）
+
+    ImgLenT3 ─────────────┐
+    ImgBlockT3 ──> (S2) ──┼──> (S5) ──> SandwichUT3
+    (S3) ──> (S4) ────────┘
+                  ↑
+             課題 H2（族 β）が Python 側で決着してから
+
+* **`OrderT3` には依存しない。**
+* **`ImgBlockT3` には依存する**（(S2) 経由）。だから (b) を先に片づけるのが正しい順。
+* **(S4) はいまの `conv3` では偽**（<=7 列で 12 対の反例）。
+  つまり `SandwichUT3` を Lean で証明する前に、Python 側の H2 が要る。
+  ただし C2（`SandwichU` の実測）は <=7 列 386405 対で破れ 0 なので、
+  (S4) より弱い形（`sle3` で足りる = 一方向だけ）で回避できる可能性はある。
+
+## L2 (c) `mark` の移植 — **移植した**
+
+`V12['mark']`（`leaves_mark_local`）を Lean に載せた。
+
+### 何を変えたか
+
+1. `St` に `rc : List (ℕ × ℕ)`（もとの添字 -> 「決める直前の段」）を足した。
+   符号は `0` 浅い / `1` 深い / `2` まだ無い（Python の `None`）/
+   `3` 選択肢が無い（`'tie'`）/ `4` 記録なし（`'none'`）。
+   **項目名を `rec` にすると自動生成の再帰子 `St.rec` とぶつかる**ので `rc`。
+2. `conv3` の分岐列の枝で `recNew` に記録し、`st1.rc` に載せる。
+   `rc` は像に効かない（読むのは `leavesMark` だけ）。
+3. `Conv3.recAt` / `Conv3.leavesMark` を新設。
+4. 縮約の門に 1 枚かぶせた（`cfm`）。
+
+### 肝: `contrOne` を相互再帰にしなくてよい
+
+Python は `for e in (0, 1)` の中で `continue` するので、素朴には
+`contrOne` が `conv3` を呼ぶ形（＝相互再帰の輪に入る）になる。
+ところが **`mark` が見られるのは `rest2 == []` かつ `e == 1` のときだけ**である
+（`rest2 == []` かつ `e == 0` はその前の `elif e == 0 or not deep_end: continue`
+で落ちる）。`e == 1` はループの最後なので、そこで `continue` することは
+「ループが候補なしで終わる」ことと同じ。つまり
+
+    「`contrFind` が返した候補を、あとから `mark` で捨てる」
+
+と**完全に同値**である。だから `contrFind` はそのままでよく、`conv3` の本体に
+門を 1 枚かぶせるだけで済んだ。判定の下見に `conv3 A` / `conv3 U` の再帰呼び出しが
+2 本増えるが、`decreasing_by` は既存の `rA` / `rU` と同じ形なので `omega` が通る。
+
+### 既存の証明への波及（2 か所）
+
+* §9/§10 の無名コンストラクタ `⟨STd (k+1), st.prev, …, st.nc⟩` に `st.rc` を足した。
+  対角 `diagSeqT` には分岐列 `(a,1,0)` が 1 本も無いので `rc` は素通りする
+  （`(j, j, min j 1)` が `isBranch` になるには `j = 1` かつ `min j 1 = 0` が要り、
+  両立しない）。
+* `conv3_lvl0` の `simp` に `isBranch` を足した（根 `(0,0,0)` が分岐列でないことを
+  潰すため。`rc` の `if isBranch (0,0,0) …` が残ってしまう）。
+
+### 突き合わせ
+
+| 集合 | 個数 | 食い違い |
+|---|---|---|
+| **双子** `M ++ (1,1,0) ++ 写し`（<=14 列） | 4003 | **0** |
+| 　うち **`mark` で像が変わるもの全部** | 2043 | 0 |
+| 　＋ 無作為 | 2000 | 0 |
+| <=6 列 全数 | 8387 | **0** |
+| 7 列 全数 | 68895 | **0** |
+| 8 列（縮約発火 ∪ h1 で像が変わる ∪ 無作為） | 5412 | **0** |
+
+双子は `rows3.twin`（`M ++ (1,1,0) ++ M[1:] の写し`）で、<=7 列 77282 個から作った
+（最長 14 列）。`mark` で像が変わるのは 2043 個。**`#guard` 458 本もそのまま通る**
+（<=8 列では `mark` は像を変えないので当然）。
+
+### まだ Lean に無いもの
+
+`V12['mark_global']`（`leaves_mark`。2 通り走らせて像を比べる大域版）は
+突き合わせ専用で、局所版と gen<=7 で差 0 なので移植しない。
+`V14['chu']`（`closes_hi_unit`）は Python 側も既定 off なので、`leavesMark` の
+Python にある 3 つ目の枝（`closes_hi_unit` が両方を浅くする）は現れない。
+
+
+---
+
+# 課題 L3: 残りの証明債務の地図（2026-08-28）
+
+## 0. まず全体の姿
+
+`lean/` は **自前 64299 行、`sorry` 0 個、`axiom` 宣言 0 個**。
+だから債務は全部「**`Prop` として定義されて、定理の仮定として開いたまま**」の形をしている。
+`grep sorry` で見つかるのは `Dbms.lean:67` と `:74` の**散文**（「sorry は 0 だ」と
+書いてある行）だけである。
+
+**トラックは 2 本ある。両者は独立で、いま合流していない。**
+
+| トラック | 目的 | 現状 |
+|---|---|---|
+| **A. 直接トラック**（`Final.lean` ほか） | 3 行 BMS の停止性そのもの | 残核 **1 本**（15 行の `Prop`） |
+| **B. DBMS トラック**（`Dbms3.lean`） | 像が DBMS 3 行標準形であること | 残り 5 本 |
+
+## 1. 最終定理はどこにあるか
+
+**ある。** `lean/Final.lean:57`（3 行 = トリオ）:
+
+```lean
+/-- **Trio sequences terminate.** -/
+theorem TRIO_terminates (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
+    WellFounded stepRel := step_terminates (wf_Rnf_holds h2 he)
+
+theorem no_infinite_expansion_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_holds h2 he)
+```
+
+**いまの頂点**（仮定 1 本）は `Final.lean:358`:
+
+```lean
+theorem TRIO_terminates_of_revive_self (h : Subst1gReviveSelf) : WellFounded stepRel
+theorem no_infinite_expansion_of_revive_self (h : Subst1gReviveSelf) : ¬ ∃ 無限展開列
+```
+
+2 行（ペア数列）は**無条件で完成**している（`Pair/Final.lean:54`
+`PSS_terminates_unconditional : WellFounded stepRel`、仮定なし）。
+
+`Reduction.lean:51` の `step_terminates (wfimg : WellFounded Rnf) : WellFounded stepRel`
+が「順序数側の整礎性 ⟹ 停止性」の橋で、減少 `m_step_decreases` は証明ずみ。
+つまり**停止性 ＝ `WellFounded Rnf`（標準形上の `<o` の整礎性）**である。
+
+## 2. DBMS 3 行の停止性 — **存在しない**
+
+`WellFounded` / `Acc` / `stepRel` と `ST_D` / `ST_D3` を結ぶ定理は**リポジトリに 1 本も無い**。
+`ST_D` / `ST_D3` を結論に持つ定理は 15 + 6 本あるが、**全部が「像が標準形である」型**
+（`ST_PS M → ST_D (conC M)` / `ST_TS M → ST_D3 (conv3 M)`）である。
+
+### ⚠ 依存の向きに注意（重要）
+
+**DBMS トラックは BMS の整礎性を「入力として消費している」。**
+
+```lean
+theorem ST_D3_conv3_holds (h2 : Wset.TowerGraft2) (he : Wset.TowerExp) … :=
+  ST_D3_conv3 (wf_olt_ST_TS_holds h2 he) H hd hM
+                --  ^^^^^^^^^^^^^^^^^^ BMS 3 行の整礎性
+```
+
+`ST_D3_descend`（`Dbms3.lean` §5）は `A` についての**整礎帰納法**である。降下先の
+`B` は `translate B <o translate A` としか分からないので、`ST_TS` の構成子に沿った
+構造帰納法にはできない（**性質 R が 3 行で偽**だから `B = A⟦n'⟧` に取れない、
+`bms2dbms/tools/NOTES.md` §性質 R）。2 行側も同じで、`DbmsStd.lean:1582,1590` が
+`wf_olt_ST_PS_holds` と `pss_cofinality_holds` を使っている。
+
+したがって **`ST_D3 (conv3 M)` を完成させても、それだけでは停止性は出ない**。
+DBMS トラックの成果物は「像が DBMS 標準形である」という**特徴づけ**であって、
+停止性への**還元ではない**。停止性に効かせるには、どちらかが要る:
+
+1. **DBMS 3 行の整礎性を独立に証明する**（いまリポジトリに命題すら無い）。
+   そのうえで `OrderT3`（順序埋め込み）で BMS 側に移す。この道なら
+   `ST_D3_conv3` を**整礎性を使わずに**（＝ `ReindexT1` を経由せずに）
+   出し直す必要がある。
+2. あるいは DBMS トラックを「停止性の証明」ではなく「順序数の読みの検証」
+   （シート・Y 数列との対応）として位置づける。
+
+**これは Python 側に返す話ではない**（`conv3` の設計の問題ではなく、Lean の
+配線の問題）。ただし**課題の目的の再確認が要る**ので報告する。
+
+## 3. 債務の一覧
+
+### A. 直接トラック（停止性そのもの）
+
+| 命題 | いまの状態 | 大きさの見積もり | 依存 |
+|---|---|---|---|
+| `Reduction.step_terminates` | **証明済み** | — | `WellFounded Rnf` |
+| `Pair/Final.PSS_terminates_unconditional`（2 行） | **証明済み・無条件** | — | — |
+| `Final.TRIO_terminates_of_revive_self` | **証明済み**（仮定 1 本） | — | `Subst1gReviveSelf` |
+| **`Wtower2.Subst1gReviveSelf`** | **未証明・これが唯一の核** | 命題は `Wtower2.lean:3213-3230` の **15 行**。証明の大きさは未知（`PROOF-STATUS.md` §5 が「BM4 展開への新しい数学的入力が要る」と書く壁） | — |
+| `Wset.TowerGraft2` / `Wset.TowerExp` | 核から**導出済み**（`towerGraft2_of_liftStage` / `towerExp_of_substG` ほか） | — | `Subst1gReviveSelf` |
+| `Lind.CoreSingleton` / `CoreCap`、`Wtower2.WSnoc` / `Row1Mono` / `LowerLastParented`、`Wset.GraftAll` | 別ルートの核（同値な顔） | `RESIDUE-PROBLEM.md` §4.8 が「翻訳しても得は無い」と結論 | — |
+| `Gamma.InfEquip` | ⛔ **偽**（`Infcex.not_infEquip` で反証済み） | — | — |
+
+実測（`PROOF-STATUS.md` §4）: `(SUBST1g)` 210201 例 0 違反、`(TOW)` 164 万例 0 違反、
+`(GC)` 1221 万例 0 違反。ただし「`W` 所属の判定自体が停止性問題なので決定的でない」
+と明記されている。
+
+### B. DBMS トラック（`Dbms3.lean`, `ST_D3_conv3_of_parts` の 6 仮定）
+
+| 命題 | いまの状態 | 大きさの見積もり | 依存 |
+|---|---|---|---|
+| `ConvDiagT3 Conv3.b2d3` | **証明済み**（§9, §10） | 約 260 行 | — |
+| `ImgLenT3 Conv3.b2d3` | **証明済み**（§11.4, 課題 L2 (a)） | 約 45 行 | — |
+| `ImgBlockT3 Conv3.b2d3` | **`Conv3.BlkInv` 待ち**（§11.5）。空の枝と**縮約でない枝は証明ずみ** | 土台 約 200 行が済み。残りは縮約の枝 | `BlkInv` |
+| └ `Conv3.BlkInv` の残り | **縮約の枝だけ**。2 つの穴（`contr_rd_ok` と `convResid_blk`） | 数十〜数百行（`dmap` と `ST` の関係を不変量に足す） | — |
+| `SandwichUT3 Conv3.b2d3` | 未着手 | 5 本 (S1)-(S5) に分解（課題 L2 (d)）。(S2) が本丸 | `ImgBlockT3` ／ Python の H2 |
+| `OrderT3 Conv3.b2d3` | 未着手 | **2 行側の対応物が 2533 行**（`Dbms.lean` §5-§8 の `readK_convC` 446 行 ＋ その支え）。3 行は読み `read3` すら未定義で、行 1 と行 2 の 2 種類の影があるので**節が 2 つ**要る。**2 行より大きい** | `ReadT3` ＋ `ImgDokT3` ＋ `ReadLexT3` |
+| `ImgCofinalT3 Conv3.b2d3` | 未着手。**Python 側でまだ破れている**（`ImgClosedT` 破れ <=5 列 2 個 / <=6 列 54 個） | 2 行側は `ReindexD` に融合されていて **`DbmsStd.lean` の約 15000 行がまるごとこの証明** | 変換器 `conv3` の設計（Python の課題 H2/H5） |
+| `SandwichLT3` | **要らない**（`ReindexT1_of_block` / `_of_cofinal` が使わない） | — | — |
+| **DBMS 3 行の停止性** | **命題すら無い**（§2） | 2 行側にも無い。ゼロからの設計 | — |
+| `read3` / `dok`（`OrderT3` の道具） | **未定義** | 2 行の `readK` は 67 行（うち `decreasing_by` 47 行） | — |
+
+### C. 2 行 DBMS（参考・全部済み）
+
+| 命題 | 状態 |
+|---|---|
+| `DbmsStd.reindexD_holds : ReindexD` | **無条件で証明済み**（`DbmsStd.lean:15189`）。約 15000 行 |
+| `DbmsStd.ST_D_conC_final` | **無条件で証明済み**（`DbmsStd.lean:15192`） |
+| `Dbms.readC_conC_ST`（読みの保存） | **証明済み**（§5-§8 で 2533 行） |
+| `Dbms.conC_olt_iff_seqlex` | **証明済み**（3 行）。ただし右辺が **BMS 側の** `seqlex M N` で、`OrderT3` より**弱い** |
+
+**2 行には `SandwichU` / `SandwichL` に当たる命題が無い**。役目は `ReindexD` の中の
+`oper_mono`（上）と `m_step_decreases`（下）が直接果たしている。3 行では
+`ReindexD` の形（相手が `A⟦n'⟧`）が偽なので、相手を「ある標準形 `B`」に緩めた
+`ReindexT1` になり、そこで `oper_mono` が使えなくなった穴を埋めるために
+`SandwichUT3` を明示的に立てる必要が出た。**これが 2 行と 3 行の構造的な分岐点。**
+
+## 4. 運用上の注意（発見）
+
+* **`Dbms3.lean` は `lakefile.toml` の `roots` に入っていない。** つまり
+  `lake build` はこの file をビルドしない（`leanman check` で単体検査するだけ）。
+  `PROOF-STATUS.md` の「自前 40850 行に sorry 0」は**この file を数えていない**。
+* `Final.lean:5` の doc は残る仮定を `Wset.TowerOK` と **`Wset.TbOper`** と書くが、
+  `TbOper` はリポジトリのどこにも無い（古い記述）。
+
+## 5. 片づけたもの（課題 L3 (3)）: `BlkInv` の**縮約でない枝**
+
+いちばん安いのは `ImgBlockT3` の残り（`BlkInv`）だったので、そこを詰めた。
+
+新しく証明した道具（`Dbms3.lean` §11.5）:
+
+* **`Conv3.depths_le`** — `depths_ok` の深さの部分だけ（`cols` を結論に含まない形）。
+  **これが鍵**: `cols` を含む形だと `e2` や `pw` が結論に現れないので、
+  単一化がそれらを決められず「implicit argument を合成できない」で止まる。
+* **`Conv3.cols_blk`** — `depths_ok` を `BlkOK` の形に包んだもの。
+
+そのうえで、`BlkInv` の帰納の 1 歩のうち **空の枝と縮約でない枝は証明できた**。
+戦術の全文（scratch で機械検査ずみ。`· sorry` の 1 か所だけが縮約の枝）:
+
+```lean
+set_option maxHeartbeats 2000000 in
+/-- `BlkInv` の帰納の 1 歩（**縮約の枝はまだ `sorry`**）。 -/
+theorem blk_step (p : Col) (r : TrioSeq) (d : ℕ) (L : List Lent) (F : List Bool)
+    (ps pw : ℕ × ℕ) (first force : Bool) (st : St) (nx : Option Col) (off : ℕ)
+    (hd : d ≤ st.ST.length)
+    (IH : ∀ (M' : TrioSeq), M'.length ≤ r.length → ∀ (d' : ℕ) (L' : List Lent)
+        (F' : List Bool) (ps' pw' : ℕ × ℕ) (f1 f2 : Bool) (st' : St)
+        (nx' : Option Col) (off' : ℕ),
+        d' ≤ st'.ST.length →
+        BlkOK d' st' (conv3 M' d' L' F' ps' pw' f1 f2 st' nx' off')) :
+    BlkOK d st (conv3 (p :: r) d L F ps pw first force st nx off) := by
+  have hA : (r.takeWhile (fun q => decide (p.1 < q.1))).length ≤ r.length :=
+    (List.takeWhile_sublist _).length_le
+  have hB : (r.dropWhile (fun q => decide (p.1 < q.1))).length ≤ r.length :=
+    List.length_dropWhile_le _ r
+  rw [conv3.eq_def]
+  dsimp only
+  split
+  · sorry
+  · refine BlkOK_app (le_refl d)
+      (BlkOK_app ?_ (cols_blk hd rfl rfl rfl rfl rfl rfl rfl)
+        (IH _ hA _ _ _ _ _ _ _ _ _ _ ?_)) (IH _ hB _ _ _ _ _ _ _ _ _ _ ?_)
+    · exact Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1
+    · exact (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge
+    · exact le_trans (Nat.le_succ_of_le (depths_le hd rfl rfl rfl rfl rfl).1)
+        (IH _ hA _ _ _ _ _ _ _ _ _ _
+          (len_take_app (depths_le hd rfl rfl rfl rfl rfl).2 _).ge).2.1
+
+```
+
+### 通し方の勘所（課題 L2 で詰まった点の解決）
+
+* **枝の局所値を `intro` してはいけない。** `conv3.induct` の枝で `have` を
+  `intro` すると、仮定は fvar で、`conv3.eq_def` で開いた目標は生の式になり、
+  `rw` も defeq 検査も通らない（`whnf` が燃え尽きる）。
+* 代わりに **`conv3.eq_def` -> `dsimp only` -> `split` で生の項のまま進み、
+  補題の implicit を目標との単一化で決めさせる**。`BlkOK_app` / `cols_blk` /
+  `depths_le` はどれも結論から implicit が決まる形にしてある。
+* 帰納法は `conv3.induct` ではなく、**列数についての強い帰納法**（`IH` を仮定に
+  取る形）にする。そうすると枝の `have` が出てこない。
+* 側条件は全部 `?_` にして**あとで**片づける（先に書くと metavariable が
+  決まっていなくて `Nat.le_succ_of_le` の implicit が合成できない）。
+
+### 残り（縮約の枝の 2 つの穴）
+
+1. **`contr_rd_ok`**: 残余の開始深さ `rd` が `d ≤ rd ≤ |rU.2.ST|` に収まること。
+   `rd = d + 1 + e` の側は `depths_le` から出る。
+   `rd = dmapAt rU.2.dmap (rest2[0].1 - 1)` の側は
+   **`st.dmap` と `st.ST` の関係を `BlkOK` に足さないと出ない**。
+   候補: 「`k < |dmap|` なら `dmap[k] < |ST|`、かつ `dmap` は狭義単調」。
+2. **`convResid_blk`**: `convResid` の不変量。残余は**森**なので次の木で開始深さが
+   `rd - (m0 - tail[0].1)` と**下がる**。`BlkOK` の第 2 項（`d ≤ |res.2.ST|`）は
+   `convResid` については**そのままでは偽**なので、弱めた形が要る。
+
+なお `ResidBlk`（`rd` の上界を仮定しない形）は**偽**である: `rd > |st.ST|` だと
+`fit` が `none` を返して `dd0 = max rd |ST| = rd` になり、出した柱の行 0 が
+`|st.ST|` を超える。だから `rd` の上界は落とせない。
+
+
+---
+
+# 課題 L4: 直接トラックの残核（2026-08-28）
+
+## 0. 結論を先に
+
+* 残核は **`Wtower2.Subst1gReviveSelf` ただ 1 本**（`Wtower2.lean:3213`、命題は 15 行）。
+  古い 2 核 `TowerGraft2` / `TowerExp` は**これから導出済み**。
+* 残核は「すべての trio 列について〜」の形なので **Python で列挙できる**。
+  ただし中身の `M ∈ Wself` は**一般に有限計算で判定できない**（判定すること自体が
+  停止性問題）。既存のプローブは 3 重打ち切りの過大近似で、**すでに大規模に
+  0 違反**（1221 万例ほか）。同じ真偽検査を足す限界効用は小さい。
+* **DBMS トラックは停止性の道ではない**（下の §4）。位置づけは「検証資産」。
+
+## 1. `W a` とは何か
+
+`W_u` は Buchholz 流の**反復帰納的定義**（`Wset.lean:171-217`）:
+
+    Aop(W, u, X, M) :=
+      (1) |M| <= 1 かつ lev(M,0) = 0
+      (2) 全ての n >= 1 で M[n] ∈ X
+      (3) ある m < u: 末尾列が孤児でレベル m+1、かつ
+          全ての z ∈ W_m（根の深さ 0）で graft(M,z) ∈ X
+    W_u := lfp(X |-> {M | Aop(W,u,X,M)})
+
+ここで `lev(M,j) := 2*行1 + 行2`（z<2 なので添字対の辞書式を ℕ に詰めたもの）。
+
+`Wchar.lean` の**厳密な**特徴づけ:
+
+    |S| = 0  ->  つねに S ∈ W a
+    |S| = 1  ->  S ∈ W a  <->  lev(S,0) <= a
+    |S| >= 2 ->  S ∈ W a  <->  全ての n >= 1 で S[n] ∈ W a
+
+つまり **`M ∈ W a` = 「M からどんな括弧の選び方 n1, n2, ... で展開しても、
+有限回で 1 列以下（レベル <= a）に潰れる」**。停止性そのものを**下から**
+（最小不動点として）組み立てたものである。段 `a` は「根の添字レベルの上限」
+だけを意味し、`W_root_stage` で **段はちょうど根のレベル**と分かっている
+（だから `Wself := {M | M ∈ W (lev M 0)}` 1 つに潰れる）。
+
+**停止性との関係**: 「全標準形が或る `W u` に属する」＋ 共終性（`trio_cofinality`、
+**3 行でも無条件に証明済み**）⟹ `WellFounded stepRel`。
+`W u` は最小不動点なので、その上で超限帰納法が回るのが肝
+（`Wset.acc_of_W` / `wf_of_cofinality_and_membership`）。
+
+## 2. 3 つの核を行列の言葉で
+
+### 2.1 舞台: 主ブロック `(0,v,z) :: R` と「塔」
+
+    列:   0        1 .. |R|
+    行0:  0        R の行 0（全部 > 0 = 全部この根の子孫）
+    行1:  v        R の行 1
+    行2:  z        R の行 2
+
+これは順序表記の `psi_{v,z}(R の順序数)`（**主ブロック**）。
+
+* `domT R m` = **`R` の末尾列は `R` の中では孤児**（レベル m+1 > 0 なのに
+  自分の行に親がいない）。
+* `hasParent ((0,v,z)::R) ...` = **根を頭に足した途端、その孤児に親ができる**。
+  しかもその親は**根そのもの**（`parent_cons_eq_zero`）。
+
+⟹ バッドルートが列 0 なので、展開は「末尾列を除いたもののコピーを n 個」。
+`graft` の形に読み替えると
+
+    ((0,v,z) :: R)[n] = 根 -> R.dropLast -> （より深く）同じものがもう一段 -> ... （n 段）
+
+順序表記では `psi_{v,z}( A + psi_{v,z}( A + ... ) )` の **n 段の塔**。
+「n 個のコピーを横に並べる」＝「n 段の塔を縦に積む」が同じ、というのが要点。
+
+### 2.2 核 A `Wset.TowerGraft2`（`Wset.lean:4498`）— 行 2 で潰れる塔
+
+条件に `srow R (|R|-1) = 2`（**行 2 の崩壊**）が付いている版。
+このとき BM4 の上昇行列 `A_xy` により `d1 = w - v > 0` で、**コピー k は根の行 1 錐の
+上で行 1 を k*(w-v) 持ち上げる**。だから塔の各段に入るのは素の塔ではなく
+**持ち上げられた塔** `Lift1 (tow k) (w-v)`。
+
+手元にある道具は接ぎ木閉包「段 `m` のブロックなら差し込んでよい」だけなのに、
+リフトすると必要な段が `m + 2*(w-v)` に上がる。**この段のズレが核の正体**。
+
+**現状: `towerGraft2_of_liftStage`（`Wtower2.lean:908`）で (WL) = `LiftStage`
+「根リフトは段をちょうど 2d 上げる」から導出済み。**
+
+### 2.3 核 B `Wset.TowerExp`（`Wset.lean:4507`）— 節 2 経由で来た塔
+
+`srow` の指定なし。違うのは**手元のデータ**で、接ぎ木閉包の代わりに
+「全ての n >= 1 で `R[n] ∈ Wstar`」しかない。ところが `domT R m` があるので
+**`R[n] = R.dropLast`（n によらず同じ）**。つまりデータは実質
+
+    R.dropLast ∈ Wstar
+
+**1 個にしぼんでしまう**。差し替えの権利が一切ない状態で、n 段の塔全体が
+`W a` に入ることを示さねばならない。
+
+段なしの一番きれいな顔（`(TOW)`）:
+
+    良い木 Q を深さ q0, q0+e, q0+2e, ... に n 本植えたら、その森も良い
+
+### 2.4 現在の核 `Wtower2.Subst1gReviveSelf`（`Wtower2.lean:3213`）
+
+    良い行列 S（∈ Wself）の第 p 列を、
+      * 先頭列の深さが S の第 p 列と同じ
+      * 他の列はそれ以上に深い
+      * レベル lev(C,0) <= lev(S,p)
+    を満たす良いブロック C に丸ごと差し替える。R := S.take p ++ C ++ S.drop(p+1)。
+
+    さらに
+      (i)  R の末尾列は R の中では親を持つ
+      (ii) その末尾列は、自分の属するブロックの中では孤児
+           （S.drop(p+1) が空なら C の中で、空でなければ S.drop(p+1) の中で）
+      (iii) R の末尾を除いた部分に行 2 > 0 の列がある
+
+    このとき R ∈ Wself。
+
+一言でいうと **「良い行列のある列の下に、その列のレベル以下で止まる良いブロックを
+吊るしてよい」**。未証明なのは (i)(ii)、つまり
+**「文脈がブロック内の孤児を復活させてしまう」場合だけ**。それ以外は全部 Lean 済み。
+(iii) は行 2 ≡ 0 なら 2 行の定理で無料（`zeroRow2_mem_Wself` / `snoc_zeroRow2`）
+なので、実質 **行 2 の印がついた列が末尾より手前にある場合だけ**が残っている。
+
+`W` の定義の節 3 と比べた差は **2 点だけ**:
+
+| | `Aop` 節 3 | 残核 |
+|---|---|---|
+| 位置 | 末尾列のみ | **任意の位置** |
+| ブロックの段 | `lev - 1` | **`lev`**（1 つ上） |
+
+## 3. 3 つの関係と依存の木
+
+**`Subst1gReviveSelf` ⟹ `TowerGraft2` ∧ `TowerExp`**（Lean で証明済み、12 本の鎖）。
+**逆向きの証明はどこにも無い**。`Subst*` を結論に持つ定理は 5 本しかなく、全部
+`Subst*` を仮定に持つ。だから残核は形の上で**真に強い**。
+
+    Subst1gReviveSelf
+      --subst1gRevive_of_self (Wtower2:3231)--> Subst1gRevive
+      --subst1g_of_revive     (Wtower2:3424)--> Subst1g
+      --substClosedG_of_subst1g (Wtower2:2687)--> SubstClosedG
+           |- shiftTowerClosedS_of_substG (Wtower2:3615) -> (TOW)
+           |     `- liftStageParented_of_tower (1800) -> liftStage_of_parented (560)
+           |         -> (WL) LiftStage -> towerGraft2_of_liftStage (908) -> TowerGraft2
+           |- cons_mem_W_of_substG (3709) -> TowerExp の m<a 枝
+           `- substClosed_of_substClosedG (2681) -> SubstClosed
+                 `- towerExp2Root_of_subst (3829) -> towerExp2Low_of_root (2208)
+      --towerExp_of_substG (3803)--> Wset.TowerExp
+      --TRIO_terminates_of_tower (Final:159)--> WellFounded stepRel
+
+**わざわざ強い方に乗り換えた理由**（`Subst1g` の doc）: 核が 2 本 → 1 本、
+段量詞 `u` が消える、`Aop` 節 3 との差が上の 2 点だけの**紙で読める命題**になる。
+
+**どちらが証明しやすいか**: 実質の残りは `TowerExp`（行 2 塔・節 2 経由）側。
+`TowerGraft2` は (WL) から出るところまで来ている。ただし RESIDUE-PROBLEM §5 が
+「`(LOW)` / `(REPL)` / `(TOW)` 独立証明 / 多ブロック化はいずれも `TowerExp` 経由で
+自分に戻る（循環）」と記録しているので、**顔を変える作業には価値が無い**。
+
+## 4. 2 行はどう閉じたか / 3 行で何が足りないか
+
+### 4.1 2 行の `W` は 3 行と**逐語的に同じ**
+
+`Pair/Wset.lean` の `Aop` / `W` / `Wstar` / `tow` は 3 行版と同型。**塔もある。**
+違うのは節 2 のガード `natDom M` があることだけ。
+
+### 4.2 2 行の塔は **8 行**で閉じている
+
+`Pair/Wset.lean:1315 Wstar_closed`（**仮定なし**）の塔の枝:
+
+    have hlift : tow v R k ∈ W m := W_mono hvm ihk
+
+**からくりはこの 1 行**。塔の 1 段前は `W v` に居て、分岐条件が `v <= m` なので
+**段の単調性だけ**で `W m` に押し上がり、そのまま節 3 のデータに食わせられる。
+リフトも文脈も新しい入力も要らない。
+
+### 4.3 3 行で壊れるのは **ただ 1 点**
+
+`Wset.lean:2694` の doc（逐語）:
+
+> **A row-1 orphan is always dominated by the root.** If the principal root fails
+> to revive `R`'s trailing column at row 1, that column's row 1 is at most `v`,
+> so its level is at most `2v <= 2v+z` — the orphan is automatically BELOW the
+> root's stage. **No such bound holds at row 2** (`no_hasParent_two_of_row1_zero`
+> gives permanent orphans of level 1 under a level-0 root), and **that asymmetry
+> is exactly why trio needs more than yapss.**
+
+具体的な機構: **`(x,0,1)` 型の列（行 1 = 0, 行 2 = 1）はどんな文脈でも永久に
+親を持たない**（`no_hasParent_two_of_row1_zero`, `Wset.lean:1893`）。行 2 の親は
+行 1 の祖先でなければならず（`nextrel2` が `le1` を要求）、行 1 が 0 の列に
+行 1 の祖先はあり得ないから。
+
+帰結は 3 つ:
+
+1. **二分法が消える。** 2 行は「根が孤児を復活させない ⟺ 孤児のレベル <= 根の段」
+   が厳密な二分法。3 行でも `srow = 1` なら同じ（`tower1_le` が `2v+z <= m` を
+   自動で出す ⟹ `tower1_mem` は yapss と**逐語的に同じ 8 行**で証明済み）。
+   `srow = 2` では孤児のレベル `m` と根の段 `2v+z` の間に何の関係もない。
+2. **塔が「リフトされた塔」になる。** 上昇行列 `A_xy` がコピーの行 1 を持ち上げる。
+   これが `TowerGraft2`。
+3. **`Aop` 節 2 の `natDom` ガードを外さざるを得ない**（行 2 の永久孤児を `Pred` で
+   吸収する経路が要る。ガードを戻すと `Wstar_closed` が偽になる反例
+   `[(0,0,0),(1,0,1)]` が `GRAFTALL-PLAN §4.5` にある）。その代償が
+   「節 2 経由の塔」= `TowerExp` が核として残ること。
+
+### 4.4 済んでいるもの
+
+* **共終性側**（2 行の `argDomCore_holds` に対応する部分）は 3 行でも
+  **無条件で証明済み**（`trio_cofinality`）。
+* **z = 0（行 2 恒等 0）断片は完済**。`zeroRow2_mem_Wself`（`Wtower2.lean:2950`）が
+  lean-yapss の無条件結果をそのまま輸入する。
+  **「trio の難所は行 2 の列だけにある」**（doc 逐語）。
+
+⟹ **残っているのは `W` の閉包側、しかも行 2 の崩壊だけ。**
+
+## 5. Python で全数検査できるか
+
+### 5.1 できる部分／できない部分
+
+* 残核は「すべての trio 列 `S`, `C`, 位置 `p` について〜」の形で、
+  **順序数も超限概念も出てこない**。だから**列挙はできる**。
+* しかし中身の `M ∈ Wself` は **一般に有限計算で判定できない**。
+  `|M| = 1` なら `2y+z <= a` で即決だが、`|M| >= 2` は「全ての n >= 1 で
+  `M[n] ∈ W a`」という無限分岐の再帰で、**判定すること自体が停止性問題**。
+* 実務では 3 重打ち切りの `inW` で 3 値（True / False / **未判定**）近似する:
+  `n ∈ {1,2}` のみ、再帰深さ `MAXDEPTH`、列長 `MAXLEN`。
+  未判定は成功に数えない。
+* 打ち切りが**過大近似**（受理しすぎる向き）である根拠: `oper_prefix_of_le` より
+  `n' <= n` なら `M[n']` は `M[n]` の接頭辞で `W` は接頭辞閉 ⟹ **n が大きいほど
+  条件が強い** ⟹ `n ∈ {1,2}` は最も緩いチェック。`n <= 3` / `n <= 4` と突合して
+  不一致 0（`tools/check_inw_ns.py`: 判定 2209 例 / 524 例）。
+
+### 5.2 既存の計測（**全部 0 違反**）
+
+| 命題 | スクリプト | 規模 |
+|---|---|---|
+| **残核そのもの** | `tools/probe_subst1g_adv.py` | 78885 決定（別実装の再監査 1201307 決定） |
+| `Subst1g` | `tools/probe_subst1g.py` | 210201 |
+| `Subst1g` on 実 ST_TS | `tools/audit_subst1g_stts.py` | **判定 651 例で頭打ち** |
+| `(GC)` | `tools/probe_gc.py` | 12217217 |
+| `(LOW)` | `tools/probe_lowerlast.py` | 5544711 |
+| `(TOW)` 段なし形 | `tools/probe_tow_hard.py` | 1642293 決定 / 134699 未判定 |
+| `(INS)` | `tools/probe_insert.py` | 1603817 |
+| `(REPL)` | — | 1097675 |
+| `(CAT)` | `tools/probe_cat.py` | 372290 |
+| `(SNOC)` | `tools/probe_snoc.py` | 14455 |
+| サンドイッチ | `tools/probe_sandwich.py` | 1920294 x 2 |
+
+⚠ **実 ST_TS 行列では `inW` が判定不能**。決定的な監査ではない。
+
+⟹ **同じ形の真偽検査を足しても限界効用は小さい。**
+
+### 5.3 まだ測っていない 3 本（提案する仕様）
+
+**検査 A（本命）: 残差インスタンスを「既存の証明済み補題で覆えるか」で分類する**
+
+* 入力: `probe_subst1g_adv.py` が出す残差インスタンス
+  （`context-revives` 枝。既存 14540 例 ＋ 新規乱択）。
+* やること: 各インスタンス `(S, p, C)` について、`R ∈ Wself` が
+  **証明済みの補題だけで出るか**を判定してタグを付ける。使える証明済み補題:
+  `zeroRow2_mem_Wself`（行 2 ≡ 0）/ `snoc_zeroRow2` / `snoc_orphan`（孤児のままの
+  1 列を継ぐ）/ `dropLast_mem_Wself` / `drop_mem_Wself`（接尾辞閉）/
+  `oper_mem_Wself`（展開閉）/ `takeC_mem_of_prefixPackage` /
+  `W_flatMap_copies`（e = 0 のコピー）/ `W_mono`。
+* 出力: 「覆える／覆えない」の分類と、**覆えないものの構造の統計**
+  （`|C|`, `|D|`, 行 2 > 0 の列の位置, `srow`, `e = w - v`, 根のレベル差,
+  `hasParent` を与えている文脈列の位置）。
+* 狙い: 覆えないものが**1 つの形に集中していれば、それが探すべき補題**。
+  この「教師データ」型の測定は課題 H1 で実際に効いた（55 素性 -> 3 リテラルの述語）。
+* 規模の目安: 1 例あたり `inW` を数回。数万例で数十分。
+
+**検査 B: `(TOW)` の「内容領域」だけを網羅する**
+
+* RESIDUE §4.8 より `(TOW)` が**無料でない**のは
+  `|Q| >= 2` かつ `Q` に行 2 > 0 の列があり `e >= 1` のときだけ。
+* `probe_tow_hard.py` は 164 万例の**乱択**。同じ領域を **`|Q| <= 4` で全数**に
+  切り替え、`e ∈ 1..6`, `n ∈ 2..6` を回す。
+* 追加の出力: RESIDUE §4.8 の漸化式（`|Q| = 2` でだけ実機確認ずみ）
+
+      T_n[m] = T_{n-1} ++ (m 列の対角)
+      T_n[m] = Q ++ shiftr01 e 0 (T_{n-1}[m])      (n >= 3)
+
+  が**一般の `|Q|` でも成り立つか**を厳密に検査する。
+* 狙い: 成り立つなら `(TOW)` は n についての帰納 ＋「`Q` の後ろに根レベルの
+  等しい `Wself` 元を深く継ぐ」1 本に落ちる。成り立たない `|Q|` の形が
+  見つかれば、そこが本体。
+
+**検査 C: 打ち切りの健全性を残核の領域で確かめ直す**
+
+* `check_inw_ns.py` は**一般の**母集団で `n<=2` vs `n<=3/4` を比べた（不一致 0）。
+* **残核の残差インスタンスに限って**同じ突合をやる。残差領域で食い違えば、
+  既存の 0 違反はアーティファクトの可能性がある。
+* 規模: 残差から数千例。`n<=3` は重いので `|S| <= 4`, `|C| <= 3` に絞る。
+
+**検査できない部分**: `M ∈ Wself` の真の判定（＝停止性そのもの）。
+だからどの検査も「反例探し」であって「証明」ではない。
+
+## 6. DBMS トラックの位置づけ — **判定: 2（検証資産）**
+
+### 6.1 `ST_D3_conv3` を整礎性なしで出し直す道は**無い**
+
+`ST_D3` は `diag` と `oper` の 2 構成子だけで生成される帰納的集合で、
+**「<=o で下に閉じる」規則が無い**。だから `conv3 M ∈ ST_D3` を示すには
+「対角から `conv3 M` へ**有限回の展開で到達する道**」を作らねばならない。
+
+`ST_TS` の導出（`diag` / `oper`）に沿った構造帰納法にできれば整礎性は要らないが、
+それには
+
+    conv3 (M[n]) = (conv3 M)[m]        （性質 R）
+
+が要る。**3 行ではこれが偽と確定している**（`NOTES.md` §性質 R。
+反例 `M = (0,0,0)(1,1,1)(2,1,0)(3,0,0)`、しかもシートの OCF 欄が独立に裏付け:
+BMS 側の基本列は `psi(W_w^n * W)`、DBMS 側は `psi(W_w^m * W_2)` で**別の順序数**）。
+
+だから相手を「ある標準形 `B`」に緩めた `ReindexT1` になり、`B` に降りる帰納法
+＝**整礎性が必然的に要る**。2 行側も同じ配線（`DbmsStd.lean:1582,1590` が
+`wf_olt_ST_PS_holds` と `pss_cofinality_holds` を使う）。
+
+### 6.2 DBMS 側の整礎性を独立に立てる道も現実的でない
+
+DBMS は**展開規則が BMS と完全に同一**で、違うのは対角だけ
+（BMS `(j,j,min j 1)` / DBMS `(j,j-1,min (j-2) 1)`）。だから DBMS の停止性は
+**同じ問題の別インスタンス**であり、`W` 相当の機構を丸ごと作り直すことになる。
+しかも **2 行 DBMS でさえ整礎性は書かれていない**。
+「DBMS のほうが易しい」という前提は**どの行数でも実装されていない**。
+
+### 6.3 行数の見積もり（道 1 を最後までやる場合）
+
+| 部品 | 2 行の対応物 | 3 行の見積もり |
+|---|---|---|
+| `read3` ＋ `ReadT3` | `readK` 67 行 ＋ `readK_convC` 446 行 ＋ 支え = **2533 行** | 影が行 1 と行 2 の 2 種類、`conv3` は縮約つきで `convC` よりずっと複雑 → **5,000〜10,000 行** |
+| `dok` ＋ `ReadLexT3` | **2 行は回避**（`olt_iff_seqlex` を BMS 側に当てて逃げた） | 前例なし → **2,000〜5,000 行** |
+| `ImgCofinalT3` | `reindexD_holds` = `DbmsStd.lean` の約 **15,000 行** | 同等以上。しかも**いまの conv3 では偽**（Img 破れ <=6 列 54 個）なので Python 側の H2/H5 が先 → **>= 15,000 行** |
+| `SandwichUT3` | 前例なし（`oper_mono` が代行） | **2,000〜5,000 行** |
+| `ImgBlockT3` の残り | — | **300〜1,000 行** |
+| **DBMS 3 行の整礎性** | **前例なし（2 行にも無い）** | BMS 3 行が 40,850 行 → **数万行**。しかも同じ壁（行 2 の塔）に当たる公算が高い |
+
+合計 **>= 25,000 行 ＋ 前例のない部品 2 つ**。対して直接トラックの残りは
+**15 行の Prop 1 本**。
+
+### 6.4 したがって
+
+* **停止性を目指すなら直接トラック。**
+* DBMS トラックは
+  * `ConvDiagT3`（証明済み）/ `ImgLenT3`（証明済み）/ `ImgBlockT3`（骨組み）
+  * シート 1354/1358、BMS <-> DBMS <-> Y 数列の辞書
+  という**検証資産**として意味があり、それ自体は完成させる価値がある。
+  ただし**停止性への還元ではない**。
+* 補強証拠: **`ST_D3_b2d3` は既に `TowerGraft2` / `TowerExp` を仮定に取っている**
+  （`Dbms3.lean`）。DBMS トラックの結論そのものが直接トラックの核に依存している。
+
+
+---
+
+# 課題 L5: 検査 A の結果（2026-08-28）
+
+道具は `tools/probe_residue_cover.py`。seed 20260828、200000 サンプル。
+`inW` は既存プローブと同じ 3 重打ち切り（`n ∈ {1,2}` / MAXDEPTH 11 / MAXLEN 44）。
+
+## 0. 結論を先に
+
+1. **`(x,0,1)` 型の永久孤児は「難しさ」を集中させていない。** 期待は外れた。
+2. **証明済みの 9 本の補題は、帰納を使わない限り残差をほとんど覆わない**
+   （18025 件中 1094 件 = 6%、しかも全部 `|R| = 2` の退化した場合）。
+   残核の中身は**丸ごと帰納の 1 歩の中**にある。
+3. **★ 残核の側条件 6 本は 1 本も真理値に効いていない**（アブレーション）。
+   仮定を全部落とした一般形を反証型で 164760 例ハントして**違反 0**。
+4. ⟹ **停止性は仮定 4 つの 1 行の命題に帰着した**（Lean で機械検査ずみ、
+   `lean/L5Subst.lean`）:
+
+        SubstFree :=
+          ∀ p S C, S ∈ Wself → p < |S| → C ≠ [] → C ∈ Wself →
+            S.take p ++ C ++ S.drop (p+1) ∈ Wself
+
+        TRIO.L5.TRIO_terminates_of_substFree : SubstFree → WellFounded stepRel
+
+   **「`Wself` は任意の位置での任意の `Wself` ブロックの差し替えで閉じている」**
+   — 深さも、レベルも、孤児の条件も、行 2 の条件も要らない。
+
+## 1. 列挙（Lean の仮定をそのまま写した残差）
+
+    residue                18025      ← **違反 0**
+    skip/levC              89736
+    skip/i                 50592
+    skip/ii                22195
+    skip/iii                5983
+    skip/SinW               5240
+    skip/R undecided        5493
+    skip/CinW               2736
+
+## 2. (A) 帰納を使わない補題で覆えるか
+
+`free(M)` = `zeroRow2_mem_Wself` / `snoc_zeroRow2` / `two_col_mem_W` /
+`snoc_orphan` / `W_add`(+`rsum`) / `W_flatMap_copies` を**再帰的に**組む探索
+（`Aop` 節 2 の展開は使わない）。
+
+    COVERED     1094 (6%)   ← 全部 `two_col`（`|R| = 2`）
+    UNCOVERED  16931 (94%)
+
+**⟹ 残差には「証明済みの補題で切り落とせる部分族」が無い。**
+`(iii)`（`R[:-1]` に行 2 の列）がちょうど `zeroRow2` 系を殺し、
+`(i)`（末尾列が親を持つ）が `snoc_orphan` を殺し、`W_add` の `rsum`
+（`D` の根が `R` 全体の最浅）は `S[0]` が深さ 0 なのでほぼ成り立たない。
+
+## 3. (B) 覆えないものの構造
+
+`oper` の分岐データ `(j0, i1, d0, d1)` で見る（`j0` = バッドルート、
+`i1` = 崩壊する行、`d0` = 行 0 のずらし、`d1` = 行 1 のリフト）。
+`Q := R[j0 .. last-1]` = コピーされる塊。
+
+    i1             1=65%   0=24%   2=10%
+    d1             0=89%   1=4%    2=3%   3=1%
+    zone_j0        C=57%   takeS=42%   D=0%      ← **バッドルートは D に入らない**
+    Q_row2         True=88%
+    TOW_free       False=62%  True=37%
+    Q_covers_C     True=71%                        ← 塊が C を丸ごと含む
+    has_permorph   True=52%  False=47%
+    permorph_in_D  False=94%
+
+`TOW_free` は RESIDUE-PROBLEM §4.8 の「`(TOW)` が無料になる 3 条件」
+（`|Q| <= 1` / `Q` が行 2 を持たない / `d0 = 0`）。
+
+## 4. (B1) 教師ラベルと 1 リテラルの分離度
+
+ラベル: **「1 歩ほどくと自由領域に落ちるか」**（`n ∈ {1,2}` の展開が両方
+`free`）。落ちないものが**本当に帰納を要する**インスタンス。
+
+    覆えない 16931 件 → 1 歩で閉じる 5088 / 帰納が要る 11843
+
+1 リテラルの分離度 `P(帰納が要る | 素性 = 値)`:
+
+| 素性 = 値 | 分離度 | 件数 |
+|---|---|---|
+| **`i1 = 2`（行 2 の崩壊）** | **1.000** | 1747 / 1747 |
+| **`d1 = 1`** | **1.000** | 825 / 825 |
+| **`d1 = 2`** | **1.000** | 547 / 547 |
+| `lenQ = 7` | 0.939 | 370 / 394 |
+| `Q_row2 = False` | 0.852 | 1618 / 1900 |
+| ... | | |
+| `i1 = 0` / `d0 = 0` | 0.510 | 2092 / 4100 |
+
+**`i1 = 2 ⟺ d1 >= 1`**（`nextrel2` が `le1` を要求するので行 1 は必ず真に増える）。
+
+### ★ 分かったこと 2 つ
+
+* **`i1 = 2`（行 2 の崩壊）は 1747/1747 で必ず帰納を要する。**
+  Lean 側の分析（`tower1_mem` は行 1 で証明済み、行 2 だけが核）と**完全に一致**。
+* **しかし逆は言えない。** 帰納を要する 11843 件のうち 10096 件は `d1 = 0`
+  である。つまり **`d0 > 0` かつ `Q` に行 2 の列があれば、行 1 のリフトが無くても
+  1 歩では閉じない**。難所は「行 2 のリフト」だけでなく「**行 2 の列を含む塊を
+  ずらしてコピーすること**」そのものにある（RESIDUE §4.8 の `(TOW)` の
+  内容領域の記述と一致）。
+
+### 永久孤児 `(x,0,1)` は集中していない（**期待は外れた**）
+
+    has_permorph = True   帰納が要る 6274 / 1 歩で閉じる 2578   → 0.709
+    has_permorph = False  帰納が要る 5569 / 1 歩で閉じる 2510   → 0.689
+
+**差は 2 ポイント。分離しない。** `permorph_in_C` / `permorph_in_D` /
+`Q_permorph` も同様。永久孤児は「なぜ二分法が壊れるか」の**説明**ではあるが、
+残差の中で難しさを**集中させる特徴ではない**。
+
+## 5. (C) 仮定のアブレーション — **側条件は 1 本も効いていない**
+
+残差の仮定を 1 本ずつ落として、他が全部成り立つインスタンスで反例を探す。
+
+| 落とした仮定 | 判定 | **違反** | 未判定 |
+|---|---|---|---|
+| `lev (C 0) <= lev S p` | 10148 | **0** | 2773 |
+| (i) 末尾列が R で親を持つ | 28383 | **0** | 1263 |
+| (ii) 自分のブロックでは孤児 | 8720 | **0** | 1348 |
+| (iii) `R[:-1]` に行 2 の列 | 3160 | **0** | 722 |
+| 頭の深さ `C[0].x = S[p].x` | 2632 | **0** | 675 |
+| 深さ `∀q∈C, S[p].x <= q.x` | 739 | **0** | 242 |
+| **上の 6 本を全部** | **156247** | **0** | 18244 |
+
+`S ∈ Wself` と `C ∈ Wself` は当然効く（落とすと `inW` が判定できなくなる）。
+
+## 6. (D) 一般形 (SUBST-FREE) の反証型ハント
+
+深さもレベルも自由なブロック `C`（深さ 0..6、レベル 0..9）を使い、
+`S ∈ Wself` と `C ∈ Wself` だけを課す。
+
+    判定 164760   **違反 0**   未判定 13411
+
+内訳（判定できたもののうち）:
+
+    頭の深さが違う              137954
+    R に行 2 の列あり           155319
+    C に浅い列あり               75187
+    lev(C 0) > lev(S p)          74261
+    |R| >= 5                     95943
+    永久孤児 (x,0,1) あり        68552
+    行 2 の崩壊 (i1 = 2)         11047
+
+## 7. 陽性対照 — プローブは反例を**見つけられる**
+
+「違反 0」がプローブの盲目のせいでないことを確かめた。同じ母集団で
+**段を 1 つ下げた**主張（`R ∈ W (lev R 0 - 1)`）を測ると
+
+    判定 67279   **違反 67279**（100%）
+
+つまり `inW` はこの形の偽な主張を即座に、確実に落とす。
+（もう 1 つの対照「`R` を逆順にする」は `ok` が返るが、逆順が所属を保つ場合が
+実際に多いので対照にならない。段の対照が決定的。）
+
+## 8. (E) 打ち切りの健全性を**残差の領域で**再確認
+
+`tools/check_inw_ns.py` は一般の母集団で `n<=2` vs `n<=3` を比べていた
+（不一致 0）。残差の領域（`|R| <= 7` の 1500 件）で同じ突合をやった:
+
+    n<=3 で判定できた 1146   未判定 354   **n<=2 と食い違い 0**
+
+## 9. 探すべき補題 — **(SUBST-FREE)**
+
+    SubstFree :=
+      ∀ p S C, S ∈ Wself → p < |S| → C ≠ [] → C ∈ Wself →
+        S.take p ++ C ++ S.drop (p+1) ∈ Wself
+
+**残核を本当に埋めるか: 埋める。** 仮定を 6 本落としただけなので
+`SubstFree → Subst1gReviveSelf` は**仮定を忘れるだけ**（3 行）。
+Lean で機械検査ずみ（`lean/L5Subst.lean`、`leanman check` exit 0 / sorry 0 /
+axioms = `[propext, Classical.choice, Quot.sound]`）:
+
+    theorem TRIO.L5.subst1gReviveSelf_of_free (h : SubstFree) : Subst1gReviveSelf
+    theorem TRIO.L5.TRIO_terminates_of_substFree (h : SubstFree) : WellFounded stepRel
+    theorem TRIO.L5.no_infinite_expansion_of_substFree (h : SubstFree) : ¬ ∃ 無限展開列
+
+### なぜこれが進展になりうるか
+
+* 残核 `Subst1gReviveSelf` は**帰納の 1 歩**である（RESIDUE §4.5）。帰納を回すと
+  展開のたびに側条件を建て直さなければならない。実際
+  `GRAFTALL-PLAN.md:3332` は深さ条件を厳格 `<` から非厳格 `<=` に弱めている
+  ——「`oper` は厳格性を保たない」から。**側条件を全部落とすのはその極限**で、
+  建て直しの手間がゼロになる。
+* 側条件が消えると **`D = []` / `D ≠ []` の場合分けも、(i)(ii) の孤児の議論も
+  要らなくなる**。`subst1g_of_revive`（`Wtower2.lean:3424`）と
+  `end_subst_of_revive`（:3284）の 2 本立ての構造がそのまま 1 本になる可能性がある。
+
+### ⚠ 注意（循環していないか）
+
+* RESIDUE §4.8 が警告するのは**同値な言い換え**（`(GC)` / `(LOW)` / `(TOW)` /
+  `(REPL)` / `(SNOC)`）である。`SubstFree` はそれらとは違い、残核より
+  **真に強い**（同値ではない）。だから「翻訳して一周する」型ではない。
+* **ただし強い命題が易しいとは限らない。** 測定が言えるのは「偽ではない」まで。
+* 打ち切りの過大近似（`n ∈ {1,2}`）は残る。§7 の陽性対照と §8 の再確認で
+  緩和はしているが、**証明ではない**。
+
+### 次の一手（提案）
+
+1. `SubstFree` を `Wtower2.lean` の帰納（`subst1g_of_revive`）に**そのまま**
+   入れてみる。側条件が消えるので、いま `hpre`（接頭辞パッケージ）を
+   捨てている箇所（RESIDUE §4.5）が使えるようになるかもしれない。
+2. だめなら、6 本のうち**どれを戻すと通るか**を 1 本ずつ試す。
+   測定上はどれも要らないので、**証明に要るものだけ**が残る。それが
+   「本当の側条件」である。
+
+
+---
+
+# 課題 L6: `行 2 <= 行 1` は不変量だが、`natDom` ガードは戻らない（2026-08-28）
+
+## 0. 結論を先に
+
+1. **`行 2 <= 行 1` は BMS / DBMS 両方の標準形の不変量。証明した**
+   （`lean/L6Inv.lean` と `lean/Dbms3.lean` §1.1、`leanman check` exit 0 / sorry 0）。
+   既存の `Wset.zle1`（行 2 ≤ 1）より**真に強い**。
+   系として **標準形には永久孤児 `(x,0,1)` が現れない**。
+2. **しかし `natDom` ガードは戻らない。** `row2 <= row1` を全列に課しても
+   `Wstar_closed` を壊す形が**309 個**残る。最小の反例:
+
+        M = [(0,1,0), (1,1,1)]      （両方の柱で row2 <= row1）
+
+3. 理由: 障害は `(x,0,1)` ではなく **行 1 のタイ**である。
+   `nextrel2` は `le1` を要求し、`le1` は行 1 の**真の増加**を要求する。
+   `(x,0,1)`（行 1 = 0）はその極端な場合にすぎず、`row2 <= row1` が消すのは
+   その 1 点だけ。**行 1 = v >= 1 のタイは残る。**
+
+## 1. 証明した不変量
+
+`lean/L6Inv.lean`（`import Wset`。`Wset.zle1_ST_TS` の写経）:
+
+    TRIO.L6.r21 (M) := ∀ p ∈ M, p.2.2 ≤ p.2.1
+    TRIO.L6.r21_ST_TS : ST_TS M → r21 M
+    TRIO.L6.no_permanent_orphan_ST_TS : ST_TS M → ∀ p ∈ M, p.2.1 = 0 → p.2.2 = 0
+    TRIO.L6.r21_graft / r21_Lift1 / r21_take / r21_drop / r21_dropLast / r21_cons
+
+`lean/Dbms3.lean` §1.1（`Dbms3.lean` は `lakefile.toml` の `roots` に無く
+`L6Inv` を import できないので、展開の枝だけ写した）:
+
+    TRIO.r21D_ST_D3 : ST_D3 M → ∀ p ∈ M, p.2.2 ≤ p.2.1
+    TRIO.no_permanent_orphan_ST_D3
+
+効くのは 2 点だけ:
+* 生成元の対角が満たす（BMS `(j, j, min j 1)` は `min j 1 ≤ j`、
+  DBMS `(j, j-1, min (j-2) 1)` も同様）。
+* `oper` は行 0 と行 1 に**非負**を足し、**行 2 を逐語コピーする**。
+  `Pred` / `take` は柱を落とすだけ。
+
+**機構の道具も保つ**（`L6Inv` で証明）: `graft` は行 0 しか動かさない、
+`Lift1` は行 1 に非負を足す、`take` / `drop` / `dropLast` は部分列。
+
+### 実測（生成器の制約を使わず、展開閉包を直に作った）
+
+    BM4  対角 v=0..5 から n∈{1,2,3} で 6 段  2479 個  行2>行1 の柱 0 / (x,0,1) 0
+    DBMS 対角 v=0..7 から n∈{1,2,3} で 6 段  2923 個  同上 0 / 0
+
+## 2. `natDom` ガードは戻らない — 反例
+
+`natDom M := ∀ m, ¬ domT M m`（`Wset.lean:83`）＝「末尾列が正のレベルの孤児で
+**ない**」。2 行の `Aop` 節 2 はこのガード付き、3 行は外してある。
+
+`GRAFTALL-PLAN §4.5` の反証は `M = [(0,0,0),(1,0,1)]` を使う。これは
+`(1,0,1)` が `row2 > row1` なので**新しい不変量で消える**。しかし:
+
+### 反例 `M = [(0,1,0), (1,1,1)]`
+
+* `row2 <= row1`: `(0,1,0)` は `0 ≤ 1`、`(1,1,1)` は `1 ≤ 1`。**満たす。**
+* `argOK R` for `R = [(1,1,1)]`（深さ 1 > 0）。**満たす。**
+* 末尾列 `(1,1,1)` は `srow = 2`。行 2 の親は「行 2 が小さい**行 1 の祖先**」で
+  なければならない。候補は列 0 だけだが `nextrel1 M 0 1` は
+  `entry M 1 0 = 1 < entry M 1 1 = 1` を要求して**偽**。
+  ⟹ `le1 M 0 1` が偽 ⟹ `nextrel2` の候補なし ⟹ **`¬ hasParent M 2 1`**。
+* よって `domT M 2`（`lev M 1 = 2*1+1 = 3 = m+1`）が成り立ち、**`natDom M` は偽**。
+
+`Wstar` は `v = 1, z = 0, a = 2*1+0 = 2` でも `M ∈ W 2` を要求する。
+ガード付き `Aop` で `M ∈ W 2` を出そうとすると:
+
+| 節 | 要求 | 結果 |
+|---|---|---|
+| 1 | `|M| ≤ 1` | `|M| = 2` ✗ |
+| 2（ガード付き） | `natDom M` | 偽 ✗ |
+| 3 | `∃ m < a = 2, domT M m` | `domT` は `m = 2` を強制、`2 < 2` ✗ |
+
+⟹ **`M ∉ W 2`。`Wstar_closed` は壊れたまま。**
+（ガード無しなら節 2 が通る: `hasParent` が偽なので `M⟦n⟧ = Pred M = [(0,1,0)]`
+で、これは `lev = 2 ≤ 2` の 1 列。）
+
+### 同じ形は 309 個ある
+
+`row2 <= row1` を全列に課し、`v ≤ 2`, `z ≤ 1`, `|R| ≤ 2`、柱は
+深さ 1..3 / 行 1 0..3 / 行 2 0..1 の範囲で全数:
+
+    row2<=row1 を課しても natDom ガードが壊れる形: **309 個**
+    最小: v=1 z=0 a=2 m=2  M=[(0,1,0),(1,1,1)]
+
+## 3. なぜ効かないか（1 段落）
+
+障害は **`nextrel2` が `le1` を要求すること**である。`le1` は行 1 の**真の増加**の
+連鎖なので、「行 2 が正の柱 `(x,w,c)` に行 2 の親がある」ためには、
+その柱の行 0 の祖先の中に**行 1 が `w` より真に小さい**ものが要る。
+`(x,0,1)`（`w = 0`）はその極端な場合で、行 1 の祖先が原理的に存在し得ない。
+`row2 <= row1` が消すのは**この `w = 0` の 1 点だけ**であり、`w >= 1` で
+祖先の行 1 が `w` 以上（＝**行 1 のタイ**）という形は残る。上の反例は
+`w = 1` で根の行 1 も `1` という、いちばん小さいタイである。
+
+## 4. さらに測った: タイの 2 つの版
+
+    根とのタイ（row2>0 の柱で root.row1 >= 自分の row1）  0 / 2479 個
+    局所タイ（row2>0 の柱で ある行 0 祖先の row1 >= 自分の row1）  **1488** / 2479 個
+
+* **根版は実測で不変量**（0 例）。しかも `oper` が保つ理屈もつく
+  （`M⟦n⟧` の根はつねに `M[0]` で、コピーは行 1 に非負を足すだけ）。
+  **上の反例 `[(0,1,0),(1,1,1)]` は根版を破る**（根の行 1 = 1、行 2 の柱の
+  行 1 = 1）。だから根版を課せば反例は消える。
+* **しかし根版は `W` の帰納に通せない。** `mem_of_Aclosed_aux` は列の長さで
+  帰納し、`M = A ++ P`（`P = p0 :: R'`）と**任意の最上位位置で切って再基底**する。
+  そこで要るのは「`p0` の下の行 2 の柱の行 1 が `p0` の行 1 より真に大きい」＝
+  **局所版**であり、局所版は**偽**（同じ閉包で 1488 例）。
+  例: `[(0,0,0),(1,1,1),(2,2,0),(3,3,1),(4,4,0),(5,4,0),(6,3,1),…]` で
+  `(6,3,1)` の行 0 の親は `(5,4,0)`（行 1 = 4 >= 3）。
+
+これは `PROOF-STATUS.md §5.7` / `RESIDUE-PROBLEM.md §4.9` の壁
+「**タイ無しは ST_TS 到達可能性そのもの**」と同じ場所である。
+`row2 <= row1` は既知の局所不変量（`r1ok` / `z0ok` / `noninc` / `zle1`）の
+リストに**無かった新しいもの**だが、§5.7 の反例
+`[(0,0,0),(1,1,0),(2,1,0),(2,2,1)]` は `row2 <= row1` を**満たす**ので、
+この不変量でも壁は越えない。
+
+## 5. それでも買えたもの
+
+* **永久孤児 `(x,0,1)` が標準形に無いことの証明**。これまで Lean 上で
+  一度も使われていなかった構造事実（`PROOF-STATUS §5.5` が `zle1` について
+  言っていたのと同じ意味で、こちらはより強い）。
+* 壁の言い換えが 1 段鋭くなった:
+  **障害は「行 2 が正の柱の行 1 のタイ」であり、`row2 <= row1` はその
+  `行 1 = 0` の境界だけを消す。**
+* 機構の道具（`graft` / `Lift1` / `take` / `drop` / `dropLast`）が
+  `row2 <= row1` を保つことも証明済みなので、**もしどこかで
+  `(x,0,1)` を排除するだけで済む箇所があれば、そこには今すぐ使える**。
+
+
+---
+
+# 課題 L7: `SubstFree` を `W` の帰納で証明しに行った（2026-08-28）
+
+## 0. 結論を先に
+
+* **`Aop` の節 1 は証明できた**（`lean/L7Subst.lean` の `substProp_of_short`）。
+* **`SubstFree` は節 2 ＋ 節 3 に割れる**（`substFree_of_clauses`、機械検査ずみ）。
+  そこから `TRIO_terminates_of_clauses (h2 : Clause2) (h3 : Clause3) :
+  WellFounded stepRel`。
+* **止まる場所は `Subst1gReviveSelf` とまったく同じ「復活の場合」**だった。
+  `Wtower2.subst1g_of_revive`（`Wtower2.lean:3424`）が既に同じ帰納をやっており、
+  そこも同じところで止まっている。
+* ⟹ **側条件 6 本を落として得たのは「帰納のたびに側条件を建て直す手間が消える」
+  ことだけで、壁は動かない。**
+
+## 1. 何をしたか
+
+`Wself := {M | M ∈ W (lev M 0)}` で `W u` は `Aop` の最小不動点なので、
+`Wset.A2'`（「`Aop`-閉な集合は `W u` を含む」）が使える。
+
+    Ysub := {S | SubstProp S}
+    SubstProp S := ∀ p C, p < |S| → C ≠ [] → C ∈ Wself →
+                     S.take p ++ C ++ S.drop (p+1) ∈ Wself
+
+`A2'` を当てると `Aop` の 3 節がそのまま 3 つの場合になる（`lean/L7Subst.lean`）:
+
+    theorem substFree_of_clauses (h2 : Clause2) (h3 : Clause3) : SubstFree
+    theorem TRIO_terminates_of_clauses (h2 : Clause2) (h3 : Clause3) : WellFounded stepRel
+
+節 1 は証明した:
+
+    theorem substProp_of_short {S} (h : S.length ≤ 1) : SubstProp S
+
+（`p < |S|` から `|S| = 1, p = 0` なので `S.take 0 = []`、`S.drop 1 = []`、
+差し替えの結果は `C` そのもの。）
+
+## 2. 節 2 の中身 — 既存の帰納と同じ 4 分割
+
+`Wtower2.subst1g_of_revive` の doc（`Wtower2.lean:3405-3423`）がそのまま当てはまる。
+`D := S.drop (p+1)` として:
+
+| 場合 | 条件 | 閉じ方 |
+|---|---|---|
+| **clause 1** | `|S| ≤ 1` | **証明ずみ** |
+| **mirror** | `|D| ≥ 2` かつ `D` の末尾列が `D` の中で親を持つ | `Xbar.oper_append_inner` で `S⟦n⟧ = S.take (p+1) ++ D⟦n⟧`、`R⟦n⟧ = (S.take p ++ C) ++ D⟦n⟧`。帰納法の仮定が直に効く |
+| **orphan** | `D ≠ []` かつ `R` の末尾列が `R` の中でも孤児 | `R⟦n⟧ = Pred R = S.take p ++ C ++ D.dropLast` ＝ **接頭辞 `S.dropLast` への差し替え**。接頭辞パッケージが払う |
+| **revival** | それ以外（`R` では親を持つのに `D` の中では孤児／`D = []`） | **開いたまま** |
+
+### ⚠ 訂正: 接頭辞パッケージは捨てられていない
+
+`RESIDUE-PROBLEM.md §4.5` は「`hpre : ∀ k, k < |S| → SubstProp u (S.take k)` が
+呼び出し地点に実在し**捨てられている**」と書くが、実際には **orphan の場合で
+使われている**（`Wtower2.lean:3419-3421` の doc に明記）。捨てられているのは
+**revival の場合だけ**である。だから「側条件を落とせばパッケージが使える
+ようになる」という私の課題 L5 §9 の期待は**外れ**だった。
+
+## 3. 実測（`S, C ∈ Wself` の 103579 例）
+
+`R` を展開したときのバッドルート `j0` の位置で分類:
+
+| | 割合 | `R⟦n⟧ = subst (S⟦n⟧) p C` か |
+|---|---|---|
+| `R` が展開しない（`Pred`）＝ **orphan** | **54%** | —（`Pred` で閉じる） |
+| `j0` が `D` の中 ＝ **mirror** | 7% | **つねに成り立つ**（6944/6944） |
+| `j0` が `S.take p` の中 ＝ **revival** | 14% | 98.4% 成り立たない（14302/14487） |
+| `j0` が `C` の中 ＝ **revival** | 25% | 98.5% 成り立たない（25926/26310） |
+
+revival では `R` の展開が「`C` を含む区間の `n` 個のコピー」になるので、
+`S⟦n⟧` への **1 ブロックの差し替え**にならない（多ブロックになる）。
+しかも `d1 > 0`（コピーに行 1 のリフトが乗る）のが `S.take p` 側で **21%**、
+`C` 側で **24%**。そこを塔として処理しようとすると
+
+    C ∈ Wself → （ガード付き行 1 リフトした C）∈ Wself
+
+が要り、これが既知の核 `(WL)` `Wtower2.LiftStage` である。
+`RESIDUE-PROBLEM.md §4.8` の「どの顔も同じところに落ちる」と一致する。
+
+## 4. 詰まった場所を命題の形で
+
+    SubstFreeRevive :=
+      ∀ p S C, S ∈ Wself → p < |S| → C ≠ [] → C ∈ Wself →
+        （R := S.take p ++ C ++ S.drop (p+1) の末尾列が R の中で親を持ち、
+          自分のブロック（D = [] なら C、そうでなければ D）の中では孤児）→
+        R ∈ Wself
+
+これは `Wtower2.Subst1gReviveSelf` から**側条件 6 本を落としただけ**である
+（課題 L6 の `lean/L5Subst.lean` の `SubstFree` と `Subst1gReviveSelf` の関係と同じ）。
+つまり
+
+    L5 の測定:  Subst1gReviveSelf の側条件 6 本は真理値に効かない
+    L7 の帰納:  その 6 本は帰納の**止まる場所**も動かさない
+
+## 5. 判定
+
+**`SubstFree` は「命題としては真に強く、証明の難易度は同じ」だった。**
+利点は残る（側条件の建て直しが消える、`D = []` / `D ≠ []` の場合分けの
+うち側条件由来のものが消える）が、**新しい数学的入力にはならない**。
+`PROOF-STATUS.md §5` の「BM4 展開への新しい数学的入力が要る」は変わらない。
+
+## 6. 課題 L6（`行 2 <= 行 1`）について
+
+これは課題 L6 で回答ずみ。要点だけ:
+
+* **不変量としては正しく、証明した**（`lean/L6Inv.lean` / `lean/Dbms3.lean` §1.1）。
+  `graft` / `Lift1` / `take` / `drop` / `dropLast` が保つことも証明ずみ。
+* **しかし `natDom` ガードは戻らない。** `row2 ≤ row1` を課しても
+  `Wstar_closed` を壊す形が **309 個**残る（最小 `M = [(0,1,0),(1,1,1)]`）。
+* 障害は `(x,0,1)` ではなく**行 1 のタイ**。`row2 ≤ row1` が消すのは
+  `行 1 = 0` の境界だけ。
+
+
+---
+
+# 課題 L7 の続き: 詰まりは「行 1 のタイ」に集中しない（2026-08-28）
+
+課題 L7 の本体（`A2'` の分解・節 1 の証明・`TRIO_terminates_of_clauses`）は
+1 つ前の commit `371ca7b` で済んでいる。ここはその続きで、
+**「詰まりが行 1 のタイに集中するか」**を測った結果。
+
+## 1. 答え: **集中しない**
+
+`R` の末尾列が崩壊する行 `i1 = srow(R, |R|-1)` で revival の場合を割ると
+（`S, C ∈ Wself` の乱択。`tie` = 自分のブロック `B` の中に行 1 の親が無い）:
+
+| | `SubstFree` の revival（(iii) 無し） | **Lean の残核**（(iii) ＋ レベル条件） |
+|---|---|---|
+| `i1 = 0` | 7793 (20%) | 3834 (**21%**) |
+| `i1 = 1` | 21177 (55%) | 10367 (**58%**) |
+| `i1 = 2` / tie | 8531 (22%) | 3270 (18%) |
+| `i1 = 2` / no-tie | 431 (1%) | 237 (1%) |
+| 合計 | 37932 | 17708 |
+
+* **残核の 79% は `i1 <= 1`**。行 2 もタイも関係しない。
+* **`i1 = 2` の中では タイが 93%**（3270/3507）。ここは課題 L6 の診断どおり。
+
+⟹ **タイは「`i1 = 2` の中での支配的な形」であって、残核全体の支配的な形ではない。**
+
+## 2. ⟹ ところが `i1 <= 1` は「新しい数学」を要らない
+
+`oper`（`Trio.lean:98`）は `d1 = if 1 < i1 then … else 0` なので、
+**`i1 <= 1` なら行 1 のリフトは 0**。さらにバッドルート `j0` は末尾列の
+行 0 の親で「間に凹み無し」なので、コピー区間 `[j0, x)` の柱は**全部 `j0` の
+行 0 の子孫**であり、`k*d0` が全部に乗る。したがって
+
+> **`i1 <= 1` のとき、`R⟦n⟧` の中に現れる `C` のコピーは
+> 「`C` を行 0 に `k*d0` だけずらしたもの」ちょうどである。**
+
+実測（コピー区間が `C` を丸ごと含む revival、`n = 1,2,3` の各回を 1 件）:
+
+    i1 <= 1   コピーは C の行 0 ずらし   57066 / 57066   （**100%、例外なし**）
+    i1 = 2    コピーは C の行 0 ずらし    6094 / 14610
+    i1 = 2    ちがう（行 1 が持ち上がる）  8516 / 14610   （58%）
+
+行 0 のずらしは `Wset.W_shift` / `Wset.W_shiftl0` で `W u` に戻る。しかも
+`lev` は行 1 と行 2 しか見ないので `Wself`（＝根のレベルの段）も動かない。
+
+⟹ **帰納法の不変量を「1 ブロックの差し替え」ではなく「多ブロックの差し替え」に
+取れば、`i1 <= 1` の revival は帰納法の仮定だけで閉じる。**
+（`R⟦n⟧` は `S⟦n⟧` への、`C` の行 0 ずらしを `n` 箇所に入れた差し替えになる。）
+
+## 3. ⟹ 本当に新しいのは `i1 = 2`（残核の 20%）だけ
+
+`i1 = 2` ではコピーが**行 1 で持ち上がる**（実測 58%）。そこで要るのは
+
+    C ∈ Wself → （ガード付き行 1 リフトした C）∈ Wself
+
+で、これは既知の核 `(WL)` `Wtower2.LiftStage` そのもの。
+
+**これで `Subst*` の残核と `TowerGraft2` の話が初めて噛み合った。**
+`Wset.tower1_mem`（行 1 の塔）は証明ずみで `TowerGraft2`（行 2 の塔）だけが核、
+という構図（課題 L4 §4.3）に対して、`Subst1gReviveSelf` は一見「行 2 に限らない」
+ように見えていた。実際は **`i1 <= 1` の 79% は多ブロック化で落ちる**ので、
+両者は同じ「行 2 の崩壊が行 1 をリフトする」1 点に帰着する。
+
+## 4. 提案する狭い残核
+
+    SubstFreeRevive2 :=
+      SubstFree の revival の場合を `srow (R, |R|-1) = 2` に制限したもの
+
+⚠ **これを `X → SubstFree → WellFounded stepRel` の鎖として機械検査するには、
+多ブロック版の帰納（mirror ＋ orphan ＋ 節 1 ＋ `i1 <= 1` の revival）を
+書かないといけない。`Wtower2.subst1g_of_revive` を多ブロックに書き換える作業で、
+300〜400 行。今回はやっていない。**
+
+## 5. 判定（正直なところ）
+
+* `SubstFree` / `SubstFreeRevive` は `Subst1gReviveSelf` の**強め**であって、
+  仮定が減るぶん**証明は難しくなりこそすれ易しくならない**（課題 L7 本体）。
+  **`Subst1gReviveSelf` がいまも最弱の残核である。**
+* 今回得た狭め方（`i1 = 2` への制限）は**新しい数学ではなく証明工学**で、
+  しかも行き着く先は既知の `(WL)`。
+* 陽性対照について: §2 の主張は統計ではなく `oper` の定義から出る恒等式
+  （`i1 <= 1 ⟹ d1 = 0`）なので、対照実験ではなく **100% の実測（57066/57066）**で
+  裏を取ってある。反例が 1 つでもあれば主張は即死する形の測定である。
+
+
+---
+
+# 課題 L8: 多ブロックへの一般化は **循環する**（2026-08-28）
+
+## (3) 判定: **循環する。止めるべき。**（最優先の答え）
+
+`Wtower2.lean` に**残核 → `LiftStage`** の鎖が既にある:
+
+    substClosedG_of_subst1g      : Subst1g → SubstClosedG
+    shiftTowerClosedS_of_substG  : SubstClosedG → ShiftTowerClosedS        (:3615)
+    liftStageParented_of_tower   : ShiftTowerClosedS → LiftStageParented   (:1800)
+    liftStage_of_parented        : LiftStageParented → LiftStage           (:560)
+
+一方、課題 L7 の分析で、**多ブロックの帰納で残るのは `i1 = 2` の場合だけ**で、
+そこで要るのはちょうど
+
+    C ∈ Wself → Lift1 C d ∈ Wself          （= `Wtower2.LiftStage` の `Wself` 版）
+    LiftStage := ∀ m d X, X ∈ W m → Lift1 X d ∈ W (m + 2*d)
+
+つまり私が組もうとしていたのは **`LiftStage` → 残核**。これを足すと
+
+    残核 ⟺ LiftStage
+
+の**輪が閉じるだけ**である。`RESIDUE-PROBLEM.md §5` が
+「**多ブロック版に一般化して帰納する**」を「`TowerExp` 経由で自分に戻る」として
+却下しているのは、まさにこれ。
+
+### 側条件が落ちた今も循環するか → **する**
+
+循環しているのは**命題の仮定**ではなく**導出グラフ**である。
+`SubstClosedG → ShiftTowerClosedS → LiftStageParented → LiftStage` の 3 本は
+側条件とは無関係に成り立っているので、側条件 6 本を落としても輪は残る。
+
+さらに `SubstMulti` と `SubstFree` は**命題としては同値**である
+（多 ⟸ 単は位置を降順にして右から 1 つずつ当てるだけ。単 = `k = 1`）。
+だから**目標を多ブロックに取り替えても命題は 1 ミリも弱くならない**。
+強くなるのは「帰納法の**不変量**として使うとき」だけで、そこが `LiftStage` に落ちる。
+
+### `LiftStage` の先も既に地図がある
+
+* `Wtower2.liftStage_of_wconvex' : WConvex → LiftStage`
+* `WConvex` の素直な `oper` 帰納は**反証済み**（`tools/probe_wconvex_step.py`、
+  単調形 9.4% / 存在形 5.9% 失敗）
+* `Wtower2.lean:477` 付近の doc:
+  > `le1` 錐 ⊆ `amin` 錐 は**無条件**（`coneV_of_le1`、計測 64808 例 0 例外）。
+  > したがって逆包含（`TieFree`）が成り立てば (WL) はその場で無料になる。
+* `TieFree`（**行 1 のタイが無い**）は `PROOF-STATUS.md §5.7` によれば
+  **ST_TS 到達可能性そのもの**。
+
+⟹ **輪の先は既知の壁**。顔を変える作業に価値はない（課題 L4 §3 の私自身の判断）。
+
+## (1) `SubstMulti` の測定（陽性対照つき）
+
+    SubstMulti（2〜3 ブロック同時、深さもレベルも自由）
+      判定 150196   **違反 0**   未判定 23597
+      陽性対照（段を 1 つ下げる）  **違反 160882 / 161093**
+
+⟹ 命題としては真（`SubstFree` と同値なので当然）。プローブは盲目ではない。
+
+### Lean の鎖（`lean/L8Multi.lean`、`leanman check` exit 0 / sorry 0）
+
+    TRIO.L8.substFree_of_multi    : SubstMulti → SubstFree
+    TRIO.L8.TRIO_terminates_of_multi : SubstMulti → WellFounded stepRel
+
+## (2) リフトの切り分け
+
+課題 L7 続の測定（`oper` の定義から出る恒等式を実測で裏取りしたもの）:
+
+| | コピーが `C` の**行 0 ずらし**ちょうどか |
+|---|---|
+| `i1 <= 1`（行 1 のリフト `d1 = 0`） | **57066 / 57066（100%、例外なし）** |
+| `i1 = 2` | 6094 / 14610（残り 8516 = 58% は行 1 が持ち上がる） |
+
+行 0 のずらしは `Wset.W_shift` / `W_shiftl0` で `W u` に戻り、`lev` は行 0 を
+見ないので `Wself` も動かない。⟹ **`i1 <= 1`（残核の 79%）は多ブロックの
+帰納法の仮定だけで閉じる。**
+
+リフトそのものの測定:
+
+    C ∈ Wself → Lift1 C d ∈ Wself
+      判定 138708   **違反 0**   未判定 11
+      陽性対照（段を 1 つ下げる）  **違反 138719 / 138719**
+
+⟹ 狙いの鎖 **`SubstMulti (d1 = 0) ＋ LiftStage ⟹ SubstFree ⟹ 停止性`** は
+**形としては正しく、真偽も測れている**。しかしそれは (3) の輪そのものである。
+
+## まとめ: 残っている問題の 1 文の言い換え
+
+課題 L4〜L8 で得た地図を 1 文にすると:
+
+> **3 行バシク（`z<2`）の停止性に残っているのは、「行 1 のタイ」ただ 1 点である。**
+> BM4 が実際に施すリフトのマスクは `le1`（悪い根の**添字**の子孫錐）、
+> 証明済みのリフト法則のマスクは `amin`（行 1 の**値**の上方集合）。
+> 前者 ⊆ 後者は無条件。**逆包含（タイが無いこと）だけが未証明**で、
+> それは ST_TS 到達可能性と同値である。
+
+支えている事実（このセッションで足したもの）:
+
+* **課題 L6**: `行 2 <= 行 1` は BMS / DBMS 両方の標準形の不変量（**証明ずみ**）。
+  タイのうち `行 1 = 0` の境界（永久孤児 `(x,0,1)`）だけを消す。残りは消さない。
+* **課題 L7**: 残核の中でタイが効くのは `i1 = 2` の部分（20%）だけ。
+  残り 79%（`i1 <= 1`）は多ブロック化という**証明工学**で落ちる。
+* **課題 L8**: その多ブロック化は `LiftStage` に落ちて輪が閉じる。
+
+## 推奨
+
+* **(a) 300〜400 行を書いて残核を `i1 = 2` に狭める** — 循環すると分かったので
+  **やらない**。得られるのは「残核 ⟺ LiftStage」の機械検査だけで、
+  どちらも既に地図の上にある。
+* **(b) `(WL)` / `LiftStage` を直接攻める** — 実質は `TieFree`（タイ無し）を
+  攻めることで、それは ST_TS 到達可能性。`W` の枠組みは ST_TS を仮定しない
+  設計なので、**枠組みの外から入力が要る**。
+* **(c) `PROOF-STATUS §5.5` の `zle1` 改修**（30k 行）— 課題 L6 で
+  `行 2 <= 行 1` という**より強い**不変量が手に入ったので、`zle1` を通すより
+  こちらを通すほうが買えるものは多い（`(x,0,1)` が消える）。ただし
+  課題 L6 の測定どおり、それでもタイは消えない。
+
+⟹ **量詞・側条件・帰納の形をいじる方向は、これで打ち止め**と判断する。
+`PROOF-STATUS §5` の「BM4 展開への新しい数学的入力が要る」は、
+このセッションの 5 課題（L4〜L8）を経ても変わらなかった。
+
+
+---
+
+# 課題 L9: 測ってから書く、で 300 行が助かった（2026-08-28）
+
+## 0. 結論
+
+* **(1) `(WL)` `LiftStage` は真**（231244 例 判定 / **違反 0**、陽性対照つき）。
+* **(2) しかし多ブロック帰納は書かなかった。書く前の測定で前提が崩れたから。**
+  課題 L7/L8 の「`i1 <= 1` の 79% は多ブロック化で落ちる」は**早とちり**だった。
+  実際に落ちるのは **その 61%** だけで、39% は帰納法の仮定が届かない。
+* 原因は 1 行: **差し替えはバッドルートを動かす。**
+
+## 1. `(WL)` `Wtower2.LiftStage` の測定
+
+    LiftStage := ∀ m d X, X ∈ W m → Lift1 X d ∈ W (m + 2*d)
+
+| | 判定 | 違反 | 未判定 |
+|---|---|---|---|
+| 段つきの本来の形（`m` を `lev X 0 .. +3` で振る） | **231244** | **0** | 21 |
+| `Wself` の形（`m = lev X 0`、課題 L8 で測ったもの） | 138708 | 0 | 11 |
+
+**陽性対照**（結論の段を 1 つ下げた偽の主張）:
+
+| | 違反 |
+|---|---|
+| 段つきの形 | **57862 / 231257** |
+| `Wself` の形（段がぴったりなので必ず落ちるはず） | **138719 / 138719（100%）** |
+
+段つきの形で対照が 25% にとどまるのは正しい挙動である。`lev X 0 < m` と
+余裕があるときは段を 1 下げても真のままだからで、余裕が無い（`m = lev X 0`）
+ときだけ必ず落ちる。それが `Wself` の形の 100% である。
+
+⟹ **行き先は真。** 証明工学を投じてもよい命題だった。
+
+## 2. ところが前提が崩れた（**課題 L7/L8 の訂正**）
+
+課題 L7/L8 で私はこう書いた:
+
+> `i1 <= 1` なら `R⟦n⟧` の中の `C` のコピーは「`C` を行 0 にずらしたもの」ちょうど
+> （57066/57066、例外なし）。だから多ブロック化すれば帰納法の仮定だけで閉じる。
+
+**前半は正しいが、後半は出ない。** 「ブロックが行 0 ずらしである」ことと
+「`R⟦n⟧` が `S⟦n⟧` への差し替えになっている」ことは別である。後者を直に測った:
+
+`i1 <= 1` の revival、`n = 1,2,3` の各回を 1 件、**69981 件**:
+
+| | 件数 | |
+|---|---|---|
+| `R⟦n⟧` が `S⟦n⟧` への多ブロック差し替えになる（＝ 帰納法の仮定が届く） | 43254 | **61%** |
+| `S` が展開しない（`R` はする） | 12132 | **17%** |
+| バッドルートが `C` の中に移った | 7447 | **10%** |
+| バッドルートの位置が違う（その他） | 766 | 1% |
+| その他 | 6382 | 9% |
+
+判定は「`Rn` を `Sn` に貪欲に整列させ、食い違ったところで
+`Rn[j..j+|C|)` が `C` のずらしで、かつ `Sn[i]` が `S[p]` の同じずらしになって
+いるか」を見る（成功したら `Rn` はちょうど「`S[p]` の各コピーを `C` のずらしに
+差し替えたもの」）。
+
+### 原因（1 行）
+
+> **差し替えはバッドルートを動かす。**
+
+挿入した `C` の柱が末尾列の新しい行 0 の親になってしまうと、`R` のコピー区間は
+`C` の**内側**から始まり、`S⟦n⟧` にはそれに対応するものが無い。実例:
+
+    S = [(0,4,0), (3,0,0)]        p = 0   C = [(0,2,1), (1,1,1), (2,0,0)]
+    R = [(0,2,1), (1,1,1), (2,0,0), (3,0,0)]
+    S のバッドルート = 0（= p 自身）    R のバッドルート = 2（= C の中）
+
+同じ理由で「`S` は展開しない（末尾列が孤児）のに `R` は展開する」も起きる
+（17%）。差し替えが末尾列に**親を作ってしまう**場合である。これは
+`probe_subst1g_adv.py` が `residue/insertion-creates-parent` と呼んでいる形と同じ。
+
+## 3. 数字の訂正
+
+| | 課題 L7/L8 で書いた値 | **正しい値** |
+|---|---|---|
+| 残核のうち多ブロック化で落ちる割合 | 79% | **79% x 61% ≈ 48%** |
+| 残るもの | `i1 = 2` だけ（21%）＝ `(WL)` | `i1 = 2`（21%）**＋ `i1 <= 1` の 39%** |
+
+⟹ **多ブロック化しても残核は `(WL)` 1 本にならない。** 300〜400 行を書いても
+「`(WL)` ＋ もう 1 本」にしかならず、そのもう 1 本は「差し替えがバッドルートを
+動かす場合」＝ 残核そのものである。
+
+## 4. 何が残ったか（1 行で）
+
+> **差し替えが末尾列のバッドルートを動かす（親を作る／親を `C` の中に移す）場合。**
+
+これは `probe_subst1g_adv.py` の残差 3 分類のうち
+`insertion-creates-parent` と `inside-copied-region` に当たる
+（`context-revives` は 3 つ目）。つまり**残核の 3 つの顔のうち 2 つ**が
+そのまま残る。1 つに減らせていない。
+
+## 5. 判定と推奨
+
+* **300〜400 行は書かなかった。** 書く前の測定（(2)）で前提が崩れたため。
+  **測ってから書く、という規約がそのまま効いた例**である。
+  「分量が読めている作業」だと思っていたものが、実は前提を測っていないだけだった。
+* `(WL)` は真だと確かめたので、**`(WL)` を直接攻める**（推奨 (b)）は
+  行き先が保証された道である。ただし課題 L8 のとおり、その先は
+  `WConvex`（素直な `oper` 帰納は反証済み）→ `TieFree`（＝ ST_TS 到達可能性）。
+* いま言えることの総括は課題 L8 の 1 文のまま:
+
+  > 3 行バシク（`z<2`）の停止性に残っているのは「**行 1 のタイ**」ただ 1 点。
+  > `le1`（添字の錐）⊆ `amin`（値の上方集合）は無条件で、逆包含だけが未証明、
+  > それは ST_TS 到達可能性と同値。
+
+
+---
+
+# 課題 L10: `TieFree` は構文的不変量にならない（2026-08-28）
+
+## 0. 結論
+
+* **外れました。** `TieFree` は `oper` でも `cons` でも破れる。**1 例で終わり。**
+* しかも **「標準形ではタイが起きない」という観察は `TieFree` については空虚**
+  だった。標準形の根は 3 行とも 0 なので `TieFree` の前提が常に落ちる（**証明した**）。
+
+## 1. まず `TieFree` の正体（`Wtower2.lean:59`）
+
+    coneV A v j := ∀ y, y は j の行 0 祖先（自身含む）→ v < entry A 1 y
+    TieFree X   := ∀ j, coneV X (entry X 1 0 - 1) j → le1 X 0 j
+
+**`Wtower2.liftStage_of_tieFree` は既に証明ずみ**（`1 ≤ entry X 1 0` ＋ `TieFree X`
+⟹ `Lift1 X d ∈ W (m + 2d)`）。だから `TieFree` を構文的不変量にできれば
+`(WL)` はその場で無料になる。的としては完全に正しい。
+
+⚠ ただしチームリードが提案した形
+
+    ∀ j, entry M 2 j >= 1 → ∃ i < j, entry M 1 i < entry M 1 j ∧ entry M 2 i < entry M 2 j
+
+は `TieFree` ではない。標準形の根は `(0,0,0)` で、課題 L6 の `r21`（行 2 ≤ 行 1）
+から `row2 j ≥ 1 → row1 j ≥ 1` なので、**`i = 0` を取れば必ず成り立つ**。
+つまりこの述語は `r21_ST_TS` の**自明な系**で、`(WL)` には届かない。
+
+## 2. 測定（陽性対照つき）
+
+    陽性対照   乱択列 60000 個のうち TieFree が偽 18904 個（**31%**）
+               ⟹ この述語は簡単に偽になる。測定は盲目でない
+    対角       v = 0..11 の 12 個すべて TieFree
+
+| 操作 | 保つ | **破れる** |
+|---|---|---|
+| `take` | 69585 | **0** |
+| `dropLast` | 69585 | **0** |
+| **`oper`** | 359108 | **34330（8.7%）** |
+| `drop`（再基底つき） | 59273 | 10312（15%） |
+| **`cons`**（`(0,v,z) :: R`） | 34772 | **34813（50%）** |
+
+### `oper` の最小の反例
+
+    M    = [(0,1,1), (2,3,0)]      TieFree
+    M⟦2⟧ = [(0,1,1), (2,1,1)]      **破れる**
+
+`M` の末尾列 `(2,3,0)` は `srow = 1`、行 1 の親は根（`1 < 3`）。だから
+`j0 = 0, d0 = 2, d1 = 0` で、**コピーされる区間は根そのもの**。`d1 = 0` なので
+コピー 1 は根の行 1 をそのまま持ち、**根とのタイが生まれる**
+（`nextrel1 (M⟦2⟧) 0 1` が `1 < 1` を要求して偽 ⟹ `le1` が切れる）。
+一方 `coneV (M⟦2⟧) 0 1` は成り立つ（祖先の行 1 は 1, 1 で両方 > 0）。
+
+これは `PROOF-STATUS.md §5.7` の
+「**添字**で決まる錐はコピーで壊れる（コピー `k` は自分自身の錐を持つ）」
+の最小形そのものである。
+
+### `cons` の反例（`Wstar` の操作そのもの）
+
+    M = [(0,2,1), (4,1,0)]                        TieFree
+    (0,2,0) :: 行 0 を +1 した M
+      = [(0,2,0), (1,2,1), (5,1,0)]               **破れる**
+
+新しい根の行 1 が `2`、もとの根も行 1 が `2` ⟹ **タイ**。
+`Wstar := {R | argOK R → ∀ v z a, … → (0,v,z) :: R ∈ W a}` は **`v` を全部走る**
+ので、`v` が `R` の行 1 の値とぶつかった瞬間にタイができる。
+
+⟹ **`W` の機構を `TieFree` に制限することはできない。**
+`Aop` の節 2 が `M⟦n⟧ ∈ X` を要求する以上 `oper` の保存が要り、
+`Wstar` が `(0,v,z) :: R` を要求する以上 `cons` の保存が要る。どちらも破れる。
+
+## 3. 「標準形ではタイが起きない」は `TieFree` については**空虚**
+
+`lean/L10Tie.lean` で証明した（`leanman check` exit 0 / sorry 0）:
+
+    TRIO.L10.entry_root_ST_TS : ST_TS M → ∀ i, entry M i 0 = 0
+      （標準形の根は 3 行とも 0。`oper_take_prefix`「コピー 0 はずれない」から）
+    TRIO.L10.coneV_root_false_ST_TS : ST_TS M → ¬ coneV M (entry M 1 0 - 1) 0
+
+根の行 1 が 0 なので `entry M 1 0 - 1 = 0`（ℕ の切り捨て）、したがって
+`coneV M 0 j` は「`j` の行 0 祖先が全部行 1 で**正**」を要求するが、根はそれを
+満たさない。実測でも BM4 の展開閉包 2473 個は**全部 `entry M 1 0 = 0`**、
+`TieFree` の破れ 0（＝空虚に真）だった。
+
+⟹ **全体の標準形を測っても `TieFree` については何も言えない。**
+`TieFree` が中身を持つのは根の行 1 が 1 以上のとき、つまり `Wstar` の
+`(0,v,z) :: R`（`v ≥ 1`）や**悪い部分の部分ブロック**に対してだけである。
+`Wtower2.liftStage_of_tieFree` が `1 ≤ entry X 1 0` を要求しているのも、
+`Wtower2.lean:98` 付近の doc が「実 ST_TS では行 2 崩壊の**悪い部分**の
+53634/53642 が窓を満たす」と**悪い部分**について書いているのも、このため。
+
+## 4. 何が残ったか
+
+課題 L6 と同じ構図だった:
+
+| | 課題 L6 | 課題 L10 |
+|---|---|---|
+| 立てた述語 | `行 2 <= 行 1` | `TieFree` |
+| 不変量か | **○（証明した）** | **✗（`oper` も `cons` も破る）** |
+| 的に当たるか | ✗（`natDom` は戻らない） | ○（当たれば `(WL)` が無料） |
+
+**「不変量になるもの」と「的に当たるもの」が食い違っている**、というのが
+このセッションで繰り返し出た形である。`(WL)` に届く述語（`TieFree`）は
+`W` の機構が要求する操作（`oper` / `cons`）で壊れ、機構が保つ述語
+（`r21`）は `(WL)` に届かない。
+
+そして `TieFree` が壊れる理由は 1 行で言える:
+
+> **`Wstar` は根の行 1 `v` を全部走り、`oper` はコピーに根の行 1 をそのまま渡す。**
+> どちらも「根と同じ行 1 の値を持つ列」を作る操作である。
+
+これは `PROOF-STATUS.md §5.7` の「タイ無しは **ST_TS 到達可能性そのもの**」を、
+`W` の機構の側から見た形にすぎない。⟹ 判定は変わらない。
+
+
+---
+
+# 課題 L11: `TieFree` は**弱められない**（証明した）。塔に絞っても閉じている（2026-08-28）
+
+## 0. 結論を先に
+
+* **(1) `liftStage_of_tieFree` は `TieFree` を `j` の全体で使っている。**
+  絞れる `j` の部分集合は無い。証明は 2 行で、`Lift1 X d = mlift X (v0-1) d` を
+  `List.map_congr_left` で**列ごと**に示すだけ。`TieFree` はその `if_neg` の枝、
+  すなわち **`le1 X 0 j` が偽の `j` すべて**で使う（対偶なのでそれが全内容）。
+* **(2) しかし弱められる方向が 1 つあった: `j` ではなく `X` の量詞。**
+  `(WL)` が消費されるのは `towerGraft2_of_liftStage` の**ただ 1 行**だけで、
+  相手は**塔の族**しかない。Lean で切り出した（`Wtower2.LiftStageTower`、exit 0）。
+  実測: **塔の 1 段は `TieFree` を完全に保つ**（30537 サイト x 5〜6 段、
+  両向き 0 違反、陽性対照つき）。残るのは**土台だけ**。
+* **(3) ところが土台は 29% で偽。しかも `TieFree` は「証明ずみのリフト言語」の
+  中では必要条件でもある**（`L11Fam.sliftMatch_iff_tieFree`、exit 0 / sorry 0）。
+  ⟹ **この道は完全に閉じた。**
+
+## 1. (1) `TieFree` はどの `j` で使われているか
+
+`Wtower2.liftStage_of_tieFree` の証明は 2 行:
+
+    rw [Lift1_eq_mlift_of_tieFree hv h d]     -- ここだけで TieFree を使う
+    exact mlift_mem_W X hX
+
+`Lift1_eq_mlift_of_tieFree` は
+
+    hif : (if le1 X 0 j then d else 0) = (if coneV X (v0-1) j then d else 0)
+
+を `List.map_congr_left` で `j ∈ List.range X.length` の**全体**について示す。
+`if_pos` の枝は `coneV_of_le1`（無条件）で片づき、**`TieFree` は `if_neg` の枝
+だけ**で使われる。つまり「`le1 X 0 j` が偽である `j`」——対偶なので `TieFree` の
+全内容そのもの。**部分集合には絞れない**（絞れば 2 つの列が実際に食い違う）。
+
+## 2. (3) `TieFree` は必要条件でもある — **証明した**
+
+`lean/L11Fam.lean`（`leanman check` exit 0 / sorry 0 / `#print axioms` は
+`propext, Classical.choice, Quot.sound` のみ）:
+
+    SliftMatch X d := ∃ φ, Stair φ ∧ slift X φ = Lift1 X d
+
+`Cgraft.slift` は「証明ずみのリフト法則 `Wslift.slift_mem_W_tight` が扱える
+リフト**すべて**」で、`mlift` はその特別な場合である。
+
+    TRIO.L11.sliftMatch_iff_tieFree :
+      0 < X.length → 1 ≤ d → 1 ≤ entry X 1 0 → (SliftMatch X d ↔ TieFree X)
+
+証明の骨（必要の向き）: 根は自分の行 1 錐に入る（`le1_refl`）ので階段は
+`amin 0 = entry X 1 0` でちょうど `d` 持ち上げねばならない。`Stair.step` は
+`φ m - m` の単調性を課すので、`amin` が根以上の列（＝ `coneV` の中）でも
+持ち上げ量は `d ≥ 1` 以上になる。`Lift1` はそこで `0` しか足さないから、
+その列は `le1` 錐に入っていなければならない。∎
+
+⟹ **`L10Tie.maskMatch_iff_tieFree`（閾値 `v` を自由にしても同じ）の一般化。**
+閾値どころか**階段そのものを自由にしても** `TieFree` より弱い十分条件は
+この言語の中に**存在しない**。「弱い述語を探して `oper`/`cons` の保存率を測る」
+という作戦は、**測るまでもなく**この定理で潰れる。
+
+## 3. (2) 弱められる唯一の方向: `X` の量詞 — 塔の族だけ
+
+`Wtower2.towerGraft2_of_liftStage` を読むと `hWL` が現れるのは**1 行だけ**:
+
+    have hmem : Lift1 (M⟦j⟧) d1 ∈ W (2*v+z+2*d1) := hWL _ _ _ ih
+
+`M = (0,v,z) :: R`、`d1 = row1(R[-1]) - v`、`M⟦0⟧ = []`、
+`M⟦j+1⟧ = (0,v,z) :: graft R (Lift1 (M⟦j⟧) d1)`（`hstep`）。
+
+Lean 側に切り出した（`Wtower2.LiftStageTower` / `towerGraft2_of_liftStageTower`、
+旧い `towerGraft2_of_liftStage` はその系として残してある。`Wtower2.lean`
+`Final.lean` とも exit 0）:
+
+    LiftStageTower := ∀ v z m R, argOK R → R ≠ [] → z ≤ 1 → domT R m →
+      srow R (R.length-1) = 2 → hasParent ((0,v,z)::R) … R.length →
+      ∀ j, ((0,v,z)::R)⟦j⟧ ∈ W (2v+z) →
+        Lift1 (((0,v,z)::R)⟦j⟧) d1 ∈ W (2v+z+2*d1)
+
+**これは課題 L10 の測定と量詞が違う。** L10 は `cons` を `∀ v` で盲目に走らせて
+50% 破れたが、塔では `v` は塔のデータで固定され、`cons` の相手も
+`graft R (Lift1 · d1)` に固定されている。
+
+### 実測（`tools/probe_tiefree_tower.py`）
+
+| | maxlen=3 r0=5 r1=5 J=5 | maxlen=2 r0=6 r1=7 J=6 |
+|---|---|---|
+| tower-2 サイト（`v ≥ 1`） | 26412 | 4125 |
+| 土台 `TieFree ((0,v,z)::R.dropLast)` | 18772 / **破れ 7640（29%）** | 3675 / **破れ 450（11%）** |
+| **土台 OK → 全段 OK** | 18772 / **後で破れる 0** | 3675 / **後で破れる 0** |
+| **土台 NG → 全段 NG** | 7640 / **途中で直る 0** | 450 / **途中で直る 0** |
+| 破れのうち `X_1 ∈ W(2v+z)` | **7640（全部）** | **450（全部）** |
+| 窓（`liftStage_of_window`） | 8872 / 破れ 17540 | 2625 / 破れ 1500 |
+
+**陽性対照**（測定は盲目でない）:
+
+| 対照 | 破れ |
+|---|---|
+| リフト量を `d1 - 1` にする | **9428 / 18772（50%）が「後から破れる」** |
+| リフト量を `d1 + 1` にする | 0（多く持ち上げるのは無害。正しい挙動） |
+| tower-2 の絞りを外した `(v,z,R)` | **160040 / 498708（32%）** |
+
+⟹ **塔の 1 段は `TieFree` を完全に保つ**（保つ方向も破る方向も 0 違反）。
+`d1` をちょうど 1 減らすと壊れるので、`d1` の値そのものが効いている。
+
+### ところが土台が落ちる
+
+土台 `X_1 = (0,v,z) :: R.dropLast` の破れは 29%。しかも
+
+* `X_1 ∈ W (2v+z)` を課しても**1 例も消えない**（7640 / 7640 が W に入る）。
+  最小反例 `v=1, z=0, R=[(1,1,0),(1,2,1)]` ⟹ `X_1 = [(0,1,0),(1,1,0)]`。
+* タイの正体は **7080/7640 が「`R` の中に行 1 がちょうど `v` の列がある」**。
+
+`TowerGraft2` は `∀ v z` を走るので、**`v` は `R` の行 1 の値を必ず走る**。
+これは課題 L10 の `cons` の反例と**同じ理由**であり、塔に絞っても消えない。
+窓（`liftStage_of_window`）は `TieFree` より**強い**ので当然覆えない。
+
+## 4. 判定: **打ち止め**
+
+停止性トラックの `(WL)` を「証明ずみのリフト言語」で出す道は、
+
+* 量詞 `j` を絞る → **絞れない**（証明が全称で使う）
+* 閾値 `v` を自由にする → **同値**（`L10Tie.maskMatch_iff_tieFree`）
+* 階段 `Stair φ` まで自由にする → **同値**（`L11Fam.sliftMatch_iff_tieFree`、新）
+* 量詞 `X` を塔の族に絞る → **絞れた。段は保つ。しかし土台が 29% で偽**（新）
+
+の 4 方向すべてで閉じた。課題 L5〜L10 の「量詞・側条件・帰納の形・不変量」と
+あわせて **`(WL)` に残る道は `Row1Mono` / `WConvex`（どちらも実測 0 違反の
+未証明予想）だけ**である。`PROOF-STATUS §5` の「BM4 展開への新しい数学的入力が
+要る」は変わらない。
+
+### 買えたもの（この課題で `lean/` に残るもの）
+
+    lean/L11Fam.lean            SliftMatch と sliftMatch_iff_tieFree（新定理）
+    lean/Wtower2.lean           LiftStageTower / towerGraft2_of_liftStageTower
+                                （開いた核を塔の族まで狭めた。旧形は系として存置）
+    tools/probe_tiefree_tower.py 塔の族の TieFree 測定（陽性対照 4 本つき）
+
+**`sorry` 0 / `axiom` 宣言 0 は維持**（`lean/` 自前 65221 行）。
+
+
+---
+
+# 課題 L11 (DBMS トラック): `BlkInv` の残りを**測った**（2026-08-28）
+
+停止性トラックを打ち止めにしたので DBMS トラックに移った。担当は
+`ImgBlockT3`（＝ `Conv3.BlkInv`）の残り、すなわち**縮約の枝**である。
+
+## 0. 結論を先に
+
+* **書く前に測った。10 本の債務は**全部真**（338 発火・違反 0・陽性対照つき）。**
+* **doc の「`convResid` については `BlkOK` の第 2 項はそのままでは偽」は、
+  実際に現れる `rd` については観測されない**（訂正した）。
+* 連結のときに要る `BlkOK_app'`（開始深さが下がってもよい版）を**証明した**
+  （`Dbms3.lean`, exit 0 / sorry 0）。
+* 残りは書くだけ。**見積もり 250〜350 行**（内訳は §3）。
+
+## 1. 縮約の枝が要求するもの（コードから読んだ）
+
+    (cols ++ rA.1 ++ rU.1 ++ rR.1 ++ rB.1, { rB.2 with nc := rB.2.nc + 1 })
+
+を `((((cols ++ rA) ++ rU) ++ rR) ++ rB)` と括ると、必要なのは
+
+| # | 債務 | 出どころ |
+|---|---|---|
+| a | `BlkOK d st (cols, st1)` | `cols_blk`（**証明ずみ**） |
+| b | `BlkOK (dd2+1) st1 (rA…)`、`d ≤ dd2+1` | 帰納法の仮定 ＋ `depths_le`（**済**） |
+| c | `BlkOK (d+1) rA.2 (rU…)`、`d ≤ d+1` | 帰納法の仮定（**済**） |
+| d | `d ≤ rd` と `rd ≤ |rU.2.ST|` | **`contr_rd_ok`（穴 1）** |
+| e | `BlkOK rd rU.2 (rR…)` の 5 節 | **`convResid_blk`（穴 2）** |
+| f | `d ≤ |rR.2.ST|` | `rB` の帰納法の仮定の入口 |
+
+⚠ `convResid` の中では次の木の開始深さが `rd - (c.1 - tail[0].1)` と**下がる**
+ので、`BlkOK_app` の仮定 `d ≤ d'` が**使えない**。`d ≤ d'` は結論の第 2 項
+`d ≤ |st'.ST|` を出すためだけに使われているので、それを直に仮定する
+**`BlkOK_app'`** を立てて証明した（`Dbms3.lean` §11.5, exit 0）。これで
+穴 2 の連結の側は片づく。
+
+## 2. 測定（`lean/l11_blkmeas.py`）
+
+`Dbms3.lean` の本文をそのまま貼った使い捨ての Lean file を作り、縮約の枝に
+計測を埋め込む。**埋め込み先は `St.nc`**（縮約の発火回数）で、`nc` は像に一切
+効かない（`grep '\.nc'` で読むところが無い）ので安全。10 本の条件を 100 進の
+桁に詰めて `#eval` で合計する。
+
+| 桁 | 条件 | <=6 列 全数 | 7 列 縮約発火 |
+|---|---|---|---|
+| 0 | 発火回数 | **44** | **294** |
+| 1 | `d ≤ rd` | 0 | 0 |
+| 2 | `rd ≤ |rU.2.ST|` | 0 | 0 |
+| 3 | `steps1 rR.1` | 0 | 0 |
+| 4 | **`rd ≤ |rR.2.ST|`**（偽と疑われていた） | **0** | **0** |
+| 5 | `rR.1 = [] → |rR.2.ST| = |rU.2.ST|` | 0 | 0 |
+| 6 | `rR.1 ≠ [] → head.1 ≤ |rU.2.ST|` | 0 | 0 |
+| 7 | `rR.1 ≠ [] → last.1 + 1 = |rR.2.ST|` | 0 | 0 |
+| 8 | `d ≤ |rR.2.ST|` | 0 | 0 |
+| 9 | `dmap` が狭義単調 | 0 | 0 |
+| 10 | `dmap` の全要素 `< |ST|` | 0 | 0 |
+| 11 | **陽性対照** `rd + 1 ≤ d` | **44 / 44** | **294 / 294** |
+
+母数: `<=6` 列は BMS 3 行 z<2 標準形 **8387 個の全数**、7 列は**縮約が発火する
+294 個の全数**。合計 338 発火は `SESSION-2026-08-28.md` の「発火は
+338/77282 = 0.4%」と**一致**する（＝ 既知の発火を全部踏んでいる）。
+
+### 訂正 2 つ
+
+1. **`convResid_blk` は弱めなくてよい。** doc の「残余は森なので `BlkOK` の
+   第 2 項はそのままでは偽」は、**実際に現れる `rd`** では観測されない
+   （桁 4 が 0）。`ResidBlk`（`rd` の上界を仮定しない形）が偽であることとは
+   別の話である。弱めた述語を設計する作業は**要らない**。
+2. **`dmap` の候補の不変量は真。** 「`k < |dmap|` なら `dmap[k] < |ST|`、かつ
+   `dmap` は狭義単調」は 338 発火すべてで成立。`BlkOK` に足してよい。
+
+## 3. 残りの見積もり（行数つき）
+
+| やること | 見積もり | 状態 |
+|---|---|---|
+| `BlkOK_app'`（開始深さが下がる連結） | 40 行 | **証明ずみ** |
+| `BlkOK` に `dmap` の 2 条項を足し、`BlkOK_nil` / `BlkOK_app` / `BlkOK_app'` / `cols_blk` / `ImgBlockT3_of_BlkInv` を追随させる | **120〜150 行** | 未 |
+| `contr_rd_ok`（`rd` の両側。`dmapAt` の場合分けと `depths_le`） | **40〜60 行** | 未 |
+| `convResid_blk`（`rest` についての構造帰納。`conv3` の IH と `BlkOK_app'`） | **60〜100 行** | 未 |
+| 縮約の枝の組み立て（`blk_step` の `· sorry` を埋める） | **30〜40 行** | 未 |
+| **合計** | **250〜350 行** | |
+
+`blk_step` の非縮約の枝は課題 L3 で済んでいるので、これで `BlkInv` が閉じ、
+`ImgBlockT3 Conv3.b2d3` が**無条件**になる。
+
+## 4. その先（`SandwichUT3` / `OrderT3`）の見積もり
+
+課題 L3 §3 の表を、コードを読み直して更新したもの。
+
+| 命題 | 見積もり | 律速 |
+|---|---|---|
+| `ImgBlockT3` | **250〜350 行**（上） | 測定ずみ。書くだけ |
+| `SandwichUT3` | (S1)-(S5) の 5 本。**(S2) が本丸**。2 行側に対応物が無く、`ReindexT1` の穴埋めのために新しく立てた命題なので**下限が読めない**。まず Python 側（課題 H2）で (S2) を測るべき | `ImgBlockT3` |
+| `OrderT3` | **2533 行より大きい**（2 行の `readC_conC_ST` が 2533 行、3 行は読み `read3` が未定義で、行 1 と行 2 の 2 種類の影があるので節が 2 つ要る）。`read3` / `dok` の設計から | `read3` / `dok` |
+| `ImgCofinalT3` | 2 行側は `DbmsStd.lean` 約 15000 行がまるごとこれ。**Python 側でまだ破れている**（`ImgClosedT` 破れ <=6 列 54 個）ので**着手できない** | 変換器 `conv3` の設計 |
+
+⟹ **DBMS トラックで次にやる価値があるのは `ImgBlockT3` だけ**である（測って
+あるので書けば通る）。その先の `SandwichUT3` / `OrderT3` は 2 行側の 2533〜15000
+行に対応する規模で、しかも `ImgCofinalT3` は Python 側の破れが直るまで手が出ない。
+
+
+---
+
+# 課題 L12: `ImgBlockT3` は**閉じなかった**。見積もりが外れた理由（2026-08-28）
+
+## 0. 結論を先に
+
+* **`ImgBlockT3 Conv3.b2d3` は無条件にならなかった。** `sorry` は 0 のまま
+  （通らなかった部分は file に入れていない）。`Dbms3.lean` は exit 0。
+* **課題 L11 の見積もり「250〜350 行。測ってある。書くだけ」は外れた。**
+  外れた理由は 2 つとも**測定の解釈の誤り**で、今回それを潰した（§2）。
+* буквально書けたのは**非縮約の枝だけ**。縮約の枝は
+  「証明の穴」ではなく「**成り立たない不変量**」に当たっていた。
+
+## 1. 今回 file に入ったもの（全部 exit 0 / sorry 0）
+
+| 追加 | 中身 |
+|---|---|
+| `BlkOK` の**節 6** | `∀ c ∈ res.1, d ≤ c.1`（出した柱は全部深さ `d` 以上） |
+| `BlkOK_mono` | `d' ≤ d → BlkOK d → BlkOK d'`（節 2 と節 6 が緩むだけ） |
+| `BlkOK_app'` | 開始深さが下がってもよい連結（`convResid` の森に要る） |
+| `contrFind_e_le` | `contrFind` が返す `e` は `0` か `1` |
+| `BlkOK_nil` / `BlkOK_app` / `cols_blk` / `ImgBlockT3_of_BlkInv` | 節 6 に追随 |
+
+**節 6 は新しい実測に基づく**（下）。`depths_ok` が既に 1 列ぶんについて
+証明していたものを `BlkOK` に持ち上げただけなので、追随は 40 行で済んだ。
+
+`blk_step`（帰納の 1 歩）の**非縮約の枝は新しい `BlkOK` でも通る**ことを
+確認した（scratch, exit 1 = sorry のみ）。縮約の枝の 5 重連結
+`cols ++ rA ++ rU ++ rR ++ rB` も、`BlkOK_app` / `BlkOK_app'` / `BlkOK_mono`
+（`d' := 0` を明示して `rd` の巨大項を回避）で**組み立てには成功した**。
+残ったのは下の 2 つだけである。
+
+## 2. 見積もりが外れた 2 か所（**課題 L11 の訂正**）
+
+### 訂正 A: `dmap` の不変量は**偽**だった
+
+課題 L11 は「候補の `dmap` 不変量（狭義単調・`< |ST|`）は真」と書いた。
+これは**縮約の呼び出し点でしか測っていなかった**。今回**すべての `conv3`
+呼び出し**（`<=6` 列全数で 48997 回、7 列の縮約発火で 1134 回）で測り直した:
+
+| 不変量 | <=6 列 48997 呼び出し | 7 列 1134 呼び出し |
+|---|---|---|
+| `dmap` が狭義単調 | **38 違反** | **438 違反** |
+| `∀ k ∈ dmap, k < |ST|`（入口） | **6 違反** | **32 違反** |
+| `∀ k ∈ dmap, k < |ST|`（出口） | **7 違反** | **38 違反** |
+| **`dmap ≠ [] → dmap.last + 1 = |ST|`** | **0** | **0** |
+| `d ≤ |st.ST|`（`BlkOK` の前提） | 0 | 0 |
+| **`∀ c ∈ 出力, d ≤ c.1`（節 6）** | **0** | **0** |
+
+⟹ `BlkOK` に足せるのは **`dmap.last + 1 = |ST|`** と **節 6** だけ。
+`dmapAt` の**範囲内の枝**（`k < |dmap|`）の値 `dmap[k]` を `|ST|` で
+抑える道具は無い（単調でも最大でもないから）。
+
+### 訂正 B: `convResid` の節 2 は**やはり偽**（前任者の doc が正しかった）
+
+課題 L11 は「doc の『`convResid` については `BlkOK` の第 2 項はそのままでは
+偽』は観測されない」と書いた。**これも誤り**だった。今回 `convResid` の
+**森の枝**（`tail ≠ []`）そのものを数えた:
+
+    <=6 列 全数 ＋ 7 列の縮約発火 = 338 発火
+      convResid が `tail = []` で終わる … 334
+      convResid の**森の枝**        …   **0**
+      rest2 = []                     …     4
+
+つまり **森の枝は一度も踏まれない**。だから「呼び出し点では真」だったので
+あって、`convResid` の不変量として真なのではない。しかも森の枝は
+
+    tail = (c :: rs).drop (1 + deepGe c.1 rs)
+
+なので `tail.head` は **`c` より必ず浅い**（`deepGe` の定義から）。したがって
+次の木の開始深さ `rd - (c.1 - tail.head.1)` は **必ず下がる**。
+⟹ **`BlkOK rd` は `convResid` については構造的に偽**であり、
+「弱めた形が要る」という前任者の doc が正しい。
+
+## 3. 残っている穴（正確に 2 つ）
+
+`blk_step` の縮約の枝で残るのは、次の 2 つだけである。
+
+    (H1) contr_rd_ok:  d ≤ rd ≤ |rU.2.ST|
+         rd = if rest2 = [] ∨ (rest2.head).1 = p.1 + 1 then d + 1 + e
+              else dmapAt rU.2.dmap ((rest2.head).1 - 1)
+
+      * `d + 1 + e` の枝（実測 44/44 と 288/294）は**あと 1 歩**で出る:
+        `e ≤ 1`（`contrFind_e_le`、**証明ずみ**）＋ `d + 2 ≤ |rU.2.ST|`。
+        後者は節 6 と `lad0 = true`（縮約の枝では必ず真）から出るはず。
+      * `dmapAt` の枝（実測 0/44 と **6/294**）は**道具が無い**（訂正 A）。
+        6 回のうち 4 回は `(rest2.head).1 - 1 = |dmap|` ちょうどの
+        「範囲外だが 1 個だけ外」で、`dmap.last + 1 = |ST|` から
+        `dmapAt = |ST|` とぴったり出る。残り 2 回が範囲内で、ここが未解決。
+
+    (H2) convResid の block 性
+      * 実測では森の枝が 0 回なので、**残余が単一の木**であることさえ言えれば
+        `convResid` は 1 回の `conv3` に潰れて (H2) は消える。
+      * 「残余が単一の木」は `rest2 = Aq.drop kp` の形から出るはずだが、
+        `Aq` の切り方（`deepGe (q.1+1) r2` と `kp`）を追う必要がある。
+
+## 4. 直した見積もり
+
+| やること | 前回 | 今回 |
+|---|---|---|
+| `BlkOK` 節 6 ＋ 追随 | 120〜150 | **40（済）** |
+| `BlkOK_mono` / `BlkOK_app'` / `contrFind_e_le` | — | **60（済）** |
+| `blk_step` の非縮約の枝 | 30〜40 | **20（scratch で確認）** |
+| 縮約の枝の 5 重連結の組み立て | （上に含む） | **30（scratch で確認）** |
+| **(H1) `d+1+e` の枝** | 40〜60 | **40〜60**（`lad0` の取り出しが要る） |
+| **(H1) `dmapAt` の枝** | （同上） | **不明。道具が無い** |
+| **(H2) 残余が単一の木** | 60〜100 | **80〜150**（`deepGe` と `kp` の追跡） |
+
+⟹ **`ImgBlockT3` は「書くだけ」ではなかった。**
+残るのは 2 つとも「`conv3` が残余をどう切るか」という**変換器の設計の性質**で、
+`BlkOK` の帰納の外にある。`bms2dbms/tools/rows3.py` 側（課題 H）の知識が要る。
+
+## 5. `SandwichUT3` の (S2) の**測定仕様**（課題 H11 へ）
+
+`SandwichUT3` の 5 分解のうち (S2) `BadRootT3` が本丸で、下限が読めない。
+**Lean を書く前に Python で測るべき**なので、仕様だけ書く。
+
+### (S2) の命題（行列の言葉だけ。順序数は使わない）
+
+標準形 `A`（`|A| > 1`）について、BM4 の展開が使う 4 つの量を
+
+    t  = srow A (|A|-1)                 末尾列が崩れる行（1 か 2）
+    r  = parent A t (|A|-1)             **バッドルート**（`A` の添字）
+    d0 = A[|A|-1].0 - A[r].0            行 0 の持ち上げ幅
+    d1 = A[|A|-1].1 - A[r].1            行 1 の持ち上げ幅（`t = 2` のとき）
+
+と書く。像 `B = conv3 A` について同じものを
+
+    t' = srow B (|B|-1),  r' = parent B t' (|B|-1),
+    d0' = B[|B|-1].0 - B[r'].0,  d1' = B[|B|-1].1 - B[r'].1
+
+と書く。**(S2) は「`(t', r', d0', d1')` が `(t, r, d0, d1)` から決まる」**である。
+測るのは次の 4 本:
+
+    (S2-a)  t' = t                            末尾の崩れる行は像でも同じ
+    (S2-b)  r' = img r                        バッドルートは「`A[r]` の本体柱」
+    (S2-c)  d1' = d1                          行 1 の持ち上げ幅は変わらない
+    (S2-d)  d0' = (B[|B|-1].0) - (B[img r].0) 行 0 の幅は像の段差で決まる
+
+ここで **`img j`** は「入力の第 `j` 列に対して `conv3` が出した柱のうち
+**本体**（`(dd2, e1, e2)`、その列が出す最後の柱）の像での添字」である。
+
+### 要る計装（Python 側）
+
+`rows3.b2d3` に**像に影響しない**出力を 1 本足す:
+
+    img : list[int]      img[j] = 入力の第 j 列の本体柱の像での添字
+
+`conv3` は 1 列につき最大 3 本（行 0 の影 / 行 1 の影 / 本体）を出すので、
+`cols` を積むところで本体の位置を記録すれば得られる。
+**`nc` と同じで像には効かない**（Lean 側の計装 `lean/l11_blkmeas.py` は
+`St.nc` を使ったのと同じ流儀）。
+
+### 入力の範囲
+
+    <=6 列  BMS 3 行 z<2 標準形 **8387 個 全数**
+    <=7 列  **77282 個 全数**（4 秒で回る土俵と同じ母数）
+    `|A| > 1` かつ末尾が孤児でない（＝ 展開が `dropLast` に潰れない）ものだけ
+
+`n` は要らない（(S2) は `A` だけの性質）。ただし (S2) が通ったら
+`n = 1..5` で `conv3 (A⟦n⟧)` と `(conv3 A)⟦n+1⟧` の突き合わせに使う。
+
+### 何を「破れ」と数えるか
+
+`A` ごとに (S2-a)〜(S2-d) の 4 本を独立に判定し、**1 本でも外れたら
+その `A` を破れ**とする。出力は
+
+    土俵ごとに: 母数 / 破れ数 / 4 本それぞれの破れ数 / 最小の反例 3 個
+
+`t = 1`（行 1 で崩れる）と `t = 2`（行 2 で崩れる）で**必ず分けて数える**。
+3 行の困難は行 2 側にあるので、混ぜると効かない。
+
+### 陽性対照（**必須**）
+
+判定が盲目でないことを、**わざと外した予測**で確かめる:
+
+    (P1) `r' = img r` を **`r' = img r + 1`** に変えて数え直す
+    (P2) `d1' = d1` を **`d1' = d1 + 1`** に変えて数え直す
+    (P3) `img` を**恒等写像**（`img j = j`）に差し替えて数え直す
+
+(P1)(P2) は母数のほぼ全部が破れになるはず。(P3) は「像が入力より長い」
+（`ConvDiagT3`: `conv3 (diagSeqT 0 v) = ddiagSeqT (v+2)`、梯子 2 段ぶん長い）
+ので、やはりほぼ全部が破れになるはず。**3 本とも破れ数が母数に近づかない
+なら、判定が効いていない**ので仕様を見直すこと。
+
+### 期待と、外れたときの意味
+
+C2（`SandwichU` の実測）は `<=7` 列 386405 対で破れ 8 しかないので、
+(S2) も**ほぼ通る**はずである。破れが出るとしたら (S4)（写し同変）が
+壊れている 12 対と同じ行列であろう。**そこが重なるなら、(S2) の破れは
+課題 H1/H2 の「写しの境目で状態が漏れる」病と同じもの**であり、
+`SandwichUT3` を Lean で追う前に Python 側を直すのが正しい順である。
+
+
+---
+
+# 課題 L13: `BlkInv` の帰納を全部通した。残る仮定は 1 本（2026-08-28）
+
+## 0. 結論を先に
+
+* **`blk_step`（帰納の 1 歩）を両方の枝とも証明した。** `leanman check` exit 0 /
+  `sorry` 0 / `axiom` 0。`blkInv_aux` / `blkInv_of` / `ImgBlockT3_of_resid` まで配線。
+* **`ImgBlockT3 Conv3.b2d3` が依存するのは名前つき 2 本だけ**になった:
+
+      ResidBlkT … `convResid` が開始深さ `rd` の block（**課題 H へ**）
+      DmapInT  … `dmapAt` の枝の `k + 1 < |dmap|` の場合（**338 発火で 0 回**）
+
+* **課題 L12 の `(H1)` は全部閉じた。** `d + 1 + e` の枝も、`dmapAt` の枝の
+  6 例（4 ＋ 2）も証明で閉じた。残るのは実測で一度も踏まれない場合だけ。
+
+## 1. 縮約の枝の壁は「`split` が巨大項で燃える」だった
+
+課題 L12 で詰まったのは、`he : (if lad0 then … else none) = some w` から
+`lad0 = true` を取り出すところだった。`split at he` も `split_ifs at he` も
+**識別子の `simp` が `maxSteps` を超えて燃え尽きる**（`conv3` の 1 列ぶんの
+`if` の入れ子は数百行の項になる）。
+
+**回避**: 汎用の補題を `he` に**当てて単一化させる**。項に `simp` を当てない。
+
+    cond_of_ite_some : (if b = true then X else none) = some w → b = true
+    ite_some_pair    : (if b = true then X else some u) = some w → X = some w ∨ u = w
+    ite_some_none    : (if b = true then some u else none) = some w → u = w
+
+これで `lad0 = true` と `contrFind … = some (e, kU, kp, na)` が取り出せ、
+`contrFind_e_le` から `e ≤ 1` が出る。**これが課題 L12 で外していた 1 手。**
+
+## 2. 5 重連結は「局所値を全部変数にした補題」に括り出す
+
+`cols ++ rA.1 ++ rU.1 ++ rR.1 ++ rB.1` を `conv3` の本体の中で組み立てようと
+すると、側条件の `have` が metavariable を決められない（課題 L2 で前任者が
+踏んだのと同じ穴）。**局所値を全部変数にした補題** `blk_contr` に括り出すと、
+呼び出し側は巨大項に触らずに済む:
+
+    blk_contr (hddd : d + 1 ≤ dd2) (hst1 : dd2 + 1 ≤ |st1.ST|) (hst1ne : st1.dmap ≠ [])
+      (hcols) (hA) (hU) (hR) (hrd) (hB) : BlkOK d st (cols ++ A1 ++ U1 ++ R1 ++ B1, …)
+
+`hU` / `hR` / `hB` は**関数**として受ける（前提を `blk_contr` の中で導出する）。
+これで側条件が 1 回ずつしか現れない。`d + 2 ≤ |stU.ST|` は
+`BlkOK_ST_ge`（`BlkOK` の節 6 から出る鎖長の下界）で内部導出する。
+
+⚠ **引数の順序が効く**: `rd` は結論に現れないので、`hR`（`rd` を含む
+`convResid` の項が結論に現れる側）を `hrd` より**先に**置かないと `rd` が
+metavariable のままになる。
+
+## 3. `dmapAt` の枝は 6 例とも閉じた
+
+`BlkOK` に足した節 8（`dmap.last + 1 = |ST|`、課題 L12 で唯一生き残った
+`dmap` 不変量）から、`dmapAt dm k` は
+
+| `k` | 値 | 閉じるか |
+|---|---|---|
+| `k = |dm|`（範囲外がちょうど 1 個外） | `dm.last + 1 = n` | **○** |
+| `k = |dm| - 1`（範囲内の最後） | `dm.last = n - 1` | **○** |
+| `k + 1 < |dm|` | 不明 | ✗（仮定 `DmapInT`） |
+
+実測（`<=6` 列全数 ＋ 7 列の縮約発火全数 = 338 発火）:
+
+    dmapAt の枝        0 / 6
+      k = |dmap|        0 / 4   ← 閉じた
+      k = |dmap| - 1    0 / 2   ← 閉じた
+      **k + 1 < |dmap|  0 / 0** ← 一度も踏まれない
+
+`k = |dmap| - 1` の 2 例（課題 L12 で「未解決」と報告したもの）:
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(3,0,0)
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(3,1,0)
+    どちらも d = 1, hh = (rest2.head).1 = 3, k = hh - 1 = 2,
+             |rU.2.dmap| = 3, dmap[2] = 4, |rU.2.ST| = 5
+    ⟹ k = |dmap| - 1 なので dmap[k] = dmap.last = |ST| - 1。閉じる。
+
+## 4. `ImgBlockT3` があと何を待っているか
+
+**`ResidBlkT` 1 本だけ**（`DmapInT` は実測で空虚）。
+
+    ResidBlkT := ∀ rest rd Lr ps pw st nx off, rd ≤ |st.ST| →
+                   BlkOK rd st (convResid rest rd Lr ps pw st nx off)
+
+一般には**偽**（森の枝で開始深さが必ず下がる）。真になるのは残余が
+**単一の木**のとき、すなわち `convResid` の再帰の枝に入らないとき。
+実測では 338 発火で森の枝は **0 回**。⟹ **「残余は常に単一の木」が言えれば
+`ImgBlockT3` は無条件になる。** 変換器側（課題 H）の性質である。
+
+## 5. 見積もりの書き方（課題 L11 の反省）
+
+課題 L11 の「250〜350 行。測ってある。書くだけ」が外れたのは
+**測定の範囲が呼び出し点に限られていた**からだった。以後、見積もりには
+
+* **どの範囲で測ったか**（呼び出し点だけ / 全呼び出し / 全入力）
+* **測っていない場合分けはどれか**
+
+を必ず添える。今回の測定範囲は:
+
+| 測ったもの | 範囲 |
+|---|---|
+| `BlkOK` の節 6・節 8、`d ≤ |st.ST|` | **全 `conv3` 呼び出し**（`<=6` 列 48997 ＋ 7 列 1134） |
+| 縮約の枝の債務 10 本、`dmapAt` の場合分け、`convResid` の森の枝 | **全縮約発火**（`<=6` 列 44 ＋ 7 列 294 = 338 = 既知の全発火） |
+| 未測定 | **8 列以上**。`ResidBlkT` の森の枝が 8 列で踏まれる可能性は否定できない |
+
+
+---
+
+# 課題 L14: 突き合わせの母集団が足りなかった（2026-08-28）
+
+## 0. 結論を先に
+
+* **`gen3` ベースの母集団では Lean（v15）と Python（v16(2)）を区別できない。**
+  チームリードの測定を**自分の突き合わせ器で再現した**:
+
+      gen<=7 の 77282 個          … 像の差 **0**
+      **展開閉包 20829 個**       … 像の差 **161**（10 列 140 / 15 列 21）
+
+* 原因は 1 行: **`gen3` は展開して伸びた行列を含まない。** v16 で変えた
+  `wroot` / `hiblk` / `sibnb` は「写しの中で親の鎖に `x w` 柱が挟まる」形の
+  ときに効くので、**写しが 2 枚以上ある行列でしか差が出ない**。
+* `lean/l1_sets.py` に **`exp` モード（展開閉包）を足した**。以後の突き合わせは
+  こちらを使う。`gen3` 側だけの結果を「一致」と報告してはいけない。
+
+## 1. 母集団の作り方（`python3 lean/l1_sets.py exp <out.txt>`）
+
+    gen3('BMS', 6, zcap=1) の 8387 個
+      ＋ その各々を core.expand で n = 1, 2, 3 展開したもの
+      = 重複を除いて **20829 個**
+
+    長さの分布
+      1..6 : 8387   7 : 2298   8 : 845   9 : 1328   10 : 3282
+        11 :  389  12 :  383  13 : 729  15 : 3188
+
+`max z = 1` なので z<2 断片から出ない（生成器の制約と整合）。
+
+## 2. 実測（`lean/l1_check.py`、Lean に計算させた像を行ごとに diff）
+
+    python3 lean/l1_sets.py exp tmp_l1/inexp.txt
+    python3 lean/l1_check.py gen tmp_l1/inexp.txt tmp_l1
+    leanman check -C /home/koteitan/proofs/dbms/lean tmp_l1/l1check.lean   # 213 秒 exit 0
+    python3 lean/l1_check.py diff tmp_l1
+
+    compared 20829  **mismatches 161**
+
+最短の食い違い（10 列）:
+
+    A   0,0,0 1,1,1 2,0,0 1,1,1 1,1,1 1,1,0 2,2,1 3,0,0 2,2,1 2,2,1
+    py  … 3,2,1 3,2,1 **3,2,0 4,3,1 5,0,0 4,3,1 4,3,1**   （v16(2)）
+    lean… 3,2,1 3,2,1 **2,1,0 3,2,1 4,0,0 3,2,1 3,2,1**   （v15）
+
+**Python 側の 2 版を直に比べても同じ 161 個**（`RS_NOSIBNB=1 RS_NOWROOT=1
+`RS_NOHIBLK=1` で v15 に戻して差分を取った）。つまり差は完全に v15/v16(2) の
+綴りの違いであって、Lean の写経ミスではない。
+
+## 3. これまでの「一致」の表示について（訂正）
+
+`Dbms3.lean` の doc と課題 L3 の表に
+
+    <=6 列の BMS 3 行 z<2 標準形 8387 個を全数        食い違い 0
+    7 列（68895 個）のうち v12 と像が違う 290 個ぜんぶ … 食い違い 0
+
+とあるが、**これは「Lean の conv3 が Python の conv3 と同じ関数だ」の証拠には
+ならない**。当時の Python と Lean が同じ版だったことの証拠にはなるが、
+母集団が展開を含まないので、**あとで Python 側が v16 に進んでも同じ表示のまま
+通ってしまう**。実際そうなった。
+
+⟹ **突き合わせの母集団は「展開閉包」を含むこと。** これは規約とする。
+
+## 4. Lean を v16(2) に追いつかせるか
+
+いまは**追いつかせない**。理由:
+
+* 課題 L13 の `ImgBlockT3`（`blk_step` / `blk_contr` / `BlkOK` の節 6・7・8）は
+  **`conv3` の定義の中身に依存しない**。`depths_ok` と `cols_blk` が使うのは
+  `dd0` / `dd1` / `dd2` / `ST1` / `ST2` の**形**だけで、`bp`（浅い／深いの選択）
+  の中身は一切見ない。v16 の 4 本（`sibnb` / `wroot` / `hiblk` / `conv_resid`）は
+  すべて `bp` と `first` / `ps` の読みを変えるものなので、**証明は無傷**である。
+* Python 側は課題 H13 が `after_w` を触っているので、追いつかせてもすぐ古くなる。
+
+追いつかせるときに要るのは 4 本:
+
+    sibnb      sibL の「深い側」を分岐列以外にも渡す ＋ 6 リテラルの門 sibnb_ok
+    wroot      after_w / wchain の par0(..)==0 を par0_w に
+    hiblk      hi_block の頭を is_diag で拾う
+    conv_resid first / ps を行列読み first_of / ps_of に
+
+**⚠ ただし `conv_resid` の変更は課題 L13 の `ResidBlkT` に効く可能性がある**
+（`convResid` の引数の読み方が変わるので、「残余が単一の木」の議論が変わりうる）。
+そこだけは追随のときに測り直すこと。
+
+
+---
+
+# 課題 L14: `read3` / `dok` の設計 — **この設計では `ReadT3` は出ない**（2026-08-28）
+
+## 0. 結論を先に
+
+* **2 行の `readD` の逐語版は 3 行では原理的に不可能**（最小の反例は対角）。
+  像の行 1 は BMS の添字ではなく**行 1 の木での順位**である。
+* 順位に直す設計 `read3 := translate ∘ rankify ∘ survivors` を書き（`lean/L14Read.lean`、
+  exit 0 / `sorry` 0 / `#guard` 5 本）、**真の `ST_TS` 展開閉包で測った**:
+  **415218 個中 406564 一致・破れ 8654（2.1%）**、陽性対照 2 本つき。
+* **破れは 2 種類とも構造的で、`ReadT3` はこの形では成り立たない。**
+  とくに**縮約が発火した行列は一致が 1 つも無い**（601/601 破れ）。
+* ⟹ **`OrderT3` は `SeqEmbT3`（`OrderT3_iff_seqemb` で同値、読みを使わない）から
+  攻めるべき。** `read3` の道は縮約を読み戻す仕掛けが要る。
+
+## 1. なぜ逐語版が不可能か（1 例で終わり）
+
+    M   = (0,0,0)(1,1,1)                    translate M = P 0 0 (P 1 1 Z Z) Z
+    像  = (0,0,0)(1,0,0)(2,1,0)(3,2,1)
+    像の (行1,行2) = (0,0) (0,0) (1,0) (2,1)   ⟹ **(1,1) がどこにも無い**
+
+`translate` は柱の `(行1,行2)` をそのまま添字にするので、どの部分列を選んでも
+`P 1 1` は作れない。原因は `conv3` の 1 行:
+
+    e2 = s2                行 2 は**そのまま**書く
+    e1 = 梯子の表から計算   行 1 は**そのままではない**
+
+2 行の `convD` は `p.2` をそのまま書くので `readD` が逐語で済んでいた。
+**ここが 2 行と 3 行の分かれ目である。**
+
+## 2. 設計（`lean/L14Read.lean`、exit 0）
+
+    survivors B first plev   `readD` と同じ再帰で影を捨てる。節は 2 つ
+      行 1 の梯子 … first ∧ (p の段) = plev ∧ 次 = p + (1,1,0)
+      行 2 の梯子 … first ∧ p の行 2 = plev の行 2 ∧ 次 = p + (1,1,1)
+    rankify B                各行の値を**その行の木での順位**に置き換える
+    readMat B := rankify (survivors B true (0,0))
+    read3 B   := translate (readMat B)
+    dok B     := blockok 0 B ∧ ST_TS (readMat B)
+
+`rankify` は BMS 標準形の上では恒等なので、**`readMat (conv3 M) = M` が言えれば
+`ReadT3` は無料**になる。対角では `#guard` で確認ずみ:
+
+    readMat (0,0,0)(1,0,0)(2,1,0)(3,2,1)           = (0,0,0)(1,1,1)
+    readMat (0,0,0)(1,0,0)(2,1,0)(3,2,1)(4,3,1)    = (0,0,0)(1,1,1)(2,2,1)
+    read3   (0,0,0)(1,0,0)(2,1,0)(3,2,1) = translate (0,0,0)(1,1,1)
+
+## 3. 測定（`tools/probe_read3.py`）— **測定範囲を明記する**
+
+    (INV) readMat (conv3 M) = M          for M in ST_TS
+
+**母集団は「真の `ST_TS` 展開閉包」**（対角 `diag(3,v,zcap=1)` から `n = 1,2,3` の
+展開で到達できるもの）。`gen3` の標準形の集合ではない — `ReadT3` の仮定が
+`ST_TS M` だからである（`gen3` は `isstd` で、`ST_TS` より広い）。
+
+| | 母数 | 一致 | **破れ** |
+|---|---|---|---|
+| `v<=4, len<=10` **本番** | 415218 | 406564 | **8654（2.1%）** |
+| 陽性対照 1（影を捨てない） | 415218 | 36 | **415182** |
+| 陽性対照 2（順位に直さない） | 415218 | 36 | **415182** |
+
+⟹ **影を捨てる段も順位に直す段も、どちらも必須**（対照が両方とも落ちる）。
+
+破れの内訳（`v<=4, len<=9` の 44063 個で分解。破れ 973）:
+
+| | 件数 |
+|---|---|
+| **縮約が発火した** | **601** |
+| 縮約なし | 372 |
+| 短い像（`|conv3 M| < |M|`）| 239 |
+| 像は十分長い | 734 |
+| **一致した中に縮約ありは** | **0 個** |
+
+**測っていない場合分け**: `v>=5` / `len>=11` / `n>=4` の展開。
+とくに縮約の発火率は列数とともに上がるので、**破れの割合は 2.1% より
+悪くなる可能性がある**（良くはならない）。
+
+## 4. 判定: **この設計では出ない**（1 段落）
+
+`conv3` の**縮約**が発火すると像が `M` より短くなる（実測 239 例）。`translate M`
+の節点は `|M|` 個あるので、**1 列 1 節点で読むどんな `read3` でも
+`read3 (conv3 M) = translate M` は成り立ちえない**。しかも縮約が発火した行列は
+**一致が 1 つも無い**（601/601）。縮約は捨てられない（止めるとシートが
+1354 -> 1021 に落ちる）。残る 372 は影の節の**取り違え**で、局所の
+「次 = `p + (1,1,1)`」だけでは本体の柱と梯子の柱を分けられない
+（`okPlace` 相当の「その深さにその段を直に書けたか」を見ないと決まらない）。
+⟹ **`read3` / `dok` の道は、縮約を読み戻せる `read3`（1 列を複数節点に開く）を
+設計しないかぎり閉じている。**
+
+## 5. 推奨: `SeqEmbT3` から攻める
+
+`Dbms3.OrderT3_iff_seqemb`（**証明ずみ**）:
+
+    OrderT3 conv3  ↔  SeqEmbT3 conv3
+    SeqEmbT3 conv3 := ∀ M N, ST_TS M → ST_TS N → (seqlex M N ↔ seqlex (conv3 M) (conv3 N))
+
+こちらは**読みも項も順序数も出てこない**ので、縮約が像を縮めても関係ない
+（辞書式の比較だけ）。実測でも `conv3` は `<=6` 列 8387 個・`<=7` 列 77282 個で
+位置ずれ 0・像の重複 0 である。`conv3` の構造帰納法で攻めるのが筋である。
+**2533 行の `readC_conC_ST` を写経する道は、少なくとも縮約がある以上、無い。**
+
+
+---
+
+# 課題 L14 の続き: `ResidBlkT` は偽だった。真の形に差し替えた（2026-08-28）
+
+## 0. 結論を先に
+
+* **課題 L13 の `ResidBlkT`（結論が `BlkOK rd`）は偽**だった（課題 R1 §2、8 列の反例）。
+  ⟹ `ImgBlockT3_of_resid` は**空虚な定理**になっていた。**最優先で差し替えた。**
+* いま `ImgBlockT3 Conv3.b2d3` が依存するのは **3 本**（`Dbms3.lean`, exit 0 / sorry 0）:
+
+      ResidBlkD    convResid は**外側の `d`** の block（R1 §3、全母集団で違反 0）
+      ResidSideT   その呼び出し点の側条件 (H)（R2-3）
+      DmapInT      dmapAt の範囲内の枝（R1 §4）
+
+* **課題 L13 の「`k + 1 < |dmap|` は空虚」も誤り**だった（R1 §4.2、9 列で 3 例・
+  10 列で 39 例）。`DmapInT` の中身を元に戻した。
+* **節 11 の帰納は通らなかった。** 足りないものは §3 に 1 行で書いた。
+
+## 1. 自分の誤りの構図（2 回とも同じ）
+
+| 課題 | 書いたこと | 実際 |
+|---|---|---|
+| L13 | 「`convResid` の森の枝は 338 発火で 0 回」 | `<=8` 列で 2414 発火中 **32 回** |
+| L13 | 「`k + 1 < |dmap|` は 0 回だから空虚」 | 9 列で **3 例**、10 列で **39 例** |
+
+どちらも**母数が `gen3 <=7` で止まっていた**。R1 の診断がそのまま原因である:
+
+> `<=7` 列で 0 だったのは、「残余の先頭が `p.1+1` より深い」6 例が
+> **全部そこで行列が終わっていた**からです。**1 列足すだけで森になります。**
+
+⟹ 規約に足す: **「0 回だから空虚」と書く前に、母数を 2 列ぶん広げて確かめる。**
+課題 L13 §5 で「未測定: 8 列以上」と書いていたのは正しかったが、
+**書いただけで確かめなかった**のが誤りだった。
+
+## 2. 差し替えた形（`Dbms3.lean`, exit 0 / sorry 0）
+
+    def ResidBlkD : Prop :=
+      ∀ rest d rd Lr ps pw st nx off, rd ≤ |st.ST| → DmOK st →
+        (∀ c ∈ rest, d + rest.head.1 ≤ rd + c.1) →           -- 側条件 (H)
+        BlkOK d st (convResid rest rd Lr ps pw st nx off)     -- ★ rd ではなく d
+
+    def ResidSideT : Prop :=   -- 呼び出し点で (H) が出ること
+      ∀ d p stU rest2 e, ∀ c ∈ rest2,
+        d + rest2.head.1 ≤ (if rest2 = [] ∨ rest2.head.1 = p.1 + 1
+                            then d + 1 + e
+                            else dmapAt stU.dmap (rest2.head.1 - 1)) + c.1
+
+`BlkOK rd` を `BlkOK d` にすると **`blk_contr` が単純になった**:
+`rd` が消え、`hrd`（`d ≤ rd ∧ rd ≤ |stU.ST|`）が要らなくなり、
+連結が `BlkOK_app (le_refl d)` 2 段になる。最後の `d ≤ |rR.2.ST|` も
+`BlkOK d` の節 2 から直に出る。**R1 の「いちばん素直」は Lean でもそうだった。**
+
+## 3. 節 11 の帰納が通らない — **足りないもの 1 行**
+
+R1 の節 11 `∀ k < |st.dmap|, st.dmap[k] ≤ |st.ST|` を `DmOK` に足そうとすると、
+`cols_blk` の 1 歩で止まる:
+
+    st1.dmap = st.dmap.take p.1 ++ [dd2]     st1.ST の長さ = dd2 + 1
+    新しい項 dd2 は dd2 ≤ dd2 + 1 で ✓
+    **古い項 st.dmap[k]（k < p.1）に要るのは `≤ dd2 + 1`**
+    ところが入口の不変量が与えるのは `≤ |st.ST|` だけで、
+    **`|st.ST| ≤ dd2 + 1` は無い**（`d ≤ dd2` と `d ≤ |st.ST|` しか無い）
+
+> **足りないもの: 「もとの深さが `p.1` 未満の項は、いまのブロックの深さ `d` 以下」
+> ＝ `∀ k < p.1, st.dmap[k] ≤ d`。**
+
+これがあれば `st.dmap[k] ≤ d ≤ dd2 < dd2 + 1` で節 11 が帰納で通る。
+意味としては「`p` の祖先の像の深さは `p` のブロックの開始深さを超えない」で、
+`dmap` の項が `take p.1` で切られる理由そのものである。**R1 に測ってほしい**
+（陽性対照は `≤ d - 1` と `≤ d + 1` の 2 本）。
+
+## 4. まだやっていないこと（正直に）
+
+* **節 10 を `BlkOK` に足す**: 節 10 は `M`（入力）の先頭の深さを参照するので、
+  `BlkOK d st res` に**引数を 1 本足す**（`mo : Option ℕ` = 入力の先頭の行 0）
+  必要がある。`BlkOK_nil` / `BlkOK_app` / `BlkOK_app'` / `BlkOK_mono` /
+  `cols_blk` / `BlkOK_ST_ge` / `blk_contr` / `blk_step` / `blkInv_aux` が全部
+  追随する。**`BlkOK_app` には `d + m_Y ≤ d' + m_X` の側条件が要る**
+  （R1 の「4 つの再帰がどれも `d' + (j - m') ≥ d + (j - p.1)` の向きにずれている」
+  はまさにこれ）。見積もり **150〜200 行**。測定は R1 が済ませている
+  （全 `conv3` 呼び出し 13108043 回で違反 0・陽性対照つき）。
+* **`ResidBlkD` / `ResidSideT` を帰納の中で消す**: R1/R2 の見立てでは
+  `convResid` は `conv3 head` を `|head| ≤ |rest| < |M|` で呼ぶので
+  `blkInv_aux` の強い帰納に入る。`convResid` についての相互再帰の補題を
+  1 本書く（(H) の保存 ＋ `BlkOK_app'`）。見積もり **80〜120 行**。
+
+
+---
+
+# 課題 L15: `convResid` の block 性を**証明した**。残る仮定は 2 本（2026-08-28）
+
+## 0. 結論を先に
+
+* **`resid_blk` を証明した**（`Dbms3.lean`, exit 0 / sorry 0）。
+  課題 L13 の `ResidBlkT`（結論 `BlkOK rd`、**偽**）を結論 **`BlkOK d`** に直し、
+  側条件 (H) を付けたうえで、`conv3` の強い帰納の中で**証明できた**。
+  ⟹ **仮定から消えた。**
+* `ImgBlockT3 Conv3.b2d3` が依存するのは **2 本**:
+
+      ResidSideT   呼び出し点で側条件 (H) が出ること（R1-NOTES §3 / R2-3）
+      DmapInT      `dmapAt` の範囲内の枝（R1-NOTES 節 10 ＋ 節 11）
+
+## 1. `resid_blk`（課題 R2 の紙の証明を Lean に写したもの）
+
+    resid_blk (IH : conv3 の強い帰納の仮定) :
+      ∀ n rest, |rest| ≤ n → |rest| ≤ NN → ∀ rd Lr ps pw st nx off,
+        d ≤ |st.ST| → rd ≤ |st.ST| → DmOK st →
+        (∀ c ∈ rest, d + rest.head.1 ≤ rd + c.1) →      -- 側条件 (H)
+        BlkOK d st (convResid rest rd Lr ps pw st nx off)
+
+`rest.length` についての強い帰納。骨は R2 の紙の証明そのままである:
+
+* `rest = []` … `BlkOK_nil`
+* `rest = c :: rs` …
+  - (H) に `c' := c` を入れて **`d ≤ rd`**。
+  - 先頭の木は `conv3 head rd` で、`|head| ≤ |rest| ≤ NN` なので `IH` が使える。
+    `BlkOK rd` を `BlkOK_mono` で `BlkOK d` に落とす。
+  - `tail = []` … それで終わり。
+  - `tail ≠ []` … `rd' = rd - (c.1 - m1)` で再帰し、`BlkOK_app (le_refl d)` で連結。
+    **(H) の保存**は `omega` 1 発で出るが、そのために
+    **`m1 < c.1`**（次の木の頭は今の木の頭より浅い）が要る。これは
+    `deepGe` の定義そのものなので `deepGe_head_lt` として証明した:
+
+        deepGe_head_lt : rs.drop (deepGe a rs) ≠ [] →
+                         ((rs.drop (deepGe a rs)).headD x).1 < a
+
+    ℕ の切り捨て引き算は `omega` がそのまま扱うので、R2 の言う
+    「`max(0, ·)` は死んでいる」を別に証明する必要はなかった
+    （(H) から `c.1 - m1 ≤ rd - d` が出るので切り詰めが起きない、を
+    `omega` が内部で使う）。
+
+新しい補題: `headD_memT` / `deepGe_head_lt` / `resid_blk`。**60 行**。
+（課題 L14 の見積もり「80〜120 行」より小さかった。`omega` が ℕ の
+切り捨て引き算を全部飲んだため。）
+
+## 2. 残る 2 本と、その先
+
+    ResidSideT  補題 A（∀ c ∈ rest2, p.1+1 ≤ c.1）＋ 節 10 から出る（R1 §3）
+    DmapInT     第 1 項 k ≤ |dmap| は R1 §4.3、下界は節 10、上界は節 11
+
+**どちらも「`BlkOK` に節 10 を足す」ことに帰着する。** 節 10 は入力 `M` の
+先頭の深さを参照するので `BlkOK d st res` に引数を 1 本足す必要がある:
+
+    BlkOK d mo st res      mo : Option ℕ（入力の先頭の行 0。空なら none）
+    節 10  ∀ m ∈ mo, ∀ j, m ≤ j → j < |res.2.dmap| → d + (j - m) ≤ res.2.dmap[j]
+
+追随するもの: `BlkOK_nil` / `BlkOK_app` / `BlkOK_app'` / `BlkOK_mono` /
+`BlkOK_ST_ge` / `cols_blk` / `blk_contr` / `blk_step` / `resid_blk` /
+`blkInv_aux`。**`BlkOK_app` には側条件 `d + m_Y ≤ d' + m_X` が要る**
+（R1 の「4 つの再帰がどれも `d' + (j - m') ≥ d + (j - p.1)` の向きにずれている」）。
+見積もり **150〜200 行**。測定は R1 が全 `conv3` 呼び出し 13108043 回で済ませている。
+
+節 11（`∀ k < |dmap|, dmap[k] ≤ |ST|`）は課題 L14 §3 のとおり
+`∀ k < p.1, st.dmap[k] ≤ d` が要る。**R1 に測定を依頼中。**
+
+
+---
+
+# 課題 L16: 節 10 を足す前の確認 — **側条件は真。ただし節がもう 1 本要る**（2026-08-28）
+
+## 0. 結論を先に
+
+* **`BlkOK_app` の側条件 `d + m_Y ≤ d' + m_X` は 4 つの連結点すべてで真**
+  （違反 0、**陽性対照は 1 段きつくすると全部発火**）。
+* **ただし節 10 だけでは合成できない。** `m_X < m_Y` になる連結点（`cols ++ rA`）で
+  `m_X ≤ j < m_Y` の `j` が hY の外に落ちるので、
+  **「ブロックは自分の先頭より浅い `dmap` の項に触らない」（節 12）が要る。**
+* 節 12 も測った: **違反 0**、陽性対照（添字を 1 つ広げる）は **27584 / 521** 発火。
+* ⟹ 見積もりを **150〜200 行 → 250〜350 行**に直す（節が 1 本増え、
+  `BlkOK_app` の場合分けが 2 つになるため）。**まだ書いていない。**
+
+## 1. 測った側条件（母集団: `gen3 <=6` 全数 8387 ＋ 7 列の縮約発火 294）
+
+| # | 連結点 | 条件 | 違反 | 陽性対照（1 段きつく）|
+|---|---|---|---:|---:|
+| a1 | 縮約の枝の `cA` | `A.head.1 ≤ p.1 + 1` | **0** | — |
+| a3 | 縮約の枝の `cU` | `U.head.1 ≤ p.1 + 1` | **0** | — |
+| **a4** | **縮約の枝の `cR`** | **`d + rest2.head.1 ≤ rd + p.1`** | **0** | **13 / 60** |
+| a5 | 縮約の枝の `cB` | `Bq.head.1 ≤ p.1` | **0** | — |
+| b1 | 非縮約の枝の `cA` | `A.head.1 ≤ p.1 + 1` | **0** | **27584 / 521** |
+| b2 | 非縮約の枝の `cB` | `B.head.1 ≤ p.1` | **0** | **13018 / 190** |
+
+母数は `conv3` の**全呼び出し**（非縮約 48997 / 1134、縮約 44 / 294）。
+
+**a4 がいちばん危ないと読んでいた**（`rest2.head.1 ≥ p.1 + 1`（補題 A）なので
+`d + rest2.head.1 ≤ d + p.1` は偽になるはず）。実際には `rd` が
+`rest2.head.1 - p.1` ぶん大きくなるので通る。**しかも 13 + 60 例でぴったり等号**
+（1 段きつくすると落ちる）＝ この不等式は**タイト**で、証明では
+`rd` の 2 つの枝（`d+1+e` / `dmapAt`）を両方きちんと使う必要がある。
+
+⚠ `a1` / `b1`（`A.head.1 ≤ p.1 + 1`）は **BMS の隣接条件**（隣の柱の行 0 は
+高々 +1）そのものである。`BlkInv` はいま**任意の `M`** について述べているので、
+節 10 を足すなら **`BlkInv` に「入力が `steps1`」の仮定を足す**か、
+`ImgBlockT3_of_BlkInv` の側で `ST_TS A → steps1 A` を使って渡す必要がある。
+（`takeWhile` / `dropWhile` / `drop` / `take` は `steps1` を保つので帰納は回る。）
+
+## 2. 節 10 だけでは合成できない — **節 12 が要る**
+
+    節 10  ∀ j, m ≤ j → j < |res.2.dmap| → d + (j - m) ≤ res.2.dmap[j]
+
+を `BlkOK` に足して `X ++ Y` を合成すると、結果の `dmap` は **Y の側のもの**
+なので、`j ≥ m_Y` は hY から出る。ところが `cols ++ rA` の連結点は
+`m_X = p.1`, `m_Y = p.1 + 1` で **`m_X < m_Y`** なので、`j = p.1` が hY の外に落ちる。
+そこは「**X が書いた `dmap[p.1] = dd2` を Y が触っていない**」で埋めるしかない:
+
+    節 12（保存）  M ≠ [] → ∀ k < M.headI.1, k < |res.2.dmap| →
+                     k < |st.dmap| ∧ res.2.dmap[k] = st.dmap[k]
+
+実測（同じ母集団、`conv3` の全呼び出し）:
+
+| | 違反 | 陽性対照（添字を 1 つ広げる）|
+|---|---:|---:|
+| `rA` が `< p.1 + 1` の項を保つ | **0** | **27584 / 521** |
+| `rB` が `< B.head.1` の項を保つ | **0** | — |
+
+**タイト**である（`< p.1 + 2` にすると 27584 / 521 で落ちる）。
+意味は明らかで、`conv3` の `dmap` 更新が `st.dmap.take p.1 ++ [dd2]` なので
+**添字 `< p.1` には触らない**。帰納で素直に通るはずである。
+
+## 3. 直した見積もり（**測定範囲つき**）
+
+| やること | 行数 |
+|---|---|
+| `BlkOK d st res` に引数 `mo : Option ℕ`（入力の先頭の行 0）を足す | 40 |
+| 節 10 ＋ 節 12 を足し、`BlkOK_nil` / `_app` / `_app'` / `_mono` / `_ST_ge` / `cols_blk` を追随 | 120〜160 |
+| `BlkOK_app` の側条件（`d + m_Y ≤ d' + m_X`）と `m_X < m_Y` の場合分け | 40〜60 |
+| `blk_contr` / `blk_step` / `resid_blk` / `blkInv_aux` の追随 | 50〜80 |
+| `BlkInv` に `steps1` の仮定を足して `ImgBlockT3_of_BlkInv` で渡す | 20〜30 |
+| **合計** | **250〜350 行** |
+
+**測定範囲**:
+
+| 測ったもの | 範囲 | 未測定 |
+|---|---|---|
+| 側条件 6 本・節 12 | `conv3` の**全呼び出し**（`gen3<=6` 全数 ＋ 7 列の縮約発火全数） | **8 列以上**。R1 の節 10 は `gen3<=8` 全数 ＋ 展開閉包で測ってある |
+| 節 10 | R1 が `gen3<=8` 全数 13108043 回 ＋ **展開閉包 1181746 回**（違反 0・陽性対照つき） | — |
+
+⚠ 側条件と節 12 は**私の測定が `<=7` 列止まり**である。課題 L13 で同じ切り方に
+やられているので、**書く前に 8 列で測り直す**か、R1 に投げるのが安全である。
+
+
+---
+
+# 課題 L16 の続き: 測定に依らない部分を書いた（2026-08-28）
+
+## 0. 結論を先に
+
+* **`sorry` は 0 のまま。** 側条件が要る部分は `sorry` を置くのではなく
+  **側条件を仮定に取った補題**として書いたので、測定が返ってきたら
+  呼び出し点でその仮定を埋めるだけになる。
+* 入ったもの（`Dbms3.lean`, exit 0 / sorry 0 / axiom 0）:
+
+      Dm10 / Dm12            節 10 と 節 12（**`BlkOK` とは別の述語**）
+      Dm10_nil / Dm12_refl   空の場合
+      Dm10_app / Dm12_app    連結（側条件は仮定）
+      steps1_prefixT / _suffixT / _takeT / _dropT / _takeWhileT / _dropWhileT / _tailT
+
+## 1. 設計の変更: `BlkOK` に引数を足さない
+
+課題 L16 §3 では「`BlkOK d st res` に `mo : Option ℕ` を足す（40 行）」と
+書いたが、**やめた**。`BlkOK` は 8 節あり、既存の証明が
+`.2.2.2.2.2.2.2`（節 8 = `DmOK`）のような射影を使っているので、
+引数や節を足すと**全部ずれる**（`blk_contr` / `resid_blk` / `blk_step` /
+`blkInv_aux` の全体）。
+
+代わりに**別の述語**にした:
+
+    def Dm10 (d m : ℕ) (res : TrioSeq × St) : Prop :=
+      ∀ j, m ≤ j → j < |res.2.dmap| → d + (j - m) ≤ res.2.dmap[j]
+
+    def Dm12 (m : ℕ) (st : St) (res : TrioSeq × St) : Prop :=
+      ∀ k, k < m → k < |res.2.dmap| → k < |st.dmap| ∧ res.2.dmap[k] = st.dmap[k]
+
+`BlkOK` は 1 バイトも動かない。`blk_step` は
+`BlkOK d st res ∧ Dm10 d p.1 res ∧ Dm12 p.1 st res` を返す形にすればよい。
+**見積もりが 250〜350 行 → 180〜250 行に下がる。**
+
+## 2. 連結の補題（側条件は仮定に取ってある。**証明ずみ**）
+
+    Dm10_app (hmm : d + m' ≤ d' + m)
+             (hX : Dm10 d m (X, stm)) (hY : Dm10 d' m' (Y, st'))
+             (hY2 : Dm12 m' stm (Y, st')) : Dm10 d m (X ++ Y, st')
+
+    Dm12_app (hle : m ≤ m')
+             (hX : Dm12 m st (X, stm)) (hY : Dm12 m' stm (Y, st')) :
+             Dm12 m st (X ++ Y, st')
+
+`Dm10_app` の証明が **課題 L16 §2 の発見をそのまま形にしている**:
+
+* `j ≥ m'` … `Y` の節 10 ＋ 側条件 `d + m' ≤ d' + m`（`omega`）
+* `m ≤ j < m'` … **`Y` が触っていない**（`Y` の節 12）ので `X` の節 10
+
+⟹ **節 10 だけでは合成できず節 12 が要る**ことが、証明の場合分けとして残った。
+
+`Dm12_app` は `m ≤ m'` が要る。これは**外側の連結（`… ++ rB`）では偽**
+（`rB` の `m' = B.head.1 ≤ p.1 = m`）なので、そこは
+「ブロック全体の節 12 の添字は**先頭の深さではなく最小の深さ**」に直すか、
+`rB` の側の節 12 を `m` で述べ直す必要がある。**未解決。測定待ちの部分と一緒に
+片づける。**
+
+## 3. `steps1` は接頭辞・接尾辞で保たれる（**証明ずみ**）
+
+`conv3` の再帰は `takeWhile` / `dropWhile` / `take` / `drop` / `tail` しか
+使わないので、`steps1_append` の `.mp` から全部出た（**各 2〜3 行**）。
+`BlkInv` に `steps1 M` を足すときの道具はこれで揃った。
+`ImgBlockT3_of_BlkInv` の側は `(blockok_ST_TS hA).2.2` で渡せる。
+
+## 4. 残り（測定待ち）
+
+| やること | 行数 | 待っているもの |
+|---|---|---|
+| `cols_blk` が `Dm10 d p.1` と `Dm12 p.1` を出すこと | 40〜60 | — |
+| `blk_step` / `blk_contr` / `resid_blk` を `∧ Dm10 ∧ Dm12` の形に | 80〜120 | 側条件 6 本の `<=8` 列での確認 |
+| `Dm12` の外側連結（`m' ≤ m` の向き）の直し | 20〜40 | 上と同じ |
+| `BlkInv` に `steps1` を足す | 20〜30 | — |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 | 節 12 の `<=8` 列での確認 |
+| **合計** | **200〜310 行** | |
+
+**測定範囲**（前回と同じ。R1 に依頼中）:
+
+| 測ったもの | 範囲 | 未測定 |
+|---|---|---|
+| 節 10 | R1: `gen3<=8` 全数 13108043 ＋ 展開閉包 1181746、違反 0・陽性対照つき | — |
+| 側条件 6 本・節 12 | 私: `conv3` の全呼び出し（`gen3<=6` 全数 ＋ 7 列の縮約発火全数） | **8 列以上**（R1 に依頼中） |
+
+
+---
+
+# 課題 L16 の続き 2: 測定に依らない 2 本を書いた（2026-08-28）
+
+## 0. 結論
+
+**`sorry` 0 のまま、待ちが「—」の 2 本を両方入れた**（`Dbms3.lean` exit 0）。
+
+## 1. `cols_blk` の側（節 10 / 節 12 の 1 列ぶん）
+
+    getD_snoc_len : (l ++ [x]).getD |l| 0 = x
+    getD_snoc_lt  : k < |l| → (l ++ [x]).getD k 0 = l.getD k 0
+
+    Dm10_of_take (hres : res.2.dmap = dmo.take m ++ [dd2]) (hdd : d ≤ dd2) :
+      Dm10 d m res
+    Dm12_of_take (hst : st.dmap = dmo) (hres : res.2.dmap = dmo.take m ++ [dd2])
+      (hm : m ≤ |dmo|) : Dm12 m st res
+
+`Dm10_of_take` の骨は 1 行で言える: **`dmap` の更新が `take m ++ [dd2]` なので
+`|dmap| ≤ m + 1`、したがって `j ≥ m` で範囲内なのは `j = m` だけ**で、
+そこの値は `dd2 ≥ d`（`depths_le`）。`Dm12_of_take` は `take` が下位の項に
+触らないことそのもの。
+
+⚠ `Dm12_of_take` には **`m ≤ |dmo|`** が要る（`|dmo| < m` だと添字 `|dmo|` の
+値が `dd2` になり「入口と一致」が偽になる）。呼び出し点で `p.1 ≤ |st.dmap|` を
+出す必要がある。R1-NOTES §4.3 の `|dmap| = (最後に処理した柱).1 + 1` が
+その材料である。**未確認。**
+
+## 2. `BlkInv` に `steps1` を足した
+
+    BlkInv := ∀ M d L F ps pw first force st nx off,
+                d ≤ |st.ST| → DmOK st → **steps1 M** → BlkOK d st (conv3 M …)
+
+`blkInv_aux` / `blk_step` / `resid_blk` の 3 本に通した。呼び出し点は
+`steps1_takeWhileT` / `_dropWhileT` / `_takeT` / `_dropT` の 1 行か、
+巨大項のところは
+
+    repeat' first | exact hr1 | apply steps1_takeT | apply steps1_dropT
+                  | apply steps1_takeWhileT | apply steps1_dropWhileT | apply steps1_tailT
+
+で片づく（`Bq` や `rest2` は `take`/`drop`/`tail` の入れ子なので、
+`apply` を繰り返すだけで根の `steps1 r` に落ちる）。
+
+入口は `ImgBlockT3_of_BlkInv` が `(blockok_ST_TS _hA).2.2` で渡す。
+**`ImgBlockT3` の仮定は 2 本のまま**（`ResidSideT` / `DmapInT`）。
+
+## 3. 残り（測定待ち）
+
+| やること | 行数 | 待っているもの |
+|---|---|---|
+| `blk_step` / `blk_contr` / `resid_blk` を `∧ Dm10 ∧ Dm12` の形に | 80〜120 | 側条件 6 本の `<=8` 列確認 |
+| `Dm12` の外側連結（`m' ≤ m` の向き）の直し | 20〜40 | 同上 |
+| `Dm12_of_take` の `m ≤ |dmo|` を呼び出し点で出す | 20〜30 | R1 §4.3 の Lean 化 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 | 節 12 の `<=8` 列確認 |
+| **合計** | **160〜250 行** | |
+
+
+---
+
+# 課題 L17: `Dm10` は**外側の `(d, p.1)` で揃う**（2026-08-28）
+
+## 0. 結論を先に
+
+* R1 の測定を受けて Lean に落とした形（`Dbms3.lean`, exit 0 / sorry 0）:
+
+      Dm12w  節 12 の弱い版（`k < |st.dmap| →` を仮定に。強い版は**偽**）
+      Dm11   `∀ k < m, st.dmap[k] ≤ **d + 1**`（`≤ d` は**偽**。5 列が境目）
+
+* **新しい測定で設計が 1 段簡単になった。** `Dm10` を**各ブロックの頭 `m'`** では
+  なく**外側の `(d, p.1)` で揃えて**立てると、4 つの再帰すべてで違反 0:
+
+      Dm10 d p.1 (rA.2)  違反 0     Dm10 d p.1 (rU.2)  違反 0
+      Dm10 d p.1 (rR.2)  違反 0     Dm10 d p.1 (rB.2)  違反 0
+      陽性対照（`d+1` にする）: rR は **13 / 60**、rB は **38894 / 1061**（タイト）
+
+  母数は `conv3` の全呼び出し（非縮約 48997 / 1134、縮約 44 / 294）。
+
+* **`Dm10` は `res.2.dmap`（＝ 最後の状態）しか見ない**ので、`(d, m)` を揃えれば
+  **連結補題 `Dm10_app` は要らない**（`Dm10 d m (X ++ Y, st') = Dm10 d m (Y, st')`）。
+  必要なのは「**各再帰の出力が `Dm10 d p.1` を満たす**」だけになる。
+
+## 1. なぜ揃うか（側条件がそのまま効く）
+
+各ブロックは自分の `(d', m')` で `Dm10 d' m'` を満たす。`j ≥ m'` の部分は
+
+    d + (j - p.1) ≤ d' + (j - m')   ⟺   d + m' ≤ d' + p.1
+
+で移せる。これは**課題 L16 で測った側条件そのもの**である:
+
+| ブロック | `(d', m')` | 側条件 | 実測 |
+|---|---|---|---|
+| `rA` | `(dd2+1, p.1+1)` | `d + p.1 + 1 ≤ dd2 + 1 + p.1` ⟸ `d ≤ dd2` | ✓ `depths_le` |
+| `rU` | `(d+1, U.head.1)` | `d + U.head.1 ≤ d + 1 + p.1` ⟸ `U.head.1 ≤ p.1+1` | 違反 0 |
+| **`rR`** | `(rd, rest2.head.1)` | **`d + rest2.head.1 ≤ rd + p.1`** | 違反 0・**等号 73/334** |
+| `rB` | `(d, Bq.head.1)` | `d + Bq.head.1 ≤ d + p.1` ⟸ `Bq.head.1 ≤ p.1` | 違反 0 |
+
+`rR` の条件は `convResid` の再帰でも**そのまま保たれる**（(H) と同じ計算）:
+
+    rd' = rd - (c.1 - m1),  head' = m1
+    d + m1 ≤ rd' + p.1  ⟺  d + c.1 ≤ rd + p.1     ← もとの条件
+
+⟹ **`resid_blk` を「`Dm10 d p0` も返す」形に強めるのが筋。** 側条件は
+呼び出し点の a4 で、再帰では (H) と同じ形で伝わる。
+
+## 2. `m' > p.1` の中間の添字（`p.1 ≤ j < m'`）
+
+`rA` は `m' = p.1 + 1` なので `j = p.1` の 1 点だけ。ここは
+`rA` が添字 `p.1` を保つ（`Dm12`、測って違反 0）＋ `st1.dmap[p.1] = dd2 ≥ d` で埋まる。
+
+`rR` は `m' = rest2.head.1 ≥ p.1 + 1` なので `j ∈ [p.1, rest2.head.1)` が中間。
+**ここは節 12 では埋まらない**（R1 の反例: 呼び出し前に無かった添字が生える）。
+しかし §1 のとおり `resid_blk` 自身が `Dm10 d p0` を返せば中間も含めて出るので、
+**`Dm12` を `rR` に当てる必要が無くなる**。
+
+## 3. 残り（設計が確定した形）
+
+| やること | 行数 |
+|---|---|
+| `resid_blk` の結論に `Dm10 d p0`（側条件 `d + rest.head.1 ≤ rd + p0` つき）を足す | 50〜70 |
+| `cols_blk` の `Dm10 d p.1` / `Dm12 (p.1+1)`（`Dm10_of_take` / `Dm12_of_take` は済み） | 20〜30 |
+| `blk_step` / `blk_contr` の結論に `∧ Dm10 d p.1` を足す | 60〜80 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **170〜240 行** |
+
+`Dm10_app` / `Dm12_app` は**要らなくなる見込み**（`(d, m)` を揃えるので）。
+残すが使わない、でよい。
+
+**測定範囲**: `conv3` の全呼び出し、`gen3 <=6` 全数 ＋ 7 列の縮約発火全数。
+**未測定は 8 列以上**（R1 が流している）。
+
+
+---
+
+# 課題 L18: `Dm10` は**各呼び出しの `(d', m')` ごとに独立**で、鎖が閉じない（2026-08-28）
+
+## 0. 結論を先に
+
+* **止めました。** 不変量が偽なのではなく、**導出の鎖が閉じない**。
+* 測ったものは全部真（`conv3` の全呼び出し、非縮約 48997 / 1134、縮約 44 / 294）:
+
+      入口の前提  Dm10 (dd2+1) (p.1+1) st1     違反 0
+                 Dm10 (d+1) U.head.1 rA.2     違反 0
+                 Dm10 rd rest2.head.1 rU.2    違反 0
+                 Dm10 d Bq.head.1 rR.2        違反 0
+                 Dm10 d p.1 st（入口そのもの） 違反 0
+      出口（課題 L17）Dm10 d p.1 (rA/rU/rR/rB) 違反 0（対照 13/60、38894/1061）
+
+* **ところが片方からもう片方が出ない。** 例:
+
+      `Dm10 d p.1 (rA.2)`（L17 で測った出口）から
+      `Dm10 (d+1) U.head.1 rA.2`（`rU` の入口）は出ない。
+      移すのに要るのは `d + 1 + (j - U.head.1) ≤ d + (j - p.1)`
+      ⟺ `p.1 + 1 ≤ U.head.1`。ところが **`U.head.1 ≤ p.1`**（測って違反 0）。**逆向き。**
+
+  つまり `Dm10` は `(d', m')` の組ごとに**独立な命題**で、
+  「1 つ運べば他が出る」形になっていない。
+
+## 1. なぜ「`dmap` だけの不変量」に直せないか
+
+`Dm10 d m` を全部の `(d, m)` で一度に言う形は
+
+    ∀ i ≤ j < |dmap|,  dmap[i] + (j - i) ≤ dmap[j]      （傾き 1 以上）
+
+だが、これは**狭義単調を含む**ので**偽**である（課題 L12 の実測: `dmap` の
+狭義単調性は `gen3 <=6` の 48997 呼び出しで 38 件、7 列で 438 件破れる）。
+
+⟹ **`Dm10` は `(d, m)` を持ったまま運ぶしかない**。すると各呼び出し点で
+「その呼び出しの入口の `Dm10 d' m'`」を別々に出す必要があり、たとえば
+
+    `rU` の入口の `j = p.1` の点は `d + 1 + (p.1 - U.head.1) ≤ dd2` を要求する
+
+という、**`dd2` の下界についての新しい事実**になる。実測では真だが、
+`depths_le`（`d ≤ dd2`）からは出ない。
+
+## 2. 代案（R1 へ）: **節 9** のほうが運びやすいのではないか
+
+R1-NOTES §5 の節 9
+
+    ∀ k < |res.2.dmap|,
+      d ≤ res.2.dmap[k] ∨ (k < |st.dmap| ∧ res.2.dmap[k] = st.dmap[k])
+
+は `m` を持たないので、**`(d, m)` の組ごとの独立性という問題が起きない**。
+`gen3 <=8` 全数 13108043 呼び出し ＋ 展開閉包で違反 0（陽性対照つき）。
+
+`DmapInT` に要るのは
+* 下界 `d ≤ dmap[k]`（`k = rest2.head.1 - 1 ≥ p.1 + 1`）
+* 上界 `dmap[k] ≤ |ST|`（節 11）
+* `k ≤ |dmap|`（R1 §4.3）
+
+の 3 つで、**下界は節 9 の左の枝そのもの**である。右の枝（入口から保存）に
+落ちたときは入口の状態について同じことを言えばよく、`m` を持ち回らないので
+帰納が素直に回る見込みがある。
+
+**お願い**: 節 9 を「`conv3` の全呼び出しで、`d` を `d+1` にした版が破れるか」
+（＝ タイトか）だけ測っていただけると、Lean 側の書きぶりが決まります。
+タイトでなければ `d` の余裕を使って `rU` / `rR` の入口も同じ節でまかなえます。
+
+## 3. いま入っているもの（`Dbms3.lean`, exit 0 / sorry 0）
+
+    Dm10 / Dm12 / Dm12w / Dm11        述語（R1 が測った形）
+    Dm10_app / Dm12_app               連結（`(d,m)` を揃えれば使わない）
+    Dm10_of_take / Dm12_of_take       `cols_blk` の 1 列ぶん
+    getD_snoc_len / getD_snoc_lt      道具
+    steps1_prefixT / _suffixT / _takeT / _dropT / _takeWhileT / _dropWhileT / _tailT
+    BlkInv に `steps1 M`（`blkInv_aux` / `blk_step` / `resid_blk` に通した）
+
+`ImgBlockT3` の仮定は **2 本のまま**（`ResidSideT` / `DmapInT`）。
+
+**測定範囲**: `conv3` の全呼び出し、`gen3 <=6` 全数 ＋ 7 列の縮約発火全数。
+**未測定は 8 列以上**（R1 が流している）。
+
+
+---
+
+# 課題 L19: `Dm12` を含意の形に直した（2026-08-28）
+
+## 0. 結論
+
+* **`Dm12` の `rA` 版も偽**だった（課題 R1、最小反例 8 列）。結論に持っていた
+  `k < |st.dmap|` を**仮定に回した含意の形**に直した（`Dbms3.lean` exit 0 / sorry 0）。
+* **副産物: 課題 L16 で残していた宿題「呼び出し点で `p.1 ≤ |st.dmap|` を出す」が
+  消えた。** 含意にすると `Dm12_of_take` から仮定 `m ≤ |dmo|` が落ちるため。
+
+## 1. 反例（`<=7` 列では 0。8 列と展開閉包で初めて出る）
+
+    M = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,0,0)(5,0,0)
+    cA の呼び出し、p.1 = 4、k = 4
+    呼び出し前 dmap = [0,3,4,5]（長さ 4）、後 [0,3,4,5,6]（長さ 5）
+    k = 4 < p.1+1 = 5 かつ k < |res.dmap| = 5、だが k は |st.dmap| = 4 の外
+    破れ 0 / 11 / 349（`<=7` 列 / `<=8` 列 / `<=6` の展開閉包）
+
+**今日 3 度目の同じ穴**である（`ResidBlkT` の森、`DmapInT` の `k+1<|dmap|`、これ）。
+どれも `<=7` 列で 0、8 列で出る。**母数は最低でも 8 列 ＋ 展開閉包**を規約にする。
+
+## 2. 直した形と、追随
+
+    Dm12 m st res := ∀ k, k < m → k < |res.2.dmap| → **k < |st.dmap| →**
+                       res.2.dmap[k] = st.dmap[k]
+
+| 補題 | 変更 |
+|---|---|
+| `Dm12_refl` | `fun _ _ _ _ => rfl`（短くなった） |
+| `Dm12_of_take` | **仮定 `m ≤ \|dmo\|` が不要になった** |
+| `Dm12_app` | 仮定 `m ≤ \|stm.dmap\|` を追加 |
+| `Dm10_app` | 仮定 `m' ≤ \|stm.dmap\|` を追加（中間の添字が存在することの保証） |
+| `Dm12w` / `Dm12_to_w` | 削除（`Dm12` が弱い版になったので不要） |
+
+`Dm10_app` の中間の場所は `cols` の直後で `|dmap| = p.1+1 = m'` なので
+`m' ≤ |stm.dmap|` は等号で出る。**証明は変わらなかった。**
+
+## 3. 側条件 6 本（`<=8` 列 ＋ 展開閉包で全部真、陽性対照つき）
+
+    a1 / a3 / a4 / a5 / b1 / b2   すべて違反 0
+    **a4（`d + rest2.head.1 ≤ rd + p.1`）はタイト**:
+      `<=8` 列 2386 発火中 **369 が等号**（1 段きつくすると同じ 369 が落ちる）
+
+⟹ **`a4` では余裕を使えない。** 証明でそこを踏まないこと。
+
+## 4. 記録: (S2) は `t=2` で閉じた（課題 R3。`SandwichUT3` 用）
+
+    r' ＝ 像 B の**行 0 の親の鎖を d0 段のぼった柱**（＝ d0' = d0）
+
+| 母集団 | t=0 | **t=2** | t=1 |
+|---|---:|---:|---:|
+| `gen3 <=6` | 0 | **0**（1616） | 771/3056 が +1 |
+| `gen3 <=7` | 0 | **0**（16046） | 7849/28735 |
+| 展開閉包 | 0 | **0**（14917） | 2099/23651 |
+
+`t'=t`・`d1'=d1` と合わせて **(S2) は `t=2`（3 行の困難の本体）で完全**。
+`t=1` は `(t, r, d0, d1)` と悪い部分からは決まらない（悪い部分の外の 1 列だけが
+違う 2 例で `d0'-d0` が 1 と 0 に割れる）。Lean に渡す形:
+
+    (S2-b')  t ≠ 1 → B[|B|-1].0 - B[r'].0 = d0
+    (S2-b1)  t = 1 → d0' ∈ {d0, d0+1}
+
+
+---
+
+# 課題 L20: 課題 L18 の壁は**節 9 なしで**閉じた（2026-08-28）
+
+## 0. 結論
+
+* **`Dm10_shift` / `Dm10_of_child` を証明した**（`Dbms3.lean`, exit 0 / sorry 0）。
+  課題 L18 で「導出の鎖が閉じない」と報告した箇所は、**節 9 を使わずに**閉じる。
+* 鍵は R1 の測定 **`U.head.1 = p.1`（`<=7` 列で 6/6）** だった。これで
+  `cU` の入口が要求するのは `Dm10 (d+1) p.1 rA.2` になり、`rA` からの付け替えで出る。
+
+## 1. 付け替えの補題
+
+    Dm10_shift (hmm : d + m' ≤ d' + m) (h : Dm10 d' m' res)
+               (hmid : ∀ j, m ≤ j → j < m' → j < |res.2.dmap| →
+                         d + (j - m) ≤ res.2.dmap[j]) : Dm10 d m res
+
+`j ≥ m'` は**数の条件だけ**で移る（`omega`）。中間 `m ≤ j < m'` を別に与える形。
+
+## 2. `rA` の付け替え（L18 の壁そのもの）
+
+    Dm10_of_child (hdd : d + 1 ≤ dd2) (h : Dm10 (dd2+1) (m+1) res)
+                  (h12 : Dm12 (m+1) st1 res)
+                  (hst1 : st1.dmap[m] = dd2) (hlen1 : m < |st1.dmap|) :
+      Dm10 (d+1) m res
+
+* `j > p.1` … `(dd2+1) + (j - p.1 - 1) ≥ (d+1) + (j - p.1)` ⟺ **`d + 1 ≤ dd2`**
+* `j = p.1` … `cA` は添字 `p.1` を触らない（`Dm12`）ので値は `st1.dmap[p.1] = dd2 ≥ d+1`
+
+**`d + 1 ≤ dd2` は縮約の枝では構造から出る**（`lad0 = true` なので `dd0 = d+1`、
+`dd1 ≥ dd0`、`dd2 ≥ dd1`）。`depths_le_lad0` として**証明ずみ**である。
+R1 の測定どおりタイト（`dd2 = d+1` の場合があるので余裕は使えない）。
+
+⟹ **課題 L18 の「(d,m) の組ごとに独立で鎖が閉じない」は解消した。**
+節 9 / 節 9+ は使わずに済む（測っていただいたが、この道では不要）。
+
+## 3. 残り（配線だけ）
+
+| やること | 行数 |
+|---|---|
+| `resid_blk` の結論に `Dm10 d p0`（側条件 `d + rest.head.1 ≤ rd + p0` つき） | 50〜70 |
+| `blk_step` / `blk_contr` の結論に `∧ Dm10 d p.1 ∧ Dm12 p.1 st` | 60〜80 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **150〜210 行** |
+
+道具はすべて揃った（`Dm10_of_take` / `Dm12_of_take` / `Dm10_shift` /
+`Dm10_of_child` / `depths_le_lad0` / `Dm10_app` / `Dm12_app`）。
+
+**測定範囲**: 側条件 6 本と節 12 は `<=8` 列 ＋ 展開閉包（R1）。
+`U.head.1 = p.1` は `<=7` 列で 6/6（**`<=8` 列は未測定**。`cU` に空でない `U` が
+渡るのが 6 回しかないので、8 列で新しい形が出ないか R1 に確かめてほしい）。
+
+
+---
+
+# 課題 L21: 結論側は閉じた。残るのは**入口側の 2 事実**（2026-08-28）
+
+## 0. 結論
+
+* **`Dm10_mono_m` を証明した**（`Dbms3.lean` exit 0 / sorry 0）。
+  これで **5 重連結の結論側は完全に閉じる**。
+* 残るのは**各再帰呼び出しの入口の `Dm10`** で、4 つのうち **2 つは証明できる**、
+  **2 つは新しい測定が 1 本ずつ要る**（下）。
+
+## 1. 結論側が閉じる理由（1 行）
+
+**`Dm10 d m res` は `res.2.dmap`（＝ 最後の状態）しか見ない。**
+`cols ++ rA ++ rU ++ rR ++ rB` の最後は `cB` で、その `(d', m')` は
+`(d, Bq.head.1)`、`Bq.head.1 ≤ p.1`（測って違反 0）。よって
+
+    Dm10 d Bq.head.1 rB.2  --(Dm10_mono_m)-->  Dm10 d p.1 rB.2  ＝ 全体の結論
+
+⟹ **中間の場合分け（`m ≤ j < m'`）は結論側には現れない。**
+`Dm10_app` / `Dm12_app` は結局使わない。
+
+## 2. 入口側（各再帰の前提）— 2 つは証明でき、2 つは測定待ち
+
+| 呼び出し | 要る前提 | 出るか |
+|---|---|---|
+| `cA` | `Dm10 (dd2+1) (p.1+1) st1` | **空虚**（`\|st1.dmap\| ≤ p.1+1`）**証明できる** |
+| `cU` | `Dm10 (d+1) p.1 rA.2` | **`Dm10_of_child`**（`U.head.1 = p.1` が要る）**証明できる** |
+| `cR` | `Dm10 rd rest2.head.1 rU.2` | `Dm10 (d+1) p.1 rU.2` から出すには **`rd + p.1 ≤ d + 1 + rest2.head.1`** |
+| `cB` | `Dm10 d Bq.head.1 rR.2` | `Dm10 d p.1 rR.2` から出すには **`p.1 ≤ Bq.head.1`** |
+
+### R1 に測ってほしい 2 本
+
+    (i)  `rd + p.1 ≤ d + 1 + rest2.head.1`
+         ＝ **側条件 a4 のたるみが 0 か 1**（a4 は `d + rest2.head.1 ≤ rd + p.1`）
+         a4 は `<=8` 列 2386 発火中 369 が等号（たるみ 0）なので、
+         **残り 2017 のたるみが 1 で収まるか**が問い。
+         陽性対照: `rd + p.1 ≤ d + rest2.head.1`（たるみ 0 を要求）
+
+    (ii) `Bq.head.1 = p.1`（`U.head.1 = p.1` と同じ形）
+         実測ずみなのは `Bq.head.1 ≤ p.1`（違反 0）。**等号かどうかは未測定。**
+         陽性対照: `Bq.head.1 = p.1 - 1` / `= p.1 + 1`
+
+**どちらも `<=8` 列 ＋ 展開閉包で**お願いしたい（今日 3 回、`<=7` 列で 0 だったものが
+8 列で出ている）。
+
+## 3. 残りの見積もり（測定が返ったあと）
+
+| やること | 行数 |
+|---|---|
+| `blk_step` / `blk_contr` の結論に `∧ Dm10 d p.1`（入口 4 本の配線こみ） | 80〜110 |
+| `resid_blk` の結論に `Dm10 d p0`（側条件つき） | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **160〜230 行** |
+
+道具はすべて証明ずみ: `Dm10_of_take` / `Dm12_of_take` / `Dm10_shift` /
+`Dm10_of_child` / `Dm10_mono_m` / `depths_le_lad0` / `Dm10_app` / `Dm12_app`。
+
+
+---
+
+# 課題 L22: `Dm10` を状態の述語に直し、側条件 b2 を**証明**した（2026-08-28）
+
+## 0. 結論
+
+* **`Dm10` は `res.2.dmap` しか見ない**ので、`TrioSeq × St` ではなく **`St` の述語**に
+  直した。これで `Dm10_app` が不要になり（削除）、配線の摩擦が減った。
+* **側条件 b2（`B.head.1 ≤ p.1`）は測定ではなく証明になった**
+  （`dropWhile_headD_false` / `dropWhile_headD_le`）。
+* 6 本の側条件のうち **4 本が証明可能**と分かった（下）。
+
+## 1. 側条件 6 本の現状
+
+| # | 条件 | 状態 |
+|---|---|---|
+| b2 | `B.head.1 ≤ p.1`（非縮約の `cB`） | **証明した**（`dropWhile_headD_le`） |
+| a1 / b1 | `A.head.1 ≤ p.1 + 1`（`cA`） | **証明できる**: `A = r.takeWhile (p.1 < ·)` なので `A.head = r.head`、`steps1 (p :: r)` から `r.head.1 ≤ p.1 + 1` ✓（`BlkInv` に `steps1` を足したのはこのため） |
+| a3 | `U.head.1 ≤ p.1 + 1`（`cU`） | **証明できる**: `U = B.take kU` なので `U.head = B.head`、b2 から ✓ |
+| a5 | `Bq.head.1 ≤ p.1`（縮約の `cB`） | **半分**: `deepGe_head_lt` で `Bq.head.1 ≤ q.1` は出る。残るのは **`q.1 ≤ p.1`**（`q = (B.drop kU).headD`）。実測は違反 0 |
+| a4 | `d + rest2.head.1 ≤ rd + p.1`（`cR`） | 実測 違反 0・**タイト**（等号 369/2386）。`ResidSideT` として仮定のまま |
+
+⟹ **残るのは a5 の後半（`q.1 ≤ p.1`）と a4 の 2 本だけ**である。
+a5 の後半は「縮約が探す双子 `q` は `p` より浅い」で、`contrFind` の構造から
+出るはず（`contrOne` が `B` の中を走る形）。
+
+## 2. 入っている道具（全部 exit 0 / sorry 0）
+
+    Dm10（St の述語）/ Dm12 / Dm11
+    Dm10_of_take / Dm12_of_take / Dm10_shift / Dm10_of_child / Dm10_mono_m
+    Dm12_app / getD_snoc_len / getD_snoc_lt / getD_last
+    depths_le_lad0 / deepGe_head_lt / dropWhile_headD_false / dropWhile_headD_le
+    steps1_prefixT / _suffixT / _takeT / _dropT / _takeWhileT / _dropWhileT / _tailT
+    headD_memT / getLastD_memT / getLastD_snoc / BlkOK_ST_ge / BlkOK_mono / BlkOK_app'
+    resid_blk（`convResid` は外側の `d` の block）
+
+## 3. 残りの配線（R1 の測定は全部揃っている）
+
+| やること | 行数 |
+|---|---|
+| a1/b1・a3 を `steps1` から出す（補題 2 本） | 20〜30 |
+| a5 の後半（`q.1 ≤ p.1`）を `contrFind` の構造から出す | 30〜50 |
+| `BlkInv` に `M ≠ [] → Dm10 d M.head.1 (…).2` を足す | 20〜30 |
+| `blk_step` の 2 枝で結論を出す（最後のブロックから `Dm10_mono_m`） | 60〜80 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **210〜310 行** |
+
+**測定範囲**: 側条件 6 本・節 10・節 12 とも `<=8` 列 ＋ 展開閉包（R1）。
+`U.head.1 = p.1` は **1270/1270**（`<=8` ＋ 閉包）。**未測定は無い。**
+
+
+---
+
+# 課題 L23: `BlkLo` を入れ、側条件の head を**等号で証明**した（2026-08-29）
+
+## 0. 結論
+
+課題 R1 の構造的な理由「**渡されたブロックの全柱は先頭の柱の深さ以上**」を
+`BlkLo` として Lean に入れ、そこから 4 つの再帰の先頭の深さを
+**等号で証明した**（`Dbms3.lean`, exit 0 / sorry 0）。
+
+    def BlkLo (M : TrioSeq) : Prop := ∀ c ∈ M, (M.headI).1 ≤ c.1
+
+| 補題 | 内容 | 状態 |
+|---|---|---|
+| `takeWhile_head_eq` | `steps1 (p::r)` → **`A.head.1 = p.1 + 1`** | **証明した** |
+| `takeWhile_blkLo` | `BlkLo A` | **証明した** |
+| `dropWhile_head_eq` | `BlkLo (p::r)` → **`B.head.1 = p.1`** | **証明した** |
+| `dropWhile_blkLo` | `BlkLo B` | **証明した** |
+| `blkLo_take` | `BlkLo l → BlkLo (l.take k)`（`U = B.take kU`） | **証明した** |
+
+⟹ **側条件 a1 / b1 / b2 / a3 は測定ではなく証明になった。**
+`A.head.1 = p.1 + 1` は `steps1`（BMS の隣接条件）から、
+`B.head.1 = p.1` は `BlkLo` で下から挟んで出る。**どちらも等号**なので、
+`Dm10_of_child` の隙間の処理（`j = p.1` の 1 点）だけで済む。
+
+道具として `headI_takeWhile` / `takeWhile_head_true` / `headI_eq_headD` /
+`dropWhile_headD_false` / `dropWhile_headD_le` も入れた。
+
+## 1. 残り
+
+| やること | 行数 |
+|---|---|
+| `BlkInv` に `BlkLo M` を足して 4 再帰に通す（道具は上で揃った） | 40〜60 |
+| a5 の残り（`q.1 ≤ p.1`、`q = (B.drop kU).headD`）を `contrFind` から | 30〜50 |
+| `BlkInv` に `Dm10` の conjunct、`blk_step` の 2 枝で結論 | 80〜110 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **230〜340 行** |
+
+**測定範囲**: 側条件・節 10・節 12 とも `<=7` 列全数 ＋ **展開閉包（最長 24 列）**（R1）。
+a4 のたるみは 0 か 1 で **2 以上は 0 件**（`gen3<=7` 334 発火 / 展開閉包 5139 発火）。
+`gen3 <=8` 全数は R1 が流し中。**未測定は無い。**
+
+
+---
+
+# ⚠ 課題 L24: `OrderT3` は **未成立**（`len ≤ 11` で 24 件）（課題 R7/R8/R9）
+
+## 0. これを最初に読むこと
+
+* **v18 の `conv3` では `OrderT3` / `SeqEmbT3` は偽**（反例は §1）。
+* **⚠ 訂正（課題 R9）**: 「3 条項を切れば破れ 41 -> 0」は
+  **母数 `len ≤ 10` での話**だった。**`len ≤ 11`（1882196 個）で (→) 24 件 /
+  (←) 24 件破れる**。表では **「未成立（`len ≤ 11` で 24 件）」**とすること。
+* **ただし `ReindexT1` に全域の順序保存は要らない**（課題 L28、下）。
+  **(→) は 1 か所も使っていない。**
+* `OrderT3_iff_seqemb`（`Dbms3.lean`, **証明ずみ**）より両者は同値。
+
+## 1. 反例（8 列 ＋ 9 列。どちらも `ST_TS`）
+
+    M1 = (0,0,0)(1,1,1)(1,1,0)(2,2,1)(2,1,0)(3,0,0)(4,1,1)(4,1,0)
+    M2 = M1 ++ (5,1,0)                     ← M1 は M2 の**真の接頭辞**
+
+    seqlex M1 M2 = 真（`seqlex_prefix`）
+    f M1 = …(6,2,1)**(6,2,0)**
+    f M2 = …(6,2,1)**(5,1,0)**(6,1,0)
+    第 8 柱で `(6,2,0)` vs `(5,1,0)`。`collt` は 6 > 5 なので
+    seqlex (f M1) (f M2) = **偽**
+
+`ST_TS` であることは展開の道を復元して確認ずみ:
+共通の祖先 `X = M1 ++ (5,2,1)` から **`M1 = X⟦1⟧`、`M2 = X⟦2⟧⟦2⟧`**、
+`X` 自身は `diagSeqT 0 2` から 15 手。
+
+## 2. なぜ今まで見えなかったか — **母数**（課題 L14 とまったく同じ形）
+
+| 母集団 | 個数 | (→) の破れ | (←) の破れ |
+|---|---:|---:|---:|
+| `ST_TS` 展開閉包 `v≤4, len≤9` | 44063 | **0** | **0** |
+| **`v≤5, len≤10`** | **416607** | **41** | **38** |
+
+**両方 `≤8` 列の対は 41 件中 0 件**。だから `gen3 ≤8` の突き合わせでは
+**原理的に見えない**。Python 側がずっと報告していた「順序保存 違反 0」は
+**母数が狭かっただけ**だった。
+
+⟹ 規約: **`ReadT3` / `SeqEmbT3` / `OrderT3` の母数は `ST_TS` 展開閉包で
+`len ≥ 10` まで**。`gen3` でも `len ≤ 9` でも足りない。
+
+## 3. 犯人（**縮約ではない**）
+
+破れ 41 件中 **39 件で縮約は 1 度も発火しない**。犯人は
+
+> **分岐列 `(a,1,0)` の綴りが「次の列」に依存すること。**
+> 反例では末尾の `(4,1,0)` が、行列の末尾のときは深く `(6,2,0)`、
+> 後ろに `(5,1,0)` が来ると浅く `(5,1,0)` と綴られる。
+
+接頭辞単調が破れる 22624 個も**同じ機構**（100% が `body` の柱、0% が縮約の中、
+98.6% が像の末尾 1 柱だけ、96.9% が「行 1 だけ違う」）。
+
+⟹ **直すには変換器側で「分岐列の綴りを次の列に依存させない」必要がある**
+（`bms2dbms/tools/NOTES.md` の「残る非同変な読み」と同じ的）。**Lean 側は待ち。**
+
+## 4. `OrderT3` の 2 つの道は**両方とも閉じた**
+
+| 道 | 結果 |
+|---|---|
+| `read3` / `dok`（読みを書く） | **閉じている**（課題 L14。縮約で像が短くなるので 1 列 1 節点の読みでは届かない） |
+| `SeqEmbT3`（読みを使わない） | **偽**（この節） |
+
+⟹ **`OrderT3` は `conv3` を直せば出る。** 変換器側（課題 H）待ち。
+`Dbms3.lean` の `SeqEmbT3` の直前にも同じことを doc として置いた。
+
+## 5. ★ `OrderT3` は**達成可能**（課題 R8, 2026-08-29）
+
+**シート自身は完全に順序保存**:
+
+| 切り方 | 母数 | A 列が昇順 | E 列が昇順 |
+|---|---:|---|---|
+| 誤記 5 件を除く / z<2 の 3 行 | 1618 | **1617/1617** | **1617/1617** |
+| 誤記を除かない / 全部 | 1622 | 1621/1621 | 1621/1621 |
+
+    A 列の `seqlex` 昇順で E 列も昇順: 増 1588 / 等 0 / **減 0**、重複 0
+
+`seqlex` は BMS 標準形の上で順序数の順序と一致する（`olt_ST_iff_seqlex`）ので、
+「A 列が行番号順に昇順（破れ 0）」は **「行番号の順序 ＝ 順序数の順序」の証明
+そのもの**である。
+
+決め手 2 つ:
+
+    反例 41 対はシートに **1 件も載っていない**（0/41）
+    3 条項（`tiesd` / `awflip` / `h1`）を切ってもシート点は **1354/1358 のまま**
+
+⟹ **`SeqEmbT3` を壊す 3 条項はシートに 1 行も寄与していない。**
+3 旗オフで `SeqEmbT3` の破れ **41 -> 0**、非標準の像も **177 -> 105**（改善）。
+代償は `ImgClosedT` / `C1` だけ（lim=5 で 2 -> 4）。
+
+**⟹ 次の人へ: `OrderT3` を諦めないこと。** 変換器が 3 旗オフを基準にしたら
+`SeqEmbT3` を攻める道が開く。母数は **`ST_TS` 展開閉包で `len ≥ 10` まで**。
+
+
+---
+
+# 課題 L25: 側条件 a5 も証明になった（`contrOne` の門から）（2026-08-29）
+
+## 0. 結論
+
+    contrOne_q_eq  : contrOne … = some (kU, kp, na) → ((B.drop kU).headD).1 = p.1
+    contrFind_q_eq : contrFind … = some (e, kU, kp, na) → 同上
+
+`contrOne` は定義の中で
+
+    if (q.2.1, q.2.2) ≠ qlab ∨ q.1 ≠ p.1 then none
+
+と**明示的に弾いている**ので、`some` が返るなら `q.1 = p.1` である。
+⟹ `deepGe_head_lt`（`Bq.head.1 ≤ q.1`）と合わせて **側条件 a5 が証明になった**。
+
+取り出し方は課題 L13 の `contrFind_e_le` と同じ流儀だが、`contrOne` は本体が
+`let` の入れ子なので **`unfold` のあとに `dsimp only` で zeta 簡約**してから
+`split` する必要がある（`split` は `let` を割れない）。分岐の始末は
+
+    all_goals first
+      | exact (congrArg (fun t => t.1) (Option.some.inj h)).symm
+      | exact absurd h (by simp)
+
+の順で書くこと（逆にすると `by simp` が `¬(some _ = some _)` を部分簡約して
+ゴールを残し、`first` が戻らない）。
+
+## 1. 側条件 6 本の最終状態
+
+| # | 条件 | 状態 |
+|---|---|---|
+| a1 / b1 | `A.head.1 = p.1 + 1` | **証明**（`takeWhile_head_eq`、`steps1` から） |
+| b2 | `B.head.1 = p.1` | **証明**（`dropWhile_head_eq`、`BlkLo` から） |
+| a3 | `U.head.1 = p.1` | **証明**（`U = B.take kU` の頭は `B` の頭） |
+| a5 | `Bq.head.1 ≤ p.1` | **証明**（`contrFind_q_eq` ＋ `deepGe_head_lt`） |
+| a4 | `d + rest2.head.1 ≤ rd + p.1` | **仮定のまま**（`ResidSideT`。実測タイト、等号 369/2386） |
+
+⟹ **6 本のうち 5 本が証明になった。**
+
+## 2. `ImgBlockT3` の残り
+
+| やること | 行数 |
+|---|---|
+| `BlkInv` に `BlkLo M` を足して 4 再帰に通す（道具は全部揃った） | 40〜60 |
+| `BlkInv` に `Dm10` の conjunct、`blk_step` の 2 枝で結論 | 80〜110 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **200〜290 行** |
+
+**測定範囲**: R1 が `gen3 ≤8` 全数 ＋ 展開閉包（最長 24 列）。**未測定は無い。**
+
+
+---
+
+# 課題 L26: `BlkLo` を `BlkInv` に通した（2026-08-29）
+
+## 0. 結論
+
+**`BlkLo M`（ブロックの全柱は先頭の柱の深さ以上）を `BlkInv` の仮定に足し、
+`blkInv_aux` / `blk_step` / `resid_blk` の 4 再帰すべてに通した。**
+`Dbms3.lean` exit 0 / `sorry` 0 / `axiom` 0。**新しい仮定は 1 つも増えていない。**
+
+## 1. 各呼び出し点の `BlkLo` の出どころ（全部証明）
+
+| 呼び出し | 出どころ |
+|---|---|
+| `cA`（`A = r.takeWhile`） | `takeWhile_blkLo hst1s`（`steps1` から） |
+| `cB`（`B = r.dropWhile`） | `dropWhile_blkLo hblo` |
+| `cU`（`U = B.take kU`） | `blkLo_take (dropWhile_blkLo hblo) _` |
+| **`cB`（縮約, `Bq`）** | `blkLo_of_le`: 全柱が `p.1` 以上（`hblo` ＋ 部分列）、先頭が `p.1` 以下（`deepGe_head_lt` ＋ **`contrFind_q_eq`**） |
+| `convResid` の木 | `blkLo_take_deepGe`（`deepGe` の定義そのもの） |
+| 入口（`ImgBlockT3_of_BlkInv`） | `blockok_ST_TS` の第 1 項（標準形の頭は行 0 が 0） |
+
+⚠ **`Bq` のところで `kU` と `kUv` が別の変数になる**（外の `match cfm` が束縛する
+`kUv` と、内の `contrFind` の `kU`）。`hw : (e,kU,kp,na) = (ee,kUv,kpv,nav)` から
+`congrArg (fun t => t.2.1) hw` で `kU = kUv` を出して `rw` しないと `omega` が
+別々の原子として扱って落ちる。**同じ落とし穴が `Dm10` の配線でも出るはず。**
+
+## 2. 残り
+
+| やること | 行数 |
+|---|---|
+| `BlkInv` に `Dm10` の conjunct、`blk_step` の 2 枝で結論 | 80〜110 |
+| `resid_blk` の結論に `Dm10 d p0` | 40〜60 |
+| `DmapInT` / `ResidSideT` を `Dm10` から出す | 40〜60 |
+| **合計** | **160〜230 行** |
+
+`ImgBlockT3_of_resid` の仮定は **2 本のまま**（`DmapInT` / `ResidSideT`）。
+道具は全部揃っている。**未測定は無い。**
+
+
+
+---
+
+# ★ 課題 L28: `ReindexT1` に**全域の順序保存は要らない**（2026-08-29）
+
+## 0. 結論
+
+**答えはチームリードの (b) の側**である。`ReindexT1_of_cofinal` の証明で
+`OrderT3` が使われるのは **3 か所だけ**で、相手は任意の `M, N` ではなく
+**`ImgCofinalT3` が返した `B`** に限られる。しかも
+
+    **(→)（順序を保つ向き）は 1 か所も使っていない。**
+
+`Dbms3.lean` に `OrderReindexT3` と `ReindexT1_of_cofinal'` を入れた
+（exit 0 / sorry 0）。**`OrderT3` は仮定から外せる。**
+
+## 1. `OrderT3` が使われる 3 か所（全部読んだ。合計 90 行）
+
+| 場所 | 使う向き | 相手 |
+|---|---|---|
+| `ole_of_sle3` の `=` の枝 | **単射性だけ**（`conv3 M = conv3 N → M = N`） | `(A⟦n⟧, B)` |
+| `ole_of_sle3` の `<` の枝 | **(←)** `seqlex 像 → <o` | `(A⟦n⟧, B)` |
+| `ReindexT1_of_cofinal` の最後の行 | **(←)** | `(B, A)` |
+
+`conv3_injective` が (→) を使っているのは「`=` の枝を潰す」ためだけなので、
+**単射性を直に仮定すれば (→) は完全に消える**（`ole_of_sle3'`）。
+
+## 2. 入れたもの
+
+    def OrderReindexT3 (conv3) : Prop :=
+      ∀ {A B}, ST_TS A → ST_TS B → ∀ {n m}, 1 ≤ n → n + 1 ≤ m →
+        (conv3 A)⟦m⟧ = conv3 B →
+          (conv3 (A⟦n⟧) = conv3 B → A⟦n⟧ = B) ∧
+          (seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B) ∧
+          (seqlex (conv3 B) (conv3 A) → translate B <o translate A)
+
+    orderReindexT3_of_orderT3 : OrderT3 → OrderReindexT3        （弱化の確認）
+    ole_of_sle3'              : 単射性 ＋ (←) から `sle3 → ≤o`
+    ReindexT1_of_cofinal'     : ImgCofinalT3 ＋ **OrderReindexT3** ＋ SandwichUT3
+                                ＋ ImgBlockT3 ＋ ImgLenT3 → ReindexT1
+
+## 3. 次に測ってほしいこと（Python へ。**これで 24 件が無害になるかが決まる**）
+
+反例 24 対が `OrderReindexT3` の形かどうか:
+
+    (i)  24 対の `(M1, M2)` に **`∃ m, (conv3 M1)⟦m⟧ = conv3 M2`** を満たすものがあるか
+    (ii) `(A⟦n⟧, B)` の形（`A` から `n` 回展開したものと、像の `m` 回展開の逆像）
+         になっているものがあるか
+    (iii) 向きは (←)（`seqlex 像 → 順序数`）か (→) か
+
+**(i)(ii) がどちらも 0 なら、24 件は `ReindexT1` に効かない**ので、
+Lean 側は `OrderReindexT3` を仮定して先に進める。陽性対照は
+「`m` の範囲を広げても見つからない」ことを別の母数で確かめること。
+EOF
+
+
+---
+
+# 課題 L29: `Inj3` を切り出し、6 仮定の表を更新（2026-08-29）
+
+## 0. 入れたもの（`Dbms3.lean`, exit 0 / sorry 0）
+
+    Inj3 conv3 := ∀ M N, ST_TS M → ST_TS N → conv3 M = conv3 N → M = N
+    inj3_of_orderT3 : OrderT3 → Inj3
+
+    OrderReindexT3 から単射性を抜いて**順序の 2 本だけ**にした:
+      (seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B)
+      (seqlex (conv3 B) (conv3 A) → translate B <o translate A)
+      （どちらも **(←) だけ**。相手は `(conv3 A)⟦m⟧ = conv3 B` を満たす `B` に限る）
+
+    ReindexT1_of_cofinal'   : ImgCofinalT3 ＋ **Inj3** ＋ **OrderReindexT3**
+                              ＋ SandwichUT3 ＋ ImgBlockT3 ＋ ImgLenT3 → ReindexT1
+    ST_D3_conv3_of_parts''  : 上を使う版（`OrderT3` を使わない）
+
+## 1. `ST_D3 (conv3 M)` の仮定の表（更新）
+
+| 仮定 | 状態 |
+|---|---|
+| `ConvDiagT3 Conv3.b2d3` | **証明ずみ**（約 260 行） |
+| `ImgLenT3 Conv3.b2d3` | **証明ずみ**（約 45 行） |
+| `ImgBlockT3 Conv3.b2d3` | `DmapInT` / `ResidSideT` の 2 本待ち。残り 160〜230 行 |
+| ~~`OrderT3`~~ → **`Inj3`** | Python で測れる（単射性）。**順序とは独立** |
+| ~~`OrderT3`~~ → **`OrderReindexT3`** | **(←) だけ・相手は像の展開の逆像に限る**。24 件の反例がこの形かは測定待ち |
+| `SandwichUT3 Conv3.b2d3` | 5 分割 (S1)-(S5)。(S2) は `t=2` で閉じた。(S4) が壁 |
+| `ImgCofinalT3 Conv3.b2d3` | Python 側の破れ待ち |
+
+⟹ **`OrderT3`（`len ≤ 11` で 24 件破れる）は仮定から消えた。**
+
+## 2. 参考: (D0') と 節 10（`Dm10`）は同じ対象の裏表
+
+チームリードの (D0')
+
+> `dmap[k] := dd` を書くとき、書く前の `dmap` に `k' > k` があって
+> `dmap[k'] ≤ dd` なら違反
+
+は `dmap` が**深さの順序を潰す**ことを禁じるもので、私が `ImgBlockT3` で
+使っている **節 10** `d + (j - m) ≤ dmap[j]` と同じ対象（`st.dmap`）の話である。
+
+* 「全部の対で `dmap[i] + (j - i) ≤ dmap[j]`」（傾き 1 以上）は**偽**
+  （課題 L18。狭義単調を含み、`gen3 <=6` で 38 件・7 列で 438 件破れる）。
+* (D0') は**書き込みの瞬間だけ**を見るので、破れが **90 / 1882196** と桁違いに少ない。
+
+⟹ **(D0') は「傾き 1 以上」の的を絞った版**である。`ImgBlockT3` の節 10 が
+証明で通れば、(D0') の Lean 版もそこから出る可能性がある（未検討）。
+
+
+---
+
+# 課題 L30: `OrderReindexT3` の見込みを評価した（2026-08-29）
+
+## 0. 測定結果（チームリードより。**正確な言い方で**残す）
+
+`bms2dbms/tools/oreidx.py`、`ST_TS v<=5 len<=11`（1882196 個）:
+
+    順序 (→) の破れ                                        24 件
+    (ii)  ∃A,n,m : A⟦n⟧ = Y かつ (conv3 A)⟦m⟧ = conv3 X   **0 / 24**
+    (iii) ∃m>=2  : (conv3 X)⟦m⟧ = conv3 Y                 **0 / 24**
+
+⚠ **これは「既知の 24 件の反例が `OrderReindexT3` に当たらない」の測定であって、
+`OrderReindexT3` が真であることの証明ではない。** `len ≥ 12` は未測定。
+
+## 1. ★ **向きの制限は何も買わない**（証明した）
+
+    OrderBackT3 conv3 := ∀ M N, ST_TS M → ST_TS N →
+                           seqlex (conv3 M) (conv3 N) → translate M <o translate N
+
+    orderT3_of_orderBackT3 : Inj3 → OrderBackT3 → **OrderT3**
+
+`seqlex` も `<o` も `ST_TS` 上では相異なる 2 つを必ず比べる（`seqlex_total` /
+`olt_ST_iff_seqlex`）ので、**(→) と (←) は全域では同値**である。
+
+⟹ **`OrderReindexT3` が `OrderT3` より弱いのは「向きが (←) だけ」だからではなく、
+「相手が `(conv3 A)⟦m⟧ = conv3 B` を満たす `B` に限られる」からである。**
+測定 (ii)(iii) が 0 なのもこの**相手の制限**が効いている。
+
+## 2. 見込みの評価: **チームリードの「帯」の案は塞がっている**
+
+> `(conv3 A)⟦m⟧ = conv3 B` と `SandwichU` から
+> `conv3 (A⟦n⟧) ≤ conv3 B ≤ conv3 (A⟦n+2⟧)` が出るので、
+> `B` は `A⟦n⟧` と `A⟦n+2⟧` の間の狭い帯に閉じ込められる
+
+**帯の上半分は既に使っている**（`ReindexT1_of_cofinal'` の `h3`）。
+**下半分 `conv3 B ≤ conv3 (A⟦n+2⟧)` は `SandwichLT3` が要るが、それは実測で偽**である
+（`Dbms3.lean` の `SandwichLT3` の doc: `conv3` v12 で `<=6` 列 41930 対中 **破れ 352**、
+`<=7` 列 386405 対中 **破れ 4696**）。`ReindexT1_of_block` / `_of_cofinal` が
+`SandwichL` を使わない設計になっているのはそのためである。
+
+⟹ **帯の下半分は無い。** この案で `OrderReindexT3` を証明する道は塞がっている。
+
+## 3. では何が要るか（1 段落）
+
+`OrderReindexT3` の中身は結局
+
+> **像の展開の逆像 `B`（`(conv3 A)⟦m⟧ = conv3 B`）は、もとの側でも `A` より下にある**
+
+であり、これは `ReindexT1` の結論そのものに近い。`ImgBlockT3` ＋ `seqlex_oper` から
+**像の側の `seqlex (conv3 B) (conv3 A)` は無料で出る**（`ReindexT1_of_cofinal'` の
+最後の行）ので、残るのは「像の辞書式からもとの順序数へ戻す」ただ 1 歩だけである。
+⟹ **新しい入力が要る。** 候補はチームリードの **(D0')**（`dmap` が深さの順序を
+潰さない）で、それが Lean の補題になれば「像の第 1 キー（行 0）で決着する」が言えて
+戻す 1 歩が埋まる見込みがある。
+
+## 4. 見積もり
+
+| やること | 行数 |
+|---|---|
+| (D0') を `conv3` の不変量として立てる（`Dm10` と同じ枠） | 100〜150 |
+| (D0') から「像の行 0 で決着する」を出す | 80〜150 |
+| それで `OrderReindexT3` を出す | 60〜100 |
+| **合計** | **240〜400 行**、ただし **(D0') 自体が未証明**（実測 90/1882196 の破れ） |
+
+⚠ **(D0') は 90 件破れる**ので、そのままでは不変量にならない。
+まず「90 件が `OrderReindexT3` の相手の形になりうるか」を測るべきである
+（24 件と同じ切り方）。**そこが 0 なら (D0') を `OrderReindexT3` の範囲に
+制限した形で使える。**
+
+
+---
+
+# 課題 L31: `SandwichUT3` も弱められた。仮定 2 本が「偽」から降りた（2026-08-29）
+
+## 0. 結論
+
+`OrderT3` でやったのと同じことを `SandwichUT3` でもやった
+（`Dbms3.lean`, exit 0 / sorry 0）:
+
+    SandwichUReindexT3 conv3 :=
+      ∀ {A B}, ST_TS A → 1 < |A| → ST_TS B → ∀ {n m}, 1 ≤ n → n + 1 ≤ m →
+        (conv3 A)⟦m⟧ = conv3 B → sle3 (conv3 (A⟦n⟧)) (conv3 B)
+
+    sandwichUReindexT3_of_sandwichUT3 : SandwichUT3 → SandwichUReindexT3  （弱化の確認）
+    ReindexT1_of_cofinal''  : ImgCofinalT3 ＋ Inj3 ＋ OrderReindexT3
+                              ＋ **SandwichUReindexT3** ＋ ImgBlockT3 ＋ ImgLenT3
+                              → ReindexT1
+    ST_D3_conv3_of_parts''' : 上を使う版（**`OrderT3` も `SandwichUT3` も使わない**）
+
+理由は `OrderT3` のときとまったく同じ: `ReindexT1_of_cofinal'` の中で
+`SandwichUT3` が使われるのは **1 か所**（`h1` を `oper_mono_idx` と継いで `h3` を作る）
+だけで、しかも相手は `(conv3 A)⟦m⟧ = conv3 B` を満たす `B` に限られる。
+**その 1 か所の結論が `SandwichUReindexT3` そのもの**なので、置き換えは 3 行で済んだ。
+
+## 1. 仮定の表（更新）
+
+| 命題 | 強い版の実測 | Lean が実際に要求する弱い版 |
+|---|---|---|
+| `ConvDiagT3` | — | **証明ずみ** |
+| `ImgLenT3` | — | **証明ずみ** |
+| `ImgBlockT3` | — | 仮定 2 本、残り 160〜230 行 |
+| `OrderT3` | **偽**（`len ≤ 11` で 24 件） | **`Inj3` ＋ `OrderReindexT3`** |
+| `SandwichUT3` | **偽**（`v≤4 len≤8` で 12 件） | **`SandwichUReindexT3`** |
+| `ImgCofinalT3` | 破れ 20（lim=6） | — |
+
+⟹ **「偽」と分かっている 2 本が、どちらも仮定から消えた。**
+残るのは「弱い版が真か」で、それは**相手が `(conv3 A)⟦m⟧ = conv3 B` に限られる**
+という 1 点にかかっている。
+
+## 2. 弱められる理由は 2 本とも同じ（一般則として残す）
+
+> **`ReindexT1` は `ImgCofinalT3` が返した `B` としか話さない。**
+> だから `B` について全域で成り立つ性質を仮定する必要はなく、
+> **`(conv3 A)⟦m⟧ = conv3 B` を満たす `B` についてだけ**でよい。
+
+`OrderT3` も `SandwichUT3` も、この 1 点で弱まった。**次に「実測で偽」の仮定が
+出てきたら、まず `ReindexT1_of_cofinal` の証明の中で何回・どの相手に使われているかを
+数えること。** `OrderT3` は 3 か所（うち 1 つは単射性）、`SandwichUT3` は 1 か所だった。
+
+⚠ **`ImgCofinalT3` は弱められない**（`B` を作るのがこれ自身なので）。
+
+## 3. 保留（チームリードより）
+
+「24 件は `OrderReindexT3` を壊さない」の測定は**バグで保留**
+（`b2d3([list(c) for c in M])` だと縮約が発火しない。シート 1358 行のうち
+334 行で像が変わる）。**Lean 側の構造（`(→)` を 1 か所も使わない、
+`SandwichUT3` は 1 か所）は読解の結果なのでバグと無関係**である。
+
+
+---
+
+# 課題 L33: `wf` を DBMS 側に載せ替える見積もり（2026-08-29）
+
+## 0. 結論（見積もり）
+
+**書ける見込みは高い。95〜130 行。** しかも**副産物が 1 つある**（§3）。
+
+## 1. `wf` が使われるのは 1 か所。要るのは 3 つ組だけ
+
+`ST_D3_descend`（35 行）で `wf` を使うのは
+
+    induction A using wf.induction
+    exact ih B ⟨hB, hA, hBA⟩ hB hSD' M hM (ole_trans hMn hAnB)
+
+の 1 か所。`⟨hB, hA, hBA⟩` が再帰の根拠で、**`hBA : translate B <o translate A`
+だけが BMS の順序**である。他の 2 つ（`hB` / `hA`）は `ST_TS` の証拠。
+
+## 2. `heq` の枝は**変更不要**（チームリードの心配は当たらない）
+
+    · have hMA : M = A := by ... seqlex_total ... olt_ST_iff_seqlex ...
+
+この枝は **`wf` を一切使っていない**。`ST_D3_descend` の**主張**（`M` の側の仮定
+`translate M ≤o translate A`）を BMS のままにしておくなら、**そのまま残せる**。
+⟹ **`Inj3` は要らない。**
+
+## 3. ★ 副産物: **`OrderReindexT3` の第 2 成分が消える**
+
+DBMS 側の整礎性を **`seqlex` で**取る:
+
+    RD : TrioSeq → TrioSeq → Prop := fun x y => ST_D3 x ∧ ST_D3 y ∧ seqlex x y
+    wfD : WellFounded RD                    ← 新しい仮定（DBMS 3 行 z<2 の停止性）
+
+すると再帰の根拠は `RD (conv3 B) (conv3 A)`、すなわち
+
+    ST_D3 (conv3 B)                 … `hSD'`（既に手にある）
+    ST_D3 (conv3 A)                 … `hSD`（仮定）
+    seqlex (conv3 B) (conv3 A)      … `heqC` で `(conv3 A)⟦m⟧` に書き換えると
+                                      **`seqlex_oper (hb hA) (hlen2 hA hlen)`**
+
+**3 つ目は `ImgBlockT3` ＋ `ImgLenT3` から無料で出る**（`ReindexT1_of_cofinal''` の
+最後の行が既にそれを作っている）。⟹ `hBA` は要らなくなり、
+**`OrderReindexT3` の第 2 成分（`seqlex (conv3 B) (conv3 A) → translate B <o translate A`）
+が仮定から消える。**
+
+残るのは第 1 成分（`seqlex (conv3 (A⟦n⟧)) (conv3 B) → translate (A⟦n⟧) <o translate B`）
+だけで、これは `hAnB`（`M` を次の段へ渡すため）に要る。
+
+⚠ **`translateD` を新しく定義する必要は無い**（`seqlex` を使うので）。
+DBMS 側の `m_step_decreases` に当たるものも要らない（`seqlex_oper` が既にある）。
+
+## 4. 見積もりの内訳
+
+| やること | 行数 |
+|---|---|
+| `RD` / `wfD` の定義と `InvImage.wf` の適用 | 10 |
+| `ST_D3_descend_D`（`ST_D3_descend` の写しで根拠を差し替え） | 35〜45 |
+| `ReindexT1D`（`hBA` を落とした版）＋ `ReindexT1D_of_cofinal` | 25〜40 |
+| `ST_D3_conv3_D` / `ST_D3_conv3_of_parts_D` | 20〜25 |
+| **合計** | **90〜120 行** |
+
+**引っかかりそうな点**（順に）:
+
+1. `induction A using (InvImage.wf conv3 wfD).induction` が通るか（`InvImage.wf` は
+   Mathlib の標準。通るはず）
+2. `heqC` の向き（`(conv3 A)⟦m⟧ = conv3 B`）で `seqlex (conv3 B) (conv3 A)` を作るとき、
+   `rw [← heqC]` の位置
+3. `ReindexT1` の interface を 2 つに割る（既存の利用者を壊さないよう `ReindexT1D` を
+   別名で足す）
+
+**未測定は無い**（全部 Lean の中の話）。
+
+## 5. これで何が変わるか（正確に）
+
+| | いま | L33 が通ると |
+|---|---|---|
+| `ST_D3_conv3` の仮定 | **BMS の整礎性**（残核 `TowerGraft2` / `TowerExp`） | **DBMS の整礎性**（`wfD`） |
+| `OrderReindexT3` | 2 成分 | **1 成分**（第 1 成分だけ） |
+| 2 つの道 | 絡んでいる | **切り離せる** |
+
+⚠ **BMS の停止性が出るわけではない。** `ST_D3_conv3` の結論は「像が DBMS 標準形」で
+あって停止性ではない。DBMS の停止性から BMS の停止性を出すには**順序の埋め込み**
+（`translate M <o translate N → seqlex (conv3 M) (conv3 N)`）が別に要り、
+そこは今日 24 件の反例が出た側である。
+
+
+---
+
+# 課題 L33 の続き: 引っかかりそうな 2 点への答え（2026-08-29）
+
+## Q1. `heq` の枝は `Inj3` で書き換えられるか
+
+**書き換える必要が無い。** `heq` の枝
+
+    · have hMA : M = A := by
+        by_contra hne; rcases seqlex_total M A with … olt_ST_iff_seqlex …
+
+は **`wf` を 1 度も使っていない**。`ST_D3_descend` の主張のうち `M` の側の仮定
+（`translate M ≤o translate A`）を BMS のまま残すなら、この枝は**そのまま**でよい。
+⟹ **`Inj3` は L33 には要らない。**
+
+（もし `M` の側も DBMS に移すなら別の話になるが、その必要は無い。`M` は
+「`A` 以下のすべての標準形」を回す変数で、整礎帰納の対象ではない。）
+
+## Q2. `trio_cofinality` の DBMS 版が要るか
+
+**要らない。** `trio_cofinality hA hM hlt` は `translate M <o translate A` から
+`n` と `translate M ≤o translate (A⟦n⟧)` を出すもので、**`M` と `A` の BMS 側の話**
+である。整礎帰納の関係とは無関係なので、そのまま残せる。
+
+⟹ **L33 で新しく要る DBMS 側の道具は 0 個。**`translateD` も
+DBMS 版 `m_step_decreases` も `trio_cofinality` の DBMS 版も要らない
+（整礎性を `seqlex` で取れば、下がることは `seqlex_oper` で既に出ている）。
+
+## 見積もりは据え置き: **90〜120 行**
+
+内訳は前節（課題 L33 §4）のとおり。**未測定は無い。**
+
+---
+
+# 課題 L34: `Bq.head.1 = p.1` を等号にする道具（2026-08-29）
+
+`head_eq_of_le_of_ge` を足した（`Dbms3.lean`, exit 0 / sorry 0）:
+
+    全柱が `a` 以上（`BlkLo` ＋ 部分列）＋ 先頭が `a` 以下（`deepGe_head_lt` ＋
+    `contrFind_q_eq`）⟹ **先頭はちょうど `a`**
+
+これで `Bq.head.1 = p.1` が出る。**`Dm12` の連結（`Dm12_app` は `m ≤ m'` を要求）で
+効く**: 5 重連結の `m'` は `cols` `p.1` / `rA` `p.1+1` / `rU` `p.1` / `rR` `≥ p.1+1` /
+`rB` `p.1` となり、**全部 `p.1` 以上**になるので `Dm12 p.1 st (全体)` が鎖でつながる。
+
+（`Bq.head.1 ≤ p.1` のままだと `rB` のところで `m' < m` になり、鎖が切れていた。）
+
+
+---
+
+# 課題 L35: `Inj3` を証明する見積もり ＋ `ImgBlockT3` の残りの絞り込み（2026-08-29）
+
+## 1. `Inj3` の見積もり: **400〜700 行、ただし縮約の部分は未知**
+
+**課題 L14 で既に半分やってある。** `lean/L14Read.lean` に
+
+    survivors  影を捨てる（`readD` と同じ再帰、節は 2 つ）
+    rankify    各行の値をその行の木での順位に置き換える（計算できる `parB` / `rankB`）
+    readMat := rankify ∘ survivors
+
+があり、**`readMat (conv3 M) = M` を測ってある**（課題 L14 §3）:
+
+| 母集団 | 一致 | 破れ |
+|---|---|---|
+| `ST_TS v<=4 len<=10`（415218） | 406564 | **8654（2.1%）** |
+| 破れのうち**縮約が発火**（`v<=4 len<=9` の 973 例で分解） | — | **601**（一致した中に縮約ありは **0**） |
+
+⟹ **`readMat` は `d2b3` の役をしていて、穴も同じ（縮約）**である。
+
+| やること | 行数 | 状態 |
+|---|---|---|
+| `survivors` / `rankify` / `readMat` | — | **書いてある**（`L14Read.lean`, exit 0） |
+| `readMat (conv3 M) = M`（**縮約なしのとき**）の帰納 | 300〜500 | 未着手。`BlkInv` と同じ規模の `conv3` 帰納 |
+| 縮約の穴（`preimage_try` の双子戻し） | **未知** | Python 側でも「像から列が落ちる」ので読み戻せない。`preimage_try` が埋めている |
+| `Inj3` を系として出す | 20〜30 | `readMat` が左逆なら自明 |
+
+⚠ **縮約の部分は行数が読めない。** 課題 L14 の判定「縮約が発火すると
+`|conv3 M| < |M|` になるので 1 列 1 節点の読みでは届かない」がそのまま効く。
+`preimage_try` は「双子を戻してから読む」ので、**Lean 版は `contrFind` の逆を
+書くことになる**。そこが未知数である。
+
+**代案（もっと安いかもしれない）**: `Inj3` は「`M ≠ N → conv3 M ≠ conv3 N`」なので、
+**像の 1 か所だけ見て分けられれば済む**。たとえば
+「最初に食い違う BMS の柱の位置が、像でも食い違いを作る」が言えれば
+`readMat` を全部書かずに済む。**これを Python で測る価値がある**
+（`M ≠ N` の対で、最初の食い違いの位置 `j` に対して像の
+`img j` の位置で食い違うか）。
+
+## 2. `ImgBlockT3` の残り: **鍵は `Dm10 (d+1) p.1 rU.2` 1 本**
+
+残る 2 仮定（`ResidSideT` / `DmapInT`）を追ったら、**両方とも同じ 1 本に帰着した**:
+
+### `ResidSideT`（側条件 a4）`d + rest2.head.1 ≤ rd + p.1`
+
+* `rd = d + 1 + e` の枝 … 自明（`rest2.head.1 = p.1 + 1` なので `d + p.1 + 1 ≤ d + 1 + e + p.1`）
+* `rd = dmapAt dmap k` の枝（`k = rest2.head.1 - 1 ≥ p.1 + 1`）…
+  **`(d+1) + (k - p.1) ≤ dmap[k]`**（＝ `Dm10 (d+1) p.1`）があれば
+
+      d + rest2.head.1 = d + k + 1 ≤ dmap[k] + p.1 = rd + p.1        ∎
+
+### `DmapInT` の下界 `d ≤ dmap[k]`
+
+同じく `Dm10 (d+1) p.1` から `d < d + 1 + (k - p.1) ≤ dmap[k]` ✓
+
+⟹ **`Dm10 (d+1) p.1 rU.2` を出せば 2 本のうち 1.5 本が片づく。**
+それは課題 L20 の `Dm10_of_child`（`rA` から）＋ `rU` 自身の `Dm10` で出る。
+これは R1 の**節 9+**（`k > p.1` に絞れば `d+1`）と同じ内容である。
+
+**残る 0.5 本**は `DmapInT` の
+
+    上界 `dmap[k] ≤ |ST|`      … 節 11（`Dm11` の配線が要る）
+    第 1 項 `k ≤ |dmap|`       … R1-NOTES §4.3（`|dmap| = 最後に処理した柱.1 + 1`）
+
+## 3. 優先順位（チームリードの指定どおり）
+
+    L25 `ImgBlockT3`  >  L33 `wf` の載せ替え  >  L35 `Inj3`
+
+
+---
+
+# 課題 L36: 整礎性を DBMS 側に載せ替えた（2026-08-29）
+
+## 0. 結論
+
+**`ST_D3 (conv3 M)` を BMS の残核（`TowerGraft2` / `TowerExp`）**なしで**出せるように
+なった**（`Dbms3.lean`, exit 0 / sorry 0）:
+
+    ST_D3_conv3_of_parts_D (wfD : WellFounded RD3)
+      (hI : ImgCofinalT3) (hj : Inj3) (hO : **OrderReindexT3'**)
+      (hU : SandwichUReindexT3) (hb : ImgBlockT3) (hlen2 : ImgLenT3)
+      (hd : ConvDiagT3) : ST_TS M → ST_D3 (conv3 M)
+
+    RD3 x y := ST_D3 x ∧ ST_D3 y ∧ seqlex x y        ← DBMS 3 行 z<2 の整礎性
+
+## 1. 入れたもの
+
+    RD3                        DBMS 側の整礎性の関係（`seqlex` 版）
+    ReindexT1D                 `translate B <o translate A` を **`seqlex (conv3 B) (conv3 A)`** に
+    OrderReindexT3'            `OrderReindexT3` の**第 1 成分だけ**
+    orderReindexT3'_of_orderReindexT3
+    ReindexT1D_of_cofinal      弱い 3 本から `ReindexT1D`
+    ST_D3_descend_D            `induction A using (InvImage.wf conv3 wfD).induction`
+    ST_D3_conv3_D / ST_D3_conv3_of_parts_D
+
+## 2. 効いたこと 2 つ
+
+* **`OrderReindexT3` の第 2 成分が消えた。** 再帰の根拠の 3 つ目
+  `seqlex (conv3 B) (conv3 A)` は `heq` で `(conv3 A)⟦m⟧` に書き換えて
+  **`seqlex_oper (hb hA) (hlen2 hA hlen)`** で出る（`ImgBlockT3` ＋ `ImgLenT3` だけ）。
+* **`heq` の枝も `trio_cofinality` も無傷。** `wf` を使っていないので写すだけだった。
+  **新しい DBMS 側の道具は 0 個**（`translateD` も DBMS 版 `m_step_decreases` も不要）。
+
+見積もり 90〜120 行に対し、実際は **約 95 行**。
+
+⚠ 書くときの注意: `RD3` / `ReindexT1D` / `ST_D3_descend_D` / `ST_D3_conv3_D` は §6 の前、
+`OrderReindexT3'` / `ReindexT1D_of_cofinal` / `ST_D3_conv3_of_parts_D` は §11 の後
+（`ImgCofinalT3` などの定義位置による）。実装で 2 回はまった。
+
+
+---
+
+# 課題 L39: 2 行の筋は 3 行では**使えない**（`ReindexD` の結論そのものが偽）（2026-08-29）
+
+## 0. 結論を先に
+
+**2 行の `reindexD_holds` が仮定なしで通っているのは、結論が 3 行より強い形で
+書けるからである。その強い形は 3 行では偽**（性質 R）。⟹ **筋を借りられない。**
+
+    2 行  ReindexD := ∀ A, ST_PS A → 1 < |A| → ∀ n ≥ 1,
+            ∃ m n', 1 ≤ m ∧ n ≤ n' ∧ **(conC A)⟦m⟧ = conC (A⟦n'⟧)**
+                                        ^^^^^^^^^^^^^^^ 相手は **A 自身の展開**
+
+    3 行  ReindexT1 := … ∃ m B, … ∧ **(conv3 A)⟦m⟧ = conv3 B** ∧
+            translate (A⟦n⟧) ≤o translate B ∧ translate B <o translate A
+                                     ^^^ 相手は「ある標準形 B」まで緩めてある
+
+**`B = A⟦n'⟧` に取れないことが性質 R の否定**である
+（`bms2dbms/tools/NOTES.md` §性質 R、`Dbms3.lean:34`、`SESSION-2026-08-28.md:17`）。
+
+## 1. `reindexD_holds` の骨格（10 行以内）
+
+1. `ReindexD` は「**像の展開は、A 自身の展開の像**」。相手を探さなくてよい。
+2. だから `ImgCofinalT` も `OrderT3` も `SandwichU` も**出てこない**
+   （`B` を作る／位置づける仕事が要らない）。
+3. 証明は **`A` の右端の道に沿った帰納**（`reindexD_zero_block` / `reindexD_pos_block`）。
+4. 末尾列の段が 0 か正かで 2 分岐（`reindexD_zero5` / `reindexD_pos_of4`）。
+5. `dropLast` の 4 段（`convC_dropLast_arg` / `_tail` / `_lad_none` / `_contr`）で
+   1 列ずつ剥がす。
+6. 剥がせない形は**禁止形**で潰す（`adj3` / `noAdj3_ST_PS` / `headPatOK` / `argPatOK`）。
+7. 浅い柱の**証人**（`convC_exists_shallow` / `_shallow1`）と床の補題
+   （`rtg_lt_of_floor` / `le0_ge_of_append`）で、剥がした先の深さを押さえる。
+8. 残余は `res11 → res10 → … → res7` と順に消えた（`CtrRes` / `RDnopar` /
+   `RDnode` / `CtrPres2` は定理化、`RDzeroRes2` などは帰納の組み替えで消滅）。
+9. **`RDposRes` / `contrOK` は偽と判明**し、使わない版に置き換えた。
+10. 全体 15471 行。
+
+## 2. 3 行でどこまで使えるか
+
+| 2 行の道具 | 3 行で |
+|---|---|
+| 右端の道に沿った帰納 | **使えない**。結論が `B = A⟦n'⟧` でないので「A の右端」を剥がしても相手に届かない |
+| `dropLast` の 4 段 | 形としては移せる。ただし行 2 の分岐が増える |
+| 禁止形 `adj3` / `noAdj3_ST_PS` | **3 行版は無い**。行 1 と行 2 の 2 本の道があるので禁止形の分類がやり直しになる |
+| 証人・床の補題 | 移せる見込み。`Dbms3.lean` の `depths_ok` / `fit_bounds` が近い |
+
+**「右端の道が 2 本になる」は壊れる原因ではない**（それだけなら場合分けが増えるだけ）。
+**壊れるのは結論の形**である。
+
+## 3. 見積もり: **いまの分解を捨てる価値は無い**
+
+2 行の筋を 3 行で通すには、まず **性質 R を回復する**必要がある。それは
+`conv3` の設計を変える話（課題 H）であって Lean の話ではない。
+⟹ **分解（`ImgCofinalT3` ほか）を捨てて 2 行の筋に乗り換える道は無い。**
+
+ただし **中間の形を測る価値はある**（Python へ）:
+
+> `ReindexT1` が返す `B` は、`A⟦n'⟧` からどれくらい遠いか。
+> **`B = A⟦n'⟧` になる割合**、ならないときの**差の形**（長さの差 / 末尾何列が違うか）。
+> もし「`B` は `A⟦n'⟧` の展開」や「`B` は `A⟦n'⟧` と末尾 1 列だけ違う」なら、
+> **性質 R の弱い版**が立ち、2 行の筋の一部が使えるかもしれない。
+
+⚠ `ImgCofinalT3` が破れ 20 で弱められないのは事実だが、**それは行き止まりの証拠では
+ない**。`ImgCofinalT3` は「像の展開の逆像が存在する」で、性質 R が偽である以上
+**その代わりに必要になったもの**である。破れ 20 を直すのは変換器側の仕事である。
+
+---
+
+# 課題 L38: 導出に穴は無い。見積もり 150〜250 行（2026-08-29）
+
+## 0. 型の確認（全部合っている）
+
+    trio_cofinality (hM : ST_TS M) (hN : ST_TS N) (h : translate N <o translate M) :
+      ∃ n, 1 ≤ n ∧ translate N ≤o translate (M⟦n⟧)          ← 形は指摘どおり
+    not_olt_len_one_T (hM : ST_TS M) (hA : A.length ≤ 1) (hAst : ST_TS A)
+      (h : translate M <o translate A) : False
+    step_terminates (wfimg : WellFounded Rnf) : WellFounded stepRel
+      Rnf v u := v <o u ∧ u ∈ NF ∧ v ∈ NF                    ← 目標はこれ
+
+## 1. `1 < |B_i|` の始末（`≤o` なので 2 段要る）
+
+`translate A_{i+1} ≤o translate B_i` は `<o` **または** `=` である。
+
+* `<o` の側 … `not_olt_len_one_T` で直に矛盾 ✓
+* `=` の側 … `A_{i+1} = [(0,0,0)]` になるので `|A_{i+1}| = 1`。ところが無限列は
+  `A_{i+2}` へ続くので `translate A_{i+2} <o translate A_{i+1}` があり、
+  こんどは `not_olt_len_one_T`（`A := A_{i+1}`）で矛盾 ✓
+
+⟹ **穴は無い。ただし「列が次へ続く」ことを使う**ので、
+`Acc` の形ではなく**無限降下列の形**で書くのが素直である。
+
+## 2. 見積もり
+
+| やること | 行数 |
+|---|---|
+| `WellFounded` ↔ 無限降下列なし の言い換え | 30〜50 |
+| 列の構成（`Nat.rec` で `B_i` と不変量 `translate A_{i+1} ≤o translate B_i` を同時に） | 60〜100 |
+| `1 < |B_i|` の 2 段 | 20〜30 |
+| DBMS 側の無限列 → `wfD` と矛盾 | 30〜50 |
+| **合計** | **140〜230 行** |
+
+⚠ **置き場所**: `Dbms3.lean` は `lakefile.toml` の `roots` に無いので
+`Final.lean` から import できない。**`Dbms3.lean` の側に置く**のが安全
+（`TRIO_terminates_of_dbms_wf` を `Dbms3.lean` の末尾に）。
+
+
+---
+
+# ★★ 課題 L38: **DBMS の停止性 ⟹ BMS の停止性**（書けた。2026-08-29）
+
+## 0. 結論
+
+    theorem TRIO_terminates_of_dbms_wf (wfD : WellFounded RD3)
+        (H : ReindexT1D conv3) (hd : ConvDiagT3 conv3) : **WellFounded stepRel**
+
+    theorem TRIO_terminates_of_dbms_wf_parts (wfD) (hI) (hj) (hO) (hU) (hb) (hlen2) (hd) :
+        WellFounded stepRel
+
+`Dbms3.lean`, exit 0 / `sorry` 0 / `axiom` 0。
+**`TowerGraft2` / `TowerExp` / `Subst1gReviveSelf` を使わない。**
+
+## 1. 列の構成は要らなかった —— **`Acc` の入れ子で 60 行**
+
+見積もりは 140〜230 行（無限降下列 ＋ 選択公理）だったが、**`Acc` で直に書けた**:
+
+    acc_olt_of_accD : ∀ C, Acc RD3 C → ∀ A, ST_TS A → ST_D3 (conv3 A) → conv3 A = C →
+                        Acc (BMS の関係) A
+
+`Acc RD3 (conv3 A)` についての帰納。`R a A`（`translate a <o translate A`）が
+与えられたら
+
+    not_olt_len_one_T           `1 < |A|`
+    trio_cofinality             `n` と `translate a ≤o translate (A⟦n⟧)`
+    ReindexT1D                  `B`、`(conv3 A)⟦m⟧ = conv3 B`、`seqlex (conv3 B) (conv3 A)`
+    ST_D3.oper                  `ST_D3 (conv3 B)`
+    ⟹ `RD3 (conv3 B) (conv3 A)` が 3 成分そろう ⟹ 帰納法の仮定で `Acc R B`
+    `translate a ≤o translate B` を `<o` と `=` に割って `Acc.inv` / `a = B`
+
+**選択公理も列も要らない。** `ReindexT1D` を使うと `seqlex (conv3 B) (conv3 A)` が
+付いてくるので、`RD3` の 3 成分がその場でそろうのが効いた。
+
+## 2. なぜ `conv3` の順序が要らないか（1 行）
+
+> **`ReindexT1D` が `(conv3 A)⟦m⟧ = conv3 B` を「等式で」くれるから。**
+> DBMS 側の降下は**定義から**展開であって、`conv3` が順序を保つかとは無関係。
+
+これが課題 L24 の 24 件（順序保存の反例）を迂回できる理由である。
+
+## 3. 何が変わったか
+
+| | いままで | いま |
+|---|---|---|
+| BMS 3 行 (z<2) の停止性の入り口 | `Subst1gReviveSelf` **1 本**（半年詰まっている） | **2 本**（もう 1 本は `wfD`） |
+| 変換の道の結論 | 像が DBMS 標準形 | **BMS の停止性**（`wfD` を仮定して） |
+| `conv3` の順序保存 | 要ると思っていた | **1 か所も要らない** |
+
+⚠ **`wfD`（DBMS 3 行 z<2 の停止性）は新しい問題**である。ただし DBMS は差分表現なので
+BMS とは別の道具が使える見込みがある。**`PROOF-STATUS §5` の壁とは独立の入り口。**
+
+## 4. 残っている仮定（`TRIO_terminates_of_dbms_wf_parts`）
+
+    wfD                 **未着手**（新しい問題）
+    ImgCofinalT3        Python 側で破れ 20（弱められない）
+    Inj3                実測 1882196 個で衝突 0
+    OrderReindexT3'     実測 破れ 0（前提 171422 回）
+    SandwichUReindexT3  実測 破れ 0（256006 回）
+    ImgBlockT3          仮定 2 本、残り 160〜230 行（課題 L25）
+    ImgLenT3 / ConvDiagT3   **証明ずみ**
+
+
+---
+
+# 課題 L40: L38 の代償と、L25 に残る 1 つの長さの事実（2026-08-29）
+
+## 1. ★ L38 の代償（`SESSION §16` より。**次の人は必ず読むこと**）
+
+    conv3 は全射でない（`<=7` 列で DBMS 標準形 3514 個中 外れ 82 ＝ 2.3%）
+    ⟹ DBMS 標準形の集合は像より真に大きい
+    ⟹ **`wfD` は BMS の停止性より形式的には強い**
+
+**「DBMS のほうが易しい」とは言えない。** `TRIO_terminates_of_dbms_wf` の値打ちは
+「DBMS 側に独立な証明の道があるか」にかかっている。**入り口が 2 本になること自体は
+価値がある**が、それだけである。
+
+## 2. (D0') の宿題が解けた（課題 R1 の測定、`r31.py`）
+
+課題 L30 §3 で「90 件が `OrderReindexT3` の相手の形になりうるかを測るべき」と
+書いた宿題の答え:
+
+    (D0') 違反 site        **90**
+    そこから作った破れの対 **90 組**（site 1 つにつき必ず 1 組作れる ＝ (D0') は必要十分）
+    **当たる (ii) / (iii)   0**　　**当たらない  90 / 90**
+
+⟹ **(D0') を `OrderReindexT3` の範囲に制限した形で使える。**
+
+さらにこれが**探していた陽性対照**でもある:
+
+> 90 site の破れの対は `seqlex (f M2) (f M1)` かつ `¬ seqlex M2 M1` ＝
+> **条項を破る対は実在する**（`OrderBackT3` は偽なので当然）。
+> **そのどれも `(conv3 A)⟦m⟧ = conv3 B` の形にならない（90/90）。**
+
+「条項を破る対は実在するが、三つ組の制約がそれを全部除く」——
+**測定としてはこれが最も強い形**である。直測定（前提 84584 / 171422 / 256006 回、
+破れ 0）と合わせて、`OrderReindexT3` は**空虚でも偶然でもない**。
+
+## 3. L25（`ImgBlockT3`）に残る**長さの事実 1 つ**
+
+`Dm12` の連結（`Dm12_app` は `hstm : m ≤ |stm.dmap|` を要求）を追ったら、
+**`cols` と `rA` の継ぎ目で 1 つ足りない**:
+
+    Dm12_app の junction 1: X = cols（m = p.1, 出口 st1）, Y = rA（m' = p.1+1）
+      hle  : p.1 ≤ p.1 + 1                                        ✓
+      hstm : **p.1 ≤ |st1.dmap|**
+             `st1.dmap = st.dmap.take p.1 ++ [dd2]` なので
+             `|st1.dmap| = min p.1 |st.dmap| + 1`
+             ⟹ 要るのは **`p.1 ≤ |st.dmap| + 1`**
+
+### ⚠ この測定依頼は**取り下げ**（下の §5 を見よ）
+
+### （取り下げ）R1 に測ってほしかったこと（1 本）
+
+    (L)  `conv3` の全呼び出しで  **p.1 ≤ |st.dmap| + 1**
+         （＝ ブロックの頭の深さは、入口の `dmap` の長さより高々 1 だけ大きい）
+
+    陽性対照: `p.1 ≤ |st.dmap|`（1 段きつく）と `p.1 + 1 ≤ |st.dmap| + 1`
+    母数: `gen3 <=8` 全数 ＋ 展開閉包（今日の最低ライン）
+
+R1-NOTES §4.3 の「`|dmap| = 最後に処理した柱.1 + 1`」が材料である。
+**これが真なら `Dm12` の鎖がつながり、L25 の残りは `Dm10` の配線だけになる。**
+
+## 4. L25 の残り（更新）
+
+| やること | 状態 |
+|---|---|
+| `Dm10 (d+1) p.1 rU.2` を出す | 道具は揃っている（`Dm10_of_child` ＋ `depths_le_lad0`） |
+| それで `ResidSideT` と `DmapInT` の下界 | 課題 L35 §2 のとおり |
+| `Dm12` の鎖 | **(L) 待ち** |
+| `DmapInT` の上界（節 11）と `k ≤ |dmap|` | 未着手 |
+
+## 5. ★ 取り下げの理由: `Dm12` を**強い形 `DmKeep`** にすると長さが要らない（同日）
+
+`Dm12` が `k < res.2.dmap.length` を**仮定**に置いていたのは課題 R1 の反例のため
+だった。ところが**その仮定こそが `Dm12_app` に `m ≤ |stm.dmap|` を要求させていた**。
+`k < res.2.dmap.length` を**結論**に移すと、両方いっぺんに片づく:
+
+    def DmKeep (m : ℕ) (st st' : St) : Prop :=
+      ∀ k, k < m → k < st.dmap.length →
+        k < st'.dmap.length ∧ st'.dmap.getD k 0 = st.dmap.getD k 0
+
+* R1 の反例（`k=4`, `|st.dmap|=4`, `|res.dmap|=5`）は**仮定 `k < |st.dmap|` を
+  満たさない**ので反例にならない。
+* `DmKeep_trans` は**長さの仮定をまったく要らない**。
+* `Dm12_of_DmKeep` で `Dm10_of_child'` はそのまま使える。
+
+### 証明が短い理由（**この 2 つが効いた**）
+
+1. **`conv3` 全体で `dmap` を書く場所は 1 か所しかない**（`st1.dmap =
+   st.dmap.take p.1 ++ [dd2]`）。`convResid` は `dmap` を直に触らない。
+2. ブロックの下界 `m` を「先頭の行」ではなく**パラメータ**にすると、
+   再帰呼び出しがすべて同じ `m` で回るので、**`steps1` も `BlkLo` も要らない**。
+
+⟹ `dmKeep_holds`（**仮定ゼロ**、100 行）。`leanman check` **exit 0 / sorry 0**。
+
+## 6. ★ 落とし穴: 新しい宣言は `blk_step` の**後ろ**に置くこと
+
+`DmKeep` の一式を `blk_step` の**前**に置いたら、**`blk_step` が
+heartbeat 超過（`whnf` / `isDefEq` timeout）で落ちた**。中身は 1 文字も
+変えていない。`blk_step` の**後ろ**（`def BlkInv` の直前）に移したら緑になった。
+
+    前に置く … blk_step が exit 2（deterministic timeout at whnf, 200000 heartbeats）
+    後ろに置く … exit 0
+
+**`conv3` を `rw [conv3.eq_def]` で開く定理を増やすときは、必ず `blk_step` より
+後ろに置く。**
+
+## 7. `Dm10` に残るのは長さの事実 1 つ（`DmLen`）
+
+`Dm10` の帰納は `B = []` かつ `A ≠ []` の場合に `Dm10_of_child'` を使い、
+そこで `p.1 < |st1.dmap|` すなわち **`p.1 ≤ |st.dmap|`** が要る
+（`|st1.dmap| = min p.1 |st.dmap| + 1`）。これは R1-NOTES §4.3 の
+「`|dmap| = 最後に処理した柱.1 + 1`」そのもの。
+
+**`DmKeep` があるので伝播は出る**:
+
+    入口 b2d3          … st.dmap = [] かつ M.headI.1 = 0        ⟹ 0 ≤ 0     ✓
+    st1                … |st1.dmap| = p.1 + 1                                ✓
+    A の呼び出し（頭 p.1+1）… p.1 + 1 ≤ |st1.dmap| = p.1 + 1                 ✓
+    B / U の呼び出し（頭 p.1、状態 rA.2）
+                       … DmKeep (p.1+1) st1 rA.2 に k = p.1 を入れて
+                         p.1 < |rA.2.dmap|                                    ✓
+
+残るのは **`rest2`（`convResid` の入力）の頭**だけ。ここは R1 の測定が要る。
+
+
+---
+
+# 課題 L41: `Dm10`（節 10）を**仮定 1 本**まで落とした（2026-08-29）
+
+## 1. 結果
+
+    dmKeep_holds      仮定ゼロ（課題 L40）
+    dm10_step         conv3 の 1 歩。縮約の枝も縮約でない枝も。仮定は hres だけ
+    dm10_resid        convResid の帰納。仮定は「頭が dmap に届く」の 1 本だけ
+    dm10_aux/holds    ★ **Dm10 は `ResidHeadT` だけから出る**
+
+`leanman check` **exit 0 / sorry 0**。
+
+```lean
+def ResidHeadT : Prop :=
+  ∀ (rest : TrioSeq) (st' : St) (m d : ℕ), rest ≠ [] → (∀ c ∈ rest, m + 1 ≤ c.1) →
+    m ≤ st'.dmap.length → Dm10 (d + 1) m st' → (rest.headI).1 ≤ st'.dmap.length
+```
+
+これは **`DmapInT` の第 1 項**（`k ≤ |dmap|`）に対応し、**R1-NOTES §4.3 に紙の
+証明がある**（`|dmap| = 最後に処理した柱.1 + 1`）。
+
+## 2. ★ 定式化で効いた 3 つ（課題 L25 で詰まっていた原因）
+
+### (a) 入口の仮定を「空のときだけ」にする
+
+    結論   Dm10 d m res.2
+    仮定   ∀ c ∈ M, m ≤ c.1 / M ≠ [] → M.headI.1 = m / m ≤ |st.dmap|
+           **M = [] → Dm10 d m st**   ← ここが要
+
+`M = []` なら `res.2 = st` なので入口の仮定がそのまま結論。
+⟹ **`A = []` / `B = []` / `U = []` / `Bq = []` の場合分けが 1 つも要らない。**
+
+実際 `dm10_step` の証明は入口の仮定を**一度も使わない**。だから空のときだけに
+弱められる。そしてこれが `convResid` の中で効く: `convResid` が呼ぶ `conv3` の
+入口 `Dm10 rd c.1 st` は**出せない**（`rd` の上界が要るので）が、
+`head ≠ []` なので**要らない**。
+
+### (b) `d ≤ dd2` は `d ≤ |ST|` を仮定しなくても出る（`depths_le_lo`）
+
+`fit` は `d` から上へ探し、既定値 `max d |ST|` も `d` 以上。
+⟹ **`Dm10` の帰納は `BlkOK` と完全に切り離せた**（`blk_step` の `hres` が
+`BlkOK` 経由で `d ≤ |st'.ST|` を要求していた鎖を断てる）。
+
+### (c) `Dm10` の付け替えは `DmKeep`（課題 L40）で全部出る
+
+    st1              |st1.dmap| = m + 1
+    A（頭 m+1、深さ dd2+1）  入口は**空虚**（範囲が m+1 まで）
+                     出口は Dm10_of_child'（非縮約）/ Dm10_of_child（縮約、d+1 ≤ dd2）
+    B / U / Bq       DmKeep で長さが降り、Dm10 はそのまま渡る
+
+## 3. `convResid` の中身（`dm10_resid`）
+
+    j < c.1   … `c.1 ≤ |st.dmap|` なので DmKeep で値が保存され、入口の Dm10 が効く
+    j ≥ c.1   … 子の `Dm10 rd c.1` を Dm10_shift で (d, m) に付け替える。
+                要るのは **d + c.1 ≤ rd + m**（`resid_rd_lb`）
+
+`resid_rd_lb` は `Dm10 (d+1) m st'` を添字 `h-1` で読むだけ:
+
+    h = m+1 の枝 … rd = d+1+e ≥ d+1        ⟹ d + h = d+m+1 ≤ rd+m   ✓
+    それ以外     … rd = dmap[h-1] ≥ (d+1)+(h-1-m) ⟹ d + h ≤ rd + m  ✓
+
+**再帰の中では頭の条件が自分で伝わる**（`deepGe_head_lt` で `tail.head.1 < c.1`、
+`DmKeep` で長さが降りる）。⟹ **`ResidHeadT` はいちばん外側でしか要らない。**
+
+## 4. 次（課題 L25 の残り）
+
+`ImgBlockT3` の 2 本（`DmapInT` / `ResidSideT`）は、課題 L35 §2 のとおり
+**`Dm10 (d+1) p.1 rU.2` の 1 本に帰着**する。これが `dm10_holds` で出るように
+なったので、あとは **`blk_step` の `hside` / `hdmin` を実際の `stU` で
+インスタンス化する配線**だけ（`blk_step` の署名変更）。
+
+| 命題 | 状態 |
+|---|---|
+| `DmKeep` | **証明ずみ（仮定ゼロ）** |
+| `Dm10` | **`ResidHeadT` 1 本**（R1-NOTES §4.3 に紙の証明） |
+| `DmapInT` の下界・`ResidSideT` | `Dm10` から出る。**配線が残り** |
+| `DmapInT` の上界（節 11） | 未着手（`Dm11` を同じ型で回せば出るはず） |
+
+
+---
+
+# 課題 L41(b): `RD3` を**像に制限**すると `ST_D3` がまるごと落ちる（2026-08-29）
+
+（番号がぶつかったので、`Dm10` のほうを L41(a)、こちらを L41(b) と呼ぶ。）
+
+## 1. 結果 —— **一発で緑、65 行**
+
+```lean
+def RD3img (conv3 : TrioSeq → TrioSeq) : TrioSeq → TrioSeq → Prop :=
+  fun x y => (∃ M, ST_TS M ∧ x = conv3 M) ∧ (∃ N, ST_TS N ∧ y = conv3 N) ∧ seqlex x y
+
+theorem TRIO_terminates_of_img_wf {conv3 : TrioSeq → TrioSeq}
+    (wf : WellFounded (RD3img conv3)) (H : ReindexT1D conv3) : WellFounded stepRel
+```
+
+**仮定は `ReindexT1D` ただ 1 本。**
+
+## 2. なぜ `ST_D3` が全部落ちるか（1 行）
+
+> **`acc_olt_of_accD` が `ST_D3 (conv3 A)` を運んでいたのは、`RD3` の第 1・第 2 成分を
+> 埋めるためだけだった。** 像に制限すると `⟨B, hB, rfl⟩` / `⟨A, hA, rfl⟩` で自明に埋まる。
+
+しかも **`ReindexT1D` の定義は `ST_D3` に一切触れていない**（確認ずみ）。だから
+
+    落ちる   ST_D3_conv3_D / ST_D3_descend_D / **ConvDiagT3** / ST_D3 の機構ぜんぶ
+    残る     ReindexT1D ただ 1 本
+
+差分は `acc_olt_of_accD` から `hSD` / `hSD'` の 2 行を消しただけ。
+
+## 3. 代償が消える
+
+`conv3` は全射でない（R1: `<=6` 列 0.76% / `<=7` 列 2.3% / **`<=8` 列 4.2%**、
+`preimage_try` に替えても減らない本物）。だから `WellFounded RD3` は BMS の停止性より
+**形式的に強い**。`RD3img` は像の上だけなので**その代償を払わない**。
+
+## 4. L38 は L41(b) の系
+
+`wf_img_of_wfD : WellFounded RD3 → ReindexT1D → ConvDiagT3 → WellFounded (RD3img conv3)`
+（`Subrelation.wf` ＋ `ST_D3_conv3_D`、8 行）。**逆は言えない。**
+
+## 5. ⚠ 正直な限界
+
+`RD3img` の整礎性は、`Inj3` を通せば `ST_TS` 上の関係
+`M ≺ N ⟺ seqlex (conv3 M) (conv3 N)` の整礎性と**同じ**。
+**BMS の停止性より易しい保証は無い**（`OrderT3` が偽なので `seqlex M N` とは
+別の関係だが、強さが違うとは限らない）。値打ちは 2 つだけ:
+
+* **前提が真に弱い**（定理として強い）
+* **`ST_D3` の機構が停止性の道から外れる ⟹ 残るのは `ReindexT1D` 1 本**
+
+
+---
+
+# 課題 L44: `DmapInT` / `ResidSideT` は**偽**だった。制限版は仮定ゼロで出る（2026-08-29）
+
+## 1. ⚠⚠ 反証（`Dbms3.lean` に `example` として常駐、両方緑）
+
+    example : ¬ ResidSideT
+    example : ¬ DmapInT
+
+    ResidSideT  d=5, p=(0,0,0), stU.dmap=[0], rest2=[(2,0,0)], e=0, c=(2,0,0)
+                2 ≠ p.1+1 = 1 ⟹ else 枝、dmapAt [0] 1 = 0 + (1-1+1) = 1
+                LHS 5+2 = 7 ≤ RHS 1+2 = 3   **偽**
+    DmapInT     p=(0,0,0), stU.dmap=[], rest2=[(5,0,0)]
+                5 ≠ 1 ⟹ 番人が開く、第 1 項 5-1 = 4 ≤ 0   **偽**
+
+**原因**: どちらも `stU` / `rest2` を**無制限に全称化**していた。R1 と
+`l11_blkmeas.py` の実測は**呼び出し点で**測ったもので、Lean の `def` はそれより広い。
+
+⟹ **`ImgBlockT3_of_resid` は現状空虚。**「仮定 2 本」は嘘で「偽の仮定 2 本」だった。
+
+## 2. ★ 教訓（課題 L24 と同じ穴に落ちた）
+
+> **新しく仮定の `def` を書いたら、まずその `def` 自体に反例が無いか探す。**
+> 実測が「呼び出し点で」取られているなら、`def` も**呼び出し点の文脈を仮定に
+> 持たせる**こと。文脈を落として全称化すると、ほぼ確実に偽になる。
+
+課題 L24（`OrderT3`）で「全域の命題が偽でも証明が使う狭い形は真かもしれない」と
+書いたのに、**自分が書いた仮定で同じことをした**。
+
+## 3. 制限版は**両方とも仮定ゼロで証明できた**
+
+```lean
+theorem residSideR_holds : ResidSideR   -- 仮定ゼロ
+theorem dmapInR_holds    : DmapInR      -- 仮定ゼロ（DmST を文の中の仮定として持つ）
+```
+
+呼び出し点で分かっていることを足しただけ:
+
+    ∀ c ∈ rest2, p.1 + 1 ≤ c.1      dm10_step で証明ずみ（q.1 ≥ p.1 経由）
+    p.1 ≤ |stU.dmap|
+    Dm10 (d+1) p.1 stU               課題 L41(a) の dm10_holds
+    rest2 ≠ [] → rest2.headI.1 ≤ |stU.dmap|   ← ResidHeadT
+    DmST stU                          ← 節 11（下）
+
+* `ResidSideR` … `resid_rd_lb` が `d + h ≤ rd + p.1` をくれ、`c.1 ≥ p.1+1` で押し上げる。**3 行**。
+* `DmapInR` … 第 1 項は `ResidHeadT`、下界は `Dm10` を添字 `h-1` で読むだけ、
+  上界は `DmST` そのもの。**8 行**。
+
+```lean
+def DmST (st : St) : Prop := ∀ k, k < st.dmap.length → st.dmap.getD k 0 ≤ st.ST.length
+```
+⚠ これも**無制限に全称化した形は偽**（`st.ST = []`, `st.dmap = [5]`）。
+**呼び出しの鎖に沿って運ぶ状態の述語**として使うこと。
+
+## 4. `ImgBlockT3` に残るもの（3 つ、すべて形が分かっている）
+
+| | 状態 |
+|---|---|
+| **`ResidHeadT`** | R1-NOTES §4.3 に紙の証明。Lean 未 |
+| **`DmST` の伝播** | 新しい帰納 1 本（下） |
+| **配線** | `blk_step` の `hside` / `hdmin` を制限版に差し替え |
+
+### `DmST` の伝播は `Dm11` を**新しく回さなくてよい**
+
+`Dm11 d m st := ∀ k < m, k < |st.dmap| → st.dmap.getD k 0 ≤ d + 1` は
+**`DmKeep`（課題 L40）から只で伝わる**（`k < m` の値は変わらないから）。
+だから要る帰納は `DmST` の 1 本だけで、中身は
+
+    st1 …  |st1.ST| = dd2 + 1
+           k < p.1  … Dm11 で `≤ d+1 ≤ dd2+1`   ✓
+           k = p.1  … `dd2 ≤ dd2+1`             ✓
+    子   …  d ≤ |st.ST| も同じ帰納で運ぶ（dd2+1 = |st1.ST| かつ dd2 ≥ d）
+
+見積もり **130 行**（`dmKeep_holds` / `dm10_holds` と同じ型）。
+
+
+---
+
+# 課題 L45: `DmST`（節 11）の伝播 —— 1 歩は書けた。`convResid` の枝が測定待ち
+
+## 1. 書けたもの（`leanman check` exit 0 / sorry 0）
+
+    dm10_at_U    縮約の枝で Dm10 (d+1) p.1 rU.2 を出す 1 歩（ResidHeadT のみ）
+    StOK d st    := d ≤ |st.ST| ∧ DmST st
+    dm11_keep    Dm11 は **m ≤ |st.dmap| を足せば** DmKeep で伝わる
+    dmST_st1     1 列ぶんの状態は StOK (dd2+1)（DmST の要）
+    dm11_st1 / dm11_st1'
+    **dmST_step  DmST の帰納の 1 歩。仮定は hres（convResid）と ResidHeadT だけ**
+
+## 2. なぜ `Dm11` が要るか（1 行）
+
+> `st1.ST = ST2.take dd2 ++ [·]` で**スタックが `dd2` に切り詰められる**ので、
+> 古い `dmap[k]`（`k < p.1`）が `≤ dd2+1` であることを言う必要がある。
+
+`Dm11`（`dmap[k] ≤ d+1`）＋ `d ≤ dd2` でちょうど閉じる。
+
+⚠ **`Dm11` は `DmKeep` だけでは伝わらない**（`k < |st'.dmap|` から `k < |st.dmap|` が
+出ない ＝ 課題 R1 の 8 列の反例）。**`m ≤ |st.dmap|` を足すと伝わる**。
+呼び出し点では `|st1.dmap| = p.1 + 1` なので成り立っている。
+
+## 3. ★ 止まっている所 —— 測定 (N') 待ち
+
+`convResid` の中の木は下界 `c.1`・深さ `rd = dmap[c.1-1]` で回るので、そこでは
+`dmap[k] ≤ rd + 1`（`k < c.1`）が要る。
+
+    k < p.1        外側の Dm11 ＋ d ≤ rd     ⟹ OK
+    p.1 ≤ k < c.1  **dmap[k] ≤ dmap[c.1-1] + 1 ＝ dmap の（非狭義）単調性**が要る
+
+`dmap` の**狭義**単調性が偽なのは記録ずみ。**非狭義は未測定**。
+
+### R1 への依頼 (N')
+
+    (N')  convResid の呼び出し点で rest2 ≠ [] のとき  **|rU.2.dmap| = rest2.headI.1**
+    陽性対照: `= rest2.headI.1 + 1` と `= rest2.headI.1 - 1`
+    母数: gen3 <=8 全数 ＋ ST_TS 展開閉包
+
+**(N') が真なら 2 つ同時に片づく**:
+
+* `ResidHeadT` は等号の系
+* `c.1 - 1` が**最後の添字**になるので、`DmOK`（証明ずみ）と `DmST` から
+
+      dmap[k] ≤ |ST| = dmap.getLastD + 1 = dmap[c.1-1] + 1 = rd + 1   ✓
+
+  ⟹ **新しい不変量を 1 つも足さずに `Dm11` が閉じる。**
+
+代替（弱いほう。これでも足りる）:
+
+    (M)  ∀ k < j < |st.dmap|, st.dmap.getD k 0 ≤ st.dmap.getD j 0 + 1
+    陽性対照: `≤ dmap[j]`（狭義単調は偽と記録ずみなので**必ず鳴るはず**）
+
+## 4. `ImgBlockT3` の残り（更新）
+
+| | 状態 |
+|---|---|
+| `DmKeep` | **仮定ゼロ** |
+| `Dm10` / `dm10_at_U` | **`ResidHeadT` 1 本** |
+| `ResidSideR` / `DmapInR` | **仮定ゼロ** |
+| `dmST_step` | **`hres` ＋ `ResidHeadT`** |
+| `dmST_resid` | **(N') 待ち** |
+| `dmST_aux` | 上が揃えば 30 行 |
+| `blk_step` の配線 | 最後 |
+
+
+---
+
+# 課題 L46: `ResidHeadT` は偽ではなく**私の off-by-one** だった（2026-08-29）
+
+## 1. 測定（team-lead、`bms2dbms/tools/residhead.py`、呼び出し点 2386 件）
+
+    |dmap| == h      2082      （h = rest2.headI.1）
+    |dmap| == h + 1   243
+    |dmap| == h - 1    61      ← `h ≤ |dmap|` の破れ
+    その他              0
+    ⟹ **h ≤ |dmap| + 1 は 2386 / 2386 = 100%**
+
+## 2. 呼び出し点は Lean と一致している（確認ずみ）
+
+`rows3.py` 1513 `cA` → 1515 `cU` → 1519 `rd` → 1525 `conv_resid`。
+Lean も `rA` → `rU` → `rd`（`rU.2.dmap` から）→ `convResid`（`rU.2` から）。
+`st` を破壊的に持ち回るので **1519/1525 の `st['dmap']` は Lean の `rU.2.dmap`**。
+`rest2 != []` だけなので `cfm` の投機的な枝も混じらない。**測定は有効。**
+
+## 3. ★ 壊れていたのは私が書いた `ResidHeadT` だけ
+
+`R1-NOTES §4.3` の紙の証明の対象は **`h - 1 ≤ |dmap|`**（＝ `h ≤ |dmap| + 1`）で、
+`DmapInT` の第 1 項の書き方（`(rest2.headD).1 - 1 ≤ |stU.dmap|`）とも一致する。
+**私が課題 L45 で `h ≤ |dmap|` と 1 ずらして書いた。** 課題 L44 と同じ失敗
+（自分が新しく書いた `def` を確かめなかった）。
+
+## 4. 61 件は証明の中でも閉じる（`resid_rd_lb'`、緑）
+
+`h - 1 = |dmap|` のとき `dmapAt` は**外挿の枝**に入る:
+
+    rd = dmap.getLastD + (h-1 - |dmap| + 1) = dmap.getLastD + 1
+    Dm10 を**最後の添字** |dmap|-1 で読むと (d+1) + (|dmap|-1-m) ≤ dmap.getLastD
+    ⟹ rd ≥ d + |dmap| + 1 - m = d + h - m      ✓ ぴったり
+
+`m ≤ |dmap| - 1` は `else` の枝（`h ≠ m+1`）から `h ≥ m+2` ⟹ `|dmap| ≥ m+1` で出る。
+`dmap ≠ []` も同じ不等式から出るので **追加の仮定は要らない**。
+
+⟹ **`resid_rd_lb'` は `h ≤ |dmap| + 1` だけで成立する**（`DmOK` すら要らない）。
+
+## 5. (M)（`dmap` の非狭義単調性）は**もう要らない見込み**
+
+team-lead の (M) は陽性対照（`≤ dmap[j] - 1`）が鳴らず無効だったが、
+上のとおり `h ≤ |dmap|+1` ＋ `Dm10` の**最後の添字**だけで閉じるので、
+`dmap` の単調性は要らない。`Dm11` の側の `dmap[k] ≤ rd+1` も、`h-1` が
+`|dmap|-1` か `|dmap|` のどちらかなので **`DmOK` ＋ `DmST` で同じ形で出る見込み**。
+
+## 6. 残りの直し
+
+    resid_rd_lb'                                    **済み（緑）**
+    ResidHeadT を h ≤ |dmap| + 1 に直す              3 行
+    dm10_step / dm10_aux / dm10_holds / dm10_at_U /
+      dmST_step の hlen を **m ≤ |st.dmap| + 1** に  **120〜180 行**
+
+最後のが本体。`|st1.dmap| = min(p.1,|st.dmap|) + 1` が `p.1+1` と `p.1` の 2 通りに
+なるので、`Dm10_of_child'` が使えない場合（`p.1 = |st.dmap|+1`）に補題が 1 本要る。
+**その場合の `rA.2.dmap[p.1]` は A ブロックの最初の書き込み `dd2'`（`≥ dd2+1 ≥ d+1`）
+なので、結論自体は成り立つ。**
+
+## 10. `DmBot` の定式化は 3 回書き直して、**`conv3_via_st1` 1 本**に落ちた（課題 L46 §8）
+
+最初に考えた 3 つはどれも連結で壊れた:
+
+    DmBot d st st'   ∀ j ≥ |st.dmap|, j < |st'.dmap| → d ≤ st'.dmap[j]
+      ⟹ B の呼び出しで壊れる。B は take p.1 で添字 > p.1 を捨てて作り直すので、
+        rA.2 から rB.2 へ値が渡らない
+    DmGe d m st st'  上を j ≥ m に制限
+      ⟹ A の呼び出し（下界 p.1+1）が添字 p.1 を覆わない
+    DmHead d m st'   m < |st'.dmap| → d ≤ st'.dmap[m]
+      ⟹ 2 つの場合（st1 に添字 m がある/ない）で別の議論が要る
+
+**要るのは「入口の `dmap` の**すぐ外側**の 1 つの添字」だけだった。** そしてそれは
+
+```lean
+theorem conv3_via_st1 (hmr : ∀ c ∈ r, p.1 ≤ c.1) :
+    ∃ dd2 st1, st1.dmap = st.dmap.take p.1 ++ [dd2] ∧ d ≤ dd2 ∧
+      DmKeep p.1 st1 (conv3 (p :: r) d ...).2
+```
+
+「**呼び出しは `st1` を経由し、そこから先は `DmKeep p.1`**」の 1 本で出る
+（`dmKeep_step` の証明から最初の `DmKeep_take` を外しただけ、20 行）。
+
+```lean
+theorem dmFirst_of (hmr) (hout : st.dmap.length < p.1) (hin : ...) :
+    d ≤ (conv3 (p :: r) d ...).2.dmap.getD st.dmap.length 0
+```
+
+`p.1 > |st.dmap|` なので `st.dmap.take p.1 = st.dmap`、つまり `st1` の最初の書き込みが
+**ちょうど添字 `|st.dmap|`** に `dd2 ≥ d` を置く。そこから先は `|st.dmap| < p.1` なので
+`DmKeep p.1` がその添字を凍らせる。**15 行。**
+
+⟹ **課題 L46 の一般化に要る道具はこれで揃った。** 残りは `dm10_step` の
+`case pA` を 2 つに割る作業（`p.1 ≤ |st.dmap|` は現状のまま、
+`p.1 = |st.dmap| + 1` は `Dm10_shift` の隙間を `dmFirst_of` で埋める）。**60〜100 行。**
+
+## 11. 教訓（定式化について）
+
+> **不変量が連結で壊れたら、命題を弱めるのではなく「本当に要る添字はどれか」を数える。**
+> `DmBot` は「`|st.dmap|` 以上の全部」を主張していたが、実際に要るのは
+> **`|st.dmap|` ちょうど 1 つ**だった。範囲を絞ったら連結の問題が消えた。
+
+
+---
+
+# 課題 L48: `hlen` の一般化を試みて**差し戻した**（2026-08-29）
+
+## 1. やったこと
+
+`dm10_step` の `hlen : p.1 ≤ |st.dmap|` を `≤ |st.dmap| + 1` に一般化し、
+`case pA` / `case pAn` を `by_cases hsm : p.1 ≤ st.dmap.length` で 2 つに割った。
+`p.1 = |st.dmap| + 1` の枝は `Dm10_shift` ＋ `dmFirst_of'` で埋める設計どおり。
+
+**結果は exit 2。差し戻した（`git checkout`）。** いまは `83c0903` の状態で緑。
+
+## 2. ★ 分かった 3 つ（見積もりを直す）
+
+### (a) **順序が逆だった**
+
+`conv3_via_st1` / `dmFirst_of` / `dmFirst_of'` は **`dm10_step` より後ろ**にある
+（課題 L44 のブロックの直前に入れたため）。`dm10_step` から呼べない。
+
+⚠ **前に動かすのは危ない**（課題 L40 §6: `blk_step` の前に宣言を足したら
+`blk_step` が heartbeat 超過で落ちた）。
+
+**⟹ 正しい直し方: `dmFirst_of'` を `dm10_step` の仮定として渡す**（`hres` と同じ形）。
+`dm10_aux` が後ろから供給すればよい。**移動は要らない。**
+
+### (b) `+1` は `dm10_resid` と `dm10_aux` にも波及する
+
+`dm10_step` だけ直しても 4526 行以降（`dm10_resid` / `dm10_aux`）で型が合わない。
+とくに `dm10_resid` は
+
+    hhd : rest ≠ [] → rest.headI.1 ≤ |st.dmap|      → **+1 に**
+    hc1 で `j < c.1 → j < |st.dmap|` を使っている    → **j = |st.dmap| の場合分けが要る**
+                                                      （そこは `dmFirst_of'` で埋まる）
+    hkeep' の `dmKeep_le ... hlen`                    → `m-1` で取り直す
+
+### (c) `by_cases` で `dm10_step` が heartbeat 超過する
+
+分割すると巨大項の goal が 2 倍になり、`isDefEq` / `whnf` が 200000 を超えた。
+**`set_option maxHeartbeats 800000 in` を `dm10_step` の前に置く**必要がある。
+
+## 3. 直した見積もり
+
+    もとの見積もり  60〜100 行
+    **正しい見積もり  150〜250 行 ＋ `set_option maxHeartbeats` ＋ 仮定の受け渡し**
+
+内訳:
+
+    dm10_step に hdmF（= dmFirst_of' の形）を仮定として足す        20 行
+    dm10_step の case pA / pAn を 2 つに割る                        60 行
+    dm10_resid の hhd を +1 にし、j = |st.dmap| の場合を足す        50 行
+    dm10_aux / dm10_holds の受け渡し                                30 行
+    set_option maxHeartbeats                                        1 行
+
+## 4. 教訓
+
+> **大きな証明に `by_cases` を足すときは、先に `set_option maxHeartbeats` を上げる。**
+> そして**新しい補題は「前に動かす」のではなく「仮定として受け取る」**。
+> このリポジトリでは宣言を前に動かすと後ろの巨大な証明が heartbeat で落ちる
+> （課題 L40 §6 と同じ現象を 2 回目に踏んだ）。
+
+
+---
+
+# 課題 L50: `diagSeqT 0 v ∈ Wself` は停止性と**同値**（2026-08-29）
+
+## 1. 同値である（Lean で証明、`L47W.lean`）
+
+```lean
+theorem exists_stage_of_ST_TS (h : ∀ v, diagSeqT 0 v ∈ Wself) (hM : ST_TS M) : ∃ u, M ∈ W u
+theorem mem_Wself_of_diag (h : ∀ v, diagSeqT 0 v ∈ Wself) (hM : ST_TS M) (hne : M ≠ []) :
+    M ∈ Wself
+```
+
+`ST_TS` は**対角と `oper` だけ**で生成され（`Trio.lean` の inductive）、
+`oper_closed`（`Wset.lean:2103`、証明ずみ）は `W u` を `oper` で閉じる。逆は自明。
+
+⟹ **最小形ではあるが近道ではない。** 値打ちは
+**「どんな証明技法も `diagSeqT` を通せるかで安く篩にかけられる」**こと。
+
+## 2. ★ プロジェクト全体の最小の未解決例は **3 列**
+
+    v=0  singleton_mem_W          ✓
+    v=1  snoc_zeroRow2            ✓（M' = [(0,0,0)] は行 2 ≡ 0、t = (1,1,1)）
+    **v=2  (0,0,0)(1,1,1)(2,2,1)  ← 未解決。M' = (0,0,0)(1,1,1) の行 2 が 0 でない**
+
+## 3. 展開の形（team-lead の測定）と、なぜ既存の道具が届かないか
+
+    **D(v)⟦n⟧ = flatMap (k => shiftr01 (k*v) (k*v) (D(v-1)))**   （行 0 と行 1 を**両方**ずらす）
+
+    shTower / W_flatMap_copies … **行 0 だけ**。届かない
+    ulift_mem_W                  … 行 1 のシフトは段を **+2d** 上げる
+
+### ⚠ 段は本質ではない（`mem_Wself_iff`）
+
+根は `(0,0,0)` のままなので `lev (D(v)⟦n⟧) 0 = 0`。`mem_Wself_iff` より
+`D(v)⟦n⟧ ∈ W 0 ⟺ D(v)⟦n⟧ ∈ Wself`。**中身は `Wself` 所属であって段ではない。**
+
+### ★ しかし分解すると残核に着く
+
+    shiftr01 d d = shiftr01 d 0 ∘ shiftr01 0 d      （行 0 のシフト ∘ 行 1 のリフト）
+    行 0 のシフト … `W_shift`（Wset.lean:1320）**無料**
+    行 1 のリフト … `LiftStage`（(WL)）で段が **+2d**
+
+⟹ **k 枚目の写しは `W (2kv)` にいる。段の違う塊を `W 0` に連結する操作は
+`Aop` の節 3（`graft`）そのもの**であり、`W_mono` は上向きにしか使えない。
+
+> **⟹ `D(v)⟦n⟧` は graft の鎖である。その `W` 所属の証明は節 3 を通るしかなく、
+> それは残核（`SubstClosedG` / `Subst1gReviveSelf`）である。**
+
+## 4. 見積もり
+
+    (a) 既存の道具   **無い**（行 0 だけの道具しかない）
+    (b) v の帰納     自然だが、1 歩が「行 1 シフト版の (TOW)」＝ (TOW) より**強い**
+                     ⟹ **行数の上限は出せない**
+    (c) 残核と同値か **同値**（上の 1。Lean で証明ずみ）
+
+## 5. 今日の縮小の到達点
+
+    停止性 → 残核(15 行) → WSnoc(3 行) → (TOW) → WCat → W_add の緩和
+           → L49（行 2 版の証明書）→ **L50: diagSeqT 0 2（3 列）**
+
+**全部が同値か、同じ結び目。** `PROOF-STATUS §5` の「新しい数学的入力が要る」の
+**到達点が 3 列の行列 1 つ**になった、というのが今日の成果である。
+
+
+---
+
+# 課題 L51: 標的を `(0,0,0)(1,1,1)(2,1,1)` に差し替え。展開補題が通った（2026-08-29）
+
+## 1. 結果（`lean/L51Lift.lean`、`leanman check` exit 0 / sorry 0）
+
+    **oper_Mt (n) : Mt⟦n⟧ = liftTower At 2 n**
+    **Mt_mem_W_zero_of_tower (h : ∀ n ≥ 1, liftTower At 2 n ∈ W 0) : Mt ∈ W 0**
+    **Mt_mem_Wself_of_tower  (同) : Mt ∈ Wself**
+
+    At = (0,0,0)(1,1,1)     Mt = (0,0,0)(1,1,1)(2,1,1)
+    liftTower Q e n := (List.range n).flatMap (fun k => shiftr01 (e*k) k Q)
+
+⟹ **標的は「`∀ n ≥ 1, liftTower At 2 n ∈ W 0`」ただ 1 本**になった
+（`lev Mt 0 = 0` なので `W 0`、`W 0` に節 3 は無いので**節 2 一本**）。
+
+## 2. `Mt⟦n⟧` の正体（`oper` の定義から手で計算）
+
+    j1 = 2、entry Mt 2 2 = 1 > 0            ⟹ srow = 2
+    行 2 で entry Mt 2 j0 < 1 は j0 = 0 だけ ⟹ parent = 0
+    d0 = 2 - 0 = 2、d1 = 1 - 0 = 1、take 0 = []
+    コピーは range' 0 2 ＝ 列 0..1 ＝ At、le0 も le1 も 0 から届く
+
+⟹ **`Mt⟦n⟧` は `At` 自身の持ち上げ塔。** team-lead の
+`At ++ (range (n-1)).flatMap (shiftr01 (2k) k Q)`（`Q = (2,1,0)(3,2,1)`）と同じもの
+（`Q = shiftr01 2 1 At` なので `At` に吸収できる）。
+
+## 3. 証明した材料
+
+    le0_le / le1_le          le0・le1 の添字は単調（nextrel が j0 < j1 を含む）
+    nextrel0_Mt_01 / _12     行 0 の鎖 0 -> 1 -> 2
+    le0_Mt_00 / _01 / _02
+    nextrel1_Mt_01 / _02     行 1 の鎖（le0 が要る）
+    le1_Mt_00 / _01 / _02
+    nextrel2_Mt_02           行 2 の親候補
+    nextrel2_Mt_unique       entry Mt 2 j0 < 1 は j0 = 0 のみ
+    hasParent_Mt / parent_Mt （Classical.epsilon ＋ 一意性）
+    srow_Mt / entry_Mt_*
+
+## 4. ★ 技術メモ（`oper` を開くときの型）
+
+**`oper` の if は `rw [if_neg ...]` では潰せない。** 条件の中には `Decidable` の
+実例が入っていて、`simp only [h]` も `rw [h]` もそこを書き換えられない
+（`Mt.length - 1` が `2` に化けない）。
+
+**`split` を使うこと。** 条件は defeq なので、各枝で `exact absurd ... h` に
+そのまま食わせられる。本体に入ってから `rw [hp, hl]` で `parent` / `length` を潰す。
+
+    have hs : srow Mt (Mt.length - 1) = 2 := srow_Mt      ← defeq で通る
+    have hp : parent Mt (srow Mt (Mt.length - 1)) (Mt.length - 1) = 0 := parent_Mt
+
+**最後の `simp` で `Mt` を展開しないこと。** 展開すると `le0_Mt_00` などの
+補題（`Mt` で書いてある）が当たらなくなる。`entry_Mt_*` を `@[simp]` で足して
+`Mt` を畳んだまま計算する。
+
+## 5. ★ シェルの注意（今日踏んだ）
+
+**`git commit -m "..."` の中に逆引用符を書かない。** bash がコマンド置換として
+実行しようとして固まる（`rw [if_neg ...]` を実行しようとした）。
+**`git commit -F` ＋ 引用符つきヒアドキュメント**を使うこと。
+
+## 6. 残り —— (LTOW)
+
+    def LiftTowerClosed : Prop :=
+      ∀ u e n Q, Q ∈ W u → (∀ p ∈ Q, entry Q 0 0 ≤ p.1) → liftTower Q e n ∈ W u
+
+⚠ `Wset.ShiftTowerClosed`（行 0 だけ）と違い**行 1 が段ごとに上がる**。
+`ulift_mem_W` は行 1 のシフトで段を `+2d` 上げるので、**k 枚目の写しは `W (2k)`**。
+`mem_Wself_iff` より根の `lev` しか効かないので `W 0` に留まりうるが、
+**`+2d` を回避する道具がまだ無い**。これは課題 L50 §3 で「graft の鎖に着く」と
+書いたのと同じ場所である。
+
+`Mt` は 3 列なので、**`Q = At`, `e = 2` の 1 事例に絞って構成的に攻める**のが
+現実的だと思う。

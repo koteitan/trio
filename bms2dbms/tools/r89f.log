@@ -1,0 +1,25 @@
+### R89f 形の検算 |M| ∈ {4,5,6} 各 3000 文脈のランダム標本  (118.6s)
+  L4/P1/ok                   186912
+  L4/P2/ok                   176673
+  L4/P3/ok                   284415
+  L4/j0=0                    176673
+  L4/j0>=1                   186912
+  L4/tower/srow=0             23832
+  L4/tower/srow=1             59874
+  L4/tower/srow=2             92967
+  L5/P1/ok                   200268
+  L5/P2/ok                   165498
+  L5/P3/ok                   282234
+  L5/j0=0                    165498
+  L5/j0>=1                   200268
+  L5/tower/srow=0             21564
+  L5/tower/srow=1             56226
+  L5/tower/srow=2             87708
+  L6/P1/ok                   205524
+  L6/P2/ok                   161316
+  L6/P3/ok                   281160
+  L6/j0=0                    161316
+  L6/j0>=1                   205524
+  L6/tower/srow=0             20592
+  L6/tower/srow=1             54858
+  L6/tower/srow=2             85866
