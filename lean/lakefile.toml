@@ -8,4 +8,4 @@ rev = "v4.30.0"
 
 [[lean_lib]]
 name = "TRIO"
-roots = ["Trio", "Term", "Decrease", "Reduction", "Seqlex", "Cnf", "Lift", "Gcopy", "Goper", "Cofinality", "ArgDom", "Column", "Invariant", "Zjump", "Gtrans", "Peel2", "Core", "Wset", "Wchar", "Lcone", "Cgraft", "Aexp", "Wslift", "Wtower2", "Croot", "Xbar", "Gamma", "Lind", "Infcex", "L47W", "L51Tower", "L53Subst", "L105Cap", "H12Export", "R2LT", "Final", "Cofidx", "Pair.Pss", "Pair.Term", "Pair.Decrease", "Pair.Reduction", "Pair.Cnf", "Pair.Seqlex", "Pair.Column", "Pair.Cofinality", "Pair.ArgDom", "Pair.Wset", "Pair.Final", "Pair.Bridge"]
+roots = ["Trio", "Term", "Decrease", "Reduction", "Seqlex", "Cnf", "Lift", "Gcopy", "Goper", "Cofinality", "ArgDom", "Column", "Invariant", "Zjump", "Gtrans", "Peel2", "Core", "Wset", "Wchar", "Lcone", "Cgraft", "Aexp", "Wslift", "Wtower2", "Croot", "Xbar", "Gamma", "Lind", "Infcex", "L47W", "L51Tower", "L53Subst", "L105Cap", "H12Export", "R2LT", "Final", "Cofidx", "Small", "Pair.Pss", "Pair.Term", "Pair.Decrease", "Pair.Reduction", "Pair.Cnf", "Pair.Seqlex", "Pair.Column", "Pair.Cofinality", "Pair.ArgDom", "Pair.Wset", "Pair.Final", "Pair.Bridge"]
