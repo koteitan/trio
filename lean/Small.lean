@@ -440,8 +440,52 @@ theorem Rep_one_mem (n m : ℕ) :
     Rep n ++ List.replicate m ((1, 0, 0) : ℕ × ℕ × ℕ) ∈ W 0 :=
   snoc_one_iter (Rep_mem n) (Rep_ne n) (Rep_deep n) m
 
+/-! ## master 補題: 末尾に 1 列継ぐ
+
+`L53.oper_flat` は `srow = 0` の末尾列について展開を閉じた形で与える。ブロックは
+「`take j1` してから `drop j0`」に他ならないので、`A ++ [b]` の形に整えると
+**「コピー族が済んでいれば末尾 1 列は無料」**という 1 本にまとまる。
+`snoc_one` / `snoc_two` はこの系である。 -/
+
+theorem map_range'_entry_drop {M : TrioSeq} {j0 j1 : ℕ} (h1 : j1 ≤ M.length) (h0 : j0 ≤ j1) :
+    (List.range' j0 (j1 - j0)).map
+        (fun j => ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ))
+      = (M.take j1).drop j0 := by
+  apply List.ext_getElem
+  · simp; omega
+  · intro i hA hB
+    have hik : i < j1 - j0 := by simpa using hA
+    simp only [List.getElem_map, List.getElem_range', List.getElem_drop, List.getElem_take,
+      Nat.one_mul]
+    exact triple_entry M (by omega)
+
+/-- **末尾 1 列は、そのコピー族が済んでいれば無料。** -/
+theorem snoc_flat {A : TrioSeq} {b : ℕ × ℕ × ℕ} {j0 : ℕ} (hne : A ≠ [])
+    (hb : b.1 ≠ 0) (hb1 : b.2.1 = 0) (hb2 : b.2.2 = 0)
+    (hpar : hasParent (A ++ [b]) 0 A.length)
+    (hj0 : parent (A ++ [b]) 0 A.length = j0)
+    (hcop : ∀ n, A.take j0 ++ (List.range n).flatMap (fun _ => A.drop j0) ∈ W 0) :
+    A ++ [b] ∈ W 0 := by
+  set M : TrioSeq := A ++ [b] with hM
+  have hplen : 0 < A.length := List.length_pos_iff.mpr hne
+  have hlen : M.length - 1 = A.length := by rw [hM]; simp
+  have hlast : entry M 0 A.length = b.1 ∧ entry M 1 A.length = b.2.1 ∧
+      entry M 2 A.length = b.2.2 := entry_append_last
+  have hsr : srow M A.length = 0 := by
+    simp [srow, hlast.2.1, hlast.2.2, hb1, hb2]
+  have hj0le : j0 ≤ A.length := by
+    rw [← hj0]; exact le_of_lt (nextR_index_lt (parent_nextR hpar))
+  refine mem_of_oper_mem (fun n _ => ?_)
+  have hop := L53.oper_flat (M := M) (j1 := A.length) (j0 := j0) hlen.symm (by omega)
+    (by rw [hlast.1]; simp [hb]) hsr hpar hj0.symm n
+  rw [hop, map_range'_entry_drop (by rw [hM]; simp) hj0le]
+  have htk : M.take A.length = A := by rw [hM, List.take_left]
+  rw [htk, show M.take j0 = A.take j0 by rw [hM, List.take_append_of_le_length hj0le]]
+  exact hcop n
+
 #print axioms M_mem
 #print axioms Mm_mem
+#print axioms snoc_flat
 #print axioms snoc_two
 #print axioms Rep_mem
 #print axioms Rep_one_mem
