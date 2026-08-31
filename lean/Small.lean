@@ -687,18 +687,40 @@ def Iterable (P : TrioSeq) : Prop :=
   ∀ q, q < P.length → ∀ n,
     P.take q ++ (List.range n).flatMap (fun _ => P.drop q) ∈ W 0
 
-#print axioms M_mem
-#print axioms Mm_mem
-#print axioms M3_mem
-#print axioms app_iter
-#print axioms entry_app_at
-#print axioms Deep_append
-#print axioms snoc_flat
-#print axioms snoc_two
-#print axioms Rep_mem
-#print axioms Rep_one_mem
-#print axioms M2_mem
-#print axioms snoc_one
+/-! ### なぜ深さ 1 で止まるか（再帰を追った結果）
+
+`snoc_flat` で末尾 1 列を剥がすと、親の位置 `j0` で
+
+    P ++ Q^n  ⟶  (P ++ Q^(n-1) ++ Q[:r]) ++ (Q[r : |Q|-1])^m
+
+となる。**深さ 1 の梯子**では `Q = App k = (1,0,0)(2,0,0)^k` で、親は必ず `Q` の
+先頭の `(1,0,0)`（`r = 0`）なので
+
+    P ++ (App k)^n  ⟶  P ++ (App (k-1))^m
+
+と **`k` が 1 つ減る**。底の `App 0 = [(1,0,0)]` では親が根に落ちて `take 0 = []` に
+なり、`W_flatMap_copies` で無料。だから `app_iter` は回る。
+
+**深さ 2 では底が変わる**。`AppAt2 k = (2,0,0)(3,0,0)^k` の底 `[(2,0,0)]` を継ぐと、
+親は根ではなく `(1,0,0)` になり
+
+    (X ++ (1,0,0) ++ S) ++ (2,0,0)^m
+      ⟶  X ++ [(1,0,0) ++ S ++ (2,0,0)^(m-1)]^i
+
+で、ブロックが **`S` を巻き込んで伸びる**。`S` は再帰のたびに育つので、
+ブロックの長さでも深さでも整礎な測度が取れない。
+
+⟹ **深さ 1 が特別だったのは「親が根に落ちて `take` が空になる」からで、
+深さ 2 以上ではそこが閉じない。** 止まる理由は順序数の減少しかなく、それは `W`
+そのもの。つまりここが `PrefixCopiesOpen` が開いている理由の、梯子から見た姿である。
+
+計測（両側とも健全、`tools/probe_pcdeep.py`）:
+
+    P in W 0, Deep P, Q の根が深さ 1, Q の全列が深さ 1 以上  ==>  P ++ Q^n in W 0
+    判定 12870 件 / 反例 0
+
+`Mm` / `Rep` / `app_iter` は全部この特殊ケースで、梯子の 4 段目以降は
+一般形を要求する。 -/
 
 end Small
 end TRIO
