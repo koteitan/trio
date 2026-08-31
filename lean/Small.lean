@@ -666,6 +666,27 @@ theorem M3_mem : M3 ∈ W 0 := by
     simp [App, List.append_assoc]]
   exact app_mem Q_mem Q_ne Q_deep n
 
+/-! ## 次の的: `Iterable`
+
+`snoc_flat` は「末尾 1 列は、**その親の位置での接尾辞コピー族**が済んでいれば無料」
+と言っている。だから次の性質が閉じれば、梯子は深さに関係なく全部回る。
+
+    Iterable P := ∀ q < |P|, ∀ n, P.take q ++ (P.drop q)^n ∈ W 0
+
+`Deep`（根が深さ 0・他は深さ 1 以上）は、これの**深さ 1 に特化した弱い版**である。
+深さ 1 でだけ `Deep` で足りたのは、継ぎ足す塊の親が必ず根で、`take 0 = []` に
+なってコピー族が `W_flatMap_copies` で無料になるから。深さ 2 以上では
+`take q ≠ []` になり、`PrefixCopiesOpen` の開いている場合に入る。
+
+計測（`tools/probe_iterable.py`、上界は `r49.Wup` で False が健全）:
+梯子が生成する形 `X ++ (1,0,0)^a1 (2,0,0)^a2 … (d,0,0)^ad`（d ≤ 4, a ≤ 3）で
+**判定 3219 件・反例 0**。 -/
+
+/-- どの接尾辞も繰り返せる。`snoc_flat` の仮定をまとめたもの。 -/
+def Iterable (P : TrioSeq) : Prop :=
+  ∀ q, q < P.length → ∀ n,
+    P.take q ++ (List.range n).flatMap (fun _ => P.drop q) ∈ W 0
+
 #print axioms M_mem
 #print axioms Mm_mem
 #print axioms M3_mem
