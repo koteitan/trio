@@ -10,17 +10,23 @@ BMS 3 行標準形  --conv3-->  DBMS 3 行標準形
                 <--d2b3---
 ```
 
+## 変換関数
+
+MrredsharkFan 氏の `bmsToDbms` を使う。出所は
+<https://github.com/MrredsharkFan/w-Y-global-lngi> の `conv.js`。
+このリポジトリには純 Python 版 `bms2dbms/tools/mrf3.py` があり、
+`≤7` 列の BMS 標準形 77282 個・DBMS 標準形 3514 個で元の JS と食い違い 0。
+
 ## ⚠ 2 行版との違い
 
-`bms2dbms.py`（2 行）は Lean で正しさが証明ずみだが、**この 3 行版は証明されていない。
-既知の誤りがある。**
+`bms2dbms.py`（2 行）は Lean で正しさが証明ずみだが、**この 3 行版は証明されていない**。
 
 | | 2 行 `bms2dbms.py` | 3 行 `tss2dbms.py` |
 |---|---|---|
-| 変換 | `conC`（`rows2.convC`） | `conv3`（`rows3.b2d3`） |
-| Lean の定理 | `ST_D_conC_final`、`conC_injective`（仮定なし） | 無し（`Conv3.b2d3` は `def` だけ） |
-| シート BM4-Analysis | 236/236 一致 | 1354/1358 一致（4 件外す） |
-| 逆変換 | `untranslate ∘ readCon`、往復が証明ずみ | `inv3.d2b3`、証明なし |
+| 変換 | `conC`（`rows2.convC`） | `mrf3.b2d` |
+| Lean の定理 | `ST_D_conC_final`、`conC_injective`（仮定なし） | 無し |
+| シート BM4-Analysis | 236/236 一致 | 1353/1358 一致（外す 5 行はシート側の誤記） |
+| 逆変換 | `untranslate ∘ readCon`、往復が証明ずみ | `mrf3.d2b`、証明なし |
 
 だから `--no-verify` を付けない限り、変換のたびに次の 2 つをその場で確かめる。
 どちらかが破れると **exit 2** で報告する（結果自体は出す）。
@@ -34,8 +40,8 @@ Python 3 だけ。
 
 ```
 bms2dbms/tools/tss2dbms.py    このコマンド
-bms2dbms/tools/rows3.py       参照実装（Lean の Conv3.b2d3 と同じ像）
-bms2dbms/tools/inv3.py        逆写像 d2b3
+bms2dbms/tools/mrf3.py        変換関数の純 Python 版（b2d / d2b）
+bms2dbms/tools/rows3.py       BMS の読み translate3 など
 bms2dbms/tools/core.py        展開規則と標準形判定（BMS / DBMS 共通）
 ```
 
@@ -49,7 +55,7 @@ tss2dbms.py [-r] [-c] [-t] [-q] [-f] [--no-verify] "行列" ...
 
 | オプション | 意味 |
 |---|---|
-| `-r`, `--reverse` | DBMS → BMS（`inv3.d2b3`） |
+| `-r`, `--reverse` | DBMS → BMS（`mrf3.d2b`） |
 | `-c`, `--check` | 変換せず、標準形かどうかだけ報告する |
 | `-t`, `--tree` | BMS 側の項（`translate3`）も表示する |
 | `-q`, `--quiet` | 結果の行列だけを出す |
@@ -103,15 +109,17 @@ $ echo $?
 2
 ```
 
-## 既知の誤り
+## 実測した性質
 
-* シート BM4-Analysis の 1358 件のうち **4 件で E 列と食い違う**（行 592, 891, 897, 898）。
-  いずれも像がシートより短い。
-* `ImgClosedT`（像が展開で閉じる）の破れが `≤5` 列で 2 個、`≤6` 列で 54 個。
-* 像が DBMS 標準形にならない入力がある（上の r2245 など）。
-* `OrderT3`（順序保存）は偽。`len ≤ 11` の 1882196 個で 24 件の破れ。
+| 性質 | 母数 | 結果 |
+|---|---|---|
+| 単射 | `≤7` 列 77282 個 | 衝突 0 |
+| 全射 | `≤8` 列の DBMS 標準形 27932 個 | 外れ 0 |
+| 順序保存 | `ST_TS` 展開閉包 583466 個 | 破れ 0 |
+| `ImgClosedT` | `≤7` 列 231843 対 | 破れ 0 |
+| BM4-Analysis シート | 1358 行 | 1353 一致（外す 5 行はシート側の誤記） |
 
-詳しくは `bms2dbms/results.md`、他実装との突き合わせは
+いずれも測定であって証明ではない。詳しくは `bms2dbms/results.md` と
 `bms2dbms/mrredsharkfan/README.md`。
 
 ## 実測

@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """tss2dbms — トリオ数列 (Trio Sequence System, BMS 3 行) と DBMS 3 行を変換する CLI。
 
-変換 `conv3` の参照実装 `rows3.b2d3` を呼ぶ。Lean 側の `Conv3.b2d3`
-（`bms2dbms/lean/Dbms3.lean`）と同じ像を出すことは確認ずみ
-（`≤6` 列 8387 個を全数、7 列は抜き取りで食い違い 0）。
+変換関数は MrredsharkFan 氏の `bmsToDbms` の Python 版 `mrf3.b2d` を呼ぶ
+（出所: <https://github.com/MrredsharkFan/w-Y-global-lngi> の `conv.js`）。
 
-    conv3        = rows3.b2d3            bms2dbms/lean/Dbms3.lean  Conv3.b2d3
-    translate3   = rows3.translate3      lean/Term.lean            translate
-    d2b3         = inv3.d2b3             （逆写像。Lean 側には無い）
+    conv3        = mrf3.b2d              conv.js  bmsToDbms
+    conv3 の逆   = mrf3.d2b              conv.js  dbmsToBms
+    translate3   = rows3.translate3      lean/Term.lean  translate
 
-**2 行の `bms2dbms.py` と違い、この変換の正しさは証明されていない。**
-既知の誤り: シート BM4-Analysis の 1358 件で 4 件外す（行 592, 891, 897, 898)、
-`ImgClosedT` の破れが `≤6` 列で 54 個、像が DBMS 標準形にならない入力がある。
+**2 行の `bms2dbms.py` と違い、この変換の正しさは Lean で証明されていない**
+（測った範囲では単射・全射・順序保存だが、証明ではない）。
 だから `--no-verify` を付けない限り、変換のたびに像が DBMS 標準形かを検算する。
 
 扱うのは `z ≤ 1`（行 2 が 0 か 1）の断片。`z ≥ 2` は `--force` で強行できるが
@@ -28,7 +26,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import rows3
-import inv3
+import mrf3
 from core import expand, isstd, parse, rows, show
 
 EXIT_OK = 0
@@ -89,13 +87,13 @@ def show_term3(t):
 
 
 def convert(M):
-    """BMS 3 行標準形 -> DBMS 3 行標準形（`conv3`）。"""
-    return tuple(rows3.b2d3(M))
+    """BMS 3 行標準形 -> DBMS 3 行標準形。"""
+    return tuple(mrf3.b2d(M))
 
 
 def invert(D):
-    """DBMS 3 行標準形 -> BMS 3 行標準形（`d2b3`）。証明は無い。"""
-    return tuple(tuple(c) for c in inv3.d2b3(D))
+    """DBMS 3 行標準形 -> BMS 3 行標準形。"""
+    return tuple(mrf3.d2b(D))
 
 
 def run_one(src, args, out):
