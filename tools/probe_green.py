@@ -10,13 +10,14 @@ Four lemmas put a matrix in `Wself` without touching the residue:
   R4 mem_W_of_flat_root   dropLast が済み ＋ srow(末尾)=0 ＋ parent(末尾)=0
   R5 prefixCopies_of_rsum srow(末尾)=0 ＋ バッドルートが深さ 0（rsum が自明）
   R6 W_add                A ++ B に切れて B の根が深さ 0（rsum が自明）
+  R7 mem_of_oper_mem      展開 M[n] が n<=K で全部済み（★ n の帰納法が別途要る）
 
 R3-R6 recurse on shorter matrices, so this is a closure. Prints the coverage by
 length and the smallest matrices the closure does not reach.
 """
 import os, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from trio import parent
+from trio import parent, expand
 
 BMS = os.path.expanduser('~/code/yaBMS/c/bms')
 
@@ -45,6 +46,9 @@ def forms(maxlen, maxval):
     return out
 
 def lev(c): return 2 * c[1] + c[2]
+
+K = 4        # R7 で見る n の個数
+CAP = 26     # R7 で追う展開の長さ上限
 
 _memo = {}
 
@@ -76,15 +80,26 @@ def _why(M):
     for i in range(1, len(M)):                   # A ++ B at depth 0
         if M[i][0] == 0 and lev(M[i]) <= lev(M[0]) and prov(M[:i]) and prov(M[i:]):
             return 'R6'
+    if len(M) >= 2:                              # every expansion is covered
+        ok = True
+        for n in range(1, K + 1):
+            E = tuple(expand(L, n))
+            if len(E) > CAP or why(E) is None: ok = False; break
+        if ok: return 'R7'
     return None
 
 def main(maxlen=6, maxval=4):
     fs = forms(maxlen, maxval)
     print('z<2 標準形 (<=%d 列, 値<=%d): %d' % (maxlen, maxval, len(fs)))
     tag = {}
-    for M in sorted(fs, key=len):
-        r = why(M)
-        if r: tag[M] = r
+    for _round in range(6):                      # R7 unlocks more; iterate
+        _memo.clear(); _memo.update(tag)         # 既に済んだものは再利用する
+        before = len(tag)
+        for M in sorted(fs, key=len):
+            r = why(M)
+            if r: tag[M] = r
+        print('  round %d: %d' % (_round + 1, len(tag)))
+        if len(tag) == before: break
     prov = set(tag)
     from collections import Counter
     print('\n長さ別の到達率:')
