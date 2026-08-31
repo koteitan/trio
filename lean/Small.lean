@@ -285,8 +285,166 @@ theorem snoc_one {P : TrioSeq} (hP : P ∈ W 0) (hne : P ≠ [])
   · rw [Nat.sub_zero, map_range'_entry (by rw [hlen]; omega), hM, List.take_left]
   · intro p _; rw [h0]; exact Nat.zero_le _
 
+/-! ## 継ぎ足しの不変量
+
+`snoc_one` の仮定「根が深さ 0・他は深さ 1 以上」は継ぎ足しで保たれる。名前を付けて
+おくと、梯子を何段でも回せる。 -/
+
+/-- 根が深さ 0 で、他の列は深さ 1 以上。 -/
+def Deep (P : TrioSeq) : Prop :=
+  entry P 0 0 = 0 ∧ ∀ j, 1 ≤ j → j < P.length → 1 ≤ entry P 0 j
+
+theorem entry_append_lt {P : TrioSeq} {c : ℕ × ℕ × ℕ} {i j : ℕ} (hj : j < P.length) :
+    entry (P ++ [c]) i j = entry P i j := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_append_left hj]
+
+theorem entry_append_last {P : TrioSeq} {c : ℕ × ℕ × ℕ} :
+    entry (P ++ [c]) 0 P.length = c.1 ∧ entry (P ++ [c]) 1 P.length = c.2.1 ∧
+      entry (P ++ [c]) 2 P.length = c.2.2 := by
+  have h : (P ++ [c]).getD P.length (0, 0, 0) = c := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega)]
+    simp
+  refine ⟨?_, ?_, ?_⟩ <;> simp [entry, h]
+
+theorem Deep_snoc {P : TrioSeq} {c : ℕ × ℕ × ℕ} (hP : Deep P) (hne : P ≠ [])
+    (hc : 1 ≤ c.1) : Deep (P ++ [c]) := by
+  have hplen : 0 < P.length := List.length_pos_iff.mpr hne
+  refine ⟨by rw [entry_append_lt hplen]; exact hP.1, ?_⟩
+  intro j h1 h2
+  simp only [List.length_append, List.length_cons, List.length_nil] at h2
+  rcases Nat.lt_or_ge j P.length with h | h
+  · rw [entry_append_lt h]; exact hP.2 j h1 h
+  · have : j = P.length := by omega
+    subst this; rw [entry_append_last.1]; exact hc
+
+theorem Deep_replicate {P : TrioSeq} (hne : P ≠ []) (hd : Deep P) :
+    ∀ m, Deep (P ++ List.replicate m ((1, 0, 0) : ℕ × ℕ × ℕ))
+  | 0 => by simpa using hd
+  | (m + 1) => by
+      have ih := Deep_replicate hne hd m
+      have hne' : P ++ List.replicate m ((1, 0, 0) : ℕ × ℕ × ℕ) ≠ [] := by
+        simp [List.append_eq_nil_iff, hne]
+      have h := Deep_snoc (c := ((1, 0, 0) : ℕ × ℕ × ℕ)) ih hne' (le_refl 1)
+      rwa [List.append_assoc, ← List.replicate_succ'] at h
+
+/-- **`(1,0,0)` は何段でも継げる。** -/
+theorem snoc_one_iter {P : TrioSeq} (hP : P ∈ W 0) (hne : P ≠ []) (hd : Deep P) :
+    ∀ m, P ++ List.replicate m ((1, 0, 0) : ℕ × ℕ × ℕ) ∈ W 0
+  | 0 => by simpa using hP
+  | (m + 1) => by
+      have ih := snoc_one_iter hP hne hd m
+      have hne' : P ++ List.replicate m ((1, 0, 0) : ℕ × ℕ × ℕ) ≠ [] := by
+        simp [List.append_eq_nil_iff, hne]
+      have hd' := Deep_replicate hne hd m
+      have h := snoc_one ih hne' hd'.1 hd'.2
+      rwa [List.append_assoc, ← List.replicate_succ'] at h
+
+/-! ## `(1,0,0)(2,0,0)` を継ぐ
+
+`P ++ [(1,0,0),(2,0,0)]` の展開はどの `m` でも `P ++ (1,0,0)^m`。したがって
+`snoc_one_iter` と規則 A で閉じる。`Deep` は保たれるので、この組は**何段でも**継げる。 -/
+
+theorem entry_app2_lt {P : TrioSeq} {a b : ℕ × ℕ × ℕ} {i j : ℕ} (hj : j < P.length) :
+    entry (P ++ [a, b]) i j = entry P i j := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_append_left hj]
+
+theorem getD_app2_a {P : TrioSeq} {a b : ℕ × ℕ × ℕ} :
+    (P ++ [a, b]).getD P.length (0, 0, 0) = a := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega)]; simp
+
+theorem getD_app2_b {P : TrioSeq} {a b : ℕ × ℕ × ℕ} :
+    (P ++ [a, b]).getD (P.length + 1) (0, 0, 0) = b := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega)]; simp
+
+/-- **`(1,0,0)(2,0,0)` を継ぐのも無料。** -/
+theorem snoc_two {P : TrioSeq} (hP : P ∈ W 0) (hne : P ≠ []) (hd : Deep P) :
+    P ++ [((1, 0, 0) : ℕ × ℕ × ℕ), (2, 0, 0)] ∈ W 0 := by
+  set M : TrioSeq := P ++ [((1, 0, 0) : ℕ × ℕ × ℕ), (2, 0, 0)] with hM
+  have hplen : 0 < P.length := List.length_pos_iff.mpr hne
+  have hlen : M.length - 1 = P.length + 1 := by rw [hM]; simp
+  have hb : entry M 0 (P.length + 1) = 2 ∧ entry M 1 (P.length + 1) = 0 ∧
+      entry M 2 (P.length + 1) = 0 := by
+    refine ⟨?_, ?_, ?_⟩ <;> simp [entry, hM, getD_app2_b]
+  have ha : entry M 0 P.length = 1 := by simp [entry, hM, getD_app2_a]
+  have hsr : srow M (P.length + 1) = 0 := by simp [srow, hb.2.1, hb.2.2]
+  have hpar : hasParent M 0 (P.length + 1) := by
+    rw [hasParent_zero_iff (by rw [hM]; simp)]
+    exact ⟨P.length, by omega, by rw [ha, hb.1]; omega⟩
+  have hj0 : parent M 0 (P.length + 1) = P.length := by
+    have h := parent_nextR hpar
+    rw [nextR, if_pos rfl] at h
+    obtain ⟨-, -, hlt, -, hmin⟩ := h
+    by_contra hne0
+    have hlt' : parent M 0 (P.length + 1) < P.length := by omega
+    have := hmin P.length ⟨hlt', by omega⟩
+    rw [ha, hb.1] at this
+    omega
+  refine mem_of_oper_mem (fun m _ => ?_)
+  have hop : M⟦m⟧ = P ++ List.replicate m ((1, 0, 0) : ℕ × ℕ × ℕ) := by
+    simp only [oper, hlen, hsr, hj0]
+    rw [if_neg (by omega), if_neg (by rw [hb.1]; simp),
+      if_neg (by rw [hlen, hsr]; exact not_not_intro hpar)]
+    have htk : M.take P.length = P := by rw [hM, List.take_left]
+    have hcol : ((entry M 0 P.length, entry M 1 P.length, entry M 2 P.length) : ℕ × ℕ × ℕ)
+        = (1, 0, 0) := by simp [entry, hM, getD_app2_a]
+    rw [htk]
+    congr 1
+    simp only [show P.length + 1 - P.length = 1 from by omega,
+      show (List.range' P.length 1) = [P.length] from rfl,
+      List.map_cons, List.map_nil, lt_self_iff_false, if_false, Nat.not_lt_zero,
+      Nat.mul_zero, ite_self, Nat.add_zero, hcol]
+    exact flatMap_singleton_range _ m
+  rw [hop]
+  exact snoc_one_iter hP hne hd m
+
+theorem Deep_snoc_two {P : TrioSeq} (hne : P ≠ []) (hd : Deep P) :
+    Deep (P ++ [((1, 0, 0) : ℕ × ℕ × ℕ), (2, 0, 0)]) := by
+  have h1 := Deep_snoc (c := ((1, 0, 0) : ℕ × ℕ × ℕ)) hd hne (le_refl 1)
+  have h2 := Deep_snoc (c := ((2, 0, 0) : ℕ × ℕ × ℕ)) h1
+    (by simp [List.append_eq_nil_iff, hne]) (by omega)
+  rwa [List.append_assoc] at h2
+
+/-! ## 梯子: `X ++ [(1,0,0)(2,0,0)]^n`
+
+`snoc_two` と `Deep_snoc_two` を交互に回すだけで、この族は**全ての `n`** で `W 0`。
+これは以前の計測で「緑の補題では届かない」と出ていた 3 つの行列のうちの 1 族である
+（届かなかったのは判定器の打ち切りのせいで、数学的な壁ではなかった）。 -/
+
+/-- `X ++ [(1,0,0)(2,0,0)]^n`。 -/
+def Rep : ℕ → TrioSeq
+  | 0 => Q
+  | (n + 1) => Rep n ++ [((1, 0, 0) : ℕ × ℕ × ℕ), (2, 0, 0)]
+
+theorem Q_deep : Deep Q := by
+  refine ⟨by simp [Q, entry], ?_⟩
+  intro j h1 h2
+  simp only [Q, List.length_cons, List.length_nil] at h2
+  have : j = 1 := by omega
+  subst this; simp [Q, entry]
+
+theorem Rep_ne : ∀ n, Rep n ≠ []
+  | 0 => by simp [Rep, Q]
+  | (n + 1) => by simp [Rep]
+
+theorem Rep_deep : ∀ n, Deep (Rep n)
+  | 0 => Q_deep
+  | (n + 1) => Deep_snoc_two (Rep_ne n) (Rep_deep n)
+
+/-- **`X ++ [(1,0,0)(2,0,0)]^n ∈ W 0`（全ての `n`）。** -/
+theorem Rep_mem : ∀ n, Rep n ∈ W 0
+  | 0 => Q_mem
+  | (n + 1) => snoc_two (Rep_mem n) (Rep_ne n) (Rep_deep n)
+
+/-- ついでに、その上に `(1,0,0)` を何段でも足せる。 -/
+theorem Rep_one_mem (n m : ℕ) :
+    Rep n ++ List.replicate m ((1, 0, 0) : ℕ × ℕ × ℕ) ∈ W 0 :=
+  snoc_one_iter (Rep_mem n) (Rep_ne n) (Rep_deep n) m
+
 #print axioms M_mem
 #print axioms Mm_mem
+#print axioms snoc_two
+#print axioms Rep_mem
+#print axioms Rep_one_mem
 #print axioms M2_mem
 #print axioms snoc_one
 
