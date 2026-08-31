@@ -150,6 +150,10 @@ def _unitargs3(top, U):
     return out
 
 
+CONTR = [True]          # 縮約の節を切る旗（測定用）
+FIRE = []               # 発火の記録（測定用）
+
+
 def readC3(cols, first=True, plev=(0, 0)):
     """`rows2.readC` の 3 行版。影を捨てる節 2 つ ＋ **縮約の節**。
 
@@ -181,8 +185,12 @@ def readC3(cols, first=True, plev=(0, 0)):
     plab = (p[1], p[2])
     arg = readC3(arg_l, True, tlab)
     U, r2 = _units3(top, after)
-    if shadow and r2 and r2[0][0] == top[0] and (r2[0][1], r2[0][2]) < tlab:
+    # 引き金の柱は「親の段」に戻る柱でなければならない。2 行では段が 1 本なので
+    # `< top[1]` と `== plev` が一致するが、3 行では一致しない（前者は出すぎる）。
+    if (CONTR[0] and shadow and r2 and r2[0][0] == top[0]
+            and (r2[0][1], r2[0][2]) == plab):
         m = _deep3(top[0], r2)
+        FIRE.append((tuple(cols), tuple(top), tuple(p), nsh, tuple(U), tuple(r2), m))
         inner = readC3([top] + list(arg_l) + list(U) + list(r2[:m]), True, plab)
         succ = ('P', plab, inner, readC3(r2[m:], False, plev))
         for ua in reversed(_unitargs3(top, U)):
