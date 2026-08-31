@@ -116,3 +116,95 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(1 if main() else 0)
+
+
+# ---------------------------------------------------------------- readC の 3 行版
+def _units3(top, B):
+    """`B` の先頭から「`top` と同じ柱 ＋ その引数ブロック」を取れるだけ取る。
+    `rows2.units_split` の 3 行版（比較を 3 成分に広げただけ）。"""
+    k = 0
+    while k < len(B) and B[k] == top:
+        s = k + 1
+        while s < len(B) and top[0] < B[s][0]:
+            s += 1
+        k = s
+    return B[:k], B[k:]
+
+
+def _deep3(a, l):
+    n = 0
+    while n < len(l) and a <= l[n][0]:
+        n += 1
+    return n
+
+
+def _unitargs3(top, U):
+    """兄弟ユニットの引数ブロックを並べる。"""
+    out, k = [], 0
+    while k < len(U):
+        s = k + 1
+        while s < len(U) and top[0] < U[s][0]:
+            s += 1
+        out.append(list(U[k + 1:s]))
+        k = s
+    return out
+
+
+def readC3(cols, first=True, plev=(0, 0)):
+    """`rows2.readC` の 3 行版。影を捨てる節 2 つ ＋ **縮約の節**。
+
+    `readD` 相当（`L14Read.survivors`）に足りないのは縮約の節である。DBMS の 1 列が
+    BMS の複数列に化ける場合があり、捨てるだけの読みでは長さが足りない。
+    """
+    if not cols:
+        return ('Z',)
+    # 3 行では影が 2 本続くことがある（対角がそう）ので、続く限り捨てる。
+    p = cols[0]
+    cur = list(cols)
+    nsh = 0
+    while True:
+        q, r = cur[0], cur[1:]
+        h = r[0] if r else None
+        s1 = first and (q[1], q[2]) == plev and h == (q[0] + 1, q[1] + 1, q[2])
+        s2 = first and q[2] == plev[1] and h == (q[0] + 1, q[1] + 1, q[2] + 1)
+        if not (s1 or s2):
+            break
+        cur = r
+        nsh += 1
+    shadow = nsh > 0
+    top, tail = cur[0], list(cur[1:])
+    i = 0
+    while i < len(tail) and top[0] < tail[i][0]:
+        i += 1
+    arg_l, after = tail[:i], tail[i:]
+    tlab = (top[1], top[2])
+    plab = (p[1], p[2])
+    arg = readC3(arg_l, True, tlab)
+    U, r2 = _units3(top, after)
+    if shadow and r2 and r2[0][0] == top[0] and (r2[0][1], r2[0][2]) < tlab:
+        m = _deep3(top[0], r2)
+        inner = readC3([top] + list(arg_l) + list(U) + list(r2[:m]), True, plab)
+        succ = ('P', plab, inner, readC3(r2[m:], False, plev))
+        for ua in reversed(_unitargs3(top, U)):
+            succ = ('P', tlab, readC3(ua, True, tlab), succ)
+        return ('P', tlab, arg, succ)
+    return ('P', tlab, arg, readC3(after, False, tlab))
+
+
+def untranslate3(t, d=0):
+    """`translate3` の逆（項 -> BMS の 3 行行列）。"""
+    if t[0] == 'Z':
+        return []
+    return [(d, t[1][0], t[1][1])] + untranslate3(t[2], d + 1) + untranslate3(t[3], d)
+
+
+def rank12(B):
+    """行 0（深さ）はそのまま、行 1・行 2 だけその行の木での順位に直す。
+    `untranslate3` が付ける深さは入れ子の深さ＝順位なので、直す必要が無い。"""
+    B = [tuple(c) for c in B]
+    return [(B[j][0], rankB(B, 1, j), rankB(B, 2, j)) for j in range(len(B))]
+
+
+def readBMS(N):
+    """DBMS 標準形 -> BMS 標準形。構造再帰（縮約つき）で形を作り、段を順位に直す。"""
+    return rank12(untranslate3(readC3([tuple(c) for c in N])))
