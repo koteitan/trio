@@ -483,8 +483,195 @@ theorem snoc_flat {A : TrioSeq} {b : ℕ × ℕ × ℕ} {j0 : ℕ} (hne : A ≠ 
   rw [htk, show M.take j0 = A.take j0 by rw [hM, List.take_append_of_le_length hj0le]]
   exact hcop n
 
+/-! ## 一般の継ぎ足しでの `Deep`
+
+`Deep` が見るのは行 0 だけなので、継ぎ足す列が全部深さ 1 以上なら保たれる。 -/
+
+theorem entry0_eq {M : TrioSeq} {j : ℕ} : entry M 0 j = (M.getD j (0, 0, 0)).1 := rfl
+
+theorem Deep_append {P B : TrioSeq} (hd : Deep P) (hne : P ≠ [])
+    (hB : ∀ c ∈ B, 1 ≤ c.1) : Deep (P ++ B) := by
+  have hplen : 0 < P.length := List.length_pos_iff.mpr hne
+  have hlt : ∀ j, j < P.length → entry (P ++ B) 0 j = entry P 0 j := by
+    intro j hj
+    simp [entry, List.getD_eq_getElem?_getD, List.getElem?_append_left hj]
+  refine ⟨by rw [hlt 0 hplen]; exact hd.1, ?_⟩
+  intro j h1 h2
+  rcases Nat.lt_or_ge j P.length with h | h
+  · rw [hlt j h]; exact hd.2 j h1 h
+  · have hj : j - P.length < B.length := by simp at h2; omega
+    have hg : (P ++ B).getD j (0, 0, 0) = B[j - P.length] := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right h]
+      simp [List.getElem?_eq_getElem hj]
+    rw [entry0_eq, hg]
+    exact hB _ (List.getElem_mem hj)
+
+/-! ## 継ぎ足す塊 `App k = (1,0,0)(2,0,0)^k`
+
+`P ++ App (k+1)` の末尾列 `(2,0,0)` の親は、`k` によらず必ず `(1,0,0)`（位置 `|P|`）。
+間の列は全部深さ 2 なので最小性を邪魔しない。 -/
+
+/-- `(1,0,0)(2,0,0)^k`。 -/
+def App (k : ℕ) : TrioSeq := ((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ)
+
+theorem App_len (k : ℕ) : (App k).length = k + 1 := by simp [App]
+
+theorem App_succ (k : ℕ) : App (k + 1) = App k ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [App, List.replicate_succ']
+
+theorem App_col (k : ℕ) : ∀ c ∈ App k, 1 ≤ c.1 := by
+  intro c hc
+  rcases List.mem_cons.mp hc with h | h
+  · subst h; exact le_refl 1
+  · rw [List.eq_of_mem_replicate h]; omega
+
+theorem App_getD (k i : ℕ) (hi : i < k + 1) :
+    (App k).getD i (0, 0, 0) = if i = 0 then ((1, 0, 0) : ℕ × ℕ × ℕ) else (2, 0, 0) := by
+  cases i with
+  | zero => simp [App]
+  | succ i =>
+      have : i < k := by omega
+      simp [App, List.getD_eq_getElem?_getD, List.getElem?_replicate, this]
+
+theorem entry_app_at {P : TrioSeq} {k i : ℕ} (hi : i < k + 1) :
+    entry (P ++ App k) 0 (P.length + i) = if i = 0 then 1 else 2 := by
+  have hg : (P ++ App k).getD (P.length + i) (0, 0, 0) = (App k).getD i (0, 0, 0) := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega),
+      List.getD_eq_getElem?_getD]
+    simp
+  rw [entry0_eq, hg, App_getD k i hi]
+  cases i <;> simp
+
+theorem Reps_col (k n : ℕ) :
+    ∀ c ∈ (List.range n).flatMap (fun _ => App k), 1 ≤ c.1 := by
+  intro c hc
+  rw [List.mem_flatMap] at hc
+  obtain ⟨-, -, h⟩ := hc
+  exact App_col k c h
+
+theorem App_hasParent {P : TrioSeq} (hne : P ≠ []) (k : ℕ) :
+    hasParent ((P ++ App k) ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) 0 (P ++ App k).length := by
+  have hlen : (P ++ App k).length = P.length + (k + 1) := by simp [App_len]
+  rw [hasParent_zero_iff (by simp)]
+  refine ⟨P.length, by omega, ?_⟩
+  rw [entry_append_lt (by omega), entry_append_last.1,
+    show P.length = P.length + 0 from by omega, entry_app_at (by omega)]
+  simp
+
+theorem App_parent {P : TrioSeq} (hne : P ≠ []) (k : ℕ) :
+    parent ((P ++ App k) ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) 0 (P ++ App k).length = P.length := by
+  have hlen : (P ++ App k).length = P.length + (k + 1) := by simp [App_len]
+  have hone : entry ((P ++ App k) ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) 0 P.length = 1 := by
+    rw [entry_append_lt (by omega), show P.length = P.length + 0 from by omega,
+      entry_app_at (by omega)]; simp
+  have htwo : ∀ i, 1 ≤ i → i < k + 1 →
+      entry ((P ++ App k) ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) 0 (P.length + i) = 2 := by
+    intro i h1 h2
+    rw [entry_append_lt (by omega), entry_app_at h2]
+    simp; omega
+  have h := parent_nextR (App_hasParent hne k)
+  rw [nextR, if_pos rfl] at h
+  set p := parent ((P ++ App k) ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) 0 (P ++ App k).length with hp
+  obtain ⟨-, -, hlt, hval, hmin⟩ := h
+  rw [entry_append_last.1] at hval
+  by_contra hne0
+  rcases Nat.lt_or_ge p P.length with h1 | h1
+  · have := hmin P.length ⟨h1, by omega⟩
+    rw [entry_append_last.1, hone] at this
+    omega
+  · have hi : p = P.length + (p - P.length) := by omega
+    rw [hi, htwo (p - P.length) (by omega) (by omega)] at hval
+    omega
+
+/-- **`App k` は何段でも継げる**（`k` の帰納法、内側は `n` の帰納法）。 -/
+theorem app_iter : ∀ k, ∀ {P : TrioSeq}, P ∈ W 0 → P ≠ [] → Deep P →
+    ∀ n, P ++ (List.range n).flatMap (fun _ => App k) ∈ W 0 := by
+  intro k
+  induction k with
+  | zero =>
+      intro P hP hne hd n
+      rw [show ((List.range n).flatMap fun _ => App 0)
+          = List.replicate n ((1, 0, 0) : ℕ × ℕ × ℕ) from by
+        simpa [App] using flatMap_singleton_range ((1, 0, 0) : ℕ × ℕ × ℕ) n]
+      exact snoc_one_iter hP hne hd n
+  | succ k ih =>
+      have single : ∀ {P : TrioSeq}, P ∈ W 0 → P ≠ [] → Deep P → P ++ App (k + 1) ∈ W 0 := by
+        intro P hP hne hd
+        rw [App_succ, ← List.append_assoc]
+        refine snoc_flat (A := P ++ App k) (b := ((2, 0, 0) : ℕ × ℕ × ℕ)) (j0 := P.length)
+          (by simp [List.append_eq_nil_iff, hne]) (by omega) rfl rfl
+          (App_hasParent hne k) (App_parent hne k) ?_
+        intro n
+        rw [List.take_left, List.drop_left]
+        exact ih hP hne hd n
+      intro P hP hne hd n
+      induction n with
+      | zero => simpa using hP
+      | succ n ihn =>
+          rw [show ((List.range (n + 1)).flatMap fun _ => App (k + 1))
+              = ((List.range n).flatMap fun _ => App (k + 1)) ++ App (k + 1) from by
+            rw [List.range_succ, List.flatMap_append]; simp]
+          rw [← List.append_assoc]
+          exact single ihn (by simp [List.append_eq_nil_iff, hne])
+            (Deep_append hd hne (Reps_col (k + 1) n))
+
+/-- 1 回分（`n = 1`）。 -/
+theorem app_mem {P : TrioSeq} (hP : P ∈ W 0) (hne : P ≠ []) (hd : Deep P) (k : ℕ) :
+    P ++ App k ∈ W 0 := by simpa using app_iter k hP hne hd 1
+
+theorem Q_ne : Q ≠ [] := by simp [Q]
+
+/-! ## 梯子の 3 段目: `X(1,0,0)(2,0,0)(3,0,0)`
+
+展開は `X ++ App n`。`app_mem` が全ての `n` で与えるので規則 A で閉じる。 -/
+
+/-- `X ++ (1,0,0)(2,0,0)(3,0,0)` = ψ(Ω_ω)·ω^ω^ω の標準形。 -/
+def M3 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 0, 0), (2, 0, 0), (3, 0, 0)]
+
+theorem QApp1 : Q ++ App 1 = [(0, 0, 0), (1, 1, 1), (1, 0, 0), (2, 0, 0)] := by
+  simp [Q, App]
+
+theorem M3_eq : M3 = (Q ++ App 1) ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] := by
+  rw [QApp1]; rfl
+
+theorem M3_hasParent : hasParent ((Q ++ App 1) ++ [((3, 0, 0) : ℕ × ℕ × ℕ)]) 0 4 := by
+  rw [QApp1]
+  rw [hasParent_zero_iff (by simp)]
+  exact ⟨3, by omega, by simp [entry]⟩
+
+theorem M3_parent : parent ((Q ++ App 1) ++ [((3, 0, 0) : ℕ × ℕ × ℕ)]) 0 4 = 3 := by
+  have h := parent_nextR M3_hasParent
+  rw [nextR, if_pos rfl] at h
+  set p := parent ((Q ++ App 1) ++ [((3, 0, 0) : ℕ × ℕ × ℕ)]) 0 4 with hp
+  obtain ⟨-, -, hlt, -, hmin⟩ := h
+  have hcase : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3 := by omega
+  rcases hcase with h | h | h | h
+  · exact absurd (hmin 3 ⟨by omega, by omega⟩) (by rw [QApp1]; simp [entry])
+  · exact absurd (hmin 3 ⟨by omega, by omega⟩) (by rw [QApp1]; simp [entry])
+  · exact absurd (hmin 3 ⟨by omega, by omega⟩) (by rw [QApp1]; simp [entry])
+  · exact h
+
+/-- **`X(1,0,0)(2,0,0)(3,0,0) ∈ W 0`** — 梯子の 3 段目。 -/
+theorem M3_mem : M3 ∈ W 0 := by
+  rw [M3_eq]
+  refine snoc_flat (A := Q ++ App 1) (b := ((3, 0, 0) : ℕ × ℕ × ℕ)) (j0 := 3)
+    (by simp [Q, App]) (by omega) rfl rfl
+    (by simpa [QApp1] using M3_hasParent) (by simpa [QApp1] using M3_parent) ?_
+  intro n
+  rw [show (Q ++ App 1).take 3 = Q ++ App 0 from by simp [Q, App],
+    show (Q ++ App 1).drop 3 = [((2, 0, 0) : ℕ × ℕ × ℕ)] from by simp [Q, App]]
+  rw [show ((List.range n).flatMap fun _ => [((2, 0, 0) : ℕ × ℕ × ℕ)])
+      = List.replicate n ((2, 0, 0) : ℕ × ℕ × ℕ) from flatMap_singleton_range _ n]
+  rw [show Q ++ App 0 ++ List.replicate n ((2, 0, 0) : ℕ × ℕ × ℕ) = Q ++ App n from by
+    simp [App, List.append_assoc]]
+  exact app_mem Q_mem Q_ne Q_deep n
+
 #print axioms M_mem
 #print axioms Mm_mem
+#print axioms M3_mem
+#print axioms app_iter
+#print axioms entry_app_at
+#print axioms Deep_append
 #print axioms snoc_flat
 #print axioms snoc_two
 #print axioms Rep_mem
