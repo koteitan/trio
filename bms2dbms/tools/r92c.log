@@ -1,4 +1,0 @@
-### R92c 残核 cons(j0>=1) 972 件 —— 旧 `inW` と新 `inW2` の比較
-  旧 inW  depth=  9 maxlen= 26 : ok    270  unknown    702  **VIOL      0**   (2.0s)
-  旧 inW  depth= 11 maxlen= 30 : ok    270  unknown    702  **VIOL      0**   (13.5s)
-  旧 inW  depth= 13 maxlen= 40 : ok    270  unknown    702  **VIOL      0**   (101.1s)
