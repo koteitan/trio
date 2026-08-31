@@ -243,9 +243,52 @@ theorem oper_M2 (n : ℕ) : M2⟦n⟧ = Mm n := by
 theorem M2_mem : M2 ∈ W 0 :=
   mem_of_oper_mem (fun n _ => (oper_M2 n) ▸ Mm_mem n)
 
+/-! ## 一般化した 1 段: 根の直下に `(1,0,0)` を継ぐ
+
+`Mm` の各段でやったことは、行列に固有ではない。**根が `(0,0,0)` で、他の列が全部
+深さ 1 以上**なら、末尾に `(1,0,0)` を継いでよい（親が必ず根なので
+`mem_W_of_flat_root`）。これで梯子の (1,0,0) 方向は何段でも伸びる。 -/
+
+/-- **根の直下に `(1,0,0)` を継ぐのは無料**（`P` の根が深さ 0、他が深さ 1 以上のとき）。 -/
+theorem snoc_one {P : TrioSeq} (hP : P ∈ W 0) (hne : P ≠ [])
+    (h0 : entry P 0 0 = 0)
+    (hdeep : ∀ j, 1 ≤ j → j < P.length → 1 ≤ entry P 0 j) :
+    P ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  set M : TrioSeq := P ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] with hM
+  have hplen : 0 < P.length := List.length_pos_iff.mpr hne
+  have hlen : M.length = P.length + 1 := by rw [hM]; simp
+  have hlast : entry M 0 P.length = 1 ∧ entry M 1 P.length = 0 ∧
+      entry M 2 P.length = 0 := by
+    have h : M.getD P.length (0, 0, 0) = ((1, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [hM, List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega)]
+      simp
+    refine ⟨?_, ?_, ?_⟩ <;> simp only [entry, h] <;> rfl
+  have hpre : ∀ j, j < P.length → entry M 0 j = entry P 0 j := by
+    intro j hj
+    simp [hM, entry, List.getD_eq_getElem?_getD, List.getElem?_append_left hj]
+  have hsr : srow M P.length = 0 := by
+    obtain ⟨-, h1, h2⟩ := hlast; simp [srow, h1, h2]
+  have hpar : hasParent M 0 P.length := by
+    rw [hasParent_zero_iff (by omega)]
+    exact ⟨0, hplen, by rw [hpre 0 hplen, h0, hlast.1]; omega⟩
+  have hj0 : parent M 0 P.length = 0 := by
+    have h := parent_nextR hpar
+    rw [nextR, if_pos rfl] at h
+    obtain ⟨-, -, hlt, hval, -⟩ := h
+    by_contra hne0
+    have h1 : 1 ≤ parent M 0 P.length := by omega
+    rw [hpre _ (by omega), hlast.1] at hval
+    have := hdeep (parent M 0 P.length) h1 (by omega)
+    omega
+  refine L53.mem_W_of_flat_root (Q := P) (j1 := P.length)
+    (by rw [hlen]; omega) (by omega) (by rw [hlast.1]; simp) hsr hpar hj0 ?_ hP ?_
+  · rw [Nat.sub_zero, map_range'_entry (by rw [hlen]; omega), hM, List.take_left]
+  · intro p _; rw [h0]; exact Nat.zero_le _
+
 #print axioms M_mem
 #print axioms Mm_mem
 #print axioms M2_mem
+#print axioms snoc_one
 
 end Small
 end TRIO
