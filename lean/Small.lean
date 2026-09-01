@@ -4784,5 +4784,57 @@ theorem Mtw_N293_mem (n : ℕ) : Mtw Q N293 n ∈ W 0 :=
 #print axioms Seg_N293
 #print axioms Mtw_N293_mem
 
+/-! ### 行292 と 行293 の間を埋める
+
+`X = (0,0,0)(1,1,1)(1,1,0)(2,2,0)` に 1 列継いだ 8 個。順序は
+
+```
+X(1,0,0) < X(1,1,0) < X(2,0,0) < X(2,1,0) < X(2,2,0) < X(3,0,0) < X(3,1,0) < X(3,2,0)
+                                                                              = 行293
+```
+
+切り方は 3 族:
+
+```
+bad root 0（X 全体を写す）   (1,0,0) (1,1,0) (2,1,0) (3,1,0)   delta 0,1,2,3
+bad root 2（尻尾を写す）     (2,0,0) (2,2,0) (3,2,0)           delta 0,1,2
+bad root 3（(2,2,0) を写す） (3,0,0)                           delta 0
+```
+-/
+
+theorem R292_eq_QN : R292 = Q ++ N293 := by simp [R292, Q, N293]
+
+theorem Aok_R292 : Aok R292 := by
+  rw [R292_eq_QN]
+  exact Aok_append_Mid (by omega) Aok_Q MidD_N293 (by rw [← R292_eq_QN]; exact R292_mem)
+
+/-- `X` はレベル 0 の土台。 -/
+theorem Lv0_R292 : Lv 1 0 R292 := Aok_R292
+
+/-- `X` はレベル 1 の土台（最後のセグメントは `(1,1,0)(2,2,0)`、再継ぎは `Lv_snoc2`）。 -/
+theorem Lv1_R292 : Lv 1 1 R292 := by
+  have hre : ∀ (t : ℕ) (A' : TrioSeq), Lv 0 (0 + t) A' →
+      A' ++ shiftr01 t 0 N293 ∈ W 0 := by
+    intro t A' hA'
+    obtain ⟨hAok, ht⟩ := hA'
+    have ht0 : t = 0 := by omega
+    subst ht0
+    have h := Lv_snoc2 1 0 A' hAok
+    simpa [N293] using h
+  have h := Lv_shift (r := 0) (a := 0) MidD_N293 hre 0 (A' := Q)
+    (by exact ⟨(Aok_Q : Aok Q), rfl⟩)
+  simpa [R292_eq_QN] using h
+
+/-- ★ `X(1,1,0)`（族 A・delta 1）。 -/
+theorem R292_snoc110 : R292 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  Lv_snoc 1 0 R292 Lv0_R292
+
+/-- ★ `X(2,1,0)`（族 A・delta 2）。 -/
+theorem R292_snoc210 : R292 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  Lv_snoc 1 1 R292 Lv1_R292
+
+#print axioms R292_snoc110
+#print axioms R292_snoc210
+
 end Small
 end TRIO
