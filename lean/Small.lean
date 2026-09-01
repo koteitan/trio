@@ -2519,6 +2519,158 @@ theorem R287_mem : R287 ∈ W 0 := by
   rw [oper_R287 n]
   exact blk_zm (Diag_mem n) (Diag_zroot n) (Diag_mono n) (Diag_root n) Aok_Q (le_refl 1)
 
+/-! ## シート行288 `X(1,1,0)(2,1,0) = psi(W_w + W^2)`
+
+    288⟦n⟧ = concat_{k<n} shiftr01 (2k) 0 X(1,1,0)  =: Tw2 n
+
+（末尾 `(2,1,0)` は `srow = 1`、行 1 の親は根、`d0 = 2`、ブロックは `X(1,1,0)` 全体。）
+そして
+
+    Tw2 (n+1) = X(1,1,0) ++ shiftr01 2 0 (Tw2 n) = Q ++ Blk 1 (Tw2 n)
+
+なので `blk_zm` を `n` の帰納法で回すだけ。**d=2 の bump が塔の漸化式そのもの。** -/
+
+theorem shiftr01_append0 (d : ℕ) (X Y : TrioSeq) :
+    shiftr01 d 0 (X ++ Y) = shiftr01 d 0 X ++ shiftr01 d 0 Y := by
+  simp [shiftr01]
+
+theorem shiftr01_add0 (a b : ℕ) (X : TrioSeq) :
+    shiftr01 a 0 (shiftr01 b 0 X) = shiftr01 (b + a) 0 X := by
+  simp only [shiftr01, List.map_map, Function.comp_def]
+  apply List.map_congr_left
+  intro p _
+  simp [Nat.add_assoc]
+
+theorem shift_flatMap0 (d : ℕ) (f : ℕ → TrioSeq) : ∀ l : List ℕ,
+    shiftr01 d 0 (l.flatMap f) = l.flatMap fun x => shiftr01 d 0 (f x)
+  | [] => by simp [shiftr01]
+  | (a :: t) => by
+      rw [List.flatMap_cons, shiftr01_append0, shift_flatMap0 d f t, List.flatMap_cons]
+
+theorem X110_eq : X110 = Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] := by simp [X110, Q]
+
+/-- `288` の展開の塔。 -/
+def Tw2 (n : ℕ) : TrioSeq := (List.range n).flatMap fun k => shiftr01 (2 * k) 0 X110
+
+theorem Tw2_succ (n : ℕ) : Tw2 (n + 1) = Q ++ Blk 1 (Tw2 n) := by
+  rw [Blk_app, ← X110_eq]
+  show (List.range (n + 1)).flatMap _ = _
+  rw [List.range_succ_eq_map, List.flatMap_cons]
+  have h0 : shiftr01 (2 * 0) 0 X110 = X110 := by simp [shiftr01]
+  rw [h0, Tw2, shift_flatMap0, List.flatMap_map]
+  congr 1
+
+theorem Tw2_mono : ∀ n, Mono (Tw2 n)
+  | 0 => by intro c hc; simp [Tw2] at hc
+  | (n + 1) => by
+      rw [Tw2_succ]
+      intro c hc
+      rcases List.mem_append.mp hc with hm | hm
+      · exact Aok_Q.mono c hm
+      · exact Blk_mono (Tw2_mono n) c hm
+
+theorem Tw2_zroot : ∀ n, Zroot (Tw2 n)
+  | 0 => by intro c hc; simp [Tw2] at hc
+  | (n + 1) => by
+      rw [Tw2_succ]
+      intro c hc h0
+      rcases List.mem_append.mp hc with hm | hm
+      · exact Aok_Q.zroot c hm h0
+      · have := Blk_col c hm; omega
+
+theorem Tw2_root : ∀ n, entry (Tw2 n) 0 0 = 0
+  | 0 => by simp [Tw2, entry]
+  | (n + 1) => by
+      rw [Tw2_succ, entry_append_left (by simp [Q])]
+      exact Aok_Q.deep.1
+
+theorem Tw2_mem : ∀ n, Tw2 n ∈ W 0
+  | 0 => by simpa [Tw2] using W_nil 0
+  | (n + 1) => by
+      rw [Tw2_succ]
+      exact blk_zm (Tw2_mem n) (Tw2_zroot n) (Tw2_mono n) (Tw2_root n) Aok_Q (le_refl 1)
+
+/-- シート行288。 -/
+def R288 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 1, 0), (2, 1, 0)]
+
+theorem R288_len : R288.length = 4 := by simp [R288]
+
+theorem R288_srow : srow R288 3 = 1 := by simp [srow, R288, entry]
+
+theorem nextrel0_R288_01 : nextrel0 R288 0 1 := by
+  refine ⟨by simp [R288], by simp [R288], by omega, by simp [R288, entry], ?_⟩
+  intro x hx; omega
+
+theorem nextrel0_R288_02 : nextrel0 R288 0 2 := by
+  refine ⟨by simp [R288], by simp [R288], by omega, by simp [R288, entry], ?_⟩
+  intro x hx
+  have : x = 1 := by omega
+  subst this
+  simp [R288, entry]
+
+theorem nextrel0_R288_23 : nextrel0 R288 2 3 := by
+  refine ⟨by simp [R288], by simp [R288], by omega, by simp [R288, entry], ?_⟩
+  intro x hx; omega
+
+theorem le0_R288_0 : le0 R288 0 0 :=
+  ⟨by simp [R288], by simp [R288], Relation.ReflTransGen.refl⟩
+
+theorem le0_R288_1 : le0 R288 0 1 :=
+  ⟨by simp [R288], by simp [R288], Relation.ReflTransGen.single nextrel0_R288_01⟩
+
+theorem le0_R288_2 : le0 R288 0 2 :=
+  ⟨by simp [R288], by simp [R288], Relation.ReflTransGen.single nextrel0_R288_02⟩
+
+theorem le0_R288_3 : le0 R288 0 3 :=
+  ⟨by simp [R288], by simp [R288],
+    (Relation.ReflTransGen.single nextrel0_R288_02).tail nextrel0_R288_23⟩
+
+theorem nextrel1_R288 : nextrel1 R288 0 3 := by
+  refine ⟨by simp [R288], by simp [R288], by omega, by simp [R288, entry],
+    le0_R288_3, ?_⟩
+  intro j hj
+  have hjl := hj.2.1
+  rw [R288_len] at hjl
+  have hcase : j = 1 ∨ j = 2 ∨ j = 3 := by omega
+  rcases hcase with rfl | rfl | rfl <;> simp [R288, entry]
+
+theorem R288_hasParent : hasParent R288 1 3 :=
+  H12Export.hasParent1_of_le0_witness (by rw [R288_len]; omega)
+    le0_R288_3.2.2 (by simp [R288, entry])
+
+theorem R288_parent : parent R288 1 3 = 0 :=
+  R288_hasParent.unique (parent_nextR R288_hasParent) nextrel1_R288
+
+open Classical in
+theorem oper_R288 (n : ℕ) : R288⟦n⟧ = Tw2 n := by
+  rw [L53.oper_unfold (j1 := 3) (i1 := 1) (j0 := 0) (d0 := 2) (d1 := 0)
+      (by simp [R288]) (by omega) (by simp [R288, entry]) R288_srow.symm
+      R288_hasParent R288_parent.symm (by simp [R288, entry]) (by simp) n]
+  have hr : List.range' 0 (3 - 0) = [0, 1, 2] := rfl
+  have htk : R288.take 0 = [] := rfl
+  rw [hr, htk, List.nil_append]
+  have hbody : ∀ k : ℕ, ([0, 1, 2] : List ℕ).map
+      (fun j => ((entry R288 0 j + (if le0 R288 0 j then k * 2 else 0),
+        entry R288 1 j + (if le1 R288 0 j then k * 0 else 0),
+        entry R288 2 j) : ℕ × ℕ × ℕ))
+      = shiftr01 (2 * k) 0 X110 := by
+    intro k
+    simp only [List.map_cons, List.map_nil, Nat.mul_zero, ite_self, Nat.add_zero]
+    rw [if_pos le0_R288_0, if_pos le0_R288_1, if_pos le0_R288_2]
+    simp [R288, entry, X110, shiftr01, Nat.mul_comm, Nat.add_comm]
+  rw [List.flatMap_congr (fun k _ => hbody k)]
+  rfl
+
+/-- ★ シート行288 `X(1,1,0)(2,1,0) ∈ W 0`。 -/
+theorem R288_mem : R288 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_R288 n]
+  exact Tw2_mem n
+
+#print axioms Tw2_mem
+#print axioms R288_mem
+
 #print axioms oper_R287
 #print axioms R287_mem
 
