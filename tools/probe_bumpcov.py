@@ -137,6 +137,11 @@ def rule(M, known, use_bump):
             if (c[0] == 1 and c[2] == 0 and deep_d(A, 1) and gen_ok(A)
                     and A in known):
                 return 'R9'
+        if ORACLE_TOW1 and len(M) >= 3:
+            A, c1, c2 = M[:-2], M[-2], M[-1]
+            if (c1[0] == 1 and c1[2] == 0 and c2 == (2, 0, 0)
+                    and deep_d(A, 1) and gen_ok(A) and A in known):
+                return 'R10'
         if ORACLE_GEN:
             for i in range(1, len(M)):
                 A, C = M[:i], M[i:]

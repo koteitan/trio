@@ -2042,6 +2042,113 @@ theorem X110_fs (m : ℕ) : X110⟦m + 1⟧ = powTow Q m := by
   have h : X110 = Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] := by simp [X110, Q]
   rw [h, powTow_is_fs Q_ne Q_deep Aok_Q.zroot (le_refl 1)]
 
+/-! ## シート行286 `X(1,1,0)(2,0,0) = psi(W_w + W*w)`
+
+`snoc_row1` は `Aok` を保つので、`(1,e,0)` は**何段でも**継げる:
+
+    snocR A e m = A ++ (1,e,0)^m  ∈ W 0
+
+そして `A ++ [(1,e,0)(2,0,0)]` の展開はちょうどこの族:
+
+    (A ++ [(1,e,0),(2,0,0)])⟦m⟧ = A ++ (1,e,0)^m
+
+（末尾 `(2,0,0)` の行 0 の親は 1 つ前の `(1,e,0)`、`srow = 0` なので持ち上げ無し。）
+したがって節 2 で落ちる。`A = X = (0,0,0)(1,1,1)`, `e = 1` がシート行286。 -/
+
+theorem Aok.append_row1 {A : TrioSeq} (hA : Aok A) {e : ℕ} (he : 1 ≤ e) :
+    Aok (A ++ [((1, e, 0) : ℕ × ℕ × ℕ)]) := by
+  refine ⟨snoc_row1 hA.mem hA.ne hA.deep hA.zroot hA.mono he,
+    by simp [List.append_eq_nil_iff, hA.ne],
+    Deep_snoc hA.deep hA.ne (le_refl 1), ?_, ?_⟩
+  · intro c hc h0
+    rcases List.mem_append.mp hc with hm | hm
+    · exact hA.zroot c hm h0
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
+      subst hm
+      exact absurd h0 (by simp)
+  · intro c hc
+    rcases List.mem_append.mp hc with hm | hm
+    · exact hA.mono c hm
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
+      subst hm
+      simp
+
+/-- `A ++ (1,e,0)^m`。 -/
+def snocR (A : TrioSeq) (e : ℕ) : ℕ → TrioSeq
+  | 0 => A
+  | (m + 1) => snocR A e m ++ [((1, e, 0) : ℕ × ℕ × ℕ)]
+
+theorem snocR_eq (A : TrioSeq) (e m : ℕ) :
+    snocR A e m = A ++ List.replicate m ((1, e, 0) : ℕ × ℕ × ℕ) := by
+  induction m with
+  | zero => simp [snocR]
+  | succ m ih =>
+    show snocR A e m ++ _ = _
+    rw [ih, List.append_assoc, ← List.replicate_succ']
+
+theorem snocR_Aok {A : TrioSeq} (hA : Aok A) {e : ℕ} (he : 1 ≤ e) :
+    ∀ m, Aok (snocR A e m)
+  | 0 => hA
+  | (m + 1) => (snocR_Aok hA he m).append_row1 he
+
+/-- **`(1,e,0)(2,0,0)` を継ぐ。** 展開は `(1,e,0)` を `m` 個並べたもの。 -/
+theorem snoc_row1_two {A : TrioSeq} (hA : Aok A) {e : ℕ} (he : 1 ≤ e) :
+    A ++ [((1, e, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne := hA.ne
+  set M : TrioSeq := A ++ [((1, e, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)] with hM
+  have hplen : 0 < A.length := List.length_pos_iff.mpr hne
+  have hlen : M.length - 1 = A.length + 1 := by rw [hM]; simp
+  have hb : entry M 0 (A.length + 1) = 2 ∧ entry M 1 (A.length + 1) = 0 ∧
+      entry M 2 (A.length + 1) = 0 := by
+    refine ⟨?_, ?_, ?_⟩ <;> simp [entry, hM, getD_app2_b]
+  have ha : entry M 0 A.length = 1 := by simp [entry, hM, getD_app2_a]
+  have hsr : srow M (A.length + 1) = 0 := by simp [srow, hb.2.1, hb.2.2]
+  have hpar : hasParent M 0 (A.length + 1) := by
+    rw [hasParent_zero_iff (by rw [hM]; simp)]
+    exact ⟨A.length, by omega, by rw [ha, hb.1]; omega⟩
+  have hj0 : parent M 0 (A.length + 1) = A.length := by
+    have h := parent_nextR hpar
+    rw [nextR, if_pos rfl] at h
+    obtain ⟨-, -, hlt, -, hmin⟩ := h
+    by_contra hne0
+    have hlt' : parent M 0 (A.length + 1) < A.length := by omega
+    have := hmin A.length ⟨hlt', by omega⟩
+    rw [ha, hb.1] at this
+    omega
+  refine mem_of_oper_mem (fun m _ => ?_)
+  have hop : M⟦m⟧ = A ++ List.replicate m ((1, e, 0) : ℕ × ℕ × ℕ) := by
+    simp only [oper, hlen, hsr, hj0]
+    rw [if_neg (by omega), if_neg (by rw [hb.1]; simp),
+      if_neg (by rw [hlen, hsr]; exact not_not_intro hpar)]
+    have htk : M.take A.length = A := by rw [hM, List.take_left]
+    have hcol : ((entry M 0 A.length, entry M 1 A.length, entry M 2 A.length) : ℕ × ℕ × ℕ)
+        = (1, e, 0) := by simp [entry, hM, getD_app2_a]
+    rw [htk]
+    congr 1
+    simp only [show A.length + 1 - A.length = 1 from by omega,
+      show (List.range' A.length 1) = [A.length] from rfl,
+      List.map_cons, List.map_nil, lt_self_iff_false, if_false, Nat.not_lt_zero,
+      Nat.mul_zero, ite_self, Nat.add_zero, hcol]
+    exact flatMap_singleton_range _ m
+  rw [hop, ← snocR_eq]
+  exact (snocR_Aok hA he m).mem
+
+/-- シート行285 `X(1,1,0)(1,1,0) = psi(W_w + W*2)`。 -/
+theorem R285_mem :
+    [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1), (1, 1, 0), (1, 1, 0)] ∈ W 0 := by
+  have h := (snocR_Aok Aok_Q (e := 1) (le_refl 1) 2).mem
+  simpa [snocR, Q] using h
+
+/-- ★ シート行286 `X(1,1,0)(2,0,0) = psi(W_w + W*w)`。 -/
+theorem R286_mem :
+    [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1), (1, 1, 0), (2, 0, 0)] ∈ W 0 := by
+  have h := snoc_row1_two Aok_Q (e := 1) (le_refl 1)
+  simpa [Q] using h
+
+#print axioms snoc_row1_two
+#print axioms R285_mem
+#print axioms R286_mem
+
 #print axioms powTow_eq_Tow
 #print axioms X110_fs
 
