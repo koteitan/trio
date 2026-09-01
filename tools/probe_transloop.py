@@ -98,3 +98,43 @@ def iterate(M, ver, steps=12, nmax=2, cap=400):
         cur = P
         if len(cur) > cap: return i + 1
     return steps
+
+
+def limit_prefixes(M, ver, cap):
+    """無限語 G B(0) B(1) B(2) ... の初期区間のうち、長さ cap 以下で標準形のもの。
+
+    `X[n]` は `X[n+1]` の初期区間なので、`n` を上げても初期区間が伸びるだけ。
+    よって n は選択肢ではなく、cap だけが効く。"""
+    E, n = [], 1
+    while len(E) < cap and n <= cap:
+        F = expand(M, n, ver)
+        if not F or len(F) <= len(E): break
+        E = F; n += 1
+    E = E[:cap]
+    return [E[:L] for L in range(len(M) + 1, len(E) + 1)]
+
+
+def dfs(M, ver, K=6, depth=12, cap=200, branch=6):
+    """末尾 K 列の正規形を保ったまま、どこまで降りられるかを**全分岐**で探す。
+
+    貪欲でなく、条件をみたす初期区間を全部試す。到達した最大段数を返す。"""
+    if len(M) < K: return 0
+    S0 = norm(M[-K:])
+    best = 0
+
+    def go(cur, d):
+        nonlocal best
+        best = max(best, d)
+        if d >= depth: return
+        kids = []
+        for P in limit_prefixes(cur, ver, cap):
+            if len(P) < K: continue
+            if norm(P[-K:]) != S0: continue
+            if P[-K][0] <= cur[-K][0]: continue       # 行 0 が真に上がること
+            if not standard(P, ver): continue
+            kids.append(P)
+        for P in kids[:branch]:
+            go(P, d + 1)
+
+    go(M, 0)
+    return best
