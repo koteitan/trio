@@ -5773,5 +5773,172 @@ theorem R293_mem : R293 ∈ W 0 :=
 
 #print axioms R293_mem
 
+/-! ## ★★★ 走りの梯子 `RunA`（行294 への道）
+
+行294 の基本列は `(·,2,0)` が 1 本ずつ伸びる:
+
+```
+294[n] = (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,2,0)...(n+1,2,0)
+```
+
+その各項の展開は**歩幅 `m` の塔**で、繰り返す塊が
+`Uu m b = (b+1,1,0)(b+2,2,0)...(b+m,2,0)` と長くなる。
+
+塔を作るには「塊の各部品を、**より大きな台座の上でも**継げる」ことが要る。
+そこで再継ぎ性を台座について ∀ で取った `SegA`（絶対セグメント）を使い、
+台座は ∃ で包む（`LwA`）。`SegA` はブロックを飲み込んでも `SegA` のまま
+（飲み込むときに使う仮定も台座 ∀ の形で来るため）。 -/
+
+/-- どれかの良い台座の上の梯子の頭。 -/
+def LwA (h : ℕ) (A : TrioSeq) : Prop :=
+  ∃ P : ℕ → TrioSeq → Prop, BaseOk P ∧ LwB P h A
+
+theorem LwA_Aok {h : ℕ} {A : TrioSeq} (hA : LwA h A) : Aok A := by
+  obtain ⟨P, hP, hL⟩ := hA
+  exact LwB_Aok hP hL
+
+/-- 台座に依らないセグメント。`SegB` の台座 ∀ 版。 -/
+structure SegA (h : ℕ) (M : TrioSeq) : Prop where
+  mid : MidD (h + 2) M
+  head1 : entry M 1 0 < 2
+  reapp : ∀ (P : ℕ → TrioSeq → Prop), BaseOk P → ∀ (s : ℕ) (A' : TrioSeq),
+      LwB P (h + s) A' → A' ++ shiftr01 s 0 M ∈ W 0
+
+theorem SegA_toSegB {h : ℕ} {M : TrioSeq} (hM : SegA h M)
+    {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) : SegB P h M where
+  mid := hM.mid
+  head1 := hM.head1
+  reapp := fun s A' hA' => hM.reapp P hP s A' hA'
+
+theorem SegA_shift {h : ℕ} {M : TrioSeq} (hM : SegA h M) (u : ℕ) :
+    SegA (h + u) (shiftr01 u 0 M) where
+  mid := by
+    have h1 := MidD_shift hM.mid u
+    rwa [show h + 2 + u = h + u + 2 from by omega] at h1
+  head1 := by
+    rw [entry_shift1 (List.length_pos_iff.mpr hM.mid.ne)]
+    exact hM.head1
+  reapp := by
+    intro P hP s A' hA'
+    rw [shiftr01_add0]
+    refine hM.reapp P hP (u + s) A' ?_
+    rwa [show h + (u + s) = h + u + s from by omega]
+
+/-- `(h+1,1,0)` は絶対セグメント（`LvB_snoc` はどの台座でも通る）。 -/
+theorem SegA_one (h : ℕ) : SegA h [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] where
+  mid := MidD_one (h + 1) (by omega)
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro P hP s A' hA'
+    obtain ⟨r, hr⟩ := hA'
+    have h1 := LvB_snoc hP r (h + s) A' hr
+    have heq : shiftr01 s 0 [((h + 1, 1, 0) : ℕ × ℕ × ℕ)]
+        = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] := by
+      simp only [shiftr01, List.map_cons, List.map_nil]
+      congr 2
+      omega
+    rw [heq]
+    exact h1
+
+/-- `RunA j h A`: 梯子の頭の上に `(·,1,0)` 1 本と `(·,2,0)` を `j` 本
+（それぞれ上にブロックを飲み込んでよい）。レベルは `h`。 -/
+def RunA : ℕ → ℕ → TrioSeq → Prop
+  | 0, h, A => ∃ (b : ℕ) (Y0 M : TrioSeq), h = b + 1 ∧ A = Y0 ++ M ∧
+      LwA b Y0 ∧ SegA b M
+  | (j + 1), h, A => ∃ (b : ℕ) (A0 N : TrioSeq), h = b + 1 ∧ A = A0 ++ N ∧
+      RunA j b A0 ∧ MidD (b + 2) N ∧ 2 ≤ entry N 1 0 ∧
+      (∀ (s : ℕ) (X : TrioSeq), RunA j (b + s) X → X ++ shiftr01 s 0 N ∈ W 0)
+
+/-- `RunA 0` の頭は梯子の頭（レベルが 1 上がっている）。 -/
+theorem RunA0_LwA {h : ℕ} {A : TrioSeq} (hA : RunA 0 h A) : LwA h A := by
+  obtain ⟨b, Y0, M, rfl, rfl, ⟨P, hP, hY0⟩, hM⟩ := hA
+  refine ⟨P, hP, ?_⟩
+  have h1 := LwB_tower hP (SegA_toSegB hM hP) hY0 1
+  rwa [Mtw_succ, Mtw_zero, shiftr01_zero] at h1
+
+theorem BaseOk_RunA : ∀ j : ℕ, BaseOk (RunA j)
+  | 0 => by
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · intro h A hA
+        exact LwA_Aok (RunA0_LwA hA)
+      · intro h A hA
+        obtain ⟨P, hP, hL⟩ := RunA0_LwA hA
+        exact LwB_Ancd hP hL
+      · intro h A hA B hB
+        obtain ⟨P, hP, r, hr⟩ := RunA0_LwA hA
+        exact LvB_hang hP r h A hr B hB
+      · rintro h A Blk ⟨b, Y0, M, rfl, rfl, hY0, hM⟩ hcol hmo hre
+        refine ⟨b, Y0, M ++ Blk, rfl, by rw [List.append_assoc], hY0, ?_, ?_, ?_⟩
+        · exact MidD_append hM.mid (by intro x hx; have := hcol x hx; omega) hmo
+        · rw [entry_append_left (List.length_pos_iff.mpr hM.mid.ne)]
+          exact hM.head1
+        · intro P hP u A' hA'
+          rw [shiftr01_append0, ← List.append_assoc]
+          have h1 : A' ++ shiftr01 u 0 M ∈ W 0 := hM.reapp P hP u A' hA'
+          have hstep : RunA 0 (b + 1 + u) (A' ++ shiftr01 u 0 M) := by
+            refine ⟨b + u, A', shiftr01 u 0 M, by omega, rfl, ⟨P, hP, hA'⟩,
+              SegA_shift hM u⟩
+          exact hre u _ hstep
+  | (j + 1) => by
+      have hIHj := BaseOk_RunA j
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · rintro h A ⟨b, A0, N, rfl, rfl, hA0, hN, hN2, hre⟩
+        have hmem : A0 ++ N ∈ W 0 := by
+          have h1 := hre 0 A0 (by simpa using hA0)
+          simpa using h1
+        exact Aok_append_Mid (by omega) (hIHj.aok b A0 hA0) hN hmem
+      · rintro h A ⟨b, A0, N, rfl, rfl, hA0, hN, hN2, hre⟩
+        exact Ancd_append_Mid (hIHj.aok b A0 hA0).ne (hIHj.ancd b A0 hA0) hN
+      · rintro h A ⟨b, A0, N, rfl, rfl, hA0, hN, hN2, hre⟩ B hB
+        have hbase : ∀ (s : ℕ) (X : TrioSeq), Aok X → RunA j (b + s) X →
+            X ++ shiftr01 s 0 N ∈ W 0 := fun s X _ hX => hre s X hX
+        have hclose : ∀ (s : ℕ) (X C' : TrioSeq), Aok X → RunA j (b + s) X → Mono C' →
+            (∀ (t : ℕ) (Y : TrioSeq), Aok Y → RunA j (b + t) Y →
+              Y ++ BlkD (b + 2 + t) (shiftr01 t 0 N) C' ∈ W 0) →
+            RunA j (b + s) (X ++ BlkD (b + 2 + s) (shiftr01 s 0 N) C') := by
+          intro s X C' _ hX hmoC' hIH
+          have hNs : MidD (b + 2 + s) (shiftr01 s 0 N) := MidD_shift hN s
+          refine hIHj.close (b + s) X _ hX ?_ (BlkD_mono hNs.mono hmoC') ?_
+          · intro x hx
+            rcases List.mem_append.mp hx with hh | hh
+            · have := MidD_col_ge hNs x hh; omega
+            · have := shiftD_col x hh; omega
+          · intro t Y hY
+            have heq : shiftr01 t 0 (BlkD (b + 2 + s) (shiftr01 s 0 N) C')
+                = BlkD (b + 2 + (s + t)) (shiftr01 (s + t) 0 N) C' := by
+              simp only [BlkD, shiftr01_append0, shiftr01_add0]
+              congr 2
+              omega
+            rw [heq]
+            have hY' : RunA j (b + (s + t)) Y := by
+              rwa [show b + (s + t) = b + s + t from by omega]
+            exact hIH (s + t) Y (hIHj.aok _ _ hY') hY'
+        have hkey := blkD_memS (d := b + 2) (by omega) N hN hbase hclose B hB.mem
+          hB.zroot hB.mono hB.root 0 A0 (hIHj.aok b A0 hA0) (by simpa using hA0)
+        simp only [shiftr01_zero, Nat.add_zero] at hkey
+        rw [BlkD_app] at hkey
+        exact hkey
+      · rintro h A Blk ⟨b, A0, N, rfl, rfl, hA0, hN, hN2, hre⟩ hcol hmo hcl
+        refine ⟨b, A0, N ++ Blk, rfl, by rw [List.append_assoc], hA0,
+          MidD_append hN (by intro x hx; have := hcol x hx; omega) hmo, ?_, ?_⟩
+        · rw [entry_append_left (List.length_pos_iff.mpr hN.ne)]
+          exact hN2
+        · intro s X hX
+          rw [shiftr01_append0, ← List.append_assoc]
+          have h1 : X ++ shiftr01 s 0 N ∈ W 0 := hre s X hX
+          have hstep : RunA (j + 1) (b + 1 + s) (X ++ shiftr01 s 0 N) := by
+            refine ⟨b + s, X, shiftr01 s 0 N, by omega, rfl, hX, ?_, ?_, ?_⟩
+            · have h2 := MidD_shift hN s
+              rwa [show b + 2 + s = b + s + 2 from by omega] at h2
+            · rw [entry_shift1 (List.length_pos_iff.mpr hN.ne)]
+              exact hN2
+            · intro t Z hZ
+              rw [shiftr01_add0]
+              refine hre (s + t) Z ?_
+              rwa [show b + (s + t) = b + s + t from by omega]
+          exact hcl s _ hstep
+
+#print axioms BaseOk_RunA
+
 end Small
 end TRIO
