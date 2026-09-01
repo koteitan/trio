@@ -5000,5 +5000,243 @@ X(3,2,0)  = 行293        ❌   族 B delta 2   ← 残り 1 個
 ```
 -/
 
+/-! ## ★★★ セグメントの本数で階層を作る（`Hd k c Z`）
+
+これまでの `Lv` は**高さ**で階層を作っていたので、再継ぎ性が `Lv` を
+高さ `a+s`（上）で参照し、定義できなかった。
+
+**本数 `k` で階層を作る**と、再継ぎ性が参照するのは `Hd k`（同じ `k`・高さは上）だけ
+なので、`k` についての構造再帰で定義できる。
+
+```
+Hd 0 c Z = Lw c Z                            レベル c の土台
+Hd (k+1) c Z = Z0 ++ N,  Hd k c Z0,
+               N の 1 列目の高さ = c+k+1,
+               N は Hd k の頭すべてに（ずらして）継げる
+```
+
+`Hd k c Z` なら高さ `c+k+1` にブロックを吊るせる。 -/
+
+def Hd : ℕ → ℕ → TrioSeq → Prop
+  | 0, c, Z => Lw c Z
+  | (k + 1), c, Z => ∃ Z0 N : TrioSeq, Z = Z0 ++ N ∧ Hd k c Z0 ∧
+      MidD (c + k + 2) N ∧ (k = 0 → entry N 1 0 < 2) ∧
+      (∀ (u : ℕ) (Y : TrioSeq), Hd k (c + u) Y → Y ++ shiftr01 u 0 N ∈ W 0)
+
+theorem Hd_Aok : ∀ (k c : ℕ) (Z : TrioSeq), Hd k c Z → Aok Z
+  | 0, c, Z, h => Lw_Aok h
+  | (k + 1), c, Z, h => by
+      obtain ⟨Z0, N, rfl, h0, hN, hN1, hre⟩ := h
+      have hmem : Z0 ++ N ∈ W 0 := by
+        have := hre 0 Z0 (by simpa using h0)
+        simpa using this
+      exact Aok_append_Mid (by omega) (Hd_Aok k c Z0 h0) hN hmem
+
+theorem Hd_mem {k c : ℕ} {Z : TrioSeq} (h : Hd k c Z) : Z ∈ W 0 := (Hd_Aok k c Z h).mem
+
+theorem Hd_Ancd : ∀ (k c : ℕ) (Z : TrioSeq), Hd k c Z → Ancd (c + k + 1) Z
+  | 0, c, Z, h => by simpa using Lw_Ancd h
+  | (k + 1), c, Z, h => by
+      obtain ⟨Z0, N, rfl, h0, hN, hN1, hre⟩ := h
+      have hZ0ok : Aok Z0 := Hd_Aok k c Z0 h0
+      have hZ0len : 0 < Z0.length := List.length_pos_iff.mpr hZ0ok.ne
+      have hNlen : 0 < N.length := List.length_pos_iff.mpr hN.ne
+      have hhead0 : entry (Z0 ++ N) 0 Z0.length = entry N 0 0 := by
+        rw [show Z0.length = Z0.length + 0 from rfl, entry_append_right]
+      have hhead1 : entry (Z0 ++ N) 1 Z0.length = entry N 1 0 := by
+        rw [show Z0.length = Z0.length + 0 from rfl, entry_append_right]
+      have hNh : entry N 0 0 = c + k + 1 := by have := hN.head; omega
+      intro j hj0 hjl hlt hrec
+      have hlen : (Z0 ++ N).length = Z0.length + N.length := by simp
+      rcases Nat.lt_trichotomy j Z0.length with hj | hj | hj
+      · have hcmp : entry (Z0 ++ N) 0 j < entry (Z0 ++ N) 0 Z0.length :=
+          hrec Z0.length hj (by omega)
+        rw [hhead0, hNh] at hcmp
+        rw [entry_append_left hj] at hcmp ⊢
+        refine Hd_Ancd k c Z0 h0 j hj0 hj (by omega) ?_
+        intro i hi1 hi2
+        have := hrec i hi1 (by omega)
+        rw [entry_append_left hj, entry_append_left hi2] at this
+        exact this
+      · subst hj
+        rw [hhead1]
+        exact hN.head1
+      · exfalso
+        obtain ⟨t, rfl⟩ : ∃ t, j = Z0.length + t := ⟨j - Z0.length, by omega⟩
+        rw [entry_append_right] at hlt
+        have := hN.tail t (by omega) (by omega)
+        omega
+
+#print axioms Hd_Ancd
+
+/-- ★ `Hd k` は「高さ `c+k+1` 以上のブロックを継ぐ」で閉じる。
+`blkD_memS` の `hclose` の中身。 -/
+theorem Hd_close : ∀ (k c : ℕ) (Y Blk : TrioSeq), Hd k c Y →
+    (∀ x ∈ Blk, c + k + 1 ≤ x.1) → Mono Blk →
+    (∀ (t : ℕ) (Y' : TrioSeq), Hd k (c + t) Y' → Y' ++ shiftr01 t 0 Blk ∈ W 0) →
+    Hd k c (Y ++ Blk)
+  | 0, c, Y, Blk, hY, hBcol, hBmo, hre => by
+      -- `Hd 0 c Y = Lw c Y`。Lv の記録の最後のセグメントを `Blk` で伸ばす。
+      obtain ⟨r, hr⟩ := hY
+      have hmem : Y ++ Blk ∈ W 0 := by
+        have := hre 0 Y ⟨r, by simpa using hr⟩
+        simpa using this
+      have hYok : Aok Y := Lv_Aok r c Y hr
+      match c, hr with
+      | 0, hr =>
+          refine ⟨r, ?_⟩
+          have hAok : Aok (Y ++ Blk) := by
+            refine ⟨hmem, by simp [List.append_eq_nil_iff, hYok.ne], ?_, ?_, ?_⟩
+            · refine ⟨?_, ?_⟩
+              · rw [entry_append_left (List.length_pos_iff.mpr hYok.ne)]
+                exact hYok.deep.1
+              · intro j hj1 hj2
+                rcases Nat.lt_or_ge j Y.length with h | h
+                · rw [entry_append_left h]; exact hYok.deep.2 j hj1 h
+                · obtain ⟨t, rfl⟩ : ∃ t, j = Y.length + t := ⟨j - Y.length, by omega⟩
+                  rw [entry_append_right, entry0_eq]
+                  have ht : t < Blk.length := by simp at hj2; omega
+                  have := hBcol _ (List.getElem_mem ht)
+                  rw [List.getD_eq_getElem?_getD,
+                    List.getElem?_eq_getElem ht]
+                  simpa using by omega
+            · intro x hx hx0
+              rcases List.mem_append.mp hx with h | h
+              · exact hYok.zroot x h hx0
+              · exact absurd hx0 (by have := hBcol x h; omega)
+            · intro x hx
+              rcases List.mem_append.mp hx with h | h
+              · exact hYok.mono x h
+              · exact hBmo x h
+          match r with
+          | 0 => exact ⟨hAok, rfl⟩
+          | (_ + 1) => exact hAok
+      | (e + 1), hr =>
+          match r, hr with
+          | 0, hr => exact absurd hr.2 (by omega)
+          | (r' + 1), hr =>
+              obtain ⟨-, Y0, M', hsp, hY0, hM', hre'⟩ := hr
+              subst hsp
+              have hBcol' : ∀ x ∈ Blk, e + 2 ≤ x.1 := by
+                intro x hx; have := hBcol x hx; omega
+              refine ⟨r' + 1, ?_, Y0, M' ++ Blk, by rw [List.append_assoc],
+                hY0, MidD_append hM' hBcol' hBmo, ?_⟩
+              · have h : Y0 ++ (M' ++ Blk) ∈ W 0 := by
+                  rw [← List.append_assoc]; exact hmem
+                rw [List.append_assoc]
+                exact Aok_append_Mid (d := e + 2) (by omega) (Lv_Aok _ _ _ hY0)
+                  (MidD_append hM' hBcol' hBmo) h
+              · intro t A'' hA''
+                rw [shiftr01_append0, ← List.append_assoc]
+                have h1 : A'' ++ shiftr01 t 0 M' ∈ W 0 := hre' t A'' hA''
+                have hlv : Lv (r' + 1) (e + t + 1) (A'' ++ shiftr01 t 0 M') :=
+                  Lv_shift hM' hre' t hA''
+                refine hre t _ ⟨r' + 1, ?_⟩
+                rwa [show e + 1 + t = e + t + 1 from by omega]
+  | (k + 1), c, Y, Blk, hY, hBcol, hBmo, hre => by
+      obtain ⟨Y0, N', rfl, hY0, hN', hN1', hreN⟩ := hY
+      have hBcol' : ∀ x ∈ Blk, c + k + 2 ≤ x.1 := by
+        intro x hx; have := hBcol x hx; omega
+      refine ⟨Y0, N' ++ Blk, by rw [List.append_assoc], hY0,
+        MidD_append hN' hBcol' hBmo, ?_, ?_⟩
+      · intro hk
+        rw [entry_append_left (List.length_pos_iff.mpr hN'.ne)]
+        exact hN1' hk
+      intro u Y'' hY''
+      rw [shiftr01_append0, ← List.append_assoc]
+      have h1 : Y'' ++ shiftr01 u 0 N' ∈ W 0 := hreN u Y'' hY''
+      have hMu : MidD (c + u + k + 2) (shiftr01 u 0 N') := by
+        have h := MidD_shift hN' u
+        rwa [show c + k + 2 + u = c + u + k + 2 from by omega] at h
+      have hstep : Hd (k + 1) (c + u) (Y'' ++ shiftr01 u 0 N') := by
+        refine ⟨Y'', shiftr01 u 0 N', rfl, hY'', hMu, ?_, ?_⟩
+        · intro hk
+          rw [entry_shift1 (List.length_pos_iff.mpr hN'.ne)]
+          exact hN1' hk
+        intro v Y3 hY3
+        rw [shiftr01_add0]
+        refine hreN (u + v) Y3 ?_
+        rwa [show c + (u + v) = c + u + v from by omega]
+      exact hre u _ hstep
+
+#print axioms Hd_close
+
+/-- ★★ `Hd k c Z` なら高さ `c+k+1` にブロックを吊るせる。 -/
+theorem Hd_hang : ∀ (k c : ℕ) (Z : TrioSeq), Hd k c Z → ∀ B : TrioSeq, Bok B →
+    Z ++ shiftr01 (c + k + 1) 0 B ∈ W 0
+  | 0, c, Z, h, B, hB => by
+      obtain ⟨r, hr⟩ := h
+      simpa using Lv_hang r c Z hr B hB
+  | (k + 1), c, Z, h, B, hB => by
+      obtain ⟨Z0, N, rfl, h0, hN, hN1, hre⟩ := h
+      have hbase : ∀ (s : ℕ) (Y : TrioSeq), Aok Y → Hd k (c + s) Y →
+          Y ++ shiftr01 s 0 N ∈ W 0 := fun s Y _ hY => hre s Y hY
+      have hclose : ∀ (s : ℕ) (Y C' : TrioSeq), Aok Y → Hd k (c + s) Y → Mono C' →
+          (∀ (t : ℕ) (Y' : TrioSeq), Aok Y' → Hd k (c + t) Y' →
+            Y' ++ BlkD (c + k + 2 + t) (shiftr01 t 0 N) C' ∈ W 0) →
+          Hd k (c + s) (Y ++ BlkD (c + k + 2 + s) (shiftr01 s 0 N) C') := by
+        intro s Y C' _ hY hmoC' hIH
+        have hNs : MidD (c + k + 2 + s) (shiftr01 s 0 N) := MidD_shift hN s
+        refine Hd_close k (c + s) Y _ hY ?_ (BlkD_mono hNs.mono hmoC') ?_
+        · intro x hx
+          rcases List.mem_append.mp hx with hh | hh
+          · have := MidD_col_ge hNs x hh; omega
+          · have := shiftD_col x hh; omega
+        · intro t Y' hY'
+          have heq : shiftr01 t 0 (BlkD (c + k + 2 + s) (shiftr01 s 0 N) C')
+              = BlkD (c + k + 2 + (s + t)) (shiftr01 (s + t) 0 N) C' := by
+            simp only [BlkD, shiftr01_append0, shiftr01_add0]
+            congr 2
+            omega
+          rw [heq]
+          refine hIH (s + t) Y' (Hd_Aok k (c + (s + t)) Y' ?_) ?_ <;>
+            rwa [show c + (s + t) = c + s + t from by omega]
+      have hkey := blkD_memS (d := c + k + 2) (by omega) N hN hbase hclose
+        B hB.mem hB.zroot hB.mono hB.root 0 Z0 (Hd_Aok k c Z0 h0) (by simpa using h0)
+      rw [BlkD_app] at hkey
+      simp only [shiftr01_zero, Nat.add_zero] at hkey
+      have heq : c + (k + 1) + 1 = c + k + 2 := by omega
+      rw [heq]
+      exact hkey
+
+theorem Hd_tw (k c : ℕ) (Z : TrioSeq) (hZ : Hd k c Z) :
+    ∀ n, TwD (c + k + 1) Z n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      have hAok : Aok Z := Hd_Aok k c Z hZ
+      rw [TwD_succ]
+      exact Hd_hang k c Z hZ (TwD (c + k + 1) Z n)
+        ⟨Hd_tw k c Z hZ n, TwD_zroot (by omega) hAok.zroot n, TwD_mono hAok.mono n,
+          TwD_root hAok.ne hAok.deep.1 n⟩
+
+/-- ★★ `Hd k c Z` なら `(c+k+1,1,0)` を継げる。 -/
+theorem Hd_snoc (k c : ℕ) (Z : TrioSeq) (hZ : Hd k c Z) :
+    Z ++ [((c + k + 1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hAok : Aok Z := Hd_Aok k c Z hZ
+  exact snocd_mem (by omega) hAok.ne hAok.deep hAok.zroot (Hd_Ancd k c Z hZ)
+    (Hd_tw k c Z hZ)
+
+/-- ★★ `(c+k+1,1,0)` を継ぐと段が 1 つ上がる。これで鎖がいくらでも伸びる。 -/
+theorem Hd_step (k c : ℕ) (Z : TrioSeq) (hZ : Hd k c Z) :
+    Hd (k + 1) c (Z ++ [((c + k + 1, 1, 0) : ℕ × ℕ × ℕ)]) := by
+  refine ⟨Z, [((c + k + 1, 1, 0) : ℕ × ℕ × ℕ)], rfl, hZ, ?_, ?_, ?_⟩
+  · have h := MidD_one (c + k + 1) (by omega)
+    rwa [show c + k + 1 + 1 = c + k + 2 from by omega] at h
+  · intro _
+    show (1 : ℕ) < 2
+    omega
+  · intro u Y hY
+    have h := Hd_snoc k (c + u) Y hY
+    have heq : shiftr01 u 0 [((c + k + 1, 1, 0) : ℕ × ℕ × ℕ)]
+        = [((c + u + k + 1, 1, 0) : ℕ × ℕ × ℕ)] := by
+      simp only [shiftr01, List.map_cons, List.map_nil]
+      congr 2
+      omega
+    rw [heq]
+    exact h
+
+#print axioms Hd_hang
+#print axioms Hd_step
+
 end Small
 end TRIO
