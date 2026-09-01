@@ -5940,5 +5940,218 @@ theorem BaseOk_RunA : ∀ j : ℕ, BaseOk (RunA j)
 
 #print axioms BaseOk_RunA
 
+/-! ### 走りの塊 `RunU` と、その塔 -/
+
+/-- `RunA j` の頭はどの `j` でも梯子の頭（台座に `RunA j` 自身を取る）。 -/
+theorem RunA_LwA (j h : ℕ) (Z : TrioSeq) (hZ : RunA j h Z) : LwA h Z :=
+  ⟨RunA j, BaseOk_RunA j, 0, hZ⟩
+
+/-- 走りの塊。`RunU j c U`: `U = (c+1,1,0)` のセグメント ++ `(·,2,0)` を `j` 本
+（各段の上のブロック込み）。 -/
+def RunU : ℕ → ℕ → TrioSeq → Prop
+  | 0, c, U => SegA c U
+  | (j + 1), c, U => ∃ U0 N : TrioSeq, U = U0 ++ N ∧ RunU j c U0 ∧
+      MidD (c + j + 3) N ∧ 2 ≤ entry N 1 0 ∧
+      (∀ (s : ℕ) (X : TrioSeq), RunA j (c + 1 + j + s) X → X ++ shiftr01 s 0 N ∈ W 0)
+
+theorem RunU_mid : ∀ (j c : ℕ) (U : TrioSeq), RunU j c U → MidD (c + 2) U
+  | 0, c, U, hU => hU.mid
+  | (j + 1), c, U, hU => by
+      obtain ⟨U0, N, rfl, hU0, hN, hN2, hre⟩ := hU
+      refine MidD_append (RunU_mid j c U0 hU0) ?_ hN.mono
+      intro x hx
+      have := MidD_col_ge hN x hx
+      omega
+
+theorem RunU_head1 : ∀ (j c : ℕ) (U : TrioSeq), RunU j c U → entry U 1 0 < 2
+  | 0, _, _, hU => hU.head1
+  | (j + 1), c, U, hU => by
+      obtain ⟨U0, N, rfl, hU0, hN, hN2, hre⟩ := hU
+      rw [entry_append_left (List.length_pos_iff.mpr (RunU_mid j c U0 hU0).ne)]
+      exact RunU_head1 j c U0 hU0
+
+theorem RunU_shift : ∀ (j c : ℕ) (U : TrioSeq), RunU j c U → ∀ v : ℕ,
+    RunU j (c + v) (shiftr01 v 0 U)
+  | 0, c, U, hU, v => SegA_shift hU v
+  | (j + 1), c, U, hU, v => by
+      obtain ⟨U0, N, rfl, hU0, hN, hN2, hre⟩ := hU
+      refine ⟨shiftr01 v 0 U0, shiftr01 v 0 N, by rw [shiftr01_append0],
+        RunU_shift j c U0 hU0 v, ?_, ?_, ?_⟩
+      · have h1 := MidD_shift hN v
+        rwa [show c + j + 3 + v = c + v + j + 3 from by omega] at h1
+      · rw [entry_shift1 (List.length_pos_iff.mpr hN.ne)]
+        exact hN2
+      · intro s X hX
+        rw [shiftr01_add0]
+        refine hre (v + s) X ?_
+        rwa [show c + 1 + j + (v + s) = c + v + 1 + j + s from by omega]
+
+/-- `snocYd_mem` の `hMy`: 継ぐ列より低い記録の行 1 は 2 以上。 -/
+theorem RunU_rec : ∀ (j c : ℕ) (U : TrioSeq), RunU j c U →
+    ∀ t, 1 ≤ t → t < U.length → entry U 0 t < c + j + 2 →
+      (∀ i, t < i → i < U.length → entry U 0 t < entry U 0 i) → 2 ≤ entry U 1 t
+  | 0, c, U, hU, t, ht1, htl, hlt, _ => by
+      have := hU.mid.tail t ht1 htl
+      omega
+  | (j + 1), c, U, hU, t, ht1, htl, hlt, hrec => by
+      obtain ⟨U0, N, rfl, hU0, hN, hN2, hre⟩ := hU
+      have hU0mid := RunU_mid j c U0 hU0
+      have hU0len : 0 < U0.length := List.length_pos_iff.mpr hU0mid.ne
+      have hNlen : 0 < N.length := List.length_pos_iff.mpr hN.ne
+      have hlen : (U0 ++ N).length = U0.length + N.length := by simp
+      have hNh : entry (U0 ++ N) 0 U0.length = c + j + 2 := by
+        rw [show U0.length = U0.length + 0 from rfl, entry_append_right]
+        have := hN.head; omega
+      rcases Nat.lt_trichotomy t U0.length with h | h | h
+      · rw [entry_append_left h] at hlt ⊢
+        have hlt' : entry U0 0 t < c + j + 2 := by
+          have := hrec U0.length h (by omega)
+          rw [entry_append_left h, hNh] at this
+          omega
+        refine RunU_rec j c U0 hU0 t ht1 h hlt' ?_
+        intro i hti hiU
+        have := hrec i hti (by omega)
+        rw [entry_append_left h, entry_append_left hiU] at this
+        exact this
+      · subst h
+        rw [show U0.length = U0.length + 0 from rfl, entry_append_right]
+        exact hN2
+      · exfalso
+        obtain ⟨q, rfl⟩ : ∃ q, t = U0.length + q := ⟨t - U0.length, by omega⟩
+        rw [entry_append_right] at hlt
+        have := hN.tail q (by omega) (by omega)
+        omega
+
+theorem RunA_of : ∀ (j c : ℕ) (Y0 U : TrioSeq), LwA c Y0 → RunU j c U →
+    RunA j (c + 1 + j) (Y0 ++ U)
+  | 0, c, Y0, U, hY0, hU => ⟨c, Y0, U, rfl, rfl, hY0, hU⟩
+  | (j + 1), c, Y0, U, hY0, hU => by
+      obtain ⟨U0, N, rfl, hU0, hN, hN2, hre⟩ := hU
+      refine ⟨c + 1 + j, Y0 ++ U0, N, by omega, by rw [List.append_assoc],
+        RunA_of j c Y0 U0 hY0 hU0, ?_, hN2, ?_⟩
+      · rwa [show c + 1 + j + 2 = c + j + 3 from by omega]
+      · exact hre
+
+theorem RunA_to : ∀ (j h : ℕ) (X : TrioSeq), RunA j h X →
+    ∃ (c : ℕ) (Y0 U : TrioSeq), h = c + 1 + j ∧ X = Y0 ++ U ∧ LwA c Y0 ∧ RunU j c U
+  | 0, h, X, hX => by
+      obtain ⟨b, Y0, M, rfl, rfl, hY0, hM⟩ := hX
+      exact ⟨b, Y0, M, rfl, rfl, hY0, hM⟩
+  | (j + 1), h, X, hX => by
+      obtain ⟨b, A0, N, rfl, rfl, hA0, hN, hN2, hre⟩ := hX
+      obtain ⟨c, Y0, U0, rfl, rfl, hY0, hU0⟩ := RunA_to j b A0 hA0
+      refine ⟨c, Y0, U0 ++ N, by omega, by rw [List.append_assoc], hY0,
+        ⟨U0, N, rfl, hU0, ?_, hN2, ?_⟩⟩
+      · rwa [show c + 1 + j + 2 = c + j + 3 from by omega] at hN
+      · exact hre
+
+/-- ★★ 走りの塊の塔（歩幅 `j+1`）。段が上がっても `RunA j` のまま。 -/
+theorem RunU_tower {j c : ℕ} {Y0 U : TrioSeq} (hY0 : LwA c Y0) (hU : RunU j c U) :
+    ∀ n : ℕ, RunA j (c + n * (j + 1) + 1 + j) (Mtwd (j + 1) Y0 U (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      simpa using RunA_of j c Y0 U hY0 hU
+  | (n + 1) => by
+      have hprev := RunU_tower hY0 hU n
+      rw [Mtwd_succ]
+      have hL : LwA (c + n * (j + 1) + 1 + j) (Mtwd (j + 1) Y0 U (n + 1)) :=
+        RunA_LwA j _ _ hprev
+      have hmul1 : (j + 1) * (n + 1) = n * (j + 1) + 1 + j := by
+        rw [Nat.mul_succ, Nat.mul_comm (j + 1) n]
+        omega
+      have hmul2 : (n + 1) * (j + 1) = n * (j + 1) + 1 + j := by
+        rw [Nat.succ_mul]
+        omega
+      have hUs : RunU j (c + n * (j + 1) + 1 + j) (shiftr01 ((j + 1) * (n + 1)) 0 U) := by
+        have h1 := RunU_shift j c U hU ((j + 1) * (n + 1))
+        rwa [show c + (j + 1) * (n + 1) = c + n * (j + 1) + 1 + j from by omega] at h1
+      have h2 := RunA_of j _ _ _ hL hUs
+      rwa [show c + n * (j + 1) + 1 + j + 1 + j = c + (n + 1) * (j + 1) + 1 + j from by
+        omega] at h2
+
+theorem RunU_tower_mem {j c : ℕ} {Y0 U : TrioSeq} (hY0 : LwA c Y0) (hU : RunU j c U) :
+    ∀ n : ℕ, Mtwd (j + 1) Y0 U n ∈ W 0
+  | 0 => by rw [Mtwd_zero]; exact (LwA_Aok hY0).mem
+  | (n + 1) => ((BaseOk_RunA j).aok _ _ (RunU_tower hY0 hU n)).mem
+
+/-- ★★★ 走りの上に `(·,2,0)` をもう 1 本継げる。 -/
+theorem RunA_snoc2 (j h : ℕ) (X : TrioSeq) (hX : RunA j h X) :
+    X ++ [((h + 1, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨c, Y0, U, rfl, rfl, hY0, hU⟩ := RunA_to j _ X hX
+  have hmid : MidD (c + 2) U := RunU_mid j c U hU
+  have hne : Y0 ≠ [] := (LwA_Aok hY0).ne
+  have h1 := snocYd_mem (Y0 := Y0) (M := U) (L := c + 1) (y := 2) (dl := j + 1)
+    hne (by rwa [show c + 1 + 1 = c + 2 from by omega]) (RunU_head1 j c U hU)
+    ?_ (by omega) (by omega) (RunU_tower_mem hY0 hU)
+  · rwa [show c + 1 + (j + 1) = c + 1 + j + 1 from by omega] at h1
+  · intro t ht1 htl hlt hrec
+    refine RunU_rec j c U hU t ht1 htl ?_ hrec
+    omega
+
+#print axioms RunA_snoc2
+
+/-! ### シート行294 `X(1,1,0)(2,2,0)(3,3,0) = psi(W_w + psi_1(W_3))`
+
+基本列は `(·,2,0)` が 1 本ずつ伸びる列。塊 `Uu n = (1,1,0)(2,2,0)...(n+1,2,0)` を
+`RunU n 0` に入れれば `Q ++ Uu n ∈ W 0` が出る。 -/
+
+/-- `Uu n = (1,1,0)(2,2,0)(3,2,0)...(n+1,2,0)`（`(·,2,0)` が `n` 本）。 -/
+def Uu : ℕ → TrioSeq
+  | 0 => [((1, 1, 0) : ℕ × ℕ × ℕ)]
+  | (n + 1) => Uu n ++ [((n + 2, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem LwA_Q : LwA 0 Q :=
+  ⟨fun h A => Aok A ∧ h = 0, BaseOk_zero, 0, ⟨(Aok_Q : Aok Q), rfl⟩⟩
+
+theorem RunU_Uu : ∀ n : ℕ, RunU n 0 (Uu n)
+  | 0 => by
+      have h := SegA_one 0
+      simpa [Uu] using h
+  | (n + 1) => by
+      refine ⟨Uu n, [((n + 2, 2, 0) : ℕ × ℕ × ℕ)], rfl, RunU_Uu n, ?_, ?_, ?_⟩
+      · have h := MidD_col (n + 2) 2 (by omega) (by omega)
+        rwa [show n + 2 + 1 = 0 + n + 3 from by omega] at h
+      · show (2 : ℕ) ≤ 2
+        omega
+      · intro s X hX
+        have h := RunA_snoc2 n (0 + 1 + n + s) X hX
+        rw [shift_col]
+        rwa [show 0 + 1 + n + s + 1 = n + 2 + s from by omega] at h
+
+theorem RunA_Uu (n : ℕ) : RunA n (0 + 1 + n) (Q ++ Uu n) :=
+  RunA_of n 0 Q (Uu n) LwA_Q (RunU_Uu n)
+
+theorem Uu_mem (n : ℕ) : Q ++ Uu n ∈ W 0 :=
+  ((BaseOk_RunA n).aok _ _ (RunA_Uu n)).mem
+
+theorem Mtw_Dg1_Uu : ∀ n : ℕ,
+    Mtw (Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) [((2, 2, 0) : ℕ × ℕ × ℕ)] n = Q ++ Uu n
+  | 0 => by rw [Mtw_zero]; rfl
+  | (n + 1) => by
+      rw [Mtw_succ, Mtw_Dg1_Uu n, shift_col]
+      show (Q ++ Uu n) ++ [((2 + n, 2, 0) : ℕ × ℕ × ℕ)]
+        = Q ++ (Uu n ++ [((n + 2, 2, 0) : ℕ × ℕ × ℕ)])
+      rw [List.append_assoc, show 2 + n = n + 2 from by omega]
+
+/-- シート行294。 -/
+def R294 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 1, 0), (2, 2, 0), (3, 3, 0)]
+
+/-- ★★★ 行294 `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0) ∈ W 0`。 -/
+theorem R294_mem : R294 ∈ W 0 := by
+  have h : R294 = ((Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) ++ [((2, 2, 0) : ℕ × ℕ × ℕ)])
+      ++ [((2 + 1, 3, 0) : ℕ × ℕ × ℕ)] := by
+    simp [R294, Q]
+  rw [h]
+  refine snocY_mem (L := 2) (y := 3) (by simp [Q]) ?_ ?_ (by omega) ?_
+  · have hM := MidD_col 2 2 (by omega) (by omega)
+    rwa [show 2 + 1 = 2 + 1 from rfl] at hM
+  · show (2 : ℕ) < 3
+    omega
+  · intro n
+    rw [Mtw_Dg1_Uu n]
+    exact Uu_mem n
+
+#print axioms R294_mem
+
 end Small
 end TRIO
