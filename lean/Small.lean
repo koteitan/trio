@@ -5238,5 +5238,57 @@ theorem Hd_step (k c : ℕ) (Z : TrioSeq) (hZ : Hd k c Z) :
 #print axioms Hd_hang
 #print axioms Hd_step
 
+/-! ### `Hd` を行292 に当てる -/
+
+theorem Hd_zero_iff (c : ℕ) (Z : TrioSeq) : Hd 0 c Z ↔ Lw c Z := Iff.rfl
+
+theorem Hd1_Dg1 : Hd 1 0 (Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) := by
+  have h := Hd_step 0 0 Q Lw_Q
+  simpa using h
+
+/-- ★★ `X = (0,0,0)(1,1,1)(1,1,0)(2,2,0)` は 2 段（`(1,1,0)` と `(2,2,0)`）。
+`(2,2,0)` の再継ぎはちょうど `Seg_snoc2`。 -/
+theorem Hd2_R292 : Hd 2 0 R292 := by
+  refine ⟨Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)], [((2, 2, 0) : ℕ × ℕ × ℕ)],
+    by simp [R292, Q], Hd1_Dg1, MidD_col 2 2 (by omega) (by omega), ?_, ?_⟩
+  · intro hk
+    simp at hk
+  · intro u Y hY
+    obtain ⟨Y0, N, rfl, hY0, hN, hN1, hre⟩ := hY
+    simp only [Nat.zero_add, Nat.add_zero] at hN hY0 hre
+    have hSeg : Seg u N := ⟨hN, hN1 rfl, fun v Y' hY' => hre v Y' hY'⟩
+    have h := Seg_snoc2 hSeg (A0 := Y0) hY0
+    have heq : shiftr01 u 0 [((2, 2, 0) : ℕ × ℕ × ℕ)]
+        = [((u + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq,
+        Prod.mk.injEq, and_true]
+      omega
+    rw [heq]
+    exact h
+
+/-- ★ `X` に高さ 3 から `(k,1,0)` の鎖を継ぐと、継いだ本数だけ段が上がる。 -/
+theorem Hd_chain_R292 : ∀ n : ℕ,
+    Hd (2 + n) 0 (Mtw R292 [((3, 1, 0) : ℕ × ℕ × ℕ)] n)
+  | 0 => by simpa [Mtw_zero] using Hd2_R292
+  | (n + 1) => by
+      have h := Hd_step (2 + n) 0 _ (Hd_chain_R292 n)
+      simp only [Nat.zero_add] at h
+      rw [Mtw_one_succ R292 2 n, show 2 + (n + 1) = 2 + n + 1 from by omega]
+      exact h
+
+theorem Mtw_R292_310_mem (n : ℕ) : Mtw R292 [((3, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 :=
+  Hd_mem (Hd_chain_R292 n)
+
+/-- ★★★ 行293 の基本列の 2 項目 `R293[1] = X(3,1,0)(4,2,0)`。 -/
+theorem R293_1_mem :
+    (R292 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)]) ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := R292) (M := [((3, 1, 0) : ℕ × ℕ × ℕ)]) (L := 3) (y := 2)
+    (by simp [R292]) (MidD_one 3 (by omega)) (by show (1 : ℕ) < 2; omega) (by omega)
+    Mtw_R292_310_mem
+  simpa using h
+
+#print axioms Hd2_R292
+#print axioms R293_1_mem
+
 end Small
 end TRIO
