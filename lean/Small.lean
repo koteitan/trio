@@ -4306,7 +4306,8 @@ open Classical in
 /-- ★ 内部アンカーでの継ぎ足しの展開（歩幅 `dl`）。 -/
 theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
     (hM : MidD (L + 1) M) (hMe : entry M 1 0 < y)
-    (hMy : ∀ t, 1 ≤ t → t < M.length → y ≤ entry M 1 t)
+    (hMy : ∀ t, 1 ≤ t → t < M.length → entry M 0 t < L + dl →
+      (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t)
     (hy : 1 ≤ y) (hdl : 1 ≤ dl) (n : ℕ) :
     ((Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Mtwd dl Y0 M n := by
   have hY0len : 0 < Y0.length := List.length_pos_iff.mpr hY0ne
@@ -4362,8 +4363,17 @@ theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
     rw [hl1]
     rcases Nat.lt_or_ge j Y.length with h | h
     · obtain ⟨t, rfl⟩ : ∃ t, j = Y0.length + t := ⟨j - Y0.length, by omega⟩
+      have hlow : entry M 0 t < L + dl := by
+        have hlt := rtg0_rec hjle.2.2 Y.length (by omega) (le_refl _)
+        rw [hl0] at hlt
+        rwa [hpreY 0 _ h, hpreM 0 t (by omega)] at hlt
+      have hrec : ∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i := by
+        intro i hti hiM
+        have hlt := rtg0_rec hjle.2.2 (Y0.length + i) (by omega) (by omega)
+        rwa [hpreY 0 _ h, hpreM 0 t (by omega),
+          hpreY 0 _ (by omega), hpreM 0 i hiM] at hlt
       rw [hpreY 1 _ h, hpreM 1 t (by omega)]
-      exact hMy t (by omega) (by omega)
+      exact hMy t (by omega) (by omega) hlow hrec
     · have : j = Y.length := by
         have := H12Export.rtg0_index_le hjle.2.2
         omega
@@ -4394,7 +4404,8 @@ theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
 /-- ★ 塔が済めば内部アンカーで歩幅 `dl` の列を継げる。 -/
 theorem snocYd_mem {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
     (hM : MidD (L + 1) M) (hMe : entry M 1 0 < y)
-    (hMy : ∀ t, 1 ≤ t → t < M.length → y ≤ entry M 1 t)
+    (hMy : ∀ t, 1 ≤ t → t < M.length → entry M 0 t < L + dl →
+      (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t)
     (hy : 1 ≤ y) (hdl : 1 ≤ dl) (htw : ∀ n, Mtwd dl Y0 M n ∈ W 0) :
     (Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   refine A1_intro (Or.inr (Or.inl ?_))
@@ -4442,7 +4453,7 @@ theorem R293_mem_of_tower (htw : ∀ n, Mtwd 2 Q N293 n ∈ W 0) : R293 ∈ W 0 
     (by omega) (by omega) htw
   · show (1 : ℕ) < 2
     omega
-  · intro t h1 h2
+  · intro t h1 h2 _ _
     simp only [N293, List.length_cons, List.length_nil] at h2
     have ht : t = 1 := by omega
     subst ht
