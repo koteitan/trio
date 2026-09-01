@@ -1849,6 +1849,179 @@ theorem snoc_row1 {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A
   rw [snoc_row1_oper hAne hAd hAz he n]
   exact Tow_mem hA hAne hAd hAz hAm n
 
+/-! ## 積・冪の梯子: `o(A)^2` から `o(A)^o(A)` まで
+
+`bump_mem3` は **`B` に `Deep` を要求しない**（`B ∈ W 0` ＋ `Zroot` ＋ `Mono` ＋
+根が深さ 0 だけ）。この差がちょうど効く: `A ++ A` は根が 2 つあるので `Deep`
+ではないが `B` 側の条件は満たすので、そのまま `bump` できる。
+
+    Aok A := A ∈ W 0 ∧ A ≠ [] ∧ Deep A ∧ Zroot A ∧ Mono A   （左に置ける）
+    Bok B := B ∈ W 0 ∧ Zroot B ∧ Mono B ∧ 根が深さ 0        （bump できる）
+
+    Aok A → Bok B → Aok (A ++ bump B)     継いだ結果もまた左に置ける
+    Aok A → Bok A                          （`Deep` を落とすだけ）
+    Aok A → Bok (copies A n)               同じものを n 個並べても bump できる
+
+順序数では（ユーザーの読み）:
+
+    A ++ bump A                          o(A)^2
+    A ++ bump (copies A n)               o(A)^(n+1)
+    A ++ bump (A ++ bump [(0,0,0)])      o(A)^ω
+    A ++ bump (A ++ bump ((0,0,0)(1,0,0)))  o(A)^(ω^ω)
+    A ++ bump (A ++ bump B)              o(A)^o(B)
+    A ++ bump (A ++ bump A)              o(A)^o(A)
+
+いずれも標準形であることは `bms -s` で確認済み。 -/
+
+/-- `bump` の左に置ける行列。 -/
+structure Aok (A : TrioSeq) : Prop where
+  mem : A ∈ W 0
+  ne : A ≠ []
+  deep : Deep A
+  zroot : Zroot A
+  mono : Mono A
+
+/-- `bump` できる行列（`Deep` は要らない）。 -/
+structure Bok (B : TrioSeq) : Prop where
+  mem : B ∈ W 0
+  zroot : Zroot B
+  mono : Mono B
+  root : entry B 0 0 = 0
+
+theorem Aok.toBok {A : TrioSeq} (h : Aok A) : Bok A :=
+  ⟨h.mem, h.zroot, h.mono, h.deep.1⟩
+
+/-- **積**: `A ++ bump B ∈ W 0`。 -/
+theorem Bok.append {A B : TrioSeq} (hA : Aok A) (hB : Bok B) : A ++ bump B ∈ W 0 :=
+  bump_zm hB.mem hB.zroot hB.mono hB.root hA.mem hA.ne hA.deep
+
+theorem bump_mono {B : TrioSeq} (h : Mono B) : Mono (bump B) := by
+  intro c hc
+  simp only [bump, shiftr01, List.mem_map] at hc
+  obtain ⟨p, hp, rfl⟩ := hc
+  have := h p hp
+  dsimp only
+  omega
+
+/-- **継いだ結果もまた左に置ける** ⟹ いくらでも重ねられる。 -/
+theorem Aok.append_bump {A B : TrioSeq} (hA : Aok A) (hB : Bok B) :
+    Aok (A ++ bump B) := by
+  refine ⟨Bok.append hA hB, by simp [List.append_eq_nil_iff, hA.ne],
+    Deep_append hA.deep hA.ne (fun c hc => bump_col c hc), ?_, ?_⟩
+  · intro c hc h0
+    rcases List.mem_append.mp hc with hm | hm
+    · exact hA.zroot c hm h0
+    · have := bump_col c hm
+      omega
+  · intro c hc
+    rcases List.mem_append.mp hc with hm | hm
+    · exact hA.mono c hm
+    · exact bump_mono hB.mono c hm
+
+/-- `copies A n = A^n`。 -/
+def copies (A : TrioSeq) (n : ℕ) : TrioSeq := (List.range n).flatMap fun _ => A
+
+theorem copies_succ (A : TrioSeq) (n : ℕ) : copies A (n + 1) = A ++ copies A n := by
+  simp [copies, List.range_succ_eq_map, List.flatMap_map, Function.comp_def]
+
+theorem copies_mem_col {A : TrioSeq} {n : ℕ} : ∀ c ∈ copies A n, c ∈ A := by
+  intro c hc
+  simp only [copies, List.mem_flatMap] at hc
+  obtain ⟨k, -, h⟩ := hc
+  exact h
+
+/-- **同じものを `n` 個並べたものも `bump` できる。** -/
+theorem Aok.copies_Bok {A : TrioSeq} (hA : Aok A) (n : ℕ) : Bok (copies A n) := by
+  refine ⟨W_flatMap_copies hA.mem (fun p _ => by rw [hA.deep.1]; omega) n,
+    fun c hc => hA.zroot c (copies_mem_col c hc),
+    fun c hc => hA.mono c (copies_mem_col c hc), ?_⟩
+  cases n with
+  | zero => simp [copies, entry]
+  | succ n =>
+    rw [copies_succ, entry_append_left (List.length_pos_iff.mpr hA.ne)]
+    exact hA.deep.1
+
+theorem Bok_nil : Bok ([] : TrioSeq) :=
+  ⟨W_nil 0, by simp [Zroot], by simp [Mono], by simp [entry]⟩
+
+theorem Bok_zero : Bok [((0, 0, 0) : ℕ × ℕ × ℕ)] :=
+  ⟨Flat_mem_W (by intro c hc; simp at hc; subst hc; exact ⟨rfl, rfl⟩),
+    by intro c hc _; simp at hc; subst hc; exact ⟨rfl, rfl⟩,
+    by intro c hc; simp at hc; subst hc; simp,
+    by simp [entry]⟩
+
+/-- 平坦（行 1・行 2 が 0）で根が深さ 0 なら `Bok`。仮定は形だけ。 -/
+theorem Bok_flat {B : TrioSeq} (hf : Flat B) (hroot : entry B 0 0 = 0) : Bok B :=
+  ⟨Flat_mem_W hf, Flat_Zroot hf, Z2_Mono (Flat_Z2 hf), hroot⟩
+
+theorem Aok_zero : Aok [((0, 0, 0) : ℕ × ℕ × ℕ)] :=
+  ⟨Bok_zero.mem, by simp, ⟨by simp [entry], by intro j h1 h2; simp at h2; omega⟩,
+    Bok_zero.zroot, Bok_zero.mono⟩
+
+theorem Aok_Q : Aok Q := by
+  refine ⟨Q_mem, Q_ne, Q_deep, ?_, ?_⟩
+  · intro c hc h0; simp only [Q, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl
+    · exact ⟨rfl, rfl⟩
+    · exact absurd h0 (by simp)
+  · intro c hc; simp only [Q, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> simp
+
+/-! ### 梯子（`o(A)^α`） -/
+
+/-- `o(A)^2`。 -/
+theorem pow_two {A : TrioSeq} (hA : Aok A) : A ++ bump A ∈ W 0 :=
+  Bok.append hA hA.toBok
+
+/-- `o(A)^(n+1)`。 -/
+theorem pow_succ {A : TrioSeq} (hA : Aok A) (n : ℕ) :
+    A ++ bump (copies A n) ∈ W 0 :=
+  Bok.append hA (hA.copies_Bok n)
+
+/-- `o(A)^o(B)`（`B` は `Bok` なら何でも）。 -/
+theorem pow_gen {A B : TrioSeq} (hA : Aok A) (hB : Bok B) :
+    A ++ bump (A ++ bump B) ∈ W 0 :=
+  Bok.append hA (hA.append_bump hB).toBok
+
+/-- `o(A)^ω`。 -/
+theorem pow_omega {A : TrioSeq} (hA : Aok A) :
+    A ++ bump (A ++ bump [((0, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 :=
+  pow_gen hA Bok_zero
+
+/-- `o(A)^(ω^ω)`。 -/
+theorem pow_omega_omega {A : TrioSeq} (hA : Aok A) :
+    A ++ bump (A ++ bump [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 :=
+  pow_gen hA (Bok_flat (by
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> exact ⟨rfl, rfl⟩) (by simp [entry]))
+
+/-- `o(A)^o(A)`。 -/
+theorem pow_self {A : TrioSeq} (hA : Aok A) :
+    A ++ bump (A ++ bump A) ∈ W 0 :=
+  pow_gen hA hA.toBok
+
+/-- 梯子は止まらない: `Aok` は `A ++ bump ·` で閉じているので、任意の段数を積める。 -/
+theorem pow_tower {A : TrioSeq} (hA : Aok A) : ∀ m, Aok (Nat.rec A (fun _ X => A ++ bump X) m)
+  | 0 => hA
+  | (m + 1) => hA.append_bump (pow_tower hA m).toBok
+
+/-- 具体例: `X = (0,0,0)(1,1,1)` について `X ++ bump X = X(1,0,0)(2,1,1) ∈ W 0`。 -/
+theorem QQ_mem : [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1), (1, 0, 0), (2, 1, 1)] ∈ W 0 := by
+  have h := pow_two Aok_Q
+  simpa [Q, bump, shiftr01] using h
+
+/-- 具体例: `X ++ bump (X ++ bump X) = X(1,0,0)(2,1,1)(2,0,0)(3,1,1) ∈ W 0`。 -/
+theorem QQQ_mem :
+    [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1), (1, 0, 0), (2, 1, 1), (2, 0, 0), (3, 1, 1)]
+      ∈ W 0 := by
+  have h := pow_self Aok_Q
+  simpa [Q, bump, shiftr01] using h
+
+#print axioms Aok.append_bump
+#print axioms pow_gen
+#print axioms QQQ_mem
+
 #print axioms snoc_row1_oper
 #print axioms snoc_row1
 
