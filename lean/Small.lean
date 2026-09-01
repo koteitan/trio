@@ -4752,5 +4752,37 @@ theorem R292_snoc310 : R292 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R292_snoc310
 
+/-! ### 行293 のブロック `N293 = (1,1,0)(2,2,0)` は `Seg`
+
+再継ぎ性はちょうど `Lv_snoc2`。したがって
+`Lw_tower` で**歩幅 1** の塔 `Mtw Q N293 n` は全段 `Lw` に入る。
+
+行293 が要るのは**歩幅 2** の塔 `Mtwd 2 Q N293 n = W_n`。歩幅 `dl` の塔は
+段ごとにレベルが `dl` 上がる必要があるが、`Lv` のレベルは
+「最後のセグメントの頭の深さ」なので 1 しか上がらない。この 1 のずれが
+`LADDER-PROBLEM.md` §3 の (G2)。 -/
+
+theorem Seg_N293 : Seg 0 N293 where
+  mid := MidD_N293
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro s A' hA'
+    obtain ⟨r, hr⟩ := hA'
+    have h := Lv_snoc2 r (0 + s) A' hr
+    have heq : shiftr01 s 0 N293
+        = [((0 + s + 1, 1, 0) : ℕ × ℕ × ℕ), ((0 + s + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+      simp only [N293, shiftr01, List.map_cons, List.map_nil, List.cons.injEq,
+        Prod.mk.injEq, and_true]
+      omega
+    rw [heq]
+    exact h
+
+/-- 歩幅 1 の塔なら全段 `Lw`。（行293 に要るのは歩幅 2。） -/
+theorem Mtw_N293_mem (n : ℕ) : Mtw Q N293 n ∈ W 0 :=
+  Lw_tower_mem Seg_N293 Lw_Q n
+
+#print axioms Seg_N293
+#print axioms Mtw_N293_mem
+
 end Small
 end TRIO
