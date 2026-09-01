@@ -138,3 +138,39 @@ def dfs(M, ver, K=6, depth=12, cap=200, branch=6):
 
     go(M, 0)
     return best
+
+
+import re as _re
+
+def signature(M, ver=4):
+    """展開の署名 (末尾から見た bad root の位置, delta, lnz)。
+
+    平行移動が「次に渡る」かどうかは、この署名が周期に入るかで決まる。
+    写しが自分の根を持ち込むと bad root が写しの中に入り、delta が縮んで周期に入らない。"""
+    a = (['-v2'] if ver == 2 else []) + ['-d', s(M) + '[1]']
+    o = subprocess.run([BMS] + a, capture_output=True, text=True).stdout
+    def g(k):
+        m = _re.search(k + r'\s*=\s*(.*)', o)
+        return m.group(1).strip() if m else ''
+    try:
+        br = int(g('bad root')); lnz = int(g('lnz'))
+    except ValueError:
+        return None
+    return (len(M) - 1 - br, g('delta'), lnz)
+
+
+def sig_period(M, ver=4, steps=14, cap=3000):
+    """M := M[1] を反復して署名が周期に入るか。周期長を返す（0 なら入らない）。
+
+    ★ これは**安いふるい**でしかない。署名は粗いので、停止する行列でも周期が出る
+    （実測: BM2 反例=4、同じ行列を BM4 で=4、B=4、R293=3）。
+    「署名が周期的 ⟹ 非停止」は成り立たない。本判定は `find` / `dfs` を使う。"""
+    cur, seen = M, {}
+    for i in range(steps):
+        sg = signature(cur, ver)
+        if sg is None: return 0
+        if sg in seen and len(cur) > len(M): return i - seen[sg]
+        seen[sg] = i
+        cur = expand(cur, 1, ver)
+        if not cur or len(cur) > cap: return 0
+    return 0
