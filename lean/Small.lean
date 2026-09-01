@@ -4451,5 +4451,306 @@ theorem R293_mem_of_tower (htw : ∀ n, Mtwd 2 Q N293 n ∈ W 0) : R293 ∈ W 0 
 
 #print axioms R293_mem_of_tower
 
+/-! ### ランクを消す（`Lw`）と、再継ぎ可能セグメント `Seg`
+
+`Lv r a A` の `r` は定義を停止させるための燃料で、`Lv r a A → r ≥ a` が成り立つ。
+そのため `hre` の仮定 `Lv r (a+s) A'` は `s > r - a` では空になり、ランクは上げられない
+（`Lv r a A → Lv (r+1) a A` は偽: `Lv 1 1 A → Lv 0 1 A` は `False` になる）。
+
+**逃げ道**: ランクを ∃ で包んだ `Lw c A := ∃ r, Lv r c A` を使う。
+`Lv r' c A' → Lw c A'` は自明なので、「`Lw` の頭すべてに継げる」という**定理**があれば、
+それは任意のランクの記録の `hre` として使える。`Lv_snoc` はまさにその形。 -/
+
+def Lw (c : ℕ) (A : TrioSeq) : Prop := ∃ r, Lv r c A
+
+theorem Lw_Aok {c : ℕ} {A : TrioSeq} (h : Lw c A) : Aok A := by
+  obtain ⟨r, hr⟩ := h
+  exact Lv_Aok r c A hr
+
+theorem Lw_mem {c : ℕ} {A : TrioSeq} (h : Lw c A) : A ∈ W 0 := (Lw_Aok h).mem
+
+theorem Lw_Q : Lw 0 Q := ⟨0, (Aok_Q : Aok Q), rfl⟩
+
+/-- ★ 深さ `a+1` から始まる、`Lw` の頭ならどこへでも（シフトして）継げるセグメント。 -/
+structure Seg (a : ℕ) (M : TrioSeq) : Prop where
+  mid : MidD (a + 2) M
+  head1 : entry M 1 0 < 2
+  reapp : ∀ (s : ℕ) (A' : TrioSeq), Lw (a + s) A' → A' ++ shiftr01 s 0 M ∈ W 0
+
+theorem Seg_shift {a : ℕ} {M : TrioSeq} (hS : Seg a M) (u : ℕ) :
+    Seg (a + u) (shiftr01 u 0 M) where
+  mid := by
+    have h := MidD_shift hS.mid u
+    rwa [show a + 2 + u = a + u + 2 from by omega] at h
+  head1 := by
+    rw [entry_shift1 (List.length_pos_iff.mpr hS.mid.ne)]
+    exact hS.head1
+  reapp := by
+    intro s A' hA'
+    rw [shiftr01_add0]
+    refine hS.reapp (u + s) A' ?_
+    rwa [show a + (u + s) = a + u + s from by omega]
+
+/-- ★★ セグメントの塔。ランクは 1 段ごとに上がるが、`Seg.reapp` は
+`Lw`（ランクは ∃）の頭に対する主張なので、どの段でも使える。 -/
+theorem Lw_tower {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) :
+    ∀ n : ℕ, Lw (a + n) (Mtw A0 M n)
+  | 0 => by simpa [Mtw_zero] using h0
+  | (n + 1) => by
+      obtain ⟨r, hr⟩ := Lw_tower hS h0 n
+      rw [Mtw_succ]
+      have hmem : Mtw A0 M n ++ shiftr01 n 0 M ∈ W 0 := hS.reapp n _ ⟨r, hr⟩
+      have hMn : MidD (a + n + 2) (shiftr01 n 0 M) := by
+        have h := MidD_shift hS.mid n
+        rwa [show a + 2 + n = a + n + 2 from by omega] at h
+      refine ⟨r + 1, Aok_append_Mid (by omega) (Lv_Aok _ _ _ hr) hMn hmem,
+        Mtw A0 M n, shiftr01 n 0 M, rfl, hr, hMn, ?_⟩
+      intro t A' hA'
+      rw [shiftr01_add0]
+      refine hS.reapp (n + t) A' ⟨r, ?_⟩
+      rwa [show a + (n + t) = a + n + t from by omega]
+
+theorem Lw_tower_mem {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) (n : ℕ) :
+    Mtw A0 M n ∈ W 0 := Lw_mem (Lw_tower hS h0 n)
+
+/-- ★★ セグメントの直後に `(a+2,2,0)` を継げる（内部アンカー、歩幅 1）。 -/
+theorem Seg_snoc2 {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) :
+    (A0 ++ M) ++ [((a + 2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocY_mem (L := a + 1) (y := 2) (Lw_Aok h0).ne hS.mid hS.head1 (by omega)
+    (Lw_tower_mem hS h0)
+
+/-- `(a+1,1,0)` は `Seg`（再継ぎは `Lv_snoc`）。 -/
+theorem Seg_one (a : ℕ) : Seg a [((a + 1, 1, 0) : ℕ × ℕ × ℕ)] where
+  mid := MidD_one (a + 1) (by omega)
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro s A' hA'
+    obtain ⟨r, hr⟩ := hA'
+    have h := Lv_snoc r (a + s) A' hr
+    have heq : shiftr01 s 0 [((a + 1, 1, 0) : ℕ × ℕ × ℕ)]
+        = [((a + s + 1, 1, 0) : ℕ × ℕ × ℕ)] := by
+      simp only [shiftr01, List.map_cons, List.map_nil]
+      congr 2
+      omega
+    rw [heq]
+    exact h
+
+/-- **検算**: `Lv_snoc2` は `Seg_one` ＋ `Seg_snoc2` の特別な場合。 -/
+theorem Lv_snoc2' (r a : ℕ) (A : TrioSeq) (hA : Lv r a A) :
+    A ++ [((a + 1, 1, 0) : ℕ × ℕ × ℕ), ((a + 2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := Seg_snoc2 (Seg_one a) (A0 := A) ⟨r, hA⟩
+  simpa using h
+
+#print axioms Lw_tower
+#print axioms Seg_snoc2
+#print axioms Lv_snoc2'
+
+/-! ### ★★ `(a+2,2,0)` を継いだ頭も吊るせる（`hang2`）
+
+`Lv` の梯子は「最後のセグメントの頭の深さ」＝レベルなので、`(a+2,2,0)` を継いだ
+行列のレベルは `a+2` になってほしいが、その記録には `(a+2,2,0)` の再継ぎ
+（＝任意の `Lw` の頭に `(·,2,0)` を継ぐ）が要り、それは循環する。
+
+ここでは記録を作らず、**吊るしだけ**を直接示す。`blkD_memS` の中身 `Mid` を
+`(a+2,2,0)` そのものにして、`P s X := X が「Lw の頭 ++ Seg」に分かれる` を不変量に取る。
+`hbase` は `Seg_snoc2`、`hclose` は「セグメントを `Blk` で伸ばす」で閉じる。 -/
+
+theorem MidD_col (d v : ℕ) (hd : 1 ≤ d) (hv : 1 ≤ v) :
+    MidD (d + 1) [((d, v, 0) : ℕ × ℕ × ℕ)] := by
+  refine ⟨by simp, ?_, rfl, hv, ?_, ?_⟩
+  · intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    subst hc
+    exact hd
+  · intro j h1 h2
+    simp only [List.length_cons, List.length_nil] at h2
+    omega
+  · intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    subst hc
+    dsimp only
+    omega
+
+theorem shift_col (d v s : ℕ) :
+    shiftr01 s 0 [((d, v, 0) : ℕ × ℕ × ℕ)] = [((d + s, v, 0) : ℕ × ℕ × ℕ)] := by
+  simp [shiftr01]
+
+/-- `Seg` の頭は空でない。 -/
+theorem Seg_ne {a : ℕ} {M : TrioSeq} (hS : Seg a M) : 0 < M.length :=
+  List.length_pos_iff.mpr hS.mid.ne
+
+theorem hang2 {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0)
+    (B : TrioSeq) (hB : Bok B) :
+    ((A0 ++ M) ++ [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 (a + 3) 0 B ∈ W 0 := by
+  have hMdD : MidD (a + 3) [((a + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+    have h := MidD_col (a + 2) 2 (by omega) (by omega)
+    rwa [show a + 2 + 1 = a + 3 from by omega] at h
+  have hbase : ∀ (s : ℕ) (X : TrioSeq), Aok X →
+      (∃ X0 M', X = X0 ++ M' ∧ Lw (a + s) X0 ∧ Seg (a + s) M') →
+      X ++ shiftr01 s 0 [((a + 2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+    rintro s X - ⟨X0, M', rfl, hX0, hM'⟩
+    rw [shift_col]
+    have h := Seg_snoc2 hM' hX0
+    rwa [show a + s + 2 = a + 2 + s from by omega] at h
+  have hclose : ∀ (s : ℕ) (X C' : TrioSeq), Aok X →
+      (∃ X0 M', X = X0 ++ M' ∧ Lw (a + s) X0 ∧ Seg (a + s) M') → Mono C' →
+      (∀ (t : ℕ) (Y : TrioSeq), Aok Y →
+        (∃ Y0 M'', Y = Y0 ++ M'' ∧ Lw (a + t) Y0 ∧ Seg (a + t) M'') →
+        Y ++ BlkD (a + 3 + t) (shiftr01 t 0 [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) C' ∈ W 0) →
+      (∃ Z0 M'',
+        X ++ BlkD (a + 3 + s) (shiftr01 s 0 [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) C'
+          = Z0 ++ M'' ∧ Lw (a + s) Z0 ∧ Seg (a + s) M'') := by
+    rintro s X C' - ⟨X0, M', rfl, hX0, hM'⟩ hmoC' hIH
+    set Blk : TrioSeq :=
+      BlkD (a + 3 + s) (shiftr01 s 0 [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) C' with hBlk
+    have hMs : MidD (a + 3 + s) (shiftr01 s 0 [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) :=
+      MidD_shift hMdD s
+    have hBlkcol : ∀ c ∈ Blk, a + s + 2 ≤ c.1 := by
+      intro c hc
+      rcases List.mem_append.mp hc with h | h
+      · rw [shift_col] at h
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+        subst h
+        dsimp only
+        omega
+      · have := shiftD_col c h
+        omega
+    have hBlkmo : Mono Blk := BlkD_mono hMs.mono hmoC'
+    refine ⟨X0, M' ++ Blk, by rw [List.append_assoc], hX0, ?_, ?_, ?_⟩
+    · exact MidD_append hM'.mid hBlkcol hBlkmo
+    · rw [entry_append_left (Seg_ne hM')]
+      exact hM'.head1
+    · intro u A' hA'
+      rw [shiftr01_append0]
+      have h1 : A' ++ shiftr01 u 0 M' ∈ W 0 := hM'.reapp u A' hA'
+      have hSu : Seg (a + s + u) (shiftr01 u 0 M') := Seg_shift hM' u
+      have hAok : Aok (A' ++ shiftr01 u 0 M') :=
+        Aok_append_Mid (by omega) (Lw_Aok hA') hSu.mid h1
+      have hP : ∃ Y0 M'', A' ++ shiftr01 u 0 M' = Y0 ++ M'' ∧
+          Lw (a + (s + u)) Y0 ∧ Seg (a + (s + u)) M'' := by
+        refine ⟨A', shiftr01 u 0 M', rfl, ?_, ?_⟩
+        · rwa [show a + (s + u) = a + s + u from by omega]
+        · rwa [show a + (s + u) = a + s + u from by omega]
+      have h2 := hIH (s + u) _ hAok hP
+      have heq : shiftr01 u 0 Blk
+          = BlkD (a + 3 + (s + u))
+              (shiftr01 (s + u) 0 [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) C' := by
+        rw [hBlk, BlkD, BlkD, shiftr01_append0, shiftr01_add0, shiftr01_add0]
+        congr 2
+        omega
+      rw [heq, ← List.append_assoc]
+      exact h2
+  have hmemAM : A0 ++ M ∈ W 0 := by
+    have h := hS.reapp 0 A0 (by simpa using h0)
+    simpa using h
+  have hAokAM : Aok (A0 ++ M) := Aok_append_Mid (by omega) (Lw_Aok h0) hS.mid hmemAM
+  have hP0 : ∃ X0 M', A0 ++ M = X0 ++ M' ∧ Lw (a + 0) X0 ∧ Seg (a + 0) M' := by
+    refine ⟨A0, M, rfl, ?_, ?_⟩
+    · simpa using h0
+    · simpa using hS
+  have hkey := blkD_memS (d := a + 3) (by omega) [((a + 2, 2, 0) : ℕ × ℕ × ℕ)] hMdD
+    hbase hclose B hB.mem hB.zroot hB.mono hB.root 0 (A0 ++ M) hAokAM hP0
+  rw [BlkD_app] at hkey
+  simpa using hkey
+
+#print axioms hang2
+
+/-! ### `hang2` の系: 塔と `(a+3,1,0)` の継ぎ足し -/
+
+theorem Lw_Ancd {c : ℕ} {A : TrioSeq} (h : Lw c A) : Ancd (c + 1) A := by
+  obtain ⟨r, hr⟩ := h
+  exact Lv_Ancd r c A hr
+
+theorem hang2_Aok {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) :
+    Aok ((A0 ++ M) ++ [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) := by
+  have hmemAM : A0 ++ M ∈ W 0 := by
+    have h := hS.reapp 0 A0 (by simpa using h0)
+    simpa using h
+  have hAokAM : Aok (A0 ++ M) := Aok_append_Mid (by omega) (Lw_Aok h0) hS.mid hmemAM
+  have hMdD : MidD (a + 3) [((a + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+    have h := MidD_col (a + 2) 2 (by omega) (by omega)
+    rwa [show a + 2 + 1 = a + 3 from by omega] at h
+  exact Aok_append_Mid (by omega) hAokAM hMdD (Seg_snoc2 hS h0)
+
+theorem hang2_Ancd {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) :
+    Ancd (a + 3) ((A0 ++ M) ++ [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) := by
+  set c : ℕ × ℕ × ℕ := ((a + 2, 2, 0) : ℕ × ℕ × ℕ) with hc
+  set Y : TrioSeq := (A0 ++ M) ++ [c] with hY
+  have hL0 : 0 < A0.length := List.length_pos_iff.mpr (Lw_Aok h0).ne
+  have hLM : 0 < M.length := Seg_ne hS
+  have hPlen : (A0 ++ M).length = A0.length + M.length := by simp
+  have hYlen : Y.length = A0.length + M.length + 1 := by rw [hY]; simp; omega
+  have hpre : ∀ i j, j < (A0 ++ M).length → entry Y i j = entry (A0 ++ M) i j :=
+    fun i j hj => entry_append_left hj
+  have hlast := entry_append_last (P := A0 ++ M) (c := c)
+  have hl0 : entry Y 0 (A0 ++ M).length = a + 2 := hlast.1
+  have hl1 : entry Y 1 (A0 ++ M).length = 2 := hlast.2.1
+  have hMh0 : entry M 0 0 = a + 1 := by have := hS.mid.head; omega
+  intro j hj0 hjl hlt hrec
+  rcases Nat.lt_or_ge j (A0 ++ M).length with hj | hj
+  · -- j は A0 ++ M の中
+    rcases Nat.lt_or_ge j A0.length with hjA | hjA
+    · -- A0 の中: M の頭より浅いことが記録最小から出る
+      have hcmp : entry Y 0 j < entry Y 0 A0.length :=
+        hrec A0.length hjA (by omega)
+      have hMhY : entry Y 0 A0.length = a + 1 := by
+        rw [hpre 0 A0.length (by omega),
+          show A0.length = A0.length + 0 from rfl, entry_append_right, hMh0]
+      rw [hMhY] at hcmp
+      rw [hpre 0 j (by omega), entry_append_left hjA] at hcmp
+      rw [hpre 1 j (by omega), entry_append_left hjA]
+      refine Lw_Ancd h0 j hj0 hjA hcmp ?_
+      intro i hi1 hi2
+      have h := hrec i hi1 (by omega)
+      rw [hpre 0 j (by omega), entry_append_left hjA, hpre 0 i (by omega),
+        entry_append_left hi2] at h
+      exact h
+    · -- M の中
+      obtain ⟨t, rfl⟩ : ∃ t, j = A0.length + t := ⟨j - A0.length, by omega⟩
+      have ht : t < M.length := by omega
+      rw [hpre 1 _ (by omega), entry_append_right]
+      rcases Nat.eq_zero_or_pos t with rfl | htpos
+      · exact hS.mid.head1
+      · exfalso
+        have hdeep := hS.mid.tail t htpos ht
+        have h := hrec (A0 ++ M).length (by omega) (by omega)
+        rw [hpre 0 _ (by omega), entry_append_right, hl0] at h
+        omega
+  · -- j は末尾
+    have : j = (A0 ++ M).length := by omega
+    rw [this, hl1]
+    omega
+
+theorem hang2_tw {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) :
+    ∀ n : ℕ, TwD (a + 3) ((A0 ++ M) ++ [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      have hAok := hang2_Aok hS h0
+      rw [TwD_succ]
+      exact hang2 hS h0 _
+        ⟨hang2_tw hS h0 n, TwD_zroot (by omega) hAok.zroot n, TwD_mono hAok.mono n,
+          TwD_root hAok.ne hAok.deep.1 n⟩
+
+/-- ★★ `(a+2,2,0)` の上に `(a+3,1,0)` を継げる。 -/
+theorem hang2_snoc {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) :
+    ((A0 ++ M) ++ [((a + 2, 2, 0) : ℕ × ℕ × ℕ)]) ++ [((a + 3, 1, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  have hAok := hang2_Aok hS h0
+  exact snocd_mem (by omega) hAok.ne hAok.deep hAok.zroot (hang2_Ancd hS h0)
+    (hang2_tw hS h0)
+
+#print axioms hang2_snoc
+
+/-- **検算**: 行292 の上に `(3,1,0)` を継げる（行293 の塔の第 1 段）。 -/
+theorem R292_snoc310 : R292 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := hang2_snoc (a := 0) (A0 := Q) (M := [((1, 1, 0) : ℕ × ℕ × ℕ)])
+    (Seg_one 0) Lw_Q
+  have heq : ((Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) ++ [((0 + 2, 2, 0) : ℕ × ℕ × ℕ)])
+      ++ [((0 + 3, 1, 0) : ℕ × ℕ × ℕ)] = R292 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] := by
+    simp [R292, Q]
+  rwa [heq] at h
+
+#print axioms R292_snoc310
+
 end Small
 end TRIO
