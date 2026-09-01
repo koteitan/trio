@@ -722,5 +722,102 @@ def Iterable (P : TrioSeq) : Prop :=
 `Mm` / `Rep` / `app_iter` は全部この特殊ケースで、梯子の 4 段目以降は
 一般形を要求する。 -/
 
+/-! ## bump: 接頭辞を不問にする
+
+`B` の末尾列が `B` の中に親を持つなら、`A ++ bump B` のバッドルートも `bump B` の
+中で止まるので、**`A` が何であってもよい**（`bump B` = 行 0 に一律 +1）。
+
+`Column.oper_append_right` はこれを `entry T 0 0 = 0` で実現しているが、`bump B` の
+根は深さ 1 なので使えない。`Wset.nextR_src_ge`（アンカー仮定なしで「接頭辞は親を
+供給できない」）から作った版なら通る。 -/
+
+/-- **`oper_append_right` のアンカー不要版**。 -/
+theorem oper_append_right_of (A T : TrioSeq) (n : ℕ) (hT : 2 ≤ T.length)
+    (hp : hasParent T (srow T (T.length - 1)) (T.length - 1)) :
+    oper (A ++ T) n = A ++ oper T n := by
+  have hlenAT : (A ++ T).length - 1 = A.length + (T.length - 1) := by
+    rw [List.length_append]; omega
+  unfold oper
+  set j1 := T.length - 1 with hj1
+  rw [hlenAT, if_neg (by omega : ¬ (A.length + j1 = 0)), if_neg (by omega : ¬ (j1 = 0))]
+  rw [entry_append_right A T 0 j1, entry_append_right A T 1 j1, entry_append_right A T 2 j1]
+  have hz : ¬ (entry T 0 j1 = 0 ∧ entry T 1 j1 = 0 ∧ entry T 2 j1 = 0) := by
+    rintro ⟨h0, -, -⟩
+    exact no_hasParent_of_row0_zero h0 hp
+  rw [if_neg hz, if_neg hz, srow_append_right A T j1]
+  have hpAT : hasParent (A ++ T) (srow T j1) (A.length + j1) :=
+    Wset.hasParent_append_right_of A T hp
+  rw [if_neg (not_not.2 hpAT), if_neg (not_not.2 hp)]
+  have hpar : parent (A ++ T) (srow T j1) (A.length + j1)
+      = A.length + parent T (srow T j1) j1 := parent_append_right_of A T hp
+  set j0 := parent T (srow T j1) j1 with hj0
+  simp only [hpar]
+  have hd0 : entry T 0 j1 - entry (A ++ T) 0 (A.length + j0)
+      = entry T 0 j1 - entry T 0 j0 := by rw [entry_append_right]
+  have hd1 : entry T 1 j1 - entry (A ++ T) 1 (A.length + j0)
+      = entry T 1 j1 - entry T 1 j0 := by rw [entry_append_right]
+  rw [hd0, hd1]
+  have hrange : (A.length + j1) - (A.length + j0) = j1 - j0 := by omega
+  rw [hrange, take_append_right, List.append_assoc, hpar]
+  congr 1
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  exact copyblock_append A T j0 j0 (j1 - j0) k _ _
+
+/-- `bump B` = 行 0 に一律 +1。 -/
+def bump (B : TrioSeq) : TrioSeq := shiftr01 1 0 B
+
+theorem bump_len (B : TrioSeq) : (bump B).length = B.length := by simp [bump, shiftr01]
+
+theorem bump_nil : bump [] = [] := by simp [bump, shiftr01]
+
+theorem bump_col {B : TrioSeq} : ∀ c ∈ bump B, 1 ≤ c.1 := by
+  intro c hc
+  simp only [bump, shiftr01, List.mem_map] at hc
+  obtain ⟨p, -, rfl⟩ := hc
+  omega
+
+/-- **展開は bump をすり抜ける。** -/
+theorem oper_bump (A B : TrioSeq) (n : ℕ) (hlen : 2 ≤ B.length)
+    (hp : hasParent B (srow B (B.length - 1)) (B.length - 1)) :
+    (A ++ bump B)⟦n⟧ = A ++ bump (B⟦n⟧) := by
+  have h2 : 2 ≤ (bump B).length := by rw [bump_len]; exact hlen
+  have hp' : hasParent (bump B) (srow (bump B) ((bump B).length - 1))
+      ((bump B).length - 1) := by
+    rw [bump_len, bump, srow_shiftr01, hasParent_shiftr01]; exact hp
+  rw [bump, oper_append_right_of A _ n (by simpa [bump] using h2) (by simpa [bump] using hp'),
+    oper_shiftr01]
+  rfl
+
+/-! ## 平坦な `B`
+
+行 1・行 2 が恒等的に 0 の `B`（＝埋め込まれた原始数列）なら `srow = 0` なので、
+末尾列が全零でない限り必ず親を持つ。これで場合分けが 2 つに閉じる。 -/
+
+/-- 行 1・行 2 が恒等的に 0。 -/
+def Flat (B : TrioSeq) : Prop := ∀ c ∈ B, c.2.1 = 0 ∧ c.2.2 = 0
+
+theorem Flat_entry {B : TrioSeq} (h : Flat B) (j : ℕ) :
+    entry B 1 j = 0 ∧ entry B 2 j = 0 := by
+  rcases Nat.lt_or_ge j B.length with hj | hj
+  · have hm := h _ (List.getElem_mem hj)
+    have hg : B.getD j (0, 0, 0) = B[j] := by
+      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    constructor <;> simp only [entry, hg] <;> simp [hm.1, hm.2]
+  · constructor <;>
+      simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_none_iff.mpr hj]
+
+theorem Flat_srow {B : TrioSeq} (h : Flat B) (j : ℕ) : srow B j = 0 := by
+  obtain ⟨h1, h2⟩ := Flat_entry h j
+  simp [srow, h1, h2]
+
+theorem Flat_dropLast {B : TrioSeq} (h : Flat B) : Flat B.dropLast :=
+  fun c hc => h c (List.dropLast_subset _ hc)
+
+#print axioms oper_append_right_of
+#print axioms oper_bump
+#print axioms Flat_srow
+
 end Small
 end TRIO
