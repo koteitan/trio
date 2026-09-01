@@ -4219,5 +4219,237 @@ theorem R292_mem_of_snocY : R292 ∈ W 0 := by
 
 #print axioms R292_mem_of_snocY
 
+/-! ### `Lv` の梯子 ×`Mtw` の塔
+
+`Lv_snoc` は 1 本だけ `(a+1,1,0)` を継ぐ。ここではそれを **n 本連ねた鎖**
+`A(a+1,1,0)(a+2,1,0)...(a+n,1,0)` が `W 0` に入ることを示す。ランクは 1 段ごとに
+1 つ上がるが、`n` ごとに別のランクでよいので問題にならない。 -/
+
+theorem Mtw_one_succ (A : TrioSeq) (a n : ℕ) :
+    Mtw A [((a + 1, 1, 0) : ℕ × ℕ × ℕ)] (n + 1)
+      = Mtw A [((a + 1, 1, 0) : ℕ × ℕ × ℕ)] n ++ [((a + n + 1, 1, 0) : ℕ × ℕ × ℕ)] := by
+  rw [Mtw_succ]
+  congr 1
+  simp only [shiftr01, List.map_cons, List.map_nil]
+  congr 2
+  omega
+
+/-- 鎖の各段が梯子の 1 段になる。 -/
+theorem Lv_chain_lv (r a : ℕ) (A : TrioSeq) (hA : Lv r a A) :
+    ∀ n : ℕ, Lv (r + n) (a + n) (Mtw A [((a + 1, 1, 0) : ℕ × ℕ × ℕ)] n)
+  | 0 => by simpa [Mtw_zero] using hA
+  | (n + 1) => by
+      have ih := Lv_chain_lv r a A hA n
+      rw [Mtw_one_succ]
+      have hM : MidD (a + n + 2) [((a + n + 1, 1, 0) : ℕ × ℕ × ℕ)] :=
+        MidD_one (a + n + 1) (by omega)
+      have hre : ∀ (t : ℕ) (A' : TrioSeq), Lv (r + n) (a + n + t) A' →
+          A' ++ shiftr01 t 0 [((a + n + 1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+        intro t A' hA'
+        have h := Lv_snoc (r + n) (a + n + t) A' hA'
+        have heq : shiftr01 t 0 [((a + n + 1, 1, 0) : ℕ × ℕ × ℕ)]
+            = [((a + n + t + 1, 1, 0) : ℕ × ℕ × ℕ)] := by
+          simp only [shiftr01, List.map_cons, List.map_nil]
+          congr 2
+          omega
+        rw [heq]
+        exact h
+      have h := Lv_shift (r := r + n) (a := a + n) hM hre 0
+        (A' := Mtw A [((a + 1, 1, 0) : ℕ × ℕ × ℕ)] n) (by simpa using ih)
+      simp only [shiftr01_zero, Nat.add_zero] at h
+      have h1 : r + n + 1 = r + (n + 1) := by omega
+      have h2 : a + n + 1 = a + (n + 1) := by omega
+      rw [h1, h2] at h
+      exact h
+
+/-- ★ `Lv r a A` なら鎖 `A(a+1,1,0)(a+2,1,0)...` はどこまでも `W 0`。 -/
+theorem Lv_chain (r a : ℕ) (A : TrioSeq) (hA : Lv r a A) (n : ℕ) :
+    Mtw A [((a + 1, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 :=
+  (Lv_Aok _ _ _ (Lv_chain_lv r a A hA n)).mem
+
+/-- ★★ `Lv r a A` なら **2 列** `(a+1,1,0)(a+2,2,0)` を継げる。
+
+`(a+2,2,0)` の行 1 の親は直前の `(a+1,1,0)`（内部アンカー）なので、塔は
+`Mtw A [(a+1,1,0)]` すなわち鎖。 -/
+theorem Lv_snoc2 (r a : ℕ) (A : TrioSeq) (hA : Lv r a A) :
+    A ++ [((a + 1, 1, 0) : ℕ × ℕ × ℕ), ((a + 2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hAok : Aok A := Lv_Aok _ _ _ hA
+  have h := snocY_mem (Y0 := A) (M := [((a + 1, 1, 0) : ℕ × ℕ × ℕ)]) (L := a + 1)
+    (y := 2) hAok.ne (MidD_one (a + 1) (by omega)) (by show (1 : ℕ) < 2; omega)
+    (by omega) (Lv_chain r a A hA)
+  simpa using h
+
+#print axioms Lv_chain
+#print axioms Lv_snoc2
+
+/-! ### 内部アンカーの継ぎ足し（歩幅 `delta` 版）
+
+`oper_snocY` はアンカーと末尾列の深さの差が 1 の場合。ここでは差を `dl` に一般化する。
+写しの歩幅がそのまま `dl` になるので、塔は `Mtwd dl Y0 M n = Y0 ++ M ++ M↑dl ++ M↑2dl ++ ...`。
+
+差が 2 以上のときは「アンカーより後ろで末尾列の行 0 の祖先になる列」が実在しうるので、
+`nextrel1` の最小性は仮定 `hMy`（`M` の頭以外は行 1 が `y` 以上）で押さえる。 -/
+
+def Mtwd (dl : ℕ) (Y0 M : TrioSeq) (n : ℕ) : TrioSeq :=
+  Y0 ++ (List.range n).flatMap fun k => shiftr01 (dl * k) 0 M
+
+theorem Mtwd_zero (dl : ℕ) (Y0 M : TrioSeq) : Mtwd dl Y0 M 0 = Y0 := by simp [Mtwd]
+
+theorem Mtwd_one (dl : ℕ) (Y0 M : TrioSeq) : Mtwd dl Y0 M 1 = Y0 ++ M := by
+  simp [Mtwd, shiftr01_zero]
+
+theorem Mtwd_succ (dl : ℕ) (Y0 M : TrioSeq) (n : ℕ) :
+    Mtwd dl Y0 M (n + 1) = Mtwd dl Y0 M n ++ shiftr01 (dl * n) 0 M := by
+  simp [Mtwd, List.range_succ, List.flatMap_append, List.append_assoc]
+
+open Classical in
+/-- ★ 内部アンカーでの継ぎ足しの展開（歩幅 `dl`）。 -/
+theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
+    (hM : MidD (L + 1) M) (hMe : entry M 1 0 < y)
+    (hMy : ∀ t, 1 ≤ t → t < M.length → y ≤ entry M 1 t)
+    (hy : 1 ≤ y) (hdl : 1 ≤ dl) (n : ℕ) :
+    ((Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Mtwd dl Y0 M n := by
+  have hY0len : 0 < Y0.length := List.length_pos_iff.mpr hY0ne
+  have hMlen : 0 < M.length := List.length_pos_iff.mpr hM.ne
+  set Y : TrioSeq := Y0 ++ M with hY
+  set T : TrioSeq := Y ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)] with hT
+  have hYlen : Y.length = Y0.length + M.length := by rw [hY]; simp
+  have hTlen : T.length = Y.length + 1 := by rw [hT]; simp
+  have hpreY : ∀ i j, j < Y.length → entry T i j = entry Y i j :=
+    fun i j hj => entry_append_lt hj
+  have hpreM : ∀ i t, t < M.length → entry Y i (Y0.length + t) = entry M i t := by
+    intro i t _
+    rw [hY, entry_append_right]
+  have hlast := entry_append_last (P := Y) (c := ((L + dl, y, 0) : ℕ × ℕ × ℕ))
+  have hl0 : entry T 0 Y.length = L + dl := hlast.1
+  have hl1 : entry T 1 Y.length = y := hlast.2.1
+  have hl2 : entry T 2 Y.length = 0 := hlast.2.2
+  have hanchor0 : entry T 0 Y0.length = L := by
+    rw [hpreY 0 Y0.length (by omega),
+      show Y0.length = Y0.length + 0 from rfl, hpreM 0 0 hMlen]
+    have := hM.head; omega
+  have hanchor1 : entry T 1 Y0.length = entry M 1 0 := by
+    rw [hpreY 1 Y0.length (by omega),
+      show Y0.length = Y0.length + 0 from rfl, hpreM 1 0 hMlen]
+  have hdeeper : ∀ x, Y0.length < x → x < T.length → L + 1 ≤ entry T 0 x := by
+    intro x h1 h2
+    rcases Nat.lt_or_ge x Y.length with h | h
+    · obtain ⟨t, rfl⟩ : ∃ t, x = Y0.length + t := ⟨x - Y0.length, by omega⟩
+      rw [hpreY 0 _ h, hpreM 0 t (by omega)]
+      exact hM.tail t (by omega) (by omega)
+    · have : x = Y.length := by omega
+      rw [this, hl0]; omega
+  have hsh : ∀ x, Y0.length < x → x < T.length → entry T 0 Y0.length < entry T 0 x := by
+    intro x h1 h2
+    have := hdeeper x h1 h2
+    rw [hanchor0]; omega
+  have hle0 : ∀ j, Y0.length ≤ j → j < T.length → le0 T Y0.length j := by
+    intro j h1 h2
+    rcases Nat.eq_or_lt_of_le h1 with rfl | h
+    · exact ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+    · exact H12Export.le0_root_of_shallow (by omega) hsh j h h2
+  have hsrow : srow T Y.length = 1 := by
+    unfold srow
+    rw [if_neg (by rw [hl2]; omega), if_pos (by rw [hl1]; omega)]
+  have hpar : hasParent T 1 Y.length :=
+    H12Export.hasParent1_of_le0_witness (by omega)
+      (hle0 Y.length (by omega) (by omega)).2.2
+      (by rw [hanchor1, hl1]; exact hMe)
+  have hnr1 : nextrel1 T Y0.length Y.length := by
+    refine ⟨by omega, by omega, by omega, by rw [hanchor1, hl1]; exact hMe,
+      hle0 Y.length (by omega) (by omega), ?_⟩
+    rintro j ⟨hj0, hjle⟩
+    rw [hl1]
+    rcases Nat.lt_or_ge j Y.length with h | h
+    · obtain ⟨t, rfl⟩ : ∃ t, j = Y0.length + t := ⟨j - Y0.length, by omega⟩
+      rw [hpreY 1 _ h, hpreM 1 t (by omega)]
+      exact hMy t (by omega) (by omega)
+    · have : j = Y.length := by
+        have := H12Export.rtg0_index_le hjle.2.2
+        omega
+      rw [this, hl1]
+  have hj0 : parent T 1 Y.length = Y0.length :=
+    hpar.unique (parent_nextR hpar) hnr1
+  rw [L53.oper_unfold (j1 := Y.length) (i1 := 1) (j0 := Y0.length) (d0 := dl) (d1 := 0)
+      (by omega) (by omega) (by rintro ⟨h, -, -⟩; rw [hl0] at h; omega)
+      hsrow.symm hpar hj0.symm (by rw [if_pos (by omega), hl0, hanchor0]; omega)
+      (by simp) n, Mtwd]
+  have htk : T.take Y0.length = Y0 := by
+    rw [hT, hY, List.append_assoc]
+    exact List.take_left
+  have hrlen : Y.length - Y0.length = M.length := by omega
+  rw [htk, hrlen]
+  simp only [Nat.mul_zero, ite_self, Nat.add_zero]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  rw [← map_range'_shift_at (T := T) (M := M) (q := Y0.length) (k := dl * k)
+    (fun i t ht => by
+      rw [hpreY i _ (by omega), hpreM i t ht])]
+  apply List.map_congr_left
+  intro j hj
+  have hjr := List.mem_range'_1.1 hj
+  rw [if_pos (hle0 j (by omega) (by omega)), Nat.mul_comm k dl]
+
+/-- ★ 塔が済めば内部アンカーで歩幅 `dl` の列を継げる。 -/
+theorem snocYd_mem {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
+    (hM : MidD (L + 1) M) (hMe : entry M 1 0 < y)
+    (hMy : ∀ t, 1 ≤ t → t < M.length → y ≤ entry M 1 t)
+    (hy : 1 ≤ y) (hdl : 1 ≤ dl) (htw : ∀ n, Mtwd dl Y0 M n ∈ W 0) :
+    (Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_snocYd hY0ne hM hMe hMy hy hdl n]
+  exact htw n
+
+#print axioms oper_snocYd
+#print axioms snocYd_mem
+
+/-! ### シート行293 `X(1,1,0)(2,2,0)(3,2,0) = psi(W_w + psi_1(W_2^2))`
+
+`N293 = (1,1,0)(2,2,0)` を歩幅 2 で積んだ塔が `W 0` に入れば行293 が出る。 -/
+
+def N293 : TrioSeq := [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)]
+
+def R293 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 1, 0), (2, 2, 0), (3, 2, 0)]
+
+theorem MidD_N293 : MidD 2 N293 where
+  ne := by simp [N293]
+  col := by
+    intro c hc
+    simp only [N293, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> decide
+  head := rfl
+  head1 := le_refl 1
+  tail := by
+    intro j h1 h2
+    simp only [N293, List.length_cons, List.length_nil] at h2
+    have hj : j = 1 := by omega
+    subst hj
+    have hv : entry N293 0 1 = 2 := rfl
+    omega
+  mono := by
+    intro c hc
+    simp only [N293, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> decide
+
+/-- ★ 塔 `Q ++ N293 ++ N293↑2 ++ N293↑4 ++ ...` が済めば行293。 -/
+theorem R293_mem_of_tower (htw : ∀ n, Mtwd 2 Q N293 n ∈ W 0) : R293 ∈ W 0 := by
+  have h : R293 = (Q ++ N293) ++ [((1 + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+    simp [R293, Q, N293]
+  rw [h]
+  refine snocYd_mem (L := 1) (y := 2) (dl := 2) (by simp [Q]) MidD_N293 ?_ ?_
+    (by omega) (by omega) htw
+  · show (1 : ℕ) < 2
+    omega
+  · intro t h1 h2
+    simp only [N293, List.length_cons, List.length_nil] at h2
+    have ht : t = 1 := by omega
+    subst ht
+    have hv : entry N293 1 1 = 2 := rfl
+    omega
+
+#print axioms R293_mem_of_tower
+
 end Small
 end TRIO
