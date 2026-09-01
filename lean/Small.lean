@@ -815,6 +815,185 @@ theorem Flat_srow {B : TrioSeq} (h : Flat B) (j : ℕ) : srow B j = 0 := by
 theorem Flat_dropLast {B : TrioSeq} (h : Flat B) : Flat B.dropLast :=
   fun c hc => h c (List.dropLast_subset _ hc)
 
+theorem Flat_pred {B : TrioSeq} (h : Flat B) : Flat (Pred B) := by
+  unfold Pred
+  by_cases hc : B.length ≤ 1
+  · rw [if_pos hc]; exact h
+  · rw [if_neg hc]; exact Flat_dropLast h
+
+/-- **平坦なら展開も平坦。** `srow = 0` なので増分は `d0 = d1 = 0`、写しは元の列
+そのものになる。 -/
+theorem Flat_oper {B : TrioSeq} (h : Flat B) (n : ℕ) : Flat (B⟦n⟧) := by
+  by_cases hL : B.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]; exact h
+  by_cases hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+      entry B 2 (B.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz]; exact Flat_pred h
+  by_cases hp : hasParent B 0 (B.length - 1)
+  · rw [L53.oper_flat (j0 := parent B 0 (B.length - 1)) rfl hL hz
+      (Flat_srow h _) hp rfl n]
+    intro c hc
+    rcases List.mem_append.mp hc with hm | hm
+    · exact h c (List.mem_of_mem_take hm)
+    · rw [List.mem_flatMap] at hm
+      obtain ⟨k, -, hm2⟩ := hm
+      rw [List.mem_map] at hm2
+      obtain ⟨j, hj, rfl⟩ := hm2
+      have hjr := List.mem_range'_1.1 hj
+      exact h _ (Wset.entry_pair_mem (by omega))
+  · rw [oper_eq_pred_of_noParent n hL hz (by rw [Flat_srow h]; exact hp)]
+    exact Flat_pred h
+
+/-! ## 本丸: bump に沿った帰納法
+
+`B` が平坦（行 1・行 2 が 0）で根が深さ 0 なら、`A ++ bump B` の**バッドルートは
+必ず `bump B` の中で止まる**。だから展開は `A` を素通りして `A ++ bump (B⟦n⟧)` に
+なり、`B` 自身の `W` 帰納法がそのまま `A ++ bump B` の帰納法になる。`A` は
+`W 0` の `Deep` な行列なら何でもよい。 -/
+
+/-- **`B ∈ W 0`（平坦・根 0）なら、どの `Deep` な `A ∈ W 0` に対しても
+`A ++ bump B ∈ W 0`。** -/
+theorem bump_mem :
+    ∀ B ∈ W 0, Flat B → entry B 0 0 = 0 →
+      ∀ A : TrioSeq, A ∈ W 0 → A ≠ [] → Deep A → A ++ bump B ∈ W 0 := by
+  have key : W 0 ⊆ {B : TrioSeq | Flat B → entry B 0 0 = 0 →
+      ∀ A : TrioSeq, A ∈ W 0 → A ≠ [] → Deep A → A ++ bump B ∈ W 0} := by
+    refine A2' ?_
+    intro B hB
+    simp only [Set.mem_setOf_eq]
+    intro hflat hroot A hA hAne hAd
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        simpa [bump_nil] using hA
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        obtain ⟨hc1, hc2⟩ := hflat c (by simp)
+        have hc0 : c.1 = 0 := hroot
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hb : bump [((0, 0, 0) : ℕ × ℕ × ℕ)] = [((1, 0, 0) : ℕ × ℕ × ℕ)] := by
+          simp [bump, shiftr01]
+        rw [hb]
+        exact snoc_one hA hAne hAd.1 hAd.2
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by
+      intro hc; rw [hc] at hlen2; simp at hlen2
+    rcases hB with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · -- 末尾列は `(0,0,0)`。展開は `dropLast`、`bump` の末尾は `(1,0,0)`。
+        obtain ⟨he1, he2⟩ := Flat_entry hflat (B.length - 1)
+        have hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0 := ⟨hlast, he1, he2⟩
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]
+          exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) hz]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdl0 : entry B.dropLast 0 0 = 0 := by
+          rw [List.dropLast_eq_take,
+            Wset.entry_take (show (0 : ℕ) < B.length - 1 by omega)]
+          exact hroot
+        have hIH := hdl (Flat_dropLast hflat) hdl0 A hA hAne hAd
+        have hDne : A ++ bump B.dropLast ≠ [] := by
+          simp [List.append_eq_nil_iff, hAne]
+        have hD : Deep (A ++ bump B.dropLast) :=
+          Deep_append hAd hAne (fun c hc => bump_col c hc)
+        have hbs : bump B = bump B.dropLast ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] := by
+          conv_lhs => rw [hsplit]
+          simp [bump, shiftr01]
+        rw [hbs, ← List.append_assoc]
+        exact snoc_one hIH hDne hD.1 hD.2
+      · -- 末尾列は非零。根が深さ 0 なので `B` の中に親がある。
+        have hp0 : hasParent B 0 (B.length - 1) := by
+          rw [Wset.hasParent_zero_iff (show B.length - 1 < B.length by omega)]
+          exact ⟨0, by omega, by rw [hroot]; omega⟩
+        have hp : hasParent B (srow B (B.length - 1)) (B.length - 1) := by
+          rw [Flat_srow hflat]; exact hp0
+        refine A1_intro (Or.inr (Or.inl ?_))
+        intro n hn
+        rw [oper_bump A B n hlen2 hp]
+        exact hnat n hn (Flat_oper hflat n)
+          (by rw [Wset.oper_head_eq hn]; exact hroot) A hA hAne hAd
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro B hB
+  exact key hB
+
+/-! ## 系: 平坦な `B` は無条件で `W 0` に居る
+
+行 2 が恒等的に 0 の行列は（2 行 BMS そのものなので）`Wtower2.zeroRow2_mem_Wself`
+で `Wself` に入る。平坦なら根のレベルも 0 なので段は 0 でよい。したがって
+`bump_mem` の `B ∈ W 0` は仮定ではなく**定理**になる。 -/
+
+theorem Flat_mem_W {B : TrioSeq} (h : Flat B) : B ∈ W 0 := by
+  refine (mem_Wself_iff 0 B).mpr ⟨zeroRow2_mem_Wself (fun p hp => (h p hp).2), ?_⟩
+  obtain ⟨h1, h2⟩ := Flat_entry h 0
+  simp [lev, h1, h2]
+
+/-- **`A ++ bump B`（`B` は任意の平坦な行列）。** 順序数では `o(A) * o(B)`。 -/
+theorem bump_flat {B : TrioSeq} (hf : Flat B) (hroot : entry B 0 0 = 0)
+    {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A) :
+    A ++ bump B ∈ W 0 :=
+  bump_mem B (Flat_mem_W hf) hf hroot A hA hAne hAd
+
+/-- 継ぎ足した後も `Deep` なので、いくらでも重ねられる。 -/
+theorem Deep_bump_flat {B A : TrioSeq} (hAne : A ≠ []) (hAd : Deep A) :
+    Deep (A ++ bump B) :=
+  Deep_append hAd hAne (fun c hc => bump_col c hc)
+
+/-! ## 梯子 `X(1,0,0)(2,0,0)…(k,0,0)`
+
+`Chain k = (0,0,0)(1,0,0)…(k,0,0)` は平坦で根が深さ 0。`bump` すると
+`(1,0,0)(2,0,0)…(k+1,0,0)`。これで `M`・`M2`・`M3` が一斉に出る。 -/
+
+/-- 平らな梯子 `(0,0,0)(1,0,0)…(k,0,0)`。 -/
+def Chain (k : ℕ) : TrioSeq := (List.range (k + 1)).map fun i => ((i, 0, 0) : ℕ × ℕ × ℕ)
+
+theorem Chain_flat (k : ℕ) : Flat (Chain k) := by
+  intro c hc
+  simp only [Chain, List.mem_map] at hc
+  obtain ⟨i, -, rfl⟩ := hc
+  exact ⟨rfl, rfl⟩
+
+theorem Chain_root (k : ℕ) : entry (Chain k) 0 0 = 0 := by
+  simp [Chain, entry, List.getD_eq_getElem?_getD, List.range_succ_eq_map]
+
+theorem bump_Chain (k : ℕ) :
+    bump (Chain k) = (List.range (k + 1)).map fun i => ((i + 1, 0, 0) : ℕ × ℕ × ℕ) := by
+  simp [bump, shiftr01, Chain, List.map_map, Function.comp_def]
+
+/-- **`A ++ (1,0,0)(2,0,0)…(k+1,0,0) ∈ W 0`（すべての `k`）。** -/
+theorem chain_mem {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A) (k : ℕ) :
+    A ++ (List.range (k + 1)).map (fun i => ((i + 1, 0, 0) : ℕ × ℕ × ℕ)) ∈ W 0 := by
+  rw [← bump_Chain]
+  exact bump_flat (Chain_flat k) (Chain_root k) hA hAne hAd
+
+/-- 梯子の 3 段目 `M3` を `bump_flat` で取り直す（`M3_mem` の別証明）。 -/
+theorem M3_mem' : M3 ∈ W 0 := by
+  have h := chain_mem Q_mem Q_ne Q_deep 2
+  simpa [M3, Q, List.range_succ] using h
+
+#print axioms Flat_mem_W
+#print axioms chain_mem
+#print axioms M3_mem'
+
+#print axioms Flat_oper
+#print axioms bump_mem
+
 #print axioms oper_append_right_of
 #print axioms oper_bump
 #print axioms Flat_srow
