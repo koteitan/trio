@@ -132,6 +132,11 @@ def rule(M, known, use_bump):
             d = C[0][0]
             if deep_d(A, d) and bumpshape(C, d) and A in known:
                 return 'R8' if d == 1 else 'R8d'
+        if ORACLE_TOW1 and len(M) >= 2:
+            A, c = M[:-1], M[-1]
+            if (c[0] == 1 and c[2] == 0 and deep_d(A, 1) and gen_ok(A)
+                    and A in known):
+                return 'R9'
         if ORACLE_GEN:
             for i in range(1, len(M)):
                 A, C = M[:i], M[i:]
@@ -148,6 +153,7 @@ def rule(M, known, use_bump):
 
 ORACLE_PC = False
 ORACLE_GEN = False
+ORACLE_TOW1 = False
 
 
 def closure(D, use_bump):
@@ -183,9 +189,11 @@ if __name__ == '__main__':
             (False, False, False, 'bump なし'),
             (True, False, False, 'bump（行2≡0 の B）'),
             (True, False, True, 'bump 一般版（B は Zroot+Mono で W 0 の元）'),
-            (True, True, True, '上 ＋ PrefixCopies 神託')):
+            (True, False, 'tow1', '上 ＋ TOW1（A ++ [(1,e,0)]）'),
+            (True, True, 'tow1', '上 ＋ PrefixCopies 神託')):
         globals()['ORACLE_PC'] = oracle
-        globals()['ORACLE_GEN'] = gen
+        globals()['ORACLE_GEN'] = bool(gen)
+        globals()['ORACLE_TOW1'] = (gen == 'tow1')
         tag = closure(D, use)
         hit = [M for M in F if M in tag]
         by = Counter(len(M) for M in hit)

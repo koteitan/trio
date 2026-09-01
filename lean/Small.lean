@@ -1673,6 +1673,185 @@ theorem X110_mem : X110 ∈ W 0 := by
   rw [oper_X110 n]
   exact Utow_mem n
 
+/-! ## 一般化: 深さ 1 の列は行 1 が何でも継げる
+
+`X(1,1,0)` の証明は `A = Q` に依っていない。`A ∈ W 0` が `Deep`・`Zroot`・`Mono`
+なら、末尾に **`(1,e,0)`（深さ 1・行 2 は 0・行 1 は何でも）** を継げる。
+
+理由: 継いだ列の行 1 の親は必ず `A` の根。`Deep` なので行 0 の祖先は根しかなく、
+根の行 1 は 0（`Zroot`）だから。したがって
+
+    (A ++ [(1,e,0)])⟦n⟧ = concat_{k<n} shiftr01 k 0 A  =: Tow A n
+    Tow A (n+1) = A ++ bump (Tow A n)
+
+で `bump_zm` の帰納法が回る。**`e` は結果に一切効かない。** -/
+
+theorem bump_append (X Y : TrioSeq) : bump (X ++ Y) = bump X ++ bump Y := by
+  simp [bump, shiftr01]
+
+theorem shiftr01_succ (k : ℕ) (A : TrioSeq) :
+    bump (shiftr01 k 0 A) = shiftr01 (k + 1) 0 A := by
+  simp only [bump, shiftr01, List.map_map, Function.comp_def]
+  apply List.map_congr_left
+  intro p _
+  simp [Nat.add_comm, Nat.add_assoc, Nat.add_left_comm]
+
+/-- `A ++ [(1,e,0)]` の展開の塔。 -/
+def Tow (A : TrioSeq) : ℕ → TrioSeq
+  | 0 => []
+  | (n + 1) => A ++ bump (Tow A n)
+
+theorem map_bump_shift (A : TrioSeq) : ∀ l : List ℕ,
+    bump (l.flatMap fun k => shiftr01 k 0 A)
+      = (l.map (· + 1)).flatMap fun k => shiftr01 k 0 A
+  | [] => by simp [bump, shiftr01]
+  | (a :: t) => by
+      rw [List.flatMap_cons, bump_append, map_bump_shift A t, List.map_cons,
+        List.flatMap_cons, shiftr01_succ]
+
+theorem Tow_eq (A : TrioSeq) (n : ℕ) :
+    Tow A n = (List.range n).flatMap fun k => shiftr01 k 0 A := by
+  induction n with
+  | zero => simp [Tow]
+  | succ n ih =>
+    show A ++ bump (Tow A n) = _
+    rw [ih, List.range_succ_eq_map, map_bump_shift, List.flatMap_cons, shiftr01_zero]
+
+theorem Tow_col {A : TrioSeq} (n : ℕ) : ∀ c ∈ Tow A n, ∃ k, ∃ p ∈ A,
+    c = ((p.1 + k, p.2.1 + 0, p.2.2) : ℕ × ℕ × ℕ) := by
+  rw [Tow_eq]
+  intro c hc
+  rw [List.mem_flatMap] at hc
+  obtain ⟨k, -, hc2⟩ := hc
+  simp only [shiftr01, List.mem_map] at hc2
+  obtain ⟨p, hp, rfl⟩ := hc2
+  exact ⟨k, p, hp, rfl⟩
+
+theorem Tow_zroot {A : TrioSeq} (hAz : Zroot A) (n : ℕ) : Zroot (Tow A n) := by
+  intro c hc h0
+  obtain ⟨k, p, hp, rfl⟩ := Tow_col n c hc
+  have hp1 : p.1 = 0 := by dsimp only at h0; omega
+  obtain ⟨e1, e2⟩ := hAz p hp hp1
+  exact ⟨by dsimp only; omega, by dsimp only; exact e2⟩
+
+theorem Tow_mono {A : TrioSeq} (hAm : Mono A) (n : ℕ) : Mono (Tow A n) := by
+  intro c hc
+  obtain ⟨k, p, hp, rfl⟩ := Tow_col n c hc
+  have := hAm p hp
+  dsimp only
+  omega
+
+theorem Tow_root {A : TrioSeq} (hAne : A ≠ []) (hAd : Deep A) (n : ℕ) :
+    entry (Tow A n) 0 0 = 0 := by
+  cases n with
+  | zero => simp [Tow, entry]
+  | succ n =>
+    show entry (A ++ bump (Tow A n)) 0 0 = 0
+    rw [entry_append_left (List.length_pos_iff.mpr hAne)]
+    exact hAd.1
+
+theorem Tow_mem {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A)
+    (hAz : Zroot A) (hAm : Mono A) : ∀ n, Tow A n ∈ W 0
+  | 0 => by simpa [Tow] using W_nil 0
+  | (n + 1) => by
+      show A ++ bump (Tow A n) ∈ W 0
+      exact bump_zm (Tow_mem hA hAne hAd hAz hAm n) (Tow_zroot hAz n)
+        (Tow_mono hAm n) (Tow_root hAne hAd n) hA hAne hAd
+
+theorem map_range'_shift (A : TrioSeq) (k : ℕ) :
+    (List.range' 0 A.length).map
+        (fun j => ((entry A 0 j + k, entry A 1 j, entry A 2 j) : ℕ × ℕ × ℕ))
+      = shiftr01 k 0 A := by
+  apply List.ext_getElem
+  · simp [shiftr01]
+  · intro i h1 h2
+    have hi : i < A.length := by simpa using h1
+    simp only [List.getElem_map, List.getElem_range', Nat.zero_add, Nat.one_mul,
+      shiftr01]
+    rw [← triple_entry A hi]
+    rfl
+
+theorem snoc_row1_oper {A : TrioSeq} (hAne : A ≠ []) (hAd : Deep A) (hAz : Zroot A)
+    {e : ℕ} (he : 1 ≤ e) (n : ℕ) :
+    (A ++ [((1, e, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Tow A n := by
+  have hplen : 0 < A.length := List.length_pos_iff.mpr hAne
+  have hlast := entry_append_last (P := A) (c := ((1, e, 0) : ℕ × ℕ × ℕ))
+  have hpre : ∀ i j, j < A.length →
+      entry (A ++ [((1, e, 0) : ℕ × ℕ × ℕ)]) i j = entry A i j :=
+    fun i j hj => entry_append_lt hj
+  have hMdeep : Deep (A ++ [((1, e, 0) : ℕ × ℕ × ℕ)]) :=
+    Deep_snoc hAd hAne (le_refl 1)
+  have hMlen : (A ++ [((1, e, 0) : ℕ × ℕ × ℕ)]).length = A.length + 1 := by simp
+  set M : TrioSeq := A ++ [((1, e, 0) : ℕ × ℕ × ℕ)] with hM
+  have hl0 : entry M 0 A.length = 1 := hlast.1
+  have hl1 : entry M 1 A.length = e := hlast.2.1
+  have hl2 : entry M 2 A.length = 0 := hlast.2.2
+  have hsh : ∀ x, 0 < x → x < M.length → entry M 0 0 < entry M 0 x := by
+    intro x hx0 hxl
+    rw [hMdeep.1]
+    exact hMdeep.2 x hx0 hxl
+  have hle0 : ∀ j, j < M.length → le0 M 0 j := by
+    intro j hj
+    rcases Nat.eq_zero_or_pos j with rfl | hj0
+    · exact ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+    · exact H12Export.le0_root_of_shallow (by omega) hsh j hj0 hj
+  have hroot1 : entry M 1 0 = 0 := by
+    rw [hpre 1 0 hplen]
+    exact (Zroot_entry hAz hAd.1).1
+  have hsrow : srow M A.length = 1 := by
+    unfold srow
+    rw [if_neg (by rw [hl2]; omega), if_pos (by rw [hl1]; omega)]
+  have hpar : hasParent M 1 A.length :=
+    H12Export.hasParent1_of_le0_witness (by omega) (hle0 A.length (by omega)).2.2
+      (by rw [hroot1, hl1]; omega)
+  have hnr1 : nextrel1 M 0 A.length := by
+    refine ⟨by omega, by omega, hplen, by rw [hroot1, hl1]; omega,
+      hle0 A.length (by omega), ?_⟩
+    intro j hj
+    have hjeq : j = A.length := by
+      rcases Relation.ReflTransGen.cases_tail hj.2.2.2 with h | ⟨c, hc1, hc2⟩
+      · omega
+      · exfalso
+        have hc0 : entry M 0 c = 0 := by
+          have := hc2.2.2.2.1
+          rw [hl0] at this
+          omega
+        have hcz : c = 0 := by
+          by_contra hcn
+          have := hMdeep.2 c (by omega) hc2.1
+          omega
+        rw [hcz] at hc1
+        have := H12Export.rtg0_index_le hc1
+        omega
+    rw [hjeq]
+  have hj0 : parent M 1 A.length = 0 := hpar.unique (parent_nextR hpar) hnr1
+  rw [L53.oper_unfold (j1 := A.length) (i1 := 1) (j0 := 0) (d0 := 1) (d1 := 0)
+      (by omega) (by omega) (by rintro ⟨h, -, -⟩; rw [hl0] at h; omega)
+      hsrow.symm hpar hj0.symm (by rw [if_pos (by omega), hl0, hMdeep.1]) (by simp) n,
+    Tow_eq]
+  simp only [List.take_zero, List.nil_append, Nat.sub_zero, Nat.mul_zero, ite_self,
+    Nat.add_zero, Nat.mul_one]
+  apply List.flatMap_congr
+  intro k _
+  rw [← map_range'_shift A k]
+  apply List.map_congr_left
+  intro j hj
+  have hjl : j < A.length := by have := List.mem_range'_1.1 hj; omega
+  rw [if_pos (hle0 j (by omega)), hpre 0 j hjl, hpre 1 j hjl, hpre 2 j hjl]
+
+/-- ★ **`A ++ [(1,e,0)] ∈ W 0`** — `Deep`・`Zroot`・`Mono` な `W 0` の元には、
+深さ 1・行 2 が 0 の列を、行 1 の値に関係なく継げる。 -/
+theorem snoc_row1 {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A)
+    (hAz : Zroot A) (hAm : Mono A) {e : ℕ} (he : 1 ≤ e) :
+    A ++ [((1, e, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [snoc_row1_oper hAne hAd hAz he n]
+  exact Tow_mem hA hAne hAd hAz hAm n
+
+#print axioms snoc_row1_oper
+#print axioms snoc_row1
+
 #print axioms Utow_mem
 #print axioms X110_mem
 
