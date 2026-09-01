@@ -2001,10 +2001,49 @@ theorem pow_self {A : TrioSeq} (hA : Aok A) :
     A ++ bump (A ++ bump A) ∈ W 0 :=
   pow_gen hA hA.toBok
 
-/-- 梯子は止まらない: `Aok` は `A ++ bump ·` で閉じているので、任意の段数を積める。 -/
-theorem pow_tower {A : TrioSeq} (hA : Aok A) : ∀ m, Aok (Nat.rec A (fun _ X => A ++ bump X) m)
+/-! ### 冪の塔とその極限
+
+`powTow A m = A ++ bump (A ++ bump (... ++ bump A))`（`bump` が `m` 個）。
+`bump` は `++` を通り抜けるので、これは実は**一様な写しの列**である:
+
+    powTow A m = Tow A (m+1) = A ++ shiftr01 1 0 A ++ ... ++ shiftr01 m 0 A
+
+そして `Tow A n` は `A ++ [(1,e,0)]` の基本列そのもの（`snoc_row1_oper`）。
+したがって
+
+    **冪の塔の極限は `A ++ [(1,1,0)]`。**
+
+`A = X = (0,0,0)(1,1,1)` なら極限は `X(1,1,0)`（シート行 284, psi(W_w + W)）。
+塔の各段はシートで
+  m=0 行267 psi(W_w) / m=1 行280 psi(W_w)^2 / m=2 行283 psi(W_w)^psi(W_w)。 -/
+
+/-- 冪の塔（`bump` を `m` 段）。 -/
+def powTow (A : TrioSeq) : ℕ → TrioSeq
+  | 0 => A
+  | (m + 1) => A ++ bump (powTow A m)
+
+theorem powTow_eq_Tow (A : TrioSeq) (m : ℕ) : powTow A m = Tow A (m + 1) := by
+  induction m with
+  | zero => show A = A ++ bump (Tow A 0); simp [Tow, bump_nil]
+  | succ m ih => show A ++ bump (powTow A m) = _; rw [ih]; rfl
+
+theorem powTow_Aok {A : TrioSeq} (hA : Aok A) : ∀ m, Aok (powTow A m)
   | 0 => hA
-  | (m + 1) => hA.append_bump (pow_tower hA m).toBok
+  | (m + 1) => hA.append_bump (powTow_Aok hA m).toBok
+
+/-- **極限**: `A ++ [(1,e,0)]` の基本列がちょうど冪の塔。 -/
+theorem powTow_is_fs {A : TrioSeq} (hAne : A ≠ []) (hAd : Deep A) (hAz : Zroot A)
+    {e : ℕ} (he : 1 ≤ e) (m : ℕ) :
+    (A ++ [((1, e, 0) : ℕ × ℕ × ℕ)])⟦m + 1⟧ = powTow A m := by
+  rw [snoc_row1_oper hAne hAd hAz he, powTow_eq_Tow]
+
+/-- `X = (0,0,0)(1,1,1)` の冪の塔の極限は `X(1,1,0)`。 -/
+theorem X110_fs (m : ℕ) : X110⟦m + 1⟧ = powTow Q m := by
+  have h : X110 = Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] := by simp [X110, Q]
+  rw [h, powTow_is_fs Q_ne Q_deep Aok_Q.zroot (le_refl 1)]
+
+#print axioms powTow_eq_Tow
+#print axioms X110_fs
 
 /-- 具体例: `X = (0,0,0)(1,1,1)` について `X ++ bump X = X(1,0,0)(2,1,1) ∈ W 0`。 -/
 theorem QQ_mem : [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1), (1, 0, 0), (2, 1, 1)] ∈ W 0 := by
