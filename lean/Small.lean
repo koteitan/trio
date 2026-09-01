@@ -1239,6 +1239,447 @@ theorem M278_mem : [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1), (1, 0, 0), (2, 1
   have h := bump_z2 hz2 hzr (by simp [entry]) Q_mem Q_ne Q_deep
   simpa [Q, bump, shiftr01] using h
 
+/-! ## さらに一般化: 行 2 を許す（`Mono`）
+
+`Z2`（行 2 ≡ 0）は「行 1 の親が根から取れる」ためだけに使っていた。行 2 まで
+許すには行 2 の親も要るが、`Mono B`（行 2 <= 行 1）を足せば同じ論法で取れる:
+
+  行 1 の親を辿ると行 1 = 0 の列に着く ⟹ `Mono` より行 2 も 0
+  ⟹ その列が行 2 の親になる。
+
+`Zroot` は行 2 があっても展開で保たれる（深さ 0 の写しは `k = 0` の分だけで、
+それは元の列そのもの）。`Mono` も保たれる（行 1 しか持ち上がらない）。
+ただし `B ∈ W 0` はここでは**本当の仮定**（行 2 があると `zeroRow2_mem_Wself`
+が使えない）。それでも「`W 0` の元を 1 段深くして継げる」という閉包規則として
+使える。 -/
+
+/-- 行 2 <= 行 1。 -/
+def Mono (B : TrioSeq) : Prop := ∀ c ∈ B, c.2.2 ≤ c.2.1
+
+theorem Mono_entry {B : TrioSeq} (h : Mono B) (j : ℕ) : entry B 2 j ≤ entry B 1 j := by
+  rcases Nat.lt_or_ge j B.length with hj | hj
+  · have hg : B.getD j (0, 0, 0) = B[j] := by
+      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj]
+    have hm := h _ (List.getElem_mem hj)
+    show (B.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.2 ≤ (B.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1
+    rw [hg]; exact hm
+  · simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_none_iff.mpr hj]
+
+theorem Z2_Mono {B : TrioSeq} (h : Z2 B) : Mono B := fun c hc => by rw [h c hc]; omega
+
+open Classical in
+/-- **深さ 0 の写しには行 1 の持ち上げが乗らない。** `Zroot` が展開で保たれる理由。 -/
+theorem zroot_copy_key {B : TrioSeq} (hzr : Zroot B)
+    (hz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+      entry B 2 (B.length - 1) = 0))
+    {i1 j0 j k d0 d1 : ℕ}
+    (hi1 : i1 = srow B (B.length - 1)) (hj0 : j0 = parent B i1 (B.length - 1))
+    (hd0 : d0 = if 0 < i1 then entry B 0 (B.length - 1) - entry B 0 j0 else 0)
+    (hd1 : d1 = if 1 < i1 then entry B 1 (B.length - 1) - entry B 1 j0 else 0)
+    (hj : entry B 0 j + (if le0 B j0 j then k * d0 else 0) = 0) :
+    (if le1 B j0 j then k * d1 else 0) = 0 := by
+  by_cases hle1 : le1 B j0 j
+  · rw [if_pos hle1]
+    have hle0 : le0 B j0 j := ⟨hle1.1, hle1.2.1, rtg1_to_rtg0 hle1.2.2⟩
+    rw [if_pos hle0] at hj
+    have hj0z : entry B 0 j = 0 := by omega
+    have hkd0 : k * d0 = 0 := by omega
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · simp
+    · have hd0z : d0 = 0 := by
+        rcases Nat.mul_eq_zero.mp hkd0 with h | h
+        · omega
+        · exact h
+      rcases Nat.eq_zero_or_pos i1 with hi | hi
+      · rw [hd1, if_neg (by omega)]; simp
+      · exfalso
+        have heq : j0 = j := rtg_to_root hj0z hle0.2.2
+        have h0j0 : entry B 0 j0 = 0 := by rw [heq]; exact hj0z
+        rw [hd0, if_pos hi] at hd0z
+        have hlastz : entry B 0 (B.length - 1) = 0 := by omega
+        obtain ⟨f1, f2⟩ := Zroot_entry hzr hlastz
+        exact hz ⟨hlastz, f1, f2⟩
+  · rw [if_neg hle1]
+
+/-- **`Zroot` と `Mono` は展開で保たれる（行 2 の制限なし）。** -/
+theorem ZM_oper {B : TrioSeq} (hzr : Zroot B) (hmo : Mono B) (n : ℕ) :
+    Zroot (B⟦n⟧) ∧ Mono (B⟦n⟧) := by
+  by_cases hL : B.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]; exact ⟨hzr, hmo⟩
+  by_cases hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+      entry B 2 (B.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz]
+    exact ⟨fun c hc => hzr c (mem_of_mem_Pred hc),
+      fun c hc => hmo c (mem_of_mem_Pred hc)⟩
+  by_cases hp : hasParent B (srow B (B.length - 1)) (B.length - 1)
+  · rw [L53.oper_unfold rfl hL hz rfl hp rfl rfl rfl n]
+    constructor
+    · intro c hc hc0
+      rcases List.mem_append.mp hc with hm | hm
+      · exact hzr c (List.mem_of_mem_take hm) hc0
+      · rw [List.mem_flatMap] at hm
+        obtain ⟨k, -, hm2⟩ := hm
+        rw [List.mem_map] at hm2
+        obtain ⟨j, -, rfl⟩ := hm2
+        dsimp only at hc0 ⊢
+        have hj0z : entry B 0 j = 0 := by omega
+        obtain ⟨e1, e2⟩ := Zroot_entry hzr hj0z
+        have hkey := zroot_copy_key (k := k) (j := j) hzr hz rfl rfl rfl rfl hc0
+        exact ⟨by rw [e1, hkey], e2⟩
+    · intro c hc
+      rcases List.mem_append.mp hc with hm | hm
+      · exact hmo c (List.mem_of_mem_take hm)
+      · rw [List.mem_flatMap] at hm
+        obtain ⟨k, -, hm2⟩ := hm
+        rw [List.mem_map] at hm2
+        obtain ⟨j, -, rfl⟩ := hm2
+        dsimp only
+        have := Mono_entry hmo j
+        omega
+  · rw [oper_eq_pred_of_noParent n hL hz hp]
+    exact ⟨fun c hc => hzr c (mem_of_mem_Pred hc),
+      fun c hc => hmo c (mem_of_mem_Pred hc)⟩
+
+open Classical in
+/-- **行 2 の親の存在**: `le1` 祖先に行 2 がより小さい列があれば親がある。 -/
+theorem hasParent2_of_le1_witness {M : TrioSeq} {j y : ℕ} (hj : j < M.length)
+    (hanc : Relation.ReflTransGen (nextrel1 M) y j) (hlt : entry M 2 y < entry M 2 j) :
+    hasParent M 2 j := by
+  classical
+  have hyj : y < j := by
+    rcases Relation.ReflTransGen.cases_tail hanc with h | ⟨c, hc1, hc2⟩
+    · rw [h] at hlt; omega
+    · exact lt_of_le_of_lt (rtg1_index_le hc1) hc2.2.2.1
+  have hyle1 : le1 M y j := ⟨by omega, hj, hanc⟩
+  obtain ⟨a, haj, halt, hale1, hamax⟩ :
+      ∃ a, a < j ∧ entry M 2 a < entry M 2 j ∧ le1 M a j ∧
+        ∀ x, a < x → le1 M x j → entry M 2 j ≤ entry M 2 x := by
+    have hyT : y ∈ (Finset.range j).filter
+        (fun x => entry M 2 x < entry M 2 j ∧ le1 M x j) := by
+      simp only [Finset.mem_filter, Finset.mem_range]
+      exact ⟨hyj, hlt, hyle1⟩
+    have hne : ((Finset.range j).filter
+        (fun x => entry M 2 x < entry M 2 j ∧ le1 M x j)).Nonempty := ⟨y, hyT⟩
+    have hmem := Finset.max'_mem _ hne
+    simp only [Finset.mem_filter, Finset.mem_range] at hmem
+    refine ⟨_, hmem.1, hmem.2.1, hmem.2.2, ?_⟩
+    intro x hx1 hx2
+    by_contra hc
+    push Not at hc
+    have hxj : x < j := lt_of_le_of_ne (rtg1_index_le hx2.2.2) (by rintro rfl; omega)
+    have hxT : x ∈ (Finset.range j).filter
+        (fun x => entry M 2 x < entry M 2 j ∧ le1 M x j) := by
+      simp only [Finset.mem_filter, Finset.mem_range]
+      exact ⟨hxj, hc, hx2⟩
+    exact absurd (Finset.le_max' _ x hxT) (by omega)
+  have hstep : nextrel2 M a j :=
+    ⟨by omega, hj, haj, halt, hale1, fun x hx => hamax x hx.1 hx.2⟩
+  refine ⟨a, hstep, ?_⟩
+  intro c hc
+  have hc' : nextrel2 M c j := hc
+  by_contra hne'
+  rcases Nat.lt_or_ge c a with h | h
+  · have h1 := hc'.2.2.2.2.2 a ⟨h, hale1⟩
+    omega
+  · have hgt : a < c := lt_of_le_of_ne h (Ne.symm hne')
+    have h1 := hamax c hgt hc'.2.2.2.2.1
+    have h2 := hc'.2.2.2.1
+    omega
+
+/-- 行 1 の祖先を辿ると必ず行 1 = 0 の列に着く。 -/
+theorem le1_to_row1_zero {B : TrioSeq} (hzr : Zroot B) (hroot : entry B 0 0 = 0) :
+    ∀ v j, entry B 1 j = v → j < B.length →
+      ∃ c, entry B 1 c = 0 ∧ Relation.ReflTransGen (nextrel1 B) c j := by
+  intro v
+  induction v using Nat.strong_induction_on with
+  | _ v ih =>
+    intro j hv hj
+    rcases Nat.eq_zero_or_pos v with rfl | hpos
+    · exact ⟨j, hv, Relation.ReflTransGen.refl⟩
+    · have h0j : entry B 0 j ≠ 0 := by
+        intro hc
+        obtain ⟨e1, -⟩ := Zroot_entry hzr hc
+        omega
+      obtain ⟨c0, hc00, hc0r⟩ := rtg0_to_root hroot (entry B 0 j) j rfl hj
+      obtain ⟨e1, -⟩ := Zroot_entry hzr hc00
+      have hp1 : hasParent B 1 j :=
+        H12Export.hasParent1_of_le0_witness hj hc0r (by omega)
+      have hn : nextrel1 B (parent B 1 j) j := parent_nextR hp1
+      obtain ⟨c, hc1, hcr⟩ :=
+        ih (entry B 1 (parent B 1 j)) (by have := hn.2.2.2.1; omega)
+          (parent B 1 j) rfl hn.1
+      exact ⟨c, hc1, hcr.tail hn⟩
+
+/-- **末尾列が非零なら必ず `B` の中に親がある**（`Zroot` ＋ `Mono` 版）。 -/
+theorem hasParent_of_ZrootMono {B : TrioSeq} (hzr : Zroot B) (hmo : Mono B)
+    (hroot : entry B 0 0 = 0) (hlen : 2 ≤ B.length)
+    (hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+      entry B 2 (B.length - 1) = 0)) :
+    hasParent B (srow B (B.length - 1)) (B.length - 1) := by
+  have hj : B.length - 1 < B.length := by omega
+  have h0 : entry B 0 (B.length - 1) ≠ 0 := by
+    intro hc
+    obtain ⟨e1, e2⟩ := Zroot_entry hzr hc
+    exact hnz ⟨hc, e1, e2⟩
+  have hm := Mono_entry hmo (B.length - 1)
+  by_cases h2 : entry B 2 (B.length - 1) = 0
+  · by_cases h1 : entry B 1 (B.length - 1) = 0
+    · have hs : srow B (B.length - 1) = 0 := by
+        unfold srow; rw [if_neg (by omega), if_neg (by omega)]
+      rw [hs, Wset.hasParent_zero_iff hj]
+      exact ⟨0, by omega, by omega⟩
+    · have hs : srow B (B.length - 1) = 1 := by
+        unfold srow; rw [if_neg (by omega), if_pos (by omega)]
+      rw [hs]
+      obtain ⟨c, hc0, hcr⟩ :=
+        rtg0_to_root hroot (entry B 0 (B.length - 1)) (B.length - 1) rfl hj
+      obtain ⟨e1, -⟩ := Zroot_entry hzr hc0
+      exact H12Export.hasParent1_of_le0_witness hj hcr (by omega)
+  · have hs : srow B (B.length - 1) = 2 := by
+      unfold srow; rw [if_pos (by omega)]
+    rw [hs]
+    obtain ⟨c, hc1, hcr⟩ :=
+      le1_to_row1_zero hzr hroot (entry B 1 (B.length - 1)) (B.length - 1) rfl hj
+    have hc2 : entry B 2 c = 0 := by have := Mono_entry hmo c; omega
+    exact hasParent2_of_le1_witness hj hcr (by omega)
+
+/-- **`A ++ bump B`（`B` は `W 0` の元で `Zroot` ＋ `Mono`）。** 行 2 の制限なし。 -/
+theorem bump_mem3 :
+    ∀ B ∈ W 0, Zroot B → Mono B → entry B 0 0 = 0 →
+      ∀ A : TrioSeq, A ∈ W 0 → A ≠ [] → Deep A → A ++ bump B ∈ W 0 := by
+  have key : W 0 ⊆ {B : TrioSeq | Zroot B → Mono B → entry B 0 0 = 0 →
+      ∀ A : TrioSeq, A ∈ W 0 → A ≠ [] → Deep A → A ++ bump B ∈ W 0} := by
+    refine A2' ?_
+    intro B hB
+    simp only [Set.mem_setOf_eq]
+    intro hzr hmo hroot A hA hAne hAd
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        simpa [bump_nil] using hA
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hroot
+        obtain ⟨hc1, hc2⟩ := hzr c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hb : bump [((0, 0, 0) : ℕ × ℕ × ℕ)] = [((1, 0, 0) : ℕ × ℕ × ℕ)] := by
+          simp [bump, shiftr01]
+        rw [hb]
+        exact snoc_one hA hAne hAd.1 hAd.2
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by
+      intro hc; rw [hc] at hlen2; simp at hlen2
+    rcases hB with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hzr hlast
+        have hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0 := ⟨hlast, he1, he2⟩
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]
+          exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) hz]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdl0 : entry B.dropLast 0 0 = 0 := by
+          rw [List.dropLast_eq_take,
+            Wset.entry_take (show (0 : ℕ) < B.length - 1 by omega)]
+          exact hroot
+        have hIH := hdl (fun c hc => hzr c (List.dropLast_subset _ hc))
+          (fun c hc => hmo c (List.dropLast_subset _ hc)) hdl0 A hA hAne hAd
+        have hDne : A ++ bump B.dropLast ≠ [] := by
+          simp [List.append_eq_nil_iff, hAne]
+        have hD : Deep (A ++ bump B.dropLast) :=
+          Deep_append hAd hAne (fun c hc => bump_col c hc)
+        have hbs : bump B = bump B.dropLast ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] := by
+          conv_lhs => rw [hsplit]
+          simp [bump, shiftr01]
+        rw [hbs, ← List.append_assoc]
+        exact snoc_one hIH hDne hD.1 hD.2
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hzr hmo hroot hlen2 hnz
+        refine A1_intro (Or.inr (Or.inl ?_))
+        intro n hn
+        rw [oper_bump A B n hlen2 hp]
+        obtain ⟨hzr', hmo'⟩ := ZM_oper hzr hmo n
+        exact hnat n hn hzr' hmo' (by rw [Wset.oper_head_eq hn]; exact hroot) A hA hAne hAd
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro B hB
+  exact key hB
+
+/-- 使いやすい形。 -/
+theorem bump_zm {B : TrioSeq} (hB : B ∈ W 0) (hzr : Zroot B) (hmo : Mono B)
+    (hroot : entry B 0 0 = 0)
+    {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A) :
+    A ++ bump B ∈ W 0 :=
+  bump_mem3 B hB hzr hmo hroot A hA hAne hAd
+
+/-! ## 3 列の壁を 1 枚破る: `X(1,1,0) ∈ W 0`
+
+`X(1,1,0) = (0,0,0)(1,1,1)(1,1,0)` は、旧来の緑の補題では届かなかった 7 個の
+うちの 1 つ（末尾の `srow = 1` なので「シフト塔」が要ると思われていた）。
+ところが展開は
+
+    X(1,1,0)⟦n⟧ = (0,0,0)(1,1,1) (1,0,0)(2,1,1) (2,0,0)(3,1,1) ...
+                = concat_{k<n} [(k,0,0), (k+1,1,1)]  =: Utow n
+
+で、**`Utow (n+1) = Q ++ bump (Utow n)`**（`Q = (0,0,0)(1,1,1)`）という漸化式を
+持つ。`Utow n` は `Zroot` かつ `Mono` かつ根が `(0,0,0)` なので `bump_zm` が
+そのまま効き、`n` の帰納法で `Utow n ∈ W 0`。あとは節 2。
+
+塔が `A ++ bump(塔)` の形をしている ── これが bump が塔に効く理由である。 -/
+
+theorem entry_append_left {P B : TrioSeq} {i j : ℕ} (hj : j < P.length) :
+    entry (P ++ B) i j = entry P i j := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_append_left hj]
+
+/-- `X(1,1,0)` の展開の塔。 -/
+def Utow : ℕ → TrioSeq
+  | 0 => []
+  | (n + 1) => Q ++ bump (Utow n)
+
+theorem map_bump_flatMap (l : List ℕ) :
+    bump (l.flatMap fun k => [((k, 0, 0) : ℕ × ℕ × ℕ), ((k + 1, 1, 1) : ℕ × ℕ × ℕ)])
+      = (l.map Nat.succ).flatMap
+        fun k => [((k, 0, 0) : ℕ × ℕ × ℕ), ((k + 1, 1, 1) : ℕ × ℕ × ℕ)] := by
+  induction l with
+  | nil => rfl
+  | cons a t ih =>
+    simp only [bump, shiftr01, List.flatMap_cons, List.map_append, List.map_cons,
+      List.map_nil] at ih ⊢
+    rw [ih]
+
+theorem Utow_eq (n : ℕ) : Utow n = (List.range n).flatMap
+    fun k => [((k, 0, 0) : ℕ × ℕ × ℕ), ((k + 1, 1, 1) : ℕ × ℕ × ℕ)] := by
+  induction n with
+  | zero => simp [Utow]
+  | succ n ih =>
+    show Q ++ bump (Utow n) = _
+    rw [ih, List.range_succ_eq_map, map_bump_flatMap]
+    rfl
+
+theorem Utow_col (n : ℕ) : ∀ c ∈ Utow n,
+    (∃ k, c = ((k, 0, 0) : ℕ × ℕ × ℕ)) ∨ (∃ k, c = ((k + 1, 1, 1) : ℕ × ℕ × ℕ)) := by
+  rw [Utow_eq]
+  intro c hc
+  rw [List.mem_flatMap] at hc
+  obtain ⟨k, -, hc2⟩ := hc
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hc2
+  rcases hc2 with rfl | rfl
+  · exact Or.inl ⟨k, rfl⟩
+  · exact Or.inr ⟨k, rfl⟩
+
+theorem Utow_zroot (n : ℕ) : Zroot (Utow n) := by
+  intro c hc h0
+  rcases Utow_col n c hc with ⟨k, rfl⟩ | ⟨k, rfl⟩
+  · exact ⟨rfl, rfl⟩
+  · exact absurd h0 (by simp)
+
+theorem Utow_mono (n : ℕ) : Mono (Utow n) := by
+  intro c hc
+  rcases Utow_col n c hc with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> simp
+
+theorem Utow_root (n : ℕ) : entry (Utow n) 0 0 = 0 := by
+  cases n with
+  | zero => simp [Utow, entry]
+  | succ n =>
+    show entry (Q ++ bump (Utow n)) 0 0 = 0
+    rw [entry_append_left (by simp [Q])]
+    simp [Q, entry]
+
+theorem Utow_mem : ∀ n, Utow n ∈ W 0
+  | 0 => by simpa [Utow] using W_nil 0
+  | (n + 1) => by
+      show Q ++ bump (Utow n) ∈ W 0
+      exact bump_zm (Utow_mem n) (Utow_zroot n) (Utow_mono n) (Utow_root n)
+        Q_mem Q_ne Q_deep
+
+/-- `X(1,1,0) = (0,0,0)(1,1,1)(1,1,0)`。 -/
+def X110 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 1, 0)]
+
+theorem X110_len : X110.length = 3 := by simp [X110]
+
+theorem X110_srow : srow X110 2 = 1 := by simp [srow, X110, entry]
+
+theorem nextrel0_X110_01 : nextrel0 X110 0 1 := by
+  refine ⟨by simp [X110], by simp [X110], by omega, by simp [X110, entry], ?_⟩
+  intro j hj; omega
+
+theorem nextrel0_X110_02 : nextrel0 X110 0 2 := by
+  refine ⟨by simp [X110], by simp [X110], by omega, by simp [X110, entry], ?_⟩
+  intro j hj
+  have : j = 1 := by omega
+  subst this
+  simp [X110, entry]
+
+theorem le0_X110_00 : le0 X110 0 0 :=
+  ⟨by simp [X110], by simp [X110], Relation.ReflTransGen.refl⟩
+
+theorem le0_X110_01 : le0 X110 0 1 :=
+  ⟨by simp [X110], by simp [X110], Relation.ReflTransGen.single nextrel0_X110_01⟩
+
+theorem le0_X110_02 : le0 X110 0 2 :=
+  ⟨by simp [X110], by simp [X110], Relation.ReflTransGen.single nextrel0_X110_02⟩
+
+theorem X110_hasParent : hasParent X110 1 2 :=
+  H12Export.hasParent1_of_le0_witness (by simp [X110]) le0_X110_02.2.2
+    (by simp [X110, entry])
+
+theorem nextrel1_X110_02 : nextrel1 X110 0 2 := by
+  refine ⟨by simp [X110], by simp [X110], by omega, by simp [X110, entry],
+    le0_X110_02, ?_⟩
+  intro j hj
+  have hjl : j < X110.length := hj.2.1
+  rw [X110_len] at hjl
+  have : j = 1 ∨ j = 2 := by omega
+  rcases this with rfl | rfl <;> simp [X110, entry]
+
+theorem X110_parent : parent X110 1 2 = 0 :=
+  X110_hasParent.unique (parent_nextR X110_hasParent) nextrel1_X110_02
+
+theorem oper_X110 (n : ℕ) : X110⟦n⟧ = Utow n := by
+  rw [L53.oper_unfold (j1 := 2) (i1 := 1) (j0 := 0) (d0 := 1) (d1 := 0)
+      (by simp [X110]) (by omega) (by simp [X110, entry]) X110_srow.symm
+      X110_hasParent X110_parent.symm (by simp [X110, entry]) (by simp) n,
+    Utow_eq]
+  simp only [List.take_zero, Nat.sub_zero, List.nil_append]
+  apply List.flatMap_congr
+  intro k _
+  have hr : List.range' 0 (2 - 0) = [0, 1] := rfl
+  rw [hr]
+  simp only [List.map_cons, List.map_nil, Nat.mul_zero, ite_self, Nat.add_zero,
+    Nat.mul_one]
+  rw [if_pos le0_X110_00, if_pos le0_X110_01]
+  simp [X110, entry, Nat.add_comm]
+
+/-- ★ **`X(1,1,0) = (0,0,0)(1,1,1)(1,1,0) ∈ W 0`** — 3 列の壁 7 個のうち 1 枚。 -/
+theorem X110_mem : X110 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_X110 n]
+  exact Utow_mem n
+
+#print axioms Utow_mem
+#print axioms X110_mem
+
+#print axioms ZM_oper
+#print axioms hasParent2_of_le1_witness
+#print axioms bump_mem3
+
 #print axioms Z2Zroot_oper
 #print axioms bump_mem2
 #print axioms M278_mem
