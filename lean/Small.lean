@@ -79,7 +79,7 @@ theorem M_hasParent : hasParent M 0 2 := by
   rw [hasParent_zero_iff (by rw [M_len]; omega)]
   exact ⟨0, by omega, by simp [M, entry]⟩
 
-/-- 親は根。行 1 の列 `(1,1,1)` は深さ 1 なので候補から外れる。 -/
+/-- 親は根。行 1 の列 `(1,1,1)` は高さ 1 なので候補から外れる。 -/
 theorem M_parent : parent M 0 2 = 0 := by
   have h := parent_nextR M_hasParent
   rw [nextR, if_pos rfl] at h
@@ -244,13 +244,13 @@ theorem oper_M2 (n : ℕ) : M2⟦n⟧ = Mm n := by
 theorem M2_mem : M2 ∈ W 0 :=
   mem_of_oper_mem (fun n _ => (oper_M2 n) ▸ Mm_mem n)
 
-/-! ## 一般化した 1 段: 根の直下に `(1,0,0)` を継ぐ
+/-! ## 一般化した 1 段: 根の直上に `(1,0,0)` を継ぐ
 
 `Mm` の各段でやったことは、行列に固有ではない。**根が `(0,0,0)` で、他の列が全部
-深さ 1 以上**なら、末尾に `(1,0,0)` を継いでよい（親が必ず根なので
+高さ 1 以上**なら、末尾に `(1,0,0)` を継いでよい（親が必ず根なので
 `mem_W_of_flat_root`）。これで梯子の (1,0,0) 方向は何段でも伸びる。 -/
 
-/-- **根の直下に `(1,0,0)` を継ぐのは無料**（`P` の根が深さ 0、他が深さ 1 以上のとき）。 -/
+/-- **根の直上に `(1,0,0)` を継ぐのは無料**（`P` の根が高さ 0、他が高さ 1 以上のとき）。 -/
 theorem snoc_one {P : TrioSeq} (hP : P ∈ W 0) (hne : P ≠ [])
     (h0 : entry P 0 0 = 0)
     (hdeep : ∀ j, 1 ≤ j → j < P.length → 1 ≤ entry P 0 j) :
@@ -288,10 +288,10 @@ theorem snoc_one {P : TrioSeq} (hP : P ∈ W 0) (hne : P ≠ [])
 
 /-! ## 継ぎ足しの不変量
 
-`snoc_one` の仮定「根が深さ 0・他は深さ 1 以上」は継ぎ足しで保たれる。名前を付けて
+`snoc_one` の仮定「根が高さ 0・他は高さ 1 以上」は継ぎ足しで保たれる。名前を付けて
 おくと、梯子を何段でも回せる。 -/
 
-/-- 根が深さ 0 で、他の列は深さ 1 以上。 -/
+/-- 根が高さ 0 で、他の列は高さ 1 以上。 -/
 def Deep (P : TrioSeq) : Prop :=
   entry P 0 0 = 0 ∧ ∀ j, 1 ≤ j → j < P.length → 1 ≤ entry P 0 j
 
@@ -486,7 +486,7 @@ theorem snoc_flat {A : TrioSeq} {b : ℕ × ℕ × ℕ} {j0 : ℕ} (hne : A ≠ 
 
 /-! ## 一般の継ぎ足しでの `Deep`
 
-`Deep` が見るのは行 0 だけなので、継ぎ足す列が全部深さ 1 以上なら保たれる。 -/
+`Deep` が見るのは行 0 だけなので、継ぎ足す列が全部高さ 1 以上なら保たれる。 -/
 
 theorem entry0_eq {M : TrioSeq} {j : ℕ} : entry M 0 j = (M.getD j (0, 0, 0)).1 := rfl
 
@@ -510,7 +510,7 @@ theorem Deep_append {P B : TrioSeq} (hd : Deep P) (hne : P ≠ [])
 /-! ## 継ぎ足す塊 `App k = (1,0,0)(2,0,0)^k`
 
 `P ++ App (k+1)` の末尾列 `(2,0,0)` の親は、`k` によらず必ず `(1,0,0)`（位置 `|P|`）。
-間の列は全部深さ 2 なので最小性を邪魔しない。 -/
+間の列は全部高さ 2 なので最小性を邪魔しない。 -/
 
 /-- `(1,0,0)(2,0,0)^k`。 -/
 def App (k : ℕ) : TrioSeq := ((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ)
@@ -670,13 +670,13 @@ theorem M3_mem : M3 ∈ W 0 := by
 /-! ## 次の的: `Iterable`
 
 `snoc_flat` は「末尾 1 列は、**その親の位置での接尾辞コピー族**が済んでいれば無料」
-と言っている。だから次の性質が閉じれば、梯子は深さに関係なく全部回る。
+と言っている。だから次の性質が閉じれば、梯子は高さに関係なく全部回る。
 
     Iterable P := ∀ q < |P|, ∀ n, P.take q ++ (P.drop q)^n ∈ W 0
 
-`Deep`（根が深さ 0・他は深さ 1 以上）は、これの**深さ 1 に特化した弱い版**である。
-深さ 1 でだけ `Deep` で足りたのは、継ぎ足す塊の親が必ず根で、`take 0 = []` に
-なってコピー族が `W_flatMap_copies` で無料になるから。深さ 2 以上では
+`Deep`（根が高さ 0・他は高さ 1 以上）は、これの**高さ 1 に特化した弱い版**である。
+高さ 1 でだけ `Deep` で足りたのは、継ぎ足す塊の親が必ず根で、`take 0 = []` に
+なってコピー族が `W_flatMap_copies` で無料になるから。高さ 2 以上では
 `take q ≠ []` になり、`PrefixCopiesOpen` の開いている場合に入る。
 
 計測（`tools/probe_iterable.py`、上界は `r49.Wup` で False が健全）:
@@ -688,13 +688,13 @@ def Iterable (P : TrioSeq) : Prop :=
   ∀ q, q < P.length → ∀ n,
     P.take q ++ (List.range n).flatMap (fun _ => P.drop q) ∈ W 0
 
-/-! ### なぜ深さ 1 で止まるか（再帰を追った結果）
+/-! ### なぜ高さ 1 で止まるか（再帰を追った結果）
 
 `snoc_flat` で末尾 1 列を剥がすと、親の位置 `j0` で
 
     P ++ Q^n  ⟶  (P ++ Q^(n-1) ++ Q[:r]) ++ (Q[r : |Q|-1])^m
 
-となる。**深さ 1 の梯子**では `Q = App k = (1,0,0)(2,0,0)^k` で、親は必ず `Q` の
+となる。**高さ 1 の梯子**では `Q = App k = (1,0,0)(2,0,0)^k` で、親は必ず `Q` の
 先頭の `(1,0,0)`（`r = 0`）なので
 
     P ++ (App k)^n  ⟶  P ++ (App (k-1))^m
@@ -702,22 +702,22 @@ def Iterable (P : TrioSeq) : Prop :=
 と **`k` が 1 つ減る**。底の `App 0 = [(1,0,0)]` では親が根に落ちて `take 0 = []` に
 なり、`W_flatMap_copies` で無料。だから `app_iter` は回る。
 
-**深さ 2 では底が変わる**。`AppAt2 k = (2,0,0)(3,0,0)^k` の底 `[(2,0,0)]` を継ぐと、
+**高さ 2 では底が変わる**。`AppAt2 k = (2,0,0)(3,0,0)^k` の底 `[(2,0,0)]` を継ぐと、
 親は根ではなく `(1,0,0)` になり
 
     (X ++ (1,0,0) ++ S) ++ (2,0,0)^m
       ⟶  X ++ [(1,0,0) ++ S ++ (2,0,0)^(m-1)]^i
 
 で、ブロックが **`S` を巻き込んで伸びる**。`S` は再帰のたびに育つので、
-ブロックの長さでも深さでも整礎な測度が取れない。
+ブロックの長さでも高さでも整礎な測度が取れない。
 
-⟹ **深さ 1 が特別だったのは「親が根に落ちて `take` が空になる」からで、
-深さ 2 以上ではそこが閉じない。** 止まる理由は順序数の減少しかなく、それは `W`
+⟹ **高さ 1 が特別だったのは「親が根に落ちて `take` が空になる」からで、
+高さ 2 以上ではそこが閉じない。** 止まる理由は順序数の減少しかなく、それは `W`
 そのもの。つまりここが `PrefixCopiesOpen` が開いている理由の、梯子から見た姿である。
 
 計測（両側とも健全、`tools/probe_pcdeep.py`）:
 
-    P in W 0, Deep P, Q の根が深さ 1, Q の全列が深さ 1 以上  ==>  P ++ Q^n in W 0
+    P in W 0, Deep P, Q の根が高さ 1, Q の全列が高さ 1 以上  ==>  P ++ Q^n in W 0
     判定 12870 件 / 反例 0
 
 `Mm` / `Rep` / `app_iter` は全部この特殊ケースで、梯子の 4 段目以降は
@@ -729,7 +729,7 @@ def Iterable (P : TrioSeq) : Prop :=
 中で止まるので、**`A` が何であってもよい**（`bump B` = 行 0 に一律 +1）。
 
 `Column.oper_append_right` はこれを `entry T 0 0 = 0` で実現しているが、`bump B` の
-根は深さ 1 なので使えない。`Wset.nextR_src_ge`（アンカー仮定なしで「接頭辞は親を
+根は高さ 1 なので使えない。`Wset.nextR_src_ge`（アンカー仮定なしで「接頭辞は親を
 供給できない」）から作った版なら通る。 -/
 
 /-- **`oper_append_right` のアンカー不要版**。 -/
@@ -847,7 +847,7 @@ theorem Flat_oper {B : TrioSeq} (h : Flat B) (n : ℕ) : Flat (B⟦n⟧) := by
 
 /-! ## 本丸: bump に沿った帰納法
 
-`B` が平坦（行 1・行 2 が 0）で根が深さ 0 なら、`A ++ bump B` の**バッドルートは
+`B` が平坦（行 1・行 2 が 0）で根が高さ 0 なら、`A ++ bump B` の**バッドルートは
 必ず `bump B` の中で止まる**。だから展開は `A` を素通りして `A ++ bump (B⟦n⟧)` に
 なり、`B` 自身の `W` 帰納法がそのまま `A ++ bump B` の帰納法になる。`A` は
 `W 0` の `Deep` な行列なら何でもよい。 -/
@@ -919,7 +919,7 @@ theorem bump_mem :
           simp [bump, shiftr01]
         rw [hbs, ← List.append_assoc]
         exact snoc_one hIH hDne hD.1 hD.2
-      · -- 末尾列は非零。根が深さ 0 なので `B` の中に親がある。
+      · -- 末尾列は非零。根が高さ 0 なので `B` の中に親がある。
         have hp0 : hasParent B 0 (B.length - 1) := by
           rw [Wset.hasParent_zero_iff (show B.length - 1 < B.length by omega)]
           exact ⟨0, by omega, by rw [hroot]; omega⟩
@@ -958,7 +958,7 @@ theorem Deep_bump_flat {B A : TrioSeq} (hAne : A ≠ []) (hAd : Deep A) :
 
 /-! ## 梯子 `X(1,0,0)(2,0,0)…(k,0,0)`
 
-`Chain k = (0,0,0)(1,0,0)…(k,0,0)` は平坦で根が深さ 0。`bump` すると
+`Chain k = (0,0,0)(1,0,0)…(k,0,0)` は平坦で根が高さ 0。`bump` すると
 `(1,0,0)(2,0,0)…(k+1,0,0)`。これで `M`・`M2`・`M3` が一斉に出る。 -/
 
 /-- 平らな梯子 `(0,0,0)(1,0,0)…(k,0,0)`。 -/
@@ -990,12 +990,12 @@ theorem M3_mem' : M3 ∈ W 0 := by
 
 /-! ## 一般化: 行 2 ≡ 0 の `B`
 
-`Flat`（行 1 も 0）は「行 2 ≡ 0 ＋ **深さ 0 の列は `(0,0,0)` に限る**」まで緩められ
+`Flat`（行 1 も 0）は「行 2 ≡ 0 ＋ **高さ 0 の列は `(0,0,0)` に限る**」まで緩められ
 る。同じ帰納法が回る理由は「末尾列が非零なら必ず `B` の中に親がある」で、これは
 
-* 深さ 0 の列は `(0,0,0)`（だから末尾が非零なら深さ >= 1）
-* 深さ >= 1 の列は行 0 の親を持ち、深さが厳密に減るので根まで辿れる
-* 辿り着いた深さ 0 の列は行 1 が 0 なので、行 1 の親としても使える
+* 高さ 0 の列は `(0,0,0)`（だから末尾が非零なら高さ >= 1）
+* 高さ >= 1 の列は行 0 の親を持ち、高さが厳密に減るので根まで辿れる
+* 辿り着いた高さ 0 の列は行 1 が 0 なので、行 1 の親としても使える
 
 から出る。行 2 ≡ 0 なので `srow <= 1`、すなわち `d1 = 0`（行 1 は持ち上がらない）。
 順序数では `o(A) * o(B)` で、`o(B)` は 2 行 BMS の全域を走る。 -/
@@ -1003,7 +1003,7 @@ theorem M3_mem' : M3 ∈ W 0 := by
 /-- 行 2 が恒等的に 0（＝埋め込まれた 2 行 BMS）。 -/
 def Z2 (B : TrioSeq) : Prop := ∀ c ∈ B, c.2.2 = 0
 
-/-- 深さ 0 の列は `(0,0,0)` に限る。 -/
+/-- 高さ 0 の列は `(0,0,0)` に限る。 -/
 def Zroot (B : TrioSeq) : Prop := ∀ c ∈ B, c.1 = 0 → c.2.1 = 0 ∧ c.2.2 = 0
 
 theorem Flat_Z2 {B : TrioSeq} (h : Flat B) : Z2 B := fun c hc => (h c hc).2
@@ -1085,7 +1085,7 @@ theorem Z2Zroot_oper {B : TrioSeq} (hz2 : Z2 B) (hzr : Zroot B) (n : ℕ) :
     exact ⟨fun c hc => hz2 c (mem_of_mem_Pred hc),
       fun c hc => hzr c (mem_of_mem_Pred hc)⟩
 
-/-- 行 0 の祖先を辿ると必ず深さ 0 の列に着く（根が深さ 0 だから途中で止まらない）。 -/
+/-- 行 0 の祖先を辿ると必ず高さ 0 の列に着く（根が高さ 0 だから途中で止まらない）。 -/
 theorem rtg0_to_root {B : TrioSeq} (hroot : entry B 0 0 = 0) :
     ∀ v j, entry B 0 j = v → j < B.length →
       ∃ c, entry B 0 c = 0 ∧ Relation.ReflTransGen (nextrel0 B) c j := by
@@ -1165,7 +1165,7 @@ theorem bump_mem2 :
     rcases hB with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
     · exact absurd hl hshort
     · by_cases hlast : entry B 0 (B.length - 1) = 0
-      · -- 深さ 0 の末尾列は Zroot より `(0,0,0)`。展開は `dropLast`。
+      · -- 高さ 0 の末尾列は Zroot より `(0,0,0)`。展開は `dropLast`。
         obtain ⟨he1, he2⟩ := Zroot_entry hzr hlast
         have hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
             entry B 2 (B.length - 1) = 0 := ⟨hlast, he1, he2⟩
@@ -1214,14 +1214,14 @@ theorem bump_mem2 :
   intro B hB
   exact key hB
 
-/-- 行 2 ≡ 0 ＋ Zroot ＋ 根が深さ 0 なら、`B ∈ W 0` は無条件。 -/
+/-- 行 2 ≡ 0 ＋ Zroot ＋ 根が高さ 0 なら、`B ∈ W 0` は無条件。 -/
 theorem Zroot_mem_W {B : TrioSeq} (hz2 : Z2 B) (hzr : Zroot B)
     (hroot : entry B 0 0 = 0) : B ∈ W 0 := by
   refine (mem_Wself_iff 0 B).mpr ⟨zeroRow2_mem_Wself hz2, ?_⟩
   obtain ⟨e1, e2⟩ := Zroot_entry hzr hroot
   simp [lev, e1, e2]
 
-/-- **仮定は `B` の形だけ**: 行 2 ≡ 0・Zroot・根が深さ 0。 -/
+/-- **仮定は `B` の形だけ**: 行 2 ≡ 0・Zroot・根が高さ 0。 -/
 theorem bump_z2 {B : TrioSeq} (hz2 : Z2 B) (hzr : Zroot B) (hroot : entry B 0 0 = 0)
     {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A) :
     A ++ bump B ∈ W 0 :=
@@ -1247,10 +1247,10 @@ theorem M278_mem : [((0, 0, 0) : ℕ × ℕ × ℕ), (1, 1, 1), (1, 0, 0), (2, 1
   行 1 の親を辿ると行 1 = 0 の列に着く ⟹ `Mono` より行 2 も 0
   ⟹ その列が行 2 の親になる。
 
-`Zroot` は行 2 があっても展開で保たれる（深さ 0 の写しは `k = 0` の分だけで、
+`Zroot` は行 2 があっても展開で保たれる（高さ 0 の写しは `k = 0` の分だけで、
 それは元の列そのもの）。`Mono` も保たれる（行 1 しか持ち上がらない）。
 ただし `B ∈ W 0` はここでは**本当の仮定**（行 2 があると `zeroRow2_mem_Wself`
-が使えない）。それでも「`W 0` の元を 1 段深くして継げる」という閉包規則として
+が使えない）。それでも「`W 0` の元を 1 段高くして継げる」という閉包規則として
 使える。 -/
 
 /-- 行 2 <= 行 1。 -/
@@ -1268,7 +1268,7 @@ theorem Mono_entry {B : TrioSeq} (h : Mono B) (j : ℕ) : entry B 2 j ≤ entry 
 theorem Z2_Mono {B : TrioSeq} (h : Z2 B) : Mono B := fun c hc => by rw [h c hc]; omega
 
 open Classical in
-/-- **深さ 0 の写しには行 1 の持ち上げが乗らない。** `Zroot` が展開で保たれる理由。 -/
+/-- **高さ 0 の写しには行 1 の持ち上げが乗らない。** `Zroot` が展開で保たれる理由。 -/
 theorem zroot_copy_key {B : TrioSeq} (hzr : Zroot B)
     (hz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
       entry B 2 (B.length - 1) = 0))
@@ -1673,10 +1673,10 @@ theorem X110_mem : X110 ∈ W 0 := by
   rw [oper_X110 n]
   exact Utow_mem n
 
-/-! ## 一般化: 深さ 1 の列は行 1 が何でも継げる
+/-! ## 一般化: 高さ 1 の列は行 1 が何でも継げる
 
 `X(1,1,0)` の証明は `A = Q` に依っていない。`A ∈ W 0` が `Deep`・`Zroot`・`Mono`
-なら、末尾に **`(1,e,0)`（深さ 1・行 2 は 0・行 1 は何でも）** を継げる。
+なら、末尾に **`(1,e,0)`（高さ 1・行 2 は 0・行 1 は何でも）** を継げる。
 
 理由: 継いだ列の行 1 の親は必ず `A` の根。`Deep` なので行 0 の祖先は根しかなく、
 根の行 1 は 0（`Zroot`）だから。したがって
@@ -1840,7 +1840,7 @@ theorem snoc_row1_oper {A : TrioSeq} (hAne : A ≠ []) (hAd : Deep A) (hAz : Zro
   rw [if_pos (hle0 j (by omega)), hpre 0 j hjl, hpre 1 j hjl, hpre 2 j hjl]
 
 /-- ★ **`A ++ [(1,e,0)] ∈ W 0`** — `Deep`・`Zroot`・`Mono` な `W 0` の元には、
-深さ 1・行 2 が 0 の列を、行 1 の値に関係なく継げる。 -/
+高さ 1・行 2 が 0 の列を、行 1 の値に関係なく継げる。 -/
 theorem snoc_row1 {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A)
     (hAz : Zroot A) (hAm : Mono A) {e : ℕ} (he : 1 ≤ e) :
     A ++ [((1, e, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
@@ -1852,11 +1852,11 @@ theorem snoc_row1 {A : TrioSeq} (hA : A ∈ W 0) (hAne : A ≠ []) (hAd : Deep A
 /-! ## 積・冪の梯子: `o(A)^2` から `o(A)^o(A)` まで
 
 `bump_mem3` は **`B` に `Deep` を要求しない**（`B ∈ W 0` ＋ `Zroot` ＋ `Mono` ＋
-根が深さ 0 だけ）。この差がちょうど効く: `A ++ A` は根が 2 つあるので `Deep`
+根が高さ 0 だけ）。この差がちょうど効く: `A ++ A` は根が 2 つあるので `Deep`
 ではないが `B` 側の条件は満たすので、そのまま `bump` できる。
 
     Aok A := A ∈ W 0 ∧ A ≠ [] ∧ Deep A ∧ Zroot A ∧ Mono A   （左に置ける）
-    Bok B := B ∈ W 0 ∧ Zroot B ∧ Mono B ∧ 根が深さ 0        （bump できる）
+    Bok B := B ∈ W 0 ∧ Zroot B ∧ Mono B ∧ 根が高さ 0        （bump できる）
 
     Aok A → Bok B → Aok (A ++ bump B)     継いだ結果もまた左に置ける
     Aok A → Bok A                          （`Deep` を落とすだけ）
@@ -1950,7 +1950,7 @@ theorem Bok_zero : Bok [((0, 0, 0) : ℕ × ℕ × ℕ)] :=
     by intro c hc; simp at hc; subst hc; simp,
     by simp [entry]⟩
 
-/-- 平坦（行 1・行 2 が 0）で根が深さ 0 なら `Bok`。仮定は形だけ。 -/
+/-- 平坦（行 1・行 2 が 0）で根が高さ 0 なら `Bok`。仮定は形だけ。 -/
 theorem Bok_flat {B : TrioSeq} (hf : Flat B) (hroot : entry B 0 0 = 0) : Bok B :=
   ⟨Flat_mem_W hf, Flat_Zroot hf, Z2_Mono (Flat_Z2 hf), hroot⟩
 
@@ -2149,7 +2149,7 @@ theorem R286_mem :
 
     Blk e B := (1,e,0) :: shiftr01 2 0 B
 
-深さ 1 の列 1 本と、その下に深さ 2 以上のブロックを吊るした形。目標は
+高さ 1 の列 1 本と、その下に高さ 2 以上のブロックを吊るした形。目標は
 
     Aok A → B ∈ W 0（Zroot ∧ Mono ∧ 根 0）→ 1 <= e  ⟹  A ++ Blk e B ∈ W 0
 
@@ -2158,7 +2158,7 @@ theorem R286_mem :
 * `B` の末尾が非零 ⟹ 親が `B` の中にあるので
   `(A ++ Blk e B)⟦n⟧ = A ++ Blk e (B⟦n⟧)`（`A` は不問）。
 * `B` の末尾が `(0,0,0)` ⟹ `Blk e B = Blk e (B.dropLast) ++ [(2,0,0)]`。
-  この `(2,0,0)` の行 0 の親は `(1,e,0)`（間の列は全部深さ 2 以上）。`srow = 0` で
+  この `(2,0,0)` の行 0 の親は `(1,e,0)`（間の列は全部高さ 2 以上）。`srow = 0` で
   持ち上げも無いので `snoc_flat` が使え、要るのは**コピー族**
 
       A ++ (Blk e (B.dropLast))^n ∈ W 0
@@ -2176,7 +2176,7 @@ theorem oper_shift (A B : TrioSeq) (d n : ℕ) (hlen : 2 ≤ B.length)
     rw [shiftr01_length, srow_shiftr01, hasParent_shiftr01]; exact hp
   rw [oper_append_right_of A _ n h2 hp', oper_shiftr01]
 
-/-- 深さ 1 の列 1 本 ＋ 深さ 2 以上のブロック。 -/
+/-- 高さ 1 の列 1 本 ＋ 高さ 2 以上のブロック。 -/
 def Blk (e : ℕ) (B : TrioSeq) : TrioSeq :=
   ((1, e, 0) : ℕ × ℕ × ℕ) :: shiftr01 2 0 B
 
@@ -2320,7 +2320,7 @@ theorem blk_snoc_two {C A : TrioSeq} {e : ℕ} (hmoC : Mono C) (hA : Aok A)
   rw [h1, h2, ← Yseq_eq]
   exact (Yseq_Aok hA hmoC hIH n).mem
 
-/-- ★ **d=2 の bump**: `Aok A` の上に `(1,e,0)` ＋ 深さ 2 のブロックを吊るせる。 -/
+/-- ★ **d=2 の bump**: `Aok A` の上に `(1,e,0)` ＋ 高さ 2 のブロックを吊るせる。 -/
 theorem blk_mem :
     ∀ B ∈ W 0, Zroot B → Mono B → entry B 0 0 = 0 →
       ∀ A : TrioSeq, Aok A → ∀ e : ℕ, 1 ≤ e → A ++ Blk e B ∈ W 0 := by
@@ -2725,20 +2725,20 @@ theorem QQQ_mem :
 #print axioms oper_bump
 #print axioms Flat_srow
 
-/-! ## 深さ `d` の一般 bump（`BlkD`）
+/-! ## 高さ `d` の一般 bump（`BlkD`）
 
 `Blk e B = (1,e,0) :: B⇑2` を二方向に一般化する。
 
-* アンカーを**セグメント** `M` にする（先頭は深さ < d、残りは深さ ≥ d）。
+* アンカーを**セグメント** `M` にする（先頭は高さ < d、残りは高さ ≥ d）。
 * シフト量を `2` から一般の `d` にする。
 
     BlkD d M B = M ++ B⇑d
 
-`(d,0,0)` を継ぐときの行 0 の親は「深さ < d の最後の列」＝ `M` の先頭なので、
+`(d,0,0)` を継ぐときの行 0 の親は「高さ < d の最後の列」＝ `M` の先頭なので、
 `Blk` の議論はそのまま通る。底は `A ++ M ∈ W 0`。
 
-さらに `A` 側に**不変量 `P`** を運ぶ。`P` は「`A` の上に深さ `d` のブロックを
-吊るせる」という情報を持てるので、深さの梯子（`d → d+1`）が登れる。`P` の
+さらに `A` 側に**不変量 `P`** を運ぶ。`P` は「`A` の上に高さ `d` のブロックを
+吊るせる」という情報を持てるので、高さの梯子（`d → d+1`）が登れる。`P` の
 閉包条件には**その段の帰納法の仮定そのもの**を渡す（`hclose` の第 4 引数）。 -/
 
 theorem shiftD_col {d : ℕ} {C : TrioSeq} : ∀ c ∈ shiftr01 d 0 C, d ≤ c.1 := by
@@ -2755,7 +2755,7 @@ theorem shiftD_mono {d : ℕ} {C : TrioSeq} (h : Mono C) : Mono (shiftr01 d 0 C)
   dsimp only
   omega
 
-/-- 根以外の**深さ < d** の列は行 1 が 1 以上。 -/
+/-- 根以外の**高さ < d** の列は行 1 が 1 以上。 -/
 def Shd (d : ℕ) (Y : TrioSeq) : Prop :=
   ∀ j, 0 < j → j < Y.length → entry Y 0 j < d → 1 ≤ entry Y 1 j
 
@@ -2763,7 +2763,7 @@ def Shd (d : ℕ) (Y : TrioSeq) : Prop :=
 def ShdM (d : ℕ) (M : TrioSeq) : Prop :=
   ∀ j, j < M.length → entry M 0 j < d → 1 ≤ entry M 1 j
 
-/-- 深さ `d` 用の中間セグメント: 先頭が深さ < d・行 1 が 1 以上、残りは深さ ≥ d。 -/
+/-- 高さ `d` 用の中間セグメント: 先頭が高さ < d・行 1 が 1 以上、残りは高さ ≥ d。 -/
 structure MidD (d : ℕ) (M : TrioSeq) : Prop where
   ne : M ≠ []
   col : ∀ c ∈ M, 1 ≤ c.1
@@ -2778,7 +2778,7 @@ theorem MidD.shdM {d : ℕ} {M : TrioSeq} (hM : MidD d M) : ShdM d M := by
   · exact hM.head1
   · have := hM.tail j h hj; omega
 
-/-- `M` ＋ 深さ `d` 以上のブロック。 -/
+/-- `M` ＋ 高さ `d` 以上のブロック。 -/
 def BlkD (d : ℕ) (M B : TrioSeq) : TrioSeq := M ++ shiftr01 d 0 B
 
 theorem BlkD_col {d : ℕ} (hd : 1 ≤ d) {M B : TrioSeq} (hM : ∀ c ∈ M, 1 ≤ c.1) :
@@ -2935,7 +2935,7 @@ theorem blkD_snoc_two {d : ℕ} (hd : 1 ≤ d) {C A M : TrioSeq} (hM : MidD d M)
   rw [h1, h2, ← Yseq_eq]
   exact (Yseq_Aok_D hd hA hM hmoC hP hclose hIH n).1.mem
 
-/-- ★★ **深さ `d` の一般 bump**。`P` は `A` 側の不変量。 -/
+/-- ★★ **高さ `d` の一般 bump**。`P` は `A` 側の不変量。 -/
 theorem blkD_mem {d : ℕ} (hd : 1 ≤ d) (M : TrioSeq) (hM : MidD d M)
     {P : TrioSeq → Prop}
     (hbase : ∀ A : TrioSeq, Aok A → P A → A ++ M ∈ W 0)
@@ -3022,9 +3022,9 @@ theorem blkD_mem {d : ℕ} (hd : 1 ≤ d) (M : TrioSeq) (hM : MidD d M)
   intro B hB
   exact key hB
 
-/-! ## 深さ `d` の塔と `(d,1,0)` の継ぎ足し -/
+/-! ## 高さ `d` の塔と `(d,1,0)` の継ぎ足し -/
 
-/-- `Y` の深さ `d` の塔。 -/
+/-- `Y` の高さ `d` の塔。 -/
 def TwD (d : ℕ) (Y : TrioSeq) (n : ℕ) : TrioSeq :=
   (List.range n).flatMap fun k => shiftr01 (d * k) 0 Y
 
@@ -3066,7 +3066,7 @@ theorem TwD_root {d : ℕ} {Y : TrioSeq} (hne : Y ≠ []) (h : entry Y 0 0 = 0) 
       exact h
 
 /-- 「右から見た狭義最小記録」の列にだけ行 1 の下界を課す（`Shd` の弱化）。
-最後の列に深さ `d` の列を継いだときの `le0` 祖先は、ちょうどこの形。 -/
+最後の列に高さ `d` の列を継いだときの `le0` 祖先は、ちょうどこの形。 -/
 def Ancd (d : ℕ) (Y : TrioSeq) : Prop :=
   ∀ j, 0 < j → j < Y.length → entry Y 0 j < d →
     (∀ i, j < i → i < Y.length → entry Y 0 j < entry Y 0 i) → 1 ≤ entry Y 1 j
@@ -3074,7 +3074,7 @@ def Ancd (d : ℕ) (Y : TrioSeq) : Prop :=
 theorem Shd_Ancd {d : ℕ} {Y : TrioSeq} (h : Shd d Y) : Ancd d Y :=
   fun j hj0 hjl hlt _ => h j hj0 hjl hlt
 
-/-- ★ 行 0 の祖先 `a` は、`a` と `b` の間の全ての列より真に浅い。 -/
+/-- ★ 行 0 の祖先 `a` は、`a` と `b` の間の全ての列より真に低い。 -/
 theorem rtg0_rec {M : TrioSeq} {a b : ℕ}
     (h : Relation.ReflTransGen (nextrel0 M) a b) :
     ∀ i, a < i → i ≤ b → entry M 0 a < entry M 0 i := by
@@ -3100,7 +3100,7 @@ theorem rtg0_entry_le {M : TrioSeq} {a b : ℕ}
   | tail _ hstep ih => exact le_trans ih (le_of_lt hstep.2.2.2.1)
 
 open Classical in
-/-- ★ `(d,1,0)` を継いだときの展開は `Y` の深さ `d` の塔。 -/
+/-- ★ `(d,1,0)` を継いだときの展開は `Y` の高さ `d` の塔。 -/
 theorem oper_snocd {Y : TrioSeq} {d : ℕ} (hd : 1 ≤ d) (hne : Y ≠ []) (hdp : Deep Y)
     (hz : Zroot Y) (hsh : Ancd d Y) (n : ℕ) :
     (Y ++ [((d, 1, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = TwD d Y n := by
@@ -3326,17 +3326,17 @@ theorem R289_mem : R289 ∈ W 0 := by
 #print axioms mseq_mem
 #print axioms R289_mem
 
-/-! ## 深さの梯子 `Lv r a`（ランク付き・シフト付き）
+/-! ## 高さの梯子 `Lv r a`（ランク付き・シフト付き）
 
-`Lv r a A` ＝「`A` は高さ `r` 以下の梯子を持ち、深さ `a+1` のブロックを吊るせる」
-（アンカーは深さ `a`）。
+`Lv r a A` ＝「`A` は高さ `r` 以下の梯子を持ち、高さ `a+1` のブロックを吊るせる」
+（アンカーは高さ `a`）。
 
     Lv 0 a A       = Aok A ∧ a = 0
     Lv (r+1) 0 A   = Aok A                        アンカーは根（`bump`）
     Lv (r+1) (a+1) A = Aok A ∧ ∃ A0 M, A = A0 ++ M ∧ Lv r a A0 ∧ MidD (a+2) M
                        ∧ (∀ s A', Lv r (a+s) A' → A' ++ M↑s ∈ W 0)
 
-最後が**シフト付きの再継ぎ性**。`M↑s` はアンカーが深さ `a+1+s` なので、`Lv r (a+s)`
+最後が**シフト付きの再継ぎ性**。`M↑s` はアンカーが高さ `a+1+s` なので、`Lv r (a+s)`
 な行列になら誰にでも継げる、という意味。
 
 ランク `r` が要る理由: 再継ぎ性は `Lv` を**仮定の側**で、しかも `a+s ≥ a` の
@@ -3513,7 +3513,7 @@ theorem blkD_snoc_twoS {d : ℕ} (hd : 1 ≤ d) {C A M : TrioSeq} {s : ℕ}
   rw [h1, h2, ← Yseq_eq]
   exact (Yseq_Aok_S hd hA hM hmoC hP hclose hIH n).1.mem
 
-/-- ★★ シフト付きの深さ `d` 一般 bump。帰納法の仮定を**全てのシフトで**渡す。 -/
+/-- ★★ シフト付きの高さ `d` 一般 bump。帰納法の仮定を**全てのシフトで**渡す。 -/
 theorem blkD_memS {d : ℕ} (hd : 1 ≤ d) (M : TrioSeq) (hM : MidD d M)
     {P : ℕ → TrioSeq → Prop}
     (hbase : ∀ (s : ℕ) (A : TrioSeq), Aok A → P s A → A ++ shiftr01 s 0 M ∈ W 0)
@@ -3605,7 +3605,7 @@ theorem blkD_memS {d : ℕ} (hd : 1 ≤ d) (M : TrioSeq) (hM : MidD d M)
 
 /-! ### 梯子本体 -/
 
-/-- 高さ `r` 以下の梯子で、深さ `a+1` のブロックを吊るせる行列。 -/
+/-- 高さ `r` 以下の梯子で、高さ `a+1` のブロックを吊るせる行列。 -/
 def Lv : ℕ → ℕ → TrioSeq → Prop
   | 0, a, A => Aok A ∧ a = 0
   | (_ + 1), 0, A => Aok A
@@ -3661,7 +3661,7 @@ theorem Lv_Ancd : ∀ (r a : ℕ) (A : TrioSeq), Lv r a A → Ancd (a + 1) A
         have := hM.tail t (by omega) (by omega)
         omega
 
-/-- シフト閉包: 再継ぎ可能なセグメントを `s` だけ深くして継いでも梯子が 1 段上がる。 -/
+/-- シフト閉包: 再継ぎ可能なセグメントを `s` だけ高くして継いでも梯子が 1 段上がる。 -/
 theorem Lv_shift {r a : ℕ} {M : TrioSeq} (hM : MidD (a + 2) M)
     (hre : ∀ (t : ℕ) (A' : TrioSeq), Lv r (a + t) A' → A' ++ shiftr01 t 0 M ∈ W 0)
     (s : ℕ) {A' : TrioSeq} (hA' : Lv r (a + s) A') :
@@ -4062,14 +4062,14 @@ theorem blkD_mem_of_stage {d : ℕ} (hd : 1 ≤ d) (M : TrioSeq) (hM : MidD d M)
 
 `Lv_snoc` は「行 1 の親が**根**」の場合だった。行293 以降では
 
-    Y0 ++ M ++ [(L+1, y, 0)]        M の先頭は深さ L・行 1 = e < y
+    Y0 ++ M ++ [(L+1, y, 0)]        M の先頭は高さ L・行 1 = e < y
 
 の形が出る。行 1 の親は `M` の先頭（内部）で、`d0 = (L+1) - L = 1`、ブロックは
-`M` そのもの。よって展開は `M` を 1 ずつ深くしたコピーの列:
+`M` そのもの。よって展開は `M` を 1 ずつ高くしたコピーの列:
 
     (Y0 ++ M ++ [(L+1,y,0)])[n] = Y0 ++ M ++ M↑1 ++ ... ++ M↑(n-1)  =: Mtw Y0 M n
 
-`M` の尻尾が深さ `L+1` 以上（`MidD (L+1) M`）なので、`M` の中には行 1 が `y`
+`M` の尻尾が高さ `L+1` 以上（`MidD (L+1) M`）なので、`M` の中には行 1 が `y`
 未満の `le0` 祖先が無く、親が `M` の先頭に固定される。 -/
 
 def Mtw (Y0 M : TrioSeq) (n : ℕ) : TrioSeq :=
@@ -4284,7 +4284,7 @@ theorem Lv_snoc2 (r a : ℕ) (A : TrioSeq) (hA : Lv r a A) :
 
 /-! ### 内部アンカーの継ぎ足し（歩幅 `delta` 版）
 
-`oper_snocY` はアンカーと末尾列の深さの差が 1 の場合。ここでは差を `dl` に一般化する。
+`oper_snocY` はアンカーと末尾列の高さの差が 1 の場合。ここでは差を `dl` に一般化する。
 写しの歩幅がそのまま `dl` になるので、塔は `Mtwd dl Y0 M n = Y0 ++ M ++ M↑dl ++ M↑2dl ++ ...`。
 
 差が 2 以上のときは「アンカーより後ろで末尾列の行 0 の祖先になる列」が実在しうるので、
@@ -4471,7 +4471,7 @@ theorem Lw_mem {c : ℕ} {A : TrioSeq} (h : Lw c A) : A ∈ W 0 := (Lw_Aok h).me
 
 theorem Lw_Q : Lw 0 Q := ⟨0, (Aok_Q : Aok Q), rfl⟩
 
-/-- ★ 深さ `a+1` から始まる、`Lw` の頭ならどこへでも（シフトして）継げるセグメント。 -/
+/-- ★ 高さ `a+1` から始まる、`Lw` の頭ならどこへでも（シフトして）継げるセグメント。 -/
 structure Seg (a : ℕ) (M : TrioSeq) : Prop where
   mid : MidD (a + 2) M
   head1 : entry M 1 0 < 2
@@ -4547,7 +4547,7 @@ theorem Lv_snoc2' (r a : ℕ) (A : TrioSeq) (hA : Lv r a A) :
 
 /-! ### ★★ `(a+2,2,0)` を継いだ頭も吊るせる（`hang2`）
 
-`Lv` の梯子は「最後のセグメントの頭の深さ」＝レベルなので、`(a+2,2,0)` を継いだ
+`Lv` の梯子は「最後のセグメントの頭の高さ」＝レベルなので、`(a+2,2,0)` を継いだ
 行列のレベルは `a+2` になってほしいが、その記録には `(a+2,2,0)` の再継ぎ
 （＝任意の `Lw` の頭に `(·,2,0)` を継ぐ）が要り、それは循環する。
 
@@ -4690,7 +4690,7 @@ theorem hang2_Ancd {a : ℕ} {A0 M : TrioSeq} (hS : Seg a M) (h0 : Lw a A0) :
   rcases Nat.lt_or_ge j (A0 ++ M).length with hj | hj
   · -- j は A0 ++ M の中
     rcases Nat.lt_or_ge j A0.length with hjA | hjA
-    · -- A0 の中: M の頭より浅いことが記録最小から出る
+    · -- A0 の中: M の頭より低いことが記録最小から出る
       have hcmp : entry Y 0 j < entry Y 0 A0.length :=
         hrec A0.length hjA (by omega)
       have hMhY : entry Y 0 A0.length = a + 1 := by
@@ -4759,7 +4759,7 @@ theorem R292_snoc310 : R292 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 行293 が要るのは**歩幅 2** の塔 `Mtwd 2 Q N293 n`（チャットでは `T_n`）。歩幅 `dl` の塔は
 段ごとにレベルが `dl` 上がる必要があるが、`Lv` のレベルは
-「最後のセグメントの頭の深さ」なので 1 しか上がらない。この 1 のずれが
+「最後のセグメントの頭の高さ」なので 1 しか上がらない。この 1 のずれが
 `LADDER-PROBLEM.md` §3 の (G2)。 -/
 
 theorem Seg_N293 : Seg 0 N293 where
