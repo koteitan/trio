@@ -4836,5 +4836,169 @@ theorem R292_snoc210 : R292 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R292_snoc110
 #print axioms R292_snoc210
 
+/-! #### 族 B の delta 0 と 族 C: `X(2,0,0)` と `X(3,0,0)`
+
+どちらも末尾が `(h,0,0)` なので `snoc_flat`。写しは **verbatim**（delta 0）。 -/
+
+theorem copies_snoc (A : TrioSeq) (n : ℕ) : copies A (n + 1) = copies A n ++ A := by
+  simp [copies, List.range_succ, List.flatMap_append]
+
+/-- `A` が `Aok` なら `(1,1,0)(2,2,0)` を何個でも継げる。 -/
+theorem Aok_append_copies_N293 : ∀ (n : ℕ) (A : TrioSeq), Aok A →
+    Aok (A ++ copies N293 n)
+  | 0, A, hA => by simpa [copies] using hA
+  | (n + 1), A, hA => by
+      have hmem : A ++ N293 ∈ W 0 := by
+        have h := Lv_snoc2 1 0 A hA
+        simpa [N293] using h
+      have hAok : Aok (A ++ N293) := Aok_append_Mid (by omega) hA MidD_N293 hmem
+      have h := Aok_append_copies_N293 n (A ++ N293) hAok
+      rw [copies_succ, ← List.append_assoc]
+      exact h
+
+/-- `(1,1,0)(2,2,0)^k`。 -/
+def Rep220 (k : ℕ) : TrioSeq :=
+  [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies [((2, 2, 0) : ℕ × ℕ × ℕ)] k
+
+theorem Rep220_zero : Rep220 0 = [((1, 1, 0) : ℕ × ℕ × ℕ)] := by simp [Rep220, copies]
+
+theorem Rep220_succ (k : ℕ) :
+    Rep220 (k + 1) = Rep220 k ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Rep220, copies_snoc, List.append_assoc]
+
+theorem Rep220_mid : ∀ k, MidD 2 (Rep220 k)
+  | 0 => by rw [Rep220_zero]; exact MidD_one 1 (by omega)
+  | (k + 1) => by
+      rw [Rep220_succ]
+      refine MidD_append (Rep220_mid k) ?_ ?_ <;> intro c hc <;>
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hc <;> subst hc <;> decide
+
+theorem Rep220_head : ∀ k, entry (Rep220 k) 1 0 = 1
+  | 0 => by rw [Rep220_zero]; rfl
+  | (k + 1) => by
+      rw [Rep220_succ, entry_append_left (List.length_pos_iff.mpr (Rep220_mid k).ne)]
+      exact Rep220_head k
+
+/-- ★ `(1,1,0)(2,2,0)^k` は `Seg`（再継ぎは `Seg_snoc2` の反復）。 -/
+theorem Seg_Rep220 : ∀ k, Seg 0 (Rep220 k)
+  | 0 => by rw [Rep220_zero]; simpa using Seg_one 0
+  | (k + 1) => by
+      refine ⟨Rep220_mid (k + 1), by rw [Rep220_head]; omega, ?_⟩
+      intro s A' hA'
+      rw [Rep220_succ, shiftr01_append0, ← List.append_assoc]
+      have hSs : Seg (0 + s) (shiftr01 s 0 (Rep220 k)) := Seg_shift (Seg_Rep220 k) s
+      have h := Seg_snoc2 hSs (A0 := A') (by simpa using hA')
+      have heq : shiftr01 s 0 [((2, 2, 0) : ℕ × ℕ × ℕ)]
+          = [((0 + s + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+        simp only [shiftr01, List.map_cons, List.map_nil]
+        congr 2
+        omega
+      rw [heq]
+      exact h
+
+theorem Q_append_Rep220 (k : ℕ) : Q ++ Rep220 k ∈ W 0 := by
+  have h := (Seg_Rep220 k).reapp 0 Q (by simpa using Lw_Q)
+  simpa using h
+
+#print axioms Seg_Rep220
+
+theorem R292_len4 : R292.length = 4 := by simp [R292]
+
+/-- ★ `X(2,0,0)`（族 B・delta 0）。写しは尻尾 `(1,1,0)(2,2,0)` の verbatim 反復。 -/
+theorem R292_snoc200 : R292 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hpar : hasParent (R292 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) 0 R292.length := by
+    rw [R292_len4, hasParent_zero_iff (by simp [R292])]
+    exact ⟨2, by omega, by decide⟩
+  have hnr : nextrel0 (R292 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) 2 R292.length := by
+    rw [R292_len4]
+    refine ⟨by simp [R292], by simp [R292], by omega, by decide, ?_⟩
+    intro j hj
+    have hj3 : j = 3 := by omega
+    subst hj3
+    decide
+  refine snoc_flat (A := R292) (j0 := 2) (by simp [R292]) (by decide) rfl rfl hpar
+    (hpar.unique (parent_nextR hpar) (by rw [R292_len4] at hnr ⊢; exact hnr)) ?_
+  intro n
+  have h1 : R292.take 2 = Q := by simp [R292, Q]
+  have h2 : R292.drop 2 = N293 := by simp [R292, N293]
+  rw [h1, h2]
+  exact (Aok_append_copies_N293 n Q Aok_Q).mem
+
+/-- ★ `X(3,0,0)`（族 C）。写しは `(2,2,0)` の verbatim 反復。 -/
+theorem R292_snoc300 : R292 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hpar : hasParent (R292 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)]) 0 R292.length := by
+    rw [R292_len4, hasParent_zero_iff (by simp [R292])]
+    exact ⟨3, by omega, by decide⟩
+  have hnr : nextrel0 (R292 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)]) 3 R292.length := by
+    rw [R292_len4]
+    refine ⟨by simp [R292], by simp [R292], by omega, by decide, ?_⟩
+    intro j hj
+    omega
+  refine snoc_flat (A := R292) (j0 := 3) (by simp [R292]) (by decide) rfl rfl hpar
+    (hpar.unique (parent_nextR hpar) (by rw [R292_len4] at hnr ⊢; exact hnr)) ?_
+  intro n
+  have h1 : R292.take 3 ++ (List.range n).flatMap
+      (fun _ => R292.drop 3) = Q ++ Rep220 n := by
+    have hd : R292.drop 3 = [((2, 2, 0) : ℕ × ℕ × ℕ)] := by simp [R292]
+    have ht : R292.take 3 = Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] := by simp [R292, Q]
+    rw [hd, ht, Rep220, ← List.append_assoc]
+    rfl
+  rw [h1]
+  exact Q_append_Rep220 n
+
+#print axioms R292_snoc200
+#print axioms R292_snoc300
+
+/-! #### 族 A の delta 0: `X(1,0,0)` -/
+
+theorem copies_R292_mem : ∀ n, copies R292 n ∈ W 0
+  | 0 => by simpa [copies] using W_nil 0
+  | (n + 1) => by
+      rw [copies_snoc]
+      refine W_add (copies_R292_mem n) R292_mem ?_
+      intro p _
+      have h : entry R292 0 0 = 0 := rfl
+      omega
+
+/-- ★ `X(1,0,0)`（族 A・delta 0）。写しは `X` 全体の verbatim 反復。 -/
+theorem R292_snoc100 : R292 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hpar : hasParent (R292 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)]) 0 R292.length := by
+    rw [R292_len4, hasParent_zero_iff (by simp [R292])]
+    exact ⟨0, by omega, by decide⟩
+  have hnr : nextrel0 (R292 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)]) 0 R292.length := by
+    rw [R292_len4]
+    refine ⟨by simp [R292], by simp [R292], by omega, by decide, ?_⟩
+    intro j hj
+    have hj3 : j = 1 ∨ j = 2 ∨ j = 3 := by omega
+    rcases hj3 with rfl | rfl | rfl <;> decide
+  refine snoc_flat (A := R292) (j0 := 0) (by simp [R292]) (by decide) rfl rfl hpar
+    (hpar.unique (parent_nextR hpar) (by rw [R292_len4] at hnr ⊢; exact hnr)) ?_
+  intro n
+  simpa [copies] using copies_R292_mem n
+
+#print axioms R292_snoc100
+
+/-- ★ `X(2,2,0)`（族 B・delta 1）。`Seg_snoc2` の直接の帰結。 -/
+theorem R292_snoc220 : R292 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := Seg_snoc2 Seg_N293 Lw_Q
+  rw [R292_eq_QN]
+  simpa using h
+
+#print axioms R292_snoc220
+
+/-! #### まとめ: 行292 と 行293 の間の 8 個
+
+```
+X(1,0,0)  R292_snoc100   ✅   族 A delta 0
+X(1,1,0)  R292_snoc110   ✅   族 A delta 1
+X(2,0,0)  R292_snoc200   ✅   族 B delta 0
+X(2,1,0)  R292_snoc210   ✅   族 A delta 2
+X(2,2,0)  R292_snoc220   ✅   族 B delta 1
+X(3,0,0)  R292_snoc300   ✅   族 C
+X(3,1,0)  R292_snoc310   ✅   族 A delta 3
+X(3,2,0)  = 行293        ❌   族 B delta 2   ← 残り 1 個
+```
+-/
+
 end Small
 end TRIO
