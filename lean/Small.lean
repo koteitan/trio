@@ -3617,5 +3617,169 @@ theorem R292_mem : R292 ∈ W 0 := by
 #print axioms R291_mem
 #print axioms R292_mem
 
+/-! ## 段 `u` 版の `blkD_mem` — 残るのは 2 枝だけ
+
+`blkD_mem` は `B ∈ W 0` の帰納法だった。`W 0` では `Aop` の節3 が空で、しかも
+`Zroot B` のおかげで「末尾が孤児」の枝が現れない。段を上げると、この 2 つが
+生きた枝として出る。
+
+    節1              |B| ≤ 1 ∧ lev B 0 = 0            ← 既存の議論で済む
+    節2 ＋ 全零末尾                                     ← 既存（blkD_snoc_two）
+    節2 ＋ B の中に親あり                                ← 既存（oper_shift の恒等式）
+    節2 ＋ B の中では孤児   ★ hSnoc                     ← 文脈が孤児を復活させる
+    節3（graft）           ★ hGraft                    ← 残核 (GC) の顔
+
+下の定理は `sorry` 無しで通る。残っているのは仮定 `hSnoc` / `hGraft` の 2 本
+だけで、どちらも**その枝で使える帰納法の仮定を引数として受け取る**形にしてある
+（`RESIDUE-PROBLEM.md` §4.5 の「呼び出し地点にあるのに捨てられているパッケージ」）。 -/
+
+theorem blkD_stage {d u : ℕ} (hd : 1 ≤ d) (M : TrioSeq) (hM : MidD d M)
+    {P Pb : TrioSeq → Prop}
+    (hPbOper : ∀ B : TrioSeq, Pb B → ∀ n, 1 ≤ n → Pb (B⟦n⟧))
+    (hPbMono : ∀ B : TrioSeq, Pb B → Mono B)
+    (hPbRoot : ∀ B : TrioSeq, Pb B → entry B 0 0 = 0)
+    (hbase : ∀ A : TrioSeq, Aok A → P A → A ++ M ∈ W 0)
+    (hclose : ∀ A' C' : TrioSeq, Aok A' → P A' → Mono C' →
+        (∀ A'' : TrioSeq, Aok A'' → P A'' → A'' ++ BlkD d M C' ∈ W 0) →
+        P (A' ++ BlkD d M C'))
+    (hSnoc : ∀ B : TrioSeq, 2 ≤ B.length → Pb B →
+        ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+           entry B 2 (B.length - 1) = 0) →
+        ¬ hasParent B (srow B (B.length - 1)) (B.length - 1) →
+        (∀ A : TrioSeq, Aok A → P A → A ++ BlkD d M B.dropLast ∈ W 0) →
+        ∀ A : TrioSeq, Aok A → P A → A ++ BlkD d M B ∈ W 0)
+    (hGraft : ∀ (B : TrioSeq) (m : ℕ), m < u → domT B m → Pb B →
+        (∀ z ∈ W m, based z → Pb (graft B z) →
+          ∀ A : TrioSeq, Aok A → P A → A ++ BlkD d M (graft B z) ∈ W 0) →
+        ∀ A : TrioSeq, Aok A → P A → A ++ BlkD d M B ∈ W 0) :
+    ∀ B ∈ W u, Pb B → ∀ A : TrioSeq, Aok A → P A → A ++ BlkD d M B ∈ W 0 := by
+  have key : W u ⊆ {B : TrioSeq |
+      Pb B → ∀ A : TrioSeq, Aok A → P A → A ++ BlkD d M B ∈ W 0} := by
+    refine A2' ?_
+    intro B hB
+    simp only [Set.mem_setOf_eq]
+    intro hPb A hA hPA
+    have hroot : entry B 0 0 = 0 := hPbRoot B hPb
+    have hmo : Mono B := hPbMono B hPb
+    rcases hB with ⟨hl, hlev0⟩ | hnat | ⟨m, hm, hdom, hgr⟩
+    · -- 節1
+      rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        rw [BlkD_nil]
+        exact hbase A hA hPA
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hroot
+        have hc1 : c.2.1 = 0 ∧ c.2.2 = 0 := by
+          have : 2 * c.2.1 + c.2.2 = 0 := hlev0
+          omega
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1.1 hc1.2)
+        subst hcz
+        have heq : A ++ BlkD d M [((0, 0, 0) : ℕ × ℕ × ℕ)]
+            = (A ++ BlkD d M []) ++ [((d, 0, 0) : ℕ × ℕ × ℕ)] := by
+          simp [BlkD, shiftr01]
+        rw [heq]
+        refine blkD_snoc_two hd hM (by intro c hc; simp at hc) hA hPA hclose ?_
+        intro A' hA' hP'
+        rw [BlkD_nil]
+        exact hbase A' hA' hP'
+    · -- 節2
+      by_cases hshort : B.length ≤ 1
+      · have hself : B⟦1⟧ = B := oper_eq_self_of_short 1 (by omega)
+        have := hnat 1 le_rfl
+        rw [hself] at this
+        simp only [Set.mem_setOf_eq] at this
+        exact this hPb A hA hPA
+      have hlen2 : 2 ≤ B.length := by omega
+      have hBne : B ≠ [] := by intro hc; rw [hc] at hlen2; simp at hlen2
+      -- dropLast 版の帰納法の仮定を先に作る
+      by_cases hzero : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+          entry B 2 (B.length - 1) = 0
+      · -- 全零末尾 ⟹ dropLast、ブロック側は (d,0,0) を継ぐだけ
+        obtain ⟨hz0, hz1, hz2⟩ := hzero
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hz0 (Prod.ext hz1 hz2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hz0, hz1, hz2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hPbdl : Pb B.dropLast := by
+          have := hPbOper B hPb 1 le_rfl
+          rwa [hop] at this
+        have hIH : ∀ A' : TrioSeq, Aok A' → P A' → A' ++ BlkD d M B.dropLast ∈ W 0 :=
+          fun A' hA' hP' => hdl hPbdl A' hA' hP'
+        have hgoal := blkD_snoc_two (C := B.dropLast) hd hM
+          (hPbMono _ hPbdl) hA hPA hclose hIH
+        have heq : A ++ BlkD d M B
+            = (A ++ BlkD d M B.dropLast) ++ [((d, 0, 0) : ℕ × ℕ × ℕ)] := by
+          conv_lhs => rw [hsplit]
+          rw [BlkD_snoc, List.append_assoc]
+        rw [heq]
+        exact hgoal
+      · by_cases hp : hasParent B (srow B (B.length - 1)) (B.length - 1)
+        · -- B の中に親がある ⟹ 恒等式で n の帰納法に落ちる
+          refine A1_intro (Or.inr (Or.inl ?_))
+          intro n hn
+          rw [BlkD_app, oper_shift _ _ d n hlen2 hp, ← BlkD_app]
+          exact hnat n hn (hPbOper B hPb n hn) A hA hPA
+        · -- ★ 孤児枝: B の中では親が無いが、文脈 A ++ M が親を与える
+          have hop : B⟦1⟧ = B.dropLast := by
+            rw [oper_eq_pred_of_noParent 1 (by omega) hzero hp]
+            unfold Pred
+            rw [if_neg (by omega)]
+          have hdl := hnat 1 le_rfl
+          rw [hop] at hdl
+          simp only [Set.mem_setOf_eq] at hdl
+          have hPbdl : Pb B.dropLast := by
+            have := hPbOper B hPb 1 le_rfl
+            rwa [hop] at this
+          exact hSnoc B hlen2 hPb hzero hp
+            (fun A' hA' hP' => hdl hPbdl A' hA' hP') A hA hPA
+    · -- ★ 節3（graft）
+      refine hGraft B m hm hdom hPb ?_ A hA hPA
+      intro z hz hbz hPbg A' hA' hP'
+      have := hgr z hz hbz
+      simp only [Set.mem_setOf_eq] at this
+      exact this hPbg A' hA' hP'
+  intro B hB
+  exact key hB
+
+/-- **検算**: `u = 0` では `hSnoc` も `hGraft` も空になり、`blkD_stage` から
+`blkD_mem` がそのまま出る（＝ 一般化が忠実であることの確認）。 -/
+theorem blkD_mem_of_stage {d : ℕ} (hd : 1 ≤ d) (M : TrioSeq) (hM : MidD d M)
+    {P : TrioSeq → Prop}
+    (hbase : ∀ A : TrioSeq, Aok A → P A → A ++ M ∈ W 0)
+    (hclose : ∀ A' C' : TrioSeq, Aok A' → P A' → Mono C' →
+        (∀ A'' : TrioSeq, Aok A'' → P A'' → A'' ++ BlkD d M C' ∈ W 0) →
+        P (A' ++ BlkD d M C')) :
+    ∀ B ∈ W 0, Zroot B → Mono B → entry B 0 0 = 0 →
+      ∀ A : TrioSeq, Aok A → P A → A ++ BlkD d M B ∈ W 0 := by
+  intro B hB hzr hmo hroot A hA hPA
+  refine blkD_stage (Pb := fun X => Zroot X ∧ Mono X ∧ entry X 0 0 = 0)
+    hd M hM ?_ ?_ ?_ hbase hclose ?_ ?_ B hB ⟨hzr, hmo, hroot⟩ A hA hPA
+  · rintro B' ⟨h1, h2, h3⟩ n hn
+    obtain ⟨h1', h2'⟩ := ZM_oper h1 h2 n
+    exact ⟨h1', h2', by rw [Wset.oper_head_eq hn]; exact h3⟩
+  · rintro B' ⟨-, h2, -⟩; exact h2
+  · rintro B' ⟨-, -, h3⟩; exact h3
+  · rintro B' hlen2 ⟨h1, h2, h3⟩ hnz hp - A' hA' hP'
+    exact absurd (hasParent_of_ZrootMono h1 h2 h3 hlen2 hnz) hp
+  · rintro B' m hm - - - A' hA' hP'
+    exact absurd hm (Nat.not_lt_zero m)
+
+#print axioms blkD_stage
+#print axioms blkD_mem_of_stage
+
 end Small
 end TRIO
