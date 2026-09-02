@@ -9927,5 +9927,244 @@ theorem Iface_StkF {B : ℕ → TrioSeq → Prop} (hB : Iface B) {y : ℕ} (hy :
 
 #print axioms Iface_StkF
 
+
+/-! ### 記録の積の和 `Stk B y := ∃ i, StkF B y i` と、3 の snoc のための界面 `Ifc3` -/
+
+def Stk (B : ℕ → TrioSeq → Prop) (y : ℕ) (h : ℕ) (A : TrioSeq) : Prop := ∃ i, StkF B y i h A
+
+theorem BaseOk_Stk {B : ℕ → TrioSeq → Prop} (hB : BaseOk B) {y : ℕ} (hy : 1 ≤ y) :
+    BaseOk (Stk B y) where
+  aok := fun h A ⟨i, hA⟩ => (BaseOk_StkF hB hy i).aok h A hA
+  ancd := fun h A ⟨i, hA⟩ => (BaseOk_StkF hB hy i).ancd h A hA
+  hang := fun h A ⟨i, hA⟩ => (BaseOk_StkF hB hy i).hang h A hA
+  close := fun h A Blk ⟨i, hA⟩ hcol hmo hcl =>
+    ⟨i, (BaseOk_StkF hB hy i).close h A Blk hA hcol hmo (fun t A' hA' => hcl t A' ⟨i, hA'⟩)⟩
+
+theorem Iface_Stk {B : ℕ → TrioSeq → Prop} (hB : Iface B) {y : ℕ} (hy : 1 ≤ y) :
+    Iface (Stk B y) where
+  bok := BaseOk_Stk hB.bok hy
+  rebase := by
+    rintro h A ⟨i, hA⟩
+    obtain ⟨b, Y0, M, rfl, hY0, hM, hM1, hlt, hvis, hre⟩ := (Iface_StkF hB hy i).rebase h A hA
+    exact ⟨b, Y0, M, rfl, hY0, hM, hM1, hlt, hvis, fun s Y0' hY0' => ⟨i, hre s Y0' hY0'⟩⟩
+
+/-- 3 の snoc のための界面: `E` の元は「任意の Iface 台座の上の走り `X`」++「単位 `U`」で、
+`U` の頭は `(c+1,2,0)`、見える列は row1 ≥ 3、そして任意の走り `X'` の上に `U` を置き直しても `E`。 -/
+structure Ifc3 (E : ℕ → TrioSeq → Prop) : Prop where
+  ifc : Iface E
+  reb : ∀ (h : ℕ) (A : TrioSeq), E h A → ∃ (c : ℕ) (X U : TrioSeq),
+    A = X ++ U ∧ (∃ (E' : ℕ → TrioSeq → Prop) (j : ℕ), Iface E' ∧ RunG E' j c X) ∧
+    MidD (c + 2) U ∧ entry U 1 0 = 2 ∧ c < h ∧ Vis3 (h + 1) U ∧
+    (∀ (s : ℕ) (E'' : ℕ → TrioSeq → Prop) (j'' : ℕ) (X' : TrioSeq), Iface E'' →
+      RunG E'' j'' (c + s) X' → E (h + s) (X' ++ shiftr01 s 0 U))
+
+theorem Ifc3_tower {E : ℕ → TrioSeq → Prop} (hE : Ifc3 E) {h c : ℕ} {X U : TrioSeq}
+    (hX : ∃ (E' : ℕ → TrioSeq → Prop) (j : ℕ), Iface E' ∧ RunG E' j c X)
+    (hre : ∀ (s : ℕ) (E'' : ℕ → TrioSeq → Prop) (j'' : ℕ) (X' : TrioSeq), Iface E'' →
+      RunG E'' j'' (c + s) X' → E (h + s) (X' ++ shiftr01 s 0 U)) (hlt : c < h) :
+    ∀ n : ℕ, E (h + n * (h - c)) (Mtwd (h - c) X U (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      obtain ⟨E', j, hI', hX'⟩ := hX
+      have := hre 0 E' j X hI' (by simpa using hX')
+      simpa using this
+  | (n + 1) => by
+      rw [Mtwd_succ]
+      have ih := Ifc3_tower hE hX hre hlt n
+      have h1 := hre ((h - c) * (n + 1)) E 0 _ hE.ifc
+        (by
+          show E (c + (h - c) * (n + 1)) (Mtwd (h - c) X U (n + 1))
+          rwa [show c + (h - c) * (n + 1) = h + n * (h - c) from by
+            rw [Nat.mul_succ, Nat.mul_comm (h - c) n]; omega])
+      rwa [show h + (h - c) * (n + 1) = h + (n + 1) * (h - c) from by
+        rw [Nat.mul_comm (h - c) (n + 1)]] at h1
+
+theorem Ifc3_tower_mem {E : ℕ → TrioSeq → Prop} (hE : Ifc3 E) {h c : ℕ} {X U : TrioSeq}
+    (hX : ∃ (E' : ℕ → TrioSeq → Prop) (j : ℕ), Iface E' ∧ RunG E' j c X)
+    (hre : ∀ (s : ℕ) (E'' : ℕ → TrioSeq → Prop) (j'' : ℕ) (X' : TrioSeq), Iface E'' →
+      RunG E'' j'' (c + s) X' → E (h + s) (X' ++ shiftr01 s 0 U)) (hlt : c < h) :
+    ∀ n : ℕ, Mtwd (h - c) X U n ∈ W 0
+  | 0 => by
+      rw [Mtwd_zero]
+      obtain ⟨E', j, hI', hX'⟩ := hX
+      exact ((BaseOk_RunG hI'.bok j).aok _ _ hX').mem
+  | (n + 1) => (hE.ifc.bok.aok _ _ (Ifc3_tower hE hX hre hlt n)).mem
+
+/-- ★★★ `Ifc3` の元の頂上に `(h+1,3,0)`。 -/
+theorem Ifc3_snoc3 {E : ℕ → TrioSeq → Prop} (hE : Ifc3 E) {h : ℕ} {A : TrioSeq} (hA : E h A) :
+    A ++ [((h + 1, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨c, X, U, rfl, hX, hU, hU1, hlt, hvis, hre⟩ := hE.reb h A hA
+  have hne : X ≠ [] := by
+    obtain ⟨E', j, hI', hX'⟩ := hX
+    exact ((BaseOk_RunG hI'.bok j).aok _ _ hX').ne
+  have h1 := snocYd_mem (Y0 := X) (M := U) (L := c + 1) (y := 3) (dl := h - c) hne
+    (by rw [show c + 1 + 1 = c + 2 from by omega]; exact hU) (by rw [hU1]; omega)
+    (by rw [show c + 1 + (h - c) = h + 1 from by omega]; exact hvis)
+    (by omega) (by omega) (Ifc3_tower_mem hE hX hre hlt)
+  rwa [show c + 1 + (h - c) = h + 1 from by omega] at h1
+
+theorem Ifc3_PkGA : Ifc3 PkGA where
+  ifc := Iface_PkGA
+  reb := by
+    intro h A hA
+    obtain ⟨E, hI, j, c, X, J, rfl, hX, rfl, hJ⟩ := hA
+    have hM2 := JkG_mid (hJ E hI)
+    refine ⟨c, X, [((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J, rfl, ⟨E, j, hI, hX⟩, hM2,
+      entry_cons_append_1 _ _, by omega, ?_, ?_⟩
+    · refine Vis3_high ?_
+      intro t ht1 htl
+      have := hM2.tail t ht1 htl
+      omega
+    · intro s E'' j'' X' hI'' hX'
+      rw [shiftr01_append0, shift_col]
+      exact ⟨E'', hI'', j'', c + s, X', shiftr01 s 0 J, by omega, hX',
+        by rw [show c + s + 1 = c + 1 + s from by omega], JkGU_shift hJ s⟩
+
+theorem Ifc3_StkF {B : ℕ → TrioSeq → Prop} (hB : Ifc3 B) {y : ℕ} (hy : 2 ≤ y) :
+    ∀ k : ℕ, Ifc3 (StkF B y k)
+  | 0 => hB
+  | (k + 1) => by
+      have hIk := Ifc3_StkF hB hy k
+      refine ⟨Iface_StkF hB.ifc (by omega) (k + 1), ?_⟩
+      rintro h A ⟨c, Y, J, rfl, hY, rfl, hJ⟩
+      have hJ' : JkS B y k c J := hJ
+      obtain ⟨c0, X, U, rfl, hX, hU, hU1, hlt, hvis, hre⟩ := hIk.reb c Y hY
+      have hM3 := JkS_mid (by omega) hJ'
+      refine ⟨c0, X, U ++ ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J), by simp [List.append_assoc],
+        hX, ?_, ?_, by omega, ?_, ?_⟩
+      · refine MidD_append hU ?_ hM3.mono
+        intro x hx; have := MidD_col_ge hM3 x hx; omega
+      · rw [entry_append_left (List.length_pos_iff.mpr hU.ne)]
+        exact hU1
+      · have e : entry ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) 0 0 = c + 1 := by simp [entry]
+        refine Vis3_append (by simp) ?_ (by simp [entry]; omega) ?_
+        · rw [e]; exact hvis
+        · refine Vis3_high ?_
+          intro t ht1 htl
+          have := hM3.tail t ht1 htl
+          omega
+      · intro s E'' j'' X' hI'' hX'
+        rw [shiftr01_append0, shiftr01_append0, shift_col, ← List.append_assoc]
+        exact ⟨c + s, X' ++ shiftr01 s 0 U, shiftr01 s 0 J, by omega, hre s E'' j'' X' hI'' hX',
+          by rw [show c + s + 1 = c + 1 + s from by omega], JkS_shift hJ' s⟩
+
+theorem Ifc3_Stk {B : ℕ → TrioSeq → Prop} (hB : Ifc3 B) {y : ℕ} (hy : 2 ≤ y) :
+    Ifc3 (Stk B y) where
+  ifc := Iface_Stk hB.ifc (by omega)
+  reb := by
+    rintro h A ⟨i, hA⟩
+    obtain ⟨c0, X, U, rfl, hX, hU, hU1, hlt, hvis, hre⟩ := (Ifc3_StkF hB hy i).reb h A hA
+    exact ⟨c0, X, U, rfl, hX, hU, hU1, hlt, hvis,
+      fun s E'' j'' X' hI'' hX' => ⟨i, hre s E'' j'' X' hI'' hX'⟩⟩
+
+/-! ### 4 の snoc: 「junk 条件が `Stk C 2` 全体の上」の 3 の記録の頂上に `(h+1,4,0)` -/
+
+/-- 複製 `(3 + J)↑j` を積んだ段は `StkF C 2 (i+n+1)`。 -/
+theorem StkF_stage4 {C : ℕ → TrioSeq → Prop} {i c : ℕ} {Z J : TrioSeq}
+    (hZ : StkF C 2 i c Z) (hJ : JkS (Stk C 2) 2 0 c J) :
+    ∀ n : ℕ, StkF C 2 (i + n + 1) (c + 1 + n)
+      (Mtw Z ([((c + 1, 3, 0) : ℕ × ℕ × ℕ)] ++ J) (n + 1))
+  | 0 => by
+      rw [Mtw_succ, Mtw_zero, shiftr01_zero]
+      exact ⟨c, Z, J, by omega, hZ, rfl, hJ.1, hJ.2.1, fun t Y' hY' => hJ.2.2 t Y' ⟨i, hY'⟩⟩
+  | (n + 1) => by
+      rw [Mtw_succ]
+      have ih := StkF_stage4 hZ hJ n
+      have hJs := JkS_shift hJ (n + 1)
+      rw [show c + (n + 1) = c + 1 + n from by omega] at hJs
+      rw [shiftr01_append0, shift_col]
+      refine ⟨c + 1 + n, _, shiftr01 (n + 1) 0 J, by omega, ih,
+        by rw [show c + 1 + (n + 1) = c + 1 + n + 1 from by omega], hJs.1, hJs.2.1, ?_⟩
+      intro t Y' hY'
+      exact hJs.2.2 t Y' ⟨i + n + 1, hY'⟩
+
+/-- ★★★ 4 の snoc。 -/
+theorem StkF_snoc4 {C : ℕ → TrioSeq → Prop} (hC : BaseOk C) {h : ℕ} {A : TrioSeq}
+    (hA : StkF (Stk C 2) 2 1 h A) : A ++ [((h + 1, 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨c, Z, J, rfl, ⟨i, hZ⟩, rfl, hJ⟩ := hA
+  have hJ' : JkS (Stk C 2) 2 0 c J := hJ
+  have hZne : Z ≠ [] := ((BaseOk_StkF hC (by omega) i).aok _ _ hZ).ne
+  have hM := JkS_mid (by omega) hJ'
+  have htw : ∀ n, Mtw Z ([((c + 1, 3, 0) : ℕ × ℕ × ℕ)] ++ J) n ∈ W 0 := by
+    intro n
+    cases n with
+    | zero => rw [Mtw_zero]; exact ((BaseOk_StkF hC (by omega) i).aok _ _ hZ).mem
+    | succ n => exact ((BaseOk_StkF hC (by omega) _).aok _ _ (StkF_stage4 hZ hJ' n)).mem
+  have h1 := snocY_mem (Y0 := Z) (M := [((c + 1, 3, 0) : ℕ × ℕ × ℕ)] ++ J) (L := c + 1) (y := 4)
+    hZne (by rw [show c + 1 + 1 = c + 2 from by omega]; exact hM) (by simp [entry]) (by omega) htw
+  simpa [List.append_assoc] using h1
+
+/-! ### 層 `G C`（3 の上に 4）と `Cm m`、そしてシート行295 の次
+`(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,4,0)(5,4,0)` -/
+
+theorem JkS_nil3 {C : ℕ → TrioSeq → Prop} (hC : Ifc3 C) (c : ℕ) : JkS (Stk C 2) 2 0 c [] := by
+  refine ⟨by simp, by intro x hx; simp at hx, ?_⟩
+  intro t Y' hY'
+  have h := Ifc3_snoc3 (Ifc3_Stk hC (le_refl 2)) hY'
+  simpa [shiftr01, show c + t + 1 = c + 1 + t from by omega] using h
+
+theorem JkS_nil4 {C : ℕ → TrioSeq → Prop} (hC : BaseOk C) (c : ℕ) :
+    JkS (StkF (Stk C 2) 2 1) 3 0 c [] := by
+  refine ⟨by simp, by intro x hx; simp at hx, ?_⟩
+  intro t Y' hY'
+  have h := StkF_snoc4 hC hY'
+  simpa [shiftr01, show c + t + 1 = c + 1 + t from by omega] using h
+
+/-- 層: `C` の元の上に「3（junk 条件は `Stk C 2` の上）」、その上に「4」。 -/
+def G (C : ℕ → TrioSeq → Prop) : ℕ → TrioSeq → Prop := StkF (StkF (Stk C 2) 2 1) 3 1
+
+theorem Ifc3_G {C : ℕ → TrioSeq → Prop} (hC : Ifc3 C) : Ifc3 (G C) :=
+  Ifc3_StkF (Ifc3_StkF (Ifc3_Stk hC (le_refl 2)) (le_refl 2) 1) (by omega) 1
+
+theorem G_step {C : ℕ → TrioSeq → Prop} (hC : Ifc3 C) {h : ℕ} {A : TrioSeq} (hA : C h A) :
+    G C (h + 2) (A ++ ([((h + 1, 3, 0) : ℕ × ℕ × ℕ)] ++ [((h + 2, 4, 0) : ℕ × ℕ × ℕ)])) := by
+  refine ⟨h + 1, A ++ ([((h + 1, 3, 0) : ℕ × ℕ × ℕ)] ++ []), [], by omega,
+    ⟨h, A, [], rfl, ⟨0, hA⟩, rfl, JkS_nil3 hC h⟩, ?_, JkS_nil4 hC.ifc.bok (h + 1)⟩
+  simp [show h + 1 + 1 = h + 2 from by omega]
+
+def Cm : ℕ → ℕ → TrioSeq → Prop
+  | 0 => PkGA
+  | (m + 1) => G (Cm m)
+
+theorem Ifc3_Cm : ∀ m : ℕ, Ifc3 (Cm m)
+  | 0 => Ifc3_PkGA
+  | (m + 1) => Ifc3_G (Ifc3_Cm m)
+
+/-- `M34 = (3,3,0)(4,4,0)`。 -/
+def M34 : TrioSeq := [((3, 3, 0) : ℕ × ℕ × ℕ)] ++ [((4, 4, 0) : ℕ × ℕ × ℕ)]
+
+/-- 塔の段 `D_2 (3,3,0)(4,4,0) [(5,3,0)(6,4,0)] … ∈ Cm (n+1)`。 -/
+theorem M34_stage : ∀ n : ℕ, Cm (n + 1) (2 * n + 4) (Mtwd 2 (Tn 0) M34 (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      have h := G_step Ifc3_PkGA (Lk_Tn 0)
+      simpa [M34] using h
+  | (n + 1) => by
+      rw [Mtwd_succ]
+      have ih := M34_stage n
+      have h := G_step (Ifc3_Cm (n + 1)) ih
+      show G (Cm (n + 1)) (2 * (n + 1) + 4) _
+      rw [M34, shiftr01_append0, shift_col, shift_col,
+        show 3 + 2 * (n + 1) = 2 * n + 4 + 1 from by omega,
+        show 4 + 2 * (n + 1) = 2 * n + 4 + 2 from by omega,
+        show 2 * (n + 1) + 4 = 2 * n + 4 + 2 from by omega]
+      exact h
+
+/-- ★★★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,4,0)(5,4,0) ∈ W 0`。 -/
+theorem R295_54_mem : R295 ++ [((5, 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocYd_mem (Y0 := Tn 0) (M := M34) (L := 3) (y := 4) (dl := 2)
+    (by simp [Tn, D1, Q]) ?_ (by simp [entry, M34]) ?_ (by omega) (by omega) ?_
+  · simpa [Tn, D1, Q, R295, R294, M34] using h
+  · exact MidD_append (MidD_col 3 3 (by omega) (by omega)) (by simp) (by simp [Mono])
+  · intro t ht1 htl _ _
+    have : t = 1 := by simp [M34] at htl; omega
+    subst this
+    simp [entry, M34]
+  · intro n
+    cases n with
+    | zero => rw [Mtwd_zero]; exact Tn_mem 0
+    | succ n => exact ((Ifc3_Cm (n + 1)).ifc.bok.aok _ _ (M34_stage n)).mem
+
+#print axioms R295_54_mem
 end Small
 end TRIO
