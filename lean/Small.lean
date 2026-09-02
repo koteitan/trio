@@ -9061,5 +9061,179 @@ theorem R43_400_mem : R43_400 ∈ W 0 := by
 
 #print axioms R43_400_mem
 
+/-! ### 普遍な junk つきの `Pk3`（`Pk3U`）: 吊るしの不変量を「どの界面台座でも」に取る。`R294(4,3,0)(4,1,0)` -/
+
+/-- 普遍な junk: どの界面台座の走りの頭にも継げる。 -/
+def JkGU (c : ℕ) (J : TrioSeq) : Prop := ∀ (E : ℕ → TrioSeq → Prop), Iface E → JkG E c J
+
+theorem JkGU_nil (c : ℕ) : JkGU c [] := fun _ hI => JkG_nil hI c
+
+theorem JkGU_shift {c : ℕ} {J : TrioSeq} (hJ : JkGU c J) (u : ℕ) : JkGU (c + u) (shiftr01 u 0 J) :=
+  fun E hI => JkG_shift (hJ E hI) u
+
+/-- `RunG E j` の頭 ++ `(c+1,2,0)` ++ 普遍な junk。 -/
+def PkGU (E : ℕ → TrioSeq → Prop) (h : ℕ) (Y : TrioSeq) : Prop :=
+  ∃ (j c : ℕ) (X J : TrioSeq), h = c + 1 ∧ RunG E j c X ∧
+    Y = X ++ ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J) ∧ JkGU c J
+
+/-- 台座を ∃ で潰したもの（吊るしの不変量）。 -/
+def PkGA (h : ℕ) (Y : TrioSeq) : Prop := ∃ E : ℕ → TrioSeq → Prop, Iface E ∧ PkGU E h Y
+
+theorem PkGU_toPkG {E : ℕ → TrioSeq → Prop} (hI : Iface E) {h : ℕ} {Y : TrioSeq}
+    (hY : PkGU E h Y) : PkG E h Y := by
+  obtain ⟨j, c, X, J, hc, hX, rfl, hJ⟩ := hY
+  exact ⟨j, c, X, J, hc, hX, rfl, hJ E hI⟩
+
+theorem PkGA_Aok {h : ℕ} {Y : TrioSeq} (hY : PkGA h Y) : Aok Y := by
+  obtain ⟨E, hI, hY⟩ := hY
+  exact PkG_Aok hI.bok (PkGU_toPkG hI hY)
+
+/-- `blkD_memS` の `hclose`（普遍版）: 吊るした junk を `(c+1,2,0)` の junk に吸収する。 -/
+theorem PkGU_absorb {c : ℕ} {M : TrioSeq} (hM : MidD (c + 3) M) {C' : TrioSeq} (hmoC' : Mono C')
+    (hIH : ∀ (t : ℕ) (A'' : TrioSeq), Aok A'' → PkGA (c + 1 + t) A'' →
+      A'' ++ BlkD (c + 3 + t) (shiftr01 t 0 M) C' ∈ W 0)
+    (t : ℕ) (A' : TrioSeq) (hA' : PkGA (c + 1 + t) A') :
+    PkGA (c + 1 + t) (A' ++ BlkD (c + 3 + t) (shiftr01 t 0 M) C') := by
+  obtain ⟨E, hI, j, c', X, J, hc, hX, rfl, hJ⟩ := hA'
+  have hc' : c' = c + t := by omega
+  subst hc'
+  refine ⟨E, hI, j, c + t, X, J ++ BlkD (c + 3 + t) (shiftr01 t 0 M) C', by omega, hX,
+    by simp [List.append_assoc], ?_⟩
+  intro E'' hI''
+  have hJE := hJ E'' hI''
+  refine ⟨?_, ?_, ?_⟩
+  · intro x hx
+    rcases List.mem_append.mp hx with h | h
+    · exact hJE.1 x h
+    · rcases List.mem_append.mp h with h' | h'
+      · have := MidD_col_ge (MidD_shift hM t) x h'
+        omega
+      · have := shiftD_col x h'
+        omega
+  · have h1 : Mono (J ++ shiftr01 t 0 M) := by
+      intro x hx
+      rcases List.mem_append.mp hx with h | h
+      · exact hJE.2.1 x h
+      · exact shiftD_mono hM.mono x h
+    have h2 := BlkD_mono (d := c + 3 + t) h1 hmoC'
+    simpa [BlkD, List.append_assoc] using h2
+  · intro j' t' X' hX'
+    have hA'' : PkGA (c + 1 + (t + t')) (X' ++ ([((c + t + 1 + t', 2, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 t' 0 J)) := by
+      refine ⟨E'', hI'', j', c + t + t', X', shiftr01 t' 0 J, by omega, hX',
+        by rw [show c + t + t' + 1 = c + t + 1 + t' from by omega], JkGU_shift hJ t'⟩
+    have h := hIH (t + t') _ (PkGA_Aok hA'') hA''
+    rw [BlkD_shift_eq] at h ⊢
+    rw [shiftr01_append0, shiftr01_append0, shiftr01_add0, shiftr01_add0,
+      show c + 3 + t + t' = c + 3 + (t + t') from by omega, ← List.append_assoc]
+    simpa only [List.append_assoc] using h
+
+/-- `(c+2,3,0)` の後ろの junk（普遍版）: `PkGA` の元の上に継げる。 -/
+def Jk3GU (c : ℕ) (J : TrioSeq) : Prop :=
+  (∀ x ∈ J, c + 3 ≤ x.1) ∧ Mono J ∧
+  ∀ (t : ℕ) (Y : TrioSeq), PkGA (c + 1 + t) Y →
+    Y ++ ([((c + 2 + t, 3, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J) ∈ W 0
+
+theorem Jk3GU_nil (c : ℕ) : Jk3GU c [] := by
+  refine ⟨by simp, by intro x hx; simp at hx, ?_⟩
+  intro t Y hY
+  obtain ⟨E, hI, j, c', X, J, hc, hX, rfl, hJ⟩ := hY
+  have hc' : c' = c + t := by omega
+  subst hc'
+  have h := JkG_snoc3 hI.bok (hJ E hI) hX
+  simpa [shiftr01, show c + t + 2 = c + 2 + t from by omega] using h
+
+theorem Jk3GU_mid {c : ℕ} {J : TrioSeq} (hJ : Jk3GU c J) :
+    MidD (c + 3) ([((c + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J) := by
+  have h := MidD_append (MidD_col (c + 2) 3 (by omega) (by omega))
+    (by intro x hx; have := hJ.1 x hx; omega) hJ.2.1
+  rwa [show c + 2 + 1 = c + 3 from by omega] at h
+
+/-- `PkGU E` の頭 ++ `(c+2,3,0)` ++ junk。レベル `c+2`。 -/
+def Pk3U (E : ℕ → TrioSeq → Prop) (h : ℕ) (A : TrioSeq) : Prop :=
+  ∃ (c : ℕ) (Y J : TrioSeq), h = c + 2 ∧ PkGU E (c + 1) Y ∧
+    A = Y ++ ([((c + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J) ∧ Jk3GU c J
+
+theorem Pk3U_aok {E : ℕ → TrioSeq → Prop} (hI : Iface E) (h : ℕ) (A : TrioSeq)
+    (hA : Pk3U E h A) : Aok A := by
+  obtain ⟨c, Y, J, rfl, hY, rfl, hJ⟩ := hA
+  have hmem := hJ.2.2 0 Y (by simpa using (⟨E, hI, hY⟩ : PkGA (c + 1) Y))
+  simp only [shiftr01_zero, Nat.add_zero] at hmem
+  exact Aok_append_Mid (by omega) (PkG_Aok hI.bok (PkGU_toPkG hI hY)) (Jk3GU_mid hJ) hmem
+
+theorem Pk3U_ancd {E : ℕ → TrioSeq → Prop} (hI : Iface E) (h : ℕ) (A : TrioSeq)
+    (hA : Pk3U E h A) : Ancd (h + 1) A := by
+  obtain ⟨c, Y, J, rfl, hY, rfl, hJ⟩ := hA
+  have hM := Jk3GU_mid hJ
+  rw [show c + 3 = c + 2 + 1 from by omega] at hM
+  have h1 := PkG_Ancd hI.bok (PkGU_toPkG hI hY)
+  rw [show c + 1 + 1 = c + 2 from by omega] at h1
+  exact Ancd_append_Mid (PkG_Aok hI.bok (PkGU_toPkG hI hY)).ne h1 hM
+
+/-- ★★★ `Pk3U E` の頭の上（レベル `+1`）に `Bok` を吊るせる。不変量は `PkGA`（どの台座でも）。 -/
+theorem Pk3U_hang {E : ℕ → TrioSeq → Prop} (hI : Iface E) (h : ℕ) (A : TrioSeq)
+    (hA : Pk3U E h A) (B : TrioSeq) (hB : Bok B) : A ++ shiftr01 (h + 1) 0 B ∈ W 0 := by
+  obtain ⟨c, Y, J, rfl, hY, rfl, hJ⟩ := hA
+  have hM := Jk3GU_mid hJ
+  have hbase : ∀ (t : ℕ) (A : TrioSeq), Aok A → PkGA (c + 1 + t) A →
+      A ++ shiftr01 t 0 ([((c + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J) ∈ W 0 := by
+    intro t A _ hA
+    rw [shiftr01_append0, shift_col]
+    exact hJ.2.2 t A hA
+  have hclose : ∀ (t : ℕ) (A' C' : TrioSeq), Aok A' → PkGA (c + 1 + t) A' → Mono C' →
+      (∀ (t' : ℕ) (A'' : TrioSeq), Aok A'' → PkGA (c + 1 + t') A'' →
+        A'' ++ BlkD (c + 3 + t') (shiftr01 t' 0 ([((c + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J)) C'
+          ∈ W 0) →
+      PkGA (c + 1 + t) (A' ++ BlkD (c + 3 + t)
+        (shiftr01 t 0 ([((c + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J)) C') := by
+    intro t A' C' _ hA' hmoC' hIH
+    exact PkGU_absorb hM hmoC' hIH t A' hA'
+  have hkey := blkD_memS (d := c + 3) (by omega) _ hM hbase hclose B hB.mem
+    hB.zroot hB.mono hB.root 0 Y (PkGA_Aok ⟨E, hI, hY⟩)
+    (by simpa using (⟨E, hI, hY⟩ : PkGA (c + 1) Y))
+  simp only [shiftr01_zero, Nat.add_zero] at hkey
+  rw [BlkD_app] at hkey
+  rwa [show c + 2 + 1 = c + 3 from by omega]
+
+/-- `R43 = D1 (2,2,0)(3,3,0)(4,3,0) ∈ Pk3U (RunA 0)`（レベル 3。`(4,3,0)` は 3 の junk）。 -/
+theorem R43_Pk3U : Pk3U (RunA 0) 3 R43 := by
+  refine ⟨1, D1 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ []), [((4, 3, 0) : ℕ × ℕ × ℕ)], rfl,
+    ⟨0, 1, D1, [], rfl, D1_RunA0, rfl, JkGU_nil 1⟩, by simp [R43, R294, D1, Q], ?_, ?_, ?_⟩
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+  · intro t Y hY
+    obtain ⟨E, hI, j, c', X, J, hc, hX, rfl, hJ⟩ := hY
+    have hc' : c' = 1 + t := by omega
+    subst hc'
+    have h := Iface_snocJ33 (Iface_RunG hI j) hX (fun E' hI' => hJ E' hI')
+    simpa [shiftr01, List.append_assoc, show 1 + t + 2 = 3 + t from by omega,
+      show 1 + t + 3 = 4 + t from by omega] using h
+
+theorem R43_Aok : Aok R43 := Pk3U_aok Iface_RunA0 3 R43 R43_Pk3U
+
+/-- ★★★ `R43` の上（高さ 4）に `Bok` を吊るせる。 -/
+theorem R43_hang (B : TrioSeq) (hB : Bok B) : R43 ++ shiftr01 4 0 B ∈ W 0 :=
+  Pk3U_hang Iface_RunA0 3 R43 R43_Pk3U B hB
+
+/-- ユーザーの行列 `R43 ++ R43↑4`。 -/
+theorem R43_R43 : R43 ++ shiftr01 4 0 R43 ∈ W 0 :=
+  R43_hang R43 ⟨R43_Aok.mem, R43_Aok.zroot, R43_Aok.mono, by simp [R43, R294, entry]⟩
+
+theorem R43_tw : ∀ n, TwD 4 R43 n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      exact R43_hang (TwD 4 R43 n)
+        ⟨R43_tw n, TwD_zroot (by omega) R43_Aok.zroot n, TwD_mono R43_Aok.mono n,
+          TwD_root R43_Aok.ne R43_Aok.deep.1 n⟩
+
+/-- ★★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(4,1,0) ∈ W 0`。 -/
+theorem R43_410 : R43 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) R43_Aok.ne R43_Aok.deep R43_Aok.zroot
+    (Pk3U_ancd Iface_RunA0 3 R43 R43_Pk3U) R43_tw
+
+#print axioms R43_410
+#print axioms R43_R43
+
 end Small
 end TRIO
