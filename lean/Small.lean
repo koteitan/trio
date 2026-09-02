@@ -8789,5 +8789,36 @@ theorem R43_330 : R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R43_330
 
+/-! ### `(2,2,0)` の junk `(3,3,0)(4,3,0)`（任意の界面台座・レベル）と、`R43(3,3,0)` の塔の第 1 段 -/
+
+theorem JkG_233 {E : ℕ → TrioSeq → Prop} (hI : Iface E) (c : ℕ) :
+    JkG E c [((c + 2, 3, 0) : ℕ × ℕ × ℕ), ((c + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+  · intro j t X hX
+    have h := Iface_snoc233 (Iface_RunG hI j) hX
+    simpa [shiftr01, show c + t + 1 = c + 1 + t from by omega,
+      show c + t + 2 = c + 2 + t from by omega, show c + t + 3 = c + 3 + t from by omega] using h
+
+/-- `D1 (2,2,0)(3,3,0)(4,3,0)(3,3,0)` は `Pk3 (RunA 0)` の元（レベル 3）: `(4,3,0)` は 2 の junk、
+最後の `(3,3,0)` が 3 の記録。 -/
+theorem R43_330_Pk3 : Pk3 (RunA 0) 3 (R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)]) := by
+  refine ⟨1, D1 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 3, 0) : ℕ × ℕ × ℕ)]),
+    [], rfl, ⟨0, 1, D1, _, rfl, D1_RunA0, rfl, JkG_233 Iface_RunA0 1⟩, ?_,
+    Jk3G_nil (BaseOk_RunA 0) 1⟩
+  simp [R43, R294, D1, Q]
+
+/-- ★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(3,3,0)(4,2,0)(5,3,0)(6,3,0)(5,3,0) ∈ W 0`。 -/
+theorem R43_330_stage1 : R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 3, 0) : ℕ × ℕ × ℕ), ((6, 3, 0) : ℕ × ℕ × ℕ), ((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hX : RunG (Lay 1) 0 3 (R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)]) := R43_330_Pk3
+  have h := JkG_snoc3 (Iface_Lay 1).bok (JkG_233 (Iface_Lay 1) 3) hX
+  simpa using h
+
+#print axioms R43_330_stage1
+
 end Small
 end TRIO
