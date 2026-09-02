@@ -417,3 +417,19 @@ Jk3G / Pk3 / BaseOk_Pk3 / Iface_Pk3 / Iface_RunA0 / Lay n / Lay_stage / R294_43 
 - 使った軸: propext, Classical.choice, Quot.sound のみ。
 教訓: クラスの定義は exact rank でよい。junk の「全 rank」条件は、クラスを定義した後の述語として書き、
  不変量を「∃ j」に取れば hclose で保たれる。層をまたぐ複製（3 3）だけが残る壁。
+
+### 2026-09-02 (続き27) ★★★ 「3 3」も行ける見込み: 全層 junk（∞ 版）と 1 段深い記録クラス
+問い: D1 (2 3 3 3) = R294(4,3,0)(5,3,0) は？ 塔は D1 (2 3 3)^k。段 k は「(2 3 3) を 1 単位」とする層。
+(2 3 3) の上の 3（bad root = 2）の塔は (2J)(3J3) を歩幅 2 で積み、複製が Lay' = iterate Pk3 の層を登る。
+登れるためには junk J, J3 の条件が**全層**で要る:
+  JkG∞ E c J := ∀ i j t X, RunG (Lay'^i E) j (c+t) X → X ++ 2 ++ J↑ ∈ W 0   （Lay' は定義済みなので書ける）
+  PkG∞ E := ∃ i j, RunG (Lay'^i E) j ++ (2 + JkG∞ junk)
+  Jk3G∞ E c J3 := ∀ t Y, PkG∞ E (c+1+t) Y → Y ++ 3 ++ J3↑ ∈ W 0
+  Pk3∞ E := PkG∞ E ++ (3 + Jk3G∞ junk)
+  BaseOk (Pk3∞ E): hang の不変量を「∃ i, PkG∞ 層 i」に取れば hclose の断片は全層で再継ぎ可 → J は JkG∞ のまま。
+  Pk33 E := Pk3∞ E ++ (3 + junk。条件は Pk3∞ E の上)。BaseOk (Pk33 E): hbase = 「Pk3∞ の元の上の 3」=
+  上の塔（複製 (2J)(3J3) は全層 junk なので Pk3 (Lay'^{i+1} E) の元。段 k ∈ Lay'^{i+1+k} E）。hclose は J3 へ。
+  Iface (Pk33 E) → Lay'' := iterate Pk33 で D1 (2 3 3)^k ∈ Lay''^k → R294(4,3,0)(5,3,0)。
+一般化（行295）: Pk3^{(m)} を m の再帰で: Pk3^{(m)}∞ の junk 条件は iterate(Pk3^{(m)}) の全層、
+  Pk3^{(m+1)} E := Pk3^{(m)}∞ E ++ (3 + junk)。D1 (2 3^n) ∈ Pk3^{(n)} 系の層 → D_4。
+  行296 はさらに k-記録（4, 5, ...）の再帰。
