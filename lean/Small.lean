@@ -8548,5 +8548,180 @@ theorem D1_23pow (n : ℕ) : D1 ++ (List.range n).flatMap (fun i =>
   rw [← Mtwd2_D1_eq]
   exact Lay_stage_mem n
 
+/-! ### 任意の界面台座の上の `(2 3)` の登り、`(2,2,0)(3,3,0)(4,3,0)` の継ぎ足し、`R294(4,3,0)(3,0,0)` -/
+
+/-- 層（台座 `E` 版）。 -/
+def LayE (E : ℕ → TrioSeq → Prop) : ℕ → ℕ → TrioSeq → Prop
+  | 0 => E
+  | (i + 1) => Pk3 (LayE E i)
+
+theorem Iface_LayE {E : ℕ → TrioSeq → Prop} (hI : Iface E) : ∀ i : ℕ, Iface (LayE E i)
+  | 0 => hI
+  | (i + 1) => Iface_Pk3 (Iface_LayE hI i)
+
+/-- `(c+1,2,0)(c+2,3,0)`。 -/
+def N23c (c : ℕ) : TrioSeq := [((c + 1, 2, 0) : ℕ × ℕ × ℕ), ((c + 2, 3, 0) : ℕ × ℕ × ℕ)]
+
+theorem N23c_shift (c v : ℕ) : shiftr01 v 0 (N23c c) = N23c (c + v) := by
+  simp only [N23c, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+    Nat.add_zero, and_true]
+  omega
+
+/-- ★★★ 界面台座の元 `X`（レベル `c`）の上の `(2 3)^k` は第 `k` 層の元（レベル `c+2k`）。 -/
+theorem LayE_stage {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X : TrioSeq} (hX : E c X) :
+    ∀ k : ℕ, LayE E k (c + 2 * k) (Mtwd 2 X (N23c c) k)
+  | 0 => by
+      rw [Mtwd_zero]
+      simpa using hX
+  | (k + 1) => by
+      rw [Mtwd_succ, N23c_shift]
+      have ih := LayE_stage hI hX k
+      have hIk := Iface_LayE hI k
+      have hP : PkG (LayE E k) (c + 2 * k + 1)
+          (Mtwd 2 X (N23c c) k ++ ([((c + 2 * k + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+        ⟨0, c + 2 * k, _, [], rfl, ih, rfl, JkG_nil hIk _⟩
+      have h3 : Pk3 (LayE E k) (c + 2 * k + 2)
+          ((Mtwd 2 X (N23c c) k ++ ([((c + 2 * k + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ []))
+            ++ ([((c + 2 * k + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+        ⟨c + 2 * k, _, [], rfl, hP, rfl, Jk3G_nil hIk.bok _⟩
+      show Pk3 (LayE E k) (c + 2 * (k + 1)) _
+      rw [show c + 2 * (k + 1) = c + 2 * k + 2 from by omega]
+      simpa only [N23c, List.append_assoc, List.append_nil, List.nil_append,
+        List.cons_append] using h3
+
+theorem LayE_stage_mem {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X : TrioSeq}
+    (hX : E c X) (k : ℕ) : Mtwd 2 X (N23c c) k ∈ W 0 :=
+  ((Iface_LayE hI k).bok.aok _ _ (LayE_stage hI hX k)).mem
+
+/-- ★★★ 界面台座の元の上に `(2,2,0)(3,3,0)(4,3,0)`（3 の上の 3）を継げる。 -/
+theorem Iface_snoc233 {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X : TrioSeq}
+    (hX : E c X) :
+    X ++ [((c + 1, 2, 0) : ℕ × ℕ × ℕ), ((c + 2, 3, 0) : ℕ × ℕ × ℕ), ((c + 3, 3, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  have hM : MidD (c + 1 + 1) (N23c c) := by
+    refine MidD_append (MidD_col (c + 1) 2 (by omega) (by omega)) ?_ ?_
+    · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+    · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+  have h := snocYd_mem (Y0 := X) (M := N23c c) (L := c + 1) (y := 3) (dl := 2)
+    (hI.bok.aok _ _ hX).ne hM (by simp [N23c, entry]) ?_ (by omega) (by omega)
+    (LayE_stage_mem hI hX)
+  · have heq : (X ++ N23c c) ++ [((c + 1 + 2, 3, 0) : ℕ × ℕ × ℕ)]
+        = X ++ [((c + 1, 2, 0) : ℕ × ℕ × ℕ), ((c + 2, 3, 0) : ℕ × ℕ × ℕ),
+            ((c + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+      simp only [N23c, List.append_assoc, List.cons_append, List.nil_append]
+    rwa [heq] at h
+  · intro t ht1 htl _ _
+    have : t = 1 := by simp [N23c] at htl; omega
+    subst this
+    simp [N23c, entry]
+
+/-- `(2,2,0)(3,3,0)(4,3,0)`。 -/
+def M233 : TrioSeq :=
+  [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 3, 0) : ℕ × ℕ × ℕ)]
+
+/-- `(1,1,0) ++ M233^m`（平坦に並べた単位）。 -/
+def U3 (m : ℕ) : TrioSeq := [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ (List.range m).flatMap (fun _ => M233)
+
+theorem U3_succ (m : ℕ) : U3 (m + 1) = U3 m ++ M233 := by
+  simp [U3, List.range_succ, List.flatMap_append, List.append_assoc]
+
+theorem M233_cols : ∀ x ∈ M233, 2 ≤ x.1 := by
+  intro x hx
+  simp only [M233, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl <;> simp
+
+theorem M233_mono : Mono M233 := by
+  intro x hx
+  simp only [M233, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl <;> simp
+
+theorem MidD_U3 : ∀ m, MidD 2 (U3 m)
+  | 0 => by
+      have h := MidD_col 1 1 (by omega) (by omega)
+      simpa [U3] using h
+  | (m + 1) => by
+      rw [U3_succ]
+      exact MidD_append (MidD_U3 m) M233_cols M233_mono
+
+/-- ★★★ `(1,1,0)` に `(2,2,0)(3,3,0)(4,3,0)` を `m` 個横に並べたものは絶対セグメント。 -/
+theorem SegA_U3 : ∀ m, SegA 0 (U3 m)
+  | 0 => by
+      have h := SegA_one 0
+      simpa [U3] using h
+  | (m + 1) => by
+      refine ⟨MidD_U3 (m + 1), by simp [U3, entry], ?_⟩
+      intro P hP s A' hA'
+      have hR0 : RunA 0 (s + 1) (A' ++ shiftr01 s 0 (U3 m)) :=
+        ⟨s, A', _, rfl, rfl, ⟨P, hP, by simpa using hA'⟩,
+          by simpa using SegA_shift (SegA_U3 m) s⟩
+      have h := Iface_snoc233 Iface_RunA0 hR0
+      rw [U3_succ, shiftr01_append0, ← List.append_assoc]
+      have heq : shiftr01 s 0 M233 = [((s + 1 + 1, 2, 0) : ℕ × ℕ × ℕ),
+          ((s + 1 + 2, 3, 0) : ℕ × ℕ × ℕ), ((s + 1 + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+        simp only [M233, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+          Nat.add_zero, and_true]
+        omega
+      rw [heq]
+      exact h
+
+theorem Q_U3_mem (m : ℕ) : Q ++ U3 m ∈ W 0 := by
+  have h := (SegA_U3 m).reapp _ BaseOk_zero 0 Q (LwB_of_base ⟨(Aok_Q : Aok Q), rfl⟩)
+  simpa using h
+
+/-- `R43 = (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)`。 -/
+def R43 : TrioSeq := R294 ++ [((4, 3, 0) : ℕ × ℕ × ℕ)]
+def R43_300 : TrioSeq := R43 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R43_300_len : R43_300.length = 7 := by simp [R43_300, R43, R294]
+
+theorem nextrel0_R43_300 : nextrel0 R43_300 3 6 := by
+  refine ⟨by simp [R43_300, R43, R294], by simp [R43_300, R43, R294], by omega,
+    by simp [R43_300, R43, R294, entry], ?_⟩
+  intro j hj
+  rcases j with _ | _ | _ | _ | _ | _ | j
+  · omega
+  · omega
+  · omega
+  · omega
+  · simp [R43_300, R43, R294, entry]
+  · simp [R43_300, R43, R294, entry]
+  · omega
+
+theorem hasParent0_R43_300 : hasParent R43_300 0 6 := by
+  refine ⟨3, by show nextR R43_300 0 3 6; simp only [nextR, if_true]; exact nextrel0_R43_300, ?_⟩
+  intro j0 hj0
+  change nextR R43_300 0 j0 6 at hj0
+  simp only [nextR, if_true] at hj0
+  obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+  rw [R43_300_len] at hj0l
+  rcases j0 with _ | _ | _ | _ | _ | _ | j0
+  · exfalso; have := hall 3 ⟨by omega, by omega⟩; simp [R43_300, R43, R294, entry] at this
+  · exfalso; have := hall 3 ⟨by omega, by omega⟩; simp [R43_300, R43, R294, entry] at this
+  · exfalso; have := hall 3 ⟨by omega, by omega⟩; simp [R43_300, R43, R294, entry] at this
+  · rfl
+  · exfalso; simp [R43_300, R43, R294, entry] at hlt2
+  · exfalso; simp [R43_300, R43, R294, entry] at hlt2
+  · omega
+
+theorem parent0_R43_300 : parent R43_300 0 6 = 3 :=
+  hasParent0_R43_300.unique (parent_nextR hasParent0_R43_300)
+    (by show nextR R43_300 0 3 6; simp only [nextR, if_true]; exact nextrel0_R43_300)
+
+open Classical in
+theorem oper_R43_300 (n : ℕ) : R43_300⟦n⟧ = Q ++ U3 n := by
+  rw [L53.oper_flat (j1 := 6) (j0 := 3) (by rw [R43_300_len]) (by omega)
+    (by simp [R43_300, R43, R294, entry]) (by simp [srow, R43_300, R43, R294, entry])
+    hasParent0_R43_300 parent0_R43_300.symm n]
+  simp [R43_300, R43, R294, Q, U3, M233, entry, List.range']
+
+/-- ★★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(3,0,0) ∈ W 0`。 -/
+theorem R43_300_mem : R43_300 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_R43_300]
+  exact Q_U3_mem n
+
+#print axioms R43_300_mem
+
 end Small
 end TRIO
