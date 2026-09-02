@@ -8820,5 +8820,74 @@ theorem R43_330_stage1 : R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : �
 
 #print axioms R43_330_stage1
 
+/-! ### 単位 `(c+1,2,0)(c+2,3,0)(c+3,3,0)(c+2,3,0)` の登り: `R43(3,3,0)(4,3,0)` -/
+
+/-- `(c+1,2,0)(c+2,3,0)(c+3,3,0)(c+2,3,0)`: 2 のブロック（junk `(3)(3)`）+ 平坦な 3 の記録。 -/
+def U4 (c : ℕ) : TrioSeq :=
+  [((c + 1, 2, 0) : ℕ × ℕ × ℕ), ((c + 2, 3, 0) : ℕ × ℕ × ℕ), ((c + 3, 3, 0) : ℕ × ℕ × ℕ),
+    ((c + 2, 3, 0) : ℕ × ℕ × ℕ)]
+
+theorem U4_shift (c v : ℕ) : shiftr01 v 0 (U4 c) = U4 (c + v) := by
+  simp only [U4, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+    Nat.add_zero, and_true]
+  omega
+
+/-- 界面台座の元 `X`（レベル `c`）の上の `U4` 1 個は第 1 層の元（レベル `c+2`）。 -/
+theorem Pk3_U4 {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X : TrioSeq} (hX : E c X) :
+    Pk3 E (c + 2) (X ++ U4 c) := by
+  refine ⟨c, X ++ ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ),
+      ((c + 3, 3, 0) : ℕ × ℕ × ℕ)]), [], rfl,
+    ⟨0, c, X, _, rfl, hX, rfl, JkG_233 hI c⟩, ?_, Jk3G_nil hI.bok c⟩
+  simp [U4]
+
+/-- ★★★ `X ++ U4^k` は第 `k` 層の元（レベル `c + 2k`）。単位は層を登るが、junk の条件が普遍なので通る。 -/
+theorem LayE_stage4 {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X : TrioSeq} (hX : E c X) :
+    ∀ k : ℕ, LayE E k (c + 2 * k) (Mtwd 2 X (U4 c) k)
+  | 0 => by
+      rw [Mtwd_zero]
+      simpa using hX
+  | (k + 1) => by
+      rw [Mtwd_succ, U4_shift]
+      have ih := LayE_stage4 hI hX k
+      have h := Pk3_U4 (Iface_LayE hI k) ih
+      show Pk3 (LayE E k) (c + 2 * (k + 1)) _
+      rwa [show c + 2 * (k + 1) = c + 2 * k + 2 from by omega]
+
+theorem LayE_stage4_mem {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X : TrioSeq}
+    (hX : E c X) (k : ℕ) : Mtwd 2 X (U4 c) k ∈ W 0 :=
+  ((Iface_LayE hI k).bok.aok _ _ (LayE_stage4 hI hX k)).mem
+
+/-- ★★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(3,3,0)(4,3,0) ∈ W 0`。 -/
+theorem R43_330_430 : R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hM : MidD (2 + 1) (U4 1) := by
+    refine MidD_append (MidD_col 2 2 (by omega) (by omega)) ?_ ?_
+    · intro x hx; simp only [U4, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl <;> simp
+    · intro x hx; simp only [U4, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl <;> simp
+  have h := snocYd_mem (Y0 := D1) (M := U4 1) (L := 2) (y := 3) (dl := 2)
+    (by simp [D1, Q]) hM (by simp [U4, entry]) ?_ (by omega) (by omega)
+    (LayE_stage4_mem Iface_RunA0 D1_RunA0)
+  · simpa [D1, U4, R43, R294, Q] using h
+  · intro t ht1 htl hlt hrec
+    simp only [U4, List.length_cons, List.length_nil] at htl
+    rcases (by omega : t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl
+    · exfalso
+      have := hrec 3 (by omega) (by simp [U4])
+      simp [U4, entry] at this
+    · exfalso
+      simp [U4, entry] at hlt
+    · simp [U4, entry]
+
+#print axioms R43_330_430
+
+/-- ユーザーの行列（塔の第 3 段）。 -/
+theorem R43_330_stage3 : R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 3, 0) : ℕ × ℕ × ℕ), ((6, 3, 0) : ℕ × ℕ × ℕ), ((5, 3, 0) : ℕ × ℕ × ℕ),
+    ((6, 2, 0) : ℕ × ℕ × ℕ), ((7, 3, 0) : ℕ × ℕ × ℕ), ((8, 3, 0) : ℕ × ℕ × ℕ),
+    ((7, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := LayE_stage4_mem Iface_RunA0 D1_RunA0 3
+  simpa [Mtwd, U4, D1, R43, R294, Q, shiftr01] using h
+
 end Small
 end TRIO
