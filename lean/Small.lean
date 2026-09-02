@@ -9578,5 +9578,206 @@ theorem Iface_Lk : ∀ k : ℕ, Iface (Lk k)
 
 #print axioms Iface_Lk
 
+/-! ### `Lk k` の単位と塔、`Lk_snoc3`（3 の記録の上にさらに 3）、行295 -/
+
+/-- `Vis2` の 3 版。 -/
+def Vis3 (bd : ℕ) (M : TrioSeq) : Prop :=
+  ∀ t, 1 ≤ t → t < M.length → entry M 0 t < bd →
+    (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → 3 ≤ entry M 1 t
+
+theorem Vis3_high {bd : ℕ} {N : TrioSeq}
+    (h : ∀ t, 1 ≤ t → t < N.length → bd ≤ entry N 0 t) : Vis3 bd N := by
+  intro t ht1 htl hlt _
+  have := h t ht1 htl
+  omega
+
+theorem Vis3_append {bd : ℕ} {M N : TrioSeq} (hNlen : 0 < N.length)
+    (hM : Vis3 (entry N 0 0) M) (hN0 : 3 ≤ entry N 1 0) (hN : Vis3 bd N) :
+    Vis3 bd (M ++ N) := by
+  intro t ht1 htl hlt hrec
+  have hlen : (M ++ N).length = M.length + N.length := by simp
+  have hNh : entry (M ++ N) 0 M.length = entry N 0 0 := by
+    rw [show M.length = M.length + 0 from rfl, entry_append_right]
+  rcases Nat.lt_trichotomy t M.length with hh | hh | hh
+  · rw [entry_append_left hh] at hlt ⊢
+    have hlt' : entry M 0 t < entry N 0 0 := by
+      have := hrec M.length hh (by omega)
+      rw [entry_append_left hh, hNh] at this
+      exact this
+    refine hM t ht1 hh hlt' ?_
+    intro i hti hiM
+    have := hrec i hti (by omega)
+    rw [entry_append_left hh, entry_append_left hiM] at this
+    exact this
+  · subst hh
+    rw [show M.length = M.length + 0 from rfl, entry_append_right]
+    exact hN0
+  · obtain ⟨q, rfl⟩ : ∃ q, t = M.length + q := ⟨t - M.length, by omega⟩
+    rw [entry_append_right] at hlt ⊢
+    refine hN q (by omega) (by omega) hlt ?_
+    intro i hqi hiN
+    have := hrec (M.length + i) (by omega) (by omega)
+    rw [entry_append_right, entry_append_right] at this
+    exact this
+
+/-- 単位: `(c+1,2,0)` + 普遍 junk、その上に 3 の記録 `k` 本（junk つき）。 -/
+def UnitL : ℕ → ℕ → TrioSeq → Prop
+  | 0, c, U => ∃ J : TrioSeq, U = [((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J ∧ JkGU c J
+  | (k + 1), c, U => ∃ U0 J : TrioSeq, U = U0 ++ ([((c + k + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J) ∧
+      UnitL k c U0 ∧ JkL k (c + k + 1) J
+
+theorem UnitL_mid : ∀ (k c : ℕ) (U : TrioSeq), UnitL k c U → MidD (c + 2) U
+  | 0, c, U, hU => by
+      obtain ⟨J, rfl, hJ⟩ := hU
+      exact JkG_mid (hJ (RunA 0) Iface_RunA0)
+  | (k + 1), c, U, hU => by
+      obtain ⟨U0, J, rfl, hU0, hJ⟩ := hU
+      have hM := JkL_mid hJ
+      refine MidD_append (UnitL_mid k c U0 hU0) ?_ hM.mono
+      intro x hx; have := MidD_col_ge hM x hx; omega
+
+theorem UnitL_head : ∀ (k c : ℕ) (U : TrioSeq), UnitL k c U → entry U 1 0 = 2
+  | 0, c, U, hU => by
+      obtain ⟨J, rfl, _⟩ := hU
+      rw [entry_cons_append_1]
+  | (k + 1), c, U, hU => by
+      obtain ⟨U0, J, rfl, hU0, _⟩ := hU
+      rw [entry_append_left (List.length_pos_iff.mpr (UnitL_mid k c U0 hU0).ne)]
+      exact UnitL_head k c U0 hU0
+
+theorem UnitL_vis : ∀ (k c : ℕ) (U : TrioSeq), UnitL k c U → Vis3 (c + k + 2) U
+  | 0, c, U, hU => by
+      obtain ⟨J, rfl, hJ⟩ := hU
+      have hM := JkG_mid (hJ (RunA 0) Iface_RunA0)
+      refine Vis3_high ?_
+      intro t ht1 htl
+      have := hM.tail t ht1 htl
+      omega
+  | (k + 1), c, U, hU => by
+      obtain ⟨U0, J, rfl, hU0, hJ⟩ := hU
+      have hM := JkL_mid hJ
+      have e : entry ([((c + k + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J) 0 0 = c + k + 2 := by simp [entry]
+      refine Vis3_append (by simp) ?_ (by simp [entry]) ?_
+      · rw [e]; exact UnitL_vis k c U0 hU0
+      · refine Vis3_high ?_
+        intro t ht1 htl
+        have := hM.tail t ht1 htl
+        omega
+
+theorem UnitL_shift : ∀ (k c : ℕ) (U : TrioSeq), UnitL k c U → ∀ v : ℕ,
+    UnitL k (c + v) (shiftr01 v 0 U)
+  | 0, c, U, hU, v => by
+      obtain ⟨J, rfl, hJ⟩ := hU
+      refine ⟨shiftr01 v 0 J, ?_, JkGU_shift hJ v⟩
+      rw [shiftr01_append0, shift_col, show c + 1 + v = c + v + 1 from by omega]
+  | (k + 1), c, U, hU, v => by
+      obtain ⟨U0, J, rfl, hU0, hJ⟩ := hU
+      refine ⟨shiftr01 v 0 U0, shiftr01 v 0 J, ?_, UnitL_shift k c U0 hU0 v, ?_⟩
+      · rw [shiftr01_append0, shiftr01_append0, shift_col,
+          show c + k + 2 + v = c + v + k + 2 from by omega]
+      · have h := JkL_shift hJ v
+        rwa [show c + k + 1 + v = c + v + k + 1 from by omega] at h
+
+theorem Lk_of {E : ℕ → TrioSeq → Prop} (hI : Iface E) : ∀ (k j c : ℕ) (X U : TrioSeq),
+    RunG E j c X → UnitL k c U → Lk k (c + k + 1) (X ++ U)
+  | 0, j, c, X, U, hX, hU => by
+      obtain ⟨J, rfl, hJ⟩ := hU
+      show PkGA (c + 0 + 1) _
+      exact ⟨E, hI, j, c, X, J, by omega, hX, rfl, hJ⟩
+  | (k + 1), j, c, X, U, hX, hU => by
+      obtain ⟨U0, J, rfl, hU0, hJ⟩ := hU
+      refine ⟨c + k + 1, X ++ U0, J, by omega, Lk_of hI k j c X U0 hX hU0,
+        by simp [List.append_assoc], ?_⟩
+      exact hJ
+
+theorem Lk_to : ∀ (k h : ℕ) (A : TrioSeq), Lk k h A →
+    ∃ E : ℕ → TrioSeq → Prop, Iface E ∧ ∃ (j c : ℕ) (X U : TrioSeq),
+      h = c + k + 1 ∧ A = X ++ U ∧ RunG E j c X ∧ UnitL k c U
+  | 0, h, A, hA => by
+      obtain ⟨E, hI, j, c, X, J, rfl, hX, rfl, hJ⟩ := hA
+      exact ⟨E, hI, j, c, X, _, by omega, rfl, hX, ⟨J, rfl, hJ⟩⟩
+  | (k + 1), h, A, hA => by
+      obtain ⟨c', Y, J, rfl, hY, rfl, hJ⟩ := hA
+      have hJ' : JkL k c' J := hJ
+      obtain ⟨E, hI, j, c, X, U0, hc', rfl, hX, hU0⟩ := Lk_to k c' Y hY
+      subst hc'
+      refine ⟨E, hI, j, c, X, U0 ++ ([((c + k + 1 + 1, 3, 0) : ℕ × ℕ × ℕ)] ++ J), by omega,
+        by simp [List.append_assoc], hX, ⟨U0, J, ?_, hU0, hJ'⟩⟩
+      rw [show c + k + 2 = c + k + 1 + 1 from by omega]
+
+/-- ★★★ 単位の塔（歩幅 `k+1`）。段が上がっても `Lk k` のまま。 -/
+theorem Lk_tower {E : ℕ → TrioSeq → Prop} (hI : Iface E) {k j c : ℕ} {X U : TrioSeq}
+    (hX : RunG E j c X) (hU : UnitL k c U) :
+    ∀ n : ℕ, Lk k (c + k + 1 + n * (k + 1)) (Mtwd (k + 1) X U (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      simpa using Lk_of hI k j c X U hX hU
+  | (n + 1) => by
+      rw [Mtwd_succ]
+      have ih := Lk_tower hI hX hU n
+      have hIk := Iface_Lk k
+      have hUs : UnitL k (c + k + 1 + n * (k + 1)) (shiftr01 ((k + 1) * (n + 1)) 0 U) := by
+        have h := UnitL_shift k c U hU ((k + 1) * (n + 1))
+        rwa [show c + (k + 1) * (n + 1) = c + k + 1 + n * (k + 1) from by
+          rw [Nat.mul_succ, Nat.mul_comm (k + 1) n]; omega] at h
+      have h := Lk_of hIk k 0 _ _ _ ih hUs
+      rwa [show c + k + 1 + n * (k + 1) + k + 1 = c + k + 1 + (n + 1) * (k + 1) from by
+        rw [Nat.succ_mul]; omega] at h
+
+theorem Lk_tower_mem {E : ℕ → TrioSeq → Prop} (hI : Iface E) {k j c : ℕ} {X U : TrioSeq}
+    (hX : RunG E j c X) (hU : UnitL k c U) : ∀ n : ℕ, Mtwd (k + 1) X U n ∈ W 0
+  | 0 => by rw [Mtwd_zero]; exact ((BaseOk_RunG hI.bok j).aok _ _ hX).mem
+  | (n + 1) => ((BaseOk_Lk k).aok _ _ (Lk_tower hI hX hU n)).mem
+
+/-- ★★★★ `Lk k` の元の頂上に `(·,3,0)` をもう 1 本継げる（3 の上に 3、`k` 本目）。 -/
+theorem Lk_snoc3 {k h : ℕ} {A : TrioSeq} (hA : Lk k h A) : A ++ [((h + 1, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨E, hI, j, c, X, U, rfl, rfl, hX, hU⟩ := Lk_to k h A hA
+  have hne : X ≠ [] := ((BaseOk_RunG hI.bok j).aok _ _ hX).ne
+  have hMe : entry U 1 0 < 3 := by rw [UnitL_head k c U hU]; omega
+  have h := snocYd_mem (Y0 := X) (M := U) (L := c + 1) (y := 3) (dl := k + 1) hne
+    (by rw [show c + 1 + 1 = c + 2 from by omega]; exact UnitL_mid k c U hU) hMe
+    (by rw [show c + 1 + (k + 1) = c + k + 2 from by omega]; exact UnitL_vis k c U hU)
+    (by omega) (by omega) (Lk_tower_mem hI hX hU)
+  rwa [show c + 1 + (k + 1) = c + k + 1 + 1 from by omega] at h
+
+theorem JkL_nil (k c : ℕ) : JkL k c [] := by
+  refine ⟨by simp, by intro x hx; simp at hx, ?_⟩
+  intro t Y hY
+  have h := Lk_snoc3 hY
+  simpa [shiftr01, show c + t + 1 = c + 1 + t from by omega] using h
+
+/-- `Tn n = (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)…(n+2,3,0)`（3 が `n` 本）。 -/
+def Tn : ℕ → TrioSeq
+  | 0 => D1 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)]
+  | (n + 1) => Tn n ++ [((n + 3, 3, 0) : ℕ × ℕ × ℕ)]
+
+theorem Lk_Tn : ∀ n : ℕ, Lk n (n + 2) (Tn n)
+  | 0 => by
+      show PkGA (0 + 2) (D1 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)])
+      exact ⟨RunA 0, Iface_RunA0, 0, 1, D1, [], by omega, D1_RunA0, by simp, JkGU_nil 1⟩
+  | (n + 1) => by
+      refine ⟨n + 2, Tn n, [], by omega, Lk_Tn n, ?_, JkL_nil n (n + 2)⟩
+      simp [Tn]
+
+theorem Tn_mem (n : ℕ) : Tn n ∈ W 0 := ((BaseOk_Lk n).aok _ _ (Lk_Tn n)).mem
+
+theorem Mtw_Tn : ∀ n : ℕ, Mtw (Tn 0) [((3, 3, 0) : ℕ × ℕ × ℕ)] n = Tn n
+  | 0 => by rw [Mtw_zero]
+  | (n + 1) => by
+      rw [Mtw_succ, Mtw_Tn n, shift_col]
+      simp [Tn, show 3 + n = n + 3 from by omega]
+
+/-- `R295 = (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,4,0)`（シート行295、`psi(W_w + psi_1(W_4))`）。 -/
+def R295 : TrioSeq := R294 ++ [((4, 4, 0) : ℕ × ℕ × ℕ)]
+
+/-- ★★★★★ シート行295 `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,4,0) ∈ W 0`。 -/
+theorem R295_mem : R295 ∈ W 0 := by
+  have h := snocY_mem (Y0 := Tn 0) (M := [((3, 3, 0) : ℕ × ℕ × ℕ)]) (L := 3) (y := 4)
+    (by simp [Tn, D1, Q]) (MidD_col 3 3 (by omega) (by omega)) (by simp [entry]) (by omega)
+    (fun n => by rw [Mtw_Tn]; exact Tn_mem n)
+  simpa [Tn, D1, Q, R295, R294] using h
+
+#print axioms R295_mem
+
 end Small
 end TRIO

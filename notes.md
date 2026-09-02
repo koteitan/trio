@@ -498,3 +498,18 @@ R43_330_430 = snocYd_mem（塔 = Mtwd 2 D1 (U4 1)）。ユーザーの第 3 段�
  行295 の塔 D1 (2 3^n)（単位の記録が 2 の n 段上: Pk3T n のような「junk の上の記録」クラスが要る）。
 - (続き33 追記) ✓ R43(4,2,0): Pk3A（∃ 台座の Pk3U）は BaseOk（close も通る: Blk の条件が Pk3A の元の上）。
   Pk3U_step: LwA の頭の上の (1)(2)(3)(3) は Pk3U (RunA 0)。塔（歩幅 3）の各段 ∈ Pk3U → snocYd_mem。
+
+### 2026-09-03 (続き34) ★★★★★ シート行295 psi(W_w + psi_1(W_4)) が緑（commit 済み）
+R295_mem: (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,4,0) ∈ W 0。軸は propext / Classical.choice / Quot.sound。
+構成:
+- PkGA := ∃ E, Iface E ∧ PkGU E（走り + 2 + 普遍 junk）。BaseOk_PkGA、Iface_PkGA。
+- Lk 0 := PkGA、Lk (k+1) := Lk k の元 ++ (3 + junk。条件は Lk k の元の上)。レベル = 頂上の記録。
+  BaseOk_Lk（吊るしの不変量は Lk k、hclose は Lk k の close）、Iface_Lk（再台座性）。
+- UnitL k c U: 単位 (2 + 普遍 junk)(3 + junk)^k。Lk_of / Lk_to（Lk k の元 = 走り ++ 単位）。
+- Lk_tower: 単位を歩幅 k+1 で積んでも Lk k（複製は Lk k の元の上に UnitL を継ぐだけ。Iface_Lk で台座化）。
+- Lk_snoc3: Lk k の元の頂上に 3（snocYd_mem、hMy は Vis3）。JkL_nil。
+- Tn n = D1 (2 3^n) ∈ Lk n（3 が n 本）。R295 = snocY_mem（塔 = Tn）。
+ユーザーの方針「壁は展開して各段を証明し、それを続ける」がそのまま効いた。壁だった (4,3,0)(4,1,0) を
+ 展開 → 段が「junk 付きの 3 の上に吊るす」 → 不変量を ∃ 台座に取る（Pk3U）→ それを階層にした（Lk）。
+次: 行296 psi(W_w + psi_1(W_w)) = (2,2,1) には ∀ v D_v。4 の記録、5 の記録 … を同じ型で積む
+ （k-記録の階層を列の値 v でも再帰）。
