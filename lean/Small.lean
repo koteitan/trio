@@ -8757,5 +8757,37 @@ theorem R43_320 : R43 ++ [((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R43_310
 #print axioms R43_320
 
+/-! ### 界面は `RunG` でも継承される。`R43(3,3,0)` -/
+
+theorem Iface_RunG {E : ℕ → TrioSeq → Prop} (hI : Iface E) (j : ℕ) : Iface (RunG E j) where
+  bok := BaseOk_RunG hI.bok j
+  rebase := by
+    intro h A hA
+    obtain ⟨c0, h0, Y0, U, rfl, rfl, hY0, hU⟩ := RunG_to hI j h A hA
+    refine ⟨c0, Y0, U, rfl, hY0, RunGU_mid j c0 h0 U hU, RunGU_head1 j c0 h0 U hU,
+      by have := RunGU_lt j c0 h0 U hU; omega, RunGU_rec j c0 h0 U hU, ?_⟩
+    intro s Y0' hY0'
+    have h := RunG_of j (c0 + s) (h0 + s) Y0' _ hY0' (RunGU_shift j c0 h0 U hU s)
+    rwa [show h0 + s + j = h0 + j + s from by omega] at h
+
+/-- `(3,3,0)(4,3,0)` は `(2,2,0)` の junk としてどの `RunG (RunA 0) j` の頭にも継げる。 -/
+theorem JkG_R43 : JkG (RunA 0) 1 [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 3, 0) : ℕ × ℕ × ℕ)] := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+  · intro j t X hX
+    have h := Iface_snoc233 (Iface_RunG Iface_RunA0 j) hX
+    simpa [shiftr01, show 1 + t + 1 = 1 + 1 + t from by omega,
+      show 1 + t + 2 = 3 + t from by omega, show 1 + t + 3 = 4 + t from by omega] using h
+
+/-- ★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(3,3,0) ∈ W 0`。 -/
+theorem R43_330 : R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := JkG_snoc3 (BaseOk_RunA 0) JkG_R43 (j := 0) D1_RunA0
+  simpa [R43, R294, D1, Q] using h
+
+#print axioms R43_330
+
 end Small
 end TRIO
