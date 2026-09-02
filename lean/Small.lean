@@ -7214,5 +7214,361 @@ theorem A42_200_mem : A42_200 ∈ W 0 := by
 
 #print axioms A42_200_mem
 
+/-! ### 語の部分 `Wp`（台座抜き）と、語の上への `(·,2,0)` の継ぎ足し `Pw_snoc2` -/
+
+/-- 語 `r` の列たち（台座抜き）。 -/
+def Wp : List ℕ → ℕ → TrioSeq → Prop
+  | [], _, R => R = []
+  | (v :: r), s, R => ∃ (R0 J : TrioSeq), Wp r s R0 ∧
+      R = R0 ++ ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J) ∧ 2 ≤ v ∧ Jw r v s J
+
+theorem Pw_split : ∀ (r : List ℕ) (s : ℕ) (Y : TrioSeq), Pw r s Y →
+    ∃ (j : ℕ) (X R : TrioSeq), RunA j (1 + s) X ∧ Y = X ++ R ∧ Wp r s R
+  | [], s, Y, hY => by
+      obtain ⟨j, hj⟩ := hY
+      exact ⟨j, Y, [], hj, by simp, rfl⟩
+  | (v :: r), s, Y, hY => by
+      obtain ⟨Y0, J, hY0, rfl, hv, hJ⟩ := Pw_cons.mp hY
+      obtain ⟨j, X, R0, hX, rfl, hR0⟩ := Pw_split r s Y0 hY0
+      exact ⟨j, X, R0 ++ ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J), hX,
+        by simp [List.append_assoc], R0, J, hR0, rfl, hv, hJ⟩
+
+theorem Pw_of_split : ∀ (r : List ℕ) (s j : ℕ) (X R : TrioSeq), RunA j (1 + s) X →
+    Wp r s R → Pw r s (X ++ R)
+  | [], s, j, X, R, hX, hR => by
+      subst hR
+      exact ⟨j, by simpa using hX⟩
+  | (v :: r), s, j, X, R, hX, hR => by
+      obtain ⟨R0, J, hR0, rfl, hv, hJ⟩ := hR
+      exact Pw_cons.mpr ⟨X ++ R0, J, Pw_of_split r s j X R0 hX hR0,
+        by simp [List.append_assoc], hv, hJ⟩
+
+theorem Wp_shift : ∀ (r : List ℕ) (s : ℕ) (R : TrioSeq), Wp r s R → ∀ u : ℕ,
+    Wp r (s + u) (shiftr01 u 0 R)
+  | [], s, R, hR, u => by
+      subst hR
+      simp [Wp, shiftr01]
+  | (v :: r), s, R, hR, u => by
+      obtain ⟨R0, J, hR0, rfl, hv, hJ⟩ := hR
+      refine ⟨shiftr01 u 0 R0, shiftr01 u 0 J, Wp_shift r s R0 hR0 u, ?_, hv, Jw_shift hJ u⟩
+      rw [shiftr01_append0, shiftr01_append0, shift_col,
+        show 2 + s + r.length + u = 2 + (s + u) + r.length from by omega]
+
+theorem Wp_cols : ∀ (r : List ℕ) (s : ℕ) (R : TrioSeq), Wp r s R → ∀ x ∈ R, 2 + s ≤ x.1
+  | [], s, R, hR, x, hx => by subst hR; simp at hx
+  | (v :: r), s, R, hR, x, hx => by
+      obtain ⟨R0, J, hR0, rfl, hv, hJ⟩ := hR
+      rcases List.mem_append.mp hx with h | h
+      · exact Wp_cols r s R0 hR0 x h
+      · rcases List.mem_append.mp h with h' | h'
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
+          subst h'
+          show 2 + s ≤ 2 + s + r.length
+          omega
+        · have := hJ.1 x h'
+          omega
+
+theorem Wp_mono : ∀ (r : List ℕ) (s : ℕ) (R : TrioSeq), Wp r s R → Mono R
+  | [], s, R, hR => by subst hR; intro c hc; simp at hc
+  | (v :: r), s, R, hR => by
+      obtain ⟨R0, J, hR0, rfl, hv, hJ⟩ := hR
+      intro c hc
+      rcases List.mem_append.mp hc with h | h
+      · exact Wp_mono r s R0 hR0 c h
+      · rcases List.mem_append.mp h with h' | h'
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
+          subst h'
+          show (0 : ℕ) ≤ v
+          omega
+        · exact hJ.2.1 c h'
+
+/-- 語が空でなければ先頭の列の高さは `2 + s`。 -/
+theorem Wp_head : ∀ (r : List ℕ) (s : ℕ) (R : TrioSeq), Wp r s R → r ≠ [] →
+    0 < R.length ∧ entry R 0 0 = 2 + s
+  | [], _, _, _, hne => absurd rfl hne
+  | (v :: r), s, R, hR, _ => by
+      obtain ⟨R0, J, hR0, rfl, hv, hJ⟩ := hR
+      rcases r with _ | ⟨v', r'⟩
+      · simp only [Wp] at hR0
+        subst hR0
+        refine ⟨by simp, ?_⟩
+        simp [entry]
+      · obtain ⟨hlen, hh⟩ := Wp_head (v' :: r') s R0 hR0 (by simp)
+        refine ⟨by simp; omega, ?_⟩
+        rw [entry_append_left hlen]
+        exact hh
+
+/-- 語の記録: 頂上より低い記録の行 1 は 2 以上。 -/
+theorem Wp_rec : ∀ (r : List ℕ) (s : ℕ) (R : TrioSeq), Wp r s R →
+    ∀ t, t < R.length → entry R 0 t < 2 + s + r.length →
+      (∀ i, t < i → i < R.length → entry R 0 t < entry R 0 i) → 2 ≤ entry R 1 t
+  | [], s, R, hR, t, htl, _, _ => by subst hR; simp at htl
+  | (v :: r), s, R, hR, t, htl, hlt, hrec => by
+      obtain ⟨R0, J, hR0, rfl, hv, hJ⟩ := hR
+      have hlen : (R0 ++ ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J)).length
+          = R0.length + (1 + J.length) := by simp; omega
+      have hch : entry (R0 ++ ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J)) 0 R0.length
+          = 2 + s + r.length := by
+        rw [show R0.length = R0.length + 0 from rfl, entry_append_right]
+        simp [entry]
+      rcases Nat.lt_trichotomy t R0.length with h | h | h
+      · rw [entry_append_left h] at hlt ⊢
+        have hlt' : entry R0 0 t < 2 + s + r.length := by
+          have := hrec R0.length h (by omega)
+          rw [entry_append_left h, hch] at this
+          exact this
+        refine Wp_rec r s R0 hR0 t h hlt' ?_
+        intro i hti hiR
+        have := hrec i hti (by omega)
+        rw [entry_append_left h, entry_append_left hiR] at this
+        exact this
+      · subst h
+        rw [show R0.length = R0.length + 0 from rfl, entry_append_right]
+        simpa [entry] using hv
+      · exfalso
+        obtain ⟨q, rfl⟩ : ∃ q, t = R0.length + q := ⟨t - R0.length, by omega⟩
+        rw [entry_append_right] at hlt
+        simp only [List.length_cons] at hlt
+        rcases q with _ | q
+        · omega
+        · have hq : q < J.length := by simp at htl; omega
+          have hmem : J.getD q ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ J := by
+            rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hq]
+            exact List.getElem_mem hq
+          have := hJ.1 _ hmem
+          have hq' : entry ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J) 0 (q + 1)
+              = (J.getD q ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := by
+            simp [entry]
+          rw [hq'] at hlt
+          omega
+
+/-- ★★ 語の上（頂上の 1 つ上）に `(·,2,0)` を継げる。bad root は `RunA` の頭の頭。 -/
+theorem Pw_snoc2 {r : List ℕ} {s : ℕ} {Y : TrioSeq} (hY : Pw r s Y) :
+    Y ++ [((2 + s + r.length, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨j, X, R, hX, rfl, hR⟩ := Pw_split r s Y hY
+  obtain ⟨c, Y0, U, hc, rfl, hY0, hU⟩ := RunA_to j (1 + s) X hX
+  have hs : s = c + j := by omega
+  subst hs
+  set d := 1 + j + r.length with hd
+  have hUmid := RunU_mid j c U hU
+  have hUlen : 0 < U.length := List.length_pos_iff.mpr hUmid.ne
+  have hM : MidD (c + 1 + 1) (U ++ R) := by
+    refine MidD_append (by rwa [show c + 1 + 1 = c + 2 from by omega]) ?_ (Wp_mono r _ R hR)
+    intro x hx
+    have := Wp_cols r _ R hR x hx
+    omega
+  have htw : ∀ n, Pw r (c + j + d * n) (Mtwd d Y0 (U ++ R) (n + 1)) := by
+    intro n
+    induction n with
+    | zero =>
+        rw [Mtwd_one, ← List.append_assoc]
+        simpa using Pw_of_split r (c + j) j (Y0 ++ U) R hX hR
+    | succ n ih =>
+        rw [Mtwd_succ]
+        have hL : LwA (1 + (c + j + d * n) + r.length) (Mtwd d Y0 (U ++ R) (n + 1)) := Pw_LwA ih
+        have hdn : d * (n + 1) = d * n + d := Nat.mul_succ d n
+        have hL' : LwA (c + d * (n + 1)) (Mtwd d Y0 (U ++ R) (n + 1)) := by
+          have heq : c + d * (n + 1) = 1 + (c + j + d * n) + r.length := by
+            rw [hdn, hd]; omega
+          rw [heq]; exact hL
+        have hUs := RunU_shift j c U hU (d * (n + 1))
+        have hRA := RunA_of j _ _ _ hL' hUs
+        rw [shiftr01_append0, ← List.append_assoc]
+        have hRs := Wp_shift r (c + j) R hR (d * (n + 1))
+        have hRA' : RunA j (1 + (c + j + d * (n + 1)))
+            (Mtwd d Y0 (U ++ R) (n + 1) ++ shiftr01 (d * (n + 1)) 0 U) := by
+          rwa [show c + d * (n + 1) + 1 + j = 1 + (c + j + d * (n + 1)) from by omega] at hRA
+        exact Pw_of_split r _ j _ _ hRA' hRs
+  have hmem : ∀ n, Mtwd d Y0 (U ++ R) n ∈ W 0 := by
+    intro n
+    cases n with
+    | zero => rw [Mtwd_zero]; exact (LwA_Aok hY0).mem
+    | succ n => exact Pw_mem (htw n)
+  have hMy : ∀ t, 1 ≤ t → t < (U ++ R).length → entry (U ++ R) 0 t < c + 1 + d →
+      (∀ i, t < i → i < (U ++ R).length → entry (U ++ R) 0 t < entry (U ++ R) 0 i) →
+      2 ≤ entry (U ++ R) 1 t := by
+    intro t ht1 htl hlt hrec
+    have hlen : (U ++ R).length = U.length + R.length := by simp
+    rcases Nat.lt_or_ge t U.length with h | h
+    · rw [entry_append_left h] at hlt ⊢
+      have hlt' : entry U 0 t < c + j + 2 := by
+        rcases r with _ | ⟨v, r'⟩
+        · simp only [Wp] at hR
+          subst hR
+          simp only [List.length_nil] at hd
+          omega
+        · obtain ⟨hRlen, hRh⟩ := Wp_head (v :: r') (c + j) R hR (by simp)
+          have := hrec U.length h (by omega)
+          rw [entry_append_left h, show U.length = U.length + 0 from rfl, entry_append_right,
+            hRh] at this
+          omega
+      refine RunU_rec j c U hU t ht1 h hlt' ?_
+      intro i hti hiU
+      have := hrec i hti (by omega)
+      rw [entry_append_left h, entry_append_left hiU] at this
+      exact this
+    · obtain ⟨q, rfl⟩ : ∃ q, t = U.length + q := ⟨t - U.length, by omega⟩
+      rw [entry_append_right] at hlt ⊢
+      refine Wp_rec r (c + j) R hR q (by omega) (by omega) ?_
+      intro i hqi hiR
+      have := hrec (U.length + i) (by omega) (by omega)
+      rw [entry_append_right, entry_append_right] at this
+      exact this
+  have h := snocYd_mem (Y0 := Y0) (M := U ++ R) (L := c + 1) (y := 2) (dl := d)
+    (LwA_Aok hY0).ne hM (by rw [entry_append_left hUlen]; exact RunU_head1 j c U hU) hMy
+    (by omega) (by omega) hmem
+  rw [← List.append_assoc] at h
+  rwa [show c + 1 + d = 2 + (c + j) + r.length from by omega] at h
+
+/-- 語の上に `(·,2,0)` を（junk なしで）足せる。 -/
+theorem Pw_cons2 {r : List ℕ} {s : ℕ} {Y : TrioSeq} (hY : Pw r s Y) :
+    Pw (2 :: r) s (Y ++ [((2 + s + r.length, 2, 0) : ℕ × ℕ × ℕ)]) := by
+  refine Pw_cons.mpr ⟨Y, [], hY, by simp, le_refl 2, by simp, by intro c hc; simp at hc, ?_⟩
+  intro t Y' hY'
+  have h := Pw_snoc2 hY'
+  simpa [show 2 + (s + t) + r.length = 2 + s + r.length + t from by omega] using h
+
+theorem Jw_nil2_to_Jk2 {s : ℕ} {J : TrioSeq} (hJ : Jw [] 2 s J) : Jk2 s J := by
+  refine ⟨by simpa using hJ.1, hJ.2.1, ?_⟩
+  intro j t X hX
+  have h := hJ.2.2 t X ⟨j, by rwa [show 1 + (s + t) = 1 + s + t from by omega]⟩
+  simpa using h
+
+/-- 最初の `2` の真横に `(·,3,0)` を足せる。 -/
+theorem Jw_3first (s : ℕ) : Jw [2] 3 s [] := by
+  refine ⟨by simp, by intro c hc; simp at hc, ?_⟩
+  intro t Y' hY'
+  obtain ⟨Y0, J, hY0, rfl, -, hJ⟩ := Pw_cons.mp hY'
+  obtain ⟨j, hj⟩ := hY0
+  have hJ' := Jw_nil2_to_Jk2 hJ
+  simp only [List.length_nil, Nat.add_zero] at hJ' hj ⊢
+  have h := Jk2_snoc3 hJ' hj
+  have heq : 2 + s + [2].length + t = 3 + (s + t) := by
+    simp only [List.length_cons, List.length_nil]; omega
+  rw [heq]
+  simpa using h
+
+theorem Pw_nil_of_RunA {j h : ℕ} {Y : TrioSeq} (hY : RunA j (1 + h) Y) : Pw [] h Y := ⟨j, hY⟩
+
+theorem Pw2_R292 : Pw [2] 0 R292 := by
+  have h := Pw_cons2 (Pw_nil_of_RunA (h := 0) (by simpa [Uu] using RunA_Uu 0))
+  simpa [R292, Q] using h
+
+theorem Pw32_R294 : Pw [3, 2] 0 R294 := by
+  refine Pw_cons.mpr ⟨R292, [], Pw2_R292, by simp [R292, R294], by omega, Jw_3first 0⟩
+
+theorem Pw232_A42 : Pw [2, 3, 2] 0 A42 := by
+  have h := Pw_cons2 Pw32_R294
+  simpa [A42] using h
+
+/-- `A42` を `Pw [3,2]`（`(4,2,0)` を `(3,3,0)` の junk に）として見る。 -/
+theorem Pw32j_A42 : Pw [3, 2] 0 A42 := by
+  refine Pw_cons.mpr ⟨R292, [((4, 2, 0) : ℕ × ℕ × ℕ)], Pw2_R292, by simp [R292, A42, R294],
+    by omega, ?_⟩
+  refine ⟨by simp, ?_, ?_⟩
+  · intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    subst hc
+    simp
+  intro t Y' hY'
+  have h1 : Pw [3, 2] t (Y' ++ [((2 + t + 1, 3, 0) : ℕ × ℕ × ℕ)]) :=
+    Pw_cons.mpr ⟨Y', [], by simpa using hY', by simp, by omega, by simpa using Jw_3first t⟩
+  have h2 := Pw_snoc2 h1
+  simpa [shiftr01, List.append_assoc, show 2 + t + 2 = 4 + t from by omega,
+    show 2 + t + 1 = 3 + t from by omega] using h2
+
+/-- `A42` を `Pw [2]`（`(3,3,0)(4,2,0)` を `(2,2,0)` の junk に）として見る。 -/
+theorem Pw2j_A42 : Pw [2] 0 A42 := by
+  refine Pw_cons.mpr ⟨Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)],
+    [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)],
+    Pw_nil_of_RunA (h := 0) (by simpa [Uu] using RunA_Uu 0), by simp [Q, A42, R294],
+    by omega, ?_⟩
+  refine ⟨by simp, ?_, ?_⟩
+  · intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> simp
+  intro t Y' hY'
+  have h1 : Pw [2] t (Y' ++ [((2 + t + 0, 2, 0) : ℕ × ℕ × ℕ)]) := Pw_cons2 (by simpa using hY')
+  have h2 : Pw [3, 2] t ((Y' ++ [((2 + t + 0, 2, 0) : ℕ × ℕ × ℕ)])
+      ++ [((2 + t + 1, 3, 0) : ℕ × ℕ × ℕ)]) :=
+    Pw_cons.mpr ⟨_, [], h1, by simp, by omega, by simpa using Jw_3first t⟩
+  have h3 := Pw_snoc2 h2
+  simpa [shiftr01, List.append_assoc, show 2 + t + 2 = 4 + t from by omega,
+    show 2 + t + 1 = 3 + t from by omega] using h3
+
+/-! ### `A42` の上の列たち（高さ 3, 4, 5） -/
+
+theorem A42_snoc1 (r : List ℕ) (hA : Pw r 0 A42) :
+    A42 ++ [((2 + r.length, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hok := Aok_A42
+  have hsh : Ancd (2 + r.length) A42 := by simpa using Pw_Ancd r 0 A42 hA
+  have hL : PwL r (1 + 0 + r.length) A42 := ⟨0, rfl, hA⟩
+  have htw : ∀ n, TwD (2 + r.length) A42 n ∈ W 0 := by
+    intro n
+    induction n with
+    | zero => simpa [TwD] using W_nil 0
+    | succ n ih =>
+        rw [TwD_succ]
+        have h := (BaseOk_PwL r).hang _ _ hL (TwD (2 + r.length) A42 n)
+          ⟨ih, TwD_zroot (by omega) hok.zroot n, TwD_mono hok.mono n,
+            TwD_root hok.ne hok.deep.1 n⟩
+        rwa [show 1 + 0 + r.length + 1 = 2 + r.length from by omega] at h
+  exact snocd_mem (by omega) hok.ne hok.deep hok.zroot hsh htw
+
+/-- ★★★ `A42(3,1,0)`。 -/
+theorem A42_310 : A42 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using A42_snoc1 [2] Pw2j_A42
+
+/-- ★★★ `A42(3,2,0)`。 -/
+theorem A42_320 : A42 ++ [((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Pw_snoc2 Pw2j_A42
+
+/-- ★★★ `A42(3,3,0)`（`(2,2,0)` の真横）。 -/
+theorem A42_330 : A42 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨Y0, J, hY0, hA, -, hJ⟩ := Pw_cons.mp Pw2j_A42
+  obtain ⟨j, hj⟩ := hY0
+  have hJ' := Jw_nil2_to_Jk2 hJ
+  simp only [List.length_nil, Nat.add_zero] at hJ' hj hA
+  have h := Jk2_snoc3 hJ' hj
+  rw [← hA] at h
+  simpa using h
+
+/-- ★★★ `A42(4,1,0)`。 -/
+theorem A42_410 : A42 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using A42_snoc1 [3, 2] Pw32j_A42
+
+/-- ★★★ `A42(4,2,0)`。 -/
+theorem A42_420 : A42 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Pw_snoc2 Pw32j_A42
+
+/-- ★★★ `A42(5,1,0)`。 -/
+theorem A42_510 : A42 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using A42_snoc1 [2, 3, 2] Pw232_A42
+
+/-- ★★★ `A42(5,2,0)`。 -/
+theorem A42_520 : A42 ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Pw_snoc2 Pw232_A42
+
+/-- `R294 ++ (4,2,0)(5,2,0)...(n+3,2,0)` は語 `2^n 3 2`。 -/
+theorem Pw_R294_tw2 : ∀ n : ℕ,
+    Pw (List.replicate n 2 ++ [3, 2]) 0 (Mtw R294 [((4, 2, 0) : ℕ × ℕ × ℕ)] n)
+  | 0 => by rw [Mtw_zero]; exact Pw32_R294
+  | (n + 1) => by
+      rw [Mtw_succ, shift_col]
+      have h := Pw_cons2 (Pw_R294_tw2 n)
+      rw [List.replicate_succ, List.cons_append]
+      simp only [List.length_append, List.length_replicate, List.length_cons,
+        List.length_nil, Nat.add_zero] at h ⊢
+      rwa [show 2 + 0 + (n + (0 + 1 + 1)) = 4 + n from by omega] at h
+
+/-- ★★★ `A42(5,3,0)`（`(4,2,0)` の真横。複製は `(4,2,0)` の 1 本ずつ）。 -/
+theorem A42_530 : A42 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := R294) (M := [((4, 2, 0) : ℕ × ℕ × ℕ)]) (L := 4) (y := 3)
+    (by simp [R294]) (MidD_col 4 2 (by omega) (by omega)) (by simp [entry]) (by omega)
+    (fun n => Pw_mem (Pw_R294_tw2 n))
+  simpa [A42] using h
+
+#print axioms A42_530
+
 end Small
 end TRIO
