@@ -6974,5 +6974,245 @@ theorem Pw_LwA {r : List ℕ} {s : ℕ} {A : TrioSeq} (hA : Pw r s A) :
     LwA (1 + s + r.length) A :=
   ⟨PwL r, BaseOk_PwL r, 0, ⟨s, rfl, hA⟩⟩
 
+/-! ## ★★★ ゆっくり戦法 (2): `(4,2,0)` の上に継ぐ
+
+`A := R294 ++ (4,2,0)`。鍵は「任意の `LwA` の頭に `(1,1,0)(2,2,0)(3,3,0)(4,2,0)` を継げる」
+（`R294_42` の台座 `Q` を一般の `X` に）。これで `M1232 := (1,1,0)(2,2,0)(3,3,0)(4,2,0)` が `SegA`
+になり、`A ∈ RunA 0 1`。 -/
+
+/-- `Pk23` の 1 段: `LwA` の頭に `(h+1,1,0)(h+2,2,0)(h+3,3,0)` を継いだものは `Pk23 (h+3)`。 -/
+theorem Pk23_step (h : ℕ) (Y : TrioSeq) (hY : LwA h Y) :
+    Pk23 (h + 3) (Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((h + 3, 3, 0) : ℕ × ℕ × ℕ)]) := by
+  have hR0 : RunA 0 (h + 1) (Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+    ⟨h, _, _, rfl, rfl, hY, SegA_one h⟩
+  have hP2 : Pk2 h ((Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ)])
+      ++ ([((2 + h, 2, 0) : ℕ × ℕ × ℕ)] ++ [])) := by
+    refine ⟨0, _, [], ?_, rfl, Jk2_nil _⟩
+    rwa [show 1 + h = h + 1 from by omega]
+  have hP23 : Pk23 (3 + h) (_ ++ ([((3 + h, 3, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+    ⟨h, _, [], rfl, hP2, rfl, Jk3_nil _⟩
+  have heq : Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((h + 3, 3, 0) : ℕ × ℕ × ℕ)]
+      = ((Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ)]) ++ ([((2 + h, 2, 0) : ℕ × ℕ × ℕ)] ++ []))
+        ++ ([((3 + h, 3, 0) : ℕ × ℕ × ℕ)] ++ []) := by
+    rw [show 2 + h = h + 2 from by omega, show 3 + h = h + 3 from by omega]
+    simp
+  rw [heq, show h + 3 = 3 + h from by omega]
+  exact hP23
+
+theorem StG_Pk23 {c : ℕ} {X : TrioSeq} (hX : LwA c X) :
+    ∀ n : ℕ, Pk23 (c + 3 * n + 3) (Mtwd 3 X (shiftr01 c 0 M123) (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      have h := Pk23_step c X hX
+      rw [show c + 3 * 0 + 3 = c + 3 from by omega]
+      convert h using 2
+      simp only [M123, shiftr01, List.map_cons, List.map_nil, List.cons.injEq,
+        Prod.mk.injEq, Nat.add_zero, and_true, true_and]
+      omega
+  | (n + 1) => by
+      rw [Mtwd_succ, shiftr01_add0]
+      have ih := StG_Pk23 hX n
+      have hL : LwA (c + 3 * n + 3) (Mtwd 3 X (shiftr01 c 0 M123) (n + 1)) :=
+        ⟨Pk23, BaseOk_Pk23, 0, ih⟩
+      have h := Pk23_step _ _ hL
+      rw [show c + 3 * (n + 1) + 3 = c + 3 * n + 3 + 3 from by omega]
+      convert h using 2
+      simp only [M123, shiftr01, List.map_cons, List.map_nil, List.cons.injEq,
+        Prod.mk.injEq, Nat.add_zero, and_true, true_and]
+      omega
+
+theorem StG_mem {c : ℕ} {X : TrioSeq} (hX : LwA c X) :
+    ∀ n : ℕ, Mtwd 3 X (shiftr01 c 0 M123) n ∈ W 0
+  | 0 => by rw [Mtwd_zero]; exact (LwA_Aok hX).mem
+  | (n + 1) => (Pk23_aok _ _ (StG_Pk23 hX n)).mem
+
+/-- `(1,1,0)(2,2,0)(3,3,0)(4,2,0)`。 -/
+def M1232 : TrioSeq :=
+  [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ),
+    ((4, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_M123 (c : ℕ) : MidD (c + 1 + 1) (shiftr01 c 0 M123) := by
+  have h := MidD_append (MidD_col 1 1 (by omega) (by omega))
+    (N := [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ)])
+    (by intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl <;> simp)
+    (by intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl <;> simp)
+  have h2 := MidD_shift h c
+  rw [show 1 + 1 + c = c + 1 + 1 from by omega] at h2
+  simpa [M123] using h2
+
+/-- ★★ 任意の `LwA` の頭に `(1,1,0)(2,2,0)(3,3,0)(4,2,0)` を継げる。 -/
+theorem LwA_snoc1232 {c : ℕ} {X : TrioSeq} (hX : LwA c X) :
+    X ++ shiftr01 c 0 M1232 ∈ W 0 := by
+  have h := snocYd_mem (Y0 := X) (M := shiftr01 c 0 M123) (L := c + 1) (y := 2) (dl := 3)
+    (LwA_Aok hX).ne (MidD_M123 c) ?_ ?_ (by omega) (by omega) (StG_mem hX)
+  · have heq : (X ++ shiftr01 c 0 M123) ++ [((c + 1 + 3, 2, 0) : ℕ × ℕ × ℕ)]
+        = X ++ shiftr01 c 0 M1232 := by
+      simp only [M123, M1232, shiftr01, List.map_cons, List.map_nil, List.append_assoc,
+        List.cons_append, List.nil_append, List.singleton_append]
+      congr 1
+      simp only [List.cons.injEq, Prod.mk.injEq, Nat.add_zero, and_true, true_and]
+      omega
+    rwa [heq] at h
+  · simp [M123, shiftr01, entry]
+  · intro t ht1 htl _ _
+    simp only [M123, shiftr01, List.length_map, List.length_cons, List.length_nil] at htl
+    rcases t with _ | _ | _ | t
+    · omega
+    · simp [M123, shiftr01, entry]
+    · simp [M123, shiftr01, entry]
+    · omega
+
+theorem MidD_M1232 : MidD 2 M1232 := by
+  have h := MidD_append (MidD_col 1 1 (by omega) (by omega))
+    (N := [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)])
+    (by intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl | rfl <;> simp)
+    (by intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl | rfl <;> simp)
+  simpa [M1232] using h
+
+/-- `M1232` は絶対セグメント。 -/
+theorem SegA_M1232 : SegA 0 M1232 where
+  mid := MidD_M1232
+  head1 := by simp [M1232, entry]
+  reapp := by
+    intro P hP s A' hA'
+    exact LwA_snoc1232 ⟨P, hP, by simpa using hA'⟩
+
+/-- `A42 := (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,2,0)`。 -/
+def A42 : TrioSeq := R294 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem A42_eq : A42 = Q ++ M1232 := by simp [A42, R294, Q, M1232]
+
+theorem RunA0_A42 : RunA 0 1 A42 := by
+  rw [A42_eq]
+  exact ⟨0, Q, M1232, rfl, rfl, LwA_Q, SegA_M1232⟩
+
+theorem Aok_A42 : Aok A42 := (BaseOk_RunA 0).aok _ _ RunA0_A42
+
+/-- ★★★ `A42 ++ (1,1,0) ∈ W 0`（根に吊るす、`bump`）。 -/
+theorem A42_110 : A42 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hok := Aok_A42
+  have hsh : Ancd 1 A42 := by
+    intro j hj0 hjl hlt _
+    have := hok.deep.2 j hj0 hjl
+    omega
+  have htw : ∀ n, TwD 1 A42 n ∈ W 0 := by
+    intro n
+    induction n with
+    | zero => simpa [TwD] using W_nil 0
+    | succ n ih =>
+        rw [TwD_succ]
+        exact bump_zm ih (TwD_zroot (by omega) hok.zroot n) (TwD_mono hok.mono n)
+          (TwD_root hok.ne hok.deep.1 n) hok.mem hok.ne hok.deep
+  exact snocd_mem (by omega) hok.ne hok.deep hok.zroot hsh htw
+
+/-- ★★★ `A42 ++ (2,1,0) ∈ W 0`（根に吊るす、歩幅 2）。 -/
+theorem A42_210 : A42 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hok := Aok_A42
+  have hsh : Ancd 2 A42 := (BaseOk_RunA 0).ancd _ _ RunA0_A42
+  have htw : ∀ n, TwD 2 A42 n ∈ W 0 := by
+    intro n
+    induction n with
+    | zero => simpa [TwD] using W_nil 0
+    | succ n ih =>
+        rw [TwD_succ]
+        exact (BaseOk_RunA 0).hang _ _ RunA0_A42 (TwD 2 A42 n)
+          ⟨ih, TwD_zroot (by omega) hok.zroot n, TwD_mono hok.mono n,
+            TwD_root hok.ne hok.deep.1 n⟩
+  exact snocd_mem (by omega) hok.ne hok.deep hok.zroot hsh htw
+
+/-- ★★★ `A42 ++ (2,2,0) ∈ W 0`（`(1,1,0)` が bad root、歩幅 1）。 -/
+theorem A42_220 : A42 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  rw [A42_eq]
+  have h := snocY_mem (Y0 := Q) (M := M1232) (L := 1) (y := 2) (by simp [Q]) MidD_M1232
+    (by simp [M1232, entry]) (by omega)
+    (LwB_tower_mem BaseOk_zero (SegA_toSegB SegA_M1232 BaseOk_zero)
+      (LwB_of_base ⟨(Aok_Q : Aok Q), rfl⟩))
+  simpa using h
+
+#print axioms A42_220
+
+/-! ### `A42 ++ (2,0,0)`: srow 0、親は `(1,1,0)`（index 2）、平坦な複製 `Q (1 2 3 2)^n` -/
+
+/-- `Q ++ M1232^n` は `Aok`。 -/
+theorem Q_M1232_pow : ∀ n : ℕ, Aok (Q ++ (List.range n).flatMap (fun _ => M1232))
+  | 0 => by simpa using Aok_Q
+  | (n + 1) => by
+      rw [List.range_succ, List.flatMap_append, ← List.append_assoc]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      have hok := Q_M1232_pow n
+      have h := SegA_M1232.reapp _ BaseOk_zero 0 _ (LwB_of_base ⟨hok, rfl⟩)
+      simp only [shiftr01_zero, Nat.add_zero] at h
+      exact Aok_append_Mid (by omega) hok MidD_M1232 h
+
+def A42_200 : TrioSeq := A42 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem A42_200_len : A42_200.length = 7 := by simp [A42_200, A42, R294]
+
+theorem nextrel0_A42_200 : nextrel0 A42_200 2 6 := by
+  refine ⟨by simp [A42_200, A42, R294], by simp [A42_200, A42, R294], by omega,
+    by simp [A42_200, A42, R294, entry], ?_⟩
+  intro j hj
+  obtain ⟨h1, h2⟩ := hj
+  rcases j with _ | _ | _ | _ | _ | _ | j
+  · omega
+  · omega
+  · omega
+  · simp [A42_200, A42, R294, entry]
+  · simp [A42_200, A42, R294, entry]
+  · simp [A42_200, A42, R294, entry]
+  · omega
+
+theorem hasParent0_A42_200 : hasParent A42_200 0 6 := by
+  refine ⟨2, ?_, ?_⟩
+  · show nextR A42_200 0 2 6
+    simp only [nextR, if_true]
+    exact nextrel0_A42_200
+  · intro j0 hj0
+    change nextR A42_200 0 j0 6 at hj0
+    simp only [nextR, if_true] at hj0
+    obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+    rcases j0 with _ | _ | _ | j0
+    · exfalso
+      have := hall 2 ⟨by omega, by omega⟩
+      simp [A42_200, A42, R294, entry] at this
+    · exfalso
+      have := hall 2 ⟨by omega, by omega⟩
+      simp [A42_200, A42, R294, entry] at this
+    · rfl
+    · exfalso
+      rw [A42_200_len] at hj0l
+      rcases j0 with _ | _ | _ | j0
+      · simp [A42_200, A42, R294, entry] at hlt2
+      · simp [A42_200, A42, R294, entry] at hlt2
+      · simp [A42_200, A42, R294, entry] at hlt2
+      · omega
+
+theorem parent0_A42_200 : parent A42_200 0 6 = 2 :=
+  hasParent0_A42_200.unique (parent_nextR hasParent0_A42_200)
+    (by show nextR A42_200 0 2 6; simp only [nextR, if_true]; exact nextrel0_A42_200)
+
+open Classical in
+theorem oper_A42_200 (n : ℕ) :
+    A42_200⟦n⟧ = Q ++ (List.range n).flatMap (fun _ => M1232) := by
+  rw [L53.oper_flat (j1 := 6) (j0 := 2) (by rw [A42_200_len]) (by omega)
+    (by simp [A42_200, A42, R294, entry]) (by simp [srow, A42_200, A42, R294, entry])
+    hasParent0_A42_200 parent0_A42_200.symm n]
+  simp [A42_200, A42, R294, Q, M1232, entry, List.range']
+
+/-- ★★★ `A42 ++ (2,0,0) ∈ W 0`。 -/
+theorem A42_200_mem : A42_200 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_A42_200]
+  exact (Q_M1232_pow n).mem
+
+#print axioms A42_200_mem
+
 end Small
 end TRIO
