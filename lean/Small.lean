@@ -9779,5 +9779,153 @@ theorem R295_mem : R295 ∈ W 0 := by
 
 #print axioms R295_mem
 
+/-! ### 記録の階層を値で一般化: `StkF B y k`（台座 `B` の上に値 `y+1` の記録を `k` 本） -/
+
+def StkF (B : ℕ → TrioSeq → Prop) (y : ℕ) : ℕ → ℕ → TrioSeq → Prop
+  | 0 => B
+  | (k + 1) => fun h A => ∃ (c : ℕ) (Y J : TrioSeq), h = c + 1 ∧ StkF B y k c Y ∧
+      A = Y ++ ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) ∧ (∀ x ∈ J, c + 2 ≤ x.1) ∧ Mono J ∧
+      (∀ (t : ℕ) (Y' : TrioSeq), StkF B y k (c + t) Y' →
+        Y' ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J) ∈ W 0)
+
+/-- `StkF B y (k+1)` の記録の junk の条件。 -/
+def JkS (B : ℕ → TrioSeq → Prop) (y k c : ℕ) (J : TrioSeq) : Prop :=
+  (∀ x ∈ J, c + 2 ≤ x.1) ∧ Mono J ∧
+  ∀ (t : ℕ) (Y' : TrioSeq), StkF B y k (c + t) Y' →
+    Y' ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J) ∈ W 0
+
+theorem Lk_eq_StkF : ∀ k, Lk k = StkF PkGA 2 k
+  | 0 => rfl
+  | (k + 1) => by
+      show (fun h A => ∃ (c : ℕ) (Y J : TrioSeq), h = c + 1 ∧ Lk k c Y ∧ _) = _
+      rw [Lk_eq_StkF k]
+      rfl
+
+theorem JkS_shift {B : ℕ → TrioSeq → Prop} {y k c : ℕ} {J : TrioSeq} (hJ : JkS B y k c J) (u : ℕ) :
+    JkS B y k (c + u) (shiftr01 u 0 J) := by
+  refine ⟨?_, shiftD_mono hJ.2.1, ?_⟩
+  · intro x hx
+    simp only [shiftr01, List.mem_map] at hx
+    obtain ⟨p, hp, rfl⟩ := hx
+    have := hJ.1 p hp
+    dsimp only
+    omega
+  · intro t Y hY
+    rw [shiftr01_add0]
+    have hY' : StkF B y k (c + (u + t)) Y := by
+      rw [show c + (u + t) = c + u + t from by omega]; exact hY
+    have h := hJ.2.2 (u + t) Y hY'
+    rw [show c + u + 1 + t = c + 1 + (u + t) from by omega]
+    exact h
+
+theorem JkS_mid {B : ℕ → TrioSeq → Prop} {y k c : ℕ} {J : TrioSeq} (hy : 1 ≤ y)
+    (hJ : JkS B y k c J) : MidD (c + 2) ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) := by
+  have h := MidD_append (MidD_col (c + 1) (y + 1) (by omega) (by omega))
+    (by intro x hx; have := hJ.1 x hx; omega) hJ.2.1
+  rwa [show c + 1 + 1 = c + 2 from by omega] at h
+
+theorem BaseOk_StkF {B : ℕ → TrioSeq → Prop} (hB : BaseOk B) {y : ℕ} (hy : 1 ≤ y) :
+    ∀ k : ℕ, BaseOk (StkF B y k)
+  | 0 => hB
+  | (k + 1) => by
+      have hIHk := BaseOk_StkF hB hy k
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · rintro h A ⟨c, Y, J, rfl, hY, rfl, hJ⟩
+        have hJ' : JkS B y k c J := hJ
+        have hmem := hJ'.2.2 0 Y (by simpa using hY)
+        simp only [shiftr01_zero, Nat.add_zero] at hmem
+        exact Aok_append_Mid (by omega) (hIHk.aok c Y hY) (JkS_mid hy hJ') hmem
+      · rintro h A ⟨c, Y, J, rfl, hY, rfl, hJ⟩
+        have hJ' : JkS B y k c J := hJ
+        exact Ancd_append_Mid (hIHk.aok c Y hY).ne (hIHk.ancd c Y hY) (JkS_mid hy hJ')
+      · rintro h A ⟨c, Y, J, rfl, hY, rfl, hJ⟩ Bk hBk
+        have hJ' : JkS B y k c J := hJ
+        have hM := JkS_mid hy hJ'
+        have hbase : ∀ (t : ℕ) (A : TrioSeq), Aok A → StkF B y k (c + t) A →
+            A ++ shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) ∈ W 0 := by
+          intro t A _ hA
+          rw [shiftr01_append0, shift_col]
+          exact hJ'.2.2 t A hA
+        have hclose : ∀ (t : ℕ) (A' C' : TrioSeq), Aok A' → StkF B y k (c + t) A' → Mono C' →
+            (∀ (t' : ℕ) (A'' : TrioSeq), Aok A'' → StkF B y k (c + t') A'' →
+              A'' ++ BlkD (c + 2 + t') (shiftr01 t' 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C'
+                ∈ W 0) →
+            StkF B y k (c + t) (A' ++ BlkD (c + 2 + t)
+              (shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C') := by
+          intro t A' C' _ hA' hmoC' hIH
+          have hNs : MidD (c + 2 + t) (shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) :=
+            MidD_shift hM t
+          refine hIHk.close (c + t) A' _ hA' ?_ (BlkD_mono hNs.mono hmoC') ?_
+          · intro x hx
+            rcases List.mem_append.mp hx with hh | hh
+            · have := MidD_col_ge hNs x hh; omega
+            · have := shiftD_col x hh; omega
+          · intro t' Z hZ
+            have heq : shiftr01 t' 0 (BlkD (c + 2 + t)
+                (shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C')
+                = BlkD (c + 2 + (t + t')) (shiftr01 (t + t') 0
+                    ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C' := by
+              simp only [BlkD, shiftr01_append0, shiftr01_add0]
+              congr 2
+              omega
+            rw [heq]
+            have hZ' : StkF B y k (c + (t + t')) Z := by
+              rwa [show c + (t + t') = c + t + t' from by omega]
+            exact hIH (t + t') Z (hIHk.aok _ _ hZ') hZ'
+        have hkey := blkD_memS (d := c + 2) (by omega) _ hM hbase hclose Bk hBk.mem
+          hBk.zroot hBk.mono hBk.root 0 Y (hIHk.aok c Y hY) (by simpa using hY)
+        simp only [shiftr01_zero, Nat.add_zero] at hkey
+        rw [BlkD_app] at hkey
+        rwa [show c + 1 + 1 = c + 2 from by omega]
+      · rintro h A Blk ⟨c, Y, J, rfl, hY, rfl, hJ⟩ hcol hmo hcl
+        have hJ' : JkS B y k c J := hJ
+        refine ⟨c, Y, J ++ Blk, rfl, hY, by simp [List.append_assoc], ?_, ?_, ?_⟩
+        · intro x hx
+          rcases List.mem_append.mp hx with hh | hh
+          · exact hJ'.1 x hh
+          · have := hcol x hh; omega
+        · intro x hx
+          rcases List.mem_append.mp hx with hh | hh
+          · exact hJ'.2.1 x hh
+          · exact hmo x hh
+        · intro t Y' hY'
+          rw [shiftr01_append0, ← List.append_assoc, ← List.append_assoc]
+          have hstep : StkF B y (k + 1) (c + 1 + t)
+              (Y' ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J)) :=
+            ⟨c + t, Y', shiftr01 t 0 J, by omega, hY',
+              by rw [show c + t + 1 = c + 1 + t from by omega], JkS_shift hJ' t⟩
+          have h := hcl t _ hstep
+          simpa only [List.append_assoc] using h
+
+theorem Iface_StkF {B : ℕ → TrioSeq → Prop} (hB : Iface B) {y : ℕ} (hy : 1 ≤ y) :
+    ∀ k : ℕ, Iface (StkF B y k)
+  | 0 => hB
+  | (k + 1) => by
+      have hIk := Iface_StkF hB hy k
+      refine ⟨BaseOk_StkF hB.bok hy (k + 1), ?_⟩
+      rintro h A ⟨c, Y, J, rfl, hY, rfl, hJ⟩
+      have hJ' : JkS B y k c J := hJ
+      obtain ⟨b, Y0, M, rfl, hY0, hM, hM1, hlt, hvis, hre⟩ := hIk.rebase c Y hY
+      have hM3 := JkS_mid hy hJ'
+      refine ⟨b, Y0, M ++ ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J), by simp [List.append_assoc],
+        hY0, ?_, ?_, by omega, ?_, ?_⟩
+      · refine MidD_append hM ?_ hM3.mono
+        intro x hx; have := MidD_col_ge hM3 x hx; omega
+      · rw [entry_append_left (List.length_pos_iff.mpr hM.ne)]
+        exact hM1
+      · have e : entry ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) 0 0 = c + 1 := by simp [entry]
+        refine Vis2_append (by simp) ?_ (by simp [entry]; omega) ?_
+        · rw [e]; exact hvis
+        · refine Vis2_high ?_
+          intro t ht1 htl
+          have := hM3.tail t ht1 htl
+          omega
+      · intro s Y0' hY0'
+        rw [shiftr01_append0, shiftr01_append0, shift_col, ← List.append_assoc]
+        exact ⟨c + s, Y0' ++ shiftr01 s 0 M, shiftr01 s 0 J, by omega, hre s Y0' hY0',
+          by rw [show c + s + 1 = c + 1 + s from by omega], JkS_shift hJ' s⟩
+
+#print axioms Iface_StkF
+
 end Small
 end TRIO
