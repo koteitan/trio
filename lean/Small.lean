@@ -8366,5 +8366,187 @@ theorem BaseOk_Pk3 {E : ℕ → TrioSeq → Prop} (hE : BaseOk E) : BaseOk (Pk3 
 
 #print axioms BaseOk_Pk3
 
+/-! ### 界面の継承 `Iface E → Iface (Pk3 E)`、層 `Lay n`、そして `R294(4,3,0)` -/
+
+theorem Vis2_high {bd : ℕ} {N : TrioSeq}
+    (h : ∀ t, 1 ≤ t → t < N.length → bd ≤ entry N 0 t) : Vis2 bd N := by
+  intro t ht1 htl hlt _
+  have := h t ht1 htl
+  omega
+
+theorem Vis2_append {bd : ℕ} {M N : TrioSeq} (hNlen : 0 < N.length)
+    (hM : Vis2 (entry N 0 0) M) (hN0 : 2 ≤ entry N 1 0) (hN : Vis2 bd N) :
+    Vis2 bd (M ++ N) := by
+  intro t ht1 htl hlt hrec
+  have hlen : (M ++ N).length = M.length + N.length := by simp
+  have hNh : entry (M ++ N) 0 M.length = entry N 0 0 := by
+    rw [show M.length = M.length + 0 from rfl, entry_append_right]
+  rcases Nat.lt_trichotomy t M.length with hh | hh | hh
+  · rw [entry_append_left hh] at hlt ⊢
+    have hlt' : entry M 0 t < entry N 0 0 := by
+      have := hrec M.length hh (by omega)
+      rw [entry_append_left hh, hNh] at this
+      exact this
+    refine hM t ht1 hh hlt' ?_
+    intro i hti hiM
+    have := hrec i hti (by omega)
+    rw [entry_append_left hh, entry_append_left hiM] at this
+    exact this
+  · subst hh
+    rw [show M.length = M.length + 0 from rfl, entry_append_right]
+    exact hN0
+  · obtain ⟨q, rfl⟩ : ∃ q, t = M.length + q := ⟨t - M.length, by omega⟩
+    rw [entry_append_right] at hlt ⊢
+    refine hN q (by omega) (by omega) hlt ?_
+    intro i hqi hiN
+    have := hrec (M.length + i) (by omega) (by omega)
+    rw [entry_append_right, entry_append_right] at this
+    exact this
+
+/-- ★★ 界面は `Pk3` で継承される。 -/
+theorem Iface_Pk3 {E : ℕ → TrioSeq → Prop} (hI : Iface E) : Iface (Pk3 E) where
+  bok := BaseOk_Pk3 hI.bok
+  rebase := by
+    intro h A hA
+    obtain ⟨c, Y, J, rfl, hY, rfl, hJ⟩ := hA
+    obtain ⟨j, c', X, J', hc, hX, rfl, hJ'⟩ := hY
+    have hc' : c = c' := by omega
+    subst hc'
+    obtain ⟨c0, h0, Y0, U, hh, rfl, hY0, hU⟩ := RunG_to hI j c X hX
+    have hlt := RunGU_lt j c0 h0 U hU
+    have hUmid := RunGU_mid j c0 h0 U hU
+    have hM2 := JkG_mid hJ'
+    have hM3 := Jk3G_mid hJ
+    refine ⟨c0, Y0, (U ++ ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J')) ++ ([((c + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J),
+      by simp [List.append_assoc], hY0, ?_, ?_, by omega, ?_, ?_⟩
+    · refine MidD_append (MidD_append hUmid ?_ hM2.mono) ?_ hM3.mono
+      · intro x hx; have := MidD_col_ge hM2 x hx; omega
+      · intro x hx; have := MidD_col_ge hM3 x hx; omega
+    · rw [entry_append_left (List.length_pos_iff.mpr (MidD_append hUmid
+        (by intro x hx; have := MidD_col_ge hM2 x hx; omega) hM2.mono).ne)]
+      rw [entry_append_left (List.length_pos_iff.mpr hUmid.ne)]
+      exact RunGU_head1 j c0 h0 U hU
+    · refine Vis2_append (by simp) ?_ (by simp [entry]) ?_
+      · refine Vis2_append (by simp) ?_ (by simp [entry]) ?_
+        · have h1 := RunGU_rec j c0 h0 U hU
+          rw [hh]
+          simpa [entry, show h0 + j + 1 = h0 + j + 1 from rfl] using h1
+        · have hN3 : entry ([((c + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ J) 0 0 = c + 2 := by simp [entry]
+          rw [hN3]
+          refine Vis2_high ?_
+          intro t ht1 htl
+          exact hM2.tail t ht1 htl
+      · refine Vis2_high ?_
+        intro t ht1 htl
+        have := hM3.tail t ht1 htl
+        omega
+    · intro s Y0' hY0'
+      rw [shiftr01_append0, shiftr01_append0, shiftr01_append0, shiftr01_append0,
+        shift_col, shift_col]
+      have hR : RunG E j (h0 + s + j) (Y0' ++ shiftr01 s 0 U) :=
+        RunG_of j (c0 + s) (h0 + s) Y0' _ hY0' (RunGU_shift j c0 h0 U hU s)
+      have hP : PkG E (c + s + 1) ((Y0' ++ shiftr01 s 0 U) ++
+          ([((c + 1 + s, 2, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 s 0 J')) := by
+        refine ⟨j, c + s, _, _, rfl, ?_, by rw [show c + s + 1 = c + 1 + s from by omega],
+          JkG_shift hJ' s⟩
+        rwa [show c + s = h0 + s + j from by omega]
+      refine ⟨c + s, (Y0' ++ shiftr01 s 0 U) ++ ([((c + 1 + s, 2, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 s 0 J'),
+        shiftr01 s 0 J, by omega, hP, ?_, Jk3G_shift hJ s⟩
+      simp only [List.append_assoc]
+      rw [show c + s + 2 = c + 2 + s from by omega]
+
+theorem Iface_RunA0 : Iface (RunA 0) where
+  bok := BaseOk_RunA 0
+  rebase := by
+    rintro h A ⟨b, Y0, M, rfl, rfl, hY0, hM⟩
+    refine ⟨b, Y0, M, rfl, hY0, hM.mid, hM.head1, by omega, ?_, ?_⟩
+    · refine Vis2_high ?_
+      intro t ht1 htl
+      have := hM.mid.tail t ht1 htl
+      omega
+    · intro s Y0' hY0'
+      exact ⟨b + s, Y0', _, by omega, rfl, hY0', SegA_shift hM s⟩
+
+/-- 層。`Lay 0 = RunA 0`、`Lay (n+1) = Pk3 (Lay n)`。 -/
+def Lay : ℕ → ℕ → TrioSeq → Prop
+  | 0 => RunA 0
+  | (n + 1) => Pk3 (Lay n)
+
+theorem Iface_Lay : ∀ n : ℕ, Iface (Lay n)
+  | 0 => Iface_RunA0
+  | (n + 1) => Iface_Pk3 (Iface_Lay n)
+
+/-- `(2,2,0)(3,3,0)`。 -/
+def N23 : TrioSeq := [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ)]
+
+/-- `D1 = (0,0,0)(1,1,1)(1,1,0)`。 -/
+def D1 : TrioSeq := Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem D1_RunA0 : RunA 0 1 D1 :=
+  ⟨0, Q, _, rfl, rfl, ⟨_, BaseOk_zero, LwB_of_base ⟨(Aok_Q : Aok Q), rfl⟩⟩, SegA_one 0⟩
+
+/-- ★★★ `D1 ++ (2 3)^n` は第 `n` 層の元（レベル `2n+1`）。 -/
+theorem Lay_stage : ∀ n : ℕ, Lay n (2 * n + 1) (Mtwd 2 D1 N23 n)
+  | 0 => by
+      rw [Mtwd_zero]
+      exact D1_RunA0
+  | (n + 1) => by
+      rw [Mtwd_succ]
+      have ih := Lay_stage n
+      have hI := Iface_Lay n
+      have heq : shiftr01 (2 * n) 0 N23
+          = [((2 * n + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ [((2 * n + 1 + 2, 3, 0) : ℕ × ℕ × ℕ)] := by
+        simp only [N23, shiftr01, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+          List.cons.injEq, Prod.mk.injEq, Nat.add_zero, and_true, true_and]
+        omega
+      rw [heq]
+      have hP : PkG (Lay n) (2 * n + 1 + 1)
+          (Mtwd 2 D1 N23 n ++ ([((2 * n + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+        ⟨0, 2 * n + 1, _, [], rfl, ih, rfl, JkG_nil hI _⟩
+      have h3 : Pk3 (Lay n) (2 * n + 1 + 2)
+          ((Mtwd 2 D1 N23 n ++ ([((2 * n + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ []))
+            ++ ([((2 * n + 1 + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+        ⟨2 * n + 1, _, [], rfl, hP, rfl, Jk3G_nil hI.bok _⟩
+      show Pk3 (Lay n) (2 * (n + 1) + 1) _
+      rw [show 2 * (n + 1) + 1 = 2 * n + 1 + 2 from by omega]
+      simpa only [List.append_assoc, List.append_nil, List.nil_append] using h3
+
+theorem Lay_stage_mem (n : ℕ) : Mtwd 2 D1 N23 n ∈ W 0 :=
+  ((Iface_Lay n).bok.aok _ _ (Lay_stage n)).mem
+
+/-- ★★★★ `R294(4,3,0) = (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0) ∈ W 0`（壁だった行列）。 -/
+theorem R294_43 : R294 ++ [((4, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hM : MidD (2 + 1) N23 := by
+    refine MidD_append (MidD_col 2 2 (by omega) (by omega)) ?_ ?_
+    · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+    · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+  have h := snocYd_mem (Y0 := D1) (M := N23) (L := 2) (y := 3) (dl := 2)
+    (by simp [D1, Q]) hM (by simp [N23, entry]) ?_ (by omega) (by omega) Lay_stage_mem
+  · simpa [D1, N23, R294, Q] using h
+  · intro t ht1 htl _ _
+    have : t = 1 := by simp [N23] at htl; omega
+    subst this
+    simp [N23, entry]
+
+#print axioms R294_43
+
+theorem Mtwd2_D1_eq : ∀ n : ℕ, Mtwd 2 D1 N23 n = D1 ++ (List.range n).flatMap (fun i =>
+    [((2 * i + 2, 2, 0) : ℕ × ℕ × ℕ), ((2 * i + 3, 3, 0) : ℕ × ℕ × ℕ)])
+  | 0 => by simp [Mtwd_zero]
+  | (n + 1) => by
+      have heq : shiftr01 (2 * n) 0 N23
+          = [((2 * n + 2, 2, 0) : ℕ × ℕ × ℕ), ((2 * n + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+        simp only [N23, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+          Nat.add_zero, and_true]
+        omega
+      rw [Mtwd_succ, Mtwd2_D1_eq n, heq, List.range_succ, List.flatMap_append, List.append_assoc]
+      simp
+
+/-- ユーザーの列: `D1 ++ (2 3)^n` は全部 `W 0`。 -/
+theorem D1_23pow (n : ℕ) : D1 ++ (List.range n).flatMap (fun i =>
+    [((2 * i + 2, 2, 0) : ℕ × ℕ × ℕ), ((2 * i + 3, 3, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  rw [← Mtwd2_D1_eq]
+  exact Lay_stage_mem n
+
 end Small
 end TRIO

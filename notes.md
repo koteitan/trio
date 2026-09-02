@@ -408,3 +408,12 @@ rank ∀ を定義に入れると非構造的。→ 界面（一階の性質）�
 以前「A42(5,3,0)(6,2,0) は壁」と言ったのは誤り。junk K の条件は RunG E_1 の全 rank の上でよく、
 RunG E_1 は K より先に定義できる。
 残る壁: 語に「3 3」（(2 3^n), n ≥ 2）。行 295 の塔はこれ。
+
+### 2026-09-02 (続き26) ★★★★ 壁 R294(4,3,0) が緑（commit 済み）
+続き25 の設計をそのまま Lean に入れた: Vis2 / Iface / RunG / RunGU（塔）/ RunG_snoc2 / JkG / PkG /
+Jk3G / Pk3 / BaseOk_Pk3 / Iface_Pk3 / Iface_RunA0 / Lay n / Lay_stage / R294_43 / D1_23pow。
+- Lay_stage: D1 ++ (2 3)^n ∈ Lay n（レベル 2n+1）。D1_23pow: ユーザーの列は全部 W 0。
+- R294_43: (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0) ∈ W 0（snocYd_mem、塔 = Lay_stage）。
+- 使った軸: propext, Classical.choice, Quot.sound のみ。
+教訓: クラスの定義は exact rank でよい。junk の「全 rank」条件は、クラスを定義した後の述語として書き、
+ 不変量を「∃ j」に取れば hclose で保たれる。層をまたぐ複製（3 3）だけが残る壁。
