@@ -8889,5 +8889,177 @@ theorem R43_330_stage3 : R43 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : �
   have h := LayE_stage4_mem Iface_RunA0 D1_RunA0 3
   simpa [Mtwd, U4, D1, R43, R294, Q, shiftr01] using h
 
+/-! ### 普遍な junk つきの 2 のブロックの上の「3 の上に 3」、`R294(4,3,0)(4,0,0)` -/
+
+/-- 2 のブロック（junk `J`、普遍）+ 3 の記録 `(c+2,3,0)` は `Pk3` の 1 段。 -/
+theorem Pk3_UJ {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X J : TrioSeq} (hX : E c X)
+    (hJ : JkG E c J) :
+    Pk3 E (c + 2) ((X ++ ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J)) ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨c, X ++ ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J), [], rfl, ⟨0, c, X, J, rfl, hX, rfl, hJ⟩,
+    by simp, Jk3G_nil hI.bok c⟩
+
+/-- 単位 `U = (c+1,2,0) ++ J ++ (c+2,3,0)` を歩幅 2 で積んだ塔。junk `J` はどの界面台座でも通るとする。 -/
+theorem LayE_stageUJ {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X J : TrioSeq} (hX : E c X)
+    (hJ : ∀ (E' : ℕ → TrioSeq → Prop), Iface E' → JkG E' c J) :
+    ∀ k : ℕ, LayE E k (c + 2 * k)
+      (Mtwd 2 X (([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J) ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ)]) k)
+  | 0 => by
+      rw [Mtwd_zero]
+      simpa using hX
+  | (k + 1) => by
+      rw [Mtwd_succ, shiftr01_append0, shiftr01_append0, shift_col, shift_col]
+      have ih := LayE_stageUJ hI hX hJ k
+      have hIk := Iface_LayE hI k
+      have hJk : JkG (LayE E k) (c + 2 * k) (shiftr01 (2 * k) 0 J) := JkG_shift (hJ _ hIk) (2 * k)
+      have h := Pk3_UJ hIk ih hJk
+      show Pk3 (LayE E k) (c + 2 * (k + 1)) _
+      rw [show c + 2 * (k + 1) = c + 2 * k + 2 from by omega, show c + 1 + 2 * k = c + 2 * k + 1 from by omega,
+        show c + 2 + 2 * k = c + 2 * k + 2 from by omega]
+      simpa only [List.append_assoc] using h
+
+theorem LayE_stageUJ_mem {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X J : TrioSeq}
+    (hX : E c X) (hJ : ∀ (E' : ℕ → TrioSeq → Prop), Iface E' → JkG E' c J) (k : ℕ) :
+    Mtwd 2 X (([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J) ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ)]) k ∈ W 0 :=
+  ((Iface_LayE hI k).bok.aok _ _ (LayE_stageUJ hI hX hJ k)).mem
+
+/-- ★★★ 普遍な junk つきの 2 のブロックの上に `(c+2,3,0)(c+3,3,0)`（3 の上に 3）を継げる。 -/
+theorem Iface_snocJ33 {E : ℕ → TrioSeq → Prop} (hI : Iface E) {c : ℕ} {X J : TrioSeq} (hX : E c X)
+    (hJ : ∀ (E' : ℕ → TrioSeq → Prop), Iface E' → JkG E' c J) :
+    ((X ++ ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J)) ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ)])
+      ++ [((c + 3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hJE := hJ E hI
+  have hM2 : MidD (c + 2) ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J) := JkG_mid hJE
+  have hM : MidD (c + 1 + 1) (([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J) ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ)]) := by
+    rw [show c + 1 + 1 = c + 2 from by omega]
+    refine MidD_append hM2 ?_ ?_
+    · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+    · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+  have hlen2 : 0 < ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J).length := by simp
+  have h := snocYd_mem (Y0 := X) (M := ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J) ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ)])
+    (L := c + 1) (y := 3) (dl := 2) (hI.bok.aok _ _ hX).ne hM
+    (by rw [entry_append_left hlen2, entry_cons_append_1]; show (2 : ℕ) < 3; omega) ?_
+    (by omega) (by omega) (LayE_stageUJ_mem hI hX hJ)
+  · rw [show c + 1 + 2 = c + 3 from by omega] at h
+    simpa only [List.append_assoc] using h
+  · intro t ht1 htl hlt hrec
+    set M2 := ([((c + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ J) with hM2def
+    have hlen : (M2 ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ)]).length = M2.length + 1 := by simp
+    rw [hlen] at htl
+    rcases Nat.lt_or_ge t M2.length with hh | hh
+    · exfalso
+      rw [entry_append_left hh] at hlt
+      have h1 := hrec M2.length hh (by omega)
+      rw [entry_append_left hh, show M2.length = M2.length + 0 from rfl, entry_append_right] at h1
+      have h2 := hM2.tail t ht1 hh
+      rw [show entry [((c + 2, 3, 0) : ℕ × ℕ × ℕ)] 0 0 = c + 2 from by simp [entry]] at h1
+      omega
+    · have : t = M2.length := by omega
+      subst this
+      rw [show M2.length = M2.length + 0 from rfl, entry_append_right]
+      simp [entry]
+
+/-- `(c+2,3,0)(c+3,3,0)` を `n` 組（平坦に並べた junk）。 -/
+def J34 (c n : ℕ) : TrioSeq :=
+  (List.range n).flatMap (fun _ => [((c + 2, 3, 0) : ℕ × ℕ × ℕ), ((c + 3, 3, 0) : ℕ × ℕ × ℕ)])
+
+theorem J34_succ (c n : ℕ) : J34 c (n + 1) = J34 c n ++ [((c + 2, 3, 0) : ℕ × ℕ × ℕ), ((c + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+  simp [J34, List.range_succ, List.flatMap_append]
+
+theorem J34_shift (c n t : ℕ) : shiftr01 t 0 (J34 c n) = J34 (c + t) n := by
+  induction n with
+  | zero => simp [J34]
+  | succ n ih =>
+      rw [J34_succ, J34_succ, shiftr01_append0, ih]
+      congr 1
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        Nat.add_zero, and_true]
+      omega
+
+/-- ★★★ `J34 c n` はどの界面台座でも `(c+1,2,0)` の junk として通る。 -/
+theorem JkG_J34 : ∀ (n : ℕ) (E : ℕ → TrioSeq → Prop), Iface E → ∀ c : ℕ, JkG E c (J34 c n)
+  | 0, E, hI, c => by simpa [J34] using JkG_nil hI c
+  | (n + 1), E, hI, c => by
+      rw [J34_succ]
+      refine ⟨?_, ?_, ?_⟩
+      · intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact (JkG_J34 n E hI c).1 x h
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+          rcases h with rfl | rfl <;> simp
+      · intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact (JkG_J34 n E hI c).2.1 x h
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+          rcases h with rfl | rfl <;> simp
+      · intro j t X hX
+        have h := Iface_snocJ33 (Iface_RunG hI j) (c := c + t) (J := J34 (c + t) n) hX
+          (fun E' hI' => JkG_J34 n E' hI' (c + t))
+        rw [shiftr01_append0, J34_shift]
+        have heq : shiftr01 t 0 [((c + 2, 3, 0) : ℕ × ℕ × ℕ), ((c + 3, 3, 0) : ℕ × ℕ × ℕ)]
+            = [((c + t + 2, 3, 0) : ℕ × ℕ × ℕ), ((c + t + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+          simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+            Nat.add_zero, and_true]
+          omega
+        rw [heq, show c + 1 + t = c + t + 1 from by omega]
+        simpa only [List.append_assoc, List.cons_append, List.nil_append] using h
+
+/-- `R294(4,3,0)(4,0,0)` の各段 `R292 ++ ((3,3,0)(4,3,0))^n ∈ W 0`。 -/
+theorem R292_J34_mem (n : ℕ) : D1 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ J34 1 n) ∈ W 0 :=
+  (PkG_Aok (BaseOk_RunA 0) ⟨0, 1, D1, J34 1 n, rfl, D1_RunA0, rfl,
+    JkG_J34 n (RunA 0) Iface_RunA0 1⟩).mem
+
+def R43_400 : TrioSeq := R43 ++ [((4, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R43_400_len : R43_400.length = 7 := by simp [R43_400, R43, R294]
+
+theorem nextrel0_R43_400 : nextrel0 R43_400 4 6 := by
+  refine ⟨by simp [R43_400, R43, R294], by simp [R43_400, R43, R294], by omega,
+    by simp [R43_400, R43, R294, entry], ?_⟩
+  intro j hj
+  rcases j with _ | _ | _ | _ | _ | _ | j
+  · omega
+  · omega
+  · omega
+  · omega
+  · omega
+  · simp [R43_400, R43, R294, entry]
+  · omega
+
+theorem hasParent0_R43_400 : hasParent R43_400 0 6 := by
+  refine ⟨4, by show nextR R43_400 0 4 6; simp only [nextR, if_true]; exact nextrel0_R43_400, ?_⟩
+  intro j0 hj0
+  change nextR R43_400 0 j0 6 at hj0
+  simp only [nextR, if_true] at hj0
+  obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+  rw [R43_400_len] at hj0l
+  rcases j0 with _ | _ | _ | _ | _ | _ | j0
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [R43_400, R43, R294, entry] at this
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [R43_400, R43, R294, entry] at this
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [R43_400, R43, R294, entry] at this
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [R43_400, R43, R294, entry] at this
+  · rfl
+  · exfalso; simp [R43_400, R43, R294, entry] at hlt2
+  · omega
+
+theorem parent0_R43_400 : parent R43_400 0 6 = 4 :=
+  hasParent0_R43_400.unique (parent_nextR hasParent0_R43_400)
+    (by show nextR R43_400 0 4 6; simp only [nextR, if_true]; exact nextrel0_R43_400)
+
+open Classical in
+theorem oper_R43_400 (n : ℕ) : R43_400⟦n⟧ = D1 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ J34 1 n) := by
+  rw [L53.oper_flat (j1 := 6) (j0 := 4) (by rw [R43_400_len]) (by omega)
+    (by simp [R43_400, R43, R294, entry]) (by simp [srow, R43_400, R43, R294, entry])
+    hasParent0_R43_400 parent0_R43_400.symm n]
+  simp [R43_400, R43, R294, Q, D1, J34, entry, List.range']
+
+/-- ★★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(4,0,0) ∈ W 0`。 -/
+theorem R43_400_mem : R43_400 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_R43_400]
+  exact R292_J34_mem n
+
+#print axioms R43_400_mem
+
 end Small
 end TRIO
