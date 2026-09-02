@@ -6753,5 +6753,226 @@ theorem R294_42 : R294 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R294_42
 
+/-! ## ★★★ 語クラス `Pw`（行295 への道）
+
+`Pk2 = Pw [2]`, `Pk23 = Pw [3,2]` の一般化。語 `r` は逆順（先頭が最新の列）。各列の行 1 は 2 以上、
+各列の後ろに junk（次の列より高い、`Mono`、一段下のクラスの元の上で再継ぎ可）が挟まる。
+`BaseOk` は語について構造的に出る（帰納法不要）。 -/
+
+/-- 語 `r` の上のクラス。`Pw r s A`: 最後の列の高さは `1 + s + r.length`。 -/
+def Pw : List ℕ → ℕ → TrioSeq → Prop
+  | [], s, A => ∃ j, RunA j (1 + s) A
+  | (v :: r), s, A => ∃ (Y J : TrioSeq), Pw r s Y ∧
+      A = Y ++ ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J) ∧ 2 ≤ v ∧
+      (∀ x ∈ J, 3 + s + r.length ≤ x.1) ∧ Mono J ∧
+      (∀ (t : ℕ) (Y' : TrioSeq), Pw r (s + t) Y' →
+        Y' ++ ([((2 + s + r.length + t, v, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J) ∈ W 0)
+
+/-- 語 `r` の上、列 `v` の後ろの junk。 -/
+def Jw (r : List ℕ) (v s : ℕ) (J : TrioSeq) : Prop :=
+  (∀ x ∈ J, 3 + s + r.length ≤ x.1) ∧ Mono J ∧
+  ∀ (t : ℕ) (Y' : TrioSeq), Pw r (s + t) Y' →
+    Y' ++ ([((2 + s + r.length + t, v, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J) ∈ W 0
+
+theorem Pw_cons {v : ℕ} {r : List ℕ} {s : ℕ} {A : TrioSeq} :
+    Pw (v :: r) s A ↔ ∃ (Y J : TrioSeq), Pw r s Y ∧
+      A = Y ++ ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J) ∧ 2 ≤ v ∧ Jw r v s J := by
+  constructor
+  · rintro ⟨Y, J, hY, rfl, hv, h1, h2, h3⟩
+    exact ⟨Y, J, hY, rfl, hv, h1, h2, h3⟩
+  · rintro ⟨Y, J, hY, rfl, hv, h1, h2, h3⟩
+    exact ⟨Y, J, hY, rfl, hv, h1, h2, h3⟩
+
+theorem Jw_shift {r : List ℕ} {v s : ℕ} {J : TrioSeq} (hJ : Jw r v s J) (u : ℕ) :
+    Jw r v (s + u) (shiftr01 u 0 J) := by
+  refine ⟨?_, shiftD_mono hJ.2.1, ?_⟩
+  · intro x hx
+    simp only [shiftr01, List.mem_map] at hx
+    obtain ⟨p, hp, rfl⟩ := hx
+    have := hJ.1 p hp
+    dsimp only
+    omega
+  · intro t Y' hY'
+    rw [shiftr01_add0]
+    have hY'' : Pw r (s + (u + t)) Y' := by
+      rw [show s + (u + t) = s + u + t from by omega]; exact hY'
+    have h := hJ.2.2 (u + t) Y' hY''
+    rw [show 2 + (s + u) + r.length + t = 2 + s + r.length + (u + t) from by omega]
+    exact h
+
+theorem Jw_mid {r : List ℕ} {v s : ℕ} {J : TrioSeq} (hJ : Jw r v s J) (hv : 2 ≤ v) :
+    MidD (3 + s + r.length) ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J) := by
+  have h := MidD_append (MidD_col (2 + s + r.length) v (by omega) (by omega))
+    (by intro x hx; have := hJ.1 x hx; omega) hJ.2.1
+  rwa [show 2 + s + r.length + 1 = 3 + s + r.length from by omega] at h
+
+theorem Pw_Aok : ∀ (r : List ℕ) (s : ℕ) (A : TrioSeq), Pw r s A → Aok A
+  | [], s, A, hA => by
+      obtain ⟨j, hj⟩ := hA
+      exact (BaseOk_RunA j).aok _ _ hj
+  | (v :: r), s, A, hA => by
+      obtain ⟨Y, J, hY, rfl, hv, hJ⟩ := Pw_cons.mp hA
+      have hmem := hJ.2.2 0 Y (by simpa using hY)
+      simp only [shiftr01_zero, Nat.add_zero] at hmem
+      exact Aok_append_Mid (by omega) (Pw_Aok r s Y hY) (Jw_mid hJ hv) hmem
+
+theorem Pw_mem {r : List ℕ} {s : ℕ} {A : TrioSeq} (hA : Pw r s A) : A ∈ W 0 :=
+  (Pw_Aok r s A hA).mem
+
+theorem Pw_Ancd : ∀ (r : List ℕ) (s : ℕ) (A : TrioSeq), Pw r s A → Ancd (2 + s + r.length) A
+  | [], s, A, hA => by
+      obtain ⟨j, hj⟩ := hA
+      have h := (BaseOk_RunA j).ancd _ _ hj
+      simpa [show 1 + s + 1 = 2 + s from by omega] using h
+  | (v :: r), s, A, hA => by
+      obtain ⟨Y, J, hY, rfl, hv, hJ⟩ := Pw_cons.mp hA
+      have hM := Jw_mid hJ hv
+      have h := Ancd_append_Mid (Pw_Aok r s Y hY).ne (Pw_Ancd r s Y hY)
+        (by rwa [show 3 + s + r.length = 2 + s + r.length + 1 from by omega] at hM)
+      simp only [List.length_cons]
+      rwa [show 2 + s + (r.length + 1) = 2 + s + r.length + 1 from by omega]
+
+/-- `blkD_memS` の `hclose`: 吊るした junk を語の最後の junk（語が空なら `RunA` の頭）に吸収する。 -/
+theorem Pw_absorb : ∀ (r : List ℕ) (s : ℕ) (M : TrioSeq), MidD (3 + s + r.length) M →
+    ∀ (C' : TrioSeq), Mono C' →
+    (∀ (t : ℕ) (A'' : TrioSeq), Aok A'' → Pw r (s + t) A'' →
+      A'' ++ BlkD (3 + s + r.length + t) (shiftr01 t 0 M) C' ∈ W 0) →
+    ∀ (t : ℕ) (A' : TrioSeq), Pw r (s + t) A' →
+      Pw r (s + t) (A' ++ BlkD (3 + s + r.length + t) (shiftr01 t 0 M) C')
+  | [], s, M, hM, C', hmoC', hIH, t, A', hA' => by
+      obtain ⟨j, hj⟩ := hA'
+      refine ⟨j, (BaseOk_RunA j).close _ _ _ hj ?_ ?_ ?_⟩
+      · intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · have := MidD_col_ge (MidD_shift hM t) x h
+          simp only [List.length_nil] at this
+          omega
+        · have := shiftD_col x h
+          simp only [List.length_nil] at this
+          omega
+      · exact BlkD_mono (MidD_shift hM t).mono hmoC'
+      · intro t2 A3 hA3
+        have hA3' : RunA j (1 + (s + (t + t2))) A3 := by
+          rw [show 1 + (s + (t + t2)) = 1 + (s + t) + t2 from by omega]; exact hA3
+        have h := hIH (t + t2) A3 ((BaseOk_RunA j).aok _ _ hA3') ⟨j, hA3'⟩
+        rw [BlkD_shift_eq] at h ⊢
+        rw [shiftr01_append0, shiftr01_add0, shiftr01_add0]
+        simp only [List.length_nil, List.append_assoc] at h ⊢
+        rwa [show 3 + s + 0 + t + t2 = 3 + s + 0 + (t + t2) from by omega]
+  | (v :: r), s, M, hM, C', hmoC', hIH, t, A', hA' => by
+      obtain ⟨Y, J, hY, rfl, hv, hJ⟩ := Pw_cons.mp hA'
+      simp only [List.length_cons] at hM hIH ⊢
+      refine Pw_cons.mpr ⟨Y, J ++ BlkD (3 + s + (r.length + 1) + t) (shiftr01 t 0 M) C', hY,
+        by simp [List.append_assoc], hv, ?_, ?_, ?_⟩
+      · intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact hJ.1 x h
+        · rcases List.mem_append.mp h with h2 | h2
+          · have := MidD_col_ge (MidD_shift hM t) x h2
+            omega
+          · have := shiftD_col x h2
+            omega
+      · have h1 : Mono (J ++ shiftr01 t 0 M) := by
+          intro c hc
+          rcases List.mem_append.mp hc with h | h
+          · exact hJ.2.1 c h
+          · exact shiftD_mono hM.mono c h
+        have h2 := BlkD_mono (d := 3 + s + (r.length + 1) + t) h1 hmoC'
+        simpa [BlkD, List.append_assoc] using h2
+      · intro t2 Y2 hY2
+        have hA2 : Pw (v :: r) (s + (t + t2))
+            (Y2 ++ ([((2 + (s + t) + r.length + t2, v, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t2 0 J)) := by
+          refine Pw_cons.mpr ⟨Y2, shiftr01 t2 0 J, ?_, ?_, hv, ?_⟩
+          · rw [show s + (t + t2) = s + t + t2 from by omega]; exact hY2
+          · rw [show 2 + (s + (t + t2)) + r.length = 2 + (s + t) + r.length + t2 from by omega]
+          · have h := Jw_shift hJ t2
+            rwa [show s + t + t2 = s + (t + t2) from by omega] at h
+        have h := hIH (t + t2) _ (Pw_Aok _ _ _ hA2) hA2
+        rw [BlkD_shift_eq] at h ⊢
+        rw [shiftr01_append0, shiftr01_append0, shiftr01_add0, shiftr01_add0,
+          show 3 + s + (r.length + 1) + t + t2 = 3 + s + (r.length + 1) + (t + t2) from by omega]
+        simpa only [List.append_assoc] using h
+
+/-- ★★ `Pw (v :: r)` の頭の上（レベル `+1`）に `Bok` を吊るせる。 -/
+theorem Pw_hang {v : ℕ} {r : List ℕ} {s : ℕ} {A : TrioSeq} (hA : Pw (v :: r) s A)
+    (B : TrioSeq) (hB : Bok B) : A ++ shiftr01 (3 + s + r.length) 0 B ∈ W 0 := by
+  obtain ⟨Y, J, hY, rfl, hv, hJ⟩ := Pw_cons.mp hA
+  have hM := Jw_mid hJ hv
+  have hbase : ∀ (t : ℕ) (A : TrioSeq), Aok A → Pw r (s + t) A →
+      A ++ shiftr01 t 0 ([((2 + s + r.length, v, 0) : ℕ × ℕ × ℕ)] ++ J) ∈ W 0 := by
+    intro t A _ hA
+    rw [shiftr01_append0, shift_col]
+    exact hJ.2.2 t A hA
+  have hkey := blkD_memS (d := 3 + s + r.length) (by omega) _ hM hbase
+    (fun t A' C' _ hA' hmoC' hIH => Pw_absorb r s _ hM C' hmoC' hIH t A' hA') B hB.mem
+    hB.zroot hB.mono hB.root 0 Y (Pw_Aok r s Y hY) (by simpa using hY)
+  simp only [shiftr01_zero, Nat.add_zero] at hkey
+  rw [BlkD_app] at hkey
+  exact hkey
+
+theorem Pw_close : ∀ (r : List ℕ) (s : ℕ) (A Blk : TrioSeq), Pw r s A →
+    (∀ x ∈ Blk, 2 + s + r.length ≤ x.1) → Mono Blk →
+    (∀ (t : ℕ) (A' : TrioSeq), Pw r (s + t) A' → A' ++ shiftr01 t 0 Blk ∈ W 0) →
+    Pw r s (A ++ Blk)
+  | [], s, A, Blk, hA, hcol, hmo, hre => by
+      obtain ⟨j, hj⟩ := hA
+      refine ⟨j, (BaseOk_RunA j).close _ _ _ hj ?_ hmo ?_⟩
+      · intro x hx; have := hcol x hx; simp only [List.length_nil] at this; omega
+      · intro t A' hA'
+        exact hre t A' ⟨j, by rwa [show 1 + (s + t) = 1 + s + t from by omega]⟩
+  | (v :: r), s, A, Blk, hA, hcol, hmo, hre => by
+      obtain ⟨Y, J, hY, rfl, hv, hJ⟩ := Pw_cons.mp hA
+      simp only [List.length_cons] at hcol hre
+      refine Pw_cons.mpr ⟨Y, J ++ Blk, hY, by simp [List.append_assoc], hv, ?_, ?_, ?_⟩
+      · intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact hJ.1 x h
+        · have := hcol x h; omega
+      · intro c hc
+        rcases List.mem_append.mp hc with h | h
+        · exact hJ.2.1 c h
+        · exact hmo c h
+      · intro t Y' hY'
+        rw [shiftr01_append0, ← List.append_assoc, ← List.append_assoc]
+        have hA' : Pw (v :: r) (s + t)
+            (Y' ++ ([((2 + s + r.length + t, v, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J)) := by
+          refine Pw_cons.mpr ⟨Y', shiftr01 t 0 J, hY', ?_, hv, Jw_shift hJ t⟩
+          rw [show 2 + (s + t) + r.length = 2 + s + r.length + t from by omega]
+        have h := hre t _ hA'
+        simpa only [List.append_assoc] using h
+
+/-- レベルつきの語クラス（`LwA` の台座に使う）。 -/
+def PwL (r : List ℕ) (h : ℕ) (A : TrioSeq) : Prop := ∃ s, h = 1 + s + r.length ∧ Pw r s A
+
+theorem BaseOk_PwL (r : List ℕ) : BaseOk (PwL r) where
+  aok := by
+    rintro h A ⟨s, rfl, hA⟩
+    exact Pw_Aok r s A hA
+  ancd := by
+    rintro h A ⟨s, rfl, hA⟩
+    have h := Pw_Ancd r s A hA
+    rwa [show 1 + s + r.length + 1 = 2 + s + r.length from by omega]
+  hang := by
+    rintro h A ⟨s, rfl, hA⟩ B hB
+    cases r with
+    | nil =>
+        obtain ⟨j, hj⟩ := hA
+        have h := (BaseOk_RunA j).hang _ _ hj B hB
+        simpa using h
+    | cons v r =>
+        have h := Pw_hang hA B hB
+        simp only [List.length_cons]
+        rwa [show 1 + s + (r.length + 1) + 1 = 3 + s + r.length from by omega]
+  close := by
+    rintro h A Blk ⟨s, rfl, hA⟩ hcol hmo hre
+    refine ⟨s, rfl, Pw_close r s A Blk hA ?_ hmo ?_⟩
+    · intro x hx; have := hcol x hx; omega
+    · intro t A' hA'
+      exact hre t A' ⟨s + t, by omega, hA'⟩
+
+theorem Pw_LwA {r : List ℕ} {s : ℕ} {A : TrioSeq} (hA : Pw r s A) :
+    LwA (1 + s + r.length) A :=
+  ⟨PwL r, BaseOk_PwL r, 0, ⟨s, rfl, hA⟩⟩
+
 end Small
 end TRIO
