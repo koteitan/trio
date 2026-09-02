@@ -8723,5 +8723,39 @@ theorem R43_300_mem : R43_300 ∈ W 0 := by
 
 #print axioms R43_300_mem
 
+/-! ### `R43 = R294(4,3,0)` を「`(2,2,0)` + junk `(3,3,0)(4,3,0)`」のブロックと見る: 高さ 3 の列 -/
+
+theorem MidD_M233 : MidD 3 M233 := by
+  refine MidD_append (MidD_col 2 2 (by omega) (by omega)) ?_ ?_
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+
+/-- `R43 ∈ RunG (RunA 0) 1`（レベル 2）: `D1` の上のブロック `(2,2,0)(3,3,0)(4,3,0)`。 -/
+theorem R43_RunG1 : RunG (RunA 0) 1 2 R43 := by
+  refine ⟨1, D1, M233, rfl, by simp [R43, R294, D1, Q, M233], D1_RunA0, MidD_M233,
+    by simp [M233, entry], ?_⟩
+  intro s X hX
+  have h := Iface_snoc233 Iface_RunA0 hX
+  have heq : shiftr01 s 0 M233 = [((1 + s + 1, 2, 0) : ℕ × ℕ × ℕ),
+      ((1 + s + 2, 3, 0) : ℕ × ℕ × ℕ), ((1 + s + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+    simp only [M233, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+      Nat.add_zero, and_true]
+    omega
+  rw [heq]
+  exact h
+
+/-- ★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(3,1,0) ∈ W 0`。 -/
+theorem R43_310 : R43 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LvB_snoc (BaseOk_RunG (BaseOk_RunA 0) 1) 0 2 R43 R43_RunG1
+
+/-- ★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(3,2,0) ∈ W 0`。 -/
+theorem R43_320 : R43 ++ [((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunG_snoc2 Iface_RunA0 1 2 R43 R43_RunG1
+
+#print axioms R43_310
+#print axioms R43_320
+
 end Small
 end TRIO
