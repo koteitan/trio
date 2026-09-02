@@ -7570,5 +7570,288 @@ theorem A42_530 : A42 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms A42_530
 
+/-! ### `A42` の上の `(k,0,0)`（平坦な複製） -/
+
+/-- `(2,2,0)(3,3,0)(4,2,0)`。 -/
+def M232 : TrioSeq :=
+  [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]
+
+/-- `(1,1,0) ++ M232^k`。 -/
+def Sg (k : ℕ) : TrioSeq := [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ (List.range k).flatMap (fun _ => M232)
+
+theorem Sg_succ (k : ℕ) : Sg (k + 1) = Sg k ++ M232 := by
+  simp [Sg, List.range_succ, List.flatMap_append, List.append_assoc]
+
+theorem M232_cols : ∀ x ∈ M232, 2 ≤ x.1 := by
+  intro x hx
+  simp only [M232, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl <;> simp
+
+theorem M232_mono : Mono M232 := by
+  intro x hx
+  simp only [M232, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl <;> simp
+
+theorem MidD_Sg : ∀ k, MidD 2 (Sg k)
+  | 0 => by
+      have h := MidD_col 1 1 (by omega) (by omega)
+      simpa [Sg] using h
+  | (k + 1) => by
+      rw [Sg_succ]
+      exact MidD_append (MidD_Sg k) M232_cols M232_mono
+
+/-- `Sg k` は絶対セグメント（`(2,2,0)` は `Pw_snoc2`、`(3,3,0)` は真横、`(4,2,0)` は `Pw_snoc2`）。 -/
+theorem SegA_Sg : ∀ k, SegA 0 (Sg k)
+  | 0 => by
+      have h := SegA_one 0
+      simpa [Sg] using h
+  | (k + 1) => by
+      refine ⟨MidD_Sg (k + 1), by simp [Sg, entry], ?_⟩
+      intro P hP s A' hA'
+      have hR0 : RunA 0 (s + 1) (A' ++ shiftr01 s 0 (Sg k)) :=
+        ⟨s, A', _, rfl, rfl, ⟨P, hP, by simpa using hA'⟩,
+          by simpa using SegA_shift (SegA_Sg k) s⟩
+      have hP0 : Pw [] s (A' ++ shiftr01 s 0 (Sg k)) :=
+        ⟨0, by rwa [show 1 + s = s + 1 from by omega]⟩
+      have hP2 := Pw_cons2 hP0
+      have hP32 : Pw [3, 2] s ((A' ++ shiftr01 s 0 (Sg k) ++ [((2 + s + ([] : List ℕ).length, 2, 0) : ℕ × ℕ × ℕ)])
+          ++ [((2 + s + 1, 3, 0) : ℕ × ℕ × ℕ)]) :=
+        Pw_cons.mpr ⟨_, [], hP2, by simp, by omega, by simpa using Jw_3first s⟩
+      have h := Pw_snoc2 hP32
+      have heq : shiftr01 s 0 M232 = [((2 + s + 0, 2, 0) : ℕ × ℕ × ℕ), ((2 + s + 1, 3, 0) : ℕ × ℕ × ℕ),
+          ((2 + s + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+        simp only [M232, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+          Nat.add_zero, and_true, true_and]
+        omega
+      rw [Sg_succ, shiftr01_append0, heq]
+      simpa [List.append_assoc] using h
+
+def A42_300 : TrioSeq := A42 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)]
+def A42_400 : TrioSeq := A42 ++ [((4, 0, 0) : ℕ × ℕ × ℕ)]
+def A42_500 : TrioSeq := A42 ++ [((5, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem A42_300_len : A42_300.length = 7 := by simp [A42_300, A42, R294]
+theorem A42_400_len : A42_400.length = 7 := by simp [A42_400, A42, R294]
+theorem A42_500_len : A42_500.length = 7 := by simp [A42_500, A42, R294]
+
+theorem nextrel0_A42_300 : nextrel0 A42_300 3 6 := by
+  refine ⟨by simp [A42_300, A42, R294], by simp [A42_300, A42, R294], by omega,
+    by simp [A42_300, A42, R294, entry], ?_⟩
+  intro j hj
+  rcases j with _ | _ | _ | _ | _ | _ | j
+  · omega
+  · omega
+  · omega
+  · omega
+  · simp [A42_300, A42, R294, entry]
+  · simp [A42_300, A42, R294, entry]
+  · omega
+
+theorem nextrel0_A42_400 : nextrel0 A42_400 4 6 := by
+  refine ⟨by simp [A42_400, A42, R294], by simp [A42_400, A42, R294], by omega,
+    by simp [A42_400, A42, R294, entry], ?_⟩
+  intro j hj
+  rcases j with _ | _ | _ | _ | _ | _ | j
+  · omega
+  · omega
+  · omega
+  · omega
+  · omega
+  · simp [A42_400, A42, R294, entry]
+  · omega
+
+theorem nextrel0_A42_500 : nextrel0 A42_500 5 6 := by
+  refine ⟨by simp [A42_500, A42, R294], by simp [A42_500, A42, R294], by omega,
+    by simp [A42_500, A42, R294, entry], ?_⟩
+  intro j hj
+  omega
+
+theorem hasParent0_A42_300 : hasParent A42_300 0 6 := by
+  refine ⟨3, by show nextR A42_300 0 3 6; simp only [nextR, if_true]; exact nextrel0_A42_300, ?_⟩
+  intro j0 hj0
+  change nextR A42_300 0 j0 6 at hj0
+  simp only [nextR, if_true] at hj0
+  obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+  rw [A42_300_len] at hj0l
+  rcases j0 with _ | _ | _ | _ | _ | _ | j0
+  · exfalso; have := hall 3 ⟨by omega, by omega⟩; simp [A42_300, A42, R294, entry] at this
+  · exfalso; have := hall 3 ⟨by omega, by omega⟩; simp [A42_300, A42, R294, entry] at this
+  · exfalso; have := hall 3 ⟨by omega, by omega⟩; simp [A42_300, A42, R294, entry] at this
+  · rfl
+  · exfalso; simp [A42_300, A42, R294, entry] at hlt2
+  · exfalso; simp [A42_300, A42, R294, entry] at hlt2
+  · omega
+
+theorem hasParent0_A42_400 : hasParent A42_400 0 6 := by
+  refine ⟨4, by show nextR A42_400 0 4 6; simp only [nextR, if_true]; exact nextrel0_A42_400, ?_⟩
+  intro j0 hj0
+  change nextR A42_400 0 j0 6 at hj0
+  simp only [nextR, if_true] at hj0
+  obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+  rw [A42_400_len] at hj0l
+  rcases j0 with _ | _ | _ | _ | _ | _ | j0
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [A42_400, A42, R294, entry] at this
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [A42_400, A42, R294, entry] at this
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [A42_400, A42, R294, entry] at this
+  · exfalso; have := hall 4 ⟨by omega, by omega⟩; simp [A42_400, A42, R294, entry] at this
+  · rfl
+  · exfalso; simp [A42_400, A42, R294, entry] at hlt2
+  · omega
+
+theorem hasParent0_A42_500 : hasParent A42_500 0 6 := by
+  refine ⟨5, by show nextR A42_500 0 5 6; simp only [nextR, if_true]; exact nextrel0_A42_500, ?_⟩
+  intro j0 hj0
+  change nextR A42_500 0 j0 6 at hj0
+  simp only [nextR, if_true] at hj0
+  obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+  rw [A42_500_len] at hj0l
+  rcases j0 with _ | _ | _ | _ | _ | _ | j0
+  · exfalso; have := hall 5 ⟨by omega, by omega⟩; simp [A42_500, A42, R294, entry] at this
+  · exfalso; have := hall 5 ⟨by omega, by omega⟩; simp [A42_500, A42, R294, entry] at this
+  · exfalso; have := hall 5 ⟨by omega, by omega⟩; simp [A42_500, A42, R294, entry] at this
+  · exfalso; have := hall 5 ⟨by omega, by omega⟩; simp [A42_500, A42, R294, entry] at this
+  · exfalso; have := hall 5 ⟨by omega, by omega⟩; simp [A42_500, A42, R294, entry] at this
+  · rfl
+  · omega
+
+theorem parent0_A42_300 : parent A42_300 0 6 = 3 :=
+  hasParent0_A42_300.unique (parent_nextR hasParent0_A42_300)
+    (by show nextR A42_300 0 3 6; simp only [nextR, if_true]; exact nextrel0_A42_300)
+
+theorem parent0_A42_400 : parent A42_400 0 6 = 4 :=
+  hasParent0_A42_400.unique (parent_nextR hasParent0_A42_400)
+    (by show nextR A42_400 0 4 6; simp only [nextR, if_true]; exact nextrel0_A42_400)
+
+theorem parent0_A42_500 : parent A42_500 0 6 = 5 :=
+  hasParent0_A42_500.unique (parent_nextR hasParent0_A42_500)
+    (by show nextR A42_500 0 5 6; simp only [nextR, if_true]; exact nextrel0_A42_500)
+
+open Classical in
+theorem oper_A42_300 (n : ℕ) : A42_300⟦n⟧ = Q ++ Sg n := by
+  rw [L53.oper_flat (j1 := 6) (j0 := 3) (by rw [A42_300_len]) (by omega)
+    (by simp [A42_300, A42, R294, entry]) (by simp [srow, A42_300, A42, R294, entry])
+    hasParent0_A42_300 parent0_A42_300.symm n]
+  simp [A42_300, A42, R294, Q, Sg, M232, entry, List.range']
+
+/-- ★★★ `A42(3,0,0) ∈ W 0`。 -/
+theorem A42_300_mem : A42_300 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_A42_300]
+  have h := (SegA_Sg n).reapp _ BaseOk_zero 0 Q (LwB_of_base ⟨(Aok_Q : Aok Q), rfl⟩)
+  simpa using h
+
+/-- `(3,3,0)(4,2,0)`。 -/
+def M32 : TrioSeq := [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]
+
+/-- 語の頂上の `(·,2,0)` には junk なしの条件が付く。 -/
+theorem Jw_col2 (r : List ℕ) (s : ℕ) : Jw r 2 s [] := by
+  refine ⟨by simp, by intro c hc; simp at hc, ?_⟩
+  intro t Y' hY'
+  have h := Pw_snoc2 hY'
+  simpa [show 2 + (s + t) + r.length = 2 + s + r.length + t from by omega] using h
+
+/-- `(2,2,0)` の後ろの junk `M32^n`。 -/
+theorem Jw_M32pow : ∀ n : ℕ, Jw [] 2 0 ((List.range n).flatMap (fun _ => M32))
+  | 0 => by simpa using Jw_col2 [] 0
+  | (n + 1) => by
+      rw [List.range_succ, List.flatMap_append]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      have ih := Jw_M32pow n
+      refine ⟨?_, ?_, ?_⟩
+      · intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact ih.1 x h
+        · simp only [M32, List.mem_cons, List.not_mem_nil, or_false] at h
+          rcases h with rfl | rfl <;> simp
+      · intro c hc
+        rcases List.mem_append.mp hc with h | h
+        · exact ih.2.1 c h
+        · simp only [M32, List.mem_cons, List.not_mem_nil, or_false] at h
+          rcases h with rfl | rfl <;> simp
+      · intro t Y' hY'
+        have hP2 : Pw [2] t (Y' ++ ([((2 + t + ([] : List ℕ).length, 2, 0) : ℕ × ℕ × ℕ)]
+            ++ shiftr01 t 0 ((List.range n).flatMap (fun _ => M32)))) :=
+          Pw_cons.mpr ⟨Y', _, by simpa using hY', rfl, by omega, by simpa using Jw_shift ih t⟩
+        have hP32 : Pw [3, 2] t ((Y' ++ ([((2 + t + ([] : List ℕ).length, 2, 0) : ℕ × ℕ × ℕ)]
+            ++ shiftr01 t 0 ((List.range n).flatMap (fun _ => M32))))
+            ++ [((2 + t + 1, 3, 0) : ℕ × ℕ × ℕ)]) :=
+          Pw_cons.mpr ⟨_, [], hP2, by simp, by omega, by simpa using Jw_3first t⟩
+        have h := Pw_snoc2 hP32
+        have heq : shiftr01 t 0 M32 = [((2 + t + 1, 3, 0) : ℕ × ℕ × ℕ),
+            ((2 + t + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+          simp only [M32, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+            Nat.add_zero, and_true, true_and]
+          omega
+        rw [shiftr01_append0, heq]
+        simpa [List.append_assoc] using h
+
+open Classical in
+theorem oper_A42_400 (n : ℕ) :
+    A42_400⟦n⟧ = (Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)]
+      ++ (List.range n).flatMap (fun _ => M32)) := by
+  rw [L53.oper_flat (j1 := 6) (j0 := 4) (by rw [A42_400_len]) (by omega)
+    (by simp [A42_400, A42, R294, entry]) (by simp [srow, A42_400, A42, R294, entry])
+    hasParent0_A42_400 parent0_A42_400.symm n]
+  simp [A42_400, A42, R294, Q, M32, entry, List.range']
+
+/-- ★★★ `A42(4,0,0) ∈ W 0`。 -/
+theorem A42_400_mem : A42_400 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_A42_400]
+  refine Pw_mem (r := [2]) (s := 0) (Pw_cons.mpr ⟨_, _, ?_, rfl, by omega, by simpa using Jw_M32pow n⟩)
+  exact Pw_nil_of_RunA (h := 0) (by simpa [Uu] using RunA_Uu 0)
+
+/-- `(3,3,0)` の後ろの junk `(4,2,0)^n`。 -/
+theorem Jw_42pow : ∀ n : ℕ,
+    Jw [2] 3 0 ((List.range n).flatMap (fun _ => [((4, 2, 0) : ℕ × ℕ × ℕ)]))
+  | 0 => by simpa using Jw_3first 0
+  | (n + 1) => by
+      rw [List.range_succ, List.flatMap_append]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      have ih := Jw_42pow n
+      refine ⟨?_, ?_, ?_⟩
+      · intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact ih.1 x h
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+          subst h; simp
+      · intro c hc
+        rcases List.mem_append.mp hc with h | h
+        · exact ih.2.1 c h
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+          subst h; simp
+      · intro t Y' hY'
+        have hP32 : Pw [3, 2] t (Y' ++ ([((2 + t + [2].length, 3, 0) : ℕ × ℕ × ℕ)]
+            ++ shiftr01 t 0 ((List.range n).flatMap (fun _ => [((4, 2, 0) : ℕ × ℕ × ℕ)])))) :=
+          Pw_cons.mpr ⟨Y', _, by simpa using hY', rfl, by omega, by simpa using Jw_shift ih t⟩
+        have h := Pw_snoc2 hP32
+        rw [shiftr01_append0, shift_col]
+        simp only [List.length_cons, List.length_nil, List.append_assoc, List.cons_append,
+          List.nil_append] at h ⊢
+        rw [show 4 + t = 2 + t + (0 + 1 + 1) from by omega,
+          show 2 + 0 + (0 + 1) + t = 2 + t + (0 + 1) from by omega]
+        exact h
+
+open Classical in
+theorem oper_A42_500 (n : ℕ) :
+    A42_500⟦n⟧ = R292 ++ ([((3, 3, 0) : ℕ × ℕ × ℕ)]
+      ++ (List.range n).flatMap (fun _ => [((4, 2, 0) : ℕ × ℕ × ℕ)])) := by
+  rw [L53.oper_flat (j1 := 6) (j0 := 5) (by rw [A42_500_len]) (by omega)
+    (by simp [A42_500, A42, R294, entry]) (by simp [srow, A42_500, A42, R294, entry])
+    hasParent0_A42_500 parent0_A42_500.symm n]
+  simp [A42_500, A42, R294, R292, Q, entry, List.range']
+
+/-- ★★★ `A42(5,0,0) ∈ W 0`。 -/
+theorem A42_500_mem : A42_500 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_A42_500]
+  exact Pw_mem (r := [3, 2]) (s := 0)
+    (Pw_cons.mpr ⟨R292, _, Pw2_R292, rfl, by omega, by simpa using Jw_42pow n⟩)
+
+#print axioms A42_500_mem
+
 end Small
 end TRIO
