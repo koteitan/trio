@@ -1,0 +1,113 @@
+# trio: トリオ数列（z<2）停止性の構文的証明
+
+**現状の権威ドキュメント: `lean/PROOF-STATUS.md`**（GRAFTALL-PLAN.md は設計ログ）
+
+- [x] BM4 実行可能モデル tools/trio.py ✅
+- [x] 検証 tools/verify_trio.py（ペア一致・対角・psi(I) 塔・z<2 閉性・A≡1 探索）✅
+- [x] Trio.lean 定義（TrioSeq / 親子 / oper / ST_TS / step）✅ build 緑
+- [x] Term.lean 記法（添字対 p_{a1,a2}(b)+c）・順序 olt（推移律まで）・翻訳 tr ✅
+- [x] Decrease.lean 測度の減少 m_step_decreases ✅ build 緑
+- [x] Reduction.lean 停止性への還元（条件付き停止性）✅
+- [x] Seqlex.lean 列辞書式順序との同型 olt_ST_iff_seqlex ✅
+- [x] Cnf.lean cnf・閉包・ctx_cong・コピー塔・cnf_oper_of_window ✅（cnf_ST_TS は Column 後）
+- [x] ピボット: A_x1≡1・W2ok は ST_TS 上で反証（HOST 系列）→ ガード付きコピーが実挙動 ✅probe
+- [x] Lift.lean 心材リフト lsub（単調性・cnf 保存）✅
+- [x] 経路補題 le1 ⟺ chain 窓（無条件）✅（スパイン⊆D は不要と判明）
+- [x] Gcopy/Goper: translate_gseg・cnf_gcopiesFrom・cnf_oper・**cnf_ST_TS** ✅（不変量も窓仮説も不要）
+- [x] 不変量保存 r1ok/z0ok/noninc_oper（ガード対応・climb・スパイン補題）＋ ST_TS 版 ✅ Invariant.lean
+- [x] 共終性 **完結（核を法として）**: trio_cofinality_of_core ✅ Peel2.lean v0.42.0
+- [x] ガード輸送 gexp_guard_transport ✅・尾部 le1 同値 le1_tail_equiv ✅ Gtrans.lean
+- [x] 核 ST 帰納の足場（ArgDomCoreOn・diag 基底・snoc_zero・drop_left・小道具）✅ Core.lean
+- [x] 核 bad 枝 ガード経路 (i1=2): bad_B / bad_A2 / bad_A1 → argDomCoreOn_bad_guard ✅
+- [x] 核 bad 枝 一様経路 (i1<=1, d1=0): shift 不変性 + uni_A1/inner/root/desc ✅
+- [x] argDomCoreOn_oper / _ST_TS / **argDomCore_holds** ✅ 共終性が無条件に
+- [x] W 階層 Wstar_closed / mem_Wstar / W_membership ✅（主ブロック添字 tbAll）
+- [x] Final.lean 組み立て TRIO_terminates ✅（残る仮定は TowerOK と TbOper のみ）
+- [x] W* から tbAll を除去（全段階で成立する形に）→ TbOper 消滅 ✅
+- [x] 行1タワー oper_cons_tower1 / tower1_mem ✅
+- [x] 前置切片決定性 le0_take/le1_take・内在リフト Lift1 ✅
+- [x] nextrel1_Lift1（リフトは行1辺を保つ）と系 ✅
+- [x] glift_eq_Lift1（塔の周期マスク＝内在錐; Gtrans 由来）・oper_cons_tower2 ✅
+- [x] **towerGraft2_holds**（旧 TowerGraft2）✅ リフト閉 Wstar2 に対して
+- [x] **Wstar2_closed**（三核を法として）✅ 行2接ぎ木塔は towerGraft2_lift_mem で消化
+- [x] **LiftInner**（B2a のリフト同変性）✅ Lcone.lean 錐輸送（強錐・平坦の両方）
+- [x] LiftTower1 / LiftTowerExp2 → **GraftAll に還元** ✅（Buchholz-(1) 型の段自由閉包）
+- [x] GX 機械（装備付き文脈・A2・graftAll_of_GX）✅ Gamma.lean
+- [x] β 完全還元: CoreT2E → Fam → Step → 機械自身の包含 ✅ GX_loop
+- [x] GX' 接頭辞内在化 + ctxOK_graft（複合文脈装備）✅
+- [x] α 還元 coreT1L_of_le（残差 CtxLiftT1）・γ' 還元 coreBlocked_of_elt ✅
+- [x] スライス装備（第7設計）で α 残差消滅 ✅ v0.113
+- [x] 接ぎ木閉包 gx_graft / tow_mem_GX で **自己参照 W⊆GX が消滅** ✅ v0.114
+- [x] γ' 要素をコピー塊の反復接ぎ木で窓に還元 ✅ v0.115（srow≤1）
+- [x] 接ぎ木リフト計算則 Cgraft.lean（錐輸送・環境マスク mlift）✅ v0.118
+- [x] 階段リフト slift の Lean 化: (A2)/(G2)/(ML) ✅ v0.118.11-13 Aexp.lean
+- [x] β からマスク核が消滅（塔データは根リフト、(ML) で吸収）✅ v0.118.13
+- [x] GXs（階段閉包）で α のマスク核も消滅・CoreStairOm も証明済み ✅ v0.118.16
+- [x] GX の文脈を単元まで緩めて **CoreBlocked0 が消滅**・GraftAll の文脈条件に一致 ✅ v0.118.31
+- [x] 行2ブロッカーのコピー塊を根リフト漸化式で窓に還元（CoreBlockedEltHi 消滅）✅ v0.118.33
+- [x] 装備ギャップ解消: Wstar2s 接頭辞閉包で GraftAll を核から直接導出 ✅ v0.118.35
+- [x] 生成族還元はトートロジーと判明（機械検査済み）⛔ v0.118.52
+- [x] 核からリフト量詞が落ちた: CorePlantCtx0 と同値 ✅ v0.118.53
+- [x] 長さ帰納で GX 側が一列族に潰れた: CoreSingleton ✅ v0.118.54 Lind.lean
+- [x] 残核から GX が消滅: CoreCap（純 W レベル）✅ v0.118.55
+- [x] ⛔ InfEquip は偽（Infcex.lean 反例）→ 撤去し単元核経由に置換 ✅ v0.118.56
+- [x] W の初等的特徴づけ Wchar.lean・階段リフトの段法則 Wslift.lean ✅ v0.118.60-62
+- [x] ★ (WL) から行 2 塔核が落ちた: GX を通さない第 3 トラック ✅ v0.118.64
+- [ ] **残差A（GXトラック）**: CoreCap 1 本
+- [x] (WL) は Pred 分岐が可換なので「親あり」だけに縮小 ✅ v0.118.67
+- [x] LiftStageParented を 4 枝に分割（badPar と srow で場合分け）✅ v0.118.68
+- [x] 4 枝のうち badPar=0/i1=0 と badPar=0/i1=2 を証明 ✅ v0.118.69-71
+- [x] 添字 0 からの錐輸送（上昇版・平坦版）で 1<=badPar 枝が落ちた ✅ v0.118.75-77
+- [x] 残り 1 枝と TowerExp 行1 を「行0ずらしコピー塔」(TOW) に還元 ✅ v0.118.78
+- [x] (TOW) の候補上位 (CAT)「W u は連結で閉じる」を計測（37万例 違反 0）✅ v0.118.79
+- [x] (CAT) を 1 列追加 (SNOC) に還元（Xbar.oper_append_inner が既存）✅ v0.118.81
+- [x] (SNOC) の自由な断片 (i1=0,j0=0) を証明・ST_TS 監査 ✅ v0.118.82-83
+- [x] ⛔ TowerExp2 は (CAT) から出ない ✅ v0.118.85
+- [x] ⛔ 前置だけの界面は不可能（0 錐は行1祖先鎖、塔では周期的）計測済み
+- [x] ⛔ Aop 節2 の natDom ガードは全変種が反証 ✅ v0.118.90-93
+- [x] ★ TowerExp は (SNOC) からそのまま出る（towerExp_of_snoc）✅ v0.118.94
+- [ ] **残差B（本命）**: `TRIO_terminates_of_snoc : WSnoc → WellFounded stepRel`（核 1 本・広い）
+- [x] TowerExp を m<a で分割、高い側は (CAT) で証明 ✅ v0.118.99
+- [x] 行2塔の段量詞 a を除去（W_mono）・復活ギャップを核に焼込 ✅ v0.118.100-101
+- [ ] **残差B'（最狭）**: `TRIO_terminates_of_cat_root : WCat → TowerExp2Root → ...`
+- [x] ★ lean-yapss を lean/Pair/ に取り込み・橋渡し完成（emb / oper_emb / emb_mem_W）✅ v0.118.104-106
+- [x] ★ (PAIR) と対角列 `[(k*e, v+k*f, 0)] ∈ W (2v)` を証明（TowerExp2Root の基底）✅ v0.118.106
+- [x] z=1 対角列 diag1_mem_W を証明（oper = Pred）→ |R|=1 基底は完全に閉じた ✅ v0.118.110
+- [x] gcopy_eq_shift_lift / gcopies_eq_tower（コピー＝行0シフト×行1リフト）✅ v0.118.110
+- [x] (SUBST) SubstClosed を計測（38403 例 0 違反）・Lean で def 化 ✅ v0.118.109-110
+- [x] ★ `TowerExp2Root <= (SUBST) + (WL) + diag` の配線 ✅ v0.118.113
+- [ ] **残差（現在の頂点・2 本）**: `TRIO_terminates_of_cat_subst : WCat → SubstClosed → WellFounded stepRel`
+- [x] ★ (SUBST) を単一ブロック (SUBST1) に還元 ✅ v0.118.120
+- [x] ★★★ (CAT) を吸収し残差を (SUBST1g) 1 本に ✅ v0.118.122
+- [x] ★★★ (SUBST1g) の mirror/orphan 枝を証明（ホスト W データ帰納）✅ v0.118.125
+- [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive : Subst1gRevive → WellFounded stepRel`
+- [x] 端置換 D=[] をブロックのデータで入れ子帰納して閉じた ✅ v0.118.127
+- [x] ★ W_root_stage（段＝根のレベル）で核から段量詞 u が消えた ✅ v0.118.132
+- [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel`
+- [x] ★ W_drop: W は接尾辞閉（接尾辞自身の根のレベルで）✅ v0.118.135
+- [x] W_root_stage / W_drop / W_shiftl0 / zeroRow2 / snoc_zeroRow2 / snoc_orphan ✅ v0.118.132-163
+- [x] 経験的検証: inW の n<=2 打ち切りを n<=3,4 と突合（不一致 0）✅ v0.118.152-155
+- [x] (GC) の「反証済み」記録を訂正（1221万例 0 違反・未証明なだけ）✅ v0.118.160-162
+- [ ] **残差（現在の頂点）**: `TRIO_terminates_of_revive_self : Subst1gReviveSelf → WellFounded stepRel`
+- [ ] 次: 残核の同値な顔は出揃った（RESIDUE-PROBLEM 4.8）。翻訳ではなく新しい入力を探す
+- [x] ★ (WL) の壁＝「添字マスク vs 値マスク」と判明・タイ無し枝を証明 ✅ v0.118.174
+- [x] ★★ (ULIFT) 一様行1シフトの段法則を証明（`Stair.zero` は不要と判明）✅ v0.118.175
+- [x] ⛔ (WL) の残差＝タイ無し＝**ST_TS 到達可能性**（既知不変量では出ない）✅ v0.118.176
+- [x] ★★★ (WL) をマスク不要の `(ROW1MONO)`（行1引き下げ閉包）に置換 ✅ v0.118.180
+- [x] ⚠ 行0版 `(ROW0FREE)` は停止性と同値と判明（`flat_mem_W`）→ 行0を補題に使わない ✅ v0.118.183
+- [x] ★ 行1引き下げ関係 `Le1` 一式（refl/trans/take/shiftr01/`Le1_Lift1_shiftr1`）✅ v0.118.186
+- [x] ★★★ サンドイッチを計測（192万例 0 違反・無条件）✅ v0.118.187
+- [x] ★★★ (WL) の核を `(ROW1MONO)` から `(WCONVEX)`（`W` の `Le1`-凸性）に弱化 ✅ v0.118.187
+- [x] ★★★★ サンドイッチ 2 本を証明 → `liftStage_of_wconvex'` で仮説が消えた ✅ v0.118.190
+- [ ] **(WL) 側の残差（1 本）**: `TRIO_terminates_of_wconvex : WConvex → TowerExp → WellFounded stepRel`
+- [x] ⛔ `(WCONVEX)` の素直な oper 帰納は反証（単調形 7.2% / 存在形 4.3% 失敗）✅ v0.118.191
+- [x] ⛔ `Le1s`/`Le1sd`（分岐データ一致を足す）も反証: (WL) の実例が関係外 ✅ v0.118.192
+- [x] ⚠ 訂正: 「Lift1/shiftr01 は分岐データを全部保存」は偽。真の理由は Lift1 の展開パス一致 ✅ v0.118.192
+- [x] ★ 接頭辞パッケージは実在・置換部分は無料 takeC_mem_of_prefixPackage ✅ v0.118.193
+- [x] ⛔ 「残るのは継ぐだけ」は (CAT) と循環（v0.118.122 の向きは 残核 ⟹ (CAT)）✅ v0.118.194
+- [ ] 未測定の唯一の希望: 要る「継ぐ」は素の (CAT) より S 自身とパッケージを持つ点
+- [x] 極大候補補題 hasParent_one_of / _two_of / 永久孤児 / 行1支配 ✅ v0.118.97
+- [ ] 量詞整理は打ち止め。次は BM4 展開への新しい数学的入力が要る
+- [ ] v0.119: GX を装備述語 E でパラメータ化（E の不動点）→ CorePlantCtxLift が定義から消える
+- [ ] v0.119b: 「基づく列はすべて GX」を長さ帰納で（hin は短い窓 + 塔から gx_graft で組む）
+- [x] Final.lean を Wstar2s 系に配線替え: TRIO_terminates_of_cores ✅ v0.118.36
