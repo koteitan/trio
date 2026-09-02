@@ -496,3 +496,5 @@ R43_330_430 = snocYd_mem（塔 = Mtwd 2 D1 (U4 1)）。ユーザーの第 3 段�
  新しいクラス Pk3U を作れば、弱い junk の文脈は要らない。
 次: R43(4,2,0)（塔の再台座化に Pk3U の BaseOk/Iface が要る。close が問題か）、R43(5,x,0)、
  行295 の塔 D1 (2 3^n)（単位の記録が 2 の n 段上: Pk3T n のような「junk の上の記録」クラスが要る）。
+- (続き33 追記) ✓ R43(4,2,0): Pk3A（∃ 台座の Pk3U）は BaseOk（close も通る: Blk の条件が Pk3A の元の上）。
+  Pk3U_step: LwA の頭の上の (1)(2)(3)(3) は Pk3U (RunA 0)。塔（歩幅 3）の各段 ∈ Pk3U → snocYd_mem。

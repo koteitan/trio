@@ -9235,5 +9235,131 @@ theorem R43_410 : R43 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R43_410
 #print axioms R43_R43
 
+/-! ### `Pk3A`（台座を ∃ で潰した `Pk3U`）は `BaseOk`。`R294(4,3,0)(4,2,0)` -/
+
+def Pk3A (h : ℕ) (A : TrioSeq) : Prop := ∃ E : ℕ → TrioSeq → Prop, Iface E ∧ Pk3U E h A
+
+theorem Pk3A_close (h : ℕ) (A Blk : TrioSeq) (hA : Pk3A h A)
+    (hcol : ∀ x ∈ Blk, h + 1 ≤ x.1) (hmo : Mono Blk)
+    (hre : ∀ (t : ℕ) (A' : TrioSeq), Pk3A (h + t) A' → A' ++ shiftr01 t 0 Blk ∈ W 0) :
+    Pk3A h (A ++ Blk) := by
+  obtain ⟨E, hI, c, Y, J, rfl, hY, rfl, hJ⟩ := hA
+  refine ⟨E, hI, c, Y, J ++ Blk, rfl, hY, by simp [List.append_assoc], ?_, ?_, ?_⟩
+  · intro x hx
+    rcases List.mem_append.mp hx with h | h
+    · exact hJ.1 x h
+    · have := hcol x h; omega
+  · intro x hx
+    rcases List.mem_append.mp hx with h | h
+    · exact hJ.2.1 x h
+    · exact hmo x h
+  · intro t Y' hY'
+    rw [shiftr01_append0, ← List.append_assoc, ← List.append_assoc]
+    obtain ⟨E', hI', hY'⟩ := hY'
+    have hA' : Pk3A (c + 2 + t) (Y' ++ ([((c + 2 + t, 3, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J)) :=
+      ⟨E', hI', c + t, Y', shiftr01 t 0 J, by omega,
+        by rwa [show c + t + 1 = c + 1 + t from by omega],
+        by rw [show c + t + 2 = c + 2 + t from by omega], ?_⟩
+    · have h := hre t _ hA'
+      simpa only [List.append_assoc] using h
+    · refine ⟨?_, shiftD_mono hJ.2.1, ?_⟩
+      · intro x hx
+        simp only [shiftr01, List.mem_map] at hx
+        obtain ⟨p, hp, rfl⟩ := hx
+        have := hJ.1 p hp
+        dsimp only
+        omega
+      · intro t' Y'' hY''
+        rw [shiftr01_add0]
+        have h := hJ.2.2 (t + t') Y'' (by rwa [show c + 1 + (t + t') = c + t + 1 + t' from by omega])
+        rwa [show c + t + 2 + t' = c + 2 + (t + t') from by omega]
+
+theorem BaseOk_Pk3A : BaseOk Pk3A where
+  aok := fun h A ⟨E, hI, hA⟩ => Pk3U_aok hI h A hA
+  ancd := fun h A ⟨E, hI, hA⟩ => Pk3U_ancd hI h A hA
+  hang := fun h A ⟨E, hI, hA⟩ => Pk3U_hang hI h A hA
+  close := Pk3A_close
+
+/-- `(c+3,3,0)` は `(c+2,3,0)` の普遍な junk（3 の上に 3）。 -/
+theorem Jk3GU_one (c : ℕ) : Jk3GU c [((c + 3, 3, 0) : ℕ × ℕ × ℕ)] := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; simp
+  · intro t Y hY
+    obtain ⟨E, hI, j, c', X, J, hc, hX, rfl, hJ⟩ := hY
+    have hc' : c' = c + t := by omega
+    subst hc'
+    have h := Iface_snocJ33 (Iface_RunG hI j) hX (fun E' hI' => hJ E' hI')
+    simpa [shiftr01, List.append_assoc, show c + t + 2 = c + 2 + t from by omega,
+      show c + t + 3 = c + 3 + t from by omega] using h
+
+/-- 梯子の頭 `Y`（レベル `h`）の上に `(1)(2)(3)(3)` を継ぐと `Pk3U (RunA 0)` の元（レベル `h+3`）。 -/
+theorem Pk3U_step {h : ℕ} {Y : TrioSeq} (hL : LwA h Y) :
+    Pk3U (RunA 0) (h + 3) (Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((h + 3, 3, 0) : ℕ × ℕ × ℕ), ((h + 4, 3, 0) : ℕ × ℕ × ℕ)]) := by
+  have hR0 : RunA 0 (h + 1) (Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+    ⟨h, _, _, rfl, rfl, hL, SegA_one h⟩
+  have hP : PkGU (RunA 0) (h + 1 + 1) ((Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ)])
+      ++ ([((h + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+    ⟨0, h + 1, _, [], rfl, hR0, rfl, JkGU_nil _⟩
+  have h3 : Pk3U (RunA 0) (h + 1 + 2) (((Y ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ)])
+      ++ ([((h + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ []))
+      ++ ([((h + 1 + 2, 3, 0) : ℕ × ℕ × ℕ)] ++ [((h + 1 + 3, 3, 0) : ℕ × ℕ × ℕ)])) :=
+    ⟨h + 1, _, _, rfl, hP, rfl, Jk3GU_one (h + 1)⟩
+  rw [show h + 3 = h + 1 + 2 from by omega]
+  simpa [List.append_assoc, show h + 1 + 1 = h + 2 from by omega,
+    show h + 1 + 2 = h + 3 from by omega, show h + 1 + 3 = h + 4 from by omega] using h3
+
+/-- `(1,1,0)(2,2,0)(3,3,0)(4,3,0)`。 -/
+def M1233 : TrioSeq :=
+  [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 3, 0) : ℕ × ℕ × ℕ)]
+
+theorem M1233_shift (v : ℕ) : shiftr01 v 0 M1233 = [((v + 1, 1, 0) : ℕ × ℕ × ℕ),
+    ((v + 2, 2, 0) : ℕ × ℕ × ℕ), ((v + 3, 3, 0) : ℕ × ℕ × ℕ), ((v + 4, 3, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [M1233, shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+    Nat.add_zero, and_true]
+  omega
+
+/-- `R43(4,2,0)` の塔の段（歩幅 3）は全部 `Pk3U (RunA 0)` の元。 -/
+theorem R43_420_stage : ∀ n : ℕ, Pk3U (RunA 0) (3 * n + 3) (Mtwd 3 Q M1233 (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      have h := Pk3U_step (h := 0) ⟨_, BaseOk_zero, LwB_of_base ⟨(Aok_Q : Aok Q), rfl⟩⟩
+      simpa [M1233] using h
+  | (n + 1) => by
+      rw [Mtwd_succ, M1233_shift]
+      have ih := R43_420_stage n
+      have hL : LwA (3 * n + 3) (Mtwd 3 Q M1233 (n + 1)) :=
+        ⟨Pk3A, BaseOk_Pk3A, LwB_of_base ⟨RunA 0, Iface_RunA0, ih⟩⟩
+      have h := Pk3U_step hL
+      rw [show 3 * (n + 1) + 3 = 3 * n + 3 + 3 from by omega,
+        show 3 * (n + 1) = 3 * n + 3 from by omega]
+      exact h
+
+theorem R43_420_tw (n : ℕ) : Mtwd 3 Q M1233 n ∈ W 0 := by
+  cases n with
+  | zero => rw [Mtwd_zero]; exact Aok_Q.mem
+  | succ n => exact (Pk3U_aok Iface_RunA0 _ _ (R43_420_stage n)).mem
+
+/-- ★★★★ `(0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)(4,3,0)(4,2,0) ∈ W 0`。 -/
+theorem R43_420 : R43 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hM : MidD (1 + 1) M1233 := by
+    refine MidD_append (MidD_col 1 1 (by omega) (by omega)) ?_ ?_
+    · intro x hx; simp only [M1233, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl <;> simp
+    · intro x hx; simp only [M1233, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl <;> simp
+  have h := snocYd_mem (Y0 := Q) (M := M1233) (L := 1) (y := 2) (dl := 3)
+    (by simp [Q]) hM (by simp [M1233, entry]) ?_ (by omega) (by omega) R43_420_tw
+  · simpa [Q, M1233, R43, R294] using h
+  · intro t ht1 htl hlt _
+    simp only [M1233, List.length_cons, List.length_nil] at htl
+    rcases (by omega : t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl
+    · simp [M1233, entry]
+    · simp [M1233, entry]
+    · exfalso; simp [M1233, entry] at hlt
+
+#print axioms R43_420
+
 end Small
 end TRIO
