@@ -6153,5 +6153,258 @@ theorem R294_mem : R294 ∈ W 0 := by
 
 #print axioms R294_mem
 
+/-! ## ★★★ 段の階段 `Vis`（行295/296 への道）
+
+`RunA j` は「LwA の台座 ++ `(·,1,0)` の頭 ++ `(·,≥2,0)` のブロック `j` 本」だった。
+`(·,3,0)` を継ぐには「`(·,2,0)` の頭 ++ `(·,≥3,0)` のブロック列」を、`(·,2,0)` を継げる台座
+（`∃ j', RunA j'`）の上に置く。塔の各段はこの台座に戻る必要があるが、上段のユニット
+`n ++ N_1..N_j` は `j+1` 段ぶん高さを使うので、下段のブロックを **群**（`MidD` ブロックの列、
+レベルはブロック数ぶん上がる）にしておく。上段のユニットは平坦化して下段の 1 群になる。
+
+* `VU E hl bl j c U`: 群。`U = M0 ++ N_1 ++ ... ++ N_j`、`M0` は `MidD (c+2)` で頭の行 1 が `hl` 以上、
+  再継ぎは `E` の上。`N_i` は `MidD (c+i+2)` で頭の行 1 が `bl` 以上、再継ぎは
+  「`E` の元 ++ 同じ群の先頭 `i-1` 本」の上。
+* `VisG E Hd g j h A`: 台座 `E` の元 ++ 頭（述語 `Hd`）++ 群 `j` 個（行 1 は `g` 以上）。
+  群 `i` の再継ぎは `VisG E Hd g (i-1)` の上。 -/
+
+/-- 群。 -/
+def VU (E : ℕ → TrioSeq → Prop) (hl bl : ℕ) : ℕ → ℕ → TrioSeq → Prop
+  | 0, c, U => MidD (c + 2) U ∧ hl ≤ entry U 1 0 ∧
+      (∀ (s : ℕ) (X : TrioSeq), E (c + s) X → X ++ shiftr01 s 0 U ∈ W 0)
+  | (j + 1), c, U => ∃ U0 N : TrioSeq, U = U0 ++ N ∧ VU E hl bl j c U0 ∧
+      MidD (c + j + 3) N ∧ bl ≤ entry N 1 0 ∧
+      (∀ (s : ℕ) (X : TrioSeq),
+        (∃ (c' : ℕ) (Y0 U' : TrioSeq), c + s = c' ∧ X = Y0 ++ U' ∧ E c' Y0 ∧ VU E hl bl j c' U') →
+        X ++ shiftr01 s 0 N ∈ W 0)
+
+/-- 群の頭つきクラス: 台座の元 ++ 群（`j+1` 本）。レベルは `c + 1 + j`。 -/
+def VUC (E : ℕ → TrioSeq → Prop) (hl bl j : ℕ) (h : ℕ) (A : TrioSeq) : Prop :=
+  ∃ (c : ℕ) (Y0 U : TrioSeq), h = c + 1 + j ∧ A = Y0 ++ U ∧ E c Y0 ∧ VU E hl bl j c U
+
+theorem VU_mid {E : ℕ → TrioSeq → Prop} {hl bl : ℕ} :
+    ∀ (j c : ℕ) (U : TrioSeq), VU E hl bl j c U → MidD (c + 2) U
+  | 0, _, _, hU => hU.1
+  | (j + 1), c, U, hU => by
+      obtain ⟨U0, N, rfl, hU0, hN, -, -⟩ := hU
+      refine MidD_append (VU_mid j c U0 hU0) ?_ hN.mono
+      intro x hx
+      have := MidD_col_ge hN x hx
+      omega
+
+theorem VU_head {E : ℕ → TrioSeq → Prop} {hl bl : ℕ} :
+    ∀ (j c : ℕ) (U : TrioSeq), VU E hl bl j c U → hl ≤ entry U 1 0
+  | 0, _, _, hU => hU.2.1
+  | (j + 1), c, U, hU => by
+      obtain ⟨U0, N, rfl, hU0, -, -, -⟩ := hU
+      rw [entry_append_left (List.length_pos_iff.mpr (VU_mid j c U0 hU0).ne)]
+      exact VU_head j c U0 hU0
+
+theorem VU_shift {E : ℕ → TrioSeq → Prop} {hl bl : ℕ} :
+    ∀ (j c : ℕ) (U : TrioSeq), VU E hl bl j c U → ∀ v : ℕ,
+      VU E hl bl j (c + v) (shiftr01 v 0 U)
+  | 0, c, U, hU, v => by
+      obtain ⟨hM, hh, hre⟩ := hU
+      refine ⟨?_, ?_, ?_⟩
+      · have h1 := MidD_shift hM v
+        rwa [show c + 2 + v = c + v + 2 from by omega] at h1
+      · rw [entry_shift1 (List.length_pos_iff.mpr hM.ne)]
+        exact hh
+      · intro s X hX
+        rw [shiftr01_add0]
+        refine hre (v + s) X ?_
+        rwa [show c + (v + s) = c + v + s from by omega]
+  | (j + 1), c, U, hU, v => by
+      obtain ⟨U0, N, rfl, hU0, hN, hN2, hre⟩ := hU
+      refine ⟨shiftr01 v 0 U0, shiftr01 v 0 N, by rw [shiftr01_append0],
+        VU_shift j c U0 hU0 v, ?_, ?_, ?_⟩
+      · have h1 := MidD_shift hN v
+        rwa [show c + j + 3 + v = c + v + j + 3 from by omega] at h1
+      · rw [entry_shift1 (List.length_pos_iff.mpr hN.ne)]
+        exact hN2
+      · rintro s X ⟨c', Y0, U', hc, rfl, hY0, hU'⟩
+        rw [shiftr01_add0]
+        exact hre (v + s) (Y0 ++ U') ⟨c', Y0, U', by omega, rfl, hY0, hU'⟩
+
+/-- 群の記録: 継ぐ高さより低い記録の行 1 は `bl` 以上（頭を除く）。 -/
+theorem VU_rec {E : ℕ → TrioSeq → Prop} {hl bl : ℕ} :
+    ∀ (j c : ℕ) (U : TrioSeq), VU E hl bl j c U →
+    ∀ t, 1 ≤ t → t < U.length → entry U 0 t < c + j + 2 →
+      (∀ i, t < i → i < U.length → entry U 0 t < entry U 0 i) → bl ≤ entry U 1 t
+  | 0, c, U, hU, t, ht1, htl, hlt, _ => by
+      have := hU.1.tail t ht1 htl
+      omega
+  | (j + 1), c, U, hU, t, ht1, htl, hlt, hrec => by
+      obtain ⟨U0, N, rfl, hU0, hN, hN2, -⟩ := hU
+      have hU0mid := VU_mid j c U0 hU0
+      have hU0len : 0 < U0.length := List.length_pos_iff.mpr hU0mid.ne
+      have hNlen : 0 < N.length := List.length_pos_iff.mpr hN.ne
+      have hlen : (U0 ++ N).length = U0.length + N.length := by simp
+      have hNh : entry (U0 ++ N) 0 U0.length = c + j + 2 := by
+        rw [show U0.length = U0.length + 0 from rfl, entry_append_right]
+        have := hN.head; omega
+      rcases Nat.lt_trichotomy t U0.length with h | h | h
+      · rw [entry_append_left h] at hlt ⊢
+        have hlt' : entry U0 0 t < c + j + 2 := by
+          have := hrec U0.length h (by omega)
+          rw [entry_append_left h, hNh] at this
+          omega
+        refine VU_rec j c U0 hU0 t ht1 h hlt' ?_
+        intro i hti hiU
+        have := hrec i hti (by omega)
+        rw [entry_append_left h, entry_append_left hiU] at this
+        exact this
+      · subst h
+        rw [show U0.length = U0.length + 0 from rfl, entry_append_right]
+        exact hN2
+      · exfalso
+        obtain ⟨q, rfl⟩ : ∃ q, t = U0.length + q := ⟨t - U0.length, by omega⟩
+        rw [entry_append_right] at hlt
+        have := hN.tail q (by omega) (by omega)
+        omega
+
+/-- 群は台座のどの元にも（シフトして）継げる。 -/
+theorem VU_reapp {E : ℕ → TrioSeq → Prop} {hl bl : ℕ} :
+    ∀ (j c : ℕ) (U : TrioSeq), VU E hl bl j c U →
+    ∀ (s : ℕ) (X : TrioSeq), E (c + s) X → X ++ shiftr01 s 0 U ∈ W 0
+  | 0, _, _, hU, s, X, hX => hU.2.2 s X hX
+  | (j + 1), c, U, hU, s, X, hX => by
+      obtain ⟨U0, N, rfl, hU0, -, -, hre⟩ := hU
+      rw [shiftr01_append0, ← List.append_assoc]
+      exact hre s (X ++ shiftr01 s 0 U0)
+        ⟨c + s, X, shiftr01 s 0 U0, rfl, rfl, hX, VU_shift j c U0 hU0 s⟩
+
+theorem VUC_mem {E : ℕ → TrioSeq → Prop} {hl bl j h : ℕ} {A : TrioSeq}
+    (hA : VUC E hl bl j h A) : A ∈ W 0 := by
+  obtain ⟨c, Y0, U, rfl, rfl, hY0, hU⟩ := hA
+  have h1 := VU_reapp j c U hU 0 Y0 (by simpa using hY0)
+  simpa using h1
+
+/-! ### 群の頭つきクラス `VisG` -/
+
+/-- 頭の述語 `Hd` に要る性質。 -/
+structure HdOk (E : ℕ → TrioSeq → Prop) (Hd : ℕ → TrioSeq → Prop) : Prop where
+  mid : ∀ (c : ℕ) (M : TrioSeq), Hd c M → MidD (c + 2) M
+  reapp : ∀ (c : ℕ) (M : TrioSeq), Hd c M → ∀ (s : ℕ) (X : TrioSeq), E (c + s) X →
+      X ++ shiftr01 s 0 M ∈ W 0
+  shift : ∀ (c : ℕ) (M : TrioSeq), Hd c M → ∀ v : ℕ, Hd (c + v) (shiftr01 v 0 M)
+
+/-- 台座 `E` の元 ++ 頭 ++ 群 `j` 個。 -/
+def VisG (E : ℕ → TrioSeq → Prop) (Hd : ℕ → TrioSeq → Prop) (g : ℕ) :
+    ℕ → ℕ → TrioSeq → Prop
+  | 0, h, A => ∃ (c : ℕ) (Y0 M : TrioSeq), h = c + 1 ∧ A = Y0 ++ M ∧ E c Y0 ∧ Hd c M
+  | (j + 1), h, A => ∃ (b r : ℕ) (A0 G : TrioSeq), h = b + 1 + r ∧ A = A0 ++ G ∧
+      VisG E Hd g j b A0 ∧ VU (VisG E Hd g j) g g r b G
+
+/-- ユニット（頭 ++ 群 `j` 個）。`VUn j c e U`: レベル `c` の上、高さ `e` ぶん（頂上はレベル `c+e`）。 -/
+def VUn (E : ℕ → TrioSeq → Prop) (Hd : ℕ → TrioSeq → Prop) (g : ℕ) :
+    ℕ → ℕ → ℕ → TrioSeq → Prop
+  | 0, c, e, U => e = 1 ∧ Hd c U
+  | (j + 1), c, e, U => ∃ (e0 r : ℕ) (U0 G : TrioSeq), U = U0 ++ G ∧ e = e0 + 1 + r ∧
+      VUn E Hd g j c e0 U0 ∧ VU (VisG E Hd g j) g g r (c + e0) G
+
+theorem VisG_of {E Hd : ℕ → TrioSeq → Prop} {g : ℕ} :
+    ∀ (j c e : ℕ) (Y0 U : TrioSeq), E c Y0 → VUn E Hd g j c e U →
+      VisG E Hd g j (c + e) (Y0 ++ U)
+  | 0, c, e, Y0, U, hY0, hU => by
+      obtain ⟨rfl, hU⟩ := hU
+      exact ⟨c, Y0, U, rfl, rfl, hY0, hU⟩
+  | (j + 1), c, e, Y0, U, hY0, hU => by
+      obtain ⟨e0, r, U0, G, rfl, rfl, hU0, hG⟩ := hU
+      exact ⟨c + e0, r, Y0 ++ U0, G, by omega, by rw [List.append_assoc],
+        VisG_of j c e0 Y0 U0 hY0 hU0, hG⟩
+
+theorem VisG_to {E Hd : ℕ → TrioSeq → Prop} {g : ℕ} :
+    ∀ (j h : ℕ) (A : TrioSeq), VisG E Hd g j h A →
+      ∃ (c e : ℕ) (Y0 U : TrioSeq), h = c + e ∧ A = Y0 ++ U ∧ E c Y0 ∧ VUn E Hd g j c e U
+  | 0, h, A, hA => by
+      obtain ⟨c, Y0, M, rfl, rfl, hY0, hM⟩ := hA
+      exact ⟨c, 1, Y0, M, rfl, rfl, hY0, rfl, hM⟩
+  | (j + 1), h, A, hA => by
+      obtain ⟨b, r, A0, G, rfl, rfl, hA0, hG⟩ := hA
+      obtain ⟨c, e0, Y0, U0, rfl, rfl, hY0, hU0⟩ := VisG_to j b A0 hA0
+      exact ⟨c, e0 + 1 + r, Y0, U0 ++ G, by omega, by rw [List.append_assoc], hY0,
+        ⟨e0, r, U0, G, rfl, rfl, hU0, hG⟩⟩
+
+theorem VUn_pos {E Hd : ℕ → TrioSeq → Prop} {g : ℕ} :
+    ∀ (j c e : ℕ) (U : TrioSeq), VUn E Hd g j c e U → 1 ≤ e
+  | 0, _, _, _, hU => by have := hU.1; omega
+  | (j + 1), c, e, U, hU => by
+      obtain ⟨e0, r, U0, G, -, he, -, -⟩ := hU
+      omega
+
+theorem VUn_mid {E Hd : ℕ → TrioSeq → Prop} {g : ℕ} (hH : HdOk E Hd) :
+    ∀ (j c e : ℕ) (U : TrioSeq), VUn E Hd g j c e U → MidD (c + 2) U
+  | 0, c, _, U, hU => hH.mid c U hU.2
+  | (j + 1), c, e, U, hU => by
+      obtain ⟨e0, r, U0, G, rfl, rfl, hU0, hG⟩ := hU
+      have he0 := VUn_pos j c e0 U0 hU0
+      refine MidD_append (VUn_mid hH j c e0 U0 hU0) ?_ (VU_mid r _ G hG).mono
+      intro x hx
+      have := MidD_col_ge (VU_mid r _ G hG) x hx
+      omega
+
+theorem VUn_head {E Hd : ℕ → TrioSeq → Prop} {g : ℕ} (hH : HdOk E Hd) :
+    ∀ (j c e : ℕ) (U : TrioSeq), VUn E Hd g j c e U →
+      ∃ M : TrioSeq, Hd c M ∧ entry U 1 0 = entry M 1 0
+  | 0, c, _, U, hU => ⟨U, hU.2, rfl⟩
+  | (j + 1), c, e, U, hU => by
+      obtain ⟨e0, r, U0, G, rfl, rfl, hU0, -⟩ := hU
+      obtain ⟨M, hM, hM1⟩ := VUn_head hH j c e0 U0 hU0
+      refine ⟨M, hM, ?_⟩
+      rw [entry_append_left (List.length_pos_iff.mpr (VUn_mid hH j c e0 U0 hU0).ne)]
+      exact hM1
+
+theorem VUn_shift {E Hd : ℕ → TrioSeq → Prop} {g : ℕ} (hH : HdOk E Hd) :
+    ∀ (j c e : ℕ) (U : TrioSeq), VUn E Hd g j c e U → ∀ v : ℕ,
+      VUn E Hd g j (c + v) e (shiftr01 v 0 U)
+  | 0, c, e, U, hU, v => ⟨hU.1, hH.shift c U hU.2 v⟩
+  | (j + 1), c, e, U, hU, v => by
+      obtain ⟨e0, r, U0, G, rfl, rfl, hU0, hG⟩ := hU
+      refine ⟨e0, r, shiftr01 v 0 U0, shiftr01 v 0 G, by rw [shiftr01_append0], rfl,
+        VUn_shift hH j c e0 U0 hU0 v, ?_⟩
+      have h1 := VU_shift r (c + e0) G hG v
+      rwa [show c + e0 + v = c + v + e0 from by omega] at h1
+
+/-- ユニットの記録: 頂上より低い記録（頭を除く）の行 1 は `g` 以上。 -/
+theorem VUn_rec {E Hd : ℕ → TrioSeq → Prop} {g : ℕ} (hH : HdOk E Hd) :
+    ∀ (j c e : ℕ) (U : TrioSeq), VUn E Hd g j c e U →
+    ∀ t, 1 ≤ t → t < U.length → entry U 0 t < c + e + 1 →
+      (∀ i, t < i → i < U.length → entry U 0 t < entry U 0 i) → g ≤ entry U 1 t
+  | 0, c, e, U, hU, t, ht1, htl, hlt, _ => by
+      obtain ⟨rfl, hM⟩ := hU
+      have := (hH.mid c U hM).tail t ht1 htl
+      omega
+  | (j + 1), c, e, U, hU, t, ht1, htl, hlt, hrec => by
+      obtain ⟨e0, r, U0, G, rfl, rfl, hU0, hG⟩ := hU
+      have hU0mid := VUn_mid hH j c e0 U0 hU0
+      have hGmid := VU_mid r _ G hG
+      have hU0len : 0 < U0.length := List.length_pos_iff.mpr hU0mid.ne
+      have hGlen : 0 < G.length := List.length_pos_iff.mpr hGmid.ne
+      have hlen : (U0 ++ G).length = U0.length + G.length := by simp
+      have hGh : entry (U0 ++ G) 0 U0.length = c + e0 + 1 := by
+        rw [show U0.length = U0.length + 0 from rfl, entry_append_right]
+        have := hGmid.head; omega
+      rcases Nat.lt_trichotomy t U0.length with h | h | h
+      · rw [entry_append_left h] at hlt ⊢
+        have hlt' : entry U0 0 t < c + e0 + 1 := by
+          have := hrec U0.length h (by omega)
+          rw [entry_append_left h, hGh] at this
+          omega
+        refine VUn_rec hH j c e0 U0 hU0 t ht1 h hlt' ?_
+        intro i hti hiU
+        have := hrec i hti (by omega)
+        rw [entry_append_left h, entry_append_left hiU] at this
+        exact this
+      · subst h
+        rw [show U0.length = U0.length + 0 from rfl, entry_append_right]
+        exact VU_head r _ G hG
+      · obtain ⟨q, rfl⟩ : ∃ q, t = U0.length + q := ⟨t - U0.length, by omega⟩
+        rw [entry_append_right] at hlt ⊢
+        refine VU_rec r (c + e0) G hG q (by omega) (by omega) (by omega) ?_
+        intro i hqi hiG
+        have := hrec (U0.length + i) (by omega) (by omega)
+        rw [entry_append_right, entry_append_right] at this
+        exact this
+
 end Small
 end TRIO
