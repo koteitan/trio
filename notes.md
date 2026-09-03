@@ -839,3 +839,10 @@ RunG_snoc2, DiaV, z1）を繰り返す」形。台座が RunA 0 1 になるた�
   (ii) 荷の末尾が (0,0,0) → 字を n 個複製 (k, Y')（内側 IH を n 回）
   (iii) 荷が空で k ≥ 1 → snocd_gen、hang = (k-1, B)（外側 IH、B は任意）
   (iv) 荷が空で k = 0 → 対角の連鎖（Q(ws)）
+
+### 2026-09-04 (続き62) 複合字を継ぐ 4 つの場合のうち (iii)(iv) が緑
+- GoodFb_of_keyC（3 段を key 1 本から）、Ancd_recword（台座 + 記録 + 語の祖先条件）、wordC_kind。
+- GoodFb_snoczC（場合 iv: 裸の z、対角の連鎖）。
+- GoodFb_snoc_oneC（場合 iii: 1 の列、snocd_gen、hang = 荷つきの字 (k,B)）。
+残り: (i) 荷の内部展開（oper_shift）、(ii) 荷の末尾 (0,0,0) → 字の n 複製（flat_mem''）、
+そして k の強帰納法 + 荷の A2' で束ねる。

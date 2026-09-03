@@ -16373,5 +16373,310 @@ theorem z1wC_mem {Y0 : TrioSeq} {a b : ℕ} (hb : 1 ≤ b) {ws : List (ℕ × Tr
 
 #print axioms z1wC_mem
 
+
+/-! ### 複合字の語の普遍性の骨組み -/
+
+theorem GoodFb_of_keyC {ws : List (ℕ × TrioSeq)} (hw : WplC ws)
+    {new : ℕ → List (ℕ × TrioSeq)}
+    (hnew : ∀ n, 1 ≤ n → GoodFb (fun a b => wordC a b (new n)))
+    (key : ∀ (Z : TrioSeq) (a b : ℕ), 1 ≤ b →
+      (∀ n, 1 ≤ n → Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b (new n)) ∈ W 0) →
+      Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws) ∈ W 0) :
+    GoodFb (fun a b => wordC a b ws) where
+  ge := fun a b => wordC_ge a b ws
+  mono := fun a b => wordC_mono hw
+  shift := fun a b s => wordC_shift a b s ws
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := wordC_ge (c + 1) (y + 1) ws x hx; omega, wordC_mono hw, ?_⟩
+    intro E hE t Z hZ
+    rw [wordC_shift]
+    have h := key Z (c + 1 + t) (y + 1) (by omega) (fun n hn => by
+      have hP : PU y (c + 1 + t) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordC (c + 1 + t) (y + 1) (new n))) :=
+        ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hnew n hn).pu y (c + t) hy⟩
+      simpa using ((BaseOk_PU y).aok _ _ hP).mem)
+    simpa using h
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := wordC_ge (c + 1) 2 ws x hx; omega, wordC_mono hw, ?_⟩
+    intro j t X hX
+    rw [wordC_shift]
+    have h := key X (c + 1 + t) 2 (by omega) (fun n hn => by
+      have hP : PkGA (c + 1 + t) (X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+          wordC (c + 1 + t) 2 (new n))) :=
+        ⟨E, hI, j, c + t, X, _, by omega, hX, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hnew n hn).pk (c + t)⟩
+      simpa using (PkGA_Aok hP).mem)
+    simpa using h
+  seg := by
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordC (h + 1) 1 ws) := by
+      have h1 := MidD_wordC (h + 1) 1 (by omega) (by omega) hw
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordC (h + 1) 1 ws
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordC (h + 1) 1 ws from rfl,
+      shiftr01_append0, shift_col, wordC_shift]
+    have hk := key A' (h + 1 + s) 1 (by omega) (fun n hn => by
+      have hR : RunA 0 (h + s + 1) (A' ++ (((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordC (h + s + 1) 1 (new n))) :=
+        ⟨h + s, A', _, rfl, rfl, ⟨P, hP, hA'⟩, (hnew n hn).seg (h + s)⟩
+      have := ((BaseOk_RunA 0).aok _ _ hR).mem
+      simpa [show h + s + 1 = h + 1 + s from by omega] using this)
+    simpa using hk
+
+/-- 語の列は「z の列」「1 の列」「高さ `a+2` 以上」のどれか。 -/
+theorem wordC_kind (a b : ℕ) (ws : List (ℕ × TrioSeq)) :
+    ∀ x ∈ wordC a b ws, x = ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) ∨
+      x = ((a + 2, 1, 0) : ℕ × ℕ × ℕ) ∨ a + 2 ≤ x.1 := by
+  intro x hx
+  simp only [wordC, List.mem_flatMap] at hx
+  obtain ⟨p, -, hxp⟩ := hx
+  simp only [colC, List.mem_cons, List.mem_append, List.mem_replicate, shiftr01,
+    List.mem_map] at hxp
+  rcases hxp with h1 | ⟨-, h1⟩ | ⟨q, -, h1⟩
+  · exact Or.inl h1
+  · exact Or.inr (Or.inl h1)
+  · refine Or.inr (Or.inr ?_)
+    rw [← h1]
+    simp
+
+/-- 台座と記録と語の祖先条件。 -/
+theorem Ancd_recword {a b : ℕ} (hb : 1 ≤ b) {Z : TrioSeq} (hZ : Ancd a Z)
+    {ws : List (ℕ × TrioSeq)} (hw : WplC ws) :
+    Ancd (a + 2) (Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws)) := by
+  set N : TrioSeq := ((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws with hN
+  intro j hj0 hjl hlt hvis
+  rcases Nat.lt_or_ge j Z.length with hjZ | hjZ
+  · have e0 : entry (Z ++ N) 0 j = entry Z 0 j := entry_append_left hjZ
+    have e1 : entry (Z ++ N) 1 j = entry Z 1 j := entry_append_left hjZ
+    have hNl : Z.length < (Z ++ N).length := by simp [hN]
+    have hlt1 : entry Z 0 j < a := by
+      have h1 := hvis Z.length hjZ hNl
+      have h2 : entry (Z ++ N) 0 Z.length = a := by
+        rw [show Z.length = Z.length + 0 from rfl, entry_append_right]
+        simp [hN, entry]
+      rw [e0] at h1
+      omega
+    rw [e1]
+    refine hZ j hj0 hjZ hlt1 ?_
+    intro i hi hil
+    have := hvis i hi (by simp [hN]; omega)
+    rwa [e0, entry_append_left hil] at this
+  · obtain ⟨u, hu, rfl⟩ : ∃ u, u < N.length ∧ j = Z.length + u :=
+      ⟨j - Z.length, by simp [hN] at hjl ⊢; omega, by omega⟩
+    rw [entry_append_right]
+    match u, hu with
+    | 0, _ => simpa [hN, entry] using hb
+    | (i + 1), hi =>
+        have hil : i < (wordC a b ws).length := by simp [hN] at hi; omega
+        have he : entry N 0 (i + 1) = entry (wordC a b ws) 0 i := by simp [hN, entry]
+        have he1 : entry N 1 (i + 1) = entry (wordC a b ws) 1 i := by simp [hN, entry]
+        have hlt' : entry (wordC a b ws) 0 i < a + 2 := by
+          have h := hlt
+          rw [entry_append_right, he] at h
+          exact h
+        have he0v : entry (wordC a b ws) 0 i = ((wordC a b ws)[i]'hil).1 := by
+          simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hil]
+        have he1v : entry (wordC a b ws) 1 i = ((wordC a b ws)[i]'hil).2.1 := by
+          simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hil]
+        rw [he0v] at hlt'
+        rcases wordC_kind a b ws _ (List.getElem_mem hil) with h1 | h1 | h1
+        · rw [he1, he1v, h1]; simp
+        · rw [he1, he1v, h1]
+        · exact absurd hlt' (by omega)
+
+#print axioms Ancd_recword
+
+
+/-! ### 字を 1 つ継ぐ: 裸の z（場合 iv）と 1 の列（場合 iii） -/
+
+theorem colC_z (a b : ℕ) : colC a b (0, []) = [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] := by
+  simp [colC, shiftr01]
+
+theorem colC_one_succ (a b k : ℕ) :
+    colC a b (k + 1, []) = colC a b (k, []) ++ [((a + 2, 1, 0) : ℕ × ℕ × ℕ)] := by
+  simp [colC, shiftr01, List.replicate_succ']
+
+theorem colC_pay (a b k : ℕ) (B : TrioSeq) :
+    colC a b (k, B) = colC a b (k, []) ++ shiftr01 (a + 2) 0 B := by
+  simp [colC, shiftr01, List.append_assoc]
+
+theorem colC_snoc_zero (a b k : ℕ) (Y : TrioSeq) :
+    colC a b (k, Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])
+      = colC a b (k, Y) ++ [((a + 2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [colC, shiftr01, List.append_assoc]
+
+theorem wordC_replicate (a b : ℕ) (p : ℕ × TrioSeq) : ∀ n : ℕ,
+    wordC a b (List.replicate n p) = (List.range n).flatMap fun _ => colC a b p
+  | 0 => by simp [wordC]
+  | (n + 1) => by
+      rw [List.replicate_succ, wordC_cons, wordC_replicate a b p n,
+        List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+
+/-- 場合 (iv): 裸の z を継ぐ。 -/
+theorem GoodFb_snoczC {ws : List (ℕ × TrioSeq)} (hw : WplC ws)
+    (hG : GoodFb (fun a b => wordC a b ws)) :
+    GoodFb (fun a b => wordC a b (ws ++ [(0, [])])) where
+  ge := fun a b => wordC_ge a b _
+  mono := fun a b => wordC_mono (WplC_append hw (WplC_singleton Bok_nil))
+  shift := fun a b s => wordC_shift a b s _
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := wordC_ge (c + 1) (y + 1) _ x hx; omega,
+      wordC_mono (WplC_append hw (WplC_singleton Bok_nil)), ?_⟩
+    intro E hE t Z hZ
+    rw [wordC_shift, wordC_append, wordC_singleton, colC_z]
+    have h := z1wC_mem (Y0 := Z) (a := c + 1 + t) (b := y + 1) (by omega) hw
+      (fun n => by
+        have := Dzf_W hG hy hE (c := c + t) (by simpa using hZ) n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    simpa [List.append_assoc] using h
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := wordC_ge (c + 1) 2 _ x hx; omega,
+      wordC_mono (WplC_append hw (WplC_singleton Bok_nil)), ?_⟩
+    intro j t X hX
+    rw [wordC_shift, wordC_append, wordC_singleton, colC_z]
+    have h := z1wC_mem (Y0 := X) (a := c + 1 + t) (b := 2) (by omega) hw
+      (fun n => by
+        have := Dzf_W_RunG hG hI (c := c + t) hX n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    simpa [List.append_assoc] using h
+  seg := by
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordC (h + 1) 1 (ws ++ [(0, [])])) := by
+      have h1 := MidD_wordC (h + 1) 1 (by omega) (by omega)
+        (ws := ws ++ [((0 : ℕ), ([] : TrioSeq))])
+        (WplC_append hw (WplC_singleton (k := 0) Bok_nil))
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordC (h + 1) 1 (ws ++ [(0, [])])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordC (h + 1) 1 (ws ++ [(0, [])]) from rfl,
+      shiftr01_append0, shift_col, wordC_shift, wordC_append, wordC_singleton, colC_z]
+    have hz := z1wC_mem (Y0 := A') (a := h + 1 + s) (b := 1) (by omega) hw
+      (fun n => by
+        have := Dzf_W_LwA hG (h := h + s) ⟨P, hP, hA'⟩ n
+        simpa [show h + s + 1 = h + 1 + s from by omega] using this)
+    simpa [List.append_assoc] using hz
+
+#print axioms GoodFb_snoczC
+
+
+/-! ### 場合 (iii): 1 の列を継ぐ（snocd_gen、hang は荷つきの字） -/
+
+theorem wordC_snoc_one (a b : ℕ) (ws : List (ℕ × TrioSeq)) (k : ℕ) :
+    wordC a b (ws ++ [(k + 1, [])])
+      = wordC a b (ws ++ [(k, [])]) ++ [((a + 2, 1, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordC_append, wordC_append, wordC_singleton, wordC_singleton, colC_one_succ,
+    List.append_assoc]
+
+theorem wordC_snoc_pay (a b : ℕ) (ws : List (ℕ × TrioSeq)) (k : ℕ) (B : TrioSeq) :
+    wordC a b (ws ++ [(k, B)])
+      = wordC a b (ws ++ [(k, [])]) ++ shiftr01 (a + 2) 0 B := by
+  rw [wordC_append, wordC_append, wordC_singleton, wordC_singleton, colC_pay,
+    List.append_assoc]
+
+/-- 場合 (iii): `1` の列を継ぐ。 -/
+theorem GoodFb_snoc_oneC {ws : List (ℕ × TrioSeq)} (hw : WplC ws) (k : ℕ)
+    (hprev : ∀ B : TrioSeq, Bok B → GoodFb (fun a b => wordC a b (ws ++ [(k, B)]))) :
+    GoodFb (fun a b => wordC a b (ws ++ [(k + 1, [])])) where
+  ge := fun a b => wordC_ge a b _
+  mono := fun a b => wordC_mono (WplC_append hw (WplC_singleton (k := k + 1) Bok_nil))
+  shift := fun a b s => wordC_shift a b s _
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := wordC_ge (c + 1) (y + 1) _ x hx; omega,
+      wordC_mono (WplC_append hw (WplC_singleton (k := k + 1) Bok_nil)), ?_⟩
+    intro E hE t Z hZ
+    rw [wordC_shift, wordC_snoc_one]
+    set a := c + 1 + t with ha
+    have hbase : PU y a (Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordC a (y + 1) (ws ++ [(k, [])]))) :=
+      ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [ha, show c + t + 1 = c + 1 + t from by omega],
+        (hprev [] Bok_nil).pu y (c + t) hy⟩
+    have hAok := (BaseOk_PU y).aok _ _ hbase
+    have hancZ : Ancd a Z := by
+      have := (IfcV_iface (y + 1) hE).bok.ancd (c + t) Z hZ
+      rwa [show c + t + 1 = a from by omega] at this
+    have hanc : Ancd (a + 2) (Z ++ (((a, y + 1, 0) : ℕ × ℕ × ℕ) ::
+        wordC a (y + 1) (ws ++ [(k, [])]))) :=
+      Ancd_recword (by omega) hancZ (WplC_append hw (WplC_singleton (k := k) Bok_nil))
+    have h := snocd_gen (Y := Z ++ (((a, y + 1, 0) : ℕ × ℕ × ℕ) ::
+        wordC a (y + 1) (ws ++ [(k, [])]))) (d := a + 2) (by omega)
+      (by simpa using hAok) hanc ?_
+    · simpa [List.append_assoc] using h
+    · intro B hB
+      have h2 := (hprev B hB).pu y c hy
+      have h3 := h2.2.2 E hE t Z hZ
+      rw [wordC_shift, wordC_snoc_pay] at h3
+      simpa [ha, List.append_assoc] using h3
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := wordC_ge (c + 1) 2 _ x hx; omega,
+      wordC_mono (WplC_append hw (WplC_singleton (k := k + 1) Bok_nil)), ?_⟩
+    intro j t X hX
+    rw [wordC_shift, wordC_snoc_one]
+    set a := c + 1 + t with ha
+    have hbase : PkGA a (X ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++ wordC a 2 (ws ++ [(k, [])]))) :=
+      ⟨E, hI, j, c + t, X, _, by omega, hX,
+        by rw [ha, show c + t + 1 = c + 1 + t from by omega],
+        (hprev [] Bok_nil).pk (c + t)⟩
+    have hAok := PkGA_Aok hbase
+    have hancX : Ancd a X := by
+      have := (BaseOk_RunG hI.bok j).ancd (c + t) X hX
+      rwa [show c + t + 1 = a from by omega] at this
+    have hanc : Ancd (a + 2) (X ++ (((a, 2, 0) : ℕ × ℕ × ℕ) :: wordC a 2 (ws ++ [(k, [])]))) :=
+      Ancd_recword (by omega) hancX (WplC_append hw (WplC_singleton (k := k) Bok_nil))
+    have h := snocd_gen (Y := X ++ (((a, 2, 0) : ℕ × ℕ × ℕ) :: wordC a 2 (ws ++ [(k, [])])))
+      (d := a + 2) (by omega) (by simpa using hAok) hanc ?_
+    · simpa [List.append_assoc] using h
+    · intro B hB
+      have h2 := (hprev B hB).pk c E hI
+      have h3 := h2.2.2 j t X hX
+      rw [wordC_shift, wordC_snoc_pay] at h3
+      simpa [ha, List.append_assoc] using h3
+  seg := by
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordC (h + 1) 1 (ws ++ [(k + 1, [])])) := by
+      have h1 := MidD_wordC (h + 1) 1 (by omega) (by omega)
+        (ws := ws ++ [((k + 1 : ℕ), ([] : TrioSeq))])
+        (WplC_append hw (WplC_singleton (k := k + 1) Bok_nil))
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordC (h + 1) 1 (ws ++ [(k + 1, [])])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordC (h + 1) 1 (ws ++ [(k + 1, [])]) from rfl,
+      shiftr01_append0, shift_col, wordC_shift, wordC_snoc_one]
+    set a := h + 1 + s with ha
+    have hLw : LwA (h + s) A' := ⟨P, hP, hA'⟩
+    have hbase : RunA 0 a (A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: wordC a 1 (ws ++ [(k, [])]))) :=
+      ⟨h + s, A', _, by omega, rfl, hLw, by
+        have := (hprev [] Bok_nil).seg (h + s)
+        simpa [ha, show h + s + 1 = h + 1 + s from by omega] using this⟩
+    have hAok := (BaseOk_RunA 0).aok _ _ hbase
+    have hancA : Ancd a A' := by
+      have := LwB_Ancd hP hA'
+      rwa [show h + s + 1 = a from by omega] at this
+    have hanc : Ancd (a + 2) (A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: wordC a 1 (ws ++ [(k, [])]))) :=
+      Ancd_recword (by omega) hancA (WplC_append hw (WplC_singleton (k := k) Bok_nil))
+    have hh := snocd_gen (Y := A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: wordC a 1 (ws ++ [(k, [])])))
+      (d := a + 2) (by omega) hAok hanc ?_
+    · simpa [List.append_assoc] using hh
+    · intro B hB
+      have h2 := ((hprev B hB).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordC (h + s + 1) 1 (ws ++ [(k, B)])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordC (h + s + 1) 1 (ws ++ [(k, B)]) from rfl]
+        at h2
+      rw [wordC_snoc_pay] at h2
+      simpa [ha, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h2
+
+#print axioms GoodFb_snoc_oneC
+
 end Small
 end TRIO
