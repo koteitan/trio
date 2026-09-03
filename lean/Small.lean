@@ -11998,5 +11998,114 @@ theorem Am_mem (m : ℕ) : Am m ∈ W 0 := (Am_Aok m).mem
 
 #print axioms Am_mem
 #print axioms LvB_U11
+
+/-! ### 行 317〜325（台座 `R316 = (0,0,0)(1,1,1)(1,1,1)`） -/
+
+theorem Aok_R316 : Aok R316 := Am_Aok 2
+
+theorem R316_row1 : ∀ j, 0 < j → j < R316.length → 1 ≤ entry R316 1 j := by
+  intro j hj0 hjl
+  rw [R316_len] at hjl
+  rcases (show j = 1 ∨ j = 2 by omega) with rfl | rfl <;> simp [R316, entry]
+
+/-- ★★★★ シート行317 `R316 (1,1,0) = psi(W_w*2 + W)`。 -/
+theorem R317_mem : R316 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R316 (Ancd_of_row1 R316_row1 1)
+    (fun B hB => BaseOk_zero.hang 0 R316 ⟨Aok_R316, rfl⟩ B hB)
+
+/-- ★★★★ シート行318 `R316 (1,1,0)(2,2,1) = psi(W_w*2 + psi_1(W_w))`。 -/
+theorem R318_mem : R316 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunA0_z1 (h := 1) ⟨0, R316, _, rfl, rfl, LwA_of_Aok Aok_R316, SegA_one 0⟩
+
+/-- `R319 = R316 (1,1,0)(2,2,1)(2,2,1)`。 -/
+def R319 : TrioSeq := R316 ++ U11 0 2
+
+theorem R319_RunA0 : RunA 0 1 R319 := LwA_U11 (LwA_of_Aok Aok_R316) 2
+
+theorem Aok_R319 : Aok R319 := (BaseOk_RunA 0).aok _ _ R319_RunA0
+
+/-- ★★★★ シート行319 `psi(W_w*2 + psi_1(W_w*2))`。 -/
+theorem R319_mem : R319 ∈ W 0 := Aok_R319.mem
+
+theorem R319_row1 : ∀ j, 0 < j → j < R319.length → 1 ≤ entry R319 1 j := by
+  intro j hj0 hjl
+  simp only [R319, R316, U11, List.length_append, List.length_cons, List.length_replicate,
+    List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+    simp [R319, R316, U11, entry]
+
+/-- ★★★★ シート行320 `R319 (2,1,0) = psi(W_w*2 + psi_1(W_w*2)*W)`。 -/
+theorem R320_mem : R319 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R319 (Ancd_of_row1 R319_row1 2)
+    (fun B hB => LvB_hang BaseOk_P0 1 1 R319 (LvB_U11 BaseOk_P0 (r := 0) (h := 0)
+      ⟨Aok_R316, rfl⟩ 2) B hB)
+
+/-- ★★★★ シート行321 `R319 (2,2,0) = psi(W_w*2 + W_2)`。 -/
+theorem R321_mem : R319 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunG_snoc2 Iface_RunA0 0 1 R319 R319_RunA0
+
+theorem R321_33_PkGA : PkGA 2 (R319 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++
+    List.replicate 2 ((3, 3, 1) : ℕ × ℕ × ℕ))) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, R319, List.replicate 2 ((3, 3, 1) : ℕ × ℕ × ℕ), rfl, R319_RunA0, rfl,
+    JkGU_z1m 2 1⟩
+
+/-- ★★★★ シート行322 `R319 (2,2,0)(3,3,1)(3,3,1)(3,3,0) = psi(W_w*2 + W_3)`。 -/
+theorem R322_mem : R319 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ),
+    ((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  ((BaseOk_PU 2).aok _ _ (⟨PkGA, 2, _, [], Ifc3_toIfcV Ifc3_PkGA, rfl, R321_33_PkGA, rfl,
+    JkU_nil' (le_refl 2) 2⟩ : PU 2 3 (R319 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++
+      List.replicate 2 ((3, 3, 1) : ℕ × ℕ × ℕ)) ++ ([((3, 3, 0) : ℕ × ℕ × ℕ)] ++ [])))).mem
+
+/-- ★★★★ シート行323 `(0,0,0)(1,1,1)(1,1,1)(1,1,1) = psi(W_w*3)`、行324 `psi(W_w*4)`。 -/
+theorem R323_mem : [(0, 0, 0), (1, 1, 1), (1, 1, 1), (1, 1, 1)] ∈ W 0 := Am_mem 3
+
+theorem R324_mem : [(0, 0, 0), (1, 1, 1), (1, 1, 1), (1, 1, 1), (1, 1, 1)] ∈ W 0 := Am_mem 4
+
+/-! ### 行 325 `(0,0,0)(1,1,1)(2,0,0) = psi(W_w*w)`: 平坦な複製 `(0,0,0)(1,1,1)^n` -/
+
+def R325 : TrioSeq := [(0, 0, 0), (1, 1, 1), (2, 0, 0)]
+
+theorem R325_len : R325.length = 3 := by simp [R325]
+
+theorem nextrel0_R325_12 : nextrel0 R325 1 2 := by
+  refine ⟨by simp [R325], by simp [R325], by omega, by simp [R325, entry], ?_⟩
+  intro j hj; omega
+
+theorem hasParent0_R325 : hasParent R325 0 2 := by
+  refine ⟨1, by show nextR R325 0 1 2; simp only [nextR, if_true]; exact nextrel0_R325_12, ?_⟩
+  intro j0 hj0
+  change nextR R325 0 j0 2 at hj0
+  simp only [nextR, if_true] at hj0
+  obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+  rw [R325_len] at hj0l
+  rcases j0 with _ | _ | j0
+  · exfalso; have := hall 1 ⟨by omega, by omega⟩; simp [R325, entry] at this
+  · rfl
+  · omega
+
+theorem parent0_R325 : parent R325 0 2 = 1 :=
+  hasParent0_R325.unique (parent_nextR hasParent0_R325)
+    (by show nextR R325 0 1 2; simp only [nextR, if_true]; exact nextrel0_R325_12)
+
+theorem flatMap_const_singleton {α : Type _} (n : ℕ) (c : α) :
+    (List.range n).flatMap (fun _ => [c]) = List.replicate n c := by
+  rw [flatMap_singleton_map, List.map_const', List.length_range]
+
+open Classical in
+theorem oper_R325 (n : ℕ) : R325⟦n⟧ = Am n := by
+  rw [L53.oper_flat (j1 := 2) (j0 := 1) (by rw [R325_len]) (by omega)
+    (by simp [R325, entry]) (by simp [srow, R325, entry])
+    hasParent0_R325 parent0_R325.symm n]
+  simp [R325, Am, entry, List.range', flatMap_const_singleton]
+
+/-- ★★★★★ シート行325 `(0,0,0)(1,1,1)(2,0,0) = psi(W_w*w) ∈ W 0`。 -/
+theorem R325_mem : R325 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_R325 n]
+  exact Am_mem n
+
+#print axioms R325_mem
+#print axioms R322_mem
 end Small
 end TRIO
