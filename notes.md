@@ -774,3 +774,16 @@ GoodP_all の 4 段のうち root と seg だけで足りた（bms で塔を確�
   354 = R351 + 351 のセグメント（SegA_z1c）、355 = R351(2,1,0)（SegA_one 1）、356 = R351(2,2,0)（RunG_snoc2）。
 観察: シートの 346 以降は「R344 / R351 を新しい台座にして、既に作った段（SegA_one, U11, unit11_1, z1c,
 RunG_snoc2, DiaV, z1）を繰り返す」形。台座が RunA 0 1 になるたびに一気に進む。
+
+### 2026-09-04 (続き58) 行 357〜360: junk の語 Zw（z の列と 1 の列）
+- GoodF を GoodFb（根を除く 3 段）と GoodF（+ 根）に分けた。連鎖補題 Dzf_* は GoodFb で足りる。
+- 記録 (a,b,0) の右の junk の字: zcol a b true = (a+1,b+1,1)（z）、false = (a+2,1,0)（1 の列）。
+  Zw w a b = w.map (zcol a b)。
+- oper_z1_Zw: Y0 ++ (a,b,0) :: Zw w a b ++ [(a+1,b+1,1)] の展開 = Y0 ++ Dzf (Zw w) a b n（b ≥ 1）。
+  マスク: z の位置は le1（行 0 の親は記録、行 1 の親も記録、間に候補なし）、1 の列は行 1 = 1 ≤ b で le1 でない。
+- GoodFb_snocz: 語の最後に z を足しても普遍（上の展開 + Dzf_W / _RunG / _LwA）。
+  GoodFb_nil, GoodFb_z1c（= GoodF_z1c）、GoodFb_z1c_rep m: 語 [z,1] ++ [z]^m。
+- 357 = R351(2,2,0) + Zw [z,1,z] 2 2（PkGA）、358 = 357(3,3,0)（PU）、
+  359 = R338 + 記録 + Zw [z,1,z,z] 1 1（seg）、360 = Zw [z,1,z,z,z]。
+- 残りの壁: 語の最後に「1 の列」を足すには「語 + 任意の Bok ブロック（高さ a+2）」の普遍性が要る
+  （snocd_gen の hang）。GoodP_all は語が z だけの場合。363〜365（[z,1,z,1] 等）はそれ待ち。

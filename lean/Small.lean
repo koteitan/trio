@@ -15283,7 +15283,16 @@ theorem R348_mem : R344 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ ×
 
 /-! ### junk の族の抽象化 `GoodF`（記録の右に付ける junk が 4 段すべてで普遍） -/
 
-/-- `J a b` = 記録 `(a,b,0)` の右に付ける junk。 -/
+/-- 根を除いた 3 段（`PU` / `PkGA` / `SegA`）で普遍な junk の族。`J a b` = 記録 `(a,b,0)` の右の junk。 -/
+structure GoodFb (J : ℕ → ℕ → TrioSeq) : Prop where
+  ge : ∀ a b, ∀ x ∈ J a b, a + 1 ≤ x.1
+  mono : ∀ a b, Mono (J a b)
+  shift : ∀ a b s, shiftr01 s 0 (J a b) = J (a + s) b
+  pu : ∀ y c : ℕ, 2 ≤ y → JkU y c (J (c + 1) (y + 1))
+  pk : ∀ c : ℕ, JkGU c (J (c + 1) 2)
+  seg : ∀ h : ℕ, SegA h (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: J (h + 1) 1)
+
+/-- 4 段（`GoodFb` に根を足したもの）。 -/
 structure GoodF (J : ℕ → ℕ → TrioSeq) : Prop where
   ge : ∀ a b, ∀ x ∈ J a b, a + 1 ≤ x.1
   mono : ∀ a b, Mono (J a b)
@@ -15292,6 +15301,9 @@ structure GoodF (J : ℕ → ℕ → TrioSeq) : Prop where
   pk : ∀ c : ℕ, JkGU c (J (c + 1) 2)
   seg : ∀ h : ℕ, SegA h (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: J (h + 1) 1)
   root : Aok (((0, 0, 0) : ℕ × ℕ × ℕ) :: J 0 0)
+
+theorem GoodF.toGoodFb {J : ℕ → ℕ → TrioSeq} (h : GoodF J) : GoodFb J :=
+  ⟨h.ge, h.mono, h.shift, h.pu, h.pk, h.seg⟩
 
 /-- 語 `ws` の junk の族。 -/
 theorem GoodF_wordP {ws : List TrioSeq} (hw : Wpl ws) (hG : GoodP ws) :
@@ -15312,7 +15324,7 @@ theorem Dzf_succ (J : ℕ → ℕ → TrioSeq) (a b : ℕ) (n : ℕ) : Dzf J a b
     Dzf J a b n ++ (((a + n, b + n, 0) : ℕ × ℕ × ℕ) :: J (a + n) (b + n)) := by
   simp [Dzf, List.range_succ]
 
-theorem Dzf_chainU {J : ℕ → ℕ → TrioSeq} (hG : GoodF J)
+theorem Dzf_chainU {J : ℕ → ℕ → TrioSeq} (hG : GoodFb J)
     {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
     {c : ℕ} {Z : TrioSeq} (hZ : E c Z) :
     ∀ (n : ℕ) (Jt : TrioSeq), JkU (y + n + 1) (c + n + 1) Jt →
@@ -15336,7 +15348,7 @@ theorem Dzf_chainU {J : ℕ → ℕ → TrioSeq} (hG : GoodF J)
         show y + (n + 1) + 2 = y + n + 3 from by omega,
         show c + n + 2 + 1 = c + n + 3 from by omega]
 
-theorem Dzf_W {J : ℕ → ℕ → TrioSeq} (hG : GoodF J)
+theorem Dzf_W {J : ℕ → ℕ → TrioSeq} (hG : GoodFb J)
     {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
     {c : ℕ} {Z : TrioSeq} (hZ : E c Z) : ∀ n : ℕ, Z ++ Dzf J (c + 1) (y + 1) n ∈ W 0
   | 0 => by simpa [Dzf] using ((IfcV_iface (y + 1) hE).bok.aok _ _ hZ).mem
@@ -15352,7 +15364,7 @@ theorem Dzf_W {J : ℕ → ℕ → TrioSeq} (hG : GoodF J)
       simpa [List.append_assoc, show c + 1 + (n + 1) = c + n + 2 from by omega,
         show y + 1 + (n + 1) = y + n + 2 from by omega] using h2
 
-theorem Dzf_W_RunG {J : ℕ → ℕ → TrioSeq} (hG : GoodF J) {E : ℕ → TrioSeq → Prop} (hI : Iface E)
+theorem Dzf_W_RunG {J : ℕ → ℕ → TrioSeq} (hG : GoodFb J) {E : ℕ → TrioSeq → Prop} (hI : Iface E)
     {j c : ℕ} {X : TrioSeq} (hX : RunG E j c X) : ∀ n : ℕ, X ++ Dzf J (c + 1) 2 n ∈ W 0 := by
   have hP : PkGA (c + 1) (X ++ Dzf J (c + 1) 2 1) :=
     ⟨E, hI, j, c, X, J (c + 1) 2, rfl, hX, by simp [Dzf], hG.pk c⟩
@@ -15372,7 +15384,7 @@ theorem Dzf_W_RunG {J : ℕ → ℕ → TrioSeq} (hG : GoodF J) {E : ℕ → Tri
       rw [e, ← List.append_assoc]
       exact Dzf_W hG (le_refl 2) (Ifc3_toIfcV Ifc3_PkGA) hP (n + 1)
 
-theorem Dzf_W_LwA {J : ℕ → ℕ → TrioSeq} (hG : GoodF J) {h : ℕ} {A : TrioSeq} (hA : LwA h A) :
+theorem Dzf_W_LwA {J : ℕ → ℕ → TrioSeq} (hG : GoodFb J) {h : ℕ} {A : TrioSeq} (hA : LwA h A) :
     ∀ n : ℕ, A ++ Dzf J (h + 1) 1 n ∈ W 0 := by
   have hX : RunA 0 (h + 1) (A ++ Dzf J (h + 1) 1 1) :=
     ⟨h, A, _, rfl, rfl, hA, by simpa [Dzf] using hG.seg h⟩
@@ -15403,7 +15415,7 @@ theorem Dzf_W_root {J : ℕ → ℕ → TrioSeq} (hG : GoodF J) : ∀ n : ℕ, D
         intro k _
         simp [Nat.add_comm]
       rw [e]
-      have h1 := Dzf_W_LwA hG (h := 0) (LwA_of_Aok hG.root) n
+      have h1 := Dzf_W_LwA hG.toGoodFb (h := 0) (LwA_of_Aok hG.root) n
       simpa [Dzf] using h1
 
 #print axioms Dzf_W_root
@@ -15627,7 +15639,7 @@ theorem R351_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
       = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: Jz1c 1 1 ++ [((1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)]) := by
     simp [R344, R341, Jz1c]
   rw [e, oper_z1_Jz1c R338 1 1 (by omega) n]
-  exact Dzf_W_LwA GoodF_z1c (LwA_of_Aok Aok_R338) n
+  exact Dzf_W_LwA GoodF_z1c.toGoodFb (LwA_of_Aok Aok_R338) n
 
 #print axioms R351_mem
 
@@ -15663,7 +15675,7 @@ theorem SegA_z1c (h : ℕ) :
     refine A1_intro (Or.inr (Or.inl ?_))
     intro n _
     rw [oper_z1_Jz1c A' (h + s + 1) 1 (by omega) n]
-    exact Dzf_W_LwA GoodF_z1c (h := h + s) ⟨P, hP, hA'⟩ n
+    exact Dzf_W_LwA GoodF_z1c.toGoodFb (h := h + s) ⟨P, hP, hA'⟩ n
 
 def R351 : TrioSeq := R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]
 
@@ -15708,6 +15720,251 @@ theorem R356_mem : R351 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   RunG_snoc2 Iface_RunA0 0 1 R351 R351_RunA0
 
 #print axioms R356_mem
+
+
+/-! ### junk の語「z の列と 1 の列」`Zw` と、行 357〜360 -/
+
+/-- 記録 `(a,b,0)` の右の junk の字: `true` = z の列、`false` = 1 の列。 -/
+def zcol (a b : ℕ) : Bool → ℕ × ℕ × ℕ
+  | true => (a + 1, b + 1, 1)
+  | false => (a + 2, 1, 0)
+
+def Zw (w : List Bool) (a b : ℕ) : TrioSeq := w.map (zcol a b)
+
+theorem Zw_nil (a b : ℕ) : Zw [] a b = [] := rfl
+
+theorem Zw_snoc (w : List Bool) (t : Bool) (a b : ℕ) :
+    Zw (w ++ [t]) a b = Zw w a b ++ [zcol a b t] := by simp [Zw]
+
+theorem zcol_shift (a b s : ℕ) (t : Bool) :
+    shiftr01 s 0 [zcol a b t] = [zcol (a + s) b t] := by
+  cases t <;> simp [zcol, shiftr01] <;> omega
+
+theorem Zw_shift (w : List Bool) (a b s : ℕ) : shiftr01 s 0 (Zw w a b) = Zw w (a + s) b := by
+  induction w with
+  | nil => simp [Zw, shiftr01]
+  | cons t w ih =>
+      rw [Zw, Zw, List.map_cons, List.map_cons,
+        show (zcol a b t :: w.map (zcol a b)) = [zcol a b t] ++ w.map (zcol a b) from rfl,
+        shiftr01_append0, zcol_shift]
+      simpa [Zw] using congrArg (fun x => [zcol (a + s) b t] ++ x) ih
+
+theorem Zw_ge {w : List Bool} {a b : ℕ} : ∀ x ∈ Zw w a b, a + 1 ≤ x.1 := by
+  intro x hx
+  obtain ⟨t, -, rfl⟩ := List.mem_map.mp hx
+  cases t <;> simp [zcol]
+
+theorem Zw_mono {w : List Bool} {a b : ℕ} : Mono (Zw w a b) := by
+  intro x hx
+  obtain ⟨t, -, rfl⟩ := List.mem_map.mp hx
+  cases t <;> simp [zcol]
+
+theorem MidD_Jw (a v : ℕ) (ha : 1 ≤ a) (hv : 1 ≤ v) (w : List Bool) :
+    MidD (a + 1) (((a, v, 0) : ℕ × ℕ × ℕ) :: Zw w a v) := by
+  have h := MidD_append (MidD_col a v ha hv) (N := Zw w a v) Zw_ge Zw_mono
+  simpa using h
+
+theorem entry_Jw {w : List Bool} {a b : ℕ} {r i : ℕ} (hi : i < w.length) :
+    entry (Zw w a b) r i = entry [zcol a b (w[i]'hi)] r 0 := by
+  rw [Zw, entry_map_lt (zcol a b) w hi r]
+
+open Classical in
+/-- junk の語の上の z の列の展開は、記録と junk の対角の塔。 -/
+theorem oper_z1_Jw (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) (w : List Bool) (n : ℕ) :
+    (Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: Zw w a b ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]))⟦n⟧
+      = Y0 ++ Dzf (Zw w) a b n := by
+  set C : TrioSeq := Zw w a b with hC
+  set T : TrioSeq := ((a, b, 0) : ℕ × ℕ × ℕ) :: C ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] with hT
+  set M : TrioSeq := Y0 ++ T with hM
+  set p := Y0.length with hp
+  set L := w.length with hL
+  have hCL : C.length = L := by simp [hC, Zw, hL]
+  have hlen : M.length = p + L + 2 := by simp [hM, hT, hC, Zw, hp, hL]; omega
+  have eT : ∀ i q, entry M i (p + q) = entry T i q := fun i q => entry_append_right Y0 T i q
+  have e0p : entry M 0 p = a ∧ entry M 1 p = b ∧ entry M 2 p = 0 := by
+    refine ⟨?_, ?_, ?_⟩ <;> · rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have eC : ∀ r i (hi : i < L), entry M r (p + 1 + i) = entry [zcol a b (w[i]'(by omega))] r 0 := by
+    intro r i hi
+    rw [show p + 1 + i = p + (i + 1) from by omega, eT]
+    have : entry T r (i + 1) = entry C r i := by
+      simp only [hT, entry, List.cons_append, List.getD_cons_succ]
+      rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+        List.getElem?_append_left (by omega)]
+    rw [this, hC, entry_Jw hi]
+  have ege : ∀ i, i < L → a + 1 ≤ entry M 0 (p + 1 + i) := by
+    intro i hi
+    rw [eC 0 i hi]
+    cases w[i] <;> simp [zcol, entry] <;> omega
+  have ege' : ∀ j, p < j → j < p + 1 + L → a + 1 ≤ entry M 0 j := by
+    intro j hj1 hj2
+    obtain ⟨i, hi, rfl⟩ : ∃ i, i < L ∧ j = p + 1 + i := ⟨j - (p + 1), by omega, by omega⟩
+    exact ege i hi
+  -- z の位置は行 1 の子
+  have hl1 : ∀ i (hi : i < L), w[i] = true → le1 M p (p + 1 + i) := by
+    intro i hi ht
+    have e0 : entry M 0 (p + 1 + i) = a + 1 := by rw [eC 0 i hi, ht]; simp [zcol, entry]
+    have e1 : entry M 1 (p + 1 + i) = b + 1 := by rw [eC 1 i hi, ht]; simp [zcol, entry]
+    have hl0 : le0 M p (p + 1 + i) := by
+      refine ⟨by omega, by omega, Relation.ReflTransGen.single ?_⟩
+      refine ⟨by omega, by omega, by omega, by rw [e0p.1, e0]; omega, ?_⟩
+      intro j hj
+      rw [e0]
+      exact ege' j hj.1 (by omega)
+    refine ⟨by omega, by omega, Relation.ReflTransGen.single ?_⟩
+    refine ⟨by omega, by omega, by omega, by rw [e0p.2.1, e1]; omega, hl0, ?_⟩
+    intro j hj
+    have := le0_eq_of_min (M := M) (p := p) (a := a) hj.1 hj.2 e0
+      (fun j'' h1 h2 => ege' j'' h1 (by omega))
+    subst this
+    rw [e1]
+  -- 1 の列は行 1 の子ではない
+  have hnl1 : ∀ i (hi : i < L), w[i] = false → ¬ le1 M p (p + 1 + i) := by
+    intro i hi hf hc
+    have e1 : entry M 1 (p + 1 + i) = 1 := by rw [eC 1 i hi, hf]; simp [zcol, entry]
+    have := le1_row1_lt hc (by omega)
+    rw [e0p.2.1, e1] at this
+    omega
+  have hbody : ∀ k i (hi : i < L),
+      ((entry C 0 i + k, entry C 1 i + (if le1 M p (p + 1 + i) then k else 0),
+        entry C 2 i) : ℕ × ℕ × ℕ) = zcol (a + k) (b + k) (w[i]'(by omega)) := by
+    intro k i hi
+    have hiw : i < w.length := by omega
+    rw [hC, entry_Jw hiw, entry_Jw hiw, entry_Jw hiw]
+    cases hw : w[i]'hiw with
+    | true =>
+        rw [if_pos (hl1 i hi hw)]
+        simp [hw, zcol, entry]
+        omega
+    | false =>
+        rw [if_neg (hnl1 i hi hw)]
+        simp [hw, zcol, entry]
+        omega
+  rw [oper_z1_mask Y0 a b C (fun x hx => Zw_ge x hx) n]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  congr 1
+  rw [hCL]
+  apply List.ext_getElem
+  · simp [Zw, hL]
+  · intro i h1 h2
+    have hi : i < L := by simpa [hL, Zw] using h2
+    simp only [List.getElem_map, List.getElem_range]
+    rw [hbody k i hi]
+    simp [Zw]
+
+/-- 空の junk。 -/
+theorem GoodFb_nil : GoodFb (Zw []) where
+  ge := fun a b => Zw_ge
+  mono := fun a b => Zw_mono
+  shift := fun a b s => Zw_shift [] a b s
+  pu := fun y c hy => by simpa [Zw_nil] using JkU_nil' hy c
+  pk := fun c => by simpa [Zw_nil] using JkGU_nil c
+  seg := fun h => by simpa [Zw_nil] using SegA_one h
+
+theorem Zw_z1c : Zw [true, false] = Jz1c := by
+  funext a b
+  simp [Zw, Jz1c, zcol]
+
+theorem GoodFb_z1c : GoodFb (Zw [true, false]) := by
+  rw [Zw_z1c]; exact GoodF_z1c.toGoodFb
+
+/-- ★ 語の最後に z の列を足しても普遍。 -/
+theorem GoodFb_snocz {w : List Bool} (hG : GoodFb (Zw w)) : GoodFb (Zw (w ++ [true])) where
+  ge := fun a b => Zw_ge
+  mono := fun a b => Zw_mono
+  shift := fun a b s => Zw_shift (w ++ [true]) a b s
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := Zw_ge (w := w ++ [true]) (a := c + 1) (b := y + 1) x hx; omega,
+      Zw_mono, ?_⟩
+    intro E hE t Z hZ
+    rw [Zw_shift, Zw_snoc]
+    refine A1_intro (Or.inr (Or.inl ?_))
+    intro n _
+    have e : Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        (Zw w (c + 1 + t) (y + 1) ++ [zcol (c + 1 + t) (y + 1) true]))
+        = Z ++ (((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ) :: Zw w (c + 1 + t) (y + 1) ++
+          [((c + 1 + t + 1, y + 1 + 1, 1) : ℕ × ℕ × ℕ)]) := by
+      simp [zcol, List.append_assoc]
+    rw [e, oper_z1_Jw Z (c + 1 + t) (y + 1) (by omega) w n]
+    have h := Dzf_W hG hy hE (c := c + t) hZ n
+    simpa [show c + t + 1 = c + 1 + t from by omega] using h
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := Zw_ge (w := w ++ [true]) (a := c + 1) (b := 2) x hx; omega,
+      Zw_mono, ?_⟩
+    intro j t X hX
+    rw [Zw_shift, Zw_snoc]
+    refine A1_intro (Or.inr (Or.inl ?_))
+    intro n _
+    have e : X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        (Zw w (c + 1 + t) 2 ++ [zcol (c + 1 + t) 2 true]))
+        = X ++ (((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ) :: Zw w (c + 1 + t) 2 ++
+          [((c + 1 + t + 1, 2 + 1, 1) : ℕ × ℕ × ℕ)]) := by
+      simp [zcol, List.append_assoc]
+    rw [e, oper_z1_Jw X (c + 1 + t) 2 (by omega) w n]
+    have h := Dzf_W_RunG hG hI (c := c + t) hX n
+    simpa [show c + t + 1 = c + 1 + t from by omega] using h
+  seg := by
+    intro h
+    refine ⟨by simpa [show h + 1 + 1 = h + 2 from by omega] using
+        MidD_Jw (h + 1) 1 (by omega) (by omega) (w ++ [true]), by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    have e : shiftr01 s 0 (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: Zw (w ++ [true]) (h + 1) 1)
+        = ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: Zw w (h + s + 1) 1 ++
+          [((h + s + 1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)] := by
+      rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: Zw (w ++ [true]) (h + 1) 1
+          = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ Zw (w ++ [true]) (h + 1) 1 from rfl,
+        shiftr01_append0, shift_col, Zw_shift, Zw_snoc]
+      simp [zcol, show h + 1 + s = h + s + 1 from by omega, List.append_assoc]
+    rw [e]
+    refine A1_intro (Or.inr (Or.inl ?_))
+    intro n _
+    rw [oper_z1_Jw A' (h + s + 1) 1 (by omega) w n]
+    exact Dzf_W_LwA hG (h := h + s) ⟨P, hP, hA'⟩ n
+
+theorem GoodFb_z1c_rep : ∀ m : ℕ, GoodFb (Zw ([true, false] ++ List.replicate m true))
+  | 0 => by simpa using GoodFb_z1c
+  | (m + 1) => by
+      have h := GoodFb_snocz (GoodFb_z1c_rep m)
+      have e : [true, false] ++ List.replicate m true ++ [true]
+          = [true, false] ++ List.replicate (m + 1) true := by
+        rw [List.append_assoc, ← List.replicate_succ']
+      rwa [e] at h
+
+/-- ★★★★★ シート行357 `R351 (2,2,0)(3,3,1)(4,1,0)(3,3,1) = psi(W_w*W+W_w+psi_2(W_w*W+W_w))`。 -/
+theorem R357_PkGA : PkGA 2 (R351 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ Zw [true, false, true] 2 2)) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, R351, Zw [true, false, true] 2 2, rfl, R351_RunA0, rfl,
+    (GoodFb_z1c_rep 1).pk 1⟩
+
+theorem R357_mem : R351 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ),
+    ((4, 1, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := (PkGA_Aok R357_PkGA).mem
+  simpa [Zw, zcol] using h
+
+/-- ★★★★★ シート行358 `R357 (3,3,0) = psi(W_w*W+W_w+W_3)`。 -/
+theorem R358_mem : R351 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ),
+    ((4, 1, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hPU : PU 2 3 ((R351 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ Zw [true, false, true] 2 2)) ++
+      ([((3, 3, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+    ⟨PkGA, 2, _, [], Ifc3_toIfcV Ifc3_PkGA, rfl, R357_PkGA, rfl, JkU_nil' (le_refl 2) 2⟩
+  have h := ((BaseOk_PU 2).aok _ _ hPU).mem
+  simpa [Zw, zcol, List.append_assoc] using h
+
+/-- ★★★★★ シート行359 `R351 (2,2,1) = psi(W_w*W+W_w*2)`。 -/
+theorem R359_mem : R351 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := ((GoodFb_z1c_rep 2).seg 0).reapp P0 BaseOk_zero 0 R338
+    (LwB_of_base ⟨Aok_R338, rfl⟩)
+  simpa [Zw, zcol, R351, R344, R341, List.append_assoc] using h
+
+/-- ★★★★★ シート行360 `R359 (2,2,1) = psi(W_w*W+W_w*3)`。 -/
+theorem R360_mem : R351 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := ((GoodFb_z1c_rep 3).seg 0).reapp P0 BaseOk_zero 0 R338
+    (LwB_of_base ⟨Aok_R338, rfl⟩)
+  simpa [Zw, zcol, R351, R344, R341, List.append_assoc] using h
+
+#print axioms R360_mem
 
 end Small
 end TRIO
