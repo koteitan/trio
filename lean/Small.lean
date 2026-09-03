@@ -15552,5 +15552,162 @@ theorem R350_mem : R349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 
 #print axioms R350_mem
 
+
+/-! ### 「z の列 + 1 の列」の junk の上の z の列の展開。行 351 -/
+
+theorem le1_row1_le {M : TrioSeq} {i j : ℕ} (h : Relation.ReflTransGen (nextrel1 M) i j) :
+    entry M 1 i ≤ entry M 1 j := by
+  induction h with
+  | refl => exact le_rfl
+  | tail _ h2 ih => exact le_trans ih (le_of_lt h2.2.2.2.1)
+
+/-- 行 1 の親鎖は行 1 を狭義に増やす。 -/
+theorem le1_row1_lt {M : TrioSeq} {i j : ℕ} (h : le1 M i j) (hne : i ≠ j) :
+    entry M 1 i < entry M 1 j := by
+  obtain ⟨-, -, hch⟩ := h
+  rcases Relation.ReflTransGen.cases_tail hch with h1 | ⟨c, hc1, hc2⟩
+  · exact absurd h1.symm hne
+  · have h3 := le1_row1_le hc1
+    have h4 := hc2.2.2.2.1
+    omega
+
+open Classical in
+/-- `Jz1c` の junk の上の z の列の展開は、記録と junk の対角の塔。 -/
+theorem oper_z1_Jz1c (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) (n : ℕ) :
+    (Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: Jz1c a b ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]))⟦n⟧
+      = Y0 ++ Dzf Jz1c a b n := by
+  set T : TrioSeq := ((a, b, 0) : ℕ × ℕ × ℕ) :: Jz1c a b ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] with hT
+  set M : TrioSeq := Y0 ++ T with hM
+  set p := Y0.length with hp
+  have eT : ∀ i q, entry M i (p + q) = entry T i q := fun i q => entry_append_right Y0 T i q
+  have hlen : M.length = p + 4 := by simp [hM, hT, Jz1c, hp]
+  have e0 : entry M 0 p = a ∧ entry M 1 p = b ∧ entry M 2 p = 0 := by
+    refine ⟨?_, ?_, ?_⟩ <;> · rw [show p = p + 0 from rfl, eT]; simp [hT, Jz1c, entry]
+  have e1 : entry M 0 (p + 1) = a + 1 ∧ entry M 1 (p + 1) = b + 1 ∧ entry M 2 (p + 1) = 1 := by
+    refine ⟨?_, ?_, ?_⟩ <;> · rw [eT]; simp [hT, Jz1c, entry]
+  have e2 : entry M 0 (p + 2) = a + 2 ∧ entry M 1 (p + 2) = 1 ∧ entry M 2 (p + 2) = 0 := by
+    refine ⟨?_, ?_, ?_⟩ <;> · rw [eT]; simp [hT, Jz1c, entry]
+  -- z の位置は行 1 の子
+  have hl0z : le0 M p (p + 1) := by
+    refine ⟨by omega, by omega, Relation.ReflTransGen.single ?_⟩
+    exact ⟨by omega, by omega, by omega, by rw [e0.1, e1.1]; omega, by intro j hj; omega⟩
+  have hl1z : le1 M p (p + 1) := by
+    refine ⟨by omega, by omega, Relation.ReflTransGen.single ?_⟩
+    refine ⟨by omega, by omega, by omega, by rw [e0.2.1, e1.2.1]; omega, hl0z, ?_⟩
+    intro j hj
+    have hjle : j ≤ p + 1 := le0_le' hj.2
+    have : j = p + 1 := by omega
+    subst this
+    exact le_rfl
+  have hnl1 : ¬ le1 M p (p + 2) := by
+    intro hc
+    have := le1_row1_lt hc (by omega)
+    rw [e0.2.1, e2.2.1] at this
+    omega
+  have hge : ∀ x ∈ Jz1c a b, a + 1 ≤ x.1 := GoodF_z1c.ge a b
+  rw [oper_z1_mask Y0 a b (Jz1c a b) hge n]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  congr 1
+  have hL : (Jz1c a b).length = 2 := by simp [Jz1c]
+  rw [hL]
+  show (List.range 2).map _ = Jz1c (a + k) (b + k)
+  rw [show (2 : ℕ) = 1 + 1 from rfl, List.range_add]
+  simp only [List.map_append, List.range_one, List.map_cons, List.map_nil, List.map_map]
+  rw [if_pos (by simpa using hl1z), if_neg (by simpa using hnl1)]
+  simp [Jz1c, entry]
+  omega
+
+/-- ★★★★★ シート行351 `R344 (2,2,1) = psi(W_w*W+W_w)`。 -/
+theorem R351_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  have e : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]
+      = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: Jz1c 1 1 ++ [((1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)]) := by
+    simp [R344, R341, Jz1c]
+  rw [e, oper_z1_Jz1c R338 1 1 (by omega) n]
+  exact Dzf_W_LwA GoodF_z1c (LwA_of_Aok Aok_R338) n
+
+#print axioms R351_mem
+
+
+/-! ### 行 351 の 4 列をセグメントに一般化して、行 352〜356 -/
+
+/-- ★ 行 351 の 4 列は、どの梯子の元の上でも通るセグメント。 -/
+theorem SegA_z1c (h : ℕ) :
+    SegA h [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ),
+      ((h + 3, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)] where
+  mid := by
+    refine ⟨by simp, ?_, by simp [entry], by simp [entry], ?_, ?_⟩
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl | rfl | rfl <;> simp
+    · intro j hj1 hjl
+      simp only [List.length_cons, List.length_nil] at hjl
+      rcases (show j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl <;>
+        simp [entry] <;> omega
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl | rfl | rfl <;> simp
+  head1 := by simp [entry]
+  reapp := by
+    intro P hP s A' hA'
+    have e : shiftr01 s 0 [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ),
+        ((h + 3, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)]
+        = ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: Jz1c (h + s + 1) 1 ++
+          [((h + s + 1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)] := by
+      simp [Jz1c, shiftr01]
+      omega
+    rw [e]
+    refine A1_intro (Or.inr (Or.inl ?_))
+    intro n _
+    rw [oper_z1_Jz1c A' (h + s + 1) 1 (by omega) n]
+    exact Dzf_W_LwA GoodF_z1c (h := h + s) ⟨P, hP, hA'⟩ n
+
+def R351 : TrioSeq := R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]
+
+theorem R351_RunA0 : RunA 0 1 R351 :=
+  ⟨0, R338, _, rfl, rfl, LwA_of_Aok Aok_R338, by
+    simpa [R351, R344, R341] using SegA_z1c 0⟩
+
+theorem Aok_R351 : Aok R351 := (BaseOk_RunA 0).aok _ _ R351_RunA0
+
+theorem R351_row1 : ∀ j, 0 < j → j < R351.length → 1 ≤ entry R351 1 j := by
+  intro j hj0 hjl
+  simp only [R351, R344, R341, R338, List.length_append, List.length_cons,
+    List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl <;> simp [R351, R344, R341, R338, entry]
+
+/-- ★★★★★ シート行352 `R351 (1,1,0) = psi(W_w*W+W_w+W)`。 -/
+theorem R352_mem : R351 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R351 (Ancd_of_row1 R351_row1 1)
+    (fun B hB => by simpa [bump] using Bok.append Aok_R351 hB)
+
+/-- ★★★★★ シート行353 `R351 (1,1,0)(2,2,1)(3,1,0) = psi(W_w*W+W_w+psi_1(W_w*W))`。 -/
+theorem R353_mem : R351 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := (SegA_unit11_1 0).reapp P0 BaseOk_zero 0 R351 (LwB_of_base ⟨Aok_R351, rfl⟩)
+  simpa using h
+
+/-- ★★★★★ シート行354 `R353 (2,2,1) = psi(W_w*W+W_w+psi_1(W_w*W+W_w))`。 -/
+theorem R354_mem : R351 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := (SegA_z1c 0).reapp P0 BaseOk_zero 0 R351 (LwB_of_base ⟨Aok_R351, rfl⟩)
+  simpa using h
+
+/-- ★★★★★ シート行355 `R351 (2,1,0) = psi(W_w*W+W_w+psi_1(W_w*W+W_w)*W)`。 -/
+theorem R355_mem : R351 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hR : RunA 0 2 (R351 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)]) :=
+    ⟨1, R351, _, rfl, rfl, RunA0_LwA R351_RunA0, by simpa using SegA_one 1⟩
+  exact ((BaseOk_RunA 0).aok _ _ hR).mem
+
+/-- ★★★★★ シート行356 `R351 (2,2,0) = psi(W_w*W+W_w+W_2)`。 -/
+theorem R356_mem : R351 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunG_snoc2 Iface_RunA0 0 1 R351 R351_RunA0
+
+#print axioms R356_mem
+
 end Small
 end TRIO
