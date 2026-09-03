@@ -15966,5 +15966,29 @@ theorem R360_mem : R351 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ ×
 
 #print axioms R360_mem
 
+
+/-! ### 行 361 -/
+
+theorem R344_z_rep (n : ℕ) :
+    R344 ++ (List.range n).flatMap (fun _ => [((2, 2, 1) : ℕ × ℕ × ℕ)])
+      = R338 ++ (((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: Zw ([true, false] ++ List.replicate n true) 1 1) := by
+  rw [flatMap_const_singleton]
+  simp [R344, R341, Zw, zcol, List.append_assoc, List.map_append, List.map_replicate]
+
+theorem R344_z_rep_mem (n : ℕ) :
+    R344 ++ (List.range n).flatMap (fun _ => [((2, 2, 1) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  rw [R344_z_rep n]
+  have h := ((GoodFb_z1c_rep n).seg 0).reapp P0 BaseOk_zero 0 R338 (LwB_of_base ⟨Aok_R338, rfl⟩)
+  simpa using h
+
+/-- ★★★★★ シート行361 `R344 (2,2,1)(3,0,0) = psi(W_w*W+W_w*w)`。 -/
+theorem R361_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R344) (M := [((2, 2, 1) : ℕ × ℕ × ℕ)]) (d := 3)
+    (by simp) (by simp [entry]) (by intro r hr1 hrl; simp at hrl; omega)
+    R344_z_rep_mem
+  simpa using h
+
+#print axioms R361_mem
+
 end Small
 end TRIO
