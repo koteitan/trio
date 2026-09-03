@@ -846,3 +846,14 @@ RunG_snoc2, DiaV, z1）を繰り返す」形。台座が RunA 0 1 になるた�
 - GoodFb_snoc_oneC（場合 iii: 1 の列、snocd_gen、hang = 荷つきの字 (k,B)）。
 残り: (i) 荷の内部展開（oper_shift）、(ii) 荷の末尾 (0,0,0) → 字の n 複製（flat_mem''）、
 そして k の強帰納法 + 荷の A2' で束ねる。
+
+### 2026-09-04 (続き63) ★★★★★ GoodFb_wordC が緑（複合字の語はすべて普遍）
+GoodFb_snocC: 字 (k, Y)（z + 1 の列 k 本 + 荷 Y）を 1 つ継いでも普遍。
+ k の強帰納法 ＋ 内側で荷 Y の W 帰納法（A2'）。4 つの場合が全部閉じる:
+ (i) GoodFb_snoc_innerC（荷の末尾が非零 → oper_shift で Y[n]）
+ (ii) GoodFb_snoc_dupC（荷の末尾が (0,0,0) → flat_mem'' で字を n 複製、n=0 は W_take）
+ (iii) GoodFb_snoc_oneC（荷が空で k ≥ 1 → snocd_gen、hang は (k-1, B)、外側 IH）
+ (iv) GoodFb_snoczC（荷が空で k = 0 → 対角の連鎖）
+GoodFb_wordC: 語の長さの帰納法（List.reverseRecOn）で全部の語に。
+⟹ 「語の最後に 1 の列を足せない」壁が消えた。1 の列は字の中に持たせ、hang は
+   「1 の列を 1 本減らして荷にする」で供給する、が答えだった。

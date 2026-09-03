@@ -16678,5 +16678,195 @@ theorem GoodFb_snoc_oneC {ws : List (ℕ × TrioSeq)} (hw : WplC ws) (k : ℕ)
 
 #print axioms GoodFb_snoc_oneC
 
+
+/-! ### 場合 (i)(ii): 荷の内部展開と、荷の複製 -/
+
+/-- 場合 (i): 荷の末尾が非零なら、荷だけが展開される。 -/
+theorem GoodFb_snoc_innerC {ws : List (ℕ × TrioSeq)} (hw : WplC ws) (k : ℕ) {Y : TrioSeq}
+    (hY : Bok Y) (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hIH : ∀ n, 1 ≤ n → GoodFb (fun a b => wordC a b (ws ++ [(k, Y⟦n⟧)]))) :
+    GoodFb (fun a b => wordC a b (ws ++ [(k, Y)])) := by
+  refine GoodFb_of_keyC (WplC_append hw (WplC_singleton hY)) hIH ?_
+  intro Z a b hb hn
+  have e : ∀ B : TrioSeq, Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b (ws ++ [(k, B)]))
+      = (Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b (ws ++ [(k, [])]))) ++ shiftr01 (a + 2) 0 B := by
+    intro B
+    rw [wordC_snoc_pay]
+    simp [List.append_assoc]
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn'
+  rw [e Y, oper_shift _ Y (a + 2) n hlen hp, ← e (Y⟦n⟧)]
+  exact hn n hn'
+
+/-- 場合 (ii): 荷の末尾が `(0,0,0)` なら、字が `n` 個に複製される。 -/
+theorem GoodFb_snoc_dupC {ws : List (ℕ × TrioSeq)} (hw : WplC ws) (k : ℕ) {Y : TrioSeq}
+    (hY : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) (hY' : Bok Y)
+    (hIH : ∀ n, 1 ≤ n → GoodFb (fun a b => wordC a b (ws ++ List.replicate n (k, Y)))) :
+    GoodFb (fun a b => wordC a b (ws ++ [(k, Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])])) := by
+  refine GoodFb_of_keyC (WplC_append hw (WplC_singleton hY)) hIH ?_
+  intro Z a b hb hn
+  have hhead : entry (colC a b (k, Y)) 0 0 < a + 2 := by
+    rw [entry_colC_zero]; simp [entry]
+  have htail : ∀ r, 1 ≤ r → r < (colC a b (k, Y)).length → a + 2 ≤ entry (colC a b (k, Y)) 0 r := by
+    intro r hr1 hrl
+    obtain ⟨u, rfl⟩ : ∃ u, r = u + 1 := ⟨r - 1, by omega⟩
+    rw [colC_length] at hrl
+    rcases Nat.lt_or_ge u k with hlt | hge
+    · rw [entry_colC_one a b (k, Y) 0 u hlt]; simp [entry]
+    · obtain ⟨u', rfl⟩ : ∃ u', u = k + u' := ⟨u - k, by omega⟩
+      have hu' : u' < Y.length := by simp at hrl; omega
+      rw [show k + u' + 1 = k + u' + 1 from rfl, entry_colC_pay a b (k, Y) 0 u' hu',
+        entry0_shiftr01 hu']
+      omega
+  have h := flat_mem'' (Y0 := Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws))
+    (M := colC a b (k, Y)) (d := a + 2) (colC_ne a b (k, Y)) hhead htail
+    (fun n => by
+      match n with
+      | 0 =>
+          have h1 := hn 1 (le_refl 1)
+          rw [wordC_append, wordC_replicate] at h1
+          simp only [List.range_one, List.flatMap_cons, List.flatMap_nil,
+            List.append_nil] at h1
+          have h2 := W_take (by
+            rw [show Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: (wordC a b ws ++ colC a b (k, Y)))
+                = (Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws)) ++ colC a b (k, Y) from by
+                  simp [List.append_assoc]] at h1
+            exact h1) (Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws)).length
+          rw [List.take_left] at h2
+          simpa using h2
+      | (n + 1) =>
+          have h1 := hn (n + 1) (by omega)
+          rw [wordC_append, wordC_replicate] at h1
+          simpa [List.append_assoc] using h1)
+  rw [wordC_append, wordC_singleton, colC_snoc_zero]
+  simpa [List.append_assoc] using h
+
+#print axioms GoodFb_snoc_dupC
+
+
+/-! ### 主帰納法: 字を 1 つ継いでも普遍（`k` の強帰納法 ＋ 荷の W 帰納法） -/
+
+theorem GoodFb_rep {ws : List (ℕ × TrioSeq)} (hw : WplC ws)
+    {p : ℕ × TrioSeq} (hp : Bok p.2)
+    (hstep : ∀ ws' : List (ℕ × TrioSeq), WplC ws' → GoodFb (fun a b => wordC a b ws') →
+      GoodFb (fun a b => wordC a b (ws' ++ [p])))
+    (hG : GoodFb (fun a b => wordC a b ws)) :
+    ∀ n : ℕ, GoodFb (fun a b => wordC a b (ws ++ List.replicate n p))
+  | 0 => by simpa using hG
+  | (n + 1) => by
+      have hwn : WplC (ws ++ List.replicate n p) := by
+        refine WplC_append hw ?_
+        intro q hq
+        rw [List.eq_of_mem_replicate hq]
+        exact hp
+      have h := hstep (ws ++ List.replicate n p) hwn (GoodFb_rep hw hp hstep hG n)
+      have e : ws ++ List.replicate n p ++ [p] = ws ++ List.replicate (n + 1) p := by
+        rw [List.append_assoc, ← List.replicate_succ']
+      rwa [e] at h
+
+/-- ★★★★★ 複合字を 1 つ継いでも普遍。 -/
+theorem GoodFb_snocC : ∀ (k : ℕ) (Y : TrioSeq), Bok Y → ∀ ws : List (ℕ × TrioSeq), WplC ws →
+    GoodFb (fun a b => wordC a b ws) → GoodFb (fun a b => wordC a b (ws ++ [(k, Y)])) := by
+  intro k
+  induction k using Nat.strong_induction_on with
+  | _ k ihk =>
+    -- まず荷が空の場合
+    have hnil : ∀ ws : List (ℕ × TrioSeq), WplC ws → GoodFb (fun a b => wordC a b ws) →
+        GoodFb (fun a b => wordC a b (ws ++ [(k, [])])) := by
+      match k with
+      | 0 => intro ws hw hG; exact GoodFb_snoczC hw hG
+      | (k' + 1) =>
+          intro ws hw hG
+          refine GoodFb_snoc_oneC hw k' ?_
+          intro B hB
+          exact ihk k' (by omega) B hB ws hw hG
+    -- 荷の W 帰納法
+    have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ ws : List (ℕ × TrioSeq), WplC ws →
+        GoodFb (fun a b => wordC a b ws) → GoodFb (fun a b => wordC a b (ws ++ [(k, Y)]))} := by
+      refine A2' ?_
+      intro Y hY
+      simp only [Set.mem_setOf_eq]
+      intro hYb ws hw hG
+      by_cases hshort : Y.length ≤ 1
+      · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+        · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+          subst hnil0
+          exact hnil ws hw hG
+        · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+          have hc0 : c.1 = 0 := hYb.root
+          obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+          have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+          subst hcz
+          have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+              = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+          rw [e]
+          refine GoodFb_snoc_dupC hw k (by simpa using hYb) Bok_nil ?_
+          intro n hn
+          exact GoodFb_rep hw (p := (k, ([] : TrioSeq))) Bok_nil
+            (fun ws' hw' hG' => hnil ws' hw' hG') hG n
+      have hlen2 : 2 ≤ Y.length := by omega
+      have hYne : Y ≠ [] := by intro hc; rw [hc] at hlen2; simp at hlen2
+      rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+      · exact absurd hl hshort
+      · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+        · -- 場合 (ii): 荷の末尾は (0,0,0)
+          obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+          have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+            Prod.ext hlast (Prod.ext he1 he2)
+          have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+              rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+                List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+              rfl
+            rw [h1, hcol]
+          have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+            rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+          have hop : Y⟦1⟧ = Y.dropLast := by
+            rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+            unfold Pred
+            rw [if_neg (by omega)]
+          have hdl := hnat 1 le_rfl
+          rw [hop] at hdl
+          simp only [Set.mem_setOf_eq] at hdl
+          have hdb : Bok Y.dropLast := Bok_dropLast hYb
+          rw [hsplit]
+          refine GoodFb_snoc_dupC hw k (by rw [← hsplit]; exact hYb) hdb ?_
+          intro n hn
+          exact GoodFb_rep hw (p := (k, Y.dropLast)) hdb
+            (fun ws' hw' hG' => hdl hdb ws' hw' hG') hG n
+        · -- 場合 (i): 荷の末尾は非零
+          have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+              entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+          have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+          refine GoodFb_snoc_innerC hw k hYb hlen2 hp ?_
+          intro n hn
+          have := hnat n hn
+          simp only [Set.mem_setOf_eq] at this
+          exact this (Bok_oper hYb hn) ws hw hG
+      · exact absurd hm (Nat.not_lt_zero m)
+    intro Y hYb ws hw hG
+    exact key hYb.mem hYb ws hw hG
+
+/-- ★★★★★ 荷が `Bok` の複合字の語はすべて普遍。 -/
+theorem GoodFb_wordC : ∀ ws : List (ℕ × TrioSeq), WplC ws → GoodFb (fun a b => wordC a b ws) := by
+  intro ws
+  induction ws using List.reverseRecOn with
+  | nil =>
+      intro _
+      exact ⟨fun a b => by simp [wordC_nil], fun a b => by simp [wordC_nil, Mono],
+        fun a b s => by simp [wordC_nil, shiftr01],
+        fun y c hy => by simpa [wordC_nil] using JkU_nil' hy c,
+        fun c => by simpa [wordC_nil] using JkGU_nil c,
+        fun h => by simpa [wordC_nil] using SegA_one h⟩
+  | append_singleton ws p ih =>
+      intro hw
+      have hw' : WplC ws := WplC_of_append_left hw
+      have hp : Bok p.2 := hw p (by simp)
+      have := GoodFb_snocC p.1 p.2 hp ws hw' (ih hw')
+      simpa using this
+
+#print axioms GoodFb_wordC
+
 end Small
 end TRIO
