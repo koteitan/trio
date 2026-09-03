@@ -14588,5 +14588,155 @@ theorem z1wP_mem {Y0 : TrioSeq} {a b : ℕ} {ws : List TrioSeq} (hw : Wpl ws)
 
 #print axioms z1wP_mem
 
+
+/-! ### 和: `A ++ B`（`B` は根が高さ 0）と、荷つきの語の影 `shwP` -/
+
+/-- 末尾に `(0,0,0)` を継ぐ。展開は前者。 -/
+theorem snoc_zero {A : TrioSeq} (hA : A ∈ W 0) (hne : A ≠ []) :
+    A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hAlen : 0 < A.length := List.length_pos_iff.mpr hne
+  have hlast : (A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]).length - 1 = A.length := by simp
+  have hz : entry (A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) 0 ((A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]).length - 1) = 0 ∧
+      entry (A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) 1 ((A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]).length - 1) = 0 ∧
+      entry (A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) 2 ((A ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]).length - 1) = 0 := by
+    rw [hlast]
+    refine ⟨?_, ?_, ?_⟩ <;>
+      · rw [show A.length = A.length + 0 from rfl, entry_append_right]
+        simp [entry]
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_eq_pred_of_zero n (by rw [hlast]; omega) hz]
+  unfold Pred
+  rw [if_neg (by simp; omega), List.dropLast_concat]
+  exact hA
+
+/-- **和**: 根が高さ 0 の `B` は、`Aok` でなくても右に継げる。 -/
+theorem sum_mem : ∀ B ∈ W 0, Zroot B → Mono B → entry B 0 0 = 0 →
+    ∀ A : TrioSeq, A ∈ W 0 → A ≠ [] → A ++ B ∈ W 0 := by
+  have key : W 0 ⊆ {B : TrioSeq | Zroot B → Mono B → entry B 0 0 = 0 →
+      ∀ A : TrioSeq, A ∈ W 0 → A ≠ [] → A ++ B ∈ W 0} := by
+    refine A2' ?_
+    intro B hB
+    simp only [Set.mem_setOf_eq]
+    intro hzr hmo hroot A hA hAne
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        simpa using hA
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hroot
+        obtain ⟨hc1, hc2⟩ := hzr c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        exact snoc_zero hA hAne
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hc; rw [hc] at hlen2; simp at hlen2
+    rcases hB with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hzr hlast
+        have hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0 := ⟨hlast, he1, he2⟩
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]
+          exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) hz]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdl0 : entry B.dropLast 0 0 = 0 := by
+          rw [List.dropLast_eq_take, Wset.entry_take (show (0 : ℕ) < B.length - 1 by omega)]
+          exact hroot
+        have hIH := hdl (fun c hc => hzr c (List.dropLast_subset _ hc))
+          (fun c hc => hmo c (List.dropLast_subset _ hc)) hdl0 A hA hAne
+        have e : A ++ B = (A ++ B.dropLast) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [List.append_assoc, ← hsplit]
+        rw [e]
+        exact snoc_zero hIH (by simp [List.append_eq_nil_iff, hAne])
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hzr hmo hroot hlen2 hnz
+        refine A1_intro (Or.inr (Or.inl ?_))
+        intro n hn
+        rw [oper_append_right_of A B n hlen2 hp]
+        obtain ⟨hzr', hmo'⟩ := ZM_oper hzr hmo n
+        exact hnat n hn hzr' hmo' (by rw [Wset.oper_head_eq hn]; exact hroot) A hA hAne
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro B hB
+  exact key hB
+
+theorem sum_Bok {A B : TrioSeq} (hA : Aok A) (hB : Bok B) : A ++ B ∈ W 0 :=
+  sum_mem B hB.mem hB.zroot hB.mono hB.root A hA.mem hA.ne
+
+/-- 影の字: `(1,0,0) :: Y↑2`。 -/
+def shP (Y : TrioSeq) : TrioSeq := ((1, 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 2 0 Y
+
+/-- 影の語: `(0,0,0)` の上に影の字を並べたもの。 -/
+def shwP (ws : List TrioSeq) : TrioSeq := ((0, 0, 0) : ℕ × ℕ × ℕ) :: ws.flatMap shP
+
+/-- 影の中身（`bump` の内側）。 -/
+def Fw (ws : List TrioSeq) : TrioSeq := ws.flatMap fun Y => ((0, 0, 0) : ℕ × ℕ × ℕ) :: bump Y
+
+theorem bump_shP (Y : TrioSeq) : bump (((0, 0, 0) : ℕ × ℕ × ℕ) :: bump Y) = shP Y := by
+  simp [bump, shP, shiftr01, List.map_map, Function.comp_def]
+
+theorem bump_Fw (ws : List TrioSeq) : bump (Fw ws) = ws.flatMap shP := by
+  induction ws with
+  | nil => simp [Fw, bump, shiftr01]
+  | cons Y ws ih =>
+      rw [Fw, List.flatMap_cons, bump_append, bump_shP, List.flatMap_cons]
+      rw [show ws.flatMap (fun Y => ((0, 0, 0) : ℕ × ℕ × ℕ) :: bump Y) = Fw ws from rfl, ih]
+
+theorem shwP_eq (ws : List TrioSeq) : shwP ws = [((0, 0, 0) : ℕ × ℕ × ℕ)] ++ bump (Fw ws) := by
+  rw [bump_Fw]; rfl
+
+theorem Bok_Fw : ∀ {ws : List TrioSeq}, Wpl ws → Bok (Fw ws)
+  | [], _ => by simpa [Fw] using Bok_nil
+  | (Y :: ws), hw => by
+      have hY : Bok Y := hw Y (by simp)
+      have hws : Wpl ws := fun Y' hY' => hw Y' (by simp [hY'])
+      have hIH := Bok_Fw hws
+      have hAok : Aok (((0, 0, 0) : ℕ × ℕ × ℕ) :: bump Y) := by
+        have := Aok_zero.append_bump hY
+        simpa using this
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · have h := sum_Bok hAok hIH
+        rw [Fw, List.flatMap_cons]
+        simpa using h
+      · intro c hc h0
+        rw [Fw, List.flatMap_cons] at hc
+        rcases List.mem_append.mp hc with h | h
+        · rcases List.mem_cons.mp h with rfl | h'
+          · exact ⟨rfl, rfl⟩
+          · exfalso; have := bump_col c h'; omega
+        · exact hIH.zroot c h h0
+      · intro c hc
+        rw [Fw, List.flatMap_cons] at hc
+        rcases List.mem_append.mp hc with h | h
+        · rcases List.mem_cons.mp h with rfl | h'
+          · simp
+          · exact bump_mono hY.mono c h'
+        · exact hIH.mono c h
+      · rw [Fw, List.flatMap_cons]
+        simp [entry]
+
+theorem shwP_mem {ws : List TrioSeq} (hw : Wpl ws) : shwP ws ∈ W 0 := by
+  rw [shwP_eq]
+  exact Bok.append Aok_zero (Bok_Fw hw)
+
+#print axioms shwP_mem
+
 end Small
 end TRIO

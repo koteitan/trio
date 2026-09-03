@@ -714,3 +714,11 @@ oper_z1wP は「マスク付き一般形」(le1 M p j をそのまま残す) + �
   block_root: 荷のブロックはその条件を満たす（根 (a+2,0,0) の行 1 が 0、Bok の Zroot）。
 - 帰結 oper_z1wP: (Y0 (a,b,0) wordP a b ws (a+1,b+1,1))[n] = Y0 ++ DzwP a b ws n。z の位置だけ行 1 が上がる。
 次: 荷の内部展開（oper_shift）と根の複製（Bok Y の末尾が (0,0,0) のとき字が n 個に複製）で GoodP_all。
+
+### 2026-09-04 (続き52) 和の定理と影の所属が緑
+- snoc_zero: A(0,0,0) ∈ W 0（展開 = 前者）。sum_mem: Aok A, Bok B ⟹ A ++ B ∈ W 0（bump_mem3 の写し、
+  bump を外しただけ。B の中で bad root が閉じるので oper_append_right_of が効く）。
+- 影 shwP ws = (0,0,0) :: Σ((1,0,0) :: Y↑2) = [(0,0,0)] ++ bump(Fw ws), Fw ws = Σ((0,0,0) :: bump Y)。
+  Bok_Fw: ws の帰納法（各項は Aok、和は sum_mem）。shwP_mem: Bok.append Aok_zero。
+- 影の展開が語の展開を写す（設計）: 末尾 z → dropLast(n=1); 荷の末尾が (0,0,0) → 字の n 個複製
+  （oper_snoc00''、頭 1 < 2 ≤ 尾）; 荷の末尾が非零 → 荷が Y[n] に（oper_shift）。
