@@ -554,3 +554,17 @@ D_5 = R295 ++ (5,5,0) の塔は D_2 (3,3,0)(4,4,0)(5,4,0)…(3+n,4,0)（bad root
  4 の snoc は界面 Ifc4 F（元 = Ifc3 台座の元 Z ++ 単位 U、U の頭は 3、Vis4、任意の Ifc3 台座の上に置き直せる）
  で一般化: Ifc4_snoc4。Ifc4_P3U、Ifc4_StkF（4 を積んでも Ifc4）。
  段: T4 n = Tn 1 ++ (4,4,0)(5,4,0)…(n+3,4,0) ∈ StkF P3U 3 n。D5 = snocY_mem (Y0 = Tn 1, M = (4,4,0), y = 5)。
+
+### 2026-09-03 (続き38) ✓ D_5 が緑（commit 45e45ba）。★★★★★ ∀ v D_v の見通し
+D5_mem 緑。続き37 の設計どおり一発。
+気づき: PU y := ∃ E, IfcV (y+1) E ∧ (E の元 ++ (y+1 の記録) + 普遍 junk) を値 y で一様に定義すれば、
+ Dg (k+1) = Dg k ++ (k+3,k+3,0) ∈ PU (k+2)（台座 E = PU (k+1)、junk = []）が帰納法で出て、
+ BaseOk_PU の aok から Dg k ∈ W 0、つまり ∀ v D_v ∈ W 0 が塔なしで出る（塔は IfcV_snoc の中）。
+必要なもの（v で一様）:
+- VisV y bd M（見える列は row1 ≥ y）。IfcV v F: v ≤ 2 は Iface、IfcV (v+1) F := IfcV v F ∧ Reb v (IfcV v) F
+  （Reb v B F: F の元 = B 台座の元 Z ++ 単位 U、U の頭の row1 = v、VisV (v+1)、任意の B 台座の上に置き直せる）。
+  Ifc3 の「走り X ∈ RunG E' j」は「X ∈ Iface 台座（RunG E' j は Iface）」に置き換えて一様化。
+- IfcV_iface、IfcV_down（u ≤ v）、IfcV_snoc（v ≥ 3: F の元 ++ (h+1,v,0) ∈ W 0）。
+- JkU y c J、PU y、BaseOk_PU、Iface_PU、IfcV_PU（w ≤ y+2 で IfcV w (PU y)）、IfcV_StkF（w ≤ y+1）。
+- Dg k = D_2 3 4 … (k+2)、Dg_mem: Dg (k+1) ∈ PU (k+2)。
+行 296 (0,0,0)(1,1,1)(1,1,0)(2,2,1) は展開が Dg n なら A1_intro で出る（展開の補題が要る）。

@@ -10487,5 +10487,352 @@ theorem D5_mem : D5 ∈ W 0 := by
   simpa [Tn, D1, Q, D5, R295, R294] using h
 
 #print axioms D5_mem
+
+/-! ### 値 `v` で一様な界面 `IfcV v` と普遍 junk の記録の集合 `PU y`（∀ v の D_v へ） -/
+
+/-- 見える列（頂上から辿れる祖先）は row1 ≥ `y`。 -/
+def VisV (y bd : ℕ) (M : TrioSeq) : Prop :=
+  ∀ t, 1 ≤ t → t < M.length → entry M 0 t < bd →
+    (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t
+
+theorem VisV_high {y bd : ℕ} {N : TrioSeq}
+    (h : ∀ t, 1 ≤ t → t < N.length → bd ≤ entry N 0 t) : VisV y bd N := by
+  intro t ht1 htl hlt _
+  have := h t ht1 htl
+  omega
+
+theorem VisV_append {y bd : ℕ} {M N : TrioSeq} (hNlen : 0 < N.length)
+    (hM : VisV y (entry N 0 0) M) (hN0 : y ≤ entry N 1 0) (hN : VisV y bd N) :
+    VisV y bd (M ++ N) := by
+  intro t ht1 htl hlt hrec
+  have hlen : (M ++ N).length = M.length + N.length := by simp
+  have hNh : entry (M ++ N) 0 M.length = entry N 0 0 := by
+    rw [show M.length = M.length + 0 from rfl, entry_append_right]
+  rcases Nat.lt_trichotomy t M.length with hh | hh | hh
+  · rw [entry_append_left hh] at hlt ⊢
+    have hlt' : entry M 0 t < entry N 0 0 := by
+      have := hrec M.length hh (by omega)
+      rw [entry_append_left hh, hNh] at this
+      exact this
+    refine hM t ht1 hh hlt' ?_
+    intro i hti hiM
+    have := hrec i hti (by omega)
+    rw [entry_append_left hh, entry_append_left hiM] at this
+    exact this
+  · subst hh
+    rw [show M.length = M.length + 0 from rfl, entry_append_right]
+    exact hN0
+  · obtain ⟨q, rfl⟩ : ∃ q, t = M.length + q := ⟨t - M.length, by omega⟩
+    rw [entry_append_right] at hlt ⊢
+    refine hN q (by omega) (by omega) hlt ?_
+    intro i hqi hiN
+    have := hrec (M.length + i) (by omega) (by omega)
+    rw [entry_append_right, entry_append_right] at this
+    exact this
+
+/-- 置き直し可能性: `F` の元 = 台座（`B` を満たす集合の元）`Z` ++ 単位 `U`、`U` の頭の row1 = `v`、
+見える列は row1 ≥ `v+1`、任意の `B` 台座の元の上に `U` を置き直しても `F`。 -/
+def Reb (v : ℕ) (B : (ℕ → TrioSeq → Prop) → Prop) (F : ℕ → TrioSeq → Prop) : Prop :=
+  ∀ (h : ℕ) (A : TrioSeq), F h A → ∃ (c : ℕ) (Z U : TrioSeq),
+    A = Z ++ U ∧ (∃ E : ℕ → TrioSeq → Prop, B E ∧ E c Z) ∧
+    MidD (c + 2) U ∧ entry U 1 0 = v ∧ c < h ∧ VisV (v + 1) (h + 1) U ∧
+    (∀ (s : ℕ) (E' : ℕ → TrioSeq → Prop) (Z' : TrioSeq), B E' →
+      E' (c + s) Z' → F (h + s) (Z' ++ shiftr01 s 0 U))
+
+/-- 値 `v` の snoc ができる界面。`v ≤ 2` は `Iface`、`IfcV (v+1) F = IfcV v F ∧ Reb v (IfcV v) F`。 -/
+def IfcV : ℕ → (ℕ → TrioSeq → Prop) → Prop
+  | 0 => Iface
+  | 1 => Iface
+  | 2 => Iface
+  | (v + 3) => fun F => IfcV (v + 2) F ∧ Reb (v + 2) (IfcV (v + 2)) F
+
+theorem IfcV_succ3 (v : ℕ) (F : ℕ → TrioSeq → Prop) :
+    IfcV (v + 3) F ↔ IfcV (v + 2) F ∧ Reb (v + 2) (IfcV (v + 2)) F := Iff.rfl
+
+theorem IfcV_iface : ∀ (v : ℕ) {F : ℕ → TrioSeq → Prop}, IfcV v F → Iface F
+  | 0, _, h => h
+  | 1, _, h => h
+  | 2, _, h => h
+  | (v + 3), F, h => IfcV_iface (v + 2) ((IfcV_succ3 v F).mp h).1
+
+theorem IfcV_le2 {v : ℕ} (hv : v ≤ 2) {F : ℕ → TrioSeq → Prop} : IfcV v F ↔ Iface F := by
+  match v, hv with
+  | 0, _ => exact Iff.rfl
+  | 1, _ => exact Iff.rfl
+  | 2, _ => exact Iff.rfl
+
+theorem IfcV_down : ∀ (v : ℕ) {u : ℕ} {F : ℕ → TrioSeq → Prop}, IfcV v F → u ≤ v → IfcV u F
+  | 0, u, F, h, hu => (IfcV_le2 (by omega)).mpr h
+  | 1, u, F, h, hu => (IfcV_le2 (by omega)).mpr h
+  | 2, u, F, h, hu => (IfcV_le2 (by omega)).mpr h
+  | (v + 3), u, F, h, hu => by
+      rcases Nat.lt_or_ge u (v + 3) with hlt | hge
+      · exact IfcV_down (v + 2) ((IfcV_succ3 v F).mp h).1 (by omega)
+      · have : u = v + 3 := by omega
+        subst this; exact h
+
+theorem Reb_tower {B : (ℕ → TrioSeq → Prop) → Prop} {F : ℕ → TrioSeq → Prop}
+    (hBF : B F) {h c : ℕ} {Z U : TrioSeq}
+    (hZ : ∃ E : ℕ → TrioSeq → Prop, B E ∧ E c Z)
+    (hre : ∀ (s : ℕ) (E' : ℕ → TrioSeq → Prop) (Z' : TrioSeq), B E' →
+      E' (c + s) Z' → F (h + s) (Z' ++ shiftr01 s 0 U)) (hlt : c < h) :
+    ∀ n : ℕ, F (h + n * (h - c)) (Mtwd (h - c) Z U (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      obtain ⟨E, hE, hZ'⟩ := hZ
+      have := hre 0 E Z hE (by simpa using hZ')
+      simpa using this
+  | (n + 1) => by
+      rw [Mtwd_succ]
+      have ih := Reb_tower hBF hZ hre hlt n
+      have h1 := hre ((h - c) * (n + 1)) F _ hBF
+        (by
+          show F (c + (h - c) * (n + 1)) (Mtwd (h - c) Z U (n + 1))
+          rwa [show c + (h - c) * (n + 1) = h + n * (h - c) from by
+            rw [Nat.mul_succ, Nat.mul_comm (h - c) n]; omega])
+      rwa [show h + (h - c) * (n + 1) = h + (n + 1) * (h - c) from by
+        rw [Nat.mul_comm (h - c) (n + 1)]] at h1
+
+theorem Reb_tower_mem {B : (ℕ → TrioSeq → Prop) → Prop} {F : ℕ → TrioSeq → Prop}
+    (hBF : B F) (hBI : ∀ E, B E → Iface E) {h c : ℕ} {Z U : TrioSeq}
+    (hZ : ∃ E : ℕ → TrioSeq → Prop, B E ∧ E c Z)
+    (hre : ∀ (s : ℕ) (E' : ℕ → TrioSeq → Prop) (Z' : TrioSeq), B E' →
+      E' (c + s) Z' → F (h + s) (Z' ++ shiftr01 s 0 U)) (hlt : c < h) :
+    ∀ n : ℕ, Mtwd (h - c) Z U n ∈ W 0
+  | 0 => by
+      rw [Mtwd_zero]
+      obtain ⟨E, hE, hZ'⟩ := hZ
+      exact ((hBI E hE).bok.aok _ _ hZ').mem
+  | (n + 1) => ((hBI F hBF).bok.aok _ _ (Reb_tower hBF hZ hre hlt n)).mem
+
+/-- ★★★ 置き直し可能な `F` の元の頂上に `(h+1, v+1, 0)`。 -/
+theorem Reb_snoc {v : ℕ} {B : (ℕ → TrioSeq → Prop) → Prop} {F : ℕ → TrioSeq → Prop}
+    (hBF : B F) (hBI : ∀ E, B E → Iface E) (hreb : Reb v B F) {h : ℕ} {A : TrioSeq}
+    (hA : F h A) : A ++ [((h + 1, v + 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨c, Z, U, rfl, hZ, hU, hU1, hlt, hvis, hre⟩ := hreb h A hA
+  have hne : Z ≠ [] := by
+    obtain ⟨E, hE, hZ'⟩ := hZ
+    exact ((hBI E hE).bok.aok _ _ hZ').ne
+  have h1 := snocYd_mem (Y0 := Z) (M := U) (L := c + 1) (y := v + 1) (dl := h - c) hne
+    (by rw [show c + 1 + 1 = c + 2 from by omega]; exact hU) (by rw [hU1]; omega)
+    (by rw [show c + 1 + (h - c) = h + 1 from by omega]; exact hvis)
+    (by omega) (by omega) (Reb_tower_mem hBF hBI hZ hre hlt)
+  rwa [show c + 1 + (h - c) = h + 1 from by omega] at h1
+
+/-- ★★★★ `IfcV (v+3)` の元の頂上に `(h+1, v+3, 0)`。 -/
+theorem IfcV_snoc (v : ℕ) {F : ℕ → TrioSeq → Prop} (hF : IfcV (v + 3) F) {h : ℕ} {A : TrioSeq}
+    (hA : F h A) : A ++ [((h + 1, v + 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  Reb_snoc ((IfcV_succ3 v F).mp hF).1 (fun E hE => IfcV_iface (v + 2) hE)
+    ((IfcV_succ3 v F).mp hF).2 hA
+
+theorem Ifc3_toIfcV {F : ℕ → TrioSeq → Prop} (hF : Ifc3 F) : IfcV 3 F := by
+  refine ⟨hF.ifc, ?_⟩
+  intro h A hA
+  obtain ⟨c, X, U, rfl, ⟨E', j, hI', hX⟩, hU, hU1, hlt, hvis, hre⟩ := hF.reb h A hA
+  exact ⟨c, X, U, rfl, ⟨RunG E' j, Iface_RunG hI' j, hX⟩, hU, hU1, hlt, hvis,
+    fun s E'' Z' hI'' hZ' => hre s E'' 0 Z' hI'' hZ'⟩
+
+/-- 任意の `IfcV (y+1)` 台座の上で良い junk（記録の値は `y+1`）。 -/
+def JkU (y c : ℕ) (J : TrioSeq) : Prop :=
+  (∀ x ∈ J, c + 2 ≤ x.1) ∧ Mono J ∧
+  ∀ (E : ℕ → TrioSeq → Prop), IfcV (y + 1) E → ∀ (t : ℕ) (Z : TrioSeq), E (c + t) Z →
+    Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J) ∈ W 0
+
+theorem JkU_toJkS {y c : ℕ} {J : TrioSeq} {E : ℕ → TrioSeq → Prop} (hJ : JkU y c J)
+    (hE : IfcV (y + 1) E) : JkS E y 0 c J := ⟨hJ.1, hJ.2.1, hJ.2.2 E hE⟩
+
+theorem JkU_nil (w c : ℕ) : JkU (w + 2) c [] := by
+  refine ⟨by simp, by intro x hx; simp at hx, ?_⟩
+  intro E hE t Z hZ
+  have h := IfcV_snoc w hE hZ
+  simpa [shiftr01, show c + t + 1 = c + 1 + t from by omega] using h
+
+theorem JkU_shift {y c : ℕ} {J : TrioSeq} (hJ : JkU y c J) (u : ℕ) :
+    JkU y (c + u) (shiftr01 u 0 J) := by
+  refine ⟨?_, shiftD_mono hJ.2.1, ?_⟩
+  · intro x hx
+    simp only [shiftr01, List.mem_map] at hx
+    obtain ⟨p, hp, rfl⟩ := hx
+    have := hJ.1 p hp
+    dsimp only
+    omega
+  · intro E hE t Z hZ
+    rw [shiftr01_add0]
+    have hZ' : E (c + (u + t)) Z := by
+      rw [show c + (u + t) = c + u + t from by omega]; exact hZ
+    have h := hJ.2.2 E hE (u + t) Z hZ'
+    rw [show c + u + 1 + t = c + 1 + (u + t) from by omega]
+    exact h
+
+theorem JkU_mid {y c : ℕ} {J : TrioSeq} (hJ : JkU y c J) :
+    MidD (c + 2) ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) := by
+  have h := MidD_append (MidD_col (c + 1) (y + 1) (by omega) (by omega))
+    (by intro x hx; have := hJ.1 x hx; omega) hJ.2.1
+  rwa [show c + 1 + 1 = c + 2 from by omega] at h
+
+/-- 任意の `IfcV (y+1)` 台座の元の上に「`y+1` の記録 + 普遍 junk」。レベルは記録の高さ。 -/
+def PU (y : ℕ) (h : ℕ) (A : TrioSeq) : Prop :=
+  ∃ (E : ℕ → TrioSeq → Prop) (c : ℕ) (Z J : TrioSeq), IfcV (y + 1) E ∧ h = c + 1 ∧ E c Z ∧
+    A = Z ++ ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) ∧ JkU y c J
+
+theorem BaseOk_PU (y : ℕ) : BaseOk (PU y) := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rintro h A ⟨E, c, Z, J, hE, rfl, hZ, rfl, hJ⟩
+    have hB := (IfcV_iface (y + 1) hE).bok
+    have hJ' := JkU_toJkS hJ hE
+    have hmem := hJ'.2.2 0 Z (by simpa using hZ)
+    simp only [shiftr01_zero, Nat.add_zero] at hmem
+    exact Aok_append_Mid (by omega) (hB.aok c Z hZ) (JkU_mid hJ) hmem
+  · rintro h A ⟨E, c, Z, J, hE, rfl, hZ, rfl, hJ⟩
+    have hB := (IfcV_iface (y + 1) hE).bok
+    exact Ancd_append_Mid (hB.aok c Z hZ).ne (hB.ancd c Z hZ) (JkU_mid hJ)
+  · rintro h A ⟨E, c, Z, J, hE, rfl, hZ, rfl, hJ⟩ Bk hBk
+    have hB := (IfcV_iface (y + 1) hE).bok
+    have hJ' := JkU_toJkS hJ hE
+    have hM := JkU_mid hJ
+    have hbase : ∀ (t : ℕ) (A : TrioSeq), Aok A → E (c + t) A →
+        A ++ shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) ∈ W 0 := by
+      intro t A _ hA
+      rw [shiftr01_append0, shift_col]
+      exact hJ'.2.2 t A hA
+    have hclose : ∀ (t : ℕ) (A' C' : TrioSeq), Aok A' → E (c + t) A' → Mono C' →
+        (∀ (t' : ℕ) (A'' : TrioSeq), Aok A'' → E (c + t') A'' →
+          A'' ++ BlkD (c + 2 + t') (shiftr01 t' 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C'
+            ∈ W 0) →
+        E (c + t) (A' ++ BlkD (c + 2 + t)
+          (shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C') := by
+      intro t A' C' _ hA' hmoC' hIH
+      have hNs : MidD (c + 2 + t) (shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) :=
+        MidD_shift hM t
+      refine hB.close (c + t) A' _ hA' ?_ (BlkD_mono hNs.mono hmoC') ?_
+      · intro x hx
+        rcases List.mem_append.mp hx with hh | hh
+        · have := MidD_col_ge hNs x hh; omega
+        · have := shiftD_col x hh; omega
+      · intro t' Z hZ
+        have heq : shiftr01 t' 0 (BlkD (c + 2 + t)
+            (shiftr01 t 0 ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C')
+            = BlkD (c + 2 + (t + t')) (shiftr01 (t + t') 0
+                ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J)) C' := by
+          simp only [BlkD, shiftr01_append0, shiftr01_add0]
+          congr 2
+          omega
+        rw [heq]
+        have hZ' : E (c + (t + t')) Z := by
+          rwa [show c + (t + t') = c + t + t' from by omega]
+        exact hIH (t + t') Z (hB.aok _ _ hZ') hZ'
+    have hkey := blkD_memS (d := c + 2) (by omega) _ hM hbase hclose Bk hBk.mem
+      hBk.zroot hBk.mono hBk.root 0 Z (hB.aok c Z hZ) (by simpa using hZ)
+    simp only [shiftr01_zero, Nat.add_zero] at hkey
+    rw [BlkD_app] at hkey
+    rwa [show c + 1 + 1 = c + 2 from by omega]
+  · rintro h A Blk ⟨E, c, Z, J, hE, rfl, hZ, rfl, hJ⟩ hcol hmo hcl
+    refine ⟨E, c, Z, J ++ Blk, hE, rfl, hZ, by simp [List.append_assoc], ?_, ?_, ?_⟩
+    · intro x hx
+      rcases List.mem_append.mp hx with hh | hh
+      · exact hJ.1 x hh
+      · have := hcol x hh; omega
+    · intro x hx
+      rcases List.mem_append.mp hx with hh | hh
+      · exact hJ.2.1 x hh
+      · exact hmo x hh
+    · intro E' hE' t Y' hY'
+      rw [shiftr01_append0, ← List.append_assoc, ← List.append_assoc]
+      have hstep : PU y (c + 1 + t)
+          (Y' ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 t 0 J)) :=
+        ⟨E', c + t, Y', shiftr01 t 0 J, hE', by omega, hY',
+          by rw [show c + t + 1 = c + 1 + t from by omega], JkU_shift hJ t⟩
+      have h := hcl t _ hstep
+      simpa only [List.append_assoc] using h
+
+theorem Iface_PU {y : ℕ} (hy : 1 ≤ y) : Iface (PU y) where
+  bok := BaseOk_PU y
+  rebase := by
+    rintro h A ⟨E, c, Z, J, hE, rfl, hZ, rfl, hJ⟩
+    obtain ⟨b, Y0, M, rfl, hY0, hM, hM1, hlt, hvis, hre⟩ := (IfcV_iface (y + 1) hE).rebase c Z hZ
+    have hM3 := JkU_mid hJ
+    refine ⟨b, Y0, M ++ ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J), by simp [List.append_assoc],
+      hY0, ?_, ?_, by omega, ?_, ?_⟩
+    · refine MidD_append hM ?_ hM3.mono
+      intro x hx; have := MidD_col_ge hM3 x hx; omega
+    · rw [entry_append_left (List.length_pos_iff.mpr hM.ne)]
+      exact hM1
+    · have e : entry ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) 0 0 = c + 1 := by simp [entry]
+      refine Vis2_append (by simp) ?_ (by simp [entry]; omega) ?_
+      · rw [e]; exact hvis
+      · refine Vis2_high ?_
+        intro t ht1 htl
+        have := hM3.tail t ht1 htl
+        omega
+    · intro s Y0' hY0'
+      rw [shiftr01_append0, shiftr01_append0, shift_col, ← List.append_assoc]
+      exact ⟨E, c + s, Y0' ++ shiftr01 s 0 M, shiftr01 s 0 J, hE, by omega, hre s Y0' hY0',
+        by rw [show c + s + 1 = c + 1 + s from by omega], JkU_shift hJ s⟩
+
+/-- `PU y` は `w ≤ y+2` のすべての `w` で `IfcV w`（頂上が `y+1` なので `y+2` の snoc までできる）。 -/
+theorem IfcV_PU {y : ℕ} (hy : 1 ≤ y) : ∀ w : ℕ, w ≤ y + 2 → IfcV w (PU y)
+  | 0, _ => Iface_PU hy
+  | 1, _ => Iface_PU hy
+  | 2, _ => Iface_PU hy
+  | (w + 3), hw => by
+      refine ⟨IfcV_PU hy (w + 2) (by omega), ?_⟩
+      rintro h A ⟨E, c, Z, J, hE, rfl, hZ, rfl, hJ⟩
+      have hM3 := JkU_mid hJ
+      by_cases hwy : w + 1 = y
+      · -- 頂上の段: 台座 `E` 自身が `IfcV (w+2)`
+        subst hwy
+        refine ⟨c, Z, [((c + 1, w + 1 + 1, 0) : ℕ × ℕ × ℕ)] ++ J, rfl, ⟨E, hE, hZ⟩, hM3,
+          entry_cons_append_1 _ _, by omega, ?_, ?_⟩
+        · refine VisV_high ?_
+          intro t ht1 htl
+          have := hM3.tail t ht1 htl
+          omega
+        · intro s E' Z' hE' hZ'
+          rw [shiftr01_append0, shift_col]
+          exact ⟨E', c + s, Z', shiftr01 s 0 J, hE', by omega, hZ',
+            by rw [show c + s + 1 = c + 1 + s from by omega], JkU_shift hJ s⟩
+      · -- 下の段: 台座 `E` の置き直しに記録を足す
+        have hE' : IfcV (w + 3) E := IfcV_down (y + 1) hE (by omega)
+        obtain ⟨c0, Z0, U0, rfl, hZ0, hU0, hU01, hlt, hvis, hre⟩ :=
+          ((IfcV_succ3 w E).mp hE').2 c Z hZ
+        refine ⟨c0, Z0, U0 ++ ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J),
+          by simp [List.append_assoc], hZ0, ?_, ?_, by omega, ?_, ?_⟩
+        · refine MidD_append hU0 ?_ hM3.mono
+          intro x hx; have := MidD_col_ge hM3 x hx; omega
+        · rw [entry_append_left (List.length_pos_iff.mpr hU0.ne)]
+          exact hU01
+        · have e : entry ([((c + 1, y + 1, 0) : ℕ × ℕ × ℕ)] ++ J) 0 0 = c + 1 := by simp [entry]
+          refine VisV_append (by simp) ?_ (by simp [entry]; omega) ?_
+          · rw [e]; exact hvis
+          · refine VisV_high ?_
+            intro t ht1 htl
+            have := hM3.tail t ht1 htl
+            omega
+        · intro s E'' Z' hE'' hZ'
+          rw [shiftr01_append0, shiftr01_append0, shift_col, ← List.append_assoc]
+          exact ⟨E, c + s, Z' ++ shiftr01 s 0 U0, shiftr01 s 0 J, hE, by omega,
+            hre s E'' Z' hE'' hZ', by rw [show c + s + 1 = c + 1 + s from by omega],
+            JkU_shift hJ s⟩
+
+/-! ### ★★★★★ ∀ v: `Dv k = (0,0,0)(1,1,1)(1,1,0)(2,2,0)(3,3,0)…(k+2,k+2,0) ∈ W 0` -/
+
+/-- `Dv 0 = Tn 0 = (0,0,0)(1,1,1)(1,1,0)(2,2,0)`、`Dv (k+1) = Dv k ++ (k+3,k+3,0)`。 -/
+def Dv : ℕ → TrioSeq
+  | 0 => Tn 0
+  | (k + 1) => Dv k ++ [((k + 3, k + 3, 0) : ℕ × ℕ × ℕ)]
+
+theorem Dv_PU : ∀ k : ℕ, PU (k + 2) (k + 3) (Dv (k + 1))
+  | 0 => ⟨PkGA, 2, Tn 0, [], Ifc3_toIfcV Ifc3_PkGA, by omega, Lk_Tn 0, by simp [Dv],
+      JkU_nil 0 2⟩
+  | (k + 1) => ⟨PU (k + 2), k + 3, Dv (k + 1), [], IfcV_PU (by omega) (k + 4) (by omega),
+      by omega, Dv_PU k, by simp [Dv, show k + 3 + 1 = k + 4 from by omega], JkU_nil (k + 1) (k + 3)⟩
+
+/-- ★★★★★ 対角列 `D_v` はすべて `W 0`。 -/
+theorem Dv_W (k : ℕ) : Dv k ∈ W 0 := by
+  cases k with
+  | zero => exact Tn_mem 0
+  | succ k => exact ((BaseOk_PU (k + 2)).aok _ _ (Dv_PU k)).mem
+
+#print axioms Dv_W
 end Small
 end TRIO
