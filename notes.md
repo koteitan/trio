@@ -879,3 +879,25 @@ R338 の上の記録 (1,1,0) の junk を複合字の語で書くだけ（rowC_m
   整礎性は「S(x): ∀ 前置き, Q(前置き) → Q(前置き ++ [x])」の形にすれば、複製は S を n 回適用で
   済むので多重集合順序は不要（複合字のときと同じ手）。段の列も同じ形の snoc 帰納法で回す。
   ⟹ 入れ子の帰納型（字 = 段の列 × 荷、段の junk = 字の列）が要る。これが次の大きな塊。
+
+### 2026-09-04 (続き66) junk の木 JT（一般の文法）を定義
+記録 (l,v,0) の右の junk は、高さ l+1 の項の列で、各項が自分の junk を持つ:
+ z sub rest    = (l+1,v+1,1) + sub（レベル (l+1,v+1)）+ rest
+ rc w sub rest = (l+1,w,0)   + sub（レベル (l+1,w)）  + rest
+ blk Y rest    = Y↑(l+1) + rest
+（rec は Lean の再帰子と衝突するので rc）。JTOk v J = 荷は Bok、記録は 1 ≤ w ≤ v+1。
+シート行の対応を確認済み（設計）:
+ R344 の junk = z (rc 1 nil nil) nil     … z の junk に 1 の列
+ 368 = z (rc 1 nil (rc 1 nil nil)) nil   … z の junk に 1 の列 2 本（同じ高さ）
+ 371 = z (rc 1 (rc 1 nil nil) nil) nil   … 1 の列の junk に 1 の列（高さが 1 つ上）
+ 377 = z (rc 1 (z nil nil) nil) nil      … 1 の列の junk に z
+ 373 = z (rc 1 (rc 2 nil nil) nil) nil   … 1 の列の junk に 2 の記録
+ 366 = z (rc 1 nil (blk (0,0,0) nil)) nil
+ 355 = z (rc 1 nil nil) (z nil (rc 1 nil nil))
+展開の場合分けもこの文法で閉じる（設計）:
+ * 最後の項が blk で荷の末尾が非零 → 荷が縮む
+ * 最後の項が blk で荷の末尾が (0,0,0) → 「その項を含む親の項」が n 複製
+ * 最後の項が rc 1 で junk が空 → snocd_gen、hang はその項を荷に替える
+ * 最後の項が z で junk が空 → 対角の連鎖
+ * 最後の項の junk が非空 → その中へ再帰
+基本補題（jkT_ge / jkT_mono / jkT_shift / MidD_jkT）まで緑。

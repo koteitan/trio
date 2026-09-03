@@ -16982,5 +16982,106 @@ theorem R370_mem : R344 ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R370_mem
 
+
+/-! ### junk の木 `JT`: 記録 `(l, v, 0)` の右の junk の一般形
+
+各項は高さ `l+1` に置かれ、自分の junk を持つ:
+- `z sub rest`  : `(l+1, v+1, 1)` と、その junk `sub`（レベル `(l+1, v+1)`）、続き `rest`
+- `rec w sub rest` : `(l+1, w, 0)` と、その junk `sub`（レベル `(l+1, w)`）、続き `rest`
+- `blk Y rest`  : 荷 `Y↑(l+1)`、続き `rest`
+-/
+
+inductive JT : Type where
+  | nil : JT
+  | z : JT → JT → JT
+  | rc : ℕ → JT → JT → JT
+  | blk : TrioSeq → JT → JT
+
+/-- 木の解釈。 -/
+def jkT (l v : ℕ) : JT → TrioSeq
+  | JT.nil => []
+  | JT.z sub rest => ((l + 1, v + 1, 1) : ℕ × ℕ × ℕ) :: (jkT (l + 1) (v + 1) sub ++ jkT l v rest)
+  | JT.rc w sub rest => ((l + 1, w, 0) : ℕ × ℕ × ℕ) :: (jkT (l + 1) w sub ++ jkT l v rest)
+  | JT.blk Y rest => shiftr01 (l + 1) 0 Y ++ jkT l v rest
+
+/-- 木が妥当: 荷はすべて `Bok`、記録の行 1 は `1 ≤ w ≤ v+1`。 -/
+def JTOk (v : ℕ) : JT → Prop
+  | JT.nil => True
+  | JT.z sub rest => JTOk (v + 1) sub ∧ JTOk v rest
+  | JT.rc w sub rest => 1 ≤ w ∧ w ≤ v + 1 ∧ JTOk w sub ∧ JTOk v rest
+  | JT.blk Y rest => Bok Y ∧ JTOk v rest
+
+theorem jkT_ge : ∀ (J : JT) (l v : ℕ), ∀ x ∈ jkT l v J, l + 1 ≤ x.1
+  | JT.nil, l, v => by simp [jkT]
+  | JT.z sub rest, l, v => by
+      intro x hx
+      simp only [jkT, List.mem_cons, List.mem_append] at hx
+      rcases hx with rfl | h | h
+      · exact le_refl _
+      · have := jkT_ge sub (l + 1) (v + 1) x h; omega
+      · exact jkT_ge rest l v x h
+  | JT.rc w sub rest, l, v => by
+      intro x hx
+      simp only [jkT, List.mem_cons, List.mem_append] at hx
+      rcases hx with rfl | h | h
+      · exact le_refl _
+      · have := jkT_ge sub (l + 1) w x h; omega
+      · exact jkT_ge rest l v x h
+  | JT.blk Y rest, l, v => by
+      intro x hx
+      simp only [jkT, List.mem_append, shiftr01, List.mem_map] at hx
+      rcases hx with ⟨q, -, rfl⟩ | h
+      · show l + 1 ≤ q.1 + (l + 1); omega
+      · exact jkT_ge rest l v x h
+
+theorem jkT_mono : ∀ (J : JT) (v : ℕ), JTOk v J → ∀ l : ℕ, Mono (jkT l v J)
+  | JT.nil, v, _, l => by simp [jkT, Mono]
+  | JT.z sub rest, v, hJ, l => by
+      intro x hx
+      simp only [jkT, List.mem_cons, List.mem_append] at hx
+      rcases hx with rfl | h | h
+      · show 1 ≤ v + 1; omega
+      · exact jkT_mono sub (v + 1) hJ.1 (l + 1) x h
+      · exact jkT_mono rest v hJ.2 l x h
+  | JT.rc w sub rest, v, hJ, l => by
+      intro x hx
+      simp only [jkT, List.mem_cons, List.mem_append] at hx
+      rcases hx with rfl | h | h
+      · show (0 : ℕ) ≤ w; omega
+      · exact jkT_mono sub w hJ.2.2.1 (l + 1) x h
+      · exact jkT_mono rest v hJ.2.2.2 l x h
+  | JT.blk Y rest, v, hJ, l => by
+      intro x hx
+      simp only [jkT, List.mem_append, shiftr01, List.mem_map] at hx
+      rcases hx with ⟨q, hq, rfl⟩ | h
+      · simpa using hJ.1.mono q hq
+      · exact jkT_mono rest v hJ.2 l x h
+
+theorem jkT_shift : ∀ (J : JT) (l v s : ℕ), shiftr01 s 0 (jkT l v J) = jkT (l + s) v J
+  | JT.nil, l, v, s => by simp [jkT, shiftr01]
+  | JT.z sub rest, l, v, s => by
+      rw [jkT, show ((l + 1, v + 1, 1) : ℕ × ℕ × ℕ) :: (jkT (l + 1) (v + 1) sub ++ jkT l v rest)
+          = [((l + 1, v + 1, 1) : ℕ × ℕ × ℕ)] ++ (jkT (l + 1) (v + 1) sub ++ jkT l v rest) from rfl,
+        shiftr01_append0, shiftr01_append0, shift_zcol, jkT_shift sub (l + 1) (v + 1) s,
+        jkT_shift rest l v s, show l + 1 + s = l + s + 1 from by omega]
+      rfl
+  | JT.rc w sub rest, l, v, s => by
+      rw [jkT, show ((l + 1, w, 0) : ℕ × ℕ × ℕ) :: (jkT (l + 1) w sub ++ jkT l v rest)
+          = [((l + 1, w, 0) : ℕ × ℕ × ℕ)] ++ (jkT (l + 1) w sub ++ jkT l v rest) from rfl,
+        shiftr01_append0, shiftr01_append0, shift_col, jkT_shift sub (l + 1) w s,
+        jkT_shift rest l v s, show l + 1 + s = l + s + 1 from by omega]
+      rfl
+  | JT.blk Y rest, l, v, s => by
+      rw [jkT, shiftr01_append0, shiftr01_add0, jkT_shift rest l v s,
+        show l + 1 + s = l + s + 1 from by omega]
+      rfl
+
+theorem MidD_jkT (l v : ℕ) (hl : 1 ≤ l) (hv : 1 ≤ v) {J : JT} (hJ : JTOk v J) :
+    MidD (l + 1) (((l, v, 0) : ℕ × ℕ × ℕ) :: jkT l v J) := by
+  have h := MidD_append (MidD_col l v hl hv) (N := jkT l v J) (jkT_ge J l v) (jkT_mono J v hJ l)
+  simpa using h
+
+#print axioms MidD_jkT
+
 end Small
 end TRIO
