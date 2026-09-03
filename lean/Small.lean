@@ -16868,5 +16868,95 @@ theorem GoodFb_wordC : ∀ ws : List (ℕ × TrioSeq), WplC ws → GoodFb (fun a
 
 #print axioms GoodFb_wordC
 
+
+/-! ### シート行 362〜369（`R338` の上の複合字の語） -/
+
+theorem rowC_mem (ws : List (ℕ × TrioSeq)) (hw : WplC ws) :
+    R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordC 1 1 ws) ∈ W 0 := by
+  have h := ((GoodFb_wordC ws hw).seg 0).reapp P0 BaseOk_zero 0 R338
+    (LwB_of_base ⟨Aok_R338, rfl⟩)
+  simpa using h
+
+theorem WplC_ex (ws : List (ℕ × TrioSeq)) (h : ∀ p ∈ ws, Bok p.2) : WplC ws := h
+
+/-- 行344 の確認: `R344 = R338 ++ (1,1,0) :: wordC 1 1 [(1,[])]`。 -/
+theorem R344_eq_wordC : R344 = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordC 1 1 [(1, [])]) := by
+  simp [R344, R341, wordC, colC, shiftr01]
+
+/-- ★★★★★ シート行362 `R344 (2,2,1)(3,0,0)(4,1,1) = psi(W_w*W+W_w*psi(W_w))`。 -/
+theorem R362_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ),
+    ((4, 1, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(1, []), (0, Q)] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl
+    · exact Bok_nil
+    · exact Bok_Q)
+  simpa [R344, R341, wordC, colC, shiftr01, Q, List.append_assoc] using h
+
+/-- ★★★★★ シート行363 `R344 (2,2,1)(3,1,0) = psi(W_w*W2)`。 -/
+theorem R363_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(1, []), (1, [])] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> exact Bok_nil)
+  simpa [R344, R341, wordC, colC, shiftr01, List.append_assoc] using h
+
+/-- ★★★★★ シート行364 `R363 (2,2,1) = psi(W_w*W2+W_w)`。 -/
+theorem R364_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+    ((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(1, []), (1, []), (0, [])] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl <;> exact Bok_nil)
+  simpa [R344, R341, wordC, colC, shiftr01, List.append_assoc] using h
+
+/-- ★★★★★ シート行365 `R364 (3,1,0) = psi(W_w*W3)`。 -/
+theorem R365_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+    ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(1, []), (1, []), (1, [])] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl <;> exact Bok_nil)
+  simpa [R344, R341, wordC, colC, shiftr01, List.append_assoc] using h
+
+/-- ★★★★★ シート行366 `R344 (3,0,0) = psi(W_w*W*w)`。 -/
+theorem R366_mem : R344 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(1, [((0, 0, 0) : ℕ × ℕ × ℕ)])] (by
+    intro p hp
+    simp only [List.mem_singleton] at hp
+    subst hp
+    exact Bok_zero)
+  simpa [R344, R341, wordC, colC, shiftr01, List.append_assoc] using h
+
+/-- ★★★★★ シート行367 `R344 (3,0,0)(4,1,1) = psi(W_w*W*psi(W_w))`。 -/
+theorem R367_mem : R344 ++ [((3, 0, 0) : ℕ × ℕ × ℕ), ((4, 1, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(1, Q)] (by
+    intro p hp
+    simp only [List.mem_singleton] at hp
+    subst hp
+    exact Bok_Q)
+  simpa [R344, R341, wordC, colC, shiftr01, Q, List.append_assoc] using h
+
+/-- ★★★★★ シート行368 `R344 (3,1,0) = psi(W_w*W^2)`。 -/
+theorem R368_mem : R344 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(2, [])] (by
+    intro p hp
+    simp only [List.mem_singleton] at hp
+    subst hp
+    exact Bok_nil)
+  simpa [R344, R341, wordC, colC, shiftr01, List.append_assoc] using h
+
+/-- ★★★★★ シート行369 `R368 (3,1,0) = psi(W_w*W^3)`。 -/
+theorem R369_mem : R344 ++ [((3, 1, 0) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := rowC_mem [(3, [])] (by
+    intro p hp
+    simp only [List.mem_singleton] at hp
+    subst hp
+    exact Bok_nil)
+  simpa [R344, R341, wordC, colC, shiftr01, List.append_assoc] using h
+
+#print axioms R369_mem
+
 end Small
 end TRIO
