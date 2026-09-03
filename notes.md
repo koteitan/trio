@@ -568,3 +568,14 @@ D5_mem 緑。続き37 の設計どおり一発。
 - JkU y c J、PU y、BaseOk_PU、Iface_PU、IfcV_PU（w ≤ y+2 で IfcV w (PU y)）、IfcV_StkF（w ≤ y+1）。
 - Dg k = D_2 3 4 … (k+2)、Dg_mem: Dg (k+1) ∈ PU (k+2)。
 行 296 (0,0,0)(1,1,1)(1,1,0)(2,2,1) は展開が Dg n なら A1_intro で出る（展開の補題が要る）。
+
+### 2026-09-03 (続き39) ★★★★★ ∀ v D_v ∈ W 0 が緑（Dv_W、commit 済み）
+続き38 の設計どおり。IfcV v / Reb / PU y / JkU で値 v に一様化、Dv (k+1) ∈ PU (k+2) を k の帰納法で。
+塔は IfcV_snoc（Reb_snoc）の中に閉じ込めた。行 296 (0,0,0)(1,1,1)(1,1,0)(2,2,1) は展開 ⟦n⟧ が Dv の形
+ になることを示せば A1_intro で出る。最後の列の row2 = 1（lnz = 2、delta = (1,1)、複製が row 1 でも上がる）
+ なので既存の oper_snocY/oper_snocYd では扱えない。新しい展開の計算補題が要る。
+
+### 2026-09-03 (続き40) ★★★★★ シート行296 psi(W_w + psi_1(W_w)) が緑（R296_mem、commit 済み）
+R296 = (0,0,0)(1,1,1)(1,1,0)(2,2,1)。展開 ⟦n⟧ = Dm n = Q ++ (1,1,0)(2,2,0)…(n,n,0)
+（bad root は (1,1,0)、srow 2、d0 = d1 = 1）。oper_R287 と同じ手（L53.oper_unfold）。
+Dm 0 = Q、Dm 1 = D1、Dm (n+2) = Dv n。A1_intro で終わり。

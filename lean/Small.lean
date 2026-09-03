@@ -10834,5 +10834,102 @@ theorem Dv_W (k : ℕ) : Dv k ∈ W 0 := by
   | succ k => exact ((BaseOk_PU (k + 2)).aok _ _ (Dv_PU k)).mem
 
 #print axioms Dv_W
+
+/-! ### ★★★★★ シート行296 `(0,0,0)(1,1,1)(1,1,0)(2,2,1) = psi(W_w + psi_1(W_w))` -/
+
+def R296 : TrioSeq := [(0, 0, 0), (1, 1, 1), (1, 1, 0), (2, 2, 1)]
+
+theorem R296_len : R296.length = 4 := by simp [R296]
+
+theorem nextrel0_R296_23 : nextrel0 R296 2 3 := by
+  refine ⟨by simp [R296], by simp [R296], by omega, by simp [R296, entry], ?_⟩
+  intro j hj; omega
+
+theorem le0_R296_23 : le0 R296 2 3 :=
+  ⟨by simp [R296], by simp [R296], Relation.ReflTransGen.single nextrel0_R296_23⟩
+
+theorem nextrel1_R296_23 : nextrel1 R296 2 3 := by
+  refine ⟨by simp [R296], by simp [R296], by omega, by simp [R296, entry],
+    le0_R296_23, ?_⟩
+  intro j hj
+  have hjl := hj.2.1
+  rw [R296_len] at hjl
+  have hj3 : j = 3 := by omega
+  subst hj3
+  omega
+
+theorem nextrel2_R296_23 : nextrel2 R296 2 3 := by
+  refine ⟨by simp [R296], by simp [R296], by omega, by simp [R296, entry],
+    ⟨by simp [R296], by simp [R296], Relation.ReflTransGen.single nextrel1_R296_23⟩, ?_⟩
+  intro j hj
+  have hjl := hj.2.1
+  rw [R296_len] at hjl
+  have hj3 : j = 3 := by omega
+  subst hj3
+  omega
+
+theorem R296_hasParent : hasParent R296 2 3 :=
+  hasParent2_of_le1_witness (by rw [R296_len]; omega)
+    (Relation.ReflTransGen.single nextrel1_R296_23) (by simp [R296, entry])
+
+theorem R296_parent : parent R296 2 3 = 2 :=
+  R296_hasParent.unique (parent_nextR R296_hasParent) nextrel2_R296_23
+
+theorem R296_srow : srow R296 3 = 2 := by simp [srow, R296, entry]
+
+theorem le0_R296_22 : le0 R296 2 2 :=
+  ⟨by simp [R296], by simp [R296], Relation.ReflTransGen.refl⟩
+
+theorem le1_R296_22 : le1 R296 2 2 :=
+  ⟨by simp [R296], by simp [R296], Relation.ReflTransGen.refl⟩
+
+/-- `Dm n = (0,0,0)(1,1,1)(1,1,0)(2,2,0)…(n,n,0)`（対角の列が `n` 本）。 -/
+def Dm (n : ℕ) : TrioSeq := Q ++ (List.range n).map fun k => ((k + 1, k + 1, 0) : ℕ × ℕ × ℕ)
+
+open Classical in
+theorem oper_R296 (n : ℕ) : R296⟦n⟧ = Dm n := by
+  rw [L53.oper_unfold (j1 := 3) (i1 := 2) (j0 := 2) (d0 := 1) (d1 := 1)
+      (by simp [R296]) (by omega) (by simp [R296, entry]) R296_srow.symm
+      R296_hasParent R296_parent.symm (by simp [R296, entry]) (by simp [R296, entry]) n]
+  have hr : List.range' 2 (3 - 2) = [2] := rfl
+  have htk : R296.take 2 = Q := rfl
+  rw [hr, htk]
+  have hbody : ∀ k : ℕ, ([2] : List ℕ).map
+      (fun j => ((entry R296 0 j + (if le0 R296 2 j then k * 1 else 0),
+        entry R296 1 j + (if le1 R296 2 j then k * 1 else 0),
+        entry R296 2 j) : ℕ × ℕ × ℕ))
+      = [((k + 1, k + 1, 0) : ℕ × ℕ × ℕ)] := by
+    intro k
+    simp only [List.map_cons, List.map_nil]
+    rw [if_pos le0_R296_22, if_pos le1_R296_22]
+    simp [R296, entry, Nat.add_comm]
+  rw [List.flatMap_congr (fun k _ => hbody k)]
+  simp [Dm, flatMap_singleton_map]
+
+theorem Dm_succ (n : ℕ) : Dm (n + 1) = Dm n ++ [((n + 1, n + 1, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Dm, List.range_succ]
+
+theorem Dm_one : Dm 1 = D1 := by simp [Dm, D1]
+
+theorem Dm_Dv : ∀ n : ℕ, Dm (n + 2) = Dv n
+  | 0 => by simp [Dm, Dv, Tn, D1, List.range_succ]
+  | (n + 1) => by
+      rw [show n + 1 + 2 = n + 2 + 1 from by omega, Dm_succ, Dm_Dv n]
+      simp [Dv, show n + 2 + 1 = n + 3 from by omega]
+
+theorem Dm_mem (n : ℕ) : Dm n ∈ W 0 := by
+  match n with
+  | 0 => simpa [Dm] using Q_mem
+  | 1 => rw [Dm_one]; simpa [Dg, D1] using Dg_mem 1
+  | (n + 2) => rw [Dm_Dv]; exact Dv_W n
+
+/-- ★★★★★ シート行296 `(0,0,0)(1,1,1)(1,1,0)(2,2,1) ∈ W 0`（`psi(W_w + psi_1(W_w))`）。 -/
+theorem R296_mem : R296 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_R296 n]
+  exact Dm_mem n
+
+#print axioms R296_mem
 end Small
 end TRIO
