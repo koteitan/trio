@@ -11371,5 +11371,285 @@ theorem R316_mem : R316 ∈ W 0 := by
   exact R316s_mem n
 
 #print axioms R316_mem
+
+/-! ### 梯子の段としての単位 `(h+1,1,0)(h+2,2,1)`、`Yn`、行 297〜305, 308, 311 -/
+
+def P0 : ℕ → TrioSeq → Prop := fun h A => Aok A ∧ h = 0
+
+theorem BaseOk_P0 : BaseOk P0 := BaseOk_zero
+
+/-- 梯子の元の上に単位を継ぐと段が 1 つ上がる。 -/
+theorem LvB_unit11 {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {r h : ℕ} {A : TrioSeq}
+    (hA : LvB P r h A) :
+    LvB P (r + 1) (h + 1) (A ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)]) := by
+  refine ⟨(BaseOk_RunA 0).aok _ _ (LwA_unit11 ⟨P, hP, r, hA⟩), Or.inr ⟨h, A, _, rfl, rfl, hA,
+    (SegA_unit11 h).mid, ?_⟩⟩
+  intro s A' hA'
+  exact (SegA_unit11 h).reapp P hP s A' ⟨r, hA'⟩
+
+/-- `Yn n = Q (1,1,0)(2,2,1)(2,1,0)(3,2,1)…(n,1,0)(n+1,2,1)`。`Yn 1 = R296`。 -/
+def Yn : ℕ → TrioSeq
+  | 0 => Q
+  | (n + 1) => Yn n ++ [((n + 1, 1, 0) : ℕ × ℕ × ℕ), ((n + 2, 2, 1) : ℕ × ℕ × ℕ)]
+
+theorem Yn_LvB : ∀ n : ℕ, LvB P0 n n (Yn n)
+  | 0 => ⟨Aok_Q, rfl⟩
+  | (n + 1) => LvB_unit11 BaseOk_P0 (Yn_LvB n)
+
+theorem Yn_one : Yn 1 = R296 := rfl
+
+theorem Yn_LwA (n : ℕ) : LwA n (Yn n) := ⟨P0, BaseOk_P0, n, Yn_LvB n⟩
+
+theorem Yn_Aok (n : ℕ) : Aok (Yn n) := LwA_Aok (Yn_LwA n)
+
+/-- 塔 `TwD d Y n` は「レベル `d-1` の吊るし」があれば `W 0`。 -/
+theorem TwD_mem_of_hang {Y : TrioSeq} {d : ℕ} (hd : 1 ≤ d) (hY : Aok Y)
+    (hang : ∀ B : TrioSeq, Bok B → Y ++ shiftr01 d 0 B ∈ W 0) : ∀ n, TwD d Y n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      exact hang (TwD d Y n) ⟨TwD_mem_of_hang hd hY hang n, TwD_zroot hd hY.zroot n,
+        TwD_mono hY.mono n, TwD_root hY.ne hY.deep.1 n⟩
+
+/-- 根以外の列の row1 が正なら `Ancd d`。 -/
+theorem Ancd_of_row1 {Y : TrioSeq} (h : ∀ j, 0 < j → j < Y.length → 1 ≤ entry Y 1 j) (d : ℕ) :
+    Ancd d Y := fun j hj0 hjl _ _ => h j hj0 hjl
+
+theorem snocd_gen {Y : TrioSeq} {d : ℕ} (hd : 1 ≤ d) (hY : Aok Y) (hsh : Ancd d Y)
+    (hang : ∀ B : TrioSeq, Bok B → Y ++ shiftr01 d 0 B ∈ W 0) :
+    Y ++ [((d, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem hd hY.ne hY.deep hY.zroot hsh (TwD_mem_of_hang hd hY hang)
+
+theorem R296_row1 : ∀ j, 0 < j → j < R296.length → 1 ≤ entry R296 1 j := by
+  intro j hj0 hjl
+  rw [R296_len] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl <;> simp [R296, entry]
+
+/-- ★★★★ シート行297 `R296 (1,1,0) = psi(W_w + psi_1(W_w) + W)`。 -/
+theorem R297_mem : R296 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R296 (Ancd_of_row1 R296_row1 1)
+    (fun B hB => BaseOk_zero.hang 0 R296 ⟨Aok_R296, rfl⟩ B hB)
+
+theorem R297_RunA0 : RunA 0 1 (R296 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨0, R296, _, rfl, rfl, LwA_of_Aok Aok_R296, SegA_one 0⟩
+
+/-- ★★★★ シート行298 `R296 (1,1,0)(2,2,1) = psi(W_w + psi_1(W_w)*2)`。 -/
+theorem R298_mem : R296 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunA0_z1 (h := 1) R297_RunA0
+
+/-- ★★★★ シート行300 `R296 (2,1,0) = psi(W_w + psi_1(W_w)*W)`。 -/
+theorem R300_mem : R296 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R296 (Ancd_of_row1 R296_row1 2)
+    (fun B hB => LvB_hang BaseOk_P0 1 1 R296 (Yn_LvB 1) B hB)
+
+def R300 : TrioSeq := R296 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem R300_RunA0 : RunA 0 2 R300 := ⟨1, R296, _, rfl, rfl, Yn_LwA 1, SegA_one 1⟩
+
+theorem Aok_R300 : Aok R300 := (BaseOk_RunA 0).aok _ _ R300_RunA0
+
+theorem R300_row1 : ∀ j, 0 < j → j < R300.length → 1 ≤ entry R300 1 j := by
+  intro j hj0 hjl
+  simp only [R300, R296, List.length_append, List.length_cons, List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl <;>
+    simp [R300, R296, entry]
+
+/-- ★★★★ シート行301 `R296 (2,1,0)(3,1,0) = psi(W_w + psi_1(W_w)*W^W)`。 -/
+theorem R301_mem : R300 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R300 (Ancd_of_row1 R300_row1 3)
+    (fun B hB => (BaseOk_RunA 0).hang 2 R300 R300_RunA0 B hB)
+
+/-- ★★★★ シート行302 `R296 (2,1,0)(3,2,0) = psi(W_w + psi_1(W_w)*psi_1(W_2))`。 -/
+theorem R302_mem : R300 ++ [((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := R296) (M := [((2, 1, 0) : ℕ × ℕ × ℕ)]) (L := 2) (y := 2)
+    Aok_R296.ne (MidD_col 2 1 (by omega) (by omega)) (by simp [entry]) (by omega)
+    (fun n => by
+      have h1 := LwB_tower BaseOk_P0 (SegA_toSegB (SegA_one 1) BaseOk_P0) ⟨1, Yn_LvB 1⟩ n
+      exact (LwB_Aok BaseOk_P0 h1).mem)
+  exact h
+
+/-- ★★★★ シート行303 `R296 (2,1,0)(3,2,1) = psi(W_w + psi_1(W_w)^2)`。 -/
+theorem R303_mem : R296 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunA0_z1 (h := 2) R300_RunA0
+
+theorem Yn_two : Yn 2 = R296 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ)] := rfl
+
+theorem Yn2_row1 : ∀ j, 0 < j → j < (Yn 2).length → 1 ≤ entry (Yn 2) 1 j := by
+  intro j hj0 hjl
+  simp only [Yn, Q, List.length_append, List.length_cons, List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+    simp [Yn, Q, entry]
+
+/-- ★★★★ シート行304 `R296 (2,1,0)(3,2,1)(3,1,0) = psi(W_w + psi_1(W_w)^W)`。 -/
+theorem R304_mem : Yn 2 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) (Yn_Aok 2) (Ancd_of_row1 Yn2_row1 3)
+    (fun B hB => LvB_hang BaseOk_P0 2 2 (Yn 2) (Yn_LvB 2) B hB)
+
+theorem R304_RunA0 : RunA 0 3 (Yn 2 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨2, Yn 2, _, rfl, rfl, Yn_LwA 2, SegA_one 2⟩
+
+/-- ★★★★ シート行305 `R296 (2,1,0)(3,2,1)(3,1,0)(4,2,1) = psi(W_w + psi_1(W_w)^psi_1(W_w))`。 -/
+theorem R305_mem : Yn 2 ++ [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunA0_z1 (h := 3) R304_RunA0
+
+/-! ### 行 299 `R296 (2,0,0)`: 平坦な複製 `Q ((1,1,0)(2,2,1))^n` -/
+
+def R299 : TrioSeq := R296 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R299_len : R299.length = 5 := by simp [R299, R296]
+
+theorem nextrel0_R299_24 : nextrel0 R299 2 4 := by
+  refine ⟨by simp [R299, R296], by simp [R299, R296], by omega, by simp [R299, R296, entry], ?_⟩
+  intro j hj
+  have hj3 : j = 3 := by omega
+  subst hj3
+  simp [R299, R296, entry]
+
+theorem hasParent0_R299 : hasParent R299 0 4 := by
+  refine ⟨2, by show nextR R299 0 2 4; simp only [nextR, if_true]; exact nextrel0_R299_24, ?_⟩
+  intro j0 hj0
+  change nextR R299 0 j0 4 at hj0
+  simp only [nextR, if_true] at hj0
+  obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+  rw [R299_len] at hj0l
+  rcases j0 with _ | _ | _ | _ | j0
+  · exfalso; have := hall 2 ⟨by omega, by omega⟩; simp [R299, R296, entry] at this
+  · exfalso; have := hall 2 ⟨by omega, by omega⟩; simp [R299, R296, entry] at this
+  · rfl
+  · exfalso; simp [R299, R296, entry] at hlt2
+  · omega
+
+theorem parent0_R299 : parent R299 0 4 = 2 :=
+  hasParent0_R299.unique (parent_nextR hasParent0_R299)
+    (by show nextR R299 0 2 4; simp only [nextR, if_true]; exact nextrel0_R299_24)
+
+/-- `Un n = Q ((1,1,0)(2,2,1))^n`。 -/
+def Un (n : ℕ) : TrioSeq :=
+  Q ++ (List.range n).flatMap fun _ => [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+
+theorem Un_succ (n : ℕ) : Un (n + 1) = Un n ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] := by
+  simp [Un, List.range_succ]
+
+open Classical in
+theorem oper_R299 (n : ℕ) : R299⟦n⟧ = Un n := by
+  rw [L53.oper_flat (j1 := 4) (j0 := 2) (by rw [R299_len]) (by omega)
+    (by simp [R299, R296, entry]) (by simp [srow, R299, R296, entry])
+    hasParent0_R299 parent0_R299.symm n]
+  simp [R299, R296, Q, Un, entry, List.range']
+
+theorem Un_Aok : ∀ n : ℕ, Aok (Un n)
+  | 0 => by simpa [Un] using Aok_Q
+  | (n + 1) => by
+      rw [Un_succ]
+      have hR : RunA 0 1 (Un n ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+        ⟨0, Un n, _, rfl, rfl, LwA_of_Aok (Un_Aok n), SegA_one 0⟩
+      exact Aok_append_Mid (by omega) (Un_Aok n) (SegA_unit11 0).mid (RunA0_z1 (h := 1) hR)
+
+/-- ★★★★ シート行299 `R296 (2,0,0) = psi(W_w + psi_1(W_w)*w)`。 -/
+theorem R299_mem : R299 ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_R299 n]
+  exact (Un_Aok n).mem
+
+/-! ### 行 308 `R296 (2,2,0)(3,2,0)`、行 311 `R296 (2,2,0)(3,3,1)(3,2,0)`: 歩幅 2 の塔 -/
+
+def M308 : TrioSeq := [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_M308 : MidD 2 M308 := by
+  refine MidD_append (MidD_col 1 1 (by omega) (by omega)) ?_ ?_
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+
+theorem R308_stage : ∀ n : ℕ, PkGA (2 * n + 2) (Mtwd 2 Q M308 (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      exact ⟨RunA 0, Iface_RunA0, 0, 1, R296, [], rfl, R296_RunA0, rfl, JkGU_nil 1⟩
+  | (n + 1) => by
+      rw [Mtwd_succ]
+      have ih := R308_stage n
+      have hR := LwA_unit11 (h := 2 * n + 2) ⟨PkGA, BaseOk_PkGA, LwB_of_base ih⟩
+      have hP : PkGA (2 * n + 2 + 1 + 1) (Mtwd 2 Q M308 (n + 1) ++
+          [((2 * n + 2 + 1, 1, 0) : ℕ × ℕ × ℕ), ((2 * n + 2 + 2, 2, 1) : ℕ × ℕ × ℕ)] ++
+          ([((2 * n + 2 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ [])) :=
+        ⟨RunA 0, Iface_RunA0, 0, 2 * n + 2 + 1, _, [], rfl, hR, rfl, JkGU_nil _⟩
+      have e : shiftr01 (2 * (n + 1)) 0 M308 =
+          [((2 * n + 2 + 1, 1, 0) : ℕ × ℕ × ℕ), ((2 * n + 2 + 2, 2, 1) : ℕ × ℕ × ℕ)] ++
+          ([((2 * n + 2 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ []) := by
+        simp [M308, shiftr01]; omega
+      rw [e, ← List.append_assoc, show 2 * (n + 1) + 2 = 2 * n + 2 + 1 + 1 from by omega]
+      exact hP
+
+/-- ★★★★ シート行308 `R296 (2,2,0)(3,2,0) = psi(W_w + W_2^2)`。 -/
+theorem R308_mem : R296 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocYd_mem (Y0 := Q) (M := M308) (L := 1) (y := 2) (dl := 2) Q_ne MidD_M308
+    (by simp [M308, entry]) ?_ (by omega) (by omega) ?_
+  · simpa [M308, R296, Q] using h
+  · intro t ht1 htl hlt hrec
+    simp only [M308, List.length_cons, List.length_nil] at htl
+    rcases (show t = 1 ∨ t = 2 by omega) with rfl | rfl
+    · exfalso
+      have := hrec 2 (by omega) (by simp [M308])
+      simp [M308, entry] at this
+    · simp [M308, entry]
+  · intro n
+    cases n with
+    | zero => rw [Mtwd_zero]; exact Q_mem
+    | succ n => exact (PkGA_Aok (R308_stage n)).mem
+
+def M311 : TrioSeq := M308 ++ [((3, 3, 1) : ℕ × ℕ × ℕ)]
+
+theorem MidD_M311 : MidD 2 M311 := by
+  refine MidD_append MidD_M308 ?_ ?_
+  · intro x hx; simp only [List.mem_singleton] at hx; subst hx; simp
+  · intro x hx; simp only [List.mem_singleton] at hx; subst hx; simp
+
+theorem R311_stage : ∀ n : ℕ, PkGA (2 * n + 2) (Mtwd 2 Q M311 (n + 1))
+  | 0 => by
+      rw [Mtwd_one]
+      exact ⟨RunA 0, Iface_RunA0, 0, 1, R296, [((3, 3, 1) : ℕ × ℕ × ℕ)], rfl, R296_RunA0, rfl,
+        JkGU_z1 1⟩
+  | (n + 1) => by
+      rw [Mtwd_succ]
+      have ih := R311_stage n
+      have hR := LwA_unit11 (h := 2 * n + 2) ⟨PkGA, BaseOk_PkGA, LwB_of_base ih⟩
+      have hP : PkGA (2 * n + 2 + 1 + 1) (Mtwd 2 Q M311 (n + 1) ++
+          [((2 * n + 2 + 1, 1, 0) : ℕ × ℕ × ℕ), ((2 * n + 2 + 2, 2, 1) : ℕ × ℕ × ℕ)] ++
+          ([((2 * n + 2 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++
+            [((2 * n + 2 + 1 + 2, 3, 1) : ℕ × ℕ × ℕ)])) :=
+        ⟨RunA 0, Iface_RunA0, 0, 2 * n + 2 + 1, _, [((2 * n + 2 + 1 + 2, 3, 1) : ℕ × ℕ × ℕ)], rfl,
+          hR, rfl, JkGU_z1 _⟩
+      have e : shiftr01 (2 * (n + 1)) 0 M311 =
+          [((2 * n + 2 + 1, 1, 0) : ℕ × ℕ × ℕ), ((2 * n + 2 + 2, 2, 1) : ℕ × ℕ × ℕ)] ++
+          ([((2 * n + 2 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] ++
+            [((2 * n + 2 + 1 + 2, 3, 1) : ℕ × ℕ × ℕ)]) := by
+        simp [M311, M308, shiftr01]; omega
+      rw [e, ← List.append_assoc, show 2 * (n + 1) + 2 = 2 * n + 2 + 1 + 1 from by omega]
+      exact hP
+
+/-- ★★★★ シート行311 `R296 (2,2,0)(3,3,1)(3,2,0) = psi(W_w + psi_2(W_w)*W_2)`。 -/
+theorem R311_mem : R310 ++ [((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocYd_mem (Y0 := Q) (M := M311) (L := 1) (y := 2) (dl := 2) Q_ne MidD_M311
+    (by simp [M311, M308, entry]) ?_ (by omega) (by omega) ?_
+  · simpa [M311, M308, R310, R296, Q] using h
+  · intro t ht1 htl hlt hrec
+    simp only [M311, M308, List.length_append, List.length_cons, List.length_nil] at htl
+    rcases (show t = 1 ∨ t = 2 ∨ t = 3 by omega) with rfl | rfl | rfl
+    · exfalso
+      have := hrec 2 (by omega) (by simp [M311, M308])
+      simp [M311, M308, entry] at this
+    · simp [M311, M308, entry]
+    · exfalso; simp [M311, M308, entry] at hlt
+  · intro n
+    cases n with
+    | zero => rw [Mtwd_zero]; exact Q_mem
+    | succ n => exact (PkGA_Aok (R311_stage n)).mem
+
+#print axioms R299_mem
+#print axioms R305_mem
+#print axioms R308_mem
+#print axioms R311_mem
 end Small
 end TRIO
