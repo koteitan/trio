@@ -17083,5 +17083,75 @@ theorem MidD_jkT (l v : ℕ) (hl : 1 ≤ l) (hv : 1 ≤ v) {J : JT} (hJ : JTOk v
 
 #print axioms MidD_jkT
 
+
+/-! ### z を含まない junk の木（1 の列と荷だけ）は、どの `BaseOk` 台座の上でも通る -/
+
+/-- 木が「z を含まず、記録は 1 の列、荷は `Bok`」。 -/
+def RT1 : JT → Prop
+  | JT.nil => True
+  | JT.z _ _ => False
+  | JT.rc w sub rest => w = 1 ∧ RT1 sub ∧ RT1 rest
+  | JT.blk Y rest => Bok Y ∧ RT1 rest
+
+theorem RT1_JTOk : ∀ (J : JT), RT1 J → ∀ v : ℕ, JTOk v J
+  | JT.nil, _, v => trivial
+  | JT.z _ _, h, _ => absurd h (by simp [RT1])
+  | JT.blk Y rest, hJ, v => ⟨hJ.1, RT1_JTOk rest hJ.2 v⟩
+  | JT.rc w sub rest, hJ, v => by
+      obtain ⟨rfl, hsub, hrest⟩ := hJ
+      exact ⟨le_refl 1, by omega, RT1_JTOk sub hsub 1, RT1_JTOk rest hrest v⟩
+
+/-- ★★★ `BaseOk` 台座の元に、z を含まない木の junk を継いでも台座の元のまま。 -/
+theorem RT1_close : ∀ (J : JT), RT1 J → ∀ (P : ℕ → TrioSeq → Prop), BaseOk P →
+    ∀ (l v : ℕ) (Y0 : TrioSeq), P l Y0 → P l (Y0 ++ jkT l v J)
+  | JT.nil, _, P, hP, l, v, Y0, hY0 => by simpa [jkT] using hY0
+  | JT.z _ _, h, _, _, _, _, _, _ => absurd h (by simp [RT1])
+  | JT.blk Y rest, hJ, P, hP, l, v, Y0, hY0 => by
+      have hY : Bok Y := hJ.1
+      -- 荷を吸収
+      have hstep : P l (Y0 ++ shiftr01 (l + 1) 0 Y) := by
+        refine hP.close l Y0 _ hY0 ?_ ?_ ?_
+        · intro x hx
+          simp only [shiftr01, List.mem_map] at hx
+          obtain ⟨q, -, rfl⟩ := hx
+          show l + 1 ≤ q.1 + (l + 1); omega
+        · intro x hx
+          simp only [shiftr01, List.mem_map] at hx
+          obtain ⟨q, hq, rfl⟩ := hx
+          simpa using hY.mono q hq
+        · intro t A' hA'
+          rw [shiftr01_add0]
+          have := hP.hang (l + t) A' hA' Y hY
+          rwa [show l + t + 1 = l + 1 + t from by omega] at this
+      have h2 := RT1_close rest hJ.2 P hP l v _ hstep
+      rw [jkT]
+      simpa [List.append_assoc] using h2
+  | JT.rc w sub rest, hJ, P, hP, l, v, Y0, hY0 => by
+      obtain ⟨rfl, hsub, hrest⟩ := hJ
+      -- 1 の列とその junk をまとめて吸収
+      have hstep : P l (Y0 ++ ([((l + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ jkT (l + 1) 1 sub)) := by
+        refine hP.close l Y0 _ hY0 ?_ ?_ ?_
+        · intro x hx
+          rcases List.mem_append.mp hx with h | h
+          · simp only [List.mem_singleton] at h; subst h; simp
+          · have := jkT_ge sub (l + 1) 1 x h; omega
+        · intro x hx
+          rcases List.mem_append.mp hx with h | h
+          · simp only [List.mem_singleton] at h; subst h; simp
+          · exact jkT_mono sub 1 (RT1_JTOk sub hsub 1) (l + 1) x h
+        · intro t A' hA'
+          rw [shiftr01_append0, shift_col, jkT_shift]
+          have hAok : Aok A' := hP.aok (l + t) A' hA'
+          have hLw : LwA (l + t) A' := ⟨P, hP, LwB_of_base hA'⟩
+          have hR : RunA 0 (l + t + 1) (A' ++ [((l + t + 1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+            ⟨l + t, A', _, rfl, rfl, hLw, by simpa using SegA_one (l + t)⟩
+          have h1 := RT1_close sub hsub (RunA 0) (BaseOk_RunA 0) (l + t + 1) 1 _ hR
+          have h2 := ((BaseOk_RunA 0).aok _ _ h1).mem
+          rw [show l + 1 + t = l + t + 1 from by omega]
+          simpa [List.append_assoc] using h2
+      have h2 := RT1_close rest hrest P hP l v _ hstep
+      rw [jkT]
+      simpa [List.append_assoc] using h2
+
 end Small
 end TRIO
