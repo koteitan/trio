@@ -652,3 +652,10 @@ Dm 0 = Q、Dm 1 = D1、Dm (n+2) = Dv n。A1_intro で終わり。
 - 帰納法: Q K cnt: ∀ P S, good P → (∀ i ∈ S, i ≤ K) → S.count K = cnt → good (P ++ S)。
   K = 0: Lemma A を繰り返す。K+1, cnt = 0: Q K。cnt+1: S = S1 ++ [K+1] ++ S2（最後の K+1）、
   good (P ++ S1 ++ [K+1]) は Lemma B（Q (K+1) cnt で good (P ++ S1 ++ replicate m K)）、その後 Q K で S2。
+
+### 2026-09-03 (続き46) ★★★★★ junk の語の普遍性 Good_blocks と行 331〜335 が緑
+- Good ks（4 段: PU の JkU / PkGA の JkGU / 1 の列の SegA / 根の Aok）。
+- Good_snocz（最後に z: oper_z1w の塔 = Dzw の連鎖）、Good_snocf（最後に f: flat_mem、塔は ks ++ (zf i)^n）。
+- Good_Q K cnt: 「最大の走り K」「K の走りの個数 cnt」の二重帰納法（続き45 のとおり）。Good_blocks rs。
+- 331〜334 = (Good_blocks rs).root（rs = [1,0], [1,0,0], [1,1], [2]）、335 = oper_snoc00'（MidD の head1 なし版）+ blocks [n]。
+残り: 行 336 以降の「平坦な列の壁」（続き44）。

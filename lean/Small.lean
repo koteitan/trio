@@ -12650,5 +12650,397 @@ theorem Dzw_W_root {ks : List Bool} (hG : Good ks) : ∀ n : ℕ, Dzw 0 0 ks n �
       simpa [Dzw] using h1
 
 #print axioms Dzw_W_root
+/-! ### 語の普遍性: 補題 A（最後に z）、補題 B（最後に f）、二重帰納法。行 331〜335 -/
+
+/-- 根と語だけの行列は `W 0` に入れば `Aok`。 -/
+theorem Aok_root_of_mem {ks : List Bool}
+    (hmem : (((0, 0, 0) : ℕ × ℕ × ℕ) :: ks.map (col 0 0)) ∈ W 0) :
+    Aok (((0, 0, 0) : ℕ × ℕ × ℕ) :: ks.map (col 0 0)) := by
+  refine ⟨hmem, by simp, ⟨by simp [entry], ?_⟩, ?_, ?_⟩
+  · intro j hj hjl
+    simp only [List.length_cons, List.length_map] at hjl
+    obtain ⟨q, rfl⟩ : ∃ q, j = q + 1 := ⟨j - 1, by omega⟩
+    have : entry (((0, 0, 0) : ℕ × ℕ × ℕ) :: ks.map (col 0 0)) 0 (q + 1)
+        = entry (ks.map (col 0 0)) 0 q := by simp [entry]
+    rw [this, entry_map_lt (col 0 0) ks (by omega) 0]
+    cases ks[q] <;> simp [col, entry]
+  · intro c hc h0
+    simp only [List.mem_cons] at hc
+    rcases hc with rfl | hc
+    · exact ⟨rfl, rfl⟩
+    · exfalso; have := map_col_ge c hc; omega
+  · intro c hc
+    simp only [List.mem_cons] at hc
+    rcases hc with rfl | hc
+    · simp
+    · exact map_col_mono c hc
+
+theorem Good_nil : Good [] where
+  pu := fun y c hy => by simpa using JkU_nil' hy c
+  pk := fun c => by simpa using JkGU_nil c
+  seg := fun h => by simpa using SegA_one h
+  root := by simpa using Am_Aok 0
+
+theorem shift_zcol (a b t : ℕ) :
+    shiftr01 t 0 [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] = [((a + 1 + t, b + 1, 1) : ℕ × ℕ × ℕ)] := by
+  simp [shiftr01]
+
+/-- 補題 A: 語の最後に z を足しても普遍。 -/
+theorem Good_snocz {ks : List Bool} (h0 : ∀ h : 0 < ks.length, ks[0] = true) (hG : Good ks) :
+    Good (ks ++ [true]) where
+  pu := by
+    intro y c hy
+    refine ⟨?_, ?_, ?_⟩
+    · intro x hx
+      rw [List.map_append] at hx
+      rcases List.mem_append.mp hx with h | h
+      · have := map_col_ge x h; omega
+      · simp only [List.map_cons, List.map_nil, List.mem_singleton] at h; subst h; simp [col]
+    · rw [List.map_append]; exact fun x hx => by
+        rcases List.mem_append.mp hx with h | h
+        · exact map_col_mono x h
+        · simp only [List.map_cons, List.map_nil, List.mem_singleton] at h; subst h; simp [col]
+    · intro E hE t Z hZ
+      have h := z1w_mem (Y0 := Z) (a := c + 1 + t) (b := y + 1) h0
+        (fun n => by
+          have := Dzw_W hG hy hE (c := c + t) (by simpa using hZ) n
+          simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+      rw [List.map_append, shiftr01_append0, shift_map_col]
+      simp only [List.map_cons, List.map_nil, col]
+      rw [shift_zcol]
+      simpa [List.append_assoc, show c + 1 + 1 + t = c + 1 + t + 1 from by omega] using h
+  pk := by
+    intro c E hI
+    refine ⟨?_, ?_, ?_⟩
+    · intro x hx
+      rw [List.map_append] at hx
+      rcases List.mem_append.mp hx with h | h
+      · have := map_col_ge x h; omega
+      · simp only [List.map_cons, List.map_nil, List.mem_singleton] at h; subst h; simp [col]
+    · rw [List.map_append]; exact fun x hx => by
+        rcases List.mem_append.mp hx with h | h
+        · exact map_col_mono x h
+        · simp only [List.map_cons, List.map_nil, List.mem_singleton] at h; subst h; simp [col]
+    · intro j t X hX
+      have h := z1w_mem (Y0 := X) (a := c + 1 + t) (b := 2) h0
+        (fun n => by
+          have := Dzw_W_RunG hG hI (c := c + t) hX n
+          simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+      rw [List.map_append, shiftr01_append0, shift_map_col]
+      simp only [List.map_cons, List.map_nil, col]
+      rw [shift_zcol]
+      simpa [List.append_assoc, show c + 1 + 1 + t = c + 1 + t + 1 from by omega] using h
+  seg := by
+    intro h
+    refine ⟨?_, by simp [entry], ?_⟩
+    · have h1 := MidD_append (MidD_word (h + 1) 1 (by omega) (by omega) ks)
+        (N := [((h + 2, 2, 1) : ℕ × ℕ × ℕ)])
+        (by intro x hx; simp only [List.mem_singleton] at hx; subst hx; show h + 1 + 1 ≤ h + 2; omega)
+        (by intro x hx; simp only [List.mem_singleton] at hx; subst hx; simp)
+      simpa [show h + 1 + 1 = h + 2 from by omega, col] using h1
+    · intro P hP s A' hA'
+      have hz := z1w_mem (Y0 := A') (a := h + s + 1) (b := 1) h0
+        (fun n => Dzw_W_LwA hG (h := h + s) ⟨P, hP, hA'⟩ n)
+      rw [List.map_append]
+      simp only [List.map_cons, List.map_nil, col]
+      rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: (ks.map (col (h + 1) 1) ++ [((h + 1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)])
+          = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ ks.map (col (h + 1) 1) ++ [((h + 1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)] from rfl,
+        shiftr01_append0, shiftr01_append0, shift_col, shift_map_col, shift_zcol]
+      simpa [List.append_assoc, show h + 1 + s = h + s + 1 from by omega,
+        show h + 1 + 1 + s = h + s + 1 + 1 from by omega] using hz
+  root := by
+    have hmem := z1w_mem (Y0 := []) (a := 0) (b := 0) h0 (fun n => by simpa using Dzw_W_root hG n)
+    exact Aok_root_of_mem (ks := ks ++ [true]) (by simpa [col] using hmem)
+
+/-- `zf i = z f^i`（1 ブロック）。 -/
+def zf (i : ℕ) : List Bool := true :: List.replicate i false
+
+theorem map_zf (a b i : ℕ) : (zf i).map (col a b) =
+    ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: List.replicate i ((a + 2, 0, 0) : ℕ × ℕ × ℕ) := by
+  simp [zf, col, List.map_replicate]
+
+theorem MidD_zf (a b i : ℕ) : MidD (a + 2) ((zf i).map (col a b)) := by
+  rw [map_zf]
+  have h := MidD_append (MidD_col1 (a + 1) (b + 1) (by omega) (by omega))
+    (N := List.replicate i ((a + 2, 0, 0) : ℕ × ℕ × ℕ))
+    (by intro x hx; rw [List.mem_replicate] at hx; obtain ⟨_, rfl⟩ := hx; show a + 1 + 1 ≤ a + 2; omega)
+    (by intro x hx; rw [List.mem_replicate] at hx; obtain ⟨_, rfl⟩ := hx; simp)
+  simpa [show a + 1 + 1 = a + 2 from by omega] using h
+
+/-- 語 `ks ++ (zf i)^n`。 -/
+def wordN (ks : List Bool) (i n : ℕ) : List Bool := ks ++ (List.range n).flatMap fun _ => zf i
+
+theorem map_wordN (f : Bool → ℕ × ℕ × ℕ) (ks : List Bool) (i n : ℕ) :
+    (wordN ks i n).map f = ks.map f ++ (List.range n).flatMap fun _ => (zf i).map f := by
+  simp [wordN, List.map_flatMap]
+
+theorem map_snocf (f : Bool → ℕ × ℕ × ℕ) (ks : List Bool) (i : ℕ) :
+    (ks ++ (zf i ++ [false])).map f = ks.map f ++ (zf i).map f ++ [f false] := by
+  simp [List.map_append]
+
+/-- 補題 B: `ks ++ (zf i)^n` が全部普遍なら `ks ++ zf i ++ [f]` も普遍。 -/
+theorem Good_snocf {ks : List Bool} (i : ℕ) (hm : ∀ n, Good (wordN ks i n)) :
+    Good (ks ++ (zf i ++ [false])) where
+  pu := by
+    intro y c hy
+    refine ⟨?_, ?_, ?_⟩
+    · intro x hx; have := map_col_ge x hx; omega
+    · exact map_col_mono
+    · intro E hE t Z hZ
+      rw [shift_map_col, map_snocf]
+      simp only [col]
+      have h := flat_mem (Y0 := Z ++ [((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ ks.map (col (c + 1 + t) (y + 1)))
+        (M := (zf i).map (col (c + 1 + t) (y + 1))) (d := c + 1 + t + 2) (MidD_zf _ _ i)
+        (fun n => by
+          have hP : PU y (c + 1 + t) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+              (wordN ks i n).map (col (c + 1 + t) (y + 1)))) :=
+            ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [show c + t + 1 = c + 1 + t from by omega],
+              (hm n).pu y (c + t) hy⟩
+          have := ((BaseOk_PU y).aok _ _ hP).mem
+          rw [map_wordN] at this
+          simpa [List.append_assoc] using this)
+      simpa [List.append_assoc] using h
+  pk := by
+    intro c E hI
+    refine ⟨?_, ?_, ?_⟩
+    · intro x hx; have := map_col_ge x hx; omega
+    · exact map_col_mono
+    · intro j t X hX
+      rw [shift_map_col, map_snocf]
+      simp only [col]
+      have h := flat_mem (Y0 := X ++ [((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++ ks.map (col (c + 1 + t) 2))
+        (M := (zf i).map (col (c + 1 + t) 2)) (d := c + 1 + t + 2) (MidD_zf _ _ i)
+        (fun n => by
+          have hP : PkGA (c + 1 + t) (X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+              (wordN ks i n).map (col (c + 1 + t) 2))) :=
+            ⟨E, hI, j, c + t, X, _, by omega, hX, by rw [show c + t + 1 = c + 1 + t from by omega],
+              (hm n).pk (c + t)⟩
+          have := (PkGA_Aok hP).mem
+          rw [map_wordN] at this
+          simpa [List.append_assoc] using this)
+      simpa [List.append_assoc] using h
+  seg := by
+    intro h
+    refine ⟨?_, by simp [entry], ?_⟩
+    · have h1 := MidD_word (h + 1) 1 (by omega) (by omega) (ks ++ (zf i ++ [false]))
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    · intro P hP s A' hA'
+      rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: (ks ++ (zf i ++ [false])).map (col (h + 1) 1)
+          = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ (ks ++ (zf i ++ [false])).map (col (h + 1) 1) from rfl,
+        shiftr01_append0, shift_col, shift_map_col, map_snocf]
+      simp only [col]
+      have hR : ∀ n, RunA 0 (h + s + 1) (A' ++ (((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          (wordN ks i n).map (col (h + s + 1) 1))) :=
+        fun n => ⟨h + s, A', _, rfl, rfl, ⟨P, hP, hA'⟩, (hm n).seg (h + s)⟩
+      have h1 := flat_mem (Y0 := A' ++ [((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++ ks.map (col (h + 1 + s) 1))
+        (M := (zf i).map (col (h + 1 + s) 1)) (d := h + 1 + s + 2) (MidD_zf _ _ i)
+        (fun n => by
+          have := ((BaseOk_RunA 0).aok _ _ (hR n)).mem
+          rw [map_wordN] at this
+          simpa [List.append_assoc, show h + s + 1 = h + 1 + s from by omega] using this)
+      simpa [List.append_assoc] using h1
+  root := by
+    have h1 := flat_mem (Y0 := [((0, 0, 0) : ℕ × ℕ × ℕ)] ++ ks.map (col 0 0))
+      (M := (zf i).map (col 0 0)) (d := 0 + 2) (MidD_zf 0 0 i)
+      (fun n => by
+        have := (hm n).root.mem
+        rw [map_wordN] at this
+        simpa [List.append_assoc] using this)
+    refine Aok_root_of_mem ?_
+    rw [map_snocf]
+    simpa [col, List.append_assoc] using h1
+
+/-! ### 二重帰納法: すべての語が普遍 -/
+
+def blocks (rs : List ℕ) : List Bool := rs.flatMap zf
+
+theorem blocks_append (rs1 rs2 : List ℕ) : blocks (rs1 ++ rs2) = blocks rs1 ++ blocks rs2 := by
+  simp [blocks]
+
+theorem blocks_head (rs : List ℕ) : ∀ h : 0 < (blocks rs).length, (blocks rs)[0] = true := by
+  intro h
+  cases rs with
+  | nil => simp [blocks] at h
+  | cons i rs => simp [blocks, zf]
+
+theorem blocks_snoc0 (rs : List ℕ) : blocks (rs ++ [0]) = blocks rs ++ [true] := by
+  simp [blocks, zf]
+
+theorem blocks_snoc_succ (rs : List ℕ) (i : ℕ) :
+    blocks (rs ++ [i + 1]) = blocks rs ++ (zf i ++ [false]) := by
+  simp [blocks, zf, List.replicate_succ']
+
+theorem blocks_replicate (rs : List ℕ) (i : ℕ) : ∀ m,
+    blocks (rs ++ List.replicate m i) = wordN (blocks rs) i m
+  | 0 => by simp [blocks, wordN]
+  | (m + 1) => by
+      rw [List.replicate_succ', ← List.append_assoc, blocks_append, blocks_replicate rs i m]
+      simp [wordN, blocks, List.range_succ, List.append_assoc]
+
+theorem split_last {a : ℕ} : ∀ {S : List ℕ}, a ∈ S → ∃ S1 S2, S = S1 ++ a :: S2 ∧ a ∉ S2
+  | [], h => by simp at h
+  | b :: S', h => by
+      by_cases ha : a ∈ S'
+      · obtain ⟨S1, S2, rfl, hn⟩ := split_last ha
+        exact ⟨b :: S1, S2, by simp, hn⟩
+      · have : a = b := by
+          rcases List.mem_cons.mp h with h1 | h1
+          · exact h1
+          · exact absurd h1 ha
+        subst this
+        exact ⟨[], S', rfl, ha⟩
+
+theorem Good_rep0 {P : List ℕ} (hP : Good (blocks P)) : ∀ n, Good (blocks (P ++ List.replicate n 0))
+  | 0 => by simpa using hP
+  | (n + 1) => by
+      rw [List.replicate_succ', ← List.append_assoc, blocks_snoc0]
+      exact Good_snocz (blocks_head _) (Good_rep0 hP n)
+
+/-- 二重帰納法の本体。 -/
+theorem Good_Q : ∀ (K cnt : ℕ) (P S : List ℕ), Good (blocks P) → (∀ i ∈ S, i ≤ K) →
+    S.count K = cnt → Good (blocks (P ++ S))
+  | 0, _, P, S, hP, hle, _ => by
+      have hS : S = List.replicate S.length 0 :=
+        List.eq_replicate_iff.mpr ⟨rfl, fun i hi => by have := hle i hi; omega⟩
+      rw [hS]
+      exact Good_rep0 hP _
+  | (K + 1), 0, P, S, hP, hle, hcnt => by
+      have hnot : (K + 1) ∉ S := List.count_eq_zero.mp hcnt
+      refine Good_Q K (S.count K) P S hP ?_ rfl
+      intro i hi
+      have := hle i hi
+      have : i ≠ K + 1 := fun h => hnot (h ▸ hi)
+      omega
+  | (K + 1), (cnt + 1), P, S, hP, hle, hcnt => by
+      have hmem : (K + 1) ∈ S := by
+        rw [← List.count_pos_iff]; omega
+      obtain ⟨S1, S2, rfl, hn⟩ := split_last hmem
+      have hc1 : S1.count (K + 1) = cnt := by
+        rw [List.count_append, List.count_cons_self] at hcnt
+        have : S2.count (K + 1) = 0 := List.count_eq_zero.mpr hn
+        omega
+      have hall : ∀ m, Good (blocks (P ++ S1 ++ List.replicate m K)) := by
+        intro m
+        rw [List.append_assoc]
+        refine Good_Q (K + 1) cnt P (S1 ++ List.replicate m K) hP ?_ ?_
+        · intro i hi
+          rcases List.mem_append.mp hi with h | h
+          · exact hle i (by simp [h])
+          · rw [List.mem_replicate] at h; omega
+        · rw [List.count_append, hc1, List.count_replicate]
+          simp
+      have hB : Good (blocks (P ++ S1 ++ [K + 1])) := by
+        rw [blocks_snoc_succ]
+        refine Good_snocf K ?_
+        intro n
+        rw [← blocks_replicate]
+        exact hall n
+      have h2 := Good_Q K (S2.count K) (P ++ S1 ++ [K + 1]) S2 hB (by
+        intro i hi
+        have := hle i (by simp [hi])
+        have : i ≠ K + 1 := fun h => hn (h ▸ hi)
+        omega) rfl
+      simpa [List.append_assoc] using h2
+
+theorem le_sum_of_mem : ∀ {rs : List ℕ} {i : ℕ}, i ∈ rs → i ≤ rs.sum
+  | [], _, h => by simp at h
+  | b :: rs, i, h => by
+      rcases List.mem_cons.mp h with rfl | h
+      · simp
+      · have := le_sum_of_mem h; simp; omega
+
+/-- ★★★★★ すべての語 `z f^{i_1} … z f^{i_r}` は普遍 junk。 -/
+theorem Good_blocks (rs : List ℕ) : Good (blocks rs) := by
+  have h := Good_Q rs.sum (rs.count rs.sum) [] rs (by simpa [blocks] using Good_nil)
+    (fun i hi => le_sum_of_mem hi) rfl
+  simpa using h
+
+/-! ### 行 331〜335 -/
+
+/-- ★★★★ シート行331 `(0,0,0)(1,1,1)(2,0,0)(1,1,1) = psi(W_w*w + W_w)`。 -/
+theorem R331_mem : [(0, 0, 0), (1, 1, 1), (2, 0, 0), (1, 1, 1)] ∈ W 0 := (Good_blocks [1, 0]).root.mem
+
+/-- ★★★★ シート行332 `psi(W_w*w + W_w*2)`。 -/
+theorem R332_mem : [(0, 0, 0), (1, 1, 1), (2, 0, 0), (1, 1, 1), (1, 1, 1)] ∈ W 0 :=
+  (Good_blocks [1, 0, 0]).root.mem
+
+/-- ★★★★ シート行333 `psi(W_w*w2)`。 -/
+theorem R333_mem : [(0, 0, 0), (1, 1, 1), (2, 0, 0), (1, 1, 1), (2, 0, 0)] ∈ W 0 :=
+  (Good_blocks [1, 1]).root.mem
+
+/-- ★★★★ シート行334 `psi(W_w*w^2)`。 -/
+theorem R334_mem : [(0, 0, 0), (1, 1, 1), (2, 0, 0), (2, 0, 0)] ∈ W 0 := (Good_blocks [2]).root.mem
+
+open Classical in
+/-- 平坦な列の一般展開（`MidD` の代わりに頭と尾の高さだけ）。 -/
+theorem oper_snoc00' (Y0 : TrioSeq) {M : TrioSeq} {d : ℕ} (hne : M ≠ [])
+    (hhead : entry M 0 0 + 1 = d) (htail : ∀ r, 1 ≤ r → r < M.length → d ≤ entry M 0 r) (n : ℕ) :
+    (Y0 ++ M ++ [((d, 0, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Y0 ++ (List.range n).flatMap fun _ => M := by
+  set c : ℕ × ℕ × ℕ := (d, 0, 0) with hc
+  have hq1 : 1 ≤ M.length := List.length_pos_iff.mpr hne
+  have hd1 : 1 ≤ d := by omega
+  have hlen : (Y0 ++ M ++ [c]).length = Y0.length + M.length + 1 := by simp; omega
+  have eT : ∀ i r, entry (Y0 ++ M ++ [c]) i (Y0.length + r) = entry (M ++ [c]) i r := by
+    intro i r; rw [List.append_assoc]; exact entry_append_right Y0 (M ++ [c]) i r
+  have eM : ∀ i r, r < M.length → entry (Y0 ++ M ++ [c]) i (Y0.length + r) = entry M i r := by
+    intro i r hr; rw [eT]; exact entry_append_left hr
+  have e0p : entry (Y0 ++ M ++ [c]) 0 Y0.length = d - 1 := by
+    rw [show Y0.length = Y0.length + 0 from rfl, eM 0 0 (by omega)]; omega
+  have e0q : entry (Y0 ++ M ++ [c]) 0 (Y0.length + M.length) = d := by
+    rw [eT]; exact (entry_append_last (P := M) (c := c)).1
+  have e1q : entry (Y0 ++ M ++ [c]) 1 (Y0.length + M.length) = 0 := by
+    rw [eT]; exact (entry_append_last (P := M) (c := c)).2.1
+  have e2q : entry (Y0 ++ M ++ [c]) 2 (Y0.length + M.length) = 0 := by
+    rw [eT]; exact (entry_append_last (P := M) (c := c)).2.2
+  have etail : ∀ r, 1 ≤ r → r < M.length → d ≤ entry (Y0 ++ M ++ [c]) 0 (Y0.length + r) := by
+    intro r hr1 hrq; rw [eM 0 r hrq]; exact htail r hr1 hrq
+  have hn0 : nextrel0 (Y0 ++ M ++ [c]) Y0.length (Y0.length + M.length) := by
+    refine ⟨by omega, by omega, by omega, by rw [e0p, e0q]; omega, ?_⟩
+    intro j hj
+    obtain ⟨r, hr1, hrq, rfl⟩ : ∃ r, 1 ≤ r ∧ r < M.length ∧ j = Y0.length + r :=
+      ⟨j - Y0.length, by omega, by omega, by omega⟩
+    rw [e0q]; exact etail r hr1 hrq
+  have hpar : hasParent (Y0 ++ M ++ [c]) 0 (Y0.length + M.length) := by
+    refine ⟨Y0.length, by show nextR _ 0 Y0.length (Y0.length + M.length); simp only [nextR, if_true]; exact hn0, ?_⟩
+    intro j0 hj0
+    change nextR _ 0 j0 (Y0.length + M.length) at hj0
+    simp only [nextR, if_true] at hj0
+    obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+    rcases Nat.lt_trichotomy j0 Y0.length with h | h | h
+    · exfalso
+      have := hall Y0.length ⟨h, by omega⟩
+      rw [e0p, e0q] at this; omega
+    · exact h
+    · exfalso
+      obtain ⟨r, hr1, hrq, rfl⟩ : ∃ r, 1 ≤ r ∧ r < M.length ∧ j0 = Y0.length + r :=
+        ⟨j0 - Y0.length, by omega, by omega, by omega⟩
+      have := etail r hr1 hrq
+      rw [e0q] at hlt2; omega
+  have hparent : parent (Y0 ++ M ++ [c]) 0 (Y0.length + M.length) = Y0.length :=
+    hpar.unique (parent_nextR hpar) (by show nextR _ 0 Y0.length (Y0.length + M.length); simp only [nextR, if_true]; exact hn0)
+  have hsrow : srow (Y0 ++ M ++ [c]) (Y0.length + M.length) = 0 := by
+    simp only [srow]; rw [e2q, e1q]; simp
+  rw [L53.oper_flat (j1 := Y0.length + M.length) (j0 := Y0.length) (by omega) (by omega)
+    (by rw [e0q]; omega) hsrow hpar hparent.symm n]
+  rw [map_range'_entry_drop (by omega) (by omega)]
+  have htk : (Y0 ++ M ++ [c]).take Y0.length = Y0 := by
+    rw [List.append_assoc, List.take_left]
+  have hseg : ((Y0 ++ M ++ [c]).take (Y0.length + M.length)).drop Y0.length = M := by
+    rw [show Y0.length + M.length = (Y0 ++ M).length from by simp, List.take_left, List.drop_left]
+  rw [htk, hseg]
+
+/-- ★★★★ シート行335 `(0,0,0)(1,1,1)(2,0,0)(3,0,0) = psi(W_w*w^w)`。 -/
+theorem R335_mem : R325 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  have e := oper_snoc00' (Y0 := Q) (M := [((2, 0, 0) : ℕ × ℕ × ℕ)]) (d := 3) (by simp)
+    (by simp [entry]) (by intro r hr1 hrl; simp at hrl; omega) n
+  rw [show R325 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] = Q ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] from rfl, e,
+    flatMap_const_singleton]
+  have h := (Good_blocks [n]).root.mem
+  simpa [blocks, zf, col, Q, List.map_replicate] using h
+
+#print axioms R335_mem
+#print axioms Good_blocks
 end Small
 end TRIO
