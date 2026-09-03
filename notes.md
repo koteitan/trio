@@ -738,3 +738,16 @@ GoodP_all: 荷がすべて Bok の語 ws（字 = z + 任意の Bok ブロック�
  C 最後の荷の末尾が非零 → oper_shwP_inner（荷が Y[n] に）→ GoodP_inner
 補助: Bok_dropLast, Bok_oper（oper_closed + ZM_oper + oper_head_eq）, Wp_replicate。
 次: 337〜345 を GoodP_all と既存の道具で個別に出す。
+
+### 2026-09-04 (続き55) ★★★★★ シート行 337〜345 が全部緑
+GoodP_all の 4 段のうち root と seg だけで足りた（bms で塔を確認した結果、(ii)(iii) は
+すべて「荷つきの字」の形に収まっていた）。
+- hangQ B = Q ++ B↑2 ∈ W 0 = GoodP_all [B] の root（Q ++ B↑2 = (0,0,0) :: colP 0 0 B）。
+- 337 = Q ++ Q↑2 = hangQ Q。338 = Q(2,1,0) = snocd_gen(d=2, hang=hangQ)。
+- 339 = R338(1,1,0) = snocd_gen(d=1, hang=Bok.append)。340 = R339(2,2,0) = RunG_snoc2（R339 は RunA 0 1）。
+- 341 = R338 ++ U11 0 1 = LwA_unit11。
+- hangU11: LwA h A, Bok B ⟹ A(h+1,1,0)(h+2,2,1) ++ B↑(h+3) ∈ W 0 = GoodP_all [B] の seg h。
+  342 = hangU11 B=(0,0,0)、343 = hangU11 B=Q、344 = R341(3,1,0) = snocd_gen(d=3, hang=hangU11)、
+  345 = R344(1,1,0)(2,2,1)(3,1,0) = 同じく snocd_gen(d=3) を R344 の上で。
+壁だった「平坦な列を頂上に持つ台座」は、実は語の側（荷つきの字）に押し込めた: 平坦な列 (2,0,0) は
+字 colP 0 0 B の荷の根であって、台座ではない。

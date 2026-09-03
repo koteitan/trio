@@ -15048,5 +15048,145 @@ theorem GoodP_all : ∀ ws : List TrioSeq, Wpl ws → GoodP ws := by
 
 #print axioms GoodP_all
 
+
+/-! ### シート行 337〜345 -/
+
+theorem Bok_Q : Bok Q := Aok_Q.toBok
+
+/-- 高さ 2 で任意の `Bok` ブロックを吊るす: `Q ++ B↑2 = (0,0,0) :: (z の荷が B の字)`。 -/
+theorem hangQ {B : TrioSeq} (hB : Bok B) : Q ++ shiftr01 2 0 B ∈ W 0 := by
+  have h := (GoodP_all [B] (Wp_singleton hB)).root.mem
+  simpa [wordP, colP, Q] using h
+
+/-- ★★★★★ シート行337 `(0,0,0)(1,1,1)(2,0,0)(3,1,1) = psi(W_w*psi(W_w))`。 -/
+theorem R337_mem : ([(0, 0, 0), (1, 1, 1), (2, 0, 0), (3, 1, 1)] : TrioSeq) ∈ W 0 := by
+  have h := hangQ Bok_Q
+  simpa [Q, shiftr01] using h
+
+/-- ★★★★★ シート行338 `(0,0,0)(1,1,1)(2,1,0) = psi(W_w*W)`。 -/
+theorem R338_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0)] : TrioSeq) ∈ W 0 := by
+  have hrow : ∀ j, 0 < j → j < Q.length → 1 ≤ entry Q 1 j := by
+    intro j hj0 hjl
+    simp only [Q, List.length_cons, List.length_nil] at hjl
+    have hj : j = 1 := by omega
+    subst hj
+    simp [Q, entry]
+  have h := snocd_gen (Y := Q) (d := 2) (by omega) Aok_Q (Ancd_of_row1 hrow 2)
+    (fun B hB => hangQ hB)
+  simpa [Q] using h
+
+def R338 : TrioSeq := [(0, 0, 0), (1, 1, 1), (2, 1, 0)]
+
+theorem Aok_R338 : Aok R338 := by
+  refine ⟨R338_mem, by simp [R338], ⟨by simp [R338, entry], ?_⟩, ?_, ?_⟩
+  · intro j hj hjl
+    simp only [R338, List.length_cons, List.length_nil] at hjl
+    rcases (show j = 1 ∨ j = 2 by omega) with rfl | rfl <;> simp [R338, entry]
+  · intro c hc h0
+    simp only [R338, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl <;> simp_all
+  · intro c hc
+    simp only [R338, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl <;> simp
+
+theorem R338_row1 : ∀ j, 0 < j → j < R338.length → 1 ≤ entry R338 1 j := by
+  intro j hj0 hjl
+  simp only [R338, List.length_cons, List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 by omega) with rfl | rfl <;> simp [R338, entry]
+
+/-- ★★★★★ シート行339 `R338 (1,1,0) = psi(W_w*W+W)`。 -/
+theorem R339_mem : R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R338 (Ancd_of_row1 R338_row1 1)
+    (fun B hB => by simpa [bump] using Bok.append Aok_R338 hB)
+
+def R339 : TrioSeq := R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem R339_RunA0 : RunA 0 1 R339 :=
+  ⟨0, R338, _, rfl, rfl, LwA_of_Aok Aok_R338, by simpa using SegA_one 0⟩
+
+/-- ★★★★★ シート行340 `R339 (2,2,0) = psi(W_w*W+psi_1(W_2))`。 -/
+theorem R340_mem : R339 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunG_snoc2 Iface_RunA0 0 1 R339 R339_RunA0
+
+/-- ★★★★★ シート行341 `R338 (1,1,0)(2,2,1) = psi(W_w*W+psi_1(W_w))`。 -/
+theorem R341_mem : R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  ((BaseOk_RunA 0).aok _ _ (LwA_unit11 (LwA_of_Aok Aok_R338))).mem
+
+def R341 : TrioSeq := R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+
+/-- 梯子の元 `A`（レベル `h`）の上の単位の上に、高さ `h+3` で任意の `Bok` を吊るす。 -/
+theorem hangU11 {h : ℕ} {A : TrioSeq} (hA : LwA h A) {B : TrioSeq} (hB : Bok B) :
+    A ++ ([((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)] ++
+      shiftr01 (h + 3) 0 B) ∈ W 0 := by
+  obtain ⟨P, hP, hL⟩ := hA
+  have h1 := ((GoodP_all [B] (Wp_singleton hB)).seg h).reapp P hP 0 A (by simpa using hL)
+  simpa [wordP, colP, shiftr01_zero, List.append_assoc,
+    show h + 1 + 1 = h + 2 from by omega, show h + 1 + 2 = h + 3 from by omega] using h1
+
+/-- ★★★★★ シート行342 `R341 (3,0,0) = psi(W_w*W+psi_1(W_w*w))`。 -/
+theorem R342_mem : R341 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := hangU11 (h := 0) (LwA_of_Aok Aok_R338) Bok_zero
+  simpa [R341, shiftr01, List.append_assoc] using h
+
+/-- ★★★★★ シート行343 `R341 (3,0,0)(4,1,1) = psi(W_w*W+psi_1(W_w*psi(W_w)))`。 -/
+theorem R343_mem : R341 ++ [((3, 0, 0) : ℕ × ℕ × ℕ), ((4, 1, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := hangU11 (h := 0) (LwA_of_Aok Aok_R338) Bok_Q
+  simpa [R341, Q, shiftr01, List.append_assoc] using h
+
+theorem Aok_R341 : Aok R341 := (BaseOk_RunA 0).aok _ _ (LwA_unit11 (LwA_of_Aok Aok_R338))
+
+theorem R341_row1 : ∀ j, 0 < j → j < R341.length → 1 ≤ entry R341 1 j := by
+  intro j hj0 hjl
+  simp only [R341, R338, List.length_append, List.length_cons, List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl <;>
+    simp [R341, R338, entry]
+
+/-- ★★★★★ シート行344 `R341 (3,1,0) = psi(W_w*W+psi_1(W_w*W))`。 -/
+theorem R344_mem : R341 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine snocd_gen (Y := R341) (d := 3) (by omega) Aok_R341 (Ancd_of_row1 R341_row1 3) ?_
+  intro B hB
+  have h := hangU11 (h := 0) (LwA_of_Aok Aok_R338) hB
+  simpa [R341, List.append_assoc] using h
+
+def R344 : TrioSeq := R341 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem Aok_R344 : Aok R344 := by
+  refine ⟨R344_mem, by simp [R344, R341, R338], ⟨by simp [R344, R341, R338, entry], ?_⟩, ?_, ?_⟩
+  · intro j hj hjl
+    simp only [R344, R341, R338, List.length_append, List.length_cons, List.length_nil] at hjl
+    rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+      simp [R344, R341, R338, entry]
+  · intro c hc h0
+    simp only [R344, R341, R338, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+  · intro c hc
+    simp only [R344, R341, R338, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+
+theorem R345_row1 : ∀ j, 0 < j →
+    j < (R344 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]).length →
+    1 ≤ entry (R344 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) 1 j := by
+  intro j hj0 hjl
+  simp only [R344, R341, R338, List.length_append, List.length_cons, List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [R344, R341, R338, entry]
+
+/-- ★★★★★ シート行345 `R344 (1,1,0)(2,2,1)(3,1,0) = psi(W_w*W+psi_1(W_w*W)*2)`。 -/
+theorem R345_mem : R344 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hbase : Aok (R344 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) :=
+    (BaseOk_RunA 0).aok _ _ (LwA_unit11 (LwA_of_Aok Aok_R344))
+  have h := snocd_gen (Y := R344 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (d := 3) (by omega) hbase (Ancd_of_row1 R345_row1 3) ?_
+  · simpa [List.append_assoc] using h
+  · intro B hB
+    have h1 := hangU11 (h := 0) (LwA_of_Aok Aok_R344) hB
+    simpa [List.append_assoc] using h1
+
+#print axioms R337_mem
+#print axioms R345_mem
+
 end Small
 end TRIO
