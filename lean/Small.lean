@@ -12519,5 +12519,136 @@ theorem z1w_mem {Y0 : TrioSeq} {a b : ℕ} {ks : List Bool} (h0 : ∀ h : 0 < ks
   exact htw n
 
 #print axioms z1w_mem
+/-! ### 語つきの塔 `Dzw` の連鎖（IfcV 台座 / RunG 台座 / LwA 台座 / 根） -/
+
+theorem col_ge (a b : ℕ) (t : Bool) : a + 1 ≤ (col a b t).1 := by
+  cases t <;> simp [col]
+
+theorem col_mono (a b : ℕ) (t : Bool) : (col a b t).2.2 ≤ (col a b t).2.1 := by
+  cases t <;> simp [col]
+
+theorem map_col_ge {a b : ℕ} {ks : List Bool} : ∀ x ∈ ks.map (col a b), a + 1 ≤ x.1 := by
+  intro x hx
+  obtain ⟨t, -, rfl⟩ := List.mem_map.mp hx
+  exact col_ge a b t
+
+theorem map_col_mono {a b : ℕ} {ks : List Bool} : Mono (ks.map (col a b)) := by
+  intro x hx
+  obtain ⟨t, -, rfl⟩ := List.mem_map.mp hx
+  exact col_mono a b t
+
+/-- 記録 `(a,v,0)`（`1 ≤ v`）と語の junk は `MidD (a+1)`。 -/
+theorem MidD_word (a v : ℕ) (ha : 1 ≤ a) (hv : 1 ≤ v) (ks : List Bool) :
+    MidD (a + 1) (((a, v, 0) : ℕ × ℕ × ℕ) :: ks.map (col a v)) := by
+  have h := MidD_append (MidD_col a v ha hv) (N := ks.map (col a v)) map_col_ge map_col_mono
+  simpa using h
+
+/-- `Good ks`: 語 `ks` は 4 つの段で普遍。 -/
+structure Good (ks : List Bool) : Prop where
+  pu : ∀ (y c : ℕ), 2 ≤ y → JkU y c (ks.map (col (c + 1) (y + 1)))
+  pk : ∀ c : ℕ, JkGU c (ks.map (col (c + 1) 2))
+  seg : ∀ h : ℕ, SegA h (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: ks.map (col (h + 1) 1))
+  root : Aok (((0, 0, 0) : ℕ × ℕ × ℕ) :: ks.map (col 0 0))
+
+/-- `IfcV (y+1)` 台座の上の `Dzw` の連鎖は `PU` の連鎖。 -/
+theorem Dzw_chainU {ks : List Bool} (hG : Good ks)
+    {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
+    {c : ℕ} {Z : TrioSeq} (hZ : E c Z) :
+    ∀ (n : ℕ) (J : TrioSeq), JkU (y + n + 1) (c + n + 1) J →
+      PU (y + n + 1) (c + n + 2)
+        (Z ++ Dzw (c + 1) (y + 1) ks (n + 1) ++ ([((c + n + 2, y + n + 2, 0) : ℕ × ℕ × ℕ)] ++ J))
+  | 0, J, hJ => by
+      have h1 : PU y (c + 1) (Z ++ Dzw (c + 1) (y + 1) ks 1) :=
+        ⟨E, c, Z, ks.map (col (c + 1) (y + 1)), hE, rfl, hZ, by simp [Dzw], hG.pu y c hy⟩
+      exact ⟨PU y, c + 1, _, J, IfcV_PU (by omega) (y + 0 + 1 + 1) (by omega), by omega, h1,
+        by simp, hJ⟩
+  | (n + 1), J, hJ => by
+      have ih := Dzw_chainU hG hy hE hZ n (ks.map (col (c + n + 2) (y + n + 2)))
+        (hG.pu (y + n + 1) (c + n + 1) (by omega))
+      refine ⟨PU (y + n + 1), c + n + 2, _, J, IfcV_PU (by omega) (y + (n + 1) + 1 + 1) (by omega),
+        by omega, ih, ?_, by simpa [show y + (n + 1) + 1 = y + n + 1 + 1 from by omega,
+          show c + (n + 1) + 1 = c + n + 1 + 1 from by omega] using hJ⟩
+      rw [Dzw_succ (c + 1) (y + 1) ks (n + 1)]
+      simp [List.append_assoc, show c + 1 + (n + 1) = c + n + 2 from by omega,
+        show y + 1 + (n + 1) = y + n + 2 from by omega,
+        show c + (n + 1) + 2 = c + n + 3 from by omega,
+        show y + (n + 1) + 2 = y + n + 3 from by omega,
+        show c + n + 2 + 1 = c + n + 3 from by omega,
+        show y + n + 1 + 1 + 1 = y + n + 3 from by omega]
+
+theorem Dzw_W {ks : List Bool} (hG : Good ks)
+    {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
+    {c : ℕ} {Z : TrioSeq} (hZ : E c Z) : ∀ n : ℕ, Z ++ Dzw (c + 1) (y + 1) ks n ∈ W 0
+  | 0 => by simpa [Dzw] using ((IfcV_iface (y + 1) hE).bok.aok _ _ hZ).mem
+  | 1 => by
+      have h1 : PU y (c + 1) (Z ++ Dzw (c + 1) (y + 1) ks 1) :=
+        ⟨E, c, Z, ks.map (col (c + 1) (y + 1)), hE, rfl, hZ, by simp [Dzw], hG.pu y c hy⟩
+      exact ((BaseOk_PU y).aok _ _ h1).mem
+  | (n + 2) => by
+      have h := Dzw_chainU hG hy hE hZ n (ks.map (col (c + n + 2) (y + n + 2)))
+        (hG.pu (y + n + 1) (c + n + 1) (by omega))
+      have h2 := ((BaseOk_PU (y + n + 1)).aok _ _ h).mem
+      rw [Dzw_succ (c + 1) (y + 1) ks (n + 1)]
+      simpa [List.append_assoc, show c + 1 + (n + 1) = c + n + 2 from by omega,
+        show y + 1 + (n + 1) = y + n + 2 from by omega] using h2
+
+/-- `RunG` 台座（2 の記録から始まる）の上の連鎖。 -/
+theorem Dzw_W_RunG {ks : List Bool} (hG : Good ks) {E : ℕ → TrioSeq → Prop} (hI : Iface E)
+    {j c : ℕ} {X : TrioSeq} (hX : RunG E j c X) : ∀ n : ℕ, X ++ Dzw (c + 1) 2 ks n ∈ W 0 := by
+  have hP : PkGA (c + 1) (X ++ Dzw (c + 1) 2 ks 1) :=
+    ⟨E, hI, j, c, X, ks.map (col (c + 1) 2), rfl, hX, by simp [Dzw], hG.pk c⟩
+  intro n
+  match n with
+  | 0 => simpa [Dzw] using ((BaseOk_RunG hI.bok j).aok _ _ hX).mem
+  | 1 => exact (PkGA_Aok hP).mem
+  | (n + 2) =>
+      have e : Dzw (c + 1) 2 ks (n + 2) = Dzw (c + 1) 2 ks 1 ++ Dzw (c + 1 + 1) 3 ks (n + 1) := by
+        simp only [Dzw]
+        rw [show n + 2 = 1 + (n + 1) from by omega, List.range_add, List.flatMap_append,
+          List.flatMap_map]
+        congr 1
+        apply List.flatMap_congr
+        intro k _
+        simp [show c + 1 + (1 + k) = c + 1 + 1 + k from by omega, show 2 + (1 + k) = 3 + k from by omega]
+      rw [e, ← List.append_assoc]
+      exact Dzw_W hG (le_refl 2) (Ifc3_toIfcV Ifc3_PkGA) hP (n + 1)
+
+/-- `LwA` 台座（1 の列から始まる）の上の連鎖。 -/
+theorem Dzw_W_LwA {ks : List Bool} (hG : Good ks) {h : ℕ} {A : TrioSeq} (hA : LwA h A) :
+    ∀ n : ℕ, A ++ Dzw (h + 1) 1 ks n ∈ W 0 := by
+  have hX : RunA 0 (h + 1) (A ++ Dzw (h + 1) 1 ks 1) :=
+    ⟨h, A, _, rfl, rfl, hA, by simpa [Dzw] using hG.seg h⟩
+  intro n
+  match n with
+  | 0 => simpa [Dzw] using (LwA_Aok hA).mem
+  | 1 => exact ((BaseOk_RunA 0).aok _ _ hX).mem
+  | (n + 2) =>
+      have e : Dzw (h + 1) 1 ks (n + 2) = Dzw (h + 1) 1 ks 1 ++ Dzw (h + 1 + 1) 2 ks (n + 1) := by
+        simp only [Dzw]
+        rw [show n + 2 = 1 + (n + 1) from by omega, List.range_add, List.flatMap_append,
+          List.flatMap_map]
+        congr 1
+        apply List.flatMap_congr
+        intro k _
+        simp [show h + 1 + (1 + k) = h + 1 + 1 + k from by omega, show 1 + (1 + k) = 2 + k from by omega]
+      rw [e, ← List.append_assoc]
+      exact Dzw_W_RunG hG Iface_RunA0 (j := 0) hX (n + 1)
+
+/-- 根から始まる連鎖 `Dzw 0 0 ks n`。 -/
+theorem Dzw_W_root {ks : List Bool} (hG : Good ks) : ∀ n : ℕ, Dzw 0 0 ks n ∈ W 0
+  | 0 => by simpa [Dzw] using W_nil 0
+  | (n + 1) => by
+      have e : Dzw 0 0 ks (n + 1) = Dzw 0 0 ks 1 ++ Dzw (0 + 1) 1 ks n := by
+        simp only [Dzw]
+        rw [show n + 1 = 1 + n from by omega, List.range_add, List.flatMap_append, List.flatMap_map]
+        congr 1
+        apply List.flatMap_congr
+        intro k _
+        simp [Nat.add_comm]
+      rw [e]
+      have h1 := Dzw_W_LwA hG (h := 0) (LwA_of_Aok hG.root) n
+      simpa [Dzw] using h1
+
+#print axioms Dzw_W_root
 end Small
 end TRIO
