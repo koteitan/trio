@@ -13360,5 +13360,419 @@ theorem flat_mem'' {Y0 M : TrioSeq} {d : ℕ} (hne : M ≠ []) (hhead : entry M 
 
 #print axioms z1wG_mem
 #print axioms flat_mem''
+/-! ### 一般化した語の普遍性 `GoodG`（影の W 帰納法）と行 336 -/
+
+theorem colG_fst (a b : ℕ) (t : Option ℕ) : (colG a b t).1 = a + hgt t := by
+  cases t <;> simp [colG, hgt]
+
+/-- 記録 `(a,v,0)`（`1 ≤ v`）と語の junk は `MidD (a+1)`。 -/
+theorem MidD_wordG (a v : ℕ) (ha : 1 ≤ a) (hv : 1 ≤ v) {ws : List (Option ℕ)} (hw : Wv ws) :
+    MidD (a + 1) (((a, v, 0) : ℕ × ℕ × ℕ) :: ws.map (colG a v)) := by
+  have h := MidD_append (MidD_col a v ha hv) (N := ws.map (colG a v)) (map_colG_ge hw) map_colG_mono
+  simpa using h
+
+theorem Aok_rootG_of_mem {ws : List (Option ℕ)} (hw : Wv ws)
+    (hmem : (((0, 0, 0) : ℕ × ℕ × ℕ) :: ws.map (colG 0 0)) ∈ W 0) :
+    Aok (((0, 0, 0) : ℕ × ℕ × ℕ) :: ws.map (colG 0 0)) := by
+  refine ⟨hmem, by simp, ⟨by simp [entry], ?_⟩, ?_, ?_⟩
+  · intro j hj hjl
+    simp only [List.length_cons, List.length_map] at hjl
+    obtain ⟨q, rfl⟩ : ∃ q, j = q + 1 := ⟨j - 1, by omega⟩
+    have : entry (((0, 0, 0) : ℕ × ℕ × ℕ) :: ws.map (colG 0 0)) 0 (q + 1)
+        = entry (ws.map (colG 0 0)) 0 q := by simp [entry]
+    rw [this, entry_map_lt (colG 0 0) ws (by omega) 0]
+    have := colG_ge (a := 0) (b := 0) (t := ws[q]) (fun e he => hw.flat e (he ▸ List.getElem_mem (by omega)))
+    simp [entry]; omega
+  · intro c hc h0
+    simp only [List.mem_cons] at hc
+    rcases hc with rfl | hc
+    · exact ⟨rfl, rfl⟩
+    · exfalso; have := map_colG_ge hw c hc; omega
+  · intro c hc
+    simp only [List.mem_cons] at hc
+    rcases hc with rfl | hc
+    · simp
+    · exact map_colG_mono c hc
+
+structure GoodG (ws : List (Option ℕ)) : Prop where
+  pu : ∀ (y c : ℕ), 2 ≤ y → JkU y c (ws.map (colG (c + 1) (y + 1)))
+  pk : ∀ c : ℕ, JkGU c (ws.map (colG (c + 1) 2))
+  seg : ∀ h : ℕ, SegA h (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: ws.map (colG (h + 1) 1))
+  root : Aok (((0, 0, 0) : ℕ × ℕ × ℕ) :: ws.map (colG 0 0))
+
+theorem GoodG_nil : GoodG [] where
+  pu := fun y c hy => by simpa using JkU_nil' hy c
+  pk := fun c => by simpa using JkGU_nil c
+  seg := fun h => by simpa using SegA_one h
+  root := by simpa using Am_Aok 0
+
+theorem DzwG_chainU {ws : List (Option ℕ)} (hG : GoodG ws)
+    {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
+    {c : ℕ} {Z : TrioSeq} (hZ : E c Z) :
+    ∀ (n : ℕ) (J : TrioSeq), JkU (y + n + 1) (c + n + 1) J →
+      PU (y + n + 1) (c + n + 2)
+        (Z ++ DzwG (c + 1) (y + 1) ws (n + 1) ++ ([((c + n + 2, y + n + 2, 0) : ℕ × ℕ × ℕ)] ++ J))
+  | 0, J, hJ => by
+      have h1 : PU y (c + 1) (Z ++ DzwG (c + 1) (y + 1) ws 1) :=
+        ⟨E, c, Z, ws.map (colG (c + 1) (y + 1)), hE, rfl, hZ, by simp [DzwG], hG.pu y c hy⟩
+      exact ⟨PU y, c + 1, _, J, IfcV_PU (by omega) (y + 0 + 1 + 1) (by omega), by omega, h1,
+        by simp, hJ⟩
+  | (n + 1), J, hJ => by
+      have ih := DzwG_chainU hG hy hE hZ n (ws.map (colG (c + n + 2) (y + n + 2)))
+        (hG.pu (y + n + 1) (c + n + 1) (by omega))
+      refine ⟨PU (y + n + 1), c + n + 2, _, J, IfcV_PU (by omega) (y + (n + 1) + 1 + 1) (by omega),
+        by omega, ih, ?_, by simpa [show y + (n + 1) + 1 = y + n + 1 + 1 from by omega,
+          show c + (n + 1) + 1 = c + n + 1 + 1 from by omega] using hJ⟩
+      rw [DzwG_succ (c + 1) (y + 1) ws (n + 1)]
+      simp [List.append_assoc, show c + 1 + (n + 1) = c + n + 2 from by omega,
+        show y + 1 + (n + 1) = y + n + 2 from by omega,
+        show c + (n + 1) + 2 = c + n + 3 from by omega,
+        show y + (n + 1) + 2 = y + n + 3 from by omega,
+        show c + n + 2 + 1 = c + n + 3 from by omega,
+        show y + n + 1 + 1 + 1 = y + n + 3 from by omega]
+
+theorem DzwG_W {ws : List (Option ℕ)} (hG : GoodG ws)
+    {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
+    {c : ℕ} {Z : TrioSeq} (hZ : E c Z) : ∀ n : ℕ, Z ++ DzwG (c + 1) (y + 1) ws n ∈ W 0
+  | 0 => by simpa [DzwG] using ((IfcV_iface (y + 1) hE).bok.aok _ _ hZ).mem
+  | 1 => by
+      have h1 : PU y (c + 1) (Z ++ DzwG (c + 1) (y + 1) ws 1) :=
+        ⟨E, c, Z, ws.map (colG (c + 1) (y + 1)), hE, rfl, hZ, by simp [DzwG], hG.pu y c hy⟩
+      exact ((BaseOk_PU y).aok _ _ h1).mem
+  | (n + 2) => by
+      have h := DzwG_chainU hG hy hE hZ n (ws.map (colG (c + n + 2) (y + n + 2)))
+        (hG.pu (y + n + 1) (c + n + 1) (by omega))
+      have h2 := ((BaseOk_PU (y + n + 1)).aok _ _ h).mem
+      rw [DzwG_succ (c + 1) (y + 1) ws (n + 1)]
+      simpa [List.append_assoc, show c + 1 + (n + 1) = c + n + 2 from by omega,
+        show y + 1 + (n + 1) = y + n + 2 from by omega] using h2
+
+theorem DzwG_W_RunG {ws : List (Option ℕ)} (hG : GoodG ws) {E : ℕ → TrioSeq → Prop} (hI : Iface E)
+    {j c : ℕ} {X : TrioSeq} (hX : RunG E j c X) : ∀ n : ℕ, X ++ DzwG (c + 1) 2 ws n ∈ W 0 := by
+  have hP : PkGA (c + 1) (X ++ DzwG (c + 1) 2 ws 1) :=
+    ⟨E, hI, j, c, X, ws.map (colG (c + 1) 2), rfl, hX, by simp [DzwG], hG.pk c⟩
+  intro n
+  match n with
+  | 0 => simpa [DzwG] using ((BaseOk_RunG hI.bok j).aok _ _ hX).mem
+  | 1 => exact (PkGA_Aok hP).mem
+  | (n + 2) =>
+      have e : DzwG (c + 1) 2 ws (n + 2) = DzwG (c + 1) 2 ws 1 ++ DzwG (c + 1 + 1) 3 ws (n + 1) := by
+        simp only [DzwG]
+        rw [show n + 2 = 1 + (n + 1) from by omega, List.range_add, List.flatMap_append,
+          List.flatMap_map]
+        congr 1
+        apply List.flatMap_congr
+        intro k _
+        simp [show c + 1 + (1 + k) = c + 1 + 1 + k from by omega, show 2 + (1 + k) = 3 + k from by omega]
+      rw [e, ← List.append_assoc]
+      exact DzwG_W hG (le_refl 2) (Ifc3_toIfcV Ifc3_PkGA) hP (n + 1)
+
+theorem DzwG_W_LwA {ws : List (Option ℕ)} (hG : GoodG ws) {h : ℕ} {A : TrioSeq} (hA : LwA h A) :
+    ∀ n : ℕ, A ++ DzwG (h + 1) 1 ws n ∈ W 0 := by
+  have hX : RunA 0 (h + 1) (A ++ DzwG (h + 1) 1 ws 1) :=
+    ⟨h, A, _, rfl, rfl, hA, by simpa [DzwG] using hG.seg h⟩
+  intro n
+  match n with
+  | 0 => simpa [DzwG] using (LwA_Aok hA).mem
+  | 1 => exact ((BaseOk_RunA 0).aok _ _ hX).mem
+  | (n + 2) =>
+      have e : DzwG (h + 1) 1 ws (n + 2) = DzwG (h + 1) 1 ws 1 ++ DzwG (h + 1 + 1) 2 ws (n + 1) := by
+        simp only [DzwG]
+        rw [show n + 2 = 1 + (n + 1) from by omega, List.range_add, List.flatMap_append,
+          List.flatMap_map]
+        congr 1
+        apply List.flatMap_congr
+        intro k _
+        simp [show h + 1 + (1 + k) = h + 1 + 1 + k from by omega, show 1 + (1 + k) = 2 + k from by omega]
+      rw [e, ← List.append_assoc]
+      exact DzwG_W_RunG hG Iface_RunA0 (j := 0) hX (n + 1)
+
+theorem DzwG_W_root {ws : List (Option ℕ)} (hG : GoodG ws) : ∀ n : ℕ, DzwG 0 0 ws n ∈ W 0
+  | 0 => by simpa [DzwG] using W_nil 0
+  | (n + 1) => by
+      have e : DzwG 0 0 ws (n + 1) = DzwG 0 0 ws 1 ++ DzwG (0 + 1) 1 ws n := by
+        simp only [DzwG]
+        rw [show n + 1 = 1 + n from by omega, List.range_add, List.flatMap_append, List.flatMap_map]
+        congr 1
+        apply List.flatMap_congr
+        intro k _
+        simp [Nat.add_comm]
+      rw [e]
+      have h1 := DzwG_W_LwA hG (h := 0) (LwA_of_Aok hG.root) n
+      simpa [DzwG] using h1
+
+theorem Wv_snocz {ws : List (Option ℕ)} (hv : Wv ws) : Wv (ws ++ [none]) where
+  head := by
+    intro h
+    cases ws with
+    | nil => simp
+    | cons t ws => simpa using hv.head (by simp)
+  flat := fun e he => hv.flat e (by simpa using he)
+
+/-- 補題 A（一般形）: 最後に z。 -/
+theorem GoodG_snocz {ws : List (Option ℕ)} (hv : Wv ws) (hG : GoodG ws) :
+    GoodG (ws ++ [none]) where
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := map_colG_ge (a := c + 1) (b := y + 1) (Wv_snocz hv) x hx; omega,
+      map_colG_mono, ?_⟩
+    intro E hE t Z hZ
+    have h := z1wG_mem (Y0 := Z) (a := c + 1 + t) (b := y + 1) hv
+      (fun n => by
+        have := DzwG_W hG hy hE (c := c + t) (by simpa using hZ) n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    rw [List.map_append, shiftr01_append0, shift_map_colG]
+    simp only [List.map_cons, List.map_nil, colG]
+    rw [shift_zcol]
+    simpa [List.append_assoc, show c + 1 + 1 + t = c + 1 + t + 1 from by omega] using h
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := map_colG_ge (a := c + 1) (b := 2) (Wv_snocz hv) x hx; omega,
+      map_colG_mono, ?_⟩
+    intro j t X hX
+    have h := z1wG_mem (Y0 := X) (a := c + 1 + t) (b := 2) hv
+      (fun n => by
+        have := DzwG_W_RunG hG hI (c := c + t) hX n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    rw [List.map_append, shiftr01_append0, shift_map_colG]
+    simp only [List.map_cons, List.map_nil, colG]
+    rw [shift_zcol]
+    simpa [List.append_assoc, show c + 1 + 1 + t = c + 1 + t + 1 from by omega] using h
+  seg := by
+    intro h
+    refine ⟨?_, by simp [entry], ?_⟩
+    · have h1 := MidD_wordG (h + 1) 1 (by omega) (by omega) (Wv_snocz hv)
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    · intro P hP s A' hA'
+      have hz := z1wG_mem (Y0 := A') (a := h + s + 1) (b := 1) hv
+        (fun n => DzwG_W_LwA hG (h := h + s) ⟨P, hP, hA'⟩ n)
+      rw [List.map_append]
+      simp only [List.map_cons, List.map_nil, colG]
+      rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: (ws.map (colG (h + 1) 1) ++ [((h + 1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)])
+          = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ ws.map (colG (h + 1) 1) ++ [((h + 1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)] from rfl,
+        shiftr01_append0, shiftr01_append0, shift_col, shift_map_colG, shift_zcol]
+      simpa [List.append_assoc, show h + 1 + s = h + s + 1 from by omega,
+        show h + 1 + 1 + s = h + s + 1 + 1 from by omega] using hz
+  root := by
+    have hmem := z1wG_mem (Y0 := []) (a := 0) (b := 0) hv (fun n => by simpa using DzwG_W_root hG n)
+    exact Aok_rootG_of_mem (Wv_snocz hv) (by simpa [colG] using hmem)
+
+/-- 語 `ws1 ++ seg^n`。 -/
+def wordG (ws1 seg : List (Option ℕ)) (n : ℕ) : List (Option ℕ) :=
+  ws1 ++ (List.range n).flatMap fun _ => seg
+
+theorem map_wordG (f : Option ℕ → ℕ × ℕ × ℕ) (ws1 seg : List (Option ℕ)) (n : ℕ) :
+    (wordG ws1 seg n).map f = ws1.map f ++ (List.range n).flatMap fun _ => seg.map f := by
+  simp [wordG, List.map_flatMap]
+
+theorem entry_map_colG_fst {a b : ℕ} {seg : List (Option ℕ)} {r : ℕ} (hr : r < seg.length) :
+    entry (seg.map (colG a b)) 0 r = a + hgt seg[r] := by
+  rw [entry_map_lt (colG a b) seg hr 0]
+  cases hs : seg[r] <;> simp [colG, hgt, entry]
+
+/-- 補題 B（一般形）: 最後が平坦な列 `some e`。`seg` は最も近い低い列からの区間。 -/
+theorem GoodG_flat {ws1 seg : List (Option ℕ)} {e : ℕ} (hv : Wv (ws1 ++ seg ++ [some e]))
+    (hne : seg ≠ []) (hhead : ∀ h0 : 0 < seg.length, hgt seg[0] < e)
+    (htail : ∀ r (hr : r < seg.length), 1 ≤ r → e ≤ hgt seg[r])
+    (hIH : ∀ n, 1 ≤ n → GoodG (wordG ws1 seg n)) :
+    GoodG (ws1 ++ seg ++ [some e]) := by
+  have hseglen : 0 < seg.length := List.length_pos_iff.mpr hne
+  -- 共通: 台座つきの塔
+  have key : ∀ (Y : TrioSeq) (a b : ℕ),
+      (∀ n, 1 ≤ n → Y ++ (wordG ws1 seg n).map (colG a b) ∈ W 0) →
+      Y ++ (ws1 ++ seg ++ [some e]).map (colG a b) ∈ W 0 := by
+    intro Y a b hn
+    have hmne : seg.map (colG a b) ≠ [] := by simpa using hne
+    have h := flat_mem'' (Y0 := Y ++ ws1.map (colG a b)) (M := seg.map (colG a b)) (d := a + e)
+      hmne (by rw [entry_map_colG_fst hseglen]; have := hhead hseglen; omega)
+      (by intro r hr1 hrl
+          rw [List.length_map] at hrl
+          rw [entry_map_colG_fst hrl]; have := htail r hrl hr1; omega)
+      (fun n => by
+        match n with
+        | 0 =>
+            have h1 := hn 1 (le_refl 1)
+            rw [map_wordG] at h1
+            simp only [List.range_one, List.flatMap_cons, List.flatMap_nil, List.append_nil] at h1
+            have h2 := W_take (by rw [← List.append_assoc] at h1; exact h1) (Y ++ ws1.map (colG a b)).length
+            rw [List.take_left] at h2
+            simpa using h2
+        | (n + 1) =>
+            have h1 := hn (n + 1) (by omega)
+            rw [map_wordG] at h1
+            simpa [List.append_assoc] using h1)
+    simpa [List.map_append, colG, List.append_assoc] using h
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := map_colG_ge (a := c + 1) (b := y + 1) hv x hx; omega,
+      map_colG_mono, ?_⟩
+    intro E hE t Z hZ
+    rw [shift_map_colG]
+    have := key (Z ++ [((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)]) (c + 1 + t) (y + 1) (fun n hn => by
+      have hP : PU y (c + 1 + t) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+          (wordG ws1 seg n).map (colG (c + 1 + t) (y + 1)))) :=
+        ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hIH n hn).pu y (c + t) hy⟩
+      simpa [List.append_assoc] using ((BaseOk_PU y).aok _ _ hP).mem)
+    simpa [List.append_assoc] using this
+  · intro c E hI
+    refine ⟨fun x hx => by have := map_colG_ge (a := c + 1) (b := 2) hv x hx; omega,
+      map_colG_mono, ?_⟩
+    intro j t X hX
+    rw [shift_map_colG]
+    have := key (X ++ [((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)]) (c + 1 + t) 2 (fun n hn => by
+      have hP : PkGA (c + 1 + t) (X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+          (wordG ws1 seg n).map (colG (c + 1 + t) 2))) :=
+        ⟨E, hI, j, c + t, X, _, by omega, hX, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hIH n hn).pk (c + t)⟩
+      simpa [List.append_assoc] using (PkGA_Aok hP).mem)
+    simpa [List.append_assoc] using this
+  · intro h
+    refine ⟨?_, by simp [entry], ?_⟩
+    · have h1 := MidD_wordG (h + 1) 1 (by omega) (by omega) hv
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    · intro P hP s A' hA'
+      rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: (ws1 ++ seg ++ [some e]).map (colG (h + 1) 1)
+          = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ (ws1 ++ seg ++ [some e]).map (colG (h + 1) 1) from rfl,
+        shiftr01_append0, shift_col, shift_map_colG]
+      have := key (A' ++ [((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)]) (h + 1 + s) 1 (fun n hn => by
+        have hR : RunA 0 (h + s + 1) (A' ++ (((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+            (wordG ws1 seg n).map (colG (h + s + 1) 1))) :=
+          ⟨h + s, A', _, rfl, rfl, ⟨P, hP, hA'⟩, (hIH n hn).seg (h + s)⟩
+        have := ((BaseOk_RunA 0).aok _ _ hR).mem
+        simpa [List.append_assoc, show h + s + 1 = h + 1 + s from by omega] using this)
+      simpa [List.append_assoc] using this
+  · refine Aok_rootG_of_mem hv ?_
+    have := key [((0, 0, 0) : ℕ × ℕ × ℕ)] 0 0 (fun n hn => by simpa using (hIH n hn).root.mem)
+    simpa using this
+
+/-- 影: z を `(1,0,0)`、平坦な列をそのままにした平坦な行列。 -/
+def shw (ws : List (Option ℕ)) : TrioSeq := ws.map fun t => ((hgt t, 0, 0) : ℕ × ℕ × ℕ)
+
+theorem Flat_shw (ws : List (Option ℕ)) : Flat (((0, 0, 0) : ℕ × ℕ × ℕ) :: shw ws) := by
+  intro c hc
+  simp only [List.mem_cons, shw, List.mem_map] at hc
+  rcases hc with rfl | ⟨t, -, rfl⟩ <;> simp
+
+theorem Wv_sub {ws ws2 : List (Option ℕ)} (hv : Wv ws) (hsub : ∀ t ∈ ws2, t ∈ ws)
+    (hhead : ∀ h : 0 < ws2.length, ws2[0] = none) : Wv ws2 :=
+  ⟨hhead, fun e he => hv.flat e (hsub _ he)⟩
+
+theorem Wv_of_append_left {ws1 ws2 : List (Option ℕ)} (hv : Wv (ws1 ++ ws2)) : Wv ws1 := by
+  refine Wv_sub hv (fun t ht => List.mem_append_left _ ht) ?_
+  intro h
+  have := hv.head (by simp; omega)
+  rwa [List.getElem_append_left h] at this
+
+theorem entry_shw_fst {ws : List (Option ℕ)} {r : ℕ} (hr : r < ws.length) :
+    entry (shw ws) 0 r = hgt ws[r] := by
+  simp only [shw]
+  rw [entry_map_lt _ ws hr 0]
+  simp [entry]
+
+/-- ★★★★★ 妥当な語はすべて普遍（影の W 帰納法）。 -/
+theorem GoodG_all : ∀ ws : List (Option ℕ), Wv ws → GoodG ws := by
+  have key : W 0 ⊆ {Fl : TrioSeq | ∀ ws : List (Option ℕ), Wv ws →
+      Fl = ((0, 0, 0) : ℕ × ℕ × ℕ) :: shw ws → GoodG ws} := by
+    refine A2' ?_
+    intro Fl hFl
+    simp only [Set.mem_setOf_eq]
+    intro ws hv hFl_eq
+    rcases hFl with ⟨hlen, -⟩ | h2 | ⟨m, hm, -⟩
+    · -- 長さ 1: ws = []
+      subst hFl_eq
+      have : ws = [] := by
+        simp only [List.length_cons, shw, List.length_map] at hlen
+        exact List.eq_nil_of_length_eq_zero (by omega)
+      subst this; exact GoodG_nil
+    · subst hFl_eq
+      rcases List.eq_nil_or_concat ws with hnil | ⟨ws', t, hws⟩
+      · subst hnil; exact GoodG_nil
+      · rw [List.concat_eq_append] at hws
+        subst hws
+        have hv' : Wv ws' := Wv_of_append_left hv
+        have hL : 1 < (((0, 0, 0) : ℕ × ℕ × ℕ) :: shw (ws' ++ [t])).length := by
+          simp [shw]
+        have hdrop : (((0, 0, 0) : ℕ × ℕ × ℕ) :: shw (ws' ++ [t]))⟦1⟧
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) :: shw ws' := by
+          rw [oper_one_eq_dropLast hL,
+            show (((0, 0, 0) : ℕ × ℕ × ℕ) :: shw (ws' ++ [t])) = (((0, 0, 0) : ℕ × ℕ × ℕ) :: shw ws') ++ [((hgt t, 0, 0) : ℕ × ℕ × ℕ)] from by simp [shw],
+            List.dropLast_concat]
+        have hG' : GoodG ws' := h2 1 (le_refl 1) ws' hv' hdrop
+        cases t with
+        | none => exact GoodG_snocz hv' hG'
+        | some e =>
+          -- 最も近い低い列
+          have hws'ne : ws' ≠ [] := by
+            rintro rfl
+            have := hv.head (by simp)
+            simp at this
+          have hlen' : 0 < ws'.length := List.length_pos_iff.mpr hws'ne
+          have hhead0 : ws'[0] = none := by
+            have := hv.head (by simp)
+            rwa [List.getElem_append_left hlen'] at this
+          have he2 : 2 ≤ e := hv.flat e (by simp)
+          obtain ⟨i', hi', hlt, hall⟩ := nearest_lower (f := fun j => hgt (ws'.getD j none)) (v := e)
+            ws'.length ⟨0, hlen', by simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlen', hhead0, hgt]; omega⟩
+          set ws1 := ws'.take i' with hws1
+          set seg := ws'.drop i' with hseg
+          have hsplit : ws' = ws1 ++ seg := by simp [hws1, hseg]
+          have hsegne : seg ≠ [] := by
+            intro h
+            have := congrArg List.length h
+            simp [hseg] at this; omega
+          have hseglen : 0 < seg.length := List.length_pos_iff.mpr hsegne
+          have hseg_get : ∀ r (hr : r < seg.length), seg[r] = ws'[i' + r]'(by simp [hseg] at hr; omega) := by
+            intro r hr
+            simp [hseg]
+          have hlt' : hgt ws'[i'] < e := by
+            simpa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi'] using hlt
+          have hsegh : ∀ h0 : 0 < seg.length, hgt seg[0] < e := by
+            intro h0
+            rw [hseg_get 0 h0]
+            simpa using hlt'
+          have hsegt : ∀ r (hr : r < seg.length), 1 ≤ r → e ≤ hgt seg[r] := by
+            intro r hr hr1
+            have hlt2 : i' + r < ws'.length := by simp [hseg] at hr; omega
+            rw [hseg_get r hr]
+            have := hall (i' + r) (by omega) hlt2
+            simpa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt2] using this
+          rw [hsplit] at hv ⊢
+          refine GoodG_flat hv hsegne hsegh hsegt ?_
+          intro n hn
+          -- 影の展開 = wordG の影
+          have hFl : ((0, 0, 0) : ℕ × ℕ × ℕ) :: shw (ws1 ++ seg ++ [some e])
+              = (((0, 0, 0) : ℕ × ℕ × ℕ) :: shw ws1) ++ shw seg ++ [((e, 0, 0) : ℕ × ℕ × ℕ)] := by
+            simp [shw, List.map_append, hgt]
+          have hop : (((0, 0, 0) : ℕ × ℕ × ℕ) :: shw (ws1 ++ seg ++ [some e]))⟦n⟧
+              = ((0, 0, 0) : ℕ × ℕ × ℕ) :: shw (wordG ws1 seg n) := by
+            rw [hFl, oper_snoc00'' _ (by simpa [shw] using hsegne)
+              (by rw [entry_shw_fst hseglen]; exact hsegh hseglen)
+              (by intro r hr1 hrl
+                  rw [shw, List.length_map] at hrl
+                  rw [entry_shw_fst hrl]; exact hsegt r hrl hr1)]
+            simp [shw, wordG, List.map_flatMap]
+          have hvn : Wv (wordG ws1 seg n) := by
+            refine Wv_sub hv ?_ ?_
+            · intro t ht
+              simp only [wordG, List.mem_append, List.mem_flatMap, List.mem_range] at ht
+              rcases ht with h | ⟨-, -, h⟩
+              · simp [h]
+              · simp [h]
+            · intro h
+              obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+              have hw : wordG ws1 seg (n' + 1) = ws' ++ (List.range n').flatMap (fun _ => seg) := by
+                simp only [wordG]
+                rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map, hsplit]
+                simp [List.append_assoc]
+              rw [List.getElem_of_eq hw, List.getElem_append_left hlen']
+              exact hhead0
+          rw [← hsplit] at hop
+          exact h2 n hn (wordG ws1 seg n) hvn hop
+    · omega
+  intro ws hv
+  exact key (Flat_mem_W (Flat_shw ws)) ws hv rfl
+
+#print axioms GoodG_all
 end Small
 end TRIO
