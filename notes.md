@@ -639,3 +639,16 @@ Dm 0 = Q、Dm 1 = D1、Dm (n+2) = Dv n。A1_intro で終わり。
   「任意の Aok A' に対し A' ++ (1,1,1) ∈ W 0」（= A' の複製が (1,1) ずつ le1 マスクで上がる塔）が要る。
   これは任意の A' についての主張で、今の集合の外。候補: (a) A' ∈ BaseOk 集合に限って複製の塔を集合の中で回す、
   (b) 本体の ULIFT（行 1 の一様シフト）を使う。要検討。
+
+### 2026-09-03 (続き45) junk の語の設計（行 331〜335）
+- 記録 (r0,r1,0) の junk の語: rs : List ℕ（各ブロック z f^i、z = (r0+1,r1+1,1)、f = (r0+2,0,0)）。
+  colsR r0 r1 rs := rs.flatMap (fun i => z :: replicate i f)。塔 Dzw a b rs n := ⋃_k ((a+k,b+k,0) :: colsR (a+k) (b+k) rs)。
+- 展開: 最後が z（rs ++ [0] の最後の z）→ bad root は記録、複製は z が (1,1)、f が (1,0) 上がる（oper_z1w、
+  列ごとの le0/le1: z は両方、f は le0 のみ。¬le1 は row1 = 0 から）。最後が f → oper_snoc00（M = 最後の z から）。
+- good rs := 4 つの段で普遍: (i) JkU y c (colsR (c+1) (y+1) rs)、(ii) JkGU c (colsR (c+1) 2 rs)、
+  (iii) SegA h ((h+1,1,0) :: colsR (h+1) 1 rs)、(iv) Aok ((0,0,0) :: colsR 0 0 rs)。
+  Lemma A: good rs → good (rs ++ [0])（塔は Dzw の連鎖: 段は (iv)→(iii)→(ii)→(i) の順に集合に入る）。
+  Lemma B: (∀ m, good (rs ++ replicate m i)) → good (rs ++ [i+1])（平坦複製）。
+- 帰納法: Q K cnt: ∀ P S, good P → (∀ i ∈ S, i ≤ K) → S.count K = cnt → good (P ++ S)。
+  K = 0: Lemma A を繰り返す。K+1, cnt = 0: Q K。cnt+1: S = S1 ++ [K+1] ++ S2（最後の K+1）、
+  good (P ++ S1 ++ [K+1]) は Lemma B（Q (K+1) cnt で good (P ++ S1 ++ replicate m K)）、その後 Q K で S2。

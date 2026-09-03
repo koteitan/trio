@@ -12281,5 +12281,243 @@ theorem R330_mem : R328 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ ×
       [((3, 3, 1) : ℕ × ℕ × ℕ), ((4, 0, 0) : ℕ × ℕ × ℕ)]) ++ ([((3, 3, 0) : ℕ × ℕ × ℕ)] ++ [])))).mem
 
 #print axioms R330_mem
+/-! ### junk の語: `col a b true = (a+1,b+1,1)`（z）、`col a b false = (a+2,0,0)`（f）。
+記録 `(a,b,0)` の junk は `ks.map (col a b)`（`ks : List Bool`、先頭は z）。 -/
+
+def col (a b : ℕ) : Bool → ℕ × ℕ × ℕ
+  | true => (a + 1, b + 1, 1)
+  | false => (a + 2, 0, 0)
+
+/-- 塔 `Dzw a b ks n = ⋃_{k<n} (a+k,b+k,0) :: ks.map (col (a+k) (b+k))`。 -/
+def Dzw (a b : ℕ) (ks : List Bool) (n : ℕ) : TrioSeq :=
+  (List.range n).flatMap fun k => ((a + k, b + k, 0) : ℕ × ℕ × ℕ) :: ks.map (col (a + k) (b + k))
+
+theorem Dzw_succ (a b : ℕ) (ks : List Bool) (n : ℕ) : Dzw a b ks (n + 1) =
+    Dzw a b ks n ++ (((a + n, b + n, 0) : ℕ × ℕ × ℕ) :: ks.map (col (a + n) (b + n))) := by
+  simp [Dzw, List.range_succ]
+
+theorem col_shift (a b s : ℕ) (t : Bool) : shiftr01 s 0 [col a b t] = [col (a + s) b t] := by
+  cases t <;> simp [col, shiftr01, Nat.add_right_comm]
+
+theorem shift_map_col (a b s : ℕ) (ks : List Bool) :
+    shiftr01 s 0 (ks.map (col a b)) = ks.map (col (a + s) b) := by
+  induction ks with
+  | nil => simp [shiftr01]
+  | cons t ks ih =>
+      rw [List.map_cons, List.map_cons, show (col a b t :: ks.map (col a b)) = [col a b t] ++ ks.map (col a b) from rfl,
+        shiftr01_append0, col_shift, ih]
+      rfl
+
+theorem entry_map_lt {α : Type _} (f : α → ℕ × ℕ × ℕ) (ks : List α) {i : ℕ} (hi : i < ks.length) (r : ℕ) :
+    entry (ks.map f) r i = entry [f ks[i]] r 0 := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_getElem hi]
+
+theorem entry_col_true (a b r : ℕ) : entry [col a b true] r 0 = entry [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] r 0 := rfl
+theorem entry_col_false (a b r : ℕ) : entry [col a b false] r 0 = entry [((a + 2, 0, 0) : ℕ × ℕ × ℕ)] r 0 := rfl
+
+theorem le0_le' {M : TrioSeq} {i j : ℕ} (h : le0 M i j) : i ≤ j := by
+  obtain ⟨-, -, h⟩ := h
+  induction h with
+  | refl => exact le_rfl
+  | tail _ h2 ih => exact le_trans ih (le_of_lt h2.2.2.1)
+
+theorem rtg0_of_rtg1 {M : TrioSeq} {i j : ℕ} (h : Relation.ReflTransGen (nextrel1 M) i j) :
+    Relation.ReflTransGen (nextrel0 M) i j := by
+  induction h with
+  | refl => exact Relation.ReflTransGen.refl
+  | tail _ h2 ih => exact ih.trans h2.2.2.2.2.1.2.2
+
+theorem le0_of_le1 {M : TrioSeq} {i j : ℕ} (h : le1 M i j) : le0 M i j :=
+  ⟨h.1, h.2.1, rtg0_of_rtg1 h.2.2⟩
+
+theorem not_le1_of_row1_zero {M : TrioSeq} {i j : ℕ} (hj : entry M 1 j = 0) (hne : i ≠ j) :
+    ¬ le1 M i j := by
+  rintro ⟨-, -, h⟩
+  rcases Relation.ReflTransGen.cases_tail h with h1 | ⟨c, -, hc⟩
+  · exact hne h1.symm
+  · have := hc.2.2.2.1; omega
+
+/-- 語の先頭が z なら、f の直前に最後の z がある。 -/
+theorem last_true_before {ks : List Bool} (h0 : ∀ h : 0 < ks.length, ks[0] = true) :
+    ∀ i (hi : i < ks.length), ks[i] = false →
+      ∃ i', ∃ hi' : i' < ks.length, i' < i ∧ ks[i'] = true ∧
+        ∀ j (hj : j < ks.length), i' < j → j < i → ks[j] = false := by
+  intro i
+  induction i with
+  | zero => intro hi hf; rw [h0 hi] at hf; cases hf
+  | succ i ih =>
+      intro hi hf
+      by_cases hz : ks[i]'(by omega) = true
+      · exact ⟨i, by omega, by omega, hz, fun j hj h1 h2 => by omega⟩
+      · obtain ⟨i', hi', hlt, hz', hall⟩ := ih (by omega) (by simpa using hz)
+        refine ⟨i', hi', by omega, hz', ?_⟩
+        intro j hj h1 h2
+        rcases Nat.lt_or_ge j i with h | h
+        · exact hall j hj h1 h
+        · have : j = i := by omega
+          subst this; simpa using hz
+
+open Classical in
+theorem oper_z1w (Y0 : TrioSeq) (a b : ℕ) (ks : List Bool)
+    (h0 : ∀ h : 0 < ks.length, ks[0] = true) (n : ℕ) :
+    (Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: ks.map (col a b) ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]))⟦n⟧
+      = Y0 ++ Dzw a b ks n := by
+  set C : TrioSeq := ks.map (col a b) with hC
+  set T : TrioSeq := ((a, b, 0) : ℕ × ℕ × ℕ) :: C ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] with hT
+  set M : TrioSeq := Y0 ++ T with hM
+  set p := Y0.length with hp
+  set L := ks.length with hL
+  have hCL : C.length = L := by simp [hC, hL]
+  have hlen : M.length = p + L + 2 := by simp [hM, hT, hC, hp, hL]; omega
+  have eT : ∀ i q, entry M i (p + q) = entry T i q := fun i q => entry_append_right Y0 T i q
+  have e0p : entry M 0 p = a := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e1p : entry M 1 p = b := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e2p : entry M 2 p = 0 := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have eC : ∀ r i (hi : i < L), entry M r (p + 1 + i) = entry [col a b (ks[i]'(by omega))] r 0 := by
+    intro r i hi
+    rw [show p + 1 + i = p + (i + 1) from by omega, eT]
+    have : entry T r (i + 1) = entry C r i := by
+      simp only [hT, entry, List.cons_append, List.getD_cons_succ]
+      rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+        List.getElem?_append_left (by simpa [hC, hL] using hi)]
+    rw [this, hC, entry_map_lt (col a b) ks hi r]
+  have eq : ∀ r, entry M r (p + 1 + L) = entry [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] r 0 := by
+    intro r
+    rw [show p + 1 + L = p + (L + 1) from by omega, eT]
+    simp only [hT, entry, List.cons_append, List.getD_cons_succ]
+    rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+      List.getElem?_append_right (by omega), hCL, Nat.sub_self]
+  -- 列の種類ごとの成分
+  have ez : ∀ i (hi : i < L), ks[i] = true →
+      entry M 0 (p + 1 + i) = a + 1 ∧ entry M 1 (p + 1 + i) = b + 1 ∧ entry M 2 (p + 1 + i) = 1 := by
+    intro i hi ht
+    rw [eC 0 i hi, eC 1 i hi, eC 2 i hi]
+    simp [ht, col, entry]
+  have ef : ∀ i (hi : i < L), ks[i] = false →
+      entry M 0 (p + 1 + i) = a + 2 ∧ entry M 1 (p + 1 + i) = 0 ∧ entry M 2 (p + 1 + i) = 0 := by
+    intro i hi ht
+    rw [eC 0 i hi, eC 1 i hi, eC 2 i hi]
+    simp [ht, col, entry]
+  have ege : ∀ i, i < L → a + 1 ≤ entry M 0 (p + 1 + i) := by
+    intro i hi
+    cases hks : ks[i]'(by omega)
+    · have := (ef i hi hks).1; omega
+    · have := (ez i hi hks).1; omega
+  have ege' : ∀ j, p < j → j < p + 1 + L → a + 1 ≤ entry M 0 j := by
+    intro j hj1 hj2
+    obtain ⟨i, hi, rfl⟩ : ∃ i, i < L ∧ j = p + 1 + i := ⟨j - (p + 1), by omega, by omega⟩
+    exact ege i hi
+  have eqL : entry M 0 (p + 1 + L) = a + 1 ∧ entry M 1 (p + 1 + L) = b + 1 ∧
+      entry M 2 (p + 1 + L) = 1 := by
+    rw [eq 0, eq 1, eq 2]; simp [entry]
+  -- 「p より上の列の le0 先祖は自分だけ」
+  have hanc : ∀ j j', p < j' → le0 M j' j → entry M 0 j = a + 1 →
+      (∀ j'', p < j'' → j'' < j → a + 1 ≤ entry M 0 j'') → j' = j := by
+    intro j j' hj' hle hj hbetween
+    obtain ⟨hj'l, hjl, hch⟩ := hle
+    rcases Relation.ReflTransGen.cases_tail hch with h1 | ⟨c, hc1, hc2⟩
+    · exact h1.symm
+    · exfalso
+      have hcj : c < j := hc2.2.2.1
+      have hcle : j' ≤ c := le0_le' ⟨hj'l, hc2.1, hc1⟩
+      have hlt : entry M 0 c < entry M 0 j := hc2.2.2.2.1
+      have := hbetween c (by omega) hcj
+      omega
+  -- z 列: le0 と le1
+  have hn0z : ∀ i (hi : i < L), ks[i] = true → nextrel0 M p (p + 1 + i) := by
+    intro i hi ht
+    refine ⟨by omega, by omega, by omega, by rw [e0p, (ez i hi ht).1]; omega, ?_⟩
+    intro j hj
+    rw [(ez i hi ht).1]; exact ege' j hj.1 (by omega)
+  have hl0z : ∀ i (hi : i < L), ks[i] = true → le0 M p (p + 1 + i) := fun i hi ht =>
+    ⟨by omega, by omega, Relation.ReflTransGen.single (hn0z i hi ht)⟩
+  have hn1z : ∀ i (hi : i < L), ks[i] = true → nextrel1 M p (p + 1 + i) := by
+    intro i hi ht
+    refine ⟨by omega, by omega, by omega, by rw [e1p, (ez i hi ht).2.1]; omega, hl0z i hi ht, ?_⟩
+    intro j hj
+    have := hanc (p + 1 + i) j hj.1 hj.2 (ez i hi ht).1
+      (fun j'' h1 h2 => ege' j'' h1 (by omega))
+    subst this; exact le_rfl
+  have hl1z : ∀ i (hi : i < L), ks[i] = true → le1 M p (p + 1 + i) := fun i hi ht =>
+    ⟨by omega, by omega, Relation.ReflTransGen.single (hn1z i hi ht)⟩
+  -- f 列: le0（直前の z 経由）、¬le1
+  have hl0f : ∀ i (hi : i < L), ks[i] = false → le0 M p (p + 1 + i) := by
+    intro i hi hf
+    obtain ⟨i', hi', hlt, hz', hall⟩ := last_true_before h0 i hi hf
+    have hn : nextrel0 M (p + 1 + i') (p + 1 + i) := by
+      refine ⟨by omega, by omega, by omega, by rw [(ez i' hi' hz').1, (ef i hi hf).1]; omega, ?_⟩
+      intro j hj
+      obtain ⟨i'', hi'', rfl⟩ : ∃ i'', i'' < L ∧ j = p + 1 + i'' := ⟨j - (p + 1), by omega, by omega⟩
+      have := hall i'' hi'' (by omega) (by omega)
+      rw [(ef i hi hf).1, (ef i'' hi'' this).1]
+    exact ⟨by omega, by omega, (hl0z i' hi' hz').2.2.trans (Relation.ReflTransGen.single hn)⟩
+  have hnl1f : ∀ i (hi : i < L), ks[i] = false → ¬ le1 M p (p + 1 + i) := fun i hi hf =>
+    not_le1_of_row1_zero (ef i hi hf).2.1 (by omega)
+  -- 最後の列
+  have hn0L : nextrel0 M p (p + 1 + L) := by
+    refine ⟨by omega, by omega, by omega, by rw [e0p, eqL.1]; omega, ?_⟩
+    intro j hj
+    rw [eqL.1]; exact ege' j hj.1 hj.2
+  have hl0L : le0 M p (p + 1 + L) := ⟨by omega, by omega, Relation.ReflTransGen.single hn0L⟩
+  have hn1L : nextrel1 M p (p + 1 + L) := by
+    refine ⟨by omega, by omega, by omega, by rw [e1p, eqL.2.1]; omega, hl0L, ?_⟩
+    intro j hj
+    have := hanc (p + 1 + L) j hj.1 hj.2 eqL.1 (fun j'' h1 h2 => ege' j'' h1 h2)
+    subst this; exact le_rfl
+  have hn2L : nextrel2 M p (p + 1 + L) := by
+    refine ⟨by omega, by omega, by omega, by rw [e2p, eqL.2.2]; omega,
+      ⟨by omega, by omega, Relation.ReflTransGen.single hn1L⟩, ?_⟩
+    intro j hj
+    have := hanc (p + 1 + L) j hj.1 (le0_of_le1 hj.2) eqL.1
+      (fun j'' h1 h2 => ege' j'' h1 h2)
+    subst this; rw [eqL.2.2]
+  have hpar : hasParent M 2 (p + 1 + L) :=
+    hasParent2_of_le1_witness (by omega) (Relation.ReflTransGen.single hn1L)
+      (by rw [e2p, eqL.2.2]; omega)
+  have hparent : parent M 2 (p + 1 + L) = p := hpar.unique (parent_nextR hpar) hn2L
+  have hsrow : srow M (p + 1 + L) = 2 := by simp [srow, eqL.2.2]
+  have hl00 : le0 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  have hl11 : le1 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  rw [L53.oper_unfold (j1 := p + 1 + L) (i1 := 2) (j0 := p) (d0 := 1) (d1 := 1)
+      (by omega) (by omega) (by rw [eqL.1]; omega) hsrow.symm hpar hparent.symm
+      (by rw [if_pos (by omega : 0 < 2), eqL.1, e0p]; omega)
+      (by rw [if_pos (by omega : 1 < 2), eqL.2.1, e1p]; omega) n]
+  have hr : List.range' p (p + 1 + L - p) = p :: List.range' (p + 1) L := by
+    rw [show p + 1 + L - p = L + 1 from by omega, List.range'_succ]
+  have htk : M.take p = Y0 := by rw [hM, hp, List.take_left]
+  rw [hr, htk]
+  have hbody : ∀ k : ℕ, (p :: List.range' (p + 1) L).map
+      (fun j => ((entry M 0 j + (if le0 M p j then k * 1 else 0),
+        entry M 1 j + (if le1 M p j then k * 1 else 0),
+        entry M 2 j) : ℕ × ℕ × ℕ))
+      = ((a + k, b + k, 0) : ℕ × ℕ × ℕ) :: ks.map (col (a + k) (b + k)) := by
+    intro k
+    rw [List.map_cons]
+    congr 1
+    · rw [if_pos hl00, if_pos hl11, e0p, e1p, e2p]; simp
+    · apply List.ext_getElem
+      · simp [hL]
+      · intro i h1 h2
+        simp only [List.getElem_map, List.getElem_range'_1]
+        have hi : i < L := by simpa [hL] using h2
+        cases hks : ks[i]'(by omega)
+        · obtain ⟨e0, e1, e2⟩ := ef i hi hks
+          rw [show p + 1 + i = p + 1 + i from rfl, if_pos (hl0f i hi hks), if_neg (hnl1f i hi hks), e0, e1, e2]
+          simp [col]; omega
+        · obtain ⟨e0, e1, e2⟩ := ez i hi hks
+          rw [if_pos (hl0z i hi hks), if_pos (hl1z i hi hks), e0, e1, e2]
+          simp [col]; omega
+  rw [List.flatMap_congr (fun k _ => hbody k)]
+  rfl
+
+theorem z1w_mem {Y0 : TrioSeq} {a b : ℕ} {ks : List Bool} (h0 : ∀ h : 0 < ks.length, ks[0] = true)
+    (htw : ∀ n, Y0 ++ Dzw a b ks n ∈ W 0) :
+    Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: ks.map (col a b) ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_z1w Y0 a b ks h0]
+  exact htw n
+
+#print axioms z1w_mem
 end Small
 end TRIO
