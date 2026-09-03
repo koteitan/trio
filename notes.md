@@ -751,3 +751,16 @@ GoodP_all の 4 段のうち root と seg だけで足りた（bms で塔を確�
   345 = R344(1,1,0)(2,2,1)(3,1,0) = 同じく snocd_gen(d=3) を R344 の上で。
 壁だった「平坦な列を頂上に持つ台座」は、実は語の側（荷つきの字）に押し込めた: 平坦な列 (2,0,0) は
 字 colP 0 0 B の荷の根であって、台座ではない。
+
+### 2026-09-04 (続き56) 行 346〜350: R344 を走りの底の元にして、junk の族を抽象化
+- SegA_unit11_1 h: (h+1,1,0)(h+2,2,1)(h+3,1,0) はどの梯子の元の上でも通るセグメント
+  （snocd_gen(d=h+s+3) + hangU11、Ancd は Ancd_unit11_3）。⟹ R344_RunA0: RunA 0 1 R344。
+- 346 = R344(2,1,0)（SegA_one 1）、347 = R344(2,2,0)（RunG_snoc2）、348 = R344(2,2,0)(3,3,1)（z1_mem + RunA0_DiaV）。
+- GoodF J: 記録 (a,b,0) の右の junk の族が 4 段（PU/PkGA/SegA/根）で普遍、という抽象化。
+  Dzf J a b n（記録と junk の対角の塔）と連鎖補題を GoodF から出す（DzwP_* の写し）。
+  GoodF_wordP: 語の junk は GoodF。
+- GoodF_z1c: Jz1c a b = [(a+1,b+1,1),(a+2,1,0)]（z の列 + 1 の列）も GoodF。
+  pu/pk は snocd_gen(d=c+t+3) + hang（GoodP_all [B] の pu/pk）、seg = SegA_unit11_1、根 = Aok R338。
+- 349 = R348(4,1,0) = PkGA 2（junk = Jz1c 2 2）、350 = R349(3,3,0) = PU 2 3（junk 空）。
+次: 351 = R344(2,2,1) は R338 ++ Dzf Jz1c 1 1 (n+1) が塔。oper_z1_mask + マスク計算（1 の列は
+行 1 が上がらない: 行 1 の親鎖は狭義増加）で出るはず。
