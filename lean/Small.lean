@@ -11651,5 +11651,196 @@ theorem R311_mem : R310 ++ [((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R305_mem
 #print axioms R308_mem
 #print axioms R311_mem
+
+/-! ### z=1 の列 `m` 本: `(Y0 ++ (a,b,0) ++ (a+1,b+1,1)^(m+1))⟦n⟧ = Y0 ++ Dzm a b m n` -/
+
+/-- `Dzm a b m n = ⋃_{k<n} (a+k,b+k,0) (a+1+k,b+1+k,1)^m`。 -/
+def Dzm (a b m n : ℕ) : TrioSeq :=
+  (List.range n).flatMap fun k =>
+    ((a + k, b + k, 0) : ℕ × ℕ × ℕ) :: List.replicate m ((a + 1 + k, b + 1 + k, 1) : ℕ × ℕ × ℕ)
+
+theorem Dzm_succ (a b m n : ℕ) : Dzm a b m (n + 1) = Dzm a b m n ++
+    (((a + n, b + n, 0) : ℕ × ℕ × ℕ) :: List.replicate m ((a + 1 + n, b + 1 + n, 1) : ℕ × ℕ × ℕ)) := by
+  simp [Dzm, List.range_succ]
+
+theorem Dzm_cons (a b m : ℕ) : ∀ n : ℕ, Dzm a b m (n + 1) =
+    (((a, b, 0) : ℕ × ℕ × ℕ) :: List.replicate m ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)) ++
+      Dzm (a + 1) (b + 1) m n
+  | 0 => by simp [Dzm]
+  | (n + 1) => by
+      rw [Dzm_succ, Dzm_cons a b m n, Dzm_succ (a + 1) (b + 1) m n, List.append_assoc,
+        show a + (n + 1) = a + 1 + n from by omega, show b + (n + 1) = b + 1 + n from by omega,
+        show a + 1 + (n + 1) = a + 1 + 1 + n from by omega,
+        show b + 1 + (n + 1) = b + 1 + 1 + n from by omega]
+
+theorem entry_replicate_lt {c : ℕ × ℕ × ℕ} {n q : ℕ} (hq : q < n) (i : ℕ) :
+    entry (List.replicate n c) i q = entry [c] i 0 := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_replicate_of_lt hq]
+
+open Classical in
+theorem oper_z1m (Y0 : TrioSeq) (a b m n : ℕ) :
+    (Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: List.replicate (m + 1) ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)))⟦n⟧
+      = Y0 ++ Dzm a b m n := by
+  set T : TrioSeq := ((a, b, 0) : ℕ × ℕ × ℕ) :: List.replicate (m + 1) ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)
+    with hT
+  set M : TrioSeq := Y0 ++ T with hM
+  set p := Y0.length with hp
+  have hlen : M.length = p + m + 2 := by simp [hM, hT, hp]; omega
+  have eT : ∀ i q, entry M i (p + q) = entry T i q := fun i q => entry_append_right Y0 T i q
+  have e0p : entry M 0 p = a := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e1p : entry M 1 p = b := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e2p : entry M 2 p = 0 := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have eq : ∀ i, i < m + 1 → entry M 0 (p + 1 + i) = a + 1 ∧ entry M 1 (p + 1 + i) = b + 1 ∧
+      entry M 2 (p + 1 + i) = 1 := by
+    intro i hi
+    rw [show p + 1 + i = p + (i + 1) from by omega, eT, eT, eT]
+    simp only [hT, entry, List.getD_cons_succ]
+    simp [List.getD_eq_getElem?_getD, List.getElem?_replicate_of_lt hi]
+  have hn0 : ∀ i, i < m + 1 → nextrel0 M p (p + 1 + i) := by
+    intro i hi
+    refine ⟨by omega, by omega, by omega, by rw [e0p, (eq i hi).1]; omega, ?_⟩
+    intro j hj
+    obtain ⟨i', hi', rfl⟩ : ∃ i', i' < m + 1 ∧ j = p + 1 + i' := ⟨j - (p + 1), by omega, by omega⟩
+    rw [(eq i hi).1, (eq i' hi').1]
+  have hl0 : ∀ i, i < m + 1 → le0 M p (p + 1 + i) := fun i hi =>
+    ⟨by omega, by omega, Relation.ReflTransGen.single (hn0 i hi)⟩
+  have hn1 : ∀ i, i < m + 1 → nextrel1 M p (p + 1 + i) := by
+    intro i hi
+    refine ⟨by omega, by omega, by omega, by rw [e1p, (eq i hi).2.1]; omega, hl0 i hi, ?_⟩
+    intro j hj
+    have hjl := hj.2.1
+    obtain ⟨i', hi', rfl⟩ : ∃ i', i' < m + 1 ∧ j = p + 1 + i' := ⟨j - (p + 1), by omega, by omega⟩
+    rw [(eq i hi).2.1, (eq i' hi').2.1]
+  have hl1 : ∀ i, i < m + 1 → le1 M p (p + 1 + i) := fun i hi =>
+    ⟨by omega, by omega, Relation.ReflTransGen.single (hn1 i hi)⟩
+  have hn2 : nextrel2 M p (p + 1 + m) := by
+    refine ⟨by omega, by omega, by omega, by rw [e2p, (eq m (by omega)).2.2]; omega,
+      hl1 m (by omega), ?_⟩
+    intro j hj
+    have hjl := hj.2.1
+    obtain ⟨i', hi', rfl⟩ : ∃ i', i' < m + 1 ∧ j = p + 1 + i' := ⟨j - (p + 1), by omega, by omega⟩
+    rw [(eq m (by omega)).2.2, (eq i' hi').2.2]
+  have hpar : hasParent M 2 (p + 1 + m) :=
+    hasParent2_of_le1_witness (by omega) (Relation.ReflTransGen.single (hn1 m (by omega)))
+      (by rw [e2p, (eq m (by omega)).2.2]; omega)
+  have hparent : parent M 2 (p + 1 + m) = p := hpar.unique (parent_nextR hpar) hn2
+  have hsrow : srow M (p + 1 + m) = 2 := by simp [srow, (eq m (by omega)).2.2]
+  have hl00 : le0 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  have hl11 : le1 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  rw [L53.oper_unfold (j1 := p + 1 + m) (i1 := 2) (j0 := p) (d0 := 1) (d1 := 1)
+      (by omega) (by omega) (by rw [(eq m (by omega)).1]; omega) hsrow.symm hpar hparent.symm
+      (by rw [if_pos (by omega : 0 < 2), (eq m (by omega)).1, e0p]; omega)
+      (by rw [if_pos (by omega : 1 < 2), (eq m (by omega)).2.1, e1p]; omega) n]
+  have hr : List.range' p (p + 1 + m - p) = p :: List.range' (p + 1) m := by
+    rw [show p + 1 + m - p = m + 1 from by omega, List.range'_succ]
+  have htk : M.take p = Y0 := by rw [hM, hp, List.take_left]
+  rw [hr, htk]
+  have hbody : ∀ k : ℕ, (p :: List.range' (p + 1) m).map
+      (fun j => ((entry M 0 j + (if le0 M p j then k * 1 else 0),
+        entry M 1 j + (if le1 M p j then k * 1 else 0),
+        entry M 2 j) : ℕ × ℕ × ℕ))
+      = ((a + k, b + k, 0) : ℕ × ℕ × ℕ) :: List.replicate m ((a + 1 + k, b + 1 + k, 1) : ℕ × ℕ × ℕ) := by
+    intro k
+    rw [List.map_cons]
+    congr 1
+    · rw [if_pos hl00, if_pos hl11, e0p, e1p, e2p]; simp
+    · refine List.eq_replicate_iff.mpr ⟨by simp, ?_⟩
+      intro x hx
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hx
+      rw [List.mem_range'_1] at hj
+      obtain ⟨i, hi, rfl⟩ : ∃ i, i < m ∧ j = p + 1 + i := ⟨j - (p + 1), by omega, by omega⟩
+      rw [if_pos (hl0 i (by omega)), if_pos (hl1 i (by omega)), (eq i (by omega)).1,
+        (eq i (by omega)).2.1, (eq i (by omega)).2.2]
+      simp
+  rw [List.flatMap_congr (fun k _ => hbody k)]
+  rfl
+
+theorem z1m_mem {Y0 : TrioSeq} {a b m : ℕ} (htw : ∀ n, Y0 ++ Dzm a b m n ∈ W 0) :
+    Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: List.replicate (m + 1) ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)) ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_z1m]
+  exact htw n
+
+/-! ### 塔の段: `IfcV (y+1)` 台座の上の `Dzm` の連鎖は `PU` の連鎖 -/
+
+/-- `hJm`: z=1 の列 `m` 本は普遍 junk（`m` についての帰納法の仮定）。 -/
+theorem Dzm_chainU {m : ℕ}
+    (hJm : ∀ (y' c' : ℕ), 2 ≤ y' → JkU y' c' (List.replicate m ((c' + 2, y' + 2, 1) : ℕ × ℕ × ℕ)))
+    {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
+    {c : ℕ} {Z : TrioSeq} (hZ : E c Z) :
+    ∀ (n : ℕ) (J : TrioSeq), JkU (y + n + 1) (c + n + 1) J →
+      PU (y + n + 1) (c + n + 2)
+        (Z ++ Dzm (c + 1) (y + 1) m (n + 1) ++ ([((c + n + 2, y + n + 2, 0) : ℕ × ℕ × ℕ)] ++ J))
+  | 0, J, hJ => by
+      have h1 : PU y (c + 1) (Z ++ Dzm (c + 1) (y + 1) m 1) :=
+        ⟨E, c, Z, List.replicate m ((c + 2, y + 2, 1) : ℕ × ℕ × ℕ), hE, rfl, hZ,
+          by simp [Dzm, show c + 1 + 1 = c + 2 from by omega, show y + 1 + 1 = y + 2 from by omega],
+          hJm y c hy⟩
+      exact ⟨PU y, c + 1, _, J, IfcV_PU (by omega) (y + 0 + 1 + 1) (by omega), by omega, h1,
+        by simp, hJ⟩
+  | (n + 1), J, hJ => by
+      have ih := Dzm_chainU hJm hy hE hZ n
+        (List.replicate m ((c + n + 1 + 2, y + n + 1 + 2, 1) : ℕ × ℕ × ℕ))
+        (hJm (y + n + 1) (c + n + 1) (by omega))
+      refine ⟨PU (y + n + 1), c + n + 2, _, J, IfcV_PU (by omega) (y + (n + 1) + 1 + 1) (by omega),
+        by omega, ih, ?_, by simpa [show y + (n + 1) + 1 = y + n + 1 + 1 from by omega,
+          show c + (n + 1) + 1 = c + n + 1 + 1 from by omega] using hJ⟩
+      rw [Dzm_succ (c + 1) (y + 1) m (n + 1)]
+      simp [List.append_assoc, show c + 1 + (n + 1) = c + n + 2 from by omega,
+        show y + 1 + (n + 1) = y + n + 2 from by omega,
+        show c + 1 + 1 + (n + 1) = c + n + 1 + 2 from by omega,
+        show y + 1 + 1 + (n + 1) = y + n + 1 + 2 from by omega,
+        show c + (n + 1) + 2 = c + n + 3 from by omega,
+        show y + (n + 1) + 2 = y + n + 3 from by omega,
+        show c + n + 2 + 1 = c + n + 3 from by omega,
+        show y + n + 1 + 1 + 1 = y + n + 3 from by omega]
+
+theorem Dzm_W {m : ℕ}
+    (hJm : ∀ (y' c' : ℕ), 2 ≤ y' → JkU y' c' (List.replicate m ((c' + 2, y' + 2, 1) : ℕ × ℕ × ℕ)))
+    {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
+    {c : ℕ} {Z : TrioSeq} (hZ : E c Z) : ∀ n : ℕ, Z ++ Dzm (c + 1) (y + 1) m n ∈ W 0
+  | 0 => by simpa [Dzm] using ((IfcV_iface (y + 1) hE).bok.aok _ _ hZ).mem
+  | 1 => by
+      have h1 : PU y (c + 1) (Z ++ Dzm (c + 1) (y + 1) m 1) :=
+        ⟨E, c, Z, List.replicate m ((c + 2, y + 2, 1) : ℕ × ℕ × ℕ), hE, rfl, hZ,
+          by simp [Dzm, show c + 1 + 1 = c + 2 from by omega, show y + 1 + 1 = y + 2 from by omega],
+          hJm y c hy⟩
+      exact ((BaseOk_PU y).aok _ _ h1).mem
+  | (n + 2) => by
+      have h := Dzm_chainU hJm hy hE hZ n
+        (List.replicate m ((c + n + 1 + 2, y + n + 1 + 2, 1) : ℕ × ℕ × ℕ))
+        (hJm (y + n + 1) (c + n + 1) (by omega))
+      have h2 := ((BaseOk_PU (y + n + 1)).aok _ _ h).mem
+      rw [Dzm_succ (c + 1) (y + 1) m (n + 1)]
+      simpa [List.append_assoc, show c + 1 + (n + 1) = c + n + 2 from by omega,
+        show y + 1 + (n + 1) = y + n + 2 from by omega,
+        show c + 1 + 1 + (n + 1) = c + n + 1 + 2 from by omega,
+        show y + 1 + 1 + (n + 1) = y + n + 1 + 2 from by omega] using h2
+
+/-- ★★★ `y+1` の記録の直上の z=1 の列 `m` 本は普遍 junk。 -/
+theorem JkU_z1m : ∀ (m y c : ℕ), 2 ≤ y → JkU y c (List.replicate m ((c + 2, y + 2, 1) : ℕ × ℕ × ℕ))
+  | 0, y, c, hy => by simpa using JkU_nil' hy c
+  | (m + 1), y, c, hy => by
+      refine ⟨?_, ?_, ?_⟩
+      · intro x hx
+        rw [List.mem_replicate] at hx
+        simp [hx.2]
+      · intro x hx
+        rw [List.mem_replicate] at hx
+        rw [hx.2]; show (1 : ℕ) ≤ y + 2; omega
+      · intro E hE t Z hZ
+        have h := z1m_mem (Y0 := Z) (a := c + 1 + t) (b := y + 1) (m := m)
+          (fun n => by
+            have := Dzm_W (fun y' c' hy' => JkU_z1m m y' c' hy') hy hE
+              (c := c + t) (by simpa using hZ) n
+            simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+        have e : shiftr01 t 0 (List.replicate (m + 1) ((c + 2, y + 2, 1) : ℕ × ℕ × ℕ))
+            = List.replicate (m + 1) ((c + 1 + t + 1, y + 1 + 1, 1) : ℕ × ℕ × ℕ) := by
+          simp [shiftr01, List.map_replicate]; omega
+        rw [e]
+        simpa using h
+
+#print axioms JkU_z1m
 end Small
 end TRIO
