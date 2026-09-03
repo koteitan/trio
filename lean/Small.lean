@@ -11072,5 +11072,64 @@ theorem RunA0_z1 {h : ℕ} {Y0 : TrioSeq} (hX : RunA 0 h (Y0 ++ [((h, 1, 0) : �
       exact RunA0_DiaV hX n
 
 #print axioms RunA0_z1
+
+/-! ### 単位 `(h+1,1,0)(h+2,2,1)` は絶対セグメント。`R296 ∈ RunA 0 1`、行 306/309/310 -/
+
+theorem SegA_unit11 (h : ℕ) :
+    SegA h [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)] where
+  mid := by
+    have h1 := MidD_append (MidD_col (h + 1) 1 (by omega) (by omega))
+      (N := [((h + 2, 2, 1) : ℕ × ℕ × ℕ)])
+      (by intro c hc; simp only [List.mem_singleton] at hc; subst hc; show h + 1 + 1 ≤ h + 2; omega)
+      (by intro c hc; simp only [List.mem_singleton] at hc; subst hc; show (1 : ℕ) ≤ 2; omega)
+    simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+  head1 := by simp [entry]
+  reapp := by
+    intro P hP s A' hA'
+    have hR : RunA 0 (h + s + 1) (A' ++ [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+      ⟨h + s, A', _, rfl, rfl, ⟨P, hP, hA'⟩, SegA_one (h + s)⟩
+    have h1 := RunA0_z1 hR
+    have e : shiftr01 s 0 [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)]
+        = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + s + 1 + 1, 2, 1) : ℕ × ℕ × ℕ)] := by
+      simp [shiftr01]; omega
+    rw [e]
+    exact h1
+
+/-- 任意の梯子の元の上の単位は `RunA 0`。 -/
+theorem LwA_unit11 {h : ℕ} {A : TrioSeq} (hA : LwA h A) :
+    RunA 0 (h + 1) (A ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)]) :=
+  ⟨h, A, _, rfl, rfl, hA, SegA_unit11 h⟩
+
+theorem LwA_of_Aok {A : TrioSeq} (hA : Aok A) : LwA 0 A :=
+  ⟨_, BaseOk_zero, LwB_of_base ⟨hA, rfl⟩⟩
+
+theorem R296_eq : R296 = Q ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] := rfl
+
+/-- ★★★ `R296 = (0,0,0)(1,1,1)(1,1,0)(2,2,1)` は走りの底の元（レベル 1）。 -/
+theorem R296_RunA0 : RunA 0 1 R296 := LwA_unit11 (LwA_of_Aok Aok_Q)
+
+theorem Aok_R296 : Aok R296 := (BaseOk_RunA 0).aok _ _ R296_RunA0
+
+/-- ★★★★ シート行306 `R296 (2,2,0) = psi(W_w + W_2)`。 -/
+theorem R306_mem : R296 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunG_snoc2 Iface_RunA0 0 1 R296 R296_RunA0
+
+/-- ★★★★ シート行309 `R296 (2,2,0)(3,3,0) = psi(W_w + psi_2(W_3))`。 -/
+theorem R309_mem : R296 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := RunA0_DiaV R296_RunA0 2
+  simpa [DiaV] using h
+
+/-- ★★★★ シート行310 `R296 (2,2,0)(3,3,1) = psi(W_w + psi_2(W_w))`。 -/
+theorem R310_mem : R296 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine z1_mem (a := 2) (b := 2) ?_
+  intro n
+  cases n with
+  | zero => simpa [Dtw] using R296_mem
+  | succ n =>
+      have e : Dtw 2 2 (n + 1) = DiaV 1 1 (n + 1) := Dtw_eq_DiaV 1 1 (n + 1)
+      rw [e]
+      exact RunA0_DiaV R296_RunA0 (n + 1)
+
+#print axioms R310_mem
 end Small
 end TRIO
