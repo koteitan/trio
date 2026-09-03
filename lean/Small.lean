@@ -15990,5 +15990,388 @@ theorem R361_mem : R344 ++ [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ ×
 
 #print axioms R361_mem
 
+
+/-! ### 複合字の語: 1 つの字 = z の列 + 1 の列 `k` 本 + 荷 `Y`（高さ `a+2`） -/
+
+/-- 複合字。`p.1` = 1 の列の本数、`p.2` = 荷。 -/
+def colC (a b : ℕ) (p : ℕ × TrioSeq) : TrioSeq :=
+  ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) ::
+    (List.replicate p.1 ((a + 2, 1, 0) : ℕ × ℕ × ℕ) ++ shiftr01 (a + 2) 0 p.2)
+
+def wordC (a b : ℕ) (ws : List (ℕ × TrioSeq)) : TrioSeq := ws.flatMap (colC a b)
+
+/-- 荷はすべて `Bok`。 -/
+def WplC (ws : List (ℕ × TrioSeq)) : Prop := ∀ p ∈ ws, Bok p.2
+
+theorem WplC_nil : WplC [] := fun _ h => by simp at h
+
+theorem WplC_append {ws1 ws2 : List (ℕ × TrioSeq)} (h1 : WplC ws1) (h2 : WplC ws2) :
+    WplC (ws1 ++ ws2) := by
+  intro p hp
+  rcases List.mem_append.mp hp with h | h
+  · exact h1 p h
+  · exact h2 p h
+
+theorem WplC_of_append_left {ws1 ws2 : List (ℕ × TrioSeq)} (h : WplC (ws1 ++ ws2)) : WplC ws1 :=
+  fun p hp => h p (List.mem_append_left _ hp)
+
+theorem WplC_singleton {k : ℕ} {Y : TrioSeq} (hY : Bok Y) : WplC [(k, Y)] := by
+  intro p hp
+  simp only [List.mem_singleton] at hp
+  subst hp; exact hY
+
+theorem wordC_nil (a b : ℕ) : wordC a b [] = [] := rfl
+
+theorem wordC_append (a b : ℕ) (ws1 ws2 : List (ℕ × TrioSeq)) :
+    wordC a b (ws1 ++ ws2) = wordC a b ws1 ++ wordC a b ws2 := by simp [wordC]
+
+theorem wordC_singleton (a b : ℕ) (p : ℕ × TrioSeq) : wordC a b [p] = colC a b p := by
+  simp [wordC]
+
+theorem wordC_cons (a b : ℕ) (p : ℕ × TrioSeq) (ws : List (ℕ × TrioSeq)) :
+    wordC a b (p :: ws) = colC a b p ++ wordC a b ws := by simp [wordC]
+
+theorem colC_shift (a b s : ℕ) (p : ℕ × TrioSeq) :
+    shiftr01 s 0 (colC a b p) = colC (a + s) b p := by
+  rw [colC, show ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) ::
+      (List.replicate p.1 ((a + 2, 1, 0) : ℕ × ℕ × ℕ) ++ shiftr01 (a + 2) 0 p.2)
+      = [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] ++
+        (List.replicate p.1 ((a + 2, 1, 0) : ℕ × ℕ × ℕ) ++ shiftr01 (a + 2) 0 p.2) from rfl,
+    shiftr01_append0, shiftr01_append0, shift_zcol, shiftr01_add0,
+    show a + 2 + s = a + s + 2 from by omega, show a + 1 + s = a + s + 1 from by omega]
+  have hr : shiftr01 s 0 (List.replicate p.1 ((a + 2, 1, 0) : ℕ × ℕ × ℕ))
+      = List.replicate p.1 ((a + s + 2, 1, 0) : ℕ × ℕ × ℕ) := by
+    simp [shiftr01, List.map_replicate]
+    omega
+  rw [hr]
+  rfl
+
+theorem wordC_shift (a b s : ℕ) (ws : List (ℕ × TrioSeq)) :
+    shiftr01 s 0 (wordC a b ws) = wordC (a + s) b ws := by
+  induction ws with
+  | nil => simp [wordC, shiftr01]
+  | cons p ws ih => rw [wordC_cons, wordC_cons, shiftr01_append0, colC_shift, ih]
+
+theorem colC_ge (a b : ℕ) (p : ℕ × TrioSeq) : ∀ x ∈ colC a b p, a + 1 ≤ x.1 := by
+  intro x hx
+  simp only [colC, List.mem_cons, List.mem_append, List.mem_replicate, shiftr01,
+    List.mem_map] at hx
+  rcases hx with rfl | ⟨-, rfl⟩ | ⟨q, -, rfl⟩
+  · exact le_refl _
+  · show a + 1 ≤ a + 2; omega
+  · show a + 1 ≤ q.1 + (a + 2); omega
+
+theorem wordC_ge (a b : ℕ) (ws : List (ℕ × TrioSeq)) : ∀ x ∈ wordC a b ws, a + 1 ≤ x.1 := by
+  intro x hx
+  simp only [wordC, List.mem_flatMap] at hx
+  obtain ⟨p, -, hx⟩ := hx
+  exact colC_ge a b p x hx
+
+theorem colC_mono {a b : ℕ} {p : ℕ × TrioSeq} (hp : Mono p.2) : Mono (colC a b p) := by
+  intro x hx
+  simp only [colC, List.mem_cons, List.mem_append, List.mem_replicate, shiftr01,
+    List.mem_map] at hx
+  rcases hx with rfl | ⟨-, rfl⟩ | ⟨q, hq, rfl⟩
+  · show 1 ≤ b + 1; omega
+  · show (0 : ℕ) ≤ 1; omega
+  · simpa using hp q hq
+
+theorem wordC_mono {a b : ℕ} {ws : List (ℕ × TrioSeq)} (hw : WplC ws) : Mono (wordC a b ws) := by
+  intro x hx
+  simp only [wordC, List.mem_flatMap] at hx
+  obtain ⟨p, hp, hx⟩ := hx
+  exact colC_mono (hw p hp).mono x hx
+
+theorem MidD_wordC (a v : ℕ) (ha : 1 ≤ a) (hv : 1 ≤ v) {ws : List (ℕ × TrioSeq)}
+    (hw : WplC ws) : MidD (a + 1) (((a, v, 0) : ℕ × ℕ × ℕ) :: wordC a v ws) := by
+  have h := MidD_append (MidD_col a v ha hv) (N := wordC a v ws) (wordC_ge a v ws) (wordC_mono hw)
+  simpa using h
+
+theorem colC_length (a b : ℕ) (p : ℕ × TrioSeq) : (colC a b p).length = p.1 + p.2.length + 1 := by
+  simp [colC, shiftr01]
+
+theorem colC_ne (a b : ℕ) (p : ℕ × TrioSeq) : colC a b p ≠ [] := by simp [colC]
+
+#print axioms wordC_shift
+
+
+/-! ### 複合字の語の上の z の列の展開 -/
+
+def MzC (Y0 : TrioSeq) (a b : ℕ) (ws : List (ℕ × TrioSeq)) : TrioSeq :=
+  Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+
+theorem entry_colC_zero (a b : ℕ) (p : ℕ × TrioSeq) (r : ℕ) :
+    entry (colC a b p) r 0 = entry [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] r 0 := by
+  simp [colC, entry]
+
+theorem entry_colC_one (a b : ℕ) (p : ℕ × TrioSeq) (r t : ℕ) (ht : t < p.1) :
+    entry (colC a b p) r (t + 1) = entry [((a + 2, 1, 0) : ℕ × ℕ × ℕ)] r 0 := by
+  simp only [colC, entry, List.getD_cons_succ]
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_append_left (by simpa using ht), List.getElem?_replicate]
+  simp [ht]
+
+theorem entry_colC_pay (a b : ℕ) (p : ℕ × TrioSeq) (r t : ℕ) (ht : t < p.2.length) :
+    entry (colC a b p) r (p.1 + t + 1) = entry (shiftr01 (a + 2) 0 p.2) r t := by
+  simp only [colC, entry, List.getD_cons_succ]
+  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+    List.getElem?_append_right (by simp), List.length_replicate]
+  simp
+
+theorem entry_MzC_p (Y0 : TrioSeq) (a b : ℕ) (ws : List (ℕ × TrioSeq)) (r : ℕ) :
+    entry (MzC Y0 a b ws) r Y0.length = entry [((a, b, 0) : ℕ × ℕ × ℕ)] r 0 := by
+  rw [MzC, show Y0.length = Y0.length + 0 from rfl, entry_append_right]
+  simp [entry]
+
+theorem entry_MzC_word (Y0 : TrioSeq) (a b : ℕ) (ws : List (ℕ × TrioSeq)) (r i : ℕ)
+    (hi : i < (wordC a b ws).length) :
+    entry (MzC Y0 a b ws) r (Y0.length + 1 + i) = entry (wordC a b ws) r i := by
+  have e : MzC Y0 a b ws = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)]) ++
+      (wordC a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) := by
+    simp [MzC]
+  rw [e, show Y0.length + 1 + i = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)]).length + i from by
+      simp only [List.length_append, List.length_singleton],
+    entry_append_right, entry_append_left hi]
+
+theorem entry_wordC_pos (Y0 : TrioSeq) (a b : ℕ) (ws1 ws3 : List (ℕ × TrioSeq))
+    (p : ℕ × TrioSeq) (r t : ℕ) (ht : t < (colC a b p).length) :
+    entry (MzC Y0 a b (ws1 ++ p :: ws3)) r (Y0.length + 1 + (wordC a b ws1).length + t)
+      = entry (colC a b p) r t := by
+  have e : MzC Y0 a b (ws1 ++ p :: ws3)
+      = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)] ++ wordC a b ws1) ++
+        (colC a b p ++ (wordC a b ws3 ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])) := by
+    simp [MzC, wordC_append, wordC_cons, List.append_assoc]
+  rw [e, show Y0.length + 1 + (wordC a b ws1).length + t
+      = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)] ++ wordC a b ws1).length + t from by
+        simp only [List.length_append, List.length_singleton],
+    entry_append_right, entry_append_left ht]
+
+theorem entry_wordC_ge (a b : ℕ) (ws : List (ℕ × TrioSeq)) {i : ℕ}
+    (hi : i < (wordC a b ws).length) : a + 1 ≤ entry (wordC a b ws) 0 i := by
+  have := wordC_ge a b ws _ (List.getElem_mem hi)
+  have he : entry (wordC a b ws) 0 i = ((wordC a b ws)[i]).1 := by
+    simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi]
+  omega
+
+/-- 字の先頭（z の列）は記録の行 1 の子。 -/
+theorem le1_zposC (Y0 : TrioSeq) (a b : ℕ) (ws1 ws3 : List (ℕ × TrioSeq)) (p : ℕ × TrioSeq) :
+    le1 (MzC Y0 a b (ws1 ++ p :: ws3)) Y0.length
+      (Y0.length + 1 + (wordC a b ws1).length) := by
+  set M := MzC Y0 a b (ws1 ++ p :: ws3) with hM
+  set q := Y0.length + 1 + (wordC a b ws1).length with hq
+  have hlenw : (wordC a b (ws1 ++ p :: ws3)).length
+      = (wordC a b ws1).length + (colC a b p).length + (wordC a b ws3).length := by
+    rw [wordC_append, wordC_cons, List.length_append, List.length_append]
+    omega
+  have hlen : M.length = Y0.length + 1 + (wordC a b (ws1 ++ p :: ws3)).length + 1 := by
+    simp [hM, MzC]
+    omega
+  have hcl : 0 < (colC a b p).length := by rw [colC_length]; omega
+  have hql : q < M.length := by omega
+  have e0p : entry M 0 Y0.length = a := by rw [hM, entry_MzC_p]; simp [entry]
+  have e1p : entry M 1 Y0.length = b := by rw [hM, entry_MzC_p]; simp [entry]
+  have eq0 : entry M 0 q = a + 1 := by
+    have h := entry_wordC_pos Y0 a b ws1 ws3 p 0 0 hcl
+    rw [entry_colC_zero] at h
+    simp only [Nat.add_zero] at h
+    rw [hM, hq, h]; simp [entry]
+  have eq1 : entry M 1 q = b + 1 := by
+    have h := entry_wordC_pos Y0 a b ws1 ws3 p 1 0 hcl
+    rw [entry_colC_zero] at h
+    simp only [Nat.add_zero] at h
+    rw [hM, hq, h]; simp [entry]
+  have hge : ∀ j', Y0.length < j' → j' ≤ q → a + 1 ≤ entry M 0 j' := by
+    intro j' h1 h2
+    obtain ⟨i, hi, rfl⟩ : ∃ i, i < (wordC a b (ws1 ++ p :: ws3)).length ∧ j' = Y0.length + 1 + i :=
+      ⟨j' - (Y0.length + 1), by omega, by omega⟩
+    rw [hM, entry_MzC_word Y0 a b _ 0 i hi]
+    exact entry_wordC_ge a b _ hi
+  have hl0 : le0 M Y0.length q := le0_of_between e0p q (by omega) hql hge
+  refine ⟨by omega, hql, Relation.ReflTransGen.single ?_⟩
+  refine ⟨by omega, hql, by omega, by rw [e1p, eq1]; omega, hl0, ?_⟩
+  intro j hj
+  have := le0_eq_of_min hj.1 hj.2 eq0 (fun j'' h1 h2 => hge j'' h1 (by omega))
+  subst this; exact le_rfl
+
+/-- 1 の列は行 1 が 1 なので、記録（行 1 = b ≥ 1）の行 1 の子孫ではない。 -/
+theorem not_le1_oneC (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) (ws1 ws3 : List (ℕ × TrioSeq))
+    (p : ℕ × TrioSeq) (t : ℕ) (ht : t < p.1) :
+    ¬ le1 (MzC Y0 a b (ws1 ++ p :: ws3)) Y0.length
+      (Y0.length + 1 + (wordC a b ws1).length + (t + 1)) := by
+  intro hc
+  set M := MzC Y0 a b (ws1 ++ p :: ws3) with hM
+  have e1p : entry M 1 Y0.length = b := by rw [hM, entry_MzC_p]; simp [entry]
+  have e1 : entry M 1 (Y0.length + 1 + (wordC a b ws1).length + (t + 1)) = 1 := by
+    have h := entry_wordC_pos Y0 a b ws1 ws3 p 1 (t + 1) (by rw [colC_length]; omega)
+    rw [entry_colC_one a b p 1 t ht] at h
+    rw [hM, h]; simp [entry]
+  have := le1_row1_lt hc (by omega)
+  rw [e1p, e1] at this
+  omega
+
+/-- 荷の列は記録の行 1 の子孫ではない（荷の根は行 1 が 0）。 -/
+theorem not_le1_payC (Y0 : TrioSeq) (a b : ℕ) (ws1 ws3 : List (ℕ × TrioSeq))
+    {p : ℕ × TrioSeq} (hp : Bok p.2) (t : ℕ) (ht : t < p.2.length) :
+    ¬ le1 (MzC Y0 a b (ws1 ++ p :: ws3)) Y0.length
+      (Y0.length + 1 + (wordC a b ws1).length + (p.1 + t + 1)) := by
+  set M := MzC Y0 a b (ws1 ++ p :: ws3) with hM
+  set q := Y0.length + 1 + (wordC a b ws1).length with hq
+  have hlenw : (wordC a b (ws1 ++ p :: ws3)).length
+      = (wordC a b ws1).length + (colC a b p).length + (wordC a b ws3).length := by
+    rw [wordC_append, wordC_cons, List.length_append, List.length_append]
+    omega
+  have hlen : M.length = Y0.length + 1 + (wordC a b (ws1 ++ p :: ws3)).length + 1 := by
+    simp [hM, MzC]
+    omega
+  have hcl : (colC a b p).length = p.1 + p.2.length + 1 := colC_length a b p
+  have hY0 : 0 < p.2.length := by omega
+  -- 荷のブロックは [q + p.1 + 1, q + p.1 + 1 + |Y|)
+  have eblk : ∀ r u, u < p.2.length →
+      entry M r (q + p.1 + 1 + u) = entry (shiftr01 (a + 2) 0 p.2) r u := by
+    intro r u hu
+    have h := entry_wordC_pos Y0 a b ws1 ws3 p r (p.1 + u + 1) (by omega)
+    rw [entry_colC_pay a b p r u hu] at h
+    rw [hM, hq, show Y0.length + 1 + (wordC a b ws1).length + p.1 + 1 + u
+      = Y0.length + 1 + (wordC a b ws1).length + (p.1 + u + 1) from by omega]
+    exact h
+  have hroot := block_root (M := M) (s := q + p.1 + 1) (e := q + p.1 + 1 + p.2.length)
+    (d := a + 2) (by omega)
+    (by rw [show q + p.1 + 1 = q + p.1 + 1 + 0 from rfl, eblk 0 0 hY0, entry0_shiftr01 hY0,
+        hp.root]; omega)
+    (by intro j hj1 hj2
+        obtain ⟨u, hu, rfl⟩ : ∃ u, u < p.2.length ∧ j = q + p.1 + 1 + u :=
+          ⟨j - (q + p.1 + 1), by omega, by omega⟩
+        rw [eblk 0 u hu, entry0_shiftr01 hu]; omega)
+    (by intro j hj1 hj2 hd
+        obtain ⟨u, hu, rfl⟩ : ∃ u, u < p.2.length ∧ j = q + p.1 + 1 + u :=
+          ⟨j - (q + p.1 + 1), by omega, by omega⟩
+        rw [eblk 0 u hu, entry0_shiftr01 hu] at hd
+        rw [eblk 1 u hu, entry1_shiftr01]
+        exact (Zroot_entry hp.zroot (by omega)).1)
+  intro hle
+  have hx := le1_lower_bound hroot Y0.length (q + p.1 + 1 + t) (by
+    have : q + (p.1 + t + 1) = q + p.1 + 1 + t := by omega
+    rwa [this] at hle) (by omega) (by omega)
+  omega
+
+#print axioms not_le1_payC
+
+
+/-! ### 複合字の語の上昇と展開 -/
+
+theorem getElem?_colC_zero (a b : ℕ) (p : ℕ × TrioSeq) :
+    (colC a b p)[0]? = some ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) := by simp [colC]
+
+theorem getElem?_colC_one (a b : ℕ) (p : ℕ × TrioSeq) (u : ℕ) (hu : u < p.1) :
+    (colC a b p)[u + 1]? = some ((a + 2, 1, 0) : ℕ × ℕ × ℕ) := by
+  simp [colC, List.getElem?_append_left, List.getElem?_replicate, hu]
+
+theorem getElem?_colC_pay (a b : ℕ) (p : ℕ × TrioSeq) (u : ℕ) (hu : u < p.2.length) :
+    (colC a b p)[p.1 + u + 1]? = some ((((p.2[u]'hu).1 + (a + 2), (p.2[u]'hu).2.1,
+      (p.2[u]'hu).2.2)) : ℕ × ℕ × ℕ) := by
+  simp [colC, List.getElem?_append_right, shiftr01, List.getElem?_map,
+    List.getElem?_eq_getElem hu]
+
+theorem rise_colC (a b k : ℕ) (p : ℕ × TrioSeq) (P : ℕ → Prop) [DecidablePred P]
+    (hP0 : P 0) (hP : ∀ t, 1 ≤ t → t < (colC a b p).length → ¬ P t) :
+    (List.range (colC a b p).length).map (fun t =>
+      ((entry (colC a b p) 0 t + k, entry (colC a b p) 1 t + (if P t then k else 0),
+        entry (colC a b p) 2 t) : ℕ × ℕ × ℕ)) = colC (a + k) (b + k) p := by
+  have hlenk : (colC (a + k) (b + k) p).length = (colC a b p).length := by
+    rw [colC_length, colC_length]
+  have hlen := colC_length a b p
+  apply List.ext_getElem?
+  intro i
+  rcases Nat.lt_or_ge i (colC a b p).length with hi | hi
+  · rw [List.getElem?_map, List.getElem?_range hi]
+    simp only [Option.map_some]
+    match i, hi with
+    | 0, _ =>
+        rw [getElem?_colC_zero, entry_colC_zero, entry_colC_zero, entry_colC_zero, if_pos hP0]
+        simp [entry]
+        omega
+    | (u + 1), hu =>
+        rw [if_neg (hP (u + 1) (by omega) hu)]
+        rcases Nat.lt_or_ge u p.1 with hlt | hge
+        · rw [entry_colC_one a b p 0 u hlt, entry_colC_one a b p 1 u hlt,
+            entry_colC_one a b p 2 u hlt, getElem?_colC_one (a + k) (b + k) p u hlt]
+          simp [entry]
+          omega
+        · obtain ⟨u', rfl⟩ : ∃ u', u = p.1 + u' := ⟨u - p.1, by omega⟩
+          have hu' : u' < p.2.length := by omega
+          rw [show p.1 + u' + 1 = p.1 + u' + 1 from rfl,
+            entry_colC_pay a b p 0 u' hu', entry_colC_pay a b p 1 u' hu',
+            entry_colC_pay a b p 2 u' hu', getElem?_colC_pay (a + k) (b + k) p u' hu']
+          simp [shiftr01, entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hu']
+          omega
+  · rw [List.getElem?_eq_none (by simpa using hi), List.getElem?_eq_none (by omega)]
+
+open Classical in
+theorem rise_wordC (Y0 : TrioSeq) (a b k : ℕ) (hb : 1 ≤ b) {ws : List (ℕ × TrioSeq)}
+    (hw : WplC ws) :
+    ∀ (ws2 ws1 ws3 : List (ℕ × TrioSeq)), ws = ws1 ++ ws2 ++ ws3 →
+      (List.range (wordC a b ws2).length).map (fun i =>
+        ((entry (wordC a b ws2) 0 i + k, entry (wordC a b ws2) 1 i +
+          (if le1 (MzC Y0 a b ws) Y0.length (Y0.length + 1 + (wordC a b ws1).length + i)
+            then k else 0), entry (wordC a b ws2) 2 i) : ℕ × ℕ × ℕ))
+      = wordC (a + k) (b + k) ws2
+  | [], _, _, _ => by simp [wordC]
+  | (p :: ws2), ws1, ws3, hws => by
+      have hws' : ws = (ws1 ++ [p]) ++ ws2 ++ ws3 := by rw [hws]; simp
+      have hws'' : ws = ws1 ++ p :: (ws2 ++ ws3) := by rw [hws]; simp
+      have hp : Bok p.2 := hw p (by rw [hws]; simp)
+      have ih := rise_wordC Y0 a b k hb hw ws2 (ws1 ++ [p]) ws3 hws'
+      rw [wordC_cons, wordC_cons, List.length_append, List.range_add, List.map_append,
+        List.map_map]
+      congr 1
+      · rw [← rise_colC a b k p (fun t => le1 (MzC Y0 a b ws) Y0.length
+            (Y0.length + 1 + (wordC a b ws1).length + t))
+            (by rw [hws'']; simpa using le1_zposC Y0 a b ws1 (ws2 ++ ws3) p)
+            (by intro t ht1 ht
+                rcases Nat.lt_or_ge (t - 1) p.1 with hlt | hge
+                · obtain ⟨u, rfl⟩ : ∃ u, t = u + 1 := ⟨t - 1, by omega⟩
+                  rw [hws'']
+                  exact not_le1_oneC Y0 a b hb ws1 (ws2 ++ ws3) p u (by omega)
+                · obtain ⟨u, rfl⟩ : ∃ u, t = p.1 + u + 1 := ⟨t - 1 - p.1, by omega⟩
+                  rw [hws'']
+                  refine not_le1_payC Y0 a b ws1 (ws2 ++ ws3) hp u ?_
+                  rw [colC_length] at ht; omega)]
+        apply List.map_congr_left
+        intro t ht
+        rw [List.mem_range] at ht
+        rw [entry_append_left ht, entry_append_left ht, entry_append_left ht]
+      · rw [← ih]
+        apply List.map_congr_left
+        intro i hi
+        simp only [Function.comp]
+        rw [entry_append_right, entry_append_right, entry_append_right, wordC_append,
+          wordC_singleton, List.length_append,
+          show Y0.length + 1 + (wordC a b ws1).length + ((colC a b p).length + i)
+            = Y0.length + 1 + ((wordC a b ws1).length + (colC a b p).length) + i from by omega]
+
+open Classical in
+/-- ★ 複合字の語の上の z の列の展開: 記録と語の対角の塔。 -/
+theorem oper_z1wC (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) {ws : List (ℕ × TrioSeq)}
+    (hw : WplC ws) (n : ℕ) :
+    (Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]))⟦n⟧
+      = Y0 ++ Dzf (fun a b => wordC a b ws) a b n := by
+  rw [oper_z1_mask Y0 a b (wordC a b ws) (wordC_ge a b ws) n]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  congr 1
+  have := rise_wordC Y0 a b k hb hw ws [] [] (by simp)
+  simpa [wordC, MzC] using this
+
+theorem z1wC_mem {Y0 : TrioSeq} {a b : ℕ} (hb : 1 ≤ b) {ws : List (ℕ × TrioSeq)}
+    (hw : WplC ws) (htw : ∀ n, Y0 ++ Dzf (fun a b => wordC a b ws) a b n ∈ W 0) :
+    Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordC a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_z1wC Y0 a b hb hw]
+  exact htw n
+
+#print axioms z1wC_mem
+
 end Small
 end TRIO
