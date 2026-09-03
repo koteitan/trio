@@ -16958,5 +16958,29 @@ theorem R369_mem : R344 ++ [((3, 1, 0) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ ×
 
 #print axioms R369_mem
 
+
+/-! ### 行 370 -/
+
+theorem R341_one_rep (n : ℕ) :
+    R341 ++ (List.range n).flatMap (fun _ => [((3, 1, 0) : ℕ × ℕ × ℕ)])
+      = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordC 1 1 [(n, [])]) := by
+  rw [flatMap_const_singleton]
+  simp [R341, wordC, colC, shiftr01, List.append_assoc]
+
+/-- ★★★★★ シート行370 `R344 (4,0,0) = psi(W_w*W^w)`。 -/
+theorem R370_mem : R344 ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R341) (M := [((3, 1, 0) : ℕ × ℕ × ℕ)]) (d := 4)
+    (by simp) (by simp [entry]) (by intro r hr1 hrl; simp at hrl; omega)
+    (fun n => by
+      rw [R341_one_rep n]
+      exact rowC_mem [(n, [])] (by
+        intro p hp
+        simp only [List.mem_singleton] at hp
+        subst hp
+        exact Bok_nil))
+  simpa [R344, R341, List.append_assoc] using h
+
+#print axioms R370_mem
+
 end Small
 end TRIO
