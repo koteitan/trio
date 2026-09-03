@@ -13042,5 +13042,323 @@ theorem R335_mem : R325 ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R335_mem
 #print axioms Good_blocks
+/-! ### 語の一般化: `colG a b none = (a+1,b+1,1)`（z）、`colG a b (some e) = (a+e,0,0)`（高さ `e ≥ 2` の平坦な列） -/
+
+def colG (a b : ℕ) : Option ℕ → ℕ × ℕ × ℕ
+  | none => (a + 1, b + 1, 1)
+  | some e => (a + e, 0, 0)
+
+def hgt : Option ℕ → ℕ
+  | none => 1
+  | some e => e
+
+/-- 語の妥当性: 先頭は z、平坦な列の高さは 2 以上。 -/
+structure Wv (ws : List (Option ℕ)) : Prop where
+  head : ∀ h : 0 < ws.length, ws[0] = none
+  flat : ∀ e, some e ∈ ws → 2 ≤ e
+
+theorem Wv_nil : Wv [] := ⟨fun h => by simp at h, fun e h => by simp at h⟩
+
+def DzwG (a b : ℕ) (ws : List (Option ℕ)) (n : ℕ) : TrioSeq :=
+  (List.range n).flatMap fun k => ((a + k, b + k, 0) : ℕ × ℕ × ℕ) :: ws.map (colG (a + k) (b + k))
+
+theorem DzwG_succ (a b : ℕ) (ws : List (Option ℕ)) (n : ℕ) : DzwG a b ws (n + 1) =
+    DzwG a b ws n ++ (((a + n, b + n, 0) : ℕ × ℕ × ℕ) :: ws.map (colG (a + n) (b + n))) := by
+  simp [DzwG, List.range_succ]
+
+theorem colG_shift (a b s : ℕ) (t : Option ℕ) : shiftr01 s 0 [colG a b t] = [colG (a + s) b t] := by
+  cases t <;> simp [colG, shiftr01] <;> omega
+
+theorem shift_map_colG (a b s : ℕ) (ws : List (Option ℕ)) :
+    shiftr01 s 0 (ws.map (colG a b)) = ws.map (colG (a + s) b) := by
+  induction ws with
+  | nil => simp [shiftr01]
+  | cons t ws ih =>
+      rw [List.map_cons, List.map_cons, show (colG a b t :: ws.map (colG a b)) = [colG a b t] ++ ws.map (colG a b) from rfl,
+        shiftr01_append0, colG_shift, ih]
+      rfl
+
+theorem colG_ge {a b : ℕ} {t : Option ℕ} (ht : ∀ e, t = some e → 2 ≤ e) : a + 1 ≤ (colG a b t).1 := by
+  cases t with
+  | none => simp [colG]
+  | some e => have := ht e rfl; simp [colG]; omega
+
+theorem colG_mono (a b : ℕ) (t : Option ℕ) : (colG a b t).2.2 ≤ (colG a b t).2.1 := by
+  cases t <;> simp [colG]
+
+theorem map_colG_ge {a b : ℕ} {ws : List (Option ℕ)} (hv : Wv ws) : ∀ x ∈ ws.map (colG a b), a + 1 ≤ x.1 := by
+  intro x hx
+  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hx
+  exact colG_ge (fun e he => hv.flat e (he ▸ ht))
+
+theorem map_colG_mono {a b : ℕ} {ws : List (Option ℕ)} : Mono (ws.map (colG a b)) := by
+  intro x hx
+  obtain ⟨t, -, rfl⟩ := List.mem_map.mp hx
+  exact colG_mono a b t
+
+/-- 最も近い低い列（一般形）。 -/
+theorem nearest_lower {f : ℕ → ℕ} {v : ℕ} : ∀ i : ℕ, (∃ i' < i, f i' < v) →
+    ∃ i' < i, f i' < v ∧ ∀ j, i' < j → j < i → v ≤ f j
+  | 0, h => by obtain ⟨i', hi', -⟩ := h; omega
+  | (i + 1), h => by
+      by_cases hi : f i < v
+      · exact ⟨i, by omega, hi, fun j h1 h2 => by omega⟩
+      · obtain ⟨i', hi', hf⟩ := h
+        have hi'' : i' < i := by
+          rcases Nat.lt_or_ge i' i with h1 | h1
+          · exact h1
+          · have : i' = i := by omega
+            subst this; exact absurd hf hi
+        obtain ⟨j', hj', hfj', hall⟩ := nearest_lower i ⟨i', hi'', hf⟩
+        refine ⟨j', by omega, hfj', ?_⟩
+        intro j h1 h2
+        rcases Nat.lt_or_ge j i with h3 | h3
+        · exact hall j h1 h3
+        · have : j = i := by omega
+          subst this; omega
+
+open Classical in
+theorem oper_z1wG (Y0 : TrioSeq) (a b : ℕ) (ws : List (Option ℕ)) (hv : Wv ws) (n : ℕ) :
+    (Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: ws.map (colG a b) ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]))⟦n⟧
+      = Y0 ++ DzwG a b ws n := by
+  set C : TrioSeq := ws.map (colG a b) with hC
+  set T : TrioSeq := ((a, b, 0) : ℕ × ℕ × ℕ) :: C ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] with hT
+  set M : TrioSeq := Y0 ++ T with hM
+  set p := Y0.length with hp
+  set L := ws.length with hL
+  have hCL : C.length = L := by simp [hC, hL]
+  have hlen : M.length = p + L + 2 := by simp [hM, hT, hC, hp, hL]; omega
+  have eT : ∀ i q, entry M i (p + q) = entry T i q := fun i q => entry_append_right Y0 T i q
+  have e0p : entry M 0 p = a := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e1p : entry M 1 p = b := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e2p : entry M 2 p = 0 := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have eC : ∀ r i (hi : i < L), entry M r (p + 1 + i) = entry [colG a b (ws[i]'(by omega))] r 0 := by
+    intro r i hi
+    rw [show p + 1 + i = p + (i + 1) from by omega, eT]
+    have : entry T r (i + 1) = entry C r i := by
+      simp only [hT, entry, List.cons_append, List.getD_cons_succ]
+      rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+        List.getElem?_append_left (by simpa [hC, hL] using hi)]
+    rw [this, hC, entry_map_lt (colG a b) ws hi r]
+  have eq : ∀ r, entry M r (p + 1 + L) = entry [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] r 0 := by
+    intro r
+    rw [show p + 1 + L = p + (L + 1) from by omega, eT]
+    simp only [hT, entry, List.cons_append, List.getD_cons_succ]
+    rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+      List.getElem?_append_right (by omega), hCL, Nat.sub_self]
+  have ez : ∀ i (hi : i < L), ws[i] = none →
+      entry M 0 (p + 1 + i) = a + 1 ∧ entry M 1 (p + 1 + i) = b + 1 ∧ entry M 2 (p + 1 + i) = 1 := by
+    intro i hi ht
+    rw [eC 0 i hi, eC 1 i hi, eC 2 i hi]
+    simp [ht, colG, entry]
+  have ef : ∀ i (hi : i < L) e, ws[i] = some e →
+      entry M 0 (p + 1 + i) = a + e ∧ entry M 1 (p + 1 + i) = 0 ∧ entry M 2 (p + 1 + i) = 0 := by
+    intro i hi e ht
+    rw [eC 0 i hi, eC 1 i hi, eC 2 i hi]
+    simp [ht, colG, entry]
+  have hge2 : ∀ i (hi : i < L) e, ws[i] = some e → 2 ≤ e := fun i hi e ht =>
+    hv.flat e (ht ▸ List.getElem_mem hi)
+  have ege : ∀ i, i < L → a + 1 ≤ entry M 0 (p + 1 + i) := by
+    intro i hi
+    cases hks : ws[i]'(by omega) with
+    | none => have := (ez i hi hks).1; omega
+    | some e => have := (ef i hi e hks).1; have := hge2 i hi e hks; omega
+  have ege' : ∀ j, p < j → j < p + 1 + L → a + 1 ≤ entry M 0 j := by
+    intro j hj1 hj2
+    obtain ⟨i, hi, rfl⟩ : ∃ i, i < L ∧ j = p + 1 + i := ⟨j - (p + 1), by omega, by omega⟩
+    exact ege i hi
+  have eqL : entry M 0 (p + 1 + L) = a + 1 ∧ entry M 1 (p + 1 + L) = b + 1 ∧
+      entry M 2 (p + 1 + L) = 1 := by
+    rw [eq 0, eq 1, eq 2]; simp [entry]
+  have hanc : ∀ j j', p < j' → le0 M j' j → entry M 0 j = a + 1 →
+      (∀ j'', p < j'' → j'' < j → a + 1 ≤ entry M 0 j'') → j' = j := by
+    intro j j' hj' hle hj hbetween
+    obtain ⟨hj'l, hjl, hch⟩ := hle
+    rcases Relation.ReflTransGen.cases_tail hch with h1 | ⟨c, hc1, hc2⟩
+    · exact h1.symm
+    · exfalso
+      have hcj : c < j := hc2.2.2.1
+      have hcle : j' ≤ c := le0_le' ⟨hj'l, hc2.1, hc1⟩
+      have hlt : entry M 0 c < entry M 0 j := hc2.2.2.2.1
+      have := hbetween c (by omega) hcj
+      omega
+  -- z 列
+  have hn0z : ∀ i (hi : i < L), ws[i] = none → nextrel0 M p (p + 1 + i) := by
+    intro i hi ht
+    refine ⟨by omega, by omega, by omega, by rw [e0p, (ez i hi ht).1]; omega, ?_⟩
+    intro j hj
+    rw [(ez i hi ht).1]; exact ege' j hj.1 (by omega)
+  have hl0z : ∀ i (hi : i < L), ws[i] = none → le0 M p (p + 1 + i) := fun i hi ht =>
+    ⟨by omega, by omega, Relation.ReflTransGen.single (hn0z i hi ht)⟩
+  have hn1z : ∀ i (hi : i < L), ws[i] = none → nextrel1 M p (p + 1 + i) := by
+    intro i hi ht
+    refine ⟨by omega, by omega, by omega, by rw [e1p, (ez i hi ht).2.1]; omega, hl0z i hi ht, ?_⟩
+    intro j hj
+    have := hanc (p + 1 + i) j hj.1 hj.2 (ez i hi ht).1
+      (fun j'' h1 h2 => ege' j'' h1 (by omega))
+    subst this; exact le_rfl
+  have hl1z : ∀ i (hi : i < L), ws[i] = none → le1 M p (p + 1 + i) := fun i hi ht =>
+    ⟨by omega, by omega, Relation.ReflTransGen.single (hn1z i hi ht)⟩
+  -- 全部の列: le0（平坦な列は最も近い低い列経由の強い帰納法）
+  have hl0 : ∀ i (hi : i < L), le0 M p (p + 1 + i) := by
+    intro i
+    induction i using Nat.strong_induction_on with
+    | _ i ih =>
+      intro hi
+      cases hks : ws[i]'(by omega) with
+      | none => exact hl0z i hi hks
+      | some e =>
+        have he := hge2 i hi e hks
+        have hi0 : 0 < i := by
+          rcases Nat.eq_zero_or_pos i with h0 | h0
+          · subst h0; rw [hv.head (by omega)] at hks; cases hks
+          · exact h0
+        have hz0 : entry M 0 (p + 1 + 0) = a + 1 := (ez 0 (by omega) (hv.head (by omega))).1
+        obtain ⟨i', hi'i, hlt, hall⟩ := nearest_lower (f := fun j => entry M 0 (p + 1 + j)) (v := a + e) i
+          ⟨0, hi0, by simp only; rw [hz0]; omega⟩
+        have hn : nextrel0 M (p + 1 + i') (p + 1 + i) := by
+          refine ⟨by omega, by omega, by omega, by rw [(ef i hi e hks).1]; exact hlt, ?_⟩
+          intro j hj
+          obtain ⟨i'', hi'', rfl⟩ : ∃ i'', i'' < L ∧ j = p + 1 + i'' := ⟨j - (p + 1), by omega, by omega⟩
+          rw [(ef i hi e hks).1]; exact hall i'' (by omega) (by omega)
+        have := ih i' hi'i (by omega)
+        exact ⟨by omega, by omega, this.2.2.trans (Relation.ReflTransGen.single hn)⟩
+  have hnl1f : ∀ i (hi : i < L) e, ws[i] = some e → ¬ le1 M p (p + 1 + i) := fun i hi e hf =>
+    not_le1_of_row1_zero (ef i hi e hf).2.1 (by omega)
+  -- 最後の列
+  have hn0L : nextrel0 M p (p + 1 + L) := by
+    refine ⟨by omega, by omega, by omega, by rw [e0p, eqL.1]; omega, ?_⟩
+    intro j hj
+    rw [eqL.1]; exact ege' j hj.1 hj.2
+  have hl0L : le0 M p (p + 1 + L) := ⟨by omega, by omega, Relation.ReflTransGen.single hn0L⟩
+  have hn1L : nextrel1 M p (p + 1 + L) := by
+    refine ⟨by omega, by omega, by omega, by rw [e1p, eqL.2.1]; omega, hl0L, ?_⟩
+    intro j hj
+    have := hanc (p + 1 + L) j hj.1 hj.2 eqL.1 (fun j'' h1 h2 => ege' j'' h1 h2)
+    subst this; exact le_rfl
+  have hn2L : nextrel2 M p (p + 1 + L) := by
+    refine ⟨by omega, by omega, by omega, by rw [e2p, eqL.2.2]; omega,
+      ⟨by omega, by omega, Relation.ReflTransGen.single hn1L⟩, ?_⟩
+    intro j hj
+    have := hanc (p + 1 + L) j hj.1 (le0_of_le1 hj.2) eqL.1 (fun j'' h1 h2 => ege' j'' h1 h2)
+    subst this; rw [eqL.2.2]
+  have hpar : hasParent M 2 (p + 1 + L) :=
+    hasParent2_of_le1_witness (by omega) (Relation.ReflTransGen.single hn1L)
+      (by rw [e2p, eqL.2.2]; omega)
+  have hparent : parent M 2 (p + 1 + L) = p := hpar.unique (parent_nextR hpar) hn2L
+  have hsrow : srow M (p + 1 + L) = 2 := by simp [srow, eqL.2.2]
+  have hl00 : le0 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  have hl11 : le1 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  rw [L53.oper_unfold (j1 := p + 1 + L) (i1 := 2) (j0 := p) (d0 := 1) (d1 := 1)
+      (by omega) (by omega) (by rw [eqL.1]; omega) hsrow.symm hpar hparent.symm
+      (by rw [if_pos (by omega : 0 < 2), eqL.1, e0p]; omega)
+      (by rw [if_pos (by omega : 1 < 2), eqL.2.1, e1p]; omega) n]
+  have hr : List.range' p (p + 1 + L - p) = p :: List.range' (p + 1) L := by
+    rw [show p + 1 + L - p = L + 1 from by omega, List.range'_succ]
+  have htk : M.take p = Y0 := by rw [hM, hp, List.take_left]
+  rw [hr, htk]
+  have hbody : ∀ k : ℕ, (p :: List.range' (p + 1) L).map
+      (fun j => ((entry M 0 j + (if le0 M p j then k * 1 else 0),
+        entry M 1 j + (if le1 M p j then k * 1 else 0),
+        entry M 2 j) : ℕ × ℕ × ℕ))
+      = ((a + k, b + k, 0) : ℕ × ℕ × ℕ) :: ws.map (colG (a + k) (b + k)) := by
+    intro k
+    rw [List.map_cons]
+    congr 1
+    · rw [if_pos hl00, if_pos hl11, e0p, e1p, e2p]; simp
+    · apply List.ext_getElem
+      · simp [hL]
+      · intro i h1 h2
+        simp only [List.getElem_map, List.getElem_range'_1]
+        have hi : i < L := by simpa [hL] using h2
+        cases hks : ws[i]'(by omega) with
+        | none =>
+          obtain ⟨e0, e1, e2⟩ := ez i hi hks
+          rw [if_pos (hl0 i hi), if_pos (hl1z i hi hks), e0, e1, e2]
+          simp [colG]; omega
+        | some e =>
+          obtain ⟨e0, e1, e2⟩ := ef i hi e hks
+          rw [if_pos (hl0 i hi), if_neg (hnl1f i hi e hks), e0, e1, e2]
+          simp [colG]; omega
+  rw [List.flatMap_congr (fun k _ => hbody k)]
+  rfl
+
+theorem z1wG_mem {Y0 : TrioSeq} {a b : ℕ} {ws : List (Option ℕ)} (hv : Wv ws)
+    (htw : ∀ n, Y0 ++ DzwG a b ws n ∈ W 0) :
+    Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: ws.map (colG a b) ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_z1wG Y0 a b ws hv]
+  exact htw n
+
+open Classical in
+/-- 平坦な列の一般展開（頭 `< d`、尾 `≥ d` だけ）。 -/
+theorem oper_snoc00'' (Y0 : TrioSeq) {M : TrioSeq} {d : ℕ} (hne : M ≠ [])
+    (hhead : entry M 0 0 < d) (htail : ∀ r, 1 ≤ r → r < M.length → d ≤ entry M 0 r) (n : ℕ) :
+    (Y0 ++ M ++ [((d, 0, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Y0 ++ (List.range n).flatMap fun _ => M := by
+  set c : ℕ × ℕ × ℕ := (d, 0, 0) with hc
+  have hq1 : 1 ≤ M.length := List.length_pos_iff.mpr hne
+  have hd1 : 1 ≤ d := by omega
+  have hlen : (Y0 ++ M ++ [c]).length = Y0.length + M.length + 1 := by simp; omega
+  have eT : ∀ i r, entry (Y0 ++ M ++ [c]) i (Y0.length + r) = entry (M ++ [c]) i r := by
+    intro i r; rw [List.append_assoc]; exact entry_append_right Y0 (M ++ [c]) i r
+  have eM : ∀ i r, r < M.length → entry (Y0 ++ M ++ [c]) i (Y0.length + r) = entry M i r := by
+    intro i r hr; rw [eT]; exact entry_append_left hr
+  have e0p : entry (Y0 ++ M ++ [c]) 0 Y0.length < d := by
+    rw [show Y0.length = Y0.length + 0 from rfl, eM 0 0 (by omega)]; exact hhead
+  have e0q : entry (Y0 ++ M ++ [c]) 0 (Y0.length + M.length) = d := by
+    rw [eT]; exact (entry_append_last (P := M) (c := c)).1
+  have e1q : entry (Y0 ++ M ++ [c]) 1 (Y0.length + M.length) = 0 := by
+    rw [eT]; exact (entry_append_last (P := M) (c := c)).2.1
+  have e2q : entry (Y0 ++ M ++ [c]) 2 (Y0.length + M.length) = 0 := by
+    rw [eT]; exact (entry_append_last (P := M) (c := c)).2.2
+  have etail : ∀ r, 1 ≤ r → r < M.length → d ≤ entry (Y0 ++ M ++ [c]) 0 (Y0.length + r) := by
+    intro r hr1 hrq; rw [eM 0 r hrq]; exact htail r hr1 hrq
+  have hn0 : nextrel0 (Y0 ++ M ++ [c]) Y0.length (Y0.length + M.length) := by
+    refine ⟨by omega, by omega, by omega, by rw [e0q]; exact e0p, ?_⟩
+    intro j hj
+    obtain ⟨r, hr1, hrq, rfl⟩ : ∃ r, 1 ≤ r ∧ r < M.length ∧ j = Y0.length + r :=
+      ⟨j - Y0.length, by omega, by omega, by omega⟩
+    rw [e0q]; exact etail r hr1 hrq
+  have hpar : hasParent (Y0 ++ M ++ [c]) 0 (Y0.length + M.length) := by
+    refine ⟨Y0.length, by show nextR _ 0 Y0.length (Y0.length + M.length); simp only [nextR, if_true]; exact hn0, ?_⟩
+    intro j0 hj0
+    change nextR _ 0 j0 (Y0.length + M.length) at hj0
+    simp only [nextR, if_true] at hj0
+    obtain ⟨hj0l, -, hlt, hlt2, hall⟩ := hj0
+    rcases Nat.lt_trichotomy j0 Y0.length with h | h | h
+    · exfalso
+      have := hall Y0.length ⟨h, by omega⟩
+      rw [e0q] at this; omega
+    · exact h
+    · exfalso
+      obtain ⟨r, hr1, hrq, rfl⟩ : ∃ r, 1 ≤ r ∧ r < M.length ∧ j0 = Y0.length + r :=
+        ⟨j0 - Y0.length, by omega, by omega, by omega⟩
+      have := etail r hr1 hrq
+      rw [e0q] at hlt2; omega
+  have hparent : parent (Y0 ++ M ++ [c]) 0 (Y0.length + M.length) = Y0.length :=
+    hpar.unique (parent_nextR hpar) (by show nextR _ 0 Y0.length (Y0.length + M.length); simp only [nextR, if_true]; exact hn0)
+  have hsrow : srow (Y0 ++ M ++ [c]) (Y0.length + M.length) = 0 := by
+    simp only [srow]; rw [e2q, e1q]; simp
+  rw [L53.oper_flat (j1 := Y0.length + M.length) (j0 := Y0.length) (by omega) (by omega)
+    (by rw [e0q]; omega) hsrow hpar hparent.symm n]
+  rw [map_range'_entry_drop (by omega) (by omega)]
+  have htk : (Y0 ++ M ++ [c]).take Y0.length = Y0 := by
+    rw [List.append_assoc, List.take_left]
+  have hseg : ((Y0 ++ M ++ [c]).take (Y0.length + M.length)).drop Y0.length = M := by
+    rw [show Y0.length + M.length = (Y0 ++ M).length from by simp, List.take_left, List.drop_left]
+  rw [htk, hseg]
+
+theorem flat_mem'' {Y0 M : TrioSeq} {d : ℕ} (hne : M ≠ []) (hhead : entry M 0 0 < d)
+    (htail : ∀ r, 1 ≤ r → r < M.length → d ≤ entry M 0 r)
+    (htw : ∀ n, Y0 ++ (List.range n).flatMap (fun _ => M) ∈ W 0) :
+    Y0 ++ M ++ [((d, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_snoc00'' Y0 hne hhead htail n]
+  exact htw n
+
+#print axioms z1wG_mem
+#print axioms flat_mem''
 end Small
 end TRIO
