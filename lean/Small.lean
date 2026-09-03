@@ -11842,5 +11842,161 @@ theorem JkU_z1m : ∀ (m y c : ℕ), 2 ≤ y → JkU y c (List.replicate m ((c +
         simpa using h
 
 #print axioms JkU_z1m
+
+/-! ### `PkGA` 段の z=1 junk `m` 本、単位 `(h+1,1,0)(h+2,2,1)^m` の絶対セグメント化、`(0,0,0)(1,1,1)^m` -/
+
+/-- `PkGA` の元（レベル `h`）の上の `Dzm (h+1) 3 m n`（3 の記録から始まる連鎖）は `W 0`。 -/
+theorem Dzm_W_PkGA (m : ℕ) {h : ℕ} {Z : TrioSeq} (hZ : PkGA h Z) (n : ℕ) :
+    Z ++ Dzm (h + 1) 3 m n ∈ W 0 :=
+  Dzm_W (fun y' c' hy' => JkU_z1m m y' c' hy') (le_refl 2) (Ifc3_toIfcV Ifc3_PkGA) hZ n
+
+/-- ★★★ 2 の記録の直上の z=1 の列 `m` 本は普遍 junk。 -/
+theorem JkGU_z1m : ∀ (m c : ℕ), JkGU c (List.replicate m ((c + 2, 3, 1) : ℕ × ℕ × ℕ))
+  | 0, c => by simpa using JkGU_nil c
+  | (m + 1), c => by
+      intro E hI
+      refine ⟨?_, ?_, ?_⟩
+      · intro x hx
+        rw [List.mem_replicate] at hx
+        simp [hx.2]
+      · intro x hx
+        rw [List.mem_replicate] at hx
+        simp [hx.2]
+      · intro j t X hX
+        have hP : PkGA (c + 1 + t) (X ++ (((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ) ::
+            List.replicate m ((c + 1 + t + 1, 3, 1) : ℕ × ℕ × ℕ))) :=
+          ⟨E, hI, j, c + t, X, List.replicate m ((c + t + 2, 3, 1) : ℕ × ℕ × ℕ), by omega, hX,
+            by simp [show c + t + 1 = c + 1 + t from by omega,
+              show c + t + 2 = c + 1 + t + 1 from by omega], JkGU_z1m m (c + t)⟩
+        have htw : ∀ n, X ++ Dzm (c + 1 + t) 2 m n ∈ W 0 := by
+          intro n
+          match n with
+          | 0 => simpa [Dzm] using ((BaseOk_RunG hI.bok j).aok _ _ hX).mem
+          | 1 =>
+              have := (PkGA_Aok hP).mem
+              simpa [Dzm] using this
+          | (n + 2) =>
+              rw [Dzm_cons, ← List.append_assoc]
+              have h2 := Dzm_W_PkGA m hP (n + 1)
+              simpa using h2
+        have h := z1m_mem htw
+        have e : shiftr01 t 0 (List.replicate (m + 1) ((c + 2, 3, 1) : ℕ × ℕ × ℕ))
+            = List.replicate (m + 1) ((c + 1 + t + 1, 2 + 1, 1) : ℕ × ℕ × ℕ) := by
+          simp [shiftr01, List.map_replicate]; omega
+        rw [e]
+        simpa using h
+
+/-- 単位 `U11 h m = (h+1,1,0) (h+2,2,1)^m`。 -/
+def U11 (h m : ℕ) : TrioSeq :=
+  ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: List.replicate m ((h + 2, 2, 1) : ℕ × ℕ × ℕ)
+
+theorem MidD_U11 (h m : ℕ) : MidD (h + 2) (U11 h m) := by
+  have h1 := MidD_append (MidD_col (h + 1) 1 (by omega) (by omega))
+    (N := List.replicate m ((h + 2, 2, 1) : ℕ × ℕ × ℕ))
+    (by intro c hc; rw [List.mem_replicate] at hc; obtain ⟨_, rfl⟩ := hc; show h + 1 + 1 ≤ h + 2; omega)
+    (by intro c hc; rw [List.mem_replicate] at hc; obtain ⟨_, rfl⟩ := hc; show (1 : ℕ) ≤ 2; omega)
+  simpa [U11, show h + 1 + 1 = h + 2 from by omega] using h1
+
+theorem shift_U11 (h m s : ℕ) : shiftr01 s 0 (U11 h m) = U11 (h + s) m := by
+  simp [U11, shiftr01, List.map_replicate]; omega
+
+/-- `LwA h` の元の上の `Dzm (h+1) 1 m n`（1 の列から始まる連鎖）。単位の絶対性を仮定に持つ版。 -/
+theorem Dzm_W_LwA_of (m : ℕ) (hS : ∀ h, SegA h (U11 h m)) {h : ℕ} {A : TrioSeq}
+    (hA : LwA h A) (n : ℕ) : A ++ Dzm (h + 1) 1 m n ∈ W 0 := by
+  have hX : RunA 0 (h + 1) (A ++ U11 h m) := ⟨h, A, _, rfl, rfl, hA, hS h⟩
+  have hP : PkGA (h + 2) (A ++ U11 h m ++ (((h + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+      List.replicate m ((h + 3, 3, 1) : ℕ × ℕ × ℕ))) :=
+    ⟨RunA 0, Iface_RunA0, 0, h + 1, A ++ U11 h m, List.replicate m ((h + 3, 3, 1) : ℕ × ℕ × ℕ),
+      rfl, hX, by simp, by simpa using JkGU_z1m m (h + 1)⟩
+  match n with
+  | 0 => simpa [Dzm] using (LwA_Aok hA).mem
+  | 1 =>
+      have e1 : Dzm (h + 1) 1 m 1 = U11 h m := by
+        simp [Dzm, U11, show h + 1 + 1 = h + 2 from by omega]
+      rw [e1]; exact ((BaseOk_RunA 0).aok _ _ hX).mem
+  | 2 =>
+      have e2 : Dzm (h + 1) 1 m 2 = U11 h m ++ (((h + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+          List.replicate m ((h + 3, 3, 1) : ℕ × ℕ × ℕ)) := by
+        simp [Dzm, U11, List.range_succ, show h + 1 + 1 = h + 2 from by omega,
+          show h + 1 + 1 + 1 = h + 3 from by omega]
+      rw [e2, ← List.append_assoc]
+      exact (PkGA_Aok hP).mem
+  | (n + 3) =>
+      have e3 : Dzm (h + 1) 1 m (n + 3) = U11 h m ++ (((h + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+          List.replicate m ((h + 3, 3, 1) : ℕ × ℕ × ℕ)) ++ Dzm (h + 2 + 1) 3 m (n + 1) := by
+        rw [Dzm_cons, Dzm_cons]
+        simp [U11, List.append_assoc, show h + 1 + 1 = h + 2 from by omega,
+          show h + 1 + 1 + 1 = h + 3 from by omega]
+      rw [e3, ← List.append_assoc, ← List.append_assoc]
+      exact Dzm_W_PkGA m hP (n + 1)
+
+/-- ★★★ 単位 `(h+1,1,0)(h+2,2,1)^m` は絶対セグメント。 -/
+theorem SegA_U11 : ∀ (m h : ℕ), SegA h (U11 h m)
+  | 0, h => by simpa [U11] using SegA_one h
+  | (m + 1), h =>
+      { mid := MidD_U11 h (m + 1)
+        head1 := by simp [U11, entry]
+        reapp := by
+          intro P hP s A' hA'
+          rw [shift_U11]
+          have hz := z1m_mem (Y0 := A') (a := h + s + 1) (b := 1) (m := m)
+            (fun n => Dzm_W_LwA_of m (SegA_U11 m) ⟨P, hP, hA'⟩ n)
+          simpa [U11, show h + s + 1 + 1 = h + s + 2 from by omega] using hz }
+
+theorem Dzm_W_LwA (m : ℕ) {h : ℕ} {A : TrioSeq} (hA : LwA h A) (n : ℕ) :
+    A ++ Dzm (h + 1) 1 m n ∈ W 0 := Dzm_W_LwA_of m (SegA_U11 m) hA n
+
+theorem LwA_U11 {h : ℕ} {A : TrioSeq} (hA : LwA h A) (m : ℕ) : RunA 0 (h + 1) (A ++ U11 h m) :=
+  ⟨h, A, _, rfl, rfl, hA, SegA_U11 m h⟩
+
+/-- 梯子の元の上に単位 `U11 h m` を継ぐと段が 1 つ上がる。 -/
+theorem LvB_U11 {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {r h : ℕ} {A : TrioSeq}
+    (hA : LvB P r h A) (m : ℕ) : LvB P (r + 1) (h + 1) (A ++ U11 h m) := by
+  refine ⟨(BaseOk_RunA 0).aok _ _ (LwA_U11 ⟨P, hP, r, hA⟩ m), Or.inr ⟨h, A, _, rfl, rfl, hA,
+    (SegA_U11 m h).mid, ?_⟩⟩
+  intro s A' hA'
+  exact (SegA_U11 m h).reapp P hP s A' ⟨r, hA'⟩
+
+/-! ### `Am m = (0,0,0)(1,1,1)^m` はすべて `Aok`（行 316, 323, 324 と行 325 の段） -/
+
+def Am (m : ℕ) : TrioSeq := ((0, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate m ((1, 1, 1) : ℕ × ℕ × ℕ)
+
+theorem Am_zero_mem : Am 0 ∈ W 0 := by
+  refine A1_intro (Or.inl ⟨by simp [Am], ?_⟩)
+  simp [Am, lev, entry]
+
+theorem Am_Aok_of_mem {m : ℕ} (hmem : Am m ∈ W 0) : Aok (Am m) := by
+  refine ⟨hmem, by simp [Am], ⟨by simp [Am, entry], ?_⟩, ?_, ?_⟩
+  · intro j hj hjl
+    simp only [Am, List.length_cons, List.length_replicate] at hjl
+    obtain ⟨q, rfl⟩ : ∃ q, j = q + 1 := ⟨j - 1, by omega⟩
+    simp only [Am, entry, List.getD_cons_succ]
+    simp [List.getD_eq_getElem?_getD, List.getElem?_replicate_of_lt (show q < m from by omega)]
+  · intro c hc h0
+    simp only [Am, List.mem_cons, List.mem_replicate] at hc
+    rcases hc with rfl | ⟨_, rfl⟩
+    · exact ⟨rfl, rfl⟩
+    · exact absurd h0 (by simp)
+  · intro c hc
+    simp only [Am, List.mem_cons, List.mem_replicate] at hc
+    rcases hc with rfl | ⟨_, rfl⟩ <;> simp
+
+theorem Am_Aok : ∀ m : ℕ, Aok (Am m)
+  | 0 => Am_Aok_of_mem Am_zero_mem
+  | (m + 1) => by
+      refine Am_Aok_of_mem ?_
+      have h := z1m_mem (Y0 := []) (a := 0) (b := 0) (m := m) (fun n => by
+        match n with
+        | 0 => simpa [Dzm] using W_nil 0
+        | (n + 1) =>
+            rw [Dzm_cons]
+            have h1 := Dzm_W_LwA m (h := 0) (LwA_of_Aok (Am_Aok m)) n
+            simpa [Am] using h1)
+      simpa [Am] using h
+
+theorem Am_mem (m : ℕ) : Am m ∈ W 0 := (Am_Aok m).mem
+
+#print axioms Am_mem
+#print axioms LvB_U11
 end Small
 end TRIO
