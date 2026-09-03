@@ -722,3 +722,10 @@ oper_z1wP は「マスク付き一般形」(le1 M p j をそのまま残す) + �
   Bok_Fw: ws の帰納法（各項は Aok、和は sum_mem）。shwP_mem: Bok.append Aok_zero。
 - 影の展開が語の展開を写す（設計）: 末尾 z → dropLast(n=1); 荷の末尾が (0,0,0) → 字の n 個複製
   （oper_snoc00''、頭 1 < 2 ≤ 尾）; 荷の末尾が非零 → 荷が Y[n] に（oper_shift）。
+
+### 2026-09-04 (続き53) 3 つの場合の補題が緑
+- GoodP_of_key: 4 段（PU / PkGA / RunA0 / 根）を「台座つきの語の membership」1 本から出す骨組み
+  （GoodG_flat の 4 段をそのまま抽象化）。
+- GoodP_snocz（末尾 z, DzwP 経由）、GoodP_dup（最後の荷の末尾が (0,0,0): flat_mem'' + 字の n 複製）、
+  GoodP_inner（最後の荷の末尾が非零: oper_shift で荷が Y[n] に）。
+次: 影の展開 3 つを計算して A2' で GoodP_all。

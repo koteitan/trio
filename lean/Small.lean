@@ -14738,5 +14738,167 @@ theorem shwP_mem {ws : List TrioSeq} (hw : Wpl ws) : shwP ws ∈ W 0 := by
 
 #print axioms shwP_mem
 
+
+/-! ### 語の 3 つの場合。共通の骨組み `GoodP_of_key` -/
+
+/-- 4 段すべてを、台座つきの「語の membership」1 本から出す。 -/
+theorem GoodP_of_key {ws : List TrioSeq} (hw : Wpl ws)
+    {newws : ℕ → List TrioSeq} (hnew : ∀ n, 1 ≤ n → GoodP (newws n))
+    (key : ∀ (Z : TrioSeq) (a b : ℕ),
+      (∀ n, 1 ≤ n → Z ++ wordP a b (newws n) ∈ W 0) → Z ++ wordP a b ws ∈ W 0) :
+    GoodP ws := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordP_ge (c + 1) (y + 1) ws x hx; omega, wordP_mono hw, ?_⟩
+    intro E hE t Z hZ
+    rw [wordP_shift]
+    have := key (Z ++ [((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)]) (c + 1 + t) (y + 1) (fun n hn => by
+      have hP : PU y (c + 1 + t) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordP (c + 1 + t) (y + 1) (newws n))) :=
+        ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hnew n hn).pu y (c + t) hy⟩
+      simpa [List.append_assoc] using ((BaseOk_PU y).aok _ _ hP).mem)
+    simpa [List.append_assoc] using this
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordP_ge (c + 1) 2 ws x hx; omega, wordP_mono hw, ?_⟩
+    intro j t X hX
+    rw [wordP_shift]
+    have := key (X ++ [((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)]) (c + 1 + t) 2 (fun n hn => by
+      have hP : PkGA (c + 1 + t) (X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+          wordP (c + 1 + t) 2 (newws n))) :=
+        ⟨E, hI, j, c + t, X, _, by omega, hX, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hnew n hn).pk (c + t)⟩
+      simpa [List.append_assoc] using (PkGA_Aok hP).mem)
+    simpa [List.append_assoc] using this
+  · intro h
+    refine ⟨?_, by simp [entry], ?_⟩
+    · have h1 := MidD_wordP (h + 1) 1 (by omega) (by omega) hw
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    · intro P hP s A' hA'
+      rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordP (h + 1) 1 ws
+          = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordP (h + 1) 1 ws from rfl,
+        shiftr01_append0, shift_col, wordP_shift]
+      have := key (A' ++ [((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)]) (h + 1 + s) 1 (fun n hn => by
+        have hR : RunA 0 (h + s + 1) (A' ++ (((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+            wordP (h + s + 1) 1 (newws n))) :=
+          ⟨h + s, A', _, rfl, rfl, ⟨P, hP, hA'⟩, (hnew n hn).seg (h + s)⟩
+        have := ((BaseOk_RunA 0).aok _ _ hR).mem
+        simpa [List.append_assoc, show h + s + 1 = h + 1 + s from by omega] using this)
+      simpa [List.append_assoc] using this
+  · refine Aok_rootP_of_mem hw ?_
+    have := key [((0, 0, 0) : ℕ × ℕ × ℕ)] 0 0 (fun n hn => by simpa using (hnew n hn).root.mem)
+    simpa using this
+
+theorem Wpl_snocz {ws : List TrioSeq} (hw : Wpl ws) : Wpl (ws ++ [[]]) :=
+  Wp_append hw (Wp_singleton Bok_nil)
+
+/-- 場合 A: 語の最後が裸の z。 -/
+theorem GoodP_snocz {ws : List TrioSeq} (hw : Wpl ws) (hG : GoodP ws) : GoodP (ws ++ [[]]) where
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := wordP_ge (c + 1) (y + 1) (ws ++ [[]]) x hx; omega,
+      wordP_mono (Wpl_snocz hw), ?_⟩
+    intro E hE t Z hZ
+    have h := z1wP_mem (Y0 := Z) (a := c + 1 + t) (b := y + 1) hw
+      (fun n => by
+        have := DzwP_W hG hy hE (c := c + t) (by simpa using hZ) n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    rw [wordP_shift, wordP_append, wordP_singleton]
+    simpa [colP, List.append_assoc] using h
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := wordP_ge (c + 1) 2 (ws ++ [[]]) x hx; omega,
+      wordP_mono (Wpl_snocz hw), ?_⟩
+    intro j t X hX
+    have h := z1wP_mem (Y0 := X) (a := c + 1 + t) (b := 2) hw
+      (fun n => by
+        have := DzwP_W_RunG hG hI (c := c + t) hX n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    rw [wordP_shift, wordP_append, wordP_singleton]
+    simpa [colP, List.append_assoc] using h
+  seg := by
+    intro h
+    refine ⟨?_, by simp [entry], ?_⟩
+    · have h1 := MidD_wordP (h + 1) 1 (by omega) (by omega) (Wpl_snocz hw)
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    · intro P hP s A' hA'
+      have hz := z1wP_mem (Y0 := A') (a := h + s + 1) (b := 1) hw
+        (fun n => DzwP_W_LwA hG (h := h + s) ⟨P, hP, hA'⟩ n)
+      rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordP (h + 1) 1 (ws ++ [[]])
+          = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordP (h + 1) 1 (ws ++ [[]]) from rfl,
+        shiftr01_append0, shift_col, wordP_shift, wordP_append, wordP_singleton]
+      simpa [colP, List.append_assoc, show h + 1 + s = h + s + 1 from by omega] using hz
+  root := by
+    have hmem := z1wP_mem (Y0 := []) (a := 0) (b := 0) hw
+      (fun n => by simpa using DzwP_W_root hG n)
+    refine Aok_rootP_of_mem (Wpl_snocz hw) ?_
+    rw [wordP_append, wordP_singleton]
+    simpa [colP, List.append_assoc] using hmem
+
+theorem colP_ne (a b : ℕ) (Y : TrioSeq) : colP a b Y ≠ [] := by simp [colP]
+
+theorem colP_snoc_zero (a b : ℕ) (Y : TrioSeq) :
+    colP a b (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) = colP a b Y ++ [((a + 2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [colP, shiftr01]
+
+theorem wordP_replicate (a b : ℕ) (Y : TrioSeq) : ∀ n : ℕ,
+    wordP a b (List.replicate n Y) = (List.range n).flatMap fun _ => colP a b Y
+  | 0 => by simp [wordP]
+  | (n + 1) => by
+      rw [List.replicate_succ, wordP_cons, wordP_replicate a b Y n,
+        show ((List.range (n + 1)).flatMap fun _ => colP a b Y) = copies (colP a b Y) (n + 1) from rfl,
+        copies_succ]
+      rfl
+
+/-- 場合 B: 語の最後の荷の末尾が `(0,0,0)`（字が `n` 個に複製される）。 -/
+theorem GoodP_dup {ws' : List TrioSeq} {Y : TrioSeq}
+    (hw : Wpl (ws' ++ [Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]]))
+    (hIH : ∀ n, 1 ≤ n → GoodP (ws' ++ List.replicate n Y)) :
+    GoodP (ws' ++ [Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]]) := by
+  refine GoodP_of_key hw hIH ?_
+  intro Z a b hn
+  have hhead : entry (colP a b Y) 0 0 < a + 2 := by
+    rw [entry_colP_zero]; simp [entry]
+  have htail : ∀ r, 1 ≤ r → r < (colP a b Y).length → a + 2 ≤ entry (colP a b Y) 0 r := by
+    intro r hr1 hrl
+    obtain ⟨u, rfl⟩ : ∃ u, r = u + 1 := ⟨r - 1, by omega⟩
+    rw [colP_length] at hrl
+    rw [entry_colP_succ, entry0_shiftr01 (by omega)]
+    omega
+  have h := flat_mem'' (Y0 := Z ++ wordP a b ws') (M := colP a b Y) (d := a + 2)
+    (colP_ne a b Y) hhead htail
+    (fun n => by
+      match n with
+      | 0 =>
+          have h1 := hn 1 (le_refl 1)
+          rw [wordP_append, wordP_replicate] at h1
+          simp only [List.range_one, List.flatMap_cons, List.flatMap_nil, List.append_nil] at h1
+          have h2 := W_take (by rw [← List.append_assoc] at h1; exact h1) (Z ++ wordP a b ws').length
+          rw [List.take_left] at h2
+          simpa using h2
+      | (n + 1) =>
+          have h1 := hn (n + 1) (by omega)
+          rw [wordP_append, wordP_replicate] at h1
+          simpa [List.append_assoc] using h1)
+  rw [wordP_append, wordP_singleton, colP_snoc_zero]
+  simpa [List.append_assoc] using h
+
+/-- 場合 C: 語の最後の荷の末尾が非零（荷の中だけが展開される）。 -/
+theorem GoodP_inner {ws' : List TrioSeq} {Y : TrioSeq} (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hw : Wpl (ws' ++ [Y]))
+    (hIH : ∀ n, 1 ≤ n → GoodP (ws' ++ [Y⟦n⟧])) :
+    GoodP (ws' ++ [Y]) := by
+  refine GoodP_of_key hw hIH ?_
+  intro Z a b hn
+  have e : ∀ Y' : TrioSeq, Z ++ wordP a b (ws' ++ [Y'])
+      = (Z ++ wordP a b ws' ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) ++ shiftr01 (a + 2) 0 Y' := by
+    intro Y'
+    simp [wordP_append, wordP_singleton, colP, List.append_assoc]
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn'
+  rw [e Y, oper_shift _ Y (a + 2) n hlen hp, ← e (Y⟦n⟧)]
+  exact hn n hn'
+
 end Small
 end TRIO
