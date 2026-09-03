@@ -729,3 +729,12 @@ oper_z1wP は「マスク付き一般形」(le1 M p j をそのまま残す) + �
 - GoodP_snocz（末尾 z, DzwP 経由）、GoodP_dup（最後の荷の末尾が (0,0,0): flat_mem'' + 字の n 複製）、
   GoodP_inner（最後の荷の末尾が非零: oper_shift で荷が Y[n] に）。
 次: 影の展開 3 つを計算して A2' で GoodP_all。
+
+### 2026-09-04 (続き54) ★★★★★ GoodP_all が緑（荷つきの語の普遍性）
+GoodP_all: 荷がすべて Bok の語 ws（字 = z + 任意の Bok ブロック）は 4 段すべてで普遍。
+影 shwP ws = (0,0,0) :: Σ((1,0,0) :: Y↑2) の W 帰納法（A2'）で、3 つの場合が影の 3 つの展開に対応:
+ A 末尾が裸の z → oper_shwP_z（n=1 で dropLast）→ GoodP_snocz
+ B 最後の荷の末尾が (0,0,0) → oper_shwP_dup（影の字が n 個）→ GoodP_dup
+ C 最後の荷の末尾が非零 → oper_shwP_inner（荷が Y[n] に）→ GoodP_inner
+補助: Bok_dropLast, Bok_oper（oper_closed + ZM_oper + oper_head_eq）, Wp_replicate。
+次: 337〜345 を GoodP_all と既存の道具で個別に出す。

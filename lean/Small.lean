@@ -14900,5 +14900,153 @@ theorem GoodP_inner {ws' : List TrioSeq} {Y : TrioSeq} (hlen : 2 ≤ Y.length)
   rw [e Y, oper_shift _ Y (a + 2) n hlen hp, ← e (Y⟦n⟧)]
   exact hn n hn'
 
+
+/-! ### 影の展開と `GoodP_all`（影の W 帰納法） -/
+
+theorem shwP_snoc (ws : List TrioSeq) (Y : TrioSeq) : shwP (ws ++ [Y]) = shwP ws ++ shP Y := by
+  simp [shwP, List.flatMap_append]
+
+theorem shP_nil : shP [] = [((1, 0, 0) : ℕ × ℕ × ℕ)] := by simp [shP, shiftr01]
+
+theorem shP_snoc_zero (Y : TrioSeq) :
+    shP (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) = shP Y ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [shP, shiftr01]
+
+theorem flatMap_replicate {α β : Type _} (f : α → List β) (Y : α) : ∀ n : ℕ,
+    (List.replicate n Y).flatMap f = (List.range n).flatMap fun _ => f Y
+  | 0 => by simp
+  | (n + 1) => by
+      rw [List.replicate_succ, List.flatMap_cons, flatMap_replicate f Y n,
+        List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+
+theorem shwP_replicate (ws : List TrioSeq) (Y : TrioSeq) (n : ℕ) :
+    shwP (ws ++ List.replicate n Y) = shwP ws ++ (List.range n).flatMap fun _ => shP Y := by
+  simp [shwP, List.flatMap_append, flatMap_replicate]
+
+theorem entry_shP_zero (Y : TrioSeq) : entry (shP Y) 0 0 = 1 := by simp [shP, entry]
+
+theorem entry_shP_succ (Y : TrioSeq) (r : ℕ) :
+    entry (shP Y) 0 (r + 1) = entry (shiftr01 2 0 Y) 0 r := by simp [shP, entry]
+
+theorem shP_length (Y : TrioSeq) : (shP Y).length = Y.length + 1 := by simp [shP, shiftr01]
+
+/-- 場合 A の影: 末尾の `(1,0,0)` を落とす。 -/
+theorem oper_shwP_z (ws : List TrioSeq) : (shwP (ws ++ [[]]))⟦1⟧ = shwP ws := by
+  rw [shwP_snoc, shP_nil, oper_one_eq_dropLast
+    (by simp only [shwP, List.length_append, List.length_cons]; omega),
+    List.dropLast_concat]
+
+/-- 場合 B の影: 影の字が `n` 個に複製される。 -/
+theorem oper_shwP_dup (ws : List TrioSeq) (Y : TrioSeq) (n : ℕ) :
+    (shwP (ws ++ [Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]]))⟦n⟧ = shwP (ws ++ List.replicate n Y) := by
+  rw [shwP_snoc, shP_snoc_zero, ← List.append_assoc,
+    oper_snoc00'' (shwP ws) (M := shP Y) (d := 2) (by simp [shP])
+      (by rw [entry_shP_zero]; omega)
+      (by intro r hr1 hrl
+          obtain ⟨u, rfl⟩ : ∃ u, r = u + 1 := ⟨r - 1, by omega⟩
+          have hu : u < Y.length := by rw [shP_length] at hrl; omega
+          rw [entry_shP_succ, entry0_shiftr01 hu]; omega) n,
+    shwP_replicate]
+
+/-- 場合 C の影: 荷だけが展開される。 -/
+theorem oper_shwP_inner (ws : List TrioSeq) {Y : TrioSeq} (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1)) (n : ℕ) :
+    (shwP (ws ++ [Y]))⟦n⟧ = shwP (ws ++ [Y⟦n⟧]) := by
+  have e : ∀ Y' : TrioSeq, shwP (ws ++ [Y'])
+      = (shwP ws ++ [((1, 0, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 2 0 Y' := by
+    intro Y'
+    rw [shwP_snoc, shP]
+    simp [List.append_assoc]
+  rw [e Y, oper_shift _ Y 2 n hlen hp, ← e (Y⟦n⟧)]
+
+theorem Wp_replicate {Y : TrioSeq} (hY : Bok Y) (n : ℕ) : Wpl (List.replicate n Y) := by
+  intro Y' hY'
+  rw [List.eq_of_mem_replicate hY']
+  exact hY
+
+theorem Bok_dropLast {Y : TrioSeq} (hY : Bok Y) : Bok Y.dropLast := by
+  refine ⟨W_dropLast hY.mem, fun c hc => hY.zroot c (List.dropLast_subset _ hc),
+    fun c hc => hY.mono c (List.dropLast_subset _ hc), ?_⟩
+  by_cases h : 0 < Y.length - 1
+  · rw [List.dropLast_eq_take, Wset.entry_take h]
+    exact hY.root
+  · have hnil : Y.dropLast = [] := by
+      apply List.eq_nil_of_length_eq_zero
+      rw [List.length_dropLast]
+      omega
+    rw [hnil]
+    simp [entry]
+
+theorem Bok_oper {Y : TrioSeq} (hY : Bok Y) {n : ℕ} (hn : 1 ≤ n) : Bok (Y⟦n⟧) :=
+  ⟨oper_closed hY.mem hn, (ZM_oper hY.zroot hY.mono n).1, (ZM_oper hY.zroot hY.mono n).2,
+    by rw [Wset.oper_head_eq hn]; exact hY.root⟩
+
+/-- ★★★★★ 荷が `Bok` の語はすべて普遍（影の W 帰納法）。 -/
+theorem GoodP_all : ∀ ws : List TrioSeq, Wpl ws → GoodP ws := by
+  have key : W 0 ⊆ {Fl : TrioSeq | ∀ ws : List TrioSeq, Wpl ws → Fl = shwP ws → GoodP ws} := by
+    refine A2' ?_
+    intro Fl hFl
+    simp only [Set.mem_setOf_eq]
+    intro ws hw hFl_eq
+    rcases hFl with ⟨hlen, -⟩ | h2 | ⟨m, hm, -⟩
+    · subst hFl_eq
+      cases ws with
+      | nil => exact GoodP_nil
+      | cons Y ws'' =>
+          exfalso
+          simp [shwP, shP, List.flatMap_cons] at hlen
+    · subst hFl_eq
+      rcases List.eq_nil_or_concat ws with hnil | ⟨ws', Y, hws⟩
+      · subst hnil; exact GoodP_nil
+      · rw [List.concat_eq_append] at hws
+        subst hws
+        have hw' : Wpl ws' := Wp_of_append_left hw
+        have hY : Bok Y := hw Y (by simp)
+        by_cases hYnil : Y = []
+        · subst hYnil
+          exact GoodP_snocz hw' (h2 1 (le_refl 1) ws' hw' (oper_shwP_z ws'))
+        · have hYlen : 0 < Y.length := List.length_pos_iff.mpr hYnil
+          by_cases hz : entry Y 0 (Y.length - 1) = 0
+          · -- 場合 B: 末尾の列は (0,0,0)
+            obtain ⟨he1, he2⟩ := Zroot_entry hY.zroot hz
+            have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+              Prod.ext hz (Prod.ext he1 he2)
+            have hgl : Y.getLast hYnil = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+              have h1 : Y.getLast hYnil = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+                rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+                  List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+                rfl
+              rw [h1, hcol]
+            have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+              rw [← hgl]
+              exact (List.dropLast_append_getLast hYnil).symm
+            have hd : Bok Y.dropLast := Bok_dropLast hY
+            rw [hsplit]
+            refine GoodP_dup (by rw [← hsplit]; exact hw) ?_
+            intro n hn
+            refine h2 n hn (ws' ++ List.replicate n Y.dropLast)
+              (Wp_append hw' (Wp_replicate hd n)) ?_
+            rw [← oper_shwP_dup ws' Y.dropLast n, ← hsplit]
+          · -- 場合 C: 末尾の列は非零
+            have hlen2 : 2 ≤ Y.length := by
+              rcases (by omega : Y.length = 1 ∨ 2 ≤ Y.length) with h1 | h1
+              · exfalso
+                rw [h1] at hz
+                simp only [Nat.sub_self] at hz
+                exact hz hY.root
+              · exact h1
+            have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+                entry Y 2 (Y.length - 1) = 0) := fun h => hz h.1
+            have hp := hasParent_of_ZrootMono hY.zroot hY.mono hY.root hlen2 hnz
+            refine GoodP_inner hlen2 hp hw ?_
+            intro n hn
+            exact h2 n hn (ws' ++ [Y⟦n⟧]) (Wp_append hw' (Wp_singleton (Bok_oper hY hn)))
+              (oper_shwP_inner ws' hlen2 hp n)
+    · omega
+  intro ws hw
+  exact key (shwP_mem hw) ws hw rfl
+
+#print axioms GoodP_all
+
 end Small
 end TRIO
