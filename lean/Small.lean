@@ -10931,5 +10931,146 @@ theorem R296_mem : R296 ∈ W 0 := by
   exact Dm_mem n
 
 #print axioms R296_mem
+
+/-! ### 対角の一般化: `DiaV h v k = (h+1,v+1,0)(h+2,v+2,0)…(h+k,v+k,0)` を任意の台座の上に -/
+
+def DiaV (h v : ℕ) : ℕ → TrioSeq
+  | 0 => []
+  | (k + 1) => DiaV h v k ++ [((h + k + 1, v + k + 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem DiaV_split (h v a : ℕ) : ∀ b : ℕ, DiaV h v (a + b) = DiaV h v a ++ DiaV (h + a) (v + a) b
+  | 0 => by simp [DiaV]
+  | (b + 1) => by
+      rw [show a + (b + 1) = (a + b) + 1 from by omega]
+      simp only [DiaV, DiaV_split h v a b, List.append_assoc, Nat.add_assoc]
+
+theorem JkU_nil' {y : ℕ} (hy : 2 ≤ y) (c : ℕ) : JkU y c [] := by
+  obtain ⟨w, rfl⟩ : ∃ w, y = w + 2 := ⟨y - 2, by omega⟩
+  exact JkU_nil w c
+
+/-- ★★★ `IfcV (y+1)` 台座の元 `Z`（レベル `c`）の上の対角は `PU (y+k)`（レベル `c+k+1`）。 -/
+theorem PU_DiaV {y : ℕ} (hy : 2 ≤ y) {E : ℕ → TrioSeq → Prop} (hE : IfcV (y + 1) E)
+    {c : ℕ} {Z : TrioSeq} (hZ : E c Z) :
+    ∀ k : ℕ, PU (y + k) (c + k + 1) (Z ++ DiaV c y (k + 1))
+  | 0 => ⟨E, c, Z, [], hE, by omega, hZ, by simp [DiaV], JkU_nil' hy c⟩
+  | (k + 1) => ⟨PU (y + k), c + k + 1, Z ++ DiaV c y (k + 1), [],
+      IfcV_PU (by omega) (y + k + 1 + 1) (by omega), by omega, PU_DiaV hy hE hZ k,
+      by simp [DiaV, List.append_assoc, show c + (k + 1) + 1 = c + k + 1 + 1 from by omega,
+        show y + (k + 1) + 1 = y + k + 1 + 1 from by omega],
+      JkU_nil' (by omega) (c + k + 1)⟩
+
+theorem PkGA_DiaV1 {h : ℕ} {X : TrioSeq} (hX : RunA 0 h X) : PkGA (h + 1) (X ++ DiaV h 1 1) :=
+  ⟨RunA 0, Iface_RunA0, 0, h, X, [], rfl, hX, by simp [DiaV], JkGU_nil h⟩
+
+/-- ★★★ 走りの底 `RunA 0` の元の上の対角はすべて `W 0`。 -/
+theorem RunA0_DiaV {h : ℕ} {X : TrioSeq} (hX : RunA 0 h X) : ∀ k : ℕ, X ++ DiaV h 1 k ∈ W 0
+  | 0 => by simpa [DiaV] using ((BaseOk_RunA 0).aok _ _ hX).mem
+  | 1 => (PkGA_Aok (PkGA_DiaV1 hX)).mem
+  | (k + 2) => by
+      have h1 := PU_DiaV (le_refl 2) (Ifc3_toIfcV Ifc3_PkGA) (PkGA_DiaV1 hX) k
+      have h2 := ((BaseOk_PU (2 + k)).aok _ _ h1).mem
+      rw [show k + 2 = 1 + (k + 1) from by omega, DiaV_split h 1 1 (k + 1), ← List.append_assoc]
+      exact h2
+
+/-! ### z=1 の列は対角の起点: `(Y0 ++ (a,b,0)(a+1,b+1,1))⟦n⟧ = Y0 ++ (a,b,0)(a+1,b+1,0)…(a+n-1,b+n-1,0)` -/
+
+def Dtw (a b n : ℕ) : TrioSeq := (List.range n).map fun k => ((a + k, b + k, 0) : ℕ × ℕ × ℕ)
+
+theorem Dtw_succ (a b n : ℕ) : Dtw a b (n + 1) = Dtw a b n ++ [((a + n, b + n, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Dtw, List.range_succ]
+
+theorem Dtw_eq_DiaV (h v : ℕ) : ∀ k : ℕ, Dtw (h + 1) (v + 1) k = DiaV h v k
+  | 0 => by simp [Dtw, DiaV]
+  | (k + 1) => by
+      rw [Dtw_succ, Dtw_eq_DiaV h v k, show h + 1 + k = h + k + 1 from by omega,
+        show v + 1 + k = v + k + 1 from by omega]
+      rfl
+
+theorem Dtw_cons (a b : ℕ) : ∀ n : ℕ, Dtw a b (n + 1) = [((a, b, 0) : ℕ × ℕ × ℕ)] ++ Dtw (a + 1) (b + 1) n
+  | 0 => by simp [Dtw]
+  | (n + 1) => by
+      rw [Dtw_succ, Dtw_cons a b n, Dtw_succ (a + 1) (b + 1) n, List.append_assoc,
+        show a + (n + 1) = a + 1 + n from by omega, show b + (n + 1) = b + 1 + n from by omega]
+
+open Classical in
+theorem oper_z1 (Y0 : TrioSeq) (a b n : ℕ) :
+    (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ), ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])⟦n⟧ = Y0 ++ Dtw a b n := by
+  set T : TrioSeq := [((a, b, 0) : ℕ × ℕ × ℕ), ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] with hT
+  set M : TrioSeq := Y0 ++ T with hM
+  set p := Y0.length with hp
+  have hlen : M.length = p + 2 := by simp [hM, hT, hp]
+  have eT : ∀ i q, entry M i (p + q) = entry T i q := fun i q => entry_append_right Y0 T i q
+  have e0p : entry M 0 p = a := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e1p : entry M 1 p = b := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e2p : entry M 2 p = 0 := by rw [show p = p + 0 from rfl, eT]; simp [hT, entry]
+  have e0q : entry M 0 (p + 1) = a + 1 := by rw [eT]; simp [hT, entry]
+  have e1q : entry M 1 (p + 1) = b + 1 := by rw [eT]; simp [hT, entry]
+  have e2q : entry M 2 (p + 1) = 1 := by rw [eT]; simp [hT, entry]
+  have hn0 : nextrel0 M p (p + 1) := by
+    refine ⟨by omega, by omega, by omega, by rw [e0p, e0q]; omega, ?_⟩
+    intro j hj; omega
+  have hl0 : le0 M p (p + 1) := ⟨by omega, by omega, Relation.ReflTransGen.single hn0⟩
+  have hn1 : nextrel1 M p (p + 1) := by
+    refine ⟨by omega, by omega, by omega, by rw [e1p, e1q]; omega, hl0, ?_⟩
+    intro j hj
+    have hjl := hj.2.1
+    have hj1 : j = p + 1 := by omega
+    subst hj1
+    omega
+  have hn2 : nextrel2 M p (p + 1) := by
+    refine ⟨by omega, by omega, by omega, by rw [e2p, e2q]; omega,
+      ⟨by omega, by omega, Relation.ReflTransGen.single hn1⟩, ?_⟩
+    intro j hj
+    have hjl := hj.2.1
+    have hj1 : j = p + 1 := by omega
+    subst hj1
+    omega
+  have hpar : hasParent M 2 (p + 1) :=
+    hasParent2_of_le1_witness (by omega) (Relation.ReflTransGen.single hn1) (by rw [e2p, e2q]; omega)
+  have hparent : parent M 2 (p + 1) = p := hpar.unique (parent_nextR hpar) hn2
+  have hsrow : srow M (p + 1) = 2 := by simp [srow, e2q]
+  have hl00 : le0 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  have hl11 : le1 M p p := ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+  rw [L53.oper_unfold (j1 := p + 1) (i1 := 2) (j0 := p) (d0 := 1) (d1 := 1)
+      (by omega) (by omega) (by rw [e0q]; omega) hsrow.symm hpar hparent.symm
+      (by rw [if_pos (by omega : 0 < 2), e0q, e0p]; omega)
+      (by rw [if_pos (by omega : 1 < 2), e1q, e1p]; omega) n]
+  have hr : List.range' p (p + 1 - p) = [p] := by simp
+  have htk : M.take p = Y0 := by rw [hM, hp, List.take_left]
+  rw [hr, htk]
+  have hbody : ∀ k : ℕ, ([p] : List ℕ).map
+      (fun j => ((entry M 0 j + (if le0 M p j then k * 1 else 0),
+        entry M 1 j + (if le1 M p j then k * 1 else 0),
+        entry M 2 j) : ℕ × ℕ × ℕ))
+      = [((a + k, b + k, 0) : ℕ × ℕ × ℕ)] := by
+    intro k
+    simp only [List.map_cons, List.map_nil]
+    rw [if_pos hl00, if_pos hl11, e0p, e1p, e2p]
+    simp
+  rw [List.flatMap_congr (fun k _ => hbody k)]
+  simp [Dtw, flatMap_singleton_map]
+
+/-- ★★★ z=1 の列の継ぎ足し: 対角の塔がすべて `W 0` なら `Y0 ++ (a,b,0)(a+1,b+1,1) ∈ W 0`。 -/
+theorem z1_mem {Y0 : TrioSeq} {a b : ℕ} (htw : ∀ n, Y0 ++ Dtw a b n ∈ W 0) :
+    Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ), ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_z1]
+  exact htw n
+
+/-- ★★★ `RunA 0 h` の元（頂上が `(h,1,0)`）の上に `(h+1,2,1)`。 -/
+theorem RunA0_z1 {h : ℕ} {Y0 : TrioSeq} (hX : RunA 0 h (Y0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)])) :
+    Y0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ), ((h + 1, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine z1_mem ?_
+  intro n
+  cases n with
+  | zero =>
+      have h1 := ((BaseOk_RunA 0).aok _ _ hX).mem
+      simpa [Dtw] using W_dropLast h1
+  | succ n =>
+      rw [Dtw_cons, ← List.append_assoc, Dtw_eq_DiaV]
+      exact RunA0_DiaV hX n
+
+#print axioms RunA0_z1
 end Small
 end TRIO
