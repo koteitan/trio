@@ -2140,3 +2140,64 @@ APd_all  : nil/pay/one/two の 4 分岐がそのまま閉じる
 4. `APd_twoNilGen` → `APd_nil` の ftwo の場合に吸収、`APd_twoPay` → `APd_pay` の ftwo の場合に吸収
 5. `APd_all` の 4 分岐、`GOK_all`
 6. 行375（`snocYd_mem`, dl = 2、木は `otwJ n = one nil (two nil (otwJ (n-1)))`）、行376
+
+## 続き96（★★ 設計の確定版: ftwo フレームは木を持たない + JkT）
+
+続き95 の「塔の仮定を `APd` に持たせる」案は **`APd_pay` の dup の鎖で破綻**した:
+dup の鎖 `twoIt N T m` の左兄弟は増えていくので、その塔にはまた `∀ j, APd j` が要り、
+`APd` の k 再帰（本体は `APd k` しか書けない）に収まらない。
+
+### 動かせない事実
+- 2 の記録の**左兄弟 N** の塔 `twr N m` は `∀ j, APd j N` を要求する
+- `∀ j, APd j N` は `APd_all` の**木の再帰で部分木にだけ**供給できる
+- ⟹ **2 の記録の左兄弟はフレームの木にできない。部分木でなければならない**
+
+### 確定版
+フレームは `Frm.fone N`（木つき）と `Frm.ftwo`（**木なし**、左兄弟は nil）:
+```
+plugC (Frm.fone N) X = Jk1.one N X
+plugC  Frm.ftwo    X = Jk1.two Jk1.nil X
+```
+`GCtx` の ftwo フレームには条件が要らない（木がないので塔も要らない）。
+
+左兄弟が nil でない `two N M` は**独立定理**で扱う（`APd_all` の木の再帰から
+`∀ j, APd j N` をもらう）。そのために `JkJ` を次のクラスに制限する:
+```
+JkT : Jk1 → Prop                      -- 2 の記録の直上に置ける木
+  | nil      => True
+  | pay N Y  => PayOnly N ∧ Bok Y      -- 荷の下は荷だけ
+  | one N M  => PayOnly N ∧ JkJ M      -- 1 の列の左兄弟は荷だけ、上は自由
+  | two _ _  => False
+
+JkJ : Jk1 → Prop
+  | nil      => True
+  | pay N Y  => JkJ N ∧ Bok Y
+  | one N M  => JkJ N ∧ JkJ M
+  | two N M  => (JkJ N ∧ PayOnly M) ∨ (N = Jk1.nil ∧ JkT M)
+```
+- `CtxXJ [Frm.ftwo] X = JkT X`、`HdT (Frm.fone N :: _) = PayOnly N`、`HdT (Frm.ftwo :: _) = False`
+- `JkT` は `TopOk` を含む（頭が 2 の記録にならない）ので **`TopOk` は不要**
+
+### なぜ閉じるか
+- `APd_all` の `two N M`:
+  - 左の枝（N 一般、M が `PayOnly`）→ 既存の `APd_twoPayOnly`（nil / pay で M に再帰）
+  - 右の枝（N = nil、M が `JkT`）→ **ftwo フレームで読み替えるだけ**
+- `APd_pay` の ftwo の場合: `CtxX [ftwo] (pay V C) = JkT (pay V C) = PayOnly V ∧ Bok C`
+  ⟹ **荷の底 V は自動的に `PayOnly`**。dup の鎖 `twoIt N (pay V C') m` は
+  `JkJ (two N' (pay V C'))` の左の枝（`PayOnly (pay V C')`）で通り、
+  A2' の底 `two N (pay V []) ≅ two N V` は `APd_twoPayOnly V (PayOnly V)` で閉じる
+- `APd_one` の ftwo の場合: `JkT (one V M) = PayOnly V ∧ JkJ M`。
+  `APnil_gen` の `hang` が作る `pay V C` は `JkT (pay V C) = PayOnly V ∧ Bok C` で整合
+- 行375 の木 `otwJ n = one nil (two nil (otwJ (n-1)))`:
+  `JkT (otwJ (n-1)) = PayOnly nil ∧ JkJ (two nil (otwJ (n-2)))` で再帰が回る ✓
+
+### 実装手順
+1. `TopOk` を廃し `JkT` を入れる（`JkJ`/`JkT` は相互再帰）。`PayOnly` はそのまま
+2. `Frm.ftwo` から木を外す（`Frm.ftwo : Frm`）。`plugC`/`HdT`/`CtxJ`/`CtxXJ`/`CtxX_snoc2` を直す
+3. `APd` / `GCtx` を
+   `APd (k+1) V = ∀ f, JkJ (frmT f) → APd k (frmT f) → CtxX [f] V → APd k (plugC f V)`,
+   `GCtx (k+1) ctx = ∃ ctx' f, ctx = ctx' ++ [f] ∧ GCtx k ctx' ∧ CtxOk ctx ∧ APd k (frmT f)`
+   に。`APd_iff` は `CtxX ctx V` を仮定に取る形に
+4. `APd_nil` / `APd_pay` に ftwo の場合を追加（それぞれ既存の `APd_twoNil` / `APd_twoPay` の中身）
+5. `APd_all` の 4 分岐、`GOK_all`
+6. 行375、行376
