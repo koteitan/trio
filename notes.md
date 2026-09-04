@@ -1731,3 +1731,43 @@ theorem APd_twoW (W : Jk1) (hWall : ∀ ks', Hdf ks' W → APd ks' W) (hJW : JkJ
 
 つまり **`APd` の定義には `fone` フレームだけを入れ、`fotw` は定理側で扱う**のが正しい形。
 次のセッションはこの形で書き直す。
+
+## 続き86（正しいアーキテクチャ: 文脈の「意味的な良さ」を仮定として持ち回る）
+
+続き85 の壁は、`APd` の中で ∀ 束縛した木の「全深さ性」が取れないこと。
+だが **`APd_all` は `∀ ks` の定理**なので、**部分項の全深さ性は使える**。
+そこで次の形にすればよい:
+
+```
+AllD T   := ∀ ks, Hdf ks T → APd ks T          -- = APd_all T（部分項なら IH で得られる）
+PlugG D  := ∀ T, CtxX D T → AllD T → GOK (plug D T)
+           -- 「文脈 D には、全深さで良い木ならどれでも埋められる」
+```
+`PlugG` は `APd`（1 の列フレームだけの、今コミットされている版）を使うだけなので
+循環しない。そして
+
+```
+PlugG_snoc1 : PlugG D → AllD U → PlugG (D ++ [fone U])
+PlugG_snoc2 : PlugG D → AllD U → AllD N → PlugG (D ++ [fotw U N])   ← 本体
+```
+`PlugG_snoc2`（1 の列 + N の junk + 2 の記録 のフレームを継ぐ）の証明で
+塔 `twr N k` が要るが、**`AllD N` があるので全深さが取れる** ✓
+
+`APd_all` の各場合は `PlugG` を持つ文脈の中で証明する。
+`two N M` の場合は
+```
+APd_twoW : AllD N → AllD M → JkJ N → JkJ M → TopOk M → ∀ ks, Hdf ks (two N M) → APd ks (two N M)
+```
+を `M` の構造帰納で示す:
+- `M = nil`  : 塔 `twr N k`（`AllD N` で通る）
+- `M = pay`  : `AYt`。dup の塔 `itTJ T m N` の全深さは `APd_twoW` の m の内側帰納で作る
+- `M = one N' M''` : `PlugG_snoc2` で文脈を `D ++ [fotw U N]` に伸ばし、
+  その中で既存の `APnil_gen` / `AYd` 系（どれも `PlOk ctx` 相当を仮定に取る形）を使う
+
+### まとめ（次のセッションの作業手順）
+1. `Frm` / `plug` / `dep` / `CtxX` は WIP（`lean/Small.frm.wip`）のものを流用（`fotw` は木 2 つ）
+2. `APd` / `GCtx` は**今コミットされている ℕ 添字版のまま**（1 の列フレームだけ）
+3. `AllD` / `PlugG` / `PlugG_snoc1` / `PlugG_snoc2` を新設
+4. `GoodFb_snoc_innerJs` / `dupJs` / `APnil_gen` / `AYs` の文脈仮定を `PlugG` に統一
+5. `APd_twoW` を書き、`APd_all` の `two` の場合に使う
+6. 行375（`snocYd_mem`, dl = 2）→ 行376
