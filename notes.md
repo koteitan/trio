@@ -2612,3 +2612,59 @@ APd_step2 ks : JkJ V → APd ks V → APd (false :: ks) W → APd ks (one V (two
   `two N M`（N ≠ nil）は `APd_twoPayOnly`（M が `PayOnly`）
 
 作業途中のファイルを `lean/Small.listbool.wip` に保存。`lean/Small.lean` は緑に戻してある。
+
+## 続き105（行375: 必要な設計が確定した。`Frm.ftwo` + `List Bool` 添字）
+
+### bms で確認
+```
+(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)[n]
+ = R341 (3,1,0)(4,2,0)(5,1,0)(6,2,0)(7,1,0)(8,2,0)...
+```
+なので行375 は `snocYd_mem (Y0 := R341) (M := [(3,1,0),(4,2,0)]) (L := 3) (y := 2) (dl := 2)`。
+`MidD 4 M` ✓、`entry M 1 0 = 1 < 2` ✓、`hMy` は t=1 で `2 ≤ entry M 1 1 = 2` ✓。
+塔 `Mtwd 2 R341 M n = R341 ++ jk1 2 (otwJ n)`、`otwJ (n+1) = one nil (two nil (otwJ n))`。
+
+### 続き104 の `List Bool` 設計では閉じない（今回わかったこと）
+`APd_otw` を回すのに `APd_nil ks`（false 頭も）が要る。false 頭の `APd_nil` は
+`APd_twoNil` で埋まるが、その中で `APd_stair m (true::ks')` を使い、それが
+`APd_nil (true::false::ks'')` を要求し、それが `APd_oneNil (false::ks'')` →
+`APd_pay (false::ks'')` を要求する。ここが新規内容。
+
+### 確定した設計
+1. `Frm.fotw : Jk1 → Frm` を **`Frm.ftwo : Jk1 → Frm`** に置き換える。
+   `plug (ftwo N :: rest) T = two N (plug rest T)`、`dep (ftwo _ :: rest) = dep rest + 1`。
+   「1 の列 + 2 の記録」のフレームは `[fone U, ftwo N]` の 2 枚。
+2. `JkJ (two N M) := JkJ N ∧ JkJ M ∧ TopOk M`（`PayOnly M` を緩める。
+   `TopOk` は 2 の記録の直上に 2 の記録が来ないことだけを禁じる）。
+3. `Rq : List Bool → Jk1 → Prop`（`Rq (false::_) U = TopOk U`、他は `True`）を導入。
+```
+def APd : List Bool → Jk1 → Prop
+  | [],            _ => True
+  | [true],        V => ∀ U, JkOk U → GOK U → GOK (one U V)
+  | [false],       V => ∀ U N, JkOk U → GOK U → JkJ N → (∀ ks, Rq ks N → APd ks N) →
+                          GOK (one U (two N V))
+  | (true :: ks),  V => ∀ U, JkJ U → Rq ks U → APd ks U → APd ks (one U V)
+  | (false :: ks), V => ∀ U N, JkJ U → Rq ks U → APd ks U → JkJ N →
+                          (∀ ks', Rq ks' N → APd ks' N) → APd ks (one U (two N V))
+```
+`GCtx` も同様（`ctx' ++ [fone U, ftwo N]`）。
+4. `APd_all : ∀ T, JkJ T → ∀ ks, Rq ks T → APd ks T`。場合分けは全部閉じる:
+   - `nil`: `[true]` は `APz_nil`、`[false]`/`false::ks` は **`APd_twoNilGen`**、
+     `true::ks` は `APd_oneNil`
+   - `pay V C`: `true::ks` は `AYd`、`false::ks` は `APd_step` + `APd_twoAll (pay V C)`
+     （`Rq (false::ks) (pay V C) = TopOk V` が効く）
+   - `one A B`: どの ks も `APd_step ks (APd_all A ks) (APd_all B (true::ks))`
+   - `two N M`: `TopOk (two ..) = False` なので ks は true 頭のみ。`APd_twoAll M`
+5. `APd_twoAll : ∀ M, JkJ M → TopOk M → (sizeOf M 以下の木の APd_all) →
+    ∀ N, JkJ N → (∀ks, Rq ks N → APd ks N) → ∀ ks, APd (true::ks) (two N M)`
+   （M で構造帰納。N は ∀ のまま持ち回る＝既存 `APd_twoPayOnly` と同じ形）
+   - `nil` → `APd_twoNilGen`
+   - `pay Z C` → `APd_twoPayG`（`APd_twoPay` の `PayOnly Z` を `JkJ Z ∧ TopOk Z` に緩めた版）
+   - `one A B` → `APd_all (one A B) (false::ks)` を `(U, N)` で具体化
+   - `two _ _` → `TopOk` で排除
+
+### 要点
+**2 の記録の左の junk `N` をフレームが持つ**のが鍵。`APd_twoPay` の重複場合が
+`twoIt N T m`（N が 2 の記録の鎖）を作るので、`two N (one A B)` が避けられない。
+`fotw` を `ftwo N`（左 junk 付き）にすればこれが `APd (false::ks) (one A B)` の
+具体化で出る。
