@@ -945,3 +945,75 @@ RT1_close は「BaseOk 台座の元の右に、1 の列と荷だけの木を継�
     RT1_close の証明が close を使うのは (a) 荷の吸収 (b) 1 の列 + その junk の吸収 の 2 か所だけなので、
     弱い構造でも同じ証明が通るはず。ただし rc の場合に使う「LwA → RunA 0 でレベル +1」も
     弱い構造で作り直す必要がある（1 の列の上の hang を、荷の W 帰納法で自前に作る）。
+
+## 続き70（行 371 の壁の正体と、木の字による解決の設計）
+
+### 壁の正体
+行 371 = R344 (4,1,0) = R338 (1,1,0)(2,2,1)(3,1,0)(4,1,0)。
+(3,1,0) は z の列 (2,2,1) の**真上**（高さ 3）にあり、(4,1,0) はさらにその上（高さ 4）。
+snocd_gen で行 371 を出すには
+  H1: LwA h A → Bok B → A ++ (h+1,1,0)(h+2,2,1)(h+3,1,0) ++ B↑(h+4) ∈ W 0
+が要る。H1 は「z の上の 1 の列の、さらに上に荷を吊るす」＝**レベル 2 の類**（R341 が
+レベル 2 の梯子の元）が要る、というのが壁。
+
+### 弱い台座では駄目だった（続き69 の案の否定）
+- BaseOk の 4 つのうち aok/ancd/close は書ける。hang（A ++ B↑(b+3)）が出ない。
+- hang を blkD_memS で出そうとすると d = b+3、M = z の列 ++ junk となり、
+  不変量は「梯子の頭 + 1 の列 + **z の字の語**」でなければならない。
+  その hbase は「語の右にもう 1 個 z の字を継げる」＝ GoodFb の seg そのもの。
+  ⟹ 抽象的な吸収ブロックでは駄目で、**具体的な帰納族**が要る。
+- NxtB（(·,2,0) を 1 本足す既存の構成）は SegB_snoc2 = snocY_mem（塔）で reapp が出る。
+  z の列は展開が塔でなく **Dzf の対角塔**なので、同じ道は使えない。
+
+### 解決の設計: 字の junk を「木」にする
+字 = z の列 + その junk。junk を snoc 型の木にする:
+```
+inductive Jk1 | nil | pay : Jk1 → TrioSeq → Jk1 | one : Jk1 → Jk1 → Jk1
+jk1 l nil = []
+jk1 l (pay N Y) = jk1 l N ++ Y↑(l+1)
+jk1 l (one N M) = jk1 l N ++ ((l+1,1,0) :: jk1 (l+1) M)
+```
+wordC の字 colC a b (k,Y) = jk1 (a+1) の特別な場合（1 の列が全部兄弟）。
+行 371 の字 = zed(one nil (one nil nil)) すなわち [(3,1,0),(4,1,0)]。
+
+背骨（一番右・一番深い項）の文脈を
+```
+plug [] T = T ;  plug (N :: rest) T = one N (plug rest T)
+G ws ctx T := GoodFb (fun a b => word a b (ws ++ [plug ctx T]))
+```
+と書く。
+
+### 測度の問題と、その回避（重要）
+展開の 4 場合:
+(i) 背骨末が pay Y、Y の末尾が非零 → oper_shift（Y が W で小さくなる）
+(ii) 背骨末が pay Y、Y の末尾が (0,0,0) → flat_mem''。**囲みの項が n 個に複製される**
+(iii) 背骨末が one nil → snocd_gen。1 の列が任意の Bok 荷に置き換わる
+(iv) 字の junk が空（裸の z）→ Dzf の連鎖
+
+(ii) は木の 1 の列の本数を増やし、(iii) は任意の荷を新たに生む。
+どちらか一方を外側の帰納法にすると他方が壊れる（1 本の測度では回らない）。
+回避策: 命題を 3 つに分ける。
+
+- AY Y := ∀ ws ctx Z, AL Z → AP Z → G ws ctx Z → G ws ctx (pay Z Y)   （荷を継ぐ）
+- AP X := ∀ ws ctx Z, AL Z → AP Z → G ws ctx Z → G ws ctx (one Z X)   （項を継ぐ）
+- AL X := ∀ ws, GoodFb(word ws) → GoodFb(word (ws ++ [X]))            （字を継ぐ）
+
+証明順序と依存:
+1. AY は **Y の A2' 帰納法だけ**で出る（AL Z, AP Z は仮定として持ち回る）。
+   (ii) の複製は「同じ Z で荷が小さい」AP (pay Z Y') / AL (pay Z Y') を使う。
+   これらは AP Z / AL Z と A2' の帰納法の仮定 AY Y' から出るので、測度は Y だけ。
+2. AP は X の**構造帰納法**。nil は snocd_gen + AY（任意の Bok 荷）。
+   pay X' Y は AY と AP X'。one X' X'' は plug の付け替えで AP X''（部分項）と AP X'。
+3. AL も X の構造帰納法。nil は snoczC、pay は AY、one は AP。
+
+⟹ 測度は「AY: 荷の W 帰納法」「AP/AL: 木の構造帰納法」だけで閉じる。
+
+### 実装の順序（見積もり ~1300 行）
+1. Jk1 と jk1、shift/ge/mono/MidD/length（~150）
+2. plug, word, 字の定義と補題（~150）
+3. z の列の展開: oper_z1_mask（既存・一般）＋ rise の計算を木に一般化（~300）
+   - 上がる列は z の列だけ。1 の列は行 1 = 1 ≤ b なので上がらない（le1_row1_lt）。
+     荷は根の行 1 = 0 なので鎖が入れない（block_root + le1_lower_bound）。
+4. GoodFb_of_key の一般版（~60）
+5. AY（~200）、AP（~200）、AL（~150）
+6. 行 371, 372, ...（~50）
