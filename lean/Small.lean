@@ -18362,5 +18362,209 @@ theorem AYs : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Jk1), CtxOk ctx → �
 
 #print axioms AYs
 
+
+/-! ### 木の字の語の祖先条件と、1 の列を継ぐ（深さ 0） -/
+
+theorem wordJ_kind (a b : ℕ) (ws : List Jk1) :
+    ∀ x ∈ wordJ a b ws, x = ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) ∨ a + 2 ≤ x.1 := by
+  intro x hx
+  simp only [wordJ, List.mem_flatMap] at hx
+  obtain ⟨N, -, hxp⟩ := hx
+  simp only [colJ, List.mem_cons] at hxp
+  rcases hxp with h1 | h1
+  · exact Or.inl h1
+  · exact Or.inr (jk1_ge N (a + 1) x h1)
+
+theorem Ancd_recwordJ {a b : ℕ} (hb : 1 ≤ b) {Z : TrioSeq} (hZ : Ancd a Z) (ws : List Jk1) :
+    Ancd (a + 2) (Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws)) := by
+  set N : TrioSeq := ((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws with hN
+  intro j hj0 hjl hlt hvis
+  rcases Nat.lt_or_ge j Z.length with hjZ | hjZ
+  · have e0 : entry (Z ++ N) 0 j = entry Z 0 j := entry_append_left hjZ
+    have e1 : entry (Z ++ N) 1 j = entry Z 1 j := entry_append_left hjZ
+    have hNl : Z.length < (Z ++ N).length := by simp [hN]
+    have hlt1 : entry Z 0 j < a := by
+      have h1 := hvis Z.length hjZ hNl
+      have h2 : entry (Z ++ N) 0 Z.length = a := by
+        rw [show Z.length = Z.length + 0 from rfl, entry_append_right]
+        simp [hN, entry]
+      rw [e0] at h1
+      omega
+    rw [e1]
+    refine hZ j hj0 hjZ hlt1 ?_
+    intro i hi hil
+    have := hvis i hi (by simp [hN]; omega)
+    rwa [e0, entry_append_left hil] at this
+  · obtain ⟨u, hu, rfl⟩ : ∃ u, u < N.length ∧ j = Z.length + u :=
+      ⟨j - Z.length, by simp [hN] at hjl ⊢; omega, by omega⟩
+    rw [entry_append_right]
+    match u, hu with
+    | 0, _ => simpa [hN, entry] using hb
+    | (i + 1), hi =>
+        have hil : i < (wordJ a b ws).length := by simp [hN] at hi; omega
+        have he : entry N 0 (i + 1) = entry (wordJ a b ws) 0 i := by simp [hN, entry]
+        have he1 : entry N 1 (i + 1) = entry (wordJ a b ws) 1 i := by simp [hN, entry]
+        have hlt' : entry (wordJ a b ws) 0 i < a + 2 := by
+          have h := hlt
+          rw [entry_append_right, he] at h
+          exact h
+        have he0v : entry (wordJ a b ws) 0 i = ((wordJ a b ws)[i]'hil).1 := by
+          simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hil]
+        have he1v : entry (wordJ a b ws) 1 i = ((wordJ a b ws)[i]'hil).2.1 := by
+          simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hil]
+        rw [he0v] at hlt'
+        rcases wordJ_kind a b ws _ (List.getElem_mem hil) with h1 | h1
+        · rw [he1, he1v, h1]; simp
+        · exact absurd hlt' (by omega)
+
+theorem GOK_nil : GOK Jk1.nil := fun ws hw hG => GoodFb_snoczJ hw hG
+
+theorem colJ_one_nil (a b : ℕ) (V : Jk1) :
+    colJ a b (Jk1.one V Jk1.nil) = colJ a b V ++ [((a + 2, 1, 0) : ℕ × ℕ × ℕ)] := by
+  show ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: (jk1 (a + 1) V ++ (((a + 2, 1, 0) : ℕ × ℕ × ℕ) :: []))
+    = (((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + 1) V) ++ [((a + 2, 1, 0) : ℕ × ℕ × ℕ)]
+  simp
+
+theorem wordJ_snoc_one (a b : ℕ) (ws : List Jk1) (V : Jk1) :
+    wordJ a b (ws ++ [Jk1.one V Jk1.nil])
+      = wordJ a b (ws ++ [V]) ++ [((a + 2, 1, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ_one_nil,
+    List.append_assoc]
+
+theorem wordJ_snoc_pay (a b : ℕ) (ws : List Jk1) (V : Jk1) (B : TrioSeq) :
+    wordJ a b (ws ++ [Jk1.pay V B])
+      = wordJ a b (ws ++ [V]) ++ shiftr01 (a + 2) 0 B := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ_pay,
+    List.append_assoc]
+
+/-- ★★★ 深さ 0 に「junk のない 1 の列」を継いでも良い。 -/
+theorem AP0nil (V : Jk1) (hV : JkOk V) (hGV : GOK V) : GOK (Jk1.one V Jk1.nil) := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [Jk1.one V Jk1.nil]) := WOk_append hw (WOk_singleton ⟨hV, JkOk_nil⟩)
+  have hprev : ∀ B : TrioSeq, Bok B → GoodFb (fun a b => wordJ a b (ws ++ [Jk1.pay V B])) :=
+    fun B hB => AY0 B hB V hV hGV ws hw hG
+  have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [V])) := hGV ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_snoc_one]
+    set a := c + 1 + t with ha
+    have hbase : PU y a (Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ a (y + 1) (ws ++ [V]))) :=
+      ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [ha, show c + t + 1 = c + 1 + t from by omega],
+        hbaseV.pu y (c + t) hy⟩
+    have hAok := (BaseOk_PU y).aok _ _ hbase
+    have hancZ : Ancd a Z := by
+      have := (IfcV_iface (y + 1) hE).bok.ancd (c + t) Z hZ
+      rwa [show c + t + 1 = a from by omega] at this
+    have hanc : Ancd (a + 2)
+        (Z ++ (((a, y + 1, 0) : ℕ × ℕ × ℕ) :: wordJ a (y + 1) (ws ++ [V]))) :=
+      Ancd_recwordJ (by omega) hancZ _
+    have h := snocd_gen (Y := Z ++ (((a, y + 1, 0) : ℕ × ℕ × ℕ) :: wordJ a (y + 1) (ws ++ [V])))
+      (d := a + 2) (by omega) (by simpa using hAok) hanc ?_
+    · simpa [List.append_assoc] using h
+    · intro B hB
+      have h2 := (hprev B hB).pu y c hy
+      have h3 := h2.2.2 E hE t Z hZ
+      rw [wordJ_shift, wordJ_snoc_pay] at h3
+      simpa [ha, List.append_assoc] using h3
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t X hX
+    rw [wordJ_shift, wordJ_snoc_one]
+    set a := c + 1 + t with ha
+    have hbase : PkGA a (X ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ a 2 (ws ++ [V]))) :=
+      ⟨E, hI, j, c + t, X, _, by omega, hX,
+        by rw [ha, show c + t + 1 = c + 1 + t from by omega], hbaseV.pk (c + t)⟩
+    have hAok := PkGA_Aok hbase
+    have hancX : Ancd a X := by
+      have := (BaseOk_RunG hI.bok j).ancd (c + t) X hX
+      rwa [show c + t + 1 = a from by omega] at this
+    have hanc : Ancd (a + 2) (X ++ (((a, 2, 0) : ℕ × ℕ × ℕ) :: wordJ a 2 (ws ++ [V]))) :=
+      Ancd_recwordJ (by omega) hancX _
+    have h := snocd_gen (Y := X ++ (((a, 2, 0) : ℕ × ℕ × ℕ) :: wordJ a 2 (ws ++ [V])))
+      (d := a + 2) (by omega) (by simpa using hAok) hanc ?_
+    · simpa [List.append_assoc] using h
+    · intro B hB
+      have h2 := (hprev B hB).pk c E hI
+      have h3 := h2.2.2 j t X hX
+      rw [wordJ_shift, wordJ_snoc_pay] at h3
+      simpa [ha, List.append_assoc] using h3
+  · intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [Jk1.one V Jk1.nil])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 (ws ++ [Jk1.one V Jk1.nil])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1) 1 (ws ++ [Jk1.one V Jk1.nil]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_snoc_one]
+    set a := h + 1 + s with ha
+    have hLw : LwA (h + s) A' := ⟨P, hP, hA'⟩
+    have hbase : RunA 0 a (A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: wordJ a 1 (ws ++ [V]))) :=
+      ⟨h + s, A', _, by omega, rfl, hLw, by
+        have := hbaseV.seg (h + s)
+        simpa [ha, show h + s + 1 = h + 1 + s from by omega] using this⟩
+    have hAok := (BaseOk_RunA 0).aok _ _ hbase
+    have hancA : Ancd a A' := by
+      have := LwB_Ancd hP hA'
+      rwa [show h + s + 1 = a from by omega] at this
+    have hanc : Ancd (a + 2) (A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: wordJ a 1 (ws ++ [V]))) :=
+      Ancd_recwordJ (by omega) hancA _
+    have hh := snocd_gen (Y := A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: wordJ a 1 (ws ++ [V])))
+      (d := a + 2) (by omega) hAok hanc ?_
+    · simpa [List.append_assoc] using hh
+    · intro B hB
+      have h2 := ((hprev B hB).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1 (ws ++ [Jk1.pay V B])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1 (ws ++ [Jk1.pay V B])
+          from rfl] at h2
+      rw [wordJ_snoc_pay] at h2
+      simpa [ha, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h2
+
+#print axioms AP0nil
+
+
+/-! ### 深さ 1 の荷（1 の列の上の荷）と、シート行 371 -/
+
+theorem APpayJ (Z : Jk1) (Y : TrioSeq) (hZ : JkOk Z) (hY : Bok Y)
+    (hAP : ∀ V : Jk1, JkOk V → GOK V → GOK (Jk1.one V Z)) :
+    ∀ V : Jk1, JkOk V → GOK V → GOK (Jk1.one V (Jk1.pay Z Y)) := by
+  intro V hV hGV
+  exact AYs Y hY [] trivial V Z hV hZ (fun W hW hGW => hAP W hW hGW) hGV
+
+/-- 1 の列の上に任意の `Bok` の荷を吊るした字。 -/
+theorem GOK_oneB {B : TrioSeq} (hB : Bok B) :
+    GOK (Jk1.one Jk1.nil (Jk1.pay Jk1.nil B)) :=
+  APpayJ Jk1.nil B JkOk_nil hB (fun V hV hGV => AP0nil V hV hGV) Jk1.nil JkOk_nil GOK_nil
+
+/-- ★★★★★ 単位の上の 1 の列の、さらに上に高さ `h+4` で任意の `Bok` を吊るす。 -/
+theorem hangU11one {h : ℕ} {A : TrioSeq} (hA : LwA h A) {B : TrioSeq} (hB : Bok B) :
+    A ++ ([((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ),
+      ((h + 3, 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 (h + 4) 0 B) ∈ W 0 := by
+  obtain ⟨P, hP, hL⟩ := hA
+  have hG := GOK_oneB hB [] WOk_nil GoodFb_wordJ_nil
+  have h1 := (hG.seg h).reapp P hP 0 A (by simpa using hL)
+  simpa [wordJ, colJ, jk1, shiftr01_zero, List.append_assoc,
+    show h + 1 + 1 = h + 2 from by omega, show h + 1 + 1 + 1 = h + 3 from by omega,
+    show h + 1 + 1 + 1 + 1 = h + 4 from by omega] using h1
+
+theorem R344_row1 : ∀ j, 0 < j → j < R344.length → 1 ≤ entry R344 1 j := by
+  intro j hj0 hjl
+  simp only [R344, R341, R338, List.length_append, List.length_cons, List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 by omega) with
+    rfl | rfl | rfl | rfl | rfl <;> simp [R344, R341, R338, entry]
+
+/-- ★★★★★ シート行371 `R344 (4,1,0) = psi(W_w*W^W)`。 -/
+theorem R371_mem : R344 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine snocd_gen (Y := R344) (d := 4) (by omega) Aok_R344 (Ancd_of_row1 R344_row1 4) ?_
+  intro B hB
+  have h := hangU11one (h := 0) (LwA_of_Aok Aok_R338) hB
+  simpa [R344, R341, List.append_assoc] using h
+
+#print axioms R371_mem
+
 end Small
 end TRIO
