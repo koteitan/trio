@@ -19179,5 +19179,87 @@ theorem GOK_all : ∀ (T : Jk1), JkOk T → GOK T
 
 #print axioms GOK_all
 
+
+/-! ### 語版と、階段の塔 -/
+
+theorem GoodFb_wordJ : ∀ ws : List Jk1, WOk ws → GoodFb (fun a b => wordJ a b ws) := by
+  intro ws
+  induction ws using List.reverseRecOn with
+  | nil => intro _; exact GoodFb_wordJ_nil
+  | append_singleton ws N ih =>
+      intro hw
+      have hw' : WOk ws := WOk_of_append_left hw
+      exact GOK_all N (hw N (by simp)) ws hw' (ih hw')
+
+/-- ★★★★★ `R338` の上に、木の字の語をどれでも継げる。 -/
+theorem rowJ_mem (ws : List Jk1) (hw : WOk ws) :
+    R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
+  have h := ((GoodFb_wordJ ws hw).seg 0).reapp P0 BaseOk_zero 0 R338
+    (LwB_of_base ⟨Aok_R338, rfl⟩)
+  simpa using h
+
+/-- 階段の木: 1 の列が `n` 段。 -/
+def stairJ : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (stairJ n)
+
+theorem JkOk_stairJ : ∀ n : ℕ, JkOk (stairJ n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, JkOk_stairJ n⟩
+
+theorem jk1_stairJ_succ (n l : ℕ) :
+    jk1 l (stairJ (n + 1)) = ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stairJ n) := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stairJ n)) = _
+  simp [jk1]
+
+theorem jk1_stairJ : ∀ (n l : ℕ),
+    jk1 l (stairJ n) = (List.range n).map (fun k => ((l + 1 + k, 1, 0) : ℕ × ℕ × ℕ))
+  | 0, l => by simp [stairJ, jk1]
+  | (n + 1), l => by
+      rw [jk1_stairJ_succ n l, jk1_stairJ n (l + 1), List.range_succ_eq_map, List.map_cons,
+        List.map_map]
+      congr 1
+      apply List.map_congr_left
+      intro k _
+      show ((l + 1 + 1 + k, 1, 0) : ℕ × ℕ × ℕ) = ((l + 1 + (k + 1), 1, 0) : ℕ × ℕ × ℕ)
+      congr 1
+      omega
+
+theorem flatMap_sing {α β : Type} (l : List α) (f : α → β) :
+    l.flatMap (fun x => [f x]) = l.map f := by
+  induction l with
+  | nil => rfl
+  | cons a l ih => simp [List.flatMap_cons, ih]
+
+theorem stair_tower (n : ℕ) :
+    R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [stairJ n])
+      = Mtw R341 [((3, 1, 0) : ℕ × ℕ × ℕ)] n := by
+  have e : (List.range n).flatMap (fun k => shiftr01 k 0 [((3, 1, 0) : ℕ × ℕ × ℕ)])
+      = (List.range n).map (fun k => ((3 + k, 1, 0) : ℕ × ℕ × ℕ)) := by
+    rw [← flatMap_sing]
+    apply List.flatMap_congr
+    intro k _
+    simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+      and_true, and_self]
+    try omega
+  rw [wordJ_singleton, colJ, jk1_stairJ n 2, Mtw, e, R341, R338]
+  simp
+
+/-- 階段の塔はすべて `W 0`。 -/
+theorem stair_tower_mem (n : ℕ) : Mtw R341 [((3, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  rw [← stair_tower n]
+  exact rowJ_mem [stairJ n] (WOk_singleton (JkOk_stairJ n))
+
+/-- ★★★★★ シート行373 `R344 (4,2,0) = psi(W_w*psi_1(W_2))`。 -/
+theorem R373_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hM : MidD 4 [((3, 1, 0) : ℕ × ℕ × ℕ)] := by
+    have h := MidD_col 3 1 (by omega) (by omega)
+    rwa [show 3 + 1 = 4 from rfl] at h
+  have h := snocY_mem (Y0 := R341) (M := [((3, 1, 0) : ℕ × ℕ × ℕ)]) (L := 3) (y := 2)
+    (by simp [R341, R338]) hM (by simp [entry]) (by omega) stair_tower_mem
+  simpa [R344, R341, List.append_assoc] using h
+
+#print axioms R373_mem
+
 end Small
 end TRIO
