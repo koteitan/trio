@@ -17570,5 +17570,223 @@ theorem not_le1_jk1 : ∀ (N : Jk1), JkOk N → ∀ (M : TrioSeq) (p q0 l : ℕ)
 
 #print axioms not_le1_jk1
 
+
+/-! ### 木の字の語の上の z の列の展開 -/
+
+def MzJ (Y0 : TrioSeq) (a b : ℕ) (ws : List Jk1) : TrioSeq :=
+  Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+
+theorem colJ_length (a b : ℕ) (N : Jk1) : (colJ a b N).length = (jk1 (a + 1) N).length + 1 := by
+  simp [colJ]
+
+theorem entry_MzJ_p (Y0 : TrioSeq) (a b : ℕ) (ws : List Jk1) (r : ℕ) :
+    entry (MzJ Y0 a b ws) r Y0.length = entry [((a, b, 0) : ℕ × ℕ × ℕ)] r 0 := by
+  rw [MzJ, entry_append_at]
+  simp [entry]
+
+theorem entry_MzJ_word (Y0 : TrioSeq) (a b : ℕ) (ws : List Jk1) (r i : ℕ)
+    (hi : i < (wordJ a b ws).length) :
+    entry (MzJ Y0 a b ws) r (Y0.length + 1 + i) = entry (wordJ a b ws) r i := by
+  have e : MzJ Y0 a b ws = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)]) ++
+      (wordJ a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) := by
+    simp [MzJ]
+  rw [e, show Y0.length + 1 + i = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)]).length + i from by
+      simp only [List.length_append, List.length_singleton],
+    entry_append_right, entry_append_left hi]
+
+theorem entry_wordJ_pos (Y0 : TrioSeq) (a b : ℕ) (ws1 ws3 : List Jk1) (N : Jk1) (r t : ℕ)
+    (ht : t < (colJ a b N).length) :
+    entry (MzJ Y0 a b (ws1 ++ N :: ws3)) r (Y0.length + 1 + (wordJ a b ws1).length + t)
+      = entry (colJ a b N) r t := by
+  have e : MzJ Y0 a b (ws1 ++ N :: ws3)
+      = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)] ++ wordJ a b ws1) ++
+        (colJ a b N ++ (wordJ a b ws3 ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])) := by
+    simp [MzJ, wordJ_append, wordJ_cons, List.append_assoc]
+  rw [e, show Y0.length + 1 + (wordJ a b ws1).length + t
+      = (Y0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)] ++ wordJ a b ws1).length + t from by
+        simp only [List.length_append, List.length_singleton],
+    entry_append_right, entry_append_left ht]
+
+theorem entry_wordJ_ge (a b : ℕ) (ws : List Jk1) {i : ℕ}
+    (hi : i < (wordJ a b ws).length) : a + 1 ≤ entry (wordJ a b ws) 0 i := by
+  have := wordJ_ge a b ws _ (List.getElem_mem hi)
+  have he : entry (wordJ a b ws) 0 i = ((wordJ a b ws)[i]).1 := by
+    simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi]
+  omega
+
+theorem MzJ_length (Y0 : TrioSeq) (a b : ℕ) (ws : List Jk1) :
+    (MzJ Y0 a b ws).length = Y0.length + 1 + (wordJ a b ws).length + 1 := by
+  simp [MzJ]; omega
+
+/-- 字の先頭（z の列）は記録の行 1 の子。 -/
+theorem le1_zposJ (Y0 : TrioSeq) (a b : ℕ) (ws1 ws3 : List Jk1) (N : Jk1) :
+    le1 (MzJ Y0 a b (ws1 ++ N :: ws3)) Y0.length
+      (Y0.length + 1 + (wordJ a b ws1).length) := by
+  set M := MzJ Y0 a b (ws1 ++ N :: ws3) with hM
+  set q := Y0.length + 1 + (wordJ a b ws1).length with hq
+  have hlenw : (wordJ a b (ws1 ++ N :: ws3)).length
+      = (wordJ a b ws1).length + (colJ a b N).length + (wordJ a b ws3).length := by
+    rw [wordJ_append, wordJ_cons, List.length_append, List.length_append]
+    omega
+  have hlen : M.length = Y0.length + 1 + (wordJ a b (ws1 ++ N :: ws3)).length + 1 := by
+    rw [hM, MzJ_length]
+  have hcl : 0 < (colJ a b N).length := by rw [colJ_length]; omega
+  have hql : q < M.length := by omega
+  have e0p : entry M 0 Y0.length = a := by rw [hM, entry_MzJ_p]; simp [entry]
+  have e1p : entry M 1 Y0.length = b := by rw [hM, entry_MzJ_p]; simp [entry]
+  have eq0 : entry M 0 q = a + 1 := by
+    have h := entry_wordJ_pos Y0 a b ws1 ws3 N 0 0 hcl
+    rw [hM, hq, Nat.add_zero] at *
+    rw [h]; simp [colJ, entry]
+  have eq1 : entry M 1 q = b + 1 := by
+    have h := entry_wordJ_pos Y0 a b ws1 ws3 N 1 0 hcl
+    rw [hM, hq, Nat.add_zero] at *
+    rw [h]; simp [colJ, entry]
+  have hge : ∀ j', Y0.length < j' → j' ≤ q → a + 1 ≤ entry M 0 j' := by
+    intro j' h1 h2
+    obtain ⟨i, hi, rfl⟩ : ∃ i, i < (wordJ a b (ws1 ++ N :: ws3)).length ∧ j' = Y0.length + 1 + i :=
+      ⟨j' - (Y0.length + 1), by omega, by omega⟩
+    rw [hM, entry_MzJ_word Y0 a b _ 0 i hi]
+    exact entry_wordJ_ge a b _ hi
+  have hl0 : le0 M Y0.length q := le0_of_between e0p q (by omega) hql hge
+  refine ⟨by omega, hql, Relation.ReflTransGen.single ?_⟩
+  refine ⟨by omega, hql, by omega, by rw [e1p, eq1]; omega, hl0, ?_⟩
+  intro j hj
+  have := le0_eq_of_min hj.1 hj.2 eq0 (fun j'' h1 h2 => hge j'' h1 (by omega))
+  subst this; exact le_rfl
+
+/-- 字の junk（木）の列は記録の行 1 の子孫ではない。 -/
+theorem not_le1_treeJ (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) (ws1 ws3 : List Jk1)
+    {N : Jk1} (hN : JkOk N) (t : ℕ) (ht : t < (jk1 (a + 1) N).length) :
+    ¬ le1 (MzJ Y0 a b (ws1 ++ N :: ws3)) Y0.length
+      (Y0.length + 1 + (wordJ a b ws1).length + (t + 1)) := by
+  set M := MzJ Y0 a b (ws1 ++ N :: ws3) with hM
+  set q0 := Y0.length + 1 + (wordJ a b ws1).length + 1 with hq0
+  have hlenw : (wordJ a b (ws1 ++ N :: ws3)).length
+      = (wordJ a b ws1).length + (colJ a b N).length + (wordJ a b ws3).length := by
+    rw [wordJ_append, wordJ_cons, List.length_append, List.length_append]
+    omega
+  have hlen : M.length = Y0.length + 1 + (wordJ a b (ws1 ++ N :: ws3)).length + 1 := by
+    rw [hM, MzJ_length]
+  have hcl : (colJ a b N).length = (jk1 (a + 1) N).length + 1 := colJ_length a b N
+  have hp1 : 1 ≤ entry M 1 Y0.length := by
+    rw [hM, entry_MzJ_p]; simpa [entry] using hb
+  have hent : ∀ (r u : ℕ), u < (jk1 (a + 1) N).length →
+      entry M r (q0 + u) = entry (jk1 (a + 1) N) r u := by
+    intro r u hu
+    have h := entry_wordJ_pos Y0 a b ws1 ws3 N r (u + 1) (by omega)
+    rw [colJ, entry_cons_succ] at h
+    rw [hM, hq0, show Y0.length + 1 + (wordJ a b ws1).length + 1 + u
+      = Y0.length + 1 + (wordJ a b ws1).length + (u + 1) from by omega]
+    exact h
+  have := not_le1_jk1 N hN M Y0.length q0 (a + 1) hp1 (by omega) (by omega) hent t ht
+  rwa [hq0, show Y0.length + 1 + (wordJ a b ws1).length + 1 + t
+    = Y0.length + 1 + (wordJ a b ws1).length + (t + 1) from by omega] at this
+
+#print axioms not_le1_treeJ
+
+
+/-! ### 木の字の上昇 -/
+
+theorem jk1_length_shift (N : Jk1) (l s : ℕ) :
+    (jk1 (l + s) N).length = (jk1 l N).length := by
+  rw [← jk1_shift N l s]; simp [shiftr01]
+
+theorem rise_colJ (a b k : ℕ) (N : Jk1) (P : ℕ → Prop) [DecidablePred P]
+    (hP0 : P 0) (hP : ∀ t, 1 ≤ t → t < (colJ a b N).length → ¬ P t) :
+    (List.range (colJ a b N).length).map (fun t =>
+      ((entry (colJ a b N) 0 t + k, entry (colJ a b N) 1 t + (if P t then k else 0),
+        entry (colJ a b N) 2 t) : ℕ × ℕ × ℕ)) = colJ (a + k) (b + k) N := by
+  have hJ : jk1 (a + k + 1) N = shiftr01 k 0 (jk1 (a + 1) N) := by
+    rw [jk1_shift N (a + 1) k, show a + 1 + k = a + k + 1 from by omega]
+  have hlen : (colJ (a + k) (b + k) N).length = (colJ a b N).length := by
+    rw [colJ_length, colJ_length, hJ]; simp [shiftr01]
+  apply List.ext_getElem?
+  intro i
+  rcases Nat.lt_or_ge i (colJ a b N).length with hi | hi
+  · rw [List.getElem?_map, List.getElem?_range hi]
+    simp only [Option.map_some]
+    match i, hi with
+    | 0, _ =>
+        rw [if_pos hP0]
+        simp [colJ, entry]
+        omega
+    | (u + 1), hu =>
+        have hu' : u < (jk1 (a + 1) N).length := by rw [colJ_length] at hu; omega
+        rw [if_neg (hP (u + 1) (by omega) hu), Nat.add_zero]
+        show some ((entry (colJ a b N) 0 (u + 1) + k, entry (colJ a b N) 1 (u + 1),
+          entry (colJ a b N) 2 (u + 1)) : ℕ × ℕ × ℕ) = _
+        rw [show colJ a b N = ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + 1) N from rfl,
+          entry_cons_succ, entry_cons_succ, entry_cons_succ,
+          show colJ (a + k) (b + k) N
+            = ((a + k + 1, b + k + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + k + 1) N from rfl,
+          List.getElem?_cons_succ, hJ, shiftr01, List.getElem?_map,
+          List.getElem?_eq_getElem hu']
+        simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hu']
+  · rw [List.getElem?_eq_none (by simpa using hi), List.getElem?_eq_none (by omega)]
+
+open Classical in
+theorem rise_wordJ (Y0 : TrioSeq) (a b k : ℕ) (hb : 1 ≤ b) {ws : List Jk1} (hw : WOk ws) :
+    ∀ (ws2 ws1 ws3 : List Jk1), ws = ws1 ++ ws2 ++ ws3 →
+      (List.range (wordJ a b ws2).length).map (fun i =>
+        ((entry (wordJ a b ws2) 0 i + k, entry (wordJ a b ws2) 1 i +
+          (if le1 (MzJ Y0 a b ws) Y0.length (Y0.length + 1 + (wordJ a b ws1).length + i)
+            then k else 0), entry (wordJ a b ws2) 2 i) : ℕ × ℕ × ℕ))
+      = wordJ (a + k) (b + k) ws2
+  | [], _, _, _ => by simp [wordJ]
+  | (N :: ws2), ws1, ws3, hws => by
+      have hws' : ws = (ws1 ++ [N]) ++ ws2 ++ ws3 := by rw [hws]; simp
+      have hws'' : ws = ws1 ++ N :: (ws2 ++ ws3) := by rw [hws]; simp
+      have hN : JkOk N := hw N (by rw [hws]; simp)
+      have ih := rise_wordJ Y0 a b k hb hw ws2 (ws1 ++ [N]) ws3 hws'
+      rw [wordJ_cons, wordJ_cons, List.length_append, List.range_add, List.map_append,
+        List.map_map]
+      congr 1
+      · rw [← rise_colJ a b k N (fun t => le1 (MzJ Y0 a b ws) Y0.length
+            (Y0.length + 1 + (wordJ a b ws1).length + t))
+            (by rw [hws'']; simpa using le1_zposJ Y0 a b ws1 (ws2 ++ ws3) N)
+            (by intro t ht1 ht
+                obtain ⟨u, rfl⟩ : ∃ u, t = u + 1 := ⟨t - 1, by omega⟩
+                rw [hws'']
+                refine not_le1_treeJ Y0 a b hb ws1 (ws2 ++ ws3) hN u ?_
+                rw [colJ_length] at ht; omega)]
+        apply List.map_congr_left
+        intro t ht
+        rw [List.mem_range] at ht
+        rw [entry_append_left ht, entry_append_left ht, entry_append_left ht]
+      · rw [← ih]
+        apply List.map_congr_left
+        intro i hi
+        simp only [Function.comp]
+        rw [entry_append_right, entry_append_right, entry_append_right, wordJ_append,
+          wordJ_singleton, List.length_append,
+          show Y0.length + 1 + (wordJ a b ws1).length + ((colJ a b N).length + i)
+            = Y0.length + 1 + ((wordJ a b ws1).length + (colJ a b N).length) + i from by omega]
+
+open Classical in
+/-- ★ 木の字の語の上の z の列の展開: 記録と語の対角の塔。 -/
+theorem oper_z1wJ (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) {ws : List Jk1}
+    (hw : WOk ws) (n : ℕ) :
+    (Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]))⟦n⟧
+      = Y0 ++ Dzf (fun a b => wordJ a b ws) a b n := by
+  rw [oper_z1_mask Y0 a b (wordJ a b ws) (wordJ_ge a b ws) n]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  congr 1
+  have := rise_wordJ Y0 a b k hb hw ws [] [] (by simp)
+  simpa [wordJ, MzJ] using this
+
+theorem z1wJ_mem {Y0 : TrioSeq} {a b : ℕ} (hb : 1 ≤ b) {ws : List Jk1} (hw : WOk ws)
+    (htw : ∀ n, Y0 ++ Dzf (fun a b => wordJ a b ws) a b n ∈ W 0) :
+    Y0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+      ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_z1wJ Y0 a b hb hw]
+  exact htw n
+
+#print axioms z1wJ_mem
+
 end Small
 end TRIO
