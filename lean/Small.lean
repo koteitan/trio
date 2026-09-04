@@ -17166,56 +17166,55 @@ inductive Jk1 : Type
   | nil : Jk1
   | pay : Jk1 → TrioSeq → Jk1
   | one : Jk1 → Jk1 → Jk1
-  | rep2 : Jk1 → ℕ → Jk1
+  | two : Jk1 → Jk1 → Jk1
 
 /-- 木をレベル `l` で列に展開する。 -/
 def jk1 : ℕ → Jk1 → TrioSeq
   | _, Jk1.nil => []
   | l, Jk1.pay N Y => jk1 l N ++ shiftr01 (l + 1) 0 Y
   | l, Jk1.one N M => jk1 l N ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M)
-  | l, Jk1.rep2 T m => (List.range m).flatMap
-      (fun _ => ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) T)
+  | l, Jk1.two N M => jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M)
 
 /-- 木の先頭段が 2 の記録でない（2 の記録の直上に置ける形）。 -/
 def TopOk : Jk1 → Prop
   | Jk1.nil => True
   | Jk1.pay N _ => TopOk N
   | Jk1.one N _ => TopOk N
-  | Jk1.rep2 _ _ => False
+  | Jk1.two _ _ => False
 
 /-- junk のレベル（1 の列の上）で妥当。荷はすべて `Bok`。2 の記録を置ける。 -/
 def JkJ : Jk1 → Prop
   | Jk1.nil => True
   | Jk1.pay N Y => JkJ N ∧ Bok Y
   | Jk1.one N M => JkJ N ∧ JkJ M
-  | Jk1.rep2 T m => T = Jk1.nil ∧ m = 1
+  | Jk1.two N M => N = Jk1.nil ∧ M = Jk1.nil
 
-/-- 質量計算のための一般版（`rep2` の本数と junk に制限を付けない）。 -/
+/-- 質量計算のための一般版（2 の記録に制限を付けない）。 -/
 def JkA : Jk1 → Prop
   | Jk1.nil => True
   | Jk1.pay N Y => JkA N ∧ Bok Y
   | Jk1.one N M => JkA N ∧ JkA M
-  | Jk1.rep2 T _ => JkA T ∧ TopOk T
+  | Jk1.two N M => JkA N ∧ JkA M
 
 /-- 字の先頭段で妥当。2 の記録は置けない（字の z の直上になり、上がってしまう）。 -/
 def JkOk : Jk1 → Prop
   | Jk1.nil => True
   | Jk1.pay N Y => JkOk N ∧ Bok Y
   | Jk1.one N M => JkOk N ∧ JkJ M
-  | Jk1.rep2 _ _ => False
+  | Jk1.two _ _ => False
 
 theorem JkJ_of_JkOk : ∀ N : Jk1, JkOk N → JkJ N
   | Jk1.nil, _ => trivial
   | Jk1.pay N Y, h => ⟨JkJ_of_JkOk N h.1, h.2⟩
   | Jk1.one N M, h => ⟨JkJ_of_JkOk N h.1, h.2⟩
-  | Jk1.rep2 _ _, h => absurd h (by simp [JkOk])
+  | Jk1.two _ _, h => absurd h (by simp [JkOk])
 
 theorem JkA_of_JkJ : ∀ N : Jk1, JkJ N → JkA N
   | Jk1.nil, _ => trivial
   | Jk1.pay N Y, h => ⟨JkA_of_JkJ N h.1, h.2⟩
   | Jk1.one N M, h => ⟨JkA_of_JkJ N h.1, JkA_of_JkJ M h.2⟩
-  | Jk1.rep2 T m, h => by
-      rw [show T = Jk1.nil from h.1]
+  | Jk1.two N M, h => by
+      rw [show N = Jk1.nil from h.1, show M = Jk1.nil from h.2]
       exact ⟨trivial, trivial⟩
 
 theorem JkOk_nil : JkOk Jk1.nil := trivial
@@ -17243,13 +17242,13 @@ theorem jk1_ge : ∀ (N : Jk1) (l : ℕ), ∀ x ∈ jk1 l N, l + 1 ≤ x.1
       · exact jk1_ge N l x h
       · exact le_refl _
       · have := jk1_ge M (l + 1) x h; omega
-  | Jk1.rep2 T m, l => by
+  | Jk1.two N M, l => by
       intro x hx
-      simp only [jk1, List.mem_flatMap, List.mem_cons] at hx
-      obtain ⟨_, -, hx⟩ := hx
-      rcases hx with rfl | h
+      simp only [jk1, List.mem_append, List.mem_cons] at hx
+      rcases hx with h | rfl | h
+      · exact jk1_ge N l x h
       · exact le_refl _
-      · have := jk1_ge T (l + 1) x h; omega
+      · have := jk1_ge M (l + 1) x h; omega
 
 theorem jk1_mono : ∀ (N : Jk1), JkA N → ∀ l : ℕ, Mono (jk1 l N)
   | Jk1.nil, _, l => by simp [jk1, Mono]
@@ -17266,13 +17265,13 @@ theorem jk1_mono : ∀ (N : Jk1), JkA N → ∀ l : ℕ, Mono (jk1 l N)
       · exact jk1_mono N hN.1 l x h
       · show (0 : ℕ) ≤ 1; omega
       · exact jk1_mono M hN.2 (l + 1) x h
-  | Jk1.rep2 T m, hN, l => by
+  | Jk1.two N M, hN, l => by
       intro x hx
-      simp only [jk1, List.mem_flatMap, List.mem_cons, List.mem_range] at hx
-      obtain ⟨j, hj, hx⟩ := hx
-      rcases hx with rfl | h
+      simp only [jk1, List.mem_append, List.mem_cons] at hx
+      rcases hx with h | rfl | h
+      · exact jk1_mono N hN.1 l x h
       · show (0 : ℕ) ≤ 2; omega
-      · exact jk1_mono T hN.1 (l + 1) x h
+      · exact jk1_mono M hN.2 (l + 1) x h
 
 theorem jk1_shift : ∀ (N : Jk1) (l s : ℕ), shiftr01 s 0 (jk1 l N) = jk1 (l + s) N
   | Jk1.nil, l, s => by simp [jk1, shiftr01]
@@ -17286,23 +17285,12 @@ theorem jk1_shift : ∀ (N : Jk1) (l s : ℕ), shiftr01 s 0 (jk1 l N) = jk1 (l +
         shiftr01_append0, shiftr01_append0, shift_col, jk1_shift N l s,
         jk1_shift M (l + 1) s, show l + 1 + s = l + s + 1 from by omega]
       rfl
-  | Jk1.rep2 T m, l, s => by
-      show shiftr01 s 0 ((List.range m).flatMap
-          (fun _ => ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) T)) = _
-      rw [shiftr01, List.map_flatMap]
-      show (List.range m).flatMap
-          (fun _ => shiftr01 s 0 (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) T)) = _
-      have e : ∀ _j : ℕ, shiftr01 s 0 (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) T)
-          = ((l + s + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + s + 1) T := by
-        intro _j
-        show shiftr01 s 0 ([((l + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ jk1 (l + 1) T) = _
-        rw [shiftr01_append0, shift_col, jk1_shift T (l + 1) s,
-          show l + 1 + s = l + s + 1 from by omega]
-        rfl
-      show (List.range m).flatMap _ = (List.range m).flatMap _
-      apply List.flatMap_congr
-      intro j _
-      exact e j
+  | Jk1.two N M, l, s => by
+      rw [jk1, show ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M
+          = [((l + 1, 2, 0) : ℕ × ℕ × ℕ)] ++ jk1 (l + 1) M from rfl,
+        shiftr01_append0, shiftr01_append0, shift_col, jk1_shift N l s,
+        jk1_shift M (l + 1) s, show l + 1 + s = l + s + 1 from by omega]
+      rfl
 
 #print axioms jk1_shift
 
@@ -17727,44 +17715,37 @@ theorem not_le1_jk1 : ∀ (N : Jk1) (M : TrioSeq) (p q0 l : ℕ),
         have hres := not_le1_jk1 M' M p (q0 + (jk1 l N).length + 1) (l + 1)
           (Or.inr ⟨hJM', hgrd⟩) hp1 (by omega) (by omega) hsub u hu
         rwa [show q0 + ((jk1 l N).length + 1 + u) = q0 + (jk1 l N).length + 1 + u from by omega]
-  | Jk1.rep2 T 0, M, p, q0, l, _, _, _, _, _ => by
-      intro t ht
-      simp [jk1] at ht
-  | Jk1.rep2 T (m + 1), M, p, q0, l, hN, hp1, hpq, hlen, hent => by
-      obtain ⟨⟨hJT, hTT⟩, r, v, hpr, hrq0, hr1, hr0, hvl, hrge⟩ :
-          (JkA T ∧ TopOk T) ∧ Grd M p q0 l := by
+  | Jk1.two N M', M, p, q0, l, hN, hp1, hpq, hlen, hent => by
+      obtain ⟨⟨hJN, hJM⟩, r, v, hpr, hrq0, hr1, hr0, hvl, hrge⟩ :
+          (JkA N ∧ JkA M') ∧ Grd M p q0 l := by
         rcases hN with h | ⟨h, hg⟩
         · exact absurd h (by simp [JkOk])
         · exact ⟨h, hg⟩
-      have hsplit : jk1 l (Jk1.rep2 T (m + 1))
-          = jk1 l (Jk1.rep2 T m) ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) T) := by
-        show (List.range (m + 1)).flatMap
-            (fun _ => ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) T) = _
-        rw [List.range_succ, List.flatMap_append]
-        simp [jk1]
-      have hlenp : (jk1 l (Jk1.rep2 T (m + 1))).length
-          = (jk1 l (Jk1.rep2 T m)).length + 1 + (jk1 (l + 1) T).length := by
+      have hsplit : jk1 l (Jk1.two N M')
+          = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M') := rfl
+      have hlenp : (jk1 l (Jk1.two N M')).length
+          = (jk1 l N).length + 1 + (jk1 (l + 1) M').length := by
         rw [hsplit]; simp; omega
-      have hge : ∀ j, q0 ≤ j → j < q0 + (jk1 l (Jk1.rep2 T (m + 1))).length →
+      have hge : ∀ j, q0 ≤ j → j < q0 + (jk1 l (Jk1.two N M')).length →
           l + 1 ≤ entry M 0 j := by
         intro j hj1 hj2
-        obtain ⟨u, hu, rfl⟩ : ∃ u, u < (jk1 l (Jk1.rep2 T (m + 1))).length ∧ j = q0 + u :=
+        obtain ⟨u, hu, rfl⟩ : ∃ u, u < (jk1 l (Jk1.two N M')).length ∧ j = q0 + u :=
           ⟨j - q0, by omega, by omega⟩
         rw [hent 0 u hu]
-        exact entry0_of_ge (jk1_ge (Jk1.rep2 T (m + 1)) l) u hu
+        exact entry0_of_ge (jk1_ge (Jk1.two N M') l) u hu
       intro t ht
-      rcases Nat.lt_or_ge t (jk1 l (Jk1.rep2 T m)).length with htL | htL
-      · refine not_le1_jk1 (Jk1.rep2 T m) M p q0 l
-          (Or.inr ⟨⟨hJT, hTT⟩, ⟨r, v, hpr, hrq0, hr1, hr0, hvl, hrge⟩⟩)
+      rcases Nat.lt_or_ge t (jk1 l N).length with htL | htL
+      · refine not_le1_jk1 N M p q0 l
+          (Or.inr ⟨hJN, ⟨r, v, hpr, hrq0, hr1, hr0, hvl, hrge⟩⟩)
           hp1 hpq (by omega) ?_ t htL
         intro i u hu
         have h := hent i u (by omega)
         rwa [hsplit, entry_append_left (by omega)] at h
-      rcases Nat.lt_or_ge t ((jk1 l (Jk1.rep2 T m)).length + 1) with htL1 | htL1
-      · have ht0 : t = (jk1 l (Jk1.rep2 T m)).length := by omega
+      rcases Nat.lt_or_ge t ((jk1 l N).length + 1) with htL1 | htL1
+      · have ht0 : t = (jk1 l N).length := by omega
         subst ht0
-        have hq1 : entry M 1 (q0 + (jk1 l (Jk1.rep2 T m)).length) = 2 := by
-          have h := hent 1 (jk1 l (Jk1.rep2 T m)).length (by omega)
+        have hq1 : entry M 1 (q0 + (jk1 l N).length) = 2 := by
+          have h := hent 1 (jk1 l N).length (by omega)
           rw [hsplit, entry_append_at] at h
           rw [h]; simp [entry]
         refine not_le1_two hp1 hpr hr1 hr0 (by omega) hq1 ?_
@@ -17773,30 +17754,27 @@ theorem not_le1_jk1 : ∀ (N : Jk1) (M : TrioSeq) (p q0 l : ℕ),
         · exact hrge j hj1 hjq
         · have := hge j hjq (by omega)
           omega
-      · obtain ⟨u, hu, rfl⟩ : ∃ u, u < (jk1 (l + 1) T).length ∧
-            t = (jk1 l (Jk1.rep2 T m)).length + 1 + u :=
-          ⟨t - ((jk1 l (Jk1.rep2 T m)).length + 1), by omega, by omega⟩
-        have hsub : ∀ (i u' : ℕ), u' < (jk1 (l + 1) T).length →
-            entry M i (q0 + (jk1 l (Jk1.rep2 T m)).length + 1 + u')
-              = entry (jk1 (l + 1) T) i u' := by
+      · obtain ⟨u, hu, rfl⟩ : ∃ u, u < (jk1 (l + 1) M').length ∧
+            t = (jk1 l N).length + 1 + u :=
+          ⟨t - ((jk1 l N).length + 1), by omega, by omega⟩
+        have hsub : ∀ (i u' : ℕ), u' < (jk1 (l + 1) M').length →
+            entry M i (q0 + (jk1 l N).length + 1 + u') = entry (jk1 (l + 1) M') i u' := by
           intro i u' hu'
-          have h := hent i ((jk1 l (Jk1.rep2 T m)).length + (u' + 1)) (by omega)
+          have h := hent i ((jk1 l N).length + (u' + 1)) (by omega)
           rw [hsplit, entry_append_right, entry_cons_succ] at h
-          rw [show q0 + (jk1 l (Jk1.rep2 T m)).length + 1 + u'
-              = q0 + ((jk1 l (Jk1.rep2 T m)).length + (u' + 1)) from by omega]
+          rw [show q0 + (jk1 l N).length + 1 + u' = q0 + ((jk1 l N).length + (u' + 1)) from
+            by omega]
           exact h
-        have hgrd : Grd M p (q0 + (jk1 l (Jk1.rep2 T m)).length + 1) (l + 1) := by
+        have hgrd : Grd M p (q0 + (jk1 l N).length + 1) (l + 1) := by
           refine ⟨r, v, hpr, by omega, hr1, hr0, by omega, ?_⟩
           intro j hj1 hj2
           rcases Nat.lt_or_ge j q0 with hjq | hjq
           · exact hrge j hj1 hjq
           · have := hge j hjq (by omega)
             omega
-        have hres := not_le1_jk1 T M p (q0 + (jk1 l (Jk1.rep2 T m)).length + 1) (l + 1)
-          (Or.inr ⟨hJT, hgrd⟩) hp1 (by omega) (by omega) hsub u hu
-        rwa [show q0 + ((jk1 l (Jk1.rep2 T m)).length + 1 + u)
-            = q0 + (jk1 l (Jk1.rep2 T m)).length + 1 + u from by omega]
-  termination_by N _ _ _ _ _ _ _ _ _ => sizeOf N
+        have hres := not_le1_jk1 M' M p (q0 + (jk1 l N).length + 1) (l + 1)
+          (Or.inr ⟨hJM, hgrd⟩) hp1 (by omega) (by omega) hsub u hu
+        rwa [show q0 + ((jk1 l N).length + 1 + u) = q0 + (jk1 l N).length + 1 + u from by omega]
 
 #print axioms not_le1_jk1
 
@@ -19166,13 +19144,13 @@ def PayOnly : Jk1 → Prop
   | Jk1.nil => True
   | Jk1.pay N Y => PayOnly N ∧ Bok Y
   | Jk1.one _ _ => False
-  | Jk1.rep2 _ _ => False
+  | Jk1.two _ _ => False
 
 theorem PayOnly_JkJ : ∀ W : Jk1, PayOnly W → JkJ W
   | Jk1.nil, _ => trivial
   | Jk1.pay N Y, h => ⟨PayOnly_JkJ N h.1, h.2⟩
   | Jk1.one _ _, h => absurd h (by simp [PayOnly])
-  | Jk1.rep2 _ _, h => absurd h (by simp [PayOnly])
+  | Jk1.two _ _, h => absurd h (by simp [PayOnly])
 
 /-- ★★★ `APz V` かつ `W` が荷だけなら、項 `one V W` を継げる。 -/
 theorem APz_onePayOnly : ∀ W : Jk1, PayOnly W → ∀ V : Jk1, JkJ V → APz V →
@@ -19183,7 +19161,7 @@ theorem APz_onePayOnly : ∀ W : Jk1, PayOnly W → ∀ V : Jk1, JkJ V → APz V
   | Jk1.pay W₀ C, h, V, hV, hVz =>
       AYz C h.2 W₀ (PayOnly_JkJ W₀ h.1) (APz_onePayOnly W₀ h.1) V hV hVz
   | Jk1.one _ _, h, _, _, _ => absurd h (by simp [PayOnly])
-  | Jk1.rep2 _ _, h, _, _, _ => absurd h (by simp [PayOnly])
+  | Jk1.two _ _, h, _, _, _ => absurd h (by simp [PayOnly])
 
 /-! ### シート行 372 -/
 
@@ -19478,13 +19456,13 @@ theorem colJ_plug_stair (a b : ℕ) (ctx : List Jk1) (V : Jk1) (l : ℕ)
 
 theorem colJ_plug_twostair (a b : ℕ) (ctx : List Jk1) (V : Jk1) (l : ℕ)
     (hl : l = a + ctx.length + 1) :
-    colJ a b (plug (ctx ++ [V]) (Jk1.rep2 Jk1.nil 1))
+    colJ a b (plug (ctx ++ [V]) (Jk1.two Jk1.nil Jk1.nil))
       = (colJ a b (plug ctx V) ++ [((l + 1, 1, 0) : ℕ × ℕ × ℕ)])
         ++ [((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
   subst hl
-  rw [plug_snoc, colJ_plug_one a b ctx V (Jk1.rep2 Jk1.nil 1),
+  rw [plug_snoc, colJ_plug_one a b ctx V (Jk1.two Jk1.nil Jk1.nil),
     show a + ctx.length + 1 + 1 = a + ctx.length + 2 from by omega]
-  have e : jk1 (a + ctx.length + 2) (Jk1.rep2 Jk1.nil 1)
+  have e : jk1 (a + ctx.length + 2) (Jk1.two Jk1.nil Jk1.nil)
       = [((a + ctx.length + 2 + 1, 2, 0) : ℕ × ℕ × ℕ)] := by simp [jk1]
   rw [e]
   simp [List.append_assoc]
@@ -19498,7 +19476,7 @@ theorem wordJ_snoc_plug_stair (a b : ℕ) (ws ctx : List Jk1) (V : Jk1) (l : ℕ
 
 theorem wordJ_snoc_twostair (a b : ℕ) (ws ctx : List Jk1) (V : Jk1) (l : ℕ)
     (hl : l = a + ctx.length + 1) :
-    wordJ a b (ws ++ [plug (ctx ++ [V]) (Jk1.rep2 Jk1.nil 1)])
+    wordJ a b (ws ++ [plug (ctx ++ [V]) (Jk1.two Jk1.nil Jk1.nil)])
       = (wordJ a b (ws ++ [plug ctx V]) ++ [((l + 1, 1, 0) : ℕ × ℕ × ℕ)])
         ++ [((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
   rw [wordJ_append, wordJ_singleton, colJ_plug_twostair a b ctx V l hl, wordJ_append,
@@ -19516,7 +19494,7 @@ theorem GCtx_split : ∀ (k : ℕ) (ctx : List Jk1), GCtx k ctx →
       exact ⟨ctx0, U, rfl, (APd_iff k U).mp hUk ctx0 (by exact hc0)⟩
 
 /-- ★★★★★ 2 の記録は、どの深さでも項として継げる（1 の列の直上になるので上がらない）。 -/
-theorem APd_twoNil (k : ℕ) : APd k (Jk1.rep2 Jk1.nil 1) := by
+theorem APd_twoNil (k : ℕ) : APd k (Jk1.two Jk1.nil Jk1.nil) := by
   rw [APd_iff]
   intro ctx hc
   obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split k ctx hc
@@ -19524,7 +19502,7 @@ theorem APd_twoNil (k : ℕ) : APd k (Jk1.rep2 Jk1.nil 1) := by
   have hstair : ∀ m : ℕ, GOK (plug (ctx0 ++ [V]) (stairJ m)) :=
     fun m => (APd_iff k (stairJ m)).mp (APd_stair m k) _ hc
   intro ws hw hG
-  have hwO : WOk (ws ++ [plug (ctx0 ++ [V]) (Jk1.rep2 Jk1.nil 1)]) :=
+  have hwO : WOk (ws ++ [plug (ctx0 ++ [V]) (Jk1.two Jk1.nil Jk1.nil)]) :=
     WOk_append hw (WOk_singleton (JkOk_plug _ hcO _
       (CtxX_of_JkJ _ (by simp) _ ⟨rfl, rfl⟩)))
   have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx0 V])) := hGV ws hw hG
@@ -19595,15 +19573,15 @@ theorem APd_twoNil (k : ℕ) : APd k (Jk1.rep2 Jk1.nil 1) := by
     simpa [List.append_assoc] using h
   · intro h
     have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
-        wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.rep2 Jk1.nil 1)])) := by
+        wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.two Jk1.nil Jk1.nil)])) := by
       have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
       simpa [show h + 1 + 1 = h + 2 from by omega] using h1
     refine ⟨hmid, by simp [entry], ?_⟩
     intro P hP s A' hA'
     rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
-          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.rep2 Jk1.nil 1)])
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.two Jk1.nil Jk1.nil)])
         = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
-          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.rep2 Jk1.nil 1)]) from rfl,
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.two Jk1.nil Jk1.nil)]) from rfl,
       shiftr01_append0, shift_col, wordJ_shift,
       wordJ_snoc_twostair (h + 1 + s) 1 ws ctx0 V (h + 1 + s + ctx0.length + 1) rfl]
     set a := h + 1 + s with ha
@@ -19645,7 +19623,7 @@ theorem APd_all : ∀ (T : Jk1), JkJ T → ∀ k : ℕ, APd k T
   | Jk1.nil, _, k => APd_nil k
   | Jk1.pay N Y, h, k => APd_pay k N h.1 (APd_all N h.1 k) Y h.2
   | Jk1.one N M, h, k => APd_one k h.1 (APd_all N h.1 k) (APd_all M h.2 (k + 1))
-  | Jk1.rep2 N M, h, k => by
+  | Jk1.two N M, h, k => by
       obtain ⟨h1, h2⟩ := h
       subst h1
       subst h2
@@ -19656,7 +19634,7 @@ theorem GOK_all : ∀ (T : Jk1), JkOk T → GOK T
   | Jk1.nil, _ => GOK_nil
   | Jk1.pay N Y, h => AY0 Y h.2 N h.1 (GOK_all N h.1)
   | Jk1.one N M, h => APd_all M h.2 0 N h.1 (GOK_all N h.1)
-  | Jk1.rep2 _ _, h => absurd h (by simp [JkOk])
+  | Jk1.two _ _, h => absurd h (by simp [JkOk])
 
 #print axioms GOK_all
 
@@ -19717,7 +19695,7 @@ def appJ : Jk1 → Jk1 → Jk1
   | N1, Jk1.nil => N1
   | N1, Jk1.pay N2 Y => Jk1.pay (appJ N1 N2) Y
   | N1, Jk1.one N2 M => Jk1.one (appJ N1 N2) M
-  | _, Jk1.rep2 T m => Jk1.rep2 T m
+  | _, Jk1.two N2 M => Jk1.two N2 M
 
 theorem jk1_appJ : ∀ (N2 N1 : Jk1) (l : ℕ), TopOk N2 →
     jk1 l (appJ N1 N2) = jk1 l N1 ++ jk1 l N2
@@ -19732,7 +19710,7 @@ theorem jk1_appJ : ∀ (N2 N1 : Jk1) (l : ℕ), TopOk N2 →
       rw [jk1_appJ N2 N1 l h]
       show _ = jk1 l N1 ++ (jk1 l N2 ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M))
       rw [List.append_assoc]
-  | Jk1.rep2 _ _, _, _, h => absurd h (by simp [TopOk])
+  | Jk1.two _ _, _, _, h => absurd h (by simp [TopOk])
 
 /-- 「1 の列 + junk `M'`」を入れ子に `n` 回繰り返した木。 -/
 def twr (M' : Jk1) : ℕ → Jk1
@@ -19815,7 +19793,7 @@ theorem R373_mem' : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 /-- ★★★★★ シート行374 `R344 (4,2,0)(4,2,0) = psi(W_w*psi_1(W_2*2))`。 -/
 theorem R374_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
-  have h := hang2rec (h := 0) (LwA_of_Aok Aok_R338) (M' := Jk1.rep2 Jk1.nil 1) ⟨rfl, rfl⟩
+  have h := hang2rec (h := 0) (LwA_of_Aok Aok_R338) (M' := Jk1.two Jk1.nil Jk1.nil) ⟨rfl, rfl⟩
   simpa [R344, R341, jk1, List.append_assoc] using h
 
 #print axioms R374_mem

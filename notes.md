@@ -1885,3 +1885,41 @@ jk1_mono も JkA に
 
 **これで「木の言語」側は一般の 2 の記録に対応できた。**
 残るのは `APd` 側（2 の記録の上に junk を継ぐ）。
+
+## 続き89（構成子は `two N M` が正解。`rep2 T m` では足りない）
+
+`oper_shift` の場合を bms で確認したところ、**コピーごとに junk が違う**列になる:
+```
+…(3,1,0)(4,2,0)(5,0,0)(6,1,0)(4,2,0)(5,0,0)(6,1,0)[2]
+  good part = …(4,2,0),  bad part = (5,0,0),  delta = 1
+  → …(4,2,0)(5,0,0)(6,1,0) (4,2,0)(5,0,0)(6,0,0)(7,0,0)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^ 最後のコピーの荷だけが伸びる
+```
+だから `rep2 T m`（同じ `T` を m 個）では表せず、junk の**列**が要る。
+`two N M`（左兄弟 `N` + 2 の記録 + junk `M`）なら
+`rep2L [T1,T2,T3] = two (two (two nil T1) T2) T3` と書けるので、
+**`two N M` が正しい構成子**（入れ子でない普通の帰納型で済む）。
+
+### 現状（緑）
+```
+Jk1 = nil | pay Jk1 TrioSeq | one Jk1 Jk1 | two Jk1 Jk1
+jk1 l (two N M) = jk1 l N ++ ((l+1,2,0) :: jk1 (l+1) M)
+TopOk : nil→True | pay N _→TopOk N | one N _→TopOk N | two _ _→False
+JkA   : 質量計算用（2 の記録に制限なし）。two N M → JkA N ∧ JkA M
+JkJ   : two N M → N = nil ∧ M = nil     ← APd 側が未対応なのでまだ制限
+JkOk  : two _ _ → False
+Grd M p q0 l = ∃ r v, p<r<q0 ∧ 行1(r)=1 ∧ 行0(r)=v ∧ v ≤ l ∧ (∀ j, r<j<q0 → v+1 ≤ 行0(j))
+not_le1_jk1 : (JkOk N ∨ (JkA N ∧ Grd M p q0 l)) → …    ← 一般の two N M で通る
+```
+**木の言語と質量計算は完成**。残るのは `APd` 側だけ。
+
+### 残る作業（`APd` 側）
+1. `Frm`（`fone U` / `fotw U N`）と `plug` / `dep`（WIP: `lean/Small.frm.wip`）
+2. 階数を「`fotw` の本数」で刻む `DOk n` / `AllG n`（続き88）
+   - `AllG n X := ∀ D, DOk n D → CtxX D X → GOK (plug D X)`
+   - `DOk (n+1) D := D の各 fotw フレームの木が AllG n`
+   - `AllG 0` ≒ 既存の `∀ k, APd k`（1 の列だけの文脈）
+3. `AYt`（2 の記録の上に荷を吊るす）: 荷の A2' 帰納。
+   dup の場合は「2 の記録 + junk」が同じ高さに並ぶので `two` の左兄弟に積む
+4. `APd_twoW`（`two N M` を項として継ぐ）: `M` の構造帰納
+5. `JkJ (two N M)` の制限を外す → 行375（`snocYd_mem`, dl = 2）→ 行376
