@@ -11652,6 +11652,109 @@ theorem R311_mem : R310 ++ [((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R308_mem
 #print axioms R311_mem
 
+/-! ### 行306 の上の 2 本目のブロック `R306 (2,1,0)(3,2,1)(3,2,0)`
+
+シート行306 `psi(W_w + W_2)` と行307 `psi(W_w + W_2*2)` の間にある標準形
+（シートは主脈だけなので飛ばしている）。`(1,1,0)` の下にブロックが 2 本ぶら下がる:
+
+    X (1,1,0) [ (2,2,1)(2,2,0) ] [ (2,1,0)(3,2,1)(3,2,0) ]
+
+台座 `R306 = Q ++ M308` を梯子 `LvB P0 1 1` の元として捉えれば、
+行300 → 行303 → 行302 と同じ 3 手（`snocd_gen` → `RunA0_z1` → `snocYd_mem`）で閉じる。 -/
+
+def R306 : TrioSeq := R296 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem R306_QM : R306 = Q ++ M308 := by simp [R306, R296, Q, M308]
+
+theorem R306_len : R306.length = 5 := by simp [R306, R296]
+
+theorem Aok_R306 : Aok R306 :=
+  Aok_append_Mid (by omega) Aok_R296 (MidD_col 2 2 (by omega) (by omega)) R306_mem
+
+/-- どの `Aok` の頭の上にも `M308 = (1,1,0)(2,2,1)(2,2,0)` を継げる。 -/
+theorem M308_reattach {A : TrioSeq} (hA : Aok A) : A ++ M308 ∈ W 0 := by
+  have h := RunG_snoc2 Iface_RunA0 0 1
+    (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (LwA_unit11 (LwA_of_Aok hA))
+  simpa [M308, List.append_assoc] using h
+
+/-- ★ `R306` は梯子のレベル 1 の元（台座 `Q`、単位 `M308`）。 -/
+theorem R306_LvB : LvB P0 1 1 R306 := by
+  refine ⟨Aok_R306, Or.inr ⟨0, Q, M308, rfl, R306_QM, ⟨Aok_Q, rfl⟩, MidD_M308, ?_⟩⟩
+  rintro s A' ⟨hA', hs⟩
+  have hs0 : s = 0 := by omega
+  subst hs0
+  simpa using M308_reattach hA'
+
+theorem R306_LwA : LwA 1 R306 := ⟨P0, BaseOk_P0, 1, R306_LvB⟩
+
+theorem R306_row1 : ∀ j, 0 < j → j < R306.length → 1 ≤ entry R306 1 j := by
+  intro j hj0 hjl
+  rw [R306_len] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl <;>
+    simp [R306, R296, entry]
+
+/-- `R306 (2,1,0)`。 -/
+theorem R306a_mem : R306 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R306 (Ancd_of_row1 R306_row1 2)
+    (fun B hB => LvB_hang BaseOk_P0 1 1 R306 R306_LvB B hB)
+
+theorem R306a_RunA0 : RunA 0 2 (R306 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨1, R306, _, rfl, rfl, R306_LwA, SegA_one 1⟩
+
+/-- `R306 (2,1,0)(3,2,1)`。 -/
+theorem R306b_mem :
+    R306 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunA0_z1 (h := 2) R306a_RunA0
+
+/-- 2 本目のブロックの繰り返し単位。 -/
+def MzB : TrioSeq := [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ)]
+
+theorem MidD_MzB : MidD 3 MzB := by
+  refine MidD_append (MidD_col 2 1 (by omega) (by omega)) ?_ ?_
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+  · intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> simp
+
+/-- 塔 `Zn n = R306 (2,1,0)(3,2,1)(3,1,0)(4,2,1)…(n+1,1,0)(n+2,2,1)`。 -/
+def Zn : ℕ → TrioSeq
+  | 0 => R306
+  | (n + 1) => Zn n ++ [((n + 2, 1, 0) : ℕ × ℕ × ℕ), ((n + 3, 2, 1) : ℕ × ℕ × ℕ)]
+
+theorem Zn_LvB : ∀ n : ℕ, LvB P0 (n + 1) (n + 1) (Zn n)
+  | 0 => R306_LvB
+  | (n + 1) => LvB_unit11 BaseOk_P0 (Zn_LvB n)
+
+theorem Zn_mem (n : ℕ) : Zn n ∈ W 0 := (LwA_Aok ⟨P0, BaseOk_P0, n + 1, Zn_LvB n⟩).mem
+
+theorem Zn_eq : ∀ n : ℕ, Mtwd 1 R306 MzB n = Zn n
+  | 0 => by simp [Mtwd, Zn]
+  | (n + 1) => by
+      rw [Mtwd_succ, Zn_eq n]
+      show Zn n ++ shiftr01 (1 * n) 0 MzB
+        = Zn n ++ [((n + 2, 1, 0) : ℕ × ℕ × ℕ), ((n + 3, 2, 1) : ℕ × ℕ × ℕ)]
+      congr 1
+      simp only [MzB, shiftr01, List.map_cons, List.map_nil]
+      rw [show 2 + 1 * n = n + 2 from by omega, show 3 + 1 * n = n + 3 from by omega]
+
+/-- ★★★★ `R306 (2,1,0)(3,2,1)(3,2,0)`（シート行306 と行307 の間）。 -/
+theorem R306c_mem :
+    R306 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ), ((3, 2, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  have h := snocYd_mem (Y0 := R306) (M := MzB) (L := 2) (y := 2) (dl := 1)
+    Aok_R306.ne MidD_MzB (by simp [MzB, entry]) ?_ (by omega) (by omega) ?_
+  · simpa [MzB, List.append_assoc] using h
+  · intro t ht1 htl hlt _
+    exfalso
+    rcases (show t = 1 by simp only [MzB, List.length_cons, List.length_nil] at htl; omega) with rfl
+    simp [MzB, entry] at hlt
+  · intro n
+    rw [Zn_eq]
+    exact Zn_mem n
+
+#print axioms R306c_mem
+
 /-! ### z=1 の列 `m` 本: `(Y0 ++ (a,b,0) ++ (a+1,b+1,1)^(m+1))⟦n⟧ = Y0 ++ Dzm a b m n` -/
 
 /-- `Dzm a b m n = ⋃_{k<n} (a+k,b+k,0) (a+1+k,b+1+k,1)^m`。 -/
