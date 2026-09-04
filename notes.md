@@ -1017,3 +1017,43 @@ G ws ctx T := GoodFb (fun a b => word a b (ws ++ [plug ctx T]))
 4. GoodFb_of_key の一般版（~60）
 5. AY（~200）、AP（~200）、AL（~150）
 6. 行 371, 372, ...（~50）
+
+## 続き71（木の字の帰納法の正しい分割: 深さで回す）
+
+続き70 の AY/AP/AL の分割は、深い dup（複製）の場面で「複製した項の下に元の木 Z を
+組み立て直す」ために AP Z が要り、その AP の nil の場合が任意の荷の AY を要求して
+循環していた。正しい分割は次の通り。
+
+記法: `GOKp ctx T := ∀ ws 良い語, GoodFb(word (ws ++ [plug ctx T]))`。
+
+- **AY0(Y)**: `∀ Z, GOK Z → GOK (pay Z Y)`（深さ 0 = 字の直下に荷を継ぐ）
+  Y の A2' 帰納法だけで閉じる。dup は**字**の複製なので、語 `ws` が引数だから自由。
+- **AYs(Y)**: `∀ ctx' X Z, (AP を Z について ctx' で) → GOKp ctx' X →
+     GOKp (ctx'++[X]) Z → GOKp (ctx'++[X]) (pay Z Y)`（深さ ≥ 1）
+  Y の A2' 帰納法だけで閉じる。dup は深さ |ctx'| の**項**の複製で、
+  各コピーの追加は「AP を (pay Z Y') について ctx' で」＝
+  AYs(Y')（A2' の帰納法の仮定）＋ 仮定の「AP を Z について」から導ける。
+  ⟹ **AP の定理そのものは要らない**（仮定として持ち回るだけ）。
+- **AP(M) at ctx**: `∀ W, CtxOKg ctx → GOKp ctx W → GOKp ctx (one W M)`
+  外側 = `ctx.length` の帰納法、内側 = M の構造帰納法。
+  - M = nil, ctx = []: snocd_gen ＋ AY0 ✓
+  - M = nil, ctx = ctx'++[X]: snocd_gen ＋ AYs。AYs の仮定「AP を W について ctx' で」は
+    **外側の帰納法（深さが 1 減る）**から出る ✓
+  - M = pay M' Y: AYs(Y)（または AY0）に、構造帰納法から「AP を M' について」を渡す ✓
+  - M = one M' M'': plug の付け替えで深さ +1 の AP(M'') と AP(M') ✓
+- **GOK(T)**: T の構造帰納法。nil = snoczJ、pay = AY0、one = AP。
+
+`CtxOKg ctx := ∀ j < |ctx|, GOKp (ctx.take j) ctx[j]`（文脈の各段が良い）。
+必要な補題: `CtxOKg (ctx' ++ [X]) ↔ CtxOKg ctx' ∧ GOKp ctx' X`。
+
+### この設計で取れるもの
+深さ 1 の木 `one nil (pay nil B)`（= 1 の列の上に荷）で
+  H1: LwA h A → Bok B → A ++ (h+1,1,0)(h+2,2,1)(h+3,1,0) ++ B↑(h+4) ∈ W 0
+が出る。H1 ＋ snocd_gen で**行 371**。行 372 は深さ 2（`one nil (one nil nil)`）で、
+同じ枠組みの深さを 1 増やせば出る。
+
+### 済んだ基盤（Small.lean、緑）
+Jk1/jk1/JkOk、jk1_ge/mono/shift、Ancd の組み立て補題 4 本、
+colJ/wordJ/WOk/plug/CtxOk、not_le1_jk1（木の junk に行 1 の鎖が入らない）、
+MzJ/le1_zposJ/not_le1_treeJ、rise_colJ/rise_wordJ、oper_z1wJ/z1wJ_mem、
+GoodFb_of_keyJ、GoodFb_wordJ_nil、GoodFb_snoczJ。
