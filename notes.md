@@ -1433,3 +1433,50 @@ Grd M p q0 l = ∃ r, p < r ∧ r < q0 ∧ 行1(r) = 1 ∧ 行0(r) = l ∧ (∀ 
 ```
 `one N M'` の場合、左は同じ仮定を継ぎ、右（M', レベル l+1）は 1 の列の位置を r として
 `Or.inr` を作る。`two2` の場合は左枝が `False` で潰れ、右枝で `not_le1_two` を使う。
+
+## 続き81（two2 実装完了・行374 到達。375/376 は「2 の記録の junk」が要る）
+
+続き80 の設計どおり実装して緑。追加/変更したもの:
+```
+Jk1.two2 N          jk1 l (two2 N) = jk1 l N ++ [(l+1,2,0)]
+JkJ / JkOk          junk レベル / 字の先頭段（JkOk (one N M) = JkOk N ∧ JkJ M）
+CtxJ / CtxOk / CtxX 文脈の述語（CtxX ctx X: ctx=[] なら JkOk X、それ以外は JkJ X）
+Grd M p q0 l        p と q0 の間に高さ l の 1 の列があり、その右は高さ ≥ l+1
+not_le1_two         1 の列の右の 2 の記録は行 1 の子孫にならない
+not_le1_jk1         仮定を JkOk N ∨ (JkJ N ∧ Grd M p q0 l) の選言に
+stairJ / APd_stair  階段の木は全深さで項として継げる
+Mtw_stair           Mtw Y0 [(l+1,1,0)] n = Y0 ++ jk1 l (stairJ n)
+GCtx_split          GCtx k ctx → ∃ ctx0 V, ctx = ctx0 ++ [V] ∧ GOK (plug ctx0 V)
+APd_two2 k          2 の記録は全深さで項として継げる（塔が階段の木なので循環しない）
+R374_mem            R344 (4,2,0)(4,2,0)  = psi(W_w*psi_1(W_2*2))   ← hang2rec (M' = two2 nil)
+```
+`WOk` は `JkOk` のままなので、質量計算（`rise_wordJ` / `oper_z1wJ` / `z1wJ_mem`）は
+一行も変えずに済んだ。付け回しは約 35 の宣言。
+
+### 行 375 / 376 は `two2` では届かない（bms で確認）
+```
+374[n]: bad part (3,1,0)(4,2,0), delta 1 → (4,1,0)(5,2,0)(5,1,0)(6,2,0)…  ← Mtw（実装済）
+375[n]: bad part (3,1,0)(4,2,0), delta 2 → (5,1,0)(6,2,0)(7,1,0)(8,2,0)…
+376[n]: bad part (4,2,0),        delta 1 → (5,2,0)(6,2,0)(7,2,0)…
+```
+375 の塔 `(4,2,0)(5,1,0)(6,2,0)(7,1,0)(8,2,0)` を木として読むと
+```
+(4,2,0) は高さ 4 の「記録」で、その junk が高さ ≥ 5
+  (5,1,0) 1 の列、その junk が高さ ≥ 6
+    (6,2,0) また記録、その junk が高さ ≥ 7 …
+```
+つまり **2 の記録が自分の junk を持つ**（`two2` は junk を持てない）。要る構成子は
+```
+| two : Jk1 → Jk1 → Jk1     jk1 l (two N M) = jk1 l N ++ ((l+1,2,0) :: jk1 (l+1) M)
+```
+で、`two2 N = two N nil`。`one` と完全に平行な形。
+
+そして `APd k (two N M)` は `snocY_mem`（2 の記録が最後）では出ない。
+2 の記録の右に junk が続くので、**2 の記録を「記録」として扱う閉包**
+（`GoodFb.pk` = `JkGU c (J (c+1) 2)` の木版）が要る。
+376 の塔は `R373 ++ [(5,2,0),(6,2,0),…]` で、その最初の段が 375 なので 375 が先。
+
+### 次にやること
+1. `RunG` / `Iface` / `PkGA` を読み、`snocY_mem` で作った 2 の記録の位置に
+   `RunG` 型のインターフェースが立つかを確かめる（立てば `pk` がそのまま使える）
+2. 立たないなら、木の junk 用に `JkGU` 相当を作る

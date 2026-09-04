@@ -19725,5 +19725,12 @@ theorem R373_mem' : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms hang2rec
 
+/-- ★★★★★ シート行374 `R344 (4,2,0)(4,2,0) = psi(W_w*psi_1(W_2*2))`。 -/
+theorem R374_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := hang2rec (h := 0) (LwA_of_Aok Aok_R338) (M' := Jk1.two2 Jk1.nil) rfl
+  simpa [R344, R341, jk1, List.append_assoc] using h
+
+#print axioms R374_mem
+
 end Small
 end TRIO
