@@ -1870,3 +1870,18 @@ DOk (n+1) D := D の各 fotw フレームの木が AllG n
 3. `DOk n` / `AllG n` を定義し、`DOk` の 1 本足し補題を作る
 4. `AYt`（2 の記録の上の荷）と `APd_rep2` を書く
 5. 行375（`snocYd_mem`, dl = 2）、行376
+
+### 続き88 追記: 質量計算を一般の `rep2 T m` に拡張（緑）
+```
+JkA : 質量計算用の一般述語（rep2 の本数・junk に制限なし）
+      nil→True | pay N Y→JkA N ∧ Bok Y | one N M→JkA N ∧ JkA M | rep2 T _→JkA T ∧ TopOk T
+Grd M p q0 l = ∃ r v, p < r < q0 ∧ 行1(r)=1 ∧ 行0(r)=v ∧ v ≤ l ∧ (∀ j, r<j<q0 → v+1 ≤ 行0(j))
+not_le1_jk1 : (JkOk N ∨ (JkA N ∧ Grd M p q0 l)) → …    ← rep2 T m を一般に扱える
+jk1_mono も JkA に
+```
+`rep2 T (m+1)` の場合は `jk1 l (rep2 T (m+1)) = jk1 l (rep2 T m) ++ ((l+1,2,0) :: jk1 (l+1) T)`
+で 3 つに割り、`sizeOf N` の整礎再帰（`termination_by`）で回した。
+`rep2 T m` は `sizeOf` が真に小さいので通る。
+
+**これで「木の言語」側は一般の 2 の記録に対応できた。**
+残るのは `APd` 側（2 の記録の上に junk を継ぐ）。
