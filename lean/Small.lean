@@ -17788,5 +17788,302 @@ theorem z1wJ_mem {Y0 : TrioSeq} {a b : ℕ} (hb : 1 ≤ b) {ws : List Jk1} (hw :
 
 #print axioms z1wJ_mem
 
+
+/-! ### 木の字の語の普遍性の骨組み -/
+
+theorem colJ_nil (a b : ℕ) : colJ a b Jk1.nil = [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] := rfl
+
+theorem GoodFb_of_keyJ {ws : List Jk1} (hw : WOk ws)
+    {new : ℕ → List Jk1}
+    (hnew : ∀ n, 1 ≤ n → GoodFb (fun a b => wordJ a b (new n)))
+    (key : ∀ (Z : TrioSeq) (a b : ℕ), 1 ≤ b →
+      (∀ n, 1 ≤ n → Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b (new n)) ∈ W 0) →
+      Z ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws) ∈ W 0) :
+    GoodFb (fun a b => wordJ a b ws) where
+  ge := fun a b => wordJ_ge a b ws
+  mono := fun a b => wordJ_mono hw
+  shift := fun a b s => wordJ_shift a b s ws
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) ws x hx; omega, wordJ_mono hw, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift]
+    have h := key Z (c + 1 + t) (y + 1) (by omega) (fun n hn => by
+      have hP : PU y (c + 1 + t) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (c + 1 + t) (y + 1) (new n))) :=
+        ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hnew n hn).pu y (c + t) hy⟩
+      simpa using ((BaseOk_PU y).aok _ _ hP).mem)
+    simpa using h
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 ws x hx; omega, wordJ_mono hw, ?_⟩
+    intro j t X hX
+    rw [wordJ_shift]
+    have h := key X (c + 1 + t) 2 (by omega) (fun n hn => by
+      have hP : PkGA (c + 1 + t) (X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (c + 1 + t) 2 (new n))) :=
+        ⟨E, hI, j, c + t, X, _, by omega, hX, by rw [show c + t + 1 = c + 1 + t from by omega],
+          (hnew n hn).pk (c + t)⟩
+      simpa using (PkGA_Aok hP).mem)
+    simpa using h
+  seg := by
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 ws) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hw
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 ws
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1) 1 ws from rfl,
+      shiftr01_append0, shift_col, wordJ_shift]
+    have hk := key A' (h + 1 + s) 1 (by omega) (fun n hn => by
+      have hR : RunA 0 (h + s + 1) (A' ++ (((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordJ (h + s + 1) 1 (new n))) :=
+        ⟨h + s, A', _, rfl, rfl, ⟨P, hP, hA'⟩, (hnew n hn).seg (h + s)⟩
+      have := ((BaseOk_RunA 0).aok _ _ hR).mem
+      simpa [show h + s + 1 = h + 1 + s from by omega] using this)
+    simpa using hk
+
+/-- 木の字の語はすべて空なら junk も空。 -/
+theorem GoodFb_wordJ_nil : GoodFb (fun a b => wordJ a b []) :=
+  ⟨fun a b => by simp [wordJ_nil], fun a b => by simp [wordJ_nil, Mono],
+    fun a b s => by simp [wordJ_nil, shiftr01],
+    fun y c hy => by simpa [wordJ_nil] using JkU_nil' hy c,
+    fun c => by simpa [wordJ_nil] using JkGU_nil c,
+    fun h => by simpa [wordJ_nil] using SegA_one h⟩
+
+/-- 場合 (iv): 語の最後に裸の z を継ぐ。 -/
+theorem GoodFb_snoczJ {ws : List Jk1} (hw : WOk ws)
+    (hG : GoodFb (fun a b => wordJ a b ws)) :
+    GoodFb (fun a b => wordJ a b (ws ++ [Jk1.nil])) where
+  ge := fun a b => wordJ_ge a b _
+  mono := fun a b => wordJ_mono (WOk_append hw (WOk_singleton JkOk_nil))
+  shift := fun a b s => wordJ_shift a b s _
+  pu := by
+    intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega,
+      wordJ_mono (WOk_append hw (WOk_singleton JkOk_nil)), ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_append, wordJ_singleton, colJ_nil]
+    have h := z1wJ_mem (Y0 := Z) (a := c + 1 + t) (b := y + 1) (by omega) hw
+      (fun n => by
+        have := Dzf_W hG hy hE (c := c + t) (by simpa using hZ) n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    simpa [List.append_assoc] using h
+  pk := by
+    intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega,
+      wordJ_mono (WOk_append hw (WOk_singleton JkOk_nil)), ?_⟩
+    intro j t X hX
+    rw [wordJ_shift, wordJ_append, wordJ_singleton, colJ_nil]
+    have h := z1wJ_mem (Y0 := X) (a := c + 1 + t) (b := 2) (by omega) hw
+      (fun n => by
+        have := Dzf_W_RunG hG hI (c := c + t) hX n
+        simpa [show c + t + 1 = c + 1 + t from by omega] using this)
+    simpa [List.append_assoc] using h
+  seg := by
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 (ws ++ [Jk1.nil])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega)
+        (ws := ws ++ [Jk1.nil]) (WOk_append hw (WOk_singleton JkOk_nil))
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 (ws ++ [Jk1.nil])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1) 1 (ws ++ [Jk1.nil]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_append, wordJ_singleton, colJ_nil]
+    have hz := z1wJ_mem (Y0 := A') (a := h + 1 + s) (b := 1) (by omega) hw
+      (fun n => by
+        have := Dzf_W_LwA hG (h := h + s) ⟨P, hP, hA'⟩ n
+        simpa [show h + s + 1 = h + 1 + s from by omega] using this)
+    simpa [List.append_assoc] using hz
+
+#print axioms GoodFb_snoczJ
+
+
+/-! ### 木の字を語に継げる: `GOK` -/
+
+/-- 木 `T` は、どの良い語の右にも字として継げる。 -/
+def GOK (T : Jk1) : Prop :=
+  ∀ ws : List Jk1, WOk ws → GoodFb (fun a b => wordJ a b ws) →
+    GoodFb (fun a b => wordJ a b (ws ++ [T]))
+
+theorem colJ_pay (a b : ℕ) (Z : Jk1) (B : TrioSeq) :
+    colJ a b (Jk1.pay Z B) = colJ a b Z ++ shiftr01 (a + 2) 0 B := rfl
+
+theorem colJ_pay_nil (a b : ℕ) (Z : Jk1) : colJ a b (Jk1.pay Z []) = colJ a b Z := by
+  simp [colJ_pay, shiftr01]
+
+theorem colJ_snoc_zero (a b : ℕ) (Z : Jk1) (Y : TrioSeq) :
+    colJ a b (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+      = colJ a b (Jk1.pay Z Y) ++ [((a + 2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  rw [colJ_pay, colJ_pay, shiftr01_append0, ← List.append_assoc]
+  simp [shiftr01]
+
+theorem entry_colJ_ge (a b : ℕ) (N : Jk1) : ∀ r, 1 ≤ r → r < (colJ a b N).length →
+    a + 2 ≤ entry (colJ a b N) 0 r := by
+  intro r hr1 hrl
+  obtain ⟨u, rfl⟩ : ∃ u, r = u + 1 := ⟨r - 1, by omega⟩
+  rw [colJ_length] at hrl
+  rw [show colJ a b N = ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + 1) N from rfl,
+    entry_cons_succ]
+  have := entry0_of_ge (jk1_ge N (a + 1)) u (by omega)
+  omega
+
+theorem wordJ_replicate (a b : ℕ) (N : Jk1) : ∀ n : ℕ,
+    wordJ a b (List.replicate n N) = (List.range n).flatMap fun _ => colJ a b N
+  | 0 => by simp [wordJ]
+  | (n + 1) => by
+      rw [List.replicate_succ, wordJ_cons, wordJ_replicate a b N n, List.range_succ_eq_map,
+        List.flatMap_cons]
+      simp [List.flatMap_map]
+
+/-- 語の右に同じ字を `n` 個継ぐ。 -/
+theorem GoodFb_repJ {ws : List Jk1} (hw : WOk ws) {N : Jk1} (hN : JkOk N)
+    (hstep : ∀ ws' : List Jk1, WOk ws' → GoodFb (fun a b => wordJ a b ws') →
+      GoodFb (fun a b => wordJ a b (ws' ++ [N])))
+    (hG : GoodFb (fun a b => wordJ a b ws)) :
+    ∀ n : ℕ, GoodFb (fun a b => wordJ a b (ws ++ List.replicate n N))
+  | 0 => by simpa using hG
+  | (n + 1) => by
+      have hwn : WOk (ws ++ List.replicate n N) := WOk_append hw (WOk_replicate hN n)
+      have h := hstep (ws ++ List.replicate n N) hwn (GoodFb_repJ hw hN hstep hG n)
+      have e : ws ++ List.replicate n N ++ [N] = ws ++ List.replicate (n + 1) N := by
+        rw [List.append_assoc, ← List.replicate_succ']
+      rwa [e] at h
+
+/-- 場合 (i): 荷の末尾が非零。 -/
+theorem GoodFb_snoc_innerJ {ws : List Jk1} (hw : WOk ws) {Z : Jk1} (hZ : JkOk Z) {Y : TrioSeq}
+    (hY : Bok Y) (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hIH : ∀ n, 1 ≤ n → GoodFb (fun a b => wordJ a b (ws ++ [Jk1.pay Z (Y⟦n⟧)]))) :
+    GoodFb (fun a b => wordJ a b (ws ++ [Jk1.pay Z Y])) := by
+  refine GoodFb_of_keyJ (WOk_append hw (WOk_singleton ⟨hZ, hY⟩)) hIH ?_
+  intro Z0 a b hb hn
+  have e : ∀ B : TrioSeq, Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b (ws ++ [Jk1.pay Z B]))
+      = (Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b (ws ++ [Z]))) ++ shiftr01 (a + 2) 0 B := by
+    intro B
+    rw [wordJ_append, wordJ_singleton, colJ_pay, wordJ_append, wordJ_singleton]
+    simp [List.append_assoc]
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n hn'
+  rw [e Y, oper_shift _ Y (a + 2) n hlen hp, ← e (Y⟦n⟧)]
+  exact hn n hn'
+
+/-- 場合 (ii): 荷の末尾が `(0,0,0)` なら、字が `n` 個に複製される。 -/
+theorem GoodFb_snoc_dupJ {ws : List Jk1} (hw : WOk ws) {Z : Jk1} (hZ : JkOk Z) {Y : TrioSeq}
+    (hY : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) (hY' : Bok Y)
+    (hIH : ∀ n, 1 ≤ n →
+      GoodFb (fun a b => wordJ a b (ws ++ List.replicate n (Jk1.pay Z Y)))) :
+    GoodFb (fun a b => wordJ a b (ws ++ [Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])])) := by
+  refine GoodFb_of_keyJ (WOk_append hw (WOk_singleton ⟨hZ, hY⟩)) hIH ?_
+  intro Z0 a b hb hn
+  have hhead : entry (colJ a b (Jk1.pay Z Y)) 0 0 < a + 2 := by
+    show entry (((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: _) 0 0 < a + 2
+    simp [entry]
+  have h := flat_mem'' (Y0 := Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws))
+    (M := colJ a b (Jk1.pay Z Y)) (d := a + 2) (colJ_ne a b _) hhead
+    (entry_colJ_ge a b (Jk1.pay Z Y))
+    (fun n => by
+      match n with
+      | 0 =>
+          have h1 := hn 1 (le_refl 1)
+          rw [wordJ_append, wordJ_replicate] at h1
+          simp only [List.range_one, List.flatMap_cons, List.flatMap_nil,
+            List.append_nil] at h1
+          have h2 := W_take (by
+            rw [show Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: (wordJ a b ws ++ colJ a b (Jk1.pay Z Y)))
+                = (Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws)) ++ colJ a b (Jk1.pay Z Y) from by
+                  simp [List.append_assoc]] at h1
+            exact h1) (Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: wordJ a b ws)).length
+          rw [List.take_left] at h2
+          simpa using h2
+      | (n + 1) =>
+          have h1 := hn (n + 1) (by omega)
+          rw [wordJ_append, wordJ_replicate] at h1
+          simpa [List.append_assoc] using h1)
+  rw [wordJ_append, wordJ_singleton, colJ_snoc_zero]
+  simpa [List.append_assoc] using h
+
+#print axioms GoodFb_snoc_dupJ
+
+
+theorem GOK_pay_nil {Z : Jk1} (h : GOK Z) : GOK (Jk1.pay Z []) := by
+  intro ws hw hG
+  have efun : (fun a b => wordJ a b (ws ++ [Jk1.pay Z []]))
+      = (fun a b => wordJ a b (ws ++ [Z])) := by
+    funext a b
+    rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ_pay_nil]
+  rw [efun]
+  exact h ws hw hG
+
+/-- ★★★ 深さ 0（字の直下）に荷を継いでも良い。 -/
+theorem AY0 : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkOk Z → GOK Z → GOK (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkOk Z → GOK Z → GOK (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb Z hZ hGZ ws hw hG
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact GOK_pay_nil hGZ ws hw hG
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        refine GoodFb_snoc_dupJ hw hZ (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact GoodFb_repJ hw (N := Jk1.pay Z ([] : TrioSeq)) ⟨hZ, Bok_nil⟩
+          (fun ws' hw' hG' => GOK_pay_nil hGZ ws' hw' hG') hG n
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hc; rw [hc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        rw [hsplit]
+        refine GoodFb_snoc_dupJ hw hZ (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact GoodFb_repJ hw (N := Jk1.pay Z Y.dropLast) ⟨hZ, hdb⟩
+          (fun ws' hw' hG' => hdl hdb Z hZ hGZ ws' hw' hG') hG n
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        refine GoodFb_snoc_innerJ hw hZ hYb hlen2 hp ?_
+        intro n hn
+        have := hnat n hn
+        simp only [Set.mem_setOf_eq] at this
+        exact this (Bok_oper hYb hn) Z hZ hGZ ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb Z hZ hGZ
+  exact key hYb.mem hYb Z hZ hGZ
+
+#print axioms AY0
+
 end Small
 end TRIO
