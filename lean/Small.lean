@@ -20710,12 +20710,56 @@ theorem R373_mem' : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms hang2rec
 
+/-- ★ `hangU11two` の 2 の記録版: `(h+4,2,0)` の**上に**荷を吊るす。
+2 の記録の直上が荷（`Bok B`）なら今の `JkJ` で許されている。 -/
+theorem hangU11rec {h : ℕ} {A : TrioSeq} (hA : LwA h A) {B : TrioSeq} (hB : Bok B) :
+    A ++ ([((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ),
+      ((h + 3, 1, 0) : ℕ × ℕ × ℕ), ((h + 4, 2, 0) : ℕ × ℕ × ℕ)] ++
+      shiftr01 (h + 5) 0 B) ∈ W 0 := by
+  obtain ⟨P, hP, hL⟩ := hA
+  have hT : JkOk (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))) :=
+    ⟨trivial, trivial, trivial, hB⟩
+  have hG := GOK_all _ hT [] WOk_nil GoodFb_wordJ_nil
+  have h1 := (hG.seg h).reapp P hP 0 A (by simpa using hL)
+  simpa [wordJ, colJ, jk1, shiftr01_zero, List.append_assoc,
+    show h + 1 + 1 = h + 2 from by omega, show h + 1 + 1 + 1 = h + 3 from by omega,
+    show h + 1 + 1 + 1 + 1 = h + 4 from by omega,
+    show h + 1 + 1 + 1 + 1 + 1 = h + 5 from by omega] using h1
+
 /-- ★★★★★ シート行374 `R344 (4,2,0)(4,2,0) = psi(W_w*psi_1(W_2*2))`。 -/
 theorem R374_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   have h := hang2rec (h := 0) (LwA_of_Aok Aok_R338) (M' := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
   simpa [R344, R341, jk1, List.append_assoc] using h
 
 #print axioms R374_mem
+
+/-! ### 行374 と行375 の間: `R344 (4,2,0)(5,1,0)`
+2 の記録 `(4,2,0)` の上に荷を吊るせる（`hangU11rec`）ので、
+`snocd_gen (d = 5)` で 1 の列 `(5,1,0)` が 1 本だけ乗る。 -/
+
+def R373 : TrioSeq := R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_col42 : MidD 5 [((4, 2, 0) : ℕ × ℕ × ℕ)] := MidD_col 4 2 (by omega) (by omega)
+
+theorem Aok_R373 : Aok R373 :=
+  Aok_append_Mid (d := 5) (by omega) Aok_R344 MidD_col42 R373_mem
+
+theorem R373_row1 : ∀ j, 0 < j → j < R373.length → 1 ≤ entry R373 1 j := by
+  intro j hj0 hjl
+  simp only [R373, R344, R341, R338, List.length_append, List.length_cons,
+    List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl <;> simp [R373, R344, R341, R338, entry]
+
+/-- ★★★★ `R344 (4,2,0)(5,1,0)`（シート行374 と行375 の間）。 -/
+theorem R373a_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocd_gen (Y := R373) (d := 5) (by omega) Aok_R373 (Ancd_of_row1 R373_row1 5) ?_
+  · simpa [R373, List.append_assoc] using h
+  · intro B hB
+    have h2 := hangU11rec (h := 0) (LwA_of_Aok Aok_R338) hB
+    simpa [R373, R344, R341, List.append_assoc] using h2
+
+#print axioms R373a_mem
 
 /-! ### 行 1 の 1 を 2 に置き換える（`sub21`）
 
