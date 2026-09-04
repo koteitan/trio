@@ -17342,5 +17342,233 @@ theorem Ancd_append_low {d l : ℕ} {X B : TrioSeq} (hX : Ancd d X)
 
 #print axioms Ancd_append_low
 
+
+/-! ### 木の字と語 -/
+
+/-- 木の字: z の列 `(a+1,b+1,1)` とその junk（レベル `a+1`）。 -/
+def colJ (a b : ℕ) (N : Jk1) : TrioSeq := ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + 1) N
+
+/-- 木の字の語。 -/
+def wordJ (a b : ℕ) (ws : List Jk1) : TrioSeq := ws.flatMap (colJ a b)
+
+/-- 語の各字の荷はすべて `Bok`。 -/
+def WOk (ws : List Jk1) : Prop := ∀ N ∈ ws, JkOk N
+
+theorem WOk_nil : WOk [] := fun _ h => by simp at h
+
+theorem WOk_append {ws1 ws2 : List Jk1} (h1 : WOk ws1) (h2 : WOk ws2) : WOk (ws1 ++ ws2) := by
+  intro N hN
+  rcases List.mem_append.mp hN with h | h
+  · exact h1 N h
+  · exact h2 N h
+
+theorem WOk_of_append_left {ws1 ws2 : List Jk1} (h : WOk (ws1 ++ ws2)) : WOk ws1 :=
+  fun N hN => h N (List.mem_append_left _ hN)
+
+theorem WOk_singleton {N : Jk1} (hN : JkOk N) : WOk [N] := by
+  intro M hM
+  simp only [List.mem_singleton] at hM
+  subst hM; exact hN
+
+theorem WOk_replicate {N : Jk1} (hN : JkOk N) (n : ℕ) : WOk (List.replicate n N) := by
+  intro M hM
+  rw [List.eq_of_mem_replicate hM]; exact hN
+
+/-- 背骨の文脈: 外側から内側へ並べた木の列。 -/
+def plug : List Jk1 → Jk1 → Jk1
+  | [], T => T
+  | (N :: rest), T => Jk1.one N (plug rest T)
+
+theorem plug_nil (T : Jk1) : plug [] T = T := rfl
+
+theorem plug_snoc : ∀ (ctx : List Jk1) (X T : Jk1), plug (ctx ++ [X]) T = plug ctx (Jk1.one X T)
+  | [], X, T => rfl
+  | (N :: rest), X, T => by
+      show Jk1.one N (plug (rest ++ [X]) T) = Jk1.one N (plug rest (Jk1.one X T))
+      rw [plug_snoc rest X T]
+
+/-- 文脈がすべて妥当なら、埋めた木も妥当。 -/
+def CtxOk : List Jk1 → Prop
+  | [] => True
+  | (N :: rest) => JkOk N ∧ CtxOk rest
+
+theorem JkOk_plug : ∀ (ctx : List Jk1), CtxOk ctx → ∀ T : Jk1, JkOk T → JkOk (plug ctx T)
+  | [], _, T, hT => hT
+  | (N :: rest), hc, T, hT => ⟨hc.1, JkOk_plug rest hc.2 T hT⟩
+
+theorem CtxOk_snoc : ∀ (ctx : List Jk1), CtxOk ctx → ∀ X : Jk1, JkOk X → CtxOk (ctx ++ [X])
+  | [], _, X, hX => ⟨hX, trivial⟩
+  | (N :: rest), hc, X, hX => ⟨hc.1, CtxOk_snoc rest hc.2 X hX⟩
+
+/-! ### 字と語の基本補題 -/
+
+theorem colJ_shift (a b s : ℕ) (N : Jk1) : shiftr01 s 0 (colJ a b N) = colJ (a + s) b N := by
+  rw [colJ, show ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + 1) N
+      = [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)] ++ jk1 (a + 1) N from rfl,
+    shiftr01_append0, shift_zcol, jk1_shift N (a + 1) s,
+    show a + 1 + s = a + s + 1 from by omega]
+  rfl
+
+theorem wordJ_shift (a b s : ℕ) (ws : List Jk1) :
+    shiftr01 s 0 (wordJ a b ws) = wordJ (a + s) b ws := by
+  induction ws with
+  | nil => simp [wordJ, shiftr01]
+  | cons N ws ih =>
+      simp only [wordJ, List.flatMap_cons] at *
+      rw [shiftr01_append0, colJ_shift, ih]
+
+theorem colJ_ge (a b : ℕ) (N : Jk1) : ∀ x ∈ colJ a b N, a + 1 ≤ x.1 := by
+  intro x hx
+  simp only [colJ, List.mem_cons] at hx
+  rcases hx with rfl | h
+  · exact le_refl _
+  · have := jk1_ge N (a + 1) x h; omega
+
+theorem wordJ_ge (a b : ℕ) (ws : List Jk1) : ∀ x ∈ wordJ a b ws, a + 1 ≤ x.1 := by
+  intro x hx
+  simp only [wordJ, List.mem_flatMap] at hx
+  obtain ⟨N, -, hx⟩ := hx
+  exact colJ_ge a b N x hx
+
+theorem colJ_mono {a b : ℕ} {N : Jk1} (hN : JkOk N) : Mono (colJ a b N) := by
+  intro x hx
+  simp only [colJ, List.mem_cons] at hx
+  rcases hx with rfl | h
+  · show 1 ≤ b + 1; omega
+  · exact jk1_mono N hN (a + 1) x h
+
+theorem wordJ_mono {a b : ℕ} {ws : List Jk1} (hw : WOk ws) : Mono (wordJ a b ws) := by
+  intro x hx
+  simp only [wordJ, List.mem_flatMap] at hx
+  obtain ⟨N, hN, hx⟩ := hx
+  exact colJ_mono (hw N hN) x hx
+
+theorem wordJ_nil (a b : ℕ) : wordJ a b [] = [] := rfl
+
+theorem wordJ_append (a b : ℕ) (ws1 ws2 : List Jk1) :
+    wordJ a b (ws1 ++ ws2) = wordJ a b ws1 ++ wordJ a b ws2 := by simp [wordJ]
+
+theorem wordJ_singleton (a b : ℕ) (N : Jk1) : wordJ a b [N] = colJ a b N := by simp [wordJ]
+
+theorem wordJ_cons (a b : ℕ) (N : Jk1) (ws : List Jk1) :
+    wordJ a b (N :: ws) = colJ a b N ++ wordJ a b ws := by simp [wordJ]
+
+theorem colJ_ne (a b : ℕ) (N : Jk1) : colJ a b N ≠ [] := by simp [colJ]
+
+theorem MidD_wordJ (a v : ℕ) (ha : 1 ≤ a) (hv : 1 ≤ v) {ws : List Jk1} (hw : WOk ws) :
+    MidD (a + 1) (((a, v, 0) : ℕ × ℕ × ℕ) :: wordJ a v ws) := by
+  have h := MidD_append (MidD_col a v ha hv) (N := wordJ a v ws) (wordJ_ge a v ws) (wordJ_mono hw)
+  simpa using h
+
+#print axioms MidD_wordJ
+
+
+/-! ### 木の junk には行 1 の鎖が入れない -/
+
+theorem entry_cons_succ (c : ℕ × ℕ × ℕ) (L : TrioSeq) (r u : ℕ) :
+    entry (c :: L) r (u + 1) = entry L r u := by
+  simp [entry, List.getD_cons_succ]
+
+theorem entry_append_at (A T : TrioSeq) (i : ℕ) : entry (A ++ T) i A.length = entry T i 0 := by
+  simpa using entry_append_right A T i 0
+
+theorem jk1_length_pay (l : ℕ) (N : Jk1) (Y : TrioSeq) :
+    (jk1 l (Jk1.pay N Y)).length = (jk1 l N).length + Y.length := by
+  simp [jk1, shiftr01]
+
+theorem jk1_length_one (l : ℕ) (N M : Jk1) :
+    (jk1 l (Jk1.one N M)).length = (jk1 l N).length + 1 + (jk1 (l + 1) M).length := by
+  simp [jk1]; omega
+
+/-- ★ 記録（行 1 が 1 以上）から、木の junk の列へは行 1 の鎖が届かない。 -/
+theorem not_le1_jk1 : ∀ (N : Jk1), JkOk N → ∀ (M : TrioSeq) (p q0 l : ℕ),
+    1 ≤ entry M 1 p → p < q0 → q0 + (jk1 l N).length ≤ M.length →
+    (∀ (r t : ℕ), t < (jk1 l N).length → entry M r (q0 + t) = entry (jk1 l N) r t) →
+    ∀ t, t < (jk1 l N).length → ¬ le1 M p (q0 + t)
+  | Jk1.nil, _, M, p, q0, l, _, _, _, _ => by simp [jk1]
+  | Jk1.pay N Y, hN, M, p, q0, l, hp1, hpq, hlen, hent => by
+      have hlenp : (jk1 l (Jk1.pay N Y)).length = (jk1 l N).length + Y.length :=
+        jk1_length_pay l N Y
+      have hsplit : jk1 l (Jk1.pay N Y) = jk1 l N ++ shiftr01 (l + 1) 0 Y := rfl
+      intro t ht
+      rcases Nat.lt_or_ge t (jk1 l N).length with htL | htL
+      · refine not_le1_jk1 N hN.1 M p q0 l hp1 hpq (by omega) ?_ t htL
+        intro r u hu
+        have h := hent r u (by omega)
+        rwa [hsplit, entry_append_left (by omega)] at h
+      · obtain ⟨u, hu, rfl⟩ : ∃ u, u < Y.length ∧ t = (jk1 l N).length + u :=
+          ⟨t - (jk1 l N).length, by omega, by omega⟩
+        have hY : Bok Y := hN.2
+        have eblk : ∀ r u', u' < Y.length →
+            entry M r (q0 + ((jk1 l N).length + u'))
+              = entry (shiftr01 (l + 1) 0 Y) r u' := by
+          intro r u' hu'
+          have h := hent r ((jk1 l N).length + u') (by omega)
+          rwa [hsplit, entry_append_right] at h
+        have eblk' : ∀ r u', u' < Y.length →
+            entry M r (q0 + (jk1 l N).length + u')
+              = entry (shiftr01 (l + 1) 0 Y) r u' := by
+          intro r u' hu'
+          rw [show q0 + (jk1 l N).length + u' = q0 + ((jk1 l N).length + u') from by omega]
+          exact eblk r u' hu'
+        have hroot := block_root (M := M) (s := q0 + (jk1 l N).length)
+          (e := q0 + (jk1 l N).length + Y.length) (d := l + 1) (by omega)
+          (by have h := eblk' 0 0 (by omega)
+              rw [Nat.add_zero] at h
+              rw [h, entry0_shiftr01 (by omega : 0 < Y.length), hY.root]
+              omega)
+          (by intro j hj1 hj2
+              obtain ⟨u', hu', rfl⟩ : ∃ u', u' < Y.length ∧ j = q0 + (jk1 l N).length + u' :=
+                ⟨j - (q0 + (jk1 l N).length), by omega, by omega⟩
+              rw [eblk' 0 u' hu', entry0_shiftr01 hu']; omega)
+          (by intro j hj1 hj2 hd
+              obtain ⟨u', hu', rfl⟩ : ∃ u', u' < Y.length ∧ j = q0 + (jk1 l N).length + u' :=
+                ⟨j - (q0 + (jk1 l N).length), by omega, by omega⟩
+              rw [eblk' 0 u' hu', entry0_shiftr01 hu'] at hd
+              rw [eblk' 1 u' hu', entry1_shiftr01]
+              exact (Zroot_entry hY.zroot (by omega)).1)
+        intro hle
+        have hle' : le1 M p (q0 + (jk1 l N).length + u) := by
+          rwa [show q0 + (jk1 l N).length + u = q0 + ((jk1 l N).length + u) from by omega]
+        have := le1_lower_bound hroot p (q0 + (jk1 l N).length + u) hle' (by omega) (by omega)
+        omega
+  | Jk1.one N M', hN, M, p, q0, l, hp1, hpq, hlen, hent => by
+      have hlenp : (jk1 l (Jk1.one N M')).length
+          = (jk1 l N).length + 1 + (jk1 (l + 1) M').length := jk1_length_one l N M'
+      have hsplit : jk1 l (Jk1.one N M')
+          = jk1 l N ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M') := rfl
+      intro t ht
+      rcases Nat.lt_or_ge t (jk1 l N).length with htL | htL
+      · refine not_le1_jk1 N hN.1 M p q0 l hp1 hpq (by omega) ?_ t htL
+        intro r u hu
+        have h := hent r u (by omega)
+        rwa [hsplit, entry_append_left (by omega)] at h
+      rcases Nat.lt_or_ge t ((jk1 l N).length + 1) with htL1 | htL1
+      · have ht0 : t = (jk1 l N).length := by omega
+        subst ht0
+        have e1 : entry M 1 (q0 + (jk1 l N).length) = 1 := by
+          have h := hent 1 (jk1 l N).length (by omega)
+          rw [hsplit, entry_append_at] at h
+          rw [h]; simp [entry]
+        intro hle
+        have := le1_row1_lt hle (by omega)
+        rw [e1] at this
+        omega
+      · obtain ⟨u, hu, rfl⟩ : ∃ u, u < (jk1 (l + 1) M').length ∧ t = (jk1 l N).length + 1 + u :=
+          ⟨t - ((jk1 l N).length + 1), by omega, by omega⟩
+        have hsub : ∀ (r u' : ℕ), u' < (jk1 (l + 1) M').length →
+            entry M r (q0 + (jk1 l N).length + 1 + u') = entry (jk1 (l + 1) M') r u' := by
+          intro r u' hu'
+          have h := hent r ((jk1 l N).length + (u' + 1)) (by omega)
+          rw [hsplit, entry_append_right, entry_cons_succ] at h
+          rw [show q0 + (jk1 l N).length + 1 + u' = q0 + ((jk1 l N).length + (u' + 1)) from
+            by omega]
+          exact h
+        have hres := not_le1_jk1 M' hN.2 M p (q0 + (jk1 l N).length + 1) (l + 1) hp1
+          (by omega) (by omega) hsub u hu
+        rwa [show q0 + ((jk1 l N).length + 1 + u) = q0 + (jk1 l N).length + 1 + u from by omega]
+
+#print axioms not_le1_jk1
+
 end Small
 end TRIO
