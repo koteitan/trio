@@ -1655,3 +1655,50 @@ APd (false :: ks) V = ∀ U, Hdf ks U → APd ks U →
                       ∀ N, JkJ N → APd (true :: ks) N → APd ks (one U (two N V))
 ```
 とするのが正しい形。
+
+## 続き85（フレーム化の構造的な壁: 「無限深さ」の要求）
+
+`Frm.fotw U N`（木 2 つ）まで実装し、エラー 4 個まで来たが、
+そのうち 1 個が**構造的な壁**であることが判明した。記録しておく。
+
+### 壁の中身
+```
+APd (false :: ks) V = ∀ U, Hdf ks U → APd ks U →
+                      ∀ W, JkJ W → APd (true :: ks) W → APd ks (one U (two W V))
+```
+と定義したとき、`V = nil` の場合（= 裸の 2 の記録を継ぐ）の証明が
+```
+snocY_mem: Y0 = …colJ (plug ctx U),  M = (a+p+2,1,0) :: jk1 (a+p+2) W
+塔 Mtw Y0 M n = Y0 ++ jk1 (a+p+1) (twr W n)
+             = …colJ a b (plug (ctx ++ [fone U] ++ replicate (n-1) (fone W)) W)
+```
+となり、**`W` を任意の深さ `replicate j true ++ true :: ks` で `APd` する**必要がある。
+仮定は `APd (true :: ks) W`（深さ 1 つ）しかないので出ない。
+
+`W = nil` なら `APd_nil` が全深さで使えるので出る（これが今の `APd_twoNil`）。
+`W ≠ nil` が要るのは `AYt`（2 の記録の直上への荷吊るし）の
+`dupJt` の塔（2 の記録が同じ高さに `n` 個並ぶ）だけ。
+
+### なぜ強められないか
+「全深さ」を `APd` の定義に入れると
+`APd (false :: ks) V = … ∀ W, (∀ ks', Hdf ks' W → APd ks' W) → …`
+となり、`APd ks' W` の `ks'` が任意なので構造帰納が壊れる。
+`APd` を帰納的述語にしようとしても `APd ks U →` が負の位置に出るので
+正値性が壊れる。
+
+### 次にやるべきこと（設計をやり直す）
+`APd` の「深さ」を添字にする現在の枠組みでは、
+「木 `W` を任意の深さで使う」が表現できない。
+候補は次の 2 つ:
+1. `APd_all` を**木の構造帰納 + 文脈の帰納の同時帰納**として直接書く
+   （`GOKd W = ∀ ctx, (ctx の木がすべて GOKd) → GOK (plug ctx W)` を
+    Scott の最小不動点 or `W 0` と同じ `A2'` 型の帰納で取る）
+2. `two` の左兄弟の連なりを**専用の構成子** `rep2 T n`（2 の記録 + junk T を n 個）に
+   して、`APd (true::ks) (rep2 T n)` を n の帰納で直接作る
+   （各段の `hstep` は `APd (false::ks) T` から出るので深さは増えない）
+
+**2 のほうが有望**。`rep2 T n` は `dupJt` の塔にしか出ないので、
+`two N M` の左兄弟は `nil` に固定したままでよい。
+
+WIP（`Frm.fotw U N` 版、エラー 4 個）は `lean/Small.frm.wip`。
+`Small.lean` は行374 まで緑。
