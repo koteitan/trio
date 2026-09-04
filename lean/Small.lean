@@ -19002,5 +19002,182 @@ theorem R372_mem : R371 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R372_mem
 
+
+/-! ### 任意の深さ: `APd k`（深さ `k` で項として継げる）と文脈への言い換え -/
+
+/-- 深さ `k` で「1 の列 + junk `V`」として継げる。`APd 0 = APz`。 -/
+def APd : ℕ → Jk1 → Prop
+  | 0, V => ∀ U : Jk1, JkOk U → GOK U → GOK (Jk1.one U V)
+  | (k + 1), V => ∀ U : Jk1, JkOk U → APd k U → APd k (Jk1.one U V)
+
+theorem APd_zero (V : Jk1) : APd 0 V ↔ APz V := Iff.rfl
+
+/-- 深さ `k` の良い文脈。 -/
+def GCtx : ℕ → List Jk1 → Prop
+  | 0, ctx => ∃ U : Jk1, ctx = [U] ∧ JkOk U ∧ GOK U
+  | (k + 1), ctx => ∃ (ctx' : List Jk1) (U : Jk1), ctx = ctx' ++ [U] ∧ GCtx k ctx' ∧
+      JkOk U ∧ APd k U
+
+theorem GCtx_CtxOk : ∀ (k : ℕ) (ctx : List Jk1), GCtx k ctx → CtxOk ctx
+  | 0, ctx, h => by
+      obtain ⟨U, rfl, hU, -⟩ := h
+      exact ⟨hU, trivial⟩
+  | (k + 1), ctx, h => by
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      exact CtxOk_snoc ctx' (GCtx_CtxOk k ctx' hc') U hU
+
+/-- `APd k V` は「深さ `k` のどの良い文脈でも `plug ctx V` が良い」と同値。 -/
+theorem APd_iff : ∀ (k : ℕ) (V : Jk1), APd k V ↔ ∀ ctx : List Jk1, GCtx k ctx → GOK (plug ctx V)
+  | 0, V => by
+      constructor
+      · rintro h ctx ⟨U, rfl, hU, hGU⟩
+        exact h U hU hGU
+      · intro h U hU hGU
+        exact h [U] ⟨U, rfl, hU, hGU⟩
+  | (k + 1), V => by
+      constructor
+      · rintro h ctx ⟨ctx', U, rfl, hc', hU, hUk⟩
+        rw [plug_snoc]
+        exact (APd_iff k (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (APd_iff k (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [U]) ⟨ctx', U, rfl, hc', hU, hUk⟩
+
+#print axioms APd_iff
+
+
+theorem APd_congr : ∀ (k : ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) → APd k V1 → APd k V2 := by
+  intro k V1 V2 h hA
+  rw [APd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+theorem GOK_chainJd {k : ℕ} {ctx : List Jk1} (hc : GCtx k ctx) {X T : Jk1}
+    (hXok : JkOk X) (hXk : APd k X) (hTok : JkOk T)
+    (hstep : ∀ V : Jk1, JkOk V → APd k V → APd k (Jk1.one V T)) :
+    ∀ n, GOK (plug ctx (itJ T n X)) ∧ APd k (itJ T n X)
+  | 0 => ⟨(APd_iff k X).mp hXk ctx hc, hXk⟩
+  | (n + 1) => by
+      obtain ⟨h1, h2⟩ := GOK_chainJd hc hXok hXk hTok hstep n
+      have hok := JkOk_itJ hTok n hXok
+      have h3 := hstep (itJ T n X) hok h2
+      exact ⟨(APd_iff k _).mp h3 ctx hc, h3⟩
+
+/-- ★★★ 任意の深さでの荷追加。`APd (k+1) Z` を仮定に持ち回る。 -/
+theorem AYd : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → APd (k + 1) Z →
+    ∀ (X : Jk1), JkOk X → APd k X → APd k (Jk1.one X (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → APd (k + 1) Z →
+      ∀ (X : Jk1), JkOk X → APd k X → APd k (Jk1.one X (Jk1.pay Z Y))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb k Z hZ hRZ X hX hXk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact APd_congr k (fun l => (jk1_one_pay_nil X Z l).symm) (hRZ X hX hXk)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hpres : ∀ V : Jk1, JkOk V → APd k V → APd k (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
+          fun V hV hVk => APd_congr k (fun l => (jk1_one_pay_nil V Z l).symm) (hRZ V hV hVk)
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e, APd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJs hw (GCtx_CtxOk k ctx hc) hX hZ
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (GOK_chainJd (T := Jk1.pay Z ([] : TrioSeq)) hc hX hXk ⟨hZ, Bok_nil⟩ hpres n).1 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hpres : ∀ V : Jk1, JkOk V → APd k V → APd k (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
+          fun V hV hVk => hdl hdb k Z hZ hRZ V hV hVk
+        rw [hsplit, APd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJs hw (GCtx_CtxOk k ctx hc) hX hZ
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (GOK_chainJd (T := Jk1.pay Z Y.dropLast) hc hX hXk ⟨hZ, hdb⟩ hpres n).1 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        rw [APd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_innerJs hw (GCtx_CtxOk k ctx hc) hX hZ hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact (APd_iff k _).mp (hh (Bok_oper hYb hn) k Z hZ hRZ X hX hXk) ctx hc ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb k Z hZ hRZ X hX hXk
+  exact key hYb.mem hYb k Z hZ hRZ X hX hXk
+
+#print axioms AYd
+
+
+/-! ### `APd` の閉包 → すべての木が普遍 -/
+
+theorem APd_pay : ∀ (k : ℕ) (V : Jk1), JkOk V → APd k V → ∀ C : TrioSeq, Bok C →
+    APd k (Jk1.pay V C)
+  | 0, V, hV, hVk, C, hC => APz_pay hV hVk hC
+  | (k + 1), V, hV, hVk, C, hC => fun U hU hUk => AYd C hC k V hV hVk U hU hUk
+
+theorem APd_oneNil (k : ℕ) (V : Jk1) (hV : JkOk V) (hVk : APd k V) :
+    APd k (Jk1.one V Jk1.nil) := by
+  rw [APd_iff]
+  intro ctx hc
+  refine APnil_gen ctx (GCtx_CtxOk k ctx hc) V hV ((APd_iff k V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (APd_iff k _).mp (APd_pay k V hV hVk C hC) ctx hc
+
+theorem APd_nil : ∀ k : ℕ, APd k Jk1.nil
+  | 0 => APz_nil
+  | (k + 1) => fun U hU hUk => APd_oneNil k U hU hUk
+
+theorem APd_one (k : ℕ) {V W : Jk1} (hV : JkOk V) (hVk : APd k V) (hW : APd (k + 1) W) :
+    APd k (Jk1.one V W) := hW V hV hVk
+
+/-- ★★★★★ どの妥当な木も、どの深さでも項として継げる。 -/
+theorem APd_all : ∀ (T : Jk1), JkOk T → ∀ k : ℕ, APd k T
+  | Jk1.nil, _, k => APd_nil k
+  | Jk1.pay N Y, h, k => APd_pay k N h.1 (APd_all N h.1 k) Y h.2
+  | Jk1.one N M, h, k => APd_one k h.1 (APd_all N h.1 k) (APd_all M h.2 (k + 1))
+
+/-- ★★★★★ どの妥当な木も、字として語の右に継げる（GoodFb 3 段すべて）。 -/
+theorem GOK_all : ∀ (T : Jk1), JkOk T → GOK T
+  | Jk1.nil, _ => GOK_nil
+  | Jk1.pay N Y, h => AY0 Y h.2 N h.1 (GOK_all N h.1)
+  | Jk1.one N M, h => APd_all M h.2 0 N h.1 (GOK_all N h.1)
+
+#print axioms GOK_all
+
 end Small
 end TRIO
