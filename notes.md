@@ -1702,3 +1702,32 @@ snocY_mem: Y0 = …colJ (plug ctx U),  M = (a+p+2,1,0) :: jk1 (a+p+2) W
 
 WIP（`Frm.fotw U N` 版、エラー 4 個）は `lean/Small.frm.wip`。
 `Small.lean` は行374 まで緑。
+
+### 続き85 追記: 壁の正体と、有望な形
+「任意の深さで継げる」は**定理なら `∀ ks` で取れる**（`APd_nilT : ∀ ks, APd (true::ks) nil`、
+`APd_stairT : ∀ m ks, APd ks nil → APd ks (stairJ m)` が実際そう）。
+取れないのは **`APd` の定義の中で ∀ 束縛した木**について。だから
+
+- `APd (false :: ks) V` の中に `∀ W, … → APd ks (one U (two W V))` と書くと詰む
+- 代わりに **定理** `APd_twoW` として外に出せばよい:
+```
+theorem APd_twoW (W : Jk1) (hWall : ∀ ks', Hdf ks' W → APd ks' W) (hJW : JkJ W)
+    (V : Jk1) (hVall : ∀ ks', Hdf ks' V → APd ks' V) (hJV : JkJ V) (hTV : TopOk V) :
+    ∀ ks, APd (true :: ks) (Jk1.two W V)
+```
+`APd_all` の `two N M` の場合では `N` も `M` も部分項なので
+`APd_all N`／`APd_all M`（∀ks 版）がそのまま `hWall`／`hVall` になる ✓
+
+`APd_twoW` の証明（V の構造帰納）:
+- `V = nil`: 塔は `appJ U (twr W k) = one U (one W (one W … W))`。
+  フレームの木がすべて `W` なので **`hWall` で全部の深さが取れる** ✓ 通る
+- `V = pay Z C`: `AYt`。dup の塔は `itTJ T m N = two (itTJ T (m-1) N) T`。
+  各段の `hWall` は `APd_twoW` 自身の m の帰納で作れる ✓ 通る
+- `V = one N' M'` / `V = two …`: 2 の記録の junk の中に降りるので
+  `fotw` フレームつきの文脈が要る。`GCtx` の `fotw` フレームの条件に
+  「W は全深さで `APd`」を入れれば `GCtx` は書ける（`GCtx` は `APd` の後に定義するので可）。
+  ただし `APd (false::ks) V` を `∀ ctx, GCtx (false::ks) ctx → GOK (plug ctx V)` と
+  定義し直すと `APd` と `GCtx` が相互再帰になるので、そこの取り回しが要検討。
+
+つまり **`APd` の定義には `fone` フレームだけを入れ、`fotw` は定理側で扱う**のが正しい形。
+次のセッションはこの形で書き直す。
