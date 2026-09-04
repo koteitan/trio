@@ -19261,5 +19261,102 @@ theorem R373_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R373_mem
 
+
+/-! ### 木の連結と、1 の列の塔の木 -/
+
+/-- 木の連結。`jk1 l (appJ N1 N2) = jk1 l N1 ++ jk1 l N2`。 -/
+def appJ : Jk1 → Jk1 → Jk1
+  | N1, Jk1.nil => N1
+  | N1, Jk1.pay N2 Y => Jk1.pay (appJ N1 N2) Y
+  | N1, Jk1.one N2 M => Jk1.one (appJ N1 N2) M
+
+theorem jk1_appJ : ∀ (N2 N1 : Jk1) (l : ℕ), jk1 l (appJ N1 N2) = jk1 l N1 ++ jk1 l N2
+  | Jk1.nil, N1, l => by simp [appJ, jk1]
+  | Jk1.pay N2 Y, N1, l => by
+      show jk1 l (appJ N1 N2) ++ shiftr01 (l + 1) 0 Y = _
+      rw [jk1_appJ N2 N1 l]
+      show _ = jk1 l N1 ++ (jk1 l N2 ++ shiftr01 (l + 1) 0 Y)
+      rw [List.append_assoc]
+  | Jk1.one N2 M, N1, l => by
+      show jk1 l (appJ N1 N2) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M) = _
+      rw [jk1_appJ N2 N1 l]
+      show _ = jk1 l N1 ++ (jk1 l N2 ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M))
+      rw [List.append_assoc]
+
+theorem JkOk_appJ : ∀ (N2 N1 : Jk1), JkOk N1 → JkOk N2 → JkOk (appJ N1 N2)
+  | Jk1.nil, N1, h1, _ => h1
+  | Jk1.pay N2 Y, N1, h1, h2 => ⟨JkOk_appJ N2 N1 h1 h2.1, h2.2⟩
+  | Jk1.one N2 M, N1, h1, h2 => ⟨JkOk_appJ N2 N1 h1 h2.1, h2.2⟩
+
+/-- 「1 の列 + junk `M'`」を入れ子に `n` 回繰り返した木。 -/
+def twr (M' : Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (appJ M' (twr M' n))
+
+theorem JkOk_twr {M' : Jk1} (hM' : JkOk M') : ∀ n : ℕ, JkOk (twr M' n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, JkOk_appJ (twr M' n) M' hM' (JkOk_twr hM' n)⟩
+
+theorem jk1_twr : ∀ (M' : Jk1) (n l : ℕ),
+    jk1 l (twr M' n) = (List.range n).flatMap
+      (fun k => shiftr01 k 0 (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M'))
+  | M', 0, l => by simp [twr, jk1]
+  | M', (n + 1), l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (appJ M' (twr M' n))) = _
+      rw [jk1_appJ (twr M' n) M' (l + 1), jk1_twr M' n (l + 1), List.range_succ_eq_map,
+        List.flatMap_cons]
+      simp only [jk1, List.nil_append, shiftr01_zero, List.flatMap_map, Function.comp_def]
+      congr 1
+      congr 1
+      apply List.flatMap_congr
+      intro k _
+      rw [show ((l + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1 + 1) M'
+          = shiftr01 1 0 (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M') from by
+        show _ = shiftr01 1 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 1 0 (jk1 (l + 1) M')
+        rw [shift_col, jk1_shift M' (l + 1) 1]
+        rfl, shiftr01_add0]
+      congr 1
+      omega
+
+#print axioms jk1_twr
+
+
+/-- ★★★★★ 「単位 + 1 の列 + 木の junk」の右に 2 の記録を継ぐ。 -/
+theorem hang2rec {h : ℕ} {A : TrioSeq} (hA : LwA h A) {M' : Jk1} (hM' : JkOk M') :
+    (A ++ ([((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)] ++
+      (((h + 3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 3) M'))) ++ [((h + 4, 2, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  obtain ⟨P, hP, hL⟩ := hA
+  have hAne : A ≠ [] := (LwA_Aok ⟨P, hP, hL⟩).ne
+  set Y0 : TrioSeq := A ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)] with hY0
+  set M : TrioSeq := ((h + 3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 3) M' with hM0
+  have hMid : MidD (h + 4) M := by
+    have h1 := MidD_append (MidD_col (h + 3) 1 (by omega) (by omega)) (N := jk1 (h + 3) M')
+      (fun x hx => by have := jk1_ge M' (h + 3) x hx; omega) (jk1_mono M' hM' (h + 3))
+    rw [hM0]
+    simpa [show h + 3 + 1 = h + 4 from rfl] using h1
+  have htw : ∀ n, Mtw Y0 M n ∈ W 0 := by
+    intro n
+    have hG := GOK_all (twr M' n) (JkOk_twr hM' n) [] WOk_nil GoodFb_wordJ_nil
+    have h1 := (hG.seg h).reapp P hP 0 A (by simpa using hL)
+    have e : A ++ (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 [twr M' n])
+        = Mtw Y0 M n := by
+      rw [wordJ_singleton, colJ, jk1_twr M' n (h + 2), hY0, hM0, Mtw]
+      simp [List.append_assoc]
+    rw [← e]
+    simpa using h1
+  have h2 := snocY_mem (Y0 := Y0) (M := M) (L := h + 3) (y := 2)
+    (by rw [hY0]; simp [hAne]) hMid (by rw [hM0]; simp [entry]) (by omega) htw
+  rw [hY0, hM0] at h2
+  simpa [List.append_assoc] using h2
+
+/-- 行373 を `hang2rec` から出し直す。 -/
+theorem R373_mem' : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := hang2rec (h := 0) (LwA_of_Aok Aok_R338) (M' := Jk1.nil) trivial
+  simpa [R344, R341, jk1, List.append_assoc] using h
+
+#print axioms hang2rec
+
 end Small
 end TRIO
