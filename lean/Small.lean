@@ -11671,12 +11671,24 @@ theorem R306_len : R306.length = 5 := by simp [R306, R296]
 theorem Aok_R306 : Aok R306 :=
   Aok_append_Mid (by omega) Aok_R296 (MidD_col 2 2 (by omega) (by omega)) R306_mem
 
+/-- ★ どの梯子の頭 `LwA h A` の上にも `M308` を（高さ `h` だけ持ち上げて）継げる。 -/
+theorem M308_reattach_gen {h : ℕ} {A : TrioSeq} (hA : LwA h A) :
+    A ++ shiftr01 h 0 M308 ∈ W 0 := by
+  have hz := RunG_snoc2 Iface_RunA0 0 (h + 1)
+    (A ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)])
+    (LwA_unit11 hA)
+  have e : shiftr01 h 0 M308
+      = [((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)]
+        ++ [((h + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+    simp only [M308, shiftr01, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+      List.cons.injEq, Prod.mk.injEq, and_true, and_self]
+    omega
+  rw [e, ← List.append_assoc]
+  exact hz
+
 /-- どの `Aok` の頭の上にも `M308 = (1,1,0)(2,2,1)(2,2,0)` を継げる。 -/
 theorem M308_reattach {A : TrioSeq} (hA : Aok A) : A ++ M308 ∈ W 0 := by
-  have h := RunG_snoc2 Iface_RunA0 0 1
-    (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
-    (LwA_unit11 (LwA_of_Aok hA))
-  simpa [M308, List.append_assoc] using h
+  simpa using M308_reattach_gen (LwA_of_Aok hA)
 
 /-- ★ `R306` は梯子のレベル 1 の元（台座 `Q`、単位 `M308`）。 -/
 theorem R306_LvB : LvB P0 1 1 R306 := by
@@ -11769,6 +11781,55 @@ theorem R306d_mem :
   exact Zn_mem 3
 
 #print axioms R306d_mem
+
+/-! ### シート行307 `R296 (2,2,0)(2,2,0) = psi(W_w + W_2*2)`
+
+展開は「単位 `M308 = (1,1,0)(2,2,1)(2,2,0)` を歩幅 1 で積む」塔
+`Mtwd 1 Q M308 n`。各段は `M308_reattach_gen` で 1 段ずつ伸び、
+同時に梯子の段 `LvB P0 n n` も 1 つ上がる。 -/
+
+/-- 塔 `Wn n = Q ++ M308 ++ M308↑1 ++ … ++ M308↑(n-1)`。 -/
+def Wn : ℕ → TrioSeq
+  | 0 => Q
+  | (n + 1) => Wn n ++ shiftr01 n 0 M308
+
+theorem MidD_M308_shift (n : ℕ) : MidD (n + 2) (shiftr01 n 0 M308) := by
+  have h := MidD_shift MidD_M308 n
+  rwa [show 2 + n = n + 2 from by omega] at h
+
+theorem Wn_LvB : ∀ n : ℕ, LvB P0 n n (Wn n)
+  | 0 => ⟨Aok_Q, rfl⟩
+  | (n + 1) => by
+      have hlw : LwA n (Wn n) := ⟨P0, BaseOk_P0, n, Wn_LvB n⟩
+      have hmem : Wn n ++ shiftr01 n 0 M308 ∈ W 0 := M308_reattach_gen hlw
+      refine ⟨Aok_append_Mid (by omega) (LwA_Aok hlw) (MidD_M308_shift n) hmem, Or.inr
+        ⟨n, Wn n, shiftr01 n 0 M308, rfl, rfl, Wn_LvB n, MidD_M308_shift n, ?_⟩⟩
+      intro s A' hA'
+      rw [shiftr01_add0]
+      exact M308_reattach_gen ⟨P0, BaseOk_P0, n, hA'⟩
+
+theorem Wn_mem (n : ℕ) : Wn n ∈ W 0 := (LwA_Aok ⟨P0, BaseOk_P0, n, Wn_LvB n⟩).mem
+
+theorem Wn_eq : ∀ n : ℕ, Mtwd 1 Q M308 n = Wn n
+  | 0 => by simp [Mtwd, Wn]
+  | (n + 1) => by
+      rw [Mtwd_succ, Wn_eq n, Nat.one_mul]
+      rfl
+
+/-- ★★★★ シート行307 `R296 (2,2,0)(2,2,0) = psi(W_w + W_2*2)`。 -/
+theorem R307_mem : R306 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocYd_mem (Y0 := Q) (M := M308) (L := 1) (y := 2) (dl := 1)
+    Q_ne MidD_M308 (by simp [M308, entry]) ?_ (by omega) (by omega) ?_
+  · rw [R306_QM]; simpa using h
+  · intro t ht1 htl hlt _
+    exfalso
+    simp only [M308, List.length_cons, List.length_nil] at htl
+    rcases (show t = 1 ∨ t = 2 by omega) with rfl | rfl <;> simp [M308, entry] at hlt
+  · intro n
+    rw [Wn_eq]
+    exact Wn_mem n
+
+#print axioms R307_mem
 
 /-! ### z=1 の列 `m` 本: `(Y0 ++ (a,b,0) ++ (a+1,b+1,1)^(m+1))⟦n⟧ = Y0 ++ Dzm a b m n` -/
 
