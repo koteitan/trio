@@ -17166,20 +17166,38 @@ inductive Jk1 : Type
   | nil : Jk1
   | pay : Jk1 → TrioSeq → Jk1
   | one : Jk1 → Jk1 → Jk1
+  | two2 : Jk1 → Jk1
 
 /-- 木をレベル `l` で列に展開する。 -/
 def jk1 : ℕ → Jk1 → TrioSeq
   | _, Jk1.nil => []
   | l, Jk1.pay N Y => jk1 l N ++ shiftr01 (l + 1) 0 Y
   | l, Jk1.one N M => jk1 l N ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M)
+  | l, Jk1.two2 N => jk1 l N ++ [((l + 1, 2, 0) : ℕ × ℕ × ℕ)]
 
-/-- 荷はすべて `Bok`。 -/
+/-- junk のレベル（1 の列の上）で妥当。荷はすべて `Bok`。2 の記録を置ける。 -/
+def JkJ : Jk1 → Prop
+  | Jk1.nil => True
+  | Jk1.pay N Y => JkJ N ∧ Bok Y
+  | Jk1.one N M => JkJ N ∧ JkJ M
+  | Jk1.two2 N => N = Jk1.nil
+
+/-- 字の先頭段で妥当。2 の記録は置けない（字の z の直上になり、上がってしまう）。 -/
 def JkOk : Jk1 → Prop
   | Jk1.nil => True
   | Jk1.pay N Y => JkOk N ∧ Bok Y
-  | Jk1.one N M => JkOk N ∧ JkOk M
+  | Jk1.one N M => JkOk N ∧ JkJ M
+  | Jk1.two2 _ => False
+
+theorem JkJ_of_JkOk : ∀ N : Jk1, JkOk N → JkJ N
+  | Jk1.nil, _ => trivial
+  | Jk1.pay N Y, h => ⟨JkJ_of_JkOk N h.1, h.2⟩
+  | Jk1.one N M, h => ⟨JkJ_of_JkOk N h.1, h.2⟩
+  | Jk1.two2 _, h => absurd h (by simp [JkOk])
 
 theorem JkOk_nil : JkOk Jk1.nil := trivial
+
+theorem JkJ_nil : JkJ Jk1.nil := trivial
 
 theorem jk1_nil (l : ℕ) : jk1 l Jk1.nil = [] := rfl
 
@@ -17202,8 +17220,14 @@ theorem jk1_ge : ∀ (N : Jk1) (l : ℕ), ∀ x ∈ jk1 l N, l + 1 ≤ x.1
       · exact jk1_ge N l x h
       · exact le_refl _
       · have := jk1_ge M (l + 1) x h; omega
+  | Jk1.two2 N, l => by
+      intro x hx
+      simp only [jk1, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with h | rfl
+      · exact jk1_ge N l x h
+      · exact le_refl _
 
-theorem jk1_mono : ∀ (N : Jk1), JkOk N → ∀ l : ℕ, Mono (jk1 l N)
+theorem jk1_mono : ∀ (N : Jk1), JkJ N → ∀ l : ℕ, Mono (jk1 l N)
   | Jk1.nil, _, l => by simp [jk1, Mono]
   | Jk1.pay N Y, hN, l => by
       intro x hx
@@ -17218,6 +17242,12 @@ theorem jk1_mono : ∀ (N : Jk1), JkOk N → ∀ l : ℕ, Mono (jk1 l N)
       · exact jk1_mono N hN.1 l x h
       · show (0 : ℕ) ≤ 1; omega
       · exact jk1_mono M hN.2 (l + 1) x h
+  | Jk1.two2 N, hN, l => by
+      intro x hx
+      rw [show N = Jk1.nil from hN] at hx
+      simp only [jk1, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hx
+      subst hx
+      show (0 : ℕ) ≤ 2; omega
 
 theorem jk1_shift : ∀ (N : Jk1) (l s : ℕ), shiftr01 s 0 (jk1 l N) = jk1 (l + s) N
   | Jk1.nil, l, s => by simp [jk1, shiftr01]
@@ -17230,6 +17260,10 @@ theorem jk1_shift : ∀ (N : Jk1) (l s : ℕ), shiftr01 s 0 (jk1 l N) = jk1 (l +
           = [((l + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ jk1 (l + 1) M from rfl,
         shiftr01_append0, shiftr01_append0, shift_col, jk1_shift N l s,
         jk1_shift M (l + 1) s, show l + 1 + s = l + s + 1 from by omega]
+      rfl
+  | Jk1.two2 N, l, s => by
+      rw [jk1, shiftr01_append0, jk1_shift N l s, shift_col,
+        show l + 1 + s = l + s + 1 from by omega]
       rfl
 
 #print axioms jk1_shift
@@ -17387,18 +17421,60 @@ theorem plug_snoc : ∀ (ctx : List Jk1) (X T : Jk1), plug (ctx ++ [X]) T = plug
       show Jk1.one N (plug (rest ++ [X]) T) = Jk1.one N (plug rest (Jk1.one X T))
       rw [plug_snoc rest X T]
 
-/-- 文脈がすべて妥当なら、埋めた木も妥当。 -/
+/-- 文脈がすべて junk レベルで妥当。 -/
+def CtxJ : List Jk1 → Prop
+  | [] => True
+  | (N :: rest) => JkJ N ∧ CtxJ rest
+
+/-- 文脈の一番外は字レベル、残りは junk レベル。 -/
 def CtxOk : List Jk1 → Prop
   | [] => True
-  | (N :: rest) => JkOk N ∧ CtxOk rest
+  | (N :: rest) => JkOk N ∧ CtxJ rest
 
-theorem JkOk_plug : ∀ (ctx : List Jk1), CtxOk ctx → ∀ T : Jk1, JkOk T → JkOk (plug ctx T)
-  | [], _, T, hT => hT
-  | (N :: rest), hc, T, hT => ⟨hc.1, JkOk_plug rest hc.2 T hT⟩
+/-- 文脈 `ctx` の一番内側に置く木に要る条件。空文脈なら字レベル。 -/
+def CtxX : List Jk1 → Jk1 → Prop
+  | [], X => JkOk X
+  | (_ :: _), X => JkJ X
 
-theorem CtxOk_snoc : ∀ (ctx : List Jk1), CtxOk ctx → ∀ X : Jk1, JkOk X → CtxOk (ctx ++ [X])
+theorem CtxX_of_JkOk : ∀ (ctx : List Jk1) (X : Jk1), JkOk X → CtxX ctx X
+  | [], _, h => h
+  | (_ :: _), X, h => JkJ_of_JkOk X h
+
+theorem CtxX_of_JkJ : ∀ (ctx : List Jk1), ctx ≠ [] → ∀ X : Jk1, JkJ X → CtxX ctx X
+  | [], h, _, _ => absurd rfl h
+  | (_ :: _), _, _, h => h
+
+theorem JkJ_of_CtxX : ∀ (ctx : List Jk1) (X : Jk1), CtxX ctx X → JkJ X
+  | [], X, h => JkJ_of_JkOk X h
+  | (_ :: _), _, h => h
+
+theorem CtxX_nil (ctx : List Jk1) : CtxX ctx Jk1.nil :=
+  CtxX_of_JkOk ctx Jk1.nil JkOk_nil
+
+theorem CtxX_one : ∀ (ctx : List Jk1) (X T : Jk1), CtxX ctx X → JkJ T → CtxX ctx (Jk1.one X T)
+  | [], _, _, hX, hT => ⟨hX, hT⟩
+  | (_ :: _), _, _, hX, hT => ⟨hX, hT⟩
+
+theorem CtxX_pay : ∀ (ctx : List Jk1) (X : Jk1) (Y : TrioSeq), CtxX ctx X → Bok Y →
+    CtxX ctx (Jk1.pay X Y)
+  | [], _, _, hX, hY => ⟨hX, hY⟩
+  | (_ :: _), _, _, hX, hY => ⟨hX, hY⟩
+
+theorem JkJ_plug : ∀ (ctx : List Jk1), CtxJ ctx → ∀ T : Jk1, JkJ T → JkJ (plug ctx T)
+  | [], _, _, hT => hT
+  | (N :: rest), hc, T, hT => ⟨hc.1, JkJ_plug rest hc.2 T hT⟩
+
+theorem JkOk_plug : ∀ (ctx : List Jk1), CtxOk ctx → ∀ T : Jk1, CtxX ctx T → JkOk (plug ctx T)
+  | [], _, _, hT => hT
+  | (N :: rest), hc, T, hT => ⟨hc.1, JkJ_plug rest hc.2 T hT⟩
+
+theorem CtxJ_snoc : ∀ (ctx : List Jk1), CtxJ ctx → ∀ X : Jk1, JkJ X → CtxJ (ctx ++ [X])
   | [], _, X, hX => ⟨hX, trivial⟩
-  | (N :: rest), hc, X, hX => ⟨hc.1, CtxOk_snoc rest hc.2 X hX⟩
+  | (N :: rest), hc, X, hX => ⟨hc.1, CtxJ_snoc rest hc.2 X hX⟩
+
+theorem CtxOk_snoc : ∀ (ctx : List Jk1), CtxOk ctx → ∀ X : Jk1, CtxX ctx X → CtxOk (ctx ++ [X])
+  | [], _, X, hX => ⟨hX, trivial⟩
+  | (N :: rest), hc, X, hX => ⟨hc.1, CtxJ_snoc rest hc.2 X hX⟩
 
 /-! ### 字と語の基本補題 -/
 
@@ -17430,7 +17506,7 @@ theorem wordJ_ge (a b : ℕ) (ws : List Jk1) : ∀ x ∈ wordJ a b ws, a + 1 ≤
   obtain ⟨N, -, hx⟩ := hx
   exact colJ_ge a b N x hx
 
-theorem colJ_mono {a b : ℕ} {N : Jk1} (hN : JkOk N) : Mono (colJ a b N) := by
+theorem colJ_mono {a b : ℕ} {N : Jk1} (hN : JkJ N) : Mono (colJ a b N) := by
   intro x hx
   simp only [colJ, List.mem_cons] at hx
   rcases hx with rfl | h
@@ -17441,7 +17517,7 @@ theorem wordJ_mono {a b : ℕ} {ws : List Jk1} (hw : WOk ws) : Mono (wordJ a b w
   intro x hx
   simp only [wordJ, List.mem_flatMap] at hx
   obtain ⟨N, hN, hx⟩ := hx
-  exact colJ_mono (hw N hN) x hx
+  exact colJ_mono (JkJ_of_JkOk N (hw N hN)) x hx
 
 theorem wordJ_nil (a b : ℕ) : wordJ a b [] = [] := rfl
 
@@ -17480,25 +17556,56 @@ theorem jk1_length_one (l : ℕ) (N M : Jk1) :
     (jk1 l (Jk1.one N M)).length = (jk1 l N).length + 1 + (jk1 (l + 1) M).length := by
   simp [jk1]; omega
 
-/-- ★ 記録（行 1 が 1 以上）から、木の junk の列へは行 1 の鎖が届かない。 -/
-theorem not_le1_jk1 : ∀ (N : Jk1), JkOk N → ∀ (M : TrioSeq) (p q0 l : ℕ),
+/-- `p` と `q0` の間に、高さ `l` の 1 の列 `r` があり、その右は `q0` まで高さ ≥ `l+1`。 -/
+def Grd (M : TrioSeq) (p q0 l : ℕ) : Prop :=
+  ∃ r, p < r ∧ r < q0 ∧ entry M 1 r = 1 ∧ entry M 0 r = l ∧
+    (∀ j, r < j → j < q0 → l + 1 ≤ entry M 0 j)
+
+/-- 1 の列（高さ `l`）の右にある 2 の記録は、行 1 が 1 以上の列の子孫にならない。
+`nextrel1` の最小性に 1 の列を入れると `2 ≤ 1` になる。 -/
+theorem not_le1_two {M : TrioSeq} {p r q l : ℕ}
+    (hp1 : 1 ≤ entry M 1 p) (hpr : p < r) (hr1 : entry M 1 r = 1) (hr0 : entry M 0 r = l)
+    (hrq : r < q) (hq1 : entry M 1 q = 2)
+    (hge : ∀ j, r < j → j ≤ q → l + 1 ≤ entry M 0 j) : ¬ le1 M p q := by
+  rintro ⟨hpl, hql, hch⟩
+  rcases Relation.ReflTransGen.cases_tail hch with h1 | ⟨c, hc1, hc2⟩
+  · omega
+  · rcases eq_or_ne c p with rfl | hne
+    · have hle0r : le0 M r q := le0_of_between hr0 q hrq hql hge
+      have h5 := hc2.2.2.2.2.2 r ⟨hpr, hle0r⟩
+      omega
+    · have hlepc : le1 M p c := ⟨hpl, hc2.1, hc1⟩
+      have h3 := le1_row1_lt hlepc (Ne.symm hne)
+      have h4 := hc2.2.2.2.1
+      omega
+
+#print axioms not_le1_two
+
+/-- ★ 記録（行 1 が 1 以上）から、木の junk の列へは行 1 の鎖が届かない。
+2 の記録を含む木では、その左に高さ `l` の 1 の列があること（`Grd`）が要る。 -/
+theorem not_le1_jk1 : ∀ (N : Jk1) (M : TrioSeq) (p q0 l : ℕ),
+    (JkOk N ∨ (JkJ N ∧ Grd M p q0 l)) →
     1 ≤ entry M 1 p → p < q0 → q0 + (jk1 l N).length ≤ M.length →
     (∀ (r t : ℕ), t < (jk1 l N).length → entry M r (q0 + t) = entry (jk1 l N) r t) →
     ∀ t, t < (jk1 l N).length → ¬ le1 M p (q0 + t)
-  | Jk1.nil, _, M, p, q0, l, _, _, _, _ => by simp [jk1]
-  | Jk1.pay N Y, hN, M, p, q0, l, hp1, hpq, hlen, hent => by
+  | Jk1.nil, M, p, q0, l, _, _, _, _, _ => by simp [jk1]
+  | Jk1.pay N Y, M, p, q0, l, hN, hp1, hpq, hlen, hent => by
+      have hY : Bok Y := by rcases hN with h | ⟨h, -⟩ <;> exact h.2
+      have hNs : JkOk N ∨ (JkJ N ∧ Grd M p q0 l) := by
+        rcases hN with h | ⟨h, hg⟩
+        · exact Or.inl h.1
+        · exact Or.inr ⟨h.1, hg⟩
       have hlenp : (jk1 l (Jk1.pay N Y)).length = (jk1 l N).length + Y.length :=
         jk1_length_pay l N Y
       have hsplit : jk1 l (Jk1.pay N Y) = jk1 l N ++ shiftr01 (l + 1) 0 Y := rfl
       intro t ht
       rcases Nat.lt_or_ge t (jk1 l N).length with htL | htL
-      · refine not_le1_jk1 N hN.1 M p q0 l hp1 hpq (by omega) ?_ t htL
+      · refine not_le1_jk1 N M p q0 l hNs hp1 hpq (by omega) ?_ t htL
         intro r u hu
         have h := hent r u (by omega)
         rwa [hsplit, entry_append_left (by omega)] at h
       · obtain ⟨u, hu, rfl⟩ : ∃ u, u < Y.length ∧ t = (jk1 l N).length + u :=
           ⟨t - (jk1 l N).length, by omega, by omega⟩
-        have hY : Bok Y := hN.2
         have eblk : ∀ r u', u' < Y.length →
             entry M r (q0 + ((jk1 l N).length + u'))
               = entry (shiftr01 (l + 1) 0 Y) r u' := by
@@ -17532,24 +17639,33 @@ theorem not_le1_jk1 : ∀ (N : Jk1), JkOk N → ∀ (M : TrioSeq) (p q0 l : ℕ)
           rwa [show q0 + (jk1 l N).length + u = q0 + ((jk1 l N).length + u) from by omega]
         have := le1_lower_bound hroot p (q0 + (jk1 l N).length + u) hle' (by omega) (by omega)
         omega
-  | Jk1.one N M', hN, M, p, q0, l, hp1, hpq, hlen, hent => by
+  | Jk1.one N M', M, p, q0, l, hN, hp1, hpq, hlen, hent => by
+      have hNs : JkOk N ∨ (JkJ N ∧ Grd M p q0 l) := by
+        rcases hN with h | ⟨h, hg⟩
+        · exact Or.inl h.1
+        · exact Or.inr ⟨h.1, hg⟩
+      have hJM' : JkJ M' := by rcases hN with h | ⟨h, -⟩ <;> exact h.2
       have hlenp : (jk1 l (Jk1.one N M')).length
           = (jk1 l N).length + 1 + (jk1 (l + 1) M').length := jk1_length_one l N M'
       have hsplit : jk1 l (Jk1.one N M')
           = jk1 l N ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M') := rfl
+      have e1 : entry M 1 (q0 + (jk1 l N).length) = 1 := by
+        have h := hent 1 (jk1 l N).length (by omega)
+        rw [hsplit, entry_append_at] at h
+        rw [h]; simp [entry]
+      have e0 : entry M 0 (q0 + (jk1 l N).length) = l + 1 := by
+        have h := hent 0 (jk1 l N).length (by omega)
+        rw [hsplit, entry_append_at] at h
+        rw [h]; simp [entry]
       intro t ht
       rcases Nat.lt_or_ge t (jk1 l N).length with htL | htL
-      · refine not_le1_jk1 N hN.1 M p q0 l hp1 hpq (by omega) ?_ t htL
+      · refine not_le1_jk1 N M p q0 l hNs hp1 hpq (by omega) ?_ t htL
         intro r u hu
         have h := hent r u (by omega)
         rwa [hsplit, entry_append_left (by omega)] at h
       rcases Nat.lt_or_ge t ((jk1 l N).length + 1) with htL1 | htL1
       · have ht0 : t = (jk1 l N).length := by omega
         subst ht0
-        have e1 : entry M 1 (q0 + (jk1 l N).length) = 1 := by
-          have h := hent 1 (jk1 l N).length (by omega)
-          rw [hsplit, entry_append_at] at h
-          rw [h]; simp [entry]
         intro hle
         have := le1_row1_lt hle (by omega)
         rw [e1] at this
@@ -17564,9 +17680,39 @@ theorem not_le1_jk1 : ∀ (N : Jk1), JkOk N → ∀ (M : TrioSeq) (p q0 l : ℕ)
           rw [show q0 + (jk1 l N).length + 1 + u' = q0 + ((jk1 l N).length + (u' + 1)) from
             by omega]
           exact h
-        have hres := not_le1_jk1 M' hN.2 M p (q0 + (jk1 l N).length + 1) (l + 1) hp1
-          (by omega) (by omega) hsub u hu
+        have hgrd : Grd M p (q0 + (jk1 l N).length + 1) (l + 1) :=
+          ⟨q0 + (jk1 l N).length, by omega, by omega, e1, e0, by intro j hj1 hj2; omega⟩
+        have hres := not_le1_jk1 M' M p (q0 + (jk1 l N).length + 1) (l + 1)
+          (Or.inr ⟨hJM', hgrd⟩) hp1 (by omega) (by omega) hsub u hu
         rwa [show q0 + ((jk1 l N).length + 1 + u) = q0 + (jk1 l N).length + 1 + u from by omega]
+  | Jk1.two2 N, M, p, q0, l, hN, hp1, hpq, hlen, hent => by
+      obtain ⟨hnil, r, hpr, hrq0, hr1, hr0, hrge⟩ : N = Jk1.nil ∧ Grd M p q0 l := by
+        rcases hN with h | ⟨h, hg⟩
+        · exact absurd h (by simp [JkOk])
+        · exact ⟨h, hg⟩
+      subst hnil
+      have he : jk1 l (Jk1.two2 Jk1.nil) = [((l + 1, 2, 0) : ℕ × ℕ × ℕ)] := by simp [jk1]
+      have hlen1 : (jk1 l (Jk1.two2 Jk1.nil)).length = 1 := by rw [he]; simp
+      have hq1 : entry M 1 q0 = 2 := by
+        have h := hent 1 0 (by rw [hlen1]; omega)
+        rw [Nat.add_zero, he] at h
+        rw [h]; simp [entry]
+      have hq0h : entry M 0 q0 = l + 1 := by
+        have h := hent 0 0 (by rw [hlen1]; omega)
+        rw [Nat.add_zero, he] at h
+        rw [h]; simp [entry]
+      intro t ht
+      rw [hlen1] at ht
+      have ht0 : t = 0 := by omega
+      subst ht0
+      rw [Nat.add_zero]
+      refine not_le1_two hp1 hpr hr1 hr0 hrq0 hq1 ?_
+      intro j hj1 hj2
+      rcases Nat.lt_or_ge j q0 with hjq | hjq
+      · exact hrge j hj1 hjq
+      · have hj : j = q0 := by omega
+        rw [hj]
+        omega
 
 #print axioms not_le1_jk1
 
@@ -17679,7 +17825,7 @@ theorem not_le1_treeJ (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) (ws1 ws3 : List 
     rw [hM, hq0, show Y0.length + 1 + (wordJ a b ws1).length + 1 + u
       = Y0.length + 1 + (wordJ a b ws1).length + (u + 1) from by omega]
     exact h
-  have := not_le1_jk1 N hN M Y0.length q0 (a + 1) hp1 (by omega) (by omega) hent t ht
+  have := not_le1_jk1 N M Y0.length q0 (a + 1) (Or.inl hN) hp1 (by omega) (by omega) hent t ht
   rwa [hq0, show Y0.length + 1 + (wordJ a b ws1).length + 1 + t
     = Y0.length + 1 + (wordJ a b ws1).length + (t + 1) from by omega] at this
 
@@ -18122,9 +18268,14 @@ def itJ (T : Jk1) : ℕ → Jk1 → Jk1
   | 0, X => X
   | (n + 1), X => Jk1.one (itJ T n X) T
 
-theorem JkOk_itJ {T : Jk1} (hT : JkOk T) : ∀ (n : ℕ) {X : Jk1}, JkOk X → JkOk (itJ T n X)
+theorem JkJ_itJ {T : Jk1} (hT : JkJ T) : ∀ (n : ℕ) {X : Jk1}, JkJ X → JkJ (itJ T n X)
   | 0, _, hX => hX
-  | (n + 1), X, hX => ⟨JkOk_itJ hT n hX, hT⟩
+  | (n + 1), _, hX => ⟨JkJ_itJ hT n hX, hT⟩
+
+theorem CtxX_itJ {ctx : List Jk1} {T : Jk1} (hT : JkJ T) : ∀ (n : ℕ) {X : Jk1},
+    CtxX ctx X → CtxX ctx (itJ T n X)
+  | 0, _, hX => hX
+  | (n + 1), _, hX => CtxX_one ctx _ T (CtxX_itJ hT n hX) hT
 
 #print axioms jk1_plug_one
 
@@ -18177,14 +18328,14 @@ theorem colJ_plug_itJ (a b : ℕ) (ctx : List Jk1) (X T : Jk1) (n : ℕ) :
 /-! ### 深さ ≥ 1 の位置に荷を継ぐ: 場合 (i)(ii) -/
 
 theorem GoodFb_snoc_innerJs {ws : List Jk1} (hw : WOk ws) {ctx : List Jk1} (hc : CtxOk ctx)
-    {X Z : Jk1} (hX : JkOk X) (hZ : JkOk Z) {Y : TrioSeq}
+    {X Z : Jk1} (hX : CtxX ctx X) (hZ : JkJ Z) {Y : TrioSeq}
     (hY : Bok Y) (hlen : 2 ≤ Y.length)
     (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
     (hIH : ∀ n, 1 ≤ n →
       GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.one X (Jk1.pay Z (Y⟦n⟧)))]))) :
     GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.one X (Jk1.pay Z Y))])) := by
   refine GoodFb_of_keyJ (WOk_append hw (WOk_singleton
-    (JkOk_plug ctx hc _ ⟨hX, hZ, hY⟩))) hIH ?_
+    (JkOk_plug ctx hc _ (CtxX_one ctx X _ hX ⟨hZ, hY⟩)))) hIH ?_
   intro Z0 a b hb hn
   have e : ∀ B : TrioSeq,
       Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) ::
@@ -18200,14 +18351,14 @@ theorem GoodFb_snoc_innerJs {ws : List Jk1} (hw : WOk ws) {ctx : List Jk1} (hc :
   exact hn n hn'
 
 theorem GoodFb_snoc_dupJs {ws : List Jk1} (hw : WOk ws) {ctx : List Jk1} (hc : CtxOk ctx)
-    {X Z : Jk1} (hX : JkOk X) (hZ : JkOk Z) {Y : TrioSeq}
+    {X Z : Jk1} (hX : CtxX ctx X) (hZ : JkJ Z) {Y : TrioSeq}
     (hY0 : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) (hY : Bok Y)
     (hIH : ∀ n, 1 ≤ n →
       GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (itJ (Jk1.pay Z Y) n X)]))) :
     GoodFb (fun a b => wordJ a b
       (ws ++ [plug ctx (Jk1.one X (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))])) := by
   refine GoodFb_of_keyJ (WOk_append hw (WOk_singleton
-    (JkOk_plug ctx hc _ ⟨hX, hZ, hY0⟩))) hIH ?_
+    (JkOk_plug ctx hc _ (CtxX_one ctx X _ hX ⟨hZ, hY0⟩)))) hIH ?_
   intro Z0 a b hb hn
   set p := ctx.length with hp
   set M : TrioSeq := ((a + p + 2, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (a + p + 2) (Jk1.pay Z Y) with hM
@@ -18264,12 +18415,12 @@ theorem GoodFb_snoc_dupJs {ws : List Jk1} (hw : WOk ws) {ctx : List Jk1} (hc : C
 #print axioms GoodFb_snoc_dupJs
 
 
-theorem GOK_chainJ {ctx : List Jk1} {X T : Jk1} (hXok : JkOk X) (hTok : JkOk T)
+theorem GOK_chainJ {ctx : List Jk1} {X T : Jk1} (hXok : CtxX ctx X) (hTok : JkJ T)
     (hX : GOK (plug ctx X))
-    (hstep : ∀ V : Jk1, JkOk V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V T))) :
+    (hstep : ∀ V : Jk1, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V T))) :
     ∀ n, GOK (plug ctx (itJ T n X))
   | 0 => hX
-  | (n + 1) => hstep (itJ T n X) (JkOk_itJ hTok n hXok) (GOK_chainJ hXok hTok hX hstep n)
+  | (n + 1) => hstep (itJ T n X) (CtxX_itJ hTok n hXok) (GOK_chainJ hXok hTok hX hstep n)
 
 theorem jk1_one_pay_nil (X Z : Jk1) : ∀ l,
     jk1 l (Jk1.one X (Jk1.pay Z [])) = jk1 l (Jk1.one X Z) := by
@@ -18280,13 +18431,13 @@ theorem jk1_one_pay_nil (X Z : Jk1) : ∀ l,
 
 /-- ★★★ 深さ ≥ 1 の位置に荷を継いでも良い。 -/
 theorem AYs : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Jk1), CtxOk ctx → ∀ (X Z : Jk1),
-    JkOk X → JkOk Z →
-    (∀ V : Jk1, JkOk V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Z))) →
+    CtxX ctx X → JkJ Z →
+    (∀ V : Jk1, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Z))) →
     GOK (plug ctx X) →
     GOK (plug ctx (Jk1.one X (Jk1.pay Z Y))) := by
   have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ctx : List Jk1), CtxOk ctx → ∀ (X Z : Jk1),
-      JkOk X → JkOk Z →
-      (∀ V : Jk1, JkOk V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Z))) →
+      CtxX ctx X → JkJ Z →
+      (∀ V : Jk1, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Z))) →
       GOK (plug ctx X) → GOK (plug ctx (Jk1.one X (Jk1.pay Z Y)))} := by
     refine A2' ?_
     intro Y hY
@@ -18306,7 +18457,7 @@ theorem AYs : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Jk1), CtxOk ctx → �
         have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
             = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
         rw [e]
-        have hstep : ∀ V : Jk1, JkOk V → GOK (plug ctx V) →
+        have hstep : ∀ V : Jk1, CtxX ctx V → GOK (plug ctx V) →
             GOK (plug ctx (Jk1.one V (Jk1.pay Z ([] : TrioSeq)))) := by
           intro V hV hGV
           exact GOK_congr (fun l => (jk1_plug_congr ctx (jk1_one_pay_nil V Z) l).symm)
@@ -18340,7 +18491,7 @@ theorem AYs : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Jk1), CtxOk ctx → �
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
         rw [hsplit]
-        have hstep : ∀ V : Jk1, JkOk V → GOK (plug ctx V) →
+        have hstep : ∀ V : Jk1, CtxX ctx V → GOK (plug ctx V) →
             GOK (plug ctx (Jk1.one V (Jk1.pay Z Y.dropLast))) :=
           fun V hV hGV => hdl hdb ctx hc V Z hV hZ hAP hGV
         intro ws hw hG
@@ -18529,7 +18680,7 @@ theorem AP0nil (V : Jk1) (hV : JkOk V) (hGV : GOK V) : GOK (Jk1.one V Jk1.nil) :
 
 /-! ### 深さ 1 の荷（1 の列の上の荷）と、シート行 371 -/
 
-theorem APpayJ (Z : Jk1) (Y : TrioSeq) (hZ : JkOk Z) (hY : Bok Y)
+theorem APpayJ (Z : Jk1) (Y : TrioSeq) (hZ : JkJ Z) (hY : Bok Y)
     (hAP : ∀ V : Jk1, JkOk V → GOK V → GOK (Jk1.one V Z)) :
     ∀ V : Jk1, JkOk V → GOK V → GOK (Jk1.one V (Jk1.pay Z Y)) := by
   intro V hV hGV
@@ -18538,7 +18689,7 @@ theorem APpayJ (Z : Jk1) (Y : TrioSeq) (hZ : JkOk Z) (hY : Bok Y)
 /-- 1 の列の上に任意の `Bok` の荷を吊るした字。 -/
 theorem GOK_oneB {B : TrioSeq} (hB : Bok B) :
     GOK (Jk1.one Jk1.nil (Jk1.pay Jk1.nil B)) :=
-  APpayJ Jk1.nil B JkOk_nil hB (fun V hV hGV => AP0nil V hV hGV) Jk1.nil JkOk_nil GOK_nil
+  APpayJ Jk1.nil B JkJ_nil hB (fun V hV hGV => AP0nil V hV hGV) Jk1.nil JkOk_nil GOK_nil
 
 /-- ★★★★★ 単位の上の 1 の列の、さらに上に高さ `h+4` で任意の `Bok` を吊るす。 -/
 theorem hangU11one {h : ℕ} {A : TrioSeq} (hA : LwA h A) {B : TrioSeq} (hB : Bok B) :
@@ -18666,14 +18817,14 @@ theorem wordJ_snoc_plug_pay (a b : ℕ) (ws : List Jk1) (ctx : List Jk1) (V : Jk
     List.append_assoc]
 
 /-- ★★★ 深さ `|ctx|` に「junk のない 1 の列」を継いでも良い（吊るしを仮定として受け取る）。 -/
-theorem APnil_gen (ctx : List Jk1) (hc : CtxOk ctx) (V : Jk1) (hV : JkOk V)
+theorem APnil_gen (ctx : List Jk1) (hc : CtxOk ctx) (V : Jk1) (hV : CtxX ctx V)
     (hGV : GOK (plug ctx V))
     (hang : ∀ C : TrioSeq, Bok C → GOK (plug ctx (Jk1.pay V C))) :
     GOK (plug ctx (Jk1.one V Jk1.nil)) := by
   intro ws hw hG
   set p := ctx.length with hp
   have hwO : WOk (ws ++ [plug ctx (Jk1.one V Jk1.nil)]) :=
-    WOk_append hw (WOk_singleton (JkOk_plug ctx hc _ ⟨hV, JkOk_nil⟩))
+    WOk_append hw (WOk_singleton (JkOk_plug ctx hc _ (CtxX_one ctx V Jk1.nil hV JkJ_nil)))
   have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx V])) := hGV ws hw hG
   have hprev : ∀ C : TrioSeq, Bok C →
       GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.pay V C)])) :=
@@ -18784,16 +18935,16 @@ def APz (V : Jk1) : Prop := ∀ U : Jk1, JkOk U → GOK U → GOK (Jk1.one U V)
 
 theorem APz_nil : APz Jk1.nil := fun U hU hGU => AP0nil U hU hGU
 
-theorem GOK_onePay {T V : Jk1} (hT : JkOk T) (hV : JkOk V) (hGT : GOK T) (hA : APz V)
+theorem GOK_onePay {T V : Jk1} (hT : JkOk T) (hV : JkJ V) (hGT : GOK T) (hA : APz V)
     {C : TrioSeq} (hC : Bok C) : GOK (Jk1.one T (Jk1.pay V C)) :=
   AYs C hC [] trivial T V hT hV (fun U hU hGU => hA U hU hGU) hGT
 
 /-- `APz` は荷の追加で閉じている。 -/
-theorem APz_pay {V : Jk1} (hV : JkOk V) (hA : APz V) {C : TrioSeq} (hC : Bok C) :
+theorem APz_pay {V : Jk1} (hV : JkJ V) (hA : APz V) {C : TrioSeq} (hC : Bok C) :
     APz (Jk1.pay V C) := fun U hU hGU => GOK_onePay hU hV hGU hA hC
 
 /-- ★★★ `APz V` なら、`one V nil`（junk のない 1 の列）を項として継げる。 -/
-theorem GOK_oneOneNil {T V : Jk1} (hT : JkOk T) (hV : JkOk V) (hGT : GOK T) (hA : APz V) :
+theorem GOK_oneOneNil {T V : Jk1} (hT : JkOk T) (hV : JkJ V) (hGT : GOK T) (hA : APz V) :
     GOK (Jk1.one T (Jk1.one V Jk1.nil)) := by
   refine APnil_gen [T] ⟨hT, trivial⟩ V hV ?_ ?_
   · exact hA T hT hGT
@@ -18825,24 +18976,24 @@ theorem APz_congr {V1 V2 : Jk1} (h : ∀ l, jk1 l V1 = jk1 l V2) (hA : APz V1) :
     = jk1 l U ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) V2)
   rw [h]
 
-theorem GOK_chainJz {ctx : List Jk1} {X T : Jk1} (hXok : JkOk X) (hXz : APz X)
-    (hTok : JkOk T) (hX : GOK (plug ctx X))
-    (hstep : ∀ V : Jk1, JkOk V → APz V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V T)))
-    (hpres : ∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V T)) :
+theorem GOK_chainJz {ctx : List Jk1} {X T : Jk1} (hXok : CtxX ctx X) (hXz : APz X)
+    (hTok : JkJ T) (hX : GOK (plug ctx X))
+    (hstep : ∀ V : Jk1, CtxX ctx V → APz V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V T)))
+    (hpres : ∀ V : Jk1, JkJ V → APz V → APz (Jk1.one V T)) :
     ∀ n, GOK (plug ctx (itJ T n X)) ∧ APz (itJ T n X)
   | 0 => ⟨hX, hXz⟩
   | (n + 1) => by
       obtain ⟨h1, h2⟩ := GOK_chainJz hXok hXz hTok hX hstep hpres n
-      have hok := JkOk_itJ hTok n hXok
-      exact ⟨hstep (itJ T n X) hok h2 h1, hpres (itJ T n X) hok h2⟩
+      have hok := CtxX_itJ hTok n hXok
+      exact ⟨hstep (itJ T n X) hok h2 h1, hpres (itJ T n X) (JkJ_of_CtxX ctx _ hok) h2⟩
 
 /-- ★★★ `APz` を仮定に持ち回る荷追加。連鎖の木も `APz` のまま。 -/
-theorem AYz : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkOk Z →
-    (∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V Z)) →
-    ∀ (X : Jk1), JkOk X → APz X → APz (Jk1.one X (Jk1.pay Z Y)) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkOk Z →
-      (∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V Z)) →
-      ∀ (X : Jk1), JkOk X → APz X → APz (Jk1.one X (Jk1.pay Z Y))} := by
+theorem AYz : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkJ Z →
+    (∀ V : Jk1, JkJ V → APz V → APz (Jk1.one V Z)) →
+    ∀ (X : Jk1), JkJ X → APz X → APz (Jk1.one X (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkJ Z →
+      (∀ V : Jk1, JkJ V → APz V → APz (Jk1.one V Z)) →
+      ∀ (X : Jk1), JkJ X → APz X → APz (Jk1.one X (Jk1.pay Z Y))} := by
     refine A2' ?_
     intro Y hY
     simp only [Set.mem_setOf_eq]
@@ -18857,7 +19008,7 @@ theorem AYz : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkOk Z →
         obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
         have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
         subst hcz
-        have hpres : ∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
+        have hpres : ∀ V : Jk1, JkJ V → APz V → APz (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
           fun V hV hVz => APz_congr (fun l => (jk1_one_pay_nil V Z l).symm) (hR V hV hVz)
         intro U hU hGU
         have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
@@ -18895,7 +19046,7 @@ theorem AYz : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkOk Z →
         rw [hop] at hdl
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hpres : ∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
+        have hpres : ∀ V : Jk1, JkJ V → APz V → APz (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
           fun V hV hVz => hdl hdb Z hZ hR V hV hVz
         intro U hU hGU
         rw [hsplit]
@@ -18931,21 +19082,24 @@ def PayOnly : Jk1 → Prop
   | Jk1.nil => True
   | Jk1.pay N Y => PayOnly N ∧ Bok Y
   | Jk1.one _ _ => False
+  | Jk1.two2 _ => False
 
-theorem PayOnly_JkOk : ∀ W : Jk1, PayOnly W → JkOk W
+theorem PayOnly_JkJ : ∀ W : Jk1, PayOnly W → JkJ W
   | Jk1.nil, _ => trivial
-  | Jk1.pay N Y, h => ⟨PayOnly_JkOk N h.1, h.2⟩
+  | Jk1.pay N Y, h => ⟨PayOnly_JkJ N h.1, h.2⟩
   | Jk1.one _ _, h => absurd h (by simp [PayOnly])
+  | Jk1.two2 _, h => absurd h (by simp [PayOnly])
 
 /-- ★★★ `APz V` かつ `W` が荷だけなら、項 `one V W` を継げる。 -/
-theorem APz_onePayOnly : ∀ W : Jk1, PayOnly W → ∀ V : Jk1, JkOk V → APz V →
+theorem APz_onePayOnly : ∀ W : Jk1, PayOnly W → ∀ V : Jk1, JkJ V → APz V →
     APz (Jk1.one V W)
   | Jk1.nil, _, V, hV, hVz => by
       intro U hU hGU
       exact GOK_oneOneNil hU hV hGU hVz
   | Jk1.pay W₀ C, h, V, hV, hVz =>
-      AYz C h.2 W₀ (PayOnly_JkOk W₀ h.1) (APz_onePayOnly W₀ h.1) V hV hVz
+      AYz C h.2 W₀ (PayOnly_JkJ W₀ h.1) (APz_onePayOnly W₀ h.1) V hV hVz
   | Jk1.one _ _, h, _, _, _ => absurd h (by simp [PayOnly])
+  | Jk1.two2 _, h, _, _, _ => absurd h (by simp [PayOnly])
 
 /-! ### シート行 372 -/
 
@@ -18956,7 +19110,7 @@ theorem JkOk_T372 {B : TrioSeq} (hB : Bok B) : JkOk (T372 B) :=
 
 theorem GOK_T372 {B : TrioSeq} (hB : Bok B) : GOK (T372 B) := by
   have hAPz : APz (Jk1.one Jk1.nil (Jk1.pay Jk1.nil B)) :=
-    APz_onePayOnly (Jk1.pay Jk1.nil B) ⟨trivial, hB⟩ Jk1.nil JkOk_nil APz_nil
+    APz_onePayOnly (Jk1.pay Jk1.nil B) ⟨trivial, hB⟩ Jk1.nil JkJ_nil APz_nil
   exact hAPz Jk1.nil JkOk_nil GOK_nil
 
 def R371 : TrioSeq := R344 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)]
@@ -19008,7 +19162,7 @@ theorem R372_mem : R371 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 /-- 深さ `k` で「1 の列 + junk `V`」として継げる。`APd 0 = APz`。 -/
 def APd : ℕ → Jk1 → Prop
   | 0, V => ∀ U : Jk1, JkOk U → GOK U → GOK (Jk1.one U V)
-  | (k + 1), V => ∀ U : Jk1, JkOk U → APd k U → APd k (Jk1.one U V)
+  | (k + 1), V => ∀ U : Jk1, JkJ U → APd k U → APd k (Jk1.one U V)
 
 theorem APd_zero (V : Jk1) : APd 0 V ↔ APz V := Iff.rfl
 
@@ -19016,7 +19170,15 @@ theorem APd_zero (V : Jk1) : APd 0 V ↔ APz V := Iff.rfl
 def GCtx : ℕ → List Jk1 → Prop
   | 0, ctx => ∃ U : Jk1, ctx = [U] ∧ JkOk U ∧ GOK U
   | (k + 1), ctx => ∃ (ctx' : List Jk1) (U : Jk1), ctx = ctx' ++ [U] ∧ GCtx k ctx' ∧
-      JkOk U ∧ APd k U
+      JkJ U ∧ APd k U
+
+theorem GCtx_ne : ∀ (k : ℕ) (ctx : List Jk1), GCtx k ctx → ctx ≠ []
+  | 0, ctx, h => by
+      obtain ⟨U, rfl, -, -⟩ := h
+      simp
+  | (k + 1), ctx, h => by
+      obtain ⟨ctx', U, rfl, -, -, -⟩ := h
+      simp
 
 theorem GCtx_CtxOk : ∀ (k : ℕ) (ctx : List Jk1), GCtx k ctx → CtxOk ctx
   | 0, ctx, h => by
@@ -19024,7 +19186,8 @@ theorem GCtx_CtxOk : ∀ (k : ℕ) (ctx : List Jk1), GCtx k ctx → CtxOk ctx
       exact ⟨hU, trivial⟩
   | (k + 1), ctx, h => by
       obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
-      exact CtxOk_snoc ctx' (GCtx_CtxOk k ctx' hc') U hU
+      exact CtxOk_snoc ctx' (GCtx_CtxOk k ctx' hc') U
+        (CtxX_of_JkJ ctx' (GCtx_ne k ctx' hc') U hU)
 
 /-- `APd k V` は「深さ `k` のどの良い文脈でも `plug ctx V` が良い」と同値。 -/
 theorem APd_iff : ∀ (k : ℕ) (V : Jk1), APd k V ↔ ∀ ctx : List Jk1, GCtx k ctx → GOK (plug ctx V)
@@ -19055,21 +19218,21 @@ theorem APd_congr : ∀ (k : ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) �
   exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
 
 theorem GOK_chainJd {k : ℕ} {ctx : List Jk1} (hc : GCtx k ctx) {X T : Jk1}
-    (hXok : JkOk X) (hXk : APd k X) (hTok : JkOk T)
-    (hstep : ∀ V : Jk1, JkOk V → APd k V → APd k (Jk1.one V T)) :
+    (hXok : JkJ X) (hXk : APd k X) (hTok : JkJ T)
+    (hstep : ∀ V : Jk1, JkJ V → APd k V → APd k (Jk1.one V T)) :
     ∀ n, GOK (plug ctx (itJ T n X)) ∧ APd k (itJ T n X)
   | 0 => ⟨(APd_iff k X).mp hXk ctx hc, hXk⟩
   | (n + 1) => by
       obtain ⟨h1, h2⟩ := GOK_chainJd hc hXok hXk hTok hstep n
-      have hok := JkOk_itJ hTok n hXok
+      have hok := JkJ_itJ hTok n hXok
       have h3 := hstep (itJ T n X) hok h2
       exact ⟨(APd_iff k _).mp h3 ctx hc, h3⟩
 
 /-- ★★★ 任意の深さでの荷追加。`APd (k+1) Z` を仮定に持ち回る。 -/
-theorem AYd : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → APd (k + 1) Z →
-    ∀ (X : Jk1), JkOk X → APd k X → APd k (Jk1.one X (Jk1.pay Z Y)) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → APd (k + 1) Z →
-      ∀ (X : Jk1), JkOk X → APd k X → APd k (Jk1.one X (Jk1.pay Z Y))} := by
+theorem AYd : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → APd (k + 1) Z →
+    ∀ (X : Jk1), JkJ X → APd k X → APd k (Jk1.one X (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → APd (k + 1) Z →
+      ∀ (X : Jk1), JkJ X → APd k X → APd k (Jk1.one X (Jk1.pay Z Y))} := by
     refine A2' ?_
     intro Y hY
     simp only [Set.mem_setOf_eq]
@@ -19084,13 +19247,14 @@ theorem AYd : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → A
         obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
         have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
         subst hcz
-        have hpres : ∀ V : Jk1, JkOk V → APd k V → APd k (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
+        have hpres : ∀ V : Jk1, JkJ V → APd k V → APd k (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
           fun V hV hVk => APd_congr k (fun l => (jk1_one_pay_nil V Z l).symm) (hRZ V hV hVk)
         have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
             = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
         rw [e, APd_iff]
         intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJs hw (GCtx_CtxOk k ctx hc) hX hZ
+        refine GoodFb_snoc_dupJs hw (GCtx_CtxOk k ctx hc)
+          (CtxX_of_JkJ ctx (GCtx_ne k ctx hc) X hX) hZ
           (by simpa using hYb) Bok_nil ?_
         intro n hn
         exact (GOK_chainJd (T := Jk1.pay Z ([] : TrioSeq)) hc hX hXk ⟨hZ, Bok_nil⟩ hpres n).1 ws hw hG
@@ -19118,11 +19282,12 @@ theorem AYd : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → A
         rw [hop] at hdl
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hpres : ∀ V : Jk1, JkOk V → APd k V → APd k (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
+        have hpres : ∀ V : Jk1, JkJ V → APd k V → APd k (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
           fun V hV hVk => hdl hdb k Z hZ hRZ V hV hVk
         rw [hsplit, APd_iff]
         intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJs hw (GCtx_CtxOk k ctx hc) hX hZ
+        refine GoodFb_snoc_dupJs hw (GCtx_CtxOk k ctx hc)
+          (CtxX_of_JkJ ctx (GCtx_ne k ctx hc) X hX) hZ
           (by rw [← hsplit]; exact hYb) hdb ?_
         intro n hn
         exact (GOK_chainJd (T := Jk1.pay Z Y.dropLast) hc hX hXk ⟨hZ, hdb⟩ hpres n).1 ws hw hG
@@ -19131,7 +19296,8 @@ theorem AYd : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → A
         have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
         rw [APd_iff]
         intro ctx hc ws hw hG
-        refine GoodFb_snoc_innerJs hw (GCtx_CtxOk k ctx hc) hX hZ hYb hlen2 hp ?_
+        refine GoodFb_snoc_innerJs hw (GCtx_CtxOk k ctx hc)
+          (CtxX_of_JkJ ctx (GCtx_ne k ctx hc) X hX) hZ hYb hlen2 hp ?_
         intro n hn
         have hh := hnat n hn
         simp only [Set.mem_setOf_eq] at hh
@@ -19145,16 +19311,17 @@ theorem AYd : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkOk Z → A
 
 /-! ### `APd` の閉包 → すべての木が普遍 -/
 
-theorem APd_pay : ∀ (k : ℕ) (V : Jk1), JkOk V → APd k V → ∀ C : TrioSeq, Bok C →
+theorem APd_pay : ∀ (k : ℕ) (V : Jk1), JkJ V → APd k V → ∀ C : TrioSeq, Bok C →
     APd k (Jk1.pay V C)
   | 0, V, hV, hVk, C, hC => APz_pay hV hVk hC
   | (k + 1), V, hV, hVk, C, hC => fun U hU hUk => AYd C hC k V hV hVk U hU hUk
 
-theorem APd_oneNil (k : ℕ) (V : Jk1) (hV : JkOk V) (hVk : APd k V) :
+theorem APd_oneNil (k : ℕ) (V : Jk1) (hV : JkJ V) (hVk : APd k V) :
     APd k (Jk1.one V Jk1.nil) := by
   rw [APd_iff]
   intro ctx hc
-  refine APnil_gen ctx (GCtx_CtxOk k ctx hc) V hV ((APd_iff k V).mp hVk ctx hc) ?_
+  refine APnil_gen ctx (GCtx_CtxOk k ctx hc) V
+    (CtxX_of_JkJ ctx (GCtx_ne k ctx hc) V hV) ((APd_iff k V).mp hVk ctx hc) ?_
   intro C hC
   exact (APd_iff k _).mp (APd_pay k V hV hVk C hC) ctx hc
 
@@ -19162,50 +19329,24 @@ theorem APd_nil : ∀ k : ℕ, APd k Jk1.nil
   | 0 => APz_nil
   | (k + 1) => fun U hU hUk => APd_oneNil k U hU hUk
 
-theorem APd_one (k : ℕ) {V W : Jk1} (hV : JkOk V) (hVk : APd k V) (hW : APd (k + 1) W) :
+theorem APd_one (k : ℕ) {V W : Jk1} (hV : JkJ V) (hVk : APd k V) (hW : APd (k + 1) W) :
     APd k (Jk1.one V W) := hW V hV hVk
 
-/-- ★★★★★ どの妥当な木も、どの深さでも項として継げる。 -/
-theorem APd_all : ∀ (T : Jk1), JkOk T → ∀ k : ℕ, APd k T
-  | Jk1.nil, _, k => APd_nil k
-  | Jk1.pay N Y, h, k => APd_pay k N h.1 (APd_all N h.1 k) Y h.2
-  | Jk1.one N M, h, k => APd_one k h.1 (APd_all N h.1 k) (APd_all M h.2 (k + 1))
 
-/-- ★★★★★ どの妥当な木も、字として語の右に継げる（GoodFb 3 段すべて）。 -/
-theorem GOK_all : ∀ (T : Jk1), JkOk T → GOK T
-  | Jk1.nil, _ => GOK_nil
-  | Jk1.pay N Y, h => AY0 Y h.2 N h.1 (GOK_all N h.1)
-  | Jk1.one N M, h => APd_all M h.2 0 N h.1 (GOK_all N h.1)
-
-#print axioms GOK_all
-
-
-/-! ### 語版と、階段の塔 -/
-
-theorem GoodFb_wordJ : ∀ ws : List Jk1, WOk ws → GoodFb (fun a b => wordJ a b ws) := by
-  intro ws
-  induction ws using List.reverseRecOn with
-  | nil => intro _; exact GoodFb_wordJ_nil
-  | append_singleton ws N ih =>
-      intro hw
-      have hw' : WOk ws := WOk_of_append_left hw
-      exact GOK_all N (hw N (by simp)) ws hw' (ih hw')
-
-/-- ★★★★★ `R338` の上に、木の字の語をどれでも継げる。 -/
-theorem rowJ_mem (ws : List Jk1) (hw : WOk ws) :
-    R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
-  have h := ((GoodFb_wordJ ws hw).seg 0).reapp P0 BaseOk_zero 0 R338
-    (LwB_of_base ⟨Aok_R338, rfl⟩)
-  simpa using h
+/-! ### 階段の木と、2 の記録を項として継ぐ -/
 
 /-- 階段の木: 1 の列が `n` 段。 -/
 def stairJ : ℕ → Jk1
   | 0 => Jk1.nil
   | (n + 1) => Jk1.one Jk1.nil (stairJ n)
 
+theorem JkJ_stairJ : ∀ n : ℕ, JkJ (stairJ n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, JkJ_stairJ n⟩
+
 theorem JkOk_stairJ : ∀ n : ℕ, JkOk (stairJ n)
   | 0 => trivial
-  | (n + 1) => ⟨trivial, JkOk_stairJ n⟩
+  | (n + 1) => ⟨trivial, JkJ_stairJ n⟩
 
 theorem jk1_stairJ_succ (n l : ℕ) :
     jk1 l (stairJ (n + 1)) = ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stairJ n) := by
@@ -19230,6 +19371,227 @@ theorem flatMap_sing {α β : Type} (l : List α) (f : α → β) :
   induction l with
   | nil => rfl
   | cons a l ih => simp [List.flatMap_cons, ih]
+
+theorem APd_stair : ∀ (m k : ℕ), APd k (stairJ m)
+  | 0, k => APd_nil k
+  | (m + 1), k => APd_one k JkJ_nil (APd_nil k) (APd_stair m (k + 1))
+
+/-- 1 の列の塔は階段の木そのもの。 -/
+theorem Mtw_stair (Y0 : TrioSeq) (l n : ℕ) :
+    Mtw Y0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ)] n = Y0 ++ jk1 l (stairJ n) := by
+  rw [Mtw, jk1_stairJ n l, ← flatMap_sing]
+  congr 1
+  all_goals (apply List.flatMap_congr; intro k _; rw [shift_col])
+
+theorem colJ_plug_stair (a b : ℕ) (ctx : List Jk1) (V : Jk1) (l : ℕ)
+    (hl : l = a + ctx.length + 1) (m : ℕ) :
+    colJ a b (plug (ctx ++ [V]) (stairJ m))
+      = colJ a b (plug ctx V) ++ jk1 l (stairJ (m + 1)) := by
+  subst hl
+  rw [plug_snoc, colJ_plug_one a b ctx V (stairJ m),
+    jk1_stairJ_succ m (a + ctx.length + 1),
+    show a + ctx.length + 1 + 1 = a + ctx.length + 2 from by omega]
+
+theorem colJ_plug_two2stair (a b : ℕ) (ctx : List Jk1) (V : Jk1) (l : ℕ)
+    (hl : l = a + ctx.length + 1) :
+    colJ a b (plug (ctx ++ [V]) (Jk1.two2 Jk1.nil))
+      = (colJ a b (plug ctx V) ++ [((l + 1, 1, 0) : ℕ × ℕ × ℕ)])
+        ++ [((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+  subst hl
+  rw [plug_snoc, colJ_plug_one a b ctx V (Jk1.two2 Jk1.nil),
+    show a + ctx.length + 1 + 1 = a + ctx.length + 2 from by omega]
+  have e : jk1 (a + ctx.length + 2) (Jk1.two2 Jk1.nil)
+      = [((a + ctx.length + 2 + 1, 2, 0) : ℕ × ℕ × ℕ)] := by simp [jk1]
+  rw [e]
+  simp [List.append_assoc]
+
+theorem wordJ_snoc_plug_stair (a b : ℕ) (ws ctx : List Jk1) (V : Jk1) (l : ℕ)
+    (hl : l = a + ctx.length + 1) (m : ℕ) :
+    wordJ a b (ws ++ [plug (ctx ++ [V]) (stairJ m)])
+      = wordJ a b (ws ++ [plug ctx V]) ++ jk1 l (stairJ (m + 1)) := by
+  rw [wordJ_append, wordJ_singleton, colJ_plug_stair a b ctx V l hl m, wordJ_append,
+    wordJ_singleton, List.append_assoc]
+
+theorem wordJ_snoc_two2stair (a b : ℕ) (ws ctx : List Jk1) (V : Jk1) (l : ℕ)
+    (hl : l = a + ctx.length + 1) :
+    wordJ a b (ws ++ [plug (ctx ++ [V]) (Jk1.two2 Jk1.nil)])
+      = (wordJ a b (ws ++ [plug ctx V]) ++ [((l + 1, 1, 0) : ℕ × ℕ × ℕ)])
+        ++ [((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_append, wordJ_singleton, colJ_plug_two2stair a b ctx V l hl, wordJ_append,
+    wordJ_singleton]
+  simp [List.append_assoc]
+
+/-- 良い文脈は「外側の文脈 + 最内の木」に割れて、外側だけでも良い。 -/
+theorem GCtx_split : ∀ (k : ℕ) (ctx : List Jk1), GCtx k ctx →
+    ∃ (ctx0 : List Jk1) (V : Jk1), ctx = ctx0 ++ [V] ∧ GOK (plug ctx0 V)
+  | 0, ctx, h => by
+      obtain ⟨U, rfl, -, hGU⟩ := h
+      exact ⟨[], U, rfl, hGU⟩
+  | (k + 1), ctx, h => by
+      obtain ⟨ctx0, U, rfl, hc0, -, hUk⟩ := h
+      exact ⟨ctx0, U, rfl, (APd_iff k U).mp hUk ctx0 (by exact hc0)⟩
+
+/-- ★★★★★ 2 の記録は、どの深さでも項として継げる（1 の列の直上になるので上がらない）。 -/
+theorem APd_two2 (k : ℕ) : APd k (Jk1.two2 Jk1.nil) := by
+  rw [APd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split k ctx hc
+  have hcO : CtxOk (ctx0 ++ [V]) := GCtx_CtxOk k _ hc
+  have hstair : ∀ m : ℕ, GOK (plug (ctx0 ++ [V]) (stairJ m)) :=
+    fun m => (APd_iff k (stairJ m)).mp (APd_stair m k) _ hc
+  intro ws hw hG
+  have hwO : WOk (ws ++ [plug (ctx0 ++ [V]) (Jk1.two2 Jk1.nil)]) :=
+    WOk_append hw (WOk_singleton (JkOk_plug _ hcO _
+      (CtxX_of_JkJ _ (by simp) _ rfl)))
+  have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx0 V])) := hGV ws hw hG
+  have hstG : ∀ m : ℕ,
+      GoodFb (fun a b => wordJ a b (ws ++ [plug (ctx0 ++ [V]) (stairJ m)])) :=
+    fun m => hstair m ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_snoc_two2stair (c + 1 + t) (y + 1) ws ctx0 V
+      (c + 1 + t + ctx0.length + 1) rfl]
+    set a := c + 1 + t with ha
+    have hbase0 : Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift] at h0
+      simpa [ha] using h0
+    have htw : ∀ n, Mtw (Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])))
+        [((a + ctx0.length + 1 + 1, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+      intro n
+      rw [Mtw_stair]
+      cases n with
+      | zero => simpa [stairJ, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_stair (c + 1 + t) (y + 1) ws ctx0 V
+            (c + 1 + t + ctx0.length + 1) rfl m] at h1
+          simpa [ha, List.append_assoc] using h1
+    have h := snocY_mem (Y0 := Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])))
+      (M := [((a + ctx0.length + 1 + 1, 1, 0) : ℕ × ℕ × ℕ)])
+      (L := a + ctx0.length + 1 + 1) (y := 2)
+      (by simp) (MidD_col (a + ctx0.length + 1 + 1) 1 (by omega) (by omega))
+      (by simp [entry]) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t Z hZ
+    rw [wordJ_shift, wordJ_snoc_two2stair (c + 1 + t) 2 ws ctx0 V
+      (c + 1 + t + ctx0.length + 1) rfl]
+    set a := c + 1 + t with ha
+    have hbase0 : Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift] at h0
+      simpa [ha] using h0
+    have htw : ∀ n, Mtw (Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])))
+        [((a + ctx0.length + 1 + 1, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+      intro n
+      rw [Mtw_stair]
+      cases n with
+      | zero => simpa [stairJ, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).pk c E hI).2.2 j t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_stair (c + 1 + t) 2 ws ctx0 V
+            (c + 1 + t + ctx0.length + 1) rfl m] at h1
+          simpa [ha, List.append_assoc] using h1
+    have h := snocY_mem (Y0 := Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])))
+      (M := [((a + ctx0.length + 1 + 1, 1, 0) : ℕ × ℕ × ℕ)])
+      (L := a + ctx0.length + 1 + 1) (y := 2)
+      (by simp) (MidD_col (a + ctx0.length + 1 + 1) 1 (by omega) (by omega))
+      (by simp [entry]) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.two2 Jk1.nil)])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.two2 Jk1.nil)])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (Jk1.two2 Jk1.nil)]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift,
+      wordJ_snoc_two2stair (h + 1 + s) 1 ws ctx0 V (h + 1 + s + ctx0.length + 1) rfl]
+    set a := h + 1 + s with ha
+    have hbase0 : A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          from rfl] at h0
+      simpa [ha, show h + s + 1 = h + 1 + s from by omega] using h0
+    have htw : ∀ n, Mtw (A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])))
+        [((a + ctx0.length + 1 + 1, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+      intro n
+      rw [Mtw_stair]
+      cases n with
+      | zero => simpa [stairJ, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+                wordJ (h + s + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (stairJ m)])
+              = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+                wordJ (h + s + 1) 1 (ws ++ [plug (ctx0 ++ [V]) (stairJ m)]) from rfl] at h1
+          rw [wordJ_snoc_plug_stair (h + s + 1) 1 ws ctx0 V (h + s + 1 + ctx0.length + 1) rfl m]
+            at h1
+          simpa [ha, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := snocY_mem (Y0 := A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])))
+      (M := [((a + ctx0.length + 1 + 1, 1, 0) : ℕ × ℕ × ℕ)])
+      (L := a + ctx0.length + 1 + 1) (y := 2)
+      (by simp) (MidD_col (a + ctx0.length + 1 + 1) 1 (by omega) (by omega))
+      (by simp [entry]) (by omega) htw
+    simpa [List.append_assoc] using hh
+
+#print axioms APd_two2
+
+/-- ★★★★★ どの妥当な木も、どの深さでも項として継げる。 -/
+theorem APd_all : ∀ (T : Jk1), JkJ T → ∀ k : ℕ, APd k T
+  | Jk1.nil, _, k => APd_nil k
+  | Jk1.pay N Y, h, k => APd_pay k N h.1 (APd_all N h.1 k) Y h.2
+  | Jk1.one N M, h, k => APd_one k h.1 (APd_all N h.1 k) (APd_all M h.2 (k + 1))
+  | Jk1.two2 N, h, k => by
+      subst h
+      exact APd_two2 k
+
+/-- ★★★★★ どの妥当な木も、字として語の右に継げる（GoodFb 3 段すべて）。 -/
+theorem GOK_all : ∀ (T : Jk1), JkOk T → GOK T
+  | Jk1.nil, _ => GOK_nil
+  | Jk1.pay N Y, h => AY0 Y h.2 N h.1 (GOK_all N h.1)
+  | Jk1.one N M, h => APd_all M h.2 0 N h.1 (GOK_all N h.1)
+  | Jk1.two2 _, h => absurd h (by simp [JkOk])
+
+#print axioms GOK_all
+
+
+/-! ### 語版と、階段の塔 -/
+
+theorem GoodFb_wordJ : ∀ ws : List Jk1, WOk ws → GoodFb (fun a b => wordJ a b ws) := by
+  intro ws
+  induction ws using List.reverseRecOn with
+  | nil => intro _; exact GoodFb_wordJ_nil
+  | append_singleton ws N ih =>
+      intro hw
+      have hw' : WOk ws := WOk_of_append_left hw
+      exact GOK_all N (hw N (by simp)) ws hw' (ih hw')
+
+/-- ★★★★★ `R338` の上に、木の字の語をどれでも継げる。 -/
+theorem rowJ_mem (ws : List Jk1) (hw : WOk ws) :
+    R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
+  have h := ((GoodFb_wordJ ws hw).seg 0).reapp P0 BaseOk_zero 0 R338
+    (LwB_of_base ⟨Aok_R338, rfl⟩)
+  simpa using h
 
 theorem stair_tower (n : ℕ) :
     R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [stairJ n])
@@ -19269,6 +19631,7 @@ def appJ : Jk1 → Jk1 → Jk1
   | N1, Jk1.nil => N1
   | N1, Jk1.pay N2 Y => Jk1.pay (appJ N1 N2) Y
   | N1, Jk1.one N2 M => Jk1.one (appJ N1 N2) M
+  | N1, Jk1.two2 N2 => Jk1.two2 (appJ N1 N2)
 
 theorem jk1_appJ : ∀ (N2 N1 : Jk1) (l : ℕ), jk1 l (appJ N1 N2) = jk1 l N1 ++ jk1 l N2
   | Jk1.nil, N1, l => by simp [appJ, jk1]
@@ -19282,20 +19645,24 @@ theorem jk1_appJ : ∀ (N2 N1 : Jk1) (l : ℕ), jk1 l (appJ N1 N2) = jk1 l N1 ++
       rw [jk1_appJ N2 N1 l]
       show _ = jk1 l N1 ++ (jk1 l N2 ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M))
       rw [List.append_assoc]
-
-theorem JkOk_appJ : ∀ (N2 N1 : Jk1), JkOk N1 → JkOk N2 → JkOk (appJ N1 N2)
-  | Jk1.nil, N1, h1, _ => h1
-  | Jk1.pay N2 Y, N1, h1, h2 => ⟨JkOk_appJ N2 N1 h1 h2.1, h2.2⟩
-  | Jk1.one N2 M, N1, h1, h2 => ⟨JkOk_appJ N2 N1 h1 h2.1, h2.2⟩
+  | Jk1.two2 N2, N1, l => by
+      show jk1 l (appJ N1 N2) ++ [((l + 1, 2, 0) : ℕ × ℕ × ℕ)] = _
+      rw [jk1_appJ N2 N1 l]
+      show _ = jk1 l N1 ++ (jk1 l N2 ++ [((l + 1, 2, 0) : ℕ × ℕ × ℕ)])
+      rw [List.append_assoc]
 
 /-- 「1 の列 + junk `M'`」を入れ子に `n` 回繰り返した木。 -/
 def twr (M' : Jk1) : ℕ → Jk1
   | 0 => Jk1.nil
   | (n + 1) => Jk1.one Jk1.nil (appJ M' (twr M' n))
 
-theorem JkOk_twr {M' : Jk1} (hM' : JkOk M') : ∀ n : ℕ, JkOk (twr M' n)
+theorem JkJ_twr_app {M' : Jk1} (hM' : JkJ M') : ∀ n : ℕ, JkJ (appJ M' (twr M' n))
+  | 0 => hM'
+  | (n + 1) => ⟨hM', JkJ_twr_app hM' n⟩
+
+theorem JkOk_twr {M' : Jk1} (hM' : JkJ M') : ∀ n : ℕ, JkOk (twr M' n)
   | 0 => trivial
-  | (n + 1) => ⟨trivial, JkOk_appJ (twr M' n) M' hM' (JkOk_twr hM' n)⟩
+  | (n + 1) => ⟨trivial, JkJ_twr_app hM' n⟩
 
 theorem jk1_twr : ∀ (M' : Jk1) (n l : ℕ),
     jk1 l (twr M' n) = (List.range n).flatMap
@@ -19323,7 +19690,7 @@ theorem jk1_twr : ∀ (M' : Jk1) (n l : ℕ),
 
 
 /-- ★★★★★ 「単位 + 1 の列 + 木の junk」の右に 2 の記録を継ぐ。 -/
-theorem hang2rec {h : ℕ} {A : TrioSeq} (hA : LwA h A) {M' : Jk1} (hM' : JkOk M') :
+theorem hang2rec {h : ℕ} {A : TrioSeq} (hA : LwA h A) {M' : Jk1} (hM' : JkJ M') :
     (A ++ ([((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ)] ++
       (((h + 3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 3) M'))) ++ [((h + 4, 2, 0) : ℕ × ℕ × ℕ)]
       ∈ W 0 := by

@@ -1392,3 +1392,44 @@ appJ X (stairJ (n+1)) = Jk1.one X (stairJ n)     -- stairJ (n+1) = one nil (stai
 足し、`hw N hN` を使っている箇所（10 か所程度）に `.1` を入れる。
 
 見積もり: 補題 30 + `not_le1_jk1` 改 120 + `APd_two2` 150 + 制限の付け回し 80 ≒ 380 行。
+
+## 続き80（two2 の実装方針を確定: 述語を 2 つに割る）
+
+続き79 の「`SimpleT` / `NoTop2` を `WOk` に足す」案は、`WOk` を通る補題が
+30 個以上あって付け回しが大きい。代わりに**述語自体を 2 つに割る**:
+
+```
+JkJ  : junk レベル（1 の列の上）。two2 可（引数は nil に限る）
+  nil => True | pay N Y => JkJ N ∧ Bok Y | one N M => JkJ N ∧ JkJ M | two2 N => N = nil
+JkOk : 字の先頭段（字の z の直上）。two2 不可
+  nil => True | pay N Y => JkOk N ∧ Bok Y | one N M => JkOk N ∧ JkJ M | two2 _ => False
+```
+`JkOk N → JkJ N`。`WOk ws = ∀ N ∈ ws, JkOk N` は**そのまま**なので
+質量計算（`rise_wordJ` / `oper_z1wJ` / `z1wJ_mem`）は無変更で済む。
+
+文脈は `plug ctx T` の外側が字レベル・内側が junk レベルなので
+```
+CtxJ  : 全部 JkJ
+CtxOk : 先頭が JkOk、残りが JkJ
+CtxX ctx X : ctx = [] なら JkOk X、ctx ≠ [] なら JkJ X
+JkOk_plug ctx (CtxOk ctx) T (CtxX ctx T) : JkOk (plug ctx T)
+```
+`CtxX` を入れることで、`ctx = []` で呼んでいる `AYs` / `APpayJ` はそのまま通り、
+`GCtx`（常に非空）から来る呼び出しは `JkJ` で足りる。
+
+`APd` / `GCtx` の非対称:
+```
+APd 0     V = ∀ U, JkOk U → GOK U   → GOK (one U V)      -- one U V は字レベル
+APd (k+1) V = ∀ U, JkJ  U → APd k U → APd k (one U V)    -- one U V は junk レベル
+GCtx 0     ctx = ∃ U, ctx = [U] ∧ JkOk U ∧ GOK U
+GCtx (k+1) ctx = ∃ ctx' U, ctx = ctx' ++ [U] ∧ GCtx k ctx' ∧ JkJ U ∧ APd k U
+```
+`twr (two2 nil) n = one nil (one (two2 nil) (one (two2 nil) …))` なので
+`two2 nil` は `APd (k+1)` の U の位置に来る ⟹ そこが `JkJ` である必要がある。
+
+`not_le1_jk1` は仮定を `JkOk N ∨ (JkJ N ∧ Grd M p q0 l)` の選言にする:
+```
+Grd M p q0 l = ∃ r, p < r ∧ r < q0 ∧ 行1(r) = 1 ∧ 行0(r) = l ∧ (∀ j, r<j<q0 → l+1 ≤ 行0(j))
+```
+`one N M'` の場合、左は同じ仮定を継ぎ、右（M', レベル l+1）は 1 の列の位置を r として
+`Or.inr` を作る。`two2` の場合は左枝が `False` で潰れ、右枝で `not_le1_two` を使う。
