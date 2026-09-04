@@ -17153,5 +17153,194 @@ theorem RT1_close : ∀ (J : JT), RT1 J → ∀ (P : ℕ → TrioSeq → Prop), 
       rw [jkT]
       simpa [List.append_assoc] using h2
 
+
+/-! ## 木の字（`Jk1`）: z の列の junk を「1 の列 + その junk」「荷」の木にする
+
+`jk1 l N` はレベル `l`（＝親の高さ `l`、列は高さ `l+1` 以上）に展開した列。
+- `Jk1.pay N Y`: 木 `N` の右に荷 `Y`（高さ `l+1` から）
+- `Jk1.one N M`: 木 `N` の右に 1 の列 `(l+1,1,0)` と、その junk `M`（レベル `l+1`）
+
+`wordC` の複合字 `colC a b (k,Y)` は「1 の列が全部兄弟」の特別な場合。 -/
+
+inductive Jk1 : Type
+  | nil : Jk1
+  | pay : Jk1 → TrioSeq → Jk1
+  | one : Jk1 → Jk1 → Jk1
+
+/-- 木をレベル `l` で列に展開する。 -/
+def jk1 : ℕ → Jk1 → TrioSeq
+  | _, Jk1.nil => []
+  | l, Jk1.pay N Y => jk1 l N ++ shiftr01 (l + 1) 0 Y
+  | l, Jk1.one N M => jk1 l N ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M)
+
+/-- 荷はすべて `Bok`。 -/
+def JkOk : Jk1 → Prop
+  | Jk1.nil => True
+  | Jk1.pay N Y => JkOk N ∧ Bok Y
+  | Jk1.one N M => JkOk N ∧ JkOk M
+
+theorem JkOk_nil : JkOk Jk1.nil := trivial
+
+theorem jk1_nil (l : ℕ) : jk1 l Jk1.nil = [] := rfl
+
+theorem jk1_pay_nil (l : ℕ) (N : Jk1) : jk1 l (Jk1.pay N []) = jk1 l N := by
+  simp [jk1, shiftr01]
+
+/-- 木の列はすべて高さ `l+1` 以上。 -/
+theorem jk1_ge : ∀ (N : Jk1) (l : ℕ), ∀ x ∈ jk1 l N, l + 1 ≤ x.1
+  | Jk1.nil, l => by simp [jk1]
+  | Jk1.pay N Y, l => by
+      intro x hx
+      simp only [jk1, List.mem_append, shiftr01, List.mem_map] at hx
+      rcases hx with h | ⟨q, -, rfl⟩
+      · exact jk1_ge N l x h
+      · show l + 1 ≤ q.1 + (l + 1); omega
+  | Jk1.one N M, l => by
+      intro x hx
+      simp only [jk1, List.mem_append, List.mem_cons] at hx
+      rcases hx with h | rfl | h
+      · exact jk1_ge N l x h
+      · exact le_refl _
+      · have := jk1_ge M (l + 1) x h; omega
+
+theorem jk1_mono : ∀ (N : Jk1), JkOk N → ∀ l : ℕ, Mono (jk1 l N)
+  | Jk1.nil, _, l => by simp [jk1, Mono]
+  | Jk1.pay N Y, hN, l => by
+      intro x hx
+      simp only [jk1, List.mem_append, shiftr01, List.mem_map] at hx
+      rcases hx with h | ⟨q, hq, rfl⟩
+      · exact jk1_mono N hN.1 l x h
+      · simpa using hN.2.mono q hq
+  | Jk1.one N M, hN, l => by
+      intro x hx
+      simp only [jk1, List.mem_append, List.mem_cons] at hx
+      rcases hx with h | rfl | h
+      · exact jk1_mono N hN.1 l x h
+      · show (0 : ℕ) ≤ 1; omega
+      · exact jk1_mono M hN.2 (l + 1) x h
+
+theorem jk1_shift : ∀ (N : Jk1) (l s : ℕ), shiftr01 s 0 (jk1 l N) = jk1 (l + s) N
+  | Jk1.nil, l, s => by simp [jk1, shiftr01]
+  | Jk1.pay N Y, l, s => by
+      rw [jk1, shiftr01_append0, jk1_shift N l s, shiftr01_add0,
+        show l + 1 + s = l + s + 1 from by omega]
+      rfl
+  | Jk1.one N M, l, s => by
+      rw [jk1, show ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M
+          = [((l + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ jk1 (l + 1) M from rfl,
+        shiftr01_append0, shiftr01_append0, shift_col, jk1_shift N l s,
+        jk1_shift M (l + 1) s, show l + 1 + s = l + s + 1 from by omega]
+      rfl
+
+#print axioms jk1_shift
+
+
+/-! ### `Ancd` を組み立てる補助補題 -/
+
+theorem entry0_of_ge {N : TrioSeq} {d : ℕ} (hN : ∀ x ∈ N, d ≤ x.1) :
+    ∀ u, u < N.length → d ≤ entry N 0 u := by
+  intro u hu
+  have h := hN (N[u]'hu) (List.getElem_mem hu)
+  have he : entry N 0 u = (N[u]'hu).1 := by
+    simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hu]
+  omega
+
+/-- 高さ `d` 以上の塊を継いでも祖先条件は保たれる。 -/
+theorem Ancd_append_ge {d : ℕ} {X N : TrioSeq} (hX : Ancd d X) (hN : ∀ x ∈ N, d ≤ x.1) :
+    Ancd d (X ++ N) := by
+  intro j hj0 hjl hlt hvis
+  rcases Nat.lt_or_ge j X.length with hjX | hjX
+  · rw [entry_append_left hjX]
+    refine hX j hj0 hjX (by rwa [entry_append_left hjX] at hlt) ?_
+    intro i hi hil
+    have := hvis i hi (by simp; omega)
+    rwa [entry_append_left hjX, entry_append_left hil] at this
+  · exfalso
+    obtain ⟨u, hu, rfl⟩ : ∃ u, u < N.length ∧ j = X.length + u :=
+      ⟨j - X.length, by simp at hjl; omega, by omega⟩
+    rw [entry_append_right] at hlt
+    have := entry0_of_ge hN u hu
+    omega
+
+/-- 行 1 が 1 以上の列を 1 本継いでも祖先条件は保たれる。 -/
+theorem Ancd_snoc_one1 {d : ℕ} {X : TrioSeq} (hX : Ancd d X) {c : ℕ × ℕ × ℕ}
+    (hc : 1 ≤ c.2.1) : Ancd d (X ++ [c]) := by
+  intro j hj0 hjl hlt hvis
+  rcases Nat.lt_or_ge j X.length with hjX | hjX
+  · rw [entry_append_left hjX]
+    refine hX j hj0 hjX (by rwa [entry_append_left hjX] at hlt) ?_
+    intro i hi hil
+    have := hvis i hi (by simp; omega)
+    rwa [entry_append_left hjX, entry_append_left hil] at this
+  · obtain ⟨u, hu, rfl⟩ : ∃ u, u < 1 ∧ j = X.length + u :=
+      ⟨j - X.length, by simp at hjl; omega, by omega⟩
+    have hu0 : u = 0 := by omega
+    subst hu0
+    rw [entry_append_right]
+    simpa [entry] using hc
+
+/-- 高さ `a` の「軸」の列を継ぐと、祖先条件はどんな `d` でも成り立つ。 -/
+theorem Ancd_snoc_pivot {a d : ℕ} {Z : TrioSeq} (hZ : Ancd a Z) {c : ℕ × ℕ × ℕ}
+    (hc0 : c.1 = a) (hc1 : 1 ≤ c.2.1) : Ancd d (Z ++ [c]) := by
+  intro j hj0 hjl hlt hvis
+  rcases Nat.lt_or_ge j Z.length with hjZ | hjZ
+  · have hZl : Z.length < (Z ++ [c]).length := by simp
+    have hcz : entry (Z ++ [c]) 0 Z.length = a := by
+      rw [show Z.length = Z.length + 0 from rfl, entry_append_right]
+      simpa [entry] using hc0
+    have hlt1 : entry Z 0 j < a := by
+      have h1 := hvis Z.length hjZ hZl
+      rw [entry_append_left hjZ, hcz] at h1
+      exact h1
+    rw [entry_append_left hjZ]
+    refine hZ j hj0 hjZ hlt1 ?_
+    intro i hi hil
+    have := hvis i hi (by simp; omega)
+    rwa [entry_append_left hjZ, entry_append_left hil] at this
+  · obtain ⟨u, hu, rfl⟩ : ∃ u, u < 1 ∧ j = Z.length + u :=
+      ⟨j - Z.length, by simp at hjl; omega, by omega⟩
+    have hu0 : u = 0 := by omega
+    subst hu0
+    rw [entry_append_right]
+    simpa [entry] using hc1
+
+/-- 高さ `l+1` 以上の塊 `B` の直後に高さ `l+1` 以下の列を置くと、`B` の列は不可視。 -/
+theorem Ancd_append_low {d l : ℕ} {X B : TrioSeq} (hX : Ancd d X)
+    (hB : ∀ x ∈ B, l + 1 ≤ x.1) {c : ℕ × ℕ × ℕ} (hc0 : c.1 ≤ l + 1) (hc1 : 1 ≤ c.2.1) :
+    Ancd d ((X ++ B) ++ [c]) := by
+  have hcpos : ((X ++ B) ++ [c]).length = X.length + B.length + 1 := by simp; omega
+  have hclast : entry ((X ++ B) ++ [c]) 0 (X.length + B.length) = c.1 := by
+    rw [show X.length + B.length = (X ++ B).length + 0 from by simp, entry_append_right]
+    simp [entry]
+  intro j hj0 hjl hlt hvis
+  rcases Nat.lt_or_ge j X.length with hjX | hjX
+  · have hjXB : j < (X ++ B).length := by simp; omega
+    rw [entry_append_left hjXB, entry_append_left hjX]
+    refine hX j hj0 hjX (by rwa [entry_append_left hjXB, entry_append_left hjX] at hlt) ?_
+    intro i hi hil
+    have hiXB : i < (X ++ B).length := by simp; omega
+    have := hvis i hi (by omega)
+    rwa [entry_append_left hjXB, entry_append_left hjX, entry_append_left hiXB,
+      entry_append_left hil] at this
+  rcases Nat.lt_or_ge j (X.length + B.length) with hjB | hjB
+  · exfalso
+    obtain ⟨u, hu, rfl⟩ : ∃ u, u < B.length ∧ j = X.length + u :=
+      ⟨j - X.length, by omega, by omega⟩
+    have hjXB : X.length + u < (X ++ B).length := by simp; omega
+    have he : entry ((X ++ B) ++ [c]) 0 (X.length + u) = entry B 0 u := by
+      rw [entry_append_left hjXB, entry_append_right]
+    have h1 := hvis (X.length + B.length) (by omega) (by omega)
+    rw [he, hclast] at h1
+    have := entry0_of_ge hB u hu
+    omega
+  · obtain ⟨u, hu, rfl⟩ : ∃ u, u < 1 ∧ j = (X ++ B).length + u :=
+      ⟨j - (X.length + B.length), by omega, by simp; omega⟩
+    have hu0 : u = 0 := by omega
+    subst hu0
+    rw [entry_append_right]
+    simpa [entry] using hc1
+
+#print axioms Ancd_append_low
+
 end Small
 end TRIO
