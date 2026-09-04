@@ -1093,3 +1093,46 @@ GoodFb_of_keyJ、GoodFb_wordJ_nil、GoodFb_snoczJ。
    （`GoodP_all` の `shwP` と同じ手）。1 の列の場合が影の展開に対応しないのが難点。
 3. z の上のレベルの類（続き70 の壁）を別ルートで作る。作れれば
    RunA 0 3 R344 が出て、行 371〜384 がまとめて落ちる。
+
+## 続き73（壁の精密化: 連鎖は仮定を保存する。残るのは `nil` の 1 点だけ）
+
+続き72 の壁をもう一段詰めた。記法:
+```
+APany W := ∀ ctx T, JkOk T → GOK (plug ctx T) → GOK (plug ctx (one T W))
+```
+
+### 分かったこと 1: AYs の仮定を「∀ ctx 版」にすると連鎖が自己保存する
+AYs を
+```
+S(Y) := ∀ ctx X Z, APany X → APany Z → GOK (plug ctx X) → GOK (plug ctx (one X (pay Z Y)))
+```
+の形で書くと、dup の連鎖 W_0 = X, W_{i+1} = one W_i (pay Z Y') について
+**`APany W_{i+1}` が `APany W_i` と `APany Z` から出る**（plug の付け替えで
+S(Y') の別の ctx での適用に落ちる）。つまり連鎖は仮定を壊さない。
+Y = [] の場合も `APany Z` で片づく。よって S(Y) は Y の A2' 帰納法だけで閉じる。
+
+### 分かったこと 2: 残るのは `APany nil`（深さ ≥ 1）ただ 1 点
+`APany W` を W の構造帰納法で出そうとすると:
+- W = pay Z Y → S(Y)。仮定の `APany Z` は部分項 ✓
+- W = one M' M'' → plug の付け替えで部分項 M'', M' ✓
+- W = nil, ctx = [] → AY0 ✓（自己完結）
+- **W = nil, ctx = ctx'++[X] → S(C) の仮定として `APany T`（T は蓄積した木）が要る**。
+  T は全称量化された引数なので、部分項でも小さくもない。ここだけが循環する。
+
+### 分かったこと 3: blkD_memS を Bok 版にしても同じ所で止まる
+`blkD_memS` の hclose は `Mono C'` を要求するが、内部では C' = B.dropLast（Bok）
+または [] しか使わない（`Yseq_Aok_S` は hclose を C' = C のまま回す）ので、
+**hclose の仮定を `Bok C'` に弱めた版 `blkD_memS_B` が作れる**。
+これがあると、類の不変量の junk を「木の字（Jk1）」に取れて hclose が
+`one T (pay V C')` という木になる。だが hbase が
+`GOK (plug ctx' (one T V))` すなわち `APany V` を要求するので、
+上の 1 点と同じ所で止まる。
+
+### 次に試すこと
+`APany` の定義が負の位置に自分を含む（`APany T` を仮定に持ちたい）のが技術的な壁。
+- ランク付き `APany_r`（仮定を `APany_{r-1} T` にする）は連鎖ではランクが減らない ✓ が、
+  底 `APany_1` が「助けなしの主張」になって潰れる。
+- 最大不動点（`∃ S, S W ∧ (S が閉じている)`）にすると、S を「全 JkOk 木」に取った
+  ときの閉包条件が主張そのものになって循環する。
+- 有望なのは「蓄積した木 T を、木ではなく**影の行列**として持ち、
+  T についての帰納法を W 0 の A2' に載せる」方向（`GoodP_all` の `shwP` の手）。
