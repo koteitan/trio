@@ -2201,3 +2201,51 @@ JkJ : Jk1 → Prop
 4. `APd_nil` / `APd_pay` に ftwo の場合を追加（それぞれ既存の `APd_twoNil` / `APd_twoPay` の中身）
 5. `APd_all` の 4 分岐、`GOK_all`
 6. 行375、行376
+
+## 続き97（★★★ 正解: 2 の記録フレームの本数 t で階層を刻む）
+
+続き96 の `JkT` 制限は**自己矛盾する**ことが分かった:
+- (a) `APd_pay` の ftwo の場合の dup の鎖 `twoIt N (pay V C') m` は `PayOnly V` を要求する
+- (b) `APnil_gen` の `itJ` の鎖は 2 の記録の上に `one` の鎖を作る（`PayOnly` でない）
+両方を満たす `JkT` は存在しない。
+
+### 本当の原因と解き方
+壁は「2 の記録フレームの木 N の塔が `∀ j, APd j N` を要求する」こと。
+`APd` を**フレーム数 k だけ**で刻むと `∀ j` が書けない。
+そこで **2 の記録フレームの本数 t** を第 2 の添字にする。フレームを 1 枚剥がすとき
+- `fone N` → t は不変、k が減る（条件は `APd t k N`）
+- `ftwo N` → **t が減る**、k も減る（条件は `∀ j, APd (t-1) j N` ← t が減るので書ける）
+
+```
+def GCtx : ℕ → ℕ → List Frm → Prop        -- t = ftwo フレームの本数, k = フレーム数 - 1
+  | _, 0,     ctx => ∃ U, ctx = [Frm.fone U] ∧ JkOk U ∧ GOK U
+  | t, (k+1), ctx => ∃ ctx' f, ctx = ctx' ++ [f] ∧ CtxOk ctx ∧
+      ((∃ N, f = Frm.fone N ∧ GCtx t k ctx' ∧ (∀ c, GCtx t k c → CtxX c N → GOK (plug c N))) ∨
+       (∃ N t', t = t' + 1 ∧ f = Frm.ftwo N ∧ GCtx t' k ctx' ∧
+          (∀ j c, GCtx t' j c → CtxX c N → GOK (plug c N))))
+termination_by t k _ => (t, k)      -- 辞書式。ftwo の枝は t が減るので ∀ j が許される
+
+def APd (t k : ℕ) (V : Jk1) : Prop := ∀ ctx, GCtx t k ctx → CtxX ctx V → GOK (plug ctx V)
+```
+- fone の枝の条件 = `APd t k N`、ftwo の枝の条件 = `∀ j, APd t' j N`（どちらも定義的に一致）
+- フレーム `Frm.ftwo N` は**木を持てる**（左兄弟 N）。`plugC (ftwo N) X = two N X`
+
+### これで全部閉じる
+- `JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M`（完全に一般）でよい。`JkT` は不要
+- `APd_nil` の ftwo の場合 = 旧 `APd_twoNilGen`。塔 `∀ m, GOK (plug ctx' (twr N m))` は
+  `∀ j, APd t' j N` から `APd_plug_rep` で出る ✓
+- `APd_pay` の ftwo の場合 = 旧 `APd_twoPay`。dup の鎖の `hRZ`（底の `two N V`）は
+  **ftwo フレームで読み替えるだけ**（`plug (ctx' ++ [ftwo N]) V`）✓
+- `APd_one` / `APd_two` は純粋な読み替え ✓
+- `two N (one W W')`（左兄弟一般 + 1 の列）も frame で書けるので穴がない ✓
+
+### 補助定理はすべて「普遍形」で書く
+添字の計算を避けるため、部分木の仮定は `∀ t k, APd t k <部分木>` の形にする:
+```
+APd_pay : ∀ Y, Bok Y → ∀ Z, JkJ Z → (∀ t k, APd t k Z) → ∀ t k, APd t k (pay Z Y)
+APd_nil : ∀ t k, APd t k nil
+APd_one : ∀ V W, JkJ V → (∀ t k, APd t k V) → (∀ t k, APd t k W) → JkJ W → ∀ t k, APd t k (one V W)
+APd_two : ∀ N M, JkJ N → (∀ t k, APd t k N) → (∀ t k, APd t k M) → JkJ M → TopOk M
+          → ∀ t k, APd t k (two N M)
+APd_all : ∀ T, JkJ T → ∀ t k, APd t k T
+```
