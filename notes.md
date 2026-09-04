@@ -2668,3 +2668,62 @@ def APd : List Bool → Jk1 → Prop
 `twoIt N T m`（N が 2 の記録の鎖）を作るので、`two N (one A B)` が避けられない。
 `fotw` を `ftwo N`（左 junk 付き）にすればこれが `APd (false::ks) (one A B)` の
 具体化で出る。
+
+## 続き106（行375: 105 の設計は閉じない。確定版の設計）
+
+### 梯子（`NxtB`）ルートは駄目
+行375 の塔 `Vs n = R341 (3,1,0)(4,2,0)(5,1,0)(6,2,0)...` は
+`Basef_Xs`（行293 の塔 `Xs`）と同じ形なので、**レベル 2 の `BaseOk` 底で
+`R341` を含むもの**があれば `NxtB` の鎖でそのまま出る。しかし
+- `NxtB P 2 R341` は `N = [(2,2,1)]` の再継ぎ
+  「任意の `SegB` の後ろに z 記録 `(s+2,2,1)` を継ぐ」を要求する。
+  `z1_mem` は直前の列が `(a,1,0)` でないと使えないので不可。
+- 独自の底 `NxZ`（単位 `UZ b = (b+1,1,0)(b+2,2,1)` で始まるセグメント）を作っても、
+  `BaseOk.close` で末尾に付いたブロック `N`（高さ ≥ b+3）の**上に** `Bok B` を吊るす
+  `hang` が要る。`blkD_memS` は `MidD d N`（N の頭がちょうど d-1）を要求するが、
+  ここでは N の頭は b+3 以上なので使えない。`hangU11` は木/語の言語（`GoodP_all`）
+  で証明されている ⇒ 結局こちらも木の言語が要る。
+
+### 確定版（木の言語、`Frm.ftwo` は junk 付き）
+1. `Frm.fotw : Jk1 → Frm` を **`Frm.ftwo : Jk1 → Frm`** に置換。
+   `plug (ftwo N :: rest) T = two N (plug rest T)`、`dep (ftwo _ :: rest) = dep rest + 1`。
+   「1 の列 + 2 の記録」は `[fone U, ftwo N]` の 2 枚。**2 の記録の左 junk `N` を持つ**のが要。
+2. `JkJ (two N M) := JkJ N ∧ JkJ M ∧ TopOk M`。
+   `HdT (ftwo _ :: _) = False`、`CtxJ (ftwo N :: rest) = JkJ N ∧ HdT rest ∧ CtxJ rest`、
+   `CtxOk (ftwo _ :: _) = False`、`CtxXJ [ftwo _] X = JkJ X ∧ TopOk X`（旧のまま）。
+3. 添字は `List Bool`（true = fone 1 枚、false = fone+ftwo 2 枚）。
+```
+def cntF : List Bool → ℕ            -- false の個数
+def Rq : List Bool → Jk1 → Prop     -- Rq (false::_) U = TopOk U、他は True
+def APd : List Bool → Jk1 → Prop
+  | [],                _ => True
+  | [true],            V => ∀ U, JkOk U → GOK U → GOK (one U V)
+  | [false],           V => ∀ U N, JkOk U → GOK U → JkJ N →
+                              (∀ m, APd (replicate m true ++ [true]) N) →
+                              GOK (one U (two N V))
+  | (true :: b :: ks),  V => ∀ U, JkJ U → Rq (b::ks) U → APd (b::ks) U → APd (b::ks) (one U V)
+  | (false :: b :: ks), V => ∀ U N, JkJ U → Rq (b::ks) U → APd (b::ks) U → JkJ N →
+                              (∀ m, APd (replicate m true ++ (true :: b :: ks)) N) →
+                              APd (b::ks) (one U (two N V))
+termination_by ks _ => (cntF ks, ks.length)
+```
+`false::ks` の N 条件は添字 `replicate m true ++ (true::ks)`（true 頭）なので
+`cntF` が真に減る ⇒ 停止する。**この形でないと定義が循環する**（105 の設計の穴）。
+4. `APd_all : ∀ T, JkJ T → ∀ ks, Rq ks T → APd ks T`（木で構造帰納）。全場合閉じる:
+   - `nil`: `[true]`=`APz_nil`、`[false]`/`false::ks`=**`APd_twoNilGen`**、
+     `true::ks`=`APd_oneNil`（その hang は `APd_pay`）
+   - `pay V C`: true 頭 = `AYd`、false 頭 = `APd_step` + `APd_twoAll (pay V C)`
+     （`Rq (false::ks) (pay V C) = TopOk V` が効く）
+   - `one A B`: どの ks も `APd_step ks (APd_all A ks) (APd_all B (true::ks))`
+   - `two N M`: `TopOk (two ..) = False` で true 頭のみ。`APd_twoAll M`
+5. `APd_twoAll M (JkJ M) (TopOk M) (hall : sizeOf ≤ sizeOf M の木の APd_all)
+    N (JkJ N) (hNall : ∀ks, APd (true::ks) N) ks : APd (true::ks) (two N M)`（M で構造帰納）
+   - `nil` → `APd_twoNilGen`
+   - `pay Z C` → `APd_twoPayG`（`APd_twoPay` の `PayOnly Z` を `JkJ Z ∧ TopOk Z` に緩めた版）
+   - `one A B` → `APd_all (one A B) (false::ks)` を `(U, N)` で具体化（`TopOk A` は
+     `JkJ (two N (one A B))` から出る）
+   - `two _ _` → `TopOk` で排除
+
+### 要点
+`APd_twoPay` の重複場合が `twoIt N T m`（N が 2 の記録の鎖）を作るので
+`two N (one A B)`（N ≠ nil）が避けられない。だから `ftwo` は junk 付きでなければならない。
