@@ -18776,5 +18776,44 @@ theorem APnil_gen (ctx : List Jk1) (hc : CtxOk ctx) (V : Jk1) (hV : JkOk V)
 
 #print axioms APnil_gen
 
+
+/-! ### 深さ 0 の「項として継げる」木 `APz` と、その 1 段上 -/
+
+/-- 木 `V` は、どの良い木の右にも「1 の列 + junk `V`」として継げる。 -/
+def APz (V : Jk1) : Prop := ∀ U : Jk1, JkOk U → GOK U → GOK (Jk1.one U V)
+
+theorem APz_nil : APz Jk1.nil := fun U hU hGU => AP0nil U hU hGU
+
+theorem GOK_onePay {T V : Jk1} (hT : JkOk T) (hV : JkOk V) (hGT : GOK T) (hA : APz V)
+    {C : TrioSeq} (hC : Bok C) : GOK (Jk1.one T (Jk1.pay V C)) :=
+  AYs C hC [] trivial T V hT hV (fun U hU hGU => hA U hU hGU) hGT
+
+/-- `APz` は荷の追加で閉じている。 -/
+theorem APz_pay {V : Jk1} (hV : JkOk V) (hA : APz V) {C : TrioSeq} (hC : Bok C) :
+    APz (Jk1.pay V C) := fun U hU hGU => GOK_onePay hU hV hGU hA hC
+
+/-- ★★★ `APz V` なら、`one V nil`（junk のない 1 の列）を項として継げる。 -/
+theorem GOK_oneOneNil {T V : Jk1} (hT : JkOk T) (hV : JkOk V) (hGT : GOK T) (hA : APz V) :
+    GOK (Jk1.one T (Jk1.one V Jk1.nil)) := by
+  refine APnil_gen [T] ⟨hT, trivial⟩ V hV ?_ ?_
+  · exact hA T hT hGT
+  · intro C hC
+    exact GOK_onePay hT hV hGT hA hC
+
+/-- 行 371 の字の木は完全に普遍（GoodFb 3 段すべて）。 -/
+theorem GOK_T371 : GOK (Jk1.one Jk1.nil (Jk1.one Jk1.nil Jk1.nil)) :=
+  GOK_oneOneNil JkOk_nil JkOk_nil GOK_nil APz_nil
+
+theorem JkOk_T371 : JkOk (Jk1.one Jk1.nil (Jk1.one Jk1.nil Jk1.nil)) :=
+  ⟨trivial, trivial, trivial⟩
+
+/-- 行 371 を「字の普遍性」から出し直す（`GoodFb` の 3 段すべてが付く）。 -/
+theorem R371_mem' : R344 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG := GOK_T371 [] WOk_nil GoodFb_wordJ_nil
+  have h := (hG.seg 0).reapp P0 BaseOk_zero 0 R338 (LwB_of_base ⟨Aok_R338, rfl⟩)
+  simpa [wordJ, colJ, jk1, shiftr01_zero, R344, R341, List.append_assoc] using h
+
+#print axioms R371_mem'
+
 end Small
 end TRIO
