@@ -2072,3 +2072,71 @@ HdT / CtxJ / CtxOk / CtxXJ / CtxX / CtxX_snoc1 / CtxX_snoc2 / …
    `APd_twoNilGen` / `APd_twoPay` / `APnil_gen` で埋める
 4. `APd_all` の `two` を選言で分ける
 5. 行375（`snocYd_mem`, dl = 2）、行376
+
+## 続き95（★ フレーム設計の決着: 2 の記録フレームには「塔の仮定」を持たせる）
+
+### 何が詰まっていたか
+`fotw`（1 の列 + 2 の記録を束ねたフレーム）では `two N (one W W')` が書けない。
+そこで atomic フレーム `ftwo N`（2 の記録単体、`plug (ftwo N :: rest) T = two N (plug rest T)`）
+にしたが、今度は **`GCtx` の ftwo フレームが `∀ j, APd j N` を要求する**という壁に当たった:
+- `APd_twoNilGen` の塔は `plug ctx0 (twr N m)`（N を m 段重ねる）で、深さが増える
+- `APd` は k の再帰で定義されるので、本体に `∀ j, APd j` は書けない（j > k+1 を含む）
+
+### 解き方
+塔は **文脈を深くするのではなく、最内の木を大きくする**だけ。つまり必要なのは
+```
+APdRep k N := ∀ m, APd k (plug (List.replicate m (Frm.fone N)) N)
+```
+で、これは深さ k のまま。`APd` の本体に書ける（`plug` / `Frm` は `APd` より前）。
+
+```
+def APd : ℕ → Jk1 → Prop
+  | 0,     V => ∀ U, JkOk U → GOK U → JkJ V → GOK (one U V)
+  | (k+1), V => ∀ f, JkJ (frmT f) → APd k (frmT f) →
+                  (∀ N, f = Frm.ftwo N → ∀ m, APd k (plug (replicate m (Frm.fone N)) N)) →
+                  CtxX [f] V → APd k (plugC f V)
+
+def GCtx : ℕ → List Frm → Prop
+  | 0,     ctx => ∃ U, ctx = [Frm.fone U] ∧ JkOk U ∧ GOK U
+  | (k+1), ctx => ∃ ctx' f, ctx = ctx' ++ [f] ∧ GCtx k ctx' ∧ CtxOk ctx ∧
+                    APd k (frmT f) ∧ (∀ N, f = Frm.ftwo N → ∀ m, APd k (plug (replicate m (Frm.fone N)) N))
+
+APd_iff : APd k V ↔ ∀ ctx, GCtx k ctx → CtxX ctx V → GOK (plug ctx V)
+```
+**塔の仮定は fone フレームには付けない**（`APnil_gen` / `AYd` は塔を使わないので不要）。
+これで `APd_plug_rep`（`∀ m k, APd k (plug (replicate m (fone N)) N)`、m の帰納）が
+`APd_one`（塔不要）だけで回り、循環しない。
+
+### これで全部つながる
+```
+APd_one k V W  : APd (k+1) W → JkJ V → APd k V → JkJ W → APd k (one V W)      -- 純粋な読み替え
+APd_two k N M  : APd (k+1) M → JkJ N → APd k N → APdRep k N → JkJ M → TopOk M
+                 → APd k (two N M)                                             -- 純粋な読み替え
+APd_nil  の ftwo の場合 = 旧 APd_twoNilGen（hstair が APdRep そのもの）
+APd_pay  の ftwo の場合 = 旧 APd_twoPay（hRZ は hVk : APd (k+1) V を ftwo N' フレームに当てて得る）
+APd_all  : nil/pay/one/two の 4 分岐がそのまま閉じる
+```
+`APd_twoPayOnly` / `APd_twoAll` の M についての再帰は**不要になる**。
+`JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M`（一般）でよい。
+
+### 済んだこと（この回、緑で残っている変更）
+- `JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M` に緩めた
+- `JkOk_TopOk` / `PayOnly_TopOk` / `JkJ_of_PayOnly`
+- フレームを atomic 化: `Frm.fone N` / `Frm.ftwo N`、`plugC`、`plug (f :: rest) T = plugC f (plug rest T)`、
+  `dep (_ :: rest) = dep rest + 1`
+- `plug_snocC` / `plug_append` / `dep_snocC` / `plug_single`
+- `HdT (ftwo _ :: _) = False`、`CtxOk (ftwo _ :: _) = False`、`CtxJ (ftwo N :: rest) = JkJ N ∧ CtxJ rest ∧ HdT rest`
+- `CtxX_snoc_iff` / `CtxX_one_of` / `CtxX_mono` / `TopOk_plugC` / `JkJ_plugC` /
+  `CtxXJ_plugC` / `CtxX_plugC` / `CtxJ_snocF` / `CtxOk_snocF` /
+  `JkJ_frmT_of_CtxJ_snoc` / `JkJ_frmT_of_CtxOk_snoc`
+- `jk1_plug_one` / `jk1_plug_congr` / `jk1_plug_pay0` / `jk1_plug_two` / `Ancd_plug_jk1` の ftwo の場合
+- 残る誤り: `APd_all` の two の場合だけ（次の作業で `APd_two` に置き換える）
+
+### 次の作業
+1. `appJ` / `twr` / `jk1_twr` / `stairJ` を `APd` の前に移動
+2. 上の `APd` / `GCtx` / `APd_iff` に差し替え、`APd_congr`（`CtxX_mono` を使う）、
+   `GOK_chainJd`、`AYd`、`APd_pay`、`APd_oneNil`、`APd_nil`、`APd_one`、`APd_two` を直す
+3. `APd_plug_rep` を `APd_one` だけで証明し直す（`GCtx_rep` は不要になる）
+4. `APd_twoNilGen` → `APd_nil` の ftwo の場合に吸収、`APd_twoPay` → `APd_pay` の ftwo の場合に吸収
+5. `APd_all` の 4 分岐、`GOK_all`
+6. 行375（`snocYd_mem`, dl = 2、木は `otwJ n = one nil (two nil (otwJ (n-1)))`）、行376
