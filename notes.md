@@ -1981,3 +1981,31 @@ colJ_plug_twoN / wordJ_snoc_twoN / colJ_plug_twr / wordJ_snoc_plug_twr
 ### 残り（続き90 の残り 2 つ）
 - `two N (pay Z C)`（2 の記録の上の荷）: 荷の A2' 帰納。フレーム不要のはず
 - `two N (one N' M'')`: フレーム（`fotw`）が要る
+
+## 続き92（`APd_twoPay` 完成: 2 の記録の上に荷を吊るせる）
+
+続き90 の「フレーム不要の場合 2」を実装して緑。**フレームは要らなかった**。
+```
+JkJ (two N M) = JkJ N ∧ PayOnly M      ← junk が「荷だけの木」なら OK に緩めた
+```
+新しい補題:
+```
+jk1_plug_two / colJ_plug_two : colJ a b (plug ctx (two N M))
+    = colJ a b (plug ctx N) ++ ((a+|ctx|+2,2,0) :: jk1 (a+|ctx|+2) M)
+colJ_plug_twoPay : colJ a b (plug ctx (two N (pay Z Y)))
+    = colJ a b (plug ctx (two N Z)) ++ shiftr01 (a+|ctx|+3) 0 Y
+twoIt N T n      : 「2 の記録 + junk T」を同じ高さに n 個（= 展開の複製）
+colJ_plug_twoIt  : その colJ 分解
+GoodFb_snoc_innerJt / GoodFb_snoc_dupJt : AYd の innerJs / dupJs の two 版
+APd_chainT       : 複製の鎖の APd（n の帰納）
+APd_twoPay       : 荷 Y の A2' 帰納（AYd と同型）
+APd_twoPayOnly   : PayOnly M なら two N M を継げる（M の構造帰納）
+```
+**効いた点**: 2 の記録は `one` と同じく高さを 1 上げるだけなので、
+荷の高さ（`a+|ctx|+3`）も dup のブロックの位置も `one` の場合と同じ算術になる。
+違うのは複製が `itJ`（1 の列を並べる）でなく `twoIt`（2 の記録を並べる）になる点だけ。
+
+### 残り 1 つ
+`two N (one N' M'')`（2 の記録の junk の中に 1 の列）だけがフレームを要求する。
+2 の記録が新しい段を作るので、その段の junk `M''` を継ぐには
+文脈に 2 の記録を含める必要がある。
