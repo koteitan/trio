@@ -1771,3 +1771,50 @@ APd_twoW : AllD N → AllD M → JkJ N → JkJ M → TopOk M → ∀ ks, Hdf ks 
 4. `GoodFb_snoc_innerJs` / `dupJs` / `APnil_gen` / `AYs` の文脈仮定を `PlugG` に統一
 5. `APd_twoW` を書き、`APd_all` の `two` の場合に使う
 6. 行375（`snocYd_mem`, dl = 2）→ 行376
+
+## 続き87（解決: `rep2` 構成子 + m の帰納が「全深さ」を供給する）
+
+### bms で確認したこと
+```
+…(3,1,0)(4,2,0)(5,0,0)(6,1,0)(5,0,0)[3]      ← 標準形
+  bad part = (4,2,0)(5,0,0)(6,1,0), delta = 0
+  → …(3,1,0) (4,2,0)(5,0,0)(6,1,0) ×4        ← 「2 の記録 + その junk」を同じ高さで複製
+
+…(3,1,0)(4,2,0)(4,2,0)(4,2,0)[3]
+  bad part = (3,1,0)(4,2,0)(4,2,0), delta = 1
+  → …(3,1,0)(4,2,0)(4,2,0) (4,1,0)(5,2,0)(5,2,0) (5,1,0)(6,2,0)(6,2,0) …
+```
+つまり「2 の記録 + junk T」が**同じ高さに m 個並ぶ**木が要る。専用構成子にする:
+```
+rep2 T m     jk1 l (rep2 T m) = (range m).flatMap (fun _ => (l+1,2,0) :: jk1 (l+1) T)
+JkJ (rep2 T m) = JkJ T ∧ TopOk T        -- ∀ 束縛の木が要らない！
+TopOk (rep2 T m) = (m = 0)
+```
+`two N M` は捨てて `rep2 T m` に一本化してよい（`two nil M = rep2 M 1`）。
+
+### なぜこれで壁が消えるか
+壁は「`APd` の定義の中で ∀ 束縛した木の全深さ性が取れない」だった。
+`rep2 T m` なら ∀ 束縛の木がないので `APd` の定義に入れられる。そして
+```
+theorem APd_rep2 : ∀ T, JkJ T → TopOk T → (∀ k, APd k T) → ∀ m k, APd k (rep2 T m)
+```
+を **m の帰納**で示すと、帰納法の仮定が `∀ k, APd k (rep2 T m)`（= 全深さ）になる ✓
+`m+1` の段で要る塔 `twr (rep2 T m) n` はこれで通る。
+
+### 相互再帰の構造と停止性
+```
+APd_rep2 T m         → 「T を (m+1) 本目の 2 の記録の上に吊るす」   （= AYt）
+AYt（荷 C の A2' 帰納）→ dup の場合に APd_rep2 (pay Z Y) m を使う
+                        （Y は C より小さい荷）
+```
+測度は（荷の A2' の階数, m）の辞書式。Lean では
+「A2' の外側の帰納 + 内側の m の帰納」に組めばよい。
+
+### 作業手順（次セッション）
+1. `two N M` を `rep2 T m` に置き換え（`jk1` / `JkJ` / `TopOk` / `jk1_ge` / `jk1_mono` /
+   `jk1_shift` / `not_le1_jk1` / `appJ`）
+2. 文脈をフレーム化（`Frm.fone U` / `Frm.fotw U m T`? — 2 の記録のフレームは
+   「1 の列 + rep2 T m + 2 の記録」の形になるので、フレームは `fone U` と
+   `fotw U (rep2 T m)` の 2 種でよい。どちらも木は具体的なので ∀ 束縛は出ない）
+3. `AYt`（2 の記録の上の荷）と `APd_rep2` を相互再帰で書く
+4. 行375（`snocYd_mem`, dl = 2）、行376
