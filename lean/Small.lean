@@ -18815,5 +18815,192 @@ theorem R371_mem' : R344 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R371_mem'
 
+
+/-! ### `APz` を連鎖に沿って持ち回る版の荷追加 -/
+
+theorem APz_congr {V1 V2 : Jk1} (h : ∀ l, jk1 l V1 = jk1 l V2) (hA : APz V1) : APz V2 := by
+  intro U hU hGU
+  refine GOK_congr (fun l => ?_) (hA U hU hGU)
+  show jk1 l U ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) V1)
+    = jk1 l U ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) V2)
+  rw [h]
+
+theorem GOK_chainJz {ctx : List Jk1} {X T : Jk1} (hXok : JkOk X) (hXz : APz X)
+    (hTok : JkOk T) (hX : GOK (plug ctx X))
+    (hstep : ∀ V : Jk1, JkOk V → APz V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V T)))
+    (hpres : ∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V T)) :
+    ∀ n, GOK (plug ctx (itJ T n X)) ∧ APz (itJ T n X)
+  | 0 => ⟨hX, hXz⟩
+  | (n + 1) => by
+      obtain ⟨h1, h2⟩ := GOK_chainJz hXok hXz hTok hX hstep hpres n
+      have hok := JkOk_itJ hTok n hXok
+      exact ⟨hstep (itJ T n X) hok h2 h1, hpres (itJ T n X) hok h2⟩
+
+/-- ★★★ `APz` を仮定に持ち回る荷追加。連鎖の木も `APz` のまま。 -/
+theorem AYz : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkOk Z →
+    (∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V Z)) →
+    ∀ (X : Jk1), JkOk X → APz X → APz (Jk1.one X (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkOk Z →
+      (∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V Z)) →
+      ∀ (X : Jk1), JkOk X → APz X → APz (Jk1.one X (Jk1.pay Z Y))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb Z hZ hR X hX hXz
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact APz_congr (fun l => (jk1_one_pay_nil X Z l).symm) (hR X hX hXz)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hpres : ∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
+          fun V hV hVz => APz_congr (fun l => (jk1_one_pay_nil V Z l).symm) (hR V hV hVz)
+        intro U hU hGU
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs hw (ctx := [U]) ⟨hU, trivial⟩ hX hZ
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        refine (GOK_chainJz (ctx := [U]) (T := Jk1.pay Z ([] : TrioSeq)) hX hXz
+          ⟨hZ, Bok_nil⟩ (hXz U hU hGU) ?_ hpres n).1 ws hw hG
+        intro V hV hVz hGV
+        exact hpres V hV hVz U hU hGU
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hpres : ∀ V : Jk1, JkOk V → APz V → APz (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
+          fun V hV hVz => hdl hdb Z hZ hR V hV hVz
+        intro U hU hGU
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs hw (ctx := [U]) ⟨hU, trivial⟩ hX hZ
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        refine (GOK_chainJz (ctx := [U]) (T := Jk1.pay Z Y.dropLast) hX hXz
+          ⟨hZ, hdb⟩ (hXz U hU hGU) ?_ hpres n).1 ws hw hG
+        intro V hV hVz hGV
+        exact hpres V hV hVz U hU hGU
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro U hU hGU
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs hw (ctx := [U]) ⟨hU, trivial⟩ hX hZ hYb hlen2 hp ?_
+        intro n hn
+        have := hnat n hn
+        simp only [Set.mem_setOf_eq] at this
+        exact this (Bok_oper hYb hn) Z hZ hR X hX hXz U hU hGU ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb Z hZ hR X hX hXz
+  exact key hYb.mem hYb Z hZ hR X hX hXz
+
+#print axioms AYz
+
+
+/-! ### `APz` の閉包を「1 の列 + 荷だけの junk」まで広げる -/
+
+/-- 木が荷だけでできている（`one` を含まない）。 -/
+def PayOnly : Jk1 → Prop
+  | Jk1.nil => True
+  | Jk1.pay N Y => PayOnly N ∧ Bok Y
+  | Jk1.one _ _ => False
+
+theorem PayOnly_JkOk : ∀ W : Jk1, PayOnly W → JkOk W
+  | Jk1.nil, _ => trivial
+  | Jk1.pay N Y, h => ⟨PayOnly_JkOk N h.1, h.2⟩
+  | Jk1.one _ _, h => absurd h (by simp [PayOnly])
+
+/-- ★★★ `APz V` かつ `W` が荷だけなら、項 `one V W` を継げる。 -/
+theorem APz_onePayOnly : ∀ W : Jk1, PayOnly W → ∀ V : Jk1, JkOk V → APz V →
+    APz (Jk1.one V W)
+  | Jk1.nil, _, V, hV, hVz => by
+      intro U hU hGU
+      exact GOK_oneOneNil hU hV hGU hVz
+  | Jk1.pay W₀ C, h, V, hV, hVz =>
+      AYz C h.2 W₀ (PayOnly_JkOk W₀ h.1) (APz_onePayOnly W₀ h.1) V hV hVz
+  | Jk1.one _ _, h, _, _, _ => absurd h (by simp [PayOnly])
+
+/-! ### シート行 372 -/
+
+def T372 (B : TrioSeq) : Jk1 := Jk1.one Jk1.nil (Jk1.one Jk1.nil (Jk1.pay Jk1.nil B))
+
+theorem JkOk_T372 {B : TrioSeq} (hB : Bok B) : JkOk (T372 B) :=
+  ⟨trivial, trivial, trivial, hB⟩
+
+theorem GOK_T372 {B : TrioSeq} (hB : Bok B) : GOK (T372 B) := by
+  have hAPz : APz (Jk1.one Jk1.nil (Jk1.pay Jk1.nil B)) :=
+    APz_onePayOnly (Jk1.pay Jk1.nil B) ⟨trivial, hB⟩ Jk1.nil JkOk_nil APz_nil
+  exact hAPz Jk1.nil JkOk_nil GOK_nil
+
+def R371 : TrioSeq := R344 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem R371_eq : R371 = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) ::
+    wordJ 1 1 [Jk1.one Jk1.nil (Jk1.one Jk1.nil Jk1.nil)]) := by
+  simp [R371, R344, R341, wordJ, colJ, jk1, shiftr01]
+
+theorem Aok_R371 : Aok R371 := by
+  have hR : RunA 0 1 (R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) ::
+      wordJ 1 1 [Jk1.one Jk1.nil (Jk1.one Jk1.nil Jk1.nil)])) :=
+    ⟨0, R338, _, rfl, rfl, LwA_of_Aok Aok_R338,
+      (GOK_T371 [] WOk_nil GoodFb_wordJ_nil).seg 0⟩
+  rw [R371_eq]
+  exact (BaseOk_RunA 0).aok _ _ hR
+
+theorem R371_row1 : ∀ j, 0 < j → j < R371.length → 1 ≤ entry R371 1 j := by
+  intro j hj0 hjl
+  simp only [R371, R344, R341, R338, List.length_append, List.length_cons,
+    List.length_nil] at hjl
+  rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl <;> simp [R371, R344, R341, R338, entry]
+
+/-- ★★★★★ 高さ `h+5` で任意の `Bok` を吊るす（1 の列 2 段の上）。 -/
+theorem hangU11two {h : ℕ} {A : TrioSeq} (hA : LwA h A) {B : TrioSeq} (hB : Bok B) :
+    A ++ ([((h + 1, 1, 0) : ℕ × ℕ × ℕ), ((h + 2, 2, 1) : ℕ × ℕ × ℕ),
+      ((h + 3, 1, 0) : ℕ × ℕ × ℕ), ((h + 4, 1, 0) : ℕ × ℕ × ℕ)] ++
+      shiftr01 (h + 5) 0 B) ∈ W 0 := by
+  obtain ⟨P, hP, hL⟩ := hA
+  have hG := GOK_T372 hB [] WOk_nil GoodFb_wordJ_nil
+  have h1 := (hG.seg h).reapp P hP 0 A (by simpa using hL)
+  simpa [wordJ, colJ, jk1, T372, shiftr01_zero, List.append_assoc,
+    show h + 1 + 1 = h + 2 from by omega, show h + 1 + 1 + 1 = h + 3 from by omega,
+    show h + 1 + 1 + 1 + 1 = h + 4 from by omega,
+    show h + 1 + 1 + 1 + 1 + 1 = h + 5 from by omega] using h1
+
+/-- ★★★★★ シート行372 `R344 (4,1,0)(5,1,0) = psi(W_w*W^W^W)`。 -/
+theorem R372_mem : R371 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine snocd_gen (Y := R371) (d := 5) (by omega) Aok_R371 (Ancd_of_row1 R371_row1 5) ?_
+  intro B hB
+  have h := hangU11two (h := 0) (LwA_of_Aok Aok_R338) hB
+  simpa [R371, R344, R341, List.append_assoc] using h
+
+#print axioms R372_mem
+
 end Small
 end TRIO
