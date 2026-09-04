@@ -20538,5 +20538,109 @@ theorem R374_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ ×
 
 #print axioms R374_mem
 
+/-! ### 行 1 の 1 を 2 に置き換える（`sub21`）
+
+`(h,1,0)` を `(h,2,0)` に替えても、その列が「誰の行 1 の親でもない」なら
+展開は変わらない（`tools/cmp_two_vs_one.py` で 40 例以上検証済み）。
+ここではその置換の定義と、行 0 / 行 2 / 行 0 の祖先関係が不変であることを示す。 -/
+
+/-- `S j` が真の列だけ、行 1 の値を 2 に置き換える。 -/
+def sub21 (S : ℕ → Bool) (M : TrioSeq) : TrioSeq :=
+  (List.range M.length).map fun j =>
+    let c := M.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)
+    if S j then (c.1, 2, c.2.2) else c
+
+@[simp] theorem sub21_length (S : ℕ → Bool) (M : TrioSeq) : (sub21 S M).length = M.length := by
+  simp [sub21]
+
+theorem sub21_getD (S : ℕ → Bool) (M : TrioSeq) {j : ℕ} (hj : j < M.length) :
+    (sub21 S M).getD j ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = (if S j then ((M.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).1, 2,
+            (M.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.2)
+         else M.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)) := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simpa using hj)]
+  simp [sub21, List.getElem_map, List.getElem_range]
+
+theorem entry_sub21_0 (S : ℕ → Bool) (M : TrioSeq) (j : ℕ) :
+    entry (sub21 S M) 0 j = entry M 0 j := by
+  by_cases hj : j < M.length
+  · rw [entry, entry, sub21_getD S M hj]
+    by_cases hs : S j <;> simp [hs]
+  · have h1 : (sub21 S M).getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simpa using hj)]; rfl
+    have h2 : M.getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
+    simp only [entry]
+    rw [h1, h2]
+
+theorem entry_sub21_2 (S : ℕ → Bool) (M : TrioSeq) (j : ℕ) :
+    entry (sub21 S M) 2 j = entry M 2 j := by
+  by_cases hj : j < M.length
+  · rw [entry, entry, sub21_getD S M hj]
+    by_cases hs : S j <;> simp [hs]
+  · have h1 : (sub21 S M).getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simpa using hj)]; rfl
+    have h2 : M.getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
+    simp only [entry]
+    rw [h1, h2]
+
+theorem entry_sub21_1_of (S : ℕ → Bool) (M : TrioSeq) {j : ℕ} (hj : j < M.length)
+    (hs : S j = true) : entry (sub21 S M) 1 j = 2 := by
+  rw [entry, sub21_getD S M hj]
+  simp [hs]
+
+theorem entry_sub21_1_off (S : ℕ → Bool) (M : TrioSeq) {j : ℕ} (hs : S j = false) :
+    entry (sub21 S M) 1 j = entry M 1 j := by
+  by_cases hj : j < M.length
+  · rw [entry, entry, sub21_getD S M hj]
+    simp [hs]
+  · have h1 : (sub21 S M).getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simpa using hj)]; rfl
+    have h2 : M.getD j ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
+    simp only [entry]
+    rw [h1, h2]
+
+/-- 行 0 は触らないので、行 0 の「次」関係は不変。 -/
+theorem nextrel0_sub21 (S : ℕ → Bool) (M : TrioSeq) (j0 j1 : ℕ) :
+    nextrel0 (sub21 S M) j0 j1 ↔ nextrel0 M j0 j1 := by
+  simp only [nextrel0, sub21_length, entry_sub21_0]
+
+/-- 行 0 の祖先関係も不変。 -/
+theorem le0_sub21 (S : ℕ → Bool) (M : TrioSeq) (j0 j1 : ℕ) :
+    le0 (sub21 S M) j0 j1 ↔ le0 M j0 j1 := by
+  constructor
+  · rintro ⟨h1, h2, h3⟩
+    refine ⟨by simpa using h1, by simpa using h2, ?_⟩
+    refine Relation.ReflTransGen.mono ?_ h3
+    intro a b hab
+    exact (nextrel0_sub21 S M a b).mp hab
+  · rintro ⟨h1, h2, h3⟩
+    refine ⟨by simpa using h1, by simpa using h2, ?_⟩
+    refine Relation.ReflTransGen.mono ?_ h3
+    intro a b hab
+    exact (nextrel0_sub21 S M a b).mpr hab
+
+/-- 行 1 の値が 1 の列も 2 の列も `srow = 1`（行 2 が 0 なら）。 -/
+theorem srow_sub21 (S : ℕ → Bool) (M : TrioSeq) (j : ℕ)
+    (hz : ∀ i, S i = true → entry M 2 i = 0)
+    (hone : ∀ i, S i = true → i < M.length → entry M 1 i = 1) :
+    srow (sub21 S M) j = srow M j := by
+  by_cases hj : j < M.length
+  · by_cases hs : S j
+    · have h2 : entry M 2 j = 0 := hz j hs
+      have h1 : entry M 1 j = 1 := hone j hs hj
+      simp [srow, entry_sub21_2, h2, entry_sub21_1_of S M hj hs, h1]
+    · simp [srow, entry_sub21_2, entry_sub21_1_off S M (by simpa using hs)]
+  · have hj2 : ¬ j < (sub21 S M).length := by simpa using hj
+    have e1 : entry M 1 j = 0 := by
+      rw [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
+    have e2 : entry M 2 j = 0 := by
+      rw [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
+    have e3 : entry (sub21 S M) 1 j = 0 := by
+      rw [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simpa using hj)]; rfl
+    simp [srow, entry_sub21_2, e2, e1, e3]
+
 end Small
 end TRIO
