@@ -1346,3 +1346,49 @@ hang2rec     : LwA h A → JkOk M' →
 `jk1` / `JkOk` / `jk1_ge` / `jk1_mono` / `jk1_shift` / `not_le1_jk1` /
 `APd_all` / `GOK_all` の場合分けが増える（機械的な部分と、
 `not_le1_jk1` の 2 の記録の場合＝le0 祖先の議論が本体）。
+
+## 続き79（2 の記録の構成子追加: 実際に試して残り作業を特定）
+
+`Jk1` に `two2 : Jk1 → Jk1`（`jk1 l (two2 N) = jk1 l N ++ [(l+1,2,0)]`）を足して
+機械的な場合分けを全部入れたところ、**残るエラーはちょうど 3 つ**だった:
+`not_le1_jk1` / `APd_all` / `GOK_all` の missing cases。
+機械的に済むのは `jk1` `JkOk` `jk1_ge` `jk1_mono` `jk1_shift` `PayOnly`
+`PayOnly_JkOk` `APz_onePayOnly` `appJ` `jk1_appJ` `JkOk_appJ`（全部数行）。
+
+### 1. `not_le1_jk1` の two2 の場合（設計完了）
+補題（約 30 行）:
+```
+not_le1_two : 1 ≤ 行1(p) → p < r → 行1(r) = 1 → 行0(r) = l → r < q → 行1(q) = 2 →
+   (∀ j, r < j → j ≤ q → l+1 ≤ 行0(j)) → ¬ le1 M p q
+```
+証明: 鎖 `p → … → c → q` を `Relation.ReflTransGen.cases_tail` で割る。
+- `c = p` なら `nextrel1 p q` の最小性に `j := r`（`le0 M r q` は `le0_of_between`）
+  を入れて `2 ≤ 1` で矛盾
+- `c ≠ p` なら `行1(c) < 行1(q) = 2` より `行1(c) ≤ 1`、`le1 p c` と `le1_row1_lt` で
+  `行1(p) < 1` となり仮定 `1 ≤ 行1(p)` と矛盾
+
+`not_le1_jk1` には仮定
+`NoTop2 N ∨ ∃ r, p < r ∧ r < q0 ∧ 行1(r)=1 ∧ 行0(r)=l ∧ (∀ j, r<j → j<q0 → l+1 ≤ 行0(j))`
+を足し、`one N M'` の場合に M' へ渡すとき右の枝を（1 の列の位置を r として）作る。
+`two2` の場合は左の枝なら `NoTop2 (two2 N) = False` で矛盾、右の枝なら上の補題。
+
+### 2. `APd_all` の two2 の場合（設計完了・ここが本体）
+`APd k (two2 nil)` を `APd_iff` で文脈に落とし、`ctx = ctx' ++ [X]` に分けて
+`snocY_mem`（`L = a+|ctx'|+2`, `y = 2`, `M = [(a+|ctx'|+2,1,0)]`）を使う。塔は
+```
+appJ X (stairJ (n+1)) = Jk1.one X (stairJ n)     -- stairJ (n+1) = one nil (stairJ n) だから
+⟹ 塔の行列 = … ++ colJ a b (plug ctx (stairJ n))
+```
+なので、塔の membership は **`APd_all (stairJ n)`（two2 を含まない木）** から出る。
+循環しない。3 段（pu/pk/seg）それぞれで同じ議論（`AP0nil` と同じ形、約 150 行）。
+
+⟹ そのため `two2` の引数は `nil` に限る述語 `SimpleT` を付けて
+`APd_all` / `GOK_all` / `WOk` を制限するのが簡単（行 374 の塔は
+`one (two2 nil) (…)` の入れ子なので条件を満たす）。
+
+### 3. `GOK_all` の two2 の場合
+字の junk の先頭段に 2 の記録が来ると（親が字の z、行 1 = 2）上がってしまうので、
+`NoTop2` を仮定に足して `two2` は `absurd` で潰す。`WOk` に `NoTop2` と `SimpleT` を
+足し、`hw N hN` を使っている箇所（10 か所程度）に `.1` を入れる。
+
+見積もり: 補題 30 + `not_le1_jk1` 改 120 + `APd_two2` 150 + 制限の付け回し 80 ≒ 380 行。
