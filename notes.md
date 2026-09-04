@@ -2249,3 +2249,72 @@ APd_two : ∀ N M, JkJ N → (∀ t k, APd t k N) → (∀ t k, APd t k M) → J
           → ∀ t k, APd t k (two N M)
 APd_all : ∀ T, JkJ T → ∀ t k, APd t k T
 ```
+
+## 続き98（続き97 も詰まった。詰まりの場所を正確に特定した）
+
+続き97 の `GCtx t k`（t = 2 の記録フレームの本数）を実装した。**定義は通る**:
+```
+def GCtxA (prev : ℕ → List Frm → Prop) : ℕ → List Frm → Prop
+  | 0,     ctx => ∃ U, ctx = [Frm.fone U] ∧ JkOk U ∧ GOK U
+  | (k+1), ctx =>
+      (∃ ctx' N, ctx = ctx' ++ [Frm.fone N] ∧ CtxOk ctx ∧ GCtxA prev k ctx' ∧
+          ∀ c, GCtxA prev k c → CtxX c N → GOK (plug c N)) ∨
+      (∃ ctx' N, ctx = ctx' ++ [Frm.ftwo N] ∧ CtxOk ctx ∧ prev k ctx' ∧
+          ∀ j c, prev j c → CtxX c N → GOK (plug c N))
+def GCtx : ℕ → ℕ → List Frm → Prop
+  | 0     => GCtxA (fun _ _ => False)
+  | (t+1) => GCtxA (GCtx t)
+def APd (t k : ℕ) (V : Jk1) : Prop := ∀ ctx, GCtx t k ctx → CtxX ctx V → GOK (plug ctx V)
+```
+`GCtxA` は k の構造帰納、`GCtx` は t の構造帰納。`termination_by` は要らない。
+`GCtx_cases` / `GCtx_snoc1` / `GCtx_snoc2` / `GCtx_rep` / `APd_plug_rep` /
+`APd_one_step` / `APd_two_step` / `APd_congr` / `GOK_chainJd` / `AYd` /
+`APd_twoNilGen` まで**実際に緑になった**（コミット a44022e の上での作業）。
+
+### 詰まった場所
+`APd_nil` の **1 の列フレーム**の場合:
+```
+ctx = ctx0 ++ [Frm.fone V] のとき  GOK (plug ctx0 (one V nil))
+  ← APnil_gen ctx0 … V … (GOK (plug ctx0 V)) (hang)
+     hang C : GOK (plug ctx0 (pay V C))          ← APd_pay を V に当てる
+```
+`APd_pay` の **2 の記録フレーム**の場合が `AYd2`（旧 `APd_twoPay`）を要求し、
+`AYd2` の `hRZ`（荷の鎖の底 `two N' Z`）が `APd_two_step` を要求し、
+`APd_two_step` は 2 の記録フレームの条件 **`∀ j, APd t j N'`** を要求する。
+`N'` は dup の鎖 `twoIt N T i` なので、鎖を通して
+**`AYd2` の Z にも `∀ j, APd t j Z` が要る**。
+
+ところが `V` は 1 の列フレームの木で、`GCtx` からは `APd t k V`（k は 1 つだけ）しか出ない。
+`∀ j, APd t j V` を 1 の列の枝に書くと **t が減らない**ので構造帰納が壊れる。
+
+### 要求の連鎖（まとめ）
+```
+2 の記録フレームの木 N        : ∀ j, APd t j N        （塔 twr N m が深くなるため）
+AYd2 の Z                     : ∀ j, APd t j Z        （dup の鎖 twoIt の底）
+APd_pay の Z                  : ∀ j, APd t j Z        （自分の ftwo の場合が AYd2 を呼ぶ）
+APnil_gen の hang の V        : ∀ j, APd t j V        （APd_pay を呼ぶ）
+1 の列フレームの木 V          : APd t k V だけ         ← ここが足りない
+```
+`APd_all` の木の再帰では部分木に `∀ t k, APd t k` が付くので問題ない。
+**フレームの木にだけ足りない。**
+
+### 次に試す案: 文脈と木を合わせた大きさで整礎帰納
+`APd` を添字で刻むのをやめ、
+```
+Big : ∀ ctx T, GCtx ctx → JkJ T → CtxX ctx T → GOK (plug ctx T)
+GCtx ctx := CtxOk ctx ∧ （一番外の木が JkOk かつ GOK）      -- APd を参照しない
+```
+を **μ(ctx, T) = Σ_{f ∈ ctx} size (frmT f) + size T** の整礎帰納で証明する。
+- `one N M`: (ctx, one N M) → (ctx ++ [fone N], M) で μ が 1 減る ✓
+- `nil` の 1 の列フレーム: (ctx0 ++ [fone V], nil) → (ctx0, V) で減る ✓
+- `hang`: (ctx0 ++ [fone V], nil) → (ctx0, pay V C)。`size (pay N _) = size N` と定めれば減る ✓
+- `two N M`: (ctx, two N M) → (ctx ++ [ftwo N], M) で減る ✓（塔も μ が小さい側に入るか要検討）
+- 荷 `pay Z Y` の A2' 帰納と dup の鎖 `itJ` / `twoIt` は μ が増えるので、
+  **それらは μ の帰納の内側で別の帰納（Y の A2'、n の帰納）として回す**必要がある。
+  `GOK_chainJd` / `APd_chainT` が鎖の要素の `GOK` を自前で作れるかが鍵。
+
+### 今の状態
+`lean/Small.lean` は f6d6be9（フレーム列版、`fotw` は束ね型、`CtxJ (fotw _ :: _) = False`）に戻して**緑**。
+atomic フレーム版（`Frm.ftwo N`、`JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M`、
+Ctx 周りの補題一式）はコミット **a44022e** に入っている（`APd_all` の two だけ赤）。
+`GCtx t k` 版の実装はコミットしていない（この記録が設計図）。
