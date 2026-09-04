@@ -1956,3 +1956,28 @@ not_le1_jk1 : (JkOk N ∨ (JkA N ∧ Grd M p q0 l)) → …    ← 一般の two
 1. まず**フレーム不要の 2 つ**を実装する（`APd_twoNilGen`（`two N nil`）と
    `APd_twoPay`（`two N (pay Z C)`））。これだけで `JkJ` の制限をかなり外せる
 2. そのあとフレーム（`fotw`）と `AllG n` / `DOk n` に取り組む
+
+## 続き91（`APd_twoNilGen` 完成: `two N nil` を一般の左兄弟で継げる）
+
+続き90 の「フレーム不要の場合 1」を実装して緑:
+```
+JkJ (two N M) = JkJ N ∧ M = Jk1.nil        ← 左兄弟の制限を外した（junk はまだ nil）
+APd_twoNilGen (N) (JkJ N) (∀ k, APd k N) : ∀ k, APd k (two N nil)
+```
+補助補題:
+```
+appJ_twr    : appJ N (twr N m) = plug (List.replicate m N) N
+plug_append : plug (c1 ++ c2) T = plug c1 (plug c2 T)
+GCtx_rep    : GCtx k ctx → GCtx (k+m) (ctx ++ List.replicate m N)   （N が全深さなら）
+APd_plug_rep: ∀ m k, APd k (plug (List.replicate m N) N)
+Mtw_twr     : Mtw Y0 ((l+1,1,0) :: jk1 (l+1) N) n = Y0 ++ jk1 l (twr N n)
+MidD_colN   : MidD (d+1) ((d,1,0) :: jk1 d N)
+colJ_plug_twoN / wordJ_snoc_twoN / colJ_plug_twr / wordJ_snoc_plug_twr
+```
+**塔が `plug (List.replicate m N) N`（1 の列だけの文脈）で書けるのが効いた。**
+`∀ k, APd k N` から `GCtx (k+m)` が作れるので、任意の深さが取れる。
+`appJ` / `twr` / `jk1_twr` は `APd_twoNil` より前に移動した。
+
+### 残り（続き90 の残り 2 つ）
+- `two N (pay Z C)`（2 の記録の上の荷）: 荷の A2' 帰納。フレーム不要のはず
+- `two N (one N' M'')`: フレーム（`fotw`）が要る
