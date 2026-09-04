@@ -1057,3 +1057,39 @@ Jk1/jk1/JkOk、jk1_ge/mono/shift、Ancd の組み立て補題 4 本、
 colJ/wordJ/WOk/plug/CtxOk、not_le1_jk1（木の junk に行 1 の鎖が入らない）、
 MzJ/le1_zposJ/not_le1_treeJ、rise_colJ/rise_wordJ、oper_z1wJ/z1wJ_mem、
 GoodFb_of_keyJ、GoodFb_wordJ_nil、GoodFb_snoczJ。
+
+## 続き72（実装結果: 行 371 到達と、深さ ≥ 1 の `nil` の壁）
+
+続き71 の設計で木の字の枠組みを実装した（Small.lean、緑、約 18780 行）。
+
+### できたもの
+- `Jk1` / `jk1` / `JkOk` / `colJ` / `wordJ` / `plug` / `itJ` と基本補題
+- `not_le1_jk1`: 記録（行 1 ≥ 1）から木の junk へは行 1 の鎖が届かない
+  （1 の列は行 1 = 1、荷は根の行 1 = 0 で `block_root` + `le1_lower_bound`）
+- `rise_colJ` / `rise_wordJ` / `oper_z1wJ` / `z1wJ_mem`: 木の字の語の上の z の展開
+- `GoodFb_of_keyJ` / `GoodFb_snoczJ`（裸の z）
+- `GOK T`（木 T をどの良い語の右にも字として継げる）
+- **AY0**: 深さ 0 に荷を継ぐ（荷の A2' 帰納法。dup は字の複製で語が引数だから自由）
+- **AYs**: 深さ ≥ 1 に荷を継ぐ（A2' 帰納法。dup は深さ p-1 の項の複製、連鎖 `GOK_chainJ`）
+- **AP0nil / APnil_gen**: 「junk のない 1 の列」を深さ 0 / 深さ p に継ぐ（snocd_gen）
+  深さ p 用の祖先条件 `Ancd_recwordJ_plug`（`Ancd_plug_jk1` + `Ancd_wordJ_pre`）
+- **hangU11one**: LwA h A → Bok B → A ++ (h+1,1,0)(h+2,2,1)(h+3,1,0) ++ B↑(h+4) ∈ W 0
+- **★ 行 371** `R344 (4,1,0) = psi(W_w*W^W)`（snocd_gen ＋ hangU11one）
+
+### 残る壁（行 372 以降）
+`APt N ctx := ∀ V, GOK (plug ctx V) → GOK (plug ctx (one V N))` と書くと:
+- `APt (pay Z Y) ctx` は AYs で出る。AYs の仮定は `APt Z ctx`（Z は部分項）✓
+- `APt (one M' M'') ctx` は plug の付け替えで深さ +1 の部分項に落ちる ✓
+- **`APt nil ctx`（ctx ≠ []）だけが、`APt V ctx.dropLast` を「∀ V」で要求する**。
+  V は蓄積した木で、AYs の dup の連鎖では際限なく大きくなるので、
+  木の大きさでも深さでも測度が回らない（深さを 1 下げる代わりに木が任意に大きくなる）。
+
+つまり「深さ ≥ 1 で、junk のない 1 の列を継ぐ」の吊るし
+  GOK (plug ctx (pay V C))
+を、`APt V` を経由せずに出す方法が要る。候補:
+1. AYs の仮定を「連鎖で保存される性質」に弱める（連鎖の木 W_i について
+   自動的に成り立つ形にする）。
+2. 蓄積した木もろとも影の行列に符号化して、A2' の 1 本の帰納法で回す
+   （`GoodP_all` の `shwP` と同じ手）。1 の列の場合が影の展開に対応しないのが難点。
+3. z の上のレベルの類（続き70 の壁）を別ルートで作る。作れれば
+   RunA 0 3 R344 が出て、行 371〜384 がまとめて落ちる。
