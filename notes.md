@@ -1923,3 +1923,36 @@ not_le1_jk1 : (JkOk N ∨ (JkA N ∧ Grd M p q0 l)) → …    ← 一般の two
    dup の場合は「2 の記録 + junk」が同じ高さに並ぶので `two` の左兄弟に積む
 4. `APd_twoW`（`two N M` を項として継ぐ）: `M` の構造帰納
 5. `JkJ (two N M)` の制限を外す → 行375（`snocYd_mem`, dl = 2）→ 行376
+
+## 続き90（`APd_twoW` の場合分けを詰めた: どの場合が何を要求するか）
+
+`APd_twoW : (∀ k, APd k N) → … → ∀ k, APd k (two N M)` を `M` の構造帰納で示すとき、
+各場合が何を要求するかを詰めた。
+
+- **`M = nil`**（裸の 2 の記録）: `snocY_mem`、塔は `twr N j`。
+  塔の木は `appJ U (twr N j) = plug (ctx' ++ [U] ++ replicate (j-1) N) N` と
+  **既存の `plug : List Jk1 → Jk1 → Jk1`（1 の列だけ）で書ける** ✓
+  必要なのは `∀ k, APd k N` だけ。**フレーム不要** ✓
+- **`M = pay Z C`**（2 の記録の上の荷）: 荷 `C` の A2' 帰納。
+  - `C = []`: `two N (pay Z []) ≡ two N Z` ⟸ 帰納法の仮定（`Z` は部分項）✓
+  - dup: ブロック「2 の記録 + junk」が**同じ高さに n 個**並ぶ ⟹ `two` の左兄弟に積む
+    （`twoIt N T 0 = N`, `twoIt N T (n+1) = two (twoIt N T n) T`）。
+    その `∀ k, APd k` は n の内側帰納で作れる ✓
+  - inner: `oper_shift` ✓
+  **これもフレーム不要**（`two N W` は常に一番内側の木）✓
+- **`M = one N' M''`**（2 の記録の junk の中に 1 の列）: ここだけフレームが要る。
+  `two N (one N' M'')` の 1 の列は高さ `l+2`（2 の記録が `l+1`）なので、
+  `one` を「レベル `l+1`」で使うことになり、**2 の記録が新しい段を作る**。
+  その段の junk `M''` を継ぐには文脈に 2 の記録を含める必要がある。
+
+### まとめ
+- `two N nil` と `two N (pay Z C)` は**今の枠組み（1 の列だけの文脈）で証明できる**
+- `two N (one N' M'')` だけがフレーム（`fotw`）を要求する
+
+行375 の木 `otwJ n = one nil (two nil (otwJ (n-1)))` は
+`two nil (one nil (two nil …))` の形なので、この最後の場合に当たる。
+
+### 次にやること
+1. まず**フレーム不要の 2 つ**を実装する（`APd_twoNilGen`（`two N nil`）と
+   `APd_twoPay`（`two N (pay Z C)`））。これだけで `JkJ` の制限をかなり外せる
+2. そのあとフレーム（`fotw`）と `AllG n` / `DOk n` に取り組む
