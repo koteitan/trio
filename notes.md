@@ -2558,3 +2558,57 @@ hangU11rec2 : LwA h A → Bok B →
 階段が 1 段ずつ伸びて塔が出て、質問の行列も行375 も落ちる。
 続き95〜99 で `two nil (one W W')` として特定した壁と同じもの。
 **ただし今回は `W = nil`, `W' = pay nil B` という最小の形に絞れた。**
+
+## 続き104（行375 へ: `List Bool` 添字版の設計が検証できた。作業途中を保存）
+
+### 決め手: `TopOk` の制限を外すと全部簡単になる
+`JkJ (two N M) = JkJ N ∧ JkJ M`（`TopOk` を要求しない）にすると
+```
+CtxXJ ctx X = JkJ X          -- 文脈によらない！ CtxXJ / CtxX が潰れる
+CtxJ  (fotw N :: rest) = JkJ N ∧ CtxJ rest
+CtxOk (fotw N :: rest) = JkOk N ∧ CtxJ rest
+```
+となり、`HdT` も `CtxXJ_snoc2` の TopOk 版も要らなくなる。
+`JkJ_plug` / `JkOk_plug` / `CtxJ_snoc` / `CtxOk_snoc` の fotw の場合は 1 行で通る。
+**ここまでは実際に緑になった。**
+
+### `APd` / `GCtx` を `List Bool` 添字に（true = 1 の列、false = 1 の列 + 2 の記録）
+```
+def APd : List Bool → Jk1 → Prop
+  | [],            _ => True
+  | [true],        V => ∀ U, JkOk U → GOK U → GOK (one U V)
+  | [false],       V => ∀ U, JkOk U → GOK U → GOK (one U (two nil V))
+  | (true :: ks),  V => ∀ U, JkJ U → APd ks U → APd ks (one U V)
+  | (false :: ks), V => ∀ U, JkJ U → APd ks U → APd ks (one U (two nil V))
+
+def GCtx : List Bool → List Frm → Prop
+  | [],            _   => False
+  | [true],        ctx => ∃ U, ctx = [Frm.fone U] ∧ JkOk U ∧ GOK U
+  | [false],       ctx => ∃ U, ctx = [Frm.fotw U] ∧ JkOk U ∧ GOK U
+  | (true :: ks),  ctx => ∃ ctx' U, ctx = ctx' ++ [Frm.fone U] ∧ GCtx ks ctx' ∧ JkJ U ∧ APd ks U
+  | (false :: ks), ctx => ∃ ctx' U, ctx = ctx' ++ [Frm.fotw U] ∧ GCtx ks ctx' ∧ JkJ U ∧ APd ks U
+```
+**両方とも構造帰納で通り、`APd_iff` も通った**（`plug_snoc` / `plug_snoc2` で場合分けするだけ）。
+さらに
+```
+APd_step  ks : JkJ V → APd ks V → APd (true :: ks)  W → APd ks (one V W)
+APd_step2 ks : JkJ V → APd ks V → APd (false :: ks) W → APd ks (one V (two nil W))
+```
+（`ks = []` は `APd [] _ = True` なので自明）。`AYd` も `List Bool` 化して通った。
+
+**フレームの木は `APd ks U` だけでよい**（`∀ j` が要らない）。
+2 の記録の左兄弟が `nil` に固定されるので、続き95〜99 の壁が出ない。これが要点。
+
+### 残っている機械的な変換（12 本）
+`APd_pay` / `APd_oneNil` / `APd_nil` / `APd_one` / `APd_stair` / `GCtx_split` /
+`APd_twoNil` / `GCtx_rep` / `APd_plug_rep` / `APd_twoNilGen` / `APd_twoPay` /
+`APd_twoPayOnly` / `APd_all` / `GOK_all`。
+- `k` → `ks`、`k + 1` → `true :: ks`、`∀ k, APd k N` → `∀ ks, APd ks N`
+- `k + m` → `List.replicate m true ++ ks`（`GCtx_rep` / `APd_plug_rep`）
+- 新しく要るのは `APd_pay` / `APd_nil` の **false 頭の場合**だけ:
+  `APd [false] V` と `APd (false :: ks) V` を
+  `APd_twoNil` / `APd_twoPay`（どちらも既存）＋ `APd_step` で埋める
+- `APd_all` の two の場合: `two nil M` は `APd_all M (false :: ks)` で読み替え、
+  `two N M`（N ≠ nil）は `APd_twoPayOnly`（M が `PayOnly`）
+
+作業途中のファイルを `lean/Small.listbool.wip` に保存。`lean/Small.lean` は緑に戻してある。
