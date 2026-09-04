@@ -2758,3 +2758,45 @@ termination_by ks _ => (cntF ks, ks.length)     -- cntF = false の個数
 - `lean/Small.stage2.wip`: それに `List Bool` 版 `APd`/`GCtx`/`APd_iff`/`APd_step`/
   `APd_congr`/`GOK_chainJd`/`AYd` まで（**弱い N 条件**版。強い版に直す必要あり）
 - `git` の HEAD は緑
+
+## 続き108（★ 確定版の `APd`。`false` 添字に true 拡張の閉包を組み込む）
+
+107 の形でも `APd_nil (true::false::ks)` で詰まる:
+そこの枠木 `U` は `APd (false::ks) U` しか持たないが、`APd_oneNil` → `AYdT` の
+重複場合の鎖が `U` を**より深い添字でも**要求する。
+
+### 解決: `APd (false::ks)` の定義自体に「ks の true 拡張すべて」を入れる
+さらに `APd [] V := GOK V` にすると基底が特別扱いでなくなる。
+```
+def FrmJ : List Bool → Jk1 → Prop        -- 枠木の種類（一番外は字、内は junk）
+  | [],       U => JkOk U
+  | (_ :: _), U => JkJ U
+
+def cntF : List Bool → ℕ                  -- false の個数
+def Rq : List Bool → Jk1 → Prop           -- Rq (false::_) U = TopOk U、他 True
+
+def APd : List Bool → Jk1 → Prop
+  | [],            V => GOK V
+  | (true :: ks),  V => ∀ U, FrmJ ks U → Rq ks U → APd ks U → APd ks (one U V)
+  | (false :: ks), V => ∀ (m : ℕ) (U N : Jk1),
+      FrmJ (rep m ++ ks) U → Rq (rep m ++ ks) U → APd (rep m ++ ks) U → JkJ N →
+      (∀ j, APd (rep j ++ (true :: (rep m ++ ks))) N) →
+      APd (rep m ++ ks) (one U (two N V))
+termination_by ks _ => (cntF ks, ks.length)
+```
+（`rep m = List.replicate m true`）。停止性:
+- `true::ks → ks`: cntF 同じ、長さが減る
+- `false::ks → rep m ++ ks` / `rep j ++ true :: rep m ++ ks`: cntF が真に減る
+  （`cntF (rep m ++ ks) = cntF ks < cntF ks + 1`）
+
+### なぜ閉じるか
+`APd (false::ks) U` が「U は ks とその true 拡張すべてで 2 の記録の直上に置ける」
+を意味するので、`APd_nil (true::false::ks)` で得られる枠木 U の仮定が
+そのまま `AYdT`（2 の記録の上の荷）の `hRZ` になる。鎖 `twoIt N T n` の不変量
+`∀ j, APd (rep j ++ true::(rep m ++ ks)) (twoIt N T n)` も
+`APd (false::ks) T` を m+j で具体化して維持できる。
+
+### 主張の形
+- `GOK_all : ∀ T, JkOk T → GOK T`（= `APd [] T`）
+- `APd_all : ∀ T, JkJ T → ∀ ks, ks ≠ [] → Rq ks T → APd ks T`
+- `APd (true :: []) V` は旧 `APz V` と一致する
