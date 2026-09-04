@@ -2009,3 +2009,39 @@ APd_twoPayOnly   : PayOnly M なら two N M を継げる（M の構造帰納）
 `two N (one N' M'')`（2 の記録の junk の中に 1 の列）だけがフレームを要求する。
 2 の記録が新しい段を作るので、その段の junk `M''` を継ぐには
 文脈に 2 の記録を含める必要がある。
+
+## 続き93（★ 壁が解けた: `APd_twoPay` が前回の詰まりを埋める）
+
+続き85 でフレーム版が詰まった原因は
+「`APd_oneNil (false :: ks)` が `APnil_gen` の `hang`（= **2 の記録の上に荷**）を要求する」
+だった。それが今 `APd_twoPay` として証明できた ⟹ **フレーム版が通るはず**。
+
+さらに、フレームの 2 の記録の**左兄弟は `nil` で足りる**ことが分かった:
+- 行375 の木 `otwJ n = one nil (two nil (otwJ (n-1)))` は 2 の記録の左兄弟が全部 nil
+- 左兄弟が nil でない `two` は `twoIt`（dup の複製の鎖）だけで、
+  それは `APd_twoPay` の**内側**で一番内の木として扱われる。フレームには出てこない
+
+だからフレームは木を 1 つだけ持てばよい:
+```
+plug (Frm.fotw U :: rest) T = Jk1.one U (Jk1.two Jk1.nil (plug rest T))
+APd (false :: ks) V = ∀ U, Hdf ks U → APd ks U → APd ks (one U (two nil V))
+```
+**∀ 束縛の木が出ない**ので `APd` の定義が構造帰納で通る（続き85 の壁がない）。
+
+### `JkJ` の形（両方を許す）
+```
+JkJ (two N M) = (N = nil ∧ JkJ M ∧ TopOk M) ∨ (JkJ N ∧ PayOnly M)
+```
+- 左の枝（左兄弟 nil、junk 一般）: フレーム機構で扱う
+- 右の枝（左兄弟一般、junk は荷だけ）: `APd_twoPayOnly` で扱う（実装済み）
+
+### 次の作業手順
+1. `JkJ (two N M)` を上の選言に緩め、`APd_twoPay` の `PayOnly Z` を `JkJ Z ∧ TopOk Z` に一般化
+2. フレーム（`Frm.fone U` / `Frm.fotw U`）と `plug` / `dep` を入れる
+   （WIP `lean/Small.frm.wip` の該当部分がそのまま使える）
+3. `APd` / `GCtx` / `Hdf` を `List Bool` 添字に。`false` の場合は
+   - `APd_nil (false::ks)` ← `APd_twoNilGen nil`
+   - `APd_pay (false::ks)` ← `APd_twoPay`
+   - `APd_oneNil (false::ks)` ← `APnil_gen`（hang は上の `APd_pay`）
+4. `APd_all` の `two` の場合を選言で分ける
+5. 行375（`snocYd_mem`, dl = 2）、行376
