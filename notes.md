@@ -1216,3 +1216,50 @@ APz V := ∀ U, JkOk U → GOK U → GOK (Jk1.one U V)
 1 段ごとに「任意の蓄積木についての APz」が必要になり、連鎖で作られる木は
 APz を満たさない（`one · (pay …)` の形になるため）。
 ⟹ 壁は「`APz` を `one V (pay W C)` の形まで広げること」に移った。
+
+## 続き76（★ 壁を突破: `APd k` の階層。行 371, 372, 373 到達）
+
+### 突破の鍵: 深さを「命題の添字」にして ∀k で回す
+```
+APd 0 V     := ∀ U, JkOk U → GOK U → GOK (one U V)          -- 深さ 0 で項として継げる
+APd (k+1) V := ∀ U, JkOk U → APd k U → APd k (one U V)      -- 深さ k+1
+GCtx k ctx  := ctx = [U₀,…,U_k] で GOK U₀ ∧ APd 0 U₁ ∧ … ∧ APd (k-1) U_k
+APd_iff     : APd k V ↔ ∀ ctx, GCtx k ctx → GOK (plug ctx V)
+```
+閉包:
+- `APd_one` : `APd k V → APd (k+1) W → APd k (one V W)` … **定義そのもの**
+- `APd_pay` : `APd k V → Bok C → APd k (pay V C)`
+  … k=0 は `APz_pay`、k+1 は `AYd k`（荷の A2' 帰納法。仮定 `APd (k+1) Z` を
+  複製の連鎖に沿って持ち回る。連鎖の木は `APd k` を保つ）
+- `APd_oneNil` : `APd k V → APd k (one V nil)`
+  … `APd_iff` で文脈に落として `APnil_gen ctx`。吊るしは `APd_pay k`（**同じ k**）
+- `APd_nil` : `APd k nil` … k+1 は `APd_oneNil k`
+
+⟹ **`APd_all : ∀ T, JkOk T → ∀ k, APd k T`**（T の構造帰納法）
+  - `one N M` の場合: 部分項 M について**深さ k+1** の IH を使う。
+    命題が ∀k なのでそのまま取れる ✓
+  - `nil` の場合: 深さを 1 下げて「任意の木」を要求しない（`APd_oneNil` が
+    同じ k の `APd_pay` だけで済む）✓
+
+これで続き73 の「one は深さ+1、nil は深さ-1 で任意の木」という矛盾が消えた。
+**深さを命題の添字にすると、one の +1 は ∀k で吸収され、nil の -1 は起きない。**
+
+⟹ **`GOK_all : ∀ T, JkOk T → GOK T`**（任意の深さの木の字がすべて普遍）
+⟹ `GoodFb_wordJ`（木の字の語）、`rowJ_mem`（R338 の上にどの語でも継げる）
+
+### 取れた行
+- **行 371** `R344 (4,1,0) = psi(W_w*W^W)`（GoodFb 3 段すべて付きで出し直し）
+- **行 372** `R344 (4,1,0)(5,1,0) = psi(W_w*W^W^W)`
+- **行 373** `R344 (4,2,0) = psi(W_w*psi_1(W_2))`
+  … 階段の木 `stairJ n` の塔 `Mtw R341 [(3,1,0)] n` ＋ `snocY_mem`
+
+### 次の壁（行 374 以降）
+374〜384 と 385 以降の塔の段には `(·,2,0)`（2 の記録）や `(·,2,1)`（z）が
+junk の中に現れる。木の型 `Jk1` は 1 の記録と荷しか持たないので届かない。
+選択肢:
+1. `Jk1` に 2 の記録・z を足す（質量計算＝どの列が行 1 で上がるかを再計算。
+   seg の文脈 b=1 では 2 の記録が上がるので、文脈ごとに違うマスクになる）
+2. `LwA 3 R344`（z の上のレベルの類）を作る。`GOK_all` で吊るしは全部出るが、
+   `BaseOk.close` が任意ブロックを要求する一方 `hang`（blkD_memS）は
+   不変量の字が木であることを要求するので、まだ噛み合わない。
+   `blkD_memS` の Bok 版（続き74 参照）があれば hclose 側は木で閉じる。
