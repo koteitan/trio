@@ -1601,3 +1601,41 @@ Kok ks : two フレームの外側は必ず one フレーム（先頭が false �
    （A2' の帰納は C について。fone/fotw の区別は `dep ctx` の算術だけ）
 4. 行375（`snocYd_mem`, dl = 2）
 WIP は lean/Small.frm.wip に退避。
+
+## 続き84（フレーム化 WIP を退避。最後の一段が見えた）
+
+フレーム化（`Frm` / `plug` / `dep` / `Hdf` / `APd : List Bool → Jk1 → Prop` / `GCtx` /
+`APd_iff` / `APd_twoNil` / `APd_all` / `GOK_all`）はエラー **2 個**まで到達。
+WIP は `lean/Small.frm.wip`（`Small.lean` にコピーすれば再開できる）。
+`Small.lean` 自体は行374 まで緑の状態に戻してある。
+
+### 残る 2 個
+1. `Hdf_two` の `absurd h.2 (by simp [TopOk])` → `h.2.elim` に直すだけ（自明）
+2. **`APd_pay (false :: ks)`** = 2 の記録の直上に `Bok` の荷を吊るす。
+   `APd_oneNil (false :: ks)` が `APnil_gen` の `hang` として要求する。
+   行375 の木 `otwJ n` を辿ると `APd_nil [false,false]` → `APd_twoNil [false]`
+   → `APd_nilT [false]` = `APd_oneNil [false]` が出るので避けられない。
+
+### 2 が難しい理由（新たに判明）
+`AYd` の「荷が `(0,0,0)` で終わる」場合は `flat_mem''` で
+「ブロック `M` を**同じ高さで** n 回繰り返した行列」に落とす。`fone` フレームなら
+`M = (a+p+2,1,0) :: jk1 (a+p+2) (pay Z Y)` で、繰り返しは木 `itJ (pay Z Y) n X`
+（1 の列を n 個並べる）で書ける。
+
+`fotw` フレームだと、悪い根 `(a+p+4,0,0)` の le0 の親は **2 の記録** `(a+p+3,2,0)` なので
+```
+M = (a+p+3,2,0) :: jk1 (a+p+3) (pay Z Y)
+```
+を同じ高さで n 回繰り返す必要がある。これを木で書くには
+**`two N M` の左兄弟 `N` が nil でない**形（2 の記録が同じ高さに並ぶ）が要る:
+```
+jk1 l (two N T) = jk1 l N ++ ((l+1,2,0) :: jk1 (l+1) T)
+```
+で `N` を前のコピーにする。よって
+- `JkJ (two N M)` の `N = nil` 制限を外す
+- フレーム `Frm.fotw` が木を 2 つ持つ（1 の列の左兄弟と、2 の記録の左兄弟）
+の 2 つの一般化が追加で要る。
+
+### 見積もり
+`Frm.fotw U N`（木 2 つ）への一般化 + `GoodFb_snoc_innerJt` / `dupJt` + `AYt` で
+おおよそ 400〜500 行。そのあと行375（`snocYd_mem`, dl = 2）と行376。
