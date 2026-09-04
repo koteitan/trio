@@ -2727,3 +2727,34 @@ termination_by ks _ => (cntF ks, ks.length)
 ### 要点
 `APd_twoPay` の重複場合が `twoIt N T m`（N が 2 の記録の鎖）を作るので
 `two N (one A B)`（N ≠ nil）が避けられない。だから `ftwo` は junk 付きでなければならない。
+
+## 続き107（106 の「弱い N 条件」は駄目。強い版 + `termination_by`）
+
+`APd (false::ks) V` のフレーム条件を
+`∀ m, APd ks (one U (repN N m))`（U に固有の塔）にすると**構造帰納で定義できる**が、
+`APd_twoPay` の重複場合の鎖 `twoIt N T n` でこの条件を維持できない
+（`N' = twoIt N T n` について同じ形の塔条件が要るが出せない）。
+鎖の不変量は結局 `∀ j, APd (replicate j true ++ (true::ks)) N'`（true 拡張すべて）で、
+これは `hstep` で維持できる:
+```
+APd (true::ks_j) (two N' T)  ←  APd (false::ks_j) T  を (U, N') で具体化
+   （N' の条件は ∀m, APd (rep (m+j) true ++ true::ks) N' から出る）
+```
+なので `APd` の定義に**強い N 条件**を入れる:
+```
+| [false],            V => ∀ U N, JkOk U → GOK U → JkJ N →
+      (∀ m, APd (List.replicate m true ++ [true]) N) → GOK (one U (two N V))
+| (false :: b :: ks), V => ∀ U N, JkJ U → Rq (b::ks) U → APd (b::ks) U → JkJ N →
+      (∀ m, APd (List.replicate m true ++ (true :: b :: ks)) N) →
+      APd (b::ks) (one U (two N V))
+termination_by ks _ => (cntF ks, ks.length)     -- cntF = false の個数
+```
+`cntF (replicate m true ++ ks) = cntF ks` なので、`false::ks` から
+`replicate m true ++ (true::ks)` への参照は第 1 成分が真に減る。
+構造帰納ではないので `rw [APd]` 用の展開補題を先に作ること。
+
+### 状態
+- `lean/Small.stage1.wip`: `Frm.ftwo` 化 + `JkJ` 緩和まで（`APd_all` の two だけ赤）
+- `lean/Small.stage2.wip`: それに `List Bool` 版 `APd`/`GCtx`/`APd_iff`/`APd_step`/
+  `APd_congr`/`GOK_chainJd`/`AYd` まで（**弱い N 条件**版。強い版に直す必要あり）
+- `git` の HEAD は緑
