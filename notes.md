@@ -1181,3 +1181,38 @@ one は深さ +1 と大きさ -1、nil は深さ -1 と大きさが任意。
 `LwA 2 R341`（z の上のレベルの類）に集約される。これが出れば
 `RunA 0 3 R344` から行 371〜384 が、`RunG` 経由で 385〜420 が、
 塔経由で 421 以降が一気に落ちる。
+
+## 続き75（`APz` の発見: 入れ子 1 段を突破。到達範囲の正確な特徴づけ）
+
+深さ 0 の「項として継げる」を名前にした:
+```
+APz V := ∀ U, JkOk U → GOK U → GOK (Jk1.one U V)
+```
+
+### `APz` は閉じている
+- `APz nil` ✓ （= AP0nil）
+- `APz V → Bok C → APz (pay V C)` ✓ （AYs を ctx = [] で使う）
+- **`APz V → APz (one V nil)`** ✓ ★新
+  証明: `APnil_gen [T]` に、吊るし `GOK (one T (pay V C))`（= AYs を ctx=[]、Z:=V で）
+  を渡す。`APz V` はその AYs の hAP としてちょうど要る。
+
+⟹ **APz の木 = すべての `one` の junk が nil の木**（＝ wordC 型の字の junk:
+1 の列は兄弟、荷は任意）。
+
+### `GOK` の到達範囲
+`GOK T` は次で閉じている: nil ✓、`pay T C`（AY0）✓、**`one T V`（V が APz）** ✓。
+⟹ **GOK の木 = すべての `one` の junk が APz の木** = 入れ子 1 段。
+字の junk の列の高さでいうと `a+2`（1 の列・荷）と `a+3`（1 の列・荷）まで届き、
+`a+4` の 1 の列には届かない。
+
+これで**行 371 の字の木 `one nil (one nil nil)` は GoodFb 3 段すべてが付く**
+（前は membership だけだった）。行 372 の木 `one nil (one nil (one nil nil))` は
+`a+4` の 1 の列を含むので 1 段足りない。
+
+### なぜもう 1 段行けないか
+`APz (one V M)`（M ≠ nil）を出すには、AYs の hAP として
+「`APt M at [U]` を**任意の**蓄積木で」が要る。M = nil のときそれは
+`GOK_oneOneNil` だが、それ自身が `APz`（任意の蓄積木について）を要求するので、
+1 段ごとに「任意の蓄積木についての APz」が必要になり、連鎖で作られる木は
+APz を満たさない（`one · (pay …)` の形になるため）。
+⟹ 壁は「`APz` を `one V (pay W C)` の形まで広げること」に移った。
