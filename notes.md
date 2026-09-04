@@ -2045,3 +2045,30 @@ JkJ (two N M) = (N = nil ∧ JkJ M ∧ TopOk M) ∨ (JkJ N ∧ PayOnly M)
    - `APd_oneNil (false::ks)` ← `APnil_gen`（hang は上の `APd_pay`）
 4. `APd_all` の `two` の場合を選言で分ける
 5. 行375（`snocYd_mem`, dl = 2）、行376
+
+## 続き94（フレーム化の機械的な部分が完了・緑）
+
+`plug` の型を `List Frm → Jk1 → Jk1` にした（`Frm.fone U` / `Frm.fotw U`、
+`fotw U` は「1 の列 + 2 の記録」を束ねたもの。2 の記録の左兄弟は nil）。
+```
+plug (Frm.fone N :: rest) T = one N (plug rest T)
+plug (Frm.fotw N :: rest) T = one N (two nil (plug rest T))
+dep : fone は +1、fotw は +2
+plug_snoc / plug_snoc2 / dep_snoc / dep_snoc2
+HdT / CtxJ / CtxOk / CtxXJ / CtxX / CtxX_snoc1 / CtxX_snoc2 / …
+```
+`ctx.length` → `dep ctx` に置換し、再帰的な plug 補題（`jk1_plug_one` /
+`jk1_plug_congr` / `jk1_plug_pay0` / `jk1_plug_two` / `Ancd_plug_jk1` /
+`plug_append`）に `fotw` の場合を追加。`GCtx` は `ctx' ++ [Frm.fone U]` に。
+`GCtx_CtxX_one`（GCtx の文脈なら `CtxX ctx X ↔ JkJ X`）を追加。
+
+**今は `CtxJ (fotw _ :: _) = False` / `CtxOk (fotw _ :: _) = False` にしてある**
+（`APd` 側がまだ `fotw` を扱えないため）。意味は今までと同じで、行371〜374 は維持。
+
+### 次の一手
+1. `JkJ (two N M) = (N = nil ∧ JkJ M ∧ TopOk M) ∨ (JkJ N ∧ PayOnly M)` に緩める
+2. `CtxJ` / `CtxOk` の `fotw` を有効化（`JkJ N ∧ CtxJ rest ∧ HdT rest`）
+3. `APd` / `GCtx` / `Hdf` を `List Bool` 添字に。`false` の場合を
+   `APd_twoNilGen` / `APd_twoPay` / `APnil_gen` で埋める
+4. `APd_all` の `two` を選言で分ける
+5. 行375（`snocYd_mem`, dl = 2）、行376
