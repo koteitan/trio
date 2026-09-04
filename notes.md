@@ -1546,3 +1546,58 @@ Kok ks : two フレームの外側は必ず one フレーム（先頭が false �
 4. `not_le1_jk1` の `two N M` の場合（`M` は `JkOk` なので `Or.inl` で再帰）
 
 見積もり: 機械的な付け回し 500 行 + 新規 2 本で 300 行 ≒ 800 行。
+
+## 続き83（フレーム化の実装中メモ）
+
+`two N M` を入れ、文脈を `List Frm`（`Frm.fone N` = 1 の列、`Frm.fotw N` = 1 の列 + 2 の記録）に
+一般化中。`ctx.length` は `dep ctx`（fone は 1、fotw は 2）に置き換え。
+
+分かったこと（設計の修正）:
+- **2 の記録の直上に 2 の記録が来ても上がらない**。`nextrel1` の最小性は、
+  さらに左の 1 の列（行1 = 1）で止まる。よって `Grd` は
+  「高さ **v ≤ l** の 1 の列 r があり、r の右は `v+1` 以上」に緩めてよい。
+- 逆に **2 の記録の直上の木の「先頭段」** には制限が要る。`TopOk` を
+  `nil → True, pay → False, one N _ → TopOk N, two → False` と定義し、
+  `JkJ (two N M) = N = nil ∧ JkJ M ∧ TopOk M`。
+  （荷は本当は許せるはずだが、`APd` の荷追加の two 版が要るので今は禁止）
+- `plug` の `fotw` フレームは `one N (two nil (plug rest T))` なので、
+  その内側のフレームの木にも `TopOk` が要る（`HdT rest`）。
+- `APd` の添字は `List Bool`（内側から。true = fone, false = fotw）:
+  ```
+  APd [] V            = GOK V
+  APd (true :: ks) V  = ∀ U, Hd ks U → APd ks U → APd ks (one U V)
+  APd (false :: ks) V = ∀ U, Hd ks U → APd ks U → APd ks (one U (two nil V))
+  Hd [] V = JkOk V,  Hd (true::_) V = JkJ V,  Hd (false::_) V = JkJ V ∧ TopOk V
+  ```
+  この形なら `Kok`（two の外は必ず one）が不要で、`APd_all` の場合分けは
+  `pay`/`two` が `false::ks` で `TopOk = False` により潰れる。
+  新規に要るのは `APd_twoNil ks`（= `APd ks (one U (two nil nil))`）だけ。
+
+### 続き83 追記（フレーム化はほぼ完了、残り 1 つ）
+`Frm` / `plug` / `dep` / `CtxJ` / `CtxOk` / `CtxXJ` / `CtxX` / `PlOk` / `Hdf` / `APd` / `GCtx` /
+`APd_iff` / `GCtx_CtxX` / `GCtx_CtxOk` / `Hdf_itJ` / `APd_congr` / `GOK_chainJd` / `AYd` /
+`APd_pay` / `APd_oneNil` / `APd_one` / `APd_nilT` / `APd_stairT` / `APd_twoNil` / `APd_nil` /
+`APd_all` / `GOK_all` まで書き換え、エラーは 4 個まで減った。
+
+`false::ks`（`fotw` フレーム）の連続は問題ない。`fotw` は「1 の列 + 2 の記録」を
+束ねているので、2 の記録の直上には必ず 1 の列が来る。だから `Kok` は要らない。
+
+残る本質的な穴は **`APd_oneNil (false :: ks)`**:
+`APnil_gen` が `hang : ∀ C, Bok C → GOK (plug ctx (pay V C))` を要求するので、
+**2 の記録の直上に荷を吊るす**（= `APd_pay (false :: ks)`）が要る。
+行375 の木 `otwJ n = one nil (two nil (otwJ (n-1)))` を辿ると
+`APd_nil [false,false]` → `APd_twoNil [false]` → `APd_nilT [false]` = `APd_oneNil [false]`
+が出るので避けられない。
+
+質量的には荷は 2 の記録の直上でも問題ない（`not_le1_jk1` の `pay` の場合は
+`block_root` + `le1_lower_bound` で、guard を使わない）。よって
+`TopOk (pay N _) = TopOk N` に緩めてよい。
+
+### 次の作業
+1. `TopOk (pay N _) = TopOk N` に緩める
+2. `GoodFb_snoc_innerJs` / `dupJs` を `plug ctx (one X (pay Z Y))` から
+   `plug ctx (pay Z Y)`（`colJ_plug_pay0` を使う一般形）に書き換える
+3. `AYd` を `APd_pay : ∀ ks V C, Hdf ks (pay V C) → APd ks V → APd ks (pay V C)` に統合
+   （A2' の帰納は C について。fone/fotw の区別は `dep ctx` の算術だけ）
+4. 行375（`snocYd_mem`, dl = 2）
+WIP は lean/Small.frm.wip に退避。
