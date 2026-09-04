@@ -1818,3 +1818,21 @@ AYt（荷 C の A2' 帰納）→ dup の場合に APd_rep2 (pay Z Y) m を使う
    `fotw U (rep2 T m)` の 2 種でよい。どちらも木は具体的なので ∀ 束縛は出ない）
 3. `AYt`（2 の記録の上の荷）と `APd_rep2` を相互再帰で書く
 4. 行375（`snocYd_mem`, dl = 2）、行376
+
+### 続き87 追記: `rep2` への置き換え完了（緑）
+`Jk1.two N M` を `Jk1.rep2 T m` に置き換えて緑（行371〜374 はそのまま）。
+```
+jk1 l (rep2 T m) = (range m).flatMap (fun _ => (l+1,2,0) :: jk1 (l+1) T)
+TopOk : nil → True | pay N _ → TopOk N | one N _ → TopOk N | rep2 _ _ → False
+JkJ   : … | rep2 T m => T = nil ∧ m = 1     ← 今はここを緩めていない（次の段で緩める）
+JkOk  : … | rep2 _ _ => False
+appJ  : … | _, rep2 T m => rep2 T m         ← jk1_appJ に TopOk N2 を仮定に追加
+```
+`jk1_appJ` は `TopOk N2`（連結の右の木の左背骨に 2 の記録がない）を仮定に取る形にした。
+`twr M' n` は `TopOk` を満たす（`TopOk_twr`）。
+
+**次**: `JkJ (rep2 T m) = JkJ T ∧ TopOk T` に緩め、
+`APd_rep2 : ∀ T, JkJ T → TopOk T → (∀ k, APd k T) → ∀ m k, APd k (rep2 T m)` を
+m の帰納で書く（帰納法の仮定がそのまま全深さになる）。
+その中で「2 の記録の上に荷を吊るす」`AYt` が要り、`AYt` の dup は
+`APd_rep2` を小さい荷で使う（測度は（荷の A2' の階数, m））。
