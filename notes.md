@@ -1480,3 +1480,69 @@ R374_mem            R344 (4,2,0)(4,2,0)  = psi(W_w*psi_1(W_2*2))   ← hang2rec 
 1. `RunG` / `Iface` / `PkGA` を読み、`snocY_mem` で作った 2 の記録の位置に
    `RunG` 型のインターフェースが立つかを確かめる（立てば `pk` がそのまま使える）
 2. 立たないなら、木の junk 用に `JkGU` 相当を作る
+
+## 続き82（行375 は snocYd_mem。塔に「junk を持つ 2 の記録」が要る）
+
+### 行 375 の規則は `snocYd_mem`（歩幅 dl）
+```
+snocYd_mem : (Y0 ++ M) ++ [(L + dl, y, 0)] ∈ W 0
+  ⟸ Y0 ≠ [], MidD (L+1) M, 行1(M,0) < y, hMy, 1 ≤ y, 1 ≤ dl,
+     ∀ n, Mtwd dl Y0 M n ∈ W 0      （Mtwd dl Y0 M n = Y0 ++ ⧺_k shiftr01 (dl*k) 0 M）
+```
+行375 `R344(4,2,0)(5,2,0)` は `Y0 = R341`, `M = [(3,1,0),(4,2,0)]`, `L = 3`, `dl = 2`, `y = 2`。
+- `MidD 4 M` ✓、`行1(M,0) = 1 < 2` ✓
+- `hMy`: t=1 で `行0=4 < 5` かつ右に大きいものなし ⟹ `2 ≤ 行1(M,1) = 2` ✓
+- 塔 `Mtwd 2 R341 M n = R341 ++ [(3,1,0)(4,2,0)(5,1,0)(6,2,0)(7,1,0)(8,2,0)…]` ← bms と一致
+
+### 塔の木には `two N M`（junk を持つ 2 の記録）が要る
+塔をレベル 2 の木として読むと
+`(3,1,0)`=1の列(l=2) → `(4,2,0)`=2の記録(l=3) → `(5,1,0)`=1の列(l=4) → `(6,2,0)`=2の記録(l=5) …
+つまり **2 の記録が自分の junk を持ち、その中にまた 1 の列と 2 の記録が入る**。
+```
+| two : Jk1 → Jk1 → Jk1     jk1 l (two N M) = jk1 l N ++ ((l+1,2,0) :: jk1 (l+1) M)
+```
+`two2 N = two N nil` なので `two2` は廃止して `two` に一本化できる。
+
+### 述語（続き80 の分割の自然な延長）
+2 の記録の直上（レベル l+1 の先頭段）にまた 2 の記録が来ると、
+le0 の親が 2 の記録（行1=2）になって最小性が通り、上がってしまう。よって
+```
+JkJ  (one N M) = JkJ N ∧ JkJ  M     -- 1 の列の上なので M の先頭段に 2 の記録可
+JkJ  (two N M) = N = nil ∧ JkOk M   -- 2 の記録の上なので M の先頭段は不可
+JkOk (one N M) = JkOk N ∧ JkJ M
+JkOk (two _ _) = False              -- 字の z の直上は不可
+```
+（`two` の左兄弟 `N` を nil に限るのは `APd` の塔の循環を避けるため。行374/375 は満たす）
+
+### 文脈をフレームの列にする
+`plug ctx T` の各フレームは今は 1 の列だけ。2 の記録のフレームを足す:
+```
+Frm = Bool × Jk1     -- true = 1 の列 + 左兄弟、false = 2 の記録（左兄弟 nil）
+plugF [] T = T
+plugF ((true, N) :: rest) T = one N (plugF rest T)
+plugF ((false, _) :: rest) T = two nil (plugF rest T)
+```
+高さのオフセットはどちらも 1 なので、既存の補題は
+`ctx.length` の算術がそのまま通る（場合分けが 1 個増えるだけ）。
+
+`APd` の添字 `k : ℕ` を `ks : List Bool`（内側から外側）に替える:
+```
+Hd []            V = JkOk V     -- 字の先頭段
+Hd (true  :: _)  V = JkJ V      -- 1 の列の上
+Hd (false :: _)  V = JkOk V     -- 2 の記録の上
+
+APd []            V = GOK V
+APd (true  :: ks) V = ∀ U, Hd ks U → APd ks U → APd ks (one U V)
+APd (false :: ks) V = APd ks (two nil V)
+
+Kok ks : two フレームの外側は必ず one フレーム（先頭が false なら次は true）
+```
+`APd k`（旧）は `APd (List.replicate k true ++ [true])` に対応。
+
+### 新しく要る補題
+1. `APd_nil (false :: ks)` = 旧 `APd_two2` をフレーム文脈に一般化（塔は階段の木のまま）
+2. `APd_pay (false :: ks)` = **2 の記録の上に荷を吊るす**（`AYd` の two フレーム版）← 本体
+3. `APnil_gen` / `GoodFb_snoc_*Js` / `Ancd_plug_*` / `colJ_plug_*` のフレーム版（機械的）
+4. `not_le1_jk1` の `two N M` の場合（`M` は `JkOk` なので `Or.inl` で再帰）
+
+見積もり: 機械的な付け回し 500 行 + 新規 2 本で 300 行 ≒ 800 行。
