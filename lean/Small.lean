@@ -21447,5 +21447,80 @@ theorem R375f4_mem : R375m ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375f4_mem
 
 
+/-! ### `U375a` は台座に依らないセグメント `SegA 0`
+
+`GoodFb.seg 0` の `reapp` は `s` についても一般なので、`R375_mem_gen` の
+シフト版が作れる。これで `LwB_tower` / `SegB_snoc2` が使えるようになる。 -/
+
+theorem otw_word_eq (n : ℕ) :
+    ((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [otwJ n]
+      = [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+        ++ (List.range n).flatMap
+            (fun k => shiftr01 (2 * k) 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+  have h0 := otw_tower_gen [] n
+  simpa [Mtwd] using h0
+
+theorem otw_tower_gen_s (A : TrioSeq) (s n : ℕ) :
+    A ++ shiftr01 s 0 (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [otwJ n])
+      = Mtwd 2 (A ++ shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+          (shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) n := by
+  rw [otw_word_eq n, shiftr01_append0, shift_flatMap0, Mtwd, List.append_assoc]
+  refine congrArg _ (congrArg _ ?_)
+  apply List.flatMap_congr
+  intro k _
+  rw [shiftr01_add0, shiftr01_add0, Nat.add_comm]
+
+theorem shift_U375a (s : ℕ) :
+    shiftr01 s 0 U375a
+      = (shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+          ++ shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)])
+        ++ [((3 + s + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [U375a, shiftr01, List.map_cons, List.map_nil, List.cons_append, List.nil_append]
+  refine congrArg _ (congrArg _ (congrArg _ (congrArg _ ?_)))
+  simp only [List.cons.injEq, Prod.mk.injEq, and_true, and_self]
+  omega
+
+/-- ★★ `U375a` は台座に依らないセグメント。 -/
+theorem SegA_U375a : SegA 0 U375a where
+  mid := MidD_U375a
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro P hP s A' hA'
+    have htw : ∀ n : ℕ,
+        Mtwd 2 (A' ++ shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+          (shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) n ∈ W 0 := by
+      intro n
+      have hrow := ((GoodFb_wordJ [otwJ n] (WOk_singleton (JkOk_otwJ n))).seg 0).reapp
+        P hP s A' (by simpa using hA')
+      rw [otw_tower_gen_s A' s n] at hrow
+      exact hrow
+    have hM : MidD (3 + s + 1) (shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+      have h1 := MidD_shift MidD_N375 s
+      rwa [show 4 + s = 3 + s + 1 from by omega] at h1
+    have h := snocYd_mem
+      (Y0 := A' ++ shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+      (M := shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)])
+      (L := 3 + s) (y := 2) (dl := 2) (by simp [shiftr01]) hM ?_ ?_ (by omega) (by omega) htw
+    · rw [shift_U375a s, ← List.append_assoc, ← List.append_assoc]
+      exact h
+    · show entry (shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) 1 0 < 2
+      simp [shiftr01, entry]
+    · intro t ht1 htl hlt hrec
+      simp only [shiftr01, List.length_map, List.length_cons, List.length_nil] at htl
+      have hj : t = 1 := by omega
+      subst hj
+      simp [shiftr01, entry]
+
+/-- ★★★ 続き111 #5 `P(2,2,0)`。 -/
+theorem R375f5_mem : R375m ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := R338) (M := U375a)
+    (SegA_toSegB SegA_U375a BaseOk_P0) (LwB_of_base ⟨Aok_R338, rfl⟩)
+  rw [← R375m_eq] at h
+  simpa using h
+
+#print axioms SegA_U375a
+#print axioms R375f5_mem
+
+
 end Small
 end TRIO
