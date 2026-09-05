@@ -21239,5 +21239,151 @@ theorem R375f2_mem : R375m ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375f2_mem
 
 
+/-! ### 平坦な 5 本（#3 #7 #9 #12 #15）の還元
+
+`flat_mem''` の 3 つの副条件はちょうど `MidD d M` の `ne` / `head` / `tail` である。
+残るのは **写しの族** `∀ n, Y0 ++ M^n ∈ W 0`。`Aok_append_Mid` を回すには
+「もう 1 枚 `M` が継げる」だけあればよいので、それを仮定として切り出す。
+
+⚠ 続き112 で確認した通り、#1 以外の平坦 5 本はこの仮定が本質的に難しい:
+`M` は必ず `P` の接尾辞を含み、その junk 木は `one nil (two nil (two nil nil))`
+（＝ 2 の記録の直上に 2 の記録）なので、現在の `JkJ` の `TopOk` が禁じている。
+つまり行376 と同じ壁である。 -/
+
+/-- 「もう 1 枚 `M` が継げる」を `n` について回すと、写しの族が `Aok` のまま伸びる。 -/
+theorem Aok_chain {Y0 M : TrioSeq} {d : ℕ} (hd : 1 ≤ d) (hM : MidD d M) (hY0 : Aok Y0)
+    (hstep : ∀ n : ℕ, Aok (Y0 ++ copies M n) → (Y0 ++ copies M n) ++ M ∈ W 0) :
+    ∀ n : ℕ, Aok (Y0 ++ copies M n)
+  | 0 => by simpa [copies] using hY0
+  | (n + 1) => by
+      have ih := Aok_chain hd hM hY0 hstep n
+      have h := Aok_append_Mid hd ih hM (hstep n ih)
+      rw [copies_snoc, ← List.append_assoc]
+      exact h
+
+/-- ★ 平坦（delta 0）な末尾列 `(d,0,0)` は「もう 1 枚継げる」だけで出る。 -/
+theorem flat_of_chain {Y0 M : TrioSeq} {d : ℕ} (hd : 1 ≤ d) (hM : MidD d M) (hY0 : Aok Y0)
+    (hstep : ∀ n : ℕ, Aok (Y0 ++ copies M n) → (Y0 ++ copies M n) ++ M ∈ W 0) :
+    Y0 ++ M ++ [((d, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  flat_mem'' hM.ne (by have := hM.head; omega) hM.tail
+    (fun n => (Aok_chain hd hM hY0 hstep n).mem)
+
+/-- #3 の単位 `(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)`。 -/
+def U375a : TrioSeq :=
+  [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+    ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)]
+
+/-- #7 の単位 `(2,2,1)(3,1,0)(4,2,0)(5,2,0)`。 -/
+def U375b : TrioSeq :=
+  [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 2, 0) : ℕ × ℕ × ℕ)]
+
+/-- #9 の単位 `(3,1,0)(4,2,0)(5,2,0)`。 -/
+def U375c : TrioSeq :=
+  [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)]
+
+/-- #12 の単位 `(4,2,0)(5,2,0)`。 -/
+def U375d : TrioSeq := [((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)]
+
+/-- #15 の単位 `(5,2,0)`。 -/
+def U375e : TrioSeq := [((5, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375a : MidD 2 U375a where
+  ne := by decide
+  col := by decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    show 2 ≤ entry U375a 0 j
+    simp only [U375a, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by show ∀ c ∈ U375a, c.2.2 ≤ c.2.1; decide
+
+theorem MidD_U375b : MidD 3 U375b where
+  ne := by decide
+  col := by decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    show 3 ≤ entry U375b 0 j
+    simp only [U375b, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by show ∀ c ∈ U375b, c.2.2 ≤ c.2.1; decide
+
+theorem MidD_U375c : MidD 4 U375c where
+  ne := by decide
+  col := by decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    show 4 ≤ entry U375c 0 j
+    simp only [U375c, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | j <;> first | omega | decide
+  mono := by show ∀ c ∈ U375c, c.2.2 ≤ c.2.1; decide
+
+theorem MidD_U375d : MidD 5 U375d where
+  ne := by decide
+  col := by decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    show 5 ≤ entry U375d 0 j
+    simp only [U375d, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | j <;> first | omega | decide
+  mono := by show ∀ c ∈ U375d, c.2.2 ≤ c.2.1; decide
+
+theorem MidD_U375e : MidD 6 U375e := MidD_col52
+
+/-- `R338 (1,1,0)` は `Aok`（#7 の土台）。 -/
+theorem Aok_R338110 : Aok (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  Aok_append_Mid (d := 2) (by omega) Aok_R338 (MidD_col 1 1 (by omega) (by omega))
+    (by simpa using Lv_snoc 1 0 R338 Aok_R338)
+
+/-- 続き111 #3 `P(2,0,0)` の還元。 -/
+theorem R375f3_of_step
+    (hstep : ∀ n : ℕ, Aok (R338 ++ copies U375a n) → (R338 ++ copies U375a n) ++ U375a ∈ W 0) :
+    R375m ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R338) (M := U375a) (d := 2) (by omega) MidD_U375a Aok_R338 hstep
+  simpa [R375m, R373, R344, R341, U375a, List.append_assoc] using h
+
+/-- 続き111 #7 `P(3,0,0)` の還元。 -/
+theorem R375f7_of_step
+    (hstep : ∀ n : ℕ, Aok (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375b n) →
+      (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375b n) ++ U375b ∈ W 0) :
+    R375m ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) (M := U375b) (d := 3)
+    (by omega) MidD_U375b Aok_R338110 hstep
+  simpa [R375m, R373, R344, R341, U375b, List.append_assoc] using h
+
+/-- 続き111 #9 `P(4,0,0)` の還元。 -/
+theorem R375f9_of_step
+    (hstep : ∀ n : ℕ, Aok (R341 ++ copies U375c n) → (R341 ++ copies U375c n) ++ U375c ∈ W 0) :
+    R375m ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R341) (M := U375c) (d := 4) (by omega) MidD_U375c Aok_R341 hstep
+  simpa [R375m, R373, R344, R341, U375c, List.append_assoc] using h
+
+/-- 続き111 #12 `P(5,0,0)` の還元。 -/
+theorem R375f12_of_step
+    (hstep : ∀ n : ℕ, Aok (R344 ++ copies U375d n) → (R344 ++ copies U375d n) ++ U375d ∈ W 0) :
+    R375m ++ [((5, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R344) (M := U375d) (d := 5) (by omega) MidD_U375d Aok_R344 hstep
+  simpa [R375m, R373, R344, U375d, List.append_assoc] using h
+
+/-- 続き111 #15 `P(6,0,0)` の還元。 -/
+theorem R375f15_of_step
+    (hstep : ∀ n : ℕ, Aok (R373 ++ copies U375e n) → (R373 ++ copies U375e n) ++ U375e ∈ W 0) :
+    R375m ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R373) (M := U375e) (d := 6) (by omega) MidD_U375e Aok_R373 hstep
+  simpa [R375m, U375e, List.append_assoc] using h
+
+#print axioms flat_of_chain
+#print axioms R375f3_of_step
+#print axioms R375f15_of_step
+
+
 end Small
 end TRIO
