@@ -6738,3 +6738,48 @@ jk1 l (pay N Y) = jk1 l N ++ shiftr01 (l+1) 0 Y
 **残る道は「`AYdTK` の `¬TopOk Z` の場合を別ルートで証明する」ただ 1 本。**
 `¬TopOk Z` は `Z` の先頭が 2 の記録、つまり `Z` の junk 鎖をたどると `two`。
 `APd_twoK`（証明済み、base 一様仮定）が使える形かどうかを次に見る。
+
+### 続き127: ★ 案(iv)（枠 junk = nil）は**通らない**。実測で確定
+
+`APd` / `GCtx` の `ftwo` 枠を nil に固定して置き換える版を作り、
+定義ブロックまでは全部通した（error 43 → 38）。そこで止まる。**止まる場所が本質的。**
+
+```
+/tmp/SY_n0.lean:20991: error: Function expected at
+  (APd_cS 0 ks T).mp hTk w hw
+but this term has type
+  APd (0 :: (w ++ ks)) (Jk1.nil.two T)
+```
+
+#### 理由: `APd_cS` の `N` は**枠の junk であると同時に木の junk**
+
+```
+APd ((k+1)::ks) V ↔ ∀ w0 N, ... → APd (k :: (w0 ++ ks)) (two N V)
+GCtx t ((k+1)::ks) ctx ↔ ∃ w0 ctx' N, ctx = ctx' ++ [ftwo N] ∧ ...
+APd_iff で両者が繋がる:  plug (ctx' ++ [ftwo N]) V = plug ctx' (two N V)
+```
+**`ftwo` 枠の junk と、木に足す 2 の記録の junk は同じもの**を裏表で見ているだけ。
+枠を nil に限ると、**木 `two N V`（N ≠ nil）の `APd` が作れなくなる。**
+
+そして `AYdT` の鎖がそれを必要とする:
+```
+hstep (twoIt N T n) h2 h3 : ... → APd (0 :: (w ++ ks)) (two (twoIt N T n) T)
+                                                            ^^^^^^^^^^^^^^ nil でない
+```
+鎖の要素 `twoIt N T n` は n≥1 で `two _ _`。**鎖は 2 の記録の入れ子そのもの**なので、
+junk を nil に限る設計とは両立しない。`APd0` を別に建てても同じ壁に当たる
+（`APd0_cS` は `two nil V` しか作れない）。
+
+#### 前任の「木の junk か枠の junk か」という整理自体が、ここでは成り立たない
+
+methodology §3 の判定基準は正しいが、**`APd` の `N` はどちらでもある**。
+層が 2 つに分かれていない箇所なので、「枠だけ制限する」ができない。
+これは §3 の例外として記録しておく価値がある。
+
+#### 収穫: 鎖は塔を使わない
+
+`APd_chainT` の `GOK (plug ctx (twoIt N T n))` は `APd_iff` から直接出ており、
+塔（`snocYd_mem` / `ctxK`）は使っていない。塔は `AYdT` の外側
+（`GoodFb_snoc_dupJt`）にある。**junk 入りの 2 の記録の入れ子は、鎖の技法だけで
+`APd` が作れる。**`APd_twoNilNest`（頭 0）が塔を要るのは、頭 0 では `APd_cS` が
+使えず `APnil_gen` 経由になるため。
