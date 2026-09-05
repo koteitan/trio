@@ -22806,6 +22806,47 @@ theorem GCtx_ftwoRep : ∀ (j : ℕ), (∀ h : ℕ, h < j → ∀ ks' : List ℕ
       · intro w hw
         exact hnil j (by omega) _
 
+/-! ### `js` の各段の条件（`js[i]` は level `b+i`）。追記9 の対応をそのまま定義にする。 -/
+
+def JsOk (ks : List ℕ) : List Jk1 → ℕ → Prop
+  | [], _ => True
+  | (N :: js), b =>
+      (JkJ N ∧ ∀ w : List ℕ, (∀ x ∈ w, x ≤ b) → APd (b :: (w ++ ks)) N) ∧ JsOk ks js (b + 1)
+
+theorem JsOk_snoc (ks : List ℕ) : ∀ (js : List Jk1) (Nl : Jk1) (b : ℕ),
+    JsOk ks (js ++ [Nl]) b ↔ JsOk ks js b ∧
+      (JkJ Nl ∧ ∀ w : List ℕ, (∀ x ∈ w, x ≤ b + js.length) →
+        APd ((b + js.length) :: (w ++ ks)) Nl)
+  | [], Nl, b => by
+      show ((JkJ Nl ∧ _) ∧ JsOk ks [] (b + 1)) ↔ _
+      simp [JsOk]
+  | (N :: js), Nl, b => by
+      have harith : b + 1 + js.length = b + (js.length + 1) := by omega
+      show ((JkJ N ∧ _) ∧ JsOk ks (js ++ [Nl]) (b + 1)) ↔ _
+      rw [JsOk_snoc ks js Nl (b + 1), List.length_cons, harith]
+      constructor
+      · rintro ⟨h1, h2, h3⟩
+        exact ⟨⟨h1, h2⟩, h3⟩
+      · rintro ⟨⟨h1, h2⟩, h3⟩
+        exact ⟨h1, h2, h3⟩
+
+theorem GCtx_ftwoRepL (ks : List ℕ) : ∀ (js : List Jk1), JsOk ks js 0 →
+    ∀ (ctx : List Frm) (t t' : Prop), GCtx t (0 :: ks) ctx →
+      GCtx t' (js.length :: ks) (ctx ++ js.map Frm.ftwo) := by
+  intro js
+  induction js using List.reverseRecOn with
+  | nil => intro _ ctx t t' hc; simpa using GCtx_ct_any hc
+  | append_singleton js' Nl ih =>
+      intro hjs ctx t t' hc
+      obtain ⟨hjs', hNl, hNlc⟩ := (JsOk_snoc ks js' Nl 0).mp hjs
+      have hlen : (js' ++ [Nl]).length = js'.length + 1 := by simp
+      rw [hlen, List.map_append, ← List.append_assoc, GCtx_cS]
+      refine ⟨0, ctx ++ js'.map Frm.ftwo, Nl, by simp, ?_, hNl, ?_⟩
+      · rw [show List.replicate 0 0 ++ ks = ks from by simp]
+        exact ih hjs' ctx t False hc
+      · intro w hw
+        simpa using hNlc w (by simpa using hw)
+
 theorem GCtx_repK {N : Jk1} (hJN : JkJ N) (j : ℕ)
     (hnil : ∀ h : ℕ, h < j → ∀ ks' : List ℕ, APd (h :: ks') Jk1.nil) (ks : List ℕ)
     (hNall : ∀ i : ℕ, APd (List.replicate i j ++ (j :: ks)) N) :
