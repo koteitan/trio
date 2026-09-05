@@ -9054,3 +9054,55 @@ GOK_oneOneNil / APpayJ / JkT_itJ / JkT_nil     GOK_chainJz は ctx ≠ [] を明
 
 `#12` `#15` は最外が `two` なので `APd_step`（1 の列のフレーム）ではなく
 2 の記録のフレームが要る。`APd_twoNilGen` の左兄弟つき版が要りそう。
+
+### 追記6: ★ #10 `P(4,1,0)` も出た。#11 で次の壁（深さ 1 以上の左兄弟）
+
+#10 は「高さ 4 の吊るし」。荷を `otwL` の中へ 1 段潜らせた木
+
+```
+one nil (pay (two nil (two nil nil)) B)      pay はレベル 3 → 荷は高さ 4
+```
+
+で、`APpayJ` の `hAP` がちょうど `GOK_oneU_twotwo`。ただし `AYs` が
+「内側の木は `JkJ`」を要求するので、**空文脈のときだけ `JkA` に弱める** `CtxT` を導入した:
+
+```
+CtxT [] T = JkA T,  CtxT (_ :: _) T = JkJ T
+CtxX_one / CtxX_itJ / GOK_chainJ / AYs / GoodFb_snoc_innerJs / GoodFb_snoc_dupJs
+```
+
+`Ancd 4 P` は `Ancd_append_Mid` を 3 回（`R338 → +(1,1,0) → +(2,2,1) → +U375c`）。
+
+### #11 `P(4,2,0)` の壁（`bms` の親行列で確認）
+
+```
+P(4,2,0) = snocY_mem (Y0 := R341) (M := U375c) (L := 3) (y := 2)
+要る塔: ∀n, Mtw R341 U375c n = R341 ++ U375c ++ U375c↑1 ++ U375c↑2 ++ …
+```
+
+親行列を測ると `(4,1,0)` の行 0 の親は `(3,1,0)`。つまり `(4,2,0)(5,2,0)` の**右兄弟**で、
+木は
+
+```
+V 0 = nil,  V (k+1) = one nil (appJ W (V k)),  W = two nil (two nil nil)
+V 2 = one nil (one W W)
+```
+
+`one W X` の `W` は**深さ 1 の左兄弟**で、`FrmJ (_ :: _) U = JkJ U` に当たる。
+`JkJ W` は偽（2 の記録の直上に 2 の記録）。
+
+**次にやるべきこと: 枠・文脈の層の `JkJ` を `JkA` に落とす。**
+`CtxJ` / `CtxXJ` / `FrmJ` の `JkJ` は `JkT_plug`（＝ `Mono` と `WOk`）にしか使っておらず、
+本当のガードは `CtxXJ [ftwo _] X` の `TopOk X` と `CtxJ (ftwo …)` の `HdT` だけのはず。
+深さ 0 については追記5（`FrmJ [] = JkT`）で既に済んでいて、同じことを全深さでやる。
+`FrmJ_JkJ` が消えるので `APd_payT` / `AYdT` / `AYd` / `GOK_chainJd` /
+`GoodFb_snoc_*Jt` が波及する。30〜50 箇所の見込み。
+
+なお #11 は極限の技法では取れない。`one U (one W X)` の描画は
+
+```
+jk1 U ++ (l+1,1,0) ++ (l+2,2,0)(l+3,2,0) ++ (l+2,1,0) ++ jk1 (l+2) X
+```
+
+で、極限列 `(l+3,2,0)` の**後ろに材料がある**（`snocYd_mem` は末尾にしか継げない）。
+合成（`APd`）で作るしかない。
