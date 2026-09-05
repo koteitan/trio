@@ -4432,3 +4432,140 @@ h < k < k+1 で整礎になる。
 3. `APd_twoNilNest` = `APd_twoNilGenW2` の j 一般版
 4. `APd_twoNilPeel` → `APd_twoNilGenK` / `APd_nil` の書き換え
 5. 残り: `AYdK`（未着手）、`APd_twoK`
+
+## 続き116: 残作業4a・5 完了。残るは `AYdK` 1 本（壁の正体を特定）
+
+### 状態
+
+`lean/SmallY.wip` — **error 0 / sorry 1 本**（`AYdK` のみ）。
+`leanman check --backend lean` で 45 秒前後、exit 1。
+
+```
+lean/Small.lean   green / exit 0 / sorry なし（触っていない）
+lean/SmallY.wip   error 0 / sorry 1（AYdK）
+lean/SmallX.lean  触っていない
+```
+
+### 通した定理
+
+**(1) `APd_twoNilGenK` の k 一般化（残作業4a、commit 7212886）**
+
+`APd_cS` を 1 枚はがすたびに添字の頭が 1 減り、木の `two nil` が 1 段増える:
+```
+APd (k :: ks) (two N nil) → APd (k-1 :: ks₁) (two nil (two N nil)) → …
+                          → APd (0 :: ks_k) (nst k (two N nil))
+```
+これを `nst j` として表に出し、歩幅 `j+1` の道具を作った:
+```
+nst j X          two nil を j 重
+twoRun l j       [(l+1,2,0),…,(l+j,2,0)]
+unitK j N l    = (l+1,1,0) :: twoRun (l+1) j ++ jk1 (l+1+j) N      歩幅 j+1
+twrK j N (n+1) = one nil (nst j (appJ N (twrK j N n)))
+ctxK j N m     = replicate j (ftwo nil) ++ m×(fone N :: replicate j (ftwo nil))
+形の勘定        replicate (m+1) j ++ ks
+```
+j=0,1,2 はそれぞれ既存の `twr` / `twrC` / `twrD` に一致する（3 点で検算）。
+
+本体 `APd_twoNilNest` は `APd_twoNilGenW2` の sed 置換で通った。手直しは 4 箇所だけ:
+- `ring` が使えない（Mathlib.Tactic.Ring 未 import）→ `Nat.mul_succ` + `omega`
+- `entry_cons_succ` は既に 18059 にある（作り直さない）
+- `congr 1` の後は `rfl` で閉じる（`l+1+(j+1)` と `l+1+j+1` は定義的に等しい）
+- `intro j t Z hZ` が定理の `j` を隠す → `jj` に改名
+
+★ 循環（`GCtx_repK` は ftwo を 1 枚はがすたび `APd (h::ks) nil` が要る／
+`APd_nil` は `APd_twoNilGenK` を使う）は**頭 k の強い帰納法**で解いた:
+`APd_twoNilPeel` が `hnil : ∀ h < j+k, ∀ ks', APd (h::ks') nil` を仮定として持ち回り、
+`APd_nil_head` が `termination_by k` の整礎再帰でそれを供給する。
+
+**(2) `APd_twoK`（残作業5、commit 18a24ea）— `APd_twoNilGenK` は要らなかった**
+
+```lean
+have hM := hMall ((k + 1 + 1) :: ks) (by simp)          -- APd_all の帰納法の仮定
+have h0 := (APd_cS (k + 1) ks M).mp hM 0 N h.1 h.2.2 (closure)
+simpa using h0
+```
+`M` を 1 段深い形 `(k+2) :: ks` で継げることから `APd_cS` で枠を 1 枚はがすと
+そのまま `APd ((k+1)::ks) (two N M)` が出る。5 行。
+`APd_all` の k=0 の枝が `APd_cf`（= `APd_cS 0`）で同じことをしていたのを k 一般にしただけ。
+
+### ★ 残る `AYdK` の壁（ここが本題。次の人はここから）
+
+```lean
+theorem AYdK : ∀ (k ks V), JkJ V → APd ((k+1) :: ks) V →
+    ∀ C, Bok C → APd ((k+1) :: ks) (Jk1.pay V C)
+```
+`APd_payA` の `(k+1) :: ks` の場合。`k = 0` かつ `TopOk V` なら既存の `AYdT`。
+
+#### bms での実測（手計算していない）
+
+```
+BASE = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)
+BASE(4,2,0)(5,0,0)[3]                  bad = (4,2,0)          delta 0   k=0
+BASE(4,2,0)(5,2,0)(6,0,0)[3]           bad = (5,2,0)          delta 0   k=1
+BASE(4,2,0)(5,2,0)(6,2,0)(7,0,0)[3]    bad = (6,2,0)          delta 0   k=2
+BASE(4,2,0)(5,2,0)(6,0,0)(7,1,0)[2]    bad = (6,0,0)          delta 1   荷の枝
+BASE(4,2,0)(5,2,0)(6,1,0)(7,0,0)[2]    bad = (6,1,0)          delta 0   荷の枝
+```
+**行列の議論は k に依らない。**複製されるのは常に**最内の 2 の記録 1 本だけ**で、
+外側の 2 の記録（`nst k` の分）は good part に留まる。だから
+`GoodFb_snoc_dupJt` / `GoodFb_snoc_innerJt` は **そのまま使える**
+（どちらも `ctx` は任意で `CtxOk ctx` しか要求しない。
+`plug ctx (nst k X) = plug (ctx ++ replicate k (Frm.ftwo nil)) X` なので
+外側の nest は ctx に押し込める）。
+
+#### 詰まるのは帳簿（closure）の方
+
+`AYdT` の鎖は `twoIt N T n = two (twoIt N T (n-1)) T`。鎖を 1 歩伸ばすには
+`APd_cS` の closure 条件
+```
+closure(X) := ∀ i m', APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) X
+```
+を `two W T` について作らねばならない。`rep_head_cons` で
+```
+closure(two W T) の中身 = APd (k :: (replicate i k ++ replicate m' 0 ++ ks)) (two W T)
+```
+これを出すには `APd ((k+1) :: base) T` が **base = `replicate i k ++ replicate m' 0 ++ ks`**
+で要る。ところが手にあるのは `APd ((k+1) :: ks) T`（IH）だけ。
+
+- `k = 0` なら `replicate i 0 ++ replicate m' 0 ++ ks = replicate (i+m') 0 ++ ks` と潰れ、
+  `APd_cS` の `m := i+m'` でちょうど足りる（これが `AYdT_hstep` の `rep_norm`）。
+- `k ≥ 1` では `replicate i k` は `replicate m' 0` に潰れないので届かない。
+
+**つまり `AYdK` は「base について一様な仮定」が要る:**
+```lean
+AYdK' : ∀ k V, JkJ V → (∀ ks, APd ((k+1) :: ks) V) → ∀ C, Bok C → ∀ ks, APd ((k+1) :: ks) (pay V C)
+```
+これなら通る（`APd_cS k base T` を base ごとに使えばよい）。
+
+#### 一様な仮定を供給できるか（消費側 2 つ）
+
+1. `APd_all` の `pay V C` の枝 … **供給できる**（`APd_all V` はどの形でも使える）。
+2. `APd_nilT ks : APd (0::ks) nil`
+   ```lean
+   (APd_ct ks _).mpr (fun U hU hR hUk =>
+     APd_oneNil ks U hU hR hUk (fun C hC => APd_payA ks U hU hR hUk C hC))
+   ```
+   ここの `U` は `fone` 枠の junk で、`APd_ct` からは **`APd ks U` しか来ない**。
+   `ks = (k+1) :: ks''` のとき一様性が無い。← **ここが壁**
+
+`ftwo` 枠の junk には `GCtx` / `APd_cS` が最初から一様 closure を付けているのに、
+`fone` 枠の junk `U` には `APd ks U` しか付いていない、という非対称が原因。
+
+#### 次の人への選択肢（どれもコアに触るので、測ってからマネージャに相談すること）
+
+- **案A**: `APd` の `0 :: ks` の場合と `GCtx` の `fone` 枠に、`ftwo` 枠と同じ
+  一様 closure を付ける（`∀ i m', APd (replicate i 0 ++ (0 :: (replicate m' 0 ++ ks))) U` 相当、
+  あるいは `∀ ks', APd ks' U`）。**定義を強めるので消費側も 1 セットで直す**（methodology §3）。
+  規模: `APd_ct` / `GCtx_ct` の使用箇所を数えてから。
+- **案B**: `APd_nilT` を `APd_payA` 経由でない別ルートで作る（`APd_oneNil` を回避する）。
+  現状 `APd ks (one U nil)` を出す道が `APd_oneNil` しか無い（`APd_step` は循環）。
+- **案C**: closure の `∀ i`（`replicate i k` の前置き）を弱める。
+  ただし `GCtx_repK` が「同じ高さの 2 の記録の枠が積み上がる」ために実際に使っているので、
+  弱められるかは要調査。
+
+### 次にやること
+
+1. 案A の規模を測る（`APd_ct` / `GCtx_ct` の使用箇所を数える）→ マネージャに報告
+2. 決まったら `AYdK` を書く
+3. 段階3: `twrD`（= `unitK 2`）で `R375b_mem`（続き111 の #17）
+4. 段階4: `SmallY.wip` を `Small.lean` にマージ（宣言差分は 続き113 追記13）
