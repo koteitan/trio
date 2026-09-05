@@ -9605,3 +9605,41 @@ SegA_U375a1                                    ← 上の s シフト版（hang5
 `NS = one nil (two nil (one (two nil nil) nil))` で、`one (two nil nil) nil` が
 `two nil ·` の右の子＝`TwoOk (one (two nil nil) nil)` が要る（追記22 の `TwoOk_one`）。
 `(5,1,0)` は `(5,2,0)` の兄弟なので、どの読み方でもこの形になる。
+
+### 追記24: 壁の第 2 撃 `TwoOk_oneNil`。`S` 族 15/17
+
+`APnil_gen`（1 の列は荷の族 `pay V C` の極限）の `hV : CtxX ctx V` も、
+本体では `WOk` を作る 1 か所でしか使っていなかった（grep）。
+`JkT (plug ctx (one V nil))` に差し替えた `APnil_gen0` を作ると:
+
+```
+TwoOk_oneNil (JkA V) (TwoOk V) (∀C, Bok C → TwoOk (pay V C)) : TwoOk (one V nil)
+TwoOk_oneTwoNil : TwoOk (one (two nil nil) nil)      ← V = two nil nil で実行
+```
+
+これで `S` の字が言語に入った:
+```
+NS = one nil (two nil (one (two nil nil) nil))
+jk1 2 NS = (3,1,0)(4,2,0)(5,2,0)(5,1,0)
+```
+`(5,1,0)` は `(5,2,0)` の兄弟（`(4,2,0)` の子）なので `one (two nil nil) nil`。
+
+`Q` 族の playbook がそのまま通って 9 本:
+```
+S(2,2,1) 語 [NS, nil]            S(3,0,0) NS の m 個並べ
+S(4,0,0) TLS（one の横並べ）       S(5,0,0) XXS（two の鎖）
+S(3,1,0) pay NS B                S(4,1,0) one nil (pay WttS B)
+S(4,2,0) WttS/AAnS/VVnS の塔      S(5,1,0) one nil (two nil (pay (one (two nil nil) nil) B))
+S(6,0,0) YS m = one (YS (m-1)) nil（TwoOk_YS は TwoOk_oneNil の再帰）
+```
+
+**残り 2 本 `S(6,1,0)` `S(6,2,0)` は `TwoOk (one V W)` の `W ≠ nil` 版が要る。**
+```
+S(6,1,0)  高さ 6 の吊るし。木 one nil (two nil (one (two nil nil) (pay nil B)))
+          → AYs（深さ ≥ 1 の荷）の CtxX ctx X を外せば出る見込み。
+            hX は GoodFb_snoc_dupJs / innerJs では JkT_plug の 1 か所だけ（測った）だが、
+            AYs 本体では hAP X hX hGX と GOK_chainJ にも渡っており、3 枚まとめた改修が要る
+S(6,2,0)  [n] = S ++ (6,1,0)(7,1,0)(8,1,0)...（1 の列の階段）
+          木 one nil (two nil (one (two nil nil) (stairJ m)))
+          → こちらは W = stairJ m で pay ですらないので AYs では届かない
+```
