@@ -7423,3 +7423,74 @@ APdS_all U  ↔  ∀ S, APdG S U
 
 **`APdG` が通った時点で、壁は「測度」から「2 つの述語の整合」に移った。**
 測度の壁（`msr_word` が上限）はもう無い。
+
+### 続き129 追記2: ★★★★★ 本命 `APdL`（段数と形の**辞書式**）が通った。設計問題が解けた
+
+```lean
+def APdL : ℕ → List ℕ → Jk1 → Prop
+  | 0, _, _ => True
+  | (n + 1), [], V => GOK V
+  | (n + 1), (0 :: ks), V =>
+      ∀ U, FrmJ ks U → (∀ S : List ℕ, APdL n S U) → APdL (n + 1) ks (Jk1.one U V)
+  | (n + 1), ((k + 1) :: ks), V =>
+      ∀ w0, (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N → (∀ S : List ℕ, APdL n S N) →
+        APdL (n + 1) (k :: (w0 ++ ks)) (Jk1.two N V)
+termination_by n ks _ => (n, msr ks)
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.left _ _ (by omega)
+      | exact Prod.Lex.right _ (msr_drop0 _)
+      | exact Prod.Lex.right _ (msr_word _ _ _ (by assumption))
+```
+
+#### なぜこれで解けるか
+
+```
+正の再帰呼び出し（自分の続き）  段数 n+1 を**保って**形を減らす（msr_drop0 / msr_word）
+負の位置（junk 条件）          段数を n に**落として**、形は**任意**
+```
+- 段数が落ちる呼び出しは形を問わないので、`msr` の上限（`msr_word`）に当たらない。
+- 段数を保つ呼び出しは形が減るので、`msr` がそのまま使える。
+- **辞書式 `(n, msr ks)` で両方が減る。**
+
+#### 何が手に入ったか
+
+```lean
+APdL_bnil / APdL_ct / APdL_cS                          -- 展開。全部 clean
+APdL_peel : APdL (n+1) ((k+1)::ks) V → … → (∀ S, APdL n S N)
+            → APdL (n+1) (k :: (w0 ++ ks)) (two N V)   -- junk に base 一様を要求できる
+def APdA (ks : List ℕ) (V : Jk1) : Prop := ∀ n, APdL n ks V
+APdA_bnil : APdA [] V ↔ GOK V                          -- clean。**結論の強さは不変**
+```
+そして続き128 の「唯一の不等式」:
+```lean
+example (n i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : ∀ S : List ℕ, APdL n S U) :
+    APdL n (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
+```
+**`L > i` でも通る。**`APd_twoNilNestL`（k=0 の底）が塔に要求していたものが `hU _` で出る。
+
+#### 移行の見通し
+
+**既存の 30〜40 本の証明は `n+1` を固定パラメータとしてそのまま移せる見込み。**
+形についての再帰・帰納法の構造が変わらないため。書き換えは
+```
+APd ks V                          →  APdL (n+1) ks V
+closure（語の族）∀w, (∀x∈w,x≤k) → APd (k::(w++ks)) N
+                                  →  ∀ S, APdL n S N        （**仮定が強くなる = 楽になる**）
+```
+`GCtx` も同じ形にする（junk 条件を `∀ S, APdL n S N` にし、`n` を固定パラメータ）。
+`GCtx` の再帰は形だけなので `msr` のままでよい。
+
+#### 次にやること
+
+```
+1. GCtxL（junk 条件 = ∀ S, APdL n S N、n は固定パラメータ、再帰は形のみ）を定義
+2. APdL_iff : APdL (n+1) ks V ↔ ∀ ctx, GCtxL n (TopOk V) ks ctx → GOK (plug ctx V)
+   ★ ここが両方向通れば移行は機械的になる
+3. AYd / AYdT / AYdTK を n を持ち回る形に写す（写す。設計しない）
+4. APd_twoNilNest / APd_twoNilPeel を写す。**k=0 の底が塞がるはず**
+5. APdA_all / GOK_all を作り、既存の下流（rowJ_mem など）に繋ぐ
+```
+**壁は「測度」から「移行の作業量」に変わった。**`APdL` が通った時点で、
+`msr_word` の上限という原理的な障害は無くなっている。
