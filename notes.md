@@ -4569,3 +4569,78 @@ AYdK' : ∀ k V, JkJ V → (∀ ks, APd ((k+1) :: ks) V) → ∀ C, Bok C → �
 2. 決まったら `AYdK` を書く
 3. 段階3: `twrD`（= `unitK 2`）で `R375b_mem`（続き111 の #17）
 4. 段階4: `SmallY.wip` を `Small.lean` にマージ（宣言差分は 続き113 追記13）
+
+### 続き116 追記1: `AYdK` の壁をもう一段掘った（案A〜C はどれも成立しない）
+
+上で書いた案A（`fone` 枠にも一様 closure）・案C（`ftwo` 枠の closure を弱める）を
+それぞれ潰したので記録する。**同じ道を 2 度掘らないこと。**
+
+#### 必要な仮定を正確に書くと
+
+`AYdK` の鎖 `twoIt N' T n = two (twoIt N' T (n-1)) T` を 1 歩伸ばすのに要るのは
+`W_n := twoIt N' T n` の **`APd_cS` 形の closure**:
+```
+closure(X) = ∀ i m', APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) X
+           = ∀ B ∈ F(ks), APd (k :: B) X          F(ks) := {replicate i k ++ replicate m' 0 ++ ks}
+```
+`closure(two W T)` を出すには `APd_cS k B T`（m := 0）が要る。つまり
+```
+∀ B ∈ F(ks), APd ((k+1) :: B) T           ← T が base について一様
+```
+`T = pay V Y'` なので、A2' の帰納法を base について一様に回せば IH は一様になる。
+**底に残るのは `∀ B ∈ F(ks), APd ((k+1) :: B) V` だけ。**これが供給できれば `AYdK` は通る。
+
+#### 案C（closure を `∀ m', APd (k :: (replicate m' 0 ++ ks)) X` に弱める）→ 不可
+
+弱めると `closure(two W T)` は `APd_cS k ks T` そのもので出る（そこは解決する）が、
+`APd_twoNilNest` が階段 `ctxK` の `fone N` 枠のために
+`hNall : ∀ i, APd (replicate i j ++ (j :: ks)) N`（= 強い形）を要求する。
+弱い closure からは i ≥ 1 が出ない。**`APd_twoNilGenK` が壊れる。**
+
+#### 案A（`fone` 枠にも「どの形でも」closure）→ 定義が書けない
+
+「どの形でも」= `∀ ks' ≠ [], APd ks' U` は `APd` の定義の中に書けない。
+`APd` は `termination_by ks => msr ks` の整礎再帰で、closure の族は
+`msr_grp : msr (replicate i k ++ (k :: (replicate m 0 ++ ks))) < msr ((k+1) :: ks)`
+で**測度が減る形に限られている**。`ks'` 任意は減らないので定義不能。
+
+#### そして F(ks) は必要な操作について閉じていない
+
+`APd_cS k B T` は `B ∈ F(ks)` に対して closure を `F(B)` で要求する。ところが
+```
+F(F(ks)) の元 = replicate i' k ++ replicate m'' 0 ++ (replicate i k ++ replicate m' 0 ++ ks)
+```
+で 0 と k が交互になり `F(ks)` の形（k の並び → 0 の並び → ks）に戻らない。
+`k = 0` のときだけ `rep_norm` で潰れて閉じる（それが `AYdT_hstep` が通る理由）。
+
+**要するに `AYdK` は「`V` を `(k+1) :: B` の形で一様に継げる」という、
+`APd` の測度では表せない仮定を必要としている。**
+
+#### `APd_payA` の消費側は 2 つだけ（実測）
+
+```
+21032  APd_nilT : APd_oneNil ks U hU hR hUk (fun C hC => APd_payA ks U hU hR hUk C hC)
+22363  APd_all  : pay V C の枝（V はどの形でも継げる ← 一様性を供給できる）
+```
+`APd_oneNil` の消費側は `APd_nilT` の 1 箇所だけ。
+`APd_nilT` の `U` は `APd_ct` の `fone` 枠の junk で `APd ks U` しか付いていない。
+**壁は `APd_nilT` の 1 箇所だけ**である。
+
+#### コアに触る場合の規模（実測）
+
+```
+APd_cS 11 / GCtx_cS 16 / APd_ct 10 / GCtx_ct 32 / APd_iff 37 / APd_cf 8
+closure を書き下している箇所 22
+```
+
+#### 次に試すとよさそうな方向（未検証）
+
+1. **`APd_nilT` を `APd_payA` 経由にしない。**`APd (0::ks) nil` を `APd_iff` で開くと
+   `GOK (plug ctx0 (one U nil))` で、`APnil_gen` が要求する `hang` は
+   **その ctx0 1 個についての `GOK (plug ctx0 (pay U C))`** だけ。
+   `APd ks (pay U C)`（全 ctx）まで強める必要は無い。ctx0 固定で AY の議論を回せないか。
+2. `APd` の測度 `msr` を変えて、closure の族に `(k+1) :: B` を入れられないか
+   （`msr` は多重集合順序。`(k+1) :: B` は `(k+1) :: ks` より大きいので、
+   別の測度が要る。おそらく「木の側の減少」と組む必要がある）。
+3. `AYdK` を `k` の帰納法にして、`k+1` の場合を `k` の場合 + `APd_twoNilNest` 系の
+   道具（今回作った `nst` / `twrK` / `ctxK`）で書けないか。
