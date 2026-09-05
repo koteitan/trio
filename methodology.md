@@ -435,3 +435,34 @@ TwoOk Z := ∀ N, JkA N → (∀ j kk, APd (rep j true ++ (true::kk)) N) →
 
 **教訓**: 仮定 H が作れないとき、H の**使われ方**を全部見て、
 「H から導かれる結論」だけを述語にすると、H より弱い仮定で証明が通ることがある。
+
+## 5.11 破った 2 の記録の「後ろ」に何が置けるか
+
+`TwoOk Z`（2 の記録の直上に木 `Z` を置ける）を 3 回に分けて広げた。
+広がる／広がらないの境界がはっきりしたので記録する。
+
+```
+通る  Z = nil                  後ろに何も無い
+      Z = pay Z' Y             荷は colJ_plug_pay で base ++ Y↑s に分解できる
+      Z = two nil nil          極限（snocYd_mem の塔）。後ろに何も無い
+      Z = one V nil            1 の列は荷の族 pay V C の極限（APnil_gen0）
+      Z = one V (pay nil Y)    上 2 つの合成（AYs の TwoQ 版）
+通らない
+      Z = one V W  （W が木）
+      Z = two N M  （M ≠ nil）
+```
+
+**理由は 1 つ**: 極限補題 `snocYd_mem` は列の**末尾**に 1 本継ぐ形しかない。
+荷が後ろに来る場合だけは `colJ_plug_pay` で
+「荷なしの字の列 ++ `shiftr01 s 0 Y`」に分解でき、`Y` について `W 0` の帰納法
+（`GoodFb_snoc_dupJ*` / `innerJ*`）が回る。木は分解できない。
+
+**代役クラスの型**（5.10 の続き）:
+`AYs` の `CtxX ctx X` は `hAP`（`∀ V` で量化）にも渡っていて弱められなかった。
+そこで `CtxX` の役目（= その位置に置ける）を果たすクラスを作った:
+```
+TwoQ U := JkA U ∧ TwoOk U ∧ (∀ C, Bok C → TwoOk (pay U C))
+```
+`TwoQ` が `U ↦ one U (pay nil Y')` で閉じていることが、`GOK_chainJ` の鎖に要る
+`CtxX_itJ` の代わりになる。**「∀ V で量化された仮定」は、V の走る範囲を
+クラスに絞れば弱められる。クラスは鎖の構成子で閉じていればよい。**
