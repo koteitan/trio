@@ -21608,5 +21608,201 @@ theorem R375g7_of_tower
 #print axioms R375g7_of_tower
 
 
+/-! ### ★ 字 `otwL = one nil (two nil (two nil nil))`
+
+`colJ a b otwL = (a+1,b+1,1)(a+2,1,0)(a+3,2,0)(a+4,2,0)`。
+末尾の 2 の記録 `(a+4,2,0)` は 2 の記録 `(a+3,2,0)` の直上なので `TopOk` が禁じており
+`JkOk otwL` は偽。しかし `JkT otwL`（先頭段は 1 の列）は真で、
+**この字は歩幅 2 の塔 `colJ a b (otwJ m)` の極限として直接作れる**。
+一般にガードを外す必要はない。 -/
+
+def otwL : Jk1 := Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))
+
+theorem JkA_otwL : JkA otwL := ⟨trivial, trivial, trivial, trivial⟩
+
+theorem JkT_otwL : JkT otwL := ⟨JkA_otwL, trivial⟩
+
+theorem jk1_otwL (l : ℕ) :
+    jk1 l otwL = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ)] := by
+  show ([] : TrioSeq) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (([] : TrioSeq) ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (([] : TrioSeq) ++ (((l + 1 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: ([] : TrioSeq)))))) = _
+  simp only [List.nil_append, List.cons.injEq, Prod.mk.injEq, and_true, and_self]
+
+/-- 歩幅 2 の塔から「1 の列 + 2 の記録 + 2 の記録」を継ぐ。`snocYd_mem` の一般形。 -/
+theorem snoc22_of_tower {Y0 : TrioSeq} {d e f : ℕ} (hne : Y0 ≠ []) (hd : 1 ≤ d)
+    (he : e = d + 1) (hf : f = d + 2)
+    (htw : ∀ n : ℕ,
+      Mtwd 2 Y0 [((d, 1, 0) : ℕ × ℕ × ℕ), ((e, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0) :
+    Y0 ++ [((d, 1, 0) : ℕ × ℕ × ℕ), ((e, 2, 0) : ℕ × ℕ × ℕ),
+      ((f, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  subst he
+  subst hf
+  have hM : MidD (d + 1) [((d, 1, 0) : ℕ × ℕ × ℕ), ((d + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+    refine ⟨by simp, ?_, rfl, by show (1 : ℕ) ≤ 1; omega, ?_, ?_⟩
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl <;> (show 1 ≤ _; omega)
+    · intro j h1 h2
+      simp only [List.length_cons, List.length_nil] at h2
+      have hj : j = 1 := by omega
+      subst hj
+      show d + 1 ≤ d + 1
+      omega
+    · intro c hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl <;> (show (0 : ℕ) ≤ _; omega)
+  have h := snocYd_mem (Y0 := Y0)
+    (M := [((d, 1, 0) : ℕ × ℕ × ℕ), ((d + 1, 2, 0) : ℕ × ℕ × ℕ)])
+    (L := d) (y := 2) (dl := 2) hne hM ?_ ?_ (by omega) (by omega) htw
+  · simpa using h
+  · show entry [((d, 1, 0) : ℕ × ℕ × ℕ), ((d + 1, 2, 0) : ℕ × ℕ × ℕ)] 1 0 < 2
+    simp [entry]
+  · intro t ht1 htl hlt hrec
+    simp only [List.length_cons, List.length_nil] at htl
+    have hj : t = 1 := by omega
+    subst hj
+    show (2 : ℕ) ≤ entry [((d, 1, 0) : ℕ × ℕ × ℕ), ((d + 1, 2, 0) : ℕ × ℕ × ℕ)] 1 1
+    simp [entry]
+
+theorem otwJ_tower_eq (X : TrioSeq) (a b n : ℕ) :
+    X ++ colJ a b (otwJ n)
+      = Mtwd 2 (X ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+          [((a + 2, 1, 0) : ℕ × ℕ × ℕ), ((a + 3, 2, 0) : ℕ × ℕ × ℕ)] n := by
+  rw [colJ, jk1_otwJ n (a + 1), Mtwd]
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+
+theorem colJ_otwL_eq (X : TrioSeq) (a b : ℕ) :
+    X ++ colJ a b otwL
+      = (X ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+        ++ [((a + 2, 1, 0) : ℕ × ℕ × ℕ), ((a + 3, 2, 0) : ℕ × ℕ × ℕ),
+            ((a + 4, 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [colJ, jk1_otwL (a + 1)]
+  simp only [List.append_assoc, List.cons_append, List.nil_append, List.cons.injEq,
+    Prod.mk.injEq, and_true, and_self]
+
+/-- ★★ `otwL` の字は、`otwJ m` の字の塔の極限として出る。 -/
+theorem colJ_otwL_mem {X : TrioSeq} (a b : ℕ)
+    (htw : ∀ m : ℕ, X ++ colJ a b (otwJ m) ∈ W 0) :
+    X ++ colJ a b otwL ∈ W 0 := by
+  have htw' : ∀ n : ℕ, Mtwd 2 (X ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+      [((a + 2, 1, 0) : ℕ × ℕ × ℕ), ((a + 3, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+    intro n
+    rw [← otwJ_tower_eq X a b n]
+    exact htw n
+  rw [colJ_otwL_eq X a b]
+  exact snoc22_of_tower (Y0 := X ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+    (d := a + 2) (e := a + 3) (f := a + 4) (by simp) (by omega) (by omega) (by omega) htw'
+
+/-- ★★★★★ `otwL` はどの良い語の右にも字として継げる。 -/
+theorem GOK_otwL : GOK otwL := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [otwL]) := WOk_append hw (WOk_singletonT JkT_otwL)
+  have hstG : ∀ m : ℕ, GoodFb (fun a b => wordJ a b (ws ++ [otwJ m])) :=
+    fun m => GOK_all (otwJ m) (JkOk_otwJ m) ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · -- pu
+    intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega,
+      wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_append, wordJ_singleton]
+    have key : ∀ m : ℕ,
+        (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (c + 1 + t) (y + 1) ws))
+          ++ colJ (c + 1 + t) (y + 1) (otwJ m) ∈ W 0 := by
+      intro m
+      have h1 := ((hstG m).pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift, wordJ_append, wordJ_singleton] at h1
+      simpa [List.append_assoc] using h1
+    have h := colJ_otwL_mem
+      (X := Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (c + 1 + t) (y + 1) ws))
+      (c + 1 + t) (y + 1) key
+    simpa [List.append_assoc] using h
+  · -- pk
+    intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t X hX
+    rw [wordJ_shift, wordJ_append, wordJ_singleton]
+    have key : ∀ m : ℕ,
+        (X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ (c + 1 + t) 2 ws))
+          ++ colJ (c + 1 + t) 2 (otwJ m) ∈ W 0 := by
+      intro m
+      have h1 := ((hstG m).pk c E hI).2.2 j t X hX
+      rw [wordJ_shift, wordJ_append, wordJ_singleton] at h1
+      simpa [List.append_assoc] using h1
+    have h := colJ_otwL_mem
+      (X := X ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ (c + 1 + t) 2 ws))
+      (c + 1 + t) 2 key
+    simpa [List.append_assoc] using h
+  · -- seg
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [otwL])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 (ws ++ [otwL])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1) 1 (ws ++ [otwL]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_append, wordJ_singleton]
+    have key : ∀ m : ℕ,
+        (A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1 + s) 1 ws))
+          ++ colJ (h + 1 + s) 1 (otwJ m) ∈ W 0 := by
+      intro m
+      have h1 := ((hstG m).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1 (ws ++ [otwJ m])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1 (ws ++ [otwJ m])
+          from rfl, wordJ_append, wordJ_singleton] at h1
+      simpa [show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := colJ_otwL_mem
+      (X := A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1 + s) 1 ws))
+      (h + 1 + s) 1 key
+    simpa [List.append_assoc] using hh
+
+#print axioms GOK_otwL
+
+/-- 語 `[otwL, otwJ n]` は良い。 -/
+theorem GoodFb_otwL_otwJ (n : ℕ) : GoodFb (fun a b => wordJ a b [otwL, otwJ n]) := by
+  have h0 : GoodFb (fun a b => wordJ a b ([] ++ [otwL])) :=
+    GOK_otwL [] WOk_nil GoodFb_wordJ_nil
+  have h1 : GoodFb (fun a b => wordJ a b [otwL]) := by simpa using h0
+  have h2 := GOK_all (otwJ n) (JkOk_otwJ n) [otwL] (WOk_singletonT JkT_otwL) h1
+  simpa using h2
+
+/-- `GoodFb` から直接、土台の上に「1 の列 + 語」を継ぐ（`WJ` を経由しない版）。 -/
+theorem rowJ_mem_genF {A : TrioSeq} (hA : Aok A) {ws : List Jk1}
+    (hG : GoodFb (fun a b => wordJ a b ws)) :
+    A ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
+  have h := (hG.seg 0).reapp P0 BaseOk_zero 0 A (LwB_of_base ⟨hA, rfl⟩)
+  simpa using h
+
+theorem otwL_tower_eq (A : TrioSeq) (n : ℕ) :
+    A ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [otwL, otwJ n])
+      = Mtwd 2 ((A ++ U375a) ++ [((2, 2, 1) : ℕ × ℕ × ℕ)])
+          [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n := by
+  rw [show ([otwL, otwJ n] : List Jk1) = [otwL] ++ [otwJ n] from rfl, wordJ_append,
+    wordJ_singleton, wordJ_singleton, colJ, colJ, jk1_otwL 2, jk1_otwJ n 2, Mtwd, U375a]
+  simp [List.append_assoc]
+
+theorem otwL_tower_mem {A : TrioSeq} (hA : Aok A) (n : ℕ) :
+    Mtwd 2 ((A ++ U375a) ++ [((2, 2, 1) : ℕ × ℕ × ℕ)])
+      [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  rw [← otwL_tower_eq A n]
+  exact rowJ_mem_genF hA (GoodFb_otwL_otwJ n)
+
+/-- ★★★★★ 続き111 #7 の 2 枚目
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)`。 -/
+theorem R375g7_mem : R375m ++ U375b ∈ W 0 := by
+  refine R375g7_of_tower ?_
+  intro n
+  have h := otwL_tower_mem Aok_R338 n
+  rw [← R375m_eq] at h
+  exact h
+
+#print axioms R375g7_mem
+
+
 end Small
 end TRIO
