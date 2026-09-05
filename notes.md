@@ -6561,3 +6561,56 @@ closure の族     ∀ w, (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N
 ```
 **エラーは 19500〜21400 行（`APd`/`GCtx` 機構ブロック）に閉じている。塔・目標側には 0 件。**
 ガード除去のときと同じ profile（85 件中 84 件が機械的だった）。
+
+### 続き125 追記1: ★★★★★ `AYdK` が閉じた。残る sorry は `APd_twoNilPeel` の 1 本だけ
+
+commit ac88daf。**error 0 / sorry 1。**
+
+#### 通ったもの（`#print axioms` で確認）
+
+`AYd` / `APd_iff` / `APd_twoNilGen` / `APd_twoNilGenW` / `AYs` / `AYz` / `APnil_gen` /
+`R371_mem` / `R372_mem` … **すべて clean**（`sorryAx` 無し）。
+汚れているのは `GOK_all` とその下流（`R373_mem` / `R374_mem` / `R373a_mem` / `R375_mem` /
+`hang2rec`）だけで、**全部この 1 本の sorry 経由**。
+
+#### 削除したもの
+
+`AYdT2` / `APd_chainT2` / `AYdT_hstep2`（k=1 の写し、142 行）。
+族を語に揃えたことで `AYdTK`（k 一般）に完全に吸収された。
+
+#### 残る穴 `APd_twoNilPeel` の `k+1` の場合。**なぜ `nstL` では届かないか**
+
+文は書ける。添字も合う:
+```
+head k のとき js[i] は level k+i        → JsOk ks js k
+peel で base が ks → w0 ++ ks に伸びる  → 語の族が連結で閉じるので通る
+  js[i] の要求 ∀w, (∀x∈w, x ≤ k+1+i) → APd ((k+1+i) :: (w ++ ks)) js[i]
+  から w' := w ++ w0 を取れば（w0 の元は ≤ k ≤ k+1+i）そのまま出る
+```
+**詰まるのは塔の側。**`GCtx_repKL` は `GCtx_ftwoRepL` を
+base `replicate (m+1) js.length ++ ks` で呼ぶので、level i の junk に
+```
+APd (i :: (w ++ replicate (m+1) js.length ++ ks)) js[i]
+```
+を要求する。**base に自分より高い記録 `js.length > i` が入っている。**
+level i の語の族は entries ≤ i なので、その外側。
+`nil` のときは `APd_nil_head` が任意 base で効くので問題にならなかった。
+
+#### ガードを戻す案の判定（測らずに分かる）
+
+`APd` の `(k+1)` の場合に `hd : TopOk V ∨ N = nil` を戻すと `APd_twoNilPeel` は復活するが、
+`AYdT_hstepK` が `.mp` 側で `TopOk (pay Z Y) ∨ N' = nil` を**供給**する側に回る。
+`TopOk (pay Z Y) = TopOk Z` で `Z` は任意、`N' = twoIt N T n` は n≥1 で `two _ _` ≠ nil。
+**したがってガードを戻すと `AYdK` が壊れる。**ガード除去は今も必要。
+
+なお `AYdT` の `TopOk Z` が死んでいたのは別の理由（`hTt` 未使用）で、
+ガード除去とは独立。ガード除去が要るのは `AYdTK`（k≥1）の側。
+
+#### 次の一手（優先順）
+
+1. `APd_twoNilPeel` の `k+1` を、**塔を経由しない**別ルートで閉じる。
+   `APd_twoNilNest` は塔（`ctxK` / `snocYd_mem`）で `W 0` の元を作っている。
+   junk 入りの入れ子でも同じ塔が要るかを先に確かめる。
+2. だめなら `JsOk` を「level i の junk は entries ≤ (js.length) の語まで許す」に強めて、
+   `APd` の closure 族も同じだけ広げられるかを測る（`msr_word` の上限に当たるはず）。
+3. それでもだめなら、`APd_nil_head` を `APd_twoNilPeel` 経由でなく直接証明する道を探す。
