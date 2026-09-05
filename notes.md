@@ -5272,3 +5272,41 @@ TopOk の出現              97
 AYdK = AYdTK（緑、TopOk V の枝）+ 穴(C)。
 穴(C) が塞がらないと (B) を塞いでも AYdK は完成しない。
 ```
+
+### 続き120 追記3: ★ `JkJ` の `two` 条件を外す変更を実測 → error 34、**全部 arity だけ**
+
+```lean
+| Jk1.two N M => JkJ N ∧ JkJ M ∧ (TopOk M ∨ N = Jk1.nil)
+  → | Jk1.two N M => JkJ N ∧ JkJ M
+```
+を `/tmp/SmallJ.lean` で 1 回検査（43 秒）。**error 34 個。そして 34 個すべてが
+`⟨…⟩` の項数か射影のずれ**である:
+```
+Invalid ⟨...⟩ notation: The expected type `JkJ M` is not an inductive type     （⟨a,b,c⟩ → ⟨a,b⟩）
+Insufficient number of fields for `⟨...⟩`: `True.intro` … but 2 were provided
+Invalid projection: h.right has type `JkJ M` …                                （h.2.2 → h.2）
+```
+**「この証明が通らなくなった」という種類の error は 1 個も無い。**
+つまり `TopOk M ∨ N = nil` は**どの証明にも効いておらず、ただ持ち回られているだけ**だった。
+
+これで穴 (C)（鎖 `twoIt nil T n` が JkJ を出る）は消える。
+
+#### ただし `APd` の `hd` も一緒に外す必要がある
+
+`APd` / `GCtx` の `(k+1) :: ks` の場合にある
+```
+(TopOk V ∨ N = Jk1.nil) →
+```
+は `JkJ (two N V)` の条件を映したもの。`JkJ` を弱めればこれは不要になる。
+`AYdT_hstepK` が `(Or.inl hTt)` を渡している箇所がまさにここで、
+`¬TopOk T` のときに詰まっていた。**`hd` を外せばそこも通る。**
+
+`hd` を外すと `APd ((k+1)::ks) V` は**強くなる**（N に条件が無くなるので、
+`.mpr` 側＝証明する側は全ての N を扱う必要がある。`.mp` 側＝使う側は楽になる）。
+`AYdTK` の鎖はまさに `.mp` 側なので、これは望む方向。
+
+#### 未確認（次にやること）
+
+`GoodFb_snoc_dupJt` / `GoodFb_snoc_innerJt` の `hZt : TopOk Z` が
+**行列の議論として効いているか**（`jk1_appJ` の `TopOk` は本物なので、
+一律には外せない）。ここを確かめてから `hd` の除去を測ること。
