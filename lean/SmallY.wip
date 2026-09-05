@@ -19814,6 +19814,50 @@ theorem Rq_pay (ks : List ℕ) (V : Jk1) (C : TrioSeq) (_ : Rq ks (Jk1.pay V C))
 
 theorem Rq_one (ks : List ℕ) (A B : Jk1) (_ : Rq ks (Jk1.one A B)) : Rq ks A := trivial
 
+/-! ## ★ 案(iv): 枠 junk を `nil` に限った制限版 `APd0`
+
+**制限しているのはフレーム（文脈）の junk であって、木の junk ではない。**
+`otwJ3 n = one nil (two nil (two nil (otwJ3 n')))` は「木として junk-free」なので、
+この制限版で足りる。ここを混同しやすい（続き124 追記1・3）。
+
+枠 junk が `nil` なので closure 条件（`∀ w, entries ≤ k, APd (k :: (w ++ ks)) N`）が消える。
+それが穴(B)（`fone` 枠の junk が任意）と穴(D)（`ftwo` 枠の junk が任意）の発生源だったので、
+**両方とも「発生しない」。**
+
+停止性: 素朴な `ks.length` では駄目（`(k+1)::ks` → `k :: (replicate m 0 ++ ks)` で
+長さが `1+m+|ks|` に増える）。`msr` をそのまま流用する（`msr_drop0` / `msr_grp k 0 m ks`）。 -/
+
+def APd0 : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => APd0 ks (Jk1.one Jk1.nil V)
+  | ((k + 1) :: ks), V =>
+      ∀ m : ℕ, APd0 (k :: (List.replicate m 0 ++ ks)) (Jk1.two Jk1.nil V)
+termination_by ks _ => msr ks
+decreasing_by
+  all_goals
+    first
+      | exact msr_drop0 _
+      | exact msr_grp _ 0 _ _
+
+theorem APd0_bnil (V : Jk1) : APd0 [] V ↔ GOK V := by rw [APd0]
+
+theorem APd0_ct (ks : List ℕ) (V : Jk1) :
+    APd0 (0 :: ks) V ↔ APd0 ks (Jk1.one Jk1.nil V) := by rw [APd0]
+
+theorem APd0_cS (k : ℕ) (ks : List ℕ) (V : Jk1) :
+    APd0 ((k + 1) :: ks) V ↔
+      ∀ m : ℕ, APd0 (k :: (List.replicate m 0 ++ ks)) (Jk1.two Jk1.nil V) := by rw [APd0]
+
+/-- 枠が nil なので `APd_step` は恒等。**穴(B) はここで消える。** -/
+theorem APd0_step (ks : List ℕ) (W : Jk1) (h : APd0 (0 :: ks) W) :
+    APd0 ks (Jk1.one Jk1.nil W) := (APd0_ct ks W).mp h
+
+/-- 枠が nil なので 2 の記録も恒等（m := 0）。**穴(D) はここで消える。** -/
+theorem APd0_two (k : ℕ) (ks : List ℕ) (M : Jk1) (h : APd0 ((k + 1) :: ks) M) :
+    APd0 (k :: ks) (Jk1.two Jk1.nil M) := by
+  have h0 := (APd0_cS k ks M).mp h 0
+  simpa using h0
+
 /-- 形 `ks` で junk `V` を項として継げる。`false` の場合は
 「`ks` とその true 拡張すべて」で継げることを要求する（鎖の不変量に要る）。 -/
 def APd : List ℕ → Jk1 → Prop
