@@ -9491,3 +9491,88 @@ Q(6,1,1)  shiftr01 5 0 Q = (5,0,0)(6,1,1)。hang5 に Aok_Q.toBok を入れる�
 
 `hang5_R375m` は 続き111 #13 の木そのもの。壁が消えた時点で #13 も同時に出た。
 残り 続き111: #14 P(5,2,0) #15 P(6,0,0) #16 P(6,1,0) #17 P(6,2,0)。
+
+### 追記21: 残り #14〜#17 の壁は「2 の記録の直上の 2 の記録」の**中身つき**版
+
+`bms` で測って木に起こした（`P` = 8 列の本体）。
+
+```
+#14 P(5,2,0)  good = R341, bad = U375c, delta 2 → 塔 Mtwd 2 R341 U375c (n+1)
+              木 one nil (two nil (one (two nil nil) X_k))
+              要る: TwoOk (one (two nil nil) X)
+#15 P(6,0,0)  good = R373, bad = (5,2,0) 単独, 平坦 → R373 ++ (5,2,0)^n
+              木 one nil (two nil (Y_n))、Y_n = two (Y_{n-1}) nil
+              要る: TwoOk (two N nil)（N = Y_{n-1}、TopOk N は偽）
+#16 P(6,1,0)  bad root 0, delta 6 → 高さ 6 の吊るし
+              木 one nil (two nil (two nil (pay nil B)))
+              要る: TwoOk (two nil (pay nil B))
+#17 P(6,2,0)  good = R341, bad = U375c, delta 3 → 塔 Mtwd 3 R341 U375c (n+1)
+```
+
+`TwoOk Z` は「`APd (false :: ks) Z`」の代役なので、`APd_all` の各節に対応する
+閉包補題が要る。今あるのは
+```
+TwoOk nil            APd_nil から（TwoOk_of_APdf）
+TwoOk (two nil nil)  APd_twoTwoGen（= 壁を破った本体）
+TwoOk (pay Z Y)      TwoOk_pay（AYdT の写し）
+```
+足りないのは `TwoOk (one V X)` と `TwoOk (two N Z)`。
+
+**極限で近似する筋の見立て**（`APd_twoTwoGen` の写しを作る場合）:
+`two N Z` の列は `X ++ unN N D ++ jk1 (D+1) Z`。
+`Z = two N0 nil` なら極限は `X ++ (unN N D ++ jk1 (D+1) N0) ++ [(D+2,2,0)]` で、
+`snocYd_mem` の `M` を `unN N D ++ jk1 (D+1) N0` に太らせた形。塔の単位は
+`unN N D ++ jk1 (D+1) N0` で、その木は `Q_k = one N0 (two N Q_{k-1})`。
+だが `APd_all` の `one` 節が `Rq (false::ks) N0 = TopOk N0` を要求し、
+#15 の `N0 = Y_{n-1}` は `two` 始まりで偽。**近似列自体が非合法**になる。
+
+一方 #16 は `N0 = nil` なので近似列は合法。#16 のほうが近い。
+
+次の一手は #16。`two nil (pay nil B)` は
+`two nil nil` の上（高さ `D+3`）に荷を吊るした形なので、
+`AYs`（文脈の深さつき荷）がそのまま効く可能性を先に測る。
+
+### 追記22: 次の壁は 1 つ「2 の記録の直上の 2 の記録の**後ろに続きがある**」
+
+#14〜#17 を全部この形に還元できた。`TwoOk Z` の閉包補題のうち、
+`nil` / `pay` はあるが `one` / `two` が無い。
+
+```
+足りない 2 本
+  TwoOk_one : TwoOk A → (∀ ks, APd (true::ks) B) → TwoOk (one A B)
+  TwoOk_two : JkA N → hNall N → (∀ ks, APd (false::ks) M) → TwoOk (two N M)
+これがあれば TwoOk_JkJ : ∀ Z, JkJ Z → TwoOk Z が構造帰納で出て、
+#14（one (two nil nil) X）#15（two N nil）#16（two nil (pay nil B））
+#17（two nil (one nil ...)）が全部通る。
+```
+
+**なぜ `APd_twoTwoGen` の写しで済まないか**（測った結果）:
+
+`APd_twoTwoGen` は極限補題 `snocN_of_tower`（＝`snocYd_mem`）で
+「列の**末尾**に 2 の記録を継ぐ」形。`two N (two nil nil)` は
+`X ++ unN N D ++ [(D+2,2,0)]` で 2 の記録が末尾なので効く。
+
+ところが `two N M`（M ≠ nil）や `one A B` は
+```
+two M' (two N M)   X ++ unN M' D ++ jk1 (D+1) N ++ [(D+2,2,0)] ++ jk1 (D+2) M
+two M' (one A B)   X ++ unN M' D ++ jk1 (D+1) A ++ (D+2,1,0) :: jk1 (D+2) B
+```
+で、破るべき 2 の記録の**後ろに列が続く**。`snocYd_mem` は末尾専用。
+
+`M = nil` に限れば末尾になるが、そのときの近似列の木は
+`W_k = one N (two M' W_{k-1})` で、`APd (false::ks) W_k` に
+`Rq (false::ks) N = TopOk N` が要る。#15 の `N = Y_{n-1}` は `two` 始まりで偽。
+つまり `TwoOk_two` の近似列自体が `TwoOk_one` を要求する。
+
+**別ルートも全部同じ壁に当たった**（測った）:
+```
+#14 SegB_snoc2 で出せる？ → head1 : entry M 1 0 < 2 が U375d の (4,2,0) で偽
+#15 blkD_mem_of_stage で hang6 を作る？ → hbase が「A ++ (5,2,0)」で #15 自身
+#16 梯子 LvB P0 r 5 R375m？ → reapp が「高さ 4+s のクラス全部に (5+s,2,0)」で強すぎ
+#17 木を組み直す？ → jk1 4 M1 が (5,2,0) 始まりで M1 の TopOk は必ず偽
+```
+
+**次の設計課題**: 「列の途中に 2 の記録を作る」極限補題。
+`snocYd_mem` の結論 `(Y0 ++ M) ++ [(L+dl,y,0)]` を
+`(Y0 ++ M) ++ [(L+dl,y,0)] ++ S` にする（`S` は上に乗る木の列）。
+`AY0` / `AYs` は `S` が `Bok` の荷のときの版なので、その `S` を木に広げる形。

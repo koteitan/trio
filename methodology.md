@@ -397,3 +397,41 @@ PlugG D := ∀ T, (T が D に埋められる形) → AllD T → GOK (plug D T)
 5. 新しい集合を作るときは `BaseOk` → `Iface` → 段の補題 → snoc の補題の順。
    既存の証明（`BaseOk_RunA`, `Pk23_hang`, `Lk_tower`）をほぼ写せる。
 6. 緑になったら commit。notes.md に「何が通り、何が壁か」を 1 行ずつ足す。
+
+## 5.9 ガードを迂回する前に、まず本体で使われているか grep する
+
+`Rq (false :: ks) V = TopOk V`（「2 の記録の直上に 2 の記録」を弾くガード）は
+`AYdT` から `GoodFb_snoc_dupJt` / `GoodFb_snoc_innerJt` / `APd_chainT` に
+渡されていた。3 つとも**シグネチャに書いてあるだけで本体では使っていなかった**。
+
+```
+awk -v s=$L -v e=$E 'NR>=s && NR<=e && /hZt|hTop/ {print NR": "$0}' Small.lean
+→ 出るのはシグネチャの行だけ ⇒ 死んだ仮定
+```
+
+外して呼び出し 4 か所を直したら 1 回で緑。`oper_snocYd` の `MidD` も同様で、
+本体は `hM.ne` / `hM.head` / `hM.tail` の 3 つしか見ておらず、
+`head1 : 1 ≤ 行 1` は死んでいた（`snocYd_mem0` に分離。これで bad part が
+行 1 = 0 の 1 列でも塔が使える）。
+
+**教訓**: 壁にぶつかったら、迂回路を設計する前に
+「そのガードは証明本体で本当に使われているか」を grep で 30 秒で測る。
+仮定の弱めは件数が測れる（追記8 の規則）ので、構成の一般化より先に試す。
+
+## 5.10 代役の述語を立てる ── `APd (false :: ks) Z` → `TwoOk Z`
+
+`TopOk` を外しても `AYdT` は `APd (false :: ks) Z` を要求し、
+`Z = two nil nil` ではこれが作れない（`APd_cf` の hNall が固定 `ks` 版しか
+供給しないので `APd_twoTwoGen` の強い hNall と噛み合わない）。
+
+そこで `APd (false :: ks) Z` を**使っている場所の結論**を述語にした:
+```
+TwoOk Z := ∀ N, JkA N → (∀ j kk, APd (rep j true ++ (true::kk)) N) →
+             ∀ j kk, APd (rep j true ++ (true::kk)) (two N Z)
+```
+`AYdT` が `APd (false::ks) Z` を使うのは `APd_chainT` の hstep を作る所だけで、
+その結論がちょうど `TwoOk` の中身。`APd_two_of_ctx` の側は
+`APd_iff (true::ks)` で `GOK (plug ctx ·)` に落とせば要らない。
+
+**教訓**: 仮定 H が作れないとき、H の**使われ方**を全部見て、
+「H から導かれる結論」だけを述語にすると、H より弱い仮定で証明が通ることがある。
