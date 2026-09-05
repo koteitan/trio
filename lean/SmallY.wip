@@ -20345,6 +20345,69 @@ theorem plug_append : ∀ (c1 c2 : List Frm) (T : Jk1), plug (c1 ++ c2) T = plug
       show Jk1.two N (plug (rest ++ c2) T) = Jk1.two N (plug rest (plug c2 T))
       rw [plug_append rest c2 T]
 
+/-! ### ★ 段階2 用の塔 `twrB`（1 の列 + junk + 2 の記録 を歩幅 2 で積む）
+
+`twr` は「1 の列 + junk」を歩幅 1 で積む（`two N nil` の展開に対応）。
+`two N (two N₀ nil)` の展開に要るのは **2 の記録を 1 枚含むグループ**の反復で、
+歩幅は 2 になる。1 の列と 2 の記録が交互になるので `TopOk` が常に真、
+したがって `JkJ` も通る（＝ `TopOk` 除去の恩恵をここで受ける）。 -/
+
+/-- 塔の 1 グループ: `(l+1,1,0)` + `jk1 (l+1) N` + `(l+2,2,0)`。 -/
+def unitB (N : Jk1) (l : ℕ) : TrioSeq :=
+  (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) N) ++ [((l + 2, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem unitB_shift (N : Jk1) (l s : ℕ) : shiftr01 s 0 (unitB N l) = unitB N (l + s) := by
+  unfold unitB
+  rw [shiftr01_append0]
+  have h1 : shiftr01 s 0 (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) N)
+      = ((l + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + s + 1) N := by
+    show ((l + 1 + s, 1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 s 0 (jk1 (l + 1) N) = _
+    rw [jk1_shift N (l + 1) s, show l + 1 + s = l + s + 1 from by omega]
+  have h2 : shiftr01 s 0 [((l + 2, 2, 0) : ℕ × ℕ × ℕ)]
+      = [((l + s + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+    show [((l + 2 + s, 2 + 0, 0) : ℕ × ℕ × ℕ)] = _
+    rw [show l + 2 + s = l + s + 2 from by omega]
+  rw [h1, h2]
+
+def twrB (N : Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (Jk1.two N (twrB N n))
+
+theorem TopOk_twrB (N : Jk1) : ∀ n : ℕ, TopOk (twrB N n)
+  | 0 => trivial
+  | (_ + 1) => trivial
+
+theorem JkJ_twrB {N : Jk1} (hN : JkJ N) : ∀ n : ℕ, JkJ (twrB N n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, hN, JkJ_twrB hN n, Or.inl (TopOk_twrB N n)⟩
+
+/-- `twrB` の実現は歩幅 2 の塔。 -/
+theorem jk1_twrB : ∀ (N : Jk1) (n l : ℕ),
+    jk1 l (twrB N n)
+      = (List.range n).flatMap (fun k => shiftr01 (2 * k) 0 (unitB N l))
+  | N, 0, l => by simp [twrB, jk1]
+  | N, (n + 1), l => by
+      have hstep : ∀ k : ℕ, shiftr01 (2 * k) 0 (unitB N (l + 2))
+          = shiftr01 (2 * (k + 1)) 0 (unitB N l) := by
+        intro k
+        rw [← unitB_shift N l 2, shiftr01_add0]
+        congr 1
+        omega
+      have hfl : (List.range n).flatMap (fun k => shiftr01 (2 * k) 0 (unitB N (l + 2)))
+          = (List.range n).flatMap (fun k => shiftr01 (2 * (k + 1)) 0 (unitB N l)) :=
+        List.flatMap_congr (fun k _ => hstep k)
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) N ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1) (twrB N n)))) = _
+      rw [show l + 1 + 1 = l + 2 from rfl, jk1_twrB N n (l + 2), hfl,
+        List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp [jk1, unitB, List.append_assoc]
+
+/-- `twrB` の塔を行列の言葉に。`twrB Jk1.nil = otwJ`（`Small.lean` の行375 の塔）。 -/
+theorem Mtwd_twrB (Y0 : TrioSeq) (N : Jk1) (l n : ℕ) :
+    Mtwd 2 Y0 (unitB N l) n = Y0 ++ jk1 l (twrB N n) := by
+  rw [Mtwd, jk1_twrB N n l]
+
 theorem Mtw_twr (Y0 : TrioSeq) {N : Jk1} (l n : ℕ) :
     Mtw Y0 (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) N) n = Y0 ++ jk1 l (twr N n) := by
   rw [Mtw, jk1_twr N n l]

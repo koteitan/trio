@@ -3786,3 +3786,35 @@ snocY_mem (L := a + dep ctx0 + 1 + 1) (y := 2) htw
 これは既に `W = two N nil ≠ nil`。つまり **`k = 1` の具体例でも `D(0)` の一般形が要る**。
 「一般形の前に具体を 1 本」は、ここでは `W = two N nil`（1 段だけ）を
 `D(0)` の形で書くのが最小の具体例になる。
+
+### 続き113 追記6: 段階2 の部品 `twrB` を建てた（緑）
+
+`D(0)` の `W ≠ nil` に要る塔の木を `SmallY.wip` に追加した（error 0 のまま）:
+
+```lean
+def unitB (N : Jk1) (l : ℕ) : TrioSeq :=          -- 塔の 1 グループ
+  (((l+1,1,0)) :: jk1 (l+1) N) ++ [((l+2,2,0))]
+unitB_shift : shiftr01 s 0 (unitB N l) = unitB N (l + s)
+
+def twrB (N : Jk1) : ℕ → Jk1                      -- 1 の列と 2 の記録を交互に n 段
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (Jk1.two N (twrB N n))
+TopOk_twrB : ∀ n, TopOk (twrB N n)                -- 交互なので常に真
+JkJ_twrB   : JkJ N → ∀ n, JkJ (twrB N n)          -- ★ TopOk 除去の恩恵はここ
+jk1_twrB   : jk1 l (twrB N n) = (range n).flatMap (fun k => shiftr01 (2*k) 0 (unitB N l))
+Mtwd_twrB  : Mtwd 2 Y0 (unitB N l) n = Y0 ++ jk1 l (twrB N n)
+```
+
+**`twrB Jk1.nil = otwJ`**。つまりこれは `Small.lean` の行375 の塔
+（`otw_tower_mem_gen` / `SegA_U375a` で使ったもの）を junk 付きに一般化したものである。
+#3 を通したときの構造がそのまま `SmallY` の段階2 に効く。
+
+既存の `twr`（歩幅 1、`two N nil` 用）との対応:
+```
+twr  N n  … 1 の列 + junk N            を歩幅 1 で n 段   → snocY_mem  (dl=1) で (·,2,0)
+twrB N n  … 1 の列 + junk N + 2 の記録  を歩幅 2 で n 段   → snocYd_mem (dl=2) で (·,2,0)
+```
+
+次にやること: `wordJ_snoc_twoN` / `wordJ_snoc_plug_twr` / `colJ_plug_twoN` /
+`colJ_plug_twr` の `two N (two N₀ nil)` 版を作り、`APd_twoNilGen` の 3 分岐
+（`pu` / `pk` / `seg`）を `snocY_mem` → `snocYd_mem (dl := 2)` に替えて写す。
