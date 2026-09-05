@@ -6665,20 +6665,40 @@ GCtx_repKL は GCtx_ftwoRepL を base  replicate (m+1) js.length ++ ks  で呼�
 - **closure を base 一様（`∀ ks', APd (k :: ks') N`）にする**:
   `APd_twoNilPeel` は通るが `AYdT_hstepK` が供給できない
   （`APd ((k+1) :: ks') T` を全 ks' で要求してしまう）。
-  ただし **`APd_payAll` は base 一様版として既に通っている**ので、
-  `AYdTK` を base 一様仮定（742df7b の版）に戻せば整合する可能性がある。← **次の一手候補**
+  **測定して却下（2026-09-05）: 定義そのものが通らない。**
+  `∀ ks', APd (k :: ks') N` は任意測度の再帰呼び出しなので
+  `decreasing_by` が `msr (k :: ks') < msr ((k+1) :: ks)` を示せない。
+  実測: `whnf` timeout → `APd` 自体が未定義になり error 99。
+  **これで「closure を base 一様にする」道は完全に閉じた。**
 - **`APd_ct` の U を base 一様にする**: 停止性が壊れる（`APd ks' U` が任意測度）
 - **U の条件を `JkOk U` だけにして後から `APd_all` で供給**: 停止性は通るが
   `APd_nil` ⊂ `APd_all` の循環（`APd_all` は木の構造帰納、U は任意の木）
 
+#### ★ 測定でわかった一般則
+
+**`APd` の定義に現れる再帰呼び出しの添字は、`msr` で減っていなければならない。**
+したがって定義の中で要求できる「N の継続性」は
+```
+∀ w, (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N        （msr_word がちょうど上限）
+```
+より広くできない。base 一様も、`≤ b`（b > k）の族も、どちらも停止性で落ちる。
+**「junk に自分より高い base での継続性を要求する」ことは、この設計では原理的に不可能。**
+塔がそれを要求する以上、**junk を塔に載せない**（= ガードで nil に潰す）しかない。
+
 #### 次の一手（推奨順）
 
-1. **closure を base 一様にして、`AYdTK` を 742df7b の版（`∀ ks, APd ((k+1)::ks) Z`）に戻す。**
-   消費側は `APd_payAll` が既に base 一様なので繋がるはず。
-   `APd_payA`（単一形）が要る箇所（`APd_nilT` の枠 junk `U`）だけが残る問題になる。
-   **測り方: 定義を変えて `leanman check` 1 回、エラー数を数える。**
-2. だめなら `hd` ガードを戻し、`AYdTK` に `TopOk Z` を戻したうえで、
+1. **`hd` ガードを戻し**、`AYdTK` に `TopOk Z` を戻したうえで、
    `APd_payA` の `(k+1)::ks` を `GCtx` の `t`（= `TopOk U`）から取る道を設計する。
    `GCtx_ct` は既に `GCtx (TopOk U) ks ctx'` を持っている。
-3. 目標（#17・行376）だけなら junk は出ない（bms で測定済み）ので、
+2. 目標（#17・行376）だけなら junk は出ない（bms で測定済み）ので、
    `APd_twoNilPeel` を「junk が nil の場合」に限った版で先に取る手もある。
+   ただし peel の junk は `APd_cS` の束縛変数なので、限るにはガードが要る。
+   → 結局 1 に戻る。**ガードと `AYdK` を両立させる設計が本丸。**
+
+#### 本丸の形（次の人へ）
+
+`AYdT_hstepK` が `.mp` 側で要求されるのは `TopOk (pay Z Y) ∨ N' = nil`。
+`TopOk (pay Z Y) = TopOk Z`。したがって
+**`AYdTK` を「`TopOk Z` の場合」と「`¬TopOk Z`（= Z が 2 の記録で始まる）の場合」に分け、
+後者を別の道で証明できれば、ガードを戻したまま `AYdK` が閉じる。**
+`¬TopOk Z` は `Z = two N M` の形なので、`APd_twoK`（証明済み）が使える形かどうかを見る。
