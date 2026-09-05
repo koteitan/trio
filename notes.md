@@ -8534,3 +8534,42 @@ APzk（枠条件をどの深さでも GOK U にする）は APd より強い主�
 （1 回目は案(v)、2 回目がこれ）。
 **新しい定義を思いついたら、まず既存のものと一致しないかを `example … ↔ …` で確かめる。**
 今日はそれで 2 回、無駄な着手を防いだ。
+
+### 続き131 追記11: `APz_allJ` の `one` の穴の goal（実測）
+
+```lean
+example (V M' : Jk1) (hV : JkJ V) (hM' : JkJ M') (hzV : APz V) (hzM : APz M') :
+    APz (Jk1.one V M') := by
+  intro U hU hGU
+  refine (APd_bnil _).mp ?_
+  refine APd_step [] hU trivial ((APd_bnil U).mpr hGU) ?_
+  refine APd_step [0] (FrmJ_of_ne _ (by simp) _ hV) trivial ?_ ?_
+  · -- APd [0] V ← APz V から出る ✓
+  · trace_state
+    sorry
+```
+出た goal:
+```
+V M' : Jk1
+hV : JkJ V      hM' : JkJ M'
+hzV : APz V     hzM : APz M'          ← 帰納法の仮定は **APz M' = APd [0] M'**（深さ 1）
+U : Jk1         hU : JkOk U           hGU : GOK U
+⊢ APd [0, 0] M'                       ← ★ 要るのは **深さ 2**
+```
+
+**`one` の場合は `M'` を 1 段深い形で要求する。帰納法の仮定より 1 段深い。**
+したがって帰納法は全部の深さを同時に持ち回るしかなく、それが `APd_all`。
+**`APz` のレベルだけでは埋まらない。**
+
+`two` の場合も同様（`APd_cS` が 1 段深い形を要求する）。
+
+#### 結論（この 60 分）
+
+```
+APz_allJ の one / two は「1 段深い形」を要求する
+→ 帰納法は全深さを同時に回すしかない = APd_all
+→ APd_all は APd_nil → APd_nil_head → APd_twoNilPeel（残る sorry）に依存
+⇒ APz の側から埋める道は無い。**新しい道ではなかった。**
+```
+追記9・10 と合わせて、**`APz` 由来の道（`APzk` / `GOK_one` / `APz_all`）は全部
+既存の `APd` と同じもの**と確定した。
