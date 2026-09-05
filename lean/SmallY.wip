@@ -22641,6 +22641,65 @@ theorem plug_ctxK_eq (j : ℕ) (N : Jk1) (m : ℕ) :
     plug (ctxK j N m) N = nst j (appJ N (twrK j N m)) := by
   rw [plug_ctxK, gK_eq_appJ]
 
+/-! ### 階段の junk 一般版 -/
+
+theorem plug_ftwoL : ∀ (js : List Jk1) (X : Jk1),
+    plug (js.map Frm.ftwo) X = nstL js X
+  | [], X => rfl
+  | (N :: js), X => by
+      show Jk1.two N (plug (js.map Frm.ftwo) X) = _
+      rw [plug_ftwoL js X]
+      rfl
+
+def ctxKL (js : List Jk1) (N : Jk1) : ℕ → List Frm
+  | 0 => js.map Frm.ftwo
+  | (m + 1) => ctxKL js N m ++ (Frm.fone N :: js.map Frm.ftwo)
+
+theorem ctxKL_replicate_nil (j : ℕ) (N : Jk1) : ∀ m : ℕ,
+    ctxKL (List.replicate j Jk1.nil) N m = ctxK j N m
+  | 0 => by simp [ctxKL, ctxK, List.map_replicate]
+  | (m + 1) => by
+      show ctxKL (List.replicate j Jk1.nil) N m
+          ++ (Frm.fone N :: (List.replicate j Jk1.nil).map Frm.ftwo) = _
+      rw [ctxKL_replicate_nil j N m, List.map_replicate]
+      rfl
+
+def gKL (js : List Jk1) (N : Jk1) : ℕ → Jk1 → Jk1
+  | 0, X => X
+  | (m + 1), X => gKL js N m (Jk1.one N (nstL js X))
+
+theorem gKL_succ (js : List Jk1) (N : Jk1) : ∀ (m : ℕ) (X : Jk1),
+    gKL js N (m + 1) X = Jk1.one N (nstL js (gKL js N m X))
+  | 0, _ => rfl
+  | (m + 1), X => by
+      show gKL js N (m + 1) (Jk1.one N (nstL js X))
+        = Jk1.one N (nstL js (gKL js N (m + 1) X))
+      rw [gKL_succ js N m (Jk1.one N (nstL js X))]
+      rfl
+
+theorem plug_ctxKL (js : List Jk1) (N : Jk1) : ∀ (m : ℕ) (X : Jk1),
+    plug (ctxKL js N m) X = nstL js (gKL js N m X)
+  | 0, X => by
+      show plug (js.map Frm.ftwo) X = nstL js X
+      rw [plug_ftwoL]
+  | (m + 1), X => by
+      show plug (ctxKL js N m ++ (Frm.fone N :: js.map Frm.ftwo)) X = _
+      rw [plug_append]
+      show plug (ctxKL js N m) (Jk1.one N (plug (js.map Frm.ftwo) X)) = _
+      rw [plug_ftwoL, plug_ctxKL js N m]
+      rfl
+
+theorem gKL_eq_appJ (js : List Jk1) (N : Jk1) : ∀ m : ℕ,
+    gKL js N m N = appJ N (twrKL js N m)
+  | 0 => rfl
+  | (m + 1) => by
+      rw [gKL_succ, gKL_eq_appJ js N m]
+      rfl
+
+theorem plug_ctxKL_eq (js : List Jk1) (N : Jk1) (m : ℕ) :
+    plug (ctxKL js N m) N = nstL js (appJ N (twrKL js N m)) := by
+  rw [plug_ctxKL, gKL_eq_appJ]
+
 theorem colJ_plug_twrK (a b : ℕ) (ctx : List Frm) (V : Jk1) {N : Jk1} {j : ℕ} (l : ℕ)
     (hl : l = a + dep ctx + 1) (m : ℕ) :
     colJ a b (plug (ctx ++ [Frm.fone V]) (plug (ctxK j N m) N))
