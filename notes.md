@@ -7377,3 +7377,49 @@ def APdG : List ℕ → Jk1 → Prop
 
 **1 が通れば、既存の証明の書き換えは「junk 条件を語の族から `APdS_all` に替える」だけで済む
 可能性がある**（段数を持ち回らなくてよい）。
+
+### 続き129 追記1: `APdG` も通った（error 0 / clean）。ただし `APdN` との整合が次の壁
+
+```lean
+def APdG : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U, FrmJ ks U → APdS_all U → APdG ks (Jk1.one U V)
+  | ((k+1) :: ks), V => ∀ w0, (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N → APdS_all N →
+      APdG (k :: (w0 ++ ks)) (Jk1.two N V)
+termination_by ks _ => msr ks          -- msr_drop0 + msr_word だけで通る
+```
+**`APdS_all` は `APdN` で定義済みの閉じた述語なので、`APdG` の再帰呼び出しではない。**
+だから形の測度のままで、junk 条件は base 一様（形は任意）にできる。
+塔が要求する `L > i` の形も `APdG_cS` から出ることを `example` で確認した。
+
+**これが本命の形。**既存の 30〜40 本の証明は「junk 条件を語の族から `APdS_all` に替える」
+という機械的な書き換えで移せる見込み（段数を持ち回らなくてよい）。
+
+#### 次の壁: `APdS_all`（`APdN` 経由）と `APdG` が整合しない
+
+必要なのは
+```
+APdS_all U  ↔  ∀ S, APdG S U
+```
+だが、どちらの向きも素直には出ない。
+```
+(→) APdN の本体の仮定は「∀S, APdN n S U'」（段数 n 固定）。
+    APdG は APdS_all U'（全段数）を要求するので、適用できない。
+(←) 同じ理由で、n の帰納法が回らない（IH が APdS_all U' を要求する）。
+```
+**`APdN` と `APdG` は「負の位置の仮定の強さ」が違う。**
+
+#### 次に試すこと（優先順）
+
+1. **`APdN` の負の位置を `APdS_all` に揃える。**
+   `APdN` の本体を `∀ U, FrmJ → APdS_all U → APdN n ks' (one U V)` にできるか。
+   `APdS_all` が `APdN` を全段数で呼ぶので、そのままでは定義が通らない。
+   **`APdS_all` を余帰納的（最大不動点）に取れば通る可能性がある**
+   （負の位置に自分が出る述語の標準的な扱い）。
+   Lean では `∃ R : Jk1 → Prop, R V ∧ ∀ W, R W → body[R]` の形。
+2. だめなら `APdN` を捨てて、`APdS_all` を**別の閉じた形**で定義できないか探す。
+   要件は「どの形でも継げる」だけなので、`GOK` と塔の言葉で直接書ける可能性がある。
+3. それでもだめなら step-indexing の代償を払う（`APd` 系すべてに段数を付ける、1000 行規模）。
+
+**`APdG` が通った時点で、壁は「測度」から「2 つの述語の整合」に移った。**
+測度の壁（`msr_word` が上限）はもう無い。
