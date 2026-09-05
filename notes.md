@@ -7700,3 +7700,48 @@ APdN_twoNilNestL         ★k=0 の底。行列側の道具（wordJ_snoc_twoNKL 
                           SmallY.wip のものがそのまま使える
 APdN_twoNilPeelL / APdA_all / GOK_all → 既存の下流（rowJ_mem など）
 ```
+
+### 続き129 追記7: 状態（この回の終わり）
+
+```
+lean/Small.lean    green / sorry なし。**今日一度も触っていない**
+lean/SmallY.wip    error 0 / sorry 1（APd_twoNilPeel の k+1 = k=0 の底）
+                   AYdK は全 k で閉じた。汚れは GOK_all と下流だけ
+lean/SmallSI.wip   error 0。健全な段数版の核（commit 243074c）
+```
+
+#### `SmallSI.wip` に入っているもの（全部 clean）
+
+```
+APdN / bnil / ct / cS / zero / down / le
+APdU / APdU_down / APdU_le
+APdA / APdA_bnil : APdA [] V ↔ GOK V         ★結論の強さは APd と同じ
+APdN_step（旧 穴B）／ APdN_two（旧 穴D）      どちらも 1〜2 行
+GCtxN / bnil / ct / cS / zero / ct_any / ne / CtxX / CtxOk / split
+APdN_iff（4 分岐）
+GCtxN_ftwoRep / GCtxN_repKL                  ★旧設計で不可能だった
+APdN_plug_repKL                              ★同上
+健全性の確認 example（APdN 1 は自明）
+「唯一の不等式」の example
+```
+
+#### 次の 1 手
+
+`APdN_twoNilNestL`（k=0 の底、旧 `APd_twoNilNest` の写し、約 110 行）。
+道具は全部揃っている:
+```
+文脈側  GCtxN_split / GCtxN_CtxOk / GCtxN_CtxX / APdN_plug_repKL     ← 段数版（新規）
+行列側  wordJ_snoc_twoNKL / wordJ_snoc_plug_twrKL / MidD_unitKL /
+        hMy_unitKL / Mtwd_twrKL / plug_ctxKL_eq / jk1_twrKL /
+        snocYd_mem / JkJ_nstL / JkOk_plug                            ← 段数に依らない。既存のまま
+```
+写すときの置換:
+```
+nst j       → nstL js          ctxK j N m  → ctxKL js N m
+unitK j N l → unitKL js N l    dl := j+1   → dl := js.length + 1
+twrK        → twrKL            APd …       → APdN n …
+Mtwd_twrK   → Mtwd_twrKL       APd_iff     → APdN_iff（第 1 連言は段数の帰納法）
+MidD_unitK j N l hJN → MidD_unitKL js hjsA N l hJN（hjsA : ∀ M ∈ js, JkA M が要る）
+```
+そのあと `APdN_twoNilPeelL`（帰納段は旧設計でも通っていた形）→ `APdA_all` → `GOK_all`
+→ 既存の下流（`rowJ_mem` / `otw_tower_mem` / `R375_mem` …）に繋ぐ。
