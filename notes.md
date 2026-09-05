@@ -5392,7 +5392,11 @@ example 3 本（APd_twoNilNest の j=0,1,2 が既存 3 本と同じ文である�
 2. APd / APd_cS / APd_cf / GCtx / GCtx_cS から (TopOk V ∨ N = Jk1.nil) → を外す
 3. GoodFb_snoc_dupJt / GoodFb_snoc_innerJt の (hN) (hZ) (hZt) を外す
      ← Lean の linter が「未使用」と言っている（追記4）
+4. CtxXJ の [Frm.ftwo N] の場合: JkJ X ∧ (TopOk X ∨ N = Jk1.nil)  →  JkJ X
+     ← 1 と同じ条件が CtxXJ にも別に書いてある。1 だけ直すと JkJ_plug で残る
 ```
+**注意: 4 を入れると error は 68 → 77 に増える**（それまで隠れていた下流が出てくる）。
+`CtxOk` には TopOk 条件は無いので触らなくてよい。
 `TopOk` 自体は `jk1_appJ` に本当に要るので**残す**。
 
 3 手をまとめて入れると **error 79**。安全な一括置換
@@ -5431,3 +5435,28 @@ error の内訳は
    「何を要求してよいか」の判定基準だった。
 4. **linter を読む。**`hZt` が未使用だと Lean が言っていたのを、こちらが見落としていた。
 5. `SmallX.lean` は古いスナップショット。引き継ぎの記述と実物が違う。
+
+### 続き121 追記1: 穴(C) の手は 4 つだった（`CtxXJ` にも同じ条件がある）
+
+`JkJ` を直しただけでは `JkJ_plug` が通らない。`CtxXJ` にも別に
+```lean
+| [Frm.ftwo N], X => JkJ X ∧ (TopOk X ∨ N = Jk1.nil)
+```
+と書いてあるので、これも `JkJ X` にする（手 4）。`CtxOk` には条件が無いので触らない。
+
+試作の推移（`/tmp` に残してある）:
+```
+/tmp/SmallW3-68err.lean   手 1〜3 + 安全な一括置換まで   error 68
+/tmp/SmallW3-77err.lean   手 4 と第 1 クラスタまで        error 77（隠れていた下流が出た）
+```
+**error が増えるのは正常**。条件を外すと、それまで条件で埋まっていた場所が露出する。
+種類は最後まで機械的（`⟨…⟩` の項数 / `introN` / 引数の数 / 射影 / `rcases`）で、
+「証明が通らなくなった」種類は依然ゼロ。
+
+次の人は `/tmp/SmallW3-77err.lean` から site ごとに潰していけばよい。
+潰す内容は 3 種類だけ:
+```
+Or.inr rfl の削除     … hd 引数だったもの / JkJ (two nil X) の第 3 成分だったもの
+h.2.2 → 削除、h.2.1 → h.2 … JkJ (two N M) の射影の付け替え
+rcases hd / intro hd の削除 … 束縛が 1 個減ったところ
+```
