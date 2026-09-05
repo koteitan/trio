@@ -8378,3 +8378,69 @@ APzk_all : ∀ T, JkOk T → ∀ ks, APzk ks T   を証明できるか。
 4. 通れば APd / GCtx / SmallSI.wip の段数版は不要になる（削除は最後）
 ```
 **`APz` が既にあり、行371 がそれで通っている**——これがいちばん強い証拠。
+
+### 続き131 追記8: `GOK_one` の検査（40 分）。**`APz_all` に帰着し、穴は 2 つだけ**
+
+#### `GOK_one` は `APz` を 1 個具体化するだけ
+
+```lean
+theorem GOK_one_of_APz {N M : Jk1} (hN : JkOk N) (hGN : GOK N) (hA : APz M) :
+    GOK (Jk1.one N M) := hA N hN hGN
+```
+**したがって `GOK_one` ⟺ `APz_all : ∀ M, JkJ M → APz M`。**
+
+#### 木の構造帰納で書くと穴は 2 つ（error 0、sorry 2 で確認）
+
+```lean
+theorem APz_allJ : ∀ (M : Jk1), JkJ M → APz M
+  | Jk1.nil, _ => APz_nil                                   ✓ 既存
+  | Jk1.pay V C, h => APz_pay h.1 (APz_allJ V h.1) h.2       ✓ 既存（IH から）
+  | Jk1.one V M', h => sorry                                 ← 穴1
+  | Jk1.two N M, h => sorry                                  ← 穴2（塔）
+```
+**`nil` と `pay` は既存の層1 の道具（`APz_nil` / `APz_pay`）でそのまま通る。**
+穴は `one` と `two`、つまり**入れ子**だけ。
+
+#### 既存の層1 開発は「入れ子 1 段」まで来ている
+
+```lean
+def OneOk (Z : Jk1) : Prop := ∀ V, JkJ V → APz V → APz (Jk1.one V Z)   -- 概念（AYz の仮定）
+
+GOK_oneOneNil : JkOk T → JkJ V → GOK T → APz V → GOK (one T (one V nil))
+                ＝ APz (one V nil)                    ⇒ OneOk nil ✓ 既存
+AYz : Bok Y → JkJ Z → OneOk Z → ∀ X, JkJ X → APz X → APz (one X (pay Z Y))
+                                                      ⇒ OneOk (pay Z Y) ✓ 既存（OneOk Z から）
+OneOk (one V M')  ← 穴
+OneOk (two N M)   ← 穴（塔）
+```
+**`APz` / `OneOk` は `APd` と同じ構造を層1 だけで持っている。**
+`nil` / `pay` は通り、`one` / `two`（入れ子）で止まる。
+**`APd` / `GCtx`（層2、形＝入れ子の深さで添字づけ）は、まさにこの入れ子を扱うために
+導入されたもの。**そして層2 にしたことで循環が生まれた。
+
+#### ★ したがって `APzk` が正しい方向であることが裏づけられた（ただし 1 点修正）
+
+`APzk`（追記7）は入れ子の深さを形 `ks` で添字づけつつ、枠の条件を層1 に保つ設計。
+**`APz` / `OneOk` はその深さ 0・1 の断片。**
+
+**修正:** `APzk` の枠の条件は `GOK U` にしたが、既存の開発は `APz U` を使っている
+（`AYz` / `GOK_oneOneNil` の仮定が `APz V`）。`APz U` は `GOK U` より強く、
+かつ**形に依らない固定の述語**なので、`APzk` の枠条件を
+```
+| (0 :: ks), V => ∀ U, JkJ U → APz U → APzk ks (Jk1.one U V)
+```
+にしても**`U` についての再帰は入らない**（`APz` は別定義）。
+停止性は形だけのまま、条件は既存の開発と揃う。**こちらの方が正しい。**
+
+#### 次のセッションの出発点（更新）
+
+```
+1. APzk の枠条件を `JkJ U ∧ APz U` に直す（`GOK U` より強く、既存の開発と揃う）
+2. APzk_bnil / ct / cS と、APzk [0] ↔ APz、APzk [0,0] ↔ OneOk 相当を固定する
+3. APzk_all : ∀ T, JkJ T → ∀ ks, APzk ks T
+   nil / pay は既存の APz_nil / APz_pay / AYz が使える
+   one / two（入れ子）が本番。**ただし循環はしない**（枠の条件は仮定として貰える）
+4. 通れば GOK_all が出て、APd / GCtx（層2）が丸ごと不要になる
+```
+**`nil` と `pay` が既に層1 で通っている**のがいちばん強い証拠。
+入れ子だけを層1 で扱えれば、層2 は要らない。
