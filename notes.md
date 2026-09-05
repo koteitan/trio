@@ -9643,3 +9643,45 @@ S(6,2,0)  [n] = S ++ (6,1,0)(7,1,0)(8,1,0)...（1 の列の階段）
           木 one nil (two nil (one (two nil nil) (stairJ m)))
           → こちらは W = stairJ m で pay ですらないので AYs では届かない
 ```
+
+### 追記25: 壁の第 3 撃 `TwoOk_onePayNil`（`AYs` の `TwoOk` 版）。S 16/17
+
+`AYs`（深さ ≥ 1 の荷）の `hX : CtxX ctx X` は `hAP`（∀ V で量化）にも渡っていて
+素直に弱められない。そこで `CtxX` の役目を果たすクラスを立てた:
+
+```
+TwoQ U := JkA U ∧ TwoOk U ∧ (∀ C, Bok C → TwoOk (pay U C))
+TwoQ は U ↦ one U (pay nil Y') で閉じている（TwoOk_oneNil と TwoOk_pay）
+TwoOk_onePayNil : ∀ Y, Bok Y → ∀ V, TwoQ V → TwoOk (one V (pay nil Y))
+```
+`GoodFb_snoc_dupJs` / `innerJs` の `CtxX` も `JkT_plug` 1 か所だけだったので
+`JkT` に差し替えた（`...Js0`）。`GOK_chainJ` の代わりは `TwoQ_itJ`。
+
+`S(6,1,0)`（高さ 6 の吊るし）の字:
+```
+one nil (two nil (one (two nil nil) (pay nil B)))
+jk1 2 = (3,1,0)(4,2,0)(5,2,0)(5,1,0) ++ B↑6
+```
+荷は `(5,1,0)` の子。`one V (pay nil B)` の形なので `TwoOk_onePayNil` で出る。
+
+### 残っている壁（3 撃かけて分かった形）
+
+`TwoOk Z` は「2 の記録の直上の Z」。今できるのは:
+```
+Z = nil                    TwoOk_of_APdf
+Z = pay Z' Y               TwoOk_pay          （AYdT の写し）
+Z = two nil nil            APd_twoTwoGen      （前回の壁破り）
+Z = one V nil              TwoOk_oneNil       （APnil_gen0）
+Z = one V (pay nil Y)      TwoOk_onePayNil    （AYs の TwoQ 版）
+```
+できないのは **「破る 2 の記録の後ろに“木”が続く」形**:
+```
+Z = one V W    （W が木。S(6,2,0) の W = stairJ m）
+Z = two N M    （M ≠ nil。#14 #15 #16 #17）
+```
+荷（`Bok` のブロック）が後ろに来るのは `colJ_plug_pay` で
+`base ++ B↑s` に分解できるから通る。木は分解できない。
+
+`TwoOk (two N nil)` は `N` が `TopOk` なら `APd_twoTwoGen` の写しで出るはず
+（近似列 `W_k = one N (two N' W_{k-1})` が `JkJ` になる）。だが #15 が要るのは
+`N = two ... nil` で `TopOk N` が偽なので届かない。
