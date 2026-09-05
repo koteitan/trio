@@ -20462,6 +20462,15 @@ theorem jk1_twrC : ∀ (N : Jk1) (n l : ℕ),
         List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
       simp [jk1, unitC]
 
+/-- 階段の対応（確認）: `twrC` の 1 段は「1 の列 + 2 の記録」の対 1 つ分の文脈。
+一般には `twrC N (m+1) = plug ([fone nil, ftwo nil] ++ [fone N, ftwo nil] × m) N`。 -/
+theorem plug_pair_twrC (N : Jk1) :
+    plug [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil] N = twrC N 1 := rfl
+
+theorem plug_pair_twrC2 (N : Jk1) :
+    plug [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil, Frm.fone N, Frm.ftwo Jk1.nil] N
+      = twrC N 2 := rfl
+
 theorem Mtwd_twrC (Y0 : TrioSeq) (N : Jk1) (l n : ℕ) :
     Mtwd 2 Y0 (unitC N l) n = Y0 ++ jk1 l (twrC N n) := by
   rw [Mtwd, jk1_twrC N n l]

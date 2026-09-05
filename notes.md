@@ -3950,3 +3950,23 @@ GCtx_rep2 : … → ∀ m ctx t t', GCtx t (0 :: ks) ctx
 
 **ここが残っている唯一の設計上の空白**。これが決まれば
 `APd_twoNilGen` の 3 分岐を写して `snocY_mem` → `snocYd_mem (dl := 2)` に替えるだけ。
+
+### 続き113 追記10: 階段の対応を Lean で確認（`rfl` で通った）
+
+```lean
+plug_pair_twrC  : plug [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil] N = twrC N 1 := rfl
+plug_pair_twrC2 : plug [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil, Frm.fone N, Frm.ftwo Jk1.nil] N
+                    = twrC N 2 := rfl
+```
+
+追記9 の「フレームは 1 の列 + 2 の記録の対」は手計算ではなく `rfl` で確認済み。
+一般形 `twrC N (m+1) = plug ([fone nil, ftwo nil] ++ [fone N, ftwo nil] × m) N` は
+`plug` が末尾から（内側から）畳むのに対し `twrC` は外側から伸びるので、
+そのまま `m` の帰納法では回らない。`F X := one N (two nil X)` を使って
+
+```
+twrC N (m+1)        = one nil (two nil (F^[m] N))
+plug (ctxC N m) X   = one nil (two nil (F^[m] X))
+```
+
+の 2 本に分けると回る（未実装）。
