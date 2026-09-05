@@ -5936,3 +5936,48 @@ js 一般版では、js の各 junk について「どの形でも継げる」�
    塔の単位に junk が載ることは bms で確定しているので、`ftwo js[i]` 枠は避けられない気がする。
 3. 穴(B) の route 3（`APnil_gen` の `hang` を `snocd_gen` まで降りる）を先にやり、
    そこで得た手が (D) にも効かないか見る。**(B) と (D) が同型なら、これが本命。**
+
+### 続き122 追記11: ★ route 3 の第一報 —— `hang` は「塔」にしか使われていない
+
+穴(B) の route 3（`APnil_gen` の `hang` の真の要求を `snocd_gen` まで降りて見る）に着手し、
+**最初の 1 歩で本質的なことが分かった。**
+
+```lean
+snocd_gen (hd) (hY : Aok Y) (hsh : Ancd d Y)
+    (hang : ∀ B : TrioSeq, Bok B → Y ++ shiftr01 d 0 B ∈ W 0) :
+    Y ++ [((d, 1, 0))] ∈ W 0 :=
+  snocd_mem … (TwD_mem_of_hang hd hY hang)
+
+theorem TwD_mem_of_hang (hd) (hY) (hang) : ∀ n, TwD d Y n ∈ W 0
+  | 0 => …
+  | (n + 1) => by rw [TwD_succ]; exact hang (TwD d Y n) ⟨…⟩     ← ★ ここだけ
+```
+**`hang` が使われるのは `B = TwD d Y n`（Y 自身の塔）のときだけ。**
+`TwD d Y n = (range n).flatMap (fun k => shiftr01 (d*k) 0 Y)`、
+`TwD_succ : TwD d Y (n+1) = Y ++ shiftr01 d 0 (TwD d Y n)` なので、
+`snocd_gen` の実際の要求は
+```
+∀ n, TwD d Y (n + 1) ∈ W 0      （= 「Y の歩幅 d の塔がすべて W 0 に入る」）
+```
+だけである。**任意の `Bok B` は要らない。**
+
+`APnil_gen` の `hang : ∀ C, Bok C → GOK (plug ctx (pay V C))` も、
+`snocd_gen` に渡されるだけなので **塔の場合しか使われていない。**
+
+#### なぜこれが効きそうか
+
+`APd_twoNilNest` は、まさに**塔**を `Mtwd` / `snocYd_mem` で直接扱って証明している。
+`hang` が塔だけで足りるなら、**`APd_payA`（→ `AYdK`）を経由せず、
+`APd_twoNilNest` と同じ機械（塔の議論）で `APnil_gen` の `hang` を作れる可能性がある。**
+そうなれば穴(B) は `AYdK` に依存しなくなる。
+
+#### 次にやること
+
+```
+1. APnil_gen の hang を「塔だけ」に弱めた版 APnil_gen' を作る
+   （snocd_gen も同様に snocd_gen' にする。TwD_mem_of_hang はそのまま使える）
+2. APd_oneNil / APd_nilT をそれに合わせる
+3. 弱まった hang を、APd_twoNilNest と同じ塔の機械で直接作れるか試す
+4. 効けば穴(B) が閉じる。そして穴(D) も同型なので、同じ手が効くか見る
+```
+**これが今日いちばん有望な未着手の道。**
