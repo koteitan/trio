@@ -7602,3 +7602,58 @@ APdL 1 (0 :: ks) V  =  「どの妥当な junk U に対しても APdL 1 ks (one 
 `APdL` は error 0 で通り、`APdA [] V ↔ GOK V` も clean で、
 `GCtxL_repKL` まで証明できた。それでも不健全だった。
 **低い段数を代入して自明性の釣り合いを見る**、が step-indexing の検算。
+
+### 続き129 追記5: 健全な定義に直した（commit e94bbd0）。error 0 / clean
+
+不健全性は **Lean に確認させてから**捨てた:
+```lean
+example (V : Jk1) (h : APdL 1 (0 :: ([] : List ℕ)) V) :
+    ∀ U : Jk1, JkOk U → GOK (Jk1.one U V) := …    -- 通ってしまう
+```
+
+#### 直した点は 2 つ
+
+```
+1. 結論も段数 n に落とす
+   | (n+1), (0::ks'), V => ∀ U, FrmJ ks' U → (∀ S, APdN n S U) → APdN n ks' (one U V)
+                                                                  ^^^^^^ 保たない
+2. GCtxN 0 _ _ _ := False
+   True にすると「段数 1 の良い文脈」が広すぎて（GCtxN 0 = True が中身を許すので）
+   APdN_iff の n=0 が壊れる。APdN 0 = True と釣り合わせるには GCtxN 0 = False。
+```
+**`APdN 0 = True`（何も言わない）と `GCtxN 0 = False`（文脈が無い）が対。**
+
+#### 通ったもの（全部 clean）
+
+```
+APdN / APdN_bnil / ct / cS / zero / down
+APdU / APdU_down / APdA / APdA_bnil : APdA [] V ↔ GOK V
+APdN_step（旧 穴B）／ APdN_two（旧 穴D）
+GCtxN / GCtxN_bnil / ct / cS / zero / ct_any
+APdN_iff : APdN (n+1) ks V ↔ APdN n ks V ∧ ∀ ctx, GCtxN (n+1) (TopOk V) ks ctx → GOK (plug ctx V)
+健全性の確認: APdN 1 (0::ks) V も APdN 1 ((k+1)::ks) V も**自明**
+「唯一の不等式」: APdU n U → APdN n (i :: (w ++ replicate (m+1) L ++ ks)) U
+```
+
+#### 次の人へ: 段数は形の深さと一緒に落ちる
+
+`GCtxN` の段数は形と一緒に落ちるので、`js` を積む補題は段数の足し算になる:
+```
+GCtxN_ftwoRep : GCtxN n t (0 :: ks) ctx →
+                GCtxN (n + js.length) t' (js.length :: ks) (ctx ++ js.map Frm.ftwo)
+```
+`js[i]` の条件は段数 `n + i` でよい（`APdU` は下方閉なので、
+`∀ M ∈ js, APdU (n + js.length) M` を要求して落として使えば足りる）。
+
+これが旧設計の `JsOk ks js b`（形の level を持ち回る）に対応する。
+**level が形から段数に移っただけで、構造は同じ。**
+
+#### 残りの移行
+
+```
+GCtxN_ne / CtxX / CtxOk / down / split       （旧 GCtx_* の写し）
+GCtxN_ftwoRep / GCtxN_repKL / APdN_plug_repKL
+AYd / AYdT / AYdTK                           （段数を持ち回る）
+APdN_twoNilNestL（k=0 の底）★ここが塞がる
+APdN_twoNilPeelL / APdA_all / GOK_all
+```
