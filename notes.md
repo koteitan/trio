@@ -5603,6 +5603,18 @@ ctxKL js N m  = (js の ftwo フレーム列) ++ m×(fone N :: js の ftwo フ�
 **次の人は `lean/SmallW3.wip` を本線にしてよい**（`SmallY.wip` より進んでいる）。
 移す前に `leanman check` で error 0 / sorry 2 を確認すること。
 
+#### 続き122 追記10 時点での状態表（最新。上の表は古い）
+
+| ファイル | 状態 |
+|---|---|
+| `lean/Small.lean` | **緑 / sorry なし**。今回一切触っていない |
+| `lean/SmallY.wip` | **error 0 / sorry 2**（`AYdK`, `APd_twoNilPeel`）。**本線 1 本**。ガード 5 箇所除去済み + `nstL` 系の道具 |
+| `lean/SmallYpay.wip` | 穴(B) の試作。`hd` 除去後に測り直しても構図は変わらず（追記6）|
+| `lean/SmallX.lean` | 古いスナップショット。参考にならない |
+| `lean/SmallW3.wip` | **削除済み**（`SmallY.wip` に一本化）|
+
+残る穴は **(B) と (D) の 2 つで、同型**（枠 junk の base 一様性）。追記10 参照。
+
 ### 続き122 追記2: 「全部機械的」は 1 回の測定では分からない —— 実例
 
 methodology §3 に入れた教訓の実例がここで出た。
