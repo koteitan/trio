@@ -23627,5 +23627,160 @@ example (ks : List ℕ) (V : Jk1) : APdN 1 (0 :: ks) V := by
 example (k : ℕ) (ks : List ℕ) (V : Jk1) : APdN 1 ((k + 1) :: ks) V := by
   rw [APdN_cS]; exact ⟨APdN_zero _ _, fun w0 hw0 N hN hNk => APdN_zero _ _⟩
 
+/-! ### 支える補題群（旧 `GCtx_ne` / `CtxX` / `CtxOk` / `split` の写し。段数は形と一緒に落ちる）。 -/
+
+theorem GCtxN_ne : ∀ (n : ℕ) (t : Prop) (a : ℕ) (ks : List ℕ) (ctx : List Frm),
+    GCtxN n t (a :: ks) ctx → ctx ≠ []
+  | 0, _, a, ks, ctx, h => absurd h (GCtxN_zero _ _ ctx)
+  | (n + 1), t, 0, ks, ctx, h => by
+      rw [GCtxN_ct] at h
+      obtain ⟨ctx', U, rfl, -, -, -⟩ := h
+      simp
+  | (n + 1), t, (k + 1), ks, ctx, h => by
+      rw [GCtxN_cS] at h
+      obtain ⟨w0, hw0, ctx', N, rfl, -, -, -⟩ := h
+      simp
+
+theorem GCtxN_CtxX : ∀ (n : ℕ) (ks : List ℕ) (ctx : List Frm) (X : Jk1),
+    GCtxN n (TopOk X) ks ctx → FrmJ ks X → CtxX ctx X
+  | 0, ks, ctx, X, h, _ => absurd h (GCtxN_zero _ ks ctx)
+  | (n + 1), [], ctx, X, h, hX => by
+      rw [GCtxN_bnil] at h; subst h; exact hX
+  | (n + 1), (0 :: ks), ctx, X, h, hX => by
+      rw [GCtxN_ct] at h
+      obtain ⟨ctx', U, rfl, -, -, -⟩ := h
+      exact (CtxX_snoc1 ctx' U X).mpr hX
+  | (n + 1), ((k + 1) :: ks), ctx, X, h, hX => by
+      rw [GCtxN_cS] at h
+      obtain ⟨w0, hw0, ctx', N, rfl, -, -, -⟩ := h
+      exact (CtxX_snoc2 ctx' N X).mpr hX
+
+theorem GCtxN_CtxOk : ∀ (n : ℕ) (t : Prop) (ks : List ℕ) (ctx : List Frm),
+    GCtxN n t ks ctx → CtxOk ctx
+  | 0, _, ks, ctx, h => absurd h (GCtxN_zero _ ks ctx)
+  | (n + 1), _, [], ctx, h => by rw [GCtxN_bnil] at h; subst h; trivial
+  | (n + 1), t, (0 :: ks), ctx, h => by
+      rw [GCtxN_ct] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      exact CtxOk_snoc ctx' U (GCtxN_CtxOk n (TopOk U) ks ctx' hc')
+        (GCtxN_CtxX n ks ctx' U hc' hU)
+  | (n + 1), t, ((k + 1) :: ks), ctx, h => by
+      rw [GCtxN_cS] at h
+      obtain ⟨w0, hw0, ctx', N, rfl, hc', hN, -⟩ := h
+      have hne : ctx' ≠ [] := GCtxN_ne n False k (w0 ++ ks) ctx' hc'
+      have hcT : GCtxN n (TopOk TwoNil) (k :: (w0 ++ ks)) ctx' := hc'
+      have hx : CtxXJ ctx' TwoNil := by
+        have h1 := GCtxN_CtxX n (k :: (w0 ++ ks)) ctx' TwoNil hcT JkJ_TwoNil
+        cases ctx' with
+        | nil => exact absurd rfl hne
+        | cons f rest => exact h1
+      exact CtxOk_snoc2 ctx' N hne (GCtxN_CtxOk n False (k :: (w0 ++ ks)) ctx' hc') hx hN
+
+/-! `GCtxN` は段数について単調ではない（`GCtxN 0 = False` なので下方閉ではなく、
+上方も `APdU n` が強くなるので成り立たない）。要るところでは `cases n` で処理する。 -/
+
+theorem GCtxN_split (n : ℕ) {t : Prop} (ks : List ℕ) (ctx : List Frm)
+    (h : GCtxN (n + 1) t (0 :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ GOK (plug ctx0 V) := by
+  rw [GCtxN_ct] at h
+  obtain ⟨ctx0, U, rfl, hc0, hU, hUk⟩ := h
+  cases n with
+  | zero => exact absurd hc0 (GCtxN_zero _ ks ctx0)
+  | succ p =>
+      exact ⟨ctx0, U, rfl, ((APdN_iff p ks U).mp (hUk ks)).2 ctx0 hc0⟩
+
+#print axioms GCtxN_split
+
+theorem APdN_le : ∀ (n m : ℕ), m ≤ n → ∀ (ks : List ℕ) (V : Jk1), APdN n ks V → APdN m ks V
+  | 0, m, hm, ks, V, h => by
+      have : m = 0 := by omega
+      subst this; exact h
+  | (n + 1), m, hm, ks, V, h => by
+      rcases Nat.lt_or_ge m (n + 1) with hlt | hge
+      · exact APdN_le n m (by omega) ks V (APdN_down n ks V h)
+      · have : m = n + 1 := by omega
+        subst this; exact h
+
+theorem APdU_le (n m : ℕ) (hm : m ≤ n) (V : Jk1) (h : APdU n V) : APdU m V :=
+  fun S => APdN_le n m hm S V (h S)
+
+/-- ★ `ftwo` 枠を `js` の分だけ内側に積む。**junk 条件が形を問わない**のが効く。
+段数は形と一緒に落ちるので、`js` を積むと段数が `js.length` だけ増える。 -/
+theorem GCtxN_ftwoRep (n : ℕ) (ks : List ℕ) : ∀ (js : List Jk1),
+    (∀ M ∈ js, JkJ M) → (∀ M ∈ js, APdU (n + js.length) M) →
+    ∀ (ctx : List Frm) (t t' : Prop), GCtxN n t (0 :: ks) ctx →
+      GCtxN (n + js.length) t' (js.length :: ks) (ctx ++ js.map Frm.ftwo) := by
+  intro js
+  induction js using List.reverseRecOn with
+  | nil =>
+      intro _ _ ctx t t' hc
+      simp only [List.length_nil, Nat.add_zero, List.map_nil, List.append_nil]
+      cases n with
+      | zero => exact absurd hc (GCtxN_zero _ _ ctx)
+      | succ p => exact GCtxN_ct_any p hc
+  | append_singleton js' Nl ih =>
+      intro hJ hA ctx t t' hc
+      have hlen : (js' ++ [Nl]).length = js'.length + 1 := by simp
+      have hNlJ : JkJ Nl := hJ Nl (by simp)
+      have hNlA : APdU (n + js'.length) Nl :=
+        APdU_le (n + (js' ++ [Nl]).length) (n + js'.length) (by simp) Nl
+          (hA Nl (by simp))
+      have ih' := ih (fun M hM => hJ M (by simp [hM]))
+        (fun M hM => APdU_le (n + (js' ++ [Nl]).length) (n + js'.length)
+          (by simp) M (hA M (by simp [hM]))) ctx t False hc
+      rw [hlen, List.map_append, ← List.append_assoc,
+        show n + (js'.length + 1) = (n + js'.length) + 1 from by omega, GCtxN_cS]
+      refine ⟨[], by simp, ctx ++ js'.map Frm.ftwo, Nl, by simp, ?_, hNlJ, hNlA⟩
+      rw [show ([] : List ℕ) ++ ks = ks from by simp]
+      exact ih'
+
+#print axioms GCtxN_ftwoRep
+
+/-- ★★★★★ **旧設計で不可能だった補題**（続き128 の「唯一の不等式」）。
+塔の文脈を junk 入りで組む。junk 条件が形を問わないので base が伸びても効く。
+段数は枠 1 枚につき 1 落ちるので、`ctxKL js N m`（枠 `(m+1)*js.length + m` 枚）の分だけ増える。 -/
+theorem GCtxN_repKL (js : List Jk1) (hJ : ∀ M ∈ js, JkJ M) {N : Jk1} (hJN : JkJ N)
+    (ks : List ℕ) : ∀ (m n : ℕ) (ctx : List Frm) (t t' : Prop),
+      (∀ M ∈ js, APdU (n + (m + 1) * js.length + m) M) →
+      APdU (n + (m + 1) * js.length + m) N →
+      GCtxN n t (0 :: ks) ctx →
+      GCtxN (n + (m + 1) * js.length + m) t'
+        (List.replicate (m + 1) js.length ++ ks) (ctx ++ ctxKL js N m)
+  | 0, n, ctx, t, t', hA, hAN, hc => by
+      have e : n + (0 + 1) * js.length + 0 = n + js.length := by simp
+      rw [e, show List.replicate 1 js.length ++ ks = js.length :: ks from rfl]
+      show GCtxN (n + js.length) t' (js.length :: ks) (ctx ++ js.map Frm.ftwo)
+      refine GCtxN_ftwoRep n ks js hJ (fun M hM => ?_) ctx t t' hc
+      have := hA M hM
+      rwa [e] at this
+  | (m + 1), n, ctx, t, t', hA, hAN, hc => by
+      set L := js.length with hL
+      have harith : (m + 2) * L = (m + 1) * L + L := Nat.succ_mul (m + 1) L
+      have hbud : n + (m + 1) * L + m ≤ n + (m + 2) * L + (m + 1) := by
+        rw [harith]; omega
+      have ih := GCtxN_repKL js hJ hJN ks m n ctx t (TopOk N)
+        (fun M hM => APdU_le _ _ hbud M (hA M hM)) (APdU_le _ _ hbud N hAN) hc
+      have hmid : GCtxN (n + (m + 1) * L + m + 1) (TopOk Jk1.nil)
+          (0 :: (List.replicate (m + 1) L ++ ks))
+          ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) := by
+        rw [GCtxN_ct]
+        exact ⟨ctx ++ ctxKL js N m, N, rfl, ih, FrmJ_of_ne _ (by simp) _ hJN,
+          APdU_le _ _ hbud N hAN⟩
+      have hout := GCtxN_ftwoRep (n + (m + 1) * L + m + 1) (List.replicate (m + 1) L ++ ks) js hJ
+        (fun M hM => APdU_le _ _ (by rw [harith]; omega) M (hA M hM))
+        ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) (TopOk Jk1.nil) t' hmid
+      show GCtxN (n + (m + 2) * L + (m + 1)) t'
+        (List.replicate (m + 2) L ++ ks)
+        (ctx ++ (ctxKL js N m ++ (Frm.fone N :: js.map Frm.ftwo)))
+      rw [show n + (m + 2) * L + (m + 1) = n + (m + 1) * L + m + 1 + L from by
+          rw [harith]; omega,
+        show List.replicate (m + 2) L ++ ks = L :: (List.replicate (m + 1) L ++ ks) from rfl,
+        show ctx ++ (ctxKL js N m ++ (Frm.fone N :: js.map Frm.ftwo))
+          = ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) ++ js.map Frm.ftwo
+          from by simp [List.append_assoc]]
+      exact hout
+
+#print axioms GCtxN_repKL
+
 end Small
 end TRIO
