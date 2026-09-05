@@ -21185,5 +21185,51 @@ theorem R376_of_tower (htw : ∀ n : ℕ, Mtw R344 [((4, 2, 0) : ℕ × ℕ × �
 
 #print axioms R376_of_tower
 
+/-! ### 行375 と行376 の間の標準形（notes.md 続き111 の表）
+
+`P = R375m = R344 (4,2,0)(5,2,0)` = シート行375 の右に 1 列だけ足した標準形が 17 個ある。
+`bms -s` で標準形、`bms -d` で展開を確認済み。ここではまず **#1 `P(1,0,0)`**（平坦・delta 0、
+bad root = 根、展開は `P` の verbatim コピー）を片付ける。 -/
+
+/-- `P` = シート行375 の行列 `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)`。 -/
+def R375m : TrioSeq := R373 ++ [((5, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_col52 : MidD 6 [((5, 2, 0) : ℕ × ℕ × ℕ)] := MidD_col 5 2 (by omega) (by omega)
+
+theorem R375m_mem : R373 ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa [R373, List.append_assoc] using R375_mem
+
+theorem Aok_R375m : Aok R375m :=
+  Aok_append_Mid (d := 6) (by omega) Aok_R373 MidD_col52 R375m_mem
+
+/-- ★ 続き111 #1 `P(1,0,0)`。展開 `[n]` は `P` を `n+1` 個並べたもの（平坦）なので
+`Aok.copies_Bok` で済む。 -/
+theorem R375m_copies_mem (n : ℕ) : copies R375m n ∈ W 0 := (Aok_R375m.copies_Bok n).mem
+
+theorem R375m_ne : R375m ≠ [] := by simp [R375m, R373, R344, R341, R338]
+
+theorem R375m_head : entry R375m 0 0 = 0 := by
+  simp [R375m, R373, R344, R341, R338, entry]
+
+theorem R375m_tail : ∀ r, 1 ≤ r → r < R375m.length → 1 ≤ entry R375m 0 r := by
+  intro r hr1 hrl
+  simp only [R375m, R373, R344, R341, R338, List.length_append, List.length_cons,
+    List.length_nil] at hrl
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+    first
+      | omega
+      | simp [R375m, R373, R344, R341, R338, entry]
+
+theorem R375c_mem : R375m ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, ([] : TrioSeq) ++ (List.range n).flatMap (fun _ => R375m) ∈ W 0 := by
+    intro n
+    simpa [copies] using R375m_copies_mem n
+  have h := flat_mem'' (Y0 := ([] : TrioSeq)) (M := R375m) (d := 1) R375m_ne
+    (by rw [R375m_head]; omega) R375m_tail htw
+  simpa using h
+
+#print axioms R375c_mem
+
+
 end Small
 end TRIO
