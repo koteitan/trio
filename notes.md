@@ -7174,3 +7174,103 @@ mpr at 0::ks → (APd_iff ks (one U V)).mpr → ks の頭が k+1 なら
   文脈経由（`GoodFb_snoc_dupJt` など）なので代替経路が無い
 
 **⇒ 案(v) は却下。**今日閉じたばかりの `AYdK` を壊す。
+
+## 続き128: 引き継ぎ
+
+### 状態
+
+```
+lean/Small.lean   green / sorry なし。**今日一度も触っていない。**
+                  続き111 の #1〜#5 と道具 8 本が入っている
+lean/SmallY.wip   error 0 / sorry 1   本線はこの 1 本
+残る sorry        APd_twoNilPeel の k+1 の場合（実体は k=0 の底 APd_twoNilNestL）
+```
+
+`#print axioms` の状況:
+```
+clean   AYd / AYdT / AYdTK / AYdK / APd_iff / APd_payAll / APd_twoNilGen /
+        APd_twoNilGenW / APnil_gen / AY0 / AYs / AYz / R371_mem / R372_mem …
+汚れ    GOK_all / R373_mem / R373a_mem / R374_mem / R375_mem / hang2rec
+        （すべて残り 1 本の sorry 経由）
+```
+
+### ★ 新しい測度が許さねばならない**唯一の不等式**
+
+```
+APd (i :: (w ++ List.replicate (m+1) L ++ ks)) js[i]      ただし L = js.length > i
+
+出所: APd_twoNilNestL（k=0 の底）が GCtx_repKL を
+      base = List.replicate (m+1) js.length ++ ks で呼ぶ。
+      level i の junk js[i] に、**自分より高い L を含む base** での継続性が要る。
+
+現行: msr (k :: (w ++ ks)) < msr ((k+1) :: ks)  ⟺  w の元が全部 ≤ k
+      （= msr_word。これが上限。実測で確認: base 一様にすると定義自体が
+        通らない ── whnf timeout → APd 未定義 → error 99）
+      なので L > i は許されない。
+```
+**次のセッションは「この 1 本の不等式を許す整礎順序があるか」から始められる。**
+
+`msr` を使う定義は 5 箇所だけ（影響範囲は小さい）:
+```
+APd0 / APd / GCtx / GCtx_CtxOk / APd_iff
+```
+`msr_word` / `msr_grp` / `msr_drop0` はこの 5 つの `decreasing_by` にしか出てこない。
+
+前任の指摘（有効）: 素朴な辞書式は両方向を同時に満たさない。
+`pay` の場合は添字が伸びて木が縮み、`one` の場合は添字が縮んで木が伸びる。
+
+### 潰した迂回路（全部、測定か定義からの導出で確定）
+
+| 案 | 結果 | 決め手 |
+|---|---|---|
+| 旧ガード `TopOk V ∨ N = nil` 復活 | ✗ | `AYdT_hstepK` が供給側に回り `TopOk Z` が要る |
+| 浅いガード `Hd2`（頭の構成子だけ見る） | ✗ | `AYd` が壊れる。`jk1 (pay N Y) = jk1 N ++ …` なので判定は `pay`/`one` を貫通せねばならず、結局 `¬TopOk` と同じ |
+| 枠 junk = nil（案(iv)、置き換え） | ✗ | 鎖 `twoIt N T n` が junk 付きの 2 の記録を要る |
+| 枠 junk = nil（案(iv)、追加） | ✗ | `APd0_cS` も `two nil V` しか作れないので同じ |
+| base 一様 closure | ✗ | **定義が通らない**（実測 error 99、whnf timeout） |
+| closure の族を `≤ b`（b>k）に | ✗ | 同上。`msr_word` が上限 |
+| `nstL`（junk 一般の入れ子） | ✗ | 塔が junk に自分より高い base での継続性を要求 |
+| 目標だけ取る（案(c)） | ✗ | `APd_all` の `two` が base 一様なので `APd_nil` は全形で要る |
+| `GCtx` だけ狭める（案(v)） | ✗ | 同値なら (iv) と同じ。片方向なら `AYdTK` に代替経路が無い |
+| 到達可能性を条件にする | ✗ | `GOK` は「標準形か」ではなく「`W 0` の元を作れるか」。非標準な中間形も要る |
+
+### 次の人が知っておくべき構造的事実（掘り直さないために）
+
+1. **`APd_cS` の `N` は「枠の junk」であると同時に「木の junk」。**
+   `APd_iff` が `plug (ctx' ++ [Frm.ftwo N]) V = plug ctx' (Jk1.two N V)` で両者を繋ぐ。
+   **同じ `N` を裏表で見ているだけ**なので、片方だけ制限できない。
+   → methodology §3（木の条件か枠の条件か）の**例外**。基準が効かない場所。
+2. **鎖は塔を使わない。**`APd_chainT` の `GOK (plug ctx (twoIt N T n))` は
+   `APd_iff` から直接出る。塔（`ctxK` / `snocYd_mem`）が要るのは**頭 0 だけ**
+   （頭 0 では `APd_cS` が使えず `APnil_gen` 経由になる）。
+3. **`APd_twoNilPeel` の帰納段（k ≥ 1）は通る。**k が減り、語の族は連結で閉じる。
+   **詰まっているのは k=0 の底 `APd_twoNilNestL` の 1 点だけ。**
+4. **塔の文脈 `ctxK` / `ctxD` / `ctxE` の `ftwo` 枠はすべて `Jk1.nil`。**
+   困るのは `ctxKL`（`js.map Frm.ftwo`）だけで、それが要るのは
+   peel が junk 入りの入れ子を作るから。
+5. **`APd_all` は全形で呼ばれる**（`two` の場合が `APd_twoK` で base 一様）。
+   だから「目標に要る形だけ」に落とせない。
+6. `AYdT` の `TopOk Z` は死んでいた（`AYdT_hstep` の `hTt` が本体で未使用）。
+   ガード除去とは独立。**未使用仮定は linter ではなく本体を grep して見つけた。**
+
+### 実測データ（再現手順つき）
+
+```
+標準形 8289 個（種 10 個 → bms で 7 段展開、frontier 500 打ち切り）
+判定は jk1 の定義から導出:「高さ y の記録の junk = 直前の row0 ≥ y の極大ブロック」
+
+木の 2 の記録 (y,2,0) の junk の列数:  {0: 10853}          ← 全部 0
+木の 1 の記録 (y,1,0) の junk の列数:  {0: 13969, 2: 1761}
+```
+**標準形では 2 の記録に junk が付かない。**ただし上の表の最終行のとおり、
+これを `APd` に課すことはできない（鎖が非標準な中間形を通る）。
+
+### 使わなくなった資産（消していない。再利用の可能性あり）
+
+```
+APd0 / APd0_bnil / APd0_ct / APd0_cS / APd0_step / APd0_two     案(iv) の名残
+nstL / twoRunL / unitKL / twrKL / ctxKL / gKL / JsOk / JsOk_snoc /
+GCtx_ftwoRepL / hMy_unitKL / twoRunL_rec_row1 / MidD_unitKL /
+wordJ_snoc_twoNKL / wordJ_snoc_plug_twrKL                        junk 一般の入れ子の道具一式
+```
+`nstL` 系は「k=0 の底」以外は全部通っている。測度が変われば**そのまま使える**。
