@@ -8625,3 +8625,38 @@ hcl' : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N'
 ```
 **「新しい道」に見えたものが既存と同型だった、が 3 回**（案(v)、`APzk`、`GOK_one`）。
 `example … ↔ …` で先に確かめると 10 分で分かる。
+
+### 続き131 追記14: `lean/` の試作ファイル対応表（次の人が迷わないように）
+
+```
+lean/Small.lean       21239 行  green / sorry 0   ★本線の成果物。この回で一度も触っていない
+                                                   続き111 の #1〜#5 と道具 8 本が入っている
+lean/SmallY.wip       23443 行  error 0 / sorry 1 ★作業本線。AYdK は全 k で閉じた
+                                                   残る sorry = APd_twoNilPeel の k+1
+                                                   （goal は 続き131 追記12 にそのまま貼ってある）
+```
+試作（すべて `SmallY.wip` の写しに追記したもの。**成果は notes に書き出し済み**）:
+```
+lean/SmallSI.wip      sorry 1   案(iii) step-indexing。APdN / GCtxN / APdN_iff /
+                                GCtxN_repKL / APdN_plug_repKL が clean。
+                                ただし底が APdW（全段数）を要求して合成しない（続き130）
+lean/SmallZ.wip       sorry 1   APzk（枠条件を GOK U に）。APd より強い主張なので採れない（追記9）
+lean/SmallG.wip       sorry 4   GOK_one の検査。GOK_one_of_APz / APz_allJ（穴は one/two）
+lean/SmallC.wip       sorry 1   ★ APd [0] ↔ APz、APd [0,0] ↔ AYz の仮定 を Lean で確認
+                                GOK_one_final も（既存 APd_all の帰結、sorryAx 経由）
+lean/SmallO.wip       sorry 2   APz_allJ の one の goal を trace_state で出したもの
+                                （⊢ APd [0,0] M'、IH より 1 段深い）
+lean/SmallYpay.wip    sorry 1   前の回の試作（fone 枠の荷 closure）。循環して撤回済み
+lean/SmallX.lean      sorry 0   prover1 の古いスナップショット。穴は空虚な Rq だけ（続き121）
+lean/Small.frm.wip / lean/Small.notopok.wip   さらに古い試作
+```
+**捨ててよいもの:** 上の試作はすべて notes に結論が書いてあるので、
+context を圧迫するなら消してよい。**ただし `SmallSI.wip` だけは残す価値がある**
+（段数版の道具一式が clean で通っており、循環が切れれば再利用できる）。
+
+**次の人が最初に開くべきもの:**
+```
+1. notes.md 続き131 追記12   ← 残る sorry の goal そのもの
+2. notes.md 続き131 追記13   ← 潰した候補の一覧（同じ道を掘らないため）
+3. lean/SmallY.wip           ← 作業本線
+```
