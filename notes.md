@@ -4189,3 +4189,21 @@ APd_cS が与えるのは m 固定の閉包だけ。
    `APd_nil` だけ別扱いにする。
 
 **`D(0)`（`APd_twoNilGenW`）自体は通っているので、ここが繋がれば段階2 は終わる。**
+
+### 続き113 追記18: 方向 1（0 挿入の単調性）も自明ではない
+
+`APd ks V → APd (0 :: ks) V` を作ろうとすると循環する:
+
+```
+APd_iff で開くと、GCtx t (0::ks) ctx から ctx = ctx' ++ [fone U]（APd ks U つき）で
+目標は GOK (plug ctx' (one U V))。
+既存の APd_step は「APd ks U かつ APd (0::ks) V ⟹ APd ks (one U V)」なので、
+そこで欲しくなるのが APd (0::ks) V ＝ 示したいものそのもの。
+```
+
+つまり `APd` の形についての単調性は、それ自体が独立の帰納法を要する。
+`APd_oneNil` は `one V nil` の話で別物（`APd_iff` + `APnil_gen` 経由）。
+
+**したがって追記17 の 3 方向はどれもすぐには通らない。ここで引き継ぐ。**
+`D(0)`（`APd_twoNilGenW`）は通っているので、残るのは
+「`APd_nil ((k+1)::ks)` をどう作るか」1 点である。
