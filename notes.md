@@ -3970,3 +3970,23 @@ plug (ctxC N m) X   = one nil (two nil (F^[m] X))
 ```
 
 の 2 本に分けると回る（未実装）。
+
+### 続き113 追記11: `snocYd_mem` の側条件も片付いた（緑）
+
+追記9 で「唯一まだ確かめていない」と書いた `hMy` を証明した。
+
+```lean
+unitC_eq       : unitC N l = [(l+1,1,0), (l+2,2,0)] ++ jk1 (l+2) N          (rfl)
+MidD_unitC     : JkJ N → MidD (l+2) (unitC N l)
+entry_unitC_ge : 2 ≤ t → t < (unitC N l).length → l + 3 ≤ entry (unitC N l) 0 t
+hMy_unitC      : snocYd_mem の hMy（L = l+1, dl = 2, y = 2）
+```
+
+`hMy` が通る理屈: `entry M 0 t < L + dl = l+3` を仮定するので、
+`entry_unitC_ge`（3 列目以降は高さ l+3 以上）から `t ≥ 2` は不可能。
+残る `t = 1` は `(l+2,2,0)` で行 1 = 2 ≥ 2。
+
+これで **`snocYd_mem (dl := 2)` に渡す材料はすべて揃った**:
+`MidD_unitC` / `hMe`（`entry (unitC N l) 1 0 = 1 < 2`）/ `hMy_unitC` / `hy` / `hdl`。
+残るのは塔 `htw : ∀ n, Mtwd 2 Y0 (unitC N l) n ∈ W 0` を
+`GoodFb` の 3 分岐で作ること＝階段（`GCtx_rep` の対版）の設計だけ。
