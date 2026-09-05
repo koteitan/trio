@@ -9721,3 +9721,52 @@ two N M   （M ≠ nil）                  #14 #15 #16 #17
 `OneOk` は「左に伸びる」`one Wt nil` では閉じるが、「右に伸びる」`one nil X` では
 閉じない。右に伸ばすと荷を深さ 2 に吊るす必要があり、そこは `AYs` の
 `∀ V` 量化が 1 段深い文脈で再発する。
+
+### 追記27: 「右に伸びる」を追った結果 — 壁は 1 段ずつ深くなる同じ形
+
+`OneOk (one nil X)`（X ≠ nil）を出そうとして、要るものを最後まで追った。
+
+```
+TwoOk (one U (one nil X)) = GOK (plug D3 X)    D3 = ctx ++ [ftwo N, fone U, fone nil]
+D3 で X を差すのに要る束:
+  PT D3                       ✓（JkA から）
+  GOK (plug D3 nil)           ✓（= TwoOk (one U (one nil nil))、OneOk_oneNilNil）
+  ∀C, GOK (plug D3 (pay nil C))
+     = TwoOk (one U (one nil (pay nil C)))     ← これが「右に伸びる」そのもの
+```
+
+つまり右に 1 段伸ばすたびに、同じ問い（1 段深い荷）が再発する。
+
+**`AYs` の仮定を最小まで測った**（これは収穫）:
+`AYs` が `CtxX ctx X` を使うのは
+```
+(a) hAP X hX hGX          → 「JkA V ∧ GOK (plug D V)」で足りる
+(b) dupJs / innerJs の JkT → PT D で足りる（追記25 で外した）
+(c) GOK_chainJ の CtxX_itJ → JkA_itJ で足りる
+```
+の 3 か所だけ。だから
+```
+AYsQ (PT D) (JkA Z) (hAP : ∀V, JkA V → GOK (plug D V) → GOK (plug D (one V Z)))
+  : ∀Y, Bok Y → ∀V, JkA V → GOK (plug D V) → GOK (plug D (one V (pay Z Y)))
+```
+が書ける（クラスは `JkA ∧ GOK` だけでよく、荷の閉包は要らない。
+鎖の各段の `GOK` は `hstep`＝Y の帰納法の仮定が供給する）。
+
+**それでも詰まる場所**: `hAP` を `Z = nil` で作るには `APnil_gen0` が要り、
+そこで「任意の良い `V` について `∀C, GOK (plug D (pay V C))`」が要る。
+`D = ctx ++ [ftwo N]` ではこれは `TwoOk_pay` で、`TwoOk V`（∀文脈）が要る。
+`GOK (plug D V)`（1 つの文脈だけ）では足りない。
+だからクラスは∀文脈でなければならず、深さ 1 段ごとに新しい∀文脈クラスが要る。
+
+```
+深さ 0  TwoQ  = JkA ∧ TwoOk ∧ (∀C, TwoOk (pay · C))     ✓ 作れた
+深さ 1  ?     = JkA ∧ OneOk ∧ (∀C, OneOk (pay · C))     ← OneOk_pay があるので作れるはず
+深さ k  …                                               ← 一般化が要る
+```
+
+**次の設計課題**: フレーム列 `Us : List Jk1` で添字づけた
+`DeepOk Us X := TwoOk (one U1 (one U2 (... (one Uk X))))` と
+そのクラス `DQ Us U := JkA U ∧ DeepOk Us U` を立て、
+`AYsQ` / `APnil_gen0` の閉包を `Us` について一様に回す。
+`DeepOk Us (one nil X) = DeepOk (Us ++ [nil]) X` は**定義から自明**なので、
+一様化さえできれば「右に伸びる」は自動で取れる。
