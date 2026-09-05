@@ -19888,6 +19888,16 @@ theorem APd_cS (k : ℕ) (ks : List ℕ) (V : Jk1) :
       APd (k :: (w0 ++ ks)) (Jk1.two N V) := by
   rw [APd]
 
+theorem eq_rep_zero_of_le_zero : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) →
+    w = List.replicate w.length 0
+  | [], _ => rfl
+  | (a :: w), h => by
+      have ha : a = 0 := Nat.le_zero.mp (h a (by simp))
+      subst ha
+      rw [List.length_cons, List.replicate_succ]
+      congr 1
+      exact eq_rep_zero_of_le_zero w (fun x hx => h x (by simp [hx]))
+
 theorem rep0_le (m k : ℕ) : ∀ x ∈ List.replicate m 0, x ≤ k :=
   fun x hx => by have := List.eq_of_mem_replicate hx; omega
 
@@ -20949,15 +20959,6 @@ theorem rep_true_cons : ∀ (j : ℕ) (ks : List ℕ),
 /-! ### 2 の記録の鎖と、その上の荷（`AYdT`） -/
 
 /-- 要素がすべて 0 の語は `replicate` である。 -/
-theorem eq_rep_zero_of_le_zero : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) →
-    w = List.replicate w.length 0
-  | [], _ => rfl
-  | (a :: w), h => by
-      have ha : a = 0 := Nat.le_zero.mp (h a (by simp))
-      subst ha
-      rw [List.length_cons, List.replicate_succ]
-      congr 1
-      exact eq_rep_zero_of_le_zero w (fun x hx => h x (by simp [hx]))
 
 theorem APd_chainT {t : Prop} {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
     (hc : GCtx t (0 :: (List.replicate mm 0 ++ ks)) ctx)
@@ -22953,13 +22954,20 @@ theorem APd_twoNilPeel : ∀ (k j : ℕ),
           exact h)
   | (k + 1), j, hnil, ks, N, hN, hcl => by
       rw [APd_cS]
-      intro m N' hN' hcl'
-      -- ★ ここだけが本質的。`hd` を外したので `N'` が `nil` に潰れなくなり、
-      -- 目標が `APd (k :: ks_m) (two N' (nst j (two N nil)))`（N' 任意）になる。
-      -- 以前は `hd : TopOk V ∨ N' = nil` から `N' = nil` が出て
-      -- `nst (j+1) (two N nil)` に一致していた。
-      -- 直すには `nst j`（two nil の入れ子）を「任意の junk を挟む入れ子」に一般化し、
-      -- 塔 `twrK` の単位にもその junk を載せる必要がある。arity ではない。
+      intro w0 hw0 N' hN' hcl'
+      -- ★ 残る唯一の穴。`hd` を外したので `N'` が `nil` に潰れず、
+      -- 目標が `APd (k :: (w0 ++ ks)) (two N' (nst j (two N nil)))`（N' 任意）になる。
+      --
+      -- `nstL`（junk 一般の入れ子）に一般化すれば文は書けて、
+      -- 添字の対応も合う（head k のとき js[i] は level k+i、`JsOk ks js k`）。
+      -- base が `ks → w0 ++ ks` と伸びる分も、語の族が連結で閉じているので通る。
+      --
+      -- **詰まるのは塔の側。**`GCtx_repKL` は `GCtx_ftwoRepL` を
+      -- base `replicate (m+1) js.length ++ ks` で呼ぶので、level i の junk に
+      --     APd (i :: (w ++ replicate (m+1) js.length ++ ks)) js[i]
+      -- を要求する。base に自分より**高い**記録 `js.length > i` が入っており、
+      -- level i の語の族（entries ≤ i）の外側。`nil` なら `APd_nil_head` が
+      -- 任意 base で効くので問題にならなかった。
       sorry
 
 /-- 頭 `k` についての強い帰納法。`nil` 枠はどの形でも項として継げる。 -/
