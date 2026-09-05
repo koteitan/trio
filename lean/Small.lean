@@ -21804,5 +21804,39 @@ theorem R375g7_mem : R375m ++ U375b ∈ W 0 := by
 #print axioms R375g7_mem
 
 
+/-! ### `otwL` を並べる — 続き111 #7 `P(3,0,0)`
+
+`colJ 1 1 otwL = U375b` なので、語 `[otwL, …, otwL]`（`m` 個）はそのまま
+`copies U375b m`。`GOK_otwL` は「どの良い語の右にも」なので `m` について回る。 -/
+
+theorem WOk_replicateT {N : Jk1} (hN : JkT N) (n : ℕ) : WOk (List.replicate n N) := by
+  intro M hM
+  rw [List.eq_of_mem_replicate hM]; exact hN
+
+theorem GoodFb_repl_otwL : ∀ m : ℕ, GoodFb (fun a b => wordJ a b (List.replicate m otwL))
+  | 0 => by simpa using GoodFb_wordJ_nil
+  | (m + 1) => by
+      have h := GOK_otwL (List.replicate m otwL) (WOk_replicateT JkT_otwL m)
+        (GoodFb_repl_otwL m)
+      rwa [← List.replicate_succ'] at h
+
+theorem colJ_otwL_one : colJ 1 1 otwL = U375b := rfl
+
+theorem wordJ_repl_otwL : ∀ m : ℕ, wordJ 1 1 (List.replicate m otwL) = copies U375b m
+  | 0 => rfl
+  | (m + 1) => by
+      rw [List.replicate_succ, wordJ_cons, wordJ_repl_otwL m, copies_succ, colJ_otwL_one]
+
+/-- ★★★★★ 続き111 #7 `P(3,0,0)`。 -/
+theorem R375f7_mem : R375m ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine R375f7_of_step ?_
+  intro n _
+  have h := rowJ_mem_genF Aok_R338 (GoodFb_repl_otwL (n + 1))
+  rw [wordJ_repl_otwL (n + 1), copies_snoc] at h
+  simpa [List.append_assoc] using h
+
+#print axioms R375f7_mem
+
+
 end Small
 end TRIO
