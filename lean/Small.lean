@@ -24867,20 +24867,25 @@ theorem TwoOk_congr {V1 V2 : Jk1} (h : ∀ l, jk1 l V1 = jk1 l V2) (hk : TwoOk V
 def TwoQ (U : Jk1) : Prop :=
   JkA U ∧ TwoOk U ∧ (∀ C : TrioSeq, Bok C → TwoOk (Jk1.pay U C))
 
-theorem TwoQ_one {U : Jk1} (hU : TwoQ U) {Y' : TrioSeq} (hY' : Bok Y')
-    (hprev : TwoOk (Jk1.one U (Jk1.pay Jk1.nil Y'))) :
-    TwoQ (Jk1.one U (Jk1.pay Jk1.nil Y')) :=
-  ⟨⟨hU.1, trivial, hY'⟩, hprev,
-    fun C hC => TwoOk_pay C hC _ ⟨hU.1, trivial, hY'⟩ hprev⟩
+/-- 「`one U ·` の右の子として、2 の記録の直上に置ける」木。 -/
+def OneOk (Wt : Jk1) : Prop := ∀ U : Jk1, TwoQ U → TwoOk (Jk1.one U Wt)
 
-theorem TwoQ_itJ {Y' : TrioSeq} (hY' : Bok Y')
-    (hprev : ∀ U : Jk1, TwoQ U → TwoOk (Jk1.one U (Jk1.pay Jk1.nil Y')))
+theorem OneOk_nil : OneOk Jk1.nil := fun U hU => TwoOk_oneNil hU.1 hU.2.1 hU.2.2
+
+theorem TwoQ_one {U Wt : Jk1} (hU : TwoQ U) (hJW : JkA Wt) {Y' : TrioSeq} (hY' : Bok Y')
+    (hprev : TwoOk (Jk1.one U (Jk1.pay Wt Y'))) :
+    TwoQ (Jk1.one U (Jk1.pay Wt Y')) :=
+  ⟨⟨hU.1, hJW, hY'⟩, hprev,
+    fun C hC => TwoOk_pay C hC _ ⟨hU.1, hJW, hY'⟩ hprev⟩
+
+theorem TwoQ_itJ {Wt : Jk1} (hJW : JkA Wt) {Y' : TrioSeq} (hY' : Bok Y')
+    (hprev : ∀ U : Jk1, TwoQ U → TwoOk (Jk1.one U (Jk1.pay Wt Y')))
     {X : Jk1} (hQX : TwoQ X) :
-    ∀ n : ℕ, TwoQ (itJ (Jk1.pay Jk1.nil Y') n X)
+    ∀ n : ℕ, TwoQ (itJ (Jk1.pay Wt Y') n X)
   | 0 => hQX
   | (n + 1) => by
-      have h := TwoQ_itJ hY' hprev hQX n
-      exact TwoQ_one h hY' (hprev _ h)
+      have h := TwoQ_itJ hJW hY' hprev hQX n
+      exact TwoQ_one h hJW hY' (hprev _ h)
 
 /-- `TwoOk` を 1 つの文脈での `GOK` に落とす。 -/
 theorem TwoOk_GOK {Z : Jk1} (hZ : TwoOk Z) {N : Jk1} (hN : JkA N)
@@ -24897,11 +24902,11 @@ theorem JkT_plug_two {N : Jk1} (hN : JkA N) {ks : List Bool} {ctx : List Frm}
   exact JkT_plug ctx (GCtx_CtxOk _ ctx hc) _
     (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hT⟩) trivial)
 
-/-- ★★★★★ 2 の記録の直上に「junk `V` + 1 の列 + 荷」を置ける。 -/
-theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
-    TwoOk (Jk1.one V (Jk1.pay Jk1.nil Y)) := by
+/-- ★★★★★ `OneOk` は荷で閉じている（`AYs` の `TwoQ` 版）。 -/
+theorem OneOk_pay {Wt : Jk1} (hJW : JkA Wt) (hW : OneOk Wt) :
+    ∀ (Y : TrioSeq), Bok Y → OneOk (Jk1.pay Wt Y) := by
   have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ V : Jk1, TwoQ V →
-      TwoOk (Jk1.one V (Jk1.pay Jk1.nil Y))} := by
+      TwoOk (Jk1.one V (Jk1.pay Wt Y))} := by
     refine A2' ?_
     intro Y hY
     simp only [Set.mem_setOf_eq]
@@ -24910,17 +24915,15 @@ theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
     · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
       · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
         subst hnil0
-        exact TwoOk_congr (fun l => (jk1_one_pay_nil V Jk1.nil l).symm)
-          (TwoOk_oneNil hQV.1 hQV.2.1 hQV.2.2)
+        exact TwoOk_congr (fun l => (jk1_one_pay_nil V Wt l).symm) (hW V hQV)
       · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
         have hc0 : c.1 = 0 := hYb.root
         obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
         have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
         subst hcz
         have hprev : ∀ U : Jk1, TwoQ U →
-            TwoOk (Jk1.one U (Jk1.pay Jk1.nil ([] : TrioSeq))) :=
-          fun U hU => TwoOk_congr (fun l => (jk1_one_pay_nil U Jk1.nil l).symm)
-            (TwoOk_oneNil hU.1 hU.2.1 hU.2.2)
+            TwoOk (Jk1.one U (Jk1.pay Wt ([] : TrioSeq))) :=
+          fun U hU => TwoOk_congr (fun l => (jk1_one_pay_nil U Wt l).symm) (hW U hU)
         have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
             = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
         rw [e]
@@ -24930,10 +24933,10 @@ theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
         rw [← plug_snoc2]
         intro ws hw hG
         refine GoodFb_snoc_dupJs0 hw
-          (JkT_plug_two hN hc ⟨hQV.1, trivial, by simpa using hYb⟩)
+          (JkT_plug_two hN hc ⟨hQV.1, hJW, by simpa using hYb⟩)
           (by simpa using hYb) Bok_nil ?_
         intro n hn
-        exact TwoOk_GOK (TwoQ_itJ Bok_nil hprev hQV n).2.1 hN hNall hc ws hw hG
+        exact TwoOk_GOK (TwoQ_itJ hJW Bok_nil hprev hQV n).2.1 hN hNall hc ws hw hG
     have hlen2 : 2 ≤ Y.length := by omega
     have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
     rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
@@ -24958,7 +24961,7 @@ theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
         rw [hop] at hdl
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hprev : ∀ U : Jk1, TwoQ U → TwoOk (Jk1.one U (Jk1.pay Jk1.nil Y.dropLast)) :=
+        have hprev : ∀ U : Jk1, TwoQ U → TwoOk (Jk1.one U (Jk1.pay Wt Y.dropLast)) :=
           fun U hU => hdl hdb U hU
         rw [hsplit]
         intro N hN hNall j kk
@@ -24967,10 +24970,10 @@ theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
         rw [← plug_snoc2]
         intro ws hw hG
         refine GoodFb_snoc_dupJs0 hw
-          (JkT_plug_two hN hc ⟨hQV.1, trivial, by rw [← hsplit]; exact hYb⟩)
+          (JkT_plug_two hN hc ⟨hQV.1, hJW, by rw [← hsplit]; exact hYb⟩)
           (by rw [← hsplit]; exact hYb) hdb ?_
         intro n hn
-        exact TwoOk_GOK (TwoQ_itJ hdb hprev hQV n).2.1 hN hNall hc ws hw hG
+        exact TwoOk_GOK (TwoQ_itJ hJW hdb hprev hQV n).2.1 hN hNall hc ws hw hG
       · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
             entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
         have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
@@ -24980,7 +24983,7 @@ theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
         rw [← plug_snoc2]
         intro ws hw hG
         refine GoodFb_snoc_innerJs0 hw
-          (JkT_plug_two hN hc ⟨hQV.1, trivial, hYb⟩) hYb hlen2 hp ?_
+          (JkT_plug_two hN hc ⟨hQV.1, hJW, hYb⟩) hYb hlen2 hp ?_
         intro n hn
         have hh := hnat n hn
         simp only [Set.mem_setOf_eq] at hh
@@ -24989,7 +24992,38 @@ theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
   intro Y hYb V hQV
   exact key hYb.mem hYb V hQV
 
-#print axioms TwoOk_onePayNil
+/-- ★★★★★ `OneOk` は「1 の列を 1 段足す」で閉じている。 -/
+theorem OneOk_oneNil {Wt : Jk1} (hJW : JkA Wt) (hW : OneOk Wt) :
+    OneOk (Jk1.one Wt Jk1.nil) := by
+  intro V hQV N hN hNall j kk
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  have hpl : ∀ T : Jk1, plug (ctx ++ [Frm.ftwo N, Frm.fone V]) T
+      = plug (ctx ++ [Frm.ftwo N]) (Jk1.one V T) := by
+    intro T
+    rw [show ctx ++ [Frm.ftwo N, Frm.fone V] = (ctx ++ [Frm.ftwo N]) ++ [Frm.fone V] from by
+      simp, plug_snoc]
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N, Frm.fone V]) (Jk1.one Wt Jk1.nil)) := by
+    rw [hpl]
+    exact JkT_plug_two hN hc ⟨hQV.1, hJW, trivial⟩
+  have hGV : GOK (plug (ctx ++ [Frm.ftwo N, Frm.fone V]) Wt) := by
+    rw [hpl]
+    exact TwoOk_GOK (hW V hQV) hN hNall hc
+  have hang : ∀ C : TrioSeq, Bok C →
+      GOK (plug (ctx ++ [Frm.ftwo N, Frm.fone V]) (Jk1.pay Wt C)) := by
+    intro C hC
+    rw [hpl]
+    exact TwoOk_GOK (OneOk_pay hJW hW C hC V hQV) hN hNall hc
+  have h := APnil_gen0 (ctx ++ [Frm.ftwo N, Frm.fone V]) Wt hJT hGV hang
+  rw [hpl, plug_snoc2] at h
+  exact h
+
+theorem TwoOk_onePayNil : ∀ (Y : TrioSeq), Bok Y → ∀ V : Jk1, TwoQ V →
+    TwoOk (Jk1.one V (Jk1.pay Jk1.nil Y)) :=
+  fun Y hY V hV => OneOk_pay (Wt := Jk1.nil) trivial OneOk_nil Y hY V hV
+
+#print axioms OneOk_pay
+#print axioms OneOk_oneNil
 
 
 
