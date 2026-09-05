@@ -4644,3 +4644,61 @@ closure を書き下している箇所 22
    別の測度が要る。おそらく「木の側の減少」と組む必要がある）。
 3. `AYdK` を `k` の帰納法にして、`k+1` の場合を `k` の場合 + `APd_twoNilNest` 系の
    道具（今回作った `nst` / `twrK` / `ctxK`）で書けないか。
+
+### 続き116 追記2: `AYdK` の壁を 1 点に絞り込んだ（(α) は解決、(β) だけが残る）
+
+追記1 で「base 一様性が要る」と書いたが、**`APd_nilT` 側から見ると要求はもっと狭い**。
+やり直して詰めた結果を書く。
+
+#### `APd_nilT ks`（ks = `(k+1) :: ks''`）を `APd_iff` で開くと
+
+```
+APd (0 :: ks) nil を APd_iff で開く
+  ctx = ctx0 ++ [fone U],  GCtx (TopOk U) ks ctx0,  APd ks U
+  plug ctx nil = plug ctx0 (one U nil)
+  APnil_gen ctx0 … U … (GOK (plug ctx0 U)) (hang)      ← ctx0 は 1 個固定
+    hang : ∀ C, Bok C → GOK (plug ctx0 (pay U C))
+ctx0 は形 (k+1) :: ks'' なので ctx0 = ctx1 ++ [ftwo N₀]
+  N₀ には GCtx_cS から強い closure が付いている ✓
+  plug ctx0 (pay U C) = plug ctx1 (two N₀ (pay U C))
+```
+鎖は `twoIt N₀ (pay U C') n` を **同じ ctx1** で回す。要るのは 2 つ:
+
+- **(α) `APd ((k+1) :: ks'') (pay U C')`** … `ctx1 ++ [ftwo W_n]` を形 `(k+1) :: ks''` の
+  文脈として使うため。base は `ks''` のままで**伸びない**。A2' の IH（C についての帰納法）
+  そのものなので **これは解決している**。
+- **(β) `closure(W_n)`（`APd_cS` 形、`∀ i` 付き）** … `ctx1 ++ [ftwo W_n]` が
+  `GCtx` の意味で良い文脈であることを言うのに要る。
+  `closure(two W_{n-1} T)` を出すには `APd_cS k B T`（B ∈ F(ks'')）が要り、
+  そこで **`APd ((k+1) :: B) T` と base が伸びる**。← **残るのはここだけ**
+
+#### base 伸長は原理的に埋められない（確認済み）
+
+`APd ((k+1) :: ks) V → APd ((k+1) :: (replicate m 0 ++ ks)) V` は**両向きとも出ない**。
+`GCtx_cS` を突き合わせると、
+- 形 `(k+1) :: (replicate m 0 ++ ks)` の文脈は、ftwo junk の closure が
+  「m' ≥ m に制限された分だけ弱い」ので**より多い** → `APd` は**より強い**主張。
+- 逆向きは `GCtx False (k :: (replicate m' 0 ++ ks)) ctx'` の証人 `m'` が固定なので出ない。
+
+必要な base の族を閉じるには `w ++ ks`（`w` は {0, k} 上の任意の語）まで広げる必要があり、
+これは `APd` の測度（`msr` = 多重集合順序、`msr_grp`）には載らない
+（`k ≥ 1` を含む `w` は `msr` を増やす）。
+
+#### `APd_cS` の closure を弱めると (β) は解決するが `APd_twoNilNest` が死ぬ（再確認）
+
+弱形 `∀ m', APd (k :: (replicate m' 0 ++ ks)) N` なら
+`closure(two W T)` は `APd_cS k ks T` そのもので出る（(β) 解決）。
+しかし `APd_twoNilNest` の階段 `ctxK j N m` は `fone N` 枠を使うので
+`APd_ct` が `APd (replicate (m+1) j ++ ks) N` = `APd (j :: (replicate m j ++ ks))` を要求する。
+弱形は `j :: (replicate m' 0 ++ ks)` しか与えない（j の並び vs 0 の並び）。
+**j ≥ 1 では届かない。**
+
+#### まとめ（次の人へ）
+
+```
+AYdK が要求するもの          : ftwo 枠 junk の closure を 0 と k の混在 base で
+APd_twoNilNest が要求するもの : fone 枠 junk の closure を k の並び base で
+APd の測度が許すもの          : replicate i k ++ (k :: (replicate m' 0 ++ ks)) だけ
+```
+この 3 つが両立しない。**コアの測度（`msr`）か、`APd_nilT` の作り方を変えるしかない。**
+マネージャに相談済み（続き116 の時点）。
