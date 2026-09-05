@@ -23504,6 +23504,44 @@ theorem APdS_cS_mp (k : ℕ) (ks : List ℕ) (V : Jk1) (h : APdS ((k + 1) :: ks)
 example (i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdS_all U) :
     APdS (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
 
+
+/-! ### 代案 `APdG`: 形の再帰のまま、junk 条件を**閉じた述語** `APdS_all` にする。
+`APdS_all` は `APdN`（段数の再帰）で既に定義済みなので、`APdG` の再帰呼び出しではない。
+だから「junk 条件が自分を呼ぶ → 形の測度が要る → `msr_word` が上限」の連鎖が切れる。 -/
+
+def APdG : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U : Jk1, FrmJ ks U → APdS_all U → APdG ks (Jk1.one U V)
+  | ((k + 1) :: ks), V => ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
+      APdS_all N → APdG (k :: (w0 ++ ks)) (Jk1.two N V)
+termination_by ks _ => msr ks
+decreasing_by
+  all_goals
+    first
+      | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
+
+theorem APdG_bnil (V : Jk1) : APdG [] V ↔ GOK V := by rw [APdG]
+
+theorem APdG_ct (ks : List ℕ) (V : Jk1) :
+    APdG (0 :: ks) V ↔ ∀ U : Jk1, FrmJ ks U → APdS_all U → APdG ks (Jk1.one U V) := by
+  rw [APdG]
+
+theorem APdG_cS (k : ℕ) (ks : List ℕ) (V : Jk1) :
+    APdG ((k + 1) :: ks) V ↔ ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
+      APdS_all N → APdG (k :: (w0 ++ ks)) (Jk1.two N V) := by
+  rw [APdG]
+
+/-- ★ 塔が要求していた形。`L > i` でも `APdS_all` から出る。 -/
+example (i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdS_all U) (V : Jk1)
+    (h : APdG ((i + 1) :: (w ++ List.replicate (m + 1) L ++ ks)) V)
+    (hw : ∀ x ∈ ([] : List ℕ), x ≤ i) (hJ : JkJ U) :
+    APdG (i :: (w ++ List.replicate (m + 1) L ++ ks)) (Jk1.two U V) := by
+  have := (APdG_cS i (w ++ List.replicate (m + 1) L ++ ks) V).mp h [] hw U hJ hU
+  simpa using this
+
+#print axioms APdG_cS
+
 #print axioms APdS_cS_mp
 #print axioms APdS_bnil
 
