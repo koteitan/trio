@@ -8573,3 +8573,55 @@ APz_allJ の one / two は「1 段深い形」を要求する
 ```
 追記9・10 と合わせて、**`APz` 由来の道（`APzk` / `GOK_one` / `APz_all`）は全部
 既存の `APd` と同じもの**と確定した。
+
+### 続き131 追記12: ★ 残る sorry の goal（そのまま。次の人が最初に見るもの）
+
+`APd_twoNilPeel` の `k+1` の場合。`rw [APd_cS]; intro w0 hw0 N' hN' hcl'` の直後:
+
+```
+k j : ℕ
+hnil : ∀ h < j + (k + 1), ∀ (ks' : List ℕ), APd (h :: ks') Jk1.nil
+ks : List ℕ
+N : Jk1
+hN : JkJ N
+hcl : ∀ (i m : ℕ),
+        APd (List.replicate i (j + (k + 1)) ++ (j + (k + 1)) :: (List.replicate m 0 ++ ks)) N
+w0 : List ℕ
+hw0 : ∀ x ∈ w0, x ≤ k
+N' : Jk1
+hN' : JkJ N'
+hcl' : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N'
+⊢ APd (k :: (w0 ++ ks)) (N'.two (nst j (N.two Jk1.nil)))
+```
+
+**読み方:**
+- `N'` は `APd_cS` の束縛変数（任意の妥当な junk）。`hcl'` は「元が `k` 以下の語」の族のみ。
+- 目標の木は `two N' (nst j (two N nil))` ＝ **junk 入りの入れ子**。
+- ガードがあった頃は `hd : TopOk V ∨ N' = nil` から `N' = nil` が出て
+  `nst (j+1) (two N nil)` に一致し、`APd_twoNilPeel k (j+1)`（k が減る）で閉じていた。
+- ガードは `AYdT_hstepK`（鎖）を壊すので戻せない（続き126・127）。
+
+**この goal を閉じるには `nstL`（junk 一般の入れ子）が要り、その k=0 の底
+`APd_twoNilNestL` が塔を経由し、塔が `js[i]` に
+`APd (i :: (w ++ List.replicate (m+1) L ++ ks)) js[i]`（`L = js.length > i`）を要求する。
+`hcl'` が与えるのは `w` の元が `k` 以下の場合だけ。ここが最後の 1 点。**
+
+### 続き131 追記13: この回の探索の全体像（次の人が同じ道を掘らないために）
+
+```
+壁の推移
+  朝    「(a)(b)(c) が同時に満たせない = 原理的に不可能」（前任の記述）
+  昼    ガードは 5 箇所に重複してどこにも効いていなかった → 除去
+  夕    AYdK が閉じた。壁は msr_word（形の測度の上限）に見えた
+  夜    段数（step-indexing）に替えても同じ循環が再出現
+  最後  循環の正体 = 「底が任意 junk の完全な良さを要求する」
+        APz 由来の道は全部 APd と同型（Lean で確認）
+
+潰した候補（すべて Lean での測定か定義からの導出）
+  旧ガード復活 / 浅いガード Hd2 / 枠 junk = nil（置換・追加）/ base 一様 closure /
+  族を ≤ b に / nstL / 目標だけ取る / GCtx だけ狭める / 到達可能性 /
+  step-indexing（辞書式・純粋の両方）/ 塔を有限に切る /
+  頭より大きい記録を無視する測度 / APzk / GOK_one / APz_all
+```
+**「新しい道」に見えたものが既存と同型だった、が 3 回**（案(v)、`APzk`、`GOK_one`）。
+`example … ↔ …` で先に確かめると 10 分で分かる。
