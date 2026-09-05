@@ -6036,3 +6036,85 @@ hpay : ∀ C, Bok C → APd ks (Jk1.pay V C)      （ctx も ws も全部の上�
 
 **「候補が出たら (B)(D) 両方に当ててから採用する」**——片方だけ通る手は本質を外している
 可能性が高い（マネージャの判定基準。今日の教訓の一般化）。
+
+## 続き123: 引き継ぎ（3 代目の終了時点）
+
+### 検証コマンド
+
+```
+cp /home/koteitan/proofs/trio/lean/SmallY.wip /tmp/SmallYchk.lean
+leanman check --backend lean -C /home/koteitan/proofs/trio/lean /tmp/SmallYchk.lean
+```
+
+### 状態
+
+| ファイル | 状態 |
+|---|---|
+| `lean/Small.lean` | **緑 / sorry なし**。今回一切触っていない |
+| `lean/SmallY.wip` | **error 0 / sorry 2**（`AYdK`, `APd_twoNilPeel`）。**本線 1 本** |
+| `lean/SmallYpay.wip` | 穴(B) の試作（`fone` 枠に荷閉包）。`AYd` の鎖で循環 |
+| `lean/SmallX.lean` | 古いスナップショット。**参考にならない**（追記2）|
+
+### このセッションで通したもの
+
+```
+APd_twoNilGenK の k 一般化（nst / twoRun / unitK / twrK / ctxK / APd_twoNilPeel / APd_nil_head）
+APd_twoK（5 行）
+msr_word ＝ closure の族の真の境界は「要素が k 以下の語」
+APd_chainT2 / AYdT2 / APd_chainTK / AYdTK
+ガードを 5 箇所から全部除去（JkJ / CtxXJ / CtxJ / APd / GCtx）→ 穴(C) 消滅
+  AYdTK : ∀ Y, Bok Y → ∀ k Z, JkJ Z → (∀ ks, APd ((k+1)::ks) Z) → ∀ ks, APd ((k+1)::ks) (pay Z Y)
+nstL 系の道具（nstL / twoRunL / unitKL / twrKL / ctxKL / MidD_unitKL / hMy_unitKL /
+  JsOk / JsOk_snoc / GCtx_ftwoRepL）＋ 固定補題（js = replicate j nil で既存に一致）
+```
+
+### 残る穴は 2 つ。**同型である**
+
+```
+(B) fone 枠の junk が base 一様性を要求するが、語の族が出せない  → AYdK が閉じない
+(D) ftwo 枠の junk が base 一様性を要求するが、語の族が出せない  → APd_twoNilPeel が閉じない
+```
+どちらも原因は同じ:
+**枠が要求できるのは「要素が自分の頭以下の語」を base に前置した形だけ**
+（`msr_word` が測度の上限。続き118 追記1、続き122 追記10）。
+
+**判定基準: 候補が出たら必ず (B)(D) 両方に当ててから採用する。**
+片方だけ通る手は本質を外している可能性が高い。
+
+### 未着手で最有望: `hang` ルート（追記11・12）
+
+`APnil_gen` の `hang` は `snocd_gen` を通じて **`B = TwD d Y n`（その語の塔）にしか
+使われていない**。任意の `Bok C` は要らない。`APd_twoNilNest` が塔を
+`Mtwd` / `snocYd_mem` で直接扱っているので、**同じ機械で `hang` を作れれば
+`APd_payA`（→ `AYdK`）を経由しなくなり、穴(B) の base 一様性が消える。**
+手順は追記12 の 5 段。ただし `Y` が `ws` と枝に依存するので量化子の位置が動く。
+
+### 残りの写し（(D) 待ち）
+
+```
+GCtx_repKL / APd_plug_repKL / APd_twoNilNestL
+→ APd_twoNilPeel の帰納段が閉じる → sorry 1
+```
+道具（`nstL` 系）は全部揃っていて、これらは `GCtx_repK` / `APd_plug_repK` /
+`APd_twoNilNest` の写しになるはず。**(D) が解ければ写すだけ。**
+
+### 学んだこと（後任へ）
+
+1. **写して `leanman check` に error を出させるのが分析より速い。**このセッションで
+   十数回成功。90 行の `AYdT2` も `AYdTK` も一発。分析で「両立しない」と結論していた壁が、
+   写したら 1 行に落ちた。
+2. **「error N 個・全部機械的」は 1 回の測定では分からない。**直し切って緑になるまで判定しない。
+   **本物の error は `.mp` 側（条件を供給する側）に出る。**`unsolved goals` / `no goals` が
+   出たら中を見る。項数・射影・束縛のずれは見なくてよい（追記2）。
+3. **測度 `msr` が縛るのは定義の中の枠条件だけ。**定理の仮定は自由。そして枠条件も
+   「測度が減る形なら何でも」要求できる（`msr_word`）。制約だと思っていたものは
+   「何を要求してよいか」の判定基準だった。
+4. **linter を読む。**「この仮定は効いているか」を疑ったら、まず `leanman check` の出力を
+   `unused variable` で grep する。読むより速く確実（`hZt` で実証）。
+5. **「これを足せば通るはず」で入れた条件は、本当の解が見つかったあとに死んでいることがある。**
+   ガードは 5 箇所に重複していて、どれもどの証明にも効いていなかった。定期的に測る。
+6. **「この変更であの穴も塞がるのでは」と思ったら、まずどちらの枠の話かを見る。**
+   枠が違えば、どれだけ大きな変更でも効かない（穴(B) の測り直しで実証）。
+7. **書く前に対応関係を紙で確かめる。**`js[i]` の水準が `k+i` で peel が保つ、を先に
+   確かめてから書いたので `GCtx_ftwoRepL` が一発で通った（追記9）。
+8. 添字より**構造で定義する**と帰納法が素直になる（`JsOk ks js b`）。
