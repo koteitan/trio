@@ -5127,3 +5127,56 @@ AYdT2 : ∀ Y, Bok Y → ∀ Z, JkJ Z → TopOk Z →
 2. fone 枠に荷閉包を足して APd_nilT を自明にする（穴 B、実測 error 20）
 3. AYdK を AYdK' + APd_all から作る → sorry 0
 ```
+
+## 続き120: `AYdTK`（k 一般）が一発で通った。ただし `N = nil` の枝で JkJ を出る
+
+commit 済み。`AYdTK` は `AYdT2` の sed 置換（`2::ks` → `(k+1)::ks`、`1::…` → `k::…`、
+`≤1` → `≤k`）+ `k` の束縛だけで **error 0 で通った**（写しが 6 回目の成功）。
+
+```lean
+AYdTK : ∀ Y, Bok Y → ∀ k Z, JkJ Z → TopOk Z →
+        (∀ ks, APd ((k+1) :: ks) Z) → ∀ ks, APd ((k+1) :: ks) (Jk1.pay Z Y)   -- 完全に緑
+```
+
+### ★ 残る `N = nil` の枝を bms で実測したら、JkJ の外に出た
+
+`AYdK` の `hd` は `TopOk V ∨ N = nil`。`¬TopOk V`（V の頭が 2 の記録）のときは
+`N = nil` の枝になる。その具体例を測った:
+
+```
+V = two nil nil（¬TopOk）、C = [(0,0,0)]、木 = two nil (pay V C)
+M = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,0,0)
+bms -s M = 1（標準形）
+bms -d M[2] の bad part = (4,2,0)(5,2,0)、bad root 6、delta 0
+M[2] = …(3,1,0)(4,2,0)(5,2,0)(4,2,0)(5,2,0)(4,2,0)(5,2,0)
+```
+木に直すと **`twoIt nil (two nil nil) 3`**。ところが
+```
+JkJ (two W T) = JkJ W ∧ JkJ T ∧ (TopOk T ∨ W = nil)
+```
+で `T = two nil nil` は `¬TopOk`、`W = twoIt nil T (n-1)` は n ≥ 2 で `≠ nil`。
+**つまり鎖の元 `twoIt nil T n` は n ≥ 2 で JkJ でない。**
+
+`APd_chainTK` は `JkJ (twoIt N T n)` を出力に持つ（`hstep` と `JkOk_plug` に要る）ので、
+**`N = nil` かつ `¬TopOk V` の枝は、この鎖の議論では閉じられない。**
+
+これは引き継ぎにあった「`JkJ (two N M)` の `TopOk M` が行376 の壁」がここに顔を出したもの。
+`SmallX.lean`（`JkJ` から `TopOk` を外した版）は逆に
+`APd (false::ks) (two N M)` の 1 個が穴だった、と引き継ぎにある。
+
+### 現状の整理
+
+```
+AYdTK（TopOk Z 付き、base 一様）           緑
+AYdK の TopOk V の枝                       AYdTK でそのまま出る
+AYdK の N = nil ∧ ¬TopOk V の枝            ← JkJ の外に出る。設計判断が要る
+穴 (B)（APd_nilT が base 一様性を出せない） ← 続き118 の「fone 枠に荷閉包」（実測 error 20）
+```
+
+### 次にやるべきこと（設計判断）
+
+1. `¬TopOk V` のとき `APd ((k+1) :: ks) (pay V C)` は**本当に要るか**を確かめる
+   （`APd_all` の `pay V C` の枝で V が `two _ _` になる場合。おそらく要る）
+2. 要るなら、`JkJ` の `TopOk M ∨ N = nil` をどう扱うか。
+   `SmallX.lean` の「`TopOk` を外す」版と、今の「`∨ N = nil`」版のどちらでも
+   穴が 1 個ずつ残っている。両方の穴が同じものか（= `twoIt` の鎖が言語を出る）を見る。
