@@ -5460,3 +5460,47 @@ Or.inr rfl の削除     … hd 引数だったもの / JkJ (two nil X) の第 3
 h.2.2 → 削除、h.2.1 → h.2 … JkJ (two N M) の射影の付け替え
 rcases hd / intro hd の削除 … 束縛が 1 個減ったところ
 ```
+
+### 続き121 追記2: ★ 同じガードは 5 箇所にある。全部外すと error 85（全部機械的）
+
+「2 の記録の直上に 2 の記録を禁じる」ガードは、**同じ内容が 5 つの定義に別々に書いてある**:
+
+```lean
+1. JkJ   | Jk1.two N M          => JkJ N ∧ JkJ M ∧ (TopOk M ∨ N = Jk1.nil)
+2. CtxXJ | [Frm.ftwo N], X      => JkJ X ∧ (TopOk X ∨ N = Jk1.nil)
+3. CtxJ  | (Frm.ftwo N :: rest) => JkJ N ∧ (HdT rest ∨ N = Jk1.nil) ∧ CtxJ rest
+4. APd   | ((k+1) :: ks), V     => ∀ m N, JkJ N → (TopOk V ∨ N = Jk1.nil) → …
+5. GCtx  | t, ((k+1) :: ks), ctx => … ∧ (t ∨ N = Jk1.nil) ∧ …
+（+ 言い換え APd_cS / APd_cf / GCtx_cS / GCtx_cf）
+```
+`CtxOk` にはガードが無い（触らない）。`TopOk` 自体は `jk1_appJ` に本当に要るので残す。
+
+**5 つ全部外したときの error 推移**（`/tmp` に各段階を残した）:
+```
+手 1〜3 のみ                       79 → 一括置換で 68   /tmp/SmallW3-68err.lean
++ 手 4（CtxXJ）                    77                    /tmp/SmallW3-77err.lean
++ 手 5（CtxJ）                     85                    /tmp/SmallW3-85err.lean
+```
+**増えるのは正常**（ガードを外すたび、それまでガードで埋まっていた場所が露出する）。
+error の種類は最後まで機械的:
+```
+22 ⟨…⟩ の項数   9 fields 不足   9 引数の型不一致   8 projection
+ 7 no goals     6 rcases        5 型不一致        3 unsolved  3 rewrite  3 introN
+```
+**「証明が通らなくなった」種類は、5 手すべて入れた後も 1 個も無い。**
+
+#### 副産物: `GCtx` の第 1 引数 `t` が完全に不要になる
+
+手 5 まで入れると `GCtx` は `t` を一切使わない。だから
+`GCtx_mono` / `GCtx_ct_any` は恒等写像になり、`hd` / `Or.inl` / `Or.inr` の
+持ち回りがコード全体から消える。**最終的にはコードは短くなる。**
+
+#### 次の人へ
+
+`/tmp/SmallW3-85err.lean` から site ごとに潰す。潰す内容は 4 種類だけ:
+```
+⟨…, Or.inl …⟩ / ⟨…, Or.inr rfl⟩ の第 3 成分を削る
+h.2.2 → 削除、h.2.1 → h.2（JkJ / CtxJ の射影の付け替え）
+intro / rcases / rintro から hd を 1 個減らす
+GCtx_mono / GCtx_ct_any の呼び出しを消す（恒等になるので）
+```
