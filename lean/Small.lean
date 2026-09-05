@@ -24115,5 +24115,107 @@ theorem R375s4_mem : R375s ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375s4_mem
 
 
+
+/-! ### `S(2,2,0)`: `U375a1` を台座に依らないセグメントにする -/
+
+theorem hang5_seg {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {s : ℕ} {A' : TrioSeq}
+    (hA' : LwB P s A') {B : TrioSeq} (hB : Bok B) :
+    (A' ++ shiftr01 s 0 U375a) ++ shiftr01 (5 + s) 0 B ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [NQB B])) :=
+    GOK_NQB hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [NQB B]) := by simpa using hG
+  have h := (hG'.seg 0).reapp P hP s A' (by simpa using hA')
+  rw [show ((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (0 + 1) 1 [NQB B]
+      = U375a ++ shiftr01 5 0 B from by
+        rw [wordJ_singleton, colJ, jk1_NQB B 2]; simp [U375a],
+    shiftr01_append0, shiftr01_add0] at h
+  simpa [List.append_assoc] using h
+
+theorem Aok_seg_U375a {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {s : ℕ} {A' : TrioSeq}
+    (hA' : LwB P s A') : Aok (A' ++ shiftr01 s 0 U375a) := by
+  have hmem : A' ++ shiftr01 s 0 U375a ∈ W 0 := by
+    have h := hang5_seg hP hA' Bok_nil
+    simpa [shiftr01] using h
+  exact Aok_append_Mid (d := 2 + s) (by omega) (LwB_Aok hP hA')
+    (MidD_shift MidD_U375a s) hmem
+
+theorem Ancd_seg_U375a {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {s : ℕ} {A' : TrioSeq}
+    (hA' : LwB P s A') : Ancd (5 + s) (A' ++ shiftr01 s 0 U375a) := by
+  have hne : A' ≠ [] := (LwB_Aok hP hA').ne
+  have h1 : Ancd (s + 1) A' := LwB_Ancd hP hA'
+  have m1 : MidD (s + 1 + 1) (shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ)]) := by
+    have h := MidD_shift (MidD_one 1 (by omega)) s
+    rwa [show 1 + 1 + s = s + 1 + 1 from by omega] at h
+  have h2 := Ancd_append_Mid hne h1 m1
+  have m2 : MidD (s + 1 + 1 + 1) (shiftr01 s 0 [((2, 2, 1) : ℕ × ℕ × ℕ)]) := by
+    have h := MidD_shift MidD_c221 s
+    rwa [show 3 + s = s + 1 + 1 + 1 from by omega] at h
+  have h3 := Ancd_append_Mid (by simp [hne]) h2 m2
+  have m3 : MidD (s + 1 + 1 + 1 + 1) (shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ)]) := by
+    have h := MidD_shift (MidD_one 3 (by omega)) s
+    rwa [show 3 + 1 + s = s + 1 + 1 + 1 + 1 from by omega] at h
+  have h4 := Ancd_append_Mid (by simp [hne]) h3 m3
+  have m4 : MidD (s + 1 + 1 + 1 + 1 + 1) (shiftr01 s 0 U375d) := by
+    have h := MidD_shift MidD_U375d s
+    rwa [show 5 + s = s + 1 + 1 + 1 + 1 + 1 from by omega] at h
+  have h5 := Ancd_append_Mid (by simp [hne]) h4 m4
+  have e : A' ++ shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 s 0 [((2, 2, 1) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 s 0 U375d
+      = A' ++ shiftr01 s 0 U375a := by
+    rw [show U375a = [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]
+        ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ++ U375d from by simp [U375a, U375d],
+      shiftr01_append0, shiftr01_append0, shiftr01_append0]
+    simp [List.append_assoc]
+  rw [e] at h5
+  rwa [show s + 1 + 1 + 1 + 1 + 1 = 5 + s from by omega] at h5
+
+theorem tw5_seg {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {s : ℕ} {A' : TrioSeq}
+    (hA' : LwB P s A') : ∀ n : ℕ, TwD (5 + s) (A' ++ shiftr01 s 0 U375a) n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      have hY := Aok_seg_U375a hP hA'
+      exact hang5_seg hP hA' ⟨tw5_seg hP hA' n, TwD_zroot (by omega) hY.zroot n,
+        TwD_mono hY.mono n, TwD_root hY.ne hY.deep.1 n⟩
+
+/-- ★★ `U375a1` は台座に依らないセグメント。 -/
+theorem SegA_U375a1 : SegA 0 U375a1 where
+  mid := MidD_U375a1
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro P hP s A' hA'
+    have hA'' : LwB P s A' := by simpa using hA'
+    have hY := Aok_seg_U375a hP hA''
+    have h := snocd_mem (Y := A' ++ shiftr01 s 0 U375a) (d := 5 + s) (by omega)
+      hY.ne hY.deep hY.zroot (Ancd_seg_U375a hP hA'') (tw5_seg hP hA'')
+    have e : shiftr01 s 0 U375a1 = shiftr01 s 0 U375a ++ [((5 + s, 1, 0) : ℕ × ℕ × ℕ)] := by
+      rw [U375a1, shiftr01_append0, shift_col]
+    rw [e]
+    simpa [List.append_assoc] using h
+
+/-- ★★★★★ `S(2,2,0)`。 -/
+theorem R375s5_mem : R375s ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := R338) (M := U375a1)
+    (SegA_toSegB SegA_U375a1 BaseOk_P0) (LwB_of_base ⟨Aok_R338, rfl⟩)
+  rw [← R375s_eq2] at h
+  simpa using h
+
+#print axioms R375s5_mem
+
+
+
+/-! ### 隙間埋め: `X(0,0,0)`（新しい根を 1 本足すだけ。`sum_Bok`） -/
+
+theorem R375f0_mem : R375m ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  sum_Bok Aok_R375m Bok_zero
+
+theorem R375q0_mem : R375q ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  sum_Bok Aok_R375q Bok_zero
+
+#print axioms R375f0_mem
+#print axioms R375q0_mem
+
+
 end Small
 end TRIO

@@ -9576,3 +9576,32 @@ two M' (one A B)   X ++ unN M' D ++ jk1 (D+1) A ++ (D+2,1,0) :: jk1 (D+2) B
 `snocYd_mem` の結論 `(Y0 ++ M) ++ [(L+dl,y,0)]` を
 `(Y0 ++ M) ++ [(L+dl,y,0)] ++ S` にする（`S` は上に乗る木の列）。
 `AY0` / `AYs` は `S` が `Bok` の荷のときの版なので、その `S` を木に広げる形。
+
+### 追記23: `S = P(5,1,0)` の上を 6 本。`hang5` の台座を一般化しただけ
+
+`bms -s` で `S ++ c` が標準形になる `c` は 17 個。うち 6 個が今の道具で通る。
+
+```
+S(0,0,0)  sum_Bok Aok_S Bok_zero（新しい根を 1 本）
+S(1,0,0)  flat_mem'' + copies S n
+S(1,1,0)  Lv_snoc
+S(2,0,0)  flat_of_chain (Y0 = R338, M = U375a1, d = 2)
+S(2,1,0)  LvB_snoc（LvB P0 1 1 S）
+S(2,2,0)  SegB_snoc2（SegA 0 U375a1）
+```
+
+道具は 1 つだけ足した:
+```
+hang5_gen (Aok A) (Bok B) : A ++ U375a ++ B↑5 ∈ W 0
+   = hang5_R375m の台座 R338 を任意の Aok A にしただけ（rowJ_mem_genF が元々一般）
+U375a1 = U375a ++ (5,1,0)
+U375a1_mem_gen (Aok A) : A ++ U375a1 ∈ W 0    ← snocd_mem (d=5) + tw5_gen
+SegA_U375a1                                    ← 上の s シフト版（hang5_seg / Ancd_seg / tw5_seg）
+```
+
+隙間埋め: `P(0,0,0)` `Q(0,0,0)` も `sum_Bok` で 1 行ずつ。
+
+**`S` の残り 11 個は全部同じ壁**（測った）。`S` の字は
+`NS = one nil (two nil (one (two nil nil) nil))` で、`one (two nil nil) nil` が
+`two nil ·` の右の子＝`TwoOk (one (two nil nil) nil)` が要る（追記22 の `TwoOk_one`）。
+`(5,1,0)` は `(5,2,0)` の兄弟なので、どの読み方でもこの形になる。
