@@ -6783,3 +6783,33 @@ methodology §3 の判定基準は正しいが、**`APd` の `N` はどちらで
 （`GoodFb_snoc_dupJt`）にある。**junk 入りの 2 の記録の入れ子は、鎖の技法だけで
 `APd` が作れる。**`APd_twoNilNest`（頭 0）が塔を要るのは、頭 0 では `APd_cS` が
 使えず `APnil_gen` 経由になるため。
+
+### 続き127 追記1: 案(c)（目標だけ取る）も不可。`APd_all` は全形を要求する
+
+`APd_all` の `two` の場合が決定的:
+```lean
+| Jk1.two N M, h, (k+1) :: ks' => APd_twoK k ks' N M h
+    (fun ks'' hne'' => APd_all N h.1 ks'' hne'' trivial)   -- ★ 全 ks''
+    (fun ks'' hne'' => APd_all M h.2 ks'' hne'' trivial)   -- ★ 全 ks''
+```
+`APd_twoK` は base 一様仮定なので、`APd_all` は**どの形でも**呼ばれる。
+さらに `one` の場合は `APd_all B (0 :: ks)`、`two` の頭 0 の場合は
+`APd_all M (1 :: ks')` と**頭が増える**。したがって
+`APd_nil ks` は有限個の形に落ちない。**#17 だけ取る、はできない。**
+
+### まとめ: 残る 1 本を塞ぐには測度を変えるしかない（3 方向から確認）
+
+```
+1. 定義の再帰呼び出しは msr で減る必要がある
+     msr (k :: (w ++ ks)) < msr ((k+1) :: ks)  ⟺  w の元が全部 ≤ k    （msr_word）
+   → junk に「自分より高い base での継続性」は要求できない（実測: 定義が通らない）
+2. 塔（APd_twoNilNestL、k=0 の底）はまさにそれを要求する
+3. 迂回路は全部塞がった: ガード復活 ✗ / 浅いガード ✗ / 枠 junk = nil ✗ /
+   base 一様 closure ✗ / 目標だけ取る ✗
+```
+**`APd_twoNilPeelL` の帰納段は通る。詰まるのは k=0 の底 1 点だけ。**
+そこは `APnil_gen` 経由で塔を要り、塔が `GCtx_repKL` を
+base `replicate (m+1) js.length ++ ks` で呼ぶ。
+
+次に試すなら測度そのもの（案(iii)）。Colex 多重集合を、
+「形の記号列」ではなく「塔の段数も込みの順序」に替えられるかを見る。
