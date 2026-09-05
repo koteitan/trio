@@ -19779,6 +19779,33 @@ theorem msr_grp (k i m : ℕ) (ks : List ℕ) :
     have h2 : ¬ ((0 : ℕ) = k + 1) := by omega
     simp [cntf_append, cntf_cons, cntf_replicate, Finsupp.single_apply, h1, h2]
 
+/-- 要素がすべて `j` 未満の語には `j` が現れない。 -/
+theorem cntf_apply_zero_of_all_lt : ∀ (w : List ℕ) (j : ℕ), (∀ x ∈ w, x < j) → cntf w j = 0
+  | [], j, _ => by simp [cntf]
+  | (a :: w), j, h => by
+      have ha : a < j := h a (by simp)
+      have hw : ∀ x ∈ w, x < j := fun x hx => h x (by simp [hx])
+      rw [cntf_cons]
+      simp [Finsupp.single_apply, Nat.ne_of_lt ha, cntf_apply_zero_of_all_lt w j hw]
+
+/-- ★ `msr_grp` の真の一般化。`msr` は colex なので、`k+1` を 1 個消して
+**`k` 以下の要素を好きなだけ足す**と減る。`replicate i k ++ replicate m' 0` は
+その特別な場合にすぎない。語の族は連結について閉じている。 -/
+theorem msr_word (k : ℕ) (w ks : List ℕ) (hw : ∀ x ∈ w, x ≤ k) :
+    msr (k :: (w ++ ks)) < msr ((k + 1) :: ks) := by
+  rw [msr, msr, Finsupp.Colex.lt_iff]
+  refine ⟨k + 1, ?_, ?_⟩
+  · intro j hj
+    have h1 : ¬ (k = j) := by omega
+    have h3 : ¬ (k + 1 = j) := by omega
+    have hz : cntf w j = 0 :=
+      cntf_apply_zero_of_all_lt w j (fun x hx => by have := hw x hx; omega)
+    simp [cntf_append, cntf_cons, Finsupp.single_apply, h1, h3, hz]
+  · have h1 : ¬ (k = k + 1) := by omega
+    have hz : cntf w (k + 1) = 0 :=
+      cntf_apply_zero_of_all_lt w (k + 1) (fun x hx => by have := hw x hx; omega)
+    simp [cntf_append, cntf_cons, Finsupp.single_apply, h1, hz]
+
 /-- 枠木に要る種類。一番外（`ks = []`）は字、内側は junk。 -/
 def FrmJ : List ℕ → Jk1 → Prop
   | [], U => JkOk U
@@ -19811,13 +19838,14 @@ def APd : List ℕ → Jk1 → Prop
   | [], V => GOK V
   | (0 :: ks), V => ∀ U : Jk1, FrmJ ks U → Rq ks U → APd ks U → APd ks (Jk1.one U V)
   | ((k + 1) :: ks), V => ∀ (m : ℕ) (N : Jk1), JkJ N → (TopOk V ∨ N = Jk1.nil) →
-      (∀ (i m' : ℕ), APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) N) →
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N) →
       APd (k :: (List.replicate m 0 ++ ks)) (Jk1.two N V)
 termination_by ks _ => msr ks
 decreasing_by
   all_goals
     first
       | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
       | exact msr_grp _ _ _ _
       | exact msr_grp _ 0 _ _
 
@@ -19830,7 +19858,7 @@ theorem APd_ct (ks : List ℕ) (V : Jk1) :
 /-- 2 の記録のフレームを 1 枚はがす（一般形）。 -/
 theorem APd_cS (k : ℕ) (ks : List ℕ) (V : Jk1) :
     APd ((k + 1) :: ks) V ↔ ∀ (m : ℕ) (N : Jk1), JkJ N → (TopOk V ∨ N = Jk1.nil) →
-      (∀ (i m' : ℕ), APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) N) →
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N) →
       APd (k :: (List.replicate m 0 ++ ks)) (Jk1.two N V) := by
   rw [APd]
 
@@ -19839,7 +19867,7 @@ theorem APd_cf (ks : List ℕ) (V : Jk1) :
     APd (1 :: ks) V ↔ ∀ (m : ℕ) (U N : Jk1),
       FrmJ (List.replicate m 0 ++ ks) U → Rq (List.replicate m 0 ++ ks) U →
       APd (List.replicate m 0 ++ ks) U → JkJ N → (TopOk V ∨ N = Jk1.nil) →
-      (∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks))) N) →
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N) →
       APd (List.replicate m 0 ++ ks) (Jk1.one U (Jk1.two N V)) := by
   rw [APd_cS 0 ks V]
   constructor
@@ -19858,12 +19886,13 @@ def GCtx : Prop → List ℕ → List Frm → Prop
   | t, ((k + 1) :: ks), ctx => ∃ (m : ℕ) (ctx' : List Frm) (N : Jk1),
       ctx = ctx' ++ [Frm.ftwo N] ∧ (t ∨ N = Jk1.nil) ∧
       GCtx False (k :: (List.replicate m 0 ++ ks)) ctx' ∧ JkJ N ∧
-      (∀ (i m' : ℕ), APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) N)
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N)
 termination_by _ ks _ => msr ks
 decreasing_by
   all_goals
     first
       | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
       | exact msr_grp _ _ _ _
       | exact msr_grp _ 0 _ _
 
@@ -19878,7 +19907,7 @@ theorem GCtx_cS (t : Prop) (k : ℕ) (ks : List ℕ) (ctx : List Frm) :
     GCtx t ((k + 1) :: ks) ctx ↔ ∃ (m : ℕ) (ctx' : List Frm) (N : Jk1),
       ctx = ctx' ++ [Frm.ftwo N] ∧ (t ∨ N = Jk1.nil) ∧
       GCtx False (k :: (List.replicate m 0 ++ ks)) ctx' ∧ JkJ N ∧
-      (∀ (i m' : ℕ), APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) N) := by
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N) := by
   rw [GCtx]
 
 /-- 旧 `false` 形（= `1 :: ks`）の言い換え。 -/
@@ -19888,7 +19917,7 @@ theorem GCtx_cf (t : Prop) (ks : List ℕ) (ctx : List Frm) :
       GCtx (TopOk U) (List.replicate m 0 ++ ks) ctx' ∧
       FrmJ (List.replicate m 0 ++ ks) U ∧ Rq (List.replicate m 0 ++ ks) U ∧
       APd (List.replicate m 0 ++ ks) U ∧ JkJ N ∧
-      (∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks))) N) := by
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N) := by
   rw [GCtx_cS t 0 ks ctx]
   constructor
   · rintro ⟨m, ctx1, N, rfl, hd, hc, hN, hNt⟩
@@ -19972,6 +20001,7 @@ decreasing_by
   all_goals
     first
       | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
       | exact msr_grp _ _ _ _
       | exact msr_grp _ 0 _ _
 
@@ -20017,6 +20047,7 @@ decreasing_by
   all_goals
     first
       | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
       | exact msr_grp _ _ _ _
       | exact msr_grp _ 0 _ _
 
@@ -20872,25 +20903,38 @@ theorem rep_true_cons : ∀ (j : ℕ) (ks : List ℕ),
 
 /-! ### 2 の記録の鎖と、その上の荷（`AYdT`） -/
 
+/-- 要素がすべて 0 の語は `replicate` である。 -/
+theorem eq_rep_zero_of_le_zero : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) →
+    w = List.replicate w.length 0
+  | [], _ => rfl
+  | (a :: w), h => by
+      have ha : a = 0 := Nat.le_zero.mp (h a (by simp))
+      subst ha
+      rw [List.length_cons, List.replicate_succ]
+      congr 1
+      exact eq_rep_zero_of_le_zero w (fun x hx => h x (by simp [hx]))
+
 theorem APd_chainT {t : Prop} {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
     (hc : GCtx t (0 :: (List.replicate mm 0 ++ ks)) ctx)
     {N T : Jk1}
     (hN : JkJ N)
-    (hNall : ∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks))) N)
+    (hNall : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N)
     (hT : JkJ T) (hTop : TopOk T)
     (hstep : ∀ N' : Jk1, JkJ N' →
-      (∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks))) N') →
-      ∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks)))
-        (Jk1.two N' T)) :
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N') →
+      ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) (Jk1.two N' T)) :
     ∀ n, GOK (plug ctx (twoIt N T n)) ∧ JkJ (twoIt N T n) ∧
-      (∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks)))
-        (twoIt N T n))
-  | 0 => ⟨(APd_iff (0 :: (List.replicate mm 0 ++ ks)) N).mp (by simpa using hNall 0 mm) ctx
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) (twoIt N T n))
+  | 0 => ⟨(APd_iff (0 :: (List.replicate mm 0 ++ ks)) N).mp
+            (hNall (List.replicate mm 0)
+              (fun x hx => by have := List.eq_of_mem_replicate hx; omega)) ctx
             (GCtx_ct_any hc), hN, hNall⟩
   | (n + 1) => by
       obtain ⟨-, h2, h3⟩ := APd_chainT mm hc hN hNall hT hTop hstep n
       have h4 := hstep (twoIt N T n) h2 h3
-      exact ⟨(APd_iff (0 :: (List.replicate mm 0 ++ ks)) _).mp (by simpa using h4 0 mm) ctx
+      exact ⟨(APd_iff (0 :: (List.replicate mm 0 ++ ks)) _).mp
+          (h4 (List.replicate mm 0)
+            (fun x hx => by have := List.eq_of_mem_replicate hx; omega)) ctx
           (GCtx_ct_any hc), ⟨h2, hT, Or.inl hTop⟩, h4⟩
 
 /-- `false` 形の中身を、外側の文脈に対する主張に直す。 -/
@@ -20906,16 +20950,12 @@ theorem APd_two_of_ctx {kk : List ℕ} {U N V : Jk1}
 /-- 鎖の一歩。`APd (1 :: ks) T` を、深さ `m` の枠で具体化する。 -/
 theorem AYdT_hstep {ks : List ℕ} {T : Jk1} (hTt : TopOk T) (hTk : APd (1 :: ks) T) :
     ∀ N' : Jk1, JkJ N' →
-      (∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks))) N') →
-      ∀ (j m' : ℕ), APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks)))
-        (Jk1.two N' T) := by
-  intro N' hN' hN'all j m'
-  have e : List.replicate j 0 ++ (List.replicate m' 0 ++ ks)
-      = List.replicate (j + m') 0 ++ ks := rep_norm j m' ks
-  rw [rep_true_cons, APd_ct]
-  intro U' hU' hR' hU'k
-  rw [e] at hU' hR' hU'k ⊢
-  exact (APd_cf ks T).mp hTk (j + m') U' N' hU' hR' hU'k hN' (Or.inl hTt) hN'all
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N') →
+      ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) (Jk1.two N' T) := by
+  intro N' hN' hN'all w hw
+  obtain ⟨n, rfl⟩ : ∃ n, w = List.replicate n 0 :=
+    ⟨w.length, eq_rep_zero_of_le_zero w hw⟩
+  exact (APd_cS 0 ks T).mp hTk n N' hN' (Or.inl hTt) hN'all
 
 /-- ★★★ 2 の記録の直上に置ける木に、さらに `Bok` の荷を吊るせる。 -/
 theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z → TopOk Z →
@@ -21035,60 +21075,64 @@ theorem APd_chainT2 {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
     (hc : GCtx False (1 :: (List.replicate mm 0 ++ ks)) ctx)
     {N T : Jk1}
     (hN : JkJ N)
-    (hNall : ∀ (j m' : ℕ), APd (List.replicate j 1 ++ (1 :: (List.replicate m' 0 ++ ks))) N)
+    (hNall : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) N)
     (hT : JkJ T) (hTop : TopOk T)
     (hstep : ∀ N' : Jk1, JkJ N' →
-      (∀ (j m' : ℕ), APd (List.replicate j 1 ++ (1 :: (List.replicate m' 0 ++ ks))) N') →
-      ∀ (j m' : ℕ), APd (List.replicate j 1 ++ (1 :: (List.replicate m' 0 ++ ks)))
-        (Jk1.two N' T)) :
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) N') →
+      ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) (Jk1.two N' T)) :
     ∀ n, GOK (plug ctx (twoIt N T n)) ∧ JkJ (twoIt N T n) ∧
-      (∀ (j m' : ℕ), APd (List.replicate j 1 ++ (1 :: (List.replicate m' 0 ++ ks)))
-        (twoIt N T n))
-  | 0 => ⟨(APd_iff (1 :: (List.replicate mm 0 ++ ks)) N).mp (by simpa using hNall 0 mm) ctx
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) (twoIt N T n))
+  | 0 => ⟨(APd_iff (1 :: (List.replicate mm 0 ++ ks)) N).mp
+            (hNall (List.replicate mm 0)
+              (fun x hx => by have := List.eq_of_mem_replicate hx; omega)) ctx
             (GCtx_mono False _ _ _ (fun h => h.elim) hc), hN, hNall⟩
   | (n + 1) => by
       obtain ⟨-, h2, h3⟩ := APd_chainT2 mm hc hN hNall hT hTop hstep n
       have h4 := hstep (twoIt N T n) h2 h3
-      exact ⟨(APd_iff (1 :: (List.replicate mm 0 ++ ks)) _).mp (by simpa using h4 0 mm) ctx
+      exact ⟨(APd_iff (1 :: (List.replicate mm 0 ++ ks)) _).mp
+          (h4 (List.replicate mm 0)
+            (fun x hx => by have := List.eq_of_mem_replicate hx; omega)) ctx
           (GCtx_mono False _ _ _ (fun h => h.elim) hc), ⟨h2, hT, Or.inl hTop⟩, h4⟩
 
-/-- 鎖の一歩（k = 1）。`APd (2 :: ks) T` を、深さ `m` の枠で具体化する。 -/
-theorem AYdT_hstep2 {ks : List ℕ} {T : Jk1} (hTt : TopOk T) (hTk : APd (2 :: ks) T) :
+/-- 鎖の一歩（k = 1）。`T` は base について一様であることを要求する
+（語の族は連結で閉じているので、これで鎖の不変量が保てる）。 -/
+theorem AYdT_hstep2 {ks : List ℕ} {T : Jk1} (hTt : TopOk T)
+    (hTk : ∀ B : List ℕ, APd (2 :: B) T) :
     ∀ N' : Jk1, JkJ N' →
-      (∀ (j m' : ℕ), APd (List.replicate j 1 ++ (1 :: (List.replicate m' 0 ++ ks))) N') →
-      ∀ (j m' : ℕ), APd (List.replicate j 1 ++ (1 :: (List.replicate m' 0 ++ ks)))
-        (Jk1.two N' T) := by
-  intro N' hN' hN'all j m'
-  rw [rep_one_cons]
-  -- ★ ここだけが通らない。`APd_cS 1 ks T` は base `ks` の上でしか
-  -- `APd (1 :: (replicate m 0 ++ ks)) (two N' T)` を出さない。goal は base が
-  -- `replicate j 1 ++ (replicate m' 0 ++ ks)` に伸びている（j ≥ 1 のとき）。
-  --   得られる型: APd (1 :: (List.replicate m' 0 ++ ks)) (N'.two T)
-  --   要る型    : APd (1 :: (List.replicate j 1 ++ (List.replicate m' 0 ++ ks))) (N'.two T)
-  -- j = 0 なら `exact (APd_cS 1 ks T).mp hTk m' N' hN' (Or.inl hTt) hN'all` で閉じる。
-  sorry
+      (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) N') →
+      ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) (Jk1.two N' T) := by
+  intro N' hN' hN'all w hw
+  have h := (APd_cS 1 (w ++ ks) T).mp (hTk (w ++ ks)) 0 N' hN' (Or.inl hTt)
+    (fun w' hw' => by
+      have h2 := hN'all (w' ++ w) (by
+        intro x hx
+        rcases List.mem_append.mp hx with hh | hh
+        · exact hw' x hh
+        · exact hw x hh)
+      simpa [List.append_assoc] using h2)
+  simpa using h
 
 /-- ★★★ `AYdT` の k = 1 版。 -/
-theorem AYdT2 : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z → TopOk Z →
-    APd (2 :: ks) Z → APd (2 :: ks) (Jk1.pay Z Y) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z → TopOk Z →
-      APd (2 :: ks) Z → APd (2 :: ks) (Jk1.pay Z Y)} := by
+theorem AYdT2 : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkJ Z → TopOk Z →
+    (∀ ks : List ℕ, APd (2 :: ks) Z) → ∀ ks : List ℕ, APd (2 :: ks) (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkJ Z → TopOk Z →
+      (∀ ks : List ℕ, APd (2 :: ks) Z) → ∀ ks : List ℕ, APd (2 :: ks) (Jk1.pay Z Y)} := by
     refine A2' ?_
     intro Y hY
     simp only [Set.mem_setOf_eq]
-    intro hYb ks Z hZ hZt hZk
+    intro hYb Z hZ hZt hZk ks
     by_cases hshort : Y.length ≤ 1
     · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
       · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
         subst hnil0
-        exact APd_congr (2 :: ks) (fun l => (jk1_pay_nil l Z).symm) id hZk
+        exact APd_congr (2 :: ks) (fun l => (jk1_pay_nil l Z).symm) id (hZk ks)
       · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
         have hc0 : c.1 = 0 := hYb.root
         obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
         have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
         subst hcz
-        have hZnil : APd (2 :: ks) (Jk1.pay Z ([] : TrioSeq)) :=
-          APd_congr (2 :: ks) (fun l => (jk1_pay_nil l Z).symm) id hZk
+        have hZnil : ∀ B : List ℕ, APd (2 :: B) (Jk1.pay Z ([] : TrioSeq)) :=
+          fun B => APd_congr (2 :: B) (fun l => (jk1_pay_nil l Z).symm) id (hZk B)
         have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
             = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
         rw [e, APd_cS]
@@ -21126,7 +21170,8 @@ theorem AYdT2 : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ 
         rw [hop] at hdl
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hprev : APd (2 :: ks) (Jk1.pay Z Y.dropLast) := hdl hdb ks Z hZ hZt hZk
+        have hprev : ∀ B : List ℕ, APd (2 :: B) (Jk1.pay Z Y.dropLast) :=
+          fun B => hdl hdb Z hZ hZt hZk B
         rw [hsplit, APd_cS]
         intro m N hN hd hNt
         rw [APd_iff]
@@ -21151,12 +21196,12 @@ theorem AYdT2 : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ 
         intro n hn
         have hh := hnat n hn
         simp only [Set.mem_setOf_eq] at hh
-        have hh2 := hh (Bok_oper hYb hn) ks Z hZ hZt hZk
+        have hh2 := hh (Bok_oper hYb hn) Z hZ hZt hZk ks
         have h2 := (APd_cS 1 ks _).mp hh2 m N hN hd hNt
         exact (APd_iff _ _).mp h2 ctx hc ws hw hG
     · exact absurd hm (Nat.not_lt_zero mm)
-  intro Y hYb ks Z hZ hZt hZk
-  exact key hYb.mem hYb ks Z hZ hZt hZk
+  intro Y hYb Z hZ hZt hZk ks
+  exact key hYb.mem hYb Z hZ hZt hZk ks
 
 
 /-- ★ 残作業4b: `AYdT` の `k` 一般化（2 の記録の枠を `k+1` 枚積んだ形で荷を吊るす）。
@@ -21228,8 +21273,7 @@ theorem GCtx_rep2 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
       rw [GCtx_cS]
       refine ⟨0, ctx, Jk1.nil, rfl, Or.inr rfl, ?_, trivial, ?_⟩
       · simpa using GCtx_ct_any hc
-      · intro i m'
-        rw [rep_true_cons]
+      · intro w hw
         exact APd_nilT _
   | (m + 1), ctx, t, t', hc => by
       have ih := GCtx_rep2 hJN ks hNall m ctx t (TopOk N) hc
@@ -21243,8 +21287,7 @@ theorem GCtx_rep2 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
         refine ⟨ctx ++ ctxD N m, N, rfl, ih, FrmJ_of_ne _ (by simp) _ hJN, trivial, ?_⟩
         have h := hNall m
         rwa [rep_one_cons] at h
-      · intro i m'
-        rw [rep_true_cons]
+      · intro w hw
         exact APd_nilT _
 
 theorem APd_plug_rep (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
@@ -21531,7 +21574,14 @@ theorem APd_twoNilGenW (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
 /-- ★★★★★ 2 の記録は、その左 junk が良ければ 2 の記録の枠として使える。 -/
 theorem APd_twoNilB (ks : List ℕ) : APd (1 :: ks) Jk1.nil :=
   (APd_cf ks _).mpr (fun m U N hU hR hUk hN hd hNt =>
-    (APd_ct _ _).mp (APd_twoNilGen N hN _ (fun j => hNt j m)) U hU hR hUk)
+    (APd_ct _ _).mp (APd_twoNilGen N hN _ (fun j => by
+      have h := hNt (List.replicate j 0 ++ List.replicate m 0) (by
+        intro x hx
+        rcases List.mem_append.mp hx with hh | hh
+        · have := List.eq_of_mem_replicate hh; omega
+        · have := List.eq_of_mem_replicate hh; omega)
+      rw [rep_true_cons]
+      simpa [List.append_assoc, rep_norm] using h)) U hU hR hUk)
 
 /-! ## k = 2 の道具（歩幅 3）: `unitD` / `twrD` / `ctxE`
 
@@ -21785,11 +21835,9 @@ theorem GCtx_rep3 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
         rw [show List.replicate 0 0 ++ ks = ks from by simp, GCtx_cS]
         refine ⟨0, ctx, Jk1.nil, rfl, Or.inr rfl, ?_, trivial, ?_⟩
         · simpa using GCtx_ct_any hc
-        · intro i m'
-          rw [rep_true_cons]
+        · intro w hw
           exact APd_nilT _
-      · intro i m'
-        rw [rep_one_cons]
+      · intro w hw
         exact APd_twoNilB _
   | (m + 1), ctx, t, t', hc => by
       have ih := GCtx_rep3 hJN ks hNall m ctx t (TopOk N) hc
@@ -21808,11 +21856,9 @@ theorem GCtx_rep3 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
           refine ⟨ctx ++ ctxE N m, N, rfl, ih, FrmJ_of_ne _ (by simp) _ hJN, trivial, ?_⟩
           have h := hNall m
           rwa [rep_two_cons] at h
-        · intro i m'
-          rw [rep_true_cons]
+        · intro w hw
           exact APd_nilT _
-      · intro i m'
-        rw [rep_one_cons]
+      · intro w hw
         exact APd_twoNilB _
 
 theorem APd_plug_rep3 (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
@@ -22252,8 +22298,7 @@ theorem GCtx_ftwoRep : ∀ (j : ℕ), (∀ h : ℕ, h < j → ∀ ks' : List ℕ
         trivial, ?_⟩
       · rw [show List.replicate 0 0 ++ ks = ks from by simp]
         exact GCtx_ftwoRep j (fun h hh ks' => hnil h (by omega) ks') ks ctx t False hc
-      · intro i m'
-        rw [rep_head_cons]
+      · intro w hw
         exact hnil j (by omega) _
 
 theorem GCtx_repK {N : Jk1} (hJN : JkJ N) (j : ℕ)
@@ -22455,8 +22500,15 @@ theorem APd_nil_head : ∀ (k : ℕ) (ks : List ℕ), APd (k :: ks) Jk1.nil
         APd_twoNilPeel k 0 (fun h _ ks' => APd_nil_head h ks')
           (List.replicate m 0 ++ ks) N hN
           (fun i m' => by
-            rw [show (0 : ℕ) + k = k from by omega, rep_norm]
-            exact hcl i (m' + m)))
+            have h := hcl (List.replicate i k ++ (List.replicate m' 0 ++ List.replicate m 0)) (by
+              intro x hx
+              rcases List.mem_append.mp hx with hh | hh
+              · have := List.eq_of_mem_replicate hh; omega
+              · rcases List.mem_append.mp hh with hh2 | hh2
+                · have := List.eq_of_mem_replicate hh2; omega
+                · have := List.eq_of_mem_replicate hh2; omega)
+            rw [show (0 : ℕ) + k = k from by omega, rep_head_cons]
+            simpa [List.append_assoc, rep_norm] using h))
 termination_by k _ => k
 decreasing_by omega
 
@@ -22510,7 +22562,7 @@ theorem APd_twoK (k : ℕ) (ks : List ℕ) (N M : Jk1) (h : JkJ (Jk1.two N M))
   -- 1 枚はがすと、ちょうど目標の `APd ((k+1) :: ks) (two N M)` が出る。
   have hM := hMall ((k + 1 + 1) :: ks) (by simp)
   have h0 := (APd_cS (k + 1) ks M).mp hM 0 N h.1 h.2.2
-    (fun i m' => hNall _ (by rw [rep_head_cons]; simp))
+    (fun w hw => hNall _ (by simp))
   simpa using h0
 
 /-- ★★★★★ どの妥当な木も、どの形でも項として継げる。 -/
@@ -22536,10 +22588,10 @@ theorem APd_all : ∀ (T : Jk1), JkJ T → ∀ (ks : List ℕ), ks ≠ [] → Rq
               rw [APd_ct]
               intro U hU hRU hUk
               have hM := APd_all M h.2.1 (1 :: ks') (by simp) trivial
-              have hNall : ∀ (j m' : ℕ),
-                  APd (List.replicate j 0 ++ (0 :: (List.replicate m' 0 ++ ks'))) N := by
-                intro j m'
-                exact APd_all N h.1 _ (by rw [rep_true_cons]; simp) trivial
+              have hNall : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) →
+                  APd (0 :: (w ++ ks')) N := by
+                intro w hw
+                exact APd_all N h.1 _ (by simp) trivial
               have h0 := (APd_cf ks' M).mp hM 0 U N (by simpa using hU) (by simpa using hRU)
                 (by simpa using hUk) h.1 h.2.2 (by simpa using hNall)
               simpa using h0
