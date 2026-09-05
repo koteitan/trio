@@ -3319,3 +3319,70 @@ U375d =                      (4,2,0)(5,2,0)  MidD 5  Y0 = R344            → R3
 U375e =                             (5,2,0)  MidD 6  Y0 = R373            → R375f15_of_step
 ```
 補助: `Aok_R338110 : Aok (R338 ++ [(1,1,0)])`。
+
+### 続き112 追記3（★ 追記1 の「#3 以降は全部壁」を撤回。#1 #2 #3 #4 #5 が通った）
+
+追記1 の結論は**間違い**だった。`rowJ_mem` の土台 `R338` は 3 行で外せる:
+
+```lean
+theorem rowJ_mem_gen {A : TrioSeq} (hA : Aok A) (ws : List Jk1) (hw : WOk ws) :
+    A ++ (((1,1,0) : ℕ×ℕ×ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
+  have h := ((GoodFb_wordJ ws hw).seg 0).reapp P0 BaseOk_zero 0 A (LwB_of_base ⟨hA, rfl⟩)
+  simpa using h
+```
+`GoodFb.seg 0` の `reapp` は `LwB P0 0 A`（＝ `Aok A`）だけで通る。
+
+**壁を踏まない理由**: 既に建てた写しは junk 木の中ではなく**土台 A の側**に入る。
+木は毎回 `otwJ n`（TopOk を満たす）のままで、`U375a` の末尾 `(5,2,0)` は木ではなく
+`snocYd_mem` が付ける。「木で書けない ⟹ 証明できない」は誤り。
+
+#### 通った定理（Small.lean 末尾、leanman green、sorry なし）
+
+```
+rowJ_mem_gen      Aok A → WOk ws → A ++ ((1,1,0) :: wordJ 1 1 ws) ∈ W 0
+otw_tower_gen     A ++ ((1,1,0) :: wordJ 1 1 [otwJ n])
+                  = Mtwd 2 (A ++ [(1,1,0),(2,2,1)]) [(3,1,0),(4,2,0)] n
+otw_tower_mem_gen Aok A → ∀ n, その塔 ∈ W 0
+R375_mem_gen      Aok A → A ++ U375a ∈ W 0            ★ 行375 の一様版
+R375m_eq          R375m = R338 ++ U375a
+LvB_R375m_1       LvB P0 1 1 R375m
+otw_word_eq / otw_tower_gen_s / shift_U375a           （s シフト版の部品）
+SegA_U375a        SegA 0 U375a                        ★ 台座に依らないセグメント
+
+R375c_mem   #1  P(1,0,0)   flat_mem'' + Aok.copies_Bok
+R375f2_mem  #2  P(1,1,0)   Lv_snoc 1 0
+R375f3_mem  #3  P(2,0,0)   R375f3_of_step (fun _ h => R375_mem_gen h)
+R375f4_mem  #4  P(2,1,0)   LvB_snoc BaseOk_P0 1 1 R375m LvB_R375m_1
+R375f5_mem  #5  P(2,2,0)   SegB_snoc2 BaseOk_P0 (SegA_toSegB SegA_U375a BaseOk_P0)
+```
+副産物: `LwB P0 1 R375m`（`LwB_tower` の n = 1）。R375m は高さ 1 の梯子の頭。
+
+#### 残り 12 本は本当に 1 個の壁
+
+`P` の高さ 2 以上の接尾辞 `U375b = (2,2,1)(3,1,0)(4,2,0)(5,2,0)` を
+**「新しい (1,1,0) 無しで」**継ぐ道具が要る。それが無いのが壁。
+
+- `SegA h M` は `head1 : entry M 1 0 < 2` を要求する。`U375b` の頭は `(2,2,1)` で
+  `entry = 2` なので **`SegA` に入らない**（z 記録は `seg` の枠内でしか動かせない）。
+- `GoodFb` が語について出すのは `seg h : SegA h ((h+1,1,0) :: J (h+1) 1)` だけで、
+  b = 1 の語は必ず `(h+1,1,0)` 付きでしか再接続できない
+  （`pu` は `2 ≤ y`、`pk` は b = 2）。
+- `wordJ 1 1 ws` の形で書こうとすると `ws` に
+  `T = one nil (two nil (two nil nil))` が要り、これは `TopOk` 違反。
+
+各項の内訳:
+
+```
+#6  (2,2,1)  P ++ (2,2,1) = R338 ++ (1,1,0) :: wordJ 1 1 [T, nil]      T が違法
+#7  (3,0,0)  族 R338(1,1,0) ++ U375b^n。1 枚継ぐのに A ++ wordJ 1 1 [otwJ n] が要る
+#8  (3,1,0)  LvB P0 r 2 R375m が要り、その分解の M は MidD 3 から U375b で一意
+#9  (4,0,0)  族 R341 ++ U375c^n。木にすると one (one nil (two nil (two nil nil))) …
+#10 #13 #16  同じく LvB の高さ 3/4/5。#8 と同じ理由
+#11 #14 #17  塔が Mtwd dl · [(4,2,0)] 型（2 の記録の上昇塔）＝ 行376 の塔そのもの
+#12 (5,0,0)  1 枚継ぐのに Mtwd 1 A [(4,2,0)] n（＝行376 の塔）が要る
+#15 (6,0,0)  展開の n = 2 が #14
+```
+
+結論: **17 個のうち 5 個（#1 #2 #3 #4 #5）が完了。残り 12 個は `TopOk` 除去待ち。**
+平坦 4 本（#7 #9 #12 #15）は `R375f7_of_step` 等で hstep 1 個に還元済みなので、
+壁が外れたらすぐ落ちる。
