@@ -5342,3 +5342,92 @@ SmallYchk.lean:20807:43  unused variable `hZt`
 
 **この 3 つで穴 (C) は消える見込み。**残るのは穴 (B)（`APd_nilT` の base 一様性）で、
 そちらは段階2 が循環したので別の手が要る。
+
+## 続き121: 引き継ぎ（このセッションの終了時点）
+
+### 検証コマンド
+
+```
+cp /home/koteitan/proofs/trio/lean/SmallY.wip /tmp/SmallYchk.lean
+leanman check --backend lean -C /home/koteitan/proofs/trio/lean /tmp/SmallYchk.lean
+```
+
+### 状態
+
+| ファイル | 状態 |
+|---|---|
+| `lean/Small.lean` | **緑 / sorry なし**。今回一切触っていない |
+| `lean/SmallY.wip` | **error 0 / sorry 1（`AYdK` のみ）**。本日 3 → 1 |
+| `lean/SmallX.lean` | 触っていない。**ただし古いスナップショットで参考にならない**（追記2）|
+| `/tmp/SmallW3.lean` | 穴(C) を塞ぐ 3 手を入れた試作。**error 68**（全部機械的）|
+| `/tmp/SmallY-payfone-attempt.lean` | 段階2（fone 枠に荷閉包）の試作。error 12。循環で中断 |
+
+### 本日通したもの
+
+```
+nst / twoRun / unitK / twrK / ctxK と補題群（歩幅 j+1 の道具、j 一般）
+GCtx_ftwoRep / GCtx_repK / APd_plug_repK / APd_twoNilNest / APd_twoNilPeel / APd_nil_head
+  → APd_twoNilGenK の k 一般化（残作業4a 完了）
+APd_twoK（5 行。残作業5 完了。4a に依存しなかった）
+cntf_apply_zero_of_all_lt / msr_word / eq_rep_zero_of_le_zero
+  → closure の族を「要素が k 以下の語」に拡大（続き119）
+APd_chainT2 / AYdT2（k=1）/ APd_chainTK / AYdTK（k 一般）
+  → AYdK の TopOk V の枝は完成している
+example 3 本（APd_twoNilNest の j=0,1,2 が既存 3 本と同じ文であることの固定）
+```
+
+### 残る穴は 2 つだけ
+
+```
+(B) APd_nilT が (∀ B, APd ((k+1)::B) V) を供給できない
+    → 「fone 枠に荷閉包を持たせる」で塞ぐ計画だったが AYd の鎖で循環（続き120 追記1）
+(C) AYdK の ¬TopOk V の枝が JkJ の外に出る（bms 実測、続き120）
+    → 下の 3 手で塞がる見込み。すべて実測済み
+```
+
+### ★ 穴 (C) を塞ぐ 3 手（実測済み。マネージャの承認待ち）
+
+```lean
+1. JkJ (two N M) = JkJ N ∧ JkJ M ∧ (TopOk M ∨ N = nil)  →  JkJ N ∧ JkJ M
+2. APd / APd_cS / APd_cf / GCtx / GCtx_cS から (TopOk V ∨ N = Jk1.nil) → を外す
+3. GoodFb_snoc_dupJt / GoodFb_snoc_innerJt の (hN) (hZ) (hZt) を外す
+     ← Lean の linter が「未使用」と言っている（追記4）
+```
+`TopOk` 自体は `jk1_appJ` に本当に要るので**残す**。
+
+3 手をまとめて入れると **error 79**。安全な一括置換
+（` hN hZ hZt` 削除 / `, Or.inl hZt⟩` → `⟩` / `intro … hd …` の `hd` 削除）で **68** まで落ちた。
+error の内訳は
+```
+18 ⟨…⟩ の項数     13 introN（束縛が 1 個減った）   11 引数の型不一致
+ 7 fields 不足     6 rcases              5 unsolved goals   5 no goals
+ 5 projection      3 rewrite             2 function expected  2 show  1 simp
+```
+で、**「証明が通らなくなった」種類は 1 個も無い**。残りは site ごとに
+`Or.inr rfl` の削除（`hd` 引数だったもの / `JkJ (two nil X)` の第 3 成分だったもの）と
+`h.2.2` → 削除・`h.2.1` → `h.2` の付け替え。
+
+### 次の人へ（順序）
+
+```
+1. /tmp/SmallW3.lean の 68 個を site ごとに直して緑にする（純粋に機械的）
+2. 緑になったら本体 lean/SmallY.wip に同じ差分を入れる（要マネージャ承認）
+3. AYdK を AYdTK から作る（¬TopOk V の枝が通るようになる）
+4. 穴 (B) を塞ぐ。段階2 が循環した理由は続き120 追記1。
+   `.mp` 側（枠を当てる側）の負担が GOK_chainJd の鎖に伝播するのが原因なので、
+   鎖の不変量に荷閉包を持たせられるか / AYd の ks を頭 0 に制限できるかを見る
+5. sorry 0 → 段階3'（#17 = R375b_mem）→ 段階4'（Small.lean へマージ、宣言差分は続き113 追記13）
+```
+
+### 学んだこと（後任へ）
+
+1. **写して `leanman check` に error を出させるのが、分析より速い。**本日 6 回成功。
+   `AYdT2`（90 行）も `AYdTK` も一発で通った。分析で「両立しない」と結論していた壁が、
+   写したら 1 行に落ちた。
+2. **「error N 個・全部機械的」は 1 回の測定では分からない。**直していくと新しい
+   obligation が出ることがある（段階2）。定義を強めるときは `.mp` 側の消費者を先に数える。
+3. **測度 `msr` が縛るのは定義の中の枠条件だけ。**定理の仮定は自由。そして枠条件も
+   「測度が減る形なら何でも」要求できる（`msr_word`）。制約だと思っていたものは
+   「何を要求してよいか」の判定基準だった。
+4. **linter を読む。**`hZt` が未使用だと Lean が言っていたのを、こちらが見落としていた。
+5. `SmallX.lean` は古いスナップショット。引き継ぎの記述と実物が違う。
