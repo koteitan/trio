@@ -7657,3 +7657,46 @@ AYd / AYdT / AYdTK                           （段数を持ち回る）
 APdN_twoNilNestL（k=0 の底）★ここが塞がる
 APdN_twoNilPeelL / APdA_all / GOK_all
 ```
+
+### 続き129 追記6: 健全な版で `GCtxN_repKL` が通った（commit 3c30c5b）。error 0 / 全部 clean
+
+```lean
+theorem GCtxN_repKL (js : List Jk1) (hJ : ∀ M ∈ js, JkJ M) {N : Jk1} (hJN : JkJ N)
+    (ks : List ℕ) : ∀ (m n : ℕ) (ctx : List Frm) (t t' : Prop),
+      (∀ M ∈ js, APdU (n + (m + 1) * js.length + m) M) →
+      APdU (n + (m + 1) * js.length + m) N →
+      GCtxN n t (0 :: ks) ctx →
+      GCtxN (n + (m + 1) * js.length + m) t'
+        (List.replicate (m + 1) js.length ++ ks) (ctx ++ ctxKL js N m)
+```
+**段数の勘定:** 枠 1 枚につき段数が 1 落ちる。`ctxKL js N m` は
+`(m+1)*js.length + m` 枚（ftwo が `(m+1)*js.length`、fone が `m`）なので、
+外側の段数はその分だけ大きく取る。
+
+#### 同時に通ったもの
+
+```
+APdN_le / APdU_le                        段数の単調性（下方閉の一般化）
+GCtxN_ne / GCtxN_CtxX / GCtxN_CtxOk / GCtxN_split
+GCtxN_ftwoRep                            js を積むと段数が js.length 増える
+```
+
+#### 分かったこと
+
+**`GCtxN` は段数について単調ではない。**`GCtxN 0 = False` なので下方閉ではなく、
+上方も `APdU n` が段数について強くなるので成り立たない。
+要るところでは `cases n` で `n = 0`（文脈が無い）を潰す。
+
+**非線形の算術（`(m+2)*L`）は `omega` が扱えない。**
+`Nat.succ_mul` で `(m+2)*L = (m+1)*L + L` を先に出してから `rw` して `omega`。
+
+#### 残りの移行
+
+```
+APdN_plug_repKL          （GCtxN_repKL + APdN_iff。段数の帰納法）
+AYd / AYdT / AYdTK       （段数を持ち回る）
+APdN_twoNilNestL         ★k=0 の底。行列側の道具（wordJ_snoc_twoNKL / MidD_unitKL /
+                          hMy_unitKL / Mtwd_twrKL / plug_ctxKL_eq）は段数に依らないので
+                          SmallY.wip のものがそのまま使える
+APdN_twoNilPeelL / APdA_all / GOK_all → 既存の下流（rowJ_mem など）
+```
