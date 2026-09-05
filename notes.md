@@ -3532,3 +3532,47 @@ cp lean/SmallY.wip /tmp/SmallYchk.lean
 leanman check --backend lean -m "<memo>" -C /home/koteitan/proofs/trio/lean /tmp/SmallYchk.lean
 ```
 （`--backend lean` を使うこと。kimina だと暴走時に殺せない。）
+
+### 続き113 追記1: SmallY.wip 段階1 の進捗（残作業 1・2・3 の前半）
+
+`cp lean/SmallY.wip /tmp/SmallYchk.lean` して
+`leanman check --backend lean -C .../lean /tmp/SmallYchk.lean` で計測。
+
+```
+開始時        error 34 箇所、緑の先頭 17411 行
+→ 今         error 22 箇所、緑の先頭 20555 行（ファイルの 95% が緑）
+```
+
+やったこと:
+1. `JkJ (two N M)` が 3 成分になった箇所（5 本）:
+   `JkA_of_JkJ` / `JkJ_two_pay` / `JkJ_plug`(ftwo) / `CtxJ_snoc12`(nil) / `CtxOk_snoc12`(nil)。
+2. **`msrWF`**: `noncomputable instance : WellFoundedRelation (Colex (ℕ →₀ ℕ)) := ⟨(· < ·), wellFounded_lt⟩`
+   を `msr` の直後に追加。これが無いと既定の `sizeOf` が拾われ、`decreasing_by` の goal が
+   `sizeOf (msr ks) < sizeOf (msr a)` になって `msr_grp` が刺さらない。
+3. **新規** `TwoNil = two nil nil` / `JkJ_TwoNil` / `not_TopOk_TwoNil` / `HdT_snoc_cons` /
+   `CtxJ_snoc2` / `CtxOk_snoc2`。
+   要点: `TopOk TwoNil = False` なので **`CtxXJ ctx TwoNil` が
+   「一番内のフレームが 2 の記録ならその junk は nil」と同値**になる。
+   これを `CtxJ_snoc2` の仮定にすると、`CtxJ (ftwo M :: rest)` の条件
+   `HdT rest ∨ M = nil` を `rest = []` の場合にも作れる。
+4. **新規** `GCtx_mono : (t → t') → GCtx t ks ctx → GCtx t' ks ctx`。
+   `t` は `(t ∨ N = nil)` に正の位置でしか出ないので単調。
+   注意: `GCtx` は整礎再帰なので定義的に簡約しない。`[]` と `0::ks` の場合も
+   `rw [GCtx_bnil]` / `rw [GCtx_ct]` を明示的に使う必要がある。
+5. `GCtx_CtxX` を `∀ ks ctx X, GCtx (TopOk X) ks ctx → FrmJ ks X → CtxX ctx X` に、
+   `GCtx_CtxOk` を `∀ t ks ctx, GCtx t ks ctx → CtxOk ctx` に書き換え（`(k+1)::ks` の一般形）。
+   `GCtx_CtxOk` の two の場合は `GCtx_CtxX … TwoNil` で `CtxXJ ctx' TwoNil` を作って
+   `CtxOk_snoc2` に渡す。termination は `msr ks`。
+6. `APd_congr` に `(TopOk V2 → TopOk V1)` を追加（`TopOk` は `jk1` から決まらない。
+   反例: `two nil nil` と `pay nil [(0,2,0)]` は `jk1` が同じで `TopOk` が違う）。
+   呼び出し 4 箇所は `id` で済む。
+7. `GOK_chainJd` の `hc` を `GCtx (TopOk X) ks ctx` に。`itJ` の側は
+   `TopOk_itJ` + `GCtx_mono` で送る。呼び出しは `(X := X)` を明示。
+
+**残り 22 箇所**（すべて 20555 行以降）:
+```
+20555 20562 20587 20604 20623 20657 20692 20706 20730 20732 20745 20753 20779
+  ← AYdT / APd_chainT / twoIt（残作業 3 の後半 + 4）
+20910 20913 20934 20935 20936   ← APd_all の two（残作業 5、sorry 1 個を含む）
+21056 21067 21222 21226         ← otwJ 周辺（残作業 6）
+```
