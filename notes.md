@@ -4113,3 +4113,35 @@ APd_twoNilGenW が要る仮定    : ∀ i, APd (replicate i 1 ++ (1 :: (replicat
 **判断はマネージャに投げる。**私の見立てでは 1 が素直（定義を 1 行変えるだけで、
 `APd_cS` / `APd_cf` / `GCtx_cS` / `GCtx_cf` の文が 1 個ずつ増える）だが、
 `APd_iff` と `GCtx` の対応が崩れないかの確認が要る。
+
+### 続き113 追記16: 追記15 の穴を「実験して壊れる本数を数えた」
+
+`APd` の定義と `APd_cS` の文だけ、閉包を
+
+```
+(∀ i : ℕ,        APd (replicate i k ++ (k :: (replicate m 0 ++ ks))) N)
+→ (∀ (i m' : ℕ), APd (replicate i k ++ (k :: (replicate (m + m') 0 ++ ks))) N)
+```
+
+に強めて `/tmp/SmallZ.lean` で 1 回 `leanman check` した結果:
+
+```
+壊れた箇所は 5 つだけ、しかも全部「文がずれた」型不一致:
+  19847 19851  APd_cf   （閉包の文も ∀ j m' にする必要）
+  20008 20014  APd_iff  （GCtx 側の閉包と受け渡しているので GCtx も同時に直す必要）
+  21421        APd_nil  （APd_twoNilGenK の仮定を強い形にすれば逆に噛み合う）
+```
+
+**判定**: `APd_iff` の 2 箇所が示すとおり、`GCtx` の `(k+1)::ks` の閉包も同時に
+強める必要がある（`APd_cS` と `GCtx_cS` は `APd_iff` で 1 対 1 に対応しているため）。
+`GCtx` 側を直すと、その閉包を**作る**側（`GCtx_rep2` の ftwo、`GCtx_ne`、`GCtx_mono`、
+`GCtx_CtxOk`）にも波及するが、いずれも `APd_nilT`（どの形でも通る）で埋まるはずなので
+機械的。ただし**コアの定義変更**なのでマネージャの判断を仰ぐ。
+
+強めた形が正しいことの確認:
+```
+APd_twoNilGenK k ks N の仮定を ∀ i m, APd (replicate i k ++ (k :: (replicate m 0 ++ ks))) N
+にすると、k = 1 のとき APd_twoNilGenW N hJN (replicate m 0 ++ ks) が要る
+  ∀ i, APd (replicate i 1 ++ (1 :: (replicate m 0 ++ ks))) N
+はちょうど `fun i => hcl i m` で出る。**穴はこれで閉じる。**
+```
