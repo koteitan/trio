@@ -8803,3 +8803,112 @@ AYdT の TopOk Z は本体で一度も使われていない死んだ仮定だっ
   どの証明にも効いていなかった。外すと GCtx の Prop 引数 t ごと消えた
 SmallY.wip  error 34 / sorry 3 → error 0 / sorry 1
 ```
+
+## 続き133: ★★★★★ 壁を 1 点だけ抜いた。目標行列と #7 が出た
+
+### 1. 何が出たか
+
+```
+R375g7_mem : (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0) ∈ W 0
+R375f7_mem : 続き111 #7  P(3,0,0) ∈ W 0
+```
+
+どちらも `#print axioms` = `[propext, Classical.choice, Quot.sound]`。sorry 無し。
+続き111 の表は #1 #2 #3 #4 #5 #7 が済み。残り 11 個（#6 #8 #9〜#17）。
+
+### 2. 効いた考え方（続き132 の 16 本と何が違ったか）
+
+続き132 は「ガードを一般に外す」（＝ `JkJ` から `TopOk` を消す）方向で、
+これは `APd` の深さの循環に当たって 16 本潰れていた。
+
+今回は **ガードを外さず、壁の形の字を 1 個だけ直接作った**。
+
+```
+otwL = one nil (two nil (two nil nil))
+colJ a b otwL = (a+1,b+1,1)(a+2,1,0)(a+3,2,0)(a+4,2,0)
+```
+
+`JkOk otwL` は偽（`TopOk` が「2 の記録の直上に 2 の記録」を禁じる）。
+しかし末尾の `(a+4,2,0)` は歩幅 2 の塔 `colJ a b (otwJ m)` の極限そのもので、
+`snocYd_mem` が直接与える。塔の各段 `otwJ m` は `JkOk` なので既存の `GOK_all` で足りる。
+
+つまり **「壁の形の字」は「壁でない字の塔」の極限**であり、
+`GoodFb` の 3 段（`pu` / `pk` / `seg`）すべてで同じ極限を取れば `GOK otwL` が出る。
+
+### 3. そのために要った前提の弱め（1 回だけの改修）
+
+`GOK T` の前提は「先行する語 `ws` が良い」で、それが `WOk ws = ∀ N ∈ ws, JkOk N` だった。
+`otwL` を語に入れるにはこれが強すぎる。実測したところ `JkOk` を使っているのは 2 箇所だけ:
+
+```
+rise_wordJ (18387)   → not_le1_treeJ → not_le1_jk1
+GoodFb_wordJ (20843) → 最後の字に GOK_all を使う
+```
+
+`not_le1_jk1` は元から `JkOk N ∨ (JkA N ∧ Grd M p q0 l)` の 2 経路を持っていて、
+`JkOk` から実際に使うのは (a) 荷が `Bok`、(b) 先頭段が 2 の記録でない、の 2 点だけ。
+よって
+
+```
+JkT N := JkA N ∧ TopOk N        （JkOk より弱い。one の中身にガードを要求しない）
+WOk ws := ∀ N ∈ ws, JkT N       （弱めた）
+WJ  ws := ∀ N ∈ ws, JkOk N      （旧 WOk。GoodFb_wordJ / rowJ_mem / rowJ_mem_gen だけが要る）
+```
+
+とすれば通る。`JkT otwL` は真（先頭段は 1 の列）。この改修だけで全体 green のまま。
+
+### 4. 新しい道具（`lean/Small.lean` 末尾）
+
+```
+snoc22_of_tower   Y0 ≠ [] → 1 ≤ d → e = d+1 → f = d+2 →
+                  (∀n, Mtwd 2 Y0 [(d,1,0),(e,2,0)] n ∈ W 0) →
+                  Y0 ++ [(d,1,0),(e,2,0),(f,2,0)] ∈ W 0
+otwJ_tower_eq     X ++ colJ a b (otwJ n) = Mtwd 2 (X ++ [(a+1,b+1,1)]) [(a+2,1,0),(a+3,2,0)] n
+colJ_otwL_mem     (∀m, X ++ colJ a b (otwJ m) ∈ W 0) → X ++ colJ a b otwL ∈ W 0
+GOK_otwL          GOK otwL                                  ★ 本体
+GoodFb_otwL_otwJ  GoodFb (word [otwL, otwJ n])
+rowJ_mem_genF     Aok A → GoodFb (word ws) → A ++ ((1,1,0) :: wordJ 1 1 ws) ∈ W 0
+otwL_tower_mem    Mtwd 2 (A ++ U375a ++ [(2,2,1)]) [(3,1,0),(4,2,0)] n ∈ W 0
+U375tail_of_tower Y0 ≠ [] → (∀n, Mtwd 2 Y0 [(3,1,0),(4,2,0)] n ∈ W 0) →
+                  Y0 ++ [(3,1,0),(4,2,0),(5,2,0)] ∈ W 0
+R375g7_of_tower / R375g7_mem / GoodFb_repl_otwL / wordJ_repl_otwL / R375f7_mem
+```
+
+### 5. 次に何ができるか（測った）
+
+**行376 `R344 (4,2,0)(5,3,0)` はまだ出ない。** 要るのは
+
+```
+∀n, Mtw R344 [(4,2,0)] n ∈ W 0
+  = ∀n, R338 ++ (1,1,0) :: colJ 1 1 (nstD n) ∈ W 0
+  nstD k = one nil (twoIt k)   （2 の記録を k 段積む）
+  jk1 2 (nstD k) = (3,1,0)(4,2,0)(5,2,0)…(3+k,2,0)
+```
+
+`bms -d` で測ると `nstD 3` の最後の `(6,2,0)` は
+**歩幅 3・ブロック `(3,1,0)(4,2,0)(5,2,0)`（＝ `nstD 2 = otwL` の描画）の塔**の極限。
+つまり塔の各段が `one nil (two nil (two nil (one nil (two nil (two nil …)))))` で、
+これは「2 の記録の直上に 2 の記録、しかもその上に続きがある」形。
+今回の技法は **末尾が 2 の記録で終わる**（`snocYd_mem` が使える）場合しか扱えない。
+
+```
+できる   two の直上が two で、その上が nil（＝ 字の末尾）      ← otwL
+できない two の直上が two で、その上にまだ続きがある            ← nstD 3 以降
+```
+
+これが続き132 の `APd_twoNilPeel` の一般形と同じ壁。**壁は狭くなったが消えてはいない。**
+
+### 6. すぐ手が届きそうなもの
+
+`colJ_otwL_mem` は `X` について完全に一般なので、`Y0` を伸ばした版が**同じ証明で**通る:
+
+```
+colJ_otwLV_mem : (∀m, X ++ colJ a b (appJ V (otwJ m)) ∈ W 0) → X ++ colJ a b (appJ V otwL) ∈ W 0
+  （Y0 = X ++ (a+1,b+1,1) :: jk1 (a+1) V にするだけ）
+```
+
+これで #9 `P(4,0,0)`（単位 `(3,1,0)(4,2,0)(5,2,0)` の平坦な繰り返し
+＝ `appJ` で otwL を横に並べた字）に届く可能性がある。ただし
+`∀m, GOK (appJ V (otwJ m))` が別途要り、`appJ V (otwJ m) = one V (two nil (otwJ (m-1)))` で
+`JkOk (one V _)` が `JkOk V` を要求するので、`V` に otwL が入ると既存の `GOK_all` では出ない。
+**`APd_step` / `FrmJ [] V = JkOk V` を `JkT` に弱められるかが次の分岐点。**
