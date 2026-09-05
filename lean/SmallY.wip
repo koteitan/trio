@@ -22725,6 +22725,31 @@ theorem wordJ_snoc_plug_twrK (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V : J
   rw [wordJ_append, wordJ_singleton, colJ_plug_twrK a b ctx V l hl m, wordJ_append,
     wordJ_singleton, List.append_assoc]
 
+theorem colJ_plug_twrKL (a b : ℕ) (ctx : List Frm) (V : Jk1) {N : Jk1} {js : List Jk1}
+    (l : ℕ) (hl : l = a + dep ctx + 1) (m : ℕ) :
+    colJ a b (plug (ctx ++ [Frm.fone V]) (plug (ctxKL js N m) N))
+      = colJ a b (plug ctx V) ++ jk1 l (twrKL js N (m + 1)) := by
+  subst hl
+  rw [plug_snoc, colJ_plug_one a b ctx V (plug (ctxKL js N m) N),
+    show a + dep ctx + 1 + 1 = a + dep ctx + 2 from by omega]
+  have e : jk1 (a + dep ctx + 1) (twrKL js N (m + 1))
+      = ((a + dep ctx + 2, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx + 2) (plug (ctxKL js N m) N) := by
+    rw [plug_ctxKL_eq]
+    show jk1 (a + dep ctx + 1) Jk1.nil ++
+      (((a + dep ctx + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx + 1 + 1) (nstL js (appJ N (twrKL js N m)))) = _
+    rw [show a + dep ctx + 1 + 1 = a + dep ctx + 2 from by omega]
+    simp [jk1]
+  rw [e]
+
+theorem wordJ_snoc_plug_twrKL (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V : Jk1) {N : Jk1}
+    {js : List Jk1} (l : ℕ) (hl : l = a + dep ctx + 1) (m : ℕ) :
+    wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V]) (plug (ctxKL js N m) N)])
+      = wordJ a b (ws ++ [plug ctx V]) ++ jk1 l (twrKL js N (m + 1)) := by
+  rw [wordJ_append, wordJ_singleton, colJ_plug_twrKL a b ctx V l hl m, wordJ_append,
+    wordJ_singleton, List.append_assoc]
+
 /-! ### 形の勘定（`j` 組版）
 
 ```
