@@ -5589,3 +5589,16 @@ ctxKL js N m  = (js の ftwo フレーム列) ++ m×(fone N :: js の ftwo フ�
 
 `MidD_unitKL` / `hMy_unitKL` は junk の列が入るぶん条件が増えるが、
 `jk1_ge` / `jk1_mono` で押さえられるはず（`unitK` のときと同じ）。
+
+### 続き121 の状態表の更新（続き122 時点）
+
+| ファイル | 状態 |
+|---|---|
+| `lean/Small.lean` | **緑 / sorry なし**。今回一切触っていない |
+| `lean/SmallY.wip` | error 0 / sorry 1（`AYdK`）。**ガード除去前**の版 |
+| `lean/SmallW3.wip` | **error 0 / sorry 2**（`AYdK` + `APd_twoNilPeel`）。**ガード除去後**。穴(C) 済み |
+| `lean/SmallYpay.wip` | 穴(B) の試作（error 12、`AYd` の鎖で循環して中断）|
+| `lean/SmallX.lean` | 古いスナップショット。参考にならない |
+
+**次の人は `lean/SmallW3.wip` を本線にしてよい**（`SmallY.wip` より進んでいる）。
+移す前に `leanman check` で error 0 / sorry 2 を確認すること。
