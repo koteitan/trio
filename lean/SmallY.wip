@@ -20609,6 +20609,77 @@ theorem colJ_plug_twr (a b : ℕ) (ctx : List Frm) (V : Jk1) {N : Jk1} (l : ℕ)
     simp [jk1]
   rw [e]
 
+/-- 階段の文脈: 最内の `ftwo nil` の外側に「1 の列 + 2 の記録」の対を `m` 個。 -/
+def ctxD (N : Jk1) : ℕ → List Frm
+  | 0 => [Frm.ftwo Jk1.nil]
+  | (m + 1) => ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]
+
+/-! #### 階段の木 = `twrC` であること -/
+
+def gC (N : Jk1) : ℕ → Jk1 → Jk1
+  | 0, X => X
+  | (m + 1), X => gC N m (Jk1.one N (Jk1.two Jk1.nil X))
+
+theorem gC_succ (N : Jk1) : ∀ (m : ℕ) (X : Jk1),
+    gC N (m + 1) X = Jk1.one N (Jk1.two Jk1.nil (gC N m X))
+  | 0, _ => rfl
+  | (m + 1), X => by
+      show gC N (m + 1) (Jk1.one N (Jk1.two Jk1.nil X))
+        = Jk1.one N (Jk1.two Jk1.nil (gC N (m + 1) X))
+      rw [gC_succ N m (Jk1.one N (Jk1.two Jk1.nil X))]
+      rfl
+
+theorem plug_ctxD (N : Jk1) : ∀ (m : ℕ) (X : Jk1),
+    plug (ctxD N m) X = Jk1.two Jk1.nil (gC N m X)
+  | 0, _ => rfl
+  | (m + 1), X => by
+      show plug (ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]) X = _
+      rw [show ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]
+            = (ctxD N m ++ [Frm.fone N]) ++ [Frm.ftwo Jk1.nil] from by simp,
+        plug_snoc2, plug_snoc, plug_ctxD N m]
+      rfl
+
+theorem gC_eq_appJ (N : Jk1) : ∀ m : ℕ, gC N m N = appJ N (twrC N m)
+  | 0 => rfl
+  | (m + 1) => by
+      rw [gC_succ, gC_eq_appJ N m]
+      rfl
+
+theorem plug_ctxD_eq (N : Jk1) (m : ℕ) :
+    plug (ctxD N m) N = Jk1.two Jk1.nil (appJ N (twrC N m)) := by
+  rw [plug_ctxD, gC_eq_appJ]
+
+/-- ★ 枠 `fone V` の中に階段を置くと、実現はちょうど `twrC` の塔になる。 -/
+theorem jk1_one_plug_ctxD (V N : Jk1) (m l : ℕ) :
+    jk1 l (Jk1.one V (plug (ctxD N m) N)) = jk1 l V ++ jk1 l (twrC N (m + 1)) := by
+  rw [plug_ctxD_eq]
+  simp [jk1, twrC]
+
+theorem colJ_plug_twrC (a b : ℕ) (ctx : List Frm) (V : Jk1) {N : Jk1} (l : ℕ)
+    (hl : l = a + dep ctx + 1) (m : ℕ) :
+    colJ a b (plug (ctx ++ [Frm.fone V]) (plug (ctxD N m) N))
+      = colJ a b (plug ctx V) ++ jk1 l (twrC N (m + 1)) := by
+  subst hl
+  rw [plug_snoc, colJ_plug_one a b ctx V (plug (ctxD N m) N),
+    show a + dep ctx + 1 + 1 = a + dep ctx + 2 from by omega]
+  have e : jk1 (a + dep ctx + 1) (twrC N (m + 1))
+      = ((a + dep ctx + 2, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx + 2) (plug (ctxD N m) N) := by
+    rw [plug_ctxD_eq]
+    show jk1 (a + dep ctx + 1) Jk1.nil ++
+      (((a + dep ctx + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx + 1 + 1) (Jk1.two Jk1.nil (appJ N (twrC N m)))) = _
+    rw [show a + dep ctx + 1 + 1 = a + dep ctx + 2 from by omega]
+    simp [jk1]
+  rw [e]
+
+theorem wordJ_snoc_plug_twrC (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V : Jk1) {N : Jk1}
+    (l : ℕ) (hl : l = a + dep ctx + 1) (m : ℕ) :
+    wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V]) (plug (ctxD N m) N)])
+      = wordJ a b (ws ++ [plug ctx V]) ++ jk1 l (twrC N (m + 1)) := by
+  rw [wordJ_append, wordJ_singleton, colJ_plug_twrC a b ctx V l hl m, wordJ_append,
+    wordJ_singleton, List.append_assoc]
+
 theorem wordJ_snoc_plug_twr (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V : Jk1) {N : Jk1} (l : ℕ)
     (hl : l = a + dep ctx + 1) (m : ℕ) :
     wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)])
@@ -21012,11 +21083,6 @@ theorem rep_one_cons : ∀ (j : ℕ) (ks : List ℕ),
       show 1 :: (List.replicate j 1 ++ (1 :: ks)) = 1 :: (1 :: (List.replicate j 1 ++ ks))
       rw [rep_one_cons j ks]
 
-/-- 階段の文脈: 最内の `ftwo nil` の外側に「1 の列 + 2 の記録」の対を `m` 個。 -/
-def ctxD (N : Jk1) : ℕ → List Frm
-  | 0 => [Frm.ftwo Jk1.nil]
-  | (m + 1) => ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]
-
 theorem GCtx_rep2 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
     (hNall : ∀ i : ℕ, APd (List.replicate i 1 ++ (1 :: ks)) N) :
     ∀ (m : ℕ) (ctx : List Frm) (t t' : Prop), GCtx t (0 :: ks) ctx →
@@ -21044,47 +21110,6 @@ theorem GCtx_rep2 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
       · intro i
         rw [rep_true_cons]
         exact APd_nilT _
-
-/-! #### 階段の木 = `twrC` であること -/
-
-def gC (N : Jk1) : ℕ → Jk1 → Jk1
-  | 0, X => X
-  | (m + 1), X => gC N m (Jk1.one N (Jk1.two Jk1.nil X))
-
-theorem gC_succ (N : Jk1) : ∀ (m : ℕ) (X : Jk1),
-    gC N (m + 1) X = Jk1.one N (Jk1.two Jk1.nil (gC N m X))
-  | 0, _ => rfl
-  | (m + 1), X => by
-      show gC N (m + 1) (Jk1.one N (Jk1.two Jk1.nil X))
-        = Jk1.one N (Jk1.two Jk1.nil (gC N (m + 1) X))
-      rw [gC_succ N m (Jk1.one N (Jk1.two Jk1.nil X))]
-      rfl
-
-theorem plug_ctxD (N : Jk1) : ∀ (m : ℕ) (X : Jk1),
-    plug (ctxD N m) X = Jk1.two Jk1.nil (gC N m X)
-  | 0, _ => rfl
-  | (m + 1), X => by
-      show plug (ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]) X = _
-      rw [show ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]
-            = (ctxD N m ++ [Frm.fone N]) ++ [Frm.ftwo Jk1.nil] from by simp,
-        plug_snoc2, plug_snoc, plug_ctxD N m]
-      rfl
-
-theorem gC_eq_appJ (N : Jk1) : ∀ m : ℕ, gC N m N = appJ N (twrC N m)
-  | 0 => rfl
-  | (m + 1) => by
-      rw [gC_succ, gC_eq_appJ N m]
-      rfl
-
-theorem plug_ctxD_eq (N : Jk1) (m : ℕ) :
-    plug (ctxD N m) N = Jk1.two Jk1.nil (appJ N (twrC N m)) := by
-  rw [plug_ctxD, gC_eq_appJ]
-
-/-- ★ 枠 `fone V` の中に階段を置くと、実現はちょうど `twrC` の塔になる。 -/
-theorem jk1_one_plug_ctxD (V N : Jk1) (m l : ℕ) :
-    jk1 l (Jk1.one V (plug (ctxD N m) N)) = jk1 l V ++ jk1 l (twrC N (m + 1)) := by
-  rw [plug_ctxD_eq]
-  simp [jk1, twrC]
 
 theorem APd_plug_rep (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
     (hNall : ∀ j : ℕ, APd (List.replicate j 0 ++ (0 :: ks)) N) (m : ℕ) :
@@ -21235,6 +21260,135 @@ theorem APd_twoNilGen (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
       (by simp [entry]) (by omega) htw
     simpa [List.append_assoc] using hh
 
+
+/-- ★★★ `D(0)` の `W = two N nil`。`APd_twoNilGen` の `W ≠ nil` 版。
+塔が `twr`（歩幅 1）から `twrC`（歩幅 2）に、`snocY_mem` が `snocYd_mem (dl := 2)` に変わる。 -/
+theorem APd_twoNilGenW (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
+    (hNall : ∀ i : ℕ, APd (List.replicate i 1 ++ (1 :: ks)) N) :
+    APd (0 :: ks) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil)) := by
+  rw [APd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split ks ctx hc
+  have hcO : CtxOk (ctx0 ++ [Frm.fone V]) := GCtx_CtxOk _ (0 :: ks) _ hc
+  have hstair : ∀ m : ℕ, GOK (plug (ctx0 ++ [Frm.fone V]) (plug (ctxD N m) N)) :=
+    fun m => (APd_iff (0 :: ks) _).mp (APd_plug_rep2 N hJN ks hNall m) _ (GCtx_ct_any hc)
+  intro ws hw hG
+  have hwO : WOk (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))]) :=
+    WOk_append hw (WOk_singleton (JkOk_plug _ hcO _
+      ((CtxX_snoc1 ctx0 V _).mpr ⟨trivial, ⟨hJN, trivial, Or.inl trivial⟩, Or.inr rfl⟩)))
+  have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx0 V])) := hGV ws hw hG
+  have hstG : ∀ m : ℕ,
+      GoodFb (fun a b => wordJ a b (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (ctxD N m) N)])) :=
+    fun m => hstair m ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_snoc_twoNW (c + 1 + t) (y + 1) ws ctx0 V
+      (c + 1 + t + dep ctx0 + 1) rfl]
+    set a := c + 1 + t with ha
+    have hbase0 : Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift] at h0
+      simpa [ha] using h0
+    have htw : ∀ n, Mtwd 2 (Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])))
+        (unitC N (a + dep ctx0 + 1)) n ∈ W 0 := by
+      intro n
+      rw [Mtwd_twrC]
+      cases n with
+      | zero => simpa [twrC, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_twrC (c + 1 + t) (y + 1) ws ctx0 V
+            (c + 1 + t + dep ctx0 + 1) rfl m] at h1
+          simpa [ha, List.append_assoc] using h1
+    have h := snocYd_mem (Y0 := Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])))
+      (M := unitC N (a + dep ctx0 + 1))
+      (L := a + dep ctx0 + 1 + 1) (y := 2) (dl := 2)
+      (by simp) (MidD_unitC N (a + dep ctx0 + 1) hJN)
+      (by simp [unitC, entry]) (hMy_unitC N (a + dep ctx0 + 1)) (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t Z hZ
+    rw [wordJ_shift, wordJ_snoc_twoNW (c + 1 + t) 2 ws ctx0 V
+      (c + 1 + t + dep ctx0 + 1) rfl]
+    set a := c + 1 + t with ha
+    have hbase0 : Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift] at h0
+      simpa [ha] using h0
+    have htw : ∀ n, Mtwd 2 (Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])))
+        (unitC N (a + dep ctx0 + 1)) n ∈ W 0 := by
+      intro n
+      rw [Mtwd_twrC]
+      cases n with
+      | zero => simpa [twrC, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).pk c E hI).2.2 j t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_twrC (c + 1 + t) 2 ws ctx0 V
+            (c + 1 + t + dep ctx0 + 1) rfl m] at h1
+          simpa [ha, List.append_assoc] using h1
+    have h := snocYd_mem (Y0 := Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])))
+      (M := unitC N (a + dep ctx0 + 1))
+      (L := a + dep ctx0 + 1 + 1) (y := 2) (dl := 2)
+      (by simp) (MidD_unitC N (a + dep ctx0 + 1) hJN)
+      (by simp [unitC, entry]) (hMy_unitC N (a + dep ctx0 + 1)) (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift,
+      wordJ_snoc_twoNW (h + 1 + s) 1 ws ctx0 V (h + 1 + s + dep ctx0 + 1) rfl]
+    set a := h + 1 + s with ha
+    have hbase0 : A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          from rfl] at h0
+      simpa [ha, show h + s + 1 = h + 1 + s from by omega] using h0
+    have htw : ∀ n, Mtwd 2 (A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])))
+        (unitC N (a + dep ctx0 + 1)) n ∈ W 0 := by
+      intro n
+      rw [Mtwd_twrC]
+      cases n with
+      | zero => simpa [twrC, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+                wordJ (h + s + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (ctxD N m) N)])
+              = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+                wordJ (h + s + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (ctxD N m) N)]) from rfl] at h1
+          rw [wordJ_snoc_plug_twrC (h + s + 1) 1 ws ctx0 V (h + s + 1 + dep ctx0 + 1) rfl m]
+            at h1
+          simpa [ha, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := snocYd_mem (Y0 := A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])))
+      (M := unitC N (a + dep ctx0 + 1))
+      (L := a + dep ctx0 + 1 + 1) (y := 2) (dl := 2)
+      (by simp) (MidD_unitC N (a + dep ctx0 + 1) hJN)
+      (by simp [unitC, entry]) (hMy_unitC N (a + dep ctx0 + 1)) (by omega) (by omega) htw
+    simpa [List.append_assoc] using hh
+
+
+#print axioms APd_twoNilGenW
 
 #print axioms APd_twoNilGen
 

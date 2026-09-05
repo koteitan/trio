@@ -4050,3 +4050,66 @@ msr 系: cntf cntf_cons cntf_append cntf_replicate msr msr_drop0 msr_grp (+ inst
 
 **マージ方針**: `SmallY.wip` を土台にして、上の 42 個のうち `cntF` / `cntF_rep` を除く 40 個を
 末尾に足すのが安全（`Small.lean` の末尾にまとまって入っているので切り貼りできる）。
+
+### 続き113 追記14: ★★ `D(0)`（`APd_twoNilGenW`）が通った
+
+```lean
+theorem APd_twoNilGenW (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
+    (hNall : ∀ i : ℕ, APd (List.replicate i 1 ++ (1 :: ks)) N) :
+    APd (0 :: ks) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))
+```
+
+`APd_twoNilGen`（`W = nil`）の 3 分岐をそのまま写し、機械的に
+
+```
+plug (replicate m (fone N)) N   →  plug (ctxD N m) N          （階段が対になる）
+APd_plug_rep                    →  APd_plug_rep2
+wordJ_snoc_twoN                 →  wordJ_snoc_twoNW
+wordJ_snoc_plug_twr             →  wordJ_snoc_plug_twrC
+Mtw / Mtw_twr / twr             →  Mtwd 2 / Mtwd_twrC / twrC
+snocY_mem                       →  snocYd_mem (dl := 2)
+  … (MidD_colN …)               →  (MidD_unitC N l hJN)
+  … 追加                        →  (hMy_unitC N l)
+JkJ (two N nil)                 →  JkJ (two nil (two N nil)) は 3 成分
+```
+に置き換えるだけで通った（error 0）。段階2 の本体はこれで片付いている。
+
+（`#print axioms` は `sorryAx` を含むが、これは `APd_nilT → APd_payA → AYdK`（残作業4b の穴）
+経由の間接依存で、`APd_twoNilGenW` 自身に穴は無い。）
+
+### 続き113 追記15: ★ 新たに見つかった穴 — 閉包が `replicate m 0` の挿入で閉じていない
+
+`APd_twoNilGenW` を `APd_twoNilGenK` の `k+1 = 1` に繋ごうとして詰まった。
+
+```
+APd_twoNilGenK 1 ks N  の仮定 : ∀ i, APd (replicate i 1 ++ (1 :: ks)) N
+APd_cS で開いた後の目標      : APd (0 :: (replicate m 0 ++ ks)) (two nil (two N nil))
+APd_twoNilGenW が要る仮定    : ∀ i, APd (replicate i 1 ++ (1 :: (replicate m 0 ++ ks))) N
+                                                        ↑ ここが足りない
+```
+
+`APd_cS` の閉包は
+```
+∀ i, APd (replicate i k ++ (k :: (replicate m 0 ++ ks))) N
+```
+で **`m` が結論と同じ 1 個に固定**されている。降りるたびに新しい `m'` が入るので、
+1 段しか使えない。必要なのは `m` についても閉じた形
+
+```
+∀ i m, APd (replicate i k ++ (k :: (replicate m 0 ++ ks))) N
+```
+（`rep_norm : replicate a 0 ++ (replicate b 0 ++ ks) = replicate (a+b) 0 ++ ks` があるので、
+ この形なら降下で閉じる。）
+
+**これは 続き110 追記5 の `APd` の定義そのものの問題**である。選択肢:
+
+1. `APd ((k+1)::ks) V` の閉包を `∀ i m, …` に強める（定義変更。`APd_cS` 以下すべてに波及）。
+2. `APd_nil` を別の帰納法で作り、`APd_twoNilGenK` の仮定を
+   `∀ ks', ks' ≠ [] → APd ks' N`（`APd_all` が与える形）に強める。
+   `APd_nil` の `(k+1)::ks` の場合だけがこの強い形を作れないので、そこをどう回すかが問題。
+3. `APd_twoNilGenK` の仮定自体を `∀ i m, …` にして、`APd_nil` の側で
+   `APd_cS` を使うときに m を全称で取れるように `APd` の定義を見直す。
+
+**判断はマネージャに投げる。**私の見立てでは 1 が素直（定義を 1 行変えるだけで、
+`APd_cS` / `APd_cf` / `GCtx_cS` / `GCtx_cf` の文が 1 個ずつ増える）だが、
+`APd_iff` と `GCtx` の対応が崩れないかの確認が要る。
