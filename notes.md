@@ -4830,6 +4830,10 @@ msr ((k+1) :: B) > msr ((k+1) :: ks)     （i ≥ 1 または m' ≥ 1 のとき
 `APd ((k+1) :: B) V` は `APd_ct` でも `APd_cS` でも、どんな書き方でも要求できない。**
 `APd_ct` の U に限った話ではなく、`msr` を測度に使う限り不可能である。
 
+**★ ただしこの制約は `APd` の定義の中の枠条件にのみかかる。**定理の仮定として
+`∀ B, APd ((k+1) :: B) V` を置くのは自由で、停止性とは無関係。
+供給できるのは `APd_all`（∀ ks）。供給できないのは `APd_nilT` だけ。
+
 念のため `APd_ct` の U について直接計算すると（ks = `(k+1) :: ks''`）:
 ```
 msr (0 :: ks)      = {0, k+1} + msr ks''
@@ -4973,3 +4977,59 @@ msr (w ++ ks) < msr (0 :: ks) = {0} + msr ks   ⟺   msr w < {0}   ⟺   w = []
 - 形の符号化を変えて `one` 枠にも余裕を作る（`0` より小さい記号を入れる等）、または
 - 測度を形だけでなく木でも減るものにする
 のいずれかが要る。
+
+## 続き118: 穴 (B) の直し方が見つかった。枠に「荷を吊るせる」を持たせる（実測 error 20）
+
+### 発想
+
+測度が縛るのは **`APd` / `GCtx` の定義の中の枠条件**だけ。そして枠条件は
+「測度が減る形なら何でも」要求できる。`APd ks (pay U C)` は**形 `ks` のまま**なので
+`msr_drop0` で減る。**だから枠に「荷を吊るせる」を持たせられる。**
+
+```lean
+-- APd の 0 :: ks の場合 / GCtx の 0 :: ks の場合（+ APd_ct / GCtx_ct）
+∀ U, FrmJ ks U → Rq ks U → APd ks U →
+  (∀ C : TrioSeq, Bok C → APd ks (Jk1.pay U C)) →      -- ← 追加
+  APd ks (Jk1.one U V)
+```
+
+これを入れると **`APd_nilT` が自明になる**:
+```lean
+APd_nilT ks : APd (0 :: ks) Jk1.nil :=
+  (APd_ct ks _).mpr (fun U hU hR hUk hUpay => APd_oneNil ks U hU hR hUk hUpay)
+```
+`APd_payA` を呼ばなくなるので、**`AYdK` の消費側が `APd_all` の 1 個だけになる**。
+`APd_all` は `∀ ks, ks ≠ [] → APd ks V` を出せるので、
+`AYdK'`（仮定を `∀ B, APd ((k+1) :: B) V` に強めた版）を供給できる。**穴 (B) が消える。**
+
+### 実測（`/tmp/SmallPay.lean`、1 回検査、42 秒）
+
+4 箇所（`APd` 定義 / `APd_ct` / `GCtx` 定義 / `GCtx_ct`）を書き換えただけで
+**定義は通った（停止性 OK）。error は 20 個**で、内訳は
+
+| 箇所 | 種類 |
+|---|---|
+| `APd_cf` / `GCtx_cf` の言い換え、`APd_iff`、`APd_step` など 17 個 | 機械的（引数を 1 個通すだけ）|
+| `GCtx_rep2` / `GCtx_rep3` / `GCtx_repK` の 3 個 | `fone N` 枠を建てるので N の荷閉包が要る |
+
+3 個の方は `APd_twoNilNest` / `APd_plug_repK` / `GCtx_repK` の**仮定に足せばよい**
+（定理の仮定なので自由）。その供給は `APd_nil_head` が `APd_cS` の枠条件から取る形になるので、
+`APd_cS` の枠にも同じものを足すか、`APd_payA` で作る。
+
+### もう 1 つの実測（続き117 追記1）と噛み合う
+
+closure を「要素が k 以下の語」に広げる変更（error 16、全部機械的）を入れると、
+枠 junk の closure は `∀ w, APd (j :: (w ++ ks)) N` になる。
+これは **`AYdK'` が要求する base 一様性そのもの**（`j` レベルで、base は語で伸びる）。
+つまり 2 つの変更は同じ方向を向いている。
+
+### 手順（提案）
+
+```
+1. closure を語の族に広げる                    error 16（全部機械的）
+2. fone 枠に荷閉包を足す                        error 20（17 機械的 + 3 は仮定追加）
+3. ftwo 枠にも荷閉包を足す（2 の 3 個のため）    未測定
+4. AYdK' を仮定 (∀ B, APd ((k+1)::B) V) で書く   AYdT2 の写しが既に 1 行を除いて通っている
+5. APd_nilT を自明版に、APd_payA の消費側を APd_all 1 個にする
+```
+1〜3 はどれも `msr` の制約を満たす（定義の中でも合法）ことを確認済み。
