@@ -6450,3 +6450,55 @@ APd0_step : APd0 (0 :: ks) W → APd0 ks (Jk1.one Jk1.nil W)   := id
 #17 / 行376 / 続き111 の 12 個   ← 取れる
 穴(B)(D)（枠 junk が任意）        ← 未解決のまま。一般論は (iii) で後日
 ```
+
+### 続き124 追記4: `APd0` が入った（error 0）。そして案(iv) が効く**本当の理由**
+
+commit 2f3cc1d。`APd0` / `APd0_bnil` / `APd0_ct` / `APd0_cS` / `APd0_step` / `APd0_two`。
+
+**停止性についてマネージャの読み（素朴な測度で足りる）は外れ**で、`msr` が要る:
+```
+(k+1) :: ks → k :: (List.replicate m 0 ++ ks)    長さが 1+m+|ks| に増える
+```
+`msr_grp k 0 m ks` をそのまま使えばよいので、追加コストは無い。
+
+#### 穴(B)(D) が「発生しない」ことは定義から出た
+
+```lean
+APd0_step : APd0 (0 :: ks) W → APd0 ks (Jk1.one Jk1.nil W)            -- .mp するだけ
+APd0_two  : APd0 ((k+1) :: ks) M → APd0 (k :: ks) (Jk1.two Jk1.nil M)  -- .mp して m := 0
+```
+一般版では `APd_step` に `hV / hR / hVk / hVp`、`APd_twoK` に closure が要ったが、
+**枠が nil なので全部消える。**
+
+#### ★ ただし `APd0_nil` の中で同じ形が戻ってくる。**が、質が違う**
+
+`APd0_nil ks : APd0 ks Jk1.nil` を形の帰納法で書くと
+```
+[]           GOK nil                                    ✓
+0 :: ks      APd0 ks (one nil nil)  ← APd0_oneNil + hang（= APd0_pay ks nil C）
+(k+1) :: ks  ∀ m, APd0 (k :: ks_m) (two nil nil)         ← 塔の議論（ガード除去前の形）
+```
+`hang` に要るのは **`AYdK` の V = nil の場合**で、その base 一様性は
+```
+∀ B, APd0 ((k+1) :: B) Jk1.nil        ← これは APd0_nil そのもの
+```
+**一般版との決定的な違い:**
+```
+一般版  ∀ B, APd ((k+1)::B) U     U は APd_ct の束縛変数（任意の木）
+        → どこからも供給できない。測度でも要求できない。**手も足も出ない**
+制限版  ∀ B, APd0 ((k+1)::B) nil
+        → 証明しようとしている命題そのもの。**自己言及であって供給不能ではない**
+```
+つまり **(iv) は「供給できない要求」を「自己言及」に変えた。**
+自己言及なら、より強い命題を別の順序で回すなどの手がある（一般版には無かった）。
+
+#### 次の人へ
+
+```
+1. APd0_nil を「∀ ks, APd0 ks nil」として書き、
+   hang の部分で ∀ B, APd0 ((k+1)::B) nil を自分自身から取れるか試す
+   （素朴には循環する。何かで整礎にする必要がある。ここが本丸）
+2. 通れば APd0_all（木の構造帰納。one / two の場合は APd0_step / APd0_two で恒等）
+3. GOK_all0 → rowJ_mem0 → otwJ3（= twrK 2 nil）→ R375b_mem（#17）
+```
+**`APd0_all` の one / two の場合は既に自明**（上の 2 本）。**残る本質は `APd0_nil` の 1 本だけ。**
