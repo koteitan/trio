@@ -9810,3 +9810,60 @@ NU の右端 = one nil (pay nil [(0,0,0)])   ← 「右に伸びる」壁（追�
 
 **教訓**: 「字が要る」と決めつける前に、**その列が平坦（行1=行2=0）なら
 `flat_mem''` で字を経由せず足せないか**を先に見る。
+
+### 追記30: 「右に伸びる」壁を破った — 深さ添字の梯子 `StkOk` / `LOk`
+
+追記27 の設計課題（フレーム列で一様化）を、フレーム列でなく**深さの自然数 `k`**
+で添字づけて解いた。
+
+```
+StkOk 0 D       D = ctx ++ [ftwo N]（GCtx (true::ks) ctx, JkA N, 強い hNall）
+StkOk (k+1) D   D = D' ++ [fone U]（StkOk k D', JkA U, ∀D'' StkOk k D'' → GOK (plug D'' U)）
+LOk k X    := ∀ D, StkOk k D → GOK (plug D X)
+```
+
+`StkOk` は ℕ 上の再帰的な `def`（`inductive` は非正値になるので不可: `StkOk k` が
+`StkOk (k+1)` のコンストラクタの仮定の中に負の位置で現れる）。
+
+**これで一様に書けた**:
+```
+StkOk_JkT   k の帰納法（ftwo は JkT_plug_two、fone は one U T が JkA）
+LOk_one     LOk k W → LOk (k+1) Z → LOk k (one W Z)   ← 定義から。右に伸ばす本体
+LOk_itJ     鎖 itJ の各段（LOk_one の反復）
+LOk_pay     k=0 は TwoOk_pay を transport、k+1 は OneOk_pay の写し（k に依存しない）
+LOk_oneNil  APnil_gen0 は文脈一般なので k で場合分け不要
+LOk_nil     k=0 は TwoOk_nil、k+1 は LOk_oneNil
+```
+`TwoOk ↔ LOk 0`（`TwoOk_of_LOk0` / `LOk0_of_TwoOk`）。`OneOk` は `LOk 1` に相当。
+
+**効いた理由**: `APnil_gen0` も `GoodFb_snoc_dupJs0` / `innerJs0` も**文脈一般**
+（`ctx : List Frm` を全称で取る）。深さ 1 段ごとの∀文脈クラスは、文脈の族
+`StkOk k` を先に立てれば 1 本の述語 `LOk k` に畳める。
+
+**実り 3 本**:
+```
+U(2,2,1)  NU = one nil (two nil (one (two nil nil) (one nil (pay nil [(0,0,0)]))))
+          右端 one nil (pay nil B) ← LOk 2 (pay nil B) → LOk 1 → LOk 0
+          ついでに hang7_R375t: T ++ shiftr01 7 0 B ∈ W 0（任意の Bok B）
+T(7,1,0)  hang7_R375t の塔 TwD 7 R375t n + snocd_mem（S(6,1,0) と同型）
+S(6,2,0)  鎖 chn m = one nil (one nil (... nil)) が LOk_chn でどの深さにも差せる。
+          NSch m = one nil (two nil (one (two nil nil) (chn m)))
+          → 塔 Mtw R375m [(5,1,0)] n → snocY_mem (L=5, y=2)
+```
+これで `S` 族 17/17、`T` 族 18/18 が完了。`U` 族は 18 本中 7 本。
+
+**残る壁は 1 つだけになった**: `TwoOk (two N M)`（M ≠ nil）＝ 2 の記録の階段。
+シート目標 `R376 = R373(5,3,0)` はこれだけが要る（`R376_of_tower` は既にある）。
+測った結果:
+```
+stkP j R = two nil (... (two nil R))  （j 段）
+必要 = ∀ j ks, APd (false::ks) (stkP j Jk1.nil)
+塔の木 nstG N j k = one nil (two N (stkP j (nstG N j k-1)))
+  → 段の 2 の記録は j+1 本、目標は j+2 本。j の帰納法で回る（循環しない）
+snocYd_mem 側は通る: 単位 M = unN N D ++ (D+2..D+j+1 の 2 の記録)、dl = j+2、
+  MidD (D+1) M / hMy とも unN のときと同じ議論で出る（(D+1,2,0) が M に残るため）
+残るのは APd_twoTwoGen の GoodFb 部（pu/pk/seg）の j 一般化。
+```
+`LOk` に `ftwo` のコンストラクタを足す形で書けるが、そのとき
+`APd_twoNilGen` / `TwoOk_pay` / `APd_twoTwoGen` を「2 の記録で終わる文脈」でも
+やり直す必要がある。次の大きな仕事。

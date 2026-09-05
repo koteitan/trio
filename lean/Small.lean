@@ -26265,5 +26265,380 @@ theorem R375u5_mem : R375u ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375u5_mem
 
 
+/-! ### ★★★★★ 「右に伸びる」壁: 深さ `k` の枠積み `StkOk` と、そこに差せる木 `LOk`
+
+`TwoOk` は「2 の記録の直上」（深さ 0）、`OneOk` は「その上に 1 の列を 1 枚」
+（深さ 1）だった。右に 1 段伸ばすたびに 1 段深い∀文脈クラスが要る（追記27）。
+深さを自然数 `k` で添字づけて一様化する。
+
+    StkOk 0 D       D = ctx ++ [ftwo N]（良い文脈 + 2 の記録）
+    StkOk (k+1) D   D = D' ++ [fone U]（深さ k の積みの内側に 1 の列の枠）
+                    ただし枠木 `U` はどの深さ k の積みにも差せること
+    LOk k X         深さ k のどの積みにも `X` を差せる
+
+`APnil_gen0` も `GoodFb_snoc_dupJs0` / `innerJs0` も文脈一般なので、
+`LOk_pay` / `LOk_oneNil` は `k` に一様に書ける。 -/
+
+def StkOk : ℕ → List Frm → Prop
+  | 0, D => ∃ (ks : List Bool) (ctx : List Frm) (N : Jk1),
+      D = ctx ++ [Frm.ftwo N] ∧ GCtx (true :: ks) ctx ∧ JkA N ∧
+      (∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+  | (k + 1), D => ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ StkOk k D' ∧ JkA U ∧
+      (∀ D'' : List Frm, StkOk k D'' → GOK (plug D'' U))
+
+/-- 深さ `k` のどの枠積みにも差せる木。 -/
+def LOk (k : ℕ) (X : Jk1) : Prop := ∀ D : List Frm, StkOk k D → GOK (plug D X)
+
+theorem StkOk_zero_iff (D : List Frm) :
+    StkOk 0 D ↔ ∃ (ks : List Bool) (ctx : List Frm) (N : Jk1),
+      D = ctx ++ [Frm.ftwo N] ∧ GCtx (true :: ks) ctx ∧ JkA N ∧
+      (∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) := Iff.rfl
+
+theorem StkOk_succ_iff (k : ℕ) (D : List Frm) :
+    StkOk (k + 1) D ↔ ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ StkOk k D' ∧ JkA U ∧
+      (∀ D'' : List Frm, StkOk k D'' → GOK (plug D'' U)) := Iff.rfl
+
+/-- 枠積みに差した木は字レベルで妥当。 -/
+theorem StkOk_JkT : ∀ (k : ℕ) (D : List Frm), StkOk k D → ∀ T : Jk1, JkA T →
+    JkT (plug D T)
+  | 0, D, hD, T, hT => by
+      obtain ⟨ks, ctx, N, rfl, hc, hN, -⟩ := hD
+      exact JkT_plug_two hN hc hT
+  | (k + 1), D, hD, T, hT => by
+      obtain ⟨D', U, rfl, hD', hU, -⟩ := hD
+      rw [plug_snoc]
+      exact StkOk_JkT k D' hD' _ ⟨hU, hT⟩
+
+theorem LOk_congr {k : ℕ} {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : LOk k X1) :
+    LOk k X2 := fun D hD => GOK_congr (jk1_plug_congr D h) (hX D hD)
+
+/-- ★★★★★ 右に 1 段伸ばす。深さ `k+1` の木は、深さ `k` の枠木の右の子になれる。 -/
+theorem LOk_one {k : ℕ} {W Z : Jk1} (hJW : JkA W) (hW : LOk k W) (hZ : LOk (k + 1) Z) :
+    LOk k (Jk1.one W Z) := by
+  intro D hD
+  rw [← plug_snoc]
+  exact hZ (D ++ [Frm.fone W]) ⟨D, W, rfl, hD, hJW, hW⟩
+
+theorem LOk0_of_TwoOk {X : Jk1} (h : TwoOk X) : LOk 0 X := by
+  intro D hD
+  obtain ⟨ks, ctx, N, rfl, hc, hN, hNall⟩ := hD
+  exact TwoOk_GOK h hN hNall hc
+
+theorem TwoOk_of_LOk0 {X : Jk1} (h : LOk 0 X) : TwoOk X := by
+  intro N hN hNall j kk
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  rw [← plug_snoc2]
+  exact h (ctx ++ [Frm.ftwo N]) ⟨_, ctx, N, rfl, hc, hN, hNall⟩
+
+/-- 鎖（`itJ`）の各段が深さ `k` に差せる。 -/
+theorem LOk_itJ {k : ℕ} {T : Jk1} (hJT : JkA T) (hT : LOk (k + 1) T) :
+    ∀ (n : ℕ) {U : Jk1}, JkA U → LOk k U → JkA (itJ T n U) ∧ LOk k (itJ T n U)
+  | 0, _, hJU, hU => ⟨hJU, hU⟩
+  | (n + 1), U, hJU, hU => by
+      obtain ⟨h1, h2⟩ := LOk_itJ hJT hT n hJU hU
+      exact ⟨⟨h1, hJT⟩, LOk_one h1 h2 hT⟩
+
+theorem TwoOk_nil : TwoOk Jk1.nil := by
+  intro N hN hNall j kk
+  rw [rep_true_cons]
+  exact APd_twoNilGen N hN _ (fun jj => hNall jj (List.replicate j true ++ kk))
+
+/-- ★★★★★ 深さ `k+1` での荷の閉包（`OneOk_pay` の `k` 一様版）。 -/
+theorem LOk_pay_succ (k : ℕ) {X : Jk1} (hJX : JkA X) (hX : LOk (k + 1) X) :
+    ∀ Y : TrioSeq, Bok Y → LOk (k + 1) (Jk1.pay X Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → LOk (k + 1) (Jk1.pay X Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact LOk_congr (fun l => (jk1_pay_nil l X).symm) hX
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hprev : LOk (k + 1) (Jk1.pay X ([] : TrioSeq)) :=
+          LOk_congr (fun l => (jk1_pay_nil l X).symm) hX
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (StkOk_JkT k D' hD'
+            (Jk1.one U (Jk1.pay X (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJU, hJX, by simpa using hYb⟩)
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (LOk_itJ (T := Jk1.pay X ([] : TrioSeq)) ⟨hJX, Bok_nil⟩ hprev n hJU hU).2
+          D' hD' ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : LOk (k + 1) (Jk1.pay X Y.dropLast) := hdl hdb
+        rw [hsplit]
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (StkOk_JkT k D' hD'
+            (Jk1.one U (Jk1.pay X (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJU, hJX, by rw [← hsplit]; exact hYb⟩)
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (LOk_itJ (T := Jk1.pay X Y.dropLast) ⟨hJX, hdb⟩ hprev n hJU hU).2
+          D' hD' ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs0 hw
+          (StkOk_JkT k D' hD' _ ⟨hJU, hJX, hYb⟩) hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have h2 := hh (Bok_oper hYb hn) (D' ++ [Frm.fone U]) ⟨D', U, rfl, hD', hJU, hU⟩
+        rw [plug_snoc] at h2
+        exact h2 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb
+  exact key hYb.mem hYb
+
+/-- ★★★★★ どの深さでも荷を吊るせる。 -/
+theorem LOk_pay : ∀ (k : ℕ) {X : Jk1}, JkA X → LOk k X → ∀ Y : TrioSeq, Bok Y →
+    LOk k (Jk1.pay X Y)
+  | 0, _, hJX, hX => fun Y hY => LOk0_of_TwoOk (TwoOk_pay Y hY _ hJX (TwoOk_of_LOk0 hX))
+  | (k + 1), _, hJX, hX => LOk_pay_succ k hJX hX
+
+/-- ★★★★★ どの深さでも「1 の列を 1 段足す」で閉じている。 -/
+theorem LOk_oneNil {k : ℕ} {X : Jk1} (hJX : JkA X) (hX : LOk k X) :
+    LOk k (Jk1.one X Jk1.nil) := by
+  intro D hD
+  exact APnil_gen0 D X (StkOk_JkT k D hD _ ⟨hJX, trivial⟩) (hX D hD)
+    (fun C hC => LOk_pay k hJX hX C hC D hD)
+
+/-- ★★★★★ どの深さでも空木を差せる。 -/
+theorem LOk_nil : ∀ k : ℕ, LOk k Jk1.nil
+  | 0 => LOk0_of_TwoOk TwoOk_nil
+  | (k + 1) => by
+      intro D hD
+      obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+      rw [plug_snoc]
+      exact LOk_oneNil hJU hU D' hD'
+
+#print axioms LOk_pay
+#print axioms LOk_nil
+
+
+/-! ### ★★★★★ `U` の字（高さ 7 の吊るし）と `U(2,2,1)`
+
+`U = T(7,0,0)` の字は
+`NU = one nil (two nil (one (two nil nil) (one nil (pay nil [(0,0,0)]))))`。
+右端の `one nil (pay nil B)` が「右に伸びる」形で、梯子 `LOk` で出る:
+
+    LOk 2 (pay nil B)          LOk_pay 2 + LOk_nil 2
+    LOk 1 (one nil (pay nil B))                LOk_one（枠木 nil）
+    LOk 0 (one (two nil nil) (one nil (pay nil B)))  LOk_one（枠木 two nil nil）
+    TwoOk (...)                                TwoOk_of_LOk0 -/
+
+theorem TwoOk_hang7 {B : TrioSeq} (hB : Bok B) :
+    TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.one Jk1.nil (Jk1.pay Jk1.nil B))) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+    (LOk_one (k := 1) trivial (LOk_nil 1)
+      (LOk_pay 2 (X := Jk1.nil) trivial (LOk_nil 2) B hB)))
+
+#print axioms TwoOk_hang7
+
+def NUB (B : TrioSeq) : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.one Jk1.nil (Jk1.pay Jk1.nil B))))
+
+theorem JkT_NUB {B : TrioSeq} (hB : Bok B) : JkT (NUB B) :=
+  ⟨⟨trivial, trivial, ⟨trivial, trivial⟩, trivial, trivial, hB⟩, trivial⟩
+
+theorem GOK_NUB {B : TrioSeq} (hB : Bok B) : GOK (NUB B) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_hang7 hB Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem jk1_NUB (B : TrioSeq) (l : ℕ) :
+    jk1 l (NUB B) = ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 3, 1, 0) : ℕ × ℕ × ℕ) ::
+      ((l + 4, 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 (l + 5) 0 B := by
+  show ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+    ((l + 1 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 1 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    ((l + 1 + 1 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    shiftr01 (l + 1 + 1 + 1 + 1 + 1) 0 B = _
+  rw [show l + 1 + 1 = l + 2 from by omega, show l + 2 + 1 = l + 3 from by omega,
+    show l + 3 + 1 = l + 4 from by omega, show l + 4 + 1 = l + 5 from by omega]
+
+/-- ★★★ `T` は高さ 7 で荷を吊るせる。 -/
+theorem hang7_R375t {B : TrioSeq} (hB : Bok B) : R375t ++ shiftr01 7 0 B ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [NUB B])) :=
+    GOK_NUB hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [NUB B]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_NUB B 2] at h
+  simpa [R375t, R375s, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms hang7_R375t
+
+def NU : Jk1 := NUB [((0, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem JkT_NU : JkT NU := JkT_NUB Bok_zero
+
+theorem GOK_NU : GOK NU := GOK_NUB Bok_zero
+
+/-- ★★★★★ `U(2,2,1)`。 -/
+theorem R375u6_mem : R375u ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NU])) := GOK_NU [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NU]) := by simpa using h1
+  have h2 := GOK_nil [NU] (WOk_singletonT JkT_NU) h1'
+  have h := rowJ_mem_genF Aok_R338 h2
+  simpa [wordJ_append, wordJ_singleton, colJ, NU, jk1_NUB, jk1, shiftr01, R375u, R375t,
+    R375s, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms R375u6_mem
+
+
+/-! ### ★★★★★ `T(7,1,0)`（高さ 7 の吊るしの塔） -/
+
+theorem Ancd7_R375t : Ancd 7 R375t :=
+  Ancd_append_Mid Aok_R375s.ne Ancd6_R375s (MidD_one 6 (by omega))
+
+theorem tw7_R375t : ∀ n : ℕ, TwD 7 R375t n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      exact hang7_R375t ⟨tw7_R375t n, TwD_zroot (by omega) Aok_R375t.zroot n,
+        TwD_mono Aok_R375t.mono n, TwD_root Aok_R375t.ne Aok_R375t.deep.1 n⟩
+
+/-- ★★★★★ `T(7,1,0)`。 -/
+theorem R375t17_mem : R375t ++ [((7, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) Aok_R375t.ne Aok_R375t.deep Aok_R375t.zroot Ancd7_R375t tw7_R375t
+
+#print axioms R375t17_mem
+
+
+/-! ### ★★★★★ 右に伸びる 1 の列の鎖 `chn` と `S(6,2,0)`
+
+`chn m = one nil (one nil (... nil))`（m 段）。`jk1 l (chn m)` は
+`(l+1,1,0)(l+2,1,0)...(l+m,1,0)`。梯子 `LOk` で、どの深さにも差せる。 -/
+
+def chn : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (m + 1) => Jk1.one Jk1.nil (chn m)
+
+theorem JkA_chn : ∀ m : ℕ, JkA (chn m)
+  | 0 => trivial
+  | (m + 1) => ⟨trivial, JkA_chn m⟩
+
+/-- ★★★★★ 鎖はどの深さにも差せる（「右に伸びる」の直接の実り）。 -/
+theorem LOk_chn : ∀ (m k : ℕ), LOk k (chn m)
+  | 0, k => LOk_nil k
+  | (m + 1), k => LOk_one trivial (LOk_nil k) (LOk_chn m (k + 1))
+
+theorem chn_run : ∀ (m l : ℕ), ((l, 1, 0) : ℕ × ℕ × ℕ) :: jk1 l (chn m)
+    = (List.range (m + 1)).flatMap (fun k => shiftr01 k 0 [((l, 1, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simp [chn, jk1, shiftr01]
+  | (m + 1), l => by
+      show ((l, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 l Jk1.nil ++
+        (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (chn m))) = _
+      rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp only [jk1, List.nil_append, shiftr01_zero]
+      refine congrArg _ ?_
+      rw [chn_run m (l + 1)]
+      apply List.flatMap_congr
+      intro k _
+      show shiftr01 k 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ)]
+        = shiftr01 (k + 1) 0 [((l, 1, 0) : ℕ × ℕ × ℕ)]
+      unfold shiftr01
+      simp only [List.map_cons, List.map_nil]
+      rw [show l + 1 + k = l + (k + 1) from by omega]
+
+/-- `S` の字の右端を鎖に伸ばした木。`jk1 2 (NSch m) = (3,1,0)(4,2,0)(5,2,0)(5,1,0)...(5+m,1,0)`。 -/
+def NSch (m : ℕ) : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (chn m)))
+
+theorem JkT_NSch (m : ℕ) : JkT (NSch m) :=
+  ⟨⟨trivial, trivial, ⟨trivial, trivial⟩, JkA_chn m⟩, trivial⟩
+
+theorem TwoOk_NSch_inner (m : ℕ) :
+    TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (chn m)) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+    (LOk_chn m 1))
+
+theorem GOK_NSch (m : ℕ) : GOK (NSch m) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_NSch_inner m Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem jk1_NSch (m l : ℕ) :
+    jk1 l (NSch m) = ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 3) (chn m) := by
+  show ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+    ((l + 1 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 1 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (l + 1 + 1 + 1) (chn m) = _
+  rw [show l + 1 + 1 = l + 2 from by omega, show l + 2 + 1 = l + 3 from by omega]
+
+/-- `S(6,2,0)` の塔: `P (5,1,0)(6,1,0)...(4+n,1,0)`。 -/
+theorem tw_R375m_51 : ∀ n : ℕ, Mtw R375m [((5, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0
+  | 0 => by simpa [Mtw] using Aok_R375m.mem
+  | (m + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b ([] ++ [NSch m])) :=
+        GOK_NSch m [] WOk_nil GoodFb_wordJ_nil
+      have hG' : GoodFb (fun a b => wordJ a b [NSch m]) := by simpa using hG
+      have h := rowJ_mem_genF Aok_R338 hG'
+      rw [wordJ_singleton, colJ, jk1_NSch m 2] at h
+      rw [Mtw, ← chn_run m 5]
+      simpa [R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+/-- ★★★★★ `S(6,2,0)`。 -/
+theorem R375s16_mem : R375s ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := R375m) (M := [((5, 1, 0) : ℕ × ℕ × ℕ)]) (L := 5) (y := 2)
+    R375m_ne (MidD_one 5 (by omega)) (by simp [entry]) (by omega) tw_R375m_51
+  simpa [R375s, List.append_assoc] using h
+
+#print axioms R375s16_mem
+
+
 end Small
 end TRIO
