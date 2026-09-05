@@ -3615,3 +3615,62 @@ List.replicate j' true → List.replicate j' 0
 
 **ここが山場の入口**: 残り 3 つはすべて「2 の記録の枠を `k+1` 枚積んだ形」
 （`(k+1) :: ks`）を新しく書く必要がある。`(1 :: ks)` = 1 枚の場合だけが既存。
+
+### 続き113 追記3: ★ SmallY.wip が error 0 になった。穴は名前付き 3 本だけ
+
+```
+leanman check --backend lean → exit 1 (sorry)、error 0、sorry を使う宣言は 3 本
+```
+
+3 本の穴（すべて「2 の記録の枠を `k+1` 枚積んだ形」）:
+
+```lean
+-- 20739  残作業4b（AYdT の一般化）
+theorem AYdK : ∀ (k : ℕ) (ks : List ℕ) (V : Jk1), JkJ V → APd ((k + 1) :: ks) V →
+    ∀ C : TrioSeq, Bok C → APd ((k + 1) :: ks) (Jk1.pay V C)
+
+-- 20932  残作業4a（APd_twoNilGen の一般化）
+theorem APd_twoNilGenK : ∀ (k : ℕ) (ks : List ℕ) (N : Jk1), JkJ N →
+    (∀ i : ℕ, APd (List.replicate i k ++ (k :: ks)) N) →
+    APd (k :: ks) (Jk1.two N Jk1.nil)
+  | 0, ks, N, hN, hcl => APd_twoNilGen N hN ks hcl      -- ← k = 0 は既存で埋まっている
+  | (k + 1), ks, N, hN, hcl => by sorry
+
+-- 20952  残作業5（APd_all の two の場合）
+theorem APd_twoK (k : ℕ) (ks : List ℕ) (N M : Jk1) (h : JkJ (Jk1.two N M))
+    (hNall : ∀ ks' : List ℕ, ks' ≠ [] → APd ks' N)
+    (hMall : ∀ ks' : List ℕ, ks' ≠ [] → APd ks' M) :
+    APd ((k + 1) :: ks) (Jk1.two N M)
+```
+
+これで `APd_nil` / `APd_payA` / `APd_all` はすべて埋まり、`GOK_all` まで到達する。
+元々あった `sorry`（`(sorry : Rq (1 :: ks') M)`）は `Rq` が常に真になったので `trivial` で消えた。
+
+#### `APd_twoK` の目標を開いた形（次の人はここから）
+
+`APd_cS k ks (two N M)` で開くと
+```
+∀ m N', JkJ N' → (TopOk (two N M) ∨ N' = nil) → (∀ i, APd (replicate i k ++ (k :: ks'')) N')
+      → APd (k :: ks'') (two N' (two N M))          ks'' = replicate m 0 ++ ks
+```
+`TopOk (two _ _) = False` なので **`N' = nil` が強制される**。つまり実質の目標は
+```
+APd (k :: ks'') (two nil (two N M))
+```
+＝「nil 枠の 2 の記録の下に木を置く」。これを `k` について降ろしていくと
+`two nil (two nil (… (two N M)))` の塔になり、最後に `APd (0 :: …)` で `APd_ct` に落ちる。
+`APd_twoNilGenK` と同じ塔（歩幅 `k+1`）が要るので、**4a を先にやるのが正しい順序**。
+
+#### 4a の見通し（`APd_twoNilGen` の `k = 0` の証明 20785-20915 を読むこと）
+
+`k = 0` の証明の骨格:
+```
+GCtx_split ks ctx hc            → ctx = ctx0 ++ [fone V]（最内が 1 の列の枠）
+APd_plug_rep                    → 階段 plug (replicate m (fone N)) N
+htw : ∀ n, Mtw … (colN … N) n ∈ W 0
+snocY_mem (L := …, y := 2)      → 2 の記録を 1 本継ぐ
+```
+`k ≥ 1` では `GCtx t (k :: ks) ctx` の最内が `ftwo N'` になるので `GCtx_split` が使えない。
+塔の単位も「1 の列 1 本」ではなく「グループ全体（1 の列 + 2 の記録 k 枚）」になり、
+歩幅が `k+1` になる ⟹ `snocY_mem`(dl=1) を **`snocYd_mem`(dl=k+1)** に替える。
+`snocYd_mem` は `hMy`（`M` の頭以外は行 1 が `y` 以上）という側条件が増える。

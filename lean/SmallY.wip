@@ -20733,11 +20733,18 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z
 
 /-! ### 荷の追加（どの形でも）と、階段 -/
 
+/-- ★ 残作業4b: `AYdT` の `k` 一般化（2 の記録の枠を `k+1` 枚積んだ形で荷を吊るす）。
+`k = 0` かつ `TopOk V` なら `AYdT`。新設計では `TopOk V ∨ N = nil` しか無いので、
+`N = nil` の枝も要る。 -/
+theorem AYdK : ∀ (k : ℕ) (ks : List ℕ) (V : Jk1), JkJ V → APd ((k + 1) :: ks) V →
+    ∀ C : TrioSeq, Bok C → APd ((k + 1) :: ks) (Jk1.pay V C) := by
+  sorry
+
 theorem APd_payA : ∀ (ks : List ℕ) (V : Jk1), FrmJ ks V → Rq ks V → APd ks V →
     ∀ C : TrioSeq, Bok C → APd ks (Jk1.pay V C)
   | [], V, hV, _, hVk, C, hC => APd_payE V hV hVk C hC
   | (0 :: ks), V, hV, _, hVk, C, hC => APd_payT ks V (FrmJ_JkJ _ V hV) hVk C hC
-  | (1 :: ks), V, hV, hR, hVk, C, hC => AYdT C hC ks V (FrmJ_JkJ _ V hV) hR hVk
+  | ((k + 1) :: ks), V, hV, _, hVk, C, hC => AYdK k ks V (FrmJ_JkJ _ V hV) hVk C hC
 
 theorem APd_nilT (ks : List ℕ) : APd (0 :: ks) Jk1.nil :=
   (APd_ct ks _).mpr (fun U hU hR hUk =>
@@ -20919,13 +20926,34 @@ theorem APd_twoNilB (ks : List ℕ) : APd (1 :: ks) Jk1.nil :=
   (APd_cf ks _).mpr (fun m U N hU hR hUk hN hd hNt =>
     (APd_ct _ _).mp (APd_twoNilGen N hN _ hNt) U hU hR hUk)
 
+/-- ★ 残作業4a: `APd_twoNilGen` の `k` 一般化。
+`k = 0` は既存の `APd_twoNilGen`。`k ≥ 1` は塔の歩幅が `k+1` になるので
+`snocY_mem`(dl=1) を `snocYd_mem`(dl=k+1) に替える必要がある。 -/
+theorem APd_twoNilGenK : ∀ (k : ℕ) (ks : List ℕ) (N : Jk1), JkJ N →
+    (∀ i : ℕ, APd (List.replicate i k ++ (k :: ks)) N) →
+    APd (k :: ks) (Jk1.two N Jk1.nil)
+  | 0, ks, N, hN, hcl => APd_twoNilGen N hN ks hcl
+  | (k + 1), ks, N, hN, hcl => by sorry
+
 theorem APd_nil : ∀ ks : List ℕ, APd ks Jk1.nil
   | [] => (APd_bnil _).mpr GOK_nil
   | (0 :: ks) => APd_nilT ks
-  | (1 :: ks) => APd_twoNilB ks
+  | ((k + 1) :: ks) =>
+      (APd_cS k ks _).mpr (fun m N hN _ hcl =>
+        APd_twoNilGenK k (List.replicate m 0 ++ ks) N hN hcl)
 
 
 
+
+/-- ★ 残作業5: `APd_all` の `two` の場合（枠が 2 の記録のとき）。
+`APd_cS` で開くと `TopOk (two N M) = False` なので下側の junk は `nil` に潰れ、
+目標は `APd (k :: ks') (two nil (two N M))`（nil 枠の 2 の記録の下に木）になる。
+`hN` / `hM` は `APd_all` の帰納法の仮定。 -/
+theorem APd_twoK (k : ℕ) (ks : List ℕ) (N M : Jk1) (h : JkJ (Jk1.two N M))
+    (hNall : ∀ ks' : List ℕ, ks' ≠ [] → APd ks' N)
+    (hMall : ∀ ks' : List ℕ, ks' ≠ [] → APd ks' M) :
+    APd ((k + 1) :: ks) (Jk1.two N M) := by
+  sorry
 
 /-- ★★★★★ どの妥当な木も、どの形でも項として継げる。 -/
 theorem APd_all : ∀ (T : Jk1), JkJ T → ∀ (ks : List ℕ), ks ≠ [] → Rq ks T → APd ks T
@@ -20942,16 +20970,19 @@ theorem APd_all : ∀ (T : Jk1), JkJ T → ∀ (ks : List ℕ), ks ≠ [] → Rq
       | nil => exact absurd rfl hne
       | cons b ks' =>
           cases b with
-          | false => exact absurd hR (by simp [Rq, TopOk])
-          | true =>
+          | succ k =>
+              exact APd_twoK k ks' N M h
+                (fun ks'' hne'' => APd_all N h.1 ks'' hne'' trivial)
+                (fun ks'' hne'' => APd_all M h.2.1 ks'' hne'' trivial)
+          | zero =>
               rw [APd_ct]
               intro U hU hRU hUk
-              have hM := APd_all M h.2 (1 :: ks') (by simp) (sorry : Rq (1 :: ks') M)
+              have hM := APd_all M h.2.1 (1 :: ks') (by simp) trivial
               have hNall : ∀ j : ℕ, APd (List.replicate j 0 ++ (0 :: ks')) N := by
                 intro j
                 exact APd_all N h.1 _ (by simp [rep_true_cons]) (by rw [rep_true_cons]; trivial)
               have h0 := (APd_cf ks' M).mp hM 0 U N (by simpa using hU) (by simpa using hRU)
-                (by simpa using hUk) h.1 (by simpa using hNall)
+                (by simpa using hUk) h.1 h.2.2 (by simpa using hNall)
               simpa using h0
 
 /-- ★★★★★ どの妥当な木も、字として語の右に継げる（GoodFb 3 段すべて）。 -/
