@@ -23440,122 +23440,32 @@ theorem R376_of_tower (htw : ∀ n : ℕ, Mtw R344 [((4, 2, 0) : ℕ × ℕ × �
 
 #print axioms R376_of_tower
 
-/-! ## 案(iii) 試作: step-indexing。形の測度を捨てて段数 `n` で再帰する。 -/
+/-! ## ★ 案(iii): 段数と形の**辞書式**。
 
-/-- 段数付きの `APd`。**再帰は `n` だけで減る**ので、枠条件は形を問わず
-何でも要求できる（`∀ S, APdN n S U` のように base 一様にできる）。
-第 1 引数の `APdN n ks V ∧ …` は下方閉性（`APdN (n+1) → APdN n`）を定義から出すため。 -/
-def APdN : ℕ → List ℕ → Jk1 → Prop
-  | 0, _, _ => True
-  | (n + 1), ks, V =>
-      APdN n ks V ∧
-      (match ks with
-        | [] => GOK V
-        | (0 :: ks') =>
-            ∀ U : Jk1, FrmJ ks' U → (∀ S : List ℕ, APdN n S U) →
-              APdN n ks' (Jk1.one U V)
-        | ((k + 1) :: ks') =>
-            ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
-              (∀ S : List ℕ, APdN n S N) →
-              APdN n (k :: (w0 ++ ks')) (Jk1.two N V))
+旧設計の壁は「junk 条件が `APd` 自身を呼ぶので、形の測度で減らねばならず、
+`msr_word`（語の元が全部 ≤ k）が上限になる」ことだった。
 
-/-- 形を問わず段数だけで測る版の `APd`。 -/
-def APdS (ks : List ℕ) (V : Jk1) : Prop := ∀ n : ℕ, APdN n ks V
-
-theorem APdN_down : ∀ (n : ℕ) (ks : List ℕ) (V : Jk1), APdN (n + 1) ks V → APdN n ks V
-  | _, _, _, h => h.1
-
-theorem APdS_bnil (V : Jk1) : APdS [] V ↔ GOK V := by
-  constructor
-  · intro h; exact (h 1).2
-  · intro h n
-    induction n with
-    | zero => trivial
-    | succ m ih => exact ⟨ih, h⟩
-
-/-- 「どの形でも継げる」。step-indexing なので形に制限が無い。 -/
-def APdS_all (V : Jk1) : Prop := ∀ (S : List ℕ) (n : ℕ), APdN n S V
-
-theorem APdN_ct (n : ℕ) (ks : List ℕ) (V : Jk1) :
-    APdN (n + 1) (0 :: ks) V ↔ APdN n (0 :: ks) V ∧
-      ∀ U : Jk1, FrmJ ks U → (∀ S : List ℕ, APdN n S U) → APdN n ks (Jk1.one U V) := by
-  rw [APdN]
-
-theorem APdN_cS (n k : ℕ) (ks : List ℕ) (V : Jk1) :
-    APdN (n + 1) ((k + 1) :: ks) V ↔ APdN n ((k + 1) :: ks) V ∧
-      ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
-        (∀ S : List ℕ, APdN n S N) →
-        APdN n (k :: (w0 ++ ks)) (Jk1.two N V) := by
-  rw [APdN]
-
-/-- ★ 「使う」向き。`APdS` から base 一様な枠 junk で 1 段はがせる。 -/
-theorem APdS_ct_mp (ks : List ℕ) (V : Jk1) (h : APdS (0 :: ks) V)
-    (U : Jk1) (hU : FrmJ ks U) (hUall : APdS_all U) : APdS ks (Jk1.one U V) :=
-  fun n => ((APdN_ct n ks V).mp (h (n + 1))).2 U hU (fun S => hUall S n)
-
-/-- ★ 同じく 2 の記録側。**`N` に要求するのは base 一様（形は任意）**。
-形の測度が無いのでこれが書ける。 -/
-theorem APdS_cS_mp (k : ℕ) (ks : List ℕ) (V : Jk1) (h : APdS ((k + 1) :: ks) V)
-    (w0 : List ℕ) (hw0 : ∀ x ∈ w0, x ≤ k) (N : Jk1) (hN : JkJ N) (hNall : APdS_all N) :
-    APdS (k :: (w0 ++ ks)) (Jk1.two N V) :=
-  fun n => ((APdN_cS n k ks V).mp (h (n + 1))).2 w0 hw0 N hN (fun S => hNall S n)
-
-/-- ★★★ 塔が要求していた形。`L > i` でも通る（形の測度が無いから）。 -/
-example (i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdS_all U) :
-    APdS (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
-
-
-/-! ### 代案 `APdG`: 形の再帰のまま、junk 条件を**閉じた述語** `APdS_all` にする。
-`APdS_all` は `APdN`（段数の再帰）で既に定義済みなので、`APdG` の再帰呼び出しではない。
-だから「junk 条件が自分を呼ぶ → 形の測度が要る → `msr_word` が上限」の連鎖が切れる。 -/
-
-def APdG : List ℕ → Jk1 → Prop
-  | [], V => GOK V
-  | (0 :: ks), V => ∀ U : Jk1, FrmJ ks U → APdS_all U → APdG ks (Jk1.one U V)
-  | ((k + 1) :: ks), V => ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
-      APdS_all N → APdG (k :: (w0 ++ ks)) (Jk1.two N V)
-termination_by ks _ => msr ks
-decreasing_by
-  all_goals
-    first
-      | exact msr_drop0 _
-      | exact msr_word _ _ _ (by assumption)
-
-theorem APdG_bnil (V : Jk1) : APdG [] V ↔ GOK V := by rw [APdG]
-
-theorem APdG_ct (ks : List ℕ) (V : Jk1) :
-    APdG (0 :: ks) V ↔ ∀ U : Jk1, FrmJ ks U → APdS_all U → APdG ks (Jk1.one U V) := by
-  rw [APdG]
-
-theorem APdG_cS (k : ℕ) (ks : List ℕ) (V : Jk1) :
-    APdG ((k + 1) :: ks) V ↔ ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
-      APdS_all N → APdG (k :: (w0 ++ ks)) (Jk1.two N V) := by
-  rw [APdG]
-
-/-- ★ 塔が要求していた形。`L > i` でも `APdS_all` から出る。 -/
-example (i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdS_all U) (V : Jk1)
-    (h : APdG ((i + 1) :: (w ++ List.replicate (m + 1) L ++ ks)) V)
-    (hw : ∀ x ∈ ([] : List ℕ), x ≤ i) (hJ : JkJ U) :
-    APdG (i :: (w ++ List.replicate (m + 1) L ++ ks)) (Jk1.two U V) := by
-  have := (APdG_cS i (w ++ List.replicate (m + 1) L ++ ks) V).mp h [] hw U hJ hU
-  simpa using this
-
-
-/-! ### ★ 本命: 段数と形の**辞書式**。
-正の再帰呼び出しは段数を保って形を減らす（`msr`）。
-負の位置（junk 条件）だけ段数を 1 落として、**形は任意**にする。
-これで「junk 条件が自分を呼ぶ」を許しつつ、形の再帰は今までどおり使える。 -/
+ここでは
+```
+正の再帰（自分の続き）  段数を保って形を減らす（msr_drop0 / msr_word）
+負の位置（junk 条件）    段数を 1 落として、形は**任意**
+```
+とする。辞書式 `(n, msr ks)` で両方が減る。第 1 連言 `APdL n ks V ∧ …` は
+下方閉性（`APdL (n+1) → APdL n`）を定義から出すため。 -/
 
 def APdL : ℕ → List ℕ → Jk1 → Prop
   | 0, _, _ => True
-  | (n + 1), [], V => GOK V
-  | (n + 1), (0 :: ks), V =>
-      ∀ U : Jk1, FrmJ ks U → (∀ S : List ℕ, APdL n S U) →
-        APdL (n + 1) ks (Jk1.one U V)
-  | (n + 1), ((k + 1) :: ks), V =>
-      ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
-        (∀ S : List ℕ, APdL n S N) →
-        APdL (n + 1) (k :: (w0 ++ ks)) (Jk1.two N V)
+  | (n + 1), ks, V =>
+      APdL n ks V ∧
+      (match ks with
+        | [] => GOK V
+        | (0 :: ks') =>
+            ∀ U : Jk1, FrmJ ks' U → (∀ S : List ℕ, APdL n S U) →
+              APdL (n + 1) ks' (Jk1.one U V)
+        | ((k + 1) :: ks') =>
+            ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
+              (∀ S : List ℕ, APdL n S N) →
+              APdL (n + 1) (k :: (w0 ++ ks')) (Jk1.two N V))
 termination_by n ks _ => (n, msr ks)
 decreasing_by
   all_goals
@@ -23564,57 +23474,70 @@ decreasing_by
       | exact Prod.Lex.right _ (msr_drop0 _)
       | exact Prod.Lex.right _ (msr_word _ _ _ (by assumption))
 
-theorem APdL_bnil (n : ℕ) (V : Jk1) : APdL (n + 1) [] V ↔ GOK V := by rw [APdL]
+theorem APdL_bnil (n : ℕ) (V : Jk1) : APdL (n + 1) [] V ↔ APdL n [] V ∧ GOK V := by rw [APdL]
 
 theorem APdL_ct (n : ℕ) (ks : List ℕ) (V : Jk1) :
-    APdL (n + 1) (0 :: ks) V ↔
+    APdL (n + 1) (0 :: ks) V ↔ APdL n (0 :: ks) V ∧
       ∀ U : Jk1, FrmJ ks U → (∀ S : List ℕ, APdL n S U) →
         APdL (n + 1) ks (Jk1.one U V) := by rw [APdL]
 
 theorem APdL_cS (n k : ℕ) (ks : List ℕ) (V : Jk1) :
-    APdL (n + 1) ((k + 1) :: ks) V ↔
+    APdL (n + 1) ((k + 1) :: ks) V ↔ APdL n ((k + 1) :: ks) V ∧
       ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
         (∀ S : List ℕ, APdL n S N) →
         APdL (n + 1) (k :: (w0 ++ ks)) (Jk1.two N V) := by rw [APdL]
 
-
-/-- ★★★ 続き128 の「唯一の不等式」。段数が 1 落ちるだけで**形は任意**なので通る。 -/
-example (n i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : ∀ S : List ℕ, APdL n S U) :
-    APdL n (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
-
-/-- ★ 2 の記録の枠を 1 枚はがす（使う向き）。junk `N` に要求するのは
-**段数 n での base 一様性**（形は任意）。形の測度では書けなかった形。 -/
-theorem APdL_peel (n k : ℕ) (ks : List ℕ) (V : Jk1)
-    (h : APdL (n + 1) ((k + 1) :: ks) V)
-    (w0 : List ℕ) (hw0 : ∀ x ∈ w0, x ≤ k) (N : Jk1) (hN : JkJ N)
-    (hNall : ∀ S : List ℕ, APdL n S N) :
-    APdL (n + 1) (k :: (w0 ++ ks)) (Jk1.two N V) :=
-  (APdL_cS n k ks V).mp h w0 hw0 N hN hNall
+/-- 下方閉性。定義の第 1 連言そのもの（形で場合分けして取り出す）。 -/
+theorem APdL_down (n : ℕ) : ∀ (ks : List ℕ) (V : Jk1), APdL (n + 1) ks V → APdL n ks V
+  | [], V, h => ((APdL_bnil n V).mp h).1
+  | (0 :: ks), V, h => ((APdL_ct n ks V).mp h).1
+  | ((k + 1) :: ks), V, h => ((APdL_cS n k ks V).mp h).1
 
 /-- 段数を全部取ったもの。`APd` の置き換え候補。 -/
 def APdA (ks : List ℕ) (V : Jk1) : Prop := ∀ n : ℕ, APdL n ks V
 
+/-- どの形でも継げる（段数 `n` で）。**形に制限が無い**のが要点。 -/
+def APdU (n : ℕ) (V : Jk1) : Prop := ∀ S : List ℕ, APdL n S V
+
+theorem APdU_down (n : ℕ) (V : Jk1) (h : APdU (n + 1) V) : APdU n V :=
+  fun S => APdL_down n S V (h S)
+
 theorem APdA_bnil (V : Jk1) : APdA [] V ↔ GOK V := by
   constructor
-  · intro h; exact (APdL_bnil 0 V).mp (h 1)
+  · intro h; exact ((APdL_bnil 0 V).mp (h 1)).2
   · intro h n
-    cases n with
+    induction n with
     | zero => rw [APdL]; trivial
-    | succ m => exact (APdL_bnil m V).mpr h
+    | succ m ih => exact (APdL_bnil m V).mpr ⟨ih, h⟩
 
+/-- ★★★ 続き128 の「唯一の不等式」。段数が 1 落ちるだけで**形は任意**なので通る。 -/
+example (n i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdU n U) :
+    APdL n (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
+
+/-- ★ 旧 穴(B) の `APd_step`。base 一様なので `.mp` して当てるだけ。 -/
+theorem APdL_step (n : ℕ) (ks : List ℕ) {U V : Jk1} (hU : FrmJ ks U)
+    (hUall : APdU n U) (h : APdL (n + 1) (0 :: ks) V) :
+    APdL (n + 1) ks (Jk1.one U V) := ((APdL_ct n ks V).mp h).2 U hU hUall
+
+/-- ★ 旧 穴(D) の `APd_twoK`。`w0 := []` で 1 枚はがすだけ。 -/
+theorem APdL_two (n k : ℕ) (ks : List ℕ) {N M : Jk1} (hN : JkJ N)
+    (hNall : APdU n N) (h : APdL (n + 1) ((k + 1) :: ks) M) :
+    APdL (n + 1) (k :: ks) (Jk1.two N M) := by
+  have h0 := ((APdL_cS n k ks M).mp h).2 [] (by simp) N hN hNall
+  simpa using h0
 
 /-! ### `GCtxL`: `APdL` に対応する良い文脈。段数 `n` は**固定パラメータ**、再帰は形だけ。
-junk 条件が `∀ S, APdL n S U`（閉じた形、`GCtxL` の再帰呼び出しではない）なので
+junk 条件 `APdU n U` は閉じた形（`GCtxL` の再帰呼び出しではない）なので
 停止性は `msr` のままでよい。 -/
 
 def GCtxL (n : ℕ) : Prop → List ℕ → List Frm → Prop
   | _, [], ctx => ctx = []
   | _, (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
-      GCtxL n (TopOk U) ks ctx' ∧ FrmJ ks U ∧ (∀ S : List ℕ, APdL n S U)
+      GCtxL n (TopOk U) ks ctx' ∧ FrmJ ks U ∧ APdU n U
   | _, ((k + 1) :: ks), ctx => ∃ (w0 : List ℕ) (_ : ∀ x ∈ w0, x ≤ k)
       (ctx' : List Frm) (N : Jk1),
       ctx = ctx' ++ [Frm.ftwo N] ∧
-      GCtxL n False (k :: (w0 ++ ks)) ctx' ∧ JkJ N ∧ (∀ S : List ℕ, APdL n S N)
+      GCtxL n False (k :: (w0 ++ ks)) ctx' ∧ JkJ N ∧ APdU n N
 termination_by _ ks _ => msr ks
 decreasing_by
   all_goals
@@ -23627,53 +23550,70 @@ theorem GCtxL_bnil (n : ℕ) (t : Prop) (ctx : List Frm) : GCtxL n t [] ctx ↔ 
 
 theorem GCtxL_ct (n : ℕ) (t : Prop) (ks : List ℕ) (ctx : List Frm) :
     GCtxL n t (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
-      GCtxL n (TopOk U) ks ctx' ∧ FrmJ ks U ∧ (∀ S : List ℕ, APdL n S U) := by
+      GCtxL n (TopOk U) ks ctx' ∧ FrmJ ks U ∧ APdU n U := by
   rw [GCtxL]
 
 theorem GCtxL_cS (n k : ℕ) (t : Prop) (ks : List ℕ) (ctx : List Frm) :
     GCtxL n t ((k + 1) :: ks) ctx ↔ ∃ (w0 : List ℕ) (_ : ∀ x ∈ w0, x ≤ k)
       (ctx' : List Frm) (N : Jk1),
       ctx = ctx' ++ [Frm.ftwo N] ∧
-      GCtxL n False (k :: (w0 ++ ks)) ctx' ∧ JkJ N ∧ (∀ S : List ℕ, APdL n S N) := by
+      GCtxL n False (k :: (w0 ++ ks)) ctx' ∧ JkJ N ∧ APdU n N := by
   rw [GCtxL]
 
-/-- ★★★ `APd_iff` の写し。段数 `n` を持ち回るだけで構造は同じ。 -/
+theorem GCtxL_ct_any (n : ℕ) {t t' : Prop} {ks : List ℕ} {ctx : List Frm} :
+    GCtxL n t (0 :: ks) ctx → GCtxL n t' (0 :: ks) ctx := by
+  rw [GCtxL_ct, GCtxL_ct]; exact id
+
+/-- ★★★ `APd_iff` の写し。段数 `n` を持ち回るだけで構造は同じ。
+第 1 連言 `APdL n ks V` は仮定 `h0` から出る（段数を 1 落とした同じ主張）。 -/
 theorem APdL_iff (n : ℕ) : ∀ (ks : List ℕ) (V : Jk1),
-    APdL (n + 1) ks V ↔ ∀ ctx : List Frm, GCtxL n (TopOk V) ks ctx → GOK (plug ctx V)
+    APdL (n + 1) ks V ↔ APdL n ks V ∧
+      ∀ ctx : List Frm, GCtxL n (TopOk V) ks ctx → GOK (plug ctx V)
   | [], V => by
       rw [APdL_bnil]
       constructor
-      · intro h ctx hc
+      · rintro ⟨h0, h⟩
+        refine ⟨h0, fun ctx hc => ?_⟩
         rw [GCtxL_bnil] at hc; subst hc; exact h
-      · intro h
-        exact h [] ((GCtxL_bnil n _ []).mpr rfl)
+      · rintro ⟨h0, h⟩
+        exact ⟨h0, h [] ((GCtxL_bnil n _ []).mpr rfl)⟩
   | (0 :: ks), V => by
       rw [APdL_ct]
       constructor
-      · intro h ctx hc
+      · rintro ⟨h0, h⟩
+        refine ⟨h0, fun ctx hc => ?_⟩
         rw [GCtxL_ct] at hc
         obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
         rw [plug_snoc]
-        exact (APdL_iff n ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
-      · intro h U hU hUk
-        refine (APdL_iff n ks (Jk1.one U V)).mpr ?_
-        intro ctx' hc'
-        rw [← plug_snoc]
-        exact h (ctx' ++ [Frm.fone U]) ((GCtxL_ct n _ ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+        exact ((APdL_iff n ks (Jk1.one U V)).mp (h U hU hUk)).2 ctx' hc'
+      · rintro ⟨h0, hQ⟩
+        refine ⟨h0, fun U hU hUk => ?_⟩
+        refine (APdL_iff n ks (Jk1.one U V)).mpr ⟨?_, fun ctx' hc' => ?_⟩
+        · -- `APdL n ks (one U V)` は `h0` から出る
+          cases n with
+          | zero => rw [APdL]; trivial
+          | succ p => exact ((APdL_ct p ks V).mp h0).2 U hU (APdU_down p U hUk)
+        · rw [← plug_snoc]
+          exact hQ (ctx' ++ [Frm.fone U])
+            ((GCtxL_ct n _ ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
   | ((k + 1) :: ks), V => by
       rw [APdL_cS]
       constructor
-      · intro h ctx hc
+      · rintro ⟨h0, h⟩
+        refine ⟨h0, fun ctx hc => ?_⟩
         rw [GCtxL_cS] at hc
         obtain ⟨w0, hw0, ctx', N, rfl, hc', hN, hNt⟩ := hc
         rw [plug_snoc2]
-        exact (APdL_iff n (k :: (w0 ++ ks)) _).mp (h w0 hw0 N hN hNt) ctx' hc'
-      · intro h w0 hw0 N hN hNt
-        refine (APdL_iff n (k :: (w0 ++ ks)) _).mpr ?_
-        intro ctx' hc'
-        rw [← plug_snoc2]
-        exact h (ctx' ++ [Frm.ftwo N])
-          ((GCtxL_cS n k _ ks _).mpr ⟨w0, hw0, ctx', N, rfl, hc', hN, hNt⟩)
+        exact ((APdL_iff n (k :: (w0 ++ ks)) _).mp (h w0 hw0 N hN hNt)).2 ctx' hc'
+      · rintro ⟨h0, hQ⟩
+        refine ⟨h0, fun w0 hw0 N hN hNt => ?_⟩
+        refine (APdL_iff n (k :: (w0 ++ ks)) _).mpr ⟨?_, fun ctx' hc' => ?_⟩
+        · cases n with
+          | zero => rw [APdL]; trivial
+          | succ p => exact ((APdL_cS p k ks V).mp h0).2 w0 hw0 N hN (APdU_down p N hNt)
+        · rw [← plug_snoc2]
+          exact hQ (ctx' ++ [Frm.ftwo N])
+            ((GCtxL_cS n k _ ks _).mpr ⟨w0, hw0, ctx', N, rfl, hc', hN, hNt⟩)
 termination_by ks _ => msr ks
 decreasing_by
   all_goals
@@ -23681,32 +23621,17 @@ decreasing_by
       | exact msr_drop0 _
       | exact msr_word _ _ _ (by assumption)
 
+#print axioms APdL_iff
 
-theorem GCtxL_ct_any (n : ℕ) {t t' : Prop} {ks : List ℕ} {ctx : List Frm} :
-    GCtxL n t (0 :: ks) ctx → GCtxL n t' (0 :: ks) ctx := by
-  rw [GCtxL_ct, GCtxL_ct]; exact id
-
-/-- ★ 穴(B) だった `APd_step`。base 一様なので `.mp` するだけ。 -/
-theorem APdL_step (n : ℕ) (ks : List ℕ) {U V : Jk1} (hU : FrmJ ks U)
-    (hUall : ∀ S : List ℕ, APdL n S U) (h : APdL (n + 1) (0 :: ks) V) :
-    APdL (n + 1) ks (Jk1.one U V) := (APdL_ct n ks V).mp h U hU hUall
-
-/-- ★ 穴(D) だった `APd_twoK`。`w0 := []` で 1 枚はがすだけ。 -/
-theorem APdL_two (n k : ℕ) (ks : List ℕ) {N M : Jk1} (hN : JkJ N)
-    (hNall : ∀ S : List ℕ, APdL n S N) (h : APdL (n + 1) ((k + 1) :: ks) M) :
-    APdL (n + 1) (k :: ks) (Jk1.two N M) := by
-  have h0 := (APdL_cS n k ks M).mp h [] (by simp) N hN hNall
-  simpa using h0
-
-/-! ### `js` の条件。**段数版では base も level も要らない**（形に依らないから）。
+/-! ### `js` の条件。**段数版では base も level も要らない**（条件が形に依らないから）。
 旧 `JsOk ks js b` が 3 引数だったのは、条件が形ごとだったため。 -/
 
 def JsOkL (n : ℕ) : List Jk1 → Prop
   | [] => True
-  | (N :: js) => (JkJ N ∧ ∀ S : List ℕ, APdL n S N) ∧ JsOkL n js
+  | (N :: js) => (JkJ N ∧ APdU n N) ∧ JsOkL n js
 
 theorem JsOkL_snoc (n : ℕ) : ∀ (js : List Jk1) (Nl : Jk1),
-    JsOkL n (js ++ [Nl]) ↔ JsOkL n js ∧ (JkJ Nl ∧ ∀ S : List ℕ, APdL n S Nl)
+    JsOkL n (js ++ [Nl]) ↔ JsOkL n js ∧ (JkJ Nl ∧ APdU n Nl)
   | [], Nl => by
       show ((JkJ Nl ∧ _) ∧ JsOkL n []) ↔ _
       simp [JsOkL]
@@ -23717,8 +23642,7 @@ theorem JsOkL_snoc (n : ℕ) : ∀ (js : List Jk1) (Nl : Jk1),
       · rintro ⟨h1, h2, h3⟩; exact ⟨⟨h1, h2⟩, h3⟩
       · rintro ⟨⟨h1, h2⟩, h3⟩; exact ⟨h1, h2, h3⟩
 
-/-- ★★★★★ ここが旧設計で詰まっていた場所（`GCtx_ftwoRepL` + `GCtx_repKL`）。
-junk 条件が形に依らないので、base が `replicate (m+1) L ++ ks` に伸びても効く。 -/
+/-- `ftwo` 枠を `js` の分だけ内側に積む。junk 条件が形に依らないので base を選ばない。 -/
 theorem GCtxL_ftwoRep (n : ℕ) (ks : List ℕ) : ∀ (js : List Jk1), JsOkL n js →
     ∀ (ctx : List Frm) (t t' : Prop), GCtxL n t (0 :: ks) ctx →
       GCtxL n t' (js.length :: ks) (ctx ++ js.map Frm.ftwo) := by
@@ -23734,13 +23658,12 @@ theorem GCtxL_ftwoRep (n : ℕ) (ks : List ℕ) : ∀ (js : List Jk1), JsOkL n j
       rw [show ([] : List ℕ) ++ ks = ks from by simp]
       exact ih hjs' ctx t False hc
 
-
 /-- ★★★★★ **旧設計で不可能だった補題。**塔の文脈を junk 入りで組む。
 base が `replicate (m+1) js.length ++ ks` に伸びても、junk 条件が形に依らないので通る。
-（旧 `GCtx_repKL` は level i の junk に `L = js.length > i` を含む base での継続性を
+（旧 `GCtx_repKL` は level `i` の junk に `L = js.length > i` を含む base での継続性を
 要求してしまい、`msr_word` の上限に当たっていた。続き128 の「唯一の不等式」。） -/
 theorem GCtxL_repKL (n : ℕ) (js : List Jk1) (hjs : JsOkL n js) {N : Jk1} (hJN : JkJ N)
-    (hNall : ∀ S : List ℕ, APdL n S N) (ks : List ℕ) :
+    (hNall : APdU n N) (ks : List ℕ) :
     ∀ (m : ℕ) (ctx : List Frm) (t t' : Prop), GCtxL n t (0 :: ks) ctx →
       GCtxL n t' (List.replicate (m + 1) js.length ++ ks) (ctx ++ ctxKL js N m)
   | 0, ctx, t, t', hc => by
@@ -23753,8 +23676,7 @@ theorem GCtxL_repKL (n : ℕ) (js : List Jk1) (hjs : JsOkL n js) {N : Jk1} (hJN 
           (0 :: (List.replicate (m + 1) js.length ++ ks))
           ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) := by
         rw [GCtxL_ct]
-        exact ⟨ctx ++ ctxKL js N m, N, rfl, ih,
-          FrmJ_of_ne _ (by simp) _ hJN, hNall⟩
+        exact ⟨ctx ++ ctxKL js N m, N, rfl, ih, FrmJ_of_ne _ (by simp) _ hJN, hNall⟩
       have hout := GCtxL_ftwoRep n (List.replicate (m + 1) js.length ++ ks) js hjs
         ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) (TopOk Jk1.nil) t' hmid
       show GCtxL n t' (List.replicate (m + 2) js.length ++ ks)
@@ -23766,21 +23688,25 @@ theorem GCtxL_repKL (n : ℕ) (js : List Jk1) (hjs : JsOkL n js) {N : Jk1} (hJN 
           from by simp [List.append_assoc]]
       exact hout
 
-#print axioms GCtxL_repKL
+theorem JsOkL_down (n : ℕ) : ∀ js : List Jk1, JsOkL (n + 1) js → JsOkL n js
+  | [], _ => trivial
+  | (N :: js), h => ⟨⟨h.1.1, APdU_down n N h.1.2⟩, JsOkL_down n js h.2⟩
 
-#print axioms GCtxL_ftwoRep
+/-- 塔の木がどの良い文脈でも継げる。旧 `APd_plug_repK` の junk 一般版。
+段数の帰納法で書く（第 1 連言が段数を 1 落とした同じ主張だから）。 -/
+theorem APdL_plug_repKL : ∀ (n : ℕ) (js : List Jk1), JsOkL n js → ∀ (N : Jk1), JkJ N →
+    APdU n N → ∀ (ks : List ℕ) (m : ℕ), APdL n (0 :: ks) (plug (ctxKL js N m) N)
+  | 0, _, _, _, _, _, _, _ => by rw [APdL]; trivial
+  | (n + 1), js, hjs, N, hJN, hNall, ks, m => by
+      rw [APdL_iff]
+      refine ⟨?_, fun ctx hc => ?_⟩
+      · exact APdL_plug_repKL n js (JsOkL_down n js hjs) N hJN (APdU_down n N hNall) ks m
+      · rw [← plug_append]
+        have hc2 := GCtxL_repKL n js (JsOkL_down n js hjs) hJN
+          (APdU_down n N hNall) ks m ctx _ (TopOk N) hc
+        exact ((APdL_iff n _ N).mp (hNall _)).2 _ hc2
 
-#print axioms APdL_iff
-
-#print axioms APdA_bnil
-
-#print axioms APdL_cS
-
-#print axioms APdG_cS
-
-#print axioms APdS_cS_mp
-#print axioms APdS_bnil
-
+#print axioms APdL_plug_repKL
 
 end Small
 end TRIO
