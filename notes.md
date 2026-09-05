@@ -5682,3 +5682,34 @@ jk1_ge より jk1 l N₁ の各列の高さ h ≥ l+1
 （`MidD_unitKL` も同様に `jk1_ge` / `jk1_mono` で押さえられる。
 `twoRunL` の要素は「行 1 = 2 の 2 の記録」か「junk の列」で、
 どちらも `MidD_append` の条件を満たす。）
+
+### 続き122 追記5: `nstL` 系の道具が順調に入っている（4 本連続 error 0）
+
+```
+f73ec8a  nstL / twoRunL / jk1_nstL / JkJ_nstL / TopOk_nstL_two
+         + 固定補題 nstL_replicate_nil / twoRunL_replicate_nil
+（次）   twoRunL_shift / unitKL / unitKL_cons / unitKL_eq / unitKL_shift
+         + 固定補題 unitKL_replicate_nil
+（次）   twrKL / twrKL_replicate_nil / TopOk_twrKL / JkJ_twrKL_app / JkJ_twrKL
+         jk1_twrKL / Mtwd_twrKL
+（次）   twoRunL_shape / MidD_unitKL
+```
+すべて `unitK` / `twrK` 族の写しで、**4 本連続で一発 error 0**。
+
+#### 残っている道具（次の人はここから）
+
+```
+hMy_unitKL   ★ 唯一むずかしい。追記4 の「junk の列は記録にならない」を実際に使う。
+             hMy_unitK は記録の仮定を `_` で捨てているが、KL 版では使う必要がある。
+             形式化には「twoRunL の中で、junk の列の直後に高さ ≤ 自分の 2 の記録が来る」
+             を添字で言う必要がある。twoRunL_shape を添字版に強めるのが早いかもしれない。
+ctxKL        ctxK の写し（js の ftwo フレーム列）
+gKL / plug_ctxKL / gKL_eq_appJ / plug_ctxKL_eq
+colJ_plug_twrKL / wordJ_snoc_plug_twrKL
+colJ_plug_twoNKL / wordJ_snoc_twoNKL
+GCtx_repKL / APd_plug_repKL      ← js の各 junk の closure が要る
+APd_twoNilNestL                  ← APd_twoNilNest の写し
+→ APd_twoNilPeel の帰納段が閉じる
+```
+どれも `unitK` → `unitKL` と同じ写しで、`js = replicate j nil` での固定補題を
+一緒に入れていけば回帰が即分かる。
