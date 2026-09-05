@@ -2996,3 +2996,58 @@ bms -d M2[n]:
 
 **次の一手（実験）**: `JkJ` から `∧ TopOk M` を消して `leanman check` を 1 回走らせ、
 壊れる定理の一覧をそのまま「何が要るか」の答えとして読む。
+
+### 続き110 追記4（★ 実験結果: `JkJ` から `TopOk` を外すと、壊れるのは 1 箇所だけ）
+
+`JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M` から `∧ TopOk M` を消して `leanman check`。
+**エラー 15 件。すべて `⟨…⟩` の項数ずれ／`.2.1`・`.2.2` の射影ずれという表面的なもの**で、
+証明の中身が壊れた箇所は 1 つもなかった。直した箇所（`lean/Small.notopok.wip` に保存）:
+
+| 行 | 直し方 |
+|---|---|
+| 17408 | `JkA_of_JkJ M h.2.1` → `h.2` |
+| 17424 | `⟨hN, JkJ_of_PayOnly M hM, TopOk_of_PayOnly M hM⟩` → 2 項に |
+| 17873-76 | `JkJ_plug` の ftwo 場合: `refine ⟨…, ?_⟩ + cases` → `exact ⟨hc.1, …⟩` |
+| 20473 | `⟨h2, hT, hTop⟩` → `⟨h2, hT⟩` |
+| 20534/20571/20584 | `⟨hN, ⟨hZ, …⟩, hZt⟩` → `⟨hN, ⟨hZ, …⟩⟩` |
+| 20661 | `⟨hJN, trivial, trivial⟩` → `⟨hJN, trivial⟩` |
+| 20931 | `⟨trivial, trivial, ⟨trivial, hB⟩, trivial⟩` → 3 項に |
+| 20942 | `⟨trivial, trivial, trivial⟩` → `⟨trivial, trivial⟩` |
+| 21097/21101 | `⟨trivial, trivial, JkJ_otwJ n, TopOk_otwJ n⟩` → 3 項に |
+
+直したあと `leanman check` は **exit 1（sorry 1 個のみ、error 0）**。
+つまり `CtxXJ` / `CtxX` / `CtxJ` / `JkJ_plug` / `AYd` / `AYdT` / `APd_twoNilGen` /
+`GOK_chainJd` などは **すべて `TopOk` なしでそのまま通る**。
+
+**唯一残った穴**（Small.lean 20814, `APd_all` の `two` の場合、`ks = true :: ks'`）:
+```
+have hM := APd_all M h.2 (false :: ks') (by simp) (sorry : Rq (false :: ks') M)
+```
+`Rq (false::ks) M = TopOk M` なので、`M` が `two` 頭だと供給できない。
+つまり **要るのは「2 の記録の直上に 2 の記録」を `APd` の添字で表せるようにすること 1 点だけ**。
+
+### 続き110 追記5（★ 現実的な計画）
+追記2 の障害（枠の 2 の記録の junk が塔に出る）は、**stack の下側の junk を nil に限れば消える**:
+```
+JkJ (two N M) := JkJ N ∧ JkJ M ∧ (TopOk M ∨ N = Jk1.nil)
+```
+（= 2 の記録の直上に 2 の記録を置いてよいのは、下側の junk が nil のときだけ）。
+すると積み重なった 2 の記録の枠の junk はすべて nil になり、塔のグループ
+`[fone N, ftwo nil, …, ftwo nil]` の junk は「木自身の junk `N`」と `nil` だけになる。
+`nil` の閉包は `APd_nil`（全添字）で無料、`N` の閉包は構造帰納の IH で供給できる。
+**これで追記2 の壁が消える。** 我々が要る木（`one nil (two nil (two nil …))`）は
+この制限を満たす。
+
+残る実装:
+1. `APd`/`GCtx` の添字を `List Bool` → `List ℕ`（`k :: ks` = 「2 の記録 k 枚 + 1 の列 + ks」）
+   ```
+   APd []          V = GOK V
+   APd (0::ks)     V = ∀ U, FrmJ ks U → APd ks U → APd ks (one U V)
+   APd ((k+1)::ks) V = ∀ i m N, JkJ N → (∀ ks₁ 要素≤k, APd (ks₁ ++ (k::(rep m ++ ks))) N)
+                       → APd (k :: (rep m ++ ks)) (two N V)
+   ```
+   `true = 0`, `false = 1` にちょうど対応する。
+2. 停止性は**要素の多重集合順序**（= 順序数 ⊕ ω^{k_j}）。`(k+1)::ks → ks₁ ++ (k::…)`
+   （ks₁ の要素 ≤ k）が落ちる。`(cntF, length)` では足りない（ω^k·i が要るため）。
+3. `APd_twoNilGen` を「グループ全体を繰り返す塔」に一般化（`snocY_mem` → `snocYd_mem`, dl = k+1）。
+4. `AYdT`（2 の記録の上の荷）を stacked 添字に一般化。
