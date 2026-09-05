@@ -21385,5 +21385,47 @@ theorem R375f15_of_step
 #print axioms R375f15_of_step
 
 
+/-! ### 土台を一般化する（`rowJ_mem` は `R338` に固定されていたが、本質ではない）
+
+`GoodFb.seg 0` の `reapp` は `LwB P0 0 A`（＝ `Aok A`）さえあれば通る。 -/
+
+theorem rowJ_mem_gen {A : TrioSeq} (hA : Aok A) (ws : List Jk1) (hw : WOk ws) :
+    A ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
+  have h := ((GoodFb_wordJ ws hw).seg 0).reapp P0 BaseOk_zero 0 A (LwB_of_base ⟨hA, rfl⟩)
+  simpa using h
+
+theorem otw_tower_gen (A : TrioSeq) (n : ℕ) :
+    A ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [otwJ n])
+      = Mtwd 2 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+          [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n := by
+  rw [wordJ_singleton, colJ, jk1_otwJ n 2, Mtwd]
+  simp [List.append_assoc]
+
+theorem otw_tower_mem_gen {A : TrioSeq} (hA : Aok A) (n : ℕ) :
+    Mtwd 2 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+      [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  rw [← otw_tower_gen A n]
+  exact rowJ_mem_gen hA [otwJ n] (WOk_singleton (JkOk_otwJ n))
+
+/-- ★★ 行375 の一様版: **どんな `Aok A` にも** `P` の接尾辞 `U375a` が継げる。 -/
+theorem R375_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375a ∈ W 0 := by
+  have h := snocYd_mem (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (M := [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) (L := 3) (y := 2) (dl := 2)
+    (by simp) MidD_N375 (by decide) ?_ (by omega) (by omega) (otw_tower_mem_gen hA)
+  · simpa [U375a, List.append_assoc] using h
+  · intro t ht1 htl hlt hrec
+    simp only [List.length_cons, List.length_nil] at htl
+    have hj : t = 1 := by omega
+    subst hj
+    decide
+
+/-- ★★★ 続き111 #3 `P(2,0,0)`。 -/
+theorem R375f3_mem : R375m ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375f3_of_step (fun _ hAn => R375_mem_gen hAn)
+
+#print axioms R375_mem_gen
+#print axioms R375f3_mem
+
+
 end Small
 end TRIO
