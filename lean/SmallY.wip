@@ -20789,11 +20789,11 @@ theorem APd_twoNilGen (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
   obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split ks ctx hc
   have hcO : CtxOk (ctx0 ++ [Frm.fone V]) := GCtx_CtxOk _ (0 :: ks) _ hc
   have hstair : ∀ m : ℕ, GOK (plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)) :=
-    fun m => (APd_iff (0 :: ks) _).mp (APd_plug_rep N hJN ks hNall m) _ hc
+    fun m => (APd_iff (0 :: ks) _).mp (APd_plug_rep N hJN ks hNall m) _ (GCtx_ct_any hc)
   intro ws hw hG
   have hwO : WOk (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)]) :=
     WOk_append hw (WOk_singleton (JkOk_plug _ hcO _
-      ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, trivial⟩)))
+      ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, trivial, Or.inl trivial⟩)))
   have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx0 V])) := hGV ws hw hG
   have hstG : ∀ m : ℕ,
       GoodFb (fun a b => wordJ a b (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)])) :=
@@ -20916,7 +20916,7 @@ theorem APd_twoNilGen (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
 
 /-- ★★★★★ 2 の記録は、その左 junk が良ければ 2 の記録の枠として使える。 -/
 theorem APd_twoNilB (ks : List ℕ) : APd (1 :: ks) Jk1.nil :=
-  (APd_cf ks _).mpr (fun m U N hU hR hUk hN hNt =>
+  (APd_cf ks _).mpr (fun m U N hU hR hUk hN hd hNt =>
     (APd_ct _ _).mp (APd_twoNilGen N hN _ hNt) U hU hR hUk)
 
 theorem APd_nil : ∀ ks : List ℕ, APd ks Jk1.nil
@@ -21063,7 +21063,7 @@ theorem hangU11rec {h : ℕ} {A : TrioSeq} (hA : LwA h A) {B : TrioSeq} (hB : Bo
       shiftr01 (h + 5) 0 B) ∈ W 0 := by
   obtain ⟨P, hP, hL⟩ := hA
   have hT : JkOk (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))) :=
-    ⟨trivial, trivial, ⟨trivial, hB⟩⟩
+    ⟨trivial, trivial, ⟨trivial, hB⟩, Or.inr rfl⟩
   have hG := GOK_all _ hT [] WOk_nil GoodFb_wordJ_nil
   have h1 := (hG.seg h).reapp P hP 0 A (by simpa using hL)
   simpa [wordJ, colJ, jk1, shiftr01_zero, List.append_assoc,
@@ -21074,7 +21074,7 @@ theorem hangU11rec {h : ℕ} {A : TrioSeq} (hA : LwA h A) {B : TrioSeq} (hB : Bo
 /-- ★★★★★ シート行374 `R344 (4,2,0)(4,2,0) = psi(W_w*psi_1(W_2*2))`。 -/
 theorem R374_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   have h := hang2rec (h := 0) (LwA_of_Aok Aok_R338) (M' := Jk1.two Jk1.nil Jk1.nil)
-    ⟨trivial, trivial⟩
+    JkJ_TwoNil
   simpa [R344, R341, jk1, List.append_assoc] using h
 
 #print axioms R374_mem
@@ -21229,11 +21229,11 @@ theorem TopOk_otwJ : ∀ n : ℕ, TopOk (otwJ n)
 
 theorem JkJ_otwJ : ∀ n : ℕ, JkJ (otwJ n)
   | 0 => trivial
-  | (n + 1) => ⟨trivial, trivial, JkJ_otwJ n⟩
+  | (n + 1) => ⟨trivial, trivial, JkJ_otwJ n, Or.inr rfl⟩
 
 theorem JkOk_otwJ : ∀ n : ℕ, JkOk (otwJ n)
   | 0 => trivial
-  | (n + 1) => ⟨trivial, trivial, JkJ_otwJ n⟩
+  | (n + 1) => ⟨trivial, trivial, JkJ_otwJ n, Or.inr rfl⟩
 
 theorem jk1_otwJ : ∀ (n l : ℕ),
     jk1 l (otwJ n) = (List.range n).flatMap

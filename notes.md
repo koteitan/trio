@@ -3576,3 +3576,42 @@ leanman check --backend lean -m "<memo>" -C /home/koteitan/proofs/trio/lean /tmp
 20910 20913 20934 20935 20936   ← APd_all の two（残作業 5、sorry 1 個を含む）
 21056 21067 21222 21226         ← otwJ 周辺（残作業 6）
 ```
+
+### 続き113 追記2: SmallY.wip 段階1 完了。残りは 3 宣言だけ
+
+```
+開始時   error 34 箇所、緑の先頭 17411 行
+段階1後  error  3 宣言（7 行）、緑の先頭 20738 行 = ファイルの 97%
+```
+
+残っているのはこれだけ:
+
+```
+20738  APd_payA   Missing cases: (k+2) :: ks            ← 残作業 4（AYdT の一般化）
+20740  APd_payA   (1 :: ks) の場合が AYdT に hR : Rq を渡している。AYdT は TopOk V を要求
+20923  APd_nil    Missing cases: (k+2) :: ks            ← 残作業 4（APd_twoNilGen の一般化）
+20944  APd_all    Jk1.two の場合。cases b の分岐名が false/true のまま（List Bool の名残）
+                  + (k+2) の場合が無い + sorry 1 個     ← 残作業 5
+```
+
+段階1 で追加・修正したもの（追記1 の続き）:
+
+```
+GCtx_ct_any {t t'} : GCtx t (0 :: ks) ctx → GCtx t' (0 :: ks) ctx
+                     （0 :: ks の場合 GCtx は t に依存しない）
+GCtx_rep           : 入口 t・出口 t' を両方引数に（∀ m ctx t t', …）
+APd_chainT         : {t} と hc : GCtx t (0 :: ks) ctx。twoIt の JkJ は 3 成分
+                     ⟨h2, hT, Or.inl hTop⟩
+APd_two_of_ctx     : h の仮定を GCtx False (0 :: kk) ctx に
+AYdT_hstep         : (hTt : TopOk T) を追加し APd_cf に Or.inl hTt を渡す
+APd_cf の新引数 hd : AYdT の 3 分岐すべてで intro / 適用に 1 つ追加
+JkJ (two N (pay Z Y)) : ⟨hN, ⟨hZ, hY⟩, Or.inl hZt⟩（3 成分）
+JkJ_otwJ / JkOk_otwJ  : ⟨trivial, trivial, JkJ_otwJ n, Or.inr rfl⟩
+                        （otwJ は two の下が nil なので Or.inr rfl で通る）
+hangU11rec / R374_mem : 同様に 3 成分化（R374 は JkJ_TwoNil）
+rep_cons           : ∃ (c : Bool) → ∃ (c : ℕ)
+List.replicate j' true → List.replicate j' 0
+```
+
+**ここが山場の入口**: 残り 3 つはすべて「2 の記録の枠を `k+1` 枚積んだ形」
+（`(k+1) :: ks`）を新しく書く必要がある。`(1 :: ks)` = 1 枚の場合だけが既存。
