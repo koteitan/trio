@@ -23540,6 +23540,72 @@ example (i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdS_all U) (V : Jk1)
   have := (APdG_cS i (w ++ List.replicate (m + 1) L ++ ks) V).mp h [] hw U hJ hU
   simpa using this
 
+
+/-! ### ★ 本命: 段数と形の**辞書式**。
+正の再帰呼び出しは段数を保って形を減らす（`msr`）。
+負の位置（junk 条件）だけ段数を 1 落として、**形は任意**にする。
+これで「junk 条件が自分を呼ぶ」を許しつつ、形の再帰は今までどおり使える。 -/
+
+def APdL : ℕ → List ℕ → Jk1 → Prop
+  | 0, _, _ => True
+  | (n + 1), [], V => GOK V
+  | (n + 1), (0 :: ks), V =>
+      ∀ U : Jk1, FrmJ ks U → (∀ S : List ℕ, APdL n S U) →
+        APdL (n + 1) ks (Jk1.one U V)
+  | (n + 1), ((k + 1) :: ks), V =>
+      ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
+        (∀ S : List ℕ, APdL n S N) →
+        APdL (n + 1) (k :: (w0 ++ ks)) (Jk1.two N V)
+termination_by n ks _ => (n, msr ks)
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.left _ _ (by omega)
+      | exact Prod.Lex.right _ (msr_drop0 _)
+      | exact Prod.Lex.right _ (msr_word _ _ _ (by assumption))
+
+theorem APdL_bnil (n : ℕ) (V : Jk1) : APdL (n + 1) [] V ↔ GOK V := by rw [APdL]
+
+theorem APdL_ct (n : ℕ) (ks : List ℕ) (V : Jk1) :
+    APdL (n + 1) (0 :: ks) V ↔
+      ∀ U : Jk1, FrmJ ks U → (∀ S : List ℕ, APdL n S U) →
+        APdL (n + 1) ks (Jk1.one U V) := by rw [APdL]
+
+theorem APdL_cS (n k : ℕ) (ks : List ℕ) (V : Jk1) :
+    APdL (n + 1) ((k + 1) :: ks) V ↔
+      ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
+        (∀ S : List ℕ, APdL n S N) →
+        APdL (n + 1) (k :: (w0 ++ ks)) (Jk1.two N V) := by rw [APdL]
+
+
+/-- ★★★ 続き128 の「唯一の不等式」。段数が 1 落ちるだけで**形は任意**なので通る。 -/
+example (n i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : ∀ S : List ℕ, APdL n S U) :
+    APdL n (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
+
+/-- ★ 2 の記録の枠を 1 枚はがす（使う向き）。junk `N` に要求するのは
+**段数 n での base 一様性**（形は任意）。形の測度では書けなかった形。 -/
+theorem APdL_peel (n k : ℕ) (ks : List ℕ) (V : Jk1)
+    (h : APdL (n + 1) ((k + 1) :: ks) V)
+    (w0 : List ℕ) (hw0 : ∀ x ∈ w0, x ≤ k) (N : Jk1) (hN : JkJ N)
+    (hNall : ∀ S : List ℕ, APdL n S N) :
+    APdL (n + 1) (k :: (w0 ++ ks)) (Jk1.two N V) :=
+  (APdL_cS n k ks V).mp h w0 hw0 N hN hNall
+
+/-- 段数を全部取ったもの。`APd` の置き換え候補。 -/
+def APdA (ks : List ℕ) (V : Jk1) : Prop := ∀ n : ℕ, APdL n ks V
+
+theorem APdA_bnil (V : Jk1) : APdA [] V ↔ GOK V := by
+  constructor
+  · intro h; exact (APdL_bnil 0 V).mp (h 1)
+  · intro h n
+    cases n with
+    | zero => rw [APdL]; trivial
+    | succ m => exact (APdL_bnil m V).mpr h
+
+#print axioms APdA_bnil
+
+#print axioms APdL_cS
+
 #print axioms APdG_cS
 
 #print axioms APdS_cS_mp
