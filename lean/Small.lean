@@ -22637,5 +22637,84 @@ theorem R375g12_mem :
 #print axioms R375g12_mem
 
 
+/-! ### ★ 塔の木の一般化（左兄弟 `N` つき）
+
+`TT` は `N = Wtt` の場合。同じ証明文の 2 回目なのでここで一般化する。
+`nstN N k` は「1 の列 + 左兄弟 `N` + 2 の記録」を歩幅 2 で `k` 段積んだ木。 -/
+
+def nstN (N : Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (k + 1) => Jk1.one Jk1.nil (Jk1.two N (nstN N k))
+
+/-- 塔の単位。`D` は 1 の列の高さ。 -/
+def unN (N : Jk1) (D : ℕ) : TrioSeq :=
+  ((D, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 D N ++ [((D + 1, 2, 0) : ℕ × ℕ × ℕ)])
+
+theorem shift_unN (N : Jk1) (D s : ℕ) : shiftr01 s 0 (unN N D) = unN N (D + s) := by
+  show shiftr01 s 0 ([((D, 1, 0) : ℕ × ℕ × ℕ)] ++
+    (jk1 D N ++ [((D + 1, 2, 0) : ℕ × ℕ × ℕ)])) = _
+  rw [shiftr01_append0, shiftr01_append0, shift_col, shift_col, jk1_shift N D s,
+    show D + 1 + s = D + s + 1 from by omega]
+  rfl
+
+theorem unN_append (N : Jk1) (D : ℕ) (X : TrioSeq) :
+    unN N D ++ X
+      = ((D, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: X)) := by
+  simp [unN, List.append_assoc]
+
+theorem TT_eq_nstN : ∀ n : ℕ, TT n = nstN Wtt n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one Jk1.nil (Jk1.two Wtt (TT n)) = Jk1.one Jk1.nil (Jk1.two Wtt (nstN Wtt n))
+      rw [TT_eq_nstN n]
+
+theorem APd_nstN {N : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) :
+    ∀ (k : ℕ) (ks : List Bool), APd (false :: ks) (nstN N k)
+  | 0, ks => APd_nil (false :: ks)
+  | (k + 1), ks => by
+      refine APd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil) trivial
+        (APd_nil (false :: ks)) ?_
+      rw [APd_ct]
+      intro U hU hR hUk
+      exact (APd_cf (false :: ks) (nstN N k)).mp (APd_nstN hJN hNall k (false :: ks)) 0 U N
+        (by simpa using hU) (by simpa using hR) (by simpa using hUk) hJN
+        (fun j => by simpa using hNall j (false :: ks))
+
+theorem GOK_nstN {N : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) :
+    ∀ k : ℕ, GOK (nstN N k)
+  | 0 => GOK_nil
+  | (k + 1) => by
+      refine (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+        ((APd_bnil _).mpr GOK_nil) ?_)
+      rw [APd_ct]
+      intro U hU hR hUk
+      exact (APd_cf [] (nstN N k)).mp (APd_nstN hJN hNall k []) 0 U N (by simpa using hU)
+        (by simpa using hR) (by simpa using hUk) hJN (fun j => by simpa using hNall j [])
+
+theorem jk1_nstN (N : Jk1) : ∀ (k l : ℕ),
+    jk1 l (nstN N k)
+      = (List.range k).flatMap (fun j => shiftr01 (2 * j) 0 (unN N (l + 1)))
+  | 0, l => by simp [nstN, jk1]
+  | (k + 1), l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) N ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1) (nstN N k)))) = _
+      rw [jk1_nstN N k (l + 1 + 1), List.range_succ_eq_map, List.flatMap_cons,
+        List.flatMap_map]
+      simp only [jk1, List.nil_append, Nat.mul_zero, shiftr01_zero, Function.comp_def]
+      rw [unN_append]
+      refine congrArg _ (congrArg _ (congrArg _ ?_))
+      apply List.flatMap_congr
+      intro j _
+      rw [shift_unN, shift_unN]
+      congr 1
+      omega
+
+#print axioms APd_nstN
+#print axioms jk1_nstN
+
+
 end Small
 end TRIO
