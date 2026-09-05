@@ -5310,3 +5310,35 @@ Invalid projection: h.right has type `JkJ M` …                                
 `GoodFb_snoc_dupJt` / `GoodFb_snoc_innerJt` の `hZt : TopOk Z` が
 **行列の議論として効いているか**（`jk1_appJ` の `TopOk` は本物なので、
 一律には外せない）。ここを確かめてから `hd` の除去を測ること。
+
+### 続き120 追記4: ★ `hZt : TopOk Z` は行列の議論に効いていない（Lean の linter が言っている）
+
+追記3 の「未確認の 1 点」を確かめた。**Lean の unused-variable linter が答えを出していた**:
+```
+SmallYchk.lean:20783:17  unused variable `hN`     ← GoodFb_snoc_innerJt
+SmallYchk.lean:20783:30  unused variable `hZ`
+SmallYchk.lean:20783:43  unused variable `hZt`
+SmallYchk.lean:20807:17  unused variable `hN`     ← GoodFb_snoc_dupJt
+SmallYchk.lean:20807:30  unused variable `hZ`
+SmallYchk.lean:20807:43  unused variable `hZt`
+```
+本体を読んでも `hZt` は出てこない（使うのは `hw` / `hc` / `hcx` / `hIH` / `hY` / `hlen` / `hp` だけ）。
+`hcx : CtxX ctx (two N (pay Z Y))` だけが効いている。
+
+**つまり `TopOk Z` は行列の議論には要らない。**
+
+### まとめ: 穴 (C) を塞ぐ手（すべて実測済み）
+
+```
+1. JkJ (two N M) = JkJ N ∧ JkJ M ∧ (TopOk M ∨ N = nil)  →  JkJ N ∧ JkJ M
+     実測 error 34。34 個すべて ⟨…⟩ の項数・射影のずれ。意味的な失敗ゼロ
+2. APd / GCtx の (k+1)::ks の場合から (TopOk V ∨ N = Jk1.nil) → を外す
+     JkJ を弱めれば不要になる。AYdT_hstepK の Or.inl hTt が消え、¬TopOk T でも通る
+3. GoodFb_snoc_dupJt / innerJt の hN / hZ / hZt を外す
+     linter が「未使用」と言っている。ただ消すだけ
+```
+`TopOk` 自体は `jk1_appJ`（`appJ` の実現）に本当に要るので**残す**。
+外すのは `JkJ` の `two` の条件と `APd` の `hd` の 2 つだけ。
+
+**この 3 つで穴 (C) は消える見込み。**残るのは穴 (B)（`APd_nilT` の base 一様性）で、
+そちらは段階2 が循環したので別の手が要る。
