@@ -22987,5 +22987,66 @@ theorem R375f12_mem : R375m ++ [((5, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375f12_mem
 
 
+/-! ### `Q = P(5,0,0)` の上（#12 と #13 の間）
+
+`bms -s` で `Q ++ c` が標準形になる `c` は 15 個あり、すべて `P(5,1,0)` 未満。
+まず #1 / #2 と同型の 2 本（平坦・delta 1）。 -/
+
+def R375q : TrioSeq := R375m ++ [((5, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R375q_eq : R375q = [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ), ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [R375q, R375m, R373, R344, R341, R338]
+
+theorem R375q_ne : R375q ≠ [] := by simp [R375q, R375m, R373, R344, R341, R338]
+
+theorem R375q_head : entry R375q 0 0 = 0 := by
+  simp [R375q, R375m, R373, R344, R341, R338, entry]
+
+theorem R375q_tail : ∀ r, 1 ≤ r → r < R375q.length → 1 ≤ entry R375q 0 r := by
+  intro r hr1 hrl
+  simp only [R375q, R375m, R373, R344, R341, R338, List.length_append, List.length_cons,
+    List.length_nil] at hrl
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+    first
+      | omega
+      | simp [R375q, R375m, R373, R344, R341, R338, entry]
+
+theorem Aok_R375q : Aok R375q where
+  mem := R375f12_mem
+  ne := R375q_ne
+  deep := ⟨R375q_head, R375q_tail⟩
+  zroot := by
+    rw [R375q_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  mono := by
+    rw [R375q_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem R375q_copies_mem (n : ℕ) : copies R375q n ∈ W 0 := (Aok_R375q.copies_Bok n).mem
+
+/-- ★★★★★ `P(5,0,0)(1,0,0)`（平坦）。 -/
+theorem R375q1_mem : R375q ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, ([] : TrioSeq) ++ (List.range n).flatMap (fun _ => R375q) ∈ W 0 := by
+    intro n
+    simpa [copies] using R375q_copies_mem n
+  have h := flat_mem'' (Y0 := ([] : TrioSeq)) (M := R375q) (d := 1) R375q_ne
+    (by rw [R375q_head]; omega) R375q_tail htw
+  simpa using h
+
+/-- ★★★★★ `P(5,0,0)(1,1,0)`（delta 1）。 -/
+theorem R375q2_mem : R375q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 R375q Aok_R375q
+
+#print axioms R375q1_mem
+#print axioms R375q2_mem
+
+
 end Small
 end TRIO
