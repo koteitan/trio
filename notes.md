@@ -3190,3 +3190,32 @@ CtxJ (Frm.ftwo N :: rest) = JkJ N ∧ (HdT rest ∨ N = Jk1.nil) ∧ CtxJ rest
 - `lean/SmallY.wip`: 上の設計の 1〜4 を途中まで入れた版（`FrmJ`/`Rq`/`APd`/`GCtx`/`APd_cf`/`GCtx_cf`
   まで書き換え済み、その先の `GCtx_CtxX` 以降と文脈層 5. が未着手）。
 - 残作業の見積り: 機械的な付け回し 600 行 + 重い補題 2 本で 300 行。
+
+### 続き110 追記6（リファクタの進捗と残り）
+
+`lean/SmallY.wip` に追記5 の設計を途中まで実装した。**書き換え済み**:
+`cntf`/`msr`/`msr_drop0`/`msr_grp`（停止性、緑を確認）、`JkJ`（`TopOk M ∨ N = nil`）、
+`CtxJ`/`CtxXJ` の定義、`FrmJ`、`Rq`（常に真に）、`APd`（`List ℕ`、`(k+1)::ks` の一般形）、
+`APd_bnil`/`APd_ct`/`APd_cS`/`APd_cf`、`GCtx`（`Prop` 引数つき）、
+`GCtx_bnil`/`GCtx_ct`/`GCtx_cS`/`GCtx_cf`、`APd_iff`。
+（19700〜20880 行の `List Bool`→`List ℕ`、`true`→`0`、`false`→`1` の機械置換も済み。）
+
+**残り**（多い順）:
+1. 文脈層の補題 10 本ほど: `CtxXJ_snoc2` / `CtxXJ_snoc2_of` / `CtxX_snoc2` / `CtxXJ_of_JkJhd` /
+   `CtxX_one` / `JkJ_plug` / `CtxJ_snoc` / `CtxJ_snoc12` / `CtxOk_snoc12` の選言化、
+   および**新規** `CtxJ_snoc2` / `CtxOk_snoc2`（2 の記録フレームを 1 枚だけ内側に足す）。
+   ポイント: `CtxJ (ftwo N :: rest)` の条件は `HdT rest ∨ N = nil` で、
+   `rest` に 1 枚足しても `rest ≠ []` なら `HdT` は不変。
+2. `GCtx_CtxX`（`GCtx (TopOk X) ks ctx → FrmJ ks X → CtxX ctx X`）/ `GCtx_CtxOk`。
+3. `t`（`Prop` 引数）の付け回し: `APd_step` / `APd_congr` / `GOK_chainJd` / `AYd` /
+   `APd_oneNil` / `APd_chainT` / `APd_two_of_ctx` / `AYdT` / `GCtx_split` / `GCtx_rep` /
+   `APd_plug_rep`。`itJ T n X` は `TopOk` が `X` と同じなので `t` は変わらない。
+4. **重い新規 2 本**:
+   - `APd_twoNilGen` の一般化 `APd (k::ks) (two N nil)`。
+     塔はグループ全体（1 の列 + 2 の記録 k 枚、junk はすべて nil か木自身の `N`）の反復。
+     `snocY_mem`(dl=1) → `snocYd_mem`(dl=k+1) に替える。`hMy` の側条件が新たに要る。
+   - `AYdT` の一般化（積み重ねの添字 `(k+1)::ks` で 2 の記録の直上に荷）。
+5. `APd_all` の `two` の場合を新しい定義で書く（`APd_all M ((k+1)::ks)` を `m=0`, `N` で具体化）。
+6. `otwJ3 n = one nil (two nil (two nil (otwJ3 (n-1))))` と
+   `otw3_tower : R338 ++ ((1,1,0) :: wordJ 1 1 [otwJ3 n]) = Mtwd 3 R341 [(3,1,0),(4,2,0),(5,2,0)] n`、
+   `MidD 4 [(3,1,0),(4,2,0),(5,2,0)]`、`snocYd_mem`(dl=3, y=2) で `R375b_mem`（= M2）。

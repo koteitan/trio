@@ -17717,7 +17717,7 @@ def HdT : List Frm → Prop
 def CtxJ : List Frm → Prop
   | [] => True
   | (Frm.fone N :: rest) => JkJ N ∧ CtxJ rest
-  | (Frm.ftwo N :: rest) => JkJ N ∧ HdT rest ∧ CtxJ rest
+  | (Frm.ftwo N :: rest) => JkJ N ∧ (HdT rest ∨ N = Jk1.nil) ∧ CtxJ rest
 
 /-- 文脈の一番外は字レベル、残りは junk レベル。 -/
 def CtxOk : List Frm → Prop
@@ -17729,7 +17729,7 @@ def CtxOk : List Frm → Prop
 一番内のフレームが 2 の記録なら、木の先頭段は 2 の記録ではいけない。 -/
 def CtxXJ : List Frm → Jk1 → Prop
   | [], X => JkJ X
-  | [Frm.ftwo _], X => JkJ X ∧ TopOk X
+  | [Frm.ftwo N], X => JkJ X ∧ (TopOk X ∨ N = Jk1.nil)
   | (_ :: rest), X => CtxXJ rest X
 
 /-- 文脈の一番内側に置く木に要る条件。空文脈なら字レベル。 -/
@@ -17756,7 +17756,7 @@ theorem CtxXJ_snoc1 : ∀ (ctx : List Frm) (U W : Jk1), JkJ W → CtxXJ (ctx ++ 
       rw [e]
       exact CtxXJ_snoc1 rest U W h
 
-theorem CtxXJ_snoc2 : ∀ (ctx : List Frm) (U W : Jk1), JkJ W → TopOk W →
+theorem CtxXJ_snoc2 : ∀ (ctx : List Frm) (U W : Jk1), JkJ W → (TopOk W ∨ U = Jk1.nil) →
     CtxXJ (ctx ++ [Frm.ftwo U]) W
   | [], _, _, h, h2 => ⟨h, h2⟩
   | (f :: rest), U, W, h, h2 => by
@@ -17778,7 +17778,7 @@ theorem CtxXJ_snoc1_of : ∀ (ctx : List Frm) (U W : Jk1), CtxXJ (ctx ++ [Frm.fo
       exact CtxXJ_snoc1_of rest U W h
 
 theorem CtxXJ_snoc2_of : ∀ (ctx : List Frm) (U W : Jk1), CtxXJ (ctx ++ [Frm.ftwo U]) W →
-    JkJ W ∧ TopOk W
+    JkJ W ∧ (TopOk W ∨ U = Jk1.nil)
   | [], _, _, h => h
   | (f :: rest), U, W, h => by
       have e : CtxXJ ((f :: rest) ++ [Frm.ftwo U]) W = CtxXJ (rest ++ [Frm.ftwo U]) W := by
@@ -17802,7 +17802,7 @@ theorem CtxX_snoc1 (ctx : List Frm) (U W : Jk1) : CtxX (ctx ++ [Frm.fone U]) W �
         exact CtxXJ_snoc1 ctx U W hx
 
 theorem CtxX_snoc2 (ctx : List Frm) (U W : Jk1) :
-    CtxX (ctx ++ [Frm.ftwo U]) W ↔ JkJ W ∧ TopOk W := by
+    CtxX (ctx ++ [Frm.ftwo U]) W ↔ JkJ W ∧ (TopOk W ∨ U = Jk1.nil) := by
   have hne : ctx ++ [Frm.ftwo U] ≠ [] := by simp
   cases h : ctx ++ [Frm.ftwo U] with
   | nil => exact absurd h hne
@@ -17818,7 +17818,7 @@ theorem CtxX_snoc2 (ctx : List Frm) (U W : Jk1) :
 theorem CtxXJ_of_JkJhd : ∀ (ctx : List Frm) (X : Jk1), JkJ X → TopOk X → CtxXJ ctx X
   | [], _, h, _ => h
   | [Frm.fone _], _, h, _ => h
-  | [Frm.ftwo _], _, h, h2 => ⟨h, h2⟩
+  | [Frm.ftwo _], _, h, h2 => ⟨h, Or.inl h2⟩
   | (_ :: g :: rest), X, h, h2 => by
       rw [CtxXJ_cons]
       exact CtxXJ_of_JkJhd (g :: rest) X h h2
@@ -17871,7 +17871,7 @@ theorem JkJ_plug : ∀ (ctx : List Frm), CtxJ ctx → ∀ T : Jk1, CtxXJ ctx T �
   | (Frm.ftwo N :: rest), hc, T, hT => by
       have hX : CtxXJ rest T := by
         cases rest with
-        | nil => exact (hT : JkJ T ∧ TopOk T).1
+        | nil => exact (hT : JkJ T ∧ (TopOk T ∨ N = Jk1.nil)).1
         | cons g gs => rwa [CtxXJ_cons] at hT
       exact ⟨hc.1, JkJ_plug rest hc.2.2 T hX⟩
 
@@ -17894,11 +17894,11 @@ theorem CtxJ_snoc : ∀ (ctx : List Frm) (X : Jk1), CtxJ ctx → CtxXJ ctx X →
   | (Frm.ftwo N :: rest), X, hc, hf => by
       have hX : CtxXJ rest X := by
         cases rest with
-        | nil => exact (hf : JkJ X ∧ TopOk X).1
+        | nil => exact (hf : JkJ X ∧ (TopOk X ∨ N = Jk1.nil)).1
         | cons g gs => rwa [CtxXJ_cons] at hf
       refine ⟨hc.1, ?_, CtxJ_snoc rest X hc.2.2 hX⟩
       cases rest with
-      | nil => exact (hf : JkJ X ∧ TopOk X).2
+      | nil => exact (hf : JkJ X ∧ (TopOk X ∨ N = Jk1.nil)).2
       | cons g gs => cases g <;> exact hc.2.1
 
 theorem CtxOk_snoc : ∀ (ctx : List Frm) (X : Jk1), CtxOk ctx → CtxX ctx X →
@@ -17923,11 +17923,11 @@ theorem CtxJ_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxJ ctx → CtxXJ ctx U
   | (Frm.ftwo M :: rest), U, N, hc, hU, hN => by
       have hU' : CtxXJ rest U := by
         cases rest with
-        | nil => exact (hU : JkJ U ∧ TopOk U).1
+        | nil => exact (hU : JkJ U ∧ (TopOk U ∨ M = Jk1.nil)).1
         | cons g gs => rwa [CtxXJ_cons] at hU
       refine ⟨hc.1, ?_, CtxJ_snoc12 rest U N hc.2.2 hU' hN⟩
       cases rest with
-      | nil => exact (hU : JkJ U ∧ TopOk U).2
+      | nil => exact (hU : JkJ U ∧ (TopOk U ∨ M = Jk1.nil)).2
       | cons g gs => cases g <;> exact hc.2.1
 
 theorem CtxOk_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxOk ctx → CtxX ctx U → JkJ N →
@@ -19764,7 +19764,7 @@ decreasing_by
     first
       | exact msr_drop0 _
       | exact msr_grp _ _ _ _
-      | simpa using msr_grp _ 0 _ _
+      | exact msr_grp _ 0 _ _
 
 theorem APd_bnil (V : Jk1) : APd [] V ↔ GOK V := by rw [APd]
 
@@ -19810,7 +19810,7 @@ decreasing_by
     first
       | exact msr_drop0 _
       | exact msr_grp _ _ _ _
-      | simpa using msr_grp _ 0 _ _
+      | exact msr_grp _ 0 _ _
 
 theorem GCtx_bnil (t : Prop) (ctx : List Frm) : GCtx t [] ctx ↔ ctx = [] := by rw [GCtx]
 
@@ -19890,14 +19890,14 @@ decreasing_by
 
 /-- `APd ks V` は「形 `ks` のどの良い文脈でも `plug ctx V` が良い」と同値。 -/
 theorem APd_iff : ∀ (ks : List ℕ) (V : Jk1),
-    APd ks V ↔ ∀ ctx : List Frm, GCtx ks ctx → GOK (plug ctx V)
+    APd ks V ↔ ∀ ctx : List Frm, GCtx (TopOk V) ks ctx → GOK (plug ctx V)
   | [], V => by
       rw [APd_bnil]
       constructor
       · intro h ctx hc
         rw [GCtx_bnil] at hc; subst hc; exact h
       · intro h
-        exact h [] ((GCtx_bnil []).mpr rfl)
+        exact h [] ((GCtx_bnil _ []).mpr rfl)
   | (0 :: ks), V => by
       rw [APd_ct]
       constructor
@@ -19910,28 +19910,28 @@ theorem APd_iff : ∀ (ks : List ℕ) (V : Jk1),
         refine (APd_iff ks (Jk1.one U V)).mpr ?_
         intro ctx' hc'
         rw [← plug_snoc]
-        exact h (ctx' ++ [Frm.fone U]) ((GCtx_ct ks _).mpr ⟨ctx', U, rfl, hc', hU, hR, hUk⟩)
-  | (1 :: ks), V => by
-      rw [APd_cf]
+        exact h (ctx' ++ [Frm.fone U]) ((GCtx_ct _ ks _).mpr ⟨ctx', U, rfl, hc', hU, hR, hUk⟩)
+  | ((k + 1) :: ks), V => by
+      rw [APd_cS]
       constructor
       · intro h ctx hc
-        rw [GCtx_cf] at hc
-        obtain ⟨m, ctx', U, N, rfl, hc', hU, hR, hUk, hN, hNt⟩ := hc
-        rw [plug_snoc12]
-        exact (APd_iff (List.replicate m 0 ++ ks) _).mp (h m U N hU hR hUk hN hNt) ctx' hc'
-      · intro h m U N hU hR hUk hN hNt
-        refine (APd_iff (List.replicate m 0 ++ ks) _).mpr ?_
+        rw [GCtx_cS] at hc
+        obtain ⟨m, ctx', N, rfl, hd, hc', hN, hNt⟩ := hc
+        rw [plug_snoc2]
+        exact (APd_iff (k :: (List.replicate m 0 ++ ks)) _).mp (h m N hN hd hNt) ctx' hc'
+      · intro h m N hN hd hNt
+        refine (APd_iff (k :: (List.replicate m 0 ++ ks)) _).mpr ?_
         intro ctx' hc'
-        rw [← plug_snoc12]
-        exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
-          ((GCtx_cf ks _).mpr ⟨m, ctx', U, N, rfl, hc', hU, hR, hUk, hN, hNt⟩)
-termination_by ks _ => (cntF ks, ks.length)
+        rw [← plug_snoc2]
+        exact h (ctx' ++ [Frm.ftwo N])
+          ((GCtx_cS _ k ks _).mpr ⟨m, ctx', N, rfl, hd, hc', hN, hNt⟩)
+termination_by ks _ => msr ks
 decreasing_by
   all_goals
-    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
     first
-      | exact Prod.Lex.right _ (by omega)
-      | exact Prod.Lex.left _ _ (by omega)
+      | exact msr_drop0 _
+      | exact msr_grp _ _ _ _
+      | exact msr_grp _ 0 _ _
 
 #print axioms APd_iff
 
