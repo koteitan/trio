@@ -7306,3 +7306,74 @@ wordJ_snoc_twoNKL / wordJ_snoc_plug_twrKL                        junk 一般の�
 6. **写す。**設計を考える前に、既にある証明を 1 段だけずらして写す。
    90 行の写しで詰まるのが 1 行だけ、という形が 2 回あり、
    その 1 行が問題の本質（`AYdT_hstepK`）だった。
+
+## 続き129: ★★★★★ 案(iii) = step-indexing が通った。壁が消えた
+
+### 通ったもの（`lean/SmallSI.wip`、commit 8f94217、error 0 / clean）
+
+```lean
+def APdN : ℕ → List ℕ → Jk1 → Prop
+  | 0, _, _ => True
+  | (n + 1), ks, V =>
+      APdN n ks V ∧                                   -- 下方閉性を定義から出す
+      (match ks with
+        | [] => GOK V
+        | (0 :: ks') => ∀ U, FrmJ ks' U → (∀ S : List ℕ, APdN n S U) → APdN n ks' (one U V)
+        | ((k+1) :: ks') => ∀ w0, (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N →
+            (∀ S : List ℕ, APdN n S N) → APdN n (k :: (w0 ++ ks')) (two N V))
+
+def APdS (ks : List ℕ) (V : Jk1) : Prop := ∀ n, APdN n ks V
+def APdS_all (V : Jk1) : Prop := ∀ (S : List ℕ) (n : ℕ), APdN n S V
+```
+**再帰は `n` だけで減る（構造帰納）。`msr` / `msr_word` / `msr_grp` / `Colex` は不要。**
+
+```lean
+APdS_bnil  : APdS [] V ↔ GOK V                        -- clean。結論の強さは保たれる
+APdN_ct / APdN_cS                                     -- 段数の展開
+APdS_ct_mp : APdS (0::ks) V → FrmJ ks U → APdS_all U → APdS ks (one U V)
+APdS_cS_mp : APdS ((k+1)::ks) V → … → APdS_all N → APdS (k::(w0++ks)) (two N V)
+```
+
+### ★ 続き128 の「唯一の不等式」が自明に通る
+
+```lean
+example (i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdS_all U) :
+    APdS (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
+```
+**`L > i` でも通る。**形の測度が無いので制約が無い。
+`APd_twoNilNestL`（k=0 の底）が塔に要求していたものが、`hU _` の 1 語で出る。
+**穴(B)・穴(D)・塔の要求が同じ理由で消える。**
+
+### 残る代償（step-indexing の定番）
+
+`APdS_ct` の**逆向き**（`APdS` を作る向き）は `↔` にならない。
+負の位置の仮定が段数 `n` に固定されているため:
+```
+作る側: APdN (n+1) (0::ks) V を示すとき、U について貰えるのは ∀S, APdN n S U（段数 n）
+        しかし APdS_all U（全段数）が要る補題は適用できない
+```
+**作る側は `n` の帰納法で書く。`APd` 系の定理すべてに段数の引数が付く。**
+
+### ★ 代案 `APdG`: 形の再帰のまま、junk 条件を**閉じた述語**にする（次に試す）
+
+step-indexing の代償を避けられるかもしれない形:
+```lean
+def APdG : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U, FrmJ ks U → APdS_all U → APdG ks (Jk1.one U V)
+  | ((k+1) :: ks), V => ∀ w0, (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N → APdS_all N →
+      APdG (k :: (w0 ++ ks)) (Jk1.two N V)
+```
+**停止性は形だけ（`msr_drop0` + `msr_word`）で通るはず。**
+`APdS_all` は `APdN` で定義済みの**閉じた述語**なので、`APdG` の再帰呼び出しではない。
+**「junk 条件が `APd` 自身を呼ぶから測度が要る」という連鎖が切れる。**
+`GCtx` も同じ形にできる（junk 条件を `APdS_all` にする）ので、
+`APd_iff` が同値のまま保てる可能性がある。
+
+**要検証:**
+1. `APdG` が elaborate するか（停止性）
+2. `APdS_all U ↔ ∀ S, APdG S U` が示せるか（示せれば 2 つの定義が繋がる）
+3. `APdG` で `APd_iff` の両方向が通るか
+
+**1 が通れば、既存の証明の書き換えは「junk 条件を語の族から `APdS_all` に替える」だけで済む
+可能性がある**（段数を持ち回らなくてよい）。
