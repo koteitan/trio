@@ -22322,6 +22322,25 @@ theorem APd_nil_head : ∀ (k : ℕ) (ks : List ℕ), APd (k :: ks) Jk1.nil
 termination_by k _ => k
 decreasing_by omega
 
+/-! #### `APd_twoNilNest` の j = 0, 1, 2 が既存の 3 本と同じ文であることを Lean に確認させる。
+`unitK` / `twrK` / `ctxK` の定義をいじって壊れたら、ここが即座に赤くなる。 -/
+
+example (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
+    (hNall : ∀ i : ℕ, APd (List.replicate i 0 ++ (0 :: ks)) N) :
+    APd (0 :: ks) (Jk1.two N Jk1.nil) :=
+  APd_twoNilNest 0 (fun h _ ks' => APd_nil_head h ks') N hJN ks hNall
+
+example (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
+    (hNall : ∀ i : ℕ, APd (List.replicate i 1 ++ (1 :: ks)) N) :
+    APd (0 :: ks) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil)) :=
+  APd_twoNilNest 1 (fun h _ ks' => APd_nil_head h ks') N hJN ks hNall
+
+example (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
+    (hNall : ∀ i : ℕ, APd (List.replicate i 2 ++ (2 :: ks)) N) :
+    APd (0 :: ks) (Jk1.two Jk1.nil (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))) :=
+  APd_twoNilNest 2 (fun h _ ks' => APd_nil_head h ks') N hJN ks hNall
+
+
 
 
 /-- ★ 残作業4a（完了）: `APd_twoNilGen` の `k` 一般化。
