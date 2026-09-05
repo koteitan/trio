@@ -5656,3 +5656,29 @@ ctxKL js N m = (js の ftwo フレーム列) ++ m×(fone N :: js の ftwo フレ
 
 `MidD_unitKL` / `hMy_unitKL` は junk の列が入るぶん条件が増えるが、
 `jk1_ge` / `jk1_mono` で押さえられる（`unitK` のときと同じ形）。
+
+### 続き122 追記4: `hMy_unitKL` の見通し（junk の列は「記録」にならないので条件は空回りする）
+
+`unitKL js N l` を作るとき、`hMy`（`snocYd_mem` の側条件）が心配になる:
+```
+hMy : ∀ t, 1 ≤ t → t < M.length → entry M 0 t < L + dl →
+        (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t
+```
+`unitK`（junk 無し）では t は 2 の記録か `jk1 N` の列で、前者は行 1 = 2、
+後者は行 0 が `L + dl` 以上なので仮定が偽、で済んでいた。
+`unitKL` では **`twoRunL js (l+1)` の中に junk の列が入り、その行 1 は 0 や 1 になりうる。**
+
+しかし**空回りするはず**である。理由:
+```
+twoRunL (N₁ :: js) l = jk1 l N₁ ++ (l+1,2,0) :: twoRunL js (l+1)
+jk1_ge より jk1 l N₁ の各列の高さ h ≥ l+1
+直後の 2 の記録の高さは l+1
+→ h ≥ l+1 なので entry M 0 t < entry M 0 (その 2 の記録の位置) が成り立たない
+→ 「記録」の条件（後ろが全部真に高い）が破れる → hMy の仮定が偽
+```
+**junk の列は、直後に来る 2 の記録が自分以下の高さなので、決して「記録」にならない。**
+だから `hMy_unitKL` は `unitK` のときと同じ形で書けるはず。
+
+（`MidD_unitKL` も同様に `jk1_ge` / `jk1_mono` で押さえられる。
+`twoRunL` の要素は「行 1 = 2 の 2 の記録」か「junk の列」で、
+どちらも `MidD_append` の条件を満たす。）
