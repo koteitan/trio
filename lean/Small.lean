@@ -21427,5 +21427,25 @@ theorem R375f3_mem : R375m ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R375f3_mem
 
 
+theorem R375m_eq : R375m = R338 ++ U375a := by
+  simp [R375m, R373, R344, R341, U375a, List.append_assoc]
+
+/-- `R375m` は梯子 `LvB P0` の高さ 1 の段。土台 `R338` の上に `U375a` を 1 枚。 -/
+theorem LvB_R375m_1 : LvB P0 1 1 R375m := by
+  refine ⟨Aok_R375m, Or.inr ⟨0, R338, U375a, rfl, R375m_eq, ⟨Aok_R338, rfl⟩, MidD_U375a, ?_⟩⟩
+  intro s A' hA'
+  have hA'' : Aok A' ∧ 0 + s = 0 := hA'
+  obtain ⟨hAok, hs⟩ := hA''
+  have hs0 : s = 0 := by omega
+  subst hs0
+  simpa [shiftr01_zero] using R375_mem_gen hAok
+
+/-- ★★★ 続き111 #4 `P(2,1,0)`。 -/
+theorem R375f4_mem : R375m ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using LvB_snoc BaseOk_P0 1 1 R375m LvB_R375m_1
+
+#print axioms R375f4_mem
+
+
 end Small
 end TRIO
