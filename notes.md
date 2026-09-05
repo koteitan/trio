@@ -8313,3 +8313,68 @@ GOK_* の定理    GOK_nil / GOK_all / GOK_congr など少数
 3. そのうち「定義の形に依存しているもの」と「渡しているだけのもの」を分ける
 4. 前者が少なければ Q3 は現実的
 ```
+
+### 続き131 追記7: ★★★★★ `APz` の発見と `APzk`（次のセッションの出発点はここ）
+
+#### 既に層1 だけの `APd` がファイルにあった
+
+```lean
+def APz (V : Jk1) : Prop := ∀ U : Jk1, JkOk U → GOK U → GOK (Jk1.one U V)
+```
+**これは `APd [0] V` の層1 版。**枠 junk `U` に課しているのは `JkOk U ∧ GOK U`（層1）で、
+`APd ks U`（層2、自分自身）ではない。33 箇所の小さな開発がある:
+```
+APz_nil / APz_pay / APz_congr / GOK_chainJz / AYz /
+GOK_onePay / GOK_oneOneNil / GOK_T371
+```
+**行371 はこの層だけで通っている。**`APd` / `GCtx`（層2）はその後、深い形のために
+導入されたもので、**循環はそこで生まれた。**
+
+#### `APzk`: `APz` の形一般化（定義して通した。commit 25cebf0、error 0 / clean）
+
+```lean
+def APzk : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U, JkOk U → GOK U → APzk ks (Jk1.one U V)
+  | ((k + 1) :: ks), V => ∀ w0, (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N → GOK N →
+      APzk (k :: (w0 ++ ks)) (Jk1.two N V)
+termination_by ks _ => msr ks          -- msr_drop0 + msr_word だけ
+```
+**枠の条件が層1 の閉じた述語なので `U` についての再帰が無い。**だから
+```
+停止性  形の測度だけで済む（U の再帰が無いので msr_word の上限に当たらない）
+循環    APzk_nil が「任意の U の完全な良さ」を**証明する**必要がない。
+        `GOK U` は仮定として貰える。**循環が消える。**
+```
+通ったもの（全部 clean）:
+```
+APzk_bnil : APzk [] V ↔ GOK V              結論の強さは APd と同じ
+APzk_ct / APzk_cS
+APzk_one_eq_APz : APzk [0] V ↔ APz V       ← 既存 APz の正しい一般化であることを固定
+塔の peel の形が出る example
+```
+
+#### 今日の教訓の適用（定義が通った ≠ 正しい）
+
+```
+APzk [] V  = GOK V                     自明でない ✓
+APzk [0] V = APz V                     APz_nil が証明済み ✓ 空でも強すぎでもない
+```
+**深さ 0・1 で既存の証明済み概念に一致する**ので、`APdL` のときのような
+「低いところで強すぎる」問題は無い。
+
+#### ★ 次のセッションの出発点（1 行）
+
+```
+APzk_all : ∀ T, JkOk T → ∀ ks, APzk ks T   を証明できるか。
+できれば GOK_all が出て、APd / GCtx（層2）が丸ごと不要になる。
+```
+確かめる順序:
+```
+1. APzk_nil ks（底）が閉じるか。枠 U は GOK U を仮定として貰えるので循環しない。
+   塔は APz の側の道具（GOK_chainJz / AYz）が使えるかもしれない
+2. APzk_step / APzk_two（旧 穴B・穴D）
+3. APzk_all → GOK_all → 既存の下流
+4. 通れば APd / GCtx / SmallSI.wip の段数版は不要になる（削除は最後）
+```
+**`APz` が既にあり、行371 がそれで通っている**——これがいちばん強い証拠。
