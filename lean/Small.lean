@@ -23330,5 +23330,49 @@ theorem APd_twoTwoPay {N : Jk1} (hJN : JkA N)
 
 #print axioms APd_twoTwoPay
 
+
+/-! ### ★★★★★ `Q(2,2,1)`: 壁を破った直後の 1 本
+
+`Q` の字は `NQ = one nil (two nil (pay (two nil nil) [(0,0,0)]))`。
+`jk1 2 NQ = (3,1,0)(4,2,0)(5,2,0)(5,0,0)` で、`(5,0,0)` は `(4,2,0)` の子
+（`(5,2,0)` の兄弟）。これがちょうど #13 の壁の形。 -/
+
+def NQ : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay (Jk1.two Jk1.nil Jk1.nil)
+    [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+
+theorem JkA_NQ : JkA NQ := ⟨trivial, trivial, ⟨trivial, trivial⟩, Bok_zero⟩
+
+theorem JkT_NQ : JkT NQ := ⟨JkA_NQ, trivial⟩
+
+theorem GOK_NQ : GOK NQ :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (APd_twoTwoPay (N := Jk1.nil) trivial (fun _ _ => APd_nil _) Bok_zero []))
+
+theorem jk1_NQ (l : ℕ) : jk1 l NQ =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 0, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1 + 1) (Jk1.two Jk1.nil Jk1.nil) ++
+        shiftr01 (l + 1 + 1 + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)])))) = _
+  simp only [jk1, List.nil_append, shiftr01, List.map_cons, List.map_nil,
+    Nat.zero_add, Nat.add_zero]
+  rw [show l + 1 + 1 = l + 2 from by omega, show l + 1 + 1 + 1 = l + 3 from by omega]
+  simp
+
+/-- ★★★★★ `Q(2,2,1) = P(5,0,0)(2,2,1)`。 -/
+theorem R375q6_mem : R375q ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NQ])) := GOK_NQ [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NQ]) := by simpa using h1
+  have h2 := GOK_nil [NQ] (WOk_singletonT JkT_NQ) h1'
+  have h := rowJ_mem_genF Aok_R338 h2
+  simpa [wordJ_append, wordJ_singleton, colJ, jk1_NQ, jk1, R375q, R375m, R373, R344, R341,
+    R338, List.append_assoc] using h
+
+#print axioms R375q6_mem
+
+
 end Small
 end TRIO

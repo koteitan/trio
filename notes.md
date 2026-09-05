@@ -9392,3 +9392,29 @@ TwoOk Z → Bok Y → TwoOk (pay Z Y)   ← 新規。AYdT の証明の写し
 2. `TwoOk` を定義、`APd_chainT` の強い hNall 版 `APd_chainT'`
 3. `TwoOk_pay`（AYdT の写し）
 4. `APd (true::ks) (two N (pay (two nil nil) B))` → #13 / #15 / Q(6,*)
+
+### 追記17: 壁が破れた。`TwoOk` は一発 green、`Q(2,2,1)` も一発
+
+```
+TwoOk Z := ∀ N, JkA N → (∀ j kk, APd (rep j true ++ (true::kk)) N) →
+             ∀ j kk, APd (rep j true ++ (true::kk)) (two N Z)
+TwoOk_twoNil     = APd_twoTwoGen そのもの
+APd_chainT'      APd_chainT の強い hNall 版（hstep を TwoOk で与える）
+TwoOk_pay_nil    pay Z [] は jk1 で Z と同じ
+TwoOk_pay        AYdT の写し。hZk : APd (false::ks) Z を TwoOk Z に替えただけ
+APd_twoTwoPay    APd (true::ks) (two N (pay (two nil nil) B))
+```
+
+`AYdT` の証明で `APd (false::ks) Z` が要ったのは `APd_chainT` の hstep と
+`APd_two_of_ctx` の 2 か所。前者は `TwoOk` が直接与え、後者は
+`APd_iff (true::ks)` で `GOK (plug ctx ·)` に落とせば要らない。
+`TopOk` は 3 つの補題で本体不使用（測って外した。呼び出し 4 か所）。
+
+`Q(2,2,1)`:
+```
+NQ = one nil (two nil (pay (two nil nil) [(0,0,0)]))
+jk1 2 NQ = (3,1,0)(4,2,0)(5,2,0)(5,0,0)
+Q(2,2,1) = R338 ++ (1,1,0) :: wordJ 1 1 [NQ, nil]
+GOK NQ = APd_bnil ∘ APd_step [] ∘ APd_twoTwoPay
+```
+これで `Q` の字が言語に入った。次は `Q(3,0,0)`。
