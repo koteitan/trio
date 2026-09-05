@@ -21076,5 +21076,92 @@ theorem srow_sub21 (S : ℕ → Bool) (M : TrioSeq) (j : ℕ)
       rw [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simpa using hj)]; rfl
     simp [srow, entry_sub21_2, e2, e1, e3]
 
+
+
+/-! ### ★★★★★ シート行375 `R344 (4,2,0)(5,2,0) = psi(W_w*psi_1(W_2^2))`
+
+塔は `R341 (3,1,0)(4,2,0)(5,1,0)(6,2,0)...`（歩幅 2）。
+その木は「1 の列 + 2 の記録」を交互に積んだ `otwJ n`。 -/
+
+/-- 「1 の列 + 2 の記録」を交互に `n` 段積んだ木。 -/
+def otwJ : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (Jk1.two Jk1.nil (otwJ n))
+
+theorem TopOk_otwJ : ∀ n : ℕ, TopOk (otwJ n)
+  | 0 => trivial
+  | (_ + 1) => trivial
+
+theorem JkJ_otwJ : ∀ n : ℕ, JkJ (otwJ n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, trivial, JkJ_otwJ n, TopOk_otwJ n⟩
+
+theorem JkOk_otwJ : ∀ n : ℕ, JkOk (otwJ n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, trivial, JkJ_otwJ n, TopOk_otwJ n⟩
+
+theorem jk1_otwJ : ∀ (n l : ℕ),
+    jk1 l (otwJ n) = (List.range n).flatMap
+      (fun k => shiftr01 (2 * k) 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simp [otwJ, jk1]
+  | (n + 1), l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (Jk1.two Jk1.nil (otwJ n))) = _
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) Jk1.nil ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) (otwJ n)))) = _
+      rw [jk1_otwJ n (l + 2), List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp only [jk1, List.nil_append, Nat.mul_zero, shiftr01_zero, List.singleton_append,
+        shiftr01, List.map_cons, List.map_nil, Nat.add_zero, List.cons_append]
+      refine congrArg _ (congrArg _ ?_)
+      apply List.flatMap_congr
+      intro k _
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        and_true, and_self]
+      omega
+
+theorem otw_tower (n : ℕ) :
+    R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [otwJ n])
+      = Mtwd 2 R341 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n := by
+  rw [wordJ_singleton, colJ, jk1_otwJ n 2, Mtwd, R341]
+  simp [List.append_assoc]
+
+theorem otw_tower_mem (n : ℕ) :
+    Mtwd 2 R341 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  rw [← otw_tower n]
+  exact rowJ_mem [otwJ n] (WOk_singleton (JkOk_otwJ n))
+
+theorem MidD_N375 : MidD 4 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] where
+  ne := by simp
+  col := by
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [List.length_cons, List.length_nil] at h2
+    have hj : j = 1 := by omega
+    subst hj
+    decide
+  mono := by
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> decide
+
+/-- ★★★★★ シート行375 `R344 (4,2,0)(5,2,0) = psi(W_w*psi_1(W_2^2))`。 -/
+theorem R375_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocYd_mem (Y0 := R341)
+    (M := [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) (L := 3) (y := 2) (dl := 2)
+    (by simp [R341, R338]) MidD_N375 (by decide) ?_ (by omega) (by omega) otw_tower_mem
+  · simpa [R344, R341, List.append_assoc] using h
+  · intro t ht1 htl hlt hrec
+    simp only [List.length_cons, List.length_nil] at htl
+    have hj : t = 1 := by omega
+    subst hj
+    decide
+
+#print axioms R375_mem
+
 end Small
 end TRIO

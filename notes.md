@@ -2800,3 +2800,27 @@ termination_by ks _ => (cntF ks, ks.length)
 - `GOK_all : ∀ T, JkOk T → GOK T`（= `APd [] T`）
 - `APd_all : ∀ T, JkJ T → ∀ ks, ks ≠ [] → Rq ks T → APd ks T`
 - `APd (true :: []) V` は旧 `APz V` と一致する
+
+## 続き109（★ 行375 完成）
+
+続き108 の設計で `Small.lean` が緑になった。
+
+### 入れたもの
+- `Frm.ftwo N`（2 の記録フレーム、左 junk `N` 付き）。`plug (ftwo N :: rest) T = two N (plug rest T)`
+- `JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M`（`PayOnly` の制限を外した）
+- `APd : List Bool → Jk1 → Prop`（`APd [] V = GOK V`、`false` は true 拡張の閉包つき）、
+  `GCtx`、`APd_iff`、`APd_step`、`Rq`、`FrmJ`、`cntF`（停止性）
+- `AYdT`（2 の記録の直上の木に荷を吊るす）、`APd_chainT`（`twoIt` の鎖）、
+  `APd_twoNilGen` / `APd_twoNilB`、`APd_stairT`、`GCtx_rep` / `APd_plug_rep`
+- `APd_all : ∀ T, JkJ T → ∀ ks ≠ [], Rq ks T → APd ks T`、`GOK_all`
+- `otwJ n`（1 の列と 2 の記録の交互木）、`jk1_otwJ`、`otw_tower_mem`
+- **`R375_mem : R344 ++ [(4,2,0),(5,2,0)] ∈ W 0`**（シート行375 = `p0(W_w*p1(W_2^2))`）
+
+### 効いた点
+1. `APd [] V := GOK V` にすると基底が特別扱いでなくなり、`APd (true::ks)` の枠木条件が
+   `FrmJ ks U`（`ks = []` なら `JkOk`、それ以外は `JkJ`）で統一できる。
+2. `APd (false::ks) V` を「`ks` とその true 拡張すべてで 2 の記録の直上に置ける」と
+   定義すると、`APd_twoPay` の重複場合の鎖 `twoIt N T n` の不変量がそのまま維持できる。
+   停止性は `(cntF ks, ks.length)` の辞書式（`cntF (replicate m true ++ ks) = cntF ks`）。
+3. 2 の記録の左 junk をフレームが持つので、`two N (one A B)`（N ≠ nil）が
+   `APd (false::ks) (one A B)` の具体化で出る。
