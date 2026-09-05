@@ -20945,7 +20945,7 @@ theorem APd_chainT {t : Prop} {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
     {N T : Jk1}
     (hN : JkJ N)
     (hNall : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N)
-    (hT : JkJ T) (hTop : TopOk T)
+    (hT : JkJ T)
     (hstep : ∀ N' : Jk1, JkJ N' →
       (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N') →
       ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) (Jk1.two N' T)) :
@@ -20956,7 +20956,7 @@ theorem APd_chainT {t : Prop} {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
               (fun x hx => by have := List.eq_of_mem_replicate hx; omega)) ctx
             (GCtx_ct_any hc), hN, hNall⟩
   | (n + 1) => by
-      obtain ⟨-, h2, h3⟩ := APd_chainT mm hc hN hNall hT hTop hstep n
+      obtain ⟨-, h2, h3⟩ := APd_chainT mm hc hN hNall hT hstep n
       have h4 := hstep (twoIt N T n) h2 h3
       exact ⟨(APd_iff (0 :: (List.replicate mm 0 ++ ks)) _).mp
           (h4 (List.replicate mm 0)
@@ -20974,7 +20974,7 @@ theorem APd_two_of_ctx {kk : List ℕ} {U N V : Jk1}
   exact h (ctx0 ++ [Frm.fone U]) ((GCtx_ct False kk _).mpr ⟨ctx0, U, rfl, hc0, hU, hR, hUk⟩)
 
 /-- 鎖の一歩。`APd (1 :: ks) T` を、深さ `m` の枠で具体化する。 -/
-theorem AYdT_hstep {ks : List ℕ} {T : Jk1} (hTt : TopOk T) (hTk : APd (1 :: ks) T) :
+theorem AYdT_hstep {ks : List ℕ} {T : Jk1} (hTk : APd (1 :: ks) T) :
     ∀ N' : Jk1, JkJ N' →
       (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N') →
       ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) (Jk1.two N' T) := by
@@ -20984,14 +20984,14 @@ theorem AYdT_hstep {ks : List ℕ} {T : Jk1} (hTt : TopOk T) (hTk : APd (1 :: ks
   exact (APd_cS 0 ks T).mp hTk n N' hN' hN'all
 
 /-- ★★★ 2 の記録の直上に置ける木に、さらに `Bok` の荷を吊るせる。 -/
-theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z → TopOk Z →
+theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z →
     APd (1 :: ks) Z → APd (1 :: ks) (Jk1.pay Z Y) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z → TopOk Z →
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z →
       APd (1 :: ks) Z → APd (1 :: ks) (Jk1.pay Z Y)} := by
     refine A2' ?_
     intro Y hY
     simp only [Set.mem_setOf_eq]
-    intro hYb ks Z hZ hZt hZk
+    intro hYb ks Z hZ hZk
     by_cases hshort : Y.length ≤ 1
     · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
       · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
@@ -21015,8 +21015,8 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z
             ⟨hN, ⟨hZ, by simpa using hYb⟩⟩))
           (by simpa using hYb) Bok_nil ?_
         intro n hn
-        exact (APd_chainT (T := Jk1.pay Z ([] : TrioSeq)) m hc hN hNt ⟨hZ, Bok_nil⟩ hZt
-          (AYdT_hstep hZt hZnil) n).1 ws hw hG
+        exact (APd_chainT (T := Jk1.pay Z ([] : TrioSeq)) m hc hN hNt ⟨hZ, Bok_nil⟩
+          (AYdT_hstep hZnil) n).1 ws hw hG
     have hlen2 : 2 ≤ Y.length := by omega
     have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
     rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
@@ -21041,7 +21041,7 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z
         rw [hop] at hdl
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hprev : APd (1 :: ks) (Jk1.pay Z Y.dropLast) := hdl hdb ks Z hZ hZt hZk
+        have hprev : APd (1 :: ks) (Jk1.pay Z Y.dropLast) := hdl hdb ks Z hZ hZk
         rw [hsplit, APd_cf]
         intro m U N hU hR hUk hN hNt
         refine APd_two_of_ctx hU hR hUk ?_
@@ -21051,8 +21051,8 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z
             ⟨hN, ⟨hZ, by rw [← hsplit]; exact hYb⟩⟩))
           (by rw [← hsplit]; exact hYb) hdb ?_
         intro n hn
-        exact (APd_chainT (T := Jk1.pay Z Y.dropLast) m hc hN hNt ⟨hZ, hdb⟩ hZt
-          (AYdT_hstep hZt hprev) n).1 ws hw hG
+        exact (APd_chainT (T := Jk1.pay Z Y.dropLast) m hc hN hNt ⟨hZ, hdb⟩
+          (AYdT_hstep hprev) n).1 ws hw hG
       · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
             entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
         have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
@@ -21066,7 +21066,7 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z
         intro n hn
         have hh := hnat n hn
         simp only [Set.mem_setOf_eq] at hh
-        have hh2 := hh (Bok_oper hYb hn) ks Z hZ hZt hZk
+        have hh2 := hh (Bok_oper hYb hn) ks Z hZ hZk
         have hc' := hc
         rw [GCtx_ct] at hc'
         obtain ⟨ctx0, U', hce, hc0, hU', hR', hU'k⟩ := hc'
@@ -21075,8 +21075,8 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkJ Z
         rw [plug_snoc]
         exact (APd_iff _ _).mp h2 ctx0 hc0 ws hw hG
     · exact absurd hm (Nat.not_lt_zero mm)
-  intro Y hYb ks Z hZ hZt hZk
-  exact key hYb.mem hYb ks Z hZ hZt hZk
+  intro Y hYb ks Z hZ hZk
+  exact key hYb.mem hYb ks Z hZ hZk
 
 /-! ### 荷の追加（どの形でも）と、階段 -/
 
@@ -21369,6 +21369,21 @@ theorem AYdTK : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z →
 
 
 
+
+/-- ★ `AYdK` の `k = 0`（添字 `1 :: ks`）は `AYdT` そのもの。
+`TopOk Z` はガード除去で死んだので、仮定は `APd (1 :: ks) V` 一本でよい。 -/
+theorem AYdK0 (ks : List ℕ) (V : Jk1) (hV : JkJ V) (hVk : APd (1 :: ks) V)
+    (C : TrioSeq) (hC : Bok C) : APd (1 :: ks) (Jk1.pay V C) :=
+  AYdT C hC ks V hV hVk
+
+/-- ★★★★★ base 一様版の荷吊るし。`V` が**どの形でも**継げるなら、荷を吊るしても
+どの形でも継げる。`k ≥ 1` は `AYdTK` がちょうどこの形の仮定を要求するので、
+`AYdK`（sorry）を通らずに閉じる。 -/
+theorem APd_payAll (V : Jk1) (hV : JkOk V) (hVall : ∀ ks : List ℕ, APd ks V)
+    (C : TrioSeq) (hC : Bok C) : ∀ ks : List ℕ, APd ks (Jk1.pay V C)
+  | [] => APd_payE V hV (hVall []) C hC
+  | (0 :: ks) => APd_payT ks V (JkJ_of_JkOk V hV) (hVall (0 :: ks)) C hC
+  | ((k + 1) :: ks) => AYdTK C hC k V (JkJ_of_JkOk V hV) (fun B => hVall ((k + 1) :: B)) ks
 
 /-- ★ 残作業4b: `AYdT` の `k` 一般化（2 の記録の枠を `k+1` 枚積んだ形で荷を吊るす）。
 `k = 0` かつ `TopOk V` なら `AYdT`。新設計では `TopOk V ∨ N = nil` しか無いので、
