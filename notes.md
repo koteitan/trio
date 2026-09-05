@@ -5713,3 +5713,35 @@ APd_twoNilNestL                  ← APd_twoNilNest の写し
 ```
 どれも `unitK` → `unitKL` と同じ写しで、`js = replicate j nil` での固定補題を
 一緒に入れていけば回帰が即分かる。
+
+### 続き122 追記6: 穴(B) を `hd` 除去後に測り直した → **構図は変わらない**
+
+`lean/SmallYpay.wip` の差分（`fone` 枠に荷閉包）を、ガード 5 箇所除去後の
+`lean/SmallY.wip` に当て直して 1 回測った（`/tmp/payB.lean`）。
+
+```
+error 19（前回と同じ規模）。error は AYd（20080〜）の中にも出ている
+```
+**`hd` の除去では穴(B) の循環は解けない。**理由は構造的:
+```
+hd     は APd_cS（ftwo 枠）にあった条件
+穴(B) の循環は APd_ct（fone 枠）の .mp 側 = APd_step が
+       GOK_chainJd の鎖の元 itJ T n X に荷閉包を要求することから来る
+→ 別の枠の話なので、hd を外しても AYd の鎖の負担は減らない
+```
+（`hd` 除去で楽になるのは `APd_cS` を使う側、つまり `AYdTK` の鎖の方だった。
+そちらは実際に楽になって穴(C) が閉じた。）
+
+#### 穴(B) に残る道
+
+```
+(i)   APd_nilT を APd_payA 経由でない道で作る（APd_oneNil を使わない）
+      → APnil_gen の hang は snocd_gen の最後の引数としてしか使われない。
+        そこまで降りて、もっと弱い形で足りないか見る（続き116 の route 3。未着手）
+(ii)  fone 枠に「荷閉包」ではなく別のもの（APd ks (one U nil) など）を持たせる
+      → 測度は通る（形 ks のまま）。ただし .mp 側の負担が同じ形で伝播しないか要確認
+(iii) AYd の鎖の不変量に荷閉包を持たせられるか
+      → itJ T (n+1) X = one W T なので APd ks (pay (one W T) C) が要る。
+        ks の頭が 0 なら APd_payT で出る。頭が ≥ 1 のときが問題（= AYdK 自身）。
+        AYd を「頭 0 の ks に限る」形に制限できれば閉じるかもしれない。要調査
+```
