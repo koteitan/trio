@@ -17408,7 +17408,7 @@ theorem JkA_of_JkJ : ∀ N : Jk1, JkJ N → JkA N
   | Jk1.nil, _ => trivial
   | Jk1.pay N Y, h => ⟨JkA_of_JkJ N h.1, h.2⟩
   | Jk1.one N M, h => ⟨JkA_of_JkJ N h.1, JkA_of_JkJ M h.2⟩
-  | Jk1.two N M, h => ⟨JkA_of_JkJ N h.1, JkA_of_JkJ M h.2⟩
+  | Jk1.two N M, h => ⟨JkA_of_JkJ N h.1, JkA_of_JkJ M h.2.1⟩
 
 theorem TopOk_of_PayOnly : ∀ W : Jk1, PayOnly W → TopOk W
   | Jk1.nil, _ => trivial
@@ -17424,7 +17424,7 @@ theorem JkJ_of_PayOnly : ∀ W : Jk1, PayOnly W → JkJ W
 
 /-- 旧来の「2 の記録の上は荷だけ」から新しい `JkJ` を作る。 -/
 theorem JkJ_two_pay {N M : Jk1} (hN : JkJ N) (hM : PayOnly M) : JkJ (Jk1.two N M) :=
-  ⟨hN, JkJ_of_PayOnly M hM⟩
+  ⟨hN, JkJ_of_PayOnly M hM, Or.inl (TopOk_of_PayOnly M hM)⟩
 
 theorem JkOk_nil : JkOk Jk1.nil := trivial
 
@@ -17873,7 +17873,11 @@ theorem JkJ_plug : ∀ (ctx : List Frm), CtxJ ctx → ∀ T : Jk1, CtxXJ ctx T �
         cases rest with
         | nil => exact (hT : JkJ T ∧ (TopOk T ∨ N = Jk1.nil)).1
         | cons g gs => rwa [CtxXJ_cons] at hT
-      exact ⟨hc.1, JkJ_plug rest hc.2.2 T hX⟩
+      have hlast : TopOk (plug rest T) ∨ N = Jk1.nil := by
+        cases rest with
+        | nil => exact (hT : JkJ T ∧ (TopOk T ∨ N = Jk1.nil)).2
+        | cons g gs => exact hc.2.1.imp (fun h => TopOk_plug_cons g gs T h) id
+      exact ⟨hc.1, JkJ_plug rest hc.2.2 T hX, hlast⟩
 
 theorem JkOk_plug : ∀ (ctx : List Frm), CtxOk ctx → ∀ T : Jk1, CtxX ctx T → JkOk (plug ctx T)
   | [], _, _, hT => hT
@@ -17914,7 +17918,7 @@ theorem CtxOk_snoc : ∀ (ctx : List Frm) (X : Jk1), CtxOk ctx → CtxX ctx X �
 
 theorem CtxJ_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxJ ctx → CtxXJ ctx U → JkJ N →
     CtxJ (ctx ++ [Frm.fone U, Frm.ftwo N])
-  | [], U, N, _, hU, hN => ⟨hU, hN, trivial, trivial⟩
+  | [], U, N, _, hU, hN => ⟨hU, hN, Or.inl trivial, trivial⟩
   | (Frm.fone M :: rest), U, N, hc, hU, hN => by
       refine ⟨hc.1, CtxJ_snoc12 rest U N hc.2 ?_ hN⟩
       cases rest with
@@ -17932,7 +17936,7 @@ theorem CtxJ_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxJ ctx → CtxXJ ctx U
 
 theorem CtxOk_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxOk ctx → CtxX ctx U → JkJ N →
     CtxOk (ctx ++ [Frm.fone U, Frm.ftwo N])
-  | [], U, N, hc, hU, hN => ⟨hU, hN, trivial, trivial⟩
+  | [], U, N, hc, hU, hN => ⟨hU, hN, Or.inl trivial, trivial⟩
   | (Frm.fone M :: rest), U, N, hc, hU, hN => by
       have hU' : CtxXJ (Frm.fone M :: rest) U := hU
       refine ⟨hc.1, CtxJ_snoc12 rest U N hc.2 ?_ hN⟩
