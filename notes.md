@@ -9770,3 +9770,16 @@ AYsQ (PT D) (JkA Z) (hAP : ∀V, JkA V → GOK (plug D V) → GOK (plug D (one V
 `AYsQ` / `APnil_gen0` の閉包を `Us` について一様に回す。
 `DeepOk Us (one nil X) = DeepOk (Us ++ [nil]) X` は**定義から自明**なので、
 一様化さえできれば「右に伸びる」は自動で取れる。
+
+### 追記28: `U = T(7,0,0)` は土台だけで 3 本。字は壁
+
+```
+U(0,0,0) sum_Bok    U(1,0,0) flat/copies    U(1,1,0) Lv_snoc
+```
+この 3 本は `Aok U` しか使わないので出る。
+`U(2,0,0)` から先は単位（＝字）が要る:
+```
+U の字 = one nil (two nil (one (two nil nil) (one nil (pay nil [(0,0,0)]))))
+         右の子 one nil X （X ≠ nil）＝ 追記27 の「右に伸びる」壁
+```
+`(7,0,0)` は `(6,1,0)` の子なので、木では `one nil (pay nil ·)` を右に足す形になる。

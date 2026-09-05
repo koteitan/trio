@@ -26061,5 +26061,66 @@ theorem R375t5_mem : R375t ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375t5_mem
 
 
+
+/-! ### `U = T(7,0,0)` の上（土台だけで出る 3 本） -/
+
+def R375u : TrioSeq := R375t ++ [((7, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R375u_eq : R375u = [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ), ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [R375u, R375t, R375s, R375m, R373, R344, R341, R338]
+
+theorem R375u_ne : R375u ≠ [] := by
+  simp [R375u, R375t, R375s, R375m, R373, R344, R341, R338]
+
+theorem R375u_head : entry R375u 0 0 = 0 := by
+  simp [R375u, R375t, R375s, R375m, R373, R344, R341, R338, entry]
+
+theorem R375u_tail : ∀ r, 1 ≤ r → r < R375u.length → 1 ≤ entry R375u 0 r := by
+  intro r h1 h2
+  simp only [R375u, R375t, R375s, R375m, R373, R344, R341, R338, List.length_append,
+    List.length_cons, List.length_nil] at h2
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | r
+    <;> first | omega | simp [R375u, R375t, R375s, R375m, R373, R344, R341, R338, entry]
+
+theorem Aok_R375u : Aok R375u where
+  mem := R375t16_mem
+  ne := R375u_ne
+  deep := ⟨R375u_head, R375u_tail⟩
+  zroot := by
+    rw [R375u_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  mono := by
+    rw [R375u_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- ★★★★★ `U(0,0,0)`。 -/
+theorem R375u0_mem : R375u ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  sum_Bok Aok_R375u Bok_zero
+
+/-- ★★★★★ `U(1,0,0)`。 -/
+theorem R375u1_mem : R375u ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, ([] : TrioSeq) ++ (List.range n).flatMap (fun _ => R375u) ∈ W 0 := by
+    intro n
+    simpa [copies] using (Aok_R375u.copies_Bok n).mem
+  have h := flat_mem'' (Y0 := ([] : TrioSeq)) (M := R375u) (d := 1) R375u_ne
+    (by rw [R375u_head]; omega) R375u_tail htw
+  simpa using h
+
+/-- ★★★★★ `U(1,1,0)`。 -/
+theorem R375u2_mem : R375u ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 R375u Aok_R375u
+
+#print axioms R375u0_mem
+#print axioms R375u1_mem
+#print axioms R375u2_mem
+
+
 end Small
 end TRIO
