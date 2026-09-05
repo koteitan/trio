@@ -8912,3 +8912,45 @@ colJ_otwLV_mem : (∀m, X ++ colJ a b (appJ V (otwJ m)) ∈ W 0) → X ++ colJ a
 `∀m, GOK (appJ V (otwJ m))` が別途要り、`appJ V (otwJ m) = one V (two nil (otwJ (m-1)))` で
 `JkOk (one V _)` が `JkOk V` を要求するので、`V` に otwL が入ると既存の `GOK_all` では出ない。
 **`APd_step` / `FrmJ [] V = JkOk V` を `JkT` に弱められるかが次の分岐点。**
+
+### 追記1: #6 も同じ塔の `n = 0` で出た。残り 10 個の見立て（`bms -d` 実測）
+
+```
+済  #1 #2 #3 #4 #5 #6 #7
+残  #8 #9 #10 #11 #12 #13 #14 #15 #16 #17
+```
+
+**#8 #10 #13 #16（bad root = 根、delta 3/4/5/6）は梯子のレベル 2/3/4/5。**
+`bms -d` で `P(3,1,0)[2] = P ++ P↑3 ++ P↑6`（`↑k` は `shiftr01 k 0`）と確認。
+#2 は `Lv_snoc`（レベル 0）、#4 は `LvB_snoc`（レベル 1、`LvB_R375m_1`）で済んでいるので、
+#8 は `LvB P0 r 2 R375m` が要る。分解は
+
+```
+LvB P0 2 2 R375m:  b = 1, A0 = R338 ++ [(1,1,0)], M = U375b, MidD 3 U375b ✓
+  LvB P0 1 1 (R338 ++ [(1,1,0)])   … b' = 0, M' = [(1,1,0)]。LvB_snoc で出る
+  reapp: ∀ s A', LvB P0 1 (1+s) A' → A' ++ shiftr01 s 0 U375b ∈ W 0
+```
+
+`shiftr01 s 0 U375b = colJ (1+s) 1 otwL` なので、`colJ_otwL_mem` に落とせば
+`∀m, A' ++ colJ (1+s) 1 (otwJ m) ∈ W 0` が要る。
+**これは「レベル `a` の梯子の頭に、1 の列を挟まずに字（z の列 `(a+1,2,1)` + junk）を継ぐ」**で、
+今の `GoodFb.seg h` は必ず 1 の列 `(h+1,1,0)` を頭に付ける形なので直接は使えない。
+`LvB P0 1 (1+s) A'` を展開すると `s = 0` が強制され、`A' = A0 ++ M`（`Aok A0`, `MidD 2 M`,
+`M` は再継ぎ可能）まで絞れるので、その形に限れば通る見込みはある。**未着手。**
+
+**#9 #12 #15（平坦、bad root = 4/6/7 以外）は横並び（appJ）の壁。**
+単位が同じ高さで繰り返すので、木では左兄弟の連結 `appJ` になる。
+
+```
+#9  単位 (3,1,0)(4,2,0)(5,2,0) → appJ otwL otwL = one otwL (two nil (two nil nil))
+#12 単位 (4,2,0)(5,2,0)        → two (two nil (two nil nil)) (two nil nil)
+#15 単位 (5,2,0)               → two (two (…) nil) nil  … 直上が two なので TopOk が偽
+```
+
+`colJ_otwL_mem` の `X` は完全に一般なので極限は取れるが、**塔の各段**
+`appJ V (otwJ m) = one V (two nil (otwJ (m-1)))` の `GOK` に `JkOk V` が要り、
+`V` に `otwL` が入ると既存の `GOK_all` では出ない。
+`APd_step` の `FrmJ [] V = JkOk V` を `JkT` に弱められるかが分岐点。
+
+**#11 #14 #17（bad root 5、delta 1/2/3）は「1 の列 + 2 の記録 2 本」のブロックを
+歩幅 1/2/3 で積む形**で、木にすると左兄弟と入れ子が混ざる。一番遠い。
