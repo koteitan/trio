@@ -5872,3 +5872,55 @@ head 0, js = [N'₂, N'₁]         木 nstL [N'₂, N'₁] (two N nil)
 
 `js = js' ++ [Nl]` で `GCtx_cS`（m := 0）を当てる。`List.reverseRecOn` を使う。
 `js.getLast` が形の先頭（いちばん大きい head）に対応する。
+
+### 続き122 追記10: ★ `GCtx_repKL` で新しい穴が出た（js の base 一様性）
+
+`JsOk` / `JsOk_snoc` / `GCtx_ftwoRepL` は通った（commit 済み）。
+その次の `GCtx_repKL` を書こうとして**新しい穴**に当たった。書きかけは revert 済み。
+
+#### 何が足りないか
+
+`GCtx_repK`（nil 版）の帰納段はこうなっている:
+```lean
+hout := GCtx_ftwoRep j hnil (List.replicate (m + 1) j ++ ks) …
+```
+つまり **`ftwo` 枠の junk は、base が `replicate (m+1) j ++ ks` に伸びた状態で使われる。**
+nil 版では `hnil h _ ks'` が **どの `ks'` でも**成り立つので無料だった。
+
+js 一般版だと `js[i]` について
+```
+APd (i :: (w ++ (List.replicate m js.length ++ ks))) js[i]
+```
+が要る。ところが `js[i]` が持っている closure は
+```
+∀ w, (∀ x ∈ w, x ≤ i) → APd (i :: (w ++ ks)) js[i]      ← base は ks で固定
+```
+で、**`replicate m js.length` の要素は `js.length > i` なので語の族に入らない。**
+→ **base 一様性の穴。穴(B) と同じ形。**
+
+#### つまり
+
+```
+nil 版が通っていたのは「nil はどの形でも継げる」（APd_nil）から。
+js 一般版では、js の各 junk について「どの形でも継げる」に近い一様性が要る。
+そしてそれは APd_cS の closure（語の族、base 固定）からは出ない。
+```
+
+#### 現状の穴の一覧（更新）
+
+```
+(B)  APd_nilT が (∀ B, APd ((k+1)::B) V) を供給できない          … AYdK が閉じない
+(D)  GCtx_repKL が js の base 一様性を要求する（新規）            … APd_twoNilPeel が閉じない
+```
+**(B) と (D) は同じ形**（枠 junk の base 一様性が要る／closure の語の族からは出ない）。
+片方の解き方がもう片方にも効く可能性が高い。
+
+#### 次に試すこと
+
+1. `APd_twoNilPeel` の `js` は `APd_cS` の枠 junk である。**`APd_cS` の closure を
+   「語の族」から「どの base でも」に強められないか**——ただし `msr` の制約がある
+   （続き116 追記5、続き118 追記1）。語の族が測度の上限なので、これ以上は広げられない。
+2. **`ctxKL` を使わない**別の文脈で塔 `twrKL` を実現できないか。
+   塔の単位に junk が載ることは bms で確定しているので、`ftwo js[i]` 枠は避けられない気がする。
+3. 穴(B) の route 3（`APnil_gen` の `hang` を `snocd_gen` まで降りる）を先にやり、
+   そこで得た手が (D) にも効かないか見る。**(B) と (D) が同型なら、これが本命。**
