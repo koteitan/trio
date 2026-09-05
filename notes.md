@@ -4207,3 +4207,44 @@ APd_iff で開くと、GCtx t (0::ks) ctx から ctx = ctx' ++ [fone U]（APd ks
 **したがって追記17 の 3 方向はどれもすぐには通らない。ここで引き継ぐ。**
 `D(0)`（`APd_twoNilGenW`）は通っているので、残るのは
 「`APd_nil ((k+1)::ks)` をどう作るか」1 点である。
+
+### 続き113 追記19: ★★★ 方向 4 が正解だった。閉包強化 + 消費側の仮定も同時に強める
+
+追記17 で「機械的には直らない」と書いたのは**私の間違い**。詰まりの原因は
+「定義だけ強めて、それを消費する補題（`AYdT_hstep` / `APd_chainT`）の仮定を弱いまま
+にした」ことだった。**閉包を強めるときは、消費側の仮定も同じだけ強める。これが 1 セット。**
+
+決め手は「**すべての閉包を base `ks` 上で述べ、`replicate m 0` は `hc`（文脈）に持たせる**」こと。
+逆向き（`replicate m 0 ++ ks` 上の一様性）からは base の一様性は出ないが、
+base の一様性からは `rep_norm` で吸収して `replicate m 0 ++ ks` 上の一様性が出る。
+
+#### 変更（`SmallY.wip`、error 0）
+
+```
+APd / APd_cS / APd_cf / GCtx / GCtx_cS / GCtx_cf の閉包:
+  ∀ i,      APd (replicate i k ++ (k :: (replicate m  0 ++ ks))) N
+  → ∀ i m', APd (replicate i k ++ (k :: (replicate m' 0 ++ ks))) N      （m' は自由）
+
+APd_chainT : (mm : ℕ) を明示し hc : GCtx t (0 :: (replicate mm 0 ++ ks)) ctx。
+             hNall / hstep / 結論はすべて base ks 上の強い形。
+AYdT_hstep : パラメータ m を落とす（束縛された m' になる）。
+             仮定 hN'all がそのまま APd_cf の閉包になるので、証明が 6 行短くなった。
+APd_twoNilGenK : 仮定を ∀ i m, … に強め、k = 0 は fun j => hcl j 0、
+                 k = 1 は APd_twoNilGenW N hN (replicate m 0 ++ ks) (fun i => hcl i m) で閉じた。
+APd_nil        : fun i m'' => by rw [rep_norm]; exact hcl i (m'' + m)
+APd_twoNilB    : fun j => hNt j m
+APd_all        : hNall を ∀ j m' の形に（APd_all 自身が任意の形を出すので trivial）
+GCtx_rep2      : 閉包の intro を i m' に
+```
+
+停止性はマネージャの指摘どおり無傷（`msr_grp` は既に `m` について ∀）。
+
+#### ★ `APd_twoNilGenK` の `k = 0` と `k = 1` が閉じた
+
+残る `sorry` は 3 本のまま だが中身が減った:
+```
+AYdK                       残作業4b（未着手）
+APd_twoNilGenK の k+2      歩幅 k+1 の一般化（k = 0, 1 は済み）
+APd_twoK                   残作業5
+```
+**`D(0)` から `APd_twoNilGenK 1` までが繋がった。**段階2 の縦の筋は通っている。
