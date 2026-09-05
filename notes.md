@@ -5504,3 +5504,54 @@ h.2.2 → 削除、h.2.1 → h.2（JkJ / CtxJ の射影の付け替え）
 intro / rcases / rintro から hd を 1 個減らす
 GCtx_mono / GCtx_ct_any の呼び出しを消す（恒等になるので）
 ```
+
+## 続き122: ★★★ 穴 (C) が閉じた。`AYdTK` から `TopOk Z` が落ちた
+
+`lean/SmallW3.wip`（ガード 5 箇所を全部外した版）が **error 0** になった。commit e7be1f9。
+
+```lean
+AYdTK : ∀ Y, Bok Y → ∀ k Z, JkJ Z →
+        (∀ ks, APd ((k+1) :: ks) Z) → ∀ ks, APd ((k+1) :: ks) (Jk1.pay Z Y)
+```
+**`TopOk Z` が要らなくなった。**これは `AYdK'`（base 一様版）そのもので、
+`TopOk V` の枝と `¬TopOk V` の枝の区別が消えた。**穴 (C) 消滅。**
+
+`APd_chainTK` の `hTop` も `AYdT_hstepK` の `hTt` も落ちた
+（`hd` を外したら linter が「未使用」と言い、実際に外して緑）。
+
+### grind の推移（全部 commit 済み）
+
+```
+85 → 67  CtxXJ / CtxJ の snoc 補題クラスタ
+67 → 68  GCtx / APd の言い換えから hd 除去（露出分で微増）
+68 → 38  GCtx_cf の統語 / twr 系の JkJ / Or.inl hTt / hd 残り
+38 → 12  Or.inl … / Or.inr rfl の第 3 成分を一括除去
+12 →  0  最後のクラスタ（APd_twoK / APd_all の h.2.1・h.2.2 付け替えなど）
+```
+
+### 「ガードを全部外す」の代償は **1 個だけ**だった
+
+残る sorry は 2 本:
+```
+AYdK           … 穴(B)。APd_nilT が (∀ B, APd ((k+1)::B) V) を供給できない
+APd_twoNilPeel … ★ 新規。hd を外した代償
+```
+新規の 1 個の中身:
+```
+hd を外したので APd_cS の N' が nil に潰れなくなり、帰納段の目標が
+  APd (k :: ks_m) (Jk1.two N' (nst j (Jk1.two N Jk1.nil)))     （N' 任意）
+になる。以前は hd : TopOk V ∨ N' = nil から N' = nil が出て
+nst (j+1) (two N nil) に一致していた。
+直すには nst j（two nil の入れ子）を「任意の junk を挟む入れ子」に一般化し、
+塔 twrK の単位にもその junk を載せる。arity ではない、本物の一般化。
+```
+
+### 次
+
+```
+1. APd_twoNilPeel の帰納段を直す（nst を任意 junk の入れ子に一般化）
+2. lean/SmallW3.wip を lean/SmallY.wip に移す（要 leanman check → commit）
+3. 穴(B) を lean/SmallYpay.wip の差分で測り直す
+   （hd が消えて .mp 側が楽になったので、循環の構図が変わっている可能性）
+4. AYdK → sorry 0 → 段階3'（#17）→ 段階4'（マージ）
+```
