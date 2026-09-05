@@ -23477,5 +23477,21 @@ example (Z : Jk1) : APd [0, 0] Z ↔ ∀ V : Jk1, JkJ V → APz V → APz (Jk1.o
     intro U hU hR' hUk
     exact (APd_bnil _).mpr (h2 U hU ((APd_bnil U).mp hUk))
 
+
+/-- ★ `APz_all` は既存の `APd_all` から直に出る（`APz = APd [0]` だから）。
+つまり `GOK_one` は**新しい道ではなく**、既にある `APd_all` と同じもの。
+`APd_all` は `APd_nil` → `APd_nil_head` → `APd_twoNilPeel`（残る sorry）に依存する。 -/
+theorem APz_all_of_APd_all (M : Jk1) (h : JkJ M) : APz M :=
+  fun U hU hGU =>
+    (APd_bnil _).mp
+      ((APd_ct [] M).mp (APd_all M h [0] (by simp) trivial) U hU trivial
+        ((APd_bnil U).mpr hGU))
+
+/-- したがって `GOK_one` も出る（`APd_twoNilPeel` の sorry には依存する）。 -/
+theorem GOK_one_final {N M : Jk1} (hN : JkOk N) (hM : JkJ M) (hGN : GOK N) :
+    GOK (Jk1.one N M) := APz_all_of_APd_all M hM N hN hGN
+
+#print axioms GOK_one_final
+
 end Small
 end TRIO

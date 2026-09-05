@@ -8492,3 +8492,45 @@ GOK_one ⟺ APz_all : ∀ M, JkJ M → APz M      （追記8。これは正し�
 穴は one / two（入れ子）の 2 つ               （追記8。これも正しい）
 ただしそれは APd [0] の話で、APd 一般の話と地続き。**新しい道ではない。**
 ```
+
+### 続き131 追記10: `GOK_one` は**新しい道ではない**。既存の `APd_all` と同値（Lean で確認）
+
+```lean
+theorem APz_all_of_APd_all (M : Jk1) (h : JkJ M) : APz M :=
+  fun U hU hGU =>
+    (APd_bnil _).mp
+      ((APd_ct [] M).mp (APd_all M h [0] (by simp) trivial) U hU trivial
+        ((APd_bnil U).mpr hGU))
+
+theorem GOK_one_final {N M : Jk1} (hN : JkOk N) (hM : JkJ M) (hGN : GOK N) :
+    GOK (Jk1.one N M) := APz_all_of_APd_all M hM N hN hGN
+
+#print axioms GOK_one_final
+-- [propext, sorryAx, Classical.choice, Quot.sound]     ← APd_twoNilPeel の sorry 経由
+```
+error 0（`lean/SmallC.wip`）。
+
+**`APz = APd [0]` なので `APz_all` は `APd_all` を形 `[0]` に制限しただけ。**
+`APd_all` は既に証明されており（残る sorry には依存する）、
+**`GOK_one` はそこから 2 行で出る。**
+
+**⇒ `GOK_one` を「直接示して `APd` 層を消す」という方向（追記3 の Q）は成立しない。**
+`GOK_one` は `APd` 層の帰結であって、`APd` 層を消す手段ではない。
+
+#### この 40 分の結論
+
+```
+GOK_one は真。ただし既存の APd_all の帰結で、残る sorry に依存する
+APz / OneOk は APd [0] / APd [0,0]。別の層ではない
+APzk（枠条件をどの深さでも GOK U にする）は APd より強い主張なので採れない
+```
+**「層1 だけの開発が既にある」という見立ては誤りだった。**
+`APz` の 33 箇所は `APd` が入る前に深さ 1 を手で展開したもので、
+行371 が通ったのは深さが浅かったから。
+
+#### 次の人へ（この検算の意味）
+
+**「別の道に見えたものが、既に歩いた道の一部だった」というのは今日 2 回目**
+（1 回目は案(v)、2 回目がこれ）。
+**新しい定義を思いついたら、まず既存のものと一致しないかを `example … ↔ …` で確かめる。**
+今日はそれで 2 回、無駄な着手を防いだ。
