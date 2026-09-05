@@ -6502,3 +6502,62 @@ APd0_two  : APd0 ((k+1) :: ks) M → APd0 (k :: ks) (Jk1.two Jk1.nil M)  -- .mp 
 3. GOK_all0 → rowJ_mem0 → otwJ3（= twrK 2 nil）→ R375b_mem（#17）
 ```
 **`APd0_all` の one / two の場合は既に自明**（上の 2 本）。**残る本質は `APd0_nil` の 1 本だけ。**
+
+### 続き125: ★★★★★ 穴の正体が特定できた。`APd` の定義の族が狭すぎただけ
+
+#### 1. `AYdT` の `TopOk Z` は死んでいた（commit 742df7b, error 0）
+
+`AYdT_hstep` の `hTt : TopOk T` は**本体で一度も使われていない**。
+`APd_chainT` の `hTop` も、ガード除去後の `JkJ (two N M) = JkJ N ∧ JkJ M` には不要。
+3 箇所から外して error 0。したがって
+```
+AYdT : ∀ Y, Bok Y → ∀ ks Z, JkJ Z → APd (1 :: ks) Z → APd (1 :: ks) (pay Z Y)
+```
+は **`AYdK` の k = 0 そのもの**。`AYdK0` として切り出した。
+
+#### 2. `APd_payAll`（base 一様版）が sorry 無しで通った
+
+```
+APd_payAll : JkOk V → (∀ ks, APd ks V) → Bok C → ∀ ks, APd ks (pay V C)
+  []        → APd_payE      0 :: ks → APd_payT      (k+1)::ks → AYdTK
+```
+`AYdK`（sorry）を一切通らない。
+
+#### 3. ★ なぜ k=0 は単一形の仮定で通り、k≥1 は base 一様性を要求したのか
+
+```
+APd の定義の族   APd ((k+1)::ks) V = ∀ m N, ... → APd (k :: (replicate m 0 ++ ks)) (two N V)
+closure の族     ∀ w, (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N
+```
+**k = 0 では「entries ≤ 0 の語」= `replicate n 0` なので 2 つの族が一致する。**
+だから `AYdT_hstep` は `(APd_cS 0 ks T).mp hTk n N' hN' hN'all` の 1 行で済む。
+
+**k ≥ 1 では語の族の方が真に広い。**そのズレを埋めるために `AYdT_hstepK` は
+`hTk (w ++ ks)` を呼ばざるを得ず、`∀ B, APd ((k+1)::B) T` を要求していた。
+**「供給できない要求」は本質ではなく、定義側の族が狭いことの症状だった。**
+
+#### 4. したがって定義側を語の族に揃える
+
+```lean
+| ((k + 1) :: ks), V => ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
+    (∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N) →
+    APd (k :: (w0 ++ ks)) (Jk1.two N V)
+```
+停止性は **`msr_word` がちょうどこれ**（既に `decreasing_by` に入っている）。
+`GCtx` も同形に揃える（良い文脈が増える = `APd` が強くなる、で consumer 側と整合）。
+
+通れば `AYdT_hstepK` は
+`fun N' hN' hN'all w hw => (APd_cS k ks T).mp hTk w hw N' hN' hN'all` の 1 行になり、
+`AYdTK` の `∀ ks` が落ちて **`AYdK` が全 k で閉じる → 穴(B) も 穴(D) も消える**。
+
+#### 5. 測定（1 回）
+
+**error 100（maxErrors 上限に到達。実数はもう少し多い）。**
+```
+26 Application type mismatch   22 Function expected at
+14 unsolved goals              14 rewrite failed
+14 don't know how to synthesize implicit argument
+ 1 isDefEq timeout（GCtx_cS の rw [GCtx]）
+```
+**エラーは 19500〜21400 行（`APd`/`GCtx` 機構ブロック）に閉じている。塔・目標側には 0 件。**
+ガード除去のときと同じ profile（85 件中 84 件が機械的だった）。
