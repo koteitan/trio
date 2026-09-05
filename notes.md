@@ -4145,3 +4145,47 @@ APd_twoNilGenK k ks N の仮定を ∀ i m, APd (replicate i k ++ (k :: (replica
   ∀ i, APd (replicate i 1 ++ (1 :: (replicate m 0 ++ ks))) N
 はちょうど `fun i => hcl i m` で出る。**穴はこれで閉じる。**
 ```
+
+### 続き113 追記17: 閉包強化を実際にやってみた結果 — 単純な強化では閉じない（撤回）
+
+追記16 の「5 箇所」は `APd` と `APd_cS` だけ直した場合の数だった。
+`GCtx` も同時に強めて（`APd_iff` が両者を 1 対 1 で受け渡すため必須）実際にやると
+**壊れる箇所は 8 つ**になり、しかもそのうち `AYdT_hstep` / `APd_chainT` の 3 つは
+**機械的には直らない**。理由:
+
+```
+AYdT_hstep の中で (APd_cf ks T).mp に渡す閉包は「ks について ∀ m'」の強い形。
+一方 hN'all（AYdT_hstep の仮定）は「replicate m 0 ++ ks について」の形しか作れない。
+  ∀ j m'', APd (… (replicate m'' 0 ++ (replicate m 0 ++ ks))) N'
+     = ∀ j m'', APd (… (replicate (m''+m) 0 ++ ks)) N'        （rep_norm）
+なので m'' + m ≥ m の形しか出ず、**ks についての全 m' は得られない**。
+```
+
+`APd_chainT` の結論も同じ形なので、鎖を回すと強い形が保てない。
+実験は `git checkout` で撤回した（`SmallY.wip` は追記14 の状態＝error 0 / sorry 3 本）。
+
+#### 問題の本質（後任・マネージャへ）
+
+`APd_nil ((k+1) :: ks)` が唯一の詰まりどころ:
+
+```
+APd ((k+1)::ks) nil を示すには、任意の m と N（+ APd_cS の弱い閉包）に対して
+  APd (k :: (replicate m 0 ++ ks)) (two N nil)          = APd_twoNilGenK k (replicate m 0 ++ ks) N
+を出さなければならない。ところが APd_twoNilGenK は k ≥ 1 で降りるときに
+**新しい m' の挿入**を要求するので、m について一様な閉包が要る。
+APd_cS が与えるのは m 固定の閉包だけ。
+```
+
+つまり `APd` の定義（続き110 追記5）の閉包
+`∀ i, APd (replicate i k ++ (k :: (replicate m 0 ++ ks))) N`
+は、**降下で自分自身を再利用するには弱すぎる**。
+
+考えられる方向（未検証）:
+1. `APd` に「形に 0 を挿入しても保たれる」単調性補題を別途作る
+   （`APd ks' V → APd (replicate m 0 ++ ks') V` のような）。これが出れば定義は触らずに済む。
+   ただし `APd (0 :: S) V = ∀ U, … → APd S (one U V)` なので自明ではない。
+2. `APd_nil` を `APd_twoNilGenK` を経由しない別の帰納法で作る。
+3. `APd` の閉包を `∀ ks', ks' ≠ [] → APd ks' N`（最強）にして、
+   `APd_nil` だけ別扱いにする。
+
+**`D(0)`（`APd_twoNilGenW`）自体は通っているので、ここが繋がれば段階2 は終わる。**
