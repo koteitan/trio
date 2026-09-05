@@ -9015,3 +9015,42 @@ P ++ shiftr01 3 0 B = R338 ++ (1,1,0) :: colJ 1 1 (pay otwL B)
 
 高さ 5・6 は荷が極限列 `(a+4,2,0)` の**上**に来るので `snocYd_mem`（末尾に継ぐ）が
 使えない。別の手が要る。
+
+### 追記5: ★ #9 `P(4,0,0)` が出た。鍵は `FrmJ [] = JkOk` を `JkT` に弱めること
+
+#9 の単位 `(3,1,0)(4,2,0)(5,2,0)` は**同じ高さの繰り返し**なので、木では左兄弟の連結:
+
+```
+TL 0 = nil,  TL (m+1) = one (TL m) (two nil (two nil nil))
+jk1 l (TL m) = copies [(l+1,1,0),(l+2,2,0),(l+3,2,0)] m
+R341 ++ copies U375c m = R338 ++ (1,1,0) :: colJ 1 1 (TL m)
+```
+
+`colJ_otwL_mem` は `X` について完全に一般なので、`Y0` を `X ++ colJ a b U` に伸ばすだけで
+左兄弟つきの極限 `colJ_oneU_mem` になる（同じ証明）。問題は**塔の各段**
+`one U (two nil (otwJ m))` の `GOK` で、`GOK_all` は `JkOk (one U _)` = `JkOk U` を要求する。
+
+そこで `APd` の定義に埋まっていた `FrmJ [] U = JkOk U` を `JkT U` に弱めた。
+実測すると `JkOk` が使われているのは (a) `Mono` / `WOk`、(b) `AY0`（荷の追加）の 2 つだけで、
+どちらも既に `JkT` で通る（追記3 で `AY0` を弱め済み）。改修は 14 エラーで全部機械的:
+
+```
+CtxOk (fone N :: rest) = JkT N ∧ CtxJ rest     CtxX [] X = JkT X
+JkOk_plug → JkT_plug                           FrmJ_JkJ は ks ≠ [] を要求
+APz V = ∀ U, JkT U → GOK U → GOK (one U V)     AP0nil / APd_payE / GOK_onePay /
+GOK_oneOneNil / APpayJ / JkT_itJ / JkT_nil     GOK_chainJz は ctx ≠ [] を明示
+```
+
+これで `APd_step [] (hU : JkT U) trivial (GOK U) (APd_all …)` が使えるようになり、
+`GOK (one U (two nil (otwJ m)))` が `JkOk U` なしで出る。
+
+**この改修は #12 #15 にも効くはず**（どちらも同じ高さの繰り返し）。ただし木の形が違う:
+
+```
+#9  単位 (3,1,0)(4,2,0)(5,2,0) → one U (two nil (two nil nil))   ← 済
+#12 単位 (4,2,0)(5,2,0)        → two U (two nil nil)             ← 左兄弟つきの two
+#15 単位 (5,2,0)               → two U nil                        ← 同上
+```
+
+`#12` `#15` は最外が `two` なので `APd_step`（1 の列のフレーム）ではなく
+2 の記録のフレームが要る。`APd_twoNilGen` の左兄弟つき版が要りそう。
