@@ -19425,14 +19425,15 @@ theorem wordJ_snoc_plug_pay (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V : Jk
     List.append_assoc]
 
 /-- ★★★ 深さ `|ctx|` に「junk のない 1 の列」を継いでも良い（吊るしを仮定として受け取る）。 -/
-theorem APnil_gen (ctx : List Frm) (hc : CtxOk ctx) (V : Jk1) (hV : CtxX ctx V)
+theorem APnil_gen0 (ctx : List Frm) (V : Jk1)
+    (hJT : JkT (plug ctx (Jk1.one V Jk1.nil)))
     (hGV : GOK (plug ctx V))
     (hang : ∀ C : TrioSeq, Bok C → GOK (plug ctx (Jk1.pay V C))) :
     GOK (plug ctx (Jk1.one V Jk1.nil)) := by
   intro ws hw hG
   set p := dep ctx with hp
   have hwO : WOk (ws ++ [plug ctx (Jk1.one V Jk1.nil)]) :=
-    WOk_append hw (WOk_singletonT (JkT_plug ctx hc _ (CtxX_one ctx V Jk1.nil hV (CtxT_of_JkJ ctx JkJ_nil))))
+    WOk_append hw (WOk_singletonT hJT)
   have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx V])) := hGV ws hw hG
   have hprev : ∀ C : TrioSeq, Bok C →
       GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.pay V C)])) :=
@@ -19532,6 +19533,13 @@ theorem APnil_gen (ctx : List Frm) (hc : CtxOk ctx) (V : Jk1) (hV : CtxX ctx V)
             wordJ (h + s + 1) 1 (ws ++ [plug ctx (Jk1.pay V B)]) from rfl] at h2
       rw [wordJ_snoc_plug_pay] at h2
       simpa [ha, ← hp, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h2
+
+theorem APnil_gen (ctx : List Frm) (hc : CtxOk ctx) (V : Jk1) (hV : CtxX ctx V)
+    (hGV : GOK (plug ctx V))
+    (hang : ∀ C : TrioSeq, Bok C → GOK (plug ctx (Jk1.pay V C))) :
+    GOK (plug ctx (Jk1.one V Jk1.nil)) :=
+  APnil_gen0 ctx V
+    (JkT_plug ctx hc _ (CtxX_one ctx V Jk1.nil hV (CtxT_of_JkJ ctx JkJ_nil))) hGV hang
 
 #print axioms APnil_gen
 
@@ -24215,6 +24223,95 @@ theorem R375q0_mem : R375q ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 
 #print axioms R375f0_mem
 #print axioms R375q0_mem
+
+
+
+/-! ### ★★★★★ `TwoOk` の `one V nil` 節
+
+`APnil_gen0`（1 の列は荷の族 `pay V C` の極限）は `CtxX ctx V` を
+`WOk` のためだけに使っていた。それを `JkT (plug ctx (one V nil))` に置き換えると、
+`ctx` が 2 の記録のフレームで終わっていても通る。 -/
+
+theorem TwoOk_oneNil {V : Jk1} (hJV : JkA V) (hVk : TwoOk V)
+    (hpay : ∀ C : TrioSeq, Bok C → TwoOk (Jk1.pay V C)) :
+    TwoOk (Jk1.one V Jk1.nil) := by
+  intro N hN hNall j kk
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N]) (Jk1.one V Jk1.nil)) := by
+    rw [plug_snoc2]
+    exact JkT_plug ctx (GCtx_CtxOk _ ctx hc) _
+      (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hJV, trivial⟩) trivial)
+  have hGV : GOK (plug (ctx ++ [Frm.ftwo N]) V) := by
+    rw [plug_snoc2]
+    exact (APd_iff _ _).mp
+      (by simpa using hVk N hN hNall 0 (List.replicate j true ++ kk)) ctx hc
+  have hang : ∀ C : TrioSeq, Bok C → GOK (plug (ctx ++ [Frm.ftwo N]) (Jk1.pay V C)) := by
+    intro C hC
+    rw [plug_snoc2]
+    exact (APd_iff _ _).mp
+      (by simpa using hpay C hC N hN hNall 0 (List.replicate j true ++ kk)) ctx hc
+  have h := APnil_gen0 (ctx ++ [Frm.ftwo N]) V hJT hGV hang
+  rwa [plug_snoc2] at h
+
+/-- ★★★★★ `one (two nil nil) nil`（2 の記録の直上に「2 の記録 + 1 の列」）。 -/
+theorem TwoOk_oneTwoNil : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) Jk1.nil) :=
+  TwoOk_oneNil ⟨trivial, trivial⟩ TwoOk_twoNil
+    (fun C hC => TwoOk_pay C hC (Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ TwoOk_twoNil)
+
+#print axioms TwoOk_oneTwoNil
+
+/-- `S` の字。`jk1 2 NS = (3,1,0)(4,2,0)(5,2,0)(5,1,0)`。 -/
+def NS : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) Jk1.nil))
+
+theorem JkA_NS : JkA NS := ⟨trivial, trivial, ⟨trivial, trivial⟩, trivial⟩
+
+theorem JkT_NS : JkT NS := ⟨JkA_NS, trivial⟩
+
+theorem GOK_NS : GOK NS :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa using TwoOk_oneTwoNil Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem jk1_twoNil (l : ℕ) :
+    jk1 l (Jk1.two Jk1.nil Jk1.nil) = [((l + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp [jk1]
+
+theorem jk1_oneTwoNil (l : ℕ) :
+    jk1 l (Jk1.one (Jk1.two Jk1.nil Jk1.nil) Jk1.nil)
+      = [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 1, 1, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l (Jk1.two Jk1.nil Jk1.nil) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Jk1.nil)
+      = _
+  rw [jk1_twoNil l]
+  simp [jk1]
+
+theorem jk1_NS (l : ℕ) : jk1 l NS =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (l + 1 + 1) (Jk1.one (Jk1.two Jk1.nil Jk1.nil) Jk1.nil)))) = _
+  rw [jk1_oneTwoNil (l + 1 + 1)]
+  simp only [jk1, List.nil_append]
+
+def U375b1 : TrioSeq := U375b ++ [((5, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem colJ_NS_one : colJ 1 1 NS = U375b1 := by
+  show ((2, 2, 1) : ℕ × ℕ × ℕ) :: jk1 2 NS = _
+  rw [jk1_NS 2]
+  rfl
+
+/-- ★★★★★ `S(2,2,1)`。 -/
+theorem R375s6_mem : R375s ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NS])) := GOK_NS [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NS]) := by simpa using h1
+  have h2 := GOK_nil [NS] (WOk_singletonT JkT_NS) h1'
+  have h := rowJ_mem_genF Aok_R338 h2
+  simpa [wordJ_append, wordJ_singleton, colJ, jk1_NS, jk1, R375s, R375m, R373, R344, R341,
+    R338, List.append_assoc] using h
+
+#print axioms R375s6_mem
 
 
 end Small
