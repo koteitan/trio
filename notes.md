@@ -9867,3 +9867,49 @@ snocYd_mem 側は通る: 単位 M = unN N D ++ (D+2..D+j+1 の 2 の記録)、dl
 `LOk` に `ftwo` のコンストラクタを足す形で書けるが、そのとき
 `APd_twoNilGen` / `TwoOk_pay` / `APd_twoTwoGen` を「2 の記録で終わる文脈」でも
 やり直す必要がある。次の大きな仕事。
+
+### 追記31: `U` 族 18/18。壁は `LOk_two` ただ 1 つに絞れた
+
+`U = T(7,0,0)` の 18 本すべてを、`T` 族の型紙をそのまま写して埋めた。
+新しく要った道具は 3 つだけ:
+```
+HU  = one (two nil nil) (one nil (pay nil [(0,0,0)]))   jk1 l HU = (l+1,2,0)(l+1,1,0)(l+2,1,0)(l+3,0,0)
+WttU = two nil HU
+LOk1_oneNilPay hB : LOk 1 (one nil (pay nil B))         ← 梯子（追記30）から
+```
+`T` の `WttT = two nil (one (two nil nil) (one nil nil))` の右端に `(l+4,0,0)` が
+1 本増えるだけなので、`XXU` / `TLU` / `AAnU` / `VVnU` / `ZZU` / `YU` は
+`T` 版と 1 対 1。`U(8,0,0)` だけ型紙になく、`hang7_R375t` に荷
+`copies [(0,0,0)] n` を渡すだけで出た（`shift_copies_zero`）。
+
+**残る壁を測った**。次のシート行 `R376 = R373(5,3,0)` と、続き111 の残り
+`#14 P(5,2,0)` `#15 P(6,0,0)` `#16 P(6,1,0)` `#17 P(6,2,0)` は、どれも同じ
+1 つの道具を要求する:
+```
+LOk_two : LOk (k+1) Z → JkA N → (hNall N) → LOk k (two N Z)
+          ＝「2 の記録を深さ k の枠積みに置ける」
+```
+測った内訳:
+```
+P(5,2,0) の塔 = Mtwd 2 R341 [(3,1,0),(4,2,0),(5,2,0)] n
+木は NST k = two nil (one (two nil nil) (NST (k-1)))、GOK (one nil (NST k)) が要る
+  → TwoOk (one (two nil nil) (NST (k-1)))
+  → LOk 1 (NST (k-1)) = LOk 1 (two nil ...)      ← LOk_two（深さ 1）
+R376 の塔 = Mtw R344 [(4,2,0)] n
+木は stk n = two nil (stk (n-1))、TwoOk (stk (n-1)) が要る
+  → LOk 0 (two nil ...) を繰り返す               ← LOk_two（深さ 0 の反復）
+```
+**GCtx では代用できない**ことを確かめた。`StkOk k D` の枠木 `U` には
+`TopOk U` も `APd ks U` も課していない（`two nil nil` が枠木になる）。
+だから `StkOk k D → GCtx ks D` は `k ≥ 1` で成り立たず、既存の
+`APd_twoTwoGen`（`GCtx (true::ks)` 前提）は使えない。
+
+`LOk_two` を作るには、`StkOk` に `ftwo` のコンストラクタを足したうえで
+```
+APd_twoNilGen  （2 の記録の直上に nil）
+TwoOk_pay      （GoodFb_snoc_dupJt / innerJt）
+APd_twoTwoGen  （塔 nstN + snocN_of_tower）
+```
+の 3 つを「2 の記録で終わる文脈」でやり直す。`snocYd_mem` 側は
+追記30 で測ったとおり通る（単位 `unN N D ++ (2 の記録)`、`MidD` / `hMy` は同じ議論）。
+残るのは `APd_twoTwoGen` の `GoodFb`（pu / pk / seg）の一般化。

@@ -27096,5 +27096,310 @@ theorem R375u12_mem : R375u ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375u12_mem
 
 
+/-! ### `U(5,1,0)` / `U(6,0,0)` / `U(6,1,0)` / `U(7,0,0)` / `U(8,0,0)` -/
+
+theorem Ancd5_R375u : Ancd 5 R375u := by
+  have h := Ancd_append_Mid (by simp [R344, R341, R338]) Ancd4_R344 MidD_U375d3
+  rwa [R375u_eq4] at h
+
+theorem GOK_hang5U {B : TrioSeq} (hB : Bok B) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay HU B))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_pay B hB HU JkA_HU TwoOk_HU
+        Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem jk1_hang5U (l : ℕ) (B : TrioSeq) :
+    jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay HU B)))
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+          ((l + 4, 1, 0) : ℕ × ℕ × ℕ), ((l + 5, 0, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 (l + 3) 0 B := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1 + 1) HU ++ shiftr01 (l + 1 + 1 + 1) 0 B)))) = _
+  rw [jk1_HU (l + 1 + 1), show l + 1 + 1 = l + 2 from by omega,
+    show l + 2 + 1 = l + 3 from by omega, show l + 2 + 2 = l + 4 from by omega,
+    show l + 2 + 3 = l + 5 from by omega]
+  simp [jk1]
+
+theorem hang5_R375u {B : TrioSeq} (hB : Bok B) : R375u ++ shiftr01 5 0 B ∈ W 0 := by
+  have hG := GOK_hang5U hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay HU B))]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_hang5U 2 B] at h
+  simpa [R375u, R375t, R375s, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+theorem tw5_R375u : ∀ n : ℕ, TwD 5 R375u n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      exact hang5_R375u ⟨tw5_R375u n, TwD_zroot (by omega) Aok_R375u.zroot n,
+        TwD_mono Aok_R375u.mono n, TwD_root Aok_R375u.ne Aok_R375u.deep.1 n⟩
+
+/-- ★★★★★ `U(5,1,0)`。 -/
+theorem R375u13_mem : R375u ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) Aok_R375u.ne Aok_R375u.deep Aok_R375u.zroot Ancd5_R375u tw5_R375u
+
+/-! #### `U(6,0,0)`: `(5,1,0)(6,1,0)(7,0,0)` を同じ高さに `n` 個 -/
+
+def ZZU : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil Jk1.nil
+  | (n + 1) => Jk1.one (ZZU n)
+      (Jk1.one Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+
+theorem JkA_ZZU : ∀ n : ℕ, JkA (ZZU n)
+  | 0 => ⟨trivial, trivial⟩
+  | (n + 1) => ⟨JkA_ZZU n, trivial, trivial, Bok_zero⟩
+
+theorem TwoOk_ZZU : ∀ n : ℕ, TwoOk (ZZU n)
+  | 0 => TwoOk_twoNil
+  | (n + 1) => TwoOk_of_LOk0 (LOk_one (k := 0) (JkA_ZZU n)
+      (LOk0_of_TwoOk (TwoOk_ZZU n)) (LOk1_oneNilPay Bok_zero))
+
+theorem jk1_ZZU : ∀ (n l : ℕ),
+    jk1 l (ZZU n) = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      copies [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 1, 0) : ℕ × ℕ × ℕ),
+        ((l + 3, 0, 0) : ℕ × ℕ × ℕ)] n
+  | 0, l => by simp [ZZU, jk1, copies]
+  | (n + 1), l => by
+      show jk1 l (ZZU n) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (Jk1.one Jk1.nil
+          (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]))) = _
+      rw [jk1_ZZU n l, jk1_oneNilPay0 (l + 1), copies_snoc,
+        show l + 1 + 1 = l + 2 from by omega, show l + 1 + 2 = l + 3 from by omega]
+      simp
+
+theorem GOK_oneTwoZZU (n : ℕ) : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (ZZU n))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa using TwoOk_ZZU n Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem R375m_copiesU (n : ℕ) :
+    R375m ++ copies [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ),
+      ((7, 0, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b
+      ([] ++ [Jk1.one Jk1.nil (Jk1.two Jk1.nil (ZZU n))])) :=
+    GOK_oneTwoZZU n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil (ZZU n))]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (ZZU n)))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)]
+        ++ copies [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ),
+          ((7, 0, 0) : ℕ × ℕ × ℕ)] n := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) :: jk1 4 (ZZU n)))) = _
+    rw [jk1_ZZU n 4]
+    simp [jk1]
+  simpa [wordJ_singleton, colJ, e, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+theorem R375u_eq5 : R375u = R375m ++ [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [R375u, R375t, R375s]
+
+/-- ★★★★★ `U(6,0,0)`。 -/
+theorem R375u14_mem : R375u ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R375m)
+    (M := [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)])
+    (d := 6)
+    (by simp) (by simp [entry])
+    (by intro r h1 h2; simp only [List.length_cons, List.length_nil] at h2
+        rcases r with _ | _ | _ | r <;> first | omega | simp [entry])
+    (fun n => by simpa [copies] using R375m_copiesU n)
+  rw [R375u_eq5]
+  simpa [List.append_assoc] using h
+
+/-! #### `U(6,1,0)`: 高さ 6 の吊るし -/
+
+theorem MidD_c516170 : MidD 6 [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ)] where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl <;> decide
+
+theorem Ancd6_R375u : Ancd 6 R375u := by
+  have h := Ancd_append_Mid Aok_R375m.ne Ancd5_R375m MidD_c516170
+  rwa [← R375u_eq5] at h
+
+theorem jk1_onePayOneU (l : ℕ) (B : TrioSeq) :
+    jk1 l (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.pay (Jk1.one Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])) B))
+      = [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 1, 1, 0) : ℕ × ℕ × ℕ),
+          ((l + 2, 1, 0) : ℕ × ℕ × ℕ), ((l + 3, 0, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 (l + 2) 0 B := by
+  show jk1 l (Jk1.two Jk1.nil Jk1.nil) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) (Jk1.one Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+      ++ shiftr01 (l + 1 + 1) 0 B)) = _
+  rw [jk1_twoNil l, jk1_oneNilPay0 (l + 1), show l + 1 + 1 = l + 2 from by omega,
+    show l + 1 + 2 = l + 3 from by omega]
+  simp
+
+theorem GOK_hang6U {B : TrioSeq} (hB : Bok B) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.pay (Jk1.one Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])) B)))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_of_LOk0 (LOk_one (k := 0) (W := Jk1.two Jk1.nil Jk1.nil)
+        ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+        (LOk_pay 1 (X := Jk1.one Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+          ⟨trivial, trivial, Bok_zero⟩ (LOk1_oneNilPay Bok_zero) B hB))
+        Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem jk1_hang6U (l : ℕ) (B : TrioSeq) :
+    jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.pay (Jk1.one Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])) B))))
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+          ((l + 4, 1, 0) : ℕ × ℕ × ℕ), ((l + 5, 0, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 (l + 4) 0 B := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (l + 1 + 1) (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.pay (Jk1.one Jk1.nil
+          (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])) B))))) = _
+  rw [jk1_onePayOneU (l + 1 + 1), show l + 1 + 1 = l + 2 from by omega,
+    show l + 2 + 1 = l + 3 from by omega, show l + 2 + 2 = l + 4 from by omega,
+    show l + 2 + 3 = l + 5 from by omega]
+  simp [jk1]
+
+theorem hang6_R375u {B : TrioSeq} (hB : Bok B) : R375u ++ shiftr01 6 0 B ∈ W 0 := by
+  have hG := GOK_hang6U hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.pay (Jk1.one Jk1.nil
+          (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])) B)))]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_hang6U 2 B] at h
+  simpa [R375u, R375t, R375s, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+theorem tw6_R375u : ∀ n : ℕ, TwD 6 R375u n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      exact hang6_R375u ⟨tw6_R375u n, TwD_zroot (by omega) Aok_R375u.zroot n,
+        TwD_mono Aok_R375u.mono n, TwD_root Aok_R375u.ne Aok_R375u.deep.1 n⟩
+
+/-- ★★★★★ `U(6,1,0)`。 -/
+theorem R375u15_mem : R375u ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) Aok_R375u.ne Aok_R375u.deep Aok_R375u.zroot Ancd6_R375u tw6_R375u
+
+/-! #### `U(7,0,0)`: `(6,1,0)(7,0,0)` を同じ高さに `n` 個 -/
+
+def YU : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one (YU n) (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])
+
+theorem JkA_YU : ∀ n : ℕ, JkA (YU n)
+  | 0 => trivial
+  | (n + 1) => ⟨JkA_YU n, trivial, Bok_zero⟩
+
+theorem LOk1_YU : ∀ n : ℕ, LOk 1 (YU n)
+  | 0 => LOk_nil 1
+  | (n + 1) => LOk_one (k := 1) (JkA_YU n) (LOk1_YU n)
+      (LOk_pay 2 (X := Jk1.nil) trivial (LOk_nil 2) _ Bok_zero)
+
+theorem jk1_YU : ∀ (n l : ℕ),
+    jk1 l (YU n) = copies [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 0, 0) : ℕ × ℕ × ℕ)] n
+  | 0, l => by simp [YU, jk1, copies]
+  | (n + 1), l => by
+      show jk1 l (YU n) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) Jk1.nil ++
+          shiftr01 (l + 1 + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)])) = _
+      rw [jk1_YU n l, copies_snoc, show l + 1 + 1 = l + 2 from by omega]
+      simp [jk1, shiftr01]
+
+theorem GOK_oneTwoYU (n : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (YU n)))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_of_LOk0 (LOk_one (k := 0) (W := Jk1.two Jk1.nil Jk1.nil)
+        ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil) (LOk1_YU n))
+        Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem R375s_copiesU (n : ℕ) :
+    R375s ++ copies [((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (YU n)))])) :=
+    GOK_oneTwoYU n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (YU n)))]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (YU n))))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+          ((5, 1, 0) : ℕ × ℕ × ℕ)]
+        ++ copies [((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] n := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+        jk1 4 (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (YU n))))) = _
+    rw [show jk1 4 (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (YU n))
+        = jk1 4 (Jk1.two Jk1.nil Jk1.nil) ++ (((5, 1, 0) : ℕ × ℕ × ℕ) :: jk1 5 (YU n))
+        from rfl, jk1_twoNil 4, jk1_YU n 5]
+    simp [jk1]
+  simpa [wordJ_singleton, colJ, e, R375s, R375m, R373, R344, R341, R338,
+    List.append_assoc] using h
+
+/-- ★★★★★ `U(7,0,0)`。 -/
+theorem R375u16_mem : R375u ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R375s)
+    (M := [((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)]) (d := 7)
+    (by simp) (by simp [entry])
+    (by intro r h1 h2; simp only [List.length_cons, List.length_nil] at h2
+        rcases r with _ | _ | r <;> first | omega | simp [entry])
+    (fun n => by simpa [copies] using R375s_copiesU n)
+  simpa [R375u, R375t, List.append_assoc] using h
+
+/-! #### `U(8,0,0)`: `(7,0,0)` を同じ高さに `n` 個（荷そのもの） -/
+
+theorem shift_copies_zero (d : ℕ) : ∀ n : ℕ,
+    shiftr01 d 0 (copies [((0, 0, 0) : ℕ × ℕ × ℕ)] n)
+      = copies [((d, 0, 0) : ℕ × ℕ × ℕ)] n
+  | 0 => by simp [copies, shiftr01]
+  | (n + 1) => by
+      rw [copies_succ, copies_succ, shiftr01_append0, shift_copies_zero d n]
+      simp [shiftr01]
+
+theorem R375t_copiesU8 (n : ℕ) :
+    R375t ++ copies [((7, 0, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have h := hang7_R375t (Bok_copies_zero n)
+  rwa [shift_copies_zero 7 n] at h
+
+/-- ★★★★★ `U(8,0,0)`。 -/
+theorem R375u17_mem : R375u ++ [((8, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R375t) (M := [((7, 0, 0) : ℕ × ℕ × ℕ)]) (d := 8)
+    (by simp) (by simp [entry]) (by intro r h1 h2; simp at h2; omega)
+    (fun n => by simpa [copies] using R375t_copiesU8 n)
+  simpa [R375u, List.append_assoc] using h
+
+#print axioms R375u13_mem
+#print axioms R375u14_mem
+#print axioms R375u15_mem
+#print axioms R375u16_mem
+#print axioms R375u17_mem
+
+
 end Small
 end TRIO
