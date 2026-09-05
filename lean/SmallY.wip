@@ -22423,6 +22423,58 @@ theorem twoRunL_shape : ∀ (js : List Jk1), (∀ M ∈ js, JkA M) → ∀ (l : 
         · have := twoRunL_shape js (fun M hM => hjs M (by simp [hM])) (l + 1) c h2
           exact ⟨by omega, this.2⟩
 
+/-- ★ `twoRunL` の中で「記録」（後ろが全部真に高い）になれるのは 2 の記録だけ。
+junk の列は、直後に来る 2 の記録が自分以下の高さなので記録になれない。 -/
+theorem twoRunL_rec_row1 : ∀ (js : List Jk1), (∀ M ∈ js, JkA M) → ∀ (l u : ℕ),
+    u < (twoRunL js l).length →
+    (∀ i, u < i → i < (twoRunL js l).length →
+      entry (twoRunL js l) 0 u < entry (twoRunL js l) 0 i) →
+    2 ≤ entry (twoRunL js l) 1 u
+  | [], _, l, u, hu, _ => by simp [twoRunL] at hu
+  | (N :: js), hjs, l, u, hu, hrec => by
+      have he : twoRunL (N :: js) l
+          = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: twoRunL js (l + 1)) := rfl
+      rw [he] at hu hrec ⊢
+      set A := jk1 l N with hA
+      set B := ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: twoRunL js (l + 1) with hB
+      have hBlen : 0 < B.length := by rw [hB]; simp
+      have hAB : A.length < (A ++ B).length := by
+        rw [List.length_append]; omega
+      have hzero : entry (A ++ B) 0 A.length = l + 1 := by
+        have : entry (A ++ B) 0 (A.length + 0) = entry B 0 0 := entry_append_right A B 0 0
+        simpa [hB, entry] using this
+      rcases Nat.lt_trichotomy u A.length with hlt | heq | hgt
+      · exfalso
+        have h1 : entry (A ++ B) 0 u = entry A 0 u := entry_append_left hlt
+        have hmem : A.getD u ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ A := by
+          rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, Option.getD_some]
+          exact List.getElem_mem hlt
+        have hge := jk1_ge N l _ hmem
+        have h2 : entry A 0 u = (A.getD u ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := rfl
+        have h3 := hrec A.length hlt hAB
+        rw [hzero, h1, h2] at h3
+        omega
+      · subst heq
+        have : entry (A ++ B) 1 (A.length + 0) = entry B 1 0 := entry_append_right A B 1 0
+        simpa [hB, entry] using this.ge
+      · obtain ⟨v, rfl⟩ : ∃ v, u = A.length + (v + 1) := ⟨u - A.length - 1, by omega⟩
+        have hlenv : v < (twoRunL js (l + 1)).length := by
+          rw [List.length_append, hB, List.length_cons] at hu; omega
+        have eR : ∀ (i r : ℕ), entry (A ++ B) r (A.length + (i + 1))
+            = entry (twoRunL js (l + 1)) r i := by
+          intro i r
+          have h1 : entry (A ++ B) r (A.length + (i + 1)) = entry B r (i + 1) :=
+            entry_append_right A B r (i + 1)
+          rw [h1, hB, entry_cons_succ]
+        rw [eR v 1]
+        refine twoRunL_rec_row1 js (fun M hM => hjs M (by simp [hM])) (l + 1) v hlenv ?_
+        intro i hi hil
+        have h1 := hrec (A.length + (i + 1)) (by omega) (by
+          rw [List.length_append, hB, List.length_cons]
+          omega)
+        rw [eR v 0, eR i 0] at h1
+        exact h1
+
 theorem MidD_unitKL (js : List Jk1) (hjs : ∀ M ∈ js, JkA M) (N : Jk1) (l : ℕ) (hN : JkJ N) :
     MidD (l + 2) (unitKL js N l) := by
   have h1 : MidD (l + 2) [((l + 1, 1, 0) : ℕ × ℕ × ℕ)] := MidD_col (l + 1) 1 (by omega) (by omega)
