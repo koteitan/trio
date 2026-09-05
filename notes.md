@@ -9223,3 +9223,40 @@ stage3  XX 0 = nil, XX (m+1) = two (XX m) (two nil nil)
 つまり `APd_twoTwoGen`（`true` フレーム）はできたが、**`false` フレーム版**が次の壁。
 `Rq (false :: ks) V = TopOk V` が `two` を弾いている。
 続き132 の「`AYdT` の `TopOk Z` は死んだ仮定」がここで効く可能性がある。
+
+### 追記11: 残り 5 個を全部測った。壁は 1 つに収束している
+
+`bms -d` 実測（親行列から木に起こした）:
+
+```
+#13 P(5,1,0)  [1] = P ++ P↑5        → 高さ 5 の吊るし
+              木 one nil (two nil (pay (two nil nil) B))
+              要る: APd [false] (pay (two nil nil) B) → APd [false] (two nil nil)
+#14 P(5,2,0)  [1] = P ++ (5,1,0)(6,2,0)(7,2,0)  → Mtwd 2 R341 U375c (n+2)
+              (5,1,0) は (4,2,0) の子＝(5,2,0) の兄弟。
+              木 T(k+1) = one nil (two nil (one (two nil nil) X_k))
+              要る: APd (false :: ks) (one W X)、W = two nil nil
+              → Rq (false :: ks) W = TopOk W が偽で弾かれる
+#15 P(6,0,0)  [1] = P ++ (5,2,0)     → 平坦。木 one nil (two nil (Y m))、Y m = two (Y(m-1)) nil
+              要る: APd [false] (Y m)
+#16 P(6,1,0)  [1] = P ++ P↑6        → 高さ 6 の吊るし
+#17 P(6,2,0)  [1] = P ++ (6,1,0)(7,2,0)(8,2,0) → Mtwd 3 R341 U375c (n+2)
+              (6,1,0) は (5,2,0) の子＝1 段深い入れ子。
+              木 T(k+1) = one nil (two nil (two nil (T k)))
+              要る: APd [false] (two nil (T k))
+```
+
+**5 個とも `APd (false :: ks) V` で `V` が `two` で始まる形**。
+`Rq (false :: ks) V = TopOk V` がこれを弾いており、これが続き132 の穴そのもの。
+できているのは `APd (true :: ks) (two N (two nil nil))`（`APd_twoTwoGen`）で、
+そこでは外側の `two` が**枠でなく木**なので通っている。
+
+### 追記12: ✗ `APd_cf` の hNall を `∀ kk, APd (true :: kk) N` に強めるのは不可能（測定済み）
+
+`APd_twoTwoGen` の hNall が `∀ j kk` の形なので、`APd_cf` の hNall を
+`(∀ j, APd (rep j true ++ (true :: (rep m true ++ ks))) N)` から
+`(∀ kk, APd (true :: kk) N)` に強めれば中で使える、と思って実際に書き換えた。
+
+**`APd` の整礎再帰の停止性が壊れる**（19812 の `decreasing_by` の omega が落ちる）。
+`cntF (true :: kk) = cntF kk` で `kk` が任意なので、測度が減らない。
+`APd` は定義自身が再帰なので、hNall を任意の形に強めることはできない。同じ道を掘らないこと。
