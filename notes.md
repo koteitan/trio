@@ -5781,3 +5781,45 @@ APd_twoNilNestL                                ← APd_twoNilNest の写し
 ```
 `js = replicate j nil` での固定補題を一緒に入れること（`nstL_replicate_nil` /
 `twoRunL_replicate_nil` / `unitKL_replicate_nil` / `twrKL_replicate_nil` は既に入っている）。
+
+### 続き122 追記8: `nstL` 系の写しは 9 本連続で通った。残るは `GCtx_ftwoRepL` だけ
+
+すべて `unitK` / `twrK` / `ctxK` 系の**写し**で、**9 本連続 error 0**（固定補題つき）:
+
+```
+nstL / twoRunL / jk1_nstL / JkJ_nstL / TopOk_nstL_two        + nstL_replicate_nil / twoRunL_replicate_nil
+twoRunL_shift / unitKL / unitKL_cons / unitKL_eq / unitKL_shift + unitKL_replicate_nil
+twrKL / TopOk_twrKL / JkJ_twrKL_app / JkJ_twrKL / jk1_twrKL / Mtwd_twrKL + twrKL_replicate_nil
+twoRunL_shape / MidD_unitKL
+twoRunL_rec_row1 / hMy_unitKL                                 ← いちばん難しいところ。通った
+plug_ftwoL / ctxKL / gKL / gKL_succ / plug_ctxKL / gKL_eq_appJ / plug_ctxKL_eq + ctxKL_replicate_nil
+colJ_plug_twrKL / wordJ_snoc_plug_twrKL
+colJ_plug_twoNKL / wordJ_snoc_twoNKL
+```
+
+### ★ ここで初めて写しが効かない: `GCtx_ftwoRepL` の向き
+
+`GCtx_ftwoRep` は `List.replicate j (Frm.ftwo Jk1.nil)` を
+`List.replicate_succ'`（= `replicate j x ++ [x]`）で**右から**はがしている。
+`replicate` は全部同じ要素なので左右の区別が無かった。
+
+`js` が一般のリストだと区別が出る:
+```
+plug (f :: rest) T = f を外側にして plug rest T     → js の先頭 = 木の外側の two
+GCtx t (a :: ks) ctx は ctx = ctx' ++ [frame] を要求 → ctx の末尾 = 形の先頭
+つまり形の先頭に対応するのは js の末尾（js.getLast）
+```
+だから `GCtx_ftwoRepL` は **js について右からの帰納法**（`List.reverseRecOn`）で書く必要がある。
+閉包の仮定も「`i < js.length` について `js[i]` の closure を level `i` で」の形になる。
+
+```lean
+-- 形（未検証）
+theorem GCtx_ftwoRepL (js : List Jk1)
+    (hjs : ∀ i (h : i < js.length), JkJ js[i] ∧ (closure of js[i] at level i)) :
+    ∀ ks ctx t t', GCtx t (0 :: ks) ctx →
+      GCtx t' (js.length :: ks) (ctx ++ js.map Frm.ftwo)
+```
+`js = js' ++ [Nl]` で `GCtx_cS`（m := 0）を当て、内側は IH。
+
+**ここが `APd_twoNilPeel` を閉じるまでの最後の山**。これが通れば
+`GCtx_repKL` / `APd_plug_repKL` / `APd_twoNilNestL` は既存の写しで済むはず。
