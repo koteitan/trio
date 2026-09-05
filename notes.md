@@ -4847,3 +4847,74 @@ msr ((k+1) :: B)   = {k+1, k^i, 0^m'} + msr ks''
    「ctx を 1 個固定した `∀ C, Bok C → GOK (plug ctx (pay U C))`」の形で使う。
    これを `APnil_gen` の内部の使われ方（`snocd_gen` の第 4 引数）まで降りて、
    もっと弱い形で足りないか調べる。← **まだ調べていない。次はここ。**
+
+## 続き117: `AYdT` を k=1 に写した。90 行の写しは全部通り、詰まりは 1 行だけ
+
+マネージャの指示で、分析をやめて `AYdT`（`AYdK` の k=0、添字 `1 :: ks`）を
+`2 :: ks` に写した。**結果は写しが正しかった。**
+
+### 通ったもの（新規、すべて緑）
+
+```
+APd_chainT2   : 鎖 twoIt の k=1 版（添字 1 :: (replicate mm 0 ++ ks) の文脈）
+AYdT2         : AYdT の k=1 版。90 行の写し。error 0
+```
+`AYdT` からの変更はこれだけ:
+- `APd_cf`（枠 `one U` + `two N`）→ `APd_cS`（枠 `two N` 1 枚）
+- `APd_two_of_ctx` で ctx に落とす代わりに `rw [APd_iff]` を直接使う
+- `GCtx_ct_any hc` → `GCtx_mono False _ _ _ (fun h => h.elim) hc`
+  （`1 :: ks` では旗は自由でないが、`APd_iff` から来る旗は `TopOk (two ..) = False` なので単調性で足りる）
+- 鎖の closure が `replicate j 0 ++ (0 :: …)` → `replicate j 1 ++ (1 :: …)`
+- `rep_one_cons` を `AYdT` より前に移動（定義順のため）
+
+`GoodFb_snoc_dupJt` / `GoodFb_snoc_innerJt` は **ctx 任意・`CtxOk` だけ**なのでそのまま使えた。
+最後の inner の枝は `APd_two_of_ctx` の分解が要らなくなって **AYdT より短くなった**。
+
+### 詰まったのは `AYdT_hstep2` の 1 行だけ
+
+```
+ks : List ℕ,  T : Jk1,  hTt : TopOk T,  hTk : APd (2 :: ks) T
+N' : Jk1,  hN' : JkJ N'
+hN'all : ∀ (j m' : ℕ), APd (List.replicate j 1 ++ 1 :: (List.replicate m' 0 ++ ks)) N'
+j m' : ℕ
+⊢ APd (1 :: (List.replicate j 1 ++ (List.replicate m' 0 ++ ks))) (Jk1.two N' T)
+
+(APd_cS 1 ks T).mp hTk m' N' hN' (Or.inl hTt) hN'all
+  : APd (1 :: (List.replicate m' 0 ++ ks)) (N'.two T)          ← 得られる
+  : APd (1 :: (List.replicate j 1 ++ (List.replicate m' 0 ++ ks))) (N'.two T)  ← 要る
+```
+**j = 0 なら閉じる。j ≥ 1 だけが通らない。**続き116 追記4 の (β) が、そのまま error として出た。
+
+### ★ 新しく分かったこと: closure の族は「語」まで広げられる（測度的に合法）
+
+`msr` は `Finsupp.Colex`（多重集合の colex 順）。`msr_grp` が成り立つ理由は
+「`k+1` を 1 個消して、`k` 以下の要素を好きなだけ足す」と colex で減るから:
+```
+{k} + msr w  <  {k+1}      （w の要素がすべて ≤ k のとき）
+理由: 添字 k+1 のところで 0 < 1、それより上は両方 0
+```
+`replicate i k ++ replicate m' 0` は「要素がすべて ≤ k の語」の特別な場合にすぎない。
+だから closure の族を
+```
+現在: ∀ i m', APd (replicate i k ++ (k :: (replicate m' 0 ++ ks))) N
+一般: ∀ w, (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N
+```
+に広げても **`msr` は減ったまま**（定義は書ける）。そして語の族は
+`w' ++ w` がまた語なので **入れ子について閉じている**。
+上の j ≥ 1 の escalation（`F(F(ks)) ⊄ F(ks)`）はこれで消える。
+
+### 残る穴（語の族にしても消えないもの）
+
+語の族にすると、`AYdT_hstep2` は `APd (2 :: (w ++ ks)) T` を要求する。
+`T = pay Z Y'` なので A2' の IH（base 一様）で `APd (2 :: (w ++ ks)) Z` に帰着する。
+つまり **`Z` を `2 :: (w ++ ks)` で継げること**が要る。
+
+`APd_payA` の消費側 `APd_nilT` では `Z` = `fone` 枠の junk `U` で、
+`APd_ct` が与えるのは `APd ks U`（ks = `2 :: ks''`）1 形だけ。
+
+そして **`fone` 枠には測度の余裕が無い**:
+```
+msr (w ++ ks) < msr (0 :: ks) = {0} + msr ks   ⟺   msr w < {0}   ⟺   w = []
+```
+`0` は最小なので、頭が 0 の枠は base を 1 ミリも伸ばせない。
+`two` 枠は「`k` 以下なら何でも」という余裕があるのに、`one` 枠は余裕ゼロ。**この非対称が壁。**
