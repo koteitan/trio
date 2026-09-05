@@ -7745,3 +7745,68 @@ MidD_unitK j N l hJN → MidD_unitKL js hjsA N l hJN（hjsA : ∀ M ∈ js, JkA 
 ```
 そのあと `APdN_twoNilPeelL`（帰納段は旧設計でも通っていた形）→ `APdA_all` → `GOK_all`
 → 既存の下流（`rowJ_mem` / `otw_tower_mem` / `R375_mem` …）に繋ぐ。
+
+### 続き130: ★ 合成の検査。**step-indexing でも底は閉じない。**理由は循環（形→段数に移っただけ）
+
+マネージャ指示「1000 行を払う前に見返りを確認する」に従って、
+`AYd` 系より先に k=0 の底を検査した。**両方 Lean で確認（error 0、commit b8438b6）。**
+
+#### 底が junk に要求するもの: `APdW`（全段数）
+
+```lean
+def APdW (V : Jk1) : Prop := ∀ (i : ℕ), APdU i V      -- = ∀ i S, APdN i S V
+
+example (js) (hJ) (N) (hJN) (ks) (hA : ∀ M ∈ js, APdW M) (hAN : APdW N) (n) :
+    ∀ m, APdN n (0 :: ks) (plug (ctxKL js N m) N) :=
+  fun m => APdN_plug_repKL js hJ N hJN ks m n (fun M hM => hA M hM _) (hAN _)
+```
+`hstair` は**すべての `m`** で要る。`APdN_plug_repKL` の要求段数は
+`n + (m+1)*js.length + m` で **`m` に依存**するので、`m` を動かすと段数が無限に要る。
+**塔の高さが無限だから、段数を無限に食う。**
+
+#### peel が junk について与えるもの: `APdU n`（1 段数だけ）
+
+```lean
+example (n k ks V) (h : APdN (n + 1) ((k + 1) :: ks) V) :
+    ∀ w0, (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N → APdU n N →
+      APdN n (k :: (w0 ++ ks)) (Jk1.two N V) := ((APdN_cS n k ks V).mp h).2
+```
+
+#### ★ したがって合成しない。しかも `APdW` は定理そのもの
+
+`APdW V = ∀ i S, APdN i S V = ∀ S, APdA S V` は **`APdA_all` の結論そのもの**。
+底が「その junk については定理が既に成り立つ」ことを要求している。
+**旧設計の循環（`APd_nil` が任意の木の `APd_all` を要求する）と同じ。**
+
+**形の問題が段数の問題に移っただけで、循環は消えていない。**
+
+#### 二者択一（どちらも塞がる）
+
+```
+GCtxN の段数が形と一緒に落ちる（現行）
+  → 塔が段数を食う → 底は APdW を要求 → peel は与えられない          ✗
+GCtxN の段数を固定（形だけ再帰。junk 条件は閉じた述語なので停止する）
+  → 塔は段数を食わない ✓ が APdN_iff の .mpr が通らない
+     ct の .mpr: 本体の仮定は APdU n U（弱い）、GCtxS は APdW U（強い）を要求
+     本体側の条件を APdW にすると APdN の定義の中で APdN を全段数で呼ぶことになり
+     定義が通らない（＝もとの循環）                                    ✗
+```
+
+#### 結論
+
+**step-indexing は「形の測度の上限」は消したが、循環は消さない。**
+`msr_word` の壁は本物ではなく、その奥に「底が任意の junk の完全な良さを要求する」
+という循環があった。測度をどう替えてもこれは消えない。
+
+**次に要るのは測度の工夫ではなく、循環そのものを切る手。**候補:
+```
+(A) 塔を有限に切る。GOK の定義まで遡って「高さ m までの塔」で足りるかを見る
+    （W 0 の membership が有限の証拠で済むなら段数で足りる）
+(B) 底の junk を構造的に小さくする分解を探す。
+    peel の junk N' は APd_cS の束縛変数なので任意の木。
+    これを「木の構造帰納で小さくなる」形に持ち込めれば循環が切れる
+(C) GOK / GoodFb の側を変える（今日一度も触っていない層）
+```
+
+**(A) がいちばん筋が良さそう。**`snocYd_mem` が `∀ n, Mtwd … n ∈ W 0` を要求しているが、
+そこが本当に無限個要るのか（有限で足りないか）を `snocYd_mem` の証明まで遡って見ること。
