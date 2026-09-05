@@ -4702,3 +4702,32 @@ APd の測度が許すもの          : replicate i k ++ (k :: (replicate m' 0 +
 ```
 この 3 つが両立しない。**コアの測度（`msr`）か、`APd_nilT` の作り方を変えるしかない。**
 マネージャに相談済み（続き116 の時点）。
+
+### 続き116 追記3: 案C（closure を弱める）の規模を実測した → 14 個は機械的、1 個が本質的
+
+`APd` / `APd_cS` / `GCtx` / `GCtx_cS` の 4 箇所で closure を
+```
+∀ (i m' : ℕ), APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) N
+  → ∀ (m' : ℕ), APd (k :: (List.replicate m' 0 ++ ks)) N
+```
+に弱めて `leanman check` を 1 回走らせた（`/tmp/SmallW.lean`、49 秒、exit 2）。
+
+**error は 15 個だけ。**内訳:
+
+| 箇所 | 種類 |
+|---|---|
+| `APd_cf` の証明 2 箇所 | 機械的（`intro`/`exact` の引数を 1 個減らす）|
+| `GCtx_cf` 相当 2 箇所 | 機械的 |
+| `GCtx_rep2` 2 / `GCtx_rep3` 4 / `GCtx_ftwoRep` 1 | 機械的（`intro i m'` → `intro m'`、`rep_*_cons` の rw が不要になる）|
+| `APd_twoK` 2 | 機械的 |
+| **`APd_nil_head` 1（22319 "Function expected at"）** | **本質的** |
+
+本質的な 1 個: `APd_nil_head` は `APd_cS` の closure（弱形）を `APd_twoNilPeel` の
+仮定（強形 `∀ i, replicate i k ++ …`）に渡している。弱形からは i ≥ 1 が出ない。
+そして `APd_twoNilPeel` → `APd_twoNilNest` の強形は、階段 `ctxK j N m` の
+`fone N` 枠が `APd_ct` から `APd (replicate (m+1) j ++ ks) N` を要求するために要る。
+塔 `twrK` の単位 `(l+1,1,0) twoRun(l+1,j) jk1(l+1+j)N` の末尾の `N` が
+次の単位の `fone N` 枠そのものなので、この要求は塔の形から来ていて外せない。
+
+**結論: 案C は「機械的な 14 箇所 + 外せない 1 箇所」。1 箇所が本質的なので不可。**
+（`/tmp/SmallW.lean` は実験用。`lean/SmallY.wip` は触っていない。）
