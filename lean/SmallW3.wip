@@ -17802,7 +17802,7 @@ theorem CtxX_snoc1 (ctx : List Frm) (U W : Jk1) : CtxX (ctx ++ [Frm.fone U]) W �
         exact CtxXJ_snoc1 ctx U W hx
 
 theorem CtxX_snoc2 (ctx : List Frm) (U W : Jk1) :
-    CtxX (ctx ++ [Frm.ftwo U]) W ↔ JkJ W ∧ (TopOk W ∨ U = Jk1.nil) := by
+    CtxX (ctx ++ [Frm.ftwo U]) W ↔ JkJ W := by
   have hne : ctx ++ [Frm.ftwo U] ≠ [] := by simp
   cases h : ctx ++ [Frm.ftwo U] with
   | nil => exact absurd h hne
@@ -17873,7 +17873,7 @@ theorem JkJ_plug : ∀ (ctx : List Frm), CtxJ ctx → ∀ T : Jk1, CtxXJ ctx T �
         cases rest with
         | nil => exact (hT : JkJ T)
         | cons g gs => rwa [CtxXJ_cons] at hT
-      exact ⟨hc.1, JkJ_plug rest hc.2.2 T hX⟩
+      exact ⟨hc.1, JkJ_plug rest hc.2 T hX⟩
 
 theorem JkOk_plug : ∀ (ctx : List Frm), CtxOk ctx → ∀ T : Jk1, CtxX ctx T → JkOk (plug ctx T)
   | [], _, _, hT => hT
@@ -19853,12 +19853,12 @@ theorem APd_cf (ks : List ℕ) (V : Jk1) :
       APd (List.replicate m 0 ++ ks) (Jk1.one U (Jk1.two N V)) := by
   rw [APd_cS 0 ks V]
   constructor
-  · intro h m U N hU hR hUk hN hd hNt
-    exact (APd_ct _ _).mp (h m N hN hd hNt) U hU hR hUk
-  · intro h m N hN hd hNt
+  · intro h m U N hU hR hUk hN hNt
+    exact (APd_ct _ _).mp (h m N hN hNt) U hU hR hUk
+  · intro h m N hN hNt
     refine (APd_ct _ _).mpr ?_
     intro U hU hR hUk
-    exact h m U N hU hR hUk hN hd hNt
+    exact h m U N hU hR hUk hN hNt
 
 /-- 形 `ks` の良い文脈。`t` は「中に入る木が `TopOk` か」（最内が 2 の記録のときだけ効く）。 -/
 def GCtx : Prop → List ℕ → List Frm → Prop
@@ -19902,12 +19902,12 @@ theorem GCtx_cf (t : Prop) (ks : List ℕ) (ctx : List Frm) :
       (∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) → APd (0 :: (w ++ ks)) N) := by
   rw [GCtx_cS t 0 ks ctx]
   constructor
-  · rintro ⟨m, ctx1, N, rfl, hd, hc, hN, hNt⟩
+  · rintro ⟨m, ctx1, N, rfl, hc, hN, hNt⟩
     rw [GCtx_ct] at hc
     obtain ⟨ctx2, U, rfl, hc2, hU, hR, hUk⟩ := hc
-    exact ⟨m, ctx2, U, N, by simp, hd, hc2, hU, hR, hUk, hN, hNt⟩
-  · rintro ⟨m, ctx2, U, N, rfl, hd, hc2, hU, hR, hUk, hN, hNt⟩
-    refine ⟨m, ctx2 ++ [Frm.fone U], N, by simp, hd, ?_, hN, hNt⟩
+    exact ⟨m, ctx2, U, N, by simp, hc2, hU, hR, hUk, hN, hNt⟩
+  · rintro ⟨m, ctx2, U, N, rfl, hc2, hU, hR, hUk, hN, hNt⟩
+    refine ⟨m, ctx2 ++ [Frm.fone U], N, by simp, ?_, hN, hNt⟩
     rw [GCtx_ct]
     exact ⟨ctx2, U, rfl, hc2, hU, hR, hUk⟩
 
@@ -19918,7 +19918,7 @@ theorem GCtx_mono : ∀ (t t' : Prop) (ks : List ℕ) (ctx : List Frm), (t → t
   | _, _, (0 :: ks), ctx, _, h => by rw [GCtx_ct] at h ⊢; exact h
   | t, t', ((k + 1) :: ks), ctx, hm, h => by
       rw [GCtx_cS] at h ⊢
-      obtain ⟨m, ctx', N, he, hd, hc, hN, hi⟩ := h
+      obtain ⟨m, ctx', N, he, hc, hN, hi⟩ := h
       exact ⟨m, ctx', N, he, hd.imp hm id, hc, hN, hi⟩
 
 /-- `0 :: ks` の場合、`GCtx` は `t` に依存しない。 -/
@@ -19936,7 +19936,7 @@ theorem GCtx_ne (t : Prop) (a : ℕ) (ks : List ℕ) (ctx : List Frm)
       simp
   | succ k =>
       rw [GCtx_cS] at h
-      obtain ⟨m, ctx', N, rfl, -, -, -, -⟩ := h
+      obtain ⟨m, ctx', N, rfl, -, -, -⟩ := h
       simp
 
 /-- 「1 の列 + 2 の記録」の 2 枚を内側に足す。 -/
@@ -19956,8 +19956,8 @@ theorem GCtx_CtxX : ∀ (ks : List ℕ) (ctx : List Frm) (X : Jk1),
       exact (CtxX_snoc1 ctx' U X).mpr hX
   | ((k + 1) :: ks), ctx, X, h, hX => by
       rw [GCtx_cS] at h
-      obtain ⟨m, ctx', N, rfl, hd, -, -, -⟩ := h
-      exact (CtxX_snoc2 ctx' N X).mpr ⟨hX, hd⟩
+      obtain ⟨m, ctx', N, rfl, -, -, -⟩ := h
+      exact (CtxX_snoc2 ctx' N X).mpr hX
 
 theorem GCtx_CtxOk : ∀ (t : Prop) (ks : List ℕ) (ctx : List Frm), GCtx t ks ctx → CtxOk ctx
   | _, [], ctx, h => by rw [GCtx_bnil] at h; subst h; trivial
@@ -19968,7 +19968,7 @@ theorem GCtx_CtxOk : ∀ (t : Prop) (ks : List ℕ) (ctx : List Frm), GCtx t ks 
         (GCtx_CtxX ks ctx' U hc' hU)
   | t, ((k + 1) :: ks), ctx, h => by
       rw [GCtx_cS] at h
-      obtain ⟨m, ctx', N, rfl, -, hc', hN, -⟩ := h
+      obtain ⟨m, ctx', N, rfl, hc', hN, -⟩ := h
       have hne : ctx' ≠ [] := GCtx_ne False k (List.replicate m 0 ++ ks) ctx' hc'
       have hcT : GCtx (TopOk TwoNil) (k :: (List.replicate m 0 ++ ks)) ctx' := hc'
       have hx : CtxXJ ctx' TwoNil := by
@@ -20015,10 +20015,10 @@ theorem APd_iff : ∀ (ks : List ℕ) (V : Jk1),
       constructor
       · intro h ctx hc
         rw [GCtx_cS] at hc
-        obtain ⟨m, ctx', N, rfl, hd, hc', hN, hNt⟩ := hc
+        obtain ⟨m, ctx', N, rfl, hc', hN, hNt⟩ := hc
         rw [plug_snoc2]
         exact (APd_iff (k :: (List.replicate m 0 ++ ks)) _).mp (h m N hN hd hNt) ctx' hc'
-      · intro h m N hN hd hNt
+      · intro h m N hN hNt
         refine (APd_iff (k :: (List.replicate m 0 ++ ks)) _).mpr ?_
         intro ctx' hc'
         rw [← plug_snoc2]
