@@ -8966,3 +8966,52 @@ R375g7b_mem        : (R375m ++ U375b) ++ U375b ∈ W 0   （m = 2）
 `GOK_otwL` が「どの良い語の右にも」の形なので `m` について回る（`GoodFb_repl_otwL`）。
 `bms -s` = 1、`bms -d` の親行列でも 3 つの `(2,2,1)` が全部同じ親 3 の兄弟＝同じ語の字と一致。
 #7 `P(3,0,0)` はこの族の極限。
+
+### 追記3: ★ #8 `P(3,1,0)` が出た。鍵は「梯子のレベル 2 = 高さ 3 の吊るし」
+
+`Lv 2 2 P` を作ろうとすると reapp が
+「任意の `Aok A0` と任意の再継ぎ可能な `MidD 2` ブロック `M` に対し `A0 ++ M ++ U375b ∈ W 0`」
+という強すぎる形になって詰まる。**`Lv` / `LvB` を経由せず `snocd_mem` に直に落とすのが正解。**
+
+```
+snocd_mem (1 ≤ d) hne hdeep hzroot (Ancd d Y) (∀n, TwD d Y n ∈ W 0) : Y ++ [(d,1,0)] ∈ W 0
+TwD d Y n = Y ++ Y↑d ++ Y↑2d ++ …    （TwD_succ : TwD d Y (n+1) = Y ++ (TwD d Y n)↑d）
+```
+
+なので要るのは `Ancd 3 P`（`Ancd_append_Mid` 2 回）と
+**「`P` の右に高さ 3 で `Bok` の荷を吊るす」**だけ。後者は木で書くと
+
+```
+P ++ shiftr01 3 0 B = R338 ++ (1,1,0) :: colJ 1 1 (pay otwL B)
+  （colJ a b (pay Z Y) = colJ a b Z ++ shiftr01 (a+2) 0 Y、a = 1 なので荷は高さ 3）
+```
+
+`AY0 : Bok Y → JkOk Z → GOK Z → GOK (pay Z Y)` の `JkOk Z` を `JkT Z` に弱めれば
+`GOK_otwL` からそのまま出る。`AY0` / `GoodFb_repJ` / `GoodFb_snoc_innerJ` /
+`GoodFb_snoc_dupJ` はいずれも `JkOk` を `Mono` と `WOk` のためにしか使っていなかった。
+
+### 追記4: #10 #13 #16（レベル 3/4/5）は高さ 4/5/6 の吊るし。あと 3 手
+
+同じ形で、`P(4,1,0)` は高さ 4、`P(5,1,0)` は 5、`P(6,1,0)` は 6 の吊るし。
+木では荷の位置が `otwL` の中へ潜る:
+
+```
+高さ 3  one nil (two nil (two nil nil)) に外から pay      ← 済（AY0）
+高さ 4  one nil (pay (two nil (two nil nil)) B)
+高さ 5  one nil (two nil (pay (two nil nil) B))
+高さ 6  one nil (two nil (two nil (pay nil B)))
+```
+
+高さ 4 は `APd_payT` 経由で届きそう。要るのは 3 手:
+
+```
+(1) colJ_otwL_mem を「左兄弟 U 付き」に一般化（X が完全に一般なので Y0 を伸ばすだけ）
+    塔の各段は one U (two nil (otwJ m))。JkOk U があれば JkOk なので GOK_all で足りる
+(2) GOK_oneU_twotwo (U) (JkOk U) (GOK U) : GOK (one U (two nil (two nil nil)))
+    → APd_twoTwoNil : APd [true] (two nil (two nil nil))   （APd_ct + APd_bnil で 3 行）
+(3) APd_payT の `JkJ V` を `JkA V` に弱める（要調査）
+    → APd [true] (pay (two nil (two nil nil)) B) → 高さ 4 の吊るし → #10
+```
+
+高さ 5・6 は荷が極限列 `(a+4,2,0)` の**上**に来るので `snocYd_mem`（末尾に継ぐ）が
+使えない。別の手が要る。
