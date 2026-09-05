@@ -9191,3 +9191,35 @@ Uf m = (3,1,0) ++ [(4,2,0)(5,2,0)]^(m-1) ++ (4,2,0)
 `X 1 = Wtt` の hNall は `APd_twoTwoNilGen`。**`X 2` の hNall には
 `APd_twoTwoNilGen` の「左兄弟 N つき」版が要る**（塔の各段は `two N (TT k)` で、
 `APd_TT` があるので供給できる）。これが 2 回目なので、ここで一般化してよい。
+
+### 追記10: ★ #12 `P(5,0,0)` が出た。一般化は規則どおり「2 回目」に行った
+
+```
+stage1  nstN N k / unN N D          塔の木を左兄弟 N つきに（TT = nstN Wtt）
+        APd_nstN / GOK_nstN / jk1_nstN
+stage2  APd_twoTwoGen (JkA N) (hNall) (ks) : APd (true :: ks) (two N (two nil nil))
+        APd_twoTwoNilGen の左兄弟つき版。塔の各段 two N (nstN N k) は APd_nstN から
+stage3  XX 0 = nil, XX (m+1) = two (XX m) (two nil nil)
+        APd_XX は APd_twoTwoGen を m について回すだけ → R344_copies_mem → #12
+```
+
+各 stage は 1〜2 ラウンドで green。**先に測って木に書き、足りない物を 1 個に絞る**が効いた。
+
+済: #1〜#12 と、鎖の途中の `P(4,2,0)(5,2,0)`。残り #13 #14 #15 #16 #17。
+
+### 残り 5 個の壁（いずれも `APd (false :: ks) ·` の形）
+
+```
+#13 P(5,1,0)  高さ 5 の吊るし → one nil (two nil (pay (two nil nil) B))
+              APd [false] (pay (two nil nil) B) が要る。APd_payA の hR が
+              Rq (false::ks) V = TopOk V を要求し、V = two nil nil で偽
+#15 P(6,0,0)  単位 (5,2,0) の平坦な繰り返し → one nil (two nil (Y m))
+              Y m = two (Y (m-1)) nil。APd [false] (Y m) が要る。
+              APd_twoNilGen は APd (true::ks) (two N nil) なので frame が合わない
+#16 P(6,1,0)  高さ 6 の吊るし
+#14 #17       delta 2 / 3 の上昇。未測定
+```
+
+つまり `APd_twoTwoGen`（`true` フレーム）はできたが、**`false` フレーム版**が次の壁。
+`Rq (false :: ks) V = TopOk V` が `two` を弾いている。
+続き132 の「`AYdT` の `TopOk Z` は死んだ仮定」がここで効く可能性がある。
