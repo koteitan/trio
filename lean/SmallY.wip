@@ -22529,6 +22529,44 @@ theorem hMy_unitK (j : ℕ) (N : Jk1) (l : ℕ) :
   · have h3 := jk1_ge N (l + 1 + j) _ h
     omega
 
+/-- `snocYd_mem` の `hMy` の junk 一般版（`L = l+1`, `dl = |js|+1`, `y = 2`）。
+`twoRunL` の中は 2 の記録か junk の列で、junk の列は記録になれない
+（`twoRunL_rec_row1`）。`jk1 N` の部分は行 0 が `L + dl` 以上なので仮定が偽。 -/
+theorem hMy_unitKL (js : List Jk1) (hjs : ∀ M ∈ js, JkA M) (N : Jk1) (l : ℕ) :
+    ∀ t, 1 ≤ t → t < (unitKL js N l).length →
+      entry (unitKL js N l) 0 t < (l + 1) + (js.length + 1) →
+      (∀ i, t < i → i < (unitKL js N l).length →
+        entry (unitKL js N l) 0 t < entry (unitKL js N l) 0 i) →
+      2 ≤ entry (unitKL js N l) 1 t := by
+  intro t ht1 htl hlt hrec
+  obtain ⟨u, rfl⟩ : ∃ u, t = u + 1 := ⟨t - 1, by omega⟩
+  rw [unitKL_cons] at htl hlt hrec ⊢
+  rw [entry_cons_succ] at hlt ⊢
+  simp only [List.length_cons] at htl
+  have hlen : u < (twoRunL js (l + 1) ++ jk1 (l + 1 + js.length) N).length := by omega
+  have hsplit : (twoRunL js (l + 1) ++ jk1 (l + 1 + js.length) N).length
+      = (twoRunL js (l + 1)).length + (jk1 (l + 1 + js.length) N).length := by simp
+  rcases Nat.lt_or_ge u (twoRunL js (l + 1)).length with hu | hu
+  · rw [entry_append_left hu]
+    refine twoRunL_rec_row1 js hjs (l + 1) u hu ?_
+    intro i hi hil
+    have h1 := hrec (i + 1) (by omega) (by simp only [List.length_cons]; omega)
+    rw [entry_cons_succ, entry_cons_succ, entry_append_left hu, entry_append_left hil] at h1
+    exact h1
+  · exfalso
+    obtain ⟨v, rfl⟩ : ∃ v, u = (twoRunL js (l + 1)).length + v :=
+      ⟨u - (twoRunL js (l + 1)).length, by omega⟩
+    have hv : v < (jk1 (l + 1 + js.length) N).length := by omega
+    rw [entry_append_right] at hlt
+    have hmem : (jk1 (l + 1 + js.length) N).getD v ((0, 0, 0) : ℕ × ℕ × ℕ)
+        ∈ jk1 (l + 1 + js.length) N := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hv, Option.getD_some]
+      exact List.getElem_mem hv
+    have hge := jk1_ge N (l + 1 + js.length) _ hmem
+    have hval : entry (jk1 (l + 1 + js.length) N) 0 v
+        = ((jk1 (l + 1 + js.length) N).getD v ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := rfl
+    omega
+
 /-! ### `nst j (two N nil)` の列（`colJ` / `wordJ`） -/
 
 theorem colJ_plug_twoNK (a b : ℕ) (ctx : List Frm) (V : Jk1) {N : Jk1} {j : ℕ} (l : ℕ)
