@@ -23802,5 +23802,24 @@ theorem APdN_plug_repKL (js : List Jk1) (hJ : ∀ M ∈ js, JkJ M) (N : Jk1) (hJ
 
 #print axioms APdN_plug_repKL
 
+/-! ### ★ 合成の検査（マネージャ指示: 1000 行を払う前に見返りを確認する）。 -/
+
+/-- 「どの段数でも・どの形でも継げる」。これは `APdA_all` の結論そのもの。 -/
+def APdW (V : Jk1) : Prop := ∀ (i : ℕ), APdU i V
+
+/-- 塔は段数を食う。`APdN_plug_repKL` の要求段数は `m` に依存し、
+`hstair` は**すべての `m`** で要る。したがって底が junk に要求するのは `APdW`。 -/
+example (js : List Jk1) (hJ : ∀ M ∈ js, JkJ M) (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
+    (hA : ∀ M ∈ js, APdW M) (hAN : APdW N) (n : ℕ) :
+    ∀ m, APdN n (0 :: ks) (plug (ctxKL js N m) N) :=
+  fun m => APdN_plug_repKL js hJ N hJN ks m n (fun M hM => hA M hM _) (hAN _)
+
+/-- 一方、peel が junk について与えるのは**段数 `n` だけ**（`APdU n`）。
+`APdN_cS` の束縛変数がそうなっている。 -/
+example (n k : ℕ) (ks : List ℕ) (V : Jk1) (h : APdN (n + 1) ((k + 1) :: ks) V) :
+    ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N → APdU n N →
+      APdN n (k :: (w0 ++ ks)) (Jk1.two N V) :=
+  ((APdN_cS n k ks V).mp h).2
+
 end Small
 end TRIO
