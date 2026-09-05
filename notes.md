@@ -4326,3 +4326,109 @@ k = 2  歩幅 3  グループ (h,1,0)(h+1,2,0)(h+2,2,0) → twrC の 2 の記録
    「機械的に直らない」と書いたのは、消費側を弱いままにしていたから（追記19 で訂正）。
 4. **`GCtx` / `APd` は整礎再帰なので定義的に簡約しない。**`exact h` が通らず
    `rw [GCtx_ct]` が要る場面が何度もある。
+
+## 続き115: `APd_twoNilGenK` の k=2 が閉じた（歩幅 3）
+
+### 結果
+
+`lean/SmallY.wip` — error 0 / sorry **3 → 3**（k+2 を k=2 と k+3 に割ったので本数は同じだが、
+k=2 は閉じた）。`leanman check --backend lean` で 49 秒、exit 1（sorry のみ、error 0）。
+
+新しく通った宣言（すべて一発で通った。手直しゼロ）:
+
+```
+unitD / unitD_eq / unitD_shift / twrD / TopOk_twrD / JkJ_twrD_app / JkJ_twrD
+jk1_twrD / Mtwd_twrD / MidD_unitD / entry_unitD_ge / hMy_unitD
+colJ_plug_twoNW2 / wordJ_snoc_twoNW2
+ctxE / gE / gE_succ / plug_ctxE / gE_eq_appJ / plug_ctxE_eq
+colJ_plug_twrD / wordJ_snoc_plug_twrD
+rep_two_cons / GCtx_rep3 / APd_plug_rep3
+APd_twoNilGenW2 : APd (0::ks) (two nil (two nil (two N nil)))
+APd_twoNilGenK の k = 2
+```
+
+### bms での実測（手計算していない）
+
+```
+(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)(6,2,0)[3]
+  good part = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)
+  bad part  = (3,1,0)(4,2,0)(5,2,0)(6,0,0)
+  bad root  = 5,  delta = 3
+  → (3,1,0)(4,2,0)(5,2,0)(6,0,0) (6,1,0)(7,2,0)(8,2,0)(9,0,0)
+    (9,1,0)(10,2,0)(11,2,0)(12,0,0) (12,1,0)(13,2,0)(14,2,0)(15,0,0)
+```
+歩幅 3 が実測で出た。単位は `(l+1,1,0)(l+2,2,0)(l+3,2,0) jk1(l+3)N`。
+
+### k=1 から変わったところ（前任者の予想どおり）
+
+| k=1 | k=2 |
+|---|---|
+| `unitC N l = (l+1,1,0)(l+2,2,0) jk1(l+2)N` | `unitD N l = (l+1,1,0)(l+2,2,0)(l+3,2,0) jk1(l+3)N` |
+| `twrC N (n+1) = one nil (two nil (appJ N ...))` | `twrD N (n+1) = one nil (two nil (two nil (appJ N ...)))` |
+| `Mtwd 2` / `snocYd_mem (dl := 2)` | `Mtwd 3` / `(dl := 3)` |
+| `ctxD` = `[ftwo nil]` + m×`[fone N, ftwo nil]` | `ctxE` = `[ftwo nil, ftwo nil]` + m×`[fone N, ftwo nil, ftwo nil]` |
+| 形 `replicate (m+1) 1 ++ ks` | 形 `replicate (m+1) 2 ++ ks` |
+| `L := a+dep ctx0+1+1`, `y := 2` | 同じ（`L+dl` が `l+3` → `l+4` に変わる） |
+
+`APd_twoNilGenW2` の証明本体は `APd_twoNilGenW` の **sed 置換だけ**で通った
+（手で直したのは `hNall` の 1→2 と `CtxX_snoc1` の入れ子 1 段だけ）。
+
+### 見えた構造（k 一般化の設計）
+
+`APd_cS` を 1 回はがすたびに **添字の頭が 1 減り、木の `two nil` が 1 段増える**:
+
+```
+APd (k :: ks)      (two N nil)
+ → APd (k-1 :: ks₁) (two nil (two N nil))
+ → APd (k-2 :: ks₂) (two nil (two nil (two N nil)))
+ → …
+ → APd (0 :: ks_k)  (nst k (two N nil))        nst j = two nil を j 重
+```
+
+だから k 一般化は次の 2 本に分かれる:
+
+```lean
+-- (1) 頭が 0 のときの本体（歩幅 j+1 の塔）
+APd_twoNilNest (j) (N) (hJN) (ks) (hNall : ∀ i, APd (replicate i j ++ (j :: ks)) N) :
+    APd (0 :: ks) (nst j (two N nil))
+-- j=0 は APd_twoNilGen、j=1 は APd_twoNilGenW、j=2 は APd_twoNilGenW2（既存 3 本）
+
+-- (2) はがす側（k の帰納法。j が増え k が減る）
+APd_twoNilPeel : ∀ j k ks N, JkJ N →
+    (∀ i m, APd (replicate i (j+k) ++ ((j+k) :: (replicate m 0 ++ ks))) N) →
+    APd (k :: ks) (nst j (two N nil))
+-- APd_twoNilGenK k = APd_twoNilPeel 0 k
+```
+
+必要な道具の j 一般版:
+```
+nst j X          two nil を j 重
+twoRun l j       [(l+1,2,0),…,(l+j,2,0)]
+unitK j N l    = (l+1,1,0) :: twoRun (l+1) j ++ jk1 (l+1+j) N      歩幅 j+1
+twrK j N (n+1) = one nil (nst j (appJ N (twrK j N n)))
+ctxK j N m     = replicate j (ftwo nil) ++ m×([fone N] ++ replicate j (ftwo nil))
+形の勘定        replicate (m+1) j ++ ks
+```
+`j=0` は `twr` / `replicate m (fone N)` / `GCtx_rep` に、`j=1` は `twrC` / `ctxD` に、
+`j=2` は `twrD` / `ctxE` に一致する（3 点で検算済み）。
+
+### ★ 一つだけ循環がある（先に潰すこと）
+
+`GCtx_repK` は ftwo フレームを j 枚積むので、途中の各段で
+`APd (h :: ks') Jk1.nil`（h = 0,…,j-1）が要る。
+- h=0 は `APd_nilT`、h=1 は `APd_twoNilB` で済んでいる（k=2 まではこれで足りた）。
+- h 一般は `APd_nil` だが、`APd_nil` は `APd_twoNilGenK` を使うので**循環する**。
+
+逃げ道: 頭 `k` についての強い帰納法にする。`APd_twoNilGenK` に
+`(hnil : ∀ h, h < k → ∀ ks', APd (h :: ks') Jk1.nil)` を仮定として持たせ、
+`APd_nil_head : ∀ k ks, APd (k :: ks) nil` を k の強い帰納法で作って渡す。
+`APd_nil` の `(k+1) :: ks` の場合が `APd_twoNilGenK k` を呼ぶので、
+h < k < k+1 で整礎になる。
+
+### 次にやること
+
+1. `nst` / `twoRun` / `unitK` / `twrK` / `ctxK` と補題群（j 一般）
+2. `GCtx_repK` / `APd_plug_repK`（強い帰納法の `hnil` 付き）
+3. `APd_twoNilNest` = `APd_twoNilGenW2` の j 一般版
+4. `APd_twoNilPeel` → `APd_twoNilGenK` / `APd_nil` の書き換え
+5. 残り: `AYdK`（未着手）、`APd_twoK`
