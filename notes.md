@@ -9418,3 +9418,27 @@ Q(2,2,1) = R338 ++ (1,1,0) :: wordJ 1 1 [NQ, nil]
 GOK NQ = APd_bnil ∘ APd_step [] ∘ APd_twoTwoPay
 ```
 これで `Q` の字が言語に入った。次は `Q(3,0,0)`。
+
+### 追記18: 平坦な 3 本を一気に。壁が消えたので #7 / #9 / #12 の写しで済む
+
+```
+Q(3,0,0)  Y0 = R338(1,1,0)  M = U375b5 = (2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,0,0)  d=3
+          語 = NQ の m 個並べ（GoodFb_repl_NQ）。#7 の写し
+Q(4,0,0)  Y0 = R341         M = U375c5 = (3,1,0)(4,2,0)(5,2,0)(5,0,0)          d=4
+          木 TLQ m = one (TLQ (m-1)) (two nil (pay (two nil nil) [(0,0,0)]))。#9 の写し
+Q(5,0,0)  Y0 = R344         M = U375d5 = (4,2,0)(5,2,0)(5,0,0)                 d=5
+          木 XXQ m = two (XXQ (m-1)) (pay (two nil nil) [(0,0,0)])。#12 の写し
+```
+
+共通の部品:
+```
+jk1_payTwoNil l : jk1 l (pay (two nil nil) [(0,0,0)]) = (l+1,2,0)(l+1,0,0)
+jk1_twoNilPay l : jk1 l (two nil (pay (two nil nil) [(0,0,0)]))
+                  = (l+1,2,0)(l+2,2,0)(l+2,0,0)
+GOK_oneU_pay U (JkT U) (GOK U) (Bok B) : GOK (one U (two nil (pay (two nil nil) B)))
+APd_XXQ m ks : APd (true::ks) (XXQ m)   ← APd_twoTwoPay を m について回すだけ
+```
+
+残り `Q`: (3,1,0) (4,1,0) (4,2,0) (6,0,0) (6,1,0) (6,1,1)。
+(3,1,0) (4,1,0) は delta 3 / 4 の吊るし、(4,2,0) は delta 1、
+(6,*) は bad part が `(5,0,0)` 単独（行 1 = 0）で別の道具が要る。
