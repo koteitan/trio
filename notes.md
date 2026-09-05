@@ -3990,3 +3990,63 @@ hMy_unitC      : snocYd_mem の hMy（L = l+1, dl = 2, y = 2）
 `MidD_unitC` / `hMe`（`entry (unitC N l) 1 0 = 1 < 2`）/ `hMy_unitC` / `hy` / `hdl`。
 残るのは塔 `htw : ∀ n, Mtwd 2 Y0 (unitC N l) n ∈ W 0` を
 `GoodFb` の 3 分岐で作ること＝階段（`GCtx_rep` の対版）の設計だけ。
+
+### 続き113 追記12: ★ 階段の対版 `GCtx_rep2` が通った（設計空白が埋まった）
+
+形の勘定が合った。`GCtx_ct` / `GCtx_cS` から:
+
+```
+ctx の形 0 :: ks
+  + [ftwo nil]   → 1 :: ks          （ftwo は頭の 0 を食う。GCtx_cS の m := 0）
+  + [fone N]     → 0 :: 1 :: ks
+  + [ftwo nil]   → 1 :: 1 :: ks
+  … 対を m 個     → replicate (m+1) 1 ++ ks
+```
+
+最後に要る `APd (replicate (m+1) 1 ++ ks) N` が、`APd_twoNilGenK 1 ks N` の閉包仮定
+`∀ i, APd (replicate i 1 ++ (1 :: ks)) N` と `rep_one_cons` でちょうど一致する。
+**これが噛み合ったのが決め手**（0 の閉包しか無ければ合わなかった）。
+
+```lean
+rep_one_cons : List.replicate j 1 ++ (1 :: ks) = 1 :: (List.replicate j 1 ++ ks)
+def ctxD (N : Jk1) : ℕ → List Frm            -- 最内 ftwo nil + 対 m 個
+  | 0 => [Frm.ftwo Jk1.nil]
+  | (m+1) => ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]
+GCtx_rep2 : JkJ N → (∀ i, APd (replicate i 1 ++ (1 :: ks)) N)
+          → ∀ m ctx t t', GCtx t (0 :: ks) ctx
+          → GCtx t' (replicate (m+1) 1 ++ ks) (ctx ++ ctxD N m)
+```
+2 の記録フレームの junk はすべて `nil` なので `(t' ∨ nil = nil)` は `Or.inr rfl` で通り、
+その閉包は `APd_nilT`（`APd_nil` ではない＝定義順の循環を踏まない）で足りる。
+
+### 続き113 追記13: 段階4（マージ）用の差分。**先に取っておいた**
+
+`Small.lean` にあって `SmallY.wip` に無い宣言（＝マージ時に取りこぼしてはいけないもの、42 個）:
+
+```
+R375m R375m_mem R375m_ne R375m_head R375m_tail R375m_copies_mem R375m_eq
+Aok_R375m MidD_col52 Aok_R338110
+U375a U375b U375c U375d U375e MidD_U375a MidD_U375b MidD_U375c MidD_U375d MidD_U375e
+Aok_chain flat_of_chain
+R375f3_of_step R375f7_of_step R375f9_of_step R375f12_of_step R375f15_of_step
+rowJ_mem_gen otw_tower_gen otw_tower_mem_gen R375_mem_gen
+otw_word_eq otw_tower_gen_s shift_U375a SegA_U375a LvB_R375m_1
+R375c_mem R375f2_mem R375f3_mem R375f4_mem R375f5_mem
+cntF cntF_rep          ← 旧測度。SmallY では msr / cntf に置き換わったので不要
+```
+
+`SmallY.wip` にあって `Small.lean` に無い宣言（＝リファクタで増えたもの）:
+```
+msr 系: cntf cntf_cons cntf_append cntf_replicate msr msr_drop0 msr_grp (+ instance msrWF)
+新設計: APd_cS GCtx_cS GCtx_mono GCtx_ct_any GCtx_ne TwoNil JkJ_TwoNil not_TopOk_TwoNil
+        HdT_snoc_cons CtxJ_snoc2 CtxOk_snoc2
+段階2:  unitB unitB_shift twrB TopOk_twrB JkJ_twrB jk1_twrB Mtwd_twrB
+        unitC unitC_eq unitC_shift twrC TopOk_twrC JkJ_twrC_app JkJ_twrC jk1_twrC Mtwd_twrC
+        MidD_unitC entry_unitC_ge hMy_unitC
+        colJ_plug_twoNW wordJ_snoc_twoNW plug_pair_twrC plug_pair_twrC2
+        rep_one_cons ctxD GCtx_rep2
+穴:     AYdK APd_twoNilGenK APd_twoK
+```
+
+**マージ方針**: `SmallY.wip` を土台にして、上の 42 個のうち `cntF` / `cntF_rep` を除く 40 個を
+末尾に足すのが安全（`Small.lean` の末尾にまとまって入っているので切り貼りできる）。

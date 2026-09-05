@@ -20992,6 +20992,59 @@ theorem GCtx_rep {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
       exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
         (FrmJ_rep m 0 ks N).mpr hJN, Rq_rep_true m ks N, hNall m⟩
 
+/-! #### ★ 階段の対版（`twrC` 用）: 「1 の列 + 2 の記録」の対を積む
+
+形の勘定（`GCtx_ct` / `GCtx_cS` から）:
+```
+ctx の形 0 :: ks
+  + [ftwo nil]        → 1 :: ks          （ftwo は頭の 0 を食う。m := 0）
+  + [fone N]          → 0 :: 1 :: ks
+  + [ftwo nil]        → 1 :: 1 :: ks
+  …対を m 個で         → replicate (m+1) 1 ++ ks
+```
+最後に要る `APd (replicate (m+1) 1 ++ ks) N` は、`APd_twoNilGenK k ks N` の閉包仮定
+`∀ i, APd (replicate i 1 ++ (1 :: ks)) N`（k = 1 の場合）とちょうど一致する。 -/
+
+theorem rep_one_cons : ∀ (j : ℕ) (ks : List ℕ),
+    List.replicate j 1 ++ (1 :: ks) = 1 :: (List.replicate j 1 ++ ks)
+  | 0, _ => rfl
+  | (j + 1), ks => by
+      show 1 :: (List.replicate j 1 ++ (1 :: ks)) = 1 :: (1 :: (List.replicate j 1 ++ ks))
+      rw [rep_one_cons j ks]
+
+/-- 階段の文脈: 最内の `ftwo nil` の外側に「1 の列 + 2 の記録」の対を `m` 個。 -/
+def ctxD (N : Jk1) : ℕ → List Frm
+  | 0 => [Frm.ftwo Jk1.nil]
+  | (m + 1) => ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]
+
+theorem GCtx_rep2 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
+    (hNall : ∀ i : ℕ, APd (List.replicate i 1 ++ (1 :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm) (t t' : Prop), GCtx t (0 :: ks) ctx →
+      GCtx t' (List.replicate (m + 1) 1 ++ ks) (ctx ++ ctxD N m)
+  | 0, ctx, t, t', hc => by
+      show GCtx t' (1 :: ks) (ctx ++ [Frm.ftwo Jk1.nil])
+      rw [GCtx_cS]
+      refine ⟨0, ctx, Jk1.nil, rfl, Or.inr rfl, ?_, trivial, ?_⟩
+      · simpa using GCtx_ct_any hc
+      · intro i
+        rw [rep_true_cons]
+        exact APd_nilT _
+  | (m + 1), ctx, t, t', hc => by
+      have ih := GCtx_rep2 hJN ks hNall m ctx t (TopOk N) hc
+      show GCtx t' (1 :: (List.replicate (m + 1) 1 ++ ks))
+        (ctx ++ (ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]))
+      rw [GCtx_cS]
+      refine ⟨0, (ctx ++ ctxD N m) ++ [Frm.fone N], Jk1.nil, by simp [List.append_assoc],
+        Or.inr rfl, ?_, trivial, ?_⟩
+      · rw [show (0 : ℕ) :: (List.replicate 0 0 ++ (List.replicate (m + 1) 1 ++ ks))
+              = 0 :: (List.replicate (m + 1) 1 ++ ks) from by simp, GCtx_ct]
+        refine ⟨ctx ++ ctxD N m, N, rfl, ih, FrmJ_of_ne _ (by simp) _ hJN, trivial, ?_⟩
+        have h := hNall m
+        rwa [rep_one_cons] at h
+      · intro i
+        rw [rep_true_cons]
+        exact APd_nilT _
+
 theorem APd_plug_rep (N : Jk1) (hJN : JkJ N) (ks : List ℕ)
     (hNall : ∀ j : ℕ, APd (List.replicate j 0 ++ (0 :: ks)) N) (m : ℕ) :
     APd (0 :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
