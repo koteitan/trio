@@ -6702,3 +6702,39 @@ GCtx_repKL は GCtx_ftwoRepL を base  replicate (m+1) js.length ++ ks  で呼�
 **`AYdTK` を「`TopOk Z` の場合」と「`¬TopOk Z`（= Z が 2 の記録で始まる）の場合」に分け、
 後者を別の道で証明できれば、ガードを戻したまま `AYdK` が閉じる。**
 `¬TopOk Z` は `Z = two N M` の形なので、`APd_twoK`（証明済み）が使える形かどうかを見る。
+
+### 続き126 追記1: 浅いガード `Hd2` も却下。理由は**数学的に間違い**
+
+「`TopOk` は荷 `pay` の中まで再帰するから強すぎる。頭の構成子だけ見る浅い判定
+`Hd2 (two _ _) = True`、他は `False` にすれば、peel（`V` が入れ子）でも
+鎖（`T = pay Z Y`）でも両立するのでは」を実装して測った。
+
+- 定義は通る（停止性 OK）。error 46 まで削ったが、
+- **`AYd`（頭 0 の荷追加）が壊れる。**`GOK_chainJd` は
+  `hc : GCtx (¬Hd2 X) ks ctx` を要求するのに、呼び出し側が持っているのは
+  木 `one X (pay Z Y)` に対する `GCtx (¬Hd2 (one X W))` = `GCtx True`。
+  `Hd2` は `one` を貫通しないので `True → ¬Hd2 X` が出ない（`TopOk` なら
+  `TopOk (one X W) = TopOk X` で恒等だった）。
+
+**そして貫通させないのは間違い:**
+```
+jk1 l (pay N Y) = jk1 l N ++ shiftr01 (l+1) 0 Y
+```
+なので `pay N Y` の**最初の列は N の列**。`N` が 2 の記録で始まれば
+`pay N Y` も 2 の記録で始まる。`one` も同じ。
+したがって「先頭が 2 の記録か」は `pay` / `one` を貫通しなければならず、
+**それはちょうど `¬TopOk`**。浅い版は別物であって、弱めた版ではない。
+
+#### この回で潰した選択肢（全部測定または導出で確定）
+
+| 案 | 結果 | 理由 |
+|---|---|---|
+| closure を base 一様に | ✗ | 定義が通らない（`msr` が減らない）。実測 error 99 |
+| closure の族を `≤ b`（b>k）に | ✗ | 同上。`msr_word` が上限 |
+| 旧ガード `TopOk V ∨ N = nil` を戻す | ✗ | `AYdT_hstepK` が供給側に回り `TopOk Z` が要る |
+| 浅いガード `Hd2 V → N = nil` | ✗ | `AYd` が壊れる。かつ数学的に間違い（上） |
+| `nstL`（junk 一般の入れ子） | ✗ | 塔が junk に自分より高い base での継続性を要求する |
+
+**残る道は「`AYdTK` の `¬TopOk Z` の場合を別ルートで証明する」ただ 1 本。**
+`¬TopOk Z` は `Z` の先頭が 2 の記録、つまり `Z` の junk 鎖をたどると `two`。
+`APd_twoK`（証明済み、base 一様仮定）が使える形かどうかを次に見る。
