@@ -5981,3 +5981,58 @@ theorem TwD_mem_of_hang (hd) (hY) (hang) : ∀ n, TwD d Y n ∈ W 0
 4. 効けば穴(B) が閉じる。そして穴(D) も同型なので、同じ手が効くか見る
 ```
 **これが今日いちばん有望な未着手の道。**
+
+### 続き122 追記12: `hang` ルートの結論（60 分ぶん）。弱められるが、量化子の位置が動く
+
+追記11 の「`hang` は塔にしか使われていない」を、`APnil_gen` の中まで降りて確かめた。
+
+#### 確定したこと
+
+`APnil_gen` は 3 つの枝それぞれで
+```lean
+have h := snocd_gen (Y := Z ++ ((a, y+1, 0) :: wordJ a (y+1) (ws ++ [plug ctx V])))
+                    (d := a + dep ctx + 2) … ?_
+· …
+· intro B hB
+  have h2 := (hprev B hB).pu y c hy      -- hprev B hB = hang B hB ws hw hG
+  …
+```
+としており、`snocd_gen` は `hang` を `B = TwD d Y n` にしか当てない（`TwD_mem_of_hang`）。
+**したがって `APnil_gen` が本当に要るのは「その語 `Y` の歩幅 `d` の塔が `W 0` に入る」だけ。**
+`∀ C, Bok C` は要らない。
+
+#### ただし量化子の位置が動く
+
+`B = TwD d Y n` の `Y` は
+```
+Y = Z ++ ((a, y+1, 0) :: wordJ a (y+1) (ws ++ [plug ctx V]))
+```
+で、**`ws` と枝のデータ（a, b, Z, E, …）に依存する。**だから
+「塔だけ」に弱めた `hang` は
+```
+∀ ws (good), ∀ 枝のデータ, その Y の塔が W 0 に入る
+```
+という形になり、**`ws` の量化が中に入る**。いまの
+```
+hpay : ∀ C, Bok C → APd ks (Jk1.pay V C)      （ctx も ws も全部の上での主張）
+```
+とはインターフェースが変わる。`APd_oneNil` / `APd_nilT` の側も書き換えになる。
+
+#### 見通し（未検証。次の人へ）
+
+`APd_twoNilNest` はまさに**塔**を `Mtwd` / `snocYd_mem` で直接扱っている。
+`hang` が塔だけで足りるなら、**同じ機械で `APnil_gen` の `hang` を作れる可能性がある。**
+そうなれば `APd_payA`（→ `AYdK`）を経由しなくなり、
+**穴(B) の base 一様性の要求そのものが消える。**
+
+やる手順:
+```
+1. snocd_gen' : hang を「∀ n, TwD d Y (n+1) ∈ W 0」に弱めた版（TwD_mem_of_hang はそのまま）
+2. APnil_gen' : それに合わせて hang を弱める（ws を intro したあとの形で書く）
+3. APd_oneNil / APd_nilT を APnil_gen' に合わせる
+4. 弱まった hang を Mtwd / snocYd_mem で直接作れるか試す
+5. 効いたら、同じ手を穴(D)（GCtx_repKL）にも当てる ← 必ず両方に当ててから採用
+```
+
+**「候補が出たら (B)(D) 両方に当ててから採用する」**——片方だけ通る手は本質を外している
+可能性が高い（マネージャの判定基準。今日の教訓の一般化）。
