@@ -5555,3 +5555,37 @@ nst (j+1) (two N nil) に一致していた。
    （hd が消えて .mp 側が楽になったので、循環の構図が変わっている可能性）
 4. AYdK → sorry 0 → 段階3'（#17）→ 段階4'（マージ）
 ```
+
+### 続き122 追記1: 新規 obligation の展開を bms で実測。塔の単位に junk が載る
+
+`hd` を外したことで出た `APd_twoNilPeel` の帰納段の形を測った。
+
+```
+木  two N' (nst 1 (two nil nil))    N' = pay nil [(0,0,0)]（≠ nil）
+M = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,0,0)(4,2,0)(5,2,0)(6,2,0)
+bms -d M[3]
+  good part = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)
+  bad part  = (3,1,0)(4,0,0)(4,2,0)(5,2,0)      ← N' の列 (4,0,0) が入っている
+  bad root  = 5,  delta = 3
+```
+**塔の単位に `jk1 N'` が載る。**つまり `unitK` / `twrK` / `ctxK` の族を
+「`two nil` の入れ子」から「任意 junk の入れ子」に一般化する必要がある。
+
+#### 設計（j 一般化のときと同じ形。写しが効くはず）
+
+```lean
+def nstL : List Jk1 → Jk1 → Jk1                  -- nst j X = nstL (replicate j nil) X
+  | [], X => X
+  | (N :: js), X => Jk1.two N (nstL js X)
+
+twoRunL js l   -- jk1 l N₁ ++ (l+1,2,0) :: jk1 (l+1) N₂ ++ (l+2,2,0) :: … （twoRun の一般化）
+unitKL js N l = (l+1,1,0) :: twoRunL js (l+1) ++ jk1 (l+1+|js|) N        歩幅 |js|+1
+twrKL js N (n+1) = one nil (nstL js (appJ N (twrKL js N n)))
+ctxKL js N m  = (js の ftwo フレーム列) ++ m×(fone N :: js の ftwo フレーム列)
+形の勘定       replicate (m+1) |js| ++ ks
+```
+`js = replicate j nil` のとき既存の `nst` / `twoRun` / `unitK` / `twrK` / `ctxK` に一致する。
+**その一致を `example` で固定してから一般化すること**（j=0,1,2 のときと同じ手順）。
+
+`MidD_unitKL` / `hMy_unitKL` は junk の列が入るぶん条件が増えるが、
+`jk1_ge` / `jk1_mono` で押さえられるはず（`unitK` のときと同じ）。
