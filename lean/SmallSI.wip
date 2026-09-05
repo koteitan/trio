@@ -23473,6 +23473,38 @@ theorem APdS_bnil (V : Jk1) : APdS [] V ↔ GOK V := by
     | zero => trivial
     | succ m ih => exact ⟨ih, h⟩
 
+/-- 「どの形でも継げる」。step-indexing なので形に制限が無い。 -/
+def APdS_all (V : Jk1) : Prop := ∀ (S : List ℕ) (n : ℕ), APdN n S V
+
+theorem APdN_ct (n : ℕ) (ks : List ℕ) (V : Jk1) :
+    APdN (n + 1) (0 :: ks) V ↔ APdN n (0 :: ks) V ∧
+      ∀ U : Jk1, FrmJ ks U → (∀ S : List ℕ, APdN n S U) → APdN n ks (Jk1.one U V) := by
+  rw [APdN]
+
+theorem APdN_cS (n k : ℕ) (ks : List ℕ) (V : Jk1) :
+    APdN (n + 1) ((k + 1) :: ks) V ↔ APdN n ((k + 1) :: ks) V ∧
+      ∀ (w0 : List ℕ), (∀ x ∈ w0, x ≤ k) → ∀ (N : Jk1), JkJ N →
+        (∀ S : List ℕ, APdN n S N) →
+        APdN n (k :: (w0 ++ ks)) (Jk1.two N V) := by
+  rw [APdN]
+
+/-- ★ 「使う」向き。`APdS` から base 一様な枠 junk で 1 段はがせる。 -/
+theorem APdS_ct_mp (ks : List ℕ) (V : Jk1) (h : APdS (0 :: ks) V)
+    (U : Jk1) (hU : FrmJ ks U) (hUall : APdS_all U) : APdS ks (Jk1.one U V) :=
+  fun n => ((APdN_ct n ks V).mp (h (n + 1))).2 U hU (fun S => hUall S n)
+
+/-- ★ 同じく 2 の記録側。**`N` に要求するのは base 一様（形は任意）**。
+形の測度が無いのでこれが書ける。 -/
+theorem APdS_cS_mp (k : ℕ) (ks : List ℕ) (V : Jk1) (h : APdS ((k + 1) :: ks) V)
+    (w0 : List ℕ) (hw0 : ∀ x ∈ w0, x ≤ k) (N : Jk1) (hN : JkJ N) (hNall : APdS_all N) :
+    APdS (k :: (w0 ++ ks)) (Jk1.two N V) :=
+  fun n => ((APdN_cS n k ks V).mp (h (n + 1))).2 w0 hw0 N hN (fun S => hNall S n)
+
+/-- ★★★ 塔が要求していた形。`L > i` でも通る（形の測度が無いから）。 -/
+example (i m L : ℕ) (w ks : List ℕ) (U : Jk1) (hU : APdS_all U) :
+    APdS (i :: (w ++ List.replicate (m + 1) L ++ ks)) U := hU _
+
+#print axioms APdS_cS_mp
 #print axioms APdS_bnil
 
 
