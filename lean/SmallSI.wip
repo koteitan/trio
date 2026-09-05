@@ -23602,6 +23602,87 @@ theorem APdA_bnil (V : Jk1) : APdA [] V ↔ GOK V := by
     | zero => rw [APdL]; trivial
     | succ m => exact (APdL_bnil m V).mpr h
 
+
+/-! ### `GCtxL`: `APdL` に対応する良い文脈。段数 `n` は**固定パラメータ**、再帰は形だけ。
+junk 条件が `∀ S, APdL n S U`（閉じた形、`GCtxL` の再帰呼び出しではない）なので
+停止性は `msr` のままでよい。 -/
+
+def GCtxL (n : ℕ) : Prop → List ℕ → List Frm → Prop
+  | _, [], ctx => ctx = []
+  | _, (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      GCtxL n (TopOk U) ks ctx' ∧ FrmJ ks U ∧ (∀ S : List ℕ, APdL n S U)
+  | _, ((k + 1) :: ks), ctx => ∃ (w0 : List ℕ) (_ : ∀ x ∈ w0, x ≤ k)
+      (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧
+      GCtxL n False (k :: (w0 ++ ks)) ctx' ∧ JkJ N ∧ (∀ S : List ℕ, APdL n S N)
+termination_by _ ks _ => msr ks
+decreasing_by
+  all_goals
+    first
+      | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
+
+theorem GCtxL_bnil (n : ℕ) (t : Prop) (ctx : List Frm) : GCtxL n t [] ctx ↔ ctx = [] := by
+  rw [GCtxL]
+
+theorem GCtxL_ct (n : ℕ) (t : Prop) (ks : List ℕ) (ctx : List Frm) :
+    GCtxL n t (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      GCtxL n (TopOk U) ks ctx' ∧ FrmJ ks U ∧ (∀ S : List ℕ, APdL n S U) := by
+  rw [GCtxL]
+
+theorem GCtxL_cS (n k : ℕ) (t : Prop) (ks : List ℕ) (ctx : List Frm) :
+    GCtxL n t ((k + 1) :: ks) ctx ↔ ∃ (w0 : List ℕ) (_ : ∀ x ∈ w0, x ≤ k)
+      (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧
+      GCtxL n False (k :: (w0 ++ ks)) ctx' ∧ JkJ N ∧ (∀ S : List ℕ, APdL n S N) := by
+  rw [GCtxL]
+
+/-- ★★★ `APd_iff` の写し。段数 `n` を持ち回るだけで構造は同じ。 -/
+theorem APdL_iff (n : ℕ) : ∀ (ks : List ℕ) (V : Jk1),
+    APdL (n + 1) ks V ↔ ∀ ctx : List Frm, GCtxL n (TopOk V) ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [APdL_bnil]
+      constructor
+      · intro h ctx hc
+        rw [GCtxL_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((GCtxL_bnil n _ []).mpr rfl)
+  | (0 :: ks), V => by
+      rw [APdL_ct]
+      constructor
+      · intro h ctx hc
+        rw [GCtxL_ct] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (APdL_iff n ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (APdL_iff n ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((GCtxL_ct n _ ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | ((k + 1) :: ks), V => by
+      rw [APdL_cS]
+      constructor
+      · intro h ctx hc
+        rw [GCtxL_cS] at hc
+        obtain ⟨w0, hw0, ctx', N, rfl, hc', hN, hNt⟩ := hc
+        rw [plug_snoc2]
+        exact (APdL_iff n (k :: (w0 ++ ks)) _).mp (h w0 hw0 N hN hNt) ctx' hc'
+      · intro h w0 hw0 N hN hNt
+        refine (APdL_iff n (k :: (w0 ++ ks)) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc2]
+        exact h (ctx' ++ [Frm.ftwo N])
+          ((GCtxL_cS n k _ ks _).mpr ⟨w0, hw0, ctx', N, rfl, hc', hN, hNt⟩)
+termination_by ks _ => msr ks
+decreasing_by
+  all_goals
+    first
+      | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
+
+#print axioms APdL_iff
+
 #print axioms APdA_bnil
 
 #print axioms APdL_cS
