@@ -23048,5 +23048,70 @@ theorem R375q2_mem : R375q ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375q2_mem
 
 
+/-! ### `Q(2,0,0)`（#3 と同型。単位が `U375a ++ (5,0,0)` になっただけ）
+
+```
+Q(2,0,0)[1] = R338 ++ (U375a ++ (5,0,0))^2   （平坦、bad root 3）
+```
+
+一様な一歩 `Aok A → A ++ U375a ++ (5,0,0) ∈ W 0` が要る。
+`(5,0,0)` は `A ++ (1,1,0)(2,2,1)(3,1,0)` の上の `U375d` の写しの族の極限なので、
+`R344_copies_mem` を土台一般に直せばよい（2 回目の一般化）。 -/
+
+theorem jk1_oneXX (m : ℕ) :
+    jk1 2 (Jk1.one Jk1.nil (XX m)) = ((3, 1, 0) : ℕ × ℕ × ℕ) :: copies U375d m := by
+  show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (XX m)) = _
+  rw [jk1_XX m 3]
+  simp [U375d, jk1]
+
+theorem R344_copies_mem_gen {A : TrioSeq} (hA : Aok A) (m : ℕ) :
+    (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)])
+      ++ copies U375d m ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (XX m)])) :=
+    GOK_oneXX m [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (XX m)]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  simpa [wordJ_singleton, colJ, jk1_oneXX, List.append_assoc] using h
+
+/-- `Q` の単位。`U375a` の右に平坦な `(5,0,0)`。 -/
+def U375a5 : TrioSeq := U375a ++ [((5, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375a5 : MidD 2 U375a5 where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375a5, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375a5, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375a5, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- ★★ 一様な一歩: どんな `Aok A` にも `U375a ++ (5,0,0)` が継げる。 -/
+theorem U375a5_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375a5 ∈ W 0 := by
+  have h := flat_mem''
+    (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)])
+    (M := U375d) (d := 5) MidD_U375d.ne (by have := MidD_U375d.head; omega) MidD_U375d.tail
+    (R344_copies_mem_gen hA)
+  simpa [U375a5, U375a, U375d, List.append_assoc] using h
+
+/-- ★★★★★ `P(5,0,0)(2,0,0)`。 -/
+theorem R375q3_mem : R375q ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R338) (M := U375a5) (d := 2) (by omega) MidD_U375a5
+    Aok_R338 (fun n hAn => U375a5_mem_gen hAn)
+  simpa [R375q, R375m, R373, R344, R341, U375a5, U375a, List.append_assoc] using h
+
+#print axioms R375q3_mem
+
+
 end Small
 end TRIO
