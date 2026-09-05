@@ -21196,7 +21196,7 @@ theorem APd_chainTK {k : ℕ} {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
     {N T : Jk1}
     (hN : JkJ N)
     (hNall : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N)
-    (hT : JkJ T) (hTop : TopOk T)
+    (hT : JkJ T)
     (hstep : ∀ N' : Jk1, JkJ N' →
       (∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N') →
       ∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) (Jk1.two N' T)) :
@@ -21207,7 +21207,7 @@ theorem APd_chainTK {k : ℕ} {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
               (fun x hx => by have := List.eq_of_mem_replicate hx; omega)) ctx
             (GCtx_mono False _ _ _ (fun h => h.elim) hc), hN, hNall⟩
   | (n + 1) => by
-      obtain ⟨-, h2, h3⟩ := APd_chainTK mm hc hN hNall hT hTop hstep n
+      obtain ⟨-, h2, h3⟩ := APd_chainTK mm hc hN hNall hT hstep n
       have h4 := hstep (twoIt N T n) h2 h3
       exact ⟨(APd_iff (k :: (List.replicate mm 0 ++ ks)) _).mp
           (h4 (List.replicate mm 0)
@@ -21216,7 +21216,7 @@ theorem APd_chainTK {k : ℕ} {ks : List ℕ} (mm : ℕ) {ctx : List Frm}
 
 /-- 鎖の一歩（k = 1）。`T` は base について一様であることを要求する
 （語の族は連結で閉じているので、これで鎖の不変量が保てる）。 -/
-theorem AYdT_hstepK {k : ℕ} {ks : List ℕ} {T : Jk1} (hTt : TopOk T)
+theorem AYdT_hstepK {k : ℕ} {ks : List ℕ} {T : Jk1}
     (hTk : ∀ B : List ℕ, APd ((k + 1) :: B) T) :
     ∀ N' : Jk1, JkJ N' →
       (∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N') →
@@ -21233,14 +21233,14 @@ theorem AYdT_hstepK {k : ℕ} {ks : List ℕ} {T : Jk1} (hTt : TopOk T)
   simpa using h
 
 /-- ★★★ `AYdT` の k = 1 版。 -/
-theorem AYdTK : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → TopOk Z →
+theorem AYdTK : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z →
     (∀ ks : List ℕ, APd ((k + 1) :: ks) Z) → ∀ ks : List ℕ, APd ((k + 1) :: ks) (Jk1.pay Z Y) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → TopOk Z →
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z →
       (∀ ks : List ℕ, APd ((k + 1) :: ks) Z) → ∀ ks : List ℕ, APd ((k + 1) :: ks) (Jk1.pay Z Y)} := by
     refine A2' ?_
     intro Y hY
     simp only [Set.mem_setOf_eq]
-    intro hYb k Z hZ hZt hZk ks
+    intro hYb k Z hZ hZk ks
     by_cases hshort : Y.length ≤ 1
     · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
       · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
@@ -21264,8 +21264,8 @@ theorem AYdTK : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → 
             ⟨hN, ⟨hZ, by simpa using hYb⟩⟩))
           (by simpa using hYb) Bok_nil ?_
         intro n hn
-        exact (APd_chainTK (T := Jk1.pay Z ([] : TrioSeq)) m hc hN hNt ⟨hZ, Bok_nil⟩ hZt
-          (AYdT_hstepK hZt hZnil) n).1 ws hw hG
+        exact (APd_chainTK (T := Jk1.pay Z ([] : TrioSeq)) m hc hN hNt ⟨hZ, Bok_nil⟩
+          (AYdT_hstepK hZnil) n).1 ws hw hG
     have hlen2 : 2 ≤ Y.length := by omega
     have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
     rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
@@ -21291,7 +21291,7 @@ theorem AYdTK : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → 
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
         have hprev : ∀ B : List ℕ, APd ((k + 1) :: B) (Jk1.pay Z Y.dropLast) :=
-          fun B => hdl hdb k Z hZ hZt hZk B
+          fun B => hdl hdb k Z hZ hZk B
         rw [hsplit, APd_cS]
         intro m N hN hNt
         rw [APd_iff]
@@ -21301,8 +21301,8 @@ theorem AYdTK : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → 
             ⟨hN, ⟨hZ, by rw [← hsplit]; exact hYb⟩⟩))
           (by rw [← hsplit]; exact hYb) hdb ?_
         intro n hn
-        exact (APd_chainTK (T := Jk1.pay Z Y.dropLast) m hc hN hNt ⟨hZ, hdb⟩ hZt
-          (AYdT_hstepK hZt hprev) n).1 ws hw hG
+        exact (APd_chainTK (T := Jk1.pay Z Y.dropLast) m hc hN hNt ⟨hZ, hdb⟩
+          (AYdT_hstepK hprev) n).1 ws hw hG
       · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
             entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
         have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
@@ -21316,12 +21316,12 @@ theorem AYdTK : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (Z : Jk1), JkJ Z → 
         intro n hn
         have hh := hnat n hn
         simp only [Set.mem_setOf_eq] at hh
-        have hh2 := hh (Bok_oper hYb hn) k Z hZ hZt hZk ks
+        have hh2 := hh (Bok_oper hYb hn) k Z hZ hZk ks
         have h2 := (APd_cS k ks _).mp hh2 m N hN hNt
         exact (APd_iff _ _).mp h2 ctx hc ws hw hG
     · exact absurd hm (Nat.not_lt_zero mm)
-  intro Y hYb k Z hZ hZt hZk ks
-  exact key hYb.mem hYb k Z hZ hZt hZk ks
+  intro Y hYb k Z hZ hZk ks
+  exact key hYb.mem hYb k Z hZ hZk ks
 
 
 
