@@ -19708,6 +19708,11 @@ theorem cntf_replicate : ∀ (i k : ℕ), cntf (List.replicate i k) = Finsupp.si
 /-- 添字の測度: 要素の多重集合を colex 順序で見る（= 順序数 ⊕ ω^{k_j}）。 -/
 noncomputable def msr (ks : List ℕ) : Colex (ℕ →₀ ℕ) := toColex (cntf ks)
 
+/-- `termination_by ks => msr ks` を通すための整礎関係。
+既定の `sizeOf` ではなく Colex の `<`（多重集合順序）を使う。 -/
+noncomputable instance msrWF : WellFoundedRelation (Colex (ℕ →₀ ℕ)) :=
+  ⟨(· < ·), wellFounded_lt⟩
+
 theorem msr_drop0 (ks : List ℕ) : msr ks < msr (0 :: ks) := by
   rw [msr, msr, Finsupp.Colex.lt_iff]
   refine ⟨0, ?_, ?_⟩
