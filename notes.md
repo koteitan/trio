@@ -4731,3 +4731,77 @@ APd の測度が許すもの          : replicate i k ++ (k :: (replicate m' 0 +
 
 **結論: 案C は「機械的な 14 箇所 + 外せない 1 箇所」。1 箇所が本質的なので不可。**
 （`/tmp/SmallW.lean` は実験用。`lean/SmallY.wip` は触っていない。）
+
+### 続き116 追記4: 方向1（固定文脈版）を掘った。壁は closure の `i ≥ 1` の部分に絞れた
+
+マネージャの指示で「必要より強い文を証明していないか」を疑って `APnil_gen` から掘り直した。
+**固定文脈版の道具は既にあった**（`AYs` / `GOK_chainJ`）。それを読んで分かったことを書く。
+
+#### 既存の固定文脈版（`one` 枠用）— これが手本
+
+```lean
+GOK_chainJ (hXok : CtxX ctx X) (hTok : JkJ T) (hX : GOK (plug ctx X))
+    (hstep : ∀ V, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V T))) :
+    ∀ n, GOK (plug ctx (itJ T n X))
+
+AYs : ∀ Y, Bok Y → ∀ ctx, CtxOk ctx → ∀ X Z, CtxX ctx X → JkJ Z →
+      (∀ V, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (one V Z))) →
+      GOK (plug ctx X) → GOK (plug ctx (one X (pay Z Y)))
+```
+`AYs` の鎖の不変量は `CtxX ctx (itJ T n X)` と `GOK (plug ctx (itJ T n X))` **だけ**。
+`GCtx` も closure も出てこない。`hstep` は A2' の IH がそのまま供給する。
+
+`AYd`（`0 :: ks` 版、通っている）も同じ形で、鎖の不変量は **`APd ks (itJ T n X)` の 1 形だけ**。
+`APd_ct` の枠要求が `APd ks U` の 1 形なので、IH がそのまま維持できる。
+
+#### `two` 枠だと不変量が「形の族」になる
+
+`APd_cS` の枠要求は
+```
+closure(N) = ∀ i m', APd (replicate i k ++ (k :: (replicate m' 0 ++ ks))) N
+```
+で **族**。鎖 `twoIt N T n` の不変量も族になり、1 歩伸ばすのに
+`closure(two W T)` の各元 `APd (k :: B) (two W T)`（B = `replicate i k ++ replicate m' 0 ++ ks`）
+を `APd_cS k B' T`（`replicate m 0 ++ B' = B`）で出す必要がある。
+
+- **i = 0 のとき**: B = `replicate m' 0 ++ ks` なので m := m', B' := ks が取れる。
+  つまり **`APd ((k+1) :: ks) V` そのもので足りる。問題ない。**
+- **i ≥ 1 のとき**: B' = `replicate i k ++ …` になり、
+  **`APd ((k+1) :: (replicate i k ++ …)) V` が要る。ここだけが出ない。**
+
+`i ≥ 1` は「同じ高さの 2 の記録の枠が 2 枚以上積み重なっている形」。
+
+#### だから壁は 1 行で書ける
+
+```
+ctx1 : List Frm,  hc1 : GCtx False (k :: (replicate m 0 ++ ks'')) ctx1
+hU   : APd ((k+1) :: ks'') U        -- APd_ct が与えるのはこれだけ
+hW   : CtxX ctx1 W,  GOK (plug ctx1 W)
+⊢ GOK (plug ctx1 (Jk1.two W U))
+```
+`GOK (plug ctx1 (two W U)) = GOK (plug (ctx1 ++ [ftwo W]) U)` なので `hU` を当てるには
+`GCtx ? ((k+1) :: ks'') (ctx1 ++ [ftwo W])`、すなわち **W の closure** が要る。
+W の closure を仮定として持ち回ると、その `i ≥ 1` の元で上の「出ない」に落ちる。
+
+#### `∀ i` を落とせない理由（追記3 の再確認、より正確に）
+
+`APd_twoNilNest` の階段 `ctxK j N m` の `fone N` 枠は
+`APd (replicate (m+1) j ++ ks) N` = `APd (j :: (replicate m j ++ ks)) N` を要求する。
+これは **まさに closure の `i ≥ 1` の部分**。塔 `twrK` の単位
+`(l+1,1,0) twoRun(l+1,j) jk1(l+1+j)N` の末尾 N が次の単位の枠なので、外せない。
+
+**`AYdK` は `i ≥ 1` を供給できず、`APd_twoNilNest` は `i ≥ 1` を要求する。同じ 1 個の junk について。**
+（`APd_nil_head` で `APd_cS` の枠 junk N がそのまま `APd_twoNilPeel` に渡るので、同一の N。）
+
+#### 方向3（k の帰納法）も同じところに落ちる（確認済み）
+
+`APd ((k+2)::ks) (pay V C)` を `APd_cS (k+1) ks` で開くと
+`APd ((k+1) :: ks_m) (two N (pay V C))`。`APd_twoK` の手を使うと
+`APd ((k+2) :: ks_m) (pay V C)` が要り、**base が `replicate m 0` だけ伸びる**。
+これは `i = 0` の場合と同じで実は出る（`APd_cS` の m で吸収できる）。
+しかし鎖の closure の `i ≥ 1` は残る。
+
+#### `APd_twoK` の手が `AYdK` に効かない理由（マネージャの確認事項への回答）
+
+`APd_twoK` は木の頭が `two N M` だったから `APd_cS` の結論 `APd (k :: ks_m) (two N V)` に
+形が合った。`pay V C` は `two _ _` ではないので当たらない。20 分かけるまでもなく形で分かる。
