@@ -20403,6 +20403,69 @@ theorem jk1_twrB : ∀ (N : Jk1) (n l : ℕ),
         List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
       simp [jk1, unitB, List.append_assoc]
 
+/-! #### `twrC`: junk が 2 の記録の**上**にある版
+
+`bms -d` で確かめた対応（どちらも歩幅 2、bad root は枠の 1 の列）:
+```
+one nil (two N (two nil nil))  → 単位 (l+1,1,0) jk1(l+1)N (l+2,2,0)   = unitB N l  → twrB
+one nil (two nil (two N nil))  → 単位 (l+1,1,0) (l+2,2,0) jk1(l+2)N   = unitC N l  → twrC
+```
+`D(0)`（`APd (0::ks) (two nil (two N nil))`）に要るのは **`twrC`** の方。
+実測: `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,0,0)(5,2,0)[3]` の
+bad part は `(3,1,0)(4,2,0)(5,0,0)`、delta 2。 -/
+
+def unitC (N : Jk1) (l : ℕ) : TrioSeq :=
+  ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) N)
+
+theorem unitC_shift (N : Jk1) (l s : ℕ) : shiftr01 s 0 (unitC N l) = unitC N (l + s) := by
+  show ((l + 1 + s, 1 + 0, 0) : ℕ × ℕ × ℕ) :: (((l + 2 + s, 2 + 0, 0) : ℕ × ℕ × ℕ) ::
+      shiftr01 s 0 (jk1 (l + 2) N)) = _
+  rw [jk1_shift N (l + 2) s, show l + 1 + s = l + s + 1 from by omega,
+    show l + 2 + s = l + s + 2 from by omega]
+  simp [unitC]
+
+def twrC (N : Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (Jk1.two Jk1.nil (appJ N (twrC N n)))
+
+theorem TopOk_twrC (N : Jk1) : ∀ n : ℕ, TopOk (twrC N n)
+  | 0 => trivial
+  | (_ + 1) => trivial
+
+theorem JkJ_twrC_app {N : Jk1} (hN : JkJ N) : ∀ n : ℕ, JkJ (appJ N (twrC N n))
+  | 0 => hN
+  | (n + 1) => ⟨hN, trivial, JkJ_twrC_app hN n, Or.inr rfl⟩
+
+theorem JkJ_twrC {N : Jk1} (hN : JkJ N) : ∀ n : ℕ, JkJ (twrC N n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, trivial, JkJ_twrC_app hN n, Or.inr rfl⟩
+
+theorem jk1_twrC : ∀ (N : Jk1) (n l : ℕ),
+    jk1 l (twrC N n)
+      = (List.range n).flatMap (fun k => shiftr01 (2 * k) 0 (unitC N l))
+  | N, 0, l => by simp [twrC, jk1]
+  | N, (n + 1), l => by
+      have hstep : ∀ k : ℕ, shiftr01 (2 * k) 0 (unitC N (l + 2))
+          = shiftr01 (2 * (k + 1)) 0 (unitC N l) := by
+        intro k
+        rw [← unitC_shift N l 2, shiftr01_add0]
+        congr 1
+        omega
+      have hfl : (List.range n).flatMap (fun k => shiftr01 (2 * k) 0 (unitC N (l + 2)))
+          = (List.range n).flatMap (fun k => shiftr01 (2 * (k + 1)) 0 (unitC N l)) :=
+        List.flatMap_congr (fun k _ => hstep k)
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1) (appJ N (twrC N n))))) = _
+      rw [show l + 1 + 1 = l + 2 from rfl,
+        jk1_appJ (twrC N n) N (l + 2) (TopOk_twrC N n), jk1_twrC N n (l + 2), hfl,
+        List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp [jk1, unitC]
+
+theorem Mtwd_twrC (Y0 : TrioSeq) (N : Jk1) (l n : ℕ) :
+    Mtwd 2 Y0 (unitC N l) n = Y0 ++ jk1 l (twrC N n) := by
+  rw [Mtwd, jk1_twrC N n l]
+
 /-- `twrB` の塔を行列の言葉に。`twrB Jk1.nil = otwJ`（`Small.lean` の行375 の塔）。 -/
 theorem Mtwd_twrB (Y0 : TrioSeq) (N : Jk1) (l n : ℕ) :
     Mtwd 2 Y0 (unitB N l) n = Y0 ++ jk1 l (twrB N n) := by

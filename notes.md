@@ -3862,3 +3862,52 @@ A ++ (1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)     （= 行375 の P の尻尾）
 **`SmallY` 側でやることは、この同じ議論を `GoodFb` の 3 段（`pu`/`pk`/`seg`）で書くこと**である。
 行列 1 本ではなく「どの語の右にも継げる」を示す必要があるので strictly 強いが、
 骨格と塔は同じものを使える。
+
+### 続き113 追記8: 塔は 2 種類ある（bms で実測）。`D(0)` に要るのは `twrC`
+
+追記6 で建てた `twrB` は junk の位置が違った。`bms -d` で両方確かめた:
+
+```
+木                              単位（bad part、どちらも delta 2、bad root は枠の 1 の列）
+one nil (two N (two nil nil))   (l+1,1,0) jk1(l+1)N (l+2,2,0)   = unitB N l  → twrB
+one nil (two nil (two N nil))   (l+1,1,0) (l+2,2,0) jk1(l+2)N   = unitC N l  → twrC
+```
+
+実測に使った行列（`jk1 λ N = [(λ+1,0,0)]` になる `N = pay nil [(0,0,0)]` を使った）:
+```
+(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,0,0)(4,2,0)(5,2,0)[2]
+  bad part = (3,1,0)(4,0,0)(4,2,0)   → unitB
+(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,0,0)(5,2,0)[3]
+  bad part = (3,1,0)(4,2,0)(5,0,0)   → unitC
+```
+
+`D(0)` の目標は `APd (0::ks) (two nil (two N nil))`（外側の junk が nil、内側が N）なので
+**`twrC` の方**。両方 `SmallY.wip` に入れて緑にした:
+
+```lean
+def unitC (N : Jk1) (l : ℕ) : TrioSeq :=
+  ((l+1,1,0)) :: (((l+2,2,0)) :: jk1 (l+2) N)
+unitC_shift : shiftr01 s 0 (unitC N l) = unitC N (l + s)
+def twrC (N : Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n+1) => Jk1.one Jk1.nil (Jk1.two Jk1.nil (appJ N (twrC N n)))
+TopOk_twrC / JkJ_twrC_app / JkJ_twrC / jk1_twrC / Mtwd_twrC
+```
+`JkJ_twrC` の 2 の記録の条件は `(TopOk _ ∨ nil = nil)` の右で通る（枠の junk が nil だから）。
+
+#### 残りの組み立て（次の人へ）
+
+```
+colJ_plug_twoNW : colJ a b (plug (ctx ++ [fone V]) (two nil (two N nil)))
+                  = (colJ a b (plug ctx V) ++ unitC N l) ++ [(l+3,2,0)]     l = a + dep ctx + 1
+wordJ_snoc_twoNW : 上の wordJ 版（colJ_plug_twoN → wordJ_snoc_twoN と同じ写し）
+階段側          : APd_twoNilGen は GCtx_rep で `replicate m (fone N)` を足していた。
+                  twrC 版では **`[fone nil, ftwo nil]` の対**を m 回足す。
+                  そのための CtxJ_snoc12 / CtxOk_snoc12 は既にある。
+本体            : APd_twoNilGen の 3 分岐（pu / pk / seg）を写して
+                  twr → twrC、snocY_mem → snocYd_mem (dl := 2)。
+                  snocYd_mem は hMy（M の頭以外は行 1 が y 以上）が増える。
+                  unitC N l の 2 列目は (l+2,2,0) で行 1 = 2 ≥ 2 ○、
+                  3 列目以降は jk1 (l+2) N なので JkA から行 1 ≥ ? を出す必要がある。
+                  ← ここが唯一まだ確かめていない側条件。
+```
