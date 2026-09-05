@@ -22345,6 +22345,67 @@ theorem jk1_twrK : ∀ (j : ℕ) (N : Jk1) (n l : ℕ),
         List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
       simp [jk1, unitK, List.append_assoc]
 
+/-! ### `twrK` の junk 一般版 -/
+
+def twrKL (js : List Jk1) (N : Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (nstL js (appJ N (twrKL js N n)))
+
+theorem twrKL_replicate_nil (j : ℕ) (N : Jk1) : ∀ n : ℕ,
+    twrKL (List.replicate j Jk1.nil) N n = twrK j N n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one Jk1.nil (nstL (List.replicate j Jk1.nil)
+        (appJ N (twrKL (List.replicate j Jk1.nil) N n))) = _
+      rw [twrKL_replicate_nil j N n, nstL_replicate_nil]
+      rfl
+
+theorem TopOk_twrKL (js : List Jk1) (N : Jk1) : ∀ n : ℕ, TopOk (twrKL js N n)
+  | 0 => trivial
+  | (_ + 1) => trivial
+
+theorem JkJ_twrKL_app {N : Jk1} (hN : JkJ N) (js : List Jk1) (hjs : ∀ M ∈ js, JkJ M) :
+    ∀ n : ℕ, JkJ (appJ N (twrKL js N n))
+  | 0 => hN
+  | (n + 1) => ⟨hN, JkJ_nstL js hjs _ (JkJ_twrKL_app hN js hjs n)⟩
+
+theorem JkJ_twrKL {N : Jk1} (hN : JkJ N) (js : List Jk1) (hjs : ∀ M ∈ js, JkJ M) :
+    ∀ n : ℕ, JkJ (twrKL js N n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, JkJ_nstL js hjs _ (JkJ_twrKL_app hN js hjs n)⟩
+
+theorem jk1_twrKL : ∀ (js : List Jk1) (N : Jk1) (n l : ℕ),
+    jk1 l (twrKL js N n)
+      = (List.range n).flatMap (fun k => shiftr01 ((js.length + 1) * k) 0 (unitKL js N l))
+  | js, N, 0, l => by simp [twrKL, jk1]
+  | js, N, (n + 1), l => by
+      have hstep : ∀ k : ℕ,
+          shiftr01 ((js.length + 1) * k) 0 (unitKL js N (l + 1 + js.length))
+            = shiftr01 ((js.length + 1) * (k + 1)) 0 (unitKL js N l) := by
+        intro k
+        rw [show l + 1 + js.length = l + (js.length + 1) from by omega,
+          ← unitKL_shift js N l (js.length + 1), shiftr01_add0]
+        congr 1
+        have hm : (js.length + 1) * (k + 1) = (js.length + 1) * k + (js.length + 1) :=
+          Nat.mul_succ (js.length + 1) k
+        omega
+      have hfl : (List.range n).flatMap
+            (fun k => shiftr01 ((js.length + 1) * k) 0 (unitKL js N (l + 1 + js.length)))
+          = (List.range n).flatMap
+            (fun k => shiftr01 ((js.length + 1) * (k + 1)) 0 (unitKL js N l)) :=
+        List.flatMap_congr (fun k _ => hstep k)
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (nstL js (appJ N (twrKL js N n)))) = _
+      rw [jk1_nstL js (appJ N (twrKL js N n)) (l + 1),
+        jk1_appJ (twrKL js N n) N (l + 1 + js.length) (TopOk_twrKL js N n),
+        jk1_twrKL js N n (l + 1 + js.length), hfl,
+        List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp [jk1, unitKL, List.append_assoc]
+
+theorem Mtwd_twrKL (Y0 : TrioSeq) (js : List Jk1) (N : Jk1) (l n : ℕ) :
+    Mtwd (js.length + 1) Y0 (unitKL js N l) n = Y0 ++ jk1 l (twrKL js N n) := by
+  rw [Mtwd, jk1_twrKL js N n l]
+
 theorem Mtwd_twrK (Y0 : TrioSeq) (j : ℕ) (N : Jk1) (l n : ℕ) :
     Mtwd (j + 1) Y0 (unitK j N l) n = Y0 ++ jk1 l (twrK j N n) := by
   rw [Mtwd, jk1_twrK j N n l]
