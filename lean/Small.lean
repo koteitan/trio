@@ -20402,7 +20402,7 @@ theorem colJ_plug_twoIt (a b : ℕ) (ctx : List Frm) (N T : Jk1) : ∀ n : ℕ,
       simp [List.append_assoc]
 
 theorem GoodFb_snoc_innerJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc : CtxOk ctx)
-    {N Z : Jk1} (hN : JkA N) (hZ : JkA Z) (hZt : TopOk Z) {Y : TrioSeq}
+    {N Z : Jk1} (hN : JkA N) (hZ : JkA Z) {Y : TrioSeq}
     (hcx : CtxX ctx (Jk1.two N (Jk1.pay Z Y)))
     (hY : Bok Y) (hlen : 2 ≤ Y.length)
     (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
@@ -20426,7 +20426,7 @@ theorem GoodFb_snoc_innerJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc :
   exact hn n hn'
 
 theorem GoodFb_snoc_dupJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc : CtxOk ctx)
-    {N Z : Jk1} (hN : JkA N) (hZ : JkA Z) (hZt : TopOk Z) {Y : TrioSeq}
+    {N Z : Jk1} (hN : JkA N) (hZ : JkA Z) {Y : TrioSeq}
     (hcx : CtxX ctx (Jk1.two N (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))))
     (hY0 : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) (hY : Bok Y)
     (hIH : ∀ n, 1 ≤ n →
@@ -20530,7 +20530,7 @@ theorem rep_true_cons : ∀ (j : ℕ) (ks : List Bool),
 
 theorem APd_chainT {ks : List Bool} {ctx : List Frm} (hc : GCtx (true :: ks) ctx) {N T : Jk1}
     (hN : JkA N) (hNall : ∀ j : ℕ, APd (List.replicate j true ++ (true :: ks)) N)
-    (hT : JkA T) (hTop : TopOk T)
+    (hT : JkA T)
     (hstep : ∀ N' : Jk1, JkA N' →
       (∀ j : ℕ, APd (List.replicate j true ++ (true :: ks)) N') →
       ∀ j : ℕ, APd (List.replicate j true ++ (true :: ks)) (Jk1.two N' T)) :
@@ -20538,7 +20538,7 @@ theorem APd_chainT {ks : List Bool} {ctx : List Frm} (hc : GCtx (true :: ks) ctx
       (∀ j : ℕ, APd (List.replicate j true ++ (true :: ks)) (twoIt N T n))
   | 0 => ⟨(APd_iff (true :: ks) N).mp (by simpa using hNall 0) ctx hc, hN, hNall⟩
   | (n + 1) => by
-      obtain ⟨-, h2, h3⟩ := APd_chainT hc hN hNall hT hTop hstep n
+      obtain ⟨-, h2, h3⟩ := APd_chainT hc hN hNall hT hstep n
       have h4 := hstep (twoIt N T n) h2 h3
       exact ⟨(APd_iff (true :: ks) _).mp (by simpa using h4 0) ctx hc, ⟨h2, hT⟩, h4⟩
 
@@ -20600,12 +20600,12 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA 
         intro m U N hU hR hUk hN hNt
         refine APd_two_of_ctx hU hR hUk ?_
         intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ hZt
+        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ
           (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hZ, by simpa using hYb⟩)
             trivial)
           (by simpa using hYb) Bok_nil ?_
         intro n hn
-        exact (APd_chainT (T := Jk1.pay Z ([] : TrioSeq)) hc hN hNt ⟨hZ, Bok_nil⟩ hZt
+        exact (APd_chainT (T := Jk1.pay Z ([] : TrioSeq)) hc hN hNt ⟨hZ, Bok_nil⟩
           (AYdT_hstep m hZnil) n).1 ws hw hG
     have hlen2 : 2 ≤ Y.length := by omega
     have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
@@ -20636,12 +20636,12 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA 
         intro m U N hU hR hUk hN hNt
         refine APd_two_of_ctx hU hR hUk ?_
         intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ hZt
+        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ
           (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _
             ⟨hN, hZ, by rw [← hsplit]; exact hYb⟩) trivial)
           (by rw [← hsplit]; exact hYb) hdb ?_
         intro n hn
-        exact (APd_chainT (T := Jk1.pay Z Y.dropLast) hc hN hNt ⟨hZ, hdb⟩ hZt
+        exact (APd_chainT (T := Jk1.pay Z Y.dropLast) hc hN hNt ⟨hZ, hdb⟩
           (AYdT_hstep m hprev) n).1 ws hw hG
       · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
             entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
@@ -20650,7 +20650,7 @@ theorem AYdT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA 
         intro m U N hU hR hUk hN hNt
         refine APd_two_of_ctx hU hR hUk ?_
         intro ctx hc ws hw hG
-        refine GoodFb_snoc_innerJt hw (GCtx_CtxOk _ ctx hc) hN hZ hZt
+        refine GoodFb_snoc_innerJt hw (GCtx_CtxOk _ ctx hc) hN hZ
           (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hZ, hYb⟩) trivial)
           hYb hlen2 hp ?_
         intro n hn
@@ -23186,6 +23186,149 @@ theorem R375q5_mem : R375q ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375q4_mem
 #print axioms R375q5_mem
 
+
+
+
+/-! ### ★★★★★ `two` の右の子になれる木 `TwoOk` と、その上の荷
+
+壁は `APd (false :: ks) Z`（`Rq (false :: ks) Z = TopOk Z` が `two` を弾く）。
+だが `AYdT` の証明が `APd (false :: ks) Z` を使うのは `APd_chainT` の hstep を
+作るところだけで、その結論は「`two N' Z` がどの true 枠でも継げる」そのもの。
+これを直接の仮定にすれば `TopOk` は要らない（`GoodFb_snoc_dupJt` /
+`GoodFb_snoc_innerJt` / `APd_chainT` の `TopOk` は本体で使われていなかった）。 -/
+
+/-- 木 `Z` は、`two` の右の子として、どの true 枠にも置ける。 -/
+def TwoOk (Z : Jk1) : Prop :=
+  ∀ N : Jk1, JkA N →
+    (∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) →
+    ∀ (j : ℕ) (kk : List Bool),
+      APd (List.replicate j true ++ (true :: kk)) (Jk1.two N Z)
+
+theorem TwoOk_twoNil : TwoOk (Jk1.two Jk1.nil Jk1.nil) := by
+  intro N hN hNall j kk
+  rw [rep_true_cons]
+  exact APd_twoTwoGen hN hNall _
+
+/-- `APd_chainT` の「強い hNall」版。hstep を `TwoOk` で与える。 -/
+theorem APd_chainT' {ks : List Bool} {ctx : List Frm} (hc : GCtx (true :: ks) ctx) {N T : Jk1}
+    (hN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    (hT : JkA T) (hTk : TwoOk T) :
+    ∀ n, GOK (plug ctx (twoIt N T n)) ∧ JkA (twoIt N T n) ∧
+      (∀ (j : ℕ) (kk : List Bool),
+        APd (List.replicate j true ++ (true :: kk)) (twoIt N T n))
+  | 0 => ⟨(APd_iff (true :: ks) N).mp (by simpa using hNall 0 ks) ctx hc, hN, hNall⟩
+  | (n + 1) => by
+      obtain ⟨-, h2, h3⟩ := APd_chainT' hc hN hNall hT hTk n
+      have h4 := hTk (twoIt N T n) h2 h3
+      exact ⟨(APd_iff (true :: ks) _).mp (by simpa using h4 0 ks) ctx hc, ⟨h2, hT⟩, h4⟩
+
+theorem TwoOk_pay_nil {Z : Jk1} (hZk : TwoOk Z) : TwoOk (Jk1.pay Z ([] : TrioSeq)) := by
+  intro N hN hNall j kk
+  refine APd_congr _ (fun l => ?_) (hZk N hN hNall j kk)
+  show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Z)
+      = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (Jk1.pay Z []))
+  rw [jk1_pay_nil]
+
+/-- ★★★★★ `two` の右の子になれる木の上に、`Bok` の荷を吊るせる。 -/
+theorem TwoOk_pay : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkA Z → TwoOk Z →
+    TwoOk (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkA Z → TwoOk Z →
+      TwoOk (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb Z hZ hZk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact TwoOk_pay_nil hZk
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hZnil : TwoOk (Jk1.pay Z ([] : TrioSeq)) := TwoOk_pay_nil hZk
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro N hN hNall j kk
+        rw [rep_true_cons, APd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ
+          (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hZ, by simpa using hYb⟩)
+            trivial)
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (APd_chainT' (T := Jk1.pay Z ([] : TrioSeq)) hc hN hNall ⟨hZ, Bok_nil⟩
+          hZnil n).1 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : TwoOk (Jk1.pay Z Y.dropLast) := hdl hdb Z hZ hZk
+        rw [hsplit]
+        intro N hN hNall j kk
+        rw [rep_true_cons, APd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ
+          (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _
+            ⟨hN, hZ, by rw [← hsplit]; exact hYb⟩) trivial)
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (APd_chainT' (T := Jk1.pay Z Y.dropLast) hc hN hNall ⟨hZ, hdb⟩
+          hprev n).1 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro N hN hNall j kk
+        rw [rep_true_cons, APd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_innerJt hw (GCtx_CtxOk _ ctx hc) hN hZ
+          (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hZ, hYb⟩) trivial)
+          hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have hh2 := hh (Bok_oper hYb hn) Z hZ hZk
+        exact (APd_iff _ _).mp
+          (by simpa using hh2 N hN hNall 0 (List.replicate j true ++ kk)) ctx hc ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb Z hZ hZk
+  exact key hYb.mem hYb Z hZ hZk
+
+#print axioms TwoOk_pay
+
+/-- ★★★★★ 「2 の記録の直上に 2 の記録」＋その上の荷を、項として継げる。 -/
+theorem APd_twoTwoPay {N : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    {B : TrioSeq} (hB : Bok B) (ks : List Bool) :
+    APd (true :: ks) (Jk1.two N (Jk1.pay (Jk1.two Jk1.nil Jk1.nil) B)) := by
+  have h := TwoOk_pay B hB (Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ TwoOk_twoNil
+  simpa using h N hJN hNall 0 ks
+
+#print axioms APd_twoTwoPay
 
 end Small
 end TRIO

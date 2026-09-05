@@ -9339,3 +9339,56 @@ Q(6,1,1)  bad root 8、[1] = Q ++ (6,1,0)
 `Q(6,0,0)` `Q(6,1,0)` `Q(6,1,1)` は bad part が `(5,0,0)` 単独で、
 `MidD` が `head1 : 1 ≤ 行 1` を要求するため既存の `snocY_mem` / `flat_of_chain` に乗らない。
 行 1 = 0 のブロック用の道具が要る（未調査）。
+
+### 追記16: 壁 `APd (false :: ks) V`（V が two で始まる）を回る道が見えた
+
+`Q(6,0,0)` を測って木に起こしたら、**#13 と同じ壁**だった。
+
+```
+Q(6,0,0)[n] = P(5,0,0)(5,0,0)...    bad part = (5,0,0) 単独
+  → 要る: ∀n, R375m ++ copies [(5,0,0)] n ∈ W 0   (flat_mem'' の htw)
+  → = R344 ++ U375d ++ (5,0,0)^n
+  → 各 (5,0,0) は flat_mem'' で継ぐ。その htw が
+    R344 ++ copies (U375d ++ (5,0,0)^j) m
+  → 木: one nil (T)、T = two (T') (pay (two nil nil) [(0,0,0)]^j)
+    ＝ 「2 の記録の直上に 2 の記録」＋その上に荷
+```
+
+`(5,0,0)` は `(4,2,0)` の子＝`(5,2,0)` の兄弟（bms の親行列で確認）。
+だから荷は `two nil nil` の**内側**に付く。`pay (two nil (two nil nil)) C` では
+`shiftr01 4 0 C` になって高さが 1 足りない。`Bok` は `entry C 0 0 = 0` を
+要求するので `C = (1,0,0)^j` は不可。逃げ道なし。
+
+**見つけたこと: `TopOk` は 3 か所とも死んだ仮定だった。**
+
+```
+GoodFb_snoc_innerJt  hZt : TopOk Z   本体で不使用（grep 1 件＝シグネチャのみ）
+GoodFb_snoc_dupJt    hZt : TopOk Z   同上
+APd_chainT           hTop : TopOk T  再帰で渡すだけ
+```
+
+`AYdT` が `TopOk Z` を要求していたのは、この 3 つに渡すためだけ。
+`AYdT` 自身は `APd (false :: ks) Z` も要るので、`Z = two nil nil` では
+どのみち使えない。そこで **`APd (false :: ks) Z` の代わりに「two の右の子に
+なれる」を直接仮定する述語**を立てる。
+
+```
+TwoOk Z := ∀ N, JkA N → (∀ j kk, APd (rep j true ++ (true::kk)) N) →
+             ∀ j kk, APd (rep j true ++ (true::kk)) (two N Z)
+
+TwoOk (two nil nil)              = APd_twoTwoGen（済）
+TwoOk Z → Bok Y → TwoOk (pay Z Y)   ← 新規。AYdT の証明の写し
+```
+
+`AYdT` の証明で `APd (false::ks) Z` が使われるのは
+`AYdT_hstep m hprev`（＝`APd_chainT` の hstep）を作るところだけで、
+その結論は `∀ j, APd (rep j true ++ (true::ks')) (two N' T)` そのもの。
+`TwoOk T` はこれを直接与える。`APd_two_of_ctx` で `APd_cf` の目標に戻す代わりに、
+`APd_iff (true::ks)` で `GOK (plug ctx (two N (pay Z Y)))` に落とせばよい
+（`APd_two_of_ctx` の中身と同じ ctx の形）。
+
+手順:
+1. `hZt` / `hTop` を 3 つの定理から外す（呼び出し 4 か所を直すだけ）
+2. `TwoOk` を定義、`APd_chainT` の強い hNall 版 `APd_chainT'`
+3. `TwoOk_pay`（AYdT の写し）
+4. `APd (true::ks) (two N (pay (two nil nil) B))` → #13 / #15 / Q(6,*)
