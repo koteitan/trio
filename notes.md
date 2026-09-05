@@ -2824,3 +2824,99 @@ termination_by ks _ => (cntF ks, ks.length)
    停止性は `(cntF ks, ks.length)` の辞書式（`cntF (replicate m true ++ ks) = cntF ks`）。
 3. 2 の記録の左 junk をフレームが持つので、`two N (one A B)`（N ≠ nil）が
    `APd (false::ks) (one A B)` の具体化で出る。
+
+## 続き110（行376 の壁: 2 の記録の直上に 2 の記録。設計の障害まで特定）
+
+### 済んだこと: 行376 を「塔」に還元（Lean で緑）
+```
+theorem R376_of_tower (htw : ∀ n, Mtw R344 [(4,2,0)] n ∈ W 0) :
+    R373 ++ [(5,3,0)] ∈ W 0
+```
+`bms -d` で
+```
+(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)[n]
+  good part = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)
+  bad part  = (4,2,0),  bad root = 6,  delta = 1
+  [n] = R344 (4,2,0)(5,2,0)…(3+n,2,0) = Mtw R344 [(4,2,0)] n
+```
+`snocY_mem`（`Y0 = R344`, `M = [(4,2,0)]`, `L = 4`, `y = 3`）で出る。
+**残るのは `∀ n, Mtw R344 [(4,2,0)] n ∈ W 0` だけ**（= 行375 の右にさらに
+`(6,2,0)(7,2,0)…` を積んだ行列がすべて `W 0`）。
+
+### 壁: 塔の各段が「2 の記録の直上に 2 の記録」
+`S_n := R344 (4,2,0)(5,2,0)…(3+n,2,0) = R341 ++ jk1 2 T_n`,
+`T_n = one nil (two nil (two nil … (two nil nil)))`（2 の記録 n 段）。
+現在の `JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M` の `TopOk M` がこれを禁じている
+（`TopOk (two _ _) = False`）。行375 は `n = 2` で、木ではなく塔（`snocYd_mem`, dl=2）で
+証明したので通っていた。`n ≥ 3` は塔の各段自体が同じ形なので逃げ場がない。
+
+### bms で確かめた「2 の記録の塔」の形（これが設計の地面）
+記法: 文脈 `ctx = ctx0 ++ [fone U, ftwo M_k, …, ftwo M_1]`（内側が M_1）、
+その最内に `two N nil` を置いた木。`G(X) := one N (two M_k (… (two M_1 X)))`。
+**塔は `plug ctx (G^i N)`（i → ∞）**、delta = k+1。実測 3 例:
+
+- `one nil (two nil nil)` = `(3,1,0)(4,2,0)`（k=0, N=nil）
+  bad part `(3,1,0)`, delta 1 → `(3,1,0)(4,1,0)(5,1,0)…` = `twr nil`（既存 `APd_twoNilGen`）
+- `one nil (two (one nil nil) nil)` = `(3,1,0)(4,1,0)(4,2,0)`（k=0, N=one nil nil）
+  bad part `(3,1,0)(4,1,0)`, delta 1 → `twr N`（既存）
+- `one nil (two N' (two nil nil))` = `(3,1,0)(4,1,0)(4,2,0)(5,2,0)`（k=1, N'=one nil nil, N=nil）
+  bad part `(3,1,0)(4,1,0)(4,2,0)`, delta 2
+  → `(3,1,0)(4,1,0)(4,2,0)|(5,1,0)(6,1,0)(6,2,0)|(7,1,0)(8,1,0)(8,2,0)|…`
+  = `G(X) = one nil (two N' X)` の反復。**枠の 2 の記録の junk `N'` が塔に出る**
+- `one nil (two nil (two (one nil nil) nil))` = `(3,1,0)(4,2,0)(5,1,0)(5,2,0)`（k=1, N=one nil nil）
+  bad part `(3,1,0)(4,2,0)(5,1,0)`, delta 2 → `G(X) = one N (two nil X)` の反復
+- `one nil (two nil (two nil (two (one nil nil) nil)))`（k=2）
+  bad part 4 列, delta 3 → `G(X) = one N (two nil (two nil X))` の反復
+
+つまり **bad root は必ず「一番下の 1 の列」で、bad part は
+(1 の列)(その上の枠の junk たち)(2 の記録たち)(N) 全部**。だから塔のグループは
+**枠の 1 の列の junk だけ `N` に置き換え、枠の 2 の記録の junk `M_j` はそのまま再利用**する。
+
+### 必要な設計（`List Bool` → `List ℕ` 添字）
+文脈の形を `ks : List ℕ`（内側から。`k :: ks` = 「2 の記録 k 枚 + 1 の列 1 枚 + ks」）にする:
+```
+APd []           V = GOK V
+APd (0 :: ks)    V = ∀ U, FrmJ ks U → APd ks U → APd ks (one U V)
+APd ((k+1)::ks)  V = ∀ m N, JkJ N → CLO N → APd (k :: (rep m ++ ks)) (two N V)
+```
+（`rep m = List.replicate m 0`。現行の `true = 0`, `false = 1` にちょうど対応する。）
+`Rq`/`TopOk` は `JkJ` から外れ、`CtxXJ ctx X` は `JkJ X` に潰れるので周辺は簡単になる。
+`APd_all` の `two` の場合も一様に簡単になる:
+```
+APd_all (two N M) (k::ks) ← APd_all M ((k+1)::ks) を m=0, N で具体化
+```
+
+### ★ 未解決の障害: `CLO`（2 の記録の junk の閉包）が定義できない
+塔 `plug ctx (G^i N)` を `GOK` にするには `APd (rep i k ++ (k::ks)) N` 等が要り、
+その `GCtx` を開くと **枠の junk `M_j` を「もっと深い添字」で使う**ことになる。
+必要な閉包は実質「`∀ ks', APd ((j-1) :: ks') M_j`」（尾を全部差し替えてよい）。
+- 満たす側は問題ない: `APd_all` で `M_j` は部分項なので構造帰納の IH が `∀ ks` で出る。
+- **定義できない**: `APd` は添字の整礎再帰で定義しており、`ks'` が任意だと測度が落ちない。
+  - 現行の測度 `(cntF ks, ks.length)` → `List ℕ` では多重集合順序（= 順序数 ⊕ω^{k_j}）に
+    すれば `(k+1)::ks → rep i k ++ (k::ks)`（要素 k+1 を k と 0 に分解）は落ちる。
+    つまり **`∀ i, APd (rep i k ++ ks0) N` という「グループ反復の閉包」までは定義可能**。
+  - しかし枠の junk `M_j` に要るのは `(j-1) :: (rep i k ++ ks)` という**頭を残して尾を差し替える**形で、
+    `ks₁ ++ ks0` の形（前置）ではない。しかも `k`（グループの大きさ）は `M_j` を導入する時点では未定。
+    どんな測度でも `∀ K, ∀ i, APd ((j-1) :: (rep i K ++ ks)) M_j` は落とせない。
+
+### 検討して駄目だった逃げ道
+1. `two N M` の `N ≠ nil` を `PayOnly M` に限る（枠になる 2 の記録の junk を nil に固定）
+   → 続き106 の通り `APd_twoPay` の重複場合の鎖 `twoIt N T m` で `two N (one A B)` が出るので不可。
+2. 添字を捨てて「文脈の junk はすべて JkJ」だけにする
+   → `APd ks V ↔ ∀ ctx(JkJ junk), GOK (plug ctx V)` は `GOK_all` そのもので、
+     構造帰納が `nil` の場合（塔）で閉じない（塔の木は部分項でない）。
+3. `AllD X := ∀ ks, APd ks X` を枠の条件にする → `APd` の定義が循環。
+   ℕ で階層化しても、枠の条件は仮説（負の位置）なので単調でなく、基底が空回りする。
+4. 木の集合 `Js` を固定して「`Js` の木だけからできた文脈」に制限する
+   → 塔は `Js` に閉じている（グループの junk はすべて `ctx` の junk か `N`）ので**塔は通る**が、
+     `one A B` の場合に `Js ∪ {A}` へ広げる必要があり、`GoodIn Js X → GoodIn (Js∪{A}) X`
+     （文脈が増える = 主張が強くなる）が出ないので閉じない。
+
+### 次にやるべきこと（案）
+- 4 の路線がいちばん惜しい。`Js` を「元の木 D の部分木すべて」に取れば `one A B` の
+  場合の `A` も最初から `Js` に入っているので広げる必要がない。
+  つまり `GOK_all` を「木 D を固定し、`D` の部分木からできた文脈と焦点について
+  同時に示す」形（`D` の構造帰納の外側にもう 1 段の帰納）に組み替えられないか。
+- あるいは `APd` の添字を「グループ列 `List ℕ`」にしたうえで、枠の 2 の記録の junk に要る
+  閉包を「グループ反復 `rep i k` の前置」だけに落とす整理ができないか
+  （= 塔のグループが枠の junk を再利用しないような文脈の正規形をとる）。
