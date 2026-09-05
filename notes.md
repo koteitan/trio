@@ -3124,3 +3124,69 @@ theorem msr_grp (k i m : ℕ) (ks : List ℕ) :
 
 （Mathlib の `Finsupp.Colex.lt_iff` で通る。）
 教訓: 「原理的に無理」と書く前に、一番小さい具体例を 1 本証明してみること。
+
+### 続き110 追記5（★ 確定した設計。実装中）
+
+`JkJ` から `TopOk` を外すと穴は `APd_all` の two の場合 1 個だけ（追記4）。
+それを埋める設計が確定したので記録する。
+
+#### 1. `JkJ` の制限（塔の junk を nil に落とすため）
+```
+JkJ (two N M) := JkJ N ∧ JkJ M ∧ (TopOk M ∨ N = Jk1.nil)
+```
+= 2 の記録の直上に 2 の記録を置いてよいのは**下側の junk が nil のとき**だけ。
+これで、積み重なった 2 の記録の枠の junk は最内の 1 枚を除いてすべて nil になり、
+塔のグループ `[fone N, ftwo nil, …, ftwo nil]` の junk は
+「木自身の junk `N`」と `nil` だけ ⟹ 追記2 の壁（枠の junk の閉包）が消える。
+
+#### 2. 添字を `List ℕ` に（`k :: ks` = 2 の記録 k 枚 + 1 の列 + ks。`true=0`, `false=1`）
+```
+APd []            V = GOK V
+APd (0 :: ks)     V = ∀ U, FrmJ ks U → APd ks U → APd ks (one U V)
+APd ((k+1) :: ks) V = ∀ m N, JkJ N → (TopOk V ∨ N = nil) →
+      (∀ i, APd (replicate i k ++ (k :: (replicate m 0 ++ ks))) N) →
+      APd (k :: (replicate m 0 ++ ks)) (two N V)
+```
+閉包が `replicate i k`（グループ反復）になっているのが要点。
+
+#### 3. 停止性（★ Lean で確認済み）
+`(cntF, length)` では落ちない。**要素の多重集合の colex 順序**を使う:
+```
+noncomputable def cntf (ks : List ℕ) : ℕ →₀ ℕ := (ks.map (fun k => Finsupp.single k 1)).sum
+noncomputable def msr (ks : List ℕ) : Colex (ℕ →₀ ℕ) := toColex (cntf ks)
+theorem msr_drop0 (ks) : msr ks < msr (0 :: ks)
+theorem msr_grp (k i m ks) : msr (replicate i k ++ (k :: (replicate m 0 ++ ks))) < msr ((k+1) :: ks)
+```
+`Finsupp.Colex.wellFoundedLT`（Mathlib）で `termination_by ks => msr ks` が通る。
+`import Mathlib.Data.Finsupp.WellFounded` が要る（本体への副作用は
+`refine ⟨by simp; omega, ?_⟩` の `omega` 1 箇所が過剰になるだけ）。
+
+#### 4. `GCtx` は `Prop` 引数を持つ
+最内が 2 の記録のときの条件 `TopOk V ∨ N = nil` は木 `V` に依存するので、
+`GCtx : Prop → List ℕ → List Frm → Prop` とし、`t` に「中に入る木が TopOk か」を渡す。
+```
+GCtx _ []            ctx = (ctx = [])
+GCtx _ (0 :: ks)     ctx = ∃ ctx' U, ctx = ctx' ++ [fone U] ∧ GCtx (TopOk U) ks ctx' ∧ …
+GCtx t ((k+1) :: ks) ctx = ∃ m ctx' N, ctx = ctx' ++ [ftwo N] ∧ (t ∨ N = nil) ∧
+                             GCtx False (k :: (replicate m 0 ++ ks)) ctx' ∧ JkJ N ∧ 閉包
+APd_iff : APd ks V ↔ ∀ ctx, GCtx (TopOk V) ks ctx → GOK (plug ctx V)
+```
+（`TopOk (one U V) = TopOk U`、`TopOk (two N V) = False` なので上の受け渡しで整合する。）
+`Rq` は常に真になり不要（名前だけ残して `trivial` にすれば呼び出し側は無傷）。
+
+#### 5. 文脈層も直す（`CtxXJ` / `CtxJ`）
+```
+CtxXJ [Frm.ftwo N] X = JkJ X ∧ (TopOk X ∨ N = Jk1.nil)
+CtxJ (Frm.ftwo N :: rest) = JkJ N ∧ (HdT rest ∨ N = Jk1.nil) ∧ CtxJ rest
+```
+
+#### 6. 新しく要る「重い」補題は 2 本だけ
+- `APd_twoNilGen` の一般化: `APd (k::ks) (two N nil)`。
+  塔はグループ全体の反復で、`snocY_mem`（dl=1）→ **`snocYd_mem`（dl=k+1）**に替える。
+- `AYdT` の一般化: 2 の記録の直上の荷を、積み重ねの添字 `(k+1)::ks` で。
+
+#### 状態
+- `lean/SmallX.lean`: `JkJ` から `TopOk` を外し `msr` を入れた版。**error 0 / sorry 1**（commit 済み）。
+- `lean/SmallY.wip`: 上の設計の 1〜4 を途中まで入れた版（`FrmJ`/`Rq`/`APd`/`GCtx`/`APd_cf`/`GCtx_cf`
+  まで書き換え済み、その先の `GCtx_CtxX` 以降と文脈層 5. が未着手）。
+- 残作業の見積り: 機械的な付け回し 600 行 + 重い補題 2 本で 300 行。
