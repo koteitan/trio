@@ -6813,3 +6813,53 @@ base `replicate (m+1) js.length ++ ks` で呼ぶ。
 
 次に試すなら測度そのもの（案(iii)）。Colex 多重集合を、
 「形の記号列」ではなく「塔の段数も込みの順序」に替えられるかを見る。
+
+### 続き127 追記2: `msr` の棚卸しと、`Small.lean` との比較で分かった構造
+
+#### `msr` を使う定義は 5 箇所だけ（再設計の影響範囲は小さい）
+
+```
+19839  APd0（案(iv) の名残。もう使わない）
+19873  APd
+19946  GCtx
+20058  GCtx_CtxOk
+20104  APd_iff
+```
+`msr_word` / `msr_grp` / `msr_drop0` はこの 5 つの `decreasing_by` にしか出てこない。
+**測度を替えるなら触るのはここだけ。**
+
+#### `Small.lean` が `false` の場合をどう通しているか
+
+```lean
+theorem APd_twoNilB (ks : List Bool) : APd (false :: ks) Jk1.nil :=
+  (APd_cf ks _).mpr (fun m U N hU hR hUk hN hNt =>
+    (APd_ct _ _).mp (APd_twoNilGen N hN _ hNt) U hU hR hUk)
+```
+`APd_twoNilGen N hN ks' hNt : APd (0 :: ks') (two N nil)` を直に使うだけ。
+**peel も入れ子も無い。**`List Bool` なので `false` が 1 段しか無いから。
+`List ℕ` 版は頭 k が任意なので `APd_twoNilGenK k` が要り、それを peel で作る。
+
+#### ★ 塔の `ftwo` 枠は nil。困るのは「木の入れ子の中の junk」だけ
+
+```
+ctxK j N m = ctxK j N (m-1) ++ (Frm.fone N :: List.replicate j (Frm.ftwo Jk1.nil))
+                                ^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                junk N を持つ   すべて nil
+```
+- **外側（ambient）の文脈**の junk は `hc` で良さが与えられているので問題ない。
+- 塔が**足す**のは nil の `ftwo` 枠だけ。だから `APd_twoNilNest`（junk 無しの入れ子）は通る。
+- **問題は木の入れ子そのものに junk が入る場合**（`nstL js`）。
+  木の展開が塔なので、塔の単位 `unitKL js N l` と文脈 `ctxKL js N m` が js を担ぐ。
+  そこで初めて js に「自分より高い base での継続性」が要る。
+
+#### したがって開いている問いは 1 つだけ
+
+```
+GOK (plug ctx (nstL js (two N nil)))  は、js が peel の語の族
+   ∀ w, (∀ x ∈ w, x ≤ level) → APd (level :: (w ++ ks)) js[i]
+だけを満たすとき、成り立つか？
+```
+成り立つなら証明の道具が足りないだけ。成り立たないなら `APd` の定義が
+`GCtx` を広く取りすぎている（= 到達しない文脈まで良いと言っている）。
+**次の人はここを `bms -d` で実測して決めるのが早い**（junk 入りの入れ子の
+実際の展開を見て、塔の単位に junk がどう現れるか）。
