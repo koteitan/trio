@@ -9106,3 +9106,41 @@ jk1 U ++ (l+1,1,0) ++ (l+2,2,0)(l+3,2,0) ++ (l+2,1,0) ++ jk1 (l+2) X
 
 で、極限列 `(l+3,2,0)` の**後ろに材料がある**（`snocYd_mem` は末尾にしか継げない）。
 合成（`APd`）で作るしかない。
+
+### 追記7: ★ 枠層の JkA 化が通り、#11 `P(4,2,0)` が出た
+
+`CtxJ` / `CtxXJ` / `FrmJ (_ :: _)` / `APd_cf` の ftwo フレーム junk が要求していた `JkJ` は、
+`JkT_plug`（＝ `Mono` と `WOk`）にしか使っていなかった。本当のガードは
+`CtxXJ [ftwo _]` の `TopOk` と `CtxJ (ftwo …)` の `HdT` だけ。全部 `JkA` に落とした。
+エラーは 33 → 14 → 9 → 5 → 0 で、全部機械的だった（4 ラウンド）。
+
+これで `APd_step` が**全深さで**「`JkA` の左兄弟」を許す。
+
+#11 は `bms` の通り `X[n] = Mtw R341 U375c (n+2)`。木は
+
+```
+Wtt   = two nil (two nil nil)
+AAn 0 = Wtt,  AAn (m+1) = one Wtt (AAn m)
+VVn 0 = nil,  VVn (n+1) = one nil (AAn n)
+jk1 l (VVn n) = [(l+1,1,0),(l+2,2,0),(l+3,2,0)] を歩幅 1 で n 個
+```
+
+`APd_AAn` は `APd_step (true::ks) (JkA_Wtt) trivial (APd_twoTwoNilGen ks) (APd_AAn m (true::ks))`。
+`APd_twoTwoNilGen ks : APd (true :: ks) (two nil (two nil nil))` が新しい土台で、
+`APd_twoNilGen`（`two N nil`）の 1 段上。塔は歩幅 2、各段 `two nil (otwJ m)` は
+`JkJ` なので `APd_all` で足りる。`snoc22_ctx` で末尾に継ぐ。
+
+### 残り #12〜#17 の見立て
+
+```
+#12 P(5,0,0)  単位 (4,2,0)(5,2,0) の平坦な繰り返し → two X_{m-1} (two nil nil)
+              ＝ APd_twoTwoNilGen の「左兄弟 N つき」版（hNall つき）が要る
+#13 P(5,1,0)  高さ 5 の吊るし → one nil (two nil (pay (two nil nil) B))
+#14 P(5,2,0)  delta 2、単位 (5,1,0)(6,2,0)(7,2,0)
+#15 P(6,0,0)  単位 (5,2,0) の平坦な繰り返し → two X_{m-1} nil の入れ子
+#16 P(6,1,0)  高さ 6 の吊るし
+#17 P(6,2,0)  delta 3。行376 の [2]
+```
+
+`#12` `#15` は `APd_twoTwoNilGen` / `APd_twoNilGen` の左兄弟一般化。
+`#13` `#16` は荷が極限列の**上**に来るので `snocYd_mem` が効かない（追記4）。
