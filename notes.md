@@ -7494,3 +7494,67 @@ closure（語の族）∀w, (∀x∈w,x≤k) → APd (k::(w++ks)) N
 ```
 **壁は「測度」から「移行の作業量」に変わった。**`APdL` が通った時点で、
 `msr_word` の上限という原理的な障害は無くなっている。
+
+### 続き129 追記3: ★★★★★ 段数版の基礎一式が通った。**旧設計で不可能だった補題が証明できた**
+
+`lean/SmallSI.wip`（commit 54bd5e6）、error 0 / sorry 0 / 全部 clean。
+
+#### 定義（最終形）
+
+```lean
+def APdL : ℕ → List ℕ → Jk1 → Prop
+  | 0, _, _ => True
+  | (n + 1), ks, V =>
+      APdL n ks V ∧                                   -- ★ 下方閉性を定義から出す
+      (match ks with
+        | [] => GOK V
+        | (0 :: ks') => ∀ U, FrmJ ks' U → (∀ S, APdL n S U) → APdL (n + 1) ks' (one U V)
+        | ((k+1) :: ks') => ∀ w0, (∀ x ∈ w0, x ≤ k) → ∀ N, JkJ N → (∀ S, APdL n S N) →
+            APdL (n + 1) (k :: (w0 ++ ks')) (two N V))
+termination_by n ks _ => (n, msr ks)
+
+def APdA (ks : List ℕ) (V : Jk1) : Prop := ∀ n, APdL n ks V     -- APd の置き換え
+def APdU (n : ℕ) (V : Jk1) : Prop := ∀ S : List ℕ, APdL n S V   -- 形に制限なし
+```
+**第 1 連言が要る理由:** `APdL_plug_repKL` を書くときに段数がずれる。
+下方閉性は負の位置のせいで**後から証明できない**（`APdL (n+1) → APdL n` の
+帰納が回らない）ので、定義に入れるしかない。
+
+#### 通ったもの（全部 clean）
+
+```
+APdL_bnil / APdL_ct / APdL_cS / APdL_down / APdU_down
+APdA_bnil : APdA [] V ↔ GOK V                    ★結論の強さは不変
+APdL_step  （旧 穴(B)）  .mp して当てるだけ
+APdL_two   （旧 穴(D)）  w0 := [] で 1 枚はがすだけ
+GCtxL / GCtxL_bnil / GCtxL_ct / GCtxL_cS / GCtxL_ct_any
+APdL_iff : APdL (n+1) ks V ↔ APdL n ks V ∧ ∀ ctx, GCtxL n (TopOk V) ks ctx → GOK (plug ctx V)
+JsOkL / JsOkL_snoc / JsOkL_down                  ★base も level も要らない
+GCtxL_ftwoRep
+GCtxL_repKL       ← ★旧設計で不可能だった補題（続き128 の「唯一の不等式」）
+APdL_plug_repKL   ← 塔の木。junk 一般。段数の帰納法で書く
+```
+
+#### 移行の作法（実証済み）
+
+- `APdL_iff` は既存 `APd_iff` の証明を**写して一発**（段数を持ち回るだけ）。
+- `GCtxL_repKL` は旧 `GCtx_repK` の写し。
+- 書き換え規則:
+```
+APd ks V                              →  APdL (n+1) ks V
+∀w,(∀x∈w,x≤k) → APd (k::(w++ks)) N    →  APdU n N          ★仮定が強くなる＝楽になる
+GCtx t ks ctx                         →  GCtxL n t ks ctx
+JsOk ks js b（3 引数）                 →  JsOkL n js（2 引数）
+```
+- **第 1 連言が要る補題は段数の帰納法で書く**（`APdL_plug_repKL` がその例）。
+
+#### 次
+
+```
+1. AYd / AYdT / AYdTK を段数版に写す
+2. APdL_twoNilNestL（k=0 の底）★ここが塞がるはず。L 系の道具
+   （wordJ_snoc_twoNKL / MidD_unitKL / hMy_unitKL / Mtwd_twrKL / plug_ctxKL_eq）は
+   すべて段数に依らない（GOK と行列の話）ので**そのまま使える**
+3. APdL_twoNilPeelL（帰納段は旧設計でも通っていた形）
+4. APdA_all / GOK_all を作り、既存の下流（rowJ_mem など）に繋ぐ
+```
