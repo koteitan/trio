@@ -21522,5 +21522,51 @@ theorem R375f5_mem : R375m ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375f5_mem
 
 
+/-! ### 続き111 #7 の 2 枚目 `P(2,2,1)(3,1,0)(4,2,0)(5,2,0)`
+
+`bms -d` によれば
+```
+(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)[n]
+  good part = P(2,2,1),  bad part = (3,1,0)(4,2,0),  bad root = 9,  delta = 2
+  [n] = Mtwd 2 (P ++ [(2,2,1)]) [(3,1,0),(4,2,0)] (n+1)
+```
+これは `R375_mem_gen` とまったく同じ形で、土台 `Y0` だけが
+`A ++ (1,1,0)(2,2,1)` から `P ++ (2,2,1)` に変わる。まず土台を切り出す。 -/
+
+/-- `(3,1,0)(4,2,0)(5,2,0)` は「歩幅 2 の塔」さえあればどんな土台にも継げる。 -/
+theorem U375tail_of_tower {Y0 : TrioSeq} (hne : Y0 ≠ [])
+    (htw : ∀ n : ℕ, Mtwd 2 Y0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0) :
+    Y0 ++ [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  have h := snocYd_mem (Y0 := Y0) (M := [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)])
+    (L := 3) (y := 2) (dl := 2) hne MidD_N375 (by decide) ?_ (by omega) (by omega) htw
+  · simpa using h
+  · intro t ht1 htl hlt hrec
+    simp only [List.length_cons, List.length_nil] at htl
+    have hj : t = 1 := by omega
+    subst hj
+    decide
+
+/-- `R375_mem_gen` を土台版から作り直したもの（同じ結論）。 -/
+theorem R375_mem_gen' {A : TrioSeq} (hA : Aok A) : A ++ U375a ∈ W 0 := by
+  have h := U375tail_of_tower
+    (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) (by simp)
+    (otw_tower_mem_gen hA)
+  simpa [U375a, List.append_assoc] using h
+
+/-- ★★★ 続き111 #7 の 2 枚目。塔だけに還元できた。 -/
+theorem R375g7_of_tower
+    (htw : ∀ n : ℕ, Mtwd 2 (R375m ++ [((2, 2, 1) : ℕ × ℕ × ℕ)])
+      [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0) :
+    R375m ++ U375b ∈ W 0 := by
+  have h := U375tail_of_tower (Y0 := R375m ++ [((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (by simp [R375m, R373, R344, R341, R338]) htw
+  simpa [U375b, List.append_assoc] using h
+
+#print axioms U375tail_of_tower
+#print axioms R375_mem_gen'
+#print axioms R375g7_of_tower
+
+
 end Small
 end TRIO
