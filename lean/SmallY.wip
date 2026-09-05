@@ -22245,6 +22245,39 @@ theorem jk1_nstL : ∀ (js : List Jk1) (X : Jk1) (l : ℕ),
         simp [List.length_cons]; omega]
       simp [twoRunL, List.append_assoc]
 
+theorem twoRunL_shift : ∀ (js : List Jk1) (l s : ℕ),
+    shiftr01 s 0 (twoRunL js l) = twoRunL js (l + s)
+  | [], l, s => by simp [twoRunL, shiftr01]
+  | (N :: js), l, s => by
+      show shiftr01 s 0 (jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: twoRunL js (l + 1))) = _
+      rw [shiftr01_append0, jk1_shift N l s]
+      show jk1 (l + s) N ++ (((l + 1 + s, 2 + 0, 0) : ℕ × ℕ × ℕ) ::
+        shiftr01 s 0 (twoRunL js (l + 1))) = _
+      rw [twoRunL_shift js (l + 1) s, show l + 1 + s = l + s + 1 from by omega]
+      simp [twoRunL]
+
+/-- 歩幅 `|js|+1` の単位。`js = replicate j nil` のとき `unitK j` に一致する。 -/
+def unitKL (js : List Jk1) (N : Jk1) (l : ℕ) : TrioSeq :=
+  ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: (twoRunL js (l + 1) ++ jk1 (l + 1 + js.length) N)
+
+theorem unitKL_cons (js : List Jk1) (N : Jk1) (l : ℕ) :
+    unitKL js N l
+      = ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: (twoRunL js (l + 1) ++ jk1 (l + 1 + js.length) N) := rfl
+
+theorem unitKL_eq (js : List Jk1) (N : Jk1) (l : ℕ) :
+    unitKL js N l
+      = ([((l + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ twoRunL js (l + 1)) ++ jk1 (l + 1 + js.length) N := by
+  simp [unitKL, List.append_assoc]
+
+theorem unitKL_shift (js : List Jk1) (N : Jk1) (l s : ℕ) :
+    shiftr01 s 0 (unitKL js N l) = unitKL js N (l + s) := by
+  show ((l + 1 + s, 1 + 0, 0) : ℕ × ℕ × ℕ) ::
+      shiftr01 s 0 (twoRunL js (l + 1) ++ jk1 (l + 1 + js.length) N) = _
+  rw [shiftr01_append0, twoRunL_shift js (l + 1) s, jk1_shift N (l + 1 + js.length) s,
+    show l + 1 + js.length + s = l + s + 1 + js.length from by omega,
+    show l + 1 + s = l + s + 1 from by omega]
+  simp [unitKL]
+
 /-- 歩幅 `j+1` の単位。`j = 0` は `twr`、`j = 1` は `unitC`、`j = 2` は `unitD`。 -/
 def unitK (j : ℕ) (N : Jk1) (l : ℕ) : TrioSeq :=
   ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: (twoRun (l + 1) j ++ jk1 (l + 1 + j) N)
@@ -22264,6 +22297,11 @@ theorem unitK_shift (j : ℕ) (N : Jk1) (l s : ℕ) :
     show l + 1 + j + s = l + s + 1 + j from by omega,
     show l + 1 + s = l + s + 1 from by omega]
   simp [unitK]
+
+/-- ★ 固定: `js = replicate j nil` のとき `unitKL` は `unitK` に一致する。 -/
+theorem unitKL_replicate_nil (j : ℕ) (N : Jk1) (l : ℕ) :
+    unitKL (List.replicate j Jk1.nil) N l = unitK j N l := by
+  simp only [unitKL, unitK, twoRunL_replicate_nil, List.length_replicate]
 
 def twrK (j : ℕ) (N : Jk1) : ℕ → Jk1
   | 0 => Jk1.nil
