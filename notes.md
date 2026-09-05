@@ -6308,3 +6308,67 @@ AYdTK           汚れなし ✓
 2. 塔の membership をどこから取るかを確かめる（APd 経由か、行列の機械だけか）
 3. 取れれば #17 → 行376 → 続き111 の 12 個
 ```
+
+### 続き124 追記1: #17 の依存を最後まで辿った → **案(iv) が唯一の道**
+
+「#17 は塔の道具だけで取れるのでは」を最後まで確かめた。**取れない。**理由を書く。
+
+#### `Small.lean` の #17 相当（`otwJ`）がなぜ通っているか
+
+```lean
+otwJ (n+1) = one nil (two nil (otwJ n))                  歩幅 2
+JkOk_otwJ (n+1) = ⟨trivial, trivial, JkJ_otwJ n, TopOk_otwJ n⟩
+```
+`Small.lean` の `JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M` に対し、
+**2 の記録の上が `otwJ n`（= `one …`）なので `TopOk` ✓**。だから通る。
+
+#### #17（歩幅 3）は通らない
+
+```lean
+otwJ3 (n+1) = one nil (two nil (two nil (otwJ3 n)))      歩幅 3
+JkOk_otwJ3 には JkJ (two nil (two nil (otwJ3 n))) が要る
+  → TopOk (two nil (otwJ3 n)) = False  ✗
+```
+**これがまさに「2 の記録の直上に 2 の記録」＝ 行376 の壁。**`Small.lean` の
+`R376_of_tower` のコメントにも同じことが書いてある。
+
+#### そして #17 は `GOK_all` を経由する
+
+```
+#17 → snocYd_mem (dl:=3) + 塔 → otw_tower3_mem → rowJ_mem
+    → GoodFb_wordJ → GOK_all → APd_all → APd_nil → APd_twoNilPeel（sorry）
+                                       → APd_nilT → APd_payA → AYdK（sorry）
+```
+`#print axioms` で確認済み: `SmallY.wip` の `rowJ_mem` は `sorryAx` を含む。
+（`Small.lean` の `rowJ_mem` は汚れていないが、あちらは `JkJ` が厳しいので `otwJ3` が作れない。）
+
+**つまり #17 は「JkJ を弱める」と「`GOK_all` が通る」の両方が要る。**
+塔の道具だけでは取れない。
+
+#### → 案(iv) が唯一の道
+
+```
+JkJ を弱める（済み。SmallY.wip）
+  ＋
+枠 junk を nil に限った GOK_all（= GCtx0 / APd0）で #17 の木 otwJ3 を通す
+  → otwJ3 の junk は全部 nil なので制限版で足りる（続き124 の bms 実測）
+  → 穴(B)(D) は「枠 junk が任意」から来るので、制限版では発生しない
+```
+**マネージャの案(iv) が正しい。**しかも (B)(D) 両方が同時に消える（判定基準 ✓）。
+
+#### 次にやること（案(iv) の実装）
+
+```
+1. GCtx0 / APd0 を定義（枠 junk = nil。closure 条件は消える）
+   APd0 : List ℕ → Jk1 → Prop
+     | [], V        => GOK V
+     | (0 :: ks), V => APd0 ks (Jk1.one Jk1.nil V)
+     | ((k+1) :: ks), V => ∀ m, APd0 (k :: (List.replicate m 0 ++ ks)) (Jk1.two Jk1.nil V)
+   ← 測度は msr のまま（枠条件が無いので減少は msr_drop0 / msr_grp だけ）
+2. APd0_iff / GCtx0 の対応（APd_iff の写し）
+3. GOK_all0 : 枠 junk が nil の木について GOK
+   （APd_all の写し。two の場合が APd_twoNilGenK 相当だが、枠が nil なので楽なはず）
+4. rowJ_mem0 → otw_tower3_mem → R375b_mem（#17）
+```
+**注意: 木そのものの junk（`otwJ3` の `nil`）と、文脈の枠の junk は別物。**
+`otwJ3` は木の junk が全部 nil なので、制限版の `GOK_all0` で足りる。
