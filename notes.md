@@ -4248,3 +4248,81 @@ APd_twoNilGenK の k+2      歩幅 k+1 の一般化（k = 0, 1 は済み）
 APd_twoK                   残作業5
 ```
 **`D(0)` から `APd_twoNilGenK 1` までが繋がった。**段階2 の縦の筋は通っている。
+
+## 続き114: 引き継ぎ（このセッションの終了時点）
+
+### 検証コマンド
+
+```
+# Small.lean（本体、緑）
+leanman check -C /home/koteitan/proofs/trio/lean /home/koteitan/proofs/trio/lean/Small.lean
+# SmallY.wip（リファクタ、.lean でないのでコピーして検査）
+cp /home/koteitan/proofs/trio/lean/SmallY.wip /tmp/SmallYchk.lean
+leanman check --backend lean -C /home/koteitan/proofs/trio/lean /tmp/SmallYchk.lean
+```
+
+### 状態
+
+| ファイル | 状態 |
+|---|---|
+| `lean/Small.lean` | **green / exit 0 / sorry なし**。続き111 の #1〜#5 と道具（追記13 参照）|
+| `lean/SmallY.wip` | **error 0 / sorry 3 本**。停止性・文脈層・`t` 付け回し・閉包強化すべて済み |
+| `lean/SmallX.lean` | 触っていない（マネージャが c6cb317 で保全した前任者の版）|
+
+### 残る穴 3 本（行番号は上のコマンドの出力で確認すること）
+
+```lean
+-- 21022  残作業4b。未着手。
+theorem AYdK : ∀ (k : ℕ) (ks : List ℕ) (V : Jk1), JkJ V → APd ((k+1) :: ks) V →
+    ∀ C : TrioSeq, Bok C → APd ((k+1) :: ks) (Jk1.pay V C)
+
+-- 21419  APd_twoNilGenK の k+2。k=0（APd_twoNilGen）と k=1（APd_twoNilGenW）は閉じている。
+--        目標: APd ((k+1) :: (List.replicate m 0 ++ ks)) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))
+
+-- 21440  残作業5。4a（上）が出れば同じ道具で書ける。
+theorem APd_twoK (k) (ks) (N M) (h : JkJ (Jk1.two N M)) (hNall) (hMall) :
+    APd ((k+1) :: ks) (Jk1.two N M)
+```
+
+### 次の一手（`APd_twoNilGenK` の `k+2`）
+
+`k = 1` は `APd_twoNilGenW`（歩幅 2、塔 `twrC`）で閉じた。`k+2` は**歩幅 k+2** の同じ議論:
+
+```
+k = 0  歩幅 1  グループ (h,1,0)                   → twr   （APd_twoNilGen、既存）
+k = 1  歩幅 2  グループ (h,1,0)(h+1,2,0)          → twrC  （APd_twoNilGenW、今回）
+k = 2  歩幅 3  グループ (h,1,0)(h+1,2,0)(h+2,2,0) → twrC の 2 の記録 2 枚版
+```
+
+`twrC` を `k` でパラメータ化する（`otwK k n` 的なもの）。変わるのは
+- `unitC N l` の 2 の記録が `k` 枚（`unitC_shift` / `MidD_unitC` / `hMy_unitC` も同様に一般化）
+- `Mtwd 2` → `Mtwd (k+1)`、`snocYd_mem (dl := 2)` → `(dl := k+1)`
+- `ctxD` の対が `[fone N, ftwo nil, ftwo nil, …]`（`ftwo nil` が k 枚）
+- `GCtx_rep2` の形の勘定が `replicate (m+1) 1 ++ ks` → `replicate (m+1) k ++ ks`
+
+`APd_twoNilGenW` の証明は `APd_twoNilGen` を機械的に写しただけなので、
+同じ写しをもう一度やれば `k` 一般版が出るはず。**先に `k = 2` を 1 本書いて、
+何が変わるかを見るのが安全**（`k` 一般を先に設計しないこと）。
+
+### 段階3・4
+
+```
+段階3: otwJ3 相当（twrC の k=2 版）+ snocYd_mem (dl := 3) → R375b_mem（#17）
+段階4: SmallY.wip を Small.lean にマージ
+       → #6〜#17 の 12 個 + シート行376 が一斉に落ちる
+       （#7 #9 #12 #15 は R375f*_of_step に hstep を渡すだけ、
+         行376 は R376_of_tower に塔を渡すだけ）
+```
+マージ時の宣言差分は 追記13 に取ってある（`Small.lean` にあって `SmallY.wip` に無い 42 個）。
+
+### このセッションで学んだこと（後任へ）
+
+1. **「この道具では書けない」は「証明できない」ではない。**私はこのセッションで 2 回
+   「無理」と判断して 2 回とも撤回した（`rowJ_mem` の土台一般化、`SegA` の `head1`）。
+   どちらも**測ってから**撤回した（3 行で一般化できた / `head1` の消費者を数えたら 1 個だった）。
+2. **展開は必ず `bms -d`。**`twrB` と `twrC` は junk を nil にすると区別できない。
+   手計算では絶対に気付けなかった。
+3. **定義を強めるときは、それを消費する補題の仮定も同じだけ強める。**追記17 で
+   「機械的に直らない」と書いたのは、消費側を弱いままにしていたから（追記19 で訂正）。
+4. **`GCtx` / `APd` は整礎再帰なので定義的に簡約しない。**`exact h` が通らず
+   `rw [GCtx_ct]` が要る場面が何度もある。
