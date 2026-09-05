@@ -5732,6 +5732,9 @@ hd     は APd_cS（ftwo 枠）にあった条件
 （`hd` 除去で楽になるのは `APd_cS` を使う側、つまり `AYdTK` の鎖の方だった。
 そちらは実際に楽になって穴(C) が閉じた。）
 
+**教訓: 「この変更であの穴も塞がるのでは」と考えたら、まずどちらの枠（`fone` / `ftwo`）の
+話かを見る。**枠が違えば、どれだけ大きな変更でも効かない。
+
 #### 穴(B) に残る道
 
 ```
@@ -5823,3 +5826,49 @@ theorem GCtx_ftwoRepL (js : List Jk1)
 
 **ここが `APd_twoNilPeel` を閉じるまでの最後の山**。これが通れば
 `GCtx_repKL` / `APd_plug_repKL` / `APd_twoNilNestL` は既存の写しで済むはず。
+
+### 続き122 追記9: ★ `js` の添字と level の対応（`GCtx_ftwoRepL` / `APd_twoNilPeel` の設計の要）
+
+`GCtx_ftwoRepL` を書く前に、`js` の各要素がどの level の closure を要求されるかを詰めた。
+**ここが合わないと全部崩れるので、先に紙で確かめた。**
+
+#### `GCtx_ftwoRepL` 側（`ctx ++ js.map Frm.ftwo` の形）
+
+`js = [A, B]` の例（`ctx ++ [ftwo A, ftwo B]`、形は `2 :: ks`）:
+```
+GCtx_cS が [ftwo B] を head 2 ではがす → B の closure は level 1、内側は GCtx False (1 :: …)
+GCtx_cS が [ftwo A] を head 1 ではがす → A の closure は level 0、内側は GCtx False (0 :: …)
+```
+**つまり `js[i]` は level `i` の closure を要求される。**
+（木の側では `nstL [A,B] X = two A (two B X)` で A が外側。）
+
+#### `APd_twoNilPeel` 側（head が減り js が伸びる）
+
+`k₀ = 2` の追跡:
+```
+head 2, js = []                 木 two N nil
+ ↓ APd_cS 1 が N'₁（closure level 1）を渡す
+head 1, js = [N'₁]              木 nstL [N'₁] (two N nil)
+ ↓ APd_cS 0 が N'₂（closure level 0）を渡す
+head 0, js = [N'₂, N'₁]         木 nstL [N'₂, N'₁] (two N nil)
+```
+底（head 0）で `js[0] = N'₂` は level 0、`js[1] = N'₁` は level 1。**`GCtx_ftwoRepL` の要求と一致する。**
+
+一般には **head が `k` のとき `js[i]` は level `k + i`** で、これは帰納段で保たれる:
+```
+新 js[0]   = N'        level k       = k + 0        ✓
+新 js[i+1] = 旧 js[i]  level (k+1)+i = k + (i+1)    ✓
+```
+
+#### だから `APd_twoNilPeel` の仮定はこう書く
+
+```lean
+(hjs : ∀ (i : ℕ) (hi : i < js.length), JkJ js[i] ∧
+        ∀ (w : List ℕ), (∀ x ∈ w, x ≤ k + i) → APd ((k + i) :: (w ++ ks)) js[i])
+```
+底（k = 0）で `GCtx_ftwoRepL` が要求する形にちょうどなる。
+
+#### `GCtx_ftwoRepL` は右からの帰納法
+
+`js = js' ++ [Nl]` で `GCtx_cS`（m := 0）を当てる。`List.reverseRecOn` を使う。
+`js.getLast` が形の先頭（いちばん大きい head）に対応する。
