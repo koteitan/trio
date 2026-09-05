@@ -6614,3 +6614,71 @@ level i の語の族は entries ≤ i なので、その外側。
 2. だめなら `JsOk` を「level i の junk は entries ≤ (js.length) の語まで許す」に強めて、
    `APd` の closure 族も同じだけ広げられるかを測る（`msr_word` の上限に当たるはず）。
 3. それでもだめなら、`APd_nil_head` を `APd_twoNilPeel` 経由でなく直接証明する道を探す。
+
+### 続き126: 引き継ぎ。`AYdK` は閉じた。残る 1 本の**設計上の綱引き**を特定した
+
+#### 状態
+
+```
+lean/SmallY.wip   error 0 / sorry 1   （本線。lean/Small.lean は一度も触っていない）
+残る sorry        APd_twoNilPeel の k+1 の場合（1 箇所）
+汚れている定理    GOK_all / R373_mem / R374_mem / R373a_mem / R375_mem / hang2rec
+                  （すべてこの 1 本経由。他は全部 clean）
+```
+
+#### この回で通したもの
+
+1. `AYdT` の `TopOk Z` は死んでいた（`AYdT_hstep` の `hTt` が未使用、
+   `APd_chainT` の `hTop` はガード除去後の `JkJ` に不要）→ `AYdK` の k=0 が閉じた
+2. `APd_payAll`（base 一様版の荷吊るし）が sorry 無しで通った
+3. ★ `APd` / `GCtx` の族を `replicate m 0` から**語**（entries ≤ k）に揃えた。
+   停止性はちょうど `msr_word`。これで `AYdT_hstepK` が 1 行になり、
+   **`AYdK` が全 k で閉じた**（`AYdTK` の `∀ ks` が落ちた）
+4. `AYdT2` / `APd_chainT2` / `AYdT_hstep2`（142 行）を削除
+
+#### ★ 残る 1 本は「綱引き」であって、片側だけ直しても動かない
+
+```
+                        APd_twoNilPeel   AYdK (= AYdTK)
+hd ガードあり（旧）          ○               × TopOk Z が要る
+hd ガードなし（今）          ×               ○
+```
+- ガードあり: `TopOk V ∨ N = nil` から peel の junk が `nil` に潰れる → 塔が組める
+- ガードなし: `AYdT_hstepK` が `.mp` 側で `TopOk (pay Z Y) ∨ N' = nil` を**供給**する側に回る。
+  `TopOk (pay Z Y) = TopOk Z` で `Z` は任意、`N' = twoIt N T n` は n≥1 で `two _ _` ≠ nil。
+
+#### なぜ `nstL`（junk 一般の入れ子）では届かないか
+
+木の側は通る。詰まるのは**塔**:
+```
+GCtx_repKL は GCtx_ftwoRepL を base  replicate (m+1) js.length ++ ks  で呼ぶ
+→ level i の junk に  APd (i :: (w ++ replicate (m+1) js.length ++ ks)) js[i]  を要求
+→ base に自分より高い記録 js.length > i が入る。level i の語の族（entries ≤ i）の外
+```
+`nil` のときだけ `APd_nil_head` が任意 base で効くので見えていなかった。
+**塔は「level j の記録が繰り返す文脈」なので、その中の junk には
+自分より高い base での継続性が要る。これは語の族では出せない。**
+
+#### 試した／却下した案
+
+- **closure の族をさらに広げる**: `msr_word` が上限。entries ≤ k を超えると停止性が壊れる
+- **closure を base 一様（`∀ ks', APd (k :: ks') N`）にする**:
+  `APd_twoNilPeel` は通るが `AYdT_hstepK` が供給できない
+  （`APd ((k+1) :: ks') T` を全 ks' で要求してしまう）。
+  ただし **`APd_payAll` は base 一様版として既に通っている**ので、
+  `AYdTK` を base 一様仮定（742df7b の版）に戻せば整合する可能性がある。← **次の一手候補**
+- **`APd_ct` の U を base 一様にする**: 停止性が壊れる（`APd ks' U` が任意測度）
+- **U の条件を `JkOk U` だけにして後から `APd_all` で供給**: 停止性は通るが
+  `APd_nil` ⊂ `APd_all` の循環（`APd_all` は木の構造帰納、U は任意の木）
+
+#### 次の一手（推奨順）
+
+1. **closure を base 一様にして、`AYdTK` を 742df7b の版（`∀ ks, APd ((k+1)::ks) Z`）に戻す。**
+   消費側は `APd_payAll` が既に base 一様なので繋がるはず。
+   `APd_payA`（単一形）が要る箇所（`APd_nilT` の枠 junk `U`）だけが残る問題になる。
+   **測り方: 定義を変えて `leanman check` 1 回、エラー数を数える。**
+2. だめなら `hd` ガードを戻し、`AYdTK` に `TopOk Z` を戻したうえで、
+   `APd_payA` の `(k+1)::ks` を `GCtx` の `t`（= `TopOk U`）から取る道を設計する。
+   `GCtx_ct` は既に `GCtx (TopOk U) ks ctx'` を持っている。
+3. 目標（#17・行376）だけなら junk は出ない（bms で測定済み）ので、
+   `APd_twoNilPeel` を「junk が nil の場合」に限った版で先に取る手もある。
