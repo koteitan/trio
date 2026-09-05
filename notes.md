@@ -9685,3 +9685,39 @@ Z = two N M    （M ≠ nil。#14 #15 #16 #17）
 `TwoOk (two N nil)` は `N` が `TopOk` なら `APd_twoTwoGen` の写しで出るはず
 （近似列 `W_k = one N (two N' W_{k-1})` が `JkJ` になる）。だが #15 が要るのは
 `N = two ... nil` で `TopOk N` が偽なので届かない。
+
+### 追記26: `OneOk` の閉包で `T = S(6,1,0)` の 18 個中 17 個
+
+`TwoOk_onePayNil` を `Wt` で一般化して閉包の形にした:
+
+```
+OneOk Wt := ∀ U, TwoQ U → TwoOk (one U Wt)     -- 「one U · の右の子になれる」
+OneOk_nil                                       -- TwoOk_oneNil
+OneOk_pay  (JkA Wt) (OneOk Wt) : ∀ Y, Bok Y → OneOk (pay Wt Y)
+OneOk_oneNil (JkA Wt) (OneOk Wt) : OneOk (one Wt nil)   -- APnil_gen0 を 1 段深い文脈で
+```
+`OneOk_oneNil` は `APnil_gen0` を文脈 `ctx ++ [ftwo N, fone U]` で使う。
+`APnil_gen0` はもともと文脈一般なので、`JkT` さえ供給すれば深さは自由。
+
+これで `T` の字が入る:
+```
+NT = one nil (two nil (one (two nil nil) (one nil nil)))
+jk1 2 NT = (3,1,0)(4,2,0)(5,2,0)(5,1,0)(6,1,0)
+```
+`Q` `S` と同じ playbook で 17 本（`T(0,0,0)`〜`T(7,0,0)`、`T(7,1,0)` を除く全部）。
+
+新しく要った道具:
+```
+hang6_gen / hang6_seg / U375a2_mem_gen / SegA_U375a2   （高さ 6 の吊るしの台座一般化）
+ZZT n = one (ZZT (n-1)) (one nil nil)   T(6,0,0) の (5,1,0)(6,1,0) の横並べ
+YT n  = one (YT (n-1)) nil              T(7,0,0) の (6,1,0) の横並べ
+```
+
+**`OneOk` の閉包に入らない形**（＝ 追記25 の壁のまま）:
+```
+one nil X （X ≠ nil、右に伸びる階段）   T(7,1,0) / S(6,2,0)
+two N M   （M ≠ nil）                  #14 #15 #16 #17
+```
+`OneOk` は「左に伸びる」`one Wt nil` では閉じるが、「右に伸びる」`one nil X` では
+閉じない。右に伸ばすと荷を深さ 2 に吊るす必要があり、そこは `AYs` の
+`∀ V` 量化が 1 段深い文脈で再発する。
