@@ -21838,5 +21838,14 @@ theorem R375f7_mem : R375m ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375f7_mem
 
 
+/-- ★★★★★ 続き111 #6 `P(2,2,1)`。`otwL_tower_mem` の `n = 0` そのもの。 -/
+theorem R375f6_mem : R375m ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := otwL_tower_mem Aok_R338 0
+  rw [Mtwd_zero, ← R375m_eq] at h
+  exact h
+
+#print axioms R375f6_mem
+
+
 end Small
 end TRIO
