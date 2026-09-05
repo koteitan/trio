@@ -3737,3 +3737,52 @@ theorem APd_twoK' : ∀ (k : ℕ) (ks : List ℕ) (N V : Jk1), JkJ N → JkJ V �
 `Small.lean` で作った `rowJ_mem_gen` / `R375_mem_gen` は **`GOK` の帰結であって前提ではない**。
 `GOK (one nil (two nil (two nil nil)))` が行375 の `P` に対応するのは事実だが、
 `R375_mem_gen` からは `GOK` は出せない（`.seg 0` を適用した後の弱い主張だから）。
+
+### 続き113 追記5: 段階2 の設計が確定した（が実装は未了）。★ ここが引き継ぎ点
+
+#### 正しい帰納法（`k` についての 2 本同時）
+
+```
+A(k) : ∀ ks, APd (k :: ks) Jk1.nil
+D(k) : ∀ ks N W, JkJ N → JkJ W → (TopOk W ∨ N = nil) → 閉包(N,k,ks) → [W の APd 条件]
+                → APd (k :: ks) (Jk1.two N W)
+```
+
+- `A(0)` = `APd_nilT`（既存）、`D(0)` の `W = nil` の場合 = `APd_twoNilGen`（既存）。
+- `A(k+1)` ⟸ `D(k)`（`APd_cS` で開くだけ）。
+- `D(k+1)` ⟸ `D(k)` を `W := two N W`・junk `nil` で使う。
+  `TopOk (two _ _) = False` なので junk は `nil` に強制され、
+  その閉包 `∀ i, APd (replicate i k ++ (k :: ks'')) nil` は `A(k)` から出る。**循環しない。**
+
+つまり `k` についての帰納法で閉じる。**残る本当の穴は `D(0)` の `W ≠ nil` の場合だけ**:
+
+```
+APd (0 :: ks) (Jk1.two N W)      W = two nil (two nil (… (two N₀ nil)))
+```
+
+#### `D(0)` が `APd_twoNilGen`（W = nil）より難しい理由
+
+`APd_twoNilGen` の証明（20785-20925）は `pu` / `pk` / `seg` の 3 分岐がすべて同じ形:
+
+```
+hbase0 : 基底の語が W 0            （hbaseV.pu / .pk / .seg から）
+htw    : ∀ n, Mtw hbase0 (colN … N) n ∈ W 0
+                                   （Mtw_twr + 階段 hstG m から）
+snocY_mem (L := a + dep ctx0 + 1 + 1) (y := 2) htw
+                                   → 2 の記録 (·,2,0) を 1 本継ぐ
+```
+
+`W = nil` なので、2 の記録の**右には何も無い**。だから `snocY_mem` で 1 列足すだけで済む。
+`W ≠ nil` だと `jk1 l (two N W) = jk1 l N ++ (l+1,2,0) :: jk1 (l+1) W` となり、
+`(·,2,0)` の右に `jk1 (l+1) W` が付く。`snocY_mem` は末尾 1 列しか足せないので使えない。
+必要なのは **「2 の記録 + その上の木」をまとめて継ぐ版**（`hang2rec` の木レベル版）。
+
+使う道具の当たり: `wordJ_snoc_twoN` / `wordJ_snoc_plug_twr` / `Mtw_twr` / `twr` /
+`MidD_colN` がすべて `two N nil` 専用の形になっているので、`two N W` 版を作る必要がある。
+
+#### 一番小さい具体例も同じ壁
+
+`APd_twoNilGenK 1 [] N` を開くと `APd (0 :: ks'') (two nil (two N nil))` になり、
+これは既に `W = two N nil ≠ nil`。つまり **`k = 1` の具体例でも `D(0)` の一般形が要る**。
+「一般形の前に具体を 1 本」は、ここでは `W = two N nil`（1 段だけ）を
+`D(0)` の形で書くのが最小の具体例になる。
