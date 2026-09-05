@@ -22509,5 +22509,133 @@ theorem R375f11_mem : R375m ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375f11_mem
 
 
+/-! ### ★ `P(4,2,0)(5,2,0)`（続き111 #12 の鎖の 3 番目）
+
+```
+X = P(4,2,0)(5,2,0)
+X[1] = P(4,2,0)(5,1,0)(6,2,0)(7,2,0)(6,2,0)
+X[2] = …(7,1,0)(8,2,0)(9,2,0)(8,2,0)
+→ X[n] = Mtwd 2 R341 [(3,1,0),(4,2,0),(5,2,0),(4,2,0)] (n+1)
+```
+
+塔の木は `TT n = one nil (two Wtt (TT (n-1)))`。`two Wtt ·` は
+`APd_cf` により `APd (false :: ks) ·` から出て、左兄弟 `Wtt` の hNall は
+`APd_twoTwoNilGen` そのもの。 -/
+
+def TT : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (Jk1.two Wtt (TT n))
+
+theorem hNallW (kk : List Bool) : ∀ j : ℕ,
+    APd (List.replicate j true ++ (true :: kk)) Wtt := by
+  intro j
+  rw [rep_true_cons]
+  exact APd_twoTwoNilGen _
+
+theorem APd_TT : ∀ (n : ℕ) (ks : List Bool), APd (false :: ks) (TT n)
+  | 0, ks => APd_nil (false :: ks)
+  | (n + 1), ks => by
+      refine APd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil) trivial
+        (APd_nil (false :: ks)) ?_
+      rw [APd_ct]
+      intro U hU hR hUk
+      exact (APd_cf (false :: ks) (TT n)).mp (APd_TT n (false :: ks)) 0 U Wtt
+        (by simpa using hU) (by simpa using hR) (by simpa using hUk) JkA_Wtt (hNallW _)
+
+theorem GOK_TT : ∀ n : ℕ, GOK (TT n)
+  | 0 => GOK_nil
+  | (n + 1) => by
+      refine (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+        ((APd_bnil _).mpr GOK_nil) ?_)
+      rw [APd_ct]
+      intro U hU hR hUk
+      exact (APd_cf [] (TT n)).mp (APd_TT n []) 0 U Wtt (by simpa using hU)
+        (by simpa using hR) (by simpa using hUk) JkA_Wtt (hNallW _)
+
+theorem jk1_TT : ∀ (n l : ℕ),
+    jk1 l (TT n) = (List.range n).flatMap
+      (fun k => shiftr01 (2 * k) 0
+        [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simp [TT, jk1]
+  | (n + 1), l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (Jk1.two Wtt (TT n))) = _
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) Wtt ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1) (TT n)))) = _
+      simp only [Wtt]
+      rw [jk1_twoNilTwoNil (l + 1), jk1_TT n (l + 1 + 1), List.range_succ_eq_map,
+        List.flatMap_cons, List.flatMap_map]
+      simp only [jk1, List.nil_append, Nat.mul_zero, shiftr01_zero, shiftr01, List.map_cons,
+        List.map_nil, List.cons_append, Function.comp_def]
+      refine congrArg _ ?_
+      rw [show ((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) = ((l + 2, 2, 0) : ℕ × ℕ × ℕ) from by
+        simp only [Prod.mk.injEq, and_true, and_self]]
+      refine congrArg _ ?_
+      rw [show ((l + 1 + 2, 2, 0) : ℕ × ℕ × ℕ) = ((l + 3, 2, 0) : ℕ × ℕ × ℕ) from by
+        simp only [Prod.mk.injEq, and_true, and_self]]
+      refine congrArg _ (congrArg _ ?_)
+      apply List.flatMap_congr
+      intro k _
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        and_true, and_self]
+      omega
+
+/-- `P(4,2,0)(5,2,0)` の塔の単位 `(3,1,0)(4,2,0)(5,2,0)(4,2,0)`。 -/
+def U375f : TrioSeq :=
+  [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((4, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375f : MidD 4 U375f where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375f, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375f, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375f, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl <;> decide
+
+theorem TT_tower (n : ℕ) :
+    R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [TT n]) = Mtwd 2 R341 U375f n := by
+  rw [wordJ_singleton, colJ, jk1_TT n 2, Mtwd, R341, U375f]
+  simp [List.append_assoc]
+
+theorem TT_tower_mem (n : ℕ) : Mtwd 2 R341 U375f n ∈ W 0 := by
+  rw [← TT_tower n]
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [TT n])) :=
+    GOK_TT n [] WOk_nil GoodFb_wordJ_nil
+  exact rowJ_mem_genF Aok_R338 (by simpa using hG)
+
+/-- ★★★★★ `P(4,2,0)(5,2,0)`
+`= (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(4,2,0)(5,2,0)`。 -/
+theorem R375g12_mem :
+    R375m ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocYd_mem (Y0 := R341) (M := U375f) (L := 3) (y := 2) (dl := 2)
+    (by simp [R341, R338]) MidD_U375f (by simp [U375f, entry]) ?_ (by omega) (by omega)
+    TT_tower_mem
+  · rw [← R375m_eq3]
+    simpa [U375c, U375f, List.append_assoc] using h
+  · intro t ht1 htl hlt hrec
+    simp only [U375f, List.length_cons, List.length_nil] at htl
+    rcases t with _ | _ | _ | _ | t
+    · omega
+    · exact absurd (hrec 3 (by omega) (by simp [U375f])) (by simp [U375f, entry])
+    · exact absurd hlt (by simp [U375f, entry])
+    · show (2 : ℕ) ≤ entry U375f 1 3
+      simp [U375f, entry]
+    · omega
+
+#print axioms R375g12_mem
+
+
 end Small
 end TRIO
