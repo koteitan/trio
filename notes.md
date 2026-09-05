@@ -6218,3 +6218,45 @@ APd (0 :: ks) V = ∀ U, … → APd ks U → APd ks (Jk1.one U V)
 - 別の整礎順序（形の多重集合ではないもの）を見つける
 
 **ここから先は設計のやり直しなので、次の担当はマネージャと相談してから着手すること。**
+
+### 続き123 追記3: `#print axioms` による棚卸し（何が本当に証明できているか）
+
+`sorry` が 2 本ある状態で、どの定理が本当に汚れているかを機械的に確かめた。
+（今日の教訓4「linter を読む」と同じ趣旨。exit code が 1 なので `#print axioms` は有効。）
+
+```
+TRIO.Small.AYdTK             [propext, Classical.choice, Quot.sound]              ← 汚れなし ✓
+TRIO.Small.APd_twoNilNest    [propext, Classical.choice, Quot.sound]              ← 汚れなし ✓
+TRIO.Small.APd_twoNilGen     [propext, Classical.choice, Quot.sound]              ← 汚れなし ✓
+TRIO.Small.APd_twoNilGenK    [propext, sorryAx, …]   ← APd_twoNilPeel の sorry（新規）
+TRIO.Small.APd_nilT          [propext, sorryAx, …]   ← AYdK の sorry（前からある）
+TRIO.Small.APd_nil           [propext, sorryAx, …]
+TRIO.Small.APd_all           [propext, sorryAx, …]
+TRIO.Small.GOK_all           [propext, sorryAx, …]
+```
+
+**読み方:**
+- **`AYdTK` は完全に証明できている。**穴(C) は本当に閉じた。今日の最大の成果はこれ。
+- `APd_twoNilNest`（歩幅 j+1 の塔の本体）も汚れなし。
+- `APd_nilT` / `APd_nil` / `APd_all` / `GOK_all` は**ガード除去の前から** `AYdK` 経由で汚れていた。
+  ガード除去で新しく汚れたのは `APd_twoNilGenK`（`APd_twoNilPeel` 経由）だけ。
+- つまり**ガード除去は「独立な穴を 1 個増やした」が、「前から通っていたものを壊した」わけではない。**
+
+### 続き123 追記4: 穴(D) は「`hd` を外した代償」であり、避けられない
+
+(D) を `APd_twoNilPeel` 側で回避できないか見たが、できない。
+
+```
+hd を残す → JkJ の鎖 twoIt nil T n（¬TopOk T）が JkJ を出る → 穴(C)
+hd を外す → APd_cS.mpr が任意の N' を扱う必要 → nstL js に任意 junk → 穴(D)
+```
+`hd` は `JkJ` の `two` の条件を映したものなので、`JkJ` の条件を外す以上 `hd` も外すしかない。
+そして `JkJ` の条件を外さないと穴(C) が閉じない（続き122）。
+**(C) と (D) はトレードオフではなく、(C) を閉じた代償が (D)。**
+
+`ctxKL` 以外の文脈で塔 `twrKL` を実現できないかも見たが、
+`plug (ctxKL js N m) N = nstL js (appJ N (twrKL js N m))` の形が塔から一意に決まるので、
+`ftwo js[i]` 枠は避けられない。
+
+**したがって (B)(D) は本当に同じ 1 つの問題**（枠 junk の base 一様性）であり、
+続き123 追記2 の計算により**多重集合測度では塞がらない**。
