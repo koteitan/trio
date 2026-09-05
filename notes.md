@@ -3818,3 +3818,47 @@ twrB N n  … 1 の列 + junk N + 2 の記録  を歩幅 2 で n 段   → snocY
 次にやること: `wordJ_snoc_twoN` / `wordJ_snoc_plug_twr` / `colJ_plug_twoN` /
 `colJ_plug_twr` の `two N (two N₀ nil)` 版を作り、`APd_twoNilGen` の 3 分岐
 （`pu` / `pk` / `seg`）を `snocY_mem` → `snocYd_mem (dl := 2)` に替えて写す。
+
+### 続き113 追記7: 引き継ぎ（段階2 の残り）
+
+#### 今の状態
+
+- `lean/Small.lean` … 緑・sorry なし。続き111 の #1〜#5 が入っている。**触っていない。**
+- `lean/SmallY.wip` … `leanman check --backend lean` で **error 0 / sorry 3 本**。
+  ```
+  cp lean/SmallY.wip /tmp/SmallYchk.lean
+  leanman check --backend lean -C /home/koteitan/proofs/trio/lean /tmp/SmallYchk.lean
+  ```
+- 穴（行番号は上のコマンドの出力に出る）:
+  - `AYdK`（残作業4b）… `AYdT` の `k` 一般化
+  - `APd_twoNilGenK` の `k+1`（残作業4a）… 内側の目標は
+    `APd (k :: (List.replicate m 0 ++ ks)) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))`
+  - `APd_twoK`（残作業5）… 4a が出れば同じ道具で書ける
+
+#### 次の一手（順番）
+
+1. `colJ_plug_twoN` / `wordJ_snoc_twoN` / `colJ_plug_twr` / `wordJ_snoc_plug_twr` の
+   `two Jk1.nil (two N Jk1.nil)` 版を作る。計算は
+   ```
+   colJ a b (plug (ctx ++ [fone V]) (two nil (two N nil)))
+     = colJ a b (plug ctx V) ++ ((l+1,1,0) :: ((l+2,2,0) :: (jk1 (l+2) N ++ [(l+3,2,0)])))
+       ただし l = a + dep ctx + 1
+   ```
+2. `APd_twoNilGen`（`W = nil`、3 分岐 `pu`/`pk`/`seg`）を写し、
+   `twr` → `twrB`、`snocY_mem` → `snocYd_mem (dl := 2)` に替える。
+   `snocYd_mem` は `hMy`（`M` の頭以外は行 1 が `y` 以上）が増えるので、
+   単位 `unitB N l` の 2 列目以降について確かめる必要がある。
+3. `k` を一般化するときは歩幅が `k+1` になる（`twrB` を 2 の記録 `k` 枚版に拡張）。
+
+#### ★ 行列の言葉での裏取りは済んでいる
+
+`k = 1`・junk すべて `nil` の場合は、行列では
+```
+A ++ (1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)     （= 行375 の P の尻尾）
+```
+であり、これは `Small.lean` の **`R375_mem_gen : Aok A → A ++ U375a ∈ W 0`**（緑）そのもの。
+塔は `Mtwd 2 (A ++ [(1,1,0),(2,2,1)]) [(3,1,0),(4,2,0)] n`（= `otwJ` = `twrB nil`）で、
+最後の `(5,2,0)` は `snocYd_mem (dl := 2)` が付ける。
+**`SmallY` 側でやることは、この同じ議論を `GoodFb` の 3 段（`pu`/`pk`/`seg`）で書くこと**である。
+行列 1 本ではなく「どの語の右にも継げる」を示す必要があるので strictly 強いが、
+骨格と塔は同じものを使える。
