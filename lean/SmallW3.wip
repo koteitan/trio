@@ -17756,16 +17756,16 @@ theorem CtxXJ_snoc1 : ∀ (ctx : List Frm) (U W : Jk1), JkJ W → CtxXJ (ctx ++ 
       rw [e]
       exact CtxXJ_snoc1 rest U W h
 
-theorem CtxXJ_snoc2 : ∀ (ctx : List Frm) (U W : Jk1), JkJ W → (TopOk W ∨ U = Jk1.nil) →
+theorem CtxXJ_snoc2 : ∀ (ctx : List Frm) (U W : Jk1), JkJ W →
     CtxXJ (ctx ++ [Frm.ftwo U]) W
-  | [], _, _, h, h2 => ⟨h, h2⟩
-  | (f :: rest), U, W, h, h2 => by
+  | [], _, _, h => h
+  | (f :: rest), U, W, h => by
       have e : CtxXJ ((f :: rest) ++ [Frm.ftwo U]) W = CtxXJ (rest ++ [Frm.ftwo U]) W := by
         cases rest with
         | nil => cases f <;> rfl
         | cons g gs => cases f <;> cases g <;> rfl
       rw [e]
-      exact CtxXJ_snoc2 rest U W h h2
+      exact CtxXJ_snoc2 rest U W h
 
 theorem CtxXJ_snoc1_of : ∀ (ctx : List Frm) (U W : Jk1), CtxXJ (ctx ++ [Frm.fone U]) W → JkJ W
   | [], _, _, h => h
@@ -17778,7 +17778,7 @@ theorem CtxXJ_snoc1_of : ∀ (ctx : List Frm) (U W : Jk1), CtxXJ (ctx ++ [Frm.fo
       exact CtxXJ_snoc1_of rest U W h
 
 theorem CtxXJ_snoc2_of : ∀ (ctx : List Frm) (U W : Jk1), CtxXJ (ctx ++ [Frm.ftwo U]) W →
-    JkJ W ∧ (TopOk W ∨ U = Jk1.nil)
+    JkJ W
   | [], _, _, h => h
   | (f :: rest), U, W, h => by
       have e : CtxXJ ((f :: rest) ++ [Frm.ftwo U]) W = CtxXJ (rest ++ [Frm.ftwo U]) W := by
@@ -17813,12 +17813,12 @@ theorem CtxX_snoc2 (ctx : List Frm) (U W : Jk1) :
       · intro hx
         show CtxXJ (f :: rest) W
         rw [← h]
-        exact CtxXJ_snoc2 ctx U W hx.1 hx.2
+        exact CtxXJ_snoc2 ctx U W hx
 
 theorem CtxXJ_of_JkJhd : ∀ (ctx : List Frm) (X : Jk1), JkJ X → TopOk X → CtxXJ ctx X
   | [], _, h, _ => h
   | [Frm.fone _], _, h, _ => h
-  | [Frm.ftwo _], _, h, h2 => ⟨h, Or.inl h2⟩
+  | [Frm.ftwo _], _, h, _ => h
   | (_ :: g :: rest), X, h, h2 => by
       rw [CtxXJ_cons]
       exact CtxXJ_of_JkJhd (g :: rest) X h h2
@@ -17826,7 +17826,7 @@ theorem CtxXJ_of_JkJhd : ∀ (ctx : List Frm) (X : Jk1), JkJ X → TopOk X → C
 theorem JkJ_of_CtxXJ : ∀ (ctx : List Frm) (X : Jk1), CtxXJ ctx X → JkJ X
   | [], _, h => h
   | [Frm.fone _], _, h => h
-  | [Frm.ftwo _], _, h => h.1
+  | [Frm.ftwo _], _, h => h
   | (_ :: g :: rest), X, h => by
       rw [CtxXJ_cons] at h
       exact JkJ_of_CtxXJ (g :: rest) X h
@@ -17854,7 +17854,7 @@ theorem CtxX_one : ∀ (ctx : List Frm) (X T : Jk1), CtxX ctx X → JkJ T → Ct
       | nil =>
           cases f with
           | fone _ => exact ⟨JkJ_of_CtxXJ _ X hX, hT⟩
-          | ftwo _ => exact ⟨⟨hX.1, hT⟩, hX.2⟩
+          | ftwo _ => exact ⟨hX, hT⟩
       | cons g gs =>
           have hX' : CtxXJ (f :: g :: gs) X := hX
           rw [CtxXJ_cons] at hX'
@@ -17894,12 +17894,9 @@ theorem CtxJ_snoc : ∀ (ctx : List Frm) (X : Jk1), CtxJ ctx → CtxXJ ctx X →
   | (Frm.ftwo N :: rest), X, hc, hf => by
       have hX : CtxXJ rest X := by
         cases rest with
-        | nil => exact (hf : JkJ X ∧ (TopOk X ∨ N = Jk1.nil)).1
+        | nil => exact (hf : JkJ X)
         | cons g gs => rwa [CtxXJ_cons] at hf
-      refine ⟨hc.1, ?_, CtxJ_snoc rest X hc.2.2 hX⟩
-      cases rest with
-      | nil => exact (hf : JkJ X ∧ (TopOk X ∨ N = Jk1.nil)).2
-      | cons g gs => cases g <;> exact hc.2.1
+      exact ⟨hc.1, CtxJ_snoc rest X hc.2 hX⟩
 
 theorem CtxOk_snoc : ∀ (ctx : List Frm) (X : Jk1), CtxOk ctx → CtxX ctx X →
     CtxOk (ctx ++ [Frm.fone X])
@@ -17914,7 +17911,7 @@ theorem CtxOk_snoc : ∀ (ctx : List Frm) (X : Jk1), CtxOk ctx → CtxX ctx X �
 
 theorem CtxJ_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxJ ctx → CtxXJ ctx U → JkJ N →
     CtxJ (ctx ++ [Frm.fone U, Frm.ftwo N])
-  | [], U, N, _, hU, hN => ⟨hU, hN, Or.inl trivial, trivial⟩
+  | [], U, N, _, hU, hN => ⟨hU, hN, trivial⟩
   | (Frm.fone M :: rest), U, N, hc, hU, hN => by
       refine ⟨hc.1, CtxJ_snoc12 rest U N hc.2 ?_ hN⟩
       cases rest with
@@ -17923,16 +17920,13 @@ theorem CtxJ_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxJ ctx → CtxXJ ctx U
   | (Frm.ftwo M :: rest), U, N, hc, hU, hN => by
       have hU' : CtxXJ rest U := by
         cases rest with
-        | nil => exact (hU : JkJ U ∧ (TopOk U ∨ M = Jk1.nil)).1
+        | nil => exact (hU : JkJ U)
         | cons g gs => rwa [CtxXJ_cons] at hU
-      refine ⟨hc.1, ?_, CtxJ_snoc12 rest U N hc.2.2 hU' hN⟩
-      cases rest with
-      | nil => exact (hU : JkJ U ∧ (TopOk U ∨ M = Jk1.nil)).2
-      | cons g gs => cases g <;> exact hc.2.1
+      exact ⟨hc.1, CtxJ_snoc12 rest U N hc.2 hU' hN⟩
 
 theorem CtxOk_snoc12 : ∀ (ctx : List Frm) (U N : Jk1), CtxOk ctx → CtxX ctx U → JkJ N →
     CtxOk (ctx ++ [Frm.fone U, Frm.ftwo N])
-  | [], U, N, hc, hU, hN => ⟨hU, hN, Or.inl trivial, trivial⟩
+  | [], U, N, hc, hU, hN => ⟨hU, hN, trivial⟩
   | (Frm.fone M :: rest), U, N, hc, hU, hN => by
       have hU' : CtxXJ (Frm.fone M :: rest) U := hU
       refine ⟨hc.1, CtxJ_snoc12 rest U N hc.2 ?_ hN⟩
@@ -17956,7 +17950,7 @@ theorem HdT_snoc_cons (g : Frm) (gs : List Frm) (N : Jk1) :
 
 theorem CtxJ_snoc2 : ∀ (ctx : List Frm) (N : Jk1), CtxJ ctx → CtxXJ ctx TwoNil → JkJ N →
     CtxJ (ctx ++ [Frm.ftwo N])
-  | [], N, _, _, hN => ⟨hN, Or.inl trivial, trivial⟩
+  | [], N, _, _, hN => ⟨hN, trivial⟩
   | (Frm.fone M :: rest), N, hc, hx, hN => by
       refine ⟨hc.1, CtxJ_snoc2 rest N hc.2 ?_ hN⟩
       cases rest with
@@ -17965,17 +17959,9 @@ theorem CtxJ_snoc2 : ∀ (ctx : List Frm) (N : Jk1), CtxJ ctx → CtxXJ ctx TwoN
   | (Frm.ftwo M :: rest), N, hc, hx, hN => by
       have hx' : CtxXJ rest TwoNil := by
         cases rest with
-        | nil => exact (hx : JkJ TwoNil ∧ (TopOk TwoNil ∨ M = Jk1.nil)).1
+        | nil => exact (hx : JkJ TwoNil)
         | cons g gs => rwa [CtxXJ_cons] at hx
-      have hd : HdT (rest ++ [Frm.ftwo N]) ∨ M = Jk1.nil := by
-        cases rest with
-        | nil =>
-            refine Or.inr ?_
-            rcases (hx : JkJ TwoNil ∧ (TopOk TwoNil ∨ M = Jk1.nil)).2 with h | h
-            · exact absurd h not_TopOk_TwoNil
-            · exact h
-        | cons g gs => rw [HdT_snoc_cons]; exact hc.2.1
-      exact ⟨hc.1, hd, CtxJ_snoc2 rest N hc.2.2 hx' hN⟩
+      exact ⟨hc.1, CtxJ_snoc2 rest N hc.2 hx' hN⟩
 
 theorem CtxOk_snoc2 : ∀ (ctx : List Frm) (N : Jk1), ctx ≠ [] → CtxOk ctx →
     CtxXJ ctx TwoNil → JkJ N → CtxOk (ctx ++ [Frm.ftwo N])
