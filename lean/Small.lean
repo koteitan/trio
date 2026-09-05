@@ -17407,6 +17407,20 @@ theorem JkA_of_JkJ : ∀ N : Jk1, JkJ N → JkA N
   | Jk1.one N M, h => ⟨JkA_of_JkJ N h.1, JkA_of_JkJ M h.2⟩
   | Jk1.two N M, h => ⟨JkA_of_JkJ N h.1, JkA_of_JkJ M h.2.1⟩
 
+/-- 字の先頭段に置ける最小の条件: 質量が妥当で、先頭段が 2 の記録でない。
+`JkOk` より弱い（`JkOk` は `one` の中身にガード付きの `JkJ` を要求する）。 -/
+def JkT (N : Jk1) : Prop := JkA N ∧ TopOk N
+
+theorem TopOk_of_JkOk : ∀ N : Jk1, JkOk N → TopOk N
+  | Jk1.nil, _ => trivial
+  | Jk1.pay N _, h => TopOk_of_JkOk N h.1
+  | Jk1.one N _, h => TopOk_of_JkOk N h.1
+  | Jk1.two _ _, h => absurd h (by simp [JkOk])
+
+theorem JkA_of_JkOk (N : Jk1) (h : JkOk N) : JkA N := JkA_of_JkJ N (JkJ_of_JkOk N h)
+
+theorem JkT_of_JkOk (N : Jk1) (h : JkOk N) : JkT N := ⟨JkA_of_JkOk N h, TopOk_of_JkOk N h⟩
+
 theorem TopOk_of_PayOnly : ∀ W : Jk1, PayOnly W → TopOk W
   | Jk1.nil, _ => trivial
   | Jk1.pay N _, h => TopOk_of_PayOnly N h.1
@@ -17618,7 +17632,22 @@ def colJ (a b : ℕ) (N : Jk1) : TrioSeq := ((a + 1, b + 1, 1) : ℕ × ℕ × �
 def wordJ (a b : ℕ) (ws : List Jk1) : TrioSeq := ws.flatMap (colJ a b)
 
 /-- 語の各字の荷はすべて `Bok`。 -/
-def WOk (ws : List Jk1) : Prop := ∀ N ∈ ws, JkOk N
+def WOk (ws : List Jk1) : Prop := ∀ N ∈ ws, JkT N
+
+/-- 語の各字が `JkOk`（ガード付きの強い版）。`GoodFb_wordJ` はこちらが要る。 -/
+def WJ (ws : List Jk1) : Prop := ∀ N ∈ ws, JkOk N
+
+theorem WOk_of_WJ {ws : List Jk1} (h : WJ ws) : WOk ws := fun N hN => JkT_of_JkOk N (h N hN)
+
+theorem WJ_nil : WJ [] := fun _ h => by simp at h
+
+theorem WJ_singleton {N : Jk1} (hN : JkOk N) : WJ [N] := by
+  intro M hM
+  simp only [List.mem_singleton] at hM
+  subst hM; exact hN
+
+theorem WJ_of_append_left {ws1 ws2 : List Jk1} (h : WJ (ws1 ++ ws2)) : WJ ws1 :=
+  fun N hN => h N (List.mem_append_left _ hN)
 
 theorem WOk_nil : WOk [] := fun _ h => by simp at h
 
@@ -17634,11 +17663,16 @@ theorem WOk_of_append_left {ws1 ws2 : List Jk1} (h : WOk (ws1 ++ ws2)) : WOk ws1
 theorem WOk_singleton {N : Jk1} (hN : JkOk N) : WOk [N] := by
   intro M hM
   simp only [List.mem_singleton] at hM
+  subst hM; exact JkT_of_JkOk _ hN
+
+theorem WOk_singletonT {N : Jk1} (hN : JkT N) : WOk [N] := by
+  intro M hM
+  simp only [List.mem_singleton] at hM
   subst hM; exact hN
 
 theorem WOk_replicate {N : Jk1} (hN : JkOk N) (n : ℕ) : WOk (List.replicate n N) := by
   intro M hM
-  rw [List.eq_of_mem_replicate hM]; exact hN
+  rw [List.eq_of_mem_replicate hM]; exact JkT_of_JkOk _ hN
 
 /-- 背骨のフレーム。`fone U` は「左兄弟 `U` + 1 の列」、
 `fotw U` は「左兄弟 `U` + 1 の列 + 2 の記録」。 -/
@@ -17971,18 +18005,21 @@ theorem wordJ_ge (a b : ℕ) (ws : List Jk1) : ∀ x ∈ wordJ a b ws, a + 1 ≤
   obtain ⟨N, -, hx⟩ := hx
   exact colJ_ge a b N x hx
 
-theorem colJ_mono {a b : ℕ} {N : Jk1} (hN : JkJ N) : Mono (colJ a b N) := by
+theorem colJ_monoA {a b : ℕ} {N : Jk1} (hN : JkA N) : Mono (colJ a b N) := by
   intro x hx
   simp only [colJ, List.mem_cons] at hx
   rcases hx with rfl | h
   · show 1 ≤ b + 1; omega
-  · exact jk1_mono N (JkA_of_JkJ N hN) (a + 1) x h
+  · exact jk1_mono N hN (a + 1) x h
+
+theorem colJ_mono {a b : ℕ} {N : Jk1} (hN : JkJ N) : Mono (colJ a b N) :=
+  colJ_monoA (JkA_of_JkJ N hN)
 
 theorem wordJ_mono {a b : ℕ} {ws : List Jk1} (hw : WOk ws) : Mono (wordJ a b ws) := by
   intro x hx
   simp only [wordJ, List.mem_flatMap] at hx
   obtain ⟨N, hN, hx⟩ := hx
-  exact colJ_mono (JkJ_of_JkOk N (hw N hN)) x hx
+  exact colJ_monoA (hw N hN).1 x hx
 
 theorem wordJ_nil (a b : ℕ) : wordJ a b [] = [] := rfl
 
@@ -18049,16 +18086,19 @@ theorem not_le1_two {M : TrioSeq} {p r q l : ℕ}
 /-- ★ 記録（行 1 が 1 以上）から、木の junk の列へは行 1 の鎖が届かない。
 2 の記録を含む木では、その左に高さ `l` の 1 の列があること（`Grd`）が要る。 -/
 theorem not_le1_jk1 : ∀ (N : Jk1) (M : TrioSeq) (p q0 l : ℕ),
-    (JkOk N ∨ (JkA N ∧ Grd M p q0 l)) →
+    (JkT N ∨ (JkA N ∧ Grd M p q0 l)) →
     1 ≤ entry M 1 p → p < q0 → q0 + (jk1 l N).length ≤ M.length →
     (∀ (r t : ℕ), t < (jk1 l N).length → entry M r (q0 + t) = entry (jk1 l N) r t) →
     ∀ t, t < (jk1 l N).length → ¬ le1 M p (q0 + t)
   | Jk1.nil, M, p, q0, l, _, _, _, _, _ => by simp [jk1]
   | Jk1.pay N Y, M, p, q0, l, hN, hp1, hpq, hlen, hent => by
-      have hY : Bok Y := by rcases hN with h | ⟨h, -⟩ <;> exact h.2
-      have hNs : JkOk N ∨ (JkA N ∧ Grd M p q0 l) := by
+      have hY : Bok Y := by
+        rcases hN with h | ⟨h, -⟩
+        · exact h.1.2
+        · exact h.2
+      have hNs : JkT N ∨ (JkA N ∧ Grd M p q0 l) := by
         rcases hN with h | ⟨h, hg⟩
-        · exact Or.inl h.1
+        · exact Or.inl ⟨h.1.1, h.2⟩
         · exact Or.inr ⟨h.1, hg⟩
       have hlenp : (jk1 l (Jk1.pay N Y)).length = (jk1 l N).length + Y.length :=
         jk1_length_pay l N Y
@@ -18105,13 +18145,13 @@ theorem not_le1_jk1 : ∀ (N : Jk1) (M : TrioSeq) (p q0 l : ℕ),
         have := le1_lower_bound hroot p (q0 + (jk1 l N).length + u) hle' (by omega) (by omega)
         omega
   | Jk1.one N M', M, p, q0, l, hN, hp1, hpq, hlen, hent => by
-      have hNs : JkOk N ∨ (JkA N ∧ Grd M p q0 l) := by
+      have hNs : JkT N ∨ (JkA N ∧ Grd M p q0 l) := by
         rcases hN with h | ⟨h, hg⟩
-        · exact Or.inl h.1
+        · exact Or.inl ⟨h.1.1, h.2⟩
         · exact Or.inr ⟨h.1, hg⟩
       have hJM' : JkA M' := by
         rcases hN with h | ⟨h, -⟩
-        · exact JkA_of_JkJ M' h.2
+        · exact h.1.2
         · exact h.2
       have hlenp : (jk1 l (Jk1.one N M')).length
           = (jk1 l N).length + 1 + (jk1 (l + 1) M').length := jk1_length_one l N M'
@@ -18158,7 +18198,7 @@ theorem not_le1_jk1 : ∀ (N : Jk1) (M : TrioSeq) (p q0 l : ℕ),
       obtain ⟨⟨hJN, hJM⟩, r, v, hpr, hrq0, hr1, hr0, hvl, hrge⟩ :
           (JkA N ∧ JkA M') ∧ Grd M p q0 l := by
         rcases hN with h | ⟨h, hg⟩
-        · exact absurd h (by simp [JkOk])
+        · exact absurd h.2 (by simp [TopOk])
         · exact ⟨h, hg⟩
       have hsplit : jk1 l (Jk1.two N M')
           = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M') := rfl
@@ -18304,7 +18344,7 @@ theorem le1_zposJ (Y0 : TrioSeq) (a b : ℕ) (ws1 ws3 : List Jk1) (N : Jk1) :
 
 /-- 字の junk（木）の列は記録の行 1 の子孫ではない。 -/
 theorem not_le1_treeJ (Y0 : TrioSeq) (a b : ℕ) (hb : 1 ≤ b) (ws1 ws3 : List Jk1)
-    {N : Jk1} (hN : JkOk N) (t : ℕ) (ht : t < (jk1 (a + 1) N).length) :
+    {N : Jk1} (hN : JkT N) (t : ℕ) (ht : t < (jk1 (a + 1) N).length) :
     ¬ le1 (MzJ Y0 a b (ws1 ++ N :: ws3)) Y0.length
       (Y0.length + 1 + (wordJ a b ws1).length + (t + 1)) := by
   set M := MzJ Y0 a b (ws1 ++ N :: ws3) with hM
@@ -18384,7 +18424,7 @@ theorem rise_wordJ (Y0 : TrioSeq) (a b k : ℕ) (hb : 1 ≤ b) {ws : List Jk1} (
   | (N :: ws2), ws1, ws3, hws => by
       have hws' : ws = (ws1 ++ [N]) ++ ws2 ++ ws3 := by rw [hws]; simp
       have hws'' : ws = ws1 ++ N :: (ws2 ++ ws3) := by rw [hws]; simp
-      have hN : JkOk N := hw N (by rw [hws]; simp)
+      have hN : JkT N := hw N (by rw [hws]; simp)
       have ih := rise_wordJ Y0 a b k hb hw ws2 (ws1 ++ [N]) ws3 hws'
       rw [wordJ_cons, wordJ_cons, List.length_append, List.range_add, List.map_append,
         List.map_map]
@@ -20833,17 +20873,17 @@ theorem GOK_all : ∀ (T : Jk1), JkOk T → GOK T
 
 /-! ### 語版と、階段の塔 -/
 
-theorem GoodFb_wordJ : ∀ ws : List Jk1, WOk ws → GoodFb (fun a b => wordJ a b ws) := by
+theorem GoodFb_wordJ : ∀ ws : List Jk1, WJ ws → GoodFb (fun a b => wordJ a b ws) := by
   intro ws
   induction ws using List.reverseRecOn with
   | nil => intro _; exact GoodFb_wordJ_nil
   | append_singleton ws N ih =>
       intro hw
-      have hw' : WOk ws := WOk_of_append_left hw
-      exact GOK_all N (hw N (by simp)) ws hw' (ih hw')
+      have hw' : WJ ws := WJ_of_append_left hw
+      exact GOK_all N (hw N (by simp)) ws (WOk_of_WJ hw') (ih hw')
 
 /-- ★★★★★ `R338` の上に、木の字の語をどれでも継げる。 -/
-theorem rowJ_mem (ws : List Jk1) (hw : WOk ws) :
+theorem rowJ_mem (ws : List Jk1) (hw : WJ ws) :
     R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
   have h := ((GoodFb_wordJ ws hw).seg 0).reapp P0 BaseOk_zero 0 R338
     (LwB_of_base ⟨Aok_R338, rfl⟩)
@@ -20866,7 +20906,7 @@ theorem stair_tower (n : ℕ) :
 /-- 階段の塔はすべて `W 0`。 -/
 theorem stair_tower_mem (n : ℕ) : Mtw R341 [((3, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
   rw [← stair_tower n]
-  exact rowJ_mem [stairJ n] (WOk_singleton (JkOk_stairJ n))
+  exact rowJ_mem [stairJ n] (WJ_singleton (JkOk_stairJ n))
 
 /-- ★★★★★ シート行373 `R344 (4,2,0) = psi(W_w*psi_1(W_2))`。 -/
 theorem R373_mem : R344 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
@@ -21128,7 +21168,7 @@ theorem otw_tower (n : ℕ) :
 theorem otw_tower_mem (n : ℕ) :
     Mtwd 2 R341 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
   rw [← otw_tower n]
-  exact rowJ_mem [otwJ n] (WOk_singleton (JkOk_otwJ n))
+  exact rowJ_mem [otwJ n] (WJ_singleton (JkOk_otwJ n))
 
 theorem MidD_N375 : MidD 4 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] where
   ne := by simp
@@ -21389,7 +21429,7 @@ theorem R375f15_of_step
 
 `GoodFb.seg 0` の `reapp` は `LwB P0 0 A`（＝ `Aok A`）さえあれば通る。 -/
 
-theorem rowJ_mem_gen {A : TrioSeq} (hA : Aok A) (ws : List Jk1) (hw : WOk ws) :
+theorem rowJ_mem_gen {A : TrioSeq} (hA : Aok A) (ws : List Jk1) (hw : WJ ws) :
     A ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 ws) ∈ W 0 := by
   have h := ((GoodFb_wordJ ws hw).seg 0).reapp P0 BaseOk_zero 0 A (LwB_of_base ⟨hA, rfl⟩)
   simpa using h
@@ -21405,7 +21445,7 @@ theorem otw_tower_mem_gen {A : TrioSeq} (hA : Aok A) (n : ℕ) :
     Mtwd 2 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
       [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
   rw [← otw_tower_gen A n]
-  exact rowJ_mem_gen hA [otwJ n] (WOk_singleton (JkOk_otwJ n))
+  exact rowJ_mem_gen hA [otwJ n] (WJ_singleton (JkOk_otwJ n))
 
 /-- ★★ 行375 の一様版: **どんな `Aok A` にも** `P` の接尾辞 `U375a` が継げる。 -/
 theorem R375_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375a ∈ W 0 := by
@@ -21490,7 +21530,7 @@ theorem SegA_U375a : SegA 0 U375a where
         Mtwd 2 (A' ++ shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
           (shiftr01 s 0 [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]) n ∈ W 0 := by
       intro n
-      have hrow := ((GoodFb_wordJ [otwJ n] (WOk_singleton (JkOk_otwJ n))).seg 0).reapp
+      have hrow := ((GoodFb_wordJ [otwJ n] (WJ_singleton (JkOk_otwJ n))).seg 0).reapp
         P hP s A' (by simpa using hA')
       rw [otw_tower_gen_s A' s n] at hrow
       exact hrow
