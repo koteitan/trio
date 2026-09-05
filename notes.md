@@ -5620,3 +5620,39 @@ methodology §3 に入れた教訓の実例がここで出た。
 
 なお段階2（`fone` 枠に荷閉包）も同じ形で外れた（初回 20 → 直すと `AYd` の鎖で循環）。
 **2 回とも `.mp` 側（枠を当てる側／条件を供給する側）に負担が回るときに起きている。**
+
+### 続き122 追記3: `nstL` / `twoRunL` を入れた（error 0）。次は `unitK` → `unitKL` の写し
+
+commit f73ec8a。**一発で通った**（7 回目）。
+
+```lean
+def nstL : List Jk1 → Jk1 → Jk1                    -- 入れ子の各段に任意の junk
+  | [], X => X
+  | (N :: js), X => Jk1.two N (nstL js X)
+
+def twoRunL : List Jk1 → ℕ → TrioSeq               -- junk を挟む 2 の記録の並び
+  | [], _ => []
+  | (N :: js), l => jk1 l N ++ ((l + 1, 2, 0) :: twoRunL js (l + 1))
+
+theorem jk1_nstL : jk1 l (nstL js X) = twoRunL js l ++ jk1 (l + js.length) X
+-- 固定用（j=0,1,2 の example と同じ趣旨）
+theorem nstL_replicate_nil    : nstL (List.replicate j Jk1.nil) X = nst j X
+theorem twoRunL_replicate_nil : twoRunL (List.replicate j Jk1.nil) l = twoRun l j
+JkJ_nstL / TopOk_nstL_two も入れた
+```
+
+#### 次にやること（`unitK` 族の写し。歩幅は `|js| + 1`）
+
+```lean
+unitKL js N l = ((l+1,1,0)) :: (twoRunL js (l+1) ++ jk1 (l + 1 + js.length) N)
+twrKL js N : ℕ → Jk1
+  | 0 => nil
+  | (n+1) => one nil (nstL js (appJ N (twrKL js N n)))
+ctxKL js N m = (js の ftwo フレーム列) ++ m×(fone N :: js の ftwo フレーム列)
+```
+`unitK j N l = unitKL (List.replicate j Jk1.nil) N l` を `example` で固定してから進めること。
+`js` の各 junk には `JkJ` と closure（`ftwo` 枠なので `GCtx_cS` が要求する）が要る。
+`APd_twoNilPeel` の帰納段では、その closure は `hcl'`（`APd_cS` が渡してくる）で足りるはず。
+
+`MidD_unitKL` / `hMy_unitKL` は junk の列が入るぶん条件が増えるが、
+`jk1_ge` / `jk1_mono` で押さえられる（`unitK` のときと同じ形）。
