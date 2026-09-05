@@ -21231,5 +21231,13 @@ theorem R375c_mem : R375m ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375c_mem
 
 
+/-- ★ 続き111 #2 `P(1,1,0)`。展開は `P ++ P↑1 ++ P↑2 ++ …`（delta 1、bad root = 根）。
+`Lv 1 0 P = Aok P` なので `Lv_snoc` 一発。 -/
+theorem R375f2_mem : R375m ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 R375m Aok_R375m
+
+#print axioms R375f2_mem
+
+
 end Small
 end TRIO
