@@ -5745,3 +5745,39 @@ hd     は APd_cS（ftwo 枠）にあった条件
         ks の頭が 0 なら APd_payT で出る。頭が ≥ 1 のときが問題（= AYdK 自身）。
         AYd を「頭 0 の ks に限る」形に制限できれば閉じるかもしれない。要調査
 ```
+
+### 続き122 追記7: `hMy_unitKL` が通った（`nstL` 系でいちばん難しいところ）
+
+追記4 に書いた見通し（junk の列は直後の 2 の記録が自分以下の高さなので記録になれない）を
+そのまま形式化して通った。
+
+```lean
+theorem twoRunL_rec_row1 (js) (hjs : ∀ M ∈ js, JkA M) (l u) :
+    u < (twoRunL js l).length →
+    (∀ i, u < i → i < (twoRunL js l).length →
+      entry (twoRunL js l) 0 u < entry (twoRunL js l) 0 i) →
+    2 ≤ entry (twoRunL js l) 1 u
+-- js の帰納法。twoRunL (N::js) l = jk1 l N ++ ((l+1,2,0) :: twoRunL js (l+1)) を
+-- A ++ B に割り、u < A.length のときは「添字 A.length の 2 の記録が高さ l+1 で、
+-- jk1_ge から entry 0 u ≥ l+1」なので記録の仮定と矛盾。
+
+theorem hMy_unitKL (js) (hjs) (N) (l) : …（snocYd_mem の hMy の junk 一般版）
+```
+
+つまずいた点は 2 つだけ（どちらも 1 行）:
+- `entry_append_right` はこのファイルでは**明示引数**版が見えている（`entry_append_right A B i j`）
+- `List.length_append` は暗黙引数なので `List.length_append A B` と書けない（`by simp` で置く）
+
+### `nstL` 系の残り（次の人はここから。全部 `ctxK` 系の写し）
+
+```
+ctxKL / gKL / gKL_succ / plug_ctxKL / gKL_eq_appJ / plug_ctxKL_eq
+colJ_plug_twrKL / wordJ_snoc_plug_twrKL
+colJ_plug_twoNKL / wordJ_snoc_twoNKL
+rep_head_cons は既存でよい
+GCtx_ftwoRepL / GCtx_repKL / APd_plug_repKL   ← js の各 junk の closure が要る
+APd_twoNilNestL                                ← APd_twoNilNest の写し
+→ APd_twoNilPeel の帰納段が閉じる → sorry 1（AYdK だけ）
+```
+`js = replicate j nil` での固定補題を一緒に入れること（`nstL_replicate_nil` /
+`twoRunL_replicate_nil` / `unitKL_replicate_nil` / `twrKL_replicate_nil` は既に入っている）。
