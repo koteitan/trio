@@ -23681,6 +23681,95 @@ decreasing_by
       | exact msr_drop0 _
       | exact msr_word _ _ _ (by assumption)
 
+
+theorem GCtxL_ct_any (n : ℕ) {t t' : Prop} {ks : List ℕ} {ctx : List Frm} :
+    GCtxL n t (0 :: ks) ctx → GCtxL n t' (0 :: ks) ctx := by
+  rw [GCtxL_ct, GCtxL_ct]; exact id
+
+/-- ★ 穴(B) だった `APd_step`。base 一様なので `.mp` するだけ。 -/
+theorem APdL_step (n : ℕ) (ks : List ℕ) {U V : Jk1} (hU : FrmJ ks U)
+    (hUall : ∀ S : List ℕ, APdL n S U) (h : APdL (n + 1) (0 :: ks) V) :
+    APdL (n + 1) ks (Jk1.one U V) := (APdL_ct n ks V).mp h U hU hUall
+
+/-- ★ 穴(D) だった `APd_twoK`。`w0 := []` で 1 枚はがすだけ。 -/
+theorem APdL_two (n k : ℕ) (ks : List ℕ) {N M : Jk1} (hN : JkJ N)
+    (hNall : ∀ S : List ℕ, APdL n S N) (h : APdL (n + 1) ((k + 1) :: ks) M) :
+    APdL (n + 1) (k :: ks) (Jk1.two N M) := by
+  have h0 := (APdL_cS n k ks M).mp h [] (by simp) N hN hNall
+  simpa using h0
+
+/-! ### `js` の条件。**段数版では base も level も要らない**（形に依らないから）。
+旧 `JsOk ks js b` が 3 引数だったのは、条件が形ごとだったため。 -/
+
+def JsOkL (n : ℕ) : List Jk1 → Prop
+  | [] => True
+  | (N :: js) => (JkJ N ∧ ∀ S : List ℕ, APdL n S N) ∧ JsOkL n js
+
+theorem JsOkL_snoc (n : ℕ) : ∀ (js : List Jk1) (Nl : Jk1),
+    JsOkL n (js ++ [Nl]) ↔ JsOkL n js ∧ (JkJ Nl ∧ ∀ S : List ℕ, APdL n S Nl)
+  | [], Nl => by
+      show ((JkJ Nl ∧ _) ∧ JsOkL n []) ↔ _
+      simp [JsOkL]
+  | (N :: js), Nl => by
+      show ((JkJ N ∧ _) ∧ JsOkL n (js ++ [Nl])) ↔ _
+      rw [JsOkL_snoc n js Nl]
+      constructor
+      · rintro ⟨h1, h2, h3⟩; exact ⟨⟨h1, h2⟩, h3⟩
+      · rintro ⟨⟨h1, h2⟩, h3⟩; exact ⟨h1, h2, h3⟩
+
+/-- ★★★★★ ここが旧設計で詰まっていた場所（`GCtx_ftwoRepL` + `GCtx_repKL`）。
+junk 条件が形に依らないので、base が `replicate (m+1) L ++ ks` に伸びても効く。 -/
+theorem GCtxL_ftwoRep (n : ℕ) (ks : List ℕ) : ∀ (js : List Jk1), JsOkL n js →
+    ∀ (ctx : List Frm) (t t' : Prop), GCtxL n t (0 :: ks) ctx →
+      GCtxL n t' (js.length :: ks) (ctx ++ js.map Frm.ftwo) := by
+  intro js
+  induction js using List.reverseRecOn with
+  | nil => intro _ ctx t t' hc; simpa using GCtxL_ct_any n hc
+  | append_singleton js' Nl ih =>
+      intro hjs ctx t t' hc
+      obtain ⟨hjs', hNl, hNlc⟩ := (JsOkL_snoc n js' Nl).mp hjs
+      have hlen : (js' ++ [Nl]).length = js'.length + 1 := by simp
+      rw [hlen, List.map_append, ← List.append_assoc, GCtxL_cS]
+      refine ⟨[], by simp, ctx ++ js'.map Frm.ftwo, Nl, by simp, ?_, hNl, hNlc⟩
+      rw [show ([] : List ℕ) ++ ks = ks from by simp]
+      exact ih hjs' ctx t False hc
+
+
+/-- ★★★★★ **旧設計で不可能だった補題。**塔の文脈を junk 入りで組む。
+base が `replicate (m+1) js.length ++ ks` に伸びても、junk 条件が形に依らないので通る。
+（旧 `GCtx_repKL` は level i の junk に `L = js.length > i` を含む base での継続性を
+要求してしまい、`msr_word` の上限に当たっていた。続き128 の「唯一の不等式」。） -/
+theorem GCtxL_repKL (n : ℕ) (js : List Jk1) (hjs : JsOkL n js) {N : Jk1} (hJN : JkJ N)
+    (hNall : ∀ S : List ℕ, APdL n S N) (ks : List ℕ) :
+    ∀ (m : ℕ) (ctx : List Frm) (t t' : Prop), GCtxL n t (0 :: ks) ctx →
+      GCtxL n t' (List.replicate (m + 1) js.length ++ ks) (ctx ++ ctxKL js N m)
+  | 0, ctx, t, t', hc => by
+      show GCtxL n t' (List.replicate 1 js.length ++ ks) (ctx ++ js.map Frm.ftwo)
+      rw [show List.replicate 1 js.length ++ ks = js.length :: ks from rfl]
+      exact GCtxL_ftwoRep n ks js hjs ctx t t' hc
+  | (m + 1), ctx, t, t', hc => by
+      have ih := GCtxL_repKL n js hjs hJN hNall ks m ctx t (TopOk N) hc
+      have hmid : GCtxL n (TopOk Jk1.nil)
+          (0 :: (List.replicate (m + 1) js.length ++ ks))
+          ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) := by
+        rw [GCtxL_ct]
+        exact ⟨ctx ++ ctxKL js N m, N, rfl, ih,
+          FrmJ_of_ne _ (by simp) _ hJN, hNall⟩
+      have hout := GCtxL_ftwoRep n (List.replicate (m + 1) js.length ++ ks) js hjs
+        ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) (TopOk Jk1.nil) t' hmid
+      show GCtxL n t' (List.replicate (m + 2) js.length ++ ks)
+        (ctx ++ (ctxKL js N m ++ (Frm.fone N :: js.map Frm.ftwo)))
+      rw [show List.replicate (m + 2) js.length ++ ks
+            = js.length :: (List.replicate (m + 1) js.length ++ ks) from rfl,
+        show ctx ++ (ctxKL js N m ++ (Frm.fone N :: js.map Frm.ftwo))
+          = ((ctx ++ ctxKL js N m) ++ [Frm.fone N]) ++ js.map Frm.ftwo
+          from by simp [List.append_assoc]]
+      exact hout
+
+#print axioms GCtxL_repKL
+
+#print axioms GCtxL_ftwoRep
+
 #print axioms APdL_iff
 
 #print axioms APdA_bnil
