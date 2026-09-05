@@ -21403,7 +21403,7 @@ theorem GCtx_rep2 {N : Jk1} (hJN : JkJ N) (ks : List ℕ)
         (ctx ++ (ctxD N m ++ [Frm.fone N, Frm.ftwo Jk1.nil]))
       rw [GCtx_cS]
       refine ⟨0, (ctx ++ ctxD N m) ++ [Frm.fone N], Jk1.nil, by simp [List.append_assoc],
-        Or.inr rfl, ?_, trivial, ?_⟩
+        ?_, trivial, ?_⟩
       · rw [show (0 : ℕ) :: (List.replicate 0 0 ++ (List.replicate (m + 1) 1 ++ ks))
               = 0 :: (List.replicate (m + 1) 1 ++ ks) from by simp, GCtx_ct]
         refine ⟨ctx ++ ctxD N m, N, rfl, ih, FrmJ_of_ne _ (by simp) _ hJN, trivial, ?_⟩
@@ -22605,14 +22605,13 @@ theorem APd_twoNilPeel : ∀ (k j : ℕ),
   | (k + 1), j, hnil, ks, N, hN, hcl => by
       rw [APd_cS]
       intro m N' hN' hcl'
-      rcases hd with hT | rfl
-      · exact (TopOk_nst_two j N hT).elim
-      · show APd (k :: (List.replicate m 0 ++ ks)) (nst (j + 1) (Jk1.two N Jk1.nil))
-        refine APd_twoNilPeel k (j + 1) (fun h hh ks' => hnil h (by omega) ks')
-          (List.replicate m 0 ++ ks) N hN ?_
-        intro i m'
-        rw [show j + 1 + k = j + (k + 1) from by omega, rep_norm]
-        exact hcl i (m' + m)
+      -- ★ ここだけが本質的。`hd` を外したので `N'` が `nil` に潰れなくなり、
+      -- 目標が `APd (k :: ks_m) (two N' (nst j (two N nil)))`（N' 任意）になる。
+      -- 以前は `hd : TopOk V ∨ N' = nil` から `N' = nil` が出て
+      -- `nst (j+1) (two N nil)` に一致していた。
+      -- 直すには `nst j`（two nil の入れ子）を「任意の junk を挟む入れ子」に一般化し、
+      -- 塔 `twrK` の単位にもその junk を載せる必要がある。arity ではない。
+      sorry
 
 /-- 頭 `k` についての強い帰納法。`nil` 枠はどの形でも項として継げる。 -/
 theorem APd_nil_head : ∀ (k : ℕ) (ks : List ℕ), APd (k :: ks) Jk1.nil
@@ -22683,7 +22682,7 @@ theorem APd_twoK (k : ℕ) (ks : List ℕ) (N M : Jk1) (h : JkJ (Jk1.two N M))
   -- `M` を 1 段深い形 `(k+2) :: ks` で継げることから、`APd_cS` で 2 の記録の枠を
   -- 1 枚はがすと、ちょうど目標の `APd ((k+1) :: ks) (two N M)` が出る。
   have hM := hMall ((k + 1 + 1) :: ks) (by simp)
-  have h0 := (APd_cS (k + 1) ks M).mp hM 0 N h.1 h.2.2
+  have h0 := (APd_cS (k + 1) ks M).mp hM 0 N h.1
     (fun w hw => hNall _ (by simp))
   simpa using h0
 
@@ -22705,17 +22704,17 @@ theorem APd_all : ∀ (T : Jk1), JkJ T → ∀ (ks : List ℕ), ks ≠ [] → Rq
           | succ k =>
               exact APd_twoK k ks' N M h
                 (fun ks'' hne'' => APd_all N h.1 ks'' hne'' trivial)
-                (fun ks'' hne'' => APd_all M h.2.1 ks'' hne'' trivial)
+                (fun ks'' hne'' => APd_all M h.2 ks'' hne'' trivial)
           | zero =>
               rw [APd_ct]
               intro U hU hRU hUk
-              have hM := APd_all M h.2.1 (1 :: ks') (by simp) trivial
+              have hM := APd_all M h.2 (1 :: ks') (by simp) trivial
               have hNall : ∀ (w : List ℕ), (∀ x ∈ w, x ≤ 0) →
                   APd (0 :: (w ++ ks')) N := by
                 intro w hw
                 exact APd_all N h.1 _ (by simp) trivial
               have h0 := (APd_cf ks' M).mp hM 0 U N (by simpa using hU) (by simpa using hRU)
-                (by simpa using hUk) h.1 h.2.2 (by simpa using hNall)
+                (by simpa using hUk) h.1 (by simpa using hNall)
               simpa using h0
 
 /-- ★★★★★ どの妥当な木も、字として語の右に継げる（GoodFb 3 段すべて）。 -/
