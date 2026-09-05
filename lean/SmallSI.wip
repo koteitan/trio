@@ -23782,5 +23782,25 @@ theorem GCtxN_repKL (js : List Jk1) (hJ : ∀ M ∈ js, JkJ M) {N : Jk1} (hJN : 
 
 #print axioms GCtxN_repKL
 
+/-- 塔の木がどの良い文脈でも継げる。旧 `APd_plug_repK` の junk 一般版。段数の帰納法。 -/
+theorem APdN_plug_repKL (js : List Jk1) (hJ : ∀ M ∈ js, JkJ M) (N : Jk1) (hJN : JkJ N)
+    (ks : List ℕ) (m : ℕ) : ∀ (n : ℕ),
+      (∀ M ∈ js, APdU (n + (m + 1) * js.length + m) M) →
+      APdU (n + (m + 1) * js.length + m) N →
+      APdN n (0 :: ks) (plug (ctxKL js N m) N)
+  | 0, _, _ => APdN_zero _ _
+  | (n + 1), hA, hAN => by
+      have hle : n + (m + 1) * js.length + m ≤ n + 1 + (m + 1) * js.length + m := by omega
+      rw [APdN_iff]
+      refine ⟨APdN_plug_repKL js hJ N hJN ks m n
+        (fun M hM => APdU_le _ _ hle M (hA M hM)) (APdU_le _ _ hle N hAN), fun ctx hc => ?_⟩
+      rw [← plug_append]
+      have hc2 := GCtxN_repKL js hJ hJN ks m (n + 1) ctx _ (TopOk N) hA hAN hc
+      have he : n + 1 + (m + 1) * js.length + m = (n + (m + 1) * js.length + m) + 1 := by omega
+      rw [he] at hc2 hAN
+      exact ((APdN_iff (n + (m + 1) * js.length + m) _ N).mp (hAN _)).2 _ hc2
+
+#print axioms APdN_plug_repKL
+
 end Small
 end TRIO
