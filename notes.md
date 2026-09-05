@@ -6372,3 +6372,81 @@ JkJ を弱める（済み。SmallY.wip）
 ```
 **注意: 木そのものの junk（`otwJ3` の `nil`）と、文脈の枠の junk は別物。**
 `otwJ3` は木の junk が全部 nil なので、制限版の `GOK_all0` で足りる。
+
+### 続き124 追記2: 前任者の直観は正しく、置き場所だけが違った
+
+prover2 が `JkJ` に `∨ N = nil` を足したのは
+**「枠の junk を nil に限れば閉包の壁が消える」**という読みからだった。**読みは正しい。**
+（案(iv) がまさにそれで、(B)(D) が同時に消える。）
+
+間違っていたのは**置き場所**である。
+```
+JkJ    = 木が妥当かどうかの言語        ← 枠の話ではない
+GCtx / APd = 文脈（枠）の言語          ← ここが正しい置き場所
+```
+木の言語に枠の条件を書いたので、
+- 同じ条件が `JkJ` / `CtxXJ` / `CtxJ` / `APd` / `GCtx` の **5 箇所に重複**し
+- **どの証明にも効かず**（続き120 追記3 で実測: 外しても error は arity だけ）
+- しかも `twoIt` の鎖が言語を出るという穴(C) を作った
+
+**教訓: 条件を、それが本当に属する層と違う層に書くと、重複してどこにも効かない。**
+同じ間違いは再発しやすいので、条件を足すときは「これは木の話か、枠の話か」を先に言うこと。
+
+### 続き124 追記3: 案(iv) の設計（次の人はここから実装）
+
+`JkJ` は今のまま（ガードなし。`otwJ3` が JkJ になるために必要）。
+**枠 junk を `nil` に限った `APd0` / `GCtx0` を別に定義する。**
+
+```lean
+def APd0 : List ℕ → Jk1 → Prop
+  | [], V            => GOK V
+  | (0 :: ks), V     => APd0 ks (Jk1.one Jk1.nil V)
+  | ((k+1) :: ks), V => ∀ m : ℕ, APd0 (k :: (List.replicate m 0 ++ ks)) (Jk1.two Jk1.nil V)
+termination_by ks _ => msr ks
+-- 減少は msr_drop0 と msr_grp k 0 m ks だけ。closure 条件が無いので枠の要求も無い
+```
+**これで穴(B)(D) は「発生しない」**（枠 junk が任意でなくなるので）。
+
+制限する木の class:
+```lean
+def Nil0 : Jk1 → Prop        -- 枠の junk が全部 nil
+  | Jk1.nil      => True
+  | Jk1.pay N Y  => Nil0 N ∧ Bok Y
+  | Jk1.one N M  => N = Jk1.nil ∧ Nil0 M
+  | Jk1.two N M  => N = Jk1.nil ∧ Nil0 M
+```
+`otwJ3 n = one nil (two nil (two nil (otwJ3 n')))` は `Nil0` ✓。
+
+#### 効く理由（重要）
+
+`APd0 ((k+1) :: ks) (two nil V)` を開くと `∀ m, APd0 (k :: ks_m) (two nil (two nil V))`
+となり、**入れ子は `nst`（全部 nil）のまま**。つまり
+**ガード除去前に通っていた `APd_twoNilPeel` / `APd_twoNilNest` がそのまま使える。**
+（穴(D) は「入れ子に任意 junk が入る」から出たので、nil に限れば出ない。）
+
+`APd0` の step は定義的:
+```lean
+APd0_step : APd0 (0 :: ks) W → APd0 ks (Jk1.one Jk1.nil W)   := id
+```
+`APd_step` の `hV` / `hR` / `hVk` / `hVp` が全部消える。**穴(B) もここで消える。**
+
+#### 実装の順序
+
+```
+1. APd0 / GCtx0 と APd0_iff（APd_iff の写し。枠の条件が無いぶん短い）
+2. APd0_nil（APd_nil の写し。APd_twoNilPeel はガード除去前の版がそのまま使える）
+3. APd0_all : ∀ T, Nil0 T → JkOk T → …（APd_all の写し）
+4. GOK_all0 / GoodFb_wordJ0 / rowJ_mem0
+5. otwJ3（= twrK 2 nil）/ jk1_otwJ3 / JkOk_otwJ3 / otw_tower3 / otw_tower3_mem
+6. snocYd_mem (dl := 3) → R375b_mem（#17）
+7. #print axioms R375b_mem で clean を確認
+```
+**5 は `twrK 2 Jk1.nil` と `jk1_twrK 2 nil` がそのまま使える**（既に clean）。
+`appJ nil X = X` なので `twrK j nil n` が `otwJ` 系そのもの。
+
+#### 見込み
+
+```
+#17 / 行376 / 続き111 の 12 個   ← 取れる
+穴(B)(D)（枠 junk が任意）        ← 未解決のまま。一般論は (iii) で後日
+```
