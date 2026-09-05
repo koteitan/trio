@@ -5230,3 +5230,45 @@ theorem APd_nilT (ks : List ℕ) : APd (0 :: ks) Jk1.nil :=
 obligation が出てくることがある。今回は `.mp` 側（枠を当てる側）の負担が
 鎖の不変量に伝播した。次に定義を強めるときは、**`.mp` 側の消費者を先に数える**こと
 （`APd_ct` 10 / `GCtx_ct` 32 のうち、`.mp` / 構築側がいくつか）。
+
+### 続き120 追記2: `SmallX.lean` は参考にならない。穴 (C) は `JkJ` の設計そのもの
+
+**`SmallX.lean` を読んだ結果**: 引き継ぎに「唯一の穴は `APd (false::ks) (two N M)`」とあるが、
+実物は `sorry : Rq (1 :: ks') M` の 1 個で、しかも `Rq _ _ = True` なので中身は無い。
+`JkJ` も `APd` も今の `SmallY.wip`（語の族を入れる前）とほぼ同じで、
+**別の設計ではなく古いスナップショット**だった。**穴 (C) の参考にはならない。**
+（`APd_all` の中に `cases b with | false | true` が残っていて、ファイル全体は整合していない。）
+
+### 穴 (C) の正体と規模
+
+```
+APd (k :: ks_m) (two nil (pay V C))   ただし ¬TopOk V（V の頭が 2 の記録）
+展開（bms 実測）→ twoIt nil (pay V Y') n
+JkJ (two W T) = JkJ W ∧ JkJ T ∧ (TopOk T ∨ W = nil)
+  T = pay V Y' は ¬TopOk、W = twoIt … は n ≥ 2 で ≠ nil  →  JkJ でない
+```
+**`JkJ` の言語がこの配置の展開について閉じていない。**
+
+塞ぐには `JkJ` の `two` の条件（`TopOk M ∨ N = nil`）を外すしかないが、規模は
+```
+Or.inl / Or.inr の出現   115
+TopOk の出現              97
+```
+で、**今日やったどの変更より大きい**。しかも `TopOk` は `appJ`（`jk1_appJ`）にも要るので
+一律には外せない。
+
+なお `Rq` は「旧設計の名残。今は常に真」とコメントにあり、
+`Rq ks T` を「ks の頭が ≥ 1 なら TopOk T」に戻せば穴 (C) はちょうど除外される。
+ただしそれは `APd_all` の主張を弱めることになり、`GOK_all` に届くかは別途確認が要る。
+
+### 現状の穴 2 つ（整理）
+
+```
+(B) APd_nilT が base 一様性を供給できない
+    → 段階2（fone 枠に荷閉包）で塞ぐ計画だったが AYd の鎖で循環（追記1）
+(C) AYdK の ¬TopOk V の枝が JkJ の外に出る
+    → JkJ の two の条件を外す（115 + 97 箇所）か、Rq を復活させるか
+
+AYdK = AYdTK（緑、TopOk V の枝）+ 穴(C)。
+穴(C) が塞がらないと (B) を塞いでも AYdK は完成しない。
+```
