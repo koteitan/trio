@@ -22410,6 +22410,32 @@ theorem Mtwd_twrK (Y0 : TrioSeq) (j : ℕ) (N : Jk1) (l n : ℕ) :
     Mtwd (j + 1) Y0 (unitK j N l) n = Y0 ++ jk1 l (twrK j N n) := by
   rw [Mtwd, jk1_twrK j N n l]
 
+theorem twoRunL_shape : ∀ (js : List Jk1), (∀ M ∈ js, JkA M) → ∀ (l : ℕ) (c : ℕ × ℕ × ℕ),
+    c ∈ twoRunL js l → l + 1 ≤ c.1 ∧ c.2.2 ≤ c.2.1
+  | [], _, l, c, hc => by simp [twoRunL] at hc
+  | (N :: js), hjs, l, c, hc => by
+      rw [show twoRunL (N :: js) l
+            = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: twoRunL js (l + 1)) from rfl] at hc
+      rcases List.mem_append.mp hc with h | h
+      · exact ⟨jk1_ge N l c h, jk1_mono N (hjs N (by simp)) l c h⟩
+      · rcases List.mem_cons.mp h with rfl | h2
+        · exact ⟨by omega, by simp⟩
+        · have := twoRunL_shape js (fun M hM => hjs M (by simp [hM])) (l + 1) c h2
+          exact ⟨by omega, this.2⟩
+
+theorem MidD_unitKL (js : List Jk1) (hjs : ∀ M ∈ js, JkA M) (N : Jk1) (l : ℕ) (hN : JkJ N) :
+    MidD (l + 2) (unitKL js N l) := by
+  have h1 : MidD (l + 2) [((l + 1, 1, 0) : ℕ × ℕ × ℕ)] := MidD_col (l + 1) 1 (by omega) (by omega)
+  have h2 : MidD (l + 2) ([((l + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ twoRunL js (l + 1)) :=
+    MidD_append h1
+      (fun c hc => by have := (twoRunL_shape js hjs (l + 1) c hc).1; omega)
+      (fun c hc => (twoRunL_shape js hjs (l + 1) c hc).2)
+  have h3 := MidD_append h2 (N := jk1 (l + 1 + js.length) N)
+    (fun x hx => by have := jk1_ge N (l + 1 + js.length) x hx; omega)
+    (jk1_mono N (JkA_of_JkJ N hN) (l + 1 + js.length))
+  rw [unitKL_eq]
+  exact h3
+
 theorem MidD_unitK (j : ℕ) (N : Jk1) (l : ℕ) (hN : JkJ N) : MidD (l + 2) (unitK j N l) := by
   have h1 : MidD (l + 2) [((l + 1, 1, 0) : ℕ × ℕ × ℕ)] := MidD_col (l + 1) 1 (by omega) (by omega)
   have h2 : MidD (l + 2) ([((l + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ twoRun (l + 1) j) :=
