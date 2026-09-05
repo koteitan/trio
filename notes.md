@@ -9465,3 +9465,29 @@ Q(6,1,0)  snocYd_mem Y0 = R375m, M = [(5,0,0)], L = 5, y = 1, dl = 1
           MidD の head1 : 1 ≤ entry M 1 0 が (5,0,0) で偽 ← ここが壁
 Q(6,1,1)  [n] = Q ++ (6,1,0)(7,2,0)(8,3,0)... 未整理
 ```
+
+### 追記20: `Q` 15 本すべてと 続き111 #13 が出た。鍵は `hang5_R375m`
+
+`Q(6,*)` は bad part が `(5,0,0)` 単独。`MidD` の `head1 : 1 ≤ 行 1` が偽で
+既存の `snocYd_mem` に乗らなかったが、`oper_snocYd` の本体は
+`hM.ne` `hM.head` `hM.tail` の 3 つしか見ていない（grep で確認）。
+`oper_snocYd0` に割って `snocYd_mem0` を足した（`head1` / `col` / `mono` 不要）。
+
+```
+NQB B = one nil (two nil (pay (two nil nil) B))     ← APd_twoTwoPay で GOK
+hang5_R375m (Bok B) : R375m ++ shiftr01 5 0 B ∈ W 0  ← 高さ 5 の吊るし
+```
+
+これ 1 本で 3 つ落ちた:
+```
+Q(6,0,0)  flat_mem''  M = [(5,0,0)], d = 6
+          htw = R375m ++ (5,0,0)^n = hang5 (B = copies [(0,0,0)] n)
+Q(6,1,0)  snocYd_mem0 Y0 = R375m, M = [(5,0,0)], L = 5, y = 1, dl = 1
+          htw = Mtwd 1 R375m [(5,0,0)] n = R375m ++ shiftr01 5 0 (flad n)
+          flad n = (0,0,0)(1,0,0)...(n-1,0,0)、Bok_flat で Bok
+Q(6,1,1)  shiftr01 5 0 Q = (5,0,0)(6,1,1)。hang5 に Aok_Q.toBok を入れるだけ
+#13 P(5,1,0)  Ancd5_R375m + tw5_R375m + snocd_mem
+```
+
+`hang5_R375m` は 続き111 #13 の木そのもの。壁が消えた時点で #13 も同時に出た。
+残り 続き111: #14 P(5,2,0) #15 P(6,0,0) #16 P(6,1,0) #17 P(6,2,0)。

@@ -4304,14 +4304,15 @@ theorem Mtwd_succ (dl : ℕ) (Y0 M : TrioSeq) (n : ℕ) :
 
 open Classical in
 /-- ★ 内部アンカーでの継ぎ足しの展開（歩幅 `dl`）。 -/
-theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
-    (hM : MidD (L + 1) M) (hMe : entry M 1 0 < y)
+theorem oper_snocYd0 {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
+    (hMne : M ≠ []) (hMhead : entry M 0 0 + 1 = L + 1)
+    (hMtail : ∀ j, 1 ≤ j → j < M.length → L + 1 ≤ entry M 0 j) (hMe : entry M 1 0 < y)
     (hMy : ∀ t, 1 ≤ t → t < M.length → entry M 0 t < L + dl →
       (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t)
     (hy : 1 ≤ y) (hdl : 1 ≤ dl) (n : ℕ) :
     ((Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Mtwd dl Y0 M n := by
   have hY0len : 0 < Y0.length := List.length_pos_iff.mpr hY0ne
-  have hMlen : 0 < M.length := List.length_pos_iff.mpr hM.ne
+  have hMlen : 0 < M.length := List.length_pos_iff.mpr hMne
   set Y : TrioSeq := Y0 ++ M with hY
   set T : TrioSeq := Y ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)] with hT
   have hYlen : Y.length = Y0.length + M.length := by rw [hY]; simp
@@ -4328,7 +4329,7 @@ theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
   have hanchor0 : entry T 0 Y0.length = L := by
     rw [hpreY 0 Y0.length (by omega),
       show Y0.length = Y0.length + 0 from rfl, hpreM 0 0 hMlen]
-    have := hM.head; omega
+    have := hMhead; omega
   have hanchor1 : entry T 1 Y0.length = entry M 1 0 := by
     rw [hpreY 1 Y0.length (by omega),
       show Y0.length = Y0.length + 0 from rfl, hpreM 1 0 hMlen]
@@ -4337,7 +4338,7 @@ theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
     rcases Nat.lt_or_ge x Y.length with h | h
     · obtain ⟨t, rfl⟩ : ∃ t, x = Y0.length + t := ⟨x - Y0.length, by omega⟩
       rw [hpreY 0 _ h, hpreM 0 t (by omega)]
-      exact hM.tail t (by omega) (by omega)
+      exact hMtail t (by omega) (by omega)
     · have : x = Y.length := by omega
       rw [this, hl0]; omega
   have hsh : ∀ x, Y0.length < x → x < T.length → entry T 0 Y0.length < entry T 0 x := by
@@ -4400,6 +4401,29 @@ theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
   intro j hj
   have hjr := List.mem_range'_1.1 hj
   rw [if_pos (hle0 j (by omega) (by omega)), Nat.mul_comm k dl]
+
+
+theorem oper_snocYd {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
+    (hM : MidD (L + 1) M) (hMe : entry M 1 0 < y)
+    (hMy : ∀ t, 1 ≤ t → t < M.length → entry M 0 t < L + dl →
+      (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t)
+    (hy : 1 ≤ y) (hdl : 1 ≤ dl) (n : ℕ) :
+    ((Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Mtwd dl Y0 M n :=
+  oper_snocYd0 hY0ne hM.ne hM.head hM.tail hMe hMy hy hdl n
+
+/-- ★ 塔が済めば内部アンカーで歩幅 `dl` の列を継げる（`MidD` の head1 / col / mono は
+`oper_snocYd0` が見ていないので落とした版）。 -/
+theorem snocYd_mem0 {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
+    (hMne : M ≠ []) (hMhead : entry M 0 0 + 1 = L + 1)
+    (hMtail : ∀ j, 1 ≤ j → j < M.length → L + 1 ≤ entry M 0 j) (hMe : entry M 1 0 < y)
+    (hMy : ∀ t, 1 ≤ t → t < M.length → entry M 0 t < L + dl →
+      (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t)
+    (hy : 1 ≤ y) (hdl : 1 ≤ dl) (htw : ∀ n, Mtwd dl Y0 M n ∈ W 0) :
+    (Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  rw [oper_snocYd0 hY0ne hMne hMhead hMtail hMe hMy hy hdl n]
+  exact htw n
 
 /-- ★ 塔が済めば内部アンカーで歩幅 `dl` の列を継げる。 -/
 theorem snocYd_mem {Y0 M : TrioSeq} {L y dl : ℕ} (hY0ne : Y0 ≠ [])
@@ -23779,6 +23803,154 @@ theorem R375q12_mem : R375q ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   simpa using h
 
 #print axioms R375q12_mem
+
+
+
+
+
+
+/-! ### ★ 高さ 5 の吊るし `hang5_R375m` と `Q(6,0,0)` / `Q(6,1,0)`
+
+字 `NQB B = one nil (two nil (pay (two nil nil) B))` はちょうど
+続き111 #13 の「高さ 5 の吊るし」。`APd_twoTwoPay` で作れるようになった。 -/
+
+def NQB (B : TrioSeq) : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay (Jk1.two Jk1.nil Jk1.nil) B))
+
+theorem JkT_NQB {B : TrioSeq} (hB : Bok B) : JkT (NQB B) :=
+  ⟨⟨trivial, trivial, ⟨trivial, trivial⟩, hB⟩, trivial⟩
+
+theorem GOK_NQB {B : TrioSeq} (hB : Bok B) : GOK (NQB B) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (APd_twoTwoPay (N := Jk1.nil) trivial (fun _ _ => APd_nil _) hB []))
+
+theorem jk1_NQB (B : TrioSeq) (l : ℕ) :
+    jk1 l (NQB B) = ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ) :: shiftr01 (l + 3) 0 B := by
+  show ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+    ((l + 1 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: shiftr01 (l + 1 + 1 + 1) 0 B = _
+  rw [show l + 1 + 1 = l + 2 from by omega, show l + 2 + 1 = l + 3 from by omega]
+
+/-- ★★★ `P` は高さ 5 で荷を吊るせる（続き111 #13 の木）。 -/
+theorem hang5_R375m {B : TrioSeq} (hB : Bok B) : R375m ++ shiftr01 5 0 B ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [NQB B])) :=
+    GOK_NQB hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [NQB B]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_NQB B 2] at h
+  simpa [R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+/-- 平坦なはしご `(0,0,0)(1,0,0)...(n-1,0,0)`。 -/
+def flad (n : ℕ) : TrioSeq := (List.range n).map (fun k => ((k, 0, 0) : ℕ × ℕ × ℕ))
+
+theorem flad_snoc (n : ℕ) : flad (n + 1) = flad n ++ [((n, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [flad, List.range_succ]
+
+theorem Flat_flad (n : ℕ) : Flat (flad n) := by
+  intro c hc
+  simp only [flad, List.mem_map, List.mem_range] at hc
+  obtain ⟨k, -, rfl⟩ := hc
+  exact ⟨rfl, rfl⟩
+
+theorem flad_root (n : ℕ) : entry (flad n) 0 0 = 0 := by
+  cases n with
+  | zero => simp [flad, entry]
+  | succ m => simp [flad, entry, List.range_succ_eq_map]
+
+theorem Bok_flad (n : ℕ) : Bok (flad n) := Bok_flat (Flat_flad n) (flad_root n)
+
+theorem Mtwd_flad (Y0 : TrioSeq) (s : ℕ) : ∀ n : ℕ,
+    Mtwd 1 Y0 [((s, 0, 0) : ℕ × ℕ × ℕ)] n = Y0 ++ shiftr01 s 0 (flad n)
+  | 0 => by simp [Mtwd, flad, shiftr01]
+  | (n + 1) => by
+      rw [Mtwd_succ, Mtwd_flad Y0 s n, flad_snoc, shiftr01_append0, ← List.append_assoc]
+      congr 1
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        and_true, and_self]
+      omega
+
+theorem Bok_copies_zero (n : ℕ) : Bok (copies [((0, 0, 0) : ℕ × ℕ × ℕ)] n) :=
+  Aok_zero.copies_Bok n
+
+/-- ★★★★★ `Q(6,0,0) = P(5,0,0)(6,0,0)`。 -/
+theorem R375q13_mem : R375q ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have e : shiftr01 5 0 [((0, 0, 0) : ℕ × ℕ × ℕ)] = [((5, 0, 0) : ℕ × ℕ × ℕ)] := by
+    simp [shiftr01]
+  have htw : ∀ n : ℕ,
+      R375m ++ (List.range n).flatMap (fun _ => [((5, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    have h := hang5_R375m (Bok_copies_zero n)
+    rw [shift_copies, e] at h
+    simpa [copies] using h
+  have h := flat_mem'' (Y0 := R375m) (M := [((5, 0, 0) : ℕ × ℕ × ℕ)]) (d := 6)
+    (by simp) (by simp [entry]) (by intro r h1 h2; simp at h2; omega) htw
+  simpa [R375q, List.append_assoc] using h
+
+#print axioms R375q13_mem
+
+/-- ★★★★★ `Q(6,1,0) = P(5,0,0)(6,1,0)`。 -/
+theorem R375q14_mem : R375q ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, Mtwd 1 R375m [((5, 0, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+    intro n
+    rw [Mtwd_flad]
+    exact hang5_R375m (Bok_flad n)
+  have h := snocYd_mem0 (Y0 := R375m) (M := [((5, 0, 0) : ℕ × ℕ × ℕ)]) (L := 5) (y := 1)
+    (dl := 1) (by simp [R375m, R373, R344, R341, R338]) (by simp) (by simp [entry])
+    (by intro j h1 h2; simp at h2; omega) (by simp [entry])
+    (by intro t h1 h2 _ _; simp at h2; omega) (by omega) (by omega) htw
+  simpa [R375q] using h
+
+#print axioms R375q14_mem
+
+
+
+/-- ★★★★★ `Q(6,1,1) = P(5,0,0)(6,1,1)`。`shiftr01 5 0 Q = (5,0,0)(6,1,1)` そのもの。 -/
+theorem R375q15_mem : R375q ++ [((6, 1, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := hang5_R375m Aok_Q.toBok
+  have e : shiftr01 5 0 Q = [((5, 0, 0) : ℕ × ℕ × ℕ), ((6, 1, 1) : ℕ × ℕ × ℕ)] := by
+    simp [Q, shiftr01]
+  rw [e] at h
+  simpa [R375q, List.append_assoc] using h
+
+#print axioms R375q15_mem
+
+
+/-! ### ★★★★★ 続き111 #13 `P(5,1,0)`
+
+`hang5_R375m` がそのまま高さ 5 の吊るし。あとは `Ancd 5 P` と塔。 -/
+
+theorem Ancd5_R375m : Ancd 5 R375m := by
+  have h1 : Ancd 1 R338 := Lv_Ancd 0 0 R338 ⟨Aok_R338, rfl⟩
+  have h2 : Ancd 2 (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+    Ancd_append_Mid Aok_R338.ne h1 (MidD_one 1 (by omega))
+  have h3 : Ancd 3 (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]) :=
+    Ancd_append_Mid (by simp) h2 MidD_c221
+  have hR : R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] = R341 := by
+    simp [R341, R338]
+  rw [hR] at h3
+  have h4 : Ancd 4 (R341 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)]) :=
+    Ancd_append_Mid (by simp [R341, R338]) h3 (MidD_one 3 (by omega))
+  have hR2 : R341 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] = R344 := rfl
+  rw [hR2] at h4
+  have h5 : Ancd 5 (R344 ++ U375d) := Ancd_append_Mid (by simp [R344, R341, R338]) h4 MidD_U375d
+  have hR3 : R344 ++ U375d = R375m := by
+    simp [R375m, R373, U375d, List.append_assoc]
+  rwa [hR3] at h5
+
+theorem tw5_R375m : ∀ n : ℕ, TwD 5 R375m n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      exact hang5_R375m ⟨tw5_R375m n, TwD_zroot (by omega) Aok_R375m.zroot n,
+        TwD_mono Aok_R375m.mono n, TwD_root Aok_R375m.ne Aok_R375m.deep.1 n⟩
+
+/-- ★★★★★ 続き111 #13 `P(5,1,0)`
+`= (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,1,0)`。 -/
+theorem R375f13_mem : R375m ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) Aok_R375m.ne Aok_R375m.deep Aok_R375m.zroot Ancd5_R375m tw5_R375m
+
+#print axioms R375f13_mem
 
 
 end Small
