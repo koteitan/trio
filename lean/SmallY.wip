@@ -20506,6 +20506,31 @@ theorem wordJ_snoc_twoN (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V : Jk1) {
     wordJ_singleton]
   simp [List.append_assoc]
 
+/-! #### `two nil (two N nil)` 版（`D(0)` の `W ≠ nil` に要る） -/
+
+theorem colJ_plug_twoNW (a b : ℕ) (ctx : List Frm) (V : Jk1) {N : Jk1} (l : ℕ)
+    (hl : l = a + dep ctx + 1) :
+    colJ a b (plug (ctx ++ [Frm.fone V]) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil)))
+      = (colJ a b (plug ctx V) ++ unitC N l) ++ [((l + 3, 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [plug_snoc, colJ_plug_one a b ctx V (Jk1.two Jk1.nil (Jk1.two N Jk1.nil)),
+    show a + dep ctx + 2 = l + 1 from by omega]
+  have e : jk1 (l + 1) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))
+      = ((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: (jk1 (l + 2) N ++ [((l + 3, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1 + 1) N ++ (((l + 1 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1 + 1) Jk1.nil))) = _
+    simp [jk1]
+  rw [e]
+  simp [unitC, List.append_assoc]
+
+theorem wordJ_snoc_twoNW (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V : Jk1) {N : Jk1}
+    (l : ℕ) (hl : l = a + dep ctx + 1) :
+    wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V]) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))])
+      = (wordJ a b (ws ++ [plug ctx V]) ++ unitC N l) ++ [((l + 3, 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_append, wordJ_singleton, colJ_plug_twoNW a b ctx V l hl, wordJ_append,
+    wordJ_singleton]
+  simp [List.append_assoc]
+
 theorem colJ_plug_twr (a b : ℕ) (ctx : List Frm) (V : Jk1) {N : Jk1} (l : ℕ)
     (hl : l = a + dep ctx + 1) (m : ℕ) :
     colJ a b (plug (ctx ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N))

@@ -3911,3 +3911,42 @@ wordJ_snoc_twoNW : 上の wordJ 版（colJ_plug_twoN → wordJ_snoc_twoN と同�
                   3 列目以降は jk1 (l+2) N なので JkA から行 1 ≥ ? を出す必要がある。
                   ← ここが唯一まだ確かめていない側条件。
 ```
+
+### 続き113 追記9: `two nil (two N nil)` 版の語の補題を追加（緑）
+
+```lean
+colJ_plug_twoNW (a b) (ctx) (V) {N} (l) (hl : l = a + dep ctx + 1) :
+    colJ a b (plug (ctx ++ [Frm.fone V]) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil)))
+      = (colJ a b (plug ctx V) ++ unitC N l) ++ [((l + 3, 2, 0))]
+wordJ_snoc_twoNW : 同じものの wordJ 版
+```
+
+（`colJ_plug_twoN` / `wordJ_snoc_twoN` と 1 対 1 の対応。`l+3` の列が
+`snocYd_mem` で足す列、`unitC N l` が塔の単位。）
+
+#### 次にやる: 階段（`hstG`）の側。ここの設計だけまだ決まっていない
+
+`APd_twoNilGen`（`W = nil`）では階段は `plug (List.replicate m (Frm.fone N)) N` で、
+`colJ_plug_twr` が `= colJ a b (plug ctx V) ++ jk1 l (twr N (m+1))` を与えていた。
+`twrC` 版の対応する木は（手で展開して確かめた）
+
+```
+twrC N 1 = one nil (two nil N)                        = plug [fone nil, ftwo nil] N
+twrC N 2 = one nil (two nil (one N (two nil N)))      = plug [fone nil, ftwo nil, fone N, ftwo nil] N
+twrC N (m+1) = plug ([fone nil, ftwo nil] ++ ([fone N, ftwo nil] を m 回)) N
+```
+
+つまり**フレームが「1 の列 + 2 の記録」の対**になる。`plug` は末尾が最内なので、
+リストの先頭が最外であることに注意。
+
+対応する `GCtx` の形は `1 :: …`（`GCtx_cf` が
+`ctx = ctx' ++ [fone U, ftwo N]` を与える）なので、`GCtx_rep` の対版が要る:
+
+```
+GCtx_rep2 : … → ∀ m ctx t t', GCtx t (0 :: ks) ctx
+          → GCtx t' (List.replicate m 1 ++ (1 :: ks)) (ctx ++ 対を m+1 個)
+```
+の形になるはず（未検証）。文脈側の `CtxJ_snoc12` / `CtxOk_snoc12`（対を足す）は既にある。
+
+**ここが残っている唯一の設計上の空白**。これが決まれば
+`APd_twoNilGen` の 3 分岐を写して `snocY_mem` → `snocYd_mem (dl := 2)` に替えるだけ。
