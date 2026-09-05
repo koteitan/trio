@@ -3426,3 +3426,109 @@ R375_mem_gen : Aok A → A ++ (1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0) ∈ W 0
 仕掛けは「木は `otwJ n`（1 の列と 2 の記録の交互＝TopOk 合法）のままにして、
 2 段目の `(5,2,0)` は木ではなく `snocYd_mem` に付けさせる」こと。
 junk `M'` 入りに一般化できれば `TopOk` 除去の足がかりになるかもしれない。
+
+## 続き113（現在地のまとめ / 案 A・B の比較と決定）
+
+### 1. 現在地: `lean/Small.lean`（green, sorry なし, 21526 行）
+
+続き111 の 17 個のうち **5 個が証明済み**。
+
+| # | 列 | 定理名 | 出し方 |
+|---|-----|--------|--------|
+| 1 | (1,0,0) | `R375c_mem` | `flat_mem''` + `Aok.copies_Bok` |
+| 2 | (1,1,0) | `R375f2_mem` | `Lv_snoc 1 0 R375m Aok_R375m` |
+| 3 | (2,0,0) | `R375f3_mem` | `R375f3_of_step (fun _ h => R375_mem_gen h)` |
+| 4 | (2,1,0) | `R375f4_mem` | `LvB_snoc BaseOk_P0 1 1 R375m LvB_R375m_1` |
+| 5 | (2,2,0) | `R375f5_mem` | `SegB_snoc2 BaseOk_P0 (SegA_toSegB SegA_U375a BaseOk_P0)` |
+
+新しい道具（`Small.lean` 末尾、行番号は 21190 以降）:
+
+```
+R375m         def   R373 ++ [(5,2,0)]  = P = 行375
+MidD_col52 / R375m_mem / Aok_R375m / R375m_copies_mem / R375m_ne / R375m_head / R375m_tail
+Aok_chain     1 ≤ d → MidD d M → Aok Y0 → (∀n, Aok (Y0++M^n) → (Y0++M^n)++M ∈ W 0)
+                                        → ∀ n, Aok (Y0 ++ M^n)
+flat_of_chain 同じ仮定 → Y0 ++ M ++ [(d,0,0)] ∈ W 0
+U375a..U375e  単位（下表）+ MidD_U375a..MidD_U375e + Aok_R338110
+R375f3/7/9/12/15_of_step   条件付き定理（R376_of_tower と同じ形）
+rowJ_mem_gen      Aok A → WOk ws → A ++ ((1,1,0) :: wordJ 1 1 ws) ∈ W 0
+otw_tower_gen     A ++ ((1,1,0) :: wordJ 1 1 [otwJ n])
+                  = Mtwd 2 (A ++ [(1,1,0),(2,2,1)]) [(3,1,0),(4,2,0)] n
+otw_tower_mem_gen Aok A → ∀ n, その塔 ∈ W 0
+R375_mem_gen      Aok A → A ++ U375a ∈ W 0                ★ 行375 の一様版
+R375m_eq          R375m = R338 ++ U375a
+LvB_R375m_1       LvB P0 1 1 R375m
+otw_word_eq / otw_tower_gen_s / shift_U375a               （s シフト版の部品）
+SegA_U375a        SegA 0 U375a                            ★ 台座にも s にも依らない
+```
+
+単位:
+```
+U375a = (1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)  MidD 2  Y0 = R338         → #3（証明済み）
+U375b =        (2,2,1)(3,1,0)(4,2,0)(5,2,0)  MidD 3  Y0 = R338(1,1,0)  → #7
+U375c =               (3,1,0)(4,2,0)(5,2,0)  MidD 4  Y0 = R341         → #9
+U375d =                      (4,2,0)(5,2,0)  MidD 5  Y0 = R344         → #12
+U375e =                             (5,2,0)  MidD 6  Y0 = R373         → #15
+```
+
+### 2. 残り 12 個の内訳
+
+```
+#6  (2,2,1)  z1wG_mem の語は colG（平坦な列）しか置けない。junk 木版は T が違法
+#7  (3,0,0)  1 枚継ぐのに A ++ wordJ 1 1 [otwJ n]（(1,1,0) 無しの語）が要る
+#8  (3,1,0)  LvB P0 r 2 R375m。分解の M は MidD 3 から U375b で一意
+#9  (4,0,0)  木にすると one (one nil (two nil (two nil nil))) … で違法
+#10 #13 #16  #8 と同じ（LvB の高さ 3/4/5）
+#11 (4,2,0)  SegB P 2 U375c と LwB P 2 R341 が要る。どちらも無い
+#12 (5,0,0)  Mtwd 1 A [(4,2,0)] n（＝行376 の塔）が要る
+#14 #17      塔が 2 の記録の上昇塔（行376 の塔）
+#15 (6,0,0)  展開の n = 2 が #14
+```
+
+### 3. 壁の 3 通りの言い方（全部同じ 1 個）
+
+1. **木の層**: `T = one nil (two nil (two nil nil))` が `JkJ` を通らない
+   （`JkJ (two N M) = JkJ N ∧ JkJ M ∧ TopOk M`、`TopOk (two _ _) = False`）。
+2. **`APd` の層**: `SmallX.lean` の唯一の穴 `APd (false::ks) (two N M)`。
+3. **`Seg` の層**: `P` の高さ 2 以上の接尾辞 `U375b` を「新しい `(1,1,0)` 無しで」継げない。
+   `GoodFb` が b = 1 の語について出すのは `seg h : SegA h ((h+1,1,0) :: J (h+1) 1)` だけ
+   （`pu` は `2 ≤ y`、`pk` は b = 2）。
+
+### 4. 案 A（`SmallY.wip` のリファクタ）を選ぶ。理由
+
+**案 B（`SegA` の `head1` を広げる）は的外れだった。** 実測:
+`SegA` の `head1 : entry M 1 0 < 2` を消費しているのは `SegB_snoc2`（`snocY_mem` の
+`hMe : entry M 1 0 < y` に y = 2 で渡す）だけで、`LwB_tower` も `LvB` も `head1` を使わない。
+つまり `head1` は障害ではない。本当に足りないのは `reapp`、すなわち
+
+```
+∀ (レベル 1 の頭 A') s, A' ++ shiftr01 s 0 U375b ∈ W 0
+```
+
+で、これは snocYd 経由だと塔 `A' ++ wordJ 1 1 [otwJ n]`（＝合法な語を**アンカー無しで
+1 文字だけ**継ぐ）に落ち、`GoodFb` はその形を出さない。設計も見通しも無い。
+
+**案 A は逆に、設計が完成していて実装が 82% 済んでいる。** 実測:
+`SmallY.wip`（21229 行）を `leanman check --backend lean` にかけると
+**error は 34 箇所、`sorry` は 1 個（20854 行）**、しかも **17411 行より前は全部緑**。
+error の分布は 続き110 追記6 の残作業リストとそのまま対応する:
+
+```
+17411-17935 (5)   文脈層 CtxJ / CtxXJ           ← 残作業 1
+19767-19966 (7)   FrmJ / APd / GCtx             ← 残作業 2, 3
+20469-20694 (11)  AYdT / twoIt                  ← 残作業 3, 4
+20825-20851 (5)   APd_all                       ← 残作業 5
+20854            sorry (Rq (1::ks') M)          ← 残作業 5
+20971-21141 (4)   otwJ 周辺                     ← 残作業 6
+```
+
+停止性（`msr` の Colex 多重集合順序）は前任者が緑を確認済み。
+よって **案 A を採用**し、1 → 2 → 3 → 5 → 4 → 6 の順で進める。
+
+### 5. 作業手順（`SmallY.wip` は .lean でないので）
+
+```
+cp lean/SmallY.wip /tmp/SmallYchk.lean
+leanman check --backend lean -m "<memo>" -C /home/koteitan/proofs/trio/lean /tmp/SmallYchk.lean
+```
+（`--backend lean` を使うこと。kimina だと暴走時に殺せない。）
