@@ -23708,5 +23708,87 @@ theorem APdL_plug_repKL : ∀ (n : ℕ) (js : List Jk1), JsOkL n js → ∀ (N :
 
 #print axioms APdL_plug_repKL
 
+/-! ### 支える補題群（旧 `GCtx_ne` / `GCtx_CtxX` / `GCtx_CtxOk` / `GCtx_split` の写し）。 -/
+
+theorem GCtxL_ne (n : ℕ) (t : Prop) (a : ℕ) (ks : List ℕ) (ctx : List Frm)
+    (h : GCtxL n t (a :: ks) ctx) : ctx ≠ [] := by
+  cases a with
+  | zero =>
+      rw [GCtxL_ct] at h
+      obtain ⟨ctx', U, rfl, -, -, -⟩ := h
+      simp
+  | succ k =>
+      rw [GCtxL_cS] at h
+      obtain ⟨w0, hw0, ctx', N, rfl, -, -, -⟩ := h
+      simp
+
+theorem GCtxL_CtxX (n : ℕ) : ∀ (ks : List ℕ) (ctx : List Frm) (X : Jk1),
+    GCtxL n (TopOk X) ks ctx → FrmJ ks X → CtxX ctx X
+  | [], ctx, X, h, hX => by
+      rw [GCtxL_bnil] at h; subst h; exact hX
+  | (0 :: ks), ctx, X, h, hX => by
+      rw [GCtxL_ct] at h
+      obtain ⟨ctx', U, rfl, -, -, -⟩ := h
+      exact (CtxX_snoc1 ctx' U X).mpr hX
+  | ((k + 1) :: ks), ctx, X, h, hX => by
+      rw [GCtxL_cS] at h
+      obtain ⟨w0, hw0, ctx', N, rfl, -, -, -⟩ := h
+      exact (CtxX_snoc2 ctx' N X).mpr hX
+
+theorem GCtxL_CtxOk (n : ℕ) : ∀ (t : Prop) (ks : List ℕ) (ctx : List Frm),
+    GCtxL n t ks ctx → CtxOk ctx
+  | _, [], ctx, h => by rw [GCtxL_bnil] at h; subst h; trivial
+  | t, (0 :: ks), ctx, h => by
+      rw [GCtxL_ct] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      exact CtxOk_snoc ctx' U (GCtxL_CtxOk n (TopOk U) ks ctx' hc')
+        (GCtxL_CtxX n ks ctx' U hc' hU)
+  | t, ((k + 1) :: ks), ctx, h => by
+      rw [GCtxL_cS] at h
+      obtain ⟨w0, hw0, ctx', N, rfl, hc', hN, -⟩ := h
+      have hne : ctx' ≠ [] := GCtxL_ne n False k (w0 ++ ks) ctx' hc'
+      have hcT : GCtxL n (TopOk TwoNil) (k :: (w0 ++ ks)) ctx' := hc'
+      have hx : CtxXJ ctx' TwoNil := by
+        have h1 := GCtxL_CtxX n (k :: (w0 ++ ks)) ctx' TwoNil hcT JkJ_TwoNil
+        cases ctx' with
+        | nil => exact absurd rfl hne
+        | cons f rest => exact h1
+      exact CtxOk_snoc2 ctx' N hne
+        (GCtxL_CtxOk n False (k :: (w0 ++ ks)) ctx' hc') hx hN
+termination_by t ks _ => msr ks
+decreasing_by
+  all_goals
+    first
+      | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
+
+theorem GCtxL_down (n : ℕ) : ∀ (t : Prop) (ks : List ℕ) (ctx : List Frm),
+    GCtxL (n + 1) t ks ctx → GCtxL n t ks ctx
+  | _, [], ctx, h => by rw [GCtxL_bnil] at h ⊢; exact h
+  | t, (0 :: ks), ctx, h => by
+      rw [GCtxL_ct] at h ⊢
+      obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+      exact ⟨ctx', U, rfl, GCtxL_down n _ ks ctx' hc', hU, APdU_down n U hUk⟩
+  | t, ((k + 1) :: ks), ctx, h => by
+      rw [GCtxL_cS] at h ⊢
+      obtain ⟨w0, hw0, ctx', N, rfl, hc', hN, hNk⟩ := h
+      exact ⟨w0, hw0, ctx', N, rfl, GCtxL_down n _ _ ctx' hc', hN, APdU_down n N hNk⟩
+termination_by _ ks _ => msr ks
+decreasing_by
+  all_goals
+    first
+      | exact msr_drop0 _
+      | exact msr_word _ _ _ (by assumption)
+
+theorem GCtxL_split (n : ℕ) {t : Prop} (ks : List ℕ) (ctx : List Frm)
+    (h : GCtxL (n + 1) t (0 :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ GOK (plug ctx0 V) := by
+  rw [GCtxL_ct] at h
+  obtain ⟨ctx0, U, rfl, hc0, hU, hUk⟩ := h
+  exact ⟨ctx0, U, rfl, ((APdL_iff n ks U).mp (hUk ks)).2 ctx0
+    (GCtxL_down n _ ks ctx0 hc0)⟩
+
+#print axioms GCtxL_split
+
 end Small
 end TRIO
