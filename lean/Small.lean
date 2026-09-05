@@ -21847,5 +21847,42 @@ theorem R375f6_mem : R375m ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375f6_mem
 
 
+/-! ### `P` の右に `U375b` を何枚でも
+
+`colJ 1 1 otwL = U375b` なので、`m` 枚は語 `[otwL × m]` そのもの。
+`GOK_otwL` は「どの良い語の右にも」の形なので `m` について回る。 -/
+
+theorem R375rep_mem (m : ℕ) :
+    R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375b m ∈ W 0 := by
+  have h := rowJ_mem_genF Aok_R338 (GoodFb_repl_otwL m)
+  rw [wordJ_repl_otwL m] at h
+  simpa [List.append_assoc] using h
+
+theorem R375m_eq' : R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ U375b = R375m := by
+  rw [R375m_eq]
+  simp [U375a, U375b, List.append_assoc]
+
+/-- ★★★★★ `P ++ U375b^m` はどの `m` でも `W 0`。 -/
+theorem R375copies_mem (m : ℕ) : R375m ++ copies U375b m ∈ W 0 := by
+  have h := R375rep_mem (m + 1)
+  rw [copies_succ] at h
+  rw [← R375m_eq']
+  simpa [List.append_assoc] using h
+
+/-- ★★★★★
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)`
+＝ `P` の右に `U375b` を 2 枚。 -/
+theorem R375g7b_mem : (R375m ++ U375b) ++ U375b ∈ W 0 := by
+  have h := R375copies_mem 2
+  have e : copies U375b 2 = U375b ++ U375b := by
+    rw [copies_succ, copies_succ]
+    simp [copies]
+  rw [e, ← List.append_assoc] at h
+  exact h
+
+#print axioms R375copies_mem
+#print axioms R375g7b_mem
+
+
 end Small
 end TRIO
