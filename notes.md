@@ -8660,3 +8660,33 @@ context を圧迫するなら消してよい。**ただし `SmallSI.wip` だけ�
 2. notes.md 続き131 追記13   ← 潰した候補の一覧（同じ道を掘らないため）
 3. lean/SmallY.wip           ← 作業本線
 ```
+
+### 続き131 追記15: (b) の測定 —— **いまマージできるものは無い**
+
+```
+Small.lean にだけ無い定理    150 本（SmallY.wip 側）
+そのうち clean なもの        ℕ 形の APd / GCtx 機構、AYd / AYdT / AYdTK / AYdK /
+                             APd_payAll / APd_twoNilGen / nstL・twrKL・ctxKL 一式
+そのうち汚れているもの       R373_mem / R373_mem' / R374_mem / R373a_mem / R375_mem /
+                             R376_of_tower（全部 GOK_all 経由）
+```
+
+**判定: いま `Small.lean` に入れられて意味のあるものは無い。**
+```
+1. clean な部分（ℕ 形の機構）は、Small.lean が既に Bool 形で持っているものの置き換え。
+   シートの行は 1 行も増えない。かつ大きなリファクタで green を壊すリスクがある。
+2. 新しい行（373〜376）は全部 sorry 経由。
+3. R371_mem / R372_mem は **Small.lean に既にある**（19222 / 19670 行）。
+```
+**⇒ マージは残る sorry を閉じてからで正しい**（マネージャの 段階4' の判断どおり）。
+
+#### 副次的に分かったこと: 行375 は 2 方向から攻めている
+
+```
+Small.lean   R375m / U375a / R375f3_mem / R375f4_mem / R375f5_mem / R375_mem_gen
+             ← 塔の道具（otw_tower_gen_s / SegA_U375a）を使う直接の道
+SmallY.wip   R375_mem : R344 ++ [(4,2,0), (5,2,0)] ∈ W 0
+             ← 木（Jk1）経由の道。GOK_all に依存するので今は汚れている
+```
+**`Small.lean` 側の直接の道は green のまま生きている。**
+次の人は「木の道が詰まっているなら、直接の道を伸ばせないか」も選択肢に入る。
