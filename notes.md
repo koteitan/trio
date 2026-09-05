@@ -4918,3 +4918,58 @@ msr (w ++ ks) < msr (0 :: ks) = {0} + msr ks   ⟺   msr w < {0}   ⟺   w = []
 ```
 `0` は最小なので、頭が 0 の枠は base を 1 ミリも伸ばせない。
 `two` 枠は「`k` 以下なら何でも」という余裕があるのに、`one` 枠は余裕ゼロ。**この非対称が壁。**
+
+### 続き117 追記1: closure を「語」の族に広げる変更を実測した（error 16、全部機械的）
+
+`/tmp/SmallWord.lean` で実験。変更内容:
+```lean
+-- 新規（測度）
+theorem cntf_apply_zero_of_all_lt (w) (j) : (∀ x ∈ w, x < j) → cntf w j = 0
+theorem msr_word (k w ks) (hw : ∀ x ∈ w, x ≤ k) : msr (k :: (w ++ ks)) < msr ((k+1) :: ks)
+-- closure（APd / APd_cS / GCtx / GCtx_cS の 4 箇所）
+∀ (i m'), APd (replicate i k ++ (k :: (replicate m' 0 ++ ks))) N
+  → ∀ (w : List ℕ), (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N
+-- decreasing_by に msr_word を追加（4 ブロック）
+```
+
+**結果: `msr_word` も `APd` / `GCtx` の定義も通った（停止性 OK）。error は 16 個で、
+全部が下流の機械的な書き換え**（`intro i m'` → `intro w hw`、
+`hcl i m'` → `hcl (replicate i k ++ replicate m' 0) (証明)`）。
+
+新しい族は古い族を含む（`replicate i k ++ replicate m' 0` は要素が k 以下の語）ので、
+closure は**強くなる**。`.mpr`（APd を証明する側）は多く受け取れて楽になり、
+`.mp`（枠 junk を供給する側）は多く供給する必要がある。供給側は
+`APd_all` / `APd_nil`（どの形でも出せる）なので問題ない。
+
+そして語の族は `w' ++ w` がまた語なので**入れ子について閉じている**。
+続き116 追記4 の (β)（`F(F(ks)) ⊄ F(ks)`）の escalation はこれで消える。
+
+### しかしそれだけでは `AYdK` は閉じない（穴 (B) が残る）
+
+語の族にしても、鎖の closure を保つには
+```
+closure_w(two W T) の元 = APd (1 :: (w ++ ks)) (two W T)   ⟸  APd (2 :: (w ++ ks)) T
+```
+で **T を base `w ++ ks` で要求する**。`T = pay Z Y'` なので A2' の IH で
+`APd (2 :: (w ++ ks)) Z` に落ちる。
+
+`APd_payA` の消費側 `APd_nilT` では `Z` = `fone` 枠の junk `U` で、
+`APd_ct` が与えるのは `APd ks U` の 1 形だけ。そして
+```
+msr (w ++ ks) < msr (0 :: ks) = {0} + msr ks   ⟺   msr w < {0}   ⟺   w = []
+```
+**`fone` 枠は測度の余裕がゼロ**（0 は最小なので何も足せない）。
+`two` 枠は「k 以下なら何でも」という余裕があるのに、`one` 枠は余裕ゼロ。
+
+### 整理（次の人へ）
+
+```
+穴(A) closure の族が入れ子で閉じない  → 語の族に広げれば消える（実測 error 16、全部機械的）
+穴(B) fone 枠の junk を base 伸長形で要求できない（測度の余裕ゼロ） → 未解決
+```
+**(A) は直せる。(B) が本丸。**
+(B) を回避するには
+- `APd_nilT` が `APd_payA` を経由しない道を見つける、または
+- 形の符号化を変えて `one` 枠にも余裕を作る（`0` より小さい記号を入れる等）、または
+- 測度を形だけでなく木でも減るものにする
+のいずれかが要る。
