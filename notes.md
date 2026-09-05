@@ -7116,3 +7116,61 @@ level i の junk に「level j > i の記録を含む base」での継続性を�
 **測度を形だけでなく「木の側」も込みにする（辞書式など）必要がある。**
 ただし前任の指摘どおり、pay の場合（添字が伸び木が縮む）と one の場合
 （添字が縮み木が伸びる）で向きが逆なので、素朴な辞書式は両方向を同時に満たさない。
+
+### 続き127 追記9: 案(v) の判定（マネージャの問いに回答）
+
+#### 問い: `GCtx` の `ftwo` 枠を nil に狭めると `APd_twoNilNestL`（k=0 の底）は閉じるか
+
+**まず事実確認（マネージャの読みは正しい）:**
+```lean
+ctxK  j N m = ctxK j N (m-1) ++ (Frm.fone N :: List.replicate j (Frm.ftwo Jk1.nil))
+ctxD  N   m = ctxD N (m-1)   ++ [Frm.fone N, Frm.ftwo Jk1.nil]
+ctxE  N   m = ctxE N (m-1)   ++ [Frm.fone N, Frm.ftwo Jk1.nil, Frm.ftwo Jk1.nil]
+```
+**塔の文脈の `ftwo` 枠はすべて `Jk1.nil`。**狭めた `GCtx` と一致する。
+だから `GCtx_repK` / `APd_plug_repK` / `APd_twoNilNest`（nil 版）は狭めても生き残る。
+
+**しかし底が閉じない理由は別のところにある:**
+```lean
+ctxKL js N m = ctxKL js N (m-1) ++ (Frm.fone N :: js.map Frm.ftwo)
+                                                  ^^^^^^^^^^^^^^^^ js は非 nil
+```
+`ctxKL` が要るのは、**peel が junk 入りの入れ子 `nstL js` を作るから**。
+そして js は `APd_cS` の `.mpr` の束縛変数。**`GCtx` を狭めても `APd` の定義は変わらないので
+js は任意のまま。**つまり
+```
+APd_cS の N が一般 → peel が junk 入りの入れ子を作る → 塔が ctxKL（junk 枠）を要る
+                   → GCtx を狭めるとその塔が良い文脈でなくなる → 底は閉じない
+APd_cS の N を nil → AYdT の鎖 twoIt N T n が作れない（案(iv) の実測）
+```
+**両端が塞がっている。**
+
+#### 17 箇所の分類（読んだ結果）
+
+```
+頭 0 で使う（狭めても .mpr が通る）:
+  21344 APd_plug_rep    21353 APd_plug_rep2   21363 APd_twoNilGen
+  21496 APd_twoNilGenW  21915 APd_plug_rep3   21926 APd_twoNilGenW2
+  22808 APd_plug_repK   22819 APd_twoNilNest
+形 ks 一般:
+  20119 APd_congr       20258 APd_oneNil      20991 APd_two_of_ctx
+頭 k（k は任意。★ここが致命的）:
+  21171 21208 21222  AYdTK   ← rw [APd_cS]; intro w0 hw0 N hN hNt の直後に rw [APd_iff]
+                                目標は APd (k :: (w0 ++ ks)) (two N V)、k ≥ 1 を含む
+APd_iff 自身:
+  20082 20095
+```
+
+#### 結論: **`APd_iff` は同値のままでは成立しない**
+
+`APd_iff` の `.mpr` は、頭 0 の場合でも再帰で頭 k+1 に降りる:
+```
+mpr at 0::ks → (APd_iff ks (one U V)).mpr → ks の頭が k+1 なら
+             → ctx' ++ [Frm.ftwo N] が良い文脈である必要（N は任意）
+```
+**狭めた `GCtx` ではこれが成り立たない。**したがって
+- 同値を保つ → `APd` の定義側も nil に潰れる = **案(iv)**（鎖が壊れる）
+- 片方向にする → 17 箇所すべてが `.mpr` を失う。特に `AYdTK` は証明全体が
+  文脈経由（`GoodFb_snoc_dupJt` など）なので代替経路が無い
+
+**⇒ 案(v) は却下。**今日閉じたばかりの `AYdK` を壊す。
