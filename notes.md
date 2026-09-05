@@ -5062,3 +5062,68 @@ one 枠（頭 0）  : msr (w ++ ks) < msr (0 :: ks) ⟺ msr w < {0} ⟺ w = []
       `msr_word` に相当する減少補題を**先に 1 本 Lean で緑にしてから**定義に手を付けること）
 
 (a) を先。(b) はコア全体に及ぶので最後。
+
+## 続き119: 語の族（`msr_word`）を入れた。sorry 2 → 1、`AYdT2` は完全に緑
+
+commit ac1eafc。`leanman check --backend lean` = error 0 / exit 1（sorry は `AYdK` 1 本のみ）。
+
+### 入れたもの
+
+```lean
+theorem cntf_apply_zero_of_all_lt (w j) : (∀ x ∈ w, x < j) → cntf w j = 0
+theorem msr_word (k w ks) (hw : ∀ x ∈ w, x ≤ k) : msr (k :: (w ++ ks)) < msr ((k+1) :: ks)
+theorem eq_rep_zero_of_le_zero (w) : (∀ x ∈ w, x ≤ 0) → w = List.replicate w.length 0
+```
+`APd` / `GCtx` / `APd_cS` / `GCtx_cS` の closure を
+```
+∀ i m', APd (List.replicate i k ++ (k :: (List.replicate m' 0 ++ ks))) N
+  →  ∀ w, (∀ x ∈ w, x ≤ k) → APd (k :: (w ++ ks)) N
+```
+に変更（`decreasing_by` に `msr_word` を追加）。**定義は一発で通った**（停止性 OK）。
+
+### 直した機械的な箇所（16 個、実測どおり）
+
+`APd_cf` / `GCtx_cf` の言い換え、`APd_chainT` / `AYdT_hstep`（k=0）、
+`APd_chainT2` / `AYdT_hstep2`（k=1）、`GCtx_rep2` / `GCtx_rep3` / `GCtx_ftwoRep` /
+`GCtx_repK`、`APd_twoNilB`、`APd_nil_head`、`APd_twoK`、`APd_all`。
+
+パターンは 3 つだけ:
+- `intro i m'` → `intro w hw`（`rep_true_cons` / `rep_head_cons` の `rw` は不要になる）
+- `hNall 0 mm` → `hNall (List.replicate mm 0) (fun x hx => by have := List.eq_of_mem_replicate hx; omega)`
+- `hcl i m'` → `hcl (List.replicate i k ++ …)` + `simpa [List.append_assoc, rep_norm]`
+
+### ★ `AYdT_hstep2` の穴が閉じた
+
+`AYdT` / `AYdT2` の `hTk` を **base 一様**（`∀ B, APd ((k+1) :: B) T`）に変えた。すると
+```lean
+theorem AYdT_hstep2 (hTt : TopOk T) (hTk : ∀ B, APd (2 :: B) T) :
+    ∀ N', JkJ N' → (∀ w, (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) N') →
+      ∀ w, (∀ x ∈ w, x ≤ 1) → APd (1 :: (w ++ ks)) (Jk1.two N' T) := by
+  intro N' hN' hN'all w hw
+  have h := (APd_cS 1 (w ++ ks) T).mp (hTk (w ++ ks)) 0 N' hN' (Or.inl hTt)
+    (fun w' hw' => by ... hN'all (w' ++ w) ... simpa [List.append_assoc])
+  simpa using h
+```
+で閉じる。**語の族が連結について閉じている**（`w' ++ w` がまた語）ので、鎖の不変量が保てる。
+続き117 の `j ≥ 1` の穴は消えた。
+
+### 現状
+
+```lean
+AYdT2 : ∀ Y, Bok Y → ∀ Z, JkJ Z → TopOk Z →
+    (∀ ks, APd (2 :: ks) Z) → ∀ ks, APd (2 :: ks) (Jk1.pay Z Y)      -- 完全に緑
+```
+これは **`AYdK'`（base 一様版）の k = 1 の場合そのもの**である。ただし 2 点残る:
+1. `TopOk Z` を仮定している。`AYdK` の `hd` は `TopOk V ∨ N = nil` なので、
+   **`N = nil` の枝**が要る（`GoodFb_snoc_dupJt` / `innerJt` の `hZt` を
+   `TopOk Z ∨ N = nil` に一般化する。機械的なはず）。
+2. `AYdK` の消費側 `APd_nilT` が `∀ B, APd ((k+1)::B) V` を供給できない（穴 (B)）。
+   → 続き118 の「`fone` 枠に荷閉包を持たせる」（実測 error 20）で消える見込み。
+
+### 次
+
+```
+1. AYdT2 を k 一般化して AYdK'（+ N = nil の枝）      ← 写しがもう 1 回効くはず
+2. fone 枠に荷閉包を足して APd_nilT を自明にする（穴 B、実測 error 20）
+3. AYdK を AYdK' + APd_all から作る → sorry 0
+```
