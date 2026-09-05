@@ -22185,6 +22185,66 @@ theorem jk1_nst : ∀ (j : ℕ) (X : Jk1) (l : ℕ), jk1 l (nst j X) = twoRun l 
       rw [h1, jk1_nst j X (l + 1), show l + 1 + j = l + (j + 1) from by omega, twoRun_succ]
       simp
 
+/-! ### ★ `nst` の junk 一般化（`hd` を外した代償を払うための道具）
+
+`hd` を外すと `APd_cS` の枠 junk が `nil` に潰れなくなるので、
+入れ子の各段に任意の junk が入る。`nstL js X` はその形。
+`js = List.replicate j Jk1.nil` のとき `nst j X` に一致する（下の `example` で固定）。
+
+`bms -d` の実測（続き122 追記1）: 塔の単位に junk の列が載る。
+```
+two N' (two nil (two nil nil))、N' = pay nil [(0,0,0)]
+bad part = (3,1,0)(4,0,0)(4,2,0)(5,2,0)   ← (4,0,0) が N' の列
+delta = 3 = |js| + 1
+```
+-/
+
+def nstL : List Jk1 → Jk1 → Jk1
+  | [], X => X
+  | (N :: js), X => Jk1.two N (nstL js X)
+
+theorem nstL_replicate_nil : ∀ (j : ℕ) (X : Jk1),
+    nstL (List.replicate j Jk1.nil) X = nst j X
+  | 0, _ => rfl
+  | (j + 1), X => by
+      rw [List.replicate_succ]
+      show Jk1.two Jk1.nil (nstL (List.replicate j Jk1.nil) X) = _
+      rw [nstL_replicate_nil j X]
+      rfl
+
+theorem JkJ_nstL : ∀ (js : List Jk1), (∀ N ∈ js, JkJ N) → ∀ X : Jk1, JkJ X → JkJ (nstL js X)
+  | [], _, _, h => h
+  | (N :: js), hjs, X, h =>
+      ⟨hjs N (by simp), JkJ_nstL js (fun M hM => hjs M (by simp [hM])) X h⟩
+
+theorem TopOk_nstL_two : ∀ (js : List Jk1) (N : Jk1), ¬ TopOk (nstL js (Jk1.two N Jk1.nil))
+  | [], N => by simp [nstL, TopOk]
+  | (M :: js), N => by simp [nstL, TopOk]
+
+/-- junk を挟む 2 の記録の並び。`twoRun l j` の一般化。 -/
+def twoRunL : List Jk1 → ℕ → TrioSeq
+  | [], _ => []
+  | (N :: js), l => jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: twoRunL js (l + 1))
+
+theorem twoRunL_replicate_nil : ∀ (j l : ℕ),
+    twoRunL (List.replicate j Jk1.nil) l = twoRun l j
+  | 0, _ => rfl
+  | (j + 1), l => by
+      rw [List.replicate_succ]
+      show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        twoRunL (List.replicate j Jk1.nil) (l + 1)) = _
+      rw [twoRunL_replicate_nil j (l + 1), twoRun_succ]
+      simp [jk1]
+
+theorem jk1_nstL : ∀ (js : List Jk1) (X : Jk1) (l : ℕ),
+    jk1 l (nstL js X) = twoRunL js l ++ jk1 (l + js.length) X
+  | [], X, l => by simp [nstL, twoRunL]
+  | (N :: js), X, l => by
+      show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (nstL js X)) = _
+      rw [jk1_nstL js X (l + 1), show l + 1 + js.length = l + (N :: js).length from by
+        simp [List.length_cons]; omega]
+      simp [twoRunL, List.append_assoc]
+
 /-- 歩幅 `j+1` の単位。`j = 0` は `twr`、`j = 1` は `unitC`、`j = 2` は `unitD`。 -/
 def unitK (j : ℕ) (N : Jk1) (l : ℕ) : TrioSeq :=
   ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: (twoRun (l + 1) j ++ jk1 (l + 1 + j) N)
