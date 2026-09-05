@@ -8201,3 +8201,49 @@ Q. GOK_one : JkOk N → JkOk M → GOK N → GOK M → （追加条件?) → GOK
 
 これが今日たどり着いた最終地点。**`GoodFb` を弱めるのではなく、
 `GOK_one` を直接示して `APd` 層を消す**方向。
+
+### 続き131 追記4: 上の主張を Lean のコードで確認した
+
+```lean
+theorem GOK_all : ∀ (T : Jk1), JkOk T → GOK T
+  | Jk1.one N M, h => (APd_bnil _).mp
+      (APd_step [] (h.1 : FrmJ [] N) trivial ((APd_bnil N).mpr (GOK_all N h.1))
+        (APd_all M h.2 [0] (by simp) trivial))
+
+theorem APd_step (ks) {V W} (hV) (hR) (hVk) (hW : APd (0 :: ks) W) :
+    APd ks (Jk1.one V W) := (APd_ct ks W).mp hW V hV hR hVk
+                                              ^^^ ここで ∀ U を V := N で具体化
+```
+**`GOK_all` の `one` の場合は `U = N`（実際の junk、しかも部分木）1 個しか使っていない。**
+`APd_ct` の `∀ U` は他（任意の良い文脈の枠 junk）では本当に要るが、
+**`GOK_all` の道筋には要らない。**
+
+### この回の最終状態
+
+```
+lean/Small.lean    green / sorry なし。**この回で一度も触っていない**
+                   続き111 の #1〜#5 と道具 8 本が入っている
+lean/SmallY.wip    error 0 / sorry 1（APd_twoNilPeel の k+1 = 実体は k=0 の底）
+                   AYdK は全 k で閉じた。clean: AYd / AYdT / AYdTK / AYdK / APd_iff /
+                   APd_payAll / APd_twoNilGen / APnil_gen / AY0 / R371_mem / R372_mem …
+                   汚れ: GOK_all / R373_mem / R373a_mem / R374_mem / R375_mem / hang2rec
+lean/SmallSI.wip   error 0。段数版（step-indexing）。循環が切れればそのまま使える:
+                   APdN_step（旧穴B）/ APdN_two（旧穴D）/ GCtxN_repKL / APdN_plug_repKL
+                   すべて clean
+notes.md           続き125〜131
+```
+
+### この回で潰した迂回路（12 案。全部 Lean での測定か定義からの導出）
+
+旧ガード復活 ✗ ／ 浅いガード `Hd2` ✗ ／ 枠 junk = nil（置換・追加とも）✗ ／
+base 一様 closure ✗ ／ 族を `≤ b` に ✗ ／ `nstL` ✗ ／ 目標だけ取る ✗ ／
+`GCtx` だけ狭める ✗ ／ 到達可能性 ✗ ／ step-indexing ✗ ／ 塔を有限に切る ✗ ／
+頭より大きい記録を無視する測度 ✗
+
+### 次のセッションの出発点（1 行）
+
+```
+GOK_one : JkOk N → JkOk M → GOK N → GOK M → GOK (Jk1.one N M) を
+GoodFb の言葉で直接示せるか。示せれば APd 層が one の場合に要らなくなり、
+∀ U が消えて循環が切れる。鍵は shift と seg（段をまたぐ 2 条件）。
+```
