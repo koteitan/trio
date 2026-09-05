@@ -20933,7 +20933,14 @@ theorem APd_twoNilGenK : ∀ (k : ℕ) (ks : List ℕ) (N : Jk1), JkJ N →
     (∀ i : ℕ, APd (List.replicate i k ++ (k :: ks)) N) →
     APd (k :: ks) (Jk1.two N Jk1.nil)
   | 0, ks, N, hN, hcl => APd_twoNilGen N hN ks hcl
-  | (k + 1), ks, N, hN, hcl => by sorry
+  | (k + 1), ks, N, hN, hcl => by
+      rw [APd_cS]
+      intro m N' hN' hd hcl'
+      -- `TopOk (two N nil) = False` なので下側の junk は nil に潰れる
+      rcases hd with hT | rfl
+      · exact hT.elim
+      · -- 残る目標: APd (k :: (List.replicate m 0 ++ ks)) (two nil (two N nil))
+        sorry
 
 theorem APd_nil : ∀ ks : List ℕ, APd ks Jk1.nil
   | [] => (APd_bnil _).mpr GOK_nil

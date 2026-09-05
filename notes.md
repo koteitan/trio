@@ -3674,3 +3674,66 @@ snocY_mem (L := …, y := 2)      → 2 の記録を 1 本継ぐ
 塔の単位も「1 の列 1 本」ではなく「グループ全体（1 の列 + 2 の記録 k 枚）」になり、
 歩幅が `k+1` になる ⟹ `snocY_mem`(dl=1) を **`snocYd_mem`(dl=k+1)** に替える。
 `snocYd_mem` は `hMy`（`M` の頭以外は行 1 が `y` 以上）という側条件が増える。
+
+### 続き113 追記4: 段階2（残作業4a）の入口まで。ここで一度止める
+
+`APd_twoNilGenK` の `k+1` を 1 段開いた（commit 済み、`sorry` は内側 1 個に縮んだ）:
+
+```lean
+  | (k + 1), ks, N, hN, hcl => by
+      rw [APd_cS]
+      intro m N' hN' hd hcl'
+      rcases hd with hT | rfl
+      · exact hT.elim                     -- TopOk (two N nil) = False
+      · -- 残る目標:
+        --   APd (k :: (List.replicate m 0 ++ ks)) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))
+        sorry
+```
+
+つまり `k` を 1 減らすたびに木が `two nil (…)` で 1 段伸びる。`k` 回降ろすと
+
+```
+APd (0 :: ks_k) (two nil (two nil (… (two N nil))))     -- nil 枠の 2 の記録が k 段
+```
+
+になる。**これが行376 の塔 `(4,2,0)(5,2,0)(6,2,0)…` そのもの**である。
+
+#### ★ ここで詰まっている設計の問い（次の人はここから）
+
+一般化の候補は
+
+```lean
+theorem APd_twoK' : ∀ (k : ℕ) (ks : List ℕ) (N V : Jk1), JkJ N → JkJ V →
+    (TopOk V ∨ N = Jk1.nil) →
+    (∀ i, APd (List.replicate i k ++ (k :: ks)) N) →
+    (∀ ks', ks' ≠ [] → APd ks' V) →
+    APd (k :: ks) (Jk1.two N V)
+```
+
+で、これが出れば `APd_twoNilGenK`（V = nil）も `APd_twoK`（残作業5）も同時に落ちる。
+**問題は循環**: `V = nil` で使うには `∀ ks', APd ks' nil` = `APd_nil` が要り、
+`APd_nil` は `APd_twoNilGenK` を使う。
+
+抜け道の候補（未検証）:
+- `APd_twoK'` の証明が `APd ks' V` を **`msr` で真に小さい `ks'` でしか使わない**なら、
+  `APd_nil` と `APd_twoK'` の同時整礎帰納法（測度 `msr ks`）で閉じる。
+  まず `k = 0` の証明（`APd_twoNilGen`, 20785-20915）を読んで、
+  `APd_plug_rep` / `hstair` がどの形で `APd` を呼んでいるかを確認すること。
+- あるいは `V` を `tstk i nil`（nil 枠の 2 の記録の塔）に限定した専用の帰納法にする。
+  `APd (0 :: ks) (tstk i nil)` を `i` の帰納法で作れば循環は起きない。
+
+#### `k = 0` の証明を `k+1` に持ち上げるときに変わる 3 点（追記6 の再確認）
+
+1. `GCtx_split ks ctx hc` は最内が `fone V` の場合しか割れない。
+   `k ≥ 1` では `GCtx t (k :: ks) ctx` の最内は `ftwo N'` なので使えない。
+   `GCtx_cS` で割って `ctx = ctx0 ++ [ftwo N']`、かつ `t = False` から `N' = nil` を取る。
+2. 塔の単位が「1 の列 1 本」から「グループ全体（1 の列 + 2 の記録 k 枚）」になり、
+   歩幅が `1` から `k+1` になる ⟹ `snocY_mem` を **`snocYd_mem`(dl := k+1)** に替える。
+3. `snocYd_mem` は `hMy`（`M` の頭以外は行 1 が `y` 以上）という側条件が増える。
+
+#### 使えないと確認したもの
+
+`GOK T = ∀ ws, WOk ws → GoodFb (wordJ · · ws) → GoodFb (wordJ · · (ws ++ [T]))` なので、
+`Small.lean` で作った `rowJ_mem_gen` / `R375_mem_gen` は **`GOK` の帰結であって前提ではない**。
+`GOK (one nil (two nil (two nil nil)))` が行375 の `P` に対応するのは事実だが、
+`R375_mem_gen` からは `GOK` は出せない（`.seg 0` を適用した後の弱い主張だから）。
