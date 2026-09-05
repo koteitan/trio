@@ -22349,7 +22349,12 @@ theorem APd_twoK (k : ℕ) (ks : List ℕ) (N M : Jk1) (h : JkJ (Jk1.two N M))
     (hNall : ∀ ks' : List ℕ, ks' ≠ [] → APd ks' N)
     (hMall : ∀ ks' : List ℕ, ks' ≠ [] → APd ks' M) :
     APd ((k + 1) :: ks) (Jk1.two N M) := by
-  sorry
+  -- `M` を 1 段深い形 `(k+2) :: ks` で継げることから、`APd_cS` で 2 の記録の枠を
+  -- 1 枚はがすと、ちょうど目標の `APd ((k+1) :: ks) (two N M)` が出る。
+  have hM := hMall ((k + 1 + 1) :: ks) (by simp)
+  have h0 := (APd_cS (k + 1) ks M).mp hM 0 N h.1 h.2.2
+    (fun i m' => hNall _ (by rw [rep_head_cons]; simp))
+  simpa using h0
 
 /-- ★★★★★ どの妥当な木も、どの形でも項として継げる。 -/
 theorem APd_all : ∀ (T : Jk1), JkJ T → ∀ (ks : List ℕ), ks ≠ [] → Rq ks T → APd ks T
