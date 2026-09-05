@@ -5180,3 +5180,53 @@ AYdK の N = nil ∧ ¬TopOk V の枝            ← JkJ の外に出る。設�
 2. 要るなら、`JkJ` の `TopOk M ∨ N = nil` をどう扱うか。
    `SmallX.lean` の「`TopOk` を外す」版と、今の「`∨ N = nil`」版のどちらでも
    穴が 1 個ずつ残っている。両方の穴が同じものか（= `twoIt` の鎖が言語を出る）を見る。
+
+### 続き120 追記1: 段階2（`fone` 枠に荷閉包）は `AYd` の鎖で循環する。本体は緑に戻した
+
+実測 error 20 は**表面だけ**だった。20 個を直していくと（19 → 17 → 12 に収束）、
+残りのうち 3 個が **`AYd` の鎖の中**にあり、そこが循環していた。試作は
+`/tmp/SmallY-payfone-attempt.lean` に取ってある（本体は `git checkout` で緑に戻した）。
+
+#### 循環の中身
+
+`fone` 枠に `(∀ C, Bok C → APd ks (Jk1.pay U C))` を足すと `APd_ct`/`APd_step` の
+**`.mp` 側**（枠 V を当てる側）が V の荷閉包を要求する。ところが
+```lean
+GOK_chainJd (hstep : ∀ V, FrmJ ks V → Rq ks V → APd ks V → APd ks (Jk1.one V T)) :
+    ∀ n, GOK (plug ctx (itJ T n X)) ∧ APd ks (itJ T n X)
+```
+の `hstep` は鎖の元 `itJ T n X` に当てられる。だから鎖の不変量に
+```
+∀ C, Bok C → APd ks (Jk1.pay (itJ T n X) C)
+```
+が要る。n = 0 は `AYd` の新しい仮定 `hXp` で済むが、n+1 は
+`APd ks (Jk1.pay (Jk1.one W T) C)` で、これは `APd_payA ks (one W T)`。
+- `ks` の頭が 0 なら `APd_payT` で出る
+- **`ks` の頭が ≥ 1 なら `AYdK` が要る** ← `AYd` は `APd_payT` から
+  **任意の `ks`** で呼ばれるので、頭が ≥ 1 の場合が実在する。**循環。**
+
+#### 直したもの（`/tmp/SmallY-payfone-attempt.lean` に残っている）
+
+`APd_cf` / `GCtx_cf` / `APd_iff` / `APd_step` / `APd_payT` / `APd_two_of_ctx` /
+`AYdT`（3 箇所）/ `GCtx_split` / `APd_twoNilB` / `APd_stairT` / `APd_all` / `GOK_all`、
+そして **`APd_nilT` は狙いどおり自明になった**:
+```lean
+theorem APd_nilT (ks : List ℕ) : APd (0 :: ks) Jk1.nil :=
+  (APd_ct ks _).mpr (fun U hU hR hUk hUp => APd_oneNil ks U hU hR hUk hUp)
+```
+
+#### 残る 12 個の内訳（試作ファイルの状態）
+
+```
+3  AYd の鎖（GOK_chainJd / hpres）      ← 循環。ここが本質
+3  GCtx_rep2 / GCtx_rep3 / GCtx_repK    ← ftwo 枠の荷閉包（段階3）が要る
+3  GCtx_rep / APd_plug_rep 系            ← 仮定追加で済む
+3  GCtx_cf の tuple 順など                ← 機械的
+```
+
+#### 教訓
+
+**「error N 個・全部機械的」は 1 回の測定では分からない。**直していくと新しい
+obligation が出てくることがある。今回は `.mp` 側（枠を当てる側）の負担が
+鎖の不変量に伝播した。次に定義を強めるときは、**`.mp` 側の消費者を先に数える**こと
+（`APd_ct` 10 / `GCtx_ct` 32 のうち、`.mp` / 構築側がいくつか）。
