@@ -11819,3 +11819,35 @@ Ew n Z := ∀ fs, Gw n fs → TipOk (plug fs Z)（Dk と同じ枠の相対化を
 どの層でも「荷を吊るす A2'」1 枚と APnil_gen0 と枠の付け替えだけで閉じる。
 
 次: V = U(10,2,0) 族。
+
+## 追記84: 行376 までの正確な距離（ユーザー質問への回答）
+
+行376 = R373 ++ [(5,3,0)]。ファイル内の還元はすべて証明済みで、残る仮定は 1 つ:
+
+  PayStep --ZeroStep_of_PayStep--> ZeroStep --GOK_BTall--> ブロック列は全部よい
+          --tw_R344_42Z--> 塔 Mtw R344 [(4,2,0)] n --snocY_mem (y=3)--> 行376
+
+PayStep : ∀ U, JkT U → GOK U → ∀ j js, GOK (BT U (j::js)) → ∀ C, Bok C →
+            GOK (BP U C (j::js))
+  BT U (j::js) = one U (stkP j (bdA js))   （台座 U、長さ j の走り、ブロック列）
+  BP U C (j::js) = one U (stkP j (bdAC C js))   （その先端に荷 C）
+
+### PayStep の中身を読んだ結果（この回の調査）
+
+- 荷の錨（bad root）は走りの一番上の 2 の記録。文脈は
+  [fone U] ++ (ftwo nil を j-1 本) で、**dupJt0 / dupJs0 は文脈一般なのでそのまま使える**。
+- ただし複製鎖は `twoIt nil (pay nil C') i`（荷つき 2 の記録の横鎖）で、
+  その良さには「走りが 1 本短い塔」`BT U (j-1 :: js)` が要る。
+  今の PayStep の仮定は `GOK (BT U (j::js))` 1 本だけなので、そのままでは回らない。
+- つまり PayStep は「ブロックの大きさ e についての帰納」と同時に回す必要がある:
+    e についての帰納の中で「塔がよい」と「荷を吊るせる」を同時に立てる。
+  GOK_BTall が e の帰納の骨だけ持っている（ZeroStep を仮定して）ので、
+  そこに荷の A2' を編み込む形になる。
+
+### 距離の見積もり
+
+- 使う道具は全部そろっている: GOK_BTstep / GOK_runNil_gen / GOK_TrmStep（塔）、
+  dupJt0 / innerJt0 / dupJs0 / innerJs0（荷の A2'、文脈一般）、
+  snocYd_mem（歩幅つき）。
+- 足りないのは「e の帰納の中で塔と荷を同時に立てる」1 本の大きな帰納。
+  この回に作った Ck 層（文脈を添字にした層、約 500 行）と同程度の規模。
