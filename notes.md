@@ -11301,3 +11301,19 @@ GOK (plug (ctx0 ++ [fone V]) (two N (two W nil)))      -- W は一般の左兄�
 `RunB Y := TwoOk (two nil Y)` が `nil` / `one V nil` / `pay` で閉じ、
 `bdA (replicate m 2)`（ラン 2 が任意段）→ `GOK_runNil_gen` の歩幅 2
 → ラン 3 → 帰納で任意長のラン → 行376、という道が通る。
+
+### 追記63 の補足（実測と `APd_chainT'` の射程）
+
+- `(…)(4,2,0)(5,1,0)(5,2,0)`（= `two (one nil nil) nil` を 2 の記録の枠の上に）は
+  `bms -s` で **非標準**（std=0）。左兄弟つきの 2 の記録は標準形には現れない。
+  鎖 `twoIt` の各項は標準形でない中間物なので、これ自体は想定内。
+- `APd_chainT'`（`TwoOk T` から鎖 `twoIt N T n` の良さと強さを出す）は
+  `hc : GCtx (true :: ks) ctx`、つまり**文脈が 1 の列の枠で終わる**ことを要求する。
+  ラン（2 の記録の枠の直上）では使えない。
+  `GCtx (false :: ks) = ctx' ++ [fone U, ftwo N]` なので
+  「1 の列の枠 + 2 の記録の枠」の対でしか 2 の記録を足せず、
+  ラン文脈は `GCtx` の外にある（追記63 の「分かったこと 1」の再確認）。
+
+したがって `RunB (pay V C)` の鎖 `two N (twoIt nil T n)` は
+`APd_chainT'` では供給できず、**ラン文脈用の鎖補題を新しく作る**必要がある。
+これが `GOK_twoTwoNil_gen` の左兄弟一般化と並ぶ、もう 1 本の宿題。
