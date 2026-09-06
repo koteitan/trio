@@ -9913,3 +9913,62 @@ APd_twoTwoGen  （塔 nstN + snocN_of_tower）
 の 3 つを「2 の記録で終わる文脈」でやり直す。`snocYd_mem` 側は
 追記30 で測ったとおり通る（単位 `unN N D ++ (2 の記録)`、`MidD` / `hMy` は同じ議論）。
 残るのは `APd_twoTwoGen` の `GoodFb`（pu / pk / seg）の一般化。
+
+### 追記32: シート行376 は 1 本の補題 `TwoStep` に帰着した（Lean で green）
+
+```
+def TwoStep : Prop := ∀ Z, JkA Z → TwoOk Z → TwoOk (Jk1.two Jk1.nil Z)
+theorem R376_of_TwoStep (h : TwoStep) : R373 ++ [(5,3,0)] ∈ W 0
+```
+経路（全部 green、sorry なし）:
+```
+stkP q R = two nil (... (two nil R))   stk q = stkP q nil
+TwoOk_stk h : ∀q, TwoOk (stk q)        stk 0 は TwoOk_nil、あとは h を q 回
+APd_stk h   : APd (true::ks) (stk q)   TwoOk_stk を N := nil で使う
+GOK_oneStk h, jk1_stk  → tw_R344_42 h : ∀n, Mtw R344 [(4,2,0)] n ∈ W 0
+→ R376_of_tower
+```
+`TwoStep` の `Z = nil` の場合が `TwoOk_twoNil`（= `APd_twoTwoGen`）なので、
+これは既証明の真の一般化。
+
+**続き111 の残り 4 本も同じ壁**（`bms -d` で測った）:
+```
+#14 P(5,2,0)  塔 Mtwd 2 R341 [(3,1,0),(4,2,0),(5,2,0)] n
+              木 NST k = two nil (one (two nil nil) (NST (k-1)))
+#15 P(6,0,0)  塔 R373 ++ copies [(5,2,0)] n（同じ高さに n 個）
+              木 one nil (two nil (Yc n))、Yc n = two (Yc (n-1)) nil
+#16 P(6,1,0)  塔 TwD 6 R375m n（P 全体の写し）
+              木 one nil (two nil (two nil (pay nil B)))
+#17 P(6,2,0)  塔 Mtwd 3 R341 [(3,1,0),(4,2,0),(5,2,0)] n
+```
+どれも「2 の記録の直上に 2 の記録、そのさらに上に木」を含む。
+
+**なぜ今の機械で出ないか**（測った）:
+```
+plug ctx (two N (two nil Z)) = plug (ctx ++ [ftwo N, ftwo nil]) Z
+```
+だが `APd` / `GCtx` の形の言語 `List Bool` には **「2 の記録の枠だけ」の記号がない**
+（`true` = 1 の列、`false` = 1 の列 + 2 の記録）。`GCtx (false::ks)` は
+`ctx' ++ [fone U, ftwo N]` の形しか作れないので、`ctx ++ [ftwo N, ftwo nil]` は
+`GCtx` の文脈ではなく、その上に置ける木を表す述語が存在しない。
+`APd_twoTwoGen` が `Z = nil` でしか言えていないのはこのため
+（`snocYd_mem` は末尾に 1 列足す形なので、上に木があると使えない）。
+
+**必要な工事**（設計は測った）:
+`StkOk` に `ftwo` のコンストラクタを足し、`LOk_nil` をそこで証明する。
+```
+Skq q D  : 一番内側の fone 枠のあとに 2 の記録の枠が q 枚（inductive、正値でOK）
+LOk_one / LOk_two は定義から自明
+LOk_nil を count q+1 で示す = snocYd_mem（単位 = fone 列 + N + q 枚の 2 の記録、dl = q+1）
+  塔の各段は one nil (two N (stkP (q-1) NEXT))、末端の nil は count q → IH で閉じる
+```
+`LOk_pay` は count 0（fone 終わり）では既済（`LOk_pay_succ`）、
+count ≥ 1 では `GoodFb_snoc_dupJt0` / `innerJt0` で書ける。
+
+**この回の下ごしらえ**: `GoodFb_snoc_dupJt` / `innerJt` から死んだ仮定を外した。
+```
+外れたもの: CtxOk ctx / CtxX ctx · / JkA N / JkA Z / Bok Y / Bok (Y++[(0,0,0)])
+残るもの:   JkT (plug ctx ·) だけ（本体はここでしか使っていなかった）
+```
+`GoodFb_snoc_dupJt0` / `innerJt0` / `dupJs0` / `innerJs0` の 4 本が
+これで全部「文脈一般（`ctx : List Frm` を全称で取る）」になった。

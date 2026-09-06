@@ -20453,16 +20453,15 @@ theorem colJ_plug_twoIt (a b : ℕ) (ctx : List Frm) (N T : Jk1) : ∀ n : ℕ,
         List.range_succ, List.flatMap_append]
       simp [List.append_assoc]
 
-theorem GoodFb_snoc_innerJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc : CtxOk ctx)
-    {N Z : Jk1} (hN : JkA N) (hZ : JkA Z) {Y : TrioSeq}
-    (hcx : CtxX ctx (Jk1.two N (Jk1.pay Z Y)))
-    (hY : Bok Y) (hlen : 2 ≤ Y.length)
+theorem GoodFb_snoc_innerJt0 {ws : List Jk1} (hw : WOk ws) {ctx : List Frm}
+    {N Z : Jk1} {Y : TrioSeq}
+    (hJT : JkT (plug ctx (Jk1.two N (Jk1.pay Z Y))))
+    (hlen : 2 ≤ Y.length)
     (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
     (hIH : ∀ n, 1 ≤ n →
       GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.two N (Jk1.pay Z (Y⟦n⟧)))]))) :
     GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.two N (Jk1.pay Z Y))])) := by
-  refine GoodFb_of_keyJ (WOk_append hw (WOk_singletonT
-    (JkT_plug ctx hc _ (hcx)))) hIH ?_
+  refine GoodFb_of_keyJ (WOk_append hw (WOk_singletonT hJT)) hIH ?_
   intro Z0 a b hb hn
   have e : ∀ B : TrioSeq,
       Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) ::
@@ -20477,16 +20476,24 @@ theorem GoodFb_snoc_innerJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc :
   rw [e Y, oper_shift _ Y (a + dep ctx + 3) n hlen hp, ← e (Y⟦n⟧)]
   exact hn n hn'
 
-theorem GoodFb_snoc_dupJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc : CtxOk ctx)
-    {N Z : Jk1} (hN : JkA N) (hZ : JkA Z) {Y : TrioSeq}
-    (hcx : CtxX ctx (Jk1.two N (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))))
-    (hY0 : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) (hY : Bok Y)
+theorem GoodFb_snoc_innerJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc : CtxOk ctx)
+    {N Z : Jk1} (_hN : JkA N) (_hZ : JkA Z) {Y : TrioSeq}
+    (hcx : CtxX ctx (Jk1.two N (Jk1.pay Z Y)))
+    (_hY : Bok Y) (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hIH : ∀ n, 1 ≤ n →
+      GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.two N (Jk1.pay Z (Y⟦n⟧)))]))) :
+    GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.two N (Jk1.pay Z Y))])) :=
+  GoodFb_snoc_innerJt0 hw (JkT_plug ctx hc _ hcx) hlen hp hIH
+
+theorem GoodFb_snoc_dupJt0 {ws : List Jk1} (hw : WOk ws) {ctx : List Frm}
+    {N Z : Jk1} {Y : TrioSeq}
+    (hJT : JkT (plug ctx (Jk1.two N (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))))
     (hIH : ∀ n, 1 ≤ n →
       GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (twoIt N (Jk1.pay Z Y) n)]))) :
     GoodFb (fun a b => wordJ a b
       (ws ++ [plug ctx (Jk1.two N (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))])) := by
-  refine GoodFb_of_keyJ (WOk_append hw (WOk_singletonT
-    (JkT_plug ctx hc _ (hcx)))) hIH ?_
+  refine GoodFb_of_keyJ (WOk_append hw (WOk_singletonT hJT)) hIH ?_
   intro Z0 a b hb hn
   set p := dep ctx with hp
   set M : TrioSeq := ((a + p + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (a + p + 2) (Jk1.pay Z Y) with hM
@@ -20541,6 +20548,15 @@ theorem GoodFb_snoc_dupJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc : C
   rw [hY0d] at h
   simpa [hM, List.append_assoc] using h
 
+theorem GoodFb_snoc_dupJt {ws : List Jk1} (hw : WOk ws) {ctx : List Frm} (hc : CtxOk ctx)
+    {N Z : Jk1} (_hN : JkA N) (_hZ : JkA Z) {Y : TrioSeq}
+    (hcx : CtxX ctx (Jk1.two N (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))))
+    (_hY0 : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) (_hY : Bok Y)
+    (hIH : ∀ n, 1 ≤ n →
+      GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (twoIt N (Jk1.pay Z Y) n)]))) :
+    GoodFb (fun a b => wordJ a b
+      (ws ++ [plug ctx (Jk1.two N (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))])) :=
+  GoodFb_snoc_dupJt0 hw (JkT_plug ctx hc _ hcx) hIH
 
 /-! ### 形の助け（`replicate` 前置き） -/
 
@@ -27399,6 +27415,85 @@ theorem R375u17_mem : R375u ++ [((8, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375u15_mem
 #print axioms R375u16_mem
 #print axioms R375u17_mem
+
+
+/-! ### ★★★★★ 2 の記録の階段: シート行376 は 1 本の補題に帰着する
+
+`R376_of_tower` の要求する塔 `Mtw R344 [(4,2,0)] n` は、木では
+`one nil (two nil (two nil ... nil))`。この「2 の記録の直上に 2 の記録」を
+1 段足す操作だけが未証明で、それ以外は全部つながる。 -/
+
+/-- 2 の記録の枠を `q` 段積んだ木（左兄弟はすべて `nil`）。 -/
+def stkP : ℕ → Jk1 → Jk1
+  | 0, R => R
+  | (q + 1), R => Jk1.two Jk1.nil (stkP q R)
+
+/-- `jk1 l (stk q) = (l+1,2,0)(l+2,2,0)...(l+q,2,0)`。 -/
+def stk (q : ℕ) : Jk1 := stkP q Jk1.nil
+
+theorem JkA_stkP : ∀ (q : ℕ) {R : Jk1}, JkA R → JkA (stkP q R)
+  | 0, _, h => h
+  | (q + 1), _, h => ⟨trivial, JkA_stkP q h⟩
+
+theorem JkA_stk (q : ℕ) : JkA (stk q) := JkA_stkP q trivial
+
+/-- ★ 残る唯一の壁。`Z = nil` の場合が `TwoOk_twoNil`（= `APd_twoTwoGen`）。 -/
+def TwoStep : Prop := ∀ Z : Jk1, JkA Z → TwoOk Z → TwoOk (Jk1.two Jk1.nil Z)
+
+theorem TwoOk_stk (h : TwoStep) : ∀ q : ℕ, TwoOk (stk q)
+  | 0 => TwoOk_nil
+  | (q + 1) => h (stk q) (JkA_stk q) (TwoOk_stk h q)
+
+theorem APd_stk (h : TwoStep) : ∀ (q : ℕ) (ks : List Bool), APd (true :: ks) (stk q)
+  | 0, ks => APd_nilT ks
+  | (q + 1), ks => by
+      have hh := TwoOk_stk h q Jk1.nil trivial (fun _ _ => APd_nil _) 0 ks
+      simpa using hh
+
+theorem GOK_oneStk (h : TwoStep) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil) (APd_stk h q []))
+
+theorem jk1_stk : ∀ (q l : ℕ),
+    jk1 l (stk q) = (List.range q).flatMap
+      (fun k => shiftr01 k 0 [((l + 1, 2, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simp [stk, stkP, jk1]
+  | (q + 1), l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stk q)) = _
+      rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp only [jk1, List.nil_append, shiftr01_zero, List.singleton_append,
+        Function.comp_def]
+      refine congrArg _ ?_
+      rw [jk1_stk q (l + 1)]
+      apply List.flatMap_congr
+      intro k _
+      show shiftr01 k 0 [((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)]
+        = shiftr01 (k + 1) 0 [((l + 1, 2, 0) : ℕ × ℕ × ℕ)]
+      unfold shiftr01
+      simp only [List.map_cons, List.map_nil]
+      rw [show l + 1 + 1 + k = l + 1 + (k + 1) from by omega]
+
+theorem tw_R344_42 (h : TwoStep) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    GOK_oneStk h n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★ シート行376 は `TwoStep` 1 本だけに帰着する。 -/
+theorem R376_of_TwoStep (h : TwoStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42 h)
+
+#print axioms R376_of_TwoStep
 
 
 end Small
