@@ -10946,3 +10946,110 @@ LOk1_hangP : LOk 1 (two nil (one (two nil nil) nil))
 行376 は `stk q`（2 の記録の枠を `q` 段）なので `TTwA (two nil X)` が要る。
 `TTwA_twoNil`（`X = nil`）はあるが、一般の `X` は未証明。
 `TTwA X → TTwA (two nil X)` が次の目標。
+
+## 追記59: `TTwA_onePay` が出た。`P = Z(7,1,0)` 族は 21/22
+
+追記58 の `TTwA_oneNil` で `P` 族の写経が再開でき、そのまま
+
+```
+P(3,0,0) (3,1,0) (4,0,0) (4,1,0) (4,2,0) (5,0,0) (5,1,0)
+ (6,0,0) (6,1,0) (6,2,0) (7,0,0) (7,1,0) (8,0,0)
+```
+
+が Y 族の写経で通った。`Y` 族との違いは高さ 7 が 2 列 `(7,2,0)(7,1,0)` に
+なることだけで、単位は
+
+```
+U375bP = U375bZ ++ [(7,1,0)]   （8 列, MidD 3）
+U375cP = U375cZ ++ [(7,1,0)]   （7 列, MidD 4）
+U375dP = U375dZ ++ [(7,1,0)]   （6 列, MidD 5）
+HP   = one (two nil nil) (two nil (one (two nil nil) nil))
+WttP = two nil HP
+jk1 l HP   = (l+1,2,0)(l+1,1,0)(l+2,2,0)(l+3,2,0)(l+3,1,0)
+jk1 l WttP = (l+1,2,0)(l+2,2,0)(l+2,1,0)(l+3,2,0)(l+4,2,0)(l+4,1,0)
+```
+
+`NTw_WWP`（高さ 7 の塔の枠）も `TTwA_oneNil` 一発で出た。
+`P(8,0,0)` の `SP n = one (SP (n-1)) nil`（`SP 0 = two nil nil`）も
+`TTwA_SP = TTwA_oneNil` の反復。
+
+### ★★★★★ `TTwA_onePay`（1 の列の上に荷）
+
+`P(8,1,0)` は高さ 8 に荷を吊るすので、2 の記録の枠の上に
+
+```
+one (two nil nil) (pay nil B)
+```
+
+を置く必要がある。`TTwA_oneNil` は上が `nil` のときだけなので届かない。
+`AYs`（荷 `Y` の `W 0` 帰納）を **枠条件なしで** 焼き直した:
+
+```
+TTwA_onePay : Bok Y → JkA Z → (∀ W, JkA W → TTwA W → TTwA (one W Z))
+            → JkA V → TTwA V → TTwA (one V (pay Z Y))
+```
+
+要点は鎖 `itJ (pay Z Y') n V` の良さの出どころ。`AYs` は文脈条件
+`CtxOk` と枠条件を使っていたが、ここでは
+
+```
+TTwA_itJ : (∀ W, JkA W → TTwA W → TTwA (one W T)) → TTwA V → TTwA (itJ T n V)
+```
+
+で `TTwA` そのものを繰り上げる。`GoodFb_snoc_dupJs0 / innerJs0` は
+`hJT` しか要求しない 0 版なので、文脈は `D ++ [ftwo N]` のままでよい。
+`hAP` に `TTwA_oneNil` を入れると
+
+```
+TTwA_onePayNil : JkA V → TTwA V → Bok B → TTwA (one V (pay nil B))
+```
+
+が出て、`P(8,1,0)` が通った。
+
+### 残り 1 行 `P(8,2,0)` と、その壁
+
+`P(8,2,0)` は `snocY_mem (Y0 := R375z) (M := [(7,1,0)]) (L := 7) (y := 2)`。
+塔 `Mtw R375z [(7,1,0)] n` の語は
+
+```
+… (6,2,0) (7,2,0) (7,1,0) (8,1,0) (9,1,0) …
+```
+
+で、高さ 6 の位置（2 の記録の枠の直上）の木は形が一意に決まり
+
+```
+one (two nil nil) (chn m)
+```
+
+になる。`chn m = one nil (chn (m-1))` は**右に伸びる鎖**。
+`snocYd_mem0` で歩幅 `dl` を変えても、`M` の最後の列 `(7,1,0)` が
+`hMy`（`y ≤ 行1`）を破るので逃げられない（`M` の候補を全部見た）。
+
+いま持っている `TTwA` の閉じ方は
+
+```
+TTwA nil / TTwA (two nil nil)
+TTwA (pay X C)        ← TTwA X                （TTwA_pay）
+TTwA (one W Z)        ← TTwA W かつ OneOk Z
+OneOk nil                                      （TTwA_oneNil）
+OneOk (pay Z Y)       ← OneOk Z                （TTwA_onePay）
+OneOk (one U nil)     ← OneOk U                （APnil_gen0 を 1 段深い文脈で）
+```
+
+ただし `OneOk Z := ∀ W, JkA W → TTwA W → TTwA (one W Z)`。
+**`OneOk (one nil Z) ← OneOk Z` が無い**（右に伸びる鎖が作れない）。
+`APnil_gen0` は右の子が `nil` の `one V nil` しか扱えず、
+右の子が非 `nil` の場合は枠条件（`TwOk (r+1) 0 V`）が要るが、
+`V = two nil nil` に対してそれはラン（2 の記録の連続）そのもので、
+`TwSt` の枠 `N` は `NTw r N` しか持たないため塔が回らない。
+`TTwA` は `∀ q, NTw q N` を要求することでここを避けている。
+
+なお `chn k` も `chnT k (pay nil C)` も **万能**（`∀ r m, TwOk r m ·`）で、
+`TwOk_chn` は `TwOk_nil` と `TwOk_one`（`U = nil`）だけで出る。
+つまり必要なのは
+
+```
+(∀ r m, TwOk r m Z) → OneOk Z
+```
+
+の形の橋。これが行376（`stk q`）の壁と同じ形をしている。
