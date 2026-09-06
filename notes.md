@@ -11697,3 +11697,16 @@ R(9,2,0): 展開は bad root 11、delta 2、悪い部分 (7,1,0)(8,2,0)。塔は
 Mtwd 2 R375z [(7,1,0),(8,2,0)] n で、木は QQ m = one nil (two nil (QQ (m-1)))。
 Ck_QQ : ∀ m j n, Ck j n (QQ m) が Ck_pair の繰り返しで出る。
 最後は snocYd_mem0 (L=7, y=2, dl=2)。
+
+## 追記77: T = R(9,2,0) 族に着手（標準拡張 24 個）
+
+単位 U375aK = U375aR ++ [(9,2,0)]（11 列）。(9,2,0) は 2 の列なので snocd_gen は
+効かず、歩幅 2 の塔（QQ_tower_gen）+ snocYd_mem0 で継ぐ。土台一般版は
+Mtwd 2 (A ++ U375aZ) [(7,1,0),(8,2,0)] m ∈ W 0。これで (0,0,0)(1,0,0)(1,1,0)
+(2,0,0)(2,1,0) まで。
+
+注意: T(2,2,1) の字は末尾が「2 の記録の直上に 2 の記録」（走り 2）になる:
+  NK = one nil (two nil (one (two nil nil) (two nil (one (two nil nil)
+        (two nil (two nil nil))))))
+Ck 層は走りを含まない文脈しか作れないので、そのままでは出ない。
+GOK_twoTwoNilW_gen（左兄弟つき走り 2 の塔）を Ck に取り込む必要がある。
