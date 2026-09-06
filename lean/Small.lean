@@ -34719,5 +34719,127 @@ theorem jk1_BT_append (U : Jk1) (js ks : List ℕ) (l : ℕ) :
 #print axioms jk1_stkP
 #print axioms jk1_bdA_append
 #print axioms jk1_BT_append
+
+/-! #### ブロック 1 個の語と、その塔 -/
+
+theorem jk1_stkP_nil : ∀ (e l : ℕ),
+    jk1 l (stkP e Jk1.nil)
+      = (List.range e).map (fun k => ((l + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+  | 0, l => by simp [stkP, jk1]
+  | (e + 1), l => by
+      have ih := jk1_stkP_nil e (l + 1)
+      show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (stkP e Jk1.nil)) = _
+      rw [ih]
+      simp only [jk1, List.nil_append]
+      apply List.ext_getElem
+      · simp
+      · intro n h1 h2
+        rcases n with _ | n
+        · simp
+        · simp only [List.getElem_cons_succ, List.getElem_map, List.getElem_range,
+            Prod.mk.injEq, and_true]
+          omega
+
+/-- ブロック 1 個の語。 -/
+theorem jk1_bdA_one (m e : ℕ) :
+    jk1 m (bdA [e]) = ((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+      (List.range e).map (fun k => ((m + 2 + k, 2, 0) : ℕ × ℕ × ℕ)) := by
+  show jk1 m Jk1.nil ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (m + 1) (stkP e Jk1.nil)) = _
+  rw [jk1_stkP_nil e (m + 1)]
+  simp only [jk1, List.nil_append, List.cons.injEq, true_and]
+
+theorem length_bdA_one (m e : ℕ) : (jk1 m (bdA [e])).length = e + 1 := by
+  rw [jk1_bdA_one]; simp
+
+theorem MidD_bdA_one (m e : ℕ) : MidD (m + 2) (jk1 m (bdA [e])) := by
+  have h : jk1 m (bdA [e]) = ((m + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (m + 1) (stkP e Jk1.nil) := by
+    show jk1 m Jk1.nil ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (m + 1) (stkP e Jk1.nil)) = _
+    simp [jk1]
+  rw [h]
+  have h1 := MidD_colN (m + 1) (stkP e Jk1.nil) (by omega) (JkA_stkP' e trivial)
+  rwa [show m + 1 + 1 = m + 2 from by omega] at h1
+
+theorem entry_bdA_one_head (m e : ℕ) : entry (jk1 m (bdA [e])) 1 0 = 1 := by
+  rw [jk1_bdA_one]; simp [entry]
+
+theorem entry_bdA_one_tail (m e : ℕ) : ∀ t, 1 ≤ t → t < e + 1 →
+    entry (jk1 m (bdA [e])) 1 t = 2 := by
+  intro t h1 h2
+  obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
+  have ht' : t' < e := by omega
+  have hg : (jk1 m (bdA [e])).getD (t' + 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = ((m + 2 + t', 2, 0) : ℕ × ℕ × ℕ) := by
+    rw [jk1_bdA_one, List.getD_cons_succ, List.getD_eq_getElem?_getD]
+    simp [ht']
+  have he : entry (jk1 m (bdA [e])) 1 (t' + 1)
+      = ((jk1 m (bdA [e])).getD (t' + 1) ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 := rfl
+  rw [he, hg]
+
+theorem hMy_bdA_one (m e : ℕ) : ∀ t, 1 ≤ t → t < (jk1 m (bdA [e])).length →
+    entry (jk1 m (bdA [e])) 0 t < (m + 1) + (e + 1) →
+    (∀ i, t < i → i < (jk1 m (bdA [e])).length →
+      entry (jk1 m (bdA [e])) 0 t < entry (jk1 m (bdA [e])) 0 i) →
+    2 ≤ entry (jk1 m (bdA [e])) 1 t := by
+  intro t h1 h2 _ _
+  rw [length_bdA_one] at h2
+  rw [entry_bdA_one_tail m e t h1 h2]
+
+/-- 2 の記録を 1 本足す。 -/
+theorem jk1_bdA_succ (m e : ℕ) :
+    jk1 m (bdA [e + 1]) = jk1 m (bdA [e]) ++ [((m + e + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [jk1_bdA_one, jk1_bdA_one, List.range_succ, List.map_append]
+  simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append]
+  rw [show m + 2 + e = m + e + 2 from by omega]
+
+/-- ブロックを `i` 個並べた語は歩幅 `e+1` の塔。 -/
+theorem jk1_bdA_replicate : ∀ (i m e : ℕ),
+    jk1 m (bdA (List.replicate i e))
+      = (List.range i).flatMap (fun k => shiftr01 ((e + 1) * k) 0 (jk1 m (bdA [e])))
+  | 0, m, e => by simp [bdA, jk1]
+  | (i + 1), m, e => by
+      rw [List.replicate_succ, show (e :: List.replicate i e) = [e] ++ List.replicate i e
+        from rfl, jk1_bdA_append, jk1_bdA_replicate i (m + hgtB [e]) e,
+        List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp only [Nat.mul_zero, shiftr01_zero, Function.comp_def]
+      congr 1
+      apply List.flatMap_congr
+      intro k _
+      rw [show m + hgtB [e] = m + (e + 1) from by simp only [hgtB]; omega,
+        ← jk1_shift (bdA [e]) m (e + 1), shiftr01_add0]
+      congr 1
+      rw [Nat.mul_succ]
+      omega
+
+#print axioms jk1_bdA_one
+#print axioms MidD_bdA_one
+#print axioms jk1_bdA_replicate
+
+/-! #### `BT` の語の分解（塔と最後の 1 列） -/
+
+theorem wordJ_BT_append (a b : ℕ) (ws : List Jk1) (U : Jk1) (pre ks : List ℕ) :
+    wordJ a b (ws ++ [BT U (pre ++ ks)])
+      = wordJ a b (ws ++ [BT U pre]) ++ jk1 (a + 1 + hgtB pre) (bdA ks) := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ, colJ,
+    jk1_BT_append]
+  simp [List.append_assoc]
+
+theorem Mtwd_BT (a b : ℕ) (ws : List Jk1) (U : Jk1) (pre : List ℕ) (e i : ℕ) :
+    Mtwd (e + 1) (wordJ a b (ws ++ [BT U pre])) (jk1 (a + 1 + hgtB pre) (bdA [e])) i
+      = wordJ a b (ws ++ [BT U (pre ++ List.replicate i e)]) := by
+  rw [wordJ_BT_append, Mtwd, jk1_bdA_replicate]
+
+theorem wordJ_BT_succ (a b : ℕ) (ws : List Jk1) (U : Jk1) (pre : List ℕ) (e : ℕ) :
+    wordJ a b (ws ++ [BT U (pre ++ [e + 1])])
+      = (wordJ a b (ws ++ [BT U pre]) ++ jk1 (a + 1 + hgtB pre) (bdA [e]))
+        ++ [((a + 1 + hgtB pre + 1 + (e + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_BT_append, jk1_bdA_succ, List.append_assoc,
+    show a + 1 + hgtB pre + e + 2 = a + 1 + hgtB pre + 1 + (e + 1) from by omega]
+
+#print axioms wordJ_BT_append
+#print axioms Mtwd_BT
+#print axioms wordJ_BT_succ
 end Small
 end TRIO
