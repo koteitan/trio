@@ -38022,5 +38022,71 @@ theorem R375p21_mem : R375p ++ [((8, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   simpa [R375p, List.append_assoc] using h
 
 #print axioms R375p21_mem
+
+/-! ### 幅 1 のブロック列（`TwSt` 梯子で通る階段）
+
+`bdA (replicate i 1) = one nil (two nil (one nil (two nil (… nil))))`。
+1 の列と 2 の記録が交互なので、`TwOk_two` の `Fter`（2 の記録の直上に
+2 の記録を置かない）が常に満たされる。よって `TwSt` 梯子だけで
+**どの深さにも差せる**ことが出る。これが `GOK_runNil_gen` の歩幅 `j = 1` の
+階段になる。 -/
+
+theorem TwOk_bdA1 : ∀ (i r m : ℕ), TwOk r m (bdA (List.replicate i 1))
+  | 0, r, m => TwOk_nil r m
+  | (i + 1), r, m => by
+      show TwOk r m (Jk1.one Jk1.nil (stkP 1 (bdA (List.replicate i 1))))
+      refine TwOk_one r m trivial (TwOk_nil r m) ?_
+      show TwOk r (m + 1) (Jk1.two Jk1.nil (bdA (List.replicate i 1)))
+      exact TwOk_two trivial (NTw_nil r) (Or.inr (Nat.succ_pos m))
+        (TwOk_bdA1 i (r + 1) 0)
+
+theorem LOk0_bdA1 : ∀ i : ℕ, LOk 0 (bdA (List.replicate i 1))
+  | 0 => LOk_nil 0
+  | (i + 1) => by
+      show LOk 0 (Jk1.one Jk1.nil (stkP 1 (bdA (List.replicate i 1))))
+      refine LOk_one (k := 0) trivial (LOk_nil 0) ?_
+      show LOk 1 (Jk1.two Jk1.nil (bdA (List.replicate i 1)))
+      exact LOk_of_TwOk0 (TwOk_two trivial (NTw_nil 0) (Fter_zero 0) (TwOk_bdA1 i 1 0))
+
+theorem GOK_bdA1 : ∀ i : ℕ, GOK (bdA (List.replicate i 1))
+  | 0 => GOK_nil
+  | (i + 1) => by
+      show GOK (Jk1.one Jk1.nil (stkP 1 (bdA (List.replicate i 1))))
+      refine (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+        ((APd_bnil _).mpr GOK_nil) ?_)
+      have h := TwoOk_of_LOk0 (LOk0_bdA1 i) Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h
+
+theorem Trm_rep1 : ∀ m : ℕ,
+    Trm Jk1.nil (List.replicate m ((Jk1.nil, 1) : Jk1 × ℕ)) = bdA (List.replicate m 1)
+  | 0 => rfl
+  | (m + 1) => by
+      show Jk1.one Jk1.nil (stkP 1
+          (Trm Jk1.nil (List.replicate m ((Jk1.nil, 1) : Jk1 × ℕ))))
+        = Jk1.one Jk1.nil (stkP 1 (bdA (List.replicate m 1)))
+      rw [Trm_rep1 m]
+
+/-- ★★★★★ ラン塔（歩幅 1）を階段つきで回す。`stk 2` は 2 本の 2 の記録。 -/
+theorem GOK_oneStk2 : GOK (Jk1.one Jk1.nil (stk 2)) := by
+  have hJT : JkT (plug ([] : List Frm)
+      (Jk1.one Jk1.nil (stkP 1 (Jk1.two Jk1.nil Jk1.nil)))) :=
+    ⟨⟨trivial, trivial, trivial, trivial⟩, trivial⟩
+  have hstair : ∀ i : ℕ, GOK (plug ([] : List Frm)
+      (Trm Jk1.nil ([((Jk1.nil, 1) : Jk1 × ℕ)] ++
+        List.replicate i ((Jk1.nil, 1) : Jk1 × ℕ)))) := by
+    intro i
+    have e : ([((Jk1.nil, 1) : Jk1 × ℕ)] ++ List.replicate i ((Jk1.nil, 1) : Jk1 × ℕ))
+        = List.replicate (i + 1) ((Jk1.nil, 1) : Jk1 × ℕ) := by
+      rw [List.replicate_succ]
+      rfl
+    show GOK (Trm Jk1.nil ([((Jk1.nil, 1) : Jk1 × ℕ)] ++
+      List.replicate i ((Jk1.nil, 1) : Jk1 × ℕ)))
+    rw [e, Trm_rep1 (i + 1)]
+    exact GOK_bdA1 (i + 1)
+  have h := GOK_runNil_gen (V := Jk1.nil) (A := Jk1.nil) trivial [] 1 hJT GOK_nil hstair
+  exact h
+
+#print axioms GOK_bdA1
+#print axioms GOK_oneStk2
 end Small
 end TRIO

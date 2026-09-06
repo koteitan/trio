@@ -11177,3 +11177,63 @@ PreQ             ブロックの左兄弟に課す条件（その場の良さだ
 `j = 0` は `Trm (one A0 nil) pre` になり `pre` での荷閉包（= `PayStep`）が要る。
 つまり `TipQ nil` と `PayStep` は相互再帰で、**この 2 つを同時に回す測度**が
 まだ見つかっていない。
+
+## 追記62: ラン塔が階段つきで回った（歩幅 1）。塔の先端は必ず `nil`
+
+行376 の壁 `ZeroStep` を分解して測った。
+
+### 通ったもの: 幅 1 のブロック列
+
+```
+bdA (replicate i 1) = one nil (two nil (one nil (two nil (… nil))))
+```
+
+は 1 の列と 2 の記録が**交互**なので、`TwOk_two` の `Fter`
+（2 の記録の直上に 2 の記録を置かない）が常に成り立つ。よって
+
+```
+TwOk_bdA1 : ∀ i r m, TwOk r m (bdA (replicate i 1))
+LOk0_bdA1 : ∀ i, LOk 0 (bdA (replicate i 1))
+GOK_bdA1  : ∀ i, GOK (bdA (replicate i 1))
+```
+
+が `TwSt` 梯子だけで出る（新しい定理は要らなかった）。これを階段にして
+
+```
+GOK_oneStk2 : GOK (one nil (stk 2))      -- GOK_runNil_gen の歩幅 j = 1
+```
+
+が回った。**ラン塔を実際の階段つきで回したのはこれが初めて**。
+（`stk 2` 自体は `R375m` として既知なので、意味は塔の配線の検証。）
+
+### 歩幅 `j = 2`（ラン 3）で止まる理由
+
+`GOK_runNil_gen` の歩幅 `j` の階段は `bdA (replicate i j)`。
+`j = 2` だと
+
+```
+bdA (replicate m 2) = one nil (two nil (two nil (bdA (replicate (m-1) 2))))
+```
+
+で**ランの上に荷（続きの木）が乗る**。ここが出ない。
+
+- `TwSt` 梯子: `TwOk (r+1) 0 (two nil Y)` は `Fter` で弾かれる。
+- ラン塔（`GOK_twoNil_gen` / `GOK_twoTwoNil_gen` / `GOK_TrmStep` /
+  `GOK_runNil_gen`）は **どれも先端が `nil`**。
+  塔の議論は「ランが語の一番上（上に何も無い）」でないと回らない。
+- P 族で作った「ランの上の荷」（`TTwA_oneNil` / `TTwA_onePay` / `Dk`）は
+  塔ではなく `APnil_gen0` / `AYs` の荷の帰納で出したもの。**ただし文脈クラスが
+  `TwSt`（`TTwA`）**で、ここで要るのは `LOk 0`（= `TwoOk`、GCtx の一番下の
+  ランの上）。
+
+### したがって次の一手は 2 択
+
+1. `TTwA` / `Dk` の開発を `TwoOk`（`LOk 0`）の文脈クラスに移植する。
+   `RunB Y := TwoOk (two nil Y)` を作り、`RunB nil = TwoOk_twoNil` を基点に
+   `RunB (one V nil)`（`APnil_gen0`）、`RunB (pay V C)`（`AYs`）、
+   さらに `Dk` 相当の枠の階層を積む。
+2. `GCtx` 文脈と `TwSt` 文脈の橋を作る（`GCtx` の 2 の記録の枠は必ず
+   1 の列の枠の直上なので、`Fter` 付きの `TwSt` と形は同じ。枠条件が
+   `APd` 系か `TwOk` 系かだけが違う）。
+
+1 の方が確実だが `Dk` 相当をもう 1 本書くことになる。
