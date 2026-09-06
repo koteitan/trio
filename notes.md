@@ -10536,3 +10536,34 @@ jk1 l (Trm X (bs ++ ks)) = jk1 l (Trm nil bs) ++ jk1 (l + hgL bs) (Trm X ks)
 (hstair : ∀ i, GOK (Trm A (pre ++ [(A0,j)] ++ replicate i (A,j))))
 → GOK (Trm (two A nil) (pre ++ [(A0,j)]))
 ```
+
+## 追記46: `GOK_TrmStep`（一般ステップ補題）が通った
+
+```
+GOK_TrmStep (hJA : JkA A) (pre : List (Jk1 × ℕ)) (j : ℕ)
+    (hJT   : JkT (Trm (two A nil) (pre ++ [(A0, j)])))
+    (hbase : GOK (Trm A0 pre))
+    (hstair: ∀ i, GOK (Trm A (pre ++ [(A0, j)] ++ replicate i (A, j)))) :
+  GOK (Trm (two A nil) (pre ++ [(A0, j)]))
+```
+
+`A = nil` が `GOK_BTstep`（ブロックを 1 個継ぐ）。一般の `A` は
+「ランの最後の枠木が `A`」の場合で、追記44 で結び目としたところ。
+
+塔は `snocYd_mem`（歩幅 `j+1`、錨はブロックの 1 の列、単位は
+`jk1 m (Trm A [(nil, j)]) = (m+1,1,0) :: jk1 (m+1) (stkP j A)`）。
+`pu` / `pk` / `seg` の 3 箇所で、塔の高さ 0 は `hbase`、高さ `i+1` は `hstair i`。
+
+語の分解:
+```
+wordJ a b (ws ++ [Trm A0 pre]) = wordJ a b (ws ++ [Trm nil pre]) ++ jk1 (a+1+hgL pre) A0
+wordJ a b (ws ++ [Trm A (pre ++ [(A0,j)] ++ replicate i (A,j))])
+  = Mtwd (j+1) (wordJ a b (ws ++ [Trm A0 pre])) (jk1 (a+1+hgL pre) (Trm A [(nil,j)])) (i+1)
+wordJ a b (ws ++ [Trm (two A nil) (pre ++ [(A0,j)])])
+  = (wordJ a b (ws ++ [Trm A0 pre]) ++ jk1 (a+1+hgL pre) (Trm A [(nil,j)]))
+    ++ [(a+1+hgL pre+1+(j+1), 2, 0)]
+```
+
+次は `PayStep`（先端に荷）。A2' 帰納の鎖 `twoIt nil T n` / `itJ T n nil` は
+どちらも `Trm` の言葉で書けて、A2' の底（荷が空）が `two A nil` の形なので
+`GOK_TrmStep` で処理できる。
