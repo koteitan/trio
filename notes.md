@@ -11656,3 +11656,17 @@ Dk が「TTwA を fone 枠で相対化」したものなら、Tk は「Dk を [f
 chn は「枠をもう 1 段」使うので、Tk をさらに fone 枠で相対化した Ek 層が要る。
 Ek の中身: Ek_nil / Ek_one（枠の付け替え）/ Ek_oneNil（APnil_gen0）は安いが、
 Ek_payNil に Ek_onePay（Tk_onePay の Ek 版 = A2' もう 1 枚）が要る。
+
+## 追記75: `Ek` 層で S 族 27/27 完成
+
+Ek n Z := ∀ gs, Gok n gs → Tk (plug gs Z)、Gok は Fok の Tk 版（枠木に
+「Tk で良い」と「荷を吊るしても Tk で良い」を課す）。中身は Dk 層の完全な写し:
+  Ek_of_Tk0 / Tk_of_Ek0 / Ek_congr / JkA_plug_Gok / Ek_one（枠の付け替え）/
+  Ek_oneNil（APnil_gen0）/ Ek_nil / Ek_itJ / Ek_pay（n の帰納 + A2'）。
+Ek_pay の n = 0 は Tk_pay なので、A2' は n+1 の 1 枚だけ。
+これで Ek_chn → Tk (chn m) = 「2 の記録の先端に高さの上がる 1 の記録の鎖」。
+S(10,2,0) は塔 Mtw R375r [(9,1,0)] m を chn の木で出して snocY_mem。
+
+層の作り方が見えた: TTwA →(fone 枠)→ Dk →([fone V, ftwo Wl])→ Tk →(fone 枠)→ Ek。
+各層で要る A2' は「荷を吊るす」1 枚だけで、あとは APnil_gen0 と枠の付け替え。
+GoodFb_snoc_dupJs0 / innerJs0 / APnil_gen0 が文脈一般なのが効いている。
