@@ -11638,3 +11638,21 @@ Dk_oneTwoWlPay は payload が nil の場合。one nil nil 版が要る。
   Tk (one nil (pay nil B))   ＝ 2 の記録の先端の 1 の記録の「上」に荷
 が要る。Tk は two の先端の木しか動かせないので、one の枠をもう 1 枚挟む
 「枠 2 種の梯子」が必要。R(9,2,0) の壁（追記69）と同じ壁。
+
+## 追記74: `Tk` 層（2 の記録の先端に置ける木）で S(10,1,0)
+
+def Tk (Z) := ∀ n V Wl, (V の Dk 条件) → (Wl の Dk 条件) → Dk n (one V (two Wl Z))
+Dk が「TTwA を fone 枠で相対化」したものなら、Tk は「Dk を [fone V, ftwo Wl] で
+相対化」したもの。既存の 3 つを Tk で言い直すと:
+  Tk nil = Dk_oneTwoWlNil、Tk Z → Tk (pay Z B) = Dk_oneTwoWlZPay、
+  Tk U → Tk (one U nil) = APnil_gen0（Dk_oneTwoWlOA の後継段）。
+新しいのは Tk_onePay（TTwA_onePay の Tk 版、A2' + GoodFb_snoc_dupJs0/innerJs0）。
+これらの GoodFb_snoc_* は文脈一般なので、深い文脈でもそのまま効く。
+
+はまった点: Tk の束縛を暗黙 {n V Wl} にすると、tactic の途中で暗黙引数が
+勝手に intro されて `intro n V Wl` が失敗する。明示 (n V Wl) にした。
+
+残り S(10,2,0) は Tk (chn m)（先端に高さの上がる 1 の記録の鎖）が要る。
+chn は「枠をもう 1 段」使うので、Tk をさらに fone 枠で相対化した Ek 層が要る。
+Ek の中身: Ek_nil / Ek_one（枠の付け替え）/ Ek_oneNil（APnil_gen0）は安いが、
+Ek_payNil に Ek_onePay（Tk_onePay の Ek 版 = A2' もう 1 枚）が要る。
