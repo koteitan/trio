@@ -11767,3 +11767,18 @@ Ck の 1 の枠は「その段のどの文脈でも良い」を要求するの�
 twoIt 鎖が同じ条件を要求してきて回らない（追記79）。
 次の一手: 文脈の 2 の枠を「UniW な木」に限った層 CokN を別に作り、
 その層でも荷の A2'（Ck_pay 相当）を 1 枚書く。
+
+## 追記81: T 族 24/24 完成。荷つき走り 2 は A2' 1 枚で出た
+
+T(9,1,0) の壁（追記80）は、文脈の層をもう 1 枚作らずに済んだ:
+  Ck_twoWPayTwoNil : ∀ B, Bok B → ∀ Wl, UniW Wl → ∀ j n,
+      Ck j (n+1) (two Wl (pay (two nil nil) B))
+GoodFb_snoc_dupJt0 / innerJt0 は文脈一般なので、文脈を分解せずに
+そのまま使える。鎖 twoIt Wl (pay (two nil nil) Y) i の各段が UniW であることを
+A2' の帰納仮定（小さい荷での主張）から作るのが要。
+その上で
+  Dk1_twoNilPayTwoNil → TTwA_hang9K → GOK_hang9K → hang9_R375k
+と繋いで snocd_mem。
+
+次: U = T(9,1,0) 族に着手（(0,0,0)(1,0,0)(1,1,0) まで）。
+単位は U375aJ = U375aK ++ [(9,1,0)]（(9,1,0) は 1 の列なので snocd_gen が効く）。
