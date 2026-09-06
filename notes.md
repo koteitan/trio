@@ -11237,3 +11237,67 @@ bdA (replicate m 2) = one nil (two nil (two nil (bdA (replicate (m-1) 2))))
    `APd` 系か `TwOk` 系かだけが違う）。
 
 1 の方が確実だが `Dk` 相当をもう 1 本書くことになる。
+
+## 追記63: 壁は「2 番目の 2 の記録に左兄弟が付いたラン」に一点集約する
+
+追記62 の 2 択（`TwoOk` への移植 / `GCtx`↔`TwSt` の橋）を測ったら、
+橋は**存在しない**ことが分かり、必要な補題が 1 本に絞れた。
+
+### 分かったこと 1: `GCtx` はランを表現できない
+
+`GCtx (false :: ks) ctx = ctx' ++ [fone U, ftwo N]` なので、
+**GCtx 文脈のどの 2 の記録の枠も直下が 1 の列の枠**。つまり
+「2 の記録の直上に 2 の記録」という文脈は `GCtx` / `APd` の言語で書けない。
+ランは常に**木の中**にあり、文脈にはならない。したがって
+`APd_step` などの `APd` 系は使えず、文脈を選ばない `*_gen0`
+（`APnil_gen0`、`GoodFb_snoc_dupJs0/innerJs0/dupJt0/innerJt0`）だけが使える。
+
+### 分かったこと 2: `TwSt` の底には必ず 2 の記録がある
+
+`TwSt 0 m D ↔ StkOk (m+1) D`、`StkOk 0 D = GCtx ++ [ftwo N]`。
+つまり `TwSt` 梯子は「1 枚目の 2 の記録の上」から始まる。
+一方 `GOK`（空文脈）や `APd [true]`（1 の列の枠 1 枚だけ）は
+その下にある。**`TwSt` / `TTwA` の成果は `LOk 0` = `TwoOk` に降りてこない。**
+両者は包含関係が無い（枠条件が `TwOk` 系と `APd` 系で別）。
+
+### 分かったこと 3: `LOk` はすでに全段で閉じている
+
+```
+LOk_one   : LOk k W → LOk (k+1) Z → LOk k (one W Z)
+LOk_pay   : ∀ k, LOk k X → LOk k (pay X Y)      -- k = 0 は TwoOk_pay 経由
+LOk_oneNil: ∀ k, LOk k X → LOk k (one X nil)    -- APnil_gen0
+LOk_nil   : ∀ k, LOk k nil                       -- k = 0 は TwoOk_nil 経由
+LOk_twoNilAll : ∀ k, LOk k (two nil nil)         -- k = 0 は TwoOk_twoNil（ラン 2、先端 nil）
+```
+
+足りないのは **`LOk 0 (two nil Y)`（ラン 2 の上に荷 `Y`）** ただ 1 種類。
+
+### 分かったこと 4: `twoIt` は横（左兄弟）であって縦（ラン）ではない
+
+`twoIt N T n = two (twoIt N T (n-1)) T` で、`jk1 l (two A B) = jk1 l A ++ (l+1,2,0) :: jk1 (l+1) B`
+なので `A` は**同じ高さの左兄弟**。荷の帰納で出る鎖はランを伸ばさない。
+これは良い知らせだが、鎖の各項 `two N (twoIt nil T n)` を良いと言うには
+**2 番目の 2 の記録に左兄弟 `twoIt nil T (n-1)` が付いたラン**が要る。
+
+### したがって必要な補題は 1 本
+
+```
+GOK (plug (ctx0 ++ [fone V]) (two N (two W nil)))      -- W は一般の左兄弟
+```
+
+いま持っている `GOK_twoTwoNil_gen` / `TwOk_twoTwoNil` はどちらも `W = nil`。
+語は
+
+```
+… jk1 p N ++ (p+1,2,0) :: (jk1 (p+1) W ++ [(p+2,2,0)])
+```
+
+で、`W = nil` のときの塔は歩幅 2、単位 `unN N D = (D,1,0) :: jk1 D N ++ [(D+1,2,0)]`、
+階段 `nstN N k = one nil (two N (nstN N (k-1)))`。
+`W ≠ nil` だと単位・歩幅が `W` の語の高さ幅だけ伸びるはず。
+**次はこの塔の計算（悪い部分の根・歩幅・単位）を `bms -d` で測る。**
+
+これが出れば
+`RunB Y := TwoOk (two nil Y)` が `nil` / `one V nil` / `pay` で閉じ、
+`bdA (replicate m 2)`（ラン 2 が任意段）→ `GOK_runNil_gen` の歩幅 2
+→ ラン 3 → 帰納で任意長のラン → 行376、という道が通る。
