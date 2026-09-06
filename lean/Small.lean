@@ -37929,5 +37929,98 @@ theorem Dk_pay : ∀ (n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, JkA X → D
       exact key hY0b.mem hY0b X0 hJX0 hX0
 
 #print axioms Dk_pay
+
+/-! #### 右に伸びる鎖を 2 の記録の枠の上に -/
+
+theorem Dk_payNil (n : ℕ) (C : TrioSeq) (hC : Bok C) : Dk n (Jk1.pay Jk1.nil C) :=
+  Dk_pay n C hC Jk1.nil trivial (Dk_nil n)
+
+theorem Dk_chn : ∀ (m n : ℕ), Dk n (chn m)
+  | 0, n => Dk_nil n
+  | (m + 1), n =>
+      Dk_one trivial (Dk_nil n) (fun C hC => Dk_payNil n C hC) (Dk_chn m (n + 1))
+
+theorem TTwA_one_of_Dk1 {W X : Jk1} (hJW : JkA W) (hW : TTwA W) (hX : Dk 1 X) :
+    TTwA (Jk1.one W X) := by
+  have hF : Fok 1 [Frm.fone W] :=
+    (Fok_s 0 _).mpr ⟨W, [], rfl, rfl, hJW,
+      (fun gs hgs => by
+        have hg : gs = [] := (Fok_z gs).mp hgs
+        subst hg
+        exact hW),
+      (fun C hC gs hgs => by
+        have hg : gs = [] := (Fok_z gs).mp hgs
+        subst hg
+        exact TTwA_pay C hC W hJW hW)⟩
+  exact hX [Frm.fone W] hF
+
+/-! #### `P(8,2,0)` -/
+
+def GQP : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil Jk1.nil
+  | (n + 1) => Jk1.one (Jk1.two Jk1.nil Jk1.nil) (chn n)
+
+theorem JkA_GQP : ∀ n : ℕ, JkA (GQP n)
+  | 0 => ⟨trivial, trivial⟩
+  | (n + 1) => ⟨⟨trivial, trivial⟩, JkA_chn n⟩
+
+theorem TTwA_GQP : ∀ n : ℕ, TTwA (GQP n)
+  | 0 => TTwA_twoNil
+  | (n + 1) => TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil (Dk_chn n 1)
+
+theorem jk1_GQP : ∀ (n l : ℕ),
+    jk1 l (GQP n) = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 l (chn n)
+  | 0, l => by simp [GQP, chn, jk1]
+  | (n + 1), l => by
+      show jk1 l (Jk1.two Jk1.nil Jk1.nil) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (chn n)) = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          (jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (chn n)))
+      rw [jk1_twoNil l]
+      simp [jk1]
+
+theorem GOK_oneGQP (n : ℕ) : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (GQP n))))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hk : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (GQP n))) :=
+        TwoOk_of_LOk0 (LOk_one (k := 0) (W := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
+          (LOk0_of_TwoOk TwoOk_twoNil)
+          (LOk_of_TwOk0 (TTwA_GQP n 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+      have h := hk Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem GQP_tower_mem (n : ℕ) : Mtw R375z [((7, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (GQP n))))])) :=
+    GOK_oneGQP n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (GQP n))))]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (GQP n)))))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+          ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ), ((7, 2, 0) : ℕ × ℕ × ℕ)]
+        ++ (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((7, 1, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 4 (Jk1.two Jk1.nil Jk1.nil) ++
+          (((5, 1, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 5 Jk1.nil ++ (((6, 2, 0) : ℕ × ℕ × ℕ) :: jk1 6 (GQP n)))))))) = _
+    rw [jk1_twoNil 4, jk1_GQP n 6, jk1_chn_run n 6]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R375z, R375x, R375s, R375m, R373, R344, R341, R338,
+    List.append_assoc] using h
+
+/-- ★★★★★ `P(8,2,0)`。これで `P = Z(7,1,0)` 族は 22/22。 -/
+theorem R375p21_mem : R375p ++ [((8, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := R375z) (M := [((7, 1, 0) : ℕ × ℕ × ℕ)]) (L := 7) (y := 2)
+    R375z_ne (MidD_col 7 1 (by omega) (by omega)) (by simp [entry]) (by omega)
+    GQP_tower_mem
+  simpa [R375p, List.append_assoc] using h
+
+#print axioms R375p21_mem
 end Small
 end TRIO

@@ -11053,3 +11053,62 @@ OneOk (one U nil)     ← OneOk U                （APnil_gen0 を 1 段深い�
 ```
 
 の形の橋。これが行376（`stk q`）の壁と同じ形をしている。
+
+## 追記60: ★★★★★ 枠の階層 `Dk` が回った。`P` 族 22/22
+
+追記59 の壁（右に伸びる鎖 `chn m` が 2 の記録の枠の上に置けない）は
+**枠の階層**で解けた。
+
+```
+Fok 0 fs        := fs = []
+Fok (n+1) fs    := ∃ W fs', fs = fs' ++ [fone W] ∧ Fok n fs' ∧ JkA W
+                     ∧ Dk n W ∧ (∀ C, Bok C → Dk n (pay W C))
+Dk n X          := ∀ fs, Fok n fs → TTwA (plug fs X)
+```
+
+`Dk 0 X = TTwA X`。枠木に課すのは「1 段浅い世界での良さ」と「その上に荷を
+吊るせること」の 2 つだけで、`∀ D''`（TwSt の枠条件）は要らない。
+これが効く理由は `APnil_gen0` と `GoodFb_snoc_*Js0` が
+**文脈を選ばない（`hJT` しか要求しない）** から。
+
+閉じている演算:
+
+```
+Dk_one    : JkA U → Dk n U → (∀C, Dk n (pay U C)) → Dk (n+1) T → Dk n (one U T)
+Dk_oneNil : JkA X → Dk n X → (∀C, Dk n (pay X C)) → Dk n (one X nil)   （APnil_gen0）
+Dk_nil    : ∀ n, Dk n nil
+Dk_pay    : ∀ n, JkA X → Dk n X → ∀ Y, Bok Y → Dk n (pay X Y)
+```
+
+`Dk_pay` は `n` の帰納 + 荷 `Y` の `W 0` 帰納の二重帰納。`n+1` の段では
+文脈の一番深い枠 `W` を剥がして `one W (pay X Y)` の形にし、
+`GoodFb_snoc_dupJs0 / innerJs0` を使う。鎖 `itJ (pay X Y') k W` の良さは
+`Dk_itJ`（`Dk_one` + `Dk_pay n`）で供給する。**`Dk_pay n` が使えるのが要点**で、
+これが追記59 で「鎖の荷閉包が無い」と書いた穴を塞いだ。
+
+### 実り
+
+```
+Dk_chn : ∀ m n, Dk n (chn m)          （Dk_one + Dk_nil + Dk_pay の反復）
+TTwA_one_of_Dk1 : JkA W → TTwA W → Dk 1 X → TTwA (one W X)
+GQP n = two nil nil            (n = 0)
+      = one (two nil nil) (chn (n-1))
+TTwA (GQP n) → LOk 1 (two nil (GQP n)) → 塔 Mtw R375z [(7,1,0)] n
+→ P(8,2,0)。P = Z(7,1,0) 族 22/22。
+```
+
+### 次: シート行376 `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)`
+
+`snocY_mem (Y0 := R344) (M := [(4,2,0)]) (L := 4) (y := 3)` で、要るのは
+
+```
+∀ n, Mtw R344 [(4,2,0)] n ∈ W 0
+   = R344 ++ (4,2,0)(5,2,0)(6,2,0)…(3+n,2,0) ∈ W 0
+```
+
+つまり **2 の記録の連続ラン（長さ n）**。木は `one nil (stk n)` なので
+要るのは `TwoOk (stk q) = LOk 0 (stk q)`。`q = 1`（ラン 2）は
+`LOk_twoNilAll 0`（= `APd_twoTwoGen`）で持っているが `q ≥ 2` は未証明。
+`Dk` は `one` / `pay` / `nil` で閉じているが `two` では閉じていない。
+ラン塔（追記45–48 の `GOK_runNil_gen` / `GOK_TrmStep`）を `Dk` の枠で
+回すのが次の課題。
