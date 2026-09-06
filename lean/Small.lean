@@ -35328,5 +35328,121 @@ theorem wordJ_Trm_succ (a b : ℕ) (ws : List Jk1) (A0 A : Jk1) (pre : List (Jk1
 #print axioms jk1_Trm_tower
 #print axioms wordJ_Trm_tower
 #print axioms wordJ_Trm_succ
+
+/-! #### ★★★★★ 左兄弟つきの一般ステップ補題 -/
+
+theorem GOK_TrmStep {A0 A : Jk1} (hJA : JkA A) (pre : List (Jk1 × ℕ)) (j : ℕ)
+    (hJT : JkT (Trm (Jk1.two A Jk1.nil) (pre ++ [(A0, j)])))
+    (hbase : GOK (Trm A0 pre))
+    (hstair : ∀ i : ℕ, GOK (Trm A (pre ++ [(A0, j)] ++ List.replicate i (A, j)))) :
+    GOK (Trm (Jk1.two A Jk1.nil) (pre ++ [(A0, j)])) := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [Trm (Jk1.two A Jk1.nil) (pre ++ [(A0, j)])]) :=
+    WOk_append hw (WOk_singletonT hJT)
+  have hbG : GoodFb (fun a b => wordJ a b (ws ++ [Trm A0 pre])) := hbase ws hw hG
+  have hstG : ∀ i : ℕ, GoodFb (fun a b => wordJ a b
+      (ws ++ [Trm A (pre ++ [(A0, j)] ++ List.replicate i (A, j))])) :=
+    fun i => hstair i ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega,
+      wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_Trm_succ]
+    have htw : ∀ n : ℕ, Mtwd (j + 1) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [Trm A0 pre])))
+        (jk1 (c + 1 + t + 1 + hgL pre) (Trm A [(Jk1.nil, j)])) n ∈ W 0 := by
+      intro n
+      cases n with
+      | zero =>
+          have h0 := (hbG.pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift] at h0
+          simpa [Mtwd] using h0
+      | succ i =>
+          have h1 := ((hstG i).pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift, wordJ_Trm_tower] at h1
+          simpa [Mtwd, List.append_assoc] using h1
+    have h := snocYd_mem
+      (Y0 := Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [Trm A0 pre])))
+      (M := jk1 (c + 1 + t + 1 + hgL pre) (Trm A [(Jk1.nil, j)]))
+      (L := c + 1 + t + 1 + hgL pre + 1) (y := 2) (dl := j + 1)
+      (by simp) (by simpa using MidD_blk hJA j (c + 1 + t + 1 + hgL pre))
+      (by rw [entry_blk_head]; omega)
+      (by simpa using hMy_blk hJA j (c + 1 + t + 1 + hgL pre))
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro jj t Z hZ
+    rw [wordJ_shift, wordJ_Trm_succ]
+    have htw : ∀ n : ℕ, Mtwd (j + 1) (Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [Trm A0 pre])))
+        (jk1 (c + 1 + t + 1 + hgL pre) (Trm A [(Jk1.nil, j)])) n ∈ W 0 := by
+      intro n
+      cases n with
+      | zero =>
+          have h0 := (hbG.pk c E hI).2.2 jj t Z hZ
+          rw [wordJ_shift] at h0
+          simpa [Mtwd] using h0
+      | succ i =>
+          have h1 := ((hstG i).pk c E hI).2.2 jj t Z hZ
+          rw [wordJ_shift, wordJ_Trm_tower] at h1
+          simpa [Mtwd, List.append_assoc] using h1
+    have h := snocYd_mem
+      (Y0 := Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [Trm A0 pre])))
+      (M := jk1 (c + 1 + t + 1 + hgL pre) (Trm A [(Jk1.nil, j)]))
+      (L := c + 1 + t + 1 + hgL pre + 1) (y := 2) (dl := j + 1)
+      (by simp) (by simpa using MidD_blk hJA j (c + 1 + t + 1 + hgL pre))
+      (by rw [entry_blk_head]; omega)
+      (by simpa using hMy_blk hJA j (c + 1 + t + 1 + hgL pre))
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [Trm (Jk1.two A Jk1.nil) (pre ++ [(A0, j)])])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordJ (h + 1) 1 (ws ++ [Trm (Jk1.two A Jk1.nil) (pre ++ [(A0, j)])])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (h + 1) 1 (ws ++ [Trm (Jk1.two A Jk1.nil) (pre ++ [(A0, j)])]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_Trm_succ]
+    have htw : ∀ n : ℕ, Mtwd (j + 1) (A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [Trm A0 pre])))
+        (jk1 (h + 1 + s + 1 + hgL pre) (Trm A [(Jk1.nil, j)])) n ∈ W 0 := by
+      intro n
+      cases n with
+      | zero =>
+          have h0 := (hbG.seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+                  wordJ (h + s + 1) 1 (ws ++ [Trm A0 pre])
+              = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+                  wordJ (h + s + 1) 1 (ws ++ [Trm A0 pre]) from rfl] at h0
+          simpa [Mtwd, show h + s + 1 = h + 1 + s from by omega] using h0
+      | succ i =>
+          have h1 := ((hstG i).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1
+                  (ws ++ [Trm A (pre ++ [(A0, j)] ++ List.replicate i (A, j))])
+              = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1
+                  (ws ++ [Trm A (pre ++ [(A0, j)] ++ List.replicate i (A, j))]) from rfl,
+            wordJ_Trm_tower] at h1
+          simpa [Mtwd, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := snocYd_mem
+      (Y0 := A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [Trm A0 pre])))
+      (M := jk1 (h + 1 + s + 1 + hgL pre) (Trm A [(Jk1.nil, j)]))
+      (L := h + 1 + s + 1 + hgL pre + 1) (y := 2) (dl := j + 1)
+      (by simp) (by simpa using MidD_blk hJA j (h + 1 + s + 1 + hgL pre))
+      (by rw [entry_blk_head]; omega)
+      (by simpa using hMy_blk hJA j (h + 1 + s + 1 + hgL pre))
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using hh
+
+#print axioms GOK_TrmStep
 end Small
 end TRIO
