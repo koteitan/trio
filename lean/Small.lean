@@ -31075,5 +31075,180 @@ theorem R375x17_mem : R375x ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375x16_mem
 #print axioms R375x17_mem
 
+
+/-! ### ★★★★★ 深さ `k+1` の 2 の記録の直上に荷を吊るす（`TwoOk_pay` の梯子版）
+
+`TwoOk_pay` は深さ 0（`APd (true::ks)`）の話。`GoodFb_snoc_dupJt0` / `innerJt0` は
+文脈一般なので、鎖 `twoIt N T n` の左兄弟が育っても `LOk` の梯子で回る。
+左兄弟 `N` には「深さ 1 以上ならどこにでも差せる」だけを課す。 -/
+
+/-- `Z` は、深さ `k+1` のどこでも 2 の記録の右の子になれる。 -/
+def LTwo (Z : Jk1) : Prop :=
+  ∀ N : Jk1, JkA N → (∀ j : ℕ, LOk (j + 1) N) → ∀ k : ℕ, LOk (k + 1) (Jk1.two N Z)
+
+theorem LTwo_nil : LTwo Jk1.nil := fun _ hJN hN k => LOk_twoN hJN hN k
+
+theorem LTwo_congr {Z1 Z2 : Jk1} (h : ∀ l, jk1 l Z1 = jk1 l Z2) (hZ : LTwo Z1) : LTwo Z2 :=
+  fun N hJN hN k => LOk_congr (fun l => by
+    show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Z1)
+        = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Z2)
+    rw [h (l + 1)]) (hZ N hJN hN k)
+
+theorem LTwo_chain {T : Jk1} (hJT : JkA T) (hT : LTwo T) {N : Jk1} (hJN : JkA N)
+    (hN : ∀ j : ℕ, LOk (j + 1) N) :
+    ∀ n : ℕ, JkA (twoIt N T n) ∧ ∀ j : ℕ, LOk (j + 1) (twoIt N T n)
+  | 0 => ⟨hJN, hN⟩
+  | (n + 1) => by
+      obtain ⟨h1, h2⟩ := LTwo_chain hJT hT hJN hN n
+      exact ⟨⟨h1, hJT⟩, fun j => hT (twoIt N T n) h1 h2 j⟩
+
+theorem LTwo_pay : ∀ (Y : TrioSeq), Bok Y → ∀ Z : Jk1, JkA Z → LTwo Z →
+    LTwo (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ Z : Jk1, JkA Z → LTwo Z →
+      LTwo (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb Z hJZ hZk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact LTwo_congr (fun l => (jk1_pay_nil l Z).symm) hZk
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hprev : LTwo (Jk1.pay Z ([] : TrioSeq)) :=
+          LTwo_congr (fun l => (jk1_pay_nil l Z).symm) hZk
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro N hJN hN k D hD ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (StkOk_JkT (k + 1) D hD
+            (Jk1.two N (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJN, hJZ, by simpa using hYb⟩) ?_
+        intro n hn
+        exact (LTwo_chain (T := Jk1.pay Z ([] : TrioSeq)) ⟨hJZ, Bok_nil⟩ hprev hJN hN n).2 k
+          D hD ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : LTwo (Jk1.pay Z Y.dropLast) := hdl hdb Z hJZ hZk
+        rw [hsplit]
+        intro N hJN hN k D hD ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (StkOk_JkT (k + 1) D hD
+            (Jk1.two N (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJN, hJZ, by rw [← hsplit]; exact hYb⟩) ?_
+        intro n hn
+        exact (LTwo_chain (T := Jk1.pay Z Y.dropLast) ⟨hJZ, hdb⟩ hprev hJN hN n).2 k
+          D hD ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro N hJN hN k D hD ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (StkOk_JkT (k + 1) D hD (Jk1.two N (Jk1.pay Z Y)) ⟨hJN, hJZ, hYb⟩) hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hYb hn) Z hJZ hZk N hJN hN k D hD ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb Z hJZ hZk
+  exact key hYb.mem hYb Z hJZ hZk
+
+#print axioms LTwo_pay
+
+/-! #### `X(7,1,0)` -/
+
+theorem LOk1_twoNilPay {B : TrioSeq} (hB : Bok B) :
+    LOk 1 (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B)) :=
+  LTwo_pay B hB Jk1.nil trivial LTwo_nil Jk1.nil trivial (fun j => LOk_nil (j + 1)) 0
+
+theorem GOK_hang7X {B : TrioSeq} (hB : Bok B) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hk : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+          (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))) :=
+        TwoOk_of_LOk0 (LOk_one (k := 0) (W := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
+          (LOk0_of_TwoOk TwoOk_twoNil) (LOk1_twoNilPay hB))
+      have h := hk Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem jk1_hang7X (l : ℕ) (B : TrioSeq) :
+    jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B)))))
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+          ((l + 4, 2, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 (l + 5) 0 B := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1 + 1) (Jk1.two Jk1.nil Jk1.nil) ++
+        (((l + 1 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          (jk1 (l + 1 + 1 + 1) Jk1.nil ++
+            (((l + 1 + 1 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+              (jk1 (l + 1 + 1 + 1 + 1) Jk1.nil ++
+                shiftr01 (l + 1 + 1 + 1 + 1 + 1) 0 B)))))))) = _
+  rw [jk1_twoNil (l + 1 + 1), show l + 1 + 1 = l + 2 from by omega,
+    show l + 2 + 1 = l + 3 from by omega, show l + 3 + 1 = l + 4 from by omega,
+    show l + 4 + 1 = l + 5 from by omega]
+  simp [jk1]
+
+theorem hang7_R375x {B : TrioSeq} (hB : Bok B) : R375x ++ shiftr01 7 0 B ∈ W 0 := by
+  have hG := GOK_hang7X hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))))]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_hang7X 2 B] at h
+  simpa [R375x, R375s, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+theorem Ancd7_R375x : Ancd 7 R375x := by
+  have h := Ancd_append_Mid (d := 6)
+    (by simp [R375s, R375m, R373, R344, R341, R338]) Ancd6_R375s
+    (MidD_col 6 2 (by omega) (by omega))
+  simpa [R375x] using h
+
+theorem tw7_R375x : ∀ n : ℕ, TwD 7 R375x n ∈ W 0
+  | 0 => by simpa [TwD] using W_nil 0
+  | (n + 1) => by
+      rw [TwD_succ]
+      exact hang7_R375x ⟨tw7_R375x n, TwD_zroot (by omega) Aok_R375x.zroot n,
+        TwD_mono Aok_R375x.mono n, TwD_root Aok_R375x.ne Aok_R375x.deep.1 n⟩
+
+/-- ★★★★★ `X(7,1,0)`。 -/
+theorem R375x18_mem : R375x ++ [((7, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) Aok_R375x.ne Aok_R375x.deep Aok_R375x.zroot Ancd7_R375x tw7_R375x
+
+#print axioms R375x18_mem
+
 end Small
 end TRIO
