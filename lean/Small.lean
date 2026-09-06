@@ -34841,5 +34841,96 @@ theorem wordJ_BT_succ (a b : ℕ) (ws : List Jk1) (U : Jk1) (pre : List ℕ) (e 
 #print axioms wordJ_BT_append
 #print axioms Mtwd_BT
 #print axioms wordJ_BT_succ
+
+/-! #### ★★★★★ ブロックを 1 個継ぐ（歩幅 `e+1` の塔） -/
+
+theorem GOK_BTstep {U : Jk1} (hJU : JkT U) (pre : List ℕ) (e : ℕ)
+    (hstair : ∀ i : ℕ, GOK (BT U (pre ++ List.replicate i e))) :
+    GOK (BT U (pre ++ [e + 1])) := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [BT U (pre ++ [e + 1])]) :=
+    WOk_append hw (WOk_singletonT (JkT_BT hJU _))
+  have hstG : ∀ i : ℕ,
+      GoodFb (fun a b => wordJ a b (ws ++ [BT U (pre ++ List.replicate i e)])) :=
+    fun i => hstair i ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega,
+      wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_BT_succ]
+    have htw : ∀ n : ℕ, Mtwd (e + 1) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [BT U pre])))
+        (jk1 (c + 1 + t + 1 + hgtB pre) (bdA [e])) n ∈ W 0 := by
+      intro n
+      have h1 := ((hstG n).pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift, wordJ_BT_append, jk1_bdA_replicate] at h1
+      simpa [Mtwd, List.append_assoc] using h1
+    have h := snocYd_mem
+      (Y0 := Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [BT U pre])))
+      (M := jk1 (c + 1 + t + 1 + hgtB pre) (bdA [e]))
+      (L := c + 1 + t + 1 + hgtB pre + 1) (y := 2) (dl := e + 1)
+      (by simp) (by simpa using MidD_bdA_one (c + 1 + t + 1 + hgtB pre) e)
+      (by rw [entry_bdA_one_head]; omega)
+      (by simpa using hMy_bdA_one (c + 1 + t + 1 + hgtB pre) e)
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t Z hZ
+    rw [wordJ_shift, wordJ_BT_succ]
+    have htw : ∀ n : ℕ, Mtwd (e + 1) (Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [BT U pre])))
+        (jk1 (c + 1 + t + 1 + hgtB pre) (bdA [e])) n ∈ W 0 := by
+      intro n
+      have h1 := ((hstG n).pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift, wordJ_BT_append, jk1_bdA_replicate] at h1
+      simpa [Mtwd, List.append_assoc] using h1
+    have h := snocYd_mem
+      (Y0 := Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [BT U pre])))
+      (M := jk1 (c + 1 + t + 1 + hgtB pre) (bdA [e]))
+      (L := c + 1 + t + 1 + hgtB pre + 1) (y := 2) (dl := e + 1)
+      (by simp) (by simpa using MidD_bdA_one (c + 1 + t + 1 + hgtB pre) e)
+      (by rw [entry_bdA_one_head]; omega)
+      (by simpa using hMy_bdA_one (c + 1 + t + 1 + hgtB pre) e)
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [BT U (pre ++ [e + 1])])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 (ws ++ [BT U (pre ++ [e + 1])])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1) 1 (ws ++ [BT U (pre ++ [e + 1])])
+        from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_BT_succ]
+    have htw : ∀ n : ℕ, Mtwd (e + 1) (A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [BT U pre])))
+        (jk1 (h + 1 + s + 1 + hgtB pre) (bdA [e])) n ∈ W 0 := by
+      intro n
+      have h1 := ((hstG n).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1
+              (ws ++ [BT U (pre ++ List.replicate n e)])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1
+              (ws ++ [BT U (pre ++ List.replicate n e)]) from rfl,
+        wordJ_BT_append, jk1_bdA_replicate] at h1
+      simpa [Mtwd, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := snocYd_mem
+      (Y0 := A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [BT U pre])))
+      (M := jk1 (h + 1 + s + 1 + hgtB pre) (bdA [e]))
+      (L := h + 1 + s + 1 + hgtB pre + 1) (y := 2) (dl := e + 1)
+      (by simp) (by simpa using MidD_bdA_one (h + 1 + s + 1 + hgtB pre) e)
+      (by rw [entry_bdA_one_head]; omega)
+      (by simpa using hMy_bdA_one (h + 1 + s + 1 + hgtB pre) e)
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using hh
+
+#print axioms GOK_BTstep
 end Small
 end TRIO
