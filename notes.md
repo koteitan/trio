@@ -11608,3 +11608,17 @@ jk1 の計算は
   simp only [<木の名>, jk1, List.nil_append, List.cons_append, List.append_nil,
     List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
 で済む（show で展開形を書き下す必要はない）。荷 (pay) が付く場合だけ show + rw が要る。
+
+## 追記72: S 族 23/27。Dk_oneTwoWlOneNil が効いた場所
+
+- S(8,2,0): 塔の単位 [(7,1,0),(8,2,0),(9,1,0)] を吐く木は
+  GA n = one (two nil nil) (XA (n-1))、XA n = one (two nil (one nil nil)) (XA (n-1))。
+  Dk_XA は Dk_twoNilOneNil + Dk_one、Dk_GA は Dk_twoNil + Dk_one。
+- S(9,0,0): 同じ高さに並ぶ記録の横鎖 TA n = two (TA (n-1)) (one nil nil)。
+  Dk_TA の帰納が Dk_oneTwoWlOneNil そのもの（R 族の TR は Dk_oneTwoWlNil だった）。
+  jk1 l (TA n) = copies [(l+1,2,0),(l+2,1,0)] n。
+
+残り 4 行: (9,1,0) (10,0,0) (10,1,0) (10,2,0)。
+(9,1,0) は荷を「1 の記録の上」に吊るす必要がある:
+  TTwA (one (two nil nil) (two nil (pay (one nil nil) B)))
+Dk_oneTwoWlPay は payload が nil の場合。one nil nil 版が要る。
