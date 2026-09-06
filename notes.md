@@ -10451,3 +10451,41 @@ R376_of_ZeroStep (h : ZeroStep) : R373 ++ [(5,3,0)] ∈ W 0
 
 つまり「ランの中の枠木はすべて `nil`」という条件が塔の要で、荷の閉包がそれを壊す。
 `ZeroStep` を落とすには、この 2 つを同時帰納で回す必要がある。
+
+## 追記44: 行376 は `PayStep`（先端に荷）1 本に帰着した
+
+`BT U (j :: js)` の背骨を `plug` で書けるようにした:
+
+```
+bdX X []        = X                      spnA []        = []
+bdX X (j::js)   = one nil (stkP j (bdX X js))
+spnA (j::js)    = fone nil :: (replicate j (ftwo nil) ++ spnA js)
+spnc U j js     = fone U   :: (replicate j (ftwo nil) ++ spnA js)
+
+plug (spnc U j js) X            = one U (stkP j (bdX X js))
+plug (spnc U j js) nil          = BT U (j :: js)
+plug (spnc U j js) (pay nil C)  = BP U C (j :: js)
+plug (spnc U j js) (one nil nil)= BT U ((j :: js) ++ [0])
+```
+
+`APnil_gen0` がそのまま使えて
+
+```
+PayStep := ∀ U, JkT U → GOK U → ∀ j js, GOK (BT U (j::js))
+                → ∀ C, Bok C → GOK (BP U C (j::js))
+ZeroStep_of_PayStep : PayStep → ZeroStep
+R376_of_PayStep     : PayStep → R373 ++ [(5,3,0)] ∈ W 0
+```
+
+`pre = []` の場合は `AY0` で済む（`BT U [] = U`、`BT U [0] = one U nil`）ので、
+残っているのは「`BT` の先端（ブロック列の最後）に `Bok` の荷を吊るす」だけ。
+
+### `PayStep` の見取り図
+
+`TwOk_pay_f` / `TwOk_pay_e` と同じ A2' 帰納。鎖は最後のブロックの形で分かれる:
+
+- 最後のブロックが 2 の記録 0 本 → 先端は 1 の列の直上 → 鎖は `itJ T n nil`。
+  枠は 1 の列の枠だけなので、背骨の枠木を一般化すれば通る。
+- 最後のブロックが 2 の記録 1 本以上 → 先端は 2 の記録の直上 → 鎖は `twoIt nil T n`。
+  ランの最後の枠木が `nil` でなくなる。A2' の底（荷が空）で
+  `two A nil`（`A = twoIt nil T k`）をランの上に置く必要が出て、そこが未解決。

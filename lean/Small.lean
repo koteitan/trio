@@ -34985,5 +34985,119 @@ theorem R376_of_ZeroStep (h : ZeroStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × �
 
 #print axioms GOK_BTall
 #print axioms R376_of_ZeroStep
+
+/-! #### `BT` の背骨と、`ZeroStep` の `PayStep` への帰着 -/
+
+/-- 先端に `X` を差したブロック列。 -/
+def bdX (X : Jk1) : List ℕ → Jk1
+  | [] => X
+  | (j :: js) => Jk1.one Jk1.nil (stkP j (bdX X js))
+
+def spnA : List ℕ → List Frm
+  | [] => []
+  | (j :: js) => Frm.fone Jk1.nil :: (List.replicate j (Frm.ftwo Jk1.nil) ++ spnA js)
+
+/-- `BT U (j :: js)` の背骨。 -/
+def spnc (U : Jk1) (j : ℕ) (js : List ℕ) : List Frm :=
+  Frm.fone U :: (List.replicate j (Frm.ftwo Jk1.nil) ++ spnA js)
+
+theorem plug_replicate_ftwo : ∀ (j : ℕ) (F : List Frm) (X : Jk1),
+    plug (List.replicate j (Frm.ftwo Jk1.nil) ++ F) X = stkP j (plug F X)
+  | 0, F, X => by simp [stkP]
+  | (j + 1), F, X => by
+      show Jk1.two Jk1.nil (plug (List.replicate j (Frm.ftwo Jk1.nil) ++ F) X) = _
+      rw [plug_replicate_ftwo j F X]
+      rfl
+
+theorem plug_spnA : ∀ (js : List ℕ) (X : Jk1), plug (spnA js) X = bdX X js
+  | [], X => rfl
+  | (j :: js), X => by
+      show Jk1.one Jk1.nil (plug (List.replicate j (Frm.ftwo Jk1.nil) ++ spnA js) X) = _
+      rw [plug_replicate_ftwo, plug_spnA js X]
+      rfl
+
+theorem plug_spnc (U : Jk1) (j : ℕ) (js : List ℕ) (X : Jk1) :
+    plug (spnc U j js) X = Jk1.one U (stkP j (bdX X js)) := by
+  show Jk1.one U (plug (List.replicate j (Frm.ftwo Jk1.nil) ++ spnA js) X) = _
+  rw [plug_replicate_ftwo, plug_spnA]
+
+theorem bdX_nil : ∀ js : List ℕ, bdX Jk1.nil js = bdA js
+  | [] => rfl
+  | (j :: js) => by
+      show Jk1.one Jk1.nil (stkP j (bdX Jk1.nil js)) = _
+      rw [bdX_nil js]
+      rfl
+
+theorem bdX_pay (C : TrioSeq) : ∀ js : List ℕ, bdX (Jk1.pay Jk1.nil C) js = bdAC C js
+  | [] => rfl
+  | (j :: js) => by
+      show Jk1.one Jk1.nil (stkP j (bdX (Jk1.pay Jk1.nil C) js)) = _
+      rw [bdX_pay C js]
+      rfl
+
+theorem bdA_snoc0 : ∀ js : List ℕ, bdA (js ++ [0]) = bdX (Jk1.one Jk1.nil Jk1.nil) js
+  | [] => rfl
+  | (j :: js) => by
+      show Jk1.one Jk1.nil (stkP j (bdA (js ++ [0]))) = _
+      rw [bdA_snoc0 js]
+      rfl
+
+theorem plug_spnc_nil (U : Jk1) (j : ℕ) (js : List ℕ) :
+    plug (spnc U j js) Jk1.nil = BT U (j :: js) := by
+  rw [plug_spnc, bdX_nil]
+  rfl
+
+theorem plug_spnc_pay (U : Jk1) (C : TrioSeq) (j : ℕ) (js : List ℕ) :
+    plug (spnc U j js) (Jk1.pay Jk1.nil C) = BP U C (j :: js) := by
+  rw [plug_spnc, bdX_pay]
+  rfl
+
+theorem plug_spnc_one (U : Jk1) (j : ℕ) (js : List ℕ) :
+    plug (spnc U j js) (Jk1.one Jk1.nil Jk1.nil) = BT U ((j :: js) ++ [0]) := by
+  rw [plug_spnc, ← bdA_snoc0]
+  rfl
+
+/-- 残る仮定をさらに絞ったもの: `BT` の先端に荷を吊るせる。 -/
+def PayStep : Prop := ∀ (U : Jk1), JkT U → GOK U → ∀ (j : ℕ) (js : List ℕ),
+    GOK (BT U (j :: js)) → ∀ C : TrioSeq, Bok C → GOK (BP U C (j :: js))
+
+theorem BT_snoc0 {U : Jk1} (hJU : JkT U) (hGU : GOK U) (h : PayStep) :
+    ∀ (pre : List ℕ), GOK (BT U pre) → GOK (BT U (pre ++ [0])) := by
+  intro pre hpre
+  cases pre with
+  | nil =>
+      have hJT : JkT (Jk1.one U Jk1.nil) := ⟨⟨hJU.1, trivial⟩, hJU.2⟩
+      have hh := APnil_gen0 [] U hJT hGU (fun C hC => AY0 C hC U hJU hGU)
+      simpa [BT, bdA] using hh
+  | cons j js =>
+      have hp := h U hJU hGU j js hpre
+      have hJT : JkT (plug (spnc U j js) (Jk1.one Jk1.nil Jk1.nil)) := by
+        rw [plug_spnc_one]
+        exact JkT_BT hJU _
+      have hGV : GOK (plug (spnc U j js) Jk1.nil) := by
+        rw [plug_spnc_nil]; exact hpre
+      have hang : ∀ C : TrioSeq, Bok C →
+          GOK (plug (spnc U j js) (Jk1.pay Jk1.nil C)) := by
+        intro C hC
+        rw [plug_spnc_pay]
+        exact hp C hC
+      have hh := APnil_gen0 (spnc U j js) Jk1.nil hJT hGV hang
+      rwa [plug_spnc_one] at hh
+
+theorem ZeroStep_of_PayStep (h : PayStep) : ZeroStep := by
+  intro U hJU hGU pre hpre i
+  induction i with
+  | zero => simpa using hpre
+  | succ i ihi =>
+      have e : pre ++ List.replicate (i + 1) 0 = (pre ++ List.replicate i 0) ++ [0] := by
+        rw [List.append_assoc, ← List.replicate_succ']
+      rw [e]
+      exact BT_snoc0 hJU hGU h _ ihi
+
+/-- ★★★★★ シート行376 は `PayStep` 1 本だけに帰着する。 -/
+theorem R376_of_PayStep (h : PayStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_ZeroStep (ZeroStep_of_PayStep h)
+
+#print axioms R376_of_PayStep
 end Small
 end TRIO
