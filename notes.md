@@ -10052,3 +10052,32 @@ Flat_append / Flat_copies / Bok_copies_flad2 / BV9（平坦な荷を並べる）
 族の進み: `P` → `Q` → `S` → `T` → `U` → `V`。`V(9,0,0)` の上は `T(7,1,0)`（証明済み）
 なので、この鎖は `T(7,1,0)` に収束する。次のシート行 `376` はやはり
 `TwoStep`（2 の記録の直上に 2 の記録）待ち。
+
+### 追記35: `W = T(7,1,0)` 族 20/20。台座一般の `Ancd` が新しい道具
+
+`T(7,1,0)` は `S(6,2,0)` のすぐ下なので、frontier に一番近い族。20 本すべて出た。
+
+新しく要ったもの:
+```
+Ancd_append_head1 : Aok A → N ≠ [] → entry N 0 0 = 1 → (∀j<|N|, 1 ≤ entry N 1 j)
+                    → ∀d, Ancd d (A ++ N)
+```
+「単位 N の先頭が高さ 1 なら、台座 A の列は記録になれない（あとに高さ 1 の列が来るので
+suffix-min にならない）」。これで `Ancd d (A ++ U375a2)` が台座一般に出て、
+`snocd_gen` で `U375aW = U375a2 ++ (7,1,0)` の台座一般版が作れた。
+`U` 族の `(7,0,0)` は平坦なので `flat_mem''` で済んだが、`W` の `(7,1,0)` は
+記録なので `Ancd` が要る。ここが `U` 族との違い。
+
+`hang7_seg` / `Aok_seg_U375a2` / `Ancd_seg_U375a2` / `tw7_seg` / `SegA_U375aW` も
+`T` 族の高さ 6 版の写しで出た。
+
+`W` の字は `NW = one nil (two nil (one (two nil nil) (one nil (one nil nil))))`。
+`TwoOk (one (two nil nil) (one nil (one nil nil)))` は梯子 `LOk` で
+`LOk_nil 3 → LOk 2 (one nil nil) → LOk 1 (one nil (one nil nil)) → LOk 0` と降りる。
+`W(7,1,0)` `W(8,1,0)` の吊るしも同じく梯子から。
+
+**引っかかった点**: `LOk_one (k := 1) trivial ...` は期待型が分からない
+`have h := ...` の中だと枠木 `W` がメタ変数のままになる。`(W := Jk1.nil)` を明示する。
+
+族の進み: `P` → `Q` → `S` → `T` → `U` → `V` → `W`。次に近いのは `S(6,2,0)` の族。
+シート行 376 は相変わらず `TwoStep`（2 の記録の直上に 2 の記録）待ち。
