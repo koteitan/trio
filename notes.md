@@ -11454,3 +11454,50 @@ jk1 l NR = (l+1,1,0)(l+2,2,0)(l+3,2,0)(l+3,1,0)(l+4,2,0)(l+5,2,0)(l+5,1,0)(l+6,2
 `R375r` / `Aok_R375r` / `R(0,0,0)` / `R(1,0,0)` / `R(1,1,0)` / `GOK_NR` まで green。
 
 （名前: `R375q` と `NQ` は既に別の行列で使われていたので `R375r` / `NR` にした。）
+
+## 追記67: `R = P(8,2,0)` 族 22/25。残り 3 行は「左兄弟つき 2 の記録の横鎖」
+
+R 族は `R(8,2,0)` まで通った（22/25）。効いた補題は 3 本だけ。
+
+```
+TTwA_oneTwoNil : JkA V → TTwA V → TTwA (one V (two nil nil))     （追記66）
+TTwA_onePay    : 荷つきの 1 の列                                   （追記59）
+TTwA_twoNil    : ラン 2                                            （追記58 以前）
+```
+
+- `LOk1_hangR`（= `TTwA_oneTwoTwo` から）が `ZZR` / `ZR` / `hang6R` の全部の要
+- `WWR`（高さ 7 の塔の枠）は `TTwA_oneTwoTwo` 一発
+- `SR n = one (SR n) (two nil nil)` は `TTwA_oneTwoNil` の反復
+- `GR n = one (two nil nil) (GR n)`（右に伸びる）は `Dk_twoNil` + `Dk_one` で
+  `Dk k (GR n)` を作り、`TTwA_of_Dk0` で降ろした
+
+新しく足したのは
+
+```
+Dk_twoNil : ∀ n, Dk n (two nil nil)     -- Dk_oneTwoNil の反復で出る
+```
+
+### 残り 3 行 `R(9,0,0) R(9,1,0) R(9,2,0)` に要るもの
+
+`R(9,0,0)` は `flat_mem'' (Y0 := R375p) (M := [(8,2,0)]) (d := 9)`。
+塔は `R375p ++ copies [(8,2,0)] n`、つまり**高さ 8 の 2 の記録が n 本、
+すべて同じ高さに横に並ぶ**。木は
+
+```
+TR n = twoIt nil nil n = two (TR (n-1)) nil
+```
+
+で、`NTw q (TR n)` は `TTwA_nil` の反復で出る（枠としては使える）。
+しかし `TTwA (one (two nil nil) (TR n))` を作るには `Dk 1 (TR n)` が要り、
+`TR (n+1) = two (TR n) nil` は `Dk` の閉じ方（`one` / `pay` / `nil` /
+`two nil nil`）に無い。要るのは
+
+```
+Dk_oneTwoWlNil : JkA V → Dk n V → (∀C, Dk n (pay V C)) →
+                 JkA Wl → (∀ k, 1 ≤ k → Dk k Wl) → (∀ k C, Dk k (pay Wl C)) →
+                 Dk n (one V (two Wl nil))
+```
+
+（`GOK_twoNil_gen` を `N := Wl` で使い、階段
+`plug (replicate m (fone Wl)) Wl` を `Dk_one` の反復で供給する）。
+これがあれば `Dk k (TR n)`（`k ≥ 1`）が `n` の帰納で出る。
