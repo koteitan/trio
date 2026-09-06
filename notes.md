@@ -11501,3 +11501,40 @@ Dk_oneTwoWlNil : JkA V → Dk n V → (∀C, Dk n (pay V C)) →
 （`GOK_twoNil_gen` を `N := Wl` で使い、階段
 `plug (replicate m (fone Wl)) Wl` を `Dk_one` の反復で供給する）。
 これがあれば `Dk k (TR n)`（`k ≥ 1`）が `n` の帰納で出る。
+
+## 追記68: `Dk` に「左兄弟つき 2 の記録」が入った。`R` 族 24/25
+
+追記67 の宿題が 2 本とも通った（どちらも `GOK_twoNil_gen` / `GoodFb_snoc_*Jt0`
+が文脈を選ばないおかげ）。
+
+```
+Dk_repFrm      : 階段 plug (replicate i (fone Wl)) Wl を Dk_one の反復で作る
+Dk_oneTwoWlNil : JkA V → Dk n V → 荷閉包 →
+                 JkA Wl → (∀k, Dk (k+1) Wl) → (∀k C, Dk (k+1) (pay Wl C)) →
+                 Dk n (one V (two Wl nil))
+Dk_oneTwoWlPay : 同じ形で先端が pay nil B（荷 B の W 0 帰納 + 鎖 twoIt）
+```
+
+`Dk_oneTwoWlPay` の鎖は `twoIt Wl (pay nil B') j`（**横に伸びる**）で、各項の
+`Dk (k+1)` は「枠を 1 枚剥がして `Dk_oneTwoWlNil` / 帰納法の仮定」で作る。
+`B' = []` のときだけ `pay nil [] ≅ nil` の `Dk_congr` が要る。
+
+実り:
+
+```
+TR n = two (TR (n-1)) nil        （同じ高さに並ぶ 2 の記録）→ R(9,0,0)
+Dk_twoNilPay                     （2 の記録の上に荷）        → R(9,1,0)
+```
+
+### 残り 1 行 `R(9,2,0)` の壁
+
+`snocYd_mem0 (Y0 := R375z) (M := [(7,1,0),(8,2,0)]) (L := 7) (y := 2) (dl := 2)`
+で、塔は `Mtwd 2 R375z [(7,1,0),(8,2,0)] n`。木の高さ 6 の部分は
+`one (two nil nil) (YX2 (n-1))` で、`YX2 (m+1) = two nil (one nil (YX2 m))`。
+`Dk k (YX2 m)` を作るには `Dk n (one V (two Wl Z))` を **`Z` が `nil` でも
+`pay nil B` でもない場合**に広げる必要がある。`GOK_twoNil_gen`（塔）は先端が
+`nil` 固定なので届かない。`Z = one nil (…)` を扱うには 2 の記録の枠の段数を
+`Dk` に持たせる（= 追記62–63 で測った「ランを許す梯子」）しかない。
+
+`M` の候補は全部見たが、`hMy`（`y ≤ 行1`）が `(7,1,0)` で破れるため
+`dl = 2` の 1 通りしかない。
