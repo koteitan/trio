@@ -29936,5 +29936,174 @@ theorem R375w19_mem : R375w ++ [((8, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R375w19_mem
 
 
+
+/-! ### ★★★★★ 「2 の記録を 1 の列の枠の直上に置く」の文脈一般版
+
+`APd_twoNilGen` の本体は文脈が良いことを使っていない。`GCtx_split` で
+`ctx0 ++ [fone V]` に割ったあとは `GOK (plug ctx0 V)` と塔しか要らないので、
+それを仮定にすると梯子 `LOk` の深さ `k + 1` でも同じ議論が回る。
+深さ 0 は一番内が 2 の記録の枠なので使えない（そこが本当の壁）。 -/
+
+theorem GOK_twoNil_gen (ctx0 : List Frm) (V : Jk1) {N : Jk1} (hJN : JkA N)
+    (hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)))
+    (hGV : GOK (plug ctx0 V))
+    (hstair : ∀ m : ℕ,
+      GOK (plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N))) :
+    GOK (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)) := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)]) :=
+    WOk_append hw (WOk_singletonT hJT)
+  have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx0 V])) := hGV ws hw hG
+  have hstG : ∀ m : ℕ,
+      GoodFb (fun a b => wordJ a b
+        (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)])) :=
+    fun m => hstair m ws hw hG
+
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_snoc_twoN (c + 1 + t) (y + 1) ws ctx0 V
+      (c + 1 + t + dep ctx0 + 1) rfl]
+    set a := c + 1 + t with ha
+    have hbase0 : Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift] at h0
+      simpa [ha] using h0
+    have htw : ∀ n, Mtw (Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])))
+        (((a + dep ctx0 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (a + dep ctx0 + 1 + 1) N) n ∈ W 0 := by
+      intro n
+      rw [Mtw_twr]
+      cases n with
+      | zero => simpa [twr, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_twr (c + 1 + t) (y + 1) ws ctx0 V
+            (c + 1 + t + dep ctx0 + 1) rfl m] at h1
+          simpa [ha, List.append_assoc] using h1
+    have h := snocY_mem (Y0 := Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a (y + 1) (ws ++ [plug ctx0 V])))
+      (M := ((a + dep ctx0 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx0 + 1 + 1) N)
+      (L := a + dep ctx0 + 1 + 1) (y := 2)
+      (by simp) (MidD_colN (a + dep ctx0 + 1 + 1) N (by omega) hJN)
+      (by simp [entry]) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t Z hZ
+    rw [wordJ_shift, wordJ_snoc_twoN (c + 1 + t) 2 ws ctx0 V
+      (c + 1 + t + dep ctx0 + 1) rfl]
+    set a := c + 1 + t with ha
+    have hbase0 : Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift] at h0
+      simpa [ha] using h0
+    have htw : ∀ n, Mtw (Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])))
+        (((a + dep ctx0 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (a + dep ctx0 + 1 + 1) N) n ∈ W 0 := by
+      intro n
+      rw [Mtw_twr]
+      cases n with
+      | zero => simpa [twr, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).pk c E hI).2.2 j t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_twr (c + 1 + t) 2 ws ctx0 V
+            (c + 1 + t + dep ctx0 + 1) rfl m] at h1
+          simpa [ha, List.append_assoc] using h1
+    have h := snocY_mem (Y0 := Z ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 2 (ws ++ [plug ctx0 V])))
+      (M := ((a + dep ctx0 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx0 + 1 + 1) N)
+      (L := a + dep ctx0 + 1 + 1) (y := 2)
+      (by simp) (MidD_colN (a + dep ctx0 + 1 + 1) N (by omega) hJN)
+      (by simp [entry]) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift,
+      wordJ_snoc_twoN (h + 1 + s) 1 ws ctx0 V (h + 1 + s + dep ctx0 + 1) rfl]
+    set a := h + 1 + s with ha
+    have hbase0 : A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h0 := (hbaseV.seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          from rfl] at h0
+      simpa [ha, show h + s + 1 = h + 1 + s from by omega] using h0
+    have htw : ∀ n, Mtw (A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])))
+        (((a + dep ctx0 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (a + dep ctx0 + 1 + 1) N) n ∈ W 0 := by
+      intro n
+      rw [Mtw_twr]
+      cases n with
+      | zero => simpa [twr, jk1] using hbase0
+      | succ m =>
+          have h1 := ((hstG m).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+                wordJ (h + s + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)])
+              = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+                wordJ (h + s + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)]) from rfl] at h1
+          rw [wordJ_snoc_plug_twr (h + s + 1) 1 ws ctx0 V (h + s + 1 + dep ctx0 + 1) rfl m]
+            at h1
+          simpa [ha, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := snocY_mem (Y0 := A' ++ ([((a, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ a 1 (ws ++ [plug ctx0 V])))
+      (M := ((a + dep ctx0 + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx0 + 1 + 1) N)
+      (L := a + dep ctx0 + 1 + 1) (y := 2)
+      (by simp) (MidD_colN (a + dep ctx0 + 1 + 1) N (by omega) hJN)
+      (by simp [entry]) (by omega) htw
+    simpa [List.append_assoc] using hh
+
+#print axioms GOK_twoNil_gen
+
+/-- 1 の列の枠だけを `m` 枚積んだ木（枠木も末端も `nil`）。 -/
+theorem JkA_repNil : ∀ m : ℕ, JkA (plug (List.replicate m (Frm.fone Jk1.nil)) Jk1.nil)
+  | 0 => trivial
+  | (m + 1) => ⟨trivial, JkA_repNil m⟩
+
+theorem LOk_repNil : ∀ (m k : ℕ), LOk k (plug (List.replicate m (Frm.fone Jk1.nil)) Jk1.nil)
+  | 0, k => LOk_nil k
+  | (m + 1), k => by
+      show LOk k (Jk1.one Jk1.nil (plug (List.replicate m (Frm.fone Jk1.nil)) Jk1.nil))
+      exact LOk_one (W := Jk1.nil) trivial (LOk_nil k) (LOk_repNil m (k + 1))
+
+/-- ★★★★★ 深さ `k+1`（一番内が 1 の列の枠）なら「上に何も無い 2 の記録」を置ける。 -/
+theorem LOk_twoNil : ∀ k : ℕ, LOk (k + 1) (Jk1.two Jk1.nil Jk1.nil) := by
+  intro k D hD
+  obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+  refine GOK_twoNil_gen D' U trivial
+    (StkOk_JkT (k + 1) (D' ++ [Frm.fone U]) ⟨D', U, rfl, hD', hJU, hU⟩ _ ⟨trivial, trivial⟩)
+    (hU D' hD') ?_
+  intro m
+  exact LOk_repNil m (k + 1) (D' ++ [Frm.fone U]) ⟨D', U, rfl, hD', hJU, hU⟩
+
+#print axioms LOk_twoNil
+
+/-- `one (two nil nil) (two nil nil)` は 2 の記録の右の子になれる。 -/
+theorem TwoOk_oneTwoTwo :
+    TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil Jk1.nil)) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+    (LOk_twoNil 0))
+
+#print axioms TwoOk_oneTwoTwo
+
 end Small
 end TRIO
