@@ -38400,5 +38400,55 @@ theorem TwoOk_twoWlNil {Wl : Jk1} (hJW : JkA Wl)
 
 #print axioms APd_twoTwoWGen
 #print axioms TwoOk_twoWlNil
+
+/-! ### ★★★★★ 2 の記録の枠の上に「1 の列 + 上に何も無い 2 の記録」
+
+`GOK_twoNil_gen`（ラン 1 の塔、文脈一般）の階段は
+`plug (replicate m (fone nil)) nil = chn m`。`Dk_chn` と
+`TTwA_one_of_Dk1` でこの階段が供給できるので、
+`one V (two nil nil)` を 2 の記録の枠の上に置ける。 -/
+
+theorem plug_repNil : ∀ m : ℕ,
+    plug (List.replicate m (Frm.fone Jk1.nil)) Jk1.nil = chn m
+  | 0 => rfl
+  | (m + 1) => by
+      show Jk1.one Jk1.nil (plug (List.replicate m (Frm.fone Jk1.nil)) Jk1.nil) = _
+      rw [plug_repNil m]
+      rfl
+
+theorem TTwA_oneTwoNil {V : Jk1} (hJV : JkA V) (hV : TTwA V) :
+    TTwA (Jk1.one V (Jk1.two Jk1.nil Jk1.nil)) := by
+  intro r m N hJN hNup hf D hD
+  rw [← plug_snoc2, ← plug_snoc]
+  refine GOK_twoNil_gen (D ++ [Frm.ftwo N]) V (N := Jk1.nil) trivial ?_ ?_ ?_
+  · have h := TwSt_JkT r m D hD (Jk1.two N (Jk1.one V (Jk1.two Jk1.nil Jk1.nil)))
+      ⟨hJN, hJV, trivial, trivial⟩
+    rwa [← plug_snoc2, ← plug_snoc] at h
+  · have h := hV r m N hJN hNup hf D hD
+    rwa [← plug_snoc2] at h
+  · intro k
+    rw [plug_repNil]
+    have h := TTwA_one_of_Dk1 hJV hV (Dk_chn k 1) r m N hJN hNup hf D hD
+    rwa [← plug_snoc2, ← plug_snoc] at h
+
+theorem Dk_oneTwoNil {n : ℕ} {V : Jk1} (hJV : JkA V) (hV : Dk n V)
+    (hp : ∀ C : TrioSeq, Bok C → Dk n (Jk1.pay V C)) :
+    Dk n (Jk1.one V (Jk1.two Jk1.nil Jk1.nil)) := by
+  intro fs hfs r m N hJN hNup hf D hD
+  rw [← plug_snoc2, ← plug_append, ← plug_snoc]
+  refine GOK_twoNil_gen ((D ++ [Frm.ftwo N]) ++ fs) V (N := Jk1.nil) trivial ?_ ?_ ?_
+  · have h := TwSt_JkT r m D hD
+      (Jk1.two N (plug fs (Jk1.one V (Jk1.two Jk1.nil Jk1.nil))))
+      ⟨hJN, JkA_plug_Fok n fs hfs _ ⟨hJV, trivial, trivial⟩⟩
+    rwa [← plug_snoc2, ← plug_append, ← plug_snoc] at h
+  · have h := hV fs hfs r m N hJN hNup hf D hD
+    rwa [← plug_snoc2, ← plug_append] at h
+  · intro k
+    rw [plug_repNil]
+    have h := Dk_one hJV hV hp (Dk_chn k (n + 1)) fs hfs r m N hJN hNup hf D hD
+    rwa [← plug_snoc2, ← plug_append, ← plug_snoc] at h
+
+#print axioms TTwA_oneTwoNil
+#print axioms Dk_oneTwoNil
 end Small
 end TRIO
