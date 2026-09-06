@@ -48360,12 +48360,12 @@ theorem jk1_oneChnJ (m l : ℕ) :
     show l + 7 + 1 = l + 8 from by omega]
   simp [jk1]
 
-theorem chnJ_tower_eq (Y0 : TrioSeq) (m : ℕ) :
-    Mtw Y0 [((9, 1, 0) : ℕ × ℕ × ℕ)] (m + 1)
-      = Y0 ++ ([((9, 1, 0) : ℕ × ℕ × ℕ)] ++ (List.range m).flatMap
-          (fun k => shiftr01 k 0 [((10, 1, 0) : ℕ × ℕ × ℕ)])) := by
-  have e : (List.range m).flatMap (fun k => shiftr01 (k + 1) 0 [((9, 1, 0) : ℕ × ℕ × ℕ)])
-      = (List.range m).flatMap (fun k => shiftr01 k 0 [((10, 1, 0) : ℕ × ℕ × ℕ)]) := by
+theorem chnJ_tower_eq (Y0 : TrioSeq) (hh : ℕ) (m : ℕ) :
+    Mtw Y0 [((hh, 1, 0) : ℕ × ℕ × ℕ)] (m + 1)
+      = Y0 ++ ([((hh, 1, 0) : ℕ × ℕ × ℕ)] ++ (List.range m).flatMap
+          (fun k => shiftr01 k 0 [((hh + 1, 1, 0) : ℕ × ℕ × ℕ)])) := by
+  have e : (List.range m).flatMap (fun k => shiftr01 (k + 1) 0 [((hh, 1, 0) : ℕ × ℕ × ℕ)])
+      = (List.range m).flatMap (fun k => shiftr01 k 0 [((hh + 1, 1, 0) : ℕ × ℕ × ℕ)]) := by
     apply List.flatMap_congr
     intro k _
     simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
@@ -48385,7 +48385,7 @@ theorem R375k_towerJ : ∀ n : ℕ, Mtw R375k [((9, 1, 0) : ℕ × ℕ × ℕ)] 
         simpa using GOK_oneChnJ m [] WOk_nil GoodFb_wordJ_nil
       have h := rowJ_mem_genF Aok_R338 hG'
       rw [wordJ_singleton, colJ, jk1_oneChnJ m 2] at h
-      rw [chnJ_tower_eq R375k m]
+      rw [chnJ_tower_eq R375k 9 m]
       simpa [R375k, R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338,
         List.append_assoc] using h
 
@@ -48507,7 +48507,7 @@ theorem chnJ_tower_gen {A : TrioSeq} (hA : Aok A) : ∀ n : ℕ,
         simpa using GOK_oneChnJ m [] WOk_nil GoodFb_wordJ_nil
       have h := rowJ_mem_genF hA hG'
       rw [wordJ_singleton, colJ, jk1_oneChnJ m 2] at h
-      rw [chnJ_tower_eq (A ++ U375aK) m]
+      rw [chnJ_tower_eq (A ++ U375aK) 9 m]
       simpa [U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
         List.append_assoc] using h
 
@@ -48547,5 +48547,174 @@ theorem R375i4_mem : R375i ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375i3_mem
 #print axioms R375i4_mem
+
+/-! #### `V(2,2,0)`: 単位をセグメントに -/
+
+theorem chnJ_tower_seg {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {s : ℕ} {A' : TrioSeq}
+    (hA' : LwB P s A') : ∀ n : ℕ,
+    Mtw (A' ++ shiftr01 s 0 U375aK) [((9 + s, 1, 0) : ℕ × ℕ × ℕ)] n ∈ W 0
+  | 0 => by
+      have h := hang9_seg_K hP hA' Bok_nil
+      simpa [Mtw, shiftr01] using h
+  | (m + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b
+          [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+            (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+              (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (chn m)))))))]) := by
+        simpa using GOK_oneChnJ m [] WOk_nil GoodFb_wordJ_nil
+      have h := (hG.seg 0).reapp P hP s A' (by simpa using hA')
+      have ew : ((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (0 + 1) 1
+            [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+              (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+                (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (chn m)))))))]
+          = U375aK ++ (List.range (m + 1)).flatMap
+            (fun k => shiftr01 k 0 [((9, 1, 0) : ℕ × ℕ × ℕ)]) := by
+        have hsplit := chnJ_tower_eq U375aK 9 m
+        rw [Mtw] at hsplit
+        rw [wordJ_singleton, colJ, jk1_oneChnJ m 2, hsplit]
+        simp [U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a, List.append_assoc]
+      rw [ew, shiftr01_append0] at h
+      have efm : shiftr01 s 0 ((List.range (m + 1)).flatMap
+            (fun k => shiftr01 k 0 [((9, 1, 0) : ℕ × ℕ × ℕ)]))
+          = (List.range (m + 1)).flatMap
+            (fun k => shiftr01 k 0 [((9 + s, 1, 0) : ℕ × ℕ × ℕ)]) := by
+        rw [shift_flatMap0]
+        apply List.flatMap_congr
+        intro k _
+        rw [shiftr01_add0, shift_col, shift_col]
+        congr 2
+        omega
+      rw [efm] at h
+      rw [Mtw]
+      simpa [List.append_assoc] using h
+
+theorem SegA_U375aI : SegA 0 U375aI where
+  mid := MidD_U375aI
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro P hP s A' hA'
+    have hA'' : LwB P s A' := by simpa using hA'
+    have h := snocY_mem (Y0 := A' ++ shiftr01 s 0 U375aK)
+      (M := [((9 + s, 1, 0) : ℕ × ℕ × ℕ)]) (L := 9 + s) (y := 2)
+      (by simp [U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a, shiftr01])
+      (MidD_col (9 + s) 1 (by omega) (by omega)) (by simp [entry]) (by omega)
+      (chnJ_tower_seg hP hA'')
+    have e : shiftr01 s 0 U375aI
+        = (shiftr01 s 0 U375aK ++ [((9 + s, 1, 0) : ℕ × ℕ × ℕ)])
+          ++ [((9 + s + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+      rw [show 9 + s + 1 = 10 + s from by omega, U375aI, U375aJ, shiftr01_append0,
+        shiftr01_append0, shift_col, shift_col]
+      try simp [List.append_assoc]
+    rw [e]
+    simpa [List.append_assoc] using h
+
+/-- ★★★★★ `V(2,2,0)`。 -/
+theorem R375i5_mem : R375i ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := R338) (M := U375aI)
+    (SegA_toSegB SegA_U375aI BaseOk_P0) (LwB_of_base ⟨Aok_R338, rfl⟩)
+  rw [← R375i_eq2] at h
+  simpa using h
+
+/-! #### `V(2,2,1)` -/
+
+theorem TipOk_oneTwoNil (U : Jk1) (hU : TipOk U)
+    (hUp : ∀ C : TrioSeq, Bok C → TipOk (Jk1.pay U C)) :
+    TipOk (Jk1.one U (Jk1.two Jk1.nil Jk1.nil)) where
+  ja := ⟨hU.ja, trivial, trivial⟩
+  ck := by
+    intro Wl hW j n ctx hctx
+    rw [← plug_snoc2, ← plug_snoc]
+    refine GOK_twoNil_gen (ctx ++ [Frm.ftwo Wl]) U (N := Jk1.nil) trivial ?_ ?_ ?_
+    · have h := JkT_plug_Cok j (n + 1) ctx hctx
+        (Jk1.two Wl (Jk1.one U (Jk1.two Jk1.nil Jk1.nil)))
+        ⟨hW.ja, hU.ja, trivial, trivial⟩
+      rwa [← plug_snoc2, ← plug_snoc] at h
+    · have h := hU.ck Wl hW j n ctx hctx
+      rwa [← plug_snoc2] at h
+    · intro m
+      have hG : Gw 1 [Frm.fone U] :=
+        (Gw_s 0 _).mpr ⟨U, [], rfl, rfl, hU.ja,
+          (fun gs hgs => by
+            have hg : gs = [] := (Gw_z gs).mp hgs
+            subst hg
+            exact hU),
+          (fun C hC gs hgs => by
+            have hg : gs = [] := (Gw_z gs).mp hgs
+            subst hg
+            exact hUp C hC)⟩
+      have h := (Ew_chn m 1 _ hG).ck Wl hW j n ctx hctx
+      rw [show plug [Frm.fone U] (chn m) = Jk1.one U (chn m) from rfl] at h
+      rw [← plug_snoc2, ← plug_snoc] at h
+      rw [plug_repNil]
+      exact h
+
+theorem TipOk_oneTwoNilTwoNil :
+    TipOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil Jk1.nil)) :=
+  TipOk_oneTwoNil (Jk1.two Jk1.nil Jk1.nil) TipOk_twoNil
+    (fun C hC => TipOk_pay TipOk_twoNil C hC)
+
+theorem Dk1_twoNilOneTwoNilTwoNil :
+    Dk 1 (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil Jk1.nil))) := by
+  intro fs hfs
+  obtain ⟨W, fs', rfl, hfs', hJW, hW, hWp⟩ := (Fok_s 0 fs).mp hfs
+  have hfs0 : fs' = [] := (Fok_z fs').mp hfs'
+  subst hfs0
+  rw [plug_snoc]
+  exact TTwA_of_Ck00 (Ck_one hJW (Ck00_of_TTwA (hW [] rfl))
+    (fun C hC => Ck00_of_TTwA (hWp C hC [] rfl))
+    (TipOk_oneTwoNilTwoNil.ck Jk1.nil UniW_nil 0 0))
+
+theorem TTwA_hangI :
+    TTwA (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil Jk1.nil)))) :=
+  TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil Dk1_twoNilOneTwoNilTwoNil
+
+/-- `V` の字。 -/
+def NI : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+          (Jk1.two Jk1.nil Jk1.nil)))))))
+
+theorem JkT_NI : JkT NI :=
+  ⟨⟨trivial, trivial, ⟨trivial, trivial⟩, trivial, ⟨trivial, trivial⟩, trivial,
+    ⟨trivial, trivial⟩, trivial, trivial⟩, trivial⟩
+
+theorem TwoOk_hangI : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+          (Jk1.two Jk1.nil Jk1.nil)))))) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+    (LOk_of_TwOk0 (TTwA_hangI 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+
+theorem GOK_NI : GOK NI :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa using TwoOk_hangI Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem jk1_NI (l : ℕ) : jk1 l NI =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 1, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 7, 2, 0) : ℕ × ℕ × ℕ), ((l + 7, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 8, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [NI, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+
+/-- ★★★★★ `V(2,2,1)`。 -/
+theorem R375i6_mem : R375i ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NI])) := GOK_NI [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NI]) := by simpa using h1
+  have h2 := GOK_nil [NI] (WOk_singletonT JkT_NI) h1'
+  have h := rowJ_mem_genF Aok_R338 h2
+  simpa [wordJ_append, wordJ_singleton, colJ, jk1_NI, jk1, R375i, R375j, R375k, R375r,
+    R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms R375i5_mem
+#print axioms R375i6_mem
 end Small
 end TRIO
