@@ -11710,3 +11710,15 @@ Mtwd 2 (A ++ U375aZ) [(7,1,0),(8,2,0)] m ∈ W 0。これで (0,0,0)(1,0,0)(1,1,
         (two nil (two nil nil))))))
 Ck 層は走りを含まない文脈しか作れないので、そのままでは出ない。
 GOK_twoTwoNilW_gen（左兄弟つき走り 2 の塔）を Ck に取り込む必要がある。
+
+## 追記78: T 族 16/24。走り 2 は Ck_QQ の階段で出る
+
+T(2,2,1) の字 NK の先端は「2 の記録の直上に 2 の記録」（走り 2）。
+GOK_twoTwoNilW_gen（左兄弟つき走り 2 の塔）の階段は
+  ∀ k, GOK (plug (ctx0 ++ [fone V]) (two N (nstN2 N Wl k)))
+で、N = Wl = nil のとき nstN2 nil nil k = QQ k。QQ は Ck 層で
+どの文脈にも置ける（Ck_QQ）ので、階段が埋まる:
+  TTwA_oneTwoTwoNil : TTwA (one (two nil nil) (two nil (two nil nil)))
+これで T 族の単位 HK = one (two nil nil) (two nil (one (two nil nil)
+(two nil (two nil nil)))) が TwoOk になり、あとは R 族の写しで
+(3,0,0)(3,1,0)(4,0,0)(4,1,0)(4,2,0)(5,0,0)(5,1,0)(6,0,0)(6,1,0) が出た。
