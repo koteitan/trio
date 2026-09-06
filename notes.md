@@ -11851,3 +11851,40 @@ PayStep : ∀ U, JkT U → GOK U → ∀ j js, GOK (BT U (j::js)) → ∀ C, Bok
   snocYd_mem（歩幅つき）。
 - 足りないのは「e の帰納の中で塔と荷を同時に立てる」1 本の大きな帰納。
   この回に作った Ck 層（文脈を添字にした層、約 500 行）と同程度の規模。
+
+## 追記85: 行376（PayStep）の設計が固まった。走りの一般ステップ補題まで完成
+
+### 測って分かったこと（bms）
+- 走りの上の荷 `…(4,2,0)(5,0,0)[3]` → バッドルートは 2 の記録、歩幅 0、
+  横に同じ列が並ぶ ⇒ 鎖は `twoIt`（dupJt0 の形）。
+- 走り `…(3,1,0)(4,2,0)[3]` → バッドルート 3、悪い部分 `(3,1,0)(4,2,0)`、
+  歩幅 2 ⇒ ブロックが縦に繰り返す（GOK_TrmStep の形）。走り q なら歩幅 q+1。
+
+### 壁の正体
+荷の A2' の dup 場合、鎖 `twoIt A (pay X Y') k` が出る。この鎖は
+「左兄弟が nil でない 2 の記録の走り」を作るので、既存の `GOK_TrmStep` /
+`GOK_runNil_gen`（走りの 2 の記録の左兄弟がすべて nil）では扱えない。
+
+### この回に作ったもの（緑）
+- `ftw Bs = Bs.map Frm.ftwo`、`blkC V Bs = fone V :: ftw Bs`、
+  `blkR A Bs i`（ブロック i 個）、`blkW A Bs = one nil (plug (ftw Bs) A)`。
+- `jk1_plug_tip`: `jk1 l (plug ctx T) = jk1 l (plug ctx nil) ++ jk1 (l + dep ctx) T`。
+- `jk1_blkTower` / `colJ_plug_runG(Tower)` / `wordJ_plug_runG(Tower)`。
+- `hMy_run`: 走りの語で「以後すべて真に高い列」は 2 の記録に限る
+  （兄弟の列は直後の 2 の記録に阻まれて条件を満たさない）。
+- ★ `GOK_runGNil_gen`: 左兄弟つきの走りの上に 2 の記録を継げる。
+
+### 次にやること（PreQ/TipQ 節の強化）
+既にある `PreQ`（ブロック列が良い、局所条件なので非可述にならない）/
+`TipQ`（良いブロック列の先端に差せる木）/ `TipQ2`（2 の記録の枠の上）/
+`TipQ2_nil` / `TipQ2_pay` / `TipQ_twoIt` / `TipQ_itJ` を、荷つきに強める:
+- `PreP bs`: 各ブロックの左兄弟が、その手前のブロック列に差せて **荷も吊るせる**。
+- `TipP X`: `∀ bs, PreP bs → … → GOK (Trm X bs)`。
+- 目標 1: `TipP nil`（塔）。最後のブロックの走り長 e についての帰納。
+  e = 0 は `APnil_gen0`（兄弟の荷吊るしが要る ⇒ PreP に入れた理由）、
+  e+1 は `TipQ2_nil`（= GOK_TrmStep）の PreP 版。
+- 目標 2: `TipP_pay`（荷の A2'）。dup は走り長 0 なら `dupJs0` + `TipQ_itJ`、
+  1 以上なら `dupJt0` + `TipQ_twoIt`。
+- これで `PayStep` ⇒ `ZeroStep` ⇒ `R376_of_PayStep` で行376。
+- `PreQ`/`TipQ` の参照はこの節（Small.lean 35448-36255）の中だけなので、
+  定義を強めても他所に影響しない。
