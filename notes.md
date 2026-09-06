@@ -11538,3 +11538,41 @@ Dk_twoNilPay                     （2 の記録の上に荷）        → R(9,1,
 
 `M` の候補は全部見たが、`hMy`（`y ≤ 行1`）が `(7,1,0)` で破れるため
 `dl = 2` の 1 通りしかない。
+
+## 追記69: `R(9,2,0)` は梯子待ち。標準形順で手前の `S = R(9,1,0)` 族へ
+
+`R(9,2,0)` の塔の木は `one (two nil nil) (YX2 (n-1))` で、
+`YX2 (m+1) = two nil (one nil (YX2 m))`。`Dk k (YX2 m)` を作るには
+`Dk n (one V (two Wl Z))` を `Z = one nil (…)` に広げる必要があり、
+それは 2 の記録の枠の段数を `Dk` に持たせること（= ランを許さない交互梯子）に
+なる。`Gok r m` を定義しても `Gk_pay` の Jt 側で鎖 `twoIt N T j` が
+枠木を `nil` から外すので、結局 `NTw` 相当の条件を枠に持たせた
+**`TwSt` の並行版**が要る（~500 行）。今回は着手しない。
+
+### 標準形順では `R(9,1,0)` 族が先
+
+`R ++ [(9,1,0)] ++ [c]` はどれも `R ++ [(9,2,0)]` より前（位置 13 で
+`(9,1,0) < (9,2,0)`）。だから **`S = R(9,1,0)` 族を先に埋めるのが順番として正しい**。
+標準拡張は 27 個。
+
+### 今回の新補題
+
+```
+Dk_oneTwoWlOneNil : Dk n (one V (two Wl (one nil nil)))
+```
+
+`APnil_gen0` を `ctx ++ [fone V, ftwo Wl]` で使い、
+底を `Dk_oneTwoWlNil`、荷を `Dk_oneTwoWlPay` で供給する。
+（追記68 の 2 本がちょうど `APnil_gen0` の 2 つの仮定になっている。
+追記58 の `TTwA_oneNil` と同じ形が 1 段深い所で再現した。）
+
+これで `Dk_twoNilOneNil : ∀ k, Dk (k+1) (two nil (one nil nil))` が出て、
+`S` の字
+
+```
+NA = one nil (two nil (one (two nil nil) (two nil (one (two nil nil)
+       (two nil (one nil nil))))))
+jk1 l NA = (l+1,1,0)(l+2,2,0)(l+3,2,0)(l+3,1,0)(l+4,2,0)(l+5,2,0)(l+5,1,0)(l+6,2,0)(l+7,1,0)
+```
+
+の梯子が通った。`S(0,0,0) S(1,0,0) S(1,1,0)` まで green。
