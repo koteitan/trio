@@ -36468,5 +36468,73 @@ theorem R375p5_mem : R375p ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   simpa using h
 
 #print axioms R375p5_mem
+
+/-! ### ★★★★★ 2 の記録の枠の上に「上に何も無い 1 の列」
+
+`APnil_gen0` は「先端の木 `V` の良さ」と「`V` の上の荷」を要求する。
+2 の記録の枠の上では、その 2 つが `TTwA V` と `TTwA_pay` でちょうど出る。 -/
+
+theorem TTwA_oneNil {V : Jk1} (hJV : JkA V) (hV : TTwA V) :
+    TTwA (Jk1.one V Jk1.nil) := by
+  intro r m N hJN hNup hf D hD
+  rw [← plug_snoc2]
+  refine APnil_gen0 (D ++ [Frm.ftwo N]) V ?_ ?_ ?_
+  · have h := TwSt_JkT r m D hD (Jk1.two N (Jk1.one V Jk1.nil)) ⟨hJN, hJV, trivial⟩
+    rwa [← plug_snoc2] at h
+  · have h := hV r m N hJN hNup hf D hD
+    rwa [← plug_snoc2] at h
+  · intro C hC
+    have h := TTwA_pay C hC V hJV hV r m N hJN hNup hf D hD
+    rwa [← plug_snoc2] at h
+
+#print axioms TTwA_oneNil
+
+/-! #### `P` の字と `P(2,2,1)` -/
+
+/-- `P` の字。`jk1 2 NP = (3,1,0)(4,2,0)(5,2,0)(5,1,0)(6,2,0)(7,2,0)(7,1,0)`。 -/
+def NP : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) Jk1.nil))))
+
+theorem JkT_NP : JkT NP :=
+  ⟨⟨trivial, trivial, ⟨trivial, trivial⟩, trivial, ⟨trivial, trivial⟩, trivial⟩, trivial⟩
+
+theorem LOk1_hangP :
+    LOk 1 (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) Jk1.nil)) :=
+  LOk_of_TwOk0 (TTwA_oneNil (V := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
+    TTwA_twoNil 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))
+
+theorem TwoOk_hangP :
+    TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) Jk1.nil))) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+    LOk1_hangP)
+
+theorem GOK_NP : GOK NP :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_hangP Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem jk1_NP (l : ℕ) : jk1 l NP =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 1, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [NP, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+
+/-- ★★★★★ `P(2,2,1)`。 -/
+theorem R375p6_mem : R375p ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NP])) := GOK_NP [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NP]) := by simpa using h1
+  have h2 := GOK_nil [NP] (WOk_singletonT JkT_NP) h1'
+  have h := rowJ_mem_genF Aok_R338 h2
+  simpa [wordJ_append, wordJ_singleton, colJ, jk1_NP, jk1, R375p, R375z, R375x, R375s,
+    R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms R375p6_mem
 end Small
 end TRIO

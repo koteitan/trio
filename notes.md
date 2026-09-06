@@ -10911,3 +10911,38 @@ jk1 2 NP = (3,1,0)(4,2,0)(5,2,0)(5,1,0)(6,2,0)(7,2,0)(7,1,0)
 
 **族の写経で進む範囲は尽きた。** これ以降は「2 の記録のランの上に 1 の列を足す」
 ＝ `ZeroStep` / `NOk_nil` が要る。行376 と同じ壁。
+
+## 追記58: ★★★★★ 「2 の記録の枠の上に上に何も無い 1 の列」が出た
+
+追記57 で壁と書いた形が、既にある道具の組み合わせで出た。
+
+```
+TTwA_oneNil : JkA V → TTwA V → TTwA (one V nil)
+```
+
+証明は `APnil_gen0` を 2 の記録の枠の上で使うだけ:
+
+```
+plug D (two N (one V nil)) = plug (D ++ [ftwo N]) (one V nil)
+APnil_gen0 (D ++ [ftwo N]) V
+  hJT  ← TwSt_JkT
+  hGV  ← TTwA V        （V が 2 の記録の枠の上に置ける）
+  hang ← TTwA_pay      （その上に荷を吊るせる、追記50 で green）
+```
+
+**`APnil_gen0` が要求する 2 つが、ちょうど `TTwA` と `TTwA_pay` だった。**
+追記54 で「左兄弟の荷が要る」と書いたのがこれで、梯子側では `TTwA_pay` が
+既に持っていた。
+
+これで `P(2,2,1)` が出た:
+```
+NP = one nil (two nil (one (two nil nil) (two nil (one (two nil nil) nil))))
+LOk1_hangP : LOk 1 (two nil (one (two nil nil) nil))
+           = TTwA_oneNil (V := two nil nil) … （N = nil）
+```
+
+### まだ足りないもの
+
+行376 は `stk q`（2 の記録の枠を `q` 段）なので `TTwA (two nil X)` が要る。
+`TTwA_twoNil`（`X = nil`）はあるが、一般の `X` は未証明。
+`TTwA X → TTwA (two nil X)` が次の目標。
