@@ -10182,3 +10182,45 @@ LTwo_pay : Bok Y → JkA Z → LTwo Z → LTwo (pay Z Y)
 `GOK_twoNil_gen`（下は 1 の列の枠）と `APnil_gen0` がそのまま使えるはずで、
 続き111 の `#14 P(5,2,0)`（木 `NST k = two nil (one (two nil nil) (NST (k-1)))`）も
 同じ形。次に作る道具はこれ。
+
+### 追記38: `TwM` の梯子で「2 の記録の直上に 1 の列で伸びる木」が出た。`Y` 族 22/22
+
+`LTwo Z`（追記37）は「深さ `k+1` の 2 の記録の右の子」。その上にさらに
+**1 の列の枠だけ**を `m` 枚積んだ文脈の族を作った:
+
+```
+TwStk 0 D      = D' ++ [ftwo N]、StkOk (k+1) D'、JkA N、∀j LOk (j+1) N
+TwStk (m+1) D  = D' ++ [fone U]、TwStk m D'、JkA U、∀D'' TwStk m D'' → GOK (plug D'' U)
+TwM m X        = ∀D, TwStk m D → GOK (plug D X)      TwM 0 = LTwo
+```
+
+**なぜ閉じるか**: 2 の記録の枠が 1 枚しか無いので、荷の鎖
+（`GoodFb_snoc_dupJs0` の `itJ N T n`）は 1 の列の枠だけを使う。
+枠木に要るのは「その形での良さ」だけで、追記36 の尾一般性（＝非可述）が要らない。
+`m = 0`（2 の記録で終わる文脈）の荷は `LTwo_pay` が引き受ける。
+
+出たもの:
+```
+TwM_one / TwM_itJ / TwM_pay / TwM_oneNil / TwM_nil
+LTwo_one    : JkA V → LTwo V → TwM 1 Z → LTwo (one V Z)
+LTwo_oneNil : JkA V → LTwo V → LTwo (one V nil)
+```
+
+これで **`Y = X(7,1,0)` 族が 22/22**（`X(7,2,0)` の下に丸ごと入る）。
+各行に要った形:
+```
+(6,0,0)  ZZY n = one (ZZY (n-1)) (two nil (one nil nil))   LOk1_twoNilOneNilNil
+(6,2,0)  YY n / ZY n（1 の列と 2 の記録が交互）              LOk_ZY（LTwo_oneNil）
+(7,0,0)  WWY n = two (WWY (n-1)) (one nil nil)             LTwo_oneNil（左兄弟一般）
+(7,1,0)  two nil (pay (one nil nil) B)                     LTwo_pay + LTwo_oneNil
+(8,0,0)  two nil (SY n)、SY n = one (SY (n-1)) nil          LTwo_oneNil
+(8,1,0)  two nil (one nil (pay nil B))                     LTwo_one + TwM_pay
+(8,2,0)  two nil (chn n)                                   LTwo_one（TwM_chn）
+```
+
+**まだ出ないもの**: `X(7,2,0)`。塔の木が
+`two nil (one nil (two nil (one nil …)))` で、**2 の記録の枠が 2 枚以上**要る。
+`TwStk` に 2 枚目の 2 の記録を足そうとすると、その上の荷の鎖がまた
+「2 の記録の枠木が育つ」形になり、追記36 の非可述性が戻ってくる。
+続き111 の `#14 P(5,2,0)` も同じ形（`NST k = two nil (one (two nil nil) (NST (k-1)))`）で、
+`two nil (one W …)` の `W = two nil nil` を要求するのでこの梯子では届かない。
