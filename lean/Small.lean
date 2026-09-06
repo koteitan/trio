@@ -37507,5 +37507,133 @@ theorem R375p19_mem : R375p ++ [((8, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375p18_mem
 #print axioms R375p19_mem
+
+/-! ### ★★★★★ 2 の記録の枠の上の「1 の列 + 荷」
+
+`TTwA_oneNil`（追記58）は 1 の列の上に何も無い場合。ここでは
+1 の列の上に `Bok` の荷を吊るした `one V (pay Z Y)` を扱う。
+`AYs` と同じく荷 `Y` の `W 0` 帰納で回すが、鎖 `itJ` の各項の良さは
+`TTwA` そのもの（`TTwA_itJ`）で供給するので、枠条件（`∀ D''`）が要らない。 -/
+
+theorem TTwA_itJ {T : Jk1} (hJT : JkA T)
+    (hstep : ∀ W : Jk1, JkA W → TTwA W → TTwA (Jk1.one W T)) :
+    ∀ (n : ℕ) {V : Jk1}, JkA V → TTwA V → JkA (itJ T n V) ∧ TTwA (itJ T n V)
+  | 0, _, hJV, hVk => ⟨hJV, hVk⟩
+  | (n + 1), V, hJV, hVk => by
+      obtain ⟨h1, h2⟩ := TTwA_itJ hJT hstep n hJV hVk
+      exact ⟨⟨h1, hJT⟩, hstep _ h1 h2⟩
+
+theorem TTwA_onePay : ∀ (Y : TrioSeq), Bok Y → ∀ Z : Jk1, JkA Z →
+    (∀ W : Jk1, JkA W → TTwA W → TTwA (Jk1.one W Z)) →
+    ∀ V : Jk1, JkA V → TTwA V → TTwA (Jk1.one V (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ Z : Jk1, JkA Z →
+      (∀ W : Jk1, JkA W → TTwA W → TTwA (Jk1.one W Z)) →
+      ∀ V : Jk1, JkA V → TTwA V → TTwA (Jk1.one V (Jk1.pay Z Y))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb Z hJZ hAP V hJV hVk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact TTwA_congr (fun l => (jk1_one_pay_nil V Z l).symm) (hAP V hJV hVk)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        have hY0 : Bok (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by simpa using hYb
+        have hstep : ∀ W : Jk1, JkA W → TTwA W →
+            TTwA (Jk1.one W (Jk1.pay Z ([] : TrioSeq))) :=
+          fun W hJW hWk => TTwA_congr (fun l => (jk1_one_pay_nil W Z l).symm) (hAP W hJW hWk)
+        intro r m N hJN hNup hf D hD
+        rw [← plug_snoc2]
+        intro ws hw hG
+        have hJT : JkT (plug (D ++ [Frm.ftwo N])
+            (Jk1.one V (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) := by
+          have h := TwSt_JkT r m D hD (Jk1.two N (Jk1.one V (Jk1.pay Z
+            (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) ⟨hJN, hJV, hJZ, hY0⟩
+          rwa [← plug_snoc2] at h
+        refine GoodFb_snoc_dupJs0 hw hJT hY0 Bok_nil ?_
+        intro n hn
+        have h := (TTwA_itJ (T := Jk1.pay Z ([] : TrioSeq)) ⟨hJZ, Bok_nil⟩ hstep n hJV hVk).2
+          r m N hJN hNup hf D hD
+        rw [← plug_snoc2] at h
+        exact h ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hY0 : Bok (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by
+          rw [← hsplit]; exact hYb
+        have hstep : ∀ W : Jk1, JkA W → TTwA W →
+            TTwA (Jk1.one W (Jk1.pay Z Y.dropLast)) :=
+          fun W hJW hWk => hdl hdb Z hJZ hAP W hJW hWk
+        rw [hsplit]
+        intro r m N hJN hNup hf D hD
+        rw [← plug_snoc2]
+        intro ws hw hG
+        have hJT : JkT (plug (D ++ [Frm.ftwo N])
+            (Jk1.one V (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) := by
+          have h := TwSt_JkT r m D hD (Jk1.two N (Jk1.one V (Jk1.pay Z
+            (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) ⟨hJN, hJV, hJZ, hY0⟩
+          rwa [← plug_snoc2] at h
+        refine GoodFb_snoc_dupJs0 hw hJT hY0 hdb ?_
+        intro n hn
+        have h := (TTwA_itJ (T := Jk1.pay Z Y.dropLast) ⟨hJZ, hdb⟩ hstep n hJV hVk).2
+          r m N hJN hNup hf D hD
+        rw [← plug_snoc2] at h
+        exact h ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro r m N hJN hNup hf D hD
+        rw [← plug_snoc2]
+        intro ws hw hG
+        have hJT : JkT (plug (D ++ [Frm.ftwo N]) (Jk1.one V (Jk1.pay Z Y))) := by
+          have h := TwSt_JkT r m D hD (Jk1.two N (Jk1.one V (Jk1.pay Z Y)))
+            ⟨hJN, hJV, hJZ, hYb⟩
+          rwa [← plug_snoc2] at h
+        refine GoodFb_snoc_innerJs0 hw hJT hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have h := hh (Bok_oper hYb hn) Z hJZ hAP V hJV hVk r m N hJN hNup hf D hD
+        rw [← plug_snoc2] at h
+        exact h ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb Z hJZ hAP V hJV hVk
+  exact key hYb.mem hYb Z hJZ hAP V hJV hVk
+
+#print axioms TTwA_onePay
+
+/-- 2 の記録の枠の上に「1 の列 + その上の荷」を置ける。 -/
+theorem TTwA_onePayNil {V : Jk1} (hJV : JkA V) (hV : TTwA V) {B : TrioSeq} (hB : Bok B) :
+    TTwA (Jk1.one V (Jk1.pay Jk1.nil B)) :=
+  TTwA_onePay B hB Jk1.nil trivial (fun W hJW hWk => TTwA_oneNil hJW hWk) V hJV hV
 end Small
 end TRIO
