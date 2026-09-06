@@ -38450,5 +38450,110 @@ theorem Dk_oneTwoNil {n : ℕ} {V : Jk1} (hJV : JkA V) (hV : Dk n V)
 
 #print axioms TTwA_oneTwoNil
 #print axioms Dk_oneTwoNil
+
+/-! ### ★★★★★ `R = P(8,2,0)` 族
+
+`Q = R375p ++ [(8,2,0)]`。字は
+`NR = one nil (two nil (one (two nil nil) (two nil (one (two nil nil) (two nil nil)))))`
+で、梯子の要は `TTwA (one (two nil nil) (two nil nil))`
+（= `TTwA_oneTwoNil` に `TTwA_twoNil` を入れたもの）。 -/
+
+def R375r : TrioSeq := R375p ++ [((8, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem R375r_eq : R375r = [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ), ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ), ((7, 2, 0) : ℕ × ℕ × ℕ),
+    ((7, 1, 0) : ℕ × ℕ × ℕ), ((8, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp [R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338]
+
+theorem R375r_ne : R375r ≠ [] := by
+  simp [R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338]
+
+theorem R375r_head : entry R375r 0 0 = 0 := by
+  simp [R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338, entry]
+
+theorem R375r_tail : ∀ r, 1 ≤ r → r < R375r.length → 1 ≤ entry R375r 0 r := by
+  intro r h1 h2
+  simp only [R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338,
+    List.length_append, List.length_cons, List.length_nil] at h2
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | r
+    <;> first
+      | omega
+      | simp [R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338, entry]
+
+theorem Aok_R375r : Aok R375r where
+  mem := R375p21_mem
+  ne := R375r_ne
+  deep := ⟨R375r_head, R375r_tail⟩
+  zroot := by
+    rw [R375r_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      | rfl <;> decide
+  mono := by
+    rw [R375r_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      | rfl <;> decide
+
+/-- ★★★★★ `R(0,0,0)`。 -/
+theorem R375r0_mem : R375r ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  sum_Bok Aok_R375r Bok_zero
+
+/-- ★★★★★ `R(1,0,0)`。 -/
+theorem R375r1_mem : R375r ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, ([] : TrioSeq) ++ (List.range n).flatMap (fun _ => R375r) ∈ W 0 := by
+    intro n
+    simpa [copies] using (Aok_R375r.copies_Bok n).mem
+  have h := flat_mem'' (Y0 := ([] : TrioSeq)) (M := R375r) (d := 1) R375r_ne
+    (by rw [R375r_head]; omega) R375r_tail htw
+  simpa using h
+
+/-- ★★★★★ `R(1,1,0)`。 -/
+theorem R375r2_mem : R375r ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 R375r Aok_R375r
+
+/-! #### `R` の字 -/
+
+def NR : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil Jk1.nil)))))
+
+theorem JkT_NR : JkT NR :=
+  ⟨⟨trivial, trivial, ⟨trivial, trivial⟩, trivial, ⟨trivial, trivial⟩, trivial, trivial⟩,
+    trivial⟩
+
+theorem TTwA_oneTwoTwo : TTwA (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil Jk1.nil)) :=
+  TTwA_oneTwoNil (V := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ TTwA_twoNil
+
+theorem LOk1_hangR :
+    LOk 1 (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil Jk1.nil))) :=
+  LOk_of_TwOk0 (TTwA_oneTwoTwo 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))
+
+theorem TwoOk_hangR : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil Jk1.nil)))) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+    LOk1_hangR)
+
+theorem GOK_NR : GOK NR :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa using TwoOk_hangR Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem jk1_NR (l : ℕ) : jk1 l NR =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 1, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [NR, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+
+#print axioms R375r0_mem
+#print axioms GOK_NR
 end Small
 end TRIO

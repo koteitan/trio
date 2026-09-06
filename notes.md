@@ -11416,3 +11416,41 @@ TwoOk_twoWlNil : TwoOk (two Wl nil)
 
 この食い違いが残る壁。`APd_nstN2` の `hNall` の使い方を局所化できるか、
 あるいはクラスを `TwoOk` 側に寄せて `hb` の要求を弱められるかを次に測る。
+
+## 追記66: ★ `TTwA (one V (two nil nil))` が出た。`R = P(8,2,0)` 族に着手
+
+追記65 の壁（局所/大域の強さ）は迂回できた。要は**ラン 1 の塔で足りる**場合が
+あったこと。
+
+```
+GOK_twoNil_gen (ctx0) (V) {N} (hJN) (hJT) (hGV) (hstair) :
+    GOK (plug (ctx0 ++ [fone V]) (two N nil))
+    hstair : ∀ m, GOK (plug (ctx0 ++ [fone V]) (plug (replicate m (fone N)) N))
+```
+
+に `N := nil` を入れると階段は `plug (replicate m (fone nil)) nil = chn m`。
+`chn` は `Dk_chn`（追記60）で任意段に置けるので、
+`TTwA_one_of_Dk1` で階段が供給できる。よって
+
+```
+plug_repNil     : plug (replicate m (fone nil)) nil = chn m
+TTwA_oneTwoNil  : JkA V → TTwA V → TTwA (one V (two nil nil))
+Dk_oneTwoNil    : JkA V → Dk n V → (∀C, Dk n (pay V C)) → Dk n (one V (two nil nil))
+```
+
+**これで `Dk` の閉じ方に `two nil nil`（上に何も無い 2 の記録）が加わった。**
+
+### `R = P(8,2,0)` 族に着手
+
+`R = R375r = R375p ++ [(8,2,0)]`（標準拡張は 25 個）。字は
+
+```
+NR = one nil (two nil (one (two nil nil) (two nil (one (two nil nil) (two nil nil)))))
+jk1 l NR = (l+1,1,0)(l+2,2,0)(l+3,2,0)(l+3,1,0)(l+4,2,0)(l+5,2,0)(l+5,1,0)(l+6,2,0)
+```
+
+で、梯子の要は `TTwA (one (two nil nil) (two nil nil))`
+= `TTwA_oneTwoNil` に `TTwA_twoNil` を入れたもの。**今回の新補題がちょうど要る形だった。**
+`R375r` / `Aok_R375r` / `R(0,0,0)` / `R(1,0,0)` / `R(1,1,0)` / `GOK_NR` まで green。
+
+（名前: `R375q` と `NQ` は既に別の行列で使われていたので `R375r` / `NR` にした。）
