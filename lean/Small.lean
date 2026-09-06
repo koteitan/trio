@@ -34601,5 +34601,123 @@ theorem R375z18_mem : R375z ++ [((7, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   snocd_mem (by omega) Aok_R375z.ne Aok_R375z.deep Aok_R375z.zroot Ancd7_R375z tw7_R375z
 
 #print axioms R375z18_mem
+
+/-! ### ★★★★★ ブロック列の木（2 の記録の連続ランの一般化）
+
+`BT U [j_1, …, j_p]` は「1 の列 + 2 の記録 `j_k` 本」のブロックを `p` 個積んだ木。
+`BT U [q] = one U (stk q)` なので、行376 が要求する `GOK (one nil (stk q))` は
+`BT` の言葉で書ける。末尾のブロックを 1 本減らして `i` 個並べる操作
+（`pre ++ [e+1]` → `pre ++ replicate i e`）が展開そのもので、
+`e` の帰納 + `i` の帰納で閉じる。 -/
+
+/-- `[j_1, …, j_p]` が稼ぐ高さ。1 ブロックにつき `1 + j_k`。 -/
+def hgtB : List ℕ → ℕ
+  | [] => 0
+  | (j :: js) => 1 + j + hgtB js
+
+theorem hgtB_append : ∀ (js ks : List ℕ), hgtB (js ++ ks) = hgtB js + hgtB ks
+  | [], ks => by simp [hgtB]
+  | (j :: js), ks => by
+      show 1 + j + hgtB (js ++ ks) = 1 + j + hgtB js + hgtB ks
+      rw [hgtB_append js ks]; omega
+
+/-- ブロック列の木（先頭も 1 の列で始まる）。 -/
+def bdA : List ℕ → Jk1
+  | [] => Jk1.nil
+  | (j :: js) => Jk1.one Jk1.nil (stkP j (bdA js))
+
+/-- 先端に荷 `C` を吊るした版。 -/
+def bdAC (C : TrioSeq) : List ℕ → Jk1
+  | [] => Jk1.pay Jk1.nil C
+  | (j :: js) => Jk1.one Jk1.nil (stkP j (bdAC C js))
+
+/-- 台座 `U` の上にブロック列。`BT U [] = U`。 -/
+def BT (U : Jk1) : List ℕ → Jk1
+  | [] => U
+  | (j :: js) => Jk1.one U (stkP j (bdA js))
+
+/-- 台座 `U` の上にブロック列、先端に荷 `C`。 -/
+def BP (U : Jk1) (C : TrioSeq) : List ℕ → Jk1
+  | [] => Jk1.pay U C
+  | (j :: js) => Jk1.one U (stkP j (bdAC C js))
+
+theorem JkA_stkP' : ∀ (j : ℕ) {X : Jk1}, JkA X → JkA (stkP j X)
+  | 0, _, h => h
+  | (j + 1), _, h => ⟨trivial, JkA_stkP' j h⟩
+
+theorem JkA_bdA : ∀ js : List ℕ, JkA (bdA js)
+  | [] => trivial
+  | (j :: js) => ⟨trivial, JkA_stkP' j (JkA_bdA js)⟩
+
+theorem JkA_bdAC {C : TrioSeq} (hC : Bok C) : ∀ js : List ℕ, JkA (bdAC C js)
+  | [] => ⟨trivial, hC⟩
+  | (j :: js) => ⟨trivial, JkA_stkP' j (JkA_bdAC hC js)⟩
+
+theorem JkA_BT {U : Jk1} (hU : JkA U) : ∀ js : List ℕ, JkA (BT U js)
+  | [] => hU
+  | (j :: js) => ⟨hU, JkA_stkP' j (JkA_bdA js)⟩
+
+theorem JkA_BP {U : Jk1} (hU : JkA U) {C : TrioSeq} (hC : Bok C) :
+    ∀ js : List ℕ, JkA (BP U C js)
+  | [] => ⟨hU, hC⟩
+  | (j :: js) => ⟨hU, JkA_stkP' j (JkA_bdAC hC js)⟩
+
+theorem TopOk_BT {U : Jk1} (hU : TopOk U) : ∀ js : List ℕ, TopOk (BT U js)
+  | [] => hU
+  | (_ :: _) => hU
+
+theorem JkT_BT {U : Jk1} (hU : JkT U) (js : List ℕ) : JkT (BT U js) :=
+  ⟨JkA_BT hU.1 js, TopOk_BT hU.2 js⟩
+
+/-- `stkP` の語。 -/
+theorem jk1_stkP : ∀ (j : ℕ) (X : Jk1) (l : ℕ),
+    jk1 l (stkP j X) = (List.range j).flatMap
+      (fun k => shiftr01 k 0 [((l + 1, 2, 0) : ℕ × ℕ × ℕ)]) ++ jk1 (l + j) X
+  | 0, X, l => by simp [stkP, jk1]
+  | (j + 1), X, l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stkP j X)) = _
+      rw [jk1_stkP j X (l + 1), List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+      simp only [jk1, List.nil_append, Nat.add_zero, shiftr01_zero, List.singleton_append,
+        Function.comp_def, List.cons_append, List.append_assoc]
+      rw [show l + 1 + j = l + (j + 1) from by omega]
+      refine congrArg _ ?_
+      congr 1
+      apply List.flatMap_congr
+      intro k _
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        and_true]
+      omega
+
+/-- `bdA` の語は連結で分かれる。 -/
+theorem jk1_bdA_append : ∀ (js ks : List ℕ) (l : ℕ),
+    jk1 l (bdA (js ++ ks)) = jk1 l (bdA js) ++ jk1 (l + hgtB js) (bdA ks)
+  | [], ks, l => by simp [bdA, jk1, hgtB]
+  | (j :: js), ks, l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (stkP j (bdA (js ++ ks)))) = _
+      show _ = (jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (stkP j (bdA js)))) ++ jk1 (l + hgtB (j :: js)) (bdA ks)
+      rw [jk1_stkP j (bdA (js ++ ks)) (l + 1), jk1_stkP j (bdA js) (l + 1),
+        jk1_bdA_append js ks (l + 1 + j)]
+      simp only [jk1, List.nil_append, List.cons_append, List.append_assoc]
+      rw [show l + 1 + j + hgtB js = l + hgtB (j :: js) from by simp [hgtB]; omega]
+
+/-- `BT` の語は台座 `U` とブロック列に分かれる。 -/
+theorem jk1_BT : ∀ (U : Jk1) (js : List ℕ) (l : ℕ),
+    jk1 l (BT U js) = jk1 l U ++ jk1 l (bdA js)
+  | U, [], l => by simp [BT, bdA, jk1]
+  | U, (j :: js), l => by
+      show jk1 l U ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stkP j (bdA js)))
+        = jk1 l U ++ (jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+            jk1 (l + 1) (stkP j (bdA js))))
+      simp [jk1]
+
+theorem jk1_BT_append (U : Jk1) (js ks : List ℕ) (l : ℕ) :
+    jk1 l (BT U (js ++ ks)) = jk1 l (BT U js) ++ jk1 (l + hgtB js) (bdA ks) := by
+  rw [jk1_BT, jk1_BT, jk1_bdA_append, List.append_assoc]
+
+#print axioms jk1_stkP
+#print axioms jk1_bdA_append
+#print axioms jk1_BT_append
 end Small
 end TRIO
