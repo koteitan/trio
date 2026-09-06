@@ -10817,3 +10817,35 @@ A2' の鎖 `itJ T k A0` を差すのに `PreQ (pre ++ [(itJ T (k-1) A0, 0)])` �
 
 `GOK_runNil_gen`（追記53）は梯子側でそのまま使えるので、
 次は梯子 `RSt` のラン長を添字にして `ROk_nil` を閉じる。
+
+## 追記55: 梯子 `NSt`（枠木の良さを「その場の文脈だけ」に弱める）
+
+`TwSt` / `RSt` の枠の節は「その形のどの文脈でも良い」（`∀ D''`）を課していた。
+これだと塔の階段（文脈がどんどん伸びる）で使えない。**その場の文脈での良さ**だけに
+弱めると通る:
+
+```
+NSt 0 m D          := StkOk (m+1) D
+NSt (r+1) 0 D      := ∃ m D' N, D = D' ++ [ftwo N] ∧ NSt r m D' ∧ NilR r m D'
+                                ∧ JkA N ∧ GOK (plug D' N)
+NSt (r+1) (m+1) D  := ∃ D' U, D = D' ++ [fone U] ∧ NSt (r+1) m D' ∧ JkA U ∧ GOK (plug D' U)
+NOk r m X := ∀ D, NSt r m D → GOK (plug D X)
+```
+
+閉包補題の側が `NOk r m U`（全文脈）を要求する形になるが、そちらは木を作る側なので
+問題ない。`RSt` は破棄した（`ROk_pay` は `∀ D''` 前提だったので写経し直す）。
+
+green:
+```
+NSt_z / NSt_e / NSt_f / NilR_z / NilR_e / NilR_f
+NSt_JkT, NOk_congr, NOk_one
+NOk_two : JkA N → NOk r m N → NOk (r+1) 0 Z → ∀ D, NSt r m D → NilR r m D
+        → GOK (plug D (two N Z))
+```
+
+これで階段の 1 の列の枠（左兄弟 `nil` や `V`）は「その場での良さ」で足りるので、
+ラン長 `trun D` についての帰納が回るはず。
+
+次:
+1. `NOk_pay`（A2' 帰納。鎖はその場版 `itJ` / `twoIt`）
+2. `NOk_nil`（`NilR` に制限。`trun D` の帰納 + `GOK_runNil_gen`）
