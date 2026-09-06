@@ -36536,5 +36536,61 @@ theorem R375p6_mem : R375p ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
     R375m, R373, R344, R341, R338, List.append_assoc] using h
 
 #print axioms R375p6_mem
+
+/-! #### `P(3,0,0)` -/
+
+def U375bP : TrioSeq := U375bZ ++ [((7, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375bP : MidD 3 U375bP where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375bP, U375bZ, U375bX, U375b1, U375b, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375bP, U375bZ, U375bX, U375b1, U375b, List.cons_append, List.nil_append,
+      List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375bP, U375bZ, U375bX, U375b1, U375b, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem colJ_NP_one : colJ 1 1 NP = U375bP := by
+  show ((2, 2, 1) : ℕ × ℕ × ℕ) :: jk1 2 NP = _
+  rw [jk1_NP 2]
+  rfl
+
+theorem GoodFb_repl_NP : ∀ m : ℕ, GoodFb (fun a b => wordJ a b (List.replicate m NP))
+  | 0 => by simpa using GoodFb_wordJ_nil
+  | (m + 1) => by
+      have h := GOK_NP (List.replicate m NP) (WOk_replicateT JkT_NP m) (GoodFb_repl_NP m)
+      rwa [← List.replicate_succ'] at h
+
+theorem wordJ_repl_NP : ∀ m : ℕ, wordJ 1 1 (List.replicate m NP) = copies U375bP m
+  | 0 => rfl
+  | (m + 1) => by
+      rw [List.replicate_succ, wordJ_cons, wordJ_repl_NP m, copies_succ, colJ_NP_one]
+
+/-- ★★★★★ `P(3,0,0)`。 -/
+theorem R375p7_mem : R375p ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hstep : ∀ n : ℕ,
+      Aok (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375bP n) →
+      (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375bP n) ++ U375bP ∈ W 0 := by
+    intro n _
+    have h := rowJ_mem_genF Aok_R338 (GoodFb_repl_NP (n + 1))
+    rw [wordJ_repl_NP (n + 1), copies_snoc] at h
+    simpa [List.append_assoc] using h
+  have h := flat_of_chain (Y0 := R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) (M := U375bP) (d := 3)
+    (by omega) MidD_U375bP Aok_R338110 hstep
+  simpa [R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338, U375bP, U375bZ,
+    U375bX, U375b1, U375b, List.append_assoc] using h
+
+#print axioms R375p7_mem
 end Small
 end TRIO
