@@ -35238,5 +35238,95 @@ theorem hMy_blk {A : Jk1} (hJA : JkA A) (j m : ℕ) :
 #print axioms jk1_Trm_append
 #print axioms MidD_blk
 #print axioms hMy_blk
+
+/-! #### `Trm` の語の分解（塔と最後の 1 列） -/
+
+theorem jk1_Trm_blk_two (A0 A : Jk1) (j m : ℕ) :
+    jk1 m (Trm (Jk1.two A Jk1.nil) [(A0, j)])
+      = (jk1 m A0 ++ jk1 m (Trm A [(Jk1.nil, j)]))
+        ++ [((m + 1 + (j + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 m A0 ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (m + 1) (stkP j (Jk1.two A Jk1.nil))) = _
+  have e2 : jk1 (m + 1 + j) (Jk1.two A Jk1.nil)
+      = jk1 (m + 1 + j) A ++ [((m + 1 + (j + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+    show jk1 (m + 1 + j) A ++ (((m + 1 + j + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (m + 1 + j + 1) Jk1.nil) = _
+    rw [show m + 1 + j + 1 = m + 1 + (j + 1) from by omega]
+    simp [jk1]
+  rw [jk1_stkP' j (Jk1.two A Jk1.nil) (m + 1), e2, jk1_blk']
+  simp [List.append_assoc]
+
+theorem wordJ_Trm_base (a b : ℕ) (ws : List Jk1) (A0 : Jk1) (pre : List (Jk1 × ℕ)) :
+    wordJ a b (ws ++ [Trm A0 pre])
+      = wordJ a b (ws ++ [Trm Jk1.nil pre]) ++ jk1 (a + 1 + hgL pre) A0 := by
+  have h := wordJ_Trm_append a b ws A0 pre []
+  rw [List.append_nil] at h
+  rw [h]
+  rfl
+
+theorem jk1_Trm_tower {A : Jk1} (j : ℕ) : ∀ (i : ℕ) (A0 : Jk1) (m : ℕ),
+    jk1 m (Trm A ([(A0, j)] ++ List.replicate i (A, j)))
+      = jk1 m A0 ++ (List.range (i + 1)).flatMap
+          (fun k => shiftr01 ((j + 1) * k) 0 (jk1 m (Trm A [(Jk1.nil, j)])))
+  | 0, A0, m => by
+      have e : (List.range (0 + 1)).flatMap
+          (fun k => shiftr01 ((j + 1) * k) 0 (jk1 m (Trm A [(Jk1.nil, j)])))
+          = jk1 m (Trm A [(Jk1.nil, j)]) := by simp
+      rw [List.replicate_zero, List.append_nil, e, jk1_blk]
+      rfl
+  | (i + 1), A0, m => by
+      have ih := jk1_Trm_tower (A := A) j i A (m + 1 + j)
+      have hsplit : ([(A0, j)] ++ List.replicate (i + 1) (A, j))
+          = [(A0, j)] ++ ([(A, j)] ++ List.replicate i (A, j)) := by
+        rw [List.replicate_succ]; rfl
+      have e0 : jk1 m (Trm Jk1.nil [(A0, j)]) ++ jk1 (m + 1 + j) A
+          = jk1 m A0 ++ jk1 m (Trm A [(Jk1.nil, j)]) := by
+        show jk1 m A0 ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (m + 1) (stkP j Jk1.nil)) ++ jk1 (m + 1 + j) A = _
+        rw [jk1_blk, jk1_stkP' j Jk1.nil (m + 1), jk1_stkP' j A (m + 1)]
+        simp [jk1, List.append_assoc]
+      have e1 : (List.range (i + 1)).flatMap
+            (fun k => shiftr01 ((j + 1) * k) 0 (jk1 (m + 1 + j) (Trm A [(Jk1.nil, j)])))
+          = (List.range (i + 1)).flatMap
+            (fun k => shiftr01 ((j + 1) * (k + 1)) 0 (jk1 m (Trm A [(Jk1.nil, j)]))) := by
+        apply List.flatMap_congr
+        intro k _
+        rw [show m + 1 + j = m + (1 + j) from by omega,
+          ← jk1_shift (Trm A [(Jk1.nil, j)]) m (1 + j), shiftr01_add0]
+        congr 1
+        rw [Nat.mul_succ]
+        omega
+      have e2 : (List.range (i + 1 + 1)).flatMap
+            (fun k => shiftr01 ((j + 1) * k) 0 (jk1 m (Trm A [(Jk1.nil, j)])))
+          = jk1 m (Trm A [(Jk1.nil, j)]) ++ (List.range (i + 1)).flatMap
+            (fun k => shiftr01 ((j + 1) * (k + 1)) 0 (jk1 m (Trm A [(Jk1.nil, j)]))) := by
+        rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+        simp [Function.comp_def]
+      rw [hsplit, jk1_Trm_append,
+        show m + hgL [(A0, j)] = m + 1 + j from by simp only [hgL]; omega, ih, e1,
+        ← List.append_assoc, e0, e2]
+      simp [List.append_assoc]
+
+theorem wordJ_Trm_tower (a b : ℕ) (ws : List Jk1) {A : Jk1} (A0 : Jk1)
+    (pre : List (Jk1 × ℕ)) (j i : ℕ) :
+    wordJ a b (ws ++ [Trm A (pre ++ [(A0, j)] ++ List.replicate i (A, j))])
+      = Mtwd (j + 1) (wordJ a b (ws ++ [Trm A0 pre]))
+          (jk1 (a + 1 + hgL pre) (Trm A [(Jk1.nil, j)])) (i + 1) := by
+  rw [show pre ++ [(A0, j)] ++ List.replicate i (A, j)
+        = pre ++ ([(A0, j)] ++ List.replicate i (A, j)) from by rw [List.append_assoc],
+    wordJ_Trm_append, jk1_Trm_tower, wordJ_Trm_base a b ws A0 pre, Mtwd]
+  simp [List.append_assoc]
+
+theorem wordJ_Trm_succ (a b : ℕ) (ws : List Jk1) (A0 A : Jk1) (pre : List (Jk1 × ℕ))
+    (j : ℕ) :
+    wordJ a b (ws ++ [Trm (Jk1.two A Jk1.nil) (pre ++ [(A0, j)])])
+      = (wordJ a b (ws ++ [Trm A0 pre]) ++ jk1 (a + 1 + hgL pre) (Trm A [(Jk1.nil, j)]))
+        ++ [((a + 1 + hgL pre + 1 + (j + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_Trm_append, jk1_Trm_blk_two, wordJ_Trm_base a b ws A0 pre]
+  simp [List.append_assoc]
+
+#print axioms jk1_Trm_tower
+#print axioms wordJ_Trm_tower
+#print axioms wordJ_Trm_succ
 end Small
 end TRIO
