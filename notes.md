@@ -10363,3 +10363,50 @@ stair      = two N_1 (… (two N_{j-1} (nstJ k)))
 3. 塔の各段は `j-1` 本連続なので、`j` についての帰納の仮定で置ける。
 
 `j = 3` の実測（`bms -d`）はこの形と一致している（追記40）。
+
+## 追記42: ブロック列 `BT` とステップ補題（連続 `j` 本の核心が通った）
+
+追記41 の設計を「ブロック列」で実装した。
+
+```
+bdA []       = nil
+bdA (j::js)  = one nil (stkP j (bdA js))
+BT U []      = U
+BT U (j::js) = one U (stkP j (bdA js))
+```
+
+`BT U [j_1,…,j_p]` は「1 の列 + 2 の記録 `j_k` 本」のブロックを `p` 個積んだ木で、
+`BT U [q] = one U (stk q)`。行376 が要求するのはこれ。
+
+語は連結で分かれる:
+```
+wordJ a b (ws ++ [BT U (pre ++ ks)])
+  = wordJ a b (ws ++ [BT U pre]) ++ jk1 (a + 1 + hgtB pre) (bdA ks)
+jk1 m (bdA (replicate i e))
+  = (range i).flatMap (fun k => shiftr01 ((e+1)*k) 0 (jk1 m (bdA [e])))
+jk1 m (bdA [e+1]) = jk1 m (bdA [e]) ++ [(m+e+2, 2, 0)]
+```
+
+**ステップ補題（green）**:
+```
+GOK_BTstep : JkT U → (∀ i, GOK (BT U (pre ++ replicate i e)))
+           → GOK (BT U (pre ++ [e + 1]))
+```
+`snocYd_mem`（歩幅 `e+1`、錨はブロックの 1 の列、単位は `jk1 m (bdA [e])`）を
+`pu` / `pk` / `seg` の 3 箇所で回すだけ。`MidD` と `hMy` は
+`MidD_bdA_one` / `hMy_bdA_one` で出る。**枠木がすべて `nil` なので、
+追記40 の「枠木を全段で良くする」問題が起きない。**
+
+これで `e` の帰納 + `i` の帰納が閉じる:
+```
+GOK_BTall (e+1) pre hpre (i+1) := GOK_BTstep (pre ++ replicate i (e+1)) e
+                                    (GOK_BTall e (pre ++ replicate i (e+1)) (IH i))
+```
+
+### 残る穴: `e = 0`
+
+`e = 0` のブロックは「2 の記録 0 本」＝ 1 の列だけ。語の末尾が 2 の記録でないので
+`snocYd_mem` が使えず、`APnil_gen0`（先端に `one nil nil` を足す）が要る。
+`APnil_gen0` は「先端に荷 `C` を吊るせる」を要求するので、
+`BT` の背骨 `spn U pre` 上で `TwOk_pay_f` / `TwOk_pay_e` に相当する荷の閉包
+（鎖 `itJ` / `twoIt` を含む）を作る必要がある。ここが次の一手。
