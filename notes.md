@@ -10224,3 +10224,49 @@ LTwo_oneNil : JkA V → LTwo V → LTwo (one V nil)
 「2 の記録の枠木が育つ」形になり、追記36 の非可述性が戻ってくる。
 続き111 の `#14 P(5,2,0)` も同じ形（`NST k = two nil (one (two nil nil) (NST (k-1)))`）で、
 `two nil (one W …)` の `W = two nil nil` を要求するのでこの梯子では届かない。
+
+### 追記39: 段数一般の梯子 `TwSt` / `TwOk`。`X(7,2,0)` が出て `X` 族 20/20
+
+`TwM`（追記38）は 2 の記録の枠 1 枚まで。段数 `r` に一般化した:
+
+```
+TwSt 0       m       D = StkOk (m+1) D                        （1 の列の枠で終わる）
+TwSt (r+1)   0       D = D' ++ [ftwo N]、TwSt r m D'、Fter r m、JkA N、NTw r N
+TwSt (r+1)  (m+1)    D = D' ++ [fone U]、TwSt (r+1) m D'、JkA U、
+                         ∀D'' TwSt (r+1) m D'' → GOK (plug D'' U)
+Fter r m := r = 0 ∨ 0 < m        （その文脈が 1 の列の枠で終わる）
+NTw r N  := ∀ j D, TwSt r j D → Fter r j → GOK (plug D N)
+TwOk r m X := ∀D, TwSt r m D → GOK (plug D X)
+```
+
+**なぜ非可述にならないか**: 2 の記録の枠木 `N` に課すのは
+「**1 段小さい** `r` の世界のどの文脈でも良い」。`TwSt (r+1)` の定義が参照するのは
+`TwSt r` だけなので、`(r, m)` の辞書式順序で停まる。追記36 で詰まったのは
+「同じ段数の族を全称する」形だったが、塔の各段で増えるのは**枠の段数**であって、
+枠木が要るのは**その下の段数**だけ、というのが今回の見立て。
+
+`Fter` が「2 の記録の直上に 2 の記録」を弾く。ここは本当の壁のまま。
+
+出たもの（全部 green）:
+```
+TwSt_JkT / TwSt_split / TwOk_congr
+TwOk_one  : TwOk r m U → TwOk r (m+1) Z → TwOk r m (one U Z)
+TwOk_two  : NTw r N → Fter r m → TwOk (r+1) 0 Z → TwOk r m (two N Z)
+TwOk_itJ / TwOk_twoIt / TwOk_repN
+TwOk_pay  : どの (r,m) でも荷を吊るせる（1 の列の枠で終わる文脈は itJ の鎖、
+            2 の記録の枠で終わる文脈は twoIt の鎖。後者は NTw が鎖を保つ）
+TwOk_nil  : どの (r,m) でも空木を差せる（(r+1,0) は GOK_twoNil_gen の塔）
+```
+
+これで **`X(7,2,0)`** が出た。塔 `Mtwd 2 R375m [(5,1,0),(6,2,0)] n` の木は
+`YX2 n = two nil (one nil (two nil (one nil … (two nil nil))))`（1 の列と 2 の記録が交互）で、
+`TwOk_two` と `TwOk_one` で 1 段ずつ登る。`X = S(6,2,0)` 族は 20/20。
+
+**まだ出ないもの**（`Fter` で弾かれる形）:
+```
+行376      stk q = two nil (two nil … nil)          2 の記録が連続
+#14 P(5,2,0)  two nil (one (two nil nil) …)         左兄弟が 2 の記録 → 語で連続
+#15 P(6,0,0)  Yc n = two (Yc (n-1)) nil を深さ 0 で
+#16 P(6,1,0)  one nil (two nil (two nil (pay nil B)))
+```
+どれも語のうえで 2 の記録が 2 本以上連続する。ここが唯一の壁。
