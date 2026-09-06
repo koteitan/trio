@@ -34932,5 +34932,58 @@ theorem GOK_BTstep {U : Jk1} (hJU : JkT U) (pre : List ℕ) (e : ℕ)
     simpa [List.append_assoc] using hh
 
 #print axioms GOK_BTstep
+
+/-! #### ★★★★★ `e` の帰納。残る仮定は「先端に 1 の列を継ぐ」だけ -/
+
+/-- 残る唯一の仮定。`BT` の先端に 1 の列（2 の記録 0 本のブロック）を継げる。 -/
+def ZeroStep : Prop := ∀ (U : Jk1), JkT U → GOK U → ∀ (pre : List ℕ),
+    GOK (BT U pre) → ∀ i : ℕ, GOK (BT U (pre ++ List.replicate i 0))
+
+/-- ★★★★★ ブロックの大きさ `e` についての帰納。 -/
+theorem GOK_BTall (h : ZeroStep) : ∀ (e : ℕ) {U : Jk1}, JkT U → GOK U →
+    ∀ (pre : List ℕ), GOK (BT U pre) → ∀ i : ℕ,
+      GOK (BT U (pre ++ List.replicate i e)) := by
+  intro e
+  induction e with
+  | zero => intro U hJU hGU pre hpre i; exact h U hJU hGU pre hpre i
+  | succ e ihe =>
+      intro U hJU hGU pre hpre i
+      induction i with
+      | zero => simpa using hpre
+      | succ i ihi =>
+          have hstep := GOK_BTstep hJU (pre ++ List.replicate i (e + 1)) e
+            (fun i' => ihe hJU hGU (pre ++ List.replicate i (e + 1)) ihi i')
+          rwa [List.append_assoc, ← List.replicate_succ'] at hstep
+
+theorem GOK_oneStk_of (h : ZeroStep) (q : ℕ) {U : Jk1} (hJU : JkT U) (hGU : GOK U) :
+    GOK (Jk1.one U (stk q)) := by
+  have h1 := GOK_BTall h q hJU hGU [] (by simpa [BT] using hGU) 1
+  simpa [BT, stk, bdA] using h1
+
+theorem GOK_oneStkZ (h : ZeroStep) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  GOK_oneStk_of h q JkT_nil GOK_nil
+
+theorem tw_R344_42Z (h : ZeroStep) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    GOK_oneStkZ h n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★ シート行376 は `ZeroStep` 1 本だけに帰着する（`TwoStep` より弱い）。 -/
+theorem R376_of_ZeroStep (h : ZeroStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42Z h)
+
+#print axioms GOK_BTall
+#print axioms R376_of_ZeroStep
 end Small
 end TRIO

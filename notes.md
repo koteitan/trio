@@ -10410,3 +10410,44 @@ GOK_BTall (e+1) pre hpre (i+1) := GOK_BTstep (pre ++ replicate i (e+1)) e
 `APnil_gen0` は「先端に荷 `C` を吊るせる」を要求するので、
 `BT` の背骨 `spn U pre` 上で `TwOk_pay_f` / `TwOk_pay_e` に相当する荷の閉包
 （鎖 `itJ` / `twoIt` を含む）を作る必要がある。ここが次の一手。
+
+## 追記43: 行376 は `ZeroStep`（先端に 1 の列を継ぐ）1 本に帰着した
+
+`GOK_BTstep`（追記42）から `e` の帰納 + `i` の帰納が閉じる:
+
+```
+GOK_BTall (h : ZeroStep) : ∀ e U pre, JkT U → GOK U → GOK (BT U pre)
+                         → ∀ i, GOK (BT U (pre ++ replicate i e))
+```
+
+`e = 0`（2 の記録 0 本のブロック = 1 の列だけ）だけが残るので、それを命題として切り出した:
+
+```
+ZeroStep := ∀ U, JkT U → GOK U → ∀ pre, GOK (BT U pre)
+                → ∀ i, GOK (BT U (pre ++ replicate i 0))
+```
+
+```
+GOK_oneStk_of (h : ZeroStep) (q) : GOK (one U (stk q))
+R376_of_ZeroStep (h : ZeroStep) : R373 ++ [(5,3,0)] ∈ W 0
+```
+
+`ZeroStep` は `TwoStep`（追記なし・2 の記録を 1 段足す）より弱い。
+
+### `ZeroStep` の中身
+
+`BT U (pre ++ [0])` は `BT U pre` の先端に `one nil nil` を足したもの。
+`APnil_gen0` で出るが、それは「先端に荷 `C` を吊るせる」を要求する。
+`pre = []` のときは `AY0` で済む（`BT U [0] = one U nil`）が、
+一般の `pre` では `TwOk_pay_f` / `TwOk_pay_e` に相当する A2' 帰納が要る。
+
+その鎖（`itJ` / `twoIt`）を検討した結果:
+
+- 1 の列の枠で終わる文脈の鎖 `itJ T n nil` は枠木が一般の 1 の列の枠になるだけで、
+  梯子では問題にならない。
+- 2 の記録の枠で終わる文脈の鎖 `twoIt nil T n` は、ランの上に
+  **枠木が `nil` でない 2 の記録の枠**を作る。ランの塔はすべての枠木を繰り返すので、
+  その枠木を全段で良くする必要が出る（追記40 と同じ壁）。
+
+つまり「ランの中の枠木はすべて `nil`」という条件が塔の要で、荷の閉包がそれを壊す。
+`ZeroStep` を落とすには、この 2 つを同時帰納で回す必要がある。
