@@ -11576,3 +11576,21 @@ jk1 l NA = (l+1,1,0)(l+2,2,0)(l+3,2,0)(l+3,1,0)(l+4,2,0)(l+5,2,0)(l+5,1,0)(l+6,2
 ```
 
 の梯子が通った。`S(0,0,0) S(1,0,0) S(1,1,0)` まで green。
+
+## 追記70: S = R(9,1,0) 族の単位 U375aN
+
+U375aN = U375aR ++ [(9,1,0)]（11 列）。(9,1,0) は行 1 = 1 の列なので、R の
+(8,2,0) と違って塔（snocY_mem）が要らず、snocd_gen / snocd_mem がそのまま効く。
+必要だったのは
+- hang9_genR / hang9_seg_R: GOK_hang9R の GoodFb から単位の右に荷を吊るす
+- Ancd_gen_U375aR / Ancd_seg_U375aR: Ancd (9+s)
+  Ancd_seg_U375aZ (7+s) --(7+s,1,0)--> (8+s) --(8+s,2,0)--> (9+s)
+  Ancd_append_Mid を 2 回。列の MidD は MidD_shift (MidD_col d v) s。
+- tw9_seg_R
+
+はまった点: Ancd_append_Mid は d を 1 上げるので、目標 Ancd (9+s) に対して
+「Ancd (9+s+1) を作ってから弱める」と向きが逆になる（Ancd d の仮定は
+entry < d なので、d を大きくする方向が弱化）。d はちょうどで作る。
+
+これで S(2,0,0) S(2,1,0)（LvB_snoc）、S(2,2,0)（SegA_U375aN + SegB_snoc2）、
+S(2,2,1)（GOK_NA）まで。S 族は標準拡張 27 個。
