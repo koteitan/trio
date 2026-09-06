@@ -10849,3 +10849,43 @@ NOk_two : JkA N → NOk r m N → NOk (r+1) 0 Z → ∀ D, NSt r m D → NilR r 
 次:
 1. `NOk_pay`（A2' 帰納。鎖はその場版 `itJ` / `twoIt`）
 2. `NOk_nil`（`NilR` に制限。`trun D` の帰納 + `GOK_runNil_gen`）
+
+## 追記56: `NOk_pay` は通った。`NOk_nil` の壁の正体（棚卸し）
+
+その場の文脈版の鎖が効いて、荷は通った:
+
+```
+GOK_itJ_at   : NOk (r+1) (m+1) T → NSt (r+1) m D → GOK (plug D U)
+             → ∀ n, JkA (itJ T n U) ∧ GOK (plug D (itJ T n U))
+GOK_twoIt_at : NOk (r+1) 0 T → NSt r m D → NilR r m D → GOK (plug D N)
+             → ∀ n, JkA (twoIt N T n) ∧ GOK (plug D (twoIt N T n))
+NOk_pay      : JkA X → NOk r m X → Bok Y → NOk r m (pay X Y)
+```
+
+### 残る `NOk_nil` の壁
+
+いくつも道を試して、同じ壁に戻ることが分かった。整理する。
+
+塔の階段は文脈を**伸ばす**（`ctx ++ [fone V] ++ nil ラン ++ [fone A] ++ …`）。
+だから階段を組むには、枠木（左兄弟）の証明書がその伸びた文脈それぞれで要る。
+
+- 枠の節を `∀ D''`（全文脈）にすると、階段の文脈は段数 `r` が増えるので届かない
+- 枠の節を「その場の文脈だけ」にすると階段は組めるが、
+  `APnil_gen0`（先端に 1 の列）が要求する**枠木の荷**が出せない
+  （`NOk_pay` は `NOk r m X`（全文脈）を要求するため）
+
+そして `NOk_pay` の A2' の底は `NOk r m X` なので、`X = nil` にすると
+`NOk_nil` を全文脈（鎖が一番内側に載った文脈を含む）で要求する。
+鎖付き文脈での `NOk_nil` は、塔の階段で鎖を左兄弟として使うことになり、
+その証明書がない。
+
+### 次に試す形
+
+ラン上限 `b` で添字を付け、枠の節が要求する枠木の良さを **`b-1` の梯子**にする:
+
+```
+TSt b r m D の 2 の記録の節: … ∧ (∀ j D'', TSt (b-1) r j D'' → GOK (plug D'' N))
+```
+
+ラン `t+1 ≤ b` の塔の階段はラン `t ≤ b-1` なので、`b` についての帰納で
+`TOk_nil` が回る見込み。再帰は `(b, r, m)` の辞書式で停まる。
