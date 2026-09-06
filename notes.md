@@ -11799,3 +11799,23 @@ Ck_twoWOnePay (V) (hJV) (hV : 同上) : … Ck j (n+1) (two Wl (one V (pay nil B
 chn は Ek 層で置けるが、その枠 `fone (two nil nil)` が
 「2 の枠の直上の 1 の枠」なので Tk (two nil nil)（一般の左兄弟の上の走り 2）が要り、
 これは UniW を文脈条件に入れないと出ない（追記79 の壁と同じ）。
+
+## 追記83: ★ `TipOk` / `Ew` 層で U 族 27/27 完成
+
+TipOk V := JkA V ∧ (∀ Wl, UniW Wl → ∀ j n, Ck j (n+1) (two Wl V))
+  ＝「一様な左兄弟の 2 の記録の先端に置ける木」。
+Ew n Z := ∀ fs, Gw n fs → TipOk (plug fs Z)（Dk と同じ枠の相対化を TipOk にかける）
+
+中身は Dk 層の写し:
+  Ew_of_TipOk0 / TipOk_of_Ew0 / Ew_congr / JkA_plug_Gw / Ew_one（枠の付け替え）/
+  Ew_oneNil（APnil_gen0）/ Ew_nil / Ew_itJ / Ew_pay（n の帰納 + A2'、n=0 は
+  TipOk_pay = Ck_twoWPayZ なので A2' は 1 枚）
+これで Ew_chn → TipOk (one (two nil nil) (chn m))、すなわち
+「走り 2 の右隣の 1 の記録の上に高さの上がる鎖」が置ける。U(10,2,0) が出た。
+
+層の並びが揃った:
+  TTwA →(fone 枠)→ Dk →([fone V, ftwo Wl])→ Tk →(fone 枠)→ Ek
+  Ck（文脈を添字に）→ UniW（一様な左兄弟）→ TipOk →(fone 枠)→ Ew
+どの層でも「荷を吊るす A2'」1 枚と APnil_gen0 と枠の付け替えだけで閉じる。
+
+次: V = U(10,2,0) 族。
