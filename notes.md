@@ -10639,3 +10639,27 @@ TipQ2_pay : TipQ2 X → TipQ X → JkA X → ∀ C, Bok C → TipQ2 (pay X C)   
 TipQ_pay  : …                                                          -- 鎖 itJ
 TipQ_nil  : …                                                          -- e の帰納 + APnil_gen0
 ```
+
+## 追記49: 鎖 `twoIt` が `Trm` の言葉で回った
+
+荷の閉包に要る部品が揃った。
+
+```
+spnT bs             -- Trm の背骨（plug の枠列）
+plug_spnT           : plug (spnT bs) X = Trm X bs
+jk1_Trm_congr       : (∀ l, jk1 l X1 = jk1 l X2) → jk1 l (Trm X1 bs) = jk1 l (Trm X2 bs)
+TipQ_congr / TipQ2_congr
+PreQ_unsnoc         : PreQ (bs ++ [b]) → PreQ bs ∧ JkA b.1 ∧ GOK (Trm b.1 bs)
+TipQ_twoIt          : JkA V → TipQ V → JkA T → TipQ2 T
+                    → ∀ n, JkA (twoIt V T n) ∧ TipQ (twoIt V T n)
+```
+
+`TipQ_twoIt` が鍵。`twoIt V T (n+1) = two (twoIt V T n) T` なので、
+空でない良いブロック列を `pre ++ [b]` に割って `TipQ2 T` を当てるだけで通る。
+`plug_spnT` があるので `GoodFb_snoc_dupJt0` の `plug ctx …` 形にも移せる。
+
+`TipQ` に `TopOkH bs`（先頭ブロックの左兄弟が `TopOk`）を追加した。
+`JkT` が要るのはブロック列の先頭だけなので、鎖の木が `TopOk` でなくても困らない。
+
+次は `TipQ2_pay`（A2' 帰納、鎖は `TipQ_twoIt`）→ `TipQ_pay`（鎖は `itJ`）
+→ `TipQ nil`（`e` の帰納 + `APnil_gen0`）→ `ZeroStep` → 行376。
