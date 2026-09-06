@@ -11742,3 +11742,28 @@ Cok に階段の条件を持たせると Ck_pay の中の twoIt 鎖（新しい 
 
 つまり壁は「2 の記録の左兄弟の一様性」。TTwA が `∀ q, NTw q N` を要求している
 のと同じ形の一様性が、対の段でも要る。次はここ。
+
+## 追記80: `UniW`（一様に置ける左兄弟）で走り 2 が動く。T 族 23/24
+
+structure UniW Wl := JkA Wl ∧ (∀ j i, Ck j (i+1) Wl) ∧ (荷閉包)
+- Ck_nstTower : UniW Wl → ∀ k j n, Ck j (n+1) (two Wl (nstN2 Wl nil k))
+  k についての帰納。段が 1 つ深くなるが、主張が「∀ j n」なので回る。
+- Ck_twoWTwoNil : UniW Wl → Ck j (n+1) (two Wl (two nil nil))   （走り 2）
+  GOK_twoTwoNilW_gen の階段を Ck_nstTower で埋める。
+- UniW_nil / UniW_twoNil / UniW_two（two Wl (two nil nil) も UniW）
+
+これで
+- T(9,0,0): TK n = two (TK (n-1)) (two nil nil)（走り 2 の横鎖）が UniW_two の
+  繰り返しで一様に置ける。
+- T(8,2,0): GKK n = one (two nil nil) (HHK (n-1))、HHK k = one (two nil (two nil nil))
+  (HHK (k-1))。HHK は Ck_twoWTwoNil UniW_nil + Ck_one。
+
+残り T(9,1,0) だけ。木は
+  one nil (two nil (one A (two nil (one A (two nil (pay (two nil nil) B))))))  (A = two nil nil)
+で、2 の記録の直上に「左兄弟が 2 の記録の 1 の記録」が来る。
+Ck の 1 の枠は「その段のどの文脈でも良い」を要求するので、
+`Ck (j+1) 0 (two nil nil)`（＝一般の左兄弟の上の走り 2）が要り、これは
+左兄弟の一様性が無いと出ない。UniW を文脈の条件に入れると Ck_pay の
+twoIt 鎖が同じ条件を要求してきて回らない（追記79）。
+次の一手: 文脈の 2 の枠を「UniW な木」に限った層 CokN を別に作り、
+その層でも荷の A2'（Ck_pay 相当）を 1 枚書く。
