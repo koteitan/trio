@@ -11366,3 +11366,53 @@ APd_twoTwoWGen  : GOK_twoTwoNilW_gen の APd 版（GCtx_split + APd_iff で短�
 APd_nstN2       : 階段の APd 良さ（Wl が枠として使えることが要る）
 ```
 の 2 本。`Wl` に課すのは `FrmJ ks Wl ∧ Rq ks Wl ∧ APd ks Wl`（false 頭の ks）。
+
+## 追記65: 左兄弟つきラン塔の `APd` 版まで。次の壁は「枠の強さの局所/大域」
+
+追記64 の塔を `APd` 側に降ろした（どちらも一発 green）。
+
+```
+APd_nstN2      : ∀ k ks, APd (false :: ks) (nstN2 N Wl k)
+                 （Wl に FrmJ / Rq / APd (false::ks) を課す）
+APd_twoTwoWGen : APd (true :: ks) (two N (two Wl nil))
+                 （階段を仮定に取り、GCtx_split + GOK_twoTwoNilW_gen で短く）
+TwoOk_twoWlNil : TwoOk (two Wl nil)
+                 （= 左兄弟 Wl つき・先端 nil のラン 2）
+```
+
+`Wl = nil` なら `TwoOk_twoNil` に戻る。
+
+### 次に要るもの: 荷つきのラン `TwoOk (two Wl (pay V C))`
+
+`RunB Y := TwoOk (two nil Y)` を `nil` / `one V nil` / `pay` で閉じるには、
+荷の `W 0` 帰納（`TwoOk_pay` と同じ形）が要る。鎖は
+`GoodFb_snoc_dupJt0` の `twoIt Wl (pay V C') n` で、
+`twoIt Wl T (n+1) = two (twoIt Wl T n) T` は**左兄弟が育つだけ**（横方向）。
+各項の良さは「その場の文脈 ctx と枠 N」でよいので `TwoOk (twoIt Wl T n)` を
+`n` の帰納で作れる。基点は `TwoOk Wl`、段は帰納法の仮定（荷 `C'`）。
+
+### 壁: `APd_cf` が渡す枠の強さは**局所**
+
+`APd (false :: ks) X` を `.mpr` で作るとき、与えられる 2 の記録の枠木 `N'` の
+強さは
+
+```
+∀ j, APd (rep j true ++ (true :: (rep m true ++ ks))) N'     -- kk が 1 つだけ
+```
+
+で、`TwoOk X` が要求する
+
+```
+∀ j kk, APd (rep j true ++ (true :: kk)) N'                   -- 全ての kk
+```
+
+より弱い。したがって
+
+- `RunL X := ∀ ks, APd (false :: ks) X`（局所強さ）は `TwoOk X` より**強い**
+  （`RunL X → TwoOk X` は `APd_ct` / `APd_cf` で通る）
+- 塔（`TwoOk_twoWlNil`）は階段 `APd_nstN2` に `N` の**大域**強さを使うので
+  `TwoOk`（弱い方）しか出せない
+- 一方、鎖の各項に要るのは `APd (false::ks) (twoIt Wl T n)` = `RunL`（強い方）
+
+この食い違いが残る壁。`APd_nstN2` の `hNall` の使い方を局所化できるか、
+あるいはクラスを `TwoOk` 側に寄せて `hb` の要求を弱められるかを次に測る。
