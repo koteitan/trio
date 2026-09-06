@@ -11722,3 +11722,23 @@ GOK_twoTwoNilW_gen（左兄弟つき走り 2 の塔）の階段は
 これで T 族の単位 HK = one (two nil nil) (two nil (one (two nil nil)
 (two nil (two nil nil)))) が TwoOk になり、あとは R 族の写しで
 (3,0,0)(3,1,0)(4,0,0)(4,1,0)(4,2,0)(5,0,0)(5,1,0)(6,0,0)(6,1,0) が出た。
+
+## 追記79: T 族 21/24。残り 3 行の壁 = 「左兄弟が nil でない走り 2」
+
+出たもの:
+- TTwA_oneTwoTwoNil_gen : V が TTwA + 荷閉包なら TTwA (one V (two nil (two nil nil)))
+  （GOK_twoTwoNilW_gen の階段を Ck_pair + Ck_QQ で埋める。左兄弟が nil だから
+   nstN2 nil nil k = QQ k になるのが効いている）
+- Dk1_twoNilTwoNil、TTwA_oneTwoPayTwoTwo（走り 2 の上に荷）
+これで T(2,2,1)〜T(8,1,0) が R 族の写しで出た。
+
+残り T(8,2,0) T(9,0,0) T(9,1,0) は、木の中に
+  two Wl (two nil nil)   （Wl ≠ nil）
+が要る。GOK_twoTwoNilW_gen の階段は two Wl (nstN2 Wl nil k) で、nstN2 は
+対（1 の枠 + 2 の枠）を k 段積むから、Wl の良さが「対の段数について一様」に要る。
+Cok の 2 の枠の条件は「1 段下の対の段での良さ」なので届かない。
+Cok に階段の条件を持たせると Ck_pay の中の twoIt 鎖（新しい Wl になる）が
+同じ条件を要求してきて回らない。
+
+つまり壁は「2 の記録の左兄弟の一様性」。TTwA が `∀ q, NTw q N` を要求している
+のと同じ形の一様性が、対の段でも要る。次はここ。
