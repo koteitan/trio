@@ -10663,3 +10663,35 @@ TipQ_twoIt          : JkA V → TipQ V → JkA T → TipQ2 T
 
 次は `TipQ2_pay`（A2' 帰納、鎖は `TipQ_twoIt`）→ `TipQ_pay`（鎖は `itJ`）
 → `TipQ nil`（`e` の帰納 + `APnil_gen0`）→ `ZeroStep` → 行376。
+
+## 追記50: `TipQ2_pay` が通った。残るは `TipQ nil` と荷の相互依存
+
+```
+TipQ2_pay : ∀ C, Bok C → ∀ X, JkA X → TipQ2 X → TipQ2 (pay X C)
+```
+
+`LTwo_pay` / `TTwA_pay` と同じ A2' 帰納。鎖は `TipQ_twoIt`、
+`plug ctx …` への移動は `plug_spnT`。
+
+### 見えてきた相互依存
+
+`TipQ nil`（空木を先端に）と荷の閉包が絡む:
+
+- `TipQ nil` の最後のブロックが 2 の記録 0 本 → `APnil_gen0` → **先端の荷**が要る
+- `TipQ nil` の最後のブロックが 1 本以上 → `GOK_TrmStep`（塔）→ 1 本少ないブロックでの
+  `TipQ nil` が要る（`j` の帰納で回る）
+- 荷の閉包で最後のブロックが 1 本以上 → `TipQ2_pay` を枠木 `V = nil` で使う
+  → **`TipQ nil`** が要る
+
+梯子（`TwOk`）ではこれが起きない。`TwOk_oneNil` が荷を当てるのは
+**枠木 `U`**（文脈が良さを持っている）であって `nil` ではないから。
+`TwOk_pay` は `TwOk_nil` に依存しない。
+
+ブロック列でも同じにするには、`PreQ` に「各左兄弟の**荷の閉包**」も入れればよい:
+
+```
+PreQ bs := ∀ k < bs.length, JkA bs[k].1 ∧ GOK (Trm bs[k].1 (bs.take k))
+                          ∧ (∀ C, Bok C → GOK (Trm (pay bs[k].1 C) (bs.take k)))
+```
+
+これも具体的な Π なので非可述にならない。次はこの形に直す。
