@@ -10607,3 +10607,35 @@ TipOk_one    : JkA V → TipOk n V → TipOk (n+1) X → TipOk n (one V X)
 1. 荷の閉包 `TipOk n X → Bok C → TipOk n (pay X C)`（A2' 帰納、鎖は
    `itJ T k A0` と `twoIt V T k`。後者の底は `GOK_TrmStep` で処理）
 2. `TipOk n nil`（`GOK_BTall` と同じ `e` の帰納 + 先端の 1 の列は `APnil_gen0`）
+
+## 追記48: `PreQ` / `TipQ`（添字なしで書けた）
+
+追記47 の添字付き `PreOk n` は、塔のブロック列が `i` について無限に伸びるので
+`n` が追いつかない。左兄弟の条件を「**その手前までのブロック列**でだけ良い」に
+弱めると、添字なしで具体的な Π になり非可述にならない。
+
+```
+PreQ bs := ∀ k < bs.length, JkA bs[k].1 ∧ GOK (Trm bs[k].1 (bs.take k))
+TipQ X  := ∀ bs, PreQ bs → bs ≠ [] → GOK (Trm X bs)
+TipQ2 X := ∀ V, JkA V → TipQ V → ∀ pre A0 j, PreQ pre → JkA A0 → GOK (Trm A0 pre)
+             → TopOkH (pre ++ [(A0,j)]) → GOK (Trm (two V X) (pre ++ [(A0,j)]))
+```
+
+`bs ≠ []` を入れたのは、鎖の木（`twoIt` など）が空文脈では `GOK` にならない
+（`JkT` が要るのに `TopOk` でない）ため。左兄弟の 1 個目だけは空文脈で
+`GOK b.1` が要るが、そこは `U` や `A0` なので `JkT` ✓。
+
+出た補題:
+```
+PreQ_snoc : PreQ bs → JkA V → GOK (Trm V bs) → PreQ (bs ++ [(V,j)])
+PreQ_rep  : PreQ bs → bs ≠ [] → JkA V → TipQ V
+          → ∀ i, PreQ (bs ++ replicate i (V,j)) ∧ … ≠ []
+TipQ2_nil : TipQ2 nil            -- GOK_TrmStep の梱包
+```
+
+次は荷の閉包:
+```
+TipQ2_pay : TipQ2 X → TipQ X → JkA X → ∀ C, Bok C → TipQ2 (pay X C)   -- 鎖 twoIt
+TipQ_pay  : …                                                          -- 鎖 itJ
+TipQ_nil  : …                                                          -- e の帰納 + APnil_gen0
+```
