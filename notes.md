@@ -11317,3 +11317,52 @@ GOK (plug (ctx0 ++ [fone V]) (two N (two W nil)))      -- W は一般の左兄�
 したがって `RunB (pay V C)` の鎖 `two N (twoIt nil T n)` は
 `APd_chainT'` では供給できず、**ラン文脈用の鎖補題を新しく作る**必要がある。
 これが `GOK_twoTwoNil_gen` の左兄弟一般化と並ぶ、もう 1 本の宿題。
+
+## 追記64: ★ 宿題 1 完了。ラン塔を左兄弟つきに一般化した
+
+追記63 の宿題 1「`GOK (plug (ctx0 ++ [fone V]) (two N (two Wl nil)))`」が通った。
+
+### 実測が決め手だった
+
+`bms -d` で `(…)(4,2,0)(5,1,0)(5,2,0)`（`Wl = one nil nil`）と
+`(…)(4,2,0)(5,2,0)`（`Wl = nil`）を比べると
+
+```
+good part = R341（同じ）   bad root = 1 の列（同じ）   delta = 2（同じ）
+bad part  = (3,1,0)(4,2,0) ++ jk1 4 Wl     ← Wl の語が伸びるだけ
+```
+
+つまり塔の形は `Wl` に依らない。単位と階段を
+
+```
+unN2 N Wl D      = unN N D ++ jk1 (D+1) Wl
+nstN2 N Wl 0     = Wl
+nstN2 N Wl (k+1) = one Wl (two N (nstN2 N Wl k))
+```
+
+と定義すると `nstN2 N nil k = nstN N k` で、
+`jk1 l (nstN2 N Wl k) = jk1 l Wl ++ (range k).flatMap (shiftr01 (2j) 0 (unN2 N Wl (l+1)))`。
+`MidD_unN2` / `hMy_unN2` / `snocN2_of_tower` も `Wl` の列は高さ `D+2` 以上
+（`jk1_ge`）なので `hMy` の場合分けが増えるだけで通る。
+本体 `GOK_twoTwoNilW_gen` は `GOK_twoTwoNil_gen` の機械的な置換で **一発 green**。
+
+### 注意: 変数名 `W` は使えない
+
+`W 0`（順序数の集合）と衝突して `X ∈ W 0` が `X ∈ Wl 0` に解釈される。
+左兄弟の変数名は `Wl` にした。
+
+### 残る宿題 2: ラン文脈用の鎖
+
+`RunB Y := TwoOk (two nil Y)` の荷の帰納で出る鎖は
+`two N (twoIt Wl T n)` で、`twoIt Wl T (n+1) = two (twoIt Wl T n) T`。
+先端 `T = pay V C'` が `nil` でないので今回の塔（先端 `nil`）では届かない。
+`TTwA_pay` と同じく **鎖の各項を「枠」として扱う** 必要があり、
+`APd` 側の対応物 `APd_chainT'` は `GCtx (true :: ks)`（1 の列の枠で終わる文脈）
+しか受けない。ラン文脈用の鎖補題がまだ要る。
+
+道具立ては
+```
+APd_twoTwoWGen  : GOK_twoTwoNilW_gen の APd 版（GCtx_split + APd_iff で短く書ける）
+APd_nstN2       : 階段の APd 良さ（Wl が枠として使えることが要る）
+```
+の 2 本。`Wl` に課すのは `FrmJ ks Wl ∧ Rq ks Wl ∧ APd ks Wl`（false 頭の ks）。
