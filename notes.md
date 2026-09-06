@@ -10732,3 +10732,35 @@ TipQ_itJ   : JkA A0 → TipQ A0 → JkA T → TipQ T → ∀ n, JkA (itJ T n A0)
 （塔は `GOK_TrmStep` と同型、階段の `nil` はラン `t-1` に座るので減る）。
 `TwOk_pay` / `TwOk_one` / `TwOk_two` / `TwOk_itJ` / `TwOk_twoIt` はほぼ写経で移る。
 `Trm` まわり（`GOK_TrmStep` など）はその塔の中身としてそのまま使える。
+
+## 追記52: 梯子 `RSt`（`nil` ランを許す）
+
+```
+NilR r m D  -- D の末尾の 2 の記録の枠のランがすべて nil
+RSt 0 m D          := StkOk (m+1) D
+RSt (r+1) 0 D      := ∃ m D' N, D = D' ++ [ftwo N] ∧ RSt r m D' ∧ NilR r m D'
+                                ∧ JkA N ∧ RNs r N
+RSt (r+1) (m+1) D  := ∃ D' U, D = D' ++ [fone U] ∧ RSt (r+1) m D' ∧ JkA U ∧ …
+ROk r m X := ∀ D, RSt r m D → GOK (plug D X)
+RNs r N   := ∀ j D, RSt r j D → NilR r j D → GOK (plug D N)
+```
+
+`Fter` を外す代わりに「枠を足す先の末尾ランがすべて `nil`」を課す。こうすると
+**どの `RSt` 文脈も末尾ランが `[nil, …, nil, N]`**（`nil` でない枠は高々 1 枚、
+しかも一番内側）になる。追記45・46 の通り、この形なら塔が回る:
+階段は `N_1..N_{t-1}` を 2 の記録の枠として繰り返し、`N_t` は 1 の列の左兄弟になる。
+だから `nil` でない枠が一番内側なら、繰り返されるのは `nil` だけ。
+
+移植できたもの（すべて写経＋`Fter → NilR`）:
+```
+RSt_z / RSt_e / RSt_f / NilR_z / NilR_e / NilR_f
+RSt_JkT, ROk_congr, ROk_one, ROk_two, ROk_itJ, ROk_twoIt,
+ROk_pay_f, ROk_pay_e, ROk_pay
+```
+
+### 注意点（次に効く）
+
+`NilR` は**文脈依存**なので、`TwOk_repN` のように「`Fter r m` を固定して
+`NTw r N` から `TwOk r m N` を作る」手が使えない。`ROk_repN` を作るときは
+`RNs` を `NilR` 抜き（全 `RSt` 文脈）にするか、`nil` ランと
+「一番内側だけ `nil` でない」を別述語に分ける必要がある。次はそこを決める。
