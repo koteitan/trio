@@ -10567,3 +10567,43 @@ wordJ a b (ws ++ [Trm (two A nil) (pre ++ [(A0,j)])])
 次は `PayStep`（先端に荷）。A2' 帰納の鎖 `twoIt nil T n` / `itJ T n nil` は
 どちらも `Trm` の言葉で書けて、A2' の底（荷が空）が `two A nil` の形なので
 `GOK_TrmStep` で処理できる。
+
+## 追記47: `PreOk` / `TipOk`（文脈の良さを長さで添字付ける）
+
+荷の閉包（`PayStep`）の A2' 帰納は鎖 `itJ` / `twoIt` を使い、鎖はブロックの
+左兄弟や枠木として現れる。だから「左兄弟が良い」を文脈の条件に入れる必要があるが、
+素朴に
+
+```
+PreOk bs  := ∀ 各ブロック b, JkA b.1 ∧ TipOk b.1
+TipOk X   := ∀ bs, PreOk bs → GOK (Trm X bs)
+```
+
+とすると非可述（`PreOk` が `TipOk` を、`TipOk` が全 `PreOk` を参照）。
+ブロック数で添字を付けると止まる:
+
+```
+PreOk 0 bs       := bs = []
+PreOk (n+1) bs   := bs = [] ∨ ∃ bs' b, bs = bs' ++ [b] ∧ PreOk n bs' ∧ JkA b.1 ∧
+                      (∀ cs, PreOk n cs → GOK (Trm b.1 cs))
+TipOk n X        := ∀ bs, PreOk n bs → GOK (Trm X bs)
+```
+
+左兄弟の条件が **1 段短い `PreOk n`** を参照するので構造帰納で定義できる。
+
+出た補題:
+```
+stkP_two_nil : stkP j (two nil X) = stkP (j+1) X
+Trm_one      : Trm (one V X) bs = Trm X (bs ++ [(V, 0)])
+Trm_two_nil  : Trm (two nil X) (bs ++ [(A,j)]) = Trm X (bs ++ [(A,j+1)])
+PreOk_snoc   : PreOk n bs → JkA V → TipOk n V → PreOk (n+1) (bs ++ [(V,j)])
+TipOk_one    : JkA V → TipOk n V → TipOk (n+1) X → TipOk n (one V X)
+```
+
+注意: `PreOk` は `n` について単調でない（`n` が増えると左兄弟への要求も強くなる）。
+いまのところ単調性は要らない。
+
+次は
+1. 荷の閉包 `TipOk n X → Bok C → TipOk n (pay X C)`（A2' 帰納、鎖は
+   `itJ T k A0` と `twoIt V T k`。後者の底は `GOK_TrmStep` で処理）
+2. `TipOk n nil`（`GOK_BTall` と同じ `e` の帰納 + 先端の 1 の列は `APnil_gen0`）
