@@ -48716,5 +48716,173 @@ theorem R375i6_mem : R375i ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375i5_mem
 #print axioms R375i6_mem
+
+/-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
+
+`GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
+横鎖は左兄弟が空でない走りを生むので、そこまで一般化しておく。 -/
+
+/-- 2 の記録の枠を並べた文脈。`plug (ftw [B₁,…,B_j]) X = two B₁ (two B₂ (… X))`。 -/
+def ftw (Bs : List Jk1) : List Frm := Bs.map Frm.ftwo
+
+theorem ftw_cons (B : Jk1) (Bs : List Jk1) : ftw (B :: Bs) = Frm.ftwo B :: ftw Bs := rfl
+
+theorem dep_ftw : ∀ Bs : List Jk1, dep (ftw Bs) = Bs.length
+  | [] => rfl
+  | (B :: Bs) => by
+      show dep (ftw Bs) + 1 = Bs.length + 1
+      rw [dep_ftw Bs]
+
+theorem JkA_plug_ftw : ∀ (Bs : List Jk1), (∀ B ∈ Bs, JkA B) → ∀ {X : Jk1}, JkA X →
+    JkA (plug (ftw Bs) X)
+  | [], _, _, hX => hX
+  | (B :: Bs), hB, X, hX => by
+      show JkA (Jk1.two B (plug (ftw Bs) X))
+      exact ⟨hB B (by simp), JkA_plug_ftw Bs (fun C hC => hB C (by simp [hC])) hX⟩
+
+/-- 文脈の先端に差した木の列は最後に並ぶ。 -/
+theorem jk1_plug_tip : ∀ (ctx : List Frm) (T : Jk1) (l : ℕ),
+    jk1 l (plug ctx T) = jk1 l (plug ctx Jk1.nil) ++ jk1 (l + dep ctx) T
+  | [], T, l => by simp [plug, dep, jk1]
+  | (Frm.fone N :: rest), T, l => by
+      show jk1 l N ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (plug rest T))
+        = (jk1 l N ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (plug rest Jk1.nil)))
+          ++ jk1 (l + (dep rest + 1)) T
+      rw [jk1_plug_tip rest T (l + 1),
+        show l + 1 + dep rest = l + (dep rest + 1) from by omega]
+      simp [List.append_assoc]
+  | (Frm.ftwo N :: rest), T, l => by
+      show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (plug rest T))
+        = (jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (plug rest Jk1.nil)))
+          ++ jk1 (l + (dep rest + 1)) T
+      rw [jk1_plug_tip rest T (l + 1),
+        show l + 1 + dep rest = l + (dep rest + 1) from by omega]
+      simp [List.append_assoc]
+
+/-- 1 の記録（左兄弟 `V`）+ 左兄弟つきの走り。 -/
+def blkC (V : Jk1) (Bs : List Jk1) : List Frm := Frm.fone V :: ftw Bs
+
+/-- ブロックを `i` 個重ねた文脈。 -/
+def blkR (A : Jk1) (Bs : List Jk1) : ℕ → List Frm
+  | 0 => []
+  | (i + 1) => blkC A Bs ++ blkR A Bs i
+
+/-- ブロック 1 個ぶんの語の木。 -/
+def blkW (A : Jk1) (Bs : List Jk1) : Jk1 := Jk1.one Jk1.nil (plug (ftw Bs) A)
+
+theorem jk1_blkW (A : Jk1) (Bs : List Jk1) (m : ℕ) :
+    jk1 m (blkW A Bs)
+      = ((m + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (m + 1) (plug (ftw Bs) A) := by
+  show jk1 m Jk1.nil ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (m + 1) (plug (ftw Bs) A)) = _
+  simp [jk1]
+
+theorem JkA_blkW {A : Jk1} (hJA : JkA A) {Bs : List Jk1} (hB : ∀ B ∈ Bs, JkA B) :
+    JkA (blkW A Bs) := ⟨trivial, JkA_plug_ftw Bs hB hJA⟩
+
+theorem jk1_blkTower (A : Jk1) (Bs : List Jk1) : ∀ (i : ℕ) (V : Jk1) (m : ℕ),
+    jk1 m (Jk1.one V (plug (ftw Bs ++ blkR A Bs i) A))
+      = jk1 m V ++ (List.range (i + 1)).flatMap
+          (fun k => shiftr01 ((Bs.length + 1) * k) 0 (jk1 m (blkW A Bs)))
+  | 0, V, m => by
+      show jk1 m V ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (m + 1) (plug (ftw Bs ++ ([] : List Frm)) A)) = _
+      rw [List.append_nil, ← jk1_blkW]
+      simp
+  | (i + 1), V, m => by
+      have ih := jk1_blkTower A Bs i A (m + 1 + Bs.length)
+      have hplug : plug (ftw Bs ++ blkR A Bs (i + 1)) A
+          = plug (ftw Bs) (Jk1.one A (plug (ftw Bs ++ blkR A Bs i) A)) := by
+        show plug (ftw Bs ++ (blkC A Bs ++ blkR A Bs i)) A = _
+        rw [plug_append]
+        rfl
+      have e0 : ((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 (m + 1) (plug (ftw Bs) Jk1.nil) ++ jk1 (m + 1 + Bs.length) A)
+          = jk1 m (blkW A Bs) := by
+        rw [jk1_blkW, jk1_plug_tip (ftw Bs) A (m + 1), dep_ftw]
+      have e1 : (List.range (i + 1)).flatMap
+            (fun k => shiftr01 ((Bs.length + 1) * k) 0
+              (jk1 (m + 1 + Bs.length) (blkW A Bs)))
+          = (List.range (i + 1)).flatMap
+            (fun k => shiftr01 ((Bs.length + 1) * (k + 1)) 0 (jk1 m (blkW A Bs))) := by
+        apply List.flatMap_congr
+        intro k _
+        rw [show m + 1 + Bs.length = m + (1 + Bs.length) from by omega,
+          ← jk1_shift (blkW A Bs) m (1 + Bs.length), shiftr01_add0]
+        congr 1
+        rw [Nat.mul_succ]
+        omega
+      have e2 : (List.range (i + 1 + 1)).flatMap
+            (fun k => shiftr01 ((Bs.length + 1) * k) 0 (jk1 m (blkW A Bs)))
+          = jk1 m (blkW A Bs) ++ (List.range (i + 1)).flatMap
+            (fun k => shiftr01 ((Bs.length + 1) * (k + 1)) 0 (jk1 m (blkW A Bs))) := by
+        rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+        simp [Function.comp_def]
+      rw [hplug]
+      show jk1 m V ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (m + 1) (plug (ftw Bs) (Jk1.one A (plug (ftw Bs ++ blkR A Bs i) A)))) = _
+      rw [jk1_plug_tip (ftw Bs) (Jk1.one A (plug (ftw Bs ++ blkR A Bs i) A)) (m + 1),
+        dep_ftw, ih, ← List.append_assoc, ← List.cons_append, e0, e1, e2]
+      try simp [List.append_assoc]
+
+theorem colJ_plug_runG (a b : ℕ) (ctx : List Frm) (V A : Jk1) (Bs : List Jk1) :
+    colJ a b (plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil))
+      = (colJ a b (plug ctx V) ++ jk1 (a + dep ctx + 1) (blkW A Bs))
+        ++ [((a + dep ctx + 1 + 1 + (Bs.length + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [plug_append]
+  show colJ a b (plug ctx (Jk1.one V (plug (ftw Bs) (Jk1.two A Jk1.nil)))) = _
+  rw [colJ_plug_one a b ctx V (plug (ftw Bs) (Jk1.two A Jk1.nil)),
+    jk1_plug_tip (ftw Bs) (Jk1.two A Jk1.nil) (a + dep ctx + 2), dep_ftw,
+    jk1_blkW, jk1_plug_tip (ftw Bs) A (a + dep ctx + 1 + 1), dep_ftw,
+    show a + dep ctx + 1 + 1 = a + dep ctx + 2 from by omega]
+  have e : jk1 (a + dep ctx + 2 + Bs.length) (Jk1.two A Jk1.nil)
+      = jk1 (a + dep ctx + 2 + Bs.length) A
+        ++ [((a + dep ctx + 2 + Bs.length + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+    show jk1 (a + dep ctx + 2 + Bs.length) A ++
+      (((a + dep ctx + 2 + Bs.length + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx + 2 + Bs.length + 1) Jk1.nil) = _
+    simp [jk1]
+  rw [e, show a + dep ctx + 1 + 1 + (Bs.length + 1) = a + dep ctx + 2 + Bs.length + 1
+    from by omega]
+  simp [List.append_assoc]
+
+theorem colJ_plug_runGTower (a b : ℕ) (ctx : List Frm) (V A : Jk1) (Bs : List Jk1)
+    (i : ℕ) :
+    colJ a b (plug (ctx ++ blkC V Bs ++ blkR A Bs i) A)
+      = Mtwd (Bs.length + 1) (colJ a b (plug ctx V))
+          (jk1 (a + dep ctx + 1) (blkW A Bs)) (i + 1) := by
+  have e0 : plug (ctx ++ blkC V Bs ++ blkR A Bs i) A
+      = plug ctx (Jk1.one V (plug (ftw Bs ++ blkR A Bs i) A)) := by
+    rw [List.append_assoc, plug_append]
+    rfl
+  rw [e0, colJ_plug_one a b ctx V (plug (ftw Bs ++ blkR A Bs i) A), Mtwd]
+  have e1 : ((a + dep ctx + 2, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx + 2) (plug (ftw Bs ++ blkR A Bs i) A)
+      = jk1 (a + dep ctx + 1) (Jk1.one Jk1.nil (plug (ftw Bs ++ blkR A Bs i) A)) := by
+    show _ = jk1 (a + dep ctx + 1) Jk1.nil ++
+      (((a + dep ctx + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (a + dep ctx + 1 + 1) (plug (ftw Bs ++ blkR A Bs i) A))
+    rw [show a + dep ctx + 1 + 1 = a + dep ctx + 2 from by omega]
+    simp [jk1]
+  rw [e1, jk1_blkTower A Bs i Jk1.nil (a + dep ctx + 1)]
+  simp [jk1, List.append_assoc]
+
+theorem wordJ_plug_runG (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V A : Jk1)
+    (Bs : List Jk1) :
+    wordJ a b (ws ++ [plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)])
+      = (wordJ a b (ws ++ [plug ctx V]) ++ jk1 (a + dep ctx + 1) (blkW A Bs))
+        ++ [((a + dep ctx + 1 + 1 + (Bs.length + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ_plug_runG]
+  simp [List.append_assoc]
+
+theorem wordJ_plug_runGTower (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V A : Jk1)
+    (Bs : List Jk1) (i : ℕ) :
+    wordJ a b (ws ++ [plug (ctx ++ blkC V Bs ++ blkR A Bs i) A])
+      = Mtwd (Bs.length + 1) (wordJ a b (ws ++ [plug ctx V]))
+          (jk1 (a + dep ctx + 1) (blkW A Bs)) (i + 1) := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ_plug_runGTower,
+    Mtwd, Mtwd]
+  simp [List.append_assoc]
+
 end Small
 end TRIO
