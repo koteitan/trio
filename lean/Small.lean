@@ -35512,7 +35512,8 @@ def PreQ (bs : List (Jk1 × ℕ)) : Prop :=
     JkA (bs[k]'hk).1 ∧ GOK (Trm (bs[k]'hk).1 (bs.take k))
 
 /-- 空でない良いブロック列の先端に差せる木。 -/
-def TipQ (X : Jk1) : Prop := ∀ bs : List (Jk1 × ℕ), PreQ bs → bs ≠ [] → GOK (Trm X bs)
+def TipQ (X : Jk1) : Prop :=
+  ∀ bs : List (Jk1 × ℕ), PreQ bs → TopOkH bs → bs ≠ [] → GOK (Trm X bs)
 
 theorem PreQ_nil : PreQ [] := by intro k hk; simp at hk
 
@@ -35544,13 +35545,20 @@ theorem PreQ_snoc {bs : List (Jk1 × ℕ)} (hbs : PreQ bs) {V : Jk1} (hJV : JkA 
     rw [he, ht]
     exact ⟨hJV, hV⟩
 
-theorem PreQ_rep {bs : List (Jk1 × ℕ)} (hbs : PreQ bs) (hne : bs ≠ []) {V : Jk1}
-    (hJV : JkA V) (hV : TipQ V) (j : ℕ) :
+theorem TopOkH_append : ∀ (bs ks : List (Jk1 × ℕ)), bs ≠ [] →
+    (TopOkH (bs ++ ks) ↔ TopOkH bs)
+  | [], _, h => absurd rfl h
+  | (_ :: _), _, _ => Iff.rfl
+
+theorem PreQ_rep {bs : List (Jk1 × ℕ)} (hbs : PreQ bs) (hTop : TopOkH bs) (hne : bs ≠ [])
+    {V : Jk1} (hJV : JkA V) (hV : TipQ V) (j : ℕ) :
     ∀ i : ℕ, PreQ (bs ++ List.replicate i (V, j)) ∧ (bs ++ List.replicate i (V, j)) ≠ []
   | 0 => by simpa using ⟨hbs, hne⟩
   | (i + 1) => by
-      obtain ⟨ih1, ih2⟩ := PreQ_rep hbs hne hJV hV j i
-      have h := PreQ_snoc ih1 hJV (hV _ ih1 ih2) j
+      obtain ⟨ih1, ih2⟩ := PreQ_rep hbs hTop hne hJV hV j i
+      have hT' : TopOkH (bs ++ List.replicate i (V, j)) :=
+        (TopOkH_append bs _ hne).mpr hTop
+      have h := PreQ_snoc ih1 hJV (hV _ ih1 hT' ih2) j
       rw [List.append_assoc, ← List.replicate_succ'] at h
       exact ⟨h, by simp⟩
 
@@ -35569,10 +35577,81 @@ theorem TipQ2_nil : TipQ2 Jk1.nil := by
   · exact JkT_Trm_ne (X := Jk1.two V Jk1.nil) ⟨hJV, trivial⟩ (pre ++ [(A0, j)]) hne1
       (AllJkA_of_PreQ _ hpre1) hTop
   · intro i
-    obtain ⟨h1, h2⟩ := PreQ_rep hpre1 hne1 hJV hAV j i
-    exact hAV _ h1 h2
+    obtain ⟨h1, h2⟩ := PreQ_rep hpre1 hTop hne1 hJV hAV j i
+    exact hAV _ h1 ((TopOkH_append _ _ hne1).mpr hTop) h2
 
 #print axioms PreQ_snoc
 #print axioms TipQ2_nil
+
+/-! #### `Trm` の背骨と、鎖 `twoIt` -/
+
+def spnT : List (Jk1 × ℕ) → List Frm
+  | [] => []
+  | (b :: bs) => Frm.fone b.1 :: (List.replicate b.2 (Frm.ftwo Jk1.nil) ++ spnT bs)
+
+theorem plug_spnT : ∀ (bs : List (Jk1 × ℕ)) (X : Jk1), plug (spnT bs) X = Trm X bs
+  | [], _ => rfl
+  | (b :: bs), X => by
+      show Jk1.one b.1 (plug (List.replicate b.2 (Frm.ftwo Jk1.nil) ++ spnT bs) X) = _
+      rw [plug_replicate_ftwo, plug_spnT bs X]
+      rfl
+
+theorem jk1_Trm_congr {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) :
+    ∀ (bs : List (Jk1 × ℕ)) (l : ℕ), jk1 l (Trm X1 bs) = jk1 l (Trm X2 bs)
+  | [], l => h l
+  | (b :: bs), l => by
+      show jk1 l b.1 ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (stkP b.2 (Trm X1 bs)))
+        = jk1 l b.1 ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (stkP b.2 (Trm X2 bs)))
+      rw [jk1_stkP', jk1_stkP', jk1_Trm_congr h bs (l + 1 + b.2)]
+
+theorem TipQ_congr {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : TipQ X1) : TipQ X2 :=
+  fun bs hbs hTop hne => GOK_congr (jk1_Trm_congr h bs) (hX bs hbs hTop hne)
+
+theorem TipQ2_congr {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : TipQ2 X1) :
+    TipQ2 X2 :=
+  fun V hJV hTV pre A0 j hpre hJA0 hGA0 hTop =>
+    GOK_congr (jk1_Trm_congr (fun l => by
+      show jk1 l V ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) X1)
+        = jk1 l V ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) X2)
+      rw [h (l + 1)]) _)
+      (hX V hJV hTV pre A0 j hpre hJA0 hGA0 hTop)
+
+theorem PreQ_unsnoc {bs : List (Jk1 × ℕ)} {b : Jk1 × ℕ} (h : PreQ (bs ++ [b])) :
+    PreQ bs ∧ JkA b.1 ∧ GOK (Trm b.1 bs) := by
+  have hlast := h bs.length (by simp)
+  have he : (bs ++ [b])[bs.length]'(by simp) = b := by simp
+  have ht : (bs ++ [b]).take bs.length = bs := by simp
+  rw [he, ht] at hlast
+  refine ⟨?_, hlast.1, hlast.2⟩
+  intro k hk
+  have h1 := h k (by simp; omega)
+  have he2 : (bs ++ [b])[k]'(by simp; omega) = bs[k]'hk := by
+    simp [List.getElem_append_left, hk]
+  have ht2 : (bs ++ [b]).take k = bs.take k := by
+    rw [List.take_append_of_le_length (by omega)]
+  rw [he2, ht2] at h1
+  exact h1
+
+/-- 鎖 `twoIt V T n` は、`T` が 2 の記録の枠の上に置けるなら先端に差せる。 -/
+theorem TipQ_twoIt {V T : Jk1} (hJV : JkA V) (hTV : TipQ V) (hJT : JkA T)
+    (hT2 : TipQ2 T) : ∀ n : ℕ, JkA (twoIt V T n) ∧ TipQ (twoIt V T n)
+  | 0 => ⟨hJV, hTV⟩
+  | (n + 1) => by
+      obtain ⟨h1, h2⟩ := TipQ_twoIt hJV hTV hJT hT2 n
+      refine ⟨⟨h1, hJT⟩, ?_⟩
+      intro bs hbs hTop hne
+      rcases List.eq_nil_or_concat bs with rfl | ⟨pre, b, rfl⟩
+      · exact absurd rfl hne
+      · rw [List.concat_eq_append] at hbs hTop ⊢
+        obtain ⟨hpre, hJb, hGb⟩ := PreQ_unsnoc hbs
+        have hh := hT2 (twoIt V T n) h1 h2 pre b.1 b.2 hpre hJb hGb (by simpa using hTop)
+        show GOK (Trm (Jk1.two (twoIt V T n) T) (pre ++ [b]))
+        simpa using hh
+
+#print axioms plug_spnT
+#print axioms PreQ_unsnoc
+#print axioms TipQ_twoIt
 end Small
 end TRIO
