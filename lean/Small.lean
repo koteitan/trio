@@ -38346,5 +38346,59 @@ theorem GOK_twoTwoNilW_gen (ctx0 : List Frm) (V : Jk1) {N Wl : Jk1} (hJN : JkA N
     simpa [List.append_assoc] using hh
 
 #print axioms GOK_twoTwoNilW_gen
+
+/-! #### 左兄弟つきラン塔の `APd` 版 -/
+
+/-- 階段 `nstN2 N Wl k` は 2 の記録の枠の上に差せる。
+`Wl` には「枠として使える」ことと「2 の記録の枠の上に差せる」ことを課す。 -/
+theorem APd_nstN2 {N Wl : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    (hWfrm : ∀ ks : List Bool, FrmJ ks Wl) (hWrq : ∀ ks : List Bool, Rq ks Wl)
+    (hWf : ∀ ks : List Bool, APd (false :: ks) Wl) :
+    ∀ (k : ℕ) (ks : List Bool), APd (false :: ks) (nstN2 N Wl k)
+  | 0, ks => hWf ks
+  | (k + 1), ks => by
+      refine APd_step (false :: ks) (hWfrm (false :: ks)) (hWrq (false :: ks))
+        (hWf ks) ?_
+      rw [APd_ct]
+      intro U hU hR hUk
+      exact (APd_cf (false :: ks) (nstN2 N Wl k)).mp
+        (APd_nstN2 hJN hNall hWfrm hWrq hWf k (false :: ks)) 0 U N
+        (by simpa using hU) (by simpa using hR) (by simpa using hUk) hJN
+        (fun j => by simpa using hNall j (false :: ks))
+
+/-- ★★★★★ `GOK_twoTwoNilW_gen` の `APd` 版。 -/
+theorem APd_twoTwoWGen {N Wl : Jk1} (hJN : JkA N) (hJW : JkA Wl)
+    (ks : List Bool)
+    (hstair : ∀ k : ℕ, APd (true :: ks) (Jk1.two N (nstN2 N Wl k))) :
+    APd (true :: ks) (Jk1.two N (Jk1.two Wl Jk1.nil)) := by
+  rw [APd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split ks ctx hc
+  have hcO : CtxOk (ctx0 ++ [Frm.fone V]) := GCtx_CtxOk (true :: ks) _ hc
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (Jk1.two Wl Jk1.nil))) :=
+    JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, hJW, trivial⟩)
+  refine GOK_twoTwoNilW_gen ctx0 V hJN hJW hJT hGV ?_
+  intro k
+  exact (APd_iff (true :: ks) _).mp (hstair k) _ hc
+
+/-- 階段の `APd` 良さから、ラン塔（左兄弟 `Wl`、先端 `nil`）が出る。 -/
+theorem TwoOk_twoWlNil {Wl : Jk1} (hJW : JkA Wl)
+    (hWfrm : ∀ ks : List Bool, FrmJ ks Wl) (hWrq : ∀ ks : List Bool, Rq ks Wl)
+    (hWf : ∀ ks : List Bool, APd (false :: ks) Wl) :
+    TwoOk (Jk1.two Wl Jk1.nil) := by
+  intro N hJN hNall j kk
+  rw [rep_true_cons]
+  refine APd_twoTwoWGen hJN hJW _ ?_
+  intro k
+  rw [APd_ct]
+  intro U hU hR hUk
+  exact (APd_cf (List.replicate j true ++ kk) (nstN2 N Wl k)).mp
+    (APd_nstN2 hJN hNall hWfrm hWrq hWf k (List.replicate j true ++ kk)) 0 U N
+    (by simpa using hU) (by simpa using hR) (by simpa using hUk) hJN
+    (fun i => by simpa using hNall i (List.replicate j true ++ kk))
+
+#print axioms APd_twoTwoWGen
+#print axioms TwoOk_twoWlNil
 end Small
 end TRIO
