@@ -48884,5 +48884,222 @@ theorem wordJ_plug_runGTower (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V A :
     Mtwd, Mtwd]
   simp [List.append_assoc]
 
+
+/-! #### 一般ブロックの語の性質 -/
+
+theorem entry_jk1_ge (N : Jk1) (l t : ℕ) (ht : t < (jk1 l N).length) :
+    l + 1 ≤ entry (jk1 l N) 0 t := by
+  have hmem : (jk1 l N).getD t ((0, 0, 0) : ℕ × ℕ × ℕ) ∈ jk1 l N := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem ht]
+    exact List.getElem_mem ht
+  have h := jk1_ge N l _ hmem
+  simpa [entry] using h
+
+theorem MidD_blkG {A : Jk1} (hJA : JkA A) {Bs : List Jk1} (hB : ∀ B ∈ Bs, JkA B) (m : ℕ) :
+    MidD (m + 2) (jk1 m (blkW A Bs)) := by
+  rw [jk1_blkW]
+  have h1 := MidD_colN (m + 1) (plug (ftw Bs) A) (by omega) (JkA_plug_ftw Bs hB hJA)
+  rwa [show m + 1 + 1 = m + 2 from by omega] at h1
+
+theorem entry_blkG_head (A : Jk1) (Bs : List Jk1) (m : ℕ) :
+    entry (jk1 m (blkW A Bs)) 1 0 = 1 := by
+  rw [jk1_blkW]; simp [entry]
+
+/-- 走りの中で「以後すべて真に高い」列は 2 の記録に限る。 -/
+theorem hMy_run : ∀ (Bs : List Jk1) {A : Jk1}, JkA A → (∀ B ∈ Bs, JkA B) →
+    ∀ (l t : ℕ), t < (jk1 l (plug (ftw Bs) A)).length →
+      entry (jk1 l (plug (ftw Bs) A)) 0 t < l + Bs.length + 1 →
+      (∀ i, t < i → i < (jk1 l (plug (ftw Bs) A)).length →
+        entry (jk1 l (plug (ftw Bs) A)) 0 t < entry (jk1 l (plug (ftw Bs) A)) 0 i) →
+      2 ≤ entry (jk1 l (plug (ftw Bs) A)) 1 t
+  | [], A, hJA, _, l, t, hlen, hlt, _ => by
+      have hlen' : t < (jk1 l A).length := hlen
+      have hlt' : entry (jk1 l A) 0 t < l + 0 + 1 := hlt
+      have h := entry_jk1_ge A l t hlen'
+      omega
+  | (B :: Bs), A, hJA, hB, l, t, hlen, hlt, hmin => by
+      have hJB : JkA B := hB B (by simp)
+      have hB' : ∀ C ∈ Bs, JkA C := fun C hC => hB C (by simp [hC])
+      have hW : jk1 l (plug (ftw (B :: Bs)) A)
+          = jk1 l B ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+              jk1 (l + 1) (plug (ftw Bs) A)) := rfl
+      have hlenW : (jk1 l (plug (ftw (B :: Bs)) A)).length
+          = (jk1 l B).length + ((jk1 (l + 1) (plug (ftw Bs) A)).length + 1) := by
+        rw [hW]; simp
+      have eE : ∀ (r u : ℕ), entry (jk1 l (plug (ftw (B :: Bs)) A)) r ((jk1 l B).length + (1 + u))
+          = entry (jk1 (l + 1) (plug (ftw Bs) A)) r u := by
+        intro r u
+        rw [hW, entry_append_right, show 1 + u = u + 1 from by omega, entry_cons_succ]
+      have eT : entry (jk1 l (plug (ftw (B :: Bs)) A)) 0 (jk1 l B).length = l + 1 := by
+        rw [hW, show (jk1 l B).length = (jk1 l B).length + 0 from rfl, entry_append_right]
+        simp [entry]
+      rcases lt_trichotomy t (jk1 l B).length with hlt1 | heq | hgt
+      · exfalso
+        have h3 := hmin (jk1 l B).length hlt1 (by omega)
+        have e2 : entry (jk1 l (plug (ftw (B :: Bs)) A)) 0 t = entry (jk1 l B) 0 t := by
+          rw [hW, entry_append_left hlt1]
+        have h4 := entry_jk1_ge B l t hlt1
+        omega
+      · have e1 : entry (jk1 l (plug (ftw (B :: Bs)) A)) 1 (jk1 l B).length = 2 := by
+          rw [hW, show (jk1 l B).length = (jk1 l B).length + 0 from rfl, entry_append_right]
+          simp [entry]
+        rw [heq, e1]
+      · obtain ⟨t'', ht''⟩ : ∃ t'', t = (jk1 l B).length + (1 + t'') :=
+          ⟨t - (jk1 l B).length - 1, by omega⟩
+        subst ht''
+        have hlen'' : t'' < (jk1 (l + 1) (plug (ftw Bs) A)).length := by
+          rw [hlenW] at hlen; omega
+        have hlt'' : entry (jk1 (l + 1) (plug (ftw Bs) A)) 0 t'' < (l + 1) + Bs.length + 1 := by
+          rw [← eE 0 t'']
+          simp only [List.length_cons] at hlt
+          omega
+        have hmin'' : ∀ i, t'' < i → i < (jk1 (l + 1) (plug (ftw Bs) A)).length →
+            entry (jk1 (l + 1) (plug (ftw Bs) A)) 0 t''
+              < entry (jk1 (l + 1) (plug (ftw Bs) A)) 0 i := by
+          intro i hi1 hi2
+          rw [← eE 0 t'', ← eE 0 i]
+          exact hmin _ (by omega) (by rw [hlenW]; omega)
+        have h := hMy_run Bs hJA hB' (l + 1) t'' hlen'' hlt'' hmin''
+        rw [eE 1 t'']
+        exact h
+
+theorem hMy_blkG {A : Jk1} (hJA : JkA A) {Bs : List Jk1} (hB : ∀ B ∈ Bs, JkA B) (m : ℕ) :
+    ∀ t, 1 ≤ t → t < (jk1 m (blkW A Bs)).length →
+      entry (jk1 m (blkW A Bs)) 0 t < (m + 1) + (Bs.length + 1) →
+      (∀ i, t < i → i < (jk1 m (blkW A Bs)).length →
+        entry (jk1 m (blkW A Bs)) 0 t < entry (jk1 m (blkW A Bs)) 0 i) →
+      2 ≤ entry (jk1 m (blkW A Bs)) 1 t := by
+  intro t ht1 htl hth hmin
+  obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
+  have hE : ∀ (r u : ℕ), entry (jk1 m (blkW A Bs)) r (u + 1)
+      = entry (jk1 (m + 1) (plug (ftw Bs) A)) r u := by
+    intro r u; rw [jk1_blkW, entry_cons_succ]
+  have hlenb : (jk1 m (blkW A Bs)).length
+      = (jk1 (m + 1) (plug (ftw Bs) A)).length + 1 := by
+    rw [jk1_blkW]; simp
+  rw [hE]
+  refine hMy_run Bs hJA hB (m + 1) t' (by omega) ?_ ?_
+  · rw [← hE 0 t']; omega
+  · intro i hi1 hi2
+    rw [← hE 0 t', ← hE 0 i]
+    exact hmin (i + 1) (by omega) (by omega)
+
+/-! #### ★★★★★ 左兄弟つき走りの一般ステップ補題 -/
+
+theorem GOK_runGNil_gen {V A : Jk1} (hJA : JkA A) {Bs : List Jk1} (hB : ∀ B ∈ Bs, JkA B)
+    (ctx : List Frm)
+    (hJT : JkT (plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)))
+    (hbase : GOK (plug ctx V))
+    (hstair : ∀ i : ℕ, GOK (plug (ctx ++ blkC V Bs ++ blkR A Bs i) A)) :
+    GOK (plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)) := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)]) :=
+    WOk_append hw (WOk_singletonT hJT)
+  have hbG : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx V])) := hbase ws hw hG
+  have hstG : ∀ i : ℕ, GoodFb (fun a b => wordJ a b
+      (ws ++ [plug (ctx ++ blkC V Bs ++ blkR A Bs i) A])) :=
+    fun i => hstair i ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega,
+      wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_plug_runG]
+    have htw : ∀ n : ℕ, Mtwd (Bs.length + 1) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug ctx V])))
+        (jk1 (c + 1 + t + dep ctx + 1) (blkW A Bs)) n ∈ W 0 := by
+      intro n
+      cases n with
+      | zero =>
+          have h0 := (hbG.pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift] at h0
+          simpa [Mtwd] using h0
+      | succ i =>
+          have h1 := ((hstG i).pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift, wordJ_plug_runGTower] at h1
+          simpa [Mtwd, List.append_assoc] using h1
+    have h := snocYd_mem
+      (Y0 := Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug ctx V])))
+      (M := jk1 (c + 1 + t + dep ctx + 1) (blkW A Bs))
+      (L := c + 1 + t + dep ctx + 1 + 1) (y := 2) (dl := Bs.length + 1)
+      (by simp) (by simpa using MidD_blkG hJA hB (c + 1 + t + dep ctx + 1))
+      (by rw [entry_blkG_head]; omega)
+      (by simpa using hMy_blkG hJA hB (c + 1 + t + dep ctx + 1))
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro jj t Z hZ
+    rw [wordJ_shift, wordJ_plug_runG]
+    have htw : ∀ n : ℕ, Mtwd (Bs.length + 1) (Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug ctx V])))
+        (jk1 (c + 1 + t + dep ctx + 1) (blkW A Bs)) n ∈ W 0 := by
+      intro n
+      cases n with
+      | zero =>
+          have h0 := (hbG.pk c E hI).2.2 jj t Z hZ
+          rw [wordJ_shift] at h0
+          simpa [Mtwd] using h0
+      | succ i =>
+          have h1 := ((hstG i).pk c E hI).2.2 jj t Z hZ
+          rw [wordJ_shift, wordJ_plug_runGTower] at h1
+          simpa [Mtwd, List.append_assoc] using h1
+    have h := snocYd_mem
+      (Y0 := Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug ctx V])))
+      (M := jk1 (c + 1 + t + dep ctx + 1) (blkW A Bs))
+      (L := c + 1 + t + dep ctx + 1 + 1) (y := 2) (dl := Bs.length + 1)
+      (by simp) (by simpa using MidD_blkG hJA hB (c + 1 + t + dep ctx + 1))
+      (by rw [entry_blkG_head]; omega)
+      (by simpa using hMy_blkG hJA hB (c + 1 + t + dep ctx + 1))
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using h
+  · intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordJ (h + 1) 1 (ws ++ [plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (h + 1) 1 (ws ++ [plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_plug_runG]
+    have htw : ∀ n : ℕ, Mtwd (Bs.length + 1) (A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [plug ctx V])))
+        (jk1 (h + 1 + s + dep ctx + 1) (blkW A Bs)) n ∈ W 0 := by
+      intro n
+      cases n with
+      | zero =>
+          have h0 := (hbG.seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+                  wordJ (h + s + 1) 1 (ws ++ [plug ctx V])
+              = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+                  wordJ (h + s + 1) 1 (ws ++ [plug ctx V]) from rfl] at h0
+          simpa [Mtwd, show h + s + 1 = h + 1 + s from by omega] using h0
+      | succ i =>
+          have h1 := ((hstG i).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1
+                  (ws ++ [plug (ctx ++ blkC V Bs ++ blkR A Bs i) A])
+              = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1
+                  (ws ++ [plug (ctx ++ blkC V Bs ++ blkR A Bs i) A]) from rfl,
+            wordJ_plug_runGTower] at h1
+          simpa [Mtwd, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := snocYd_mem
+      (Y0 := A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [plug ctx V])))
+      (M := jk1 (h + 1 + s + dep ctx + 1) (blkW A Bs))
+      (L := h + 1 + s + dep ctx + 1 + 1) (y := 2) (dl := Bs.length + 1)
+      (by simp) (by simpa using MidD_blkG hJA hB (h + 1 + s + dep ctx + 1))
+      (by rw [entry_blkG_head]; omega)
+      (by simpa using hMy_blkG hJA hB (h + 1 + s + dep ctx + 1))
+      (by omega) (by omega) htw
+    simpa [List.append_assoc] using hh
+
+#print axioms GOK_runGNil_gen
+
 end Small
 end TRIO
