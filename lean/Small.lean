@@ -35478,30 +35478,101 @@ theorem Trm_two_nil : ∀ (bs : List (Jk1 × ℕ)) (A : Jk1) (j : ℕ) (X : Jk1)
       rw [Trm_two_nil bs A j X]
       rfl
 
-def PreOk : ℕ → List (Jk1 × ℕ) → Prop
-  | 0, bs => bs = []
-  | (n + 1), bs => bs = [] ∨ ∃ (bs' : List (Jk1 × ℕ)) (b : Jk1 × ℕ),
-      bs = bs' ++ [b] ∧ PreOk n bs' ∧ JkA b.1 ∧
-      (∀ cs : List (Jk1 × ℕ), PreOk n cs → GOK (Trm b.1 cs))
+def AllJkA : List (Jk1 × ℕ) → Prop
+  | [] => True
+  | (b :: bs) => JkA b.1 ∧ AllJkA bs
 
-def TipOk (n : ℕ) (X : Jk1) : Prop := ∀ bs : List (Jk1 × ℕ), PreOk n bs → GOK (Trm X bs)
+def TopOkH : List (Jk1 × ℕ) → Prop
+  | [] => True
+  | (b :: _) => TopOk b.1
 
-theorem PreOk_nil : ∀ n : ℕ, PreOk n []
-  | 0 => rfl
-  | (_ + 1) => Or.inl rfl
+theorem AllJkA_snoc : ∀ (bs : List (Jk1 × ℕ)) (b : Jk1 × ℕ),
+    AllJkA (bs ++ [b]) ↔ AllJkA bs ∧ JkA b.1
+  | [], b => by
+      show JkA b.1 ∧ True ↔ True ∧ JkA b.1
+      tauto
+  | (c :: bs), b => by
+      show JkA c.1 ∧ AllJkA (bs ++ [b]) ↔ (JkA c.1 ∧ AllJkA bs) ∧ JkA b.1
+      rw [AllJkA_snoc bs b]
+      tauto
 
-theorem PreOk_snoc {n : ℕ} {bs : List (Jk1 × ℕ)} (hbs : PreOk n bs) {V : Jk1}
-    (hJV : JkA V) (hV : TipOk n V) (j : ℕ) : PreOk (n + 1) (bs ++ [(V, j)]) :=
-  Or.inr ⟨bs, (V, j), rfl, hbs, hJV, fun cs hcs => hV cs hcs⟩
+theorem JkA_Trm' {X : Jk1} (hX : JkA X) : ∀ (bs : List (Jk1 × ℕ)),
+    AllJkA bs → JkA (Trm X bs)
+  | [], _ => hX
+  | (b :: bs), h => ⟨h.1, JkA_stkP' b.2 (JkA_Trm' hX bs h.2)⟩
 
-theorem TipOk_one {n : ℕ} {V X : Jk1} (hJV : JkA V) (hV : TipOk n V)
-    (hX : TipOk (n + 1) X) : TipOk n (Jk1.one V X) := by
-  intro bs hbs
-  rw [Trm_one]
-  exact hX (bs ++ [(V, 0)]) (PreOk_snoc hbs hJV hV 0)
+theorem JkT_Trm_ne {X : Jk1} (hX : JkA X) : ∀ (bs : List (Jk1 × ℕ)), bs ≠ [] →
+    AllJkA bs → TopOkH bs → JkT (Trm X bs)
+  | [], hne, _, _ => absurd rfl hne
+  | (b :: bs), _, h, ht => ⟨⟨h.1, JkA_stkP' b.2 (JkA_Trm' hX bs h.2)⟩, ht⟩
 
-#print axioms Trm_one
-#print axioms Trm_two_nil
-#print axioms TipOk_one
+/-- ブロック列が良い: 各ブロックの左兄弟が、その手前までのブロック列に差せる。 -/
+def PreQ (bs : List (Jk1 × ℕ)) : Prop :=
+  ∀ (k : ℕ) (hk : k < bs.length),
+    JkA (bs[k]'hk).1 ∧ GOK (Trm (bs[k]'hk).1 (bs.take k))
+
+/-- 空でない良いブロック列の先端に差せる木。 -/
+def TipQ (X : Jk1) : Prop := ∀ bs : List (Jk1 × ℕ), PreQ bs → bs ≠ [] → GOK (Trm X bs)
+
+theorem PreQ_nil : PreQ [] := by intro k hk; simp at hk
+
+theorem AllJkA_of_forall : ∀ (bs : List (Jk1 × ℕ)),
+    (∀ (k : ℕ) (hk : k < bs.length), JkA (bs[k]'hk).1) → AllJkA bs
+  | [], _ => trivial
+  | (b :: bs), h => ⟨h 0 (by simp), AllJkA_of_forall bs (fun k hk => by
+      have h1 := h (k + 1) (by simp; omega)
+      simpa using h1)⟩
+
+theorem AllJkA_of_PreQ (bs : List (Jk1 × ℕ)) (h : PreQ bs) : AllJkA bs :=
+  AllJkA_of_forall bs (fun k hk => (h k hk).1)
+
+theorem PreQ_snoc {bs : List (Jk1 × ℕ)} (hbs : PreQ bs) {V : Jk1} (hJV : JkA V)
+    (hV : GOK (Trm V bs)) (j : ℕ) : PreQ (bs ++ [(V, j)]) := by
+  intro k hk
+  simp only [List.length_append, List.length_cons, List.length_nil] at hk
+  by_cases hlt : k < bs.length
+  · have he : (bs ++ [(V, j)])[k]'(by simp; omega) = bs[k]'hlt := by
+      simp [List.getElem_append_left, hlt]
+    have ht : (bs ++ [(V, j)]).take k = bs.take k := by
+      rw [List.take_append_of_le_length (by omega)]
+    rw [he, ht]
+    exact hbs k hlt
+  · have hkk : k = bs.length := by omega
+    subst hkk
+    have he : (bs ++ [(V, j)])[bs.length]'(by simp) = (V, j) := by simp
+    have ht : (bs ++ [(V, j)]).take bs.length = bs := by simp
+    rw [he, ht]
+    exact ⟨hJV, hV⟩
+
+theorem PreQ_rep {bs : List (Jk1 × ℕ)} (hbs : PreQ bs) (hne : bs ≠ []) {V : Jk1}
+    (hJV : JkA V) (hV : TipQ V) (j : ℕ) :
+    ∀ i : ℕ, PreQ (bs ++ List.replicate i (V, j)) ∧ (bs ++ List.replicate i (V, j)) ≠ []
+  | 0 => by simpa using ⟨hbs, hne⟩
+  | (i + 1) => by
+      obtain ⟨ih1, ih2⟩ := PreQ_rep hbs hne hJV hV j i
+      have h := PreQ_snoc ih1 hJV (hV _ ih1 ih2) j
+      rw [List.append_assoc, ← List.replicate_succ'] at h
+      exact ⟨h, by simp⟩
+
+/-- 先端が 2 の記録の枠（枠木 `V`）の上にある場合の良さ。 -/
+def TipQ2 (X : Jk1) : Prop :=
+  ∀ (V : Jk1), JkA V → TipQ V → ∀ (pre : List (Jk1 × ℕ)) (A0 : Jk1) (j : ℕ),
+    PreQ pre → JkA A0 → GOK (Trm A0 pre) → TopOkH (pre ++ [(A0, j)]) →
+    GOK (Trm (Jk1.two V X) (pre ++ [(A0, j)]))
+
+/-- ★★★★★ 2 の記録の枠の上に空木。`GOK_TrmStep` そのもの。 -/
+theorem TipQ2_nil : TipQ2 Jk1.nil := by
+  intro V hJV hAV pre A0 j hpre hJA0 hGA0 hTop
+  have hpre1 : PreQ (pre ++ [(A0, j)]) := PreQ_snoc hpre hJA0 hGA0 j
+  have hne1 : (pre ++ [(A0, j)]) ≠ [] := by simp
+  refine GOK_TrmStep hJV pre j ?_ hGA0 ?_
+  · exact JkT_Trm_ne (X := Jk1.two V Jk1.nil) ⟨hJV, trivial⟩ (pre ++ [(A0, j)]) hne1
+      (AllJkA_of_PreQ _ hpre1) hTop
+  · intro i
+    obtain ⟨h1, h2⟩ := PreQ_rep hpre1 hne1 hJV hAV j i
+    exact hAV _ h1 h2
+
+#print axioms PreQ_snoc
+#print axioms TipQ2_nil
 end Small
 end TRIO
