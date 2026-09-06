@@ -11594,3 +11594,17 @@ entry < d なので、d を大きくする方向が弱化）。d はちょうど
 
 これで S(2,0,0) S(2,1,0)（LvB_snoc）、S(2,2,0)（SegA_U375aN + SegB_snoc2）、
 S(2,2,1)（GOK_NA）まで。S 族は標準拡張 27 個。
+
+## 追記71: S 族の木は R 族の木の最内 `two nil nil` を `two nil (one nil nil)` にしたもの
+
+jk1_NA l = jk1_NR l ++ [(l+7,1,0)]、jk1_HA l = jk1_HR l ++ [(l+5,1,0)]。
+つまり S 族の単位 = R 族の単位 ++ [(9,1,0)]:
+  U375bN = U375bR ++ [(9,1,0)]、U375cN = U375cR ++ [(9,1,0)]、U375dN = U375dR ++ [(9,1,0)]。
+土台の R338 / R341 / R344 は共通なので、R 族の証明をそのまま写して
+NR→NA, HR→HA, WttR→WttA, TLR→TLA, XXR→XXA, VVnR→VVnA と置換するだけで
+(3,0,0)(3,1,0)(4,0,0)(4,1,0)(4,2,0)(5,0,0)(5,1,0) が出た。1 回で緑。
+
+jk1 の計算は
+  simp only [<木の名>, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+で済む（show で展開形を書き下す必要はない）。荷 (pay) が付く場合だけ show + rw が要る。
