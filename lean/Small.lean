@@ -27766,5 +27766,211 @@ theorem MOk_nil_true (fs : List Bool) : MOk (true :: fs) Jk1.nil := by
 #print axioms MOk_nil_true
 
 
+/-! ### ★ `V = U(8,0,0)` 族
+
+`U` の字 `NUB B` は荷 `B` について一般だったので、`B = flad 2 = (0,0,0)(1,0,0)` に
+すれば `V` の字になる（`jk1 2 (NUB (flad 2))` の末尾が `(7,0,0)(8,0,0)`）。 -/
+
+def R375v : TrioSeq := R375u ++ [((8, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R375v_eq : R375v = [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ), ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [R375v, R375u, R375t, R375s, R375m, R373, R344, R341, R338]
+
+theorem R375v_ne : R375v ≠ [] := by
+  simp [R375v, R375u, R375t, R375s, R375m, R373, R344, R341, R338]
+
+theorem R375v_head : entry R375v 0 0 = 0 := by
+  simp [R375v, R375u, R375t, R375s, R375m, R373, R344, R341, R338, entry]
+
+theorem R375v_tail : ∀ r, 1 ≤ r → r < R375v.length → 1 ≤ entry R375v 0 r := by
+  intro r h1 h2
+  simp only [R375v, R375u, R375t, R375s, R375m, R373, R344, R341, R338, List.length_append,
+    List.length_cons, List.length_nil] at h2
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | r
+    <;> first
+      | omega
+      | simp [R375v, R375u, R375t, R375s, R375m, R373, R344, R341, R338, entry]
+
+theorem Aok_R375v : Aok R375v where
+  mem := R375u17_mem
+  ne := R375v_ne
+  deep := ⟨R375v_head, R375v_tail⟩
+  zroot := by
+    rw [R375v_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      <;> decide
+  mono := by
+    rw [R375v_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      <;> decide
+
+/-- ★★★★★ `V(0,0,0)`。 -/
+theorem R375v0_mem : R375v ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  sum_Bok Aok_R375v Bok_zero
+
+/-- ★★★★★ `V(1,0,0)`。 -/
+theorem R375v1_mem : R375v ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, ([] : TrioSeq) ++ (List.range n).flatMap (fun _ => R375v) ∈ W 0 := by
+    intro n
+    simpa [copies] using (Aok_R375v.copies_Bok n).mem
+  have h := flat_mem'' (Y0 := ([] : TrioSeq)) (M := R375v) (d := 1) R375v_ne
+    (by rw [R375v_head]; omega) R375v_tail htw
+  simpa using h
+
+/-- ★★★★★ `V(1,1,0)`。 -/
+theorem R375v2_mem : R375v ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 R375v Aok_R375v
+
+/-! #### 高さ 7 の吊るしを台座一般に -/
+
+theorem hang7_gen {A B : TrioSeq} (hA : Aok A) (hB : Bok B) :
+    A ++ U375a2 ++ shiftr01 7 0 B ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [NUB B])) :=
+    GOK_NUB hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [NUB B]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  rw [wordJ_singleton, colJ, jk1_NUB B 2] at h
+  simpa [U375a2, U375a1, U375a, List.append_assoc] using h
+
+theorem U375a2_copies70_gen {A : TrioSeq} (hA : Aok A) (n : ℕ) :
+    A ++ U375a2 ++ copies [((7, 0, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have h := hang7_gen hA (Bok_copies_zero n)
+  rwa [shift_copies_zero 7 n] at h
+
+def U375a4 : TrioSeq := U375a3 ++ [((8, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375a4 : MidD 2 U375a4 where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375a4, U375a3, U375a2, U375a1, U375a, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375a4, U375a3, U375a2, U375a1, U375a, List.cons_append, List.nil_append,
+      List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375a4, U375a3, U375a2, U375a1, U375a, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem U375a4_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375a4 ∈ W 0 := by
+  have h := flat_mem'' (Y0 := A ++ U375a2) (M := [((7, 0, 0) : ℕ × ℕ × ℕ)]) (d := 8)
+    (by simp) (by simp [entry]) (by intro r h1 h2; simp at h2; omega)
+    (fun n => by simpa [copies, List.append_assoc] using U375a2_copies70_gen hA n)
+  simpa [U375a4, U375a3, U375a2, List.append_assoc] using h
+
+theorem R375v_eq2 : R375v = R338 ++ U375a4 := by
+  simp [R375v, R375u, R375t, R375s, R375m, R373, R344, R341, U375a4, U375a3, U375a2,
+    U375a1, U375a, List.append_assoc]
+
+/-- ★★★★★ `V(2,0,0)`。 -/
+theorem R375v3_mem : R375v ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R338) (M := U375a4) (d := 2) (by omega) MidD_U375a4
+    Aok_R338 (fun n hAn => U375a4_mem_gen hAn)
+  rw [← R375v_eq2] at h
+  simpa using h
+
+theorem LvB_R375v_1 : LvB P0 1 1 R375v := by
+  refine ⟨Aok_R375v, Or.inr ⟨0, R338, U375a4, rfl, R375v_eq2, ⟨Aok_R338, rfl⟩,
+    MidD_U375a4, ?_⟩⟩
+  intro s A' hA'
+  have hA'' : Aok A' ∧ 0 + s = 0 := hA'
+  obtain ⟨hAok, hs⟩ := hA''
+  have hs0 : s = 0 := by omega
+  subst hs0
+  simpa [shiftr01_zero] using U375a4_mem_gen hAok
+
+/-- ★★★★★ `V(2,1,0)`。 -/
+theorem R375v4_mem : R375v ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using LvB_snoc BaseOk_P0 1 1 R375v LvB_R375v_1
+
+/-! #### `V(2,2,0)` -/
+
+theorem U375a2_copies70_seg {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {s : ℕ}
+    {A' : TrioSeq} (hA' : LwB P s A') (n : ℕ) :
+    (A' ++ shiftr01 s 0 U375a2) ++ copies [((7 + s, 0, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [NUB (copies [((0, 0, 0) : ℕ × ℕ × ℕ)] n)])) :=
+    GOK_NUB (Bok_copies_zero n) [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [NUB (copies [((0, 0, 0) : ℕ × ℕ × ℕ)] n)]) := by
+    simpa using hG
+  have h := (hG'.seg 0).reapp P hP s A' (by simpa using hA')
+  have e : ((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (0 + 1) 1
+        [NUB (copies [((0, 0, 0) : ℕ × ℕ × ℕ)] n)]
+      = U375a2 ++ copies [((7, 0, 0) : ℕ × ℕ × ℕ)] n := by
+    rw [wordJ_singleton, colJ, jk1_NUB _ (0 + 1 + 1), shift_copies_zero 7 n]
+    simp [U375a2, U375a1, U375a, List.append_assoc]
+  rw [e, shiftr01_append0, shift_copies, shift_col] at h
+  simpa [List.append_assoc] using h
+
+theorem SegA_U375a4 : SegA 0 U375a4 where
+  mid := MidD_U375a4
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro P hP s A' hA'
+    have hA'' : LwB P s A' := by simpa using hA'
+    have h := flat_mem'' (Y0 := A' ++ shiftr01 s 0 U375a2)
+      (M := [((7 + s, 0, 0) : ℕ × ℕ × ℕ)]) (d := 8 + s)
+      (by simp) (by simp [entry]) (by intro r h1 h2; simp at h2; omega)
+      (fun n => by simpa [copies] using U375a2_copies70_seg hP hA'' n)
+    have e : shiftr01 s 0 U375a4
+        = (shiftr01 s 0 U375a2 ++ [((7 + s, 0, 0) : ℕ × ℕ × ℕ)])
+          ++ [((8 + s, 0, 0) : ℕ × ℕ × ℕ)] := by
+      rw [U375a4, U375a3, shiftr01_append0, shiftr01_append0, shift_col, shift_col]
+    rw [e]
+    simpa [List.append_assoc] using h
+
+/-- ★★★★★ `V(2,2,0)`。 -/
+theorem R375v5_mem : R375v ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := R338) (M := U375a4)
+    (SegA_toSegB SegA_U375a4 BaseOk_P0) (LwB_of_base ⟨Aok_R338, rfl⟩)
+  rw [← R375v_eq2] at h
+  simpa using h
+
+/-! #### `V` の字と `V(2,2,1)` -/
+
+def NV : Jk1 := NUB (flad 2)
+
+theorem JkT_NV : JkT NV := JkT_NUB (Bok_flad 2)
+
+theorem GOK_NV : GOK NV := GOK_NUB (Bok_flad 2)
+
+theorem jk1_NV (l : ℕ) : jk1 l NV =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 1, 0) : ℕ × ℕ × ℕ), ((l + 5, 0, 0) : ℕ × ℕ × ℕ),
+      ((l + 6, 0, 0) : ℕ × ℕ × ℕ)] := by
+  rw [NV, jk1_NUB]
+  simp [flad, shiftr01, List.range_succ]
+  omega
+
+/-- ★★★★★ `V(2,2,1)`。 -/
+theorem R375v6_mem : R375v ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NV])) := GOK_NV [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NV]) := by simpa using h1
+  have h2 := GOK_nil [NV] (WOk_singletonT JkT_NV) h1'
+  have h := rowJ_mem_genF Aok_R338 h2
+  simpa [wordJ_append, wordJ_singleton, colJ, jk1_NV, jk1, R375v, R375u, R375t,
+    R375s, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms R375v0_mem
+#print axioms R375v3_mem
+#print axioms R375v5_mem
+#print axioms R375v6_mem
+
+
 end Small
 end TRIO
