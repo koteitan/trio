@@ -10270,3 +10270,60 @@ TwOk_nil  : どの (r,m) でも空木を差せる（(r+1,0) は GOK_twoNil_gen �
 #16 P(6,1,0)  one nil (two nil (two nil (pay nil B)))
 ```
 どれも語のうえで 2 の記録が 2 本以上連続する。ここが唯一の壁。
+
+## 追記40: 2 の記録 2 本連続は既に通っていた（`APd_twoTwoGen`）
+
+追記39 で「壁」と書いた形のうち **2 本連続**は、実は 2021 年からある
+`APd_twoTwoGen`（`APd (true::ks) (two N (two nil nil))`）で通る。
+`GOK_twoNil_gen` のときと同じで、その本体も文脈が良いことを使っていないので、
+そのまま切り出せる:
+
+```
+GOK_twoTwoNil_gen ctx0 V (hJN : JkA N)
+    (hJT : JkT (plug (ctx0 ++ [fone V]) (two N (two nil nil))))
+    (hGV : GOK (plug ctx0 V))
+    (hstair : ∀ k, GOK (plug (ctx0 ++ [fone V]) (two N (nstN N k)))) :
+  GOK (plug (ctx0 ++ [fone V]) (two N (two nil nil)))
+```
+
+一般梯子に載せると
+
+```
+TwOk_nstN     : (∀ q, NTw q N) → ∀ k q, TwOk (q+1) 0 (nstN N k)
+TwOk_twoTwoNil: JkA N → (∀ q, NTw q N) → Fter r m → TwOk r m (two N (two nil nil))
+```
+
+塔の各段 `two N (nstN N k)` は枠の段数 `r` を 1 ずつ増やしながら登るので、
+枠木 `N` には **1 段小さい世界での良さ `NTw r N` では足りず**、
+`∀ q, NTw q N` が要る。`N = nil` と `N = WWZ n`（自分自身の帰納）では出る。
+
+### 荷を吊るす: `TTwA`
+
+`LTwo_pay` は枠木に `∀ j, LOk (j+1) N` しか課さないので `two N (two nil nil)` には
+届かない。強い仮定版を作って `LTwo_pay` と同じ A2' 帰納を回した:
+
+```
+TTwA Z := ∀ r m N, JkA N → (∀ q, NTw q N) → Fter r m → TwOk r m (two N Z)
+TTwA_twoNil : TTwA (two nil nil)
+TTwA_pay    : Bok Y → JkA Z → TTwA Z → TTwA (pay Z Y)
+```
+
+これで `LOk 1 (two nil (pay (two nil nil) B))` が出て `Z(7,1,0)` が通り、
+**`Z = X(7,2,0)` 族は 19/19** で完成。
+
+### 残る壁は「3 本以上連続」
+
+`bms -d` で測ると、`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,2,0)[3]`
+（2 の記録 3 本連続）は
+
+```
+bad root = (3,1,0) の位置、bad part = (3,1,0)(4,2,0)(5,2,0)、delta = 3
+展開 = ... (4,2,0)(5,2,0) (6,1,0)(7,2,0)(8,2,0) (9,1,0)(10,2,0)(11,2,0) ...
+```
+
+つまり単位は「1 の列 + 2 の記録 2 本」、歩幅 3。塔の木は
+`one nil (two nil (two nil (one nil (two nil (two nil …)))))`。
+一般に **`q` 本連続を置くには「`q-1` 本連続の上に木を載せた形」が要る**。
+いま持っているのは `q-1 = 1` 本（`TwoOk`）と、`q = 2` 本でも上が
+`nil` か荷だけ（`TwOk_twoTwoNil` / `TTwA`）の場合。
+`q = 2` 本の上に一般の木、が次の一手。
