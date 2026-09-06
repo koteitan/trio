@@ -11622,3 +11622,19 @@ jk1 の計算は
 (9,1,0) は荷を「1 の記録の上」に吊るす必要がある:
   TTwA (one (two nil nil) (two nil (pay (one nil nil) B)))
 Dk_oneTwoWlPay は payload が nil の場合。one nil nil 版が要る。
+
+## 追記73: 先端の木を一般化した 2 つの補題で S 25/27
+
+- Dk_oneTwoWlZPay (Z : Jk1) (hJZ) (hPZ : Tk Z) : ∀ B, Bok B → Tk (pay Z B)
+  ここで Tk Z ＝「V, Wl の条件のもとで Dk n (one V (two Wl Z))」。
+  Dk_oneTwoWlPay (Z = nil) と Dk_oneTwoWlOneNilPay (Z = one nil nil) を一般化したもの。
+  証明本文は Dk_oneTwoWlPay と同一で、nil を Z に置換しただけ。
+- Dk_oneTwoWlOA : Tk (OA m)、OA m = one (OA (m-1)) nil（先端の 1 の記録の鎖）。
+  m についての帰納で、段は APnil_gen0（base = Tk (OA (m-1))、hang = Dk_oneTwoWlZPay）。
+  m = 1 が Dk_oneTwoWlOneNil。
+これで S(9,1,0)（荷を 1 の記録の上に）と S(10,0,0)（先端に (9,1,0) の鎖）が出た。
+
+残り (10,1,0) (10,2,0)。(10,1,0) は
+  Tk (one nil (pay nil B))   ＝ 2 の記録の先端の 1 の記録の「上」に荷
+が要る。Tk は two の先端の木しか動かせないので、one の枠をもう 1 枚挟む
+「枠 2 種の梯子」が必要。R(9,2,0) の壁（追記69）と同じ壁。
