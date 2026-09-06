@@ -9972,3 +9972,57 @@ count ≥ 1 では `GoodFb_snoc_dupJt0` / `innerJt0` で書ける。
 ```
 `GoodFb_snoc_dupJt0` / `innerJt0` / `dupJs0` / `innerJs0` の 4 本が
 これで全部「文脈一般（`ctx : List Frm` を全称で取る）」になった。
+
+### 追記33: 文脈の族を `List Bool` 形に一般化した。壁は「塔と鎖の要求が衝突する」1 点
+
+`StkOk` は 1 の列の枠しか積めなかった。枠の形を `List Bool`（内側から外側へ、
+`true` = 1 の列の枠、`false` = 2 の記録の枠）で表す族を足した（green）:
+```
+SOk [] D          = StkOk 0 D（良い true 形の文脈 + 2 の記録）
+SOk (true::fs) D  = D' ++ [fone U]、SOk fs D'、JkA U、∀D'' SOk fs D'' → GOK (plug D'' U)
+SOk (false::fs) D = D' ++ [ftwo N]、SOk fs D'、JkA N、∀D'' SOk fs D'' → GOK (plug D'' N)
+MOk fs X := ∀D, SOk fs D → GOK (plug D X)      MOk [] = LOk 0
+```
+出たもの（全部 green）:
+```
+SOk_JkT / MOk_congr
+MOk_one  : MOk fs W → MOk (true::fs) Z → MOk fs (one W Z)     定義から
+MOk_two  : MOk fs N → MOk (false::fs) Z → MOk fs (two N Z)    定義から ★2 の記録の枠
+MOk_itJ / MOk_twoIt（鎖）
+MOk_pay  : どの形でも荷を吊るせる（[] は LOk_pay 0、true:: は Js0、false:: は Jt0）
+MOk_nil_true : MOk (true::fs) nil                             APnil_gen0
+```
+`MOk_pay` が **2 の記録が積み重なった文脈でも通った**のが今回の実質。
+`GoodFb_snoc_dupJt0` / `innerJt0` を文脈一般にした（追記32）のがそのまま効いた。
+
+**残るのは `MOk (false::fs) nil` だけ**。ここで 2 つの要求が衝突する:
+
+```
+(A) MOk_pay (false::fs) の鎖             GoodFb_snoc_dupJt0 の hIH は
+    twoIt N T n = two (twoIt N T (n-1)) T   ＝ 2 の記録の枠の左兄弟が育つ
+    → SOk (false::fs) の左兄弟 N は一般でなければならない（同じ形 fs でよい）
+(B) MOk_nil (false::fs) の塔             単位は「1 の列 + jk1(N) + 2 の記録 q 枚」
+    塔の各段が jk1(N) を含むので、N が **より深い形** でも良い必要がある
+    → 左兄弟は nil に限らないと閉じない
+```
+(A) は同じ形での一般性、(B) は深い形での一般性を要求し、両立しない。
+
+**測った帰納法の閉じ方**（左兄弟がすべて nil なら閉じる、を確認した）:
+```
+目標 = 2 の記録 q+1 枚積んだ文脈に nil。単位 = 1 の列 + 2 の記録 q 枚、dl = q+1
+塔の木 = stkP q (Tq q k)、 Tq q 0 = nil、Tq q (k+1) = one nil (stkP q (Tq q k))
+  終端 nil も one nil の枠木も、形はつねに「先頭の false が q 個」→ 帰納法の仮定
+  q = 0 は APd_twoNilGen、q = 1 は APd_twoTwoNilGen（どちらも既証明）
+```
+つまり左兄弟 nil 版だけなら塔は回る。だが `MOk_pay` が使えないと
+`MOk_nil_true`（`APnil_gen0`）が出ず、塔の途中の `one nil` の枠木が供給できない
+（`APd_nilT` も `APd_payA` を経由している）。
+
+**次に試すこと（測った候補）**:
+```
+1. SOk の枠木の条件を「その文脈だけでの GOK」に弱める（∀D'' を外す）。
+   MOk_itJ / MOk_twoIt はそれで足りる（鎖は同じ文脈にとどまるため）。
+   MOk_pay も文脈固定版に書き直せば通るはず。MOk_one / MOk_two の
+   ∀D 版の結論をどう保つかが課題。
+2. GoodFb_snoc_dupJt0 の鎖専用の文脈コンストラクタを足す（左兄弟が twoIt の形に限る）。
+```
