@@ -35444,5 +35444,64 @@ theorem GOK_TrmStep {A0 A : Jk1} (hJA : JkA A) (pre : List (Jk1 × ℕ)) (j : �
     simpa [List.append_assoc] using hh
 
 #print axioms GOK_TrmStep
+
+/-! ### ★★★★★ ブロック列の文脈の良さ `PreOk` / 先端の良さ `TipOk`
+
+`PreOk n bs`: ブロックが `n` 個以下で、各ブロックの左兄弟がそれより短い
+どのブロック列にも差せる。**添字 `n` が減るので非可述にならない。** -/
+
+theorem stkP_two_nil : ∀ (j : ℕ) (X : Jk1),
+    stkP j (Jk1.two Jk1.nil X) = stkP (j + 1) X
+  | 0, X => rfl
+  | (j + 1), X => by
+      show Jk1.two Jk1.nil (stkP j (Jk1.two Jk1.nil X)) = _
+      rw [stkP_two_nil j X]
+      rfl
+
+theorem Trm_one : ∀ (bs : List (Jk1 × ℕ)) (V X : Jk1),
+    Trm (Jk1.one V X) bs = Trm X (bs ++ [(V, 0)])
+  | [], V, X => rfl
+  | (b :: bs), V, X => by
+      show Jk1.one b.1 (stkP b.2 (Trm (Jk1.one V X) bs)) = _
+      rw [Trm_one bs V X]
+      rfl
+
+theorem Trm_two_nil : ∀ (bs : List (Jk1 × ℕ)) (A : Jk1) (j : ℕ) (X : Jk1),
+    Trm (Jk1.two Jk1.nil X) (bs ++ [(A, j)]) = Trm X (bs ++ [(A, j + 1)])
+  | [], A, j, X => by
+      show Jk1.one A (stkP j (Trm (Jk1.two Jk1.nil X) [])) = _
+      show Jk1.one A (stkP j (Jk1.two Jk1.nil X)) = Jk1.one A (stkP (j + 1) (Trm X []))
+      rw [stkP_two_nil]
+      rfl
+  | (b :: bs), A, j, X => by
+      show Jk1.one b.1 (stkP b.2 (Trm (Jk1.two Jk1.nil X) (bs ++ [(A, j)]))) = _
+      rw [Trm_two_nil bs A j X]
+      rfl
+
+def PreOk : ℕ → List (Jk1 × ℕ) → Prop
+  | 0, bs => bs = []
+  | (n + 1), bs => bs = [] ∨ ∃ (bs' : List (Jk1 × ℕ)) (b : Jk1 × ℕ),
+      bs = bs' ++ [b] ∧ PreOk n bs' ∧ JkA b.1 ∧
+      (∀ cs : List (Jk1 × ℕ), PreOk n cs → GOK (Trm b.1 cs))
+
+def TipOk (n : ℕ) (X : Jk1) : Prop := ∀ bs : List (Jk1 × ℕ), PreOk n bs → GOK (Trm X bs)
+
+theorem PreOk_nil : ∀ n : ℕ, PreOk n []
+  | 0 => rfl
+  | (_ + 1) => Or.inl rfl
+
+theorem PreOk_snoc {n : ℕ} {bs : List (Jk1 × ℕ)} (hbs : PreOk n bs) {V : Jk1}
+    (hJV : JkA V) (hV : TipOk n V) (j : ℕ) : PreOk (n + 1) (bs ++ [(V, j)]) :=
+  Or.inr ⟨bs, (V, j), rfl, hbs, hJV, fun cs hcs => hV cs hcs⟩
+
+theorem TipOk_one {n : ℕ} {V X : Jk1} (hJV : JkA V) (hV : TipOk n V)
+    (hX : TipOk (n + 1) X) : TipOk n (Jk1.one V X) := by
+  intro bs hbs
+  rw [Trm_one]
+  exact hX (bs ++ [(V, 0)]) (PreOk_snoc hbs hJV hV 0)
+
+#print axioms Trm_one
+#print axioms Trm_two_nil
+#print axioms TipOk_one
 end Small
 end TRIO
