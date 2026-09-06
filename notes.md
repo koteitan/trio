@@ -10764,3 +10764,32 @@ ROk_pay_f, ROk_pay_e, ROk_pay
 `NTw r N` から `TwOk r m N` を作る」手が使えない。`ROk_repN` を作るときは
 `RNs` を `NilR` 抜き（全 `RSt` 文脈）にするか、`nil` ランと
 「一番内側だけ `nil` でない」を別述語に分ける必要がある。次はそこを決める。
+
+## 追記53: `GOK_runNil_gen`（文脈一般のラン塔）
+
+`GOK_TrmStep` はブロック列 `Trm` の言葉だったので、梯子の文脈に使えるよう
+`plug ctx` 版に一般化した。
+
+```
+colJ_plug_run       : colJ a b (plug ctx (one V (stkP j (two A nil))))
+                        = (colJ a b (plug ctx V) ++ jk1 (a + dep ctx + 1) (Trm A [(nil,j)]))
+                          ++ [(a + dep ctx + 1 + 1 + (j+1), 2, 0)]
+colJ_plug_runTower  : colJ a b (plug ctx (Trm A ([(V,j)] ++ replicate i (A,j))))
+                        = Mtwd (j+1) (colJ a b (plug ctx V))
+                            (jk1 (a + dep ctx + 1) (Trm A [(nil,j)])) (i+1)
+wordJ_plug_run / wordJ_plug_runTower
+
+GOK_runNil_gen (hJA : JkA A) (ctx) (j)
+    (hJT   : JkT (plug ctx (one V (stkP j (two A nil)))))
+    (hbase : GOK (plug ctx V))
+    (hstair: ∀ i, GOK (plug ctx (Trm A ([(V,j)] ++ replicate i (A,j))))) :
+  GOK (plug ctx (one V (stkP j (two A nil))))
+```
+
+`plug ctx (one V (stkP j (two A nil)))`
+`= plug (ctx ++ [fone V] ++ replicate j (ftwo nil) ++ [ftwo A]) nil`
+なので、これがそのまま梯子 `RSt` の「末尾ラン `[nil^j, A]` の上に空木」になる。
+`j = 0` が `GOK_twoNil_gen`、`j = 1` かつ `A = nil` が `GOK_twoTwoNil_gen` の一般化。
+
+次: `RSt (r+1) 0 D` から `D = ctx ++ [fone V] ++ replicate j (ftwo nil) ++ [ftwo A]`
+を取り出し（`NilR` から）、階段を `ROk` の道具で作って `ROk_nil` を閉じる。
