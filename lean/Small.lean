@@ -35653,5 +35653,109 @@ theorem TipQ_twoIt {V T : Jk1} (hJV : JkA V) (hTV : TipQ V) (hJT : JkA T)
 #print axioms plug_spnT
 #print axioms PreQ_unsnoc
 #print axioms TipQ_twoIt
+
+/-! #### ★★★★★ 2 の記録の枠の上の荷 -/
+
+theorem TipQ2_pay : ∀ (C : TrioSeq), Bok C → ∀ (X : Jk1), JkA X → TipQ2 X →
+    TipQ2 (Jk1.pay X C) := by
+  have key : W 0 ⊆ {C : TrioSeq | Bok C → ∀ X : Jk1, JkA X → TipQ2 X →
+      TipQ2 (Jk1.pay X C)} := by
+    refine A2' ?_
+    intro C hC
+    simp only [Set.mem_setOf_eq]
+    intro hCb X hJX hXk
+    by_cases hshort : C.length ≤ 1
+    · rcases (by omega : C.length = 0 ∨ C.length = 1) with h0 | h1
+      · have hnil0 : C = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact TipQ2_congr (fun l => (jk1_pay_nil l X).symm) hXk
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hCb.root
+        obtain ⟨hc1, hc2⟩ := hCb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hprev : TipQ2 (Jk1.pay X ([] : TrioSeq)) :=
+          TipQ2_congr (fun l => (jk1_pay_nil l X).symm) hXk
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro V hJV hTV pre A0 j hpre hJA0 hGA0 hTop
+        have hpre1 : PreQ (pre ++ [(A0, j)]) := PreQ_snoc hpre hJA0 hGA0 j
+        have hne1 : (pre ++ [(A0, j)]) ≠ [] := by simp
+        intro ws hw hG
+        rw [← plug_spnT]
+        refine GoodFb_snoc_dupJt0 hw ?_ ?_
+        · rw [plug_spnT]
+          exact JkT_Trm_ne (X := Jk1.two V (Jk1.pay X
+              (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJV, hJX, by simpa using hCb⟩ _ hne1 (AllJkA_of_PreQ _ hpre1) hTop
+        · intro n hn
+          rw [plug_spnT]
+          exact (TipQ_twoIt (T := Jk1.pay X ([] : TrioSeq)) hJV hTV ⟨hJX, Bok_nil⟩
+            hprev n).2 _ hpre1 hTop hne1 ws hw hG
+    have hlen2 : 2 ≤ C.length := by omega
+    have hCne : C ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hC with ⟨hl, -⟩ | hnat | ⟨mm2, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry C 0 (C.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hCb.zroot hlast
+        have hcol : C.getD (C.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : C.getLast hCne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : C.getLast hCne = C.getD (C.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show C.length - 1 < C.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : C = C.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hCne).symm
+        have hop : C⟦1⟧ = C.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok C.dropLast := Bok_dropLast hCb
+        have hprev : TipQ2 (Jk1.pay X C.dropLast) := hdl hdb X hJX hXk
+        rw [hsplit]
+        intro V hJV hTV pre A0 j hpre hJA0 hGA0 hTop
+        have hpre1 : PreQ (pre ++ [(A0, j)]) := PreQ_snoc hpre hJA0 hGA0 j
+        have hne1 : (pre ++ [(A0, j)]) ≠ [] := by simp
+        intro ws hw hG
+        rw [← plug_spnT]
+        refine GoodFb_snoc_dupJt0 hw ?_ ?_
+        · rw [plug_spnT]
+          exact JkT_Trm_ne (X := Jk1.two V (Jk1.pay X
+              (C.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJV, hJX, by rw [← hsplit]; exact hCb⟩ _ hne1
+            (AllJkA_of_PreQ _ hpre1) hTop
+        · intro n hn
+          rw [plug_spnT]
+          exact (TipQ_twoIt (T := Jk1.pay X C.dropLast) hJV hTV ⟨hJX, hdb⟩
+            hprev n).2 _ hpre1 hTop hne1 ws hw hG
+      · have hnz : ¬ (entry C 0 (C.length - 1) = 0 ∧ entry C 1 (C.length - 1) = 0 ∧
+            entry C 2 (C.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hCb.zroot hCb.mono hCb.root hlen2 hnz
+        intro V hJV hTV pre A0 j hpre hJA0 hGA0 hTop
+        have hpre1 : PreQ (pre ++ [(A0, j)]) := PreQ_snoc hpre hJA0 hGA0 j
+        have hne1 : (pre ++ [(A0, j)]) ≠ [] := by simp
+        intro ws hw hG
+        rw [← plug_spnT]
+        refine GoodFb_snoc_innerJt0 hw ?_ hlen2 hp ?_
+        · rw [plug_spnT]
+          exact JkT_Trm_ne (X := Jk1.two V (Jk1.pay X C)) ⟨hJV, hJX, hCb⟩ _ hne1
+            (AllJkA_of_PreQ _ hpre1) hTop
+        · intro n hn
+          have hh := hnat n hn
+          simp only [Set.mem_setOf_eq] at hh
+          have h2 := hh (Bok_oper hCb hn) X hJX hXk V hJV hTV pre A0 j hpre hJA0 hGA0 hTop
+          rw [plug_spnT]
+          exact h2 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm2)
+  intro C hCb X hJX hXk
+  exact key hCb.mem hCb X hJX hXk
+
+#print axioms TipQ2_pay
 end Small
 end TRIO
