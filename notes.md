@@ -11670,3 +11670,30 @@ S(10,2,0) は塔 Mtw R375r [(9,1,0)] m を chn の木で出して snocY_mem。
 層の作り方が見えた: TTwA →(fone 枠)→ Dk →([fone V, ftwo Wl])→ Tk →(fone 枠)→ Ek。
 各層で要る A2' は「荷を吊るす」1 枚だけで、あとは APnil_gen0 と枠の付け替え。
 GoodFb_snoc_dupJs0 / innerJs0 / APnil_gen0 が文脈一般なのが効いている。
+
+## 追記76: ★★★★★ 文脈を述語にした `Ck` 層で R(9,2,0)（追記69 の壁を突破）
+
+層を 1 枚ずつ積む（Dk → Tk → Ek → …）と、`(1 の枠, 2 の枠)` の対を n 段
+重ねる木（R(9,2,0) の塔）には n 枚の層が要って終わらない。文脈そのものを
+添字にすると 1 つの定義で済む:
+
+  Cok j n ctx : ctx は「土台（TwSt + 2 の枠）+ 対 j 本 + その上の 1 の枠 n 枚」
+  Ck j n Z := ∀ ctx, Cok j n ctx → GOK (plug ctx Z)
+
+枠の条件は
+  1 の枠 U: `∀ cs, Cok j n cs → GOK (plug cs U)`（1 段下の文脈だけ）
+  2 の枠 Wl: `∀ i cs, Cok j (i+1) cs → GOK (plug cs Wl)`（対は増やさず 1 の枠だけ）
+と書けるので、定義は (j, n) の辞書式で停止する（循環しない）。
+GOK_twoNil_gen の階段が「対を増やさず 1 の枠だけ増やす」ことがここで効く。
+
+証明したのは
+  Ck_nil（土台 = TTwA_nil、1 の枠 = APnil_gen0、対 = GOK_twoNil_gen + 階段）
+  Ck_one / Ck_pair（枠の付け替え）
+  Ck_pay（(j,n) の辞書式帰納 + 荷の A2'。1 の枠側は dupJs0/innerJs0 と itJ 鎖、
+          対側は dupJt0/innerJt0 と twoIt 鎖。土台は TTwA_pay）
+Ck 0 0 = TTwA なので、既存の梯子とはここで繋がる。
+
+R(9,2,0): 展開は bad root 11、delta 2、悪い部分 (7,1,0)(8,2,0)。塔は
+Mtwd 2 R375z [(7,1,0),(8,2,0)] n で、木は QQ m = one nil (two nil (QQ (m-1)))。
+Ck_QQ : ∀ m j n, Ck j n (QQ m) が Ck_pair の繰り返しで出る。
+最後は snocYd_mem0 (L=7, y=2, dl=2)。
