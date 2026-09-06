@@ -35099,5 +35099,144 @@ theorem R376_of_PayStep (h : PayStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)
   R376_of_ZeroStep (ZeroStep_of_PayStep h)
 
 #print axioms R376_of_PayStep
+
+/-! ### ★★★★★ 左兄弟つきブロック列 `Trm`
+
+`Trm X [(A_1,j_1), …, (A_p,j_p)]
+  = one A_1 (stkP j_1 (one A_2 (stkP j_2 (… (one A_p (stkP j_p X))))))`。
+
+`BT` は左兄弟がすべて `nil` の場合。塔の各段の 1 の列に左兄弟が付くので、
+「ランの最後の枠木が `nil` でない」場合を扱うにはこの一般化が要る。 -/
+
+def Trm (X : Jk1) : List (Jk1 × ℕ) → Jk1
+  | [] => X
+  | (b :: bs) => Jk1.one b.1 (stkP b.2 (Trm X bs))
+
+def hgL : List (Jk1 × ℕ) → ℕ
+  | [] => 0
+  | (b :: bs) => 1 + b.2 + hgL bs
+
+theorem jk1_stkP' : ∀ (j : ℕ) (A : Jk1) (l : ℕ),
+    jk1 l (stkP j A) = (List.range j).map (fun k => ((l + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+      ++ jk1 (l + j) A
+  | 0, A, l => by simp [stkP, jk1]
+  | (j + 1), A, l => by
+      have ih := jk1_stkP' j A (l + 1)
+      show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stkP j A)) = _
+      rw [ih, List.range_succ_eq_map, List.map_cons, List.map_map]
+      simp only [jk1, List.nil_append, Function.comp_def, Nat.add_zero, List.cons_append,
+        List.cons.injEq, true_and]
+      rw [show l + 1 + j = l + (j + 1) from by omega]
+      congr 1
+      apply List.map_congr_left
+      intro k _
+      simp only [Prod.mk.injEq, and_true]
+      omega
+
+theorem JkA_Trm {X : Jk1} (hX : JkA X) : ∀ (bs : List (Jk1 × ℕ)),
+    (∀ b ∈ bs, JkA b.1) → JkA (Trm X bs)
+  | [], _ => hX
+  | (b :: bs), h => ⟨h b (by simp), JkA_stkP' b.2 (JkA_Trm hX bs (fun c hc => h c (by simp [hc])))⟩
+
+theorem TopOk_Trm {X : Jk1} (hX : TopOk X) : ∀ (bs : List (Jk1 × ℕ)),
+    (∀ b ∈ bs, TopOk b.1) → TopOk (Trm X bs)
+  | [], _ => hX
+  | (b :: _), h => h b (by simp)
+
+theorem jk1_Trm_append : ∀ (bs ks : List (Jk1 × ℕ)) (X : Jk1) (l : ℕ),
+    jk1 l (Trm X (bs ++ ks)) = jk1 l (Trm Jk1.nil bs) ++ jk1 (l + hgL bs) (Trm X ks)
+  | [], ks, X, l => by simp [Trm, jk1, hgL]
+  | (b :: bs), ks, X, l => by
+      have ih := jk1_Trm_append bs ks X (l + 1 + b.2)
+      show jk1 l b.1 ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (stkP b.2 (Trm X (bs ++ ks)))) = _
+      show _ = (jk1 l b.1 ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (stkP b.2 (Trm Jk1.nil bs)))) ++ jk1 (l + hgL (b :: bs)) (Trm X ks)
+      rw [jk1_stkP', jk1_stkP', ih,
+        show l + hgL (b :: bs) = l + 1 + b.2 + hgL bs from by simp only [hgL]; omega]
+      simp [List.append_assoc]
+
+theorem wordJ_Trm_append (a b : ℕ) (ws : List Jk1) (X : Jk1) (bs ks : List (Jk1 × ℕ)) :
+    wordJ a b (ws ++ [Trm X (bs ++ ks)])
+      = wordJ a b (ws ++ [Trm Jk1.nil bs]) ++ jk1 (a + 1 + hgL bs) (Trm X ks) := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ, colJ,
+    jk1_Trm_append]
+  simp [List.append_assoc]
+
+/-! #### 単位ブロック `jk1 m (Trm A [(nil, j)])` -/
+
+theorem jk1_blk (A : Jk1) (j m : ℕ) :
+    jk1 m (Trm A [(Jk1.nil, j)])
+      = ((m + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (m + 1) (stkP j A) := by
+  show jk1 m Jk1.nil ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (m + 1) (stkP j (Trm A []))) = _
+  simp [jk1, Trm]
+
+theorem jk1_blk' (A : Jk1) (j m : ℕ) :
+    jk1 m (Trm A [(Jk1.nil, j)])
+      = ((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        ((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+          ++ jk1 (m + 1 + j) A) := by
+  rw [jk1_blk, jk1_stkP']
+
+theorem MidD_blk {A : Jk1} (hJA : JkA A) (j m : ℕ) :
+    MidD (m + 2) (jk1 m (Trm A [(Jk1.nil, j)])) := by
+  rw [jk1_blk]
+  have h1 := MidD_colN (m + 1) (stkP j A) (by omega) (JkA_stkP' j hJA)
+  rwa [show m + 1 + 1 = m + 2 from by omega] at h1
+
+theorem entry_blk_head (A : Jk1) (j m : ℕ) : entry (jk1 m (Trm A [(Jk1.nil, j)])) 1 0 = 1 := by
+  rw [jk1_blk]; simp [entry]
+
+theorem hMy_blk {A : Jk1} (hJA : JkA A) (j m : ℕ) :
+    ∀ t, 1 ≤ t → t < (jk1 m (Trm A [(Jk1.nil, j)])).length →
+      entry (jk1 m (Trm A [(Jk1.nil, j)])) 0 t < (m + 1) + (j + 1) →
+      (∀ i, t < i → i < (jk1 m (Trm A [(Jk1.nil, j)])).length →
+        entry (jk1 m (Trm A [(Jk1.nil, j)])) 0 t <
+          entry (jk1 m (Trm A [(Jk1.nil, j)])) 0 i) →
+      2 ≤ entry (jk1 m (Trm A [(Jk1.nil, j)])) 1 t := by
+  intro t h1 h2 h3 _
+  obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
+  rw [jk1_blk'] at h2 h3 ⊢
+  simp only [List.length_cons, List.length_append, List.length_map, List.length_range] at h2
+  have hkey : ((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+      ++ jk1 (m + 1 + j) A).getD t' ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = ((m + 1 + 1 + t', 2, 0) : ℕ × ℕ × ℕ) ∨
+      m + 1 + j + 1 ≤ (((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+        ++ jk1 (m + 1 + j) A).getD t' ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := by
+    by_cases hlt : t' < j
+    · left
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by simpa using hlt)]
+      simp [hlt]
+    · right
+      have hlen : t' - j < (jk1 (m + 1 + j) A).length := by omega
+      have hg : ((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+          ++ jk1 (m + 1 + j) A).getD t' ((0, 0, 0) : ℕ × ℕ × ℕ)
+          = (jk1 (m + 1 + j) A)[t' - j] := by
+        rw [List.getD_eq_getElem?_getD,
+          List.getElem?_append_right (by simpa using (by omega : j ≤ t'))]
+        simp only [List.length_map, List.length_range]
+        rw [List.getElem?_eq_getElem hlen]
+        rfl
+      rw [hg]
+      exact jk1_ge A (m + 1 + j) _ (List.getElem_mem hlen)
+  have he0 : entry (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+      ((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+        ++ jk1 (m + 1 + j) A)) 0 (t' + 1)
+      = (((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+        ++ jk1 (m + 1 + j) A).getD t' ((0, 0, 0) : ℕ × ℕ × ℕ)).1 := rfl
+  have he1 : entry (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+      ((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+        ++ jk1 (m + 1 + j) A)) 1 (t' + 1)
+      = (((List.range j).map (fun k => ((m + 1 + 1 + k, 2, 0) : ℕ × ℕ × ℕ))
+        ++ jk1 (m + 1 + j) A).getD t' ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 := rfl
+  rcases hkey with hk | hk
+  · rw [he1, hk]
+  · rw [he0] at h3
+    omega
+
+#print axioms jk1_Trm_append
+#print axioms MidD_blk
+#print axioms hMy_blk
 end Small
 end TRIO
