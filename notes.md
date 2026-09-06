@@ -11112,3 +11112,68 @@ TTwA (GQP n) → LOk 1 (two nil (GQP n)) → 塔 Mtw R375z [(7,1,0)] n
 `Dk` は `one` / `pay` / `nil` で閉じているが `two` では閉じていない。
 ラン塔（追記45–48 の `GOK_runNil_gen` / `GOK_TrmStep`）を `Dk` の枠で
 回すのが次の課題。
+
+## 追記61: 行376 = `PayStep` 1 本。`Dk` の技法が届く所と届かない所（棚卸し）
+
+行376 `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)` は既に
+
+```
+R376_of_PayStep : PayStep → R373 ++ [(5,3,0)] ∈ W 0
+PayStep : ∀ U, JkT U → GOK U → ∀ j js,
+            GOK (BT U (j :: js)) → ∀ C, Bok C → GOK (BP U C (j :: js))
+```
+
+まで落ちている（`GOK_BTall` のブロック幅 `e` の帰納 + `ZeroStep_of_PayStep`）。
+`PayStep` は「ブロック列の木の**先端に荷を吊るせる**」。
+
+### `Dk` が効いた理由と、ブロック列で効かない理由
+
+`Dk`（追記60）が回ったのは次の 3 点が揃ったから。
+
+1. 枠条件が「その場の良さ + 荷閉包」の 2 つだけ（`∀ D''` が要らない）。
+2. 荷の `W 0` 帰納で出てくる鎖 `itJ (pay X Y') k W` が、
+   **1 段浅い文脈 `fs'` に置かれた木**なので `Dk_one` で組める。
+3. その鎖の荷閉包が `Dk_pay n`（1 段浅い段の定理）で出る。
+
+ブロック列で同じことをすると、鎖 `itJ (pay X C') k A0` の良さは
+
+```
+Trm (itJ T (k+1) A0) pre = Trm T (pre ++ [(itJ T k A0, 0)])      （Trm_one）
+```
+
+でブロックを 1 個増やした列に移る。ここまでは良い（列の長さは同じ）。
+しかし帰納の仮定として要る
+
+```
+GOK (Trm X (pre ++ [(itJ T k A0, 0)])) = GOK (Trm (one (itJ T k A0) X) pre)
+```
+
+が出ない。`X = nil` ならこれは `ZeroStep` そのもので、`APnil_gen0` を
+`spnT pre` で使うには `∀ C'', GOK (Trm (pay (itJ T k A0) C'') pre)`
+（= `pre` での `PayStep`）が要る。`pre` は 1 個短いので
+
+- 外側: ブロック列の長さの帰納
+- 内側: 荷 `C` の `W 0` 帰納
+
+の二重帰納で回る**可能性がある**。ただし最後のブロックの `j` が 1 以上の
+場合は、先端が 2 の記録の枠の上なので鎖が `twoIt` になり、
+`TipQ_twoIt` は左兄弟の `TipQ` を要求する（`nil` の `TipQ nil` が未証明）。
+ここが残る穴。
+
+### 使える部品（棚卸し）
+
+```
+GOK_TrmStep      左兄弟つきラン塔の 1 段（階段は列が伸びる）
+TipQ2_nil        2 の記録の枠の上に空木（= GOK_TrmStep）
+TipQ2_pay        2 の記録の枠の上の荷
+TipQ_itJ         1 の列の枠の鎖（TipQ A0 と TipQ T が要る）
+TipQ_twoIt       2 の記録の枠の鎖（TipQ V が要る）
+PreQ             ブロックの左兄弟に課す条件（その場の良さだけ）
+```
+
+`TipQ nil`（= 空でない良いブロック列は良い）が出れば `TipQ2_nil` の
+`TipQ V` が埋まり、`TipQ_twoIt` も動く。`TipQ nil` を最後のブロックの
+`j` についての帰納で回すと `j ≥ 1` は `TipQ2_nil` で `j-1` に落ちるが、
+`j = 0` は `Trm (one A0 nil) pre` になり `pre` での荷閉包（= `PayStep`）が要る。
+つまり `TipQ nil` と `PayStep` は相互再帰で、**この 2 つを同時に回す測度**が
+まだ見つかっていない。
