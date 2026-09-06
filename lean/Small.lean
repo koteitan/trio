@@ -35757,5 +35757,21 @@ theorem TipQ2_pay : ∀ (C : TrioSeq), Bok C → ∀ (X : Jk1), JkA X → TipQ2 
   exact key hCb.mem hCb X hJX hXk
 
 #print axioms TipQ2_pay
+
+/-! #### 鎖 `itJ`（1 の列の枠で終わる文脈の鎖） -/
+
+theorem TipQ_itJ {A0 T : Jk1} (hJA0 : JkA A0) (hTA0 : TipQ A0) (hJT : JkA T)
+    (hTT : TipQ T) : ∀ n : ℕ, JkA (itJ T n A0) ∧ TipQ (itJ T n A0)
+  | 0 => ⟨hJA0, hTA0⟩
+  | (n + 1) => by
+      obtain ⟨h1, h2⟩ := TipQ_itJ hJA0 hTA0 hJT hTT n
+      refine ⟨⟨h1, hJT⟩, ?_⟩
+      intro bs hbs hTop hne
+      show GOK (Trm (Jk1.one (itJ T n A0) T) bs)
+      rw [Trm_one]
+      exact hTT (bs ++ [(itJ T n A0, 0)]) (PreQ_snoc hbs h1 (h2 bs hbs hTop hne) 0)
+        ((TopOkH_append bs _ hne).mpr hTop) (by simp)
+
+#print axioms TipQ_itJ
 end Small
 end TRIO
