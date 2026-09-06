@@ -10026,3 +10026,29 @@ MOk_nil_true : MOk (true::fs) nil                             APnil_gen0
    ∀D 版の結論をどう保つかが課題。
 2. GoodFb_snoc_dupJt0 の鎖専用の文脈コンストラクタを足す（左兄弟が twoIt の形に限る）。
 ```
+
+### 追記34: `V = U(8,0,0)` 族 19/19。字を荷 `B` について一般化したので写しで済んだ
+
+`U` の字 `NUB B = one nil (two nil (one (two nil nil) (one nil (pay nil B))))` は
+最初から荷 `B` について一般だったので、`B = flad 2 = (0,0,0)(1,0,0)` にすれば
+`V` の字になる（`jk1 2 (NUB (flad 2))` の末尾が `(7,0,0)(8,0,0)`）。
+`TwoOk_hang7` `hang7_R375t` `LOk1_oneNilPay` も B 一般なのでそのまま使えた。
+
+新しく足したもの:
+```
+HB B = one (two nil nil) (one nil (pay nil B))    WttB B = two nil (HB B)
+  jk1_HB / jk1_WttB（B 一般）→ jk1_HV / jk1_WttV（B = flad 2）
+hang7_gen : Aok A → Bok B → A ++ U375a2 ++ shiftr01 7 0 B ∈ W 0   ← 台座一般
+U375a4 = U375a3 ++ (8,0,0)、U375b4 / U375c4 / U375d4
+Flat_append / Flat_copies / Bok_copies_flad2 / BV9（平坦な荷を並べる）
+```
+`V(8,0,0)` は `hang7_gen` に荷 `copies (flad 2) n`、
+`V(9,0,0)` は荷 `(0,0,0) ++ copies [(1,0,0)] n` を渡すだけで塔が出た。
+
+**教訓**: 字を最初から荷 `B` について一般に書いておくと、次の族はほぼ写しで済む。
+`U` 族のときに `NUB B` を一般にしておいたのがそのまま効いた
+（`R375u17_mem` = `U(8,0,0)` = `V` そのものも `hang7_R375t` から出ていた）。
+
+族の進み: `P` → `Q` → `S` → `T` → `U` → `V`。`V(9,0,0)` の上は `T(7,1,0)`（証明済み）
+なので、この鎖は `T(7,1,0)` に収束する。次のシート行 `376` はやはり
+`TwoStep`（2 の記録の直上に 2 の記録）待ち。
