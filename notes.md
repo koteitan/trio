@@ -10695,3 +10695,40 @@ PreQ bs := ∀ k < bs.length, JkA bs[k].1 ∧ GOK (Trm bs[k].1 (bs.take k))
 ```
 
 これも具体的な Π なので非可述にならない。次はこの形に直す。
+
+## 追記51: 鎖は両側そろった。残る本質は「空木の良さをどこに置くか」
+
+```
+TipQ_twoIt : JkA V → TipQ V → JkA T → TipQ2 T → ∀ n, JkA (twoIt V T n) ∧ TipQ (twoIt V T n)
+TipQ_itJ   : JkA A0 → TipQ A0 → JkA T → TipQ T → ∀ n, JkA (itJ T n A0) ∧ TipQ (itJ T n A0)
+```
+
+`TipQ_itJ` は `Trm_one`（`Trm (one V X) bs = Trm X (bs ++ [(V,0)])`）で
+ブロックを 1 個足すだけ。`TipQ_twoIt` は `TipQ2` を当てるだけ。
+
+### 分岐点
+
+荷の閉包 `TipQ (pay X C)` を最後のブロックの 2 の記録の本数 `j` で場合分けすると
+
+- `j = 0`（先端が 1 の列の直上）→ 鎖 `itJ`。A2' の底は `TipQ X` ✓（仮定）
+- `j ≥ 1`（先端が 2 の記録の直上）→ 鎖 `twoIt`（枠木 `nil`）。
+  `TipQ2` の仮定に **`TipQ nil`** が要る
+
+そして `TipQ nil` の `j = 0` の場合は `APnil_gen0` で、**左兄弟の荷の閉包**が要る。
+つまり `TipQ nil` と荷が相互再帰する。
+
+梯子（`TwSt` / `TwOk`）ではこれが起きない:
+
+- `TwOk_pay` は `TwOk r m X` だけから出る閉包で、`TwOk_nil` を一切使わない
+- `TwOk_oneNil` が荷を当てるのは**枠木 `U`**（文脈が `TwOk r m U` を持っている）
+
+つまり「枠木の良さを文脈の述語に持たせる」のが要で、ブロック列では
+`PreQ` に持たせようとすると、ランの途中の `nil` の良さまで要求することになり破綻する。
+
+### 方針変更
+
+梯子 `TwSt` に「`ftwo nil` を `Fter` 抜きで積める」節を足した `RSt` を作り、
+`RSt` の空木の場合を**末尾の `nil` ラン `t` についての帰納**で証明する
+（塔は `GOK_TrmStep` と同型、階段の `nil` はラン `t-1` に座るので減る）。
+`TwOk_pay` / `TwOk_one` / `TwOk_two` / `TwOk_itJ` / `TwOk_twoIt` はほぼ写経で移る。
+`Trm` まわり（`GOK_TrmStep` など）はその塔の中身としてそのまま使える。
