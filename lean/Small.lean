@@ -35773,5 +35773,314 @@ theorem TipQ_itJ {A0 T : Jk1} (hJA0 : JkA A0) (hTA0 : TipQ A0) (hJT : JkA T)
         ((TopOkH_append bs _ hne).mpr hTop) (by simp)
 
 #print axioms TipQ_itJ
+
+/-! ### ★★★★★ 梯子 `RSt`: 2 の記録の枠を連続して積める
+
+`TwSt` の `Fter` を外す代わりに、**枠を足す先の文脈の末尾ランがすべて `nil`** を
+要求する（`NilR`）。こうすると、どの `RSt` 文脈も末尾ランが `[nil, …, nil, N]`
+の形（`nil` でない枠は高々 1 枚、しかも一番上）になる。
+追記45 の通り、この形なら塔は回る（`N` は階段では 1 の列の左兄弟として現れる）。 -/
+
+/-- `D` の末尾の 2 の記録の枠のランがすべて `nil`。 -/
+def NilR : ℕ → ℕ → List Frm → Prop
+  | 0, _, _ => True
+  | (r + 1), 0, D => ∃ D' : List Frm, D = D' ++ [Frm.ftwo Jk1.nil] ∧ NilR r 0 D'
+  | (_ + 1), (_ + 1), _ => True
+
+def RSt : ℕ → ℕ → List Frm → Prop
+  | 0, m, D => StkOk (m + 1) D
+  | (r + 1), 0, D => ∃ (m : ℕ) (D' : List Frm) (N : Jk1),
+      D = D' ++ [Frm.ftwo N] ∧ RSt r m D' ∧ NilR r m D' ∧ JkA N ∧
+      (∀ (j : ℕ) (D'' : List Frm), RSt r j D'' → NilR r j D'' → GOK (plug D'' N))
+  | (r + 1), (m + 1), D => ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ RSt (r + 1) m D' ∧ JkA U ∧
+      (∀ D'' : List Frm, RSt (r + 1) m D'' → GOK (plug D'' U))
+
+/-- 形 `(r, m)` のどの文脈にも差せる木。 -/
+def ROk (r m : ℕ) (X : Jk1) : Prop := ∀ D : List Frm, RSt r m D → GOK (plug D X)
+
+/-- 2 の記録の枠木に課す条件（末尾ランが `nil` の 1 段小さい文脈での良さ）。 -/
+def RNs (r : ℕ) (N : Jk1) : Prop :=
+  ∀ (j : ℕ) (D : List Frm), RSt r j D → NilR r j D → GOK (plug D N)
+
+theorem NilR_z (m : ℕ) (D : List Frm) : NilR 0 m D := trivial
+
+theorem NilR_f (r m : ℕ) (D : List Frm) : NilR (r + 1) (m + 1) D := trivial
+
+theorem NilR_e (r : ℕ) (D : List Frm) : NilR (r + 1) 0 D ↔
+    ∃ D' : List Frm, D = D' ++ [Frm.ftwo Jk1.nil] ∧ NilR r 0 D' := by rw [NilR]
+
+theorem RSt_z (m : ℕ) (D : List Frm) : RSt 0 m D ↔ StkOk (m + 1) D := by rw [RSt]
+
+theorem RSt_e (r : ℕ) (D : List Frm) : RSt (r + 1) 0 D ↔
+    ∃ (m : ℕ) (D' : List Frm) (N : Jk1),
+      D = D' ++ [Frm.ftwo N] ∧ RSt r m D' ∧ NilR r m D' ∧ JkA N ∧ RNs r N := by
+  rw [RSt]; rfl
+
+theorem RSt_f (r m : ℕ) (D : List Frm) : RSt (r + 1) (m + 1) D ↔
+    ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ RSt (r + 1) m D' ∧ JkA U ∧
+      (∀ D'' : List Frm, RSt (r + 1) m D'' → GOK (plug D'' U)) := by rw [RSt]
+
+theorem ROk_z0 {m : ℕ} {X : Jk1} (h : LOk (m + 1) X) : ROk 0 m X :=
+  fun D hD => h D ((RSt_z m D).mp hD)
+
+theorem LOk_of_ROk0 {m : ℕ} {X : Jk1} (h : ROk 0 m X) : LOk (m + 1) X :=
+  fun D hD => h D ((RSt_z m D).mpr hD)
+
+theorem RSt_JkT : ∀ (r m : ℕ) (D : List Frm), RSt r m D → ∀ T : Jk1, JkA T →
+    JkT (plug D T)
+  | 0, m, D, hD, T, hT => StkOk_JkT (m + 1) D ((RSt_z m D).mp hD) T hT
+  | (r + 1), 0, D, hD, T, hT => by
+      obtain ⟨m, D', N, rfl, hD', -, hJN, -⟩ := (RSt_e r D).mp hD
+      rw [plug_snoc2]
+      exact RSt_JkT r m D' hD' _ ⟨hJN, hT⟩
+  | (r + 1), (m + 1), D, hD, T, hT => by
+      obtain ⟨D', U, rfl, hD', hJU, -⟩ := (RSt_f r m D).mp hD
+      rw [plug_snoc]
+      exact RSt_JkT (r + 1) m D' hD' _ ⟨hJU, hT⟩
+
+theorem ROk_congr {r m : ℕ} {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2)
+    (hX : ROk r m X1) : ROk r m X2 := fun D hD => GOK_congr (jk1_plug_congr D h) (hX D hD)
+
+/-- 1 の列の枠を 1 枚足す。 -/
+theorem ROk_one : ∀ (r m : ℕ) {U Z : Jk1}, JkA U → ROk r m U → ROk r (m + 1) Z →
+    ROk r m (Jk1.one U Z)
+  | 0, m, U, Z, hJU, hU, hZ => by
+      intro D hD
+      rw [← plug_snoc]
+      refine hZ (D ++ [Frm.fone U]) ((RSt_z (m + 1) _).mpr ?_)
+      exact ⟨D, U, rfl, (RSt_z m D).mp hD, hJU,
+        fun D'' hD'' => hU D'' ((RSt_z m D'').mpr hD'')⟩
+  | (r + 1), m, U, Z, hJU, hU, hZ => by
+      intro D hD
+      rw [← plug_snoc]
+      exact hZ (D ++ [Frm.fone U]) ((RSt_f r m _).mpr ⟨D, U, rfl, hD, hJU, hU⟩)
+
+/-- 2 の記録の枠を 1 枚足す（差す先の末尾ランが `nil` のときだけ）。 -/
+theorem ROk_two {r m : ℕ} {N Z : Jk1} (hJN : JkA N) (hN : RNs r N)
+    (hZ : ROk (r + 1) 0 Z) : ∀ D : List Frm, RSt r m D → NilR r m D →
+      GOK (plug D (Jk1.two N Z)) := by
+  intro D hD hNil
+  rw [← plug_snoc2]
+  exact hZ (D ++ [Frm.ftwo N]) ((RSt_e r _).mpr ⟨m, D, N, rfl, hD, hNil, hJN, hN⟩)
+
+#print axioms RSt_JkT
+#print axioms ROk_one
+#print axioms ROk_two
+
+/-! #### `RSt` の鎖と荷 -/
+
+theorem ROk_itJ {r m : ℕ} {T : Jk1} (hJT : JkA T) (hT : ROk r (m + 1) T) :
+    ∀ (n : ℕ) {U : Jk1}, JkA U → ROk r m U → JkA (itJ T n U) ∧ ROk r m (itJ T n U)
+  | 0, _, hJU, hU => ⟨hJU, hU⟩
+  | (n + 1), U, hJU, hU => by
+      obtain ⟨h1, h2⟩ := ROk_itJ hJT hT n hJU hU
+      exact ⟨⟨h1, hJT⟩, ROk_one r m h1 h2 hT⟩
+
+theorem ROk_twoIt {r : ℕ} {T : Jk1} (hJT : JkA T) (hT : ROk (r + 1) 0 T) :
+    ∀ (n : ℕ) {N : Jk1}, JkA N → RNs r N → JkA (twoIt N T n) ∧ RNs r (twoIt N T n)
+  | 0, _, hJN, hN => ⟨hJN, hN⟩
+  | (n + 1), N, hJN, hN => by
+      obtain ⟨h1, h2⟩ := ROk_twoIt hJT hT n hJN hN
+      refine ⟨⟨h1, hJT⟩, ?_⟩
+      intro j D'' hD'' hNil
+      exact ROk_two h1 h2 hT D'' hD'' hNil
+
+theorem ROk_pay_f (r m : ℕ) {X : Jk1} (hJX : JkA X) (hX : ROk (r + 1) (m + 1) X) :
+    ∀ Y : TrioSeq, Bok Y → ROk (r + 1) (m + 1) (Jk1.pay X Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ROk (r + 1) (m + 1) (Jk1.pay X Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact ROk_congr (fun l => (jk1_pay_nil l X).symm) hX
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hprev : ROk (r + 1) (m + 1) (Jk1.pay X ([] : TrioSeq)) :=
+          ROk_congr (fun l => (jk1_pay_nil l X).symm) hX
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := (RSt_f r m D).mp hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (RSt_JkT (r + 1) m D' hD'
+            (Jk1.one U (Jk1.pay X (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJU, hJX, by simpa using hYb⟩)
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (ROk_itJ (T := Jk1.pay X ([] : TrioSeq)) ⟨hJX, Bok_nil⟩ hprev n hJU hU).2
+          D' hD' ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : ROk (r + 1) (m + 1) (Jk1.pay X Y.dropLast) := hdl hdb
+        rw [hsplit]
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := (RSt_f r m D).mp hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (RSt_JkT (r + 1) m D' hD'
+            (Jk1.one U (Jk1.pay X (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJU, hJX, by rw [← hsplit]; exact hYb⟩)
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (ROk_itJ (T := Jk1.pay X Y.dropLast) ⟨hJX, hdb⟩ hprev n hJU hU).2
+          D' hD' ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := (RSt_f r m D).mp hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs0 hw
+          (RSt_JkT (r + 1) m D' hD' _ ⟨hJU, hJX, hYb⟩) hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have h2 := hh (Bok_oper hYb hn) (D' ++ [Frm.fone U])
+          ((RSt_f r m _).mpr ⟨D', U, rfl, hD', hJU, hU⟩)
+        rw [plug_snoc] at h2
+        exact h2 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb
+  exact key hYb.mem hYb
+
+theorem ROk_pay_e (r : ℕ) : ∀ (Y : TrioSeq), Bok Y → ∀ X : Jk1, JkA X →
+    ROk (r + 1) 0 X → ROk (r + 1) 0 (Jk1.pay X Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ X : Jk1, JkA X → ROk (r + 1) 0 X →
+      ROk (r + 1) 0 (Jk1.pay X Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb X hJX hXk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact ROk_congr (fun l => (jk1_pay_nil l X).symm) hXk
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hprev : ROk (r + 1) 0 (Jk1.pay X ([] : TrioSeq)) :=
+          ROk_congr (fun l => (jk1_pay_nil l X).symm) hXk
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro D hD
+        obtain ⟨mm, D', N, rfl, hD', hNil, hJN, hN⟩ := (RSt_e r D).mp hD
+        rw [plug_snoc2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (RSt_JkT (r + 1) 0 (D' ++ [Frm.ftwo N])
+            ((RSt_e r _).mpr ⟨mm, D', N, rfl, hD', hNil, hJN, hN⟩)
+            (Jk1.pay X (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+            ⟨hJX, by simpa using hYb⟩ |>.imp id id |> fun h => by
+              rw [plug_snoc2] at h; exact h) ?_
+        intro n hn
+        exact (ROk_twoIt (T := Jk1.pay X ([] : TrioSeq)) ⟨hJX, Bok_nil⟩ hprev n hJN hN).2
+          mm D' hD' hNil ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm2, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : ROk (r + 1) 0 (Jk1.pay X Y.dropLast) := hdl hdb X hJX hXk
+        rw [hsplit]
+        intro D hD
+        obtain ⟨mm, D', N, rfl, hD', hNil, hJN, hN⟩ := (RSt_e r D).mp hD
+        have hJT0 := RSt_JkT (r + 1) 0 (D' ++ [Frm.ftwo N])
+          ((RSt_e r _).mpr ⟨mm, D', N, rfl, hD', hNil, hJN, hN⟩)
+          (Jk1.pay X (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+          ⟨hJX, by rw [← hsplit]; exact hYb⟩
+        rw [plug_snoc2] at hJT0 ⊢
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw hJT0 ?_
+        intro n hn
+        exact (ROk_twoIt (T := Jk1.pay X Y.dropLast) ⟨hJX, hdb⟩ hprev n hJN hN).2
+          mm D' hD' hNil ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro D hD
+        obtain ⟨mm, D', N, rfl, hD', hNil, hJN, hN⟩ := (RSt_e r D).mp hD
+        have hJT0 := RSt_JkT (r + 1) 0 (D' ++ [Frm.ftwo N])
+          ((RSt_e r _).mpr ⟨mm, D', N, rfl, hD', hNil, hJN, hN⟩)
+          (Jk1.pay X Y) ⟨hJX, hYb⟩
+        rw [plug_snoc2] at hJT0 ⊢
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 hw hJT0 hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have h2 := hh (Bok_oper hYb hn) X hJX hXk (D' ++ [Frm.ftwo N])
+          ((RSt_e r _).mpr ⟨mm, D', N, rfl, hD', hNil, hJN, hN⟩)
+        rw [plug_snoc2] at h2
+        exact h2 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm2)
+  intro Y hYb X hJX hXk
+  exact key hYb.mem hYb X hJX hXk
+
+theorem ROk_pay : ∀ (r m : ℕ) {X : Jk1}, JkA X → ROk r m X → ∀ Y : TrioSeq, Bok Y →
+    ROk r m (Jk1.pay X Y)
+  | 0, m, _, hJX, hX => fun Y hY => ROk_z0 (LOk_pay (m + 1) hJX (LOk_of_ROk0 hX) Y hY)
+  | (r + 1), 0, X, hJX, hX => fun Y hY => ROk_pay_e r Y hY X hJX hX
+  | (r + 1), (m + 1), _, hJX, hX => ROk_pay_f r m hJX hX
+
+#print axioms ROk_pay
 end Small
 end TRIO
