@@ -12229,3 +12229,24 @@ Pay m : ∀ X, JkA X → (X が長さ ≤ m のブロック列に差せる) →
 この土台の上で回せばよい。残る作業は「複製鎖 `twoIt Wl (pay nil B') i` が
 左兄弟の条件（特に `APd (false :: ks)`）を満たす」ことを、A2' の帰納法の仮定から
 組み立てる部分。`Ck` 版では `UniW` がその役をしていた（`hWj` の帰納）。
+
+### 追記94 追記3: `APd` 層は `TopOk` を要求するので鎖が入らない
+
+`Rq (false :: ks) U = TopOk U` で `TopOk (two _ _) = False`。つまり `APd` 層では
+**2 の記録が頭の木は 1 の記録の左兄弟になれない**。荷の A2' が作る鎖
+`twoIt Wl (pay nil B') i` はまさにそれなので、`TwoOk_twoWlNil` の階段
+（`APd_nstN2`、`nstN2` の中で兄弟が 1 の記録の左に来る）には渡せない。
+
+一方 `Ck` 層の `UniW` は `TopOk` を要求しないので鎖が入る（`Ck_twoWPayZ` の
+`hWj` はそれで回っている）。しかし `Ck` 層で走りを作ると対の層
+`Ck (j+1) 0` に落ちて追記88 の壁。
+
+したがって次の一手は**語レベル**（`GOK_*_gen` の形、兄弟には GOK の実例と階段しか
+要求しない）で「走りの直上の荷」を作ること:
+
+```
+GOK_twoTwoPayW_gen : 走り 2（左兄弟 N と Wl）の先端に荷 B。
+  階段は A2' の複製鎖 twoIt Wl (pay nil B') i（Ck 層の UniW で配置できる）。
+```
+
+`GOK_twoTwoNilW_gen`（先端が空）が既にあるので、その荷版を A2' で作る形。
