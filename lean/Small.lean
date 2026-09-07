@@ -36052,6 +36052,7 @@ theorem TipPe_nil_succ {e : ℕ} (hV : TipPHe e Jk1.nil) : TipPe (e + 1) Jk1.nil
 
 #print axioms TipPe_nil_succ
 
+
 /-! ### ★★★★★ 梯子 `RSt`: 2 の記録の枠を連続して積める
 
 `TwSt` の `Fter` を外す代わりに、**枠を足す先の文脈の末尾ランがすべて `nil`** を
@@ -52551,6 +52552,64 @@ theorem R375i29_mem : R375i ++ [((11, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   simpa [R375i, R375j, List.append_assoc] using h
 
 #print axioms R375i29_mem
+
+/-! ### ★★★★★ `Gw` = `Pok 0`。これで `Ew` 層に走り 2 が入る
+
+`Pok 0 n` の定義は `Gw n` と同じ形（1 の枠、枠木は `TipOk`）。したがって
+`Pk 0 n` で作った木（交互塔 `Pk_nstT` など）はそのまま `Ew n` の階段に使える。 -/
+
+theorem Gw_iff_Pok0 : ∀ (n : ℕ) (fs : List Frm), Gw n fs ↔ Pok 0 n fs
+  | 0, fs => by rw [Gw_z, Pok_00]
+  | (n + 1), fs => by
+      rw [Gw_s, Pok_0s]
+      constructor
+      · rintro ⟨U, fs', rfl, hfs', hJU, hU, hUp⟩
+        exact ⟨U, fs', rfl, (Gw_iff_Pok0 n fs').mp hfs', hJU,
+          fun cs hcs => hU cs ((Gw_iff_Pok0 n cs).mpr hcs),
+          fun C hC cs hcs => hUp C hC cs ((Gw_iff_Pok0 n cs).mpr hcs)⟩
+      · rintro ⟨U, fs', rfl, hfs', hJU, hU, hUp⟩
+        exact ⟨U, fs', rfl, (Gw_iff_Pok0 n fs').mpr hfs', hJU,
+          fun cs hcs => hU cs ((Gw_iff_Pok0 n cs).mp hcs),
+          fun C hC cs hcs => hUp C hC cs ((Gw_iff_Pok0 n cs).mp hcs)⟩
+
+theorem Ew_of_Pk0 {n : ℕ} {X : Jk1} (h : Pk 0 n X) : Ew n X :=
+  fun fs hfs => h fs ((Gw_iff_Pok0 n fs).mp hfs)
+
+theorem Pk0_of_Ew {n : ℕ} {X : Jk1} (h : Ew n X) : Pk 0 n X :=
+  fun ctx hctx => h ctx ((Gw_iff_Pok0 n ctx).mpr hctx)
+
+/-- 交互塔（`Pk` 層で作ったもの）を `Ew` 層へ。 -/
+theorem Ew_twoNilNst (k n : ℕ) :
+    Ew (n + 1) (Jk1.two Jk1.nil (nstN2 Jk1.nil Jk1.nil k)) :=
+  Ew_of_Pk0 (Pk_twoW UniP_nil (Pk_nstT k 0))
+
+/-- ★★★★★ 走り 2（`Ew` 層、レベル 1 以上）。階段は交互塔。 -/
+theorem Ew_twoNilTwoNil : ∀ (q : ℕ), 1 ≤ q →
+    Ew q (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))
+  | 0, h => absurd h (by omega)
+  | (q + 1), _ => by
+      intro fs hfs
+      obtain ⟨U, fs', rfl, hfs', hJU, hU, hUp⟩ := (Gw_s q fs).mp hfs
+      rw [plug_snoc]
+      have hJp : JkA (plug fs' (Jk1.one U (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil)))) :=
+        JkA_plug_Gw q fs' hfs' _ ⟨hJU, trivial, trivial, trivial⟩
+      refine ⟨hJp, ?_⟩
+      intro Wl hW j m ctx hctx
+      rw [← plug_snoc2, ← plug_append, ← plug_snoc]
+      refine GOK_twoTwoNilW_gen ((ctx ++ [Frm.ftwo Wl]) ++ fs') U trivial trivial ?_ ?_ ?_
+      · have h := JkT_plug_Cok j (m + 1) ctx hctx
+          (Jk1.two Wl (plug fs' (Jk1.one U (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil)))))
+          ⟨hW.ja, hJp⟩
+        rwa [← plug_snoc2, ← plug_append, ← plug_snoc] at h
+      · have h := (hU fs' hfs').ck Wl hW j m ctx hctx
+        rwa [← plug_snoc2, ← plug_append] at h
+      · intro k
+        have hG : Gw (q + 1) (fs' ++ [Frm.fone U]) :=
+          (Gw_s q _).mpr ⟨U, fs', rfl, hfs', hJU, hU, fun C hC => hUp C hC⟩
+        have h := (Ew_twoNilNst k q _ hG).ck Wl hW j m ctx hctx
+        rw [← plug_snoc2, ← plug_append] at h
+        simpa [List.append_assoc] using h
+
 
 /-! ### ★★★★★ 一様に良い木の族 `UQ` / `UT` / `UP`
 
