@@ -55558,6 +55558,11 @@ theorem GOK_oneTW (hw : WallP) (n : ℕ) :
 
 #print axioms GOK_oneTW
 
+/-- 塔の木が全部良い、という 1 文。#14 に要るのはこれだけ。 -/
+def TowOk : Prop := ∀ n : ℕ, GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW n)))
+
+theorem TowOk_of_WallP (hw : WallP) : TowOk := GOK_oneTW hw
+
 /-! ### ★★★★★ `H = V(11,2,0)` 族
 
 土台は `V(11,2,0)`（= #14 の展開 [3]）。ここから 1 列ずつ埋める。 -/
@@ -56447,12 +56452,12 @@ theorem tw14_word : ∀ (k l : ℕ),
       rw [e1, tw14_word k (l + 2), flatU_succ l (k + 1)]
       first | rfl | simp [List.append_assoc]
 
-theorem tower14_mem (hw : WallP) : ∀ n : ℕ, Mtwd 2 R341 U375c n ∈ W 0
+theorem tower14_mem (hw : TowOk) : ∀ n : ℕ, Mtwd 2 R341 U375c n ∈ W 0
   | 0 => by simpa [Mtwd] using Aok_R341.mem
   | (k + 1) => by
       have hG : GoodFb (fun a b => wordJ a b
           [Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW k))]) := by
-        simpa using GOK_oneTW hw k [] WOk_nil GoodFb_wordJ_nil
+        simpa using hw k [] WOk_nil GoodFb_wordJ_nil
       have h := rowJ_mem_genF Aok_R338 hG
       rw [wordJ_singleton, colJ] at h
       have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW k)))
@@ -56467,8 +56472,8 @@ theorem tower14_mem (hw : WallP) : ∀ n : ℕ, Mtwd 2 R341 U375c n ∈ W 0
       rw [e] at h
       simpa [Mtwd, R341, R338, List.append_assoc] using h
 
-/-- ★★★★★ `WallP` があれば #14 が出る。 -/
-theorem R14_mem (hw : WallP) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+/-- ★★★★★ 塔が良ければ #14 が出る。 -/
+theorem R14_mem (hw : TowOk) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
   have h := snocYd_mem (Y0 := R341) (M := U375c) (L := 3) (y := 2) (dl := 2)
     (by simp [R341, R338]) MidD_U375c (by simp [U375c, entry])
     (by
@@ -56702,6 +56707,67 @@ theorem MPd_twoOf {ks : List Bool} {V N : Jk1} (hN : JkA N) (hNall : AllA N)
 
 #print axioms MPd_iff
 #print axioms MCtx_JkT
+
+/-! ### ★★★★★ `MPd` の塔。壁は `MNil` 1 点に落ちた -/
+
+theorem nstN2_nil_eq_nstN (N : Jk1) : ∀ k : ℕ, nstN2 N Jk1.nil k = nstN N k
+  | 0 => rfl
+  | (k + 1) => by
+      show Jk1.one Jk1.nil (Jk1.two N (nstN2 N Jk1.nil k))
+        = Jk1.one Jk1.nil (Jk1.two N (nstN N k))
+      rw [nstN2_nil_eq_nstN N k]
+
+/-- 残る壁: 走り 2 を許す文脈でも `nil` は 2 の記録の枠として使える。 -/
+def MNil : Prop := ∀ ks : List Bool, MPd (false :: ks) Jk1.nil
+
+/-- 交互塔（`APd_nstN` の `MPd` 版）。兄弟条件 `AllA` は形に依らないので通る。 -/
+theorem MPd_nstN {N : Jk1} (hJN : JkA N) (hNall : AllA N) (hnil : MNil) :
+    ∀ (k : ℕ) (ks : List Bool), MPd (false :: ks) (nstN N k)
+  | 0, ks => hnil ks
+  | (k + 1), ks =>
+      MPd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil) (hnil ks)
+        (MPd_twoOf hJN hNall (MPd_nstN hJN hNall hnil k (false :: ks)))
+
+/-- ★★★★★ 走り 2（`MPd` 層）。階段は交互塔。 -/
+theorem MPd_twoTwoGen {N : Jk1} (hJN : JkA N) (hNall : AllA N) (hnil : MNil)
+    (ks : List Bool) : MPd (true :: ks) (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
+  rw [MPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := MCtx_split ks ctx hc
+  refine GOK_twoTwoNilW_gen ctx0 V hJN trivial ?_ hGV ?_
+  · exact MCtx_JkT (true :: ks) _ hc _ ⟨hJN, trivial, trivial⟩
+  · intro k
+    have h : MPd (true :: ks) (Jk1.two N (nstN N k)) :=
+      MPd_twoOf hJN hNall (MPd_nstN hJN hNall hnil k ks)
+    rw [nstN2_nil_eq_nstN]
+    exact (MPd_iff (true :: ks) _).mp h _ hc
+
+/-- 走り 2 は 2 の記録の直上にも置ける。 -/
+theorem MPd_twoTwoNilB (hnil : MNil) (ks : List Bool) :
+    MPd (false :: ks) (Jk1.two Jk1.nil Jk1.nil) :=
+  (MPd_cf ks _).mpr (fun m U N hU hUk hN hNt =>
+    (MPd_ct _ _).mp (MPd_twoTwoGen hN hNt hnil _) U hU hUk)
+
+/-- 塔（単位の個数について一様）。 -/
+theorem MPd_TW (hnil : MNil) : ∀ (n : ℕ) (ks : List Bool), MPd (false :: ks) (TW n)
+  | 0, ks => MPd_twoTwoNilB hnil ks
+  | (n + 1), ks =>
+      MPd_step (false :: ks)
+        (⟨trivial, trivial⟩ : FrmJ (false :: ks) (Jk1.two Jk1.nil Jk1.nil))
+        (MPd_twoTwoNilB hnil ks)
+        (MPd_twoOf trivial AllA_nil (MPd_TW hnil n (false :: ks)))
+
+/-- ★★★★★ `MNil` があれば塔の木は全部良い。 -/
+theorem TowOk_of_MNil (hnil : MNil) : TowOk := fun n =>
+  (MPd_bnil _).mp (MPd_step [] (JkT_nil : FrmJ [] Jk1.nil) ((MPd_bnil _).mpr GOK_nil)
+    (MPd_twoOf trivial AllA_nil (MPd_TW hnil n [])))
+
+/-- ★★★★★ `MNil` があれば #14 が出る。 -/
+theorem R14_mem_M (hnil : MNil) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_MNil hnil)
+
+#print axioms TowOk_of_MNil
+#print axioms R14_mem_M
 
 end Small
 end TRIO
