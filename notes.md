@@ -14588,3 +14588,31 @@ TowOk_of_SPayF : SPayF → TowOk
    `GOK_twoNilW_gen` の形なので、階段は「鎖 `N` を 1 の枠で m 重にした木」。
 2. `GOK_twoPay_of` を黒箱で使わず、A2' の帰納を自分で回して
    (荷の A2' 順序, 鎖の長さ) の辞書式で測る。
+
+### 追記140 続き: `SG_nil_all` と `SHtow` の `V = nil` への道筋
+
+```
+SG_stk_all : SPayF → ∀ ks q, SG ks (stk q)      ★緑
+SG_nil_all : SPayF → ∀ ks, SG ks nil            ★緑
+```
+
+`SG (false::ks) X ⟺ SG ks (two nil X)`（`SG_cf_iff`）で走りを `stk` の添字に
+押し込むと、形の構造再帰だけで出る。これは `NNo nil`（追記100 の穴）の
+`SCtx` 版に相当する——**`SCtx` の世界では `nil` の普遍性は済んでいる**。
+
+次の 2 本で `SHtow` の `V = nil` が出るはず:
+
+1. `STow`（`Tow_of_NNo` の `SCtx` 版）
+   `(∀ ks, SG ks N) → JkA N → ∀ ks D, SCtx ks D → GOK (plug D (two N nil))`
+   文脈を `ctx ++ blkC V (rep r nil)`（r = 形の先頭の `false` の本数）に割り、
+   `GOK_runGNil_gen`（A := N）。階段のブロックは 1 の枠 `N` と 2 の枠 `nil` だけ
+   なので `SCtx` に入り、`∀ ks, SG ks N` で埋まる。
+2. `SNo_step`（`NNo_step` の `SCtx` 版、A2' の帰納）
+   `(∀ ks, SG ks N) → Bok Y → ∀ ks, SG ks (two N (pay nil Y))`
+   これで `VCh nil` の鎖が全部「普遍的に良い」になる。
+
+すると `SHtow` の `V = nil` は `STow` そのもの。残るのは **一般の `V`**:
+`two N V`（鎖の兄弟の上に `V`）で、`V ∈ ZT` の構造帰納だと
+`pay` は `GOK_twoPayZ_of` の `Z` を 1 段下げれば回りそうだが族が `VCh V'` に
+ずれる、`one` は「鎖を兄弟にした 2 の枠 + 1 の枠」の文脈が要る、というのが
+現状の見立て。
