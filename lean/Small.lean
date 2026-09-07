@@ -52686,32 +52686,84 @@ theorem Nk_twoNilNil (j : ℕ) : Nk (j + 1) 0 (Jk1.two Jk1.nil Jk1.nil) := by
 - `UP`: 1 の枠木・先端に使える木 = `UQ` + 1 の記録 + 横鎖。 -/
 
 mutual
-/-- 2 の枠木に使える木 = `nil` と横鎖。 -/
+/-- 2 の枠木に使える木 = `nil` と、先端が `UPt` の横鎖。 -/
 inductive UT : Jk1 → Prop
   | nil : UT Jk1.nil
-  | chain : ∀ {W T : Jk1} (k : ℕ), UT W → UP T → UT (twoIt W T k)
-/-- 1 の枠木・先端に使える木。 -/
+  | chain : ∀ {W T : Jk1} (k : ℕ), UT W → UPt T → UT (twoIt W T k)
+/-- 対の層（2 の記録の直上）にも差せる木 = 横鎖を含まない族。 -/
+inductive UPt : Jk1 → Prop
+  | nil : UPt Jk1.nil
+  | twoNil : UPt (Jk1.two Jk1.nil Jk1.nil)
+  | pay : ∀ {X : Jk1} {C : TrioSeq}, UPt X → Bok C → UPt (Jk1.pay X C)
+  | one : ∀ {A T : Jk1}, UPt A → UP T → UPt (Jk1.one A T)
+/-- 1 の枠木（層 ≥1）に使える木。 -/
 inductive UP : Jk1 → Prop
   | nil : UP Jk1.nil
   | pay : ∀ {X : Jk1} {C : TrioSeq}, UP X → Bok C → UP (Jk1.pay X C)
   | one : ∀ {A T : Jk1}, UP A → UP T → UP (Jk1.one A T)
-  | chain : ∀ {W T : Jk1} (k : ℕ), UT W → UP T → UP (twoIt W T k)
+  | chain : ∀ {W T : Jk1} (k : ℕ), UT W → UPt T → UP (twoIt W T k)
 end
+
+/-- 層 `n` の 1 の枠木の族。対の層に接する枠（`n = 0`）だけ `UPt` に絞る。 -/
+def UPl : ℕ → Jk1 → Prop
+  | 0 => UPt
+  | (_ + 1) => UP
+
+theorem UPl_zero (X : Jk1) : UPl 0 X ↔ UPt X := Iff.rfl
+theorem UPl_succ (n : ℕ) (X : Jk1) : UPl (n + 1) X ↔ UP X := Iff.rfl
 
 mutual
 theorem JkA_of_UT : ∀ {W : Jk1}, UT W → JkA W
   | _, UT.nil => trivial
-  | _, UT.chain k hW hT => JkA_twoItP (JkA_of_UT hW) (JkA_of_UP hT) k
+  | _, UT.chain k hW hT => JkA_twoItP (JkA_of_UT hW) (JkA_of_UPt hT) k
+theorem JkA_of_UPt : ∀ {X : Jk1}, UPt X → JkA X
+  | _, UPt.nil => trivial
+  | _, UPt.twoNil => ⟨trivial, trivial⟩
+  | _, UPt.pay hX hC => ⟨JkA_of_UPt hX, hC⟩
+  | _, UPt.one hA hT => ⟨JkA_of_UPt hA, JkA_of_UP hT⟩
 theorem JkA_of_UP : ∀ {X : Jk1}, UP X → JkA X
   | _, UP.nil => trivial
   | _, UP.pay hX hC => ⟨JkA_of_UP hX, hC⟩
   | _, UP.one hA hT => ⟨JkA_of_UP hA, JkA_of_UP hT⟩
-  | _, UP.chain k hW hT => JkA_twoItP (JkA_of_UT hW) (JkA_of_UP hT) k
+  | _, UP.chain k hW hT => JkA_twoItP (JkA_of_UT hW) (JkA_of_UPt hT) k
 end
 
 theorem UP_of_UT : ∀ {W : Jk1}, UT W → UP W
   | _, UT.nil => UP.nil
   | _, UT.chain k hW hT => UP.chain k hW hT
+
+theorem UP_of_UPt : ∀ {X : Jk1}, UPt X → UP X
+  | _, UPt.nil => UP.nil
+  | _, UPt.twoNil => UP.chain 1 UT.nil UPt.nil
+  | _, UPt.pay hX hC => UP.pay (UP_of_UPt hX) hC
+  | _, UPt.one hA hT => UP.one (UP_of_UPt hA) hT
+
+theorem JkA_of_UPl : ∀ {n : ℕ} {X : Jk1}, UPl n X → JkA X
+  | 0, _, h => JkA_of_UPt h
+  | (_ + 1), _, h => JkA_of_UP h
+
+theorem UP_of_UPl : ∀ {n : ℕ} {X : Jk1}, UPl n X → UP X
+  | 0, _, h => UP_of_UPt h
+  | (_ + 1), _, h => h
+
+theorem UPl_nil : ∀ n : ℕ, UPl n Jk1.nil
+  | 0 => UPt.nil
+  | (_ + 1) => UP.nil
+
+theorem UPl_twoNil : ∀ n : ℕ, UPl n (Jk1.two Jk1.nil Jk1.nil)
+  | 0 => UPt.twoNil
+  | (_ + 1) => UP.chain 1 UT.nil UPt.nil
+
+theorem UPl_one : ∀ {n : ℕ} {A T : Jk1}, UPl n A → UP T → UPl n (Jk1.one A T)
+  | 0, _, _, hA, hT => UPt.one hA hT
+  | (_ + 1), _, _, hA, hT => UP.one hA hT
+
+theorem UPl_pay : ∀ {n : ℕ} {X : Jk1} {C : TrioSeq}, UPl n X → Bok C →
+    UPl n (Jk1.pay X C)
+  | 0, _, _, hX, hC => UPt.pay hX hC
+  | (_ + 1), _, _, hX, hC => UP.pay hX hC
+
+theorem UPl_of_UT {n : ℕ} {W : Jk1} (h : UT W) : UPl (n + 1) W := UP_of_UT h
 
 /-- 横鎖 `TR k = twoIt nil nil k` は 2 の枠木に使える。 -/
 theorem UT_TR : ∀ k : ℕ, UT (TR k) := by
@@ -52721,7 +52773,7 @@ theorem UT_TR : ∀ k : ℕ, UT (TR k) := by
     | zero => rfl
     | succ k ih => show Jk1.two (TR k) Jk1.nil = _; rw [ih]; rfl
   rw [e]
-  exact UT.chain k UT.nil UP.nil
+  exact UT.chain k UT.nil UPt.nil
 
 /-! ### ★★★★★ 走り込みの層 `Rok`: 枠木に族を課す -/
 
@@ -52729,12 +52781,12 @@ def Rok : ℕ → ℕ → List Frm → Prop
   | 0, 0, ctx => ∃ (r m : ℕ) (D : List Frm) (N : Jk1),
       ctx = D ++ [Frm.ftwo N] ∧ TwSt r m D ∧ Fter r m ∧ JkA N ∧ (∀ q : ℕ, NTw q N)
   | 0, (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
-      ctx = ctx' ++ [Frm.fone U] ∧ Rok 0 n ctx' ∧ UP U ∧
+      ctx = ctx' ++ [Frm.fone U] ∧ Rok 0 n ctx' ∧ UPl n U ∧
       (∀ cs : List Frm, Rok 0 n cs → GOK (plug cs U)) ∧
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok 0 n cs →
         GOK (plug cs (Jk1.pay U C)))
   | (j + 1), 0, ctx => ∃ (V Wl : Jk1) (ctx' : List Frm) (n : ℕ),
-      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Rok j n ctx' ∧ UP V ∧
+      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Rok j n ctx' ∧ UPl n V ∧
       (∀ cs : List Frm, Rok j n cs → GOK (plug cs V)) ∧
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
         GOK (plug cs (Jk1.pay V C))) ∧
@@ -52742,7 +52794,7 @@ def Rok : ℕ → ℕ → List Frm → Prop
       (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Rok j (i + 1) cs →
         GOK (plug cs (Jk1.pay Wl C))) ∧ UT Wl
   | (j + 1), (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
-      ctx = ctx' ++ [Frm.fone U] ∧ Rok (j + 1) n ctx' ∧ UP U ∧
+      ctx = ctx' ++ [Frm.fone U] ∧ Rok (j + 1) n ctx' ∧ UPl n U ∧
       (∀ cs : List Frm, Rok (j + 1) n cs → GOK (plug cs U)) ∧
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok (j + 1) n cs →
         GOK (plug cs (Jk1.pay U C)))
@@ -52755,7 +52807,7 @@ theorem Rok_00 (ctx : List Frm) : Rok 0 0 ctx ↔ ∃ (r m : ℕ) (D : List Frm)
   rw [Rok]
 
 theorem Rok_0s (n : ℕ) (ctx : List Frm) : Rok 0 (n + 1) ctx ↔ ∃ (U : Jk1) (ctx' : List Frm),
-    ctx = ctx' ++ [Frm.fone U] ∧ Rok 0 n ctx' ∧ UP U ∧
+    ctx = ctx' ++ [Frm.fone U] ∧ Rok 0 n ctx' ∧ UPl n U ∧
     (∀ cs : List Frm, Rok 0 n cs → GOK (plug cs U)) ∧
     (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok 0 n cs →
       GOK (plug cs (Jk1.pay U C))) := by
@@ -52763,7 +52815,7 @@ theorem Rok_0s (n : ℕ) (ctx : List Frm) : Rok 0 (n + 1) ctx ↔ ∃ (U : Jk1) 
 
 theorem Rok_s0 (j : ℕ) (ctx : List Frm) : Rok (j + 1) 0 ctx ↔
     ∃ (V Wl : Jk1) (ctx' : List Frm) (n : ℕ),
-      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Rok j n ctx' ∧ UP V ∧
+      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Rok j n ctx' ∧ UPl n V ∧
       (∀ cs : List Frm, Rok j n cs → GOK (plug cs V)) ∧
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
         GOK (plug cs (Jk1.pay V C))) ∧
@@ -52774,7 +52826,7 @@ theorem Rok_s0 (j : ℕ) (ctx : List Frm) : Rok (j + 1) 0 ctx ↔
 
 theorem Rok_ss (j n : ℕ) (ctx : List Frm) : Rok (j + 1) (n + 1) ctx ↔
     ∃ (U : Jk1) (ctx' : List Frm),
-      ctx = ctx' ++ [Frm.fone U] ∧ Rok (j + 1) n ctx' ∧ UP U ∧
+      ctx = ctx' ++ [Frm.fone U] ∧ Rok (j + 1) n ctx' ∧ UPl n U ∧
       (∀ cs : List Frm, Rok (j + 1) n cs → GOK (plug cs U)) ∧
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok (j + 1) n cs →
         GOK (plug cs (Jk1.pay U C))) := by
@@ -52789,17 +52841,17 @@ theorem JkT_plug_Rok : ∀ (j n : ℕ) (ctx : List Frm), Rok j n ctx → ∀ T :
   | 0, (n + 1), ctx, h, T, hT => by
       obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Rok_0s n ctx).mp h
       rw [plug_snoc]
-      exact JkT_plug_Rok 0 n ctx' hc _ ⟨JkA_of_UP hJU, hT⟩
+      exact JkT_plug_Rok 0 n ctx' hc _ ⟨JkA_of_UPl hJU, hT⟩
   | (j + 1), 0, ctx, h, T, hT => by
       obtain ⟨V, Wl, ctx', n, rfl, hc, hJV, -, -, -, -, hUT⟩ := (Rok_s0 j ctx).mp h
       rw [plug_snoc2, plug_snoc]
-      exact JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UP hJV, JkA_of_UT hUT, hT⟩
+      exact JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UPl hJV, JkA_of_UT hUT, hT⟩
   | (j + 1), (n + 1), ctx, h, T, hT => by
       obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Rok_ss j n ctx).mp h
       rw [plug_snoc]
-      exact JkT_plug_Rok (j + 1) n ctx' hc _ ⟨JkA_of_UP hJU, hT⟩
+      exact JkT_plug_Rok (j + 1) n ctx' hc _ ⟨JkA_of_UPl hJU, hT⟩
 
-theorem Rok_fone {j n : ℕ} {U : Jk1} {ctx : List Frm} (hctx : Rok j n ctx) (hJU : UP U)
+theorem Rok_fone {j n : ℕ} {U : Jk1} {ctx : List Frm} (hctx : Rok j n ctx) (hJU : UPl n U)
     (hU : ∀ cs : List Frm, Rok j n cs → GOK (plug cs U))
     (hUp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
       GOK (plug cs (Jk1.pay U C))) :
@@ -52809,7 +52861,7 @@ theorem Rok_fone {j n : ℕ} {U : Jk1} {ctx : List Frm} (hctx : Rok j n ctx) (hJ
   | succ j => exact (Rok_ss j n _).mpr ⟨U, ctx, rfl, hctx, hJU, hU, hUp⟩
 
 theorem Rok_fone_dest {j n : ℕ} {ctx : List Frm} (h : Rok j (n + 1) ctx) :
-    ∃ (U : Jk1) (ctx' : List Frm), ctx = ctx' ++ [Frm.fone U] ∧ Rok j n ctx' ∧ UP U ∧
+    ∃ (U : Jk1) (ctx' : List Frm), ctx = ctx' ++ [Frm.fone U] ∧ Rok j n ctx' ∧ UPl n U ∧
       (∀ cs : List Frm, Rok j n cs → GOK (plug cs U)) ∧
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
         GOK (plug cs (Jk1.pay U C))) := by
@@ -52833,7 +52885,7 @@ theorem TTwA_of_Rk00 {X : Jk1} (h : Rk 0 0 X) : TTwA X := by
   have := h _ hc
   rwa [plug_snoc2] at this
 
-theorem Rk_one {j n : ℕ} {U T : Jk1} (hJU : UP U) (hU : Rk j n U)
+theorem Rk_one {j n : ℕ} {U T : Jk1} (hJU : UPl n U) (hU : Rk j n U)
     (hUp : ∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay U C)) (hT : Rk j (n + 1) T) :
     Rk j n (Jk1.one U T) := by
   intro ctx hctx
@@ -52842,7 +52894,7 @@ theorem Rk_one {j n : ℕ} {U T : Jk1} (hJU : UP U) (hU : Rk j n U)
   have h := hT _ hC
   rwa [plug_snoc] at h
 
-theorem Rk_pair {j n : ℕ} {V Wl T : Jk1} (hJV : UP V) (hV : Rk j n V)
+theorem Rk_pair {j n : ℕ} {V Wl T : Jk1} (hJV : UPl n V) (hV : Rk j n V)
     (hVp : ∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay V C))
     (hWk : ∀ i : ℕ, Rk j (i + 1) Wl)
     (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Rk j (i + 1) (Jk1.pay Wl C))
@@ -52865,7 +52917,7 @@ theorem Rk_nil : ∀ (j n : ℕ), Rk j n Jk1.nil
       obtain ⟨U, ctx', rfl, hc, hJU, hU, hUp⟩ := (Rok_0s n ctx).mp hctx
       rw [plug_snoc]
       refine APnil_gen0 ctx' U ?_ (hU ctx' hc) (fun C hC => hUp C hC ctx' hc)
-      exact JkT_plug_Rok 0 n ctx' hc _ ⟨JkA_of_UP hJU, trivial⟩
+      exact JkT_plug_Rok 0 n ctx' hc _ ⟨JkA_of_UPl hJU, trivial⟩
   | (j + 1), 0 => by
       intro ctx hctx
       obtain ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hW, hWp, hUT⟩ :=
@@ -52882,7 +52934,7 @@ theorem Rk_nil : ∀ (j n : ℕ), Rk j n Jk1.nil
           | zero => simpa using Rok_fone hc hJV hV (fun C hC => hVp C hC)
           | succ i ih =>
               rw [List.replicate_succ', ← List.append_assoc]
-              exact Rok_fone ih (UP_of_UT hUT) (fun cs hcs => hW (n + i) cs hcs)
+              exact Rok_fone ih (UPl_of_UT hUT) (fun cs hcs => hW (n + i) cs hcs)
                 (fun C hC cs hcs => hWp C hC (n + i) cs hcs)
         have h := hW (n + i) _ (hstair i)
         rwa [plug_append] at h
@@ -52891,7 +52943,7 @@ theorem Rk_nil : ∀ (j n : ℕ), Rk j n Jk1.nil
       obtain ⟨U, ctx', rfl, hc, hJU, hU, hUp⟩ := (Rok_ss j n ctx).mp hctx
       rw [plug_snoc]
       refine APnil_gen0 ctx' U ?_ (hU ctx' hc) (fun C hC => hUp C hC ctx' hc)
-      exact JkT_plug_Rok (j + 1) n ctx' hc _ ⟨JkA_of_UP hJU, trivial⟩
+      exact JkT_plug_Rok (j + 1) n ctx' hc _ ⟨JkA_of_UPl hJU, trivial⟩
 
 theorem Rk_twoW {j n : ℕ} {Wl T : Jk1} (hWk : ∀ i : ℕ, Rk j (i + 1) Wl)
     (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Rk j (i + 1) (Jk1.pay Wl C))
@@ -52906,23 +52958,23 @@ theorem Rk_twoW {j n : ℕ} {Wl T : Jk1} (hWk : ∀ i : ℕ, Rk j (i + 1) Wl)
 #print axioms Rk_twoW
 
 theorem Rk_itJ {j n : ℕ} {T : Jk1} (hJT : UP T) (hT : Rk j (n + 1) T)
-    (hpay : ∀ (C : TrioSeq), Bok C → ∀ Z : Jk1, UP Z → Rk j n Z → Rk j n (Jk1.pay Z C)) :
-    ∀ (k : ℕ) {U : Jk1}, UP U → Rk j n U → (∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay U C)) →
-      UP (itJ T k U) ∧ Rk j n (itJ T k U) ∧
+    (hpay : ∀ (C : TrioSeq), Bok C → ∀ Z : Jk1, UPl n Z → Rk j n Z → Rk j n (Jk1.pay Z C)) :
+    ∀ (k : ℕ) {U : Jk1}, UPl n U → Rk j n U → (∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay U C)) →
+      UPl n (itJ T k U) ∧ Rk j n (itJ T k U) ∧
         (∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay (itJ T k U) C))
   | 0, _, hJU, hU, hUp => ⟨hJU, hU, hUp⟩
   | (k + 1), U, hJU, hU, hUp => by
       obtain ⟨h1, h2, h3⟩ := Rk_itJ hJT hT hpay k hJU hU hUp
       have h4 : Rk j n (Jk1.one (itJ T k U) T) := Rk_one h1 h2 h3 hT
-      exact ⟨UP.one h1 hJT, h4, fun C hC => hpay C hC _ (UP.one h1 hJT) h4⟩
+      exact ⟨UPl_one h1 hJT, h4, fun C hC => hpay C hC _ (UPl_one h1 hJT) h4⟩
 
 /-- ★★★★★ 荷を吊るせる（`(j, n)` の辞書式帰納 + 荷の `W 0` 帰納）。 -/
-theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → Rk j n X →
+theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UPl n X → Rk j n X →
     Rk j n (Jk1.pay X Y)
   | 0, 0, Y, hY, X, hJX, hX =>
-      Rk00_of_TTwA (TTwA_pay Y hY X (JkA_of_UP hJX) (TTwA_of_Rk00 hX))
+      Rk00_of_TTwA (TTwA_pay Y hY X (JkA_of_UPl hJX) (TTwA_of_Rk00 hX))
   | j, (n + 1), Y0, hY0b, X0, hJX0, hX0 => by
-      have hpn : ∀ (C : TrioSeq), Bok C → ∀ Z : Jk1, UP Z → Rk j n Z →
+      have hpn : ∀ (C : TrioSeq), Bok C → ∀ Z : Jk1, UPl n Z → Rk j n Z →
           Rk j n (Jk1.pay Z C) := fun C hC Z hJZ hZ => Rk_pay j n C hC Z hJZ hZ
       have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ X : Jk1, UP X → Rk j (n + 1) X →
           Rk j (n + 1) (Jk1.pay X Y)} := by
@@ -52953,7 +53005,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
             intro ws hw hG
             have hJT : JkT (plug ctx' (Jk1.one U (Jk1.pay X
                 (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) :=
-              JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UP hJU, JkA_of_UP hJX, hYn⟩
+              JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UPl hJU, JkA_of_UP hJX, hYn⟩
             refine GoodFb_snoc_dupJs0 hw hJT hYn Bok_nil ?_
             intro k _
             have h := (Rk_itJ (T := Jk1.pay X ([] : TrioSeq)) (UP.pay hJX Bok_nil) hprev hpn k
@@ -52993,7 +53045,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
             intro ws hw hG
             have hJT : JkT (plug ctx' (Jk1.one U (Jk1.pay X
                 (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) :=
-              JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UP hJU, JkA_of_UP hJX, hYn⟩
+              JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UPl hJU, JkA_of_UP hJX, hYn⟩
             refine GoodFb_snoc_dupJs0 hw hJT hYn hdb ?_
             intro k _
             have h := (Rk_itJ (T := Jk1.pay X Y.dropLast) (UP.pay hJX hdb) hprev hpn k
@@ -53007,7 +53059,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
             rw [plug_snoc]
             intro ws hw hG
             have hJT : JkT (plug ctx' (Jk1.one U (Jk1.pay X Y))) :=
-              JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UP hJU, JkA_of_UP hJX, hYb⟩
+              JkT_plug_Rok j n ctx' hc _ ⟨JkA_of_UPl hJU, JkA_of_UP hJX, hYb⟩
             refine GoodFb_snoc_innerJs0 hw hJT hYb hlen2 hpar ?_
             intro k hk
             have hh := hnat k hk
@@ -53018,9 +53070,9 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
         · exact absurd hm (Nat.not_lt_zero mm)
       exact key hY0b.mem hY0b X0 hJX0 hX0
   | (j + 1), 0, Y0, hY0b, X0, hJX0, hX0 => by
-      have hpn : ∀ (i : ℕ) (C : TrioSeq), Bok C → ∀ Z : Jk1, UP Z → Rk j i Z →
+      have hpn : ∀ (i : ℕ) (C : TrioSeq), Bok C → ∀ Z : Jk1, UPl i Z → Rk j i Z →
           Rk j i (Jk1.pay Z C) := fun i C hC Z hJZ hZ => Rk_pay j i C hC Z hJZ hZ
-      have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ X : Jk1, UP X → Rk (j + 1) 0 X →
+      have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ X : Jk1, UPt X → Rk (j + 1) 0 X →
           Rk (j + 1) 0 (Jk1.pay X Y)} := by
         refine A2' ?_
         intro Y hY
@@ -53043,7 +53095,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
               simpa using hYb
             have hprev : Rk (j + 1) 0 (Jk1.pay X ([] : TrioSeq)) :=
               Rk_congr (fun l => (jk1_pay_nil l X).symm) hX
-            have hUPt : UP (Jk1.pay X ([] : TrioSeq)) := UP.pay hJX Bok_nil
+            have hUPt : UPt (Jk1.pay X ([] : TrioSeq)) := UPt.pay hJX Bok_nil
             intro ctx hctx
             obtain ⟨V, Wl, ctx', i0, rfl, hc, hJV, hV, hVp, hW, hWp, hUT⟩ :=
               (Rok_s0 j ctx).mp hctx
@@ -53070,7 +53122,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
                 (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) :=
               JkT_plug_Rok j (i0 + 1) (ctx' ++ [Frm.fone V])
                 (Rok_fone hc hJV hV (fun C hC => hVp C hC)) _
-                ⟨JkA_of_UT hUT, JkA_of_UP hJX, hYn⟩
+                ⟨JkA_of_UT hUT, JkA_of_UPt hJX, hYn⟩
             refine GoodFb_snoc_dupJt0 hw hJT ?_
             intro k _
             have h := (hWj k).1 i0 (ctx' ++ [Frm.fone V])
@@ -53103,7 +53155,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
             have hYn : Bok (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by
               rw [← hsplit]; exact hYb
             have hprev : Rk (j + 1) 0 (Jk1.pay X Y.dropLast) := hdl hdb X hJX hX
-            have hUPt : UP (Jk1.pay X Y.dropLast) := UP.pay hJX hdb
+            have hUPt : UPt (Jk1.pay X Y.dropLast) := UPt.pay hJX hdb
             rw [hsplit]
             intro ctx hctx
             obtain ⟨V, Wl, ctx', i0, rfl, hc, hJV, hV, hVp, hW, hWp, hUT⟩ :=
@@ -53131,7 +53183,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
                 (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) :=
               JkT_plug_Rok j (i0 + 1) (ctx' ++ [Frm.fone V])
                 (Rok_fone hc hJV hV (fun C hC => hVp C hC)) _
-                ⟨JkA_of_UT hUT, JkA_of_UP hJX, hYn⟩
+                ⟨JkA_of_UT hUT, JkA_of_UPt hJX, hYn⟩
             refine GoodFb_snoc_dupJt0 hw hJT ?_
             intro k _
             have h := (hWj k).1 i0 (ctx' ++ [Frm.fone V])
@@ -53148,7 +53200,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
             have hJT : JkT (plug (ctx' ++ [Frm.fone V]) (Jk1.two Wl (Jk1.pay X Y))) :=
               JkT_plug_Rok j (i0 + 1) (ctx' ++ [Frm.fone V])
                 (Rok_fone hc hJV hV (fun C hC => hVp C hC)) _
-                ⟨JkA_of_UT hUT, JkA_of_UP hJX, hYb⟩
+                ⟨JkA_of_UT hUT, JkA_of_UPt hJX, hYb⟩
             refine GoodFb_snoc_innerJt0 hw hJT hlen2 hpar ?_
             intro k hk
             have hh := hnat k hk
@@ -53167,7 +53219,7 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
 /-! #### 走りの階段と走り 2（枠木の全層条件は仮定として持つ） -/
 
 theorem Rk_payNil (j n : ℕ) (C : TrioSeq) (hC : Bok C) : Rk j n (Jk1.pay Jk1.nil C) :=
-  Rk_pay j n C hC Jk1.nil UP.nil (Rk_nil j n)
+  Rk_pay j n C hC Jk1.nil (UPl_nil n) (Rk_nil j n)
 
 theorem Rk_nstTower {Wl : Jk1} (hWall : ∀ j' i' : ℕ, Rk j' (i' + 1) Wl)
     (hWallp : ∀ (C : TrioSeq), Bok C → ∀ j' i' : ℕ, Rk j' (i' + 1) (Jk1.pay Wl C))
@@ -53176,7 +53228,7 @@ theorem Rk_nstTower {Wl : Jk1} (hWall : ∀ j' i' : ℕ, Rk j' (i' + 1) Wl)
   | 0, j, n => Rk_twoW (hWall j) (fun C hC => hWallp C hC j) hUT (Rk_nil (j + 1) 0)
   | (k + 1), j, n => by
       have h : Rk (j + 1) 0 (Jk1.one Jk1.nil (Jk1.two Wl (nstN2 Wl Jk1.nil k))) :=
-        Rk_one UP.nil (Rk_nil (j + 1) 0)
+        Rk_one (UPl_nil 0) (Rk_nil (j + 1) 0)
           (fun C hC => Rk_payNil (j + 1) 0 C hC)
           (Rk_nstTower hWall hWallp hUT k (j + 1) 0)
       exact Rk_twoW (hWall j) (fun C hC => hWallp C hC j) hUT h
@@ -55058,7 +55110,7 @@ theorem Yk_nil : ∀ (j n : ℕ), Yk j n Jk1.nil
 （`UniW` / `Rk_all_*` の形）だけ。対の層（`i' = 0`）は要らない。 -/
 
 theorem Rk_twoNilNil_at {j n : ℕ} {V Wl : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
-    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hUV : UPl n V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
     (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
       GOK (plug cs (Jk1.pay V C)))
     (hWall : ∀ j' i' : ℕ, Rk j' (i' + 1) Wl)
@@ -55072,7 +55124,7 @@ theorem Rk_twoNilNil_at {j n : ℕ} {V Wl : Jk1} {ctx' : List Frm} (hc : Rok j n
 
 /-- 2 の枠の兄弟が `nil` なら、条件は自動で満たされる。 -/
 theorem Rk_twoNilNil_nil {j n : ℕ} {V : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
-    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hUV : UPl n V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
     (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
       GOK (plug cs (Jk1.pay V C))) :
     GOK (plug ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Jk1.nil])
@@ -55087,7 +55139,7 @@ theorem Rk_twoNilNil_nil {j n : ℕ} {V : Jk1} {ctx' : List Frm} (hc : Rok j n c
 これで A2' の複製鎖が「走りの階段が要求する兄弟の条件」を満たす。 -/
 theorem Rk_all_chain {W T : Jk1} (hW : ∀ j i : ℕ, Rk j (i + 1) W)
     (hWp : ∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))
-    (hUT : UT W) (hUPT : UP T) (hT : ∀ j : ℕ, Rk (j + 1) 0 T) :
+    (hUT : UT W) (hUPT : UPt T) (hT : ∀ j : ℕ, Rk (j + 1) 0 T) :
     ∀ (k : ℕ), (∀ j i : ℕ, Rk j (i + 1) (twoIt W T k)) ∧
       (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay (twoIt W T k) C))
   | 0 => ⟨hW, hWp⟩
@@ -55102,12 +55154,12 @@ theorem Rk_all_chain {W T : Jk1} (hW : ∀ j i : ℕ, Rk j (i + 1) W)
 
 /-- 鎖を 2 の枠の兄弟にした文脈でも、走りが対の層で通る。 -/
 theorem Rk_twoNilNil_chain {j n : ℕ} {V W T : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
-    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hUV : UPl n V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
     (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
       GOK (plug cs (Jk1.pay V C)))
     (hW : ∀ j' i' : ℕ, Rk j' (i' + 1) W)
     (hWp : ∀ (C : TrioSeq), Bok C → ∀ j' i' : ℕ, Rk j' (i' + 1) (Jk1.pay W C))
-    (hUT : UT W) (hUPT : UP T) (hT : ∀ j' : ℕ, Rk (j' + 1) 0 T) (k : ℕ) :
+    (hUT : UT W) (hUPT : UPt T) (hT : ∀ j' : ℕ, Rk (j' + 1) 0 T) (k : ℕ) :
     GOK (plug ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo (twoIt W T k)])
       (Jk1.two Jk1.nil Jk1.nil)) :=
   Rk_twoNilNil_at hc hUV hV hVp (Rk_all_chain hW hWp hUT hUPT hT k).1
@@ -55119,7 +55171,7 @@ theorem Rk_twoNilNil_chain {j n : ℕ} {V W T : Jk1} {ctx' : List Frm} (hc : Rok
 /-- 全層に差せることが保証された 2 の枠木の族（鎖の先端が対の層に差せる）。 -/
 inductive UTa : Jk1 → Prop
   | nil : UTa Jk1.nil
-  | chain : ∀ {W T : Jk1} (k : ℕ), UTa W → UP T → (∀ j : ℕ, Rk (j + 1) 0 T) →
+  | chain : ∀ {W T : Jk1} (k : ℕ), UTa W → UPt T → (∀ j : ℕ, Rk (j + 1) 0 T) →
       UTa (twoIt W T k)
 
 theorem UT_of_UTa : ∀ {W : Jk1}, UTa W → UT W
@@ -55136,7 +55188,7 @@ theorem Rk_all_UTa : ∀ {W : Jk1}, UTa W →
 
 /-- ★★★★★ 2 の枠の兄弟が `UTa` なら、その直上に 2 の記録を置ける（走り）。 -/
 theorem Rk_twoNilNil_UTa {j n : ℕ} {V Wl : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
-    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hUV : UPl n V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
     (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
       GOK (plug cs (Jk1.pay V C)))
     (hWa : UTa Wl) :
@@ -55153,7 +55205,7 @@ theorem Rk_twoNilNil_UTa {j n : ℕ} {V Wl : Jk1} {ctx' : List Frm} (hc : Rok j 
 使うのは**その兄弟 `Wl` の直上の文脈だけ**なので、兄弟を固定した形に弱めれば足りる。 -/
 
 def RkW (Wl Z : Jk1) : Prop :=
-  ∀ (j n : ℕ) (V : Jk1) (ctx' : List Frm), Rok j n ctx' → UP V →
+  ∀ (j n : ℕ) (V : Jk1) (ctx' : List Frm), Rok j n ctx' → UPl n V →
     (∀ cs : List Frm, Rok j n cs → GOK (plug cs V)) →
     (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
       GOK (plug cs (Jk1.pay V C))) →
@@ -55166,7 +55218,7 @@ theorem RkW_of_Rk {Wl Z : Jk1} (h : ∀ j : ℕ, Rk (j + 1) 0 Z) : RkW Wl Z := b
   intro j n V ctx' hc hJV hV hVp hWk hWp hW
   exact h j _ ((Rok_s0 j _).mpr ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hWk, hWp, hW⟩)
 
-theorem Rk_pairW {j n : ℕ} {V Wl T : Jk1} (hJV : UP V) (hV : Rk j n V)
+theorem Rk_pairW {j n : ℕ} {V Wl T : Jk1} (hJV : UPl n V) (hV : Rk j n V)
     (hVp : ∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay V C))
     (hWk : ∀ i : ℕ, Rk j (i + 1) Wl)
     (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Rk j (i + 1) (Jk1.pay Wl C))
@@ -55199,7 +55251,7 @@ theorem PairOk_twoNil : PairOk (Jk1.two Jk1.nil Jk1.nil) := by
 /-- 先端が `PairOk` なら、横鎖は全層に差せる。 -/
 theorem Rk_all_chainW {W T : Jk1} (hW : ∀ j i : ℕ, Rk j (i + 1) W)
     (hWp : ∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))
-    (hUT : UT W) (hUPT : UP T) (hT : PairOk T) :
+    (hUT : UT W) (hUPT : UPt T) (hT : PairOk T) :
     ∀ (k : ℕ), (∀ j i : ℕ, Rk j (i + 1) (twoIt W T k)) ∧
       (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay (twoIt W T k) C))
   | 0 => ⟨hW, hWp⟩
@@ -55213,7 +55265,7 @@ theorem Rk_all_chainW {W T : Jk1} (hW : ∀ j i : ℕ, Rk j (i + 1) W)
         (UP.chain (k + 1) hUT hUPT) (hstep j i)⟩
 
 /-- `UTa` の族は `PairOk` の先端だけで作れる。 -/
-theorem Rk_all_UTchain {W T : Jk1} (hUT : UT W) (hUPT : UP T) (hT : PairOk T)
+theorem Rk_all_UTchain {W T : Jk1} (hUT : UT W) (hUPT : UPt T) (hT : PairOk T)
     (hW : ∀ j i : ℕ, Rk j (i + 1) W)
     (hWp : ∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C)) (k : ℕ) :
     (∀ j i : ℕ, Rk j (i + 1) (twoIt W T k)) ∧
@@ -55230,9 +55282,9 @@ theorem PairOk_congr {A B : Jk1} (h : ∀ l, jk1 l A = jk1 l B) (hA : PairOk A) 
     (hA Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW)
 
 /-- ★★★★★ 対の層に差せる木は荷で閉じる（A2' + 横鎖）。 -/
-theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X →
+theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UPt X → PairOk X →
     PairOk (Jk1.pay X Y) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ X : Jk1, UP X → PairOk X →
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ X : Jk1, UPt X → PairOk X →
       PairOk (Jk1.pay X Y)} := by
     refine A2' ?_
     intro Y hY
@@ -55253,7 +55305,7 @@ theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X �
         have hYn : Bok (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by simpa using hYb
         have hprev : PairOk (Jk1.pay X ([] : TrioSeq)) :=
           PairOk_congr (fun l => (jk1_pay_nil l X).symm) hPX
-        have hUPt : UP (Jk1.pay X ([] : TrioSeq)) := UP.pay hJX Bok_nil
+        have hUPt : UPt (Jk1.pay X ([] : TrioSeq)) := UPt.pay hJX Bok_nil
         rw [e]
         intro Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW
         rw [plug_snoc2]
@@ -55262,7 +55314,7 @@ theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X �
         have hJT : JkT (plug (ctx' ++ [Frm.fone V]) (Jk1.two Wl (Jk1.pay X
             (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) :=
           JkT_plug_Rok j (n + 1) (ctx' ++ [Frm.fone V]) hctx1 _
-            ⟨JkA_of_UT hUT, JkA_of_UP hJX, hYn⟩
+            ⟨JkA_of_UT hUT, JkA_of_UPt hJX, hYn⟩
         refine GoodFb_snoc_dupJt0 hw hJT ?_
         intro k _
         have h := (Rk_all_chainW hall hallp hUT hUPt hprev k).1 j n
@@ -55295,7 +55347,7 @@ theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X �
         have hYn : Bok (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by
           rw [← hsplit]; exact hYb
         have hprev : PairOk (Jk1.pay X Y.dropLast) := hdl hdb X hJX hPX
-        have hUPt : UP (Jk1.pay X Y.dropLast) := UP.pay hJX hdb
+        have hUPt : UPt (Jk1.pay X Y.dropLast) := UPt.pay hJX hdb
         rw [hsplit]
         intro Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW
         rw [plug_snoc2]
@@ -55304,7 +55356,7 @@ theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X �
         have hJT : JkT (plug (ctx' ++ [Frm.fone V]) (Jk1.two Wl (Jk1.pay X
             (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) :=
           JkT_plug_Rok j (n + 1) (ctx' ++ [Frm.fone V]) hctx1 _
-            ⟨JkA_of_UT hUT, JkA_of_UP hJX, hYn⟩
+            ⟨JkA_of_UT hUT, JkA_of_UPt hJX, hYn⟩
         refine GoodFb_snoc_dupJt0 hw hJT ?_
         intro k _
         have h := (Rk_all_chainW hall hallp hUT hUPt hprev k).1 j n
@@ -55319,7 +55371,7 @@ theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X �
         have hctx1 : Rok j (n + 1) (ctx' ++ [Frm.fone V]) := Rok_fone hc hJV hV hVp
         have hJT : JkT (plug (ctx' ++ [Frm.fone V]) (Jk1.two Wl (Jk1.pay X Y))) :=
           JkT_plug_Rok j (n + 1) (ctx' ++ [Frm.fone V]) hctx1 _
-            ⟨JkA_of_UT hUT, JkA_of_UP hJX, hYb⟩
+            ⟨JkA_of_UT hUT, JkA_of_UPt hJX, hYb⟩
         refine GoodFb_snoc_innerJt0 hw hJT hlen2 hpar ?_
         intro k hk
         have hh := hnat k hk
@@ -55335,24 +55387,24 @@ theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X �
 #print axioms PairOk_pay
 
 /-- 先端が `nil` の 1 の記録は対の層に差せる（`APnil_gen0` だけで出る）。 -/
-theorem PairOk_oneNil {U : Jk1} (hJU : UP U) (hU : PairOk U) :
+theorem PairOk_oneNil {U : Jk1} (hJU : UPt U) (hU : PairOk U) :
     PairOk (Jk1.one U Jk1.nil) := by
   intro Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW
   have hctx : Rok (j + 1) 0 ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl]) :=
     (Rok_s0 j _).mpr ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hWk, hWp, hW⟩
-  refine APnil_gen0 _ U (JkT_plug_Rok (j + 1) 0 _ hctx _ ⟨JkA_of_UP hJU, trivial⟩)
+  refine APnil_gen0 _ U (JkT_plug_Rok (j + 1) 0 _ hctx _ ⟨JkA_of_UPt hJU, trivial⟩)
     (hU Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW) ?_
   intro C hC
   exact PairOk_pay C hC U hJU hU Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW
 
-theorem UP_twoNil : UP (Jk1.two Jk1.nil Jk1.nil) := UP.chain 1 UT.nil UP.nil
+theorem UP_twoNil : UP (Jk1.two Jk1.nil Jk1.nil) := UP.chain 1 UT.nil UPt.nil
 
-theorem UT_twoNil : UT (Jk1.two Jk1.nil Jk1.nil) := UT.chain 1 UT.nil UP.nil
+theorem UT_twoNil : UT (Jk1.two Jk1.nil Jk1.nil) := UT.chain 1 UT.nil UPt.nil
 
 /-- ★★★★★ 走り 2 の直上の荷は対の層に差せる。 -/
 theorem PairOk_payTwoNil (C : TrioSeq) (hC : Bok C) :
     PairOk (Jk1.pay (Jk1.two Jk1.nil Jk1.nil) C) :=
-  PairOk_pay C hC _ UP_twoNil PairOk_twoNil
+  PairOk_pay C hC _ UPt.twoNil PairOk_twoNil
 
 #print axioms PairOk_oneNil
 #print axioms PairOk_payTwoNil
