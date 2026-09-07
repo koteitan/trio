@@ -50546,6 +50546,161 @@ theorem R375i25_mem : R375i ++ [((10, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 
 #print axioms R375i25_mem
 
+/-! #### `V(10,2,0)`: `Ew` 層に「2 の記録を先端に」を足す -/
+
+theorem Ew_oneTwoNil {n : ℕ} {X : Jk1} (hJX : JkA X) (hX : Ew n X)
+    (hUp : ∀ C : TrioSeq, Bok C → Ew n (Jk1.pay X C)) :
+    Ew n (Jk1.one X (Jk1.two Jk1.nil Jk1.nil)) := by
+  intro fs hfs
+  refine ⟨JkA_plug_Gw n fs hfs _ ⟨hJX, trivial, trivial⟩, ?_⟩
+  intro Wl hW j m ctx hctx
+  rw [← plug_snoc2, ← plug_append, ← plug_snoc]
+  refine GOK_twoNil_gen ((ctx ++ [Frm.ftwo Wl]) ++ fs) X (N := Jk1.nil) trivial ?_ ?_ ?_
+  · have h := JkT_plug_Cok j (m + 1) ctx hctx
+      (Jk1.two Wl (plug fs (Jk1.one X (Jk1.two Jk1.nil Jk1.nil))))
+      ⟨hW.ja, JkA_plug_Gw n fs hfs _ ⟨hJX, trivial, trivial⟩⟩
+    rwa [← plug_snoc2, ← plug_append, ← plug_snoc] at h
+  · have h := (hX fs hfs).ck Wl hW j m ctx hctx
+    rwa [← plug_snoc2, ← plug_append] at h
+  · intro k
+    have hG : Gw (n + 1) (fs ++ [Frm.fone X]) :=
+      (Gw_s n _).mpr ⟨X, fs, rfl, hfs, hJX, hX, fun C hC => hUp C hC⟩
+    have h := (Ew_chn k (n + 1) _ hG).ck Wl hW j m ctx hctx
+    rw [plug_repNil, List.append_assoc]
+    rwa [← plug_snoc2, ← plug_append] at h
+
+theorem Ew_twoNil : ∀ n : ℕ, Ew n (Jk1.two Jk1.nil Jk1.nil)
+  | 0 => Ew_of_TipOk0 TipOk_twoNil
+  | (n + 1) => by
+      intro fs hfs
+      obtain ⟨U, fs', rfl, hfs', hJU, hU, hUp⟩ := (Gw_s n fs).mp hfs
+      rw [plug_snoc]
+      exact Ew_oneTwoNil hJU hU (fun C hC => hUp C hC) fs' hfs'
+
+def PIc : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil Jk1.nil
+  | (m + 1) => Jk1.one (Jk1.two Jk1.nil Jk1.nil) (PIc m)
+
+theorem JkA_PIc : ∀ m : ℕ, JkA (PIc m)
+  | 0 => ⟨trivial, trivial⟩
+  | (m + 1) => ⟨⟨trivial, trivial⟩, JkA_PIc m⟩
+
+theorem Ew_PIc : ∀ (m n : ℕ), Ew n (PIc m)
+  | 0, n => Ew_twoNil n
+  | (m + 1), n =>
+      Ew_one ⟨trivial, trivial⟩ (Ew_twoNil n)
+        (fun C hC => Ew_pay n C hC _ ⟨trivial, trivial⟩ (Ew_twoNil n))
+        (Ew_PIc m (n + 1))
+
+theorem TipOk_PIc (m : ℕ) : TipOk (PIc m) := TipOk_of_Ew0 (Ew_PIc m 0)
+
+theorem Dk1_twoNilPIc (m : ℕ) : Dk 1 (Jk1.two Jk1.nil (PIc m)) := by
+  intro fs hfs
+  obtain ⟨W, fs', rfl, hfs', hJW, hW, hWp⟩ := (Fok_s 0 fs).mp hfs
+  have hfs0 : fs' = [] := (Fok_z fs').mp hfs'
+  subst hfs0
+  rw [plug_snoc]
+  exact TTwA_of_Ck00 (Ck_one hJW (Ck00_of_TTwA (hW [] rfl))
+    (fun C hC => Ck00_of_TTwA (hWp C hC [] rfl))
+    ((TipOk_PIc m).ck Jk1.nil UniW_nil 0 0))
+
+theorem TTwA_oneTwoPIc (m : ℕ) :
+    TTwA (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (PIc m))) :=
+  TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil (Dk1_twoNilPIc m)
+
+theorem jk1_PIc : ∀ (m l : ℕ),
+    jk1 l (PIc m) = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: (List.range m).flatMap
+      (fun k => shiftr01 k 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ),
+        ((l + 2, 2, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simpa using jk1_twoNil l
+  | (m + 1), l => by
+      show jk1 l (Jk1.two Jk1.nil Jk1.nil) ++
+        (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (PIc m)) = _
+      rw [jk1_twoNil l, jk1_PIc m (l + 1), List.range_succ_eq_map, List.flatMap_cons,
+        List.flatMap_map]
+      simp only [shiftr01_zero, Function.comp_def, List.cons_append, List.nil_append,
+        List.singleton_append, List.append_assoc, List.cons.injEq, Prod.mk.injEq,
+        and_true, true_and, and_self]
+      apply List.flatMap_congr
+      intro k _
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        and_true, and_self]
+      omega
+
+theorem GOK_onePIc (m : ℕ) : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (PIc m))))))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hk : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+          (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (PIc m))))) :=
+        TwoOk_of_LOk0 (LOk_one (k := 0) (W := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
+          (LOk0_of_TwoOk TwoOk_twoNil)
+          (LOk_of_TwOk0 (TTwA_oneTwoPIc m 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+      have h := hk Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem R375k_towerI : ∀ n : ℕ,
+    Mtw R375k [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro m
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+          (Jk1.two Jk1.nil (PIc m))))))]) := by
+    simpa using GOK_onePIc m [] WOk_nil GoodFb_wordJ_nil
+  have h := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+          (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (PIc m)))))))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+          ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ),
+          ((7, 2, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ),
+          ((8, 2, 0) : ℕ × ℕ × ℕ), ((9, 2, 0) : ℕ × ℕ × ℕ)]
+        ++ (List.range m).flatMap
+          (fun k => shiftr01 k 0 [((9, 1, 0) : ℕ × ℕ × ℕ),
+            ((10, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 4 (Jk1.two Jk1.nil Jk1.nil) ++
+          (((5, 1, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 5 Jk1.nil ++ (((6, 2, 0) : ℕ × ℕ × ℕ) ::
+              (jk1 6 (Jk1.two Jk1.nil Jk1.nil) ++
+                (((7, 1, 0) : ℕ × ℕ × ℕ) ::
+                  (jk1 7 Jk1.nil ++ (((8, 2, 0) : ℕ × ℕ × ℕ) ::
+                    jk1 8 (PIc m)))))))))))) = _
+    rw [jk1_twoNil 4, jk1_twoNil 6, jk1_PIc m 8]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at h
+  simpa [Mtw, R375k, R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338,
+    List.append_assoc] using h
+
+theorem MidD_pI : MidD 10 [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)] where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl <;> decide
+
+/-- ★★★★★ `V(10,2,0)`。 -/
+theorem R375i26_mem : R375i ++ [((10, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := R375k)
+    (M := [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)]) (L := 9) (y := 2)
+    R375k_ne MidD_pI (by simp [entry]) (by omega) R375k_towerI
+  simpa [R375i, R375j, List.append_assoc] using h
+
+#print axioms R375i26_mem
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
