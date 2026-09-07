@@ -14278,3 +14278,39 @@ GOK_runGNil_gen / GOK_twoPayZ_of / NNo_payU' / NNo_step / Tow_of_NNo ✓緑
 `blkW A Bs` を単位として同じ塔を既に持っていた。**着手前に notes.md を読む**。
 `snocR_of_tower` は `unN2` と `unQ` を同時に一般化した語レベルの形なので残すが、
 `GOK` レベルで要るものは `GOK_runGNil_gen` で足りる。
+
+## 追記135: 測度の解決は「文脈クラスに `GoodCtx` を持たせる」
+
+追記134 の続き。伝播形の測度を詰めた結果、次の形なら循環も測度も要らない。
+
+既存の `DCtx`（緑）は 2 の枠の兄弟に `JkA` しか課さないので、`NNo nil` を
+`blk ctx V Bs`（`Bs ≠ []`）で剥がすと `Tow_of_NNo` が要求する `NNo Bs.getLast`
+が出ない。かといって `DCtx` の中に `NNo` を書くと負の位置になって inductive に
+できない。族 `NNf`（構造的に定義）を兄弟に使い、さらに**構成子に
+`GoodCtx ctx` を持たせる**と両方解ける。
+
+```
+inductive DG : List Frm → Prop
+  | base : JkT U → GOK U → (∀ C, Bok C → GOK (pay U C)) → DG [fone U]
+  | blk  : DG ctx → (∀ X, NNf X → GOK (plug ctx X)) →      -- ← GoodCtx ctx を持たせる
+           NNf V → (∀ B ∈ Bs, NNf B) → DG (ctx ++ blkC V Bs)
+
+目標: DG_Good : ∀ ctx, DG ctx → GoodCtx ctx
+```
+
+- `blk` の `GoodCtx ctx` があるので、走り 0 のブロックの `APnil_gen0` が要求する
+  枠木の荷 `∀C, GOK (plug ctx (pay V C))` は `pay V C ∈ NNf` から**自動**
+  （追記100 の穴がここで埋まる）。
+- 走りのブロックの先端 `nil` は `GOK_runGNil_gen`（緑）。階段は
+  `Tow_of_NNo` と同じく「兄弟が全域で良い」から出るが、兄弟は `NNf` なので
+  `DG_Good` の木の帰納法で出る（兄弟は元の木の真部分木）。
+- 荷は `NNo_payU'` / `GOK_twoPayZ_of`（どちらも緑）。
+- 木の頭の 2 の記録はブロックに吸収（`plug_blk_two`、緑）。
+
+測度は「木のサイズ（内側）」と「導出（外側）」で、文脈の長さも走り長も測度に
+入らない。`DG` の `blk` は `GoodCtx ctx` を要求するので、`DG` は
+「良さが確認済みの文脈」しか作れない（帰納法の仮定を構成子が運ぶ形）。
+
+次の一手: `DG` を定義し `DG_Good` を木の帰納法で書く。ケースは
+`nil` / `pay X C` / `two N X` の 3 つ、文脈は `base` / `blk (Bs = [])` /
+`blk (Bs ≠ [])` の 3 つ。
