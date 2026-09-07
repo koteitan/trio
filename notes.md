@@ -14098,3 +14098,48 @@ APd_falseTwoOne : APd (false :: ks) (two nil (one nil W))
 ```
 
 が繋がる。`RunPay`（連鎖に荷）も同じ道具で出る見込み。
+
+## 追記132: 行376 の残りは `stkP r (pay nil C)`（連鎖に荷）1 種類に絞れた
+
+`GOK` レベル（`APd_iff` + `GCtx_split`）で作業すると兄弟は常に `nil` になる。
+その上で必要な木を整理すると:
+
+```
+A(r)      := APd (true::ks) (stkP r nil)            -- 純粋な連鎖
+B(r, W)   := APd (true::ks) (stkP r (one nil W))    -- 連鎖 + 1 の記録 + W
+C(r, C)   := APd (true::ks) (stkP r (pay nil C))    -- 連鎖 + 荷
+```
+
+依存関係:
+
+```
+A(r+2)   ⟸ GOK_stkW_gen（緑） + 階段
+階段(k)   = B(r+1, 階段(k-1))、階段(0) = A(r+1)      -- k の帰納で回る
+B(r, nil) ⟸ APnil_gen0（hGV = A(r) ✓、hang = C(r, ·)）
+B(r, W)   ⟸ 文脈を伸ばして W の帰納                  -- W が小さくなる
+C(0,·) ✓ APd_payA   C(1,·) ✓ APd_twoNilPay（今回緑）
+```
+
+**残るのは `C(r, C)` の `r ≥ 2`。**その A2' の帰納の dup の場合に鎖
+`twoIt nil (pay nil C') n` が出るが、`twoIt nil T n` は bms で見ると
+**同じ高さに水平に並ぶ**（入れ子にならない）:
+
+```
+jk1 l (twoIt nil T n) = ((l+1,2,0) :: jk1 (l+1) T) を n 回
+```
+
+ので、`stkP (r-1) (twoIt nil T n)` の `GOK` を出す補題を作れば閉じる。
+`twoIt nil T n` は 2 の記録の兄弟が `nil` ではない（鎖自身）ので 𝒯 の外だが、
+語は水平な繰り返しなので `Mtw` / `snocY_mem` 系がそのまま効く形。
+
+### この節（追記125〜132）で緑にした道具
+
+```
+unQ / nstQ / jk1_nstQ / shift_unQ / unQ_append
+colJ_plug_twoNstkX / wordJ_snoc_twoNstkX / wordJ_snoc_twoNstkQ / wordJ_snoc_twoNstkT(2)
+MidD_unQ / hMy_unQ / entry_one / length_jk1_stkP_nil / row1_jk1_stkP_nil
+snocQ_of_tower        -- snocN_of_tower の一般版（歩幅 p+2）
+GOK_stkW_gen          -- GOK_twoTwoNilW_gen の一般版（走り 2 が p+2 連）
+APd_twoNilOf / APd_oneNilF / APd_twoOneNil / APd_oneNilT
+APd_twoNilPay / APd_twoNilOneNil
+```
