@@ -13432,3 +13432,61 @@ R14_mem_M     : MNil → #14 ∈ W 0
   … 塔の枠木 `two nil nil` が `APd (false::ks)` を要求して破れる（追記116 の穴）。
 - `MNil` を語のレベルで直接潰す（`GOK_twoNilW_gen` の階段を `AllA` だけで作る）
   … 階段の文脈が `MCtx` なので `APd` が当たらない。
+
+## 追記118: 壁を `AllA ⇒ MBplus` に落とした（緑）。非可述の核が確定
+
+### 緑になったもの
+
+`APd_twoNilGen` の本体（文脈に依らない語レベルの議論）を切り出した:
+
+```
+GOK_twoNilW_gen ctx0 V hJN hJT hGV hstair : GOK (plug (ctx0++[fone V]) (two N nil))
+```
+
+`APd_twoNilGen` はその 10 行の系になり、同じ補題を `MPd` 側にも当てられる:
+
+```
+MBplus N := ∀ j ks, MPd (rep j true ++ (true :: ks)) N       -- ⇔ ∀ kk, MPd (true::kk) N
+MCtx_rep / MPd_plug_rep / MPd_twoNilGen
+MNil_of   : (∀ N, JkA N → AllA N → MBplus N) → MNil
+R14_mem_A : (∀ N, JkA N → AllA N → MBplus N) → #14 ∈ W 0
+```
+
+**壁の推移**: `WallP`（`Pk` 層、4 層目）→ `MNil`（`APd` の隣）→ **`AllA ⇒ MBplus`**
+（`APd` 層と `MPd` 層の比較 1 本）。
+
+### `AllA ⇒ MBplus` に要るもの
+
+`MPd (true::kk) N` を潰すには、文脈を 1 枚剥いで
+`GOK (plug ctx' (one U N))` を出す。`AllA N` は `APd (true::ks') N` を与えるので、
+`APd_ct` に当てるには枠木 `U` に `APd ks' U ∧ Rq ks' U` が要る。ところが `MCtx` の
+枠木は `MPd ks' U` しか持たない。塔の枠木は `two nil nil` で、これは
+
+- `AllA (two nil nil)` … `APd_twoTwoNilGen`（緑）
+- `TwoOk (two nil nil)` … `TwoOk_twoNil`（緑）
+- `APd (false::ks) (two nil nil)` … **出ない**（走り 2、兄弟が全形状で要る）
+
+つまり `MPd ks U → APd ks U` は `false` 頭の形で破れる。
+
+### 非可述の核（決定版）
+
+走り 2 の階段 `nstN N k` は、兄弟 `N` を 2 の枠の深さ `ks, ks+1, ks+2, ...` に
+コピーする（`APd_nstN` の再帰で形が `false` 1 個ずつ伸びる）。したがって
+
+```
+2 の枠の兄弟条件は「形に依らない全形状の良さ」でなければならない。
+```
+
+`APd` はこれを `AllA` として**定義の外**に置いている（`TwoOk` / `StkOk 0` が使う）。
+`MPd` に対する同じもの `AllM N = ∀ ks, MPd ks N` を `MPd` の定義の中に書くと、
+停止性の測度 `(cntF ks, ks.length)` に対し `cntF kk` が非有界になり定義できない。
+
+ランクを付けて `MPd r` の兄弟条件を `∀ ks, MPd (r-1) ks N` にすると定義は通るが、
+`MPd r` は `r` について単調でない（枠木の欄で共変、兄弟の欄で反変）ので、
+階段が要求する `MPd r` と兄弟が与える `MPd (r-1)` のずれを埋められない。
+
+### この形が有望な理由
+
+`MBplus N` は「`APd` 層で全形状に差せる木は `MPd` 層でも差せる」で、
+新しい `GOK` の事実ではなく**2 つの族の比較**。`MCtx` と `GCtx` の違いは
+`false` 頭の枠木だけ（`Rq` と、走り 2 の枠木）なので、差分が小さい。
