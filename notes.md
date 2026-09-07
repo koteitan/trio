@@ -13139,3 +13139,45 @@ bms では `#14[n]` は標準形なので、これは BMS の制限ではなく 
 ので、`Rq` を外すのは `APd` 系 30 本以上の見直しになる。
 
 **結論: `WallP` には「走り 2 を許す枠積みの機械」が要る。`APd` と同規模の新規構築。**
+
+## 追記112: 列を伸ばす方向は極限に届かない（ユーザー指摘）。梯子の伸ばし方が見えた
+
+`V(11,2,0)` は #14 の展開 [3]。H 族（36 列）を全部埋めても届くのは #14[4] だけで、
+#14 は #14[n] の**極限**だから、この方向では族を無限個作る必要がある。
+シートの「証明中」を #14 に戻した。
+
+### この回に緑にしたもの
+
+H 族 13 本（`H(0,0,0)` 〜 `H(5,1,0)`）。うち `H(2,2,1)` は壁の迂回で出た:
+
+```
+TipOk (TW 1) = Pk_one … (Pk0_of_Ew (Ew_twoNilTwoNil 1 _))
+```
+
+`Ew_twoNilTwoNil` は `GOK_twoTwoNilW_gen` を直接使い `Pk_twoW` を経由しないので
+壁 `Pk 1 0 (two nil nil)` を通らない。そこから `TTwA (TW 2)` → `TwoOk (TW 3)`。
+
+### 新しい発見: `GOK_twoTwoNilW_gen` は深い文脈にそのまま当たる
+
+`two nil (TW (k+1)) = two nil (one W (two nil (TW k)))` は
+
+```
+plug ctx (two nil (TW (k+1))) = plug (ctx ++ [ftwo nil] ++ [fone W]) (two nil (TW k))
+```
+
+なので、`GOK_twoTwoNilW_gen (ctx ++ [ftwo nil]) W (N := nil) (Wl := nil)` を当てると
+
+- `hGV : GOK (plug (ctx ++ [ftwo nil]) W) = GOK (plug ctx (two nil (two nil nil)))`
+  … `Ew_twoNilTwoNil`（緑）
+- `hstair : ∀ m, GOK (plug ctx (two nil (NST (m+1))))`
+  … `NST (m+1) = one (two nil nil) (two nil (nstN2 nil nil m))` なので
+  「走り 2 の続きつき」の**新しい語の補題は要らない**（追記109 の見立ては誤り）
+
+**つまり要るのは `Ew q (two nil (NST m))` 1 本だけ**（bms で階段が `NST` だと確認済み）。
+`Ew q (two nil (NST 0)) = Ew_twoNilTwoNil` は緑。`m` の帰納法で伸ばせれば
+`TipOk (TW 2)` → `TwoOk (TW 4)` と梯子が伸び、さらに `TWm k m` の族で
+`TipOk (TW n)` が全 n について出る見込み。
+
+`Ew q (two nil (NST m))` を `Pk_twoW UniP_nil (Pk 1 0 (NST m))` で出そうとすると
+`Pk 1 0 (two nil nil)`（壁）に当たるので、`Ew_twoNilTwoNil` と同じく
+`GOK_twoTwoNilW_gen` を直接当てる証明にする必要がある。**次の一手はこれ。**
