@@ -12218,3 +12218,14 @@ Pay m : ∀ X, JkA X → (X が長さ ≤ m のブロック列に差せる) →
 同じ形にするには「`APd` 層の `UniW`」（= 許容左兄弟の類で、階段 `nstN2` も
 渡せるもの）を定義する必要がある。荷を含む鎖の階段が `APd_all` では出ないので、
 そこが山。
+
+### 追記94 追記2: 土台は既にある（`TwoOk_twoWlNil`）
+
+`TwoOk_twoWlNil`（38664）: 左兄弟 `Wl` が `∀ ks, FrmJ ks Wl` / `Rq ks Wl` /
+`APd (false :: ks) Wl` を満たせば `TwoOk (two Wl nil)`（走りの先端が空、兄弟一般）。
+`APd_nstN2` が階段を供給している。
+
+したがって `TwoOk (two Wl (pay nil B))` は、`Ck_twoWPayZ` と同じ A2' を
+この土台の上で回せばよい。残る作業は「複製鎖 `twoIt Wl (pay nil B') i` が
+左兄弟の条件（特に `APd (false :: ks)`）を満たす」ことを、A2' の帰納法の仮定から
+組み立てる部分。`Ck` 版では `UniW` がその役をしていた（`hWj` の帰納）。
