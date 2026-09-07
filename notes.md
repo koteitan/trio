@@ -14343,3 +14343,61 @@ inductive DG : List Frm → Prop
 
 次の一手はこの測度を Lean に落とすこと。木 `X` と文脈のブロック列に対して
 `μ = Σ ω^(走り長)` を `Ordinal` で定義し、`GOK` の証明をその整礎帰納で回す。
+
+## 追記136: `NNo_pay`（族は荷で閉じる）が無条件で緑
+
+追記100 が「残っている 1 本」と書いた `NNo nil` の前段、**族の荷**が閉じた。
+
+```
+NNo_pay_blk : Bok C → NNo X → DCtx ctx → JkA V → (∀B∈Bs, JkA B) → GOK (plug ctx V) →
+              GOK (plug (ctx ++ blkC V Bs) (pay X C))
+NNo_pay_base: JkT U → GOK U → NNo X → Bok C → GOK (one U (pay X C))
+NNo_pay     : Bok C → NNo X → NNo (pay X C)          ★無条件
+```
+
+- `Bs = []` … `NNo_payU'`（緑）
+- `Bs ≠ []` … `GOK_twoPayZ_of`（緑）。族は `JkA` そのものでよい。塔
+  `htow : ∀N, JkA N → GOK (plug ctx (two N X))` は `plug_blk_two` で
+  「兄弟を 1 本増やしたブロック文脈に `X` を差す」に化けるので `NNo X` から出る
+  （`DCtx.blk` は兄弟に `JkA` しか課さないのが効く）。
+- 底 … 空文脈の荷は `AY0`（緑）で自由に付くので、`AYs` の鎖の枠木を
+  `DCtx.base` に載せられる。これで底の穴も消えた。
+
+### `NNo nil` に残る 1 点の正体（今回の詰め）
+
+`NNo nil` を `DCtx` の場合分けで示すと:
+
+```
+base [fone U]          … APnil_gen0                     ✓
+blk ctx V Bs (Bs = []) … APnil_gen0 が V の荷を要求       ← 穴
+blk ctx V Bs (Bs ≠ []) … GOK_runGNil_gen、階段は Tow_of_NNo が
+                          NNo (Bs.getLast) を要求        ← 穴
+```
+
+2 つの穴は**互いに逆向き**の要求である:
+
+- `V` の荷を得るには `DCtx.blk` に荷の条件を積む（正の位置なので可能）。
+  しかしそうすると `NNo_payU'` が文脈を鎖の枠木で伸ばすとき、鎖の荷
+  `pay (one W T) C`（`one` 頭の木の上の荷）が要る。これは
+  `one W (pay T C)` とは別の形（`C` の段が 1 つ低い）で、既存の道具が無い。
+- 兄弟の `NNo` を得るには `DCtx.blk` の兄弟条件を `NNo` にする。しかし
+  `NNo` は `DCtx` を参照するので inductive の負の位置になり書けない。
+
+一方 `RCtx`（追記134）は形で枠木を量化するので**荷の閉包は定理として出る**
+（`RP_of_RG`、緑）。逆に走りの塔が出ない。`DCtx`/`NNo` はその逆。
+
+### 次の一手: 両者を合わせる `TCtx`
+
+1 の枠は `RCtx` と同じく形で量化（荷が閉じる）、2 の枠の兄弟は**外部で定義済みの
+`NNo`** を使う（`NNo` は `DCtx` 参照なので `TCtx` の再帰には入らない → 停止する）。
+
+```
+TCtx : List Bool → List Frm → Prop
+  []        D = ∃ ks, GCtx (true::ks) D
+  true::ks  D = ∃ D' U, TCtx ks D' ∧ (JkA U ∧ TG ks U) ∧ D = D' ++ [fone U]
+  false::ks D = ∃ D' N, TCtx ks D' ∧ NNo N ∧ D = D' ++ [ftwo N]
+```
+
+- 荷: `AYr` / `AYrT` の移植（`RCtx` と同じ）。`AYrT` の鎖 `twoIt N (pay Z Y) k` は
+  兄弟が `NNo` である必要があるので、`NNo_step` の `Z` 一般版が要る。
+- 塔: `TCtx ks D → DCtx D` を示せば `Tow_of_NNo` がそのまま効く。

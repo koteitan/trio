@@ -54961,17 +54961,25 @@ theorem NNo_pay_blk (C : TrioSeq) (hC : Bok C) {X : Jk1} (hX : NNo X)
 
 #print axioms NNo_pay_blk
 
-/-- 底（`DCtx.base`）での荷。ここだけ残る。 -/
-def NBase : Prop := ∀ U : Jk1, JkT U → GOK U → (∀ C : TrioSeq, Bok C → GOK (Jk1.pay U C)) →
-  ∀ X : Jk1, NNo X → ∀ C : TrioSeq, Bok C → GOK (Jk1.one U (Jk1.pay X C))
+/-- 底（`DCtx.base`）での荷。空文脈の荷は `AY0` で自由に付くので、
+鎖の枠木も `DCtx.base` に載る。 -/
+theorem NNo_pay_base (U : Jk1) (hJU : JkT U) (hGU : GOK U)
+    {X : Jk1} (hX : NNo X) (C : TrioSeq) (hC : Bok C) :
+    GOK (Jk1.one U (Jk1.pay X C)) := by
+  have hAP : ∀ V : Jk1, CtxX ([] : List Frm) V → GOK (plug ([] : List Frm) V) →
+      GOK (plug ([] : List Frm) (Jk1.one V X)) := by
+    intro V hV hGV
+    have hJTV : JkT V := hV
+    exact hX.2 [Frm.fone V] (DCtx.base hJTV hGV (fun C' hC' => AY0 C' hC' V hJTV hGV))
+  exact AYs C hC [] trivial U X hJU hX.1 hAP hGU
 
-/-- ★★★★★ 族は荷で閉じる（底の 1 点を除く）。 -/
-theorem NNo_pay (hb : NBase) (C : TrioSeq) (hC : Bok C) {X : Jk1} (hX : NNo X) :
+/-- ★★★★★ 族は荷で閉じる（無条件）。 -/
+theorem NNo_pay (C : TrioSeq) (hC : Bok C) {X : Jk1} (hX : NNo X) :
     NNo (Jk1.pay X C) := by
   refine ⟨⟨hX.1, hC⟩, ?_⟩
   intro ctx hctx
   cases hctx with
-  | @base U hJU hGU hUp => exact hb U hJU hGU hUp X hX C hC
+  | @base U hJU hGU _ => exact NNo_pay_base U hJU hGU hX C hC
   | @blk ctx' V Bs hc' hJV hB hGV => exact NNo_pay_blk C hC hX hc' hJV hB hGV
 
 #print axioms NNo_pay
