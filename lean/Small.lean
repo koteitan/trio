@@ -57089,5 +57089,76 @@ theorem LStep2_of_LStep1 (h : LStep1) : LStep2 :=
 #print axioms MPd_oneQ2
 #print axioms R14_mem_L2
 
+/-! ### ★★★★★ 走り 2 の連鎖（`stk` 族）の階段
+
+bms 実測: `<N>(l+1,2,0)…(l+q,2,0)`（2 の記録 `q` 個）の展開は、
+良い部分が「1 個少ない連鎖」で、コピーの単位が
+
+```
+(D,1,0) <N at D> (D+1,2,0)…(D+p+1,2,0)      -- p = q-2、シフトは p+2
+```
+
+`p = 0` のとき `unN` / `nstN`（既存の 2 連の階段）に一致する。 -/
+
+/-- 階段の単位（2 の記録が `p+1` 個）。`unQ N 0 D = unN N D`。 -/
+def unQ (N : Jk1) (p D : ℕ) : TrioSeq :=
+  ((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D (Jk1.two N (stkP p Jk1.nil))
+
+/-- 階段（`p+2` 連の走り 2 の版）。`nstQ N 0 = nstN N`。 -/
+def nstQ (N : Jk1) (p : ℕ) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (k + 1) => Jk1.one Jk1.nil (Jk1.two N (stkP p (nstQ N p k)))
+
+theorem unQ_zero (N : Jk1) (D : ℕ) : unQ N 0 D = unN N D := by
+  show ((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D (Jk1.two N Jk1.nil) = _
+  show ((D, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (D + 1) Jk1.nil)) = _
+  simp [unN, jk1]
+
+theorem nstQ_zero (N : Jk1) : ∀ k : ℕ, nstQ N 0 k = nstN N k
+  | 0 => rfl
+  | (k + 1) => by
+      show Jk1.one Jk1.nil (Jk1.two N (nstQ N 0 k)) = Jk1.one Jk1.nil (Jk1.two N (nstN N k))
+      rw [nstQ_zero N k]
+
+theorem shift_unQ (N : Jk1) (p D s : ℕ) : shiftr01 s 0 (unQ N p D) = unQ N p (D + s) := by
+  show shiftr01 s 0 ([((D, 1, 0) : ℕ × ℕ × ℕ)] ++ jk1 D (Jk1.two N (stkP p Jk1.nil))) = _
+  rw [shiftr01_append0, shift_col, jk1_shift]
+  rfl
+
+theorem JkA_nstQ {N : Jk1} (hJN : JkA N) (p : ℕ) : ∀ k : ℕ, JkA (nstQ N p k)
+  | 0 => trivial
+  | (k + 1) => ⟨trivial, hJN, JkA_stkP p (JkA_nstQ hJN p k)⟩
+
+theorem jk1_nstQ (N : Jk1) (p : ℕ) : ∀ (k l : ℕ),
+    jk1 l (nstQ N p k)
+      = (List.range k).flatMap (fun j => shiftr01 ((p + 2) * j) 0 (unQ N p (l + 1)))
+  | 0, l => by simp [nstQ, jk1]
+  | (k + 1), l => by
+      have hstep : jk1 l (nstQ N p (k + 1))
+          = unQ N p (l + 1) ++ jk1 (l + 1 + (p + 1)) (nstQ N p k) := by
+        show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (Jk1.two N (stkP p (nstQ N p k)))) = _
+        show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          (jk1 (l + 1) N ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+            jk1 (l + 2) (stkP p (nstQ N p k))))) = _
+        rw [jk1_stkP p (nstQ N p k) (l + 1 + 1)]
+        show _ = ((((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          (jk1 (l + 1) N ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+            jk1 (l + 2) (stkP p Jk1.nil)))) ++ jk1 (l + 1 + (p + 1)) (nstQ N p k))
+        rw [jk1_stkP p Jk1.nil (l + 1 + 1)]
+        simp [jk1, List.append_assoc, show l + 1 + 1 = l + 2 from rfl,
+          show l + 2 + p = l + 1 + (p + 1) from by omega]
+      rw [hstep, jk1_nstQ N p k (l + 1 + (p + 1)), List.range_succ_eq_map,
+        List.flatMap_cons, List.flatMap_map]
+      simp only [Nat.mul_zero, shiftr01_zero, Function.comp_def]
+      congr 1
+      apply List.flatMap_congr
+      intro j _
+      rw [shift_unQ, shift_unQ, Nat.mul_succ]
+      congr 1
+      omega
+
+#print axioms jk1_nstQ
+
 end Small
 end TRIO
