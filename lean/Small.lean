@@ -51235,6 +51235,51 @@ theorem Rk_pay : ∀ (j n : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, UP X → 
 
 #print axioms Rk_pay
 
+/-! #### 走りの階段と走り 2（枠木の全層条件は仮定として持つ） -/
+
+theorem Rk_payNil (j n : ℕ) (C : TrioSeq) (hC : Bok C) : Rk j n (Jk1.pay Jk1.nil C) :=
+  Rk_pay j n C hC Jk1.nil UP.nil (Rk_nil j n)
+
+theorem Rk_nstTower {Wl : Jk1} (hWall : ∀ j' i' : ℕ, Rk j' (i' + 1) Wl)
+    (hWallp : ∀ (C : TrioSeq), Bok C → ∀ j' i' : ℕ, Rk j' (i' + 1) (Jk1.pay Wl C))
+    (hUT : UT Wl) :
+    ∀ (k j n : ℕ), Rk j (n + 1) (Jk1.two Wl (nstN2 Wl Jk1.nil k))
+  | 0, j, n => Rk_twoW (hWall j) (fun C hC => hWallp C hC j) hUT (Rk_nil (j + 1) 0)
+  | (k + 1), j, n => by
+      have h : Rk (j + 1) 0 (Jk1.one Jk1.nil (Jk1.two Wl (nstN2 Wl Jk1.nil k))) :=
+        Rk_one UP.nil (Rk_nil (j + 1) 0)
+          (fun C hC => Rk_payNil (j + 1) 0 C hC)
+          (Rk_nstTower hWall hWallp hUT k (j + 1) 0)
+      exact Rk_twoW (hWall j) (fun C hC => hWallp C hC j) hUT h
+
+/-- ★★★★★ 走り 2（枠木 `Wl` が全層に差せるとき）。 -/
+theorem Rk_twoWTwoNil {Wl : Jk1} (hWall : ∀ j' i' : ℕ, Rk j' (i' + 1) Wl)
+    (hWallp : ∀ (C : TrioSeq), Bok C → ∀ j' i' : ℕ, Rk j' (i' + 1) (Jk1.pay Wl C))
+    (hUT : UT Wl) (j n : ℕ) : Rk j (n + 1) (Jk1.two Wl (Jk1.two Jk1.nil Jk1.nil)) := by
+  intro ctx hctx
+  obtain ⟨U, ctx', rfl, hc, hJU, hU, hUp⟩ := Rok_fone_dest hctx
+  refine GOK_twoTwoNilW_gen ctx' U (N := Wl) (Wl := Jk1.nil) (JkA_of_UT hUT) trivial ?_
+    (hU ctx' hc) ?_
+  · exact JkT_plug_Rok j (n + 1) (ctx' ++ [Frm.fone U])
+      (Rok_fone hc hJU hU (fun C hC => hUp C hC)) _ ⟨JkA_of_UT hUT, trivial, trivial⟩
+  · intro k
+    exact Rk_nstTower hWall hWallp hUT k j n (ctx' ++ [Frm.fone U])
+      (Rok_fone hc hJU hU (fun C hC => hUp C hC))
+
+/-- `nil` は全層に差せる（走り 2 の枠木として使える）。 -/
+theorem Rk_all_nil (j' i' : ℕ) : Rk j' (i' + 1) Jk1.nil := Rk_nil j' (i' + 1)
+
+theorem Rk_allp_nil (C : TrioSeq) (hC : Bok C) (j' i' : ℕ) :
+    Rk j' (i' + 1) (Jk1.pay Jk1.nil C) := Rk_payNil j' (i' + 1) C hC
+
+/-- ★★★★★ 走り 2（枠木が `nil`）。 -/
+theorem Rk_twoNilTwoNil (j n : ℕ) :
+    Rk j (n + 1) (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil)) :=
+  Rk_twoWTwoNil Rk_all_nil Rk_allp_nil UT.nil j n
+
+#print axioms Rk_twoWTwoNil
+#print axioms Rk_twoNilTwoNil
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
