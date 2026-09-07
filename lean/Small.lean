@@ -57464,5 +57464,51 @@ theorem APd_twoNilOneNil {ks : List Bool} {W : Jk1}
 
 #print axioms APd_twoNilPay
 
+/-! ### ★★★★★ 行376 を `RunAll`（連鎖が全部良い）1 本に落とす
+
+`GOK_oneStk` は `APd_stk h q []` しか使っていない。つまり要るのは
+「走り 2 の連鎖 `stk q` がどの形でも項として継げる」だけで、
+`TwoStep`（`TwoOk` の `two nil ·` 閉包）より弱い。 -/
+
+def RunAll : Prop := ∀ (q : ℕ) (ks : List Bool), APd (true :: ks) (stk q)
+
+theorem RunAll_of_TwoStep (h : TwoStep) : RunAll := fun q ks => APd_stk h q ks
+
+theorem GOK_oneStk_R (h : RunAll) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil) (h q []))
+
+theorem tw_R344_42R (h : RunAll) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    GOK_oneStk_R h n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★ シート行376 は `RunAll` 1 本だけに帰着する。 -/
+theorem R376_of_RunAll (h : RunAll) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42R h)
+
+/-- `RunAll` の底 3 つは緑。 -/
+theorem RunAll_zero (ks : List Bool) : APd (true :: ks) (stk 0) := APd_nilT ks
+
+theorem RunAll_one (ks : List Bool) : APd (true :: ks) (stk 1) :=
+  APd_twoNilGen Jk1.nil trivial ks (fun _ => APd_nil _)
+
+theorem RunAll_two (ks : List Bool) : APd (true :: ks) (stk 2) :=
+  APd_twoTwoGen (N := Jk1.nil) trivial (fun _ _ => APd_nil _) ks
+
+#print axioms R376_of_RunAll
+#print axioms RunAll_two
+
 end Small
 end TRIO
