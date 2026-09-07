@@ -12559,3 +12559,24 @@ Main(q) : ∀ (A Bs, |Bs| = q, 条件) (ctx 良い), ∀ i,
 `NOk r m nil` が出るか見る。鎖の荷がその場で作れるか（`GOK_twoIt_at` の各段で
 荷を持ち回れるか）が焦点。持ち回れれば、`NOk_pay` と塔が同じ層で揃い、
 `GOK_bstkTower` の走り長 `q` の帰納法と合わせて行376 が閉じる。
+
+### 追記99 追記: 鎖の塔は鎖の長さ `k` の帰納法で回る（荷なしの場合）
+
+鎖 `TR k = twoIt nil nil k` を兄弟にした走りの塔は、`k` の帰納法で回る:
+
+```
+GOK (plug D (TR (k+1))) = GOK (plug D (two (TR k) nil))
+  ⇐ GOK_runGNil_gen（A := TR k）
+     階段: ∀ i, GOK (plug (D ++ blkC V Bs ++ blkR (TR k) Bs i) (TR k))   ← k が 1 減る
+```
+
+つまり「兄弟が鎖の塔」は循環しない。荷つきの鎖
+`twoIt N (pay nil Y) n` になると、A2' の dup が**混合鎖**
+（`chW (Y₁ :: Y₂ :: …) = two (chW Ys) (pay nil Y₁)`、荷が段ごとに違う）を作る。
+dup は先頭の荷 `Y` を「`n` 個の小さい荷 `Y'`」に置き換えるので、長さは伸びるが
+荷は A2' 順で減る。測度はまた ω 冪の和（追記96 の μ と同型）。
+
+次にやること（順番）:
+1. 荷なしの鎖の塔（`k` の帰納法）を `BOk` 層で緑にする。
+2. 混合鎖の族 `chW : List TrioSeq → Jk1` を定義し、その塔を μ で回す。
+3. それで `hrun` が埋まり、`BLoad` → 行376。
