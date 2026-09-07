@@ -13490,3 +13490,42 @@ R14_mem_A : (∀ N, JkA N → AllA N → MBplus N) → #14 ∈ W 0
 `MBplus N` は「`APd` 層で全形状に差せる木は `MPd` 層でも差せる」で、
 新しい `GOK` の事実ではなく**2 つの族の比較**。`MCtx` と `GCtx` の違いは
 `false` 頭の枠木だけ（`Rq` と、走り 2 の枠木）なので、差分が小さい。
+
+## 追記119: 次の一手 —— `MCtx` の枠木に `AllA` / `TwoQ` を課す
+
+`MBplus N`（= ∀ kk, `MPd (true::kk) N`）を潰すには、文脈を 1 枚剥いた
+`MPd kk (one U N)` を出す必要がある。`kk = []` なら
+
+```
+GOK (one U N) = APd_step [] (JkT U) (Rq=True) (APd [] U = GOK U ⟸ MPd [] U) (APd [true] N ⟸ AllA N)
+```
+
+で出る（緑にできる）。`kk` が長い場合は `AllA (one U N)` が要り、それには
+**枠木 `U` の `AllA`** が要る。いまの `MCtx` は枠木に `MPd ks U` しか課していない。
+
+### 使える閉包（すべて既存・緑）
+
+```
+AllA (two N T)  = TwoOk T N …                       -- TwoOk の定義そのもの
+AllA (one U T)  ⟸ APd_step（形が true 頭なので Rq = True）+ AllA U + AllA T
+TwoOk_pay / TwoOk_oneNil / TwoOk_congr
+TwoQ U  := JkA U ∧ TwoOk U ∧ (∀C, TwoOk (pay U C))
+OneOk W := ∀ U, TwoQ U → TwoOk (one U W)             -- OneOk_nil / OneOk_pay / OneOk_oneNil
+```
+
+塔の枠木はどちらも条件を満たす:
+
+```
+nil          : AllA ✓(APd_nil)  TwoOk ✓(APd_twoNilGen)     荷 ✓
+two nil nil  : AllA ✓(APd_twoTwoNilGen)  TwoOk ✓(TwoOk_twoNil)  荷 ✓(TwoOk_pay)
+```
+
+### 残る難所
+
+`MPd (true::(true::kk')) N` を `MPd (true::kk') (one U N)` に落とすと、形は短くなるが
+`MPd_iff` で見ると文脈が**伸びる**ので、形の帰納が下向きに回らない。
+`AllA (one U N)` を作って `AllA` 側で処理する道（`APd` の世界に戻す）が要る。
+つまり **`MCtx` 文脈を `GCtx` 文脈に読み替える**のが本筋で、そのためには
+枠木の `AllA` / `TwoQ` が必須。走り 2 の枠木 `two nil nil` は
+`APd (false::ks)` では出ないが `AllA` / `TwoOk` は満たすので、
+`MCtx` の枠木条件を `MPd ks U ∧ AllA U ∧ TwoQ U` にすれば読み替えの材料が揃う。
