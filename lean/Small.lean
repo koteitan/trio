@@ -57552,5 +57552,118 @@ theorem KC_GOK_nil {D : List Frm} (h : KC D) : GOK (plug D Jk1.nil) := by
 #print axioms KC_of_GCtx
 #print axioms KC_GOK_nil
 
+/-! ### ★★★★★ 走り文脈 `RCtx`（2 の枠を任意個積める）
+
+`APd` / `GCtx` は形（`List Bool`）で文脈を索引するが、`false` は
+`[fone U, ftwo N]` を束にしているので、2 の枠が隣接する文脈を書けない。
+`RCtx` では `true` = 1 の枠（木 `U`、良さと荷閉包つき）、`false` = 2 の枠
+（兄弟 `nil`）を独立の文字として積む。形の長さで構造再帰するので停止する。 -/
+
+def RCtx : List Bool → List Frm → Prop
+  | [], D => ∃ ks : List Bool, GCtx (true :: ks) D
+  | (true :: ks), D => ∃ (D' : List Frm) (U : Jk1), RCtx ks D' ∧ JkA U ∧
+      (∀ D'' : List Frm, RCtx ks D'' → GOK (plug D'' U)) ∧
+      (∀ (D'' : List Frm) (C : TrioSeq), RCtx ks D'' → Bok C →
+        GOK (plug D'' (Jk1.pay U C))) ∧
+      D = D' ++ [Frm.fone U]
+  | (false :: ks), D => ∃ D' : List Frm, RCtx ks D' ∧ D = D' ++ [Frm.ftwo Jk1.nil]
+
+/-- 形 `ks` のどの走り文脈にも差せる木。 -/
+def RG (ks : List Bool) (X : Jk1) : Prop := ∀ D : List Frm, RCtx ks D → GOK (plug D X)
+
+/-- 荷をどれだけ吊るしても差せる木。 -/
+def RP (ks : List Bool) (X : Jk1) : Prop :=
+  ∀ (D : List Frm) (C : TrioSeq), RCtx ks D → Bok C → GOK (plug D (Jk1.pay X C))
+
+/-- 1 の枠の木として使える木。 -/
+def RF (ks : List Bool) (U : Jk1) : Prop := JkA U ∧ RG ks U ∧ RP ks U
+
+theorem RCtx_bnil (D : List Frm) :
+    RCtx [] D ↔ ∃ ks : List Bool, GCtx (true :: ks) D := Iff.rfl
+
+theorem RCtx_ct (ks : List Bool) (D : List Frm) :
+    RCtx (true :: ks) D ↔ ∃ (D' : List Frm) (U : Jk1), RCtx ks D' ∧ JkA U ∧
+      (∀ D'' : List Frm, RCtx ks D'' → GOK (plug D'' U)) ∧
+      (∀ (D'' : List Frm) (C : TrioSeq), RCtx ks D'' → Bok C →
+        GOK (plug D'' (Jk1.pay U C))) ∧
+      D = D' ++ [Frm.fone U] := Iff.rfl
+
+theorem RCtx_cf (ks : List Bool) (D : List Frm) :
+    RCtx (false :: ks) D ↔ ∃ D' : List Frm, RCtx ks D' ∧ D = D' ++ [Frm.ftwo Jk1.nil] :=
+  Iff.rfl
+
+theorem RCtx_fone {ks : List Bool} {D : List Frm} {U : Jk1} (hD : RCtx ks D) (hU : RF ks U) :
+    RCtx (true :: ks) (D ++ [Frm.fone U]) := ⟨D, U, hD, hU.1, hU.2.1, hU.2.2, rfl⟩
+
+theorem RCtx_ftwo {ks : List Bool} {D : List Frm} (hD : RCtx ks D) :
+    RCtx (false :: ks) (D ++ [Frm.ftwo Jk1.nil]) := ⟨D, hD, rfl⟩
+
+/-- 走り文脈に差した木は字レベルで妥当。 -/
+theorem RCtx_JkT : ∀ (ks : List Bool) (D : List Frm), RCtx ks D → ∀ T : Jk1, JkA T →
+    JkT (plug D T)
+  | [], D, hD, T, hT => by
+      obtain ⟨kk, hc⟩ := hD
+      exact JkT_plug D (GCtx_CtxOk (true :: kk) D hc) T
+        (GCtx_CtxX (true :: kk) D hc T hT trivial)
+  | (true :: ks), D, hD, T, hT => by
+      obtain ⟨D', U, hD', hJU, -, -, rfl⟩ := hD
+      rw [plug_snoc]
+      exact RCtx_JkT ks D' hD' _ ⟨hJU, hT⟩
+  | (false :: ks), D, hD, T, hT => by
+      obtain ⟨D', hD', rfl⟩ := hD
+      rw [plug_snoc2]
+      exact RCtx_JkT ks D' hD' _ ⟨trivial, hT⟩
+
+/-- `RG` は字の形にしか依らない。 -/
+theorem RG_congr {ks : List Bool} {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2)
+    (hX : RG ks X1) : RG ks X2 :=
+  fun D hD => GOK_congr (jk1_plug_congr D h) (hX D hD)
+
+/-- `RG ks (one U Z)` は `RG (true :: ks) Z` から出る（枠を 1 本足すだけ）。 -/
+theorem RG_one {ks : List Bool} {U Z : Jk1} (hU : RF ks U) (hZ : RG (true :: ks) Z) :
+    RG ks (Jk1.one U Z) := by
+  intro D hD
+  rw [← plug_snoc]
+  exact hZ _ (RCtx_fone hD hU)
+
+/-- `RG ks (two nil Z)` は `RG (false :: ks) Z` から出る。 -/
+theorem RG_twoNil {ks : List Bool} {Z : Jk1} (hZ : RG (false :: ks) Z) :
+    RG ks (Jk1.two Jk1.nil Z) := by
+  intro D hD
+  rw [← plug_snoc2]
+  exact hZ _ (RCtx_ftwo hD)
+
+/-- ★ 1 の枠の直上には `nil` を差せる（`APnil_gen0`）。ここは無条件。 -/
+theorem RG_nil_true (ks : List Bool) : RG (true :: ks) Jk1.nil := by
+  intro D hD
+  have hD' := hD
+  obtain ⟨D0, U, hD0, hJU, hGU, hang, rfl⟩ := hD'
+  have hJT : JkT (plug D0 (Jk1.one U Jk1.nil)) := by
+    have := RCtx_JkT (true :: ks) (D0 ++ [Frm.fone U]) hD Jk1.nil trivial
+    rwa [plug_snoc] at this
+  rw [plug_snoc]
+  exact APnil_gen0 D0 U hJT (hGU D0 hD0) (fun C hC => hang D0 C hD0 hC)
+
+/-- 底（`GCtx`）では `APd` がそのまま使える。 -/
+theorem RG_bnil_of_APd {X : Jk1} (h : ∀ kk : List Bool, APd (true :: kk) X) : RG [] X := by
+  intro D hD
+  obtain ⟨kk, hc⟩ := hD
+  exact (APd_iff (true :: kk) X).mp (h kk) D hc
+
+theorem RP_bnil_of_APd {X : Jk1}
+    (h : ∀ (kk : List Bool) (C : TrioSeq), Bok C → APd (true :: kk) (Jk1.pay X C)) :
+    RP [] X := by
+  intro D C hD hC
+  obtain ⟨kk, hc⟩ := hD
+  exact (APd_iff (true :: kk) _).mp (h kk C hC) D hc
+
+/-- 逆向き：底で良ければ `APd`。`RunAll` はこの形で取り出す。 -/
+theorem APd_of_RG_bnil {X : Jk1} (h : RG [] X) (ks : List Bool) : APd (true :: ks) X :=
+  (APd_iff (true :: ks) X).mpr (fun ctx hc => h ctx ⟨ks, hc⟩)
+
+#print axioms RCtx_JkT
+#print axioms RG_nil_true
+
+
 end Small
 end TRIO
