@@ -12957,3 +12957,21 @@ Rk_allUT ⇒ Wall                            -- Wall_of_allUT
 2. `Rk_nil` を `Rk_pay` の後ろに移し、枠木の荷を別補題で供給する
 3. 枠の条件を「その場だけ」に弱める
 4. `OneGap` を `T` の構造帰納 + 荷の A2'（`NNo_payU'` の形）で示す
+
+### 追記108 追記: 「その場だけ・荷なし」の層は既にある（`NSt` / `NOk`）
+
+`NSt_f`（1 の枠を足す）は `JkA` とその場の良さだけを要求し、荷を要求しない。
+だから `GOK_itJ_at` / `GOK_twoIt_at`（鎖をその場で組む）が通っている。
+一方 `NOk` には `NOk_nil` が無い（`APnil_gen0` が枠木の荷を要求するため）。
+
+```
+Rok  … 枠の条件が普遍。nil（塔）は出る。one A T が対の層に差せない（OneGap）
+NOk  … 枠の条件がその場・荷なし。鎖と荷は出る。nil（塔）が出ない
+```
+
+**この 2 つは相補的**。`Rok` の `Rk_nil` が要求する枠木の荷を、`NOk` 側の
+`GOK_itJ_at` 系で供給できれば 1 つの層にまとめられる可能性がある。
+枠木の荷は頭で場合分けでき、`nil`（`Rk_payNil`）・`one`（`GOK_itJ_at` の A2'）・
+`two nil nil`（`PairOk_payTwoNil`、この回に緑）・横鎖（`dupJs0`、bms 実測済み）
+がすべて揃っている。**枠木の分解（`GOK (plug ctx (one A T))` から
+`GOK (plug ctx A)`）が要るかどうかが次の確認点。**
