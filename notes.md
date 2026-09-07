@@ -14143,3 +14143,49 @@ GOK_stkW_gen          -- GOK_twoTwoNilW_gen の一般版（走り 2 が p+2 連�
 APd_twoNilOf / APd_oneNilF / APd_twoOneNil / APd_oneNilT
 APd_twoNilPay / APd_twoNilOneNil
 ```
+
+## 追記133: 階段の測度は `k`。障害は「2 の枠が隣接する文脈」を `APd` が書けないこと
+
+`RunAll q` の帰納を詰めた結果:
+
+```
+RunAll (p+2) ⟸ GOK_stkW_gen（緑）+ 階段
+階段(k) := APd (true::ks) (stkP (p+1) (nstQ nil p k))
+  k = 0   … stkP (p+1) nil = stk (p+1)  ⟸ RunAll (p+1)  ✓（連鎖長の帰納）
+  k+1     … stkP (p+1) (one nil 階段(k) の木)            ← 測度は k（APd_nstN と同じ）
+```
+
+**測度は `k` で正しい**（`APd_nstN` も形が伸びるが `k` が減るので回る）。
+問題は `k+1` の場合に要る
+
+```
+APd (true::ks) (stkP (p+1) (one nil X))     -- 連鎖 + 1 の記録 + X
+```
+
+で、`stkP (p+1) (…)` は 2 の記録頭なので `APd_cf` で剥がせない。
+`GOK` レベルに降ろすと
+
+```
+plug (ctx0 ++ [fone V]) (stkP (p+1) (one nil X))
+  = plug (ctx0 ++ [fone V] ++ (p+1)×[ftwo nil] ++ [fone nil]) X
+```
+
+で **2 の枠が隣接する文脈**が要る。`GCtx (false::ks)` は `[fone U, ftwo N]` を
+束にする設計なので、`Rq` を緩めても隣接は書けない（形の設計そのもの）。
+
+### したがって
+
+行列としては `stk q` の語がまさに `(l+1,2,0)…(l+q,2,0)` と 2 の記録が隣接するので、
+これは避けられない。`APd` の形の言語（`List Bool`、`false` = `[fone U, ftwo N]` の束）を
+「2 の枠単独」も許す形に拡張するのが必要。ただし単独 `ftwo nil` を許すと
+その場合の ∀ が無くなり帰納の力が落ちる（`SPd (false::ks) V = SPd ks (two nil V)` は
+ただの言い換え）ので、1 の枠の ∀ で回すよう設計し直す必要がある。
+
+現状の到達点（すべて緑・`sorryAx` なし）:
+
+```
+R376_of_RunAll : RunAll → 行376 ∈ W 0
+RunAll_zero / RunAll_one / RunAll_two        -- q ≤ 2 は済み
+GOK_stkW_gen / snocQ_of_tower / unQ / nstQ ほか（追記128, 132 の一覧）
+R14_mem_L2 : LStep2 → #14 ∈ W 0              -- 証明中の行はこちら
+```
