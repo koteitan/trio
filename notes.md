@@ -13939,3 +13939,66 @@ two N (stkP p (nstQ N p (k+1)))
 閉じているもの）を作り、その上で
 「`p` の帰納 → 各 `p` で `k` の帰納」の二重帰納を回す。
 底は `p = 0`（既存の `APd_nstN` / `APd_twoTwoGen`）。
+
+## 追記129: 兄弟を `nil` に固定すれば一様性の問題は消える。残るのは木の 3 ケース
+
+### 気づき
+
+行376 に要るのは `TwoOk (stk q)` の**一般の兄弟**ではない。`GOK_oneStk` は
+
+```
+TwoOk_stk h q Jk1.nil trivial (fun _ _ => APd_nil _) 0 ks
+```
+
+と `N = nil` で使っている。したがって必要なのは
+
+```
+∀ q ks, APd (true :: ks) (two nil (stk q))      -- = APd (true::ks) (stk (q+1))
+```
+
+だけ。**兄弟が全部 `nil` なら「兄弟の層一様性」の問題は起きない**（`nil` はどの層でも良い）。
+
+### 言い換え
+
+`stk q` も階段 `nstQ nil p k` も「`nil` から `one nil ·` と `two nil ·` だけで作った木」。
+その族を `T` とすると、要るのは
+
+```
+∀ T ∈ 𝒯, ∀ ks, APd (true :: ks) T
+```
+
+構造帰納で:
+
+```
+T = nil        ✓ APd_nilT
+T = one nil Z  ✓ APd_step (true::ks) …（Z は形が 1 個伸びるだけ、IH）
+T = two nil Z  … 走り 2。Z で場合分けが要る
+```
+
+### `two nil Z` の 3 ケース（bms 実測、追記125 も参照）
+
+```
+Z = nil        ✓ APd_twoNilGen（緑）
+Z = one nil W  … コピーが row1 = 0 の水平な鎖（入れ子にならない）。AY 系の形
+Z = two nil W  … 連鎖が伸びる。GOK_stkW_gen（今回緑）が Y = two nil nil の場合を出す
+```
+
+`APd_cf` で剥がす道は `stkP p (…)` が 2 の記録頭なので使えない。
+各ケースを語のレベルの補題で直接潰すのが正しい形。
+
+### 現状の道具（すべて緑）
+
+```
+GOK_twoNilW_gen   : 上に何も無い 2 の記録              （Z = nil 用）
+GOK_stkW_gen      : 走り 2 が p+2 連、上は two nil nil （Z = two nil W の一部）
+snocQ_of_tower / unQ / nstQ / jk1_nstQ / MidD_unQ / hMy_unQ
+```
+
+次の一手は `Z = one nil W` のケース（水平な鎖）。bms では
+
+```
+(0,0,0)(1,1,0)(2,1,0)(2,2,0)(3,2,0)(4,1,0)[n]
+= … + n 個の (4,0,0)(5,1,0)(6,1,0)(6,2,0)(7,2,0)   -- 先頭が row1 = 0
+```
+
+で、コピーが土台の隣に水平に並ぶ。`AY` / `GoodFb_snoc_*` 系がそのまま効く形。
