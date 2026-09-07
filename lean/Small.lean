@@ -55051,5 +55051,35 @@ theorem Yk_nil : ∀ (j n : ℕ), Yk j n Jk1.nil
 
 #print axioms Yk_nil
 
+/-! ### ★★★★★ 走りが対の層で通る形（`Rk_twoWTwoNil` の言い換え）
+
+追記105: 走りの階段（交互塔 `nstN2 Wl nil k`）では兄弟 `Wl` は常に
+1 の記録の左に来るので、要求は「どの層でも 1 の枠が 1 枚以上あれば差せる」
+（`UniW` / `Rk_all_*` の形）だけ。対の層（`i' = 0`）は要らない。 -/
+
+theorem Rk_twoNilNil_at {j n : ℕ} {V Wl : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
+    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+      GOK (plug cs (Jk1.pay V C)))
+    (hWall : ∀ j' i' : ℕ, Rk j' (i' + 1) Wl)
+    (hWallp : ∀ (C : TrioSeq), Bok C → ∀ j' i' : ℕ, Rk j' (i' + 1) (Jk1.pay Wl C))
+    (hUT : UT Wl) :
+    GOK (plug ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl]) (Jk1.two Jk1.nil Jk1.nil)) := by
+  have h := Rk_twoWTwoNil hWall hWallp hUT j n (ctx' ++ [Frm.fone V])
+    (Rok_fone hc hUV hV (fun C hC => hVp C hC))
+  rw [plug_snoc2]
+  exact h
+
+/-- 2 の枠の兄弟が `nil` なら、条件は自動で満たされる。 -/
+theorem Rk_twoNilNil_nil {j n : ℕ} {V : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
+    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+      GOK (plug cs (Jk1.pay V C))) :
+    GOK (plug ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Jk1.nil])
+      (Jk1.two Jk1.nil Jk1.nil)) :=
+  Rk_twoNilNil_at hc hUV hV hVp Rk_all_nil Rk_allp_nil UT.nil
+
+#print axioms Rk_twoNilNil_at
+
 end Small
 end TRIO
