@@ -12090,3 +12090,33 @@ V(11,2,0) の塔（歩幅 2）の木は 1 の記録と 2 の記録が交互に�
 次はシート行376 = `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)`。
 残る仮定は `PayStep` 1 本（追記84/85: 走りの長さ e の帰納の中で
 「塔がよい」と「荷を吊るせる」を同時に立てる、約 500 行）。
+
+## 追記92: 行376 = `TipP nil` と `TipP (pay nil C)` の同時帰納に整理できた
+
+`PayStep` は `TipQ`（良いブロック列の先端に差せる木）の言葉で書き直すと
+**`TipP nil`（塔）と `TipP (pay nil C)`（荷）の 2 本**になる。`PreP` は `PreQ` に
+「各ブロックの左兄弟に荷も吊るせる」を足したもの（`e = 0` の段が `APnil_gen0`
+なので兄弟の荷吊るしが要る）。
+
+この回に緑にしたもの: `PreP`、`TipP`、`TipPH`（差せる+吊るせる）、`TipP2`、
+`PreQ_of_PreP`、`PreP_nil/_snoc/_unsnoc/_rep`、`TipP_congr`、`TipP2_congr`、
+`TipP2_nil`（`GOK_TrmStep` の `PreP` 版）。
+
+### 残りの設計（次回）
+
+最後のブロックの走り長 `e` についての帰納にする:
+
+```
+TipPe e X := ∀ pre A0, PreP (pre ++ [(A0,e)]) → TopOkH (pre ++ [(A0,e)]) →
+               GOK (Trm X (pre ++ [(A0,e)]))
+```
+
+- `Trm nil (pre ++ [(A0, e+1)]) = Trm (two nil nil) (pre ++ [(A0,e)])` なので、
+  塔の段は `TipP2_nil`（枠木 `V = nil`）で上がる。そこで使う `TipPH nil` は
+  走り長 `e` のブロック列でしか使わない（階段のブロックは `(nil, e)`）ので、
+  `e` の帰納の仮定でまかなえる。
+- `e = 0` の段は `APnil_gen0`（兄弟の配置と荷吊るしは `PreP` にある）。
+- 荷の側 `TipPe e (pay nil C)` は `C` の A2'。dup の鎖は
+  走り長 0 なら `itJ`（`TipQ_itJ` の `PreP` 版）、1 以上なら `twoIt`
+  （`TipQ_twoIt` + `TipP2_pay`）。`TipP2_pay` は `TipQ2_pay` の `PreP` 版。
+- これで `TipP nil` → `ZeroStep` → `GOK_BTall` → 塔 → `snocY_mem` → 行376。

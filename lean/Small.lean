@@ -35774,6 +35774,116 @@ theorem TipQ_itJ {A0 T : Jk1} (hJA0 : JkA A0) (hTA0 : TipQ A0) (hJT : JkA T)
 
 #print axioms TipQ_itJ
 
+/-! ### ★★★★★ 荷つきブロック列 `PreP` / `TipP`
+
+`PreQ` は各ブロックの左兄弟に「その手前のブロック列に差せる」だけを課す。
+塔の段 `e = 0` は `APnil_gen0` を使うので**兄弟に荷も吊るせる**ことが要る。
+そこで荷つきの版を作る（追記85 の設計）。 -/
+
+def PreP (bs : List (Jk1 × ℕ)) : Prop :=
+  ∀ (k : ℕ) (hk : k < bs.length),
+    JkA (bs[k]'hk).1 ∧ GOK (Trm (bs[k]'hk).1 (bs.take k)) ∧
+    (∀ C : TrioSeq, Bok C → GOK (Trm (Jk1.pay (bs[k]'hk).1 C) (bs.take k)))
+
+/-- 空でない良いブロック列の先端に差せる木（荷つき版）。 -/
+def TipP (X : Jk1) : Prop :=
+  ∀ bs : List (Jk1 × ℕ), PreP bs → TopOkH bs → bs ≠ [] → GOK (Trm X bs)
+
+/-- 先端に差せて荷も吊るせる。 -/
+structure TipPH (X : Jk1) : Prop where
+  ja : JkA X
+  tip : TipP X
+  hang : ∀ C : TrioSeq, Bok C → TipP (Jk1.pay X C)
+
+theorem PreQ_of_PreP {bs : List (Jk1 × ℕ)} (h : PreP bs) : PreQ bs :=
+  fun k hk => ⟨(h k hk).1, (h k hk).2.1⟩
+
+theorem PreP_nil : PreP [] := by intro k hk; simp at hk
+
+theorem PreP_snoc {bs : List (Jk1 × ℕ)} (hbs : PreP bs) {V : Jk1} (hJV : JkA V)
+    (hV : GOK (Trm V bs)) (hVp : ∀ C : TrioSeq, Bok C → GOK (Trm (Jk1.pay V C) bs))
+    (j : ℕ) : PreP (bs ++ [(V, j)]) := by
+  intro k hk
+  simp only [List.length_append, List.length_cons, List.length_nil] at hk
+  by_cases hlt : k < bs.length
+  · have he : (bs ++ [(V, j)])[k]'(by simp; omega) = bs[k]'hlt := by
+      simp [List.getElem_append_left, hlt]
+    have ht : (bs ++ [(V, j)]).take k = bs.take k := by
+      rw [List.take_append_of_le_length (by omega)]
+    rw [he, ht]
+    exact hbs k hlt
+  · have hkk : k = bs.length := by omega
+    subst hkk
+    have he : (bs ++ [(V, j)])[bs.length]'(by simp) = (V, j) := by simp
+    have ht : (bs ++ [(V, j)]).take bs.length = bs := by simp
+    rw [he, ht]
+    exact ⟨hJV, hV, hVp⟩
+
+theorem PreP_unsnoc {bs : List (Jk1 × ℕ)} {b : Jk1 × ℕ} (h : PreP (bs ++ [b])) :
+    PreP bs ∧ JkA b.1 ∧ GOK (Trm b.1 bs) ∧
+      (∀ C : TrioSeq, Bok C → GOK (Trm (Jk1.pay b.1 C) bs)) := by
+  have hlast := h bs.length (by simp)
+  have he : (bs ++ [b])[bs.length]'(by simp) = b := by simp
+  have ht : (bs ++ [b]).take bs.length = bs := by simp
+  rw [he, ht] at hlast
+  refine ⟨?_, hlast.1, hlast.2.1, hlast.2.2⟩
+  intro k hk
+  have h1 := h k (by simp; omega)
+  have he2 : (bs ++ [b])[k]'(by simp; omega) = bs[k]'hk := by
+    simp [List.getElem_append_left, hk]
+  have ht2 : (bs ++ [b]).take k = bs.take k := by
+    rw [List.take_append_of_le_length (by omega)]
+  rw [he2, ht2] at h1
+  exact h1
+
+theorem PreP_rep {bs : List (Jk1 × ℕ)} (hbs : PreP bs) (hTop : TopOkH bs) (hne : bs ≠ [])
+    {V : Jk1} (hV : TipPH V) (j : ℕ) :
+    ∀ i : ℕ, PreP (bs ++ List.replicate i (V, j)) ∧
+      (bs ++ List.replicate i (V, j)) ≠ []
+  | 0 => by simpa using ⟨hbs, hne⟩
+  | (i + 1) => by
+      obtain ⟨ih1, ih2⟩ := PreP_rep hbs hTop hne hV j i
+      have hT' : TopOkH (bs ++ List.replicate i (V, j)) :=
+        (TopOkH_append bs _ hne).mpr hTop
+      have h := PreP_snoc ih1 hV.ja (hV.tip _ ih1 hT' ih2)
+        (fun C hC => hV.hang C hC _ ih1 hT' ih2) j
+      rw [List.append_assoc, ← List.replicate_succ'] at h
+      exact ⟨h, by simp⟩
+
+theorem TipP_congr {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : TipP X1) :
+    TipP X2 :=
+  fun bs hbs hTop hne => GOK_congr (jk1_Trm_congr h bs) (hX bs hbs hTop hne)
+
+/-- 先端が 2 の記録の枠（枠木 `V`）の上（荷つき版）。 -/
+def TipP2 (X : Jk1) : Prop :=
+  ∀ (V : Jk1), TipPH V → ∀ (pre : List (Jk1 × ℕ)) (A0 : Jk1) (j : ℕ),
+    PreP pre → JkA A0 → GOK (Trm A0 pre) →
+    (∀ C : TrioSeq, Bok C → GOK (Trm (Jk1.pay A0 C) pre)) →
+    TopOkH (pre ++ [(A0, j)]) → GOK (Trm (Jk1.two V X) (pre ++ [(A0, j)]))
+
+theorem TipP2_congr {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : TipP2 X1) :
+    TipP2 X2 :=
+  fun V hV pre A0 j hpre hJA0 hGA0 hGA0p hTop =>
+    GOK_congr (jk1_Trm_congr (fun l => by
+      show jk1 l V ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) X1)
+        = jk1 l V ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) X2)
+      rw [h (l + 1)]) _)
+      (hX V hV pre A0 j hpre hJA0 hGA0 hGA0p hTop)
+
+/-- ★★★★★ 2 の記録の枠の上に空木（`GOK_TrmStep` の `PreP` 版）。 -/
+theorem TipP2_nil : TipP2 Jk1.nil := by
+  intro V hV pre A0 j hpre hJA0 hGA0 hGA0p hTop
+  have hpre1 : PreP (pre ++ [(A0, j)]) := PreP_snoc hpre hJA0 hGA0 hGA0p j
+  have hne1 : (pre ++ [(A0, j)]) ≠ [] := by simp
+  refine GOK_TrmStep hV.ja pre j ?_ hGA0 ?_
+  · exact JkT_Trm_ne (X := Jk1.two V Jk1.nil) ⟨hV.ja, trivial⟩ (pre ++ [(A0, j)]) hne1
+      (AllJkA_of_PreQ _ (PreQ_of_PreP hpre1)) hTop
+  · intro i
+    obtain ⟨h1, h2⟩ := PreP_rep hpre1 hTop hne1 hV j i
+    exact hV.tip _ h1 ((TopOkH_append _ _ hne1).mpr hTop) h2
+
+#print axioms TipP2_nil
+
 /-! ### ★★★★★ 梯子 `RSt`: 2 の記録の枠を連続して積める
 
 `TwSt` の `Fter` を外す代わりに、**枠を足す先の文脈の末尾ランがすべて `nil`** を
