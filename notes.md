@@ -13812,3 +13812,36 @@ Z = two A B      … 走り 2 が伸びる。階段の単位が 1 個増える�
 `Z = two A B` の場合の階段は `two N (two nil (Tower_m))`、単位
 `one nil (two N (two nil ·))` で、`GOK_twoTwoNilW_gen` の一般化が要る。
 **兄弟が `AllA` なので階段自体は賄える。**ここが次の一手。
+
+## 追記126: 壁を `LStep2` に弱めた（緑）。`Z = nil` は済み、残り 3 ケース
+
+```
+LStep2 := ∀ N Z, JkA N → AllA N → LAll N → JkA Z → LAll1 Z → LAll1 (two N Z)
+R14_mem_L2 : LStep2 → #14 ∈ W 0
+LStep2_of_LStep1 : LStep1 → LStep2         （LStep2 のほうが弱い）
+```
+
+`MPd_oneQ` で壁を使う場所の兄弟 `N'` は `FrQ N'` を持つので `AllA N'` と `LAll N'`
+の両方が使える。`LTwo` の兄弟条件は `LAll1` だけだったので、そこを強めてよい。
+`AllA` は `APd` の全形状（= 全 2 深さ一様）なので、走り 2 の階段が兄弟を
+深くコピーする分を賄える見込みがある。
+
+### `Z` の構造帰納（4 ケース）
+
+```
+Z = nil       ✓ LStep2_nil = LOk_twoN（緑）
+              階段は plug (replicate m (fone N)) N で、N を 1 の枠の深さにしか
+              コピーしない。だから LAll1 N だけで足りる。
+Z = pay Z' Y  … LTwo_pay（緑）が LTwo Z' → LTwo (pay Z' Y) を与える。
+              ただし LTwo は兄弟が LAll1 のみの版なので、兄弟を絞った版が要る。
+Z = one A B   … LTwo_one（緑）が LTwo A + TwM 1 B → LTwo (one A B) を与える。
+              TwM 1 B（層 1 のデータ）が不変量に無い。
+Z = two A B   … 走り 2。GOK_twoTwoNilW_gen の「上が一般の木」版が要る。
+              bms 実測（追記125）では階段の単位が `one nil (two N (two nil ·))`。
+```
+
+### 注意
+
+構造帰納にするには仮定 `LAll1 Z` が部分木に遺伝する必要があるが、
+`LAll1 (one A B) → LAll1 A` は自明ではない。ケース分けの前に
+不変量の設計をやり直す必要がある。
