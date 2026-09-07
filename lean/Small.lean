@@ -56534,6 +56534,36 @@ theorem UniW_chain_twoNil (hwc : WallC) {W : Jk1} (hW : UniW W) (C : TrioSeq)
 #print axioms UniW_chain
 #print axioms UniW_chain_twoNil
 
+/-! ### `LAll`: `LOk` の全深さ版。`TwoOk` / `OneOk` の `one` 閉包はここから出る -/
+
+/-- どの深さの枠積みにも差せる木。`LOk_one` により `one` で閉じている。 -/
+def LAll (Z : Jk1) : Prop := ∀ k : ℕ, LOk k Z
+
+theorem LAll_nil : LAll Jk1.nil := LOk_nil
+
+theorem LAll_twoNil : LAll (Jk1.two Jk1.nil Jk1.nil) := LOk_twoNilAll
+
+theorem LAll_one {U Z : Jk1} (hJU : JkA U) (hU : LAll U) (hZ : LAll Z) :
+    LAll (Jk1.one U Z) := fun k => LOk_one hJU (hU k) (hZ (k + 1))
+
+theorem LAll_pay {X : Jk1} (hJX : JkA X) (hX : LAll X) (Y : TrioSeq) (hY : Bok Y) :
+    LAll (Jk1.pay X Y) := fun k => LOk_pay k hJX (hX k) Y hY
+
+theorem TwoOk_of_LAll {Z : Jk1} (h : LAll Z) : TwoOk Z := TwoOk_of_LOk0 (h 0)
+
+/-- ★★★★★ `OneOk` は `LAll` から出る（`OneOk` の欠けていた閉包はこれで埋まる）。 -/
+theorem OneOk_of_LAll {Z : Jk1} (h : LAll Z) : OneOk Z :=
+  fun V hV => TwoOk_of_LOk0 (LOk_one hV.1 (LOk0_of_TwoOk hV.2.1) (h 1))
+
+/-- したがって `TwoOk` も `one` で閉じる。 -/
+theorem TwoOk_one_of_LAll {U Z : Jk1} (hQU : TwoQ U) (hZ : LAll Z) :
+    TwoOk (Jk1.one U Z) := OneOk_of_LAll hZ U hQU
+
+theorem TwoQ_of_LAll {Z : Jk1} (hJZ : JkA Z) (h : LAll Z) : TwoQ Z :=
+  ⟨hJZ, TwoOk_of_LAll h, fun C hC => TwoOk_of_LAll (LAll_pay hJZ h C hC)⟩
+
+#print axioms OneOk_of_LAll
+
 /-! ### ★★★★★ `MPd`: 走り 2 を許す第 2 族
 
 `APd` の壁は `Rq`（2 の記録の直上の木は `TopOk`）。これは `APd` の設計上の制限で
