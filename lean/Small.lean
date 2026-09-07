@@ -56593,8 +56593,7 @@ theorem AllA_one {U T : Jk1} (hJU : JkA U) (hU : AllA U) (hT : AllA T) :
 
 /-- 枠木・兄弟に課す下位条件。`APd` 層で全形状に差せて、2 の記録の右の子にもなれる。 -/
 def FrQ (U : Jk1) : Prop :=
-  JkA U ∧ AllA U ∧ TwoOk U ∧
-    (∀ C : TrioSeq, Bok C → AllA (Jk1.pay U C) ∧ TwoOk (Jk1.pay U C))
+  JkA U ∧ AllA U ∧ LAll U ∧ (∀ C : TrioSeq, Bok C → AllA (Jk1.pay U C))
 
 theorem AllA_twoNil : AllA (Jk1.two Jk1.nil Jk1.nil) := by
   intro j kk
@@ -56608,14 +56607,11 @@ theorem AllA_pay (U : Jk1) (hJU : JkA U) (hU : AllA U) (C : TrioSeq) (hC : Bok C
   rw [rep_true_cons]; exact Rq_true _ U
 
 theorem FrQ_nil : FrQ Jk1.nil :=
-  ⟨trivial, AllA_nil, TwoOk_nil,
-    fun C hC => ⟨AllA_pay Jk1.nil trivial AllA_nil C hC,
-      TwoOk_pay C hC Jk1.nil trivial TwoOk_nil⟩⟩
+  ⟨trivial, AllA_nil, LAll_nil, fun C hC => AllA_pay Jk1.nil trivial AllA_nil C hC⟩
 
 theorem FrQ_twoNil : FrQ (Jk1.two Jk1.nil Jk1.nil) :=
-  ⟨⟨trivial, trivial⟩, AllA_twoNil, TwoOk_twoNil,
-    fun C hC => ⟨AllA_pay (Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ AllA_twoNil C hC,
-      TwoOk_pay C hC _ ⟨trivial, trivial⟩ TwoOk_twoNil⟩⟩
+  ⟨⟨trivial, trivial⟩, AllA_twoNil, LAll_twoNil,
+    fun C hC => AllA_pay (Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ AllA_twoNil C hC⟩
 
 /-- 枠木の妥当性は 1 の記録で閉じる。 -/
 theorem FrmJ_one (ks : List Bool) (U X : Jk1) (hU : FrmJ ks U) (hX : JkA X) :
@@ -56915,6 +56911,57 @@ theorem MPd_rep_true {Z : Jk1} (hZ : AllA Z) :
 #print axioms R14_mem_A
 #print axioms MPd_rep_true
 
+
+/-! ### ★★★★★ 壁を `LStep`（`LAll` の 2 の記録での閉包）1 本に落とす -/
+
+/-- 残る 1 点: `LAll` は 2 の記録で閉じる。`StkOk` は 2 の枠を 1 枚しか持たないので、
+これは「2 の枠をもう 1 枚」そのもの。 -/
+def LStep : Prop :=
+  ∀ N Z : Jk1, JkA N → LAll N → JkA Z → LAll Z → LAll (Jk1.two N Z)
+
+/-- `LStep` があれば、`AllA` かつ `LAll` な木は枠木の上に載る。 -/
+theorem MPd_oneQ (h : LStep) : ∀ (ks : List Bool) (U Z : Jk1), FrmJ ks U → FrQ U →
+    MPd ks U → JkA Z → AllA Z → LAll Z → MPd ks (Jk1.one U Z)
+  | [], U, Z, hU, _, hUk, _, hAZ, _ => by
+      rw [MPd_bnil] at hUk ⊢
+      exact (APd_bnil _).mp (APd_step [] hU trivial ((APd_bnil _).mpr hUk) (hAZ 0 []))
+  | (true :: ks), U, Z, _, hQU, _, hJZ, hAZ, hLZ => by
+      rw [MPd_ct]
+      intro U' hU' hQU' hU'k
+      exact MPd_oneQ h ks U' (Jk1.one U Z) hU' hQU' hU'k ⟨hQU.1, hJZ⟩
+        (AllA_one hQU.1 hQU.2.1 hAZ) (LAll_one hQU.1 hQU.2.2.1 hLZ)
+  | (false :: ks), U, Z, _, hQU, _, hJZ, hAZ, hLZ => by
+      rw [MPd_cf]
+      intro m U' N' hU' hQU' hU'k hQN'
+      have hLone : LAll (Jk1.one U Z) := LAll_one hQU.1 hQU.2.2.1 hLZ
+      have hTone : TwoOk (Jk1.one U Z) :=
+        TwoOk_one_of_LAll (TwoQ_of_LAll hQU.1 hQU.2.2.1) hLZ
+      refine MPd_oneQ h (List.replicate m true ++ ks) U' (Jk1.two N' (Jk1.one U Z))
+        hU' hQU' hU'k ⟨hQN'.1, hQU.1, hJZ⟩
+        (fun j kk => hTone N' hQN'.1 hQN'.2.1 j kk)
+        (h N' _ hQN'.1 hQN'.2.2.1 ⟨hQU.1, hJZ⟩ hLone)
+termination_by ks _ _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem MBplus_of_LStep (h : LStep) {N : Jk1} (hQ : FrQ N) : MBplus N := by
+  intro j ks
+  rw [rep_true_cons, MPd_ct]
+  intro U hU hQU hUk
+  exact MPd_oneQ h _ U N hU hQU hUk hQ.1 hQ.2.1 hQ.2.2.1
+
+theorem MNil_of_LStep (h : LStep) : MNil := MNil_of (fun _ hQ => MBplus_of_LStep h hQ)
+
+/-- ★★★★★ #14 は `LStep` 1 本に落ちた。 -/
+theorem R14_mem_L (h : LStep) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem_M (MNil_of_LStep h)
+
+#print axioms MPd_oneQ
+#print axioms R14_mem_L
 
 end Small
 end TRIO
