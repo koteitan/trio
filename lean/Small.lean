@@ -55956,5 +55956,110 @@ theorem R375h7_mem : R375h ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375h7_mem
 
+/-! #### `H` 族の単位と `H(4,0,0)` -/
+
+def WttH : Jk1 := Jk1.two Jk1.nil (TW 3)
+
+theorem JkA_WttH : JkA WttH := ⟨trivial, JkA_TW 3⟩
+
+theorem APd_WttH (ks : List Bool) : APd (true :: ks) WttH := by
+  have h := TwoOk_TW3 Jk1.nil trivial (fun _ _ => APd_nil _) 0 ks
+  simpa [WttH] using h
+
+theorem jk1_WttH (l : ℕ) : jk1 l WttH =
+    [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 2, 1, 0) : ℕ × ℕ × ℕ), ((l + 3, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 2, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 6, 1, 0) : ℕ × ℕ × ℕ), ((l + 7, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 8, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [WttH, TW, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+
+theorem GOK_oneU_H (U : Jk1) (hU : JkT U) (hGU : GOK U) : GOK (Jk1.one U WttH) :=
+  (APd_bnil _).mp (APd_step [] (hU : FrmJ [] U) trivial ((APd_bnil _).mpr hGU)
+    (APd_WttH []))
+
+def TLH : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (m + 1) => Jk1.one (TLH m) WttH
+
+theorem JkT_TLH : ∀ m : ℕ, JkT (TLH m)
+  | 0 => JkT_nil
+  | (m + 1) => ⟨⟨(JkT_TLH m).1, JkA_WttH⟩, (JkT_TLH m).2⟩
+
+theorem GOK_TLH : ∀ m : ℕ, GOK (TLH m)
+  | 0 => GOK_nil
+  | (m + 1) => GOK_oneU_H (TLH m) (JkT_TLH m) (GOK_TLH m)
+
+theorem jk1_TLH : ∀ (m l : ℕ),
+    jk1 l (TLH m) = copies [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 1, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 7, 2, 0) : ℕ × ℕ × ℕ), ((l + 7, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 8, 2, 0) : ℕ × ℕ × ℕ), ((l + 9, 2, 0) : ℕ × ℕ × ℕ)] m
+  | 0, l => by simp [TLH, jk1, copies]
+  | (m + 1), l => by
+      show jk1 l (TLH m) ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) WttH) = _
+      rw [jk1_TLH m l, jk1_WttH (l + 1), copies_snoc,
+        show l + 1 + 1 = l + 2 from by omega, show l + 1 + 2 = l + 3 from by omega,
+        show l + 1 + 3 = l + 4 from by omega, show l + 1 + 4 = l + 5 from by omega,
+        show l + 1 + 5 = l + 6 from by omega, show l + 1 + 6 = l + 7 from by omega,
+        show l + 1 + 7 = l + 8 from by omega, show l + 1 + 8 = l + 9 from by omega]
+
+def U375cH : TrioSeq := U375cI ++ [((11, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375cH : MidD 4 U375cH where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX, U375c1,
+      U375c, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX, U375c1,
+      U375c, List.cons_append, List.nil_append, List.length_cons,
+      List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | j
+      <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX, U375c1,
+      U375c, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      <;> decide
+
+theorem R341_copiesH_mem (m : ℕ) : R341 ++ copies U375cH m ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [TLH m])) :=
+    GOK_TLH m [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [TLH m]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_TLH m 2] at h
+  simpa [R341, R338, U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX,
+    U375c1, U375c, List.append_assoc] using h
+
+/-- ★★★★★ `H(4,0,0)`。 -/
+theorem R375h8_mem : R375h ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hstep : ∀ n : ℕ, Aok (R341 ++ copies U375cH n) →
+      (R341 ++ copies U375cH n) ++ U375cH ∈ W 0 := by
+    intro n _
+    have h := R341_copiesH_mem (n + 1)
+    rw [copies_snoc] at h
+    simpa [List.append_assoc] using h
+  have h := flat_of_chain (Y0 := R341) (M := U375cH) (d := 4) (by omega) MidD_U375cH
+    Aok_R341 hstep
+  simpa [R375h, R375i, R375j, R375k, R375r, R375p, R375z, R375x, R375s, R375m, R373,
+    R344, R341, U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX, U375c1,
+    U375c, List.append_assoc] using h
+
+#print axioms R375h8_mem
+
 end Small
 end TRIO
