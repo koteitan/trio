@@ -55496,5 +55496,67 @@ theorem Wall_of_OneGap (h : OneGap) : Wall :=
 
 #print axioms Wall_of_OneGap
 
+/-! ### ★★★★★ #14 の塔（単位 n 個）。壁 `WallP` だけが残ることを示す
+
+`#14[n]` の木は `one nil (two nil (TW n))`。単位は `U X = one (two nil nil) (two nil X)`。
+`R375k_towerD`（証明済み）は単位 2 個 + `NST m` で、`m` は先端の交互塔を伸ばすだけ。
+単位の個数 `n` を伸ばすのに要るのは `Pk (j+1) 0 (two nil nil)`（走り 2 が対の層）1 本。 -/
+
+def TW : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil Jk1.nil
+  | (n + 1) => Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (TW n))
+
+theorem JkA_TW : ∀ n : ℕ, JkA (TW n)
+  | 0 => ⟨trivial, trivial⟩
+  | (n + 1) => ⟨⟨trivial, trivial⟩, trivial, JkA_TW n⟩
+
+/-- 壁（`Pk` 層）: 走り 2 が対の層のどの文脈にも差せる。 -/
+def WallP : Prop := ∀ j : ℕ, Pk (j + 1) 0 (Jk1.two Jk1.nil Jk1.nil)
+
+/-- 壁があれば塔の木は対の層に差せる（単位の個数について帰納）。 -/
+theorem Pk_TW (hw : WallP) : ∀ (n j : ℕ), Pk (j + 1) 0 (TW n)
+  | 0, j => hw j
+  | (n + 1), j =>
+      Pk_one ⟨trivial, trivial⟩ (hw j)
+        (fun C hC => Pk_pay (j + 1) 0 C hC _ ⟨trivial, trivial⟩ (hw j))
+        (Pk_twoW UniP_nil (Pk_TW hw n (j + 1)))
+
+theorem TipOk_TW (hw : WallP) : ∀ n : ℕ, TipOk (TW n)
+  | 0 => TipOk_twoNil
+  | (n + 1) => TipOk_of_Pk00 (Pk_one ⟨trivial, trivial⟩ (Pk00_of_TipOk TipOk_twoNil)
+      (fun C hC => Pk00_of_TipOk (TipOk_pay TipOk_twoNil C hC))
+      (Pk_twoW UniP_nil (Pk_TW hw n 0)))
+
+theorem Dk1_twoNilTW (hw : WallP) (n : ℕ) : Dk 1 (Jk1.two Jk1.nil (TW n)) := by
+  intro fs hfs
+  obtain ⟨W, fs', rfl, hfs', hJW, hW, hWp⟩ := (Fok_s 0 fs).mp hfs
+  have hfs0 : fs' = [] := (Fok_z fs').mp hfs'
+  subst hfs0
+  rw [plug_snoc]
+  exact TTwA_of_Ck00 (Ck_one hJW (Ck00_of_TTwA (hW [] rfl))
+    (fun C hC => Ck00_of_TTwA (hWp C hC [] rfl))
+    ((TipOk_TW hw n).ck Jk1.nil UniW_nil 0 0))
+
+theorem TTwA_TW (hw : WallP) : ∀ n : ℕ, TTwA (TW n)
+  | 0 => TTwA_twoNil
+  | (n + 1) => TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil (Dk1_twoNilTW hw n)
+
+theorem TwoOk_TW (hw : WallP) : ∀ n : ℕ, TwoOk (TW n)
+  | 0 => TwoOk_twoNil
+  | (n + 1) => TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩
+      (LOk_twoNilAll 0)
+      (LOk_of_TwOk0 (TTwA_TW hw n 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+
+/-- ★★★★★ 塔の語（単位 `n` 個）。 -/
+theorem GOK_oneTW (hw : WallP) (n : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW n))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_TW hw n Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+#print axioms GOK_oneTW
+
 end Small
 end TRIO
