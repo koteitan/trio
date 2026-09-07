@@ -14738,3 +14738,45 @@ SNo_ZT     : SPayF → ZT X → SNo X
 
 現状の `SCtx`（兄弟 `nil`）では `SG (false::ks) nil ⇐ SG ks nil`（形が減る）で
 回るので、こちらのほうが良い。**壁は `SPayF`（2 の枠の直上の荷）1 点のまま**。
+
+## 追記144: ★ 壁を `SNilF`（2 の枠の直上の「1 の枠 + nil」）1 本まで絞った
+
+塔（`SG_stkS`）が要求するのは `SBs ks = SSp ks ∧ SG ks nil` で、後半は
+`SG (true::ks) nil` の実例。つまり **`SPayF` は要らず `SNilT` で足りる**:
+
+```
+SNilT := ∀ ks, SG (true :: ks) nil
+RunAll_of_SNilT : SNilT → RunAll → 行376
+R14_of_SNilT    : SNilT → #14 ∈ W 0
+```
+
+さらに `SNilT` を場合分けすると、`SG (true::ks) nil` は
+`APnil_gen0` に枠木の荷 `SPy ks U` を渡すだけなので:
+
+```
+SG_nil_true_of : (∀ U, SF ks U → SPy ks U) → SG (true :: ks) nil
+SPy_ct         : JkA V → SG (true::ks) V → SPy (true::ks) V     ★無条件（SAYr）
+SP_bnil        : …                                              ★無条件（APd）
+```
+
+`ks = []` と `ks = true::_` は無条件で埋まるので、残るのは
+
+```
+SNilF := ∀ ks, SG (true :: false :: ks) nil
+       = ∀ D1 U, SCtx ks D1 → SF (false::ks) U → GOK (plug D1 (two nil (one U nil)))
+```
+
+**「2 の記録（兄弟 nil）の直上に『枠木 U + 1 の記録』を置ける」1 本**。
+`SNilT_of_SNilF` / `RunAll_of_SNilF` / `R14_of_SNilF` は緑。
+
+### 壁の強さの順序（すべて緑の含意）
+
+```
+SHtow → SPayF → SNilT ← SNilF
+SPayF → SNil
+```
+
+`SNilF` が今いちばん弱い十分条件。`APnil_gen0` 経由だと `U` の荷
+（= `SPayF`）が要るが、`U = nil` のときは `SPy (false::ks) nil` だけで済む。
+bms で見ると `(0,0,0)(1,1,0)(2,2,0)(3,1,0)`（= `U = nil` の最小例）は
+bad root 0・歩幅 3・上昇つきで、展開はブロック全体を複製する。
