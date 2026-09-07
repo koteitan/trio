@@ -11936,3 +11936,31 @@ U 族との差は「一番内側の nil を two nil nil に取り替える」だ
   `Ck (j+1) 0 (two nil nil)` が要って詰まる（追記86 の結び目と同じ）。
 - 迂回路: `GOK_twoNil_gen` を `N := TR k` で使い、階段（TR k の入れ子の積み）を
   `Ck_nstTower` の一般化で作る。`UniW_TR n`（= `Ck_twoW` の反復）は簡単に出る。
+
+## 追記88: 壁の最短表現 —「2 の枠の直上」 `Ck (j+1) 0 X` が出ない
+
+V(11,0,0) を追いかけて、壁が 1 本の補題に絞れた。
+
+- V(11,0,0) の塔は `R375j ++ (10,2,0)^k`。木は `NJ` の先端を `TR k`
+  （同じ高さに並ぶ 2 の記録の横鎖）に取り替えたもの。
+- 必要なのは `TipOk (one (two nil nil) (TR k))`
+  （`TipOk_oneTwoNilTwoNil` = TR 1 の場合は既にある）。
+- その証明は `GOK_twoNil_gen` を `N := TR (k-1)` で使えば形は合うが、階段
+  （`TR (k-1)` の入れ子の積み）を置くのに `Ew n (TR k)` が要る。
+- `Ew n (TR k)` は n = 0 で `TipOk (TR k)`、つまり `Ck j (m+1) (two Wl (TR k))`。
+  これは走り 2 なので `GOK_twoTwoNilW_gen` で形は合うが、その階段に
+  **`Ck (j+1) 0 (TR (k-1))`**（2 の枠の直上に鎖）が要る。
+- `Ck (j+1) 0 X` が出ない理由: `Cok (j+1) 0` の 2 の枠木 `Wl` の条件が
+  **層 j で頭打ち**（`∀ i cs, Cok j (i+1) cs → GOK (plug cs Wl)`）。
+  走りの階段は `Wl` を層 j+1 でも使うので届かない。
+- `Cok` の 2 の枠木条件を `UniW`（全層）に強めれば `Ck (j+1) 0 (two nil nil)` は
+  `Ck_twoWTwoNil` から即出る。しかし `Ck_pay` の横鎖 `twoIt Wl (pay X Y) k` は
+  UniW にできない（先端 `X` の条件が 1 層ぶんしか無い）ので、そのままでは移せない。
+
+つまり必要なのは「2 の枠木に、層をまたげる階段データを持たせた新しいクラス」。
+UniW をそのまま要求するのではなく、走りの階段
+`∀ i, Ck j (n+1) (two Wl (nstN2 Wl W i))` を条件として持たせる形が候補。
+
+この回に足した緑の部品: `Dk_oneTwoNilTR` / `TTwA_oneTwoNilTR`
+（`one (two nil nil) (TR k)` は `Dk` 層には通る = `Dk_one` + `Dk_twoNil` +
+`Dk_pay` + `Dk_TR`）。

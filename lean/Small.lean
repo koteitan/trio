@@ -50731,6 +50731,20 @@ theorem LOk_twoNilOneTwoNilTR (n k : ℕ) :
 #print axioms LOk_TR
 #print axioms LOk_twoNilOneTwoNilTR
 
+/-- `one (two nil nil) (TR k)`（V(11,0,0) の塔の先端）は `Dk` 層に通る。 -/
+theorem Dk_oneTwoNilTR (k : ℕ) : ∀ n : ℕ,
+    Dk n (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR k)) := by
+  intro n
+  exact Dk_one ⟨trivial, trivial⟩ (Dk_twoNil n)
+    (fun C hC => Dk_pay n C hC _ ⟨trivial, trivial⟩ (Dk_twoNil n))
+    (Dk_TR k n)
+
+theorem TTwA_oneTwoNilTR (k : ℕ) :
+    TTwA (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR k)) :=
+  Dk_oneTwoNilTR k 0 [] rfl
+
+#print axioms Dk_oneTwoNilTR
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
