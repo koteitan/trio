@@ -52611,6 +52611,69 @@ theorem Ew_twoNilTwoNil : ∀ (q : ℕ), 1 ≤ q →
         simpa [List.append_assoc] using h
 
 
+
+/-! ### ★★★★★ `Nok`: `Pok` の 2 の枠木を `nil` に限った層
+
+2 の枠木が `nil` なら「どの層でも差せる」（`Pk_nil` / `Pk_payNil`）ので、
+走りの階段（枠木をより深い層で使う）が通る。条件は `Pok` のまま課すので
+`Pk j n Z → Nk j n Z` は自明。 -/
+
+def NilCtx (ctx : List Frm) : Prop := ∀ N : Jk1, Frm.ftwo N ∈ ctx → N = Jk1.nil
+
+def Nok (j n : ℕ) (ctx : List Frm) : Prop := Pok j n ctx ∧ NilCtx ctx
+
+def Nk (j n : ℕ) (Z : Jk1) : Prop := ∀ ctx : List Frm, Nok j n ctx → TipOk (plug ctx Z)
+
+theorem Nk_of_Pk {j n : ℕ} {Z : Jk1} (h : Pk j n Z) : Nk j n Z :=
+  fun ctx hctx => h ctx hctx.1
+
+theorem NilCtx_fone {ctx : List Frm} (h : NilCtx ctx) (U : Jk1) :
+    NilCtx (ctx ++ [Frm.fone U]) := by
+  intro N hN
+  rcases List.mem_append.mp hN with h1 | h1
+  · exact h N h1
+  · simp at h1
+
+theorem NilCtx_ftwoNil {ctx : List Frm} (h : NilCtx ctx) :
+    NilCtx (ctx ++ [Frm.ftwo Jk1.nil]) := by
+  intro N hN
+  rcases List.mem_append.mp hN with h1 | h1
+  · exact h N h1
+  · simpa using h1
+
+/-- ★★★★★ 走り 2（`Nok` 層、対の層）。階段は交互塔 `Pk_nstT`。 -/
+theorem Nk_twoNilNil (j : ℕ) : Nk (j + 1) 0 (Jk1.two Jk1.nil Jk1.nil) := by
+  intro ctx hctx
+  obtain ⟨hP, hNil⟩ := hctx
+  obtain ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hJW, hW, hWp⟩ := (Pok_s0 j ctx).mp hP
+  have hWnil : Wl = Jk1.nil := hNil Wl (by simp)
+  subst hWnil
+  have hcV : Pok j (n + 1) (ctx' ++ [Frm.fone V]) :=
+    Pok_fone hc hJV hV (fun C hC => hVp C hC)
+  have hJp : JkA (plug (ctx' ++ [Frm.fone V])
+      (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))) := by
+    rw [plug_snoc]
+    exact JkA_plug_Pok j n ctx' hc _ ⟨hJV, trivial, trivial, trivial⟩
+  rw [plug_snoc2]
+  refine ⟨hJp, ?_⟩
+  intro Wl0 hW0 jc mc ctx0 hctx0
+  rw [← plug_snoc2, ← plug_append, ← List.append_assoc]
+  refine GOK_twoTwoNilW_gen ((ctx0 ++ [Frm.ftwo Wl0]) ++ ctx') V trivial trivial ?_ ?_ ?_
+  · have h := JkT_plug_Cok jc (mc + 1) ctx0 hctx0
+      (Jk1.two Wl0 (plug (ctx' ++ [Frm.fone V])
+        (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil)))) ⟨hW0.ja, hJp⟩
+    rwa [← plug_snoc2, ← plug_append, ← List.append_assoc] at h
+  · have h := (hV ctx' hc).ck Wl0 hW0 jc mc ctx0 hctx0
+    rwa [← plug_snoc2, ← plug_append] at h
+  · intro k
+    have h := (Pk_twoW UniP_nil (Pk_nstT k j) (ctx' ++ [Frm.fone V]) hcV).ck
+      Wl0 hW0 jc mc ctx0 hctx0
+    rw [← plug_snoc2, ← plug_append] at h
+    simpa [List.append_assoc] using h
+
+#print axioms Nk_twoNilNil
+
+
 /-! ### ★★★★★ 一様に良い木の族 `UQ` / `UT` / `UP`
 
 追記88 の壁: `Cok` の 2 の枠木条件は層 `j` で頭打ちで、走りの階段（`nstN2` の
