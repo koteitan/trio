@@ -20784,19 +20784,16 @@ theorem APd_plug_rep (N : Jk1) (hJN : JkA N) (ks : List Bool)
   rw [← plug_append]
   exact (APd_iff _ N).mp (hNall m) _ (GCtx_rep hJN ks hNall m ctx hc)
 
-theorem APd_twoNilGen (N : Jk1) (hJN : JkA N) (ks : List Bool)
-    (hNall : ∀ j : ℕ, APd (List.replicate j true ++ (true :: ks)) N) :
-    APd (true :: ks) (Jk1.two N Jk1.nil) := by
-  rw [APd_iff]
-  intro ctx hc
-  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split ks ctx hc
-  have hcO : CtxOk (ctx0 ++ [Frm.fone V]) := GCtx_CtxOk (true :: ks) _ hc
-  have hstair : ∀ m : ℕ, GOK (plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)) :=
-    fun m => (APd_iff (true :: ks) _).mp (APd_plug_rep N hJN ks hNall m) _ hc
+/-- ★★★★★ 2 の記録（上に何も無い）の一般版。文脈の条件は `hJT` / `hGV` / 階段だけ。 -/
+theorem GOK_twoNilW_gen (ctx0 : List Frm) (V : Jk1) {N : Jk1} (hJN : JkA N)
+    (hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)))
+    (hGV : GOK (plug ctx0 V))
+    (hstair : ∀ m : ℕ, GOK (plug (ctx0 ++ [Frm.fone V])
+      (plug (List.replicate m (Frm.fone N)) N))) :
+    GOK (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)) := by
   intro ws hw hG
   have hwO : WOk (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N Jk1.nil)]) :=
-    WOk_append hw (WOk_singletonT (JkT_plug _ hcO _
-      ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, trivial⟩)))
+    WOk_append hw (WOk_singletonT hJT)
   have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx0 V])) := hGV ws hw hG
   have hstG : ∀ m : ℕ,
       GoodFb (fun a b => wordJ a b (ws ++ [plug (ctx0 ++ [Frm.fone V]) (plug (List.replicate m (Frm.fone N)) N)])) :=
@@ -20915,6 +20912,19 @@ theorem APd_twoNilGen (N : Jk1) (hJN : JkA N) (ks : List Bool)
     simpa [List.append_assoc] using hh
 
 
+
+theorem APd_twoNilGen (N : Jk1) (hJN : JkA N) (ks : List Bool)
+    (hNall : ∀ j : ℕ, APd (List.replicate j true ++ (true :: ks)) N) :
+    APd (true :: ks) (Jk1.two N Jk1.nil) := by
+  rw [APd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split ks ctx hc
+  have hcO : CtxOk (ctx0 ++ [Frm.fone V]) := GCtx_CtxOk (true :: ks) _ hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, trivial⟩)) hGV
+    (fun m => (APd_iff (true :: ks) _).mp (APd_plug_rep N hJN ks hNall m) _ hc)
+
+#print axioms GOK_twoNilW_gen
 #print axioms APd_twoNilGen
 
 /-- ★★★★★ 2 の記録は、その左 junk が良ければ 2 の記録の枠として使える。 -/
@@ -56768,6 +56778,60 @@ theorem R14_mem_M (hnil : MNil) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈
 
 #print axioms TowOk_of_MNil
 #print axioms R14_mem_M
+
+/-! ### `MNil` を「`AllA` な木は `MPd` でも良い」に落とす -/
+
+theorem MCtx_rep {N : Jk1} (hJN : JkA N) (ks : List Bool)
+    (hNall : ∀ j : ℕ, MPd (List.replicate j true ++ (true :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), MCtx (true :: ks) ctx →
+      MCtx (List.replicate m true ++ (true :: ks)) (ctx ++ List.replicate m (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (m + 1), ctx, hc => by
+      have h1 := MCtx_rep hJN ks hNall m ctx hc
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
+          = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, rep_succ_cons, MCtx_ct]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
+        (FrmJ_rep m true ks N).mpr hJN, hNall m⟩
+
+theorem MPd_plug_rep (N : Jk1) (hJN : JkA N) (ks : List Bool)
+    (hNall : ∀ j : ℕ, MPd (List.replicate j true ++ (true :: ks)) N) (m : ℕ) :
+    MPd (true :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
+  rw [MPd_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (MPd_iff _ N).mp (hNall m) _ (MCtx_rep hJN ks hNall m ctx hc)
+
+/-- 木 `N` が `MPd` 層でどの 1 の枠つき形にも差せる。 -/
+def MBplus (N : Jk1) : Prop :=
+  ∀ (j : ℕ) (ks : List Bool), MPd (List.replicate j true ++ (true :: ks)) N
+
+/-- 2 の記録（上に何も無い）の `MPd` 版。 -/
+theorem MPd_twoNilGen {N : Jk1} (hJN : JkA N) (hM : MBplus N) (ks : List Bool) :
+    MPd (true :: ks) (Jk1.two N Jk1.nil) := by
+  rw [MPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := MCtx_split ks ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (MCtx_JkT (true :: ks) _ hc _ ⟨hJN, trivial⟩) hGV
+    (fun m => (MPd_iff (true :: ks) _).mp
+      (MPd_plug_rep N hJN ks (fun j => hM j ks) m) _ hc)
+
+/-- ★★★★★ 壁の言い換え: `AllA`（`APd` 層で全形状）な木が `MPd` 層でも良ければ `MNil`。 -/
+theorem MNil_of (h : ∀ N : Jk1, JkA N → AllA N → MBplus N) : MNil := by
+  intro ks
+  refine (MPd_cf ks _).mpr (fun m U N hU hUk hN hNt => ?_)
+  exact (MPd_ct _ _).mp (MPd_twoNilGen hN (h N hN hNt) _) U hU hUk
+
+/-- ★★★★★ したがって #14 は「`AllA` ⇒ `MBplus`」1 本に落ちた。 -/
+theorem R14_mem_A (h : ∀ N : Jk1, JkA N → AllA N → MBplus N) :
+    R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem_M (MNil_of h)
+
+#print axioms MNil_of
+#print axioms R14_mem_A
 
 end Small
 end TRIO
