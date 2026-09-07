@@ -58117,6 +58117,36 @@ def SNilT : Prop := ∀ ks : List Bool, SG (true :: ks) Jk1.nil
 
 theorem SNilT_of_SPayF (h : SPayF) : SNilT := SG_nil_true h
 
+/-- 枠木の荷さえあれば 1 の枠の直上の `nil` は出る（`APnil_gen0`）。 -/
+theorem SG_nil_true_of {ks : List Bool} (hp : ∀ U : Jk1, SF ks U → SPy ks U) :
+    SG (true :: ks) Jk1.nil := by
+  intro D hD
+  have hD' := hD
+  obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD'
+  have hJT : JkT (plug D0 (Jk1.one U Jk1.nil)) := by
+    have hh := SCtx_JkT (true :: ks) _ hD Jk1.nil trivial
+    rwa [plug_snoc] at hh
+  rw [plug_snoc]
+  exact APnil_gen0 D0 U hJT (hFU.2 D0 hD0) (fun C hC => hp U hFU D0 C hD0 hC)
+
+/-- 1 の枠の直上の荷は無条件（`SAYr`）。 -/
+theorem SPy_ct {ks : List Bool} {V : Jk1} (hJV : JkA V) (hG : SG (true :: ks) V) :
+    SPy (true :: ks) V := by
+  intro D C hD hC
+  obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD
+  rw [plug_snoc]
+  exact SAYr C hC ks V hJV hG U hFU D0 hD0
+
+/-- ★★★★★ 残る形は「1 の枠が 2 の枠の直上」だけ。 -/
+def SNilF : Prop := ∀ ks : List Bool, SG (true :: false :: ks) Jk1.nil
+
+theorem SNilT_of_SNilF (h : SNilF) : SNilT
+  | [] => SG_nil_true_of (fun _ hFU => SP_bnil hFU.1 hFU.2)
+  | (true :: _) => SG_nil_true_of (fun _ hFU => SPy_ct hFU.1 hFU.2)
+  | (false :: ks) => h ks
+
+#print axioms SNilT_of_SNilF
+
 theorem SOk_true (hnt : SNilT) (ks : List Bool) : SBs (true :: ks) :=
   ⟨SSp_ct ks, hnt ks⟩
 
@@ -58224,6 +58254,8 @@ theorem SPayF_of_SHtow (h : SHtow) : SPayF := by
     C hC Jk1.nil VCh.nil
 
 /-- ★★★★★ 行376 は `SHtow` 1 本に落ちた。 -/
+theorem RunAll_of_SNilF (h : SNilF) : RunAll := RunAll_of_SNilT (SNilT_of_SNilF h)
+
 theorem RunAll_of_SHtow (h : SHtow) : RunAll :=
   RunAll_of_SNilT (SNilT_of_SPayF (SPayF_of_SHtow h))
 
@@ -58270,6 +58302,9 @@ theorem TowOk_of_SNilT (hnt : SNilT) : TowOk := fun n =>
 /-- ★★★★★ #14（シートの証明中の行）は `SHtow` 1 本に落ちた。 -/
 theorem R14_of_SNilT (hnt : SNilT) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R14_mem (TowOk_of_SNilT hnt)
+
+theorem R14_of_SNilF (h : SNilF) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_SNilT (SNilT_of_SNilF h)
 
 theorem R14_of_SHtow (hh : SHtow) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R14_of_SNilT (SNilT_of_SPayF (SPayF_of_SHtow hh))
