@@ -54804,5 +54804,57 @@ theorem NNo_payU' : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, NNo X →
 
 #print axioms NNo_payU'
 
+/-! ### ★★★★★ 差す木の族 `NNf` と、文脈の良さ `GoodCtx`（伝播形の骨組み）
+
+文脈の良さを**仮定として持ち回る**と、`APnil_gen0` が要求する枠木の荷は
+族の中（`pay V C ∈ NNf`）に入るので自動で出る。残るのは走りの階段だけ。 -/
+
+/-- 差す木の族: `nil`・荷・2 の記録で閉じる（`one` は入れない）。 -/
+inductive NNf : Jk1 → Prop
+  | nil : NNf Jk1.nil
+  | pay : ∀ {X : Jk1} {C : TrioSeq}, NNf X → Bok C → NNf (Jk1.pay X C)
+  | two : ∀ {N X : Jk1}, NNf N → NNf X → NNf (Jk1.two N X)
+
+theorem JkA_of_NNf : ∀ {X : Jk1}, NNf X → JkA X
+  | _, NNf.nil => trivial
+  | _, NNf.pay h hC => ⟨JkA_of_NNf h, hC⟩
+  | _, NNf.two hN hX => ⟨JkA_of_NNf hN, JkA_of_NNf hX⟩
+
+/-- 文脈が族の木を全部受け入れる。 -/
+def GoodCtx (ctx : List Frm) : Prop := ∀ X : Jk1, NNf X → GOK (plug ctx X)
+
+theorem blkC_snoc (V : Jk1) (Bs : List Jk1) (N : Jk1) :
+    blkC V (Bs ++ [N]) = blkC V Bs ++ [Frm.ftwo N] := by
+  show Frm.fone V :: ftw (Bs ++ [N]) = (Frm.fone V :: ftw Bs) ++ [Frm.ftwo N]
+  rw [ftw, ftw, List.map_append]
+  rfl
+
+/-- 木の頭の 2 の記録はブロックの走りに吸収できる。 -/
+theorem plug_blk_two (ctx : List Frm) (V : Jk1) (Bs : List Jk1) (N X : Jk1) :
+    plug (ctx ++ blkC V (Bs ++ [N])) X = plug (ctx ++ blkC V Bs) (Jk1.two N X) := by
+  rw [blkC_snoc, ← List.append_assoc, plug_snoc2]
+
+/-- ★★★★★ 走り 0 のブロック（1 の記録だけ）を積む。荷は族の中にあるので自動。 -/
+theorem GoodCtx_oneNil {ctx : List Frm} (hJ : ∀ T : Jk1, JkA T → JkT (plug ctx T))
+    (hG : GoodCtx ctx) {V : Jk1} (hV : NNf V) :
+    GOK (plug ctx (Jk1.one V Jk1.nil)) :=
+  APnil_gen0 ctx V (hJ _ ⟨JkA_of_NNf hV, trivial⟩) (hG V hV)
+    (fun C hC => hG (Jk1.pay V C) (NNf.pay hV hC))
+
+/-- ★★★★★ 走りのブロックの先端に `nil`（階段は仮定）。 -/
+theorem GoodCtx_runNil {ctx : List Frm} (hJ : ∀ T : Jk1, JkA T → JkT (plug ctx T))
+    (hG : GoodCtx ctx) {V A : Jk1} {Bs : List Jk1} (hV : NNf V)
+    (hB : ∀ B ∈ Bs, NNf B) (hA : NNf A)
+    (hst : ∀ i : ℕ, GOK (plug (ctx ++ blkC V Bs ++ blkR A Bs i) A)) :
+    GOK (plug (ctx ++ blkC V Bs) (Jk1.two A Jk1.nil)) := by
+  refine GOK_runGNil_gen (JkA_of_NNf hA) (fun B hBm => JkA_of_NNf (hB B hBm)) ctx ?_
+    (hG V hV) hst
+  rw [plug_blkC]
+  exact hJ _ ⟨JkA_of_NNf hV, JkA_plug_ftw Bs (fun B hBm => JkA_of_NNf (hB B hBm))
+    ⟨JkA_of_NNf hA, trivial⟩⟩
+
+#print axioms GoodCtx_oneNil
+#print axioms GoodCtx_runNil
+
 end Small
 end TRIO
