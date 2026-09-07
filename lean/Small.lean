@@ -35884,6 +35884,46 @@ theorem TipP2_nil : TipP2 Jk1.nil := by
 
 #print axioms TipP2_nil
 
+/-- 鎖 `twoIt V T n`（荷つき版）。荷の補題 `hpay` を仮定として受け取る。 -/
+theorem TipP_twoIt {V T : Jk1} (hV : TipPH V) (hJT : JkA T) (hT2 : TipP2 T)
+    (hpay : ∀ (X : Jk1), JkA X → TipP X → ∀ (C : TrioSeq), Bok C → TipP (Jk1.pay X C)) :
+    ∀ n : ℕ, TipPH (twoIt V T n)
+  | 0 => hV
+  | (n + 1) => by
+      have ih := TipP_twoIt hV hJT hT2 hpay n
+      have hja : JkA (twoIt V T (n + 1)) := ⟨ih.ja, hJT⟩
+      have htip : TipP (twoIt V T (n + 1)) := by
+        intro bs hbs hTop hne
+        rcases List.eq_nil_or_concat bs with rfl | ⟨pre, b, rfl⟩
+        · exact absurd rfl hne
+        · rw [List.concat_eq_append] at hbs hTop ⊢
+          obtain ⟨hpre, hJb, hGb, hGbp⟩ := PreP_unsnoc hbs
+          have hh := hT2 (twoIt V T n) ih pre b.1 b.2 hpre hJb hGb hGbp (by simpa using hTop)
+          show GOK (Trm (Jk1.two (twoIt V T n) T) (pre ++ [b]))
+          simpa using hh
+      exact ⟨hja, htip, fun C hC => hpay _ hja htip C hC⟩
+
+/-- 鎖 `itJ T n A0`（荷つき版）。 -/
+theorem TipP_itJ {A0 T : Jk1} (hA0 : TipPH A0) (hT : TipPH T)
+    (hpay : ∀ (X : Jk1), JkA X → TipP X → ∀ (C : TrioSeq), Bok C → TipP (Jk1.pay X C)) :
+    ∀ n : ℕ, TipPH (itJ T n A0)
+  | 0 => hA0
+  | (n + 1) => by
+      have ih := TipP_itJ hA0 hT hpay n
+      have hja : JkA (itJ T (n + 1) A0) := ⟨ih.ja, hT.ja⟩
+      have htip : TipP (Jk1.one (itJ T n A0) T) := by
+        intro bs hbs hTop hne
+        show GOK (Trm (Jk1.one (itJ T n A0) T) bs)
+        rw [Trm_one]
+        exact hT.tip (bs ++ [(itJ T n A0, 0)])
+          (PreP_snoc hbs ih.ja (ih.tip bs hbs hTop hne)
+            (fun C hC => ih.hang C hC bs hbs hTop hne) 0)
+          ((TopOkH_append bs _ hne).mpr hTop) (by simp)
+      exact ⟨hja, htip, fun C hC => hpay _ hja htip C hC⟩
+
+#print axioms TipP_twoIt
+#print axioms TipP_itJ
+
 /-! ### ★★★★★ 梯子 `RSt`: 2 の記録の枠を連続して積める
 
 `TwSt` の `Fter` を外す代わりに、**枠を足す先の文脈の末尾ランがすべて `nil`** を
