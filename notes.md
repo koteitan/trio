@@ -13027,3 +13027,22 @@ TOk k X := ∀ D, TSt k D → GOK (plug D X)
 要るもの: `TOk k nil`（塔）、`TOk 0 (two nil nil)`（走り 2）、`TOk k (pay X C)`（荷）。
 `nil` と走り 2 の階段はこの族の中で閉じる（兄弟が全部 `nil`）。
 **残るのは「2 の記録の直上の荷」で、そこだけ横鎖（`dupJt0`）の機械が要る。**
+
+### 追記109 追記: 欠けている補題は 1 本に絞れる
+
+`TwoOk (TW (n+1))` は `TwoOk_of_LOk0 (LOk_one ⟨trivial,trivial⟩ (LOk_twoNilAll 0) h)` で
+出る（`LOk_one` は枠木の荷を要求しない）。残るのは
+
+```
+h : LOk 1 (two nil (TW n))     ⟸ LOk_of_TwOk0 (TwOk 0 0 (two nil (TW n)))
+```
+
+n = 0 は `LOk1_twoTwoNil = LOk_of_TwOk0 (TwOk_twoTwoNil trivial NTw_nil (Fter_zero 0))` で緑。
+`TwOk_twoTwoNil` は **先端がちょうど `two nil nil`** の走り 2 で、階段は交互塔。
+n ≥ 1 では先端が `one (two nil nil) (two nil (TW (n-1)))` になる。つまり要るのは
+
+**「走り 2 の続きつき」版の語の補題**（`GOK_twoTwoNilW_gen` は
+`two N (two Wl nil)` = 続きなしの形しか扱わない）。
+
+`TwOk_twoTwoNil` の兄弟条件は `∀ q, NTw q N`（全深さ）で、`N = nil` なら
+`NTw_nil` でタダなので、**兄弟の壁はここでは出ない**。純粋に語の補題の一般化。
