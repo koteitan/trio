@@ -14709,3 +14709,32 @@ inductive ZCh : Jk1 → Prop        -- ZT の荷を積んだ水平鎖
 
 `ZCh` の荷に良さを課すと族が条件つきになり階段が壊れる、という綱引きは残る。
 ただし「条件なし族なら階段は自動」という点は新しく、次の設計の軸になる。
+
+## 追記143: `SNo` の閉包を揃えた。壁 `SPayF` の強さがはっきりした
+
+```
+SNo_one    : SNo U → SNo X → SNo (one U X)          ★無条件
+SNo_twoNil : SNo X → SNo (two nil X)                 ★無条件
+SNo_stk    : SNil → ∀ q, SNo (stk q)
+SNo_pay    : SPayF → SNo X → Bok C → SNo (pay X C)
+SNo_ZT     : SPayF → ZT X → SNo X
+```
+
+`SNo_twoNil` が無条件なのは `SNo X = ∀ s, SG s X` が `s = false::s'` も含むから。
+つまり **`SPayF` があれば「`nil` から `one` / `pay` / `two nil ·` で組める木」は
+すべて普遍的に良い**。`SCtx`（兄弟 `nil`）の世界はこれで全部埋まる。
+
+### 兄弟の族を `ZCh` にする案は不動点になる（検証済み）
+
+追記142 の案（2 の枠の兄弟を条件なしの構造的な族 `ZCh` にする）を詰めた:
+
+- `SHtow` / `SPayF` は確かに**自由になる**（鎖が族に入るので `SG (false::ks) V` そのもの）。
+- しかし `SG (false::ks) nil` が「どの `ZCh` 兄弟の上でも」に強まり、
+  `two N nil ≅ two N (pay nil [])` は `ZCh` の元なので
+  `plug (D0 ++ [ftwo N]) (pay nil [])` と読み替わり、`SPy (false::ks) nil` に落ちる。
+  そして `SPy (false::ks) nil ⇐ SPayF ⇐ SG (false::ks) nil`。
+  **つまり `A ⇐ B ⇐ A` の不動点**で、鎖の長さでも切れない
+  （`GOK_twoPayZ_of` の `htow` は全長さを要求する）。
+
+現状の `SCtx`（兄弟 `nil`）では `SG (false::ks) nil ⇐ SG ks nil`（形が減る）で
+回るので、こちらのほうが良い。**壁は `SPayF`（2 の枠の直上の荷）1 点のまま**。
