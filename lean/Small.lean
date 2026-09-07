@@ -58221,6 +58221,50 @@ theorem RunAll_of_SHtow (h : SHtow) : RunAll := RunAll_of_SPayF (SPayF_of_SHtow 
 #print axioms SPayF_of_SHtow
 #print axioms RunAll_of_SHtow
 
+
+/-! ### ★★★★★ #14（証明中の行）も同じ `SPayF` に落ちる
+
+`TowOk`（#14 の壁、追記101）は `one nil (two nil (TW n))` の `GOK`。
+`[Frm.fone nil]` は `GCtx [true]` の文脈なので `SCtx []` に入り、
+`TW n` は `SCtx` の中で `stk 2` と 1 の記録だけで組める。 -/
+
+theorem SG_cf_iff (ks : List Bool) (X : Jk1) :
+    SG (false :: ks) X ↔ SG ks (Jk1.two Jk1.nil X) := by
+  constructor
+  · intro h D hD
+    rw [← plug_snoc2]
+    exact h _ (SCtx_ftwo hD)
+  · intro h D hD
+    obtain ⟨D0, hD0, rfl⟩ := hD
+    rw [plug_snoc2]
+    exact h D0 hD0
+
+theorem SG_stk1_cf (h : SPayF) (ks : List Bool) (hk : SBs ks) :
+    SG (false :: ks) (Jk1.two Jk1.nil Jk1.nil) :=
+  (SG_cf_iff ks _).mpr (SG_stkS h 2 ks hk)
+
+theorem SG_TW (h : SPayF) : ∀ (n : ℕ) (ks : List Bool), SBs ks → SG (false :: ks) (TW n)
+  | 0, ks, hk => SG_stk1_cf h ks hk
+  | (n + 1), ks, hk =>
+      SG_one ⟨⟨trivial, trivial⟩, SG_stk1_cf h ks hk⟩
+        (SG_twoNil (SG_TW h n (true :: false :: ks) (SOk_true h _)))
+
+theorem SCtx_bnil_foneNil : SCtx [] [Frm.fone Jk1.nil] :=
+  ⟨[], (GCtx_ct [] [Frm.fone Jk1.nil]).mpr
+    ⟨[], Jk1.nil, rfl, (GCtx_bnil []).mpr rfl, JkT_nil, trivial,
+      (APd_bnil Jk1.nil).mpr GOK_nil⟩⟩
+
+/-- ★★★★★ #14 の壁 `TowOk` も `SPayF` から出る。 -/
+theorem TowOk_of_SPayF (h : SPayF) : TowOk := fun n =>
+  SG_twoNil (SG_TW h n [] SOk_bnil) _ SCtx_bnil_foneNil
+
+/-- ★★★★★ #14（シートの証明中の行）は `SHtow` 1 本に落ちた。 -/
+theorem R14_of_SHtow (hh : SHtow) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_SPayF (SPayF_of_SHtow hh))
+
+#print axioms TowOk_of_SPayF
+#print axioms R14_of_SHtow
+
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
 `stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
