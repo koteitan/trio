@@ -57216,5 +57216,102 @@ theorem wordJ_snoc_twoNstkT (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V N : 
 #print axioms wordJ_snoc_twoNstkQ
 #print axioms wordJ_snoc_twoNstkT
 
+/-! #### `unQ` の `MidD` と、塔から末尾の 2 の記録を継ぐ補題 -/
+
+theorem unQ_eq2 (N : Jk1) (p D : ℕ) :
+    unQ N p D = (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N)
+      ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (D + 1) (stkP p Jk1.nil)) := by
+  show ((D, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ)
+      :: jk1 (D + 1) (stkP p Jk1.nil))) = _
+  simp
+
+theorem unQ_eq (N : Jk1) (p D : ℕ) :
+    unQ N p D = unN N D ++ jk1 (D + 1) (stkP p Jk1.nil) := by
+  rw [unQ_eq2]
+  simp [unN, List.append_assoc]
+
+theorem row1_jk1_stkP_nil (p l : ℕ) : ∀ c ∈ jk1 l (stkP p Jk1.nil), c.2.1 = 2 := by
+  rw [jk1_stkP p Jk1.nil l]
+  intro c hc
+  rcases List.mem_append.mp hc with h | h
+  · rw [List.mem_flatMap] at h
+    obtain ⟨k, -, hk⟩ := h
+    simp only [shiftr01, List.mem_map, List.mem_singleton] at hk
+    obtain ⟨x, hx, rfl⟩ := hk
+    subst hx
+    rfl
+  · simp [jk1] at h
+
+theorem length_jk1_stkP_nil (p l : ℕ) : (jk1 l (stkP p Jk1.nil)).length = p := by
+  rw [jk1_stkP p Jk1.nil l]
+  simp [jk1, shiftr01]
+
+theorem entry_one (R : TrioSeq) (j : ℕ) :
+    entry R 1 j = (R.getD j ((0, 0, 0) : ℕ × ℕ × ℕ)).2.1 := rfl
+
+theorem MidD_unQ {N : Jk1} (hJN : JkA N) {D : ℕ} (hD : 1 ≤ D) (p : ℕ) :
+    MidD (D + 1) (unQ N p D) := by
+  rw [unQ_eq N p D]
+  refine MidD_append (MidD_unN hJN hD) ?_
+    (jk1_mono _ (show JkA (stkP p Jk1.nil) from JkA_stk p) (D + 1))
+  intro c hc
+  have := jk1_ge (stkP p Jk1.nil) (D + 1) c hc
+  omega
+
+theorem entry_unQ_row1_tail (N : Jk1) (p D : ℕ) : ∀ t, (jk1 D N).length + 1 ≤ t →
+    t < (unQ N p D).length → entry (unQ N p D) 1 t = 2 := by
+  intro t ht1 ht2
+  rw [unQ_eq2 N p D] at ht2 ⊢
+  have hAlen : (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N).length = (jk1 D N).length + 1 := by simp
+  obtain ⟨j, rfl⟩ : ∃ j, t = (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N).length + j :=
+    ⟨t - ((jk1 D N).length + 1), by omega⟩
+  rw [entry_append_right]
+  have hjR : j < (((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (D + 1) (stkP p Jk1.nil)).length := by
+    rw [List.length_append] at ht2
+    omega
+  rw [entry_one, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hjR,
+    Option.getD_some]
+  rcases List.mem_cons.mp (List.getElem_mem hjR) with h | h
+  · rw [h]
+  · simpa using row1_jk1_stkP_nil p (D + 1) _ h
+
+theorem hMy_unQ {N : Jk1} (hJN : JkA N) {D : ℕ} (hD : 1 ≤ D) (p : ℕ) :
+    ∀ t, 1 ≤ t → t < (unQ N p D).length → entry (unQ N p D) 0 t < D + (p + 2) →
+      (∀ i, t < i → i < (unQ N p D).length →
+        entry (unQ N p D) 0 t < entry (unQ N p D) 0 i) →
+      2 ≤ entry (unQ N p D) 1 t := by
+  intro t ht1 htl hlt hrec
+  rcases Nat.lt_or_ge t ((jk1 D N).length + 1) with h | h
+  · exfalso
+    have hlen : (unQ N p D).length = (jk1 D N).length + 1 + (p + 1) := by
+      rw [unQ_eq2]
+      simp only [List.length_append, List.length_cons, length_jk1_stkP_nil]
+    have h2 := hrec ((jk1 D N).length + 1) h (by omega)
+    have hval : entry (unQ N p D) 0 ((jk1 D N).length + 1) = D + 1 := by
+      rw [unQ_eq2, show (jk1 D N).length + 1
+          = (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N).length from by simp, entry_append_at]
+      simp [entry]
+    rw [hval] at h2
+    have hge : D + 1 ≤ entry (unQ N p D) 0 t := (MidD_unQ hJN hD p).tail t ht1 htl
+    omega
+  · rw [entry_unQ_row1_tail N p D t h htl]
+
+/-- 塔（`k+1` 段）と底から、`unQ N p D` の末尾に 2 の記録を継ぐ。 -/
+theorem snocQ_of_tower {N : Jk1} (hJN : JkA N) {D : ℕ} (hD : 1 ≤ D) (p : ℕ) {X : TrioSeq}
+    (hne : X ≠ []) (h0 : X ∈ W 0)
+    (htw : ∀ k : ℕ, Mtwd (p + 2) X (unQ N p D) (k + 1) ∈ W 0) :
+    (X ++ unQ N p D) ++ [((D + (p + 2), 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine snocYd_mem (Y0 := X) (M := unQ N p D) (L := D) (y := 2) (dl := p + 2) hne
+    (MidD_unQ hJN hD p) ?_ (hMy_unQ hJN hD p) (by omega) (by omega) ?_
+  · show entry (unQ N p D) 1 0 < 2
+    rw [unQ_eq2]
+    simp [entry]
+  · intro n
+    match n with
+    | 0 => simpa [Mtwd] using h0
+    | (k + 1) => exact htw k
+
+#print axioms snocQ_of_tower
+
 end Small
 end TRIO
