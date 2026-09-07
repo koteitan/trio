@@ -55833,5 +55833,65 @@ theorem R375h5_mem : R375h ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375h5_mem
 
+/-! #### `H(2,2,1)`: 梯子を 1 段伸ばす
+
+`TipOk (TW 1)` は `Ew_twoNilTwoNil`（走り 2 の `Ew` 層版、緑）から出る。
+`Pk_twoW` を経由しないので `Pk 1 0 (two nil nil)`（壁）を通らない。
+そこから `TTwA (TW 2)` → `TwoOk (TW 3)` と 2 段上がって `NH` の語が出る。 -/
+
+theorem TipOk_TW1 : TipOk (TW 1) :=
+  TipOk_of_Pk00 (Pk_one ⟨trivial, trivial⟩ (Pk00_of_TipOk TipOk_twoNil)
+    (fun C hC => Pk00_of_TipOk (TipOk_pay TipOk_twoNil C hC))
+    (Pk0_of_Ew (Ew_twoNilTwoNil 1 (by omega))))
+
+theorem Dk1_twoNilTW1 : Dk 1 (Jk1.two Jk1.nil (TW 1)) := by
+  intro fs hfs
+  obtain ⟨W, fs', rfl, hfs', hJW, hW, hWp⟩ := (Fok_s 0 fs).mp hfs
+  have hfs0 : fs' = [] := (Fok_z fs').mp hfs'
+  subst hfs0
+  rw [plug_snoc]
+  exact TTwA_of_Ck00 (Ck_one hJW (Ck00_of_TTwA (hW [] rfl))
+    (fun C hC => Ck00_of_TTwA (hWp C hC [] rfl))
+    (TipOk_TW1.ck Jk1.nil UniW_nil 0 0))
+
+theorem TTwA_TW2 : TTwA (TW 2) :=
+  TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil Dk1_twoNilTW1
+
+theorem TwoOk_TW3 : TwoOk (TW 3) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk_twoNilAll 0)
+    (LOk_of_TwOk0 (TTwA_TW2 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+
+/-- `H(2,2,1)` の木。 -/
+def NH : Jk1 := Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW 3))
+
+theorem JkT_NH : JkT NH := ⟨⟨trivial, trivial, JkA_TW 3⟩, trivial⟩
+
+theorem GOK_NH : GOK NH :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa using TwoOk_TW3 Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem jk1_NH (l : ℕ) : jk1 l NH =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 1, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 7, 2, 0) : ℕ × ℕ × ℕ), ((l + 7, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 8, 2, 0) : ℕ × ℕ × ℕ), ((l + 9, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [NH, TW, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+
+/-- ★★★★★ `H(2,2,1)`。 -/
+theorem R375h6_mem : R375h ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NH])) := GOK_NH [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NH]) := by simpa using h1
+  have h2 := GOK_nil [NH] (WOk_singletonT JkT_NH) h1'
+  have h := rowJ_mem_genF Aok_R338 h2
+  simpa [wordJ_append, wordJ_singleton, colJ, jk1_NH, jk1, R375h, R375i, R375j, R375k,
+    R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341, R338,
+    List.append_assoc] using h
+
+#print axioms R375h6_mem
+
 end Small
 end TRIO
