@@ -55081,5 +55081,40 @@ theorem Rk_twoNilNil_nil {j n : ℕ} {V : Jk1} {ctx' : List Frm} (hc : Rok j n c
 
 #print axioms Rk_twoNilNil_at
 
+/-- ★★★★★ 横鎖は全層（1 の枠が 1 枚以上）に差せる。要るのは**先端の対の層での配置**だけ。
+
+`twoIt W T (k+1) = two (twoIt W T k) T` なので `Rk_twoW` を `k` 回。
+これで A2' の複製鎖が「走りの階段が要求する兄弟の条件」を満たす。 -/
+theorem Rk_all_chain {W T : Jk1} (hW : ∀ j i : ℕ, Rk j (i + 1) W)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))
+    (hUT : UT W) (hUPT : UP T) (hT : ∀ j : ℕ, Rk (j + 1) 0 T) :
+    ∀ (k : ℕ), (∀ j i : ℕ, Rk j (i + 1) (twoIt W T k)) ∧
+      (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay (twoIt W T k) C))
+  | 0 => ⟨hW, hWp⟩
+  | (k + 1) => by
+      obtain ⟨ih, ihp⟩ := Rk_all_chain hW hWp hUT hUPT hT k
+      have hstep : ∀ j i : ℕ, Rk j (i + 1) (twoIt W T (k + 1)) := by
+        intro j i
+        exact Rk_twoW (fun i' => ih j i') (fun C hC i' => ihp C hC j i')
+          (UT.chain k hUT hUPT) (hT j)
+      exact ⟨hstep, fun C hC j i => Rk_pay j (i + 1) C hC _
+        (UP.chain (k + 1) hUT hUPT) (hstep j i)⟩
+
+/-- 鎖を 2 の枠の兄弟にした文脈でも、走りが対の層で通る。 -/
+theorem Rk_twoNilNil_chain {j n : ℕ} {V W T : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
+    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+      GOK (plug cs (Jk1.pay V C)))
+    (hW : ∀ j' i' : ℕ, Rk j' (i' + 1) W)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ j' i' : ℕ, Rk j' (i' + 1) (Jk1.pay W C))
+    (hUT : UT W) (hUPT : UP T) (hT : ∀ j' : ℕ, Rk (j' + 1) 0 T) (k : ℕ) :
+    GOK (plug ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo (twoIt W T k)])
+      (Jk1.two Jk1.nil Jk1.nil)) :=
+  Rk_twoNilNil_at hc hUV hV hVp (Rk_all_chain hW hWp hUT hUPT hT k).1
+    (Rk_all_chain hW hWp hUT hUPT hT k).2 (UT.chain k hUT hUPT)
+
+#print axioms Rk_all_chain
+#print axioms Rk_twoNilNil_chain
+
 end Small
 end TRIO
