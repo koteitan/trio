@@ -12023,3 +12023,26 @@ UniW をそのまま要求するのではなく、走りの階段
 `Z = 1 の記録` が要る。文脈に「2 の枠 + 1 の枠」の対を許す `Gw` の拡張
 （仮に `Hw`/`Fw`）を作れば通る。2 の枠の直上には必ず 1 の枠が来るので走りは
 現れない。`Ew_pay` と `Ew_twoWPayZ` の A2' 帰納を `Hw` 版に移植する作業が要る。
+
+### 追記90-2: `Hw`/`Kw`（交互塔の層）の骨格を入れた（緑）
+
+V(11,2,0) の塔（歩幅 2）の木は 1 の記録と 2 の記録が交互に積まる。
+`Gw`（1 の枠だけ）を拡張し、「左兄弟 `nil` の 2 の枠 + 1 の枠」の対も許す文脈
+`Hw` を作った。2 の枠の直上には必ず 1 の枠が来るので走りは現れない。
+
+- 枠木の条件は**その場所での 1 個**（`TipOk (plug es U)` と荷版）だけ。
+  ∀ 文脈版にすると、下端の兄弟 `two nil nil` に `TipOk (two nil (two nil nil))`
+  （走り）を要求してしまい壊れる。
+- 緑: `Hw` / `Hx` / `Kw` の定義、`Hw_z`/`Hw_s`、`JkA_plug_Hw`/`JkA_plug_Hx`、
+  `Kw_of_TipOk0`/`TipOk_of_Kw0`、`Kw_one`、`Kw_blk`（対を積む）、`Kw_nil`。
+
+残り（次回の作業）:
+1. `Kw_pay`（`Ew_pay` の A2' 移植）と `Kw_twoWPayZ`（`Ew_twoWPayZ` の移植）。
+   `Hw` の文脈の手前 `es` は「2 の枠つき」でもありうるので、この 2 本は
+   **層 n についての同時帰納**にする必要がある（`Ew` 層では `Gw` の手前が
+   常に `Gw` なので分かれていた）。
+2. `Kw n (two nil nil)`（`Ew_twoNil` の移植、階段は `chn`）。
+3. `Kw_nst : Kw (n+1) (two nil (nstN2 nil nil k))` を k の帰納で（`Kw_blk`）。
+4. `TipOk (one (two nil nil) (two nil (nstN2 nil nil k)))` を `Ew_one` で作り、
+   `Dk1` → `TTwA` → 木の `GOK` → 塔 `Mtwd 2 R375k [(9,1,0),(10,2,0)] m`
+   → `snocYd_mem`（`L=9, y=2, dl=2`）で **V(11,2,0)**。

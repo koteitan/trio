@@ -51164,6 +51164,110 @@ theorem R375i28_mem : R375i ++ [((11, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 
 #print axioms R375i28_mem
 
+/-! ### ★★★★★ 交互塔の層 `Hw` / `Kw`
+
+`Gw`/`Ew` の文脈は 1 の枠だけ。`Hw` は「左兄弟 `nil` の 2 の枠 + 1 の枠」の対も
+許す。2 の枠の直上には必ず 1 の枠が来るので走りは現れない。
+枠木の条件は**その場所での 1 個**（`TipOk (plug es U)`）だけ要求する。 -/
+
+def Hw : ℕ → List Frm → Prop
+  | 0, fs => fs = []
+  | (n + 1), fs => ∃ (U : Jk1) (es : List Frm), fs = es ++ [Frm.fone U] ∧
+      (Hw n es ∨ ∃ gs : List Frm, es = gs ++ [Frm.ftwo Jk1.nil] ∧ Hw n gs) ∧
+      JkA U ∧ TipOk (plug es U) ∧
+      (∀ (C : TrioSeq), Bok C → TipOk (plug es (Jk1.pay U C)))
+
+/-- `Hw` 文脈、またはその上に「左兄弟 `nil` の 2 の枠」を 1 枚載せた場所。 -/
+def Hx (n : ℕ) (es : List Frm) : Prop :=
+  Hw n es ∨ ∃ gs : List Frm, es = gs ++ [Frm.ftwo Jk1.nil] ∧ Hw n gs
+
+def Kw (n : ℕ) (Z : Jk1) : Prop := ∀ fs : List Frm, Hw n fs → TipOk (plug fs Z)
+
+theorem Hw_z (fs : List Frm) : Hw 0 fs ↔ fs = [] := by rw [Hw]
+
+theorem Hw_s (n : ℕ) (fs : List Frm) : Hw (n + 1) fs ↔
+    ∃ (U : Jk1) (es : List Frm), fs = es ++ [Frm.fone U] ∧
+      (Hw n es ∨ ∃ gs : List Frm, es = gs ++ [Frm.ftwo Jk1.nil] ∧ Hw n gs) ∧ JkA U ∧
+      TipOk (plug es U) ∧
+      (∀ (C : TrioSeq), Bok C → TipOk (plug es (Jk1.pay U C))) := by rw [Hw]
+
+theorem Kw_of_TipOk0 {X : Jk1} (h : TipOk X) : Kw 0 X := by
+  intro fs hfs
+  have hf : fs = [] := (Hw_z fs).mp hfs
+  subst hf
+  exact h
+
+theorem TipOk_of_Kw0 {X : Jk1} (h : Kw 0 X) : TipOk X := h [] rfl
+
+theorem JkA_plug_Hw : ∀ (n : ℕ) (fs : List Frm), Hw n fs → ∀ T : Jk1, JkA T →
+    JkA (plug fs T)
+  | 0, fs, h, T, hT => by
+      have hf : fs = [] := (Hw_z fs).mp h
+      subst hf
+      exact hT
+  | (n + 1), fs, h, T, hT => by
+      obtain ⟨U, es, rfl, hes, hJU, -, -⟩ := (Hw_s n fs).mp h
+      rw [plug_snoc]
+      rcases hes with hes | ⟨gs, rfl, hgs⟩
+      · exact JkA_plug_Hw n es hes _ ⟨hJU, hT⟩
+      · rw [plug_snoc2]
+        exact JkA_plug_Hw n gs hgs _ ⟨trivial, hJU, hT⟩
+
+theorem JkA_plug_Hx (n : ℕ) (es : List Frm) (h : Hx n es) (T : Jk1) (hT : JkA T) :
+    JkA (plug es T) := by
+  rcases h with h | ⟨gs, rfl, hgs⟩
+  · exact JkA_plug_Hw n es h T hT
+  · rw [plug_snoc2]
+    exact JkA_plug_Hw n gs hgs _ ⟨trivial, hT⟩
+
+theorem Kw_one {n : ℕ} {U T : Jk1} (hJU : JkA U) (hU : Kw n U)
+    (hUp : ∀ C : TrioSeq, Bok C → Kw n (Jk1.pay U C)) (hT : Kw (n + 1) T) :
+    Kw n (Jk1.one U T) := by
+  intro fs hfs
+  have hH : Hw (n + 1) (fs ++ [Frm.fone U]) :=
+    (Hw_s n _).mpr ⟨U, fs, rfl, Or.inl hfs, hJU, hU fs hfs,
+      fun C hC => hUp C hC fs hfs⟩
+  have h := hT _ hH
+  rwa [plug_snoc] at h
+
+/-- 「2 の枠 + 1 の枠」の対を積む。 -/
+theorem Kw_blk {n : ℕ} {U T : Jk1} (hJU : JkA U) (hU : Kw n (Jk1.two Jk1.nil U))
+    (hUp : ∀ C : TrioSeq, Bok C → Kw n (Jk1.two Jk1.nil (Jk1.pay U C)))
+    (hT : Kw (n + 1) T) : Kw n (Jk1.two Jk1.nil (Jk1.one U T)) := by
+  intro fs hfs
+  have hH : Hw (n + 1) ((fs ++ [Frm.ftwo Jk1.nil]) ++ [Frm.fone U]) := by
+    refine (Hw_s n _).mpr ⟨U, fs ++ [Frm.ftwo Jk1.nil], rfl,
+      Or.inr ⟨fs, rfl, hfs⟩, hJU, ?_, ?_⟩
+    · rw [plug_snoc2]
+      exact hU fs hfs
+    · intro C hC
+      rw [plug_snoc2]
+      exact hUp C hC fs hfs
+  have h := hT _ hH
+  rwa [plug_snoc, plug_snoc2] at h
+
+theorem Kw_nil : ∀ n : ℕ, Kw n Jk1.nil
+  | 0 => Kw_of_TipOk0 TipOk_nil
+  | (n + 1) => by
+      intro fs hfs
+      obtain ⟨U, es, rfl, hes, hJU, hU, hUp⟩ := (Hw_s n fs).mp hfs
+      rw [plug_snoc]
+      refine ⟨JkA_plug_Hx n es hes _ ⟨hJU, trivial⟩, ?_⟩
+      intro Wl hW j m ctx hctx
+      rw [← plug_snoc2, ← plug_append]
+      refine APnil_gen0 ((ctx ++ [Frm.ftwo Wl]) ++ es) U ?_ ?_ ?_
+      · have h := JkT_plug_Cok j (m + 1) ctx hctx
+          (Jk1.two Wl (plug es (Jk1.one U Jk1.nil)))
+          ⟨hW.ja, JkA_plug_Hx n es hes _ ⟨hJU, trivial⟩⟩
+        rwa [← plug_snoc2, ← plug_append] at h
+      · have h := hU.ck Wl hW j m ctx hctx
+        rwa [← plug_snoc2, ← plug_append] at h
+      · intro C hC
+        have h := (hUp C hC).ck Wl hW j m ctx hctx
+        rwa [← plug_snoc2, ← plug_append] at h
+
+#print axioms Kw_nil
+
 /-! ### ★★★★★ 一様に良い木の族 `UQ` / `UT` / `UP`
 
 追記88 の壁: `Cok` の 2 の枠木条件は層 `j` で頭打ちで、走りの階段（`nstN2` の
