@@ -14051,3 +14051,50 @@ RunPay p C : APd (true::ks) (two nil (stkP p (pay nil C)))     -- 連鎖に荷
 ```
 
 で、`TwoOk_pay` / `LTwo_pay` と同じ A2' の帰納の形。
+
+## 追記131: すべての道が `APd (false::ks) (two nil Z)` に集まる。ただし `Z` 次第で見込みが違う
+
+行376 の目標 `∀ q ks, APd (true::ks) (stk q)` を詰めた結果、どの経路も
+
+```
+APd (false :: ks) (two nil Z)      -- two 頭の木を 2 の記録の直上に置く
+```
+
+に帰着することを確認した（`APd_all` の穴そのもの）。経路:
+
+```
+stk (p+2)                 ⟸ GOK_stkW_gen + 階段
+階段 (k≥1)                = two nil (stkP p (one nil W))
+  ⟸ APd_twoNilOf から APd (false::ks) (stkP p (one nil W))   -- p≥1 で two 頭 ✗
+RunOne p nil              ⟸ APnil_gen0（hGV = 1 個短い連鎖 ✓、hang = 連鎖に荷）
+hang = stkP r (pay nil C) ⟸ APd_twoNilOf から APd (false::ks) (stkP (r-1) (pay nil C))
+                                                              -- r≥2 で two 頭 ✗
+```
+
+### ただし bms 実測では `Z` が 1 の記録で終わる場合はコピーが水平
+
+```
+(0,0,0)(1,1,0)(2,1,0)(2,2,0)(3,2,0)(4,1,0)[n]
+= … + n 個の (4,0,0)(5,1,0)(6,1,0)(6,2,0)(7,2,0)     -- 先頭が row1 = 0
+```
+
+つまり `two N (two nil Z)` で `Z` が 1 の記録で終わるとき、コピーは
+**土台の隣に水平に並び、`N` は深く入れ子にならない**。だから
+`APd_cf` が渡してくる固定形状の `hNt` で足りる見込みがある。
+
+対して `Z = nil`（純粋な連鎖）のときだけ `N` が深くコピーされ、
+全形状の `AllA N` が要る（`GOK_stkW_gen` / `GOK_twoTwoNilW_gen` はその場合）。
+
+### 次の一手
+
+```
+APd_falseTwoOne : APd (false :: ks) (two nil (one nil W))
+```
+を語のレベルで作る（コピーが水平なので `GoodFb_snoc_dupJs0` / `innerJs0` 系の形）。
+これが出れば
+
+```
+階段 (k≥1) ✓ → RunOk ✓ → TwoOk_stk ✓ → GOK_oneStk ✓ → 行376 ∈ W 0
+```
+
+が繋がる。`RunPay`（連鎖に荷）も同じ道具で出る見込み。
