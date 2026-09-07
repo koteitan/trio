@@ -58102,15 +58102,18 @@ def SSp (ks : List Bool) : Prop :=
 /-- 1 の枠で終わり、`nil` を差せる形。 -/
 def SBs (ks : List Bool) : Prop := SSp ks ∧ SG ks Jk1.nil
 
-theorem SOk_bnil : SBs [] :=
-  ⟨fun D hD => by obtain ⟨kk, hc⟩ := hD; exact GCtx_split kk D hc,
-   SG_bnil_of_APd (fun kk => APd_nil _)⟩
+theorem SSp_bnil : SSp [] := fun D hD => by
+  obtain ⟨kk, hc⟩ := hD
+  exact GCtx_split kk D hc
+
+theorem SSp_ct (ks : List Bool) : SSp (true :: ks) := fun D hD => by
+  obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD
+  exact ⟨D0, U, rfl, hFU.2 D0 hD0⟩
+
+theorem SOk_bnil : SBs [] := ⟨SSp_bnil, SG_bnil_of_APd (fun kk => APd_nil _)⟩
 
 theorem SOk_true (h : SPayF) (ks : List Bool) : SBs (true :: ks) :=
-  ⟨fun D hD => by
-     obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD
-     exact ⟨D0, U, rfl, hFU.2 D0 hD0⟩,
-   SG_nil_true h ks⟩
+  ⟨SSp_ct ks, SG_nil_true h ks⟩
 
 /-- 階段の形（ブロックを `i` 個積んだもの）。 -/
 def shR (q : ℕ) (ks : List Bool) : ℕ → List Bool
@@ -58300,7 +58303,7 @@ theorem SCtx_blkRN {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N) (r :
       rw [e]
       exact ⟨_, SCtx_rep_ftwo r (SCtx_fone hks' ⟨hJN, hN ks'⟩)⟩
 
-theorem STow_stk (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N)
+theorem STow_stk {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N)
     (r : ℕ) (ks : List Bool) (hsp : SSp ks) : SG ks (stkP r (Jk1.two N Jk1.nil)) := by
   intro D hD
   obtain ⟨ctx, V, hDe, hGV⟩ := hsp D hD
@@ -58322,15 +58325,15 @@ theorem STow_stk (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG
     rw [ec]
     simpa [List.append_assoc] using hh
 
-theorem STow_all (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N) :
+theorem STow_all {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N) :
     ∀ (ks : List Bool) (r : ℕ), SG ks (stkP r (Jk1.two N Jk1.nil))
-  | [], r => STow_stk h hJN hN r [] SOk_bnil.1
-  | (true :: ks), r => STow_stk h hJN hN r (true :: ks) (SOk_true h ks).1
-  | (false :: ks), r => (SG_cf_iff ks _).mpr (STow_all h hJN hN ks (r + 1))
+  | [], r => STow_stk hJN hN r [] SSp_bnil
+  | (true :: ks), r => STow_stk hJN hN r (true :: ks) (SSp_ct ks)
+  | (false :: ks), r => (SG_cf_iff ks _).mpr (STow_all hJN hN ks (r + 1))
 
 /-- ★★★★★ 普遍的に良い木は 2 の記録の左兄弟にできる。 -/
-theorem STow (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N)
-    (ks : List Bool) : SG ks (Jk1.two N Jk1.nil) := STow_all h hJN hN ks 0
+theorem STow {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N)
+    (ks : List Bool) : SG ks (Jk1.two N Jk1.nil) := STow_all hJN hN ks 0
 
 #print axioms STow
 
@@ -58341,16 +58344,21 @@ theorem STow (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N
 
 def SNo (N : Jk1) : Prop := JkA N ∧ ∀ s : List Bool, SG s N
 
-theorem SNo_nil (h : SPayF) : SNo Jk1.nil := ⟨trivial, SG_nil_all h⟩
+/-- 「`nil` はどの形にも差せる」。壁はここに集約する。 -/
+def SNil : Prop := ∀ ks : List Bool, SG ks Jk1.nil
 
-theorem SNo_step (h : SPayF) : ∀ Y : TrioSeq, Bok Y → ∀ N : Jk1, SNo N →
+theorem SNil_of_SPayF (h : SPayF) : SNil := SG_nil_all h
+
+theorem SNo_nil (hn : SNil) : SNo Jk1.nil := ⟨trivial, hn⟩
+
+theorem SNo_step : ∀ Y : TrioSeq, Bok Y → ∀ N : Jk1, SNo N →
     SNo (Jk1.two N (Jk1.pay Jk1.nil Y)) := by
   have hnilstep : ∀ N : Jk1, SNo N →
       SNo (Jk1.two N (Jk1.pay Jk1.nil ([] : TrioSeq))) := by
     intro N hN
     refine ⟨⟨hN.1, trivial, Bok_nil⟩, ?_⟩
     intro s D hD
-    refine GOK_congr (jk1_plug_congr D ?_) (STow h hN.1 hN.2 s D hD)
+    refine GOK_congr (jk1_plug_congr D ?_) (STow hN.1 hN.2 s D hD)
     intro l
     show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Jk1.nil)
       = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
@@ -58443,14 +58451,14 @@ theorem SNo_step (h : SPayF) : ∀ Y : TrioSeq, Bok Y → ∀ N : Jk1, SNo N →
 #print axioms SNo_step
 
 /-- `VCh nil` の鎖はすべて普遍的に良い。 -/
-theorem SNo_VCh (h : SPayF) : ∀ {N : Jk1}, VCh Jk1.nil N → SNo N
-  | _, VCh.nil => SNo_nil h
-  | _, VCh.step hN hY => SNo_step h _ hY _ (SNo_VCh h hN)
+theorem SNo_VCh (hn : SNil) : ∀ {N : Jk1}, VCh Jk1.nil N → SNo N
+  | _, VCh.nil => SNo_nil hn
+  | _, VCh.step hN hY => SNo_step _ hY _ (SNo_VCh hn hN)
 
 /-- ★★★★★ `SHtow` の `V = nil` の場合。 -/
-theorem SHtow_nil (h : SPayF) (ks : List Bool) (D0 : List Frm) (hD0 : SCtx ks D0)
+theorem SHtow_nil (hn : SNil) (ks : List Bool) (D0 : List Frm) (hD0 : SCtx ks D0)
     {N : Jk1} (hN : VCh Jk1.nil N) : GOK (plug D0 (Jk1.two N Jk1.nil)) :=
-  STow h (SNo_VCh h hN).1 (SNo_VCh h hN).2 ks D0 hD0
+  STow (SNo_VCh hn hN).1 (SNo_VCh hn hN).2 ks D0 hD0
 
 #print axioms SHtow_nil
 
