@@ -55334,5 +55334,28 @@ theorem PairOk_pay : ∀ Y : TrioSeq, Bok Y → ∀ X : Jk1, UP X → PairOk X �
 
 #print axioms PairOk_pay
 
+/-- 先端が `nil` の 1 の記録は対の層に差せる（`APnil_gen0` だけで出る）。 -/
+theorem PairOk_oneNil {U : Jk1} (hJU : UP U) (hU : PairOk U) :
+    PairOk (Jk1.one U Jk1.nil) := by
+  intro Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW
+  have hctx : Rok (j + 1) 0 ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl]) :=
+    (Rok_s0 j _).mpr ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hWk, hWp, hW⟩
+  refine APnil_gen0 _ U (JkT_plug_Rok (j + 1) 0 _ hctx _ ⟨JkA_of_UP hJU, trivial⟩)
+    (hU Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW) ?_
+  intro C hC
+  exact PairOk_pay C hC U hJU hU Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW
+
+theorem UP_twoNil : UP (Jk1.two Jk1.nil Jk1.nil) := UP.chain 1 UT.nil UP.nil
+
+theorem UT_twoNil : UT (Jk1.two Jk1.nil Jk1.nil) := UT.chain 1 UT.nil UP.nil
+
+/-- ★★★★★ 走り 2 の直上の荷は対の層に差せる。 -/
+theorem PairOk_payTwoNil (C : TrioSeq) (hC : Bok C) :
+    PairOk (Jk1.pay (Jk1.two Jk1.nil Jk1.nil) C) :=
+  PairOk_pay C hC _ UP_twoNil PairOk_twoNil
+
+#print axioms PairOk_oneNil
+#print axioms PairOk_payTwoNil
+
 end Small
 end TRIO
