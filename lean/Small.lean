@@ -58112,21 +58112,26 @@ theorem SSp_ct (ks : List Bool) : SSp (true :: ks) := fun D hD => by
 
 theorem SOk_bnil : SBs [] := ⟨SSp_bnil, SG_bnil_of_APd (fun kk => APd_nil _)⟩
 
-theorem SOk_true (h : SPayF) (ks : List Bool) : SBs (true :: ks) :=
-  ⟨SSp_ct ks, SG_nil_true h ks⟩
+/-- ★★★★★ 「1 の枠の直上に `nil` を差せる」。塔にはこれだけあればよい。 -/
+def SNilT : Prop := ∀ ks : List Bool, SG (true :: ks) Jk1.nil
+
+theorem SNilT_of_SPayF (h : SPayF) : SNilT := SG_nil_true h
+
+theorem SOk_true (hnt : SNilT) (ks : List Bool) : SBs (true :: ks) :=
+  ⟨SSp_ct ks, hnt ks⟩
 
 /-- 階段の形（ブロックを `i` 個積んだもの）。 -/
 def shR (q : ℕ) (ks : List Bool) : ℕ → List Bool
   | 0 => List.replicate q false ++ ks
   | (i + 1) => List.replicate q false ++ (true :: shR q ks i)
 
-theorem SG_shR (h : SPayF) (q : ℕ) (hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q))
+theorem SG_shR (hnt : SNilT) (q : ℕ) (hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q))
     (ks : List Bool) (hk : SBs ks) : ∀ i : ℕ, SG (shR q ks i) Jk1.nil
   | 0 => SG_repF q ks Jk1.nil (hq ks hk)
   | (i + 1) => SG_repF q (true :: shR q ks i) Jk1.nil
-      (hq (true :: shR q ks i) (SOk_true h _))
+      (hq (true :: shR q ks i) (SOk_true hnt _))
 
-theorem SCtx_blkR (h : SPayF) (q : ℕ) (hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q))
+theorem SCtx_blkR (hnt : SNilT) (q : ℕ) (hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q))
     {ks : List Bool} (hk : SBs ks) {D : List Frm} (hD : SCtx ks D) :
     ∀ i : ℕ, SCtx (shR q ks i)
       (D ++ List.replicate q (Frm.ftwo Jk1.nil)
@@ -58146,14 +58151,14 @@ theorem SCtx_blkR (h : SPayF) (q : ℕ) (hq : ∀ ks' : List Bool, SBs ks' → S
         simp [List.append_assoc]
       rw [e]
       exact SCtx_rep_ftwo q
-        (SCtx_fone (SCtx_blkR h q hq hk hD i) ⟨trivial, SG_shR h q hq ks hk i⟩)
+        (SCtx_fone (SCtx_blkR hnt q hq hk hD i) ⟨trivial, SG_shR hnt q hq ks hk i⟩)
 
 /-- ★★★★★ 走りの塔。走り長 `q` についての帰納法。 -/
-theorem SG_stkS (h : SPayF) : ∀ (q : ℕ) (ks : List Bool), SBs ks → SG ks (stk q)
+theorem SG_stkS (hnt : SNilT) : ∀ (q : ℕ) (ks : List Bool), SBs ks → SG ks (stk q)
   | 0, _, hk => hk.2
   | (q + 1), ks, hk => by
       intro D hD
-      have hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q) := fun ks' hk' => SG_stkS h q ks' hk'
+      have hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q) := fun ks' hk' => SG_stkS hnt q ks' hk'
       obtain ⟨ctx, V, hDe, hGV⟩ := hk.1 D hD
       subst hDe
       have ec : ctx ++ blkC V (List.replicate q Jk1.nil)
@@ -58168,17 +58173,17 @@ theorem SG_stkS (h : SPayF) : ∀ (q : ℕ) (ks : List Bool), SBs ks → SG ks (
       · rw [ec]
         exact SCtx_JkT _ _ (SCtx_rep_ftwo q hD) _ ⟨trivial, trivial⟩
       · intro i
-        have hc := SCtx_blkR h q hq hk hD i
-        have hh := SG_shR h q hq ks hk i _ hc
+        have hc := SCtx_blkR hnt q hq hk hD i
+        have hh := SG_shR hnt q hq ks hk i _ hc
         rw [ec]
         simpa [List.append_assoc] using hh
 
-/-- ★★★★★ 行376 の壁は「2 の枠の直上の荷」`SPayF` 1 本になった。 -/
-theorem RunAll_of_SPayF (h : SPayF) : RunAll :=
-  fun q ks => APd_of_SG_bnil (SG_stkS h q [] SOk_bnil) ks
+/-- ★★★★★ 行376 は `SNilT`（1 の枠の直上の `nil`）1 本に落ちた。 -/
+theorem RunAll_of_SNilT (hnt : SNilT) : RunAll :=
+  fun q ks => APd_of_SG_bnil (SG_stkS hnt q [] SOk_bnil) ks
 
 #print axioms SG_stkS
-#print axioms RunAll_of_SPayF
+#print axioms RunAll_of_SNilT
 
 
 /-! ### ★★★★★ `SPayF` を「水平鎖の塔」1 点に絞る
@@ -58219,13 +58224,14 @@ theorem SPayF_of_SHtow (h : SHtow) : SPayF := by
     C hC Jk1.nil VCh.nil
 
 /-- ★★★★★ 行376 は `SHtow` 1 本に落ちた。 -/
-theorem RunAll_of_SHtow (h : SHtow) : RunAll := RunAll_of_SPayF (SPayF_of_SHtow h)
+theorem RunAll_of_SHtow (h : SHtow) : RunAll :=
+  RunAll_of_SNilT (SNilT_of_SPayF (SPayF_of_SHtow h))
 
 #print axioms SPayF_of_SHtow
 #print axioms RunAll_of_SHtow
 
 
-/-! ### ★★★★★ #14（証明中の行）も同じ `SPayF` に落ちる
+/-! ### ★★★★★ #14（証明中の行）も同じ `SNilT` に落ちる
 
 `TowOk`（#14 の壁、追記101）は `one nil (two nil (TW n))` の `GOK`。
 `[Frm.fone nil]` は `GCtx [true]` の文脈なので `SCtx []` に入り、
@@ -58242,42 +58248,45 @@ theorem SG_cf_iff (ks : List Bool) (X : Jk1) :
     rw [plug_snoc2]
     exact h D0 hD0
 
-theorem SG_stk1_cf (h : SPayF) (ks : List Bool) (hk : SBs ks) :
+theorem SG_stk1_cf (hnt : SNilT) (ks : List Bool) (hk : SBs ks) :
     SG (false :: ks) (Jk1.two Jk1.nil Jk1.nil) :=
-  (SG_cf_iff ks _).mpr (SG_stkS h 2 ks hk)
+  (SG_cf_iff ks _).mpr (SG_stkS hnt 2 ks hk)
 
-theorem SG_TW (h : SPayF) : ∀ (n : ℕ) (ks : List Bool), SBs ks → SG (false :: ks) (TW n)
-  | 0, ks, hk => SG_stk1_cf h ks hk
+theorem SG_TW (hnt : SNilT) : ∀ (n : ℕ) (ks : List Bool), SBs ks → SG (false :: ks) (TW n)
+  | 0, ks, hk => SG_stk1_cf hnt ks hk
   | (n + 1), ks, hk =>
-      SG_one ⟨⟨trivial, trivial⟩, SG_stk1_cf h ks hk⟩
-        (SG_twoNil (SG_TW h n (true :: false :: ks) (SOk_true h _)))
+      SG_one ⟨⟨trivial, trivial⟩, SG_stk1_cf hnt ks hk⟩
+        (SG_twoNil (SG_TW hnt n (true :: false :: ks) (SOk_true hnt _)))
 
 theorem SCtx_bnil_foneNil : SCtx [] [Frm.fone Jk1.nil] :=
   ⟨[], (GCtx_ct [] [Frm.fone Jk1.nil]).mpr
     ⟨[], Jk1.nil, rfl, (GCtx_bnil []).mpr rfl, JkT_nil, trivial,
       (APd_bnil Jk1.nil).mpr GOK_nil⟩⟩
 
-/-- ★★★★★ #14 の壁 `TowOk` も `SPayF` から出る。 -/
-theorem TowOk_of_SPayF (h : SPayF) : TowOk := fun n =>
-  SG_twoNil (SG_TW h n [] SOk_bnil) _ SCtx_bnil_foneNil
+/-- ★★★★★ #14 の壁 `TowOk` も `SNilT` から出る。 -/
+theorem TowOk_of_SNilT (hnt : SNilT) : TowOk := fun n =>
+  SG_twoNil (SG_TW hnt n [] SOk_bnil) _ SCtx_bnil_foneNil
 
 /-- ★★★★★ #14（シートの証明中の行）は `SHtow` 1 本に落ちた。 -/
-theorem R14_of_SHtow (hh : SHtow) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
-  R14_mem (TowOk_of_SPayF (SPayF_of_SHtow hh))
+theorem R14_of_SNilT (hnt : SNilT) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_SNilT hnt)
 
-#print axioms TowOk_of_SPayF
+theorem R14_of_SHtow (hh : SHtow) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_SNilT (SNilT_of_SPayF (SPayF_of_SHtow hh))
+
+#print axioms TowOk_of_SNilT
 #print axioms R14_of_SHtow
 
 /-! ### ★ `nil` はどの形にも差せる（走りを `stk` の添字に押し込む） -/
 
-theorem SG_stk_all (h : SPayF) : ∀ (ks : List Bool) (q : ℕ), SG ks (stk q)
-  | [], q => SG_stkS h q [] SOk_bnil
-  | (true :: ks), q => SG_stkS h q (true :: ks) (SOk_true h ks)
-  | (false :: ks), q => (SG_cf_iff ks (stk q)).mpr (SG_stk_all h ks (q + 1))
+theorem SG_stk_all (hnt : SNilT) : ∀ (ks : List Bool) (q : ℕ), SG ks (stk q)
+  | [], q => SG_stkS hnt q [] SOk_bnil
+  | (true :: ks), q => SG_stkS hnt q (true :: ks) (SOk_true hnt ks)
+  | (false :: ks), q => (SG_cf_iff ks (stk q)).mpr (SG_stk_all hnt ks (q + 1))
 
-theorem SG_nil_all (h : SPayF) (ks : List Bool) : SG ks Jk1.nil := SG_stk_all h ks 0
+theorem SG_nil_all (hnt : SNilT) (ks : List Bool) : SG ks Jk1.nil := SG_stk_all hnt ks 0
 
-theorem SF_nil_all (h : SPayF) (ks : List Bool) : SF ks Jk1.nil := ⟨trivial, SG_nil_all h ks⟩
+theorem SF_nil_all (hnt : SNilT) (ks : List Bool) : SF ks Jk1.nil := ⟨trivial, SG_nil_all hnt ks⟩
 
 #print axioms SG_stk_all
 
@@ -58347,7 +58356,9 @@ def SNo (N : Jk1) : Prop := JkA N ∧ ∀ s : List Bool, SG s N
 /-- 「`nil` はどの形にも差せる」。壁はここに集約する。 -/
 def SNil : Prop := ∀ ks : List Bool, SG ks Jk1.nil
 
-theorem SNil_of_SPayF (h : SPayF) : SNil := SG_nil_all h
+theorem SNil_of_SNilT (hnt : SNilT) : SNil := SG_nil_all hnt
+
+theorem SNil_of_SPayF (h : SPayF) : SNil := SNil_of_SNilT (SNilT_of_SPayF h)
 
 theorem SNo_nil (hn : SNil) : SNo Jk1.nil := ⟨trivial, hn⟩
 
