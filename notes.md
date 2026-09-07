@@ -13621,3 +13621,56 @@ AllA (two N T) ⟸ AllA N + TwoOk T          -- TwoOk の定義そのもの
 `GOK_twoTwoNilW_gen` の階段は `two N (nstN2 N Wl k)` だったが、上が `Z` の場合の
 階段を bms で確認してから、対応する `GOK_twoTwoW_gen` を書く。
 これが出れば #14（`MBplus` 経由）と行376（`TwoStep` 経由）の両方が動く。
+
+## 追記122: 壁を `LStep` に落とした（緑）。非可述の核は「層 0 だけが走り 2 を出せる」
+
+### 緑になったもの
+
+```
+LAll Z  := ∀ k, LOk k Z
+LAll_nil / LAll_twoNil / LAll_one / LAll_pay
+TwoOk_of_LAll / OneOk_of_LAll / TwoOk_one_of_LAll / TwoQ_of_LAll
+
+LStep := ∀ N Z, JkA N → LAll N → JkA Z → LAll Z → LAll (two N Z)
+MPd_oneQ : LStep → ∀ ks U Z, FrmJ ks U → FrQ U → MPd ks U →
+             JkA Z → AllA Z → LAll Z → MPd ks (one U Z)
+MBplus_of_LStep / MNil_of_LStep / R14_mem_L : LStep → #14 ∈ W 0
+```
+
+`FrQ` の `TwoOk` を `LAll` に置き換えた（`LAll` のほうが強く `TwoOk_of_LAll` で戻る）。
+
+### `MPd_oneQ` の帰納が閉じる理由
+
+形 `(cntF ks, len ks)` で回る。木は `one U ·` と `two N' (one U ·)` で伸びるが、
+
+```
+AllA (one U Z)  ⟸ AllA_one                  （形が true 頭なので Rq は自明）
+LAll (one U Z)  ⟸ LAll_one                  （LOk_one が深さ k と k+1 をまたぐ）
+AllA (two N' W) ⟸ TwoOk W = OneOk_of_LAll   （OneOk の欠けていた閉包はこれで埋まった）
+LAll (two N' W) ⟸ LStep                     （残る 1 点）
+```
+
+木の中の `two` の個数は `cntF ks` で抑えられるので、必要な 2 の枠の深さは有界。
+
+### `LStep` の中身と、残る非可述
+
+```
+LOk (k+1) (two N Z) ⟸ TwM 0 Z + (∀ j, LOk (j+1) N)   -- TwStk 0 は 2 の枠 2 枚めを持つ
+LOk 0     (two N Z)                                    -- 2 の枠が隣接、StkOk に無い
+```
+
+つまり `LStep` は「2 の枠をもう 1 枚」そのもの。層を ℕ で添字づけた族
+（`SSt r m`、兄弟条件は「層 `r` の `m` について一様」）を作ると、
+
+- 1 の記録の閉包 ✓、2 の記録の閉包 ✓、`nil` の 2 の記録の階段 ✓（m 一様で足りる）
+- **走り 2 の階段だけが通らない**。階段 `nstN N k` は兄弟 `N` を 2 の枠の深さ
+  `r, r+1, r+2, ...` にコピーするので、兄弟が **層の添字について一様**である必要がある。
+  層 `r+1` の兄弟条件は「層 `r` で一様」なので足りない。
+
+層 0 だけが例外で、`StkOk 0` の兄弟条件は `AllA`（`APd` の全形状 = 全 2 深さ一様）
+なので走り 2 が出る（`TwoOk_twoNil` / `LOk_twoNilAll` は緑）。
+**これが「1 層 = 2 の枠 1 個」の正体。**
+
+`APd` の `AllA` が唯一の全 2 深さ一様な概念で、形の添字が 2 深さを含んでいるから
+書ける。`MPd` はそれを兄弟条件に使っているので走り 2 が全深さで通る（`MPd_twoTwoNilB`）。
+`MPd` 自身の全形状版 `MBplus` は非可述。
