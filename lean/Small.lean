@@ -58265,6 +58265,20 @@ theorem R14_of_SHtow (hh : SHtow) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] �
 #print axioms TowOk_of_SPayF
 #print axioms R14_of_SHtow
 
+/-! ### ★ `nil` はどの形にも差せる（走りを `stk` の添字に押し込む） -/
+
+theorem SG_stk_all (h : SPayF) : ∀ (ks : List Bool) (q : ℕ), SG ks (stk q)
+  | [], q => SG_stkS h q [] SOk_bnil
+  | (true :: ks), q => SG_stkS h q (true :: ks) (SOk_true h ks)
+  | (false :: ks), q => (SG_cf_iff ks (stk q)).mpr (SG_stk_all h ks (q + 1))
+
+theorem SG_nil_all (h : SPayF) (ks : List Bool) : SG ks Jk1.nil := SG_stk_all h ks 0
+
+theorem SF_nil_all (h : SPayF) (ks : List Bool) : SF ks Jk1.nil := ⟨trivial, SG_nil_all h ks⟩
+
+#print axioms SG_stk_all
+
+
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
 `stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
