@@ -56481,5 +56481,43 @@ theorem R14_mem (hw : WallP) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 
 
 #print axioms R14_mem
 
+/-! ### ★★★★★ 横鎖の `UniW`（`Pk_pay` の対の腕に要る部品）
+
+`Pok` の対の兄弟条件を `UniW` に強めると、`Pk_pay` の A2' が作る横鎖
+`twoIt Wl (pay X Y') k` に `UniW` が要る。先端が `Ck` の対の層に差せれば出る。 -/
+
+theorem UniW_chain {W T : Jk1} (hW : UniW W) (hJT : JkA T)
+    (hT : ∀ j : ℕ, Ck (j + 1) 0 T) : ∀ k : ℕ, UniW (twoIt W T k)
+  | 0 => hW
+  | (k + 1) => by
+      have ih := UniW_chain hW hJT hT k
+      show UniW (Jk1.two (twoIt W T k) T)
+      have hja : JkA (Jk1.two (twoIt W T k) T) := ⟨ih.ja, hJT⟩
+      refine ⟨hja, ?_, ?_⟩
+      · intro j i
+        exact Ck_twoW ih (hT j)
+      · intro C hC j i
+        exact Ck_pay j (i + 1) C hC _ hja (Ck_twoW ih (hT j))
+
+/-- 壁（`Ck` 層）。`Pok` を `UniW` で強めたときに残る 1 点。 -/
+def WallC : Prop := ∀ j : ℕ, Ck (j + 1) 0 (Jk1.two Jk1.nil Jk1.nil)
+
+/-- `WallC` があれば `UPt` 相当の木は `Ck` の対の層に差せる。 -/
+theorem Ck_pairLevel_pay (hwc : WallC) (C : TrioSeq) (hC : Bok C) (j : ℕ) :
+    Ck (j + 1) 0 (Jk1.pay (Jk1.two Jk1.nil Jk1.nil) C) :=
+  Ck_pay (j + 1) 0 C hC (Jk1.two Jk1.nil Jk1.nil)
+    (⟨trivial, trivial⟩ : JkA (Jk1.two Jk1.nil Jk1.nil)) (hwc j)
+
+/-- `WallC` があれば走り 2 を先端にする横鎖は `UniW`。 -/
+theorem UniW_chain_twoNil (hwc : WallC) {W : Jk1} (hW : UniW W) (C : TrioSeq)
+    (hC : Bok C) (k : ℕ) :
+    UniW (twoIt W (Jk1.pay (Jk1.two Jk1.nil Jk1.nil) C) k) :=
+  UniW_chain hW
+    (show JkA (Jk1.pay (Jk1.two Jk1.nil Jk1.nil) C) from ⟨⟨trivial, trivial⟩, hC⟩)
+    (fun j => Ck_pairLevel_pay hwc C hC j) k
+
+#print axioms UniW_chain
+#print axioms UniW_chain_twoNil
+
 end Small
 end TRIO
