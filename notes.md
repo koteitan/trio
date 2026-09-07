@@ -13674,3 +13674,45 @@ LOk 0     (two N Z)                                    -- 2 の枠が隣接、St
 `APd` の `AllA` が唯一の全 2 深さ一様な概念で、形の添字が 2 深さを含んでいるから
 書ける。`MPd` はそれを兄弟条件に使っているので走り 2 が全深さで通る（`MPd_twoTwoNilB`）。
 `MPd` 自身の全形状版 `MBplus` は非可述。
+
+## 追記123: 壁を既存の `LTwo` に一致させた（緑）。層は `TwSt r m` が唯一の一様族
+
+### 緑になったもの
+
+```
+LAll1 Z := ∀ k, LOk (k+1) Z            -- LTwo の兄弟条件とちょうど一致
+LStep1  := ∀ Z, JkA Z → LAll1 Z → LTwo Z
+MPd_oneQ1 / MBplus_of_LStep1 / MNil_of_LStep1
+R14_mem_L1 : LStep1 → #14 ∈ W 0
+```
+
+`LTwo Z = ∀ N, JkA N → (∀ j, LOk (j+1) N) → ∀ k, LOk (k+1) (two N Z)` は
+**既存の定義**で、`LTwo_nil` / `LTwo_pay` / `LTwo_congr` / `LTwo_chain` /
+`LTwo_one` / `LTwo_oneNil` / `LTwo_of_TwM0` / `TwM0_of_LTwo` が既に緑。
+
+### 層の族の対応が付いた
+
+```
+TwSt 0 m   = StkOk (m+1)                       -- 層 0
+NTw 0 N    = ∀ j, LOk (j+1) N = LAll1 N        -- 層 0 の一様条件
+TwSt 1 0   = TwStk 0                           -- 層 1
+```
+
+つまり `TwSt r m` が ℕ で添字づけた唯一の層の族で、2 の枠の兄弟条件 `NTw r N`
+は「層 `r` の 1 の枠の深さについて一様」。閉包は:
+
+```
+TAll Z := ∀ q, NTw q Z
+TAll (one U Z) ⟸ TAll U + TAll Z               -- Fter が j = 0 を除くので通る
+TAll (two N Z) ⟸ TwOk (q+1) 0 Z + NTw q N      -- TwOk (q+1) 0 は NTw (q+1) に入らない
+```
+
+`TwOk (q+1) 0 Z` は「`Z` を 2 の記録の直上に置く」。木が `one U Z'` のとき
+枠木 `U = two nil nil` が 2 の記録の直上に来る（走り 2）ので、その階段が
+兄弟 `N₀` を層 `q+1, q+2, ...` にコピーする。`TwSt (q+1) 0` の兄弟条件は
+`NTw q N₀`（層 `q` のみ）なので足りない。
+
+**兄弟条件を全層一様 `TAll` にすると `TwSt` の定義が非可述になる。**
+`MPd` は同じ形を `APd` の `AllA`（形の添字が 2 深さを含むので全 2 深さ一様）で
+実現しているので走り 2 が通る。`MPd` 自身の全形状版が非可述、というのが
+これまでと同じ結論。
