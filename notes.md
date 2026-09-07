@@ -13572,3 +13572,52 @@ TwoOk (two N Z)                          -- 走り 2 そのもの、出ない
 **つまり `APd (false::ks) (two nil nil)`（走り 2 を 2 の記録の直上に置く）が
 すべての道の底にある。**兄弟が `cntF` 非有界の全形状で良い必要があり、
 形で添字付けたどの族でも供給できない。
+
+## 追記121: #14 の壁と行376 の壁（`TwoStep` / `PayStep`）は同じ現象
+
+ファイル内に既にある reduction:
+
+```
+R376_of_TwoStep  : TwoStep  → R373 ++ [(5,3,0)] ∈ W 0      -- シートの「目標」
+R376_of_ZeroStep : ZeroStep → 同上                          -- TwoStep より弱い
+R376_of_PayStep  : PayStep  → 同上                          -- ZeroStep より弱い
+TwoStep := ∀ Z, JkA Z → TwoOk Z → TwoOk (two nil Z)         -- 「★ 残る唯一の壁」と注記
+PayStep := ∀ U, JkT U → GOK U → ∀ j js, GOK (BT U (j::js)) →
+             ∀ C, Bok C → GOK (BP U C (j::js))               -- 走り 2 の塔の先端に荷
+```
+
+そして今回の
+
+```
+R14_mem_A : (∀ N, FrQ N → MBplus N) → #14 ∈ W 0             -- シートの「証明中」
+```
+
+`MBplus N` の帰納を回すと、不変量に要る閉包は次の 3 本:
+
+```
+(1) TwoOk (one U Z)  ⟸ OneOk Z + TwoQ U        -- OneOk の定義そのもの（有る）
+(2) OneOk (one U Z)  ⟸ OneOk Z + TwoQ U        -- 無い（OneOk_oneNil は左引数のみ）
+(3) TwoOk (two N Z)  ⟸ TwoOk Z + AllA N        -- = TwoStep の一般版（無い）
+```
+
+**(3) が `TwoStep` そのもの。**つまり #14 の壁と行376 の壁は同じ
+「走り 2 の上に一般の木を載せる」1 点に集まっている。
+
+`AllA` 側は閉じている:
+
+```
+AllA (one U T) ⟸ AllA U + AllA T          -- AllA_one（緑、今回追加）
+AllA (two N T) ⟸ AllA N + TwoOk T          -- TwoOk の定義そのもの
+```
+
+破れているのは `TwoOk` / `OneOk` の閉包だけ。`TwoOk (two N Z)` は
+`GOK_twoTwoNilW_gen`（上が `nil` の走り 2）の一般化が要る。
+`MPd_twoTwoNilB`（緑、`MNil` 仮定）は `MPd` 層で上が `nil` の場合を出しているが、
+`MCtx ⊄ GCtx` なので `APd` 層の `TwoOk` には移送できない。
+
+### 次の一手
+
+`TwoOk (two N Z)`（`TwoStep` の一般版）を語のレベルで直接作る。
+`GOK_twoTwoNilW_gen` の階段は `two N (nstN2 N Wl k)` だったが、上が `Z` の場合の
+階段を bms で確認してから、対応する `GOK_twoTwoW_gen` を書く。
+これが出れば #14（`MBplus` 経由）と行376（`TwoStep` 経由）の両方が動く。
