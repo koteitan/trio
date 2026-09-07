@@ -14002,3 +14002,52 @@ snocQ_of_tower / unQ / nstQ / jk1_nstQ / MidD_unQ / hMy_unQ
 ```
 
 で、コピーが土台の隣に水平に並ぶ。`AY` / `GoodFb_snoc_*` 系がそのまま効く形。
+
+## 追記130: 全 nil 木の場合分けが確定。残るのは「連鎖 + 上に何か」の 2 ケース
+
+行376 に要るのは `∀ T ∈ 𝒯, ∀ ks, APd (true::ks) T`（𝒯 = `nil` から
+`one nil ·` と `two nil ·` だけで作った木）。木の構造帰納は:
+
+```
+T = nil                ✓ APd_nilT
+T = one nil T'         ✓ APd_oneNilT（今回追加）+ IH
+T = two nil nil        ✓ APd_twoNilGen
+T = two nil (one nil W) ✓ APd_twoOneNil（今回追加）+ IH
+T = two nil (two nil W) … 連鎖。GOK_stkW_gen が W = nil の場合（純粋な連鎖）を出す
+```
+
+今回追加した部品（緑）:
+
+```
+APd_twoNilOf : APd (false::ks) Z → APd (true::ks) (two nil Z)
+APd_oneNilF  : APd (true::(false::ks)) W → APd (false::ks) (one nil W)
+APd_twoOneNil / APd_oneNilT
+```
+
+`nil` 兄弟なら `APd_cf` の `hNt` は `APd_nil` で足りるので 2 の枠を 1 枚かぶせられる。
+**`two nil (one nil W)` が剥がせる**のはこのため。
+
+### 残る 2 ケース
+
+```
+RunOk p    : APd (true::ks) (two nil (stkP p (two nil nil)))   -- 純粋な連鎖
+RunOne p W : APd (true::ks) (two nil (stkP p (one nil W)))     -- 連鎖 + 1 の記録 + W
+```
+
+`GOK_stkW_gen`（緑）は `RunOk p` を「階段」から出す。階段は
+`two nil (stkP p (nstQ nil p k))` で、
+
+```
+k = 0 … two nil (stkP p nil) = 1 個短い連鎖 = RunOk (p-1)     ✓ IH
+k ≥ 1 … nstQ nil p k = one nil (…) なので RunOne p (…)         ← これが要る
+```
+
+`RunOne p W` は `plug (ctx ++ (p+1)×[ftwo nil] ++ [fone nil]) W` なので、
+`W = nil` なら `APnil_gen0` で出る（`hGV` = `RunOk (p-1)`、`hang` = 連鎖に荷を
+吊るした版）。つまり次に要るのは
+
+```
+RunPay p C : APd (true::ks) (two nil (stkP p (pay nil C)))     -- 連鎖に荷
+```
+
+で、`TwoOk_pay` / `LTwo_pay` と同じ A2' の帰納の形。
