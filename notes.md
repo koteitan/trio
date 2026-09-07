@@ -12975,3 +12975,55 @@ NOk  … 枠の条件がその場・荷なし。鎖と荷は出る。nil（塔�
 `two nil nil`（`PairOk_payTwoNil`、この回に緑）・横鎖（`dupJs0`、bms 実測済み）
 がすべて揃っている。**枠木の分解（`GOK (plug ctx (one A T))` から
 `GOK (plug ctx A)`）が要るかどうかが次の確認点。**
+
+## 追記109: #14 の一般化がどこで止まるかを特定（ユーザー指摘）
+
+証明済みの最大 3 本は #14 の展開そのもの（bms 実測）:
+
+```
+#14[1] = R375 ++ (5,1,0)(6,2,0)(7,2,0)
+#14[2] = R375 ++ (5,1,0)(6,2,0)(7,2,0)(7,1,0)(8,2,0)(9,2,0)
+#14[3] = R375 ++ … (9,1,0)(10,2,0)(11,2,0)      ← R375i29_mem（証明済み）
+木: #14[n] = one nil (two nil (TW n))
+    TW 0 = two nil nil、TW (n+1) = one (two nil nil) (two nil (TW n))
+```
+
+### [1][2][3] は n の帰納法ではない
+
+`R375i29_mem` は `snocYd_mem` + `R375k_towerD`。`R375k_towerD m` の木は
+`one nil (two nil (U (U (NST m))))`（`U X = one (two nil nil) (two nil X)`）で、
+塔のパラメータ `m` が伸ばすのは **`NST m` の先端の交互塔 `nstN2`** であって
+**単位の個数ではない**。`GOK_oneNST m` は単位 2 個 + `NST m`（= 単位 1 個 + 交互塔）
+なので単位は 3 個で頭打ち。
+
+### 頭打ちの理由（壁の再確認）
+
+単位を 1 個足すと `two nil nil` が前の単位の 2 の記録の直上に来る（走り 2）。
+走り 2 の階段は交互塔 `nstN2 N nil k` で、**下の 2 の記録の兄弟 N を深さごとに
+使い回す**ので「N がどの深さでも良い」が要る。
+
+- `Ck` / `Pk` / `Rok` / `TwOk` … 文脈が兄弟に課すのは同じ深さだけ ⇒ 足りない
+- `StkOk 0`（`LOk 0` の土台）… `∀ j kk, APd (rep j true ++ (true::kk)) N`
+  （**全深さ**）を定義に持つ ⇒ `LOk 0 (two nil nil)` が緑
+
+`APd` は枠の形をブール列 `ks` で持ち、停止性は `(cntF ks, ks.length)` なので、
+**全深さ条件は `APd` の外側（`StkOk` / `TwoOk` の定義）に書ける**（非可述にならない）。
+一番外の単位だけ通るのはこのため。
+
+### 一般化に要るもの
+
+塔のどの段でも全深さ条件を持つ枠積み。#14 の塔は 2 の枠の兄弟がすべて `nil` で
+`APd_nil : ∀ ks, APd ks nil` が全深さ条件をタダでくれるので、
+**兄弟を `nil` に固定した専用の枠積み述語**を作れば壁は消える。
+
+```
+TSt : ℕ → List Frm → Prop        -- k = 直近の 2 の枠から上の 1 の枠の枚数
+  base : GCtx (true::ks) ctx → N 全深さ → TSt 0 (ctx ++ [ftwo N])
+  fone : TSt k D → JkA U → (∀ D', TSt k D' → GOK (plug D' U)) → TSt (k+1) (D ++ [fone U])
+  ftwo : TSt (k+1) D → TSt 0 (D ++ [ftwo nil])          -- 走りは 2 まで
+TOk k X := ∀ D, TSt k D → GOK (plug D X)
+```
+
+要るもの: `TOk k nil`（塔）、`TOk 0 (two nil nil)`（走り 2）、`TOk k (pay X C)`（荷）。
+`nil` と走り 2 の階段はこの族の中で閉じる（兄弟が全部 `nil`）。
+**残るのは「2 の記録の直上の荷」で、そこだけ横鎖（`dupJt0`）の機械が要る。**
