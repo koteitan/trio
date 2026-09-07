@@ -57842,6 +57842,204 @@ theorem snocR_of_tower {N : Jk1} (hJN : JkA N) {Ns : List Jk1} (hNs : AllJk Ns)
 #print axioms snocR_of_tower
 
 
+/-! ### ★★★★★ 兄弟 `nil` 版の走り文脈 `SCtx`
+
+`RCtx` は 2 の枠の兄弟を一般に取るので、走りの塔（`GOK_runGNil_gen`）の階段が
+「もっと `false` の多い形」での兄弟の良さを要求して回らない。兄弟を `nil` に
+固定すると条件そのものが消えるので、**一番内側の走り長についての帰納法**が回る。
+代わりに `AYdT`（2 の枠の直上の荷）の鎖が置けなくなるので、そこだけ仮定にする。 -/
+
+def SCtx : List Bool → List Frm → Prop
+  | [], D => ∃ ks : List Bool, GCtx (true :: ks) D
+  | (true :: ks), D => ∃ (D' : List Frm) (U : Jk1), SCtx ks D' ∧
+      (JkA U ∧ (∀ D'' : List Frm, SCtx ks D'' → GOK (plug D'' U))) ∧
+      D = D' ++ [Frm.fone U]
+  | (false :: ks), D => ∃ D' : List Frm, SCtx ks D' ∧ D = D' ++ [Frm.ftwo Jk1.nil]
+
+def SG (ks : List Bool) (X : Jk1) : Prop := ∀ D : List Frm, SCtx ks D → GOK (plug D X)
+
+def SPy (ks : List Bool) (X : Jk1) : Prop :=
+  ∀ (D : List Frm) (C : TrioSeq), SCtx ks D → Bok C → GOK (plug D (Jk1.pay X C))
+
+def SF (ks : List Bool) (U : Jk1) : Prop := JkA U ∧ SG ks U
+
+theorem SCtx_bnil (D : List Frm) :
+    SCtx [] D ↔ ∃ ks : List Bool, GCtx (true :: ks) D := Iff.rfl
+
+theorem SCtx_ct (ks : List Bool) (D : List Frm) :
+    SCtx (true :: ks) D ↔ ∃ (D' : List Frm) (U : Jk1), SCtx ks D' ∧ SF ks U ∧
+      D = D' ++ [Frm.fone U] := Iff.rfl
+
+theorem SCtx_cf (ks : List Bool) (D : List Frm) :
+    SCtx (false :: ks) D ↔ ∃ D' : List Frm, SCtx ks D' ∧ D = D' ++ [Frm.ftwo Jk1.nil] :=
+  Iff.rfl
+
+theorem SCtx_fone {ks : List Bool} {D : List Frm} {U : Jk1} (hD : SCtx ks D) (hU : SF ks U) :
+    SCtx (true :: ks) (D ++ [Frm.fone U]) := ⟨D, U, hD, hU, rfl⟩
+
+theorem SCtx_ftwo {ks : List Bool} {D : List Frm} (hD : SCtx ks D) :
+    SCtx (false :: ks) (D ++ [Frm.ftwo Jk1.nil]) := ⟨D, hD, rfl⟩
+
+theorem SCtx_JkT : ∀ (ks : List Bool) (D : List Frm), SCtx ks D → ∀ T : Jk1, JkA T →
+    JkT (plug D T)
+  | [], D, hD, T, hT => by
+      obtain ⟨kk, hc⟩ := hD
+      exact JkT_plug D (GCtx_CtxOk (true :: kk) D hc) T
+        (GCtx_CtxX (true :: kk) D hc T hT trivial)
+  | (true :: ks), D, hD, T, hT => by
+      obtain ⟨D', U, hD', ⟨hJU, -⟩, rfl⟩ := hD
+      rw [plug_snoc]
+      exact SCtx_JkT ks D' hD' _ ⟨hJU, hT⟩
+  | (false :: ks), D, hD, T, hT => by
+      obtain ⟨D', hD', rfl⟩ := hD
+      rw [plug_snoc2]
+      exact SCtx_JkT ks D' hD' _ ⟨trivial, hT⟩
+
+theorem SG_congr {ks : List Bool} {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2)
+    (hX : SG ks X1) : SG ks X2 :=
+  fun D hD => GOK_congr (jk1_plug_congr D h) (hX D hD)
+
+theorem SG_one {ks : List Bool} {U Z : Jk1} (hU : SF ks U) (hZ : SG (true :: ks) Z) :
+    SG ks (Jk1.one U Z) := by
+  intro D hD
+  rw [← plug_snoc]
+  exact hZ _ (SCtx_fone hD hU)
+
+theorem SG_twoNil {ks : List Bool} {Z : Jk1} (hZ : SG (false :: ks) Z) :
+    SG ks (Jk1.two Jk1.nil Z) := by
+  intro D hD
+  rw [← plug_snoc2]
+  exact hZ _ (SCtx_ftwo hD)
+
+theorem SG_bnil_of_APd {X : Jk1} (h : ∀ kk : List Bool, APd (true :: kk) X) : SG [] X := by
+  intro D hD
+  obtain ⟨kk, hc⟩ := hD
+  exact (APd_iff (true :: kk) X).mp (h kk) D hc
+
+theorem APd_of_SG_bnil {X : Jk1} (h : SG [] X) (ks : List Bool) : APd (true :: ks) X :=
+  (APd_iff (true :: ks) X).mpr (fun ctx hc => h ctx ⟨ks, hc⟩)
+
+theorem SP_bnil {V : Jk1} (hJV : JkA V) (h : SG [] V) : SPy [] V := by
+  intro D C hD hC
+  obtain ⟨kk, hc⟩ := hD
+  exact (APd_iff (true :: kk) _).mp
+    (APd_payT kk V hJV (APd_of_SG_bnil h kk) C hC) D hc
+
+/-- ★★★★★ 荷つきの木は 1 の枠の右の子になれる（`AYd` の `SCtx` 版）。 -/
+theorem SAYr : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z →
+    SG (true :: ks) Z → ∀ X : Jk1, SF ks X → SG ks (Jk1.one X (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z →
+      SG (true :: ks) Z → ∀ X : Jk1, SF ks X → SG ks (Jk1.one X (Jk1.pay Z Y))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb ks Z hJZ hRZ X hFX
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact SG_congr (fun l => (jk1_one_pay_nil X Z l).symm) (SG_one hFX hRZ)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hpres : ∀ V : Jk1, SF ks V → SG ks (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
+          fun V hFV => SG_congr (fun l => (jk1_one_pay_nil V Z l).symm) (SG_one hFV hRZ)
+        have hchain : ∀ n : ℕ, SF ks (itJ (Jk1.pay Z ([] : TrioSeq)) n X) := by
+          intro n
+          induction n with
+          | zero => exact hFX
+          | succ n ih => exact ⟨⟨ih.1, hJZ, Bok_nil⟩, hpres _ ih⟩
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro D hD ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (SCtx_JkT ks D hD _ ⟨hFX.1, hJZ, by simpa using hYb⟩)
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (hchain n).2 D hD ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hpres : ∀ V : Jk1, SF ks V → SG ks (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
+          fun V hFV => hdl hdb ks Z hJZ hRZ V hFV
+        have hchain : ∀ n : ℕ, SF ks (itJ (Jk1.pay Z Y.dropLast) n X) := by
+          intro n
+          induction n with
+          | zero => exact hFX
+          | succ n ih => exact ⟨⟨ih.1, hJZ, hdb⟩, hpres _ ih⟩
+        rw [hsplit]
+        intro D hD ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (SCtx_JkT ks D hD _ ⟨hFX.1, hJZ, by rw [← hsplit]; exact hYb⟩)
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (hchain n).2 D hD ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro D hD ws hw hG
+        refine GoodFb_snoc_innerJs0 hw
+          (SCtx_JkT ks D hD _ ⟨hFX.1, hJZ, hYb⟩) hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hYb hn) ks Z hJZ hRZ X hFX D hD ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb ks Z hJZ hRZ X hFX
+  exact key hYb.mem hYb ks Z hJZ hRZ X hFX
+
+/-- 2 の枠の直上の荷。`SCtx` は兄弟が `nil` 固定なので `AYdT` の鎖が置けない。 -/
+def SPayF : Prop :=
+  ∀ (ks : List Bool) (V : Jk1), JkA V → SG (false :: ks) V → SPy (false :: ks) V
+
+theorem SP_of_SG (h : SPayF) : ∀ (ks : List Bool) (V : Jk1), JkA V → SG ks V → SPy ks V
+  | [], V, hJV, hG => SP_bnil hJV hG
+  | (true :: ks), V, hJV, hG => by
+      intro D C hD hC
+      obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD
+      rw [plug_snoc]
+      exact SAYr C hC ks V hJV hG U hFU D0 hD0
+  | (false :: ks), V, hJV, hG => h ks V hJV hG
+
+/-- ★ 1 の枠の直上には `nil` を差せる。 -/
+theorem SG_nil_true (h : SPayF) (ks : List Bool) : SG (true :: ks) Jk1.nil := by
+  intro D hD
+  have hD' := hD
+  obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD'
+  have hJT : JkT (plug D0 (Jk1.one U Jk1.nil)) := by
+    have := SCtx_JkT (true :: ks) _ hD Jk1.nil trivial
+    rwa [plug_snoc] at this
+  rw [plug_snoc]
+  exact APnil_gen0 D0 U hJT (hFU.2 D0 hD0)
+    (fun C hC => SP_of_SG h ks U hFU.1 hFU.2 D0 C hD0 hC)
+
+#print axioms SAYr
+#print axioms SG_nil_true
+
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
 `stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
