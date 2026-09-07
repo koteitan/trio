@@ -50745,6 +50745,151 @@ theorem TTwA_oneTwoNilTR (k : ℕ) :
 
 #print axioms Dk_oneTwoNilTR
 
+/-! ### ★★★★★ 横鎖 `TR k` は「レベル 1 以上の `Ew`」に通る
+
+`TipOk (TR k)`（2 の記録の直上に横鎖）は走りになるので出ない。しかし
+`Ew q (TR k)`（`q ≥ 1`、間に 1 の記録が挟まる）は横鎖の長さ `k` の帰納で出る。
+`Ew_oneTwoNil` を左兄弟一般に一般化した `Ew_oneTwoW` を使う。 -/
+
+/-- `Gw` 文脈に「左兄弟 `N` の 1 の枠」を `m` 個積む。 -/
+theorem Gw_rep {N : Jk1} (hJN : JkA N) (hN : ∀ q : ℕ, 1 ≤ q → Ew q N)
+    (hNp : ∀ (C : TrioSeq), Bok C → ∀ q : ℕ, 1 ≤ q → Ew q (Jk1.pay N C)) :
+    ∀ (m q : ℕ) (fs : List Frm), Gw (q + 1) fs →
+      Gw (q + 1 + m) (fs ++ List.replicate m (Frm.fone N))
+  | 0, q, fs, h => by simpa using h
+  | (m + 1), q, fs, h => by
+      have ih := Gw_rep hJN hN hNp m q fs h
+      rw [List.replicate_succ', ← List.append_assoc]
+      exact (Gw_s (q + 1 + m) _).mpr ⟨N, _, rfl, ih, hJN,
+        hN (q + 1 + m) (by omega), fun C hC => hNp C hC (q + 1 + m) (by omega)⟩
+
+/-- `Ew_oneTwoNil` の左兄弟一般化。 -/
+theorem Ew_oneTwoW {n : ℕ} {X N : Jk1} (hJX : JkA X) (hX : Ew n X)
+    (hUp : ∀ C : TrioSeq, Bok C → Ew n (Jk1.pay X C)) (hJN : JkA N)
+    (hN : ∀ q : ℕ, 1 ≤ q → Ew q N)
+    (hNp : ∀ (C : TrioSeq), Bok C → ∀ q : ℕ, 1 ≤ q → Ew q (Jk1.pay N C)) :
+    Ew n (Jk1.one X (Jk1.two N Jk1.nil)) := by
+  intro fs hfs
+  refine ⟨JkA_plug_Gw n fs hfs _ ⟨hJX, hJN, trivial⟩, ?_⟩
+  intro Wl hW j m ctx hctx
+  rw [← plug_snoc2, ← plug_append, ← plug_snoc]
+  refine GOK_twoNil_gen ((ctx ++ [Frm.ftwo Wl]) ++ fs) X (N := N) hJN ?_ ?_ ?_
+  · have h := JkT_plug_Cok j (m + 1) ctx hctx
+      (Jk1.two Wl (plug fs (Jk1.one X (Jk1.two N Jk1.nil))))
+      ⟨hW.ja, JkA_plug_Gw n fs hfs _ ⟨hJX, hJN, trivial⟩⟩
+    rwa [← plug_snoc2, ← plug_append, ← plug_snoc] at h
+  · have h := (hX fs hfs).ck Wl hW j m ctx hctx
+    rwa [← plug_snoc2, ← plug_append] at h
+  · intro k
+    have hG : Gw (n + 1) (fs ++ [Frm.fone X]) :=
+      (Gw_s n _).mpr ⟨X, fs, rfl, hfs, hJX, hX, fun C hC => hUp C hC⟩
+    have hG2 : Gw (n + 1 + k) ((fs ++ [Frm.fone X]) ++ List.replicate k (Frm.fone N)) :=
+      Gw_rep hJN hN hNp k n (fs ++ [Frm.fone X]) hG
+    have h := (hN (n + 1 + k) (by omega) _ hG2).ck Wl hW j m ctx hctx
+    rw [plug_append] at h
+    rw [List.append_assoc]
+    rwa [← plug_snoc2, ← plug_append] at h
+
+/-- ★★★★★ 横鎖はレベル 1 以上の `Ew` に通る。 -/
+theorem Ew_TR : ∀ (k q : ℕ), 1 ≤ q → Ew q (TR k)
+  | 0, q, _ => Ew_nil q
+  | (k + 1), 0, h => absurd h (by omega)
+  | (k + 1), (q + 1), _ => by
+      intro fs hfs
+      obtain ⟨U, fs', rfl, hfs', hJU, hU, hUp⟩ := (Gw_s q fs).mp hfs
+      rw [plug_snoc]
+      exact Ew_oneTwoW hJU hU (fun C hC => hUp C hC) (JkA_TR k)
+        (fun r hr => Ew_TR k r hr)
+        (fun C hC r hr => Ew_pay r C hC _ (JkA_TR k) (Ew_TR k r hr)) fs' hfs'
+
+/-- ★★★★★ `one (two nil nil) (TR k)` は 2 の記録の直上に置ける。 -/
+theorem TipOk_oneTwoNilTR (k : ℕ) : TipOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR k)) :=
+  TipOk_of_Ew0 (Ew_one ⟨trivial, trivial⟩ (Ew_twoNil 0)
+    (fun C hC => Ew_pay 0 C hC _ ⟨trivial, trivial⟩ (Ew_twoNil 0))
+    (Ew_TR k 1 (by omega)))
+
+/-- ★★★★★ `two nil (one (two nil nil) (TR k))` が `Dk 1` に通る（追記88 の壁を回避）。 -/
+theorem Dk1_twoNilOneTwoNilTR (k : ℕ) :
+    Dk 1 (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR k))) := by
+  intro fs hfs
+  obtain ⟨W, fs', rfl, hfs', hJW, hW, hWp⟩ := (Fok_s 0 fs).mp hfs
+  have hfs0 : fs' = [] := (Fok_z fs').mp hfs'
+  subst hfs0
+  rw [plug_snoc]
+  exact TTwA_of_Ck00 (Ck_one hJW (Ck00_of_TTwA (hW [] rfl))
+    (fun C hC => Ck00_of_TTwA (hWp C hC [] rfl))
+    ((TipOk_oneTwoNilTR k).ck Jk1.nil UniW_nil 0 0))
+
+theorem TTwA_oneTwoNilTwoNilOneTwoNilTR (k : ℕ) :
+    TTwA (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR k)))) :=
+  TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil (Dk1_twoNilOneTwoNilTR k)
+
+#print axioms Ew_TR
+#print axioms TTwA_oneTwoNilTwoNilOneTwoNilTR
+
+/-! #### `V(11,0,0)`: `(10,2,0)` の平坦な横鎖の塔 -/
+
+theorem GOK_oneTRJ (n : ℕ) : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR n)))))))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hk : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+          (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+            (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR n)))))) :=
+        TwoOk_of_LOk0 (LOk_one (k := 0) (W := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
+          (LOk0_of_TwoOk TwoOk_twoNil)
+          (LOk_of_TwOk0 (TTwA_oneTwoNilTwoNilOneTwoNilTR n 0 0 Jk1.nil trivial NTw_nil
+            (Fter_zero 0))))
+      have h := hk Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem R375j_copiesI (n : ℕ) :
+    R375j ++ copies [((10, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+          (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR n)))))))]) := by
+    simpa using GOK_oneTRJ n [] WOk_nil GoodFb_wordJ_nil
+  have h := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+          (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+            (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR n))))))))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+          ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ),
+          ((7, 2, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ),
+          ((8, 2, 0) : ℕ × ℕ × ℕ), ((9, 2, 0) : ℕ × ℕ × ℕ),
+          ((9, 1, 0) : ℕ × ℕ × ℕ)]
+        ++ copies [((10, 2, 0) : ℕ × ℕ × ℕ)] n := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 4 (Jk1.two Jk1.nil Jk1.nil) ++
+          (((5, 1, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 5 Jk1.nil ++ (((6, 2, 0) : ℕ × ℕ × ℕ) ::
+              (jk1 6 (Jk1.two Jk1.nil Jk1.nil) ++
+                (((7, 1, 0) : ℕ × ℕ × ℕ) ::
+                  (jk1 7 Jk1.nil ++ (((8, 2, 0) : ℕ × ℕ × ℕ) ::
+                    (jk1 8 (Jk1.two Jk1.nil Jk1.nil) ++
+                      (((9, 1, 0) : ℕ × ℕ × ℕ) :: jk1 9 (TR n)))))))))))))) = _
+    rw [jk1_twoNil 4, jk1_twoNil 6, jk1_twoNil 8, jk1_TR n 9]
+    simp [jk1]
+  simpa [wordJ_singleton, colJ, e, R375j, R375k, R375r, R375p, R375z, R375x, R375s,
+    R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+/-- ★★★★★ `V(11,0,0)`。 -/
+theorem R375i27_mem : R375i ++ [((11, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R375j) (M := [((10, 2, 0) : ℕ × ℕ × ℕ)]) (d := 11)
+    (by simp) (by simp [entry])
+    (by intro r h1 h2; simp only [List.length_cons, List.length_nil] at h2; omega)
+    (fun n => by simpa [copies] using R375j_copiesI n)
+  simpa [R375i, List.append_assoc] using h
+
+#print axioms R375i27_mem
+
 /-! ### ★★★★★ 一様に良い木の族 `UQ` / `UT` / `UP`
 
 追記88 の壁: `Cok` の 2 の枠木条件は層 `j` で頭打ちで、走りの階段（`nstN2` の
