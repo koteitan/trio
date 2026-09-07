@@ -59083,6 +59083,34 @@ theorem RG_stk1 {ks : List Bool} (hsp : RSp ks) {N : Jk1} (hFN : RFt ks N) :
 #print axioms RG_nil_true
 #print axioms RG_stk1
 
+/-! ### `RCtx` 側で無条件に取れるもの（兄弟 `nil` の枠条件） -/
+
+theorem RFt_nil_bnil : RFt ([] : List Bool) Jk1.nil := by
+  refine ⟨trivial, fun j => ?_⟩
+  cases j with
+  | zero => simpa using RG_bnil_of_APd (fun kk => APd_nil (true :: kk))
+  | succ j =>
+      rw [show List.replicate (j + 1) true ++ ([] : List Bool)
+        = true :: (List.replicate j true ++ ([] : List Bool)) from rfl]
+      exact RG_nil_true _
+
+theorem RFt_nil_ct (ks : List Bool) : RFt (true :: ks) Jk1.nil := by
+  refine ⟨trivial, fun j => ?_⟩
+  rw [rep_true_cons]
+  exact RG_nil_true _
+
+theorem RFt_nil_cf {ks : List Bool} (hsp : RSp ks) : RFt (false :: ks) Jk1.nil := by
+  refine ⟨trivial, fun j => ?_⟩
+  cases j with
+  | zero => simpa using RG_nil_false hsp
+  | succ j =>
+      rw [show List.replicate (j + 1) true ++ (false :: ks)
+        = true :: (List.replicate j true ++ (false :: ks)) from rfl]
+      exact RG_nil_true _
+
+#print axioms RFt_nil_cf
+
+
 
 end Small
 end TRIO
