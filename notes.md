@@ -13886,3 +13886,56 @@ LOk (k+1) (two N (two nil nil))
 - 枠木の欄を `TAll` にした単純述語 … `m = 0`（2 の記録の直上）で破れる。
 
 **結論は変わらず: 族の中で「層について一様な兄弟条件」を書く手段が要る。**
+
+## 追記128: 走り 2 の連鎖の一般版 `GOK_stkW_gen` が緑。残るのは階段の供給
+
+### 緑になったもの（`sorryAx` なし）
+
+bms 実測（追記125・今回の 4 連 / 5 連）で、2 の記録 `q` 個の連鎖の展開は
+
+```
+良い部分 = 1 個少ない連鎖
+コピーの単位 = (D,1,0) <N at D> (D+1,2,0)…(D+p+1,2,0)、シフト p+2   （p = q-2）
+```
+
+と確定した。そこで
+
+```
+unQ N p D  := (D,1,0) :: jk1 D (two N (stkP p nil))          -- 単位（p=0 で unN）
+nstQ N p k                                                     -- 階段（p=0 で nstN）
+jk1_nstQ / shift_unQ / unQ_append / colJ_plug_twoNstkX
+wordJ_snoc_twoNstkX / wordJ_snoc_twoNstkQ / wordJ_snoc_twoNstkT(2)
+MidD_unQ / hMy_unQ / snocQ_of_tower                            -- snocN_of_tower の一般版
+GOK_stkW_gen ctx0 V p hJN hJT hGV hstair
+  : GOK (plug (ctx0 ++ [fone V]) (two N (stkP p (two nil nil))))
+```
+
+`GOK_twoTwoNilW_gen` の本文を機械的に一般化（`unN2 → unQ`、`Mtwd 2 → Mtwd (p+2)`、
+`snocN2_of_tower → snocQ_of_tower`）して一発で緑になった。`p = 0` で元の補題に一致。
+
+### 残る穴: 階段の供給
+
+`GOK_stkW_gen` の `hstair` は
+
+```
+∀ k, GOK (plug ctx (two N (stkP p (nstQ N p k))))
+```
+
+`p = 0` なら `nstQ N 0 k = nstN N k` で既存の `APd_nstN` が供給する（`nstN` は
+1 の記録頭なので `APd_cf` で剥がせる）。**`p ≥ 1` だと `stkP p (…)` が 2 の記録頭**
+なので `APd_cf` で剥がせない。`k` の帰納で見ると
+
+```
+two N (stkP p (nstQ N p (k+1)))
+  = plug ([ftwo N] ++ p×[ftwo nil] ++ [fone nil]) (two N (stkP p (nstQ N p k)))
+```
+
+なので、文脈が **2 の枠を隣接して持てる**必要がある。`GCtx` / `MCtx` / `StkOk` /
+`TwStk` / `TwSt` はどれも 2 の枠を隣接させられない（必ず 1 の枠を挟む設計）。
+
+### 次の一手
+
+2 の枠の隣接を許す文脈族（ブロック `[ftwo N] ++ p×[ftwo nil] ++ [fone nil]` で
+閉じているもの）を作り、その上で
+「`p` の帰納 → 各 `p` で `k` の帰納」の二重帰納を回す。
+底は `p = 0`（既存の `APd_nstN` / `APd_twoTwoGen`）。
