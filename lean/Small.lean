@@ -58147,6 +58147,27 @@ theorem SNilT_of_SNilF (h : SNilF) : SNilT
 
 #print axioms SNilT_of_SNilF
 
+/-- 壁 `SNilF` を明示形に展開する。「2 の記録（兄弟 `nil`）の直上に
+`one U nil` を置ける」。 -/
+theorem SNilF_iff : SNilF ↔ ∀ (ks : List Bool) (D1 : List Frm) (U : Jk1),
+    SCtx ks D1 → SF (false :: ks) U →
+    GOK (plug D1 (Jk1.two Jk1.nil (Jk1.one U Jk1.nil))) := by
+  constructor
+  · intro h ks D1 U hD1 hFU
+    have hD : SCtx (true :: false :: ks) ((D1 ++ [Frm.ftwo Jk1.nil]) ++ [Frm.fone U]) :=
+      SCtx_fone (SCtx_ftwo hD1) hFU
+    have hh := h ks _ hD
+    rw [plug_snoc, plug_snoc2] at hh
+    exact hh
+  · intro h ks D hD
+    obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD
+    obtain ⟨D1, hD1, rfl⟩ := hD0
+    rw [plug_snoc, plug_snoc2]
+    exact h ks D1 U hD1 hFU
+
+#print axioms SNilF_iff
+
+
 theorem SOk_true (hnt : SNilT) (ks : List Bool) : SBs (true :: ks) :=
   ⟨SSp_ct ks, hnt ks⟩
 
