@@ -57452,5 +57452,17 @@ theorem APd_oneNilT {ks : List Bool} {W : Jk1} (h : APd (true :: (true :: ks)) W
 #print axioms APd_twoOneNil
 #print axioms APd_oneNilT
 
+/-- 連鎖 1 段に荷（`RunPay` の底）。`AYdT` が `nil` 兄弟でそのまま効く。 -/
+theorem APd_twoNilPay {ks : List Bool} {C : TrioSeq} (hC : Bok C) :
+    APd (true :: ks) (Jk1.two Jk1.nil (Jk1.pay Jk1.nil C)) :=
+  APd_twoNilOf (AYdT C hC ks Jk1.nil trivial trivial (APd_twoNilB ks))
+
+/-- 連鎖 1 段 + 1 の記録（`RunOne` の底）。 -/
+theorem APd_twoNilOneNil {ks : List Bool} {W : Jk1}
+    (h : APd (true :: (false :: ks)) W) :
+    APd (true :: ks) (Jk1.two Jk1.nil (Jk1.one Jk1.nil W)) := APd_twoOneNil h
+
+#print axioms APd_twoNilPay
+
 end Small
 end TRIO
