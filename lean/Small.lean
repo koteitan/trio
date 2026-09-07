@@ -50701,6 +50701,36 @@ theorem R375i26_mem : R375i ++ [((10, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375i26_mem
 
+/-! #### `TR`（同じ高さに並ぶ 2 の記録の横鎖）の基本補題 -/
+
+theorem UniW_TR : ∀ n : ℕ, UniW (TR n)
+  | 0 => UniW_nil
+  | (n + 1) =>
+      { ja := ⟨(UniW_TR n).ja, trivial⟩
+        ck := fun j i => Ck_twoW (UniW_TR n) (Ck_nil (j + 1) 0)
+        ckp := fun C hC j i => Ck_pay j (i + 1) C hC _ ⟨(UniW_TR n).ja, trivial⟩
+          (Ck_twoW (UniW_TR n) (Ck_nil (j + 1) 0)) }
+
+theorem NTw_TR : ∀ (n q : ℕ), NTw q (TR n)
+  | 0, q => NTw_nil q
+  | (n + 1), q => fun j D hD hf =>
+      TTwA_nil q j (TR n) (JkA_TR n) (fun p => NTw_TR n p) hf D hD
+
+theorem LOk_TR (n k : ℕ) : LOk (k + 1) (TR n) :=
+  LOk_of_TwOk0 (fun D hD => NTw_TR n 0 k D hD (Fter_zero k))
+
+theorem LOk_oneTwoNilTR (n k : ℕ) :
+    LOk k (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR n)) :=
+  LOk_one (W := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ (LOk_twoNilAll k)
+    (LOk_TR n k)
+
+theorem LOk_twoNilOneTwoNilTR (n k : ℕ) :
+    LOk (k + 1) (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (TR n))) :=
+  LOk_of_TwOk0 (TTwA_oneTwoTR n 0 k Jk1.nil trivial NTw_nil (Fter_zero k))
+
+#print axioms LOk_TR
+#print axioms LOk_twoNilOneTwoNilTR
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
