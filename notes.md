@@ -13371,3 +13371,64 @@ MPd : List Bool → Jk1 → Prop
 `UniW_chain` / `WallC` / `Ck_pairLevel_pay` / `UniW_chain_twoNil`（追記114 の部品）。
 ただし上の分析どおり `WallC` も同じ壁なので、この道（`Pok` の兄弟を `UniW` に強める）は
 `WallP` を `WallC` に移すだけで終わる。**採らない。**
+
+## 追記117: 壁を `MNil` 1 文に落とした（緑）。残る矛盾は兄弟条件の 2 要求
+
+### 緑になったもの（`sorryAx` なし）
+
+`MPd` 層（`APd` から `Rq` を落とし、2 の枠の兄弟条件を `AllA` にした族）で塔が組めた。
+
+```
+MNil := ∀ ks, MPd (false :: ks) nil        -- 残る 1 点
+
+MPd_nstN      : AllA N → MNil → ∀ k ks, MPd (false :: ks) (nstN N k)
+MPd_twoTwoGen : AllA N → MNil → ∀ ks, MPd (true :: ks) (two N (two nil nil))
+MPd_twoTwoNilB: MNil → ∀ ks, MPd (false :: ks) (two nil nil)
+MPd_TW        : MNil → ∀ n ks, MPd (false :: ks) (TW n)
+TowOk_of_MNil : MNil → ∀ n, GOK (one nil (two nil (TW n)))
+R14_mem_M     : MNil → #14 ∈ W 0
+```
+
+`tower14_mem` / `R14_mem` の仮定を `WallP` から `TowOk`（塔の木が全部良い）に
+一般化したので、`WallP` の道（`TowOk_of_WallP`）も残っている。
+
+**`WallP`（`Pk` 層 = 4 層目）より `MNil`（層なし、`APd` の隣）の方が弱く単純。**
+
+### 走り 2 の階段が `AllA` で通る理由
+
+階段 `nstN N k` は**木**であって文脈ではないので、`MPd_nstN` の再帰で形は
+`false` 1 個ずつ伸びるが、兄弟条件 `AllA N`（`∀ j kk, APd (rep j true ++ true::kk) N`）は
+**形に依らない**ので、どの形でもそのまま渡せる。追記116 で「`AllM` が要る」と
+書いたのは誤り。
+
+### 残る矛盾（兄弟条件への 2 つの要求）
+
+2 の枠の兄弟 `N` に要る条件は 2 種類あり、両立しない:
+
+```
+(a) 走り 2 の階段（MPd_nstN）  … 形に依らない条件が要る（形が false で伸びるため）
+(b) 2 の記録の階段（MPd_twoNilGen = MNil）と荷の鎖（AYdT）
+    … その族自身での良さ ∀ j, MPd (rep j true ++ true::ks) N が要る
+```
+
+- (a) を満たすには `AllA`（`APd` 層、形に依らない）。だが `MCtx` 文脈は `GCtx` 文脈
+  ではない（枠木が走り 2 を含む）ので、`AllA N` から `MPd ks N` は出ない ⇒ (b) が出ない。
+- (b) を満たすには兄弟条件を `MPd` 層にする。だが停止性 `(cntF ks, ks.length)` のため
+  形は `rep j true ++ true :: (rep m true ++ ks)` に固定され、`false` が増えた形では
+  使えない ⇒ (a) が出ない。
+
+両方を課すと (a) 側（`MPd_twoTwoNilB`、`N` が全称）が破れる。実測はしていないが
+型で確定する。
+
+### 評価
+
+`MNil` は「走り 2 を許す文脈でも `nil` を 2 の記録の枠に置ける」。
+これを出すには **兄弟の「全形状での良さ」を、族の定義の外に置いたまま族の中で使う**
+仕掛けが要る。`APd` の `AllA` はまさにそれ（`TwoOk` / `StkOk 0` が使う）だが、
+`MPd` に対する `AllM` を作ると非可述になる。
+
+次の一手の候補（未検証）:
+- `MPd` の枠木の欄を「`MPd` かつ `APd`」にして `MCtx ⊆ GCtx` にする
+  … 塔の枠木 `two nil nil` が `APd (false::ks)` を要求して破れる（追記116 の穴）。
+- `MNil` を語のレベルで直接潰す（`GOK_twoNilW_gen` の階段を `AllA` だけで作る）
+  … 階段の文脈が `MCtx` なので `APd` が当たらない。
