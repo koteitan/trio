@@ -58278,6 +58278,63 @@ theorem SF_nil_all (h : SPayF) (ks : List Bool) : SF ks Jk1.nil := ⟨trivial, S
 
 #print axioms SG_stk_all
 
+/-! ### ★★★★★ `STow`：普遍的に良い兄弟の塔（`Tow_of_NNo` の `SCtx` 版） -/
+
+theorem SCtx_blkRN {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N) (r : ℕ) :
+    ∀ (i : ℕ) (ks : List Bool) (D : List Frm), SCtx ks D →
+      ∃ ks' : List Bool, SCtx ks' (D ++ List.replicate r (Frm.ftwo Jk1.nil)
+        ++ blkR N (List.replicate r Jk1.nil) i)
+  | 0, ks, D, hD => by
+      rw [blkR_zero, List.append_nil]
+      exact ⟨_, SCtx_rep_ftwo r hD⟩
+  | (i + 1), ks, D, hD => by
+      rw [blkR_snoc]
+      obtain ⟨ks', hks'⟩ := SCtx_blkRN hJN hN r i ks D hD
+      have e : D ++ List.replicate r (Frm.ftwo Jk1.nil)
+            ++ (blkR N (List.replicate r Jk1.nil) i ++ blkC N (List.replicate r Jk1.nil))
+          = ((D ++ List.replicate r (Frm.ftwo Jk1.nil)
+              ++ blkR N (List.replicate r Jk1.nil) i) ++ [Frm.fone N])
+            ++ List.replicate r (Frm.ftwo Jk1.nil) := by
+        rw [blkC_eq, ftw_rep]
+        simp [List.append_assoc]
+      rw [e]
+      exact ⟨_, SCtx_rep_ftwo r (SCtx_fone hks' ⟨hJN, hN ks'⟩)⟩
+
+theorem STow_stk (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N)
+    (r : ℕ) (ks : List Bool) (hsp : SSp ks) : SG ks (stkP r (Jk1.two N Jk1.nil)) := by
+  intro D hD
+  obtain ⟨ctx, V, hDe, hGV⟩ := hsp D hD
+  subst hDe
+  have ec : ctx ++ blkC V (List.replicate r Jk1.nil)
+      = (ctx ++ [Frm.fone V]) ++ List.replicate r (Frm.ftwo Jk1.nil) := by
+    rw [blkC_eq, ftw_rep]
+  have egoal : plug (ctx ++ blkC V (List.replicate r Jk1.nil)) (Jk1.two N Jk1.nil)
+      = plug (ctx ++ [Frm.fone V]) (stkP r (Jk1.two N Jk1.nil)) := by
+    rw [ec, plug_append, plug_repF]
+  rw [← egoal]
+  refine GOK_runGNil_gen (V := V) (A := N) hJN
+    (fun B hB => by rw [List.eq_of_mem_replicate hB]; trivial) ctx ?_ hGV ?_
+  · rw [ec]
+    exact SCtx_JkT _ _ (SCtx_rep_ftwo r hD) _ ⟨hJN, trivial⟩
+  · intro i
+    obtain ⟨ks', hks'⟩ := SCtx_blkRN hJN hN r i ks _ hD
+    have hh := hN ks' _ hks'
+    rw [ec]
+    simpa [List.append_assoc] using hh
+
+theorem STow_all (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N) :
+    ∀ (ks : List Bool) (r : ℕ), SG ks (stkP r (Jk1.two N Jk1.nil))
+  | [], r => STow_stk h hJN hN r [] SOk_bnil.1
+  | (true :: ks), r => STow_stk h hJN hN r (true :: ks) (SOk_true h ks).1
+  | (false :: ks), r => (SG_cf_iff ks _).mpr (STow_all h hJN hN ks (r + 1))
+
+/-- ★★★★★ 普遍的に良い木は 2 の記録の左兄弟にできる。 -/
+theorem STow (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N)
+    (ks : List Bool) : SG ks (Jk1.two N Jk1.nil) := STow_all h hJN hN ks 0
+
+#print axioms STow
+
+
 
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
