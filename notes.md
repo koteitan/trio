@@ -13046,3 +13046,46 @@ n ≥ 1 では先端が `one (two nil nil) (two nil (TW (n-1)))` になる。つ
 
 `TwOk_twoTwoNil` の兄弟条件は `∀ q, NTw q N`（全深さ）で、`N = nil` なら
 `NTw_nil` でタダなので、**兄弟の壁はここでは出ない**。純粋に語の補題の一般化。
+
+## 追記110: 塔は n 一様に組めた（`GOK_oneTW`）。残りは `WallP` 1 本
+
+追記109 のユーザー指摘どおり、塔は単位の個数 `n` について一様に組める。
+`WallP := ∀ j, Pk (j+1) 0 (two nil nil)` を仮定して以下を緑にした:
+
+```
+TW 0 = two nil nil、TW (n+1) = one (two nil nil) (two nil (TW n))
+Pk_TW hw n j    : Pk (j+1) 0 (TW n)          -- 単位の個数の帰納法（j は増える）
+TipOk_TW hw n   : TipOk (TW n)
+Dk1_twoNilTW    : Dk 1 (two nil (TW n))      -- Dk1_twoNilNST の写し
+TTwA_TW hw n    : TTwA (TW n)
+TwoOk_TW hw n   : TwoOk (TW n)               -- LOk_one で単位を 1 個足す
+GOK_oneTW hw n  : GOK (one nil (two nil (TW n)))   -- = #14[n] の木
+```
+
+**つまり `WallP` 以外は全部揃っている。** 残るのは行列側の配管（`rowJ_mem_genF` +
+`snocYd_mem`）と `WallP` だけ。
+
+### `WallP` を潰そうとして駄目だったもの（この回の追加）
+
+- `Nok`（= `Pok ∧ NilCtx`、兄弟が全部 `nil`）… `Nk_twoNilNil` は緑（壁は消える）
+  が、`Nok` を**組む**には `Pok` の 1 の枠の欄が `Pk (j+1) 0 (two nil nil)`
+  （= `WallP`）を要求する。差せるが積めない。
+- `Pok` の 1 の枠の欄を `Nok` 相対にする … `Nok ⊄ Pok` になり `Pk_nstT`（階段）が
+  使えなくなる。
+- `Pok` の対の欄に塔（`∀ k, TipOk (plug … (two Wl (nstN2 Wl nil k)))`）を足す …
+  非可述にはならないが、`Pk_pay` の対の腕が横鎖を兄弟にするとき**鎖の塔**が要り、
+  それには鎖の全層性 ⇒ 鎖の先端（`pay X Y'`）の対の層配置が **j について一様**に
+  要る。`Pok` の 1 の枠の欄がその一様版を要求すると非可述に戻る。
+
+### 壁の形（決定版）
+
+どの層でも次の 2 つが両立しない:
+
+```
+(a) 枠木の条件は「その層のどの文脈でも良い」（文脈を組むのに要る）
+(b) 2 の枠の兄弟の条件は「同じ深さの文脈で良い」（層が書ける限界）
+走り 2 の階段は交互塔で、兄弟をどの深さでも使うので (b) では足りない。
+```
+
+`StkOk 0`（`LOk 0` の土台）だけが (b) を全深さで書けている（`APd` が別定義だから）。
+だから `LOk 0 (two nil nil)` = `TwoOk_twoNil` は緑で、**塔の一番外の単位だけ**通る。
