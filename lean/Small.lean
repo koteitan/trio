@@ -55409,5 +55409,69 @@ theorem PairOk_payTwoNil (C : TrioSeq) (hC : Bok C) :
 #print axioms PairOk_oneNil
 #print axioms PairOk_payTwoNil
 
+/-! ### ★★★★★ 残る 1 点（壁）と、そこから出るもの
+
+`Rk (j+1) 0 (two nil nil)`（走り 2 が対の層のどの文脈にも差せる）だけが残る。
+これを仮定すると `UPt` / `UP` / `UT` の族はすべて所定の層に差せる。 -/
+
+def Wall : Prop := ∀ j : ℕ, Rk (j + 1) 0 (Jk1.two Jk1.nil Jk1.nil)
+
+theorem UPl_of_UPt : ∀ {n : ℕ} {X : Jk1}, UPt X → UPl n X
+  | 0, _, h => h
+  | (_ + 1), _, h => UP_of_UPt h
+
+theorem PairOk_of_Rk {Z : Jk1} (h : ∀ j : ℕ, Rk (j + 1) 0 Z) : PairOk Z :=
+  fun _ _ _ _ => RkW_of_Rk h
+
+theorem Rk_twoNil_all (hw : Wall) : ∀ j n : ℕ, Rk j n (Jk1.two Jk1.nil Jk1.nil)
+  | 0, 0 => Rk00_of_TTwA TTwA_twoNil
+  | (j + 1), 0 => hw j
+  | j, (n + 1) =>
+      Rk_twoW (Rk_all_nil j) (fun C hC => Rk_allp_nil C hC j) UT.nil (Rk_nil (j + 1) 0)
+
+mutual
+/-- 壁があれば族の 2 の枠木はすべて全層に差せる。 -/
+theorem Rk_allUT (hw : Wall) : ∀ {W : Jk1}, UT W →
+    (∀ j i : ℕ, Rk j (i + 1) W) ∧
+      (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))
+  | _, UT.nil => ⟨Rk_all_nil, Rk_allp_nil⟩
+  | _, UT.chain k hW hT =>
+      Rk_all_chainW (Rk_allUT hw hW).1 (Rk_allUT hw hW).2 hW hT
+        (PairOk_of_Rk (fun j => Rk_UPt hw hT (j + 1) 0)) k
+/-- 壁があれば `UPt` の木は対の層を含むどの層にも差せる。 -/
+theorem Rk_UPt (hw : Wall) : ∀ {X : Jk1}, UPt X → ∀ j n : ℕ, Rk j n X
+  | _, UPt.nil, j, n => Rk_nil j n
+  | _, UPt.twoNil, j, n => Rk_twoNil_all hw j n
+  | _, UPt.pay hX hC, j, n =>
+      Rk_pay j n _ hC _ (UPl_of_UPt hX) (Rk_UPt hw hX j n)
+  | _, UPt.one hA hT, j, n =>
+      Rk_one (UPl_of_UPt hA) (Rk_UPt hw hA j n)
+        (fun C hC => Rk_pay j n C hC _ (UPl_of_UPt hA) (Rk_UPt hw hA j n))
+        (Rk_UP hw hT j n)
+/-- 壁があれば `UP` の木は層 ≥1 のどの文脈にも差せる。 -/
+theorem Rk_UP (hw : Wall) : ∀ {X : Jk1}, UP X → ∀ j n : ℕ, Rk j (n + 1) X
+  | _, UP.nil, j, n => Rk_nil j (n + 1)
+  | _, UP.pay hX hC, j, n =>
+      Rk_pay j (n + 1) _ hC _ hX (Rk_UP hw hX j n)
+  | _, UP.one hA hT, j, n =>
+      Rk_one hA (Rk_UP hw hA j n)
+        (fun C hC => Rk_pay j (n + 1) C hC _ hA (Rk_UP hw hA j n))
+        (Rk_UP hw hT j (n + 1))
+  | _, UP.chain k hW hT, j, n =>
+      (Rk_all_chainW (Rk_allUT hw hW).1 (Rk_allUT hw hW).2 hW hT
+        (PairOk_of_Rk (fun j' => Rk_UPt hw hT (j' + 1) 0)) k).1 j n
+end
+
+/-- 壁は「族の 2 の枠木が全層に差せる」と同値。 -/
+theorem Wall_of_allUT
+    (h : ∀ {W : Jk1}, UT W → (∀ j i : ℕ, Rk j (i + 1) W) ∧
+      (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))) : Wall := by
+  intro j ctx hctx
+  obtain ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hW, hWp, hUT⟩ := (Rok_s0 j ctx).mp hctx
+  exact Rk_twoNilNil_at hc hJV hV (fun C hC => hVp C hC) (h hUT).1 (h hUT).2 hUT
+
+#print axioms Rk_UPt
+#print axioms Wall_of_allUT
+
 end Small
 end TRIO
