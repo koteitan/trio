@@ -57510,5 +57510,47 @@ theorem RunAll_two (ks : List Bool) : APd (true :: ks) (stk 2) :=
 #print axioms R376_of_RunAll
 #print axioms RunAll_two
 
+/-! ### ★★★★★ 生の文脈クラス `KC`
+
+`APnil_gen0` / `GOK_twoNilW_gen` / `GOK_stkW_gen` はどれも生の `List Frm` に対して
+使える（`GCtx` の形の制約は `APd` 側だけの都合）。そこで「一番内が 1 の枠で、
+その枠木が良い（荷つき）」だけを条件にした文脈クラスを立てる。
+2 の枠が隣接していてもよいので、走り 2 の連鎖を文脈に持てる。 -/
+
+def KC (D : List Frm) : Prop :=
+  ∃ (ctx0 : List Frm) (V : Jk1), D = ctx0 ++ [Frm.fone V] ∧ JkA V ∧
+    (∀ T : Jk1, JkA T → JkT (plug D T)) ∧
+    GOK (plug ctx0 V) ∧ (∀ C : TrioSeq, Bok C → GOK (plug ctx0 (Jk1.pay V C)))
+
+theorem KC_JkT {D : List Frm} (h : KC D) : ∀ T : Jk1, JkA T → JkT (plug D T) := by
+  obtain ⟨-, -, -, -, hJT, -, -⟩ := h
+  exact hJT
+
+/-- `GCtx (true :: ks)` の文脈は `KC`。 -/
+theorem KC_of_GCtx {ks : List Bool} {ctx : List Frm} (h : GCtx (true :: ks) ctx) :
+    KC ctx := by
+  have hc := h
+  rw [GCtx_ct] at hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hR, hVk⟩ := hc
+  refine ⟨ctx0, V, rfl, FrmJ_JkA ks V hV, ?_,
+    (APd_iff ks V).mp hVk ctx0 hc0, fun C hC => ?_⟩
+  · intro T hT
+    exact JkT_plug _ (GCtx_CtxOk (true :: ks) _ h) T
+      (GCtx_CtxX (true :: ks) _ h T hT trivial)
+  · exact (APd_iff ks _).mp (APd_payA ks V hV hR hVk C hC) ctx0 hc0
+
+/-- ★ `KC` 文脈に `nil` を差せる（`APnil_gen0`）。 -/
+theorem KC_GOK_nil {D : List Frm} (h : KC D) : GOK (plug D Jk1.nil) := by
+  obtain ⟨ctx0, V, rfl, hJV, hJT, hGV, hang⟩ := h
+  have hJT' : JkT (plug ctx0 (Jk1.one V Jk1.nil)) := by
+    have := hJT Jk1.nil trivial
+    rwa [plug_snoc] at this
+  have hh := APnil_gen0 ctx0 V hJT' hGV hang
+  rw [plug_snoc]
+  exact hh
+
+#print axioms KC_of_GCtx
+#print axioms KC_GOK_nil
+
 end Small
 end TRIO
