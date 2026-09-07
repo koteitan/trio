@@ -50317,6 +50317,105 @@ theorem R375i23_mem : R375i ++ [((9, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 
 #print axioms R375i23_mem
 
+/-! #### `V(10,0,0)`: 同じ高さに並ぶ「1 の記録 + 2 の記録」の横鎖 -/
+
+def OAI : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil Jk1.nil
+  | (n + 1) => Jk1.one (OAI n) (Jk1.two Jk1.nil Jk1.nil)
+
+theorem JkA_OAI : ∀ n : ℕ, JkA (OAI n)
+  | 0 => ⟨trivial, trivial⟩
+  | (n + 1) => ⟨JkA_OAI n, trivial, trivial⟩
+
+theorem TipOk_OAI : ∀ n : ℕ, TipOk (OAI n)
+  | 0 => TipOk_twoNil
+  | (n + 1) => TipOk_oneTwoNil (OAI n) (TipOk_OAI n)
+      (fun C hC => TipOk_pay (TipOk_OAI n) C hC)
+
+theorem Dk1_twoNilOAI (n : ℕ) : Dk 1 (Jk1.two Jk1.nil (OAI n)) := by
+  intro fs hfs
+  obtain ⟨W, fs', rfl, hfs', hJW, hW, hWp⟩ := (Fok_s 0 fs).mp hfs
+  have hfs0 : fs' = [] := (Fok_z fs').mp hfs'
+  subst hfs0
+  rw [plug_snoc]
+  exact TTwA_of_Ck00 (Ck_one hJW (Ck00_of_TTwA (hW [] rfl))
+    (fun C hC => Ck00_of_TTwA (hWp C hC [] rfl))
+    ((TipOk_OAI n).ck Jk1.nil UniW_nil 0 0))
+
+theorem TTwA_oneTwoOAI (n : ℕ) :
+    TTwA (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (OAI n))) :=
+  TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil (Dk1_twoNilOAI n)
+
+theorem jk1_OAI : ∀ (n m : ℕ),
+    jk1 m (OAI n) = ((m + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      copies [((m + 1, 1, 0) : ℕ × ℕ × ℕ), ((m + 2, 2, 0) : ℕ × ℕ × ℕ)] n
+  | 0, m => by simpa [copies] using jk1_twoNil m
+  | (n + 1), m => by
+      show jk1 m (OAI n) ++ (((m + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (m + 1) (Jk1.two Jk1.nil Jk1.nil)) = _
+      rw [jk1_OAI n m, copies_snoc, jk1_twoNil (m + 1),
+        show m + 1 + 1 = m + 2 from by omega]
+      simp
+
+theorem GOK_oneOAI (n : ℕ) : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (OAI n))))))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hk : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+          (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (OAI n))))) :=
+        TwoOk_of_LOk0 (LOk_one (k := 0) (W := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
+          (LOk0_of_TwoOk TwoOk_twoNil)
+          (LOk_of_TwOk0 (TTwA_oneTwoOAI n 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+      have h := hk Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem R375k_copiesI (n : ℕ) :
+    R375k ++ copies [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (OAI n))))))])) :=
+    GOK_oneOAI n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (OAI n))))))]) := by
+    simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil
+          (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (OAI n)))))))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+          ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ), ((7, 2, 0) : ℕ × ℕ × ℕ),
+          ((7, 1, 0) : ℕ × ℕ × ℕ), ((8, 2, 0) : ℕ × ℕ × ℕ), ((9, 2, 0) : ℕ × ℕ × ℕ)]
+        ++ copies [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)] n := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 4 (Jk1.two Jk1.nil Jk1.nil) ++
+          (((5, 1, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 5 Jk1.nil ++ (((6, 2, 0) : ℕ × ℕ × ℕ) ::
+              (jk1 6 (Jk1.two Jk1.nil Jk1.nil) ++
+                (((7, 1, 0) : ℕ × ℕ × ℕ) ::
+                  (jk1 7 Jk1.nil ++ (((8, 2, 0) : ℕ × ℕ × ℕ) ::
+                    jk1 8 (OAI n)))))))))))) = _
+    rw [jk1_twoNil 4, jk1_twoNil 6, jk1_OAI n 8]
+    simp [jk1]
+  simpa [wordJ_singleton, colJ, e, R375k, R375r, R375p, R375z, R375x, R375s, R375m,
+    R373, R344, R341, R338, List.append_assoc] using h
+
+/-- ★★★★★ `V(10,0,0)`。 -/
+theorem R375i24_mem : R375i ++ [((10, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R375k)
+    (M := [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)]) (d := 10)
+    (by simp) (by simp [R375k, R375r, R375p, R375z, R375x, R375s, R375m, R373, R344,
+      R341, R338, entry])
+    (by intro r h1 h2; simp only [List.length_cons, List.length_nil] at h2
+        rcases r with _ | _ | r <;> first | omega | simp [entry])
+    (fun n => by simpa [copies] using R375k_copiesI n)
+  simpa [R375i, R375j, List.append_assoc] using h
+
+#print axioms R375i24_mem
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
