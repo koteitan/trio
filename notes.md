@@ -14547,3 +14547,44 @@ SG_stkS         : SPayF → ∀ q ks, SBs ks → SG ks (stk q)   -- 走りの塔
 NNo_pay         : 族は荷で閉じる（無条件）
 R14_mem_L2      : LStep2 → #14
 ```
+
+## 追記140: ★ シートの 2 行が同じ 1 文 `SHtow` に帰着した
+
+```
+R14_of_SHtow    : SHtow → #14 ∈ W 0        （シートの証明中）
+RunAll_of_SHtow : SHtow → RunAll → 行376   （シートの目標）
+```
+
+#14 の壁 `TowOk`（追記101）= `GOK (one nil (two nil (TW n)))` は、
+`[Frm.fone nil]` が `GCtx [true]` の文脈＝`SCtx []` に入ることに気づけば
+`SCtx` の中で組める:
+
+```
+SG_cf_iff  : SG (false::ks) X ↔ SG ks (two nil X)
+SG_TW      : SPayF → ∀ n ks, SBs ks → SG (false::ks) (TW n)     -- n の帰納
+  TW 0     = stk 1     … SG (false::ks) (stk 1) = SG ks (stk 2) ← SG_stkS
+  TW (n+1) = one (stk 1) (two nil (TW n))
+             … SG_one で 1 の枠、SG_twoNil で 2 の枠、IH は形が true::false::ks
+TowOk_of_SPayF : SPayF → TowOk
+```
+
+### `SHtow` の難所（今回の詰め）
+
+`SHtow` = `∀ N ∈ VCh V, GOK (plug D0 (two N V))`。bms で見ると
+`two N V` の展開は **`V` の形に依存する**（`V = nil` なら悪い部分は 1 の枠の
+ブロック全体、`V = one nil nil` なら行列全体・歩幅 3）。つまり単一の語補題では
+出ず、`V` の良さが「鎖を兄弟にした 2 の枠の上でも良い」形で要る。手元にあるのは
+`SG (false::ks) V`（兄弟 `nil` の上でのみ）。
+
+`GOK_twoPay_of` の `hcl`（族が鎖で閉じる）が使われるのは荷が A2' で 1 つ小さい
+ときだけなので、族を「荷が `Y` より小さい鎖」に制限したいが、鎖の**下の方**の荷は
+`Y` より小さいとは限らない（族の閉包で任意の荷が混ざる）ので素直には切れない。
+
+### 次の手の候補
+
+1. `SCtx` の 1 の枠の条件に `SHtow`（その枠木についての鎖の塔）を**positive な
+   仮定として**足す。そうすると残りは `SHtow` の `V = nil` の場合だけになる
+   （塔で使う枠木は `nil` だけなので）。`V = nil` なら bms の測定どおり
+   `GOK_twoNilW_gen` の形なので、階段は「鎖 `N` を 1 の枠で m 重にした木」。
+2. `GOK_twoPay_of` を黒箱で使わず、A2' の帰納を自分で回して
+   (荷の A2' 順序, 鎖の長さ) の辞書式で測る。
