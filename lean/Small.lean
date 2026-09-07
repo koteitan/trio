@@ -53593,5 +53593,148 @@ theorem GOK_runGNil_gen {V A : Jk1} (hJA : JkA A) {Bs : List Jk1} (hB : ∀ B �
 
 #print axioms GOK_runGNil_gen
 
+
+/-! ### ★★★★★ 走りブロックの塔: 行376 は「荷」1 本に帰着する
+
+`GOK_runGNil_gen`（走りの一般ステップ）は、走りの先端が `nil` のとき、階段として
+「1 段短い走りのブロックの塔」を要求する。ブロックの走り長 `q` についての帰納法で
+塔を立てると、外から要るのは走り 0 のブロック（`APnil_gen0`）のところだけで、
+そこで荷 `GOK (plug ctx (pay nil C))` が要る。 -/
+
+/-- 走り `q` のブロック: 1 の枠 1 本 + 2 の枠 `q` 本（枠木はすべて `nil`）。 -/
+def rblk (q : ℕ) : List Frm := blkC Jk1.nil (List.replicate q Jk1.nil)
+
+/-- 走り `q` のブロックを `i` 段積んだ文脈。 -/
+def rblkR (q i : ℕ) : List Frm := blkR Jk1.nil (List.replicate q Jk1.nil) i
+
+theorem rblkR_zero (q : ℕ) : rblkR q 0 = [] := rfl
+
+theorem rblkR_succ (q i : ℕ) : rblkR q (i + 1) = rblk q ++ rblkR q i := rfl
+
+theorem rblk_succ (q : ℕ) : rblk (q + 1) = rblk q ++ [Frm.ftwo Jk1.nil] := by
+  show Frm.fone Jk1.nil :: ftw (List.replicate (q + 1) Jk1.nil)
+      = (Frm.fone Jk1.nil :: ftw (List.replicate q Jk1.nil)) ++ [Frm.ftwo Jk1.nil]
+  rw [List.replicate_succ']
+  show Frm.fone Jk1.nil :: (List.replicate q Jk1.nil ++ [Jk1.nil]).map Frm.ftwo
+      = (Frm.fone Jk1.nil :: (List.replicate q Jk1.nil).map Frm.ftwo) ++ [Frm.ftwo Jk1.nil]
+  rw [List.map_append]
+  rfl
+
+theorem stkP_two : ∀ (q : ℕ) (X : Jk1),
+    stkP q (Jk1.two Jk1.nil X) = stkP (q + 1) X
+  | 0, _ => rfl
+  | (q + 1), X => by
+      show Jk1.two Jk1.nil (stkP q (Jk1.two Jk1.nil X))
+        = Jk1.two Jk1.nil (stkP (q + 1) X)
+      rw [stkP_two q X]
+
+theorem plug_rblk : ∀ (q : ℕ) (ctx : List Frm) (X : Jk1),
+    plug (ctx ++ rblk q) X = plug ctx (Jk1.one Jk1.nil (stkP q X))
+  | 0, ctx, X => by
+      show plug (ctx ++ [Frm.fone Jk1.nil]) X = _
+      rw [plug_snoc]
+      rfl
+  | (q + 1), ctx, X => by
+      rw [rblk_succ, ← List.append_assoc, plug_snoc2, plug_rblk q ctx, stkP_two]
+
+/-- ブロックだけを積んだ文脈。 -/
+inductive BStk : List Frm → Prop
+  | nil : BStk []
+  | blk : ∀ {ctx : List Frm} (q : ℕ), BStk ctx → BStk (ctx ++ rblk q)
+
+theorem JkA_plug_BStk : ∀ {ctx : List Frm}, BStk ctx → ∀ T : Jk1, JkA T →
+    JkA (plug ctx T)
+  | _, BStk.nil, _, hT => hT
+  | _, BStk.blk q h, T, hT => by
+      rw [plug_rblk]
+      exact JkA_plug_BStk h _ ⟨trivial, JkA_stkP q hT⟩
+
+theorem JkT_plug_BStk : ∀ {ctx : List Frm}, BStk ctx → ∀ T : Jk1, JkA T → TopOk T →
+    JkT (plug ctx T)
+  | _, BStk.nil, _, hT, hTop => ⟨hT, hTop⟩
+  | _, BStk.blk q h, T, hT, _ => by
+      rw [plug_rblk]
+      exact JkT_plug_BStk h _ ⟨trivial, JkA_stkP q hT⟩ trivial
+
+/-- ★ 残る 1 本: ブロックだけの文脈の先端に荷を吊るせる。 -/
+def BLoad : Prop := ∀ ctx : List Frm, BStk ctx → ∀ C : TrioSeq, Bok C →
+  GOK (plug ctx (Jk1.pay Jk1.nil C))
+
+/-- ★★★★★ 荷 1 本を仮定すれば、走りブロックの塔は全部立つ。 -/
+theorem GOK_bstkTower (hload : BLoad) :
+    ∀ (q i : ℕ) (ctx : List Frm), BStk ctx → GOK (plug ctx Jk1.nil) →
+      GOK (plug (ctx ++ rblkR q i) Jk1.nil)
+  | _, 0, ctx, _, hG => by
+      rw [rblkR_zero, List.append_nil]
+      exact hG
+  | 0, (i + 1), ctx, hB, hG => by
+      have hstep : GOK (plug (ctx ++ rblk 0) Jk1.nil) := by
+        rw [plug_rblk]
+        exact APnil_gen0 ctx Jk1.nil
+          (JkT_plug_BStk hB _ ⟨trivial, trivial⟩ trivial) hG
+          (fun C hC => hload ctx hB C hC)
+      have h := GOK_bstkTower hload 0 i (ctx ++ rblk 0) (BStk.blk 0 hB) hstep
+      rw [rblkR_succ, ← List.append_assoc]
+      exact h
+  | (q + 1), (i + 1), ctx, hB, hG => by
+      have hq1 : GOK (plug (ctx ++ rblk q) Jk1.nil) := by
+        have h := GOK_bstkTower hload q 1 ctx hB hG
+        rw [rblkR_succ, rblkR_zero, List.append_nil] at h
+        exact h
+      have hcong : plug (ctx ++ rblk q) (Jk1.two Jk1.nil Jk1.nil)
+          = plug (ctx ++ rblk (q + 1)) Jk1.nil := by
+        rw [plug_rblk, plug_rblk, stkP_two]
+      have hJT : JkT (plug (ctx ++ rblk q) (Jk1.two Jk1.nil Jk1.nil)) := by
+        rw [hcong]
+        exact JkT_plug_BStk (BStk.blk (q + 1) hB) Jk1.nil trivial trivial
+      have hstep : GOK (plug (ctx ++ rblk (q + 1)) Jk1.nil) := by
+        rw [← hcong]
+        refine GOK_runGNil_gen (V := Jk1.nil) (A := Jk1.nil) trivial
+          (Bs := List.replicate q Jk1.nil) ?_ ctx hJT hG ?_
+        · intro B hBm
+          rw [List.eq_of_mem_replicate hBm]
+          trivial
+        · intro m
+          exact GOK_bstkTower hload q m (ctx ++ rblk q) (BStk.blk q hB) hq1
+      have h := GOK_bstkTower hload (q + 1) i (ctx ++ rblk (q + 1))
+        (BStk.blk (q + 1) hB) hstep
+      rw [rblkR_succ, ← List.append_assoc]
+      exact h
+  termination_by q i => (q, i)
+
+/-- 走り `n` の 1 段（行376 の塔の単位）。 -/
+theorem GOK_oneStk_of_load (hload : BLoad) (n : ℕ) :
+    GOK (Jk1.one Jk1.nil (stk n)) := by
+  have e : plug (([] : List Frm) ++ rblk n) Jk1.nil = Jk1.one Jk1.nil (stk n) := by
+    rw [plug_rblk]
+    rfl
+  have h := GOK_bstkTower hload n 1 [] BStk.nil GOK_nil
+  rw [rblkR_succ, rblkR_zero, List.append_nil, e] at h
+  exact h
+
+theorem tw_R344_42L (hload : BLoad) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    GOK_oneStk_of_load hload n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★ シート行376 は「ブロック文脈の荷」1 本だけに帰着する。 -/
+theorem R376_of_BLoad (hload : BLoad) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42L hload)
+
+#print axioms GOK_bstkTower
+#print axioms R376_of_BLoad
+
+
 end Small
 end TRIO
