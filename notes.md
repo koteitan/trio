@@ -14440,3 +14440,64 @@ RunAll_of_ZStep : ZStep → RunAll                     ★緑
 
 `NNo_pay`（族は荷で閉じる、無条件）— 追記136。空文脈の荷 `AY0` を使って
 `AYs` の鎖の枠木を `DCtx.base` に載せたのが鍵。
+
+## 追記138: ★ 走りの塔が通った。行376 の残りは「2 の枠の直上の荷」1 本
+
+`RCtx`（追記134）の 2 の枠の兄弟を **`nil` に固定**した `SCtx` にすると、
+兄弟の条件そのものが消えるので `GOK_runGNil_gen` の階段が回る。
+
+```
+SCtx : List Bool → List Frm → Prop
+  []        D = ∃ ks, GCtx (true::ks) D
+  true::ks  D = ∃ D' U, SCtx ks D' ∧ (JkA U ∧ SG ks U) ∧ D = D' ++ [fone U]
+  false::ks D = ∃ D',   SCtx ks D' ∧                      D = D' ++ [ftwo nil]
+
+SG ks X  := ∀ D, SCtx ks D → GOK (plug D X)
+SPy ks X := ∀ D C, SCtx ks D → Bok C → GOK (plug D (pay X C))
+SSp ks   := SCtx 文脈が ctx ++ [fone V]（+ GOK (plug ctx V)）に割れる
+SBs ks   := SSp ks ∧ SG ks nil
+```
+
+緑になったもの:
+
+```
+SAYr        : AYd の SCtx 版（1 の枠の右の子に荷つきの木）
+SPy_of_SG   : 荷閉包（false 頭だけ SPayF に頼る）
+SG_nil_true : 1 の枠の直上の nil（APnil_gen0）
+SG_repF     : SG ks (stkP q X) → SG (rep q false ++ ks) X
+SG_shR / SCtx_blkR : 階段のブロック塔を SCtx として組む
+SG_stkS     : SPayF → ∀ q ks, SBs ks → SG ks (stk q)      ★走りの塔
+RunAll_of_SPayF : SPayF → RunAll                           ★行376 へ
+```
+
+### 帰納法の形（これが要点）
+
+走り長 `q` について:
+
+```
+SG ks (stk (q+1))
+  ⇐ GOK_runGNil_gen（V = 底の枠木、Bs = nil を q 本、A = nil）
+     階段 i: GOK (plug (ctx ++ blkC V (rep q nil) ++ blkR nil (rep q nil) i) nil)
+           = 形 shR q ks i の SCtx 文脈に nil
+           ⇐ SG_repF で false^q を剥がして SG (true :: …) (stk q)   ← q が 1 減る
+```
+
+`SBs (true :: s)` は `SG_nil_true` から出るので、階段の各ブロックの枠木 `nil` の
+条件が自動で埋まる。兄弟が `nil` なので `A = nil` になり、階段が同じ `q` を
+要求しない——ここが `RCtx`（一般兄弟）との違い。
+
+### 残り 1 本
+
+```
+SPayF : ∀ ks V, JkA V → SG (false :: ks) V → SPy (false :: ks) V
+```
+
+`GOK (plug D0 (two nil (pay V C)))`。A2' の dup が要求する鎖は
+`twoIt nil (pay V C') n`（水平に並ぶ 2 の記録、bms で確認済み）で、
+これを差すには 2 の枠の兄弟が `nil` でなくなる。`GOK_twoPayZ_of`（緑）を使うと
+`htow : ∀ N ∈ 鎖族, GOK (plug D0 (two N V))` が要る。`N = nil` は仮定そのものだが、
+`N = two N' (pay V Y)` は「同じ高さに 2 の記録が k+1 本、最後だけ `V` が乗る」木で、
+`two N' (…)` に結合し直せない（`jk1 (l+1) X` は高さ `l+2` 以上しか持てない）。
+
+`RCtx`（一般兄弟）の `AYrT` はこれを持っている（緑）が、`SCtx ⊆ RCtx` は
+`RG ks U`（一般兄弟文脈での良さ）が要るので出ない。次はこの 1 点。
