@@ -13716,3 +13716,54 @@ TAll (two N Z) ⟸ TwOk (q+1) 0 Z + NTw q N      -- TwOk (q+1) 0 は NTw (q+1) �
 `MPd` は同じ形を `APd` の `AllA`（形の添字が 2 深さを含むので全 2 深さ一様）で
 実現しているので走り 2 が通る。`MPd` 自身の全形状版が非可述、というのが
 これまでと同じ結論。
+
+## 追記124: 試して駄目だった形の一覧（同じ道を二度歩かないため）
+
+現在の還元鎖（すべて緑・`sorryAx` なし）:
+
+```
+LStep1 → MNil → TowOk → tower14_mem → R14_mem → #14 ∈ W 0
+LStep1 := ∀ Z, JkA Z → LAll1 Z → LTwo Z          （LTwo は既存の定義）
+```
+
+### 2 の枠の兄弟条件に要る 2 つの性質
+
+```
+(A) 走り 2 の階段（nstN N k）… 兄弟を 2 の枠の深さ q, q+1, q+2, ... にコピーする
+    ⇒ 兄弟条件は「層の添字について一様」でなければならない
+(B) 荷の鎖（AYdT / GoodFb_snoc_dupJt0）… 鎖 twoIt N T k が兄弟になる
+    ⇒ 兄弟条件は鎖で閉じていなければならない
+```
+
+`APd` の `AllA` は両方を満たす（形の添字が 2 深さを含むので (A) ✓、
+`AllA (two A T) ⟸ AllA A + TwoOk T` で (B) ✓）。だから `MPd`（兄弟 = `AllA`）は
+走り 2 も荷も通る。**`MPd` の唯一の穴は `MNil`。**
+
+### 駄目だった形
+
+- 兄弟を `nil` に固定 … (A) ✓ だが (B) ✗（鎖が `nil` でない）
+- 兄弟を固定形状の `MPd` 条件 … (B) ✓ だが (A) ✗（形が `false` で伸びる）
+- 兄弟を `MBplus`（`MPd` の全形状）… 停止性 `(cntF ks, len)` に対し `cntF` 非有界 ✗
+- ランク付き `MPd r`（兄弟を `MPd (r-1)` の全形状に）… 定義は通るが `MPd r` が
+  `r` について単調でない（枠木の欄で共変、兄弟の欄で反変）ので階段と噛み合わない
+- `Lay P`（枠条件を `P` 絶対にする）… `MCtx_split` の `hGV` が出ない
+- 層を ℕ で添字づけた `TwSt r m` … 兄弟条件 `NTw r N` は「層 `r` の深さについて一様」
+  なので (A) が層をまたげない
+- `TwSt` の兄弟を `TAll = ∀q, NTw q` に強めた新族 `USt` … `MPd` の一段上の同型物に
+  なるだけで、`MNil` に対応する穴が同じ形で残る
+- `Rq` を外す … 22/23 は機械的だが `APd_all` の走り 2 が残る（同じ穴）
+- 塔を `n` ごとに層 `n` で証明 … 層 `n` の走り 2 が層一様な兄弟を要る（同じ穴）
+
+### 使える部品（緑）
+
+```
+LOk_twoN  : LAll1 N → ∀ k, LOk (k+1) (two N nil)      -- 上に何も無い 2 の記録は通る
+LTwo_nil / LTwo_pay / LTwo_one / LTwo_oneNil / LTwo_chain / LTwo_of_TwM0
+TwM_one / TwM_pay / TwM_nil / TwM_oneNil / TwM_itJ
+NTw_nil (r) : NTw r nil                                -- nil は全層一様
+TwOk_twoTwoNil : TAll N → Fter r m → TwOk r m (two N (two nil nil))
+TTwA_chain / TTwA_pay / TTwA_oneNil / TTwA_one_of_Dk1
+```
+
+`LOk_twoN` と `TwOk_twoTwoNil` が示すように、**兄弟が層一様なら走り 2 は通る**。
+足りないのは「族の中で層一様な兄弟条件を書く」ことだけ。
