@@ -14501,3 +14501,49 @@ SPayF : ∀ ks V, JkA V → SG (false :: ks) V → SPy (false :: ks) V
 
 `RCtx`（一般兄弟）の `AYrT` はこれを持っている（緑）が、`SCtx ⊆ RCtx` は
 `RG ks U`（一般兄弟文脈での良さ）が要るので出ない。次はこの 1 点。
+
+## 追記139: 行376 の壁は `SHtow`（水平鎖の塔）1 本
+
+追記138 の `SPayF`（2 の枠の直上の荷）を `GOK_twoPayZ_of`（緑）で切り分けた。
+
+```
+inductive VCh (V : Jk1) : Jk1 → Prop      -- 荷 V の水平鎖
+  | nil  : VCh V nil
+  | step : VCh V N → Bok Y → VCh V (two N (pay V Y))
+
+SHtow : ∀ ks V, JkA V → SG (false::ks) V → ∀ D0, SCtx ks D0 →
+          ∀ N, VCh V N → GOK (plug D0 (two N V))
+
+SPayF_of_SHtow  : SHtow → SPayF     ★緑
+RunAll_of_SHtow : SHtow → RunAll    ★緑
+```
+
+`N = nil` の場合は `SG (false::ks) V` そのもの。残るのは `step` だけ。
+
+### bms で見た `two N nil`（V = nil、鎖長 1, 2）
+
+```
+(0,0,0)(1,1,0)(2,2,0)(3,0,0)(2,2,0)
+  bad root = 1（1 の記録！）、悪い部分 = (1,1,0)(2,2,0)(3,0,0)、歩幅 1、上昇あり
+  → (0,0,0)(1,1,0)(2,2,0)(3,0,0)(2,1,0)(3,2,0)(4,0,0)(3,1,0)(4,2,0)(5,0,0)
+```
+
+つまり **`two N nil` の展開は 1 の枠のブロックを複製する**（`GOK_twoNilW_gen` の形）。
+階段の木は「`N` を 1 の枠で `m` 重にしたもの」なので、要るのは
+`GOK (plug (D0 ++ [fone N]^m) N)`＝**鎖 `N` 自身を差せること**。
+
+鎖 `N = two N' (pay nil Y)` を差すのは `GOK_twoPay_of`（緑）の結論そのもので、
+その `htow` は鎖長 1 つ短い `N'` の塔——**鎖長で減る**。ところが
+`GOK_twoPay_of` の `hcl`（族が鎖で閉じる）は鎖長を上に非有界にするので、
+族を鎖長で切れない。`hcl` が実際に使うのは荷が A2' で 1 つ小さいときだけなので、
+`GOK_twoPay_of` を黒箱で使わず **A2' の帰納を自分で回して族を
+「荷が `Y` より小さい鎖」に制限する**のが次の手。
+
+### 現在の到達点（すべて緑・`sorryAx` なし）
+
+```
+RunAll_of_SHtow : SHtow → RunAll → 行376
+SG_stkS         : SPayF → ∀ q ks, SBs ks → SG ks (stk q)   -- 走りの塔は済み
+NNo_pay         : 族は荷で閉じる（無条件）
+R14_mem_L2      : LStep2 → #14
+```
