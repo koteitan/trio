@@ -54920,6 +54920,63 @@ theorem GoodCtx_runNil {ctx : List Frm} (hJ : ∀ T : Jk1, JkA T → JkT (plug c
 #print axioms GoodCtx_oneNil
 #print axioms GoodCtx_runNil
 
+/-! ### ★★★★★ ブロック文脈の荷（`NNo_pay` の `blk` 部分）
+
+`NNo nil` の穴（追記100）は「走り 0 のブロックが要求する枠木の荷」だった。
+族の荷 `NNo (pay X C)` が出れば、枠木を族に取る限りその穴は埋まる。
+`blk` の場合は既存の緑の道具だけで出る:
+
+- `Bs = []`  … `NNo_payU'`（1 の枠の直上の荷）
+- `Bs ≠ []` … `GOK_twoPayZ_of`（走りの直上の荷）。族は `JkA` そのものでよく、
+  塔 `htow` は `plug_blk_two` で「兄弟を 1 本増やしたブロック文脈に `X` を差す」
+  に化けるので `NNo X` から出る（`DCtx.blk` は兄弟に `JkA` しか課さない）。 -/
+
+theorem NNo_pay_blk (C : TrioSeq) (hC : Bok C) {X : Jk1} (hX : NNo X)
+    {ctx : List Frm} (hctx : DCtx ctx) {V : Jk1} (hJV : JkA V) {Bs : List Jk1}
+    (hB : ∀ B ∈ Bs, JkA B) (hGV : GOK (plug ctx V)) :
+    GOK (plug (ctx ++ blkC V Bs) (Jk1.pay X C)) := by
+  rcases List.eq_nil_or_concat Bs with rfl | ⟨Bs', Bl, rfl⟩
+  · show GOK (plug (ctx ++ [Frm.fone V]) (Jk1.pay X C))
+    rw [plug_snoc]
+    exact NNo_payU' C hC X hX ctx hctx V hJV hGV
+  · rw [List.concat_eq_append] at hB ⊢
+    have hB' : ∀ B ∈ Bs', JkA B := fun B hBm => hB B (by simp [hBm])
+    have hJBl : JkA Bl := hB Bl (by simp)
+    have hdc : DCtx (ctx ++ blkC V Bs') := DCtx.blk hctx hJV hB' hGV
+    have h := GOK_twoPayZ_of (ctx := ctx ++ blkC V Bs') (fun N => JkA N) hX.1
+      (fun _ h => h)
+      (fun N hN Y hY k => JkA_twoItP hN (show JkA (Jk1.pay X Y) from ⟨hX.1, hY⟩) k)
+      (fun N T hN hT => JkT_plug_DCtx hdc _ ⟨hN, hT⟩)
+      (fun N hN => by
+        have hBN : ∀ B ∈ Bs' ++ [N], JkA B := by
+          intro B hBm
+          rcases List.mem_append.mp hBm with h1 | h1
+          · exact hB' B h1
+          · rw [List.mem_singleton.mp h1]; exact hN
+        have hh := hX.2 _ (DCtx.blk hctx hJV hBN hGV)
+        rwa [plug_blk_two] at hh)
+      C hC Bl hJBl
+    rw [plug_blk_two]
+    exact h
+
+#print axioms NNo_pay_blk
+
+/-- 底（`DCtx.base`）での荷。ここだけ残る。 -/
+def NBase : Prop := ∀ U : Jk1, JkT U → GOK U → (∀ C : TrioSeq, Bok C → GOK (Jk1.pay U C)) →
+  ∀ X : Jk1, NNo X → ∀ C : TrioSeq, Bok C → GOK (Jk1.one U (Jk1.pay X C))
+
+/-- ★★★★★ 族は荷で閉じる（底の 1 点を除く）。 -/
+theorem NNo_pay (hb : NBase) (C : TrioSeq) (hC : Bok C) {X : Jk1} (hX : NNo X) :
+    NNo (Jk1.pay X C) := by
+  refine ⟨⟨hX.1, hC⟩, ?_⟩
+  intro ctx hctx
+  cases hctx with
+  | @base U hJU hGU hUp => exact hb U hJU hGU hUp X hX C hC
+  | @blk ctx' V Bs hc' hJV hB hGV => exact NNo_pay_blk C hC hX hc' hJV hB hGV
+
+#print axioms NNo_pay
+
+
 /-! ### ★★★★★ 走り込みの層 `Yok`: 枠木の条件を層自身で、2 の枠の兄弟は全層で
 
 `Pok` は 2 の枠の兄弟に「`Pok j (i+1)` のどの文脈にも差せる」（1 の枠が 1 枚以上）
