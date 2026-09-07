@@ -12200,3 +12200,21 @@ Pay m : ∀ X, JkA X → (X が長さ ≤ m のブロック列に差せる) →
   A2' の複製鎖 `twoIt Wl (pay Z Y') i` の `UniW` もその中で作っている）。
 - 足りないのはこの 2 つを合わせた「走り 2 の直上の荷」。`APd_twoTwoWGen` を土台に
   `Ck_twoWPayZ` と同じ A2' を回す形が次の一手（`APd_twoTwoWPay`）。
+
+### 追記94 追記: 一番具体的な次の目標は `TwoOk (two nil (pay nil B))`
+
+`TwoOk Z`（23269）= 「どの許容左兄弟 `N` に対しても `two N Z` が `APd` で良い」
+= `TipOk` の `APd` 版。#16 の `hang6_R375m` は
+`GOK (one nil (two nil (two nil (pay nil B))))` なので、`APd_step` で
+**`TwoOk (two nil (pay nil B))`** に落ちる。既にあるもの:
+
+- `TwoOk_twoNil`（23275）: `TwoOk (two nil nil)`（走りの先端が空）。
+- `TwoOk_pay`（`Bok Y → JkA Z → TwoOk Z → TwoOk (pay Z Y)`）: 荷を**木の上に**吊るす。
+- `APd_twoTwoWGen`（38649）: 階段さえ渡せば `two N (two Wl nil)`。
+- `APd_all`: 荷を含まない木（`JkJ`）は `APd` で良い ⇒ 先端が空の階段はこれで出る。
+
+足りないのは `Ck_twoWPayZ` の `TwoOk` 版。`Ck` 版では左兄弟の類が `UniW`
+（全層で置ける）で、A2' の複製鎖の `UniW` もその中で作れている。`TwoOk` 版でも
+同じ形にするには「`APd` 層の `UniW`」（= 許容左兄弟の類で、階段 `nstN2` も
+渡せるもの）を定義する必要がある。荷を含む鎖の階段が `APd_all` では出ないので、
+そこが山。
