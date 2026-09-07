@@ -55146,5 +55146,82 @@ theorem Rk_twoNilNil_UTa {j n : ℕ} {V Wl : Jk1} {ctx' : List Frm} (hc : Rok j 
 #print axioms Rk_all_UTa
 #print axioms Rk_twoNilNil_UTa
 
+/-! ### ★★★★★ 兄弟を固定した対の層 `RkW` と、そこに差せる木の族 `PairOk`
+
+`Rk (j+1) 0 Z`（対の層のどの文脈にも差せる）は、文脈の 2 の枠の兄弟 `Wl` に
+全層条件が要るので出ない（追記88 の壁）。だが `Rk_pair` / `Rk_twoW` が `hT` を
+使うのは**その兄弟 `Wl` の直上の文脈だけ**なので、兄弟を固定した形に弱めれば足りる。 -/
+
+def RkW (Wl Z : Jk1) : Prop :=
+  ∀ (j n : ℕ) (V : Jk1) (ctx' : List Frm), Rok j n ctx' → UP V →
+    (∀ cs : List Frm, Rok j n cs → GOK (plug cs V)) →
+    (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+      GOK (plug cs (Jk1.pay V C))) →
+    (∀ (i : ℕ) (cs : List Frm), Rok j (i + 1) cs → GOK (plug cs Wl)) →
+    (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Rok j (i + 1) cs →
+      GOK (plug cs (Jk1.pay Wl C))) → UT Wl →
+    GOK (plug ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl]) Z)
+
+theorem RkW_of_Rk {Wl Z : Jk1} (h : ∀ j : ℕ, Rk (j + 1) 0 Z) : RkW Wl Z := by
+  intro j n V ctx' hc hJV hV hVp hWk hWp hW
+  exact h j _ ((Rok_s0 j _).mpr ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hWk, hWp, hW⟩)
+
+theorem Rk_pairW {j n : ℕ} {V Wl T : Jk1} (hJV : UP V) (hV : Rk j n V)
+    (hVp : ∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay V C))
+    (hWk : ∀ i : ℕ, Rk j (i + 1) Wl)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Rk j (i + 1) (Jk1.pay Wl C))
+    (hW : UT Wl) (hT : RkW Wl T) : Rk j n (Jk1.one V (Jk1.two Wl T)) := by
+  intro ctx hctx
+  have h := hT j n V ctx hctx hJV hV (fun C hC => hVp C hC)
+    (fun i cs hcs => hWk i cs hcs) (fun C hC i cs hcs => hWp C hC i cs hcs) hW
+  rwa [plug_snoc2, plug_snoc] at h
+
+theorem Rk_twoWW {j n : ℕ} {Wl T : Jk1} (hWk : ∀ i : ℕ, Rk j (i + 1) Wl)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Rk j (i + 1) (Jk1.pay Wl C))
+    (hW : UT Wl) (hT : RkW Wl T) : Rk j (n + 1) (Jk1.two Wl T) := by
+  intro ctx hctx
+  obtain ⟨U, ctx', rfl, hc, hJU, hU, hUp⟩ := Rok_fone_dest hctx
+  rw [plug_snoc]
+  exact Rk_pairW hJU hU (fun C hC => hUp C hC) hWk hWp hW hT ctx' hc
+
+/-- どの（全層に差せる）2 の枠の兄弟の直上にも差せる木。 -/
+def PairOk (T : Jk1) : Prop := ∀ Wl : Jk1, UT Wl → (∀ j i : ℕ, Rk j (i + 1) Wl) →
+  (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay Wl C)) → RkW Wl T
+
+theorem PairOk_nil : PairOk Jk1.nil :=
+  fun _ _ _ _ => RkW_of_Rk (fun j => Rk_nil (j + 1) 0)
+
+/-- ★★★★★ 走り 2 は対の層に差せる（兄弟が全層に差せるとき）。 -/
+theorem PairOk_twoNil : PairOk (Jk1.two Jk1.nil Jk1.nil) := by
+  intro Wl hUT hall hallp j n V ctx' hc hJV hV hVp hWk hWp hW
+  exact Rk_twoNilNil_at hc hJV hV (fun C hC => hVp C hC) hall hallp hW
+
+/-- 先端が `PairOk` なら、横鎖は全層に差せる。 -/
+theorem Rk_all_chainW {W T : Jk1} (hW : ∀ j i : ℕ, Rk j (i + 1) W)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))
+    (hUT : UT W) (hUPT : UP T) (hT : PairOk T) :
+    ∀ (k : ℕ), (∀ j i : ℕ, Rk j (i + 1) (twoIt W T k)) ∧
+      (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay (twoIt W T k) C))
+  | 0 => ⟨hW, hWp⟩
+  | (k + 1) => by
+      obtain ⟨ih, ihp⟩ := Rk_all_chainW hW hWp hUT hUPT hT k
+      have hstep : ∀ j i : ℕ, Rk j (i + 1) (twoIt W T (k + 1)) := by
+        intro j i
+        exact Rk_twoWW (fun i' => ih j i') (fun C hC i' => ihp C hC j i')
+          (UT.chain k hUT hUPT) (hT _ (UT.chain k hUT hUPT) ih ihp)
+      exact ⟨hstep, fun C hC j i => Rk_pay j (i + 1) C hC _
+        (UP.chain (k + 1) hUT hUPT) (hstep j i)⟩
+
+/-- `UTa` の族は `PairOk` の先端だけで作れる。 -/
+theorem Rk_all_UTchain {W T : Jk1} (hUT : UT W) (hUPT : UP T) (hT : PairOk T)
+    (hW : ∀ j i : ℕ, Rk j (i + 1) W)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C)) (k : ℕ) :
+    (∀ j i : ℕ, Rk j (i + 1) (twoIt W T k)) ∧
+      (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay (twoIt W T k) C)) :=
+  Rk_all_chainW hW hWp hUT hUPT hT k
+
+#print axioms PairOk_twoNil
+#print axioms Rk_all_chainW
+
 end Small
 end TRIO
