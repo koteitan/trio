@@ -12449,3 +12449,65 @@ plug ([fone nil, ftwo nil] ++ [fone A, ftwo nil]) A
 3. `Sk_nil` は `GOK_runGNil_gen`、`Sk_pay` は `Rk_pay` の `(j+1,0)` の腕を移植
    （鎖は `k` の帰納法、先端は A2' の帰納法の仮定）。
 4. 文脈を作る側（`GOK_bstkTower` の一般化）で階段を供給する。
+
+## 追記98: `BOk` 層で行376 は「走りの直上の荷」1 本になった（残る障害の正確な形）
+
+この回に緑にした層（`BOk` / `Bk`）で、行376 の依存はこうなった。
+
+```
+行376 ⇐ R376_of_tower ⇐ GOK (one nil (stk n)) 各 n
+      ⇐ GOK_oneStk_of_stair : RStair [] nil nil (replicate n nil)
+      ⇐ RStair_of_BLoad     : BLoad（ブロック文脈の荷）
+BLoad ⇐ Bk_pay_of の走りの段の腕（hrun）だけ
+```
+
+`Bk_pay_of` は「走りの段 `(j+1,0)` の荷」だけを仮定すれば、基底 `(0,0)` の荷
+（`GOK_onePay` = `AYs`）と 1 の枠の段 `(j,n+1)` の荷（`GoodFb_snoc_dupJs0` /
+`innerJs0` と鎖 `itJ`）を全部出す。緑。
+
+### `BOk` 層の形
+
+- 基底 `BOk 0 0 ctx` = `ctx = [fone U]`（`U` は `JkT`・`GOK`・荷つき）。
+  よって `Bk 0 0 X = APz X`。結論がそのまま `GOK (one U X)` になる。
+- 走りの段 `BOk (j+1) 0`: `((ctx' ++ [fone V]) ++ ftw Bs) ++ [ftwo A]`。
+  ブロックの 1 の枠は**下の文脈のもの**を使う（行376 は基底の `fone nil` の
+  直上が走りなので、この形でないと入らない）。**階段 `RStair ctx' V A Bs` を
+  証拠として持つ**。
+- `Bk_nil`: 走りの段は `GOK_runGNil_gen` 1 回、1 の枠の段は `APnil_gen0`。
+- `Bk_blk`: 階段を渡すと走りを差せる（文脈の走りの段に詰め替え）。
+
+### 残る障害: 鎖の階段
+
+`hrun`（走りの直上の荷）の A2' は `GoodFb_snoc_dupJt0` で
+
+```
+∀ n ≥ 1, GOK (plug (ctx' ++ blkC V Bs) (twoIt A (pay X Y') n))
+       = GOK (plug (ctx' ++ blkC V Bs) (two (twoIt A (pay X Y') (n-1)) (pay X Y')))
+```
+
+を要求する。`Bk_blk` で差すには **`RStair ctx' V (twoIt A T (n-1)) Bs`**（鎖を
+上の兄弟にした階段）が要る。`RStair` の塔は `blkR A' Bs i`、つまり
+**1 の枠の兄弟も先端も `A'`（＝鎖）のブロックの塔**なので、鎖ごとに別の塔が要る。
+
+- 鎖の長さ `k` の帰納法で回る形にはなっている（`plug BIG (chain k)` を
+  `plug (BIG ++ [ftwo (chain (k-1))]) T` に開くと `k` が減り、先端 `T` は
+  A2' の帰納法の仮定）。`Rk_pay` の `hWj` と同型。
+- ただし `Bk_blk` を塔の文脈で使うには**塔の文脈が `BOk` であること**が要る。
+  今の `RStair` は `GOK` の主張しか持っていない。
+
+`Rok` のように「兄弟は全層に差せる」を文脈述語の条件にすると、走りの階段は
+層の番号を増やすので `∀ 全層` になり非可述（追記88 の壁）。だから階段は
+**構成する**しかなく、構成は走り長 `q` の帰納法（`GOK_bstkTower` と同じ）。
+
+### 次の一手
+
+`GOK_bstkTower` を「兄弟つきブロック」に一般化し、塔の `GOK` と一緒に
+**塔の文脈が `BOk` であること**も出す 1 本にする:
+
+```
+Main(q) : ∀ (A Bs, |Bs| = q, 条件) (ctx 良い), ∀ i,
+    GOK (plug (ctx ++ blkR A Bs i) A) ∧ BOk _ _ (ctx ++ blkR A Bs i ++ [fone A])
+```
+
+`q` の帰納法。`A` が鎖のときの先端の配置は A2' の帰納法の仮定（荷が 1 つ小さい）
+から来る。これで `RStair` が全部構成でき、`hrun` が閉じる。
