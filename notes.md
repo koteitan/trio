@@ -13228,3 +13228,40 @@ Pok / Pk / UniP    … 兄弟に UniW を課す  ⇒ WallP が出る
 一番下（`APd`）には全深さ条件があるので、この階層化が最後まで通れば壁は消える。
 次の一手は `Pok` の対の兄弟に `UniW` を足して `WallP` を出し、
 壊れる場所（`Pk_pay` の対の腕）を特定すること。
+
+## 追記114: `Pok` の兄弟に `UniW` を課す実験。残ったのは `Pk_pay` の横鎖 1 点
+
+`Pok` の対の兄弟条件に `∧ UniW Wl` を足して `leanman check` で実測した
+（`UniW` は `Ck` 層で定義され `Pok` はその後なので**定義順は合っている**）。
+
+### 実測結果: エラーは全部で 9 個、本質は 1 個
+
+- `Pk_twoW UniP_nil …` の 6 箇所 … `UniW_nil` を足すだけ（自明）
+- `Cok` 側への誤爆 1 箇所 … 戻すだけ
+- **`Pk_pay` の対の腕 1 箇所（52292）が本質**:
+
+```
+Pk_pair … hprev : Pk (j+1) 0 (X.pay Y')
+  but is expected to have type  UniW (twoIt Wl (X.pay Y') k)
+```
+
+A2' の横鎖 `twoIt Wl (pay X Y') k` を兄弟にするので `UniW (横鎖)` が要る。
+`UniW (two A T)` は `Ck_twoW (UniW A) (Ck (j+1) 0 T)` なので、要るのは
+
+```
+Ck (j+1) 0 (pay X Y')     ⟸ Ck_pay + Ck (j+1) 0 X
+```
+
+つまり **`Ck` 層の壁 `WallC := ∀ j, Ck (j+1) 0 (two nil nil)`**。
+
+### 評価
+
+`Pok` を強めると `WallP`（`TipOk` 値）は出て、壁は `WallC`（`GOK` 値、**弱い**）に
+下がる。`Pk_pay` の利用箇所は 6 個しかないので、`Pk_pay` に
+`(∀ j', Ck (j'+1) 0 X)` を足して通すのは現実的。ただし `Pk_pay` 内部の `hpn` は
+`Pk_itJ` の鎖（`one`頭）に当てるので、そこにも `Ck` 側のデータが要る（連鎖）。
+
+`Cok` の兄弟条件を強めるのは非可述（`UniW` が `Ck` 経由）なので、
+`WallC` は別の手（`GOK_twoTwoNilW_gen` を直接当てる `Ew_twoNilTwoNil` の形）が要る。
+
+**この回は緑を保つため `Pok` の変更は戻した。** 実測結果だけ記録。
