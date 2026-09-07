@@ -57313,5 +57313,115 @@ theorem snocQ_of_tower {N : Jk1} (hJN : JkA N) {D : ℕ} (hD : 1 ≤ D) (p : ℕ
 
 #print axioms snocQ_of_tower
 
+/-- 目標側の添字を `D + (p+2)` の形に揃えた版。 -/
+theorem wordJ_snoc_twoNstkT2 (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V N : Jk1)
+    (p : ℕ) :
+    wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V])
+        (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))])
+      = (wordJ a b (ws ++ [plug ctx V]) ++ unQ N p (a + dep ctx + 2))
+        ++ [((a + dep ctx + 2 + (p + 2), 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_snoc_twoNstkT,
+    show a + dep ctx + 2 + 1 + p + 1 = a + dep ctx + 2 + (p + 2) from by omega]
+
+/-! #### ★★★★★ `GOK_twoTwoNilW_gen` の一般版（走り 2 が `p+2` 連） -/
+
+theorem GOK_stkW_gen (ctx0 : List Frm) (V : Jk1) {N : Jk1} (p : ℕ) (hJN : JkA N)
+    (hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))))
+    (hGV : GOK (plug ctx0 V))
+    (hstair : ∀ k : ℕ, GOK (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (nstQ N p k))))) :
+    GOK (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))) := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [plug (ctx0 ++ [Frm.fone V])
+      (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))]) := WOk_append hw (WOk_singletonT hJT)
+  have hbaseV : GoodFb (fun a b => wordJ a b (ws ++ [plug ctx0 V])) := hGV ws hw hG
+  have hstG : ∀ k : ℕ,
+      GoodFb (fun a b => wordJ a b
+        (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (nstQ N p k)))])) :=
+    fun k => hstair k ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · -- pu
+    intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_snoc_twoNstkT2]
+    have h0 : Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h1 := (hbaseV.pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift] at h1
+      exact h1
+    have htw : ∀ k : ℕ, Mtwd (p + 2) (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug ctx0 V])))
+        (unQ N p (c + 1 + t + dep ctx0 + 2)) (k + 1) ∈ W 0 := by
+      intro k
+      have h1 := ((hstG k).pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift, wordJ_snoc_twoNstkQ] at h1
+      simpa [Mtwd, List.append_assoc] using h1
+    have h := snocQ_of_tower hJN (D := c + 1 + t + dep ctx0 + 2) (by omega) p
+      (X := Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug ctx0 V]))) (by simp) h0 htw
+    simpa [List.append_assoc] using h
+  · -- pk
+    intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t Z hZ
+    rw [wordJ_shift, wordJ_snoc_twoNstkT2]
+    have h0 : Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h1 := (hbaseV.pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift] at h1
+      exact h1
+    have htw : ∀ k : ℕ, Mtwd (p + 2) (Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug ctx0 V])))
+        (unQ N p (c + 1 + t + dep ctx0 + 2)) (k + 1) ∈ W 0 := by
+      intro k
+      have h1 := ((hstG k).pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift, wordJ_snoc_twoNstkQ] at h1
+      simpa [Mtwd, List.append_assoc] using h1
+    have h := snocQ_of_tower hJN (D := c + 1 + t + dep ctx0 + 2) (by omega) p
+      (X := Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug ctx0 V]))) (by simp) h0 htw
+    simpa [List.append_assoc] using h
+  · -- seg
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [plug (ctx0 ++ [Frm.fone V])
+          (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1
+            (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1) 1
+            (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))])
+        from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_snoc_twoNstkT2]
+    have h0 : A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [plug ctx0 V])) ∈ W 0 := by
+      have h1 := (hbaseV.seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1 (ws ++ [plug ctx0 V])
+          from rfl] at h1
+      simpa [show h + s + 1 = h + 1 + s from by omega] using h1
+    have htw : ∀ k : ℕ, Mtwd (p + 2) (A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [plug ctx0 V])))
+        (unQ N p (h + 1 + s + dep ctx0 + 2)) (k + 1) ∈ W 0 := by
+      intro k
+      have h1 := ((hstG k).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1
+              (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (nstQ N p k)))])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1
+              (ws ++ [plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (nstQ N p k)))]) from rfl,
+        wordJ_snoc_twoNstkQ] at h1
+      simpa [Mtwd, show h + s + 1 = h + 1 + s from by omega, List.append_assoc] using h1
+    have hh := snocQ_of_tower hJN (D := h + 1 + s + dep ctx0 + 2) (by omega) p
+      (X := A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (h + 1 + s) 1 (ws ++ [plug ctx0 V]))) (by simp) h0 htw
+    simpa [List.append_assoc] using hh
+
+
+#print axioms GOK_stkW_gen
+
 end Small
 end TRIO
