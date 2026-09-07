@@ -58462,6 +58462,36 @@ theorem SHtow_nil (hn : SNil) (ks : List Bool) (D0 : List Frm) (hD0 : SCtx ks D0
 
 #print axioms SHtow_nil
 
+/-! ### `SNo` の閉包（`one` と `two nil ·` は無条件） -/
+
+theorem SNo_congr {A B : Jk1} (hJB : JkA B) (hab : ∀ l, jk1 l A = jk1 l B) (hA : SNo A) :
+    SNo B := ⟨hJB, fun s D hD => GOK_congr (jk1_plug_congr D hab) (hA.2 s D hD)⟩
+
+/-- ★ 1 の記録を足しても族に残る（文脈に詰め替えるだけ）。 -/
+theorem SNo_one {U X : Jk1} (hU : SNo U) (hX : SNo X) : SNo (Jk1.one U X) := by
+  refine ⟨⟨hU.1, hX.1⟩, ?_⟩
+  intro s D hD
+  have hd : SCtx (true :: s) (D ++ [Frm.fone U]) := SCtx_fone hD ⟨hU.1, hU.2 s⟩
+  have hh := hX.2 (true :: s) _ hd
+  rwa [plug_snoc] at hh
+
+/-- ★ 2 の記録（兄弟 `nil`）を足しても族に残る。 -/
+theorem SNo_twoNil {X : Jk1} (hX : SNo X) : SNo (Jk1.two Jk1.nil X) :=
+  ⟨⟨trivial, hX.1⟩, fun s => SG_twoNil (hX.2 (false :: s))⟩
+
+theorem SNo_stk (hn : SNil) : ∀ q : ℕ, SNo (stk q)
+  | 0 => SNo_nil hn
+  | (q + 1) => SNo_twoNil (SNo_stk hn q)
+
+/-- 荷は `SPayF` のもとで閉じる。 -/
+theorem SNo_pay (h : SPayF) {X : Jk1} (hX : SNo X) {C : TrioSeq} (hC : Bok C) :
+    SNo (Jk1.pay X C) :=
+  ⟨⟨hX.1, hC⟩, fun s D hD => SP_of_SG h s X hX.1 (hX.2 s) D C hD hC⟩
+
+#print axioms SNo_one
+#print axioms SNo_pay
+
+
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
 `stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
@@ -58541,6 +58571,15 @@ theorem RunAll_of_ZStep (h : ZStep) : RunAll := by
 
 #print axioms ZG_base
 #print axioms RunAll_of_ZStep
+
+/-- ★ `SPayF` があれば `ZT` の木はすべて普遍的に良い。 -/
+theorem SNo_ZT (h : SPayF) : ∀ {X : Jk1}, ZT X → SNo X
+  | _, ZT.nil => SNo_nil (SNil_of_SPayF h)
+  | _, ZT.pay hX hC => SNo_pay h (SNo_ZT h hX) hC
+  | _, ZT.one hU hX => SNo_one (SNo_ZT h hU) (SNo_ZT h hX)
+
+#print axioms SNo_ZT
+
 
 /-! ### ★★★★★ 走り文脈 `RCtx`（2 の枠を任意個積める）
 
