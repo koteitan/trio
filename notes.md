@@ -12250,3 +12250,22 @@ GOK_twoTwoPayW_gen : 走り 2（左兄弟 N と Wl）の先端に荷 B。
 ```
 
 `GOK_twoTwoNilW_gen`（先端が空）が既にあるので、その荷版を A2' で作る形。
+
+### 追記94 追記4: 残り全部が `TwoStep` 1 本に乗る
+
+`TwoStep`（27441）= `∀ Z, JkA Z → TwoOk Z → TwoOk (two nil Z)`
+（= 2 の記録の直上に 2 の記録を置ける）。これがあれば:
+
+- #16 の `hang6_R375m`: `TwoOk (two nil (pay nil B))`
+  ⇐ `TwoStep (pay nil B) _ (TwoOk_pay B hB nil trivial TwoOk_nil)` ✓
+- 行376: `R376_of_TwoStep`（27493）で既に還元済み ✓
+- #14 / #15 / #17: ブロック塔（走りつき）なので同じ壁
+
+つまり **残っている行はすべて `TwoStep`（走りの閉包）に帰着する**。
+`ZeroStep`/`PayStep` は `TwoStep` より弱い形（行376 用）だが、#16 のように
+`TwoStep` の形の方が素直に使える行もある。
+
+`TwoStep` の証明に要るもの: `APd_twoTwoWGen` の階段の、先端 `Z` つき版。
+`GOK_twoTwoNilW_gen`（先端 `nil`）は `snocN2_of_tower` で走りを塔に落としている。
+先端つきだと語の末尾が `Z` の語になるので、その塔（`Mtwd 2 · (unN2 …)` の一般化）を
+作るのが本体。
