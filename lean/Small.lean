@@ -57842,6 +57842,86 @@ theorem snocR_of_tower {N : Jk1} (hJN : JkA N) {Ns : List Jk1} (hNs : AllJk Ns)
 #print axioms snocR_of_tower
 
 
+/-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
+
+`stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
+族 `ZT`（`nil` / 荷 / 1 の記録で閉じた木）を通す文脈は 1 の枠では自明に閉じるので、
+残るのは 2 の枠 1 本ぶんだけ。 -/
+
+/-- 2 の記録を含まない木の族（`nil` / 荷 / 1 の記録）。 -/
+inductive ZT : Jk1 → Prop
+  | nil : ZT Jk1.nil
+  | pay : ∀ {X : Jk1} {C : TrioSeq}, ZT X → Bok C → ZT (Jk1.pay X C)
+  | one : ∀ {U X : Jk1}, ZT U → ZT X → ZT (Jk1.one U X)
+
+theorem JkJ_of_ZT : ∀ {X : Jk1}, ZT X → JkJ X
+  | _, ZT.nil => trivial
+  | _, ZT.pay h hC => ⟨JkJ_of_ZT h, hC⟩
+  | _, ZT.one hU hX => ⟨JkJ_of_ZT hU, JkJ_of_ZT hX⟩
+
+theorem JkA_of_ZT {X : Jk1} (h : ZT X) : JkA X := JkA_of_JkJ X (JkJ_of_ZT h)
+
+/-- 文脈が族の木を全部受け入れる。 -/
+def ZG (ctx : List Frm) : Prop := ∀ X : Jk1, ZT X → GOK (plug ctx X)
+
+/-- 文脈に差した木が字レベルで妥当。 -/
+def ZOk (ctx : List Frm) : Prop := ∀ T : Jk1, JkA T → JkT (plug ctx T)
+
+theorem ZJ_ftwo {ctx : List Frm} (h : ZOk ctx) : ZOk (ctx ++ [Frm.ftwo Jk1.nil]) := by
+  intro T hT
+  rw [plug_snoc2]
+  exact h _ ⟨trivial, hT⟩
+
+theorem ZJ_gctx {ks : List Bool} {ctx : List Frm} (h : GCtx (true :: ks) ctx) : ZOk ctx :=
+  fun T hT => JkT_plug ctx (GCtx_CtxOk (true :: ks) ctx h) T
+    (GCtx_CtxX (true :: ks) ctx h T hT trivial)
+
+/-- 底（`GCtx`）では `APd_all` がそのまま効く（族の木は `JkJ`）。 -/
+theorem ZG_base {ks : List Bool} {ctx : List Frm} (h : GCtx (true :: ks) ctx) : ZG ctx :=
+  fun X hX => (APd_iff (true :: ks) X).mp
+    (APd_all X (JkJ_of_ZT hX) (true :: ks) (by simp) trivial) ctx h
+
+/-- ★ 1 の枠では族は自明に閉じる（`one U X` も族の中）。 -/
+theorem ZG_fone {ctx : List Frm} (hG : ZG ctx) {U : Jk1} (hU : ZT U) :
+    ZG (ctx ++ [Frm.fone U]) := by
+  intro X hX
+  rw [plug_snoc]
+  exact hG _ (ZT.one hU hX)
+
+/-- ★★★★★ 残る 1 文：2 の枠（兄弟 `nil`）を 1 本足せる。 -/
+def ZStep : Prop := ∀ ctx : List Frm, ZOk ctx → ZG ctx → ZG (ctx ++ [Frm.ftwo Jk1.nil])
+
+theorem ZG_rep (h : ZStep) : ∀ (n : ℕ) (ctx : List Frm), ZOk ctx → ZG ctx →
+    ZG (ctx ++ List.replicate n (Frm.ftwo Jk1.nil))
+  | 0, ctx, _, hG => by simpa using hG
+  | (n + 1), ctx, hJ, hG => by
+      have e : ctx ++ List.replicate (n + 1) (Frm.ftwo Jk1.nil)
+          = (ctx ++ [Frm.ftwo Jk1.nil]) ++ List.replicate n (Frm.ftwo Jk1.nil) := by
+        simp [List.replicate_succ]
+      rw [e]
+      exact ZG_rep h n _ (ZJ_ftwo hJ) (h ctx hJ hG)
+
+theorem plug_rep_ftwo : ∀ n : ℕ,
+    plug (List.replicate n (Frm.ftwo Jk1.nil)) Jk1.nil = stk n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.two Jk1.nil (plug (List.replicate n (Frm.ftwo Jk1.nil)) Jk1.nil) = _
+      rw [plug_rep_ftwo n]
+      rfl
+
+/-- ★★★★★ `RunAll` は `ZStep` 1 本に落ちる。 -/
+theorem RunAll_of_ZStep (h : ZStep) : RunAll := by
+  intro q ks
+  rw [APd_iff]
+  intro ctx hc
+  have hG := ZG_rep h q ctx (ZJ_gctx hc) (ZG_base hc)
+  have hh := hG Jk1.nil ZT.nil
+  rw [plug_append, plug_rep_ftwo] at hh
+  exact hh
+
+#print axioms ZG_base
+#print axioms RunAll_of_ZStep
+
 /-! ### ★★★★★ 走り文脈 `RCtx`（2 の枠を任意個積める）
 
 `APd` / `GCtx` は形（`List Bool`）で文脈を索引するが、`false` は
