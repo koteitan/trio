@@ -57423,5 +57423,34 @@ theorem GOK_stkW_gen (ctx0 : List Frm) (V : Jk1) {N : Jk1} (p : ℕ) (hJN : JkA 
 
 #print axioms GOK_stkW_gen
 
+/-! #### `nil` を兄弟にする 2 の枠の出し入れ -/
+
+/-- 兄弟 `nil` の 2 の枠を 1 枚かぶせる（`APd_cf` を `m = 0`, `N = nil` で使う）。 -/
+theorem APd_twoNilOf {ks : List Bool} {Z : Jk1} (h : APd (false :: ks) Z) :
+    APd (true :: ks) (Jk1.two Jk1.nil Z) :=
+  (APd_ct ks _).mpr (fun U hU hR hUk =>
+    (APd_cf ks Z).mp h 0 U Jk1.nil (by simpa using hU) (by simpa using hR)
+      (by simpa using hUk) trivial (fun _ => APd_nil _))
+
+/-- 2 の記録の直上に `one nil ·` を積む。 -/
+theorem APd_oneNilF {ks : List Bool} {W : Jk1} (h : APd (true :: (false :: ks)) W) :
+    APd (false :: ks) (Jk1.one Jk1.nil W) :=
+  APd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil)
+    (trivial : Rq (false :: ks) Jk1.nil) (APd_nil (false :: ks)) h
+
+/-- したがって `two nil (one nil W)` は `W` の一段深い形から出る。 -/
+theorem APd_twoOneNil {ks : List Bool} {W : Jk1} (h : APd (true :: (false :: ks)) W) :
+    APd (true :: ks) (Jk1.two Jk1.nil (Jk1.one Jk1.nil W)) :=
+  APd_twoNilOf (APd_oneNilF h)
+
+/-- `one nil ·` を 1 段積む（`true` 頭）。 -/
+theorem APd_oneNilT {ks : List Bool} {W : Jk1} (h : APd (true :: (true :: ks)) W) :
+    APd (true :: ks) (Jk1.one Jk1.nil W) :=
+  APd_step (true :: ks) (trivial : FrmJ (true :: ks) Jk1.nil)
+    (trivial : Rq (true :: ks) Jk1.nil) (APd_nilT ks) h
+
+#print axioms APd_twoOneNil
+#print axioms APd_oneNilT
+
 end Small
 end TRIO
