@@ -14189,3 +14189,92 @@ RunAll_zero / RunAll_one / RunAll_two        -- q ≤ 2 は済み
 GOK_stkW_gen / snocQ_of_tower / unQ / nstQ ほか（追記128, 132 の一覧）
 R14_mem_L2 : LStep2 → #14 ∈ W 0              -- 証明中の行はこちら
 ```
+
+## 追記134: 走り文脈 `RCtx` を作った（走り 1 まで緑）。壁は「兄弟の全域良さ」
+
+追記133 の結論「`APd` の形の言語を 2 の枠単独も許す形に拡張する」を実装した。
+
+```
+RCtx : List Bool → List Frm → Prop        -- true = 1 の枠、false = 2 の枠
+  []        D = ∃ ks, GCtx (true::ks) D
+  true::ks  D = ∃ D' U, RCtx ks D' ∧ (JkA U ∧ RG ks U) ∧ D = D' ++ [fone U]
+  false::ks D = ∃ m D' N, RCtx (rep m true ++ ks) D' ∧ RFt (rep m true ++ ks) N
+                        ∧ D = D' ++ [ftwo N]
+termination_by (cntF ks, ks.length)        -- APd と同じ測度
+
+RG ks X  := ∀ D, RCtx ks D → GOK (plug D X)
+RP ks X  := ∀ D C, RCtx ks D → Bok C → GOK (plug D (pay X C))
+RF ks U  := JkA U ∧ RG ks U                        -- 1 の枠の木
+RFt ks N := JkA N ∧ ∀ j, RG (rep j true ++ ks) N   -- 2 の枠の兄弟
+```
+
+`false` が `rep m true` の前置きを吸収するのは `APd_cf` と同じ。枠木を形で
+量化しているので `AYd` 系の複製鎖がそのまま回る（`List Frm` を形にすると
+`RG (fone X :: gs) Z` が `X` 依存になって `hpres` が書けない）。
+
+### この回に緑にしたもの（すべて `sorryAx` なし）
+
+```
+RCtx / RG / RP / RF / RFt / RCtx_bnil / RCtx_ct / RCtx_cf / RCtx_fone / RCtx_ftwo
+RCtx_JkT / RG_congr / RFt_rep / RG_false_rep / RG_one / RG_two
+RG_bnil_of_APd / APd_of_RG_bnil / RP_bnil
+AYr       -- AYd の RCtx 版（荷つきの木は 1 の枠の右の子）
+AYrT      -- AYdT の RCtx 版（2 の枠の直上の木にも荷）
+RP_of_RG  -- 荷閉包は良さから出る（形の再帰）
+RG_nil_true    -- 1 の枠の直上の nil。無条件（APnil_gen0）
+RSp / RSp_bnil / RSp_ct / RSp_rep / RCtx_rep_fone
+RG_twoNil_sp / RG_nil_false / RG_stk1   -- 走り 1（形が 1 の枠で終わるとき）
+```
+
+`RP` を `RCtx` の枠条件から外して定理（`RP_of_RG`）にできたのが要。おかげで
+`RG_nil_true` が無条件になり、`APnil_gen0` の `hang` が自動で埋まる。
+
+### 壁（走り 2 以上）
+
+`RG (false::ks) nil` で `ks` が `false` 頭のとき、文脈は 2 の枠で終わるので
+`GOK_twoNilW_gen` が使えず `GOK_runGNil_gen`（追記99 で緑）を使う。その階段は
+
+```
+∀ i, GOK (plug (ctx ++ blkC V Bs ++ blkR A Bs i) A)
+```
+
+で、ブロック `blkC A Bs = [fone A] ++ ftw Bs` を `i` 個積む。この形の `cntF` は
+`|Bs|·(i+1)` で上に非有界なので、`RCtx (false::ks)` の兄弟条件を
+`∀ j, RG (rep j true ++ ks) N`（`true` 前置きだけ）にしている限り届かない。
+兄弟条件を `∀ ss, RG (ss ++ ks) N` にすると停止性が壊れる（`cntF` が減らない）。
+
+**つまり `RCtx` は `APd` と同じ壁に、走り 2 で当たる。**「兄弟がどの文脈でも良い」は
+クラスの帰納的定義の中には書けない（クラス全体への言及になる）。
+
+### 正しい枠は追記102/103 の伝播形（`GoodCtx` / `NNf`、既に一部緑）
+
+文脈の良さを**仮定として持ち回れば**この循環は消える。既存:
+
+```
+NNf : 木の族（nil / pay X C / two N X で閉じる、inductive）
+GoodCtx ctx := ∀ X, NNf X → GOK (plug ctx X)
+GoodCtx_oneNil  -- 走り 0 のブロック（荷は族の中なので自動）        ✓緑
+GoodCtx_runNil  -- 走りのブロックの先端に nil（階段は仮定）          ✓緑
+GOK_runGNil_gen / GOK_twoPayZ_of / NNo_payU' / NNo_step / Tow_of_NNo ✓緑
+```
+
+残りは追記103/104 が指摘した**測度**だけ。今回の詰めで分かったこと:
+
+- `GOK_runGNil_gen` の結論の走りは `|Bs|+1`、階段の走りは `|Bs|` なので
+  **走り長は 1 減る**（`A = nil` のとき）。
+- ただし `A` が一般の `NNf` 木だと `A` 自身の走りが `|Bs|` を超えうるので、
+  族を走り長で層別する（`RunLe q X`）必要がある。
+- 木の頭の 2 の記録はブロックに吸収でき（`plug_blk_two`、緑）、
+  `Bs.length + trun X` が不変で木が小さくなる。
+
+次の一手: `Gq q ctx := ∀ X, NNf X → RunLe q X → GOK (plug ctx X)` と
+`Q(q) : Gq q ctx → ∀ V Bs, … → |Bs| + trun X ≤ q → GOK (plug (ctx ++ blkC V Bs) X)`
+を `q` の外側帰納 + 木の内側帰納で書く。
+
+### 重複について（教訓）
+
+この回、一般兄弟の走りの塔（`runJ` / `unR` / `nstR` / `hMy_runJ` / `hMy_unR` /
+`snocR_of_tower`）を新規に書いて緑にしたが、`GOK_runGNil_gen`（追記99）が
+`blkW A Bs` を単位として同じ塔を既に持っていた。**着手前に notes.md を読む**。
+`snocR_of_tower` は `unN2` と `unQ` を同時に一般化した語レベルの形なので残すが、
+`GOK` レベルで要るものは `GOK_runGNil_gen` で足りる。
