@@ -14401,3 +14401,42 @@ TCtx : List Bool → List Frm → Prop
 - 荷: `AYr` / `AYrT` の移植（`RCtx` と同じ）。`AYrT` の鎖 `twoIt N (pay Z Y) k` は
   兄弟が `NNo` である必要があるので、`NNo_step` の `Z` 一般版が要る。
 - 塔: `TCtx ks D → DCtx D` を示せば `Tow_of_NNo` がそのまま効く。
+
+## 追記137: 行376 を「2 の枠を 1 本足せる」1 文 `ZStep` に落とした（緑）
+
+```
+ZT : Jk1 → Prop        -- nil / 荷 / 1 の記録で閉じた木（2 の記録を含まない）
+ZG ctx  := ∀ X, ZT X → GOK (plug ctx X)
+ZOk ctx := ∀ T, JkA T → JkT (plug ctx T)
+
+ZG_base    : GCtx (true::ks) ctx → ZG ctx           -- APd_all（族の木は JkJ）
+ZG_fone    : ZG ctx → ZT U → ZG (ctx ++ [fone U])   -- 自明（one U X も族の中）
+ZStep      : ∀ ctx, ZOk ctx → ZG ctx → ZG (ctx ++ [ftwo nil])
+RunAll_of_ZStep : ZStep → RunAll                     ★緑
+```
+
+`stk q` は「2 の枠を `q` 本積んだ文脈に `nil` を差したもの」なので、`ZStep` を
+`q` 回使えば `RunAll`（→ 行376）が出る。1 の枠は族が `one` で閉じているので自明。
+
+### `ZStep` の中身の切り分け
+
+`APd_all`（緑）は `Rq` さえ通れば**どんな形でも**木を継げる。`Rq (false::ks) X
+= TopOk X` なので、`ZT` の木（2 の記録が頭に来ない）は `APd (false::ks)` に入る。
+つまり `GCtx` で書ける文脈（2 の枠の直下に 1 の枠がある）では `ZStep` は既に済み。
+
+**残るのは 2 の枠が隣接する文脈だけ**で、そこでの場合分けは:
+
+- `X = nil` … 走りの塔。`GOK_runGNil_gen`（緑）。階段は走り長が 1 減る。
+- `X = one U X'` … `plug (ctx ++ [ftwo nil] ++ [fone U]) X'` に帰着するが、
+  それは `ZG (ctx ++ [ftwo nil])`（＝目標）そのものなので、木の帰納法だけでは回らない。
+- `X = pay X' C` … `GOK_twoPayZ_of`（緑）。`htow` が鎖 `twoIt nil (pay X' Y) k` を
+  2 の枠の兄弟に要求する。
+
+3 つとも「文脈が伸びる／兄弟が nil でなくなる」ので、単純な帰納法では閉じない。
+測度は追記104 と同じ多重集合（`Σ ω^(走り長)`）になる。ただし `ZStep` は
+**1 文**なので、測度を入れる場所がはっきりした。
+
+### 今回の副産物（緑）
+
+`NNo_pay`（族は荷で閉じる、無条件）— 追記136。空文脈の荷 `AY0` を使って
+`AYs` の鎖の枠木を `DCtx.base` に載せたのが鍵。
