@@ -49427,6 +49427,136 @@ theorem R375i15_mem : R375i ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R375i14_mem
 #print axioms R375i15_mem
 
+/-! #### `V(6,2,0)` -/
+
+def ZI : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil Jk1.nil))))
+  | (n + 1) => Jk1.one (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil Jk1.nil))))) (ZI n)
+
+def YI : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil Jk1.nil
+  | (n + 1) => Jk1.one (Jk1.two Jk1.nil Jk1.nil) (ZI n)
+
+theorem JkA_ZI : ∀ n : ℕ, JkA (ZI n)
+  | 0 => by simp [ZI, JkA]
+  | (n + 1) => ⟨by simp [JkA], JkA_ZI n⟩
+
+theorem JkA_YI : ∀ n : ℕ, JkA (YI n)
+  | 0 => ⟨trivial, trivial⟩
+  | (n + 1) => ⟨⟨trivial, trivial⟩, JkA_ZI n⟩
+
+theorem LOk_ZI : ∀ (n k : ℕ), LOk (k + 1) (ZI n)
+  | 0, k => LOk1_hangI_at k
+  | (n + 1), k => LOk_one
+      (W := Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+          (Jk1.two Jk1.nil Jk1.nil)))))
+      (by simp [JkA])
+      (LOk1_hangI_at k) (LOk_ZI n (k + 1))
+
+theorem LOk_YI : ∀ (n k : ℕ), LOk k (YI n)
+  | 0, k => LOk_twoNilAll k
+  | (n + 1), k => LOk_one (W := Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩
+      (LOk_twoNilAll k) (LOk_ZI n k)
+
+theorem TwoOk_YI (n : ℕ) : TwoOk (YI n) := TwoOk_of_LOk0 (LOk_YI n 0)
+
+theorem jk1_ZI : ∀ (n m : ℕ),
+    jk1 m (ZI n) = [((m + 1, 2, 0) : ℕ × ℕ × ℕ), ((m + 2, 2, 0) : ℕ × ℕ × ℕ),
+        ((m + 2, 1, 0) : ℕ × ℕ × ℕ), ((m + 3, 2, 0) : ℕ × ℕ × ℕ),
+        ((m + 4, 2, 0) : ℕ × ℕ × ℕ), ((m + 4, 1, 0) : ℕ × ℕ × ℕ),
+        ((m + 5, 2, 0) : ℕ × ℕ × ℕ)]
+      ++ (List.range n).flatMap
+        (fun k => shiftr01 k 0 [((m + 1, 1, 0) : ℕ × ℕ × ℕ),
+          ((m + 2, 2, 0) : ℕ × ℕ × ℕ), ((m + 3, 2, 0) : ℕ × ℕ × ℕ),
+          ((m + 3, 1, 0) : ℕ × ℕ × ℕ), ((m + 4, 2, 0) : ℕ × ℕ × ℕ),
+          ((m + 5, 2, 0) : ℕ × ℕ × ℕ), ((m + 5, 1, 0) : ℕ × ℕ × ℕ),
+          ((m + 6, 2, 0) : ℕ × ℕ × ℕ)])
+  | 0, m => by simpa using jk1_pieceI m
+  | (n + 1), m => by
+      show jk1 m (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+          (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+            (Jk1.two Jk1.nil Jk1.nil))))) ++
+        (((m + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (m + 1) (ZI n)) = _
+      rw [jk1_pieceI m, jk1_ZI n (m + 1), List.range_succ_eq_map,
+        List.flatMap_cons, List.flatMap_map]
+      simp only [shiftr01_zero, Function.comp_def, List.cons_append, List.nil_append,
+        List.append_assoc, List.cons.injEq, Prod.mk.injEq, and_true, true_and,
+        and_self]
+      apply List.flatMap_congr
+      intro k _
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        and_true, and_self]
+      omega
+
+theorem jk1_YI : ∀ (n l : ℕ),
+    jk1 l (YI n) = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+      (fun k => shiftr01 k 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ),
+        ((l + 2, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 3, 1, 0) : ℕ × ℕ × ℕ), ((l + 4, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 5, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 1, 0) : ℕ × ℕ × ℕ),
+        ((l + 6, 2, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simpa using jk1_twoNil l
+  | (n + 1), l => by
+      show jk1 l (Jk1.two Jk1.nil Jk1.nil) ++
+        (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (ZI n)) = _
+      rw [jk1_twoNil l, jk1_ZI n (l + 1), List.range_succ_eq_map,
+        List.flatMap_cons, List.flatMap_map]
+      simp only [shiftr01_zero, Function.comp_def, List.cons_append, List.nil_append,
+        List.singleton_append, List.append_assoc, List.cons.injEq, Prod.mk.injEq,
+        and_true, true_and, and_self]
+      apply List.flatMap_congr
+      intro k _
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+        and_true, and_self]
+      omega
+
+theorem GOK_oneTwoYI (n : ℕ) : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (YI n))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa using TwoOk_YI n Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem YYI_tower_mem (n : ℕ) :
+    Mtw R375m [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ),
+      ((7, 2, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ), ((8, 2, 0) : ℕ × ℕ × ℕ),
+      ((9, 2, 0) : ℕ × ℕ × ℕ), ((9, 1, 0) : ℕ × ℕ × ℕ),
+      ((10, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b
+      ([] ++ [Jk1.one Jk1.nil (Jk1.two Jk1.nil (YI n))])) :=
+    GOK_oneTwoYI n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil (YI n))]) := by simpa using hG
+  have h := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (YI n)))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)]
+        ++ (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ),
+            ((7, 2, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ), ((8, 2, 0) : ℕ × ℕ × ℕ),
+            ((9, 2, 0) : ℕ × ℕ × ℕ), ((9, 1, 0) : ℕ × ℕ × ℕ),
+            ((10, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) :: jk1 4 (YI n)))) = _
+    rw [jk1_YI n 4]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R375m, R373, R344, R341, R338,
+    List.append_assoc] using h
+
+/-- ★★★★★ `V(6,2,0)`。 -/
+theorem R375i16_mem : R375i ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := R375m)
+    (M := [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ), ((7, 2, 0) : ℕ × ℕ × ℕ),
+      ((7, 1, 0) : ℕ × ℕ × ℕ), ((8, 2, 0) : ℕ × ℕ × ℕ), ((9, 2, 0) : ℕ × ℕ × ℕ),
+      ((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)])
+    (L := 5) (y := 2) R375m_ne MidD_cI6 (by simp [entry]) (by omega) YYI_tower_mem
+  rw [R375i_eq5]
+  simpa [List.append_assoc] using h
+
+#print axioms R375i16_mem
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
