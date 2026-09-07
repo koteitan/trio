@@ -13181,3 +13181,50 @@ plug ctx (two nil (TW (k+1))) = plug (ctx ++ [ftwo nil] ++ [fone W]) (two nil (T
 `Ew q (two nil (NST m))` を `Pk_twoW UniP_nil (Pk 1 0 (NST m))` で出そうとすると
 `Pk 1 0 (two nil nil)`（壁）に当たるので、`Ew_twoNilTwoNil` と同じく
 `GOK_twoTwoNilW_gen` を直接当てる証明にする必要がある。**次の一手はこれ。**
+
+## 追記113: `WallP ⇒ #14` が繋がった。壁は「層の階層化」で外せる見込み
+
+### 配管が完成（緑、`sorryAx` なし）
+
+```
+tw14_word / flatU_succ / tower14_mem / R14_mem
+R14_mem (hw : WallP) : R375m ++ [(5,2,0)] ∈ W 0        -- = #14
+```
+
+塔 `Mtwd 2 R341 U375c n` の語がちょうど `GOK_oneTW` の木の語（`jk1 2` の flatMap 形）で、
+`snocYd_mem`（`Y0 = R341`, `M = U375c = (3,1,0)(4,2,0)(5,2,0)`, `L=3, y=2, dl=2`）で #14 に落ちる。
+**#14 に足りないのは `WallP` 1 本だけ**になった。
+
+### ★ 発見: `Pok` の対の兄弟条件に `UniW` を書ける（非可述にならない）
+
+`UniW` は `Ck`（= `Cok` 層）で定義されていて、`Pok` は `Cok` の**後**に定義されている。
+だから
+
+```
+Pok (j+1) 0 の兄弟条件を「UniW Wl」にできる（定義順が合っている）
+```
+
+そうすると `WallP` は出る:
+
+```
+Pk (j+1) 0 (two nil nil) の目標を GOK_twoTwoNilW_gen で潰すとき、
+階段 ∀k, GOK (… (two Wl (nstN2 Wl nil k))) は Ck_nstTower (UniW Wl)（緑）で埋まる
+```
+
+代償は `Pk_pay` の対の腕。A2' の横鎖 `twoIt Wl (pay X Y') k` を兄弟にするので
+`UniW (横鎖)` が要り、それには `Ck (j+1) 0 (pay X Y')`（= `Ck` 層の壁）が要る。
+
+### したがって方針
+
+**層ごとに「2 の枠の兄弟の条件」を 1 つ下の層の一様性で書き直す**:
+
+```
+APd / GCtx / TwoOk … 全深さ条件が書ける（`∀ j kk, APd (rep j true ++ (true::kk)) N`）
+TwSt / NTw / TTwA  … ?
+Cok / Ck / UniW    … 兄弟に「1 つ下の層の一様性」を課す
+Pok / Pk / UniP    … 兄弟に UniW を課す  ⇒ WallP が出る
+```
+
+一番下（`APd`）には全深さ条件があるので、この階層化が最後まで通れば壁は消える。
+次の一手は `Pok` の対の兄弟に `UniW` を足して `WallP` を出し、
+壊れる場所（`Pk_pay` の対の腕）を特定すること。
