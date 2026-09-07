@@ -12797,3 +12797,71 @@ Rk_all_UT : UT W → ∀ j i, Rk j (i+1) W      （族の枠木は全層に差�
 `Tow_of_NNo` / `NNo_step` / `NNo_one` / `NNo_payU` / `NNo_payU'`、
 `GOK_bstkTower`（塔）、`Bk_nil` / `Bk_blk`（走り込みの層 `BOk`）、
 `Yk_nil`（`Yok` 層）、`NNf` / `GoodCtx`。
+
+## 追記106: 壁は `two nil nil` 1 点。`RkW` / `PairOk` で「兄弟固定」に弱めた
+
+この回に緑にしたもの: `UTa` / `Rk_all_UTa`、`RkW` / `PairOk` / `PairOk_nil` /
+`PairOk_twoNil` / `Rk_all_chainW` / `PairOk_pay`。
+
+### 分かったこと 1: 対の層の荷は壁ではない
+
+`Rk (j+1) 0 (pay X C)` は `Rk_pay`（既に緑）に `Rk (j+1) 0 X` を入れれば出る。
+bms で確認: `(0,0,0)(1,1,0)(2,2,0)(3,2,0)(3,0,0)` の悪い部分は縦の走り
+`(2,2,0)(3,2,0)`、歩幅 0 で、展開は走りを横に複製する:
+
+```
+[1] = (0,0,0)(1,1,0)(2,2,0)(3,2,0)(2,2,0)(3,2,0)
+木  = twoIt nil (two nil nil) 2 = two (two nil (two nil nil)) (two nil nil)
+```
+
+これは `Rk_pay` の対の腕の横鎖 `twoIt Wl (pay X Y') k` そのもの。
+**つまり残る壁は `Rk (j+1) 0 (two nil nil)`（走り 2 が対の層に差せる）1 点**。
+
+### 分かったこと 2: `hT` は「その兄弟の直上」でしか使わない
+
+`Rk_pair` / `Rk_twoW` が `hT : Rk (j+1) 0 T` を使うのは、自分が組んだ
+文脈（兄弟 = `Wl`）1 個だけ。so 兄弟を固定した
+
+```
+RkW Wl Z  = 兄弟が Wl の対の文脈に Z を差せる
+PairOk T  = ∀ Wl（UT かつ全層に差せる）, RkW Wl T
+```
+
+で足りる。`PairOk_twoNil` は `Rk_twoWTwoNil`（緑）そのもの、
+`PairOk_pay` は `Rk_pay` の対の腕そのもの。**`PairOk` は nil / 走り 2 / 荷で閉じた。**
+
+### 残る 1 点: `Rok` の 2 の枠の兄弟に全層条件が無い
+
+`Rk (j+1) 0 (two nil nil)`（どの対の文脈でも）を出すには
+`Rk_all_UT : UT W → ∀ j i, Rk j (i+1) W`（族の枠木は全層に差せる）が要る。
+`Rk_all_chainW`（緑）より、要るのは **`UT` の鎖の先端 `T` が `PairOk`** であること。
+`UT` の先端は今 `UP`（nil / 荷 / `one` / 横鎖）なので、足りないのは
+
+- `PairOk (one U T)` … `ctx ++ [fone U]` が `Rok` の文脈である必要があり、
+  `Rok` の 1 の枠の条件が**普遍**（全文脈で良い）なので `Rk (j+1) 0 U` が要る（循環）。
+  ただし `T = nil` なら `APnil_gen0` だけで出る（`Rok` 不要）。
+- `PairOk (横鎖)` … 対の層に 2 の記録を置くと**走り 2** になる。
+  `Rok` は「2 の枠の直下は必ず 1 の枠」の文脈しか持たないので層の外。
+  語の補題 `GOK_twoTwoNilW_gen` は先端 `nil` の走り 2 だけを扱う。
+
+### 次の設計（非循環）
+
+先端の族を絞る:
+
+```
+UPq = nil | two nil nil | pay X C (UPq X) | one U T (UPq U, UPn T)   -- PairOk が示せる族
+UPn = UPq | 横鎖                                                     -- 1 の枠の兄弟
+UT  = nil | twoIt W T k (UT W, UPq T)                                -- 2 の枠の兄弟
+```
+
+`Rok` の 1 の枠の族を、層 1（対の直上）では `UPq`、層 ≥2 では `UPn` に分ける
+（`Rk_nil` の対の腕の階段 `(fone Wl)^i` は層 ≥2 にしか鎖を置かないので整合する）。
+すると
+
+- `Rk_pay` の層 (j,1) の腕が対の層で扱う木は `one (itJ T k U) T'`、`U ∈ UPq` ✓
+- `PairOk (one U T)` は `UPq U` から `Rk (j+1) 0 U`（= `Rk_all_UT` 経由）で出る
+- `Rk_all_UT` は `UT` の構造帰納 + `Rk_all_chainW` で出る
+
+ただし `PairOk (one U T)` ⇐ `Rk_all_UT` ⇐ `PairOk`（先端）の循環が残る。
+**A2' の荷の帰納法を外側に置く**（`Rk_pay (j+1) 1` の荷 `Y` について、
+`PairOk (itJ (pay X Y') k U)` は 1 つ小さい荷の IH から出る）と切れる見込み。
