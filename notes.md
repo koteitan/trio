@@ -14616,3 +14616,52 @@ SG_nil_all : SPayF → ∀ ks, SG ks nil            ★緑
 `pay` は `GOK_twoPayZ_of` の `Z` を 1 段下げれば回りそうだが族が `VCh V'` に
 ずれる、`one` は「鎖を兄弟にした 2 の枠 + 1 の枠」の文脈が要る、というのが
 現状の見立て。
+
+## 追記141: `SCtx` 版の族（`SNo`）を揃えた。ただし循環に注意
+
+この回に緑にしたもの（すべて `SPayF` のもと）:
+
+```
+STow      : SPayF → JkA N → (∀ s, SG s N) → ∀ ks, SG ks (two N nil)
+SNo N     := JkA N ∧ ∀ s, SG s N
+SNo_nil   : SPayF → SNo nil                 （SG_nil_all）
+SNo_step  : SPayF → Bok Y → SNo N → SNo (two N (pay nil Y))   （NNo_step の移植）
+SNo_VCh   : SPayF → VCh nil N → SNo N
+SHtow_nil : SPayF → ∀ ks D0, SCtx ks D0 → VCh nil N → GOK (plug D0 (two N nil))
+```
+
+`STow` は `Tow_of_NNo` の `SCtx` 版で、文脈を `ctx ++ blkC V (rep r nil)` に割って
+`GOK_runGNil_gen`（A := N）。階段のブロックは 1 の枠 `N` と 2 の枠 `nil` だけなので
+`SCtx` に入る（`SCtx_blkRN`）。走りは `SG_cf_iff` で `stkP` の添字に押し込む。
+
+### ★ 循環していることの明記
+
+`SHtow_nil` は **`SPayF` を仮定して**いる。一方 `SPayF_of_SHtow : SHtow → SPayF`。
+つまり `SHtow ↔ SPayF` は互いに行き来するだけで、まだ仮定は外れていない。
+
+依存を追うと:
+
+```
+SPayF s          ⇐ SHtow s
+SHtow s (V=nil)  ⇐ STow ⇐ SG_stkS（塔）⇐ SBs (true :: shR q s i) ⇐ SG_nil_true
+SG_nil_true s'   ⇐ SPy_of_SG s'（枠木の荷）⇐ SPayF s''（s'' はもっと深い形）
+```
+
+形は深くなる一方なので、形の測度では回らない。**測度は追記104 と同じ多重集合**に
+なる、というのが変わらない結論。今回のものは「もし `SPayF` が取れれば全部揃う」
+という意味で `DCtx`/`NNo` 世界（`NNo nil` が穴）の鏡像であり、
+`SCtx` 世界では `nil` の普遍性（`SG_nil_all`）が済んでいる点だけが違う。
+
+### 次に試すべきこと
+
+`PCtx`（枠木を族 `ZT` に限り条件を課さない文脈クラス）で
+`∀ D X, PCtx D → ZT X → GOK (plug D X)` を
+`(size (plug D X), size X)` の辞書式で回す案を検討した:
+
+- `X = one U X'` … `plug` は不変、`size X` が減る ✓
+- `X = nil`（`D = D' ++ [fone U]`）… `plug` が 1 減る ✓
+- `X = pay X' C` … `AYs` の `hAP` が鎖 `W` を要求し、`plug D' (one W X')` は
+  `size W` のぶん大きくなる ✗
+
+`hAP` は「全文脈での `PG X'`」として与えれば `size X'` で減るが、その形だと
+`nil` の場合に `PG U`（`size U > 0`）が要る。両立させる測度がまだ見つかっていない。
