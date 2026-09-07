@@ -13295,3 +13295,79 @@ Ck / Pk     … 走り 2 は書けるが全深さ条件が書けない（非可�
 **この非対称が壁の正体。**どちらかを直すのが唯一の道:
 (a) `CtxX` を走り 2 を許す形に緩める（`GCtx_CtxX` / `APd_payA` / `APd_all` の 3 本）
 (b) `Ck` の兄弟条件を全深さで書ける形にする（非可述の回避が要る）
+
+## 追記116: 壁の正体は `Rq`。実測 23 個中 22 個は機械的。第 2 族 `MPd` で外す
+
+### 実測 1: `TopOk` 制限を一括で緩める
+
+`JkJ (two N M)` の `TopOk M`、`CtxXJ [ftwo _] X` の `TopOk X`、`Rq (false::_) U = TopOk U`
+の 3 つを同時に外して `leanman check` した。
+
+```
+エラー 23 個。うち 22 個は ⟨JkA, TopOk⟩ のタプル形が変わっただけ（機械的）。
+本質は 1 個: APd_all の「false 頭の形に two 頭の木を差す」場合（20948）。
+```
+
+追記115 で「本質 3 個」としたのは `Rq` だけを外したため。`CtxXJ` / `JkJ` も一緒に
+緩めると `GCtx_CtxX` と `APd_payA` は機械的になる。
+
+### なぜ `APd_all` だけが残るか
+
+`APd (false :: ks) (two nil nil)` は走り 2 なので階段が要る。階段は `APd_nstN` で、
+その再帰は **形が `false` 1 個ずつ伸びる**:
+
+```
+APd_nstN … k (false :: ks)   -- ks が毎回 false で伸びる
+```
+
+つまり兄弟 `N` は `cntF` が非有界な形すべてで良くないといけない。ところが
+`APd (false :: ks)` の N の欄は `∀ j, APd (rep j true ++ true :: (rep m true ++ ks)) N`
+で **`cntF` は `ks` のまま**。`APd` の停止性は `(cntF ks, ks.length)` なので、
+N の欄を全形状に強めると停止しない。
+
+### 層の梯子の正体
+
+```
+APd/GCtx        … 走り 2 が書けない（Rq）
+StkOk/LOk       … 2 の枠 1 個ぶんだけ Rq を回避（兄弟は全形状 AllA）
+TwSt/TwOk/TTwA  … もう 1 個
+Cok/Ck/UniW     … もう 1 個
+Pok/Pk/UniP     … もう 1 個
+```
+
+**1 層 = 2 の枠 1 個。**だから追記111 の「単位ちょうど 3 個で頭打ち」になる。
+層を足しても 1 個ずつしか伸びない。#14 は極限なので届かない。
+
+### 外し方（第 2 族 `MPd`）
+
+`APd` を改造するのではなく、**`APd` の後ろに第 2 族を作る**:
+
+```
+AllA N := ∀ j kk, APd (rep j true ++ (true :: kk)) N        -- 既存（TwoOk / StkOk が使う）
+
+MPd : List Bool → Jk1 → Prop
+  | [],          V => GOK V
+  | (true::ks),  V => ∀ U, FrmJ ks U → MPd ks U → MPd ks (one U V)
+  | (false::ks), V => ∀ m U N, FrmJ (rep m true ++ ks) U → MPd (rep m true ++ ks) U →
+                      JkA N → AllA N → MPd (rep m true ++ ks) (one U (two N V))
+```
+
+- `Rq` を持たない ⇒ 2 の記録の直上に `two nil nil` を置ける（塔の 1 の枠）。
+- 2 の枠の兄弟は `AllA`（全形状、`APd` 側で定義済み）⇒ 停止性は `APd` と同じ。
+- 非可述にならない（`AllA` は `MPd` より前に定義される）。
+
+これで `MPd (false :: ks) (two nil nil)` が出る見込み:
+`MPd_nstN`（`APd_nstN` の写し、`AllA N` で十分）→ `MPd_twoTwoGen` → `MPd_ct`。
+
+字の妥当性は `FrmJ [] V = JkT V` が一番外の枠に `TopOk` を課すので `Rq` なしで足りる
+（`CtxOk` / `CtxJ` は `HdT` を持つので使えない。`JkT_plug_Cok` と同じ形で作り直す）。
+
+**`APd` からの移送はできない**（`MPd` の 1 の枠の欄が `MPd` 自身なので）。
+`MPd_iff` / `MCtx_split` / `MPd_nil` / `MPd_step` / `MPd_congr` / `MPd_nstN` /
+`MPd_twoTwoGen` など 12〜18 本の写しが要る。
+
+### この回に緑にしたもの
+
+`UniW_chain` / `WallC` / `Ck_pairLevel_pay` / `UniW_chain_twoNil`（追記114 の部品）。
+ただし上の分析どおり `WallC` も同じ壁なので、この道（`Pok` の兄弟を `UniW` に強める）は
+`WallP` を `WallC` に移すだけで終わる。**採らない。**
