@@ -14665,3 +14665,47 @@ SG_nil_true s'   ⇐ SPy_of_SG s'（枠木の荷）⇐ SPayF s''（s'' はもっ
 
 `hAP` は「全文脈での `PG X'`」として与えれば `size X'` で減るが、その形だと
 `nil` の場合に `PG U`（`size U > 0`）が要る。両立させる測度がまだ見つかっていない。
+
+## 追記142: `STow` / `SNo_step` は無条件。壁は `SNil` に集約
+
+```
+STow     : JkA N → (∀ s, SG s N) → ∀ ks, SG ks (two N nil)   ★無条件
+SNo_step : Bok Y → SNo N → SNo (two N (pay nil Y))            ★無条件
+SNil     := ∀ ks, SG ks nil
+SNo_VCh  : SNil → VCh nil N → SNo N
+SHtow_nil: SNil → …（SHtow の V = nil）
+SNil_of_SPayF : SPayF → SNil
+```
+
+`SSp`（形が 1 の枠で終わる）は `SPayF` に依らないので切り出した。これで
+`STow` と `SNo_step` は「普遍的に良い木が与えられれば」無条件に成り立つ再利用可能な
+定理になった。残る依存は `SNil ⇔ SPayF ⇔ SHtow`。
+
+### ★ 今回の新しい着想: 兄弟の族を「条件なしの構造的な族」にすると `SHtow` が消える
+
+`SCtx` の 2 の枠の兄弟を `nil` 固定にしているせいで `SHtow`（鎖を兄弟にする）が
+穴になっている。もし兄弟の族を **A2' の鎖を含む構造的な族**（条件なし）に取れば、
+`SHtow` は `SG (false::ks) V` そのものになり **無条件で消える**。例えば
+
+```
+inductive ZCh : Jk1 → Prop        -- ZT の荷を積んだ水平鎖
+  | nil  : ZCh nil
+  | step : ZCh N → ZT U → Bok Y → ZCh (two N (pay U Y))
+```
+
+`VCh V N`（`V ∈ ZT`）は `ZCh N` を含むので `SPayF` が自由になる。さらに
+塔（`GOK_runGNil_gen`）の階段は兄弟が何であっても `JkA` しか要らないので、
+**条件なしの族なら階段の文脈が自動で族に入る**——これが `RCtx`（兄弟に良さを
+要求）で詰まっていた原因だった。
+
+### そのときの新しい穴
+
+`SG (false::ks) nil` が「どの `ZCh` 兄弟の上でも `nil` を差せる」に強まる。
+`two N nil ≅ two N (pay nil [])` は `ZCh` の元なので、これは
+「`ZCh` の木を差せる」に等しく、`M = two M' (pay U Y)` を
+`plug (D0 ++ [ftwo M']) (pay U Y)` に読み替えると
+`SPy (false::ks) U`（荷）に落ちる。そこで要るのが **鎖の荷 `U` の良さ**
+`SG (false::ks) U` で、`U ∈ ZT` は任意なのでサイズの帰納では回らない。
+
+`ZCh` の荷に良さを課すと族が条件つきになり階段が壊れる、という綱引きは残る。
+ただし「条件なし族なら階段は自動」という点は新しく、次の設計の軸になる。
