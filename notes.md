@@ -13089,3 +13089,41 @@ GOK_oneTW hw n  : GOK (one nil (two nil (TW n)))   -- = #14[n] の木
 
 `StkOk 0`（`LOk 0` の土台）だけが (b) を全深さで書けている（`APd` が別定義だから）。
 だから `LOk 0 (two nil nil)` = `TwoOk_twoNil` は緑で、**塔の一番外の単位だけ**通る。
+
+## 追記111: 層の梯子は単位ちょうど 3 個分。H(2,2,1) も `WallP` で止まる
+
+H 族（土台 = `V(11,2,0)` = #14 の展開 [3]）を 6 本緑にした:
+`H(0,0,0)` `H(1,0,0)` `H(1,1,0)` `H(2,0,0)` `H(2,1,0)` `H(2,2,0)`。
+`chnA_tower_gen`（`R375k_towerD` の台座一般版）と `chnA_tower_seg`（セグメント版）で
+単位 `U375aH` を台座一般・セグメントに出した。
+
+### 既存の証明が単位 3 個で頭打ちな理由（構造）
+
+`NI`（`V(2,2,1)` の木）= `one nil (two nil (U^3 nil))`（`U X = one (two nil nil) (two nil X)`）。
+その `GOK` は次の梯子で出ている:
+
+```
+Pk 1 0 nil            （Pk_nil、壁なし）
+  → TipOk (U nil)     （Pk_one + Pk_twoW）
+  → TTwA (U (U nil))  （TTwA_one_of_Dk1 + Dk1_twoNil…）
+  → TwoOk (U^3 nil)   （TwoOk_of_LOk0 + LOk_one + LOk_of_TwOk0）
+```
+
+**層を 1 つ上がるごとに単位が 1 個増える。層は `Pk` / `TipOk` / `TTwA` / `TwoOk` の
+4 つしかないので、単位はちょうど 3 個で頭打ち。** 4 個目には
+`Pk 1 0 (U …)` が要り、それは `Pk 1 0 (two nil nil)` = `WallP`。
+
+### H(2,2,1) も同じ
+
+`H(2,2,1)` の木は `NH = one nil (two nil (TW 3))`（`TW 3 = U^3 (two nil nil)`、
+`NI` と違って一番内が `two nil nil`）。梯子の一番下が
+`Pk 1 0 (two nil nil)` = `WallP` になるので出ない。
+**つまり `WallP` はシートの「証明中」を直接止めている。**
+
+### `APd` 層で書けない理由（`Rq`）
+
+`APd` / `GCtx` は全深さ条件を書けるが、`Rq (false :: ks) U = TopOk U` により
+「2 の記録の直上の 1 の枠の木が 2 の記録で始まる」形（走り 2）を禁じている。
+走り 2 を許すのは `StkOk`（`Rq` なし）だが、そちらは 2 の枠を 1 枚しか持てない。
+
+**残る道: 走りを 2 まで許し、かつ 2 の枠の兄弟に全深さ条件を持てる枠積みを作る。**
