@@ -58177,6 +58177,50 @@ theorem RunAll_of_SPayF (h : SPayF) : RunAll :=
 #print axioms SG_stkS
 #print axioms RunAll_of_SPayF
 
+
+/-! ### ★★★★★ `SPayF` を「水平鎖の塔」1 点に絞る
+
+`GOK_twoPayZ_of`（緑）は A2' の複製鎖を族 `NN` と塔 `htow` に切り分ける。
+2 の枠の直上の荷で出る鎖は `twoIt nil (pay V Y) k`（同じ高さに並ぶ 2 の記録）
+なので、族は `VCh V` で閉じる。残るのは `htow`（鎖の右に `V` を載せた木）。 -/
+
+/-- 荷 `V` の水平鎖の族。 -/
+inductive VCh (V : Jk1) : Jk1 → Prop
+  | nil : VCh V Jk1.nil
+  | step : ∀ {N : Jk1} {Y : TrioSeq}, VCh V N → Bok Y → VCh V (Jk1.two N (Jk1.pay V Y))
+
+theorem JkA_of_VCh {V : Jk1} (hJV : JkA V) : ∀ {N : Jk1}, VCh V N → JkA N
+  | _, VCh.nil => trivial
+  | _, VCh.step hN hY => ⟨JkA_of_VCh hJV hN, hJV, hY⟩
+
+theorem VCh_twoIt {V : Jk1} {N : Jk1} (hN : VCh V N) {Y : TrioSeq} (hY : Bok Y) :
+    ∀ k : ℕ, VCh V (twoIt N (Jk1.pay V Y) k)
+  | 0 => hN
+  | (k + 1) => VCh.step (VCh_twoIt hN hY k) hY
+
+/-- 残る 1 点：鎖の右に荷の木を載せた木を差せる。 -/
+def SHtow : Prop := ∀ (ks : List Bool) (V : Jk1), JkA V → SG (false :: ks) V →
+  ∀ D0 : List Frm, SCtx ks D0 → ∀ N : Jk1, VCh V N → GOK (plug D0 (Jk1.two N V))
+
+/-- ★★★★★ `SPayF` は `SHtow` から出る。 -/
+theorem SPayF_of_SHtow (h : SHtow) : SPayF := by
+  intro ks V hJV hGV
+  intro D C hD hC
+  obtain ⟨D0, hD0, rfl⟩ := hD
+  rw [plug_snoc2]
+  exact GOK_twoPayZ_of (ctx := D0) (VCh V) hJV
+    (fun N hN => JkA_of_VCh hJV hN)
+    (fun N hN Y hY k => VCh_twoIt hN hY k)
+    (fun N T hN hT => SCtx_JkT ks D0 hD0 _ ⟨hN, hT⟩)
+    (fun N hN => h ks V hJV hGV D0 hD0 N hN)
+    C hC Jk1.nil VCh.nil
+
+/-- ★★★★★ 行376 は `SHtow` 1 本に落ちた。 -/
+theorem RunAll_of_SHtow (h : SHtow) : RunAll := RunAll_of_SPayF (SPayF_of_SHtow h)
+
+#print axioms SPayF_of_SHtow
+#print axioms RunAll_of_SHtow
+
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
 `stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
