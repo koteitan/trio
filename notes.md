@@ -12697,3 +12697,34 @@ Good ctx := ∀ N, NNf N → GOK (plug ctx N)
 `Tow_of_NNo` / `NNo_step` / `NNo_payU`（すべて緑）はこの部品。
 
 次: `NNf` を定義し、上の 2 本の伝播を `q` の帰納法で書く。
+
+## 追記103: 伝播の形が決まった（`q` の帰納法 + 木の帰納法）
+
+追記102 の設計を詰めた。文脈の良さは**仮定として持ち回る**（伝播形）ので、
+文脈の走りの大きさは測度に入らない。測度は「積むブロックの走り長 `q`」だけ。
+
+```
+GoodCtx ctx := ∀ X, NNf X → GOK (plug ctx X)        -- 族の木が全部差せる
+trun X      := X の頭の 2 の記録の連なりの長さ
+
+Prop_blk : ∀ q ctx, GoodCtx ctx → ∀ V Bs, NNf V → (∀ B ∈ Bs, NNf B) →
+             Bs.length ≤ q → GoodCtx (ctx ++ blkC V Bs)
+```
+
+`q` の帰納法（外）と木 `X` の帰納法（内）で、各場合は:
+
+- `X = nil`, `Bs = []` … `APnil_gen0`。`GOK (plug ctx V)` と
+  `∀C, GOK (plug ctx (pay V C))` は **どちらも `GoodCtx ctx`**（`pay V C ∈ NNf`）✓
+- `X = nil`, `Bs ≠ []` … `GOK_runGNil_gen`。階段は走り長 `|Bs|-1 ≤ q-1` の
+  ブロックの塔なので **`Prop_blk (q-1)` を繰り返せば出る** ✓
+- `X = two N X'` … ブロックに吸収（`blkC V (Bs ++ [N])`）。
+  `Bs.length + trun X` が不変で木が小さくなるので内側の帰納法 ✓
+- `X = pay X' C` … 荷。`Bs = []` なら `NNo_payU'`（この回に緑）、
+  `Bs ≠ []` なら `GOK_twoPayZ_of`（前回緑）。**ここだけ `X'` に
+  「その文脈と 1 の枠拡張で差せる」（梯子一様）が要る**のが残りの詰め。
+
+### #14 に必要な走りは 2 まで
+
+#14 の塔は単位 `one (two nil nil) (two nil ·)` の n 個積みで、走りは 2 まで。
+`q = 0, 1, 2` の 3 段だけ具体的に回せば #14 は出る（`q ≤ 1` は既存の
+`Ck` / `Rok` / `Pk` 層が持っている）。一般の `q` は行376 以降で要る。
