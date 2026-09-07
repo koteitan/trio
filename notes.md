@@ -12665,3 +12665,35 @@ A2' が横鎖を 2 の枠の兄弟に置くので `NilCtx` と矛盾する。つ
 
 **#14 も行376 と同じ「走りの直上の荷」1 点に帰着する**（走りは 2 までで済む）。
 追記100 の `NNo nil` がそれ。
+
+## 追記102: 伝播形の設計（`Good ctx = 族の木が全部差せる`）
+
+`NNo nil` を直接示そうとすると、走り 0 のブロックで `APnil_gen0` が枠木 `V` の
+荷を要求し、`V` が鎖のとき詰まる（追記100）。**族を「差せる木の集合」ごと
+伝播させる**と、その荷は族の中に入るので自動で出る。
+
+```
+NNf : 木の族（nil / pay X C / two N X で閉じる）
+Good ctx := ∀ N, NNf N → GOK (plug ctx N)
+```
+
+- 1 の枠の伝播: `Good ctx → Good (ctx ++ [fone V])`
+  - `N = nil`: `APnil_gen0`。`GOK (plug ctx V)` と `∀C, GOK (plug ctx (pay V C))` が
+    要るが、`V ∈ NNf` なら `pay V C ∈ NNf` なので**どちらも `Good ctx`** ✓
+  - `N = pay X C`: `GoodFb_snoc_dupJs0` の A2'。鎖 `itJ (pay X Y) k V` は
+    `one` 頭なので族の外だが、置く先は `ctx ++ [fone 鎖]` なので
+    1 の枠の伝播を鎖について繰り返せばよい（`NNo_payU` と同じ形）
+  - `N = two N' X`: 2 の枠の伝播に帰着
+- 2 の枠の伝播: `Good ctx → Good (ctx ++ [ftwo nil])`
+  - `N = nil`: `GOK_runGNil_gen`。階段は**走り長 1 つ小さいブロックの塔**なので
+    走り長 `q` の帰納法（`GOK_bstkTower` と同じ形）
+  - `N = pay X C`: `GOK_twoPayZ_of`（この回に緑）。`htow` は
+    `∀ N' ∈ NNf, GOK (plug ctx (two N' X))` で、`two N' X ∈ NNf` だから
+    **`Good ctx` そのもの** ✓
+  - `N = two N' X`: `plug (ctx ++ [ftwo N']) X` に帰着（木 `X` の構造帰納）
+
+つまり **族を閉じた形に取れば、荷はすべて `Good` の中に入り、外から要るのは
+走りの階段（`q` の帰納法）だけ**になる。`GOK_twoPay_of` / `GOK_twoPayZ_of` /
+`Tow_of_NNo` / `NNo_step` / `NNo_payU`（すべて緑）はこの部品。
+
+次: `NNf` を定義し、上の 2 本の伝播を `q` の帰納法で書く。
