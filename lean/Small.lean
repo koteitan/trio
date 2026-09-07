@@ -57028,5 +57028,66 @@ theorem R14_mem_L1 (h : LStep1) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈
 #print axioms MPd_oneQ1
 #print axioms R14_mem_L1
 
+/-! ### ★★★★★ 壁をさらに弱める: 兄弟に `AllA`（全 2 深さ一様）も持たせる
+
+`MPd_oneQ1` で `LStep1` を使う場所の兄弟 `N'` は `FrQ N'` を持つので、
+`AllA N'`（`APd` の全形状 = 全 2 深さ一様）と `LAll N'` の両方が使える。
+`LTwo` の兄弟条件は `LAll1` だけなので、そこを強めた版で十分。 -/
+
+def LStep2 : Prop :=
+  ∀ N Z : Jk1, JkA N → AllA N → LAll N → JkA Z → LAll1 Z → LAll1 (Jk1.two N Z)
+
+theorem MPd_oneQ2 (h : LStep2) : ∀ (ks : List Bool) (U Z : Jk1), FrmJ ks U → FrQ U →
+    MPd ks U → JkA Z → AllA Z → LAll1 Z → MPd ks (Jk1.one U Z)
+  | [], U, Z, hU, _, hUk, _, hAZ, _ => by
+      rw [MPd_bnil] at hUk ⊢
+      exact (APd_bnil _).mp (APd_step [] hU trivial ((APd_bnil _).mpr hUk) (hAZ 0 []))
+  | (true :: ks), U, Z, _, hQU, _, hJZ, hAZ, hLZ => by
+      rw [MPd_ct]
+      intro U' hU' hQU' hU'k
+      exact MPd_oneQ2 h ks U' (Jk1.one U Z) hU' hQU' hU'k ⟨hQU.1, hJZ⟩
+        (AllA_one hQU.1 hQU.2.1 hAZ)
+        (LAll1_one hQU.1 (LAll1_of_LAll hQU.2.2.1) hLZ)
+  | (false :: ks), U, Z, _, hQU, _, hJZ, hAZ, hLZ => by
+      rw [MPd_cf]
+      intro m U' N' hU' hQU' hU'k hQN'
+      have hLone : LAll1 (Jk1.one U Z) :=
+        LAll1_one hQU.1 (LAll1_of_LAll hQU.2.2.1) hLZ
+      have hTone : TwoOk (Jk1.one U Z) :=
+        TwoOk_one_of_LAll1 (TwoQ_of_LAll hQU.1 hQU.2.2.1) hLZ
+      refine MPd_oneQ2 h (List.replicate m true ++ ks) U' (Jk1.two N' (Jk1.one U Z))
+        hU' hQU' hU'k ⟨hQN'.1, hQU.1, hJZ⟩
+        (fun j kk => hTone N' hQN'.1 hQN'.2.1 j kk)
+        (h N' (Jk1.one U Z) hQN'.1 hQN'.2.1 hQN'.2.2.1 ⟨hQU.1, hJZ⟩ hLone)
+termination_by ks _ _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem MBplus_of_LStep2 (h : LStep2) {N : Jk1} (hQ : FrQ N) : MBplus N := by
+  intro j ks
+  rw [rep_true_cons, MPd_ct]
+  intro U hU hQU hUk
+  exact MPd_oneQ2 h _ U N hU hQU hUk hQ.1 hQ.2.1 (LAll1_of_LAll hQ.2.2.1)
+
+theorem MNil_of_LStep2 (h : LStep2) : MNil := MNil_of (fun _ hQ => MBplus_of_LStep2 h hQ)
+
+/-- ★★★★★ #14 は `LStep2` 1 本に落ちた（`LStep1` より兄弟の仮定が強い＝弱い壁）。 -/
+theorem R14_mem_L2 (h : LStep2) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem_M (MNil_of_LStep2 h)
+
+/-- `LStep2` の `Z = nil` の場合（既存の `LOk_twoN`）。構造帰納の底。 -/
+theorem LStep2_nil (N : Jk1) (hJN : JkA N) (hLN : LAll N) : LAll1 (Jk1.two N Jk1.nil) :=
+  fun k => LOk_twoN hJN (LAll1_of_LAll hLN) k
+
+theorem LStep2_of_LStep1 (h : LStep1) : LStep2 :=
+  fun _ Z hJN _ hLN hJZ hLZ => h Z hJZ hLZ _ hJN (LAll1_of_LAll hLN)
+
+#print axioms MPd_oneQ2
+#print axioms R14_mem_L2
+
 end Small
 end TRIO
