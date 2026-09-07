@@ -58336,6 +58336,124 @@ theorem STow (h : SPayF) {N : Jk1} (hJN : JkA N) (hN : ∀ s : List Bool, SG s N
 
 
 
+
+/-! ### ★★★★★ `SNo`：どの `SCtx` 形にも差せる木。鎖で閉じる -/
+
+def SNo (N : Jk1) : Prop := JkA N ∧ ∀ s : List Bool, SG s N
+
+theorem SNo_nil (h : SPayF) : SNo Jk1.nil := ⟨trivial, SG_nil_all h⟩
+
+theorem SNo_step (h : SPayF) : ∀ Y : TrioSeq, Bok Y → ∀ N : Jk1, SNo N →
+    SNo (Jk1.two N (Jk1.pay Jk1.nil Y)) := by
+  have hnilstep : ∀ N : Jk1, SNo N →
+      SNo (Jk1.two N (Jk1.pay Jk1.nil ([] : TrioSeq))) := by
+    intro N hN
+    refine ⟨⟨hN.1, trivial, Bok_nil⟩, ?_⟩
+    intro s D hD
+    refine GOK_congr (jk1_plug_congr D ?_) (STow h hN.1 hN.2 s D hD)
+    intro l
+    show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Jk1.nil)
+      = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (Jk1.pay Jk1.nil ([] : TrioSeq)))
+    rw [jk1_pay_nil]
+  have hchain : ∀ (Y : TrioSeq),
+      (∀ N : Jk1, SNo N → SNo (Jk1.two N (Jk1.pay Jk1.nil Y))) →
+      ∀ N : Jk1, SNo N → ∀ m : ℕ, SNo (twoIt N (Jk1.pay Jk1.nil Y) m) := by
+    intro Y hstep N hN m
+    induction m with
+    | zero => exact hN
+    | succ m ih => exact hstep _ ih
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ N : Jk1, SNo N →
+      SNo (Jk1.two N (Jk1.pay Jk1.nil Y))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb N hN
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact hnilstep N hN
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hYn : Bok (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by simpa using hYb
+        rw [e]
+        refine ⟨⟨hN.1, trivial, hYn⟩, ?_⟩
+        intro s D hD ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (SCtx_JkT s D hD _ ⟨hN.1, trivial, hYn⟩) ?_
+        intro n hn
+        obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+        exact (hchain ([] : TrioSeq) hnilstep N hN (m + 1)).2 s D hD ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev := hdl hdb
+        have hYn : Bok (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by
+          rw [← hsplit]; exact hYb
+        rw [hsplit]
+        refine ⟨⟨hN.1, trivial, hYn⟩, ?_⟩
+        intro s D hD ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (SCtx_JkT s D hD _ ⟨hN.1, trivial, hYn⟩) ?_
+        intro n hn
+        obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+        exact (hchain Y.dropLast hprev N hN (m + 1)).2 s D hD ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        refine ⟨⟨hN.1, trivial, hYb⟩, ?_⟩
+        intro s D hD ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (SCtx_JkT s D hD _ ⟨hN.1, trivial, hYb⟩) hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact (hh (Bok_oper hYb hn) N hN).2 s D hD ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb N hN
+  exact key hYb.mem hYb N hN
+
+#print axioms SNo_step
+
+/-- `VCh nil` の鎖はすべて普遍的に良い。 -/
+theorem SNo_VCh (h : SPayF) : ∀ {N : Jk1}, VCh Jk1.nil N → SNo N
+  | _, VCh.nil => SNo_nil h
+  | _, VCh.step hN hY => SNo_step h _ hY _ (SNo_VCh h hN)
+
+/-- ★★★★★ `SHtow` の `V = nil` の場合。 -/
+theorem SHtow_nil (h : SPayF) (ks : List Bool) (D0 : List Frm) (hD0 : SCtx ks D0)
+    {N : Jk1} (hN : VCh Jk1.nil N) : GOK (plug D0 (Jk1.two N Jk1.nil)) :=
+  STow h (SNo_VCh h hN).1 (SNo_VCh h hN).2 ks D0 hD0
+
+#print axioms SHtow_nil
+
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
 `stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
