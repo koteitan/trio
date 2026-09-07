@@ -13265,3 +13265,33 @@ Ck (j+1) 0 (pay X Y')     ⟸ Ck_pay + Ck (j+1) 0 X
 `WallC` は別の手（`GOK_twoTwoNilW_gen` を直接当てる `Ew_twoNilTwoNil` の形）が要る。
 
 **この回は緑を保つため `Pok` の変更は戻した。** 実測結果だけ記録。
+
+## 追記115: `Rq`（走り 2 の禁止）を外す実験。エラーは 6 個、本質は 3 個
+
+`Rq (false :: _) U = TopOk U` を `True` にして実測した。
+
+### 結果
+
+- 自明に直る 3 個: `Rq_of_TopOk` / `Rq_itJ` / `APd_all` の `M` の欄（`trivial` にするだけ）
+- **本質は 3 個**:
+  - `GCtx_CtxX`（19936）… `CtxX (ctx ++ [ftwo N]) X ↔ JkA X ∧ TopOk X`。
+    2 の枠の直上に差す木は `TopOk` でないと `CtxX`（字の妥当性）が通らない。
+  - `APd_payA`（20745）… `AYdT` が `TopOk V` を要求する。
+  - `APd_all`（20948）… `two N M` を `false` 頭の `ks` に差す場合が **偽になる**。
+
+### 結論
+
+`Rq` は `APd` / `GCtx` の設計上の well-formedness（`CtxX`）に組み込まれていて、
+外すと `CtxX` が壊れる。**`APd` 層は走り 2 を表現できない**。
+
+一方 `Ck` / `Pk` 層は `TipOk Z = JkA Z ∧ ck` で `TopOk` を要求しないので走り 2 を
+表現できる（`Nk_twoNilNil` が実際に通っている）。つまり
+
+```
+APd / GCtx … 全深さ条件は書けるが走り 2 が書けない
+Ck / Pk     … 走り 2 は書けるが全深さ条件が書けない（非可述）
+```
+
+**この非対称が壁の正体。**どちらかを直すのが唯一の道:
+(a) `CtxX` を走り 2 を許す形に緩める（`GCtx_CtxX` / `APd_payA` / `APd_all` の 3 本）
+(b) `Ck` の兄弟条件を全深さで書ける形にする（非可述の回避が要る）
