@@ -57160,5 +57160,61 @@ theorem jk1_nstQ (N : Jk1) (p : ℕ) : ∀ (k l : ℕ),
 
 #print axioms jk1_nstQ
 
+/-- `unQ` は「先端 `X` を差した形」に伸ばせる。 -/
+theorem unQ_append (N : Jk1) (p D : ℕ) (X : Jk1) :
+    unQ N p D ++ jk1 (D + 1 + p) X
+      = ((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D (Jk1.two N (stkP p X)) := by
+  show (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D (Jk1.two N (stkP p Jk1.nil)))
+      ++ jk1 (D + 1 + p) X = _
+  show ((D, 1, 0) : ℕ × ℕ × ℕ) :: ((jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (D + 1) (stkP p Jk1.nil))) ++ jk1 (D + 1 + p) X)
+    = ((D, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (D + 1) (stkP p X)))
+  rw [jk1_stkP p Jk1.nil (D + 1), jk1_stkP p X (D + 1)]
+  simp [jk1, List.append_assoc]
+
+theorem colJ_plug_twoNstkX (a b : ℕ) (ctx : List Frm) (V N : Jk1) (p : ℕ) (X : Jk1) :
+    colJ a b (plug (ctx ++ [Frm.fone V]) (Jk1.two N (stkP p X)))
+      = (colJ a b (plug ctx V) ++ unQ N p (a + dep ctx + 2))
+        ++ jk1 (a + dep ctx + 2 + 1 + p) X := by
+  rw [plug_snoc, colJ_plug_one, ← unQ_append N p (a + dep ctx + 2) X]
+  simp [List.append_assoc]
+
+theorem wordJ_snoc_twoNstkX (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V N : Jk1)
+    (p : ℕ) (X : Jk1) :
+    wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V]) (Jk1.two N (stkP p X))])
+      = (wordJ a b (ws ++ [plug ctx V]) ++ unQ N p (a + dep ctx + 2))
+        ++ jk1 (a + dep ctx + 2 + 1 + p) X := by
+  rw [wordJ_append, wordJ_singleton, colJ_plug_twoNstkX, wordJ_append, wordJ_singleton]
+  simp [List.append_assoc]
+
+/-- 階段側は `Mtwd` の形になる。 -/
+theorem wordJ_snoc_twoNstkQ (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V N : Jk1)
+    (p k : ℕ) :
+    wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V]) (Jk1.two N (stkP p (nstQ N p k)))])
+      = Mtwd (p + 2) (wordJ a b (ws ++ [plug ctx V])) (unQ N p (a + dep ctx + 2)) (k + 1) := by
+  rw [wordJ_snoc_twoNstkX, jk1_nstQ N p k (a + dep ctx + 2 + 1 + p), Mtwd,
+    List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+  simp only [Nat.mul_zero, shiftr01_zero, Function.comp_def, List.append_assoc]
+  refine congrArg _ (congrArg _ ?_)
+  apply List.flatMap_congr
+  intro j _
+  rw [shift_unQ, shift_unQ, Nat.mul_succ]
+  congr 1
+  omega
+
+/-- 目標側は「単位 + 最後の 2 の記録」。 -/
+theorem wordJ_snoc_twoNstkT (a b : ℕ) (ws : List Jk1) (ctx : List Frm) (V N : Jk1)
+    (p : ℕ) :
+    wordJ a b (ws ++ [plug (ctx ++ [Frm.fone V])
+        (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))])
+      = (wordJ a b (ws ++ [plug ctx V]) ++ unQ N p (a + dep ctx + 2))
+        ++ [((a + dep ctx + 2 + 1 + p + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_snoc_twoNstkX]
+  simp [jk1]
+
+#print axioms wordJ_snoc_twoNstkQ
+#print axioms wordJ_snoc_twoNstkT
+
 end Small
 end TRIO
