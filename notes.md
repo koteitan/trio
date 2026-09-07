@@ -13529,3 +13529,46 @@ two nil nil  : AllA ✓(APd_twoTwoNilGen)  TwoOk ✓(TwoOk_twoNil)  荷 ✓(TwoO
 枠木の `AllA` / `TwoQ` が必須。走り 2 の枠木 `two nil nil` は
 `APd (false::ks)` では出ないが `AllA` / `TwoOk` は満たすので、
 `MCtx` の枠木条件を `MPd ks U ∧ AllA U ∧ TwoQ U` にすれば読み替えの材料が揃う。
+
+## 追記120: 枠木を `FrQ` 化。`MBplus` の `true` 断片が緑。残る核は `TwoOk` の閉包
+
+### 緑になったもの
+
+`MPd` / `MCtx` の枠木と 2 の枠の兄弟に課す条件を `FrQ` にした:
+
+```
+FrQ U := JkA U ∧ AllA U ∧ TwoOk U ∧ ∀C, Bok C → AllA (pay U C) ∧ TwoOk (pay U C)
+FrQ_nil / FrQ_twoNil                    -- 塔の枠木はどちらも満たす
+AllA_one : JkA U → AllA U → AllA T → AllA (one U T)
+MPd_rep_true : AllA Z → ∀ j, MPd (replicate (j+1) true) Z
+R14_mem_A : (∀ N, FrQ N → MBplus N) → #14 ∈ W 0
+```
+
+`AllA_one` が通るのは、`AllA` の形が必ず `true` 頭（`rep_true_cons`）なので
+`Rq` が自明になるから。これで `MBplus` の「形が `true` だけ」の断片が出る。
+
+### `false` を跨ぐと止まる理由
+
+帰納の不変量 `Inv Z` は次の 2 つで閉じている必要がある:
+
+```
+Inv (one U Z)      （true を 1 個跨ぐ）
+Inv (two N Z)      （false を 1 個跨ぐ、cntF が減るので帰納は回る）
+```
+
+`kk = []` の底で `GOK (one U Z)` を出すのに `AllA Z` が要るので `Inv ⊇ AllA`。
+`AllA (two N Z)` は `TwoOk Z` から出る（`TwoOk` の定義そのもの）ので
+`Inv ⊇ TwoOk` も要る。ところが
+
+```
+TwoOk (one A B) ⟸ OneOk B + TwoQ A      -- OneOk の右引数での閉包が無い
+TwoOk (two N Z)                          -- 走り 2 そのもの、出ない
+```
+
+`OneOk (one A B)` を `OneOk_oneNil` に倣って作ろうとすると
+`GOK (plug (ctx ++ [ftwo N, fone V, fone A]) B)` が要り、`fone V` が 2 の記録の
+直上なので `Rq (false::ks) V = TopOk V` で止まる（`V` は `two nil nil` になりうる）。
+
+**つまり `APd (false::ks) (two nil nil)`（走り 2 を 2 の記録の直上に置く）が
+すべての道の底にある。**兄弟が `cntF` 非有界の全形状で良い必要があり、
+形で添字付けたどの族でも供給できない。
