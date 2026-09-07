@@ -50745,6 +50745,203 @@ theorem TTwA_oneTwoNilTR (k : ℕ) :
 
 #print axioms Dk_oneTwoNilTR
 
+/-! ### ★★★★★ 一様に良い木の族 `UP`（先端）/ `UT`（2 の枠木）
+
+追記88 の壁: `Cok` の 2 の枠木条件は層 `j` で頭打ちで、走りの階段
+（`nstN2` の入れ子）が層をまたげない。全層条件（`UniW`）を `Cok` の定義に
+書くと非可述になる。そこで **`Cok` を参照しない帰納的な木の族**を作り、
+「族に属する ⇒ `UniW`」を別に証明する。これなら 2 の枠木条件に族を課しても
+定義は構造的なまま。 -/
+
+/-- 先端に使える木（全層 `Ck` に通る）。 -/
+inductive UP : Jk1 → Prop
+  | nil : UP Jk1.nil
+  | pay : ∀ {X : Jk1} {C : TrioSeq}, UP X → Bok C → UP (Jk1.pay X C)
+
+/-- 2 の枠木に使える木（横鎖まで閉じている）。 -/
+inductive UT : Jk1 → Prop
+  | nil : UT Jk1.nil
+  | chain : ∀ {W T : Jk1} (k : ℕ), UT W → UP T → UT (twoIt W T k)
+
+theorem JkA_of_UP : ∀ {X : Jk1}, UP X → JkA X
+  | _, UP.nil => trivial
+  | _, UP.pay hX hC => ⟨JkA_of_UP hX, hC⟩
+
+theorem Uk_of_UP : ∀ {X : Jk1}, UP X → ∀ (j n : ℕ), Ck j n X
+  | _, UP.nil, j, n => Ck_nil j n
+  | _, UP.pay hX hC, j, n =>
+      Ck_pay j n _ hC _ (JkA_of_UP hX) (Uk_of_UP hX j n)
+
+theorem JkA_of_UT : ∀ {W : Jk1}, UT W → JkA W
+  | _, UT.nil => trivial
+  | _, UT.chain k hW hT => JkA_twoItP (JkA_of_UT hW) (JkA_of_UP hT) k
+
+theorem UniW_twoIt {W T : Jk1} (hW : UniW W) (hJT : JkA T)
+    (hT : ∀ j n : ℕ, Ck j n T) : ∀ k : ℕ, UniW (twoIt W T k)
+  | 0 => hW
+  | (k + 1) =>
+      { ja := ⟨(UniW_twoIt hW hJT hT k).ja, hJT⟩
+        ck := fun j i => Ck_twoW (UniW_twoIt hW hJT hT k) (hT (j + 1) 0)
+        ckp := fun C hC j i => Ck_pay j (i + 1) C hC _
+          ⟨(UniW_twoIt hW hJT hT k).ja, hJT⟩
+          (Ck_twoW (UniW_twoIt hW hJT hT k) (hT (j + 1) 0)) }
+
+theorem UniW_of_UT : ∀ {W : Jk1}, UT W → UniW W
+  | _, UT.nil => UniW_nil
+  | _, UT.chain k hW hT =>
+      UniW_twoIt (UniW_of_UT hW) (JkA_of_UP hT) (Uk_of_UP hT) k
+
+/-- 横鎖 `TR k = twoIt nil nil k` は族に属する。 -/
+theorem UT_TR : ∀ k : ℕ, UT (TR k) := by
+  intro k
+  have e : TR k = twoIt Jk1.nil Jk1.nil k := by
+    induction k with
+    | zero => rfl
+    | succ k ih => show Jk1.two (TR k) Jk1.nil = _; rw [ih]; rfl
+  rw [e]
+  exact UT.chain k UT.nil UP.nil
+
+#print axioms UniW_of_UT
+#print axioms UT_TR
+
+/-! ### ★★★★★ 走り込みの層 `Rok`: 2 の枠木に族 `UT` を課す
+
+`Cok` は 2 の枠木に「層 `j` での良さ」を課すので、走りの階段（`nstN2` の入れ子、
+枠木を層 `j+1, j+2, …` でも使う）が通らない（追記88）。`UT` は `Cok` を参照しない
+帰納的な族なので、これを条件にすれば定義は構造的なまま、枠木の一様性が使える。 -/
+
+def Rok : ℕ → ℕ → List Frm → Prop
+  | 0, 0, ctx => ∃ (r m : ℕ) (D : List Frm) (N : Jk1),
+      ctx = D ++ [Frm.ftwo N] ∧ TwSt r m D ∧ Fter r m ∧ JkA N ∧ (∀ q : ℕ, NTw q N)
+  | 0, (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Rok 0 n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Rok 0 n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok 0 n cs →
+        GOK (plug cs (Jk1.pay U C)))
+  | (j + 1), 0, ctx => ∃ (V Wl : Jk1) (ctx' : List Frm) (n : ℕ),
+      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Rok j n ctx' ∧ JkA V ∧
+      (∀ cs : List Frm, Rok j n cs → GOK (plug cs V)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+        GOK (plug cs (Jk1.pay V C))) ∧
+      (∀ (i : ℕ) (cs : List Frm), Rok j (i + 1) cs → GOK (plug cs Wl)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Rok j (i + 1) cs →
+        GOK (plug cs (Jk1.pay Wl C))) ∧ UT Wl
+  | (j + 1), (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Rok (j + 1) n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Rok (j + 1) n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok (j + 1) n cs →
+        GOK (plug cs (Jk1.pay U C)))
+
+/-- 形 `(j, n)` のどの `Rok` 文脈にも差せる。 -/
+def Rk (j n : ℕ) (Z : Jk1) : Prop := ∀ ctx : List Frm, Rok j n ctx → GOK (plug ctx Z)
+
+theorem Rok_00 (ctx : List Frm) : Rok 0 0 ctx ↔ ∃ (r m : ℕ) (D : List Frm) (N : Jk1),
+    ctx = D ++ [Frm.ftwo N] ∧ TwSt r m D ∧ Fter r m ∧ JkA N ∧ (∀ q : ℕ, NTw q N) := by
+  rw [Rok]
+
+theorem Rok_0s (n : ℕ) (ctx : List Frm) : Rok 0 (n + 1) ctx ↔ ∃ (U : Jk1) (ctx' : List Frm),
+    ctx = ctx' ++ [Frm.fone U] ∧ Rok 0 n ctx' ∧ JkA U ∧
+    (∀ cs : List Frm, Rok 0 n cs → GOK (plug cs U)) ∧
+    (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok 0 n cs →
+      GOK (plug cs (Jk1.pay U C))) := by
+  rw [Rok]
+
+theorem Rok_s0 (j : ℕ) (ctx : List Frm) : Rok (j + 1) 0 ctx ↔
+    ∃ (V Wl : Jk1) (ctx' : List Frm) (n : ℕ),
+      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Rok j n ctx' ∧ JkA V ∧
+      (∀ cs : List Frm, Rok j n cs → GOK (plug cs V)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+        GOK (plug cs (Jk1.pay V C))) ∧
+      (∀ (i : ℕ) (cs : List Frm), Rok j (i + 1) cs → GOK (plug cs Wl)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Rok j (i + 1) cs →
+        GOK (plug cs (Jk1.pay Wl C))) ∧ UT Wl := by
+  rw [Rok]
+
+theorem Rok_ss (j n : ℕ) (ctx : List Frm) : Rok (j + 1) (n + 1) ctx ↔
+    ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Rok (j + 1) n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Rok (j + 1) n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok (j + 1) n cs →
+        GOK (plug cs (Jk1.pay U C))) := by
+  rw [Rok]
+
+theorem JkT_plug_Rok : ∀ (j n : ℕ) (ctx : List Frm), Rok j n ctx → ∀ T : Jk1, JkA T →
+    JkT (plug ctx T)
+  | 0, 0, ctx, h, T, hT => by
+      obtain ⟨r, m, D, N, rfl, hD, -, hJN, -⟩ := (Rok_00 ctx).mp h
+      rw [plug_snoc2]
+      exact TwSt_JkT r m D hD _ ⟨hJN, hT⟩
+  | 0, (n + 1), ctx, h, T, hT => by
+      obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Rok_0s n ctx).mp h
+      rw [plug_snoc]
+      exact JkT_plug_Rok 0 n ctx' hc _ ⟨hJU, hT⟩
+  | (j + 1), 0, ctx, h, T, hT => by
+      obtain ⟨V, Wl, ctx', n, rfl, hc, hJV, -, -, -, -, hUT⟩ := (Rok_s0 j ctx).mp h
+      rw [plug_snoc2, plug_snoc]
+      exact JkT_plug_Rok j n ctx' hc _ ⟨hJV, JkA_of_UT hUT, hT⟩
+  | (j + 1), (n + 1), ctx, h, T, hT => by
+      obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Rok_ss j n ctx).mp h
+      rw [plug_snoc]
+      exact JkT_plug_Rok (j + 1) n ctx' hc _ ⟨hJU, hT⟩
+
+theorem Rok_fone {j n : ℕ} {U : Jk1} {ctx : List Frm} (hctx : Rok j n ctx) (hJU : JkA U)
+    (hU : ∀ cs : List Frm, Rok j n cs → GOK (plug cs U))
+    (hUp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+      GOK (plug cs (Jk1.pay U C))) :
+    Rok j (n + 1) (ctx ++ [Frm.fone U]) := by
+  cases j with
+  | zero => exact (Rok_0s n _).mpr ⟨U, ctx, rfl, hctx, hJU, hU, hUp⟩
+  | succ j => exact (Rok_ss j n _).mpr ⟨U, ctx, rfl, hctx, hJU, hU, hUp⟩
+
+theorem Rok_fone_dest {j n : ℕ} {ctx : List Frm} (h : Rok j (n + 1) ctx) :
+    ∃ (U : Jk1) (ctx' : List Frm), ctx = ctx' ++ [Frm.fone U] ∧ Rok j n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Rok j n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+        GOK (plug cs (Jk1.pay U C))) := by
+  cases j with
+  | zero => exact (Rok_0s n ctx).mp h
+  | succ j => exact (Rok_ss j n ctx).mp h
+
+theorem Rk_congr {j n : ℕ} {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : Rk j n X1) :
+    Rk j n X2 := fun ctx hctx => GOK_congr (jk1_plug_congr ctx h) (hX ctx hctx)
+
+theorem Rk00_of_TTwA {X : Jk1} (h : TTwA X) : Rk 0 0 X := by
+  intro ctx hctx
+  obtain ⟨r, m, D, N, rfl, hD, hf, hJN, hNup⟩ := (Rok_00 ctx).mp hctx
+  rw [plug_snoc2]
+  exact h r m N hJN hNup hf D hD
+
+theorem TTwA_of_Rk00 {X : Jk1} (h : Rk 0 0 X) : TTwA X := by
+  intro r m N hJN hNup hf D hD
+  have hc : Rok 0 0 (D ++ [Frm.ftwo N]) :=
+    (Rok_00 _).mpr ⟨r, m, D, N, rfl, hD, hf, hJN, hNup⟩
+  have := h _ hc
+  rwa [plug_snoc2] at this
+
+theorem Rk_one {j n : ℕ} {U T : Jk1} (hJU : JkA U) (hU : Rk j n U)
+    (hUp : ∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay U C)) (hT : Rk j (n + 1) T) :
+    Rk j n (Jk1.one U T) := by
+  intro ctx hctx
+  have hC : Rok j (n + 1) (ctx ++ [Frm.fone U]) :=
+    Rok_fone hctx hJU hU (fun C hC => hUp C hC)
+  have h := hT _ hC
+  rwa [plug_snoc] at h
+
+theorem Rk_pair {j n : ℕ} {V Wl T : Jk1} (hJV : JkA V) (hV : Rk j n V)
+    (hVp : ∀ C : TrioSeq, Bok C → Rk j n (Jk1.pay V C))
+    (hWk : ∀ i : ℕ, Rk j (i + 1) Wl)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Rk j (i + 1) (Jk1.pay Wl C))
+    (hW : UT Wl) (hT : Rk (j + 1) 0 T) : Rk j n (Jk1.one V (Jk1.two Wl T)) := by
+  intro ctx hctx
+  have hC : Rok (j + 1) 0 ((ctx ++ [Frm.fone V]) ++ [Frm.ftwo Wl]) :=
+    (Rok_s0 j _).mpr ⟨V, Wl, ctx, n, rfl, hctx, hJV, hV, (fun C hC => hVp C hC),
+      (fun i cs hcs => hWk i cs hcs), (fun C hC i cs hcs => hWp C hC i cs hcs), hW⟩
+  have h := hT _ hC
+  rwa [plug_snoc2, plug_snoc] at h
+
+#print axioms JkT_plug_Rok
+#print axioms Rk_pair
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
