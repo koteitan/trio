@@ -55116,5 +55116,35 @@ theorem Rk_twoNilNil_chain {j n : ℕ} {V W T : Jk1} {ctx' : List Frm} (hc : Rok
 #print axioms Rk_all_chain
 #print axioms Rk_twoNilNil_chain
 
+/-- 全層に差せることが保証された 2 の枠木の族（鎖の先端が対の層に差せる）。 -/
+inductive UTa : Jk1 → Prop
+  | nil : UTa Jk1.nil
+  | chain : ∀ {W T : Jk1} (k : ℕ), UTa W → UP T → (∀ j : ℕ, Rk (j + 1) 0 T) →
+      UTa (twoIt W T k)
+
+theorem UT_of_UTa : ∀ {W : Jk1}, UTa W → UT W
+  | _, UTa.nil => UT.nil
+  | _, UTa.chain k hW hT _ => UT.chain k (UT_of_UTa hW) hT
+
+theorem Rk_all_UTa : ∀ {W : Jk1}, UTa W →
+    (∀ j i : ℕ, Rk j (i + 1) W) ∧
+      (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))
+  | _, UTa.nil => ⟨Rk_all_nil, Rk_allp_nil⟩
+  | _, UTa.chain k hW hT hTp => by
+      obtain ⟨h1, h2⟩ := Rk_all_UTa hW
+      exact Rk_all_chain h1 h2 (UT_of_UTa hW) hT hTp k
+
+/-- ★★★★★ 2 の枠の兄弟が `UTa` なら、その直上に 2 の記録を置ける（走り）。 -/
+theorem Rk_twoNilNil_UTa {j n : ℕ} {V Wl : Jk1} {ctx' : List Frm} (hc : Rok j n ctx')
+    (hUV : UP V) (hV : ∀ cs : List Frm, Rok j n cs → GOK (plug cs V))
+    (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Rok j n cs →
+      GOK (plug cs (Jk1.pay V C)))
+    (hWa : UTa Wl) :
+    GOK (plug ((ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl]) (Jk1.two Jk1.nil Jk1.nil)) :=
+  Rk_twoNilNil_at hc hUV hV hVp (Rk_all_UTa hWa).1 (Rk_all_UTa hWa).2 (UT_of_UTa hWa)
+
+#print axioms Rk_all_UTa
+#print axioms Rk_twoNilNil_UTa
+
 end Small
 end TRIO
