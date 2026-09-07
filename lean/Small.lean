@@ -53915,7 +53915,8 @@ def BOk : ℕ → ℕ → List Frm → Prop
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, BOk 0 n cs →
         GOK (plug cs (Jk1.pay U C)))
   | (j + 1), 0, ctx => ∃ (V A : Jk1) (Bs : List Jk1) (ctx' : List Frm) (n : ℕ),
-      ctx = (ctx' ++ blkC V Bs) ++ [Frm.ftwo A] ∧ BOk j n ctx' ∧ JkA V ∧ JkA A ∧
+      ctx = ((ctx' ++ [Frm.fone V]) ++ ftw Bs) ++ [Frm.ftwo A] ∧
+      BOk j n (ctx' ++ [Frm.fone V]) ∧ JkA V ∧ JkA A ∧
       (∀ B ∈ Bs, JkA B) ∧ GOK (plug ctx' V) ∧ RStair ctx' V A Bs
   | (j + 1), (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
       ctx = ctx' ++ [Frm.fone U] ∧ BOk (j + 1) n ctx' ∧ JkA U ∧
@@ -53937,7 +53938,8 @@ theorem BOk_0s (n : ℕ) (ctx : List Frm) : BOk 0 (n + 1) ctx ↔
 
 theorem BOk_s0 (j : ℕ) (ctx : List Frm) : BOk (j + 1) 0 ctx ↔
     ∃ (V A : Jk1) (Bs : List Jk1) (ctx' : List Frm) (n : ℕ),
-      ctx = (ctx' ++ blkC V Bs) ++ [Frm.ftwo A] ∧ BOk j n ctx' ∧ JkA V ∧ JkA A ∧
+      ctx = ((ctx' ++ [Frm.fone V]) ++ ftw Bs) ++ [Frm.ftwo A] ∧
+      BOk j n (ctx' ++ [Frm.fone V]) ∧ JkA V ∧ JkA A ∧
       (∀ B ∈ Bs, JkA B) ∧ GOK (plug ctx' V) ∧ RStair ctx' V A Bs := by rw [BOk]
 
 theorem BOk_ss (j n : ℕ) (ctx : List Frm) : BOk (j + 1) (n + 1) ctx ↔
@@ -53946,6 +53948,11 @@ theorem BOk_ss (j n : ℕ) (ctx : List Frm) : BOk (j + 1) (n + 1) ctx ↔
       (∀ cs : List Frm, BOk (j + 1) n cs → GOK (plug cs U)) ∧
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, BOk (j + 1) n cs →
         GOK (plug cs (Jk1.pay U C))) := by rw [BOk]
+
+theorem blkC_split (ctx : List Frm) (V : Jk1) (Bs : List Jk1) :
+    ctx ++ blkC V Bs = (ctx ++ [Frm.fone V]) ++ ftw Bs := by
+  rw [List.append_assoc]
+  rfl
 
 theorem plug_blkC (ctx : List Frm) (V : Jk1) (Bs : List Jk1) (X : Jk1) :
     plug (ctx ++ blkC V Bs) X = plug ctx (Jk1.one V (plug (ftw Bs) X)) := by
@@ -53964,8 +53971,8 @@ theorem JkT_plug_BOk : ∀ (j n : ℕ) (ctx : List Frm), BOk j n ctx → ∀ T :
       exact JkT_plug_BOk 0 n ctx' hc' _ ⟨hJU, hT⟩
   | (j + 1), 0, ctx, hc, T, hT => by
       obtain ⟨V, A, Bs, ctx', n, rfl, hc', hJV, hJA, hB, -, -⟩ := (BOk_s0 j ctx).mp hc
-      rw [plug_snoc2, plug_blkC]
-      exact JkT_plug_BOk j n ctx' hc' _ ⟨hJV, JkA_plug_ftw Bs hB ⟨hJA, hT⟩⟩
+      rw [plug_snoc2, plug_append]
+      exact JkT_plug_BOk j n _ hc' _ (JkA_plug_ftw Bs hB ⟨hJA, hT⟩)
   | (j + 1), (n + 1), ctx, hc, T, hT => by
       obtain ⟨U, ctx', rfl, hc', hJU, -, -⟩ := (BOk_ss j n ctx).mp hc
       rw [plug_snoc]
@@ -53986,10 +53993,11 @@ theorem Bk_nil : ∀ (j n : ℕ), Bk j n Jk1.nil
   | (j + 1), 0 => by
       intro ctx hc
       obtain ⟨V, A, Bs, ctx', n, rfl, hc', hJV, hJA, hB, hGV, hst⟩ := (BOk_s0 j ctx).mp hc
-      rw [plug_snoc2]
+      rw [plug_snoc2, ← blkC_split]
       refine GOK_runGNil_gen hJA hB ctx' ?_ hGV hst
       have h := JkT_plug_BOk (j + 1) 0 _ hc Jk1.nil trivial
-      rwa [plug_snoc2] at h
+      rw [plug_snoc2, ← blkC_split] at h
+      exact h
   | (j + 1), (n + 1) => by
       intro ctx hc
       obtain ⟨U, ctx', rfl, hc', hJU, hU, hUp⟩ := (BOk_ss j n ctx).mp hc
@@ -53998,6 +54006,62 @@ theorem Bk_nil : ∀ (j n : ℕ), Bk j n Jk1.nil
       exact JkT_plug_BOk (j + 1) n ctx' hc' _ ⟨hJU, trivial⟩
 
 #print axioms Bk_nil
+
+/-- 1 の枠を 1 枚足す。 -/
+theorem BOk_fone {j n : ℕ} {U : Jk1} {ctx : List Frm} (hc : BOk j n ctx) (hJU : JkA U)
+    (hU : ∀ cs : List Frm, BOk j n cs → GOK (plug cs U))
+    (hUp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, BOk j n cs →
+      GOK (plug cs (Jk1.pay U C))) :
+    BOk j (n + 1) (ctx ++ [Frm.fone U]) := by
+  cases j with
+  | zero => exact (BOk_0s n _).mpr ⟨U, ctx, rfl, hc, hJU, hU, hUp⟩
+  | succ j => exact (BOk_ss j n _).mpr ⟨U, ctx, rfl, hc, hJU, hU, hUp⟩
+
+theorem Bk_one {j n : ℕ} {U T : Jk1} (hJU : JkA U) (hU : Bk j n U)
+    (hUp : ∀ C : TrioSeq, Bok C → Bk j n (Jk1.pay U C)) (hT : Bk j (n + 1) T) :
+    Bk j n (Jk1.one U T) := by
+  intro ctx hctx
+  have h := hT _ (BOk_fone hctx hJU hU (fun C hC => hUp C hC))
+  rwa [plug_snoc] at h
+
+/-- ★★★★★ 走り（ブロック）を差す。階段を渡すと文脈の走りの段になる。 -/
+theorem Bk_blk {j n : ℕ} {V A T : Jk1} {Bs : List Jk1} {ctx : List Frm}
+    (hc : BOk j n (ctx ++ [Frm.fone V])) (hJV : JkA V) (hJA : JkA A)
+    (hB : ∀ B ∈ Bs, JkA B) (hGV : GOK (plug ctx V)) (hst : RStair ctx V A Bs)
+    (hT : Bk (j + 1) 0 T) :
+    GOK (plug (ctx ++ blkC V Bs) (Jk1.two A T)) := by
+  have hC : BOk (j + 1) 0 (((ctx ++ [Frm.fone V]) ++ ftw Bs) ++ [Frm.ftwo A]) :=
+    (BOk_s0 j _).mpr ⟨V, A, Bs, ctx, n, rfl, hc, hJV, hJA, hB, hGV, hst⟩
+  have h := hT _ hC
+  rw [plug_snoc2, ← blkC_split] at h
+  exact h
+
+/-- ★★★★★ 行376 の塔の単位: 走り `n+1` の階段さえあれば出る。 -/
+theorem GOK_oneStk_of_stair (n : ℕ)
+    (hst : RStair ([] : List Frm) Jk1.nil Jk1.nil (List.replicate n Jk1.nil)) :
+    GOK (Jk1.one Jk1.nil (stk (n + 1))) := by
+  have hc : BOk 0 0 (([] : List Frm) ++ [Frm.fone Jk1.nil]) := (BOk_00 _).mpr rfl
+  have h := Bk_blk (j := 0) (n := 0) (V := Jk1.nil) (A := Jk1.nil) (T := Jk1.nil)
+    (Bs := List.replicate n Jk1.nil) (ctx := ([] : List Frm)) hc trivial trivial
+    (fun B hB => by rw [List.eq_of_mem_replicate hB]; trivial) GOK_nil hst (Bk_nil 1 0)
+  have e : plug (([] : List Frm) ++ rblk n) (Jk1.two Jk1.nil Jk1.nil)
+      = Jk1.one Jk1.nil (stk (n + 1)) := by
+    rw [plug_rblk, stkP_two]
+    rfl
+  rw [show blkC Jk1.nil (List.replicate n Jk1.nil) = rblk n from rfl, e] at h
+  exact h
+
+/-- 荷 `BLoad` から走り `n+1` の階段が出る。 -/
+theorem RStair_of_BLoad (hload : BLoad) (n : ℕ) :
+    RStair ([] : List Frm) Jk1.nil Jk1.nil (List.replicate n Jk1.nil) := by
+  intro i
+  have h := GOK_bstkTower hload n (i + 1) [] BStk.nil GOK_nil
+  rw [rblkR_succ] at h
+  rw [show blkC Jk1.nil (List.replicate n Jk1.nil) = rblk n from rfl,
+    show blkR Jk1.nil (List.replicate n Jk1.nil) i = rblkR n i from rfl]
+  exact h
+
+#print axioms GOK_oneStk_of_stair
 
 end Small
 end TRIO
