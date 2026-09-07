@@ -35924,6 +35924,134 @@ theorem TipP_itJ {A0 T : Jk1} (hA0 : TipPH A0) (hT : TipPH T)
 #print axioms TipP_twoIt
 #print axioms TipP_itJ
 
+/-! ### ★★★★★ 最後のブロックの走り長 `e` で制限した版
+
+塔（`TipP nil`）は「最後のブロックの走り長 `e`」の帰納で作る。段 `e+1` は
+`GOK_TrmStep`（階段のブロックは走り長 `e`）なので `e` の帰納の仮定でまかなえる。 -/
+
+theorem Trm_snocP : ∀ (pre : List (Jk1 × ℕ)) (A0 X : Jk1) (e : ℕ),
+    Trm X (pre ++ [(A0, e)]) = Trm (Jk1.one A0 (stkP e X)) pre
+  | [], A0, X, e => rfl
+  | (b :: bs), A0, X, e => by
+      show Jk1.one b.1 (stkP b.2 (Trm X (bs ++ [(A0, e)]))) = _
+      rw [Trm_snocP bs A0 X e]
+      rfl
+
+theorem TopOkH_run : ∀ (pre : List (Jk1 × ℕ)) (A0 : Jk1) (e e' : ℕ),
+    TopOkH (pre ++ [(A0, e)]) → TopOkH (pre ++ [(A0, e')])
+  | [], _, _, _, h => h
+  | (_ :: _), _, _, _, h => h
+
+theorem PreP_run {pre : List (Jk1 × ℕ)} {A0 : Jk1} {e e' : ℕ}
+    (h : PreP (pre ++ [(A0, e)])) : PreP (pre ++ [(A0, e')]) := by
+  intro k hk
+  simp only [List.length_append, List.length_cons, List.length_nil] at hk
+  by_cases hlt : k < pre.length
+  · have h1 := h k (by simp; omega)
+    have he : (pre ++ [(A0, e)])[k]'(by simp; omega) = pre[k]'hlt := by
+      simp [List.getElem_append_left, hlt]
+    have he' : (pre ++ [(A0, e')])[k]'(by simp; omega) = pre[k]'hlt := by
+      simp [List.getElem_append_left, hlt]
+    have ht : (pre ++ [(A0, e)]).take k = pre.take k := by
+      rw [List.take_append_of_le_length (by omega)]
+    have ht' : (pre ++ [(A0, e')]).take k = pre.take k := by
+      rw [List.take_append_of_le_length (by omega)]
+    rw [he', ht']
+    rw [he, ht] at h1
+    exact h1
+  · have hkk : k = pre.length := by omega
+    subst hkk
+    have h1 := h pre.length (by simp)
+    have he : (pre ++ [(A0, e)])[pre.length]'(by simp) = (A0, e) := by simp
+    have he' : (pre ++ [(A0, e')])[pre.length]'(by simp) = (A0, e') := by simp
+    have ht : (pre ++ [(A0, e)]).take pre.length = pre := by simp
+    have ht' : (pre ++ [(A0, e')]).take pre.length = pre := by simp
+    rw [he', ht']
+    rw [he, ht] at h1
+    exact h1
+
+def EndE (e : ℕ) (bs : List (Jk1 × ℕ)) : Prop :=
+  ∃ (pre : List (Jk1 × ℕ)) (A0 : Jk1), bs = pre ++ [(A0, e)]
+
+def TipPe (e : ℕ) (X : Jk1) : Prop :=
+  ∀ bs : List (Jk1 × ℕ), PreP bs → TopOkH bs → EndE e bs → GOK (Trm X bs)
+
+structure TipPHe (e : ℕ) (X : Jk1) : Prop where
+  ja : JkA X
+  tip : TipPe e X
+  hang : ∀ C : TrioSeq, Bok C → TipPe e (Jk1.pay X C)
+
+def TipP2e (e : ℕ) (X : Jk1) : Prop :=
+  ∀ (V : Jk1), TipPHe e V → ∀ bs : List (Jk1 × ℕ), PreP bs → TopOkH bs → EndE e bs →
+    GOK (Trm (Jk1.two V X) bs)
+
+theorem EndE_ne {e : ℕ} {bs : List (Jk1 × ℕ)} (h : EndE e bs) : bs ≠ [] := by
+  obtain ⟨pre, A0, rfl⟩ := h
+  simp
+
+theorem PreP_repe {e : ℕ} {bs : List (Jk1 × ℕ)} (hbs : PreP bs) (hTop : TopOkH bs)
+    (hE : EndE e bs) {V : Jk1} (hV : TipPHe e V) :
+    ∀ i : ℕ, PreP (bs ++ List.replicate i (V, e)) ∧ EndE e (bs ++ List.replicate i (V, e))
+  | 0 => by simpa using ⟨hbs, hE⟩
+  | (i + 1) => by
+      obtain ⟨ih1, ih3⟩ := PreP_repe hbs hTop hE hV i
+      have ih2 : TopOkH (bs ++ List.replicate i (V, e)) :=
+        (TopOkH_append bs _ (EndE_ne hE)).mpr hTop
+      have h := PreP_snoc ih1 hV.ja (hV.tip _ ih1 ih2 ih3)
+        (fun C hC => hV.hang C hC _ ih1 ih2 ih3) e
+      rw [List.append_assoc, ← List.replicate_succ'] at h
+      refine ⟨h, bs ++ List.replicate i (V, e), V, ?_⟩
+      rw [List.append_assoc, ← List.replicate_succ']
+
+/-- 2 の記録の枠の上に空木（`e` 制限版）。 -/
+theorem TipP2e_nil (e : ℕ) : TipP2e e Jk1.nil := by
+  intro V hV bs hbs hTop hE
+  obtain ⟨pre, A0, rfl⟩ := hE
+  obtain ⟨hpre, hJA0, hGA0, hGA0p⟩ := PreP_unsnoc hbs
+  have hne : (pre ++ [(A0, e)]) ≠ [] := by simp
+  refine GOK_TrmStep hV.ja pre e ?_ hGA0 ?_
+  · exact JkT_Trm_ne (X := Jk1.two V Jk1.nil) ⟨hV.ja, trivial⟩ (pre ++ [(A0, e)]) hne
+      (AllJkA_of_PreQ _ (PreQ_of_PreP hbs)) hTop
+  · intro i
+    obtain ⟨h1, h3⟩ := PreP_repe hbs hTop ⟨pre, A0, rfl⟩ hV i
+    have h2 : TopOkH ((pre ++ [(A0, e)]) ++ List.replicate i (V, e)) :=
+      (TopOkH_append _ _ hne).mpr hTop
+    have hh := hV.tip _ h1 h2 h3
+    simpa [List.append_assoc] using hh
+
+/-- 塔の段 `e = 0`。 -/
+theorem TipPe_nil_zero : TipPe 0 Jk1.nil := by
+  intro bs hbs hTop hE
+  obtain ⟨pre, A0, rfl⟩ := hE
+  obtain ⟨hpre, hJA0, hGA0, hGA0p⟩ := PreP_unsnoc hbs
+  have hJT : JkT (plug (spnT pre) (Jk1.one A0 Jk1.nil)) := by
+    rw [plug_spnT, Trm_one]
+    exact JkT_Trm_ne (X := Jk1.nil) trivial _ (by simp)
+      (AllJkA_of_PreQ _ (PreQ_of_PreP hbs)) hTop
+  have hGV : GOK (plug (spnT pre) A0) := by
+    rw [plug_spnT]
+    exact hGA0
+  have hang : ∀ C : TrioSeq, Bok C → GOK (plug (spnT pre) (Jk1.pay A0 C)) := by
+    intro C hC
+    rw [plug_spnT]
+    exact hGA0p C hC
+  have hh := APnil_gen0 (spnT pre) A0 hJT hGV hang
+  rw [plug_spnT, Trm_one] at hh
+  exact hh
+
+/-- 塔の段 `e+1`。 -/
+theorem TipPe_nil_succ {e : ℕ} (hV : TipPHe e Jk1.nil) : TipPe (e + 1) Jk1.nil := by
+  intro bs hbs hTop hE
+  obtain ⟨pre, A0, rfl⟩ := hE
+  have hh := TipP2e_nil e Jk1.nil hV (pre ++ [(A0, e)]) (PreP_run hbs)
+    (TopOkH_run pre A0 (e + 1) e hTop) ⟨pre, A0, rfl⟩
+  have e1 : Trm (Jk1.two Jk1.nil Jk1.nil) (pre ++ [(A0, e)])
+      = Trm Jk1.nil (pre ++ [(A0, e + 1)]) := by
+    rw [Trm_snocP, Trm_snocP, stkP_two_nil]
+  rwa [e1] at hh
+
+#print axioms TipPe_nil_succ
+
 /-! ### ★★★★★ 梯子 `RSt`: 2 の記録の枠を連続して積める
 
 `TwSt` の `Fter` を外す代わりに、**枠を足す先の文脈の末尾ランがすべて `nil`** を

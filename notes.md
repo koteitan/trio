@@ -12120,3 +12120,31 @@ TipPe e X := ∀ pre A0, PreP (pre ++ [(A0,e)]) → TopOkH (pre ++ [(A0,e)]) →
   走り長 0 なら `itJ`（`TipQ_itJ` の `PreP` 版）、1 以上なら `twoIt`
   （`TipQ_twoIt` + `TipP2_pay`）。`TipP2_pay` は `TipQ2_pay` の `PreP` 版。
 - これで `TipP nil` → `ZeroStep` → `GOK_BTall` → 塔 → `snocY_mem` → 行376。
+
+## 追記93: 塔の段は緑。荷の段の障害を特定（兄弟の「クラス級の良さ」）
+
+この回に緑にしたもの（`e` = 最後のブロックの走り長で制限した層）:
+`Trm_snocP`、`TopOkH_run`、`PreP_run`、`EndE`、`TipPe`、`TipPHe`、`TipP2e`、
+`EndE_ne`、`PreP_repe`、`TipP2e_nil`、**`TipPe_nil_zero`**（段 e = 0、`APnil_gen0`）、
+**`TipPe_nil_succ`**（段 e+1、`GOK_TrmStep`）。
+
+つまり塔の側は「`TipPHe e nil`（= 段 e の塔 + 段 e の荷）→ 段 e+1 の塔」が通った。
+
+### 残る障害: 荷の A2' の走り長 0 の場合
+
+`Trm (pay nil C) (pre ++ [(A0,0)])` の dup の複製鎖は `itJ (pay nil C') k A0`。
+その良さ（`TipQ_itJ` / `TipP_itJ`）には **`A0` のクラス級の良さ**（`TipQ A0`）が要る。
+ところが `PreQ`/`PreP` はブロックの左兄弟に「その場の文脈での良さ」しか課さない
+（局所条件。追記86 の「鎖は局所クラス」）。ここが噛み合わない。
+
+走り長 1 以上の場合は `dupJt0` + `TipQ_twoIt` で、鎖の左兄弟は `TipQ2` の仮定 `V`
+（クラス級）なので問題ない。**壁は走り長 0 の場合だけ**。
+
+### 次の設計案
+
+ブロックの左兄弟を「台座 `U`」と「クラス級に良い木の族」に分ける:
+- 台座 `U`: `JkT U`, `GOK U`, 荷は `AY0` で吊るせる（既存）。
+- それ以外の兄弟: `nil` と、`nil`・荷・鎖から作った木だけを許す族 `SibOk`。
+  `TipQ_itJ` / `TipQ_twoIt` はこの族を保つ（鎖の左兄弟は前の鎖）。
+- `PreP` を「先頭は台座、以降は `SibOk`」に置き換えれば、走り長 0 の dup で
+  `TipQ A0` が族から出る。`PayStep` のブロック列（兄弟は全部 `nil`）はこの形。
