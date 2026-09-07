@@ -13845,3 +13845,44 @@ Z = two A B   … 走り 2。GOK_twoTwoNilW_gen の「上が一般の木」版�
 構造帰納にするには仮定 `LAll1 Z` が部分木に遺伝する必要があるが、
 `LAll1 (one A B) → LAll1 A` は自明ではない。ケース分けの前に
 不変量の設計をやり直す必要がある。
+
+## 追記127: 壁の最小実例は `LTwo (two nil nil)`。階段が層を 1 段ずつ上げる
+
+`MPd_oneQ2` で `LStep2` を使うのは `Z = one U Z'`（1 の記録頭）の場合だけ。
+既存の `LTwo_one` は
+
+```
+LTwo_one : JkA V → LTwo V → TwM 1 Z → LTwo (one V Z)
+```
+
+なので、枠木 `V = U` について `LTwo U` が要る。塔の枠木は `nil` と `two nil nil` で、
+`LTwo_nil` は緑だが **`LTwo (two nil nil)` が出ない**。これが壁の最小実例。
+
+### なぜ出ないか（確認）
+
+```
+LOk (k+1) (two N (two nil nil))
+  D ∈ StkOk (k+1) = D' ++ [fone U]
+  plug D (two N (two nil nil)) = plug D' (one U (two N (two nil nil)))
+  GOK_twoTwoNilW_gen の階段 = ∀ m, GOK (plug D (two N (nstN N m)))
+  nstN N m = one nil (two N (nstN N (m-1)))
+  ⇒ plug (D ++ [ftwo N, fone nil]) (two N (nstN N (m-1)))
+  ⇒ 2 の枠が 2 枚の積み（StkOk は 1 枚しか持たない）
+```
+
+階段の 1 段が 2 の枠を 1 枚増やすので、層 0 の主張が層 1 を要求し、層 1 が層 2 を
+要求する。層 `r` の 2 の枠の兄弟条件は「層 `r` で一様」なので、階段が層をまたぐ分を
+賄えない。**層 0 だけが例外**で、`StkOk 0` の兄弟条件は `APd` の `AllA`
+（形の添字が 2 深さを含むので全 2 深さ一様）。
+
+### 試した弱め方（すべて同じ穴に戻る）
+
+- 兄弟クラスを `{AllA ∧ LAll1}` に絞る … 荷の鎖では閉じる（`AllA (chain) ⟸ AllA N + TwoOk T`、
+  `LAll1 (chain) ⟸ LTwo_chain`）が、`one` の場合に `TwM 1` が要り、
+  `two` の場合が走り 2 そのもの。
+- `TwSt` の兄弟を `TAll` に強めた族 `VSt` … 枠木の欄を `TwOk` にすると
+  塔の枠木 `two nil nil` が `TwOk (r+1) 0` を要求して破れ、`VOk` にすると
+  `VSt ⊆ TwSt` が出ず `TwOk_twoTwoNil` を使えない。
+- 枠木の欄を `TAll` にした単純述語 … `m = 0`（2 の記録の直上）で破れる。
+
+**結論は変わらず: 族の中で「層について一様な兄弟条件」を書く手段が要る。**
