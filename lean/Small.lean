@@ -48717,6 +48717,68 @@ theorem R375i6_mem : R375i ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R375i5_mem
 #print axioms R375i6_mem
 
+/-! #### `V(3,0,0)` -/
+
+def U375bI : TrioSeq := U375bJ ++ [((10, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375bI : MidD 3 U375bI where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375bI, U375bJ, U375bK, U375bR, U375bP, U375bZ, U375bX, U375b1, U375b,
+      List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375bI, U375bJ, U375bK, U375bR, U375bP, U375bZ, U375bX, U375b1, U375b,
+      List.cons_append, List.nil_append, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | j
+      <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375bI, U375bJ, U375bK, U375bR, U375bP, U375bZ, U375bX, U375b1, U375b,
+      List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      <;> decide
+
+theorem colJ_NI_one : colJ 1 1 NI = U375bI := by
+  show ((2, 2, 1) : ℕ × ℕ × ℕ) :: jk1 2 NI = _
+  rw [jk1_NI 2]
+  rfl
+
+theorem GoodFb_repl_NI : ∀ m : ℕ, GoodFb (fun a b => wordJ a b (List.replicate m NI))
+  | 0 => by simpa using GoodFb_wordJ_nil
+  | (m + 1) => by
+      have h := GOK_NI (List.replicate m NI) (WOk_replicateT JkT_NI m) (GoodFb_repl_NI m)
+      rwa [← List.replicate_succ'] at h
+
+theorem wordJ_repl_NI : ∀ m : ℕ, wordJ 1 1 (List.replicate m NI) = copies U375bI m
+  | 0 => rfl
+  | (m + 1) => by
+      rw [List.replicate_succ, wordJ_cons, wordJ_repl_NI m, copies_succ, colJ_NI_one]
+
+/-- ★★★★★ `V(3,0,0)`。 -/
+theorem R375i7_mem : R375i ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hstep : ∀ n : ℕ,
+      Aok (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375bI n) →
+      (R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375bI n) ++ U375bI ∈ W 0 := by
+    intro n _
+    have h := rowJ_mem_genF Aok_R338 (GoodFb_repl_NI (n + 1))
+    rw [wordJ_repl_NI (n + 1), copies_snoc] at h
+    simpa [List.append_assoc] using h
+  have h := flat_of_chain (Y0 := R338 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) (M := U375bI) (d := 3)
+    (by omega) MidD_U375bI Aok_R338110 hstep
+  simpa [R375i, R375j, R375k, R375r, R375p, R375z, R375x, R375s, R375m, R373, R344, R341,
+    R338, U375bI, U375bJ, U375bK, U375bR, U375bP, U375bZ, U375bX, U375b1, U375b,
+    List.append_assoc] using h
+
+#print axioms R375i7_mem
+
 /-! ### ★★★★★ 走りの 2 の記録に左兄弟をつけた一般ブロック
 
 `GOK_runNil_gen` は走りの 2 の記録の左兄弟がすべて `nil` の場合。荷の A2' が作る
