@@ -56542,14 +56542,50 @@ BM4 の制限ではない（`#14[n]` は標準形）。`Rq` を外すと `APd_al
 形を `false` 1 個ずつ伸ばすので、兄弟が `cntF` 非有界の全形状で良い必要が出る。
 `APd` の停止性 `(cntF ks, ks.length)` とは両立しない。
 
-そこで `APd` の後ろに第 2 族を作る。2 の枠の兄弟条件を `AllA`（全形状、`APd` 側で
-定義済み）にすれば、停止性は `APd` と同じまま `Rq` を落とせる。 -/
+そこで `APd` の後ろに第 2 族を作る。枠木と 2 の枠の兄弟に課すのは `FrQ`
+（`AllA` と `TwoOk`、いずれも `APd` 側で定義済み）なので、停止性は `APd` と
+同じまま `Rq` を落とせる。 -/
 
 /-- 全形状で項として継げる木（`TwoOk` / `StkOk 0` が使っている条件）。 -/
 def AllA (N : Jk1) : Prop :=
   ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N
 
 theorem AllA_nil : AllA Jk1.nil := fun _ _ => APd_nil _
+
+/-- `AllA` は 1 の記録で閉じている（形は必ず `true` 頭なので `Rq` は自明）。 -/
+theorem AllA_one {U T : Jk1} (hJU : JkA U) (hU : AllA U) (hT : AllA T) :
+    AllA (Jk1.one U T) := by
+  intro j kk
+  refine APd_step _ ?_ ?_ (hU j kk) ?_
+  · exact FrmJ_of_neA _ (by rw [rep_true_cons]; simp) U hJU
+  · rw [rep_true_cons]; exact Rq_true _ U
+  · exact hT 0 (List.replicate j true ++ (true :: kk))
+
+/-- 枠木・兄弟に課す下位条件。`APd` 層で全形状に差せて、2 の記録の右の子にもなれる。 -/
+def FrQ (U : Jk1) : Prop :=
+  JkA U ∧ AllA U ∧ TwoOk U ∧
+    (∀ C : TrioSeq, Bok C → AllA (Jk1.pay U C) ∧ TwoOk (Jk1.pay U C))
+
+theorem AllA_twoNil : AllA (Jk1.two Jk1.nil Jk1.nil) := by
+  intro j kk
+  rw [rep_true_cons]
+  exact APd_twoNilGen Jk1.nil trivial _ (fun _ => APd_nil _)
+
+theorem AllA_pay (U : Jk1) (hJU : JkA U) (hU : AllA U) (C : TrioSeq) (hC : Bok C) :
+    AllA (Jk1.pay U C) := by
+  intro j kk
+  refine APd_payA _ U (FrmJ_of_neA _ (by rw [rep_true_cons]; simp) U hJU) ?_ (hU j kk) C hC
+  rw [rep_true_cons]; exact Rq_true _ U
+
+theorem FrQ_nil : FrQ Jk1.nil :=
+  ⟨trivial, AllA_nil, TwoOk_nil,
+    fun C hC => ⟨AllA_pay Jk1.nil trivial AllA_nil C hC,
+      TwoOk_pay C hC Jk1.nil trivial TwoOk_nil⟩⟩
+
+theorem FrQ_twoNil : FrQ (Jk1.two Jk1.nil Jk1.nil) :=
+  ⟨⟨trivial, trivial⟩, AllA_twoNil, TwoOk_twoNil,
+    fun C hC => ⟨AllA_pay (Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ AllA_twoNil C hC,
+      TwoOk_pay C hC _ ⟨trivial, trivial⟩ TwoOk_twoNil⟩⟩
 
 /-- 枠木の妥当性は 1 の記録で閉じる。 -/
 theorem FrmJ_one (ks : List Bool) (U X : Jk1) (hU : FrmJ ks U) (hX : JkA X) :
@@ -56558,13 +56594,13 @@ theorem FrmJ_one (ks : List Bool) (U X : Jk1) (hU : FrmJ ks U) (hX : JkA X) :
   | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
   | cons b bs => exact ⟨hU, hX⟩
 
-/-- `APd` から `Rq` を落とし、2 の枠の兄弟を `AllA` にした族。 -/
+/-- `APd` から `Rq` を落とし、枠木・兄弟を `FrQ` にした族。 -/
 def MPd : List Bool → Jk1 → Prop
   | [], V => GOK V
-  | (true :: ks), V => ∀ U : Jk1, FrmJ ks U → MPd ks U → MPd ks (Jk1.one U V)
+  | (true :: ks), V => ∀ U : Jk1, FrmJ ks U → FrQ U → MPd ks U → MPd ks (Jk1.one U V)
   | (false :: ks), V => ∀ (m : ℕ) (U N : Jk1),
-      FrmJ (List.replicate m true ++ ks) U →
-      MPd (List.replicate m true ++ ks) U → JkA N → AllA N →
+      FrmJ (List.replicate m true ++ ks) U → FrQ U →
+      MPd (List.replicate m true ++ ks) U → FrQ N →
       MPd (List.replicate m true ++ ks) (Jk1.one U (Jk1.two N V))
 termination_by ks _ => (cntF ks, ks.length)
 decreasing_by
@@ -56577,13 +56613,14 @@ decreasing_by
 theorem MPd_bnil (V : Jk1) : MPd [] V ↔ GOK V := by rw [MPd]
 
 theorem MPd_ct (ks : List Bool) (V : Jk1) :
-    MPd (true :: ks) V ↔ ∀ U : Jk1, FrmJ ks U → MPd ks U → MPd ks (Jk1.one U V) := by
+    MPd (true :: ks) V ↔
+      ∀ U : Jk1, FrmJ ks U → FrQ U → MPd ks U → MPd ks (Jk1.one U V) := by
   rw [MPd]
 
 theorem MPd_cf (ks : List Bool) (V : Jk1) :
     MPd (false :: ks) V ↔ ∀ (m : ℕ) (U N : Jk1),
-      FrmJ (List.replicate m true ++ ks) U →
-      MPd (List.replicate m true ++ ks) U → JkA N → AllA N →
+      FrmJ (List.replicate m true ++ ks) U → FrQ U →
+      MPd (List.replicate m true ++ ks) U → FrQ N →
       MPd (List.replicate m true ++ ks) (Jk1.one U (Jk1.two N V)) := by
   rw [MPd]
 
@@ -56591,12 +56628,12 @@ theorem MPd_cf (ks : List Bool) (V : Jk1) :
 def MCtx : List Bool → List Frm → Prop
   | [], ctx => ctx = []
   | (true :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
-      MCtx ks ctx' ∧ FrmJ ks U ∧ MPd ks U
+      MCtx ks ctx' ∧ FrmJ ks U ∧ FrQ U ∧ MPd ks U
   | (false :: ks), ctx => ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
       ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
       MCtx (List.replicate m true ++ ks) ctx' ∧
-      FrmJ (List.replicate m true ++ ks) U ∧ MPd (List.replicate m true ++ ks) U ∧
-      JkA N ∧ AllA N
+      FrmJ (List.replicate m true ++ ks) U ∧ FrQ U ∧
+      MPd (List.replicate m true ++ ks) U ∧ FrQ N
 termination_by ks _ => (cntF ks, ks.length)
 decreasing_by
   all_goals
@@ -56609,34 +56646,34 @@ theorem MCtx_bnil (ctx : List Frm) : MCtx [] ctx ↔ ctx = [] := by rw [MCtx]
 
 theorem MCtx_ct (ks : List Bool) (ctx : List Frm) :
     MCtx (true :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
-      MCtx ks ctx' ∧ FrmJ ks U ∧ MPd ks U := by
+      MCtx ks ctx' ∧ FrmJ ks U ∧ FrQ U ∧ MPd ks U := by
   rw [MCtx]
 
 theorem MCtx_cf (ks : List Bool) (ctx : List Frm) :
     MCtx (false :: ks) ctx ↔ ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
       ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
       MCtx (List.replicate m true ++ ks) ctx' ∧
-      FrmJ (List.replicate m true ++ ks) U ∧ MPd (List.replicate m true ++ ks) U ∧
-      JkA N ∧ AllA N := by
+      FrmJ (List.replicate m true ++ ks) U ∧ FrQ U ∧
+      MPd (List.replicate m true ++ ks) U ∧ FrQ N := by
   rw [MCtx]
 
-/-- `MCtx` 文脈に差した木は字レベルで妥当（`Rq` は要らない。一番外の枠に
-`FrmJ [] = JkT` が `TopOk` を課しているので足りる）。 -/
+/-- `MCtx` 文脈に差した木は字レベルで妥当（一番外の枠に `FrmJ [] = JkT` が
+`TopOk` を課しているので `CtxOk` / `CtxJ` を使わずに済む）。 -/
 theorem MCtx_JkT : ∀ (ks : List Bool) (ctx : List Frm), MCtx ks ctx → ∀ X : Jk1,
     FrmJ ks X → JkT (plug ctx X)
   | [], ctx, h, X, hX => by
       rw [MCtx_bnil] at h; subst h; exact hX
   | (true :: ks), ctx, h, X, hX => by
       rw [MCtx_ct] at h
-      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      obtain ⟨ctx', U, rfl, hc', hU, -, -⟩ := h
       rw [plug_snoc]
       exact MCtx_JkT ks ctx' hc' _ (FrmJ_one ks U X hU hX)
   | (false :: ks), ctx, h, X, hX => by
       rw [MCtx_cf] at h
-      obtain ⟨m, ctx', U, N, rfl, hc', hU, -, hN, -⟩ := h
+      obtain ⟨m, ctx', U, N, rfl, hc', hU, -, -, hQN⟩ := h
       rw [plug_snoc12]
       exact MCtx_JkT (List.replicate m true ++ ks) ctx' hc' _
-        (FrmJ_one _ U _ hU ⟨hN, hX⟩)
+        (FrmJ_one _ U _ hU ⟨hQN.1, hX⟩)
 termination_by ks _ => (cntF ks, ks.length)
 decreasing_by
   all_goals
@@ -56660,28 +56697,29 @@ theorem MPd_iff : ∀ (ks : List Bool) (V : Jk1),
       constructor
       · intro h ctx hc
         rw [MCtx_ct] at hc
-        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        obtain ⟨ctx', U, rfl, hc', hU, hQU, hUk⟩ := hc
         rw [plug_snoc]
-        exact (MPd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
-      · intro h U hU hUk
+        exact (MPd_iff ks (Jk1.one U V)).mp (h U hU hQU hUk) ctx' hc'
+      · intro h U hU hQU hUk
         refine (MPd_iff ks (Jk1.one U V)).mpr ?_
         intro ctx' hc'
         rw [← plug_snoc]
-        exact h (ctx' ++ [Frm.fone U]) ((MCtx_ct ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+        exact h (ctx' ++ [Frm.fone U])
+          ((MCtx_ct ks _).mpr ⟨ctx', U, rfl, hc', hU, hQU, hUk⟩)
   | (false :: ks), V => by
       rw [MPd_cf]
       constructor
       · intro h ctx hc
         rw [MCtx_cf] at hc
-        obtain ⟨m, ctx', U, N, rfl, hc', hU, hUk, hN, hNt⟩ := hc
+        obtain ⟨m, ctx', U, N, rfl, hc', hU, hQU, hUk, hQN⟩ := hc
         rw [plug_snoc12]
-        exact (MPd_iff (List.replicate m true ++ ks) _).mp (h m U N hU hUk hN hNt) ctx' hc'
-      · intro h m U N hU hUk hN hNt
+        exact (MPd_iff (List.replicate m true ++ ks) _).mp (h m U N hU hQU hUk hQN) ctx' hc'
+      · intro h m U N hU hQU hUk hQN
         refine (MPd_iff (List.replicate m true ++ ks) _).mpr ?_
         intro ctx' hc'
         rw [← plug_snoc12]
         exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
-          ((MCtx_cf ks _).mpr ⟨m, ctx', U, N, rfl, hc', hU, hUk, hN, hNt⟩)
+          ((MCtx_cf ks _).mpr ⟨m, ctx', U, N, rfl, hc', hU, hQU, hUk, hQN⟩)
 termination_by ks _ => (cntF ks, ks.length)
 decreasing_by
   all_goals
@@ -56691,8 +56729,9 @@ decreasing_by
       | exact Prod.Lex.left _ _ (by omega)
 
 /-- 1 の列のフレームを 1 枚かぶせる。 -/
-theorem MPd_step (ks : List Bool) {V W : Jk1} (hV : FrmJ ks V) (hVk : MPd ks V)
-    (hW : MPd (true :: ks) W) : MPd ks (Jk1.one V W) := (MPd_ct ks W).mp hW V hV hVk
+theorem MPd_step (ks : List Bool) {V W : Jk1} (hV : FrmJ ks V) (hQ : FrQ V)
+    (hVk : MPd ks V) (hW : MPd (true :: ks) W) : MPd ks (Jk1.one V W) :=
+  (MPd_ct ks W).mp hW V hV hQ hVk
 
 theorem MPd_congr : ∀ (ks : List Bool) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
     MPd ks V1 → MPd ks V2 := by
@@ -56704,19 +56743,16 @@ theorem MPd_congr : ∀ (ks : List Bool) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l
 /-- `MCtx` 文脈は「外側の文脈 + 最内の木」に割れる。 -/
 theorem MCtx_split (ks : List Bool) (ctx : List Frm) (h : MCtx (true :: ks) ctx) :
     ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ MCtx ks ctx0 ∧
-      FrmJ ks V ∧ GOK (plug ctx0 V) := by
+      FrmJ ks V ∧ FrQ V ∧ GOK (plug ctx0 V) := by
   rw [MCtx_ct] at h
-  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
-  exact ⟨ctx', U, rfl, hc', hU, (MPd_iff ks U).mp hUk ctx' hc'⟩
+  obtain ⟨ctx', U, rfl, hc', hU, hQU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, hQU, (MPd_iff ks U).mp hUk ctx' hc'⟩
 
 /-- 2 の枠を 1 枚かぶせる（`m = 0` の場合）。 -/
-theorem MPd_twoOf {ks : List Bool} {V N : Jk1} (hN : JkA N) (hNall : AllA N)
+theorem MPd_twoOf {ks : List Bool} {V N : Jk1} (hQN : FrQ N)
     (hV : MPd (false :: ks) V) : MPd (true :: ks) (Jk1.two N V) :=
-  (MPd_ct ks _).mpr (fun U hU hUk =>
-    (MPd_cf ks V).mp hV 0 U N (by simpa using hU) (by simpa using hUk) hN hNall)
-
-#print axioms MPd_iff
-#print axioms MCtx_JkT
+  (MPd_ct ks _).mpr (fun U hU hQU hUk =>
+    (MPd_cf ks V).mp hV 0 U N (by simpa using hU) hQU (by simpa using hUk) hQN)
 
 /-! ### ★★★★★ `MPd` の塔。壁は `MNil` 1 点に落ちた -/
 
@@ -56730,33 +56766,33 @@ theorem nstN2_nil_eq_nstN (N : Jk1) : ∀ k : ℕ, nstN2 N Jk1.nil k = nstN N k
 /-- 残る壁: 走り 2 を許す文脈でも `nil` は 2 の記録の枠として使える。 -/
 def MNil : Prop := ∀ ks : List Bool, MPd (false :: ks) Jk1.nil
 
-/-- 交互塔（`APd_nstN` の `MPd` 版）。兄弟条件 `AllA` は形に依らないので通る。 -/
-theorem MPd_nstN {N : Jk1} (hJN : JkA N) (hNall : AllA N) (hnil : MNil) :
+/-- 交互塔（`APd_nstN` の `MPd` 版）。兄弟条件 `FrQ` は形に依らないので通る。 -/
+theorem MPd_nstN {N : Jk1} (hQN : FrQ N) (hnil : MNil) :
     ∀ (k : ℕ) (ks : List Bool), MPd (false :: ks) (nstN N k)
   | 0, ks => hnil ks
   | (k + 1), ks =>
-      MPd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil) (hnil ks)
-        (MPd_twoOf hJN hNall (MPd_nstN hJN hNall hnil k (false :: ks)))
+      MPd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil) FrQ_nil (hnil ks)
+        (MPd_twoOf hQN (MPd_nstN hQN hnil k (false :: ks)))
 
 /-- ★★★★★ 走り 2（`MPd` 層）。階段は交互塔。 -/
-theorem MPd_twoTwoGen {N : Jk1} (hJN : JkA N) (hNall : AllA N) (hnil : MNil)
+theorem MPd_twoTwoGen {N : Jk1} (hQN : FrQ N) (hnil : MNil)
     (ks : List Bool) : MPd (true :: ks) (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
   rw [MPd_iff]
   intro ctx hc
-  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := MCtx_split ks ctx hc
-  refine GOK_twoTwoNilW_gen ctx0 V hJN trivial ?_ hGV ?_
-  · exact MCtx_JkT (true :: ks) _ hc _ ⟨hJN, trivial, trivial⟩
+  obtain ⟨ctx0, V, rfl, hc0, hV, hQV, hGV⟩ := MCtx_split ks ctx hc
+  refine GOK_twoTwoNilW_gen ctx0 V hQN.1 trivial ?_ hGV ?_
+  · exact MCtx_JkT (true :: ks) _ hc _ ⟨hQN.1, trivial, trivial⟩
   · intro k
     have h : MPd (true :: ks) (Jk1.two N (nstN N k)) :=
-      MPd_twoOf hJN hNall (MPd_nstN hJN hNall hnil k ks)
+      MPd_twoOf hQN (MPd_nstN hQN hnil k ks)
     rw [nstN2_nil_eq_nstN]
     exact (MPd_iff (true :: ks) _).mp h _ hc
 
 /-- 走り 2 は 2 の記録の直上にも置ける。 -/
 theorem MPd_twoTwoNilB (hnil : MNil) (ks : List Bool) :
     MPd (false :: ks) (Jk1.two Jk1.nil Jk1.nil) :=
-  (MPd_cf ks _).mpr (fun m U N hU hUk hN hNt =>
-    (MPd_ct _ _).mp (MPd_twoTwoGen hN hNt hnil _) U hU hUk)
+  (MPd_cf ks _).mpr (fun m U N hU hQU hUk hQN =>
+    (MPd_ct _ _).mp (MPd_twoTwoGen hQN hnil _) U hU hQU hUk)
 
 /-- 塔（単位の個数について一様）。 -/
 theorem MPd_TW (hnil : MNil) : ∀ (n : ℕ) (ks : List Bool), MPd (false :: ks) (TW n)
@@ -56764,74 +56800,91 @@ theorem MPd_TW (hnil : MNil) : ∀ (n : ℕ) (ks : List Bool), MPd (false :: ks)
   | (n + 1), ks =>
       MPd_step (false :: ks)
         (⟨trivial, trivial⟩ : FrmJ (false :: ks) (Jk1.two Jk1.nil Jk1.nil))
-        (MPd_twoTwoNilB hnil ks)
-        (MPd_twoOf trivial AllA_nil (MPd_TW hnil n (false :: ks)))
+        FrQ_twoNil (MPd_twoTwoNilB hnil ks)
+        (MPd_twoOf FrQ_nil (MPd_TW hnil n (false :: ks)))
 
 /-- ★★★★★ `MNil` があれば塔の木は全部良い。 -/
 theorem TowOk_of_MNil (hnil : MNil) : TowOk := fun n =>
-  (MPd_bnil _).mp (MPd_step [] (JkT_nil : FrmJ [] Jk1.nil) ((MPd_bnil _).mpr GOK_nil)
-    (MPd_twoOf trivial AllA_nil (MPd_TW hnil n [])))
+  (MPd_bnil _).mp (MPd_step [] (JkT_nil : FrmJ [] Jk1.nil) FrQ_nil
+    ((MPd_bnil _).mpr GOK_nil)
+    (MPd_twoOf FrQ_nil (MPd_TW hnil n [])))
 
 /-- ★★★★★ `MNil` があれば #14 が出る。 -/
 theorem R14_mem_M (hnil : MNil) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R14_mem (TowOk_of_MNil hnil)
 
-#print axioms TowOk_of_MNil
-#print axioms R14_mem_M
+/-! ### `MNil` を「`FrQ` な木は `MPd` でも良い」に落とす -/
 
-/-! ### `MNil` を「`AllA` な木は `MPd` でも良い」に落とす -/
-
-theorem MCtx_rep {N : Jk1} (hJN : JkA N) (ks : List Bool)
+theorem MCtx_rep {N : Jk1} (hQN : FrQ N) (ks : List Bool)
     (hNall : ∀ j : ℕ, MPd (List.replicate j true ++ (true :: ks)) N) :
     ∀ (m : ℕ) (ctx : List Frm), MCtx (true :: ks) ctx →
       MCtx (List.replicate m true ++ (true :: ks)) (ctx ++ List.replicate m (Frm.fone N))
   | 0, ctx, hc => by simpa using hc
   | (m + 1), ctx, hc => by
-      have h1 := MCtx_rep hJN ks hNall m ctx hc
+      have h1 := MCtx_rep hQN ks hNall m ctx hc
       have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
           = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
         rw [List.replicate_succ']
         simp
       rw [e, rep_succ_cons, MCtx_ct]
       exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
-        (FrmJ_rep m true ks N).mpr hJN, hNall m⟩
+        (FrmJ_rep m true ks N).mpr hQN.1, hQN, hNall m⟩
 
-theorem MPd_plug_rep (N : Jk1) (hJN : JkA N) (ks : List Bool)
+theorem MPd_plug_rep (N : Jk1) (hQN : FrQ N) (ks : List Bool)
     (hNall : ∀ j : ℕ, MPd (List.replicate j true ++ (true :: ks)) N) (m : ℕ) :
     MPd (true :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
   rw [MPd_iff]
   intro ctx hc
   rw [← plug_append]
-  exact (MPd_iff _ N).mp (hNall m) _ (MCtx_rep hJN ks hNall m ctx hc)
+  exact (MPd_iff _ N).mp (hNall m) _ (MCtx_rep hQN ks hNall m ctx hc)
 
 /-- 木 `N` が `MPd` 層でどの 1 の枠つき形にも差せる。 -/
 def MBplus (N : Jk1) : Prop :=
   ∀ (j : ℕ) (ks : List Bool), MPd (List.replicate j true ++ (true :: ks)) N
 
 /-- 2 の記録（上に何も無い）の `MPd` 版。 -/
-theorem MPd_twoNilGen {N : Jk1} (hJN : JkA N) (hM : MBplus N) (ks : List Bool) :
+theorem MPd_twoNilGen {N : Jk1} (hQN : FrQ N) (hM : MBplus N) (ks : List Bool) :
     MPd (true :: ks) (Jk1.two N Jk1.nil) := by
   rw [MPd_iff]
   intro ctx hc
-  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := MCtx_split ks ctx hc
-  exact GOK_twoNilW_gen ctx0 V hJN
-    (MCtx_JkT (true :: ks) _ hc _ ⟨hJN, trivial⟩) hGV
+  obtain ⟨ctx0, V, rfl, hc0, hV, hQV, hGV⟩ := MCtx_split ks ctx hc
+  exact GOK_twoNilW_gen ctx0 V hQN.1
+    (MCtx_JkT (true :: ks) _ hc _ ⟨hQN.1, trivial⟩) hGV
     (fun m => (MPd_iff (true :: ks) _).mp
-      (MPd_plug_rep N hJN ks (fun j => hM j ks) m) _ hc)
+      (MPd_plug_rep N hQN ks (fun j => hM j ks) m) _ hc)
 
-/-- ★★★★★ 壁の言い換え: `AllA`（`APd` 層で全形状）な木が `MPd` 層でも良ければ `MNil`。 -/
-theorem MNil_of (h : ∀ N : Jk1, JkA N → AllA N → MBplus N) : MNil := by
+/-- ★★★★★ 壁の言い換え: `FrQ` な木が `MPd` 層でも良ければ `MNil`。 -/
+theorem MNil_of (h : ∀ N : Jk1, FrQ N → MBplus N) : MNil := by
   intro ks
-  refine (MPd_cf ks _).mpr (fun m U N hU hUk hN hNt => ?_)
-  exact (MPd_ct _ _).mp (MPd_twoNilGen hN (h N hN hNt) _) U hU hUk
+  refine (MPd_cf ks _).mpr (fun m U N hU hQU hUk hQN => ?_)
+  exact (MPd_ct _ _).mp (MPd_twoNilGen hQN (h N hQN) _) U hU hQU hUk
 
-/-- ★★★★★ したがって #14 は「`AllA` ⇒ `MBplus`」1 本に落ちた。 -/
-theorem R14_mem_A (h : ∀ N : Jk1, JkA N → AllA N → MBplus N) :
+/-- ★★★★★ したがって #14 は「`FrQ` ⇒ `MBplus`」1 本に落ちた。 -/
+theorem R14_mem_A (h : ∀ N : Jk1, FrQ N → MBplus N) :
     R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R14_mem_M (MNil_of h)
 
+/-! ### `MBplus` の `true` だけの形（帰納が閉じる部分） -/
+
+/-- 形が `true` だけなら `AllA` から `MPd` が出る。 -/
+theorem MPd_rep_true {Z : Jk1} (hZ : AllA Z) :
+    ∀ j : ℕ, MPd (List.replicate (j + 1) true) Z
+  | 0 => by
+      rw [show List.replicate (0 + 1) true = true :: ([] : List Bool) from rfl, MPd_ct]
+      intro U hU hQU hUk
+      rw [MPd_bnil] at hUk ⊢
+      exact (APd_bnil _).mp (APd_step [] hU trivial ((APd_bnil _).mpr hUk) (hZ 0 []))
+  | (j + 1) => by
+      rw [show List.replicate (j + 1 + 1) true = true :: List.replicate (j + 1) true from rfl,
+        MPd_ct]
+      intro U hU hQU hUk
+      exact MPd_rep_true (AllA_one hQU.1 hQU.2.1 hZ) j
+
+#print axioms MPd_iff
 #print axioms MNil_of
 #print axioms R14_mem_A
+#print axioms MPd_rep_true
+
 
 end Small
 end TRIO
