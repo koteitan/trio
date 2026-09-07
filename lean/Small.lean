@@ -57666,6 +57666,117 @@ theorem unR_target (N : Jk1) (Ns : List Jk1) (Nl : Jk1) (D : ℕ) :
 #print axioms jk1_nstR
 #print axioms unR_target
 
+/-- 走りの字では、上りの尾の位置は必ず 2 の記録（兄弟の中は上りにならない）。 -/
+theorem hMy_runJ : ∀ (Ns : List Jk1) (Nl : Jk1) (L t : ℕ),
+    t < (jk1 L (runJ Ns Nl)).length →
+    entry (jk1 L (runJ Ns Nl)) 0 t < L + Ns.length + 1 →
+    (∀ i, t < i → i < (jk1 L (runJ Ns Nl)).length →
+      entry (jk1 L (runJ Ns Nl)) 0 t < entry (jk1 L (runJ Ns Nl)) 0 i) →
+    2 ≤ entry (jk1 L (runJ Ns Nl)) 1 t
+  | [], Nl, L, t, htl, hlt, _ => by
+      exfalso
+      have htl' : t < (jk1 L Nl).length := htl
+      have hlt' : entry (jk1 L Nl) 0 t < L + 0 + 1 := hlt
+      have hge : L + 1 ≤ entry (jk1 L Nl) 0 t := entry0_of_ge (jk1_ge Nl L) t htl'
+      omega
+  | (M :: Ns), Nl, L, t, htl, hlt, hrec => by
+      have hR : jk1 L (runJ (M :: Ns) Nl)
+          = jk1 L M ++ (((L + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (L + 1) (runJ Ns Nl)) := rfl
+      rw [hR] at htl hlt hrec ⊢
+      have hlen : (jk1 L M ++ (((L + 1, 2, 0) : ℕ × ℕ × ℕ)
+          :: jk1 (L + 1) (runJ Ns Nl))).length
+          = (jk1 L M).length + ((jk1 (L + 1) (runJ Ns Nl)).length + 1) := by simp
+      have hAlt : (jk1 L M).length < (jk1 L M ++ (((L + 1, 2, 0) : ℕ × ℕ × ℕ)
+          :: jk1 (L + 1) (runJ Ns Nl))).length := by omega
+      have heA0 : entry (jk1 L M ++ (((L + 1, 2, 0) : ℕ × ℕ × ℕ)
+          :: jk1 (L + 1) (runJ Ns Nl))) 0 (jk1 L M).length = L + 1 := by
+        rw [entry_append_at]; simp [entry]
+      have heA1 : entry (jk1 L M ++ (((L + 1, 2, 0) : ℕ × ℕ × ℕ)
+          :: jk1 (L + 1) (runJ Ns Nl))) 1 (jk1 L M).length = 2 := by
+        rw [entry_append_at]; simp [entry]
+      rcases Nat.lt_trichotomy t (jk1 L M).length with h | h | h
+      · exfalso
+        have h2 := hrec (jk1 L M).length h hAlt
+        rw [heA0, entry_append_left h] at h2
+        have hge : L + 1 ≤ entry (jk1 L M) 0 t := entry0_of_ge (jk1_ge M L) t h
+        omega
+      · rw [h, heA1]
+      · obtain ⟨t', rfl⟩ : ∃ t', t = (jk1 L M).length + (t' + 1) :=
+          ⟨t - (jk1 L M).length - 1, by omega⟩
+        have hconv : ∀ (i u : ℕ), entry (jk1 L M ++ (((L + 1, 2, 0) : ℕ × ℕ × ℕ)
+            :: jk1 (L + 1) (runJ Ns Nl))) i ((jk1 L M).length + (u + 1))
+            = entry (jk1 (L + 1) (runJ Ns Nl)) i u := by
+          intro i u
+          rw [entry_append_right, entry_cons_succ]
+        rw [hconv]
+        refine hMy_runJ Ns Nl (L + 1) t' ?_ ?_ ?_
+        · rw [hlen] at htl; omega
+        · rw [hconv] at hlt
+          simp only [List.length_cons] at hlt
+          omega
+        · intro i' hi' hilt
+          have h3 := hrec ((jk1 L M).length + (i' + 1)) (by omega) (by rw [hlen]; omega)
+          rw [hconv, hconv] at h3
+          exact h3
+
+theorem hMy_unR {N : Jk1} (hJN : JkA N) {Ns : List Jk1} (hNs : AllJk Ns)
+    {Nl : Jk1} (hJNl : JkA Nl) {D : ℕ} (hD : 1 ≤ D) :
+    ∀ t, 1 ≤ t → t < (unR N Ns Nl D).length →
+      entry (unR N Ns Nl D) 0 t < D + (Ns.length + 2) →
+      (∀ i, t < i → i < (unR N Ns Nl D).length →
+        entry (unR N Ns Nl D) 0 t < entry (unR N Ns Nl D) 0 i) →
+      2 ≤ entry (unR N Ns Nl D) 1 t := by
+  intro t ht1 htl hlt hrec
+  have hlenU : (unN N D).length = (jk1 D N).length + 2 := by simp [unN]
+  have hlen : (unR N Ns Nl D).length
+      = (unN N D).length + (jk1 (D + 1) (runJ Ns Nl)).length := by simp [unR]
+  have hLlt : (jk1 D N).length + 1 < (unN N D).length := by omega
+  have heL0 : entry (unR N Ns Nl D) 0 ((jk1 D N).length + 1) = D + 1 := by
+    rw [unR, entry_append_left hLlt, entry_unN_last0]
+  have heL1 : entry (unR N Ns Nl D) 1 ((jk1 D N).length + 1) = 2 := by
+    rw [unR, entry_append_left hLlt, entry_unN_last1]
+  rcases Nat.lt_trichotomy t ((jk1 D N).length + 1) with h | h | h
+  · exfalso
+    have h2 := hrec ((jk1 D N).length + 1) h (by omega)
+    rw [heL0] at h2
+    have hge : D + 1 ≤ entry (unR N Ns Nl D) 0 t :=
+      (MidD_unR hJN hNs hJNl hD).tail t ht1 htl
+    omega
+  · rw [h, heL1]
+  · obtain ⟨t', rfl⟩ : ∃ t', t = (unN N D).length + t' :=
+      ⟨t - (unN N D).length, by omega⟩
+    have hconv : ∀ (i u : ℕ), entry (unR N Ns Nl D) i ((unN N D).length + u)
+        = entry (jk1 (D + 1) (runJ Ns Nl)) i u := by
+      intro i u; rw [unR, entry_append_right]
+    rw [hconv]
+    refine hMy_runJ Ns Nl (D + 1) t' ?_ ?_ ?_
+    · rw [hlen] at htl; omega
+    · rw [hconv] at hlt; omega
+    · intro i' hi' hilt
+      have h3 := hrec ((unN N D).length + i') (by omega) (by rw [hlen]; omega)
+      rw [hconv, hconv] at h3
+      exact h3
+
+/-- 塔（`k+1` 段）と底から、`unR N Ns Nl D` の末尾に 2 の記録を継ぐ。 -/
+theorem snocR_of_tower {N : Jk1} (hJN : JkA N) {Ns : List Jk1} (hNs : AllJk Ns)
+    {Nl : Jk1} (hJNl : JkA Nl) {D : ℕ} (hD : 1 ≤ D) {X : TrioSeq}
+    (hne : X ≠ []) (h0 : X ∈ W 0)
+    (htw : ∀ k : ℕ, Mtwd (Ns.length + 2) X (unR N Ns Nl D) (k + 1) ∈ W 0) :
+    (X ++ unR N Ns Nl D) ++ [((D + (Ns.length + 2), 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine snocYd_mem (Y0 := X) (M := unR N Ns Nl D) (L := D) (y := 2)
+    (dl := Ns.length + 2) hne (MidD_unR hJN hNs hJNl hD) ?_
+    (hMy_unR hJN hNs hJNl hD) (by omega) (by omega) ?_
+  · show entry (unR N Ns Nl D) 1 0 < 2
+    simp [unR, unN, entry]
+  · intro n
+    match n with
+    | 0 => simpa [Mtwd] using h0
+    | (k + 1) => exact htw k
+
+#print axioms hMy_runJ
+#print axioms snocR_of_tower
+
+
 /-! ### ★★★★★ 走り文脈 `RCtx`（2 の枠を任意個積める）
 
 `APd` / `GCtx` は形（`List Bool`）で文脈を索引するが、`false` は
