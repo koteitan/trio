@@ -12865,3 +12865,61 @@ UT  = nil | twoIt W T k (UT W, UPq T)                                -- 2 の枠
 ただし `PairOk (one U T)` ⇐ `Rk_all_UT` ⇐ `PairOk`（先端）の循環が残る。
 **A2' の荷の帰納法を外側に置く**（`Rk_pay (j+1) 1` の荷 `Y` について、
 `PairOk (itJ (pay X Y') k U)` は 1 つ小さい荷の IH から出る）と切れる見込み。
+
+## 追記107: 壁を 1 文に閉じ込めた（`Wall`）。残る穴は `PairOk (one A T)` 1 個
+
+この回の後半で `UT` の鎖の先端を `UPt`（横鎖を含まない族）に絞り、
+`Rok` の 1 の枠の族を層で分ける改修を入れた（すべて緑）。
+
+```
+UPt = nil | two nil nil | pay X C (UPt X) | one A T (UPt A, UP T)
+UP  = nil | pay | one | twoIt W T k (UT W, UPt T)
+UT  = nil | twoIt W T k (UT W, UPt T)
+UPl n = if n = 0 then UPt else UP     -- Rok の 1 の枠の族（層 n）
+```
+
+`Rk_nil` の対の腕の階段 `(fone Wl)^i` は層 ≥2 にしか鎖を置かないので、
+`UPl` の層分けと整合する（`Rk_pay` の層 (j,1) の腕が対の層で扱う木は
+`one (itJ T k U) T`、`U ∈ UPl 0 = UPt` ✓）。
+
+### 壁とその同値
+
+```
+Wall := ∀ j, Rk (j+1) 0 (two nil nil)      -- 走り 2 が対の層のどの文脈にも
+Wall ⇒ Rk_UPt / Rk_UP / Rk_allUT           -- 族はすべて所定の層に差せる
+Rk_allUT ⇒ Wall                            -- Wall_of_allUT
+```
+
+**未証明はこの 1 文だけ**（`sorry` は無い。`Wall` を仮定にした形で緑）。
+
+### `Wall` を素直に示そうとすると詰まる 1 点
+
+`Wall_of_allUT` に入れる `∀ W, UT W → 全層` は `UT` の構造帰納 +
+`Rk_all_chainW` で、鎖の先端 `T`（`UPt`）の `PairOk T` に落ちる。
+`UPt` の場合分けは
+
+- `nil` ✓ `PairOk_nil`
+- `two nil nil` ✓ `PairOk_twoNil`（兄弟の全層条件は `PairOk` の仮定にある）
+- `pay X C` ✓ `PairOk_pay`
+- **`one A T` ✗**
+
+`PairOk (one A T)` は `plug ctx (one A T) = plug (ctx ++ [fone A]) T` なので
+`ctx ++ [fone A]` が `Rok (j+1) 1` の文脈である必要があり、
+`Rok` の 1 の枠の条件は**普遍**（`∀ cs, Rok (j+1) 0 cs → GOK (plug cs A)`）だから
+`Rk (j+1) 0 A` が要る。`A` の `two nil nil` の場合がまさに `Wall`。**自己参照**。
+
+### 試して駄目だった逃げ道（記録）
+
+1. `Rok` の 1 の枠の条件を「その場だけ」に弱める … `Rk_pay` の層 (j,n+1) の腕で
+   鎖 `itJ (pay X Y') k U` の**荷**が出せない（荷は普遍性から来ていた）。
+2. 兄弟のサイズで層を階層化（step-indexing 風）… `Rok` の 1 の枠の条件が
+   同じ束縛で普遍なので、境界が減らない。
+3. 兄弟の族を `one` 抜き（`nil | two nil nil | pay`）に絞る …
+   `Rk_pay` の対の腕の鎖の先端 `pay (one …) Y'` が族から外れる。
+4. 兄弟の全層条件を `Rok` の定義に書く … 非可述（追記88）。
+
+### 次に試すこと
+
+`Rok` から**荷の欄を落とす**（`Rk_nil` の `APnil_gen0` が要求する枠木の荷は
+`Rk_pay j n` で導ける。`Rk_pay` は `Rk_nil` に依存しない）。すると `Rk_itJ` から
+`hpay` が消え、鎖の構成が荷を要求しなくなる。これで逃げ道 1 が生き返る可能性がある。
