@@ -53735,6 +53735,165 @@ theorem R376_of_BLoad (hload : BLoad) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)
 #print axioms GOK_bstkTower
 #print axioms R376_of_BLoad
 
+/-! ### ★★★★★ 基底つき梯子 `LSt` / `LLk`
+
+`StkOk` / `LOk` の基底（2 の記録 + `GCtx`）を差し替えられるようにした版。
+基底 `B` に課すのは「差した木が字レベルで妥当」だけ。1 の枠を `k+1` 枚積んだ
+文脈で荷を吊るせること（`LLk_pay_succ`）は基底の性質を使わない。 -/
+
+def LSt (B : List Frm → Prop) : ℕ → List Frm → Prop
+  | 0, D => B D
+  | (k + 1), D => ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ LSt B k D' ∧ JkA U ∧
+      (∀ D'' : List Frm, LSt B k D'' → GOK (plug D'' U))
+
+/-- 基底 `B` の上に 1 の枠を `k` 枚積んだどの文脈にも差せる木。 -/
+def LLk (B : List Frm → Prop) (k : ℕ) (X : Jk1) : Prop :=
+  ∀ D : List Frm, LSt B k D → GOK (plug D X)
+
+theorem LSt_zero (B : List Frm → Prop) (D : List Frm) : LSt B 0 D ↔ B D := Iff.rfl
+
+theorem LSt_succ (B : List Frm → Prop) (k : ℕ) (D : List Frm) :
+    LSt B (k + 1) D ↔ ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ LSt B k D' ∧ JkA U ∧
+      (∀ D'' : List Frm, LSt B k D'' → GOK (plug D'' U)) := Iff.rfl
+
+theorem LSt_JkT {B : List Frm → Prop}
+    (hBT : ∀ D : List Frm, B D → ∀ T : Jk1, JkA T → JkT (plug D T)) :
+    ∀ (k : ℕ) (D : List Frm), LSt B k D → ∀ T : Jk1, JkA T → JkT (plug D T)
+  | 0, D, hD, T, hT => hBT D hD T hT
+  | (k + 1), D, hD, T, hT => by
+      obtain ⟨D', U, rfl, hD', hJU, -⟩ := hD
+      rw [plug_snoc]
+      exact LSt_JkT hBT k D' hD' _ ⟨hJU, hT⟩
+
+theorem LLk_congr {B : List Frm → Prop} {k : ℕ} {X1 X2 : Jk1}
+    (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : LLk B k X1) : LLk B k X2 :=
+  fun D hD => GOK_congr (jk1_plug_congr D h) (hX D hD)
+
+/-- 1 の枠を 1 枚足す。 -/
+theorem LLk_one {B : List Frm → Prop} {k : ℕ} {W Z : Jk1} (hJW : JkA W)
+    (hW : LLk B k W) (hZ : LLk B (k + 1) Z) : LLk B k (Jk1.one W Z) := by
+  intro D hD
+  rw [← plug_snoc]
+  exact hZ (D ++ [Frm.fone W]) ⟨D, W, rfl, hD, hJW, hW⟩
+
+/-- 鎖 `itJ` の各段が同じ層に差せる。 -/
+theorem LLk_itJ {B : List Frm → Prop} {k : ℕ} {T : Jk1} (hJT : JkA T)
+    (hT : LLk B (k + 1) T) :
+    ∀ (n : ℕ) {U : Jk1}, JkA U → LLk B k U → JkA (itJ T n U) ∧ LLk B k (itJ T n U)
+  | 0, _, hJU, hU => ⟨hJU, hU⟩
+  | (n + 1), U, hJU, hU => by
+      obtain ⟨h1, h2⟩ := LLk_itJ hJT hT n hJU hU
+      exact ⟨⟨h1, hJT⟩, LLk_one h1 h2 hT⟩
+
+/-- ★★★★★ 1 の枠の上（`k+1` 層）では、基底の性質なしで荷を吊るせる。 -/
+theorem LLk_pay_succ {B : List Frm → Prop}
+    (hBT : ∀ D : List Frm, B D → ∀ T : Jk1, JkA T → JkT (plug D T))
+    (k : ℕ) {X : Jk1} (hJX : JkA X) (hX : LLk B (k + 1) X) :
+    ∀ Y : TrioSeq, Bok Y → LLk B (k + 1) (Jk1.pay X Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → LLk B (k + 1) (Jk1.pay X Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact LLk_congr (fun l => (jk1_pay_nil l X).symm) hX
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hprev : LLk B (k + 1) (Jk1.pay X ([] : TrioSeq)) :=
+          LLk_congr (fun l => (jk1_pay_nil l X).symm) hX
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (LSt_JkT hBT k D' hD'
+            (Jk1.one U (Jk1.pay X (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJU, hJX, by simpa using hYb⟩)
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (LLk_itJ (T := Jk1.pay X ([] : TrioSeq)) ⟨hJX, Bok_nil⟩ hprev n hJU hU).2
+          D' hD' ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : LLk B (k + 1) (Jk1.pay X Y.dropLast) := hdl hdb
+        rw [hsplit]
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (LSt_JkT hBT k D' hD'
+            (Jk1.one U (Jk1.pay X (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hJU, hJX, by rw [← hsplit]; exact hYb⟩)
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (LLk_itJ (T := Jk1.pay X Y.dropLast) ⟨hJX, hdb⟩ hprev n hJU hU).2
+          D' hD' ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro D hD
+        obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+        rw [plug_snoc]
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs0 hw
+          (LSt_JkT hBT k D' hD' _ ⟨hJU, hJX, hYb⟩) hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have h2 := hh (Bok_oper hYb hn) (D' ++ [Frm.fone U]) ⟨D', U, rfl, hD', hJU, hU⟩
+        rw [plug_snoc] at h2
+        exact h2 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb
+  exact key hYb.mem hYb
+
+#print axioms LLk_pay_succ
+
+/-- 1 の枠を 1 枚足した木に空を差す（荷は下の層から）。 -/
+theorem LLk_oneNil {B : List Frm → Prop}
+    (hBT : ∀ D : List Frm, B D → ∀ T : Jk1, JkA T → JkT (plug D T))
+    {k : ℕ} {X : Jk1} (hJX : JkA X) (hX : LLk B k X)
+    (hXp : ∀ Y : TrioSeq, Bok Y → LLk B k (Jk1.pay X Y)) :
+    LLk B k (Jk1.one X Jk1.nil) := by
+  intro D hD
+  exact APnil_gen0 D X (LSt_JkT hBT k D hD _ ⟨hJX, trivial⟩) (hX D hD)
+    (fun C hC => hXp C hC D hD)
+
+
 
 end Small
 end TRIO
