@@ -57552,6 +57552,120 @@ theorem KC_GOK_nil {D : List Frm} (h : KC D) : GOK (plug D Jk1.nil) := by
 #print axioms KC_of_GCtx
 #print axioms KC_GOK_nil
 
+/-! ### ★★★★★ 一般の兄弟をもつ走り（`stkP` の兄弟 `nil` を一般化）
+
+`unN2`（走り 2、兄弟一般）と `unQ`（走り `p+2`、内側の兄弟は `nil`）を
+まとめて一般化する。目標の木は `two N (runJ Ns (two Nl nil))`、
+2 の記録は `Ns.length + 2` 本、塔の歩幅も `Ns.length + 2`。 -/
+
+/-- 兄弟の列 `Ns`（外側から内側）で 2 の記録を積む。 -/
+def runJ : List Jk1 → Jk1 → Jk1
+  | [], M => M
+  | (N :: Ns), M => Jk1.two N (runJ Ns M)
+
+/-- 列の要素がすべて妥当。 -/
+def AllJk : List Jk1 → Prop
+  | [] => True
+  | (N :: Ns) => JkA N ∧ AllJk Ns
+
+theorem JkA_runJ : ∀ (Ns : List Jk1), AllJk Ns → ∀ M : Jk1, JkA M → JkA (runJ Ns M)
+  | [], _, _, hM => hM
+  | (N :: Ns), h, M, hM => ⟨h.1, JkA_runJ Ns h.2 M hM⟩
+
+theorem runJ_nil (Ns : List Jk1) : runJ Ns Jk1.nil = runJ Ns Jk1.nil := rfl
+
+/-- 走りの字は「走りだけの字」と「先の木の字」に割れる。 -/
+theorem jk1_runJ_split : ∀ (Ns : List Jk1) (X : Jk1) (D : ℕ),
+    jk1 D (runJ Ns X) = jk1 D (runJ Ns Jk1.nil) ++ jk1 (D + Ns.length) X
+  | [], X, D => by
+      show jk1 D X = jk1 D Jk1.nil ++ jk1 (D + 0) X
+      simp [jk1]
+  | (N :: Ns), X, D => by
+      show jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (D + 1) (runJ Ns X)) = _
+      rw [jk1_runJ_split Ns X (D + 1)]
+      show _ = (jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (D + 1) (runJ Ns Jk1.nil)))
+        ++ jk1 (D + (Ns.length + 1)) X
+      rw [show D + 1 + Ns.length = D + (Ns.length + 1) from by omega]
+      simp [List.append_assoc]
+
+/-- 走りの先に 2 の記録を 1 本足すと、字の右に記録が 1 本付く。 -/
+theorem jk1_runJ_two (Ns : List Jk1) (Nl : Jk1) (D : ℕ) :
+    jk1 D (runJ Ns (Jk1.two Nl Jk1.nil))
+      = jk1 D (runJ Ns Nl) ++ [((D + Ns.length + 1, 2, 0) : ℕ × ℕ × ℕ)] := by
+  rw [jk1_runJ_split Ns (Jk1.two Nl Jk1.nil) D, jk1_runJ_split Ns Nl D]
+  show _ ++ (jk1 (D + Ns.length) Nl ++ (((D + Ns.length + 1, 2, 0) : ℕ × ℕ × ℕ)
+      :: jk1 (D + Ns.length + 1) Jk1.nil)) = _
+  simp [jk1, List.append_assoc]
+
+/-- 塔の単位。`D` は 1 の列の高さ。 -/
+def unR (N : Jk1) (Ns : List Jk1) (Nl : Jk1) (D : ℕ) : TrioSeq :=
+  unN N D ++ jk1 (D + 1) (runJ Ns Nl)
+
+theorem unR_zero (N Nl : Jk1) (D : ℕ) : unR N [] Nl D = unN2 N Nl D := rfl
+
+theorem shift_unR (N : Jk1) (Ns : List Jk1) (Nl : Jk1) (D s : ℕ) :
+    shiftr01 s 0 (unR N Ns Nl D) = unR N Ns Nl (D + s) := by
+  rw [unR, unR, shiftr01_append0, shift_unN, jk1_shift,
+    show D + 1 + s = D + s + 1 from by omega]
+
+/-- 階段。 -/
+def nstR (N : Jk1) (Ns : List Jk1) (Nl : Jk1) : ℕ → Jk1
+  | 0 => Nl
+  | (k + 1) => Jk1.one Nl (Jk1.two N (runJ Ns (nstR N Ns Nl k)))
+
+theorem JkA_nstR {N : Jk1} (hJN : JkA N) {Ns : List Jk1} (hNs : AllJk Ns)
+    {Nl : Jk1} (hJNl : JkA Nl) : ∀ k : ℕ, JkA (nstR N Ns Nl k)
+  | 0 => hJNl
+  | (k + 1) => ⟨hJNl, hJN, JkA_runJ Ns hNs _ (JkA_nstR hJN hNs hJNl k)⟩
+
+theorem jk1_nstR (N : Jk1) (Ns : List Jk1) (Nl : Jk1) : ∀ (k l : ℕ),
+    jk1 l (nstR N Ns Nl k)
+      = jk1 l Nl ++ (List.range k).flatMap
+          (fun j => shiftr01 ((Ns.length + 2) * j) 0 (unR N Ns Nl (l + 1)))
+  | 0, l => by simp [nstR]
+  | (k + 1), l => by
+      have hFM : (List.range k).flatMap
+            (fun j => shiftr01 ((Ns.length + 2) * j) 0
+              (unR N Ns Nl (l + 1 + 1 + Ns.length + 1)))
+          = (List.range k).flatMap
+            (fun j => shiftr01 ((Ns.length + 2) * (j + 1)) 0 (unR N Ns Nl (l + 1))) := by
+        apply List.flatMap_congr
+        intro j _
+        rw [shift_unR, shift_unR]
+        congr 1
+        rw [Nat.mul_succ]
+        omega
+      show jk1 l Nl ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) N ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ)
+          :: jk1 (l + 1 + 1) (runJ Ns (nstR N Ns Nl k))))) = _
+      rw [jk1_runJ_split Ns (nstR N Ns Nl k) (l + 1 + 1),
+        jk1_nstR N Ns Nl k (l + 1 + 1 + Ns.length), hFM, List.range_succ_eq_map,
+        List.flatMap_cons, List.flatMap_map]
+      have hsp : jk1 (l + 1 + 1) (runJ Ns Nl)
+          = jk1 (l + 1 + 1) (runJ Ns Jk1.nil) ++ jk1 (l + 1 + 1 + Ns.length) Nl :=
+        jk1_runJ_split Ns Nl (l + 1 + 1)
+      simp [unR, unN, hsp, Nat.mul_zero, shiftr01_zero, Function.comp_def,
+        List.append_assoc]
+
+theorem MidD_unR {N : Jk1} (hJN : JkA N) {Ns : List Jk1} (hNs : AllJk Ns)
+    {Nl : Jk1} (hJNl : JkA Nl) {D : ℕ} (hD : 1 ≤ D) : MidD (D + 1) (unR N Ns Nl D) :=
+  MidD_append (MidD_unN hJN hD)
+    (fun c hc => by have := jk1_ge (runJ Ns Nl) (D + 1) c hc; omega)
+    (jk1_mono _ (JkA_runJ Ns hNs Nl hJNl) (D + 1))
+
+/-- 目標の字は「単位 + 最後の 2 の記録」。 -/
+theorem unR_target (N : Jk1) (Ns : List Jk1) (Nl : Jk1) (D : ℕ) :
+    ((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D (Jk1.two N (runJ Ns (Jk1.two Nl Jk1.nil)))
+      = unR N Ns Nl D ++ [((D + (Ns.length + 2), 2, 0) : ℕ × ℕ × ℕ)] := by
+  show ((D, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ)
+      :: jk1 (D + 1) (runJ Ns (Jk1.two Nl Jk1.nil)))) = _
+  rw [jk1_runJ_two Ns Nl (D + 1),
+    show D + 1 + Ns.length + 1 = D + (Ns.length + 2) from by omega]
+  simp [unR, unN, List.append_assoc]
+
+#print axioms jk1_nstR
+#print axioms unR_target
+
 /-! ### ★★★★★ 走り文脈 `RCtx`（2 の枠を任意個積める）
 
 `APd` / `GCtx` は形（`List Bool`）で文脈を索引するが、`false` は
