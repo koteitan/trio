@@ -55473,5 +55473,28 @@ theorem Wall_of_allUT
 #print axioms Rk_UPt
 #print axioms Wall_of_allUT
 
+/-- 残る穴 1 個: 1 の記録は対の層に差せるか。 -/
+def OneGap : Prop := ∀ {A T : Jk1}, UPt A → UP T → PairOk (Jk1.one A T)
+
+theorem PairOk_UPt (h : OneGap) : ∀ {X : Jk1}, UPt X → PairOk X
+  | _, UPt.nil => PairOk_nil
+  | _, UPt.twoNil => PairOk_twoNil
+  | _, UPt.pay hX hC => PairOk_pay _ hC _ hX (PairOk_UPt h hX)
+  | _, UPt.one hA hT => h hA hT
+
+theorem allUT_of_OneGap (h : OneGap) : ∀ {W : Jk1}, UT W →
+    (∀ j i : ℕ, Rk j (i + 1) W) ∧
+      (∀ (C : TrioSeq), Bok C → ∀ j i : ℕ, Rk j (i + 1) (Jk1.pay W C))
+  | _, UT.nil => ⟨Rk_all_nil, Rk_allp_nil⟩
+  | _, UT.chain k hW hT =>
+      Rk_all_chainW (allUT_of_OneGap h hW).1 (allUT_of_OneGap h hW).2 hW hT
+        (PairOk_UPt h hT) k
+
+/-- ★★★★★ 残るのは `OneGap` 1 文だけ。 -/
+theorem Wall_of_OneGap (h : OneGap) : Wall :=
+  Wall_of_allUT (fun hW => allUT_of_OneGap h hW)
+
+#print axioms Wall_of_OneGap
+
 end Small
 end TRIO
