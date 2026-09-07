@@ -58040,6 +58040,143 @@ theorem SG_nil_true (h : SPayF) (ks : List Bool) : SG (true :: ks) Jk1.nil := by
 #print axioms SAYr
 #print axioms SG_nil_true
 
+
+/-! ### ★★★★★ 走りの塔（走り長の帰納法） -/
+
+theorem stkP_comm : ∀ (q : ℕ) (X : Jk1), stkP q (Jk1.two Jk1.nil X) = stkP (q + 1) X
+  | 0, _ => rfl
+  | (q + 1), X => by
+      show Jk1.two Jk1.nil (stkP q (Jk1.two Jk1.nil X)) = Jk1.two Jk1.nil (stkP (q + 1) X)
+      rw [stkP_comm q X]
+
+theorem stkP_two_nil_nil (q : ℕ) : stkP q (Jk1.two Jk1.nil Jk1.nil) = stk (q + 1) :=
+  stkP_comm q Jk1.nil
+
+theorem plug_repF : ∀ (q : ℕ) (X : Jk1),
+    plug (List.replicate q (Frm.ftwo Jk1.nil)) X = stkP q X
+  | 0, _ => rfl
+  | (q + 1), X => by
+      show Jk1.two Jk1.nil (plug (List.replicate q (Frm.ftwo Jk1.nil)) X) = _
+      rw [plug_repF q X]
+      rfl
+
+theorem ftw_rep (q : ℕ) :
+    ftw (List.replicate q Jk1.nil) = List.replicate q (Frm.ftwo Jk1.nil) := by
+  show (List.replicate q Jk1.nil).map Frm.ftwo = _
+  rw [List.map_replicate]
+
+theorem blkC_eq (ctx : List Frm) (V : Jk1) (Bs : List Jk1) :
+    ctx ++ blkC V Bs = (ctx ++ [Frm.fone V]) ++ ftw Bs := by
+  rw [List.append_assoc]
+  rfl
+
+theorem SCtx_rep_ftwo : ∀ (q : ℕ) {ks : List Bool} {D : List Frm}, SCtx ks D →
+    SCtx (List.replicate q false ++ ks) (D ++ List.replicate q (Frm.ftwo Jk1.nil))
+  | 0, _, _, h => by simpa using h
+  | (q + 1), ks, D, h => by
+      have e2 : D ++ List.replicate (q + 1) (Frm.ftwo Jk1.nil)
+          = (D ++ List.replicate q (Frm.ftwo Jk1.nil)) ++ [Frm.ftwo Jk1.nil] := by
+        rw [List.replicate_succ', List.append_assoc]
+      rw [show List.replicate (q + 1) false ++ ks = false :: (List.replicate q false ++ ks)
+        from rfl, e2]
+      exact SCtx_ftwo (SCtx_rep_ftwo q h)
+
+theorem SG_repF : ∀ (q : ℕ) (ks : List Bool) (X : Jk1),
+    SG ks (stkP q X) → SG (List.replicate q false ++ ks) X
+  | 0, _, _, h => by simpa using h
+  | (q + 1), ks, X, h => by
+      rw [show List.replicate (q + 1) false ++ ks = false :: (List.replicate q false ++ ks)
+        from rfl]
+      intro D hD
+      obtain ⟨D0, hD0, rfl⟩ := hD
+      rw [plug_snoc2]
+      refine SG_repF q ks (Jk1.two Jk1.nil X) ?_ D0 hD0
+      rw [stkP_comm]
+      exact h
+
+/-- 1 の枠で終わる形。 -/
+def SSp (ks : List Bool) : Prop :=
+  ∀ D : List Frm, SCtx ks D → ∃ (ctx : List Frm) (V : Jk1),
+    D = ctx ++ [Frm.fone V] ∧ GOK (plug ctx V)
+
+/-- 1 の枠で終わり、`nil` を差せる形。 -/
+def SBs (ks : List Bool) : Prop := SSp ks ∧ SG ks Jk1.nil
+
+theorem SOk_bnil : SBs [] :=
+  ⟨fun D hD => by obtain ⟨kk, hc⟩ := hD; exact GCtx_split kk D hc,
+   SG_bnil_of_APd (fun kk => APd_nil _)⟩
+
+theorem SOk_true (h : SPayF) (ks : List Bool) : SBs (true :: ks) :=
+  ⟨fun D hD => by
+     obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD
+     exact ⟨D0, U, rfl, hFU.2 D0 hD0⟩,
+   SG_nil_true h ks⟩
+
+/-- 階段の形（ブロックを `i` 個積んだもの）。 -/
+def shR (q : ℕ) (ks : List Bool) : ℕ → List Bool
+  | 0 => List.replicate q false ++ ks
+  | (i + 1) => List.replicate q false ++ (true :: shR q ks i)
+
+theorem SG_shR (h : SPayF) (q : ℕ) (hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q))
+    (ks : List Bool) (hk : SBs ks) : ∀ i : ℕ, SG (shR q ks i) Jk1.nil
+  | 0 => SG_repF q ks Jk1.nil (hq ks hk)
+  | (i + 1) => SG_repF q (true :: shR q ks i) Jk1.nil
+      (hq (true :: shR q ks i) (SOk_true h _))
+
+theorem SCtx_blkR (h : SPayF) (q : ℕ) (hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q))
+    {ks : List Bool} (hk : SBs ks) {D : List Frm} (hD : SCtx ks D) :
+    ∀ i : ℕ, SCtx (shR q ks i)
+      (D ++ List.replicate q (Frm.ftwo Jk1.nil)
+        ++ blkR Jk1.nil (List.replicate q Jk1.nil) i)
+  | 0 => by
+      rw [blkR_zero, List.append_nil]
+      exact SCtx_rep_ftwo q hD
+  | (i + 1) => by
+      rw [blkR_snoc]
+      have e : D ++ List.replicate q (Frm.ftwo Jk1.nil)
+            ++ (blkR Jk1.nil (List.replicate q Jk1.nil) i
+              ++ blkC Jk1.nil (List.replicate q Jk1.nil))
+          = ((D ++ List.replicate q (Frm.ftwo Jk1.nil)
+              ++ blkR Jk1.nil (List.replicate q Jk1.nil) i) ++ [Frm.fone Jk1.nil])
+            ++ List.replicate q (Frm.ftwo Jk1.nil) := by
+        rw [blkC_eq, ftw_rep]
+        simp [List.append_assoc]
+      rw [e]
+      exact SCtx_rep_ftwo q
+        (SCtx_fone (SCtx_blkR h q hq hk hD i) ⟨trivial, SG_shR h q hq ks hk i⟩)
+
+/-- ★★★★★ 走りの塔。走り長 `q` についての帰納法。 -/
+theorem SG_stkS (h : SPayF) : ∀ (q : ℕ) (ks : List Bool), SBs ks → SG ks (stk q)
+  | 0, _, hk => hk.2
+  | (q + 1), ks, hk => by
+      intro D hD
+      have hq : ∀ ks' : List Bool, SBs ks' → SG ks' (stk q) := fun ks' hk' => SG_stkS h q ks' hk'
+      obtain ⟨ctx, V, hDe, hGV⟩ := hk.1 D hD
+      subst hDe
+      have ec : ctx ++ blkC V (List.replicate q Jk1.nil)
+          = (ctx ++ [Frm.fone V]) ++ List.replicate q (Frm.ftwo Jk1.nil) := by
+        rw [blkC_eq, ftw_rep]
+      have egoal : plug (ctx ++ blkC V (List.replicate q Jk1.nil)) (Jk1.two Jk1.nil Jk1.nil)
+          = plug (ctx ++ [Frm.fone V]) (stk (q + 1)) := by
+        rw [ec, plug_append, plug_repF, stkP_two_nil_nil]
+      rw [← egoal]
+      refine GOK_runGNil_gen (V := V) (A := Jk1.nil) trivial
+        (fun B hB => by rw [List.eq_of_mem_replicate hB]; trivial) ctx ?_ hGV ?_
+      · rw [ec]
+        exact SCtx_JkT _ _ (SCtx_rep_ftwo q hD) _ ⟨trivial, trivial⟩
+      · intro i
+        have hc := SCtx_blkR h q hq hk hD i
+        have hh := SG_shR h q hq ks hk i _ hc
+        rw [ec]
+        simpa [List.append_assoc] using hh
+
+/-- ★★★★★ 行376 の壁は「2 の枠の直上の荷」`SPayF` 1 本になった。 -/
+theorem RunAll_of_SPayF (h : SPayF) : RunAll :=
+  fun q ks => APd_of_SG_bnil (SG_stkS h q [] SOk_bnil) ks
+
+#print axioms SG_stkS
+#print axioms RunAll_of_SPayF
+
 /-! ### ★★★★★ `RunAll` を「2 の枠を 1 本足せる」1 文に落とす
 
 `stk q` は 2 の枠（兄弟 `nil`）を `q` 本積んだ文脈に `nil` を差したもの。
