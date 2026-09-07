@@ -57556,15 +57556,18 @@ theorem KC_GOK_nil {D : List Frm} (h : KC D) : GOK (plug D Jk1.nil) := by
 
 `APd` / `GCtx` は形（`List Bool`）で文脈を索引するが、`false` は
 `[fone U, ftwo N]` を束にしているので、2 の枠が隣接する文脈を書けない。
-`RCtx` では `true` = 1 の枠（木 `U`、良さ `RG` つき）、`false` = 2 の枠
-（兄弟 `nil`）を独立の文字として積む。形の長さで構造再帰するので停止する。 -/
+`RCtx` では `true` = 1 の枠、`false` = 2 の枠を独立の文字として積む。
+枠木はどちらも「その下の走り文脈で良い木」（`RF`）を全称で取る。
+形の長さで構造再帰するので停止する。 -/
 
 def RCtx : List Bool → List Frm → Prop
   | [], D => ∃ ks : List Bool, GCtx (true :: ks) D
   | (true :: ks), D => ∃ (D' : List Frm) (U : Jk1), RCtx ks D' ∧
       (JkA U ∧ (∀ D'' : List Frm, RCtx ks D'' → GOK (plug D'' U))) ∧
       D = D' ++ [Frm.fone U]
-  | (false :: ks), D => ∃ D' : List Frm, RCtx ks D' ∧ D = D' ++ [Frm.ftwo Jk1.nil]
+  | (false :: ks), D => ∃ (D' : List Frm) (N : Jk1), RCtx ks D' ∧
+      (JkA N ∧ (∀ D'' : List Frm, RCtx ks D'' → GOK (plug D'' N))) ∧
+      D = D' ++ [Frm.ftwo N]
 
 /-- 形 `ks` のどの走り文脈にも差せる木。 -/
 def RG (ks : List Bool) (X : Jk1) : Prop := ∀ D : List Frm, RCtx ks D → GOK (plug D X)
@@ -57573,7 +57576,7 @@ def RG (ks : List Bool) (X : Jk1) : Prop := ∀ D : List Frm, RCtx ks D → GOK 
 def RP (ks : List Bool) (X : Jk1) : Prop :=
   ∀ (D : List Frm) (C : TrioSeq), RCtx ks D → Bok C → GOK (plug D (Jk1.pay X C))
 
-/-- 1 の枠の木として使える木。 -/
+/-- 枠木として使える木。 -/
 def RF (ks : List Bool) (U : Jk1) : Prop := JkA U ∧ RG ks U
 
 theorem RCtx_bnil (D : List Frm) :
@@ -57584,14 +57587,14 @@ theorem RCtx_ct (ks : List Bool) (D : List Frm) :
       D = D' ++ [Frm.fone U] := Iff.rfl
 
 theorem RCtx_cf (ks : List Bool) (D : List Frm) :
-    RCtx (false :: ks) D ↔ ∃ D' : List Frm, RCtx ks D' ∧ D = D' ++ [Frm.ftwo Jk1.nil] :=
-  Iff.rfl
+    RCtx (false :: ks) D ↔ ∃ (D' : List Frm) (N : Jk1), RCtx ks D' ∧ RF ks N ∧
+      D = D' ++ [Frm.ftwo N] := Iff.rfl
 
 theorem RCtx_fone {ks : List Bool} {D : List Frm} {U : Jk1} (hD : RCtx ks D) (hU : RF ks U) :
     RCtx (true :: ks) (D ++ [Frm.fone U]) := ⟨D, U, hD, hU, rfl⟩
 
-theorem RCtx_ftwo {ks : List Bool} {D : List Frm} (hD : RCtx ks D) :
-    RCtx (false :: ks) (D ++ [Frm.ftwo Jk1.nil]) := ⟨D, hD, rfl⟩
+theorem RCtx_ftwo {ks : List Bool} {D : List Frm} {N : Jk1} (hD : RCtx ks D) (hN : RF ks N) :
+    RCtx (false :: ks) (D ++ [Frm.ftwo N]) := ⟨D, N, hD, hN, rfl⟩
 
 /-- 走り文脈に差した木は字レベルで妥当。 -/
 theorem RCtx_JkT : ∀ (ks : List Bool) (D : List Frm), RCtx ks D → ∀ T : Jk1, JkA T →
@@ -57605,9 +57608,9 @@ theorem RCtx_JkT : ∀ (ks : List Bool) (D : List Frm), RCtx ks D → ∀ T : Jk
       rw [plug_snoc]
       exact RCtx_JkT ks D' hD' _ ⟨hJU, hT⟩
   | (false :: ks), D, hD, T, hT => by
-      obtain ⟨D', hD', rfl⟩ := hD
+      obtain ⟨D', N, hD', ⟨hJN, -⟩, rfl⟩ := hD
       rw [plug_snoc2]
-      exact RCtx_JkT ks D' hD' _ ⟨trivial, hT⟩
+      exact RCtx_JkT ks D' hD' _ ⟨hJN, hT⟩
 
 /-- `RG` は字の形にしか依らない。 -/
 theorem RG_congr {ks : List Bool} {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2)
@@ -57621,12 +57624,12 @@ theorem RG_one {ks : List Bool} {U Z : Jk1} (hU : RF ks U) (hZ : RG (true :: ks)
   rw [← plug_snoc]
   exact hZ _ (RCtx_fone hD hU)
 
-/-- `RG ks (two nil Z)` は `RG (false :: ks) Z` から出る。 -/
-theorem RG_twoNil {ks : List Bool} {Z : Jk1} (hZ : RG (false :: ks) Z) :
-    RG ks (Jk1.two Jk1.nil Z) := by
+/-- `RG ks (two N Z)` は `RG (false :: ks) Z` から出る。 -/
+theorem RG_two {ks : List Bool} {N Z : Jk1} (hN : RF ks N) (hZ : RG (false :: ks) Z) :
+    RG ks (Jk1.two N Z) := by
   intro D hD
   rw [← plug_snoc2]
-  exact hZ _ (RCtx_ftwo hD)
+  exact hZ _ (RCtx_ftwo hD hN)
 
 /-- 底（`GCtx`）では `APd` がそのまま使える。 -/
 theorem RG_bnil_of_APd {X : Jk1} (h : ∀ kk : List Bool, APd (true :: kk) X) : RG [] X := by
@@ -57645,7 +57648,7 @@ theorem RP_bnil {V : Jk1} (hJV : JkA V) (h : RG [] V) : RP [] V := by
   exact (APd_iff (true :: kk) _).mp
     (APd_payT kk V hJV (APd_of_RG_bnil h kk) C hC) D hc
 
-/-! ### ★★★★★ `AYd` の走り文脈版 -/
+/-! ### ★★★★★ 荷の閉包（`AYd` / `AYdT` の走り文脈版） -/
 
 /-- ★★★★★ 荷つきの木は 1 の枠の右の子になれる（`AYd` の `RCtx` 版）。 -/
 theorem AYr : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z →
@@ -57672,8 +57675,7 @@ theorem AYr : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z
           intro n
           induction n with
           | zero => exact hFX
-          | succ n ih =>
-              exact ⟨⟨ih.1, hJZ, Bok_nil⟩, hpres _ ih⟩
+          | succ n ih => exact ⟨⟨ih.1, hJZ, Bok_nil⟩, hpres _ ih⟩
         have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
             = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
         rw [e]
@@ -57735,8 +57737,128 @@ theorem AYr : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z
   intro Y hYb ks Z hJZ hRZ X hFX
   exact key hYb.mem hYb ks Z hJZ hRZ X hFX
 
-#print axioms RCtx_JkT
+/-- ★★★★★ 2 の枠の直上の木にも荷を吊るせる（`AYdT` の `RCtx` 版）。 -/
+theorem AYrT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z →
+    RG (false :: ks) Z → RG (false :: ks) (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z →
+      RG (false :: ks) Z → RG (false :: ks) (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb ks Z hJZ hRZ
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact RG_congr (fun l => (jk1_pay_nil l Z).symm) hRZ
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hZnil : RG (false :: ks) (Jk1.pay Z ([] : TrioSeq)) :=
+          RG_congr (fun l => (jk1_pay_nil l Z).symm) hRZ
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro D hD
+        obtain ⟨D0, N, hD0, hFN, rfl⟩ := hD
+        have hchain : ∀ n : ℕ, RF ks (twoIt N (Jk1.pay Z ([] : TrioSeq)) n) := by
+          intro n
+          induction n with
+          | zero => exact hFN
+          | succ n ih => exact ⟨⟨ih.1, hJZ, Bok_nil⟩, RG_two ih hZnil⟩
+        rw [plug_snoc2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (RCtx_JkT ks D0 hD0 _ ⟨hFN.1, hJZ, by simpa using hYb⟩) ?_
+        intro n hn
+        exact (hchain n).2 D0 hD0 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : RG (false :: ks) (Jk1.pay Z Y.dropLast) := hdl hdb ks Z hJZ hRZ
+        rw [hsplit]
+        intro D hD
+        obtain ⟨D0, N, hD0, hFN, rfl⟩ := hD
+        have hchain : ∀ n : ℕ, RF ks (twoIt N (Jk1.pay Z Y.dropLast) n) := by
+          intro n
+          induction n with
+          | zero => exact hFN
+          | succ n ih => exact ⟨⟨ih.1, hJZ, hdb⟩, RG_two ih hprev⟩
+        rw [plug_snoc2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (RCtx_JkT ks D0 hD0 _ ⟨hFN.1, hJZ, by rw [← hsplit]; exact hYb⟩) ?_
+        intro n hn
+        exact (hchain n).2 D0 hD0 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro D hD
+        have hD' := hD
+        obtain ⟨D0, N, hD0, hFN, rfl⟩ := hD'
+        rw [plug_snoc2]
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (RCtx_JkT ks D0 hD0 _ ⟨hFN.1, hJZ, hYb⟩) hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have h2 := hh (Bok_oper hYb hn) ks Z hJZ hRZ _ hD
+        rw [plug_snoc2] at h2
+        exact h2 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb ks Z hJZ hRZ
+  exact key hYb.mem hYb ks Z hJZ hRZ
+
+/-- ★★★★★ 荷閉包は良さから出る（形について再帰）。 -/
+theorem RP_of_RG : ∀ (ks : List Bool) (V : Jk1), JkA V → RG ks V → RP ks V
+  | [], V, hJV, h => RP_bnil hJV h
+  | (true :: ks), V, hJV, h => by
+      intro D C hD hC
+      obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD
+      rw [plug_snoc]
+      exact AYr C hC ks V hJV h U hFU D0 hD0
+  | (false :: ks), V, hJV, h => fun D C hD hC => AYrT C hC ks V hJV h D hD
+
+/-- ★★★★★ 1 の枠の直上には `nil` を差せる（`APnil_gen0`）。ここは無条件。 -/
+theorem RG_nil_true (ks : List Bool) : RG (true :: ks) Jk1.nil := by
+  intro D hD
+  have hD' := hD
+  obtain ⟨D0, U, hD0, hFU, rfl⟩ := hD'
+  have hJT : JkT (plug D0 (Jk1.one U Jk1.nil)) := by
+    have := RCtx_JkT (true :: ks) _ hD Jk1.nil trivial
+    rwa [plug_snoc] at this
+  rw [plug_snoc]
+  exact APnil_gen0 D0 U hJT (hFU.2 D0 hD0)
+    (fun C hC => RP_of_RG ks U hFU.1 hFU.2 D0 C hD0 hC)
+
 #print axioms AYr
+#print axioms AYrT
+#print axioms RP_of_RG
+#print axioms RG_nil_true
 
 
 end Small
