@@ -56403,5 +56403,83 @@ theorem R375h13_mem : R375h ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R375h12_mem
 #print axioms R375h13_mem
 
+/-! ### ★★★★★ `WallP` から #14 まで（行列側の配管）
+
+`#14 = R375m ++ [(5,2,0)]` は `snocYd_mem` で塔 `Mtwd 2 R341 U375c n` に落ちる。
+塔の語はちょうど `GOK_oneTW` の木の語。 -/
+
+theorem flatU_succ (l k : ℕ) :
+    (List.range (k + 1)).flatMap (fun i => shiftr01 (2 * i) 0
+        [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ)])
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ)]
+        ++ (List.range k).flatMap (fun i => shiftr01 (2 * i) 0
+            [((l + 2 + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2 + 2, 2, 0) : ℕ × ℕ × ℕ),
+              ((l + 2 + 3, 2, 0) : ℕ × ℕ × ℕ)]) := by
+  rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+  simp only [Nat.mul_zero, shiftr01_zero, Function.comp_def]
+  congr 1
+  apply List.flatMap_congr
+  intro i _
+  simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq,
+    and_true, and_self]
+  omega
+
+theorem tw14_word : ∀ (k l : ℕ),
+    (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (Jk1.two Jk1.nil (TW k)))
+      = (List.range (k + 1)).flatMap (fun i => shiftr01 (2 * i) 0
+          [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+            ((l + 3, 2, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simp [TW, jk1, shiftr01]
+  | (k + 1), l => by
+      have e1 : jk1 (l + 1) (Jk1.two Jk1.nil (TW (k + 1)))
+          = ((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 3, 2, 0) : ℕ × ℕ × ℕ)
+            :: (((l + 3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 3) (Jk1.two Jk1.nil (TW k))) := by
+        show jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1) (TW (k + 1))) = _
+        rw [show l + 1 + 1 = l + 2 from by omega]
+        show ([] : TrioSeq) ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+          (jk1 (l + 2) (Jk1.two Jk1.nil Jk1.nil) ++ (((l + 2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+            jk1 (l + 2 + 1) (Jk1.two Jk1.nil (TW k))))) = _
+        rw [jk1_twoNil (l + 2), show l + 2 + 1 = l + 3 from by omega]
+        rfl
+      rw [e1, tw14_word k (l + 2), flatU_succ l (k + 1)]
+      first | rfl | simp [List.append_assoc]
+
+theorem tower14_mem (hw : WallP) : ∀ n : ℕ, Mtwd 2 R341 U375c n ∈ W 0
+  | 0 => by simpa [Mtwd] using Aok_R341.mem
+  | (k + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b
+          [Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW k))]) := by
+        simpa using GOK_oneTW hw k [] WOk_nil GoodFb_wordJ_nil
+      have h := rowJ_mem_genF Aok_R338 hG
+      rw [wordJ_singleton, colJ] at h
+      have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW k)))
+          = (List.range (k + 1)).flatMap (fun i => shiftr01 (2 * i) 0 U375c) := by
+        show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (2 + 1) (Jk1.two Jk1.nil (TW k))) = _
+        rw [show (2 : ℕ) + 1 = 3 from rfl]
+        have := tw14_word k 2
+        simp only [show (2 : ℕ) + 1 = 3 from rfl, show (2 : ℕ) + 2 = 4 from rfl,
+          show (2 : ℕ) + 3 = 5 from rfl] at this
+        simpa [U375c, jk1] using this
+      rw [e] at h
+      simpa [Mtwd, R341, R338, List.append_assoc] using h
+
+/-- ★★★★★ `WallP` があれば #14 が出る。 -/
+theorem R14_mem (hw : WallP) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocYd_mem (Y0 := R341) (M := U375c) (L := 3) (y := 2) (dl := 2)
+    (by simp [R341, R338]) MidD_U375c (by simp [U375c, entry])
+    (by
+      intro t h1 h2 _ _
+      simp only [U375c, List.length_cons, List.length_nil] at h2
+      rcases t with _ | _ | _ | t <;> first | omega | decide)
+    (by omega) (by omega) (tower14_mem hw)
+  rw [R375m_eq3] at h
+  simpa using h
+
+#print axioms R14_mem
+
 end Small
 end TRIO
