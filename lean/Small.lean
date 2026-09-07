@@ -55737,5 +55737,101 @@ theorem R375h4_mem : R375h ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375h4_mem
 
+/-- `H` の塔の木（単位 2 個 + `NST m`）。 -/
+def NSTt (m : ℕ) : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+    (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (NST m))))))
+
+theorem jk1_NSTt (m : ℕ) : jk1 2 (NSTt m)
+    = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+        ((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ),
+        ((7, 2, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ),
+        ((8, 2, 0) : ℕ × ℕ × ℕ), ((9, 2, 0) : ℕ × ℕ × ℕ)] ++ blkA 8 m := by
+  show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 4 (Jk1.two Jk1.nil Jk1.nil) ++
+        (((5, 1, 0) : ℕ × ℕ × ℕ) ::
+          (jk1 5 Jk1.nil ++ (((6, 2, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 6 (Jk1.two Jk1.nil Jk1.nil) ++
+              (((7, 1, 0) : ℕ × ℕ × ℕ) ::
+                (jk1 7 Jk1.nil ++ (((8, 2, 0) : ℕ × ℕ × ℕ) ::
+                  jk1 8 (NST m)))))))))))) = _
+  rw [jk1_twoNil 4, jk1_twoNil 6, jk1_NST m 8]
+  simp [jk1]
+
+theorem GOK_NSTt (m : ℕ) : GOK (NSTt m) := GOK_oneNST m
+
+/-- `chnA_tower_gen` のセグメント版。 -/
+theorem chnA_tower_seg {P : ℕ → TrioSeq → Prop} (hP : BaseOk P) {s : ℕ} {A' : TrioSeq}
+    (hA' : LwB P s A') : ∀ m : ℕ,
+    Mtwd 2 (A' ++ shiftr01 s 0 U375aK)
+      (shiftr01 s 0 [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)]) m ∈ W 0 := by
+  intro m
+  have hG : GoodFb (fun a b => wordJ a b [NSTt m]) := by
+    simpa using GOK_NSTt m [] WOk_nil GoodFb_wordJ_nil
+  have h := (hG.seg 0).reapp P hP s A' (by simpa using hA')
+  have ew : ((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (0 + 1) 1 [NSTt m]
+      = U375aK ++ (List.range m).flatMap
+          (fun k => shiftr01 (2 * k) 0
+            [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    rw [wordJ_singleton, colJ, jk1_NSTt m, blkA_flat m 8]
+    simp [U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a, List.append_assoc]
+  rw [ew, shiftr01_append0] at h
+  have efm : shiftr01 s 0 ((List.range m).flatMap
+        (fun k => shiftr01 (2 * k) 0
+          [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)]))
+      = (List.range m).flatMap
+        (fun k => shiftr01 (2 * k) 0 (shiftr01 s 0
+          [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)])) := by
+    rw [shift_flatMap0]
+    apply List.flatMap_congr
+    intro k _
+    rw [shiftr01_add0, shiftr01_add0, Nat.add_comm]
+  rw [efm] at h
+  rw [Mtwd]
+  simpa [List.append_assoc] using h
+
+theorem SegA_U375aH : SegA 0 U375aH where
+  mid := MidD_U375aH
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro P hP s A' hA'
+    have hA'' : LwB P s A' := by simpa using hA'
+    have hMs : MidD (9 + s + 1) (shiftr01 s 0
+        [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)]) := by
+      have h := MidD_shift MidD_pI s
+      have e : (10 : ℕ) + s = 9 + s + 1 := by omega
+      rwa [e] at h
+    have h := snocYd_mem (Y0 := A' ++ shiftr01 s 0 U375aK)
+      (M := shiftr01 s 0 [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)])
+      (L := 9 + s) (y := 2) (dl := 2)
+      (by simp [U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a, shiftr01])
+      hMs (by simp [entry, shiftr01])
+      (by
+        intro t h1 h2 _ _
+        simp only [shiftr01, List.map_cons, List.map_nil, List.length_cons,
+          List.length_nil] at h2
+        rcases t with _ | _ | t <;> first | omega | simp [entry, shiftr01])
+      (by omega) (by omega) (chnA_tower_seg hP hA'')
+    have e : shiftr01 s 0 U375aH
+        = (shiftr01 s 0 U375aK ++ shiftr01 s 0
+            [((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ)])
+          ++ [((9 + s + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+      rw [show 9 + s + 2 = 11 + s from by omega, U375aH, U375aI, U375aJ,
+        shiftr01_append0, shiftr01_append0, shiftr01_append0, shift_col, shift_col,
+        shift_col]
+      simp [shiftr01, List.append_assoc]
+    rw [e]
+    simpa [List.append_assoc] using h
+
+/-- ★★★★★ `H(2,2,0)`。 -/
+theorem R375h5_mem : R375h ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := R338) (M := U375aH)
+    (SegA_toSegB SegA_U375aH BaseOk_P0) (LwB_of_base ⟨Aok_R338, rfl⟩)
+  rw [← R375h_eq2] at h
+  simpa using h
+
+#print axioms R375h5_mem
+
 end Small
 end TRIO
