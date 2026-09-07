@@ -56519,5 +56519,189 @@ theorem UniW_chain_twoNil (hwc : WallC) {W : Jk1} (hW : UniW W) (C : TrioSeq)
 #print axioms UniW_chain
 #print axioms UniW_chain_twoNil
 
+/-! ### ★★★★★ `MPd`: 走り 2 を許す第 2 族
+
+`APd` の壁は `Rq`（2 の記録の直上の木は `TopOk`）。これは `APd` の設計上の制限で
+BM4 の制限ではない（`#14[n]` は標準形）。`Rq` を外すと `APd_all` の
+「`false` 頭の形に `two` 頭の木を差す」場合が走り 2 になり、階段 `APd_nstN` が
+形を `false` 1 個ずつ伸ばすので、兄弟が `cntF` 非有界の全形状で良い必要が出る。
+`APd` の停止性 `(cntF ks, ks.length)` とは両立しない。
+
+そこで `APd` の後ろに第 2 族を作る。2 の枠の兄弟条件を `AllA`（全形状、`APd` 側で
+定義済み）にすれば、停止性は `APd` と同じまま `Rq` を落とせる。 -/
+
+/-- 全形状で項として継げる木（`TwoOk` / `StkOk 0` が使っている条件）。 -/
+def AllA (N : Jk1) : Prop :=
+  ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N
+
+theorem AllA_nil : AllA Jk1.nil := fun _ _ => APd_nil _
+
+/-- 枠木の妥当性は 1 の記録で閉じる。 -/
+theorem FrmJ_one (ks : List Bool) (U X : Jk1) (hU : FrmJ ks U) (hX : JkA X) :
+    FrmJ ks (Jk1.one U X) := by
+  cases ks with
+  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
+  | cons b bs => exact ⟨hU, hX⟩
+
+/-- `APd` から `Rq` を落とし、2 の枠の兄弟を `AllA` にした族。 -/
+def MPd : List Bool → Jk1 → Prop
+  | [], V => GOK V
+  | (true :: ks), V => ∀ U : Jk1, FrmJ ks U → MPd ks U → MPd ks (Jk1.one U V)
+  | (false :: ks), V => ∀ (m : ℕ) (U N : Jk1),
+      FrmJ (List.replicate m true ++ ks) U →
+      MPd (List.replicate m true ++ ks) U → JkA N → AllA N →
+      MPd (List.replicate m true ++ ks) (Jk1.one U (Jk1.two N V))
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem MPd_bnil (V : Jk1) : MPd [] V ↔ GOK V := by rw [MPd]
+
+theorem MPd_ct (ks : List Bool) (V : Jk1) :
+    MPd (true :: ks) V ↔ ∀ U : Jk1, FrmJ ks U → MPd ks U → MPd ks (Jk1.one U V) := by
+  rw [MPd]
+
+theorem MPd_cf (ks : List Bool) (V : Jk1) :
+    MPd (false :: ks) V ↔ ∀ (m : ℕ) (U N : Jk1),
+      FrmJ (List.replicate m true ++ ks) U →
+      MPd (List.replicate m true ++ ks) U → JkA N → AllA N →
+      MPd (List.replicate m true ++ ks) (Jk1.one U (Jk1.two N V)) := by
+  rw [MPd]
+
+/-- 形 `ks` の `MPd` 文脈。 -/
+def MCtx : List Bool → List Frm → Prop
+  | [], ctx => ctx = []
+  | (true :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      MCtx ks ctx' ∧ FrmJ ks U ∧ MPd ks U
+  | (false :: ks), ctx => ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      MCtx (List.replicate m true ++ ks) ctx' ∧
+      FrmJ (List.replicate m true ++ ks) U ∧ MPd (List.replicate m true ++ ks) U ∧
+      JkA N ∧ AllA N
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem MCtx_bnil (ctx : List Frm) : MCtx [] ctx ↔ ctx = [] := by rw [MCtx]
+
+theorem MCtx_ct (ks : List Bool) (ctx : List Frm) :
+    MCtx (true :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      MCtx ks ctx' ∧ FrmJ ks U ∧ MPd ks U := by
+  rw [MCtx]
+
+theorem MCtx_cf (ks : List Bool) (ctx : List Frm) :
+    MCtx (false :: ks) ctx ↔ ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      MCtx (List.replicate m true ++ ks) ctx' ∧
+      FrmJ (List.replicate m true ++ ks) U ∧ MPd (List.replicate m true ++ ks) U ∧
+      JkA N ∧ AllA N := by
+  rw [MCtx]
+
+/-- `MCtx` 文脈に差した木は字レベルで妥当（`Rq` は要らない。一番外の枠に
+`FrmJ [] = JkT` が `TopOk` を課しているので足りる）。 -/
+theorem MCtx_JkT : ∀ (ks : List Bool) (ctx : List Frm), MCtx ks ctx → ∀ X : Jk1,
+    FrmJ ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [MCtx_bnil] at h; subst h; exact hX
+  | (true :: ks), ctx, h, X, hX => by
+      rw [MCtx_ct] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      rw [plug_snoc]
+      exact MCtx_JkT ks ctx' hc' _ (FrmJ_one ks U X hU hX)
+  | (false :: ks), ctx, h, X, hX => by
+      rw [MCtx_cf] at h
+      obtain ⟨m, ctx', U, N, rfl, hc', hU, -, hN, -⟩ := h
+      rw [plug_snoc12]
+      exact MCtx_JkT (List.replicate m true ++ ks) ctx' hc' _
+        (FrmJ_one _ U _ hU ⟨hN, hX⟩)
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+/-- `MPd ks V` は「形 `ks` のどの `MCtx` 文脈でも `plug ctx V` が良い」と同値。 -/
+theorem MPd_iff : ∀ (ks : List Bool) (V : Jk1),
+    MPd ks V ↔ ∀ ctx : List Frm, MCtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [MPd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [MCtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((MCtx_bnil []).mpr rfl)
+  | (true :: ks), V => by
+      rw [MPd_ct]
+      constructor
+      · intro h ctx hc
+        rw [MCtx_ct] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (MPd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (MPd_iff ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((MCtx_ct ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | (false :: ks), V => by
+      rw [MPd_cf]
+      constructor
+      · intro h ctx hc
+        rw [MCtx_cf] at hc
+        obtain ⟨m, ctx', U, N, rfl, hc', hU, hUk, hN, hNt⟩ := hc
+        rw [plug_snoc12]
+        exact (MPd_iff (List.replicate m true ++ ks) _).mp (h m U N hU hUk hN hNt) ctx' hc'
+      · intro h m U N hU hUk hN hNt
+        refine (MPd_iff (List.replicate m true ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc12]
+        exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
+          ((MCtx_cf ks _).mpr ⟨m, ctx', U, N, rfl, hc', hU, hUk, hN, hNt⟩)
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+/-- 1 の列のフレームを 1 枚かぶせる。 -/
+theorem MPd_step (ks : List Bool) {V W : Jk1} (hV : FrmJ ks V) (hVk : MPd ks V)
+    (hW : MPd (true :: ks) W) : MPd ks (Jk1.one V W) := (MPd_ct ks W).mp hW V hV hVk
+
+theorem MPd_congr : ∀ (ks : List Bool) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    MPd ks V1 → MPd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [MPd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+/-- `MCtx` 文脈は「外側の文脈 + 最内の木」に割れる。 -/
+theorem MCtx_split (ks : List Bool) (ctx : List Frm) (h : MCtx (true :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ MCtx ks ctx0 ∧
+      FrmJ ks V ∧ GOK (plug ctx0 V) := by
+  rw [MCtx_ct] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (MPd_iff ks U).mp hUk ctx' hc'⟩
+
+/-- 2 の枠を 1 枚かぶせる（`m = 0` の場合）。 -/
+theorem MPd_twoOf {ks : List Bool} {V N : Jk1} (hN : JkA N) (hNall : AllA N)
+    (hV : MPd (false :: ks) V) : MPd (true :: ks) (Jk1.two N V) :=
+  (MPd_ct ks _).mpr (fun U hU hUk =>
+    (MPd_cf ks V).mp hV 0 U N (by simpa using hU) (by simpa using hUk) hN hNall)
+
+#print axioms MPd_iff
+#print axioms MCtx_JkT
+
 end Small
 end TRIO
