@@ -54858,5 +54858,198 @@ theorem GoodCtx_runNil {ctx : List Frm} (hJ : ∀ T : Jk1, JkA T → JkT (plug c
 #print axioms GoodCtx_oneNil
 #print axioms GoodCtx_runNil
 
+/-! ### ★★★★★ 走り込みの層 `Yok`: 枠木の条件を層自身で、2 の枠の兄弟は全層で
+
+`Pok` は 2 の枠の兄弟に「`Pok j (i+1)` のどの文脈にも差せる」（1 の枠が 1 枚以上）
+しか課さないので、走り（対の層 `(j+1, 0)` に 2 の記録）が出ない。条件を
+**この層自身の全層 `Yok j i`（`i = 0` 込み）**にすると、走りが
+`GOK_twoTwoNilW_gen` 1 回で通る。 -/
+
+def Yok : ℕ → ℕ → List Frm → Prop
+  | 0, 0, ctx => ctx = []
+  | 0, (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Yok 0 n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Yok 0 n cs → TipOk (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok 0 n cs →
+        TipOk (plug cs (Jk1.pay U C)))
+  | (j + 1), 0, ctx => ∃ (V Wl : Jk1) (ctx' : List Frm) (n : ℕ),
+      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Yok j n ctx' ∧ JkA V ∧
+      (∀ cs : List Frm, Yok j n cs → TipOk (plug cs V)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok j n cs →
+        TipOk (plug cs (Jk1.pay V C))) ∧ JkA Wl ∧
+      (∀ (i : ℕ) (cs : List Frm), Yok j i cs → TipOk (plug cs Wl)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Yok j i cs →
+        TipOk (plug cs (Jk1.pay Wl C)))
+  | (j + 1), (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Yok (j + 1) n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Yok (j + 1) n cs → TipOk (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok (j + 1) n cs →
+        TipOk (plug cs (Jk1.pay U C)))
+
+def Yk (j n : ℕ) (Z : Jk1) : Prop := ∀ ctx : List Frm, Yok j n ctx → TipOk (plug ctx Z)
+
+theorem Yok_00 (ctx : List Frm) : Yok 0 0 ctx ↔ ctx = [] := by rw [Yok]
+
+theorem Yok_0s (n : ℕ) (ctx : List Frm) : Yok 0 (n + 1) ctx ↔
+    ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Yok 0 n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Yok 0 n cs → TipOk (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok 0 n cs →
+        TipOk (plug cs (Jk1.pay U C))) := by rw [Yok]
+
+theorem Yok_s0 (j : ℕ) (ctx : List Frm) : Yok (j + 1) 0 ctx ↔
+    ∃ (V Wl : Jk1) (ctx' : List Frm) (n : ℕ),
+      ctx = (ctx' ++ [Frm.fone V]) ++ [Frm.ftwo Wl] ∧ Yok j n ctx' ∧ JkA V ∧
+      (∀ cs : List Frm, Yok j n cs → TipOk (plug cs V)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok j n cs →
+        TipOk (plug cs (Jk1.pay V C))) ∧ JkA Wl ∧
+      (∀ (i : ℕ) (cs : List Frm), Yok j i cs → TipOk (plug cs Wl)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Yok j i cs →
+        TipOk (plug cs (Jk1.pay Wl C))) := by rw [Yok]
+
+theorem Yok_ss (j n : ℕ) (ctx : List Frm) : Yok (j + 1) (n + 1) ctx ↔
+    ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Yok (j + 1) n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Yok (j + 1) n cs → TipOk (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok (j + 1) n cs →
+        TipOk (plug cs (Jk1.pay U C))) := by rw [Yok]
+
+theorem Yk00_of_TipOk {X : Jk1} (h : TipOk X) : Yk 0 0 X := by
+  intro ctx hctx
+  rw [(Yok_00 ctx).mp hctx]
+  exact h
+
+theorem TipOk_of_Yk00 {X : Jk1} (h : Yk 0 0 X) : TipOk X := h [] ((Yok_00 []).mpr rfl)
+
+theorem JkA_plug_Yok : ∀ (j n : ℕ) (ctx : List Frm), Yok j n ctx → ∀ T : Jk1, JkA T →
+    JkA (plug ctx T)
+  | 0, 0, ctx, h, T, hT => by
+      rw [(Yok_00 ctx).mp h]
+      exact hT
+  | 0, (n + 1), ctx, h, T, hT => by
+      obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Yok_0s n ctx).mp h
+      rw [plug_snoc]
+      exact JkA_plug_Yok 0 n ctx' hc _ ⟨hJU, hT⟩
+  | (j + 1), 0, ctx, h, T, hT => by
+      obtain ⟨V, Wl, ctx', n, rfl, hc, hJV, -, -, hJW, -, -⟩ := (Yok_s0 j ctx).mp h
+      rw [plug_snoc2, plug_snoc]
+      exact JkA_plug_Yok j n ctx' hc _ ⟨hJV, hJW, hT⟩
+  | (j + 1), (n + 1), ctx, h, T, hT => by
+      obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Yok_ss j n ctx).mp h
+      rw [plug_snoc]
+      exact JkA_plug_Yok (j + 1) n ctx' hc _ ⟨hJU, hT⟩
+
+theorem Yok_fone {j n : ℕ} {U : Jk1} {ctx : List Frm} (hctx : Yok j n ctx) (hJU : JkA U)
+    (hU : ∀ cs : List Frm, Yok j n cs → TipOk (plug cs U))
+    (hUp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok j n cs →
+      TipOk (plug cs (Jk1.pay U C))) :
+    Yok j (n + 1) (ctx ++ [Frm.fone U]) := by
+  cases j with
+  | zero => exact (Yok_0s n _).mpr ⟨U, ctx, rfl, hctx, hJU, hU, hUp⟩
+  | succ j => exact (Yok_ss j n _).mpr ⟨U, ctx, rfl, hctx, hJU, hU, hUp⟩
+
+theorem Yok_fone_dest {j n : ℕ} {ctx : List Frm} (h : Yok j (n + 1) ctx) :
+    ∃ (U : Jk1) (ctx' : List Frm), ctx = ctx' ++ [Frm.fone U] ∧ Yok j n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Yok j n cs → TipOk (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Yok j n cs →
+        TipOk (plug cs (Jk1.pay U C))) := by
+  cases j with
+  | zero => exact (Yok_0s n ctx).mp h
+  | succ j => exact (Yok_ss j n ctx).mp h
+
+theorem Yk_congr {j n : ℕ} {X1 X2 : Jk1} (hJ2 : JkA X2) (h : ∀ l, jk1 l X1 = jk1 l X2)
+    (hX : Yk j n X1) : Yk j n X2 :=
+  fun ctx hctx => TipOk_congr (JkA_plug_Yok j n ctx hctx _ hJ2)
+    (jk1_plug_congr ctx h) (hX ctx hctx)
+
+theorem Yk_one {j n : ℕ} {U T : Jk1} (hJU : JkA U) (hU : Yk j n U)
+    (hUp : ∀ C : TrioSeq, Bok C → Yk j n (Jk1.pay U C)) (hT : Yk j (n + 1) T) :
+    Yk j n (Jk1.one U T) := by
+  intro ctx hctx
+  have h := hT _ (Yok_fone hctx hJU hU (fun C hC => hUp C hC))
+  rwa [plug_snoc] at h
+
+/-- 2 の枠を 1 枚足す（兄弟 `Wl` は全層に差せること）。 -/
+theorem Yk_pair {j n : ℕ} {V Wl T : Jk1} (hJV : JkA V) (hV : Yk j n V)
+    (hVp : ∀ C : TrioSeq, Bok C → Yk j n (Jk1.pay V C)) (hJW : JkA Wl)
+    (hW : ∀ i : ℕ, Yk j i Wl)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Yk j i (Jk1.pay Wl C))
+    (hT : Yk (j + 1) 0 T) : Yk j n (Jk1.one V (Jk1.two Wl T)) := by
+  intro ctx hctx
+  have hC : Yok (j + 1) 0 ((ctx ++ [Frm.fone V]) ++ [Frm.ftwo Wl]) :=
+    (Yok_s0 j _).mpr ⟨V, Wl, ctx, n, rfl, hctx, hJV, hV, (fun C hC => hVp C hC), hJW,
+      (fun i cs hcs => hW i cs hcs), (fun C hC i cs hcs => hWp C hC i cs hcs)⟩
+  have h := hT _ hC
+  rwa [plug_snoc2, plug_snoc] at h
+
+theorem Yk_nil : ∀ (j n : ℕ), Yk j n Jk1.nil
+  | 0, 0 => Yk00_of_TipOk TipOk_nil
+  | 0, (n + 1) => by
+      intro ctx hctx
+      obtain ⟨U, ctx', rfl, hc, hJU, hU, hUp⟩ := (Yok_0s n ctx).mp hctx
+      rw [plug_snoc]
+      refine ⟨JkA_plug_Yok 0 n ctx' hc _ ⟨hJU, trivial⟩, ?_⟩
+      intro Wl hW jc mc ctx0 hctx0
+      rw [← plug_snoc2, ← plug_append]
+      refine APnil_gen0 ((ctx0 ++ [Frm.ftwo Wl]) ++ ctx') U ?_ ?_ ?_
+      · have h := JkT_plug_Cok jc (mc + 1) ctx0 hctx0
+          (Jk1.two Wl (plug ctx' (Jk1.one U Jk1.nil)))
+          ⟨hW.ja, JkA_plug_Yok 0 n ctx' hc _ ⟨hJU, trivial⟩⟩
+        rwa [← plug_snoc2, ← plug_append] at h
+      · have h := (hU ctx' hc).ck Wl hW jc mc ctx0 hctx0
+        rwa [← plug_snoc2, ← plug_append] at h
+      · intro C hC
+        have h := (hUp C hC ctx' hc).ck Wl hW jc mc ctx0 hctx0
+        rwa [← plug_snoc2, ← plug_append] at h
+  | (j + 1), 0 => by
+      intro ctx hctx
+      obtain ⟨V, Wl, ctx', n, rfl, hc, hJV, hV, hVp, hJW, hW, hWp⟩ := (Yok_s0 j ctx).mp hctx
+      have hstair : ∀ i : ℕ, Yok j (n + i + 1)
+          ((ctx' ++ [Frm.fone V]) ++ List.replicate i (Frm.fone Wl)) := by
+        intro i
+        induction i with
+        | zero => simpa using Yok_fone hc hJV hV (fun C hC => hVp C hC)
+        | succ i ih =>
+            rw [List.replicate_succ', ← List.append_assoc]
+            exact Yok_fone ih hJW (fun cs hcs => hW (n + i + 1) cs hcs)
+              (fun C hC cs hcs => hWp C hC (n + i + 1) cs hcs)
+      have hJp : JkA (plug (ctx' ++ [Frm.fone V]) (Jk1.two Wl Jk1.nil)) := by
+        rw [plug_snoc]
+        exact JkA_plug_Yok j n ctx' hc _ ⟨hJV, hJW, trivial⟩
+      rw [plug_snoc2]
+      refine ⟨hJp, ?_⟩
+      intro Wl0 hW0 jc mc ctx0 hctx0
+      rw [← plug_snoc2, ← plug_append, ← List.append_assoc]
+      refine GOK_twoNil_gen ((ctx0 ++ [Frm.ftwo Wl0]) ++ ctx') V hJW ?_ ?_ ?_
+      · have h := JkT_plug_Cok jc (mc + 1) ctx0 hctx0
+          (Jk1.two Wl0 (plug (ctx' ++ [Frm.fone V]) (Jk1.two Wl Jk1.nil))) ⟨hW0.ja, hJp⟩
+        rwa [← plug_snoc2, ← plug_append, ← List.append_assoc] at h
+      · have h := (hV ctx' hc).ck Wl0 hW0 jc mc ctx0 hctx0
+        rwa [← plug_snoc2, ← plug_append] at h
+      · intro i
+        have h := (hW (n + i + 1) _ (hstair i)).ck Wl0 hW0 jc mc ctx0 hctx0
+        rw [← plug_snoc2, ← plug_append] at h
+        rw [← plug_append]
+        simpa [List.append_assoc] using h
+  | (j + 1), (n + 1) => by
+      intro ctx hctx
+      obtain ⟨U, ctx', rfl, hc, hJU, hU, hUp⟩ := (Yok_ss j n ctx).mp hctx
+      rw [plug_snoc]
+      refine ⟨JkA_plug_Yok (j + 1) n ctx' hc _ ⟨hJU, trivial⟩, ?_⟩
+      intro Wl hW jc mc ctx0 hctx0
+      rw [← plug_snoc2, ← plug_append]
+      refine APnil_gen0 ((ctx0 ++ [Frm.ftwo Wl]) ++ ctx') U ?_ ?_ ?_
+      · have h := JkT_plug_Cok jc (mc + 1) ctx0 hctx0
+          (Jk1.two Wl (plug ctx' (Jk1.one U Jk1.nil)))
+          ⟨hW.ja, JkA_plug_Yok (j + 1) n ctx' hc _ ⟨hJU, trivial⟩⟩
+        rwa [← plug_snoc2, ← plug_append] at h
+      · have h := (hU ctx' hc).ck Wl hW jc mc ctx0 hctx0
+        rwa [← plug_snoc2, ← plug_append] at h
+      · intro C hC
+        have h := (hUp C hC ctx' hc).ck Wl hW jc mc ctx0 hctx0
+        rwa [← plug_snoc2, ← plug_append] at h
+
+#print axioms Yk_nil
+
 end Small
 end TRIO
