@@ -54304,5 +54304,94 @@ theorem GOK_twoPay_of {ctx : List Frm} (NN : Jk1 → Prop)
 
 #print axioms GOK_twoPay_of
 
+/-! ### ★★★★★ ブロック文脈 `DCtx` と、そこに差せる木の族 `NNo`
+
+枠木の条件を**その場の文脈での良さ**だけにした文脈の族（`NSt` と同じ弱さ）。
+塔の文脈（`blkR N Bs i`）も、兄弟 `N` が族 `NNo` に入っていれば `DCtx` になる。
+だから `GOK_runGNil_gen` の階段は `NNo N` から出る。 -/
+
+/-- ブロック文脈。1 の枠の兄弟はその場で差せればよく、2 の枠の兄弟は `JkA` だけ。 -/
+inductive DCtx : List Frm → Prop
+  | base : DCtx [Frm.fone Jk1.nil]
+  | blk : ∀ {ctx : List Frm} {V : Jk1} {Bs : List Jk1}, DCtx ctx → JkA V →
+      (∀ B ∈ Bs, JkA B) → GOK (plug ctx V) → DCtx (ctx ++ blkC V Bs)
+
+/-- どの `DCtx` 文脈にも差せる木。 -/
+def NNo (N : Jk1) : Prop := JkA N ∧ ∀ ctx : List Frm, DCtx ctx → GOK (plug ctx N)
+
+theorem blkR_zero (A : Jk1) (Bs : List Jk1) : blkR A Bs 0 = [] := rfl
+
+theorem blkR_snoc (A : Jk1) (Bs : List Jk1) : ∀ i : ℕ,
+    blkR A Bs (i + 1) = blkR A Bs i ++ blkC A Bs
+  | 0 => by
+      show blkC A Bs ++ [] = [] ++ blkC A Bs
+      simp
+  | (i + 1) => by
+      show blkC A Bs ++ blkR A Bs (i + 1) = blkR A Bs (i + 1) ++ blkC A Bs
+      conv_lhs => rw [blkR_snoc A Bs i]
+      rw [← List.append_assoc]
+      rfl
+
+theorem blkR_nil_rep (A : Jk1) : ∀ i : ℕ,
+    blkR A ([] : List Jk1) i = List.replicate i (Frm.fone A)
+  | 0 => rfl
+  | (i + 1) => by
+      show blkC A [] ++ blkR A ([] : List Jk1) i = _
+      rw [blkR_nil_rep A i, List.replicate_succ]
+      rfl
+
+theorem JkA_plug_DCtx : ∀ {ctx : List Frm}, DCtx ctx → ∀ T : Jk1, JkA T →
+    JkA (plug ctx T)
+  | _, DCtx.base, T, hT => ⟨trivial, hT⟩
+  | _, DCtx.blk hc hJV hB _, T, hT => by
+      rw [plug_blkC]
+      exact JkA_plug_DCtx hc _ ⟨hJV, JkA_plug_ftw _ hB hT⟩
+
+theorem JkT_plug_DCtx : ∀ {ctx : List Frm}, DCtx ctx → ∀ T : Jk1, JkA T →
+    JkT (plug ctx T)
+  | _, DCtx.base, T, hT => ⟨⟨trivial, hT⟩, trivial⟩
+  | _, DCtx.blk hc hJV hB _, T, hT => by
+      rw [plug_blkC]
+      exact JkT_plug_DCtx hc _ ⟨hJV, JkA_plug_ftw _ hB hT⟩
+
+/-- 塔の文脈も `DCtx`（兄弟 `N` が族に入っていれば）。 -/
+theorem DCtx_tow {ctx : List Frm} {N : Jk1} {Bs : List Jk1} (hc : DCtx ctx) (hN : NNo N)
+    (hB : ∀ B ∈ Bs, JkA B) : ∀ i : ℕ, DCtx (ctx ++ blkR N Bs i)
+  | 0 => by
+      rw [blkR_zero, List.append_nil]
+      exact hc
+  | (i + 1) => by
+      have ih := DCtx_tow hc hN hB i
+      rw [blkR_snoc, ← List.append_assoc]
+      exact DCtx.blk ih hN.1 hB (hN.2 _ ih)
+
+/-- ★★★★★ 族の木は「走りの先端 `nil`」の位置に置ける（階段は族から出る）。 -/
+theorem Tow_of_NNo {N : Jk1} (hN : NNo N) :
+    ∀ ctx : List Frm, DCtx ctx → GOK (plug ctx (Jk1.two N Jk1.nil)) := by
+  intro ctx hc
+  cases hc with
+  | base =>
+      have hst : ∀ m : ℕ, GOK (plug (([] : List Frm) ++ [Frm.fone Jk1.nil])
+          (plug (List.replicate m (Frm.fone N)) N)) := by
+        intro m
+        rw [← plug_append, List.nil_append, ← blkR_nil_rep N m]
+        exact hN.2 _ (DCtx_tow DCtx.base hN (by simp) m)
+      have hJT : JkT (plug (([] : List Frm) ++ [Frm.fone Jk1.nil])
+          (Jk1.two N Jk1.nil)) := by
+        rw [List.nil_append]
+        exact JkT_plug_DCtx DCtx.base _ ⟨hN.1, trivial⟩
+      have h := GOK_twoNil_gen [] Jk1.nil hN.1 hJT GOK_nil hst
+      rwa [List.nil_append] at h
+  | @blk ctx' V Bs hc' hJV hB hGV =>
+      have hJT : JkT (plug (ctx' ++ blkC V Bs) (Jk1.two N Jk1.nil)) :=
+        JkT_plug_DCtx (DCtx.blk hc' hJV hB hGV) _ ⟨hN.1, trivial⟩
+      refine GOK_runGNil_gen hN.1 hB ctx' hJT hGV ?_
+      intro i
+      have hd : DCtx ((ctx' ++ blkC V Bs) ++ blkR N Bs i) :=
+        DCtx_tow (DCtx.blk hc' hJV hB hGV) hN hB i
+      exact hN.2 _ hd
+
+#print axioms Tow_of_NNo
+
 end Small
 end TRIO
