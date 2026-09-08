@@ -14930,3 +14930,58 @@ bms で `X_{k+1}` の展開を測ると、悪い部分は末尾 1 列ではな�
 `LOk_pay`（1 個の 2 の枠 + 1 の枠だけの文脈）は無条件に通るので、
 効いていない差は **2 の枠が 2 の枠の直上に来る形**（`APd`/`GCtx` では
 2 の記録の間に必ず 1 の記録が入るので表現できない形）だけ。
+
+## 追記149: 4 本の証明の差分を取ると壁は 1 か所。走りは `Qok` 層で消える
+
+`X_0`〜`X_3`（シートで緑の 4 本）の証明を並べて差分を取ると、`n` を変えても
+一字一句同じ文が並び、変わるのは 1 か所だけだった。
+
+    TwoOk (TW (n+2)) <- TTwA (TW (n+1)) <- Dk1 (two nil (TW n)) <- TipOk (TW n)
+                                                                    ~~~~~~~~~~ ここだけ
+
+    TipOk (TW 0) = TipOk_twoNil            （壁なし）
+    TipOk (TW 1) = ... Ew_twoNilTwoNil 1   （走り 2 の `Ew` 層版、個別補題）
+    TipOk (TW 2) = ?                        Pk (j+1) 0 (two nil nil) = WallP が要る
+
+つまり `TowOk` の壁は `WallP : ∀ j, Pk (j+1) 0 (two nil nil)` 1 本。
+
+### `Nk_twoNilNil` の観察
+
+`Nk_twoNilNil (j) : Nk (j+1) 0 (two nil nil)`（緑）は、**文脈の 2 の枠木を `nil` に
+限れば壁が通る**ことを言っている。`GOK_twoTwoNilW_gen` の階段が
+`two nil (nstN2 nil nil k)`（交互塔、`Pk_nstT` で緑）で済むため。
+そして `TW` の塔が作る 2 の枠は全部 `two nil …` なので、この制限は本来無害のはず。
+
+ただし `Nok = Pok ∧ NilCtx` は枠木の条件が `Pok` 条件のままなので、
+`Nk` だけ良い枠木では文脈を組めない。そこで層を作り直した。
+
+### `Qok` 層（新規、緑）
+
+`Pok` の複製で、`(j+1, 0)`（対の層）の 2 の枠木に `Wl = nil` を課したもの。
+枠木の条件は `Qok` 条件（正しく再帰的）。`(0,0)` は `ctx = []` のままなので
+`TipOk_of_Qk00` はそのまま使え、`TipOk`／`Dk`／`TTwA`／`TwoOk` へ戻る経路は無傷。
+
+    Qk_twoNilNil : Qk (j+1) 0 (two nil nil)     ★ 壁の走りの部分が通った
+    Qk_TW / TipOk_TWall / TTwA_TWall / TwoOk_TWall / TowOk_all / R14_mem_final
+
+### 残り 1 文 `QPayPair`
+
+    QPayPair : ∀ j Y, Bok Y → ∀ X, JkA X → Qk (j+1) 0 X → Qk (j+1) 0 (pay X Y)
+
+`Pk_pay` は `Pok` 層では無条件だが、A2' の複製が作る**横鎖
+`twoIt Wl (pay X Y') k` が 2 の枠の左兄弟に来る**ので、兄弟を `nil` に
+固定した `Qok` では文脈が組めない。
+
+### 分かったこと（追記145 の綱引きの 2 度目の確認）
+
+    兄弟 nil に固定  -> 走り（壁）は通る、荷（pay）が通らない
+    兄弟一般        -> 荷は通る、走りが通らない
+
+`SCtx`/`RCtx`（`GOK` 台）で見たのと同じ綱引きが `Pok`/`Qok`（`TipOk` 台）でも
+そのまま出た。左兄弟を「nil と、`nil` から横鎖で作れる木」に広げても、
+壁の階段 `two N (nstN2 N nil k)` が `N` を深い層で要求するので通らない
+（`Pok` の 2 の枠木条件は層 `j` で頭打ち。全層条件は負の位置に `Pok` が来るので
+定義に書けない = 追記88 の非可述性）。
+
+したがって #14 の残りは
+「**2 の記録の直上の荷**（横鎖の塔）」1 点に完全に集約された。
