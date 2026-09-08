@@ -59168,5 +59168,104 @@ theorem RFt_nil_cf {ks : List Bool} (hsp : RSp ks) : RFt (false :: ks) Jk1.nil :
 
 
 
+/-! ### ★★★★★ `H(6,0,0)`：`H` 族の次の列
+
+bms で見ると悪い部分は `jk1 4 TWU`（9 要素）で歩幅 0。つまり単位を横に平坦に
+複製する形なので `flat_of_chain` に乗る。単位の木は `WttU2 = two nil (TW 2)`、
+その `m` 重ねが `ZU m`。`TwoOk (ZU m)` は `LOk_one` の層で出る。 -/
+
+def WttU2 : Jk1 := Jk1.two Jk1.nil (TW 2)
+
+theorem JkA_WttU2 : JkA WttU2 := ⟨trivial, JkA_TW 2⟩
+
+theorem LOk1_WttU2 : LOk 1 WttU2 :=
+  LOk_of_TwOk0 (TTwA_TW2 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))
+
+theorem jk1_WttU2 (l : ℕ) : jk1 l WttU2 =
+    [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 2, 1, 0) : ℕ × ℕ × ℕ), ((l + 3, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 2, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [WttU2, TW, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+
+def ZU : ℕ → Jk1
+  | 0 => Jk1.two Jk1.nil Jk1.nil
+  | (m + 1) => Jk1.one (ZU m) WttU2
+
+theorem JkA_ZU : ∀ m : ℕ, JkA (ZU m)
+  | 0 => ⟨trivial, trivial⟩
+  | (m + 1) => ⟨JkA_ZU m, JkA_WttU2⟩
+
+theorem LOk0_ZU : ∀ m : ℕ, LOk 0 (ZU m)
+  | 0 => LOk_twoNilAll 0
+  | (m + 1) => LOk_one (JkA_ZU m) (LOk0_ZU m) LOk1_WttU2
+
+theorem TwoOk_ZU (m : ℕ) : TwoOk (ZU m) := TwoOk_of_LOk0 (LOk0_ZU m)
+
+/-- `H(6,0,0)` の単位（悪い部分）。 -/
+def U6H : TrioSeq :=
+  [((5, 1, 0) : ℕ × ℕ × ℕ), ((6, 2, 0) : ℕ × ℕ × ℕ), ((7, 2, 0) : ℕ × ℕ × ℕ),
+    ((7, 1, 0) : ℕ × ℕ × ℕ), ((8, 2, 0) : ℕ × ℕ × ℕ), ((9, 2, 0) : ℕ × ℕ × ℕ),
+    ((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ), ((11, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem jk1_ZU4 : ∀ m : ℕ, jk1 4 (ZU m) = ((5, 2, 0) : ℕ × ℕ × ℕ) :: copies U6H m
+  | 0 => by simp [ZU, jk1, copies]
+  | (m + 1) => by
+      show jk1 4 (ZU m) ++ (((5, 1, 0) : ℕ × ℕ × ℕ) :: jk1 5 WttU2) = _
+      rw [jk1_ZU4 m, jk1_WttU2 5, copies_snoc]
+      simp [U6H]
+
+theorem GOK_ZUTree (m : ℕ) : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (ZU m))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa using TwoOk_ZU m Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem R375m_copiesU6_mem (m : ℕ) : R375m ++ copies U6H m ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Jk1.nil (ZU m))]) := by
+    simpa using GOK_ZUTree m [] WOk_nil GoodFb_wordJ_nil
+  have h := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ] at h
+  show R375m ++ copies U6H m ∈ W 0
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (ZU m)))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) :: jk1 4 (ZU m) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) :: jk1 4 (ZU m)))) = _
+    simp [jk1]
+  rw [e, jk1_ZU4 m] at h
+  simpa [R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+theorem MidD_U6H : MidD 6 U6H where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U6H, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U6H, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U6H, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- ★★★★★ `H(6,0,0)`。 -/
+theorem R375h14_mem : R375h ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hstep : ∀ n : ℕ, Aok (R375m ++ copies U6H n) →
+      (R375m ++ copies U6H n) ++ U6H ∈ W 0 := by
+    intro n _
+    have h := R375m_copiesU6_mem (n + 1)
+    rw [copies_snoc] at h
+    simpa [List.append_assoc] using h
+  have h := flat_of_chain (Y0 := R375m) (M := U6H) (d := 6) (by omega) MidD_U6H
+    Aok_R375m hstep
+  simpa [R375h_eq, R375m, R373, R344, R341, R338, U6H, List.append_assoc] using h
+
+#print axioms R375h14_mem
+
+
 end Small
 end TRIO
