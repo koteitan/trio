@@ -14839,3 +14839,43 @@ H(5,2,0): 悪い部分 = (3,1,0)…(11,2,0)、歩幅 2、上昇あり（塔に�
 `(6,0,0)` / `(7,0,0)` は `flat_of_chain`（`R375h7_mem` と同じ形）に乗るので、
 `R375m ++ (jk1 4 TWU)^n ∈ W 0`（単位の平坦な塔）が作れれば出る。
 これは #14 の壁（高さを増やす塔）とは別物で、**同じ高さの単位を横に並べる塔**。
+
+## 追記147: `H(6,0,0)` の実装計画（`H(4,0,0)` の完全な写し）
+
+`R375h8_mem`（`H(4,0,0)`）の構造を読み解いた。そっくり写せる。
+
+```
+H(4,0,0):  WttH = two nil (TW 3)              単位の木（レベル 2）
+           TLH m = one (TLH (m-1)) WttH        m 重ね
+           GOK_TLH ⇐ GOK_oneU_H ⇐ APd_WttH ⇐ TwoOk_TW3
+           jk1_TLH m 2 = copies U375cH m       12 要素の単位
+           R341_copiesH_mem ⇐ rowJ_mem_genF Aok_R338
+           R375h8_mem ⇐ flat_of_chain (Y0 := R341) (M := U375cH) (d := 4)
+
+H(6,0,0):  WttU2 = two nil (TW 2)              単位の木（レベル 4）
+           TWU = one nil WttU2                 jk1 4 TWU = 9 要素 = 悪い部分
+           R375m = R341 ++ (3,1,0)(4,2,0)(5,2,0)
+           Y0 := R375m,  M := jk1 4 TWU,  d := 6
+```
+
+### この回に緑にした土台
+
+```
+Dk1_twoNilTW0 / TTwA_TW1 / TwoOk_TW2     -- TwoOk_TW3 の 1 段下（同じ層の流れ）
+JkT_TWU / GOK_TWU                         -- GOK_NH と同じ形
+```
+
+`TipOk_twoNil → Dk1_twoNilTW0 → TTwA_TW1 → TwoOk_TW2` は
+`TipOk_TW1 → Dk1_twoNilTW1 → TTwA_TW2 → TwoOk_TW3` の 1 段下。
+
+### 残りの部品
+
+1. `APd_WttU2 (ks) : APd (true::ks) (two nil (TW 2))` ⇐ `TwoOk_TW2`（`APd_WttH` の写し）
+2. `TLU m` / `JkT_TLU` / `GOK_TLU` / `jk1_TLU m l = copies [9 要素] m`
+3. `rowJ_mem_genF Aok_R338` に渡す木は
+   `Tree m = one nil (two nil (appJ (two nil nil) (TLU m)))`
+   （`jk1 2 (Tree m) = (3,1,0)(4,2,0)(5,2,0) ++ (単位)^m`）。
+   その `GOK` には `TwoOk (appJ (two nil nil) (TLU m))` が要る——ここだけ
+   `TLH` の写しでは済まない（`TLH` は `Y0 = R341` で木がそのまま `TLH m` だった）。
+   `OneOk WttU2` ＋ `TwoQ` の再帰で出る見込み。
+4. `MidD 6 (jk1 4 TWU)` / `Aok R375m` / `flat_of_chain`
