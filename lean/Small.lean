@@ -59888,5 +59888,22 @@ theorem VOk_two {r m : ℕ} {N Z : Jk1} (hN : VS N) (hf : Fter r m)
 #print axioms VOk_one
 #print axioms VOk_two
 
+
+/-! ### 走り 2 が通る場合／通らない場合の境目
+
+`TwOk r (m+1) (two nil nil)`（1 の枠の直上）は無条件に緑。
+`TwOk (r+1) 0 (two nil nil)`（2 の枠の直上 = 走り 2）だけが壁 `WallT`。
+兄弟が `nil` なら壁も緑（`NTw_nil` が全レベルだから）。 -/
+
+theorem TwOk_twoNil_f (r m : ℕ) : TwOk r (m + 1) (Jk1.two Jk1.nil Jk1.nil) :=
+  TwOk_two trivial (NTw_nil r) (Fter_succ r m) (TwOk_twoNilE r)
+
+theorem TwOk_twoNilTwoNil (r m : ℕ) (hf : Fter r m) :
+    TwOk r m (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil)) :=
+  TwOk_twoTwoNil trivial NTw_nil hf
+
+#print axioms TwOk_twoNil_f
+#print axioms TwOk_twoNilTwoNil
+
 end Small
 end TRIO
