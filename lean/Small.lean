@@ -59791,5 +59791,102 @@ theorem R14_of_WallT (hw : WallT) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] �
 #print axioms TowOk_of_WallT
 #print axioms R14_of_WallT
 
+
+/-! ### ★★★★★ `VSt`: 荷の A2' 帰納と同時に回すための梯子
+
+追記153 の設計。`TwSt` との違いは 2 点だけ。
+
+* 2 の枠の兄弟を**構文的な族 `VS`**（`nil` と、A2' の複製が作る横鎖）に限る。
+  頭打ちの `NTw r N` を課さないので、全レベル性は後から族についての帰納で出す。
+* 1 の枠の条件に**荷**を入れる（`Pok`/`Rok` と同じ）。こうすると `VOk_nil` の
+  `(r+1, m+1)` の枝が `APnil_gen0` で閉じ、`TwOk_pay` を経由しなくてよい。
+
+底（レベル 0）は `TwSt 0 m` そのものなので、出口 `TwOk 0 0` はそのまま使える。 -/
+
+/-- 2 の枠の兄弟に使える木の族。A2' の複製が作る横鎖で閉じている。 -/
+inductive VS : Jk1 → Prop
+  | nil : VS Jk1.nil
+  | step : ∀ {N X : Jk1} {Y : TrioSeq}, VS N → VS X → Bok Y →
+      VS (Jk1.two N (Jk1.pay X Y))
+
+theorem JkA_of_VS : ∀ {N : Jk1}, VS N → JkA N
+  | _, VS.nil => trivial
+  | _, VS.step hN hX hY => ⟨JkA_of_VS hN, JkA_of_VS hX, hY⟩
+
+/-- 横鎖は族で閉じている。 -/
+theorem VS_twoIt {N X : Jk1} {Y : TrioSeq} (hN : VS N) (hX : VS X) (hY : Bok Y) :
+    ∀ k : ℕ, VS (twoIt N (Jk1.pay X Y) k)
+  | 0 => hN
+  | (k + 1) => VS.step (VS_twoIt hN hX hY k) hX hY
+
+def VSt : ℕ → ℕ → List Frm → Prop
+  | 0, m, D => TwSt 0 m D
+  | (r + 1), 0, D => ∃ (m' : ℕ) (D' : List Frm) (N : Jk1),
+      D = D' ++ [Frm.ftwo N] ∧ VSt r m' D' ∧ Fter r m' ∧ VS N
+  | (r + 1), (m + 1), D => ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ VSt (r + 1) m D' ∧ JkA U ∧
+      (∀ D'' : List Frm, VSt (r + 1) m D'' → GOK (plug D'' U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ D'' : List Frm, VSt (r + 1) m D'' →
+        GOK (plug D'' (Jk1.pay U C)))
+
+/-- 形 `(r, m)` のどの `VSt` 文脈にも差せる木。 -/
+def VOk (r m : ℕ) (X : Jk1) : Prop := ∀ D : List Frm, VSt r m D → GOK (plug D X)
+
+theorem VSt_z (m : ℕ) (D : List Frm) : VSt 0 m D ↔ TwSt 0 m D := by rw [VSt]
+
+theorem VSt_e (r : ℕ) (D : List Frm) : VSt (r + 1) 0 D ↔
+    ∃ (m' : ℕ) (D' : List Frm) (N : Jk1),
+      D = D' ++ [Frm.ftwo N] ∧ VSt r m' D' ∧ Fter r m' ∧ VS N := by rw [VSt]
+
+theorem VSt_f (r m : ℕ) (D : List Frm) : VSt (r + 1) (m + 1) D ↔
+    ∃ (D' : List Frm) (U : Jk1),
+      D = D' ++ [Frm.fone U] ∧ VSt (r + 1) m D' ∧ JkA U ∧
+      (∀ D'' : List Frm, VSt (r + 1) m D'' → GOK (plug D'' U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ D'' : List Frm, VSt (r + 1) m D'' →
+        GOK (plug D'' (Jk1.pay U C))) := by rw [VSt]
+
+/-- レベル 0 は `TwOk` そのもの。出口はここ。 -/
+theorem VOk_zero (m : ℕ) (X : Jk1) : VOk 0 m X ↔ TwOk 0 m X := by
+  constructor
+  · intro h D hD; exact h D ((VSt_z m D).mpr hD)
+  · intro h D hD; exact h D ((VSt_z m D).mp hD)
+
+theorem VSt_JkT : ∀ (r m : ℕ) (D : List Frm), VSt r m D → ∀ T : Jk1, JkA T →
+    JkT (plug D T)
+  | 0, m, D, hD, T, hT => TwSt_JkT 0 m D ((VSt_z m D).mp hD) T hT
+  | (r + 1), 0, D, hD, T, hT => by
+      obtain ⟨m', D', N, rfl, hD', hf, hN⟩ := (VSt_e r D).mp hD
+      rw [plug_snoc2]
+      exact VSt_JkT r m' D' hD' _ ⟨JkA_of_VS hN, hT⟩
+  | (r + 1), (m + 1), D, hD, T, hT => by
+      obtain ⟨D', U, rfl, hD', hJU, -, -⟩ := (VSt_f r m D).mp hD
+      rw [plug_snoc]
+      exact VSt_JkT (r + 1) m D' hD' _ ⟨hJU, hT⟩
+
+/-- 1 の記録を 1 段足す。枠木には荷も要る。 -/
+theorem VOk_one : ∀ (r m : ℕ) {U Z : Jk1}, JkA U → VOk r m U →
+    (∀ C : TrioSeq, Bok C → VOk r m (Jk1.pay U C)) → VOk r (m + 1) Z →
+    VOk r m (Jk1.one U Z)
+  | 0, m, U, Z, hJU, hU, _, hZ => by
+      rw [VOk_zero] at hU hZ ⊢
+      exact TwOk_one 0 m hJU hU hZ
+  | (r + 1), m, U, Z, hJU, hU, hUp, hZ => by
+      intro D hD
+      rw [← plug_snoc]
+      refine hZ (D ++ [Frm.fone U]) ((VSt_f r m _).mpr ⟨D, U, rfl, hD, hJU, hU, ?_⟩)
+      intro C hC D'' hD''
+      exact hUp C hC D'' hD''
+
+/-- 2 の記録の枠を 1 枚足す（兄弟は族 `VS`）。 -/
+theorem VOk_two {r m : ℕ} {N Z : Jk1} (hN : VS N) (hf : Fter r m)
+    (hZ : VOk (r + 1) 0 Z) : VOk r m (Jk1.two N Z) := by
+  intro D hD
+  rw [← plug_snoc2]
+  exact hZ (D ++ [Frm.ftwo N]) ((VSt_e r _).mpr ⟨m, D, N, rfl, hD, hf, hN⟩)
+
+#print axioms VSt_JkT
+#print axioms VOk_one
+#print axioms VOk_two
+
 end Small
 end TRIO
