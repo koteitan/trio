@@ -14985,3 +14985,48 @@ bms で `X_{k+1}` の展開を測ると、悪い部分は末尾 1 列ではな�
 
 したがって #14 の残りは
 「**2 の記録の直上の荷**（横鎖の塔）」1 点に完全に集約された。
+
+## 追記150: #14 は `OneGap` 1 文に落ちた（`Rk`/`UPt` 経由）
+
+追記149 の `Qok` 層で「壁の走り部分」は消えたが、荷 `QPayPair` が残った。
+別ルートを探すと、`Rk` 層（`Rok` 文脈、`GOK` 台）に既にある族 `UPt`/`UT` で
+`TW` の塔がそのまま扱えることが分かった。
+
+    TW 0     = two nil nil                       = UPt.twoNil
+    TW (n+1) = one (two nil nil) (two nil (TW n))
+             右の子 two nil (TW n) = twoIt nil (TW n) 1  なので UP.chain
+
+つまり `UPt (TW n)` が全 `n` で成り立つ（`UPt_TW`）。あとは既存の緑の補題で
+
+    Wall -> Rk_UPt -> Rk 0 0 (TW n) -> TTwA_of_Rk00 -> TTwA (TW n)
+         -> TwoOk (TW n) -> TowOk -> R14_mem
+
+と繋がり、`Wall_of_OneGap`（既に緑）と合わせて
+
+    OneGap -> Wall -> TowOk -> #14 ∈ W 0        （`TowOk_of_OneGap` / `R14_of_OneGap`）
+
+`OneGap : ∀ A T, UPt A → UP T → PairOk (one A T)`
+= 「**1 の記録は 2 の記録の直上に置けるか**」。行列で言うと
+
+    ... jk1 l Wl (l+1,2,0) jk1 (l+1) A (l+2,1,0) jk1 (l+2) T ...
+
+の形。左兄弟 `Wl` は全層に差せるものに限ってよい。
+
+### これまでとの違い
+
+以前は #14 が `WallP : ∀ j, Pk (j+1) 0 (two nil nil)`（`Pk` 階層＝`TipOk` 台）に
+落ちていて、`Wall`／`OneGap`（`Rk` 階層＝`GOK` 台）とは別の壁だった。
+いま両方が `OneGap` 1 文に合流した。`Qok` 層の `QPayPair` も含めて
+
+    #14 <- OneGap        （本線。`Wall` も同時に出る）
+    #14 <- WallP         （`Pk` 階層）
+    #14 <- SNilT         （`SCtx` 階層）
+    #14 <- QPayPair      （`Qok` 階層）
+
+の 4 通りの帰着があるが、本線は `OneGap`。
+
+### 残っている別の壁
+
+シートの目標 行376 が要る `RunAll : ∀ q ks, APd (true::ks) (stk q)` は
+`stk q = two nil (two nil (… nil))` で、`UPt`/`UT` の族に入らない
+（`twoIt` は同じ高さの横鎖、`stk` は縦の入れ子）。こちらは `SNilT` のまま。

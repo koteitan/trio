@@ -59699,5 +59699,42 @@ theorem R14_mem_final (hq : QPayPair) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ
 
 #print axioms R14_mem_final
 
+
+/-! ### ★★★★★ `TW` の塔は `OneGap` から出る（`Rk`/`UPt` 経由）
+
+`TW n` は族 `UPt` に入る（`TW (n+1) = one (two nil nil) (two nil (TW n))` で、
+右の子は `twoIt nil (TW n) 1` なので `UP.chain`）。`Rk_UPt` は壁 `Wall` があれば
+`UPt` の木をどの層にも差せると言い、`Wall` は `OneGap` から出る。
+`Rk 0 0` は `TTwA` そのものなので、そこから `TwoOk` → `TowOk` → #14 へ繋がる。 -/
+
+theorem UPt_TW : ∀ n : ℕ, UPt (TW n)
+  | 0 => UPt.twoNil
+  | (n + 1) => UPt.one UPt.twoNil (UP.chain 1 UT.nil (UPt_TW n))
+
+theorem TTwA_TWw (hw : Wall) (n : ℕ) : TTwA (TW n) :=
+  TTwA_of_Rk00 (Rk_UPt hw (UPt_TW n) 0 0)
+
+theorem TwoOk_TWw (hw : Wall) : ∀ n : ℕ, TwoOk (TW n)
+  | 0 => TwoOk_twoNil
+  | (n + 1) => TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk_twoNilAll 0)
+      (LOk_of_TwOk0 (TTwA_TWw hw n 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+
+/-- ★★★★★ 塔は `Wall` から出る。 -/
+theorem TowOk_of_Wall (hw : Wall) : TowOk := fun n =>
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_TWw hw n Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+/-- ★★★★★ #14 は `OneGap` 1 文に落ちた。 -/
+theorem TowOk_of_OneGap (h : OneGap) : TowOk := TowOk_of_Wall (Wall_of_OneGap h)
+
+theorem R14_of_OneGap (h : OneGap) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_OneGap h)
+
+#print axioms TowOk_of_OneGap
+#print axioms R14_of_OneGap
+
 end Small
 end TRIO
