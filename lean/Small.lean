@@ -58167,6 +58167,35 @@ theorem SNilF_iff : SNilF ↔ ∀ (ks : List Bool) (D1 : List Frm) (U : Jk1),
 
 #print axioms SNilF_iff
 
+/-! ### `H` 族の単位は `TowOk` の木そのもの
+
+`R375h = R375m ++ jk1 4 (one nil (two nil (TW 2)))`。つまりシートの証明済みの
+`H` 族は **`TowOk` の高さ 2 の実例**で、#14 はその高さを任意にしたもの。
+`H` 族の次の列 `(6,0,0)` は bms で歩幅 0（平坦な複製）なので、
+`flat_of_chain` にこの単位の繰り返しを渡す形になる。 -/
+
+def TWU : Jk1 := Jk1.one Jk1.nil (Jk1.two Jk1.nil (TW 2))
+
+theorem jk1_TWU (l : ℕ) : jk1 l TWU =
+    [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+      ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 5, 1, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 7, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [TWU, TW, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
+
+theorem JkA_TWU : JkA TWU := ⟨trivial, trivial, JkA_TW 2⟩
+
+/-- `R375h` は「行375 + `TWU` の字（高さ 4）」。 -/
+theorem R375h_eq_TWU : R375h = R375m ++ jk1 4 TWU := by
+  rw [R375h_eq, jk1_TWU]
+  simp only [R375m, R373, R344, R341, R338, List.append_assoc, List.cons_append,
+    List.nil_append]
+
+#print axioms R375h_eq_TWU
+
+
 
 theorem SOk_true (hnt : SNilT) (ks : List Bool) : SBs (true :: ks) :=
   ⟨SSp_ct ks, hnt ks⟩
