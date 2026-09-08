@@ -15067,3 +15067,41 @@ bms で `X_{k+1}` の展開を測ると、悪い部分は末尾 1 列ではな�
 `... jk1 l Wl (l+1,2,0) jk1 (l+1) A (l+2,1,0) jk1 (l+2) T ...`。
 これを層の梯子を使わずに直接 `GoodFb` で組むか、
 層の階層をまたぐ整礎順序を見つけるかのどちらかが要る。
+
+## 追記152: #14 の依存を最短化。壁は一般梯子の 1 文 `WallT`
+
+`TwOk_one` は荷の仮定を要らない（`TwSt` の 1 の枠の条件はその場の良さだけ）。
+これに気づくと `TW` の塔は一般梯子 `TwOk` だけで登れる:
+
+    TW (n+1) = one (two nil nil) (two nil (TW n))
+    TwOk (r+1) 0 (two nil nil)      <- 壁 WallT
+    TwOk (r+1) 1 (two nil (TW n))   <- TwOk_two（兄弟 nil、NTw_nil は全 q で緑）+ 帰納
+
+    WallT : ∀ r, TwOk (r+1) 0 (two nil nil)
+
+    TwOk_TWt -> TTwA_TWt -> TwoOk_TWt -> TowOk_of_WallT -> R14_of_WallT
+
+補題 4 本。`Dk` / `Ck` / `TipOk` / `Pk` / `Rk` / `UPt` を一切通らない。
+これまでの帰着（`WallP`, `SNilT`, `QPayPair`, `Wall` = `OneGap`）より
+はるかに短い。
+
+### `WallT` の中身
+
+    TwSt (r+1) 0 D = D' ++ [ftwo N]、TwSt r m' D'、JkA N、NTw r N
+    目標 GOK (plug D' (two N (two nil nil)))
+
+`TwOk_twoTwoNil`（緑）はこれを `∀ q, NTw q N`（全レベル）で出す。文脈が渡すのは
+`NTw r N`（レベル r のみ）。差はこれだけ。階段 `nstN N k` は 2 の記録を k 個
+足すので `NTw` をレベル `r+1, …, r+k` で要求する。
+
+### 定義上の障害（今日 5 回目、決着）
+
+「兄弟は全レベルで良い」を `TwSt` の定義に書くと `NTw q`（q は上限なし）が
+`TwSt` 自身の負の位置に来る。`Rok` の `UT`、`Pok` の `UniP` のような
+**構文的な族**で逃げると、その全レベル性の証明が `one` の枝で元の壁に戻る
+（追記151 の `OneGap`）。
+
+この様式では抜けられない。要るのは
+- 「1 の記録が 2 の記録の直上」を層の梯子を使わず直接 `GoodFb` で組むか、
+- 文脈を**データ**にして良さを層でなく行列（順序数）についての帰納法で示すか、
+のどちらか。後者は設計の書き直しになる。

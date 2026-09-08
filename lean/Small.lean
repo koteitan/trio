@@ -59748,5 +59748,48 @@ theorem Wall_iff_OneGap : Wall ↔ OneGap :=
 
 #print axioms Wall_iff_OneGap
 
+
+/-! ### ★★★★★ `TW` の塔を一般梯子 `TwOk` で直接登る
+
+`TwOk_one` は荷の仮定を要らない（`TwSt` の 1 の枠の条件にはその場の良さしか
+無い）ので、`TW (n+1) = one (two nil nil) (two nil (TW n))` は
+
+    TwOk (r+1) 0 (two nil nil)          ← 壁 `WallT`
+    TwOk (r+1) 1 (two nil (TW n))       ← `TwOk_two`（兄弟 `nil`）+ 帰納
+
+の 2 つだけで組める。`Dk`/`Ck`/`TipOk`/`Pk` を一切通らない。 -/
+
+/-- 一般梯子での壁: 走り 2 が 2 の枠の直上。 -/
+def WallT : Prop := ∀ r : ℕ, TwOk (r + 1) 0 (Jk1.two Jk1.nil Jk1.nil)
+
+theorem TwOk_TWt (hw : WallT) : ∀ (n r : ℕ), TwOk (r + 1) 0 (TW n)
+  | 0, r => hw r
+  | (n + 1), r =>
+      TwOk_one (r + 1) 0 ⟨trivial, trivial⟩ (hw r)
+        (TwOk_two (N := Jk1.nil) trivial (NTw_nil (r + 1)) (Fter_succ (r + 1) 0)
+          (TwOk_TWt hw n (r + 1)))
+
+theorem TTwA_TWt (hw : WallT) (n : ℕ) : TTwA (TW n) :=
+  fun r m N hJN hNup hf => TwOk_two hJN (hNup r) hf (TwOk_TWt hw n r)
+
+theorem TwoOk_TWt (hw : WallT) : ∀ n : ℕ, TwoOk (TW n)
+  | 0 => TwoOk_twoNil
+  | (n + 1) => TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk_twoNilAll 0)
+      (LOk_of_TwOk0 (TTwA_TWt hw n 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+
+/-- ★★★★★ 塔は `WallT` 1 本から出る（梯子 `TwOk` だけ）。 -/
+theorem TowOk_of_WallT (hw : WallT) : TowOk := fun n =>
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_TWt hw n Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+theorem R14_of_WallT (hw : WallT) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_WallT hw)
+
+#print axioms TowOk_of_WallT
+#print axioms R14_of_WallT
+
 end Small
 end TRIO
