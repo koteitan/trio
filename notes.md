@@ -15241,3 +15241,44 @@ bms で `X_{k+1}` の展開を測ると、悪い部分は末尾 1 列ではな�
     TwOk_twoNil_f    (r m)    : TwOk r (m+1) (two nil nil)          1 の枠の直上、無条件
     TwOk_twoNilTwoNil (r m) hf : TwOk r m (two nil (two nil nil))   兄弟 nil なら走り 2 も緑
     WallT            (r)      : TwOk (r+1) 0 (two nil nil)          ← 壁はここだけ
+
+## 追記156: 兄弟条件を「先に定義済みの notion」で書く案を潰した
+
+追記155 の診断（`TwoOk` は兄弟条件を先に定義済みの `APd` で書いているから
+全レベルにできている）を深い層へ移そうとして、次の 3 案を潰した。
+
+* 案 A: `TwSt (r+1) 0` の兄弟条件を `∀ j kk, APd (replicate j true ++ (true::kk)) N`
+  （`TwoOk` と同じ）にする。
+  → `APd` の条件は `GCtx` 文脈（枠木が `APd` 良い）についてのもの。
+    `TwSt` の枠木条件は `GOK` ベースで弱いので `TwSt ⊄ GCtx` 系。適用できない。
+    枠木条件を `APd` ベースに強めると、`TW` の枠木 `two nil nil` が入らない。
+
+* 案 B: `TwSt` を完成させてから `NTwAll N := ∀ q, NTw q N` を定義し（これは書ける）、
+  それを兄弟条件に使う新層 `MSt` を作る。
+  → `NTwAll` は `TwSt` 文脈についての条件。`MSt` の枠木条件を `MSt` ベースに
+    すると `MSt ⊄ TwSt` で適用できない。`TwSt` ベースにすると枠木
+    `two nil nil` が `WallT` を要求して元に戻る。
+
+* 案 C: 兄弟条件を純粋に構文的（族 `Lsp` だけ、良さ無し）にする。
+  → 文脈にゴミの兄弟が入るので `NOk r m nil` 等が成り立たない。
+    `TwOk_nstN` の再帰が `hNup (q+1)`（レベル q+1 での兄弟の良さ）を
+    実際に使っているので、良さは落とせない。
+
+### 現状のまとめ
+
+    #14 <- WallT : ∀ r, TwOk (r+1) 0 (two nil nil)     補題 4 本（追記152）
+    緑: TwOk r (m+1) (two nil nil)          1 の枠の直上
+    緑: TwOk r m (two nil (two nil nil))    兄弟 nil
+    緑: TwoOk (two nil nil)                 2 の枠 1 個（APd 層、全レベル兄弟）
+    壁: TwOk (r+1) 0 (two nil nil)          2 の枠 2 個以上
+
+試した設計は通算 8 通り（`RCtx` `SCtx` `Qok` `Aok` `VSt` 案 A/B/C）。
+全部「兄弟の良さを全レベルに広げる所」で止まる。
+
+残る選択肢は 2 つ。
+
+1. `TwSt` の兄弟条件を、`TwoOk` と同型に「A2' の帰納で全レベル性が
+   維持される形」で書き直す。`APd_chainT'` に相当する補題
+   （横鎖の全レベル性を、荷を 1 つ小さくした帰納法の仮定から作る）が鍵。
+   これは `TwSt` 全体の作り直し。
+2. 文脈を層でなくデータにして、良さを行列（順序数）についての帰納で示す。
