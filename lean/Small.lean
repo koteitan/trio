@@ -55937,6 +55937,26 @@ theorem Dk1_twoNilTW1 : Dk 1 (Jk1.two Jk1.nil (TW 1)) := by
 theorem TTwA_TW2 : TTwA (TW 2) :=
   TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil Dk1_twoNilTW1
 
+theorem Dk1_twoNilTW0 : Dk 1 (Jk1.two Jk1.nil (TW 0)) := by
+  intro fs hfs
+  obtain ⟨W, fs', rfl, hfs', hJW, hW, hWp⟩ := (Fok_s 0 fs).mp hfs
+  have hfs0 : fs' = [] := (Fok_z fs').mp hfs'
+  subst hfs0
+  rw [plug_snoc]
+  exact TTwA_of_Ck00 (Ck_one hJW (Ck00_of_TTwA (hW [] rfl))
+    (fun C hC => Ck00_of_TTwA (hWp C hC [] rfl))
+    (TipOk_twoNil.ck Jk1.nil UniW_nil 0 0))
+
+theorem TTwA_TW1 : TTwA (TW 1) :=
+  TTwA_one_of_Dk1 ⟨trivial, trivial⟩ TTwA_twoNil Dk1_twoNilTW0
+
+/-- `TwoOk (TW 3)` の 1 段下。`H(6,0,0)` の単位に要る。 -/
+theorem TwoOk_TW2 : TwoOk (TW 2) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk_twoNilAll 0)
+    (LOk_of_TwOk0 (TTwA_TW1 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
+
+#print axioms TwoOk_TW2
+
 theorem TwoOk_TW3 : TwoOk (TW 3) :=
   TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk_twoNilAll 0)
     (LOk_of_TwOk0 (TTwA_TW2 0 0 Jk1.nil trivial NTw_nil (Fter_zero 0))))
@@ -58186,6 +58206,13 @@ theorem jk1_TWU (l : ℕ) : jk1 l TWU =
     List.singleton_append, List.cons.injEq, Prod.mk.injEq, and_true, true_and] <;> omega
 
 theorem JkA_TWU : JkA TWU := ⟨trivial, trivial, JkA_TW 2⟩
+
+theorem JkT_TWU : JkT TWU := ⟨JkA_TWU, trivial⟩
+
+theorem GOK_TWU : GOK TWU :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by simpa [TWU] using TwoOk_TW2 Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
 
 /-- `R375h` は「行375 + `TWU` の字（高さ 4）」。 -/
 theorem R375h_eq_TWU : R375h = R375m ++ jk1 4 TWU := by
