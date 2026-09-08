@@ -15030,3 +15030,40 @@ bms で `X_{k+1}` の展開を測ると、悪い部分は末尾 1 列ではな�
 シートの目標 行376 が要る `RunAll : ∀ q ks, APd (true::ks) (stk q)` は
 `stk q = two nil (two nil (… nil))` で、`UPt`/`UT` の族に入らない
 （`twoIt` は同じ高さの横鎖、`stk` は縦の入れ子）。こちらは `SNilT` のまま。
+
+## 追記151: 壁は 1 つ。`Wall ↔ OneGap`（同値を証明）
+
+    Wall   : ∀ j, Rk (j+1) 0 (two nil nil)      走り 2 が対の層に差せる
+    OneGap : ∀ A T, UPt A → UP T → PairOk (one A T)
+                                                1 の記録が 2 の記録の直上に置ける
+
+`Wall_of_OneGap`（既存）に加えて `OneGap_of_Wall`（`Rk_UPt` + `PairOk_of_Rk`）を
+足し、`Wall_iff_OneGap` として固定した。以後この 2 つを行き来しても得はない。
+
+### 走り 2 は 1 の枠の層では無条件に緑
+
+    Rk_twoNilTwoNil (j n) : Rk j (n+1) (two nil (two nil nil))      緑・無条件
+
+壁は**対の層 `(j+1, 0)` だけ**。文脈が与える 2 の枠木 `Wl` の良さが
+「入れた層 `j`」で頭打ちなのに対し、走り 2 の階段
+`Rk_nstTower` は `Wl` を層 `j, j+1, j+2, …` で要求する（階段が `j+1` へ再帰する）。
+
+### 非可述性の壁（4 回目）
+
+「兄弟は全層で良い」を文脈の定義に書くと `Rok`/`Pok`/`DCtx` が自分自身の
+負の位置に出る。今回は「全層条件 `AllL` を**既存の** `Rk` で書いてパラメータに
+する」新層 `Aok` を検討したが、A2' の横鎖 `twoIt Wl (pay X Y') k` の `AllL` を
+建て直すのに `Rk_all_chainW` が要り、その仮定が `PairOk (pay X Y')`、つまり
+`PairOk X`。荷を吊るす木 `X` は `itJ` の `one` 木にもなるので `OneGap` に戻る。
+
+逃げ道として使われている構文的な族（`UT`/`UPt`）の全層性が、まさに
+`Rk_allUT` の帰納の `one` の枝で `OneGap` を要求している。
+
+### 残っているのは 1 点
+
+    「1 の記録が 2 の記録の直上に来る形」を、左兄弟が全層に差せる文脈で示すこと。
+
+行列で書くと
+`... jk1 l Wl (l+1,2,0) jk1 (l+1) A (l+2,1,0) jk1 (l+2) T ...`。
+これを層の梯子を使わずに直接 `GoodFb` で組むか、
+層の階層をまたぐ整礎順序を見つけるかのどちらかが要る。

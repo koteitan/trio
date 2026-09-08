@@ -59736,5 +59736,17 @@ theorem R14_of_OneGap (h : OneGap) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] 
 #print axioms TowOk_of_OneGap
 #print axioms R14_of_OneGap
 
+
+/-- 逆向き。`Wall` があれば `OneGap` は出る（`Rk_UPt` + `PairOk_of_Rk`）。 -/
+theorem OneGap_of_Wall (hw : Wall) : OneGap :=
+  fun hA hT => PairOk_of_Rk (fun j => Rk_UPt hw (UPt.one hA hT) (j + 1) 0)
+
+/-- ★★★★★ 壁は 1 つ。`Wall`（走り 2 が対の層）と `OneGap`（1 の記録が
+2 の記録の直上）は同値。#14 はこの 1 文に落ちている。 -/
+theorem Wall_iff_OneGap : Wall ↔ OneGap :=
+  ⟨OneGap_of_Wall, Wall_of_OneGap⟩
+
+#print axioms Wall_iff_OneGap
+
 end Small
 end TRIO
