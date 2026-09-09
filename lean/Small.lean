@@ -60022,5 +60022,48 @@ theorem BStair_iff (ctx : List Frm) (V N : Jk1) :
 
 #print axioms BStair_iff
 
+
+/-! ### 壁 `WallT` を `BStair` に繋ぐ
+
+`TwSt (r+1) 0` の文脈を分解すると `(D0 ++ [fone V]) ++ [ftwo N]` の形になり、
+`GOK_twoTwoNil_of_BStair` がそのまま当たる。`TwSt_split` に `JkT` の情報を足した版を用意する。 -/
+
+theorem TwSt_split' : ∀ (r m : ℕ) (D : List Frm), TwSt r m D → Fter r m →
+    ∃ (D0 : List Frm) (V : Jk1), D = D0 ++ [Frm.fone V] ∧ JkA V ∧ GOK (plug D0 V) ∧
+      (∀ T : Jk1, JkA T → JkT (plug D0 T))
+  | 0, m, D, hD, _ => by
+      obtain ⟨D0, V, rfl, hD0, hJV, hV⟩ := (TwSt_z m D).mp hD
+      exact ⟨D0, V, rfl, hJV, hV D0 hD0, fun T hT => StkOk_JkT m D0 hD0 T hT⟩
+  | (r + 1), 0, _, _, hf => by
+      rcases hf with h | h
+      · exact absurd h (by omega)
+      · exact absurd h (by omega)
+  | (r + 1), (m + 1), D, hD, _ => by
+      obtain ⟨D0, U, rfl, hD0, hJU, hU⟩ := (TwSt_f r m D).mp hD
+      exact ⟨D0, U, rfl, hJU, hU D0 hD0, fun T hT => TwSt_JkT (r + 1) m D0 hD0 T hT⟩
+
+/-- ★ 壁 `WallT` が要求する `BStair` の全体。手元にある情報を全部仮定に持たせた最弱形。 -/
+def BStairAll : Prop := ∀ (r m : ℕ) (D0 : List Frm) (V N : Jk1),
+    JkA V → JkA N → NTw r N → TwSt r m (D0 ++ [Frm.fone V]) → Fter r m →
+    GOK (plug D0 V) → (∀ T : Jk1, JkA T → JkT (plug D0 T)) → BStair D0 V N
+
+/-- ★★★★★ 壁は `BStairAll` から出る。 -/
+theorem WallT_of_BStairAll (h : BStairAll) : WallT := by
+  intro r D hD
+  obtain ⟨m, D', N, rfl, hD', hf, hJN, hN⟩ := (TwSt_e r 0 D).mp hD
+  rw [plug_snoc2]
+  obtain ⟨D0, V, rfl, hJV, hGV, hJ⟩ := TwSt_split' r m D' hD' hf
+  exact GOK_twoTwoNil_of_BStair D0 V N hJV hJN hJ hGV
+    (h r m D0 V N hJV hJN hN hD' hf hGV hJ)
+
+/-- ★★★★★ #14 は `BStairAll` 1 文に落ちた（層を通らない形）。 -/
+theorem TowOk_of_BStairAll (h : BStairAll) : TowOk := TowOk_of_WallT (WallT_of_BStairAll h)
+
+theorem R14_of_BStairAll (h : BStairAll) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_BStairAll h)
+
+#print axioms WallT_of_BStairAll
+#print axioms R14_of_BStairAll
+
 end Small
 end TRIO

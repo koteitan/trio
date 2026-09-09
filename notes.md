@@ -15644,3 +15644,43 @@ m_0 = 1 で行 1・行 2 が不変なので、単位 M についての `MidD` �
     hstair: ∀ m, GOK (plug (BTw i ++ [fone N] ++ m 枚の [fone nil]) nil)
 
 で、後者が「nil を 1 の枠で伸ばした文脈に差せる」。ここが次の的。
+
+## 追記164: #14 が `BStairAll` 1 文に落ちた（層を通らない形、緑）
+
+`WallT` を `BStair` に繋いだ。`TwSt (r+1) 0` の文脈は分解すると
+`(D0 ++ [fone V]) ++ [ftwo N]` の形なので、`GOK_twoTwoNil_of_BStair` がそのまま当たる。
+
+    TwSt_split'         : TwSt r m D → Fter r m →
+                          ∃ D0 V, D = D0 ++ [fone V] ∧ JkA V ∧ GOK (plug D0 V)
+                                  ∧ (∀ T, JkA T → JkT (plug D0 T))
+    WallT_of_BStairAll  : BStairAll → WallT
+    TowOk_of_BStairAll  : BStairAll → TowOk
+    R14_of_BStairAll    : BStairAll → #14 ∈ W 0
+
+全部緑。鎖はこれで機械検証で閉じた。
+
+    BStairAll → WallT → TowOk_of_WallT → TwOk_TWt/TTwA_TWt/TwoOk_TWt → R14_mem → #14 ∈ W 0
+
+### `BStairAll` の中身（最弱形。手元の情報を全部仮定に持たせた）
+
+    BStairAll : ∀ r m D0 V N,
+      JkA V → JkA N → NTw r N → TwSt r m (D0 ++ [fone V]) → Fter r m →
+      GOK (plug D0 V) → (∀ T, JkA T → JkT (plug D0 T)) →
+      ∀ i m', GOK (plug (BTw D0 V N i ++ List.replicate m' (Frm.fone N)) N)
+
+つまり
+
+    仮定: N はレベル r の `TwSt` 文脈で良い（`NTw r N`）
+    結論: N はブロック塔 `BTw D0 V N i` に `fone N` を m' 枚足した文脈でも良い
+
+**「N の良さがレベルを跨ぐ」を、抽象クラスでなく具体的な文脈の族で書いたもの**。
+これが残る全部。追記149〜157 で 8 通り試して潰れた三すくみは、この形では生じない
+（文脈が `BTw D0 V N i ++ …` という具体的な 1 本の列で、層の相互依存が無いため）。
+
+### 実測で分かっている構造（追記160〜163）
+
+    m_0 = 1（全数 2636 件で例外 0）。上昇は行 0 だけ、行 1・行 2 は不変
+    B_q = shiftr01 (q * delta) 0 B_0
+    (a)/(b) は N の語の最終列の行 1（v ∈ {1,2}）だけで決まり、途中で切り替わらない
+    v = 2 は前置きに依らない（bad root がブロック内、delta 一定）
+    v = 1 は前置き依存（bad root が前置きの 行 1 = 0 の列へ移る）
