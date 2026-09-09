@@ -15389,3 +15389,46 @@ A2' の帰納法（tip の `TwoOk` が帰納法の仮定）と噛み合ってい
 
 行列では `… [X(l)] …` が良いとき `… [N(l)] (l+1,2,0) (l+2,1,0) [X(l+2)] …` も良い。
 追記157 と同じ形に戻る（`X = N` の場合が追記157）。
+
+## 追記159: 壁を層を使わない 1 文 `BStair` に落とした（緑）
+
+追記158 の実測に合わせて、壁から梯子 `TwSt` を外した。
+
+    def BTw (ctx : List Frm) (V N : Jk1) : ℕ → List Frm
+      | 0     => ctx ++ [Frm.fone V]
+      | (i+1) => BTw ctx V N i ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+
+ブロック `[ftwo N, fone nil]` を i 個積んだ文脈。基本の等式は 2 本。
+
+    plug (BTw ctx V N (i+1)) X = plug (BTw ctx V N i) (two N (one nil X))
+    plug (BTw ctx V N k) (two N (nstN N j))
+      = plug (ctx ++ [fone V]) (two N (nstN N (k+j)))
+
+2 本目から、`GOK_twoTwoNilW_gen` が要求する階段 `two N (nstN N k)` は
+`plug (BTw ctx V N k) (two N nil)` そのものだと分かる。これを
+`GOK_twoNil_gen`（先端 `nil`、階段が 1 の枠だけ）で k について帰納すると、
+残るのは次の 1 文だけになる。
+
+    def BStair (ctx : List Frm) (V N : Jk1) : Prop :=
+      ∀ (i m : ℕ), GOK (plug (BTw ctx V N i) (plug (List.replicate m (Frm.fone N)) N))
+
+「ブロック塔の中に N の 1 の記録の鎖 `one N (one N (… N))` を差せる」。
+
+    GOK_BTw_twoNil          : BStair → ∀ i, GOK (plug (BTw ctx V N i) (two N nil))   緑
+    GOK_twoTwoNil_of_BStair : BStair → GOK (plug (ctx ++ [fone V]) (two N (two nil nil)))  緑
+
+`TwSt` も `NTw r` も出てこない。追記149〜157 の三すくみ（兄弟条件を層 X で書くと
+枠木条件も層 X ベースが要る、等）はこの形では生じない。文脈が
+`BTw ctx V N i` という**具体的な 1 本の列**になっているため。
+
+### 残っている形
+
+    BStair (i+1) m の中身 = GOK (plug (BTw ctx V N i) (two N (one nil (chnN m))))
+                            chnN m = one N (one N (… N))（m 段）
+
+行列で書くと、`[BTw i の語] [chnN m の語]` が良いとき
+
+    [BTw i の語] [N(l)] (l+1,2,0) (l+2,1,0) [chnN m の語(l+2)]
+
+も良いか。追記157・158 と同じ「1 の記録が 2 の記録の直上」だが、文脈が具体的な
+ブロック塔に固定されている点が違う。

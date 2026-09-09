@@ -59905,5 +59905,106 @@ theorem TwOk_twoNilTwoNil (r m : ℕ) (hf : Fter r m) :
 #print axioms TwOk_twoNil_f
 #print axioms TwOk_twoNilTwoNil
 
+
+/-! ### ★★★★★ 壁を「層を使わない・文脈量化のない」1 文に落とす
+
+追記158 の実測（階段 `nstN N k` は本物の BM4 展開の塔で、bad root は毎回
+最終ブロックの先頭列）に合わせて、壁を梯子 `TwSt` を通さない形に書き直す。
+
+ブロック `[ftwo N, fone nil]` を `i` 個積んだ文脈を `BTw ctx V N i` と置く。
+
+    plug (BTw ctx V N (i+1)) X = plug (BTw ctx V N i) (two N (one nil X))
+    plug (BTw ctx V N k) (two N (nstN N j)) = plug (ctx ++ [fone V]) (two N (nstN N (k+j)))
+
+だから `GOK_twoTwoNilW_gen` が要求する階段 `two N (nstN N k)` は
+`plug (BTw ctx V N k) (two N nil)` そのもの。これを `GOK_twoNil_gen`（先端 `nil`、
+階段が 1 の枠だけ）で `k` について帰納すると、残るのは 1 文だけになる。
+
+    BStair ctx V N : ∀ i m, GOK (plug (BTw ctx V N i) (plug (replicate m (fone N)) N))
+
+「ブロック塔の中に `N` の 1 の記録の鎖を差せる」。`TwSt` も `NTw r` も出てこない。 -/
+
+/-- ブロック `[ftwo N, fone nil]` を `i` 個積んだ文脈。 -/
+def BTw (ctx : List Frm) (V N : Jk1) : ℕ → List Frm
+  | 0 => ctx ++ [Frm.fone V]
+  | (i + 1) => BTw ctx V N i ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+
+theorem BTw_succ (ctx : List Frm) (V N : Jk1) (i : ℕ) :
+    BTw ctx V N (i + 1) = (BTw ctx V N i ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil] := by
+  show BTw ctx V N i ++ [Frm.ftwo N, Frm.fone Jk1.nil] = _
+  simp
+
+theorem plug_BTw_succ (ctx : List Frm) (V N X : Jk1) (i : ℕ) :
+    plug (BTw ctx V N (i + 1)) X = plug (BTw ctx V N i) (Jk1.two N (Jk1.one Jk1.nil X)) := by
+  rw [BTw_succ, plug_snoc, plug_snoc2]
+
+theorem plug_BTw_nstN (ctx : List Frm) (V N : Jk1) :
+    ∀ (k j : ℕ), plug (BTw ctx V N k) (Jk1.two N (nstN N j))
+      = plug (ctx ++ [Frm.fone V]) (Jk1.two N (nstN N (k + j)))
+  | 0, j => by
+      show plug (ctx ++ [Frm.fone V]) (Jk1.two N (nstN N j))
+        = plug (ctx ++ [Frm.fone V]) (Jk1.two N (nstN N (0 + j)))
+      rw [Nat.zero_add]
+  | (k + 1), j => by
+      rw [plug_BTw_succ]
+      have e : Jk1.one Jk1.nil (Jk1.two N (nstN N j)) = nstN N (j + 1) := rfl
+      rw [e, plug_BTw_nstN ctx V N k (j + 1),
+        show k + (j + 1) = k + 1 + j from by omega]
+
+theorem JkT_plug_BTw (ctx : List Frm) (V N : Jk1) (hJV : JkA V) (hJN : JkA N)
+    (h : ∀ T : Jk1, JkA T → JkT (plug ctx T)) :
+    ∀ (i : ℕ) (T : Jk1), JkA T → JkT (plug (BTw ctx V N i) T)
+  | 0, T, hT => by
+      show JkT (plug (ctx ++ [Frm.fone V]) T)
+      rw [plug_snoc]
+      exact h _ ⟨hJV, hT⟩
+  | (i + 1), T, hT => by
+      rw [plug_BTw_succ]
+      exact JkT_plug_BTw ctx V N hJV hJN h i _ ⟨hJN, trivial, hT⟩
+
+/-- ★ 残る 1 文。ブロック塔の中に `N` の 1 の記録の鎖を差せる。文脈量化なし。 -/
+def BStair (ctx : List Frm) (V N : Jk1) : Prop :=
+  ∀ (i m : ℕ), GOK (plug (BTw ctx V N i)
+    (plug (List.replicate m (Frm.fone N)) N))
+
+/-- 階段は `BStair` から `k` についての帰納で出る（先端 `nil` の版だけを使う）。 -/
+theorem GOK_BTw_twoNil (ctx : List Frm) (V N : Jk1) (hJV : JkA V) (hJN : JkA N)
+    (hJ : ∀ T : Jk1, JkA T → JkT (plug ctx T))
+    (hGV : GOK (plug ctx V)) (hB : BStair ctx V N) :
+    ∀ i : ℕ, GOK (plug (BTw ctx V N i) (Jk1.two N Jk1.nil))
+  | 0 => GOK_twoNil_gen ctx V hJN
+      (JkT_plug_BTw ctx V N hJV hJN hJ 0 _ ⟨hJN, trivial⟩) hGV (fun m => hB 0 m)
+  | (i + 1) => by
+      have hIH := GOK_BTw_twoNil ctx V N hJV hJN hJ hGV hB i
+      rw [BTw_succ]
+      refine GOK_twoNil_gen (BTw ctx V N i ++ [Frm.ftwo N]) Jk1.nil hJN ?_ ?_ ?_
+      · rw [← BTw_succ]
+        exact JkT_plug_BTw ctx V N hJV hJN hJ (i + 1) _ ⟨hJN, trivial⟩
+      · rw [plug_snoc2]
+        exact hIH
+      · intro m
+        have h := hB (i + 1) m
+        rw [BTw_succ] at h
+        exact h
+
+/-- ★★★★★ 壁は `BStair` 1 文に落ちる。 -/
+theorem GOK_twoTwoNil_of_BStair (ctx : List Frm) (V N : Jk1) (hJV : JkA V) (hJN : JkA N)
+    (hJ : ∀ T : Jk1, JkA T → JkT (plug ctx T))
+    (hGV : GOK (plug ctx V)) (hB : BStair ctx V N) :
+    GOK (plug (ctx ++ [Frm.fone V]) (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))) := by
+  refine GOK_twoTwoNilW_gen ctx V hJN trivial
+    (JkT_plug_BTw ctx V N hJV hJN hJ 0 _ ⟨hJN, trivial, trivial⟩) hGV ?_
+  intro k
+  have h := GOK_BTw_twoNil ctx V N hJV hJN hJ hGV hB k
+  have h1 : plug (BTw ctx V N k) (Jk1.two N Jk1.nil)
+      = plug (ctx ++ [Frm.fone V]) (Jk1.two N (nstN N k)) :=
+    plug_BTw_nstN ctx V N k 0
+  rw [h1] at h
+  rw [nstN2_nil_eq_nstN N k]
+  exact h
+
+#print axioms GOK_BTw_twoNil
+#print axioms GOK_twoTwoNil_of_BStair
+
 end Small
 end TRIO
