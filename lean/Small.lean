@@ -60006,5 +60006,21 @@ theorem GOK_twoTwoNil_of_BStair (ctx : List Frm) (V N : Jk1) (hJV : JkA V) (hJN 
 #print axioms GOK_BTw_twoNil
 #print axioms GOK_twoTwoNil_of_BStair
 
+
+/-- `BStair` は「`N` は、ブロック塔 `BTw i` に `fone N` を `m` 枚足したどの文脈にも差せる」
+と同値（`plug_append`）。実測（追記160・161）で扱っているのはこちらの形。 -/
+theorem BStair_iff (ctx : List Frm) (V N : Jk1) :
+    BStair ctx V N ↔ ∀ (i m : ℕ),
+      GOK (plug (BTw ctx V N i ++ List.replicate m (Frm.fone N)) N) := by
+  constructor
+  · intro h i m
+    rw [plug_append]
+    exact h i m
+  · intro h i m
+    rw [← plug_append]
+    exact h i m
+
+#print axioms BStair_iff
+
 end Small
 end TRIO
