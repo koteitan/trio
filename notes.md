@@ -16005,3 +16005,77 @@ n = 0,1,2 は既に緑（`otwL` / `NZ` / `NK`）。`NK` は `one nil (two nil (T
 壁（走り 2）は **Qok 層で既に解けている**（`Qk_twoNilNil` が緑）。
 残りは純粋に**荷の横鎖**の問題で、壁とは別の障害。
 「兄弟の欄」が (i) と (ii) を両方要求するのが唯一の詰まり。
+
+## 追記171: 非可述性の正体と、`BFam` 型の族がそれを避ける理由
+
+### 非可述性の正体は「2 の枠の本数」
+
+`APd` の再帰は `(cntF ks, ks.length)`（`cntF` = 形 `ks` の中の `false` = 2 の枠の本数）。
+だから `APd` の兄弟条件
+
+    ∀ j, APd (replicate j true ++ (true :: replicate m true ++ ks)) N
+
+は **1 の枠を無制限に積む**ことを言えている（`j` が任意）。`cntF` が変わらないから。
+
+壁の階段 `nstN2 Wl nil k` は **対（1 の枠 + 2 の枠）を `k` 段積む**ので `cntF` が増える。
+`k` は無制限。だからどの層の兄弟条件にも書けない。これが非可述性の正体。
+
+同じことが `Cok` / `Pok` / `Qok`（添字 = 対の段数 j）でも起きる。層の添字は
+「2 の枠の本数」で、階段はそれを増やす。
+
+### 添字を数でなく「族」にすると避けられる
+
+階段が増やす枠は**いつも同じ木**（`[fone Wl, ftwo N]` の対、`Wl` も `N` も固定）。
+だから「文脈の集合」を数で刻まず、**構文的な帰納族**で書けば非可述にならない。
+
+    inductive BFam (D0 : List Frm) (V N : Jk1) : List Frm → Prop
+      | base : BFam D0 V N (D0 ++ [fone V])
+      | blk  : BFam D0 V N D → BFam D0 V N (D ++ [ftwo N, fone nil])
+      | fone : BFam D0 V N D → BFam D0 V N (D ++ [fone N])
+
+枠木に良さの条件を**付けない**（`V`, `N`, `nil` の 3 つに固定されているので構文的）。
+だから strictly positive で、深さは無制限。
+
+枠の良さは仮定せず**導出**する。
+
+    GOK_of_BFam : GOK (plug (D0 ++ [fone V]) N) → BStepBlk → BStepOne →
+                  ∀ D, BFam D0 V N D → GOK (plug D N)
+
+`BFam D` の導出についての帰納。これは整礎（文脈の作り方に沿う）。
+
+    BStepOne D0 V N : ∀ D, BFam D0 V N D → GOK (plug D N) → GOK (plug D (one N N))
+    BStepBlk D0 V N : ∀ D, BFam D0 V N D → GOK (plug D N) → GOK (plug D (two N (one nil N)))
+
+どちらも**局所の 1 歩**で、層も添字も出てこない。
+
+    #14 ⟸ BStairAll ⟸ hbase + BStepBlk + BStepOne
+
+`hbase` は `NTw r N m (D0 ++ [fone V]) hD hf` でタダ（`BStairAll` の仮定から出る）。
+
+### `BStepOne` の階段を実測した（兄弟は nil）
+
+`plug D (one N N)` を、`D` が 1 の枠で終わる形（`BFam` はいつもそう）で測る。
+前置きは `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)`、`D = [fone nil]`（高さ 3）。
+
+    N = two nil nil            (3,1,0)(4,2,0)(4,1,0)(5,2,0)           標準形
+      bad part = (4,1,0)                                delta = 1
+      [1] … (4,2,0)(4,1,0)(5,1,0)          塔 = 1 の記録の鎖
+
+    N = two nil (two nil nil)  (3,1,0)(4,2,0)(5,2,0)(4,1,0)(5,2,0)(6,2,0)   標準形
+      bad part = (4,1,0)(5,2,0)                         delta = 2
+      [1] … (4,1,0)(5,2,0)(6,1,0)(7,2,0)   塔 = 交互塔 `QQ k`（兄弟 nil）
+
+**bad root はいつも新しく置いた 1 の記録の列**で、bad part は
+「その列 ++ `jk1 (d+1) N` の末尾 1 列を除いたもの」、`delta = 最終列の行0 − (d+1)`。
+塔の木は `appJ N (Utw p n)`（`p+1` = N の走りの長さ）で、**兄弟は全部 nil**。
+
+これは追記169 で入れた `GOK_oneNN_gen` の階段 `appJ N (Utw p n)` と一致する。
+`p = 0` なら `Utw 0 n` = 1 の記録の鎖、`p = 1` なら `Utw 1 n = QQ n`。
+
+### 残っている作業
+
+`GOK_oneNN_gen` は N が走り（`jk1 d N = jk1 d (stk p) ++ [(d+p+1,2,0)]`）のときだけ。
+一般の N では最終列の行 1 が 1 か 2 かで bad root の位置が変わる（追記163 の (a)/(b)）。
+
+階段 `appJ N (Utw p n)` の枠は `fone N` と `ftwo nil` なので、`BFam` を
+`ftwo nil` / `fone nil` も含む形に広げる必要がある。族は構文的なので広げてよい。
