@@ -15859,3 +15859,50 @@ N の語が 2 列以上あれば重複は生じない（`jk1 l (two nil (two nil
 
 残りは `GoodFb` の 3 フィールドで `snocYd_mem` を使う `GOK_*_gen` 型の補題を 1 本書くこと。
 `GOK_twoNil_gen` が `snocY_mem` で同じことをしているので、その写し。
+
+## 追記169: `BStepOne` / `BStepBlk` の部品を実装（全部緑）
+
+追記168 の設計に沿って、`GOK_*_gen` 型の補題を書くための部品を入れた。
+
+### 語の分解（`jk1_plug_tip` から）
+
+    jk1_plug_oneNN : jk1 l (plug D (one N N))
+                       = jk1 l (plug D N) ++ ((h+1,1,0) :: jk1 (h+1) N)      h = l + dep D
+    jk1_plug_blk   : jk1 l (plug D (two N (one nil N)))
+                       = jk1 l (plug D N) ++ ((h+1,2,0) :: (h+2,1,0) :: jk1 (h+2) N)
+    wordJ_snoc_plug_oneNN / wordJ_snoc_plug_blk : 同じことを `wordJ` で
+
+**目標の語 = 仮定の語 ++ 追加分**にきれいに割れる。追加分だけを見ればよい。
+
+### 塔の木
+
+    jk1_stkP_split : jk1 l (stkP p Y) = jk1 l (stk p) ++ jk1 (l+p) Y
+
+    def Utw (p : ℕ) : ℕ → Jk1                    ブロックを n 個積んだ木
+      | 0     => nil
+      | (n+1) => one nil (stkP p (Utw p n))
+
+    jk1_Utw : jk1 l (Utw p n)
+                = (range n).flatMap (fun k => shiftr01 (k*(p+1)) 0
+                    ((l+1,1,0) :: jk1 (l+1) (stk p)))
+
+    Mtwd_Utw : Mtwd (p+1) Y0 ((l+1,1,0) :: jk1 (l+1) (stk p)) n = Y0 ++ jk1 l (Utw p n)
+
+単位は `(l+1,1,0) :: jk1 (l+1) (stk p)`（p+1 列）、歩幅は p+1。
+`MidD_colN (l+1) (stk p)` が `MidD (l+2)` を出すので `snocYd_mem` の形に合う。
+
+### 階段の語
+
+    TopOk_Utw           : TopOk (Utw p n)
+    jk1_plug_app        : jk1 l (plug D (appJ N X)) = jk1 l (plug D N) ++ jk1 h X   （TopOk X）
+    wordJ_snoc_plug_app : wordJ a b (ws ++ [plug D (appJ N X)])
+                            = wordJ a b (ws ++ [plug D N]) ++ jk1 h X
+
+階段の木は `appJ N (Utw p n)`（＝ N の語の右に塔を継いだ木）。
+その語がちょうど `Mtwd (p+1) (仮定の語) M n` になる。
+
+### 残り
+
+`GoodFb` の 3 フィールド（`pu` / `pk` / `seg`）で `snocYd_mem` を使う本体 1 本。
+`GOK_twoNil_gen` が `snocY_mem` で同じ形をしているので、その写し。
+N は `jk1 d N = jk1 d (stk p) ++ [(d+p+1, 2, 0)]` を満たすもの（＝ `stk (p+1)`）を想定。

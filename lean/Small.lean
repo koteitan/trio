@@ -60129,5 +60129,140 @@ theorem BStair_of_steps (D0 : List Frm) (V N : Jk1)
 #print axioms GOK_of_BFam
 #print axioms BStair_of_steps
 
+
+/-! ### `BStepOne` / `BStepBlk` の語の分解
+
+`jk1_plug_tip` から、目標の語は「仮定の語 ++ 追加分」の形にきれいに割れる。
+追加分は `BStepOne` なら `(h+1,1,0) :: jk1 (h+1) N`、`BStepBlk` なら
+`(h+1,2,0) :: (h+2,1,0) :: jk1 (h+2) N`。ここで `h = a + 1 + dep D`。 -/
+
+theorem jk1_plug_oneNN (D : List Frm) (N : Jk1) (l h : ℕ) (hh : h = l + dep D) :
+    jk1 l (plug D (Jk1.one N N))
+      = jk1 l (plug D N) ++ (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) N) := by
+  rw [jk1_plug_tip D (Jk1.one N N) l, jk1_plug_tip D N l, ← hh]
+  show jk1 l (plug D Jk1.nil) ++ (jk1 h N ++ (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) N))
+    = _
+  rw [← List.append_assoc]
+
+theorem jk1_plug_blk (D : List Frm) (N : Jk1) (l h : ℕ) (hh : h = l + dep D) :
+    jk1 l (plug D (Jk1.two N (Jk1.one Jk1.nil N)))
+      = jk1 l (plug D N) ++ (((h + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          ((h + 2, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 2) N) := by
+  rw [jk1_plug_tip D (Jk1.two N (Jk1.one Jk1.nil N)) l, jk1_plug_tip D N l, ← hh]
+  show jk1 l (plug D Jk1.nil) ++ (jk1 h N ++ (((h + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (h + 1) Jk1.nil ++ (((h + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1 + 1) N)))) = _
+  rw [show h + 1 + 1 = h + 2 from by omega]
+  simp [jk1, List.append_assoc]
+
+theorem wordJ_snoc_plug_oneNN (a b : ℕ) (ws : List Jk1) (D : List Frm) (N : Jk1) (h : ℕ)
+    (hh : h = a + 1 + dep D) :
+    wordJ a b (ws ++ [plug D (Jk1.one N N)])
+      = wordJ a b (ws ++ [plug D N]) ++ (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) N) := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ, colJ,
+    jk1_plug_oneNN D N (a + 1) h hh]
+  simp [List.append_assoc]
+
+theorem wordJ_snoc_plug_blk (a b : ℕ) (ws : List Jk1) (D : List Frm) (N : Jk1) (h : ℕ)
+    (hh : h = a + 1 + dep D) :
+    wordJ a b (ws ++ [plug D (Jk1.two N (Jk1.one Jk1.nil N))])
+      = wordJ a b (ws ++ [plug D N]) ++ (((h + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          ((h + 2, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 2) N) := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ, colJ,
+    jk1_plug_blk D N (a + 1) h hh]
+  simp [List.append_assoc]
+
+#print axioms wordJ_snoc_plug_oneNN
+#print axioms wordJ_snoc_plug_blk
+
+
+/-! ### ブロック `(·,1,0)(·,2,0)^p` を歩幅 `p+1` で積んだ木 -/
+
+/-- `stkP p Y` の語は「走り `p` の語 ++ `Y` の語（高さ `l+p`）」。 -/
+theorem jk1_stkP_split : ∀ (p : ℕ) (Y : Jk1) (l : ℕ),
+    jk1 l (stkP p Y) = jk1 l (stk p) ++ jk1 (l + p) Y
+  | 0, Y, l => by
+      show jk1 l Y = jk1 l Jk1.nil ++ jk1 (l + 0) Y
+      simp [jk1]
+  | (p + 1), Y, l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stkP p Y))
+        = (jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stkP p Jk1.nil)))
+          ++ jk1 (l + (p + 1)) Y
+      rw [jk1_stkP_split p Y (l + 1), jk1_stkP_split p Jk1.nil (l + 1),
+        show l + 1 + p = l + (p + 1) from by omega]
+      simp [jk1, List.append_assoc]
+
+/-- ブロックを `n` 個積んだ木。ブロックは `(l+1,1,0)` + 走り `p`、歩幅は `p+1`。 -/
+def Utw (p : ℕ) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (stkP p (Utw p n))
+
+theorem JkA_Utw (p : ℕ) : ∀ n : ℕ, JkA (Utw p n)
+  | 0 => trivial
+  | (n + 1) => ⟨trivial, JkA_stkP p (JkA_Utw p n)⟩
+
+theorem jk1_Utw (p : ℕ) : ∀ (n l : ℕ),
+    jk1 l (Utw p n) = (List.range n).flatMap
+      (fun k => shiftr01 (k * (p + 1)) 0
+        (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stk p)))
+  | 0, l => by simp [Utw, jk1]
+  | (n + 1), l => by
+      have e1 : jk1 l (Utw p (n + 1))
+          = (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stk p))
+            ++ jk1 (l + (p + 1)) (Utw p n) := by
+        show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (stkP p (Utw p n))) = _
+        rw [jk1_stkP_split p (Utw p n) (l + 1),
+          show l + 1 + p = l + (p + 1) from by omega]
+        simp [jk1]
+      rw [e1, jk1_Utw p n (l + (p + 1)), List.range_succ_eq_map, List.flatMap_cons]
+      simp only [Nat.zero_mul, shiftr01_zero, List.flatMap_map, Function.comp_def]
+      congr 1
+      apply List.flatMap_congr
+      intro k _
+      rw [show ((l + (p + 1) + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + (p + 1) + 1) (stk p)
+          = shiftr01 (p + 1) 0 (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stk p)) from by
+        show _ = shiftr01 (p + 1) 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ)]
+          ++ shiftr01 (p + 1) 0 (jk1 (l + 1) (stk p))
+        rw [shift_col, jk1_shift (stk p) (l + 1) (p + 1)]
+        congr 2 <;> omega, shiftr01_add0]
+      congr 1
+      rw [Nat.succ_mul]
+      omega
+
+#print axioms jk1_stkP_split
+#print axioms jk1_Utw
+
+
+theorem TopOk_Utw (p : ℕ) : ∀ n : ℕ, TopOk (Utw p n)
+  | 0 => trivial
+  | (n + 1) => trivial
+
+/-- 塔の語は `Utw` の語そのもの（`Mtw_twr` の歩幅 `p+1` 版）。 -/
+theorem Mtwd_Utw (Y0 : TrioSeq) (p n l : ℕ) :
+    Mtwd (p + 1) Y0 (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stk p)) n
+      = Y0 ++ jk1 l (Utw p n) := by
+  rw [Mtwd, jk1_Utw]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  rw [Nat.mul_comm]
+
+theorem jk1_plug_app (D : List Frm) (N X : Jk1) (l h : ℕ) (hh : h = l + dep D)
+    (hX : TopOk X) :
+    jk1 l (plug D (appJ N X)) = jk1 l (plug D N) ++ jk1 h X := by
+  rw [jk1_plug_tip D (appJ N X) l, jk1_plug_tip D N l, ← hh, jk1_appJ X N h hX,
+    ← List.append_assoc]
+
+theorem wordJ_snoc_plug_app (a b : ℕ) (ws : List Jk1) (D : List Frm) (N X : Jk1) (h : ℕ)
+    (hh : h = a + 1 + dep D) (hX : TopOk X) :
+    wordJ a b (ws ++ [plug D (appJ N X)])
+      = wordJ a b (ws ++ [plug D N]) ++ jk1 h X := by
+  rw [wordJ_append, wordJ_append, wordJ_singleton, wordJ_singleton, colJ, colJ,
+    jk1_plug_app D N X (a + 1) h hh hX]
+  simp [List.append_assoc]
+
+#print axioms Mtwd_Utw
+#print axioms wordJ_snoc_plug_app
+
 end Small
 end TRIO
