@@ -3,6 +3,8 @@
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明で、
 シートの証明中の行 #14 が 1 つの補題に帰着している。その 1 文の問題文。
 
+**2026-09-10 更新。壁（走り 2）は解けた。残っているのは荷（`pay`）だけになった。**
+
 ## 記法
 
 木 `Jk1`:
@@ -16,7 +18,7 @@
     jk1 l (two N M) = jk1 l N ++ ((l+1,2,0) :: jk1 (l+1) M)
     jk1 l (pay N Y) = jk1 l N ++ shiftr01 (l+1) 0 Y
 
-`two N M` は「左兄弟 N、直上の子 M を持つ 2 の記録」。
+`two N M` は「左兄弟 N、直上の子 M を持つ 2 の記録」。`pay N Y` は N の上に荷 Y を吊るす。
 
 文脈は枠のリスト `List Frm`、`Frm = fone Jk1 | ftwo Jk1`。
 `plug : List Frm -> Jk1 -> Jk1` は最後の枠が最も内側:
@@ -24,107 +26,127 @@
     plug (D ++ [fone U]) T = plug D (one U T)
     plug (D ++ [ftwo N]) T = plug D (two N T)
 
-`GOK X` = 「どの良い語の右にも X の語を継いでよい」（`GoodFb` を保つ）。
+## 目標
 
-## 梯子 `TwSt`
+    #14 = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
 
-`TwSt r m D` = 文脈 D の形。`r` は 2 の枠の本数 - 1、`m` は最も内側の 2 の枠より
-上の 1 の枠の本数。
+`bms` で実測すると
 
-    TwSt 0 m D        = StkOk (m+1) D                      （2 の枠 1 本 + 1 の枠 m+1 本）
-    TwSt (r+1) 0 D    = ∃ m' D' N, D = D' ++ [ftwo N] ∧ TwSt r m' D' ∧ Fter r m'
-                                   ∧ JkA N ∧ NTw r N
-    TwSt (r+1) (m+1) D = ∃ D' U, D = D' ++ [fone U] ∧ TwSt (r+1) m D' ∧ JkA U
-                                   ∧ (∀ D'', TwSt (r+1) m D'' -> GOK (plug D'' U))
+    good part = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)
+    bad part  = (3,1,0)(4,2,0)(5,2,0)      delta = 2
 
-    Fter r m = (r = 0 ∨ 0 < m)          （2 の枠の直下は必ず 1 の枠）
-    TwOk r m X = ∀ D, TwSt r m D -> GOK (plug D X)
-    NTw r N    = ∀ j D, TwSt r j D -> Fter r j -> GOK (plug D N)
+    [1] … (3,1,0)(4,2,0)(5,2,0) (5,1,0)(6,2,0)(7,2,0)
+    [2] … (3,1,0)(4,2,0)(5,2,0) (5,1,0)(6,2,0)(7,2,0) (7,1,0)(8,2,0)(9,2,0)
 
-`NTw r N` は「N はレベル r のどの文脈でも良い」。**レベル r で頭打ち**。
+これは木で `one nil (two nil (TW n))` の語。
 
-## 壁
+    TW 0     = two nil nil
+    TW (n+1) = one (two nil nil) (two nil (TW n))
 
-    WallT : ∀ r, TwOk (r+1) 0 (two nil nil)
+    TowOk := ∀ n, GOK (one nil (two nil (TW n)))
 
-行列で言うと、文脈が `... [N の語] (l+1,2,0)` で終わっているとき、その直上に
-もう 1 本 2 の記録 `(l+2,2,0)` を置いてよいか。つまり
+`TowOk` から #14 が出る（Lean で `R14_mem` として緑）。n = 0,1,2 は個別に緑。
 
-    ... [N の語(高さ l)] (l+1,2,0) (l+2,2,0)
+## 層 `Qok` / `Qk`
 
-が良いか。**2 の記録が 2 の記録の直上に来る形**（走り 2）。
+添字は (対の段数 j, 1 の枠の本数 n)。台は `TipOk`（＝「左兄弟が一様な 2 の記録の直上に
+置ける」）。**2 の枠の左兄弟を `nil` に固定**してある。
 
-これが出れば
-`TwOk_TWt -> TTwA_TWt -> TwoOk_TWt -> TowOk -> R14_mem`
-と 4 本の補題で
+    Qok 0 0 ctx       = (ctx = [])
+    Qok 0 (n+1) ctx   = ∃ U ctx', ctx = ctx' ++ [fone U] ∧ Qok 0 n ctx' ∧ JkA U ∧
+                          (∀ cs, Qok 0 n cs → TipOk (plug cs U)) ∧ (荷つき版)
+    Qok (j+1) 0 ctx   = ∃ V Wl ctx' n, ctx = (ctx' ++ [fone V]) ++ [ftwo Wl] ∧
+                          Qok j n ctx' ∧ JkA V ∧ (∀ cs, Qok j n cs → TipOk (plug cs V)) ∧
+                          (荷つき版) ∧ JkA Wl ∧
+                          (∀ i cs, Qok j (i+1) cs → TipOk (plug cs Wl)) ∧ (荷つき版) ∧
+                          **Wl = nil**
+    Qok (j+1) (n+1) ctx = （1 の枠を足すだけ、`Qok 0 (n+1)` と同型）
 
-    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0) ∈ W 0
+    Qk j n Z := ∀ ctx, Qok j n ctx → TipOk (plug ctx Z)
 
-が出る（Lean で `TowOk_of_WallT` / `R14_of_WallT` として緑）。
+## 解けた部分（緑）
+
+    Qk_nil        : ∀ j n, Qk j n nil
+    Qk_one        : Qk j n U → (荷) → Qk j (n+1) T → Qk j n (one U T)
+    Qk_pair       : Qk j n V → (荷) → (∀ i, Qk j (i+1) Wl) → (荷) → Wl = nil →
+                    Qk (j+1) 0 T → Qk j n (one V (two Wl T))
+    Qk_twoW       : Qk (j+1) 0 T → Qk j (n+1) (two nil T)
+    Qk_nstT       : ∀ k j, Qk (j+1) 0 (nstN2 nil nil k)          -- 交互塔
+    Qk_twoNilNil  : ∀ j, Qk (j+1) 0 (two nil nil)                -- ★ 走り 2 の壁
+    Qk_TW         : ∀ n j, Qk (j+1) 0 (TW n)
+    TowOk_all / R14_mem_final                                     -- #14
+
+ただし `Qk_pay` 以下は仮定 `QPayPair` つき。
+
+## 残っている 1 文
+
+    QPayPair : ∀ (j : ℕ) (Y : TrioSeq), Bok Y → ∀ X : Jk1, JkA X →
+                 Qk (j+1) 0 X → Qk (j+1) 0 (pay X Y)
+
+「2 の枠（左兄弟 nil）の直上にある木 X に荷 Y を吊るせる」。
+
+`n ≥ 1`（1 の枠の直上）と `(j,n) = (0,0)` は緑。`(j+1, 0)` だけが残っている。
 
 ## なぜ出ないか
 
-走り 2 の階段（BM4 の展開が作る近似列）は
+荷の議論は `Y` についての A2'（`W 0` の整礎性）帰納。`Y = Y' ++ [(0,0,0)]` の場合、
+`GoodFb_snoc_dupJt0` が作る近似列は
 
-    two N (nstN N k),   nstN N 0 = nil,  nstN N (k+1) = one nil (two N (nstN N k))
+    twoIt nil (pay X Y') k = two (two (… two nil (pay X Y') …) (pay X Y')) (pay X Y')
 
-で、語は
+で、**2 の記録が同じ高さに横に並ぶ**。これが次の文脈の 2 の枠の左兄弟に来る。
+つまり左兄弟が `nil` でなくなる。`Qok` は `Wl = nil` を要求しているので通らない。
 
-    [N(l)] (l+1,2,0) (l+2,1,0) [N(l+2)] (l+3,2,0) (l+4,1,0) [N(l+4)] (l+5,2,0) ...
+左兄弟の欄を緩めればよいように見えるが、そこには次の 2 つを**同時に**書く必要がある。
 
-**兄弟 N が 2 の記録を跨いで何度も複製される**。k 段目の N はレベル `r+k` の位置に
-いるので、階段を通すには `∀ q, NTw q N`（全レベル）が要る。文脈が渡すのは
-`NTw r N` だけ。差はこれだけ。
+  (i) **横鎖について閉じている**（荷に要る）
+      左兄弟が `twoIt nil T k` の形になってよいこと。
+      条件はそのレベル `j` で置けるだけでよい（近似列の帰納は同じ j しか使わない）。
 
-証明済み（緑）:
+  (ii) **全レベルで置ける**（壁に要る）
+      `Qk_twoNilNil` の階段は `two Wl (nstN2 Wl nil k)`。実測すると
 
-    TwOk_twoTwoNil : (∀ q, NTw q N) -> Fter r m -> TwOk r m (two N (two nil nil))
-    TwOk_twoNilE   : TwOk (r+1) 0 nil            （階段が 1 の枠だけなのでレベルが増えない）
-    TwOk_twoNil_f  : TwOk r (m+1) (two nil nil)  （1 の枠の直上なら無条件）
-    TwOk_twoNilTwoNil : Fter r m -> TwOk r m (two nil (two nil nil))   （兄弟 nil なら緑）
+          深さ1: …(3,1,0)(4,2,0)(5,2,0)          bad part = (3,1,0)(4,2,0)   delta 2
+          深さ2: …(3,1,0)(4,2,0)(5,1,0)(6,2,0)(7,2,0)
+                                                  bad part = (5,1,0)(6,2,0)   delta 2
+          深さ3: …(3,1,0)(4,2,0)(5,1,0)(6,2,0)(7,1,0)(8,2,0)(9,2,0)
+                                                  bad part = (7,1,0)(8,2,0)   delta 2
 
-## レベル 0 では解決している
+      bad root はいつも「いちばん内側の 1 の枠の列」で、bad part は
+      `[fone V, ftwo Wl]` の対そのもの。だから階段は左兄弟 `Wl` を
+      深さ j, j+1, …, j+k に複製する。`∀ j i, Qk j (i+1) Wl` が要る。
+      （左兄弟が nil でないと bad part に兄弟の語が丸ごと入ることも実測済み。
+        これは BM4 の展開規則が決めている事実で、層の設計の都合ではない。）
 
-2 の枠が 1 本だけの層（`APd` / `TwoOk`）では走りも荷も無条件に緑。
+`nil` は (ii) を満たすが (i) を満たさない。一般の兄弟は (i) を満たすが (ii) を満たさない。
 
-    TwoOk Z = ∀ N, JkA N -> (∀ j kk, APd (replicate j true ++ (true::kk)) N)
-                 -> ∀ j kk, APd (replicate j true ++ (true::kk)) (two N Z)
+(ii) を層の欄に直接書くと非可述になる（`Qok (j+1) 0` の定義が `Qok j'` を
+すべての `j'` について参照する）。`APd` / `TwoOk` でうまくいったのは
+「先に定義済みの層での全レベル条件」を書く逃げ道だが、それだと
+**下の層に対する全レベル性しか出ない**。上の層に移すには上の層の枠木が
+下の層で良いことが要り、それが壁そのもの（1 の枠木 `two nil nil` を
+下の層の `(j, 0)` に置く = `Pk j 0 (two nil nil)`）。
 
-兄弟条件が `∀ j kk` で **kk は任意の形**（2 の枠を何本含んでもよい）＝ 全レベル。
-これが書けるのは `APd` が `TwoOk` より**先に定義済み**だから（非可述にならない）。
-
-    APd_twoTwoGen : (N が全 shape) -> APd (true::ks) (two N (two nil nil))   -- 走り、緑
-    APd_chainT'   : (N が全 shape) -> TwoOk T -> twoIt N T n も全 shape      -- 荷の横鎖、緑
-
-`TwoOk T` は「T はどんな全 shape の兄弟の上にも乗る」なので、横鎖自身を兄弟にして
-適用すると次の横鎖の全 shape 性が出る。A2'（荷の順序数についての帰納）と噛み合っている。
-
-## 深い層で同じことをすると三すくみになる
-
-    (a) 兄弟条件を層 X についてのものにする
-        -> 枠木条件も層 X ベースでないと適用できない
-    (b) 枠木条件を層 X ベースにする
-        -> 層 X ⊄ 層 X' なので、先に定義済みの notion による兄弟条件が適用できない
-    (c) 枠木条件を層 X'（先に定義済み）ベースにする
-        -> 枠木 two nil nil が TwOk (r+1) 0 (two nil nil) = 元の壁 を要求する
-
-試した設計 8 通り（兄弟を nil に固定 / 構文的な族 / 族 + 頭打ち / 族の tip を nil に /
-層を 2 段 3 段 / 文脈をデータに / 全レベル条件を先に定義済みの APd で書く /
-全レベル条件を先に定義済みの NTw で書く）。全部 (a)(b)(c) のどれかで止まる。
+試した設計は通算 12 通り。全部この 1 点で止まる。
 
 ## 欲しいもの
 
-次のどちらか。
+次のどれか。
 
-1. `NTw r N` から `NTw (r+1) N` を出す理屈。
-   BM4 の展開規則の側から「兄弟 N の良さがレベルを跨ぐ」理由が付けば、
-   それを層の条件に書ける。
+1. `QPayPair` の直接証明。荷の近似列 `twoIt nil (pay X Y') k` を
+   左兄弟にしない別の書き方があればよい。
 
-2. 走り 2 の階段を `nstN N k`（兄弟が深くに複製される）以外の形で取る方法。
-   階段は `GoodFb_of_keyJ` の `hnew` に渡すもので、BM4 の展開が決めている。
-   別の近似列で同じ極限に届くなら、兄弟の複製を避けられる可能性がある。
+2. (i) と (ii) を同時に満たす左兄弟の族。
+   `nil` から `Wl ↦ two Wl (pay X Y)` で閉じていて、かつ全レベルで置けるもの。
+   全レベル性は `Qk (j+1) 0 (pay X Y)` を全 `j` で要求するので、
+   X 自身が全レベルで良いときには回る。困るのは X が一般のとき
+   （`Qk_pay` の内部で 1 の記録の鎖 `itJ T k U` に荷を吊るす所で、
+    `U` は文脈の枠木なので全レベルではない）。
+
+3. BM4 の展開規則の側から「左兄弟の良さがレベルを跨ぐ」理由。
+   それが付けば (ii) を層の条件から外せる。
 
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 60000 行、緑、`sorryAx` なし）。
-設計の試行錯誤は `notes.md` の追記149〜157 に全部書いてある。
+設計の試行錯誤は `notes.md` の追記149〜170 に全部書いてある。
