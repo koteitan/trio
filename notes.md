@@ -16079,3 +16079,68 @@ n = 0,1,2 は既に緑（`otwL` / `NZ` / `NK`）。`NK` は `one nil (two nil (T
 
 階段 `appJ N (Utw p n)` の枠は `fone N` と `ftwo nil` なので、`BFam` を
 `ftwo nil` / `fone nil` も含む形に広げる必要がある。族は構文的なので広げてよい。
+
+## 追記172: `BStepBlk` の本体が緑。行376 が `UtwAll` 1 本に落ちた
+
+### 入れたもの（全部緑、`sorryAx` なし）
+
+    jk1_plug_twoX / wordJ_snoc_plug_twoX
+      two N X の語 = two N nil の語 ++ X の語（高さ l + dep D + 1）
+
+    GOK_blkNN_gen : 階段 plug D (two N (Utw p n)) → plug D (two N (one nil N))
+      ★ BStepBlk の本体。GOK_oneNN_gen と同じ 3 フィールド構成、1 回で緑
+
+    jk1_plug_oneUV / wordJ_snoc_plug_oneUV
+    GOK_oneUV_gen : GOK_oneNN_gen の左兄弟 U と右の子 V を分けた版
+
+    jk1_stk_succ  : jk1 l (stk (p+1)) = jk1 l (stk p) ++ [(l+p+1,2,0)]
+    appJ_nil_Utw  : appJ nil (Utw p n) = Utw p n
+    GOK_oneStk_of_tower : (∀ n, GOK (Utw p n)) → GOK (one nil (stk (p+1)))
+
+    UtwAll := ∀ p n, GOK (Utw p n)
+    R376_of_UtwAll : UtwAll → 行376 ∈ W 0
+
+### 行376 の実測
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1) ++ (3,1,0)(4,2,0)…(q+3,2,0)   全部標準形
+      bad part = (3,1,0)(4,2,0)…(q+2,2,0)      delta = q
+
+bad root はいつも**いちばん内側の 1 の記録の列**。手前にもっと長い走りがあっても
+そこは good part に入る（実測済み）。だから塔は `Utw (q-1) n`
+（ブロック = `(1,0)` + 走り `q-1`、歩幅 `q`）で、**走りが 1 段短くなる**。
+
+    GOK (one nil (stk q))  ⟸  ∀ n, GOK (Utw (q-1) n)
+
+`UtwAll` は層も文脈量化もない閉じた文。`TwoStep` より弱い。
+
+### `UtwAll` を閉じるのに要るもの
+
+`Utw p n = plug (C_p^n) nil`（`C_p = [fone nil] ++ (ftwo nil)^p`）なので、
+兄弟が全部 `nil` の文脈族 `VCtx`（枠は `fone nil` と `ftwo nil` だけ）を取ると
+
+    VOkk := ∀ D, VCtx D → GOK (plug D nil)
+
+から `UtwAll` が出る。`VOkk` の再帰は
+
+    plug (D'' ++ C_j) nil = plug D'' (one nil (stk j))
+      ⟸ 階段 plug D'' (Utw (j-1) n) = plug (D'' ++ C_{j-1}^n) nil
+
+つまり**末尾のブロック `C_j` を `C_{j-1}` の `n` 個に置き換える**。
+文脈は長くなるので、導出についての帰納では回らない。
+
+回る尺度は **走りの長さの多重集合**（Dershowitz–Manna 順序）。
+
+    runs(D'') ∪ {j}  →  runs(D'') ∪ {j-1}^n     ← DM で減る
+
+mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
+層の添字（数）では書けない尺度で、追記171 の非可述性を回避する候補。
+
+### 底
+
+`j = 0` のブロック `C_0 = [fone nil]` では走りが無く、`plug D'' (one nil nil)`
+＝裸の 1 の記録になる。`APnil_gen0` が扱うが**荷**が要る
+（`∀ C, Bok C → GOK (plug D'' (pay nil C))`）。
+`p = 0` の閉じた場合 `GOK (Utw 0 n)` は `GOK_all (twr nil n) (JkOk_twr ...)` で既に緑。
+
+荷を文脈つきで扱うと、`GoodFb_snoc_dupJt0` の横鎖 `twoIt nil (pay nil C') k` が
+2 の枠の左兄弟に来て `VCtx`（兄弟 nil）から出る。追記170 の (i)/(ii) と同じ形。
