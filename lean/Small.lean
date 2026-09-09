@@ -60065,5 +60065,69 @@ theorem R14_of_BStairAll (h : BStairAll) : R375m ++ [((5, 2, 0) : ℕ × ℕ × 
 #print axioms WallT_of_BStairAll
 #print axioms R14_of_BStairAll
 
+
+/-! ### `BStair` を「基底 + 2 つの局所ステップ」に割る
+
+`BStair` の文脈は `BTw i ++ replicate m (fone N)` だが、これを
+「`D0 ++ [fone V]` から始めて、ブロック `[ftwo N, fone nil]` か `[fone N]` を足す」
+で生成される族として書くと、帰納が 1 本になる。 -/
+
+inductive BFam (D0 : List Frm) (V N : Jk1) : List Frm → Prop
+  | base : BFam D0 V N (D0 ++ [Frm.fone V])
+  | blk : ∀ {D : List Frm}, BFam D0 V N D →
+      BFam D0 V N (D ++ [Frm.ftwo N, Frm.fone Jk1.nil])
+  | fone : ∀ {D : List Frm}, BFam D0 V N D → BFam D0 V N (D ++ [Frm.fone N])
+
+theorem BFam_BTw (D0 : List Frm) (V N : Jk1) : ∀ i : ℕ, BFam D0 V N (BTw D0 V N i)
+  | 0 => BFam.base
+  | (i + 1) => by
+      show BFam D0 V N (BTw D0 V N i ++ [Frm.ftwo N, Frm.fone Jk1.nil])
+      exact BFam.blk (BFam_BTw D0 V N i)
+
+theorem BFam_BTw_rep (D0 : List Frm) (V N : Jk1) (i : ℕ) :
+    ∀ m : ℕ, BFam D0 V N (BTw D0 V N i ++ List.replicate m (Frm.fone N))
+  | 0 => by simpa using BFam_BTw D0 V N i
+  | (m + 1) => by
+      rw [List.replicate_succ', ← List.append_assoc]
+      exact BFam.fone (BFam_BTw_rep D0 V N i m)
+
+/-- ブロックを 1 個足すステップ。行列では
+`… [D の語] [X(l)] …` が良いとき `… [D の語] [N(l)] (l+1,2,0) (l+2,1,0) [X(l+2)] …` も良い。 -/
+def BStepBlk (D0 : List Frm) (V N : Jk1) : Prop :=
+  ∀ D : List Frm, BFam D0 V N D → GOK (plug D N) →
+    GOK (plug D (Jk1.two N (Jk1.one Jk1.nil N)))
+
+/-- 1 の枠を 1 個足すステップ。 -/
+def BStepOne (D0 : List Frm) (V N : Jk1) : Prop :=
+  ∀ D : List Frm, BFam D0 V N D → GOK (plug D N) → GOK (plug D (Jk1.one N N))
+
+theorem GOK_of_BFam (D0 : List Frm) (V N : Jk1)
+    (hbase : GOK (plug (D0 ++ [Frm.fone V]) N))
+    (hblk : BStepBlk D0 V N) (hone : BStepOne D0 V N) :
+    ∀ {D : List Frm}, BFam D0 V N D → GOK (plug D N)
+  | _, BFam.base => hbase
+  | _, BFam.blk (D := D) hD => by
+      have h := hblk D hD (GOK_of_BFam D0 V N hbase hblk hone hD)
+      have e : D ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+          = (D ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil] := by simp
+      rw [e, plug_snoc, plug_snoc2]
+      exact h
+  | _, BFam.fone (D := D) hD => by
+      have h := hone D hD (GOK_of_BFam D0 V N hbase hblk hone hD)
+      rw [plug_snoc]
+      exact h
+
+/-- ★★★★★ `BStair` は「基底 + ブロックのステップ + 1 の枠のステップ」に割れる。 -/
+theorem BStair_of_steps (D0 : List Frm) (V N : Jk1)
+    (hbase : GOK (plug (D0 ++ [Frm.fone V]) N))
+    (hblk : BStepBlk D0 V N) (hone : BStepOne D0 V N) :
+    BStair D0 V N := by
+  rw [BStair_iff]
+  intro i m
+  exact GOK_of_BFam D0 V N hbase hblk hone (BFam_BTw_rep D0 V N i m)
+
+#print axioms GOK_of_BFam
+#print axioms BStair_of_steps
+
 end Small
 end TRIO

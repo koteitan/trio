@@ -15684,3 +15684,41 @@ m_0 = 1 で行 1・行 2 が不変なので、単位 M についての `MidD` �
     (a)/(b) は N の語の最終列の行 1（v ∈ {1,2}）だけで決まり、途中で切り替わらない
     v = 2 は前置きに依らない（bad root がブロック内、delta 一定）
     v = 1 は前置き依存（bad root が前置きの 行 1 = 0 の列へ移る）
+
+## 追記165: `BStair` を「基底 + 2 つの局所ステップ」に割った（緑）
+
+`BStair` の文脈 `BTw i ++ replicate m (fone N)` を、生成される族として書く。
+
+    inductive BFam D0 V N : List Frm → Prop
+      | base : BFam (D0 ++ [fone V])
+      | blk  : BFam D → BFam (D ++ [ftwo N, fone nil])
+      | fone : BFam D → BFam (D ++ [fone N])
+
+`BTw i ++ replicate m (fone N)` はすべて `BFam` に入る（`BFam_BTw_rep`）。
+すると `BStair` は帰納 1 本で、次の 3 つに割れる。
+
+    hbase   : GOK (plug (D0 ++ [fone V]) N)
+    BStepBlk: ∀ D ∈ BFam, GOK (plug D N) → GOK (plug D (two N (one nil N)))
+    BStepOne: ∀ D ∈ BFam, GOK (plug D N) → GOK (plug D (one N N))
+
+    BStair_of_steps : hbase → BStepBlk → BStepOne → BStair     緑
+
+行列で書くと、`… [D の語] [N(l)] …` が良いとき
+
+    BStepBlk : … [D の語] [N(l)] (l+1,2,0) (l+2,1,0) [N(l+2)] …   も良い
+    BStepOne : … [D の語] [N(l)] (l+1,1,0) [N(l+1)] …             も良い
+
+どちらも**局所的**（文脈 D は共通、木が 1 段伸びるだけ）。追記157 の
+「ブロック 1 個の挿入」がそのまま `BStepBlk` になっている。
+
+### 標準形の確認
+
+`BTw` が出す重複列 `(4,2,0)(4,2,0)`（N の語の 2 の記録と、ブロックの 2 の記録が同じ高さ）
+について標準形を確認した。
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(4,2,0)(5,1,0)(6,2,0)(6,1,0)(7,2,0)
+      bms -s: std。接頭辞 n=1..12 も全部 std。
+
+重複は `jk1 l (two N M) = jk1 l N ++ (l+1,2,0) :: jk1 (l+1) M` の定義どおりで、
+`N = two nil nil` なら `jk1 l N = [(l+1,2,0)]` なので同じ高さに 2 本並ぶ。
+**木の符号化として正しく、標準形も外していない。**
