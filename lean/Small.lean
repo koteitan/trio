@@ -66444,8 +66444,45 @@ theorem R14_of_NLiftB (h : NLiftB) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] 
 #print axioms SbT_YX2
 #print axioms NPd_twoAnil_lift
 #print axioms NLift_iter
+/-! ### `SbT` の `ttwo` を `two A (two B nil)` まで広げる
+
+`GOK_twoTwoNilW_gen`（左兄弟つきのラン塔）の階段は `nstN2 A B k` で、
+底は `B`（`SbF B` で足りる）、各段の `NPd_twoOf` に要る `A` の条件は
+`NPd_true_of_SbT`（形に依らない）で出る。 -/
+
+theorem NPd_nstN2_SbT {A B : Jk1} (hA : SbT A) (hB : SbF B) :
+    ∀ (k : ℕ) (ks : List Bool), NPd (false :: ks) (nstN2 A B k)
+  | 0, ks => NPd_false_of_SbF hB ks
+  | (k + 1), ks => by
+      show NPd (false :: ks) (Jk1.one B (Jk1.two A (nstN2 A B k)))
+      exact NPd_step (false :: ks) (JkA_of_SbF hB) (NPd_false_of_SbF hB ks)
+        (NPd_twoOf (JkA_of_SbT hA)
+          (fun j => by
+            rw [rep_true_cons]
+            exact NPd_true_of_SbT hA (List.replicate j true ++ (false :: ks)))
+          (NPd_nstN2_SbT hA hB k (false :: ks)))
+
+/-- ★★★★★ 長さ 2 の走り `two A (two B nil)` は `SbT A` と `SbF B` で無条件。 -/
+theorem NPd_true_twoTwoB {A B : Jk1} (hA : SbT A) (hB : SbF B) (ks : List Bool) :
+    NPd (true :: ks) (Jk1.two A (Jk1.two B Jk1.nil)) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  refine GOK_twoTwoNilW_gen ctx0 V (JkA_of_SbT hA) (JkA_of_SbF hB)
+    (NCtx_JkT (true :: ks) _ hc (Jk1.two A (Jk1.two B Jk1.nil))
+      ⟨JkA_of_SbT hA, JkA_of_SbF hB, trivial⟩) hGV ?_
+  intro k
+  exact (NPd_iff (true :: ks) _).mp
+    (NPd_twoOf (JkA_of_SbT hA)
+      (fun j => by
+        rw [rep_true_cons]
+        exact NPd_true_of_SbT hA (List.replicate j true ++ ks))
+      (NPd_nstN2_SbT hA hB k ks)) _ hc
+
 #print axioms NPd_twoAnil_liftF
 #print axioms R14_of_NLiftB
+#print axioms NPd_nstN2_SbT
+#print axioms NPd_true_twoTwoB
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

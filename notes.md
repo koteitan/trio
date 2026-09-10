@@ -19041,3 +19041,33 @@ N の可差し性が 1 段深い形で要る。`SbT N`（形に依らない）�
 ただし `b` の段は `NLift`（`ks' = rep b false ++ ks` に適用したもの）そのものなので、
 `NLift` と `NLiftB` は同値で、新しい帰納法が生えたわけではない。
 仮定の形が `List Bool` 全体の全称から 1 パラメータ族に落ちたのが利得。
+
+## 追記235: 長さ 2 の走り `two A (two B nil)` が `SbT A` ＋ `SbF B` で出る
+
+2026-09-11。追記234 の続き。
+
+### 新しく緑になったもの
+
+    NPd_nstN2_SbT   {A B} (SbT A) (SbF B) : ∀ k ks, NPd (false::ks) (nstN2 A B k)
+    NPd_true_twoTwoB{A B} (SbT A) (SbF B) : ∀ ks, NPd (true::ks) (two A (two B nil))
+
+`GOK_twoTwoNilW_gen`（左兄弟つきのラン塔）の階段は `nstN2 A B k` で、
+
+    nstN2 A B 0     = B                        ← SbF B で足りる
+    nstN2 A B (k+1) = one B (two A (nstN2 A B k))
+
+各段の `NPd_twoOf` に要る `A` の条件は `NPd_true_of_SbT`（形に依らない）で出る。
+
+これは `SbT` の `ttwo` の節（`two A (two nil nil)`）を **B = nil から
+任意の `SbF B` に広げた**もの。長さ 3 の走り `two A (two B (two C nil))` は
+階段の途中に `two B X` が現れて `SbF` の `two` が要るので出ない。
+
+### 「塔の最内が nil に落ちるか」の正体
+
+外部測定で「#14 の木だけ塔の最内が `nil` に落ちない」と分かったが、正体は単純だった。
+
+    木 `two N (two A nil)` の塔の階段は `nstN2 N A k`、その底は **A そのもの**
+    ⟹ 最内が nil に落ちる ⟺ A = nil
+
+ただし本当に要るのは `A = nil` ではなく **`SbF A`**（もっと広い）。
+だから「落ちるかどうか」は分かれ目そのものではなく、`SbF A` の十分条件の 1 つ。
