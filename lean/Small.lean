@@ -61252,5 +61252,110 @@ theorem Wk_nil_unit0 {j n : ℕ} (ctx' : List Frm) (V Wl : Jk1) (hctx : Wok j n 
 #print axioms Wk_nil_succ
 #print axioms Wk_nil_unit0
 
+
+/-! ### ★★★★★ 走りの一般ステップ `WRun`（層なし・文脈は全称）
+
+`plug ctx (one V (stk (p+1)))` は `GOK_oneUV_gen` で階段 `appJ V (Utw p k)` に落ちる。
+階段は `plug (ctx ++ Wblk V p) (Utw p k)` と書けるので **文脈が伸びる**が、
+主張を文脈について全称にすれば
+
+  - `k` について内側の帰納（文脈が伸びても当たる）
+  - `p` について外側の帰納（走りが 1 段短くなる）
+
+で回る。残るのは `p = 0`（裸の 1 の記録）だけ。 -/
+
+/-- ブロック「1 の枠 `V` + 兄弟 `nil` の 2 の枠 `p` 枚」。 -/
+def Wblk (V : Jk1) (p : ℕ) : List Frm :=
+  Frm.fone V :: List.replicate p (Frm.ftwo Jk1.nil)
+
+theorem plug_Wblk (ctx : List Frm) (V : Jk1) (p : ℕ) (X : Jk1) :
+    plug (ctx ++ Wblk V p) X = plug ctx (Jk1.one V (stkP p X)) := by
+  rw [plug_append]
+  show plug ctx (Jk1.one V (plug (List.replicate p (Frm.ftwo Jk1.nil)) X)) = _
+  rw [plug_repTwoNil]
+
+/-- 「`one V ·` が文脈 `ctx` で字レベルで妥当」。 -/
+def WCtxT (ctx : List Frm) (V : Jk1) : Prop :=
+  ∀ X : Jk1, JkA X → JkT (plug ctx (Jk1.one V X))
+
+theorem WCtxT_nil : WCtxT [] Jk1.nil :=
+  fun _ hX => ⟨⟨trivial, hX⟩, trivial⟩
+
+theorem WCtxT_ext {ctx : List Frm} {V : Jk1} (h : WCtxT ctx V) (p : ℕ) :
+    WCtxT (ctx ++ Wblk V p) Jk1.nil := by
+  intro X hX
+  rw [plug_Wblk]
+  exact h _ (JkA_stkP p ⟨trivial, hX⟩)
+
+/-- ★ 残る 1 歩。裸の 1 の記録をどの文脈にも置ける。 -/
+def WStep0 : Prop := ∀ (ctx : List Frm) (V : Jk1), JkA V → WCtxT ctx V →
+    GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Jk1.nil))
+
+/-- ★★★★★ 走りは `WStep0` から出る。 -/
+theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm) (V : Jk1), JkA V →
+    WCtxT ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V (stk p))) := by
+  intro p
+  induction p with
+  | zero => intro ctx V hJV hT hGV; exact h0 ctx V hJV hT hGV
+  | succ p ih =>
+      have htow : ∀ (k : ℕ) (ctx : List Frm) (V : Jk1), JkA V → WCtxT ctx V →
+          GOK (plug ctx V) → GOK (plug ctx (appJ V (Utw p k))) := by
+        intro k
+        induction k with
+        | zero => intro _ _ _ _ hGV; exact hGV
+        | succ k ihk =>
+            intro ctx V hJV hT hGV
+            have hbase : GOK (plug (ctx ++ Wblk V p) Jk1.nil) := by
+              rw [plug_Wblk]
+              exact ih ctx V hJV hT hGV
+            have h := ihk (ctx ++ Wblk V p) Jk1.nil trivial (WCtxT_ext hT p) hbase
+            rw [appJ_nil_Utw] at h
+            show GOK (plug ctx (Jk1.one V (stkP p (Utw p k))))
+            rw [← plug_Wblk]
+            exact h
+      intro ctx V hJV hT hGV
+      refine GOK_oneUV_gen ctx p V (V := stk (p + 1)) (fun d => jk1_stk_succ p d)
+        (hT _ (JkA_stk (p + 1))) hGV ?_
+      intro k
+      exact htow k ctx V hJV hT hGV
+
+theorem GOK_oneStk_W (h0 : WStep0) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  WRun h0 q [] Jk1.nil trivial WCtxT_nil GOK_nil
+
+theorem tw_R344_42g (h : ∀ q : ℕ, GOK (Jk1.one Jk1.nil (stk q))) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    h n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★ シート行376 は `WStep0`（裸の 1 の記録）1 歩に落ちた。 -/
+theorem R376_of_WStep0 (h0 : WStep0) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42g (GOK_oneStk_W h0))
+
+#print axioms R376_of_WStep0
+
+/-- `WStep0` は荷から出る（`APnil_gen0`）。 -/
+def WPay : Prop := ∀ (ctx : List Frm) (V : Jk1), JkA V → WCtxT ctx V →
+    GOK (plug ctx V) → ∀ C : TrioSeq, Bok C → GOK (plug ctx (Jk1.pay V C))
+
+theorem WStep0_of_WPay (h : WPay) : WStep0 := by
+  intro ctx V hJV hT hGV
+  exact APnil_gen0 ctx V (hT Jk1.nil trivial) hGV (fun C hC => h ctx V hJV hT hGV C hC)
+
+theorem R376_of_WPay (h : WPay) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_WStep0 (WStep0_of_WPay h)
+
+#print axioms R376_of_WPay
+
 end Small
 end TRIO
