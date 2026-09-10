@@ -19124,6 +19124,121 @@ theorem AYs : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Frm), CtxOk ctx → �
 
 #print axioms AYs
 
+/-! ### ★★★★★ `AYs` の兄弟を族に制限した版
+
+    OChain Xb Z V : V は Xb から `V ↦ one V (pay Z Y)` で作れる
+
+`AYs` の証明が `hAP` を当てるのは `X` と鎖 `itJ (pay Z Y') k X` だけなので、
+族を `OChain Xb Z` に制限してよい。 -/
+
+inductive OChain (Xb Z : Jk1) : Jk1 → Prop
+  | base : OChain Xb Z Xb
+  | step : ∀ {V : Jk1} {Y : TrioSeq}, OChain Xb Z V → Bok Y →
+      OChain Xb Z (Jk1.one V (Jk1.pay Z Y))
+
+theorem GOK_chainJF {ctx : List Frm} {Xb Z X : Jk1} {Y : TrioSeq}
+    (hZ : CtxT ctx Z) (hY : Bok Y)
+    (hXc : OChain Xb Z X) (hXok : CtxX ctx X) (hGX : GOK (plug ctx X))
+    (hstep : ∀ V : Jk1, OChain Xb Z V → CtxX ctx V → GOK (plug ctx V) →
+      GOK (plug ctx (Jk1.one V (Jk1.pay Z Y)))) :
+    ∀ n : ℕ, OChain Xb Z (itJ (Jk1.pay Z Y) n X)
+      ∧ CtxX ctx (itJ (Jk1.pay Z Y) n X)
+      ∧ GOK (plug ctx (itJ (Jk1.pay Z Y) n X))
+  | 0 => ⟨hXc, hXok, hGX⟩
+  | (n + 1) => by
+      obtain ⟨hc, hok, hg⟩ := GOK_chainJF hZ hY hXc hXok hGX hstep n
+      exact ⟨OChain.step hc hY, CtxX_itJ (CtxT_pay ctx hZ hY) (n + 1) hXok,
+        hstep _ hc hok hg⟩
+
+theorem AYsF (Xb : Jk1) : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Frm), CtxOk ctx →
+    ∀ (X Z : Jk1), OChain Xb Z X →
+    CtxX ctx X → CtxT ctx Z →
+    (∀ V : Jk1, OChain Xb Z V → CtxX ctx V → GOK (plug ctx V) →
+      GOK (plug ctx (Jk1.one V Z))) →
+    GOK (plug ctx X) →
+    GOK (plug ctx (Jk1.one X (Jk1.pay Z Y))) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ctx : List Frm), CtxOk ctx →
+      ∀ (X Z : Jk1), OChain Xb Z X →
+      CtxX ctx X → CtxT ctx Z →
+      (∀ V : Jk1, OChain Xb Z V → CtxX ctx V → GOK (plug ctx V) →
+        GOK (plug ctx (Jk1.one V Z))) →
+      GOK (plug ctx X) → GOK (plug ctx (Jk1.one X (Jk1.pay Z Y)))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb ctx hc X Z hXc hX hZ hAP hGX
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact GOK_congr (fun l => (jk1_plug_congr ctx (jk1_one_pay_nil X Z) l).symm)
+          (hAP X hXc hX hGX)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        have hstep : ∀ V : Jk1, OChain Xb Z V → CtxX ctx V → GOK (plug ctx V) →
+            GOK (plug ctx (Jk1.one V (Jk1.pay Z ([] : TrioSeq)))) := by
+          intro V hVc hV hGV
+          exact GOK_congr (fun l => (jk1_plug_congr ctx (jk1_one_pay_nil V Z) l).symm)
+            (hAP V hVc hV hGV)
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs hw hc hX hZ (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (GOK_chainJF (Z := Z) (Y := ([] : TrioSeq)) hZ Bok_nil hXc hX hGX
+          hstep n).2.2 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        rw [hsplit]
+        have hstep : ∀ V : Jk1, OChain Xb Z V → CtxX ctx V → GOK (plug ctx V) →
+            GOK (plug ctx (Jk1.one V (Jk1.pay Z Y.dropLast))) :=
+          fun V hVc hV hGV => hdl hdb ctx hc V Z hVc hV hZ hAP hGV
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs hw hc hX hZ (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (GOK_chainJF (Z := Z) (Y := Y.dropLast) hZ hdb hXc hX hGX
+          hstep n).2.2 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs hw hc hX hZ hYb hlen2 hp ?_
+        intro n hn
+        have := hnat n hn
+        simp only [Set.mem_setOf_eq] at this
+        exact this (Bok_oper hYb hn) ctx hc X Z hXc hX hZ hAP hGX ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb ctx hc X Z hXc hX hZ hAP hGX
+  exact key hYb.mem hYb ctx hc X Z hXc hX hZ hAP hGX
+
+#print axioms AYsF
+
 
 /-! ### 木の字の語の祖先条件と、1 の列を継ぐ（深さ 0） -/
 
