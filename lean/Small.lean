@@ -63772,6 +63772,17 @@ theorem TSib_twoNilNil (D : List Frm) (hA : TSib D Jk1.nil)
   TSib_two D Jk1.nil Jk1.nil trivial hA hB
 
 #print axioms SelfW_of_OSib
+theorem TSibF_nil_of_SelfW (ctx0 : List Frm) (U : Jk1) (hGU : GOK (plug ctx0 U))
+    (hJTD : ∀ Z : Jk1, JkA Z → JkT (plug (ctx0 ++ [Frm.fone U]) Z))
+    (X Wb : Jk1)
+    (hself : ∀ V : Jk1, TChain Wb X V → JkA V →
+      GOK (plug (ctx0 ++ [Frm.fone U]) V) → SelfW (ctx0 ++ [Frm.fone U]) V) :
+    TSibF (ctx0 ++ [Frm.fone U]) X Jk1.nil Wb := by
+  intro V hV hJV hGV
+  exact GOK_twoNil_gen ctx0 U hJV (hJTD _ ⟨hJV, trivial⟩) hGU
+    (fun m => by rw [← plug_append]; exact hself V hV hJV hGV m)
+
+#print axioms TSibF_nil_of_SelfW
 #print axioms TSib_nil_of_SelfW
 #print axioms WallT_of_TSib
 #print axioms R14_of_TSib
