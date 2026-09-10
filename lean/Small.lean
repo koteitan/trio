@@ -65574,6 +65574,69 @@ theorem R14_of_NLift (h : NLift) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] �
 #print axioms NPd_nilAll
 #print axioms TowOk_of_NLift
 #print axioms R14_of_NLift
+
+/-! ### ★★★★★ 壁は「走り」1 ケース
+
+木 `N` の構造で `∀ ks, FrmJ ks N → NPd ks N` を回すと、
+`nil` は `NPd_nilAll`、`pay` は `NPd_payA`、`one` は `NPd_step`、
+`two A B` の形 `true::ks` は `NPd_twoOf` で閉じる。
+形 `[]` は `TopOk (two A B) = False` で空。
+残るのは `two A B` の形 `false::ks` ＝ **2 の記録の直上に 2 の記録**だけ。 -/
+
+theorem FrmJ_payl : ∀ (ks : List Bool) (A : Jk1) (C : TrioSeq),
+    FrmJ ks (Jk1.pay A C) → FrmJ ks A
+  | [], _, _, h => ⟨h.1.1, h.2⟩
+  | (_ :: _), _, _, h => h.1
+
+theorem FrmJ_payC : ∀ (ks : List Bool) (A : Jk1) (C : TrioSeq),
+    FrmJ ks (Jk1.pay A C) → Bok C
+  | [], _, _, h => h.1.2
+  | (_ :: _), _, _, h => h.2
+
+theorem FrmJ_onel : ∀ (ks : List Bool) (A B : Jk1), FrmJ ks (Jk1.one A B) → FrmJ ks A
+  | [], _, _, h => ⟨h.1.1, h.2⟩
+  | (_ :: _), _, _, h => h.1
+
+theorem FrmJ_oner : ∀ (ks : List Bool) (A B : Jk1), FrmJ ks (Jk1.one A B) → JkA B
+  | [], _, _, h => h.1.2
+  | (_ :: _), _, _, h => h.2
+
+/-- 残った 1 ケース: 2 の枠の直上に 2 の記録。部分木の帰納法の仮定つき。 -/
+def NRun : Prop := ∀ (A B : Jk1) (ks : List Bool), JkA A → JkA B →
+    (∀ kk : List Bool, FrmJ kk A → NPd kk A) →
+    (∀ kk : List Bool, FrmJ kk B → NPd kk B) →
+    NPd (false :: ks) (Jk1.two A B)
+
+theorem NPd_all_of_NRun (h : NRun) : ∀ (N : Jk1) (ks : List Bool), FrmJ ks N → NPd ks N
+  | Jk1.nil, ks, _ => NPd_nilAll ks
+  | Jk1.pay A C, ks, hF =>
+      NPd_payA ks A (FrmJ_payl ks A C hF)
+        (NPd_all_of_NRun h A ks (FrmJ_payl ks A C hF)) C (FrmJ_payC ks A C hF)
+  | Jk1.one A B, ks, hF =>
+      NPd_step ks (FrmJ_onel ks A B hF)
+        (NPd_all_of_NRun h A ks (FrmJ_onel ks A B hF))
+        (NPd_all_of_NRun h B (true :: ks) (FrmJ_oner ks A B hF))
+  | Jk1.two _ _, [], hF => hF.2.elim
+  | Jk1.two A B, (true :: ks), hF =>
+      NPd_twoOf hF.1
+        (fun j => NPd_all_of_NRun h A (List.replicate j true ++ (true :: ks))
+          (by rw [rep_true_cons]; exact hF.1))
+        (NPd_all_of_NRun h B (false :: ks) hF.2)
+  | Jk1.two A B, (false :: ks), hF =>
+      h A B ks hF.1 hF.2
+        (fun kk hkk => NPd_all_of_NRun h A kk hkk)
+        (fun kk hkk => NPd_all_of_NRun h B kk hkk)
+
+theorem NLift_of_NRun (h : NRun) : NLift := fun N ks hJN _ j =>
+  NPd_all_of_NRun h N (List.replicate j true ++ (true :: (false :: ks)))
+    (by rw [rep_true_cons]; exact hJN)
+
+/-- ★★★★★ #14 は「走り」1 ケースに落ちた。 -/
+theorem R14_of_NRun (h : NRun) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_NLift (NLift_of_NRun h)
+
+#print axioms NPd_all_of_NRun
+#print axioms R14_of_NRun
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

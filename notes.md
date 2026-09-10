@@ -18166,3 +18166,63 @@ B が乗っていると、展開の bad root が B の中に入るので、B の
     MRun     （層 MPd、two nil nil を 2 の枠の直上に置く）
     WallT    （梯子 TwOk、同上）
     OneNil / RPay （文脈版）
+
+## 追記216: #14 は「走り」1 ケースに落ちた（`NRun`）
+
+2026-09-10。追記215 の続き。
+
+### 新しく緑になったもの
+
+    NRun : Prop := ∀ A B ks, JkA A → JkA B →
+        (∀ kk, FrmJ kk A → NPd kk A) →
+        (∀ kk, FrmJ kk B → NPd kk B) →
+        NPd (false :: ks) (two A B)
+
+    FrmJ_payl / FrmJ_payC / FrmJ_onel / FrmJ_oner
+    NPd_all_of_NRun : NRun → ∀ N ks, FrmJ ks N → NPd ks N
+    NLift_of_NRun   : NRun → NLift
+    R14_of_NRun     : NRun → #14
+
+木 `N` の構造で `∀ ks, FrmJ ks N → NPd ks N` を回すと:
+
+    N = nil        NPd_nilAll                        緑
+    N = pay A C    NPd_payA + 帰納法の仮定           緑
+    N = one A B    NPd_step + 帰納法の仮定           緑
+    N = two A B, 形 []         TopOk (two A B) = False で空
+    N = two A B, 形 true::ks   NPd_twoOf + 帰納法の仮定  緑
+    N = two A B, 形 false::ks  ← NRun（残り 1 つ）
+
+**残っているのは「2 の記録を 2 の枠の直上に置く」1 ケースだけ**で、
+しかも部分木 A・B については「どの形にも差せる」という帰納法の仮定が使える。
+
+### `NRun` を開くと何が要るか
+
+`NPd_cf` で開くと文脈は `ctx ++ [fone U, ftwo N]`、木は `two A B`。
+`B = nil` なら `GOK_twoTwoNilW_gen`（階段 `nstN2 N A k`）が使えて、階段は
+
+    nstN2 N A 0     = A                        ← 帰納法の仮定で OK
+    nstN2 N A (k+1) = one A (two N (nstN2 N A k))
+
+の 2 段目で `NPd_twoOf` を使うため、兄弟 `N` を形 `false::ks₁` の上でも
+使える必要がある。`NPd_cf` が与える `hNt` は `true` を前に足す形だけ。
+やはり**兄弟条件を 2 の枠 1 本ぶん上げる**（= `NLift` = `NTwStep`）。
+
+### なぜ別の族を作っても駄目なのか（構造的な理由、確定）
+
+「形 ks の上で差せる」を ks の再帰で定義する族は、停止性のために
+測度 `cntF ks`（2 の枠の本数）が減っていなければならない。だから
+2 の枠の兄弟に課せる条件は `cntF ≤ 現在` の形についてのものだけ。
+壁は `cntF + 1` の形での良さを要求する。
+
+    APd / NPd / MPd / QPd（枠の並びに制限なし）… どれも同じ
+    梯子 TwSt … 添字 r が同じ役割
+
+**別の族を作っても壁は動かない。要るのは別の整礎順序**（木を文脈ごと
+順序数で測るような）であって、形の再帰ではない。
+
+### いま #14 を出す最弱の仮定たち
+
+    NRun    （層 NPd、走り 1 ケース、部分木の帰納法の仮定つき）← 最弱
+    NLift   （層 NPd、兄弟条件を 1 段上げる）
+    NTwStep （梯子 TwOk、NTw を 1 段上げる）
+    MRun / WallT / OneNil / RPay
