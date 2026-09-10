@@ -67594,5 +67594,82 @@ theorem WQd_nilF (k : ℕ) (ks : List ℕ) : WQd ((k + 1) :: ks) Jk1.nil := by
 #print axioms WQtx_JkT
 #print axioms WQd_nilF
 
+/-! ### `WQd` では `oneNil` が無条件（枠木の条件に荷閉包が入っているため） -/
+
+theorem WQd_oneNil (ks : List ℕ) (V : Jk1) (hV : FrmN ks V) (hVk : WQd ks V)
+    (hVp : ∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay V C)) :
+    WQd ks (Jk1.one V Jk1.nil) := by
+  rw [WQd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (WQtx_JkT ks ctx hc (Jk1.one V Jk1.nil) (FrmN_one ks V Jk1.nil hV trivial))
+    ((WQd_iff ks V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (WQd_iff ks _).mp (hVp C hC) ctx hc
+
+theorem WQd_nilT (ks : List ℕ) : WQd (0 :: ks) Jk1.nil :=
+  (WQd_c0 ks _).mpr (fun U hU hUk hUp => WQd_oneNil ks U hU hUk hUp)
+
+/-- ★★★★★★ 空木はどの形でも差せる（`WQd` 層、無条件）。走りの下でも。 -/
+theorem WQd_nilAll : ∀ ks : List ℕ, WQd ks Jk1.nil
+  | [] => (WQd_bnil _).mpr GOK_nil
+  | (0 :: ks) => WQd_nilT ks
+  | ((k + 1) :: ks) => WQd_nilF k ks
+
+#print axioms WQd_oneNil
+#print axioms WQd_nilAll
+
+/-! ### ★★★★★ 行376 を `WQd` の 1 文に落とす
+
+残るのは「`nil` に荷を 1 個吊るす」を**走りの直下でも**言うこと。 -/
+
+theorem RunP_rep_nil : ∀ (p : ℕ) (Y : Jk1),
+    RunP (List.replicate p Jk1.nil) Y = stkP p Y
+  | 0, _ => rfl
+  | (p + 1), Y => by
+      show Jk1.two Jk1.nil (RunP (List.replicate p Jk1.nil) Y)
+        = Jk1.two Jk1.nil (stkP p Y)
+      rw [RunP_rep_nil p Y]
+
+/-- `nil` に荷を吊るせれば、走りのブロックが差せる。 -/
+theorem WQd_stk_succ (hpay : ∀ (ks : List ℕ) (C : TrioSeq), Bok C →
+      WQd ks (Jk1.pay Jk1.nil C))
+    (p : ℕ) (ks : List ℕ) (Y : Jk1) (hY : WQd ((p + 1) :: ks) Y) :
+    WQd (0 :: ks) (stkP (p + 1) Y) := by
+  rw [WQd_c0]
+  intro U hU hUk hUp
+  rw [← RunP_rep_nil (p + 1) Y]
+  have h := (WQd_ck p ks Y).mp hY [] (by simp) U (List.replicate (p + 1) Jk1.nil)
+    (by simp) (by simp) (by simpa using hU) (by simpa using hUk) (by simpa using hUp)
+    (fun N hN => by rw [List.eq_of_mem_replicate hN]; trivial)
+    (fun N hN q hq hqk => by
+      rw [List.eq_of_mem_replicate hN]
+      exact WQd_nilAll _)
+    (fun N hN q hq hqk C hC => by
+      rw [List.eq_of_mem_replicate hN]
+      exact hpay _ C hC)
+  simpa using h
+
+theorem WQd_Utw (hpay : ∀ (ks : List ℕ) (C : TrioSeq), Bok C →
+      WQd ks (Jk1.pay Jk1.nil C)) :
+    ∀ (i p : ℕ) (ks : List ℕ), WQd ks (Utw p i)
+  | 0, _, ks => WQd_nilAll ks
+  | (i + 1), 0, ks => by
+      refine WQd_step ks (FrmN_nilA ks) (WQd_nilAll ks) (fun C hC => hpay ks C hC) ?_
+      exact WQd_Utw hpay i 0 (0 :: ks)
+  | (i + 1), (p + 1), ks => by
+      refine WQd_step ks (FrmN_nilA ks) (WQd_nilAll ks) (fun C hC => hpay ks C hC) ?_
+      exact WQd_stk_succ hpay p ks (Utw (p + 1) i)
+        (WQd_Utw hpay i (p + 1) ((p + 1) :: ks))
+
+/-- ★★★★★★ 目標の行（行376）は「`nil` に荷を吊るす」1 本から出る（`WQd` 版）。 -/
+theorem R376_of_QPnil (hpay : ∀ (ks : List ℕ) (C : TrioSeq), Bok C →
+      WQd ks (Jk1.pay Jk1.nil C)) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_UtwAll (fun p n => (WQd_bnil _).mp (WQd_Utw hpay n p []))
+
+#print axioms WQd_Utw
+#print axioms R376_of_QPnil
+
 end Small
 end TRIO
