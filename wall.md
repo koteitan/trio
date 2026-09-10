@@ -39,6 +39,29 @@
 （`NRun`）。その中で `B = nil` の場合は `NLift` で閉じる
 （`NPd_twoAnil_of_NLift`）。
 
+## 安全な兄弟の族 `SbT` / `SbF`（壁が 1 つの節に一致する）
+
+    mutual
+    inductive SbT : nil | pay(SbT) | one(SbT,SbT) | two(SbT,SbF) | ttwo(SbT)
+    inductive SbF : nil | pay(SbF) | one(SbF,SbT)
+    end
+
+    NPd_true_of_SbT  : SbT N → ∀ kk, NPd (true :: kk) N     無条件・緑
+    NPd_false_of_SbF : SbF N → ∀ kk, NPd (false :: kk) N    無条件・緑
+
+`SbT` は `two A B` を `SbF B` の範囲で許すので、荷を乗せた 2 の記録
+`two A (pay Z Y)` も入る。`SbF` にだけ `two` の節が無い。
+
+**壁 = `SbF` に `two` の節を足すこと** ＝ `NPd (false::ks) (two A nil)`。
+
+`TW n`（#14 の塔の木）は n ≥ 1 で `SbT` にも `SbF` にも入らない。
+`TW (n+1) = one (two nil nil) (two nil (TW n))` を分解すると
+`SbF (two nil nil)` が要るから。
+
+木の側の兄弟 `A` は `SbF A`（形に依らない）で足りる。
+**持ち上げが要るのは周囲の兄弟 `N`（`NPd_cf` の全称）だけ。**
+枠の木 `U` は塔のコピーに巻き込まれないので持ち上げ不要（実測で確認）。
+
 ## 同じ壁の別の書き方（どれも緑で #14 を出す）
 
     NRunNil : ∀ ks, NPd (false::ks) (two nil nil)          ← 最弱

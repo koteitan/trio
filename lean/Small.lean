@@ -66174,9 +66174,22 @@ theorem SbF_le_SbT : ∀ {N : Jk1}, SbF N → SbT N
   | _, SbF.pay hA hY => SbT.pay (SbF_le_SbT hA) hY
   | _, SbF.one hA hB => SbT.one (SbF_le_SbT hA) hB
 
+theorem SbT_twoNilNil : SbT (Jk1.two Jk1.nil Jk1.nil) := SbT.two SbT.nil SbF.nil
+
+/-- 交互 nil 塔は `SbF`（走りを含むのに安全）。 -/
+theorem SbF_nstN_nil : ∀ k : ℕ, SbF (nstN Jk1.nil k)
+  | 0 => SbF.nil
+  | (k + 1) => SbF.one SbF.nil (SbT.two SbT.nil (SbF_nstN_nil k))
+
+/-! `TW n`（#14 の塔の木）は n ≥ 1 で `SbT` にも `SbF` にも入らない。
+`TW (n+1) = one (two nil nil) (two nil (TW n))` の
+`SbF.one` / `SbT.two` を使うには `SbF (two nil nil)` が要るが、
+`SbF` には `two` の節が無い。ここが壁。 -/
+
 #print axioms NPd_true_of_SbT
 #print axioms NPd_false_of_SbF
 #print axioms SbF_le_SbT
+#print axioms SbF_nstN_nil
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
