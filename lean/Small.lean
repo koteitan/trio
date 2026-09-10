@@ -64869,6 +64869,42 @@ theorem R14_of_NTwStep (h : NTwStep) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)
 
 #print axioms WallT_of_NTwStep
 #print axioms R14_of_NTwStep
+
+
+/-! ### ★★★★★ `MPd` 層での壁の場合分け
+
+`MBplus N`（= `∀ ks, MPd (true :: ks) N`）と
+`MCw X`（= `∀ ks, MPd (false :: ks) X`、2 の枠の直上に差せる）を
+木の構造で回すと、閉じないのは `MCw` の 2 つの場合だけ:
+
+    MCw nil       ＝ MNil（塔の底）
+    MCw (two A B) ＝ 走り（2 の記録の直上に 2 の記録）
+
+`MBplus` の側は `two` の場合が `MCw` に落ちるだけで、他は閉じる。 -/
+
+/-- `MPd` 層で「2 の枠の直上に差せる」。 -/
+def MCw (X : Jk1) : Prop := ∀ ks : List Bool, MPd (false :: ks) X
+
+theorem MNil_iff_MCw_nil : MNil ↔ MCw Jk1.nil := Iff.rfl
+
+/-- `MBplus` の `two` の場合は `MCw` に落ちる（`MPd_twoOf` の言い換え）。 -/
+theorem MBplus_two {A B : Jk1} (hQA : FrQ A) (hB : MCw B) : MBplus (Jk1.two A B) := by
+  intro j ks
+  rw [rep_true_cons]
+  exact MPd_twoOf hQA (hB _)
+
+/-- `MCw` は 1 の記録で閉じる。 -/
+theorem MCw_one {A B : Jk1} (hQA : FrQ A) (hA : MCw A) (hB : MBplus B) :
+    MCw (Jk1.one A B) := fun ks =>
+  MPd_step (false :: ks) (hQA.1 : FrmJ (false :: ks) A) hQA (hA ks)
+    (by have h := hB 0 (false :: ks); simpa using h)
+
+/-- 走りの底。`MNil` から出る。 -/
+theorem MCw_twoNil (h : MNil) : MCw (Jk1.two Jk1.nil Jk1.nil) := MPd_twoTwoNilB h
+
+#print axioms MBplus_two
+#print axioms MCw_one
+#print axioms MCw_twoNil
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

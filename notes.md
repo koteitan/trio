@@ -17802,3 +17802,68 @@ nil 限定の梯子では `NlOk_two` が `two nil Z` しか作れないので、
     MNil / LStep2 / Rq               層 APd / MPd
     OneNil / RPay / OneTwo / TWStep  文脈 plug D
     走り                             語 (l+1,2,0)(l+2,2,0)
+
+## 追記210: 層 `APd` / `MPd` から見た同じ壁。`Rq` = `TopOk` が正体
+
+2026-09-10。追記209 の続き。梯子 `TwOk` ではなく層で書き直すと壁の形が変わる。
+
+### `APd` と `MPd` の違いは 1 点
+
+    APd (true :: ks) V = ∀ U, FrmJ ks U → Rq ks U → APd ks U → APd ks (one U V)
+    MPd (true :: ks) V = ∀ U, FrmJ ks U → FrQ U → MPd ks U → MPd ks (one U V)
+
+    Rq (false :: ks) U = TopOk U      （U の頭に 2 の記録が無い）
+    FrQ U = JkA U ∧ AllA U ∧ LAll U ∧ (∀ C, Bok C → AllA (pay U C))
+
+`TopOk (two nil nil) = False` なので、`APd` の文脈は
+**`fone (two nil nil)` を 2 の枠の直下に置けない**。#14 の塔の枠は
+
+    TWBlk = [fone (two nil nil), ftwo nil]
+
+だからちょうどこれに当たる。`MPd` は `Rq` を落として `FrQ` にしてあるので
+枠は置けるが、代わりに `MNil : ∀ ks, MPd (false::ks) nil` が未証明。
+
+    APd (false::ks) nil = APd_twoNilB ks    緑
+    MPd (false::ks) nil = MNil              未
+
+**つまり壁 = 「2 の枠の直下の 1 の枠の木から `TopOk` を外す」**。
+これが `Rq` 除去（追記の `AYdT'` / `APd_payA'` / `APd_oneNil'`）が
+到達できなかった最後の 1 個。
+
+### 層での場合分け（新規、緑）
+
+    MBplus N = ∀ ks, MPd (true :: ks) N      （1 の枠の直上に差せる）
+    MCw X    = ∀ ks, MPd (false :: ks) X     （2 の枠の直上に差せる）
+
+    MBplus_two : FrQ A → MCw B → MBplus (two A B)
+    MCw_one    : FrQ A → MCw A → MBplus B → MCw (one A B)
+    MCw_twoNil : MNil → MCw (two nil nil)
+    MNil_iff_MCw_nil : MNil ↔ MCw nil
+
+木の構造で回すと閉じないのは `MCw` の 2 つだけ:
+
+    MCw nil        ＝ MNil
+    MCw (two A B)  ＝ 走り
+
+`MBplus` 側は `nil` / `pay` / `one` が閉じ、`two` は `MCw` に落ちる。
+
+### なぜ木の帰納法で閉じないか
+
+`MNil` を `MPd_twoNilGen` で開くと `MBplus N` が要る。ここの `N` は
+**2 の枠の兄弟で、全称量化されていて大きさに上限が無い**。
+一方 `MBplus (two A B)` が要るのは `MCw B`（B は真部分木）。だから
+
+    MCw nil → MBplus N（N は任意の大きさ） → MCw B（B < N） → … → MCw nil
+
+で木の大きさの測度が回らない。形 `ks` の測度（`cntF ks`）でも同じで、
+`MBplus N` の形は `true :: ks'`（`cntF` は任意）なので減らない。
+
+### 3 つの層で同じ 1 点
+
+    梯子 TwOk : NTwStep（NTw を 1 段上げる）              追記209
+    層 APd    : Rq = TopOk を 2 の枠の直下の枠から外す
+    層 MPd    : MNil = MCw nil（と走り MCw (two A B)）
+    文脈 plug : OneNil / RPay
+    語        : (l+1,2,0)(l+2,2,0)
+
+`APd` 版が「`TopOk` を外す」という一番具体的な言い方になっている。
