@@ -17082,3 +17082,52 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
     TwSt_split3   分割 + JkT の閉包
     GOK_oneN_split / GOK_blkN_split / plug_blk2
       N = plug E (one A (RunS (Bs ++ [B]))) と分解してバッドルートで切り直す
+
+## 追記192: ★★★★★ 壁が `RPay`（荷を 1 個吊るす）1 本になった
+
+### 結論
+
+    RPay : ∀ D V, JkA V → (∀ X, JkA X → JkT (plug D X)) → GOK (plug D V) →
+        ∀ C, Bok C → GOK (plug D (pay V C))
+
+    R14_of_RPay : RPay → シート証明中の行
+
+**レベル添字も走りも塔も消えた。**「置ける `V` の上に荷を 1 個吊るせる」だけ。
+
+### 木の帰納
+
+`RStep Bs B : ∀ D V, GOK (plug D V) → GOK (plug D (one V (RunP Bs B)))` を
+`B` について（`Bs` は全称のまま）帰納で回す。
+
+    RStep Bs nil       ⟸ RStep Bs' C          （Bs = Bs' ++ [C]、RStep_snoc）
+    RStep [] nil       ⟸ RPay                 （APnil_gen0）
+    RStep Bs (one A B) ⟸ RStep Bs A, RStep [] B
+    RStep Bs (two A B) =  RStep (Bs ++ [A]) B  （RunP_append。走りに吸収される）
+    RStep Bs (pay A Y) ⟸ RStep Bs A, RPay
+
+測度は `(jsz (RunS Bs) + jsz B, B の構造)` の辞書式。`two` の場合だけ
+第 1 成分が等しく第 2 成分が減る。他は第 1 成分が減る。
+
+`jsz nil = 0`、`jsz (pay A _) = jsz A + 1`、`jsz (one A B) = jsz (two A B)
+= jsz A + jsz B + 1`。`jsz (RunP Bs X) = jsz (RunS Bs) + jsz X`。
+
+### 全体の連鎖（全部緑）
+
+    RPay
+      → RStep Bs B（全部の Bs, B）      RStep_of_RPay
+      → RStep [N] nil                    （N は文脈の 2 の枠の木）
+      → WallT                            WallT_of_RStep
+      → シート証明中の行                 R14_of_RPay
+
+### `RPay` を証明する道筋（次）
+
+`TwOk_pay_f` / `TwOk_pay_e`（緑）は `A2'`（荷 `C` についての帰納）で回っている。
+使う道具は
+
+    GoodFb_snoc_dupJs0 / GoodFb_snoc_innerJs0
+    TwOk_itJ（1 の枠の鎖）/ TwOk_twoIt（2 の枠の鎖）
+
+で、鎖の各段は `pay X Y'`（`Y'` は `C` より小さい荷）。文脈を具体的にすると
+鎖は `RStep`-型の主張になり、それは `RPay`（荷 `Y'`）から出る。
+**荷の大きさについての帰納**にすれば循環しない。
+そのためには `RPay` / `RStep` を荷で添字づけた版に書き直す必要がある。

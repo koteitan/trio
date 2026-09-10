@@ -1,39 +1,55 @@
-# 残っている壁
+# 残っている壁（1 文）
 
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明。
 
-2026-09-10 更新。
+2026-09-10 更新。`RPay` が最終形。レベル添字も走りも塔も消えた。
 
-## 壁の連鎖（全部 Lean で緑）
+## 結論の 1 文
 
-    RPay    : ∀ D V, GOK (plug D V) → ∀ C, Bok C → GOK (plug D (pay V C))
-                                                        （荷を 1 個吊るす）
-      ↓ APnil_gen0
-    RStep0  : ∀ D V, GOK (plug D V) → GOK (plug D (one V nil))
-                                                        （裸の 1 の記録を 1 個積む）
-      ↓ RStep_rep
-    RStep (replicate q nil) nil : … → GOK (plug D (one V (stk q)))
-                                                        （走りを積む）
-      ↓ GOK_oneNN_of_RStep / GOK_blkNN_of_RStep
-    NStep N D0（N が走り RunS (Bs ++ [B]) のとき）
-      ↓ WRep_of_NStep
-    WRep → WallT / TTwo / NTwUp → シート証明中の行
+    RPay : ∀ (D : List Frm) (V : Jk1), JkA V →
+        (∀ X, JkA X → JkT (plug D X)) → GOK (plug D V) →
+        ∀ C, Bok C → GOK (plug D (pay V C))
 
-**つまり `N` が走りのときの壁は `RPay` 1 本**（「荷を 1 個吊るせる」）。
+**「置ける `V` の上に荷を 1 個吊るせる」— これだけ。**
 
-## 残っている穴
+    R14_of_RPay : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
 
-`N` が走りでないとき（語の最後の記録への祖先鎖に 1 の記録があるとき）。
-`hMy`（`snocYd_mem` の条件）が落ちる。
+## 連鎖（全部 Lean で緑）
 
-ただしこれは**分割点の取り方**の問題らしい。`snocYd_mem` は語を
-`Y0 ++ M ++ [(L+dl, y, 0)]` と割るので、`M` をバッドルート（鎖の最後の
-1 の記録）から始めれば `M` の中の右からの最小値は全部 2 の記録になる。
-木で言うと `N = plug E (one A Y)` と書いて
+    RPay
+      ↓ RStep_of_RPay（木の帰納）
+    RStep Bs B : ∀ D V, GOK (plug D V) → GOK (plug D (one V (RunP Bs B)))
+      ↓ RStep_snoc
+    RStep [N] nil                （N は文脈の 2 の枠の木）
+      ↓ WallT_of_RStep
+    WallT = ∀ r, TwOk (r+1) 0 (two nil nil)
+      ↓ R14_of_WallT
+    シート証明中の行
 
-    plug D (one N N) = plug (D ++ [fone N] ++ E) (one A Y)
+## 木の帰納の中身
 
-とし、`GOK_oneUV_genM` をより深い文脈で使う。次はこれを実装する。
+    RStep Bs nil       ⟸ RStep Bs' C          （Bs = Bs' ++ [C]）
+    RStep [] nil       ⟸ RPay                 （APnil_gen0）
+    RStep Bs (one A B) ⟸ RStep Bs A, RStep [] B
+    RStep Bs (two A B) =  RStep (Bs ++ [A]) B  （走りに吸収される）
+    RStep Bs (pay A Y) ⟸ RStep Bs A, RPay
+
+測度は `(jsz (RunS Bs) + jsz B, B の構造)` の辞書式。
+
+## 壁の正体は「レベル ⇄ 走りの長さ」の交換
+
+    plug (D ++ [ftwo N]) (RunS Bs) = plug D (RunS (N :: Bs))
+
+レベルが 1 下がるかわりに走りが 1 本伸びる。追記171 の「非可述性の正体は
+2 の枠の本数」と、走りの長さの帰納（`WRunB`）は同じものの 2 つの見方だった。
+
+## `RPay` を証明する道筋
+
+`TwOk_pay_f` / `TwOk_pay_e`（緑）は `A2'`（荷 `C` についての帰納）で回っている。
+使う道具は `GoodFb_snoc_dupJs0` / `GoodFb_snoc_innerJs0` と、鎖
+`TwOk_itJ`（1 の枠）/ `TwOk_twoIt`（2 の枠）。鎖の各段は `pay X Y'` で
+`Y'` は `C` より小さい荷。文脈を具体的にすると鎖は `RStep`-型になり、
+それは `RPay`（荷 `Y'`）から出る。**荷の大きさで帰納**すれば循環しない。
 
 ## 部品（緑）
 
@@ -41,11 +57,11 @@
     UtwP Bs B n = 塔（1 段は「(1,0) + RunP Bs B」）
     PBlk Bs V   = fone V :: Bs.map ftwo         RBlk As = PBlk As nil
     ABt Bs B n  = appJ B (UtwP Bs B n)
-    RFam Bs D0  = D0 に Bs の枠列を足してできる文脈の族、RFam_GOK はその帰納
-    My_RunP / hMy_RunP
+    RFam / RFam_GOK / NFam / NFam_GOK
+    My_RunP / hMy_RunP / jk1_RunS_snocB / jsz / jsz_RunP
     GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM（元の 3 つの抽象版）
-    NFam / NFam_GOK / WRep / GOK_twoTwoNil_rep
-    NoRun / NTw_of_NoRun / STw_TTw
+    TwSt_split3 / GOK_oneN_split / GOK_blkN_split / plug_blk2
+    WRep / GOK_twoTwoNil_rep / NoRun / NTw_of_NoRun / STw_TTw
 
 ## 木の帰納の表（レベル添字版、参考）
 
@@ -269,4 +285,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜190。
+経緯は `notes.md` の追記175〜192。
