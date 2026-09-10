@@ -68431,5 +68431,27 @@ theorem mixed_zero (i : ℕ) :
 #print axioms bdA_rep2_of_mixed
 #print axioms mixed_zero
 
+/-- 幅 ≤ 1 のブロック列の先端に荷を吊るした版もどの形にも差せる
+（`PayStep` / `ZeroStep` の幅 ≤ 1 の場合）。 -/
+theorem WPd_bdAC_le1 (C : TrioSeq) (hC : Bok C) :
+    ∀ (js : List ℕ), (∀ x ∈ js, x ≤ 1) → ∀ ks : List ℕ, WPd ks (bdAC C js)
+  | [], _, ks => WPd_payA ks Jk1.nil (FrmN_nilA ks) (WPd_nilAll ks) C hC
+  | (j :: js), hj, ks => by
+      have hjs : ∀ x ∈ js, x ≤ 1 := fun x hx => hj x (List.mem_cons_of_mem j hx)
+      have hj1 : j ≤ 1 := hj j (List.mem_cons_self)
+      refine WPd_step ks (FrmN_nilA ks) (WPd_nilAll ks) ?_
+      rcases j with _ | j
+      · exact WPd_bdAC_le1 C hC js hjs (0 :: ks)
+      rcases j with _ | j
+      · exact WPd_twoOf (k := 0) trivial (fun q _ => WPd_nilAll _)
+          (WPd_bdAC_le1 C hC js hjs (1 :: ks))
+      · exfalso; omega
+
+theorem GOK_bdAC_le1 (C : TrioSeq) (hC : Bok C) (js : List ℕ) (h : ∀ x ∈ js, x ≤ 1) :
+    GOK (bdAC C js) :=
+  (WPd_bnil _).mp (WPd_bdAC_le1 C hC js h [])
+
+#print axioms WPd_bdAC_le1
+
 end Small
 end TRIO
