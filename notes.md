@@ -16144,3 +16144,64 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 
 荷を文脈つきで扱うと、`GoodFb_snoc_dupJt0` の横鎖 `twoIt nil (pay nil C') k` が
 2 の枠の左兄弟に来て `VCtx`（兄弟 nil）から出る。追記170 の (i)/(ii) と同じ形。
+
+## 追記173: 行376 が `VPay` 1 文に落ちた。文脈を全称にすると階段が回る
+
+### 入れたもの（全部緑）
+
+    Cblk p    = fone nil :: (ftwo nil)^p          ブロック
+    plug_Cblk : plug (D ++ Cblk p) X = plug D (one nil (stkP p X))
+
+    inductive VCtx : List Frm → Prop              枠木が全部 nil の文脈
+      | nil : VCtx []
+      | blk : VCtx D → VCtx (D ++ Cblk p)
+
+    VOkk   := ∀ D, VCtx D → GOK (plug D nil)
+    VStep1 := ∀ D, VCtx D → GOK (plug D nil) → GOK (plug D (one nil nil))
+    VPay   := ∀ D, VCtx D → GOK (plug D nil) → ∀ C, Bok C → GOK (plug D (pay nil C))
+
+    GOK_Utw_V      : VStep1 → ∀ p n D, VCtx D → GOK (plug D nil) → GOK (plug D (Utw p n))
+    VOkk_of_VStep1 : VStep1 → VOkk
+    VStep1_of_VPay : VPay → VStep1                （APnil_gen0）
+    R376_of_VPay   : VPay → 行376 ∈ W 0
+
+### なぜ回るのか
+
+`VOkk` の再帰は
+
+    plug (D ++ Cblk p) nil = plug D (one nil (stk p))
+      p = 0    ⟸ 裸の 1 の記録（VStep1）
+      p = q+1  ⟸ GOK_oneStk_gen: 階段 Utw q n（走りが 1 段短い）
+
+階段 `Utw q n` は `plug D (Utw q (n+1)) = plug (D ++ Cblk q) (Utw q n)` なので
+**文脈が伸びる**。これは今まで詰まっていた形だが、
+
+  - 主張を `∀ D, VCtx D → …` と**文脈について全称**にする
+  - `n` について内側の帰納（文脈が伸びても主張は全称なので当たる）
+  - `p` について外側の帰納（走りが 1 段短くなる）
+
+とすると回る。層の添字（2 の枠の本数）を使わないので追記171 の非可述性が起きない。
+追記172 で「Dershowitz–Manna 多重集合が要る」と書いたが、
+**文脈を全称にすれば入れ子の 2 重帰納で足りる**（訂正）。
+
+### 残っている 1 文
+
+    VPay : ∀ D, VCtx D → GOK (plug D nil) → ∀ C, Bok C → GOK (plug D (pay nil C))
+
+荷を A2' で回すと、`GoodFb_snoc_dupJs0` / `dupJt0` の近似列が
+
+    D の末尾が fone nil → itJ   (pay nil C') k nil
+    D の末尾が ftwo nil → twoIt nil (pay nil C') k
+
+どちらも**同じ高さの横並び**。これを次の文脈の枠木にするので `VCtx`（枠木 nil）から出る。
+
+だから `VCtx` を「枠木が `nil` か横鎖」に広げ、`VOkk` / `VPay` をその族で回す必要がある。
+広げた族でも `GOK_oneStk_gen`（走りのステップ）はそのまま当たる
+（文脈 `D` について何も仮定していない）。
+
+### 次にやること
+
+  1. `VF`（枠木の構文的な族: `nil`、`pay`、`itJ`、`twoIt`）を定義
+  2. `VCtx` を `VF` の枠で作る族に広げる
+  3. `VOkk` を `∀ D ∈ VCtx, ∀ Z ∈ VF, GOK (plug D Z)` に一般化
+  4. `VPay` を A2' で証明（鎖は `k` についての帰納、文脈は全称）
