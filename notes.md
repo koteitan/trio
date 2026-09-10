@@ -17494,3 +17494,37 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 
 `AYs` / `AYsF` の証明で `hAP` が当たるのは鎖 `itJ (pay Z Y') k X` の全ての `k`
 なので、族を有限にはできない。ここが本当の壁。
+
+## 追記202: ★ `OneNil` は `GCtx` 文脈では緑。穴は 2 つの形だけ
+
+    OneNil_GCtx : GCtx ks ctx → FrmJ ks V → Rq ks V → APd ks V →
+        GOK (plug ctx (one V nil))
+    OneNil_GCtx_nil : GCtx ks ctx → GOK (plug ctx (one nil nil))
+
+`APd_oneNil`（20272）と `APd_payA`（20856）はどちらも**一般の `ks`**
+（`false` を含む）で緑。`APd_iff` で文脈に移すだけ。
+
+### つまり `OneNil` の穴は「`GCtx` でない文脈」だけ
+
+`GCtx` が要求するのは各 1 の枠の木 `U` について
+`FrmJ ks U` / `Rq ks U` / `APd ks U`、各 2 の枠の木 `N` について
+`JkA N` / `AUni N`。`GCtx` の形は `false` 1 個につき `[fone U, ftwo N]` なので
+
+    (1) 1 の枠の木が `Rq (false::ks) U = TopOk U` を満たさない
+        ＝ 2 の枠の直上に `two nil nil` を置く（`TW` の塔）
+    (2) 2 の枠が連続する（走り）
+
+の 2 つが `GCtx` からはみ出す。どちらも既知の壁。
+
+### 確認: 行376 の p = 1 の文脈は `GCtx`
+
+`RBlk [nil] = [fone nil, ftwo nil]` を積んだ文脈は `GCtx (replicate k false)`。
+1 の枠の木が全部 `nil` なので `Rq (false::ks) nil = TopOk nil = True` ✓。
+だから `p = 1` は通る（が `GOK_oneStk2` で既に緑なので新しくない）。
+`p ≥ 2` は 2 の枠が連続するので `GCtx` から出る。
+
+### 位置づけ
+
+`OneNil` は新しい難しさではなく、既知の壁ちょうどぶんだけ足りない。
+シートの 2 行が `OneNil` 1 本に集約されたので、壁の形は
+「`GCtx` を上の 2 方向に広げること」と言い切れる。
