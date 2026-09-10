@@ -54,6 +54,7 @@ Small.lean: 小さい行列を 1 個ずつ `W` に入れる。
 -/
 import L53Subst
 import H12Export
+import Mathlib.Data.Multiset.DershowitzManna
 
 namespace TRIO
 namespace Small
@@ -66530,6 +66531,38 @@ theorem NPd_true_twoTwoB {A B : Jk1} (hA : SbT A) (hB : SbF B) (ks : List Bool) 
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
 #print axioms OneNil_GCtx_nil
+
+/-! ### ★★★★★ 多重集合の測度による族 `WPd`（実験）
+
+形を `List ℕ` にし、数字は「その 2 の枠の兄弟に許す予算」。
+
+    0 :: ks       1 の枠だけ（2 の記録なし）
+    (k+1) :: ks   1 の枠 + 2 の枠。兄弟 N には「入り目が全部 k 以下の形」で
+                  差せることを課す
+
+停止性の測度は多重集合の Dershowitz–Manna 順序。
+`{k+1}` を取り除いて `k` 以下の元だけを足すので減る。
+`cntF = Σ kᵢ` では `1^i` が `2` より大きくて届かなかったが、
+多重集合では `{1}*i < {2}` が全ての `i` について成立する。 -/
+
+/-- `List ℕ` 版の枠木の妥当性。 -/
+def FrmN : List ℕ → Jk1 → Prop
+  | [], U => JkT U
+  | (_ :: _), U => JkA U
+
+theorem FrmN_JkA : ∀ (ks : List ℕ) (U : Jk1), FrmN ks U → JkA U
+  | [], _, h => h.1
+  | (_ :: _), _, h => h
+
+/-- DM 順序の 1 手: `k` を取り除いて `k` より小さい元だけを足す。 -/
+theorem dm_step {k : ℕ} {X Y : Multiset ℕ} (h : ∀ y ∈ Y, y < k) :
+    Multiset.IsDershowitzMannaLT (X + Y) (k ::ₘ X) := by
+  refine ⟨X, Y, {k}, by simp, rfl, ?_, ?_⟩
+  · rw [← Multiset.singleton_add, add_comm]
+  · intro y hy
+    exact ⟨k, by simp, h y hy⟩
+
+#print axioms dm_step
 
 end Small
 end TRIO
