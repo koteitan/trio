@@ -17563,3 +17563,38 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 
 `LStep2` の `Z = nil` が今回緑になった。残るのは `Z = one/two/pay`。
 `Z = pay A Y` は `TSibF_pay` で `Z = A` に落ちるはず。`Z = two A B` が走り。
+
+## 追記204: ★★★★★ `APd` 層の主要補題から `Rq` が全部外れた
+
+### 何が起きたか
+
+`Rq ks U`（`false` 頭のとき `TopOk U`、＝ 2 の記録の直上に 2 の記録を置けない）は
+`APd` 層の壁だった。それが以下の 4 つから全部外れた。
+
+    AYdT'       : TopOk Z を外した（素通しで使われていなかった）
+    APd_payA'   : Rq なし（AYdT' から）
+    AYs2        : CtxX なし（＝ Rq なし）
+    APd_oneNil' : Rq なし
+
+### 鍵は `CtxX` が JkT のためだけだったこと
+
+`GoodFb_snoc_innerJs` / `GoodFb_snoc_dupJs` / `APnil_gen` の `CtxX ctx X` は
+`JkT_plug` を作るためだけに使われている。ところが
+
+    JkT (plug ctx T) は CtxOk ctx があれば JkA T だけで出る
+    （ctx ≠ [] なら先頭が 1 の枠なので TopOk は文脈が持っている）
+
+    JkA_plug' : CtxJ ctx → JkA T → JkA (plug ctx T)
+    JkT_plug' : CtxOk ctx → JkA T → (ctx = [] → TopOk T) → JkT (plug ctx T)
+
+`ctx = []` のときだけ `TopOk T` が要るが、`GCtx ks ctx` で `ctx = []` なら
+`ks = []`（`GCtx_cons_ne`）で、`FrmJ [] V = JkT V` が `TopOk` を持っている。
+
+### まだ残る `Rq`
+
+`Rq` は `APd` と `GCtx` の**定義**にまだ入っている。定義から外すと
+（追記の `MPd` の節にある通り）`APd_all` の「`false` 頭の形に `two` 頭の木を差す」
+場合が走りになり、階段 `APd_nstN` が形を `false` 1 個ずつ伸ばすので
+停止性 `(cntF ks, ks.length)` と両立しない。そこは `MPd`（`FrQ` 枠）が回避している。
+
+今回の成果は「荷と `one V nil` の側には `Rq` は要らない」ことがはっきりしたこと。
