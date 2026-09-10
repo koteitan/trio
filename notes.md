@@ -16634,3 +16634,40 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 行列で見ると `…(d,2,0)(d+1,2,0)` で、**木の側の走り**。
 `WRun` は木の側の走りを解いたが、それは先端が純粋な走り `stk q` の場合。
 ここは先端に `one V nil` が付いている。
+
+## 追記183: `WStep0` は文脈の深さ 2 まで緑。壁は `LTwo (two nil nil)`
+
+### 緑にした深さ
+
+    WStep0_true    : GCtx (true::ks) ctx                       深さ 0
+    WStep0_ftwo    : ctx ++ [ftwo nil]                         深さ 1（TwoOk_oneWV）
+    WStep0_ftwoOne : ctx ++ [ftwo nil, fone (two nil nil)]     深さ 2（TwoOk_oneTwoOneWV）
+
+深さ 2 は `LOk_one` + `LOk_oneNil` + `LOk1_WV` で出る。
+
+### 深さ 3 で止まる理由
+
+    ctx ++ [ftwo nil, fone (two nil nil), ftwo nil]
+      ⟸ TwoOk (one (two nil nil) (two nil (one V nil)))
+      ⟸ LOk_one + LOk 1 (two nil (one V nil))
+      ⟸ LTwo (one V nil)
+      ⟸ LTwo_oneNil + LTwo V
+
+`LTwo V`:
+  - V = nil            ⟹ `LTwo_nil` 緑
+  - V = two nil nil    ⟹ **`LTwo (two nil nil)` = 元の壁**
+
+    LTwo Z := ∀ N, JkA N → (∀ j, LOk (j+1) N) → ∀ k, LOk (k+1) (two N Z)
+
+`TwOk_twoTwoNil`（緑）は `two N (two nil nil)` を `∀ q, NTw q N` の下で出す。
+`LTwo (two nil nil)` はそれを `∀ j, LOk (j+1) N` の下で要求する。
+**レベル一様性の移送**（`LOk` 一様 → `NTw` 一様）が要る。これが元の壁そのもの。
+
+### 位置づけ
+
+`WStep0` への帰着は #14 と行376 を 1 文にまとめ、層を消したが、
+残った 1 文の中身は元の壁と同じ。ただし
+
+  - 文脈の深さ 2 までは緑（前は深さ 0 だけだった）
+  - 壁が `LTwo (two nil nil)` という**具体的な 1 文**に絞れた
+    （前は `WallT` / `WallP` / `Wall` / `TwoStep` と複数あった）
