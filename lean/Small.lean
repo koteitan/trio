@@ -67219,5 +67219,70 @@ theorem R14_of_WPd : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms TowOk_of_WPd
 #print axioms R14_of_WPd
 
+/-! ### 走りの一般化: 左の兄弟が `nil` でなくてよい
+
+`GOK_oneUV_RunSB` の階段 `appJ V (UtwP [N] A n)` は
+
+    appJ V (UtwP [N] A 0)       = V
+    appJ V (UtwP [N] A (n+1))   = one V (two N (appJ A (UtwP [N] A n)))
+    appJ A (UtwP [N] A (n+1))   = one A (two N (appJ A (UtwP [N] A n)))
+
+なので、形を 1 本ずつ伸ばす帰納で閉じる。入り目は 0 と 1 だけ。 -/
+
+theorem WPd_stairA {k : ℕ} (hk : 1 ≤ k) {N A : Jk1} (hJN : JkA N) (hJA : JkA A)
+    (hAall : ∀ ks : List ℕ, WPd ks A) :
+    ∀ (n : ℕ) (B' : List ℕ),
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B') N) →
+      WPd (0 :: B') (Jk1.two N (appJ A (UtwP [N] A n)))
+  | 0, B', hsib =>
+      WPd_twoOf (k := 0) hJN
+        (fun q hq => hsib q (fun x hx => by have := hq x hx; omega))
+        (hAall (1 :: B'))
+  | (n + 1), B', hsib => by
+      refine WPd_twoOf (k := 0) hJN
+        (fun q hq => hsib q (fun x hx => by have := hq x hx; omega)) ?_
+      show WPd (1 :: B') (Jk1.one A (Jk1.two N (appJ A (UtwP [N] A n))))
+      refine WPd_step (1 :: B') (hJA : FrmN (1 :: B') A) (hAall (1 :: B')) ?_
+      refine WPd_stairA hk hJN hJA hAall n (1 :: B') ?_
+      intro q hq
+      have e : (0 : ℕ) :: q ++ (1 :: B') = (0 :: (q ++ [1])) ++ B' := by simp
+      rw [e]
+      refine hsib (q ++ [1]) ?_
+      intro x hx
+      rcases List.mem_append.mp hx with h1 | h1
+      · exact hq x h1
+      · simp at h1
+        omega
+
+/-- ★★★★★★ 走り（一般形、底は `nil`）。`WPd_run` は `A = nil` の場合。 -/
+theorem WPd_twoA_run {k : ℕ} (hk : 1 ≤ k) {A : Jk1} (hJA : JkA A)
+    (hAall : ∀ ks : List ℕ, WPd ks A) (ks : List ℕ) :
+    WPd ((k + 1) :: ks) (Jk1.two A Jk1.nil) := by
+  refine (WPd_ck k ks _).mpr (fun r hr U N hU hUk hJN hNt => ?_)
+  refine (WPd_c0 (r ++ ks) _).mp ?_ U hU hUk
+  rw [WPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtx_split (r ++ ks) ctx hc
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (Jk1.two A Jk1.nil))) :=
+    WCtx_JkT (0 :: (r ++ ks)) _ hc (Jk1.two N (Jk1.two A Jk1.nil))
+      (⟨hJN, hJA, trivial⟩ : FrmN (0 :: (r ++ ks)) (Jk1.two N (Jk1.two A Jk1.nil)))
+  have erun : Jk1.two N (Jk1.two A Jk1.nil) = RunS ([N] ++ [A]) := rfl
+  rw [plug_snoc] at hJT ⊢
+  rw [erun] at hJT ⊢
+  refine GOK_oneUV_RunSB ctx0 [N] A V (by simpa using hJN) hJA hJT hGV ?_
+  intro n
+  cases n with
+  | zero =>
+      show GOK (plug ctx0 V)
+      exact hGV
+  | succ n =>
+      show GOK (plug ctx0 (Jk1.one V (Jk1.two N (appJ A (UtwP [N] A n)))))
+      rw [← plug_snoc]
+      exact (WPd_iff (0 :: (r ++ ks)) _).mp
+        (WPd_stairA hk hJN hJA hAall n (r ++ ks) hNt) _ hc
+
+#print axioms WPd_stairA
+#print axioms WPd_twoA_run
+
 end Small
 end TRIO
