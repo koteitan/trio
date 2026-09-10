@@ -17034,3 +17034,51 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 要るのは `GOK (plug (D ++ [fone N] ++ E) A)`（兄弟 `A` が置ける）と階段。
 
 次はこれを実装する。
+
+## 追記191: ★★★★★ 壁が `RStep [] N`（`one V N` を 1 個積む）1 本になった
+
+### 何をしたか
+
+`WallT r : TwOk (r+1) 0 (two nil nil)` の文脈は `D' ++ [ftwo N]` で、
+`D'` は `Fter` なので `D0 ++ [fone V]` の形（`TwSt_split3` を新設して
+分割と一緒に `∀ X, JkA X → JkT (plug D0 X)` も返すようにした）。すると
+
+    plug (D' ++ [ftwo N]) (two nil nil)
+      = plug D' (two N (two nil nil))          （plug_snoc2）
+      = plug D0 (one V (two N (two nil nil)))  （plug_snoc）
+      = plug D0 (one V (RunS ([N] ++ [nil])))  （rfl）
+
+なので `GOK_oneUV_RunSB` がそのまま当たる。要るのは階段だけで、
+それは `GOK_appJ_UtwP_of_RStep` により `RStep [N] nil`、
+さらに `RStep_snoc` により `RStep [] N` から出る。
+
+    RStep [] N : ∀ D V, JkA V → (∀ X, JkA X → JkT (plug D X)) →
+        GOK (plug D V) → GOK (plug D (one V N))
+
+    R14_of_RStep0N : (∀ N r, JkA N → NTw r N → RStep [] N) → シート証明中の行
+
+**レベル添字も走りも消えた。**「置ける `V` の上に `one V N` を積める」1 文。
+
+### 壁の正体は「レベル ⇄ 走りの長さ」の交換
+
+    TTw (RunS Bs) at level q+1  =  STw (RunS (N :: Bs)) at level q
+
+`plug (D' ++ [ftwo N]) (RunS Bs) = plug D' (RunS (N :: Bs))` だから。
+レベルが 1 下がるかわりに走りが 1 本伸びる。追記171 の「非可述性の正体は
+2 の枠の本数」と、走りの長さの帰納（`WRunB`）は同じものの 2 つの見方だった。
+
+### 現在の連鎖（全部緑）
+
+    RStep [] N（one V N を 1 個積む）
+      → RStep [N] nil                （RStep_snoc）
+      → WallT                        （WallT_of_RStep）
+      → シート証明中の行             （R14_of_RStep）
+
+    RPay（荷を 1 個吊るす）→ RStep0（one V nil）→ RStep (replicate q nil) nil
+      → NStep の 2 文（N が走りのとき）→ WRep → WallT
+
+### 新しい部品
+
+    TwSt_split3   分割 + JkT の閉包
+    GOK_oneN_split / GOK_blkN_split / plug_blk2
+      N = plug E (one A (RunS (Bs ++ [B]))) と分解してバッドルートで切り直す
