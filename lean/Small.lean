@@ -67671,5 +67671,150 @@ theorem R376_of_QPnil (hpay : ∀ (ks : List ℕ) (C : TrioSeq), Bok C →
 #print axioms WQd_Utw
 #print axioms R376_of_QPnil
 
+/-! ### `WQd` の荷。走りの直下だけを仮定に残す -/
+
+theorem GOK_chainJdQ {ks : List ℕ}
+    (hpn : ∀ (C : TrioSeq), Bok C → ∀ Z : Jk1, FrmN ks Z → WQd ks Z →
+      WQd ks (Jk1.pay Z C))
+    {ctx : List Frm} (hc : WQtx ks ctx) {X T : Jk1}
+    (hXok : FrmN ks X) (hXk : WQd ks X)
+    (hXp : ∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay X C)) (hTok : JkA T)
+    (hstep : ∀ V : Jk1, FrmN ks V → WQd ks V →
+      (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay V C)) → WQd ks (Jk1.one V T)) :
+    ∀ n, GOK (plug ctx (itJ T n X)) ∧ WQd ks (itJ T n X) ∧
+      (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay (itJ T n X) C))
+  | 0 => ⟨(WQd_iff ks X).mp hXk ctx hc, hXk, hXp⟩
+  | (n + 1) => by
+      obtain ⟨-, h2, h3⟩ := GOK_chainJdQ hpn hc hXok hXk hXp hTok hstep n
+      have hok := FrmN_itJ ks hTok n hXok
+      have h4 := hstep (itJ T n X) hok h2 h3
+      exact ⟨(WQd_iff ks _).mp h4 ctx hc, h4,
+        fun C hC => hpn C hC _ (FrmN_itJ ks hTok (n + 1) hXok) h4⟩
+
+theorem AYdQ0 (ks : List ℕ)
+    (hpn : ∀ (C : TrioSeq), Bok C → ∀ Z : Jk1, FrmN ks Z → WQd ks Z →
+      WQd ks (Jk1.pay Z C)) :
+    ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkA Z → WQd (0 :: ks) Z →
+      ∀ (X : Jk1), FrmN ks X → WQd ks X →
+        (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay X C)) →
+        WQd ks (Jk1.one X (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkA Z → WQd (0 :: ks) Z →
+      ∀ (X : Jk1), FrmN ks X → WQd ks X →
+        (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay X C)) →
+        WQd ks (Jk1.one X (Jk1.pay Z Y))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb Z hZ hRZ X hX hXk hXp
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact WQd_congr ks (fun l => (jk1_one_pay_nil X Z l).symm)
+          (WQd_step ks hX hXk hXp hRZ)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hpres : ∀ V : Jk1, FrmN ks V → WQd ks V →
+            (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay V C)) →
+            WQd ks (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
+          fun V hV hVk hVp =>
+            WQd_congr ks (fun l => (jk1_one_pay_nil V Z l).symm)
+              (WQd_step ks hV hVk hVp hRZ)
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e, WQd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (WQtx_JkT ks ctx hc
+            (Jk1.one X (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            (FrmN_one ks X (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) hX
+              ⟨hZ, by simpa using hYb⟩))
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (GOK_chainJdQ (T := Jk1.pay Z ([] : TrioSeq)) hpn hc hX hXk hXp
+          ⟨hZ, Bok_nil⟩ hpres n).1 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hpres : ∀ V : Jk1, FrmN ks V → WQd ks V →
+            (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay V C)) →
+            WQd ks (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
+          fun V hV hVk hVp => hdl hdb Z hZ hRZ V hV hVk hVp
+        rw [hsplit, WQd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (WQtx_JkT ks ctx hc
+            (Jk1.one X (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            (FrmN_one ks X (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) hX
+              ⟨hZ, by rw [← hsplit]; exact hYb⟩))
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (GOK_chainJdQ (T := Jk1.pay Z Y.dropLast) hpn hc hX hXk hXp
+          ⟨hZ, hdb⟩ hpres n).1 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        rw [WQd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_innerJs0 hw
+          (WQtx_JkT ks ctx hc (Jk1.one X (Jk1.pay Z Y))
+            (FrmN_one ks X (Jk1.pay Z Y) hX ⟨hZ, hYb⟩))
+          hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact (WQd_iff ks _).mp (hh (Bok_oper hYb hn) Z hZ hRZ X hX hXk hXp) ctx hc ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb Z hZ hRZ X hX hXk hXp
+  exact key hYb.mem hYb Z hZ hRZ X hX hXk hXp
+
+/-- 走りの直下の荷。ここだけが残る。 -/
+def QRunPay : Prop := ∀ (k : ℕ) (ks : List ℕ) (C : TrioSeq), Bok C → ∀ Z : Jk1,
+    FrmN ((k + 1) :: ks) Z → WQd ((k + 1) :: ks) Z → WQd ((k + 1) :: ks) (Jk1.pay Z C)
+
+theorem WQd_payA (hblk : QRunPay) : ∀ (ks : List ℕ) (C : TrioSeq), Bok C → ∀ Z : Jk1,
+    FrmN ks Z → WQd ks Z → WQd ks (Jk1.pay Z C)
+  | [], C, hC, Z, hZ, hZk => (WQd_bnil _).mpr (AY0 C hC Z hZ ((WQd_bnil Z).mp hZk))
+  | (0 :: ks), C, hC, Z, hZ, hZk =>
+      (WQd_c0 ks _).mpr (fun U hU hUk hUp =>
+        AYdQ0 ks (fun C' hC' Z' hZ' hZ'k => WQd_payA hblk ks C' hC' Z' hZ' hZ'k)
+          C hC Z (FrmN_JkA _ Z hZ) hZk U hU hUk hUp)
+  | ((k + 1) :: ks), C, hC, Z, hZ, hZk => hblk k ks C hC Z hZ hZk
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by exact dm_cons0 ks
+
+/-- ★★★★★★ 行376 は「走りの直下の荷」1 本から出る。 -/
+theorem R376_of_QRunPay (hblk : QRunPay) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_QPnil (fun ks C hC => WQd_payA hblk ks C hC Jk1.nil (FrmN_nilA ks) (WQd_nilAll ks))
+
+#print axioms AYdQ0
+#print axioms WQd_payA
+#print axioms R376_of_QRunPay
+
 end Small
 end TRIO
