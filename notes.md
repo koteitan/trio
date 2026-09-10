@@ -17465,3 +17465,32 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 
 で、それぞれ「兄弟の族」相対の版まで緑になっている（`OChain` / `TChain`）。
 残るのは測度（追記198）。
+
+## 追記201: `OneNil` の 3 ケースが全部緑。残るのは測度だけ
+
+    OneNil_nil  : D = []              → AY0（緑、無条件）
+    OneNil_fone : D = ctx ++ [fone U] → AYsF（緑）
+    OneNil_ftwo : D = ctx ++ [ftwo N] → TSibF_pay（緑）
+
+残るのは
+
+    fone : hAP : ∀ V ∈ OChain U W, GOK (plug ctx V) → GOK (plug ctx (one V W))
+    ftwo : TSibF ctx W W N
+
+どちらも **1 段短い文脈**での「兄弟について全称」な主張（`OSib ctx W` / `TSibF ctx W`）。
+
+### 測度の詳細
+
+`OSib D W`（`W` が木、兄弟は族）の遷移:
+
+    W = nil       : (|D|, 0)      → (|D|-1, jsz V)   V は兄弟（族の member）
+    W = pay A Y   : (|D|, jsz W)  → (|D|,   jsz A)   ✓ 減る
+    W = one A B   : (|D|, jsz W)  → (|D|+1, jsz B)   ✗ 文脈が伸びる
+    W = two A B   : 同上                             ✗
+
+`W = nil` のとき兄弟 `V` の荷が要り、`V` は `OChain` の member。
+`OChain` は `V ↦ one V (pay W Y)` で無限に伸びるので `jsz V` に上限が無い。
+だから `(|D|, jsz W)` の辞書式では止まらない。
+
+`AYs` / `AYsF` の証明で `hAP` が当たるのは鎖 `itJ (pay Z Y') k X` の全ての `k`
+なので、族を有限にはできない。ここが本当の壁。
