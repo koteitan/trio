@@ -62822,5 +62822,87 @@ theorem GOK_blkNN_RunSB (D : List Frm) (Bs : List Jk1) (B : Jk1)
 #print axioms GOK_oneNN_RunSB
 #print axioms GOK_blkNN_RunSB
 
+
+/-! ### ★★★★★ 階段も「1 段積む」1 文に落とす（先端が任意の走り版）
+
+    PBlk Bs V = fone V :: Bs.map ftwo
+    plug (D ++ PBlk Bs V) X = plug D (one V (RunP Bs X))
+    ABt Bs B n = appJ B (UtwP Bs B n)      ABt 0 = B, ABt (n+1) = one B (RunP Bs (ABt n))
+
+なので `plug D' (ABt Bs B (n+1)) = plug (D' ++ PBlk Bs B) (ABt Bs B n)`。
+文脈を族について全称にすると `n` の帰納で `n = 0`（`GOK (plug D' B)`）に落ちる。 -/
+
+def PBlk (Bs : List Jk1) (V : Jk1) : List Frm := Frm.fone V :: Bs.map Frm.ftwo
+
+theorem plug_PBlk (D : List Frm) (Bs : List Jk1) (V X : Jk1) :
+    plug (D ++ PBlk Bs V) X = plug D (Jk1.one V (RunP Bs X)) := by
+  show plug (D ++ (Frm.fone V :: Bs.map Frm.ftwo)) X = _
+  rw [show D ++ (Frm.fone V :: Bs.map Frm.ftwo)
+      = (D ++ [Frm.fone V]) ++ Bs.map Frm.ftwo by simp,
+    plug_append, plug_mapFtwo, plug_snoc]
+
+def ABt (Bs : List Jk1) (B : Jk1) (n : ℕ) : Jk1 := appJ B (UtwP Bs B n)
+
+theorem ABt_zero (Bs : List Jk1) (B : Jk1) : ABt Bs B 0 = B := rfl
+
+theorem ABt_succ (Bs : List Jk1) (B : Jk1) (n : ℕ) :
+    ABt Bs B (n + 1) = Jk1.one B (RunP Bs (ABt Bs B n)) := rfl
+
+theorem GOK_ABt_of_step (D1 : List Frm) (Bs : List Jk1) (B : Jk1)
+    (hbase : GOK (plug D1 B))
+    (hstep : ∀ D' : List Frm, RFam [PBlk Bs B] D1 D' →
+      GOK (plug D' B) → GOK (plug D' (Jk1.one B (RunP Bs B)))) :
+    ∀ (n : ℕ) (D' : List Frm), RFam [PBlk Bs B] D1 D' → GOK (plug D' (ABt Bs B n)) := by
+  have h0 : ∀ D' : List Frm, RFam [PBlk Bs B] D1 D' → GOK (plug D' B) := by
+    refine RFam_GOK hbase ?_
+    intro D' Bk hBk hD' hG
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hBk
+    subst hBk
+    rw [plug_PBlk]
+    exact hstep D' hD' hG
+  intro n
+  induction n with
+  | zero => intro D' hD'; exact h0 D' hD'
+  | succ n ih =>
+      intro D' hD'
+      rw [ABt_succ, ← plug_PBlk]
+      exact ih _ (RFam.step (by simp) hD')
+
+/-- `one U V` 型の階段。 -/
+theorem GOK_appJ_UtwP (D : List Frm) (Bs : List Jk1) (B U : Jk1)
+    (hbase : GOK (plug D U))
+    (hB : GOK (plug (D ++ PBlk Bs U) B))
+    (hstep : ∀ D' : List Frm, RFam [PBlk Bs B] (D ++ PBlk Bs U) D' →
+      GOK (plug D' B) → GOK (plug D' (Jk1.one B (RunP Bs B)))) :
+    ∀ n : ℕ, GOK (plug D (appJ U (UtwP Bs B n))) := by
+  intro n
+  cases n with
+  | zero => exact hbase
+  | succ n =>
+      show GOK (plug D (Jk1.one U (RunP Bs (ABt Bs B n))))
+      rw [← plug_PBlk]
+      exact GOK_ABt_of_step (D ++ PBlk Bs U) Bs B hB hstep n _ RFam.base
+
+/-- `two N X` 型の階段。 -/
+theorem GOK_two_UtwP (D : List Frm) (Bs : List Jk1) (B N : Jk1)
+    (hbase : GOK (plug D (Jk1.two N Jk1.nil)))
+    (hB : GOK (plug ((D ++ [Frm.ftwo N]) ++ PBlk Bs Jk1.nil) B))
+    (hstep : ∀ D' : List Frm,
+      RFam [PBlk Bs B] ((D ++ [Frm.ftwo N]) ++ PBlk Bs Jk1.nil) D' →
+      GOK (plug D' B) → GOK (plug D' (Jk1.one B (RunP Bs B)))) :
+    ∀ n : ℕ, GOK (plug D (Jk1.two N (UtwP Bs B n))) := by
+  intro n
+  cases n with
+  | zero => exact hbase
+  | succ n =>
+      show GOK (plug D (Jk1.two N (Jk1.one Jk1.nil (RunP Bs (ABt Bs B n)))))
+      rw [← plug_snoc2, ← plug_PBlk]
+      exact GOK_ABt_of_step ((D ++ [Frm.ftwo N]) ++ PBlk Bs Jk1.nil) Bs B hB hstep n _
+        RFam.base
+
+#print axioms GOK_ABt_of_step
+#print axioms GOK_appJ_UtwP
+#print axioms GOK_two_UtwP
+
 end Small
 end TRIO
