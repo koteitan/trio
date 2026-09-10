@@ -64655,6 +64655,60 @@ theorem LAll1_twoRun {N A : Jk1} (hJN : JkA N) (hJA : JkA A)
   exact GOK_oneUV_RunSB D' [N] A V hBs hJA hJT (hV D' hD') (hst k D' V hD' hJV hV)
 
 #print axioms LAll1_twoRun
+
+/-! ### ★★★★★ #14 が要る文脈は走りを含まない
+
+`R14_of_OneNil` の連鎖で `OneNil` が呼ばれる文脈は
+
+    TWD0 = [fone nil, ftwo nil]、TWBlk = [fone (two nil nil), ftwo nil]
+    PBlk [] W = [fone W]、PBlk [] nil = [fone nil]
+
+を並べたものだけ。**2 の枠は必ず 1 の枠の直後に来る**（`[fone U, ftwo N]` の形）
+ので、2 の枠が連続することはない。つまり #14 の壁は追記202 の (1)
+（2 の枠の直上に `two nil nil`）だけで、(2)（走り）は出てこない。 -/
+
+inductive NoRunCtx : List Frm → Prop
+  | nil : NoRunCtx []
+  | fone : ∀ {D : List Frm} {U : Jk1}, NoRunCtx D → NoRunCtx (D ++ [Frm.fone U])
+  | blk : ∀ {D : List Frm} {U N : Jk1}, NoRunCtx D →
+      NoRunCtx (D ++ [Frm.fone U, Frm.ftwo N])
+
+theorem NoRunCtx_TWD0 : NoRunCtx TWD0 := by
+  have h := NoRunCtx.blk (D := ([] : List Frm)) (U := Jk1.nil) (N := Jk1.nil) NoRunCtx.nil
+  simpa [TWD0] using h
+
+theorem NoRunCtx_RFam_TWBlk : ∀ D : List Frm, RFam [TWBlk] TWD0 D → NoRunCtx D := by
+  intro D hD
+  induction hD with
+  | base => exact NoRunCtx_TWD0
+  | step hB hD ih =>
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+      subst hB
+      exact NoRunCtx.blk (U := Jk1.two Jk1.nil Jk1.nil) (N := Jk1.nil) ih
+
+theorem NoRunCtx_RFam_TWD0 {D0 : List Frm} (h0 : NoRunCtx D0) :
+    ∀ D : List Frm, RFam [TWD0] D0 D → NoRunCtx D := by
+  intro D hD
+  induction hD with
+  | base => exact h0
+  | step hB hD ih =>
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+      subst hB
+      exact NoRunCtx.blk (U := Jk1.nil) (N := Jk1.nil) ih
+
+theorem NoRunCtx_RFam_fone {D0 : List Frm} (h0 : NoRunCtx D0) (W : Jk1) :
+    ∀ D : List Frm, RFam [PBlk ([] : List Jk1) W] D0 D → NoRunCtx D := by
+  intro D hD
+  induction hD with
+  | base => exact h0
+  | step hB hD ih =>
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+      subst hB
+      exact NoRunCtx.fone (U := W) ih
+
+#print axioms NoRunCtx_RFam_TWBlk
+#print axioms NoRunCtx_RFam_TWD0
+#print axioms NoRunCtx_RFam_fone
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
