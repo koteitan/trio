@@ -16823,3 +16823,66 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 
 　　壁 = `TTwo`（`STw A` と `TTw B` から `TTw (two A B)`）
 これが行376（走り一般）と #14 の共通の 1 点。木の帰納の他のマスは全部緑。
+
+## 追記187: ★★★★★ 壁を「もう 1 段積む」2 文 `NStep` まで詰めた
+
+### 何が起きたか
+
+`TwOk_twoTwoNil` は `∀ q, NTw q N`（**全レベルの全文脈**で N が良い）を要求していた。
+実際に使われるのは階段を潰すときに現れる **N と nil だけでできた文脈**だけ、と分かった。
+
+    PJ N j = [ftwo N, fone nil] を j 回積んだ文脈
+
+    plug (D ++ PJ N j) (two N (nstN N (k+1))) = plug (D ++ PJ N (j+1)) (two N (nstN N k))
+
+なので `k` の帰納（`j` は全称、`WRun` と同じ手）で `k = 0` に落ち、
+`k = 0` は `j` の帰納で `GOK_twoNil_gen` の連鎖になる。要るのは
+
+    WRep : ∀ j i, GOK (plug (D ++ PJ N j ++ (fone N)^i) N)
+
+だけ。`j = i = 0` は `NTw r N` そのもの。
+
+さらに、この文脈族は `D0` に `[fone N]` と `[ftwo N, fone nil]` を足して作れて
+
+    plug (D ++ [fone N]) N           = plug D (one N N)
+    plug (D ++ [ftwo N, fone nil]) N = plug D (two N (one nil N))
+
+なので族の帰納で 2 文に落ちる。
+
+    NStep N D0 : ∀ D, NFam N D0 D → GOK (plug D N) →
+        GOK (plug D (one N N)) ∧ GOK (plug D (two N (one nil N)))
+
+    R14_of_NStep : (∀ N D0, NStep N D0) → シート証明中の行
+
+全部緑（一発）。**レベル添字が消えた。** 残りは「N の上にもう 1 段 N を積めるか」だけ。
+
+### 既にある道具との対応
+
+    GOK_oneNN_gen : … → GOK (plug D (one N N))          ← NStep の第 1 文
+    GOK_blkNN_gen : … → GOK (plug D (two N (one nil N))) ← NStep の第 2 文
+
+どちらも緑。ただし仮定に
+
+    hNs : ∀ d, jk1 d N = jk1 d (stk p) ++ [(d+p+1, 2, 0)]     （N が走り `stk (p+1)`）
+    hstair : ∀ n, GOK (plug D (appJ N (Utw p n)))  /  (plug D (two N (Utw p n)))
+
+が付く。つまり **N が走りのときは道具が揃っている**。一般の N が残り。
+
+### `TW` の展開に出る枠は全部 nil（だが `TwSt` の全称性が潰す）
+
+    TowOk_of_WallT → TwoOk_TWt → TTwA_TWt (N := nil) → TwOk_TWt
+
+を辿ると、`TwOk_TWt` が積む枠は `ftwo nil` と `fone (two nil nil)` だけ。
+2 の枠の木はいつも `nil` で、`NTw q nil` は全レベル無条件（`NTw_nil`）。
+実際 `TwOk_twoNilTwoNil`（`TwOk r m (two nil (two nil nil))`、`Fter r m`）は緑。
+
+それでも `WallT` が要るのは、`TwSt (r+1) (m+1)` の **1 の枠の欄**が
+
+    ∀ D'', TwSt (r+1) m D'' → GOK (plug D'' U)
+
+と**全文脈**を要求するから。`fone (two nil nil)` を `m = 0`（2 の枠の直上）に積む
+ときにこれが `WallT` そのものになる。枠を nil に制限した梯子を作っても、
+1 の枠の欄をその梯子相対にすると `TwSt' ⊆ TwSt` が消えて `TwOk_twoNilTwoNil`
+が使えなくなる（追記186 の 2 択と同じ）。
+
+`NStep` は文脈を**具体的に**取るので、この全称性の問題が起きない。そこが利点。
