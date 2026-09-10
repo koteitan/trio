@@ -62976,5 +62976,33 @@ theorem GOK_two_UtwP_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
 #print axioms GOK_appJ_UtwP_of_RStep
 #print axioms GOK_two_UtwP_of_RStep
 
+
+/-! ### ★★★★★ `NStep` の 2 文が `RStep` から出る（`N` が走りのとき） -/
+
+theorem GOK_oneNN_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
+    (hJBs : ∀ A ∈ Bs, JkA A) (h : RStep Bs B) (D : List Frm)
+    (hJTD : ∀ X : Jk1, JkA X → JkT (plug D X))
+    (hGN : GOK (plug D (RunS (Bs ++ [B])))) :
+    GOK (plug D (Jk1.one (RunS (Bs ++ [B])) (RunS (Bs ++ [B])))) :=
+  GOK_oneNN_RunSB D Bs B hJBs hJB
+    (hJTD _ ⟨JkA_RunS_snocB Bs B hJBs hJB, JkA_RunS_snocB Bs B hJBs hJB⟩) hGN
+    (GOK_appJ_UtwP_of_RStep hJB hJBs h D (RunS (Bs ++ [B]))
+      (JkA_RunS_snocB Bs B hJBs hJB) hJTD hGN)
+
+theorem GOK_blkNN_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
+    (hJBs : ∀ A ∈ Bs, JkA A) (h : RStep Bs B) (D : List Frm)
+    (hJTD : ∀ X : Jk1, JkA X → JkT (plug D X))
+    (hbase : GOK (plug D (Jk1.two (RunS (Bs ++ [B])) Jk1.nil))) :
+    GOK (plug D (Jk1.two (RunS (Bs ++ [B]))
+      (Jk1.one Jk1.nil (RunS (Bs ++ [B]))))) :=
+  GOK_blkNN_RunSB D Bs B hJBs hJB
+    (hJTD _ ⟨JkA_RunS_snocB Bs B hJBs hJB, trivial,
+      JkA_RunS_snocB Bs B hJBs hJB⟩)
+    (GOK_two_UtwP_of_RStep hJB hJBs h D (RunS (Bs ++ [B]))
+      (JkA_RunS_snocB Bs B hJBs hJB) hJTD hbase)
+
+#print axioms GOK_oneNN_of_RStep
+#print axioms GOK_blkNN_of_RStep
+
 end Small
 end TRIO
