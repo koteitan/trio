@@ -16,6 +16,23 @@
     R376_of_RPay : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
     R376_of_RStep0 : RStep0 → 目標の行（RStep0 = 裸の 1 の記録を 1 個積む）
 
+## 目標の行（行376）は `RPayN0` 1 本
+
+    RPayN0 : ∀ D, (∀ X, JkA X → JkT (plug D (one nil X))) → GOK (plug D nil) →
+        ∀ C, Bok C → GOK (plug D (pay nil C))
+
+    R376_of_RPayN0  : RPayN0  → 目標の行
+    R376_of_RStepN0 : RStepN0 → 目標の行
+    RStepN0 : ∀ D, (JkT 閉包) → GOK (plug D nil) → GOK (plug D (one nil nil))
+
+行376 の連鎖では兄弟も木も全部 `nil`、文脈も
+`[fone nil] ++ (ftwo nil)^q` のブロックの積み重ね（枠の木は全部 nil）。
+だから仮定を `nil` に固定できる。
+
+    末尾 fone nil : GOK (plug D' (one nil (pay nil C)))  ← AYs、OSib D' nil が要る
+    末尾 ftwo nil : GOK (plug D' (two nil (pay nil C)))  ← TSib_pay、TSib D' nil が要る
+    D = []        : AY0（緑、無条件）
+
 ## 兄弟について全称な 2 つの述語
 
     OSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (one W X))
@@ -305,4 +322,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜195。
+経緯は `notes.md` の追記175〜197。
