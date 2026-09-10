@@ -64277,6 +64277,115 @@ theorem OneNil_GCtx_nil (ks : List Bool) (ctx : List Frm) (hc : GCtx ks ctx) :
   OneNil_GCtx ks Jk1.nil (FrmJ_nilA ks) (Rq_of_TopOk ks Jk1.nil trivial)
     (APd_nil ks) ctx hc
 
+
+/-! ### ★★★★★ `AYdT` の `TopOk Z` は素通しで一度も使われていない
+
+だから外せる。すると `APd_payA` の `Rq` も不要になる。 -/
+
+theorem AYdT' : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z →
+    APd (false :: ks) Z → APd (false :: ks) (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List Bool) (Z : Jk1), JkA Z →
+      APd (false :: ks) Z → APd (false :: ks) (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb ks Z hZ hZk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact APd_congr (false :: ks) (fun l => (jk1_pay_nil l Z).symm) hZk
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hZnil : APd (false :: ks) (Jk1.pay Z ([] : TrioSeq)) :=
+          APd_congr (false :: ks) (fun l => (jk1_pay_nil l Z).symm) hZk
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e, APd_cf]
+        intro m U N hU hR hUk hN hNt
+        refine APd_two_of_ctx hU hR hUk ?_
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ
+          (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hZ, by simpa using hYb⟩)
+            trivial)
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (APd_chainT (T := Jk1.pay Z ([] : TrioSeq)) hc hN hNt ⟨hZ, Bok_nil⟩
+          (AYdT_hstep m hZnil) n).1 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : APd (false :: ks) (Jk1.pay Z Y.dropLast) := hdl hdb ks Z hZ hZk
+        rw [hsplit, APd_cf]
+        intro m U N hU hR hUk hN hNt
+        refine APd_two_of_ctx hU hR hUk ?_
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJt hw (GCtx_CtxOk _ ctx hc) hN hZ
+          (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _
+            ⟨hN, hZ, by rw [← hsplit]; exact hYb⟩) trivial)
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (APd_chainT (T := Jk1.pay Z Y.dropLast) hc hN hNt ⟨hZ, hdb⟩
+          (AYdT_hstep m hprev) n).1 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        rw [APd_cf]
+        intro m U N hU hR hUk hN hNt
+        refine APd_two_of_ctx hU hR hUk ?_
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_innerJt hw (GCtx_CtxOk _ ctx hc) hN hZ
+          (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hZ, hYb⟩) trivial)
+          hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have hh2 := hh (Bok_oper hYb hn) ks Z hZ hZk
+        have hc' := hc
+        rw [GCtx_ct] at hc'
+        obtain ⟨ctx0, U', hce, hc0, hU', hR', hU'k⟩ := hc'
+        subst hce
+        have h2 := (APd_cf ks _).mp hh2 m U' N hU' hR' hU'k hN hNt
+        rw [plug_snoc]
+        exact (APd_iff _ _).mp h2 ctx0 hc0 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb ks Z hZ hZk
+  exact key hYb.mem hYb ks Z hZ hZk
+
+/-! ### 荷の追加（どの形でも）と、階段 -/
+
+theorem APd_payA' : ∀ (ks : List Bool) (V : Jk1), FrmJ ks V → APd ks V →
+    ∀ C : TrioSeq, Bok C → APd ks (Jk1.pay V C)
+  | [], V, hV, hVk, C, hC => APd_payE V hV hVk C hC
+  | (true :: ks), V, hV, hVk, C, hC => APd_payT ks V (FrmJ_JkA _ V hV) hVk C hC
+  | (false :: ks), V, hV, hVk, C, hC => AYdT' C hC ks V (FrmJ_JkA _ V hV) hVk
+
+#print axioms AYdT'
+#print axioms APd_payA'
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
