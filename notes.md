@@ -16703,3 +16703,52 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
   - `GOK_blkNN_gen` / `GOK_oneUV_gen`（`GoodFb` 3 フィールドの本体）が緑
   - `WStep0` が文脈の深さ 2 まで緑
   - 壁が `NTwUp` 1 文に確定
+
+## 追記185: ★ 走りを含まない兄弟なら壁は無い。壁は「走りを含む兄弟」だけ
+
+### 緑にしたもの
+
+    inductive NoRun : Jk1 → Prop           走りを含まない木
+      | nil
+      | one : NoRun A → NoRun B → NoRun (one A B)
+      | two : NoRun A → NoRun B → TopOk B → NoRun (two A B)
+
+    NTw_NoRun_all : NoRun X → (∀ q, NTw q X) ∧ (TopOk X → ∀ q, TwOk (q+1) 0 X)
+    NTw_of_NoRun  : NoRun X → ∀ q, NTw q X
+    NTw_twoNilNil : ∀ q, NTw q (two nil nil)
+
+木の帰納で回る理由:
+
+    NTw q (one A B)  ⟸ TwOk_one で A（レベル q, j）と B（レベル q, j+1）に割れる
+    NTw q (two A B)  ⟸ TwOk_two で A（レベル q）と B（レベル q+1, j = 0）に割れる
+
+`j = 0` は「2 の枠の直上」。`B` が 2 の記録で始まると走りになる。
+`NoRun` の `two` に `TopOk B` を課しているので、そこが起きない。
+
+### つまり `NTwUp` は「走りを含む兄弟」だけの話
+
+`TwSt (r+1) 0` の兄弟 `N` が `NoRun` なら `∀ q, NTw q N` は無条件で出る。
+壁が残るのは `N` が走りを含むとき（例: `N = stk 2 = two nil (two nil nil)`）。
+
+### 兄弟を `NoRun` に制限した層 `TwSt'` は作れなかった
+
+`TwSt'`（2 の枠の兄弟に `NoRun` を課した層）を作れば `WallT'` は緑になる。
+実際 `TwOk'_twoTwoNil` は `NTw'_of_NoRun` で埋まる。しかし
+
+  - `TwSt'` の 1 の枠の欄を `TwSt'` 相対にすると `TwSt' ⊄ TwSt` になり、
+    既存の `TwOk_nil` / `TwOk_pay` が使えない。
+    `TwOk_nil` は `TwOk_oneNil` 経由で `TwOk_pay`（荷、大きい）を使うので、
+    そこも移植が要る。
+  - `TwSt'` の 1 の枠の欄を `TwSt` 相対にすると `TwSt' ⊆ TwSt` になるが、
+    `TwOk'_one` が `TwOk (r+1) 0 (two nil nil)`（＝ `WallT`）を要求する。
+
+移植は 500 行規模で、しかも荷の横鎖 `twoIt N (pay X Y) k` が `NoRun` に入るとは
+限らない（`NoRun` に `pay` の構成子を足しても `TopOk` の条件が要る）。
+
+### 位置づけ
+
+    壁 = NTwUp を「走りを含む兄弟」について示すこと
+
+これは行376（走り一般）と同じ強さに見える。#14 だけを先に通す道は、
+`TW n` の文脈に出る兄弟が全部 `nil` であることを使うはずだが、
+`TwOk` の全称性がそれを潰している。
