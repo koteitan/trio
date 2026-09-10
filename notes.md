@@ -18110,3 +18110,59 @@ B が乗っていると、展開の bad root が B の中に入るので、B の
 
 `APd` / `NPd` / `MPd` / 梯子 `TwOk` のどれで書いても、
 壁は「2 の枠の兄弟の条件を 1 段上げる」1 本に帰着する。
+
+## 追記215: `NPd` 層が完成。壁は `NLift` 1 本
+
+2026-09-10。追記214 の続き。`APd` から `Rq` だけを外した族 `NPd` を仕上げた。
+
+### 無条件で緑になったもの
+
+    NPd / NCtx の定義（測度は APd と同じ (cntF ks, ks.length)）
+    NPd_bnil / NPd_ct / NPd_cf / NCtx_bnil / NCtx_ct / NCtx_cf
+    NCtx_JkT / NPd_iff / NPd_step / NPd_congr / NCtx_split / NPd_twoOf
+    NCtx_rep / NPd_plug_rep / NPd_twoNilGen
+    NPd_nilF  : ∀ ks, NPd (false :: ks) nil          （MPd の MNil 相当）
+    GOK_chainJdN / AYdN / NPd_payT / NPd_payE
+    NPd_two_of_ctx / NPd_chainT / AYdTN_hstep / AYdTN
+    NPd_payA  : ∀ ks V, FrmJ ks V → NPd ks V → ∀ C, Bok C → NPd ks (pay V C)
+    NPd_oneNil / NPd_nilT
+    NPd_nilAll : ∀ ks, NPd ks nil
+
+`MPd` 層で未証明だった `MNil` も荷 `MPd_payA` も、`NPd` 層では無条件。
+やはり `MPd` が閉じなかったのは `Rq` ではなく兄弟条件を `FrQ` にしたせい。
+
+### 壁の最小形（層版）
+
+    NLift : ∀ N ks, JkA N →
+      (∀ j, NPd (rep j true ++ (true :: ks)) N) →
+      ∀ j, NPd (rep j true ++ (true :: (false :: ks))) N
+
+「N が形 ks の上のどの 1 の枠つき形にも差せるなら、
+2 の枠を 1 本足した形 `false::ks` の上でも差せる」。
+
+これから出るもの（全部緑）:
+
+    NPd_nstN_of_NLift     : NLift → ∀ k ks, NPd (false::ks) (nstN N k)
+    NPd_twoTwoGen_of_NLift: NLift → NPd (true::ks) (two N (two nil nil))
+    NPd_twoTwoB_of_NLift  : NLift → ∀ ks, NPd (false::ks) (two nil nil)   ← 走り
+    NPd_TW_of_NLift       : NLift → ∀ n ks, NPd (false::ks) (TW n)
+    TowOk_of_NLift        : NLift → TowOk
+    R14_of_NLift          : NLift → #14
+
+### 壁の 2 つの書き方は同じ
+
+    梯子 TwOk : NTwStep : NTw r N → NTw (r+1) N
+    層 NPd    : NLift   : （ks の上で差せる）→（false::ks の上で差せる）
+
+どちらも「2 の枠の兄弟に課した条件を、2 の枠 1 本ぶん上に持ち上げる」。
+`APd` の再帰も梯子の再帰も枠積みの下から上へ進むので、兄弟条件は
+必然的に「1 段下の世界での良さ」になり、壁はそれを 1 段上で使い直すことを
+要求する（追記209 の構造的な理由）。
+
+### いま一番弱い仮定たち（どれも #14 を出す）
+
+    NLift    （層 NPd、兄弟条件を 1 段上げる）
+    NTwStep  （梯子 TwOk、NTw を 1 段上げる）
+    MRun     （層 MPd、two nil nil を 2 の枠の直上に置く）
+    WallT    （梯子 TwOk、同上）
+    OneNil / RPay （文脈版）

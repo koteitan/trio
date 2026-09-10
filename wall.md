@@ -19,6 +19,20 @@ Lean で緑:
 塔を 3 種類（`nstN` / `UtwP` / `twoIt`）試して、どれも要るのは
 `NTw q M`（q ≥ r、M は 2 の枠の兄弟）だけだと確認した。詳細は notes 追記209。
 
+## 同じ壁の層版（`NLift`）
+
+`NPd` = `APd` から `Rq`（= `TopOk`、走り禁止）だけを外した族。
+`NPd` 層では空木も荷も無条件（`NPd_nilAll` / `NPd_payA`）。残るのは 1 本:
+
+    NLift : ∀ N ks, JkA N →
+      (∀ j, NPd (rep j true ++ (true :: ks)) N) →
+      ∀ j, NPd (rep j true ++ (true :: (false :: ks))) N
+
+    R14_of_NLift : NLift → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+
+`NTwStep` と `NLift` はどちらも「2 の枠の兄弟に課した条件を
+2 の枠 1 本ぶん上に持ち上げる」。詳細は notes 追記214・215。
+
 ## 同じ壁の別表記（`OneNil`）
 
     OneNil : ∀ (D : List Frm) (W : Jk1), JkA W →
