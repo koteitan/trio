@@ -64251,8 +64251,36 @@ theorem GOK_twoNil_of_SelfW (ctx0 : List Frm) (V : Jk1) (hGV : GOK (plug ctx0 V)
 #print axioms OneNil_nil
 #print axioms OneNil_fone
 #print axioms OneNil_ftwo
+/-! ### ★★★★★ `OneNil` は `GCtx` 文脈では緑
+
+`APd_oneNil` と `APd_payA` はどちらも**一般の `ks`**（`false` を含む）で緑。
+`APd_iff` で文脈に移すと、`GCtx ks ctx` かつ `V` が `APd ks` なら
+`GOK (plug ctx (one V nil))` が出る。
+
+つまり `OneNil` の穴は「`GCtx` でない文脈」だけ。`GCtx` でないのは
+- 1 の枠の木が `Rq` を満たさない（2 の枠の直上に `two nil nil`）
+- 2 の枠が連続する（走り）
+の 2 つ。 -/
+
+theorem OneNil_GCtx (ks : List Bool) (V : Jk1) (hV : FrmJ ks V) (hR : Rq ks V)
+    (hVk : APd ks V) (ctx : List Frm) (hc : GCtx ks ctx) :
+    GOK (plug ctx (Jk1.one V Jk1.nil)) :=
+  (APd_iff ks _).mp
+    (APd_oneNil ks V hV hR hVk (fun C hC => APd_payA ks V hV hR hVk C hC)) ctx hc
+
+theorem FrmJ_nilA : ∀ ks : List Bool, FrmJ ks Jk1.nil
+  | [] => JkT_nil
+  | (_ :: _) => trivial
+
+theorem OneNil_GCtx_nil (ks : List Bool) (ctx : List Frm) (hc : GCtx ks ctx) :
+    GOK (plug ctx (Jk1.one Jk1.nil Jk1.nil)) :=
+  OneNil_GCtx ks Jk1.nil (FrmJ_nilA ks) (Rq_of_TopOk ks Jk1.nil trivial)
+    (APd_nil ks) ctx hc
+
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
+#print axioms OneNil_GCtx
+#print axioms OneNil_GCtx_nil
 
 end Small
 end TRIO
