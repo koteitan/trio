@@ -18543,3 +18543,50 @@ rank の外側再帰で定義できるので `∀ ks'` が書ける。ところ�
 **「2 の枠の兄弟に課した条件を、2 の枠 1 本ぶん上に持ち上げる」**
 
 の 1 点。層を作り直しても動かない（追記216・221・222）。
+
+## 追記224: 塔の Δ が 0 か 2 か。制限した族が使えない決定的な理由
+
+2026-09-10。追記223 の続き。
+
+### 平らな塔と上がる塔
+
+    荷の塔  twoIt N T n     = two (twoIt N T (n-1)) T
+      語: jk1 l N ++ ((l+1,2,0) :: jk1 (l+1) T)^n     ← 同じ高さで横に並ぶ
+      Δ = 0。だから兄弟条件は同じ段のまま（`TwOk_twoIt` は `NTw r` を保つ）。
+
+    走りの塔 nstN N k       = one nil (two N (nstN N (k-1)))
+      語: (D,1,0) jk1 D N (D+1,2,0) を D = l+1, l+3, l+5, … で繰り返す
+      Δ = 2（`Mtwd 2`）。だから兄弟 N が 1 段ずつ深くなる。
+
+**壁 = 「悪い部分の行 0 の持ち上げ Δ が 2」**。Δ = 0 の塔（荷）は
+兄弟条件を保つので閉じる。Δ = 2 の塔（走り）は保たない。
+
+### 階段は k = 1 で既に詰まる
+
+    NPd (false::ks) (nstN N 0) = NPd (false::ks) nil        ← NPd_nilF、緑
+    NPd (false::ks) (nstN N 1) = NPd (false::ks) (one nil (two N nil))
+      ⟸ NPd_step + NPd_twoNilGen（形 false::ks）
+      ⟸ N を形 rep j true ++ (true::(false::ks)) に差す      ← 1 段上げ
+
+k = 1 で既に `NLift` が要る。
+
+### 文脈の族を #14 の枠だけに制限しても駄目な理由（決定版）
+
+族を `Fam = TWD0 ++ (TWBlk|TWD0|[fone nil]|[fone (two nil nil)])^*` に
+制限し、`P(C) = GOK (plug C (two nil nil))`、`Q(C) = GOK (plug C nil)` を
+族の帰納法で回すと:
+
+1. 走りの階段は `k` の帰納＋文脈を族で全称化すれば回る
+   （`Stair(k+1) at C = Stair(k) at C ++ TWD0`）。底は `Q`。
+2. `Q(C ++ [fone V])` は `APnil_gen0` で
+   「`GOK (plug C V)`」＋「荷 `∀ C', GOK (plug C (pay V C'))`」に落ちる。
+3. その荷を A2' で回すと、dup の場合に鎖 `itJ (pay V C'') n V` が要る。
+   `itJ T (n+1) V = one (itJ T n V) T` なので、
+   **枠の木が `itJ T n V`（族の外の任意の木）になる**。
+
+つまり荷の鎖が任意の枠木を要求するので、枠木を `{nil, two nil nil}` に
+制限した族では閉じない。だから `NPd` のように枠木を任意に取るしかなく、
+すると枠木 `two nil nil` が形 `false::ks` に来て `NRunNil` が要る。
+
+**#14 の枠は全部 `ftwo nil` なのに一般の兄弟が必要になるのは、
+荷の鎖のせい**、というのが正確な理由。
