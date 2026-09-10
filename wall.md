@@ -8,6 +8,26 @@
 
 いまの壁は次の行（行376）の 1 文。
 
+## いまの証明中の行列（シート）
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,2,0)
+
+帰着の鎖（全部緑）:
+
+    R375m_62_of_bdA2   : (∀ n, GOK (bdA (replicate n 2))) → この行列
+    bdA_rep2_of_mixed  : MixTow → ∀ n, GOK (bdA (replicate n 2))
+    R375m_62_of_MixTow : MixTow → この行列
+
+    def MixTow : ∀ n i, GOK (bdA (replicate n 2 ++ replicate i 1))
+    MixTow_zero : n = 0 は緑（WPd_bdA_le1）
+
+残りは `n ≥ 1`、木で書くと
+
+    bdA (replicate (n+1) 2 ++ …) = one nil (two nil (two nil (bdA (replicate n 2 ++ …))))
+
+＝ **幅 2 のブロックを木の上に足す**。`GOK_BTstep`（緑）は下にしか足せない。
+これは下の `ZeroStep` と同じ 1 点。
+
 ## 最小形
 
     ZeroStep : ∀ U, JkT U → GOK U → ∀ pre, GOK (BT U pre) →
