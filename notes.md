@@ -17422,3 +17422,46 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
     AYsF     : AYs の hAP を OChain Xb Z（V ↦ one V (pay Z Y)）に制限
     TSibF_pay: TSib_pay の兄弟を TChain Wb X（V ↦ two V (pay X Y)）に制限
     GOK_chainJF / GOK_twoIt_chainF がそれぞれの鎖
+
+## 追記200: ★★★★★ シートの 2 行が両方 `OneNil` 1 本になった
+
+### 結論
+
+    OneNil : ∀ D W, JkA W → (∀ X, JkA X → JkT (plug D (one W X))) →
+        GOK (plug D W) → GOK (plug D (one W nil))
+
+**「置ける `W` の上に裸の 1 の記録を 1 個積める」— これだけ。**
+
+    R14_of_OneNil  : OneNil → シート証明中の行
+    R376_of_OneNil : OneNil → シート目標の行
+    OneNil_of_RPay : RPay   → OneNil
+
+### #14 の道
+
+    OneNil
+      → OneTwo   : GOK (plug D W) → GOK (plug D (one W (two nil nil)))
+      → TWStep   : GOK (plug D (two nil nil)) → GOK (plug D (TW 1))
+      → TowOk_of_TWStep → R14_mem
+
+各段は `GOK_oneUV_RunSB`（走り、兄弟任意）＋ `GOK_appJ_UtwP`（塔を 1 ブロックに割る）。
+基底 `GOK (plug TWD0 (two nil nil)) = GOK (one nil (stk 2))` は
+`GOK_oneStk2`（既存、無条件）で消える。
+
+### 行376 の道
+
+    OneNil → RStepN0 → RStepN_rep → GOK_Utw_of_RStepN0 → UtwAll → R376_of_UtwAll
+
+### `OneNil` の中身
+
+`APnil_gen0`（緑、文脈一般）で
+
+    OneNil ⟸ ∀ C, Bok C → GOK (plug D (pay W C))    ＝ RPay
+
+なので実質は荷 1 個。文脈の末尾で場合分けすると
+
+    D = []        : AY0（緑、無条件）
+    末尾 fone U   : AYs / AYsF（緑）
+    末尾 ftwo N   : TSib_pay / TSibF_pay（緑、梯子なし）
+
+で、それぞれ「兄弟の族」相対の版まで緑になっている（`OChain` / `TChain`）。
+残るのは測度（追記198）。
