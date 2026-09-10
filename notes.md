@@ -16608,3 +16608,29 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
     GOK (plug ctx (one V (stkP p Z)))    Z = one V' nil など
 
 の階段を `bms` で測って、`GOK_oneUV_gen` の一般版を作るのが次。
+
+## 追記182: 走りの長さに上限を付けて #14 と行376 の仮定を分離した
+
+    WFamB b     文脈は Wblk V p（p ≤ b）を積んだものだけ
+    WStep0B b := ∀ ctx, WFamB b ctx → ∀ V, WV V → WCtxT ctx V → GOK (plug ctx V)
+                   → GOK (plug ctx (one V nil))
+
+    R14_of_WStep0  : WStep0B 1        → #14
+    R376_of_WStep0 : (∀ b, WStep0B b) → 行376
+
+`TowOk_W` は `WRunB 1`（走り 2 まで）しか使わないので、#14 は `b = 1` で足りる。
+`b = 1` の文脈は `[fone V]` と `[fone V, ftwo nil]` を積んだものだけで、
+**文脈の中に走りが出ない**（2 の枠の直下は必ず 1 の枠）。
+
+### `b = 1` の残り
+
+`GCtx` で書けない理由は 1 つだけになった。
+
+    Rq (false :: ks) (two nil nil) = TopOk (two nil nil) = False
+
+つまり `fone (two nil nil)` が `ftwo` の直上に来る形。`TowOk_W` は 2 段目からこれ。
+`WStep0_ftwo`（緑）は 1 段だけ扱える。
+
+行列で見ると `…(d,2,0)(d+1,2,0)` で、**木の側の走り**。
+`WRun` は木の側の走りを解いたが、それは先端が純粋な走り `stk q` の場合。
+ここは先端に `one V nil` が付いている。
