@@ -8,6 +8,46 @@
 
 いまの壁は次の行（行376）の 1 文。
 
+## ★★★ 最小形（2026-09-11 更新。族 `WRd` で書き直した）
+
+    RunNil2 : ∀ k k' (B : List ℕ) (N : Jk1), JkA N →
+        (∀ q (入り目 ≤ k), WRd (q ++ ((k'+1) :: B)) N) →
+        WRd ((k'+1) :: B) (two N nil)
+
+**「2 の記録の直上に 2 の記録を置く（底は空木）」— これだけ。**
+
+    R375m_62_of_RunNil2 : RunNil2 → 証明中の行列 …(5,2,0)(6,2,0)
+    R376_of_RunNil2     : RunNil2 → 目標の行376 …(4,2,0)(5,3,0)
+    GOK_bdA_of          : RunNil2 → 幅に上限のないブロック列 bdA js が全部
+
+もう壁に入っていないもの（全部無条件で緑）:
+
+    WRd_payA      荷。走りの形でも。（前は QRunPay / RPayN0 / BLoad / hrun が壁）
+    WRd_oneNil    1 の枠。（前は ZeroStep / OneNil が壁）
+    WRd_nilT      1 の枠の形での空木
+    WRd_twoNilGen 走りの長さ 1（外の形の頭が 1 の枠）
+    WRd_stkP_of / WRd_bdA_of  幅の上限が無い（前は GOK_BTall の幅の帰納が要った）
+
+## 族 `WRd`（走りをほどいた族）
+
+    WRd []            V = GOK V
+    WRd (0 :: ks)     V = ∀ U, FrmN ks U → WRd ks U → WRd ks (one U V)
+    WRd ((k+1) :: ks) V = ∀ r (入り目 ≤ k), r ++ ks ≠ [] → ∀ N, JkA N →
+        (∀ q (入り目 ≤ k), WRd (q ++ (r ++ ks)) N) → WRd (r ++ ks) (two N V)
+
+枠 1 枚 = 入り目 1 個。長さ `m` の走りは形 `(k_m+1) :: … :: (k_1+1) :: 0 :: ks`。
+走りの長さが入り目に縛られない。停止性は多重集合 DM。
+`r ++ ks ≠ []` は `TopOk (two _ _) = False` から。
+
+**荷が通る理由**: `A2'` の横鎖 `twoIt N T n = two (twoIt N T (n-1)) T` は
+`WRd` では**兄弟を伸ばすだけ**で、走りの長さも予算も増えない
+（`AYdTR_hstep` が `WRd_ck_shift` で形をずらすだけ）。
+`WQd`（融合した族）では同じ鎖が走りを 1 本伸ばすので `f(k)+1 ≤ f(k)` になっていた。
+
+**`RunNil2` が残る理由**: 走りの階段（`GOK_oneUV_RunSB` の `UtwP`）の
+1 ブロックは走りの枠を作り直すので、形が `[e2, 0]` 伸びる。
+外の兄弟の条件は `e2 < e'`、内の兄弟の条件は `e2 = e'` を要求して両立しない。
+
 ## いまの証明中の行列（シート）
 
     (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,2,0)

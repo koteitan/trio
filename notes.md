@@ -20200,3 +20200,47 @@ GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
 「走りの長さ」は 2 のはず。いまの `WPd`/`WQd` は木の `two` の個数で数えるので
 `m+1` と数えてしまう。**高さで数える族**か、**歩幅 0 の塔補題**が要る。
 既存の塔補題 `snocY_mem` / `snocYd_mem` は歩幅 `dl ≥ 1` しか無い。
+
+## 追記262: ★★★★★★ 荷が壁から外れた。壁は `RunNil2` 1 文
+
+2026-09-11。族 `WRd`（枠 1 枚 = 入り目 1 個）で壁を書き直した。緑になったもの:
+
+    AYdR / AYdTR / WRd_payA  荷。どの形でも（走りの形でも）無条件
+    WRd_oneNil / WRd_nilT    1 の枠、1 の枠の形での空木
+    WRd_twoNilGen            走りの長さ 1（外の形の頭が 1 の枠）
+    WRd_stkP_of / WRd_bdA_of RunNil2 から幅に上限のないブロック列
+    RunNilR_of_RunNil2       残るのは走りの長さ 2 以上だけ
+    R375m_62_of_RunNil2      RunNil2 → 証明中の行列
+    R376_of_RunNil2          RunNil2 → 目標の行376
+
+### 荷が通った理由
+
+`A2'` の dup が要求する横鎖は `twoIt N T n = two (twoIt N T (n-1)) T`。
+
+- `WQd`（融合した族、ブロック全体が入り目 1 個）では、この鎖は
+  `RunP Ns (twoIt N T n) = RunP (Ns ++ [X]) T` と読むしかなく、走りが 1 本伸びる。
+  長さの上限 `f(k)` に対して `f(k)+1 ≤ f(k)` を要求して矛盾（追記247/261）。
+- `WRd`（ほどいた族）では `two (…) T` は「2 の枠 1 枚、兄弟が鎖」なので、
+  **兄弟を伸ばすだけ**。走りの長さも予算も増えない。`AYdTR_hstep` は
+  `WRd_ck_shift` で形をずらすだけで閉じる。
+
+つまり **`QRunPay` / `RPayN0` / `BLoad` / `hrun` はもう壁ではない**。
+壁のリストから荷が消えた。
+
+### 残る 1 文
+
+    RunNil2 : ∀ k k' B N, JkA N →
+        (∀ q (入り目 ≤ k), WRd (q ++ ((k'+1) :: B)) N) →
+        WRd ((k'+1) :: B) (two N nil)
+
+「2 の記録の直上に 2 の記録（底は空木）」。長さ 1（外の形の頭が 1 の枠）は
+`WRd_twoNilGen` で緑（階段は `SelfW`＝1 の枠で積むだけ）。
+長さ 2 以上だと階段が `GOK_oneUV_RunSB` の `UtwP` になり、
+1 ブロックが走りの枠を作り直すので形が `[e2, 0]` 伸びる。
+外の兄弟が `e2 < e'`、内の兄弟が `e2 = e'` を要求して両立しない（追記261）。
+
+### いまの帰着（全部緑の含意）
+
+    RunNil2 → RunNilR → GOK (bdA js)（幅に上限なし）
+            → MixTow → R375m ++ [(6,2,0)]      証明中の行列
+            → GOK (one nil (stk q))（全ての q）→ R373 ++ [(5,3,0)]  行376
