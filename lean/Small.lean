@@ -65749,9 +65749,19 @@ theorem NRunNil_nilSib (kk : List Bool) (U : Jk1) (hU : FrmJ kk U) (hUk : NPd kk
     NPd kk (Jk1.one U (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))) :=
   NPd_step kk hU hUk (NPd_twoTwoGen_nil kk)
 
+/-- 交互塔（全部 nil）はどの形にも差せる。走りを含むのに無条件。 -/
+theorem NPd_nstN_nil_all : ∀ (k : ℕ) (ks : List Bool), NPd ks (nstN Jk1.nil k)
+  | 0, ks => NPd_nilAll ks
+  | (k + 1), ks => by
+      show NPd ks (Jk1.one Jk1.nil (Jk1.two Jk1.nil (nstN Jk1.nil k)))
+      exact NPd_step ks (FrmJ_nilA ks) (NPd_nilAll ks)
+        (NPd_twoOf (N := Jk1.nil) trivial (fun _ => NPd_nilAll _)
+          (NPd_nstN_nil k ks))
+
 #print axioms NPd_nstN_nil
 #print axioms NPd_twoTwoGen_nil
 #print axioms NRunNil_nilSib
+#print axioms NPd_nstN_nil_all
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
