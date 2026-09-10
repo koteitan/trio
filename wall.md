@@ -77,6 +77,38 @@
 の 2 つ。どちらも既知の壁。`OneNil` は新しい難しさではなく、
 既知の壁ちょうどぶんだけ足りない。
 
+## `Rq`（2 の記録の直上は `TopOk`）は主要補題から全部外れた
+
+    AYdT'       : TopOk Z を外した（素通しで一度も使われていなかった）
+    APd_payA'   : Rq なし
+    AYs2        : CtxX なし（＝ Rq なし）
+    APd_oneNil' : Rq なし
+    MPd_oneNil  : MPd 層の one V nil
+
+鍵は `CtxX ctx X` が `JkT_plug` のためだけに使われていたこと。
+
+    JkA_plug' : CtxJ ctx → JkA T → JkA (plug ctx T)
+    JkT_plug' : CtxOk ctx → JkA T → (ctx = [] → TopOk T) → JkT (plug ctx T)
+
+`CtxOk ctx` があれば `ctx ≠ []` のとき先頭が 1 の枠なので `TopOk` は文脈が持つ。
+`ctx = []` のときだけ `TopOk T` が要るが、`GCtx ks []` なら `ks = []` で
+`FrmJ [] V = JkT V` が `TopOk` を持っている（`GCtx_cons_ne`）。
+
+**残る `Rq` は `APd` / `GCtx` の定義に入っている分だけ。** 定義から外すと
+`APd_all`（任意の `JkJ` 木を任意の形に差す）が壊れる。`MPd` はそこを
+`FrQ` 枠で回避しているが、`MCtx` は 1 の枠の木に `MPd ks U` も課すので
+`U = two nil nil` を `false` 頭に置くのは結局 `MNil`（`MPd` の壁）と同じ。
+
+## 別ライン `MPd` の現状
+
+    R14_mem_M  (MNil)   / R14_mem_A (∀ N, FrQ N → MBplus N)
+    R14_mem_L  (LStep)  / R14_mem_L1 (LStep1) / R14_mem_L2 (LStep2)
+
+    LStep2 : JkA N → AllA N → LAll N → JkA Z → LAll1 Z → LAll1 (two N Z)
+      Z = nil     : LOk_twoNilA（緑）
+      Z = pay A Y : LAll1_twoPay（緑、TSibF が仮定）
+      Z = one/two : 走り
+
 ## 残っている測度の問題
 
     木の構造で降りる: 木が縮む、文脈が 1 伸びる
@@ -335,4 +367,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜202。
+経緯は `notes.md` の追記175〜206。
