@@ -16,6 +16,31 @@
     R376_of_RPay : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
     R376_of_RStep0 : RStep0 → 目標の行（RStep0 = 裸の 1 の記録を 1 個積む）
 
+## 証明中の行（#14）は `TWStep` 1 本（基底は無条件）
+
+    TW 0 = two nil nil,  TW (n+1) = one (two nil nil) (two nil (TW n))
+    TWBlk = [fone (two nil nil), ftwo nil]
+    TWD0  = [fone nil, ftwo nil]
+
+    plug (D ++ TWBlk) X = plug D (one (two nil nil) (two nil X))
+    plug D (TW (n+1))   = plug (D ++ TWBlk) (TW n)
+
+文脈を `RFam [TWBlk] TWD0` について全称にすると `n` の帰納で `TW 0` に落ちる。
+基底は
+
+    plug TWD0 (two nil nil) = one nil (stk 2)
+    GOK_oneStk2 : GOK (one nil (stk 2))       ← 既存、無条件で緑
+
+なので消える。残る 1 文は
+
+    TWStep : ∀ D ∈ RFam [TWBlk] TWD0,
+        GOK (plug D (two nil nil)) →
+        GOK (plug D (one (two nil nil) (two nil (two nil nil))))
+
+**「`two nil nil` が置ける文脈には `TW 1` も置ける」— これだけ。**
+
+    R14_of_TWStep : TWStep → シート証明中の行
+
 ## いまの理解（要約）
 
 - 明示文脈で組み直す道は**梯子 `TwSt` を再現する**。梯子の唯一の穴は `Fter`
@@ -334,4 +359,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜198。
+経緯は `notes.md` の追記175〜199。
