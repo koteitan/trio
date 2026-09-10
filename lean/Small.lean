@@ -62713,5 +62713,114 @@ theorem hMy_RunP (Bs : List Jk1) (B : Jk1) (h : ℕ) : ∀ t, 1 ≤ t →
 #print axioms My_RunP
 #print axioms hMy_RunP
 
+
+/-! ### 先端が任意の走りの塔 -/
+
+def UtwP (Bs : List Jk1) (B : Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (RunP Bs (appJ B (UtwP Bs B n)))
+
+theorem TopOk_UtwP (Bs : List Jk1) (B : Jk1) : ∀ n : ℕ, TopOk (UtwP Bs B n)
+  | 0 => trivial
+  | (_ + 1) => trivial
+
+theorem jk1_UtwP (Bs : List Jk1) (B : Jk1) : ∀ (n l : ℕ),
+    jk1 l (UtwP Bs B n) = (List.range n).flatMap
+      (fun k => shiftr01 (k * (Bs.length + 1)) 0
+        (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunP Bs B)))
+  | 0, l => by simp [UtwP, jk1]
+  | (n + 1), l => by
+      have e1 : jk1 l (UtwP Bs B (n + 1))
+          = (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunP Bs B))
+            ++ jk1 (l + (Bs.length + 1)) (UtwP Bs B n) := by
+        show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (RunP Bs (appJ B (UtwP Bs B n)))) = _
+        rw [jk1_RunP Bs (appJ B (UtwP Bs B n)) (l + 1),
+          jk1_appJ (UtwP Bs B n) B (l + 1 + Bs.length) (TopOk_UtwP Bs B n),
+          jk1_RunP Bs B (l + 1),
+          show l + 1 + Bs.length = l + (Bs.length + 1) from by omega]
+        simp [jk1, List.append_assoc]
+      rw [e1, jk1_UtwP Bs B n (l + (Bs.length + 1)), List.range_succ_eq_map,
+        List.flatMap_cons]
+      simp only [Nat.zero_mul, shiftr01_zero, List.flatMap_map, Function.comp_def]
+      congr 1
+      apply List.flatMap_congr
+      intro k _
+      rw [show ((l + (Bs.length + 1) + 1, 1, 0) : ℕ × ℕ × ℕ)
+              :: jk1 (l + (Bs.length + 1) + 1) (RunP Bs B)
+          = shiftr01 (Bs.length + 1) 0
+              (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunP Bs B)) from by
+        show _ = shiftr01 (Bs.length + 1) 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ)]
+          ++ shiftr01 (Bs.length + 1) 0 (jk1 (l + 1) (RunP Bs B))
+        rw [shift_col, jk1_shift (RunP Bs B) (l + 1) (Bs.length + 1)]
+        congr 2 <;> omega, shiftr01_add0]
+      congr 1
+      rw [Nat.succ_mul]
+      omega
+
+theorem Mtwd_UtwP (Y0 : TrioSeq) (Bs : List Jk1) (B : Jk1) (n l : ℕ) :
+    Mtwd (Bs.length + 1) Y0
+      (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunP Bs B)) n
+      = Y0 ++ jk1 l (UtwP Bs B n) := by
+  rw [Mtwd, jk1_UtwP]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  rw [Nat.mul_comm]
+
+theorem JkA_RunS_snocB (Bs : List Jk1) (B : Jk1) (hJBs : ∀ A ∈ Bs, JkA A)
+    (hJB : JkA B) : JkA (RunS (Bs ++ [B])) := by
+  show JkA (RunP (Bs ++ [B]) Jk1.nil)
+  rw [RunP_append]
+  exact JkA_RunP Bs hJBs (show JkA (Jk1.two B Jk1.nil) from ⟨hJB, trivial⟩)
+
+#print axioms jk1_UtwP
+#print axioms Mtwd_UtwP
+
+
+/-! ### ★★★★★ `NStep` の 2 文と `one U V`、先端が任意の走りで
+
+`N = RunS (Bs ++ [B]) = two B1 (… (two Bq (two B nil)))`（`Bi`, `B` は任意）
+に対して、階段さえあれば 3 つとも緑。 -/
+
+theorem GOK_oneUV_RunSB (D : List Frm) (Bs : List Jk1) (B U : Jk1)
+    (hJBs : ∀ A ∈ Bs, JkA A) (hJB : JkA B)
+    (hJT : JkT (plug D (Jk1.one U (RunS (Bs ++ [B])))))
+    (hGU : GOK (plug D U))
+    (hstair : ∀ n : ℕ, GOK (plug D (appJ U (UtwP Bs B n)))) :
+    GOK (plug D (Jk1.one U (RunS (Bs ++ [B])))) :=
+  GOK_oneUV_genM D (Bs.length + 1) (by omega) U (UtwP Bs B)
+    (JkA_RunP Bs hJBs hJB) (jk1_RunS_snocB Bs B) (TopOk_UtwP Bs B) (fun _ => rfl)
+    (fun Y0 l n => Mtwd_UtwP Y0 Bs B n l) (hMy_RunP Bs B) hJT hGU hstair
+
+theorem GOK_oneNN_RunSB (D : List Frm) (Bs : List Jk1) (B : Jk1)
+    (hJBs : ∀ A ∈ Bs, JkA A) (hJB : JkA B)
+    (hJT : JkT (plug D (Jk1.one (RunS (Bs ++ [B])) (RunS (Bs ++ [B])))))
+    (hGN : GOK (plug D (RunS (Bs ++ [B]))))
+    (hstair : ∀ n : ℕ,
+      GOK (plug D (appJ (RunS (Bs ++ [B])) (UtwP Bs B n)))) :
+    GOK (plug D (Jk1.one (RunS (Bs ++ [B])) (RunS (Bs ++ [B])))) :=
+  GOK_oneNN_genM D (Bs.length + 1) (by omega) (UtwP Bs B)
+    (JkA_RunS_snocB Bs B hJBs hJB) (JkA_RunP Bs hJBs hJB)
+    (jk1_RunS_snocB Bs B) (TopOk_UtwP Bs B) (fun _ => rfl)
+    (fun Y0 l n => Mtwd_UtwP Y0 Bs B n l) (hMy_RunP Bs B) hJT hGN hstair
+
+theorem GOK_blkNN_RunSB (D : List Frm) (Bs : List Jk1) (B : Jk1)
+    (hJBs : ∀ A ∈ Bs, JkA A) (hJB : JkA B)
+    (hJT : JkT (plug D (Jk1.two (RunS (Bs ++ [B]))
+      (Jk1.one Jk1.nil (RunS (Bs ++ [B]))))))
+    (hstair : ∀ n : ℕ,
+      GOK (plug D (Jk1.two (RunS (Bs ++ [B])) (UtwP Bs B n)))) :
+    GOK (plug D (Jk1.two (RunS (Bs ++ [B]))
+      (Jk1.one Jk1.nil (RunS (Bs ++ [B]))))) :=
+  GOK_blkNN_genM D (Bs.length + 1) (by omega) (UtwP Bs B)
+    (JkA_RunS_snocB Bs B hJBs hJB) (JkA_RunP Bs hJBs hJB) rfl
+    (jk1_RunS_snocB Bs B) (fun Y0 l n => Mtwd_UtwP Y0 Bs B n l)
+    (hMy_RunP Bs B) hJT hstair
+
+#print axioms GOK_oneUV_RunSB
+#print axioms GOK_oneNN_RunSB
+#print axioms GOK_blkNN_RunSB
+
 end Small
 end TRIO
