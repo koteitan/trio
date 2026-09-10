@@ -62363,5 +62363,32 @@ theorem hMy_RunS (As : List Jk1) (h : ℕ) : ∀ t, 1 ≤ t →
 #print axioms My_RunS
 #print axioms Mtwd_UtwR
 
+
+/-! ### ★★★★★ `NStep` の 2 文を「兄弟が任意の走り」で解く -/
+
+theorem GOK_oneNN_RunS (D : List Frm) (As : List Jk1) (hAs : ∀ A ∈ As, JkA A)
+    (hJT : JkT (plug D (Jk1.one (RunS (As ++ [Jk1.nil])) (RunS (As ++ [Jk1.nil])))))
+    (hGN : GOK (plug D (RunS (As ++ [Jk1.nil]))))
+    (hstair : ∀ n : ℕ, GOK (plug D (appJ (RunS (As ++ [Jk1.nil])) (UtwR As n)))) :
+    GOK (plug D (Jk1.one (RunS (As ++ [Jk1.nil])) (RunS (As ++ [Jk1.nil])))) :=
+  GOK_oneNN_genM D (As.length + 1) (by omega) (UtwR As)
+    (JkA_RunS_snoc As hAs) (JkA_RunS As hAs)
+    (jk1_RunS_snoc As) (TopOk_UtwR As) (fun _ => rfl)
+    (fun Y0 l n => Mtwd_UtwR Y0 As n l) (hMy_RunS As) hJT hGN hstair
+
+theorem GOK_blkNN_RunS (D : List Frm) (As : List Jk1) (hAs : ∀ A ∈ As, JkA A)
+    (hJT : JkT (plug D (Jk1.two (RunS (As ++ [Jk1.nil]))
+      (Jk1.one Jk1.nil (RunS (As ++ [Jk1.nil]))))))
+    (hstair : ∀ n : ℕ,
+      GOK (plug D (Jk1.two (RunS (As ++ [Jk1.nil])) (UtwR As n)))) :
+    GOK (plug D (Jk1.two (RunS (As ++ [Jk1.nil]))
+      (Jk1.one Jk1.nil (RunS (As ++ [Jk1.nil]))))) :=
+  GOK_blkNN_genM D (As.length + 1) (by omega) (UtwR As)
+    (JkA_RunS_snoc As hAs) (JkA_RunS As hAs) rfl
+    (jk1_RunS_snoc As) (fun Y0 l n => Mtwd_UtwR Y0 As n l) (hMy_RunS As) hJT hstair
+
+#print axioms GOK_oneNN_RunS
+#print axioms GOK_blkNN_RunS
+
 end Small
 end TRIO
