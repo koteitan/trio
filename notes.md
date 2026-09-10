@@ -17677,3 +17677,39 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 `Z = two A B`（B ≠ nil）も同じ。
 
 つまり `LStep2` の残りも「2 の枠が 2 枚」＝走り。
+
+## 追記208: #14 の文脈（枠の列）は 2 の枠が連続しない。ただし走りは木の側に出る
+
+### 事実
+
+`R14_of_OneNil` の連鎖で `OneNil` が呼ばれる文脈は
+
+    TWD0 = [fone nil, ftwo nil]
+    TWBlk = [fone (two nil nil), ftwo nil]
+    PBlk [] W = [fone W]
+
+を並べたものだけ。2 の枠は必ず 1 の枠の直後に来る（`NoRunCtx`、緑）。
+
+### ただし走りは消えていない
+
+`OneNil D W` で `W = two nil nil`、`D` が `ftwo nil` で終わるとき
+
+    plug D (one W nil) = … two nil (one (two nil nil) nil)
+    語 = … (l+1,2,0) (l+2,2,0) (l+2,1,0)
+
+で `(l+1,2,0)(l+2,2,0)` は走り。つまり
+**追記202 の (1)（2 の枠の直上に `two nil nil`）と (2)（走り）は
+枠で見るか語で見るかの違いで、同じもの**。
+
+枠の列が走りを含まないのは、走りが「枠 + そこに差す木」で出るから。
+`OneNil` の木は `one W nil` で走りを含まないが、兄弟 `W = two nil nil` が
+2 の枠の直上に来ることで語に走りが出る。
+
+### 位置づけ
+
+追記205 → 206 の訂正と合わせて、穴は 1 つ:
+
+    2 の記録の直上に 2 の記録（枠で見れば `Rq` / `MPd ks U`、
+    語で見れば走り）
+
+`OneNil` / `WallT` / `TTwo` / `MNil` / `LStep2` / `RPay` は全部これ。
