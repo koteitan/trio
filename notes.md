@@ -18629,3 +18629,55 @@ k = 1 で既に `NLift` が要る。
 
 `NAlt` の中身をさらに開くと `∀ k m, GOK (plug (ctx ++ AltC N k ++ (fone N)^m) N)`
 に落ちる（k の帰納法で `GOK_twoNil_gen` を回す）。
+
+## 追記226: 壁の最終形 `NIn`。「N を N 自身の 2 の枠の中に差す」
+
+2026-09-10。追記225 の続き。
+
+### 新しく緑になったもの
+
+    KtxJ         : CtxJ から HdT（走り禁止）を外した junk レベルの妥当性
+    JkA_plugK    : KtxJ ctx → JkA T → JkA (plug ctx T)
+    KtxJ_AltC    : JkA N → ∀ k, KtxJ (AltC N k)
+    NCtx_JkT_app : NCtx (true::ks) ctx → KtxJ E → JkA T → JkT (plug (ctx ++ E) T)
+    AltC_succ'   : AltC N (k+1) = AltC N k ++ [ftwo N, fone nil]
+
+    NIn : ∀ N ks, JkA N → (∀ j, NPd (rep j true ++ (true::ks)) N) →
+      ∀ ctx, NCtx (true::ks) ctx →
+      ∀ k m, GOK (plug (ctx ++ AltC N k ++ (fone N)^m) N)
+
+    NAlt_of_NIn : NIn → NAlt
+    R14_of_NIn  : NIn → #14
+    NIn_zero    : NIn の k = 0 の場合は緑
+
+### `NAlt` から `NIn` への落とし方
+
+交互文脈 `AltC N k` の右端は `fone nil` なので、`AltC_succ'` で右から
+1 ブロック剥がすと `GOK_twoNil_gen`（`two N nil` 専用の塔、緑）がそのまま
+使える形になる:
+
+    plug (ctx ++ AltC N (k+1)) (two N nil)
+      = plug ((ctx ++ AltC N k ++ [ftwo N]) ++ [fone nil]) (two N nil)
+
+    GOK_twoNil_gen の hGV : GOK (plug (ctx ++ AltC N k ++ [ftwo N]) nil)
+                          = GOK (plug (ctx ++ AltC N k) (two N nil))   ← k の帰納法
+    GOK_twoNil_gen の hstair m : GOK (plug (ctx ++ AltC N (k+1) ++ (fone N)^m) N)  ← NIn
+
+底 `k = 0` は `NPd_twoNilGen`（緑）。`JkT` は `KtxJ` で作れる
+（`CtxJ` の `HdT` は要らない、追記214）。
+
+### 壁の意味
+
+`NIn` は **「N を、N 自身を兄弟に持つ 2 の枠の中に差す」**。
+交互文脈 `AltC N k = [ftwo N, fone nil]^k` は N の 2 の枠を k 枚並べたもので、
+その中にもう一度 N を差せ、と言っている。自己言及がむき出しになった。
+
+`k = 0` は `hNt`（1 の枠だけ）で緑。`k ≥ 1` から壁。
+
+### 仮定の地図（更新）
+
+    NRun → NUni → NLift → NAlt → NRunNil → TowOk → #14
+                     ↑
+                   NIn（最終形、文脈だけの主張）
+
+`NIn → NAlt → NRunNil → #14` はすべて緑。

@@ -65874,6 +65874,86 @@ theorem R14_of_NAlt (h : NAlt) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ 
 
 #print axioms plug_two_nstN
 #print axioms R14_of_NAlt
+
+/-! ### `NAlt` を「N を交互文脈に差す」1 文に落とす
+
+交互文脈の右端は `fone nil` なので `GOK_twoNil_gen` がそのまま使え、
+`k` の帰納法が回る。底は `NPd_twoNilGen`（緑）。
+残るのは階段 `hstair m` だけで、それが「N を交互文脈 + 1 の枠 m 枚に差す」。 -/
+
+/-- 枠の並びに制限を付けない junk レベルの妥当性（`CtxJ` から `HdT` を外した版）。 -/
+def KtxJ : List Frm → Prop
+  | [] => True
+  | (Frm.fone U :: rest) => JkA U ∧ KtxJ rest
+  | (Frm.ftwo U :: rest) => JkA U ∧ KtxJ rest
+
+theorem JkA_plugK : ∀ (ctx : List Frm), KtxJ ctx → ∀ T : Jk1, JkA T → JkA (plug ctx T)
+  | [], _, _, hT => hT
+  | (Frm.fone _ :: rest), hc, T, hT => ⟨hc.1, JkA_plugK rest hc.2 T hT⟩
+  | (Frm.ftwo _ :: rest), hc, T, hT => ⟨hc.1, JkA_plugK rest hc.2 T hT⟩
+
+theorem KtxJ_AltC {N : Jk1} (hJN : JkA N) : ∀ k : ℕ, KtxJ (AltC N k)
+  | 0 => trivial
+  | (k + 1) => ⟨hJN, trivial, KtxJ_AltC hJN k⟩
+
+theorem NCtx_JkT_app {ks : List Bool} {ctx : List Frm} (hc : NCtx (true :: ks) ctx)
+    (E : List Frm) (hE : KtxJ E) (T : Jk1) (hT : JkA T) : JkT (plug (ctx ++ E) T) := by
+  rw [plug_append]
+  exact NCtx_JkT (true :: ks) ctx hc (plug E T) (JkA_plugK E hE T hT)
+
+theorem AltC_succ' (N : Jk1) : ∀ k : ℕ,
+    AltC N (k + 1) = AltC N k ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+  | 0 => by simp [AltC]
+  | (k + 1) => by
+      have ih := AltC_succ' N k
+      show [Frm.ftwo N, Frm.fone Jk1.nil] ++ AltC N (k + 1)
+        = ([Frm.ftwo N, Frm.fone Jk1.nil] ++ AltC N k) ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+      rw [ih, ← List.append_assoc]
+
+/-- 壁の最終形: `N` を交互文脈 `AltC N k` ＋ 1 の枠 `m` 枚に差す。 -/
+def NIn : Prop := ∀ (N : Jk1) (ks : List Bool), JkA N →
+    (∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) →
+    ∀ ctx : List Frm, NCtx (true :: ks) ctx →
+    ∀ k m : ℕ, GOK (plug (ctx ++ AltC N k ++ List.replicate m (Frm.fone N)) N)
+
+theorem NAlt_of_NIn (h : NIn) : NAlt := by
+  intro N ks hJN hNt ctx hc k
+  induction k with
+  | zero =>
+      show GOK (plug (ctx ++ ([] : List Frm)) (Jk1.two N Jk1.nil))
+      rw [List.append_nil]
+      exact (NPd_iff (true :: ks) _).mp (NPd_twoNilGen hJN ks hNt) ctx hc
+  | succ k ih =>
+      have e : ctx ++ AltC N (k + 1)
+          = (ctx ++ AltC N k ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil] := by
+        rw [AltC_succ' N k]; simp
+      have hJT : JkT (plug (ctx ++ AltC N (k + 1)) (Jk1.two N Jk1.nil)) :=
+        NCtx_JkT_app hc (AltC N (k + 1)) (KtxJ_AltC hJN (k + 1)) _ ⟨hJN, trivial⟩
+      rw [e] at hJT ⊢
+      refine GOK_twoNil_gen (ctx ++ AltC N k ++ [Frm.ftwo N]) Jk1.nil hJN hJT ?_ ?_
+      · rw [plug_snoc2]
+        exact ih
+      · intro m
+        have hh := h N ks hJN hNt ctx hc (k + 1) m
+        rw [e] at hh
+        rw [← plug_append]
+        exact hh
+
+theorem R14_of_NIn (h : NIn) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_NAlt (NAlt_of_NIn h)
+
+/-- `NIn` の `k = 0` は緑。壁は `k ≥ 1`（交互文脈が 1 ブロック以上）から。 -/
+theorem NIn_zero {N : Jk1} {ks : List Bool} (hJN : JkA N)
+    (hNt : ∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N)
+    (ctx : List Frm) (hc : NCtx (true :: ks) ctx) (m : ℕ) :
+    GOK (plug (ctx ++ AltC N 0 ++ List.replicate m (Frm.fone N)) N) := by
+  show GOK (plug (ctx ++ ([] : List Frm) ++ List.replicate m (Frm.fone N)) N)
+  rw [List.append_nil]
+  exact (NPd_iff _ N).mp (hNt m) _ (NCtx_rep hJN ks hNt m ctx hc)
+
+#print axioms NAlt_of_NIn
+#print axioms R14_of_NIn
+#print axioms NIn_zero
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
