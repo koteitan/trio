@@ -62928,7 +62928,7 @@ theorem JkT_RFam_PBlk (Bs : List Jk1) (B : Jk1) (hJB : JkA B)
       exact ih _ ⟨hJB, JkA_RunP Bs hJBs hX⟩
 
 def RStep (Bs : List Jk1) (B : Jk1) : Prop :=
-  ∀ (D : List Frm) (V : Jk1), JkA V → JkT (plug D (Jk1.one V (RunP Bs B))) →
+  ∀ (D : List Frm) (V : Jk1), JkA V → (∀ X : Jk1, JkA X → JkT (plug D X)) →
     GOK (plug D V) → GOK (plug D (Jk1.one V (RunP Bs B)))
 
 theorem GOK_appJ_UtwP_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
@@ -62942,11 +62942,10 @@ theorem GOK_appJ_UtwP_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
     exact hJTD _ ⟨hJU, JkA_RunP Bs hJBs hX⟩
   have hB : GOK (plug (D ++ PBlk Bs U) B) := by
     rw [plug_PBlk]
-    exact h D U hJU (hJTD _ ⟨hJU, JkA_RunP Bs hJBs hJB⟩) hbase
+    exact h D U hJU hJTD hbase
   refine GOK_appJ_UtwP D Bs B U hbase hB ?_
   intro D' hD' hG
-  exact h D' B hJB
-    (JkT_RFam_PBlk Bs B hJB hJBs _ hJT1 D' hD' _ ⟨hJB, JkA_RunP Bs hJBs hJB⟩) hG
+  exact h D' B hJB (JkT_RFam_PBlk Bs B hJB hJBs _ hJT1 D' hD') hG
 
 theorem GOK_two_UtwP_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
     (hJBs : ∀ A ∈ Bs, JkA A) (h : RStep Bs B) (D : List Frm) (N : Jk1) (hJN : JkA N)
@@ -62966,12 +62965,10 @@ theorem GOK_two_UtwP_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
     exact hJTN _ ⟨trivial, JkA_RunP Bs hJBs hX⟩
   have hB : GOK (plug ((D ++ [Frm.ftwo N]) ++ PBlk Bs Jk1.nil) B) := by
     rw [plug_PBlk]
-    exact h (D ++ [Frm.ftwo N]) Jk1.nil trivial
-      (hJTN _ ⟨trivial, JkA_RunP Bs hJBs hJB⟩) hbaseN
+    exact h (D ++ [Frm.ftwo N]) Jk1.nil trivial hJTN hbaseN
   refine GOK_two_UtwP D Bs B N hbase hB ?_
   intro D' hD' hG
-  exact h D' B hJB
-    (JkT_RFam_PBlk Bs B hJB hJBs _ hJT1 D' hD' _ ⟨hJB, JkA_RunP Bs hJBs hJB⟩) hG
+  exact h D' B hJB (JkT_RFam_PBlk Bs B hJB hJBs _ hJT1 D' hD') hG
 
 #print axioms GOK_appJ_UtwP_of_RStep
 #print axioms GOK_two_UtwP_of_RStep
@@ -63003,6 +63000,51 @@ theorem GOK_blkNN_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
 
 #print axioms GOK_oneNN_of_RStep
 #print axioms GOK_blkNN_of_RStep
+
+
+/-! ### ★★★★★ 走りの長さの降下
+
+    RStep (Bs ++ [C]) nil ⟸ RStep Bs C
+
+`RunP (Bs ++ [C]) nil = RunS (Bs ++ [C])` は語の最後が 2 の記録なので
+`GOK_oneUV_RunSB` が使え、その階段が `RStep Bs C` から出る。
+兄弟が全部 nil なら底は
+
+    RStep0 = RStep [] nil : GOK (plug D V) → GOK (plug D (one V nil))
+
+つまり「裸の 1 の記録を 1 個積む」。 -/
+
+theorem RStep_snoc {Bs : List Jk1} {C : Jk1} (hJC : JkA C)
+    (hJBs : ∀ A ∈ Bs, JkA A) (h : RStep Bs C) : RStep (Bs ++ [C]) Jk1.nil := by
+  intro D V hJV hJTD hGV
+  show GOK (plug D (Jk1.one V (RunS (Bs ++ [C]))))
+  exact GOK_oneUV_RunSB D Bs C V hJBs hJC
+    (hJTD _ ⟨hJV, JkA_RunS_snocB Bs C hJBs hJC⟩) hGV
+    (GOK_appJ_UtwP_of_RStep hJC hJBs h D V hJV hJTD hGV)
+
+/-- 底: 裸の 1 の記録を 1 個積む。 -/
+def RStep0 : Prop := ∀ (D : List Frm) (V : Jk1), JkA V →
+    (∀ X : Jk1, JkA X → JkT (plug D X)) →
+    GOK (plug D V) → GOK (plug D (Jk1.one V Jk1.nil))
+
+theorem RStep_nil_of_RStep0 (h : RStep0) : RStep [] Jk1.nil := h
+
+theorem RStep_rep (h : RStep0) : ∀ q : ℕ, RStep (List.replicate q Jk1.nil) Jk1.nil
+  | 0 => h
+  | (q + 1) => by
+      have hb : ∀ A ∈ List.replicate q Jk1.nil, JkA A := by
+        intro A hA
+        simp only [List.eq_of_mem_replicate hA]
+        exact trivial
+      have hr := RStep_snoc (Bs := List.replicate q Jk1.nil) (C := Jk1.nil)
+        trivial hb (RStep_rep h q)
+      have he : List.replicate q Jk1.nil ++ [Jk1.nil]
+          = List.replicate (q + 1) Jk1.nil := List.replicate_succ'.symm
+      rw [he] at hr
+      exact hr
+
+#print axioms RStep_snoc
+#print axioms RStep_rep
 
 end Small
 end TRIO
