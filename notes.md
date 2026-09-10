@@ -17335,3 +17335,50 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 `OSib D' nil` は文脈が 1 縮むので帰納が回る。`TSib D' nil` は `SelfW D' W`
 （`W` を自分の上に積み続けられる）に落ちるが、`W` は `TSib_pay` の横鎖
 `twoIt nil (pay nil C') n` なので族に制限できる。ここが次。
+
+## 追記198: 明示文脈の道は梯子を再現する。測度がどこで壊れるか
+
+### 兄弟を族に制限できた（緑）
+
+    TChain Wb X V  : V は Wb から V ↦ two V (pay X Y) で作れる
+    TSibF D X Z Wb : ∀ V, TChain Wb X V → GOK (plug D V) → GOK (plug D (two V Z))
+    TSibF_pay      : TSibF D X X Wb → ∀ Y, Bok Y → TSibF D X (pay X Y) Wb
+    TSibF_nil_of_SelfW : （D が 1 の枠止まり）SelfW → TSibF D X nil Wb
+
+`AYs` の側も同様に `OChain Xb Z V : V は Xb から V ↦ one V (pay Z Y) で作れる`
+に制限できるはず（`AYs` の `hAP` が当たるのは `X` と鎖 `itJ (pay Z Y') k X` だけ）。
+
+### 測度がどこで壊れるか
+
+明示文脈で `PayAll D`（`D` で任意の木に荷を吊るせる）を文脈の長さで回そうとすると
+
+    PayAll []                 ⟸ AY0（緑）
+    PayAll (D' ++ [fone U])   ⟸ AYs、仮定は OSib D' V（`V` は載せる木）
+    PayAll (D' ++ [ftwo N])   ⟸ TSibF_pay、仮定は TSibF D' … N
+
+で、`OSib D' V` が
+
+    OSib D' nil       ⟸ PayAll D'                  （|D| が 1 縮む）
+    OSib D' (pay A Y) ⟸ OSib D' A                  （文脈そのまま、木が縮む）
+    OSib D' (one A B) ⟸ OSib D' A, ∀W OSib (D' ++ [fone W]) B   （文脈が 1 伸びる）
+    OSib D' (two A B) ⟸ OSib D' A, ∀W TSib (D' ++ [fone W]) B   （文脈が 1 伸びる）
+
+再帰は `(k, V) → (k + jsz V, nil) → (k + jsz V - 1, 任意の W)` となり、
+レベルが `jsz V` 上がってから 1 だけ下がる。`W` が無制限なので止まらない。
+
+### 梯子はここをどうしているか
+
+`TwSt r m` は「その形の**全文脈**で良い」を持つので、`TwOk_one` / `TwOk_two` は
+木を**積み上げる**だけで、特定の文脈を伸ばす再帰が起きない。`TwOk_nil` の再帰は
+`(r, m+1) → (r, m)` の 1 方向だけ。荷 `TwOk_pay` は `A2'` で (r,m) の再帰なし。
+
+つまり**明示文脈の道は梯子を再現する**。梯子の唯一の穴は `Fter`
+（2 の枠の直上に 2 の枠を積めない）で、それが `WallT`。
+
+### 収穫
+
+- `TSib_pay` / `TSibF_pay`（2 の枠側の荷）が**梯子なしで緑**になった。
+  これは `TwOk_pay_e` の一般化で、`Fter` を要求しない。
+- したがって梯子から `Fter` を外す障害のうち「荷」は消えた。
+  残るのは `GOK_twoNil_gen` / `GOK_twoTwoNil_gen` が
+  `ctx0 ++ [fone V]`（1 の枠止まり）を要求すること。
