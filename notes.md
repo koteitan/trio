@@ -16984,3 +16984,53 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
     GOK (plug D (two N (two A (two nil nil))))   （走り 3、兄弟は任意）
 
 を出す BM4 側の補題。`GOK_twoTwoNil_gen` は `two N (two nil nil)` 専用。
+
+## 追記190: ★★★★★ 走りの壁が `RStep0`（裸の 1 の記録 1 個）まで落ちた
+
+### 落ちた道筋（全部緑）
+
+    RStep Bs B : ∀ D V, JkA V → (∀ X, JkA X → JkT (plug D X)) →
+        GOK (plug D V) → GOK (plug D (one V (RunP Bs B)))
+
+    RStep0 = RStep [] nil : GOK (plug D V) → GOK (plug D (one V nil))
+      （裸の 1 の記録を 1 個積む）
+
+    RStep_snoc : RStep Bs C → RStep (Bs ++ [C]) nil        ← 走りが 1 本伸びる
+    RStep_rep  : RStep0 → ∀ q, RStep (replicate q nil) nil
+
+    GOK_appJ_UtwP_of_RStep / GOK_two_UtwP_of_RStep : RStep Bs B → 塔の階段
+    GOK_oneNN_of_RStep / GOK_blkNN_of_RStep        : RStep Bs B → NStep の 2 文
+      （N = RunS (Bs ++ [B]) = two B1 (… (two Bq (two B nil)))）
+
+つまり **`N` が走りのときは、壁は `RStep0` 1 本**。
+
+### 部品
+
+    RunP [A1,…,Ap] X = two A1 (… (two Ap X))、RunS As = RunP As nil
+    UtwP Bs B n = 塔（1 段は「(1,0) + RunP Bs B」）
+    PBlk Bs V   = fone V :: Bs.map ftwo         塔の 1 段ぶんの枠
+    ABt Bs B n  = appJ B (UtwP Bs B n)、ABt (n+1) = one B (RunP Bs (ABt n))
+    RFam Bs D0  = D0 に Bs の枠列を足してできる文脈の族、RFam_GOK はその帰納
+
+    My_RunP / hMy_RunP : 走りの語では行 1 が 2 未満の記録は右からの最小値にならない
+      （直後の背骨の 2 の記録に高さで抜かれる。先端 B の記録は高さ条件で弾かれる）
+
+    GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM
+      = 元の 3 つの抽象版（`stk p` → 一般の `Nd`、`Utw p` → 一般の塔 `T`）
+
+### 残っているのは `N` が走りでない場合
+
+`hMy` は「`N` の語の最後の記録への祖先鎖が全部 2 の記録」を要求する。
+たとえば `N = one A (two B (two nil nil))` だと鎖に `(h+2,1,0)` が入って落ちる。
+
+**ただしこれは分割点の取り方の問題**らしい。`snocYd_mem` は語を
+`Y0 ++ M ++ [(L+dl, y, 0)]` と割るので、`M` を**バッドルート（鎖の最後の
+1 の記録）から始める**ように取り直せば、`M` の中の右からの最小値は
+全部 2 の記録になる。木で言うと `N = plug E (one A Y)` と書いて
+
+    plug D (one N N) = plug (D ++ [fone N] ++ E) (one A Y)
+
+とし、`GOK_oneUV_genM` を**より深い文脈 `D ++ [fone N] ++ E`** で使う。
+要るのは `GOK (plug (D ++ [fone N] ++ E) A)`（兄弟 `A` が置ける）と階段。
+
+次はこれを実装する。
