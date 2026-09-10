@@ -17598,3 +17598,36 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 停止性 `(cntF ks, ks.length)` と両立しない。そこは `MPd`（`FrQ` 枠）が回避している。
 
 今回の成果は「荷と `one V nil` の側には `Rq` は要らない」ことがはっきりしたこと。
+
+## 追記205: 穴は「2 の枠の連続（走り）」1 つだけ。`fone (two nil nil)` は `MCtx` が許す
+
+追記202 で `OneNil` の穴を 2 つ挙げた:
+
+    (1) 1 の枠の木が `Rq` を満たさない（2 の枠の直上に `two nil nil`）
+    (2) 2 の枠が連続する（走り）
+
+このうち **(1) は `MCtx` が既に許している**。`MCtx (false::ks)` は
+`ctx' ++ [fone U, ftwo N]` で、`U` に課すのは `FrQ U`（`Rq` ではない）。
+`FrQ_twoNil : FrQ (two nil nil)` は緑。だから
+
+    TWD0 ++ (TWBlk)^j = [fone nil, ftwo nil] ++ ([fone (two nil nil), ftwo nil])^j
+
+は `MCtx (replicate (j+1) false)` の文脈。`MCtx` の形は `false` 1 個につき
+`[fone U, ftwo N]` なので 2 の枠は連続しない。
+
+### つまり残る穴は (2) だけ
+
+`MPd` ラインの壁 `MNil` → `MBplus` → `LStep2` を辿ると、
+`LStep2 : JkA N → AllA N → LAll N → JkA Z → LAll1 Z → LAll1 (two N Z)` の
+
+    Z = nil     : 緑（追記203 の `LOk_twoNilA`）
+    Z = pay A Y : `TSibF_pay` で落ちるが、横鎖の member に `LAll (two W' T)`
+                  が要る ＝ 走り
+    Z = one A B : 2 の枠を足した文脈が要る ＝ 走り
+    Z = two A B : そのまま走り
+
+で、全部走りに帰する。
+
+### 今回の緑
+
+    MPd_oneNil : MCtx_JkT + APnil_gen0（荷は仮定のまま）
