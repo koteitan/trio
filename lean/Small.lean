@@ -61794,5 +61794,76 @@ theorem TowOk_of_WRep (h : WRep) : TowOk := TowOk_of_WallT (WallT_of_WRep h)
 #print axioms GOK_twoTwoNil_rep
 #print axioms R14_of_WRep
 
+
+/-! ### ★★★★★ 壁を「もう 1 段積む」2 文にする
+
+`WRep` の文脈族は `D0` に `[fone N]` と `[ftwo N, fone nil]` を足して作れる。
+足す操作は木の側では
+
+    plug (D ++ [fone N]) N            = plug D (one N N)
+    plug (D ++ [ftwo N, fone nil]) N  = plug D (two N (one nil N))
+
+なので、族についての帰納で `WRep` は次の 2 文に落ちる。
+
+    GOK (plug D N) → GOK (plug D (one N N))
+    GOK (plug D N) → GOK (plug D (two N (one nil N)))
+
+`GOK_oneNN_gen` / `GOK_blkNN_gen`（どちらも緑）がまさにこの形の道具。 -/
+
+/-- `D0` に `[fone N]` と `[ftwo N, fone nil]` を足してできる文脈の族。 -/
+inductive NFam (N : Jk1) (D0 : List Frm) : List Frm → Prop
+  | base : NFam N D0 D0
+  | one : ∀ {D : List Frm}, NFam N D0 D → NFam N D0 (D ++ [Frm.fone N])
+  | two : ∀ {D : List Frm}, NFam N D0 D →
+      NFam N D0 (D ++ [Frm.ftwo N, Frm.fone Jk1.nil])
+
+theorem plug_blkN (D : List Frm) (N : Jk1) :
+    plug (D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) N
+      = plug D (Jk1.two N (Jk1.one Jk1.nil N)) := by
+  rw [show D ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+      = (D ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil] by simp,
+    plug_snoc, plug_snoc2]
+
+/-- ★ もう 1 段積めるか、という 2 文。 -/
+def NStep (N : Jk1) (D0 : List Frm) : Prop :=
+  ∀ D : List Frm, NFam N D0 D → GOK (plug D N) →
+    GOK (plug D (Jk1.one N N)) ∧ GOK (plug D (Jk1.two N (Jk1.one Jk1.nil N)))
+
+theorem NFam_GOK {N : Jk1} {D0 : List Frm} (hbase : GOK (plug D0 N))
+    (h : NStep N D0) : ∀ D : List Frm, NFam N D0 D → GOK (plug D N) := by
+  intro D hD
+  induction hD with
+  | base => exact hbase
+  | one hD ih => rw [plug_snoc]; exact (h _ hD ih).1
+  | two hD ih => rw [plug_blkN]; exact (h _ hD ih).2
+
+theorem NFam_PJ (N : Jk1) (D0 : List Frm) :
+    ∀ (j i : ℕ), NFam N D0 (D0 ++ PJ N j ++ List.replicate i (Frm.fone N)) := by
+  have hj : ∀ j : ℕ, NFam N D0 (D0 ++ PJ N j) := by
+    intro j
+    induction j with
+    | zero => simpa [PJ] using (NFam.base : NFam N D0 D0)
+    | succ j ih =>
+        have := NFam.two ih
+        simpa [PJ] using this
+  intro j i
+  induction i with
+  | zero => simpa using hj j
+  | succ i ih =>
+      have := NFam.one ih
+      simpa [List.replicate_succ', ← List.append_assoc] using this
+
+theorem WRep_of_NStep (h : ∀ (N : Jk1) (D0 : List Frm), NStep N D0) : WRep := by
+  intro N r m hJN hN hf D hD j i
+  exact NFam_GOK (hN m D hD hf) (h N D) _ (NFam_PJ N D j i)
+
+/-- ★★★★★ シート #14 は「もう 1 段積む」2 文から出る。 -/
+theorem R14_of_NStep (h : ∀ (N : Jk1) (D0 : List Frm), NStep N D0) :
+    R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WRep (WRep_of_NStep h)
+
+#print axioms NFam_GOK
+#print axioms R14_of_NStep
+
 end Small
 end TRIO
