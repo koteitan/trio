@@ -65675,6 +65675,39 @@ theorem NPd_twoAnil_of_NLift (h : NLift) {A : Jk1} (hJA : JkA A)
 
 #print axioms NPd_nstN2_of_NLift
 #print axioms NPd_twoAnil_of_NLift
+
+/-! ### ★★★★★ #14 は「裸の走り」1 文から出る
+
+`NPd_TW_of_NLift` / `TowOk_of_NLift` が `NLift` を使うのは
+`NPd_twoTwoB_of_NLift`（= `∀ ks, NPd (false::ks) (two nil nil)`）を
+作るためだけ。だから仮定はそれで足りる。 -/
+
+def NRunNil : Prop := ∀ ks : List Bool, NPd (false :: ks) (Jk1.two Jk1.nil Jk1.nil)
+
+theorem NRunNil_of_NLift (h : NLift) : NRunNil := NPd_twoTwoB_of_NLift h
+
+theorem NPd_TW_of_NRunNil (h : NRunNil) :
+    ∀ (n : ℕ) (ks : List Bool), NPd (false :: ks) (TW n)
+  | 0, ks => h ks
+  | (n + 1), ks =>
+      NPd_step (false :: ks)
+        (⟨trivial, trivial⟩ : FrmJ (false :: ks) (Jk1.two Jk1.nil Jk1.nil))
+        (h ks)
+        (NPd_twoOf trivial (fun _ => NPd_nilAll _)
+          (NPd_TW_of_NRunNil h n (false :: ks)))
+
+theorem TowOk_of_NRunNil (h : NRunNil) : TowOk := fun n =>
+  (NPd_bnil _).mp (NPd_step [] (JkT_nil : FrmJ [] Jk1.nil)
+    ((NPd_bnil _).mpr GOK_nil)
+    (NPd_twoOf trivial (fun _ => NPd_nilAll _) (NPd_TW_of_NRunNil h n [])))
+
+/-- ★★★★★ #14 は `NRunNil` 1 文から出る。いま一番弱い仮定。 -/
+theorem R14_of_NRunNil (h : NRunNil) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_NRunNil h)
+
+#print axioms NRunNil_of_NLift
+#print axioms TowOk_of_NRunNil
+#print axioms R14_of_NRunNil
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

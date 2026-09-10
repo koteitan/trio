@@ -18332,3 +18332,22 @@ rank の外側再帰で定義できるので `∀ ks'` が書ける。ところ�
 
 枠の間に `fone nil` を 1 枚挟めば `m ≥ 1` になって緑にできるが、
 それは木を `one nil (…)` に変えることなので語が変わる。使えない。
+
+## 追記219: #14 は `NRunNil`（裸の走り）1 文から出る
+
+2026-09-10。追記218 の続き。
+
+    NRunNil : ∀ ks : List Bool, NPd (false :: ks) (two nil nil)
+
+    NRunNil_of_NLift  : NLift → NRunNil
+    NPd_TW_of_NRunNil : NRunNil → ∀ n ks, NPd (false::ks) (TW n)
+    TowOk_of_NRunNil  : NRunNil → TowOk
+    R14_of_NRunNil    : NRunNil → #14        （全部緑）
+
+`NPd_TW_of_NLift` / `TowOk_of_NLift` が `NLift` を使うのは
+`NPd_twoTwoB_of_NLift`（= `NRunNil`）を作るためだけだった。
+仮定を `NRunNil` に置き換えると、`NLift → NRunNil` があるので
+`R14_of_NRunNil` は `R14_of_NLift` より強い定理。
+
+**いま #14 を出す最弱の仮定は `NRunNil`**:
+「上に何も無い 2 の記録を、2 の枠の直上に、どの形の文脈でも置ける」。

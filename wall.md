@@ -2,36 +2,66 @@
 
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明。
 
-2026-09-10 更新。最小形は `NTwStep`。
+2026-09-10 更新。最小形は `NRunNil`。
 
-## 最小形（梯子で書いた壁）
+## 最小形
 
-    NTwStep : ∀ N r, JkA N → NTw r N → NTw (r + 1) N
+    NRunNil : ∀ ks : List Bool, NPd (false :: ks) (two nil nil)
 
-    NTw r N = ∀ j D, TwSt r j D → Fter r j → GOK (plug D N)
+**「上に何も無い 2 の記録を、2 の枠の直上に、どの形の文脈でも置ける」— これだけ。**
 
-「2 の枠が r 枚ある枠積みの全部に差せる木は、r+1 枚の枠積みにも差せる」。
-Lean で緑:
+    R14_of_NRunNil : NRunNil → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
 
-    WallT_of_NTwStep : NTwStep → WallT
-    R14_of_NTwStep   : NTwStep → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+語で見れば `… (l+1,2,0)(l+2,2,0) …` を作ること（走り）。
 
-塔を 3 種類（`nstN` / `UtwP` / `twoIt`）試して、どれも要るのは
-`NTw q M`（q ≥ r、M は 2 の枠の兄弟）だけだと確認した。詳細は notes 追記209。
+## 舞台: `NPd` 層
 
-## 同じ壁の層版（`NLift`）
+`NPd` = `APd` から `Rq` だけを外した族。`Rq (false::ks) U = TopOk U` は
+「2 の枠の直下の 1 の枠の木が 2 の記録で始まってはいけない」＝走り禁止で、
+`JkA` には要らない条件だった（`JkJ` 時代の名残）。
 
-`NPd` = `APd` から `Rq`（= `TopOk`、走り禁止）だけを外した族。
-`NPd` 層では空木も荷も無条件（`NPd_nilAll` / `NPd_payA`）。残るのは 1 本:
+    NPd []           V = GOK V
+    NPd (true :: ks) V = ∀ U, FrmJ ks U → NPd ks U → NPd ks (one U V)
+    NPd (false::ks)  V = ∀ m U N, FrmJ (rep m true ++ ks) U → NPd (rep m true ++ ks) U →
+        JkA N → (∀ j, NPd (rep j true ++ (true :: (rep m true ++ ks))) N) →
+        NPd (rep m true ++ ks) (one U (two N V))
 
-    NLift : ∀ N ks, JkA N →
-      (∀ j, NPd (rep j true ++ (true :: ks)) N) →
-      ∀ j, NPd (rep j true ++ (true :: (false :: ks))) N
+`NPd` 層では **`NRunNil` 以外は全部無条件で緑**:
 
-    R14_of_NLift : NLift → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+    NPd_nilAll : ∀ ks, NPd ks nil                     （空木）
+    NPd_payA   : FrmJ ks V → NPd ks V → Bok C → NPd ks (pay V C)   （荷）
+    NPd_step   : 1 の記録
+    NPd_twoOf  : 1 の枠の直上の 2 の記録
+    NPd_nilF / NPd_twoNilGen / NPd_oneNil / NPd_nilT
+    NPd_all_of_NRun : NRun → ∀ N ks, FrmJ ks N → NPd ks N
 
-`NTwStep` と `NLift` はどちらも「2 の枠の兄弟に課した条件を
-2 の枠 1 本ぶん上に持ち上げる」。詳細は notes 追記214・215。
+木の構造で回すと、閉じないのは `two A B` を形 `false::ks` に差す 1 ケースだけ
+（`NRun`）。その中で `B = nil` の場合は `NLift` で閉じる
+（`NPd_twoAnil_of_NLift`）。
+
+## 同じ壁の別の書き方（どれも緑で #14 を出す）
+
+    NRunNil : ∀ ks, NPd (false::ks) (two nil nil)          ← 最弱
+    NLift   : 兄弟条件を 2 の枠 1 本ぶん上げる（層 NPd）
+    NRun    : two A B を形 false::ks に差す（走り 1 ケース）
+    NTwStep : NTw r N → NTw (r+1) N（梯子 TwOk）
+    WallT   : ∀ r, TwOk (r+1) 0 (two nil nil)（梯子 TwOk）
+    MRun / MNil （層 MPd）
+    OneNil / RPay / OneTwo / TWStep（文脈 plug）
+
+## なぜ族を作り直しても動かないのか
+
+「形 ks の上で差せる」を ks の再帰で定義する族は、停止性のために測度
+`cntF ks`（2 の枠の本数）が減っていなければならない。だから 2 の枠の
+兄弟に課せる条件は `cntF ≤ 現在` の形についてのものだけ。壁は `cntF + 1`
+の形での良さを要求する。`APd` / `NPd` / `MPd` / 枠の並びに制限なしの族 /
+梯子 `TwSt` — どれも同じ構造。
+
+実測（notes 追記218）でも、塔の単位 `unN N D = (D,1,0) :: jk1 D N ++ [(D+1,2,0)]`
+のコピーごとに `D` が 2 ずつ上がる＝木では 2 の枠が 1 本ずつ深くなる。
+
+**要るのは別の整礎順序**（木を文脈ごと順序数で測るような）であって、
+形の再帰ではない。
 
 ## 同じ壁の別表記（`OneNil`）
 
