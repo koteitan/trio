@@ -64628,6 +64628,33 @@ theorem LAll1_twoPay {N A : Jk1} {Y : TrioSeq} (hJN : JkA N) (hLN : LAll N)
     Y hY N TChain.base hJN (hLN (k + 1) D hD)
 
 #print axioms LAll1_twoPay
+
+/-! ### ★ `LStep2` の `Z = two A nil`（走り）は `GOK_oneUV_RunSB` に落ちる
+
+`two N (two A nil) = RunS ([N] ++ [A])` なので、`StkOk (k+1)` の文脈
+`D' ++ [fone V]` で `GOK_oneUV_RunSB` が当たる。残るのは階段。 -/
+
+theorem LAll1_twoRun {N A : Jk1} (hJN : JkA N) (hJA : JkA A)
+    (hst : ∀ (k : ℕ) (D' : List Frm) (V : Jk1), StkOk k D' → JkA V →
+      (∀ D'' : List Frm, StkOk k D'' → GOK (plug D'' V)) →
+      ∀ n : ℕ, GOK (plug D' (appJ V (UtwP [N] A n)))) :
+    LAll1 (Jk1.two N (Jk1.two A Jk1.nil)) := by
+  intro k D hD
+  obtain ⟨D', V, rfl, hD', hJV, hV⟩ := hD
+  have hBs : ∀ X ∈ ([N] : List Jk1), JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact hJN
+  have hJT : JkT (plug D' (Jk1.one V (RunS ([N] ++ [A])))) := by
+    have h := StkOk_JkT (k + 1) (D' ++ [Frm.fone V]) ⟨D', V, rfl, hD', hJV, hV⟩
+      (RunS ([N] ++ [A])) ⟨hJN, hJA, trivial⟩
+    rw [plug_snoc] at h
+    exact h
+  rw [plug_snoc]
+  exact GOK_oneUV_RunSB D' [N] A V hBs hJA hJT (hV D' hD') (hst k D' V hD' hJV hV)
+
+#print axioms LAll1_twoRun
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
