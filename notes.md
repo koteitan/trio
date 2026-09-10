@@ -16671,3 +16671,35 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
   - 文脈の深さ 2 までは緑（前は深さ 0 だけだった）
   - 壁が `LTwo (two nil nil)` という**具体的な 1 文**に絞れた
     （前は `WallT` / `WallP` / `Wall` / `TwoStep` と複数あった）
+
+## 追記184: ★ 壁を 1 つの名前付き文 `NTwUp` にした
+
+    NTwUp := ∀ (N : Jk1) (r : ℕ), JkA N → NTw r N → ∀ q : ℕ, NTw q N
+
+    NTw q N = ∀ j D, TwSt q j D → Fter q j → GOK (plug D N)
+
+    WallT_of_NTwUp / R14_of_NTwUp / TowOk_of_NTwUp   すべて緑
+
+### なぜこれ 1 つか
+
+`TwSt (r+1) 0` の文脈は `D' ++ [ftwo N]` で、持っている条件は `NTw r N`
+（**レベル r で打ち止め**）。一方 `TwOk_twoTwoNil`（緑）は `∀ q, NTw q N`
+（全レベル）を要求する。差はこれだけ。
+
+`TwSt 0 m = StkOk (m+1)` なので `NTw 0 N ⟺ ∀ j, LOk (j+1) N`。
+だから追記183 の `LTwo (two nil nil)` も同じ 1 点。
+
+これまでに出てきた壁
+
+    WallT / WallP / Wall / OneGap / TwoStep / BStairAll / QPayPair
+    WStep0 / WPay / LTwo (two nil nil)
+
+は全部 `NTwUp` に合流する（`WStep0` 系は #14 と行376 を 1 文にまとめた別ルート）。
+
+### セッションで進んだこと（まとめ）
+
+  - #14 と行376 が 1 文に合流（`WStep0`）。層を通らない形
+  - 走りが層なしで回る（`WRun`、文脈を全称にする）
+  - `GOK_blkNN_gen` / `GOK_oneUV_gen`（`GoodFb` 3 フィールドの本体）が緑
+  - `WStep0` が文脈の深さ 2 まで緑
+  - 壁が `NTwUp` 1 文に確定
