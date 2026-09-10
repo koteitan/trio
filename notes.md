@@ -17131,3 +17131,44 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 鎖は `RStep`-型の主張になり、それは `RPay`（荷 `Y'`）から出る。
 **荷の大きさについての帰納**にすれば循環しない。
 そのためには `RPay` / `RStep` を荷で添字づけた版に書き直す必要がある。
+
+## 追記193: ★★★★★ シートの 2 行が両方 `RStep0` から出る
+
+### 結論
+
+    RStep0 : ∀ D V, JkA V → (∀ X, JkA X → JkT (plug D (one V X))) →
+        GOK (plug D V) → GOK (plug D (one V nil))
+
+「置ける `V` の上に**裸の 1 の記録を 1 個**積める」。これだけで
+
+    R376_of_RStep0 : RStep0 → 目標の行（行376）
+    R14_of_RPay    : RPay   → 証明中の行（#14）
+    R376_of_RPay   : RPay   → 目標の行
+
+`RPay`（荷を 1 個吊るす）から `RStep0` は `APnil_gen0` で出る。
+
+### JkT 前提の直し
+
+`∀ X, JkA X → JkT (plug D X)` は `D = []` では偽（`TopOk X` が要る）。
+`∀ X, JkA X → JkT (plug D (one V X))` にすると `D = []` でも成り立つ
+（`TopOk (one V X) = TopOk V`）。これで空文脈でも `RStep` が使える。
+
+### 行376 の道
+
+    Utw p n = UtwR (replicate p nil) n            Utw_eq_UtwR
+    GOK_UtwR_of_step : GOK (plug D nil) → (1 段積む) → ∀ n, GOK (plug D (UtwR As n))
+    1 段積む = RStep_rep h p（RStep0 から）
+    JkT_RFam_RBlk : 族の妥当性（空文脈から始めても回る）
+    UtwAll_of_RStep0 → R376_of_UtwAll
+
+### 現在の全体像
+
+    RPay（荷を 1 個吊るす）
+      ↓ APnil_gen0
+    RStep0（裸の 1 の記録を 1 個積む）
+      ↓ RStep_rep                    ↓ RStep_of_RPay（木の帰納）
+    走り stk q を積む                RStep Bs B
+      ↓ UtwAll_of_RStep0              ↓ RStep_snoc, WallT_of_RStep
+    目標の行（行376）                 証明中の行（#14）
+
+`RStep0` は `RPay` を要求する（`APnil_gen0` の荷）ので、実質の壁は `RPay` 1 本。
