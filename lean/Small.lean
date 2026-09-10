@@ -68294,5 +68294,45 @@ theorem R373_copies52_mem (m : ℕ) :
 #print axioms towerM_mem
 #print axioms R373_copies52_mem
 
+/-! ### 幅 ≤ 1 のブロック列はどの形にも差せる（`GOK_bdA1` の一般化）
+
+`bdA js = one nil (stkP j₀ (one nil (stkP j₁ (… nil))))`。
+幅が 0 か 1 なら 2 の記録が連続しないので、`WPd_step` と `WPd_twoOf` だけで回る。 -/
+
+theorem WPd_bdA_le1 : ∀ (js : List ℕ), (∀ x ∈ js, x ≤ 1) → ∀ ks : List ℕ,
+    WPd ks (bdA js)
+  | [], _, ks => WPd_nilAll ks
+  | (j :: js), hj, ks => by
+      have hjs : ∀ x ∈ js, x ≤ 1 := fun x hx => hj x (List.mem_cons_of_mem j hx)
+      have hj1 : j ≤ 1 := hj j (List.mem_cons_self)
+      refine WPd_step ks (FrmN_nilA ks) (WPd_nilAll ks) ?_
+      rcases j with _ | j
+      · exact WPd_bdA_le1 js hjs (0 :: ks)
+      rcases j with _ | j
+      · exact WPd_twoOf (k := 0) trivial (fun q _ => WPd_nilAll _)
+          (WPd_bdA_le1 js hjs (1 :: ks))
+      · exfalso; omega
+
+theorem GOK_bdA_le1 (js : List ℕ) (h : ∀ x ∈ js, x ≤ 1) : GOK (bdA js) :=
+  (WPd_bnil _).mp (WPd_bdA_le1 js h [])
+
+/-- 台座つき版。 -/
+theorem WPd_BT_le1 (U : Jk1) (hU : ∀ ks : List ℕ, FrmN ks U → WPd ks U) :
+    ∀ (js : List ℕ), (∀ x ∈ js, x ≤ 1) → ∀ ks : List ℕ, FrmN ks U → WPd ks (BT U js)
+  | [], _, ks, hks => hU ks hks
+  | (j :: js), hj, ks, hks => by
+      have hjs : ∀ x ∈ js, x ≤ 1 := fun x hx => hj x (List.mem_cons_of_mem j hx)
+      have hj1 : j ≤ 1 := hj j (List.mem_cons_self)
+      refine WPd_step ks hks (hU ks hks) ?_
+      rcases j with _ | j
+      · exact WPd_bdA_le1 js hjs (0 :: ks)
+      rcases j with _ | j
+      · exact WPd_twoOf (k := 0) trivial (fun q _ => WPd_nilAll _)
+          (WPd_bdA_le1 js hjs (1 :: ks))
+      · exfalso; omega
+
+#print axioms WPd_bdA_le1
+#print axioms GOK_bdA_le1
+
 end Small
 end TRIO
