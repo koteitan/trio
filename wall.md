@@ -14,43 +14,54 @@
 
     R14_of_RPay  : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
     R376_of_RPay : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
+    R376_of_RStep0 : RStep0 → 目標の行（RStep0 = 裸の 1 の記録を 1 個積む）
 
-行376 のほうは `RStep0`（裸の 1 の記録を 1 個積む）だけで足りる:
+## 兄弟について全称な 2 つの述語
 
-    R376_of_RStep0 : RStep0 → 目標の行
-    RStep0 : ∀ D V, JkA V → (JkT 閉包) → GOK (plug D V) → GOK (plug D (one V nil))
+    OSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (one W X))
+    TSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (two W X))
 
-## `RPay` は 1 の枠側だけなら緑
+    plug (D ++ [fone W]) X = plug D (one W X)
+    plug (D ++ [ftwo W]) X = plug D (two W X)
 
-    AY0 : ∀ Y, Bok Y → ∀ Z, JkT Z → GOK Z → GOK (pay Z Y)          （緑、無条件）
-    AYs : … (hAP : ∀ V, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (one V Z)))
-        → GOK (plug ctx X) → GOK (plug ctx (one X (pay Z Y)))       （緑）
+木の構造で 1 段降りる補題（全部緑）:
 
-`plug (ctx ++ [fone X]) (pay Z Y) = plug ctx (one X (pay Z Y))` なので
-**1 の枠で終わる文脈での `RPay` は `AYs` そのもの**（`RPay_fone`、緑）。
-`hAP` は `RStep [] Z` を 1 段短い文脈に制限したもの。
+    OSib D (one A B) ⟸ OSib D A, ∀W OSib (D ++ [fone W]) B
+    OSib D (two A B) ⟸ OSib D A, ∀W TSib (D ++ [fone W]) B
+    TSib D (one A B) ⟸ TSib D A, ∀W OSib (D ++ [ftwo W]) B
+    TSib D (two A B) ⟸ TSib D A, ∀W TSib (D ++ [ftwo W]) B
+    TSib D (pay A Y) ⟸ TSib D A                     ← TSib_pay（緑、梯子なし）
+    OSib D (pay A Y) ⟸ OSib D A                     ← AYs（緑、CtxX 付き）
+    OSib D nil       ⟸ ∀W 荷を吊るせる              ← APnil_gen0
+    TSib D nil       ⟸ ?                             ← GOK_twoNil_gen、階段が要る
 
-    RPay at |D| = k（1 の枠止まり）
-      ⟸ RStep [] Z at |D| = k-1        （AYs の hAP）
-      ⟸ （木の帰納）RPay at |D| = k-1  （RStep_of_RPay）
-      ⟸ … ⟸ RPay at |D| = 0 = AY0（緑）
+荷の側:
 
-**文脈の長さで帰納が回る。**
+    RPay_nil  : D = []           → AY0（緑、無条件）
+    RPay_fone : D = ctx ++ [fone X] → AYs（緑）
+    RPay_ftwo : D = ctx ++ [ftwo N] → TSib ctx V（TSib_pay で緑）
 
-## 残っているのは 2 の枠側
+## 残っているのは測度
 
-    RPay2 : ∀ D N V, … → GOK (plug (D ++ [ftwo N]) V) →
-        ∀ C, Bok C → GOK (plug (D ++ [ftwo N]) (pay V C))
+    木の構造で降りる:   木が縮む、文脈が 1 伸びる
+    荷（APnil_gen0）:   文脈が 1 縮む、木は任意（兄弟 `W`）
 
-木で `plug D (two N (pay V C))`、行列で**走りの上の荷**。
-実測（`bms`）ではその展開がシート証明中の行そのもの。
+この 2 方向を同時に減らす測度が無い。`OSib D nil` が兄弟 `W` の荷を要求し、
+`W` の大きさが文脈の長さと無関係だから。
 
-    …(3,1,0)(4,2,0)(5,2,0)(6,0,0)  →  …(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+**ただし `OSib` / `TSib` の「兄弟について全称」は強すぎる。** 梯子（`TwSt`）が
+実際に使うのは
+- `TwOk_nil` … 文脈の枠の木 `U`（任意の兄弟ではない）
+- `AYs` の `hAP` … `X` とその横鎖 `itJ (pay Z Y') k X`
+だけ。つまり兄弟は「文脈の枠の木から鎖で生成される族」に制限してよい。
+`RFam` / `RFam_GOK` がその形。次はこれ。
 
-`TwOk_pay_e`（緑）は梯子でこれを証明しているが、そこでは横鎖
-`twoIt N T n`（同じ高さに 2 の記録が並ぶ、delta = 0）が要り、鎖の各段で
-兄弟が伸びる。梯子は `TwOk (r+1) 0 T`（全文脈）を持っているので兄弟が
-変わっても当たる。文脈を具体的にするとそこが足りない。
+## 壁の正体は「レベル ⇄ 走りの長さ」の交換
+
+    plug (D ++ [ftwo N]) (RunS Bs) = plug D (RunS (N :: Bs))
+
+レベルが 1 下がるかわりに走りが 1 本伸びる。追記171 の「非可述性の正体は
+2 の枠の本数」と、走りの長さの帰納（`WRunB`）は同じものの 2 つの見方だった。
 
 ## 連鎖（全部 Lean で緑）
 
@@ -60,32 +71,15 @@
       ↓ RStep_rep                       ↓ RStep_snoc, WallT_of_RStep
     UtwAll → 目標の行（行376）          WallT → 証明中の行（#14）
 
-木の帰納の中身:
-
-    RStep Bs nil       ⟸ RStep Bs' C          （Bs = Bs' ++ [C]）
-    RStep [] nil       ⟸ RPay                 （APnil_gen0）
-    RStep Bs (one A B) ⟸ RStep Bs A, RStep [] B
-    RStep Bs (two A B) =  RStep (Bs ++ [A]) B  （走りに吸収される）
-    RStep Bs (pay A Y) ⟸ RStep Bs A, RPay
-
-測度は `(jsz (RunS Bs) + jsz B, B の構造)` の辞書式。
-
-## 壁の正体は「レベル ⇄ 走りの長さ」の交換
-
-    plug (D ++ [ftwo N]) (RunS Bs) = plug D (RunS (N :: Bs))
-
-レベルが 1 下がるかわりに走りが 1 本伸びる。追記171 の「非可述性の正体は
-2 の枠の本数」と、走りの長さの帰納（`WRunB`）は同じものの 2 つの見方だった。
-
 ## 部品（緑）
 
-    RunP [A1,…,Ap] X = two A1 (… (two Ap X))    RunS As = RunP As nil
-    UtwP Bs B n / UtwR As n = 塔               Utw_eq_UtwR
-    PBlk Bs V = fone V :: Bs.map ftwo          RBlk As = PBlk As nil
-    ABt Bs B n = appJ B (UtwP Bs B n)
-    RFam / RFam_GOK / NFam / NFam_GOK / JkT_RFam_PBlk / JkT_RFam_RBlk
+    AY0 / AYs / APnil_gen0 / TSib_pay / GOK_twoIt_chain
+    OSib / TSib / OSib_one / OSib_two / TSib_one / TSib_two
+    RPay_nil / RPay_fone / RPay_ftwo / OSib_nil_of_pay
+    RunP / RunS / UtwP / UtwR / PBlk / RBlk / ABt / RFam / RFam_GOK
+    NFam / NFam_GOK / JkT_RFam_PBlk / JkT_RFam_RBlk
     My_RunP / hMy_RunP / jk1_RunS_snocB / jsz / jsz_RunP
-    GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM（元の 3 つの抽象版）
+    GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM
     TwSt_split3 / GOK_oneN_split / GOK_blkN_split / plug_blk2
     WRep / GOK_twoTwoNil_rep / NoRun / NTw_of_NoRun / STw_TTw
 
@@ -311,4 +305,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜194。
+経緯は `notes.md` の追記175〜195。
