@@ -69740,5 +69740,127 @@ theorem WBd_nilE : WBd [] Jk1.nil := (WBd_bnil _).mpr GOK_nil
 #print axioms WBd_payA
 #print axioms WBd_nilT
 
+/-! ### `WBd` の走り。長さ 1（ブロックの 1 枚目）は無条件 -/
+
+theorem WBtx_rep {m : ℕ} {N : Jk1} (hJN : JkA N) (B : List (ℕ × ℕ))
+    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N) :
+    ∀ (j : ℕ) (ctx : List Frm), WBtx ((m, 0) :: B) ctx →
+      WBtx ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B))
+        (ctx ++ List.replicate j (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (j + 1), ctx, hc => by
+      have h1 := WBtx_rep hJN B hNall j ctx hc
+      have e : ctx ++ List.replicate (j + 1) (Frm.fone N)
+          = (ctx ++ List.replicate j (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      have e2 : ((m, 0) : ℕ × ℕ) :: (List.replicate (j + 1) ((m, 0) : ℕ × ℕ) ++ B)
+          = ((m, 0) : ℕ × ℕ) ::
+            (((m, 0) : ℕ × ℕ) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) := by
+        rw [List.replicate_succ]
+        rfl
+      rw [e, e2, WBtx_c0]
+      exact ⟨ctx ++ List.replicate j (Frm.fone N), N, rfl, h1, hJN, hNall j⟩
+
+theorem WBd_plug_rep {m : ℕ} (N : Jk1) (hJN : JkA N) (B : List (ℕ × ℕ))
+    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N) (j : ℕ) :
+    WBd ((m, 0) :: B) (plug (List.replicate j (Frm.fone N)) N) := by
+  rw [WBd_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (WBd_iff _ N).mp (hNall j) _ (WBtx_rep hJN B hNall j ctx hc)
+
+theorem WBd_twoNilGen {m : ℕ} {N : Jk1} (hJN : JkA N) (B : List (ℕ × ℕ))
+    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N) :
+    WBd ((m, 0) :: B) (Jk1.two N Jk1.nil) := by
+  rw [WBd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WBtx_split m B ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (WBtx_JkT ((m, 0) :: B) _ hc (Jk1.two N Jk1.nil)
+      (show FrmB ((m, 0) :: B) (Jk1.two N Jk1.nil) from ⟨hJN, trivial⟩))
+    hGV
+    (fun j => (WBd_iff ((m, 0) :: B) _).mp (WBd_plug_rep N hJN B hNall j) _ hc)
+
+/-- ★★★★★ 走りの長さ 1（ブロックの 1 枚目）は無条件。 -/
+theorem WBd_nilF1 (m : ℕ) (ks : List (ℕ × ℕ)) : WBd ((m, 1) :: ks) Jk1.nil := by
+  rw [WBd_ck]
+  intro q hq N hJN hNt
+  refine WBd_twoNilGen hJN (q ++ ks) ?_
+  intro j
+  refine hNt (List.replicate j ((m, 0) : ℕ × ℕ)) ?_
+  intro x hx
+  have hx0 : x = ((m, 0) : ℕ × ℕ) := List.eq_of_mem_replicate hx
+  subst hx0
+  show m * m + 0 < m * m + 1
+  omega
+
+/-! ### ★★★★★★ 残る 1 文と、そこから出るもの
+
+`WBd` では走りの長さがブロックの中の位置に現れるので、**長さの上限が無い**。
+残るのは「ブロックの `i+1` 枚目（`i ≥ 1`）で空木が差せる」だけ。 -/
+
+def RunNilB : Prop := ∀ (m i : ℕ) (ks : List (ℕ × ℕ)), WBd ((m, i + 1) :: ks) Jk1.nil
+
+theorem WBd_nilAllB (h : RunNilB) : ∀ ks : List (ℕ × ℕ), WBd ks Jk1.nil
+  | [] => WBd_nilE
+  | ((m, 0) :: ks) => WBd_nilT m ks
+  | ((m, i + 1) :: ks) => h m i ks
+
+theorem WBd_stkP_ofB (h : RunNilB) : ∀ (j : ℕ) (X : Jk1), (∀ ks : List (ℕ × ℕ), WBd ks X) →
+    ∀ (m i : ℕ) (ks : List (ℕ × ℕ)), WBd ((m, i) :: ks) (stkP j X)
+  | 0, X, hX, m, i, ks => hX _
+  | (j + 1), X, hX, m, i, ks => by
+      show WBd ((m, i) :: ks) (Jk1.two Jk1.nil (stkP j X))
+      exact WBd_twoOf trivial (fun q' _ => WBd_nilAllB h _)
+        (WBd_stkP_ofB h j X hX m (i + 1) ks)
+
+theorem WBd_bdA_ofB (h : RunNilB) : ∀ (js : List ℕ) (ks : List (ℕ × ℕ)), WBd ks (bdA js)
+  | [], ks => WBd_nilAllB h ks
+  | (j :: js), ks => by
+      show WBd ks (Jk1.one Jk1.nil (stkP j (bdA js)))
+      refine WBd_step 0 ks (FrmB_nilA ks) (WBd_nilAllB h ks) ?_
+      exact WBd_stkP_ofB h j (bdA js) (fun ks' => WBd_bdA_ofB h js ks') 0 0 ks
+
+/-- ★★★★★★ 幅に上限のないブロック列が全部出る。 -/
+theorem GOK_bdA_ofB (h : RunNilB) (js : List ℕ) : GOK (bdA js) :=
+  (WBd_bnil _).mp (WBd_bdA_ofB h js [])
+
+theorem GOK_oneStk_ofB (h : RunNilB) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  GOK_bdA_ofB h [q]
+
+theorem MixTow_of_RunNilB (h : RunNilB) : MixTow :=
+  fun n i => GOK_bdA_ofB h (List.replicate n 2 ++ List.replicate i 1)
+
+/-- ★★★★★★ 証明中の行列は `RunNilB` 1 本から出る。 -/
+theorem R375m_62_of_RunNilB (h : RunNilB) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m_62_of_MixTow (MixTow_of_RunNilB h)
+
+theorem tw_R344_42_ofB (h : RunNilB) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    GOK_oneStk_ofB h n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ 目標の行376 も `RunNilB` 1 本から出る。 -/
+theorem R376_of_RunNilB (h : RunNilB) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42_ofB h)
+
+#print axioms WBd_nilF1
+#print axioms GOK_bdA_ofB
+#print axioms R375m_62_of_RunNilB
+#print axioms R376_of_RunNilB
+
 end Small
 end TRIO
