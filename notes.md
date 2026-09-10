@@ -19279,3 +19279,48 @@ cntF が小さい形だけなので届かない。
                     chain / pay / oneNil / nilAll → 幅 2 の nilF → NRunNil → #14
 
 規模は 600 行程度。既存の `NPd` の証明がほぼそのまま写せるはず。
+
+## 追記240: ★★★★★ `WPd` の定義と停止性が緑。多重集合の測度が通った
+
+2026-09-11。追記239 の実装。
+
+### 緑になったもの
+
+    import Mathlib.Data.Multiset.DershowitzManna
+
+    FrmN : List ℕ → Jk1 → Prop              List ℕ 版の枠木の妥当性
+    dm_step  : (∀ y ∈ Y, y < k) → IsDershowitzMannaLT (X + Y) (k ::ₘ X)
+    dm_cons0 : IsDershowitzMannaLT ↑ks ↑(0 :: ks)
+    dm_app   : (∀ x ∈ a, x ≤ k) → IsDershowitzMannaLT ↑(a ++ ks) ↑((k+1) :: ks)
+
+    def WPd : List ℕ → Jk1 → Prop
+      | [], V => GOK V
+      | (0 :: ks), V => ∀ U, FrmN ks U → WPd ks U → WPd ks (one U V)
+      | ((k+1) :: ks), V => ∀ m U N,
+          FrmN (0^m ++ ks) U → WPd (0^m ++ ks) U → JkA N →
+          (∀ ks', (∀ x ∈ ks', x ≤ k) → WPd (ks' ++ (0^m ++ ks)) N) →
+          WPd (0^m ++ ks) (one U (two N V))
+    termination_by ks _ => (ks : Multiset ℕ)
+    decreasing_by  dm_cons0 / dm_app
+
+**停止性が通った。**`Multiset.instWellFoundedIsDershowitzMannaLT` が
+`WellFoundedRelation (Multiset ℕ)` を与えるので `termination_by` にそのまま使える。
+
+### 何が変わったか
+
+形の数字 = その 2 の枠の兄弟に許す**予算**。
+
+    0 :: ks       1 の枠だけ
+    (k+1) :: ks   1 の枠 + 2 の枠。兄弟 N は「入り目が全部 k 以下の形」で差せる
+
+`k+1 = 2`（予算 1）なら、兄弟の条件を**入り目 1 の形（2 の枠）を含む形**まで書ける。
+`NPd` では `cntF` が `1^i` で非有界に増えて届かなかったが、多重集合では
+`{1}*i < {2}` が全ての `i` について成立する。
+
+### 次
+
+    WPd_bnil / WPd_c0 / WPd_ck   節の言い換え
+    WCtx / WPd_iff               文脈版
+    WPd_step / WPd_twoOf / WCtx_rep / WPd_twoNilGen / WPd_nilF
+    荷（AYdN / AYdTN の移植）/ WPd_oneNil / WPd_nilAll
+    → 予算 1 の節で走り → #14

@@ -66564,5 +66564,49 @@ theorem dm_step {k : ℕ} {X Y : Multiset ℕ} (h : ∀ y ∈ Y, y < k) :
 
 #print axioms dm_step
 
+theorem dm_cons0 (ks : List ℕ) :
+    Multiset.IsDershowitzMannaLT ((ks : List ℕ) : Multiset ℕ)
+      ((0 :: ks : List ℕ) : Multiset ℕ) := by
+  simpa using dm_step (k := 0) (X := ((ks : List ℕ) : Multiset ℕ)) (Y := 0) (by simp)
+
+theorem dm_app {k : ℕ} (ks a : List ℕ) (h : ∀ x ∈ a, x ≤ k) :
+    Multiset.IsDershowitzMannaLT ((a ++ ks : List ℕ) : Multiset ℕ)
+      (((k + 1) :: ks : List ℕ) : Multiset ℕ) := by
+  have e : ((a ++ ks : List ℕ) : Multiset ℕ)
+      = ((ks : List ℕ) : Multiset ℕ) + ((a : List ℕ) : Multiset ℕ) := by
+    rw [← Multiset.coe_add]
+    exact Multiset.coe_eq_coe.mpr List.perm_append_comm
+  rw [e]
+  exact dm_step (k := k + 1) (X := ((ks : List ℕ) : Multiset ℕ))
+    (Y := ((a : List ℕ) : Multiset ℕ))
+    (fun y hy => Nat.lt_succ_of_le (h y (by simpa using hy)))
+
+#print axioms dm_cons0
+#print axioms dm_app
+
+def WPd : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U : Jk1, FrmN ks U → WPd ks U → WPd ks (Jk1.one U V)
+  | ((k + 1) :: ks), V => ∀ (m : ℕ) (U N : Jk1),
+      FrmN (List.replicate m 0 ++ ks) U →
+      WPd (List.replicate m 0 ++ ks) U → JkA N →
+      (∀ ks' : List ℕ, (∀ x ∈ ks', x ≤ k) →
+        WPd (ks' ++ (List.replicate m 0 ++ ks)) N) →
+      WPd (List.replicate m 0 ++ ks) (Jk1.one U (Jk1.two N V))
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks (List.replicate m 0) (by simp)
+      | (rw [← List.append_assoc]
+         exact dm_app ks (ks' ++ List.replicate m 0)
+           (by
+             intro x hx
+             rcases List.mem_append.mp hx with h1 | h1
+             · exact ‹∀ x ∈ ks', x ≤ k› x h1
+             · simp at h1
+               omega))
+
 end Small
 end TRIO
