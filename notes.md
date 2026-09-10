@@ -18226,3 +18226,57 @@ B が乗っていると、展開の bad root が B の中に入るので、B の
     NLift   （層 NPd、兄弟条件を 1 段上げる）
     NTwStep （梯子 TwOk、NTw を 1 段上げる）
     MRun / WallT / OneNil / RPay
+
+## 追記217: `NRun` の `B = nil` は `NLift` で閉じる。階層化は効かない
+
+2026-09-10。追記216 の続き。
+
+### 新しく緑になったもの
+
+    NPd_nstN2_of_NLift  : NLift → ∀ k kk, (N の条件) → NPd (false::kk) (nstN2 N A k)
+    NPd_twoAnil_of_NLift: NLift → JkA A → (∀ kk, FrmJ kk A → NPd kk A) →
+                          ∀ ks, NPd (false :: ks) (two A nil)
+
+`GOK_twoTwoNilW_gen`（左兄弟つきのラン塔、階段 `nstN2 N A k`）を使う。
+階段は
+
+    nstN2 N A 0     = A                        ← 帰納法の仮定
+    nstN2 N A (k+1) = one A (two N (nstN2 N A k))
+
+で、2 段目の `NPd_twoOf` に兄弟 `N` を 1 段深い形 `false::kk` で使う。
+そこがちょうど `NLift`。
+
+したがって `NRun` と `NLift` の差は **`B ≠ nil` の場合だけ**。
+`R14_of_NLift` は既に緑なので、#14 に要るのは `NLift` 1 本。
+
+### 階層化（rank つきの族）は効かない
+
+壁は「形 ks の再帰では兄弟条件を `cntF + 1` に持ち上げられない」ことなので、
+兄弟条件だけ 1 つ下の rank の族で書けば良いのでは、と考えた:
+
+    APdR (n+1) (false::ks) V = ∀ m U N, … → JkA N →
+        (∀ ks', APdR n ks' N) →            ← rank を 1 つ下げれば ∀ ks' が書ける
+        APdR (n+1) (rep m true ++ ks) (one U (two N V))
+
+rank の外側再帰で定義できるので `∀ ks'` が書ける。ところが閉じない:
+
+- `nstN` の階段（走り用）は兄弟を 1 段深い形で使うので rank n の
+  `∀ ks'` で足りる ✓
+- `twoNilGen` の階段（`plug (rep i (fone N)) N`、`NPd_nilF` 用）は
+  **同じ rank n+1** で兄弟 `N` を `true` 形に差す必要がある ✗
+  rank n の条件からは rank n+1 の主張は出ない
+  （rank が下がるほど兄弟条件が弱く、族としては強くなるので、
+   `APdR (n+1) ks V → APdR n ks V` の向きしか無い）
+
+両方を clause に入れても、`nstN` の階段が同じ rank で 1 段深い形を
+要求するので閉じない。**rank による階層化では壁は動かない。**
+
+### いま #14 を出す最弱の仮定
+
+    NLift : ∀ N ks, JkA N →
+      (∀ j, NPd (rep j true ++ (true :: ks)) N) →
+      ∀ j, NPd (rep j true ++ (true :: (false :: ks))) N
+
+    R14_of_NLift : NLift → #14   （緑）
+
+`NRun`（走り 1 ケース）は `NLift` より強い仮定で、差は `B ≠ nil` の場合だけ。

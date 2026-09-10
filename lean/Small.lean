@@ -65637,6 +65637,44 @@ theorem R14_of_NRun (h : NRun) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ 
 
 #print axioms NPd_all_of_NRun
 #print axioms R14_of_NRun
+
+/-! ### `NRun` の `B = nil` の場合は `NLift` で閉じる
+
+`GOK_twoTwoNilW_gen`（階段 `nstN2 N A k`、左兄弟つきのラン塔）を使う。
+階段は `nstN2 N A 0 = A`（帰納法の仮定）、
+`nstN2 N A (k+1) = one A (two N (nstN2 N A k))` で、2 段目の `NPd_twoOf` に
+兄弟 `N` を 1 段深い形で使う必要がある。そこが `NLift`。 -/
+
+theorem NPd_nstN2_of_NLift (h : NLift) {N A : Jk1} (hJN : JkA N) (hJA : JkA A)
+    (IHA : ∀ kk : List Bool, FrmJ kk A → NPd kk A) :
+    ∀ (k : ℕ) (kk : List Bool),
+      (∀ j : ℕ, NPd (List.replicate j true ++ (true :: kk)) N) →
+      NPd (false :: kk) (nstN2 N A k)
+  | 0, kk, _ => IHA (false :: kk) hJA
+  | (k + 1), kk, hNt => by
+      show NPd (false :: kk) (Jk1.one A (Jk1.two N (nstN2 N A k)))
+      exact NPd_step (false :: kk) (hJA : FrmJ (false :: kk) A) (IHA (false :: kk) hJA)
+        (NPd_twoOf hJN (h N kk hJN hNt)
+          (NPd_nstN2_of_NLift h hJN hJA IHA k (false :: kk) (h N kk hJN hNt)))
+
+theorem NPd_twoAnil_of_NLift (h : NLift) {A : Jk1} (hJA : JkA A)
+    (IHA : ∀ kk : List Bool, FrmJ kk A → NPd kk A) (ks : List Bool) :
+    NPd (false :: ks) (Jk1.two A Jk1.nil) := by
+  rw [NPd_cf]
+  intro m U N hU hUk hJN hNt
+  refine NPd_two_of_ctx hU hUk ?_
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split _ ctx hc
+  refine GOK_twoTwoNilW_gen ctx0 V hJN hJA
+    (NCtx_JkT (true :: (List.replicate m true ++ ks)) _ hc
+      (Jk1.two N (Jk1.two A Jk1.nil)) ⟨hJN, hJA, trivial⟩) hGV ?_
+  intro k
+  exact (NPd_iff (true :: (List.replicate m true ++ ks)) _).mp
+    (NPd_twoOf hJN hNt
+      (NPd_nstN2_of_NLift h hJN hJA IHA k (List.replicate m true ++ ks) hNt)) _ hc
+
+#print axioms NPd_nstN2_of_NLift
+#print axioms NPd_twoAnil_of_NLift
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
