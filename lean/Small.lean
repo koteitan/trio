@@ -62022,5 +62022,161 @@ theorem GOK_oneNN_genM (D : List Frm) (dl : ℕ) (hdl : 1 ≤ dl) {N Nd : Jk1}
 
 #print axioms GOK_oneNN_genM
 
+
+/-! ### ★★★★★ `GOK_blkNN_gen` の抽象版 -/
+
+theorem GOK_blkNN_genM (D : List Frm) (dl : ℕ) (hdl : 1 ≤ dl) {N Nd : Jk1}
+    (T : ℕ → Jk1) (hJN : JkA N) (hJNd : JkA Nd) (hT0 : T 0 = Jk1.nil)
+    (hNs : ∀ d : ℕ, jk1 d N = jk1 d Nd ++ [((d + dl, 2, 0) : ℕ × ℕ × ℕ)])
+    (hTw : ∀ (Y0 : TrioSeq) (l n : ℕ),
+      Mtwd dl Y0 (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Nd) n = Y0 ++ jk1 l (T n))
+    (hMy : ∀ h : ℕ, ∀ t, 1 ≤ t →
+      t < (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd).length →
+      entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd) 0 t < h + 1 + dl →
+      (∀ i, t < i → i < (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd).length →
+        entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd) 0 t <
+          entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd) 0 i) →
+      2 ≤ entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd) 1 t)
+    (hJT : JkT (plug D (Jk1.two N (Jk1.one Jk1.nil N))))
+    (hstair : ∀ n : ℕ, GOK (plug D (Jk1.two N (T n)))) :
+    GOK (plug D (Jk1.two N (Jk1.one Jk1.nil N))) := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [plug D (Jk1.two N (Jk1.one Jk1.nil N))]) :=
+    WOk_append hw (WOk_singletonT hJT)
+  have hbaseN : GoodFb (fun a b => wordJ a b (ws ++ [plug D (Jk1.two N Jk1.nil)])) := by
+    have h := hstair 0 ws hw hG
+    rw [hT0] at h
+    exact h
+  have hstG : ∀ n : ℕ,
+      GoodFb (fun a b => wordJ a b (ws ++ [plug D (Jk1.two N (T n))])) :=
+    fun n => hstair n ws hw hG
+  have hone : ∀ h : ℕ, jk1 h (Jk1.one Jk1.nil N)
+      = ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) N := fun _ => rfl
+  have hsplit : ∀ h : ℕ, ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) N
+      = (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd)
+        ++ [((h + 1 + dl, 2, 0) : ℕ × ℕ × ℕ)] := by
+    intro h
+    rw [hNs (h + 1)]
+    simp only [List.cons_append]
+  have hMid : ∀ h : ℕ, MidD (h + 1 + 1)
+      (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) Nd) :=
+    fun h => MidD_colN (h + 1) Nd (by omega) hJNd
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_snoc_plug_twoX (c + 1 + t) (y + 1) ws D N (Jk1.one Jk1.nil N)
+      (c + 1 + t + 1 + dep D + 1) rfl, hone (c + 1 + t + 1 + dep D + 1),
+      hsplit (c + 1 + t + 1 + dep D + 1)]
+    have hbase0 : Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug D (Jk1.two N Jk1.nil)])) ∈ W 0 := by
+      have h0 := (hbaseN.pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift] at h0
+      exact h0
+    have htw : ∀ n : ℕ, Mtwd dl (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug D (Jk1.two N Jk1.nil)])))
+        (((c + 1 + t + 1 + dep D + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (c + 1 + t + 1 + dep D + 1 + 1) Nd) n ∈ W 0 := by
+      intro n
+      rw [hTw]
+      cases n with
+      | zero => simpa [hT0, jk1] using hbase0
+      | succ n' =>
+          have h1 := ((hstG (n' + 1)).pu y c hy).2.2 E hE t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_twoX (c + 1 + t) (y + 1) ws D N (T (n' + 1))
+            (c + 1 + t + 1 + dep D + 1) rfl] at h1
+          simpa [List.append_assoc] using h1
+    have hres := snocYd_mem (Y0 := Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) (y + 1) (ws ++ [plug D (Jk1.two N Jk1.nil)])))
+      (M := ((c + 1 + t + 1 + dep D + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (c + 1 + t + 1 + dep D + 1 + 1) Nd)
+      (L := c + 1 + t + 1 + dep D + 1 + 1) (y := 2) (dl := dl)
+      (by simp) (hMid (c + 1 + t + 1 + dep D + 1)) (by simp [entry])
+      (hMy (c + 1 + t + 1 + dep D + 1)) (by omega) hdl htw
+    simpa [List.append_assoc] using hres
+  · intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t Z hZ
+    rw [wordJ_shift, wordJ_snoc_plug_twoX (c + 1 + t) 2 ws D N (Jk1.one Jk1.nil N)
+      (c + 1 + t + 1 + dep D + 1) rfl, hone (c + 1 + t + 1 + dep D + 1),
+      hsplit (c + 1 + t + 1 + dep D + 1)]
+    have hbase0 : Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug D (Jk1.two N Jk1.nil)])) ∈ W 0 := by
+      have h0 := (hbaseN.pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift] at h0
+      exact h0
+    have htw : ∀ n : ℕ, Mtwd dl (Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug D (Jk1.two N Jk1.nil)])))
+        (((c + 1 + t + 1 + dep D + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (c + 1 + t + 1 + dep D + 1 + 1) Nd) n ∈ W 0 := by
+      intro n
+      rw [hTw]
+      cases n with
+      | zero => simpa [hT0, jk1] using hbase0
+      | succ n' =>
+          have h1 := ((hstG (n' + 1)).pk c E hI).2.2 j t Z hZ
+          rw [wordJ_shift, wordJ_snoc_plug_twoX (c + 1 + t) 2 ws D N (T (n' + 1))
+            (c + 1 + t + 1 + dep D + 1) rfl] at h1
+          simpa [List.append_assoc] using h1
+    have hres := snocYd_mem (Y0 := Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (c + 1 + t) 2 (ws ++ [plug D (Jk1.two N Jk1.nil)])))
+      (M := ((c + 1 + t + 1 + dep D + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (c + 1 + t + 1 + dep D + 1 + 1) Nd)
+      (L := c + 1 + t + 1 + dep D + 1 + 1) (y := 2) (dl := dl)
+      (by simp) (hMid (c + 1 + t + 1 + dep D + 1)) (by simp [entry])
+      (hMy (c + 1 + t + 1 + dep D + 1)) (by omega) hdl htw
+    simpa [List.append_assoc] using hres
+  · intro g
+    have hmid : MidD (g + 2) (((g + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (g + 1) 1 (ws ++ [plug D (Jk1.two N (Jk1.one Jk1.nil N))])) := by
+      have h1 := MidD_wordJ (g + 1) 1 (by omega) (by omega) hwO
+      simpa [show g + 1 + 1 = g + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((g + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          wordJ (g + 1) 1 (ws ++ [plug D (Jk1.two N (Jk1.one Jk1.nil N))])
+        = [((g + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+          wordJ (g + 1) 1 (ws ++ [plug D (Jk1.two N (Jk1.one Jk1.nil N))]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift,
+      wordJ_snoc_plug_twoX (g + 1 + s) 1 ws D N (Jk1.one Jk1.nil N)
+        (g + 1 + s + 1 + dep D + 1) rfl, hone (g + 1 + s + 1 + dep D + 1),
+      hsplit (g + 1 + s + 1 + dep D + 1)]
+    have hbase0 : A' ++ ([((g + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (g + 1 + s) 1 (ws ++ [plug D (Jk1.two N Jk1.nil)])) ∈ W 0 := by
+      have h0 := (hbaseN.seg (g + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((g + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+            wordJ (g + s + 1) 1 (ws ++ [plug D (Jk1.two N Jk1.nil)])
+          = [((g + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+            wordJ (g + s + 1) 1 (ws ++ [plug D (Jk1.two N Jk1.nil)]) from rfl] at h0
+      simpa [show g + s + 1 = g + 1 + s from by omega] using h0
+    have htw : ∀ n : ℕ, Mtwd dl (A' ++ ([((g + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (g + 1 + s) 1 (ws ++ [plug D (Jk1.two N Jk1.nil)])))
+        (((g + 1 + s + 1 + dep D + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (g + 1 + s + 1 + dep D + 1 + 1) Nd) n ∈ W 0 := by
+      intro n
+      rw [hTw]
+      cases n with
+      | zero => simpa [hT0, jk1] using hbase0
+      | succ n' =>
+          have h1 := ((hstG (n' + 1)).seg (g + s)).reapp P hP 0 A' (by simpa using hA')
+          rw [show ((g + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+                wordJ (g + s + 1) 1 (ws ++ [plug D (Jk1.two N (T (n' + 1)))])
+              = [((g + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+                wordJ (g + s + 1) 1 (ws ++ [plug D (Jk1.two N (T (n' + 1)))]) from rfl] at h1
+          rw [wordJ_snoc_plug_twoX (g + s + 1) 1 ws D N (T (n' + 1))
+            (g + s + 1 + 1 + dep D + 1) rfl] at h1
+          simpa [show g + s + 1 = g + 1 + s from by omega, List.append_assoc] using h1
+    have hres := snocYd_mem (Y0 := A' ++ ([((g + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        wordJ (g + 1 + s) 1 (ws ++ [plug D (Jk1.two N Jk1.nil)])))
+      (M := ((g + 1 + s + 1 + dep D + 1 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (g + 1 + s + 1 + dep D + 1 + 1) Nd)
+      (L := g + 1 + s + 1 + dep D + 1 + 1) (y := 2) (dl := dl)
+      (by simp) (hMid (g + 1 + s + 1 + dep D + 1)) (by simp [entry])
+      (hMy (g + 1 + s + 1 + dep D + 1)) (by omega) hdl htw
+    simpa [List.append_assoc] using hres
+
+#print axioms GOK_blkNN_genM
+
 end Small
 end TRIO
