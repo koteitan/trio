@@ -60853,5 +60853,171 @@ theorem R376_of_UtwAll (h : UtwAll) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] 
 
 #print axioms R376_of_UtwAll
 
+
+/-! ### ★★★★★ 枠木が全部 `nil` の文脈族 `VCtx` と、`UtwAll` の文脈つき版
+
+`Utw p n = plug (Cblk p を n 個) nil` なので、`UtwAll` は
+「枠木が全部 `nil` の文脈のどこにでも `nil` を差せる」から出る。
+文脈族は構文的（枠木が `nil` に固定）なので、追記171 の非可述性が起きない。 -/
+
+/-- ブロック「1 の枠 1 枚 + 2 の枠 `p` 枚」。 -/
+def Cblk (p : ℕ) : List Frm :=
+  Frm.fone Jk1.nil :: List.replicate p (Frm.ftwo Jk1.nil)
+
+theorem plug_repTwoNil : ∀ (p : ℕ) (X : Jk1),
+    plug (List.replicate p (Frm.ftwo Jk1.nil)) X = stkP p X
+  | 0, _ => rfl
+  | (p + 1), X => by
+      show Jk1.two Jk1.nil (plug (List.replicate p (Frm.ftwo Jk1.nil)) X) = _
+      rw [plug_repTwoNil p X]
+      rfl
+
+theorem plug_Cblk (D : List Frm) (p : ℕ) (X : Jk1) :
+    plug (D ++ Cblk p) X = plug D (Jk1.one Jk1.nil (stkP p X)) := by
+  rw [plug_append]
+  show plug D (Jk1.one Jk1.nil (plug (List.replicate p (Frm.ftwo Jk1.nil)) X)) = _
+  rw [plug_repTwoNil]
+
+/-- 枠木が全部 `nil` の文脈。ブロック `Cblk p` を積んで作る。 -/
+inductive VCtx : List Frm → Prop
+  | nil : VCtx []
+  | blk : ∀ {D : List Frm} (p : ℕ), VCtx D → VCtx (D ++ Cblk p)
+
+/-- ★ 行376 に残る 1 文（文脈つき）。 -/
+def VOkk : Prop := ∀ D : List Frm, VCtx D → GOK (plug D Jk1.nil)
+
+theorem GOK_Utw_of_VOkk (h : VOkk) (p : ℕ) : ∀ (n : ℕ) (D : List Frm), VCtx D →
+    GOK (plug D (Utw p n))
+  | 0, D, hD => h D hD
+  | (n + 1), D, hD => by
+      show GOK (plug D (Jk1.one Jk1.nil (stkP p (Utw p n))))
+      rw [← plug_Cblk D p (Utw p n)]
+      exact GOK_Utw_of_VOkk h p n (D ++ Cblk p) (VCtx.blk p hD)
+
+theorem UtwAll_of_VOkk (h : VOkk) : UtwAll :=
+  fun p n => GOK_Utw_of_VOkk h p n [] VCtx.nil
+
+/-- ★★★★★ 行376 は `VOkk` から出る。 -/
+theorem R376_of_VOkk (h : VOkk) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_UtwAll (UtwAll_of_VOkk h)
+
+#print axioms R376_of_VOkk
+
+/-- 文脈つきの走りのステップ。走りが 1 段短い塔から走り `p+1` が出る。 -/
+theorem GOK_oneStk_gen (D : List Frm) (p : ℕ)
+    (hJT : JkT (plug D (Jk1.one Jk1.nil (stk (p + 1)))))
+    (hGnil : GOK (plug D Jk1.nil))
+    (hst : ∀ n : ℕ, GOK (plug D (Utw p n))) :
+    GOK (plug D (Jk1.one Jk1.nil (stk (p + 1)))) := by
+  refine GOK_oneUV_gen D p Jk1.nil (V := stk (p + 1)) (fun d => jk1_stk_succ p d)
+    hJT hGnil ?_
+  intro n
+  rw [appJ_nil_Utw]
+  exact hst n
+
+#print axioms GOK_oneStk_gen
+
+/-- `VCtx` の文脈に `JkA` の木を差しても `JkA`。 -/
+theorem JkA_plug_VCtx : ∀ {D : List Frm}, VCtx D → ∀ X : Jk1, JkA X → JkA (plug D X)
+  | _, VCtx.nil, _, hX => hX
+  | _, VCtx.blk p hD, X, hX => by
+      rw [plug_Cblk]
+      exact JkA_plug_VCtx hD _ ⟨trivial, JkA_stkP p hX⟩
+
+theorem JkT_plug_VCtx {D : List Frm} (hD : VCtx D) {X : Jk1} (hX : JkA X)
+    (hT : TopOk (plug D X)) : JkT (plug D X) :=
+  ⟨JkA_plug_VCtx hD X hX, hT⟩
+
+#print axioms JkA_plug_VCtx
+
+
+/-! ### ★★★★★ `VOkk` は「裸の 1 の記録」1 歩に落ちる
+
+`plug (D ++ Cblk p) nil = plug D (one nil (stk p))` なので、`VOkk` の再帰は
+
+    走り p+1  ⟸  塔 Utw p n            （走りが 1 段短くなる）
+    走り 0    ⟸  裸の 1 の記録          （VStep1）
+
+塔のほうは `n` について、走りのほうは `p` について帰納すれば回る。
+文脈は全称なので「文脈が長くなる」ことが問題にならない。 -/
+
+theorem TopOk_plug_VCtx : ∀ {D : List Frm}, VCtx D → ∀ X : Jk1, TopOk X →
+    TopOk (plug D X) := by
+  intro D hD
+  induction hD with
+  | nil => intro X hX; exact hX
+  | blk p _ ih =>
+      intro X _
+      rw [plug_Cblk]
+      exact ih _ trivial
+
+/-- ★ 残る 1 歩。枠木が `nil` の文脈の先端に裸の 1 の記録を置ける。 -/
+def VStep1 : Prop := ∀ D : List Frm, VCtx D → GOK (plug D Jk1.nil) →
+    GOK (plug D (Jk1.one Jk1.nil Jk1.nil))
+
+/-- 塔 `Utw p n` は、`VStep1` があればどの `VCtx` 文脈にも差せる。 -/
+theorem GOK_Utw_V (h1 : VStep1) : ∀ (p n : ℕ) (D : List Frm), VCtx D →
+    GOK (plug D Jk1.nil) → GOK (plug D (Utw p n)) := by
+  intro p
+  induction p with
+  | zero =>
+      intro n
+      induction n with
+      | zero => intro D _ hG; exact hG
+      | succ n ih =>
+          intro D hD hG
+          show GOK (plug D (Jk1.one Jk1.nil (stkP 0 (Utw 0 n))))
+          rw [← plug_Cblk D 0 (Utw 0 n)]
+          refine ih (D ++ Cblk 0) (VCtx.blk 0 hD) ?_
+          rw [plug_Cblk]
+          exact h1 D hD hG
+  | succ q hq =>
+      intro n
+      induction n with
+      | zero => intro D _ hG; exact hG
+      | succ n ih =>
+          intro D hD hG
+          show GOK (plug D (Jk1.one Jk1.nil (stkP (q + 1) (Utw (q + 1) n))))
+          rw [← plug_Cblk D (q + 1) (Utw (q + 1) n)]
+          refine ih (D ++ Cblk (q + 1)) (VCtx.blk (q + 1) hD) ?_
+          rw [plug_Cblk]
+          refine GOK_oneStk_gen D q ?_ hG (fun m => hq m D hD hG)
+          exact ⟨JkA_plug_VCtx hD _ ⟨trivial, JkA_stk (q + 1)⟩,
+            TopOk_plug_VCtx hD _ trivial⟩
+
+/-- ★★★★★ `VOkk` は `VStep1` から出る。 -/
+theorem VOkk_of_VStep1 (h1 : VStep1) : VOkk := by
+  intro D hD
+  induction hD with
+  | nil => exact GOK_nil
+  | blk p hD ih =>
+      rw [plug_Cblk]
+      cases p with
+      | zero => exact h1 _ hD ih
+      | succ q =>
+          refine GOK_oneStk_gen _ q ?_ ih (fun m => GOK_Utw_V h1 q m _ hD ih)
+          exact ⟨JkA_plug_VCtx hD _ ⟨trivial, JkA_stk (q + 1)⟩,
+            TopOk_plug_VCtx hD _ trivial⟩
+
+/-- ★★★★★ シート行376 は `VStep1` 1 歩に落ちた。 -/
+theorem R376_of_VStep1 (h1 : VStep1) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_VOkk (VOkk_of_VStep1 h1)
+
+#print axioms R376_of_VStep1
+
+/-- ★ 残る 1 文。枠木が `nil` の文脈の先端に荷を吊るせる。 -/
+def VPay : Prop := ∀ (D : List Frm), VCtx D → GOK (plug D Jk1.nil) →
+    ∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay Jk1.nil C))
+
+theorem VStep1_of_VPay (h : VPay) : VStep1 := by
+  intro D hD hG
+  refine APnil_gen0 D Jk1.nil ?_ hG (fun C hC => h D hD hG C hC)
+  exact ⟨JkA_plug_VCtx hD _ ⟨trivial, trivial⟩, TopOk_plug_VCtx hD _ trivial⟩
+
+theorem R376_of_VPay (h : VPay) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_VStep1 (VStep1_of_VPay h)
+
+#print axioms R376_of_VPay
+
 end Small
 end TRIO
