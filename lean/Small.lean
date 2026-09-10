@@ -61539,12 +61539,14 @@ inductive NoRun : Jk1 → Prop
   | one : ∀ {A B : Jk1}, NoRun A → NoRun B → NoRun (Jk1.one A B)
   | two : ∀ {A B : Jk1}, NoRun A → NoRun B → TopOk B → NoRun (Jk1.two A B)
   | pay : ∀ {A : Jk1} {Y : TrioSeq}, NoRun A → Bok Y → NoRun (Jk1.pay A Y)
+  | ttA : ∀ {A : Jk1}, NoRun A → NoRun (Jk1.two A (Jk1.two Jk1.nil Jk1.nil))
 
 theorem JkA_of_NoRun : ∀ {X : Jk1}, NoRun X → JkA X
   | _, NoRun.nil => trivial
   | _, NoRun.one hA hB => ⟨JkA_of_NoRun hA, JkA_of_NoRun hB⟩
   | _, NoRun.two hA hB _ => ⟨JkA_of_NoRun hA, JkA_of_NoRun hB⟩
   | _, NoRun.pay hA hY => ⟨JkA_of_NoRun hA, hY⟩
+  | _, NoRun.ttA hA => ⟨JkA_of_NoRun hA, trivial, trivial⟩
 
 /-- ★ 走りを含まない木は全レベルで差せる（`NTwUp` の制限版）。 -/
 theorem NTw_NoRun_all : ∀ {X : Jk1}, NoRun X →
@@ -61576,6 +61578,12 @@ theorem NTw_NoRun_all : ∀ {X : Jk1}, NoRun X →
           (fun D' hD' => hA1 q j D' hD' hf) _ hY D hD
       · intro hT q
         exact TwOk_pay (q + 1) 0 (JkA_of_NoRun hA) (hA2 hT q) _ hY
+  | _, NoRun.ttA hA => by
+      obtain ⟨hA1, -⟩ := NTw_NoRun_all hA
+      refine ⟨fun q j D hD hf =>
+        TwOk_twoTwoNil (JkA_of_NoRun hA) hA1 hf D hD, ?_⟩
+      intro hT
+      exact absurd hT (by simp [TopOk])
 
 theorem NTw_of_NoRun {X : Jk1} (h : NoRun X) (q : ℕ) : NTw q X := (NTw_NoRun_all h).1 q
 
