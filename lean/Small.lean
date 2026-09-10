@@ -63322,5 +63322,71 @@ theorem R14_of_RPay (h : RPay) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ 
 #print axioms RStep_of_RPay
 #print axioms R14_of_RPay
 
+
+/-! ### ★★★★★ 目標の行（行376）も `RStep0` から出る
+
+`UtwAll = ∀ p n, GOK (Utw p n)` は `R376_of_UtwAll` でシートの目標の行を出す。
+`Utw p n = UtwR (replicate p nil) n` なので `GOK_UtwR_of_step` が使えて、
+1 段積むところは `RStep_rep`（`RStep0` から出る）で埋まる。 -/
+
+theorem RunP_replicate : ∀ (p : ℕ) (X : Jk1),
+    RunP (List.replicate p Jk1.nil) X = stkP p X
+  | 0, _ => rfl
+  | (p + 1), X => by
+      show Jk1.two Jk1.nil (RunP (List.replicate p Jk1.nil) X)
+        = Jk1.two Jk1.nil (stkP p X)
+      rw [RunP_replicate p X]
+
+theorem Utw_eq_UtwR (p : ℕ) : ∀ n : ℕ, Utw p n = UtwR (List.replicate p Jk1.nil) n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one Jk1.nil (stkP p (Utw p n))
+        = Jk1.one Jk1.nil (RunP (List.replicate p Jk1.nil)
+            (UtwR (List.replicate p Jk1.nil) n))
+      rw [RunP_replicate, Utw_eq_UtwR p n]
+
+theorem JkT_RFam_RBlk (As : List Jk1) (hJAs : ∀ A ∈ As, JkA A) :
+    ∀ D' : List Frm, RFam [RBlk As] ([] : List Frm) D' →
+      ∀ X : Jk1, JkA X → JkT (plug D' (Jk1.one Jk1.nil X)) := by
+  intro D' hD'
+  induction hD' with
+  | base => intro X hX; exact ⟨⟨trivial, hX⟩, trivial⟩
+  | step hB hD ih =>
+      intro X hX
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+      subst hB
+      show JkT (plug (_ ++ PBlk As Jk1.nil) (Jk1.one Jk1.nil X))
+      rw [plug_PBlk]
+      exact ih _ (JkA_RunP As hJAs ⟨trivial, hX⟩)
+
+theorem GOK_Utw_of_RStep0 (h : RStep0) (p : ℕ) : ∀ n : ℕ, GOK (Utw p n) := by
+  have hJAs : ∀ A ∈ List.replicate p Jk1.nil, JkA A := by
+    intro A hA
+    rw [List.eq_of_mem_replicate hA]
+    exact trivial
+  have hstep : ∀ D' : List Frm,
+      RFam [RBlk (List.replicate p Jk1.nil)] ([] : List Frm) D' →
+      GOK (plug D' Jk1.nil) →
+      GOK (plug D' (Jk1.one Jk1.nil (RunS (List.replicate p Jk1.nil)))) := by
+    intro D' hD' hG
+    exact RStep_rep h p D' Jk1.nil trivial (JkT_RFam_RBlk _ hJAs D' hD') hG
+  intro n
+  have hk := GOK_UtwR_of_step [] (List.replicate p Jk1.nil)
+    (show GOK (plug ([] : List Frm) Jk1.nil) from GOK_nil) hstep n
+  rw [Utw_eq_UtwR]
+  exact hk
+
+theorem UtwAll_of_RStep0 (h : RStep0) : UtwAll := fun p n => GOK_Utw_of_RStep0 h p n
+
+/-- ★★★★★ シートの目標の行も `RStep0` から出る。 -/
+theorem R376_of_RStep0 (h : RStep0) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_UtwAll (UtwAll_of_RStep0 h)
+
+theorem R376_of_RPay (h : RPay) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RStep0 (RStep0_of_RPay h)
+
+#print axioms R376_of_RStep0
+#print axioms R376_of_RPay
+
 end Small
 end TRIO
