@@ -16205,3 +16205,62 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
   2. `VCtx` を `VF` の枠で作る族に広げる
   3. `VOkk` を `∀ D ∈ VCtx, ∀ Z ∈ VF, GOK (plug D Z)` に一般化
   4. `VPay` を A2' で証明（鎖は `k` についての帰納、文脈は全称）
+
+## 追記174: #14 と行376 は同じ底（「深い文脈での裸の 1 の記録 + 荷」）に着く
+
+### 実測（全部標準形）
+
+    plug D (one W (two nil nil))        W ∈ {nil, two nil nil}
+      bad part = (h+1,1,0) 1 列だけ    delta = 1    階段 = 1 の記録の鎖
+      例: …(4,2,0)(5,2,0)(5,1,0)(6,2,0) → …(5,1,0)(6,1,0)
+
+    plug D (two nil nil)                D の末尾が ftwo nil（走り）
+      bad part = (h,1,0)(h+1,2,0)      delta = 2    階段 = 交互塔 QQ k
+      例: …(4,2,0)(5,2,0)(5,1,0)(6,2,0)(7,2,0) → …(6,2,0)(7,1,0)(8,2,0)
+
+    plug D (pay nil C)                  D の末尾が ftwo nil
+      bad root = その 2 の記録、delta = 0、鎖は同じ高さの横並び
+      例: …(4,2,0)(5,2,0)(6,0,0) → …(4,2,0)(5,2,0)(5,2,0)
+      ⚠ これは #14 の行列そのもの。行376 の荷は #14 と同じ強さ。
+
+### #14 も `ECtx` で書ける
+
+    TW 0 = two nil nil,  TW (n+1) = one (two nil nil) (two nil (TW n))
+      ⟹ TW n = plug ([fone (two nil nil), ftwo nil]^n) (two nil nil)
+      ⟹ one nil (two nil (TW n))
+           = plug ([fone nil, ftwo nil] ++ [fone (two nil nil), ftwo nil]^n) (two nil nil)
+
+だから `TowOk` は「枠木が `nil` か `two nil nil` の文脈のどこにでも `two nil nil` を差せる」。
+行376 の `VOkk`（枠木 `nil`）と同じ形で、枠木が 1 種類増えただけ。
+
+  - 走りのステップ（`plug D (two nil nil)`、D の末尾が 2 の枠）は走りが 1 段短くなる
+  - 1 の枠のステップ（`plug D (one W (two nil nil))`）は階段が 1 の記録の鎖（`Utw 0 n`）
+    ＝ `GOK_oneUV_gen D 0 W (V := two nil nil)` がそのまま当たる
+    （`hVs : jk1 d (two nil nil) = jk1 d (stk 0) ++ [(d+0+1,2,0)]` は真）
+
+### 底は共通
+
+どちらも最後は
+
+    plug D nil   （D の末尾が fone W）  =  plug D' (one W nil)   裸の 1 の記録
+
+に着く。`APnil_gen0` はこれに**荷**（`∀ C, GOK (plug D' (pay W C))`）を要求する。
+荷を深い文脈で回すには層の「枠木の荷」欄が要る（`Cok`/`Pok` はそれを持っている）。
+構文的な族（`VCtx`/`ECtx`）は枠木に条件を持てないので、そこで詰まる。
+
+### 分かった設計
+
+既存の層（`Pok`）は**走りを表現できない**（`Pok (j+1) 0` が
+`(ctx' ++ [fone V]) ++ [ftwo Wl]` の形を要求する＝ 2 の枠の直下は必ず 1 の枠）。
+だから走りだけを足した層を作ればよい。
+
+    Wok j n ctx      j = 2 の枠の本数、n = 最後の 2 の枠より上の 1 の枠の本数
+      (j+1, 0) の場合を 2 つに割る
+        (a) ctx = (ctx' ++ [fone V]) ++ [ftwo Wl]     Wl は一般（荷の横鎖が来る）
+        (b) ctx = ctx' ++ [ftwo nil]                  走り（兄弟は nil に固定）
+
+  - 枠木の良さ・荷は層の欄が持つ（可述、`Pok` と同じ）
+  - (b) の走りは `GOK_oneUV_gen` で 1 段短い走りに落ちる（兄弟 nil なので `stk p` が使える）
+  - 荷の横鎖は (a) の位置にしか来ない
+
+これが次の実装対象。
