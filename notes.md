@@ -16395,3 +16395,57 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
   1. #14 用に `WStep0` を `GCtx` 文脈に限った形で書き、`APd_oneNil` で埋める
   2. `WRun` / `TowOk_W` を `APd` 相当の仮定で回るように書き直す
      （文脈は `∀ ks` なので階段で shape が伸びてもよい）
+
+## 追記177: `WStep0` を族に絞った。`APd` では埋まらない理由
+
+### 絞れたところ（緑）
+
+    WFam : List Frm → Prop
+      | nil : WFam []
+      | blk : WFam ctx → WV V → WFam (ctx ++ Wblk V p)
+
+    WStep0 := ∀ ctx, WFam ctx → ∀ V, WV V → WCtxT ctx V → GOK (plug ctx V)
+                → GOK (plug ctx (one V nil))
+
+左兄弟は `nil` と `two nil nil` の 2 つ、文脈は `Wblk V p` を積んだものだけ。
+
+### `APd` では埋まらない
+
+追記176 で「#14 の文脈は `GCtx` の形だから `APd` で埋まる」と書いたが、**埋まらない**。
+
+`APd_oneNil ks V (FrmJ ks V) (Rq ks V) (APd ks V) (荷) : APd ks (one V nil)` は
+
+    Rq (false :: ks) U = TopOk U
+
+を要求する。`TopOk (two nil nil) = False` なので、**`V = two nil nil` を 2 の枠の
+直上に置く場合は `APd` の形に入らない**。行列で見ると
+
+    [ctx](d,2,0) ++ jk1 d (one (two nil nil) nil) = …(d,2,0)(d+1,2,0)(d+1,1,0)
+
+で `(d,2,0)(d+1,2,0)` は走り。`APd` は走りを表現できない（追記174）。
+
+ただし `WStep0` の仮定 `GOK (plug ctx V)`（= `plug ctx (two nil nil)` が良い）は
+`TowOk_W` の 1 つ前のステップで既に得ている。だから**主張自体は正しく、
+`APd` の記法に入らないだけ**。
+
+### `AYs` 経由も閉じない
+
+`WStep0 ⟸ WPay ⟸ AYs` の道は
+
+    hAP : ∀ W, CtxX ctx' W → GOK (plug ctx' W) → GOK (plug ctx' (one W V))
+
+を要求する。`W` が**無制限**なのが問題。`W` を族に絞った `AYs` は原理的に作れるが
+（`AYs` の証明で `hAP` が当たるのは `X` と鎖 `itJ (pay Z Y') k X` だけ）、
+その鎖が `{nil, two nil nil}` から出るので、兄弟の族が閉じない。
+
+### 分かったこと
+
+荷（`pay`）を一般の文脈で回すには、層の「枠木の良さと荷」の欄が要る。
+構文的な族（`WFam`）は枠木に条件を持てない。
+一方で走り（`WRun`）は層なしで回る。
+
+    走り  → 層なしで回る（WRun、文脈は全称）
+    荷    → 層が要る（枠量化された良さ）
+    走り + 荷 → 層は走りを表現できない
+
+これが最後の 1 点。
