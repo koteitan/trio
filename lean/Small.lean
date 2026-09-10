@@ -63388,5 +63388,45 @@ theorem R376_of_RPay (h : RPay) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ 
 #print axioms R376_of_RStep0
 #print axioms R376_of_RPay
 
+
+/-! ### ★★★★★ `RPay` の 1 の枠側は `AYs` で済む
+
+    AY0 : ∀ Y, Bok Y → ∀ Z, JkT Z → GOK Z → GOK (pay Z Y)          （緑、無条件）
+    AYs : … (hAP : ∀ V, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (one V Z)))
+        → GOK (plug ctx X) → GOK (plug ctx (one X (pay Z Y)))       （緑）
+
+`plug (ctx ++ [fone X]) (pay Z Y) = plug ctx (one X (pay Z Y))` なので、
+**1 の枠で終わる文脈での `RPay` は `AYs` そのもの**。仮定 `hAP` は
+`RStep [] Z` を `ctx`（1 段短い文脈）に制限したもの。
+
+    RPay at |D| = k（1 の枠止まり）
+      ⟸ RStep [] Z at |D| = k-1
+      ⟸ （木の帰納）RPay at |D| = k-1
+      ⟸ … ⟸ RPay at |D| = 0 = AY0（緑）
+
+つまり **1 の枠側は文脈の長さで帰納が回る**。残るのは 2 の枠で終わる文脈、
+すなわち「走りの上の荷」。これが本当の壁。 -/
+
+theorem RPay_fone (ctx : List Frm) (hc : CtxOk ctx) (X Z : Jk1)
+    (hX : CtxX ctx X) (hZ : CtxT ctx Z)
+    (hAP : ∀ V : Jk1, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Z)))
+    (hGX : GOK (plug ctx X)) (Y : TrioSeq) (hY : Bok Y) :
+    GOK (plug (ctx ++ [Frm.fone X]) (Jk1.pay Z Y)) := by
+  rw [plug_snoc]
+  exact AYs Y hY ctx hc X Z hX hZ hAP hGX
+
+theorem RPay_nil (Z : Jk1) (hJT : JkT Z) (hGZ : GOK Z) (Y : TrioSeq) (hY : Bok Y) :
+    GOK (plug ([] : List Frm) (Jk1.pay Z Y)) :=
+  AY0 Y hY Z hJT hGZ
+
+/-- ★ 残る壁: 2 の枠で終わる文脈での荷（＝走りの上の荷）。 -/
+def RPay2 : Prop := ∀ (D : List Frm) (N V : Jk1), JkA N → JkA V →
+    (∀ X : Jk1, JkA X → JkT (plug D (Jk1.two N (Jk1.one V X)))) →
+    GOK (plug (D ++ [Frm.ftwo N]) V) →
+    ∀ C : TrioSeq, Bok C → GOK (plug (D ++ [Frm.ftwo N]) (Jk1.pay V C))
+
+#print axioms RPay_fone
+#print axioms RPay_nil
+
 end Small
 end TRIO
