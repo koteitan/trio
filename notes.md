@@ -16752,3 +16752,74 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 これは行376（走り一般）と同じ強さに見える。#14 だけを先に通す道は、
 `TW n` の文脈に出る兄弟が全部 `nil` であることを使うはずだが、
 `TwOk` の全称性がそれを潰している。
+
+## 追記186: ★★★★★ 壁を木の構造帰納の唯一の抜け穴 `TTwo` にした
+
+### 2 つの述語
+
+木 `X` について
+
+    STw X = ∀ q, NTw q X          （どのレベルの「1 の枠止まり」の文脈にも差せる）
+    TTw X = ∀ q, TwOk (q+1) 0 X   （どのレベルの「2 の枠の直上」にも差せる）
+
+`X` の構造帰納で表を埋めると
+
+    X          STw                        TTw
+    -------------------------------------------------------------
+    nil        NTw_nil                    TwOk_twoNilE
+    one A B    STw A, STw B → 緑          TTw A, STw B → 緑
+    pay A Y    STw A → 緑（TwOk_pay）     TTw A → 緑（TwOk_pay_e）
+    two A B    STw A, TTw B → 緑          ★ 壁
+    -------------------------------------------------------------
+
+抜け穴は 1 マスだけ。
+
+    TTwo : ∀ A B, JkA A → JkA B → STw A → TTw B → TTw (two A B)
+    STw_TTw (h : TTwo) : ∀ X, JkA X → STw X ∧ TTw X     -- 緑（一発）
+    NTwUp_of_TTwo / WallT_of_TTwo / R14_of_TTwo / TowOk_of_TTwo
+
+`TTwo` の最小の場合 `A = B = nil` が `WallT`。
+`NTwUp` は `TTwo` から出る（`NTw r N` の仮定すら使わない）。
+追記185 の `NoRun` は「この表の緑のマスだけで閉じる木の族」の別名だった。
+`NoRun` に `pay`（追記186 以前）と `ttA : NoRun A → NoRun (two A (two nil nil))`
+を足して、族はさらに広がった（`ttA` は `TwOk_twoTwoNil` で通る）。
+
+### レベル 0 では壁は無い、という事実
+
+    TwoOk Z = ∀ N, JkA N → AUni N → ∀ j kk, APd (rep j true ++ (true::kk)) (two N Z)
+    AUni N  = ∀ j kk, APd (rep j true ++ (true::kk)) N
+
+- `TwoOk_twoNil : TwoOk (two nil nil)` は緑（`APd_twoTwoGen`）。
+- `LOk_twoNilAll : ∀ k, LOk k (two nil nil)` は緑。`LOk 0 ⟺ TwoOk`。
+- つまり `TwOk 0 j (two nil nil)`（`TwSt 0 j = StkOk (j+1)`）も
+  「`StkOk 0` の 2 の枠の直上」も両方緑。
+
+なぜレベル 0 だけ通るか: `StkOk 0` の 2 の枠の木 `N` は `AUni N`（全 shape の `APd`）
+を持っているから。`APd_chainT'` の通り `AUni` は `twoIt N T n` で閉じている。
+一方 `TwSt (r+1) 0` の 2 の枠の木 `N` は `NTw r N`（レベル r で打ち止め）しか持たない。
+**壁 = 梯子の 2 の枠の木が一様でないこと。** 差はそこだけ。
+
+### 梯子を作り直す道が塞がっている理由（今回、全部確かめた）
+
+2 の枠の欄を強めた梯子 `TwSt'` を作ると、必ず次のどちらかで詰まる。
+
+1. 1 の枠の欄を **素の `TwSt` 相対**にすると `TwSt' ⊆ TwSt` が出るので
+   `TwOk_twoTwoNil` がそのまま使えて `WallT'` は緑。しかし `TwOk_TWt`
+   （`TW (n+1) = one (two nil nil) (two nil (TW n))`）が 1 の枠に
+   `two nil nil` を積むので、素の `TwOk (r+1) 0 (two nil nil)` = `WallT` が要る。
+2. 1 の枠の欄を **`TwSt'` 相対**にすると `TwOk_TWt` は `WallT'` から回る。
+   しかし `TwSt' ⊆ TwSt` が消えるので `TwOk_twoTwoNil` を移植する必要があり、
+   その連鎖が `TwOk'_nil → TwOk'_pay → TwOk'_pay_e → TwOk'_twoIt` まで届く。
+   `TwOk'_twoIt` は `ftwo (twoIt N T n)` を積むので、2 の枠の欄の条件が
+   `twoIt N T n` で閉じていなければならない。`NoRun` は閉じていない
+   （`T = pay X Y` の `X` が任意）。全レベル一様 `∀ q, NTw' q N` にすると
+   定義が循環する（`TwSt' (r+1)` が `TwSt' q`（q 任意）を参照する）。
+
+`AUni N` を欄に入れる案も試したが、`AUni X → TwOkA r m X` が要り、
+`r = 0` で `AUni X → LOk (j+1) X` が必要になる。`LOk` の 1 の枠は
+意味的（弱い）ので `APd` からは出ない。ここで止まる。
+
+### 位置づけ
+
+　　壁 = `TTwo`（`STw A` と `TTw B` から `TTw (two A B)`）
+これが行376（走り一般）と #14 の共通の 1 点。木の帰納の他のマスは全部緑。
