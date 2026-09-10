@@ -63071,5 +63071,60 @@ theorem RStep_rep_of_RPay (h : RPay) :
 
 #print axioms RStep0_of_RPay
 
+
+/-! ### ★★★★★ バッドルートで切り直す
+
+`N` の語の最後の記録への祖先鎖に 1 の記録があるときは、`snocYd_mem` の分割点を
+その 1 の記録から取り直せばよい。木で言うと
+
+    N = plug E (one A (RunS (Bs ++ [B])))
+
+と分解して（`E` は `N` の中の「バッドルートより手前」の枠列）、
+
+    plug D (one N N)            = plug ((D ++ [fone N]) ++ E) (one A (RunS (Bs ++ [B])))
+    plug D (two N (one nil N))  = plug ((D ++ [ftwo N, fone nil]) ++ E) (one A (RunS (Bs ++ [B])))
+
+とすれば `GOK_oneUV_RunSB` がそのまま使える。 -/
+
+theorem plug_blk2 (D : List Frm) (N X : Jk1) :
+    plug (D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) X
+      = plug D (Jk1.two N (Jk1.one Jk1.nil X)) := by
+  rw [show D ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+      = (D ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil] by simp,
+    plug_snoc, plug_snoc2]
+
+theorem GOK_oneN_split (D : List Frm) (N A : Jk1) (E : List Frm) (Bs : List Jk1)
+    (B : Jk1) (hJBs : ∀ X ∈ Bs, JkA X) (hJB : JkA B)
+    (hNE : N = plug E (Jk1.one A (RunS (Bs ++ [B]))))
+    (hJT : JkT (plug ((D ++ [Frm.fone N]) ++ E) (Jk1.one A (RunS (Bs ++ [B])))))
+    (hGU : GOK (plug ((D ++ [Frm.fone N]) ++ E) A))
+    (hstair : ∀ n : ℕ,
+      GOK (plug ((D ++ [Frm.fone N]) ++ E) (appJ A (UtwP Bs B n)))) :
+    GOK (plug D (Jk1.one N N)) := by
+  have e1 : plug D (Jk1.one N N)
+      = plug ((D ++ [Frm.fone N]) ++ E) (Jk1.one A (RunS (Bs ++ [B]))) := by
+    rw [plug_append, plug_snoc, ← hNE]
+  rw [e1]
+  exact GOK_oneUV_RunSB _ Bs B A hJBs hJB hJT hGU hstair
+
+theorem GOK_blkN_split (D : List Frm) (N A : Jk1) (E : List Frm) (Bs : List Jk1)
+    (B : Jk1) (hJBs : ∀ X ∈ Bs, JkA X) (hJB : JkA B)
+    (hNE : N = plug E (Jk1.one A (RunS (Bs ++ [B]))))
+    (hJT : JkT (plug ((D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) ++ E)
+      (Jk1.one A (RunS (Bs ++ [B])))))
+    (hGU : GOK (plug ((D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) ++ E) A))
+    (hstair : ∀ n : ℕ,
+      GOK (plug ((D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) ++ E) (appJ A (UtwP Bs B n)))) :
+    GOK (plug D (Jk1.two N (Jk1.one Jk1.nil N))) := by
+  have e1 : plug D (Jk1.two N (Jk1.one Jk1.nil N))
+      = plug ((D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) ++ E)
+        (Jk1.one A (RunS (Bs ++ [B]))) := by
+    rw [plug_append, plug_blk2, ← hNE]
+  rw [e1]
+  exact GOK_oneUV_RunSB _ Bs B A hJBs hJB hJT hGU hstair
+
+#print axioms GOK_oneN_split
+#print axioms GOK_blkN_split
+
 end Small
 end TRIO
