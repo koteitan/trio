@@ -19408,3 +19408,80 @@ cntF が小さい形だけなので届かない。
 停止性の測度は `cntF`（入り目の和）から多重集合の DM 順序へ。
 `{1}*i < {2}` が全ての `i` で成立するので、階段の高さ `i` が非有界でも減る。
 ZFC も順序数も使っていない。`Multiset.IsDershowitzMannaLT` だけ。
+
+## 追記243: 行376 に要るのは「走りのブロックを一度に張る節」
+
+2026-09-11。#14 の次（行376）を測った。
+
+### 行376 の帰着（既存、緑）
+
+    R376_of_tower : (∀ n, Mtw R344 [(4,2,0)] n ∈ W 0) → 行376
+    tw_R344_42g   : (∀ q, GOK (one nil (stk q))) → ∀ n, Mtw R344 [(4,2,0)] n ∈ W 0
+    GOK_oneStk_gen: (∀ n, GOK (plug D (Utw p n))) → GOK (plug D (one nil (stk (p+1))))
+
+    stk q = stkP q nil = two nil (two nil (… nil))     2 の記録 q 本
+    Utw p n = Trm nil (replicate n (nil, p))
+            = one nil (stkP p (one nil (stkP p (… nil))))
+
+つまり **2 の記録が p 本続く走りを、底が `nil` でない所で使う**。
+
+### `WPd` でどこまで行くか
+
+    WPd ((k+1)::ks) (two A nil)     ✓ WPd_twoA_run（A は全形で良い木）
+    WPd ((k+1)::ks) (two A B)       ✗ B が nil でないと塔補題がない
+
+既存の塔補題（`GOK_oneUV_genM` 系）はどれも
+「`one U ·` にぶら下がる木の語が 2 の記録で終わる」ことを要求する。
+`two A B` の語は `B` の語で終わるので、`B = nil`（や `B = RunS …`）でないと使えない。
+
+### 直し方: 節が走りのブロックを一度に張る
+
+    | ((k+1) :: ks), V => ∀ r (入り目 ≤ k) U (Ns : List Jk1), Ns ≠ [] → … →
+        WQd (r ++ ks) (one U (RunP Ns V))
+
+こうすると `RunP Ns (two A B) = RunP (Ns ++ [A]) B` なので
+
+    WQd ((k+1)::ks) B → (A が兄弟条件を満たす) → WQd ((k+1)::ks) (two A B)
+
+が**定義から**出る。一般の走りが塔補題なしで出る。
+
+### そのとき兄弟の条件は頭を固定できない
+
+`GOK_oneUV_RunSB` の階段は `Ns = Bs ++ [Bl]` と分けて
+
+    appJ V (UtwP Bs Bl (n+1)) = one V (RunP Bs (appJ Bl (UtwP Bs Bl n)))
+    appJ Bl (UtwP Bs Bl 0)    = Bl
+
+なので `n = 0` の段で `WQd ((b+1)::B) Bl` が要る。頭が 0 の形だけでは届かない。
+兄弟の条件を `∀ q ≠ [] (入り目 ≤ k), WQd (q ++ ks) N` にする必要がある。
+
+### すると荷（pay）の連鎖が詰まる
+
+連鎖の 1 歩は兄弟 `X` を `two X T` にする。形 `(k'+1)::rest`（`k'+1 ≤ k`）では
+一般の走りに落ちるが、そこで `WQd ((k'+1)::rest) T` が要る。
+`T = pay Z Y'` で、手元にあるのは `WQd ((k+1)::ks) Z`（予算 k）だけ。
+予算 `k'` と `k` は互いに含意しない（予算が大きいほど兄弟の仮定が強く、文が弱い）。
+
+### 出口: 枠木の条件に荷閉包を入れる
+
+荷が要るのは `WQd (0::ks) nil`（= `oneNil`）だけで、そこは `APnil_gen0` が
+
+    (∀ C, Bok C → GOK (plug ctx (pay U C)))
+
+を要求する。これを**枠木 `U` の条件そのものに入れる**（methodology 5.13 と同じ手）。
+
+    | (0 :: ks), V => ∀ U, FrmN ks U → WQd ks U →
+        (∀ C, Bok C → WQd ks (pay U C)) → WQd ks (one U V)
+
+こうすると `oneNil` は荷の補題なしで出る。荷の補題は
+「兄弟条件つきの `Z`」に対してだけ書けばよくなり、予算のずれが消える。
+兄弟 `N` の条件にも同じく荷閉包を入れる。
+
+### 次にやること
+
+    WQd の定義（ブロック節・頭自由の兄弟・枠木に荷閉包）
+    WCtx / iff / step / twoOf / block / nilF / nilAll
+    荷（兄弟条件つき）
+    一般の走り（定義から）
+    構造帰納 ∀ X, JkA X → ∀ ks, FrmN ks X → WQd ks X
+    → UtwAll → 行376
