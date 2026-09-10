@@ -66300,8 +66300,57 @@ theorem SbT_YX2 : ∀ n : ℕ, SbT (YX2 n)
 
 #print axioms NPd_ABt_SbF
 #print axioms NPd_twoAnil_sibSbT
+/-! ### 走りの意味版（構文クラスを使わない形）
+
+`NPd_twoAnil_sibSbT` の `SbF A` / `SbT N` を、そのまま可差し性に置き換えた形。
+**A は 2 の枠の直上にどの形でも差せる、N は true 頭のどの形にも差せる**、
+の 2 つだけで走りが出る。 -/
+
+theorem NPd_ABt_lift {A N : Jk1} (hJA : JkA A)
+    (hAf : ∀ kk : List Bool, NPd (false :: kk) A) (hJN : JkA N)
+    (hNt : ∀ (kk : List Bool) (j : ℕ),
+      NPd (List.replicate j true ++ (true :: kk)) N) :
+    ∀ (n : ℕ) (kk : List Bool), NPd (false :: kk) (ABt [N] A n)
+  | 0, kk => hAf kk
+  | (n + 1), kk => by
+      show NPd (false :: kk) (Jk1.one A (Jk1.two N (ABt [N] A n)))
+      exact NPd_step (false :: kk) hJA (hAf kk)
+        (NPd_twoOf hJN (fun j => hNt (false :: kk) j)
+          (NPd_ABt_lift hJA hAf hJN hNt n (false :: kk)))
+
+/-- ★★★★★ 走りの意味版。`A` が 2 の枠の直上にどの形でも差せて、
+`N` が true 頭のどの形にも差せれば、走りは置ける。 -/
+theorem NPd_twoAnil_lift {A N : Jk1} (hJA : JkA A)
+    (hAf : ∀ kk : List Bool, NPd (false :: kk) A) (hJN : JkA N)
+    (hNt : ∀ (kk : List Bool) (j : ℕ),
+      NPd (List.replicate j true ++ (true :: kk)) N)
+    (kk : List Bool) (U : Jk1) (hU : FrmJ kk U) (hUk : NPd kk U) :
+    NPd kk (Jk1.one U (Jk1.two N (Jk1.two A Jk1.nil))) := by
+  rw [NPd_iff]
+  intro ctx hc
+  have hJBs : ∀ X ∈ [N], JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact hJN
+  have hGU : GOK (plug ctx U) := (NPd_iff kk U).mp hUk ctx hc
+  have hstair : ∀ n : ℕ, GOK (plug ctx (appJ U (UtwP [N] A n))) := by
+    intro n
+    cases n with
+    | zero => exact hGU
+    | succ n =>
+        have h : NPd kk (Jk1.one U (Jk1.two N (ABt [N] A n))) :=
+          NPd_step kk hU hUk
+            (NPd_twoOf hJN (fun j => hNt kk j) (NPd_ABt_lift hJA hAf hJN hNt n kk))
+        exact (NPd_iff kk _).mp h ctx hc
+  show GOK (plug ctx (Jk1.one U (RunS ([N] ++ [A]))))
+  exact GOK_oneUV_RunSB ctx [N] A U hJBs hJA
+    (NCtx_JkT kk ctx hc _ (FrmJ_one kk U _ hU ⟨hJN, hJA, trivial⟩))
+    hGU hstair
+
 #print axioms SbT_NST
 #print axioms SbT_YX2
+#print axioms NPd_twoAnil_lift
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
