@@ -68130,5 +68130,78 @@ theorem TowOkM (m : ℕ) : ∀ n : ℕ,
 #print axioms WPd_TWm
 #print axioms TowOkM
 
+/-! ### 塔の一般形の語
+
+    UBlk m l = (l+1,1,0)(l+2,2,0)(l+3,2,0)^m
+    U375c = UBlk 1 2 （#14 の単位）
+-/
+
+def UBlk (m l : ℕ) : TrioSeq :=
+  ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+    List.replicate m ((l + 3, 2, 0) : ℕ × ℕ × ℕ)
+
+theorem UBlk_one_two : UBlk 1 2 = U375c := by
+  show ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) ::
+    List.replicate 1 ((5, 2, 0) : ℕ × ℕ × ℕ) = _
+  simp [U375c]
+
+theorem shiftr01_UBlk (m l h : ℕ) : shiftr01 h 0 (UBlk m l) = UBlk m (l + h) := by
+  have e1 : l + 1 + h = l + h + 1 := by omega
+  have e2 : l + 2 + h = l + h + 2 := by omega
+  have e3 : l + 3 + h = l + h + 3 := by omega
+  simp [UBlk, shiftr01, List.map_replicate, e1, e2, e3]
+
+theorem jk1_twoIt_nil : ∀ (m l : ℕ),
+    jk1 l (twoIt Jk1.nil Jk1.nil m) = List.replicate m ((l + 1, 2, 0) : ℕ × ℕ × ℕ)
+  | 0, _ => rfl
+  | (m + 1), l => by
+      show jk1 l (twoIt Jk1.nil Jk1.nil m) ++
+        (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Jk1.nil) = _
+      rw [jk1_twoIt_nil m l]
+      show List.replicate m ((l + 1, 2, 0) : ℕ × ℕ × ℕ) ++
+        [((l + 1, 2, 0) : ℕ × ℕ × ℕ)] = _
+      rw [← List.replicate_succ']
+
+theorem flatU_succ_m (m l k : ℕ) :
+    (List.range (k + 1)).flatMap (fun i => shiftr01 (2 * i) 0 (UBlk m l))
+      = UBlk m l ++ (List.range k).flatMap (fun i => shiftr01 (2 * i) 0 (UBlk m (l + 2))) := by
+  rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+  simp only [Nat.mul_zero, shiftr01_zero, Function.comp_def]
+  congr 1
+  apply List.flatMap_congr
+  intro i _
+  rw [shiftr01_UBlk, shiftr01_UBlk]
+  congr 1
+  omega
+
+theorem twm_word (m : ℕ) : ∀ (k l : ℕ),
+    (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (Jk1.two Jk1.nil (TWm m k)))
+      = (List.range (k + 1)).flatMap (fun i => shiftr01 (2 * i) 0 (UBlk m l))
+  | 0, l => by
+      show ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 (l + 1) Jk1.nil ++
+        (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1) (twoIt Jk1.nil Jk1.nil m))) = _
+      rw [show l + 1 + 1 = l + 2 from by omega, jk1_twoIt_nil m (l + 2)]
+      simp [UBlk, jk1, show l + 2 + 1 = l + 3 from by omega]
+  | (k + 1), l => by
+      have e1 : jk1 (l + 1) (Jk1.two Jk1.nil (TWm m (k + 1)))
+          = ((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+            (List.replicate m ((l + 3, 2, 0) : ℕ × ℕ × ℕ) ++
+              (((l + 3, 1, 0) : ℕ × ℕ × ℕ) ::
+                jk1 (l + 3) (Jk1.two Jk1.nil (TWm m k)))) := by
+        show jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1 + 1) (TWm m (k + 1))) = _
+        rw [show l + 1 + 1 = l + 2 from by omega]
+        show ([] : TrioSeq) ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+          (jk1 (l + 2) (twoIt Jk1.nil Jk1.nil m) ++
+            (((l + 2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+              jk1 (l + 2 + 1) (Jk1.two Jk1.nil (TWm m k))))) = _
+        rw [jk1_twoIt_nil m (l + 2), show l + 2 + 1 = l + 3 from by omega]
+        rfl
+      rw [e1, twm_word m k (l + 2), flatU_succ_m m l (k + 1)]
+      simp [UBlk]
+
+#print axioms twm_word
+
 end Small
 end TRIO
