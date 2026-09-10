@@ -18351,3 +18351,46 @@ rank の外側再帰で定義できるので `∀ ks'` が書ける。ところ�
 
 **いま #14 を出す最弱の仮定は `NRunNil`**:
 「上に何も無い 2 の記録を、2 の枠の直上に、どの形の文脈でも置ける」。
+
+## 追記220: 兄弟が nil の走りは無条件。残るのは兄弟が nil でない場合だけ
+
+2026-09-10。追記219 の続き。
+
+### 新しく緑になったもの
+
+    NPd_nstN_nil     : ∀ k ks, NPd (false :: ks) (nstN nil k)
+    NPd_twoTwoGen_nil: ∀ ks, NPd (true :: ks) (two nil (two nil nil))
+    NRunNil_nilSib   : ∀ kk U, FrmJ kk U → NPd kk U →
+                       NPd kk (one U (two nil (two nil nil)))
+
+階段 `nstN nil k` は兄弟が nil なので `NPd_twoOf` に要る条件が
+`NPd_nilAll`（緑）で済み、**1 段上げが要らない**。だから走りは
+
+- 2 の枠の兄弟が nil
+- 置き場所が 1 の枠の直上
+
+なら無条件で置ける。
+
+### 残っている差
+
+`NRunNil : ∀ ks, NPd (false::ks) (two nil nil)` を `NPd_cf` で開くと
+
+    ∀ m U N, FrmJ kk U → NPd kk U → JkA N → (∀ j, NPd (rep j true ++ (true::kk)) N) →
+      NPd kk (one U (two N (two nil nil)))
+
+で、**`N = nil` の場合は `NRunNil_nilSib` で緑**。残るのは `N ≠ nil` だけ。
+
+`N ≠ nil` だと階段 `nstN N k` の各段で兄弟 `N` を 2 の枠 1 本ぶん深い形に
+差す必要があり（追記218 の実測: 単位 `unN N D` の `D` がコピーごとに 2 上がる）、
+`NPd_cf` が与える条件（`true` を前に足すだけ）では足りない。
+
+### #14 が兄弟 nil だけでは済まない理由
+
+塔の文脈 `TWD0 ++ TWBlk^n` は 2 の枠が全部 `ftwo nil` なので、
+一見「兄弟 nil の走り」で足りそうに見える。しかし `NCtx` で見ると
+最内の 1 の枠の木 `two nil nil` が形 `false^(n-1)` に来るので、
+枠の条件として `NPd (false::ks) (two nil nil)` が要る。
+これは `NPd_cf` で開かれるので**兄弟 `N` が全称**になる。
+
+つまり「塔の 2 の枠の兄弟は nil」でも、「枠の木 `two nil nil` を
+置くために開いた先の兄弟」は任意になってしまう。

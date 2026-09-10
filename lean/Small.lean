@@ -65708,6 +65708,50 @@ theorem R14_of_NRunNil (h : NRunNil) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)
 #print axioms NRunNil_of_NLift
 #print axioms TowOk_of_NRunNil
 #print axioms R14_of_NRunNil
+
+/-! ### ★★★★★ 兄弟が nil の走りは無条件で出る
+
+`nstN nil k` の階段は兄弟が `nil` なので `NPd_twoOf` に要る条件が
+`NPd_nilAll`（緑）で済み、1 段上げが要らない。だから
+
+    NPd (true :: ks) (two nil (two nil nil))
+
+は無条件。残るのは 2 の枠の直上（`false :: ks`）と、兄弟が nil でない場合。 -/
+
+theorem NPd_nstN_nil : ∀ (k : ℕ) (ks : List Bool), NPd (false :: ks) (nstN Jk1.nil k)
+  | 0, ks => NPd_nilF ks
+  | (k + 1), ks => by
+      refine NPd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil)
+        (NPd_nilF ks) ?_
+      rw [NPd_ct]
+      intro U hU hUk
+      exact (NPd_cf (false :: ks) (nstN Jk1.nil k)).mp
+        (NPd_nstN_nil k (false :: ks)) 0 U Jk1.nil
+        (by simpa using hU) (by simpa using hUk) trivial (fun _ => NPd_nilAll _)
+
+/-- ★★★★★ 走り（兄弟 nil）は 1 の枠の直上なら無条件で置ける。 -/
+theorem NPd_twoTwoGen_nil (ks : List Bool) :
+    NPd (true :: ks) (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil)) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  refine GOK_twoTwoNil_gen ctx0 V trivial
+    (NCtx_JkT (true :: ks) _ hc (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))
+      ⟨trivial, trivial, trivial⟩) hGV ?_
+  intro k
+  exact (NPd_iff (true :: ks) _).mp
+    (NPd_twoOf (N := Jk1.nil) trivial (fun _ => NPd_nilAll _)
+      (NPd_nstN_nil k ks)) _ hc
+
+/-- `NRunNil` を `NPd_cf` で開いた形。**兄弟 `N` が nil の場合は無条件**。
+残るのは `N ≠ nil` の場合だけ。 -/
+theorem NRunNil_nilSib (kk : List Bool) (U : Jk1) (hU : FrmJ kk U) (hUk : NPd kk U) :
+    NPd kk (Jk1.one U (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))) :=
+  NPd_step kk hU hUk (NPd_twoTwoGen_nil kk)
+
+#print axioms NPd_nstN_nil
+#print axioms NPd_twoTwoGen_nil
+#print axioms NRunNil_nilSib
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
