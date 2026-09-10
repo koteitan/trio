@@ -63528,6 +63528,116 @@ theorem TSib_pay (D : List Frm) (hJTD : ∀ Z : Jk1, JkA Z → JkT (plug D Z))
   intro Y hYb
   exact key hYb.mem hYb
 
+
+/-! ### ★★★★★ 兄弟を族に制限した版
+
+    TChain Wb X V : V は Wb から `V ↦ two V (pay X Y)` で作れる
+    TSibF D X Z Wb : ∀ V, TChain Wb X V → GOK (plug D V) → GOK (plug D (two V Z))
+
+`TSib_pay` の証明が使う兄弟は横鎖 `twoIt V (pay X Y') n` だけなので、
+族を `TChain` に制限してよい。 -/
+
+inductive TChain (Wb X : Jk1) : Jk1 → Prop
+  | base : TChain Wb X Wb
+  | step : ∀ {V : Jk1} {Y : TrioSeq}, TChain Wb X V → Bok Y →
+      TChain Wb X (Jk1.two V (Jk1.pay X Y))
+
+def TSibF (D : List Frm) (X Z Wb : Jk1) : Prop :=
+  ∀ V : Jk1, TChain Wb X V → JkA V → GOK (plug D V) → GOK (plug D (Jk1.two V Z))
+
+theorem TSib_of_TSibF {D : List Frm} {X Z Wb : Jk1} (h : TSib D Z) : TSibF D X Z Wb :=
+  fun V _ hJV hGV => h V hJV hGV
+
+theorem GOK_twoIt_chainF {D : List Frm} {Wb X V : Jk1} {Y : TrioSeq} (hJX : JkA X)
+    (hY : Bok Y) (hprev : TSibF D X (Jk1.pay X Y) Wb) (hV : TChain Wb X V)
+    (hJV : JkA V) (hGV : GOK (plug D V)) :
+    ∀ n : ℕ, TChain Wb X (twoIt V (Jk1.pay X Y) n)
+      ∧ JkA (twoIt V (Jk1.pay X Y) n)
+      ∧ GOK (plug D (twoIt V (Jk1.pay X Y) n))
+  | 0 => ⟨hV, hJV, hGV⟩
+  | (n + 1) => by
+      obtain ⟨hc, h1, h2⟩ := GOK_twoIt_chainF hJX hY hprev hV hJV hGV n
+      exact ⟨TChain.step hc hY, ⟨h1, hJX, hY⟩, hprev _ hc h1 h2⟩
+
+theorem TSibF_pay (D : List Frm) (hJTD : ∀ Z : Jk1, JkA Z → JkT (plug D Z))
+    (X : Jk1) (hJX : JkA X) (Wb : Jk1) (hX : TSibF D X X Wb) :
+    ∀ Y : TrioSeq, Bok Y → TSibF D X (Jk1.pay X Y) Wb := by
+  have hnilc : TSibF D X (Jk1.pay X ([] : TrioSeq)) Wb := by
+    intro V hV hJV hGV
+    refine GOK_congr (jk1_plug_congr D ?_) (hX V hV hJV hGV)
+    intro l
+    show jk1 l V ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) X)
+      = jk1 l V ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (Jk1.pay X ([] : TrioSeq)))
+    rw [jk1_pay_nil]
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → TSibF D X (Jk1.pay X Y) Wb} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact hnilc
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        intro V hV hJV hGV ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (hJTD _ ⟨hJV, hJX, by simpa using hYb⟩) ?_
+        intro n _
+        exact (GOK_twoIt_chainF hJX Bok_nil hnilc hV hJV hGV n).2.2 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm2, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : TSibF D X (Jk1.pay X Y.dropLast) Wb := hdl hdb
+        rw [hsplit]
+        intro V hV hJV hGV ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (hJTD _ ⟨hJV, hJX, by rw [← hsplit]; exact hYb⟩) ?_
+        intro n _
+        exact (GOK_twoIt_chainF hJX hdb hprev hV hJV hGV n).2.2 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro V hV hJV hGV ws hw hG
+        refine GoodFb_snoc_innerJt0 hw (hJTD _ ⟨hJV, hJX, hYb⟩) hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hYb hn) V hV hJV hGV ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm2)
+  intro Y hYb
+  exact key hYb.mem hYb
+
+#print axioms TSibF_pay
 #print axioms TSib_pay
 
 
