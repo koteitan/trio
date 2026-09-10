@@ -18915,3 +18915,40 @@ N の可差し性が 1 段深い形で要る。`SbT N`（形に依らない）�
     cntF(true^(j+1) ++ false^(k-1)) = k − 1   ← 1 段につき cntF が 1 増える
 
 語・木・形の 3 つの見方が同じ数字を出している。
+
+## 追記232: 証明済みの行の木族は `SbT` に入る。外れるのは `TW n` だけ
+
+2026-09-11。追記231 の続き。
+
+### 新しく緑になったもの
+
+    SbT_NST : ∀ m, SbT (NST m)        NST m = V(11,2,0) の塔の先端
+    SbT_YX2 : ∀ n, SbT (YX2 n)        YX2 n = X(7,2,0) の交互木
+
+    NST 0 = two nil nil,  NST (m+1) = one (two nil nil) (two nil (nstN nil m))
+    YX2 0 = two nil nil,  YX2 (n+1) = two nil (one nil (YX2 n))
+
+どちらも `SbF_nstN_nil` / `SbF.one` を経由して `SbT` に入る。
+
+一方 `TW n`（#14 の塔の木）は n ≥ 1 で `SbT` にも `SbF` にも入らない。
+
+    TW (n+1) = one (two nil nil) (two nil (TW n))
+    SbT.one には SbT (two nil nil) ✓ と SbT (two nil (TW n)) が要り、
+    後者は SbT.two SbT.nil (SbF (TW n)) なので SbF (TW n) が要る。
+    SbF (TW (n+1)) = SbF.one (SbF (two nil nil)) … で SbF (two nil nil) が要る。
+    SbF には two の節が無い。
+
+**つまり `SbT` / `SbF` は証明済みの行の木族をちょうど覆い、
+#14 の塔だけが外に出ている。**
+
+### 外部測定（弱い証拠）
+
+シート行 2〜375 の 3 行行列 108 件を復号すると
+
+    空木                        33
+    非自明な木に復号できた      27   **うち SbT に入る 27 / 27、外れる 0**
+    復号できなかった            48   （加算ユニットが複数ある行列）
+
+復号できた範囲は行 268〜375 で、376 行目の直前まで。
+「よくある形が `SbT` を外れる」ということは無さそう、という弱い証拠。
+復号できなかった 48 件については何も言えない。

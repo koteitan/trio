@@ -66279,8 +66279,29 @@ theorem NPd_twoAnil_sibSbT {A N : Jk1} (hA : SbF A) (hN : SbT N) (kk : List Bool
 #print axioms SbF_le_SbT
 #print axioms SbF_nstN_nil
 #print axioms NPd_stkA_SbF
+/-! ### 証明済みの行に出てくる木族は `SbT` に入る
+
+`NST m`（`V(11,2,0)` の塔の先端）も `YX2 n`（`X(7,2,0)` の交互木）も
+`SbT` に入る。入らないのは `TW n`（#14 の塔、n ≥ 1）だけ。 -/
+
+theorem SbT_NST : ∀ m : ℕ, SbT (NST m)
+  | 0 => SbT_twoNilNil
+  | (m + 1) => by
+      show SbT (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+        (Jk1.two Jk1.nil (nstN2 Jk1.nil Jk1.nil m)))
+      rw [nstN2_nil_eq_nstN]
+      exact SbT.one SbT_twoNilNil (SbT.two SbT.nil (SbF_nstN_nil m))
+
+theorem SbT_YX2 : ∀ n : ℕ, SbT (YX2 n)
+  | 0 => SbT_twoNilNil
+  | (n + 1) => by
+      show SbT (Jk1.two Jk1.nil (Jk1.one Jk1.nil (YX2 n)))
+      exact SbT.two SbT.nil (SbF.one SbF.nil (SbT_YX2 n))
+
 #print axioms NPd_ABt_SbF
 #print axioms NPd_twoAnil_sibSbT
+#print axioms SbT_NST
+#print axioms SbT_YX2
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
