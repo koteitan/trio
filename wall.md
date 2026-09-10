@@ -10,20 +10,59 @@
 
 ## 最小形
 
-    QRunPay : ∀ k ks C, Bok C → ∀ Z, FrmN ((k+1)::ks) Z →
-              WQd ((k+1)::ks) Z → WQd ((k+1)::ks) (pay Z C)
+    ZeroStep : ∀ U, JkT U → GOK U → ∀ pre, GOK (BT U pre) →
+               ∀ i, GOK (BT U (pre ++ List.replicate i 0))
 
-**「走りの 2 の記録の直下に、荷を 1 個吊るせる」— これだけ。**
+**「走りを含む文脈の先端で、裸の 1 の記録を積む」— これだけ。**
 
-    R376_of_QRunPay : QRunPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
+    R376_of_ZeroStep : ZeroStep → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
 
-同じ 1 点の別名（すべて緑の含意）:
+`bdA (js ++ [0]) = bdX (one nil nil) js` なので、これは `SelfW D nil`
+（`D` の先端で `one nil` を `k` 個積む）と同じ。
+ブロックの幅についての帰納 `GOK_BTall` は**既に緑**なので、幅 0 だけでよい。
 
-    RPayN0   : nil に荷を 1 個（文脈は任意）        R376_of_RPayN0
-    BLoad    : 走りの塔の文脈で nil に荷           R376_of_BLoad
-    hrun     : Bk (j+1) 0 での荷                  Bk_pay_of の仮定
+## 同値な形（全部緑の含意、Lean 名つき）
 
-`WQd` 層（多重集合の測度）から独立に同じ点に着いた。壁の位置は確定。
+    ZeroStep    R376_of_ZeroStep     走りを含む文脈の先端で 1 の枠を積む
+    PayStep     R376_of_PayStep      BT の先端に荷を吊るす
+    QTSibF      R376_of_QTSibF       走り（荷なし、兄弟は連鎖の木）
+    QRunPay     R376_of_QRunPay      走りの直下の荷（WQd 層）
+    RPayN0      R376_of_RPayN0       nil に荷を 1 個（文脈は任意）
+    RStepN0     R376_of_RStepN0      裸の 1 の記録を 1 個積む
+    RPay/RStep0 R376_of_RPay         枠木つきの版
+    VPay/VStep1 R376_of_VPay         全部 nil の文脈で
+    VOkk        R376_of_VOkk         全部 nil の文脈で nil
+    UtwAll      R376_of_UtwAll       塔 Utw p n が全部良い
+    RunAll      R376_of_RunAll       APd (true::ks) (stk q)
+    TwoStep     R376_of_TwoStep      TwoOk Z → TwoOk (two nil Z)
+    BLoad       R376_of_BLoad        走りの塔の文脈で nil に荷
+    OneNil      R376_of_OneNil       one V nil をどの文脈でも
+    hrun        Bk_pay_of の仮定      Bk (j+1) 0 での荷
+
+## 済んでいる部分
+
+    SelfW_of_WPd     : WPd の 1 の枠の文脈なら SelfW D V（V は頭 0 の形で良い木）
+    TSibF_of_WPd     : 同じ文脈で TSibF ctx W W N
+    WQd_nilF/nilAll  : ブロックの節でも nil はどこでも差せる
+    GOK_bdA1         : 幅 1 の塔（梯子。1 と 2 が交互で Fter が満たされる）
+    WPd_stk1/stk2    : stk q は q ≤ 2 まで
+
+**足りないのは、文脈が走り（幅 ≥ 2 のブロック）を含む場合だけ。**
+
+## なぜ閉じないか（循環）
+
+    one nil nil を D に置く   →  APnil_gen0 が ∀C, pay nil C を D に要求
+    pay nil C を D に置く     →  A2' の連鎖が「走りを D に置く」に落ちる
+    走りを D に置く           →  塔補題の階段が要る
+    階段                      →  one nil … を D ++ ブロック に置く
+                              →  最初に戻る（D が 1 段深い）
+
+深くなるので整礎でない。族の添字の付け替えでは消えない:
+長さの上限 `f` は `nilF` から `f(k) ≤ f(k-1)+1`、
+荷の連鎖から `f(k) ≥ f(k)+1` を要求して矛盾する（追記247/251/252）。
+
+必要なのは、塔の高さについて整礎な別の議論か、
+`twoIt` の平らさ（Δ=0）を使う新しい塔補題。
 
 ## 前の壁がどう破れたか（記録）
 
