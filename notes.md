@@ -19071,3 +19071,54 @@ N の可差し性が 1 段深い形で要る。`SbT N`（形に依らない）�
 
 ただし本当に要るのは `A = nil` ではなく **`SbF A`**（もっと広い）。
 だから「落ちるかどうか」は分かれ目そのものではなく、`SbF A` の十分条件の 1 つ。
+
+## 追記236: `SbT` に長さ 2 の走りの節を追加。長さ 3 は枠アルファベットに無い
+
+2026-09-11。追記235 の続き。
+
+### 新しく緑になったもの
+
+    NPd_nstN2_lift / NPd_true_twoTwoB_lift
+      `NPd_nstN2_SbT` / `NPd_true_twoTwoB` の意味版（`SbT`/`SbF` を使わない形）
+
+    SbT に節を追加:
+      | ttwoB : SbT A → SbF B → SbT (two A (two B nil))
+
+    SbT : nil | pay | one(SbT,SbT) | two(SbT,SbF) | ttwo(SbT) | ttwoB(SbT,SbF)
+    SbF : nil | pay | one(SbF,SbT)
+
+`ttwo`（B = nil）は `ttwoB` の特別な場合。意味定理 `NPd_true_of_SbT` の
+新しい場合は `NPd_true_twoTwoB_lift` に部分導出の帰納法の仮定を渡すだけで通る。
+
+### なぜ長さ 2 がちょうど限界なのか（外部測定＋構造）
+
+走りの長さ k の塔を測ると
+
+    k   Δ    階段の段                                    語（単位）
+    1   1    one nil ·                                   (3,1,0)
+    2   2    one nil (two nil ·)                         (3,1,0)(4,2,0)
+    3   3    one nil (two nil (two nil ·))               (3,1,0)(4,2,0)(5,2,0)
+    4   4    one nil (two nil (two nil (two nil ·)))     …
+
+`NPd` の枠アルファベットは 2 つだけ:
+
+    true  = one U ·
+    false = one U (two N ·)
+
+照らすと
+
+    長さ 2   段 = one nil (two nil ·)             = **false 枠ちょうど 1 本** ✓
+    長さ 3   段 = one nil (two nil (two nil ·))   = 枠として書けない ✗
+
+**長さ 3 以上は「難しい」のではなく、階段の段が `NPd` の枠として表現できない。**
+`one U (two N (two N' ·))` に当たる節が定義に無い。
+だから長さ 2 が限界なのは実装の都合ではなく、枠アルファベットの構造から来ている。
+
+### 6 つの見方が同じ 1 点を指した
+
+    語        1 段につき 2 の記録が 1 本増える
+    木        経路は false^k、最内は常に false 文脈
+    形        要る条件は true^(j+1) ++ false^b、b だけ動く
+    切り方    8 通り全部が SbF (two A nil) で止まる
+    展開      A が two 頭なら最内は A そのもので停留
+    走りの長さ Δ = k、段は one + two^(k-1)。k ≥ 3 は枠アルファベットに無い

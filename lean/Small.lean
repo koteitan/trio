@@ -66103,6 +66103,40 @@ theorem NPd_true_of_PlainU : ∀ {N : Jk1}, PlainU N → ∀ kk : List Bool, NPd
 #print axioms NPd_twoTwoGen_lift
 #print axioms NPd_true_of_PlainU
 
+/-! ### 長さ 2 の走りの意味版（`SbT` / `SbF` を使わない形） -/
+
+theorem NPd_nstN2_lift {A B : Jk1} (hJA : JkA A) (hJB : JkA B)
+    (hAt : ∀ kk : List Bool, NPd (true :: kk) A)
+    (hBf : ∀ kk : List Bool, NPd (false :: kk) B) :
+    ∀ (k : ℕ) (ks : List Bool), NPd (false :: ks) (nstN2 A B k)
+  | 0, ks => hBf ks
+  | (k + 1), ks => by
+      show NPd (false :: ks) (Jk1.one B (Jk1.two A (nstN2 A B k)))
+      exact NPd_step (false :: ks) hJB (hBf ks)
+        (NPd_twoOf hJA
+          (fun j => by
+            rw [rep_true_cons]
+            exact hAt (List.replicate j true ++ (false :: ks)))
+          (NPd_nstN2_lift hJA hJB hAt hBf k (false :: ks)))
+
+theorem NPd_true_twoTwoB_lift {A B : Jk1} (hJA : JkA A) (hJB : JkA B)
+    (hAt : ∀ kk : List Bool, NPd (true :: kk) A)
+    (hBf : ∀ kk : List Bool, NPd (false :: kk) B) (ks : List Bool) :
+    NPd (true :: ks) (Jk1.two A (Jk1.two B Jk1.nil)) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  refine GOK_twoTwoNilW_gen ctx0 V hJA hJB
+    (NCtx_JkT (true :: ks) _ hc (Jk1.two A (Jk1.two B Jk1.nil))
+      ⟨hJA, hJB, trivial⟩) hGV ?_
+  intro k
+  exact (NPd_iff (true :: ks) _).mp
+    (NPd_twoOf hJA
+      (fun j => by
+        rw [rep_true_cons]
+        exact hAt (List.replicate j true ++ ks))
+      (NPd_nstN2_lift hJA hJB hAt hBf k ks)) _ hc
+
 /-! ### ★★★★★ 安全な兄弟の族の最大形 `SbT` / `SbF`
 
 `NPd (true::kk) N` が閉じる族 `SbT` と `NPd (false::kk) N` が閉じる族 `SbF` を
@@ -66121,6 +66155,7 @@ inductive SbT : Jk1 → Prop where
   | one : ∀ {A B : Jk1}, SbT A → SbT B → SbT (Jk1.one A B)
   | two : ∀ {A B : Jk1}, SbT A → SbF B → SbT (Jk1.two A B)
   | ttwo : ∀ {A : Jk1}, SbT A → SbT (Jk1.two A (Jk1.two Jk1.nil Jk1.nil))
+  | ttwoB : ∀ {A B : Jk1}, SbT A → SbF B → SbT (Jk1.two A (Jk1.two B Jk1.nil))
 inductive SbF : Jk1 → Prop where
   | nil : SbF Jk1.nil
   | pay : ∀ {A : Jk1} {Y : TrioSeq}, SbF A → Bok Y → SbF (Jk1.pay A Y)
@@ -66134,6 +66169,7 @@ theorem JkA_of_SbT : ∀ {N : Jk1}, SbT N → JkA N
   | _, SbT.one hA hB => ⟨JkA_of_SbT hA, JkA_of_SbT hB⟩
   | _, SbT.two hA hB => ⟨JkA_of_SbT hA, JkA_of_SbF hB⟩
   | _, SbT.ttwo hA => ⟨JkA_of_SbT hA, trivial, trivial⟩
+  | _, SbT.ttwoB hA hB => ⟨JkA_of_SbT hA, JkA_of_SbF hB, trivial⟩
 theorem JkA_of_SbF : ∀ {N : Jk1}, SbF N → JkA N
   | _, SbF.nil => trivial
   | _, SbF.pay h hY => ⟨JkA_of_SbF h, hY⟩
@@ -66156,6 +66192,9 @@ theorem NPd_true_of_SbT : ∀ {N : Jk1}, SbT N → ∀ kk : List Bool, NPd (true
         (NPd_false_of_SbF hB kk)
   | _, SbT.ttwo hA, kk =>
       NPd_twoTwoGen_lift (JkA_of_SbT hA) (fun kk' => NPd_true_of_SbT hA kk') kk
+  | _, SbT.ttwoB hA hB, kk =>
+      NPd_true_twoTwoB_lift (JkA_of_SbT hA) (JkA_of_SbF hB)
+        (fun kk' => NPd_true_of_SbT hA kk') (fun kk' => NPd_false_of_SbF hB kk') kk
 theorem NPd_false_of_SbF : ∀ {N : Jk1}, SbF N → ∀ kk : List Bool, NPd (false :: kk) N
   | _, SbF.nil, kk => NPd_nilF kk
   | _, SbF.pay hA hY, kk =>
