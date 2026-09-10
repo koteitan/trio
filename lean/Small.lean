@@ -61048,7 +61048,7 @@ theorem JkA_Wunit_tree {V Wl X : Jk1} (hV : JkA V) (hW : JkA Wl) (hX : JkA X) (p
 
 /-- 形 `(j, n)` の良い文脈。`j` は単位の個数、`n` は最後の単位より上の 1 の枠の本数。 -/
 def Wok : ℕ → ℕ → List Frm → Prop
-  | 0, 0, ctx => ctx = []
+  | 0, 0, ctx => ctx = [Frm.fone Jk1.nil]
   | 0, (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
       ctx = ctx' ++ [Frm.fone U] ∧ Wok 0 n ctx' ∧ JkA U ∧
       (∀ cs : List Frm, Wok 0 n cs → GOK (plug cs U)) ∧
@@ -61070,7 +61070,7 @@ def Wok : ℕ → ℕ → List Frm → Prop
 /-- `Z` は形 `(j, n)` のどの良い文脈にも差せる。 -/
 def Wk (j n : ℕ) (Z : Jk1) : Prop := ∀ ctx : List Frm, Wok j n ctx → GOK (plug ctx Z)
 
-theorem Wok_00 (ctx : List Frm) : Wok 0 0 ctx ↔ ctx = [] := by rw [Wok]
+theorem Wok_00 (ctx : List Frm) : Wok 0 0 ctx ↔ ctx = [Frm.fone Jk1.nil] := by rw [Wok]
 
 theorem Wok_0s (n : ℕ) (ctx : List Frm) : Wok 0 (n + 1) ctx ↔
     ∃ (U : Jk1) (ctx' : List Frm),
@@ -61096,20 +61096,21 @@ theorem Wok_ss (j n : ℕ) (ctx : List Frm) : Wok (j + 1) (n + 1) ctx ↔
       (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok (j + 1) n cs →
         GOK (plug cs (Jk1.pay U C))) := by rw [Wok]
 
-theorem Wk_00 {X : Jk1} (h : GOK X) : Wk 0 0 X := by
+theorem Wk_00 {X : Jk1} (h : GOK (Jk1.one Jk1.nil X)) : Wk 0 0 X := by
   intro ctx hctx
-  have hc : ctx = [] := (Wok_00 ctx).mp hctx
+  have hc : ctx = [Frm.fone Jk1.nil] := (Wok_00 ctx).mp hctx
   subst hc
   exact h
 
-theorem GOK_of_Wk00 {X : Jk1} (h : Wk 0 0 X) : GOK X := h [] ((Wok_00 []).mpr rfl)
+theorem GOK_of_Wk00 {X : Jk1} (h : Wk 0 0 X) : GOK (Jk1.one Jk1.nil X) :=
+  h [Frm.fone Jk1.nil] ((Wok_00 _).mpr rfl)
 
 theorem JkA_plug_Wok : ∀ (j n : ℕ) (ctx : List Frm), Wok j n ctx → ∀ T : Jk1, JkA T →
     JkA (plug ctx T)
   | 0, 0, ctx, h, T, hT => by
-      have hc : ctx = [] := (Wok_00 ctx).mp h
+      have hc : ctx = [Frm.fone Jk1.nil] := (Wok_00 ctx).mp h
       subst hc
-      exact hT
+      exact ⟨trivial, hT⟩
   | 0, (n + 1), ctx, h, T, hT => by
       obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Wok_0s n ctx).mp h
       rw [plug_snoc]
@@ -61167,6 +61168,89 @@ theorem Wk_unit {j n : ℕ} {V Wl T : Jk1} {p : ℕ} (hp : p = 0 ∨ Wl = Jk1.ni
   rwa [plug_Wunit] at h
 
 #print axioms Wk_unit
+
+
+/-! ### `Wk_nil`: 1 の枠の直上と、走り 1（単位の `p = 0`）は無条件で出る -/
+
+theorem TopOk_plug_Wok : ∀ (j n : ℕ) (ctx : List Frm), Wok j n ctx → ∀ X : Jk1,
+    TopOk (plug ctx X)
+  | 0, 0, ctx, h, X => by
+      have hc : ctx = [Frm.fone Jk1.nil] := (Wok_00 ctx).mp h
+      subst hc
+      exact trivial
+  | 0, (n + 1), ctx, h, X => by
+      obtain ⟨U, ctx', rfl, hc, -, -, -⟩ := (Wok_0s n ctx).mp h
+      rw [plug_snoc]
+      exact TopOk_plug_Wok 0 n ctx' hc (Jk1.one U X)
+  | (j + 1), 0, ctx, h, X => by
+      obtain ⟨V, Wl, p, n, ctx', rfl, -, hc, -, -, -, -, -, -⟩ := (Wok_s0 j ctx).mp h
+      rw [plug_Wunit]
+      exact TopOk_plug_Wok j n ctx' hc (Jk1.one V (Jk1.two Wl (stkP p X)))
+  | (j + 1), (n + 1), ctx, h, X => by
+      obtain ⟨U, ctx', rfl, hc, -, -, -⟩ := (Wok_ss j n ctx).mp h
+      rw [plug_snoc]
+      exact TopOk_plug_Wok (j + 1) n ctx' hc (Jk1.one U X)
+
+theorem JkT_plug_Wok {j n : ℕ} {ctx : List Frm} (h : Wok j n ctx) {X : Jk1} (hX : JkA X) :
+    JkT (plug ctx X) :=
+  ⟨JkA_plug_Wok j n ctx h X hX, TopOk_plug_Wok j n ctx h X⟩
+
+/-- ★ 1 の枠の直上に `nil` は無条件で差せる（枠の欄だけで出る）。 -/
+theorem Wk_nil_succ (j n : ℕ) : Wk j (n + 1) Jk1.nil := by
+  intro ctx hctx
+  obtain ⟨U, ctx', rfl, hc, hJU, hU, hUp⟩ := Wok_fone_dest hctx
+  rw [plug_snoc]
+  refine APnil_gen0 ctx' U ?_ (hU ctx' hc) (fun C hC => hUp C hC ctx' hc)
+  exact JkT_plug_Wok (X := Jk1.one U Jk1.nil) hc ⟨hJU, trivial⟩
+
+/-- 1 の枠を `m` 枚積む。 -/
+theorem Wok_repW {j n : ℕ} {Wl : Jk1} {ctx : List Frm} (hctx : Wok j (n + 1) ctx)
+    (hJW : JkA Wl)
+    (hW : ∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs → GOK (plug cs Wl))
+    (hWp : ∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs →
+      GOK (plug cs (Jk1.pay Wl C))) :
+    ∀ m : ℕ, Wok j (n + 1 + m) (ctx ++ List.replicate m (Frm.fone Wl))
+  | 0 => by simpa using hctx
+  | (m + 1) => by
+      have ih := Wok_repW hctx hJW hW hWp m
+      have h2 := Wok_fone ih hJW
+        (fun cs hcs => hW (n + m) cs (by
+          simpa [show n + 1 + m = n + m + 1 from by omega] using hcs))
+        (fun C hC cs hcs => hWp C hC (n + m) cs (by
+          simpa [show n + 1 + m = n + m + 1 from by omega] using hcs))
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone Wl)
+          = (ctx ++ List.replicate m (Frm.fone Wl)) ++ [Frm.fone Wl] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, show n + 1 + (m + 1) = n + 1 + m + 1 from by omega]
+      exact h2
+
+/-- ★ 単位の `p = 0`（裸の 2 の記録）。階段は 1 の枠だけなので無条件で出る。 -/
+theorem Wk_nil_unit0 {j n : ℕ} (ctx' : List Frm) (V Wl : Jk1) (hctx : Wok j n ctx')
+    (hJV : JkA V) (hV : ∀ cs : List Frm, Wok j n cs → GOK (plug cs V))
+    (hVp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok j n cs →
+      GOK (plug cs (Jk1.pay V C)))
+    (hJW : JkA Wl)
+    (hW : ∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs → GOK (plug cs Wl))
+    (hWp : ∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs →
+      GOK (plug cs (Jk1.pay Wl C))) :
+    GOK (plug (ctx' ++ Wunit V Wl 0) Jk1.nil) := by
+  have hc1 : Wok j (n + 1) (ctx' ++ [Frm.fone V]) := Wok_fone hctx hJV hV hVp
+  have hgoal : plug (ctx' ++ Wunit V Wl 0) Jk1.nil
+      = plug (ctx' ++ [Frm.fone V]) (Jk1.two Wl Jk1.nil) := by
+    rw [plug_Wunit, plug_snoc]
+    rfl
+  rw [hgoal]
+  refine GOK_twoNil_gen ctx' V hJW ?_ (hV ctx' hctx) ?_
+  · exact JkT_plug_Wok (X := Jk1.two Wl Jk1.nil) hc1 ⟨hJW, trivial⟩
+  · intro m
+    rw [← plug_append]
+    exact hW (n + m) _ (by
+      simpa [show n + 1 + m = n + m + 1 from by omega] using
+        Wok_repW hc1 hJW hW hWp m)
+
+#print axioms Wk_nil_succ
+#print axioms Wk_nil_unit0
 
 end Small
 end TRIO
