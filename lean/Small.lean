@@ -61295,24 +61295,29 @@ theorem WV_JkA {V : Jk1} (h : WV V) : JkA V := by
   · exact trivial
   · exact ⟨trivial, trivial⟩
 
-/-- `WStep0` が実際に要る文脈は `Wblk V p`（`WV V`）を積んだものだけ。 -/
-inductive WFam : List Frm → Prop
-  | nil : WFam []
-  | blk : ∀ {ctx : List Frm} {V : Jk1} (p : ℕ), WFam ctx → WV V → WFam (ctx ++ Wblk V p)
+/-- `WStep0` が実際に要る文脈は `Wblk V p`（`WV V`、`p ≤ b`）を積んだものだけ。
+`b` は走りの長さの上限。#14 は `b = 1` で足り、行376 は `∀ b` が要る。 -/
+inductive WFamB (b : ℕ) : List Frm → Prop
+  | nil : WFamB b []
+  | blk : ∀ {ctx : List Frm} {V : Jk1} {p : ℕ}, p ≤ b → WFamB b ctx → WV V →
+      WFamB b (ctx ++ Wblk V p)
 
-/-- ★ 残る 1 歩。裸の 1 の記録。左兄弟は `nil` か `two nil nil`、文脈は `WFam`。 -/
-def WStep0 : Prop := ∀ (ctx : List Frm), WFam ctx → ∀ V : Jk1, WV V → WCtxT ctx V →
-    GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Jk1.nil))
+/-- ★ 残る 1 歩。裸の 1 の記録。左兄弟は `nil` か `two nil nil`、文脈は `WFamB b`。 -/
+def WStep0B (b : ℕ) : Prop := ∀ (ctx : List Frm), WFamB b ctx → ∀ V : Jk1, WV V →
+    WCtxT ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Jk1.nil))
 
-/-- ★★★★★ 走りは `WStep0` から出る。 -/
-theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm), WFam ctx → ∀ V : Jk1, WV V →
-    WCtxT ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V (stk p))) := by
+/-- ★★★★★ 走りは `WStep0B` から出る。走り `p` には `p ≤ b + 1` が要る。 -/
+theorem WRunB (b : ℕ) (h0 : WStep0B b) : ∀ (p : ℕ), p ≤ b + 1 → ∀ (ctx : List Frm),
+    WFamB b ctx → ∀ V : Jk1, WV V → WCtxT ctx V → GOK (plug ctx V) →
+    GOK (plug ctx (Jk1.one V (stk p))) := by
   intro p
   induction p with
-  | zero => intro ctx hF V hJV hT hGV; exact h0 ctx hF V hJV hT hGV
+  | zero => intro _ ctx hF V hJV hT hGV; exact h0 ctx hF V hJV hT hGV
   | succ p ih =>
-      have htow : ∀ (k : ℕ) (ctx : List Frm), WFam ctx → ∀ V : Jk1, WV V → WCtxT ctx V →
-          GOK (plug ctx V) → GOK (plug ctx (appJ V (Utw p k))) := by
+      intro hpb
+      have hpb' : p ≤ b := by omega
+      have htow : ∀ (k : ℕ) (ctx : List Frm), WFamB b ctx → ∀ V : Jk1, WV V →
+          WCtxT ctx V → GOK (plug ctx V) → GOK (plug ctx (appJ V (Utw p k))) := by
         intro k
         induction k with
         | zero => intro _ _ _ _ _ hGV; exact hGV
@@ -61320,8 +61325,8 @@ theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm), WFam ctx → ∀ V 
             intro ctx hF V hJV hT hGV
             have hbase : GOK (plug (ctx ++ Wblk V p) Jk1.nil) := by
               rw [plug_Wblk]
-              exact ih ctx hF V hJV hT hGV
-            have h := ihk (ctx ++ Wblk V p) (WFam.blk p hF hJV) Jk1.nil (Or.inl rfl)
+              exact ih (by omega) ctx hF V hJV hT hGV
+            have h := ihk (ctx ++ Wblk V p) (WFamB.blk hpb' hF hJV) Jk1.nil (Or.inl rfl)
               (WCtxT_ext hT p) hbase
             rw [appJ_nil_Utw] at h
             show GOK (plug ctx (Jk1.one V (stkP p (Utw p k))))
@@ -61333,8 +61338,8 @@ theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm), WFam ctx → ∀ V 
       intro k
       exact htow k ctx hF V hJV hT hGV
 
-theorem GOK_oneStk_W (h0 : WStep0) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
-  WRun h0 q [] WFam.nil Jk1.nil (Or.inl rfl) WCtxT_nil GOK_nil
+theorem GOK_oneStk_W (h0 : ∀ b : ℕ, WStep0B b) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  WRunB q (h0 q) q (by omega) [] WFamB.nil Jk1.nil (Or.inl rfl) WCtxT_nil GOK_nil
 
 theorem tw_R344_42g (h : ∀ q : ℕ, GOK (Jk1.one Jk1.nil (stk q))) : ∀ n : ℕ,
     Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
@@ -61353,21 +61358,23 @@ theorem tw_R344_42g (h : ∀ q : ℕ, GOK (Jk1.one Jk1.nil (stk q))) : ∀ n : �
   simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
 
 /-- ★★★★★ シート行376 は `WStep0`（裸の 1 の記録）1 歩に落ちた。 -/
-theorem R376_of_WStep0 (h0 : WStep0) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+theorem R376_of_WStep0 (h0 : ∀ b : ℕ, WStep0B b) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R376_of_tower (tw_R344_42g (GOK_oneStk_W h0))
 
 #print axioms R376_of_WStep0
 
-/-- `WStep0` は荷から出る（`APnil_gen0`）。 -/
-def WPay : Prop := ∀ (ctx : List Frm), WFam ctx → ∀ V : Jk1, WV V → WCtxT ctx V →
-    GOK (plug ctx V) → ∀ C : TrioSeq, Bok C → GOK (plug ctx (Jk1.pay V C))
+/-- `WStep0B` は荷から出る（`APnil_gen0`）。 -/
+def WPayB (b : ℕ) : Prop := ∀ (ctx : List Frm), WFamB b ctx → ∀ V : Jk1, WV V →
+    WCtxT ctx V → GOK (plug ctx V) → ∀ C : TrioSeq, Bok C →
+    GOK (plug ctx (Jk1.pay V C))
 
-theorem WStep0_of_WPay (h : WPay) : WStep0 := by
+theorem WStep0_of_WPay {b : ℕ} (h : WPayB b) : WStep0B b := by
   intro ctx hF V hJV hT hGV
   exact APnil_gen0 ctx V (hT Jk1.nil trivial) hGV (fun C hC => h ctx hF V hJV hT hGV C hC)
 
-theorem R376_of_WPay (h : WPay) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
-  R376_of_WStep0 (WStep0_of_WPay h)
+theorem R376_of_WPay (h : ∀ b : ℕ, WPayB b) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_WStep0 (fun b => WStep0_of_WPay (h b))
 
 #print axioms R376_of_WPay
 
@@ -61388,28 +61395,28 @@ theorem WCtxT_ext' {ctx : List Frm} {V : Jk1} (h : WCtxT ctx V) (p : ℕ) (V' : 
   rw [plug_Wblk]
   exact h _ (JkA_stkP p ⟨hJV', hX⟩)
 
-theorem TowOk_W (h0 : WStep0) : ∀ (n : ℕ) (ctx : List Frm), WFam ctx → ∀ V : Jk1, WV V →
-    WCtxT ctx V → GOK (plug ctx V) →
+theorem TowOk_W (h0 : WStep0B 1) : ∀ (n : ℕ) (ctx : List Frm), WFamB 1 ctx →
+    ∀ V : Jk1, WV V → WCtxT ctx V → GOK (plug ctx V) →
     GOK (plug ctx (Jk1.one V (Jk1.two Jk1.nil (TW n))))
-  | 0, ctx, hF, V, hJV, hT, hGV => WRun h0 2 ctx hF V hJV hT hGV
+  | 0, ctx, hF, V, hJV, hT, hGV => WRunB 1 h0 2 (by omega) ctx hF V hJV hT hGV
   | (n + 1), ctx, hF, V, hJV, hT, hGV => by
       have hgv2 : GOK (plug (ctx ++ Wblk V 1) (Jk1.two Jk1.nil Jk1.nil)) := by
         rw [plug_Wblk]
-        exact WRun h0 2 ctx hF V hJV hT hGV
-      have h := TowOk_W h0 n (ctx ++ Wblk V 1) (WFam.blk 1 hF hJV)
+        exact WRunB 1 h0 2 (by omega) ctx hF V hJV hT hGV
+      have h := TowOk_W h0 n (ctx ++ Wblk V 1) (WFamB.blk (by omega) hF hJV)
         (Jk1.two Jk1.nil Jk1.nil) (Or.inr rfl)
         (WCtxT_ext' hT 1 _ ⟨trivial, trivial⟩) hgv2
       rw [plug_Wblk] at h
       exact h
 
-theorem TowOk_of_WStep0 (h0 : WStep0) : TowOk := fun n =>
-  TowOk_W h0 n [] WFam.nil Jk1.nil (Or.inl rfl) WCtxT_nil GOK_nil
+theorem TowOk_of_WStep0 (h0 : WStep0B 1) : TowOk := fun n =>
+  TowOk_W h0 n [] WFamB.nil Jk1.nil (Or.inl rfl) WCtxT_nil GOK_nil
 
-/-- ★★★★★ シート #14 も `WStep0` 1 歩に落ちた。 -/
-theorem R14_of_WStep0 (h0 : WStep0) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+/-- ★★★★★ シート #14 は `WStep0B 1`（走りの長さ 1 まで）1 歩に落ちた。 -/
+theorem R14_of_WStep0 (h0 : WStep0B 1) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R14_mem (TowOk_of_WStep0 h0)
 
-theorem R14_of_WPay (h : WPay) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+theorem R14_of_WPay (h : WPayB 1) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R14_of_WStep0 (WStep0_of_WPay h)
 
 #print axioms R14_of_WStep0
