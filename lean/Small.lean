@@ -68956,5 +68956,73 @@ theorem WRd_nilE : WRd [] Jk1.nil := (WRd_bnil _).mpr GOK_nil
 #print axioms WRd_oneNil
 #print axioms WRd_nilT
 
+/-! ### ★★★★★★ 壁は `WRd` の 1 文 `RunNilR`（走りの底の空木）だけ
+
+`WRd` 層では荷・1 の枠・2 の枠 1 枚（底が空木でない場合も）が全部無条件。
+残るのは「2 の枠の形（＝走りの中）で空木が差せる」1 文だけ。
+これがあれば**幅に上限のないブロック列** `bdA js` が全部出るので、
+証明中の行列も目標の行376 も出る。 -/
+
+def RunNilR : Prop := ∀ (k : ℕ) (ks : List ℕ), WRd ((k + 1) :: ks) Jk1.nil
+
+theorem WRd_nilAllR (h : RunNilR) : ∀ ks : List ℕ, WRd ks Jk1.nil
+  | [] => WRd_nilE
+  | (0 :: ks) => WRd_nilT ks
+  | ((k + 1) :: ks) => h k ks
+
+theorem WRd_stkP_of (h : RunNilR) : ∀ (j : ℕ) (X : Jk1), (∀ ks : List ℕ, WRd ks X) →
+    ∀ ks : List ℕ, ks ≠ [] → WRd ks (stkP j X)
+  | 0, X, hX, ks, _ => hX ks
+  | (j + 1), X, hX, ks, hne => by
+      show WRd ks (Jk1.two Jk1.nil (stkP j X))
+      exact WRd_twoOf (k := 0) hne trivial (fun q _ => WRd_nilAllR h _)
+        (WRd_stkP_of h j X hX (1 :: ks) (by simp))
+
+theorem WRd_bdA_of (h : RunNilR) : ∀ (js : List ℕ) (ks : List ℕ), WRd ks (bdA js)
+  | [], ks => WRd_nilAllR h ks
+  | (j :: js), ks => by
+      show WRd ks (Jk1.one Jk1.nil (stkP j (bdA js)))
+      refine WRd_step ks (FrmN_nilA ks) (WRd_nilAllR h ks) ?_
+      exact WRd_stkP_of h j (bdA js) (fun ks' => WRd_bdA_of h js ks') (0 :: ks) (by simp)
+
+/-- ★★★★★★ 幅に上限のないブロック列が全部出る。 -/
+theorem GOK_bdA_of (h : RunNilR) (js : List ℕ) : GOK (bdA js) :=
+  (WRd_bnil _).mp (WRd_bdA_of h js [])
+
+theorem GOK_oneStk_ofR (h : RunNilR) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  GOK_bdA_of h [q]
+
+theorem MixTow_of_RunNilR (h : RunNilR) : MixTow :=
+  fun n i => GOK_bdA_of h (List.replicate n 2 ++ List.replicate i 1)
+
+/-- ★★★★★★ 証明中の行列は `RunNilR` 1 本から出る。 -/
+theorem R375m_62_of_RunNilR (h : RunNilR) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m_62_of_MixTow (MixTow_of_RunNilR h)
+
+theorem tw_R344_42_ofR (h : RunNilR) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    GOK_oneStk_ofR h n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ 目標の行376 も `RunNilR` 1 本から出る。 -/
+theorem R376_of_RunNilR (h : RunNilR) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42_ofR h)
+
+#print axioms GOK_bdA_of
+#print axioms R375m_62_of_RunNilR
+#print axioms R376_of_RunNilR
+
 end Small
 end TRIO
