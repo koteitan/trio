@@ -18055,3 +18055,58 @@ B が乗っていると、展開の bad root が B の中に入るので、B の
 
 `MRun` と `WallT` はどちらも「上に何も無い 2 の記録を 2 の枠の直上に置く」で、
 層で書くか梯子で書くかの違いしかない。いま一番弱い仮定は `MRun`。
+
+## 追記214: `NPd`（`APd` から `Rq` だけ外した族）で `MNil` 相当が無条件に出た
+
+2026-09-10。追記213 の続き。
+
+### `Rq` の正体
+
+    Rq (false :: ks) U = TopOk U
+
+文脈 `ctx'' ++ [fone U', ftwo N', fone U, ftwo N]` に木 T を差すと語は
+
+    jk1 l U' , (l+1,1,0) , jk1 (l+1) N' , (l+2,2,0) , jk1 (l+2) U , (l+3,1,0) , …
+
+で、`U = two nil nil` なら `jk1 (l+2) U = [(l+3,2,0)]` だから
+`(l+2,2,0)(l+3,2,0)` の走りが出る。**`Rq` は走り禁止そのもの。**
+
+そしてこれは `JkA` には要らない。`JkA (two N M) = JkA N ∧ JkA M` で
+`TopOk M` を課していない（`JkJ` の方は課している）。`CtxJ` の
+`HdT rest`、`CtxXJ` の `TopOk`、`Rq` はどれも `JkJ` 時代の名残で、
+`JkA_plug'` / `JkT_plug'`（緑）がそれを示している。
+
+### `NPd`
+
+`MPd` は `Rq` を外したが、同時に兄弟条件を `∀ j, APd (rep j true ++ …) N` から
+`FrQ N` に変えてしまった。`NPd` は **`Rq` だけ**外す。
+
+    NPd []           V = GOK V
+    NPd (true :: ks) V = ∀ U, FrmJ ks U → NPd ks U → NPd ks (one U V)
+    NPd (false::ks)  V = ∀ m U N, FrmJ (rep m true ++ ks) U → NPd (rep m true ++ ks) U →
+        JkA N → (∀ j, NPd (rep j true ++ (true :: (rep m true ++ ks))) N) →
+        NPd (rep m true ++ ks) (one U (two N V))
+
+緑になったもの:
+
+    NPd_bnil / NPd_ct / NPd_cf / NCtx / NCtx_bnil / NCtx_ct / NCtx_cf
+    NCtx_JkT / NPd_iff / NPd_step / NPd_congr / NCtx_split / NPd_twoOf
+    NCtx_rep / NPd_plug_rep / NPd_twoNilGen
+    NPd_nilF : ∀ ks, NPd (false :: ks) nil        ← MNil 相当、無条件
+
+`MNil` が `MPd` で閉じなかったのは `Rq` のせいではなく、
+**兄弟条件を `FrQ` に変えたせい**だったことの裏づけ。
+
+### `NPd` に残る壁
+
+    NPd (false :: ks) (two nil nil)      ← 走り
+
+`NPd_cf` が兄弟 `N` について与えるのは
+`∀ j, NPd (rep j true ++ (true :: ks₁)) N`（`true` を前に足すだけ、
+`cntF` は固定）。ところが走りの階段 `nstN N k` は N を
+`false::false::…::ks` と `false` の本数を増やしながら差す。
+つまり**兄弟条件を「2 の枠が 1 本多い形」に持ち上げる**必要があり、
+これは梯子の `NTwStep : NTw r N → NTw (r+1) N`（追記209）と同じ 1 点。
+
+`APd` / `NPd` / `MPd` / 梯子 `TwOk` のどれで書いても、
+壁は「2 の枠の兄弟の条件を 1 段上げる」1 本に帰着する。

@@ -65182,6 +65182,52 @@ theorem NPd_twoOf {ks : List Bool} {V N : Jk1} (hJN : JkA N)
 #print axioms NPd_iff
 #print axioms NCtx_JkT
 #print axioms NPd_twoOf
+
+/-! ### ★★★★★ `NPd` では `MNil` 相当が無条件で出る -/
+
+theorem NCtx_rep {N : Jk1} (hJN : JkA N) (ks : List Bool)
+    (hNall : ∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), NCtx (true :: ks) ctx →
+      NCtx (List.replicate m true ++ (true :: ks)) (ctx ++ List.replicate m (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (m + 1), ctx, hc => by
+      have h1 := NCtx_rep hJN ks hNall m ctx hc
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
+          = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, rep_succ_cons, NCtx_ct]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
+        (FrmJ_rep m true ks N).mpr hJN, hNall m⟩
+
+theorem NPd_plug_rep (N : Jk1) (hJN : JkA N) (ks : List Bool)
+    (hNall : ∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) (m : ℕ) :
+    NPd (true :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
+  rw [NPd_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (NPd_iff _ N).mp (hNall m) _ (NCtx_rep hJN ks hNall m ctx hc)
+
+theorem NPd_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List Bool)
+    (hNall : ∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) :
+    NPd (true :: ks) (Jk1.two N Jk1.nil) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (NCtx_JkT (true :: ks) _ hc _ (⟨hJN, trivial⟩ : FrmJ (true :: ks) (Jk1.two N Jk1.nil)))
+    hGV
+    (fun m => (NPd_iff (true :: ks) _).mp (NPd_plug_rep N hJN ks hNall m) _ hc)
+
+/-- ★★★★★ `MNil : ∀ ks, MPd (false::ks) nil`（`MPd` 層では未証明）の
+`NPd` 版は無条件で出る。`MPd` が閉じなかったのは `Rq` ではなく
+兄弟条件を `FrQ` に変えたせいだったことの裏づけ。 -/
+theorem NPd_nilF (ks : List Bool) : NPd (false :: ks) Jk1.nil :=
+  (NPd_cf ks _).mpr (fun m U N hU hUk hJN hNt =>
+    (NPd_ct _ _).mp (NPd_twoNilGen hJN _ hNt) U hU hUk)
+
+#print axioms NPd_twoNilGen
+#print axioms NPd_nilF
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
