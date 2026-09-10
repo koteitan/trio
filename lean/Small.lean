@@ -63046,5 +63046,30 @@ theorem RStep_rep (h : RStep0) : ∀ q : ℕ, RStep (List.replicate q Jk1.nil) J
 #print axioms RStep_snoc
 #print axioms RStep_rep
 
+
+/-! ### ★★★★★ 底は荷 1 個
+
+`APnil_gen0`（緑、文脈一般）が
+
+    JkT (plug ctx (one V nil)) → GOK (plug ctx V)
+      → (∀ C, Bok C → GOK (plug ctx (pay V C)))
+      → GOK (plug ctx (one V nil))
+
+なので `RStep0` は「荷を 1 個吊るせる」1 文に落ちる。 -/
+
+def RPay : Prop := ∀ (D : List Frm) (V : Jk1), JkA V →
+    (∀ X : Jk1, JkA X → JkT (plug D X)) → GOK (plug D V) →
+    ∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay V C))
+
+theorem RStep0_of_RPay (h : RPay) : RStep0 := by
+  intro D V hJV hJTD hGV
+  exact APnil_gen0 D V (hJTD _ ⟨hJV, trivial⟩) hGV (h D V hJV hJTD hGV)
+
+theorem RStep_rep_of_RPay (h : RPay) :
+    ∀ q : ℕ, RStep (List.replicate q Jk1.nil) Jk1.nil :=
+  RStep_rep (RStep0_of_RPay h)
+
+#print axioms RStep0_of_RPay
+
 end Small
 end TRIO
