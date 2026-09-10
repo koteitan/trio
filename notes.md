@@ -16337,3 +16337,61 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 
 実際に `WStep0` が要る `V` は `nil` と `two nil nil` の 2 つだけ（`WRun` / `TowOk_W` の
 呼び出しを見れば分かる）。ここを使って絞れる可能性がある。
+
+## 追記176: `WStep0` の左兄弟は 2 つだけ。#14 の文脈は全部 `GCtx` の形
+
+### 絞れたところ（緑）
+
+    WV V := V = nil ∨ V = two nil nil
+    WStep0 := ∀ ctx V, WV V → WCtxT ctx V → GOK (plug ctx V)
+                → GOK (plug ctx (one V nil))
+
+`WRun` / `TowOk_W` / `GOK_oneStk_W` の呼び出しを追うと、左兄弟は
+`nil` か `two nil nil` しか出てこない。仮定が弱くなった。
+
+### 裸の 1 の記録の展開（実測）
+
+    …(3,1,0)(4,1,0)        bad root = 0、bad part = 行列全体、delta = 4
+      [1] …(3,1,0)(4,0,0)(5,1,1)(6,1,0)(5,1,0)(6,2,1)(7,1,0)
+
+**語全体が繰り返される**（`AY0` / `GoodFb_repJ` の形）。
+これは前置きに荷の列 `(·,0,0)` が無いときの話で、一般には bad root が荷の列に来る。
+だから `APnil_gen0` は荷を要求する。荷は避けられない。
+
+### `AYs` の `hAP` が当たる木
+
+`AYs` の証明を読むと `hAP` は
+
+  - `X`（与えられた木）
+  - 鎖 `itJ (pay Z Y') k X`
+
+にしか当たっていない。だから `hAP` を族に制限した `AYs` は原理的には作れる。
+ただし鎖は 2 元の族 `{nil, two nil nil}` から出てしまう。
+
+### ★ #14 の文脈は全部 `GCtx` の形
+
+`WRun h0 2` と `TowOk_W` の呼び出しを全部追うと、文脈に積まれるブロックは
+
+    Wblk V 0 = [fone V]            （1 の枠 1 枚）
+    Wblk V 1 = [fone V, ftwo nil]  （1 の枠 + 兄弟 nil の 2 の枠）
+
+の 2 つだけ（`V ∈ {nil, two nil nil}`）。**走り（`ftwo nil` が 2 枚続く）は出ない。**
+これは `GCtx` がちょうど表現できる形。
+
+    GCtx (true :: ks)  = ctx' ++ [fone U]
+    GCtx (false :: ks) = ctx' ++ [fone U, ftwo N]     N は全 shape
+
+だから **#14 に限れば `WStep0` は `APd` の世界で書ける**。
+
+    APd_oneNil ks V (FrmJ) (Rq) (APd ks V) (∀C, APd ks (pay V C)) : APd ks (one V nil)
+
+が緑なので、`APd ks nil` / `APd ks (two nil nil)` とその荷が揃えば `WStep0` が出る。
+
+行376 のほうは `WRun q` で `q ≥ 3` を使うので `Wblk V p`（p ≥ 2）＝走りが出る。
+そこは `GCtx` では書けない。だから #14 が先。
+
+### 次にやること
+
+  1. #14 用に `WStep0` を `GCtx` 文脈に限った形で書き、`APd_oneNil` で埋める
+  2. `WRun` / `TowOk_W` を `APd` 相当の仮定で回るように書き直す
+     （文脈は `∀ ks` なので階段で shape が伸びてもよい）
