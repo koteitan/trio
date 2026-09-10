@@ -1,9 +1,47 @@
 # 残っている壁（1 文）
 
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明で、
-シートの**証明中の行と目標の行が同じ 1 文に合流した**。その 1 文の問題文。
+**残っている壁は 1 文だけ**になった。
 
-2026-09-10 更新。前の版（層 `TwSt` の `WallT`）は不要になった。
+2026-09-10 更新。`NTwUp` が最終形。
+
+## 結論の 1 文
+
+    NTwUp := ∀ (N : Jk1) (r : ℕ), JkA N → NTw r N → ∀ q : ℕ, NTw q N
+
+    NTw q N = ∀ j D, TwSt q j D → Fter q j → GOK (plug D N)
+      （「レベル q のどの良い文脈にも N を差せる」）
+
+**「2 の枠の左兄弟の良さはレベルを跨ぐ」— これだけ。**
+
+これが出れば
+
+    R14_of_NTwUp   : NTwUp → シート証明中の行
+    TowOk_of_NTwUp : NTwUp → TowOk
+    WallT_of_NTwUp : NTwUp → WallT
+
+が出る（Lean で緑）。
+
+## なぜこの 1 文か
+
+`TwSt (r+1) 0` の文脈は `D' ++ [ftwo N]` の形で、持っている条件は
+
+    NTw r N        ← レベル r で打ち止め
+
+一方 `TwOk_twoTwoNil`（緑）は
+
+    (∀ q, NTw q N) → Fter r m → TwOk r m (two N (two nil nil))
+
+と、**全レベル**を要求する。差はこれだけ。
+
+`TwSt 0 m = StkOk (m+1)` なので `NTw 0 N ⟺ ∀ j, LOk (j+1) N`。
+
+これまで出てきた壁
+
+    WallT / WallP / Wall / OneGap / TwoStep / BStairAll / QPayPair
+    WStep0 / WPay / LTwo (two nil nil)
+
+は全部ここに合流する。
 
 ## 記法
 
@@ -118,15 +156,36 @@
 
 ## 欲しいもの
 
-次のどちらか。
+次のどれか。
 
-1. (b) を `GoodFb` の 3 フィールド（`pu` / `pk` / `seg`）で直接組む。
-   道具は `GoodFb_snoc_dupJt0` / `GoodFb_snoc_innerJt0`（どちらも緑、文脈一般）。
-   `GOK_oneUV_gen` / `GOK_blkNN_gen` が `snocYd_mem` で同じことをしているので、その写し。
+1. `NTw r N → NTw (r+1) N` の理屈。
+   BM4 の展開規則の側から「左兄弟の良さがレベルを跨ぐ」理由が付けばよい。
 
-2. (a) を出す理屈。兄弟が無制限の裸の 1 の記録。
+2. `TwOk_twoTwoNil` を `NTw r N`（打ち止め）だけで出す別証明。
+   その階段は `two N (nstN2 N nil k)` で、`N` をレベル `r, r+1, …, r+k` に複製する。
+   実測（`bms`）では bad root がいちばん内側の 1 の記録で、bad part が
+   `[fone V, ftwo N]` の対そのもの、delta = 2。だから複製は避けられない。
+
+3. 木の構造についての帰納。`N = two A B` の場合に
+   「2 の枠の直上の 2 の記録」（＝走り）が出るので、そこが本体。
+
+## 木の側の走りは解けている（参考）
+
+走り（`stk q` = `(l+1,2,0)…(l+q,2,0)`）を**木の先端**に置く問題は、
+主張を文脈について全称にすると解ける。
+
+    WRun : ∀ p ctx V, … → GOK (plug ctx V) → GOK (plug ctx (one V (stk p)))
+
+`GOK_oneUV_gen` の階段 `appJ V (Utw p k)` が `plug (ctx ++ Wblk V p) (Utw p k)` と
+等しいので、`k` について内側の帰納（文脈が伸びても主張は全称なので当たる）と
+`p` について外側の帰納（走りが 1 段短くなる）で回る。
+
+    Wblk V p = fone V :: (ftwo nil)^p
+    Utw p k  = ブロック「(1,0) + 走り p」を k 個積んだ木
+
+**文脈**の側の走り（＝左兄弟のレベル一様性）はこれでは解けない。それが `NTwUp`。
 
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-設計の経緯は `notes.md` の追記175〜179。
+経緯は `notes.md` の追記175〜184。
