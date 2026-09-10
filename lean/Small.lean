@@ -66031,6 +66031,77 @@ theorem NPd_twoTwoGen_PlainT {N : Jk1} (hP : PlainT N) (ks : List Bool) :
 #print axioms NLift_of_PlainT
 #print axioms NPd_nstN_PlainT
 #print axioms NPd_twoTwoGen_PlainT
+
+/-! ### ★★★★★ 「兄弟が true 頭のどの形にも差せる」だけで走りは回る
+
+`NPd_nstN_PlainT` / `NPd_twoTwoGen_PlainT` は `PlainT N` を使っていたが、
+実際に要るのは `∀ kk, NPd (true :: kk) N` だけ。それに一般化する。 -/
+
+theorem NPd_nstN_lift {N : Jk1} (hJN : JkA N) (hL : ∀ kk : List Bool, NPd (true :: kk) N) :
+    ∀ (k : ℕ) (ks : List Bool), NPd (false :: ks) (nstN N k)
+  | 0, ks => NPd_nilF ks
+  | (k + 1), ks => by
+      refine NPd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil)
+        (NPd_nilF ks) ?_
+      rw [NPd_ct]
+      intro U hU hUk
+      exact (NPd_cf (false :: ks) (nstN N k)).mp
+        (NPd_nstN_lift hJN hL k (false :: ks)) 0 U N
+        (by simpa using hU) (by simpa using hUk) hJN
+        (fun j => by
+          simp only [List.replicate_zero, List.nil_append]
+          rw [rep_true_cons]
+          exact hL (List.replicate j true ++ (false :: ks)))
+
+theorem NPd_twoTwoGen_lift {N : Jk1} (hJN : JkA N)
+    (hL : ∀ kk : List Bool, NPd (true :: kk) N) (ks : List Bool) :
+    NPd (true :: ks) (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  refine GOK_twoTwoNil_gen ctx0 V hJN
+    (NCtx_JkT (true :: ks) _ hc (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))
+      ⟨hJN, trivial, trivial⟩) hGV ?_
+  intro k
+  exact (NPd_iff (true :: ks) _).mp
+    (NPd_twoOf (N := N) hJN
+      (fun j => by rw [rep_true_cons]; exact hL (List.replicate j true ++ ks))
+      (NPd_nstN_lift hJN hL k ks)) _ hc
+
+/-! ### 安全な兄弟の族を `two A (two nil nil)` まで広げる -/
+
+inductive PlainU : Jk1 → Prop
+  | nil : PlainU Jk1.nil
+  | pay : ∀ {A : Jk1} {Y : TrioSeq}, PlainU A → Bok Y → PlainU (Jk1.pay A Y)
+  | one : ∀ {A B : Jk1}, PlainU A → PlainU B → PlainU (Jk1.one A B)
+  | two : ∀ {A : Jk1}, PlainU A → PlainU (Jk1.two A Jk1.nil)
+  | ttwo : ∀ {A : Jk1}, PlainU A → PlainU (Jk1.two A (Jk1.two Jk1.nil Jk1.nil))
+
+theorem JkA_of_PlainU : ∀ {N : Jk1}, PlainU N → JkA N
+  | _, PlainU.nil => trivial
+  | _, PlainU.pay h hY => ⟨JkA_of_PlainU h, hY⟩
+  | _, PlainU.one hA hB => ⟨JkA_of_PlainU hA, JkA_of_PlainU hB⟩
+  | _, PlainU.two hA => ⟨JkA_of_PlainU hA, trivial⟩
+  | _, PlainU.ttwo hA => ⟨JkA_of_PlainU hA, trivial, trivial⟩
+
+theorem NPd_true_of_PlainU : ∀ {N : Jk1}, PlainU N → ∀ kk : List Bool, NPd (true :: kk) N
+  | _, PlainU.nil, kk => NPd_nilT kk
+  | _, PlainU.pay hA hY, kk =>
+      NPd_payA (true :: kk) _ (JkA_of_PlainU hA) (NPd_true_of_PlainU hA kk) _ hY
+  | _, PlainU.one hA hB, kk =>
+      NPd_step (true :: kk) (JkA_of_PlainU hA) (NPd_true_of_PlainU hA kk)
+        (NPd_true_of_PlainU hB (true :: kk))
+  | _, PlainU.two hA, kk =>
+      NPd_twoNilGen (JkA_of_PlainU hA) kk
+        (fun j => by
+          rw [rep_true_cons]
+          exact NPd_true_of_PlainU hA (List.replicate j true ++ kk))
+  | _, PlainU.ttwo hA, kk =>
+      NPd_twoTwoGen_lift (JkA_of_PlainU hA) (fun kk' => NPd_true_of_PlainU hA kk') kk
+
+#print axioms NPd_nstN_lift
+#print axioms NPd_twoTwoGen_lift
+#print axioms NPd_true_of_PlainU
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
