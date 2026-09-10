@@ -17382,3 +17382,43 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 - したがって梯子から `Fter` を外す障害のうち「荷」は消えた。
   残るのは `GOK_twoNil_gen` / `GOK_twoTwoNil_gen` が
   `ctx0 ++ [fone V]`（1 の枠止まり）を要求すること。
+
+## 追記199: ★★★★★ 証明中の行（#14）が `TWStep` 1 本になった（基底は無条件）
+
+### 塔を「1 ブロック積む」に割る
+
+    TW 0 = two nil nil,  TW (n+1) = one (two nil nil) (two nil (TW n))
+    TWBlk = [fone (two nil nil), ftwo nil]
+    TWD0  = [fone nil, ftwo nil]
+
+    plug (D ++ TWBlk) X = plug D (one (two nil nil) (two nil X))
+    plug D (TW (n+1))   = plug (D ++ TWBlk) (TW n)
+
+文脈を `RFam [TWBlk] TWD0` について全称にすると `n` の帰納で `TW 0` に落ちる
+（`TowOk_of_TWstep`）。
+
+### 基底が無条件だった
+
+    plug TWD0 (two nil nil) = one nil (two nil (two nil nil)) = one nil (stk 2)
+    GOK_oneStk2 : GOK (one nil (stk 2))       ← 既存、無条件で緑
+
+だから基底 `h0` は消える。
+
+### 残る 1 文
+
+    TWStep : ∀ D ∈ RFam [TWBlk] TWD0,
+        GOK (plug D (two nil nil)) →
+        GOK (plug D (one (two nil nil) (two nil (two nil nil))))
+
+「`two nil nil` が置ける文脈には `TW 1` も置ける」。
+
+    R14_of_TWStep : TWStep → シート証明中の行
+
+`GOK_oneUV_RunSB` で見ると `one (two nil nil) (RunS ([nil] ++ [nil]))` なので
+階段 `∀ n, GOK (plug D (appJ (two nil nil) (UtwP [nil] nil n)))` があれば通る。
+
+### 兄弟の族の制限（両側とも緑になった）
+
+    AYsF     : AYs の hAP を OChain Xb Z（V ↦ one V (pay Z Y)）に制限
+    TSibF_pay: TSib_pay の兄弟を TChain Wb X（V ↦ two V (pay X Y)）に制限
+    GOK_chainJF / GOK_twoIt_chainF がそれぞれの鎖
