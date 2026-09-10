@@ -19222,3 +19222,60 @@ cntF が小さい形だけなので届かない。
     展開      A が two 頭なら最内は A そのもので停留
     枠        走りの長さ k の段は one + two^(k-1)。k ≥ 3 は枠アルファベットに無い
     枠の展開  [k] → [k-1]^(n+1)。cntF が非増加なのは k ≤ 1 だけ
+
+## 追記239: ★★★★★ 多重集合の測度で壁が破れる見込み
+
+2026-09-11。追記238 の続き。**これは壁を破る道かもしれない。**
+
+### 測度を `Multiset ℕ` の Dershowitz–Manna 順序にする
+
+枠を `List ℕ`（数字 = その枠が持つ 2 の記録の本数）にし、測度を
+
+    μ ks = ks を多重集合として見たもの（Multiset ℕ）
+    順序 = Dershowitz–Manna 順序（Mathlib: Multiset.IsDershowitzMannaLT）
+
+にする。Mathlib に `Multiset.instWellFoundedIsDershowitzMannaLT`
+（`WellFoundedRelation (Multiset α)` の instance）があるので
+`termination_by` にそのまま使える。**順序数は使わない。**
+
+対応する順序数は `⊕ ω^kᵢ`（自然和）だが、有限多重集合の DM 順序と同型なので
+組合せ的に済む。
+
+### 既存の節が全部減る
+
+    0 :: ks → ks                  {0}+M → M            Z={0}, Y=∅        ✓
+    1 :: ks → 0^m ++ ks           {1}+M → {0}*m+M      Z={1}, Y={0}*m    ✓（0 < 1）
+    兄弟 0^j ++ (0 :: 0^m ++ ks)  同上                                   ✓
+    k :: ks → (k-1)^(n+1) ++ ks   {k}+M → {k-1}*(n+1)+M                  ✓（k-1 < k）
+
+**幅 k の枠が幅 k−1 の枠を非有界本数作っても、DM 順序では減る。**
+追記238 の `[k] → [k-1]^(n+1)` がちょうど DM の 1 手。
+
+### 壁が破れる理由
+
+幅 2 の枠の節（`one U (two N₁ (two N₂ ·))`）を足すと、その節は
+**兄弟の条件を `1^i` の形（2 の枠 i 本）まで書ける**:
+
+    μ(0^j ++ (0 :: (1^i ++ 0^m ++ ks))) = {0}*(j+1+m) + {1}*i + M
+    μ(2 :: ks)                          = {2} + M
+    すべての元（0 か 1）が 2 より小さい                              ✓ 減る
+
+これがちょうど走りの階段が要求していたもの。
+
+    NRunNil ks = NPd (1::ks) (two nil nil)
+      開くと NPd (0^m ++ ks) (one U (two N (two nil nil)))
+      これは **幅 2 の枠を nil に適用した形**
+      ⟹ NPd (2::ks) nil から出る
+
+そして `NPd (2::ks) nil` の証明は `GOK_twoTwoNilW_gen` の階段
+`nstN2 N₁ N₂ i` を使い、各段で N₁ を `1^i` の形に差す。
+**幅 2 の節がその条件を供給できる。**
+
+### 次にやること
+
+    WPd : List ℕ → Jk1 → Prop      幅 0/1/2（一般 k）の節
+    termination_by  多重集合の DM 順序
+    再証明          NCtx / iff / step / twoOf / rep / twoNilGen / nilF /
+                    chain / pay / oneNil / nilAll → 幅 2 の nilF → NRunNil → #14
+
+規模は 600 行程度。既存の `NPd` の証明がほぼそのまま写せるはず。
