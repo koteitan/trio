@@ -20083,3 +20083,26 @@ GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
 `WQd`（ブロックの節）は兄弟の形の頭を自由にする必要があり、そこで
 頭が入り目つきの場合に連鎖の予算が伸びて足りなくなる。これが壁の正体の
 もう 1 つの言い方。
+
+## 追記260: 証明中の残り 1 文に名前を付けた（`MixTow`）
+
+2026-09-11。
+
+    def MixTow : Prop := ∀ n i, GOK (bdA (replicate n 2 ++ replicate i 1))
+
+    R375m_62_of_MixTow : MixTow → (…)(4,2,0)(5,2,0)(6,2,0) ∈ W 0   （緑）
+    MixTow_zero        : n = 0 の場合は緑（WPd_bdA_le1）
+
+帰着の鎖（全部緑）:
+
+    …(5,2,0)(6,2,0)
+      ⟸ R375m_62_of_bdA2   （bms の実測をそのまま Lean に）
+      ⟸ bdA_rep2_of_mixed  （GOK_BTstep: 幅 e の塔 → 幅 e+1 のブロック 1 個）
+      ⟸ MixTow
+
+`MixTow` の `n ≥ 1` が残り。木で書くと
+
+    bdA (replicate (n+1) 2 ++ replicate i 1)
+      = one nil (two nil (two nil (bdA (replicate n 2 ++ replicate i 1))))
+
+で、**幅 2 のブロックを木の上に足す**。`GOK_BTstep` は下にしか足せない。

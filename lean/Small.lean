@@ -68453,5 +68453,23 @@ theorem GOK_bdAC_le1 (C : TrioSeq) (hC : Bok C) (js : List ℕ) (h : ∀ x ∈ j
 
 #print axioms WPd_bdAC_le1
 
+/-! ### ★★★★★ 証明中の行列に残る 1 文
+
+    MixTow : 幅 2 のブロックを `n` 個積んだ下に幅 1 のブロックを `i` 個積んだ塔
+
+`n = 0` は `WPd_bdA_le1` で緑（`mixed_zero`）。`n ≥ 1` が残り。 -/
+
+def MixTow : Prop := ∀ (n i : ℕ), GOK (bdA (List.replicate n 2 ++ List.replicate i 1))
+
+theorem R375m_62_of_MixTow (h : MixTow) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m_62_of_bdA2 (bdA_rep2_of_mixed h)
+
+/-- `MixTow` の `n = 0` は緑。 -/
+theorem MixTow_zero : ∀ i : ℕ, GOK (bdA (List.replicate 0 2 ++ List.replicate i 1)) :=
+  mixed_zero
+
+#print axioms R375m_62_of_MixTow
+
 end Small
 end TRIO
