@@ -64616,6 +64616,18 @@ theorem MPd_oneNil (ks : List Bool) (V : Jk1) (hV : FrmJ ks V) (hVk : MPd ks V)
   exact (MPd_iff ks _).mp (hpay C hC) ctx hc
 
 #print axioms MPd_oneNil
+
+/-! ### ★ `LStep2` の `Z = pay A Y` は `TSibF_pay` に落ちる -/
+
+theorem LAll1_twoPay {N A : Jk1} {Y : TrioSeq} (hJN : JkA N) (hLN : LAll N)
+    (hJA : JkA A) (hY : Bok Y)
+    (hT : ∀ (k : ℕ) (D : List Frm), StkOk (k + 1) D → TSibF D A A N) :
+    LAll1 (Jk1.two N (Jk1.pay A Y)) := by
+  intro k D hD
+  exact TSibF_pay D (fun Z' hZ' => StkOk_JkT (k + 1) D hD Z' hZ') A hJA N (hT k D hD)
+    Y hY N TChain.base hJN (hLN (k + 1) D hD)
+
+#print axioms LAll1_twoPay
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
