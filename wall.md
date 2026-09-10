@@ -2,9 +2,24 @@
 
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明。
 
-2026-09-10 更新。`OneNil` が最終形。
+2026-09-10 更新。最小形は `NTwStep`。
 
-## 結論の 1 文
+## 最小形（梯子で書いた壁）
+
+    NTwStep : ∀ N r, JkA N → NTw r N → NTw (r + 1) N
+
+    NTw r N = ∀ j D, TwSt r j D → Fter r j → GOK (plug D N)
+
+「2 の枠が r 枚ある枠積みの全部に差せる木は、r+1 枚の枠積みにも差せる」。
+Lean で緑:
+
+    WallT_of_NTwStep : NTwStep → WallT
+    R14_of_NTwStep   : NTwStep → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+
+塔を 3 種類（`nstN` / `UtwP` / `twoIt`）試して、どれも要るのは
+`NTw q M`（q ≥ r、M は 2 の枠の兄弟）だけだと確認した。詳細は notes 追記209。
+
+## 同じ壁の別表記（`OneNil`）
 
     OneNil : ∀ (D : List Frm) (W : Jk1), JkA W →
         (∀ X, JkA X → JkT (plug D (one W X))) →

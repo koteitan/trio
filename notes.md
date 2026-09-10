@@ -17713,3 +17713,92 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
     語で見れば走り）
 
 `OneNil` / `WallT` / `TTwo` / `MNil` / `LStep2` / `RPay` は全部これ。
+
+## 追記209: 壁は `NTwStep`（`NTw` を 1 段上げる）1 本に確定
+
+2026-09-10。
+
+### 新しく緑になったもの
+
+    TwOk_TrmA {A} (hJA) (hA : ∀ r m, TwOk r m A) :
+      ∀ i r m, TwOk r m (Trm A ((A,1)^i))
+
+    TwOk_oneStkA {r m V A} (hJV) (hV : TwOk r m V) (hJA) (hA : ∀ r' m', TwOk r' m' A) :
+      TwOk r m (one V (stkP 1 (two A nil)))
+      ＝ TwOk r m (one V (two nil (two A nil)))
+
+    TwOk_all_of_NoRun {A} : NoRun A → TopOk A → ∀ r m, TwOk r m A
+
+    TwOk_stkA {r m A} (hJA) (hA : ∀ r' m', TwOk r' m' A) (hf : Fter r m) :
+      TwOk r m (two nil (two A nil))
+
+`TwOk_stkA` は `TwOk_twoNilTwoNil`（A = nil）の一般化。内側の `two A nil` は
+2 の枠の直上に来るので梯子（`TwOk_two`）では `TwOk (r+1) 0 (two A nil)` が要って
+通らない。`Fter r m` で 1 の枠まで降りてから `GOK_runNil_gen` を使うと通る。
+階段は `Trm A ((A,1)^i) = one A (two nil (one A (two nil (… A))))` で、
+これは `TwOk_one` + `TwOk_two`（兄弟 nil）だけで登れる。
+
+### 壁の最小形
+
+    NTwStep : ∀ N r, JkA N → NTw r N → NTw (r+1) N
+
+`NTw r N = ∀ j D, TwSt r j D → Fter r j → GOK (plug D N)`
+（= N は「2 の枠が r 枚ある枠積み（最上段は 1 の枠）」の全部に差せる）。
+
+    NTw_ge_of_NTwStep : NTwStep → NTw r N → ∀ q ≥ r, NTw q N
+    TwOk_nstN'        : (∀ q ≥ r, NTw q N) → ∀ k q ≥ r, TwOk (q+1) 0 (nstN N k)
+    TwOk_twoTwoNil'   : (∀ q ≥ r, NTw q N) → Fter r m → TwOk r m (two N (two nil nil))
+    WallT_of_NTwStep  : NTwStep → WallT
+    R14_of_NTwStep    : NTwStep → #14
+
+従来の `NTwUp`（`NTw r N → ∀ q, NTw q N`、全段）より弱い。
+`TwOk_twoTwoNil` が使う段は `r` 以上だけだと確認したので絞れた。
+
+### 3 つの塔が全部同じ 1 点で詰まる
+
+2 の枠の兄弟を `M` とする。壁 `TwOk (q+1) 0 Z`（2 の枠の直上に 2 の記録）を
+どの塔で攻めても、要るのは `NTw q' M`（q' ≥ r）だけで、それ以外は無い。
+
+- `nstN M k = one nil (two M (one nil (two M (… nil))))`（`GOK_twoTwoNil_gen`）
+  → `TwOk (q+1) 0 (nstN M k)` に `NTw (q+1) M`, `NTw (q+2) M`, … が要る。
+- `UtwP [M] A n`（`GOK_oneUV_RunSB`、兄弟任意の走り）
+  → 階段は `one V (two M (ABt [M] A n))`、
+    `ABt [M] A (k+1) = one A (two M (ABt [M] A k))`
+  → `NTw (r+1) M`, `NTw (r+2) M`, … が要る。
+- `twoIt M T n = two (twoIt M T (n-1)) T`（`TwOk_pay_e`）
+  → `NTw r (twoIt M T n)` を作るのに `TwOk_two` を M より上で使う。
+
+どれも「M を上の段に持ち上げる」1 点だけで詰まる。
+
+### 「2 の枠の兄弟を nil に限った梯子」は閉じない
+
+`NlSt`（`ftwo N` の N を nil に固定した梯子）を作れば `WallT` は
+`TwOk_twoNilTwoNil` から無条件に出る、と一瞬見える。実際 #14 の塔の枠
+（`TWD0` / `TWBlk`）は 2 の枠が全部 `ftwo nil` なので、これで閉じそうに見える。
+
+閉じない理由: `TwOk_pay_e`（荷を 2 の枠の直上で剥がす）の塔が
+`twoIt N T n = two (twoIt N T (n-1)) T` で、**2 の枠の兄弟が育つ**。
+nil 限定の梯子では `NlOk_two` が `two nil Z` しか作れないので、
+荷の補題が移植できない。荷が無いと `TwOk_oneNil` → `TwOk_nil` が出ず、
+`nstN` の階段の底が埋まらない。
+
+### なぜ `NTw` は上に持ち上がらないのか（構造的な理由）
+
+梯子 `TwSt r m D` は数の添字 `r` についての再帰で定義してある。
+`fone U` の枠の条件が `∀ D'', TwSt r j D'' → GOK (plug D'' U)` という
+**負の位置に現れる自己言及**なので、添字が減っていないと定義が通らない。
+枠積みは下から上へ伸びるから、添字は下から上へ増える向きにするしかなく、
+2 の枠の兄弟に課す条件は必然的に「1 段下の世界での良さ」＝ `NTw r M` になる。
+壁はそれを 1 段上で使い直すことを要求する。
+
+`APd ks X` / `MPd ks X` の層はこれを避けている（添字がブール列で、
+再帰が木 X の構造なので `∀ ks` の条件が書ける）。そちらの壁は
+`MNil : ∀ ks, MPd (false::ks) nil` で、これも同じ 1 点。
+
+### 名前の対応（全部同じ 1 点）
+
+    NTwStep（NTw を 1 段上げる）      ← 最小形
+    NTwUp / WallT / TTwo / TTw       梯子 TwOk
+    MNil / LStep2 / Rq               層 APd / MPd
+    OneNil / RPay / OneTwo / TWStep  文脈 plug D
+    走り                             語 (l+1,2,0)(l+2,2,0)
