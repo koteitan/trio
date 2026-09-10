@@ -20244,3 +20244,54 @@ GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
     RunNil2 → RunNilR → GOK (bdA js)（幅に上限なし）
             → MixTow → R375m ++ [(6,2,0)]      証明中の行列
             → GOK (one nil (stk q))（全ての q）→ R373 ++ [(5,3,0)]  行376
+
+## 追記263: ★★★★★ 兄弟の条件の底を `strip k ks` にした。壁の形が変わった
+
+2026-09-11。`RunNil2` が閉じない理由を式で詰めて、族を作り直した。緑:
+
+    strip k ks   入り目 k 以下の頭を全部落とした形（融合した族の「ブロックの下の形」）
+    strip_split / strip_app / strip_idem / dm_gen / dm_strip
+    WRd（新設計）とその層（AYdR / AYdTR / WRd_payA / WRd_oneNil / WRd_nilT /
+      WRd_twoNilGen / RunNilR_of_RunNil2 / R375m_62_of_RunNil2 / R376_of_RunNil2）
+
+### なぜ底を剥がすのか
+
+`RunNil2`（走りの長さ 2、底は空木）の階段は
+`GOK_oneUV_RunSB` の `UtwP [N'] N n`。文脈は
+
+    ctx0 ++ [fone U, ftwo N'] ++ ([fone N, ftwo N'])^t
+
+で、**兄弟 `N` と `N'` は自分の下の走りの枠を作り直した形に差せないといけない**。
+旧設計では `N` の条件の底が `r ++ ks`（自分の下の枠の入り目 `k'+1` を含む）
+だったので、`N'` が要求する「その枠を小さい入り目 `e ≤ k'` に付け替える」と
+食い違った（`e < e'` と `e = e'`）。
+
+底を `strip k ks` にすると、`k'+1 ≤ k` のとき `strip k ((k'+1) :: B) = strip k B`
+なので、`N` の条件が**自分の下の枠を飛び越える**。付け替えが自由になる。
+
+    WRd ((k+1) :: ks) V = ∀ r (入り目 ≤ k), r ++ strip k ks ≠ [] → ∀ N, JkA N →
+        (∀ p (入り目 ≤ k), p ++ strip k ks ≠ [] → WRd (p ++ strip k ks) N) →
+        WRd (r ++ strip k ks) (two N V)
+
+節が `ks` を `strip k ks` 越しにしか見ないので `WRd_ck_strip`（形の低い部分は自由）
+が無条件で出る。これが `WRd_ck_shift` を含む。
+
+### 残っている条件: 入り目が下から上へ増えること
+
+`k'+1 ≤ k`（自分の下の枠の入り目が自分の予算以下）が要る。走りを
+`WRd_twoOf (k := b)` で下から積むとき **`b` を下の形の最大の入り目以上に取れば**
+満たせる（`strip b ks = []` になり `r ≠ []` の場合に落ちる）。
+
+ただし節の兄弟の条件は「入り目 ≤ k の**任意の** `p`」を張るので、
+`nil` を `[1, 5, 0]` のような**増えていない形**にも差す必要が出る。
+次の一手は、節の `p`（と `r`）を**増えている形**に制限すること。
+階段が作る形は `[f, 0]^t`（走りの長さ 1 のブロック）なので制限に収まる。
+
+### いまの壁
+
+    RunNil2 : ∀ k k' B N, JkA N →
+        (∀ p (入り目 ≤ k), p ++ strip k ((k'+1) :: B) ≠ [] →
+          WRd (p ++ strip k ((k'+1) :: B)) N) →
+        WRd ((k'+1) :: B) (two N nil)
+
+`k'+1 ≤ k` なら底が `strip k B` まで剥がれるので、上の食い違いは消える。
