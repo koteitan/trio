@@ -16930,3 +16930,57 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
    `∀ n, GOK (plug D (two N (UtwR As n)))` を出すこと。
 2. `N` が走りでない場合（語の最後が 1 の記録、または祖先鎖に 1 の記録がある場合）。
    このときバッドルートが別の場所になるので `snocY_mem` 系の別の道具が要る。
+
+## 追記189: 塔の階段を「1 段積む」に落とした。降下帰納は兄弟が nil のときだけ回る
+
+### 落としたもの（緑）
+
+    RBlk As = fone nil :: As.map ftwo
+    plug (D ++ RBlk As) X = plug D (one nil (RunP As X))
+    RFam Bs D0 = D0 に Bs の枠列を足してできる文脈の族
+    RFam_GOK   = その族についての帰納
+
+    GOK_UtwR_of_step :
+      GOK (plug D nil) →
+      (∀ D' ∈ RFam [RBlk As] D, GOK (plug D' nil) → GOK (plug D' (one nil (RunS As)))) →
+      ∀ n, GOK (plug D (UtwR As n))
+
+つまり塔の階段は「1 段積む」1 文になる。`GOK_oneUV_genM`（`GOK_oneUV_gen` の
+抽象版）も緑にした。
+
+### 降下帰納がどこで止まるか
+
+`NStep` の第 1 文を `GOK_oneNN_RunS` で出すと、階段は
+
+    ∀ n, GOK (plug D (appJ N (UtwR As n)))     N = RunS (As ++ [nil])
+
+で、`n = 0` は `GOK (plug D N)`、`n+1` は文脈 `D ++ [fone N] ++ As.map ftwo` での塔。
+`GOK_UtwR_of_step` に渡すには
+
+    GOK (plug (D ++ [fone N] ++ As.map ftwo) nil) = GOK (plug D (one N (RunS As)))
+
+が要る。**走りが 1 本短くなる。** ここで `GOK_oneUV_genM` を使うには
+`RunS As` の語の最後の記録への祖先鎖が全部 2 の記録でなければならず、
+`As = As' ++ [A_p]` の `A_p` が nil でないと `hMy` が落ちる
+（`A_p` の記録の後ろに背骨の記録が無いので、右からの最小値になってしまう）。
+
+したがって降下帰納は `As` が全部 nil のとき（＝純粋な走り `stk q`、`WRunB`）
+だけ回る。兄弟が任意なのは**一番上の 1 段だけ**。
+
+### 言い換え
+
+    GOK (plug D (one U (RunS As))) = GOK (plug (D ++ [fone U] ++ As.map ftwo) nil)
+
+で、`As.map ftwo` は **2 の枠が |As| 個連続**する文脈。梯子 `TwSt` では
+`Fter` が 2 連続を弾く。`|As| = 1` なら通る、`|As| ≥ 2` が壁。
+`|As| = 1` の場合（`N = two A (two nil nil)`）は追記186 の `NoRun.ttA` で既に緑。
+
+### 位置づけ
+
+壁は結局「**2 の枠が 2 個連続する文脈の木が良い**」1 点。
+`TTwo` / `NStep` / `WRep` / `WallT` / `WStep0` は全部その言い換え。
+次に要るのは `GOK_twoTwoNil_gen` の一般化、つまり
+
+    GOK (plug D (two N (two A (two nil nil))))   （走り 3、兄弟は任意）
+
+を出す BM4 側の補題。`GOK_twoTwoNil_gen` は `two N (two nil nil)` 専用。
