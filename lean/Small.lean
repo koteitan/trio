@@ -66905,5 +66905,319 @@ theorem WPd_run {k : ℕ} (hk : 1 ≤ k) (ks : List ℕ) :
 #print axioms WPd_nstN_run
 #print axioms WPd_run
 
+/-! ### `WPd` 層の荷（pay） -/
+
+theorem FrmN_itJ : ∀ (ks : List ℕ) {T : Jk1}, JkA T → ∀ (n : ℕ) {X : Jk1}, FrmN ks X →
+    FrmN ks (itJ T n X)
+  | [], _, hT, n, _, h => JkT_itJ hT n h
+  | (_ :: _), _, hT, n, _, h => JkA_itJ hT n h
+
+theorem GOK_chainJdW {ks : List ℕ} {ctx : List Frm} (hc : WCtx ks ctx) {X T : Jk1}
+    (hXok : FrmN ks X) (hXk : WPd ks X) (hTok : JkA T)
+    (hstep : ∀ V : Jk1, FrmN ks V → WPd ks V → WPd ks (Jk1.one V T)) :
+    ∀ n, GOK (plug ctx (itJ T n X)) ∧ WPd ks (itJ T n X)
+  | 0 => ⟨(WPd_iff ks X).mp hXk ctx hc, hXk⟩
+  | (n + 1) => by
+      obtain ⟨h1, h2⟩ := GOK_chainJdW hc hXok hXk hTok hstep n
+      have hok := FrmN_itJ ks hTok n hXok
+      have h3 := hstep (itJ T n X) hok h2
+      exact ⟨(WPd_iff ks _).mp h3 ctx hc, h3⟩
+
+theorem AYdW : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkA Z →
+    WPd (0 :: ks) Z →
+    ∀ (X : Jk1), FrmN ks X → WPd ks X → WPd ks (Jk1.one X (Jk1.pay Z Y)) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List ℕ) (Z : Jk1), JkA Z →
+      WPd (0 :: ks) Z →
+      ∀ (X : Jk1), FrmN ks X → WPd ks X → WPd ks (Jk1.one X (Jk1.pay Z Y))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb ks Z hZ hRZ X hX hXk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact WPd_congr ks (fun l => (jk1_one_pay_nil X Z l).symm) (WPd_step ks hX hXk hRZ)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hpres : ∀ V : Jk1, FrmN ks V → WPd ks V →
+            WPd ks (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
+          fun V hV hVk =>
+            WPd_congr ks (fun l => (jk1_one_pay_nil V Z l).symm) (WPd_step ks hV hVk hRZ)
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e, WPd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (WCtx_JkT ks ctx hc (Jk1.one X (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            (FrmN_one ks X _ hX ⟨hZ, by simpa using hYb⟩))
+          (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact (GOK_chainJdW (T := Jk1.pay Z ([] : TrioSeq)) hc hX hXk ⟨hZ, Bok_nil⟩
+          hpres n).1 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hpres : ∀ V : Jk1, FrmN ks V → WPd ks V →
+            WPd ks (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
+          fun V hV hVk => hdl hdb ks Z hZ hRZ V hV hVk
+        rw [hsplit, WPd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (WCtx_JkT ks ctx hc (Jk1.one X (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            (FrmN_one ks X _ hX ⟨hZ, by rw [← hsplit]; exact hYb⟩))
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (GOK_chainJdW (T := Jk1.pay Z Y.dropLast) hc hX hXk ⟨hZ, hdb⟩
+          hpres n).1 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        rw [WPd_iff]
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_innerJs0 hw
+          (WCtx_JkT ks ctx hc (Jk1.one X (Jk1.pay Z Y)) (FrmN_one ks X _ hX ⟨hZ, hYb⟩))
+          hYb hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact (WPd_iff ks _).mp (hh (Bok_oper hYb hn) ks Z hZ hRZ X hX hXk) ctx hc ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb ks Z hZ hRZ X hX hXk
+  exact key hYb.mem hYb ks Z hZ hRZ X hX hXk
+
+theorem WPd_payT (ks : List ℕ) (V : Jk1) (hV : JkA V) (hVk : WPd (0 :: ks) V)
+    (C : TrioSeq) (hC : Bok C) : WPd (0 :: ks) (Jk1.pay V C) :=
+  (WPd_c0 ks _).mpr (fun U hU hUk => AYdW C hC ks V hV hVk U hU hUk)
+
+theorem WPd_payE (V : Jk1) (hV : JkT V) (hVk : WPd [] V) (C : TrioSeq) (hC : Bok C) :
+    WPd [] (Jk1.pay V C) :=
+  (WPd_bnil _).mpr (AY0 C hC V hV ((WPd_bnil V).mp hVk))
+
+#print axioms AYdW
+
+/-! ### `WPd` 層の荷（予算つきの形） -/
+
+theorem WPd_two_of_ctx {kk : List ℕ} {U N V : Jk1}
+    (hU : FrmN kk U) (hUk : WPd kk U)
+    (h : ∀ ctx : List Frm, WCtx (0 :: kk) ctx → GOK (plug ctx (Jk1.two N V))) :
+    WPd kk (Jk1.one U (Jk1.two N V)) := by
+  rw [WPd_iff]
+  intro ctx0 hc0
+  rw [← plug_snoc]
+  exact h (ctx0 ++ [Frm.fone U]) ((WCtx_c0 kk _).mpr ⟨ctx0, U, rfl, hc0, hU, hUk⟩)
+
+theorem WPd_chainT {k : ℕ} {B : List ℕ} {ctx : List Frm} (hc : WCtx (0 :: B) ctx) {N T : Jk1}
+    (hN : JkA N) (hNall : ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B) N)
+    (hT : JkA T)
+    (hstep : ∀ N' : Jk1, JkA N' →
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B) N') →
+      ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B) (Jk1.two N' T)) :
+    ∀ n, GOK (plug ctx (twoIt N T n)) ∧ JkA (twoIt N T n) ∧
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B) (twoIt N T n))
+  | 0 => ⟨(WPd_iff (0 :: B) N).mp (by simpa using hNall [] (by simp)) ctx hc, hN, hNall⟩
+  | (n + 1) => by
+      obtain ⟨-, h2, h3⟩ := WPd_chainT hc hN hNall hT hstep n
+      have h4 := hstep (twoIt N T n) h2 h3
+      exact ⟨(WPd_iff (0 :: B) _).mp (by simpa using h4 [] (by simp)) ctx hc, ⟨h2, hT⟩, h4⟩
+
+theorem AYdTW_hstep {k : ℕ} {ks r : List ℕ} (hr : ∀ x ∈ r, x ≤ k)
+    {T : Jk1} (hTk : WPd ((k + 1) :: ks) T) :
+    ∀ N' : Jk1, JkA N' →
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ (r ++ ks)) N') →
+      ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ (r ++ ks)) (Jk1.two N' T) := by
+  intro N' hN' hN'all q hq
+  have e : (0 : ℕ) :: q ++ (r ++ ks) = 0 :: (q ++ r ++ ks) := by simp
+  rw [e]
+  refine WPd_twoOf (k := k) hN' ?_ ?_
+  · intro q' hq'
+    have e2 : (0 : ℕ) :: q' ++ (q ++ r ++ ks) = (0 :: (q' ++ q)) ++ (r ++ ks) := by simp
+    rw [e2]
+    refine hN'all (q' ++ q) ?_
+    intro x hx
+    rcases List.mem_append.mp hx with h1 | h1
+    · exact hq' x h1
+    · exact hq x h1
+  · have hsh := WPd_ck_shift hTk (q ++ r)
+      (by
+        intro x hx
+        rcases List.mem_append.mp hx with h1 | h1
+        · exact hq x h1
+        · exact hr x h1)
+    simpa using hsh
+
+theorem AYdTW : ∀ (Y : TrioSeq), Bok Y → ∀ (k : ℕ) (ks : List ℕ) (Z : Jk1), JkA Z →
+    WPd ((k + 1) :: ks) Z → WPd ((k + 1) :: ks) (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (k : ℕ) (ks : List ℕ) (Z : Jk1), JkA Z →
+      WPd ((k + 1) :: ks) Z → WPd ((k + 1) :: ks) (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb k ks Z hZ hZk
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact WPd_congr ((k + 1) :: ks) (fun l => (jk1_pay_nil l Z).symm) hZk
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hZnil : WPd ((k + 1) :: ks) (Jk1.pay Z ([] : TrioSeq)) :=
+          WPd_congr ((k + 1) :: ks) (fun l => (jk1_pay_nil l Z).symm) hZk
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e, WPd_ck]
+        intro r hr U N hU hUk hN hNt
+        refine WPd_two_of_ctx hU hUk ?_
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (WCtx_JkT (0 :: (r ++ ks)) ctx hc
+            (Jk1.two N (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hN, hZ, by simpa using hYb⟩) ?_
+        intro n hn
+        exact (WPd_chainT (T := Jk1.pay Z ([] : TrioSeq)) hc hN hNt ⟨hZ, Bok_nil⟩
+          (AYdTW_hstep hr hZnil) n).1 ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : WPd ((k + 1) :: ks) (Jk1.pay Z Y.dropLast) := hdl hdb k ks Z hZ hZk
+        rw [hsplit, WPd_ck]
+        intro r hr U N hU hUk hN hNt
+        refine WPd_two_of_ctx hU hUk ?_
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (WCtx_JkT (0 :: (r ++ ks)) ctx hc
+            (Jk1.two N (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+            ⟨hN, hZ, by rw [← hsplit]; exact hYb⟩) ?_
+        intro n hn
+        exact (WPd_chainT (T := Jk1.pay Z Y.dropLast) hc hN hNt ⟨hZ, hdb⟩
+          (AYdTW_hstep hr hprev) n).1 ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        rw [WPd_ck]
+        intro r hr U N hU hUk hN hNt
+        refine WPd_two_of_ctx hU hUk ?_
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (WCtx_JkT (0 :: (r ++ ks)) ctx hc
+            (Jk1.two N (Jk1.pay Z Y)) ⟨hN, hZ, hYb⟩)
+          hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have hh2 := hh (Bok_oper hYb hn) k ks Z hZ hZk
+        have hc' := hc
+        rw [WCtx_c0] at hc'
+        obtain ⟨ctx0, U', hce, hc0, hU', hU'k⟩ := hc'
+        subst hce
+        have h2 := (WPd_ck k ks _).mp hh2 r hr U' N hU' hU'k hN hNt
+        rw [plug_snoc]
+        exact (WPd_iff _ _).mp h2 ctx0 hc0 ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb k ks Z hZ hZk
+  exact key hYb.mem hYb k ks Z hZ hZk
+
+/-- ★★★★★ `WPd` 層の荷（どの形でも）。 -/
+theorem WPd_payA : ∀ (ks : List ℕ) (V : Jk1), FrmN ks V → WPd ks V →
+    ∀ C : TrioSeq, Bok C → WPd ks (Jk1.pay V C)
+  | [], V, hV, hVk, C, hC => WPd_payE V hV hVk C hC
+  | (0 :: ks), V, hV, hVk, C, hC => WPd_payT ks V (FrmN_JkA _ V hV) hVk C hC
+  | ((k + 1) :: ks), V, hV, hVk, C, hC => AYdTW C hC k ks V (FrmN_JkA _ V hV) hVk
+
+#print axioms AYdTW
+#print axioms WPd_payA
+
+/-! ### 空木・塔・#14 -/
+
+theorem WPd_oneNil (ks : List ℕ) (V : Jk1) (hV : FrmN ks V) (hVk : WPd ks V) :
+    WPd ks (Jk1.one V Jk1.nil) := by
+  rw [WPd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (WCtx_JkT ks ctx hc (Jk1.one V Jk1.nil) (FrmN_one ks V Jk1.nil hV trivial))
+    ((WPd_iff ks V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (WPd_iff ks _).mp (WPd_payA ks V hV hVk C hC) ctx hc
+
+theorem WPd_nilT (ks : List ℕ) : WPd (0 :: ks) Jk1.nil :=
+  (WPd_c0 ks _).mpr (fun U hU hUk => WPd_oneNil ks U hU hUk)
+
+/-- ★★★★★ 空木はどの形でも差せる（`WPd` 層、無条件）。 -/
+theorem WPd_nilAll : ∀ ks : List ℕ, WPd ks Jk1.nil
+  | [] => (WPd_bnil _).mpr GOK_nil
+  | (0 :: ks) => WPd_nilT ks
+  | ((k + 1) :: ks) => WPd_nilF k ks
+
+theorem WPd_TW {k : ℕ} (hk : 1 ≤ k) : ∀ (n : ℕ) (ks : List ℕ), WPd ((k + 1) :: ks) (TW n)
+  | 0, ks => WPd_run hk ks
+  | (n + 1), ks =>
+      WPd_step ((k + 1) :: ks)
+        (⟨trivial, trivial⟩ : FrmN ((k + 1) :: ks) (Jk1.two Jk1.nil Jk1.nil))
+        (WPd_run hk ks)
+        (WPd_twoOf (k := k) trivial (fun q _ => WPd_nilAll _) (WPd_TW hk n ((k + 1) :: ks)))
+
+/-- ★★★★★★ 塔が無条件で出る。 -/
+theorem TowOk_of_WPd : TowOk := fun n =>
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil)
+    (WPd_twoOf (k := 1) trivial (fun q _ => WPd_nilAll _)
+      (WPd_TW (le_refl 1) n [])))
+
+/-- ★★★★★★ シート #14。 -/
+theorem R14_of_WPd : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem TowOk_of_WPd
+
+#print axioms WPd_nilAll
+#print axioms TowOk_of_WPd
+#print axioms R14_of_WPd
+
 end Small
 end TRIO

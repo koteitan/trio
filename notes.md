@@ -19373,3 +19373,38 @@ cntF が小さい形だけなので届かない。
     AYdW / AYdTW    荷（pay）の移植。AYdTW は WPd_ck_shift で閉じる
     WPd_oneNil / WPd_nilT / WPd_nilAll
     WPd_TW / TowOk / #14
+
+## 追記242: ★★★★★★★ #14 が無条件で緑。壁がなくなった
+
+2026-09-11。追記241 の続き。荷（pay）を `WPd` 層へ移して閉じた。
+
+    AYdW      : 形 0::ks の荷。NPd の AYdN をそのまま写した
+    AYdTW     : 形 (k+1)::ks の荷。連鎖の hstep は WPd_ck_shift で閉じる
+    WPd_payA  : どの形でも荷が付く
+    WPd_oneNil / WPd_nilT / WPd_nilAll : 空木はどの形でも差せる
+    WPd_TW    : 1 ≤ k → ∀ n ks, WPd ((k+1)::ks) (TW n)
+    TowOk_of_WPd : TowOk                      無条件
+    R14_of_WPd   : R375m ++ [(5,2,0)] ∈ W 0   無条件
+
+`R375m ++ [(5,2,0)]` =
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)`。
+
+### AYdTW の hstep が閉じた理由
+
+連鎖 `twoIt N T n` の兄弟の条件を保つには、`two X T` を形 `(0::q) ++ (r ++ ks)`
+に差せることが要る。`WPd_twoOf`（予算 k）に落とすと `T` が形
+`(k+1) :: (q ++ r ++ ks)` に要る。節が形の族 `r ++ ks` を張っているので
+
+    WPd_ck_shift : WPd ((k+1)::ks) T → WPd ((k+1)::(a ++ ks)) T   (a の入り目 ≤ k)
+
+で `a = q ++ r` として取れる。`NPd` では `m` の複製 `0^m` しか張っていなかったので
+ここが通らなかった。族を `r ++ ks` に広げたのが効いた。
+
+### まとめ: 何が壁だったのか
+
+    NPd の 2 の枠の節   形 0^m ++ ks を張る、兄弟は 1^j ++ (0 :: 形)
+    WPd の 2 の枠の節   形 r ++ ks（入り目 ≤ k）を張る、兄弟は (0 :: q) ++ 形（入り目 ≤ k）
+
+停止性の測度は `cntF`（入り目の和）から多重集合の DM 順序へ。
+`{1}*i < {2}` が全ての `i` で成立するので、階段の高さ `i` が非有界でも減る。
+ZFC も順序数も使っていない。`Multiset.IsDershowitzMannaLT` だけ。
