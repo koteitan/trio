@@ -1,39 +1,65 @@
-# 残っている壁（1 文）
+# 残っている壁（2 文）
 
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明で、
-**残っている壁は 1 文だけ**になった。
+**残っているのは「もう 1 段積む」2 文だけ**になった。
 
-2026-09-10 更新。`TTwo` が最終形（`NTwUp` より鋭い）。
+2026-09-10 更新。`NStep` が最終形。レベル添字は消えた。
 
-## 結論の 1 文
+## 結論の 2 文
 
-木 `X` について 2 つの述語を置く。
+    NFam N D0 = D0 に [fone N] と [ftwo N, fone nil] を足してできる文脈の族
 
-    STw X = ∀ q, NTw q X          （どのレベルの「1 の枠止まり」の文脈にも差せる）
-    TTw X = ∀ q, TwOk (q+1) 0 X   （どのレベルの「2 の枠の直上」にも差せる）
+    NStep N D0 : ∀ D, NFam N D0 D → GOK (plug D N) →
+        GOK (plug D (one N N)) ∧ GOK (plug D (two N (one nil N)))
 
-    NTw q N   = ∀ j D, TwSt q j D → Fter q j → GOK (plug D N)
-    TwOk r m X = ∀ D, TwSt r j D → GOK (plug D X)
+**「N が置ける文脈には、N の上にもう 1 段 N が置ける」— これだけ。**
 
-残る 1 文はこれ。
+これが出れば（Lean で緑）
 
-    TTwo := ∀ A B, JkA A → JkA B → STw A → TTw B → TTw (two A B)
+    WRep_of_NStep : (∀ N D0, NStep N D0) → WRep
+    R14_of_NStep  : (∀ N D0, NStep N D0) → シート証明中の行
 
-**「2 の記録の直上に 2 の記録を置ける」— これだけ。**
+## 既にある道具
 
-これが出れば
+    GOK_oneNN_gen : … → GOK (plug D (one N N))            ← 第 1 文
+    GOK_blkNN_gen : … → GOK (plug D (two N (one nil N)))   ← 第 2 文
 
-    STw_TTw      : TTwo → ∀ X, JkA X → STw X ∧ TTw X
-    NTwUp_of_TTwo: TTwo → NTwUp
-    WallT_of_TTwo: TTwo → WallT
-    R14_of_TTwo  : TTwo → シート証明中の行
-    TowOk_of_TTwo: TTwo → TowOk
+どちらも緑。ただし仮定に
 
-が出る（Lean で緑）。
+    hNs    : ∀ d, jk1 d N = jk1 d (stk p) ++ [(d+p+1, 2, 0)]   （N が走り stk (p+1)）
+    hstair : ∀ n, GOK (plug D (appJ N (Utw p n)))  /  (plug D (two N (Utw p n)))
 
-## なぜこの 1 文か
+が付く。**N が走りのときは道具が揃っている。** 一般の N が残り。
 
-`X` の構造帰納で表を埋めると、埋まらないマスが 1 つしか残らない。
+## どうやってここまで詰めたか
+
+古い形（レベル添字つき）は
+
+    TwOk_twoTwoNil : (∀ q, NTw q N) → Fter r m → TwOk r m (two N (two nil nil))
+
+で、**全レベルの全文脈**で N が良いことを要求していた。実際に使われるのは
+階段を潰すときに現れる **N と nil だけでできた文脈**だけである。
+
+    PJ N j = [ftwo N, fone nil] を j 回積んだ文脈
+
+    plug (D ++ PJ N j) (two N (nstN N (k+1))) = plug (D ++ PJ N (j+1)) (two N (nstN N k))
+
+なので `k` の帰納（`j` は全称。`WRun` と同じ手）で `k = 0` に落ち、
+`k = 0` は `j` の帰納で `GOK_twoNil_gen` の連鎖になる。要るのは
+
+    WRep : ∀ j i, GOK (plug (D ++ PJ N j ++ (fone N)^i) N)
+
+だけ（`j = i = 0` は `NTw r N` そのもの）。この族は `[fone N]` と
+`[ftwo N, fone nil]` を足して作れて、足す操作は木の側で
+
+    plug (D ++ [fone N]) N           = plug D (one N N)
+    plug (D ++ [ftwo N, fone nil]) N = plug D (two N (one nil N))
+
+だから、族の帰納で `NStep` に落ちる。
+
+## 木の帰納の表（レベル添字版、参考）
+
+    STw X = ∀ q, NTw q X          TTw X = ∀ q, TwOk (q+1) 0 X
 
     X          STw                        TTw
     -------------------------------------------------------------
@@ -43,13 +69,23 @@
     two A B    STw A, TTw B → 緑          ★ 壁 = TTwo
     -------------------------------------------------------------
 
-`TTwo` の最小の場合 `A = B = nil` が `WallT`。
+`TTwo := ∀ A B, JkA A → JkA B → STw A → TTw B → TTw (two A B)`。
+最小の場合 `A = B = nil` が `WallT`。`NTwUp` は `TTwo` から出る。
 これまで出てきた壁
 
     WallT / WallP / Wall / OneGap / TwoStep / BStairAll / QPayPair
-    WStep0 / WPay / LTwo (two nil nil) / NTwUp
+    WStep0 / WPay / LTwo (two nil nil) / NTwUp / TTwo / WRep
 
-は全部ここに合流する。
+は全部 `NStep` に合流する。
+
+## なぜレベル添字が邪魔だったか
+
+`TwSt (r+1) 0` の文脈は `D' ++ [ftwo N]` の形で、持っている条件は
+
+    NTw r N        ← レベル r で打ち止め
+
+一方 `TwOk_twoTwoNil` は `∀ q, NTw q N`（全レベル）を要求する。
+`NStep` は文脈を**具体的に**取るので、この差が消える。
 
 ## レベル 0 では壁は無い
 
@@ -121,7 +157,7 @@
 
 `GOK X` = 「どの良い語の右にも X の語を継いでよい」（`GoodFb` を保つ）。
 
-## 合流した 1 文
+## 層を通らない言い換え `WStep0`（参考）
 
     WCtxT ctx V := ∀ X : Jk1, JkA X → JkT (plug ctx (one V X))     -- 字レベルの妥当性だけ
     WV V        := V = nil ∨ V = two nil nil
@@ -212,18 +248,17 @@
 
 次のどれか。
 
-1. `TTwo` の直接証明。`TTw (two A B)` の階段は BM4 側から
-   `two N (nstN N k)`（`N` をレベル `r, r+1, …, r+k` に複製する）になる。
-   実測（`bms`）では bad root がいちばん内側の 1 の記録で、bad part が
-   `[fone V, ftwo N]` の対そのもの、delta = 2。だから複製は避けられない。
-   複製先の各レベルで `N` が良いこと（＝`STw N`）が要る。
+1. `GOK_oneNN_gen` / `GOK_blkNN_gen` の `hNs`（N が走り）を外した一般版。
+   一般の N では `one N N` の語の最後の記録が N の形で変わるので、
+   バッドルートの場合分けが増える。そこを `GoodFb` の 3 フィールド
+   （`pu` / `pk` / `seg`）だけで書けるか。
 
-2. `STw N` を「文脈の木 `N` が置かれる先の木より小さい」ことで回す帰納。
-   `TwOk_nstN` は同じ `N` を枠として積み直すので、枠の大きさは増えない。
-   一方 `nstN N k` は `k` で伸びる。大きさの差を測度にできないか。
+2. `NStep` の階段を実測して、一般の N でも `Utw p n` 型の塔になるか確かめる。
+   なるなら `GOK_oneNN_gen` の証明がほぼそのまま通る。
 
-3. レベル 0 の `AUni`（`APd` の全 shape 一様性）に相当する条件を、
-   1 の枠が意味的に弱い梯子でも書ける形で見つける。
+3. `NStep` の第 2 文だけを先に落とす。第 1 文（`one N N`）は
+   `NTw r N` の文脈では `TwOk_itJ` で無料なので、
+   `[ftwo N, fone nil]` を足す第 2 文が本体。
 
 ## 木の側の走りは解けている（参考）
 
@@ -244,4 +279,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜186。
+経緯は `notes.md` の追記175〜187。
