@@ -44,10 +44,21 @@
     SelfW_of_WPd     : WPd の 1 の枠の文脈なら SelfW D V（V は頭 0 の形で良い木）
     TSibF_of_WPd     : 同じ文脈で TSibF ctx W W N
     WQd_nilF/nilAll  : ブロックの節でも nil はどこでも差せる
-    GOK_bdA1         : 幅 1 の塔（梯子。1 と 2 が交互で Fter が満たされる）
+    WPd_bdA_le1      : 幅 ≤ 1 のブロック列はどの形にも差せる（GOK_bdA1 の一般化）
     WPd_stk1/stk2    : stk q は q ≤ 2 まで
+    WPd_twoA_runB    : 走り（左の兄弟は任意、底は nil）。予算を上げられる
+    WPd_twoIt_nil    : 平らな走り twoIt nil nil m（Δ=0）は全部差せる
+    TowOkM / R373_copies52_mem : (…)(4,2,0)(5,2,0)^(m+1) ∈ W 0 が全ての m で
 
-**足りないのは、文脈が走り（幅 ≥ 2 のブロック）を含む場合だけ。**
+**足りないのは、走りの底が `nil` でない場合だけ**（＝ 文脈が
+幅 ≥ 2 のブロックを含む場合）。
+
+    平らな走り  twoIt A T m = two (two (… ) T) T    一般部分が左   ✓ 出る
+    登る走り    stkP j X    = two nil (two nil (… X))  一般部分が右（底） ✗
+
+`WPd_twoA_runB` で一般化できるのは**左の兄弟**だけ。底は `RunS` の `nil` に
+固定されていて、`GOK_oneUV_genM` 系の塔補題がどれも
+「`one U ·` にぶら下がる木の語が 2 の記録で終わる」ことを要求するのが理由。
 
 ## なぜ閉じないか（循環）
 
