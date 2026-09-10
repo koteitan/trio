@@ -64386,6 +64386,43 @@ theorem APd_payA' : ∀ (ks : List Bool) (V : Jk1), FrmJ ks V → APd ks V →
 
 #print axioms AYdT'
 #print axioms APd_payA'
+
+/-! ### ★★★★★ `LOk_twoNil` を `LAll` な兄弟に一般化
+
+`GOK_twoNil_gen` の階段 `plug (replicate m (fone N)) N` は
+`plug (D ++ (fone N)^m) N` と同じで、`LAll N` があれば
+`D ++ (fone N)^m` は `StkOk` のまま。だから `LOk (k+1) (two N nil)` が出る。
+これは `LStep2` の `Z = nil` の場合。 -/
+
+theorem StkOk_rep_fone {N : Jk1} (hJN : JkA N) (hN : LAll N) :
+    ∀ (m k : ℕ) (D : List Frm), StkOk k D →
+      StkOk (k + m) (D ++ List.replicate m (Frm.fone N))
+  | 0, k, D, hD => by simpa using hD
+  | (m + 1), k, D, hD => by
+      have e : D ++ List.replicate (m + 1) (Frm.fone N)
+          = (D ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        simp [List.replicate_succ', ← List.append_assoc]
+      rw [e, show k + (m + 1) = (k + m) + 1 from by omega]
+      exact ⟨D ++ List.replicate m (Frm.fone N), N, rfl,
+        StkOk_rep_fone hJN hN m k D hD, hJN, fun D'' hD'' => hN (k + m) D'' hD''⟩
+
+theorem LOk_twoNilA {N : Jk1} (hJN : JkA N) (hN : LAll N) :
+    ∀ k : ℕ, LOk (k + 1) (Jk1.two N Jk1.nil) := by
+  intro k D hD
+  obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+  refine GOK_twoNil_gen D' U hJN
+    (StkOk_JkT (k + 1) (D' ++ [Frm.fone U]) ⟨D', U, rfl, hD', hJU, hU⟩ _ ⟨hJN, trivial⟩)
+    (hU D' hD') ?_
+  intro m
+  rw [← plug_append]
+  exact hN (k + 1 + m) _ (StkOk_rep_fone hJN hN m (k + 1) (D' ++ [Frm.fone U])
+    ⟨D', U, rfl, hD', hJU, hU⟩)
+
+theorem LAll1_twoNilA {N : Jk1} (hJN : JkA N) (hN : LAll N) :
+    LAll1 (Jk1.two N Jk1.nil) := LOk_twoNilA hJN hN
+
+#print axioms StkOk_rep_fone
+#print axioms LOk_twoNilA
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
