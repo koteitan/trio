@@ -16886,3 +16886,47 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 が使えなくなる（追記186 の 2 択と同じ）。
 
 `NStep` は文脈を**具体的に**取るので、この全称性の問題が起きない。そこが利点。
+
+## 追記188: `NStep` の道具を「兄弟が任意の走り」まで広げた
+
+### 抽象版
+
+`GOK_oneNN_gen` / `GOK_blkNN_gen` の仮定 `hNs`（N が走り `stk (p+1)`）を外して
+
+    GOK_oneNN_genM / GOK_blkNN_genM
+      hNs : ∀ d, jk1 d N = jk1 d Nd ++ [(d + dl, 2, 0)]   （語の最後が 2 の記録）
+      hMy : `(h+1,1,0) :: jk1 (h+1) Nd` の右からの最小値の位置は行 1 が 2 以上
+      hTw : 塔の語が `Mtwd dl` そのもの
+      hT0 : 塔の 0 段目が nil
+
+だけにした（`snocYd_mem` は元から語について一般）。証明本体は `stk p → Nd`、
+`Utw p → T` の機械的な置き換えで通る。
+
+### `hMy` が言っていること
+
+「N の語の**最後の記録への祖先鎖**が全部 2 の記録」。
+
+### 兄弟が任意の走り `RunS`
+
+    RunP [A1,…,Ap] X = two A1 (two A2 (… (two Ap X)))
+    RunS As          = RunP As nil
+    N                = RunS (As ++ [nil]) = two A1 (… (two Ap (two nil nil)))
+    UtwR As n        = ブロック「(1,0) + RunS As」を n 個積んだ木
+
+`My_RunS`（緑）: 走りの語では、行 1 が 2 未満の記録は必ず後ろに高さが自分以下の
+記録を持つ。`A_i` の記録は高さ ≥ e+i で、直後の背骨の記録が `(e+i,2,0)` だから。
+よって右からの最小値になるのは背骨の 2 の記録だけ ⇒ `hMy` が通る。
+
+これで
+
+    GOK_oneNN_RunS : … → GOK (plug D (one N N))
+    GOK_blkNN_RunS : … → GOK (plug D (two N (one nil N)))
+
+が緑（階段は仮定のまま）。元の 2 つは `As = [nil,…,nil]` の場合。
+
+### 残り
+
+1. 階段 `∀ n, GOK (plug D (appJ N (UtwR As n)))` /
+   `∀ n, GOK (plug D (two N (UtwR As n)))` を出すこと。
+2. `N` が走りでない場合（語の最後が 1 の記録、または祖先鎖に 1 の記録がある場合）。
+   このときバッドルートが別の場所になるので `snocY_mem` 系の別の道具が要る。
