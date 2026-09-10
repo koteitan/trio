@@ -68203,5 +68203,96 @@ theorem twm_word (m : ℕ) : ∀ (k l : ℕ),
 
 #print axioms twm_word
 
+/-! ### ★★★★★★ `R373 ++ (5,2,0)^(m+1) ∈ W 0` -/
+
+theorem UBlk_length (m l : ℕ) : (UBlk m l).length = m + 2 := by simp [UBlk]
+
+theorem UBlk_getD_ge2 (m l j : ℕ) (hj : j < m) :
+    (UBlk m l).getD (j + 2) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((l + 3, 2, 0) : ℕ × ℕ × ℕ) := by
+  show (List.replicate m ((l + 3, 2, 0) : ℕ × ℕ × ℕ)).getD j
+    ((0, 0, 0) : ℕ × ℕ × ℕ) = _
+  simp [List.getD_eq_getElem?_getD, List.getElem?_replicate, hj]
+
+theorem UBlk_entry0_ge2 (m l j : ℕ) (hj : j < m) :
+    entry (UBlk m l) 0 (j + 2) = l + 3 := by
+  unfold entry
+  rw [UBlk_getD_ge2 m l j hj]
+  simp
+
+theorem MidD_UBlk2 (m : ℕ) : MidD 4 (UBlk m 2) where
+  ne := by simp [UBlk]
+  col := by
+    intro c hc
+    simp only [UBlk, List.mem_cons] at hc
+    rcases hc with rfl | rfl | hc
+    · decide
+    · decide
+    · rw [List.eq_of_mem_replicate hc]; decide
+  head := rfl
+  head1 := by simp [entry, UBlk]
+  tail := by
+    intro j h1 h2
+    rw [UBlk_length] at h2
+    rcases j with _ | j
+    · omega
+    rcases j with _ | j
+    · simp [entry, UBlk]
+    · rw [UBlk_entry0_ge2 m 2 j (by omega)]
+      omega
+  mono := by
+    intro c hc
+    simp only [UBlk, List.mem_cons] at hc
+    rcases hc with rfl | rfl | hc
+    · decide
+    · decide
+    · rw [List.eq_of_mem_replicate hc]; decide
+
+theorem towerM_mem (m : ℕ) : ∀ n : ℕ, Mtwd 2 R341 (UBlk m 2) n ∈ W 0
+  | 0 => by simpa [Mtwd] using Aok_R341.mem
+  | (k + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b
+          [Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm m k))]) := by
+        simpa using TowOkM m k [] WOk_nil GoodFb_wordJ_nil
+      have h := rowJ_mem_genF Aok_R338 hG
+      rw [wordJ_singleton, colJ] at h
+      have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm m k)))
+          = (List.range (k + 1)).flatMap (fun i => shiftr01 (2 * i) 0 (UBlk m 2)) := by
+        show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (2 + 1) (Jk1.two Jk1.nil (TWm m k))) = _
+        have h2 := twm_word m k 2
+        simpa [jk1] using h2
+      rw [e] at h
+      simpa [Mtwd, R341, R338, List.append_assoc] using h
+
+theorem R341_UBlk_eq (m : ℕ) :
+    R341 ++ UBlk m 2 = R373 ++ List.replicate m ((5, 2, 0) : ℕ × ℕ × ℕ) := by
+  show R341 ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) ::
+    List.replicate m ((5, 2, 0) : ℕ × ℕ × ℕ)) = _
+  simp [R373, R344, List.append_assoc]
+
+/-- ★★★★★★ `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)^(m+1) ∈ W 0`。
+`m = 1` がシートの #14。 -/
+theorem R373_copies52_mem (m : ℕ) :
+    R373 ++ List.replicate (m + 1) ((5, 2, 0) : ℕ × ℕ × ℕ) ∈ W 0 := by
+  have h := snocYd_mem (Y0 := R341) (M := UBlk m 2) (L := 3) (y := 2) (dl := 2)
+    (by simp [R341, R338]) (MidD_UBlk2 m) (by simp [entry, UBlk])
+    (by
+      intro t h1 h2 h3 _
+      rw [UBlk_length] at h2
+      rcases t with _ | t
+      · omega
+      rcases t with _ | t
+      · simp [entry, UBlk]
+      · exfalso
+        rw [UBlk_entry0_ge2 m 2 t (by omega)] at h3
+        omega)
+    (by omega) (by omega) (towerM_mem m)
+  rw [R341_UBlk_eq m] at h
+  rw [List.replicate_succ']
+  simpa [List.append_assoc] using h
+
+#print axioms towerM_mem
+#print axioms R373_copies52_mem
+
 end Small
 end TRIO
