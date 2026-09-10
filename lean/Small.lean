@@ -64709,6 +64709,86 @@ theorem NoRunCtx_RFam_fone {D0 : List Frm} (h0 : NoRunCtx D0) (W : Jk1) :
 #print axioms NoRunCtx_RFam_TWBlk
 #print axioms NoRunCtx_RFam_TWD0
 #print axioms NoRunCtx_RFam_fone
+
+/-! ### ★★★★★ 走り 2 を 1 の記録の上に置く（梯子の全レベルで）
+
+`GOK_runNil_gen`（文脈一般、緑）の階段は `Trm nil ([(V,1)] ++ (nil,1)^i)`
+＝ `one V (stkP 1 (bdA (1^i)))` で、`TwOk_bdA1`（全レベルで緑）から出る。
+`stkP 1` は 2 の枠 1 枚なので `Fter` に引っかからない。 -/
+
+theorem TwOk_oneStk2 {r m : ℕ} {V : Jk1} (hJV : JkA V) (hV : TwOk r m V) :
+    TwOk r m (Jk1.one V (stk 2)) := by
+  intro D hD
+  have hJT : JkT (plug D (Jk1.one V (stkP 1 (Jk1.two Jk1.nil Jk1.nil)))) :=
+    TwSt_JkT r m D hD _ ⟨hJV, trivial, trivial, trivial⟩
+  refine GOK_runNil_gen (A := Jk1.nil) trivial D 1 hJT (hV D hD) ?_
+  intro i
+  have e : Trm Jk1.nil ([(V, 1)] ++ List.replicate i ((Jk1.nil, 1) : Jk1 × ℕ))
+      = Jk1.one V (stkP 1 (bdA (List.replicate i 1))) := by
+    show Jk1.one V (stkP 1 (Trm Jk1.nil (List.replicate i ((Jk1.nil, 1) : Jk1 × ℕ)))) = _
+    rw [Trm_rep1]
+  rw [e]
+  exact TwOk_one r m hJV hV
+    (TwOk_two (N := Jk1.nil) trivial (NTw_nil r) (Fter_succ r m)
+      (TwOk_bdA1 i (r + 1) 0)) D hD
+
+theorem LOk_oneStk2 {k : ℕ} {V : Jk1} (hJV : JkA V) (hV : LOk (k + 1) V) :
+    LOk (k + 1) (Jk1.one V (stk 2)) :=
+  LOk_of_TwOk0 (TwOk_oneStk2 hJV (TwOk_z0 hV))
+
+#print axioms TwOk_oneStk2
+#print axioms LOk_oneStk2
+
+/-! ### ★★★★★ 走り 2 の 2 本目に兄弟 `A` を付けても通る
+
+`GOK_runNil_gen` の階段は `Trm A ([(V,1)] ++ (A,1)^i)` で、
+`Trm A ((U,j) :: bs) = one U (stkP j (Trm A bs))`、`Trm A [] = A`。
+`stkP 1` は 2 の枠 1 枚なので `Fter` に引っかからず、`A` が全レベルで
+置けるなら塔が回る。梯子で直接組むと `TwOk (r+1) 0 (two A nil)`
+（2 の枠の直上の 2 の記録）が要るので、これは新しい。 -/
+
+theorem TwOk_TrmA {A : Jk1} (hJA : JkA A) (hA : ∀ r m : ℕ, TwOk r m A) :
+    ∀ (i r m : ℕ), TwOk r m (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ)))
+  | 0, r, m => hA r m
+  | (i + 1), r, m => by
+      show TwOk r m (Jk1.one A (stkP 1 (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ)))))
+      refine TwOk_one r m hJA (hA r m) ?_
+      show TwOk r (m + 1)
+        (Jk1.two Jk1.nil (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ))))
+      exact TwOk_two (N := Jk1.nil) trivial (NTw_nil r) (Fter_succ r m)
+        (TwOk_TrmA hJA hA i (r + 1) 0)
+
+theorem TwOk_oneStkA {r m : ℕ} {V A : Jk1} (hJV : JkA V) (hV : TwOk r m V)
+    (hJA : JkA A) (hA : ∀ r' m' : ℕ, TwOk r' m' A) :
+    TwOk r m (Jk1.one V (stkP 1 (Jk1.two A Jk1.nil))) := by
+  intro D hD
+  have hJT : JkT (plug D (Jk1.one V (stkP 1 (Jk1.two A Jk1.nil)))) :=
+    TwSt_JkT r m D hD _ ⟨hJV, trivial, hJA, trivial⟩
+  refine GOK_runNil_gen hJA D 1 hJT (hV D hD) ?_
+  intro i
+  have e : Trm A ([(V, 1)] ++ List.replicate i ((A, 1) : Jk1 × ℕ))
+      = Jk1.one V (stkP 1 (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ)))) := rfl
+  rw [e]
+  exact TwOk_one r m hJV hV
+    (TwOk_two (N := Jk1.nil) trivial (NTw_nil r) (Fter_succ r m)
+      (TwOk_TrmA hJA hA i (r + 1) 0)) D hD
+
+/-- `NoRun A` かつ `TopOk A` なら `∀ r m, TwOk r m A`。 -/
+theorem TwOk_all_of_NoRun {A : Jk1} (h : NoRun A) (hT : TopOk A) :
+    ∀ r m : ℕ, TwOk r m A := by
+  obtain ⟨hS, hTT⟩ := NTw_NoRun_all h
+  intro r m
+  cases r with
+  | zero => exact fun D hD => hS 0 m D hD (Fter_zero m)
+  | succ r' =>
+      cases m with
+      | zero => exact hTT hT r'
+      | succ m' =>
+          exact fun D hD => hS (r' + 1) (m' + 1) D hD (Fter_succ (r' + 1) m')
+
+#print axioms TwOk_TrmA
+#print axioms TwOk_oneStkA
+#print axioms TwOk_all_of_NoRun
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
