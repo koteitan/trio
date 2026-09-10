@@ -1,61 +1,51 @@
-# 残っている壁（2 文）
+# 残っている壁
 
-トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明で、
-**残っているのは「もう 1 段積む」2 文だけ**になった。
+トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明。
 
-2026-09-10 更新。`NStep` が最終形。レベル添字は消えた。
+2026-09-10 更新。
 
-## 結論の 2 文
+## 壁の連鎖（全部 Lean で緑）
 
-    NFam N D0 = D0 に [fone N] と [ftwo N, fone nil] を足してできる文脈の族
+    RPay    : ∀ D V, GOK (plug D V) → ∀ C, Bok C → GOK (plug D (pay V C))
+                                                        （荷を 1 個吊るす）
+      ↓ APnil_gen0
+    RStep0  : ∀ D V, GOK (plug D V) → GOK (plug D (one V nil))
+                                                        （裸の 1 の記録を 1 個積む）
+      ↓ RStep_rep
+    RStep (replicate q nil) nil : … → GOK (plug D (one V (stk q)))
+                                                        （走りを積む）
+      ↓ GOK_oneNN_of_RStep / GOK_blkNN_of_RStep
+    NStep N D0（N が走り RunS (Bs ++ [B]) のとき）
+      ↓ WRep_of_NStep
+    WRep → WallT / TTwo / NTwUp → シート証明中の行
 
-    NStep N D0 : ∀ D, NFam N D0 D → GOK (plug D N) →
-        GOK (plug D (one N N)) ∧ GOK (plug D (two N (one nil N)))
+**つまり `N` が走りのときの壁は `RPay` 1 本**（「荷を 1 個吊るせる」）。
 
-**「N が置ける文脈には、N の上にもう 1 段 N が置ける」— これだけ。**
+## 残っている穴
 
-これが出れば（Lean で緑）
+`N` が走りでないとき（語の最後の記録への祖先鎖に 1 の記録があるとき）。
+`hMy`（`snocYd_mem` の条件）が落ちる。
 
-    WRep_of_NStep : (∀ N D0, NStep N D0) → WRep
-    R14_of_NStep  : (∀ N D0, NStep N D0) → シート証明中の行
+ただしこれは**分割点の取り方**の問題らしい。`snocYd_mem` は語を
+`Y0 ++ M ++ [(L+dl, y, 0)]` と割るので、`M` をバッドルート（鎖の最後の
+1 の記録）から始めれば `M` の中の右からの最小値は全部 2 の記録になる。
+木で言うと `N = plug E (one A Y)` と書いて
 
-## 既にある道具
+    plug D (one N N) = plug (D ++ [fone N] ++ E) (one A Y)
 
-    GOK_oneNN_gen : … → GOK (plug D (one N N))            ← 第 1 文
-    GOK_blkNN_gen : … → GOK (plug D (two N (one nil N)))   ← 第 2 文
+とし、`GOK_oneUV_genM` をより深い文脈で使う。次はこれを実装する。
 
-どちらも緑。ただし仮定に
+## 部品（緑）
 
-    hNs    : ∀ d, jk1 d N = jk1 d (stk p) ++ [(d+p+1, 2, 0)]   （N が走り stk (p+1)）
-    hstair : ∀ n, GOK (plug D (appJ N (Utw p n)))  /  (plug D (two N (Utw p n)))
-
-が付く。**N が走りのときは道具が揃っている。** 一般の N が残り。
-
-## どうやってここまで詰めたか
-
-古い形（レベル添字つき）は
-
-    TwOk_twoTwoNil : (∀ q, NTw q N) → Fter r m → TwOk r m (two N (two nil nil))
-
-で、**全レベルの全文脈**で N が良いことを要求していた。実際に使われるのは
-階段を潰すときに現れる **N と nil だけでできた文脈**だけである。
-
-    PJ N j = [ftwo N, fone nil] を j 回積んだ文脈
-
-    plug (D ++ PJ N j) (two N (nstN N (k+1))) = plug (D ++ PJ N (j+1)) (two N (nstN N k))
-
-なので `k` の帰納（`j` は全称。`WRun` と同じ手）で `k = 0` に落ち、
-`k = 0` は `j` の帰納で `GOK_twoNil_gen` の連鎖になる。要るのは
-
-    WRep : ∀ j i, GOK (plug (D ++ PJ N j ++ (fone N)^i) N)
-
-だけ（`j = i = 0` は `NTw r N` そのもの）。この族は `[fone N]` と
-`[ftwo N, fone nil]` を足して作れて、足す操作は木の側で
-
-    plug (D ++ [fone N]) N           = plug D (one N N)
-    plug (D ++ [ftwo N, fone nil]) N = plug D (two N (one nil N))
-
-だから、族の帰納で `NStep` に落ちる。
+    RunP [A1,…,Ap] X = two A1 (… (two Ap X))    RunS As = RunP As nil
+    UtwP Bs B n = 塔（1 段は「(1,0) + RunP Bs B」）
+    PBlk Bs V   = fone V :: Bs.map ftwo         RBlk As = PBlk As nil
+    ABt Bs B n  = appJ B (UtwP Bs B n)
+    RFam Bs D0  = D0 に Bs の枠列を足してできる文脈の族、RFam_GOK はその帰納
+    My_RunP / hMy_RunP
+    GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM（元の 3 つの抽象版）
+    NFam / NFam_GOK / WRep / GOK_twoTwoNil_rep
+    NoRun / NTw_of_NoRun / STw_TTw
 
 ## 木の帰納の表（レベル添字版、参考）
 
@@ -279,4 +269,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜187。
+経緯は `notes.md` の追記175〜190。
