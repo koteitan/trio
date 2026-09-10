@@ -17172,3 +17172,42 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
     目標の行（行376）                 証明中の行（#14）
 
 `RStep0` は `RPay` を要求する（`APnil_gen0` の荷）ので、実質の壁は `RPay` 1 本。
+
+## 追記194: `RPay` の 1 の枠側は `AYs` で済む。壁は 2 の枠側（走りの上の荷）
+
+### 既にある緑の道具
+
+    AY0 : ∀ Y, Bok Y → ∀ Z, JkT Z → GOK Z → GOK (pay Z Y)          （無条件）
+    AYs : … (hAP : ∀ V, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (one V Z)))
+        → GOK (plug ctx X) → GOK (plug ctx (one X (pay Z Y)))
+
+`plug (ctx ++ [fone X]) (pay Z Y) = plug ctx (one X (pay Z Y))` なので、
+**1 の枠で終わる文脈での `RPay` は `AYs` そのもの**（`RPay_fone`、緑）。
+仮定 `hAP` は `RStep [] Z` を `ctx`（1 段短い文脈）に制限したもの。
+
+    RPay at |D| = k（1 の枠止まり）
+      ⟸ RStep [] Z at |D| = k-1        （AYs の hAP）
+      ⟸ （木の帰納）RPay at |D| = k-1  （RStep_of_RPay）
+      ⟸ … ⟸ RPay at |D| = 0 = AY0（緑）
+
+**文脈の長さで帰納が回る。**
+
+### 残る壁
+
+    RPay2 : ∀ D N V, … → GOK (plug (D ++ [ftwo N]) V) →
+        ∀ C, Bok C → GOK (plug (D ++ [ftwo N]) (pay V C))
+
+2 の枠で終わる文脈での荷。木で言うと `plug D (two N (pay V C))`、
+行列で言うと**走りの上の荷**。wall.md の (b) と同じで、実測（`bms`）では
+その展開がシート証明中の行そのもの。
+
+`TwOk_pay_e`（緑）はこれを梯子で証明しているが、そこでは横鎖
+`twoIt N T n`（同じ高さに 2 の記録が並ぶ、delta = 0）が要り、
+鎖の各段で兄弟が伸びる。梯子は `TwOk (r+1) 0 T`（全文脈）を持っているので
+兄弟が変わっても当たる。文脈を具体的にするとそこが足りない。
+
+### 次
+
+`RPay ⟸ RPay2` を文脈の長さの帰納で示すには、文脈の枠の木が置けることを
+条件に持つ述語（`CtxG` 的なもの）が要る。`AYs` の `CtxOk` / `CtxX` /
+`GOK (plug ctx X)` がまさにそれ。
