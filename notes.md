@@ -19797,3 +19797,45 @@ GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
 族の帳尻合わせでは消えない（追記245/246/247/250 で 6 通り確認）。
 必要なのは、塔の高さについて整礎な別の議論か、
 `twoIt` の平らさ（Δ=0）を使う新しい塔補題。
+
+## 追記252: 幅の帰納は既に緑。壁は「走りを含む文脈での 1 の枠の積み上げ」
+
+2026-09-11。既存の緑を洗い直して、壁のいちばん短い言い方が変わった。
+
+    GOK_BTall (h : ZeroStep) : ∀ e U pre i, GOK (BT U pre) →
+                               GOK (BT U (pre ++ replicate i e))
+
+**ブロックの幅 `e` についての帰納は既に緑**。だから行376 は
+
+    ZeroStep : ∀ U, JkT U → GOK U → ∀ pre, GOK (BT U pre) →
+               ∀ i, GOK (BT U (pre ++ replicate i 0))
+
+1 本（`R376_of_ZeroStep`、緑）。`bdA (js ++ [0]) = bdX (one nil nil) js` なので
+これは **`BT` 文脈の先端で `one nil` を `i` 個積む** ＝ `SelfW D nil`。
+
+    SelfW D W := ∀ k, GOK (plug (D ++ (fone W)^k) W)
+
+そして今回
+
+    SelfW_of_WPd : WPd の 1 の枠の文脈 D なら SelfW D V（V は頭 0 の形で良い木）
+
+が緑になっている。**足りないのは `D` が走り（幅 ≥ 2 のブロック）を含む場合だけ**。
+
+### `WPd` の到達点（機械検証で刻んだ）
+
+    WPd_stk1 / WPd_stk2 : ∀ ks, WPd (0::ks) (stk 1) / (stk 2)
+    GOK_oneStkW2        : GOK (one nil (stk 2))     WPd 版（既存の梯子版とは別証明）
+
+`stk 3` には `WPd ((b+1)::ks) (two nil (two nil nil))`（走りの底が走り）が要り、
+`WPd_twoA_run`（底が `nil`）では出ない。
+
+### 壁の言い方（更新）
+
+    ZeroStep  走りを含む文脈の先端で 1 の枠を積む     ← いちばん短い
+    QTSibF    走り（荷なし）
+    QRunPay   走りの直下の荷
+    RPayN0 / BLoad / VPay / PayStep / hrun
+
+幅 1 の塔 `GOK_bdA1` が梯子（`TwOk` / `Fter`）で緑なのは、
+1 の記録と 2 の記録が交互で `Fter`（2 の記録の直上に 2 の記録を置かない）が
+常に満たされるから。幅 ≥ 2 はそこで落ちる。

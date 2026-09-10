@@ -67970,5 +67970,29 @@ theorem R376_of_QTSibF (h : QTSibF) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] 
 #print axioms QRunPay_of_QTSibF
 #print axioms R376_of_QTSibF
 
+/-! ### `WPd` の到達点: `stk q` は `q ≤ 2` まで
+
+`stk 3 = two nil (two nil (two nil nil))` には
+`WPd ((b+1)::ks) (two nil (two nil nil))`（走りの底が走り）が要り、
+`WPd_twoA_run`（底が `nil`、左の兄弟は任意）では出ない。 -/
+
+theorem WPd_stk1 (ks : List ℕ) : WPd (0 :: ks) (stk 1) :=
+  WPd_twoOf (k := 1) trivial (fun q _ => WPd_nilAll _) (WPd_nilF 1 ks)
+
+theorem WPd_stk2 (ks : List ℕ) : WPd (0 :: ks) (stk 2) :=
+  WPd_twoOf (k := 1) trivial (fun q _ => WPd_nilAll _) (WPd_run (le_refl 1) ks)
+
+theorem GOK_oneStk1 : GOK (Jk1.one Jk1.nil (stk 1)) :=
+  (WPd_bnil _).mp
+    (WPd_step [] (JkT_nil : FrmN [] Jk1.nil) ((WPd_bnil _).mpr GOK_nil) (WPd_stk1 []))
+
+/-- `GOK_oneStk2`（既存、梯子で証明）の `WPd` 版。 -/
+theorem GOK_oneStkW2 : GOK (Jk1.one Jk1.nil (stk 2)) :=
+  (WPd_bnil _).mp
+    (WPd_step [] (JkT_nil : FrmN [] Jk1.nil) ((WPd_bnil _).mpr GOK_nil) (WPd_stk2 []))
+
+#print axioms WPd_stk2
+#print axioms GOK_oneStkW2
+
 end Small
 end TRIO
