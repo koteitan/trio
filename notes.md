@@ -18864,3 +18864,54 @@ N の可差し性が 1 段深い形で要る。`SbT N`（形に依らない）�
 **`true^j` は測度から強制されている。**層の設計の都合ではない。
 そして実測（追記229・230）より、基本列そのものが `(true false)^k` を要求する。
 だから両者のずれは動かせない。
+
+## 追記231: 兄弟が `SbT` なら走りは一般の N で出る。壁は相互帰納の切り方
+
+2026-09-11。追記230 の続き。
+
+### 新しく緑になったもの
+
+    NPd_ABt_SbF        {A N} (SbF A) (SbT N) : ∀ n kk, NPd (false::kk) (ABt [N] A n)
+    NPd_twoAnil_sibSbT {A N} (SbF A) (SbT N) (kk) (U) (FrmJ kk U) (NPd kk U) :
+      NPd kk (one U (two N (two A nil)))
+
+`GOK_oneUV_RunSB`（兄弟任意の走り）の階段
+`ABt [N] A (k+1) = one A (two N (ABt [N] A k))` の各段で `NPd_twoOf` に
+兄弟 N を 1 段深い形で使うが、**`SbT N` は形に依らないので通る**。底は `SbF A`。
+
+追記230 の `NPd_stkA_SbF`（N = nil）を一般の N に広げたもの。
+
+### 壁の正確な形（三角形）
+
+    (1) N の条件は SbT N（形に依らない）で足りる           ← 今日の結果で確定
+    (2) しかし NPd_cf が供給するのは JkA N ＋ 形つきの hNt
+    (3) SbT の意味定理 NPd_true_of_SbT なら hNt を任意の形で出せる
+    (4) ところがその意味定理の相互帰納に SbF.two を足すと、
+        SbF.two の証明が「周囲の兄弟（全称、部分導出でない）の意味定理」を要求する
+
+**壁は「N の条件が作れない」ではなく「相互帰納の切り方」。**
+
+### `NPd_cf` の節に `SbT N` を足す道も塞がっている
+
+節を `JkA N ∧ SbT N ∧ hNt` にすると:
+
+    NPd_nilF        ✓ hNt を使う（GOK_twoNilW_gen の階段は N を 1 の枠で積むだけ）
+    SbF.two         ✓ SbT N を使う（今日の NPd_twoAnil_sibSbT）
+    ただし NPd_twoOf は節の条件を**全部**供給しないと使えないので、
+    深い形での hNt が要り、それは意味定理経由 ⟹ 循環
+    さらに荷 AYdTN の鎖 twoIt N T n が SbT (two W T) ⟸ SbF T を要求し、
+    T = pay Z Y' の Z（荷の相手、全称）に SbF Z が要る ⟹ 閉じない
+
+### 経路は `false^k`（実測、追記230 の訂正）
+
+塔の木を `NPd` の枠で読むと（`true` = `one U ·`、`false` = `one U (two N ·)`）、
+経路は純粋に `false^k` で `true` は挟まらない。段 k で要る N の条件は
+
+    NPd (true^(j+1) ++ false^(k-1)) N        （`true` の前置きは ∀ j で自由）
+
+    k = 1  → true^(j+1)          ← NPd_cf が供給する形。届く
+    k ≥ 2  → 末尾の false^(k-1) が不足
+
+    cntF(true^(j+1) ++ false^(k-1)) = k − 1   ← 1 段につき cntF が 1 増える
+
+語・木・形の 3 つの見方が同じ数字を出している。

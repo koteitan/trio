@@ -66224,11 +66224,63 @@ theorem NPd_stkA_SbF {A : Jk1} (hA : SbF A) (kk : List Bool) (U : Jk1)
     (NPd_twoOf (N := Jk1.nil) trivial (fun _ => NPd_nilAll _)
       (NPd_TrmA_SbF hA i kk)) _ hcU
 
+/-! ### ★★★★★ 周囲の兄弟が `SbT` なら `SbF.two` が一般の N で出る
+
+`GOK_oneUV_RunSB`（兄弟任意の走り）の階段は
+`ABt [N] A (k+1) = one A (two N (ABt [N] A k))` で、各段の `NPd_twoOf` に
+兄弟 `N` を 1 段深い形で使う。`SbT N` は**形に依らない**のでそこが通る。
+底は `SbF A`。 -/
+
+theorem NPd_ABt_SbF {A N : Jk1} (hA : SbF A) (hN : SbT N) :
+    ∀ (n : ℕ) (kk : List Bool), NPd (false :: kk) (ABt [N] A n)
+  | 0, kk => NPd_false_of_SbF hA kk
+  | (n + 1), kk => by
+      show NPd (false :: kk) (Jk1.one A (Jk1.two N (ABt [N] A n)))
+      exact NPd_step (false :: kk) (JkA_of_SbF hA) (NPd_false_of_SbF hA kk)
+        (NPd_twoOf (JkA_of_SbT hN)
+          (fun j => by
+            rw [rep_true_cons]
+            exact NPd_true_of_SbT hN (List.replicate j true ++ (false :: kk)))
+          (NPd_ABt_SbF hA hN n (false :: kk)))
+
+/-- ★★★★★ 周囲の兄弟が `SbT` なら走りは一般の N で置ける。 -/
+theorem NPd_twoAnil_sibSbT {A N : Jk1} (hA : SbF A) (hN : SbT N) (kk : List Bool)
+    (U : Jk1) (hU : FrmJ kk U) (hUk : NPd kk U) :
+    NPd kk (Jk1.one U (Jk1.two N (Jk1.two A Jk1.nil))) := by
+  rw [NPd_iff]
+  intro ctx hc
+  have hJBs : ∀ X ∈ [N], JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact JkA_of_SbT hN
+  have hGU : GOK (plug ctx U) := (NPd_iff kk U).mp hUk ctx hc
+  have hstair : ∀ n : ℕ, GOK (plug ctx (appJ U (UtwP [N] A n))) := by
+    intro n
+    cases n with
+    | zero => exact hGU
+    | succ n =>
+        have h : NPd kk (Jk1.one U (Jk1.two N (ABt [N] A n))) :=
+          NPd_step kk hU hUk
+            (NPd_twoOf (JkA_of_SbT hN)
+              (fun j => by
+                rw [rep_true_cons]
+                exact NPd_true_of_SbT hN (List.replicate j true ++ kk))
+              (NPd_ABt_SbF hA hN n kk))
+        exact (NPd_iff kk _).mp h ctx hc
+  show GOK (plug ctx (Jk1.one U (RunS ([N] ++ [A]))))
+  exact GOK_oneUV_RunSB ctx [N] A U hJBs (JkA_of_SbF hA)
+    (NCtx_JkT kk ctx hc _
+      (FrmJ_one kk U _ hU ⟨JkA_of_SbT hN, JkA_of_SbF hA, trivial⟩))
+    hGU hstair
+
 #print axioms NPd_true_of_SbT
 #print axioms NPd_false_of_SbF
 #print axioms SbF_le_SbT
 #print axioms SbF_nstN_nil
 #print axioms NPd_stkA_SbF
+#print axioms NPd_ABt_SbF
+#print axioms NPd_twoAnil_sibSbT
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
