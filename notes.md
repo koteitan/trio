@@ -16559,3 +16559,52 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 
 `WRun` は走りを**木**の側で解いたが、**文脈**の側の走りはまだ。
 ここが最後の 1 点。
+
+## 追記181: ★ 訂正。`WStep0` は `TowOk` と同じ強さ（言い換えであって簡約ではない）
+
+### 何が起きているか
+
+`TowOk_W` の再帰を追うと、`h0 = WStep0` が呼ばれる文脈は
+
+    ctx_n = [fone nil, ftwo nil] ++ [fone (two nil nil), ftwo nil]^(n-1)
+
+で、そこでの主張は
+
+    GOK (plug ctx_n (one V nil))
+      = GOK (one nil (two nil (one (two nil nil) (two nil (… (one V nil))))))
+
+一方 `TowOk` は
+
+    GOK (one nil (two nil (TW n)))
+      = GOK (one nil (two nil (one (two nil nil) (two nil (… (two nil nil))))))
+
+**先端が `one V nil` か `two nil nil` かの違いだけ。**木の大きさも同じ n オーダー。
+
+つまり `WStep0` は `TowOk` の言い換えであって、簡約ではない。
+
+### それでも進んだこと
+
+  - #14 と行376 が**同じ 1 文**になった（前は別々の壁だった）
+  - **層を一切通らない**形になった（`APd` / `Cok` / `Pok` / `TwSt` が消えた）
+  - 走り（`WRun`）と塔（`TowOk_W`）が層なしで回ることが分かった
+  - `WStep0` の一部（`GCtx` 文脈、深さ 1）が緑（追記180）
+
+難しさは変わっていないが、形はずっときれいになった。
+
+### どこに帰納が要るか
+
+`WStep0` は `TowOk_W` / `WRun` の**各段**で使われ、段が減らない。
+だから `WStep0` 自体を文脈について帰納する必要がある。
+
+    ctx = ctx0 ++ Wblk V0 p
+    plug ctx (one V nil) = plug ctx0 (one V0 (stkP p (one V nil)))
+
+文脈は 1 ブロック短くなるが、木は `stkP p (one V nil)` に育つ。
+`GOK_oneUV_gen` は右の子が `stk (p+1)`（純粋な走り）でないと当たらないので、
+先端 `one V nil` が付いた形には当たらない。
+
+**要るのは「走り + 先端」の一般化**:
+
+    GOK (plug ctx (one V (stkP p Z)))    Z = one V' nil など
+
+の階段を `bms` で測って、`GOK_oneUV_gen` の一般版を作るのが次。
