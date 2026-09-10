@@ -64233,9 +64233,26 @@ theorem OneNil_ftwo (ctx : List Frm) (N W : Jk1) (hJN : JkA N) (hJW : JkA W)
   rw [plug_snoc2]
   exact TSibF_pay ctx hJTc W hJW N hT C hC N TChain.base hJN hGN
 
+/-- 梯子の `NTw q N` からは `SelfW` が無料で出る（`TwOk_repN`）。 -/
+theorem SelfW_of_NTw {q m : ℕ} {N : Jk1} (hJN : JkA N) (hN : NTw q N) (hf : Fter q m)
+    (D : List Frm) (hD : TwSt q m D) : SelfW D N := by
+  intro k
+  rw [plug_append]
+  exact TwOk_repN hJN hN k m hf D hD
+
+/-- `TSib D nil` の点ごとの版（兄弟を 1 つ固定）。 -/
+theorem GOK_twoNil_of_SelfW (ctx0 : List Frm) (V : Jk1) (hGV : GOK (plug ctx0 V))
+    (W : Jk1) (hJW : JkA W)
+    (hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two W Jk1.nil)))
+    (h : SelfW (ctx0 ++ [Frm.fone V]) W) :
+    GOK (plug (ctx0 ++ [Frm.fone V]) (Jk1.two W Jk1.nil)) :=
+  GOK_twoNil_gen ctx0 V hJW hJT hGV (fun m => by rw [← plug_append]; exact h m)
+
 #print axioms OneNil_nil
 #print axioms OneNil_fone
 #print axioms OneNil_ftwo
+#print axioms SelfW_of_NTw
+#print axioms GOK_twoNil_of_SelfW
 
 end Small
 end TRIO
