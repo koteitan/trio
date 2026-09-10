@@ -19973,3 +19973,31 @@ GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
 
 で走りの底が `bdA js`（≠ nil）なので `WPd_twoA_runB` では出ない。
 `ZeroStep` と同じ点。
+
+## 追記257: 証明中の帰着を最後まで詰めた
+
+2026-09-11。緑になったもの:
+
+    BT_nil_eq          : BT nil js = bdA js
+    bdA_rep2_of_mixed  : (∀ n i, GOK (bdA (replicate n 2 ++ replicate i 1)))
+                         → ∀ n, GOK (bdA (replicate n 2))
+    mixed_zero (i)     : GOK (bdA (replicate 0 2 ++ replicate i 1))   ← n = 0 は緑
+
+帰着の鎖（全部緑）:
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,2,0)
+      ⟸ R375m_62_of_bdA2   : ∀ n, GOK (bdA (replicate n 2))
+      ⟸ bdA_rep2_of_mixed  : ∀ n i, GOK (bdA (replicate n 2 ++ replicate i 1))
+      n = 0 は mixed_zero（WPd_bdA_le1）で緑
+
+`GOK_BTstep`（緑・無条件、「幅 e の塔 → 幅 e+1 のブロック 1 個」）が効いた。
+
+### 残り: `n ≥ 1` の混合塔
+
+    bdA (replicate (n+1) 2 ++ replicate i 1)
+      = one nil (stkP 2 (bdA (replicate n 2 ++ replicate i 1)))
+
+**幅 2 のブロックを木の上に足す**ことになる。`GOK_BTstep` は下に足すので使えず、
+`WPd` では `WPd ((b+1)::ks) (two nil X)`（走りの底が `X ≠ nil`）に落ちて出ない。
+上の 2 のブロックを文脈に回すと `WPd` の文脈（ブロック無し）に入らない。
+`WQd` のブロックの節なら入るが `nil` の荷閉包が入り目つきの形で要る（= `ZeroStep`）。

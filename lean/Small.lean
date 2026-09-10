@@ -68393,5 +68393,43 @@ theorem R375m_62_of_bdA2 (h : ∀ n : ℕ, GOK (bdA (List.replicate n 2))) :
 #print axioms tower_bdA2_mem
 #print axioms R375m_62_of_bdA2
 
+/-! ### 幅 2 の塔を「幅 2 のあとに幅 1 を積む塔」に落とす
+
+`GOK_BTstep`（緑・無条件）は「幅 `e` の塔 → 幅 `e+1` のブロック 1 個」。
+`e = 1` で使うと、幅 2 の塔は「幅 2 の前置きの下に幅 1 を積んだ塔」に落ちる。 -/
+
+theorem BT_nil_eq : ∀ js : List ℕ, BT Jk1.nil js = bdA js
+  | [] => rfl
+  | (_ :: _) => rfl
+
+theorem bdA_rep2_of_mixed
+    (h : ∀ (n i : ℕ), GOK (bdA (List.replicate n 2 ++ List.replicate i 1))) :
+    ∀ n : ℕ, GOK (bdA (List.replicate n 2))
+  | 0 => by
+      show GOK (bdA ([] : List ℕ))
+      exact GOK_nil
+  | (n + 1) => by
+      have hst : ∀ i : ℕ,
+          GOK (BT Jk1.nil (List.replicate n 2 ++ List.replicate i 1)) := by
+        intro i
+        rw [BT_nil_eq]
+        exact h n i
+      have hh := GOK_BTstep (U := Jk1.nil) JkT_nil (List.replicate n 2) 1 hst
+      rw [BT_nil_eq] at hh
+      rw [List.replicate_succ']
+      exact hh
+
+/-- 前置きが空なら緑（`WPd_bdA_le1`）。 -/
+theorem mixed_zero (i : ℕ) :
+    GOK (bdA (List.replicate 0 2 ++ List.replicate i 1)) := by
+  refine GOK_bdA_le1 _ ?_
+  intro x hx
+  simp only [List.replicate_zero, List.nil_append] at hx
+  have : x = 1 := List.eq_of_mem_replicate hx
+  omega
+
+#print axioms bdA_rep2_of_mixed
+#print axioms mixed_zero
+
 end Small
 end TRIO
