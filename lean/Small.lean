@@ -64789,6 +64789,86 @@ theorem TwOk_all_of_NoRun {A : Jk1} (h : NoRun A) (hT : TopOk A) :
 #print axioms TwOk_TrmA
 #print axioms TwOk_oneStkA
 #print axioms TwOk_all_of_NoRun
+
+/-! ### ★★★★★ 2 の枠の直上に「兄弟つきの 2 の記録」を置く
+
+`TwOk_twoNilTwoNil r m hf : TwOk r m (two nil (two nil nil))` の一般化。
+内側の `two A nil` は 2 の枠の直上に来るので、梯子（`TwOk_two`）では
+`TwOk (r+1) 0 (two A nil)` が要って通らない。`Fter r m` で 1 の枠まで
+降りてから `GOK_runNil_gen` を使えば通る。 -/
+
+theorem TwOk_stkA {r m : ℕ} {A : Jk1} (hJA : JkA A) (hA : ∀ r' m' : ℕ, TwOk r' m' A)
+    (hf : Fter r m) : TwOk r m (Jk1.two Jk1.nil (Jk1.two A Jk1.nil)) := by
+  intro D hD
+  obtain ⟨D0, V, hsp, hJV, hGV, hJk⟩ := TwSt_split' r m D hD hf
+  subst hsp
+  rw [plug_snoc]
+  refine GOK_runNil_gen hJA D0 1 (hJk _ ⟨hJV, trivial, hJA, trivial⟩) hGV ?_
+  intro i
+  show GOK (plug D0 (Jk1.one V (stkP 1 (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ))))))
+  rw [← plug_snoc]
+  exact TwOk_two (N := Jk1.nil) trivial (NTw_nil r) hf
+    (TwOk_TrmA hJA hA i (r + 1) 0) (D0 ++ [Frm.fone V]) hD
+
+#print axioms TwOk_stkA
+
+
+/-! ### ★★★★★ 壁は「1 段だけ上げる」に絞れる
+
+`NTwUp` は `NTw r N → ∀ q, NTw q N`（全段）だったが、
+`TwOk_twoTwoNil` が使う `hNup` は `r` 以上の段だけ。よって壁は
+`NTwStep : NTw r N → NTw (r+1) N`（1 段上げ）に絞れる。 -/
+
+def NTwStep : Prop := ∀ (N : Jk1) (r : ℕ), JkA N → NTw r N → NTw (r + 1) N
+
+theorem NTw_add_of_NTwStep (h : NTwStep) {N : Jk1} (hJN : JkA N) (r : ℕ) (hN : NTw r N) :
+    ∀ k : ℕ, NTw (r + k) N
+  | 0 => hN
+  | (k + 1) => by
+      have hk := NTw_add_of_NTwStep h hJN r hN k
+      have := h N (r + k) hJN hk
+      rwa [show r + k + 1 = r + (k + 1) from by omega] at this
+
+theorem NTw_ge_of_NTwStep (h : NTwStep) {N : Jk1} (hJN : JkA N) {r : ℕ} (hN : NTw r N)
+    (q : ℕ) (hq : r ≤ q) : NTw q N := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hq
+  exact NTw_add_of_NTwStep h hJN r hN k
+
+/-- `TwOk_nstN` の「`r` 以上の段だけ」版。 -/
+theorem TwOk_nstN' {N : Jk1} (hJN : JkA N) {r : ℕ} (hNup : ∀ q : ℕ, r ≤ q → NTw q N) :
+    ∀ (k q : ℕ), r ≤ q → TwOk (q + 1) 0 (nstN N k)
+  | 0, q, _ => TwOk_nil (q + 1) 0
+  | (k + 1), q, hq => by
+      show TwOk (q + 1) 0 (Jk1.one Jk1.nil (Jk1.two N (nstN N k)))
+      exact TwOk_one (q + 1) 0 trivial (TwOk_nil (q + 1) 0)
+        (TwOk_two hJN (hNup (q + 1) (by omega)) (Fter_succ (q + 1) 0)
+          (TwOk_nstN' hJN hNup k (q + 1) (by omega)))
+
+/-- `TwOk_twoTwoNil` の「`r` 以上の段だけ」版。 -/
+theorem TwOk_twoTwoNil' {r m : ℕ} {N : Jk1} (hJN : JkA N)
+    (hNup : ∀ q : ℕ, r ≤ q → NTw q N) (hf : Fter r m) :
+    TwOk r m (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
+  intro D hD
+  have hJT := TwSt_JkT r m D hD (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))
+    ⟨hJN, trivial, trivial⟩
+  obtain ⟨D0, V, hsp, hGV⟩ := TwSt_split r m D hD hf
+  subst hsp
+  refine GOK_twoTwoNil_gen D0 V hJN hJT hGV ?_
+  intro k
+  exact TwOk_two hJN (hNup r le_rfl) hf (TwOk_nstN' hJN hNup k r le_rfl) _ hD
+
+theorem WallT_of_NTwStep (h : NTwStep) : WallT := by
+  intro r D hD
+  obtain ⟨m, D', N, rfl, hD', hf, hJN, hN⟩ := (TwSt_e r 0 D).mp hD
+  rw [plug_snoc2]
+  exact TwOk_twoTwoNil' hJN (fun q hq => NTw_ge_of_NTwStep h hJN hN q hq) hf D' hD'
+
+/-- ★★★★★ シート #14 は「1 段上げ」`NTwStep` から出る。 -/
+theorem R14_of_NTwStep (h : NTwStep) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WallT (WallT_of_NTwStep h)
+
+#print axioms WallT_of_NTwStep
+#print axioms R14_of_NTwStep
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
