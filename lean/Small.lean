@@ -61287,18 +61287,26 @@ theorem WCtxT_ext {ctx : List Frm} {V : Jk1} (h : WCtxT ctx V) (p : ℕ) :
   rw [plug_Wblk]
   exact h _ (JkA_stkP p ⟨trivial, hX⟩)
 
-/-- ★ 残る 1 歩。裸の 1 の記録をどの文脈にも置ける。 -/
-def WStep0 : Prop := ∀ (ctx : List Frm) (V : Jk1), JkA V → WCtxT ctx V →
+/-- `WStep0` が実際に要る左兄弟は `nil` と `two nil nil` の 2 つだけ。 -/
+def WV (V : Jk1) : Prop := V = Jk1.nil ∨ V = Jk1.two Jk1.nil Jk1.nil
+
+theorem WV_JkA {V : Jk1} (h : WV V) : JkA V := by
+  rcases h with rfl | rfl
+  · exact trivial
+  · exact ⟨trivial, trivial⟩
+
+/-- ★ 残る 1 歩。裸の 1 の記録をどの文脈にも置ける（左兄弟は `nil` か `two nil nil`）。 -/
+def WStep0 : Prop := ∀ (ctx : List Frm) (V : Jk1), WV V → WCtxT ctx V →
     GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Jk1.nil))
 
 /-- ★★★★★ 走りは `WStep0` から出る。 -/
-theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm) (V : Jk1), JkA V →
+theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm) (V : Jk1), WV V →
     WCtxT ctx V → GOK (plug ctx V) → GOK (plug ctx (Jk1.one V (stk p))) := by
   intro p
   induction p with
   | zero => intro ctx V hJV hT hGV; exact h0 ctx V hJV hT hGV
   | succ p ih =>
-      have htow : ∀ (k : ℕ) (ctx : List Frm) (V : Jk1), JkA V → WCtxT ctx V →
+      have htow : ∀ (k : ℕ) (ctx : List Frm) (V : Jk1), WV V → WCtxT ctx V →
           GOK (plug ctx V) → GOK (plug ctx (appJ V (Utw p k))) := by
         intro k
         induction k with
@@ -61308,7 +61316,7 @@ theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm) (V : Jk1), JkA V →
             have hbase : GOK (plug (ctx ++ Wblk V p) Jk1.nil) := by
               rw [plug_Wblk]
               exact ih ctx V hJV hT hGV
-            have h := ihk (ctx ++ Wblk V p) Jk1.nil trivial (WCtxT_ext hT p) hbase
+            have h := ihk (ctx ++ Wblk V p) Jk1.nil (Or.inl rfl) (WCtxT_ext hT p) hbase
             rw [appJ_nil_Utw] at h
             show GOK (plug ctx (Jk1.one V (stkP p (Utw p k))))
             rw [← plug_Wblk]
@@ -61320,7 +61328,7 @@ theorem WRun (h0 : WStep0) : ∀ (p : ℕ) (ctx : List Frm) (V : Jk1), JkA V →
       exact htow k ctx V hJV hT hGV
 
 theorem GOK_oneStk_W (h0 : WStep0) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
-  WRun h0 q [] Jk1.nil trivial WCtxT_nil GOK_nil
+  WRun h0 q [] Jk1.nil (Or.inl rfl) WCtxT_nil GOK_nil
 
 theorem tw_R344_42g (h : ∀ q : ℕ, GOK (Jk1.one Jk1.nil (stk q))) : ∀ n : ℕ,
     Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
@@ -61345,7 +61353,7 @@ theorem R376_of_WStep0 (h0 : WStep0) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)]
 #print axioms R376_of_WStep0
 
 /-- `WStep0` は荷から出る（`APnil_gen0`）。 -/
-def WPay : Prop := ∀ (ctx : List Frm) (V : Jk1), JkA V → WCtxT ctx V →
+def WPay : Prop := ∀ (ctx : List Frm) (V : Jk1), WV V → WCtxT ctx V →
     GOK (plug ctx V) → ∀ C : TrioSeq, Bok C → GOK (plug ctx (Jk1.pay V C))
 
 theorem WStep0_of_WPay (h : WPay) : WStep0 := by
@@ -61374,7 +61382,7 @@ theorem WCtxT_ext' {ctx : List Frm} {V : Jk1} (h : WCtxT ctx V) (p : ℕ) (V' : 
   rw [plug_Wblk]
   exact h _ (JkA_stkP p ⟨hJV', hX⟩)
 
-theorem TowOk_W (h0 : WStep0) : ∀ (n : ℕ) (ctx : List Frm) (V : Jk1), JkA V →
+theorem TowOk_W (h0 : WStep0) : ∀ (n : ℕ) (ctx : List Frm) (V : Jk1), WV V →
     WCtxT ctx V → GOK (plug ctx V) →
     GOK (plug ctx (Jk1.one V (Jk1.two Jk1.nil (TW n))))
   | 0, ctx, V, hJV, hT, hGV => WRun h0 2 ctx V hJV hT hGV
@@ -61383,12 +61391,12 @@ theorem TowOk_W (h0 : WStep0) : ∀ (n : ℕ) (ctx : List Frm) (V : Jk1), JkA V 
         rw [plug_Wblk]
         exact WRun h0 2 ctx V hJV hT hGV
       have h := TowOk_W h0 n (ctx ++ Wblk V 1) (Jk1.two Jk1.nil Jk1.nil)
-        ⟨trivial, trivial⟩ (WCtxT_ext' hT 1 _ ⟨trivial, trivial⟩) hgv2
+        (Or.inr rfl) (WCtxT_ext' hT 1 _ ⟨trivial, trivial⟩) hgv2
       rw [plug_Wblk] at h
       exact h
 
 theorem TowOk_of_WStep0 (h0 : WStep0) : TowOk := fun n =>
-  TowOk_W h0 n [] Jk1.nil trivial WCtxT_nil GOK_nil
+  TowOk_W h0 n [] Jk1.nil (Or.inl rfl) WCtxT_nil GOK_nil
 
 /-- ★★★★★ シート #14 も `WStep0` 1 歩に落ちた。 -/
 theorem R14_of_WStep0 (h0 : WStep0) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
