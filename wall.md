@@ -59,6 +59,24 @@
 兄弟の族に制限した版も両側とも緑（`OChain` / `TChain`）。
 残るのは測度（下記）。
 
+## `OneNil` は `GCtx` 文脈では緑
+
+    OneNil_GCtx : GCtx ks ctx → FrmJ ks V → Rq ks V → APd ks V →
+        GOK (plug ctx (one V nil))
+    OneNil_GCtx_nil : GCtx ks ctx → GOK (plug ctx (one nil nil))
+
+`APd_oneNil` と `APd_payA` はどちらも一般の `ks`（`false` を含む）で緑。
+`APd_iff` で文脈に移すだけ。
+
+**つまり `OneNil` の穴は「`GCtx` でない文脈」だけ。** `GCtx` からはみ出すのは
+
+    (1) 1 の枠の木が `Rq (false::ks) U = TopOk U` を満たさない
+        ＝ 2 の枠の直上に `two nil nil` を置く（`TW` の塔）
+    (2) 2 の枠が連続する（走り）
+
+の 2 つ。どちらも既知の壁。`OneNil` は新しい難しさではなく、
+既知の壁ちょうどぶんだけ足りない。
+
 ## 残っている測度の問題
 
     木の構造で降りる: 木が縮む、文脈が 1 伸びる
@@ -317,4 +335,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜200。
+経緯は `notes.md` の追記175〜202。
