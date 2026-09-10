@@ -69024,5 +69024,74 @@ theorem R376_of_RunNilR (h : RunNilR) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)
 #print axioms R375m_62_of_RunNilR
 #print axioms R376_of_RunNilR
 
+/-! ### `RunNilR` のうち「走りの長さ 1」は緑。残るのは長さ 2 以上だけ
+
+`WRd ((k+1)::ks) nil` の中身は `WRd (r ++ ks) (two N nil)`。
+`r ++ ks` の頭が `0`（1 の枠）なら走りの長さは 1 で、`GOK_twoNilW_gen`
+（階段は `SelfW`＝1 の枠で積むだけ）で出る。頭が `k'+1` のときが
+「2 の記録の直上に 2 の記録」＝残る 1 点。 -/
+
+theorem WRtx_rep {N : Jk1} (hJN : JkA N) (B : List ℕ)
+    (hNall : ∀ j : ℕ, WRd (List.replicate j 0 ++ (0 :: B)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), WRtx (0 :: B) ctx →
+      WRtx (List.replicate m 0 ++ (0 :: B)) (ctx ++ List.replicate m (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (m + 1), ctx, hc => by
+      have h1 := WRtx_rep hJN B hNall m ctx hc
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
+          = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, repN_succ_cons, WRtx_c0]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
+        (FrmN_rep m 0 B N).mpr hJN, hNall m⟩
+
+theorem WRd_plug_rep (N : Jk1) (hJN : JkA N) (B : List ℕ)
+    (hNall : ∀ j : ℕ, WRd (List.replicate j 0 ++ (0 :: B)) N) (m : ℕ) :
+    WRd (0 :: B) (plug (List.replicate m (Frm.fone N)) N) := by
+  rw [WRd_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (WRd_iff _ N).mp (hNall m) _ (WRtx_rep hJN B hNall m ctx hc)
+
+theorem WRd_twoNilGen {N : Jk1} (hJN : JkA N) (B : List ℕ)
+    (hNall : ∀ j : ℕ, WRd (List.replicate j 0 ++ (0 :: B)) N) :
+    WRd (0 :: B) (Jk1.two N Jk1.nil) := by
+  rw [WRd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WRtx_split B ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (WRtx_JkT (0 :: B) _ hc (Jk1.two N Jk1.nil)
+      (⟨hJN, trivial⟩ : FrmN (0 :: B) (Jk1.two N Jk1.nil)))
+    hGV
+    (fun m => (WRd_iff (0 :: B) _).mp (WRd_plug_rep N hJN B hNall m) _ hc)
+
+/-- ★★★★★★ 残る 1 文。走りの長さ 2 以上（2 の記録の直上に 2 の記録）。 -/
+def RunNil2 : Prop := ∀ (k k' : ℕ) (B : List ℕ) (N : Jk1), JkA N →
+    (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WRd (q ++ ((k' + 1) :: B)) N) →
+    WRd ((k' + 1) :: B) (Jk1.two N Jk1.nil)
+
+theorem RunNilR_of_RunNil2 (h : RunNil2) : RunNilR := by
+  intro k ks
+  rw [WRd_ck]
+  intro r hr hne N hN hNt
+  obtain ⟨b, B, hrk⟩ := List.exists_cons_of_ne_nil hne
+  rw [hrk] at hNt ⊢
+  cases b with
+  | zero =>
+      exact WRd_twoNilGen hN B (fun j => hNt (List.replicate j 0) (le_of_mem_rep0 k j))
+  | succ k' => exact h k k' B N hN hNt
+
+theorem R375m_62_of_RunNil2 (h : RunNil2) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m_62_of_RunNilR (RunNilR_of_RunNil2 h)
+
+theorem R376_of_RunNil2 (h : RunNil2) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RunNilR (RunNilR_of_RunNil2 h)
+
+#print axioms WRd_twoNilGen
+#print axioms RunNilR_of_RunNil2
+#print axioms R376_of_RunNil2
+
 end Small
 end TRIO
