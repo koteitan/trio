@@ -65758,10 +65758,58 @@ theorem NPd_nstN_nil_all : ∀ (k : ℕ) (ks : List Bool), NPd ks (nstN Jk1.nil 
         (NPd_twoOf (N := Jk1.nil) trivial (fun _ => NPd_nilAll _)
           (NPd_nstN_nil k ks))
 
+/-! ### 兄弟が「どの形にも差せる」なら走りは回る
+
+`NPd_nstN_nil` の一般化。階段 `nstN N k` の各段で兄弟 `N` を 1 段深い形に
+差すので、`N` が形に依らず差せれば良い。壁はここ 1 点。 -/
+
+theorem NPd_nstN_uni {N : Jk1} (hJN : JkA N)
+    (hU : ∀ ks : List Bool, FrmJ ks N → NPd ks N) :
+    ∀ (k : ℕ) (ks : List Bool), NPd (false :: ks) (nstN N k)
+  | 0, ks => NPd_nilF ks
+  | (k + 1), ks => by
+      refine NPd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil)
+        (NPd_nilF ks) ?_
+      rw [NPd_ct]
+      intro U hU' hUk
+      exact (NPd_cf (false :: ks) (nstN N k)).mp
+        (NPd_nstN_uni hJN hU k (false :: ks)) 0 U N
+        (by simpa using hU') (by simpa using hUk) hJN
+        (fun j => hU _ (by rw [rep_true_cons]; exact hJN))
+
+theorem NPd_twoTwoGen_uni {N : Jk1} (hJN : JkA N)
+    (hU : ∀ ks : List Bool, FrmJ ks N → NPd ks N) (ks : List Bool) :
+    NPd (true :: ks) (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  refine GOK_twoTwoNil_gen ctx0 V hJN
+    (NCtx_JkT (true :: ks) _ hc (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))
+      ⟨hJN, trivial, trivial⟩) hGV ?_
+  intro k
+  exact (NPd_iff (true :: ks) _).mp
+    (NPd_twoOf (N := N) hJN (fun _ => hU _ (by rw [rep_true_cons]; exact hJN))
+      (NPd_nstN_uni hJN hU k ks)) _ hc
+
+/-- 「どの木もどの形にも差せる」。`NRun` から出る（`NPd_all_of_NRun`）。 -/
+def NUni : Prop := ∀ N : Jk1, JkA N → ∀ ks : List Bool, FrmJ ks N → NPd ks N
+
+theorem NUni_of_NRun (h : NRun) : NUni := fun N _ ks hF => NPd_all_of_NRun h N ks hF
+
+theorem NRunNil_of_NUni (h : NUni) : NRunNil :=
+  fun ks => h (Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ (false :: ks)
+    ⟨trivial, trivial⟩
+
+theorem NLift_of_NUni (h : NUni) : NLift := fun N ks hJN _ j =>
+  h N hJN (List.replicate j true ++ (true :: (false :: ks)))
+    (by rw [rep_true_cons]; exact hJN)
+
 #print axioms NPd_nstN_nil
 #print axioms NPd_twoTwoGen_nil
 #print axioms NRunNil_nilSib
 #print axioms NPd_nstN_nil_all
+#print axioms NPd_twoTwoGen_uni
+#print axioms NRunNil_of_NUni
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

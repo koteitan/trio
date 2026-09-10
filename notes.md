@@ -18453,3 +18453,51 @@ rank の外側再帰で定義できるので `∀ ks'` が書ける。ところ�
     NRunNil_nilSib   : 兄弟 nil なら NRunNil の中身は緑
 
 いずれも「2 の枠の兄弟が全部 nil」の場合。
+
+## 追記222: 壁は「兄弟がどの形にも差せる」1 点に集約
+
+2026-09-10。追記221 の続き。
+
+### 新しく緑になったもの
+
+    NPd_nstN_uni {N} (JkA N) (∀ ks, FrmJ ks N → NPd ks N)
+      : ∀ k ks, NPd (false::ks) (nstN N k)
+    NPd_twoTwoGen_uni {N} (JkA N) (∀ ks, FrmJ ks N → NPd ks N)
+      : ∀ ks, NPd (true::ks) (two N (two nil nil))
+
+    NUni : Prop := ∀ N, JkA N → ∀ ks, FrmJ ks N → NPd ks N
+    NUni_of_NRun    : NRun → NUni
+    NRunNil_of_NUni : NUni → NRunNil
+    NLift_of_NUni   : NUni → NLift
+
+`NPd_nstN_nil`（兄弟 nil）の一般化。階段 `nstN N k` の各段で兄弟 `N` を
+2 の枠 1 本ぶん深い形に差すので、**`N` が形に依らず差せれば良い**。
+
+### 仮定の地図（全部緑で #14 を出す）
+
+    NRun  →  NUni  →  NRunNil  →  TowOk  →  #14
+              ↓
+            NLift  →  NRunNil
+
+    NRun    : two A B を形 false::ks に差す（走り 1 ケース、部分木の帰納法の仮定つき）
+    NUni    : どの木もどの形にも差せる
+    NLift   : 兄弟条件を 2 の枠 1 本ぶん上げる
+    NRunNil : 上に何も無い 2 の記録を 2 の枠の直上に置く   ← 最弱
+
+`NPd` 層で無条件なのは:
+
+    NPd_nilAll / NPd_payA / NPd_step / NPd_twoOf / NPd_nilF / NPd_twoNilGen
+    NPd_oneNil / NPd_nilT / NPd_nstN_nil / NPd_nstN_nil_all / NPd_twoTwoGen_nil
+    NRunNil_nilSib
+    NPd_all_of_NRun（NRun を仮定すれば全部）
+
+### 残っているのは 1 点だけ
+
+兄弟 `N` が nil なら走りは無条件（`NPd_nstN_nil`）。
+兄弟 `N` が「どの形にも差せる」なら走りは無条件（`NPd_nstN_uni`）。
+ところが `NPd_cf` が兄弟について与えるのは
+`∀ j, NPd (rep j true ++ (true::ks)) N`（`true` を前に足すだけ）で、
+2 の枠 1 本ぶん深い形が入っていない。
+
+形 `ks` の再帰で族を定義する限り、測度 `cntF ks` が減らねばならないので
+この条件は書けない（追記216・221）。**別の整礎順序が要る。**
