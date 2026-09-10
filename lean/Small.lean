@@ -61492,5 +61492,38 @@ theorem WStep0_ftwoOne (kk : List Bool) (ctx : List Frm) (hc : GCtx (true :: kk)
 
 #print axioms WStep0_ftwoOne
 
+
+/-! ### ★★★★★ 壁を 1 つの名前付き文にする: `NTwUp`
+
+これまでの `WallT` / `WallP` / `Wall` / `TwoStep` / `LTwo (two nil nil)` は
+すべて「**2 の枠の左兄弟の良さがレベルを跨ぐ**」1 点に帰着する。
+
+    NTw q N = ∀ j D, TwSt q j D → Fter q j → GOK (plug D N)
+      （レベル q の文脈のどこにでも N を差せる）
+
+`TwSt (r+1) 0` の文脈は `D' ++ [ftwo N]` で `NTw r N`（**レベル r で打ち止め**）しか
+持たない。一方 `TwOk_twoTwoNil`（緑）は `∀ q, NTw q N`（全レベル）を要求する。
+その差だけ。
+
+`NTw 0 N ⟺ ∀ j, LOk (j+1) N`（`TwSt 0 m = StkOk (m+1)`）なので、
+追記183 の `LTwo (two nil nil)` もこれと同じ 1 点。 -/
+
+/-- ★ 残る 1 文。2 の枠の左兄弟の良さはレベルを跨ぐ。 -/
+def NTwUp : Prop := ∀ (N : Jk1) (r : ℕ), JkA N → NTw r N → ∀ q : ℕ, NTw q N
+
+theorem WallT_of_NTwUp (h : NTwUp) : WallT := by
+  intro r D hD
+  obtain ⟨m, D', N, rfl, hD', hf, hJN, hN⟩ := (TwSt_e r 0 D).mp hD
+  rw [plug_snoc2]
+  exact TwOk_twoTwoNil hJN (h N r hJN hN) hf D' hD'
+
+/-- ★★★★★ シート #14 は `NTwUp` から出る。 -/
+theorem R14_of_NTwUp (h : NTwUp) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WallT (WallT_of_NTwUp h)
+
+theorem TowOk_of_NTwUp (h : NTwUp) : TowOk := TowOk_of_WallT (WallT_of_NTwUp h)
+
+#print axioms R14_of_NTwUp
+
 end Small
 end TRIO
