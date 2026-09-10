@@ -64569,6 +64569,36 @@ theorem AYs2 : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Frm), CtxOk ctx → 
   exact key hYb.mem hYb ctx hc X Z hJX hT0 hZ hAP hGX
 
 #print axioms AYs2
+
+theorem GCtx_cons_ne : ∀ (b : Bool) (ks : List Bool) (ctx : List Frm),
+    GCtx (b :: ks) ctx → ctx ≠ [] := by
+  intro b ks ctx h
+  cases b with
+  | true =>
+      rw [GCtx_ct] at h
+      obtain ⟨ctx', U, rfl, -, -, -, -⟩ := h
+      simp
+  | false =>
+      rw [GCtx_cf] at h
+      obtain ⟨m, ctx', U, N, rfl, -, -, -, -, -, -⟩ := h
+      simp
+
+/-- ★★★★★ `APd_oneNil` から `Rq` を外した版。 -/
+theorem APd_oneNil' (ks : List Bool) (V : Jk1) (hV : FrmJ ks V) (hVk : APd ks V) :
+    APd ks (Jk1.one V Jk1.nil) := by
+  rw [APd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V ?_ ((APd_iff ks V).mp hVk ctx hc) ?_
+  · refine JkT_plug' ctx (GCtx_CtxOk ks ctx hc) _ ⟨FrmJ_JkA ks V hV, trivial⟩ ?_
+    intro he
+    cases ks with
+    | nil => exact (hV : JkT V).2
+    | cons b bs => exact absurd he (GCtx_cons_ne b bs ctx hc)
+  · intro C hC
+    exact (APd_iff ks _).mp (APd_payA' ks V hV hVk C hC) ctx hc
+
+#print axioms GCtx_cons_ne
+#print axioms APd_oneNil'
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
