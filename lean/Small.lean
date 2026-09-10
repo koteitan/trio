@@ -67816,5 +67816,56 @@ theorem R376_of_QRunPay (hblk : QRunPay) :
 #print axioms WQd_payA
 #print axioms R376_of_QRunPay
 
+/-! ### ★★★★★ 連鎖の木 `TChain` は `WPd` で差せる → `SelfW`
+
+`WPd_payA`（`WPd` 層の荷）が無条件で緑なので、連鎖の木
+`V ↦ two V (pay X Y)` は 1 の枠の形（頭が 0）ならどこでも差せる。
+`SelfW` が要るのは 1 の枠で積んだ形だけなので、これで足りる。 -/
+
+theorem WPd_TChain0 {Wb X : Jk1} (hJWb : JkA Wb) (hJX : JkA X)
+    (hWb : ∀ (k : ℕ) (ks : List ℕ), WPd (k :: ks) Wb)
+    (hX : ∀ (k : ℕ) (ks : List ℕ), WPd (k :: ks) X) :
+    ∀ V : Jk1, TChain Wb X V → JkA V ∧ ∀ ks : List ℕ, WPd (0 :: ks) V := by
+  intro V hV
+  induction hV with
+  | base => exact ⟨hJWb, fun ks => hWb 0 ks⟩
+  | step hc hY ih =>
+      obtain ⟨hJV', hV'⟩ := ih
+      refine ⟨⟨hJV', hJX, hY⟩, ?_⟩
+      intro ks
+      refine WPd_twoOf (k := 0) hJV' (fun q _ => hV' (q ++ ks)) ?_
+      exact WPd_payA (1 :: ks) X (hJX : FrmN (1 :: ks) X) (hX 1 ks) _ hY
+
+/-- `WPd` の 1 の枠の文脈では `SelfW` が出る。 -/
+theorem SelfW_of_WPd {ks : List ℕ} {V : Jk1} (hJV : JkA V)
+    (hV : ∀ ks' : List ℕ, WPd (0 :: ks') V)
+    (D : List Frm) (hD : WCtx (0 :: ks) D) : SelfW D V := by
+  intro m
+  rw [plug_append]
+  refine (WPd_iff (0 :: ks) _).mp ?_ D hD
+  refine WPd_plug_rep V hJV ks ?_ m
+  intro j
+  rw [rep0_mid j ks]
+  exact hV (List.replicate j 0 ++ ks)
+
+/-- ★★★★★★ `WPd` の 1 の枠の文脈では `TSibF · X nil Wb` が出る。 -/
+theorem TSibF_nil_of_WPd {ks : List ℕ} {Wb X : Jk1} (hJWb : JkA Wb) (hJX : JkA X)
+    (hWb : ∀ (k : ℕ) (ks' : List ℕ), WPd (k :: ks') Wb)
+    (hX : ∀ (k : ℕ) (ks' : List ℕ), WPd (k :: ks') X)
+    (ctx0 : List Frm) (U : Jk1) (hU : FrmN ks U) (hUk : WPd ks U)
+    (hc0 : WCtx ks ctx0) :
+    TSibF (ctx0 ++ [Frm.fone U]) X Jk1.nil Wb := by
+  have hcU : WCtx (0 :: ks) (ctx0 ++ [Frm.fone U]) :=
+    (WCtx_c0 ks _).mpr ⟨ctx0, U, rfl, hc0, hU, hUk⟩
+  refine TSibF_nil_of_SelfW ctx0 U ((WPd_iff ks U).mp hUk ctx0 hc0) ?_ X Wb ?_
+  · intro Z hZ
+    exact WCtx_JkT (0 :: ks) _ hcU Z hZ
+  · intro V hV hJV _
+    exact SelfW_of_WPd hJV (WPd_TChain0 hJWb hJX hWb hX V hV).2 _ hcU
+
+#print axioms WPd_TChain0
+#print axioms SelfW_of_WPd
+#print axioms TSibF_nil_of_WPd
+
 end Small
 end TRIO

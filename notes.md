@@ -19653,3 +19653,32 @@ ZFC も順序数も使っていない。`Multiset.IsDershowitzMannaLT` だけ。
 深さ `d` と予算 `k` を対 `(d,k)` に分けると `(d₂+1, k₂)` が取れて矛盾は消えるが、
 そのとき `Z` が形 `(d₂+1,k₂)::rest` に要る。`Z` が全形で良い木（`nil` など）なら
 問題ないが、連鎖の木は全形で良くない。ここが最後の 1 点。
+
+## 追記248: 連鎖の木は `WPd` で差せる。`TSibF · X nil Wb` が無条件で出た
+
+2026-09-11。緑になったもの:
+
+    WPd_TChain0 : TChain Wb X V → JkA V ∧ ∀ ks, WPd (0::ks) V
+    SelfW_of_WPd : WPd の 1 の枠の文脈では SelfW D V
+    TSibF_nil_of_WPd : WPd の 1 の枠の文脈では TSibF (ctx0 ++ [fone U]) X nil Wb
+
+効いたのは **`WPd_payA`（`WPd` 層の荷）が無条件で緑**なこと。連鎖の木は
+
+    V ↦ two V (pay X Y)
+
+なので、頭が 0 の形なら `WPd_twoOf`（予算 0）＋ `WPd_payA` で差せる。
+`SelfW` が要るのは 1 の枠で積んだ形（頭が 0）だけなので、これで足りる。
+
+これまで `TSibF ctx W W N` は仮定だった（`OneNil_ftwo` の残り 1 本）。
+`W = nil` の場合は無条件になった。
+
+### まだ届かない所
+
+`TSibF_nil_of_SelfW` は文脈が `ctx0 ++ [fone U]`（1 の枠止まり）を要求する。
+走りで終わる文脈 `ctx0 ++ blkC V Bs` の版は `GOK_runGNil_gen` で、階段が
+`blkR A Bs i`（ブロックの塔）になる。その階段の穴に来るのは連鎖の木 `A` で、
+文脈の頭は 2 の枠（入り目つきの形）なので
+
+    WPd ((k+1)::ks) (two V' (pay X Y))    走りの底が pay
+
+が要る。`WPd_twoA_run` は底が `nil` の場合しか出ない。ここが同じ 1 点。
