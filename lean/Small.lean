@@ -61661,5 +61661,138 @@ theorem TowOk_of_TTwo (h : TTwo) : TowOk := TowOk_of_NTwUp (NTwUp_of_TTwo h)
 #print axioms STw_TTw
 #print axioms R14_of_TTwo
 
+
+/-! ### ★★★★★ 壁の仮定を `N` と `nil` だけの文脈族に弱める
+
+`TwOk_twoTwoNil` は `∀ q, NTw q N`（全レベルの全文脈）を要求していた。
+実際に使われるのは、階段 `two N (nstN N k)` を潰していくときに現れる
+**`N` と `nil` だけでできた文脈**だけである。
+
+    PJ N j = [ftwo N, fone nil] を j 回積んだもの
+
+    plug (D ++ PJ N j) (two N (nstN N (k+1))) = plug (D ++ PJ N (j+1)) (two N (nstN N k))
+
+なので `k` の帰納（`j` は全称）で `k = 0` に落ち、`k = 0` は `j` の帰納で
+`GOK_twoNil_gen` の連鎖になる。そこで要るのは
+
+    ∀ j i, GOK (plug (D ++ PJ N j ++ (fone N)^i) N)
+
+だけ。`j = i = 0` は `NTw r N` そのもの。 -/
+
+/-- `[ftwo N, fone nil]` を `j` 回積んだ文脈。 -/
+def PJ (N : Jk1) : ℕ → List Frm
+  | 0 => []
+  | (j + 1) => PJ N j ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+
+theorem plug_PJ_succ (N : Jk1) (j : ℕ) (E : List Frm) (X : Jk1) :
+    plug (E ++ PJ N (j + 1)) X = plug (E ++ PJ N j) (Jk1.two N (Jk1.one Jk1.nil X)) := by
+  show plug (E ++ (PJ N j ++ [Frm.ftwo N, Frm.fone Jk1.nil])) X = _
+  rw [show E ++ (PJ N j ++ [Frm.ftwo N, Frm.fone Jk1.nil])
+      = ((E ++ PJ N j) ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil] by simp,
+    plug_snoc, plug_snoc2]
+
+theorem JkA_plug_PJ {N : Jk1} (hJN : JkA N) :
+    ∀ (j : ℕ) {X : Jk1}, JkA X → JkA (plug (PJ N j) X)
+  | 0, X, hX => hX
+  | (j + 1), X, hX => by
+      have h := plug_PJ_succ N j [] X
+      simp only [List.nil_append] at h
+      rw [h]
+      exact JkA_plug_PJ hJN j ⟨hJN, trivial, hX⟩
+
+/-- 階段の底: `two N nil` を `PJ` の各段で潰す。 -/
+theorem GOK_twoNil_PJ {D : List Frm} {N : Jk1} (hJN : JkA N)
+    (hJT : ∀ T : Jk1, JkA T → JkT (plug D T))
+    (hD0 : ∃ (D0 : List Frm) (V : Jk1), D = D0 ++ [Frm.fone V] ∧ GOK (plug D0 V))
+    (hrep : ∀ j i : ℕ,
+      GOK (plug (D ++ PJ N j ++ List.replicate i (Frm.fone N)) N)) :
+    ∀ j : ℕ, GOK (plug (D ++ PJ N j) (Jk1.two N Jk1.nil))
+  | 0 => by
+      obtain ⟨D0, V, rfl, hGV⟩ := hD0
+      have h := GOK_twoNil_gen D0 V hJN
+        (hJT _ ⟨hJN, trivial⟩) hGV (fun i => by
+          have := hrep 0 i
+          simpa [PJ, plug_append] using this)
+      simpa [PJ] using h
+  | (j + 1) => by
+      have hIH := GOK_twoNil_PJ hJN hJT hD0 hrep j
+      have hctx : D ++ PJ N (j + 1)
+          = ((D ++ PJ N j ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil]) := by
+        simp [PJ]
+      rw [hctx]
+      refine GOK_twoNil_gen (D ++ PJ N j ++ [Frm.ftwo N]) Jk1.nil hJN ?_ ?_ ?_
+      · have : JkA (plug (PJ N (j + 1)) (Jk1.two N Jk1.nil)) :=
+          JkA_plug_PJ hJN (j + 1) ⟨hJN, trivial⟩
+        have h := hJT _ this
+        rw [← plug_append] at h
+        rw [hctx] at h
+        exact h
+      · rw [plug_snoc2]
+        exact hIH
+      · intro i
+        have := hrep (j + 1) i
+        rw [hctx] at this
+        simpa [plug_append] using this
+
+/-- 階段の全段。 -/
+theorem GOK_twoNst_PJ {D : List Frm} {N : Jk1} (hJN : JkA N)
+    (hJT : ∀ T : Jk1, JkA T → JkT (plug D T))
+    (hD0 : ∃ (D0 : List Frm) (V : Jk1), D = D0 ++ [Frm.fone V] ∧ GOK (plug D0 V))
+    (hrep : ∀ j i : ℕ,
+      GOK (plug (D ++ PJ N j ++ List.replicate i (Frm.fone N)) N)) :
+    ∀ (k j : ℕ), GOK (plug (D ++ PJ N j) (Jk1.two N (nstN N k)))
+  | 0, j => by
+      show GOK (plug (D ++ PJ N j) (Jk1.two N Jk1.nil))
+      exact GOK_twoNil_PJ hJN hJT hD0 hrep j
+  | (k + 1), j => by
+      show GOK (plug (D ++ PJ N j)
+        (Jk1.two N (Jk1.one Jk1.nil (Jk1.two N (nstN N k)))))
+      rw [← plug_PJ_succ]
+      exact GOK_twoNst_PJ hJN hJT hD0 hrep k (j + 1)
+
+/-- ★★★★★ `TwOk_twoTwoNil` の弱仮定版。`∀ q, NTw q N` は要らない。 -/
+theorem GOK_twoTwoNil_rep {D : List Frm} {N : Jk1} (hJN : JkA N)
+    (hJT : ∀ T : Jk1, JkA T → JkT (plug D T))
+    (hD0 : ∃ (D0 : List Frm) (V : Jk1), D = D0 ++ [Frm.fone V] ∧ GOK (plug D0 V))
+    (hrep : ∀ j i : ℕ,
+      GOK (plug (D ++ PJ N j ++ List.replicate i (Frm.fone N)) N)) :
+    GOK (plug D (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))) := by
+  obtain ⟨D0, V, rfl, hGV⟩ := hD0
+  refine GOK_twoTwoNil_gen D0 V hJN (hJT _ ⟨hJN, trivial, trivial⟩) hGV ?_
+  intro k
+  have h := GOK_twoNst_PJ hJN hJT ⟨D0, V, rfl, hGV⟩ hrep k 0
+  simpa [PJ] using h
+
+/-- ★ 弱めた壁。`NTw r N` を `N`/`nil` だけの文脈族に延ばせ、という 1 文。 -/
+def WRep : Prop := ∀ (N : Jk1) (r m : ℕ), JkA N → NTw r N → Fter r m →
+    ∀ (D : List Frm), TwSt r m D → ∀ j i : ℕ,
+      GOK (plug (D ++ PJ N j ++ List.replicate i (Frm.fone N)) N)
+
+theorem TwOk_twoTwoNil_of_WRep (h : WRep) {r m : ℕ} {N : Jk1} (hJN : JkA N)
+    (hN : NTw r N) (hf : Fter r m) :
+    TwOk r m (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
+  intro D hD
+  exact GOK_twoTwoNil_rep hJN
+    (fun T hT => TwSt_JkT r m D hD T hT)
+    (by
+      obtain ⟨D0, V, hsp, hGV⟩ := TwSt_split r m D hD hf
+      exact ⟨D0, V, hsp, hGV⟩)
+    (fun j i => h N r m hJN hN hf D hD j i)
+
+theorem WallT_of_WRep (h : WRep) : WallT := by
+  intro r D hD
+  obtain ⟨m, D', N, rfl, hD', hf, hJN, hN⟩ := (TwSt_e r 0 D).mp hD
+  rw [plug_snoc2]
+  exact TwOk_twoTwoNil_of_WRep h hJN hN hf D' hD'
+
+/-- ★★★★★ シート #14 は `WRep` から出る。 -/
+theorem R14_of_WRep (h : WRep) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WallT (WallT_of_WRep h)
+
+theorem TowOk_of_WRep (h : WRep) : TowOk := TowOk_of_WallT (WallT_of_WRep h)
+
+#print axioms GOK_twoTwoNil_rep
+#print axioms R14_of_WRep
+
 end Small
 end TRIO
