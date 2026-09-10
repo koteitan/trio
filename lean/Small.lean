@@ -69189,5 +69189,257 @@ theorem R376_of_RunNil2 (h : RunNil2) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)
 #print axioms RunNilR_of_RunNil2
 #print axioms R376_of_RunNil2
 
+/-! ### ★★★★★★ 部分ブロックを形に書ける族 `WBd`
+
+追記264 の結論: 壁は「ブロックの途中（`i ≥ 2` 番目の兄弟）が形に書けない」こと。
+入り目を **(ブロックの容量 `m`, いまブロックの何枚目 `i`)** の対にすると書ける。
+
+    WBd []             V = GOK V
+    WBd ((m,0) :: ks)  V = ∀ U, FrmB ks U → WBd ks U → WBd ks (one U V)
+    WBd ((m,i+1)::ks)  V = ∀ q (入り目 < (m,i+1)), ∀ N, JkA N →
+        (∀ q' (入り目 < (m,i+1)), WBd (q' ++ ((m,i) :: (q ++ ks))) N) →
+        WBd ((m,i) :: (q ++ ks)) (two N V)
+
+要点は 2 つ。
+- **階段**: 長さ `i+1` のブロックの階段は長さ `i` のブロックを作り直す。
+  その入り目は `(m,i) < (m,i+1)` で、兄弟の条件の中に収まる。
+- **荷の横鎖**: 兄弟の形の頭は `(m,i)`（ブロックの途中）なので、
+  そこに `two X T` を差すのは「同じブロックの `i+1` 枚目」＝ 走りは伸びない。
+
+順序は `encE (m,i) = m*m + i` で ℕ に埋める（`i ≤ m` の範囲で辞書式と一致）。
+測度は `encE` を通した多重集合の DM。 -/
+
+def encE : ℕ × ℕ → ℕ
+  | (m, i) => m * m + i
+
+def encS (s : List (ℕ × ℕ)) : Multiset ℕ := ((s.map encE : List ℕ) : Multiset ℕ)
+
+theorem encS_cons (e : ℕ × ℕ) (s : List (ℕ × ℕ)) : encS (e :: s) = encE e ::ₘ encS s := rfl
+
+theorem encS_app (a s : List (ℕ × ℕ)) : encS (a ++ s) = encS a + encS s := by
+  simp [encS, List.map_append]
+
+theorem dm_encS {e : ℕ × ℕ} (ks a : List (ℕ × ℕ)) (h : ∀ x ∈ a, encE x < encE e) :
+    Multiset.IsDershowitzMannaLT (encS (a ++ ks)) (encS (e :: ks)) := by
+  rw [encS_app, encS_cons, add_comm]
+  refine dm_step (k := encE e) (X := encS ks) (Y := encS a) ?_
+  intro y hy
+  simp only [encS, Multiset.mem_coe, List.mem_map] at hy
+  obtain ⟨x, hx, rfl⟩ := hy
+  exact h x hx
+
+/-- 枠木の妥当性（対の形の版）。 -/
+def FrmB : List (ℕ × ℕ) → Jk1 → Prop
+  | [], U => JkT U
+  | (_ :: _), U => JkA U
+
+theorem FrmB_JkA : ∀ (ks : List (ℕ × ℕ)) (U : Jk1), FrmB ks U → JkA U
+  | [], _, h => h.1
+  | (_ :: _), _, h => h
+
+theorem FrmB_one (ks : List (ℕ × ℕ)) (U X : Jk1) (hU : FrmB ks U) (hX : JkA X) :
+    FrmB ks (Jk1.one U X) := by
+  cases ks with
+  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
+  | cons b bs => exact ⟨hU, hX⟩
+
+theorem FrmB_nilA (ks : List (ℕ × ℕ)) : FrmB ks Jk1.nil := by
+  cases ks with
+  | nil => exact JkT_nil
+  | cons b bs => exact trivial
+
+def WBd : List (ℕ × ℕ) → Jk1 → Prop
+  | [], V => GOK V
+  | ((_, 0) :: ks), V => ∀ U : Jk1, FrmB ks U → WBd ks U → WBd ks (Jk1.one U V)
+  | ((m, i + 1) :: ks), V => ∀ (q : List (ℕ × ℕ)), (∀ x ∈ q, encE x < encE (m, i + 1)) →
+      ∀ N : Jk1, JkA N →
+      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd (q' ++ ((m, i) :: (q ++ ks))) N) →
+      WBd ((m, i) :: (q ++ ks)) (Jk1.two N V)
+termination_by s _ => encS s
+decreasing_by
+  all_goals
+    first
+      | exact dm_encS ks [] (by simp)
+      | (rw [show (m, i) :: (q ++ ks) = ((m, i) :: q) ++ ks from rfl]
+         exact dm_encS ks ((m, i) :: q)
+           (by
+             intro x hx
+             rcases List.mem_cons.mp hx with rfl | hx1
+             · show m * m + i < m * m + (i + 1)
+               omega
+             · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
+      | (rw [show q' ++ ((m, i) :: (q ++ ks)) = (q' ++ (m, i) :: q) ++ ks from by simp]
+         exact dm_encS ks (q' ++ (m, i) :: q)
+           (by
+             intro x hx
+             rcases List.mem_append.mp hx with h1 | h1
+             · exact (by assumption : ∀ x ∈ q', encE x < encE (m, i + 1)) x h1
+             · rcases List.mem_cons.mp h1 with rfl | h2
+               · show m * m + i < m * m + (i + 1)
+                 omega
+               · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x h2))
+
+theorem WBd_bnil (V : Jk1) : WBd [] V ↔ GOK V := by rw [WBd]
+
+theorem WBd_c0 (m : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) :
+    WBd ((m, 0) :: ks) V ↔ ∀ U : Jk1, FrmB ks U → WBd ks U → WBd ks (Jk1.one U V) := by
+  rw [WBd]
+
+theorem WBd_ck (m i : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) :
+    WBd ((m, i + 1) :: ks) V ↔ ∀ (q : List (ℕ × ℕ)), (∀ x ∈ q, encE x < encE (m, i + 1)) →
+      ∀ N : Jk1, JkA N →
+      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd (q' ++ ((m, i) :: (q ++ ks))) N) →
+      WBd ((m, i) :: (q ++ ks)) (Jk1.two N V) := by
+  rw [WBd]
+
+def WBtx : List (ℕ × ℕ) → List Frm → Prop
+  | [], ctx => ctx = []
+  | ((_, 0) :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WBtx ks ctx' ∧ FrmB ks U ∧ WBd ks U
+  | ((m, i + 1) :: ks), ctx => ∃ (q : List (ℕ × ℕ))
+      (_ : ∀ x ∈ q, encE x < encE (m, i + 1)) (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧ WBtx ((m, i) :: (q ++ ks)) ctx' ∧ JkA N ∧
+      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd (q' ++ ((m, i) :: (q ++ ks))) N)
+termination_by s _ => encS s
+decreasing_by
+  all_goals
+    first
+      | exact dm_encS ks [] (by simp)
+      | (rw [show (m, i) :: (q ++ ks) = ((m, i) :: q) ++ ks from rfl]
+         exact dm_encS ks ((m, i) :: q)
+           (by
+             intro x hx
+             rcases List.mem_cons.mp hx with rfl | hx1
+             · show m * m + i < m * m + (i + 1)
+               omega
+             · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
+
+theorem WBtx_bnil (ctx : List Frm) : WBtx [] ctx ↔ ctx = [] := by rw [WBtx]
+
+theorem WBtx_c0 (m : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) :
+    WBtx ((m, 0) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WBtx ks ctx' ∧ FrmB ks U ∧ WBd ks U := by
+  rw [WBtx]
+
+theorem WBtx_ck (m i : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) :
+    WBtx ((m, i + 1) :: ks) ctx ↔ ∃ (q : List (ℕ × ℕ))
+      (_ : ∀ x ∈ q, encE x < encE (m, i + 1)) (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧ WBtx ((m, i) :: (q ++ ks)) ctx' ∧ JkA N ∧
+      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd (q' ++ ((m, i) :: (q ++ ks))) N) := by
+  rw [WBtx]
+
+theorem WBtx_JkT : ∀ (ks : List (ℕ × ℕ)) (ctx : List Frm), WBtx ks ctx → ∀ X : Jk1,
+    FrmB ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WBtx_bnil] at h; subst h; exact hX
+  | ((m, 0) :: ks), ctx, h, X, hX => by
+      rw [WBtx_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      rw [plug_snoc]
+      exact WBtx_JkT ks ctx' hc' (Jk1.one U X) (FrmB_one ks U X hU hX)
+  | ((m, i + 1) :: ks), ctx, h, X, hX => by
+      rw [WBtx_ck] at h
+      obtain ⟨q, hq, ctx', N, rfl, hc', hJN, -⟩ := h
+      rw [plug_snoc2]
+      exact WBtx_JkT ((m, i) :: (q ++ ks)) ctx' hc' (Jk1.two N X)
+        (show JkA (Jk1.two N X) from ⟨hJN, hX⟩)
+termination_by s _ => encS s
+decreasing_by
+  all_goals
+    first
+      | exact dm_encS ks [] (by simp)
+      | (rw [show (m, i) :: (q ++ ks) = ((m, i) :: q) ++ ks from rfl]
+         exact dm_encS ks ((m, i) :: q)
+           (by
+             intro x hx
+             rcases List.mem_cons.mp hx with rfl | hx1
+             · show m * m + i < m * m + (i + 1)
+               omega
+             · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
+
+theorem WBd_iff : ∀ (ks : List (ℕ × ℕ)) (V : Jk1),
+    WBd ks V ↔ ∀ ctx : List Frm, WBtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WBd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WBtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WBtx_bnil []).mpr rfl)
+  | ((m, 0) :: ks), V => by
+      rw [WBd_c0]
+      constructor
+      · intro h ctx hc
+        rw [WBtx_c0] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (WBd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (WBd_iff ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((WBtx_c0 m ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | ((m, i + 1) :: ks), V => by
+      rw [WBd_ck]
+      constructor
+      · intro h ctx hc
+        rw [WBtx_ck] at hc
+        obtain ⟨q, hq, ctx', N, rfl, hc', hJN, hNt⟩ := hc
+        rw [plug_snoc2]
+        exact (WBd_iff ((m, i) :: (q ++ ks)) _).mp (h q hq N hJN hNt) ctx' hc'
+      · intro h q hq N hJN hNt
+        refine (WBd_iff ((m, i) :: (q ++ ks)) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc2]
+        exact h (ctx' ++ [Frm.ftwo N])
+          ((WBtx_ck m i ks _).mpr ⟨q, hq, ctx', N, rfl, hc', hJN, hNt⟩)
+termination_by s _ => encS s
+decreasing_by
+  all_goals
+    first
+      | exact dm_encS ks [] (by simp)
+      | (rw [show (m, i) :: (q ++ ks) = ((m, i) :: q) ++ ks from rfl]
+         exact dm_encS ks ((m, i) :: q)
+           (by
+             intro x hx
+             rcases List.mem_cons.mp hx with rfl | hx1
+             · show m * m + i < m * m + (i + 1)
+               omega
+             · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
+
+theorem WBd_step (m : ℕ) (ks : List (ℕ × ℕ)) {V W : Jk1} (hV : FrmB ks V) (hVk : WBd ks V)
+    (hW : WBd ((m, 0) :: ks) W) : WBd ks (Jk1.one V W) :=
+  (WBd_c0 m ks W).mp hW V hV hVk
+
+/-- ブロックの `i+1` 枚目の 2 の枠。走りの長さはブロックの中の位置に現れる。 -/
+theorem WBd_twoOf {m i : ℕ} {ks : List (ℕ × ℕ)} {V N : Jk1} (hJN : JkA N)
+    (hNt : ∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
+      WBd (q' ++ ((m, i) :: ks)) N)
+    (hV : WBd ((m, i + 1) :: ks) V) : WBd ((m, i) :: ks) (Jk1.two N V) := by
+  have h := (WBd_ck m i ks V).mp hV [] (by simp) N hJN (by simpa using hNt)
+  simpa using h
+
+theorem WBd_congr : ∀ (ks : List (ℕ × ℕ)) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    WBd ks V1 → WBd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WBd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+theorem WBtx_split (m : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) (h : WBtx ((m, 0) :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WBtx ks ctx0 ∧
+      FrmB ks V ∧ GOK (plug ctx0 V) := by
+  rw [WBtx_c0] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (WBd_iff ks U).mp hUk ctx' hc'⟩
+
+#print axioms dm_encS
+#print axioms WBd_iff
+#print axioms WBd_twoOf
+
 end Small
 end TRIO
