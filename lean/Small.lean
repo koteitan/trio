@@ -63996,5 +63996,69 @@ theorem R376_of_RPayN0 (h : RPayN0) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] 
 #print axioms R376_of_RStepN0
 #print axioms R376_of_RPayN0
 
+
+/-! ### ★★★★★ 証明中の行（#14）も「1 ブロック積む」1 文
+
+    TW 0 = two nil nil,  TW (n+1) = one (two nil nil) (two nil (TW n))
+    TWBlk = [fone (two nil nil), ftwo nil]
+    plug (D ++ TWBlk) X = plug D (one (two nil nil) (two nil X))
+    plug D (TW (n+1))   = plug (D ++ TWBlk) (TW n)
+
+なので文脈を `RFam [TWBlk] [fone nil, ftwo nil]` について全称にすると
+`n` の帰納で `TW 0 = two nil nil` に落ちる。 -/
+
+def TWBlk : List Frm := [Frm.fone (Jk1.two Jk1.nil Jk1.nil), Frm.ftwo Jk1.nil]
+
+def TWD0 : List Frm := [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil]
+
+theorem plug_TWBlk (D : List Frm) (X : Jk1) :
+    plug (D ++ TWBlk) X
+      = plug D (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil X)) := by
+  show plug (D ++ [Frm.fone (Jk1.two Jk1.nil Jk1.nil), Frm.ftwo Jk1.nil]) X = _
+  rw [show D ++ [Frm.fone (Jk1.two Jk1.nil Jk1.nil), Frm.ftwo Jk1.nil]
+      = (D ++ [Frm.fone (Jk1.two Jk1.nil Jk1.nil)]) ++ [Frm.ftwo Jk1.nil] by simp,
+    plug_snoc2, plug_snoc]
+
+theorem plug_TW_succ (D : List Frm) (n : ℕ) :
+    plug D (TW (n + 1)) = plug (D ++ TWBlk) (TW n) := by
+  rw [plug_TWBlk]
+  rfl
+
+/-- ★★★★★ `TowOk` は「`two nil nil` の上に 1 ブロック積む」1 文から出る。 -/
+theorem TowOk_of_TWstep
+    (h0 : GOK (plug TWD0 (Jk1.two Jk1.nil Jk1.nil)))
+    (hstep : ∀ D : List Frm, RFam [TWBlk] TWD0 D →
+      GOK (plug D (Jk1.two Jk1.nil Jk1.nil)) →
+      GOK (plug (D ++ TWBlk) (Jk1.two Jk1.nil Jk1.nil))) :
+    TowOk := by
+  have hbase : ∀ D : List Frm, RFam [TWBlk] TWD0 D →
+      GOK (plug D (Jk1.two Jk1.nil Jk1.nil)) := by
+    refine RFam_GOK h0 ?_
+    intro D B hB hD hG
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+    subst hB
+    exact hstep D hD hG
+  have key : ∀ (n : ℕ) (D : List Frm), RFam [TWBlk] TWD0 D → GOK (plug D (TW n)) := by
+    intro n
+    induction n with
+    | zero => intro D hD; exact hbase D hD
+    | succ n ih =>
+        intro D hD
+        rw [plug_TW_succ]
+        exact ih _ (RFam.step (by simp) hD)
+  intro n
+  exact key n TWD0 RFam.base
+
+theorem R14_of_TWstep
+    (h0 : GOK (plug TWD0 (Jk1.two Jk1.nil Jk1.nil)))
+    (hstep : ∀ D : List Frm, RFam [TWBlk] TWD0 D →
+      GOK (plug D (Jk1.two Jk1.nil Jk1.nil)) →
+      GOK (plug (D ++ TWBlk) (Jk1.two Jk1.nil Jk1.nil))) :
+    R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_TWstep h0 hstep)
+
+#print axioms TowOk_of_TWstep
+#print axioms R14_of_TWstep
+
 end Small
 end TRIO
