@@ -64137,5 +64137,58 @@ theorem R14_of_OneTwo (h : OneTwo) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] 
 #print axioms TWStep_of_OneTwo
 #print axioms R14_of_OneTwo
 
+
+/-! ### ★★★★★ `OneTwo` も「裸の 1 の記録を 1 個積む」1 文に落ちる
+
+`one W (two nil nil) = one W (RunS ([] ++ [nil]))` なので同じ手が使える。
+階段は `UtwP [] nil n`（1 の記録だけの塔）で、`GOK_appJ_UtwP` により
+
+    hB    : GOK (plug D (one W nil))
+    hstep : GOK (plug D' nil) → GOK (plug D' (one nil nil))
+
+の 2 つ。どちらも `OneNil` の instance。 -/
+
+/-- ★ 置ける `W` の上に裸の 1 の記録を 1 個積める。 -/
+def OneNil : Prop := ∀ (D : List Frm) (W : Jk1), JkA W →
+    (∀ X : Jk1, JkA X → JkT (plug D (Jk1.one W X))) →
+    GOK (plug D W) → GOK (plug D (Jk1.one W Jk1.nil))
+
+theorem OneTwo_of_OneNil (h : OneNil) : OneTwo := by
+  intro D W hJW hJT hGW
+  have hJBs : ∀ X ∈ ([] : List Jk1), JkA X := by simp
+  have hJT1 : ∀ X : Jk1, JkA X → JkT (plug (D ++ PBlk ([] : List Jk1) W) X) := by
+    intro X hX
+    rw [plug_PBlk]
+    exact hJT _ ⟨hJW, hX⟩
+  have hB : GOK (plug (D ++ PBlk ([] : List Jk1) W) Jk1.nil) := by
+    rw [plug_PBlk]
+    exact h D W hJW (fun X hX => hJT _ ⟨hJW, hX⟩) hGW
+  refine GOK_oneUV_RunSB D [] Jk1.nil W hJBs trivial
+    (hJT _ ⟨hJW, trivial, trivial⟩) hGW ?_
+  refine GOK_appJ_UtwP D [] Jk1.nil W hGW hB ?_
+  intro D' hD' hG'
+  exact h D' Jk1.nil trivial
+    (fun X hX => JkT_RFam_PBlk [] Jk1.nil trivial hJBs _ hJT1 D' hD' _ ⟨trivial, hX⟩) hG'
+
+/-- ★★★★★ シート証明中の行は `OneNil` 1 本。 -/
+theorem R14_of_OneNil (h : OneNil) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_OneTwo (OneTwo_of_OneNil h)
+
+/-- 目標の行も同じ 1 文から。 -/
+theorem RStepN0_of_OneNil (h : OneNil) : RStepN0 :=
+  fun D hJT hG => h D Jk1.nil trivial hJT hG
+
+theorem R376_of_OneNil (h : OneNil) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RStepN0 (RStepN0_of_OneNil h)
+
+theorem OneNil_of_RPay (h : RPay) : OneNil := by
+  intro D W hJW hJT hGW
+  exact APnil_gen0 D W (hJT Jk1.nil trivial) hGW (h D W hJW hJT hGW)
+
+#print axioms OneTwo_of_OneNil
+#print axioms R14_of_OneNil
+#print axioms R376_of_OneNil
+#print axioms OneNil_of_RPay
+
 end Small
 end TRIO
