@@ -66208,6 +66208,10 @@ end
 theorem SbT_twoPay {A Z : Jk1} {Y : TrioSeq} (hA : SbT A) (hZ : SbF Z) (hY : Bok Y) :
     SbT (Jk1.two A (Jk1.pay Z Y)) := SbT.two hA (SbF.pay hZ hY)
 
+/-- 2 の記録 2 本の塔 `stk 2 = two nil (two nil nil)` は安全な兄弟。
+`stk 3` は入らない（走りの長さ 3 は枠アルファベットに無い）。 -/
+theorem SbT_stk2 : SbT (stk 2) := SbT.ttwoB SbT.nil SbF.nil
+
 theorem SbF_le_SbT : ∀ {N : Jk1}, SbF N → SbT N
   | _, SbF.nil => SbT.nil
   | _, SbF.pay hA hY => SbT.pay (SbF_le_SbT hA) hY
