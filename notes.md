@@ -16525,3 +16525,37 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 だから (b) が本体。`GoodFb` の 3 フィールドを直接組む
 （`GOK_oneUV_gen` / `GOK_blkNN_gen` と同じ書き方、ただし `GoodFb_snoc_dupJt0` /
 `GoodFb_snoc_innerJt0` を使う）のが残った道。
+
+## 追記180: `WStep0` は `GCtx` 文脈なら緑。残るのは走りを含む文脈だけ
+
+### 緑にしたもの
+
+    WStep0_true : GCtx (true::ks) ctx → GOK (plug ctx (one V nil))
+    WStep0_ftwo : GCtx (true::kk) ctx → GOK (plug (ctx ++ [ftwo nil]) (one V nil))
+      V ∈ {nil, two nil nil}
+
+  - 1 の枠で終わる場合: `APd_oneNil` は `Rq (true::ks) = True` なので `two nil nil` でも通る
+  - 2 の枠で終わる場合: `TwoOk (one V nil)`（`TwoOk_oneWV`）を **兄弟 nil** で使う。
+    `TwoOk` は兄弟の「全 shape」を要求するが、`nil` は `APd_nil` で満たすので
+    打ち止めの問題が起きない
+
+### 残っているのは 1 点
+
+`WFam` の文脈のうち **`GCtx` で書けないもの**。具体的には
+
+  - `Wblk V p`（p ≥ 2）＝ 文脈の中の走り
+  - `fone (two nil nil)` が `ftwo` の直上に来る場合
+    （`Rq (false::ks) (two nil nil) = TopOk (two nil nil) = False`）
+
+`TowOk_W` は 2 段目から後者になる。枠が `fone V` で `V` が前段の左兄弟なので、
+`nil → two nil nil → two nil nil → …` と進み、2 段目以降は `ftwo` の直上に
+`fone (two nil nil)` が来る。
+
+行列で見ると `…(d,2,0)(d+1,2,0)` で走り。`GCtx` は走りを表現できない（追記174）。
+
+### つまり
+
+    WStep0 の残り = 「走りを含む文脈での裸の 1 の記録」
+
+`WRun` は走りを**木**の側で解いたが、**文脈**の側の走りはまだ。
+ここが最後の 1 点。
