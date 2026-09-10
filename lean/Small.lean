@@ -68334,5 +68334,64 @@ theorem WPd_BT_le1 (U : Jk1) (hU : ∀ ks : List ℕ, FrmN ks U → WPd ks U) :
 #print axioms WPd_bdA_le1
 #print axioms GOK_bdA_le1
 
+/-! ### ★★★★★ 証明中の行列を「幅 2 の塔」1 文に落とす
+
+`bms` の実測: `R375m ++ [(6,2,0)]` の展開は `Mtwd 3 R341 U375c n`。
+その木が `bdA (replicate n 2)`（幅 2 のブロック列）。 -/
+
+theorem flatU3_succ (l n : ℕ) :
+    (List.range (n + 1)).flatMap (fun i => shiftr01 (3 * i) 0 (UBlk 1 l))
+      = UBlk 1 l ++ (List.range n).flatMap (fun i => shiftr01 (3 * i) 0 (UBlk 1 (l + 3))) := by
+  rw [List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+  simp only [Nat.mul_zero, shiftr01_zero, Function.comp_def]
+  congr 1
+  apply List.flatMap_congr
+  intro i _
+  rw [shiftr01_UBlk, shiftr01_UBlk]
+  congr 1
+  omega
+
+theorem jk1_bdA_rep2 : ∀ (n l : ℕ),
+    jk1 l (bdA (List.replicate n 2))
+      = (List.range n).flatMap (fun i => shiftr01 (3 * i) 0 (UBlk 1 l))
+  | 0, _ => by simp [bdA, jk1]
+  | (n + 1), l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1) (stkP 2 (bdA (List.replicate n 2)))) = _
+      rw [jk1_stkP' 2 (bdA (List.replicate n 2)) (l + 1),
+        show l + 1 + 2 = l + 3 from by omega, jk1_bdA_rep2 n (l + 3), flatU3_succ l n]
+      simp [UBlk, jk1, show List.range 2 = [0, 1] from rfl,
+        show l + 1 + 1 + 0 = l + 2 from by omega, show l + 1 + 1 + 1 = l + 3 from by omega]
+
+theorem tower_bdA2_mem (h : ∀ n : ℕ, GOK (bdA (List.replicate n 2))) :
+    ∀ n : ℕ, Mtwd 3 R341 U375c n ∈ W 0
+  | 0 => by simpa [Mtwd] using Aok_R341.mem
+  | (k + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b [bdA (List.replicate (k + 1) 2)]) := by
+        simpa using h (k + 1) [] WOk_nil GoodFb_wordJ_nil
+      have hh := rowJ_mem_genF Aok_R338 hG
+      rw [wordJ_singleton, colJ] at hh
+      have e : jk1 2 (bdA (List.replicate (k + 1) 2))
+          = (List.range (k + 1)).flatMap (fun i => shiftr01 (3 * i) 0 U375c) := by
+        rw [jk1_bdA_rep2 (k + 1) 2, UBlk_one_two]
+      rw [e] at hh
+      simpa [Mtwd, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ 証明中の行列は「幅 2 のブロック列の塔」1 文から出る。 -/
+theorem R375m_62_of_bdA2 (h : ∀ n : ℕ, GOK (bdA (List.replicate n 2))) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hh := snocYd_mem (Y0 := R341) (M := U375c) (L := 3) (y := 2) (dl := 3)
+    (by simp [R341, R338]) MidD_U375c (by simp [U375c, entry])
+    (by
+      intro t h1 h2 _ _
+      simp only [U375c, List.length_cons, List.length_nil] at h2
+      rcases t with _ | _ | _ | t <;> first | omega | decide)
+    (by omega) (by omega) (tower_bdA2_mem h)
+  rw [R375m_eq3] at hh
+  simpa using hh
+
+#print axioms tower_bdA2_mem
+#print axioms R375m_62_of_bdA2
+
 end Small
 end TRIO

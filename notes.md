@@ -19953,3 +19953,23 @@ GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
 
     ZeroStep ≡ 走りを含む文脈の先端で 1 の枠を積む
              ≡ 走りの底が nil でない場合
+
+## 追記256: 証明中の行列を「幅 2 の塔」1 文に落とした
+
+2026-09-11。緑になったもの:
+
+    flatU3_succ / jk1_bdA_rep2 : jk1 l (bdA (replicate n 2))
+                                 = (range n).flatMap (shiftr01 (3i) 0 (UBlk 1 l))
+    tower_bdA2_mem  : (∀ n, GOK (bdA (replicate n 2))) → ∀ n, Mtwd 3 R341 U375c n ∈ W 0
+    R375m_62_of_bdA2 : (∀ n, GOK (bdA (replicate n 2))) → R375m ++ [(6,2,0)] ∈ W 0
+
+`R375m ++ [(6,2,0)]` = `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,2,0)`
+＝ いまの証明中の行列。歩幅 `dl = 3`、単位は `U375c = (3,1,0)(4,2,0)(5,2,0)`。
+
+残るのは **`∀ n, GOK (bdA (replicate n 2))`**（幅 2 のブロック列の塔）1 本。
+幅 ≤ 1 なら `WPd_bdA_le1` で緑（追記255）。幅 2 は
+
+    bdA (2 :: js) = one nil (two nil (two nil (bdA js)))
+
+で走りの底が `bdA js`（≠ nil）なので `WPd_twoA_runB` では出ない。
+`ZeroStep` と同じ点。
