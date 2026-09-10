@@ -17528,3 +17528,38 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 `OneNil` は新しい難しさではなく、既知の壁ちょうどぶんだけ足りない。
 シートの 2 行が `OneNil` 1 本に集約されたので、壁の形は
 「`GCtx` を上の 2 方向に広げること」と言い切れる。
+
+## 追記203: ★ `AYdT` の `TopOk` は素通し。`LOk_twoNil` を `LAll` 兄弟に一般化
+
+### `AYdT` の `TopOk Z` は使われていない
+
+`AYdT`（`APd` 層の 2 の枠での荷）の `TopOk Z` は、証明の中で
+再帰呼び出しに渡されるだけで**一度も使われていない**。外すと
+
+    AYdT'     : ∀ Y, Bok Y → ∀ ks Z, JkA Z → APd (false::ks) Z →
+        APd (false::ks) (pay Z Y)
+    APd_payA' : ∀ ks V, FrmJ ks V → APd ks V → ∀ C, Bok C → APd ks (pay V C)
+
+が緑。**`APd_payA` から `Rq` が消えた。**
+
+### `LOk_twoNil` の一般化
+
+    StkOk_rep_fone : LAll N → StkOk k D → StkOk (k+m) (D ++ (fone N)^m)
+    LOk_twoNilA    : JkA N → LAll N → ∀ k, LOk (k+1) (two N nil)
+
+`GOK_twoNil_gen` の階段は `plug (D ++ (fone N)^m) N` と同じで、
+`LAll N` があれば文脈は `StkOk` のまま。これは `LStep2`（追記の別ライン）の
+`Z = nil` の場合。
+
+### 既存の別ラインの整理
+
+`MPd`（`Rq` を落とした第 2 族）のラインが既にあり、
+
+    R14_mem_M  (MNil)   MNil : ∀ ks, MPd (false::ks) nil
+    R14_mem_A  (∀ N, FrQ N → MBplus N)
+    R14_mem_L  (LStep)  : LAll は 2 の記録で閉じる
+    R14_mem_L1 (LStep1) : LAll1 な木は LTwo
+    R14_mem_L2 (LStep2) : JkA N → AllA N → LAll N → JkA Z → LAll1 Z → LAll1 (two N Z)
+
+`LStep2` の `Z = nil` が今回緑になった。残るのは `Z = one/two/pay`。
+`Z = pay A Y` は `TSibF_pay` で `Z = A` に落ちるはず。`Z = two A B` が走り。
