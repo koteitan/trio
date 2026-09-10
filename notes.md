@@ -16264,3 +16264,76 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
   - 荷の横鎖は (a) の位置にしか来ない
 
 これが次の実装対象。
+
+## 追記175: ★ #14 と行376 が同じ 1 文 `WStep0` に合流した
+
+### 結論
+
+    WStep0 := ∀ (ctx : List Frm) (V : Jk1), JkA V → WCtxT ctx V →
+                GOK (plug ctx V) → GOK (plug ctx (Jk1.one V Jk1.nil))
+
+    WCtxT ctx V := ∀ X, JkA X → JkT (plug ctx (Jk1.one V X))     -- 字レベルの妥当性だけ
+
+    R14_of_WStep0  : WStep0 → シート証明中 #14
+    R376_of_WStep0 : WStep0 → シート目標 行376
+
+**層を一切通らない。**`Cok` / `Pok` / `Qok` / `Wok` / `TwSt` / `APd` のどれも出てこない。
+文脈は任意の `List Frm`、条件は `WCtxT`（`JkT` だけ）。
+
+「裸の 1 の記録をどの文脈でも置ける」— これだけ。
+
+### 何が効いたか
+
+**主張を文脈について全称にすると、階段が文脈を伸ばしても帰納が回る。**
+
+    plug ctx (one V (stk (p+1)))
+      ⟸ GOK_oneUV_gen の階段 appJ V (Utw p k)
+      = plug (ctx ++ Wblk V p) (Utw p k)                   ← 文脈が伸びる
+
+    Wblk V p = fone V :: (ftwo nil)^p
+    plug (ctx ++ Wblk V p) X = plug ctx (one V (stkP p X))
+
+`k` について内側の帰納（文脈が伸びても主張は全称なので当たる）、
+`p` について外側の帰納（走りが 1 段短くなる）。これで `WRun` が出る。
+
+    WRun h0 : ∀ p ctx V, JkA V → WCtxT ctx V → GOK (plug ctx V)
+                → GOK (plug ctx (one V (stk p)))
+
+#14 も同じ形になる。
+
+    TW (n+1) = one (two nil nil) (two nil (TW n))
+    plug ctx (one V (two nil (TW (n+1))))
+      = plug (ctx ++ Wblk V 1) (one (two nil nil) (two nil (TW n)))
+
+`n` を 1 減らすと文脈が `Wblk V 1` だけ伸びるだけ。底は `two nil (TW 0) = stk 2`
+なので `WRun` の走り 2。
+
+### 追記171–174 の訂正
+
+  - 「層の添字（2 の枠の本数）が非可述性の原因」は正しいが、
+    **層を使わなければよい**。文脈を全称にすれば添字が要らない。
+  - 追記174 で設計した `Wok` 層（走りを足した層）は**不要になった**。
+    Stage A / B は緑で入っているが `WRun` は使っていない。
+  - 追記172 の Dershowitz–Manna 多重集合も不要（追記173 で既に訂正済み）。
+
+### 残っている 1 文
+
+`WStep0` は `APnil_gen0` から荷を引いたもの。
+
+    APnil_gen0 ctx V (hJT) (hGV) (hang : ∀ C, Bok C → GOK (plug ctx (pay V C)))
+      : GOK (plug ctx (one V nil))
+
+    WPay := ∀ ctx V, JkA V → WCtxT ctx V → GOK (plug ctx V)
+              → ∀ C, Bok C → GOK (plug ctx (pay V C))
+    WStep0_of_WPay : WPay → WStep0
+
+`ctx = []` は緑（`AP0nil` / `AY0`）。`AY0` は荷の複製が「項ごとの繰り返し」で済むから
+無条件で出る。深い文脈だと `AYs` が要り、`AYs` は
+
+    hAP : ∀ W, CtxX ctx W → GOK (plug ctx W) → GOK (plug ctx (one W Z))
+
+を要求する（`Z` は荷を吊るす木）。`Z = nil` なら `WStep0` そのもの。
+`Z = V`（一般）だと「`V` がどの 1 の枠の下でも良い」が要り、そこが枠量化された良さ＝層。
+
+実際に `WStep0` が要る `V` は `nil` と `two nil nil` の 2 つだけ（`WRun` / `TowOk_W` の
+呼び出しを見れば分かる）。ここを使って絞れる可能性がある。
