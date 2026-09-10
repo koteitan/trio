@@ -61466,5 +61466,31 @@ theorem WStep0_ftwo (kk : List Bool) (ctx : List Frm) (hc : GCtx (true :: kk) ct
 #print axioms WStep0_true
 #print axioms WStep0_ftwo
 
+
+/-- `LOk 1 V`（`V ∈ {nil, two nil nil}`）。 -/
+theorem LOk1_WV {V : Jk1} (hV : WV V) : LOk 1 V := by
+  rcases hV with rfl | rfl
+  · exact LOk_nil 1
+  · exact LOk_twoNil 0
+
+/-- `TwoOk (one (two nil nil) (one V nil))`。`WStep0` を 1 段深くするのに使う。 -/
+theorem TwoOk_oneTwoOneWV {V : Jk1} (hV : WV V) :
+    TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.one V Jk1.nil)) :=
+  TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk0_of_TwoOk TwoOk_twoNil)
+    (LOk_oneNil (WV_JkA hV) (LOk1_WV hV)))
+
+/-- ★ `WStep0` の 1 段深い版。文脈の末尾が `[ftwo nil, fone (two nil nil)]` でも緑。 -/
+theorem WStep0_ftwoOne (kk : List Bool) (ctx : List Frm) (hc : GCtx (true :: kk) ctx)
+    {V : Jk1} (hV : WV V) :
+    GOK (plug (ctx ++ [Frm.ftwo Jk1.nil, Frm.fone (Jk1.two Jk1.nil Jk1.nil)])
+      (Jk1.one V Jk1.nil)) := by
+  rw [plug_append]
+  show GOK (plug ctx (Jk1.two Jk1.nil
+    (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.one V Jk1.nil))))
+  have h := TwoOk_oneTwoOneWV hV Jk1.nil trivial (fun _ _ => APd_nil _) 0 kk
+  exact (APd_iff (true :: kk) _).mp (by simpa using h) ctx hc
+
+#print axioms WStep0_ftwoOne
+
 end Small
 end TRIO
