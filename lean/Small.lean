@@ -62178,5 +62178,190 @@ theorem GOK_blkNN_genM (D : List Frm) (dl : ℕ) (hdl : 1 ≤ dl) {N Nd : Jk1}
 
 #print axioms GOK_blkNN_genM
 
+
+/-! ### ★★★★★ 兄弟が任意の走り `RunS`
+
+    RunP [A1,…,Ap] X = two A1 (two A2 (… (two Ap X)))
+    RunS As          = RunP As nil
+
+`RunS (As ++ [nil])` の語は `RunS As` の語 ++ `(e+p+1, 2, 0)` で、
+最後の記録への祖先鎖は背骨の 2 の記録だけ（`A_i` の記録は必ず直後の
+背骨の記録 `(e+i,2,0)` に高さで抜かれるので右からの最小値にならない）。
+だから `hMy` が通る。走り `stk (p+1)` は `As = [nil,…,nil]` の場合。 -/
+
+def RunP : List Jk1 → Jk1 → Jk1
+  | [], X => X
+  | (A :: As), X => Jk1.two A (RunP As X)
+
+def RunS (As : List Jk1) : Jk1 := RunP As Jk1.nil
+
+theorem RunP_append : ∀ (As Bs : List Jk1) (X : Jk1),
+    RunP (As ++ Bs) X = RunP As (RunP Bs X)
+  | [], _, _ => rfl
+  | (A :: As), Bs, X => by
+      show Jk1.two A (RunP (As ++ Bs) X) = Jk1.two A (RunP As (RunP Bs X))
+      rw [RunP_append As Bs X]
+
+theorem JkA_RunP : ∀ (As : List Jk1), (∀ A ∈ As, JkA A) → ∀ {X : Jk1}, JkA X →
+    JkA (RunP As X)
+  | [], _, _, hX => hX
+  | (A :: As), h, X, hX =>
+      ⟨h A (by simp), JkA_RunP As (fun B hB => h B (by simp [hB])) hX⟩
+
+theorem jk1_RunP : ∀ (As : List Jk1) (X : Jk1) (e : ℕ),
+    jk1 e (RunP As X) = jk1 e (RunS As) ++ jk1 (e + As.length) X
+  | [], X, e => by simp [RunP, RunS, jk1]
+  | (A :: As), X, e => by
+      show jk1 e A ++ (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunP As X))
+        = (jk1 e A ++ (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunS As)))
+          ++ jk1 (e + (A :: As).length) X
+      rw [jk1_RunP As X (e + 1),
+        show e + (A :: As).length = e + 1 + As.length by simp; omega]
+      simp [List.append_assoc]
+
+theorem jk1_RunS_snoc (As : List Jk1) (e : ℕ) :
+    jk1 e (RunS (As ++ [Jk1.nil]))
+      = jk1 e (RunS As) ++ [((e + (As.length + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 e (RunP (As ++ [Jk1.nil]) Jk1.nil) = _
+  rw [RunP_append, jk1_RunP As (RunP [Jk1.nil] Jk1.nil) e]
+  congr 1
+
+theorem JkA_RunS (As : List Jk1) (h : ∀ A ∈ As, JkA A) : JkA (RunS As) :=
+  JkA_RunP As h trivial
+
+theorem JkA_RunS_snoc (As : List Jk1) (h : ∀ A ∈ As, JkA A) :
+    JkA (RunS (As ++ [Jk1.nil])) :=
+  JkA_RunP (As ++ [Jk1.nil]) (by
+    intro A hA
+    rcases List.mem_append.mp hA with h1 | h1
+    · exact h A h1
+    · simp only [List.mem_singleton] at h1
+      subst h1
+      exact trivial) trivial
+
+/-- 兄弟が任意の走りの塔。 -/
+def UtwR (As : List Jk1) : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.one Jk1.nil (RunP As (UtwR As n))
+
+theorem TopOk_UtwR (As : List Jk1) : ∀ n : ℕ, TopOk (UtwR As n)
+  | 0 => trivial
+  | (_ + 1) => trivial
+
+theorem jk1_UtwR (As : List Jk1) : ∀ (n l : ℕ),
+    jk1 l (UtwR As n) = (List.range n).flatMap
+      (fun k => shiftr01 (k * (As.length + 1)) 0
+        (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunS As)))
+  | 0, l => by simp [UtwR, jk1]
+  | (n + 1), l => by
+      have e1 : jk1 l (UtwR As (n + 1))
+          = (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunS As))
+            ++ jk1 (l + (As.length + 1)) (UtwR As n) := by
+        show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (RunP As (UtwR As n))) = _
+        rw [jk1_RunP As (UtwR As n) (l + 1),
+          show l + 1 + As.length = l + (As.length + 1) from by omega]
+        simp [jk1]
+      rw [e1, jk1_UtwR As n (l + (As.length + 1)), List.range_succ_eq_map,
+        List.flatMap_cons]
+      simp only [Nat.zero_mul, shiftr01_zero, List.flatMap_map, Function.comp_def]
+      congr 1
+      apply List.flatMap_congr
+      intro k _
+      rw [show ((l + (As.length + 1) + 1, 1, 0) : ℕ × ℕ × ℕ)
+              :: jk1 (l + (As.length + 1) + 1) (RunS As)
+          = shiftr01 (As.length + 1) 0
+              (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunS As)) from by
+        show _ = shiftr01 (As.length + 1) 0 [((l + 1, 1, 0) : ℕ × ℕ × ℕ)]
+          ++ shiftr01 (As.length + 1) 0 (jk1 (l + 1) (RunS As))
+        rw [shift_col, jk1_shift (RunS As) (l + 1) (As.length + 1)]
+        congr 2 <;> omega, shiftr01_add0]
+      congr 1
+      rw [Nat.succ_mul]
+      omega
+
+theorem Mtwd_UtwR (Y0 : TrioSeq) (As : List Jk1) (n l : ℕ) :
+    Mtwd (As.length + 1) Y0
+      (((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (RunS As)) n
+      = Y0 ++ jk1 l (UtwR As n) := by
+  rw [Mtwd, jk1_UtwR]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  rw [Nat.mul_comm]
+
+/-- 走りの語では、行 1 が 2 未満の記録は必ず後ろに高さが自分以下の記録を持つ。 -/
+theorem My_RunS : ∀ (As : List Jk1) (e t : ℕ),
+    t < (jk1 e (RunS As)).length →
+    entry (jk1 e (RunS As)) 1 t < 2 →
+    ∃ i, t < i ∧ i < (jk1 e (RunS As)).length ∧
+      entry (jk1 e (RunS As)) 0 i ≤ entry (jk1 e (RunS As)) 0 t
+  | [], e, t, ht, _ => by
+      simp [RunS, RunP, jk1] at ht
+  | (A :: As), e, t, ht, h2 => by
+      have hw : jk1 e (RunS (A :: As))
+          = jk1 e A ++ (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunS As)) := rfl
+      have hlen : (jk1 e (RunS (A :: As))).length
+          = (jk1 e A).length + ((jk1 (e + 1) (RunS As)).length + 1) := by
+        rw [hw]; simp
+      have hentL : ∀ (r j : ℕ), j < (jk1 e A).length →
+          entry (jk1 e (RunS (A :: As))) r j = entry (jk1 e A) r j := by
+        intro r j hj
+        rw [hw, entry_append_left hj]
+      have hentM : ∀ r : ℕ,
+          entry (jk1 e (RunS (A :: As))) r (jk1 e A).length
+            = entry (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunS As)) r 0 := by
+        intro r
+        rw [hw]
+        exact entry_append_right (jk1 e A) _ r 0
+      have hentR : ∀ (r u : ℕ),
+          entry (jk1 e (RunS (A :: As))) r ((jk1 e A).length + (u + 1))
+            = entry (jk1 (e + 1) (RunS As)) r u := by
+        intro r u
+        rw [hw, entry_append_right]
+        exact entry_cons_succ _ _ r u
+      rcases lt_trichotomy t (jk1 e A).length with hc | hc | hc
+      · refine ⟨(jk1 e A).length, hc, by omega, ?_⟩
+        have h0 : entry (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunS As)) 0 0
+            = e + 1 := rfl
+        rw [hentM 0, hentL 0 t hc, h0]
+        exact entry_jk1_ge A e t hc
+      · exfalso
+        rw [hc, hentM 1] at h2
+        have h1 : entry (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunS As)) 1 0
+            = 2 := rfl
+        omega
+      · obtain ⟨u, hu0⟩ : ∃ u, t = (jk1 e A).length + (u + 1) :=
+          ⟨t - (jk1 e A).length - 1, by omega⟩
+        subst hu0
+        have hu : u < (jk1 (e + 1) (RunS As)).length := by omega
+        rw [hentR 1 u] at h2
+        obtain ⟨i', hi1, hi2, hi3⟩ := My_RunS As (e + 1) u hu h2
+        refine ⟨(jk1 e A).length + (i' + 1), by omega, by omega, ?_⟩
+        rw [hentR 0 i', hentR 0 u]
+        exact hi3
+
+theorem hMy_RunS (As : List Jk1) (h : ℕ) : ∀ t, 1 ≤ t →
+    t < (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunS As)).length →
+    entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunS As)) 0 t
+      < h + 1 + (As.length + 1) →
+    (∀ i, t < i → i < (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunS As)).length →
+      entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunS As)) 0 t <
+        entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunS As)) 0 i) →
+    2 ≤ entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunS As)) 1 t := by
+  intro t h1 h2 _ h4
+  by_contra hcon
+  push_neg at hcon
+  obtain ⟨u, rfl⟩ : ∃ u, t = u + 1 := ⟨t - 1, by omega⟩
+  rw [entry_cons_succ] at hcon
+  have hu : u < (jk1 (h + 1) (RunS As)).length := by simp at h2; omega
+  obtain ⟨i', hi1, hi2, hi3⟩ := My_RunS As (h + 1) u hu hcon
+  have := h4 (i' + 1) (by omega) (by simp; omega)
+  rw [entry_cons_succ, entry_cons_succ] at this
+  omega
+
+#print axioms My_RunS
+#print axioms Mtwd_UtwR
+
 end Small
 end TRIO
