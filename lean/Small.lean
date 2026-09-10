@@ -64190,5 +64190,52 @@ theorem OneNil_of_RPay (h : RPay) : OneNil := by
 #print axioms R376_of_OneNil
 #print axioms OneNil_of_RPay
 
+
+/-! ### ★★★★★ `OneNil` の場合分け
+
+    D = []          : AY0（緑、無条件）
+    D = ctx ++ [fone U] : AYsF（緑）。残るのは
+        hAP : ∀ V ∈ OChain U W, GOK (plug ctx V) → GOK (plug ctx (one V W))
+      で、これは 1 段短い文脈での「兄弟について全称な `OSib ctx W`」。
+    D = ctx ++ [ftwo N] : TSibF_pay（緑）。残るのは `TSibF ctx W W N`。 -/
+
+theorem OneNil_nil (W : Jk1) (hJW : JkA W)
+    (hJT : ∀ X : Jk1, JkA X → JkT (plug ([] : List Frm) (Jk1.one W X)))
+    (hGW : GOK (plug ([] : List Frm) W)) :
+    GOK (plug ([] : List Frm) (Jk1.one W Jk1.nil)) := by
+  have h1 : JkT (Jk1.one W Jk1.nil) := hJT Jk1.nil trivial
+  refine APnil_gen0 [] W h1 hGW ?_
+  intro C hC
+  exact AY0 C hC W ⟨hJW, h1.2⟩ hGW
+
+theorem OneNil_fone (ctx : List Frm) (hc : CtxOk ctx) (U W : Jk1)
+    (hXU : CtxX ctx U) (hZW : CtxT ctx W)
+    (hGU : GOK (plug ctx U))
+    (hJT : ∀ X : Jk1, JkA X → JkT (plug (ctx ++ [Frm.fone U]) (Jk1.one W X)))
+    (hGW : GOK (plug (ctx ++ [Frm.fone U]) W))
+    (hAP : ∀ V : Jk1, OChain U W V → CtxX ctx V → GOK (plug ctx V) →
+      GOK (plug ctx (Jk1.one V W))) :
+    GOK (plug (ctx ++ [Frm.fone U]) (Jk1.one W Jk1.nil)) := by
+  refine APnil_gen0 (ctx ++ [Frm.fone U]) W (hJT Jk1.nil trivial) hGW ?_
+  intro C hC
+  rw [plug_snoc]
+  exact AYsF U C hC ctx hc U W OChain.base hXU hZW hAP hGU
+
+theorem OneNil_ftwo (ctx : List Frm) (N W : Jk1) (hJN : JkA N) (hJW : JkA W)
+    (hJTc : ∀ Z : Jk1, JkA Z → JkT (plug ctx Z))
+    (hJT : ∀ X : Jk1, JkA X → JkT (plug (ctx ++ [Frm.ftwo N]) (Jk1.one W X)))
+    (hGN : GOK (plug ctx N))
+    (hGW : GOK (plug (ctx ++ [Frm.ftwo N]) W))
+    (hT : TSibF ctx W W N) :
+    GOK (plug (ctx ++ [Frm.ftwo N]) (Jk1.one W Jk1.nil)) := by
+  refine APnil_gen0 (ctx ++ [Frm.ftwo N]) W (hJT Jk1.nil trivial) hGW ?_
+  intro C hC
+  rw [plug_snoc2]
+  exact TSibF_pay ctx hJTc W hJW N hT C hC N TChain.base hJN hGN
+
+#print axioms OneNil_nil
+#print axioms OneNil_fone
+#print axioms OneNil_ftwo
+
 end Small
 end TRIO
