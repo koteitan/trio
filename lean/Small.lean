@@ -68017,5 +68017,118 @@ theorem NoRun_TChain {Wb X : Jk1} (hWb : NoRun Wb) (hX : NoRun X) (hTop : TopOk 
 #print axioms NoRun_twoIt
 #print axioms NoRun_TChain
 
+/-! ### ★★★★★ 走りの一般形の予算つき版
+
+`WPd_stairA` は階段の予算を 0 に固定していたので、左の兄弟 `A` に
+`WPd (1::ks) A` を要求していた。予算を `b` にすると `WPd ((b+1)::ks) A`
+でよくなり、`A` 自身が走りを含む木でも通る。 -/
+
+theorem WPd_stairB {k b : ℕ} (hb : b + 1 ≤ k) {N A : Jk1} (hJN : JkA N) (hJA : JkA A)
+    (hAall : ∀ ks : List ℕ, WPd ((b + 1) :: ks) A) :
+    ∀ (n : ℕ) (B' : List ℕ),
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B') N) →
+      WPd (0 :: B') (Jk1.two N (appJ A (UtwP [N] A n)))
+  | 0, B', hsib =>
+      WPd_twoOf (k := b) hJN
+        (fun q hq => hsib q (fun x hx => le_trans (hq x hx) (by omega)))
+        (hAall B')
+  | (n + 1), B', hsib => by
+      refine WPd_twoOf (k := b) hJN
+        (fun q hq => hsib q (fun x hx => le_trans (hq x hx) (by omega))) ?_
+      show WPd ((b + 1) :: B') (Jk1.one A (Jk1.two N (appJ A (UtwP [N] A n))))
+      refine WPd_step ((b + 1) :: B') (hJA : FrmN ((b + 1) :: B') A) (hAall B') ?_
+      refine WPd_stairB hb hJN hJA hAall n ((b + 1) :: B') ?_
+      intro q hq
+      have e : (0 : ℕ) :: q ++ ((b + 1) :: B') = (0 :: (q ++ [b + 1])) ++ B' := by simp
+      rw [e]
+      refine hsib (q ++ [b + 1]) ?_
+      intro x hx
+      rcases List.mem_append.mp hx with h1 | h1
+      · exact hq x h1
+      · simp at h1
+        omega
+
+theorem WPd_twoA_runB {k b : ℕ} (hb : b + 1 ≤ k) {A : Jk1} (hJA : JkA A)
+    (hAall : ∀ ks : List ℕ, WPd ((b + 1) :: ks) A) (ks : List ℕ) :
+    WPd ((k + 1) :: ks) (Jk1.two A Jk1.nil) := by
+  refine (WPd_ck k ks _).mpr (fun r hr U N hU hUk hJN hNt => ?_)
+  refine (WPd_c0 (r ++ ks) _).mp ?_ U hU hUk
+  rw [WPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtx_split (r ++ ks) ctx hc
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (Jk1.two A Jk1.nil))) :=
+    WCtx_JkT (0 :: (r ++ ks)) _ hc (Jk1.two N (Jk1.two A Jk1.nil))
+      (⟨hJN, hJA, trivial⟩ : FrmN (0 :: (r ++ ks)) (Jk1.two N (Jk1.two A Jk1.nil)))
+  have erun : Jk1.two N (Jk1.two A Jk1.nil) = RunS ([N] ++ [A]) := rfl
+  rw [plug_snoc] at hJT ⊢
+  rw [erun] at hJT ⊢
+  refine GOK_oneUV_RunSB ctx0 [N] A V (by simpa using hJN) hJA hJT hGV ?_
+  intro n
+  cases n with
+  | zero =>
+      show GOK (plug ctx0 V)
+      exact hGV
+  | succ n =>
+      show GOK (plug ctx0 (Jk1.one V (Jk1.two N (appJ A (UtwP [N] A n)))))
+      rw [← plug_snoc]
+      exact (WPd_iff (0 :: (r ++ ks)) _).mp
+        (WPd_stairB hb hJN hJA hAall n (r ++ ks) hNt) _ hc
+
+/-- ★★★★★★ 平らな走り `twoIt nil nil m`（2 の記録 `m` 本が同じ高さ）は
+入り目 `m+1` 以上の形に差せる。 -/
+theorem JkA_twoIt_nil : ∀ m : ℕ, JkA (twoIt Jk1.nil Jk1.nil m)
+  | 0 => trivial
+  | (m + 1) => ⟨JkA_twoIt_nil m, trivial⟩
+
+theorem WPd_twoIt_nil : ∀ (m k : ℕ), m ≤ k → ∀ ks : List ℕ,
+    WPd ((k + 1) :: ks) (twoIt Jk1.nil Jk1.nil m)
+  | 0, k, _, ks => WPd_nilF k ks
+  | (m + 1), k, hk, ks => by
+      have hb : m + 1 ≤ k := hk
+      exact WPd_twoA_runB hb (JkA_twoIt_nil m)
+        (fun ks' => WPd_twoIt_nil m m (le_refl m) ks') ks
+
+#print axioms WPd_stairB
+#print axioms WPd_twoIt_nil
+
+/-! ### ★★★★★★ 塔の一般形 `TWm m`（平らな走りが `m` 本）
+
+`TW = TWm 1`。#14 の塔は `m = 1`。`...(5,2,0)^(m+1)` の塔が `TWm m`。 -/
+
+def TWm (m : ℕ) : ℕ → Jk1
+  | 0 => twoIt Jk1.nil Jk1.nil m
+  | (n + 1) => Jk1.one (twoIt Jk1.nil Jk1.nil m) (Jk1.two Jk1.nil (TWm m n))
+
+theorem TWm_one : ∀ n : ℕ, TWm 1 n = TW n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (TWm 1 n))
+        = Jk1.one (Jk1.two Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (TW n))
+      rw [TWm_one n]
+
+theorem JkA_TWm (m : ℕ) : ∀ n : ℕ, JkA (TWm m n)
+  | 0 => JkA_twoIt_nil m
+  | (n + 1) => ⟨JkA_twoIt_nil m, trivial, JkA_TWm m n⟩
+
+theorem WPd_TWm (m : ℕ) : ∀ (n k : ℕ), m ≤ k → ∀ ks : List ℕ,
+    WPd ((k + 1) :: ks) (TWm m n)
+  | 0, k, hk, ks => WPd_twoIt_nil m k hk ks
+  | (n + 1), k, hk, ks => by
+      refine WPd_step ((k + 1) :: ks)
+        (JkA_twoIt_nil m : FrmN ((k + 1) :: ks) (twoIt Jk1.nil Jk1.nil m))
+        (WPd_twoIt_nil m k hk ks) ?_
+      refine WPd_twoOf (k := k) trivial (fun q _ => WPd_nilAll _) ?_
+      exact WPd_TWm m n k hk ((k + 1) :: ks)
+
+/-- ★★★★★★ 塔の一般形が無条件で良い。 -/
+theorem TowOkM (m : ℕ) : ∀ n : ℕ,
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm m n))) := fun n =>
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil)
+    (WPd_twoOf (k := m) trivial (fun q _ => WPd_nilAll _) (WPd_TWm m n m (le_refl m) [])))
+
+#print axioms WPd_TWm
+#print axioms TowOkM
+
 end Small
 end TRIO
