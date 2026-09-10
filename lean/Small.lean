@@ -63193,5 +63193,129 @@ theorem R14_of_RStep0N
 #print axioms R14_of_RStep
 #print axioms R14_of_RStep0N
 
+
+/-! ### ★★★★★ `RStep` は `RPay` から木の帰納で出る
+
+    RStep Bs nil       ⟸ RStep Bs' C          （Bs = Bs' ++ [C]、RStep_snoc）
+    RStep [] nil       ⟸ RPay                 （RStep0_of_RPay）
+    RStep Bs (one A B) ⟸ RStep Bs A, RStep [] B
+    RStep Bs (two A B) =  RStep (Bs ++ [A]) B  （RunP_append）
+    RStep Bs (pay A Y) ⟸ RStep Bs A, RPay
+
+測度は `(jsz (RunS Bs) + jsz B, B の構造)` の辞書式。`two` の場合だけ
+第 1 成分が等しく、第 2 成分が減る。 -/
+
+def jsz : Jk1 → ℕ
+  | Jk1.nil => 0
+  | Jk1.pay A _ => jsz A + 1
+  | Jk1.one A B => jsz A + jsz B + 1
+  | Jk1.two A B => jsz A + jsz B + 1
+
+theorem jsz_RunP : ∀ (Bs : List Jk1) (X : Jk1),
+    jsz (RunP Bs X) = jsz (RunS Bs) + jsz X
+  | [], X => by simp [RunS, RunP, jsz]
+  | (A :: As), X => by
+      show jsz A + jsz (RunP As X) + 1 = jsz (RunS (A :: As)) + jsz X
+      have e : jsz (RunS (A :: As)) = jsz A + jsz (RunS As) + 1 := rfl
+      rw [jsz_RunP As X, e]
+      omega
+
+theorem jsz_RunS_snoc (Bs : List Jk1) (C : Jk1) :
+    jsz (RunS (Bs ++ [C])) = jsz (RunS Bs) + jsz C + 1 := by
+  show jsz (RunP (Bs ++ [C]) Jk1.nil) = _
+  rw [RunP_append, jsz_RunP Bs (RunP [C] Jk1.nil)]
+  have e : jsz (RunP [C] Jk1.nil) = jsz C + 1 := by
+    show jsz C + jsz (RunP [] Jk1.nil) + 1 = _
+    simp [RunP, jsz]
+  rw [e]
+  omega
+
+theorem RStep_aux (h : RPay) : ∀ (n : ℕ) (B : Jk1) (Bs : List Jk1),
+    jsz (RunS Bs) + jsz B ≤ n → (∀ X ∈ Bs, JkA X) → JkA B → RStep Bs B := by
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ihn =>
+    intro B
+    induction B with
+    | nil =>
+        intro Bs hle hBs _
+        rcases List.eq_nil_or_concat Bs with rfl | ⟨Bs', C, rfl⟩
+        · exact RStep_nil_of_RStep0 (RStep0_of_RPay h)
+        · simp only [List.concat_eq_append] at hle hBs ⊢
+          have hJC : JkA C := hBs C (by simp)
+          have hBs' : ∀ X ∈ Bs', JkA X := fun X hX => hBs X (by simp [hX])
+          have hsz := jsz_RunS_snoc Bs' C
+          simp only [jsz] at hle
+          refine RStep_snoc hJC hBs' ?_
+          exact ihn (n - 1) (by omega) C Bs' (by omega) hBs' hJC
+    | pay A Y ihA =>
+        intro Bs hle hBs hJ
+        intro D V hJV hJTD hGV
+        have e : plug D (Jk1.one V (RunP Bs (Jk1.pay A Y)))
+            = plug (D ++ PBlk Bs V) (Jk1.pay A Y) := (plug_PBlk D Bs V _).symm
+        rw [e]
+        have hJTD' : ∀ X : Jk1, JkA X → JkT (plug (D ++ PBlk Bs V) X) := by
+          intro X hX
+          rw [plug_PBlk]
+          exact hJTD _ ⟨hJV, JkA_RunP Bs hBs hX⟩
+        have hGA : GOK (plug (D ++ PBlk Bs V) A) := by
+          rw [plug_PBlk]
+          exact ihA Bs (by simp only [jsz] at hle ⊢; omega) hBs hJ.1 D V hJV hJTD hGV
+        exact h (D ++ PBlk Bs V) A hJ.1 hJTD' hGA Y hJ.2
+    | one A B' ihA ihB' =>
+        intro Bs hle hBs hJ
+        intro D V hJV hJTD hGV
+        have e : plug D (Jk1.one V (RunP Bs (Jk1.one A B')))
+            = plug (D ++ PBlk Bs V) (Jk1.one A B') := (plug_PBlk D Bs V _).symm
+        rw [e]
+        have hJTD' : ∀ X : Jk1, JkA X → JkT (plug (D ++ PBlk Bs V) X) := by
+          intro X hX
+          rw [plug_PBlk]
+          exact hJTD _ ⟨hJV, JkA_RunP Bs hBs hX⟩
+        have hGA : GOK (plug (D ++ PBlk Bs V) A) := by
+          rw [plug_PBlk]
+          exact ihA Bs (by simp only [jsz] at hle ⊢; omega) hBs hJ.1 D V hJV hJTD hGV
+        have hnil : jsz (RunS ([] : List Jk1)) = 0 := rfl
+        exact ihB' [] (by simp only [jsz] at hle ⊢; omega) (by simp) hJ.2
+          (D ++ PBlk Bs V) A hJ.1 hJTD' hGA
+    | two A B' ihA ihB' =>
+        intro Bs hle hBs hJ
+        have hBsA : ∀ X ∈ (Bs ++ [A]), JkA X := by
+          intro X hX
+          rcases List.mem_append.mp hX with h1 | h1
+          · exact hBs X h1
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at h1
+            subst h1
+            exact hJ.1
+        have hsz := jsz_RunS_snoc Bs A
+        have hr := ihB' (Bs ++ [A]) (by simp only [jsz] at hle ⊢; omega) hBsA hJ.2
+        intro D V hJV hJTD hGV
+        have e : RunP Bs (Jk1.two A B') = RunP (Bs ++ [A]) B' := by
+          rw [RunP_append]
+          rfl
+        rw [e]
+        exact hr D V hJV hJTD hGV
+
+theorem RStep_of_RPay (h : RPay) (Bs : List Jk1) (B : Jk1)
+    (hBs : ∀ X ∈ Bs, JkA X) (hJB : JkA B) : RStep Bs B :=
+  RStep_aux h (jsz (RunS Bs) + jsz B) B Bs le_rfl hBs hJB
+
+/-- ★★★★★ 壁は `RPay`（荷を 1 個吊るす）1 本。 -/
+theorem WallT_of_RPay (h : RPay) : WallT := by
+  refine WallT_of_RStep ?_
+  intro N r hJN _
+  have hBs : ∀ X ∈ ([N] : List Jk1), JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact hJN
+  exact RStep_of_RPay h [N] Jk1.nil hBs trivial
+
+theorem R14_of_RPay (h : RPay) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WallT (WallT_of_RPay h)
+
+#print axioms RStep_of_RPay
+#print axioms R14_of_RPay
+
 end Small
 end TRIO
