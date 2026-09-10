@@ -19750,3 +19750,50 @@ ZFC も順序数も使っていない。`Multiset.IsDershowitzMannaLT` だけ。
     RPayN0   nil に荷を 1 個（文脈は任意）
     BLoad    走りの塔の文脈で nil に荷
     hrun     Bk (j+1) 0 での荷
+
+## 追記251: 壁の循環構造を精密に測った（上昇が整礎でない）
+
+2026-09-11。`QTSibF` の中身を階段まで開いて、なぜ閉じないかを確定した。
+
+### 階段は「塔の高さ」で書ける
+
+`TSibF D nil nil N` の中身は `∀ V ∈ TChain N nil, GOK (plug D V) →
+GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
+
+    plug D (two V nil) = plug (ctx ++ [fone U]) (RunS (Bs ++ [V]))
+
+なので `GOK_oneUV_RunSB`（`Bs' = Bs`, `B = V`）が使える。その階段は
+
+    appJ U (UtwP Bs V 0)     = U                       ✓ 手元にある
+    appJ U (UtwP Bs V (n+1)) = one U (RunP Bs (appJ V (UtwP Bs V n)))
+
+で、`S(n) := GOK (plug D (appJ V (UtwP Bs V n)))` と置くと
+
+    S(0)   = GOK (plug D V)                      ✓ 仮定にある
+    S(n+1) = S(n) を D ++ blkC V Bs で見たもの
+
+つまり階段は **`∀ n, GOK (plug (D ++ (blkC V Bs)^n) V)`**（連鎖の木 `V` を
+ブロックの塔の各高さで差す）。
+
+### 循環
+
+    T(D) := TSibF D nil nil N            走り（荷なし）
+    G(D) := ∀ V ∈ TChain, GOK (plug D V)  連鎖の木がその文脈で良い
+
+    G(D) ⟸ T(D)                連鎖の長さの帰納（TSibF_pay、高さは増えない）
+    T(D) ⟸ ∀ n, G(D_n)         上の階段（D_n = D ++ (blkC V Bs)^n）
+
+合わせると `T(D) ⟸ ∀ n, T(D_n)`。**塔の高さが上がるので整礎でない。**
+
+### 塔を下から積む道（`GOK_bstkTower`）
+
+`BLoad`（塔の文脈で `nil` に荷）があれば、塔は `i` の帰納で下から積める
+（各段は `APnil_gen0` ＋ `BLoad`）。上昇が整礎になる。
+しかし `BLoad` 自体が `T` を要求するので、そこで閉じる。
+
+### まとめ
+
+壁は「連鎖の木をブロックの塔の各高さで差す」1 点。
+族の帳尻合わせでは消えない（追記245/246/247/250 で 6 通り確認）。
+必要なのは、塔の高さについて整礎な別の議論か、
+`twoIt` の平らさ（Δ=0）を使う新しい塔補題。
