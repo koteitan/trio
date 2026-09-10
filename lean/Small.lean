@@ -61357,5 +61357,48 @@ theorem R376_of_WPay (h : WPay) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ 
 
 #print axioms R376_of_WPay
 
+
+/-! ### ★★★★★ #14 も `WStep0` から出る
+
+`TW (n+1) = one (two nil nil) (two nil (TW n))` なので
+
+    plug ctx (one V (two nil (TW (n+1))))
+      = plug (ctx ++ Wblk V 1) (one (two nil nil) (two nil (TW n)))
+
+つまり `n` を 1 減らすと文脈が `Wblk V 1` だけ伸びる。文脈は全称なので回る。
+底（`n = 0`）は `two nil (TW 0) = stk 2` なので `WRun` の走り 2。 -/
+
+theorem WCtxT_ext' {ctx : List Frm} {V : Jk1} (h : WCtxT ctx V) (p : ℕ) (V' : Jk1)
+    (hJV' : JkA V') : WCtxT (ctx ++ Wblk V p) V' := by
+  intro X hX
+  rw [plug_Wblk]
+  exact h _ (JkA_stkP p ⟨hJV', hX⟩)
+
+theorem TowOk_W (h0 : WStep0) : ∀ (n : ℕ) (ctx : List Frm) (V : Jk1), JkA V →
+    WCtxT ctx V → GOK (plug ctx V) →
+    GOK (plug ctx (Jk1.one V (Jk1.two Jk1.nil (TW n))))
+  | 0, ctx, V, hJV, hT, hGV => WRun h0 2 ctx V hJV hT hGV
+  | (n + 1), ctx, V, hJV, hT, hGV => by
+      have hgv2 : GOK (plug (ctx ++ Wblk V 1) (Jk1.two Jk1.nil Jk1.nil)) := by
+        rw [plug_Wblk]
+        exact WRun h0 2 ctx V hJV hT hGV
+      have h := TowOk_W h0 n (ctx ++ Wblk V 1) (Jk1.two Jk1.nil Jk1.nil)
+        ⟨trivial, trivial⟩ (WCtxT_ext' hT 1 _ ⟨trivial, trivial⟩) hgv2
+      rw [plug_Wblk] at h
+      exact h
+
+theorem TowOk_of_WStep0 (h0 : WStep0) : TowOk := fun n =>
+  TowOk_W h0 n [] Jk1.nil trivial WCtxT_nil GOK_nil
+
+/-- ★★★★★ シート #14 も `WStep0` 1 歩に落ちた。 -/
+theorem R14_of_WStep0 (h0 : WStep0) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_WStep0 h0)
+
+theorem R14_of_WPay (h : WPay) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WStep0 (WStep0_of_WPay h)
+
+#print axioms R14_of_WStep0
+#print axioms R14_of_WPay
+
 end Small
 end TRIO
