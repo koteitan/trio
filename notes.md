@@ -17211,3 +17211,52 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 `RPay ⟸ RPay2` を文脈の長さの帰納で示すには、文脈の枠の木が置けることを
 条件に持つ述語（`CtxG` 的なもの）が要る。`AYs` の `CtxOk` / `CtxX` /
 `GOK (plug ctx X)` がまさにそれ。
+
+## 追記195: ★ 2 の枠側の荷 `TSib_pay` が緑になった（梯子なし）
+
+### 兄弟について全称な 2 つの述語
+
+    OSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (one W X))
+    TSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (two W X))
+
+`TwOk_pay_e` を明示文脈に移すと
+
+    TSib_pay : TSib D X → ∀ Y, Bok Y → TSib D (pay X Y)      ← 緑
+
+横鎖 `twoIt W T n`（同じ高さに 2 の記録が並ぶ）は `TSib D T`（荷が 1 つ小さい版）
+から順に伸ばせるので、`A2'` の帰納がそのまま回る。**梯子が要らなくなった。**
+`GOK_twoIt_chain` がその鎖。
+
+これで「走りの上の荷」（追記194 の `RPay2`）は `TSib D V` に落ちた。
+
+    RPay_ftwo : TSib D V → GOK (plug D N) → GOK (plug (D ++ [ftwo N]) (pay V C))
+
+### 構造補題（全部緑）
+
+    plug (D ++ [fone W]) X = plug D (one W X)
+    plug (D ++ [ftwo W]) X = plug D (two W X)
+
+    OSib D (one A B) ⟸ OSib D A, ∀W OSib (D ++ [fone W]) B
+    OSib D (two A B) ⟸ OSib D A, ∀W TSib (D ++ [fone W]) B
+    TSib D (one A B) ⟸ TSib D A, ∀W OSib (D ++ [ftwo W]) B
+    TSib D (two A B) ⟸ TSib D A, ∀W TSib (D ++ [ftwo W]) B
+    TSib D (pay A Y) ⟸ TSib D A                     （TSib_pay）
+    OSib D (pay A Y) ⟸ OSib D A                     （AYs、CtxX 付き）
+    OSib D nil       ⟸ ∀W 荷を吊るせる              （APnil_gen0、OSib_nil_of_pay）
+    TSib D nil       ⟸ ?                             （GOK_twoNil_gen、階段が要る）
+
+### 残っている測度の問題
+
+    木の構造で降りる:   木が縮む、文脈が 1 伸びる
+    荷（APnil_gen0）:   文脈が 1 縮む、木は任意（兄弟 W）
+
+この 2 方向を同時に減らす測度が無い。`OSib D nil` が兄弟 `W` の荷を要求し、
+`W` の大きさが文脈の長さと無関係だから。梯子（`TwSt`）はここを
+「全文脈について全称」で吸収していた。
+
+### 残っている穴
+
+1. `TSib D nil`（裸の 2 の記録を置ける兄弟の上に置く）。`GOK_twoNil_gen` の
+   階段は `plug (replicate m (fone W)) W`（`W` の 1 の記録の鎖）で、
+   `OSib` を伸びる文脈で使う。
+2. 上の測度。
