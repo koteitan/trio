@@ -66186,10 +66186,49 @@ theorem SbF_nstN_nil : ∀ k : ℕ, SbF (nstN Jk1.nil k)
 `SbF.one` / `SbT.two` を使うには `SbF (two nil nil)` が要るが、
 `SbF` には `two` の節が無い。ここが壁。 -/
 
+/-! ### ★★★★★ 周囲の兄弟が nil なら `SbF` に `two` を足せる
+
+`GOK_runNil_gen`（`one V (stkP j (two A nil))` 専用の走り塔）は
+途中の 2 の枠の兄弟が全部 nil なので、階段
+`Trm A ((A,1)^i) = one A (two nil (one A (two nil … A)))` の各段で
+`NPd_twoOf` に要る条件が `NPd_nilAll` で済む。底は `SbF A`（形に依らない）。 -/
+
+theorem NPd_TrmA_SbF {A : Jk1} (hA : SbF A) :
+    ∀ (i : ℕ) (kk : List Bool),
+      NPd (false :: kk) (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ)))
+  | 0, kk => NPd_false_of_SbF hA kk
+  | (i + 1), kk => by
+      show NPd (false :: kk)
+        (Jk1.one A (stkP 1 (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ)))))
+      exact NPd_step (false :: kk) (JkA_of_SbF hA) (NPd_false_of_SbF hA kk)
+        (NPd_twoOf (N := Jk1.nil) trivial (fun _ => NPd_nilAll _)
+          (NPd_TrmA_SbF hA i (false :: kk)))
+
+/-- ★★★★★ 周囲の兄弟が nil のときの `SbF.two`。 -/
+theorem NPd_stkA_SbF {A : Jk1} (hA : SbF A) (kk : List Bool) (U : Jk1)
+    (hU : FrmJ kk U) (hUk : NPd kk U) :
+    NPd kk (Jk1.one U (Jk1.two Jk1.nil (Jk1.two A Jk1.nil))) := by
+  rw [NPd_iff]
+  intro ctx hc
+  have hcU : NCtx (true :: kk) (ctx ++ [Frm.fone U]) :=
+    (NCtx_ct kk _).mpr ⟨ctx, U, rfl, hc, hU, hUk⟩
+  refine GOK_runNil_gen (V := U) (A := A) (JkA_of_SbF hA) ctx 1
+    (NCtx_JkT kk ctx hc _
+      (FrmJ_one kk U _ hU ⟨trivial, JkA_of_SbF hA, trivial⟩))
+    ((NPd_iff kk U).mp hUk ctx hc) ?_
+  intro i
+  show GOK (plug ctx
+    (Jk1.one U (stkP 1 (Trm A (List.replicate i ((A, 1) : Jk1 × ℕ))))))
+  rw [← plug_snoc]
+  exact (NPd_iff (true :: kk) _).mp
+    (NPd_twoOf (N := Jk1.nil) trivial (fun _ => NPd_nilAll _)
+      (NPd_TrmA_SbF hA i kk)) _ hcU
+
 #print axioms NPd_true_of_SbT
 #print axioms NPd_false_of_SbF
 #print axioms SbF_le_SbT
 #print axioms SbF_nstN_nil
+#print axioms NPd_stkA_SbF
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

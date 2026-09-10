@@ -18814,3 +18814,53 @@ N の可差し性が 1 段深い形で要る。`SbT N`（形に依らない）�
 
     SbT_twoNilNil : SbT (two nil nil)
     SbF_nstN_nil  : ∀ k, SbF (nstN nil k)      交互 nil 塔は走りを含むのに安全
+
+## 追記230: 周囲の兄弟が nil なら `SbF.two` が出る。ずれは `true^j` と `(true false)^j`
+
+2026-09-11。追記229 の続き。
+
+### 新しく緑になったもの
+
+    NPd_TrmA_SbF {A} (SbF A) : ∀ i kk,
+      NPd (false :: kk) (Trm A ((A,1)^i))
+    NPd_stkA_SbF {A} (SbF A) (kk) (U) (FrmJ kk U) (NPd kk U) :
+      NPd kk (one U (two nil (two A nil)))
+
+`GOK_runNil_gen`（`one V (stkP j (two A nil))` 専用の走り塔）は
+途中の 2 の枠の兄弟が全部 nil なので、階段
+`Trm A ((A,1)^i) = one A (two nil (one A (two nil … A)))` の各段で
+`NPd_twoOf` に要る条件が `NPd_nilAll`（緑）で済む。底は `SbF A`（形に依らない）。
+
+**つまり `SbF` の `two` の節は、周囲の兄弟が nil なら無条件で出る。**
+残るのは周囲の兄弟が nil でない場合だけ。
+
+### 壁のずれの正確な形
+
+塔の木を実測で復元すると（`jk1` の逆写像）
+
+    [0]  one nil (two N (two nil nil))
+    [1]  one nil (two N (one nil (two N nil)))
+    [2]  one nil (two N (one nil (two N (one nil (two N nil)))))
+
+**`one nil (two N ·)` が 1 段ずつ積み上がる交互鎖。**N はコピーされるだけで
+変形しない。1 段につき 2 の記録が 1 本、1 の記録が 2 本増える。
+
+だから N が現れる位置は形で言うと **`(true false)^k` の下**。一方 `NPd_cf` が
+供給するのは
+
+    ∀ j, NPd (rep j true ++ (true::ks)) N        ＝ **`true^j` の下**
+
+**ずれはここ 1 点。**「2 の枠 1 本ぶん持ち上げる」は正確には
+**「`true^j` の供給を `(true false)^j` の供給に変える」**こと。
+
+### なぜ `NPd_cf` が `true^j` しかくれないのか
+
+定義の停止性の測度が `(cntF ks, ks.length)` だから。
+
+    NPd (false::ks) の cntF = cntF ks + 1
+    節が参照する rep m true ++ ks の cntF = cntF ks        ✓ 減る
+    もし (true false)^m ++ ks を参照すると cntF = m + cntF ks  ✗ 増える
+
+**`true^j` は測度から強制されている。**層の設計の都合ではない。
+そして実測（追記229・230）より、基本列そのものが `(true false)^k` を要求する。
+だから両者のずれは動かせない。
