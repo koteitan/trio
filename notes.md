@@ -16490,3 +16490,38 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
      `GoodFb_snoc_dupJs0` / `innerJs0` / `dupJt0` / `innerJt0` を使う）
 
 の 2 つ。
+
+## 追記179: `AYs` は走りの上では使えない（`CtxX` が禁じる）
+
+`AYs` は `CtxX ctx X` と `CtxT ctx Z` を要求する。
+
+    CtxXJ [Frm.ftwo _] X = JkA X ∧ TopOk X
+
+つまり**文脈の一番内が 2 の枠なら、置く木は 2 の記録で始まれない**。
+`TopOk (two nil nil) = False` なので、
+
+    WStep0 ctx (two nil nil)   （ctx の末尾が ftwo nil）
+
+は `AYs` の適用範囲外。`APd` の `Rq` と同じ制限（追記177）で、走りは通らない。
+
+一方 `V = nil` なら `CtxX ctx nil` は真なので `AYs` は当たる。ただし
+
+    hang : ∀ C, GOK (plug ctx (pay nil C))
+      ⟸ AYs で ctx = ctx' ++ [fone U] に落とすと
+        hAP : ∀ W, CtxX ctx' W → GOK (plug ctx' W) → GOK (plug ctx' (one W nil))
+
+が要る。`W` が**無制限**なので `WStep0`（兄弟が `nil` か `two nil nil`）では足りない。
+
+### まとめ: 最後の 1 個は 2 つの形
+
+    (a) 兄弟が無制限の裸の 1 の記録   ∀ W good, GOK (plug ctx (one W nil))
+    (b) 走りの上の荷                  GOK (plug ctx (pay (two nil nil) C))
+                                        （ctx の末尾が ftwo nil）
+
+(a) は `AYs` の `hAP` がそのまま要求するもの。(b) は既存の機械（`AYs` / `APd` /
+`Cok` / `Pok`）が全部 `TopOk` で弾く形。実測（追記170）では (b) の展開は
+横鎖 `twoIt nil (pay X C') k` で、これは `#14` の行列そのものになる。
+
+だから (b) が本体。`GoodFb` の 3 フィールドを直接組む
+（`GOK_oneUV_gen` / `GOK_blkNN_gen` と同じ書き方、ただし `GoodFb_snoc_dupJt0` /
+`GoodFb_snoc_innerJt0` を使う）のが残った道。
