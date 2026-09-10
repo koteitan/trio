@@ -19485,3 +19485,52 @@ ZFC も順序数も使っていない。`Multiset.IsDershowitzMannaLT` だけ。
     一般の走り（定義から）
     構造帰納 ∀ X, JkA X → ∀ ks, FrmN ks X → WQd ks X
     → UtwAll → 行376
+
+## 追記244: `WQd`（ブロック節）を実装。`nilF` は通る。荷との両立が残る
+
+2026-09-11。追記243 の実装。
+
+### 緑になったもの
+
+    def WQd : List ℕ → Jk1 → Prop
+      | [], V => GOK V
+      | (0 :: ks), V => ∀ U, FrmN ks U → WQd ks U →
+          (∀ C, Bok C → WQd ks (pay U C)) → WQd ks (one U V)
+      | ((k+1) :: ks), V => ∀ r (入り目 ≤ k), ∀ U Ns, Ns ≠ [] → Ns.length ≤ k+1 →
+          （枠木 U: FrmN / WQd / 荷閉包）
+          （兄弟 N ∈ Ns: JkA / ∀ q ≠ [] (入り目 ≤ k), WQd (q ++ (r++ks)) N / その荷閉包）→
+          WQd (r ++ ks) (one U (RunP Ns V))
+
+    plug_mapTwo / plug_blk / WQtx / WQtx_JkT / WQd_iff / WQd_step / WQd_congr
+    WQd_runStair / WQd_nilF                                      すべて緑
+
+`WQd_nilF (k ks) : WQd ((k+1)::ks) nil` は**深さ `k+1` までの走りの上の `nil`**。
+`WPd_nilF`（深さ 1）の一般化。`GOK_oneUV_RunSB` の階段を
+`Ns = Bs ++ [Bl]` と分けて `n` の帰納で回す。`n = 0` の段で
+`WQd (j :: B'') Bl`（`j = k`、`Bs ≠ []` のとき）が要るので、
+**兄弟の形は頭を 0 に固定できない**。
+
+長さの上限 `Ns.length ≤ k+1` が要る理由: `Bs` を差すのに入り目 `k` の節を使うので
+`Bs.length ≤ k` が要る。上限がないと予算 0（入り目 1）で深さ 2 の走りを
+要求してしまい、そこは通らない。
+
+### 残る綱引き
+
+    nilF（深さ ≥ 2 の走り）  兄弟の形は頭自由（`q ≠ []`、入り目 ≤ k）が要る
+    荷の連鎖              兄弟の形の頭が 0 でないと `two X T` を
+                          入り目つきの形に差すことになり、
+                          そこは `RunP (Ns ++ [X]) T` の長さが 1 増えて
+                          上限 `≤ k'+1` を超える
+
+長さの上限は `f(k) ≥ f(k-1) - 1` を満たす必要があり（nilF）、
+荷は `f(k') ≥ f(k') + 1` を要求する（不可能）。
+つまり **1 つの節で両方は書けない**。
+
+### 次の案
+
+節を 2 種類に分ける。
+- 深さ 1 の節（頭 0 の兄弟）… 荷が通る。`WPd` と同じ
+- ブロックの節（頭自由の兄弟）… `nilF` が通る
+
+入り目の値でどちらかを指示する（偶奇など）。
+荷の補題をブロックの節の形でも証明する必要があるかを次に測る。

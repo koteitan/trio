@@ -67284,5 +67284,315 @@ theorem WPd_twoA_run {k : ℕ} (hk : 1 ≤ k) {A : Jk1} (hJA : JkA A)
 #print axioms WPd_stairA
 #print axioms WPd_twoA_run
 
+/-! ## ★★★★★★ `WQd`: 2 の枠の節が走りのブロックを一度に張る族
+
+節の入り目 `k+1` は「深さ `k+1` までの走りのブロック `RunP Ns V`」を張る
+（`Ns.length ≤ k+1`）。入り目 1（予算 0）なら 1 本だけで、`WPd` と同じ。
+兄弟の形は頭を固定せず「空でない・入り目 ≤ k」。
+枠木・兄弟には荷閉包（`∀ C, Bok C → WQd · (pay · C)`）を課す。 -/
+
+theorem plug_mapTwo : ∀ (Ns : List Jk1) (X : Jk1),
+    plug (Ns.map Frm.ftwo) X = RunP Ns X
+  | [], _ => rfl
+  | (N :: Ns), X => by
+      show Jk1.two N (plug (Ns.map Frm.ftwo) X) = Jk1.two N (RunP Ns X)
+      rw [plug_mapTwo Ns X]
+
+theorem plug_blk (D : List Frm) (U : Jk1) (Ns : List Jk1) (X : Jk1) :
+    plug (D ++ ([Frm.fone U] ++ Ns.map Frm.ftwo)) X = plug D (Jk1.one U (RunP Ns X)) := by
+  rw [plug_append]
+  show plug D (Jk1.one U (plug (Ns.map Frm.ftwo) X)) = _
+  rw [plug_mapTwo]
+
+def WQd : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U : Jk1, FrmN ks U → WQd ks U →
+      (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay U C)) →
+      WQd ks (Jk1.one U V)
+  | ((k + 1) :: ks), V => ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) →
+      ∀ (U : Jk1) (Ns : List Jk1), Ns ≠ [] → Ns.length ≤ k + 1 →
+      FrmN (r ++ ks) U → WQd (r ++ ks) U →
+      (∀ C : TrioSeq, Bok C → WQd (r ++ ks) (Jk1.pay U C)) →
+      (∀ N ∈ Ns, JkA N) →
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) → WQd (q ++ (r ++ ks)) N) →
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) →
+        ∀ C : TrioSeq, Bok C → WQd (q ++ (r ++ ks)) (Jk1.pay N C)) →
+      WQd (r ++ ks) (Jk1.one U (RunP Ns V))
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+      | (rw [show q ++ (r ++ ks) = (q ++ r) ++ ks from by simp]
+         exact dm_app ks (q ++ r)
+           (by
+             intro x hx
+             rcases List.mem_append.mp hx with h1 | h1
+             · exact (by assumption : ∀ x ∈ q, x ≤ k) x h1
+             · exact (by assumption : ∀ x ∈ r, x ≤ k) x h1))
+
+theorem WQd_bnil (V : Jk1) : WQd [] V ↔ GOK V := by rw [WQd]
+
+theorem WQd_c0 (ks : List ℕ) (V : Jk1) :
+    WQd (0 :: ks) V ↔ ∀ U : Jk1, FrmN ks U → WQd ks U →
+      (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay U C)) →
+      WQd ks (Jk1.one U V) := by
+  rw [WQd]
+
+theorem WQd_ck (k : ℕ) (ks : List ℕ) (V : Jk1) :
+    WQd ((k + 1) :: ks) V ↔ ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) →
+      ∀ (U : Jk1) (Ns : List Jk1), Ns ≠ [] → Ns.length ≤ k + 1 →
+      FrmN (r ++ ks) U → WQd (r ++ ks) U →
+      (∀ C : TrioSeq, Bok C → WQd (r ++ ks) (Jk1.pay U C)) →
+      (∀ N ∈ Ns, JkA N) →
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) → WQd (q ++ (r ++ ks)) N) →
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) →
+        ∀ C : TrioSeq, Bok C → WQd (q ++ (r ++ ks)) (Jk1.pay N C)) →
+      WQd (r ++ ks) (Jk1.one U (RunP Ns V)) := by
+  rw [WQd]
+
+def WQtx : List ℕ → List Frm → Prop
+  | [], ctx => ctx = []
+  | (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WQtx ks ctx' ∧ FrmN ks U ∧ WQd ks U ∧
+      (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay U C))
+  | ((k + 1) :: ks), ctx => ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ k) (ctx' : List Frm)
+      (U : Jk1) (Ns : List Jk1),
+      Ns ≠ [] ∧ Ns.length ≤ k + 1 ∧
+      ctx = ctx' ++ ([Frm.fone U] ++ Ns.map Frm.ftwo) ∧
+      WQtx (r ++ ks) ctx' ∧ FrmN (r ++ ks) U ∧ WQd (r ++ ks) U ∧
+      (∀ C : TrioSeq, Bok C → WQd (r ++ ks) (Jk1.pay U C)) ∧
+      (∀ N ∈ Ns, JkA N) ∧
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) → WQd (q ++ (r ++ ks)) N) ∧
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) →
+        ∀ C : TrioSeq, Bok C → WQd (q ++ (r ++ ks)) (Jk1.pay N C))
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem WQtx_bnil (ctx : List Frm) : WQtx [] ctx ↔ ctx = [] := by rw [WQtx]
+
+theorem WQtx_c0 (ks : List ℕ) (ctx : List Frm) :
+    WQtx (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WQtx ks ctx' ∧ FrmN ks U ∧ WQd ks U ∧
+      (∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay U C)) := by
+  rw [WQtx]
+
+theorem WQtx_ck (k : ℕ) (ks : List ℕ) (ctx : List Frm) :
+    WQtx ((k + 1) :: ks) ctx ↔ ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ k) (ctx' : List Frm)
+      (U : Jk1) (Ns : List Jk1),
+      Ns ≠ [] ∧ Ns.length ≤ k + 1 ∧
+      ctx = ctx' ++ ([Frm.fone U] ++ Ns.map Frm.ftwo) ∧
+      WQtx (r ++ ks) ctx' ∧ FrmN (r ++ ks) U ∧ WQd (r ++ ks) U ∧
+      (∀ C : TrioSeq, Bok C → WQd (r ++ ks) (Jk1.pay U C)) ∧
+      (∀ N ∈ Ns, JkA N) ∧
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) → WQd (q ++ (r ++ ks)) N) ∧
+      (∀ N ∈ Ns, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) →
+        ∀ C : TrioSeq, Bok C → WQd (q ++ (r ++ ks)) (Jk1.pay N C)) := by
+  rw [WQtx]
+
+theorem WQtx_JkT : ∀ (ks : List ℕ) (ctx : List Frm), WQtx ks ctx → ∀ X : Jk1,
+    FrmN ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WQtx_bnil] at h; subst h; exact hX
+  | (0 :: ks), ctx, h, X, hX => by
+      rw [WQtx_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -, -⟩ := h
+      rw [plug_snoc]
+      exact WQtx_JkT ks ctx' hc' (Jk1.one U X) (FrmN_one ks U X hU hX)
+  | ((k + 1) :: ks), ctx, h, X, hX => by
+      rw [WQtx_ck] at h
+      obtain ⟨r, hr, ctx', U, Ns, -, -, rfl, hc', hU, -, -, hJNs, -, -⟩ := h
+      rw [plug_blk]
+      exact WQtx_JkT (r ++ ks) ctx' hc' (Jk1.one U (RunP Ns X))
+        (FrmN_one _ U (RunP Ns X) hU (JkA_RunP Ns hJNs hX))
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem WQd_iff : ∀ (ks : List ℕ) (V : Jk1),
+    WQd ks V ↔ ∀ ctx : List Frm, WQtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WQd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WQtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WQtx_bnil []).mpr rfl)
+  | (0 :: ks), V => by
+      rw [WQd_c0]
+      constructor
+      · intro h ctx hc
+        rw [WQtx_c0] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩ := hc
+        rw [plug_snoc]
+        exact (WQd_iff ks (Jk1.one U V)).mp (h U hU hUk hUp) ctx' hc'
+      · intro h U hU hUk hUp
+        refine (WQd_iff ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U])
+          ((WQtx_c0 ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩)
+  | ((k + 1) :: ks), V => by
+      rw [WQd_ck]
+      constructor
+      · intro h ctx hc
+        rw [WQtx_ck] at hc
+        obtain ⟨r, hr, ctx', U, Ns, hNe, hNl, rfl, hc', hU, hUk, hUp, hJNs, hNs, hNp⟩ := hc
+        rw [plug_blk]
+        exact (WQd_iff (r ++ ks) _).mp (h r hr U Ns hNe hNl hU hUk hUp hJNs hNs hNp) ctx' hc'
+      · intro h r hr U Ns hNe hNl hU hUk hUp hJNs hNs hNp
+        refine (WQd_iff (r ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_blk]
+        exact h (ctx' ++ ([Frm.fone U] ++ Ns.map Frm.ftwo))
+          ((WQtx_ck k ks _).mpr ⟨r, hr, ctx', U, Ns, hNe, hNl, rfl, hc', hU, hUk, hUp,
+            hJNs, hNs, hNp⟩)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem WQd_step (ks : List ℕ) {V W : Jk1} (hV : FrmN ks V) (hVk : WQd ks V)
+    (hVp : ∀ C : TrioSeq, Bok C → WQd ks (Jk1.pay V C))
+    (hW : WQd (0 :: ks) W) : WQd ks (Jk1.one V W) :=
+  (WQd_c0 ks W).mp hW V hV hVk hVp
+
+theorem WQd_congr : ∀ (ks : List ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    WQd ks V1 → WQd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WQd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+/-! ### 走りのブロックを差す -/
+
+/-- ブロックの階段。`j` は「`Bs` を差すのに要る入り目」。 -/
+theorem WQd_runStair {k : ℕ} {Bs : List Jk1} {Bl : Jk1} (hJBl : JkA Bl)
+    (j : ℕ) (hj : j ≤ k)
+    (hjrun : ∀ (B'' : List ℕ) (X : Jk1),
+      (∀ N ∈ Bs, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) → WQd (q ++ B'') N) →
+      (∀ N ∈ Bs, ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) →
+        ∀ C : TrioSeq, Bok C → WQd (q ++ B'') (Jk1.pay N C)) →
+      WQd (j :: B'') X → WQd (0 :: B'') (RunP Bs X)) :
+    ∀ (n : ℕ) (B'' : List ℕ),
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) → WQd (q ++ B'') N) →
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) →
+        ∀ C : TrioSeq, Bok C → WQd (q ++ B'') (Jk1.pay N C)) →
+      WQd (0 :: B'') (RunP Bs (appJ Bl (UtwP Bs Bl n)))
+  | 0, B'', hs, hp => by
+      refine hjrun B'' Bl (fun N hN => hs N (List.mem_append_left _ hN))
+        (fun N hN => hp N (List.mem_append_left _ hN)) ?_
+      have h := hs Bl (List.mem_append_right _ (by simp)) [j] (by simp) (by simpa using hj)
+      simpa using h
+  | (n + 1), B'', hs, hp => by
+      refine hjrun B'' _ (fun N hN => hs N (List.mem_append_left _ hN))
+        (fun N hN => hp N (List.mem_append_left _ hN)) ?_
+      show WQd (j :: B'') (Jk1.one Bl (RunP Bs (appJ Bl (UtwP Bs Bl n))))
+      refine WQd_step (j :: B'') (hJBl : FrmN (j :: B'') Bl) ?_ ?_ ?_
+      · have h := hs Bl (List.mem_append_right _ (by simp)) [j] (by simp) (by simpa using hj)
+        simpa using h
+      · intro C hC
+        have h := hp Bl (List.mem_append_right _ (by simp)) [j] (by simp)
+          (by simpa using hj) C hC
+        simpa using h
+      · refine WQd_runStair hJBl j hj hjrun n (j :: B'') ?_ ?_
+        · intro N hN q hq hqk
+          rw [show q ++ (j :: B'') = (q ++ [j]) ++ B'' from by simp]
+          refine hs N hN (q ++ [j]) (by simp) ?_
+          intro x hx
+          rcases List.mem_append.mp hx with h1 | h1
+          · exact hqk x h1
+          · simp at h1
+            omega
+        · intro N hN q hq hqk C hC
+          rw [show q ++ (j :: B'') = (q ++ [j]) ++ B'' from by simp]
+          refine hp N hN (q ++ [j]) (by simp) ?_ C hC
+          intro x hx
+          rcases List.mem_append.mp hx with h1 | h1
+          · exact hqk x h1
+          · simp at h1
+            omega
+
+/-- ★★★★★★ `nil` はどの予算の枠でも差せる（ブロックの長さが予算以下なら）。 -/
+theorem WQd_nilF (k : ℕ) (ks : List ℕ) : WQd ((k + 1) :: ks) Jk1.nil := by
+  rw [WQd_ck]
+  intro r hr U Ns hNe hNl hU hUk hUp hJNs hNs hNp
+  obtain ⟨Bs, Bl, rfl⟩ : ∃ Bs Bl, Ns = Bs ++ [Bl] :=
+    ⟨Ns.dropLast, Ns.getLast hNe, (List.dropLast_append_getLast hNe).symm⟩
+  set B : List ℕ := r ++ ks with hB
+  have hBsl : Bs.length ≤ k := by
+    have := hNl
+    simp only [List.length_append, List.length_singleton] at this
+    omega
+  have hJBl : JkA Bl := hJNs Bl (List.mem_append_right _ (by simp))
+  -- `j` と `hjrun`
+  have key : ∀ (B'' : List ℕ),
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) → WQd (q ++ B'') N) →
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List ℕ, q ≠ [] → (∀ x ∈ q, x ≤ k) →
+        ∀ C : TrioSeq, Bok C → WQd (q ++ B'') (Jk1.pay N C)) →
+      ∀ n : ℕ, WQd (0 :: B'') (RunP Bs (appJ Bl (UtwP Bs Bl n))) := by
+    cases Bs with
+    | nil =>
+        intro B'' hs hp n
+        exact WQd_runStair (Bs := []) hJBl 0 (Nat.zero_le k) (fun _ _ _ _ h => h) n B'' hs hp
+    | cons C Cs =>
+        have hk1 : 1 ≤ k := by
+          simp only [List.length_cons] at hBsl
+          omega
+        obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+        intro B'' hs hp n
+        refine WQd_runStair hJBl (k' + 1) le_rfl ?_ n B'' hs hp
+        intro B3 X hsib hsibp hX
+        rw [WQd_c0]
+        intro U3 hU3 hU3k hU3p
+        have h2 := (WQd_ck k' B3 X).mp hX [] (by simp) U3 (C :: Cs) (by simp) ?_
+          (by simpa using hU3) (by simpa using hU3k) (by simpa using hU3p) ?_ ?_ ?_
+        · simpa using h2
+        · simp only [List.length_cons] at hBsl ⊢
+          omega
+        · intro N hN
+          exact hJNs N (List.mem_append_left _ hN)
+        · intro N hN q hq hqk
+          have := hsib N hN q hq (fun x hx => le_trans (hqk x hx) (by omega))
+          simpa using this
+        · intro N hN q hq hqk C0 hC0
+          have := hsibp N hN q hq (fun x hx => le_trans (hqk x hx) (by omega)) C0 hC0
+          simpa using this
+  -- 本体
+  refine (WQd_c0 B _).mp ?_ U hU hUk hUp
+  rw [WQd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hVk, hVp⟩ := (WQtx_c0 B ctx).mp hc
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (RunP (Bs ++ [Bl]) Jk1.nil)) :=
+    WQtx_JkT (0 :: B) _ hc (RunP (Bs ++ [Bl]) Jk1.nil)
+      (JkA_RunP (Bs ++ [Bl]) hJNs trivial : FrmN (0 :: B) (RunP (Bs ++ [Bl]) Jk1.nil))
+  have hGV : GOK (plug ctx0 V) := (WQd_iff B V).mp hVk ctx0 hc0
+  rw [plug_snoc] at hJT ⊢
+  refine GOK_oneUV_RunSB ctx0 Bs Bl V
+    (fun A hA => hJNs A (List.mem_append_left _ hA)) hJBl hJT hGV ?_
+  intro n
+  cases n with
+  | zero =>
+      show GOK (plug ctx0 V)
+      exact hGV
+  | succ n =>
+      show GOK (plug ctx0 (Jk1.one V (RunP Bs (appJ Bl (UtwP Bs Bl n)))))
+      rw [← plug_snoc]
+      exact (WQd_iff (0 :: B) _).mp (key B hNs hNp n) _ hc
+
+#print axioms WQd_iff
+#print axioms WQtx_JkT
+#print axioms WQd_nilF
+
 end Small
 end TRIO
