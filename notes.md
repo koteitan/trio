@@ -17657,3 +17657,23 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 移し替えただけ。ただし追記204 の通り、**荷と `one V nil` の側からは
 `Rq` が完全に外れた**（`AYdT'` / `APd_payA'` / `AYs2` / `APd_oneNil'`）ので、
 残っているのは `APd` / `MPd` の**定義**に入っている分だけ。
+
+## 追記207: `LStep2` の場合分けを進めた
+
+    LStep2 : JkA N → AllA N → LAll N → JkA Z → LAll1 Z → LAll1 (two N Z)
+
+    Z = nil       : LOk_twoNilA（緑、無条件。階段は SelfW = StkOk_rep_fone）
+    Z = pay A Y   : LAll1_twoPay（緑。TSibF D A A N が仮定）
+    Z = two A nil : LAll1_twoRun（緑。two N (two A nil) = RunS ([N] ++ [A]) なので
+                    GOK_oneUV_RunSB。階段 ∀ n, GOK (plug D' (appJ V (UtwP [N] A n))) が仮定）
+    Z = one A B   : 残り
+    Z = two A B（B ≠ nil）: 残り
+
+### `Z = one A B` がなぜ残るか
+
+`two N (one A B) = plug [ftwo N, fone A] B` なので、`GOK_oneUV_genM` を
+`D' ++ [fone V, ftwo N]` という深い文脈で使えばよいが、`D'` は `StkOk` で
+既に 2 の枠を 1 枚持っているので、もう 1 枚足すと `StkOk` から出る。
+`Z = two A B`（B ≠ nil）も同じ。
+
+つまり `LStep2` の残りも「2 の枠が 2 枚」＝走り。
