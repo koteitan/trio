@@ -17294,3 +17294,44 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 3. `SelfW D W` … `OSib` を伸びる文脈で使う
 
 どれも「木が縮む/文脈が伸びる」対「荷で文脈が縮む/木が任意」の測度に帰する。
+
+## 追記197: ★★★★★ 目標の行（行376）が `RPayN0`（`nil` に荷を 1 個）1 本になった
+
+### 兄弟が全部 nil だった
+
+`UtwAll_of_RStep0` → `RStep_rep` → `RStep_snoc` → `GOK_appJ_UtwP_of_RStep` の
+連鎖を辿ると、`RStep` が呼ばれるのは
+
+    h D U hJU hJTD hbase   （U ＝ 兄弟）
+    h D' B hJB … hG        （B ＝ 木）
+
+の 2 か所だけで、行376 の道ではどちらも `nil`。文脈も
+`PBlk (replicate q nil) nil = [fone nil] ++ (ftwo nil)^q` のブロックの
+積み重ねで、**枠の木は全部 nil**。
+
+そこで兄弟と木を `nil` に固定した版
+
+    RStepN Bs B : ∀ D, (JkT 閉包) → GOK (plug D nil) →
+        GOK (plug D (one nil (RunP Bs B)))
+    RStepN0 = RStepN [] nil : … → GOK (plug D (one nil nil))
+    RPayN0  : … → ∀ C, Bok C → GOK (plug D (pay nil C))
+
+を作ると
+
+    R376_of_RStepN0 : RStepN0 → 目標の行
+    R376_of_RPayN0  : RPayN0  → 目標の行
+
+が緑。`RStepN0_of_RPayN0` は `APnil_gen0` 3 行。
+
+### 残り
+
+`RPayN0` は「枠が全部 nil の文脈で `nil` に荷を 1 個吊るせる」。
+文脈の末尾で場合分けすると
+
+    末尾 fone nil : GOK (plug D' (one nil (pay nil C)))  ← AYs、OSib D' nil が要る
+    末尾 ftwo nil : GOK (plug D' (two nil (pay nil C)))  ← TSib_pay、TSib D' nil が要る
+    D = []        : AY0（緑）
+
+`OSib D' nil` は文脈が 1 縮むので帰納が回る。`TSib D' nil` は `SelfW D' W`
+（`W` を自分の上に積み続けられる）に落ちるが、`W` は `TSib_pay` の横鎖
+`twoIt nil (pay nil C') n` なので族に制限できる。ここが次。
