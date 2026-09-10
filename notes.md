@@ -19713,3 +19713,40 @@ ZFC も順序数も使っていない。`Multiset.IsDershowitzMannaLT` だけ。
 `WQd` のブロックの節なら `stk q` は全部差せるが、階段の
 `nstQ N p k = one nil (two N (stkP p (nstQ N p (k-1))))` の 1 の枠で
 `nil` の荷閉包が入り目つきの形で要り、そこが `QRunPay`。
+
+## 追記250: 壁から荷が消えた。行376 = `QTSibF`（走り、底は任意）1 本
+
+2026-09-11。緑になったもの:
+
+    def QTSibF : ∀ D Z N, JkA Z → JkA N → (∀ Y, JkA Y → JkT (plug D Y)) →
+                 GOK (plug D N) → TSibF D Z Z N
+    QRunPay_of_QTSibF : QTSibF → QRunPay
+    R376_of_QTSibF    : QTSibF → 行376
+
+    TSibF D Z Z N = ∀ V, TChain N Z V → JkA V → GOK (plug D V) →
+                    GOK (plug D (two V Z))
+
+つまり「どの文脈でも、兄弟 `V` が連鎖の木でその場所で良いなら、
+走り `two V Z` がその場所で良い」— **荷が要らない**。
+
+効いたのは既存の緑 `TSibF_pay`（文脈は任意）。走りが出れば荷は自動で付く。
+
+### いまの状況
+
+    TSibF_of_WPd : WPd の 1 の枠の文脈 D については緑（Z, N が全形で良い木なら）
+
+残るのは **D が走りで終わる場合**（ブロックの文脈）。
+
+    D = ctx ++ [fone U] ++ ftw Bs   （Bs ≠ []）
+
+`GOK_runGNil_gen` はこの形の `two A nil` を階段 `blkR A Bs i`（ブロックの塔）
+から出す。その階段の穴に来るのは連鎖の木で、文脈の頭は 2 の枠なので
+また同じ点に戻る。
+
+### 壁の名前（全部同じ 1 点）
+
+    QTSibF   走り（荷なし）。いちばん短い形
+    QRunPay  走りの直下の荷
+    RPayN0   nil に荷を 1 個（文脈は任意）
+    BLoad    走りの塔の文脈で nil に荷
+    hrun     Bk (j+1) 0 での荷

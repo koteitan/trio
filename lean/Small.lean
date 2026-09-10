@@ -67893,5 +67893,82 @@ theorem TSibF_pay_of_WPd {ks : List ℕ} {W N : Jk1} (hJN : JkA N) (hJW : JkA W)
 #print axioms TSibF_of_WPd
 #print axioms TSibF_pay_of_WPd
 
+/-! ### ★★★★★ 壁から荷を取り除く: `QRunPay` は `TSibF`（走り、底は `nil`）1 本
+
+`TSibF_pay`（緑、文脈は任意）が「兄弟が連鎖の木でも走りの直下に荷が吊るせる」
+を与えるので、壁は荷のない形になる。 -/
+
+def QTSibF : Prop := ∀ (D : List Frm) (Z N : Jk1), JkA Z → JkA N →
+    (∀ Y : Jk1, JkA Y → JkT (plug D Y)) → GOK (plug D N) → TSibF D Z Z N
+
+theorem QRunPay_of_QTSibF (h : QTSibF) : QRunPay := by
+  intro k ks C hC Z hZ hZk
+  rw [WQd_ck]
+  intro r hr U Ns hNe hNl hU hUk hUp hJNs hNs hNp
+  rw [WQd_iff]
+  intro ctx hc
+  obtain ⟨Bs, Nm, rfl⟩ : ∃ Bs Nm, Ns = Bs ++ [Nm] :=
+    ⟨Ns.dropLast, Ns.getLast hNe, (List.dropLast_append_getLast hNe).symm⟩
+  have hJNm : JkA Nm := hJNs Nm (List.mem_append_right _ (by simp))
+  have hJBs : ∀ A ∈ Bs, JkA A := fun A hA => hJNs A (List.mem_append_left _ hA)
+  have hBl : Bs.length ≤ k := by
+    have := hNl
+    simp only [List.length_append, List.length_singleton] at this
+    omega
+  have hJTD : ∀ Y : Jk1, JkA Y → JkT (plug (ctx ++ ([Frm.fone U] ++ Bs.map Frm.ftwo)) Y) := by
+    intro Y hY
+    rw [plug_blk]
+    exact WQtx_JkT (r ++ ks) ctx hc (Jk1.one U (RunP Bs Y))
+      (FrmN_one (r ++ ks) U (RunP Bs Y) hU (JkA_RunP Bs hJBs hY))
+  -- `Nm` はその位置で良い
+  have hGNm : GOK (plug (ctx ++ ([Frm.fone U] ++ Bs.map Frm.ftwo)) Nm) := by
+    cases hBsc : Bs with
+    | nil =>
+        subst hBsc
+        have hcU : WQtx (0 :: (r ++ ks)) (ctx ++ [Frm.fone U]) :=
+          (WQtx_c0 (r ++ ks) _).mpr ⟨ctx, U, rfl, hc, hU, hUk, hUp⟩
+        have hNm0 : WQd ([0] ++ (r ++ ks)) Nm :=
+          hNs Nm (List.mem_append_right _ (by simp)) [0] (by simp) (by simp)
+        have := (WQd_iff (0 :: (r ++ ks)) Nm).mp hNm0 (ctx ++ [Frm.fone U]) hcU
+        simpa using this
+    | cons C0 Cs =>
+        have hlen : (C0 :: Cs).length ≤ Cs.length + 1 := by simp
+        have hle : Cs.length + 1 ≤ k := by rw [hBsc] at hBl; simpa using hBl
+        have hcD : WQtx ((Cs.length + 1) :: (r ++ ks))
+            (ctx ++ ([Frm.fone U] ++ (C0 :: Cs).map Frm.ftwo)) := by
+          refine (WQtx_ck Cs.length (r ++ ks) _).mpr
+            ⟨[], by simp, ctx, U, C0 :: Cs, by simp, hlen, rfl, by simpa using hc,
+              by simpa using hU, by simpa using hUk, by simpa using hUp, ?_, ?_, ?_⟩
+          · intro N hN
+            exact hJBs N (by rw [hBsc]; exact hN)
+          · intro N hN q hq hqk
+            have h2 := hNs N (List.mem_append_left _ (by rw [hBsc]; exact hN)) q hq
+              (fun x hx => le_trans (hqk x hx) (by omega))
+            simpa using h2
+          · intro N hN q hq hqk C0' hC0'
+            have h2 := hNp N (List.mem_append_left _ (by rw [hBsc]; exact hN)) q hq
+              (fun x hx => le_trans (hqk x hx) (by omega)) C0' hC0'
+            simpa using h2
+        have hNmE : WQd ([Cs.length + 1] ++ (r ++ ks)) Nm :=
+          hNs Nm (List.mem_append_right _ (by simp)) [Cs.length + 1] (by simp)
+            (by simpa using hle)
+        have := (WQd_iff ((Cs.length + 1) :: (r ++ ks)) Nm).mp (by simpa using hNmE)
+          (ctx ++ ([Frm.fone U] ++ (C0 :: Cs).map Frm.ftwo)) hcD
+        exact this
+  have egoal : plug ctx (Jk1.one U (RunP (Bs ++ [Nm]) (Jk1.pay Z C)))
+      = plug (ctx ++ ([Frm.fone U] ++ Bs.map Frm.ftwo)) (Jk1.two Nm (Jk1.pay Z C)) := by
+    rw [plug_blk, RunP_append]
+    rfl
+  rw [egoal]
+  exact TSibF_pay _ hJTD Z (FrmN_JkA _ Z hZ) Nm
+    (h _ Z Nm (FrmN_JkA _ Z hZ) hJNm hJTD hGNm) C hC Nm TChain.base hJNm hGNm
+
+/-- ★★★★★★ 目標の行（行376）は荷のない 1 文から出る。 -/
+theorem R376_of_QTSibF (h : QTSibF) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_QRunPay (QRunPay_of_QTSibF h)
+
+#print axioms QRunPay_of_QTSibF
+#print axioms R376_of_QTSibF
+
 end Small
 end TRIO
