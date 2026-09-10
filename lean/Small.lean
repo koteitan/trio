@@ -62610,5 +62610,108 @@ theorem GOK_oneUV_genM (D : List Frm) (dl : ℕ) (hdl : 1 ≤ dl) (U : Jk1) {V V
 
 #print axioms GOK_oneUV_genM
 
+
+/-! ### ★★★★★ 走りの先端が nil でなくてもよい版
+
+    RunS (Bs ++ [B]) = two B1 (… (two Bq (two B nil)))     ← Bs = [B1,…,Bq]
+    jk1 e (RunS (Bs ++ [B])) = jk1 e (RunP Bs B) ++ [(e + (|Bs| + 1), 2, 0)]
+
+`hMy` の高さ条件 `entry 0 t < h + 1 + dl`（`dl = |Bs| + 1`）が `B` の記録
+（高さ ≥ h + 1 + |Bs| + 1）を弾くので、`B` が何であっても通る。 -/
+
+theorem jk1_RunS_snocB (Bs : List Jk1) (B : Jk1) (e : ℕ) :
+    jk1 e (RunS (Bs ++ [B]))
+      = jk1 e (RunP Bs B) ++ [((e + (Bs.length + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+  have h1 : jk1 e (RunS (Bs ++ [B]))
+      = jk1 e (RunS Bs) ++ jk1 (e + Bs.length) (Jk1.two B Jk1.nil) := by
+    show jk1 e (RunP (Bs ++ [B]) Jk1.nil) = _
+    rw [RunP_append]
+    exact jk1_RunP Bs (Jk1.two B Jk1.nil) e
+  have h2 : jk1 (e + Bs.length) (Jk1.two B Jk1.nil)
+      = jk1 (e + Bs.length) B ++ [((e + (Bs.length + 1), 2, 0) : ℕ × ℕ × ℕ)] := by
+    show jk1 (e + Bs.length) B ++ (((e + Bs.length + 1, 2, 0) : ℕ × ℕ × ℕ)
+      :: jk1 (e + Bs.length + 1) Jk1.nil) = _
+    simp [jk1]
+    omega
+  rw [h1, h2, jk1_RunP Bs B e, List.append_assoc]
+
+theorem My_RunP : ∀ (Bs : List Jk1) (B : Jk1) (e t : ℕ),
+    t < (jk1 e (RunP Bs B)).length →
+    entry (jk1 e (RunP Bs B)) 1 t < 2 →
+    entry (jk1 e (RunP Bs B)) 0 t < e + Bs.length + 1 →
+    ∃ i, t < i ∧ i < (jk1 e (RunP Bs B)).length ∧
+      entry (jk1 e (RunP Bs B)) 0 i ≤ entry (jk1 e (RunP Bs B)) 0 t
+  | [], B, e, t, ht, _, hb => by
+      exfalso
+      have h : e + 1 ≤ entry (jk1 e (RunP [] B)) 0 t := entry_jk1_ge B e t ht
+      simp only [List.length_nil] at hb
+      omega
+  | (A :: As), B, e, t, ht, h1, hb => by
+      have hw : jk1 e (RunP (A :: As) B)
+          = jk1 e A ++ (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunP As B)) := rfl
+      have hlen : (jk1 e (RunP (A :: As) B)).length
+          = (jk1 e A).length + ((jk1 (e + 1) (RunP As B)).length + 1) := by
+        rw [hw]; simp
+      have hentL : ∀ (r j : ℕ), j < (jk1 e A).length →
+          entry (jk1 e (RunP (A :: As) B)) r j = entry (jk1 e A) r j := by
+        intro r j hj
+        rw [hw, entry_append_left hj]
+      have hentM : ∀ r : ℕ,
+          entry (jk1 e (RunP (A :: As) B)) r (jk1 e A).length
+            = entry (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunP As B)) r 0 := by
+        intro r
+        rw [hw]
+        exact entry_append_right (jk1 e A) _ r 0
+      have hentR : ∀ (r u : ℕ),
+          entry (jk1 e (RunP (A :: As) B)) r ((jk1 e A).length + (u + 1))
+            = entry (jk1 (e + 1) (RunP As B)) r u := by
+        intro r u
+        rw [hw, entry_append_right]
+        exact entry_cons_succ _ _ r u
+      rcases lt_trichotomy t (jk1 e A).length with hc | hc | hc
+      · refine ⟨(jk1 e A).length, hc, by omega, ?_⟩
+        have h0 : entry (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunP As B)) 0 0
+            = e + 1 := rfl
+        rw [hentM 0, hentL 0 t hc, h0]
+        exact entry_jk1_ge A e t hc
+      · exfalso
+        rw [hc, hentM 1] at h1
+        have h2 : entry (((e + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (e + 1) (RunP As B)) 1 0
+            = 2 := rfl
+        omega
+      · obtain ⟨u, hu0⟩ : ∃ u, t = (jk1 e A).length + (u + 1) :=
+          ⟨t - (jk1 e A).length - 1, by omega⟩
+        subst hu0
+        have hu : u < (jk1 (e + 1) (RunP As B)).length := by omega
+        rw [hentR 1 u] at h1
+        rw [hentR 0 u] at hb
+        obtain ⟨i', hi1, hi2, hi3⟩ := My_RunP As B (e + 1) u hu h1 (by simp at hb ⊢; omega)
+        refine ⟨(jk1 e A).length + (i' + 1), by omega, by omega, ?_⟩
+        rw [hentR 0 i', hentR 0 u]
+        exact hi3
+
+theorem hMy_RunP (Bs : List Jk1) (B : Jk1) (h : ℕ) : ∀ t, 1 ≤ t →
+    t < (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunP Bs B)).length →
+    entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunP Bs B)) 0 t
+      < h + 1 + (Bs.length + 1) →
+    (∀ i, t < i → i < (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunP Bs B)).length →
+      entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunP Bs B)) 0 t <
+        entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunP Bs B)) 0 i) →
+    2 ≤ entry (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (h + 1) (RunP Bs B)) 1 t := by
+  intro t h1 h2 h3 h4
+  by_contra hcon
+  push_neg at hcon
+  obtain ⟨u, rfl⟩ : ∃ u, t = u + 1 := ⟨t - 1, by omega⟩
+  rw [entry_cons_succ] at hcon
+  rw [entry_cons_succ] at h3
+  have hu : u < (jk1 (h + 1) (RunP Bs B)).length := by simp at h2; omega
+  obtain ⟨i', hi1, hi2, hi3⟩ := My_RunP Bs B (h + 1) u hu hcon (by omega)
+  have := h4 (i' + 1) (by omega) (by simp; omega)
+  rw [entry_cons_succ, entry_cons_succ] at this
+  omega
+
+#print axioms My_RunP
+#print axioms hMy_RunP
+
 end Small
 end TRIO
