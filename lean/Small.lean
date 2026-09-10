@@ -64057,8 +64057,27 @@ theorem R14_of_TWstep
     R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R14_mem (TowOk_of_TWstep h0 hstep)
 
+/-- ★★★★★ 基底は緑（`GOK_oneStk2`、無条件）。
+`plug TWD0 (two nil nil) = one nil (stk 2)`。 -/
+theorem GOK_TWD0 : GOK (plug TWD0 (Jk1.two Jk1.nil Jk1.nil)) := GOK_oneStk2
+
+/-- ★★★★★ 証明中の行に残る 1 文。
+「`two nil nil` が置ける文脈には `TW 1` も置ける」。 -/
+def TWStep : Prop := ∀ D : List Frm, RFam [TWBlk] TWD0 D →
+    GOK (plug D (Jk1.two Jk1.nil Jk1.nil)) →
+    GOK (plug D (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+      (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))))
+
+theorem TowOk_of_TWStep (h : TWStep) : TowOk :=
+  TowOk_of_TWstep GOK_TWD0 (fun D hD hG => by rw [plug_TWBlk]; exact h D hD hG)
+
+/-- ★★★★★ シート証明中の行は `TWStep` 1 本。 -/
+theorem R14_of_TWStep (h : TWStep) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_TWStep h)
+
 #print axioms TowOk_of_TWstep
-#print axioms R14_of_TWstep
+#print axioms GOK_TWD0
+#print axioms R14_of_TWStep
 
 end Small
 end TRIO
