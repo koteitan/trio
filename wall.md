@@ -1,32 +1,66 @@
-# 残っている壁（1 文）
+# 残っている壁
 
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明。
 
-2026-09-10 更新。`RPay` が最終形。レベル添字も走りも塔も消えた。
+2026-09-10 更新。
 
-## 結論の 1 文
+## 壁は `RPay`（荷を 1 個吊るす）1 本
 
     RPay : ∀ (D : List Frm) (V : Jk1), JkA V →
-        (∀ X, JkA X → JkT (plug D X)) → GOK (plug D V) →
+        (∀ X, JkA X → JkT (plug D (one V X))) → GOK (plug D V) →
         ∀ C, Bok C → GOK (plug D (pay V C))
 
-**「置ける `V` の上に荷を 1 個吊るせる」— これだけ。**
+**シートの 2 行が両方これ 1 本から出る**（Lean で緑）:
 
-    R14_of_RPay : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+    R14_of_RPay  : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+    R376_of_RPay : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
+
+行376 のほうは `RStep0`（裸の 1 の記録を 1 個積む）だけで足りる:
+
+    R376_of_RStep0 : RStep0 → 目標の行
+    RStep0 : ∀ D V, JkA V → (JkT 閉包) → GOK (plug D V) → GOK (plug D (one V nil))
+
+## `RPay` は 1 の枠側だけなら緑
+
+    AY0 : ∀ Y, Bok Y → ∀ Z, JkT Z → GOK Z → GOK (pay Z Y)          （緑、無条件）
+    AYs : … (hAP : ∀ V, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (one V Z)))
+        → GOK (plug ctx X) → GOK (plug ctx (one X (pay Z Y)))       （緑）
+
+`plug (ctx ++ [fone X]) (pay Z Y) = plug ctx (one X (pay Z Y))` なので
+**1 の枠で終わる文脈での `RPay` は `AYs` そのもの**（`RPay_fone`、緑）。
+`hAP` は `RStep [] Z` を 1 段短い文脈に制限したもの。
+
+    RPay at |D| = k（1 の枠止まり）
+      ⟸ RStep [] Z at |D| = k-1        （AYs の hAP）
+      ⟸ （木の帰納）RPay at |D| = k-1  （RStep_of_RPay）
+      ⟸ … ⟸ RPay at |D| = 0 = AY0（緑）
+
+**文脈の長さで帰納が回る。**
+
+## 残っているのは 2 の枠側
+
+    RPay2 : ∀ D N V, … → GOK (plug (D ++ [ftwo N]) V) →
+        ∀ C, Bok C → GOK (plug (D ++ [ftwo N]) (pay V C))
+
+木で `plug D (two N (pay V C))`、行列で**走りの上の荷**。
+実測（`bms`）ではその展開がシート証明中の行そのもの。
+
+    …(3,1,0)(4,2,0)(5,2,0)(6,0,0)  →  …(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+
+`TwOk_pay_e`（緑）は梯子でこれを証明しているが、そこでは横鎖
+`twoIt N T n`（同じ高さに 2 の記録が並ぶ、delta = 0）が要り、鎖の各段で
+兄弟が伸びる。梯子は `TwOk (r+1) 0 T`（全文脈）を持っているので兄弟が
+変わっても当たる。文脈を具体的にするとそこが足りない。
 
 ## 連鎖（全部 Lean で緑）
 
     RPay
-      ↓ RStep_of_RPay（木の帰納）
-    RStep Bs B : ∀ D V, GOK (plug D V) → GOK (plug D (one V (RunP Bs B)))
-      ↓ RStep_snoc
-    RStep [N] nil                （N は文脈の 2 の枠の木）
-      ↓ WallT_of_RStep
-    WallT = ∀ r, TwOk (r+1) 0 (two nil nil)
-      ↓ R14_of_WallT
-    シート証明中の行
+      ↓ APnil_gen0                     ↓ RStep_of_RPay（木の帰納）
+    RStep0                             RStep Bs B
+      ↓ RStep_rep                       ↓ RStep_snoc, WallT_of_RStep
+    UtwAll → 目標の行（行376）          WallT → 証明中の行（#14）
 
-## 木の帰納の中身
+木の帰納の中身:
 
     RStep Bs nil       ⟸ RStep Bs' C          （Bs = Bs' ++ [C]）
     RStep [] nil       ⟸ RPay                 （APnil_gen0）
@@ -43,21 +77,13 @@
 レベルが 1 下がるかわりに走りが 1 本伸びる。追記171 の「非可述性の正体は
 2 の枠の本数」と、走りの長さの帰納（`WRunB`）は同じものの 2 つの見方だった。
 
-## `RPay` を証明する道筋
-
-`TwOk_pay_f` / `TwOk_pay_e`（緑）は `A2'`（荷 `C` についての帰納）で回っている。
-使う道具は `GoodFb_snoc_dupJs0` / `GoodFb_snoc_innerJs0` と、鎖
-`TwOk_itJ`（1 の枠）/ `TwOk_twoIt`（2 の枠）。鎖の各段は `pay X Y'` で
-`Y'` は `C` より小さい荷。文脈を具体的にすると鎖は `RStep`-型になり、
-それは `RPay`（荷 `Y'`）から出る。**荷の大きさで帰納**すれば循環しない。
-
 ## 部品（緑）
 
     RunP [A1,…,Ap] X = two A1 (… (two Ap X))    RunS As = RunP As nil
-    UtwP Bs B n = 塔（1 段は「(1,0) + RunP Bs B」）
-    PBlk Bs V   = fone V :: Bs.map ftwo         RBlk As = PBlk As nil
-    ABt Bs B n  = appJ B (UtwP Bs B n)
-    RFam / RFam_GOK / NFam / NFam_GOK
+    UtwP Bs B n / UtwR As n = 塔               Utw_eq_UtwR
+    PBlk Bs V = fone V :: Bs.map ftwo          RBlk As = PBlk As nil
+    ABt Bs B n = appJ B (UtwP Bs B n)
+    RFam / RFam_GOK / NFam / NFam_GOK / JkT_RFam_PBlk / JkT_RFam_RBlk
     My_RunP / hMy_RunP / jk1_RunS_snocB / jsz / jsz_RunP
     GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM（元の 3 つの抽象版）
     TwSt_split3 / GOK_oneN_split / GOK_blkN_split / plug_blk2
@@ -285,4 +311,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜192。
+経緯は `notes.md` の追記175〜194。
