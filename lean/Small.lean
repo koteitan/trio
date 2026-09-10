@@ -66591,7 +66591,7 @@ def WPd : List ℕ → Jk1 → Prop
       FrmN (List.replicate m 0 ++ ks) U →
       WPd (List.replicate m 0 ++ ks) U → JkA N →
       (∀ ks' : List ℕ, (∀ x ∈ ks', x ≤ k) →
-        WPd (ks' ++ (List.replicate m 0 ++ ks)) N) →
+        WPd (ks' ++ (0 :: (List.replicate m 0 ++ ks))) N) →
       WPd (List.replicate m 0 ++ ks) (Jk1.one U (Jk1.two N V))
 termination_by ks _ => (ks : Multiset ℕ)
 decreasing_by
@@ -66599,14 +66599,229 @@ decreasing_by
     first
       | exact dm_cons0 ks
       | exact dm_app ks (List.replicate m 0) (by simp)
-      | (rw [← List.append_assoc]
-         exact dm_app ks (ks' ++ List.replicate m 0)
+      | (rw [show ks' ++ (0 :: (List.replicate m 0 ++ ks))
+              = (ks' ++ (0 :: List.replicate m 0)) ++ ks from by simp]
+         exact dm_app ks (ks' ++ (0 :: List.replicate m 0))
            (by
              intro x hx
              rcases List.mem_append.mp hx with h1 | h1
              · exact ‹∀ x ∈ ks', x ≤ k› x h1
              · simp at h1
                omega))
+
+
+/-! ### `WPd` 層: 形の言い換えと文脈版 -/
+
+theorem FrmN_one (ks : List ℕ) (U X : Jk1) (hU : FrmN ks U) (hX : JkA X) :
+    FrmN ks (Jk1.one U X) := by
+  cases ks with
+  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
+  | cons b bs => exact ⟨hU, hX⟩
+
+theorem FrmN_rep (m : ℕ) (k : ℕ) (ks : List ℕ) (N : Jk1) :
+    FrmN (List.replicate m 0 ++ (k :: ks)) N ↔ JkA N := by
+  cases m with
+  | zero => exact Iff.rfl
+  | succ m => exact Iff.rfl
+
+theorem repN_succ_cons (m : ℕ) (ks : List ℕ) :
+    List.replicate (m + 1) (0 : ℕ) ++ ks = 0 :: (List.replicate m 0 ++ ks) := rfl
+
+theorem le_of_mem_rep0 (k j : ℕ) : ∀ x ∈ List.replicate j (0 : ℕ), x ≤ k := by
+  intro x hx
+  have : x = 0 := List.eq_of_mem_replicate hx
+  omega
+
+theorem WPd_bnil (V : Jk1) : WPd [] V ↔ GOK V := by rw [WPd]
+
+theorem WPd_c0 (ks : List ℕ) (V : Jk1) :
+    WPd (0 :: ks) V ↔ ∀ U : Jk1, FrmN ks U → WPd ks U → WPd ks (Jk1.one U V) := by
+  rw [WPd]
+
+theorem WPd_ck (k : ℕ) (ks : List ℕ) (V : Jk1) :
+    WPd ((k + 1) :: ks) V ↔ ∀ (m : ℕ) (U N : Jk1),
+      FrmN (List.replicate m 0 ++ ks) U →
+      WPd (List.replicate m 0 ++ ks) U → JkA N →
+      (∀ ks' : List ℕ, (∀ x ∈ ks', x ≤ k) →
+        WPd (ks' ++ (0 :: (List.replicate m 0 ++ ks))) N) →
+      WPd (List.replicate m 0 ++ ks) (Jk1.one U (Jk1.two N V)) := by
+  rw [WPd]
+
+def WCtx : List ℕ → List Frm → Prop
+  | [], ctx => ctx = []
+  | (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WCtx ks ctx' ∧ FrmN ks U ∧ WPd ks U
+  | ((k + 1) :: ks), ctx => ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      WCtx (List.replicate m 0 ++ ks) ctx' ∧
+      FrmN (List.replicate m 0 ++ ks) U ∧
+      WPd (List.replicate m 0 ++ ks) U ∧ JkA N ∧
+      (∀ ks' : List ℕ, (∀ x ∈ ks', x ≤ k) →
+        WPd (ks' ++ (0 :: (List.replicate m 0 ++ ks))) N)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks (List.replicate m 0) (by simp)
+
+theorem WCtx_bnil (ctx : List Frm) : WCtx [] ctx ↔ ctx = [] := by rw [WCtx]
+
+theorem WCtx_c0 (ks : List ℕ) (ctx : List Frm) :
+    WCtx (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WCtx ks ctx' ∧ FrmN ks U ∧ WPd ks U := by
+  rw [WCtx]
+
+theorem WCtx_ck (k : ℕ) (ks : List ℕ) (ctx : List Frm) :
+    WCtx ((k + 1) :: ks) ctx ↔ ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      WCtx (List.replicate m 0 ++ ks) ctx' ∧
+      FrmN (List.replicate m 0 ++ ks) U ∧
+      WPd (List.replicate m 0 ++ ks) U ∧ JkA N ∧
+      (∀ ks' : List ℕ, (∀ x ∈ ks', x ≤ k) →
+        WPd (ks' ++ (0 :: (List.replicate m 0 ++ ks))) N) := by
+  rw [WCtx]
+
+theorem WCtx_JkT : ∀ (ks : List ℕ) (ctx : List Frm), WCtx ks ctx → ∀ X : Jk1,
+    FrmN ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WCtx_bnil] at h; subst h; exact hX
+  | (0 :: ks), ctx, h, X, hX => by
+      rw [WCtx_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      rw [plug_snoc]
+      exact WCtx_JkT ks ctx' hc' (Jk1.one U X) (FrmN_one ks U X hU hX)
+  | ((k + 1) :: ks), ctx, h, X, hX => by
+      rw [WCtx_ck] at h
+      obtain ⟨m, ctx', U, N, rfl, hc', hU, -, hJN, -⟩ := h
+      rw [plug_snoc12]
+      exact WCtx_JkT (List.replicate m 0 ++ ks) ctx' hc' (Jk1.one U (Jk1.two N X))
+        (FrmN_one _ U (Jk1.two N X) hU ⟨hJN, hX⟩)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks (List.replicate m 0) (by simp)
+
+theorem WPd_iff : ∀ (ks : List ℕ) (V : Jk1),
+    WPd ks V ↔ ∀ ctx : List Frm, WCtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WPd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WCtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WCtx_bnil []).mpr rfl)
+  | (0 :: ks), V => by
+      rw [WPd_c0]
+      constructor
+      · intro h ctx hc
+        rw [WCtx_c0] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (WPd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (WPd_iff ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((WCtx_c0 ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | ((k + 1) :: ks), V => by
+      rw [WPd_ck]
+      constructor
+      · intro h ctx hc
+        rw [WCtx_ck] at hc
+        obtain ⟨m, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩ := hc
+        rw [plug_snoc12]
+        exact (WPd_iff (List.replicate m 0 ++ ks) _).mp (h m U N hU hUk hJN hNt) ctx' hc'
+      · intro h m U N hU hUk hJN hNt
+        refine (WPd_iff (List.replicate m 0 ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc12]
+        exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
+          ((WCtx_ck k ks _).mpr ⟨m, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks (List.replicate m 0) (by simp)
+
+theorem WPd_step (ks : List ℕ) {V W : Jk1} (hV : FrmN ks V) (hVk : WPd ks V)
+    (hW : WPd (0 :: ks) W) : WPd ks (Jk1.one V W) :=
+  (WPd_c0 ks W).mp hW V hV hVk
+
+theorem WPd_congr : ∀ (ks : List ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    WPd ks V1 → WPd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WPd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+theorem WCtx_split (ks : List ℕ) (ctx : List Frm) (h : WCtx (0 :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WCtx ks ctx0 ∧
+      FrmN ks V ∧ GOK (plug ctx0 V) := by
+  rw [WCtx_c0] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (WPd_iff ks U).mp hUk ctx' hc'⟩
+
+theorem WPd_twoOf {k : ℕ} {ks : List ℕ} {V N : Jk1} (hJN : JkA N)
+    (hNt : ∀ ks' : List ℕ, (∀ x ∈ ks', x ≤ k) → WPd (ks' ++ (0 :: ks)) N)
+    (hV : WPd ((k + 1) :: ks) V) : WPd (0 :: ks) (Jk1.two N V) :=
+  (WPd_c0 ks _).mpr (fun U hU hUk =>
+    (WPd_ck k ks V).mp hV 0 U N (by simpa using hU) (by simpa using hUk) hJN
+      (fun ks' hks' => by simpa using hNt ks' hks'))
+
+#print axioms WPd_iff
+#print axioms WCtx_JkT
+#print axioms WPd_twoOf
+
+/-! ### `WPd` 層でも `nilF` は無条件 -/
+
+theorem WCtx_rep {N : Jk1} (hJN : JkA N) (ks : List ℕ)
+    (hNall : ∀ j : ℕ, WPd (List.replicate j 0 ++ (0 :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), WCtx (0 :: ks) ctx →
+      WCtx (List.replicate m 0 ++ (0 :: ks)) (ctx ++ List.replicate m (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (m + 1), ctx, hc => by
+      have h1 := WCtx_rep hJN ks hNall m ctx hc
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
+          = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, repN_succ_cons, WCtx_c0]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
+        (FrmN_rep m 0 ks N).mpr hJN, hNall m⟩
+
+theorem WPd_plug_rep (N : Jk1) (hJN : JkA N) (ks : List ℕ)
+    (hNall : ∀ j : ℕ, WPd (List.replicate j 0 ++ (0 :: ks)) N) (m : ℕ) :
+    WPd (0 :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
+  rw [WPd_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (WPd_iff _ N).mp (hNall m) _ (WCtx_rep hJN ks hNall m ctx hc)
+
+theorem WPd_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List ℕ)
+    (hNall : ∀ j : ℕ, WPd (List.replicate j 0 ++ (0 :: ks)) N) :
+    WPd (0 :: ks) (Jk1.two N Jk1.nil) := by
+  rw [WPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtx_split ks ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (WCtx_JkT (0 :: ks) _ hc (Jk1.two N Jk1.nil)
+      (⟨hJN, trivial⟩ : FrmN (0 :: ks) (Jk1.two N Jk1.nil)))
+    hGV
+    (fun m => (WPd_iff (0 :: ks) _).mp (WPd_plug_rep N hJN ks hNall m) _ hc)
+
+/-- `NPd_nilF` の `WPd` 版。予算 `k` によらず無条件。 -/
+theorem WPd_nilF (k : ℕ) (ks : List ℕ) : WPd ((k + 1) :: ks) Jk1.nil :=
+  (WPd_ck k ks _).mpr (fun m U N hU hUk hJN hNt =>
+    (WPd_c0 _ _).mp
+      (WPd_twoNilGen hJN (List.replicate m 0 ++ ks)
+        (fun j => hNt (List.replicate j 0) (le_of_mem_rep0 k j))) U hU hUk)
+
+#print axioms WPd_twoNilGen
+#print axioms WPd_nilF
 
 end Small
 end TRIO
