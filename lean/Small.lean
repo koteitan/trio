@@ -61416,5 +61416,48 @@ theorem R14_of_WPay (h : WPay) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ 
 
 #print axioms R14_of_WPay
 
+
+/-! ### `WStep0` のうち「文脈が 1 の枠で終わり、しかも `GCtx`」の場合は緑
+
+`APd_oneNil` は `Rq ks V` を要求するが、`ks = true :: ks'` なら `Rq` は真。
+だから `V = two nil nil` でも通る。残るのは `ks = false :: ks'`（走り）だけ。 -/
+
+theorem TwoOk_oneWV {V : Jk1} (hV : WV V) : TwoOk (Jk1.one V Jk1.nil) := by
+  rcases hV with rfl | rfl
+  · exact TwoOk_oneNil trivial TwoOk_nil
+      (fun C hC => TwoOk_pay C hC Jk1.nil trivial TwoOk_nil)
+  · exact TwoOk_oneTwoNil
+
+theorem APd_WV {V : Jk1} (hV : WV V) (ks : List Bool) : APd (true :: ks) V := by
+  rcases hV with rfl | rfl
+  · exact APd_nilT ks
+  · have h := TwoOk_nil Jk1.nil trivial (fun _ _ => APd_nil _) 0 ks
+    simpa using h
+
+theorem APd_oneWVnil (ks : List Bool) {V : Jk1} (hV : WV V) :
+    APd (true :: ks) (Jk1.one V Jk1.nil) := by
+  refine APd_oneNil (true :: ks) V (FrmJ_of_neA _ (by simp) V (WV_JkA hV))
+    (Rq_true ks V) (APd_WV hV ks) ?_
+  intro C hC
+  exact APd_payA (true :: ks) V (FrmJ_of_neA _ (by simp) V (WV_JkA hV))
+    (Rq_true ks V) (APd_WV hV ks) C hC
+
+/-- ★ `GCtx (true :: ks)` の文脈（＝ 1 の枠で終わる良い文脈）では `WStep0` は緑。 -/
+theorem WStep0_true (ks : List Bool) (ctx : List Frm) (hc : GCtx (true :: ks) ctx)
+    {V : Jk1} (hV : WV V) : GOK (plug ctx (Jk1.one V Jk1.nil)) :=
+  (APd_iff (true :: ks) _).mp (APd_oneWVnil ks hV) ctx hc
+
+/-- ★ 兄弟 `nil` の 2 の枠で終わる場合も緑。`TwoOk` の兄弟は `nil` なので
+全 shape の条件が `APd_nil` で満たされ、打ち止めの問題が起きない。 -/
+theorem WStep0_ftwo (kk : List Bool) (ctx : List Frm) (hc : GCtx (true :: kk) ctx)
+    {V : Jk1} (hV : WV V) :
+    GOK (plug (ctx ++ [Frm.ftwo Jk1.nil]) (Jk1.one V Jk1.nil)) := by
+  rw [plug_snoc2]
+  have h := TwoOk_oneWV hV Jk1.nil trivial (fun _ _ => APd_nil _) 0 kk
+  exact (APd_iff (true :: kk) _).mp (by simpa using h) ctx hc
+
+#print axioms WStep0_true
+#print axioms WStep0_ftwo
+
 end Small
 end TRIO
