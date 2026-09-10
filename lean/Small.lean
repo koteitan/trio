@@ -65009,6 +65009,179 @@ theorem R14_of_MRun (h : MRun) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ 
 #print axioms MRun_of_MNil
 #print axioms TowOk_of_MRun
 #print axioms R14_of_MRun
+
+
+/-! ### ★★★★★ `NPd`: `APd` から `Rq` だけを外した族
+
+`Rq (false::ks) U = TopOk U` は「2 の枠の直下の 1 の枠の木が
+2 の記録で始まってはいけない」＝ **走り禁止**。これが `APd_step` で
+`fone (two nil nil)` を止めていた。
+
+`MPd` は `Rq` を外したが、同時に兄弟条件を `∀ j, APd (rep j true ++ …) N` から
+`FrQ N` に変えてしまい、そちらが閉じなくなった（追記213）。
+`NPd` は **`Rq` だけ**を外し、兄弟条件は `APd` と同じ一様形のまま残す。
+
+停止性の測度は `APd` と同じ `(cntF ks, ks.length)`。 -/
+
+def NPd : List Bool → Jk1 → Prop
+  | [], V => GOK V
+  | (true :: ks), V => ∀ U : Jk1, FrmJ ks U → NPd ks U → NPd ks (Jk1.one U V)
+  | (false :: ks), V => ∀ (m : ℕ) (U N : Jk1),
+      FrmJ (List.replicate m true ++ ks) U →
+      NPd (List.replicate m true ++ ks) U → JkA N →
+      (∀ j : ℕ, NPd (List.replicate j true ++ (true :: (List.replicate m true ++ ks))) N) →
+      NPd (List.replicate m true ++ ks) (Jk1.one U (Jk1.two N V))
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem NPd_bnil (V : Jk1) : NPd [] V ↔ GOK V := by rw [NPd]
+
+theorem NPd_ct (ks : List Bool) (V : Jk1) :
+    NPd (true :: ks) V ↔ ∀ U : Jk1, FrmJ ks U → NPd ks U → NPd ks (Jk1.one U V) := by
+  rw [NPd]
+
+theorem NPd_cf (ks : List Bool) (V : Jk1) :
+    NPd (false :: ks) V ↔ ∀ (m : ℕ) (U N : Jk1),
+      FrmJ (List.replicate m true ++ ks) U →
+      NPd (List.replicate m true ++ ks) U → JkA N →
+      (∀ j : ℕ, NPd (List.replicate j true ++ (true :: (List.replicate m true ++ ks))) N) →
+      NPd (List.replicate m true ++ ks) (Jk1.one U (Jk1.two N V)) := by
+  rw [NPd]
+
+def NCtx : List Bool → List Frm → Prop
+  | [], ctx => ctx = []
+  | (true :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      NCtx ks ctx' ∧ FrmJ ks U ∧ NPd ks U
+  | (false :: ks), ctx => ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      NCtx (List.replicate m true ++ ks) ctx' ∧
+      FrmJ (List.replicate m true ++ ks) U ∧
+      NPd (List.replicate m true ++ ks) U ∧ JkA N ∧
+      (∀ j : ℕ, NPd (List.replicate j true ++ (true :: (List.replicate m true ++ ks))) N)
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem NCtx_bnil (ctx : List Frm) : NCtx [] ctx ↔ ctx = [] := by rw [NCtx]
+
+theorem NCtx_ct (ks : List Bool) (ctx : List Frm) :
+    NCtx (true :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      NCtx ks ctx' ∧ FrmJ ks U ∧ NPd ks U := by
+  rw [NCtx]
+
+theorem NCtx_cf (ks : List Bool) (ctx : List Frm) :
+    NCtx (false :: ks) ctx ↔ ∃ (m : ℕ) (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      NCtx (List.replicate m true ++ ks) ctx' ∧
+      FrmJ (List.replicate m true ++ ks) U ∧
+      NPd (List.replicate m true ++ ks) U ∧ JkA N ∧
+      (∀ j : ℕ, NPd (List.replicate j true ++ (true :: (List.replicate m true ++ ks))) N) := by
+  rw [NCtx]
+
+theorem NCtx_JkT : ∀ (ks : List Bool) (ctx : List Frm), NCtx ks ctx → ∀ X : Jk1,
+    FrmJ ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [NCtx_bnil] at h; subst h; exact hX
+  | (true :: ks), ctx, h, X, hX => by
+      rw [NCtx_ct] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      rw [plug_snoc]
+      exact NCtx_JkT ks ctx' hc' _ (FrmJ_one ks U X hU hX)
+  | (false :: ks), ctx, h, X, hX => by
+      rw [NCtx_cf] at h
+      obtain ⟨m, ctx', U, N, rfl, hc', hU, -, hJN, -⟩ := h
+      rw [plug_snoc12]
+      exact NCtx_JkT (List.replicate m true ++ ks) ctx' hc' _
+        (FrmJ_one _ U _ hU ⟨hJN, hX⟩)
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem NPd_iff : ∀ (ks : List Bool) (V : Jk1),
+    NPd ks V ↔ ∀ ctx : List Frm, NCtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [NPd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [NCtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((NCtx_bnil []).mpr rfl)
+  | (true :: ks), V => by
+      rw [NPd_ct]
+      constructor
+      · intro h ctx hc
+        rw [NCtx_ct] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (NPd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (NPd_iff ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((NCtx_ct ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | (false :: ks), V => by
+      rw [NPd_cf]
+      constructor
+      · intro h ctx hc
+        rw [NCtx_cf] at hc
+        obtain ⟨m, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩ := hc
+        rw [plug_snoc12]
+        exact (NPd_iff (List.replicate m true ++ ks) _).mp (h m U N hU hUk hJN hNt) ctx' hc'
+      · intro h m U N hU hUk hJN hNt
+        refine (NPd_iff (List.replicate m true ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc12]
+        exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
+          ((NCtx_cf ks _).mpr ⟨m, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩)
+termination_by ks _ => (cntF ks, ks.length)
+decreasing_by
+  all_goals
+    simp only [cntF_rep, cntF, List.length_append, List.length_replicate, List.length_cons]
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem NPd_step (ks : List Bool) {V W : Jk1} (hV : FrmJ ks V) (hVk : NPd ks V)
+    (hW : NPd (true :: ks) W) : NPd ks (Jk1.one V W) :=
+  (NPd_ct ks W).mp hW V hV hVk
+
+theorem NPd_congr : ∀ (ks : List Bool) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    NPd ks V1 → NPd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [NPd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+theorem NCtx_split (ks : List Bool) (ctx : List Frm) (h : NCtx (true :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ NCtx ks ctx0 ∧
+      FrmJ ks V ∧ GOK (plug ctx0 V) := by
+  rw [NCtx_ct] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (NPd_iff ks U).mp hUk ctx' hc'⟩
+
+theorem NPd_twoOf {ks : List Bool} {V N : Jk1} (hJN : JkA N)
+    (hNt : ∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N)
+    (hV : NPd (false :: ks) V) : NPd (true :: ks) (Jk1.two N V) :=
+  (NPd_ct ks _).mpr (fun U hU hUk =>
+    (NPd_cf ks V).mp hV 0 U N (by simpa using hU) (by simpa using hUk) hJN
+      (fun j => by simpa using hNt j))
+
+#print axioms NPd_iff
+#print axioms NCtx_JkT
+#print axioms NPd_twoOf
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
