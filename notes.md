@@ -19324,3 +19324,52 @@ cntF が小さい形だけなので届かない。
     WPd_step / WPd_twoOf / WCtx_rep / WPd_twoNilGen / WPd_nilF
     荷（AYdN / AYdTN の移植）/ WPd_oneNil / WPd_nilAll
     → 予算 1 の節で走り → #14
+
+## 追記241: ★★★★★★ 壁が破れた。`WPd_run` が無条件で緑
+
+2026-09-11。追記240 の続き。設計を 1 か所直したら走りが出た。
+
+### 直した所
+
+2 の枠の節が張る形を `0^m ++ ks` から **`r ++ ks`（`r` の入り目が全部 `k` 以下）** に広げた。
+
+    def WPd : List ℕ → Jk1 → Prop
+      | [], V => GOK V
+      | (0 :: ks), V => ∀ U, FrmN ks U → WPd ks U → WPd ks (one U V)
+      | ((k+1) :: ks), V => ∀ r, (∀ x ∈ r, x ≤ k) → ∀ U N,
+          FrmN (r ++ ks) U → WPd (r ++ ks) U → JkA N →
+          (∀ q, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ (r ++ ks)) N) →
+          WPd (r ++ ks) (one U (two N V))
+    termination_by  多重集合の DM 順序
+
+兄弟の形の頭を `0` に固定したのも要点。頭が `0` でないと `two X T` を
+その形に差すのが走りそのものになって循環する。
+
+この形で `WPd ((k+1)::ks) T → WPd ((k+1)::(a ++ ks)) T`（入り目 ≤ k の `a`）が出る
+（`WPd_ck_shift`）。荷の連鎖はこれで閉じる。
+
+### 走り
+
+    WPd_run : 1 ≤ k → ∀ ks, WPd ((k+1)::ks) (two nil nil)     無条件・緑
+
+証明。`WPd_ck` を開くと形 `B = r ++ ks` と兄弟 `N`（入り目 ≤ k の `(0::q) ++ B`
+すべてに差せる）が来る。`GOK_twoTwoNil_gen` の階段 `nstN N i` を
+
+    WPd (1 :: (1^t ++ B)) (nstN N i)
+
+の形で作る。`nstN N (i+1) = one nil (two N (nstN N i))` なので
+
+    WPd_step + WPd_twoOf(予算 0)
+      兄弟 N の要る形: (0 :: (q ++ 1^(t+1))) ++ B     入り目は 0 と 1 だけ
+      次の段:          WPd (1 :: (1^(t+1) ++ B)) (nstN N i)
+
+兄弟の要る形の入り目が **0 と 1 だけ**なので、予算 `k ≥ 1` の条件でちょうど覆える。
+
+`NPd` ではここで `cntF` が階段の高さ `i` だけ増えて非有界になり届かなかった。
+多重集合では `{1}*i < {2}` が全ての `i` について成り立つ。これが唯一の差。
+
+### 残り
+
+    AYdW / AYdTW    荷（pay）の移植。AYdTW は WPd_ck_shift で閉じる
+    WPd_oneNil / WPd_nilT / WPd_nilAll
+    WPd_TW / TowOk / #14
