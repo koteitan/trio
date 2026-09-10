@@ -64423,6 +64423,152 @@ theorem LAll1_twoNilA {N : Jk1} (hJN : JkA N) (hN : LAll N) :
 
 #print axioms StkOk_rep_fone
 #print axioms LOk_twoNilA
+
+/-! ### ★★★★★ `CtxX` は JkT のためだけ。`Rq` なしの版
+
+`GoodFb_snoc_innerJs` / `GoodFb_snoc_dupJs` の `hX : CtxX ctx X` は
+`JkT_plug` を作るためだけに使われている。`JkT (plug ctx T)` は
+`CtxOk ctx` があれば（`ctx ≠ []` なら先頭が 1 の枠なので）`JkA T` だけで出る。
+`ctx = []` のときだけ `TopOk T` が要る。 -/
+
+theorem JkA_plug' : ∀ (ctx : List Frm), CtxJ ctx → ∀ T : Jk1, JkA T → JkA (plug ctx T)
+  | [], _, _, hT => hT
+  | (Frm.fone _ :: rest), hc, T, hT => ⟨hc.1, JkA_plug' rest hc.2 T hT⟩
+  | (Frm.ftwo _ :: rest), hc, T, hT => ⟨hc.1, JkA_plug' rest hc.2.2 T hT⟩
+
+theorem JkT_plug' : ∀ (ctx : List Frm), CtxOk ctx → ∀ T : Jk1, JkA T →
+    (ctx = [] → TopOk T) → JkT (plug ctx T)
+  | [], _, _, hT, h0 => ⟨hT, h0 rfl⟩
+  | (Frm.fone _ :: rest), hc, T, hT, _ => ⟨⟨hc.1.1, JkA_plug' rest hc.2 T hT⟩, hc.1.2⟩
+  | (Frm.ftwo _ :: _), hc, _, _, _ => absurd hc (by simp [CtxOk])
+
+theorem GoodFb_snoc_innerJs' {ws : List Jk1} (hw : WOk ws) {ctx : List Frm}
+    (hc : CtxOk ctx) {X Z : Jk1} (hJX : JkA X) (h0 : ctx = [] → TopOk X)
+    (hZ : CtxT ctx Z) {Y : TrioSeq}
+    (hY : Bok Y) (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hIH : ∀ n, 1 ≤ n →
+      GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.one X (Jk1.pay Z (Y⟦n⟧)))]))) :
+    GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (Jk1.one X (Jk1.pay Z Y))])) :=
+  GoodFb_snoc_innerJs0 hw
+    (JkT_plug' ctx hc _ ⟨hJX, hZ, hY⟩ (fun e => h0 e)) hY hlen hp hIH
+
+theorem GoodFb_snoc_dupJs' {ws : List Jk1} (hw : WOk ws) {ctx : List Frm}
+    (hc : CtxOk ctx) {X Z : Jk1} (hJX : JkA X) (h0 : ctx = [] → TopOk X)
+    (hZ : CtxT ctx Z) {Y : TrioSeq}
+    (hY0 : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) (hY : Bok Y)
+    (hIH : ∀ n, 1 ≤ n →
+      GoodFb (fun a b => wordJ a b (ws ++ [plug ctx (itJ (Jk1.pay Z Y) n X)]))) :
+    GoodFb (fun a b => wordJ a b
+      (ws ++ [plug ctx (Jk1.one X (Jk1.pay Z (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))])) :=
+  GoodFb_snoc_dupJs0 hw
+    (JkT_plug' ctx hc _ ⟨hJX, hZ, hY0⟩ (fun e => h0 e)) hY0 hY hIH
+
+#print axioms JkT_plug'
+#print axioms GoodFb_snoc_innerJs'
+#print axioms GoodFb_snoc_dupJs'
+
+/-! ### ★★★★★ `AYs` を `CtxX` なしに（`Rq` が消える） -/
+
+theorem JkA_itJ' {T : Jk1} (hJT : JkA T) : ∀ (n : ℕ) {X : Jk1}, JkA X → JkA (itJ T n X)
+  | 0, _, hX => hX
+  | (n + 1), X, hX => ⟨JkA_itJ' hJT n hX, hJT⟩
+
+theorem GOK_chainJ' {ctx : List Frm} {X T : Jk1} (hJX : JkA X)
+    (h0 : ctx = [] → TopOk X) (hTok : CtxT ctx T) (hX : GOK (plug ctx X))
+    (hstep : ∀ V : Jk1, JkA V → (ctx = [] → TopOk V) → GOK (plug ctx V) →
+      GOK (plug ctx (Jk1.one V T))) :
+    ∀ n, GOK (plug ctx (itJ T n X))
+  | 0 => hX
+  | (n + 1) => hstep (itJ T n X) (JkA_itJ' hTok n hJX)
+      (fun e => TopOk_itJ T n (h0 e)) (GOK_chainJ' hJX h0 hTok hX hstep n)
+
+theorem AYs2 : ∀ (Y : TrioSeq), Bok Y → ∀ (ctx : List Frm), CtxOk ctx → ∀ (X Z : Jk1),
+    JkA X → (ctx = [] → TopOk X) → CtxT ctx Z →
+    (∀ V : Jk1, JkA V → (ctx = [] → TopOk V) → GOK (plug ctx V) →
+      GOK (plug ctx (Jk1.one V Z))) →
+    GOK (plug ctx X) →
+    GOK (plug ctx (Jk1.one X (Jk1.pay Z Y))) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ctx : List Frm), CtxOk ctx → ∀ (X Z : Jk1),
+      JkA X → (ctx = [] → TopOk X) → CtxT ctx Z →
+      (∀ V : Jk1, JkA V → (ctx = [] → TopOk V) → GOK (plug ctx V) →
+        GOK (plug ctx (Jk1.one V Z))) →
+      GOK (plug ctx X) → GOK (plug ctx (Jk1.one X (Jk1.pay Z Y)))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb ctx hc X Z hJX hT0 hZ hAP hGX
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact GOK_congr (fun l => (jk1_plug_congr ctx (jk1_one_pay_nil X Z) l).symm)
+          (hAP X hJX hT0 hGX)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        have hstep : ∀ V : Jk1, JkA V → (ctx = [] → TopOk V) → GOK (plug ctx V) →
+            GOK (plug ctx (Jk1.one V (Jk1.pay Z ([] : TrioSeq)))) := by
+          intro V hJV h0V hGV
+          exact GOK_congr (fun l => (jk1_plug_congr ctx (jk1_one_pay_nil V Z) l).symm)
+            (hAP V hJV h0V hGV)
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs' hw hc hJX hT0 hZ (by simpa using hYb) Bok_nil ?_
+        intro n hn
+        exact GOK_chainJ' (T := Jk1.pay Z ([] : TrioSeq)) hJX hT0
+          (CtxT_pay ctx hZ Bok_nil) hGX hstep n ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        rw [hsplit]
+        have hstep : ∀ V : Jk1, JkA V → (ctx = [] → TopOk V) → GOK (plug ctx V) →
+            GOK (plug ctx (Jk1.one V (Jk1.pay Z Y.dropLast))) :=
+          fun V hJV h0V hGV => hdl hdb ctx hc V Z hJV h0V hZ hAP hGV
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs' hw hc hJX hT0 hZ (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact GOK_chainJ' (T := Jk1.pay Z Y.dropLast) hJX hT0 (CtxT_pay ctx hZ hdb)
+          hGX hstep n ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs' hw hc hJX hT0 hZ hYb hlen2 hp ?_
+        intro n hn
+        have := hnat n hn
+        simp only [Set.mem_setOf_eq] at this
+        exact this (Bok_oper hYb hn) ctx hc X Z hJX hT0 hZ hAP hGX ws hw hG
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro Y hYb ctx hc X Z hJX hT0 hZ hAP hGX
+  exact key hYb.mem hYb ctx hc X Z hJX hT0 hZ hAP hGX
+
+#print axioms AYs2
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
