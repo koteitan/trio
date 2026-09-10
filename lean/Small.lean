@@ -66348,9 +66348,104 @@ theorem NPd_twoAnil_lift {A N : Jk1} (hJA : JkA A)
     (NCtx_JkT kk ctx hc _ (FrmJ_one kk U _ hU ⟨hJN, hJA, trivial⟩))
     hGU hstair
 
+/-- `NLift` を `false` について反復する。1 段上げから `false^i` ぶんの持ち上げが出る。 -/
+theorem NLift_iter (h : NLift) {N : Jk1} (hJN : JkA N) :
+    ∀ (i : ℕ) (ks : List Bool),
+      (∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) →
+      ∀ j : ℕ,
+        NPd (List.replicate j true ++ (true :: (List.replicate i false ++ ks))) N
+  | 0, ks, hNt => by simpa using hNt
+  | (i + 1), ks, hNt => by
+      have hi := NLift_iter h hJN i ks hNt
+      have hh := h N (List.replicate i false ++ ks) hJN hi
+      intro j
+      have e : List.replicate (i + 1) false ++ ks
+          = false :: (List.replicate i false ++ ks) := by
+        rw [List.replicate_succ]
+        rfl
+      rw [e]
+      exact hh j
+
+/-! ### 走りの意味版・仮定を 1 パラメータ族に弱めた形
+
+実測（塔 5 族 × 4 段）で、根から最内までの枠の列は常に `true^a ++ false^b` で、
+`a` は固定、動くのは `b` だけ。だから `∀ kk` は過剰で、
+`false^b ++ ks` の 1 パラメータ族だけあればよい。 -/
+
+theorem NPd_ABt_liftF {A N : Jk1} (hJA : JkA A) (hJN : JkA N) (ks : List Bool)
+    (hAb : ∀ b : ℕ, NPd (false :: (List.replicate b false ++ ks)) A)
+    (hNb : ∀ b j : ℕ,
+      NPd (List.replicate j true ++ (true :: (List.replicate b false ++ ks))) N) :
+    ∀ (n b : ℕ), NPd (false :: (List.replicate b false ++ ks)) (ABt [N] A n)
+  | 0, b => hAb b
+  | (n + 1), b => by
+      have e : List.replicate (b + 1) false ++ ks
+          = false :: (List.replicate b false ++ ks) := by
+        rw [List.replicate_succ]; rfl
+      show NPd (false :: (List.replicate b false ++ ks))
+        (Jk1.one A (Jk1.two N (ABt [N] A n)))
+      refine NPd_step (false :: (List.replicate b false ++ ks)) hJA (hAb b) ?_
+      refine NPd_twoOf hJN (fun j => ?_) ?_
+      · have hx := hNb (b + 1) j
+        rw [e] at hx
+        exact hx
+      · have h := NPd_ABt_liftF hJA hJN ks hAb hNb n (b + 1)
+        rw [e] at h
+        exact h
+
+theorem NPd_twoAnil_liftF {A N : Jk1} (hJA : JkA A) (hJN : JkA N) (ks : List Bool)
+    (hAb : ∀ b : ℕ, NPd (false :: (List.replicate b false ++ ks)) A)
+    (hNb : ∀ b j : ℕ,
+      NPd (List.replicate j true ++ (true :: (List.replicate b false ++ ks))) N)
+    (U : Jk1) (hU : FrmJ ks U) (hUk : NPd ks U) :
+    NPd ks (Jk1.one U (Jk1.two N (Jk1.two A Jk1.nil))) := by
+  rw [NPd_iff]
+  intro ctx hc
+  have hJBs : ∀ X ∈ [N], JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact hJN
+  have hGU : GOK (plug ctx U) := (NPd_iff ks U).mp hUk ctx hc
+  have hstair : ∀ n : ℕ, GOK (plug ctx (appJ U (UtwP [N] A n))) := by
+    intro n
+    cases n with
+    | zero => exact hGU
+    | succ n =>
+        have h : NPd ks (Jk1.one U (Jk1.two N (ABt [N] A n))) :=
+          NPd_step ks hU hUk
+            (NPd_twoOf hJN (fun j => by simpa using hNb 0 j)
+              (by simpa using NPd_ABt_liftF hJA hJN ks hAb hNb n 0))
+        exact (NPd_iff ks _).mp h ctx hc
+  show GOK (plug ctx (Jk1.one U (RunS ([N] ++ [A]))))
+  exact GOK_oneUV_RunSB ctx [N] A U hJBs hJA
+    (NCtx_JkT ks ctx hc _ (FrmJ_one ks U _ hU ⟨hJN, hJA, trivial⟩))
+    hGU hstair
+
+/-- 壁の 1 パラメータ版。`b = 0` は `NPd_cf` が無条件で供給する。 -/
+def NLiftB : Prop := ∀ (N : Jk1) (ks : List Bool), JkA N →
+    (∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) →
+    ∀ b j : ℕ,
+      NPd (List.replicate j true ++ (true :: (List.replicate b false ++ ks))) N
+
+theorem NLiftB_of_NLift (h : NLift) : NLiftB :=
+  fun N ks hJN hNt b j => NLift_iter h hJN b ks hNt j
+
+theorem NRunNil_of_NLiftB (h : NLiftB) : NRunNil :=
+  fun ks => (NPd_cf ks _).mpr (fun m U N hU hUk hJN hNt =>
+    NPd_twoAnil_liftF (A := Jk1.nil) trivial hJN _
+      (fun b => NPd_nilF _) (fun b j => h N _ hJN hNt b j) U hU hUk)
+
+/-- ★★★★★ #14 は 1 パラメータ版の壁 `NLiftB` から出る。 -/
+theorem R14_of_NLiftB (h : NLiftB) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_NRunNil (NRunNil_of_NLiftB h)
+
 #print axioms SbT_NST
 #print axioms SbT_YX2
 #print axioms NPd_twoAnil_lift
+#print axioms NLift_iter
+#print axioms NPd_twoAnil_liftF
+#print axioms R14_of_NLiftB
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

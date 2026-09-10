@@ -19001,3 +19001,43 @@ N の可差し性が 1 段深い形で要る。`SbT N`（形に依らない）�
     木で見た    経路は false^k。最内は常に false 文脈
     形で見た    要る条件は true^(j+1) ++ false^(k-1)、cntF が 1 段 1 増
     切り方      8 通り全部が SbF (two A nil) で止まる
+
+## 追記234: 壁の 1 パラメータ版 `NLiftB`。`b = 0` は無条件
+
+2026-09-11。追記233 の続き。
+
+### 実測（塔 5 族 × 4 段、20 例）
+
+根から最内までの枠の列は **常に `true^a ++ false^b`**。T と F が交互になることは
+一度も無い。しかも `a` は塔ごとに固定で、**増えるのは `b` だけ**。
+
+    one nil (two nil (two nil nil))            経路 F, FF, FFF, FFFF
+    one nil (two nil (two (two nil nil) nil))  経路 F, FF, FFF, FFFF   ← #14 の木
+    one nil (one nil (two nil (two nil nil)))  経路 TF, TFF, TFFF, TFFFF
+
+さらに **#14 の木だけ最内が `nil` に落ちない**:
+
+    #14 の木   最内 two (two nil nil) nil → two nil nil → two nil nil → …（止まる）
+    他の 4 族  最内 two nil nil → nil → nil → …（消える）
+
+`SbF_nstN_nil`（交互 nil 塔が `SbF`）が効くのは最内が `nil` に落ちる族で、
+#14 は落ちない。追記232 の「#14 の塔だけ `SbT`/`SbF` の外」を経路の側から見た形。
+
+### 新しく緑になったもの
+
+    NLift_iter (NLift) : ∀ i ks, (b=0 の条件) → ∀ j,
+      NPd (rep j true ++ (true :: (rep i false ++ ks))) N
+
+    NPd_ABt_liftF / NPd_twoAnil_liftF
+      仮定を `∀ kk` から `false^b ++ ks` の 1 パラメータ族に弱めた版
+
+    NLiftB : ∀ N ks, JkA N → (∀ j, NPd (rep j true ++ (true::ks)) N) →
+      ∀ b j, NPd (rep j true ++ (true :: (rep b false ++ ks))) N
+
+    NLiftB_of_NLift / NRunNil_of_NLiftB / R14_of_NLiftB
+
+**`b = 0` は `NPd_cf` が無条件で供給する。壁は `b` の段だけ。**
+
+ただし `b` の段は `NLift`（`ks' = rep b false ++ ks` に適用したもの）そのものなので、
+`NLift` と `NLiftB` は同値で、新しい帰納法が生えたわけではない。
+仮定の形が `List Bool` 全体の全称から 1 パラメータ族に落ちたのが利得。
