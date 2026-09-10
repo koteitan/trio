@@ -64951,6 +64951,30 @@ theorem MCw_twoAnil {A : Jk1} (hQA : FrQ A) (hA : MCw A) :
 
 #print axioms MCw_ABt
 #print axioms MCw_twoAnil
+
+/-! ### ★★★★★ `MBplus` の `two A nil` は `MNil` を経由しない
+
+`MBplus_two` は `MCw B` を使うので `B = nil` だと `MNil` に落ちるが、
+`MPd_twoNilGen` を直接使えば `MBplus A`（`A` は真部分木）だけで済む。
+これで `MBplus` の場合分けから `MNil` が消える。 -/
+
+theorem MBplus_one {A B : Jk1} (hQA : FrQ A) (hA : MBplus A) (hB : MBplus B) :
+    MBplus (Jk1.one A B) := by
+  intro j ks
+  rw [rep_true_cons]
+  refine MPd_step (true :: (List.replicate j true ++ ks))
+    (hQA.1 : FrmJ (true :: (List.replicate j true ++ ks)) A) hQA ?_ ?_
+  · have h := hA 0 (List.replicate j true ++ ks); simpa using h
+  · have h := hB 0 (true :: (List.replicate j true ++ ks)); simpa using h
+
+theorem MBplus_twoNil {A : Jk1} (hQA : FrQ A) (hA : MBplus A) :
+    MBplus (Jk1.two A Jk1.nil) := by
+  intro j ks
+  rw [rep_true_cons]
+  exact MPd_twoNilGen hQA hA _
+
+#print axioms MBplus_one
+#print axioms MBplus_twoNil
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

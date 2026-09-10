@@ -17928,3 +17928,64 @@ nil 限定の梯子では `NlOk_two` が `two nil Z` しか作れないので、
 
 2 つの手が逆向きなので、`(cntF, jsz)` の辞書式でも `(jsz, cntF)` でも
 `w*cntF + jsz` でも回らない。これが壁の測度的な正体。
+
+## 追記212: `MBplus` の場合分けから `MNil` が消えた
+
+2026-09-10。追記211 の続き。
+
+### 新しく緑になったもの
+
+    MBplus_one    {A B} (FrQ A) (MBplus A) (MBplus B) : MBplus (one A B)
+    MBplus_twoNil {A}   (FrQ A) (MBplus A)            : MBplus (two A nil)
+
+`MBplus_two : FrQ A → MCw B → MBplus (two A B)` を `B = nil` に使うと
+`MCw nil` = `MNil` に落ちてしまうが、`MPd_twoNilGen` を直接使えば
+`MBplus A`（A は真部分木）だけで済む。
+
+### 場合分けの現状（更新）
+
+    MBplus X:
+      X = nil          MPd_oneNil + MPd 層の荷      未（移植）
+      X = pay A C      MPd 層の荷                   未（移植）
+      X = one A B      MBplus_one                   緑
+      X = two A nil    MBplus_twoNil                緑 ← 新（MNil 不要）
+      X = two A B  B≠nil  MBplus_two ← MCw B        MCw B に落ちる
+
+    MCw X:
+      X = nil          MNil                         未（壁）
+      X = pay A C      MPd 層の荷                   未（移植）
+      X = one A B      MCw_one ← MCw A, MBplus B    緑
+      X = two A nil    MCw_twoAnil ← MCw A          緑
+      X = two A B  B≠nil                            未（壁）
+
+`MNil ⟸ (∀ N, FrQ N → MBplus N)` なので、循環はいま
+
+    MNil → MBplus N → （N が two A B, B≠nil のとき）MCw B → … → MCw nil = MNil
+
+の 1 本だけ。`two A nil` の場合が抜けたので、循環は
+**「上に何か乗った 2 の記録」＝ 走り**だけを通る。
+
+### 走りが `RunS` の機械で扱えない理由（BM4 側）
+
+`GOK_oneUV_genM` の仮定 `hVs : ∀ d, jk1 d V = jk1 d Vd ++ [(d+dl,2,0)]` は
+「V の語は最後の 1 列が 2 の記録」を要求する。`V = two N (two A B)` だと
+語は `jk1 d N ++ (d+1,2,0) :: jk1 (d+1) A ++ (d+2,2,0) :: jk1 (d+2) B` で、
+`B ≠ nil` なら最後の列は B の中にある。つまり
+
+**塔の機械は「走りが語の末尾で終わる」ときにしか使えない。**
+
+B が乗っていると、展開の bad root が B の中に入るので、B の構造で
+場合分けし直すことになり、それが `MCw B` の再帰そのもの。
+
+### 形の言語を広げても同じ
+
+枠の並びに制限を付けない族
+
+    QPd []          V = GOK V
+    QPd (true::ks)  V = ∀ U, … → QPd ks (one U V)
+    QPd (false::ks) V = ∀ N, FrQ N → QPd ks (two N V)
+
+は `ks.length` の再帰で定義できて、2 の枠が 2 枚続く形
+`QPd (false::false::ks)` も書ける。しかし `QPd (false::ks) nil` を開くと
+`QPd ks (two N nil)` で、ks の頭が false ならまた走り。
+形の言語を広げても壁は動かない。
