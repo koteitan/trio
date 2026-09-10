@@ -61594,5 +61594,72 @@ theorem NTw_twoNilNil (q : ℕ) : NTw q (Jk1.two Jk1.nil Jk1.nil) :=
 #print axioms NTw_NoRun_all
 #print axioms NTw_twoNilNil
 
+
+/-! ### ★★★★★ 壁を木の帰納で 1 文にする: `TTwo`
+
+木 `X` について 2 つの述語を置く。
+
+    STw X = ∀ q, NTw q X          （どのレベルの 1 の枠止まりの文脈にも差せる）
+    TTw X = ∀ q, TwOk (q+1) 0 X   （どのレベルの 2 の枠の直上にも差せる）
+
+`X` の構造帰納で
+
+    X = nil        : STw ✓（NTw_nil）        TTw ✓（TwOk_twoNilE）
+    X = one A B    : STw ⟸ STw A, STw B      TTw ⟸ TTw A, STw B
+    X = pay A Y    : STw ⟸ STw A             TTw ⟸ TTw A
+    X = two A B    : STw ⟸ STw A, TTw B      TTw = **壁**
+
+が全部緑。抜け穴は最後の 1 マスだけ。それを `TTwo` と名付ける。
+`TTwo` の最小の場合 `A = B = nil` が `WallT`。 -/
+
+/-- どのレベルの 1 の枠止まりの文脈にも差せる。 -/
+def STw (X : Jk1) : Prop := ∀ q : ℕ, NTw q X
+
+/-- どのレベルの 2 の枠の直上にも差せる。 -/
+def TTw (X : Jk1) : Prop := ∀ q : ℕ, TwOk (q + 1) 0 X
+
+/-- ★ 残る 1 文。2 の記録の直上に 2 の記録を置く。 -/
+def TTwo : Prop := ∀ A B : Jk1, JkA A → JkA B → STw A → TTw B → TTw (Jk1.two A B)
+
+/-- ★★★★★ `TTwo` さえあれば、どの木も両方を満たす。 -/
+theorem STw_TTw (h : TTwo) : ∀ (X : Jk1), JkA X → STw X ∧ TTw X
+  | Jk1.nil, _ => ⟨NTw_nil, fun q => TwOk_twoNilE q⟩
+  | Jk1.one A B, hJ => by
+      obtain ⟨hSA, hTA⟩ := STw_TTw h A hJ.1
+      obtain ⟨hSB, -⟩ := STw_TTw h B hJ.2
+      refine ⟨?_, ?_⟩
+      · intro q j D hD hf
+        exact TwOk_one q j hJ.1 (fun D' hD' => hSA q j D' hD' hf)
+          (fun D' hD' => hSB q (j + 1) D' hD' (Fter_succ q j)) D hD
+      · intro q
+        exact TwOk_one (q + 1) 0 hJ.1 (hTA q)
+          (fun D' hD' => hSB (q + 1) 1 D' hD' (Fter_succ (q + 1) 0))
+  | Jk1.two A B, hJ => by
+      obtain ⟨hSA, -⟩ := STw_TTw h A hJ.1
+      obtain ⟨-, hTB⟩ := STw_TTw h B hJ.2
+      exact ⟨fun q j D hD hf => TwOk_two hJ.1 (hSA q) hf (hTB q) D hD,
+        h A B hJ.1 hJ.2 hSA hTB⟩
+  | Jk1.pay A Y, hJ => by
+      obtain ⟨hSA, hTA⟩ := STw_TTw h A hJ.1
+      refine ⟨?_, ?_⟩
+      · intro q j D hD hf
+        exact TwOk_pay q j hJ.1 (fun D' hD' => hSA q j D' hD' hf) Y hJ.2 D hD
+      · intro q
+        exact TwOk_pay_e q Y hJ.2 A hJ.1 (hTA q)
+
+theorem NTwUp_of_TTwo (h : TTwo) : NTwUp :=
+  fun N _ hJN _ q => (STw_TTw h N hJN).1 q
+
+theorem WallT_of_TTwo (h : TTwo) : WallT := WallT_of_NTwUp (NTwUp_of_TTwo h)
+
+/-- ★★★★★ シート #14 は `TTwo` から出る。 -/
+theorem R14_of_TTwo (h : TTwo) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_NTwUp (NTwUp_of_TTwo h)
+
+theorem TowOk_of_TTwo (h : TTwo) : TowOk := TowOk_of_NTwUp (NTwUp_of_TTwo h)
+
+#print axioms STw_TTw
+#print axioms R14_of_TTwo
+
 end Small
 end TRIO
