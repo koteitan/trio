@@ -1,114 +1,77 @@
-# 残っている壁
+# 残っている壁（1 文）
 
 トリオ数列（3 行バシク行列, BM4, z < 2 の断片）の停止性証明。
 
-2026-09-10 更新。
+2026-09-10 更新。`OneNil` が最終形。
 
-## 壁は `RPay`（荷を 1 個吊るす）1 本
+## 結論の 1 文
 
-    RPay : ∀ (D : List Frm) (V : Jk1), JkA V →
-        (∀ X, JkA X → JkT (plug D (one V X))) → GOK (plug D V) →
-        ∀ C, Bok C → GOK (plug D (pay V C))
+    OneNil : ∀ (D : List Frm) (W : Jk1), JkA W →
+        (∀ X, JkA X → JkT (plug D (one W X))) →
+        GOK (plug D W) → GOK (plug D (one W nil))
+
+**「置ける `W` の上に裸の 1 の記録を 1 個積める」— これだけ。**
 
 **シートの 2 行が両方これ 1 本から出る**（Lean で緑）:
 
-    R14_of_RPay  : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
-    R376_of_RPay : RPay → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
-    R376_of_RStep0 : RStep0 → 目標の行（RStep0 = 裸の 1 の記録を 1 個積む）
+    R14_of_OneNil  : OneNil → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+    R376_of_OneNil : OneNil → (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
+    OneNil_of_RPay : RPay   → OneNil
 
-## 証明中の行（#14）は `TWStep` 1 本（基底は無条件）
+## #14 の道
+
+    OneNil
+      ↓ OneTwo_of_OneNil
+    OneTwo : GOK (plug D W) → GOK (plug D (one W (two nil nil)))
+      ↓ TWStep_of_OneTwo
+    TWStep : GOK (plug D (two nil nil)) → GOK (plug D (TW 1))
+      ↓ TowOk_of_TWStep
+    TowOk → R14_mem
+
+各段は `GOK_oneUV_RunSB`（走り、兄弟任意）＋ `GOK_appJ_UtwP`（塔を 1 ブロックに割る）。
+基底 `plug TWD0 (two nil nil) = one nil (stk 2)` は `GOK_oneStk2`（既存、無条件）。
 
     TW 0 = two nil nil,  TW (n+1) = one (two nil nil) (two nil (TW n))
-    TWBlk = [fone (two nil nil), ftwo nil]
-    TWD0  = [fone nil, ftwo nil]
-
+    TWBlk = [fone (two nil nil), ftwo nil],  TWD0 = [fone nil, ftwo nil]
     plug (D ++ TWBlk) X = plug D (one (two nil nil) (two nil X))
     plug D (TW (n+1))   = plug (D ++ TWBlk) (TW n)
 
-文脈を `RFam [TWBlk] TWD0` について全称にすると `n` の帰納で `TW 0` に落ちる。
-基底は
+## 行376 の道
 
-    plug TWD0 (two nil nil) = one nil (stk 2)
-    GOK_oneStk2 : GOK (one nil (stk 2))       ← 既存、無条件で緑
+    OneNil → RStepN0 → RStepN_rep → GOK_Utw_of_RStepN0 → UtwAll → R376_of_UtwAll
 
-なので消える。残る 1 文は
+    Utw p n = UtwR (replicate p nil) n
+    RBlk As = fone nil :: As.map ftwo
+    plug (D ++ RBlk As) X = plug D (one nil (RunP As X))
 
-    TWStep : ∀ D ∈ RFam [TWBlk] TWD0,
-        GOK (plug D (two nil nil)) →
-        GOK (plug D (one (two nil nil) (two nil (two nil nil))))
+## `OneNil` の中身
 
-**「`two nil nil` が置ける文脈には `TW 1` も置ける」— これだけ。**
+`APnil_gen0`（緑、文脈一般）で
 
-    R14_of_TWStep : TWStep → シート証明中の行
+    OneNil ⟸ ∀ C, Bok C → GOK (plug D (pay W C))     ＝ RPay（荷 1 個）
 
-## いまの理解（要約）
+文脈の末尾で場合分けすると
 
-- 明示文脈で組み直す道は**梯子 `TwSt` を再現する**。梯子の唯一の穴は `Fter`
-  （2 の枠の直上に 2 の枠を積めない）で、それが `WallT`。
-- ただし**荷の障害は消えた**: `TSib_pay` / `TSibF_pay`（2 の枠側の荷）が
-  梯子なしで緑になった。`TwOk_pay_e` の一般化で `Fter` を要求しない。
-- 残るのは `GOK_twoNil_gen` / `GOK_twoTwoNil_gen` が `ctx0 ++ [fone V]`
-  （1 の枠止まり）を要求すること。2 の枠止まりだとバッドルートが
-  1 つ前の 1 の枠まで戻り、ブロックが**走り全体**を含む。それが
-  `GOK_oneUV_RunSB`（走りを吸収したブロック `RunS`、塔 `UtwP`）で、
-  その階段が `RStep` に落ちる。ここが不動点。
+    D = []      : AY0（緑、無条件）
+    末尾 fone U : AYs / AYsF（緑）
+    末尾 ftwo N : TSib_pay / TSibF_pay（緑、梯子なし）
 
-## 目標の行（行376）は `RPayN0` 1 本
+兄弟の族に制限した版も両側とも緑（`OChain` / `TChain`）。
+残るのは測度（下記）。
 
-    RPayN0 : ∀ D, (∀ X, JkA X → JkT (plug D (one nil X))) → GOK (plug D nil) →
-        ∀ C, Bok C → GOK (plug D (pay nil C))
+## 残っている測度の問題
 
-    R376_of_RPayN0  : RPayN0  → 目標の行
-    R376_of_RStepN0 : RStepN0 → 目標の行
-    RStepN0 : ∀ D, (JkT 閉包) → GOK (plug D nil) → GOK (plug D (one nil nil))
+    木の構造で降りる: 木が縮む、文脈が 1 伸びる
+    荷（APnil_gen0）: 文脈が 1 縮む、木は任意（兄弟 `W`）
 
-行376 の連鎖では兄弟も木も全部 `nil`、文脈も
-`[fone nil] ++ (ftwo nil)^q` のブロックの積み重ね（枠の木は全部 nil）。
-だから仮定を `nil` に固定できる。
+再帰は `(k, V) → (k + jsz V, nil) → (k + jsz V - 1, 任意の W)` となり、
+レベルが `jsz V` 上がってから 1 だけ下がる。`W` が無制限なので止まらない。
+梯子 `TwSt` は「その形の**全文脈**で良い」を持つので木を積み上げるだけで済み、
+この再帰が起きない。**明示文脈の道は梯子を再現する。**
 
-    末尾 fone nil : GOK (plug D' (one nil (pay nil C)))  ← AYs、OSib D' nil が要る
-    末尾 ftwo nil : GOK (plug D' (two nil (pay nil C)))  ← TSib_pay、TSib D' nil が要る
-    D = []        : AY0（緑、無条件）
-
-## 兄弟について全称な 2 つの述語
-
-    OSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (one W X))
-    TSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (two W X))
-
-    plug (D ++ [fone W]) X = plug D (one W X)
-    plug (D ++ [ftwo W]) X = plug D (two W X)
-
-木の構造で 1 段降りる補題（全部緑）:
-
-    OSib D (one A B) ⟸ OSib D A, ∀W OSib (D ++ [fone W]) B
-    OSib D (two A B) ⟸ OSib D A, ∀W TSib (D ++ [fone W]) B
-    TSib D (one A B) ⟸ TSib D A, ∀W OSib (D ++ [ftwo W]) B
-    TSib D (two A B) ⟸ TSib D A, ∀W TSib (D ++ [ftwo W]) B
-    TSib D (pay A Y) ⟸ TSib D A                     ← TSib_pay（緑、梯子なし）
-    OSib D (pay A Y) ⟸ OSib D A                     ← AYs（緑、CtxX 付き）
-    OSib D nil       ⟸ ∀W 荷を吊るせる              ← APnil_gen0
-    TSib D nil       ⟸ ?                             ← GOK_twoNil_gen、階段が要る
-
-荷の側:
-
-    RPay_nil  : D = []           → AY0（緑、無条件）
-    RPay_fone : D = ctx ++ [fone X] → AYs（緑）
-    RPay_ftwo : D = ctx ++ [ftwo N] → TSib ctx V（TSib_pay で緑）
-
-## 残っているのは測度
-
-    木の構造で降りる:   木が縮む、文脈が 1 伸びる
-    荷（APnil_gen0）:   文脈が 1 縮む、木は任意（兄弟 `W`）
-
-この 2 方向を同時に減らす測度が無い。`OSib D nil` が兄弟 `W` の荷を要求し、
-`W` の大きさが文脈の長さと無関係だから。
-
-**ただし `OSib` / `TSib` の「兄弟について全称」は強すぎる。** 梯子（`TwSt`）が
-実際に使うのは
-- `TwOk_nil` … 文脈の枠の木 `U`（任意の兄弟ではない）
-- `AYs` の `hAP` … `X` とその横鎖 `itJ (pay Z Y') k X`
-だけ。つまり兄弟は「文脈の枠の木から鎖で生成される族」に制限してよい。
-`RFam` / `RFam_GOK` がその形。次はこれ。
+梯子の唯一の穴は `Fter`（2 の枠の直上に 2 の枠を積めない）＝ `WallT`。
+ただし荷の障害は消えた（`TSib_pay` は `Fter` を要求しない）。残るのは
+`GOK_twoNil_gen` / `GOK_twoTwoNil_gen` が「1 の枠止まりの文脈」を要求すること。
 
 ## 壁の正体は「レベル ⇄ 走りの長さ」の交換
 
@@ -117,25 +80,20 @@
 レベルが 1 下がるかわりに走りが 1 本伸びる。追記171 の「非可述性の正体は
 2 の枠の本数」と、走りの長さの帰納（`WRunB`）は同じものの 2 つの見方だった。
 
-## 連鎖（全部 Lean で緑）
-
-    RPay
-      ↓ APnil_gen0                     ↓ RStep_of_RPay（木の帰納）
-    RStep0                             RStep Bs B
-      ↓ RStep_rep                       ↓ RStep_snoc, WallT_of_RStep
-    UtwAll → 目標の行（行376）          WallT → 証明中の行（#14）
-
 ## 部品（緑）
 
-    AY0 / AYs / APnil_gen0 / TSib_pay / GOK_twoIt_chain
-    OSib / TSib / OSib_one / OSib_two / TSib_one / TSib_two
-    RPay_nil / RPay_fone / RPay_ftwo / OSib_nil_of_pay
+    AY0 / AYs / AYsF / OChain / GOK_chainJF / APnil_gen0
+    TSib_pay / TSibF_pay / TChain / GOK_twoIt_chainF / GOK_twoIt_chain
+    OSib / TSib / TSibF / SelfW / TSib_nil_of_SelfW / TSibF_nil_of_SelfW
+    OneNil / OneTwo / TWStep / TWBlk / TWD0 / TowOk_of_TWstep / GOK_oneStk2
+    RStepN / RStepN_rep / RStep / RStep_of_RPay / RStep_snoc / RStep_rep
     RunP / RunS / UtwP / UtwR / PBlk / RBlk / ABt / RFam / RFam_GOK
-    NFam / NFam_GOK / JkT_RFam_PBlk / JkT_RFam_RBlk
+    GOK_appJ_UtwP / GOK_two_UtwP / GOK_ABt_of_step / NFam / NFam_GOK
+    JkT_RFam_PBlk / JkT_RFam_RBlk / JkT_RFam_TWBlk
     My_RunP / hMy_RunP / jk1_RunS_snocB / jsz / jsz_RunP
-    GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM
+    GOK_oneNN_genM / GOK_blkNN_genM / GOK_oneUV_genM / GOK_oneUV_RunSB
     TwSt_split3 / GOK_oneN_split / GOK_blkN_split / plug_blk2
-    WRep / GOK_twoTwoNil_rep / NoRun / NTw_of_NoRun / STw_TTw
+    WRep / GOK_twoTwoNil_rep / NoRun / NTw_of_NoRun / STw_TTw / WallT_of_TSib
 
 ## 木の帰納の表（レベル添字版、参考）
 
@@ -359,4 +317,4 @@
 ## 参考
 
 Lean のファイルは `lean/Small.lean`（約 61000 行、緑、`sorryAx` なし）。
-経緯は `notes.md` の追記175〜199。
+経緯は `notes.md` の追記175〜200。
