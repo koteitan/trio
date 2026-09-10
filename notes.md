@@ -17260,3 +17260,37 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
    階段は `plug (replicate m (fone W)) W`（`W` の 1 の記録の鎖）で、
    `OSib` を伸びる文脈で使う。
 2. 上の測度。
+
+## 追記196: `TSib D nil` は「`W` を自分の上に積み続けられる」1 文（1 の枠止まりの文脈）
+
+### `SelfW`
+
+    SelfW D W : ∀ k, GOK (plug (D ++ (fone W)^k) W)
+
+`GOK_twoNil_gen` の階段は `plug (replicate m (fone W)) W`（`W` の 1 の記録の鎖）で、
+`plug_append` により `plug (D ++ replicate m (fone W)) W` と同じ。だから
+`SelfW` がそのまま階段になる。
+
+    TSib_nil_of_SelfW : （D = ctx0 ++ [fone V]）∀W SelfW D W → TSib D nil
+    SelfW_of_OSib     : GOK (plug D W) → (∀k OSib (D ++ (fone W)^k) W) → SelfW D W
+
+### 壁は `TSib D (two nil nil)` 1 本
+
+    WallT_of_TSib : (∀ r m D, TwSt r m D → Fter r m → TSib D (two nil nil)) → WallT
+    R14_of_TSib
+
+`TSib D (two nil nil)` は `TSib_two` で
+
+    TSib D nil                  （1 の枠止まりなら SelfW で出る）
+    ∀W, TSib (D ++ [ftwo W]) nil （2 の枠止まり ＝ 走り ＝ 壁）
+
+の 2 つに割れる。後者は `two W (two W' nil) = RunS [W, W']` なので
+`GOK_oneUV_RunSB` の形（走り 2、兄弟は任意）で、`RStep [W] W'` が要る。
+
+### 残っている 3 つ
+
+1. `OSib D nil` … 任意の兄弟 `W` に荷を吊るす（測度の問題）
+2. `TSib D nil` が 2 の枠止まりの文脈のとき（走り）
+3. `SelfW D W` … `OSib` を伸びる文脈で使う
+
+どれも「木が縮む/文脈が伸びる」対「荷で文脈が縮む/木が任意」の測度に帰する。
