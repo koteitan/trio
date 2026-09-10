@@ -16449,3 +16449,44 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
     走り + 荷 → 層は走りを表現できない
 
 これが最後の 1 点。
+
+## 追記178: `WStep0` の中身は「荷 1 個」だけ。`APd` の壁は仮定で回避できる
+
+### `WStep0` を `APd` で埋めようとした結果
+
+`APd ks (one V nil)` を ks で場合分けすると
+
+    ks = true :: ks'   → APd_oneNil で出る（Rq (true::ks) = True）
+                          APd (true::ks') nil            = APd_nilT
+                          APd (true::ks') (two nil nil)  = TwoOk_nil を N=nil で使う
+    ks = false :: ks'  → APd_cf を開くと N の条件が「その kk だけ」（打ち止め）。
+                          TwoOk は N の全 shape を要求するので当たらない。
+
+ただし `APd_cf` を開いて `APd_iff` に落とすと、要るのは
+
+    APnil_gen0 (ctx ++ [fone U, ftwo N]) V hJT (GOK (plug … V)) (hang)
+
+だけ。**`GOK (plug ctx V)` は `WStep0` の仮定として与えられている**ので、
+`APd (false::ks) (two nil nil)`（= 走り 2 の壁）を通らずに済む。
+
+つまり `WStep0` は `APd` の壁（`Rq (false::ks) U = TopOk U`、追記177）を
+**仮定で迂回できている**。残るのは `hang` だけ。
+
+    hang : ∀ C, Bok C → GOK (plug ctx (Jk1.pay V C))        V ∈ {nil, two nil nil}
+
+### 荷が最後の 1 個
+
+    ctx = []      → AY0（緑、無条件）。荷の複製が項ごとの繰り返しで済む
+    ctx ≠ []      → AYs が使えるが hAP の W が無制限（追記177）
+                     層（Cok/Pok）は荷を解いているが走りを表現できない
+
+`WStep0` / `WPay` は #14 と行376 の**共通の最後の 1 個**。
+これ以上の分解は見つかっていない。次は
+
+  - `AYs` を「`hAP` を族に制限した版」に書き直す（`hAP` が当たるのは
+    `X` と鎖 `itJ (pay Z Y') k X` だけ、追記177）
+  - または `plug ctx (pay V C)` を直接 `GoodFb` の 3 フィールドで組む
+    （`GOK_oneUV_gen` / `GOK_blkNN_gen` と同じ書き方。`snocYd_mem` ではなく
+     `GoodFb_snoc_dupJs0` / `innerJs0` / `dupJt0` / `innerJt0` を使う）
+
+の 2 つ。
