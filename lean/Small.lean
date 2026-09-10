@@ -66102,6 +66102,81 @@ theorem NPd_true_of_PlainU : ∀ {N : Jk1}, PlainU N → ∀ kk : List Bool, NPd
 #print axioms NPd_nstN_lift
 #print axioms NPd_twoTwoGen_lift
 #print axioms NPd_true_of_PlainU
+
+/-! ### ★★★★★ 安全な兄弟の族の最大形 `SbT` / `SbF`
+
+`NPd (true::kk) N` が閉じる族 `SbT` と `NPd (false::kk) N` が閉じる族 `SbF` を
+相互帰納で定義する。
+
+    SbT : nil | pay | one(SbT,SbT) | two(SbT,SbF) | ttwo(SbT)
+    SbF : nil | pay | one(SbF,SbT)
+
+`SbF` に `two` の節が無いのが壁。`SbT` は `two A B` を `SbF B` の範囲で許すので、
+**荷を乗せた 2 の記録 `two A (pay Z Y)`（`SbF Z`）も入る**。 -/
+
+mutual
+inductive SbT : Jk1 → Prop where
+  | nil : SbT Jk1.nil
+  | pay : ∀ {A : Jk1} {Y : TrioSeq}, SbT A → Bok Y → SbT (Jk1.pay A Y)
+  | one : ∀ {A B : Jk1}, SbT A → SbT B → SbT (Jk1.one A B)
+  | two : ∀ {A B : Jk1}, SbT A → SbF B → SbT (Jk1.two A B)
+  | ttwo : ∀ {A : Jk1}, SbT A → SbT (Jk1.two A (Jk1.two Jk1.nil Jk1.nil))
+inductive SbF : Jk1 → Prop where
+  | nil : SbF Jk1.nil
+  | pay : ∀ {A : Jk1} {Y : TrioSeq}, SbF A → Bok Y → SbF (Jk1.pay A Y)
+  | one : ∀ {A B : Jk1}, SbF A → SbT B → SbF (Jk1.one A B)
+end
+
+mutual
+theorem JkA_of_SbT : ∀ {N : Jk1}, SbT N → JkA N
+  | _, SbT.nil => trivial
+  | _, SbT.pay h hY => ⟨JkA_of_SbT h, hY⟩
+  | _, SbT.one hA hB => ⟨JkA_of_SbT hA, JkA_of_SbT hB⟩
+  | _, SbT.two hA hB => ⟨JkA_of_SbT hA, JkA_of_SbF hB⟩
+  | _, SbT.ttwo hA => ⟨JkA_of_SbT hA, trivial, trivial⟩
+theorem JkA_of_SbF : ∀ {N : Jk1}, SbF N → JkA N
+  | _, SbF.nil => trivial
+  | _, SbF.pay h hY => ⟨JkA_of_SbF h, hY⟩
+  | _, SbF.one hA hB => ⟨JkA_of_SbF hA, JkA_of_SbT hB⟩
+end
+
+mutual
+theorem NPd_true_of_SbT : ∀ {N : Jk1}, SbT N → ∀ kk : List Bool, NPd (true :: kk) N
+  | _, SbT.nil, kk => NPd_nilT kk
+  | _, SbT.pay hA hY, kk =>
+      NPd_payA (true :: kk) _ (JkA_of_SbT hA) (NPd_true_of_SbT hA kk) _ hY
+  | _, SbT.one hA hB, kk =>
+      NPd_step (true :: kk) (JkA_of_SbT hA) (NPd_true_of_SbT hA kk)
+        (NPd_true_of_SbT hB (true :: kk))
+  | _, SbT.two hA hB, kk =>
+      NPd_twoOf (JkA_of_SbT hA)
+        (fun j => by
+          rw [rep_true_cons]
+          exact NPd_true_of_SbT hA (List.replicate j true ++ kk))
+        (NPd_false_of_SbF hB kk)
+  | _, SbT.ttwo hA, kk =>
+      NPd_twoTwoGen_lift (JkA_of_SbT hA) (fun kk' => NPd_true_of_SbT hA kk') kk
+theorem NPd_false_of_SbF : ∀ {N : Jk1}, SbF N → ∀ kk : List Bool, NPd (false :: kk) N
+  | _, SbF.nil, kk => NPd_nilF kk
+  | _, SbF.pay hA hY, kk =>
+      NPd_payA (false :: kk) _ (JkA_of_SbF hA) (NPd_false_of_SbF hA kk) _ hY
+  | _, SbF.one hA hB, kk =>
+      NPd_step (false :: kk) (JkA_of_SbF hA) (NPd_false_of_SbF hA kk)
+        (NPd_true_of_SbT hB (false :: kk))
+end
+
+/-- 荷を乗せた 2 の記録も安全な兄弟になる。 -/
+theorem SbT_twoPay {A Z : Jk1} {Y : TrioSeq} (hA : SbT A) (hZ : SbF Z) (hY : Bok Y) :
+    SbT (Jk1.two A (Jk1.pay Z Y)) := SbT.two hA (SbF.pay hZ hY)
+
+theorem SbF_le_SbT : ∀ {N : Jk1}, SbF N → SbT N
+  | _, SbF.nil => SbT.nil
+  | _, SbF.pay hA hY => SbT.pay (SbF_le_SbT hA) hY
+  | _, SbF.one hA hB => SbT.one (SbF_le_SbT hA) hB
+
+#print axioms NPd_true_of_SbT
+#print axioms NPd_false_of_SbF
+#print axioms SbF_le_SbT
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

@@ -18716,3 +18716,55 @@ k = 1 で既に `NLift` が要る。
 （`two A B`、B ≠ nil）があるときだけ。**
 
 兄弟が nil（追記220）や `PlainT`（今回）なら走りは無条件で置ける。
+
+## 追記228: 安全な兄弟の族 `SbT` / `SbF`。壁は「`SbF` に `two` の節が無い」
+
+2026-09-10。追記227 の続き。
+
+### 新しく緑になったもの
+
+    mutual
+    inductive SbT : nil | pay(SbT) | one(SbT,SbT) | two(SbT,SbF) | ttwo(SbT)
+    inductive SbF : nil | pay(SbF) | one(SbF,SbT)
+    end
+
+    JkA_of_SbT / JkA_of_SbF
+    NPd_true_of_SbT  : SbT N → ∀ kk, NPd (true :: kk) N     （無条件）
+    NPd_false_of_SbF : SbF N → ∀ kk, NPd (false :: kk) N    （無条件）
+    SbF_le_SbT       : SbF N → SbT N
+    SbT_twoPay       : SbT A → SbF Z → Bok Y → SbT (two A (pay Z Y))
+
+`SbT` は `two A B` を `SbF B` の範囲で許すので、**荷を乗せた 2 の記録
+`two A (pay Z Y)` も安全な兄弟に入る**（追記227 の宿題が片付いた）。
+
+### 壁の位置が 1 つの節に一致した
+
+    SbT : nil | pay | one | two(SbT,SbF) | ttwo      ← 全部緑
+    SbF : nil | pay | one                            ← two の節だけ無い
+
+**壁 = `SbF` に `two` の節を足すこと** ＝ `NPd (false::ks) (two A nil)`
+＝ 2 の記録を 2 の枠の直上に置く。`NPd_twoAnil_of_NLift`（緑）が
+`NLift` からそれを与える。
+
+### 3 すくみ（追記221）の再検討
+
+`SbT` / `SbF` は形に依らない述語なので、走りの階段（`nstN`）も荷の塔（`twoIt`）も
+閉じます。実際 `SbT` は `N ↦ two N T`（T が `SbF`）で閉じている。
+
+では兄弟条件を `SbT N` にした族を作れば良いか、を検討したが駄目でした:
+
+    兄弟条件を SbT N（形に依らない）にすると
+      走りの階段 nstN ✓（1 段上げが要らない）
+      荷の塔 twoIt   ✓（SbT が閉じている）
+      twoNilGen の階段 ✗ 兄弟の可差し性が要るが、それは意味定理
+        NPd_true_of_SbT で、その証明の SbF.two の場合が
+        **周囲の兄弟（全称、大きさに上限なし）の可差し性**を要求する
+
+つまり `SbF` に `two` を足した瞬間に、意味定理の相互帰納が
+「部分導出でない周囲の兄弟」に依存して壊れます。追記210 の `MNil` の循環と同じ形。
+
+### いまの `NPd` が最良の妥協
+
+いまの `NPd` は兄弟条件が形つき（`NPd_cf` が可差し性を直接くれる）なので
+`twoNilGen` も荷も無条件。そのかわり走りの階段で 1 段上げが要る。
+`SbT`/`SbF` はその上で「どの木なら安全か」を正確に切り出したもの。
