@@ -19682,3 +19682,34 @@ ZFC も順序数も使っていない。`Multiset.IsDershowitzMannaLT` だけ。
     WPd ((k+1)::ks) (two V' (pay X Y))    走りの底が pay
 
 が要る。`WPd_twoA_run` は底が `nil` の場合しか出ない。ここが同じ 1 点。
+
+## 追記249: `TSibF ctx W W N` が `W` 一般で無条件（`WPd` の 1 の枠の文脈）
+
+2026-09-11。緑になったもの:
+
+    TSibF_of_WPd : WPd の 1 の枠の文脈 ctx について
+                   TSibF ctx W W N     （W, N が全形で良い木なら無条件）
+    TSibF_pay_of_WPd : 同じ文脈で GOK (plug ctx (two N (pay W C)))
+
+`OneNil` の場合分け（追記の既存分析）で `D = ctx ++ [ftwo N]` の残り 1 本が
+`TSibF ctx W W N` だった。`WPd` で表せる文脈なら無条件になった。
+
+証明は短い。連鎖の木は `WPd_TChain0` で頭 0 の形に差せるので、
+
+    WPd_twoOf（予算 0）: 兄弟 = 連鎖の木、本体 = W
+
+でそのまま出る。`SelfW` も `GOK_twoNil_gen` も要らない。
+
+### 深さの数え方（確認）
+
+    two nil nil      = stk 1     2 の記録 1 本
+    stk q                        2 の記録 q 本
+    one U (two N V)              V の 2 の記録の上に 1 本足す
+
+`WPd` で出るのは `GOK (one nil (stk q))` の `q ≤ 2` まで。
+`q = 3` には `WPd [b+1] (two nil (two nil nil))`（走りの底が走り）が要り、
+これは `WPd_twoA_run`（底が nil）では出ない。
+
+`WQd` のブロックの節なら `stk q` は全部差せるが、階段の
+`nstQ N p k = one nil (two N (stkP p (nstQ N p (k-1))))` の 1 の枠で
+`nil` の荷閉包が入り目つきの形で要り、そこが `QRunPay`。

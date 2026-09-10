@@ -67867,5 +67867,31 @@ theorem TSibF_nil_of_WPd {ks : List ℕ} {Wb X : Jk1} (hJWb : JkA Wb) (hJX : JkA
 #print axioms SelfW_of_WPd
 #print axioms TSibF_nil_of_WPd
 
+/-- ★★★★★★ `OneNil` の `ftwo` の場合の残り 1 本 `TSibF ctx W W N` は、
+`WPd` の 1 の枠の文脈なら無条件で出る（`W` は `nil` でなくてよい）。 -/
+theorem TSibF_of_WPd {ks : List ℕ} {W N : Jk1} (hJN : JkA N) (hJW : JkA W)
+    (hN : ∀ (k : ℕ) (ks' : List ℕ), WPd (k :: ks') N)
+    (hW : ∀ (k : ℕ) (ks' : List ℕ), WPd (k :: ks') W)
+    (ctx : List Frm) (hc : WCtx (0 :: ks) ctx) :
+    TSibF ctx W W N := by
+  intro V hV hJV _
+  obtain ⟨hJV', hVall⟩ := WPd_TChain0 hJN hJW hN hW V hV
+  exact (WPd_iff (0 :: ks) _).mp
+    (WPd_twoOf (k := 0) hJV' (fun q _ => hVall (q ++ ks)) (hW 1 ks)) ctx hc
+
+/-- `WPd` の 1 の枠の文脈では、走りの 2 の記録の直下に荷が吊るせる
+（兄弟が連鎖の木でも）。 -/
+theorem TSibF_pay_of_WPd {ks : List ℕ} {W N : Jk1} (hJN : JkA N) (hJW : JkA W)
+    (hN : ∀ (k : ℕ) (ks' : List ℕ), WPd (k :: ks') N)
+    (hW : ∀ (k : ℕ) (ks' : List ℕ), WPd (k :: ks') W)
+    (ctx : List Frm) (hc : WCtx (0 :: ks) ctx) (C : TrioSeq) (hC : Bok C) :
+    GOK (plug ctx (Jk1.two N (Jk1.pay W C))) :=
+  TSibF_pay ctx (fun Z hZ => WCtx_JkT (0 :: ks) ctx hc Z hZ) W hJW N
+    (TSibF_of_WPd hJN hJW hN hW ctx hc) C hC N TChain.base hJN
+    ((WPd_iff (0 :: ks) N).mp (hN 0 ks) ctx hc)
+
+#print axioms TSibF_of_WPd
+#print axioms TSibF_pay_of_WPd
+
 end Small
 end TRIO
