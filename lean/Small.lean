@@ -63666,5 +63666,99 @@ theorem TSib_twoNilNil (D : List Frm) (hA : TSib D Jk1.nil)
 #print axioms WallT_of_TSib
 #print axioms R14_of_TSib
 
+
+/-! ### ★★★★★ 目標の行（行376）は兄弟が全部 `nil` で足りる
+
+`UtwAll_of_RStep0` の連鎖を辿ると、`RStep` が使われるのは兄弟が `nil`、
+木も `nil` のときだけ。だから仮定は
+
+    RStepN0 : ∀ D, (JkT 閉包) → GOK (plug D nil) → GOK (plug D (one nil nil))
+
+「置ける文脈に**裸の 1 の記録を 1 個**積める（兄弟も nil）」だけでよい。 -/
+
+def RStepN (Bs : List Jk1) (B : Jk1) : Prop :=
+  ∀ (D : List Frm), (∀ X : Jk1, JkA X → JkT (plug D (Jk1.one Jk1.nil X))) →
+    GOK (plug D Jk1.nil) → GOK (plug D (Jk1.one Jk1.nil (RunP Bs B)))
+
+def RStepN0 : Prop := ∀ (D : List Frm),
+    (∀ X : Jk1, JkA X → JkT (plug D (Jk1.one Jk1.nil X))) →
+    GOK (plug D Jk1.nil) → GOK (plug D (Jk1.one Jk1.nil Jk1.nil))
+
+theorem GOK_appJ_UtwP_of_RStepN {Bs : List Jk1} (hJBs : ∀ A ∈ Bs, JkA A)
+    (h : RStepN Bs Jk1.nil) (D : List Frm)
+    (hJTD : ∀ X : Jk1, JkA X → JkT (plug D (Jk1.one Jk1.nil X)))
+    (hbase : GOK (plug D Jk1.nil)) :
+    ∀ n : ℕ, GOK (plug D (appJ Jk1.nil (UtwP Bs Jk1.nil n))) := by
+  have hJT1 : ∀ X : Jk1, JkA X → JkT (plug (D ++ PBlk Bs Jk1.nil) X) := by
+    intro X hX
+    rw [plug_PBlk]
+    exact hJTD _ (JkA_RunP Bs hJBs hX)
+  have hB : GOK (plug (D ++ PBlk Bs Jk1.nil) Jk1.nil) := by
+    rw [plug_PBlk]
+    exact h D hJTD hbase
+  refine GOK_appJ_UtwP D Bs Jk1.nil Jk1.nil hbase hB ?_
+  intro D' hD' hG
+  exact h D'
+    (fun X hX => JkT_RFam_PBlk Bs Jk1.nil trivial hJBs _ hJT1 D' hD' _ ⟨trivial, hX⟩) hG
+
+theorem RStepN_snoc {Bs : List Jk1} (hJBs : ∀ A ∈ Bs, JkA A)
+    (h : RStepN Bs Jk1.nil) : RStepN (Bs ++ [Jk1.nil]) Jk1.nil := by
+  intro D hJTD hGnil
+  show GOK (plug D (Jk1.one Jk1.nil (RunS (Bs ++ [Jk1.nil]))))
+  exact GOK_oneUV_RunSB D Bs Jk1.nil Jk1.nil hJBs trivial
+    (hJTD _ (JkA_RunS_snocB Bs Jk1.nil hJBs trivial)) hGnil
+    (GOK_appJ_UtwP_of_RStepN hJBs h D hJTD hGnil)
+
+theorem RStepN_rep (h : RStepN0) :
+    ∀ q : ℕ, RStepN (List.replicate q Jk1.nil) Jk1.nil
+  | 0 => h
+  | (q + 1) => by
+      have hb : ∀ A ∈ List.replicate q Jk1.nil, JkA A := by
+        intro A hA
+        rw [List.eq_of_mem_replicate hA]
+        exact trivial
+      have hr := RStepN_snoc hb (RStepN_rep h q)
+      have he : List.replicate q Jk1.nil ++ [Jk1.nil]
+          = List.replicate (q + 1) Jk1.nil := List.replicate_succ'.symm
+      rw [he] at hr
+      exact hr
+
+theorem GOK_Utw_of_RStepN0 (h : RStepN0) (p : ℕ) : ∀ n : ℕ, GOK (Utw p n) := by
+  have hJAs : ∀ A ∈ List.replicate p Jk1.nil, JkA A := by
+    intro A hA
+    rw [List.eq_of_mem_replicate hA]
+    exact trivial
+  have hstep : ∀ D' : List Frm,
+      RFam [RBlk (List.replicate p Jk1.nil)] ([] : List Frm) D' →
+      GOK (plug D' Jk1.nil) →
+      GOK (plug D' (Jk1.one Jk1.nil (RunS (List.replicate p Jk1.nil)))) := by
+    intro D' hD' hG
+    exact RStepN_rep h p D' (JkT_RFam_RBlk _ hJAs D' hD') hG
+  intro n
+  have hk := GOK_UtwR_of_step [] (List.replicate p Jk1.nil)
+    (show GOK (plug ([] : List Frm) Jk1.nil) from GOK_nil) hstep n
+  rw [Utw_eq_UtwR]
+  exact hk
+
+/-- ★★★★★ 目標の行は「裸の 1 の記録を 1 個積む（兄弟も nil）」1 本から出る。 -/
+theorem R376_of_RStepN0 (h : RStepN0) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_UtwAll (fun p n => GOK_Utw_of_RStepN0 h p n)
+
+/-- 荷を `nil` に吊るす版。 -/
+def RPayN0 : Prop := ∀ (D : List Frm),
+    (∀ X : Jk1, JkA X → JkT (plug D (Jk1.one Jk1.nil X))) →
+    GOK (plug D Jk1.nil) → ∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay Jk1.nil C))
+
+theorem RStepN0_of_RPayN0 (h : RPayN0) : RStepN0 := by
+  intro D hJTD hGnil
+  exact APnil_gen0 D Jk1.nil (hJTD Jk1.nil trivial) hGnil (h D hJTD hGnil)
+
+/-- ★★★★★ 目標の行は「`nil` に荷を 1 個吊るす」1 本から出る。 -/
+theorem R376_of_RPayN0 (h : RPayN0) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RStepN0 (RStepN0_of_RPayN0 h)
+
+#print axioms R376_of_RStepN0
+#print axioms R376_of_RPayN0
+
 end Small
 end TRIO
