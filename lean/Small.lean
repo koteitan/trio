@@ -61019,5 +61019,154 @@ theorem R376_of_VPay (h : VPay) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ 
 
 #print axioms R376_of_VPay
 
+
+/-! ### ★★★★★ 走りを表現できる層 `Wok` / `Wk`
+
+`Pok` / `Qok` は「2 の枠の直下は必ず 1 の枠」を要求するので走りを表現できない
+（追記174）。単位を
+
+    Wunit V Wl p = [fone V, ftwo Wl] ++ (ftwo nil)^p        p = 0 ∨ Wl = nil
+
+にすると走りが入る。枠木の良さと荷は層の欄が持つので可述。
+走りの兄弟は `nil` に固定する（`GOK_oneUV_gen` が `stk p` を要求するため）。 -/
+
+/-- 単位: 1 の枠 1 枚 + 2 の枠 1 枚 + 兄弟 `nil` の 2 の枠 `p` 枚。 -/
+def Wunit (V Wl : Jk1) (p : ℕ) : List Frm :=
+  Frm.fone V :: Frm.ftwo Wl :: List.replicate p (Frm.ftwo Jk1.nil)
+
+theorem plug_Wunit (ctx : List Frm) (V Wl : Jk1) (p : ℕ) (X : Jk1) :
+    plug (ctx ++ Wunit V Wl p) X
+      = plug ctx (Jk1.one V (Jk1.two Wl (stkP p X))) := by
+  rw [plug_append]
+  show plug ctx (Jk1.one V (Jk1.two Wl
+    (plug (List.replicate p (Frm.ftwo Jk1.nil)) X))) = _
+  rw [plug_repTwoNil]
+
+theorem JkA_Wunit_tree {V Wl X : Jk1} (hV : JkA V) (hW : JkA Wl) (hX : JkA X) (p : ℕ) :
+    JkA (Jk1.one V (Jk1.two Wl (stkP p X))) :=
+  ⟨hV, hW, JkA_stkP p hX⟩
+
+/-- 形 `(j, n)` の良い文脈。`j` は単位の個数、`n` は最後の単位より上の 1 の枠の本数。 -/
+def Wok : ℕ → ℕ → List Frm → Prop
+  | 0, 0, ctx => ctx = []
+  | 0, (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Wok 0 n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Wok 0 n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok 0 n cs → GOK (plug cs (Jk1.pay U C)))
+  | (j + 1), 0, ctx => ∃ (V Wl : Jk1) (p n : ℕ) (ctx' : List Frm),
+      ctx = ctx' ++ Wunit V Wl p ∧ (p = 0 ∨ Wl = Jk1.nil) ∧ Wok j n ctx' ∧ JkA V ∧
+      (∀ cs : List Frm, Wok j n cs → GOK (plug cs V)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok j n cs → GOK (plug cs (Jk1.pay V C))) ∧
+      JkA Wl ∧
+      (∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs → GOK (plug cs Wl)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs →
+        GOK (plug cs (Jk1.pay Wl C)))
+  | (j + 1), (n + 1), ctx => ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Wok (j + 1) n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Wok (j + 1) n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok (j + 1) n cs →
+        GOK (plug cs (Jk1.pay U C)))
+
+/-- `Z` は形 `(j, n)` のどの良い文脈にも差せる。 -/
+def Wk (j n : ℕ) (Z : Jk1) : Prop := ∀ ctx : List Frm, Wok j n ctx → GOK (plug ctx Z)
+
+theorem Wok_00 (ctx : List Frm) : Wok 0 0 ctx ↔ ctx = [] := by rw [Wok]
+
+theorem Wok_0s (n : ℕ) (ctx : List Frm) : Wok 0 (n + 1) ctx ↔
+    ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Wok 0 n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Wok 0 n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok 0 n cs →
+        GOK (plug cs (Jk1.pay U C))) := by rw [Wok]
+
+theorem Wok_s0 (j : ℕ) (ctx : List Frm) : Wok (j + 1) 0 ctx ↔
+    ∃ (V Wl : Jk1) (p n : ℕ) (ctx' : List Frm),
+      ctx = ctx' ++ Wunit V Wl p ∧ (p = 0 ∨ Wl = Jk1.nil) ∧ Wok j n ctx' ∧ JkA V ∧
+      (∀ cs : List Frm, Wok j n cs → GOK (plug cs V)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok j n cs → GOK (plug cs (Jk1.pay V C))) ∧
+      JkA Wl ∧
+      (∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs → GOK (plug cs Wl)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ (i : ℕ) (cs : List Frm), Wok j (i + 1) cs →
+        GOK (plug cs (Jk1.pay Wl C))) := by rw [Wok]
+
+theorem Wok_ss (j n : ℕ) (ctx : List Frm) : Wok (j + 1) (n + 1) ctx ↔
+    ∃ (U : Jk1) (ctx' : List Frm),
+      ctx = ctx' ++ [Frm.fone U] ∧ Wok (j + 1) n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Wok (j + 1) n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok (j + 1) n cs →
+        GOK (plug cs (Jk1.pay U C))) := by rw [Wok]
+
+theorem Wk_00 {X : Jk1} (h : GOK X) : Wk 0 0 X := by
+  intro ctx hctx
+  have hc : ctx = [] := (Wok_00 ctx).mp hctx
+  subst hc
+  exact h
+
+theorem GOK_of_Wk00 {X : Jk1} (h : Wk 0 0 X) : GOK X := h [] ((Wok_00 []).mpr rfl)
+
+theorem JkA_plug_Wok : ∀ (j n : ℕ) (ctx : List Frm), Wok j n ctx → ∀ T : Jk1, JkA T →
+    JkA (plug ctx T)
+  | 0, 0, ctx, h, T, hT => by
+      have hc : ctx = [] := (Wok_00 ctx).mp h
+      subst hc
+      exact hT
+  | 0, (n + 1), ctx, h, T, hT => by
+      obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Wok_0s n ctx).mp h
+      rw [plug_snoc]
+      exact JkA_plug_Wok 0 n ctx' hc _ ⟨hJU, hT⟩
+  | (j + 1), 0, ctx, h, T, hT => by
+      obtain ⟨V, Wl, p, n, ctx', rfl, -, hc, hJV, -, -, hJW, -, -⟩ := (Wok_s0 j ctx).mp h
+      rw [plug_Wunit]
+      exact JkA_plug_Wok j n ctx' hc _ (JkA_Wunit_tree hJV hJW hT p)
+  | (j + 1), (n + 1), ctx, h, T, hT => by
+      obtain ⟨U, ctx', rfl, hc, hJU, -, -⟩ := (Wok_ss j n ctx).mp h
+      rw [plug_snoc]
+      exact JkA_plug_Wok (j + 1) n ctx' hc _ ⟨hJU, hT⟩
+
+/-- 1 の枠を継ぐ。 -/
+theorem Wok_fone {j n : ℕ} {U : Jk1} {ctx : List Frm} (hctx : Wok j n ctx) (hJU : JkA U)
+    (hU : ∀ cs : List Frm, Wok j n cs → GOK (plug cs U))
+    (hUp : ∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok j n cs →
+      GOK (plug cs (Jk1.pay U C))) :
+    Wok j (n + 1) (ctx ++ [Frm.fone U]) := by
+  cases j with
+  | zero => exact (Wok_0s n _).mpr ⟨U, ctx, rfl, hctx, hJU, hU, hUp⟩
+  | succ j => exact (Wok_ss j n _).mpr ⟨U, ctx, rfl, hctx, hJU, hU, hUp⟩
+
+theorem Wok_fone_dest {j n : ℕ} {ctx : List Frm} (h : Wok j (n + 1) ctx) :
+    ∃ (U : Jk1) (ctx' : List Frm), ctx = ctx' ++ [Frm.fone U] ∧ Wok j n ctx' ∧ JkA U ∧
+      (∀ cs : List Frm, Wok j n cs → GOK (plug cs U)) ∧
+      (∀ C : TrioSeq, Bok C → ∀ cs : List Frm, Wok j n cs →
+        GOK (plug cs (Jk1.pay U C))) := by
+  cases j with
+  | zero => exact (Wok_0s n ctx).mp h
+  | succ j => exact (Wok_ss j n ctx).mp h
+
+theorem Wk_congr {j n : ℕ} {X1 X2 : Jk1} (h : ∀ l, jk1 l X1 = jk1 l X2) (hX : Wk j n X1) :
+    Wk j n X2 := fun ctx hctx => GOK_congr (jk1_plug_congr ctx h) (hX ctx hctx)
+
+/-- 1 の枠を 1 段深くする。 -/
+theorem Wk_one {j n : ℕ} {U T : Jk1} (hJU : JkA U) (hU : Wk j n U)
+    (hUp : ∀ C : TrioSeq, Bok C → Wk j n (Jk1.pay U C)) (hT : Wk j (n + 1) T) :
+    Wk j n (Jk1.one U T) := by
+  intro ctx hctx
+  have h := hT _ (Wok_fone hctx hJU hU (fun C hC => hUp C hC))
+  rwa [plug_snoc] at h
+
+/-- 単位（1 の枠 + 2 の枠 + 走り `p`）を 1 段深くする。 -/
+theorem Wk_unit {j n : ℕ} {V Wl T : Jk1} {p : ℕ} (hp : p = 0 ∨ Wl = Jk1.nil)
+    (hJV : JkA V) (hV : Wk j n V) (hVp : ∀ C : TrioSeq, Bok C → Wk j n (Jk1.pay V C))
+    (hJW : JkA Wl) (hW : ∀ i : ℕ, Wk j (i + 1) Wl)
+    (hWp : ∀ (C : TrioSeq), Bok C → ∀ i : ℕ, Wk j (i + 1) (Jk1.pay Wl C))
+    (hT : Wk (j + 1) 0 T) : Wk j n (Jk1.one V (Jk1.two Wl (stkP p T))) := by
+  intro ctx hctx
+  have hC : Wok (j + 1) 0 (ctx ++ Wunit V Wl p) :=
+    (Wok_s0 j _).mpr ⟨V, Wl, p, n, ctx, rfl, hp, hctx, hJV, hV, (fun C hC => hVp C hC),
+      hJW, (fun i cs hcs => hW i cs hcs), (fun C hC i cs hcs => hWp C hC i cs hcs)⟩
+  have h := hT _ hC
+  rwa [plug_Wunit] at h
+
+#print axioms Wk_unit
+
 end Small
 end TRIO
