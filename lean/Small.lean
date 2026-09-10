@@ -62904,5 +62904,77 @@ theorem GOK_two_UtwP (D : List Frm) (Bs : List Jk1) (B N : Jk1)
 #print axioms GOK_appJ_UtwP
 #print axioms GOK_two_UtwP
 
+
+/-! ### ★★★★★ 走りの壁を 1 文 `RStep` にする
+
+    RStep Bs B : ∀ D V, JkA V → JkT (plug D (one V (RunP Bs B))) →
+        GOK (plug D V) → GOK (plug D (one V (RunP Bs B)))
+
+「置ける `V` の上に `one V (RunP Bs B)` を積める」だけ。
+`Bs = []` なら `RunP [] B = B` なので「1 の記録 1 個ぶん積む」。 -/
+
+theorem JkT_RFam_PBlk (Bs : List Jk1) (B : Jk1) (hJB : JkA B)
+    (hJBs : ∀ A ∈ Bs, JkA A) (D1 : List Frm)
+    (h1 : ∀ X : Jk1, JkA X → JkT (plug D1 X)) :
+    ∀ D' : List Frm, RFam [PBlk Bs B] D1 D' → ∀ X : Jk1, JkA X → JkT (plug D' X) := by
+  intro D' hD'
+  induction hD' with
+  | base => exact h1
+  | step hB' hD ih =>
+      intro X hX
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hB'
+      subst hB'
+      rw [plug_PBlk]
+      exact ih _ ⟨hJB, JkA_RunP Bs hJBs hX⟩
+
+def RStep (Bs : List Jk1) (B : Jk1) : Prop :=
+  ∀ (D : List Frm) (V : Jk1), JkA V → JkT (plug D (Jk1.one V (RunP Bs B))) →
+    GOK (plug D V) → GOK (plug D (Jk1.one V (RunP Bs B)))
+
+theorem GOK_appJ_UtwP_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
+    (hJBs : ∀ A ∈ Bs, JkA A) (h : RStep Bs B) (D : List Frm) (U : Jk1) (hJU : JkA U)
+    (hJTD : ∀ X : Jk1, JkA X → JkT (plug D X))
+    (hbase : GOK (plug D U)) :
+    ∀ n : ℕ, GOK (plug D (appJ U (UtwP Bs B n))) := by
+  have hJT1 : ∀ X : Jk1, JkA X → JkT (plug (D ++ PBlk Bs U) X) := by
+    intro X hX
+    rw [plug_PBlk]
+    exact hJTD _ ⟨hJU, JkA_RunP Bs hJBs hX⟩
+  have hB : GOK (plug (D ++ PBlk Bs U) B) := by
+    rw [plug_PBlk]
+    exact h D U hJU (hJTD _ ⟨hJU, JkA_RunP Bs hJBs hJB⟩) hbase
+  refine GOK_appJ_UtwP D Bs B U hbase hB ?_
+  intro D' hD' hG
+  exact h D' B hJB
+    (JkT_RFam_PBlk Bs B hJB hJBs _ hJT1 D' hD' _ ⟨hJB, JkA_RunP Bs hJBs hJB⟩) hG
+
+theorem GOK_two_UtwP_of_RStep {Bs : List Jk1} {B : Jk1} (hJB : JkA B)
+    (hJBs : ∀ A ∈ Bs, JkA A) (h : RStep Bs B) (D : List Frm) (N : Jk1) (hJN : JkA N)
+    (hJTD : ∀ X : Jk1, JkA X → JkT (plug D X))
+    (hbase : GOK (plug D (Jk1.two N Jk1.nil))) :
+    ∀ n : ℕ, GOK (plug D (Jk1.two N (UtwP Bs B n))) := by
+  have hJTN : ∀ X : Jk1, JkA X → JkT (plug (D ++ [Frm.ftwo N]) X) := by
+    intro X hX
+    rw [plug_snoc2]
+    exact hJTD _ ⟨hJN, hX⟩
+  have hbaseN : GOK (plug (D ++ [Frm.ftwo N]) Jk1.nil) := by
+    rw [plug_snoc2]
+    exact hbase
+  have hJT1 : ∀ X : Jk1, JkA X → JkT (plug ((D ++ [Frm.ftwo N]) ++ PBlk Bs Jk1.nil) X) := by
+    intro X hX
+    rw [plug_PBlk]
+    exact hJTN _ ⟨trivial, JkA_RunP Bs hJBs hX⟩
+  have hB : GOK (plug ((D ++ [Frm.ftwo N]) ++ PBlk Bs Jk1.nil) B) := by
+    rw [plug_PBlk]
+    exact h (D ++ [Frm.ftwo N]) Jk1.nil trivial
+      (hJTN _ ⟨trivial, JkA_RunP Bs hJBs hJB⟩) hbaseN
+  refine GOK_two_UtwP D Bs B N hbase hB ?_
+  intro D' hD' hG
+  exact h D' B hJB
+    (JkT_RFam_PBlk Bs B hJB hJBs _ hJT1 D' hD' _ ⟨hJB, JkA_RunP Bs hJBs hJB⟩) hG
+
+#print axioms GOK_appJ_UtwP_of_RStep
+#print axioms GOK_two_UtwP_of_RStep
+
 end Small
 end TRIO
