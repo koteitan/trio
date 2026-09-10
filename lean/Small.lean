@@ -64905,6 +64905,52 @@ theorem MCw_twoNil (h : MNil) : MCw (Jk1.two Jk1.nil Jk1.nil) := MPd_twoTwoNilB 
 #print axioms MBplus_two
 #print axioms MCw_one
 #print axioms MCw_twoNil
+
+/-! ### ★★★★★ 走りの末端 `two A nil` は `MCw` で閉じる
+
+`MPd (false::ks) (two A nil)` を開くと
+`GOK (plug ctx (one U (two N (two A nil))))` で、これは
+`one U (RunS ([N] ++ [A]))`。`GOK_oneUV_RunSB`（兄弟任意の走り）が使える。
+階段は `appJ U (UtwP [N] A n) = one U (two N (ABt [N] A n))` で、
+`ABt [N] A (k+1) = one A (two N (ABt [N] A k))` だから
+`MCw_one` + `MBplus_two` で登れる。底は `MCw A`。 -/
+
+theorem MCw_ABt {A N : Jk1} (hQA : FrQ A) (hA : MCw A) (hQN : FrQ N) :
+    ∀ n : ℕ, MCw (ABt [N] A n)
+  | 0 => hA
+  | (n + 1) => by
+      show MCw (Jk1.one A (Jk1.two N (ABt [N] A n)))
+      exact MCw_one hQA hA (MBplus_two hQN (MCw_ABt hQA hA hQN n))
+
+theorem MCw_twoAnil {A : Jk1} (hQA : FrQ A) (hA : MCw A) :
+    MCw (Jk1.two A Jk1.nil) := by
+  intro ks
+  rw [MPd_cf]
+  intro m U N hU hQU hUk hQN
+  rw [MPd_iff]
+  intro ctx hc
+  have hJBs : ∀ X ∈ [N], JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact hQN.1
+  have hGU : GOK (plug ctx U) := (MPd_iff _ U).mp hUk ctx hc
+  have hstair : ∀ n : ℕ, GOK (plug ctx (appJ U (UtwP [N] A n))) := by
+    intro n
+    cases n with
+    | zero => exact hGU
+    | succ n =>
+        have h : MPd (List.replicate m true ++ ks)
+            (Jk1.one U (Jk1.two N (ABt [N] A n))) :=
+          MPd_step _ hU hQU hUk (MPd_twoOf hQN (MCw_ABt hQA hA hQN n _))
+        exact (MPd_iff _ _).mp h ctx hc
+  show GOK (plug ctx (Jk1.one U (RunS ([N] ++ [A]))))
+  exact GOK_oneUV_RunSB ctx [N] A U hJBs hQA.1
+    (MCtx_JkT _ ctx hc _ (FrmJ_one _ U _ hU ⟨hQN.1, hQA.1, trivial⟩))
+    hGU hstair
+
+#print axioms MCw_ABt
+#print axioms MCw_twoAnil
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

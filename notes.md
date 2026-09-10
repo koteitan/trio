@@ -17867,3 +17867,64 @@ nil 限定の梯子では `NlOk_two` が `two nil Z` しか作れないので、
     語        : (l+1,2,0)(l+2,2,0)
 
 `APd` 版が「`TopOk` を外す」という一番具体的な言い方になっている。
+
+## 追記211: `MCw (two A nil)` が閉じた。残りは `MCw nil` と `MCw (two A B)`
+
+2026-09-10。追記210 の続き。
+
+### 新しく緑になったもの
+
+    MCw_ABt {A N} (hQA : FrQ A) (hA : MCw A) (hQN : FrQ N) : ∀ n, MCw (ABt [N] A n)
+    MCw_twoAnil {A} (hQA : FrQ A) (hA : MCw A) : MCw (two A nil)
+
+`MPd (false::ks) (two A nil)` を開くと
+`GOK (plug ctx (one U (two N (two A nil))))` で、これは
+`one U (RunS ([N] ++ [A]))`。`GOK_oneUV_RunSB`（兄弟任意の走り）が使える。
+階段は `appJ U (UtwP [N] A n) = one U (two N (ABt [N] A n))`、
+`ABt [N] A (k+1) = one A (two N (ABt [N] A k))` なので
+`MCw_one` + `MBplus_two` で登れる。底は `MCw A`。
+
+`A = nil` にすると `MCw_twoNil`（`MNil → MCw (two nil nil)`）の別証明になる。
+
+### `MCw` / `MBplus` の場合分けの現状
+
+    MCw X:
+      X = nil        MNil                       未（壁）
+      X = pay A C    MPd 層の荷が要る           未（壁ではない、移植の問題）
+      X = one A B    MCw_one                    緑
+      X = two A nil  MCw_twoAnil                緑 ← 新
+      X = two A B    B ≠ nil                    未（壁）
+
+    MBplus X:
+      X = nil        MPd_oneNil + MPd 層の荷    未（移植の問題）
+      X = pay A C    MPd 層の荷                 未（移植の問題）
+      X = one A B    MPd_step                   緑
+      X = two A B    MBplus_two ← MCw B         緑
+
+`MCw (two A B)`（B ≠ nil）が閉じない理由: `GOK_oneUV_RunSB` の結論は
+`one U (RunS (Bs ++ [B]))` = `one U (RunP Bs (two B nil))` で、
+走りは必ず「上に何も無い 2 の記録」で終わる。木の側の走りが長さ 2 以上
+（`two A (two A' …)`）だと階段 `ABt Bs B n` の中に走りが再び現れて
+帰納が回らない。
+
+### 文脈で見た走り
+
+    plug ctx (one U (two N (two A B))) = plug (ctx ++ [fone U, ftwo N, ftwo A]) B
+
+`MCtx` の `false` は 1 個につき `[fone U, ftwo N]` の対なので、
+**2 の枠が 2 枚続く枠積みは `MCtx` に無い**。これが走りの正体。
+
+### 測度が回らない理由（追記210 より鋭い形）
+
+形 `ks` の `false` の個数を `cntF ks = c`、木の大きさを `jsz` とする。
+
+    MNil:        MPd (false::ks) nil   (cntF = c+1, jsz = 0)
+                   ⟸ MBplus N          (cntF = c,   jsz = 任意)
+                 cntF は減る、jsz は増える
+
+    MBplus_two:  MPd (true::ks₀) (two A B)  (cntF = c)
+                   ⟸ MPd (false::ks₀) B    (cntF = c+1)
+                 cntF は増える、jsz は減る
+
+2 つの手が逆向きなので、`(cntF, jsz)` の辞書式でも `(jsz, cntF)` でも
+`w*cntF + jsz` でも回らない。これが壁の測度的な正体。
