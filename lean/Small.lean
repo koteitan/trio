@@ -61525,5 +61525,56 @@ theorem TowOk_of_NTwUp (h : NTwUp) : TowOk := TowOk_of_WallT (WallT_of_NTwUp h)
 
 #print axioms R14_of_NTwUp
 
+
+/-! ### ★★★★★ 走りを含まない木なら `NTwUp` は木の帰納で出る
+
+`NTw q (one A B)` は `TwOk_one` で `A`, `B` に割れる。
+`NTw q (two A B)` は `TwOk_two` で `A`（レベル q）と `B`（レベル q+1、`j = 0`）に割れる。
+`j = 0` は「2 の枠の直上」なので `B` が 2 の記録で始まると走りになる。
+そこだけが壁。だから **`B` が `TopOk`（2 の記録で始まらない）なら回る**。 -/
+
+/-- 走りを含まない木。2 の記録の直上に 2 の記録が来ない。 -/
+inductive NoRun : Jk1 → Prop
+  | nil : NoRun Jk1.nil
+  | one : ∀ {A B : Jk1}, NoRun A → NoRun B → NoRun (Jk1.one A B)
+  | two : ∀ {A B : Jk1}, NoRun A → NoRun B → TopOk B → NoRun (Jk1.two A B)
+
+theorem JkA_of_NoRun : ∀ {X : Jk1}, NoRun X → JkA X
+  | _, NoRun.nil => trivial
+  | _, NoRun.one hA hB => ⟨JkA_of_NoRun hA, JkA_of_NoRun hB⟩
+  | _, NoRun.two hA hB _ => ⟨JkA_of_NoRun hA, JkA_of_NoRun hB⟩
+
+/-- ★ 走りを含まない木は全レベルで差せる（`NTwUp` の制限版）。 -/
+theorem NTw_NoRun_all : ∀ {X : Jk1}, NoRun X →
+    (∀ q : ℕ, NTw q X) ∧ (TopOk X → ∀ q : ℕ, TwOk (q + 1) 0 X)
+  | _, NoRun.nil => ⟨fun q => NTw_nil q, fun _ q => TwOk_twoNilE q⟩
+  | _, NoRun.one hA hB => by
+      obtain ⟨hA1, hA2⟩ := NTw_NoRun_all hA
+      obtain ⟨hB1, -⟩ := NTw_NoRun_all hB
+      refine ⟨?_, ?_⟩
+      · intro q j D hD hf
+        exact TwOk_one q j (JkA_of_NoRun hA)
+          (fun D' hD' => hA1 q j D' hD' hf)
+          (fun D' hD' => hB1 q (j + 1) D' hD' (Fter_succ q j)) D hD
+      · intro hT q
+        exact TwOk_one (q + 1) 0 (JkA_of_NoRun hA) (hA2 hT q)
+          (fun D' hD' => hB1 (q + 1) 1 D' hD' (Fter_succ (q + 1) 0))
+  | _, NoRun.two hA hB hTB => by
+      obtain ⟨hA1, -⟩ := NTw_NoRun_all hA
+      obtain ⟨-, hB2⟩ := NTw_NoRun_all hB
+      refine ⟨fun q j D hD hf =>
+        TwOk_two (JkA_of_NoRun hA) (hA1 q) hf (hB2 hTB q) D hD, ?_⟩
+      intro hT
+      exact absurd hT (by simp [TopOk])
+
+theorem NTw_of_NoRun {X : Jk1} (h : NoRun X) (q : ℕ) : NTw q X := (NTw_NoRun_all h).1 q
+
+/-- `two nil nil` は走りを含まないので全レベルで差せる。 -/
+theorem NTw_twoNilNil (q : ℕ) : NTw q (Jk1.two Jk1.nil Jk1.nil) :=
+  NTw_of_NoRun (NoRun.two NoRun.nil NoRun.nil trivial) q
+
+#print axioms NTw_NoRun_all
+#print axioms NTw_twoNilNil
+
 end Small
 end TRIO
