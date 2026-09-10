@@ -64599,6 +64599,23 @@ theorem APd_oneNil' (ks : List Bool) (V : Jk1) (hV : FrmJ ks V) (hVk : APd ks V)
 
 #print axioms GCtx_cons_ne
 #print axioms APd_oneNil'
+
+/-! ### ★ `MPd` 層の `one V nil`
+
+`MCtx_JkT` があるので `APnil_gen0` に直接渡せる。残るのは `MPd` 層の荷。 -/
+
+theorem MPd_oneNil (ks : List Bool) (V : Jk1) (hV : FrmJ ks V) (hVk : MPd ks V)
+    (hpay : ∀ C : TrioSeq, Bok C → MPd ks (Jk1.pay V C)) :
+    MPd ks (Jk1.one V Jk1.nil) := by
+  rw [MPd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (MCtx_JkT ks ctx hc _ (FrmJ_one ks V Jk1.nil hV trivial))
+    ((MPd_iff ks V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (MPd_iff ks _).mp (hpay C hC) ctx hc
+
+#print axioms MPd_oneNil
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
