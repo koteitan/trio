@@ -65810,6 +65810,70 @@ theorem NLift_of_NUni (h : NUni) : NLift := fun N ks hJN _ j =>
 #print axioms NPd_nstN_nil_all
 #print axioms NPd_twoTwoGen_uni
 #print axioms NRunNil_of_NUni
+
+/-! ### ★★★★★ 走りの階段は「交互文脈で `two N nil` を置く」に等しい
+
+`nstN N (k+1) = one nil (two N (nstN N k))` なので、木の側の入れ子を
+そのまま枠に移せる:
+
+    plug D (two N (nstN N k)) = plug (D ++ AltC N k) (two N nil)
+
+`AltC N k` は `[ftwo N, fone nil]` を k 個並べた枠。これで壁は
+**「交互文脈で `two N nil` を置く」**という文脈だけの主張になる。 -/
+
+def AltC (N : Jk1) : ℕ → List Frm
+  | 0 => []
+  | (k + 1) => [Frm.ftwo N, Frm.fone Jk1.nil] ++ AltC N k
+
+theorem plug_snoc21 (D : List Frm) (N T : Jk1) :
+    plug (D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) T
+      = plug D (Jk1.two N (Jk1.one Jk1.nil T)) := by
+  have e : D ++ [Frm.ftwo N, Frm.fone Jk1.nil]
+      = (D ++ [Frm.ftwo N]) ++ [Frm.fone Jk1.nil] := by simp
+  rw [e, plug_snoc, plug_snoc2]
+
+theorem plug_two_nstN (N : Jk1) : ∀ (k : ℕ) (D : List Frm),
+    plug D (Jk1.two N (nstN N k)) = plug (D ++ AltC N k) (Jk1.two N Jk1.nil)
+  | 0, D => by
+      show plug D (Jk1.two N Jk1.nil) = plug (D ++ ([] : List Frm)) (Jk1.two N Jk1.nil)
+      simp
+  | (k + 1), D => by
+      show plug D (Jk1.two N (Jk1.one Jk1.nil (Jk1.two N (nstN N k)))) = _
+      rw [← plug_snoc21, plug_two_nstN N k (D ++ [Frm.ftwo N, Frm.fone Jk1.nil])]
+      congr 1
+      show (D ++ [Frm.ftwo N, Frm.fone Jk1.nil]) ++ AltC N k
+        = D ++ ([Frm.ftwo N, Frm.fone Jk1.nil] ++ AltC N k)
+      rw [List.append_assoc]
+
+/-- 壁の文脈版: 交互文脈 `AltC N k` で `two N nil` を置く。 -/
+def NAlt : Prop := ∀ (N : Jk1) (ks : List Bool), JkA N →
+    (∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) →
+    ∀ ctx : List Frm, NCtx (true :: ks) ctx →
+    ∀ k : ℕ, GOK (plug (ctx ++ AltC N k) (Jk1.two N Jk1.nil))
+
+theorem NPd_twoTwoGen_of_NAlt (h : NAlt) {N : Jk1} (hJN : JkA N) (ks : List Bool)
+    (hNt : ∀ j : ℕ, NPd (List.replicate j true ++ (true :: ks)) N) :
+    NPd (true :: ks) (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  refine GOK_twoTwoNil_gen ctx0 V hJN
+    (NCtx_JkT (true :: ks) _ hc (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))
+      ⟨hJN, trivial, trivial⟩) hGV ?_
+  intro k
+  rw [plug_two_nstN]
+  exact h N ks hJN hNt _ hc k
+
+theorem NRunNil_of_NAlt (h : NAlt) : NRunNil :=
+  fun ks => (NPd_cf ks _).mpr (fun m U N hU hUk hJN hNt =>
+    (NPd_ct _ _).mp (NPd_twoTwoGen_of_NAlt h hJN _ hNt) U hU hUk)
+
+/-- ★★★★★ #14 は「交互文脈で `two N nil` を置く」1 文から出る。 -/
+theorem R14_of_NAlt (h : NAlt) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_NRunNil (NRunNil_of_NAlt h)
+
+#print axioms plug_two_nstN
+#print axioms R14_of_NAlt
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

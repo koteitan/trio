@@ -18590,3 +18590,42 @@ k = 1 で既に `NLift` が要る。
 
 **#14 の枠は全部 `ftwo nil` なのに一般の兄弟が必要になるのは、
 荷の鎖のせい**、というのが正確な理由。
+
+## 追記225: 壁を「交互文脈で `two N nil` を置く」に書き換えた（`NAlt`）
+
+2026-09-10。追記224 の続き。
+
+### 新しく緑になったもの
+
+    AltC N 0 = [],  AltC N (k+1) = [ftwo N, fone nil] ++ AltC N k
+    plug_snoc21 : plug (D ++ [ftwo N, fone nil]) T = plug D (two N (one nil T))
+    plug_two_nstN : ∀ k D, plug D (two N (nstN N k)) = plug (D ++ AltC N k) (two N nil)
+
+    NAlt : ∀ N ks, JkA N → (∀ j, NPd (rep j true ++ (true::ks)) N) →
+      ∀ ctx, NCtx (true::ks) ctx → ∀ k, GOK (plug (ctx ++ AltC N k) (two N nil))
+
+    NPd_twoTwoGen_of_NAlt / NRunNil_of_NAlt / R14_of_NAlt   （緑）
+
+`nstN N (k+1) = one nil (two N (nstN N k))` の入れ子を、そのまま枠に移せる。
+これで走りの階段は**木の再帰が消えて、文脈だけの主張**になった:
+
+**交互文脈 `ctx ++ [ftwo N, fone nil]^k` で `two N nil` を置く。**
+
+### 何が良くなったか
+
+- 階段の木が `two N nil` 固定になり、`k` は文脈の深さだけになった。
+- `GOK_twoNil_gen`（`two N nil` 専用の塔、緑）がそのまま使える形。
+  `GOK_twoNil_gen ctx0 V hJN hJT (hGV) (hstair)` の
+  `hGV : GOK (plug ctx0 V)` は `k-1` の場合に一致するので、
+  **k の帰納法が回る**。
+- 残るのは `hstair m : GOK (plug (ctx ++ AltC N k ++ (fone N)^m) N)`、
+  つまり **N を交互文脈の中に差す**こと。これが 1 段上げ（`NLift`）。
+
+### 仮定の地図（更新）
+
+    NRun → NUni → NLift → NAlt → NRunNil → TowOk → #14
+                            ↑
+                    NAlt が一番文脈寄りの書き方
+
+`NAlt` の中身をさらに開くと `∀ k m, GOK (plug (ctx ++ AltC N k ++ (fone N)^m) N)`
+に落ちる（k の帰納法で `GOK_twoNil_gen` を回す）。
