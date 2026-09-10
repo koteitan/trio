@@ -64079,5 +64079,63 @@ theorem R14_of_TWStep (h : TWStep) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] 
 #print axioms GOK_TWD0
 #print axioms R14_of_TWStep
 
+
+/-! ### ★★★★★ `TWStep` は「`one W (two nil nil)` を積む」1 文
+
+`TWStep` の木は `one (two nil nil) (RunS ([nil] ++ [nil]))` なので
+`GOK_oneUV_RunSB` が当たる。階段は `GOK_appJ_UtwP` で
+
+    hB    : GOK (plug (D ++ TWBlk) nil) = GOK (plug D (one (two nil nil) (two nil nil)))
+    hstep : GOK (plug D' nil) → GOK (plug D' (one nil (two nil nil)))
+
+の 2 つになり、どちらも「置ける `W` の上に `one W (two nil nil)` を積む」。
+`PBlk [nil] (two nil nil) = TWBlk`、`PBlk [nil] nil = TWD0`。 -/
+
+theorem JkT_RFam_TWBlk : ∀ D : List Frm, RFam [TWBlk] TWD0 D →
+    ∀ X : Jk1, JkA X → JkT (plug D X) := by
+  intro D hD
+  induction hD with
+  | base => intro X hX; exact ⟨⟨trivial, trivial, hX⟩, trivial⟩
+  | step hB hD ih =>
+      intro X hX
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+      subst hB
+      rw [plug_TWBlk]
+      exact ih _ ⟨⟨trivial, trivial⟩, trivial, hX⟩
+
+/-- ★ 置ける `W` の上に `(1,0)` と走り 1 を積める。 -/
+def OneTwo : Prop := ∀ (D : List Frm) (W : Jk1), JkA W →
+    (∀ X : Jk1, JkA X → JkT (plug D X)) →
+    GOK (plug D W) → GOK (plug D (Jk1.one W (Jk1.two Jk1.nil Jk1.nil)))
+
+theorem TWStep_of_OneTwo (h : OneTwo) : TWStep := by
+  intro D hD hG
+  have hJT := JkT_RFam_TWBlk D hD
+  have hJBs : ∀ X ∈ ([Jk1.nil] : List Jk1), JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact trivial
+  have hJT1 : ∀ X : Jk1, JkA X → JkT (plug (D ++ TWBlk) X) := by
+    intro X hX
+    rw [plug_TWBlk]
+    exact hJT _ ⟨⟨trivial, trivial⟩, trivial, hX⟩
+  have hB : GOK (plug (D ++ TWBlk) Jk1.nil) := by
+    rw [plug_TWBlk]
+    exact h D (Jk1.two Jk1.nil Jk1.nil) ⟨trivial, trivial⟩ hJT hG
+  refine GOK_oneUV_RunSB D [Jk1.nil] Jk1.nil (Jk1.two Jk1.nil Jk1.nil) hJBs trivial
+    (hJT _ ⟨⟨trivial, trivial⟩, trivial, trivial, trivial⟩) hG ?_
+  refine GOK_appJ_UtwP D [Jk1.nil] Jk1.nil (Jk1.two Jk1.nil Jk1.nil) hG hB ?_
+  intro D' hD' hG'
+  exact h D' Jk1.nil trivial
+    (JkT_RFam_PBlk [Jk1.nil] Jk1.nil trivial hJBs _ hJT1 D' hD') hG'
+
+/-- ★★★★★ シート証明中の行は `OneTwo` 1 本。 -/
+theorem R14_of_OneTwo (h : OneTwo) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_TWStep (TWStep_of_OneTwo h)
+
+#print axioms TWStep_of_OneTwo
+#print axioms R14_of_OneTwo
+
 end Small
 end TRIO
