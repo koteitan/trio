@@ -65954,6 +65954,83 @@ theorem NIn_zero {N : Jk1} {ks : List Bool} (hJN : JkA N)
 #print axioms NAlt_of_NIn
 #print axioms R14_of_NIn
 #print axioms NIn_zero
+
+/-! ### ★★★★★ 「2 の記録が全部裸」な木なら `NLift` は無条件
+
+`PlainT N`（N の中のどの 2 の記録も上に何も乗っていない）なら、
+`NPd (true :: kk) N` が全部の `kk` について無条件に出る。
+`two A nil` の場合が `NPd_twoNilGen`（緑）で済み、走りを通らないから。
+
+したがって壁が効くのは**兄弟 N の中に荷を乗せた 2 の記録があるとき**だけ。 -/
+
+inductive PlainT : Jk1 → Prop
+  | nil : PlainT Jk1.nil
+  | pay : ∀ {A : Jk1} {Y : TrioSeq}, PlainT A → Bok Y → PlainT (Jk1.pay A Y)
+  | one : ∀ {A B : Jk1}, PlainT A → PlainT B → PlainT (Jk1.one A B)
+  | two : ∀ {A : Jk1}, PlainT A → PlainT (Jk1.two A Jk1.nil)
+
+theorem JkA_of_PlainT : ∀ {N : Jk1}, PlainT N → JkA N
+  | _, PlainT.nil => trivial
+  | _, PlainT.pay h hY => ⟨JkA_of_PlainT h, hY⟩
+  | _, PlainT.one hA hB => ⟨JkA_of_PlainT hA, JkA_of_PlainT hB⟩
+  | _, PlainT.two hA => ⟨JkA_of_PlainT hA, trivial⟩
+
+theorem NPd_true_of_PlainT : ∀ {N : Jk1}, PlainT N → ∀ kk : List Bool, NPd (true :: kk) N
+  | _, PlainT.nil, kk => NPd_nilT kk
+  | _, PlainT.pay hA hY, kk =>
+      NPd_payA (true :: kk) _ (JkA_of_PlainT hA) (NPd_true_of_PlainT hA kk) _ hY
+  | _, PlainT.one hA hB, kk =>
+      NPd_step (true :: kk) (JkA_of_PlainT hA) (NPd_true_of_PlainT hA kk)
+        (NPd_true_of_PlainT hB (true :: kk))
+  | _, PlainT.two hA, kk =>
+      NPd_twoNilGen (JkA_of_PlainT hA) kk
+        (fun j => by
+          rw [rep_true_cons]
+          exact NPd_true_of_PlainT hA (List.replicate j true ++ kk))
+
+/-- ★★★★★ `PlainT` な兄弟については `NLift` が無条件。 -/
+theorem NLift_of_PlainT {N : Jk1} (hP : PlainT N) (ks : List Bool) (j : ℕ) :
+    NPd (List.replicate j true ++ (true :: (false :: ks))) N := by
+  rw [rep_true_cons]
+  exact NPd_true_of_PlainT hP (List.replicate j true ++ (false :: ks))
+
+theorem PlainT_twoNil : PlainT (Jk1.two Jk1.nil Jk1.nil) := PlainT.two PlainT.nil
+
+/-- ★★★★★ `PlainT` な兄弟なら走りの階段は無条件で回る。 -/
+theorem NPd_nstN_PlainT {N : Jk1} (hP : PlainT N) :
+    ∀ (k : ℕ) (ks : List Bool), NPd (false :: ks) (nstN N k)
+  | 0, ks => NPd_nilF ks
+  | (k + 1), ks => by
+      refine NPd_step (false :: ks) (trivial : FrmJ (false :: ks) Jk1.nil)
+        (NPd_nilF ks) ?_
+      rw [NPd_ct]
+      intro U hU hUk
+      exact (NPd_cf (false :: ks) (nstN N k)).mp
+        (NPd_nstN_PlainT hP k (false :: ks)) 0 U N
+        (by simpa using hU) (by simpa using hUk) (JkA_of_PlainT hP)
+        (fun j => by simpa using NLift_of_PlainT hP ks j)
+
+/-- ★★★★★ `PlainT` な兄弟なら走りは無条件で置ける。 -/
+theorem NPd_twoTwoGen_PlainT {N : Jk1} (hP : PlainT N) (ks : List Bool) :
+    NPd (true :: ks) (Jk1.two N (Jk1.two Jk1.nil Jk1.nil)) := by
+  rw [NPd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := NCtx_split ks ctx hc
+  refine GOK_twoTwoNil_gen ctx0 V (JkA_of_PlainT hP)
+    (NCtx_JkT (true :: ks) _ hc (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))
+      ⟨JkA_of_PlainT hP, trivial, trivial⟩) hGV ?_
+  intro k
+  exact (NPd_iff (true :: ks) _).mp
+    (NPd_twoOf (N := N) (JkA_of_PlainT hP)
+      (fun j => by
+        rw [rep_true_cons]
+        exact NPd_true_of_PlainT hP (List.replicate j true ++ ks))
+      (NPd_nstN_PlainT hP k ks)) _ hc
+
+#print axioms NPd_true_of_PlainT
+#print axioms NLift_of_PlainT
+#print axioms NPd_nstN_PlainT
+#print axioms NPd_twoTwoGen_PlainT
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx

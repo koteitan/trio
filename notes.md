@@ -18681,3 +18681,38 @@ k = 1 で既に `NLift` が要る。
                    NIn（最終形、文脈だけの主張）
 
 `NIn → NAlt → NRunNil → #14` はすべて緑。
+
+## 追記227: 「2 の記録が全部裸」な兄弟なら走りは無条件
+
+2026-09-10。追記226 の続き。
+
+### 新しく緑になったもの
+
+    inductive PlainT : Jk1 → Prop      -- どの 2 の記録も上に何も乗っていない
+      | nil | pay | one | two (A) : PlainT A → PlainT (two A nil)
+
+    JkA_of_PlainT       : PlainT N → JkA N
+    NPd_true_of_PlainT  : PlainT N → ∀ kk, NPd (true :: kk) N
+    NLift_of_PlainT     : PlainT N → ∀ ks j, NPd (rep j true ++ (true::(false::ks))) N
+    NPd_nstN_PlainT     : PlainT N → ∀ k ks, NPd (false::ks) (nstN N k)
+    NPd_twoTwoGen_PlainT: PlainT N → ∀ ks, NPd (true::ks) (two N (two nil nil))
+    PlainT_twoNil       : PlainT (two nil nil)
+
+`NPd (true::kk) N` が `PlainT N` なら無条件に出るのが鍵。場合分け:
+
+    nil        NPd_nilT
+    pay A Y    NPd_payA + 帰納法の仮定
+    one A B    NPd_step + 帰納法の仮定
+    two A nil  NPd_twoNilGen（形は `rep j true ++ (true::kk)` = true 頭）
+
+`two A nil` が `NPd_twoNilGen` で済むので走りを通らない。
+
+### 何が分かったか
+
+`NLift` の結論の形は `rep j true ++ (true::(false::ks))` ＝ **true 頭**なので、
+`NPd_true_of_PlainT` がそのまま使える。だから
+
+**壁が効くのは、2 の枠の兄弟 N の中に「荷を乗せた 2 の記録」
+（`two A B`、B ≠ nil）があるときだけ。**
+
+兄弟が nil（追記220）や `PlainT`（今回）なら走りは無条件で置ける。
