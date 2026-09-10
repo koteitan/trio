@@ -63126,5 +63126,72 @@ theorem GOK_blkN_split (D : List Frm) (N A : Jk1) (E : List Frm) (Bs : List Jk1)
 #print axioms GOK_oneN_split
 #print axioms GOK_blkN_split
 
+
+/-! ### ★★★★★ 壁 `WallT` を `RStep` 1 本にする
+
+`TwSt (r+1) 0` の文脈は `D' ++ [ftwo N]` で、`D'` は `Fter` なので
+`D0 ++ [fone V]` の形。すると
+
+    plug (D' ++ [ftwo N]) (two nil nil)
+      = plug D' (two N (two nil nil))
+      = plug D0 (one V (RunS ([N] ++ [nil])))
+
+なので `GOK_oneUV_RunSB` が使える。要るのは `RStep [N] nil`、
+`RStep_snoc` により `RStep [] N`（＝「置ける `V` の上に `one V N` を積める」）。
+
+**レベルが 1 下がるかわりに走りが 1 本伸びる。** 壁の正体はこの交換。 -/
+
+theorem TwSt_split3 : ∀ (r m : ℕ) (D : List Frm), TwSt r m D → Fter r m →
+    ∃ (D0 : List Frm) (V : Jk1), D = D0 ++ [Frm.fone V] ∧ GOK (plug D0 V) ∧
+      JkA V ∧ (∀ X : Jk1, JkA X → JkT (plug D0 X))
+  | 0, m, D, hD, _ => by
+      obtain ⟨D0, V, rfl, hD0, hJV, hV⟩ := (TwSt_z m D).mp hD
+      exact ⟨D0, V, rfl, hV D0 hD0, hJV, fun X hX => StkOk_JkT m D0 hD0 X hX⟩
+  | (r + 1), 0, D, _, hf => by
+      rcases hf with h | h
+      · exact absurd h (by omega)
+      · exact absurd h (by omega)
+  | (r + 1), (m + 1), D, hD, _ => by
+      obtain ⟨D0, U, rfl, hD0, hJU, hU⟩ := (TwSt_f r m D).mp hD
+      exact ⟨D0, U, rfl, hU D0 hD0, hJU,
+        fun X hX => TwSt_JkT (r + 1) m D0 hD0 X hX⟩
+
+theorem WallT_of_RStep
+    (h : ∀ (N : Jk1) (r : ℕ), JkA N → NTw r N → RStep [N] Jk1.nil) : WallT := by
+  intro r D hD
+  obtain ⟨m, D', N, rfl, hD', hf, hJN, hN⟩ := (TwSt_e r 0 D).mp hD
+  rw [plug_snoc2]
+  obtain ⟨D0, V, rfl, hGV, hJV, hJT0⟩ := TwSt_split3 r m D' hD' hf
+  rw [plug_snoc]
+  have hBs : ∀ X ∈ ([N] : List Jk1), JkA X := by
+    intro X hX
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+    subst hX
+    exact hJN
+  have hRun : Jk1.two N (Jk1.two Jk1.nil Jk1.nil) = RunS ([N] ++ [Jk1.nil]) := rfl
+  rw [hRun]
+  exact GOK_oneUV_RunSB D0 [N] Jk1.nil V hBs trivial
+    (hJT0 _ ⟨hJV, JkA_RunS_snocB [N] Jk1.nil hBs trivial⟩) hGV
+    (GOK_appJ_UtwP_of_RStep (Bs := [N]) (B := Jk1.nil) trivial hBs
+      (h N r hJN hN) D0 V hJV hJT0 hGV)
+
+/-- ★★★★★ シート #14 は `RStep [N] nil` から出る。 -/
+theorem R14_of_RStep
+    (h : ∀ (N : Jk1) (r : ℕ), JkA N → NTw r N → RStep [N] Jk1.nil) :
+    R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WallT (WallT_of_RStep h)
+
+/-- `RStep [] N`（`one V N` を積む）からも出る。 -/
+theorem R14_of_RStep0N
+    (h : ∀ (N : Jk1) (r : ℕ), JkA N → NTw r N → RStep [] N) :
+    R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_RStep (fun N r hJN hN => by
+    have := RStep_snoc (Bs := []) (C := N) hJN (by simp) (h N r hJN hN)
+    simpa using this)
+
+#print axioms WallT_of_RStep
+#print axioms R14_of_RStep
+#print axioms R14_of_RStep0N
+
 end Small
 end TRIO
