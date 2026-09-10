@@ -17631,3 +17631,29 @@ mathlib の `Multiset.CutExpand`（hydra）がちょうどこの関係。
 ### 今回の緑
 
     MPd_oneNil : MCtx_JkT + APnil_gen0（荷は仮定のまま）
+
+## 追記206: ★ 訂正。追記205 の「(1) は `MCtx` が許す」は誤り
+
+`MCtx (false::ks) ctx = ctx' ++ [fone U, ftwo N]` は `U` に `FrQ U` **と
+`MPd (rep m true ++ ks) U`** の両方を課す。`U = two nil nil` を
+`false` 頭の形に置くには
+
+    MPd [false] (two nil nil)
+
+が要り、これは `MPd_twoTwoNilB` で `MNil`（`MPd` の壁）そのもの。
+つまり `Rq` が `FrQ` + `MPd` に置き換わっただけで、**(1) も閉じていない**。
+
+実際、`TWD0 ++ (TWBlk)^j` を `MCtx` と見るには
+`MPd [false] (two nil nil)`、`MPd [false,false] (two nil nil)`、… が要る。
+
+### 正しい状況
+
+穴は追記202 のまま 2 つ:
+
+    (1) 2 の枠の直上に `two nil nil`（`APd` では `Rq`、`MPd` では `MPd ks U`）
+    (2) 2 の枠が連続する（走り）
+
+`MPd` は (1) を「`Rq` という構文条件」から「`MPd ks U` という意味条件」に
+移し替えただけ。ただし追記204 の通り、**荷と `one V nil` の側からは
+`Rq` が完全に外れた**（`AYdT'` / `APd_payA'` / `AYs2` / `APd_oneNil'`）ので、
+残っているのは `APd` / `MPd` の**定義**に入っている分だけ。
