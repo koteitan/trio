@@ -63530,5 +63530,79 @@ theorem TSib_pay (D : List Frm) (hJTD : ∀ Z : Jk1, JkA Z → JkT (plug D Z))
 
 #print axioms TSib_pay
 
+
+/-! ### ★★★★★ 兄弟について全称な 2 つの述語で構造を書き切る
+
+    OSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (one W X))
+    TSib D X : ∀ W, JkA W → GOK (plug D W) → GOK (plug D (two W X))
+
+    plug (D ++ [fone W]) X = plug D (one W X)
+    plug (D ++ [ftwo W]) X = plug D (two W X)
+
+なので木の構造で
+
+    OSib D (one A B) ⟸ OSib D A, ∀W OSib (D ++ [fone W]) B
+    OSib D (two A B) ⟸ OSib D A, ∀W TSib (D ++ [fone W]) B
+    TSib D (one A B) ⟸ TSib D A, ∀W OSib (D ++ [ftwo W]) B
+    TSib D (two A B) ⟸ TSib D A, ∀W TSib (D ++ [ftwo W]) B
+    TSib D (pay A Y) ⟸ TSib D A                          （TSib_pay、緑）
+    OSib D (pay A Y) ⟸ OSib D A                          （AYs、CtxX 付き）
+    OSib D nil       ⟸ ∀W, 荷を吊るせる                  （APnil_gen0）
+    TSib D nil       ⟸ ?                                  （GOK_twoNil_gen、階段が要る）
+
+木は縮むが文脈が伸びる。荷のところで文脈が縮む。ここの測度が最後の問題。 -/
+
+def OSib (D : List Frm) (X : Jk1) : Prop :=
+  ∀ W : Jk1, JkA W → GOK (plug D W) → GOK (plug D (Jk1.one W X))
+
+theorem OSib_one (D : List Frm) (A B : Jk1) (hJA : JkA A) (hA : OSib D A)
+    (hB : ∀ W : Jk1, JkA W → GOK (plug D W) → OSib (D ++ [Frm.fone W]) B) :
+    OSib D (Jk1.one A B) := by
+  intro W hJW hGW
+  rw [← plug_snoc]
+  exact hB W hJW hGW A hJA (by rw [plug_snoc]; exact hA W hJW hGW)
+
+theorem OSib_two (D : List Frm) (A B : Jk1) (hJA : JkA A) (hA : OSib D A)
+    (hB : ∀ W : Jk1, JkA W → GOK (plug D W) → TSib (D ++ [Frm.fone W]) B) :
+    OSib D (Jk1.two A B) := by
+  intro W hJW hGW
+  rw [← plug_snoc]
+  exact hB W hJW hGW A hJA (by rw [plug_snoc]; exact hA W hJW hGW)
+
+theorem TSib_one (D : List Frm) (A B : Jk1) (hJA : JkA A) (hA : TSib D A)
+    (hB : ∀ W : Jk1, JkA W → GOK (plug D W) → OSib (D ++ [Frm.ftwo W]) B) :
+    TSib D (Jk1.one A B) := by
+  intro W hJW hGW
+  rw [← plug_snoc2]
+  exact hB W hJW hGW A hJA (by rw [plug_snoc2]; exact hA W hJW hGW)
+
+theorem TSib_two (D : List Frm) (A B : Jk1) (hJA : JkA A) (hA : TSib D A)
+    (hB : ∀ W : Jk1, JkA W → GOK (plug D W) → TSib (D ++ [Frm.ftwo W]) B) :
+    TSib D (Jk1.two A B) := by
+  intro W hJW hGW
+  rw [← plug_snoc2]
+  exact hB W hJW hGW A hJA (by rw [plug_snoc2]; exact hA W hJW hGW)
+
+/-- 2 の枠で終わる文脈での荷は `TSib` から出る。 -/
+theorem RPay_ftwo (D : List Frm) (hJTD : ∀ Z : Jk1, JkA Z → JkT (plug D Z))
+    (V : Jk1) (hJV : JkA V) (hV : TSib D V) (N : Jk1) (hJN : JkA N)
+    (hGN : GOK (plug D N)) (C : TrioSeq) (hC : Bok C) :
+    GOK (plug (D ++ [Frm.ftwo N]) (Jk1.pay V C)) := by
+  rw [plug_snoc2]
+  exact TSib_pay D hJTD V hJV hV C hC N hJN hGN
+
+/-- 1 の枠で終わる文脈での荷は `OSib` から出る（`APnil_gen0` の荷）。 -/
+theorem OSib_nil_of_pay (D : List Frm)
+    (hJTD : ∀ Z : Jk1, JkA Z → JkT (plug D Z))
+    (hpay : ∀ W : Jk1, JkA W → GOK (plug D W) →
+      ∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay W C))) :
+    OSib D Jk1.nil := by
+  intro W hJW hGW
+  exact APnil_gen0 D W (hJTD _ ⟨hJW, trivial⟩) hGW (hpay W hJW hGW)
+
+#print axioms TSib_two
+#print axioms RPay_ftwo
+#print axioms OSib_nil_of_pay
+
 end Small
 end TRIO
