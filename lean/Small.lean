@@ -68471,5 +68471,200 @@ theorem MixTow_zero : ∀ i : ℕ, GOK (bdA (List.replicate 0 2 ++ List.replicat
 
 #print axioms R375m_62_of_MixTow
 
+/-! ### ★★★★★★ 走りをほどいた族 `WRd`（1 の枠と 2 の枠を別々の入り目にする）
+
+`WPd` の節は「1 の枠 ＋ 2 の枠」を 1 つの入り目 `k+1` に融合していたので、
+2 の枠が 2 枚続く形（＝走り）が表せなかった。`WRd` は枠 1 枚を入り目 1 個に
+対応させる。
+
+    WRd []            V = GOK V
+    WRd (0 :: ks)     V = ∀ U, FrmN ks U → WRd ks U → WRd ks (one U V)
+    WRd ((k+1) :: ks) V = ∀ r (入り目 ≤ k), r ++ ks ≠ [] → ∀ N, JkA N →
+        (∀ q (入り目 ≤ k), WRd (q ++ (r ++ ks)) N) → WRd (r ++ ks) (two N V)
+
+長さ `m` の走りは形 `(k_m+1) :: … :: (k_1+1) :: 0 :: ks` で表せる。
+走りの長さが入り目に縛られないのが `WQd` との違い。
+`r ++ ks ≠ []` は「字の頭に 2 の記録は置けない」（`TopOk (two _ _) = False`）から。 -/
+
+theorem FrmN_ne (ks : List ℕ) (h : ks ≠ []) (U : Jk1) : FrmN ks U ↔ JkA U := by
+  cases ks with
+  | nil => exact absurd rfl h
+  | cons a as => exact Iff.rfl
+
+theorem FrmN_two_ne : ∀ (ks : List ℕ), ks ≠ [] → ∀ N X : Jk1, JkA N → JkA X →
+    FrmN ks (Jk1.two N X)
+  | [], h, _, _, _, _ => absurd rfl h
+  | (_ :: _), _, _, _, hN, hX => ⟨hN, hX⟩
+
+def WRd : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U : Jk1, FrmN ks U → WRd ks U → WRd ks (Jk1.one U V)
+  | ((k + 1) :: ks), V => ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) → r ++ ks ≠ [] →
+      ∀ N : Jk1, JkA N →
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WRd (q ++ (r ++ ks)) N) →
+      WRd (r ++ ks) (Jk1.two N V)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+      | (rw [show q ++ (r ++ ks) = (q ++ r) ++ ks from by simp]
+         exact dm_app ks (q ++ r)
+           (by
+             intro x hx
+             rcases List.mem_append.mp hx with h1 | h1
+             · exact (by assumption : ∀ x ∈ q, x ≤ k) x h1
+             · exact (by assumption : ∀ x ∈ r, x ≤ k) x h1))
+
+theorem WRd_bnil (V : Jk1) : WRd [] V ↔ GOK V := by rw [WRd]
+
+theorem WRd_c0 (ks : List ℕ) (V : Jk1) :
+    WRd (0 :: ks) V ↔ ∀ U : Jk1, FrmN ks U → WRd ks U → WRd ks (Jk1.one U V) := by
+  rw [WRd]
+
+theorem WRd_ck (k : ℕ) (ks : List ℕ) (V : Jk1) :
+    WRd ((k + 1) :: ks) V ↔ ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) → r ++ ks ≠ [] →
+      ∀ N : Jk1, JkA N →
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WRd (q ++ (r ++ ks)) N) →
+      WRd (r ++ ks) (Jk1.two N V) := by
+  rw [WRd]
+
+def WRtx : List ℕ → List Frm → Prop
+  | [], ctx => ctx = []
+  | (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WRtx ks ctx' ∧ FrmN ks U ∧ WRd ks U
+  | ((k + 1) :: ks), ctx => ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ k) (_ : r ++ ks ≠ [])
+      (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧ WRtx (r ++ ks) ctx' ∧ JkA N ∧
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WRd (q ++ (r ++ ks)) N)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem WRtx_bnil (ctx : List Frm) : WRtx [] ctx ↔ ctx = [] := by rw [WRtx]
+
+theorem WRtx_c0 (ks : List ℕ) (ctx : List Frm) :
+    WRtx (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WRtx ks ctx' ∧ FrmN ks U ∧ WRd ks U := by
+  rw [WRtx]
+
+theorem WRtx_ck (k : ℕ) (ks : List ℕ) (ctx : List Frm) :
+    WRtx ((k + 1) :: ks) ctx ↔ ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ k) (_ : r ++ ks ≠ [])
+      (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧ WRtx (r ++ ks) ctx' ∧ JkA N ∧
+      (∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WRd (q ++ (r ++ ks)) N) := by
+  rw [WRtx]
+
+theorem WRtx_JkT : ∀ (ks : List ℕ) (ctx : List Frm), WRtx ks ctx → ∀ X : Jk1,
+    FrmN ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WRtx_bnil] at h; subst h; exact hX
+  | (0 :: ks), ctx, h, X, hX => by
+      rw [WRtx_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      rw [plug_snoc]
+      exact WRtx_JkT ks ctx' hc' (Jk1.one U X) (FrmN_one ks U X hU hX)
+  | ((k + 1) :: ks), ctx, h, X, hX => by
+      rw [WRtx_ck] at h
+      obtain ⟨r, hr, hne, ctx', N, rfl, hc', hJN, -⟩ := h
+      rw [plug_snoc2]
+      exact WRtx_JkT (r ++ ks) ctx' hc' (Jk1.two N X)
+        (FrmN_two_ne (r ++ ks) hne N X hJN hX)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem WRd_iff : ∀ (ks : List ℕ) (V : Jk1),
+    WRd ks V ↔ ∀ ctx : List Frm, WRtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WRd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WRtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WRtx_bnil []).mpr rfl)
+  | (0 :: ks), V => by
+      rw [WRd_c0]
+      constructor
+      · intro h ctx hc
+        rw [WRtx_c0] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (WRd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (WRd_iff ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((WRtx_c0 ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | ((k + 1) :: ks), V => by
+      rw [WRd_ck]
+      constructor
+      · intro h ctx hc
+        rw [WRtx_ck] at hc
+        obtain ⟨r, hr, hne, ctx', N, rfl, hc', hJN, hNt⟩ := hc
+        rw [plug_snoc2]
+        exact (WRd_iff (r ++ ks) _).mp (h r hr hne N hJN hNt) ctx' hc'
+      · intro h r hr hne N hJN hNt
+        refine (WRd_iff (r ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc2]
+        exact h (ctx' ++ [Frm.ftwo N])
+          ((WRtx_ck k ks _).mpr ⟨r, hr, hne, ctx', N, rfl, hc', hJN, hNt⟩)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem WRd_step (ks : List ℕ) {V W : Jk1} (hV : FrmN ks V) (hVk : WRd ks V)
+    (hW : WRd (0 :: ks) W) : WRd ks (Jk1.one V W) :=
+  (WRd_c0 ks W).mp hW V hV hVk
+
+/-- 2 の枠 1 枚。走りの長さは形の長さに現れるので、入り目に縛られない。 -/
+theorem WRd_twoOf {k : ℕ} {ks : List ℕ} (hne : ks ≠ []) {V N : Jk1} (hJN : JkA N)
+    (hNt : ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WRd (q ++ ks) N)
+    (hV : WRd ((k + 1) :: ks) V) : WRd ks (Jk1.two N V) := by
+  have h := (WRd_ck k ks V).mp hV [] (by simp) (by simpa using hne) N hJN
+    (by simpa using hNt)
+  simpa using h
+
+theorem WRd_ck_shift {k : ℕ} {ks : List ℕ} {T : Jk1} (h : WRd ((k + 1) :: ks) T)
+    (a : List ℕ) (ha : ∀ x ∈ a, x ≤ k) : WRd ((k + 1) :: (a ++ ks)) T := by
+  rw [WRd_ck]
+  intro r hr hne N hJN hNt
+  have e : r ++ (a ++ ks) = (r ++ a) ++ ks := (List.append_assoc r a ks).symm
+  rw [e] at hne hNt ⊢
+  refine (WRd_ck k ks T).mp h (r ++ a) ?_ hne N hJN hNt
+  intro x hx
+  rcases List.mem_append.mp hx with h1 | h1
+  · exact hr x h1
+  · exact ha x h1
+
+theorem WRd_congr : ∀ (ks : List ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    WRd ks V1 → WRd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WRd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+theorem WRtx_split (ks : List ℕ) (ctx : List Frm) (h : WRtx (0 :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WRtx ks ctx0 ∧
+      FrmN ks V ∧ GOK (plug ctx0 V) := by
+  rw [WRtx_c0] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (WRd_iff ks U).mp hUk ctx' hc'⟩
+
+#print axioms WRd_iff
+#print axioms WRd_twoOf
+#print axioms WRd_ck_shift
+
 end Small
 end TRIO
