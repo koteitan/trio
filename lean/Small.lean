@@ -62390,5 +62390,77 @@ theorem GOK_blkNN_RunS (D : List Frm) (As : List Jk1) (hAs : ∀ A ∈ As, JkA A
 #print axioms GOK_oneNN_RunS
 #print axioms GOK_blkNN_RunS
 
+
+/-! ### ★★★★★ 塔の階段を「1 段積む」1 文に落とす
+
+    RBlk As = fone nil :: As.map ftwo        （塔の 1 段ぶんの枠）
+    plug (D ++ RBlk As) X = plug D (one nil (RunP As X))
+    UtwR As (n+1) = one nil (RunP As (UtwR As n))
+
+なので `plug D' (UtwR As (n+1)) = plug (D' ++ RBlk As) (UtwR As n)`。
+文脈を `RBlk As` を足してできる族について全称にすると、`n` の帰納で
+`n = 0`（＝ `GOK (plug D' nil)`）に落ちる。 -/
+
+/-- `D0` に `Bs` の中の枠列を足してできる文脈の族。 -/
+inductive RFam (Bs : List (List Frm)) (D0 : List Frm) : List Frm → Prop
+  | base : RFam Bs D0 D0
+  | step : ∀ {D B : List Frm}, B ∈ Bs → RFam Bs D0 D → RFam Bs D0 (D ++ B)
+
+theorem RFam_GOK {Bs : List (List Frm)} {D0 : List Frm} {X : Jk1}
+    (hbase : GOK (plug D0 X))
+    (h : ∀ (D B : List Frm), B ∈ Bs → RFam Bs D0 D → GOK (plug D X) →
+      GOK (plug (D ++ B) X)) :
+    ∀ D : List Frm, RFam Bs D0 D → GOK (plug D X) := by
+  intro D hD
+  induction hD with
+  | base => exact hbase
+  | step hB hD ih => exact h _ _ hB hD ih
+
+theorem plug_mapFtwo : ∀ (As : List Jk1) (X : Jk1),
+    plug (As.map Frm.ftwo) X = RunP As X
+  | [], _ => rfl
+  | (A :: As), X => by
+      show Jk1.two A (plug (As.map Frm.ftwo) X) = Jk1.two A (RunP As X)
+      rw [plug_mapFtwo As X]
+
+/-- 塔の 1 段ぶんの枠列。 -/
+def RBlk (As : List Jk1) : List Frm := Frm.fone Jk1.nil :: As.map Frm.ftwo
+
+theorem plug_RBlk (D : List Frm) (As : List Jk1) (X : Jk1) :
+    plug (D ++ RBlk As) X = plug D (Jk1.one Jk1.nil (RunP As X)) := by
+  show plug (D ++ (Frm.fone Jk1.nil :: As.map Frm.ftwo)) X = _
+  rw [show D ++ (Frm.fone Jk1.nil :: As.map Frm.ftwo)
+      = (D ++ [Frm.fone Jk1.nil]) ++ As.map Frm.ftwo by simp,
+    plug_append, plug_mapFtwo, plug_snoc]
+
+/-- ★ 塔は「1 段積む」1 文から出る。 -/
+theorem GOK_UtwR_of_step (D : List Frm) (As : List Jk1)
+    (hbase : GOK (plug D Jk1.nil))
+    (hstep : ∀ D' : List Frm, RFam [RBlk As] D D' → GOK (plug D' Jk1.nil) →
+      GOK (plug D' (Jk1.one Jk1.nil (RunS As)))) :
+    ∀ n : ℕ, GOK (plug D (UtwR As n)) := by
+  have hall : ∀ D' : List Frm, RFam [RBlk As] D D' → GOK (plug D' Jk1.nil) := by
+    refine RFam_GOK hbase ?_
+    intro D' B hB hD' hG
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+    subst hB
+    rw [plug_RBlk]
+    exact hstep D' hD' hG
+  have key : ∀ (n : ℕ) (D' : List Frm), RFam [RBlk As] D D' →
+      GOK (plug D' (UtwR As n)) := by
+    intro n
+    induction n with
+    | zero => intro D' hD'; exact hall D' hD'
+    | succ n ih =>
+        intro D' hD'
+        show GOK (plug D' (Jk1.one Jk1.nil (RunP As (UtwR As n))))
+        rw [← plug_RBlk]
+        exact ih _ (RFam.step (by simp) hD')
+  intro n
+  exact key n D RFam.base
+
+#print axioms RFam_GOK
+#print axioms GOK_UtwR_of_step
+
 end Small
 end TRIO
