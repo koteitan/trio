@@ -17989,3 +17989,69 @@ B が乗っていると、展開の bad root が B の中に入るので、B の
 `QPd (false::false::ks)` も書ける。しかし `QPd (false::ks) nil` を開くと
 `QPd ks (two N nil)` で、ks の頭が false ならまた走り。
 形の言語を広げても壁は動かない。
+
+## 追記213: #14 は `MNil` より弱い `MRun` から出る。`FrQ` は `two _ T` で閉じない
+
+2026-09-10。追記212 の続き。
+
+### 新しく緑になったもの
+
+    MRun : Prop := ∀ ks, MPd (false :: ks) (two nil nil)
+
+    MRun_of_MNil   : MNil → MRun            （= MCw_twoNil）
+    MPd_TW_of_MRun : MRun → ∀ n ks, MPd (false::ks) (TW n)
+    TowOk_of_MRun  : MRun → TowOk
+    R14_of_MRun    : MRun → #14
+
+`MPd_TW` の証明が `MNil` を使うのは `MPd_twoTwoNilB hnil ks`
+（= `MCw (two nil nil)`）を作るためだけだった。だから仮定はそれで足りる。
+`MNil → MRun` があるので `MRun` は `MNil` より弱い仮定で、
+`R14_of_MRun` は `R14_mem_M` より強い定理。
+
+`MRun` は壁の一番裸の形:
+**上に何も無い 2 の記録を、2 の枠の直上に置く。**
+語で書けば `… (l+1,2,0)(l+2,2,0)` を作ること。
+
+### `MPd` 層の荷（`MPd_payA`）は移植の問題ではなく壁だった
+
+追記211 で「未（移植の問題）」と書いたが、これは間違い。理由:
+
+`AYdT'`（`APd` の荷、false 頭）の証明は `APd_chainT` の塔を使う。
+塔の木は `twoIt N T n = two (twoIt N T (n-1)) T`（T は荷 `pay Z Y'`）で、
+**2 の枠の兄弟が育つ**。`APd` ではその不変条件が
+
+    ∀ j, APd (rep j true ++ (true :: ks)) (twoIt N T n)
+
+（= `APd` 一様、`AYdT_hstep` で 1 段進む）なので閉じる。ところが `MPd` は
+兄弟条件を `FrQ N` にしてあるので、不変条件は `FrQ (twoIt N T n)` になり、
+
+    FrQ (two W T) ⊇ LAll (two W T)
+
+が要る。`LAll (two W T)` は `T ≠ nil` だと `LStep2` そのもの、つまり壁。
+**`FrQ` は `N ↦ two N T` で閉じていない。**
+
+### 直し方の候補: `NPd` = `APd` から `Rq` だけ外した族
+
+    NPd []           V = GOK V
+    NPd (true :: ks) V = ∀ U, FrmJ ks U → NPd ks U → NPd ks (one U V)
+    NPd (false::ks)  V = ∀ m U N, FrmJ (rep m true ++ ks) U → NPd (rep m true ++ ks) U →
+        JkA N → (∀ j, NPd (rep j true ++ (true :: (rep m true ++ ks))) N) →
+        NPd (rep m true ++ ks) (one U (two N V))
+
+兄弟条件を `APd` と同じ一様形のまま残すので、荷の塔は閉じる。
+枠 `U` の `Rq` = `TopOk U` だけを外す。停止性の測度 `(cntF ks, ks.length)` は同じ。
+
+ただしこれでも #14 は出ない。塔の文脈
+`[fone nil, ftwo nil] ++ [fone (two nil nil), ftwo nil]^n` の最内の枠木は
+`two nil nil` で、形は `false^n`。だから `NPd (false^n) (two nil nil)` が要り、
+`n ≥ 1` ならこれは走り。**やはり `MRun` に落ちる。**
+
+### まとめ
+
+    #14 ⟸ MRun : ∀ ks, MPd (false::ks) (two nil nil)
+        ⟸ MNil ⟸ (∀ N, FrQ N → MBplus N)
+    #14 ⟸ WallT : ∀ r, TwOk (r+1) 0 (two nil nil)   （梯子）
+        ⟸ NTwStep
+
+`MRun` と `WallT` はどちらも「上に何も無い 2 の記録を 2 の枠の直上に置く」で、
+層で書くか梯子で書くかの違いしかない。いま一番弱い仮定は `MRun`。

@@ -64975,6 +64975,40 @@ theorem MBplus_twoNil {A : Jk1} (hQA : FrQ A) (hA : MBplus A) :
 
 #print axioms MBplus_one
 #print axioms MBplus_twoNil
+
+/-! ### ★★★★★ #14 は `MNil` より弱い `MRun` から出る
+
+`MPd_TW` の証明が `MNil` を使うのは `MPd_twoTwoNilB hnil ks`
+（= `MCw (two nil nil)`）を作るためだけ。だから仮定はそれで足りる。
+`MCw_twoNil : MNil → MCw (two nil nil)` があるので `MRun` は `MNil` より弱い。
+
+`MRun` は壁の一番裸の形: **上に何も無い 2 の記録を、2 の枠の直上に置く**。 -/
+
+def MRun : Prop := ∀ ks : List Bool, MPd (false :: ks) (Jk1.two Jk1.nil Jk1.nil)
+
+theorem MRun_of_MNil (h : MNil) : MRun := MCw_twoNil h
+
+theorem MPd_TW_of_MRun (h : MRun) :
+    ∀ (n : ℕ) (ks : List Bool), MPd (false :: ks) (TW n)
+  | 0, ks => h ks
+  | (n + 1), ks =>
+      MPd_step (false :: ks)
+        (⟨trivial, trivial⟩ : FrmJ (false :: ks) (Jk1.two Jk1.nil Jk1.nil))
+        FrQ_twoNil (h ks)
+        (MPd_twoOf FrQ_nil (MPd_TW_of_MRun h n (false :: ks)))
+
+theorem TowOk_of_MRun (h : MRun) : TowOk := fun n =>
+  (MPd_bnil _).mp (MPd_step [] (JkT_nil : FrmJ [] Jk1.nil) FrQ_nil
+    ((MPd_bnil _).mpr GOK_nil)
+    (MPd_twoOf FrQ_nil (MPd_TW_of_MRun h n [])))
+
+/-- ★★★★★ #14 は `MRun` 1 本から出る。 -/
+theorem R14_of_MRun (h : MRun) : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_mem (TowOk_of_MRun h)
+
+#print axioms MRun_of_MNil
+#print axioms TowOk_of_MRun
+#print axioms R14_of_MRun
 #print axioms SelfW_of_NTw
 #print axioms GOK_twoNil_of_SelfW
 #print axioms OneNil_GCtx
