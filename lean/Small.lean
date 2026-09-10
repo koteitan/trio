@@ -67994,5 +67994,28 @@ theorem GOK_oneStkW2 : GOK (Jk1.one Jk1.nil (stk 2)) :=
 #print axioms WPd_stk2
 #print axioms GOK_oneStkW2
 
+/-! ### 連鎖の木は走りを含まない（平らさ Δ=0 の形式化）
+
+`twoIt A T n` の 2 の記録は全部同じ高さに並ぶ（Δ=0）。木の言葉では
+`NoRun`（2 の記録の直上に 2 の記録が来ない）が成り立つ。
+ただし `TopOk` は成り立たない（`two` 頭なので）。
+`TwOk_all_of_NoRun` は `TopOk` を要求するので、`Fter` が破れる位置
+（＝走りの中）では使えない。そこが壁。 -/
+
+theorem NoRun_twoIt {A T : Jk1} (hA : NoRun A) (hT : NoRun T) (hTop : TopOk T) :
+    ∀ n : ℕ, NoRun (twoIt A T n)
+  | 0 => hA
+  | (n + 1) => NoRun.two (NoRun_twoIt hA hT hTop n) hT hTop
+
+theorem NoRun_TChain {Wb X : Jk1} (hWb : NoRun Wb) (hX : NoRun X) (hTop : TopOk X) :
+    ∀ V : Jk1, TChain Wb X V → NoRun V := by
+  intro V hV
+  induction hV with
+  | base => exact hWb
+  | step _ hY ih => exact NoRun.two ih (NoRun.pay hX hY) hTop
+
+#print axioms NoRun_twoIt
+#print axioms NoRun_TChain
+
 end Small
 end TRIO

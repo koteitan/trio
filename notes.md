@@ -19839,3 +19839,31 @@ GOK (plug D (two V nil))`。`D = ctx ++ [fone U] ++ ftw Bs` と分けると
 幅 1 の塔 `GOK_bdA1` が梯子（`TwOk` / `Fter`）で緑なのは、
 1 の記録と 2 の記録が交互で `Fter`（2 の記録の直上に 2 の記録を置かない）が
 常に満たされるから。幅 ≥ 2 はそこで落ちる。
+
+## 追記253: 連鎖の木は `NoRun`。壁は「`TopOk` が無い所」に確定
+
+2026-09-11。緑になったもの:
+
+    NoRun_twoIt  : NoRun A → NoRun T → TopOk T → ∀ n, NoRun (twoIt A T n)
+    NoRun_TChain : NoRun Wb → NoRun X → TopOk X → ∀ V, TChain Wb X V → NoRun V
+
+`twoIt A T n` の 2 の記録は全部同じ高さ（Δ=0）なので、木の言葉で
+`NoRun`（2 の記録の直上に 2 の記録が来ない）が成り立つ。
+`TopOk (pay Z Y) = TopOk Z` なので連鎖の荷の側も条件を満たす。
+
+### なぜこれで壁が破れないか
+
+    TwOk_all_of_NoRun (h : NoRun A) (hT : TopOk A) : ∀ r m, TwOk r m A
+
+は `TopOk A` を要求する。連鎖の木は `two` 頭なので `TopOk` は偽。
+`TopOk` が使われるのは梯子の `Fter` が破れる位置（＝走りの中）だけなので、
+連鎖の木は **1 の枠の位置では良いが走りの中では言えない**。
+これは `WPd_TChain0`（頭 0 の形なら差せる）と同じことを梯子側で言っている。
+
+### 壁の位置（3 通りの言い方が一致）
+
+    層 WPd   : 連鎖の木は頭 0 の形でのみ差せる（入り目つきの形では言えない）
+    梯子     : 連鎖の木は NoRun だが TopOk でないので Fter が破れる位置で言えない
+    文脈     : ZeroStep（走りを含む文脈の先端で 1 の枠を積む）
+
+どれも「走りの中に連鎖の木を置く」1 点。
