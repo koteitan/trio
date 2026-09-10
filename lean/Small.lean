@@ -63604,5 +63604,67 @@ theorem OSib_nil_of_pay (D : List Frm)
 #print axioms RPay_ftwo
 #print axioms OSib_nil_of_pay
 
+
+/-! ### ★★★★★ `TSib D nil` は「`W` を自分の上に積み続けられる」1 文
+
+`GOK_twoNil_gen` の階段は `plug (replicate m (fone W)) W`（`W` の 1 の記録の鎖）で、
+`plug (D ++ replicate m (fone W)) W` と同じ。だから
+
+    SelfW D W : ∀ k, GOK (plug (D ++ (fone W)^k) W)
+
+だけで `TSib D nil` が出る（`D` が 1 の枠止まりのとき）。
+
+さらに `WallT` は `TSib D (two nil nil)` に落ち、`TSib_two` でそれは
+`TSib · nil` 2 つになる。 -/
+
+def SelfW (D : List Frm) (W : Jk1) : Prop :=
+  ∀ k : ℕ, GOK (plug (D ++ List.replicate k (Frm.fone W)) W)
+
+theorem SelfW_of_OSib (D : List Frm) (W : Jk1) (hJW : JkA W) (hGW : GOK (plug D W))
+    (h : ∀ k : ℕ, OSib (D ++ List.replicate k (Frm.fone W)) W) : SelfW D W := by
+  intro k
+  induction k with
+  | zero => simpa using hGW
+  | succ k ih =>
+      have e : D ++ List.replicate (k + 1) (Frm.fone W)
+          = (D ++ List.replicate k (Frm.fone W)) ++ [Frm.fone W] := by
+        simp [List.replicate_succ', ← List.append_assoc]
+      rw [e, plug_snoc]
+      exact h k W hJW ih
+
+/-- `D` が 1 の枠止まりなら `TSib D nil` は `SelfW` から出る。 -/
+theorem TSib_nil_of_SelfW (ctx0 : List Frm) (V : Jk1) (hGV : GOK (plug ctx0 V))
+    (hJTD : ∀ Z : Jk1, JkA Z → JkT (plug (ctx0 ++ [Frm.fone V]) Z))
+    (hself : ∀ W : Jk1, JkA W → GOK (plug (ctx0 ++ [Frm.fone V]) W) →
+      SelfW (ctx0 ++ [Frm.fone V]) W) :
+    TSib (ctx0 ++ [Frm.fone V]) Jk1.nil := by
+  intro W hJW hGW
+  exact GOK_twoNil_gen ctx0 V hJW (hJTD _ ⟨hJW, trivial⟩) hGV
+    (fun m => by rw [← plug_append]; exact hself W hJW hGW m)
+
+/-- ★★★★★ 壁 `WallT` は `TSib D (two nil nil)` 1 本。 -/
+theorem WallT_of_TSib (h : ∀ (r m : ℕ) (D : List Frm), TwSt r m D → Fter r m →
+    TSib D (Jk1.two Jk1.nil Jk1.nil)) : WallT := by
+  intro r D hD
+  obtain ⟨m, D', N, rfl, hD', hf, hJN, hN⟩ := (TwSt_e r 0 D).mp hD
+  rw [plug_snoc2]
+  exact h r m D' hD' hf N hJN (hN m D' hD' hf)
+
+theorem R14_of_TSib (h : ∀ (r m : ℕ) (D : List Frm), TwSt r m D → Fter r m →
+    TSib D (Jk1.two Jk1.nil Jk1.nil)) :
+    R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R14_of_WallT (WallT_of_TSib h)
+
+/-- `TSib D (two nil nil)` は `TSib · nil` 2 つから。 -/
+theorem TSib_twoNilNil (D : List Frm) (hA : TSib D Jk1.nil)
+    (hB : ∀ W : Jk1, JkA W → GOK (plug D W) → TSib (D ++ [Frm.ftwo W]) Jk1.nil) :
+    TSib D (Jk1.two Jk1.nil Jk1.nil) :=
+  TSib_two D Jk1.nil Jk1.nil trivial hA hB
+
+#print axioms SelfW_of_OSib
+#print axioms TSib_nil_of_SelfW
+#print axioms WallT_of_TSib
+#print axioms R14_of_TSib
+
 end Small
 end TRIO
