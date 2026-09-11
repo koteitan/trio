@@ -75939,5 +75939,35 @@ theorem QOk_twoNil_of_fone {n : ℕ} {D₁ : List Frm} (hD₁ : GCx n D₁) {V :
 #print axioms QOk_nil_fone
 #print axioms QOk_twoNil_of_fone
 
+/-! ### `GCx` の構造補題
+
+`one` / `two` はどちらも `plug` の付け替えだけ。木と「その荷」の 2 つが
+族の側条件なので、木の構造帰納では常にこの 2 つを一緒に持ち回ることになる。 -/
+
+def QPay (n : ℕ) (X : Jk1) : Prop :=
+  ∀ (D : List Frm) (C : TrioSeq), GCx n D → Bok C → GOK (plug D (Jk1.pay X C))
+
+theorem QOk_one {n : ℕ} {U X : Jk1} (hJU : JkA U) (hU : QOk n U) (hUp : QPay n U)
+    (hX : QOk n X) : QOk n (Jk1.one U X) := by
+  intro D hD
+  rw [← plug_snoc]
+  exact hX _ (GCx_fone hD hJU (hU D hD) (fun C hC => hUp D C hD hC))
+
+theorem QOk_two {n : ℕ} {N X : Jk1} (hJN : JkA N) (hN : QOk n N) (hNp : QPay n N)
+    (hX : QOk (n + 1) X) : QOk n (Jk1.two N X) := by
+  intro D hD
+  rw [← plug_snoc2]
+  exact hX _ (GCx_ftwo hD hJN hN (fun D' C hD' hC => hNp D' C hD' hC))
+
+theorem APz_of_QOk0 {X : Jk1} (h : QOk 0 X) : APz X :=
+  fun U hU hGU => h [Frm.fone U] (GCx0.base hU hGU)
+
+/-- ★ `GCx` で残っているのは荷 1 つ。鎖の要素の吊るしが出ない。 -/
+def QPayAll : Prop := ∀ (n : ℕ) (X : Jk1), JkA X → QOk n X → QPay n X
+
+#print axioms QOk_one
+#print axioms QOk_two
+#print axioms APz_of_QOk0
+
 end Small
 end TRIO
