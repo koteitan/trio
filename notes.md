@@ -21559,3 +21559,44 @@ Acc（DM）帰納でほどける:
 （`R600_349 ++ DiaV 2 2 (k+1)`、全部緑）も `bms -c` で `R600_351` より小さい
 （対角は z=0、`R600_351` の末尾は z=1）。
 今回のセッションで無条件に証明できた**行列**はまだ無い（全部条件つきの還元）。
+
+## 追記291 (2026-09-11): `Z` 一般の鎖は回る。ただし `ZnilStep` は強すぎる
+
+### 1. 緑になった機械
+
+    ZnilStep := ∀ ctx (CtxJT), ∀ Z M, JkA Z → JkA M →
+                  GOK (plug ctx M) → GOK (plug ctx (two M Z))
+    PZ_chain / PZ_cons (h : ZnilStep) :
+      ∀ B Bok B, ∀ ctx Z M, … → GOK (plug ctx (two M (pay Z B)))
+
+`FoneB` を `APnil_gen0` で荷に落とすと `GOK (plug ctx (pay A C))`。
+`GBase ctx` なら `ctx = ctx₀ ++ [fone A', ftwo nil]` なので
+`plug ctx (pay A C) = plug (ctx₀ ++ [fone A']) (two nil (pay A C))`。
+節が `two nil (pay A C)` になるので `dupJt0` / `innerJt0` がそのまま当たり、
+荷 `C` の W 帰納が回る。鎖 `twoIt M (pay Z C₀) n` は `PZ_chain` で受ける。
+
+### 2. 文脈の深さで回る（発見）
+
+`PZ_cons` を `M = nil` で使うと、要るのは
+
+    GOK (plug (ctx₀ ++ [fone A']) nil) = GOK (plug ctx₀ (one A' nil)) = FoneB(ctx₀, A')
+
+つまり**1 ブロック浅い文脈の `FoneB`**。`GBase` の底（`ctx₀ = []`, `A' = nil`）は
+`GOK (one nil nil)` = `GOK (bdA [0])` で緑。だから `FoneB` は `GBase` の帰納で
+回る**はず**だった。
+
+### 3. しかし `ZnilStep` は強すぎる（測定）
+
+`ZnilStep` は `Z` に `JkA` しか課していない。`Z` は 2 の記録の上に来る木なので、
+条件なしだと「どんな `JkA` の木も良い」に近く、断片の停止性そのものに匹敵する。
+`PZ_cons` の還元としての価値は低い。
+
+正しくは:
+
+- `Z` は固定（荷の `pay Z B` の `Z`。実際の用途では枠木 `A` か `nil`）
+- `M` は鎖の前置き `twoIt nil (pay Z C₀) n` に限る
+- `M = nil` の場合の `GOK (plug ctx (two nil Z))` は `GOK (plug ctx' A)` として
+  **手元にある**（`ctx = ctx₀ ++ [fone A']`、`two nil A` がちょうど元のブロック）
+
+つまり本当に要るのは「鎖の前置き `M` について `two M Z` が良い」だけ。
+次はこの形で `ZnilStep` を絞り直す。
