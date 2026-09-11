@@ -74881,5 +74881,50 @@ theorem RunBdA_one_nil {k : ℕ} (hk : 1 ≤ k) (ks : List ℕ) :
 #print axioms R375m62_of_RunBdA
 #print axioms StkBlk2_of_RunBdA
 
+/-! ### ★★★★★ `bdA` 経由（`WPd` 層）も裸の記録経由（`HGx` 層）も同じ壁
+
+`GOKall := ∀ T, JkT T → GOK T` があれば `WPd` 層は全部出る。`WPd ks Z` は
+`WPd_iff` で「`WCtx ks` のどの文脈でも `plug ctx Z` が良い」であり、
+`WCtx_JkT` がその `plug ctx Z` の `JkT` をくれるから。 -/
+
+theorem WPd_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) (ks : List ℕ) (Z : Jk1)
+    (hZ : FrmN ks Z) : WPd ks Z :=
+  (WPd_iff ks Z).mpr (fun ctx hc => h _ (WCtx_JkT ks ctx hc Z hZ))
+
+theorem RunP2_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) : RunP2 := by
+  intro j k ks X hX _ _
+  exact WPd_of_GOKall h _ _ (JkA_stkP j hX : FrmN ((k + 1) :: ks) (stkP j X))
+
+theorem TopOk_bdA : ∀ js : List ℕ, TopOk (bdA js)
+  | [] => trivial
+  | (_ :: _) => trivial
+
+theorem JkT_bdA (js : List ℕ) : JkT (bdA js) := ⟨JkA_bdA js, TopOk_bdA js⟩
+
+theorem GOK_bdA_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) (js : List ℕ) :
+    GOK (bdA js) := h _ (JkT_bdA js)
+
+theorem Pay2_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) : Pay2 := by
+  intro B hB
+  exact h (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))))
+    ⟨⟨trivial, trivial, trivial, trivial, hB⟩, trivial⟩
+
+/-- ★★★★★★ 一般の壁 1 本から、開いている 2 つの行列の両方。 -/
+theorem R375m61_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_GOKall h)
+
+theorem R375m62_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m_62_of_bdA2 (fun n => GOK_bdA_of_GOKall h (List.replicate n 2))
+
+theorem R375m62_of_APzAll (h : APzAll) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m62_of_GOKall (GOKall_of_APzAll h)
+
+#print axioms WPd_of_GOKall
+#print axioms R375m61_of_GOKall
+#print axioms R375m62_of_GOKall
+
 end Small
 end TRIO
