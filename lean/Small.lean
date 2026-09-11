@@ -70766,5 +70766,28 @@ theorem WFd_oneNilT (k : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) (hV : JkA V)
 #print axioms WFd_ck_shift
 #print axioms WFd_oneNilT
 
+/-! ### 空木。幅 0 の入り目までは無条件で出る -/
+
+theorem WFd_nilE : WFd [] Jk1.nil := (WFd_bnil _).mpr GOK_nil
+
+theorem WFd_oneNilE (V : Jk1) (hV : JkT V) (hVk : WFd [] V) :
+    WFd [] (Jk1.one V Jk1.nil) := by
+  rw [WFd_bnil]
+  refine APnil_gen0 [] V ⟨⟨hV.1, trivial⟩, hV.2⟩ ((WFd_bnil V).mp hVk) ?_
+  intro C hC
+  exact (WFd_bnil _).mp (WFd_payE V hV hVk C hC)
+
+/-- 尻尾が空、または尻尾の頭が幅 0 なら、幅 0 の入り目の空木が出る。 -/
+theorem WFd_nilT_e (k : ℕ) : WFd ((k, 0) :: ([] : List (ℕ × ℕ))) Jk1.nil :=
+  (WFd_c0 k [] _).mpr (fun U hU hUk => WFd_oneNilE U hU hUk)
+
+theorem WFd_nilT_c (k k' : ℕ) (ks : List (ℕ × ℕ)) :
+    WFd ((k, 0) :: ((k', 0) :: ks)) Jk1.nil :=
+  (WFd_c0 k ((k', 0) :: ks) _).mpr
+    (fun U hU hUk => WFd_oneNilT k' ks U hU hUk)
+
+#print axioms WFd_nilT_e
+#print axioms WFd_nilT_c
+
 end Small
 end TRIO
