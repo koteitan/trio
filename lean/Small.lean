@@ -71182,5 +71182,135 @@ theorem WGd_mono {b b' : ℕ} (hb : b' ≤ b) {ks : List ℕ} {V : Jk1}
 #print axioms WGtx_anti
 #print axioms WGd_mono
 
+/-! ### ★★★★★★ `WGd` の階段 -/
+
+theorem WGd_nilF (m i : ℕ) (hib : i ≤ m) (ks : List ℕ) :
+    WGd (m + 1) ((i + 1) :: ks) Jk1.nil := by
+  set b : ℕ := m + 1 with hb
+  rw [WGd_ck]
+  intro r hr U hU hUk hUs Ns hlen hJNs hNt
+  have hne : Ns ≠ [] := by
+    intro h; rw [h] at hlen; simp at hlen
+  have hrne : Ns.reverse ≠ [] := by simpa using hne
+  obtain ⟨C, L, hL⟩ := List.exists_cons_of_ne_nil hrne
+  have hNs : Ns = L.reverse ++ [C] := by
+    have h2 := congrArg List.reverse hL
+    rwa [List.reverse_reverse, List.reverse_cons] at h2
+  subst hNs
+  set Ns' : List Jk1 := L.reverse with hNs'
+  have hlen' : Ns'.length = i := by
+    have : Ns'.length + 1 = i + 1 := by simpa using hlen
+    omega
+  have hJC : JkA C := hJNs C (by simp)
+  have hJNs' : ∀ A ∈ Ns', JkA A := fun A hA => hJNs A (by simp [hA])
+  have hib' : i < b := by omega
+  have hCq : ∀ b' : ℕ, b' < b → ∀ q : List ℕ, (∀ x ∈ q, x < b) →
+      WGd b' (i :: (q ++ (r ++ ks))) C := by
+    intro b' hb' q hq
+    refine hNt i (le_refl i) C ?_ b' hb' q hq
+    rw [← hlen']
+    exact AtIx_concat_last Ns' C
+  have hSib : ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns' j N → ∀ b' : ℕ, b' < b →
+      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N :=
+    fun j hj N hN b' hb' q hq => hNt j (by omega) N (AtIx_of_prefix C hN) b' hb' q hq
+  rw [WGd_iff]
+  intro ctx hc
+  have hGU : GOK (plug ctx U) := (WGd_iff b (r ++ ks) U).mp hUk ctx hc
+  have hJT : JkT (plug ctx (Jk1.one U (RunS (Ns' ++ [C])))) :=
+    WGtx_JkT b (r ++ ks) ctx hc _
+      (FrmG_one (r ++ ks) U _ hU (JkA_RunS_snocB Ns' C hJNs' hJC))
+  -- 予算を 1 下げて塔を組む
+  have hcm : WGtx m (r ++ ks) ctx := WGtx_anti b m (by omega) (r ++ ks) ctx hc
+  have hUm : WGd m (r ++ ks) U := by
+    by_cases hqe : r ++ ks = []
+    · rw [hqe] at hUk ⊢
+      exact (WGd_bnil m U).mpr ((WGd_bnil b U).mp hUk)
+    · obtain ⟨e, ks', hrk⟩ := List.exists_cons_of_ne_nil hqe
+      have h2 := hUs e ks' hrk m (by omega) [] (by simp)
+      rw [hrk]
+      simpa using h2
+  have hUsm : ∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < m →
+      ∀ q : List ℕ, (∀ x ∈ q, x < m) → WGd b' (e :: (q ++ ks')) U :=
+    fun e ks' he b' hb' q hq => hUs e ks' he b' (by omega) q
+      (fun x hx => by have := hq x hx; omega)
+  have hrep : ∀ t : ℕ, ∀ x ∈ List.replicate t i, x < b := by
+    intro t x hx
+    rw [List.eq_of_mem_replicate hx]
+    exact hib'
+  have hTC : ∀ t : ℕ, WGd m (List.replicate (t + 1) i ++ (r ++ ks)) C := by
+    intro t
+    have h1 := hCq m (by omega) (List.replicate t i) (hrep t)
+    rw [List.replicate_succ]
+    exact h1
+  have hFC : ∀ t : ℕ, FrmG (List.replicate (t + 1) i ++ (r ++ ks)) C := by
+    intro t
+    rw [List.replicate_succ]
+    exact hJC
+  have hTCs : ∀ t : ℕ, ∀ (e : ℕ) (ks2 : List ℕ),
+      List.replicate (t + 1) i ++ (r ++ ks) = e :: ks2 → ∀ b' : ℕ, b' < m →
+      ∀ q : List ℕ, (∀ x ∈ q, x < m) → WGd b' (e :: (q ++ ks2)) C := by
+    intro t e ks2 he b' hb' q hq
+    rw [List.replicate_succ] at he
+    have hpair : e = i ∧ ks2 = List.replicate t i ++ (r ++ ks) := by
+      simpa using he.symm
+    rw [hpair.1, hpair.2]
+    have hb2 : ∀ x ∈ q ++ List.replicate t i, x < b := by
+      intro x hx
+      rcases List.mem_append.mp hx with h1 | h1
+      · have := hq x h1; omega
+      · exact hrep t x h1
+    have h3 := hCq b' (by omega) (q ++ List.replicate t i) hb2
+    rwa [List.append_assoc] at h3
+  have hsibT : ∀ t : ℕ, ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns' j N → ∀ b' : ℕ, b' < m →
+      ∀ q : List ℕ, (∀ x ∈ q, x < m) →
+        WGd b' (j :: (q ++ (List.replicate (t + 1) i ++ (r ++ ks)))) N := by
+    intro t j hj N hN b' hb' q hq
+    have hb2 : ∀ x ∈ q ++ List.replicate (t + 1) i, x < b := by
+      intro x hx
+      rcases List.mem_append.mp hx with h1 | h1
+      · have := hq x h1; omega
+      · exact hrep (t + 1) x h1
+    have h3 := hSib j hj N hN b' (by omega) (q ++ List.replicate (t + 1) i) hb2
+    rwa [List.append_assoc] at h3
+  have hbase : WGtx m (i :: (r ++ ks)) (ctx ++ PBlk Ns' U) := by
+    refine WGtx_blk m i (r ++ ks) hcm hU hUm hUsm Ns' hlen' hJNs' ?_
+    intro j hj N hN b' hb' q hq
+    exact hSib j hj N hN b' (by omega) q (fun x hx => by have := hq x hx; omega)
+  have hstepT : ∀ t : ℕ, ∀ D' : List Frm,
+      WGtx m (List.replicate (t + 1) i ++ (r ++ ks)) D' →
+      WGtx m (List.replicate (t + 2) i ++ (r ++ ks)) (D' ++ PBlk Ns' C) := by
+    intro t D' hD'
+    have h := WGtx_blk m i (List.replicate (t + 1) i ++ (r ++ ks)) hD'
+      (hFC t) (hTC t) (hTCs t) Ns' hlen' hJNs' (hsibT t)
+    rw [List.replicate_succ]
+    exact h
+  have hRF : ∀ D' : List Frm, RFam [PBlk Ns' C] (ctx ++ PBlk Ns' U) D' →
+      ∃ t : ℕ, WGtx m (List.replicate (t + 1) i ++ (r ++ ks)) D' := by
+    intro D' hD'
+    induction hD' with
+    | base => exact ⟨0, by simpa using hbase⟩
+    | step hB _ ih =>
+        obtain ⟨t, ht⟩ := ih
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+        subst hB
+        exact ⟨t + 1, hstepT t _ ht⟩
+  have hkey : ∀ t : ℕ, ∀ D' : List Frm,
+      WGtx m (List.replicate (t + 1) i ++ (r ++ ks)) D' →
+      GOK (plug D' (Jk1.one C (RunP Ns' C))) := by
+    intro t D' hD'
+    have hhead : WGd m (i :: (List.replicate (t + 1) i ++ (r ++ ks))) C :=
+      hCq m (by omega) (List.replicate (t + 1) i) (hrep (t + 1))
+    have h1 := WGd_blk m i (List.replicate (t + 1) i ++ (r ++ ks)) hhead
+      (hFC t) (hTC t) (hTCs t) Ns' hlen' hJNs' (hsibT t)
+    exact (WGd_iff m _ _).mp h1 D' hD'
+  refine GOK_oneUV_RunSB ctx Ns' C U hJNs' hJC hJT hGU ?_
+  refine GOK_appJ_UtwP ctx Ns' C U hGU ?_ ?_
+  · exact (WGd_iff m _ C).mp (by simpa using hCq m (by omega) [] (by simp)) _ hbase
+  · intro D' hD' _
+    obtain ⟨t, ht⟩ := hRF D' hD'
+    exact hkey t D' ht
+
+#print axioms WGd_nilF
+
 end Small
 end TRIO
