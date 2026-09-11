@@ -72634,5 +72634,75 @@ theorem WPd_FLr : ∀ (Bs : List TrioSeq), (∀ C ∈ Bs, Bok C) →
 
 #print axioms WPd_FLr
 
+/-! ### ★★★★★★ 壁の最小形と、いま開いている最小の行列
+
+`bms` で実測: 開いている最小の行列は
+
+    R375m (6,1,0) = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,1,0)
+
+（標準形。木では `bdA [2,0]` を台座 `R341` の上に置いたもの。）
+その展開は `TwD 6 R375m (n+1)`、つまり **`R375m` 自身の縦塔**。
+`TwD_mem_of_hang` が要るのは高さ 6 の吊るし `hang6_R375m` だけで、
+それは木の言葉で「幅 2 の走りの上に荷」= `Pay2`。 -/
+
+def Wall2 (B : TrioSeq) : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B)))
+
+theorem jk1_Wall2 (B : TrioSeq) (l : ℕ) :
+    jk1 l (Wall2 B) = ((l + 1, 1, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+      :: ((l + 3, 2, 0) : ℕ × ℕ × ℕ) :: shiftr01 (l + 4) 0 B := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (l + 1) (Jk1.two Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B)))) = _
+  simp [jk1, show l + 1 + 1 = l + 2 from by omega,
+    show l + 1 + 1 + 1 = l + 3 from by omega,
+    show l + 1 + 1 + 1 + 1 = l + 4 from by omega]
+
+/-- ★ 壁の最小形（木の言葉）。幅 2 の走りの上に荷。 -/
+def Pay2 : Prop := ∀ B : TrioSeq, Bok B → GOK (Wall2 B)
+
+theorem hang6_R375m_of_Pay2 (h : Pay2) {B : TrioSeq} (hB : Bok B) :
+    R375m ++ shiftr01 6 0 B ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Wall2 B])) :=
+    h B hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Wall2 B]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_Wall2 B 2] at hh
+  simpa [R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+theorem Ancd_R375m (d : ℕ) : Ancd d R375m := by
+  refine Ancd_of_row1 ?_ d
+  intro j hj0 hjl
+  simp only [R375m, R373, R344, R341, R338, List.length_append, List.length_cons,
+    List.length_nil] at hjl
+  rcases j with _ | _ | _ | _ | _ | _ | _ | _ | j <;>
+    first
+      | omega
+      | simp [R375m, R373, R344, R341, R338, entry]
+
+/-- ★★★★★★ いま開いている最小の行列。 -/
+theorem R375m61_of_Pay2 (h : Pay2) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R375m (Ancd_R375m 6) (fun B hB => hang6_R375m_of_Pay2 h hB)
+
+/-- `Pay2` から「幅 2 のブロックの上に裸の 1 の枠」（`FoneB` の最小例）。 -/
+theorem GOK_bdA20_of_Pay2 (h : Pay2) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.two Jk1.nil (Jk1.one Jk1.nil Jk1.nil)))) := by
+  have e : ∀ X : Jk1,
+      plug [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil, Frm.ftwo Jk1.nil] X
+        = Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil X)) := fun _ => rfl
+  rw [← e]
+  refine APnil_gen0 _ Jk1.nil ?_ ?_ ?_
+  · rw [e]
+    exact ⟨⟨trivial, trivial, trivial, trivial, trivial⟩, trivial⟩
+  · rw [e]
+    exact GOK_bdA_two
+  · intro C hC
+    rw [e]
+    exact h C hC
+
+#print axioms R375m61_of_Pay2
+#print axioms GOK_bdA20_of_Pay2
+
 end Small
 end TRIO
