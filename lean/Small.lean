@@ -77218,5 +77218,63 @@ theorem GOK_oneTwoVChRunTW {N : Jk1} (hN : VCh Jk1.nil N) (m n : ℕ) :
 #print axioms GOK_oneTwoVChRunFlat
 #print axioms GOK_oneTwoVChRunTW
 
+/-! ### ★★★★★★ `GOK_oneU_twotwo` の反復が一番強い字を作る
+
+`GOK_oneU_twotwo (U) (JkT U) (GOK U) : GOK (one U (stk 2))` は既に緑。
+`JkT` も保たれるので何度でも積める。`bms -c` の実測では
+
+    Rz1 (T6w 10)  <  Rz1 [ItS T6 10]  <  Rz1 [ItS T6 10]^3  <  Rz1 [ItS T6 30]
+
+で、**`T6` を語に並べるより `stk 2` を積む方が強い**。
+語で見ると `jk1 l (ItS T6 n) = jk1 l T6 ++ ((l+1,1,0)(l+2,2,0)(l+3,2,0))^n`
+（ブロックが同じ高さで積み重なる）。 -/
+
+def ItS (U : Jk1) : ℕ → Jk1
+  | 0 => U
+  | (n + 1) => Jk1.one (ItS U n) (stk 2)
+
+theorem JkT_ItS {U : Jk1} (hU : JkT U) : ∀ n : ℕ, JkT (ItS U n)
+  | 0 => hU
+  | (n + 1) => ⟨⟨(JkT_ItS hU n).1, JkA_stk 2⟩, (JkT_ItS hU n).2⟩
+
+theorem GOK_ItS {U : Jk1} (hU : JkT U) (hGU : GOK U) : ∀ n : ℕ, GOK (ItS U n)
+  | 0 => hGU
+  | (n + 1) => GOK_oneU_twotwo (ItS U n) (JkT_ItS hU n) (GOK_ItS hU hGU n)
+
+def ItT6 (n : ℕ) : Jk1 := ItS T6 n
+
+theorem JkT_ItT6 (n : ℕ) : JkT (ItT6 n) := JkT_ItS JkT_T6 n
+
+theorem GOK_ItT6 (n : ℕ) : GOK (ItT6 n) := GOK_ItS JkT_T6 GOK_T6 n
+
+theorem GoodFb_ItT6 (n : ℕ) : GoodFb (fun a b => wordJ a b [ItT6 n]) := by
+  have h := GOK_ItT6 n [] WOk_nil GoodFb_wordJ_nil
+  simpa using h
+
+/-- ★★★★★★ 新しい最大の台座（`RunA 0 1`）。 -/
+theorem RzIt_RunA0 (n : ℕ) : RunA 0 1 (Rz1 [ItT6 n]) :=
+  Rz1_RunA0 (WOk_singletonT (JkT_ItT6 n)) (GoodFb_ItT6 n)
+
+theorem RzIt_mem (n : ℕ) : Rz1 [ItT6 n] ∈ W 0 :=
+  ((BaseOk_RunA 0).aok _ _ (RzIt_RunA0 n)).mem
+
+/-- その上に `PkGA 2`（木の語の junk）と `PU` の梯子も載る。 -/
+theorem RzItj_PkGA (n : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    PkGA 2 (Rz1 [ItT6 n] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, Rz1 [ItT6 n], wordJ 2 2 ws, rfl, RzIt_RunA0 n, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩
+
+theorem RzItj_mem (n : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    Rz1 [ItT6 n] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws) ∈ W 0 :=
+  (PkGA_Aok (RzItj_PkGA n hw)).mem
+
+theorem LadIt_mem (n : ℕ) {ws : List Jk1} (hw : WJ ws) (m : ℕ) :
+    LadB (Rz1 [ItT6 n] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) m ∈ W 0 :=
+  LadB_mem (RzItj_PkGA n hw) m
+
+#print axioms GOK_ItT6
+#print axioms RzIt_mem
+#print axioms LadIt_mem
+
 end Small
 end TRIO
