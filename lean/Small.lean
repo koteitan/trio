@@ -76493,5 +76493,33 @@ theorem GOK_T6 : GOK T6 := by
 
 #print axioms GOK_T6
 
+/-- 単字の語の普遍性。 -/
+theorem GoodFb_T6 : GoodFb (fun a b => wordJ a b [T6]) := by
+  have h := GOK_T6 [] WOk_nil GoodFb_wordJ_nil
+  simpa using h
+
+theorem R600_eq_wordJ :
+    R600 = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [T6]) := by
+  rw [wordJ_singleton]
+  show _ = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (((1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (1 + 1) T6))
+  rw [jk1_T6]
+  simp [R600_eq, R338]
+
+/-- ★★★★★★ `P(6,0,0)(2,2,1)`。梯子の族どれよりも大きい（`bms -c` で実測）。 -/
+theorem R600_221_mem : R600 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := z1wJ_mem (Y0 := R338) (a := 1) (b := 1) (by omega)
+    (ws := [T6]) (WOk_singletonT JkT_T6)
+    (fun n => Dzf_W_LwA GoodFb_T6 (LwA_of_Aok Aok_R338) n)
+  have e : R600 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]
+      = R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [T6]
+        ++ [((1 + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)]) := by
+    rw [R600_eq_wordJ]
+    simp [List.append_assoc]
+  rw [e]
+  exact h
+
+#print axioms R600_221_mem
+
 end Small
 end TRIO
