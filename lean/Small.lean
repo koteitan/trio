@@ -73584,5 +73584,96 @@ theorem FoneOK_of_ZAppSib (h : ZAppSib) :
 
 #print axioms FoneOK_of_ZAppSib
 
+/-! ### ★★★★★★ 文脈の族を `fone` 拡張まで広げて、壁を「幅 0 のブロック 1 枚」1 文に
+
+`GBase` は `[fone A, ftwo nil]`（幅 1 のブロック）でしか伸びない。ところが
+`Q0Step` の階段は `appJ A (UtwP [] nil n)`、つまり `[fone A] ++ [fone nil]^n`
+（幅 0 のブロックの塔）なので `GBase` の外に出てしまう。
+
+そこで `fone` 1 枚の拡張も許した文脈の族 `HCx` を作る:
+
+    HCx ctx → JkA A → GOK (plug ctx A) → HCx (ctx ++ [fone A])
+
+塔の 1 段を伸ばすのに要る側条件は `GOK (plug D nil)`、`D` が `fone` で終わるなら
+これは `GOK (plug D' (one A nil))`、つまり**幅 0 のブロック 1 枚**。だから
+
+    HFone := ∀ ctx A, HCx ctx → JkA A → GOK (plug ctx A) → GOK (plug ctx (one A nil))
+
+1 本で塔が全部立ち、`QFL []` が出る。`Q0Step`（幅 1）と塔の 2 つだった壁が
+`HFone`（幅 0）1 つになる。 -/
+
+inductive HCx : List Frm → Prop
+  | base : HCx ctxFL
+  | ext {ctx : List Frm} {A : Jk1} : HCx ctx → JkA A → GOK (plug ctx A) →
+      HCx (ctx ++ [Frm.fone A, Frm.ftwo Jk1.nil])
+  | fone {ctx : List Frm} {A : Jk1} : HCx ctx → JkA A → GOK (plug ctx A) →
+      HCx (ctx ++ [Frm.fone A])
+
+theorem HCx_of_GBase {ctx : List Frm} (h : GBase ctx) : HCx ctx := by
+  induction h with
+  | base => exact HCx.base
+  | ext _ hA hG ih => exact HCx.ext ih hA hG
+
+theorem HCx_CtxJT {ctx : List Frm} (h : HCx ctx) : CtxJT ctx := by
+  induction h with
+  | base => exact CtxJT_ctxFL
+  | ext _ hA _ ih => exact CtxJT_ext ih hA
+  | fone _ hA _ ih => exact CtxJT_fone ih hA
+
+/-- ★ 残っている壁 1 本。「良い枠木 `A` の上に幅 0 のブロックを 1 枚積む」。 -/
+def HFone : Prop := ∀ (ctx : List Frm) (A : Jk1), HCx ctx → JkA A → GOK (plug ctx A) →
+  GOK (plug ctx (Jk1.one A Jk1.nil))
+
+theorem UtwP0_succ (n : ℕ) : UtwP ([] : List Jk1) Jk1.nil (n + 1)
+    = Jk1.one Jk1.nil (UtwP ([] : List Jk1) Jk1.nil n) := by
+  rw [← appJ_nil_UtwP ([] : List Jk1) Jk1.nil (n + 1), appJ_UtwP0]
+
+/-- 幅 0 のブロックの塔。`HFone` があれば `HCx` の文脈で何段でも積める。 -/
+theorem TowHCx (hF : HFone) : ∀ (n : ℕ) (D : List Frm), HCx D → GOK (plug D Jk1.nil) →
+    GOK (plug D (UtwP ([] : List Jk1) Jk1.nil n)) := by
+  intro n
+  induction n with
+  | zero => intro D _ hG; exact hG
+  | succ n ih =>
+      intro D hD hG
+      rw [UtwP0_succ, ← plug_snoc]
+      exact ih (D ++ [Frm.fone Jk1.nil]) (HCx.fone hD trivial hG)
+        (by rw [plug_snoc]; exact hF D Jk1.nil hD trivial hG)
+
+/-- ★★★★★★ `HFone` だけで「空木は `HCx` の文脈で良い」が出る。 -/
+theorem QH0 (hF : HFone) : ∀ ctx : List Frm, HCx ctx → GOK (plug ctx Jk1.nil) := by
+  intro ctx hc
+  induction hc with
+  | base =>
+      show GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil Jk1.nil))
+      exact GOK_oneTwoNil
+  | @ext ctx A hcp hA hGA _ih =>
+      rw [plug_oneTwoBlk]
+      have hJT : JkT (plug ctx (Jk1.one A (Jk1.two Jk1.nil Jk1.nil))) :=
+        HCx_CtxJT hcp _ ⟨hA, trivial, trivial⟩
+      have hst : ∀ n : ℕ, GOK (plug ctx (appJ A (UtwP ([] : List Jk1) Jk1.nil n))) := by
+        intro n
+        cases n with
+        | zero => exact hGA
+        | succ m =>
+            rw [appJ_UtwP0, ← plug_snoc]
+            exact TowHCx hF m (ctx ++ [Frm.fone A]) (HCx.fone hcp hA hGA)
+              (by rw [plug_snoc]; exact hF ctx A hcp hA hGA)
+      exact GOK_oneUV_RunSB ctx [] Jk1.nil A (by simp) trivial hJT hGA hst
+  | @fone ctx A hcp hA hGA _ih =>
+      rw [plug_snoc]
+      exact hF ctx A hcp hA hGA
+
+theorem QFL0_of_HFone (hF : HFone) : QFL ([] : List TrioSeq) :=
+  fun ctx hc => QH0 hF ctx (HCx_of_GBase hc)
+
+/-- ★★★★★★ 壁 1 本からいま開いている最小の行列まで。 -/
+theorem R375m61_of_HFone (hF : HFone) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_QFL0 (QFL0_of_HFone hF)
+
+#print axioms QH0
+#print axioms R375m61_of_HFone
+
 end Small
 end TRIO
