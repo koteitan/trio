@@ -74457,5 +74457,237 @@ theorem APz_twoNil (h1 : APzOne) {V : Jk1} (hV : JkA V) (hAV : APz V) :
 
 #print axioms APz_twoNil
 
+/-! ### ★★★★★ `APzTwo` の第 2 引数が `pay` の場合は荷の W 帰納で落ちる
+
+`PZ_cons` と同じ形だが、文脈は `[fone U]` に固定で `U` を全称にする。
+鎖 `twoIt M (pay Z Y₀) n` の要素は**小さい荷** `Y₀` を使うので、
+その `APz` は W 帰納の IH から出る。 -/
+
+def APzT2 (W : Jk1) : Prop := ∀ M : Jk1, JkA M → APz M → APz (Jk1.two M W)
+
+theorem APzT2_chain {Z : Jk1} (hJZ : JkA Z) {Y₀ : TrioSeq} (hY₀ : Bok Y₀)
+    (hIH : APzT2 (Jk1.pay Z Y₀)) {M : Jk1} (hJM : JkA M) (hAM : APz M) :
+    ∀ n : ℕ, JkA (twoIt M (Jk1.pay Z Y₀) n) ∧ APz (twoIt M (Jk1.pay Z Y₀) n) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hJM, hAM⟩
+  | succ n ih => exact ⟨⟨ih.1, hJZ, hY₀⟩, hIH _ ih.1 ih.2⟩
+
+theorem APzT2_pay (Z : Jk1) (hJZ : JkA Z) (hZ : APzT2 Z) :
+    ∀ Y : TrioSeq, Bok Y → APzT2 (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → APzT2 (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hYw
+    simp only [Set.mem_setOf_eq]
+    intro hYb M hJM hAM U hU hGU
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact APz_congr (fun l => (jk1_two_payZnil M Z l).symm) (hZ M hJM hAM) U hU hGU
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hIH0 : APzT2 (Jk1.pay Z ([] : TrioSeq)) := by
+          intro M' hJM' hAM'
+          exact APz_congr (fun l => (jk1_two_payZnil M' Z l).symm) (hZ M' hJM' hAM')
+        have hch := APzT2_chain hJZ Bok_nil hIH0 hJM hAM
+        rw [e2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 (ctx := [Frm.fone U]) hw
+          ⟨⟨hU.1, hJM, hJZ, by rw [← e2]; exact hYb⟩, hU.2⟩ ?_
+        intro n hn
+        exact (hch n).2 U hU hGU ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hYw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hch := APzT2_chain hJZ hdb (hdl hdb) hJM hAM
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 (ctx := [Frm.fone U]) hw
+          ⟨⟨hU.1, hJM, hJZ, by rw [← hsplit]; exact hYb⟩, hU.2⟩ ?_
+        intro n hn
+        exact (hch n).2 U hU hGU ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 (ctx := [Frm.fone U]) hw
+          ⟨⟨hU.1, hJM, hJZ, hYb⟩, hU.2⟩ hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hYb hn) M hJM hAM U hU hGU ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb
+  exact key hYb.mem hYb
+
+#print axioms APzT2_pay
+
+/-! ### ★★★★★★ 壁は「記録の上に記録」4 文
+
+`APzO2 W := ∀ M, JkA M → APz M → APz (one M W)`（`APzOne` の言い換え）
+`APzT2 W := ∀ M, JkA M → APz M → APz (two M W)`（`APzTwo` の言い換え）
+
+を `W` で構造帰納すると
+
+    W = nil    : APzO2 は無条件で緑（APz_oneNil）、APzT2 は APzOne から（APz_twoNil）
+    W = pay Z Y: 荷の W 帰納で W = Z に落ちる（APzO2_pay / APzT2_pay）
+    W = one Z T / two Z T : 残り
+
+残り 4 つはどれも「記録の直上にまた記録がある」形。 -/
+
+def APzO2 (W : Jk1) : Prop := ∀ M : Jk1, JkA M → APz M → APz (Jk1.one M W)
+
+theorem APzO2_nil : APzO2 Jk1.nil := fun _ hJM hAM => APz_oneNil hJM hAM
+
+theorem APzO2_chain {Z : Jk1} (hJZ : JkA Z) {Y₀ : TrioSeq} (hY₀ : Bok Y₀)
+    (hIH : APzO2 (Jk1.pay Z Y₀)) {M : Jk1} (hJM : JkA M) (hAM : APz M) :
+    ∀ n : ℕ, JkA (itJ (Jk1.pay Z Y₀) n M) ∧ APz (itJ (Jk1.pay Z Y₀) n M) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hJM, hAM⟩
+  | succ n ih => exact ⟨⟨ih.1, hJZ, hY₀⟩, hIH _ ih.1 ih.2⟩
+
+theorem APzO2_pay (Z : Jk1) (hJZ : JkA Z) (hZ : APzO2 Z) :
+    ∀ Y : TrioSeq, Bok Y → APzO2 (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → APzO2 (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hYw
+    simp only [Set.mem_setOf_eq]
+    intro hYb M hJM hAM U hU hGU
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact APz_congr (fun l => (jk1_one_pay_nil M Z l).symm) (hZ M hJM hAM) U hU hGU
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hIH0 : APzO2 (Jk1.pay Z ([] : TrioSeq)) := by
+          intro M' hJM' hAM'
+          exact APz_congr (fun l => (jk1_one_pay_nil M' Z l).symm) (hZ M' hJM' hAM')
+        have hch := APzO2_chain hJZ Bok_nil hIH0 hJM hAM
+        rw [e2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 (ctx := [Frm.fone U]) hw
+          ⟨⟨hU.1, hJM, hJZ, by rw [← e2]; exact hYb⟩, hU.2⟩
+          (by rw [← e2]; exact hYb) Bok_nil ?_
+        intro n hn
+        exact (hch n).2 U hU hGU ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hYw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hch := APzO2_chain hJZ hdb (hdl hdb) hJM hAM
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 (ctx := [Frm.fone U]) hw
+          ⟨⟨hU.1, hJM, hJZ, by rw [← hsplit]; exact hYb⟩, hU.2⟩
+          (by rw [← hsplit]; exact hYb) hdb ?_
+        intro n hn
+        exact (hch n).2 U hU hGU ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs0 (ctx := [Frm.fone U]) hw
+          ⟨⟨hU.1, hJM, hJZ, hYb⟩, hU.2⟩ hYb hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hYb hn) M hJM hAM U hU hGU ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb
+  exact key hYb.mem hYb
+
+/-! ### 残り 4 文 -/
+
+def APzO2One : Prop := ∀ Z T : Jk1, JkA Z → JkA T → APzO2 Z → APzO2 T → APzO2 (Jk1.one Z T)
+def APzO2Two : Prop := ∀ Z T : Jk1, JkA Z → JkA T → APzO2 Z → APzO2 T → APzO2 (Jk1.two Z T)
+def APzT2One : Prop := ∀ Z T : Jk1, JkA Z → JkA T → APzT2 Z → APzT2 T → APzT2 (Jk1.one Z T)
+def APzT2Two : Prop := ∀ Z T : Jk1, JkA Z → JkA T → APzT2 Z → APzT2 T → APzT2 (Jk1.two Z T)
+
+theorem APzO2_all (h1 : APzO2One) (h2 : APzO2Two) : ∀ W : Jk1, JkA W → APzO2 W := by
+  intro W
+  induction W with
+  | nil => intro _; exact APzO2_nil
+  | pay Z Y ih => intro hW; exact APzO2_pay Z hW.1 (ih hW.1) Y hW.2
+  | one Z T ihZ ihT => intro hW; exact h1 Z T hW.1 hW.2 (ihZ hW.1) (ihT hW.2)
+  | two Z T ihZ ihT => intro hW; exact h2 Z T hW.1 hW.2 (ihZ hW.1) (ihT hW.2)
+
+theorem APzOne_of_APzO2 (h : ∀ W : Jk1, JkA W → APzO2 W) : APzOne :=
+  fun V W hJV hJW hAV _ => h W hJW V hJV hAV
+
+theorem APzT2_all (hOne : APzOne) (h1 : APzT2One) (h2 : APzT2Two) :
+    ∀ W : Jk1, JkA W → APzT2 W := by
+  intro W
+  induction W with
+  | nil => intro _ M hJM hAM; exact APz_twoNil hOne hJM hAM
+  | pay Z Y ih => intro hW; exact APzT2_pay Z hW.1 (ih hW.1) Y hW.2
+  | one Z T ihZ ihT => intro hW; exact h1 Z T hW.1 hW.2 (ihZ hW.1) (ihT hW.2)
+  | two Z T ihZ ihT => intro hW; exact h2 Z T hW.1 hW.2 (ihZ hW.1) (ihT hW.2)
+
+theorem APzTwo_of_APzT2 (h : ∀ W : Jk1, JkA W → APzT2 W) : APzTwo :=
+  fun V W hJV hJW hAV _ => h W hJW V hJV hAV
+
+/-- ★★★★★★ 壁 4 文からいま開いている最小の行列まで。 -/
+theorem R375m61_of_APz4 (o1 : APzO2One) (o2 : APzO2Two) (t1 : APzT2One) (t2 : APzT2Two) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_APzSteps (APzOne_of_APzO2 (APzO2_all o1 o2))
+    (APzTwo_of_APzT2 (APzT2_all (APzOne_of_APzO2 (APzO2_all o1 o2)) t1 t2))
+
+#print axioms APzO2_pay
+#print axioms R375m61_of_APz4
+
 end Small
 end TRIO
