@@ -76179,45 +76179,64 @@ theorem R376_of_RHang (h : RHang) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] �
 #print axioms R376_of_RNil
 #print axioms R376_of_RHang
 
-/-! ### ★★★★★★ `P(6,0,0)` の上の `PU` の梯子（行313〜315 の写し。無限に伸びる）
+/-! ### ★★★★★★ `P(6,0,0)` の上の `PU` の梯子と、台座の `z` 列の反復
 
 `R313` → `R314` → `R315` は `PU` の台座を 1 段ずつ上げながら
-`(h,h,0)` と `(h+1,h+1,1)` を交互に積む梯子。台座を `R310` から `R600_349`
-に取り替えるだけで同じ梯子が回り、証明済みの一番大きい行列
-`R600_349 (3,3,0)(4,4,1)` の上に無限に伸びる。 -/
+`(h,h,0)` と `(h+1,h+1,1)` を交互に積む梯子。台座は `PkGA 2` でありさえすれば
+何でもよいので、`R310` を `P(6,0,0)` 側の `PkGA 2` に取り替えるとそのまま伸びる。
+さらに台座の側も、行357 の形（`GoodFb_z1c_rep`）で `z` の列を反復して伸ばせる。
+2 重の無限族になる。 -/
 
-def Lad : ℕ → TrioSeq
-  | 0 => R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)]
-  | (n + 1) => Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ), ((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)]
+/-- `PkGA 2` の台座 `Y` の上に積む梯子。 -/
+def LadB (Y : TrioSeq) : ℕ → TrioSeq
+  | 0 => Y ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)]
+  | (n + 1) => LadB Y n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ), ((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)]
 
-theorem Lad_PU : ∀ n : ℕ, PU (n + 2) (n + 3) (Lad n)
-  | 0 => ⟨PkGA, 2, R600_349, [((4, 4, 1) : ℕ × ℕ × ℕ)], Ifc3_toIfcV Ifc3_PkGA, rfl,
-      R600_349_PkGA, by simp [Lad], JkU_z1 (le_refl 2) 2⟩
-  | (n + 1) => ⟨PU (n + 2), n + 3, Lad n, [((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)],
-      IfcV_PU (by omega) (n + 4) (by omega), by omega, Lad_PU n,
-      by simp [Lad], JkU_z1 (by omega) (n + 3)⟩
+theorem LadB_PU {Y : TrioSeq} (hY : PkGA 2 Y) : ∀ n : ℕ, PU (n + 2) (n + 3) (LadB Y n)
+  | 0 => ⟨PkGA, 2, Y, [((4, 4, 1) : ℕ × ℕ × ℕ)], Ifc3_toIfcV Ifc3_PkGA, rfl, hY,
+      by simp [LadB], JkU_z1 (le_refl 2) 2⟩
+  | (n + 1) => ⟨PU (n + 2), n + 3, LadB Y n, [((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)],
+      IfcV_PU (by omega) (n + 4) (by omega), by omega, LadB_PU hY n,
+      by simp [LadB], JkU_z1 (by omega) (n + 3)⟩
 
 /-- ★★★★★★ 梯子の段（`(n+5,n+5,1)` で終わる形）。 -/
-theorem Lad_mem (n : ℕ) : Lad n ∈ W 0 := ((BaseOk_PU (n + 2)).aok _ _ (Lad_PU n)).mem
+theorem LadB_mem {Y : TrioSeq} (hY : PkGA 2 Y) (n : ℕ) : LadB Y n ∈ W 0 :=
+  ((BaseOk_PU (n + 2)).aok _ _ (LadB_PU hY n)).mem
 
-theorem Lad_flat_PU (n : ℕ) :
-    PU (n + 3) (n + 4) (Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)]) :=
-  ⟨PU (n + 2), n + 3, Lad n, [], IfcV_PU (by omega) (n + 4) (by omega), by omega,
-    Lad_PU n, by simp, JkU_nil' (by omega) (n + 3)⟩
+theorem LadB_flat_PU {Y : TrioSeq} (hY : PkGA 2 Y) (n : ℕ) :
+    PU (n + 3) (n + 4) (LadB Y n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨PU (n + 2), n + 3, LadB Y n, [], IfcV_PU (by omega) (n + 4) (by omega), by omega,
+    LadB_PU hY n, by simp, JkU_nil' (by omega) (n + 3)⟩
 
 /-- ★★★★★★ 梯子の段（`(n+4,n+4,0)` で終わる形）。 -/
-theorem Lad_flat_mem (n : ℕ) : Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
-  ((BaseOk_PU (n + 3)).aok _ _ (Lad_flat_PU n)).mem
+theorem LadB_flat_mem {Y : TrioSeq} (hY : PkGA 2 Y) (n : ℕ) :
+    LadB Y n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  ((BaseOk_PU (n + 3)).aok _ _ (LadB_flat_PU hY n)).mem
 
-theorem Lad_zero_eq :
-    Lad 0 = R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)] := rfl
+/-- 台座の側: `z` の列を `m` 個反復した `PkGA 2`（行357 の形の一般化）。 -/
+def R600z (m : ℕ) : TrioSeq :=
+  R600 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ Zw ([true, false] ++ List.replicate m true) 2 2)
 
-theorem Lad_succ_eq (n : ℕ) :
-    Lad (n + 1)
-      = Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ), ((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)] := rfl
+theorem R600z_PkGA (m : ℕ) : PkGA 2 (R600z m) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, R600, Zw ([true, false] ++ List.replicate m true) 2 2, rfl,
+    R600_RunA0, rfl, (GoodFb_z1c_rep m).pk 1⟩
 
-#print axioms Lad_mem
-#print axioms Lad_flat_mem
+/-- ★★★★★★ 台座（`z` の列を `m` 個反復）。 -/
+theorem R600z_mem (m : ℕ) : R600z m ∈ W 0 := (PkGA_Aok (R600z_PkGA m)).mem
+
+/-- ★★★★★★ 台座の反復 `m` と梯子の段 `n` の 2 重の無限族。全部無条件。 -/
+theorem LadZ_mem (m n : ℕ) : LadB (R600z m) n ∈ W 0 := LadB_mem (R600z_PkGA m) n
+
+theorem LadZ_flat_mem (m n : ℕ) :
+    LadB (R600z m) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LadB_flat_mem (R600z_PkGA m) n
+
+theorem R600z_zero : R600z 0 = R600_349 := by
+  simp [R600z, R600_349, Zw, zcol, List.append_assoc]
+
+#print axioms LadZ_mem
+#print axioms LadZ_flat_mem
+#print axioms R600z_mem
 
 end Small
 end TRIO
