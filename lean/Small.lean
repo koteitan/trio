@@ -72704,5 +72704,60 @@ theorem GOK_bdA20_of_Pay2 (h : Pay2) :
 #print axioms R375m61_of_Pay2
 #print axioms GOK_bdA20_of_Pay2
 
+/-! ### 平らな鎖の入れ子帰納法の土台
+
+`bms` 実測: `R375m ++ B↑6` で `B = B₀ ++ [(0,0,0)]` のとき、悪い部分は
+`(5,2,0) ++ B₀↑6`（荷つきの平らな鎖）。`B₀ = []` のときだけ悪い部分が
+裸の `(5,2,0)` になり、そこは緑。
+
+    R375m (6,0,0)     [2] = R373 (5,2,0)(5,2,0)(5,2,0)              荷なしの鎖
+    R375m (6,0,0)(6,0,0) [2] = R373 (5,2,0)(6,0,0)(5,2,0)(6,0,0)(5,2,0)(6,0,0)
+
+よって入れ子帰納法（荷の W 帰納 × 鎖のリスト）の**土台は「荷が全部空の鎖」**で、
+それは `WPd_twoIt_nil` から緑。 -/
+
+theorem GOK_flat2 (m : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (twoIt Jk1.nil Jk1.nil m))) := by
+  have h1 : WPd ((m + 1) :: ([] : List ℕ)) (twoIt Jk1.nil Jk1.nil m) :=
+    WPd_twoIt_nil m m (le_refl m) []
+  have h2 : WPd (0 :: ([] : List ℕ)) (Jk1.two Jk1.nil (twoIt Jk1.nil Jk1.nil m)) :=
+    WPd_twoOf (k := m) trivial (fun q _ => WPd_nilAll _) h1
+  have h3 : WPd ([] : List ℕ)
+      (Jk1.one Jk1.nil (Jk1.two Jk1.nil (twoIt Jk1.nil Jk1.nil m))) :=
+    WPd_step [] (FrmN_nilA []) (WPd_nilAll []) h2
+  exact (WPd_bnil _).mp h3
+
+theorem jk1_FLr_rep_nil : ∀ (m l : ℕ),
+    jk1 l (FLr (List.replicate m ([] : TrioSeq))) = jk1 l (twoIt Jk1.nil Jk1.nil m)
+  | 0, _ => rfl
+  | (m + 1), l => by
+      show jk1 l (Jk1.two (FLr (List.replicate m ([] : TrioSeq)))
+          (Jk1.pay Jk1.nil ([] : TrioSeq)))
+        = jk1 l (Jk1.two (twoIt Jk1.nil Jk1.nil m) Jk1.nil)
+      show jk1 l (FLr (List.replicate m ([] : TrioSeq))) ++
+          (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (Jk1.pay Jk1.nil ([] : TrioSeq)))
+        = jk1 l (twoIt Jk1.nil Jk1.nil m) ++
+          (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Jk1.nil)
+      rw [jk1_FLr_rep_nil m l]
+      simp [jk1, shiftr01]
+
+/-- ★ 入れ子帰納法の土台: 荷が全部空の平らな鎖。 -/
+theorem GOK_FLr_rep_nil (m : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (FLr (List.replicate m ([] : TrioSeq))))) := by
+  refine GOK_congr ?_ (GOK_flat2 m)
+  intro l
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (l + 1) (Jk1.two Jk1.nil (twoIt Jk1.nil Jk1.nil m))) = _
+  show _ = jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (l + 1) (Jk1.two Jk1.nil (FLr (List.replicate m ([] : TrioSeq)))))
+  show _ = jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (l + 2) (FLr (List.replicate m ([] : TrioSeq))))))
+  rw [jk1_FLr_rep_nil m (l + 2)]
+  rfl
+
+#print axioms GOK_flat2
+#print axioms GOK_FLr_rep_nil
+
 end Small
 end TRIO
