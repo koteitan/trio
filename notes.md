@@ -23438,3 +23438,23 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 
 `leanman check` の既定のタイムアウトは 300 秒。Small.lean は 260〜290 秒かかるので、
 **`LEANMAN_TIMEOUT=900` を付けて呼ぶ**。同じ重い `simpa` を 2 本書くと超える。
+
+## 追記335 (2026-09-12): 幅の多重集合の DM 帰納は既にあった（`GOK_BCtx_nil`）
+
+`bdA (js ++ [j+1])` の展開が `bdA (js ++ replicate (i+1) j)`（幅が 1 下がって増える）
+であることを `bms` で実測し、幅の多重集合の DM 帰納で `BdAll` が出ると思って
+実装しようとしたが、**`GOK_BCtx_nil (hp : PayB)`（行70125）が同じもの**だった。
+`GOK_bdA_ofPayB` も `R376_of_PayB` も既に緑。[[family-already-exists]] の再演。
+
+実測した展開の規則（記録として）:
+
+    bdA (js ++ [j+1]) [k] = bdA (js ++ replicate (k+1) j)      幅が 1 下がって k+1 本に
+    bdA (js ++ [0])   [k] = bdA js ++ 荷 (h,0,0) ++ 最後のブロックの複製 k 本
+    one nil (stk n)   [k] = bdA (replicate (k+1) (n-1))
+
+幅 0 のブロックだけ荷が出る。だから `bdA` の DM 帰納は幅 0 のところで
+`APnil_gen0` を使い、荷の族 `PayB` に落ちる。`PayB` の最小の場合が `Pay2`
+（= `GOK (bdAC B [2])`）で、`B = [(0,0,0)]` だけは `GOK_T6` で緑。
+
+**行376 への還元は `Small.lean` に 30 本以上ある。** wall.md に一覧を置いた。
+新しい還元を作る前に必ずそこを見ること。

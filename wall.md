@@ -51,6 +51,23 @@ DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を
     StkG は StkL の ws = [] の場合だけ（`StkG_of_StkL`、緑）。行376 に要るのは
     こちらだけなので、**どの良い語に継いでもよい**という全称は落とせる。
 
+## 行376 への還元の一覧（`R376_of_*`、全部緑。新しく作る前にここを見る）
+
+`Small.lean` には行376 への還元が **30 本以上**ある。同じ壁の言い換えなので、
+新しい還元を作る前に必ずここを見ること。よく使うもの:
+
+| 定理 | 仮定 | 形 |
+|---|---|---|
+| `R376_of_StkG` | `∀n, GoodFb (wordJ · · [one nil (stk n)])` | 単字の語 1 本（いちばん弱い仮定） |
+| `R376_of_StkL` | `∀n, GOK (one nil (stk n))` | 字 |
+| `R376_of_BdAll` | `∀j m, GOK (bdA (replicate m j))` | ブロック列の字 |
+| `R376_of_PayB` | `∀ws C, Bok C → GOK (plug (BCtx ws) (pay nil C))` | **荷 1 個**（`GOK_BCtx_nil` の幅の DM 帰納で `bdA` が全部出る） |
+| `R376_of_TwoBud1` | `∀V W, PA V → PA W → ∀ks, WPd (1::ks) (two V W)` | `WPd` 1 文 |
+| `R376_of_OneNil` / `R376_of_RPay` / `R376_of_WPay` / `R376_of_FoneB` / … | 文脈の族 | 追記315 の表 |
+
+`PayB` は `Pay2`（= `GOK (bdAC B [2])`）の全文脈・全荷版。**`Pay2` だけでは行376 は
+出ない**（`R375m (6,1,0)` までしか出ない）。`PayB` が要る。
+
 ## 壁の言い方（全部同値、どれも 1 手）
 
     (1) ChainStep : WPd_twoA_runB（緑）の結論 two A nil を two A (pay nil Y) に
