@@ -77766,5 +77766,42 @@ theorem RzQ_mem (m p r j : ℕ) : Rz1 [ItQ m p r j] ∈ W 0 :=
 #print axioms GOK_ItQ
 #print axioms RzQ_mem
 
+/-! ### ★★★★★ 最弱形 `FoneB` を `bdA` の言葉で書き直す
+
+`FoneB` は「ブロック列の先に**裸の 1 の記録を 1 個**足す」。`bdA` で書くと
+`∀ js, GOK (bdA (js ++ [0]))`。いちばん小さい未証明の場合は `bdA [2,0]` で、
+緑の `T6 = one nil (two nil (two nil (pay nil [(0,0,0)])))` とは
+**末尾の記録の行 1 が 0 か 1 かだけ**が違う。 -/
+
+theorem FoneB_iff_bdA0 : FoneB ↔ ∀ js : List ℕ, GOK (bdA (js ++ [0])) := by
+  constructor
+  · intro h js
+    have h1 := h (List.reverse js)
+    rw [plug_BCtx_eq, List.reverse_reverse] at h1
+    rw [bdA_snoc0]
+    exact h1
+  · intro h ws
+    rw [plug_BCtx_eq, ← bdA_snoc0]
+    exact h (List.reverse ws)
+
+/-- ★★★★★★ 行376 は「ブロック列の先に裸の 1 の記録を 1 個足す」1 文から出る。 -/
+theorem R376_of_bdA0 (h : ∀ js : List ℕ, GOK (bdA (js ++ [0]))) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_FoneB (FoneB_iff_bdA0.mpr h)
+
+/-- いちばん小さい未証明の場合。`T6` は同じ形で末尾が `(d,0,0)`（`GOK_T6`、緑）。 -/
+def Bd20 : Jk1 := bdA [2, 0]
+
+theorem Bd20_eq : Bd20 = Jk1.one Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.two Jk1.nil (Jk1.one Jk1.nil Jk1.nil))) := rfl
+
+theorem jk1_Bd20 (l : ℕ) :
+    jk1 l Bd20 = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 1, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Bd20, bdA, stkP, jk1] <;> omega
+
+#print axioms FoneB_iff_bdA0
+#print axioms R376_of_bdA0
+
 end Small
 end TRIO
