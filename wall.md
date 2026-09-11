@@ -76,7 +76,8 @@ DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を
 
 | 定理 | 仮定 | 形 |
 |---|---|---|
-| `R376_of_StkG` | `∀n, GoodFb (wordJ · · [one nil (stk n)])` | 単字の語 1 本（いちばん弱い仮定） |
+| `R376_of_FoneB` | `∀ws, GOK (plug (BCtx ws) (one nil nil))` | **裸の 1 の記録を 1 個足す（荷すら要らない、最弱）** |
+| `R376_of_StkG` | `∀n, GoodFb (wordJ · · [one nil (stk n)])` | 単字の語 1 本 |
 | `R376_of_StkL` | `∀n, GOK (one nil (stk n))` | 字 |
 | `R376_of_BdAll` | `∀j m, GOK (bdA (replicate m j))` | ブロック列の字 |
 | `R376_of_PayB` | `∀ws C, Bok C → GOK (plug (BCtx ws) (pay nil C))` | **荷 1 個**（`GOK_BCtx_nil` の幅の DM 帰納で `bdA` が全部出る） |
@@ -168,8 +169,11 @@ DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を
 - `flat_mem''` で `ChainStep` → 平らな鎖の塔が予算を食う。
 - `GOK_oneUV_genM` を末尾の荷つきに → `hVs` が壊れる。`snocYd_hang` を作ろうとすると
   また平らな鎖の塔に戻る。
-- `BaseOk.hang` / `BaseOk.close` / `Lv_hang` → 梯子の準位は**セグメントの頭**の高さで
+- `BaseOk.hang` / `BaseOk.close` / `Lv_hang` → `LvB` の準位は**セグメントの頭**の高さで
   決まるので、末尾の記録の 1 つ上には届かない。
+  （追記339 の補足: `Stk B 1` は 2 の記録 1 本ごとに準位を上げるので「上がらない」
+  わけではない。`StkF B 1 (k+1)` の一様条件が「2 の記録が k 本乗った族の元にもう 1 本
+  足す」＝走りになるのが壁。`k = 1` は `R14_mem_green` で緑、`k = 2` が壁。）
 - `GOK_twoPay_of` の `ctx` を `[fone nil]` / `[fone nil, ftwo nil]` /
   `ctx0 ++ [fone U', ftwo N]` と変える → `htow` が `RunS` の**先端**に鎖を要求し、
   先端は予算の位置なので戻る。
