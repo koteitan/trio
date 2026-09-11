@@ -74317,5 +74317,42 @@ theorem GNilO_base (h : ∀ M : Jk1, JkA M → GOK (Jk1.one Jk1.nil M) → APz M
 #print axioms GNilO_ftwo
 #print axioms GNilO_base
 
+/-! ### ★★★★★★ `GNilO ∧ GNilT` は「どの木もどの文脈でも良い」と同値
+
+`HGx` の枠はどれも「その枠の木が 1 段外で良い」を側条件に持つ。だから
+`GSib_tree` を最後の枠の木に当てるだけで、**任意の** `JkA` の木が良くなる。
+場合分けは `cases` 1 回で済む（帰納法すら要らない）。 -/
+
+def GAll : Prop := ∀ F : List Frm, HGx F → ∀ Z : Jk1, JkA Z → GOK (plug F Z)
+
+theorem GAll_of_GNils (hO : GNilO) (hT : GNilT)
+    (hb : ∀ Z : Jk1, JkA Z → GOK (Jk1.one Jk1.nil Z)) : GAll := by
+  intro F hF Z hZ
+  cases hF with
+  | base => exact hb Z hZ
+  | fone hF' hW hGW =>
+      rw [plug_snoc]
+      exact (GSib_tree hO hT Z hZ _ hF').1 _ hW hGW
+  | ftwo hF' hW hGW =>
+      rw [plug_snoc2]
+      exact (GSib_tree hO hT Z hZ _ hF').2 _ hW hGW
+
+theorem GNilO_of_GAll (h : GAll) : GNilO :=
+  fun D hD M hM _ => h D hD (Jk1.one M Jk1.nil) ⟨hM, trivial⟩
+
+theorem GNilT_of_GAll (h : GAll) : GNilT :=
+  fun D hD M hM _ => h D hD (Jk1.two M Jk1.nil) ⟨hM, trivial⟩
+
+theorem GAllBase_of_GAll (h : GAll) : ∀ Z : Jk1, JkA Z → GOK (Jk1.one Jk1.nil Z) :=
+  fun Z hZ => h [Frm.fone Jk1.nil] HGx.base Z hZ
+
+/-- ★★★★★★ 壁 1 文（これが z < 2 の停止性そのもの）から目標まで。 -/
+theorem R375m61_of_GAll (h : GAll) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_GNilO (GNilO_of_GAll h)
+
+#print axioms GAll_of_GNils
+#print axioms R375m61_of_GAll
+
 end Small
 end TRIO
