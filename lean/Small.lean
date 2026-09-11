@@ -69195,19 +69195,22 @@ theorem R376_of_RunNil2 (h : RunNil2) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)
 入り目を **(ブロックの容量 `m`, いまブロックの何枚目 `i`)** の対にすると書ける。
 
     WBd []             V = GOK V
-    WBd ((m,0) :: ks)  V = ∀ U, FrmB ks U → WBd ks U → WBd ks (one U V)
+    WBd ((m,0) :: ks)  V = ∀ U, FrmB ks U → WBd ks U → (U の荷閉包) → WBd ks (one U V)
     WBd ((m,i+1)::ks)  V = ∀ q (入り目 < (m,i+1)), ∀ N, JkA N →
-        (∀ q' (入り目 < (m,i+1)), WBd (q' ++ ((m,i) :: (q ++ ks))) N) →
+        (∀ m₂ q', encE (m₂,i) < encE (m,i+1) → (入り目 < (m,i+1)) →
+            WBd ((m₂,i) :: (q' ++ (q ++ ks))) N) →
+        (同じ形での N の荷閉包) →
         WBd ((m,i) :: (q ++ ks)) (two N V)
 
-要点は 2 つ。
+要点は 3 つ。
 - **階段**: 長さ `i+1` のブロックの階段は長さ `i` のブロックを作り直す。
-  その入り目は `(m,i) < (m,i+1)` で、兄弟の条件の中に収まる。
-- **荷の横鎖**: 兄弟の形の頭は `(m,i)`（ブロックの途中）なので、
+  その入り目は容量を下げて `(m₂, i)` に取れるので、外の兄弟の上限に収まる。
+  兄弟の形の**頭の容量 `m₂` を可変**にしてあるのはこのため。
+- **荷の横鎖**: 兄弟の形の頭は `(m₂,i)`（ブロックの途中）なので、
   そこに `two X T` を差すのは「同じブロックの `i+1` 枚目」＝ 走りは伸びない。
+- **荷閉包を枠木・兄弟の条件に入れる**（`WQd` と同じ）。`APnil_gen0` がそのまま使える。
 
-順序は `encE (m,i) = m*m + i` で ℕ に埋める（`i ≤ m` の範囲で辞書式と一致）。
-測度は `encE` を通した多重集合の DM。 -/
+順序は `encE (m,i) = m*m + i` で ℕ に埋める。測度は `encE` を通した多重集合の DM。 -/
 
 def encE : ℕ × ℕ → ℕ
   | (m, i) => m * m + i
@@ -69250,11 +69253,17 @@ theorem FrmB_nilA (ks : List (ℕ × ℕ)) : FrmB ks Jk1.nil := by
 
 def WBd : List (ℕ × ℕ) → Jk1 → Prop
   | [], V => GOK V
-  | ((_, 0) :: ks), V => ∀ U : Jk1, FrmB ks U → WBd ks U → WBd ks (Jk1.one U V)
+  | ((_, 0) :: ks), V => ∀ U : Jk1, FrmB ks U → WBd ks U →
+      (∀ C : TrioSeq, Bok C → WBd ks (Jk1.pay U C)) →
+      WBd ks (Jk1.one U V)
   | ((m, i + 1) :: ks), V => ∀ (q : List (ℕ × ℕ)), (∀ x ∈ q, encE x < encE (m, i + 1)) →
       ∀ N : Jk1, JkA N →
-      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ (q ++ ks))) N) →
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd ((m₂, i) :: (q' ++ (q ++ ks))) N) →
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        ∀ C : TrioSeq, Bok C → WBd ((m₂, i) :: (q' ++ (q ++ ks))) (Jk1.pay N C)) →
       WBd ((m, i) :: (q ++ ks)) (Jk1.two N V)
 termination_by s _ => encS s
 decreasing_by
@@ -69269,13 +69278,12 @@ decreasing_by
              · show m * m + i < m * m + (i + 1)
                omega
              · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
-      | (rw [show (m, i) :: (q' ++ (q ++ ks)) = ((m, i) :: (q' ++ q)) ++ ks from by simp]
-         exact dm_encS ks ((m, i) :: (q' ++ q))
+      | (rw [show (m₂, i) :: (q' ++ (q ++ ks)) = ((m₂, i) :: (q' ++ q)) ++ ks from by simp]
+         exact dm_encS ks ((m₂, i) :: (q' ++ q))
            (by
              intro x hx
              rcases List.mem_cons.mp hx with rfl | h1
-             · show m * m + i < m * m + (i + 1)
-               omega
+             · exact (by assumption : encE (m₂, i) < encE (m, i + 1))
              · rcases List.mem_append.mp h1 with h2 | h2
                · exact (by assumption : ∀ x ∈ q', encE x < encE (m, i + 1)) x h2
                · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x h2))
@@ -69283,26 +69291,36 @@ decreasing_by
 theorem WBd_bnil (V : Jk1) : WBd [] V ↔ GOK V := by rw [WBd]
 
 theorem WBd_c0 (m : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) :
-    WBd ((m, 0) :: ks) V ↔ ∀ U : Jk1, FrmB ks U → WBd ks U → WBd ks (Jk1.one U V) := by
+    WBd ((m, 0) :: ks) V ↔ ∀ U : Jk1, FrmB ks U → WBd ks U →
+      (∀ C : TrioSeq, Bok C → WBd ks (Jk1.pay U C)) →
+      WBd ks (Jk1.one U V) := by
   rw [WBd]
 
 theorem WBd_ck (m i : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) :
     WBd ((m, i + 1) :: ks) V ↔ ∀ (q : List (ℕ × ℕ)), (∀ x ∈ q, encE x < encE (m, i + 1)) →
       ∀ N : Jk1, JkA N →
-      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ (q ++ ks))) N) →
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd ((m₂, i) :: (q' ++ (q ++ ks))) N) →
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        ∀ C : TrioSeq, Bok C → WBd ((m₂, i) :: (q' ++ (q ++ ks))) (Jk1.pay N C)) →
       WBd ((m, i) :: (q ++ ks)) (Jk1.two N V) := by
   rw [WBd]
 
 def WBtx : List (ℕ × ℕ) → List Frm → Prop
   | [], ctx => ctx = []
   | ((_, 0) :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
-      WBtx ks ctx' ∧ FrmB ks U ∧ WBd ks U
+      WBtx ks ctx' ∧ FrmB ks U ∧ WBd ks U ∧ (∀ C : TrioSeq, Bok C → WBd ks (Jk1.pay U C))
   | ((m, i + 1) :: ks), ctx => ∃ (q : List (ℕ × ℕ))
       (_ : ∀ x ∈ q, encE x < encE (m, i + 1)) (ctx' : List Frm) (N : Jk1),
       ctx = ctx' ++ [Frm.ftwo N] ∧ WBtx ((m, i) :: (q ++ ks)) ctx' ∧ JkA N ∧
-      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ (q ++ ks))) N)
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd ((m₂, i) :: (q' ++ (q ++ ks))) N) ∧
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        ∀ C : TrioSeq, Bok C → WBd ((m₂, i) :: (q' ++ (q ++ ks))) (Jk1.pay N C))
 termination_by s _ => encS s
 decreasing_by
   all_goals
@@ -69321,15 +69339,20 @@ theorem WBtx_bnil (ctx : List Frm) : WBtx [] ctx ↔ ctx = [] := by rw [WBtx]
 
 theorem WBtx_c0 (m : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) :
     WBtx ((m, 0) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
-      WBtx ks ctx' ∧ FrmB ks U ∧ WBd ks U := by
+      WBtx ks ctx' ∧ FrmB ks U ∧ WBd ks U ∧
+      (∀ C : TrioSeq, Bok C → WBd ks (Jk1.pay U C)) := by
   rw [WBtx]
 
 theorem WBtx_ck (m i : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) :
     WBtx ((m, i + 1) :: ks) ctx ↔ ∃ (q : List (ℕ × ℕ))
       (_ : ∀ x ∈ q, encE x < encE (m, i + 1)) (ctx' : List Frm) (N : Jk1),
       ctx = ctx' ++ [Frm.ftwo N] ∧ WBtx ((m, i) :: (q ++ ks)) ctx' ∧ JkA N ∧
-      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ (q ++ ks))) N) := by
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        WBd ((m₂, i) :: (q' ++ (q ++ ks))) N) ∧
+      (∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+        (∀ x ∈ q', encE x < encE (m, i + 1)) →
+        ∀ C : TrioSeq, Bok C → WBd ((m₂, i) :: (q' ++ (q ++ ks))) (Jk1.pay N C)) := by
   rw [WBtx]
 
 theorem WBtx_JkT : ∀ (ks : List (ℕ × ℕ)) (ctx : List Frm), WBtx ks ctx → ∀ X : Jk1,
@@ -69338,12 +69361,12 @@ theorem WBtx_JkT : ∀ (ks : List (ℕ × ℕ)) (ctx : List Frm), WBtx ks ctx �
       rw [WBtx_bnil] at h; subst h; exact hX
   | ((m, 0) :: ks), ctx, h, X, hX => by
       rw [WBtx_c0] at h
-      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      obtain ⟨ctx', U, rfl, hc', hU, -, -⟩ := h
       rw [plug_snoc]
       exact WBtx_JkT ks ctx' hc' (Jk1.one U X) (FrmB_one ks U X hU hX)
   | ((m, i + 1) :: ks), ctx, h, X, hX => by
       rw [WBtx_ck] at h
-      obtain ⟨q, hq, ctx', N, rfl, hc', hJN, -⟩ := h
+      obtain ⟨q, hq, ctx', N, rfl, hc', hJN, -, -⟩ := h
       rw [plug_snoc2]
       exact WBtx_JkT ((m, i) :: (q ++ ks)) ctx' hc' (Jk1.two N X)
         (show JkA (Jk1.two N X) from ⟨hJN, hX⟩)
@@ -69375,28 +69398,29 @@ theorem WBd_iff : ∀ (ks : List (ℕ × ℕ)) (V : Jk1),
       constructor
       · intro h ctx hc
         rw [WBtx_c0] at hc
-        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩ := hc
         rw [plug_snoc]
-        exact (WBd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
-      · intro h U hU hUk
+        exact (WBd_iff ks (Jk1.one U V)).mp (h U hU hUk hUp) ctx' hc'
+      · intro h U hU hUk hUp
         refine (WBd_iff ks (Jk1.one U V)).mpr ?_
         intro ctx' hc'
         rw [← plug_snoc]
-        exact h (ctx' ++ [Frm.fone U]) ((WBtx_c0 m ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+        exact h (ctx' ++ [Frm.fone U])
+          ((WBtx_c0 m ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩)
   | ((m, i + 1) :: ks), V => by
       rw [WBd_ck]
       constructor
       · intro h ctx hc
         rw [WBtx_ck] at hc
-        obtain ⟨q, hq, ctx', N, rfl, hc', hJN, hNt⟩ := hc
+        obtain ⟨q, hq, ctx', N, rfl, hc', hJN, hNt, hNp⟩ := hc
         rw [plug_snoc2]
-        exact (WBd_iff ((m, i) :: (q ++ ks)) _).mp (h q hq N hJN hNt) ctx' hc'
-      · intro h q hq N hJN hNt
+        exact (WBd_iff ((m, i) :: (q ++ ks)) _).mp (h q hq N hJN hNt hNp) ctx' hc'
+      · intro h q hq N hJN hNt hNp
         refine (WBd_iff ((m, i) :: (q ++ ks)) _).mpr ?_
         intro ctx' hc'
         rw [← plug_snoc2]
         exact h (ctx' ++ [Frm.ftwo N])
-          ((WBtx_ck m i ks _).mpr ⟨q, hq, ctx', N, rfl, hc', hJN, hNt⟩)
+          ((WBtx_ck m i ks _).mpr ⟨q, hq, ctx', N, rfl, hc', hJN, hNt, hNp⟩)
 termination_by s _ => encS s
 decreasing_by
   all_goals
@@ -69412,15 +69436,20 @@ decreasing_by
              · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
 
 theorem WBd_step (m : ℕ) (ks : List (ℕ × ℕ)) {V W : Jk1} (hV : FrmB ks V) (hVk : WBd ks V)
+    (hVp : ∀ C : TrioSeq, Bok C → WBd ks (Jk1.pay V C))
     (hW : WBd ((m, 0) :: ks) W) : WBd ks (Jk1.one V W) :=
-  (WBd_c0 m ks W).mp hW V hV hVk
+  (WBd_c0 m ks W).mp hW V hV hVk hVp
 
 /-- ブロックの `i+1` 枚目の 2 の枠。走りの長さはブロックの中の位置に現れる。 -/
 theorem WBd_twoOf {m i : ℕ} {ks : List (ℕ × ℕ)} {V N : Jk1} (hJN : JkA N)
-    (hNt : ∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-      WBd ((m, i) :: (q' ++ ks)) N)
+    (hNt : ∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+      (∀ x ∈ q', encE x < encE (m, i + 1)) → WBd ((m₂, i) :: (q' ++ ks)) N)
+    (hNp : ∀ (m₂ : ℕ) (q' : List (ℕ × ℕ)), encE (m₂, i) < encE (m, i + 1) →
+      (∀ x ∈ q', encE x < encE (m, i + 1)) →
+      ∀ C : TrioSeq, Bok C → WBd ((m₂, i) :: (q' ++ ks)) (Jk1.pay N C))
     (hV : WBd ((m, i + 1) :: ks) V) : WBd ((m, i) :: ks) (Jk1.two N V) := by
-  have h := (WBd_ck m i ks V).mp hV [] (by simp) N hJN (by simpa using hNt)
+  have h := (WBd_ck m i ks V).mp hV [] (by simp) N hJN
+    (by simpa using hNt) (by simpa using hNp)
   simpa using h
 
 theorem WBd_congr : ∀ (ks : List (ℕ × ℕ)) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
@@ -69434,294 +69463,12 @@ theorem WBtx_split (m : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) (h : WBtx
     ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WBtx ks ctx0 ∧
       FrmB ks V ∧ GOK (plug ctx0 V) := by
   rw [WBtx_c0] at h
-  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk, -⟩ := h
   exact ⟨ctx', U, rfl, hc', hU, (WBd_iff ks U).mp hUk ctx' hc'⟩
 
-#print axioms dm_encS
-#print axioms WBd_iff
-#print axioms WBd_twoOf
-
-/-! ### `WBd` 層の荷。兄弟の形の頭は `(m,i)` に固定してあるので鎖が閉じる -/
-
-theorem WBd_ck_shift {m i : ℕ} {ks : List (ℕ × ℕ)} {T : Jk1}
-    (h : WBd ((m, i + 1) :: ks) T) (a : List (ℕ × ℕ))
-    (ha : ∀ x ∈ a, encE x < encE (m, i + 1)) : WBd ((m, i + 1) :: (a ++ ks)) T := by
-  rw [WBd_ck]
-  intro q hq N hJN hNt
-  have e : q ++ (a ++ ks) = (q ++ a) ++ ks := (List.append_assoc q a ks).symm
-  rw [e] at hNt ⊢
-  refine (WBd_ck m i ks T).mp h (q ++ a) ?_ N hJN hNt
-  intro x hx
-  rcases List.mem_append.mp hx with h1 | h1
-  · exact hq x h1
-  · exact ha x h1
-
-theorem FrmB_itJ : ∀ (ks : List (ℕ × ℕ)) {T : Jk1}, JkA T → ∀ (n : ℕ) {X : Jk1}, FrmB ks X →
-    FrmB ks (itJ T n X)
-  | [], _, hT, n, _, h => JkT_itJ hT n h
-  | (_ :: _), _, hT, n, _, h => JkA_itJ hT n h
-
-theorem GOK_chainJdB {ks : List (ℕ × ℕ)} {ctx : List Frm} (hc : WBtx ks ctx) {X T : Jk1}
-    (hXok : FrmB ks X) (hXk : WBd ks X) (hTok : JkA T)
-    (hstep : ∀ V : Jk1, FrmB ks V → WBd ks V → WBd ks (Jk1.one V T)) :
-    ∀ n, GOK (plug ctx (itJ T n X)) ∧ WBd ks (itJ T n X)
-  | 0 => ⟨(WBd_iff ks X).mp hXk ctx hc, hXk⟩
-  | (n + 1) => by
-      obtain ⟨h1, h2⟩ := GOK_chainJdB hc hXok hXk hTok hstep n
-      have hok := FrmB_itJ ks hTok n hXok
-      have h3 := hstep (itJ T n X) hok h2
-      exact ⟨(WBd_iff ks _).mp h3 ctx hc, h3⟩
-
-theorem AYdB : ∀ (Y : TrioSeq), Bok Y → ∀ (m : ℕ) (ks : List (ℕ × ℕ)) (Z : Jk1), JkA Z →
-    WBd ((m, 0) :: ks) Z →
-    ∀ (X : Jk1), FrmB ks X → WBd ks X → WBd ks (Jk1.one X (Jk1.pay Z Y)) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (m : ℕ) (ks : List (ℕ × ℕ)) (Z : Jk1), JkA Z →
-      WBd ((m, 0) :: ks) Z →
-      ∀ (X : Jk1), FrmB ks X → WBd ks X → WBd ks (Jk1.one X (Jk1.pay Z Y))} := by
-    refine A2' ?_
-    intro Y hY
-    simp only [Set.mem_setOf_eq]
-    intro hYb m ks Z hZ hRZ X hX hXk
-    by_cases hshort : Y.length ≤ 1
-    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
-      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
-        subst hnil0
-        exact WBd_congr ks (fun l => (jk1_one_pay_nil X Z l).symm) (WBd_step m ks hX hXk hRZ)
-      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
-        have hc0 : c.1 = 0 := hYb.root
-        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
-        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
-        subst hcz
-        have hpres : ∀ V : Jk1, FrmB ks V → WBd ks V →
-            WBd ks (Jk1.one V (Jk1.pay Z ([] : TrioSeq))) :=
-          fun V hV hVk =>
-            WBd_congr ks (fun l => (jk1_one_pay_nil V Z l).symm) (WBd_step m ks hV hVk hRZ)
-        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
-            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
-        rw [e, WBd_iff]
-        intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJs0 hw
-          (WBtx_JkT ks ctx hc (Jk1.one X (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
-            (FrmB_one ks X (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) hX
-              ⟨hZ, by simpa using hYb⟩))
-          (by simpa using hYb) Bok_nil ?_
-        intro n hn
-        exact (GOK_chainJdB (T := Jk1.pay Z ([] : TrioSeq)) hc hX hXk
-          (show JkA (Jk1.pay Z ([] : TrioSeq)) from ⟨hZ, Bok_nil⟩) hpres n).1 ws hw hG
-    have hlen2 : 2 ≤ Y.length := by omega
-    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
-    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
-    · exact absurd hl hshort
-    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
-      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
-        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
-          Prod.ext hlast (Prod.ext he1 he2)
-        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
-          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
-            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
-              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
-            rfl
-          rw [h1, hcol]
-        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
-          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
-        have hop : Y⟦1⟧ = Y.dropLast := by
-          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
-          unfold Pred
-          rw [if_neg (by omega)]
-        have hdl := hnat 1 le_rfl
-        rw [hop] at hdl
-        simp only [Set.mem_setOf_eq] at hdl
-        have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hpres : ∀ V : Jk1, FrmB ks V → WBd ks V →
-            WBd ks (Jk1.one V (Jk1.pay Z Y.dropLast)) :=
-          fun V hV hVk => hdl hdb m ks Z hZ hRZ V hV hVk
-        rw [hsplit, WBd_iff]
-        intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJs0 hw
-          (WBtx_JkT ks ctx hc (Jk1.one X (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
-            (FrmB_one ks X (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) hX
-              ⟨hZ, by rw [← hsplit]; exact hYb⟩))
-          (by rw [← hsplit]; exact hYb) hdb ?_
-        intro n hn
-        exact (GOK_chainJdB (T := Jk1.pay Z Y.dropLast) hc hX hXk
-          (show JkA (Jk1.pay Z Y.dropLast) from ⟨hZ, hdb⟩) hpres n).1 ws hw hG
-      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
-            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
-        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
-        rw [WBd_iff]
-        intro ctx hc ws hw hG
-        refine GoodFb_snoc_innerJs0 hw
-          (WBtx_JkT ks ctx hc (Jk1.one X (Jk1.pay Z Y))
-            (FrmB_one ks X (Jk1.pay Z Y) hX ⟨hZ, hYb⟩))
-          hYb hlen2 hp ?_
-        intro n hn
-        have hh := hnat n hn
-        simp only [Set.mem_setOf_eq] at hh
-        exact (WBd_iff ks _).mp (hh (Bok_oper hYb hn) m ks Z hZ hRZ X hX hXk) ctx hc ws hw hG
-    · exact absurd hm (Nat.not_lt_zero mm)
-  intro Y hYb m ks Z hZ hRZ X hX hXk
-  exact key hYb.mem hYb m ks Z hZ hRZ X hX hXk
-
-theorem WBd_payT (m : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) (hV : JkA V)
-    (hVk : WBd ((m, 0) :: ks) V) (C : TrioSeq) (hC : Bok C) :
-    WBd ((m, 0) :: ks) (Jk1.pay V C) :=
-  (WBd_c0 m ks _).mpr (fun U hU hUk => AYdB C hC m ks V hV hVk U hU hUk)
-
-theorem WBd_payE (V : Jk1) (hV : JkT V) (hVk : WBd [] V) (C : TrioSeq) (hC : Bok C) :
-    WBd [] (Jk1.pay V C) :=
-  (WBd_bnil _).mpr (AY0 C hC V hV ((WBd_bnil V).mp hVk))
-
-#print axioms AYdB
-
-theorem WBd_chainT {m i : ℕ} {B : List (ℕ × ℕ)} {ctx : List Frm}
-    (hc : WBtx ((m, i) :: B) ctx) {N T : Jk1} (hN : JkA N)
-    (hNall : ∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-      WBd ((m, i) :: (q' ++ B)) N)
-    (hT : JkA T)
-    (hstep : ∀ N' : Jk1, JkA N' →
-      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ B)) N') →
-      ∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ B)) (Jk1.two N' T)) :
-    ∀ n, GOK (plug ctx (twoIt N T n)) ∧ JkA (twoIt N T n) ∧
-      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ B)) (twoIt N T n))
-  | 0 => ⟨(WBd_iff _ N).mp (by simpa using hNall [] (by simp)) ctx hc, hN, hNall⟩
-  | (n + 1) => by
-      obtain ⟨-, h2, h3⟩ := WBd_chainT hc hN hNall hT hstep n
-      have h4 := hstep (twoIt N T n) h2 h3
-      exact ⟨(WBd_iff _ _).mp (by simpa using h4 [] (by simp)) ctx hc, ⟨h2, hT⟩, h4⟩
-
-theorem AYdTB_hstep {m i : ℕ} {ks q : List (ℕ × ℕ)}
-    (hq : ∀ x ∈ q, encE x < encE (m, i + 1))
-    {T : Jk1} (hTk : WBd ((m, i + 1) :: ks) T) :
-    ∀ N' : Jk1, JkA N' →
-      (∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ (q ++ ks))) N') →
-      ∀ q' : List (ℕ × ℕ), (∀ x ∈ q', encE x < encE (m, i + 1)) →
-        WBd ((m, i) :: (q' ++ (q ++ ks))) (Jk1.two N' T) := by
-  intro N' hN' hN'all q' hq'
-  refine WBd_twoOf (m := m) (i := i) hN' ?_ ?_
-  · intro q'' hq''
-    have e : q'' ++ (q' ++ (q ++ ks)) = (q'' ++ q') ++ (q ++ ks) := by simp
-    rw [e]
-    refine hN'all (q'' ++ q') ?_
-    intro x hx
-    rcases List.mem_append.mp hx with h1 | h1
-    · exact hq'' x h1
-    · exact hq' x h1
-  · have hsh := WBd_ck_shift hTk (q' ++ q)
-      (by
-        intro x hx
-        rcases List.mem_append.mp hx with h1 | h1
-        · exact hq' x h1
-        · exact hq x h1)
-    simpa using hsh
-
-theorem AYdTB : ∀ (Y : TrioSeq), Bok Y → ∀ (m i : ℕ) (ks : List (ℕ × ℕ)) (Z : Jk1), JkA Z →
-    WBd ((m, i + 1) :: ks) Z → WBd ((m, i + 1) :: ks) (Jk1.pay Z Y) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (m i : ℕ) (ks : List (ℕ × ℕ)) (Z : Jk1), JkA Z →
-      WBd ((m, i + 1) :: ks) Z → WBd ((m, i + 1) :: ks) (Jk1.pay Z Y)} := by
-    refine A2' ?_
-    intro Y hY
-    simp only [Set.mem_setOf_eq]
-    intro hYb m i ks Z hZ hZk
-    by_cases hshort : Y.length ≤ 1
-    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
-      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
-        subst hnil0
-        exact WBd_congr ((m, i + 1) :: ks) (fun l => (jk1_pay_nil l Z).symm) hZk
-      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
-        have hc0 : c.1 = 0 := hYb.root
-        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
-        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
-        subst hcz
-        have hZnil : WBd ((m, i + 1) :: ks) (Jk1.pay Z ([] : TrioSeq)) :=
-          WBd_congr ((m, i + 1) :: ks) (fun l => (jk1_pay_nil l Z).symm) hZk
-        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
-            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
-        rw [e, WBd_ck]
-        intro q hq N hN hNt
-        rw [WBd_iff]
-        intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJt0 hw
-          (WBtx_JkT ((m, i) :: (q ++ ks)) ctx hc
-            (Jk1.two N (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
-            (show FrmB ((m, i) :: (q ++ ks))
-                (Jk1.two N (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
-              from ⟨hN, hZ, by simpa using hYb⟩)) ?_
-        intro n hn
-        exact (WBd_chainT (T := Jk1.pay Z ([] : TrioSeq)) hc hN hNt
-          (show JkA (Jk1.pay Z ([] : TrioSeq)) from ⟨hZ, Bok_nil⟩)
-          (AYdTB_hstep hq hZnil) n).1 ws hw hG
-    have hlen2 : 2 ≤ Y.length := by omega
-    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
-    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
-    · exact absurd hl hshort
-    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
-      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
-        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
-          Prod.ext hlast (Prod.ext he1 he2)
-        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
-          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
-            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
-              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
-            rfl
-          rw [h1, hcol]
-        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
-          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
-        have hop : Y⟦1⟧ = Y.dropLast := by
-          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
-          unfold Pred
-          rw [if_neg (by omega)]
-        have hdl := hnat 1 le_rfl
-        rw [hop] at hdl
-        simp only [Set.mem_setOf_eq] at hdl
-        have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hprev : WBd ((m, i + 1) :: ks) (Jk1.pay Z Y.dropLast) := hdl hdb m i ks Z hZ hZk
-        rw [hsplit, WBd_ck]
-        intro q hq N hN hNt
-        rw [WBd_iff]
-        intro ctx hc ws hw hG
-        refine GoodFb_snoc_dupJt0 hw
-          (WBtx_JkT ((m, i) :: (q ++ ks)) ctx hc
-            (Jk1.two N (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
-            (show FrmB ((m, i) :: (q ++ ks))
-                (Jk1.two N (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
-              from ⟨hN, hZ, by rw [← hsplit]; exact hYb⟩)) ?_
-        intro n hn
-        exact (WBd_chainT (T := Jk1.pay Z Y.dropLast) hc hN hNt
-          (show JkA (Jk1.pay Z Y.dropLast) from ⟨hZ, hdb⟩)
-          (AYdTB_hstep hq hprev) n).1 ws hw hG
-      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
-            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
-        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
-        rw [WBd_ck]
-        intro q hq N hN hNt
-        rw [WBd_iff]
-        intro ctx hc ws hw hG
-        refine GoodFb_snoc_innerJt0 hw
-          (WBtx_JkT ((m, i) :: (q ++ ks)) ctx hc (Jk1.two N (Jk1.pay Z Y))
-            (show FrmB ((m, i) :: (q ++ ks)) (Jk1.two N (Jk1.pay Z Y)) from ⟨hN, hZ, hYb⟩))
-          hlen2 hp ?_
-        intro n hn
-        have hh := hnat n hn
-        simp only [Set.mem_setOf_eq] at hh
-        have hh2 := hh (Bok_oper hYb hn) m i ks Z hZ hZk
-        have h2 := (WBd_ck m i ks _).mp hh2 q hq N hN hNt
-        exact (WBd_iff _ _).mp h2 ctx hc ws hw hG
-    · exact absurd hm (Nat.not_lt_zero mm)
-  intro Y hYb m i ks Z hZ hZk
-  exact key hYb.mem hYb m i ks Z hZ hZk
-
-/-- ★★★★★★ `WBd` 層の荷はどの形でも無条件。 -/
-theorem WBd_payA : ∀ (ks : List (ℕ × ℕ)) (V : Jk1), FrmB ks V → WBd ks V →
-    ∀ C : TrioSeq, Bok C → WBd ks (Jk1.pay V C)
-  | [], V, hV, hVk, C, hC => WBd_payE V hV hVk C hC
-  | ((m, 0) :: ks), V, hV, hVk, C, hC => WBd_payT m ks V (FrmB_JkA _ V hV) hVk C hC
-  | ((m, i + 1) :: ks), V, hV, hVk, C, hC => AYdTB C hC m i ks V (FrmB_JkA _ V hV) hVk
-
-theorem WBd_oneNil (ks : List (ℕ × ℕ)) (V : Jk1) (hV : FrmB ks V) (hVk : WBd ks V) :
+/-- 枠木の条件に荷閉包が入っているので `one V nil` は無条件。 -/
+theorem WBd_oneNil (ks : List (ℕ × ℕ)) (V : Jk1) (hV : FrmB ks V) (hVk : WBd ks V)
+    (hVp : ∀ C : TrioSeq, Bok C → WBd ks (Jk1.pay V C)) :
     WBd ks (Jk1.one V Jk1.nil) := by
   rw [WBd_iff]
   intro ctx hc
@@ -69729,27 +69476,29 @@ theorem WBd_oneNil (ks : List (ℕ × ℕ)) (V : Jk1) (hV : FrmB ks V) (hVk : WB
     (WBtx_JkT ks ctx hc (Jk1.one V Jk1.nil) (FrmB_one ks V Jk1.nil hV trivial))
     ((WBd_iff ks V).mp hVk ctx hc) ?_
   intro C hC
-  exact (WBd_iff ks _).mp (WBd_payA ks V hV hVk C hC) ctx hc
+  exact (WBd_iff ks _).mp (hVp C hC) ctx hc
 
 theorem WBd_nilT (m : ℕ) (ks : List (ℕ × ℕ)) : WBd ((m, 0) :: ks) Jk1.nil :=
-  (WBd_c0 m ks _).mpr (fun U hU hUk => WBd_oneNil ks U hU hUk)
+  (WBd_c0 m ks _).mpr (fun U hU hUk hUp => WBd_oneNil ks U hU hUk hUp)
 
 theorem WBd_nilE : WBd [] Jk1.nil := (WBd_bnil _).mpr GOK_nil
 
-#print axioms AYdTB
-#print axioms WBd_payA
+#print axioms WBd_iff
+#print axioms WBd_twoOf
 #print axioms WBd_nilT
 
 /-! ### `WBd` の走り。長さ 1（ブロックの 1 枚目）は無条件 -/
 
 theorem WBtx_rep {m : ℕ} {N : Jk1} (hJN : JkA N) (B : List (ℕ × ℕ))
-    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N) :
+    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N)
+    (hNp : ∀ (j : ℕ) (C : TrioSeq), Bok C →
+      WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) (Jk1.pay N C)) :
     ∀ (j : ℕ) (ctx : List Frm), WBtx ((m, 0) :: B) ctx →
       WBtx ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B))
         (ctx ++ List.replicate j (Frm.fone N))
   | 0, ctx, hc => by simpa using hc
   | (j + 1), ctx, hc => by
-      have h1 := WBtx_rep hJN B hNall j ctx hc
+      have h1 := WBtx_rep hJN B hNall hNp j ctx hc
       have e : ctx ++ List.replicate (j + 1) (Frm.fone N)
           = (ctx ++ List.replicate j (Frm.fone N)) ++ [Frm.fone N] := by
         rw [List.replicate_succ']
@@ -69760,18 +69509,23 @@ theorem WBtx_rep {m : ℕ} {N : Jk1} (hJN : JkA N) (B : List (ℕ × ℕ))
         rw [List.replicate_succ]
         rfl
       rw [e, e2, WBtx_c0]
-      exact ⟨ctx ++ List.replicate j (Frm.fone N), N, rfl, h1, hJN, hNall j⟩
+      exact ⟨ctx ++ List.replicate j (Frm.fone N), N, rfl, h1, hJN, hNall j,
+        fun C hC => hNp j C hC⟩
 
 theorem WBd_plug_rep {m : ℕ} (N : Jk1) (hJN : JkA N) (B : List (ℕ × ℕ))
-    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N) (j : ℕ) :
+    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N)
+    (hNp : ∀ (j : ℕ) (C : TrioSeq), Bok C →
+      WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) (Jk1.pay N C)) (j : ℕ) :
     WBd ((m, 0) :: B) (plug (List.replicate j (Frm.fone N)) N) := by
   rw [WBd_iff]
   intro ctx hc
   rw [← plug_append]
-  exact (WBd_iff _ N).mp (hNall j) _ (WBtx_rep hJN B hNall j ctx hc)
+  exact (WBd_iff _ N).mp (hNall j) _ (WBtx_rep hJN B hNall hNp j ctx hc)
 
 theorem WBd_twoNilGen {m : ℕ} {N : Jk1} (hJN : JkA N) (B : List (ℕ × ℕ))
-    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N) :
+    (hNall : ∀ j : ℕ, WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) N)
+    (hNp : ∀ (j : ℕ) (C : TrioSeq), Bok C →
+      WBd ((m, 0) :: (List.replicate j ((m, 0) : ℕ × ℕ) ++ B)) (Jk1.pay N C)) :
     WBd ((m, 0) :: B) (Jk1.two N Jk1.nil) := by
   rw [WBd_iff]
   intro ctx hc
@@ -69780,68 +69534,81 @@ theorem WBd_twoNilGen {m : ℕ} {N : Jk1} (hJN : JkA N) (B : List (ℕ × ℕ))
     (WBtx_JkT ((m, 0) :: B) _ hc (Jk1.two N Jk1.nil)
       (show FrmB ((m, 0) :: B) (Jk1.two N Jk1.nil) from ⟨hJN, trivial⟩))
     hGV
-    (fun j => (WBd_iff ((m, 0) :: B) _).mp (WBd_plug_rep N hJN B hNall j) _ hc)
+    (fun j => (WBd_iff ((m, 0) :: B) _).mp (WBd_plug_rep N hJN B hNall hNp j) _ hc)
 
 /-- ★★★★★ 走りの長さ 1（ブロックの 1 枚目）は無条件。 -/
 theorem WBd_nilF1 (m : ℕ) (ks : List (ℕ × ℕ)) : WBd ((m, 1) :: ks) Jk1.nil := by
   rw [WBd_ck]
-  intro q hq N hJN hNt
-  refine WBd_twoNilGen hJN (q ++ ks) ?_
-  intro j
-  refine hNt (List.replicate j ((m, 0) : ℕ × ℕ)) ?_
-  intro x hx
-  have hx0 : x = ((m, 0) : ℕ × ℕ) := List.eq_of_mem_replicate hx
-  subst hx0
-  show m * m + 0 < m * m + 1
-  omega
+  intro q hq N hJN hNt hNp
+  have hrep : ∀ j : ℕ, ∀ x ∈ List.replicate j ((m, 0) : ℕ × ℕ),
+      encE x < encE (m, 0 + 1) := by
+    intro j x hx
+    have hx0 : x = ((m, 0) : ℕ × ℕ) := List.eq_of_mem_replicate hx
+    subst hx0
+    show m * m + 0 < m * m + (0 + 1)
+    omega
+  have hm0 : encE ((m, 0) : ℕ × ℕ) < encE ((m, 0 + 1) : ℕ × ℕ) := by
+    show m * m + 0 < m * m + (0 + 1)
+    omega
+  refine WBd_twoNilGen hJN (q ++ ks) ?_ ?_
+  · intro j
+    exact hNt m (List.replicate j ((m, 0) : ℕ × ℕ)) hm0 (hrep j)
+  · intro j C hC
+    exact hNp m (List.replicate j ((m, 0) : ℕ × ℕ)) hm0 (hrep j) C hC
 
 /-! ### ★★★★★★ 残る 1 文と、そこから出るもの
 
 `WBd` では走りの長さがブロックの中の位置に現れるので、**長さの上限が無い**。
-残るのは「ブロックの `i+1` 枚目（`i ≥ 1`）で空木が差せる」だけ。 -/
+残るのは「ブロックの `i+1` 枚目（`i ≥ 1`）で空木が差せる」と、その荷。 -/
 
 def RunNilB : Prop := ∀ (m i : ℕ) (ks : List (ℕ × ℕ)), WBd ((m, i + 1) :: ks) Jk1.nil
+
+def PayNilB : Prop := ∀ (ks : List (ℕ × ℕ)) (C : TrioSeq), Bok C → WBd ks (Jk1.pay Jk1.nil C)
 
 theorem WBd_nilAllB (h : RunNilB) : ∀ ks : List (ℕ × ℕ), WBd ks Jk1.nil
   | [] => WBd_nilE
   | ((m, 0) :: ks) => WBd_nilT m ks
   | ((m, i + 1) :: ks) => h m i ks
 
-theorem WBd_stkP_ofB (h : RunNilB) : ∀ (j : ℕ) (X : Jk1), (∀ ks : List (ℕ × ℕ), WBd ks X) →
+theorem WBd_stkP_ofB (h : RunNilB) (hp : PayNilB) :
+    ∀ (j : ℕ) (X : Jk1), (∀ ks : List (ℕ × ℕ), WBd ks X) →
     ∀ (m i : ℕ) (ks : List (ℕ × ℕ)), WBd ((m, i) :: ks) (stkP j X)
   | 0, X, hX, m, i, ks => hX _
   | (j + 1), X, hX, m, i, ks => by
       show WBd ((m, i) :: ks) (Jk1.two Jk1.nil (stkP j X))
-      exact WBd_twoOf trivial (fun q' _ => WBd_nilAllB h _)
-        (WBd_stkP_ofB h j X hX m (i + 1) ks)
+      exact WBd_twoOf trivial (fun m₂ q' _ _ => WBd_nilAllB h _)
+        (fun m₂ q' _ _ C hC => hp _ C hC)
+        (WBd_stkP_ofB h hp j X hX m (i + 1) ks)
 
-theorem WBd_bdA_ofB (h : RunNilB) : ∀ (js : List ℕ) (ks : List (ℕ × ℕ)), WBd ks (bdA js)
+theorem WBd_bdA_ofB (h : RunNilB) (hp : PayNilB) :
+    ∀ (js : List ℕ) (ks : List (ℕ × ℕ)), WBd ks (bdA js)
   | [], ks => WBd_nilAllB h ks
   | (j :: js), ks => by
       show WBd ks (Jk1.one Jk1.nil (stkP j (bdA js)))
-      refine WBd_step 0 ks (FrmB_nilA ks) (WBd_nilAllB h ks) ?_
-      exact WBd_stkP_ofB h j (bdA js) (fun ks' => WBd_bdA_ofB h js ks') 0 0 ks
+      refine WBd_step 0 ks (FrmB_nilA ks) (WBd_nilAllB h ks) (fun C hC => hp ks C hC) ?_
+      exact WBd_stkP_ofB h hp j (bdA js) (fun ks' => WBd_bdA_ofB h hp js ks') 0 0 ks
 
 /-- ★★★★★★ 幅に上限のないブロック列が全部出る。 -/
-theorem GOK_bdA_ofB (h : RunNilB) (js : List ℕ) : GOK (bdA js) :=
-  (WBd_bnil _).mp (WBd_bdA_ofB h js [])
+theorem GOK_bdA_ofB (h : RunNilB) (hp : PayNilB) (js : List ℕ) : GOK (bdA js) :=
+  (WBd_bnil _).mp (WBd_bdA_ofB h hp js [])
 
-theorem GOK_oneStk_ofB (h : RunNilB) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
-  GOK_bdA_ofB h [q]
+theorem GOK_oneStk_ofB (h : RunNilB) (hp : PayNilB) (q : ℕ) :
+    GOK (Jk1.one Jk1.nil (stk q)) :=
+  GOK_bdA_ofB h hp [q]
 
-theorem MixTow_of_RunNilB (h : RunNilB) : MixTow :=
-  fun n i => GOK_bdA_ofB h (List.replicate n 2 ++ List.replicate i 1)
+theorem MixTow_of_RunNilB (h : RunNilB) (hp : PayNilB) : MixTow :=
+  fun n i => GOK_bdA_ofB h hp (List.replicate n 2 ++ List.replicate i 1)
 
-/-- ★★★★★★ 証明中の行列は `RunNilB` 1 本から出る。 -/
-theorem R375m_62_of_RunNilB (h : RunNilB) :
+/-- ★★★★★★ 証明中の行列は `RunNilB` / `PayNilB` から出る。 -/
+theorem R375m_62_of_RunNilB (h : RunNilB) (hp : PayNilB) :
     R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
-  R375m_62_of_MixTow (MixTow_of_RunNilB h)
+  R375m_62_of_MixTow (MixTow_of_RunNilB h hp)
 
-theorem tw_R344_42_ofB (h : RunNilB) : ∀ n : ℕ,
+theorem tw_R344_42_ofB (h : RunNilB) (hp : PayNilB) : ∀ n : ℕ,
     Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
   intro n
   have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
-    GOK_oneStk_ofB h n [] WOk_nil GoodFb_wordJ_nil
+    GOK_oneStk_ofB h hp n [] WOk_nil GoodFb_wordJ_nil
   have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
   have hh := rowJ_mem_genF Aok_R338 hG'
   have e : jk1 2 (Jk1.one Jk1.nil (stk n))
@@ -69853,9 +69620,10 @@ theorem tw_R344_42_ofB (h : RunNilB) : ∀ n : ℕ,
   rw [Mtw]
   simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
 
-/-- ★★★★★★ 目標の行376 も `RunNilB` 1 本から出る。 -/
-theorem R376_of_RunNilB (h : RunNilB) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
-  R376_of_tower (tw_R344_42_ofB h)
+/-- ★★★★★★ 目標の行376 も `RunNilB` / `PayNilB` から出る。 -/
+theorem R376_of_RunNilB (h : RunNilB) (hp : PayNilB) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42_ofB h hp)
 
 #print axioms WBd_nilF1
 #print axioms GOK_bdA_ofB
