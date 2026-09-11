@@ -77800,8 +77800,29 @@ theorem jk1_Bd20 (l : ℕ) :
       ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 1, 0) : ℕ × ℕ × ℕ)] := by
   simp [Bd20, bdA, stkP, jk1] <;> omega
 
+/-- ★★★★★★ 量化子ゼロの壁。`GOK Bd20` 1 個からいま開いている最小の行列が出る。
+`T6` は `Bd20` の末尾の記録を `(l+4,1,0)` から `(l+4,0,0)` に替えたもので、
+`GOK_T6`（緑）からは `R600 = R375m ++ [(6,0,0)]` が出る。 -/
+theorem R375m61_of_Bd20 (h : GOK Bd20) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Bd20])) := h [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Bd20]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_Bd20 2] at hh
+  simpa [R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+/-- 同じ形で `T6` にすると緑（`R600`）。違いは末尾の記録の行 1 だけ。 -/
+theorem R600_eq_R375m60 : R375m ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [T6])) := GOK_T6 [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [T6]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  rw [wordJ_singleton, colJ, jk1_T6 2] at hh
+  simpa [R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
 #print axioms FoneB_iff_bdA0
 #print axioms R376_of_bdA0
+#print axioms R375m61_of_Bd20
+#print axioms R600_eq_R375m60
 
 end Small
 end TRIO
