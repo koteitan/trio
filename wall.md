@@ -11,6 +11,13 @@
   2 の記録 1 本ごとに準位は上がる（`Stk`）。上がらないのではなく、上げる
   **一様条件**が「2 の記録が k 本乗った族の元にもう 1 本足す」＝走りになる。
 - いちばん弱い仮定は `FoneB`（`R376_of_FoneB`、緑）。還元は 30 本以上ある（下の表）。
+- `TwoOk` 版（`TwoOk Z` = 「`Z` を 2 の記録の直上に置ける」）で言うと**`two nil` 1 枚**:
+
+      TwoOk nil / TwoOk (pay nil B) / TwoOk (two nil nil)   ★全部緑
+      TwoStepP : Bok B → TwoOk (two nil (pay nil B))        ★壁
+
+  `TwoOk_pay`（荷の W 帰納）が回るのは鎖が最上段のときだけ。1 段上げると
+  鎖 `twoIt nil (pay nil Y) n` も 1 段上がって `TwoStep` に化ける（追記344）。
 - **量化子ゼロの壁**（いちばん具体的な形、2026-09-13 に緑）:
 
       Bd20 = bdA [2,0] = one nil (two nil (two nil (one nil nil)))

@@ -23665,3 +23665,38 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
     R375m ++ [(h,y,0)]: (1,0,0)…(5,1,0) まで緑（R375f1..f13）
                         (5,2,0) = R14_mem_green、(6,0,0) = R600  緑
                         (6,1,0) ★壁
+
+## 追記344 (2026-09-13): 壁は `TwoOk` の「`two nil` を 1 枚かぶせる」1 手
+
+`TwoOk Z := ∀N（良い）, APd … (two N Z)`（＝「`Z` を 2 の記録の直上に置ける」）で
+
+    TwoOk_nil     : TwoOk nil                      ★緑（行26486）
+    TwoOk_pay     : Bok Y → JkA Z → TwoOk Z → TwoOk (pay Z Y)   ★緑（荷の W 帰納）
+    TwoOk_payNil  : Bok B → TwoOk (pay nil B)      ★緑（上の 2 つから）
+    TwoOk_twoNil  : TwoOk (two nil nil)            ★緑
+    TwoStepP      : Bok B → TwoOk (two nil (pay nil B))   ★壁
+
+**`TwoOk (pay nil B)` は緑なのに、その上に `two nil` を 1 枚かぶせるだけで壁。**
+`TwoStep : TwoOk Z → TwoOk (two nil Z)` がその一般形。
+
+### 荷の W 帰納がどこで止まるか（`bms` で実測）
+
+`Wall2 B` の行列（`B = [(0,0,0),(0,0,0)]`）を展開すると
+
+    P(6,0,0)(6,0,0)[n] = P(6,0,0) ++ [(5,2,0)(6,0,0)]^n      P = R375m
+
+つまり `flat_mem''` の `M = (5,2,0)(6,0,0)`（**2 本目**の 2 の記録＋荷）が
+`n` 回並ぶ。木で言うと繰り返される鎖は
+
+    twoIt nil (pay nil Y) n     （荷つき 2 の記録の水平鎖）
+
+で、これが `two N (·)` の**直上**に来る。`TwoOk_pay` の証明では鎖が
+`APd_chainT'`（`TwoOk T` から作る）で出るが、そこでは鎖が最上段だった。
+今回は鎖が 2 の記録の直上なので `TwoOk (twoIt nil (pay nil Y) n)` が要る。
+
+    n = 0 : TwoOk nil                     ★緑
+    n+1   : TwoOk (two (鎖) (pay nil Y))   ★壁（兄弟つきの TwoStep）
+
+**`TwoOk_pay` が荷の帰納を回せたのは、鎖が最上段だったから。**
+1 段上げると鎖も 1 段上がって `TwoStep` に化ける。これが 5 回確かめた同じ壁の
+`TwoOk` 版の言い方。
