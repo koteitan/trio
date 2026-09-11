@@ -77067,5 +77067,111 @@ theorem R375m61_of_TwoStepP (h : TwoStepP) :
 #print axioms Pay2_of_TwoStepP
 #print axioms R375m61_of_TwoStepP
 
+/-! ### ★★★★★★ `Bs = []` なら塔が予算を増やさない：`ChainNil` は緑
+
+`GOK_oneUV_RunSB D Bs B U` の塔は `UtwP Bs B`。`Bs = [nil]` のときは
+`UtwP [nil] N (n+1) = one nil (two nil (TWB N n))` で `two nil` が入るので、
+`WPd` で作ると `(k+1) ::` の形（予算）が要る。ところが **`Bs = []`** なら
+
+    UtwP [] N (n+1) = one nil (TW1 N n),   TW1 N 0 = N, TW1 N (m+1) = one N (TW1 N m)
+
+で `one` しか増えないので `0 ::` の形のままでよい。`WPd_chainP` /（一般化した）
+`WPd_VCh` がちょうどその形なので、**`one nil (two N nil)` は水平鎖 `N` で緑**。
+
+壁 `ZApp2c` は `one nil (two nil (two N nil))`。**差は `two nil` 1 層だけ。** -/
+
+def TW1 (N : Jk1) : ℕ → Jk1
+  | 0 => N
+  | (n + 1) => Jk1.one N (TW1 N n)
+
+theorem JkA_TW1 {N : Jk1} (hJN : JkA N) : ∀ n : ℕ, JkA (TW1 N n)
+  | 0 => hJN
+  | (n + 1) => ⟨hJN, JkA_TW1 hJN n⟩
+
+/-- 水平鎖はどれも `0 ::` の形で良い（`WPd_chainP` の `VCh` 版）。 -/
+theorem WPd_VCh {k : ℕ} {B : List ℕ} : ∀ {N : Jk1}, VCh Jk1.nil N →
+    ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B) N := by
+  intro N hN
+  induction hN with
+  | nil => intro q _; exact WPd_nilAll _
+  | @step N' Y hN' hY ih =>
+      intro q hq
+      show WPd (0 :: (q ++ B)) (Jk1.two N' (Jk1.pay Jk1.nil Y))
+      refine WPd_twoP (k := k) hY (JkA_of_VCh (V := Jk1.nil) trivial hN') ?_
+      intro q' hq'
+      have hh := ih (q' ++ q) (by
+        intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact hq' x h
+        · exact hq x h)
+      simpa [List.append_assoc] using hh
+
+theorem WPd_TW1 {N : Jk1} (hJN : JkA N) {k : ℕ} {B : List ℕ}
+    (hNall : ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B) N) :
+    ∀ (n : ℕ) (q : List ℕ), (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ B) (TW1 N n)
+  | 0, q, hq => hNall q hq
+  | (n + 1), q, hq => by
+      show WPd (0 :: (q ++ B)) (Jk1.one N (TW1 N n))
+      refine WPd_step (0 :: (q ++ B)) (hJN : FrmN (0 :: (q ++ B)) N) (hNall q hq) ?_
+      exact WPd_TW1 hJN hNall n (0 :: q) (by
+        intro x hx
+        simp only [List.mem_cons] at hx
+        rcases hx with rfl | h
+        · omega
+        · exact hq x h)
+
+theorem GOK_oneTW1 {N : Jk1} (hJN : JkA N) {k : ℕ}
+    (hNall : ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ ([] : List ℕ)) N)
+    (n : ℕ) : GOK (Jk1.one Jk1.nil (TW1 N n)) :=
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil) (WPd_TW1 hJN hNall n [] (by simp)))
+
+theorem appJ_UtwP_TW1 (N : Jk1) : ∀ n : ℕ, appJ N (UtwP [] N n) = TW1 N n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one N (appJ N (UtwP [] N n)) = Jk1.one N (TW1 N n)
+      rw [appJ_UtwP_TW1 N n]
+
+theorem UtwP_empty_eq (N : Jk1) (n : ℕ) :
+    UtwP [] N (n + 1) = Jk1.one Jk1.nil (TW1 N n) := by
+  show Jk1.one Jk1.nil (appJ N (UtwP [] N n)) = _
+  rw [appJ_UtwP_TW1 N n]
+
+/-- ★★★★★★ `one nil (two N nil)`（走り 1 本、兄弟は任意の `0 ::` 形の木）。 -/
+theorem GOK_oneTwoNilOf {N : Jk1} (hJN : JkA N) {k : ℕ}
+    (hNall : ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ ([] : List ℕ)) N) :
+    GOK (Jk1.one Jk1.nil (Jk1.two N Jk1.nil)) := by
+  have hJT : JkT (plug ([] : List Frm) (Jk1.one Jk1.nil (RunS (([] : List Jk1) ++ [N])))) :=
+    ⟨⟨trivial, hJN, trivial⟩, trivial⟩
+  refine GOK_oneUV_RunSB [] [] N Jk1.nil (by intro A hA; exact absurd hA (by simp))
+    hJN hJT GOK_nil ?_
+  intro n
+  cases n with
+  | zero => exact GOK_nil
+  | succ n =>
+      show GOK (appJ Jk1.nil (UtwP ([] : List Jk1) N (n + 1)))
+      rw [UtwP_empty_eq]
+      show GOK (Jk1.one Jk1.nil (TW1 N n))
+      exact GOK_oneTW1 hJN hNall n
+
+/-- ★★★★★★ 水平鎖の上の走り 1 本は緑。壁 `ZApp2c` との差は `two nil` 1 層。 -/
+theorem GOK_oneTwoVChNil {N : Jk1} (hN : VCh Jk1.nil N) :
+    GOK (Jk1.one Jk1.nil (Jk1.two N Jk1.nil)) :=
+  GOK_oneTwoNilOf (JkA_of_VCh (V := Jk1.nil) trivial hN) (k := 0)
+    (fun q hq => WPd_VCh (k := 0) (B := []) hN q hq)
+
+/-- ★★★★★★ その上に荷も載る（`GOK_twoPay_of`）。 -/
+theorem GOK_oneTwoVChPay : ∀ Y : TrioSeq, Bok Y → ∀ N : Jk1, VCh Jk1.nil N →
+    GOK (Jk1.one Jk1.nil (Jk1.two N (Jk1.pay Jk1.nil Y))) :=
+  GOK_twoPay_of (ctx := [Frm.fone Jk1.nil]) (VCh Jk1.nil)
+    (fun N hN => JkA_of_VCh (V := Jk1.nil) trivial hN)
+    (fun N hN Y hY k => VCh_twoIt hN hY k)
+    (fun N T hN hT => ⟨⟨trivial, hN, hT⟩, trivial⟩)
+    (fun N hN => GOK_oneTwoVChNil hN)
+
+#print axioms WPd_VCh
+#print axioms GOK_oneTwoVChNil
+#print axioms GOK_oneTwoVChPay
+
 end Small
 end TRIO

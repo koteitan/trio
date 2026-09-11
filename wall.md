@@ -71,6 +71,23 @@
 
 **`(k+1) ::` の形だけが壁。** `0 ::` は緑。
 
+## ★ いちばん鋭い言い方：水平鎖は緑、走り（縦）だけが壁（2026-09-12）
+
+    GOK_oneTwoVChNil : ∀ N ∈ VCh nil, GOK (one nil (two N nil))          ★緑
+    GOK_oneTwoVChPay : ∀ Y Bok Y, ∀ N ∈ VCh nil,
+                         GOK (one nil (two N (pay nil Y)))               ★緑
+    ZApp2c           : ∀ N ∈ VCh nil, GOK (one nil (two nil (two N nil))) ★壁
+
+**差は `two nil` 1 層だけ。** 理由は塔の形:
+
+    GOK_oneUV_RunSB D Bs B U の塔は UtwP Bs B
+      Bs = []    : UtwP [] N (n+1) = one nil (TW1 N n)      （one だけ）→ 形は 0 :: のまま ★緑
+      Bs = [nil] : UtwP [nil] N (n+1) = one nil (two nil (TWB N n))（two nil が入る）
+                   → WPd_twoOf が (k+1) :: の形（予算）を要求 ★壁
+
+水平鎖 `VCh nil`（2 の記録が全部同じ高さ）は `WPd_VCh` で `0 ::` の形のまま扱えるが、
+走り（2 の記録の高さが 1 上がる）を 1 本挟むと予算の形に落ちる。
+
 ## 壁の最小形は 3 つ（全部同じ 1 手、言い換えが違うだけ）
 
     (1) ChainStep : WPd_twoA_runB（緑）の結論 two A nil を two A (pay nil Y) に

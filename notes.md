@@ -23082,3 +23082,42 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 語に `nil` の字を混ぜると `(2,2,1)` が増える（`colJ a b nil = [(a+1,b+1,1)]`）。
 `Rz1 (T6w 5 ++ nil^20)` は `Rz1 (T6w 5)` より大きいが `Rz1 (T6w 6)` より小さい。
 `nil` を先頭や交互に置くと非標準になる。シートは据え置き。
+
+## 追記325 (2026-09-12): `Bs = []` なら塔が予算を増やさない。水平鎖は緑
+
+### 1. 見つけたこと
+
+`GOK_oneUV_RunSB D Bs B U` の階段は `UtwP Bs B` で、`Bs` の長さで形が変わる。
+
+    Bs = []    : UtwP [] N (n+1) = one nil (TW1 N n)
+                 TW1 N 0 = N, TW1 N (m+1) = one N (TW1 N m)   ← one しか増えない
+    Bs = [nil] : UtwP [nil] N (n+1) = one nil (two nil (TWB N n))
+                 TWB N (m+1) = one N (two nil (TWB N m))      ← two nil が入る
+
+`WPd` で階段を作るとき、`one` は `WPd_step` で形が `0 ::` 増えるだけだが、
+`two nil` は `WPd_twoOf` で `(k+1) ::`（予算つきの形）を要求する。
+**だから `Bs = []` の階段は予算を使わない。**
+
+### 2. 出たもの（全部緑、1 回目のビルドで通過）
+
+    WPd_VCh          : ∀ N ∈ VCh nil, ∀ q(≤k), WPd ((0::q)++B) N
+                       （`WPd_chainP` の `VCh` 版。`WPd_twoP` で帰納）
+    TW1 / WPd_TW1 / GOK_oneTW1
+    appJ_UtwP_TW1 / UtwP_empty_eq : UtwP [] N (n+1) = one nil (TW1 N n)
+    GOK_oneTwoNilOf  : N が 0:: 形で良ければ GOK (one nil (two N nil))
+    GOK_oneTwoVChNil : ∀ N ∈ VCh nil, GOK (one nil (two N nil))
+    GOK_oneTwoVChPay : ∀ Y Bok Y, ∀ N ∈ VCh nil, GOK (one nil (two N (pay nil Y)))
+                       （`GOK_twoPay_of` を ctx = [fone nil] で）
+
+### 3. 壁のいちばん鋭い言い方
+
+    緑 : one nil (two N nil)              N は水平鎖
+    壁 : one nil (two nil (two N nil))    ← two nil が 1 層多いだけ
+
+水平鎖 `VCh nil`（2 の記録が全部同じ高さ、荷つき）は通る。
+**高さが 1 上がる走りを 1 本挟むと通らない。**
+
+### 4. 実測
+
+新しい字を `Rz1` に入れて測ると `cnNil0 < cnNil1 < cnPay1 < … < cnPay10 < T6` で、
+どれも `T6` より小さい。シートは据え置き。
