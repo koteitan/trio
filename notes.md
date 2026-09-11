@@ -20753,3 +20753,46 @@ A2' の帰納法の仮定がそのまま使える）。ただし `AYdB0` の横�
     WFd_nilF   階段。幅は無制限、無条件
     GOK_chainJdF / AYdWF / WFd_payT / WFd_payE / WFd_oneNilT   荷（幅 0 の入り目）
     WFd_ck_shift / WFd_nilE / WFd_oneNilE / WFd_nilT_e / WFd_nilT_c
+
+## 追記273: 族 `WGd`（予算を大域に）で階段と幅 0 の荷が緑。残りは兄弟の条件の形
+
+2026-09-11。追記272 の 6 を実装した。緑:
+
+    Ins b ks ks₂       ks に幅 < b のブロックを好きな位置に挿した形
+    Ins_refl / Ins_app / Ins_mono / Ins_cons_inv / Ins_trans
+    WGd / WGtx / WGd_iff / WGtx_JkT / WGd_congr / WGd_blk / WGtx_blk / WGd_step
+    WGtx_anti          文脈は予算について反単調
+    WGd_mono           WGd は予算について単調
+    WGd_nilF           ★ 階段。幅は無制限、無条件
+    GOk / GOk_down / FrmG_Ins / WGd_stepG / GOK_chainJdG
+    AYdWG / AYdWG_G / WGd_payT / WGd_payE    荷（1 の枠の位置）
+
+### 設計
+
+* 形は**幅の列**だけ。予算 `b` は形の外の大域パラメータ。
+* スラック `r`（ブロックを剥がすとき下に入る完成ブロック）の幅は `≤ i`。
+* 1 の枠の木と兄弟は「**予算を下げれば、形のどこにでも幅 `< b` のブロックを
+  挿した形で差し直せる**」。予算が下がるので幅の条件が要らない。
+* 測度は lex(予算, 幅の多重集合の DM)。Lean の `Prod.Lex` で通る。
+
+`WGtx_anti` が要点で、階段が塔を予算 `b-1` で組める。追記272 の 5 と 6 が
+これで両立した。
+
+### A2' の循環を避けた書き方
+
+`GOk b ks U = WGd b ks U ∧ ∀ b'<b, ∀ ks₂ (Ins b ks ks₂), WGd b' ks₂ U`。
+A2' の結論を**素の `WGd`** にして（`∀ b ks` で全称）、`GOk` 版は各 `(b', ks₂)` で
+`AYdWG` を instantiate するだけにする。同じ `Y` で自分を使わないので循環しない。
+
+### 残り: 走りの位置の荷。兄弟の条件は「頭を残した挿入」でないといけない
+
+横鎖 `twoIt` の要素 `X` について、族は
+`∀ b'<b, ∀ ks₂ (Ins b (i :: (r++ks)) ks₂), WGd b' ks₂ X` を要求する。
+ところが `Ins` は**形の先頭にも**ブロックを挿せるので、`X` の位置（ブロックの
+`i` 枚目）が変わってしまい、そのままでは証明できない。
+
+    兄弟の条件は InsH（頭 `i` を残して下にだけ挿す）でないと証明できない
+    しかし階段は兄弟 `C` を塔の 1 の枠の木として使い直すので、
+    1 の枠の木の条件（先頭挿入も許す `Ins`）を要求する
+
+次はこの 2 つを噛み合わせる形（1 の枠の木の条件も「頭を残す」形にする）を詰める。
