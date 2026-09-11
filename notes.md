@@ -22774,3 +22774,48 @@ W 帰納は「より小さい荷」しかくれない。荷が小さくなる方
 
 ブロックの中に走り `(a+4,2,0)(a+5,2,0)` が入っているので、`pk` の段で
 走りの道具が要る可能性がある。**壁（`SHtow`）と繋がっているかは未確認。**
+
+## 追記319 (2026-09-12): 台座の junk は `Zw ⊂ wordC ⊂ wordJ` と広げられる。上限は壁
+
+### 1. `PkGA` の `pk` に入る junk はどんどん一般化できる
+
+`PkGA 2 (R600 ++ [(2,2,0)] ++ J)` は `JkGU 1 J` さえあればよく、
+`JkGU` は `GoodFb` の `pk` の段そのもの。したがって
+
+    Zw w a b          : GoodFb_z1c_rep          （z の列 + 1 の列、反復）
+    wordC a b ws      : GoodFb_wordC            （z の列 + 1 の列 k 本 + 荷 Y）
+    wordJ a b ws      : GoodFb_wordJ + GOK_all  （**走りの無い木**を並べた語）
+
+の 3 つが全部緑で、`Zw ⊂ wordC ⊂ wordJ`。`bms -c` の実測では
+
+    R600z m  <  R600k k  <  R600j [AltT i]  <  R600j (AltT i)^m  <  R600 (2,2,1)
+
+    R600k k        = R600 (2,2,0)(3,3,1)(4,1,0)^k          （wordC、1 の列 k 本）
+    AltT i         = one nil (two nil (one nil (two nil ... nil)))（交互、走り無し）
+    R600j ws       = R600 (2,2,0) ++ wordJ 2 2 ws
+
+Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` が全部緑。
+`LadB`（`PkGA 2` の台座の上の `PU` の梯子）はどの台座にも載る。
+
+`PU` の `JkU` の段（`pu`）にも同じ語が入る（`(GoodFb_wordJ ws hw).pu 2 2`）が、
+実測では `PkGA` の段で語を伸ばす方が大きいので使わなかった。
+
+### 2. 上限は `R600 (2,2,1)`。これは壁そのもの
+
+`R600 (2,2,1)` はこの族のどれより大きく標準形。行351 `R344 (2,2,1)` と同じ形で
+
+    R600 ++ [(2,2,1)] = R338 ++ ((1,1,0) :: J6 1 1 ++ [(2,2,1)])
+    J6 a b = colJ a b T6,   T6 = one nil (two nil (two nil (pay nil [(0,0,0)])))
+
+なので `GoodFb (colJ · · T6)`、つまり実質 `GOK T6` が要る。ところが
+
+    T6 の中身 = 走り 2 連 `(l+1,2,0)(l+2,2,0)` の**直上に荷** `(l+3,0,0)`
+
+で、`JkOk T6` は偽（`TopOk (two _ _) = False`）。`APd` で書くと
+
+    APd (false::ks) (two nil (pay nil [(0,0,0)]))     ← これが要る
+
+「走り 2 連の上の荷」。`APd (false::ks) (pay nil C)`（走り 1 連の上の荷）は
+`AYdT` で緑、`APd (true::ks) (two nil (pay nil C))` も緑。1 つ深いだけで割れる。
+
+**結論: 行列を大きくする安い道はここで尽きた。次は壁（`SHtow`）しかない。**
