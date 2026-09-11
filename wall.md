@@ -14,57 +14,59 @@
     OSib D X := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (one M X))
     TSib D X := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (two M X))
 
-    HEx [fone nil]
-    HEx ctx → JkA A → HEx (ctx ++ [fone A])
-    HEx ctx → JkA A → HEx (ctx ++ [ftwo A])
+    HGx [fone nil]
+    HGx ctx → JkA A → GOK (plug ctx A) → HGx (ctx ++ [fone A])
+    HGx ctx → JkA A → GOK (plug ctx A) → HGx (ctx ++ [ftwo A])
 
-    NilO := ∀ D, HEx D → OSib D nil      ★これ 1 本
-    NilT := ∀ D, HEx D → TSib D nil
+    GNilO := ∀ D, HGx D → OSib D nil      ★これ 1 本
+    GNilT := ∀ D, HGx D → TSib D nil
 
-    NilO → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
+    GNilO → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
 
-`HEx` には**側条件が 1 つもない**（枠の木は `JkA` なだけ）。族
-（`APd` / `WPd` / `WFd` / `WGd`）が文脈の中の木にも族の述語を要求して
-満たせなくなっていたのが、これで消えた。
+族の述語（`APd` / `WPd` / `WFd` / `WGd`）を文脈の中の木に要求していたのが
+充足可能性の壁だった。`HGx` の側条件は `GOK` だけなので、それは消えた。
+
+## 還元の地図（`GNilO` / `GNilT` を仮定に置いたとき）
+
+| 場合 | 道具 | 状態 |
+|---|---|---|
+| `GNilO`（`D` が 1 の枠止まり） | `APnil_gen0` + `PS_cons` + `GSib_tree` | 緑 `GNilO_fone` |
+| `GNilO`（`D` が 2 の枠止まり） | `APnil_gen0` + `PZ_cons` + `GSib_tree` | 緑 `GNilO_ftwo` |
+| `GNilO`（`D = [fone nil]`） | `GOK_oneOneNil` | `APz M` に落ちる `GNilO_base` |
+| `GNilT`（`D` が 1 の枠止まり） | `TSib_nil_of_SelfW` + `SelfW_HGx` | 緑 `GNilT_fone` |
+| `GNilT`（`D` が 2 の枠止まり） | — | **走り。道具が無い** |
+
+## 残っている新しい内容は 2 つ
+
+1. **底**: `∀ M, JkA M → GOK (one nil M) → APz M`
+   （`APz M := ∀ U, JkT U → GOK U → GOK (one U M)`、深さ 0 の兄弟の全称）。
+   既存の道具は `APz_nil` / `APz_pay` / `APz_onePayOnly` / `AYz` / `APz_of_Bk00`。
+   `one` / `two` を含む `M` が未。
+2. **走り**: `GNilT` の 2 の枠止まり。
+   `plug (D ++ [ftwo V]) (two M nil)` ＝ `plug D (two V (two M nil))`。
+   `GOK_twoNil_gen` は文脈が 1 の枠止まりのときしか使えない。
+   走りの道具は `RunP` / `RunS` / `GOK_oneUV_RunSB` / `hMy_RunP` にあるので、
+   そこへ繋ぐのが次の一手。
 
 ## 緑の部品
 
-    HFone_of_NilO / R375m61_of_NilO
-    Sib_tree : NilO → NilT → ∀ T, JkA T → ∀ D, HEx D → OSib D T ∧ TSib D T
-    NilO_of_hang（APnil_gen0 の包み直し）
+    HFone_of_GNilO / R375m61_of_GNilO
+    GSib_tree（木の構造帰納）/ SelfW_HGx（自分の上に積み続ける）
+    hangG_fone / hangG_ftwo（荷の還元）
     OSib_one / OSib_two / TSib_one / TSib_two（plug の付け替えだけ）
     PS_cons / PZ_cons（荷の W 帰納、CtxJT だけで回る）
     PS_consF / TSibF_pay（兄弟を鎖 OChain / TChain に制限した版）
-    HCx / HDx（GOK 側条件つきの塔の文脈）/ TowHCx / QH0 / QFL0_of_HFone
+    HCx / HDx / TowHCx / QH0 / QFL0_of_HFone（幅 0 のブロックの塔）
     QFL_cons（鎖の入れ子帰納法、無条件）/ QFL_all / Pay2_of_QFL0
     GOK_oneUV_RunSB（階段）/ GOK_appJ_tow（塔は文脈を伸ばすだけ）
     W0_acc（荷の展開 1 手は `W 0` の上で整礎）
 
-## `NilO` の中身と、残る測度の問題
+## 測度（未解決）
 
-`NilO D` は `APnil_gen0` で荷に落ちる:
-
-    NilO D ⟸ ∀ M 良い, ∀ C Bok, GOK (plug D (pay M C))
-
-`D` の最後の枠で分けると
-
-    D = D' ++ [fone V] : plug D' (one V (pay M C)) → PS_cons → OSib D' M
-    D = D' ++ [ftwo V] : plug D' (two V (pay M C)) → PZ_cons → TSib D' M
-    D = [fone nil]     : one nil (pay M C) → AYs（深さ 0）→ APz M
-
-そして `OSib D' M` / `TSib D' M` は `Sib_tree` で `M` の構造帰納:
-
-    OSib D (pay Z Y) ⟸ OSib D Z                        （PS_cons）
-    OSib D (one N T) ⟸ OSib D N, ∀W OSib (D ++ [fone W]) T
-    OSib D (two N T) ⟸ OSib D N, ∀W TSib (D ++ [fone W]) T
-    TSib D (one N T) ⟸ TSib D N, ∀W OSib (D ++ [ftwo W]) T
-    TSib D (two N T) ⟸ TSib D N, ∀W TSib (D ++ [ftwo W]) T
-    OSib D nil / TSib D nil = 壁
-
-**木は縮むが文脈が伸びる。`nil` のところで文脈が 1 縮んで木が任意に戻る。**
-`（木の大きさ, 文脈の長さ）` のどちらの辞書式順序でも割れる。これが最後の
-測度の問題で、`TSib D nil` は `SelfW D M`（`M` を自分の上に積み続けられる）
-＝ `GOK_twoNil_gen` の階段に対応する。
+`GNilO (D ++ [fone V])` ⟸ `GNilO / GNilT (D ++ M の背骨の枠)`。
+長さは `|D| + 1` → `|D| + h(M)`（`h(M)` は `M` の背骨の記録の本数）。
+`h(M) ≤ 0`（`M` が `nil` か荷だけ）でないと減らない。`M` は兄弟なので任意。
+`（木の大きさ, 文脈の長さ）`のどちらの辞書式順序でも割れる。
 
 ## 死んだ道（族）
 
