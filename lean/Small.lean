@@ -69630,5 +69630,37 @@ theorem R376_of_RunNilB (h : RunNilB) (hp : PayNilB) :
 #print axioms R375m_62_of_RunNilB
 #print axioms R376_of_RunNilB
 
+/-! ### ★★★★★ `R375m (6,0,0)` は平らな走りの塔そのもの
+
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)
+
+の展開は `R375m ++ (5,2,0)^n`（bms 実測）。`R373_copies52_mem`（緑）がそれ。 -/
+
+theorem flatMap_const_52 : ∀ n : ℕ,
+    (List.range n).flatMap (fun _ => [((5, 2, 0) : ℕ × ℕ × ℕ)])
+      = List.replicate n ((5, 2, 0) : ℕ × ℕ × ℕ)
+  | 0 => by simp
+  | (n + 1) => by
+      rw [List.range_succ, List.flatMap_append, flatMap_const_52 n]
+      simp [List.replicate_succ']
+
+theorem R373_copies52_all : ∀ n : ℕ,
+    R373 ++ List.replicate n ((5, 2, 0) : ℕ × ℕ × ℕ) ∈ W 0
+  | 0 => by simpa using Aok_R373.mem
+  | (n + 1) => R373_copies52_mem n
+
+/-- ★★★★★★ シートの次の行。 -/
+theorem R375m_600_mem : R375m ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, R373 ++ (List.range n).flatMap
+      (fun _ => [((5, 2, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_const_52 n]
+    exact R373_copies52_all n
+  have h := flat_mem'' (Y0 := R373) (M := [((5, 2, 0) : ℕ × ℕ × ℕ)]) (d := 6)
+    (by simp) (by simp [entry]) (by intro r h1 h2; simp at h2; omega) htw
+  simpa [R375m, List.append_assoc] using h
+
+#print axioms R375m_600_mem
+
 end Small
 end TRIO
