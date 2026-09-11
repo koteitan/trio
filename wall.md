@@ -24,10 +24,18 @@
     TwoBud1 := ∀ V W, JkA V → JkA W → PA V → PA W → ∀ ks, WPd (1 :: ks) (two V W)
     R376_of_TwoBud1 : TwoBud1 → 行376        ★これが最短
 
-`TwoBud1` が硬い理由: `WPd_ck 0 ks` を開くと、兄弟 `N` について貰えるのは
-`∀ q(全部 0), WPd ((0::q)++B) N` だけ。`WPd_twoTwoGen_run`（走り 2 連、緑）の
-階段 `nstN N i` は `replicate t 1` を前に付けるので **1 が要る**。予算 1 では
-その 1 が出ない。これが [[budget-off-by-one]] の 1 ずれそのもの。
+`TwoBud1` が硬い理由（追記331）: `WPd_ck 0 ks` を開くと、兄弟 `N` について
+貰えるのは `∀ q(全部 0), WPd ((0::q)++B) N` だけ。これは
+
+    **`N` は「1 の枠だけを積んだ文脈」でしか良さが保証されない**
+
+という意味。`two N nil` の階段は 1 の枠の塔なので予算 1 でも通る（`WPd_nilF`）。
+`two N (two V nil)` の階段 `nstN2` は各段が `[fone V, ftwo N]` で 2 の枠を積むので、
+予算リストに 1 以上が 1 個ずつ増える。`WPd_nstN_run` はそれを
+`hsib (q ++ replicate (t+1) 1)` で吸収するが `1 ≤ k` が要る。予算 1 では出ない。
+
+DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を除いて `k` 以下の元を
+足した」多重集合だけ。`k = 0` なら 0 しか足せない。**測度を変えないと 1 ずれは消えない。**
 
 上の木が空・予算 2 以上（`two V nil`）は `TwoBud_nilW` で緑。
 
