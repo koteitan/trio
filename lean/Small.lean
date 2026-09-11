@@ -77508,5 +77508,177 @@ theorem R375m61_of_TwoBud1 (h : TwoBud1) :
 #print axioms R376_of_TwoBud
 #print axioms R375m61_of_TwoBud
 
+/-! ### ★★★★★★ 兄弟の条件を「予算」でなく「兄弟の木の高さ」で刻む族 `QDP` / `QD`
+
+`WPd` の壁（`TwoBud1`）の正体は、2 の枠の兄弟 `N` の良さが
+`∀ q(成分 ≤ k), WPd ((0::q)++ks) N` という**予算つきのリスト**でしか貰えないこと。
+予算 1 では `q` に 0 しか入れられないので、階段（2 の枠を積む）が回らない。
+
+代わりに兄弟の条件を
+
+    `N` の高さ ≤ s   かつ   **どの `ks'` でも** `P ks' N`
+
+とすると、階段は予算を一切食わなくなる（`QDP_twoOf` の `k` が自由）。
+`s` は 2 の枠をくぐるたびに 1 下がるので、木の高さで整礎になる。
+
+`QDP P S` はリストの DM 順序だけで再帰する（`WPd` と同じ）。`QD s` は `s` の
+構造帰納で `QDP (QD (s-1)) (高さ ≤ s-1)` として定める。 -/
+
+/-- 木の高さ。 -/
+def tdp : Jk1 → ℕ
+  | Jk1.nil => 0
+  | Jk1.pay N _ => tdp N + 1
+  | Jk1.one N M => max (tdp N) (tdp M) + 1
+  | Jk1.two N M => max (tdp N) (tdp M) + 1
+
+def QDP (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) : List ℕ → Jk1 → Prop
+  | [], V => GOK V
+  | (0 :: ks), V => ∀ U : Jk1, FrmN ks U → QDP P S ks U → QDP P S ks (Jk1.one U V)
+  | ((k + 1) :: ks), V => ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) → ∀ (U N : Jk1),
+      FrmN (r ++ ks) U → QDP P S (r ++ ks) U → JkA N → S N →
+      (∀ ks' : List ℕ, FrmN ks' N → P ks' N) →
+      QDP P S (r ++ ks) (Jk1.one U (Jk1.two N V))
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem QDP_bnil (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) (V : Jk1) :
+    QDP P S [] V ↔ GOK V := by rw [QDP]
+
+theorem QDP_c0 (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) (ks : List ℕ) (V : Jk1) :
+    QDP P S (0 :: ks) V ↔
+      ∀ U : Jk1, FrmN ks U → QDP P S ks U → QDP P S ks (Jk1.one U V) := by rw [QDP]
+
+theorem QDP_ck (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) (k : ℕ) (ks : List ℕ) (V : Jk1) :
+    QDP P S ((k + 1) :: ks) V ↔ ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) → ∀ (U N : Jk1),
+      FrmN (r ++ ks) U → QDP P S (r ++ ks) U → JkA N → S N →
+      (∀ ks' : List ℕ, FrmN ks' N → P ks' N) →
+      QDP P S (r ++ ks) (Jk1.one U (Jk1.two N V)) := by rw [QDP]
+
+def QCtxP (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) : List ℕ → List Frm → Prop
+  | [], ctx => ctx = []
+  | (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      QCtxP P S ks ctx' ∧ FrmN ks U ∧ QDP P S ks U
+  | ((k + 1) :: ks), ctx => ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ k)
+      (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      QCtxP P S (r ++ ks) ctx' ∧ FrmN (r ++ ks) U ∧ QDP P S (r ++ ks) U ∧ JkA N ∧ S N ∧
+      (∀ ks' : List ℕ, FrmN ks' N → P ks' N)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem QCtxP_bnil (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) (ctx : List Frm) :
+    QCtxP P S [] ctx ↔ ctx = [] := by rw [QCtxP]
+
+theorem QCtxP_c0 (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) (ks : List ℕ) (ctx : List Frm) :
+    QCtxP P S (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      QCtxP P S ks ctx' ∧ FrmN ks U ∧ QDP P S ks U := by rw [QCtxP]
+
+theorem QCtxP_ck (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) (k : ℕ) (ks : List ℕ)
+    (ctx : List Frm) :
+    QCtxP P S ((k + 1) :: ks) ctx ↔ ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ k)
+      (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      QCtxP P S (r ++ ks) ctx' ∧ FrmN (r ++ ks) U ∧ QDP P S (r ++ ks) U ∧ JkA N ∧ S N ∧
+      (∀ ks' : List ℕ, FrmN ks' N → P ks' N) := by rw [QCtxP]
+
+theorem QCtxP_JkT (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) :
+    ∀ (ks : List ℕ) (ctx : List Frm), QCtxP P S ks ctx → ∀ X : Jk1,
+      FrmN ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [QCtxP_bnil] at h; subst h; exact hX
+  | (0 :: ks), ctx, h, X, hX => by
+      rw [QCtxP_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      rw [plug_snoc]
+      exact QCtxP_JkT P S ks ctx' hc' (Jk1.one U X) (FrmN_one ks U X hU hX)
+  | ((k + 1) :: ks), ctx, h, X, hX => by
+      rw [QCtxP_ck] at h
+      obtain ⟨r, hr, ctx', U, N, rfl, hc', hU, -, hJN, -, -⟩ := h
+      rw [plug_snoc12]
+      exact QCtxP_JkT P S (r ++ ks) ctx' hc' (Jk1.one U (Jk1.two N X))
+        (FrmN_one _ U (Jk1.two N X) hU ⟨hJN, hX⟩)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem QDP_iff (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) :
+    ∀ (ks : List ℕ) (V : Jk1),
+      QDP P S ks V ↔ ∀ ctx : List Frm, QCtxP P S ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [QDP_bnil]
+      constructor
+      · intro h ctx hc
+        rw [QCtxP_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((QCtxP_bnil P S []).mpr rfl)
+  | (0 :: ks), V => by
+      rw [QDP_c0]
+      constructor
+      · intro h ctx hc
+        rw [QCtxP_c0] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (QDP_iff P S ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (QDP_iff P S ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((QCtxP_c0 P S ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | ((k + 1) :: ks), V => by
+      rw [QDP_ck]
+      constructor
+      · intro h ctx hc
+        rw [QCtxP_ck] at hc
+        obtain ⟨r, hr, ctx', U, N, rfl, hc', hU, hUk, hJN, hSN, hPN⟩ := hc
+        rw [plug_snoc12]
+        exact (QDP_iff P S (r ++ ks) _).mp (h r hr U N hU hUk hJN hSN hPN) ctx' hc'
+      · intro h r hr U N hU hUk hJN hSN hPN
+        refine (QDP_iff P S (r ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc12]
+        exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
+          ((QCtxP_ck P S k ks _).mpr ⟨r, hr, ctx', U, N, rfl, hc', hU, hUk, hJN, hSN, hPN⟩)
+termination_by ks _ => (ks : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_cons0 ks
+      | exact dm_app ks r (by assumption)
+
+theorem QDP_step (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) (ks : List ℕ) {V W : Jk1}
+    (hV : FrmN ks V) (hVk : QDP P S ks V) (hW : QDP P S (0 :: ks) W) :
+    QDP P S ks (Jk1.one V W) :=
+  (QDP_c0 P S ks W).mp hW V hV hVk
+
+/-- ★★★★★★ 予算 `k` が**自由**。兄弟の条件がリストに依存しないのが `WPd_twoOf` との差。 -/
+theorem QDP_twoOf (P : List ℕ → Jk1 → Prop) (S : Jk1 → Prop) {k : ℕ} {ks : List ℕ}
+    {V N : Jk1} (hJN : JkA N) (hSN : S N) (hPN : ∀ ks' : List ℕ, FrmN ks' N → P ks' N)
+    (hV : QDP P S ((k + 1) :: ks) V) : QDP P S (0 :: ks) (Jk1.two N V) :=
+  (QDP_c0 P S ks _).mpr (fun U hU hUk =>
+    (QDP_ck P S k ks V).mp hV [] (by simp) U N (by simpa using hU) (by simpa using hUk)
+      hJN hSN hPN)
+
+/-- 高さで刻んだ層。`QD 0` は 2 の枠を許さない（`S = False`）ので自明。 -/
+def QD : ℕ → List ℕ → Jk1 → Prop
+  | 0 => QDP (fun _ _ => False) (fun _ => False)
+  | (s + 1) => QDP (QD s) (fun N => tdp N ≤ s)
+
+theorem QD_bnil (s : ℕ) (V : Jk1) : QD s [] V ↔ GOK V := by
+  cases s <;> exact QDP_bnil _ _ V
+
+#print axioms QDP_iff
+#print axioms QDP_twoOf
+
 end Small
 end TRIO
