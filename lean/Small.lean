@@ -75969,5 +75969,43 @@ def QPayAll : Prop := ∀ (n : ℕ) (X : Jk1), JkA X → QOk n X → QPay n X
 #print axioms QOk_two
 #print axioms APz_of_QOk0
 
+/-! ### ★★★★★★ `GCx` を目標まで繋ぐ
+
+    QPayAll := ∀ n X, JkA X → QOk n X → QPay n X      （荷）
+    QNil    := ∀ n, QOk n nil                         （空木）
+
+この 2 つで木の構造帰納が回る。空木は走り以外は緑なので、`QNil` の中身も
+実質は走りだけ。 -/
+
+def QAll (X : Jk1) : Prop := ∀ n : ℕ, QOk n X
+
+def QNil : Prop := ∀ n : ℕ, QOk n Jk1.nil
+
+theorem QAll_of_Q (hp : QPayAll) (hn : QNil) : ∀ X : Jk1, JkA X → QAll X := by
+  intro X
+  induction X with
+  | nil => intro _ n; exact hn n
+  | pay Z C ih => intro hX n D hD; exact hp n Z hX.1 (ih hX.1 n) D C hD hX.2
+  | one U Y ihU ihY =>
+      intro hX n
+      exact QOk_one hX.1 (ihU hX.1 n) (hp n U hX.1 (ihU hX.1 n)) (ihY hX.2 n)
+  | two N Y ihN ihY =>
+      intro hX n
+      exact QOk_two hX.1 (ihN hX.1 n) (hp n N hX.1 (ihN hX.1 n)) (ihY hX.2 (n + 1))
+
+theorem APzAll_of_Q (hp : QPayAll) (hn : QNil) : APzAll :=
+  fun M hM => APz_of_QOk0 (QAll_of_Q hp hn M hM 0)
+
+theorem R375m61_of_Q (hp : QPayAll) (hn : QNil) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_GOKall (GOKall_of_APzAll (APzAll_of_Q hp hn))
+
+theorem R375m62_of_Q (hp : QPayAll) (hn : QNil) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m62_of_APzAll (APzAll_of_Q hp hn)
+
+#print axioms QAll_of_Q
+#print axioms R375m61_of_Q
+
 end Small
 end TRIO
