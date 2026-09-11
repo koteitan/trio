@@ -76873,5 +76873,135 @@ theorem ZApp2c_twoItNil (k : ℕ) :
 #print axioms ZApp2c_twoItNil
 #print axioms R375m61_of_ZApp2c
 
+/-! ### ★★★★★★ `TWm` の一般形 `TWB` と、`ZApp2c` の `WPd` 1 文への還元
+
+`TWm m n` は平らな走り `twoIt nil nil m` を単位にした塔。単位を任意の木 `N` に
+すると `TWB N n`。`WPd_TWm` / `TowOkM` はそのまま一般化できる。
+
+さらに `UtwP [nil] N (n+1) = one nil (two nil (TWB N n))` なので、
+`GOK_oneUV_RunSB [] [nil] N nil` の階段がちょうど `TowOkB` になり、
+`ZApp2c` は「鎖 `N` が `WPd` の予算を持つ」1 文に落ちる。 -/
+
+def TWB (N : Jk1) : ℕ → Jk1
+  | 0 => N
+  | (n + 1) => Jk1.one N (Jk1.two Jk1.nil (TWB N n))
+
+theorem TWB_twoIt (m : ℕ) : ∀ n : ℕ, TWB (twoIt Jk1.nil Jk1.nil m) n = TWm m n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one (twoIt Jk1.nil Jk1.nil m)
+          (Jk1.two Jk1.nil (TWB (twoIt Jk1.nil Jk1.nil m) n))
+        = Jk1.one (twoIt Jk1.nil Jk1.nil m) (Jk1.two Jk1.nil (TWm m n))
+      rw [TWB_twoIt m n]
+
+theorem JkA_TWB {N : Jk1} (hJN : JkA N) : ∀ n : ℕ, JkA (TWB N n)
+  | 0 => hJN
+  | (n + 1) => ⟨hJN, trivial, JkA_TWB hJN n⟩
+
+theorem WPd_TWB {N : Jk1} (hJN : JkA N) {b : ℕ}
+    (hNall : ∀ (k : ℕ), b ≤ k → ∀ ks : List ℕ, WPd ((k + 1) :: ks) N) :
+    ∀ (n k : ℕ), b ≤ k → ∀ ks : List ℕ, WPd ((k + 1) :: ks) (TWB N n)
+  | 0, k, hk, ks => hNall k hk ks
+  | (n + 1), k, hk, ks => by
+      refine WPd_step ((k + 1) :: ks) (hJN : FrmN ((k + 1) :: ks) N) (hNall k hk ks) ?_
+      refine WPd_twoOf (k := k) trivial (fun q _ => WPd_nilAll _) ?_
+      exact WPd_TWB hJN hNall n k hk ((k + 1) :: ks)
+
+/-- ★★★★★★ `TowOkM` の一般形。 -/
+theorem TowOkB {N : Jk1} (hJN : JkA N) {b : ℕ}
+    (hNall : ∀ (k : ℕ), b ≤ k → ∀ ks : List ℕ, WPd ((k + 1) :: ks) N) : ∀ n : ℕ,
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWB N n))) := fun n =>
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil)
+    (WPd_twoOf (k := b) trivial (fun q _ => WPd_nilAll _)
+      (WPd_TWB hJN hNall n b (le_refl b) [])))
+
+theorem appJ_UtwP_TWB (B : Jk1) : ∀ n : ℕ, appJ B (UtwP [Jk1.nil] B n) = TWB B n
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one (appJ B Jk1.nil)
+        (Jk1.two Jk1.nil (appJ B (UtwP [Jk1.nil] B n))) = _
+      rw [appJ_UtwP_TWB B n]
+      rfl
+
+theorem UtwP_nil_eq (B : Jk1) (n : ℕ) :
+    UtwP [Jk1.nil] B (n + 1) = Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWB B n)) := by
+  show Jk1.one Jk1.nil (Jk1.two Jk1.nil (appJ B (UtwP [Jk1.nil] B n))) = _
+  rw [appJ_UtwP_TWB B n]
+
+/-- ★★★★★★ 鎖 `N` が `WPd` の予算を持てば `ZApp2c` の 1 点が出る。 -/
+theorem ZApp2c_of_chain {N : Jk1} (hJN : JkA N) {b : ℕ}
+    (hNall : ∀ (k : ℕ), b ≤ k → ∀ ks : List ℕ, WPd ((k + 1) :: ks) N) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))) := by
+  have hJT : JkT (plug ([] : List Frm) (Jk1.one Jk1.nil (RunS ([Jk1.nil] ++ [N])))) :=
+    ⟨⟨trivial, trivial, hJN, trivial⟩, trivial⟩
+  refine GOK_oneUV_RunSB [] [Jk1.nil] N Jk1.nil ?_ hJN hJT GOK_nil ?_
+  · intro A hA
+    simp only [List.mem_singleton] at hA
+    subst hA
+    trivial
+  · intro n
+    cases n with
+    | zero => exact GOK_nil
+    | succ n =>
+        show GOK (appJ Jk1.nil (UtwP [Jk1.nil] N (n + 1)))
+        rw [UtwP_nil_eq]
+        show GOK (Jk1.one (appJ Jk1.nil Jk1.nil) (Jk1.two Jk1.nil (TWB N n)))
+        exact TowOkB hJN hNall n
+
+/-- ★ 残る 1 文：水平鎖が `WPd` の予算を持つ。 -/
+def ChainW : Prop := ∀ N : Jk1, VCh Jk1.nil N →
+  ∃ b : ℕ, ∀ (k : ℕ), b ≤ k → ∀ ks : List ℕ, WPd ((k + 1) :: ks) N
+
+theorem ZApp2c_of_ChainW (h : ChainW) : ZApp2c := by
+  intro N hN
+  obtain ⟨b, hb⟩ := h N hN
+  exact ZApp2c_of_chain (JkA_of_VCh (V := Jk1.nil) trivial hN) hb
+
+theorem R375m61_of_ChainW (h : ChainW) : R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_ZApp2c (ZApp2c_of_ChainW h)
+
+/-! #### 荷つきの鎖は `0 ::` の形なら緑（`(k+1) ::` の形が壁） -/
+
+theorem JkA_twoIt_payNil {Y : TrioSeq} (hY : Bok Y) :
+    ∀ n : ℕ, JkA (twoIt Jk1.nil (Jk1.pay Jk1.nil Y) n)
+  | 0 => trivial
+  | (n + 1) => ⟨JkA_twoIt_payNil hY n, trivial, hY⟩
+
+theorem WPd_twoP {k : ℕ} {ks : List ℕ} {N' : Jk1} {Y : TrioSeq} (hY : Bok Y)
+    (hJN' : JkA N')
+    (hN't : ∀ q : List ℕ, (∀ x ∈ q, x ≤ k) → WPd ((0 :: q) ++ ks) N') :
+    WPd (0 :: ks) (Jk1.two N' (Jk1.pay Jk1.nil Y)) :=
+  WPd_twoOf (k := k) hJN' hN't
+    (WPd_payA ((k + 1) :: ks) Jk1.nil trivial (WPd_nilAll _) Y hY)
+
+theorem WPd_chainP {k : ℕ} {B : List ℕ} {Y : TrioSeq} (hY : Bok Y) :
+    ∀ (n : ℕ) (q : List ℕ), (∀ x ∈ q, x ≤ k) →
+      WPd ((0 :: q) ++ B) (twoIt Jk1.nil (Jk1.pay Jk1.nil Y) n)
+  | 0, q, _ => WPd_nilAll _
+  | (n + 1), q, hq => by
+      show WPd (0 :: (q ++ B))
+        (Jk1.two (twoIt Jk1.nil (Jk1.pay Jk1.nil Y) n) (Jk1.pay Jk1.nil Y))
+      refine WPd_twoP (k := k) hY (JkA_twoIt_payNil hY n) ?_
+      intro q' hq'
+      have hh := WPd_chainP (k := k) (B := B) hY n (q' ++ q) (by
+        intro x hx
+        rcases List.mem_append.mp hx with h | h
+        · exact hq' x h
+        · exact hq x h)
+      simpa [List.append_assoc] using hh
+
+/-- ★★★ 荷つきの水平鎖は `0 ::` の形では良い（字としても良い）。 -/
+theorem GOK_oneChainP {Y : TrioSeq} (hY : Bok Y) (n : ℕ) :
+    GOK (Jk1.one Jk1.nil (twoIt Jk1.nil (Jk1.pay Jk1.nil Y) n)) :=
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil)
+    (by simpa using WPd_chainP (k := 0) (B := []) hY n [] (by simp)))
+
+#print axioms TowOkB
+#print axioms ZApp2c_of_chain
+#print axioms R375m61_of_ChainW
+#print axioms GOK_oneChainP
+
 end Small
 end TRIO
