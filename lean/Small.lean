@@ -75052,5 +75052,33 @@ theorem QL_all : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → QL Bs
 #print axioms QL_nilcons
 #print axioms QL_all
 
+/-! ### `QL_all` の使いどころ: `one W (FLr Bs)` が `TwoOk` になる
+
+`LOk_one` は「`LOk k W` と `LOk (k+1) Z` から `LOk k (one W Z)`」。
+`Z = FLr Bs` を `QL_all` で埋めると、`LOk 0 W` な `W` について
+`LOk 0 (one W (FLr Bs))`、つまり `TwoOk (one W (FLr Bs))` が出る。
+`W = nil` / `two nil nil` / `YX n` はどれも `LOk 0` が緑。 -/
+
+theorem LOk_oneFLr {W : Jk1} (hJW : JkA W) {k : ℕ} (hW : LOk k W)
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) : LOk k (Jk1.one W (FLr Bs)) :=
+  LOk_one hJW hW (QL_all Bs hBs k)
+
+theorem TwoOk_oneFLr {W : Jk1} (hJW : JkA W) (hW : LOk 0 W)
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) : TwoOk (Jk1.one W (FLr Bs)) :=
+  TwoOk_of_LOk0 (LOk_oneFLr hJW hW hBs)
+
+/-- ★★★★★ 字にすると `one nil (two nil (one W (FLr Bs)))` が良い。 -/
+theorem GOK_oneTwoOneFLr {W : Jk1} (hJW : JkA W) (hW : LOk 0 W)
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one W (FLr Bs)))) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have h := TwoOk_oneFLr hJW hW hBs Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using h))
+
+#print axioms TwoOk_oneFLr
+#print axioms GOK_oneTwoOneFLr
+
 end Small
 end TRIO
