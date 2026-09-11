@@ -70362,5 +70362,113 @@ theorem WFd_ck (k i : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) :
 
 #print axioms WFd_ck
 
+/-! ### `WFd` の文脈版 -/
+
+def WFtx : List (ℕ × ℕ) → List Frm → Prop
+  | [], ctx => ctx = []
+  | ((_, 0) :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WFtx ks ctx' ∧ FrmF ks U ∧ WFd ks U
+  | ((k, i + 1) :: ks), ctx => ∃ (r : List (ℕ × ℕ)) (_ : ∀ x ∈ r, encF x < encF (k, i + 1))
+      (ctx' : List Frm) (U : Jk1) (Ns : List Jk1),
+      ctx = ctx' ++ PBlk Ns U ∧ Ns.length = i + 1 ∧ WFtx (r ++ ks) ctx' ∧
+      FrmF (r ++ ks) U ∧ WFd (r ++ ks) U ∧ (∀ N ∈ Ns, JkA N) ∧
+      (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N →
+        ∀ q : List (ℕ × ℕ), (∀ x ∈ q, encF x < encF (k, i + 1)) →
+          WFd ((k, j) :: (q ++ (r ++ ks))) N)
+termination_by s _ => encT s
+decreasing_by
+  all_goals first | exact dm_encT ks [] (by simp) | exact dm_encT ks r (by assumption)
+
+theorem WFtx_bnil (ctx : List Frm) : WFtx [] ctx ↔ ctx = [] := by rw [WFtx]
+
+theorem WFtx_c0 (k : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) :
+    WFtx ((k, 0) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WFtx ks ctx' ∧ FrmF ks U ∧ WFd ks U := by
+  rw [WFtx]
+
+theorem WFtx_ck (k i : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm) :
+    WFtx ((k, i + 1) :: ks) ctx ↔
+      ∃ (r : List (ℕ × ℕ)) (_ : ∀ x ∈ r, encF x < encF (k, i + 1))
+      (ctx' : List Frm) (U : Jk1) (Ns : List Jk1),
+      ctx = ctx' ++ PBlk Ns U ∧ Ns.length = i + 1 ∧ WFtx (r ++ ks) ctx' ∧
+      FrmF (r ++ ks) U ∧ WFd (r ++ ks) U ∧ (∀ N ∈ Ns, JkA N) ∧
+      (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N →
+        ∀ q : List (ℕ × ℕ), (∀ x ∈ q, encF x < encF (k, i + 1)) →
+          WFd ((k, j) :: (q ++ (r ++ ks))) N) := by
+  rw [WFtx]
+
+theorem WFd_iff : ∀ (ks : List (ℕ × ℕ)) (V : Jk1),
+    WFd ks V ↔ ∀ ctx : List Frm, WFtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WFd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WFtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WFtx_bnil []).mpr rfl)
+  | ((k, 0) :: ks), V => by
+      rw [WFd_c0]
+      constructor
+      · intro h ctx hc
+        rw [WFtx_c0] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+        rw [plug_snoc]
+        exact (WFd_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+      · intro h U hU hUk
+        refine (WFd_iff ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U]) ((WFtx_c0 k ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+  | ((k, i + 1) :: ks), V => by
+      rw [WFd_ck]
+      constructor
+      · intro h ctx hc
+        rw [WFtx_ck] at hc
+        obtain ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hJNs, hNt⟩ := hc
+        rw [plug_PBlk]
+        exact (WFd_iff (r ++ ks) _).mp (h r hr U hU hUk Ns hlen hJNs hNt) ctx' hc'
+      · intro h r hr U hU hUk Ns hlen hJNs hNt
+        refine (WFd_iff (r ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_PBlk]
+        exact h (ctx' ++ PBlk Ns U)
+          ((WFtx_ck k i ks _).mpr ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hJNs, hNt⟩)
+termination_by s _ => encT s
+decreasing_by
+  all_goals first | exact dm_encT ks [] (by simp) | exact dm_encT ks r (by assumption)
+
+theorem WFtx_JkT : ∀ (ks : List (ℕ × ℕ)) (ctx : List Frm), WFtx ks ctx → ∀ X : Jk1,
+    FrmF ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WFtx_bnil] at h; subst h; exact hX
+  | ((k, 0) :: ks), ctx, h, X, hX => by
+      rw [WFtx_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+      rw [plug_snoc]
+      exact WFtx_JkT ks ctx' hc' (Jk1.one U X) (FrmF_one ks U X hU hX)
+  | ((k, i + 1) :: ks), ctx, h, X, hX => by
+      rw [WFtx_ck] at h
+      obtain ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hJNs, -⟩ := h
+      rw [plug_PBlk]
+      exact WFtx_JkT (r ++ ks) ctx' hc' (Jk1.one U (RunP Ns X))
+        (FrmF_one (r ++ ks) U (RunP Ns X) hU (JkA_RunP Ns hJNs hX))
+termination_by s _ => encT s
+decreasing_by
+  all_goals first | exact dm_encT ks [] (by simp) | exact dm_encT ks r (by assumption)
+
+theorem WFd_step (k : ℕ) (ks : List (ℕ × ℕ)) {V W : Jk1} (hV : FrmF ks V) (hVk : WFd ks V)
+    (hW : WFd ((k, 0) :: ks) W) : WFd ks (Jk1.one V W) :=
+  (WFd_c0 k ks W).mp hW V hV hVk
+
+theorem WFd_congr : ∀ (ks : List (ℕ × ℕ)) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    WFd ks V1 → WFd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WFd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+#print axioms WFd_iff
+#print axioms WFtx_JkT
+
 end Small
 end TRIO
