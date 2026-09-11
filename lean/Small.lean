@@ -71070,5 +71070,117 @@ theorem WGd_congr : ∀ (b : ℕ) (ks : List ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V
 #print axioms WGd_iff
 #print axioms WGtx_JkT
 
+/-! ### `WGd` のブロック 1 枚の出し入れと、予算の反単調性 -/
+
+theorem WGd_blk (b i : ℕ) (S : List ℕ) {V U : Jk1} (h : WGd b (i :: S) V)
+    (hU : FrmG S U) (hUk : WGd b S U)
+    (hUs : ∀ (e : ℕ) (ks' : List ℕ), S = e :: ks' → ∀ b' : ℕ, b' < b →
+      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U)
+    (Ns : List Jk1) (hlen : Ns.length = i) (hJNs : ∀ N ∈ Ns, JkA N)
+    (hNt : ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ S)) N) :
+    WGd b S (Jk1.one U (RunP Ns V)) := by
+  cases i with
+  | zero =>
+      have hNs : Ns = [] := List.eq_nil_of_length_eq_zero hlen
+      subst hNs
+      exact (WGd_c0 b S V).mp h U hU hUk hUs
+  | succ m =>
+      have hsib : ∀ j : ℕ, j ≤ m → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+          ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ ([] ++ S))) N := by
+        intro j hj N hN b' hb q hq
+        simpa using hNt j (by omega) N hN b' hb q hq
+      have h2 := (WGd_ck b m S V).mp h [] (by simp) U (by simpa using hU)
+        (by simpa using hUk) (by simpa using hUs) Ns hlen hJNs hsib
+      simpa using h2
+
+theorem WGtx_blk (b i : ℕ) (S : List ℕ) {ctx' : List Frm} (hc : WGtx b S ctx')
+    {U : Jk1} (hU : FrmG S U) (hUk : WGd b S U)
+    (hUs : ∀ (e : ℕ) (ks' : List ℕ), S = e :: ks' → ∀ b' : ℕ, b' < b →
+      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U)
+    (Ns : List Jk1) (hlen : Ns.length = i) (hJNs : ∀ N ∈ Ns, JkA N)
+    (hNt : ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ S)) N) :
+    WGtx b (i :: S) (ctx' ++ PBlk Ns U) := by
+  cases i with
+  | zero =>
+      have hNs : Ns = [] := List.eq_nil_of_length_eq_zero hlen
+      subst hNs
+      rw [WGtx_c0]
+      exact ⟨ctx', U, by simp [PBlk], hc, hU, hUk, hUs⟩
+  | succ m =>
+      rw [WGtx_ck]
+      refine ⟨[], by simp, ctx', U, Ns, rfl, hlen, by simpa using hc, by simpa using hU,
+        by simpa using hUk, by simpa using hUs, hJNs, ?_⟩
+      intro j hj N hN b' hb q hq
+      simpa using hNt j (by omega) N hN b' hb q hq
+
+theorem WGd_step (b : ℕ) (ks : List ℕ) {V W : Jk1} (hV : FrmG ks V) (hVk : WGd b ks V)
+    (hVs : ∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
+      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) V)
+    (hW : WGd b (0 :: ks) W) : WGd b ks (Jk1.one V W) :=
+  (WGd_c0 b ks W).mp hW V hV hVk hVs
+
+/-- 木の仮定が「予算を下げれば差し直せる」形なので、文脈は予算について反単調。 -/
+theorem WGtx_anti : ∀ (b b' : ℕ), b' ≤ b → ∀ (ks : List ℕ) (ctx : List Frm),
+    WGtx b ks ctx → WGtx b' ks ctx
+  | b, b', hb, [], ctx, h => by
+      rw [WGtx_bnil] at h ⊢; exact h
+  | b, b', hb, (0 :: ks), ctx, h => by
+      rw [WGtx_c0] at h ⊢
+      obtain ⟨ctx', U, rfl, hc', hU, hUk, hUs⟩ := h
+      refine ⟨ctx', U, rfl, WGtx_anti b b' hb ks ctx' hc', hU, ?_, ?_⟩
+      · by_cases hne : ks = []
+        · rw [hne] at hUk ⊢
+          exact (WGd_bnil b' U).mpr ((WGd_bnil b U).mp hUk)
+        · obtain ⟨e, ks', hrk⟩ := List.exists_cons_of_ne_nil hne
+          rcases Nat.lt_or_ge b' b with hlt | hge
+          · have h2 := hUs e ks' hrk b' hlt [] (by simp)
+            rw [hrk]
+            simpa using h2
+          · have hbb : b' = b := le_antisymm hb hge
+            subst hbb; exact hUk
+      · intro e ks' he b'' hb'' q hq
+        exact hUs e ks' he b'' (by omega) q (fun x hx => by have := hq x hx; omega)
+  | b, b', hb, ((i + 1) :: ks), ctx, h => by
+      rw [WGtx_ck] at h ⊢
+      obtain ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hUs, hJNs, hNt⟩ := h
+      refine ⟨r, hr, ctx', U, Ns, rfl, hlen, WGtx_anti b b' hb (r ++ ks) ctx' hc',
+        hU, ?_, ?_, hJNs, ?_⟩
+      · by_cases hne : r ++ ks = []
+        · rw [hne] at hUk ⊢
+          exact (WGd_bnil b' U).mpr ((WGd_bnil b U).mp hUk)
+        · obtain ⟨e, ks', hrk⟩ := List.exists_cons_of_ne_nil hne
+          rcases Nat.lt_or_ge b' b with hlt | hge
+          · have h2 := hUs e ks' hrk b' hlt [] (by simp)
+            rw [hrk]
+            simpa using h2
+          · have hbb : b' = b := le_antisymm hb hge
+            subst hbb; exact hUk
+      · intro e ks' he b'' hb'' q hq
+        exact hUs e ks' he b'' (by omega) q (fun x hx => by have := hq x hx; omega)
+      · intro j hj N hN b'' hb'' q hq
+        exact hNt j hj N hN b'' (by omega) q (fun x hx => by have := hq x hx; omega)
+termination_by b b' _ ks _ _ => ((ks : List ℕ) : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_ws 0 ks [] (by simp)
+      | exact dm_ws (i + 1) ks r
+          (by
+            intro x hx
+            have := (by assumption : ∀ x ∈ r, x ≤ i) x hx
+            omega)
+
+/-- `WGd` は予算について単調（文脈が反単調だから）。 -/
+theorem WGd_mono {b b' : ℕ} (hb : b' ≤ b) {ks : List ℕ} {V : Jk1}
+    (h : WGd b' ks V) : WGd b ks V := by
+  rw [WGd_iff] at h ⊢
+  intro ctx hc
+  exact h ctx (WGtx_anti b b' hb ks ctx hc)
+
+#print axioms WGtx_anti
+#print axioms WGd_mono
+
 end Small
 end TRIO
