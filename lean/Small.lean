@@ -71503,5 +71503,121 @@ theorem WGd_payE (V : Jk1) (hV : JkT V) (hVk : WGd 0 [] V) (C : TrioSeq) (hC : B
 #print axioms AYdWG
 #print axioms WGd_payT
 
+/-! ### `AtIx` の出し入れ -/
+
+theorem AtIx_lt {Ns : List Jk1} {j : ℕ} {N : Jk1} (h : AtIx Ns j N) : j < Ns.length := by
+  obtain ⟨Bs, Cs, rfl, rfl⟩ := h
+  simp
+
+theorem AtIx_zero {a : Jk1} {L : List Jk1} {N : Jk1} : AtIx (a :: L) 0 N ↔ N = a := by
+  constructor
+  · rintro ⟨Bs, Cs, he, hl⟩
+    have hB : Bs = [] := List.eq_nil_of_length_eq_zero hl
+    subst hB
+    have h2 : a = N ∧ L = Cs := by simpa using he
+    exact h2.1.symm
+  · rintro rfl
+    exact ⟨[], L, rfl, rfl⟩
+
+theorem AtIx_succ {a : Jk1} {L : List Jk1} {N : Jk1} {j : ℕ} :
+    AtIx (a :: L) (j + 1) N ↔ AtIx L j N := by
+  constructor
+  · rintro ⟨Bs, Cs, he, hl⟩
+    have hBne : Bs ≠ [] := by intro hc; rw [hc] at hl; simp at hl
+    obtain ⟨b0, Bs', rfl⟩ := List.exists_cons_of_ne_nil hBne
+    have h2 : a = b0 ∧ L = Bs' ++ N :: Cs := by simpa using he
+    exact ⟨Bs', Cs, h2.2, by simpa using hl⟩
+  · rintro ⟨Bs, Cs, rfl, rfl⟩
+    exact ⟨a :: Bs, Cs, rfl, by simp⟩
+
+theorem AtIx_snoc : ∀ (Ns : List Jk1) (X N : Jk1) (j : ℕ), AtIx (Ns ++ [X]) j N →
+    AtIx Ns j N ∨ (j = Ns.length ∧ N = X)
+  | [], X, N, 0, h => Or.inr ⟨by simp, AtIx_zero.mp (by simpa using h)⟩
+  | [], X, N, (j + 1), h => by
+      exfalso
+      have h2 := AtIx_lt (by simpa using h : AtIx ([X] : List Jk1) (j + 1) N)
+      simp at h2
+  | (a :: L), X, N, 0, h => Or.inl (AtIx_zero.mpr (AtIx_zero.mp (by simpa using h)))
+  | (a :: L), X, N, (j + 1), h => by
+      have h2 : AtIx (L ++ [X]) j N := AtIx_succ.mp (by simpa using h)
+      rcases AtIx_snoc L X N j h2 with h3 | ⟨h3, h4⟩
+      · exact Or.inl (AtIx_succ.mpr h3)
+      · exact Or.inr ⟨by simp [h3], h4⟩
+
+/-! ### 走りの位置の荷の部品 -/
+
+theorem InsT_drop_slack {b e : ℕ} {r S ks₂ : List ℕ} (hr : ∀ x ∈ r, x < b)
+    (h : InsT b (e :: (r ++ S)) ks₂) : InsT b (e :: S) ks₂ := by
+  obtain ⟨q, ks₃, hks, hq, h3⟩ := h
+  exact ⟨q, ks₃, hks, hq, Ins_trans (Ins_prepend r hr (Ins_refl b S)) h3⟩
+
+theorem WGd_ck_shiftG {b i : ℕ} {ks : List ℕ} {V : Jk1} (h : WGd b ((i + 1) :: ks) V)
+    (r : List ℕ) (hr : ∀ x ∈ r, x ≤ i) : WGd b ((i + 1) :: (r ++ ks)) V := by
+  rw [WGd_ck]
+  intro r₂ hr₂ U hU hUk hUs Ns hlen hJNs hNt
+  have hb2 : ∀ x ∈ r₂ ++ r, x ≤ i := by
+    intro x hx
+    rcases List.mem_append.mp hx with h1 | h1
+    · exact hr₂ x h1
+    · exact hr x h1
+  have hU' : FrmG ((r₂ ++ r) ++ ks) U := by rw [List.append_assoc]; exact hU
+  have hUk' : WGd b ((r₂ ++ r) ++ ks) U := by rw [List.append_assoc]; exact hUk
+  have hUs' : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b ((r₂ ++ r) ++ ks) ks₂ →
+      WGd b' ks₂ U := by
+    intro b' hb' ks₂ hins
+    rw [List.append_assoc] at hins
+    exact hUs b' hb' ks₂ hins
+  have hsib : ∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+      ∀ ks₂ : List ℕ, InsT b (j :: ((r₂ ++ r) ++ ks)) ks₂ → WGd b' ks₂ N := by
+    intro j hj N hN b' hb' ks₂ hins
+    rw [List.append_assoc] at hins
+    exact hNt j hj N hN b' hb' ks₂ hins
+  have h2 := (WGd_ck b i ks V).mp h (r₂ ++ r) hb2 U hU' hUk' hUs' Ns hlen hJNs hsib
+  rw [← List.append_assoc]
+  exact h2
+
+theorem WGd_twoOfG (b i : ℕ) (hib : i < b) (S : List ℕ) {X T : Jk1} (hJX : JkA X)
+    (hX : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b (i :: S) ks₂ → WGd b' ks₂ X)
+    (hT : WGd b ((i + 1) :: S) T) : WGd b (i :: S) (Jk1.two X T) := by
+  cases i with
+  | zero =>
+      rw [WGd_c0]
+      intro U hU hUk hUs
+      have hsib : ∀ j : ℕ, j < 1 → ∀ N : Jk1, AtIx [X] j N → ∀ b' : ℕ, b' < b →
+          ∀ ks₂ : List ℕ, InsT b (j :: S) ks₂ → WGd b' ks₂ N := by
+        intro j hj N hN b' hb' ks₂ hins
+        have hj0 : j = 0 := by omega
+        subst hj0
+        have hNX : N = X := AtIx_zero.mp hN
+        subst hNX
+        exact hX b' hb' ks₂ hins
+      exact WGd_blk b 1 S (V := T) hT hU hUk hUs [X] (by simp)
+        (by intro N hN; simp at hN; subst hN; exact hJX) hsib
+  | succ m =>
+      rw [WGd_ck]
+      intro r hr U hU hUk hUs Ns hlen hJNs hNt
+      have hrb : ∀ x ∈ r, x < b := fun x hx => by have := hr x hx; omega
+      have hT' : WGd b ((m + 1 + 1) :: (r ++ S)) T :=
+        WGd_ck_shiftG hT r (fun x hx => by have := hr x hx; omega)
+      have hJ : ∀ N ∈ Ns ++ [X], JkA N := by
+        intro N hN
+        rcases List.mem_append.mp hN with h1 | h1
+        · exact hJNs N h1
+        · simp at h1; subst h1; exact hJX
+      have hsib : ∀ j : ℕ, j < m + 1 + 1 → ∀ N : Jk1, AtIx (Ns ++ [X]) j N →
+          ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b (j :: (r ++ S)) ks₂ → WGd b' ks₂ N := by
+        intro j hj N hN b' hb' ks₂ hins
+        rcases AtIx_snoc Ns X N j hN with h1 | ⟨hjv, rfl⟩
+        · exact hNt j (by have := AtIx_lt h1; omega) N h1 b' hb' ks₂ hins
+        · rw [hlen] at hjv
+          subst hjv
+          exact hX b' hb' ks₂ (InsT_drop_slack hrb hins)
+      have h2 := WGd_blk b (m + 1 + 1) (r ++ S) (V := T) hT' hU hUk hUs (Ns ++ [X])
+        (by simp [hlen]) hJ hsib
+      rw [RunP_append] at h2
+      exact h2
+
+#print axioms WGd_twoOfG
+
 end Small
 end TRIO
