@@ -74354,5 +74354,74 @@ theorem R375m61_of_GAll (h : GAll) :
 #print axioms GAll_of_GNils
 #print axioms R375m61_of_GAll
 
+/-! ### ★★★★★★ 壁は文脈なしの 2 文になる
+
+`GOK` を木の構造で帰納すると、`TopOk` があるので `two` は先頭段に来られない。
+残る 3 つは
+
+    nil        : GOK_nil（緑）
+    pay N Y    : AY0（緑）
+    one N M    : APz M を U = N に当てるだけ
+
+なので、**文脈を一切使わずに**
+
+    APzAll := ∀ M, JkA M → APz M
+    APz M  := ∀ U, JkT U → GOK U → GOK (one U M)
+
+1 本に落ちる。さらに `M` の構造帰納で `nil` / `pay` は既に緑なので、残るのは
+`one` と `two` の 2 文だけ。 -/
+
+def APzAll : Prop := ∀ M : Jk1, JkA M → APz M
+
+theorem GOKall_of_APzAll (h : APzAll) : ∀ T : Jk1, JkT T → GOK T := by
+  intro T
+  induction T with
+  | nil => intro _; exact GOK_nil
+  | pay N Y ih =>
+      intro hT
+      exact AY0 Y hT.1.2 N ⟨hT.1.1, hT.2⟩ (ih ⟨hT.1.1, hT.2⟩)
+  | one N M ihN _ =>
+      intro hT
+      exact h M hT.1.2 N ⟨hT.1.1, hT.2⟩ (ihN ⟨hT.1.1, hT.2⟩)
+  | two N M _ _ => intro hT; exact hT.2.elim
+
+theorem APzAll_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) : APzAll :=
+  fun M hM U hU _ => h (Jk1.one U M) ⟨⟨hU.1, hM⟩, hU.2⟩
+
+theorem GAll_of_GOKall (h : ∀ T : Jk1, JkT T → GOK T) : GAll :=
+  fun F hF Z hZ => h _ (HGx_CtxJT hF Z hZ)
+
+/-- ★★★★★★ 文脈なしの壁 1 文から目標まで。 -/
+theorem R375m61_of_APzAll (h : APzAll) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_GAll (GAll_of_GOKall (GOKall_of_APzAll h))
+
+/-- `APz (one V nil)` は緑（`GOK_oneOneNil`）。 -/
+theorem APz_oneNil {V : Jk1} (hV : JkA V) (h : APz V) : APz (Jk1.one V Jk1.nil) :=
+  fun U hU hGU => GOK_oneOneNil hU hV hGU h
+
+/-- ★ 残り 1 本目。 -/
+def APzOne : Prop := ∀ V W : Jk1, JkA V → JkA W → APz V → APz W → APz (Jk1.one V W)
+
+/-- ★ 残り 2 本目。 -/
+def APzTwo : Prop := ∀ V W : Jk1, JkA V → JkA W → APz V → APz W → APz (Jk1.two V W)
+
+theorem APzAll_of_steps (h1 : APzOne) (h2 : APzTwo) : APzAll := by
+  intro M
+  induction M with
+  | nil => intro _; exact APz_nil
+  | pay V C ih => intro hM; exact APz_pay hM.1 (ih hM.1) hM.2
+  | one V W ihV ihW => intro hM; exact h1 V W hM.1 hM.2 (ihV hM.1) (ihW hM.2)
+  | two V W ihV ihW => intro hM; exact h2 V W hM.1 hM.2 (ihV hM.1) (ihW hM.2)
+
+/-- ★★★★★★ 文脈なしの壁 2 文から目標まで。 -/
+theorem R375m61_of_APzSteps (h1 : APzOne) (h2 : APzTwo) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_APzAll (APzAll_of_steps h1 h2)
+
+#print axioms GOKall_of_APzAll
+#print axioms APzAll_of_steps
+#print axioms R375m61_of_APzSteps
+
 end Small
 end TRIO
