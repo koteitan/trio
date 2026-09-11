@@ -36,6 +36,20 @@
 **`WFd` は充足可能**（1 の枠の木の条件が素の `WFd ks U` だけなので
 `WFtx ((k,0)::[]) [fone nil]` が成り立つ）。
 
+### 道3: 行列の言葉（いちばん弱い）
+
+    B([]) = R341,  B(js ++ [j]) = B(js) ++ (h+1,1,0)(h+2,2,0)…(h+j,2,0)
+
+    HangB : ∀ js B, Bok B → B(js) ++ shiftr01 (h(js)+1) 0 B ∈ W 0
+
+「ブロック列の先に、任意の良い行列を吊るせる」。展開規則（bms 実測）
+
+    B(js ++ [j])[k] = B(js ++ [j-1]^(k+1))   j ≥ 1   → snocYd_mem
+    B(js ++ [0])[k] = TwD d (B(js)) (k+1)            → snocd_mem（TwD に HangB が要る）
+
+が両方 DM 降下なので、`HangB` さえあれば幅の多重集合の DM で行376 まで行く。
+`PayB` から出るが、GOK は前置語すべてについての主張なので `HangB` の方が弱い。
+
 ### 死んだ道: 族 `WGd`（予算を大域パラメータにしたもの）
 
     WGd_zero_bad : WGd 0 [0] V ↔ ∀ U, JkT U → GOK U → GOK (one U V)   （緑）
