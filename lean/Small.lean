@@ -70789,5 +70789,74 @@ theorem WFd_nilT_c (k k' : ℕ) (ks : List (ℕ × ℕ)) :
 #print axioms WFd_nilT_e
 #print axioms WFd_nilT_c
 
+/-! ### ★★★★★★ `WFd` の空木が全部の形で出れば、行376 が出る
+
+残るのは `WFd_nilT`（幅 0 の入り目の空木）だけ。幅 2 以上の入り目は
+`WFd_nilF` で緑。 -/
+
+theorem WFd_bdA (h : ∀ ks : List (ℕ × ℕ), WFd ks Jk1.nil) :
+    ∀ (js : List ℕ) (ks : List (ℕ × ℕ)), WFd ks (bdA js)
+  | [], ks => h ks
+  | (j :: js), ks => by
+      have hrec : WFd ((j, j) :: ks) (bdA js) := WFd_bdA h js ((j, j) :: ks)
+      have hJ : ∀ N ∈ List.replicate j Jk1.nil, JkA N := by
+        intro N hN
+        rw [List.eq_of_mem_replicate hN]
+        exact trivial
+      have hNt : ∀ j' : ℕ, j' < j → ∀ N : Jk1, AtIx (List.replicate j Jk1.nil) j' N →
+          ∀ k₂ : ℕ, j' ≤ k₂ → k₂ < j → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < j) →
+            WFd ((k₂, j') :: (q ++ ks)) N := by
+        intro j' hj' N hN k₂ h3 h4 q hq
+        obtain ⟨Bs, Cs, he, hl⟩ := hN
+        have hmem : N ∈ List.replicate j Jk1.nil := by rw [he]; simp
+        rw [List.eq_of_mem_replicate hmem]
+        exact h _
+      have h2 := WFd_blk j j ks hrec (FrmF_nilA ks) (h ks) (List.replicate j Jk1.nil)
+        (by simp) hJ hNt
+      show WFd ks (Jk1.one Jk1.nil (stkP j (bdA js)))
+      rw [← RunP_rep_nil]
+      exact h2
+
+theorem GOK_bdA_of_nilAll (h : ∀ ks : List (ℕ × ℕ), WFd ks Jk1.nil) (js : List ℕ) :
+    GOK (bdA js) :=
+  (WFd_bnil _).mp (WFd_bdA h js [])
+
+theorem tw_R344_42_of_stk (hs : ∀ q : ℕ, GOK (Jk1.one Jk1.nil (stk q))) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    hs n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+theorem R376_of_stk (hs : ∀ q : ℕ, GOK (Jk1.one Jk1.nil (stk q))) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42_of_stk hs)
+
+/-- ★★★★★★ `WFd` の空木が全部の形で出れば行376。残るのは幅 0 の入り目だけ。 -/
+theorem R376_of_WFd_nilAll (h : ∀ ks : List (ℕ × ℕ), WFd ks Jk1.nil) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine R376_of_stk ?_
+  intro q
+  have h1 := GOK_bdA_of_nilAll h [q]
+  show GOK (Jk1.one Jk1.nil (stkP q Jk1.nil))
+  exact h1
+
+/-- 幅 ≤ 予算 の形なら、幅 2 以上の入り目の空木は無条件。 -/
+theorem WFd_nilF' (k i : ℕ) (hik : i + 1 ≤ k) (ks : List (ℕ × ℕ)) :
+    WFd ((k, i + 1) :: ks) Jk1.nil := by
+  obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = m + 1 := ⟨k - 1, by omega⟩
+  exact WFd_nilF m i (by omega) ks
+
+#print axioms R376_of_WFd_nilAll
+
 end Small
 end TRIO
