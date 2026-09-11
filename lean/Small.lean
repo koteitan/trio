@@ -73274,5 +73274,43 @@ theorem R375m61_of_QFL0 (h0 : QFL ([] : List TrioSeq)) :
 #print axioms QFL_cons
 #print axioms R375m61_of_QFL0
 
+/-! ### 壁のいちばん短い言い方
+
+`QFL []` を `GBase` の帰納で割ると、`base` は緑（`GOK (bdA [1])`）、
+残るのは `ext` の 1 手:
+
+    Q0Step : GOK (plug ctx A) → GOK (plug ctx (one A (two nil nil)))
+
+「良い枠木 `A` の上に幅 1 のブロックを 1 枚積む」。 -/
+
+theorem GOK_oneTwoNil : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil Jk1.nil)) := by
+  have h := GOK_bdA1 1
+  show GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil Jk1.nil))
+  have e : bdA (List.replicate 1 1) = Jk1.one Jk1.nil (Jk1.two Jk1.nil Jk1.nil) := rfl
+  rwa [e] at h
+
+/-- ★ 残っている壁 1 手。 -/
+def Q0Step : Prop := ∀ (ctx : List Frm) (A : Jk1), GBase ctx → JkA A →
+  GOK (plug ctx A) → GOK (plug ctx (Jk1.one A (Jk1.two Jk1.nil Jk1.nil)))
+
+theorem QFL0_of_Q0Step (h : Q0Step) : QFL ([] : List TrioSeq) := by
+  intro ctx hc
+  show GOK (plug ctx Jk1.nil)
+  induction hc with
+  | base =>
+      show GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil Jk1.nil))
+      exact GOK_oneTwoNil
+  | ext hc hA hGA _ =>
+      rw [plug_oneTwoBlk]
+      exact h _ _ hc hA hGA
+
+/-- ★★★★★★ 壁 1 手からいま開いている最小の行列まで。 -/
+theorem R375m61_of_Q0Step (h : Q0Step) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_QFL0 (QFL0_of_Q0Step h)
+
+#print axioms GOK_oneTwoNil
+#print axioms R375m61_of_Q0Step
+
 end Small
 end TRIO
