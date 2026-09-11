@@ -69963,5 +69963,39 @@ theorem R6007_mem :
 #print axioms R600_RunA0
 #print axioms R6007_mem
 
+/-! ### ★★★★★ `P(6,0,0)` の上の梯子（`(2,1,0)(3,1,0)…` と z=1） -/
+
+def DgR6 : ℕ → TrioSeq
+  | 0 => R600
+  | (k + 1) => DgR6 k ++ [((k + 2, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem RunA_DgR6 : ∀ k : ℕ, RunA 0 (k + 1) (DgR6 k)
+  | 0 => R600_RunA0
+  | (k + 1) => ⟨k + 1, DgR6 k, [((k + 2, 1, 0) : ℕ × ℕ × ℕ)], rfl, rfl,
+      RunA0_LwA (RunA_DgR6 k), by simpa using SegA_one (k + 1)⟩
+
+/-- ★★★★★★ `P(6,0,0)(2,1,0)(3,1,0)…(k+1,1,0)`。 -/
+theorem DgR6_mem (k : ℕ) : DgR6 k ∈ W 0 := ((BaseOk_RunA 0).aok _ _ (RunA_DgR6 k)).mem
+
+/-- ★★★★★★ `P(6,0,0)(2,1,0)…(k+2,1,0)(k+3,2,1)`。 -/
+theorem DgR6_z1 (k : ℕ) :
+    DgR6 k ++ [((k + 2, 1, 0) : ℕ × ℕ × ℕ), ((k + 3, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunA0_z1 (h := k + 2) (Y0 := DgR6 k) (RunA_DgR6 (k + 1))
+
+/-- `P(6,0,0)(2,1,0)(3,2,1)`。 -/
+theorem R6008_mem :
+    R600 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := DgR6_z1 0
+
+/-- `P(6,0,0)(2,1,0)(3,2,0)`（走りの 2 の記録）。 -/
+theorem R6009_mem :
+    R600 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := RunG_snoc2 Iface_RunA0 0 2 (DgR6 1) (RunA_DgR6 1)
+  simpa [DgR6, List.append_assoc] using h
+
+#print axioms RunA_DgR6
+#print axioms DgR6_mem
+#print axioms DgR6_z1
+#print axioms R6009_mem
+
 end Small
 end TRIO
