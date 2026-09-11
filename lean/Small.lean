@@ -75094,7 +75094,7 @@ theorem GOK_oneTwoOneFLr {W : Jk1} (hJW : JkA W) (hW : LOk 0 W)
 `APd` の `Rq` も要らない。 -/
 
 def ECtx : ℕ → List ℕ → List Frm → Prop
-  | 0, [], D => D = [Frm.fone Jk1.nil]
+  | 0, [], D => ∃ V : Jk1, D = [Frm.fone V] ∧ JkT V ∧ GOK V
   | (k + 1), ks, D => ∃ (D' : List Frm) (U : Jk1), D = D' ++ [Frm.fone U] ∧
       ECtx k ks D' ∧ JkA U ∧ (∀ D'' : List Frm, ECtx k ks D'' → GOK (plug D'' U))
   | 0, (k' :: ks), D => ∃ (D' : List Frm) (N : Jk1), D = D' ++ [Frm.ftwo N] ∧
@@ -75111,7 +75111,8 @@ decreasing_by
 def EOk (k : ℕ) (ks : List ℕ) (X : Jk1) : Prop :=
   ∀ D : List Frm, ECtx k ks D → GOK (plug D X)
 
-theorem ECtx_base (D : List Frm) : ECtx 0 [] D ↔ D = [Frm.fone Jk1.nil] := by rw [ECtx]
+theorem ECtx_base (D : List Frm) :
+    ECtx 0 [] D ↔ ∃ V : Jk1, D = [Frm.fone V] ∧ JkT V ∧ GOK V := by rw [ECtx]
 
 theorem ECtx_succ (k : ℕ) (ks : List ℕ) (D : List Frm) :
     ECtx (k + 1) ks D ↔ ∃ (D' : List Frm) (U : Jk1), D = D' ++ [Frm.fone U] ∧
@@ -75128,8 +75129,8 @@ theorem ECtx_JkT : ∀ (k : ℕ) (ks : List ℕ) (D : List Frm), ECtx k ks D →
     ∀ X : Jk1, JkA X → JkT (plug D X)
   | 0, [], D, h, X, hX => by
       rw [ECtx_base] at h
-      subst h
-      exact ⟨⟨trivial, hX⟩, trivial⟩
+      obtain ⟨V, rfl, hV, -⟩ := h
+      exact ⟨⟨hV.1, hX⟩, hV.2⟩
   | (k + 1), ks, D, h, X, hX => by
       rw [ECtx_succ] at h
       obtain ⟨D', U, rfl, hD', hJU, -⟩ := h
@@ -75198,6 +75199,240 @@ theorem EOk_twoNil {ks : List ℕ} {N : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, EO
 #print axioms ECtx_JkT
 #print axioms EOk_two
 #print axioms EOk_twoNil
+
+/-! ### 底は `APz` そのもの -/
+
+theorem EOk_base_APz (X : Jk1) : EOk 0 [] X ↔ APz X := by
+  constructor
+  · intro h U hU hGU
+    exact h [Frm.fone U] ((ECtx_base _).mpr ⟨U, rfl, hU, hGU⟩)
+  · intro h D hD
+    rw [ECtx_base] at hD
+    obtain ⟨V, rfl, hV, hGV⟩ := hD
+    exact h V hV hGV
+
+theorem EOk_nil_base : EOk 0 [] Jk1.nil := (EOk_base_APz _).mpr APz_nil
+
+theorem EOk_pay_base {Z : Jk1} (hJZ : JkA Z) (hZ : EOk 0 [] Z) {C : TrioSeq} (hC : Bok C) :
+    EOk 0 [] (Jk1.pay Z C) :=
+  (EOk_base_APz _).mpr (APz_pay hJZ ((EOk_base_APz _).mp hZ) hC)
+
+/-! ### ★★★★★★ 荷: 鎖に `EOk` を持ち回る W 帰納
+
+`PS_cons` の `SAppend ctx Z` が要るのは鎖の要素のところ。鎖は必ず
+**小さい荷 `B₀`** で作られるので、`EOk k ks (itJ (pay Z B₀) n M)` は
+`EOk_one` と W 帰納の IH から出る。 -/
+
+def PayE (k : ℕ) (ks : List ℕ) (Z : Jk1) (B : TrioSeq) : Prop :=
+  ∀ ctx : List Frm, ECtx k ks ctx → ∀ M : Jk1, JkA M → EOk k ks M →
+    GOK (plug ctx M) → GOK (plug ctx (Jk1.one M (Jk1.pay Z B)))
+
+theorem EOk_pay_of_PayE {k : ℕ} {ks : List ℕ} {Z : Jk1} {B : TrioSeq} (h : PayE k ks Z B) :
+    EOk (k + 1) ks (Jk1.pay Z B) := by
+  intro D hD
+  rw [ECtx_succ] at hD
+  obtain ⟨D', U, rfl, hD', hJU, hEU⟩ := hD
+  rw [plug_snoc]
+  exact h D' hD' U hJU hEU (hEU D' hD')
+
+theorem PS_chainE {k : ℕ} {ks : List ℕ} {ctx : List Frm} {Z : Jk1} (hZ : JkA Z)
+    {B₀ : TrioSeq} (hB₀ : Bok B₀) (hEpay : EOk (k + 1) ks (Jk1.pay Z B₀))
+    (hIH : PayE k ks Z B₀) (hctx : ECtx k ks ctx)
+    {M : Jk1} (hM : JkA M) (hEM : EOk k ks M) (hGM : GOK (plug ctx M)) :
+    ∀ n : ℕ, GOK (plug ctx (itJ (Jk1.pay Z B₀) n M))
+      ∧ JkA (itJ (Jk1.pay Z B₀) n M) ∧ EOk k ks (itJ (Jk1.pay Z B₀) n M) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hGM, hM, hEM⟩
+  | succ n ih =>
+      exact ⟨hIH ctx hctx _ ih.2.1 ih.2.2 ih.1, ⟨ih.2.1, hZ, hB₀⟩,
+        EOk_one ih.2.1 ih.2.2 hEpay⟩
+
+/-- ★★★★★★ 荷の W 帰納（`EOk` 版）。仮定は `EOk (k+1) ks Z` だけ。 -/
+theorem PS_consE {k : ℕ} {ks : List ℕ} : ∀ (B : TrioSeq), Bok B →
+    ∀ Z : Jk1, JkA Z → EOk (k + 1) ks Z → PayE k ks Z B := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ Z : Jk1, JkA Z → EOk (k + 1) ks Z →
+      PayE k ks Z B} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb Z hZ hZE ctx hctx M hM hEM hGM
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        refine GOK_congr (fun l => jk1_plug_congr ctx
+          (fun l' => (jk1_one_pay_nil M Z l').symm) l) ?_
+        rw [← plug_snoc]
+        exact hZE _ (ECtx_fone hctx hM hEM)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hIH0 : PayE k ks Z ([] : TrioSeq) := by
+          intro ctx' hctx' M' hM' hEM' hGM'
+          refine GOK_congr (fun l => jk1_plug_congr ctx'
+            (fun l' => (jk1_one_pay_nil M' Z l').symm) l) ?_
+          rw [← plug_snoc]
+          exact hZE _ (ECtx_fone hctx' hM' hEM')
+        have hch := PS_chainE hZ Bok_nil (EOk_pay_of_PayE hIH0) hIH0 hctx hM hEM hGM
+        rw [e2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (ECtx_JkT k ks ctx hctx _ ⟨hM, hZ, by rw [← e2]; exact hBb⟩)
+          (by rw [← e2]; exact hBb) Bok_nil ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        have hIH0 : PayE k ks Z B.dropLast := hdl hdb Z hZ hZE
+        have hch := PS_chainE hZ hdb (EOk_pay_of_PayE hIH0) hIH0 hctx hM hEM hGM
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (ECtx_JkT k ks ctx hctx _ ⟨hM, hZ, by rw [← hsplit]; exact hBb⟩)
+          (by rw [← hsplit]; exact hBb) hdb ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs0 hw
+          (ECtx_JkT k ks ctx hctx _ ⟨hM, hZ, hBb⟩) hBb hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) Z hZ hZE ctx hctx M hM hEM hGM ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb Z hZ hZE
+  exact key hBb.mem hBb Z hZ hZE
+
+/-- ★★★★★ 荷。`EOk (k+1) ks Z` から `EOk (k+1) ks (pay Z B)`。 -/
+theorem EOk_pay {k : ℕ} {ks : List ℕ} {Z : Jk1} (hJZ : JkA Z) (hZ : EOk (k + 1) ks Z)
+    {B : TrioSeq} (hB : Bok B) : EOk (k + 1) ks (Jk1.pay Z B) :=
+  EOk_pay_of_PayE (PS_consE B hB Z hJZ hZ)
+
+#print axioms EOk_base_APz
+#print axioms PS_consE
+#print axioms EOk_pay
+
+/-! ### ★★★★★★ 空木と、残る 2 文
+
+    EPayT  : 2 の枠止まりの形での荷
+    ERunNil: 2 の枠止まりの形での裸の 2 の記録（走り）
+
+この 2 つがあれば `∀ X, JkA X → ∀ k ks, EOk k ks X` が木の構造帰納で回り、
+`APzAll`（= `GOKall`）が出る。 -/
+
+theorem EOk_twoNil_base {N : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, EOk j [] N) :
+    EOk 0 [] (Jk1.two N Jk1.nil) := by
+  intro D hD
+  have hD0 := hD
+  rw [ECtx_base] at hD
+  obtain ⟨V, rfl, hV, hGV⟩ := hD
+  refine GOK_twoNil_gen [] V hJN (ECtx_JkT 0 [] _ hD0 _ ⟨hJN, trivial⟩) hGV ?_
+  intro m
+  rw [← plug_append]
+  exact hN (0 + m) _ (ECtx_rep_fone hJN hN m 0 _ hD0)
+
+theorem EOk_nil_fone {k : ℕ} {ks : List ℕ}
+    (hpay : ∀ U : Jk1, JkA U → EOk k ks U → ∀ C : TrioSeq, Bok C → EOk k ks (Jk1.pay U C)) :
+    EOk (k + 1) ks Jk1.nil := by
+  intro D hD
+  have hD0 := hD
+  rw [ECtx_succ] at hD
+  obtain ⟨D', U, rfl, hD', hJU, hEU⟩ := hD
+  have hJT : JkT (plug D' (Jk1.one U Jk1.nil)) := by
+    rw [← plug_snoc]
+    exact ECtx_JkT (k + 1) ks _ hD0 _ trivial
+  rw [plug_snoc]
+  exact APnil_gen0 D' U hJT (hEU D' hD') (fun C hC => hpay U hJU hEU C hC D' hD')
+
+/-- ★ 残り 1 文目: 2 の枠止まりの形での荷。 -/
+def EPayT : Prop := ∀ (k' : ℕ) (ks : List ℕ) (Z : Jk1), JkA Z → EOk 0 (k' :: ks) Z →
+  ∀ B : TrioSeq, Bok B → EOk 0 (k' :: ks) (Jk1.pay Z B)
+
+/-- ★ 残り 2 文目: 2 の枠止まりの形での裸の 2 の記録（走り）。 -/
+def ERunNil : Prop := ∀ (k' : ℕ) (ks : List ℕ) (N : Jk1), JkA N →
+  (∀ j : ℕ, EOk j (k' :: ks) N) → EOk 0 (k' :: ks) (Jk1.two N Jk1.nil)
+
+theorem EOk_payAll (hT : EPayT) : ∀ (k : ℕ) (ks : List ℕ) (Z : Jk1), JkA Z → EOk k ks Z →
+    ∀ B : TrioSeq, Bok B → EOk k ks (Jk1.pay Z B)
+  | 0, [], Z, hJZ, hZ, _, hB => EOk_pay_base hJZ hZ hB
+  | 0, (k' :: ks), Z, hJZ, hZ, B, hB => hT k' ks Z hJZ hZ B hB
+  | (_ + 1), _, _, hJZ, hZ, _, hB => EOk_pay hJZ hZ hB
+
+theorem EOk_twoNilAll (hR : ERunNil) : ∀ (k : ℕ) (ks : List ℕ) (N : Jk1), JkA N →
+    (∀ j : ℕ, EOk j ks N) → EOk k ks (Jk1.two N Jk1.nil)
+  | 0, [], _, hJN, hN => EOk_twoNil_base hJN hN
+  | 0, (k' :: ks), N, hJN, hN => hR k' ks N hJN hN
+  | (k + 1), _, _, hJN, hN => EOk_twoNil hJN hN k
+
+theorem EOk_nilAll (hT : EPayT) (hR : ERunNil) : ∀ (k : ℕ) (ks : List ℕ), EOk k ks Jk1.nil
+  | 0, [] => EOk_nil_base
+  | (k + 1), ks => EOk_nil_fone (fun U hJU hEU C hC => EOk_payAll hT k ks U hJU hEU C hC)
+  | 0, (k' :: ks) => by
+      intro D hD
+      rw [ECtx_cons] at hD
+      obtain ⟨D', N, rfl, hD', hJN, hN⟩ := hD
+      rw [plug_snoc2]
+      exact EOk_twoNilAll hR k' ks N hJN (fun j D'' hD'' => hN j D'' hD'') D' hD'
+
+/-- ★★★★★★ 木の構造帰納。残り 2 文から全部の木が全部の形で良い。 -/
+theorem EOk_all (hT : EPayT) (hR : ERunNil) :
+    ∀ X : Jk1, JkA X → ∀ (k : ℕ) (ks : List ℕ), EOk k ks X := by
+  intro X
+  induction X with
+  | nil => intro _ k ks; exact EOk_nilAll hT hR k ks
+  | pay Z C ih => intro hX k ks; exact EOk_payAll hT k ks Z hX.1 (ih hX.1 k ks) C hX.2
+  | one U Y ihU ihY =>
+      intro hX k ks
+      exact EOk_one hX.1 (ihU hX.1 k ks) (ihY hX.2 (k + 1) ks)
+  | two N Y ihN ihY =>
+      intro hX k ks
+      exact EOk_two hX.1 (fun j => ihN hX.1 j ks) (ihY hX.2 0 (k :: ks))
+
+theorem APzAll_of_E (hT : EPayT) (hR : ERunNil) : APzAll :=
+  fun M hM => (EOk_base_APz M).mp (EOk_all hT hR M hM 0 [])
+
+/-- ★★★★★★ 残り 2 文から目標の行列。 -/
+theorem R375m61_of_E (hT : EPayT) (hR : ERunNil) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_GOKall (GOKall_of_APzAll (APzAll_of_E hT hR))
+
+theorem R375m62_of_E (hT : EPayT) (hR : ERunNil) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m62_of_APzAll (APzAll_of_E hT hR)
+
+#print axioms EOk_all
+#print axioms R375m61_of_E
+#print axioms R375m62_of_E
 
 end Small
 end TRIO
