@@ -71862,5 +71862,38 @@ theorem BM_ne : ∀ js : List ℕ, BM js ≠ []
 #print axioms MidD_blkM
 #print axioms BM_succ
 
+/-! ### `Mtwd` と `BM` の照合 -/
+
+theorem shiftr01_blkM (d h j : ℕ) : shiftr01 d 0 (blkM h j) = blkM (h + d) j := by
+  simp only [blkM, shiftr01, List.map_cons, List.map_map, Function.comp_def]
+  refine congrArg₂ List.cons ?_ ?_
+  · simp
+    omega
+  · refine List.map_congr_left ?_
+    intro t _
+    simp
+    omega
+
+theorem hgtB_replicate : ∀ (n j : ℕ), hgtB (List.replicate n j) = n * (1 + j)
+  | 0, _ => by simp [hgtB]
+  | (n + 1), j => by
+      show 1 + j + hgtB (List.replicate n j) = _
+      rw [hgtB_replicate n j, Nat.succ_mul]
+      omega
+
+theorem Mtwd_BM (j : ℕ) (js : List ℕ) : ∀ n : ℕ,
+    Mtwd (1 + j) (BM js) (blkM (2 + hgtB js) j) n = BM (List.replicate n j ++ js)
+  | 0 => by simp [Mtwd]
+  | (n + 1) => by
+      rw [Mtwd_succ, Mtwd_BM j js n, shiftr01_blkM, List.replicate_succ]
+      show _ = BM (List.replicate n j ++ js) ++ blkM (2 + hgtB (List.replicate n j ++ js)) j
+      rw [hgtB_append, hgtB_replicate]
+      congr 2
+      rw [Nat.mul_comm]
+      omega
+
+#print axioms shiftr01_blkM
+#print axioms Mtwd_BM
+
 end Small
 end TRIO
