@@ -21792,3 +21792,54 @@ Acc（DM）帰納でほどける:
 
 今回の収穫は「壁の**言い方**が 1 文になった」こと。族の充足可能性の問題は
 `HEx` で完全に消えたので、残るのは純粋に測度だけになった。
+
+## 追記296 (2026-09-11): 壁の地図を全部埋めた。残るのは底と走り
+
+### 1. 側条件を戻した族 `HGx`
+
+`NilO D` を `APnil_gen0` で荷に落とすと `PS_cons` / `PZ_cons` を使う。そのとき
+`D` の最後の枠の木 `V` について **`GOK (plug D' V)`（1 段外で良い）**が要る。
+`HEx`（側条件なし）では出ないので `HGx` を使う:
+
+    HGx [fone nil]
+    HGx ctx → JkA A → GOK (plug ctx A) → HGx (ctx ++ [fone A])
+    HGx ctx → JkA A → GOK (plug ctx A) → HGx (ctx ++ [ftwo A])
+
+`HCx` の幅 1 のブロックの `ftwo nil` に要る側条件
+`GOK (plug (ctx ++ [fone A]) nil)` はちょうど `GNilO` なので、
+`HGx_of_HCx` は `GNilO` を仮定して回す（同じ含意の中なので問題ない）。
+
+    GNilO := ∀ D, HGx D → OSib D nil
+    HFone_of_GNilO : GNilO → HFone       ★緑
+
+### 2. 還元は全部埋まった
+
+| 場合 | 道具 | 状態 |
+|---|---|---|
+| `GNilO` (D が 1 の枠止まり) | `APnil_gen0` + `PS_cons` + `GSib_tree` | 緑 (`GNilO_fone`) |
+| `GNilO` (D が 2 の枠止まり) | `APnil_gen0` + `PZ_cons` + `GSib_tree` | 緑 (`GNilO_ftwo`) |
+| `GNilO` (D = [fone nil]) | `GOK_oneOneNil` | `APz M` に落ちる (`GNilO_base`) |
+| `GNilT` (D が 1 の枠止まり) | `TSib_nil_of_SelfW` + `SelfW_HGx` | 緑 (`GNilT_fone`) |
+| `GNilT` (D が 2 の枠止まり) | — | **走り。道具が無い** |
+
+`SelfW_HGx` が要点: `SelfW D W = ∀k, GOK (plug (D ++ (fone W)^k) W)` は
+`OSib · W` を `W` 自身に当てるだけで 1 段伸びる（`one W W`）。`HGx` が
+`fone W` で閉じているのでそのまま回る。
+
+### 3. 残っている新しい内容は 2 つだけ
+
+- **底**: `∀ M, JkA M → GOK (one nil M) → APz M`。
+  `APz M := ∀ U, JkT U → GOK U → GOK (one U M)`（深さ 0 の兄弟の全称）。
+  既存の `APz` の道具は `APz_nil` / `APz_pay` / `APz_onePayOnly` / `AYz` /
+  `APz_of_Bk00`。`one` / `two` を含む `M` が未。
+- **走り**: `GNilT` の 2 の枠止まり。`plug (D ++ [ftwo V]) (two M nil)`
+  ＝ `plug D (two V (two M nil))`＝ 2 の記録が 2 つ続く形。
+  `GOK_twoNil_gen` は文脈が 1 の枠止まりのときしか使えない。
+  走り自体の道具は `RunP` / `RunS` / `GOK_oneUV_RunSB` / `hMy_RunP` にあるので、
+  そこに繋ぐのが次の一手。
+
+### 4. 測度は変わらず未解決
+
+`GNilO (D ++ [fone V])` ⟸ `GNilO / GNilT (D ++ M の背骨の枠)`。
+`|D| + 1` → `|D| + h(M)`（`h(M)` は `M` の背骨の記録の本数）。
+`h(M) ≤ 0`（`M` が `nil` か荷だけ）でないと減らない。`M` は兄弟なので任意。
