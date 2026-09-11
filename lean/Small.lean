@@ -71619,5 +71619,82 @@ theorem WGd_twoOfG (b i : ℕ) (hib : i < b) (S : List ℕ) {X T : Jk1} (hJX : J
 
 #print axioms WGd_twoOfG
 
+/-! ### ★★★★★★ 横鎖の 1 段。外側の予算 `b` の不変量を直接使う
+
+`WGd_twoOfG` を局所の予算 `b'` で使うと `i ≤ b'` が要って小さい `b'` で詰まる。
+不変量（族の兄弟条件、外側の予算 `b`）を直接使えば、内側の展開が出すスラック
+`r` も `InsT b (i :: B) ·` の中に入るので、`b'` への制約が要らない。 -/
+
+theorem WGd_chainStep {b i : ℕ} (hib : i < b) {B : List ℕ} {X T : Jk1} (hJX : JkA X)
+    (hX : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b (i :: B) ks₂ → WGd b' ks₂ X)
+    (hT : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b ((i + 1) :: B) ks₂ → WGd b' ks₂ T) :
+    ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b (i :: B) ks₂ →
+      WGd b' ks₂ (Jk1.two X T) := by
+  intro b' hb' ks₂ hins
+  obtain ⟨q, ks₃, rfl, hq, h3⟩ := hins
+  cases i with
+  | zero =>
+      rw [WGd_c0]
+      intro U hU hUk hUs
+      have hT1 : WGd b' (1 :: (q ++ ks₃)) T := hT b' hb' _ ⟨q, ks₃, rfl, hq, h3⟩
+      refine WGd_blk b' 1 (q ++ ks₃) (V := T) hT1 hU hUk hUs [X] (by simp)
+        (by intro N hN; simp at hN; subst hN; exact hJX) ?_
+      intro j hj N hN b'' hb'' ks₄ hins₄
+      have hj0 : j = 0 := by omega
+      subst hj0
+      have hNX : N = X := AtIx_zero.mp hN
+      subst hNX
+      exact hX b'' (by omega) ks₄
+        (InsT_trans (by omega) (⟨q, ks₃, rfl, hq, h3⟩ : InsT b (0 :: B) _) hins₄)
+  | succ m =>
+      rw [WGd_ck]
+      intro r hr U hU hUk hUs Ns hlen hJNs hNt
+      have hqr : ∀ x ∈ r ++ q, x < b := by
+        intro x hx
+        rcases List.mem_append.mp hx with h1 | h1
+        · have := hr x h1; omega
+        · exact hq x h1
+      have hkey : InsT b ((m + 1) :: B) ((m + 1) :: ((r ++ q) ++ ks₃)) :=
+        ⟨r ++ q, ks₃, rfl, hqr, h3⟩
+      have hT1 : WGd b' ((m + 1 + 1) :: (r ++ (q ++ ks₃))) T := by
+        have h4 := hT b' hb' ((m + 1 + 1) :: ((r ++ q) ++ ks₃))
+          ⟨r ++ q, ks₃, rfl, hqr, h3⟩
+        rwa [List.append_assoc] at h4
+      have hJ : ∀ N ∈ Ns ++ [X], JkA N := by
+        intro N hN
+        rcases List.mem_append.mp hN with h1 | h1
+        · exact hJNs N h1
+        · simp at h1; subst h1; exact hJX
+      have hsib : ∀ j : ℕ, j < m + 1 + 1 → ∀ N : Jk1, AtIx (Ns ++ [X]) j N →
+          ∀ b'' : ℕ, b'' < b' → ∀ ks₄ : List ℕ,
+            InsT b' (j :: (r ++ (q ++ ks₃))) ks₄ → WGd b'' ks₄ N := by
+        intro j hj N hN b'' hb'' ks₄ hins₄
+        rcases AtIx_snoc Ns X N j hN with h1 | ⟨hjv, rfl⟩
+        · exact hNt j (by have := AtIx_lt h1; omega) N h1 b'' hb'' ks₄ hins₄
+        · rw [hlen] at hjv
+          subst hjv
+          have hins₅ : InsT b' ((m + 1) :: ((r ++ q) ++ ks₃)) ks₄ := by
+            rwa [← List.append_assoc] at hins₄
+          exact hX b'' (by omega) ks₄ (InsT_trans (by omega) hkey hins₅)
+      have h5 := WGd_blk b' (m + 1 + 1) (r ++ (q ++ ks₃)) (V := T) hT1 hU hUk hUs
+        (Ns ++ [X]) (by simp [hlen]) hJ hsib
+      rw [RunP_append] at h5
+      exact h5
+
+theorem WGd_chainG {b i : ℕ} (hib : i < b) {B : List ℕ} {N T : Jk1} (hJN : JkA N)
+    (hJT : JkA T)
+    (hNall : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b (i :: B) ks₂ → WGd b' ks₂ N)
+    (hTall : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b ((i + 1) :: B) ks₂ → WGd b' ks₂ T) :
+    ∀ n : ℕ, JkA (twoIt N T n) ∧
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b (i :: B) ks₂ →
+        WGd b' ks₂ (twoIt N T n))
+  | 0 => ⟨hJN, hNall⟩
+  | (n + 1) => by
+      obtain ⟨h2, h3⟩ := WGd_chainG hib hJN hJT hNall hTall n
+      exact ⟨⟨h2, hJT⟩, WGd_chainStep hib h2 h3 hTall⟩
+
+#print axioms WGd_chainStep
+#print axioms WGd_chainG
+
 end Small
 end TRIO
