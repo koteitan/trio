@@ -74423,5 +74423,39 @@ theorem R375m61_of_APzSteps (h1 : APzOne) (h2 : APzTwo) :
 #print axioms APzAll_of_steps
 #print axioms R375m61_of_APzSteps
 
+/-! ### ★★★★★ `APzTwo` の `W = nil` は `APzOne` から出る
+
+`two V nil = RunS ([] ++ [V])` なので `GOK_oneUV_RunSB [] [] V U` が使える。
+階段は `appJ U (UtwP [] V n)`、`n = m+1` で `one U (ABt [] V m)`、
+`ABt [] V m = one V (one V (… V))`（`V` の塔）。塔の `APz` は `APzOne` を
+`m` 回当てるだけ。 -/
+
+theorem APz_ABt0 (h1 : APzOne) {V : Jk1} (hV : JkA V) (hAV : APz V) :
+    ∀ n : ℕ, JkA (ABt ([] : List Jk1) V n) ∧ APz (ABt ([] : List Jk1) V n) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hV, hAV⟩
+  | succ n ih =>
+      show JkA (Jk1.one V (ABt ([] : List Jk1) V n))
+        ∧ APz (Jk1.one V (ABt ([] : List Jk1) V n))
+      exact ⟨⟨hV, ih.1⟩, h1 V _ hV ih.1 hAV ih.2⟩
+
+theorem APz_twoNil (h1 : APzOne) {V : Jk1} (hV : JkA V) (hAV : APz V) :
+    APz (Jk1.two V Jk1.nil) := by
+  intro U hU hGU
+  have hJT : JkT (plug ([] : List Frm) (Jk1.one U (RunS (([] : List Jk1) ++ [V])))) :=
+    ⟨⟨hU.1, hV, trivial⟩, hU.2⟩
+  have hst : ∀ n : ℕ,
+      GOK (plug ([] : List Frm) (appJ U (UtwP ([] : List Jk1) V n))) := by
+    intro n
+    cases n with
+    | zero => exact hGU
+    | succ m =>
+        show GOK (Jk1.one U (ABt ([] : List Jk1) V m))
+        exact (APz_ABt0 h1 hV hAV m).2 U hU hGU
+  exact GOK_oneUV_RunSB [] [] V U (by simp) hV hJT hGU hst
+
+#print axioms APz_twoNil
+
 end Small
 end TRIO
