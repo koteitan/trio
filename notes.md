@@ -23214,3 +23214,48 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 
 `V = bdA (replicate m 1)`（`WPd_bdA_le1` でどの形でも良い）でも積めるが、
 実測では非標準になるので使わない。
+
+## 追記328 (2026-09-12): 予算は `two nil X` のところで自由にリセットできる。字が階数で伸びる
+
+`WPd_twoOf` の予算 `k` は**結論に出てこない**。
+
+    WPd_twoOf (k := b) : JkA N → (∀ q(≤b), WPd ((0::q)++ks) N) → WPd ((b+1)::ks) V
+                       → WPd (0 :: ks) (two N V)
+
+`N := nil` にすると前提 2 つは無条件（`WPd_nilAll`）なので、残るのは
+`WPd ((b+1)::ks) V` だけで、**`b` は好きに取れる**。つまり
+
+    「`0 ::` 形に `two nil X` を差す」＝「`X` を好きな予算で使ってよい」
+
+これが予算の壁のすぐ隣にあった抜け道。壁（`ChainStep` ほか）は
+「荷つきの鎖を予算の位置に置く」ことで、こちらは「予算の位置を作り直す」こと。
+
+### 入れ子の塔 `NstT`
+
+    Vlet X       = two nil (pay X [(0,0,0)])
+    ItV V U n    = one (… one (one U V) V …) V
+    NstT m 0     = twoIt nil nil m
+    NstT m (r+1) = ItV (Vlet (NstT m r)) (twoIt nil nil m) m
+
+    WPd_NstT : m ≤ k → WPd ((k+1)::ks) (NstT m r)     ★緑（階数 r について帰納）
+
+`r` について帰納するとき、内側の `NstT m r` は `WPd_Vlet (b := m)` で
+**予算 m に戻る**。だから `r` はいくらでも上げられる。
+
+字は `NLet m r = Vlet (NstT m r)`、`WPd (0::ks) (NLet m r)` が無条件。
+台座に積むのは `ItN m r j = ItV (NLet m r) T6 j`。`GOK_ItN` が緑。
+
+### 実測（`bms -c`、`Rz1 [·]` に入れて比較）
+
+    Rz1 [ItS T6 29]（前のシート最大） < Rz1 [ItN 2 1 1] < … < Rz1 [ItN 3 3 1]
+
+`r` を 1 上げるだけで前のシート 10 個を全部抜く。強さは `m` > `r` > `j` の順。
+幅を上に向けて増やす塔（`TWv [1,2,3]`）は**非標準**になるので、
+幅は一定（`TWm`）か下向きに減らすしかない。
+
+### やってみて駄目だったもの
+
+- `TWB (TWm m n) p`（塔の台座を塔にする）→ 非標準。台座は平ら（`twoIt nil nil m`）
+  でないと `(l+1,1,0)` が背の高い語の直後に来て非標準になる。
+- `two (NstT …) nil`（`WPd_twoA_runB`）→ 非標準。同じ理由。
+- 荷を大きくする（`[(0,0,0)]` を `R600` に）→ 標準だが小さい。

@@ -77276,5 +77276,118 @@ theorem LadIt_mem (n : ℕ) {ws : List Jk1} (hw : WJ ws) (m : ℕ) :
 #print axioms RzIt_mem
 #print axioms LadIt_mem
 
+/-! ### ★★★★★★ 予算の位置に差せる入れ子の塔 `NstT`
+
+`WPd_twoOf (k := b)` の予算 `b` は**自由に選べる**ので、`two nil X` の `X` は
+どんな予算の木でもよい。だから予算の位置の木は階数で入れ子にできる。
+
+    Vlet X       = two nil (pay X [(0,0,0)])       `0 ::` 形（`WPd_Vlet`）
+    ItV V U n    = one (… one (one U V) V …) V     字 `V` を `n` 個
+    NstT m 0     = twoIt nil nil m
+    NstT m (r+1) = ItV (Vlet (NstT m r)) (twoIt nil nil m) m
+
+`WPd (0 :: ks) (Vlet (NstT m r))` が無条件なので、`T6` の上に字として `m` 回でも
+積める。実測（`bms -c`）で `Rz1 [ItS T6 29]`（前のシート）より大きい。 -/
+
+def Vlet (X : Jk1) : Jk1 := Jk1.two Jk1.nil (Jk1.pay X [((0, 0, 0) : ℕ × ℕ × ℕ)])
+
+theorem JkA_Vlet {X : Jk1} (hX : JkA X) : JkA (Vlet X) := ⟨trivial, hX, Bok_zero⟩
+
+theorem WPd_Vlet {X : Jk1} (hJX : JkA X) {b : ℕ}
+    (hX : ∀ ks : List ℕ, WPd ((b + 1) :: ks) X) (ks : List ℕ) :
+    WPd (0 :: ks) (Vlet X) :=
+  WPd_twoOf (k := b) (N := Jk1.nil) trivial (fun q _ => WPd_nilAll _)
+    (WPd_payA ((b + 1) :: ks) X (hJX : FrmN ((b + 1) :: ks) X) (hX ks) _ Bok_zero)
+
+def ItV (V U : Jk1) : ℕ → Jk1
+  | 0 => U
+  | (n + 1) => Jk1.one (ItV V U n) V
+
+theorem JkA_ItV {V U : Jk1} (hV : JkA V) (hU : JkA U) : ∀ n : ℕ, JkA (ItV V U n)
+  | 0 => hU
+  | (n + 1) => ⟨JkA_ItV hV hU n, hV⟩
+
+theorem JkT_ItV {V U : Jk1} (hV : JkA V) (hU : JkT U) : ∀ n : ℕ, JkT (ItV V U n)
+  | 0 => hU
+  | (n + 1) => ⟨⟨(JkT_ItV hV hU n).1, hV⟩, (JkT_ItV hV hU n).2⟩
+
+theorem FrmN_ItV (ks : List ℕ) {V U : Jk1} (hV : JkA V) (hU : FrmN ks U) :
+    ∀ n : ℕ, FrmN ks (ItV V U n)
+  | 0 => hU
+  | (n + 1) => FrmN_one ks (ItV V U n) V (FrmN_ItV ks hV hU n) hV
+
+theorem WPd_ItV (ks : List ℕ) {V U : Jk1} (hJV : JkA V) (hV : WPd (0 :: ks) V)
+    (hU : FrmN ks U) (hUk : WPd ks U) : ∀ n : ℕ, WPd ks (ItV V U n)
+  | 0 => hUk
+  | (n + 1) => WPd_step ks (FrmN_ItV ks hJV hU n) (WPd_ItV ks hJV hV hU hUk n) hV
+
+def NstT (m : ℕ) : ℕ → Jk1
+  | 0 => twoIt Jk1.nil Jk1.nil m
+  | (r + 1) => ItV (Vlet (NstT m r)) (twoIt Jk1.nil Jk1.nil m) m
+
+theorem JkA_NstT (m : ℕ) : ∀ r : ℕ, JkA (NstT m r)
+  | 0 => JkA_twoIt_nil m
+  | (r + 1) => JkA_ItV (JkA_Vlet (JkA_NstT m r)) (JkA_twoIt_nil m) m
+
+/-- ★★★★★★ 階数 `r` の入れ子の塔は幅 `m` 以上の予算にどれでも差せる。 -/
+theorem WPd_NstT (m : ℕ) : ∀ (r k : ℕ), m ≤ k → ∀ ks : List ℕ,
+    WPd ((k + 1) :: ks) (NstT m r)
+  | 0, k, hk, ks => WPd_twoIt_nil m k hk ks
+  | (r + 1), k, hk, ks =>
+      WPd_ItV ((k + 1) :: ks) (JkA_Vlet (JkA_NstT m r))
+        (WPd_Vlet (b := m) (JkA_NstT m r)
+          (fun ks' => WPd_NstT m r m (le_refl m) ks') ((k + 1) :: ks))
+        (JkA_twoIt_nil m : FrmN ((k + 1) :: ks) (twoIt Jk1.nil Jk1.nil m))
+        (WPd_twoIt_nil m k hk ks) m
+
+#print axioms WPd_NstT
+
+/-- 字（`0 ::` 形で無条件に良い）。 -/
+def NLet (m r : ℕ) : Jk1 := Vlet (NstT m r)
+
+theorem JkA_NLet (m r : ℕ) : JkA (NLet m r) := JkA_Vlet (JkA_NstT m r)
+
+theorem WPd_NLet (m r : ℕ) (ks : List ℕ) : WPd (0 :: ks) (NLet m r) :=
+  WPd_Vlet (b := m) (JkA_NstT m r) (fun ks' => WPd_NstT m r m (le_refl m) ks') ks
+
+/-- 台座 `T6` の上に字 `NLet m r` を `j` 個積んだ木。 -/
+def ItN (m r j : ℕ) : Jk1 := ItV (NLet m r) T6 j
+
+theorem JkT_ItN (m r j : ℕ) : JkT (ItN m r j) := JkT_ItV (JkA_NLet m r) JkT_T6 j
+
+/-- ★★★★★★ 無条件で良い字。 -/
+theorem GOK_ItN (m r j : ℕ) : GOK (ItN m r j) :=
+  (WPd_bnil _).mp
+    (WPd_ItV [] (JkA_NLet m r) (WPd_NLet m r []) (JkT_T6 : FrmN [] T6)
+      ((WPd_bnil _).mpr GOK_T6) j)
+
+theorem GoodFb_ItN (m r j : ℕ) : GoodFb (fun a b => wordJ a b [ItN m r j]) := by
+  have h := GOK_ItN m r j [] WOk_nil GoodFb_wordJ_nil
+  simpa using h
+
+/-- ★★★★★★ 新しい最大の台座。 -/
+theorem RzN_RunA0 (m r j : ℕ) : RunA 0 1 (Rz1 [ItN m r j]) :=
+  Rz1_RunA0 (WOk_singletonT (JkT_ItN m r j)) (GoodFb_ItN m r j)
+
+theorem RzN_mem (m r j : ℕ) : Rz1 [ItN m r j] ∈ W 0 :=
+  ((BaseOk_RunA 0).aok _ _ (RzN_RunA0 m r j)).mem
+
+theorem RzNj_PkGA (m r j : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    PkGA 2 (Rz1 [ItN m r j] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, Rz1 [ItN m r j], wordJ 2 2 ws, rfl, RzN_RunA0 m r j, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩
+
+theorem RzNj_mem (m r j : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    Rz1 [ItN m r j] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws) ∈ W 0 :=
+  (PkGA_Aok (RzNj_PkGA m r j hw)).mem
+
+theorem LadN_mem (m r j : ℕ) {ws : List Jk1} (hw : WJ ws) (p : ℕ) :
+    LadB (Rz1 [ItN m r j] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) p ∈ W 0 :=
+  LadB_mem (RzNj_PkGA m r j hw) p
+
+#print axioms GOK_ItN
+#print axioms RzN_mem
+#print axioms LadN_mem
+
 end Small
 end TRIO

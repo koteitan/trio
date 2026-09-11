@@ -97,7 +97,21 @@
 
 実測: `Rz1 (T6w 10) < Rz1 [ItS T6 10] < Rz1 [ItS T6 10]^3 < Rz1 [ItS T6 30]`。
 **語に字を並べるより、1 つの字に `stk 2` を積む方が強い。**
-シートの証明済みは `Rz1 [ItT6 n]`（n = 20..29）。
+
+### さらに強い：予算は `two nil X` で作り直せる（追記328）
+
+`WPd_twoOf (k := b)` の `b` は結論に出てこない。`N := nil` なら前提は
+`WPd ((b+1)::ks) V` だけなので、**`b` は好きに取れる**。だから
+
+    Vlet X       = two nil (pay X [(0,0,0)])            `WPd_Vlet`（緑）
+    NstT m 0     = twoIt nil nil m
+    NstT m (r+1) = ItV (Vlet (NstT m r)) (twoIt nil nil m) m
+    WPd_NstT     : m ≤ k → WPd ((k+1)::ks) (NstT m r)   ★緑
+
+字は `NLet m r = Vlet (NstT m r)`、台座に積むのが `ItN m r j = ItV (NLet m r) T6 j`。
+`Rz1 [ItS T6 29] < Rz1 [ItN 2 1 1]` なので、`r` を 1 上げるだけで前の 10 個を抜く。
+強さは `m` > `r` > `j`。幅を上向きに増やす塔は非標準になる。
+シートの証明済みは `Rz1 [ItN m r j]`（(2,3,2) から (3,3,1) まで 10 個）。
 
 ## 既存の族の一覧（新しい族を作る前に必ずここを見る）
 
