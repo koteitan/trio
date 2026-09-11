@@ -2,182 +2,108 @@
 
 ## 目標（シート行376）
 
-    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)
+    (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)   psi(W_w*psi_1(W_3))
 
-## 行376 までの緑の還元（2026-09-12 に大幅に短くなった）
+行374（`R374_mem`）・行375（`R375m`）は緑。376 が次の行で正しい（`psiI.json` で照合済み）。
 
-    R376_of_BdAll : BdAll → R373 (5,3,0) ∈ W 0
-      BdAll := ∀ j m, GOK (bdA (List.replicate m j))        ★これ 1 本
-      bdA [] = nil ;  bdA (j::js) = one nil (stkP j (bdA js))
+## 目標までの緑の還元（いちばん短い道）
 
-    R376_of_StkL  : StkL → 行376
-      StkL := ∀ n, GOK (one nil (stk n))
-      StkL_of_BdAll : BdAll → StkL   （`GOK_runNil_gen` の階段）
+    R376_of_BdAll : BdAll → 行376
+      StkL  := ∀ n, GOK (one nil (stk n))          ← 文脈の量化は要らない
+      BdAll := ∀ j m, GOK (bdA (replicate m j))    ← j = 0,1 は緑、j ≥ 2 が壁
 
-`j = 0` と `j = 1`（`GOK_bdA1`）は緑。**`j ≥ 2` だけが壁**。
-語で見ると `bdA (2::js)` は `(l+1,1,0)(l+2,2,0)(l+3,2,0)...`、つまり走り 2 連。
+`tw_R344_42R` が `RunAll` から使うのは `GOK (one nil (stk n))` だけ。
+`GOK_runNil_gen` の階段がブロック列なので `BdAll` に落ちる。
 
-**文脈の量化は要らない。** `tw_R344_42R` が `RunAll` から使っていたのは
-`GOK (one nil (stk n))` だけで、`RunAll`（`∀ q ks, APd (true::ks) (stk q)`）は
-必要より強い条件だった（`StkL_of_RunAll` で片方向だけ）。
-
-## 2026-09-12 に閉じた壁
-
-- **`TowOk`（#14 の壁）は既に緑だった。** `TowOkM m : ∀ n, GOK (one nil (two nil (TWm m n)))`
-  は `WPd` 層で無条件に緑で、`TWm_one : TWm 1 n = TW n`。
-  `TowOk_green` / `R14_mem_green : R375m (5,2,0) ∈ W 0` は**無条件**。
-- **`GOK T6`（走り 2 連の直上に荷）**。
-  `T6 = one nil (two nil (two nil (pay nil [(0,0,0)])))`、
-  `U375a6 = (1,1,0) :: wordJ 1 1 [T6]`、`R600 = R338 ++ U375a6`。
-  `SegA_U375a6`（`seg` の段、緑）と同じ `flat_mem''` の議論
-  （塔 `(l+4,2,0)^n` を平らにして `(l+5,0,0)`）が `pk` と `pu` でも回る。
-  `T6` は `JkOk` でない（走り 2 連）ので `GOK_all` では出ない。
-
-## 「字」と「文脈」は難しさが違う
-
-`GOK T`（T を語の右に字として継ぐ）は `flat_mem''` / `snocY_mem` の塔で直接押せる。
-`APd ks X` / `SG ks X`（T を文脈の中に差す）は族の側条件が要り、階段が形のリストを
-伸ばすところで割れる。**同じ「走り 2 連」でも、字なら通り（`GOK T6`）、
-文脈なら通らない（`BdAll` の `j ≥ 2`）。**
-新しい壁を立てるときは、まず「字の主張に落ちないか」を見る。
-
-## ★ 壁の最終形：`ChainStep`（緑の補題 1 つの `nil` を荷に替えるだけ）
-
-    WPd_twoA_runB : b+1 ≤ k → JkA A → (∀ ks, WPd ((b+1)::ks) A)
-                  → ∀ ks, WPd ((k+1)::ks) (two A nil)                    ★緑
-
-    ChainStep := 同じ仮定で ∀ Y, Bok Y →
-                   ∀ ks, WPd ((k+1)::ks) (two A (pay nil Y))             ★残り 1 本
-
-    ChainW_of_ChainStep  : ChainStep → ChainW
-    Pay2_of_ChainStep    : ChainStep → Pay2
-    R375m61_of_ChainStep : ChainStep → R375m (6,1,0) ∈ W 0
-
-語で見ると `two A nil` の語 `jk1 l A ++ [(l+1,2,0)]` の後ろに `Y↑(l+2)` を
-吊るすだけ、つまり「走りの直上の荷」。`WPd_twoA_runB` の証明は
-`GOK_oneUV_RunSB`（`RunS`、末尾が裸の 2 の記録）を使うが、荷が付くと
-`GOK_oneUV_genM` の条件 `hVs`（語が裸の 2 の記録で終わる）が壊れる。
-そこが唯一の穴。
-
-### 途中の緑の還元（2026-09-12）
-
-    ZApp2c_of_chain : (∀ k ≥ b, ∀ ks, WPd ((k+1)::ks) N) →
-                      GOK (one nil (two nil (two N nil)))
-      （`GOK_oneUV_RunSB [] [nil] N nil` の階段が
-        `UtwP [nil] N (n+1) = one nil (two nil (TWB N n))` で `TowOkB` になる）
-    TWB N n / WPd_TWB / TowOkB : `TWm` / `WPd_TWm` / `TowOkM` の単位を任意の木に一般化
-    WPd_chainP : 荷つきの鎖は `0 :: q ++ B` の形なら緑（`WPd_twoOf` + `WPd_payA`）
-    GOK_oneChainP : `one nil (twoIt nil (pay nil Y) n)` は字として良い
-
-**`(k+1) ::` の形だけが壁。** `0 ::` は緑。
-
-## ★★ いちばん鋭い言い方：走りは通る。壁は「鎖が走りの**上**」だけ（2026-09-12）
-
-    緑 GOK_oneTwoVChRun : GOK (one nil (two N (two A nil)))
-         N は水平鎖（VCh nil、2 の記録の**兄弟**の位置）、A は予算つき
-         語: (l+1,1,0) ++ jk1 (l+1) N ++ (l+2,2,0)(l+3,2,0)   ← 走りを含む！
-
-    壁 ZApp2c          : GOK (one nil (two nil (two N nil)))
-         N が走りの**上**（`WPd_twoOf` が予算 (k+1):: を要求する位置）
-
-`WPd_ck` の枠木（兄弟）の条件は `∀q(≤k), WPd ((0::q)++ks) N` で、水平鎖はこれを
-満たす（`WPd_VCh`）。だから `WPd_twoA_runB`（緑）を `WPd_ck` で開くだけで
-走りつきの緑が出る。`A` の候補: `nil` / `twoIt nil nil m` / `TWm m n`。
-
-**走り自体は壁ではない。鎖を予算の位置に置けないことだけが壁。**
-
-## ★ その次に鋭い言い方：水平鎖は緑、走り（縦）だけが壁
-
-    GOK_oneTwoVChNil : ∀ N ∈ VCh nil, GOK (one nil (two N nil))          ★緑
-    GOK_oneTwoVChPay : ∀ Y Bok Y, ∀ N ∈ VCh nil,
-                         GOK (one nil (two N (pay nil Y)))               ★緑
-    ZApp2c           : ∀ N ∈ VCh nil, GOK (one nil (two nil (two N nil))) ★壁
-
-**差は `two nil` 1 層だけ。** 理由は塔の形:
-
-    GOK_oneUV_RunSB D Bs B U の塔は UtwP Bs B
-      Bs = []    : UtwP [] N (n+1) = one nil (TW1 N n)      （one だけ）→ 形は 0 :: のまま ★緑
-      Bs = [nil] : UtwP [nil] N (n+1) = one nil (two nil (TWB N n))（two nil が入る）
-                   → WPd_twoOf が (k+1) :: の形（予算）を要求 ★壁
-
-水平鎖 `VCh nil`（2 の記録が全部同じ高さ）は `WPd_VCh` で `0 ::` の形のまま扱えるが、
-走り（2 の記録の高さが 1 上がる）を 1 本挟むと予算の形に落ちる。
-
-## 壁の最小形は 3 つ（全部同じ 1 手、言い換えが違うだけ）
+## 壁の言い方（全部同値、どれも 1 手）
 
     (1) ChainStep : WPd_twoA_runB（緑）の結論 two A nil を two A (pay nil Y) に
     (2) ZApp2c    : ∀ N ∈ VCh nil, GOK (one nil (two nil (two N nil)))
-    (3) TwoStepP  : ∀ B, Bok B → TwoOk (two nil (pay nil B))
-                    （古い壁 TwoStep の Z = pay nil B への制限）
+    (3) TwoStepP  : ∀ B Bok B → TwoOk (two nil (pay nil B))   （TwoStep の荷への制限）
+    (4) ChainW    : ∀ N ∈ VCh nil, ∃ b, ∀ k ≥ b, ∀ ks, WPd ((k+1)::ks) N
+    (5) StkBlk2   : 2 ≤ k → WPd ((k+1)::ks) (stk 2)
+    (6) BdAll の j ≥ 2 / Pay2 : ∀ B Bok B → GOK (Wall2 B)
+        Wall2 B = one nil (two nil (two nil (pay nil B)))
 
-    ChainStep → ChainW → ZApp2c → Pay2 → R375m (6,1,0)       全部緑
-    TwoStepP  → Pay2 → R375m (6,1,0)                          全部緑
-    TwoStep → TwoStepP                                        緑
+    ChainStep → ChainW → ZApp2c → Pay2 → R375m (6,1,0) ∈ W 0   全部緑
+    TwoStepP → Pay2                                             緑
+    Pay2 → BdAll の一部（GOK_bdA20_of_Pay2）                     緑
 
-底はどれも緑:
-`TwoOk_pay : TwoOk Z → Bok B → TwoOk (pay Z B)`、`TwoOk_payNil`、
-`ZApp2c_nil`、`ZApp2c_twoItNil`、`Wall2 []`、`Wall2 [(0,0,0)] = T6`。
+## ★ 壁の正体：走りではなく「鎖の位置」
 
-## もう 1 つの壁の最小形：`ZApp2`（いま開いている最小の行列）
+`WPd_ck` の**枠木（2 の記録の兄弟）**の条件は `∀ q(≤k), WPd ((0::q)++ks) N` で
+`0 ::` 形。荷つきの水平鎖 `VCh nil` はこれを満たす（`WPd_VCh`、緑）。
 
-    Pay2 := ∀ B, Bok B → GOK (Wall2 B)
-      Wall2 B = one nil (two nil (two nil (pay nil B)))   （幅 2 の走りの上に荷）
-    Pay2_of_ZApp2 : ZApp2 → Pay2                          （`PZ_cons`。荷の W 帰納は済み）
-      ZApp2 := ZAppend [fone nil, ftwo nil] nil
-             = ∀ M, JkA M → GOK (one nil (two nil M)) → GOK (one nil (two nil (two M nil)))
-    R375m61_of_ZApp2 : ZApp2 → R375m (6,1,0) ∈ W 0
+    緑 : one nil (two N (two A nil))     N は水平鎖（兄弟）、A は予算つき ← 走りを含む
+    壁 : one nil (two nil (two N nil))   N が走りの**上**（(k+1):: 形＝予算の位置）
 
-さらに `GOK_twoPayZ_of` を使うと、全称 `ZApp2` ではなく**水平鎖の元でだけ**でよい:
+**走り自体は壁ではない。** 荷つきの鎖を予算の位置に置けないことだけが壁。
 
-    ZApp2c := ∀ N, VCh nil N → GOK (one nil (two nil (two N nil)))
-    Pay2_of_ZApp2c : ZApp2c → Pay2                        ★緑
-    R375m61_of_ZApp2c : ZApp2c → R375m (6,1,0) ∈ W 0      ★緑
-      VCh nil N := N = nil | N = two N' (pay nil Y)（Bok Y）
+予算の出どころは `WPd_stairB`: 階段が兄弟の形に `b+1`（`A` の予算）を押し込むので
+`hsib` の上限 `k` が `b+1 ≤ k` を要求する。鎖は予算を持たないのでここで止まる。
 
-    ZApp2c_nil      : N = nil          → one nil (stk 2)          ★緑
-    ZApp2c_twoItNil : N = twoIt nil nil k（荷が空の鎖）→ TowOkM (k+1) 0  ★緑
+## 塔が 2 種類あってどちらも塞がる
 
-**残るのは荷が空でない鎖だけ。** 語で書くと
+- `flat_mem''` の塔 = **平らな鎖** `twoIt A nil n`。`WPd_twoA_runB` を n 回使うので
+  **予算を n 消費**。結論が `GOK`（予算なし）なら n ごとに予算を変えられる
+  （`GOK_T6` はこれで通った）が、`WPd ((k+1)::ks)` だと `n ≤ k-b` で止まる。
+- `GOK_oneUV_RunSB` の塔 = `UtwP Bs B`。`Bs = []` なら `one` しか増えないので
+  予算を使わない（`GOK_oneTwoVChNil` はこれで通った）。`Bs = [N]` 以上だと
+  `two N` が入って上の木に予算が要る。さらに `GOK_oneUV_genM` の `hVs`
+  （語が裸の 2 の記録で終わる）が末尾の荷を許さない。
 
-    (l+1,1,0)(l+2,2,0) ((l+3,2,0) Y↑(l+4))^k (l+3,2,0)
+## 荷の高さ 4 / 5 / 6 の境目（語の 2 の記録の並びは同じ）
 
-で、`Y = []` なら `UBlk (k+1) l` になって `TowOkM` で出る。
-`Y ≠ []` の版（`TWm` の同高さ 2 の記録に荷を付けた族）が要る。
-`WPd` 層では `WPd_twoA_runB`（右の子が `nil` 限定）と
-`GOK_oneUV_RunSB`（`RunS`、荷なし）を荷つきに一般化することになる。
+    payL4 B = one nil (pay (two nil (two nil nil)) B)  … ++ B↑(l+2)   ★緑
+    NQB B   = one nil (two nil (pay (two nil nil) B))  … ++ B↑(l+3)   ★緑
+    Wall2 B = one nil (two nil (two nil (pay nil B)))  … ++ B↑(l+4)   ★壁
 
-底は緑: `Wall2 []`（語が `one nil (stk 2)` と同じ）、`Wall2 [(0,0,0)] = T6`（`GOK_T6`）。
+`T6 = Wall2 [(0,0,0)]` だけは `flat_mem''` で緑（結論が `GOK` なので予算が要らない）。
 
-`Pay2` が出れば `Wall2 B` が**いまで一番強い字**になり（`T6 = Wall2 [(0,0,0)]` が
-既に一番強い）、証明済みも一気に大きくなる。
+## 緑になっている関連（2026-09-12 にまとめて取った）
 
-## 台座と junk の差し替え（証明済みを増やす安い道）
+    GOK_T6            : 走り 2 連の直上に荷 [(0,0,0)]（字として）
+    TowOk_green       : #14 の壁（TWm 1 n = TW n で既に緑だった）
+    R14_mem_green     : R375m (5,2,0) ∈ W 0 が無条件
+    R600_221_mem      : P(6,0,0)(2,2,1) ∈ W 0、R6221_RunA0 で新しい台座
+    Rz1 ws / T6w k    : どの良い語でも RunA 0 1。T6 を k 個で証明済みが伸びる
+    WPd_VCh           : 水平鎖は 0:: 形で良い
+    GOK_oneTwoVChNil  : ∀ N ∈ VCh nil, GOK (one nil (two N nil))
+    GOK_oneTwoVChPay  : その上に任意の Bok 荷
+    GOK_oneTwoVChRun  : GOK (one nil (two N (two A nil)))（走りを含む）
+    TWB / WPd_TWB / TowOkB : TWm / WPd_TWm / TowOkM の単位を任意の木に
+    WPd_chainP / GOK_oneChainP : 荷つき鎖は 0:: 形で良い
 
-    Rz1 ws  = R338 (1,1,0) ++ wordJ 1 1 ws ++ (2,2,1)      RunA 0 1（緑、ws は任意の良い語）
-    T6w k   = T6 を k 個            → 台座が k 方向に無限
-    Rz1j k ws = Rz1 (T6w k) (2,2,0) ++ wordJ 2 2 ws        PkGA 2
-    LadB Y n  = Y (3,3,0)(4,4,1)(4,4,0)(5,5,1)...          PU の梯子
+## 試して駄目だった道（再挑戦しない）
 
-junk に入れられる `GoodFb` 族は `Zw ⊂ wordC ⊂ wordJ`（木の語、`GOK_all` + `GOK T6`）。
-大小は `bms -c` で必ず測る。実測では `k`（台座の `T6` の本数）が一番強い。
+- `flat_mem''` で `ChainStep` → 平らな鎖の塔が予算を食う。
+- `GOK_oneUV_genM` を末尾の荷つきに → `hVs` が壊れる。`snocYd_hang` を作ろうとすると
+  また平らな鎖の塔に戻る。
+- `BaseOk.hang` / `BaseOk.close` / `Lv_hang` → 梯子の準位は**セグメントの頭**の高さで
+  決まるので、末尾の記録の 1 つ上には届かない。
+- `GOK_twoPay_of` の `ctx` を `[fone nil]` / `[fone nil, ftwo nil]` /
+  `ctx0 ++ [fone U', ftwo N]` と変える → `htow` が `RunS` の**先端**に鎖を要求し、
+  先端は予算の位置なので戻る。
+- `WPd_chainT` / `WPd_two_of_ctx` / `WPd_ck` の組み合わせ → 同上。
+- 字の在庫の総当たり（`TWL n` / `NQB B` / `copiesI` / `nil` 混ぜ / 荷の再帰）→
+  どれも `T6` に負ける。シートは `Rz1 (T6w k)` が最大。
 
 ## 既存の族の一覧（新しい族を作る前に必ずここを見る）
 
-| 族 | 文脈 | 2 の枠 | 荷 | 空木 | 走り |
-|---|---|---|---|---|---|
-| `APd` / `GCtx` | Bool 列 | `[fone U, ftwo N]` 対で 1 枚 | 緑 | 緑 | 表現できない |
-| `SCtx` / `SG` | Bool 列 | `ftwo nil` 何枚でも | `SPayF` | `SNilT` | `SG_stkS`（長さ帰納、緑） |
-| `RCtx` / `RG` | Bool 列 | `ftwo N`（∀j 条件） | 緑 | 緑 | `RSp (false::ks)` が偽 |
-| `ZT` / `ZG` | 生 | `ftwo nil` | — | — | `ZStep` |
-| `ECtx` / `FCtx` / `GCx` / `HGx` / `RCx` | 生・ℕ 列 | いろいろ | — | — | 追記315 の表 |
-| `WPd` / `WFd` | ℕ 列（予算） | — | — | — | 予算が鎖に追いつかない（死） |
+| 族 | 2 の枠 | 荷 | 空木 | 走り |
+|---|---|---|---|---|
+| `APd`/`GCtx` | `[fone U, ftwo N]` 対で 1 枚 | 緑 | 緑 | 表現できない |
+| `SCtx`/`SG` | `ftwo nil` 何枚でも | `SPayF` | `SNilT` | `SG_stkS`（長さ帰納、緑） |
+| `RCtx`/`RG` | `ftwo N`（∀j 条件） | 緑 | 緑 | `RSp (false::ks)` が偽 |
+| `WPd`/`WFd` | 予算 `k` | 緑（`WPd_payA`） | 緑 | `StkBlk2` |
+| `ZT`/`ZG`、`ECtx`、`FCtx`、`GCx`、`HGx`、`RCx` | — | — | — | 追記315 の表 |
 
 ## 走りの道具（`GOK` 側、全部緑）
 
     GOK_twoNilW_gen    : two N nil                    ← 塔 (fone N)^m N
     GOK_twoTwoNilW_gen : two N (two Wl nil)           ← 階段 nstN2
     GOK_stkW_gen       : two N (stkP p (two nil nil)) ← 階段 nstQ
-    GOK_runNil_gen     : one V (stkP j (two A nil))   ← 階段 Trm A ([(V,j)] ++ (A,j)^i)
+    GOK_runNil_gen     : one V (stkP j (two A nil))   ← 階段 Trm（= bdA）
     GOK_runGNil_gen    : 一般兄弟の走り（runJ / unR / nstR）
-
-`GOK_runNil_gen` の階段が `bdA (replicate m j)` なので、`BdAll` が最後の 1 本。
+    GOK_oneUV_RunSB    : one U (RunS (Bs ++ [B]))     ← 階段 UtwP Bs B
+    WPd_twoTwoGen_run  : WPd (0::B) (two N (stk 1))   ← 兄弟は 0:: 形でよい
