@@ -74817,5 +74817,69 @@ theorem R375m62_of_RunP2 (h : RunP2) :
 #print axioms R375m61_of_RunP2
 #print axioms R375m62_of_RunP2
 
+/-! ### ★★★★★ `RunP2` を `bdA` の形と `j ≥ 1` に絞る
+
+`WPd_bdA_all` の中で `RunP2` を使うのは `X = bdA js` のときだけで、
+しかも `j = 0` のときは `stkP 0 X = X` なので再帰でまかなえる。だから
+
+    RunBdA := ∀ j k ks js, 1 ≤ j → j ≤ k → (∀ ks', WPd ks' (bdA js)) →
+                WPd ((k+1) :: ks) (stkP j (bdA js))
+
+まで絞れる。いちばん小さい未証明の場合は `j = 1`, `js = []`、つまり
+
+    WPd ((k+1) :: ks) (stk 2)       （`k ≥ 1`）
+
+`WPd_run` は `stk 1` の場合で緑。`WPd_stk2 : WPd (0::ks) (stk 2)` も緑だが、
+**2 の枠の直上（`(k+1)::ks`）に `stk 2` を差す**のは未。
+`GOK_stkW_gen`（走り `p+2` 連の一般ステップ補題）は既にあるが、その階段
+`two N (stkP p (nstQ N p i))` がまた「2 の枠の直上の走り」なので閉じない。 -/
+
+def RunBdA : Prop := ∀ (j k : ℕ) (ks js : List ℕ), 1 ≤ j → j ≤ k →
+  (∀ ks' : List ℕ, WPd ks' (bdA js)) → WPd ((k + 1) :: ks) (stkP j (bdA js))
+
+theorem WPd_bdA_all2 (h : RunBdA) : ∀ (js ks : List ℕ), WPd ks (bdA js)
+  | [], ks => WPd_nilAll ks
+  | (j :: js), ks => by
+      refine WPd_step ks (FrmN_nilA ks) (WPd_nilAll ks) ?_
+      show WPd (0 :: ks) (stkP j (bdA js))
+      cases j with
+      | zero => exact WPd_bdA_all2 h js (0 :: ks)
+      | succ j =>
+          refine WPd_twoOf (k := j) trivial (fun q _ => WPd_nilAll _) ?_
+          cases j with
+          | zero =>
+              show WPd (1 :: ks) (bdA js)
+              exact WPd_bdA_all2 h js (1 :: ks)
+          | succ j' =>
+              exact h (j' + 1) (j' + 1) ks js (by omega) (le_refl _)
+                (fun ks' => WPd_bdA_all2 h js ks')
+
+theorem GOK_bdA_all2 (h : RunBdA) (js : List ℕ) : GOK (bdA js) :=
+  (WPd_bnil _).mp (WPd_bdA_all2 h js [])
+
+theorem R375m62_of_RunBdA (h : RunBdA) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m_62_of_bdA2 (fun n => GOK_bdA_all2 h (List.replicate n 2))
+
+/-- いちばん小さい未証明の場合。`RunBdA` の `j = 2`, `js = []`。
+`j = 1`, `js = []` は `stkP 1 nil = stk 1` で `WPd_run`（緑）。 -/
+def StkBlk2 : Prop := ∀ (k : ℕ) (ks : List ℕ), 2 ≤ k →
+  WPd ((k + 1) :: ks) (stk 2)
+
+theorem StkBlk2_of_RunBdA (h : RunBdA) : StkBlk2 := by
+  intro k ks hk
+  have e : stk 2 = stkP 2 (bdA ([] : List ℕ)) := rfl
+  rw [e]
+  exact h 2 k ks [] (by omega) hk (fun ks' => WPd_nilAll ks')
+
+/-- `RunBdA` の `j = 1` は `WPd ((k+1)::ks) (two nil (bdA js))`。
+`js = []` なら `WPd_run`（緑）。 -/
+theorem RunBdA_one_nil {k : ℕ} (hk : 1 ≤ k) (ks : List ℕ) :
+    WPd ((k + 1) :: ks) (stkP 1 (bdA ([] : List ℕ))) := WPd_run hk ks
+
+#print axioms WPd_bdA_all2
+#print axioms R375m62_of_RunBdA
+#print axioms StkBlk2_of_RunBdA
+
 end Small
 end TRIO
