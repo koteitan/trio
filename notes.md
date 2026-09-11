@@ -20601,3 +20601,64 @@ A2' の帰納法の仮定がそのまま使える）。ただし `AYdB0` の横�
 
 族は「文脈を全部書く」ための道具だったが、**目標の行に必要な文脈は狭い**。
 狭い文脈に限れば整礎性は幅の多重集合だけで足り、族の帳簿が要らない。
+
+## 追記270: `PayB` に要るもの。荷だけは文脈を 1 枠ぶん広げないと回らない
+
+2026-09-11。追記269 で残った
+
+    PayB : ∀ ws C, Bok C → GOK (plug (BCtx ws) (pay nil C))
+
+の構造を詰めた（まだ緑ではない）。
+
+### 使える一般補題
+
+    AYs : ∀ Y, Bok Y → ∀ ctx, CtxOk ctx → ∀ X Z, CtxX ctx X → CtxT ctx Z →
+        (∀ V, CtxX ctx V → GOK (plug ctx V) → GOK (plug ctx (one V Z))) →
+        GOK (plug ctx X) → GOK (plug ctx (one X (pay Z Y)))
+
+`AYs` は文脈一般で無条件（緑）。荷が 1 の枠の位置にあるときはこれで足りる。
+`ws = 0 :: ws'` なら `plug (BCtx (0::ws')) (pay nil C) = plug (BCtx ws') (one nil (pay nil C))`
+なので `AYs` の形。足りないのは第 5 引数
+
+    hAP : ∀ V, CtxX (BCtx ws') V → GOK (plug (BCtx ws') V) → GOK (plug (BCtx ws') (one V nil))
+
+で、`APnil_gen0` で `GOK (plug (BCtx ws') (pay V C))` に落ちる。**`V` が `nil` でない**
+ので `PayB` そのものでは足りない。
+
+### 走りの位置の荷は文脈が広がる
+
+`ws = (w+1) :: ws'` だと荷は走りの上にある。`A2'` の dup が要求する横鎖は
+`twoIt N T n = two (twoIt N T (n-1)) T` で、
+
+    plug (BCtx ws) (two V T) = plug (BCtx ws ++ [ftwo V]) T      （V は鎖の要素）
+
+なので **2 の枠の木が `nil` でなくなる**。`BCtx` の外。1 の枠の鎖 `itJ` も同じで
+`plug (BCtx ws ++ [fone V]) T` になる。
+
+### だから荷には文脈族が要る
+
+    PlB : List ℕ → Jk1 → Prop      -- 「BCtx ws の上に一様に置ける」
+
+    PlB [] V           = GOK V
+    PlB (0 :: ws) V    = ∀ U, JkA U → PlB ws U → PlB ws (one U V)
+    ...
+
+`WRd` / `WBd` の族と同じ形になるが、**走りの階段はもう `GOK_BCtx_nil` が持っている**
+ので、この族は荷だけを回せばよい。`AYdR` / `AYdTR` / `WRd_payA` の証明がそのまま
+写せるかを次に見る。
+
+### 融合した族でも階段は閉じる（紙の上、参考）
+
+ついでに、入り目を**ブロックの幅 1 個**にした融合族
+
+    WFd (w :: ws) V = ∀ q (幅 < w), ∀ Ns (長さ w),
+        (∀ r < w, ∀ q' (幅 < w), WFd (r :: (q' ++ (q ++ ws))) Ns_r) →
+        ∀ U, … → WFd (q ++ ws) (one U (RunP Ns V))
+
+なら階段の 4 つの照合が全部通る（兄弟の予算が位置 `r` によらず**ブロックの幅 `w`**
+で一様だから、階段が下に入れる幅 `w-1` のブロックが予算に収まる）。
+`WBd`（枠 1 枚 = 入り目 1 個）で潰れていたのは、兄弟の予算が位置ごとに
+`encE (m,k+1)` に切られていて、下に来る幅 `i > k` のブロックを跨げなかったから。
+**融合が効くのは予算が一様になるからで、追記264 の A は融合で解ける。**
+ただし融合だと荷の横鎖がブロックを 1 枚伸ばすので B が壊れる（追記264 のまま）。
+`GOK_BCtx_nil` はその両方を避けている（兄弟が `nil` なので条件そのものが無い）。
