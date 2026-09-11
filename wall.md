@@ -50,9 +50,26 @@
              = ∀ M, JkA M → GOK (one nil (two nil M)) → GOK (one nil (two nil (two M nil)))
     R375m61_of_ZApp2 : ZApp2 → R375m (6,1,0) ∈ W 0
 
+さらに `GOK_twoPayZ_of` を使うと、全称 `ZApp2` ではなく**水平鎖の元でだけ**でよい:
+
+    ZApp2c := ∀ N, VCh nil N → GOK (one nil (two nil (two N nil)))
+    Pay2_of_ZApp2c : ZApp2c → Pay2                        ★緑
+    R375m61_of_ZApp2c : ZApp2c → R375m (6,1,0) ∈ W 0      ★緑
+      VCh nil N := N = nil | N = two N' (pay nil Y)（Bok Y）
+
+    ZApp2c_nil      : N = nil          → one nil (stk 2)          ★緑
+    ZApp2c_twoItNil : N = twoIt nil nil k（荷が空の鎖）→ TowOkM (k+1) 0  ★緑
+
+**残るのは荷が空でない鎖だけ。** 語で書くと
+
+    (l+1,1,0)(l+2,2,0) ((l+3,2,0) Y↑(l+4))^k (l+3,2,0)
+
+で、`Y = []` なら `UBlk (k+1) l` になって `TowOkM` で出る。
+`Y ≠ []` の版（`TWm` の同高さ 2 の記録に荷を付けた族）が要る。
+`WPd` 層では `WPd_twoA_runB`（右の子が `nil` 限定）と
+`GOK_oneUV_RunSB`（`RunS`、荷なし）を荷つきに一般化することになる。
+
 底は緑: `Wall2 []`（語が `one nil (stk 2)` と同じ）、`Wall2 [(0,0,0)] = T6`（`GOK_T6`）。
-残るのは「2 の記録の左の兄弟を `nil` から一般の良い木 `M` に広げる」1 手。
-`PZ_cons` の中で `M` は水平鎖 `twoIt nil (pay nil B') n` の元として現れる。
 
 `Pay2` が出れば `Wall2 B` が**いまで一番強い字**になり（`T6 = Wall2 [(0,0,0)]` が
 既に一番強い）、証明済みも一気に大きくなる。

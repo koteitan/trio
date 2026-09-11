@@ -76833,5 +76833,45 @@ theorem Pay2_zero : GOK (Wall2 [((0, 0, 0) : ℕ × ℕ × ℕ)]) := GOK_T6
 #print axioms Pay2_zero
 #print axioms R375m61_of_ZApp2
 
+/-! ### ★★★★★★ 壁は「荷つきの水平鎖」だけ：`ZApp2c`
+
+`GOK_twoPayZ_of` を使うと `Pay2` は `ZAppend` の**全称**ではなく
+**水平鎖 `VCh nil` の元でだけ**成り立てばよい。さらに
+
+- `N = nil`: `one nil (stk 2)`（`GOK_oneStk2`、緑）
+- `N = twoIt nil nil k`（荷が空の鎖）: `TowOkM (k+1) 0`（緑）
+
+なので、残るのは**荷が空でない鎖** `twoIt nil (pay nil Y) k`（`Y ≠ []`）だけ。 -/
+
+def ZApp2c : Prop := ∀ N : Jk1, VCh Jk1.nil N →
+  GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two N Jk1.nil)))
+
+theorem Pay2_of_ZApp2c (h : ZApp2c) : Pay2 := fun B hB =>
+  GOK_twoPayZ_of (ctx := [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil]) (Z := Jk1.nil) (VCh Jk1.nil)
+    trivial
+    (fun N hN => JkA_of_VCh (V := Jk1.nil) trivial hN)
+    (fun N hN Y hY k => VCh_twoIt hN hY k)
+    (fun N T hN hT => ⟨⟨trivial, trivial, hN, hT⟩, trivial⟩)
+    (fun N hN => h N hN)
+    B hB Jk1.nil VCh.nil
+
+/-- ★★★★★★ いま開いている最小の行列は「荷つきの水平鎖」1 手。 -/
+theorem R375m61_of_ZApp2c (h : ZApp2c) : R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_ZApp2c h)
+
+/-- `ZApp2c` の底: 鎖が空。 -/
+theorem ZApp2c_nil :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil))) := GOK_oneStk2
+
+/-- `ZApp2c` の底: 荷が空の鎖（`twoIt nil nil k`）。`TWm (k+1) 0` そのもの。 -/
+theorem ZApp2c_twoItNil (k : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.two (twoIt Jk1.nil Jk1.nil k) Jk1.nil))) := TowOkM (k + 1) 0
+
+#print axioms Pay2_of_ZApp2c
+#print axioms ZApp2c_nil
+#print axioms ZApp2c_twoItNil
+#print axioms R375m61_of_ZApp2c
+
 end Small
 end TRIO

@@ -22921,3 +22921,44 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 
 **`Pay2` が出れば `Wall2 B` が一番強い字になる**（`T6 = Wall2 [(0,0,0)]` が既に最強
 なので、荷を一般化すると証明済みも一気に伸びる）。次はそこを攻める。
+
+## 追記322 (2026-09-12): 壁は「荷つきの水平鎖」だけになった
+
+### 1. 字の在庫の総当たり（結論: `T6` が最強で確定）
+
+`R375m_copies*` 系の緑の字（`R375m ++ copies [block] n ∈ W 0` を出すもの）を
+ブロックごとに全部抜き出して `Rz1` に入れて測った。一番長いブロックは
+
+    copiesI = (5,1,0)(6,2,0)(7,2,0)(7,1,0)(8,2,0)(9,2,0)(9,1,0)(10,2,0)
+
+だが、`bms -c` では
+
+    J10 < I1 < I3 < I10 < T6 < T6^10
+
+で、**`T6` 1 本が `copiesI` を 10 回並べたものより大きい**。
+`TWL n = one nil (two nil (TW n))`（`TowOk_green` で全 n 緑）も `NQB` の荷の再帰も
+`T6` の本数に負ける（追記321）。シートは `Rz1 (T6w k)` のままで最大。
+
+### 2. 壁を鎖だけに絞った
+
+`GOK_twoPayZ_of` は `PZ_cons` と違って「族 `NN` の元でだけ `htow`」で済む。
+`NN = VCh nil` に取ると
+
+    ZApp2c := ∀ N, VCh nil N → GOK (one nil (two nil (two N nil)))
+    Pay2_of_ZApp2c    : ZApp2c → Pay2                      ★緑
+    R375m61_of_ZApp2c : ZApp2c → R375m (6,1,0) ∈ W 0       ★緑
+
+`VCh nil N` は `N = nil` か `N = two N' (pay nil Y)`（`Bok Y`）。場合分けすると
+
+    N = nil            : one nil (stk 2)                   ★緑（ZApp2c_nil）
+    N = twoIt nil nil k: one nil (two nil (twoIt nil nil (k+1)))
+                       = one nil (two nil (TWm (k+1) 0))   ★緑（ZApc2c_twoItNil）
+
+で、**荷が空でない鎖だけが残る**。語は
+
+    (l+1,1,0)(l+2,2,0) ((l+3,2,0) Y↑(l+4))^k (l+3,2,0)
+
+`Y = []` なら `UBlk (k+1) l` で `TowOkM` が出す。要るのは
+「`TWm` の同じ高さの 2 の記録に荷 `Y` を付けた族」。`WPd` 層で言えば
+`WPd_twoA_runB`（右の子が `nil` 限定）と `GOK_oneUV_RunSB`（`RunS`、荷なし）の
+荷つき一般化。**これが次の一手。**
