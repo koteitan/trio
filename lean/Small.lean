@@ -72553,7 +72553,9 @@ theorem WFd_oneNilF {k i : ℕ} {ks : List (ℕ × ℕ)} (U : Jk1) (hJU : JkA U)
   exact (WFd_iff ((k, i + 1) :: ks) _).mp
     (WFd_payF C hC U hJU k i ks (PayShp_of_lower hU hlt)) ctx hc
 
-/-- ★ 枠の予算下げ。これ 1 本が残っている壁。 -/
+/-- 枠の予算下げ。**これは自然な道では出ない**（`WFd` は予算について単調でない:
+予算を下げると節の兄弟条件が弱くなるので、`WFd ((k₂,·)::·) U` の方が文脈が多く
+主張として強い）。壁の位置を Lean の文で固定するためだけに置いてある。 -/
 def FrLow : Prop := ∀ (k' i : ℕ) (ks : List (ℕ × ℕ)) (U : Jk1), JkA U →
     WFd ((k', i + 1) :: ks) U →
     ∀ k₂ : ℕ, k₂ < k' → ∀ p : List (ℕ × ℕ), (∀ x ∈ p, x.1 < k') →
@@ -72564,7 +72566,8 @@ theorem WFd_nilT_f (hlow : FrLow) (k k' i : ℕ) (ks : List (ℕ × ℕ)) :
   (WFd_c0 k ((k', i + 1) :: ks) _).mpr
     (fun U hU hUk => WFd_oneNilF U hU hUk (hlow k' i ks U hU hUk))
 
-/-- 幅 0 の入り目の空木は、枠の予算下げだけで全部出る。 -/
+/-- 幅 0 の入り目の空木は、枠の予算下げ（`FrLow`、未証明・おそらく偽）だけで全部出る。
+充足可能性が測れていないので、この含意は壁の位置の記録であって前進ではない。 -/
 theorem WFd_nilT (hlow : FrLow) : ∀ (k : ℕ) (ks : List (ℕ × ℕ)),
     WFd ((k, 0) :: ks) Jk1.nil
   | k, [] => WFd_nilT_e k
