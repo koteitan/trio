@@ -72451,5 +72451,30 @@ theorem WFd_payAll : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkT Z →
 #print axioms WFd_chainF
 #print axioms WFd_payAll
 
+/-! ### 残りの隙間はちょうど「枠」だけ
+
+`WFd_payAll` は `Z` が全部の形で通ることを要求する。`Z = nil` なら目標そのものだが、
+幅 0 の入り目の枠 `U` は「その形でだけ良い」としか言えない。逆に、枠が全部の形で
+通るなら `one U nil` も全部の形で通る（下）。 -/
+
+theorem FrmF_of_JkT : ∀ (s : List (ℕ × ℕ)) {U : Jk1}, JkT U → FrmF s U
+  | [], _, h => h
+  | (_ :: _), _, h => h.1
+
+/-- ★★★★★ 枠が全部の形で通れば、その上の空木も全部の形で通る。 -/
+theorem WFd_oneNilAll (U : Jk1) (hU : JkT U) (hUall : ∀ s : List (ℕ × ℕ), WFd s U) :
+    ∀ s : List (ℕ × ℕ), WFd s (Jk1.one U Jk1.nil) := by
+  intro s
+  rw [WFd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx U
+    (WFtx_JkT s ctx hc (Jk1.one U Jk1.nil)
+      (FrmF_one s U Jk1.nil (FrmF_of_JkT s hU) trivial))
+    ((WFd_iff s U).mp (hUall s) ctx hc) ?_
+  intro C hC
+  exact (WFd_iff s _).mp (WFd_payAll C hC U hU hUall s) ctx hc
+
+#print axioms WFd_oneNilAll
+
 end Small
 end TRIO
