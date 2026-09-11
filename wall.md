@@ -7,53 +7,57 @@
     R375m (6,1,0) = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,1,0)
     R375m (6,2,0) も同じ壁から出る。
 
-## 壁は 2 文（族 `ECtx` / `EOk`、`Rq` も予算も無い）
+## 壁は走り 1 文（族 `ECtx` / `EOk`、`Rq` も予算も無い）
 
 文脈の形を `(k, ks)` で持つ。内側から「1 の枠 `k` 枚」「2 の枠」
 「1 の枠 `ks.head` 枚」「2 の枠」…、一番外は `fone V`（`JkT V`、`GOK V`）。
 
     ECtx 0 []        D := ∃ V, D = [fone V] ∧ JkT V ∧ GOK V
     ECtx (k+1) ks    D := D = D' ++ [fone U] ∧ ECtx k ks D' ∧ JkA U ∧ EOk k ks U
-    ECtx 0 (k'::ks)  D := D = D' ++ [ftwo N] ∧ ECtx k' ks D' ∧ JkA N ∧ ∀ j, EOk j ks N
+    ECtx 0 (k'::ks)  D := D = D' ++ [ftwo N] ∧ ECtx k' ks D' ∧ JkA N ∧ EOk k' ks N
     EOk k ks X := ∀ D, ECtx k ks D → GOK (plug D X)
 
-停止性は `(ks.length, k)` の辞書式。2 の枠でリストが 1 短くなるので、その木の
-条件を「梯子の深さ `j` について全称」にしても回る。
+停止性は `(ks.length, k)` の辞書式。`Rq` も予算も無い。
 
-    EAll X := ∀ k ks, EOk k ks X
-    ENil   := ∀ k ks, EOk k ks nil          ★これ 1 本
+    ERun := ∀ k' ks, EOk 0 (k' :: ks) nil       ★これ 1 本
 
-    EAll_of_ENil : ENil → ∀ X, JkA X → EAll X
-    APzAll_of_ENil → GOKall → R375m (6,1,0) / (6,2,0) ∈ W 0
+    ENil_of_ERun → EAll_of_ENil → APzAll_of_ENil → GOKall
+      → R375m (6,1,0) / (6,2,0) ∈ W 0
 
-木の構造帰納で `one` / `two` は形を伸ばすだけ、`pay` は両側とも緑。
-だから残るのは**空木**だけ。
+言葉で言うと「**空木が 2 の記録の直上で良い**」。語では 2 の記録が 2 つ続く走り。
 
 ## 緑になっている還元
 
-    底 (0, [])       : `EOk 0 [] X ↔ APz X`（`EOk_base_APz`）
-    荷 (k+1, ks)     : `PS_consE` / `EOk_pay`
-    荷 (0, [])       : `EOk_pay_base`
-    荷 (0, k'::ks)   : `PZ_consE` / `EOk_payT`（鎖の強さは `EOk_two` から）
-    裸の 2 (k+1,ks)  : `EOk_twoNil` / `EOk_twoNil_base`
-    one / two        : `EOk_one` / `EOk_two`（`plug` の付け替えだけ、予算なし）
-    `EAll_pay` / `EAll_of_ENil`
+    底 (0, [])      : `EOk 0 [] X ↔ APz X`（`EOk_base_APz`）/ `EOk_nil_base`
+    荷 どの形でも   : `EOk_payA`（`PS_consE` / `PZ_consE` / `APz_pay`）
+    空木 (k+1, ks)  : `EOk_nilF`（`APnil_gen0` + 荷）
+    one / two       : `EOk_one` / `EOk_two`（`plug` の付け替えだけ、予算なし）
+    `EAll_pay` / `EAll_of_ENil` / `ENil_of_ERun`
 
-## `ENil` の中で残っている 2 つ
+## 何が足りないか
 
-    (0, [])                          : `EOk_nil_base`   ★緑
-    (k+1, ks)、下が 1 の枠止まりか底 : `ENil_fone_ok`   ★緑
-    (k+1, ks)、下が 2 の枠止まり     : 枠の木の荷が「∀ 形」で要る
-    (0, k'::ks)                      : 走り ← 本丸
+`GOK_twoTwoNilW_gen` の階段 `nstN2 N' N k` は `[fone N, ftwo N']` を 1 段ずつ
+足すので、形が `(0, k'::ks) → (0, 1::k'::ks) → …` と**リストごと伸びる**。
+族の条件は `(·, ks)` の形しかくれない。
 
-## なぜ 2 の枠止まりだけ残るか
+1 の枠の塔（`(fone N)^m`）は形が `(k+m, ks)` に伸びるだけなので、
+`EOk_twoNil` が `∀ j, EOk j ks N` を**補題の仮定**で取れば覆える。
+走りの塔だけ覆えない。
 
-`EOk_twoNil`（1 の枠止まり）の塔は `(fone N)^m` で形が `(k+m, ks)` に伸びるだけ。
-族の条件 `∀ j, EOk j ks N` でちょうど覆える。
+## 族の条件の強さのトレードオフ（2026-09-12 に実測）
 
-走りの塔（`GOK_twoTwoNilW_gen` の `nstN2 N' N k`）は `[fone N, ftwo N']` を
-1 段ずつ足すので、形が `(0, k'::ks) → (0, 1::k'::ks) → (0, 1::1::k'::ks) → …` と
-**リストごと伸びる**。族が保証するのは `(·, ks)` の形だけなので届かない。
+2 の枠の側条件を `∀ j, EOk j ks N`（強い）にすると:
+- `EOk_twoNil` が使えて `nil` at `(0, k'::ks)`（`k' ≥ 1`）が緑
+- 代わりに `PZ_consE` が「∀ 形」の仮定を要求し、`EOk_nilF`（枠の木の荷）が届かない
+
+1 つの形（弱い）にすると:
+- `PZ_consE` も `EOk_nilF` も緑。壁は `ERun` 1 本にまとまる
+- 代わりに `nil` at `(0, k'::ks)` が全部壁になる
+
+両方取るには 1 の枠の条件も形で場合分けして強める必要がある
+（`ECtx 1 (k''::ks'')` だけ `∀ j, EOk 0 (j::ks'') U`。停止性は
+`(|ks''|+1, 0) < (|ks''|+1, 1)` で保たれる）。ただし `PS_consE` の鎖に
+同じ強さが要るので、そこが次の検討点。
 
 ## 他の言い方（全部同値、緑の還元あり）
 
