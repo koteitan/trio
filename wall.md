@@ -44,6 +44,26 @@
 `[fone ·, ftwo N, ftwo nil]` の **3 枠**伸びる。`WCtx` は 2 の枠が連続する
 文脈を持てないのでここで詰まる。`HGx` なら持てるので、`GNilO` から出る見込み。
 
+## `LOk` の梯子では鎖の階段が閉じる（緑・無条件）
+
+    LOk k X := ∀ D, StkOk k D → GOK (plug D X)
+    StkOk : `GCtx` の上に `ftwo N` が 1 枚、その上に 1 の枠が `k` 枚
+
+    QL Bs := ∀ k, LOk (k+1) (FLr Bs)
+    QL_all : ∀ Bs, (∀ C ∈ Bs, Bok C) → QL Bs      ★仮定なし
+
+`QFL`（`GBase` の文脈）で残っていた `B = []`（鎖の右端に裸の 2 の記録）が、
+`LOk_twoN`（既存の緑）でそのまま閉じる。**塔の条件が梯子の深さについて
+全称**だからで、これが `SelfW`（自分の上に積み続ける）を解く唯一の既存の型。
+
+    LOk (k+1)（1 の枠が 1 枚以上）: 鎖も塔も緑
+    LOk 0    （2 の枠の直上）     : `two nil nil` だけ緑 ← **ここが走りの壁**
+
+`GOK T → R341 ++ jk1 2 T ∈ W 0` なので `GOK (one nil (two nil X))` は
+`R373 ++ jk1 4 X`。`R375m = R373 (5,2,0)` に届くには `X = two nil Y`
+（`Y ≠ nil`）が要り、それが `LOk 0` の壁。今回出た行列
+（`R375m (5,1,0)(6,2,0)…`）は `bms -c` で証明済みの最大より小さい。
+
 ## 2 つの道は同じ壁（緑）
 
     WPd_of_GOKall : GOKall → ∀ ks Z, FrmN ks Z → WPd ks Z
