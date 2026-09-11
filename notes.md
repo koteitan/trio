@@ -21976,3 +21976,36 @@ Acc（DM）帰納でほどける:
 つまり「文脈なしの 2 文」は**壁の最短の言い方**であって、証明には結局
 文脈版（`GAll` ⟺ `GNilO ∧ GNilT ∧ 底`）が要る。両者は同値なので、
 どちらで攻めてもよい。測度が最後の問題なのは変わらない。
+
+## 追記300 (2026-09-11): 壁は「記録の直上にまた記録」4 文
+
+    APz M   := ∀ U, JkT U → GOK U → GOK (one U M)
+    APzO2 W := ∀ M, JkA M → APz M → APz (one M W)
+    APzT2 W := ∀ M, JkA M → APz M → APz (two M W)
+
+`W` の構造帰納で
+
+| `W` | `APzO2 W` | `APzT2 W` |
+|---|---|---|
+| `nil` | `APzO2_nil`（**無条件で緑**） | `APz_twoNil`（`APzOne` から） |
+| `pay Z Y` | `APzO2_pay`（荷の W 帰納） | `APzT2_pay`（同） |
+| `one Z T` | 残り `APzO2One` | 残り `APzT2One` |
+| `two Z T` | 残り `APzO2Two` | 残り `APzT2Two` |
+
+`T = nil` は緑（`APzO2_oneNil` / `APzT2_oneNil`）。`APnil_gen0` を
+`[fone U, fone M]` / `[fone U, ftwo M]` で使い、荷は `*_pay` から出す。
+
+`APz_twoNil` の中身: `two V nil = RunS ([] ++ [V])` なので
+`GOK_oneUV_RunSB [] [] V U` が使える。階段の `m+1` 段目は
+`one U (ABt [] V m)` で、`ABt [] V m` は `V` の塔 `one V (one V (… V))`。
+塔の `APz` は `APzOne` を `m` 回当てるだけ。
+
+### 残っているのは深さ
+
+4 文はどれも「記録を 1 枚剥がして深さ 1 の文脈へ」進む形。`T = nil` なら
+`APnil_gen0` で閉じるが、`T ≠ nil` だと文脈が深くなる。文脈が縮むのは
+荷のところだけで、そこで木が任意に戻る。`（木, 文脈）`のどちらの辞書式
+順序でも割れるのは追記296 と同じ。
+
+文脈なしの言い方（`APz`）と文脈つきの言い方（`GAll` / `GNilO` / `GNilT`）は
+同値なので、どちらで攻めてもよい。

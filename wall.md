@@ -9,72 +9,57 @@
 
 木では `bdA [2,0]`（幅 2 のブロックの上に裸の 1 の枠）を台座 `R341` の上に置いたもの。
 
-## 壁は 1 文
+## 壁は文脈なしの 4 文
 
-    OSib D X := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (one M X))
-    TSib D X := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (two M X))
+    APz M   := ∀ U, JkT U → GOK U → GOK (one U M)
+    APzO2 W := ∀ M, JkA M → APz M → APz (one M W)
+    APzT2 W := ∀ M, JkA M → APz M → APz (two M W)
 
-    HGx [fone nil]
-    HGx ctx → JkA A → GOK (plug ctx A) → HGx (ctx ++ [fone A])
-    HGx ctx → JkA A → GOK (plug ctx A) → HGx (ctx ++ [ftwo A])
+    APzO2One := ∀ Z T, JkA Z → JkA T → APzO2 Z → APzO2 T → APzO2 (one Z T)
+    APzO2Two := ∀ Z T, JkA Z → JkA T → APzO2 Z → APzO2 T → APzO2 (two Z T)
+    APzT2One := ∀ Z T, JkA Z → JkA T → APzT2 Z → APzT2 T → APzT2 (one Z T)
+    APzT2Two := ∀ Z T, JkA Z → JkA T → APzT2 Z → APzT2 T → APzT2 (two Z T)
 
-    GNilO := ∀ D, HGx D → OSib D nil      ★これ 1 本
-    GNilT := ∀ D, HGx D → TSib D nil
+    R375m61_of_APz4 : 4 つから R375m (6,1,0) ∈ W 0
 
-    GNilO → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
+どれも「記録の直上にまた記録がある」形。語で見ると `(l+1,r,0) … (l+2,r',0)` で
+高さが 1 ずつ上がる列、つまり塔。
 
-族の述語（`APd` / `WPd` / `WFd` / `WGd`）を文脈の中の木に要求していたのが
-充足可能性の壁だった。`HGx` の側条件は `GOK` だけなので、それは消えた。
+## 同値な言い方
 
-## 還元の地図（`GNilO` / `GNilT` を仮定に置いたとき）
+    APzAll := ∀ M, JkA M → APz M
+    GOKall := ∀ T, JkT T → GOK T                （= この符号化での z<2 の停止性）
+    GAll   := ∀ F, HGx F → ∀ Z, JkA Z → GOK (plug F Z)
+    GNilO  := ∀ D, HGx D → OSib D nil     GNilT := ∀ D, HGx D → TSib D nil
 
-| 場合 | 道具 | 状態 |
-|---|---|---|
-| `GNilO`（`D` が 1 の枠止まり） | `APnil_gen0` + `PS_cons` + `GSib_tree` | 緑 `GNilO_fone` |
-| `GNilO`（`D` が 2 の枠止まり） | `APnil_gen0` + `PZ_cons` + `GSib_tree` | 緑 `GNilO_ftwo` |
-| `GNilO`（`D = [fone nil]`） | `GOK_oneOneNil` | `APz M` に落ちる `GNilO_base` |
-| `GNilT`（`D` が 1 の枠止まり） | `TSib_nil_of_SelfW` + `SelfW_HGx` | 緑 `GNilT_fone` |
-| `GNilT`（`D` が 2 の枠止まり） | `GAll_of_GNils` | 緑（走りも含めて出る） |
+    APzAll ⟺ GOKall,  GAll ⟺ GNilO ∧ GNilT ∧ 底,  GOKall → GAll
 
-## 還元はもう終わっている
+## 緑になっている還元
 
-    GAll := ∀ F, HGx F → ∀ Z, JkA Z → GOK (plug F Z)
-
-    GAll_of_GNils : GNilO → GNilT → (∀ Z, JkA Z → GOK (one nil Z)) → GAll
-    GNilO_of_GAll / GNilT_of_GAll / GAllBase_of_GAll
-
-つまり
-
-    GAll ⟺ GNilO ∧ GNilT ∧ (∀ Z, JkA Z → GOK (one nil Z))
-
-で、`GAll` はこの符号化での z < 2 の停止性そのもの。どの場合も他の場合へ
-還元できるので、**これ以上還元することは無い**。残っているのは整礎な測度だけ。
-
-## 緑の部品
-
-    HFone_of_GNilO / R375m61_of_GNilO
-    GSib_tree（木の構造帰納）/ SelfW_HGx（自分の上に積み続ける）
-    hangG_fone / hangG_ftwo（荷の還元）
-    OSib_one / OSib_two / TSib_one / TSib_two（plug の付け替えだけ）
-    PS_cons / PZ_cons（荷の W 帰納、CtxJT だけで回る）
-    PS_consF / TSibF_pay（兄弟を鎖 OChain / TChain に制限した版）
-    HCx / HDx / TowHCx / QH0 / QFL0_of_HFone（幅 0 のブロックの塔）
-    QFL_cons（鎖の入れ子帰納法、無条件）/ QFL_all / Pay2_of_QFL0
-    GOK_oneUV_RunSB（階段）/ GOK_appJ_tow（塔は文脈を伸ばすだけ）
-    W0_acc（荷の展開 1 手は `W 0` の上で整礎）
+    GOKall_of_APzAll : 木の構造帰納。TopOk があるので `two` は字の先頭段に来られず、
+                       nil（GOK_nil）/ pay（AY0）/ one（APz を U = N に当てる）の 3 つ
+    APzAll_of_steps  : APzOne ∧ APzTwo → APzAll
+    APzO2_nil        : 無条件で緑（APz_oneNil ← GOK_oneOneNil）
+    APzO2_pay        : 荷の W 帰納（dupJs0 / innerJs0、鎖は itJ）
+    APzT2_pay        : 荷の W 帰納（dupJt0 / innerJt0、鎖は twoIt）
+    APz_twoNil       : APzT2 nil ⟸ APzOne（two V nil = RunS [V] の階段、塔は APzOne）
+    APzO2_oneNil     : APzO2 (one Z nil) ⟸ APzO2 Z
+    APzT2_oneNil     : APzT2 (one Z nil) ⟸ APzT2 Z
+    GSib_tree / SelfW_HGx / hangG_fone / hangG_ftwo / GNilO_fone / GNilO_ftwo / GNilT_fone
+    PS_cons / PZ_cons / PS_consF / TSibF_pay
+    QFL_cons / QFL_all / Pay2_of_QFL0 / TowHCx / QH0
+    GOK_oneUV_RunSB（階段）/ APnil_gen0（裸の 1 の記録）/ W0_acc
 
 ## 測度（未解決）
 
-`GNilO (D ++ [fone V])` ⟸ `GNilO / GNilT (D ++ M の背骨の枠)`。
-長さは `|D| + 1` → `|D| + h(M)`（`h(M)` は `M` の背骨の記録の本数）。
-`h(M) ≤ 0`（`M` が `nil` か荷だけ）でないと減らない。`M` は兄弟なので任意。
-`（木の大きさ, 文脈の長さ）`のどちらの辞書式順序でも割れる。
+4 文はどれも「記録を 1 枚剥がして深さ 1 の文脈へ」進む。`T = nil` なら
+`APnil_gen0` で閉じる（緑）。`T ≠ nil` だと文脈が深くなり、荷のところで
+文脈が 1 縮んで木が任意に戻る。`（木の大きさ, 文脈の長さ）`のどちらの
+辞書式順序でも割れる。
 
 ## 死んだ道（族）
 
 族 `WPd` / `WFd` / `WGd` は構造的に塞がっている。
 **階段は塔を「予算 1 下げ・幅 1 下げ」で積み、鎖は兄弟を開いて「幅だけ 1 上げ」る。**
 鎖は幅の余裕を 1 消費するのに補充できないので、兄弟条件の下限で必ず割れる。
-`lo(i)` を兄弟条件の下限、`f(w)` を幅 `w` の空木に要る予算とすると
-`f(i+1) ≤ lo(i)`（鎖）と `f(i+1) = lo(i)+1`（階段）で矛盾。
 詳細は notes 追記282〜287。
