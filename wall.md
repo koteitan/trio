@@ -41,9 +41,15 @@ DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を
 
 古い還元（`StkL` / `BdAll` 経由）も残っている:
 
-    R376_of_BdAll : BdAll → 行376
+    R376_of_StkG  : StkG → 行376                  ★語の全称が要らない版
+      StkG  := ∀ n, GoodFb (fun a b => wordJ a b [one nil (stk n)])
+    R376_of_StkL  : StkL → 行376
       StkL  := ∀ n, GOK (one nil (stk n))
+    R376_of_BdAll : BdAll → 行376
       BdAll := ∀ j m, GOK (bdA (replicate m j))    ← j = 0,1 は緑、j ≥ 2 が壁
+
+    StkG は StkL の ws = [] の場合だけ（`StkG_of_StkL`、緑）。行376 に要るのは
+    こちらだけなので、**どの良い語に継いでもよい**という全称は落とせる。
 
 ## 壁の言い方（全部同値、どれも 1 手）
 

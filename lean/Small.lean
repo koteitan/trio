@@ -76720,12 +76720,22 @@ def StkL : Prop := ∀ n : ℕ, GOK (Jk1.one Jk1.nil (stk n))
 
 theorem StkL_of_RunAll (h : RunAll) : StkL := GOK_oneStk_R h
 
-theorem tw_R344_42S (h : StkL) : ∀ n : ℕ,
+/-! ### ★★★★★ `StkL` の「語の全称」は要らない。空語 1 本でよい
+
+`tw_R344_42S` が `StkL` を使うのは `ws = []` のときだけ。だから `GOK`（どの良い語に
+継いでもよい）ではなく、**単字の語の `GoodFb` 1 本**に弱められる。 -/
+
+def StkG : Prop := ∀ n : ℕ, GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)])
+
+theorem StkG_of_StkL (h : StkL) : StkG := by
+  intro n
+  have hG := h n [] WOk_nil GoodFb_wordJ_nil
+  simpa using hG
+
+theorem tw_R344_42G (h : StkG) : ∀ n : ℕ,
     Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
   intro n
-  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
-    h n [] WOk_nil GoodFb_wordJ_nil
-  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := h n
   have hh := rowJ_mem_genF Aok_R338 hG'
   have e : jk1 2 (Jk1.one Jk1.nil (stk n))
       = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
@@ -76735,6 +76745,15 @@ theorem tw_R344_42S (h : StkL) : ∀ n : ℕ,
     simp [jk1]
   rw [Mtw]
   simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+theorem tw_R344_42S (h : StkL) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := tw_R344_42G (StkG_of_StkL h)
+
+/-- ★★★★★★ シート行376 は単字の語 1 本に落ちる（`StkL` より弱い仮定）。 -/
+theorem R376_of_StkG (h : StkG) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42G h)
+
+#print axioms R376_of_StkG
 
 /-- ★★★★★★ シート行376 は `StkL` 1 文に落ちる。 -/
 theorem R376_of_StkL (h : StkL) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
