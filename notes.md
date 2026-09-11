@@ -21485,3 +21485,36 @@ Acc（DM）帰納でほどける:
 
 族（`WPd` / `WFd`）は一切使っていない。使っているのは
 `GoodFb_snoc_dupJt0` / `innerJt0` / `GOK_oneUV_RunSB` / `A2'` だけ。
+
+## 追記289 (2026-09-11): 壁は「良い枠木の上に幅 1 のブロック 1 枚」
+
+    Q0Step := ∀ ctx A, GBase ctx → JkA A → GOK (plug ctx A)
+                → GOK (plug ctx (one A (two nil nil)))
+
+    Q0Step → QFL [] → QFL_all → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
+    （全部緑・族を使わない）
+
+`QFL []` を `GBase` の帰納で割ると
+
+- `base`: `GOK (plug ctxFL nil)` = `GOK (one nil (two nil nil))` = `GOK (bdA [1])` ★緑
+- `ext`:  `GOK (plug (ctx ++ [fone A, ftwo nil]) nil)` = `GOK (plug ctx (one A (two nil nil)))`
+  ＝ `Q0Step`
+
+### `Q0Step` の中身
+
+`GOK_oneUV_RunSB ctx [] nil A` を使うと階段は
+
+    appJ A (UtwP [] nil (m+1)) = one A (UtwP [] nil m)
+    UtwP [] nil m = one nil (one nil (… nil))       幅 0 のブロックの塔
+
+なので `GOK (plug (ctx ++ [fone A] ++ [fone nil]^m) nil)` が要る。
+`m = 0` はすでに `GOK (plug ctx (one A nil))`＝`FoneB` そのもの。
+`FoneB` の展開は（追記285 の bms 実測）全体の縦塔になり荷が要る。
+`APnil_gen0` で荷に落とすと `GOK (plug ctx (pay A C))`。
+ここが残りの円。
+
+### いま使っている道具（族なし）
+
+`A2'` / `GoodFb_snoc_dupJt0` / `GoodFb_snoc_innerJt0` / `GOK_oneUV_RunSB` /
+`APnil_gen0` / `plug_oneTwoBlk` / `appJ_nil_UtwP`。
+`WPd` は `GOK_bdA1`（幅 ≤ 1 の塔）と `WPd_FLr` のためだけに使っている。
