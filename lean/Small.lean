@@ -72577,5 +72577,62 @@ theorem WFd_nilT (hlow : FrLow) : ∀ (k : ℕ) (ks : List (ℕ × ℕ)),
 #print axioms WFd_oneNilF
 #print axioms WFd_nilT
 
+/-! ### 荷の W 順序の整礎性と、平らな荷の鎖
+
+`A2'` は `W 0` の帰納法だが、荷を**リストの中**で回すときは `Acc` の方が扱いやすい。 -/
+
+/-- 荷の展開 1 手。長さ ≤ 1 の行列には前者を作らない（`[]⟦n⟧ = []` を避ける）。 -/
+def Wstep (a b : TrioSeq) : Prop := 2 ≤ b.length ∧ ∃ n : ℕ, 1 ≤ n ∧ a = b⟦n⟧
+
+theorem W0_acc : ∀ M : TrioSeq, M ∈ W 0 → Acc Wstep M := by
+  have key : W 0 ⊆ {M : TrioSeq | Acc Wstep M} := by
+    refine A2' ?_
+    intro M hM
+    simp only [Set.mem_setOf_eq]
+    rcases hM with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · refine Acc.intro M ?_
+      intro a ha
+      exact absurd ha.1 (by omega)
+    · refine Acc.intro M ?_
+      intro a ha
+      obtain ⟨-, n, hn, rfl⟩ := ha
+      have := hnat n hn
+      simpa using this
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro M hM
+  exact key hM
+
+#print axioms W0_acc
+
+/-- 平らな荷の鎖。頭が**いちばん右**（高さは全部同じ）。
+`jk1 l (FLr [B₁,…,B_m]) = (l+1,2,0) B_m↑(l+2) … (l+1,2,0) B₁↑(l+2)` の向き。 -/
+def FLr : List TrioSeq → Jk1
+  | [] => Jk1.nil
+  | (B :: Bs) => Jk1.two (FLr Bs) (Jk1.pay Jk1.nil B)
+
+theorem JkA_FLr : ∀ (Bs : List TrioSeq), (∀ C ∈ Bs, Bok C) → JkA (FLr Bs)
+  | [], _ => trivial
+  | (B :: Bs), h =>
+      ⟨JkA_FLr Bs (fun C hC => h C (List.mem_cons_of_mem B hC)),
+        trivial, h B List.mem_cons_self⟩
+
+/-- ★★★★★ 平らな荷の鎖は**枠の位置**（1 の枠の直下）ならどの形にも差せる。
+2 の枠の直下（走り）が壁。 -/
+theorem WPd_FLr : ∀ (Bs : List TrioSeq), (∀ C ∈ Bs, Bok C) →
+    ∀ ks : List ℕ, WPd (0 :: ks) (FLr Bs)
+  | [], _, ks => WPd_nilAll (0 :: ks)
+  | (B :: Bs), h, ks => by
+      have hsub : ∀ C ∈ Bs, Bok C := fun C hC => h C (List.mem_cons_of_mem B hC)
+      show WPd (0 :: ks) (Jk1.two (FLr Bs) (Jk1.pay Jk1.nil B))
+      refine WPd_twoOf (k := 0) (JkA_FLr Bs hsub) ?_ ?_
+      · intro q hq
+        have e : (0 : ℕ) :: q ++ ks = 0 :: (q ++ ks) := by simp
+        rw [e]
+        exact WPd_FLr Bs hsub (q ++ ks)
+      · exact WPd_payA (1 :: ks) Jk1.nil (FrmN_nilA _) (WPd_nilAll _) B
+          (h B List.mem_cons_self)
+
+#print axioms WPd_FLr
+
 end Small
 end TRIO
