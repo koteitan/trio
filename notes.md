@@ -22058,3 +22058,48 @@ Acc（DM）帰納でほどける:
 `one M (two Z nil)` の語は裸の 2 の記録で終わるので `GOK_oneUV_RunSB` が使える。
 `APzT2 (two Z nil)` は階段が `RunS ([M] ++ [Z])` になり、兄弟 `M` について
 `APzT2 M` が要るので同じ手が使えない（`APz M` しか手元に無い）。
+
+## 追記302 (2026-09-11): `bdA` 経由の壁 `RunP2` — 1 文で (6,1,0) と (6,2,0)
+
+### 1. `bdA` を剥がすと 1 文になる
+
+    bdA (j :: js)  = one nil (stkP j (bdA js))
+    bdAC C (j::js) = one nil (stkP j (bdAC C js))
+    stkP 0 X = X,  stkP (q+1) X = two nil (stkP q X)
+
+`WPd_step` で頭の 1 の記録を外すと `WPd (0::ks) (stkP j (bdA js))`。
+`j = 0` なら再帰、`j = q+1` なら `WPd_twoOf (k := q)` で
+
+    WPd ((q+1) :: ks) (stkP q (bdA js))
+
+に落ちる。つまり要るのは
+
+    RunP2 := ∀ j k ks X, JkA X → (∀ ks', WPd ks' X) → j ≤ k →
+               WPd ((k+1) :: ks) (stkP j X)
+
+1 文だけ。**`j = 1`, `X = nil` はちょうど既存の `WPd_run`（緑）。**
+`RunP2` は `WPd_run` を「`X = nil` → どこでも良い `X`」
+「`j = 1` → 一般の `j`」に広げたもの。予算条件 `j ≤ k` も `WPd_run` の
+`1 ≤ k` と整合している。
+
+### 2. これ 1 本で両方の行列が出る
+
+    RunP2 → WPd_bdA_all  : ∀ js ks, WPd ks (bdA js)       幅の制限なし
+    RunP2 → WPd_bdAC_all : ∀ C js ks, WPd ks (bdAC C js)
+    RunP2 → Pay2 → R375m (6,1,0) ∈ W 0
+    RunP2 → ∀n GOK (bdA (replicate n 2)) → R375m (6,2,0) ∈ W 0
+
+`WPd_bdA_le1`（幅 ≤ 1）が通っていたのは、`j = 1` のとき `stkP 0 X = X` で
+2 の枠の直上に走りが来なかったから。**幅 2 で初めて `stkP 1` が
+2 の枠の直上に来る**。
+
+### 3. `RunP2` の中身
+
+`j = 1` は `WPd ((k+1)::ks) (two nil X)`、つまり走り `(l+1,2,0)(l+2,2,0)` の
+上に `X` が乗った形。`X = nil` は `WPd_twoTwoGen_run` + `GOK_twoTwoNil_gen`
+（階段 `nstN N i`）で緑。`X ≠ nil` だと語の末尾が `X` になるので
+`GOK_oneUV_genM` の `hVs`（末尾が裸の 2 の記録）を満たさない。
+
+ただし `X = bdA js` なら `bdA` の語の末尾は**裸の記録**（`j₀ ≥ 1` なら
+2 の記録、`j₀ = 0` なら 1 の記録）なので、階段に乗る見込みがある。
+次の一手はここ。
