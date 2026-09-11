@@ -72187,7 +72187,8 @@ theorem GOK_bdA_two : GOK (Jk1.one Jk1.nil (stk 2)) := by
 
 theorem WFd_chainF {k i : ℕ} {ks r : List (ℕ × ℕ)}
     (hr : ∀ x ∈ r, x.1 < k) {N T : Jk1} (hJN : JkA N) (hJT : JkA T)
-    (hT : ∀ s : List (ℕ × ℕ), WFd s T)
+    (hT : ∀ k₂ : ℕ, k₂ ≤ k → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
+      WFd ((k₂, i + 1) :: (q ++ (r ++ ks))) T)
     (hNt : ∀ k₂ : ℕ, i ≤ k₂ → k₂ ≤ k → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
       WFd ((k₂, i) :: (q ++ (r ++ ks))) N) :
     ∀ m : ℕ, ∀ k₂ : ℕ, i ≤ k₂ → k₂ ≤ k → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
@@ -72219,7 +72220,7 @@ theorem WFd_chainF {k i : ℕ} {ks r : List (ℕ × ℕ)}
             show WFd ((k₃, 0) :: (q' ++ (q ++ (r ++ ks)))) _
             rw [← List.append_assoc]
             exact h4
-          exact (WFd_ck k₂ 0 (q ++ (r ++ ks)) T).mp (hT _) [] (by simp) U' hU' hUk'
+          exact (WFd_ck k₂ 0 (q ++ (r ++ ks)) T).mp (hT k₂ hk q hq) [] (by simp) U' hU' hUk'
             [twoIt N T m] (by simp)
             (by
               intro N' hN'
@@ -72260,7 +72261,8 @@ theorem WFd_chainF {k i : ℕ} {ks r : List (ℕ × ℕ)}
               rw [show q' ++ (r' ++ (q ++ (r ++ ks))) = ((q' ++ r') ++ q) ++ (r ++ ks) from by
                 simp [List.append_assoc]]
               exact h4
-          have h := (WFd_ck k₂ (i' + 1) (q ++ (r ++ ks)) T).mp (hT _) r' hr' U' hU' hUk'
+          have h := (WFd_ck k₂ (i' + 1) (q ++ (r ++ ks)) T).mp (hT k₂ hk q hq)
+            r' hr' U' hU' hUk'
             (Ns' ++ [twoIt N T m]) (by simp [hlen'])
             (by
               intro N' hN'
@@ -72277,7 +72279,8 @@ theorem WFd_chainF {k i : ℕ} {ks r : List (ℕ × ℕ)}
 theorem WFd_dupF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
     {Y₀ : TrioSeq} (hY₀ : Bok Y₀)
     (hY : Bok (Y₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
-    (hprev : ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z Y₀)) :
+    (hprev : ∀ k₂ : ℕ, k₂ ≤ k → ∀ p : List (ℕ × ℕ), (∀ x ∈ p, x.1 < k) →
+      WFd ((k₂, i + 1) :: (p ++ ks)) (Jk1.pay Z Y₀)) :
     WFd ((k, i + 1) :: ks) (Jk1.pay Z (Y₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) := by
   rw [WFd_ck]
   intro r hr U hU hUk Ns hlen hJNs hNt
@@ -72301,7 +72304,18 @@ theorem WFd_dupF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
     refine hNt i (le_refl i) C ?_ k₂ h1 h2 q hq
     rw [← hlen']
     exact AtIx_concat_last Ns' C
-  have hchain := WFd_chainF hr hJC hJTp hprev hNl
+  have hprev' : ∀ k₂ : ℕ, k₂ ≤ k → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
+      WFd ((k₂, i + 1) :: (q ++ (r ++ ks))) (Jk1.pay Z Y₀) := by
+    intro k₂ hk₂ q hq
+    have hb : ∀ x ∈ q ++ r, x.1 < k := by
+      intro x hx
+      rcases List.mem_append.mp hx with h1 | h1
+      · exact hq x h1
+      · exact hr x h1
+    have h2 := hprev k₂ hk₂ (q ++ r) hb
+    rw [List.append_assoc] at h2
+    exact h2
+  have hchain := WFd_chainF hr hJC hJTp hprev' hNl
   rw [WFd_iff]
   intro ctx hc
   have hrun : ∀ W X : Jk1, RunP (Ns' ++ [W]) X = RunP Ns' (Jk1.two W X) := by
@@ -72328,7 +72342,8 @@ theorem WFd_dupF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
         have hji : j = i := by rw [h5, hlen']
         subst hji
         exact hchain n' k₂ h1 h2 q hq
-    have h2 := (WFd_ck k i ks (Jk1.pay Z Y₀)).mp (hprev _) r hr U hU hUk
+    have h2 := (WFd_ck k i ks (Jk1.pay Z Y₀)).mp (hprev k (le_refl k) [] (by simp))
+      r hr U hU hUk
       (Ns' ++ [twoIt C (Jk1.pay Z Y₀) n']) (by simp [hlen'])
       (by
         intro N hN
@@ -72346,7 +72361,7 @@ theorem WFd_dupF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
 theorem WFd_innerF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
     {Y : TrioSeq} (hYb : Bok Y) (hlen2 : 2 ≤ Y.length)
     (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
-    (hIH : ∀ n : ℕ, 1 ≤ n → ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z (Y⟦n⟧))) :
+    (hIH : ∀ n : ℕ, 1 ≤ n → WFd ((k, i + 1) :: ks) (Jk1.pay Z (Y⟦n⟧))) :
     WFd ((k, i + 1) :: ks) (Jk1.pay Z Y) := by
   rw [WFd_ck]
   intro r hr U hU hUk Ns hlen hJNs hNt
@@ -72372,31 +72387,50 @@ theorem WFd_innerF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
     exact WFtx_JkT (r ++ ks) ctx hc _
       (FrmF_one (r ++ ks) U _ hU (JkA_RunP _ hJNs ⟨hZ, hYb⟩))
   · intro n hn
-    have h2 := (WFd_ck k i ks (Jk1.pay Z (Y⟦n⟧))).mp (hIH n hn _) r hr U hU hUk
+    have h2 := (WFd_ck k i ks (Jk1.pay Z (Y⟦n⟧))).mp (hIH n hn) r hr U hU hUk
       (Ns' ++ [C]) hlen hJNs hNt
     have h3 := (WFd_iff (r ++ ks) _).mp h2 ctx hc
     rw [hrun, hplug] at h3
     exact h3 ws hw hG
 
-/-- ★★★★★★ 荷はどの形でも通る（`Z` が全部の形で通るなら）。 -/
-theorem WFd_payAll : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkT Z →
-    (∀ s : List (ℕ × ℕ), WFd s Z) → ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z Y) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkT Z →
-      (∀ s : List (ℕ × ℕ), WFd s Z) → ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z Y)} := by
+/-- 鎖が実際に要る `T` の形だけ。`k₂ = k`, `p = []` が周囲の形そのもの。 -/
+def PayShp (k i : ℕ) (ks : List (ℕ × ℕ)) (T : Jk1) : Prop :=
+  ∀ k₂ : ℕ, k₂ ≤ k → ∀ p : List (ℕ × ℕ), (∀ x ∈ p, x.1 < k) →
+    WFd ((k₂, i + 1) :: (p ++ ks)) T
+
+theorem PayShp_here {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (h : PayShp k i ks Z) :
+    WFd ((k, i + 1) :: ks) Z := h k (le_refl k) [] (by simp)
+
+/-- 鎖で形が伸びても閉じている。 -/
+theorem PayShp_shift {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (h : PayShp k i ks Z)
+    (k₂ : ℕ) (hk₂ : k₂ ≤ k) (p : List (ℕ × ℕ)) (hp : ∀ x ∈ p, x.1 < k) :
+    PayShp k₂ i (p ++ ks) Z := by
+  intro k₃ hk₃ p' hp'
+  have hb : ∀ x ∈ p' ++ p, x.1 < k := by
+    intro x hx
+    rcases List.mem_append.mp hx with h1 | h1
+    · have := hp' x h1; omega
+    · exact hp x h1
+  have h2 := h k₃ (by omega) (p' ++ p) hb
+  rw [List.append_assoc] at h2
+  exact h2
+
+/-- ★★★★★★ 幅 ≥ 1 の入り目の荷。`Z` は鎖が要る形だけでよい。 -/
+theorem WFd_payF : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkA Z →
+    ∀ (k i : ℕ) (ks : List (ℕ × ℕ)), PayShp k i ks Z →
+      WFd ((k, i + 1) :: ks) (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkA Z →
+      ∀ (k i : ℕ) (ks : List (ℕ × ℕ)), PayShp k i ks Z →
+        WFd ((k, i + 1) :: ks) (Jk1.pay Z Y)} := by
     refine A2' ?_
     intro Y hY
     simp only [Set.mem_setOf_eq]
-    intro hYb Z hZT hZk s
-    rcases s with _ | ⟨e, ks⟩
-    · exact (WFd_bnil _).mpr (AY0 Y hYb Z hZT ((WFd_bnil Z).mp (hZk [])))
-    obtain ⟨k, w⟩ := e
-    rcases w with _ | i
-    · exact WFd_payT k ks Z hZT.1 (hZk _) Y hYb
+    intro hYb Z hZ k i ks hZs
     by_cases hshort : Y.length ≤ 1
     · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
       · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
         subst hnil0
-        exact WFd_congr _ (fun l => (jk1_pay_nil l Z).symm) (hZk _)
+        exact WFd_congr _ (fun l => (jk1_pay_nil l Z).symm) (PayShp_here hZs)
       · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
         have hc0 : c.1 = 0 := hYb.root
         obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
@@ -72405,9 +72439,9 @@ theorem WFd_payAll : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkT Z →
         have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
             = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
         rw [e2]
-        refine WFd_dupF hZT.1 Bok_nil (by rw [← e2]; exact hYb) ?_
-        intro s'
-        exact WFd_congr _ (fun l => (jk1_pay_nil l Z).symm) (hZk s')
+        refine WFd_dupF hZ Bok_nil (by rw [← e2]; exact hYb) ?_
+        intro k₂ hk₂ p hpb
+        exact WFd_congr _ (fun l => (jk1_pay_nil l Z).symm) (hZs k₂ hk₂ p hpb)
     have hlen2 : 2 ≤ Y.length := by omega
     have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
     rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
@@ -72432,23 +72466,34 @@ theorem WFd_payAll : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkT Z →
         rw [hop] at hdl
         simp only [Set.mem_setOf_eq] at hdl
         have hdb : Bok Y.dropLast := Bok_dropLast hYb
-        have hprev : ∀ s' : List (ℕ × ℕ), WFd s' (Jk1.pay Z Y.dropLast) :=
-          hdl hdb Z hZT hZk
         rw [hsplit]
-        exact WFd_dupF hZT.1 hdb (by rw [← hsplit]; exact hYb) hprev
+        refine WFd_dupF hZ hdb (by rw [← hsplit]; exact hYb) ?_
+        intro k₂ hk₂ p hpb
+        exact hdl hdb Z hZ k₂ i (p ++ ks) (PayShp_shift hZs k₂ hk₂ p hpb)
       · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
             entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
-        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
-        refine WFd_innerF hZT.1 hYb hlen2 hp ?_
-        intro n hn s'
+        have hpar := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        refine WFd_innerF hZ hYb hlen2 hpar ?_
+        intro n hn
         have hh := hnat n hn
         simp only [Set.mem_setOf_eq] at hh
-        exact hh (Bok_oper hYb hn) Z hZT hZk s'
+        exact hh (Bok_oper hYb hn) Z hZ k i ks hZs
     · exact absurd hm (Nat.not_lt_zero mm)
-  intro Y hYb Z hZT hZk s
-  exact key hYb.mem hYb Z hZT hZk s
+  intro Y hYb Z hZ k i ks hZs
+  exact key hYb.mem hYb Z hZ k i ks hZs
 
-#print axioms WFd_chainF
+/-- 全部の形で通る版（`WFd_oneNilAll` 用）。 -/
+theorem WFd_payAll (Y : TrioSeq) (hY : Bok Y) (Z : Jk1) (hZT : JkT Z)
+    (hZk : ∀ s : List (ℕ × ℕ), WFd s Z) : ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z Y) := by
+  intro s
+  rcases s with _ | ⟨e, ks⟩
+  · exact (WFd_bnil _).mpr (AY0 Y hY Z hZT ((WFd_bnil Z).mp (hZk [])))
+  obtain ⟨k, w⟩ := e
+  rcases w with _ | i
+  · exact WFd_payT k ks Z hZT.1 (hZk _) Y hY
+  · exact WFd_payF Y hY Z hZT.1 k i ks (fun k₂ _ p _ => hZk _)
+
+#print axioms WFd_payF
 #print axioms WFd_payAll
 
 /-! ### 残りの隙間はちょうど「枠」だけ
