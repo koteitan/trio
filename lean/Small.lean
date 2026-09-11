@@ -73401,12 +73401,14 @@ theorem twoIt_FLrZ (Z : Jk1) : ∀ (n : ℕ) (B : TrioSeq) (Bs : List TrioSeq),
 `ctx` の最後の枠を外すと節は `two nil (pay A C)` で、荷 `C` の W 帰納が回る。
 `C = []` の場合は `two M (pay Z []) ≅ two M Z` なので、残るのは
 
-    ZnilStep : GOK (plug ctx M) → GOK (plug ctx (two M Z))
+    ZAppend ctx Z : ∀ M, GOK (plug ctx M) → GOK (plug ctx (two M Z))
 
-「`M` の右に 2 の記録を 1 本足して、その上に `Z` を置く」1 手だけ。 -/
+「2 の記録の左の兄弟を `nil` から一般の `M`（鎖の前置き）に広げる」1 手だけ。 -/
 
-def ZnilStep : Prop := ∀ (ctx : List Frm), CtxJT ctx → ∀ (Z M : Jk1), JkA Z → JkA M →
-  GOK (plug ctx M) → GOK (plug ctx (Jk1.two M Z))
+/-- `ctx` と `Z` を固定した「2 の記録の左の兄弟を `M` に一般化する」1 手。
+`M = nil` の場合は手元にあることが多いので、本当の壁は `M ≠ nil`（鎖の前置き）。 -/
+def ZAppend (ctx : List Frm) (Z : Jk1) : Prop :=
+  ∀ M : Jk1, JkA M → GOK (plug ctx M) → GOK (plug ctx (Jk1.two M Z))
 
 theorem jk1_two_payZnil (M Z : Jk1) (l : ℕ) :
     jk1 l (Jk1.two M (Jk1.pay Z ([] : TrioSeq))) = jk1 l (Jk1.two M Z) := by
@@ -73424,23 +73426,24 @@ theorem PZ_chain {ctx : List Frm} {Z : Jk1} (hZ : JkA Z)
   | zero => exact ⟨hGM, hM⟩
   | succ n ih => exact ⟨hIH _ ih.2 ih.1, ⟨ih.2, hZ, hB₀⟩⟩
 
-/-- ★★★★★★ 荷 `B` の W 帰納。残り 1 手 `ZnilStep` だけ。 -/
-theorem PZ_cons (h : ZnilStep) : ∀ (B : TrioSeq), Bok B →
-    ∀ (ctx : List Frm), CtxJT ctx → ∀ (Z M : Jk1), JkA Z → JkA M →
+/-- ★★★★★★ 荷 `B` の W 帰納。残り 1 手は `ZAppend ctx Z`（兄弟の一般化）だけ。 -/
+theorem PZ_cons : ∀ (B : TrioSeq), Bok B →
+    ∀ (ctx : List Frm), CtxJT ctx → ∀ (Z : Jk1), JkA Z → ZAppend ctx Z →
+    ∀ M : Jk1, JkA M →
       GOK (plug ctx M) → GOK (plug ctx (Jk1.two M (Jk1.pay Z B))) := by
   have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ (ctx : List Frm), CtxJT ctx →
-      ∀ (Z M : Jk1), JkA Z → JkA M →
+      ∀ (Z : Jk1), JkA Z → ZAppend ctx Z → ∀ M : Jk1, JkA M →
         GOK (plug ctx M) → GOK (plug ctx (Jk1.two M (Jk1.pay Z B)))} := by
     refine A2' ?_
     intro B hBw
     simp only [Set.mem_setOf_eq]
-    intro hBb ctx hc Z M hZ hM hGM
+    intro hBb ctx hc Z hZ h M hM hGM
     by_cases hshort : B.length ≤ 1
     · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
       · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
         subst hnil0
         exact GOK_congr (fun l => jk1_plug_congr ctx
-          (fun l' => (jk1_two_payZnil M Z l').symm) l) (h ctx hc Z M hZ hM hGM)
+          (fun l' => (jk1_two_payZnil M Z l').symm) l) (h M hM hGM)
       · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
         have hc0 : c.1 = 0 := hBb.root
         obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
@@ -73452,7 +73455,7 @@ theorem PZ_cons (h : ZnilStep) : ∀ (B : TrioSeq), Bok B →
             GOK (plug ctx (Jk1.two M' (Jk1.pay Z ([] : TrioSeq)))) := by
           intro M' hM' hGM'
           exact GOK_congr (fun l => jk1_plug_congr ctx
-            (fun l' => (jk1_two_payZnil M' Z l').symm) l) (h ctx hc Z M' hZ hM' hGM')
+            (fun l' => (jk1_two_payZnil M' Z l').symm) l) (h M' hM' hGM')
         have hch := PZ_chain hZ Bok_nil hIH0 hM hGM
         rw [e2]
         intro ws hw hG
@@ -73485,7 +73488,7 @@ theorem PZ_cons (h : ZnilStep) : ∀ (B : TrioSeq), Bok B →
         have hdb : Bok B.dropLast := Bok_dropLast hBb
         have hIH0 : ∀ M' : Jk1, JkA M' → GOK (plug ctx M') →
             GOK (plug ctx (Jk1.two M' (Jk1.pay Z B.dropLast))) :=
-          fun M' hM' hGM' => hdl hdb ctx hc Z M' hZ hM' hGM'
+          fun M' hM' hGM' => hdl hdb ctx hc Z hZ h M' hM' hGM'
         have hch := PZ_chain hZ hdb hIH0 hM hGM
         rw [hsplit]
         intro ws hw hG
@@ -73501,10 +73504,10 @@ theorem PZ_cons (h : ZnilStep) : ∀ (B : TrioSeq), Bok B →
         intro n hn
         have hh := hnat n hn
         simp only [Set.mem_setOf_eq] at hh
-        exact hh (Bok_oper hBb hn) ctx hc Z M hZ hM hGM ws hw hG
+        exact hh (Bok_oper hBb hn) ctx hc Z hZ h M hM hGM ws hw hG
     · exact absurd hm (Nat.not_lt_zero mm)
-  intro B hBb ctx hc Z M hZ hM hGM
-  exact key hBb.mem hBb ctx hc Z M hZ hM hGM
+  intro B hBb ctx hc Z hZ h M hM hGM
+  exact key hBb.mem hBb ctx hc Z hZ h M hM hGM
 
 #print axioms PZ_cons
 
