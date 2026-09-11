@@ -22315,3 +22315,39 @@ Acc（DM）帰納でほどける:
 
 **次の一手**: 1 の枠の条件を弱めて、荷と空木の「1 の枠止まり」側を全部緑にする。
 残るのは 2 の枠止まりの荷（`ZAppend`）1 つになる見込み。
+
+## 追記308 (2026-09-12): 追記307 の「1 の枠の条件を弱める」は誤り。鎖に `EOk` を持ち回る
+
+弱めると荷が出なくなる。`PS_cons` の `Z`（荷を担ぐ木）は**枠の木**で、
+`SAppend D'' Z` には `Z` が族の全部の文脈で良いことが要る。弱めた条件
+（`GOK (plug D' U)` だけ）ではそれが出ない。1 の枠の条件は
+`EOk k ks U`（強い）のままにする。
+
+### 正しい道: 鎖に `EOk` を持ち回る
+
+`PS_cons` の `SAppend ctx Z` が要るのは鎖の要素 `itJ (pay Z B₀) n M` のところ。
+`PS_chain` が鎖を `JkA` つきで作っているので、そこに `EOk k ks` も足す:
+
+    EOk_one : JkA M' → EOk k ks M' → EOk (k+1) ks (pay Z B₀) → EOk k ks (one M' (pay Z B₀))
+
+`EOk (k+1) ks (pay Z B₀)` は**荷が 1 つ小さい**（`B₀ < B`）ので W 帰納の IH。
+だから
+
+    PayE k ks Z B := ∀ ctx, ECtx k ks ctx → ∀ M, JkA M → EOk k ks M →
+                       GOK (plug ctx M) → GOK (plug ctx (one M (pay Z B)))
+
+を `B` の W 帰納で証明すればよい。鎖の要素は必ず**小さい荷**で作られるので、
+`EOk` が IH から出る。そして
+
+    EOk (k+1) ks (pay Z B)  ⟸  PayE k ks Z B
+
+（`ECtx_succ` で割ると枠の木 `U` は `EOk k ks U` を持っている）。
+
+### 次の一手
+
+1. `PS_chainE` / `PS_consE`（`PS_cons` に `EOk` を持ち回る版）を書く。
+2. `EOk_pay : JkA Z → EOk (k+1) ks Z → ∀ B Bok, EOk (k+1) ks (pay Z B)`
+3. `EOk_nil`（1 の枠止まり）: `APnil_gen0` + 上の荷。
+4. 底 `(0, [])` は `ECtx 0 [] D := ∃ V, D = [fone V] ∧ JkT V ∧ GOK V` にして
+   `EOk 0 [] X = APz X` にすると、既存の `APz_nil` / `APz_pay` がそのまま使える。
+5. 残るのは 2 の枠止まりの荷（`ZAppend`）と、走り `(0, 0::ks)` の空木。
