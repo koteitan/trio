@@ -69944,5 +69944,24 @@ theorem R6006_mem : R600 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms SegA_U375a6
 #print axioms R6006_mem
 
+/-! ### ★★★★★ `P(6,0,0)` は走りの底の元（`RunA 0 1`）。対角が全部出る -/
+
+theorem R600_RunA0 : RunA 0 1 R600 :=
+  ⟨0, R338, U375a6, rfl, R600_eq2, LwA_of_Aok Aok_R338, SegA_U375a6⟩
+
+/-- ★★★★★★ `P(6,0,0)(2,2,0)(3,3,1)`（`R348_mem` と同じ形）。 -/
+theorem R6007_mem :
+    R600 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine z1_mem (a := 2) (b := 2) ?_
+  intro n
+  cases n with
+  | zero => simpa [Dtw] using Aok_R600.mem
+  | succ n =>
+      rw [Dtw_eq_DiaV 1 1 (n + 1)]
+      exact RunA0_DiaV R600_RunA0 (n + 1)
+
+#print axioms R600_RunA0
+#print axioms R6007_mem
+
 end Small
 end TRIO
