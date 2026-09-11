@@ -1,77 +1,65 @@
 # 壁
 
 シート行376 `(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0)`。
+証明中の行（#14）も同じ壁から出る。
 
-## いま開いている最小の行列（bms で実測）
+## 目標行までの緑の還元（全部 Lean で緑）
 
-    R375m (6,1,0) = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,1,0)
-    R375m (6,2,0) も同じ壁から出る。
+    R376_of_RunAll : RunAll → R373 (5,3,0) ∈ W 0
+      RunAll := ∀ q ks, APd (true :: ks) (stk q)
+      （全部 nil の走り stk q = (l+1,2,0)(l+2,2,0)...(l+q,2,0) が 1 の枠の直上で良い）
 
-## 壁は走り 1 文（族 `ECtx` / `EOk`、`Rq` も予算も無い）
+    RunAll_of_SNilT : SNilT → RunAll        （走りの長さ q の帰納法 SG_stkS）
+      SNilT := ∀ ks, SG (true :: ks) nil
+    SNilT_of_SPayF  : SPayF → SNilT
+      SPayF := ∀ ks V, JkA V → SG (false::ks) V → SPy (false::ks) V   （2 の枠の直上の荷）
+    SPayF_of_SHtow  : SHtow → SPayF
+      SHtow := ∀ ks V, JkA V → SG (false::ks) V → ∀ D0, SCtx ks D0 →
+                 ∀ N, VCh V N → GOK (plug D0 (two N V))              ★ 最前線
 
-文脈の形を `(k, ks)` で持つ。内側から「1 の枠 `k` 枚」「2 の枠」
-「1 の枠 `ks.head` 枚」「2 の枠」…、一番外は `fone V`（`JkT V`、`GOK V`）。
+    RunAll_of_ZStep : ZStep → RunAll        （別の言い方、同じくらい細かい）
+      ZT   := nil | pay X C | one U X（2 の記録を含まない木）
+      ZStep := ∀ ctx, ZOk ctx → ZG ctx → ZG (ctx ++ [ftwo nil])
 
-    ECtx 0 []        D := ∃ V, D = [fone V] ∧ JkT V ∧ GOK V
-    ECtx (k+1) ks    D := D = D' ++ [fone U] ∧ ECtx k ks D' ∧ JkA U ∧ EOk k ks U
-    ECtx 0 (k'::ks)  D := D = D' ++ [ftwo N] ∧ ECtx k' ks D' ∧ JkA N ∧ EOk k' ks N
-    EOk k ks X := ∀ D, ECtx k ks D → GOK (plug D X)
+    R14_of_SHtow : SHtow → R375m (5,2,0) ∈ W 0   （証明中の行も同じ）
 
-停止性は `(ks.length, k)` の辞書式。`Rq` も予算も無い。
+## `SHtow` の中身
 
-    ERun := ∀ k' ks, EOk 0 (k' :: ks) nil       ★これ 1 本
+`VCh V N` は水平鎖 `N = nil | two N' (pay V Y)`。`N = nil` は緑（`SHtow_nil`）。
+残るのは「2 の記録の左の兄弟を `nil` から鎖 `two N' (pay V Y)` に広げる」1 手。
+語で見ると、同じ高さ `l+1` に 2 の記録が並び、各記録の右に `jk1 (l+1) V` と荷が付く形。
+A2' の複製鎖がこの形を出すので、鎖の右端に `V` を載せた木が要る。
 
-    ENil_of_ERun → EAll_of_ENil → APzAll_of_ENil → GOKall
-      → R375m (6,1,0) / (6,2,0) ∈ W 0
+## 何度も同じところで割れている理由（形のリストが伸びる）
 
-言葉で言うと「**空木が 2 の記録の直上で良い**」。語では 2 の記録が 2 つ続く走り。
+走りの階段は文脈を `[ftwo N] ++ ... ++ [fone ...]` と伸ばす。族の側条件は
+「`ks` に `true` を前置した形」でしか木の良さをくれないのに、階段は
+`false` を前置した形（2 の枠を 1 枚増やした形）を要求する。
+`APd` / `SCtx` / `RCtx` / `ECtx` / `WPd` のどれでもここで割れる。
 
-## 緑になっている還元
+## 既存の族の一覧（新しい族を作る前に必ずここを見る）
 
-    底 (0, [])      : `EOk 0 [] X ↔ APz X`（`EOk_base_APz`）/ `EOk_nil_base`
-    荷 どの形でも   : `EOk_payA`（`PS_consE` / `PZ_consE` / `APz_pay`）
-    空木 (k+1, ks)  : `EOk_nilF`（`APnil_gen0` + 荷）
-    one / two       : `EOk_one` / `EOk_two`（`plug` の付け替えだけ、予算なし）
-    `EAll_pay` / `EAll_of_ENil` / `ENil_of_ERun`
+| 族 | 文脈 | 2 の枠 | 荷 | 空木 | 走り |
+|---|---|---|---|---|---|
+| `APd` / `GCtx` | Bool 列 | `[fone U, ftwo N]` 対で 1 枚 | 緑 | 緑 | 表現できない |
+| `SCtx` / `SG` | Bool 列 | `ftwo nil` 何枚でも | `SPayF` | `SNilT` | `SG_stkS` で長さ帰納（緑） |
+| `RCtx` / `RG` | Bool 列 | `ftwo N` 何枚でも（∀j 条件） | 緑（`RP_of_RG`） | `RG_nil_true` 緑 | `RSp (false::ks)` が偽 |
+| `ZT` / `ZG` | 生 `List Frm` | `ftwo nil` | — | — | `ZStep` |
+| `ECtx` / `EOk` | ℕ×ℕ列 | 1 形 | 緑 | 1 の枠なら緑 | `ERun` |
+| `FCtx` / `FOk` | ℕ | 帰納的閉包 | 緑 | 未 | 緑 |
+| `GCx` / `QOk` | ℕ | 吊るしも側条件 | `QPayAll` | 緑 | 緑 |
+| `HGx` / `GAll` | 生 | `ftwo A`（点ごと `GOK`） | — | `GNilO`/`GNilT` 相互再帰 | — |
+| `RCx` / `RNil` | 生 | `ftwo nil` 何枚でも | `RHang` | `RNil` | `GOK_stk_step`（緑、長さ帰納） |
+| `WPd` / `WFd` | ℕ列（予算） | — | — | — | 予算が鎖の長さに追いつかない（死） |
 
-## 何が足りないか
+`RCx` は `SCtx` の再発見（2026-09-12）。`GOK_stk_RCx` は `SG_stkS` と同じ内容。
 
-`GOK_twoTwoNilW_gen` の階段 `nstN2 N' N k` は `[fone N, ftwo N']` を 1 段ずつ
-足すので、形が `(0, k'::ks) → (0, 1::k'::ks) → …` と**リストごと伸びる**。
-族の条件は `(·, ks)` の形しかくれない。
+## 走りの道具（`GOK` 側、全部緑）
 
-1 の枠の塔（`(fone N)^m`）は形が `(k+m, ks)` に伸びるだけなので、
-`EOk_twoNil` が `∀ j, EOk j ks N` を**補題の仮定**で取れば覆える。
-走りの塔だけ覆えない。
+    GOK_twoNilW_gen    : two N nil          ← 塔 (fone N)^m N
+    GOK_twoTwoNilW_gen : two N (two Wl nil) ← 階段 nstN2 N Wl k
+    GOK_stkW_gen       : two N (stkP p (two nil nil)) ← 階段 nstQ N p k
+    GOK_runGNil_gen    : 一般兄弟の走り（runJ / unR / nstR / snocR_of_tower）
 
-## 族の条件の強さのトレードオフ（2026-09-12 に実測）
-
-2 の枠の側条件を `∀ j, EOk j ks N`（強い）にすると:
-- `EOk_twoNil` が使えて `nil` at `(0, k'::ks)`（`k' ≥ 1`）が緑
-- 代わりに `PZ_consE` が「∀ 形」の仮定を要求し、`EOk_nilF`（枠の木の荷）が届かない
-
-1 つの形（弱い）にすると:
-- `PZ_consE` も `EOk_nilF` も緑。壁は `ERun` 1 本にまとまる
-- 代わりに `nil` at `(0, k'::ks)` が全部壁になる
-
-両方取るには 1 の枠の条件も形で場合分けして強める必要がある
-（`ECtx 1 (k''::ks'')` だけ `∀ j, EOk 0 (j::ks'') U`。停止性は
-`(|ks''|+1, 0) < (|ks''|+1, 1)` で保たれる）。ただし `PS_consE` の鎖に
-同じ強さが要るので、そこが次の検討点。
-
-## 他の言い方（全部同値、緑の還元あり）
-
-    APzAll ⟺ GOKall := ∀ T, JkT T → GOK T
-      ⟺ GNilO ∧ GNilT ∧ 底（HGx 文脈）
-      ⟸ APzO2One ∧ APzO2Two ∧ APzT2One ∧ APzT2Two（文脈なしの 4 文）
-      ⟸ EPayT ∧ ERunNil（族 `ECtx`、いちばん細かい）
-
-    GOKall → WPd 層全部 → RunP2 → RunBdA → bdA 全幅
-    QL_all : 平らな鎖は `LOk` の梯子で無条件に良い（緑）
-
-## 死んだ道（族）
-
-`WPd` / `WFd` / `WGd` は予算が鎖の長さに追いつかない。
-`APd` は `Rq (false::ks) U = TopOk U` が 2 頭の木を弾く。
-`ECtx` はどちらも無いが、走りの塔が形のリストを伸ばすところが残っている。
-詳細は notes 追記282〜287、301、309。
+どれも文脈が `ctx0 ++ [fone V]`（1 の枠止まり）であることを要求する。
+2 の枠止まりの文脈のための道具は無い。

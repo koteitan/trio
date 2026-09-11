@@ -22616,3 +22616,73 @@ W 帰納は「より小さい荷」しかくれない。荷が小さくなる方
 
 ただし `ECtx` を 3 回書き直すことになるので、次のハートビートで
 一度に書き直す。いまの `ERun`（走り 1 文）への還元は緑のまま残す。
+
+## 追記315 (2026-09-12): 走りの長さの帰納法は既にあった（`SG_stkS`）。最前線は `SHtow`
+
+### 1. 今回やったこと（緑）
+
+`GOK_stkW_gen` の階段を `N = nil` で見ると
+
+    nstQ nil p (k+1) = one nil (two nil (stkP p (nstQ nil p k)))
+    two nil (stkP p Y) = stkP (p+1) Y
+
+なので、階段の 1 段は**文脈を `replicate (p+1) (ftwo nil) ++ [fone nil]` だけ
+伸ばして同じ木に戻る**。したがって
+
+- `k` の帰納法: 文脈が伸びるだけ（走りの長さは同じ）
+- `k = 0`: `stkP (p+1) nil = stk (p+1)`、走りが 1 短い
+- 文脈を伸ばす側条件: `GOK (plug D (stk (p+1)))`、やはり 1 短い
+
+の 3 つで閉じ、走りの長さ `q` の帰納法が回る。Lean では
+
+    RCx           : 全部 nil の枠で閉じた文脈の族
+    GOK_stk_step  : stk (p+1) → stk (p+2)（無条件）
+    GOK_stk_RCx   : RNil → ∀ q, stk q
+    R376_of_RNil  : RNil → R373 (5,3,0) ∈ W 0     ← シートの目標行
+    RNil_of_RHang : RHang → RNil（走りの上の荷）
+
+### 2. しかしこれは再発見だった
+
+`Small.lean` には既に
+
+    SCtx / SG / SPy / SF            （2 の枠は `ftwo nil` を何枚でも積める族）
+    SG_stkS (hnt : SNilT) : ∀ q ks, SBs ks → SG ks (stk q)   ← 走り長の帰納法
+    RunAll_of_SNilT : SNilT → RunAll
+
+があり、`RCx` / `GOK_stk_RCx` は `SCtx` / `SG_stkS` と同じ内容。
+`RNil` ≒ `SNilT`、`RHang` ≒ `SPayF`。**族を作る前に既存の族を数えるべきだった。**
+
+### 3. 最前線は `SHtow`
+
+    SPayF_of_SHtow : SHtow → SPayF → SNilT → RunAll → 行376
+    R14_of_SHtow   : SHtow → 証明中の行
+
+    SHtow := ∀ ks V, JkA V → SG (false::ks) V → ∀ D0, SCtx ks D0 →
+               ∀ N, VCh V N → GOK (plug D0 (two N V))
+    VCh V N := N = nil | N = two N' (pay V Y)
+
+`N = nil` は緑（`SHtow_nil`）。残るのは「2 の記録の左の兄弟を `nil` から
+水平鎖に広げる」1 手。`ZStep`（`ZT` = 2 の記録を含まない木、
+`ZG ctx → ZG (ctx ++ [ftwo nil])`）も同じくらい細かい別の言い方。
+
+### 4. `RCtx` 側の実測: 荷と空木は無条件で緑、割れるのは `RSp`
+
+`RCtx (false::ks)` は 2 の枠に `∀ j` 条件を付けているので
+
+    RP_of_RG    : ∀ ks V, JkA V → RG ks V → RP ks V     ★無条件で緑（荷）
+    RG_nil_true : ∀ ks, RG (true::ks) nil               ★無条件で緑
+
+が取れる。割れるのは `RSp ks`（文脈が `ctx0 ++ [fone V]` の形）で、
+`RSp []` と `RSp (true::ks)` は緑、`RSp (false::ks)` は**偽**
+（2 の枠止まりの文脈は 1 の枠で終わらない）。つまり走り。
+
+### 5. 形のリストが伸びるのが本丸（追記309 と同じ結論）
+
+`two N₂ (two N₁ nil)` の階段 `nstN2 N₂ N₁ k` を `RCtx` で回すと、
+文脈が `D'' ++ [ftwo N₂, fone N₁]`（形 `true::false::ks`）に伸びる。
+ところが枠木 `N₂` の条件は `∀ j, RG (replicate j true ++ ks) N₂` で、
+`false` を前置した形をくれない。`APd` / `SCtx` / `ECtx` / `WPd` でも同じ。
+
+**次の一手**: `SHtow` を `GOK_twoPayZ_of` の `htow` の形で直接書く。
+鎖 `two N' (pay V Y)` の右に `V` を載せるので、階段は
+`unR` / `nstR` / `snocR_of_tower`（一般兄弟の走りの道具、緑）が使える可能性がある。
