@@ -44,6 +44,15 @@
 `[fone ·, ftwo N, ftwo nil]` の **3 枠**伸びる。`WCtx` は 2 の枠が連続する
 文脈を持てないのでここで詰まる。`HGx` なら持てるので、`GNilO` から出る見込み。
 
+## 2 つの道は同じ壁（緑）
+
+    WPd_of_GOKall : GOKall → ∀ ks Z, FrmN ks Z → WPd ks Z
+    R375m61_of_GOKall / R375m62_of_GOKall / R375m62_of_APzAll
+
+`GOKall := ∀ T, JkT T → GOK T` から `WPd` 層は全部出る（`WPd_iff` + `WCtx_JkT`）。
+だから `bdA` 経由（`RunBdA` / `StkBlk2`）と裸の記録経由（`GNilO` / `APz…`）は
+同じ壁の別の言い方。開いている 2 つの行列はどちらからでも出る。
+
 ## 一般の停止性としての壁（文脈なしの 4 文）
 
     APz M   := ∀ U, JkT U → GOK U → GOK (one U M)
