@@ -71895,5 +71895,117 @@ theorem Mtwd_BM (j : ℕ) (js : List ℕ) : ∀ n : ℕ,
 #print axioms shiftr01_blkM
 #print axioms Mtwd_BM
 
+/-! ### ★★★★★★ 壁を行列の言葉 1 文に。幅の多重集合の DM で行376 まで -/
+
+theorem BM_row1 : ∀ (js : List ℕ) (t : ℕ), 0 < t → t < (BM js).length →
+    1 ≤ entry (BM js) 1 t
+  | [], t, ht0, htl => R341_row1 t ht0 htl
+  | (j :: js), t, ht0, htl => by
+      show 1 ≤ entry (BM js ++ blkM (2 + hgtB js) j) 1 t
+      rcases Nat.lt_or_ge t (BM js).length with h | h
+      · rw [entry_append_left h]
+        exact BM_row1 js t ht0 h
+      · obtain ⟨k, hk⟩ : ∃ k, t = (BM js).length + k := ⟨t - (BM js).length, by omega⟩
+        subst hk
+        rw [entry_append_right]
+        have hlen : (BM (j :: js)).length
+            = (BM js).length + (blkM (2 + hgtB js) j).length := by
+          show (BM js ++ blkM (2 + hgtB js) j).length = _
+          simp
+        have hkl : k < (blkM (2 + hgtB js) j).length := by omega
+        rw [blkM_len] at hkl
+        cases k with
+        | zero => rw [entry_blkM10]
+        | succ k' =>
+            rw [entry_blkMS1 _ _ k' (by omega)]
+            omega
+
+/-- ★ 壁（行列の言葉）。ブロック列の先に任意の良い行列を吊るせる。 -/
+def HangB : Prop := ∀ (js : List ℕ) (B : TrioSeq), Bok B →
+    BM js ++ shiftr01 (2 + hgtB js + 1) 0 B ∈ W 0
+
+theorem BM_memAok (hang : HangB) : ∀ js : List ℕ, BM js ∈ W 0 ∧ Aok (BM js)
+  | [] => ⟨R341_mem, Aok_R341⟩
+  | (0 :: js) => by
+      obtain ⟨hm, ha⟩ := BM_memAok hang js
+      have hmem : BM (0 :: js) ∈ W 0 := by
+        rw [BM_zero]
+        exact snocd_mem (d := 2 + hgtB js + 1) (by omega) ha.ne ha.deep ha.zroot
+          (Ancd_of_row1 (BM_row1 js) _)
+          (TwD_mem_of_hang (by omega) ha (fun B hB => hang js B hB))
+      refine ⟨hmem, ?_⟩
+      have h2 : BM (0 :: js) = BM js ++ blkM (2 + hgtB js) 0 := rfl
+      rw [h2] at hmem ⊢
+      exact Aok_append_Mid (d := 2 + hgtB js + 2) (by omega) ha (MidD_blkM _ 0) hmem
+  | ((j + 1) :: js) => by
+      obtain ⟨hm, ha⟩ := BM_memAok hang js
+      have htw : ∀ n : ℕ, Mtwd (1 + j) (BM js) (blkM (2 + hgtB js) j) n ∈ W 0 := by
+        intro n
+        rw [Mtwd_BM]
+        exact (BM_memAok hang (List.replicate n j ++ js)).1
+      have hMy : ∀ t, 1 ≤ t → t < (blkM (2 + hgtB js) j).length →
+          entry (blkM (2 + hgtB js) j) 0 t < (2 + hgtB js + 1) + (1 + j) →
+          (∀ i, t < i → i < (blkM (2 + hgtB js) j).length →
+            entry (blkM (2 + hgtB js) j) 0 t < entry (blkM (2 + hgtB js) j) 0 i) →
+          2 ≤ entry (blkM (2 + hgtB js) j) 1 t := by
+        intro t ht1 htl _ _
+        rw [blkM_len] at htl
+        obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
+        rw [entry_blkMS1 _ _ t' (by omega)]
+      have hmem : BM ((j + 1) :: js) ∈ W 0 := by
+        rw [BM_succ]
+        have h := snocYd_mem (Y0 := BM js) (M := blkM (2 + hgtB js) j)
+          (L := 2 + hgtB js + 1) (y := 2) (dl := 1 + j) (BM_ne js)
+          (by simpa using MidD_blkM (2 + hgtB js) j)
+          (by rw [entry_blkM10]; omega) hMy (by omega) (by omega) htw
+        have he : (2 + hgtB js + 1) + (1 + j) = 2 + hgtB js + 2 + j := by omega
+        rw [he] at h
+        exact h
+      refine ⟨hmem, ?_⟩
+      have h2 : BM ((j + 1) :: js) = BM js ++ blkM (2 + hgtB js) (j + 1) := rfl
+      rw [h2] at hmem ⊢
+      exact Aok_append_Mid (d := 2 + hgtB js + 2) (by omega) ha (MidD_blkM _ (j + 1)) hmem
+termination_by js => ((js : List ℕ) : Multiset ℕ)
+decreasing_by
+  all_goals
+    first
+      | exact dm_ws 0 js [] (by simp)
+      | exact dm_ws (j + 1) js [] (by simp)
+      | exact dm_ws (j + 1) js (List.replicate n j)
+          (by
+            intro x hx
+            rw [List.eq_of_mem_replicate hx]
+            omega)
+
+theorem BM_mem (hang : HangB) (js : List ℕ) : BM js ∈ W 0 := (BM_memAok hang js).1
+
+theorem flatten_map_singleton {α : Type _} (f : ℕ → α) : ∀ n : ℕ,
+    ((List.range n).map (fun k => [f k])).flatten = (List.range n).map f
+  | 0 => by simp
+  | (n + 1) => by
+      rw [List.range_succ, List.map_append, List.flatten_append,
+        flatten_map_singleton f n, List.map_append]
+      simp
+
+theorem Mtw_R344_BM (n : ℕ) : Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n = BM [n] := by
+  show R344 ++ _ = R341 ++ blkM 2 n
+  show R341 ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ++ _ = _
+  rw [List.append_assoc]
+  congr 1
+  show ((3, 1, 0) : ℕ × ℕ × ℕ) :: _ = ((3, 1, 0) : ℕ × ℕ × ℕ) :: _
+  congr 1
+  simp only [List.flatMap, shiftr01, List.map_map, Function.comp_def]
+  exact flatten_map_singleton (fun k => ((4 + k, 2, 0) : ℕ × ℕ × ℕ)) n
+
+/-- ★★★★★★ 行列の言葉の 1 文 `HangB` から行376 が出る。 -/
+theorem R376_of_HangB (hang : HangB) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine R376_of_tower ?_
+  intro n
+  rw [Mtw_R344_BM]
+  exact BM_mem hang [n]
+
+#print axioms BM_memAok
+#print axioms R376_of_HangB
+
 end Small
 end TRIO
