@@ -70865,9 +70865,56 @@ theorem WFd_nilF' (k i : ℕ) (hik : i + 1 ≤ k) (ks : List (ℕ × ℕ)) :
 * 形は**幅の列**だけ。予算 `b` は形の外の大域パラメータ。
 * スラック `r`（ブロックを剥がすとき下に入る完成ブロック）の幅は `≤ i`
   （測度の幅の多重集合を減らすため）。
-* 兄弟と 1 の枠の木は**予算を下げて**差し直せる（`b' < b`）。予算が下がるので
-  幅の条件は要らない。だから**ブロックの幅に依存しない**。
+* 1 の枠の木と兄弟は「**予算を下げれば、形のどこにでも幅 `< b` のブロックを
+  挿した形で差し直せる**」（`Ins`）。予算が下がるので幅の条件が要らず、
+  ブロックの幅に依存しない。
 * 測度は lex(予算, 幅の多重集合の DM)。 -/
+
+/-- `ks₂` は `ks` に幅 `< b` のブロックを好きな位置に挿したもの。 -/
+inductive Ins (b : ℕ) : List ℕ → List ℕ → Prop
+  | nil : Ins b [] []
+  | keep {ks ks₂ : List ℕ} (e : ℕ) : Ins b ks ks₂ → Ins b (e :: ks) (e :: ks₂)
+  | ins {ks ks₂ : List ℕ} (e : ℕ) : e < b → Ins b ks ks₂ → Ins b ks (e :: ks₂)
+
+theorem Ins_refl (b : ℕ) : ∀ ks : List ℕ, Ins b ks ks
+  | [] => Ins.nil
+  | (e :: ks) => Ins.keep e (Ins_refl b ks)
+
+theorem Ins_app (b : ℕ) : ∀ (q : List ℕ), (∀ x ∈ q, x < b) → ∀ ks : List ℕ,
+    Ins b ks (q ++ ks)
+  | [], _, ks => by simpa using Ins_refl b ks
+  | (e :: q), hq, ks => by
+      have h1 := Ins_app b q (fun x hx => hq x (by simp [hx])) ks
+      exact Ins.ins e (hq e (by simp)) h1
+
+theorem Ins_mono {b b' : ℕ} (hb : b ≤ b') : ∀ {ks ks₂ : List ℕ}, Ins b ks ks₂ →
+    Ins b' ks ks₂
+  | _, _, Ins.nil => Ins.nil
+  | _, _, (Ins.keep e h) => Ins.keep e (Ins_mono hb h)
+  | _, _, (Ins.ins e he h) => Ins.ins e (by omega) (Ins_mono hb h)
+
+theorem Ins_cons_inv {b e : ℕ} {ks ks₂ : List ℕ} (h : Ins b ks (e :: ks₂)) :
+    (∃ ks' : List ℕ, ks = e :: ks' ∧ Ins b ks' ks₂) ∨ (e < b ∧ Ins b ks ks₂) := by
+  cases h with
+  | keep => exact Or.inl ⟨_, rfl, by assumption⟩
+  | ins => exact Or.inr ⟨by assumption, by assumption⟩
+
+theorem Ins_trans' {b : ℕ} : ∀ {ks₂ ks₃ : List ℕ}, Ins b ks₂ ks₃ →
+    ∀ {ks : List ℕ}, Ins b ks ks₂ → Ins b ks ks₃ := by
+  intro ks₂ ks₃ h2
+  induction h2 with
+  | nil => intro ks h1; exact h1
+  | keep e h2 ih =>
+      intro ks h1
+      rcases Ins_cons_inv h1 with ⟨ks', rfl, h1'⟩ | ⟨he', h1'⟩
+      · exact Ins.keep e (ih h1')
+      · exact Ins.ins e he' (ih h1')
+  | ins e he h2 ih =>
+      intro ks h1
+      exact Ins.ins e he (ih h1)
+
+theorem Ins_trans {b : ℕ} {ks ks₂ ks₃ : List ℕ} (h1 : Ins b ks ks₂) (h2 : Ins b ks₂ ks₃) :
+    Ins b ks ks₃ := Ins_trans' h2 h1
 
 def FrmG : List ℕ → Jk1 → Prop
   | [], U => JkT U
@@ -70888,19 +70935,22 @@ theorem FrmG_nilA (ks : List ℕ) : FrmG ks Jk1.nil := by
   | nil => exact JkT_nil
   | cons b bs => exact trivial
 
+theorem FrmG_itJ : ∀ (ks : List ℕ) {T : Jk1}, JkA T → ∀ (n : ℕ) {X : Jk1},
+    FrmG ks X → FrmG ks (itJ T n X)
+  | [], _, hT, n, _, h => JkT_itJ hT n h
+  | (_ :: _), _, hT, n, _, h => JkA_itJ hT n h
+
 def WGd : ℕ → List ℕ → Jk1 → Prop
   | _, [], V => GOK V
   | b, (0 :: ks), V => ∀ U : Jk1, FrmG ks U → WGd b ks U →
-      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b ks ks₂ → WGd b' ks₂ U) →
       WGd b ks (Jk1.one U V)
   | b, ((i + 1) :: ks), V => ∀ r : List ℕ, (∀ x ∈ r, x ≤ i) →
       ∀ U : Jk1, FrmG (r ++ ks) U → WGd b (r ++ ks) U →
-      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b (r ++ ks) ks₂ → WGd b' ks₂ U) →
       ∀ Ns : List Jk1, Ns.length = i + 1 → (∀ N ∈ Ns, JkA N) →
       (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N) →
+        ∀ ks₂ : List ℕ, Ins b (j :: (r ++ ks)) ks₂ → WGd b' ks₂ N) →
       WGd b (r ++ ks) (Jk1.one U (RunP Ns V))
 termination_by b s _ => (b, ((s : List ℕ) : Multiset ℕ))
 decreasing_by
@@ -70918,41 +70968,33 @@ theorem WGd_bnil (b : ℕ) (V : Jk1) : WGd b [] V ↔ GOK V := by rw [WGd]
 
 theorem WGd_c0 (b : ℕ) (ks : List ℕ) (V : Jk1) :
     WGd b (0 :: ks) V ↔ ∀ U : Jk1, FrmG ks U → WGd b ks U →
-      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b ks ks₂ → WGd b' ks₂ U) →
       WGd b ks (Jk1.one U V) := by
   rw [WGd]
 
 theorem WGd_ck (b i : ℕ) (ks : List ℕ) (V : Jk1) :
     WGd b ((i + 1) :: ks) V ↔ ∀ r : List ℕ, (∀ x ∈ r, x ≤ i) →
       ∀ U : Jk1, FrmG (r ++ ks) U → WGd b (r ++ ks) U →
-      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b (r ++ ks) ks₂ → WGd b' ks₂ U) →
       ∀ Ns : List Jk1, Ns.length = i + 1 → (∀ N ∈ Ns, JkA N) →
       (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N) →
+        ∀ ks₂ : List ℕ, Ins b (j :: (r ++ ks)) ks₂ → WGd b' ks₂ N) →
       WGd b (r ++ ks) (Jk1.one U (RunP Ns V)) := by
   rw [WGd]
-
-#print axioms WGd_ck
-
-/-! ### `WGd` の文脈版 -/
 
 def WGtx : ℕ → List ℕ → List Frm → Prop
   | _, [], ctx => ctx = []
   | b, (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
       WGtx b ks ctx' ∧ FrmG ks U ∧ WGd b ks U ∧
-      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U)
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b ks ks₂ → WGd b' ks₂ U)
   | b, ((i + 1) :: ks), ctx => ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ i) (ctx' : List Frm)
       (U : Jk1) (Ns : List Jk1),
       ctx = ctx' ++ PBlk Ns U ∧ Ns.length = i + 1 ∧ WGtx b (r ++ ks) ctx' ∧
       FrmG (r ++ ks) U ∧ WGd b (r ++ ks) U ∧
-      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) ∧
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b (r ++ ks) ks₂ → WGd b' ks₂ U) ∧
       (∀ N ∈ Ns, JkA N) ∧
       (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N)
+        ∀ ks₂ : List ℕ, Ins b (j :: (r ++ ks)) ks₂ → WGd b' ks₂ N)
 termination_by b s _ => (b, ((s : List ℕ) : Multiset ℕ))
 decreasing_by
   all_goals
@@ -70969,8 +71011,7 @@ theorem WGtx_bnil (b : ℕ) (ctx : List Frm) : WGtx b [] ctx ↔ ctx = [] := by 
 theorem WGtx_c0 (b : ℕ) (ks : List ℕ) (ctx : List Frm) :
     WGtx b (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
       WGtx b ks ctx' ∧ FrmG ks U ∧ WGd b ks U ∧
-      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) := by
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b ks ks₂ → WGd b' ks₂ U) := by
   rw [WGtx]
 
 theorem WGtx_ck (b i : ℕ) (ks : List ℕ) (ctx : List Frm) :
@@ -70978,11 +71019,10 @@ theorem WGtx_ck (b i : ℕ) (ks : List ℕ) (ctx : List Frm) :
       (U : Jk1) (Ns : List Jk1),
       ctx = ctx' ++ PBlk Ns U ∧ Ns.length = i + 1 ∧ WGtx b (r ++ ks) ctx' ∧
       FrmG (r ++ ks) U ∧ WGd b (r ++ ks) U ∧
-      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) ∧
+      (∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b (r ++ ks) ks₂ → WGd b' ks₂ U) ∧
       (∀ N ∈ Ns, JkA N) ∧
       (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
-        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N) := by
+        ∀ ks₂ : List ℕ, Ins b (j :: (r ++ ks)) ks₂ → WGd b' ks₂ N) := by
   rw [WGtx]
 
 theorem WGd_iff : ∀ (b : ℕ) (ks : List ℕ) (V : Jk1),
@@ -71067,18 +71107,14 @@ theorem WGd_congr : ∀ (b : ℕ) (ks : List ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V
   intro ctx hc
   exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
 
-#print axioms WGd_iff
-#print axioms WGtx_JkT
-
-/-! ### `WGd` のブロック 1 枚の出し入れと、予算の反単調性 -/
+/-! ### ブロック 1 枚の出し入れと予算の反単調性 -/
 
 theorem WGd_blk (b i : ℕ) (S : List ℕ) {V U : Jk1} (h : WGd b (i :: S) V)
     (hU : FrmG S U) (hUk : WGd b S U)
-    (hUs : ∀ (e : ℕ) (ks' : List ℕ), S = e :: ks' → ∀ b' : ℕ, b' < b →
-      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U)
+    (hUs : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b S ks₂ → WGd b' ks₂ U)
     (Ns : List Jk1) (hlen : Ns.length = i) (hJNs : ∀ N ∈ Ns, JkA N)
     (hNt : ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
-      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ S)) N) :
+      ∀ ks₂ : List ℕ, Ins b (j :: S) ks₂ → WGd b' ks₂ N) :
     WGd b S (Jk1.one U (RunP Ns V)) := by
   cases i with
   | zero =>
@@ -71087,20 +71123,19 @@ theorem WGd_blk (b i : ℕ) (S : List ℕ) {V U : Jk1} (h : WGd b (i :: S) V)
       exact (WGd_c0 b S V).mp h U hU hUk hUs
   | succ m =>
       have hsib : ∀ j : ℕ, j ≤ m → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
-          ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ ([] ++ S))) N := by
-        intro j hj N hN b' hb q hq
-        simpa using hNt j (by omega) N hN b' hb q hq
+          ∀ ks₂ : List ℕ, Ins b (j :: ([] ++ S)) ks₂ → WGd b' ks₂ N := by
+        intro j hj N hN b' hb ks₂ hins
+        exact hNt j (by omega) N hN b' hb ks₂ (by simpa using hins)
       have h2 := (WGd_ck b m S V).mp h [] (by simp) U (by simpa using hU)
         (by simpa using hUk) (by simpa using hUs) Ns hlen hJNs hsib
       simpa using h2
 
 theorem WGtx_blk (b i : ℕ) (S : List ℕ) {ctx' : List Frm} (hc : WGtx b S ctx')
     {U : Jk1} (hU : FrmG S U) (hUk : WGd b S U)
-    (hUs : ∀ (e : ℕ) (ks' : List ℕ), S = e :: ks' → ∀ b' : ℕ, b' < b →
-      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U)
+    (hUs : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b S ks₂ → WGd b' ks₂ U)
     (Ns : List Jk1) (hlen : Ns.length = i) (hJNs : ∀ N ∈ Ns, JkA N)
     (hNt : ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
-      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ S)) N) :
+      ∀ ks₂ : List ℕ, Ins b (j :: S) ks₂ → WGd b' ks₂ N) :
     WGtx b (i :: S) (ctx' ++ PBlk Ns U) := by
   cases i with
   | zero =>
@@ -71112,16 +71147,14 @@ theorem WGtx_blk (b i : ℕ) (S : List ℕ) {ctx' : List Frm} (hc : WGtx b S ctx
       rw [WGtx_ck]
       refine ⟨[], by simp, ctx', U, Ns, rfl, hlen, by simpa using hc, by simpa using hU,
         by simpa using hUk, by simpa using hUs, hJNs, ?_⟩
-      intro j hj N hN b' hb q hq
-      simpa using hNt j (by omega) N hN b' hb q hq
+      intro j hj N hN b' hb ks₂ hins
+      exact hNt j (by omega) N hN b' hb ks₂ (by simpa using hins)
 
 theorem WGd_step (b : ℕ) (ks : List ℕ) {V W : Jk1} (hV : FrmG ks V) (hVk : WGd b ks V)
-    (hVs : ∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
-      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) V)
+    (hVs : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b ks ks₂ → WGd b' ks₂ V)
     (hW : WGd b (0 :: ks) W) : WGd b ks (Jk1.one V W) :=
   (WGd_c0 b ks W).mp hW V hV hVk hVs
 
-/-- 木の仮定が「予算を下げれば差し直せる」形なので、文脈は予算について反単調。 -/
 theorem WGtx_anti : ∀ (b b' : ℕ), b' ≤ b → ∀ (ks : List ℕ) (ctx : List Frm),
     WGtx b ks ctx → WGtx b' ks ctx
   | b, b', hb, [], ctx, h => by
@@ -71130,37 +71163,25 @@ theorem WGtx_anti : ∀ (b b' : ℕ), b' ≤ b → ∀ (ks : List ℕ) (ctx : Li
       rw [WGtx_c0] at h ⊢
       obtain ⟨ctx', U, rfl, hc', hU, hUk, hUs⟩ := h
       refine ⟨ctx', U, rfl, WGtx_anti b b' hb ks ctx' hc', hU, ?_, ?_⟩
-      · by_cases hne : ks = []
-        · rw [hne] at hUk ⊢
-          exact (WGd_bnil b' U).mpr ((WGd_bnil b U).mp hUk)
-        · obtain ⟨e, ks', hrk⟩ := List.exists_cons_of_ne_nil hne
-          rcases Nat.lt_or_ge b' b with hlt | hge
-          · have h2 := hUs e ks' hrk b' hlt [] (by simp)
-            rw [hrk]
-            simpa using h2
-          · have hbb : b' = b := le_antisymm hb hge
-            subst hbb; exact hUk
-      · intro e ks' he b'' hb'' q hq
-        exact hUs e ks' he b'' (by omega) q (fun x hx => by have := hq x hx; omega)
+      · rcases Nat.lt_or_ge b' b with hlt | hge
+        · exact hUs b' hlt ks (Ins_refl b ks)
+        · have hbb : b' = b := le_antisymm hb hge
+          subst hbb; exact hUk
+      · intro b'' hb'' ks₂ hins
+        exact hUs b'' (by omega) ks₂ (Ins_mono hb hins)
   | b, b', hb, ((i + 1) :: ks), ctx, h => by
       rw [WGtx_ck] at h ⊢
       obtain ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hUs, hJNs, hNt⟩ := h
       refine ⟨r, hr, ctx', U, Ns, rfl, hlen, WGtx_anti b b' hb (r ++ ks) ctx' hc',
         hU, ?_, ?_, hJNs, ?_⟩
-      · by_cases hne : r ++ ks = []
-        · rw [hne] at hUk ⊢
-          exact (WGd_bnil b' U).mpr ((WGd_bnil b U).mp hUk)
-        · obtain ⟨e, ks', hrk⟩ := List.exists_cons_of_ne_nil hne
-          rcases Nat.lt_or_ge b' b with hlt | hge
-          · have h2 := hUs e ks' hrk b' hlt [] (by simp)
-            rw [hrk]
-            simpa using h2
-          · have hbb : b' = b := le_antisymm hb hge
-            subst hbb; exact hUk
-      · intro e ks' he b'' hb'' q hq
-        exact hUs e ks' he b'' (by omega) q (fun x hx => by have := hq x hx; omega)
-      · intro j hj N hN b'' hb'' q hq
-        exact hNt j hj N hN b'' (by omega) q (fun x hx => by have := hq x hx; omega)
+      · rcases Nat.lt_or_ge b' b with hlt | hge
+        · exact hUs b' hlt (r ++ ks) (Ins_refl b (r ++ ks))
+        · have hbb : b' = b := le_antisymm hb hge
+          subst hbb; exact hUk
+      · intro b'' hb'' ks₂ hins
+        exact hUs b'' (by omega) ks₂ (Ins_mono hb hins)
+      · intro j hj N hN b'' hb'' ks₂ hins
+        exact hNt j hj N hN b'' (by omega) ks₂ (Ins_mono hb hins)
 termination_by b b' _ ks _ _ => ((ks : List ℕ) : Multiset ℕ)
 decreasing_by
   all_goals
@@ -71172,15 +71193,11 @@ decreasing_by
             have := (by assumption : ∀ x ∈ r, x ≤ i) x hx
             omega)
 
-/-- `WGd` は予算について単調（文脈が反単調だから）。 -/
 theorem WGd_mono {b b' : ℕ} (hb : b' ≤ b) {ks : List ℕ} {V : Jk1}
     (h : WGd b' ks V) : WGd b ks V := by
   rw [WGd_iff] at h ⊢
   intro ctx hc
   exact h ctx (WGtx_anti b b' hb ks ctx hc)
-
-#print axioms WGtx_anti
-#print axioms WGd_mono
 
 /-! ### ★★★★★★ `WGd` の階段 -/
 
@@ -71204,15 +71221,15 @@ theorem WGd_nilF (m i : ℕ) (hib : i ≤ m) (ks : List ℕ) :
   have hJC : JkA C := hJNs C (by simp)
   have hJNs' : ∀ A ∈ Ns', JkA A := fun A hA => hJNs A (by simp [hA])
   have hib' : i < b := by omega
-  have hCq : ∀ b' : ℕ, b' < b → ∀ q : List ℕ, (∀ x ∈ q, x < b) →
-      WGd b' (i :: (q ++ (r ++ ks))) C := by
-    intro b' hb' q hq
-    refine hNt i (le_refl i) C ?_ b' hb' q hq
+  have hCq : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, Ins b (i :: (r ++ ks)) ks₂ →
+      WGd b' ks₂ C := by
+    intro b' hb' ks₂ hins
+    refine hNt i (le_refl i) C ?_ b' hb' ks₂ hins
     rw [← hlen']
     exact AtIx_concat_last Ns' C
   have hSib : ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns' j N → ∀ b' : ℕ, b' < b →
-      ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N :=
-    fun j hj N hN b' hb' q hq => hNt j (by omega) N (AtIx_of_prefix C hN) b' hb' q hq
+      ∀ ks₂ : List ℕ, Ins b (j :: (r ++ ks)) ks₂ → WGd b' ks₂ N :=
+    fun j hj N hN b' hb' ks₂ hins => hNt j (by omega) N (AtIx_of_prefix C hN) b' hb' ks₂ hins
   rw [WGd_iff]
   intro ctx hc
   have hGU : GOK (plug ctx U) := (WGd_iff b (r ++ ks) U).mp hUk ctx hc
@@ -71221,61 +71238,40 @@ theorem WGd_nilF (m i : ℕ) (hib : i ≤ m) (ks : List ℕ) :
       (FrmG_one (r ++ ks) U _ hU (JkA_RunS_snocB Ns' C hJNs' hJC))
   -- 予算を 1 下げて塔を組む
   have hcm : WGtx m (r ++ ks) ctx := WGtx_anti b m (by omega) (r ++ ks) ctx hc
-  have hUm : WGd m (r ++ ks) U := by
-    by_cases hqe : r ++ ks = []
-    · rw [hqe] at hUk ⊢
-      exact (WGd_bnil m U).mpr ((WGd_bnil b U).mp hUk)
-    · obtain ⟨e, ks', hrk⟩ := List.exists_cons_of_ne_nil hqe
-      have h2 := hUs e ks' hrk m (by omega) [] (by simp)
-      rw [hrk]
-      simpa using h2
-  have hUsm : ∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < m →
-      ∀ q : List ℕ, (∀ x ∈ q, x < m) → WGd b' (e :: (q ++ ks')) U :=
-    fun e ks' he b' hb' q hq => hUs e ks' he b' (by omega) q
-      (fun x hx => by have := hq x hx; omega)
+  have hUm : WGd m (r ++ ks) U := hUs m (by omega) (r ++ ks) (Ins_refl b (r ++ ks))
+  have hUsm : ∀ b' : ℕ, b' < m → ∀ ks₂ : List ℕ, Ins m (r ++ ks) ks₂ → WGd b' ks₂ U :=
+    fun b' hb' ks₂ hins => hUs b' (by omega) ks₂ (Ins_mono (by omega) hins)
   have hrep : ∀ t : ℕ, ∀ x ∈ List.replicate t i, x < b := by
     intro t x hx
     rw [List.eq_of_mem_replicate hx]
     exact hib'
-  have hTC : ∀ t : ℕ, WGd m (List.replicate (t + 1) i ++ (r ++ ks)) C := by
+  -- 塔の各段の形は `i :: (r++ks)` に幅 `i` のブロックを挿したもの
+  have hins1 : ∀ t : ℕ, Ins b (i :: (r ++ ks))
+      (List.replicate (t + 1) i ++ (r ++ ks)) := by
     intro t
-    have h1 := hCq m (by omega) (List.replicate t i) (hrep t)
     rw [List.replicate_succ]
-    exact h1
+    exact Ins.keep i (Ins_app b (List.replicate t i) (hrep t) (r ++ ks))
+  have hTC : ∀ t : ℕ, WGd m (List.replicate (t + 1) i ++ (r ++ ks)) C :=
+    fun t => hCq m (by omega) _ (hins1 t)
   have hFC : ∀ t : ℕ, FrmG (List.replicate (t + 1) i ++ (r ++ ks)) C := by
     intro t
     rw [List.replicate_succ]
     exact hJC
-  have hTCs : ∀ t : ℕ, ∀ (e : ℕ) (ks2 : List ℕ),
-      List.replicate (t + 1) i ++ (r ++ ks) = e :: ks2 → ∀ b' : ℕ, b' < m →
-      ∀ q : List ℕ, (∀ x ∈ q, x < m) → WGd b' (e :: (q ++ ks2)) C := by
-    intro t e ks2 he b' hb' q hq
-    rw [List.replicate_succ] at he
-    have hpair : e = i ∧ ks2 = List.replicate t i ++ (r ++ ks) := by
-      simpa using he.symm
-    rw [hpair.1, hpair.2]
-    have hb2 : ∀ x ∈ q ++ List.replicate t i, x < b := by
-      intro x hx
-      rcases List.mem_append.mp hx with h1 | h1
-      · have := hq x h1; omega
-      · exact hrep t x h1
-    have h3 := hCq b' (by omega) (q ++ List.replicate t i) hb2
-    rwa [List.append_assoc] at h3
+  have hTCs : ∀ t : ℕ, ∀ b' : ℕ, b' < m → ∀ ks₂ : List ℕ,
+      Ins m (List.replicate (t + 1) i ++ (r ++ ks)) ks₂ → WGd b' ks₂ C := by
+    intro t b' hb' ks₂ hins
+    exact hCq b' (by omega) ks₂ (Ins_trans (hins1 t) (Ins_mono (by omega) hins))
   have hsibT : ∀ t : ℕ, ∀ j : ℕ, j < i → ∀ N : Jk1, AtIx Ns' j N → ∀ b' : ℕ, b' < m →
-      ∀ q : List ℕ, (∀ x ∈ q, x < m) →
-        WGd b' (j :: (q ++ (List.replicate (t + 1) i ++ (r ++ ks)))) N := by
-    intro t j hj N hN b' hb' q hq
-    have hb2 : ∀ x ∈ q ++ List.replicate (t + 1) i, x < b := by
-      intro x hx
-      rcases List.mem_append.mp hx with h1 | h1
-      · have := hq x h1; omega
-      · exact hrep (t + 1) x h1
-    have h3 := hSib j hj N hN b' (by omega) (q ++ List.replicate (t + 1) i) hb2
-    rwa [List.append_assoc] at h3
+      ∀ ks₂ : List ℕ, Ins m (j :: (List.replicate (t + 1) i ++ (r ++ ks))) ks₂ →
+        WGd b' ks₂ N := by
+    intro t j hj N hN b' hb' ks₂ hins
+    have h0 : Ins b (j :: (r ++ ks)) (j :: (List.replicate (t + 1) i ++ (r ++ ks))) :=
+      Ins.keep j (Ins_app b (List.replicate (t + 1) i) (hrep (t + 1)) (r ++ ks))
+    exact hSib j hj N hN b' (by omega) ks₂ (Ins_trans h0 (Ins_mono (by omega) hins))
   have hbase : WGtx m (i :: (r ++ ks)) (ctx ++ PBlk Ns' U) := by
     refine WGtx_blk m i (r ++ ks) hcm hU hUm hUsm Ns' hlen' hJNs' ?_
-    intro j hj N hN b' hb' q hq
-    exact hSib j hj N hN b' (by omega) q (fun x hx => by have := hq x hx; omega)
+    intro j hj N hN b' hb' ks₂ hins
+    exact hSib j hj N hN b' (by omega) ks₂ (Ins_mono (by omega) hins)
   have hstepT : ∀ t : ℕ, ∀ D' : List Frm,
       WGtx m (List.replicate (t + 1) i ++ (r ++ ks)) D' →
       WGtx m (List.replicate (t + 2) i ++ (r ++ ks)) (D' ++ PBlk Ns' C) := by
@@ -71299,18 +71295,20 @@ theorem WGd_nilF (m i : ℕ) (hib : i ≤ m) (ks : List ℕ) :
       GOK (plug D' (Jk1.one C (RunP Ns' C))) := by
     intro t D' hD'
     have hhead : WGd m (i :: (List.replicate (t + 1) i ++ (r ++ ks))) C :=
-      hCq m (by omega) (List.replicate (t + 1) i) (hrep (t + 1))
+      hCq m (by omega) _ (Ins.keep i (Ins_app b (List.replicate (t + 1) i)
+        (hrep (t + 1)) (r ++ ks)))
     have h1 := WGd_blk m i (List.replicate (t + 1) i ++ (r ++ ks)) hhead
       (hFC t) (hTC t) (hTCs t) Ns' hlen' hJNs' (hsibT t)
     exact (WGd_iff m _ _).mp h1 D' hD'
   refine GOK_oneUV_RunSB ctx Ns' C U hJNs' hJC hJT hGU ?_
   refine GOK_appJ_UtwP ctx Ns' C U hGU ?_ ?_
-  · exact (WGd_iff m _ C).mp (by simpa using hCq m (by omega) [] (by simp)) _ hbase
+  · exact (WGd_iff m _ C).mp (hCq m (by omega) _ (Ins_refl b (i :: (r ++ ks)))) _ hbase
   · intro D' hD' _
     obtain ⟨t, ht⟩ := hRF D' hD'
     exact hkey t D' ht
 
+#print axioms WGd_iff
+#print axioms WGtx_anti
 #print axioms WGd_nilF
-
 end Small
 end TRIO
