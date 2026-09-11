@@ -9,7 +9,24 @@
 
 木では `bdA [2,0]`（幅 2 のブロックの上に裸の 1 の枠）を台座 `R341` の上に置いたもの。
 
-## 壁は文脈なしの 4 文
+## いちばん的を絞った壁（1 文、`WPd` 層）
+
+    bdA (j :: js)  = one nil (stkP j (bdA js))
+    stkP 0 X = X,  stkP (q+1) X = two nil (stkP q X)
+
+    RunP2 := ∀ j k ks X, JkA X → (∀ ks', WPd ks' X) → j ≤ k →
+               WPd ((k+1) :: ks) (stkP j X)
+
+    RunP2 → WPd_bdA_all / WPd_bdAC_all（幅の制限なし）
+          → Pay2 → R375m (6,1,0) ∈ W 0
+          → ∀n GOK (bdA (replicate n 2)) → R375m (6,2,0) ∈ W 0
+
+**`j = 1`, `X = nil` はちょうど既存の `WPd_run`（緑）。** `RunP2` はそれを
+「`X = nil` → どこでも良い `X`」「`j = 1` → 一般の `j`」に広げたもの。
+`WPd_bdA_le1`（幅 ≤ 1）が通っていたのは `j = 1` のとき `stkP 0 X = X` で
+2 の枠の直上に走りが来なかったから。**幅 2 で初めて `stkP 1` が来る。**
+
+## 一般の停止性としての壁（文脈なしの 4 文）
 
     APz M   := ∀ U, JkT U → GOK U → GOK (one U M)
     APzO2 W := ∀ M, JkA M → APz M → APz (one M W)
