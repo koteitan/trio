@@ -22009,3 +22009,52 @@ Acc（DM）帰納でほどける:
 
 文脈なしの言い方（`APz`）と文脈つきの言い方（`GAll` / `GNilO` / `GNilT`）は
 同値なので、どちらで攻めてもよい。
+
+## 追記301 (2026-09-11): `WPd` 層の予算の壁を実測で特定した
+
+`WPd` 層には既に大きな緑がある:
+
+    WPd_nilAll : ∀ ks, WPd ks nil                       無条件
+    WPd_FLr    : ∀ Bs Bok, ∀ ks, WPd (0 :: ks) (FLr Bs)  1 の枠の位置なら無条件
+    WPd_run    : 1 ≤ k → WPd ((k+1) :: ks) (two nil nil) 走りも緑
+    WPd_TWm    : m ≤ k → ∀ n ks, WPd ((k+1) :: ks) (TWm m n)  塔も緑
+    WPd_twoA_runB : b+1 ≤ k → (∀ ks, WPd ((b+1)::ks) A) → WPd ((k+1)::ks) (two A nil)
+
+### `QFL []` を `WPd` で閉じられるか、を最後まで追った
+
+`QFL [] = ∀ ctx GBase, GOK (plug ctx nil)`。`WPd_nilAll` と `WPd_iff` があるので、
+**GBase の文脈が `WCtx ks` になれば閉じる**。
+
+    WCtx ((k+1)::ks) (ctx' ++ [fone A, ftwo nil]) は
+      ∃ r (∀x∈r, x ≤ k), WCtx (r++ks) ctx' ∧ WPd (r++ks) A ∧ JkA nil
+        ∧ ∀ q (≤k), WPd ((0::q) ++ (r++ks)) nil
+
+最後の 2 つは `WPd_nilAll` で無料（**2 の枠の兄弟が `nil` だから**）。
+`ctx'` も GBase なので `ftwo nil` で終わり、その予算リストは 1 以上で始まる。
+だから要るのは
+
+    WPd ((j+1) :: ks') (FLr Bs)        （平らな鎖を 2 の枠の直上に差す）
+
+これだけ。`WPd_twoA_runB` がちょうどこの形で、鎖 1 本につき予算を 1 使う
+（`b+1 ≤ k`）。`WPd_twoIt_nil` は荷が空の鎖で `m ≤ k`。つまり
+
+    **予算 k は鎖の長さ以上でなければならない。**
+
+ところが `QFL_dup` / `QFL_rep` は鎖を `replicate n B₀ ++ Bs` と
+**いくらでも伸ばす**（`twoIt_FLr`）ので、`n` に上限が無い。だから割れる。
+
+これは追記282〜287 の「階段は予算 1 下げ、鎖は幅 1 上げ」を、`WPd` の
+具体的な補題の上で確かめ直したもの。**`WPd` / `WFd` は確定で死んでいる。**
+
+### 生きている道
+
+`GBase` / `HCx` / `HGx` は側条件が `GOK` だけで、文脈の中の木に族の述語を
+要求しない。だから充足可能性の問題は無い。壁は測度だけ。
+
+### 今回の緑
+
+    APzO2_twoNil : APzO2One → JkA Z → APzO2 Z → APzO2 (two Z nil)
+
+`one M (two Z nil)` の語は裸の 2 の記録で終わるので `GOK_oneUV_RunSB` が使える。
+`APzT2 (two Z nil)` は階段が `RunS ([M] ++ [Z])` になり、兄弟 `M` について
+`APzT2 M` が要るので同じ手が使えない（`APz M` しか手元に無い）。
