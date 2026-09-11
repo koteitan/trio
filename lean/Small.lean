@@ -76238,5 +76238,55 @@ theorem R600z_zero : R600z 0 = R600_349 := by
 #print axioms LadZ_flat_mem
 #print axioms R600z_mem
 
+/-! ### ★★★★★★ 台座の junk を複合字の語 `wordC` にする（`R600z` の一般化）
+
+`GoodFb_wordC : ∀ ws, WplC ws → GoodFb (wordC · · ws)`（緑）は、
+「z の列 + 1 の列 `k` 本 + 荷 `Y`」の字を並べた語の junk が 3 段すべてで普遍、
+という定理。`PkGA` の `pk` の段にそのまま入るので、台座
+`R600 (2,2,0) ++ wordC 2 2 ws` がどの `ws` でも `PkGA 2` になる。
+`Zw` 版（`R600z`）は荷が空で 1 の列が 1 本の特別な場合。 -/
+
+def R600c (ws : List (ℕ × TrioSeq)) : TrioSeq :=
+  R600 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordC 2 2 ws)
+
+theorem R600c_PkGA {ws : List (ℕ × TrioSeq)} (hw : WplC ws) : PkGA 2 (R600c ws) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, R600, wordC 2 2 ws, rfl, R600_RunA0, rfl,
+    (GoodFb_wordC ws hw).pk 1⟩
+
+/-- ★★★★★★ 複合字の語の台座（荷つき）。全部無条件。 -/
+theorem R600c_mem {ws : List (ℕ × TrioSeq)} (hw : WplC ws) : R600c ws ∈ W 0 :=
+  (PkGA_Aok (R600c_PkGA hw)).mem
+
+theorem LadC_mem {ws : List (ℕ × TrioSeq)} (hw : WplC ws) (n : ℕ) :
+    LadB (R600c ws) n ∈ W 0 := LadB_mem (R600c_PkGA hw) n
+
+theorem LadC_flat_mem {ws : List (ℕ × TrioSeq)} (hw : WplC ws) (n : ℕ) :
+    LadB (R600c ws) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LadB_flat_mem (R600c_PkGA hw) n
+
+/-- 1 の列を `k` 本にした台座。`bms -c` の実測では `k` を 1 増やす方が
+梯子 `LadB` をどれだけ登るより大きい。 -/
+def R600k (k : ℕ) : TrioSeq := R600c [(k, ([] : TrioSeq))]
+
+theorem R600k_eq (k : ℕ) :
+    R600k k = R600 ++ (((2, 2, 0) : ℕ × ℕ × ℕ) :: ((3, 3, 1) : ℕ × ℕ × ℕ) ::
+      List.replicate k ((4, 1, 0) : ℕ × ℕ × ℕ)) := by
+  simp [R600k, R600c, wordC, colC, shiftr01]
+
+theorem R600k_PkGA (k : ℕ) : PkGA 2 (R600k k) := R600c_PkGA (WplC_singleton Bok_nil)
+
+/-- ★★★★★★ `R600 (2,2,0)(3,3,1)(4,1,0)^k`。 -/
+theorem R600k_mem (k : ℕ) : R600k k ∈ W 0 := (PkGA_Aok (R600k_PkGA k)).mem
+
+theorem LadK_mem (k n : ℕ) : LadB (R600k k) n ∈ W 0 := LadB_mem (R600k_PkGA k) n
+
+theorem LadK_flat_mem (k n : ℕ) :
+    LadB (R600k k) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LadB_flat_mem (R600k_PkGA k) n
+
+#print axioms R600c_mem
+#print axioms R600k_mem
+#print axioms LadK_mem
+
 end Small
 end TRIO
