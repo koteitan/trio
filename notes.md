@@ -21843,3 +21843,47 @@ Acc（DM）帰納でほどける:
 `GNilO (D ++ [fone V])` ⟸ `GNilO / GNilT (D ++ M の背骨の枠)`。
 `|D| + 1` → `|D| + h(M)`（`h(M)` は `M` の背骨の記録の本数）。
 `h(M) ≤ 0`（`M` が `nil` か荷だけ）でないと減らない。`M` は兄弟なので任意。
+
+## 追記297 (2026-09-11): 裸の記録 2 つで全部出る（GAll）
+
+    GAll := ∀ F, HGx F → ∀ Z, JkA Z → GOK (plug F Z)
+
+    GAll_of_GNils : GNilO → GNilT → (∀ Z, JkA Z → GOK (one nil Z)) → GAll   ★緑
+
+証明は `cases hF` 1 回だけ。`HGx` の枠はどれも「その枠の木 `W` が 1 段外で
+良い（`GOK (plug F' W)`）」を側条件に持つから、
+
+    F = F' ++ [fone W] : plug F Z = plug F' (one W Z) ← OSib F' Z を W に当てる
+    F = F' ++ [ftwo W] : plug F Z = plug F' (two W Z) ← TSib F' Z を W に当てる
+
+で終わる。`OSib F' Z` / `TSib F' Z` は `GSib_tree` が `GNilO ∧ GNilT` から
+任意の `JkA Z` について出してくれる。
+
+逆に `GNilO` / `GNilT` / 底は `GAll` の例なので、**同値**:
+
+    GAll ⟺ GNilO ∧ GNilT ∧ (∀ Z, JkA Z → GOK (one nil Z))
+
+`GAll` はこの符号化での z < 2 の停止性そのもの。だから
+
+**還元はもう終わっている。残っているのは「裸の 1 の記録」と「裸の 2 の記録」を
+実際に証明することだけ。**
+
+道具立ての現状:
+
+- 裸の 1 の記録（`GNilO`）: 文脈が 1 の枠止まり・2 の枠止まりのどちらでも
+  `APnil_gen0` + `PS_cons` / `PZ_cons` で閉じる（`GNilO_fone` / `GNilO_ftwo`、緑）。
+  底 `[fone nil]` は `APz` に落ちる（`GNilO_base`、緑）。
+- 裸の 2 の記録（`GNilT`）: 1 の枠止まりは `SelfW_HGx` + `TSib_nil_of_SelfW`
+  で閉じる（`GNilT_fone`、緑）。**2 の枠止まり（走り）だけ道具が無い**。
+
+走りの形は
+
+    plug (F' ++ [ftwo V]) (two M nil) = plug F' (two V (two M nil))
+                                      = plug F'' (one U (RunS ([V] ++ [M])))
+
+（`F'` の後ろの 2 の枠を全部剥がすと `PBlk Bs U` の形になる）。
+`GOK_oneUV_RunSB D Bs M U` がちょうどこの形なので、階段
+`∀ n, GOK (plug D (appJ U (UtwP Bs M n)))` を作れば閉じる。
+階段の各段は `plug (D ++ PBlk Bs U) (ABt Bs M n)` で、`ABt` の再帰は
+`PBlk Bs M` で文脈を伸ばすだけ。伸ばした先の `HGx` の側条件は全部
+`GSib_tree` から出る（`OSib` / `TSib` を前の枠の木に当てる）。**次の一手はこれ**。
