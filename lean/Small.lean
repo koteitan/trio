@@ -75673,5 +75673,166 @@ theorem APz_of_FOk0 {X : Jk1} (h : FOk 0 X) : APz X :=
 #print axioms FOk_two
 #print axioms FCtx_rep_fone
 
+/-! ### ★★★★★ `FOk` の荷
+
+1 の枠止まりと底は無料（`SAppend` が `FCtx_fone` そのもの）。
+2 の枠止まりは鎖に `FOk m` を持ち回る W 帰納。 -/
+
+def PayFAll (Z : Jk1) (B : TrioSeq) : Prop :=
+  ∀ (m : ℕ) (D₀ : List Frm), FCtx m D₀ → ∀ M : Jk1, JkA M → FOk m M →
+    GOK (plug D₀ M) → GOK (plug D₀ (Jk1.two M (Jk1.pay Z B)))
+
+theorem FOk_pay_step {Z : Jk1} (hJZ : JkA Z) (hZ : ∀ n : ℕ, FOk n Z)
+    {B : TrioSeq} (hB : Bok B) (h : PayFAll Z B) : ∀ n : ℕ, FOk n (Jk1.pay Z B) := by
+  intro n D hD
+  cases n with
+  | zero =>
+      cases hD with
+      | @base V hV hGV =>
+          exact APpayJ Z B hJZ hB
+            (fun V' hV' hGV' => APz_of_FOk0 (hZ 0) V' hV' hGV') V hV hGV
+      | @fone D₀ V hD₀ hJV hGV =>
+          rw [plug_snoc]
+          exact PS_cons B hB D₀ (fun X hX => FCtx_JkT 0 D₀ hD₀ X hX) Z hJZ
+            (fun M hJM hGM => by
+              rw [← plug_snoc]
+              exact hZ 0 _ (FCtx_fone (n := 0) hD₀ hJM hGM))
+            V hJV hGV
+  | succ m =>
+      cases hD with
+      | @ftwo D₀ N hD₀ hJN hN =>
+          rw [plug_snoc2]
+          exact h m D₀ hD₀ N hJN (fun D' hD' => hN D' hD') (hN D₀ hD₀)
+      | @fone D₀ V hD₀ hJV hGV =>
+          rw [plug_snoc]
+          exact PS_cons B hB D₀ (fun X hX => FCtx_JkT (m + 1) D₀ hD₀ X hX) Z hJZ
+            (fun M hJM hGM => by
+              rw [← plug_snoc]
+              exact hZ (m + 1) _ (FCtx_fone (n := m + 1) hD₀ hJM hGM))
+            V hJV hGV
+
+theorem PZ_chainF {m : ℕ} {D₀ : List Frm} {Z : Jk1} (hZ : JkA Z)
+    {B₀ : TrioSeq} (hB₀ : Bok B₀) (hEpay : ∀ n : ℕ, FOk n (Jk1.pay Z B₀))
+    (hIH : PayFAll Z B₀) (hD₀ : FCtx m D₀)
+    {M : Jk1} (hM : JkA M) (hEM : FOk m M) (hGM : GOK (plug D₀ M)) :
+    ∀ n : ℕ, GOK (plug D₀ (twoIt M (Jk1.pay Z B₀) n))
+      ∧ JkA (twoIt M (Jk1.pay Z B₀) n) ∧ FOk m (twoIt M (Jk1.pay Z B₀) n) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hGM, hM, hEM⟩
+  | succ n ih =>
+      exact ⟨hIH m D₀ hD₀ _ ih.2.1 ih.2.2 ih.1, ⟨ih.2.1, hZ, hB₀⟩,
+        FOk_two ih.2.1 ih.2.2 (hEpay (m + 1))⟩
+
+theorem PayFAll_all {Z : Jk1} (hJZ : JkA Z) (hZ : ∀ n : ℕ, FOk n Z) :
+    ∀ (B : TrioSeq), Bok B → PayFAll Z B := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → PayFAll Z B} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb m D₀ hD₀ M hM hEM hGM
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        refine GOK_congr (fun l => jk1_plug_congr D₀
+          (fun l' => (jk1_two_payZnil M Z l').symm) l) ?_
+        rw [← plug_snoc2]
+        exact hZ (m + 1) _ (FCtx_ftwo hD₀ hM hEM)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hIH0 : PayFAll Z ([] : TrioSeq) := by
+          intro m' D' hD' M' hM' hEM' hGM'
+          refine GOK_congr (fun l => jk1_plug_congr D'
+            (fun l' => (jk1_two_payZnil M' Z l').symm) l) ?_
+          rw [← plug_snoc2]
+          exact hZ (m' + 1) _ (FCtx_ftwo hD' hM' hEM')
+        have hch := PZ_chainF hJZ Bok_nil (FOk_pay_step hJZ hZ Bok_nil hIH0) hIH0
+          hD₀ hM hEM hGM
+        rw [e2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (FCtx_JkT m D₀ hD₀ _ ⟨hM, hJZ, by rw [← e2]; exact hBb⟩) ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        have hIH0 : PayFAll Z B.dropLast := hdl hdb
+        have hch := PZ_chainF hJZ hdb (FOk_pay_step hJZ hZ hdb hIH0) hIH0 hD₀ hM hEM hGM
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (FCtx_JkT m D₀ hD₀ _ ⟨hM, hJZ, by rw [← hsplit]; exact hBb⟩) ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (FCtx_JkT m D₀ hD₀ _ ⟨hM, hJZ, hBb⟩) hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) m D₀ hD₀ M hM hEM hGM ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb
+  exact key hBb.mem hBb
+
+/-- ★★★★★ 荷はどの階数でも出る。 -/
+theorem FOk_pay {Z : Jk1} (hJZ : JkA Z) (hZ : ∀ n : ℕ, FOk n Z)
+    {B : TrioSeq} (hB : Bok B) : ∀ n : ℕ, FOk n (Jk1.pay Z B) :=
+  FOk_pay_step hJZ hZ hB (PayFAll_all hJZ hZ B hB)
+
+#print axioms FOk_pay
+
+/-! ### ★★★★★ `FCtx` では塔が通る（`ECtx` で通らなかったところ）
+
+1 の枠が階数を動かさないので、`GOK_twoNil_gen` の階段
+`plug (D ++ (fone N)^m) N` が族の中に収まる。だから「2 の枠の直上の空木」が
+（その下が 1 の枠止まりなら）出る。 -/
+
+theorem FOk_twoNil_of_fone {n : ℕ} {D₁ : List Frm} (hD₁ : FCtx n D₁) {V : Jk1} (hJV : JkA V)
+    (hGV : GOK (plug D₁ V)) {N : Jk1} (hJN : JkA N) (hN : FOk n N) :
+    GOK (plug (D₁ ++ [Frm.fone V]) (Jk1.two N Jk1.nil)) := by
+  refine GOK_twoNil_gen D₁ V hJN ?_ hGV ?_
+  · exact FCtx_JkT n _ (FCtx_fone hD₁ hJV hGV) _ ⟨hJN, trivial⟩
+  · intro m
+    rw [← plug_append]
+    exact hN _ (FCtx_rep_fone hJN hN m _ (FCtx_fone hD₁ hJV hGV))
+
+/-- 底での空木も出る。 -/
+theorem FOk_nil_base {V : Jk1} (hV : JkT V) (hGV : GOK V) :
+    GOK (plug [Frm.fone V] Jk1.nil) := AP0nil V hV hGV
+
+#print axioms FOk_twoNil_of_fone
+
 end Small
 end TRIO
