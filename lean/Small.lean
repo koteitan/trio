@@ -75834,5 +75834,110 @@ theorem FOk_nil_base {V : Jk1} (hV : JkT V) (hGV : GOK V) :
 
 #print axioms FOk_twoNil_of_fone
 
+/-! ### ★★★★★★ 吊るしを族の側条件に入れる: `GCx` / `QOk`
+
+`FCtx` では `nil` の吊るし（`APnil_gen0` の `hang`）が出なかった。
+枠の木 `A` の側条件が点ごとの `GOK (plug D A)` だけだったから。
+そこで**吊るしも側条件に入れる**:
+
+    1 の枠: `GOK (plug D A)` と `∀ C Bok, GOK (plug D (pay A C))`
+    2 の枠: 同じものを 1 段下の族 `P` について全称
+
+どちらも `D` と `A` だけの条件なので帰納的定義として合法（`GCxS` を参照しない）。
+これで `nil` は底・1 の枠止まり・2 の枠止まり（下が 1 の枠）が全部出る。 -/
+
+inductive GCx0 : List Frm → Prop
+  | base {V : Jk1} : JkT V → GOK V → GCx0 [Frm.fone V]
+  | fone {D : List Frm} {A : Jk1} : GCx0 D → JkA A → GOK (plug D A) →
+      (∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay A C))) → GCx0 (D ++ [Frm.fone A])
+
+inductive GCxS (P : List Frm → Prop) : List Frm → Prop
+  | ftwo {D : List Frm} {A : Jk1} : P D → JkA A →
+      (∀ D' : List Frm, P D' → GOK (plug D' A)) →
+      (∀ (D' : List Frm) (C : TrioSeq), P D' → Bok C → GOK (plug D' (Jk1.pay A C))) →
+      GCxS P (D ++ [Frm.ftwo A])
+  | fone {D : List Frm} {A : Jk1} : GCxS P D → JkA A → GOK (plug D A) →
+      (∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay A C))) → GCxS P (D ++ [Frm.fone A])
+
+def GCx : ℕ → List Frm → Prop
+  | 0 => GCx0
+  | (n + 1) => GCxS (GCx n)
+
+def QOk (n : ℕ) (X : Jk1) : Prop := ∀ D : List Frm, GCx n D → GOK (plug D X)
+
+theorem GCx0_JkT : ∀ {D : List Frm}, GCx0 D → ∀ X : Jk1, JkA X → JkT (plug D X) := by
+  intro D h
+  induction h with
+  | base hV _ => intro X hX; exact ⟨⟨hV.1, hX⟩, hV.2⟩
+  | fone _ hA _ _ ih => intro X hX; rw [plug_snoc]; exact ih _ ⟨hA, hX⟩
+
+theorem GCxS_JkT {P : List Frm → Prop}
+    (hP : ∀ D : List Frm, P D → ∀ X : Jk1, JkA X → JkT (plug D X)) :
+    ∀ {D : List Frm}, GCxS P D → ∀ X : Jk1, JkA X → JkT (plug D X) := by
+  intro D h
+  induction h with
+  | ftwo hPD hA _ _ => intro X hX; rw [plug_snoc2]; exact hP _ hPD _ ⟨hA, hX⟩
+  | fone _ hA _ _ ih => intro X hX; rw [plug_snoc]; exact ih _ ⟨hA, hX⟩
+
+theorem GCx_JkT : ∀ (n : ℕ) (D : List Frm), GCx n D → ∀ X : Jk1, JkA X → JkT (plug D X)
+  | 0, _, h, X, hX => GCx0_JkT h X hX
+  | (n + 1), _, h, X, hX => GCxS_JkT (GCx_JkT n) h X hX
+
+theorem GCx_fone {n : ℕ} {D : List Frm} (hD : GCx n D) {A : Jk1} (hJA : JkA A)
+    (hGA : GOK (plug D A)) (hang : ∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay A C))) :
+    GCx n (D ++ [Frm.fone A]) := by
+  cases n with
+  | zero => exact GCx0.fone hD hJA hGA hang
+  | succ n => exact GCxS.fone hD hJA hGA hang
+
+theorem GCx_ftwo {n : ℕ} {D : List Frm} (hD : GCx n D) {A : Jk1} (hJA : JkA A)
+    (hA : QOk n A) (hAp : ∀ (D' : List Frm) (C : TrioSeq), GCx n D' → Bok C →
+      GOK (plug D' (Jk1.pay A C))) : GCx (n + 1) (D ++ [Frm.ftwo A]) :=
+  GCxS.ftwo hD hJA (fun D' hD' => hA D' hD') hAp
+
+theorem GCx_rep_fone {n : ℕ} {N : Jk1} (hJN : JkA N) (hN : QOk n N)
+    (hNp : ∀ (D' : List Frm) (C : TrioSeq), GCx n D' → Bok C →
+      GOK (plug D' (Jk1.pay N C))) :
+    ∀ (m : ℕ) (D : List Frm), GCx n D → GCx n (D ++ List.replicate m (Frm.fone N))
+  | 0, D, hD => by simpa using hD
+  | (m + 1), D, hD => by
+      have e : D ++ List.replicate (m + 1) (Frm.fone N)
+          = (D ++ [Frm.fone N]) ++ List.replicate m (Frm.fone N) := by
+        simp [List.replicate_succ, List.append_assoc]
+      rw [e]
+      exact GCx_rep_fone hJN hN hNp m _
+        (GCx_fone hD hJN (hN D hD) (fun C hC => hNp D C hD hC))
+
+/-- ★★★★★ 空木、底。 -/
+theorem QOk_nil_base {V : Jk1} (hV : JkT V) (hGV : GOK V) :
+    GOK (plug [Frm.fone V] Jk1.nil) := AP0nil V hV hGV
+
+/-- ★★★★★ 空木、1 の枠止まり。吊るしが側条件なのでそのまま出る。 -/
+theorem QOk_nil_fone {n : ℕ} {D₀ : List Frm} (hD₀ : GCx n D₀) {A : Jk1} (hJA : JkA A)
+    (hGA : GOK (plug D₀ A)) (hang : ∀ C : TrioSeq, Bok C → GOK (plug D₀ (Jk1.pay A C))) :
+    GOK (plug (D₀ ++ [Frm.fone A]) Jk1.nil) := by
+  have hJT : JkT (plug D₀ (Jk1.one A Jk1.nil)) := by
+    rw [← plug_snoc]
+    exact GCx_JkT n _ (GCx_fone hD₀ hJA hGA hang) _ trivial
+  rw [plug_snoc]
+  exact APnil_gen0 D₀ A hJT hGA hang
+
+/-- ★★★★★ 空木、2 の枠止まり（下が 1 の枠）。塔が族の中に収まる。 -/
+theorem QOk_twoNil_of_fone {n : ℕ} {D₁ : List Frm} (hD₁ : GCx n D₁) {V : Jk1} (hJV : JkA V)
+    (hGV : GOK (plug D₁ V)) (hangV : ∀ C : TrioSeq, Bok C → GOK (plug D₁ (Jk1.pay V C)))
+    {N : Jk1} (hJN : JkA N) (hN : QOk n N)
+    (hNp : ∀ (D' : List Frm) (C : TrioSeq), GCx n D' → Bok C →
+      GOK (plug D' (Jk1.pay N C))) :
+    GOK (plug (D₁ ++ [Frm.fone V]) (Jk1.two N Jk1.nil)) := by
+  have hDV : GCx n (D₁ ++ [Frm.fone V]) := GCx_fone hD₁ hJV hGV hangV
+  refine GOK_twoNil_gen D₁ V hJN (GCx_JkT n _ hDV _ ⟨hJN, trivial⟩) hGV ?_
+  intro m
+  rw [← plug_append]
+  exact hN _ (GCx_rep_fone hJN hN hNp m _ hDV)
+
+#print axioms GCx_JkT
+#print axioms QOk_nil_fone
+#print axioms QOk_twoNil_of_fone
+
 end Small
 end TRIO
