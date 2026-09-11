@@ -22218,3 +22218,55 @@ Acc（DM）帰納でほどける:
 `UOK` を族の側条件にすると全部の場合が閉じるが、`UOK` の定義に族が要るので
 循環する。深さで階数を付けても、`nil` の場合に「外した枠の木」が要るせいで
 階数が減らない。ここが最後の 1 点。
+
+## 追記306 (2026-09-11): `LOk` の梯子なら鎖の階段が閉じる（`QL_all` 緑）
+
+### 1. `QFL` で閉じなかった `B = []` が `LOk` では閉じる
+
+    QL Bs := ∀ k, LOk (k+1) (FLr Bs)
+    QL_all : ∀ Bs, (∀ C ∈ Bs, Bok C) → QL Bs      ★仮定なし・緑
+
+`QFL`（`GBase` の文脈）では `B = []`（鎖の右端に裸の 2 の記録）が階段になり、
+`QFL []` が残っていた。`LOk` の梯子では
+
+    LOk_twoN : JkA N → (∀ j, LOk (j+1) N) → ∀ k, LOk (k+1) (two N nil)   既存の緑
+
+がちょうどその場合をくれる。**塔の条件が梯子の深さについて全称**なので、
+`QL Bs` の帰納法の仮定（`∀ j, LOk (j+1) (FLr Bs)`）がそのまま入る。
+`Rq` も予算も要らない。`QL_cons` は `QFL_cons` と同じ入れ子帰納法で、
+文脈を `GBase` から `StkOk` の梯子に替えただけ。
+
+**これが `SelfW`（自分の上に積み続ける）を解く唯一の既存の型**:
+`LOk k X := ∀ D, StkOk k D → GOK (plug D X)` で `StkOk` は
+「`GCtx` の上に `ftwo N` が 1 枚、その上に 1 の枠が `k` 枚」。
+`LOk_repN` が塔をそのまま `StkOk` の中に収める。
+
+### 2. 何が出たか
+
+    LOk_oneFLr / TwoOk_oneFLr / GOK_oneTwoOneFLr
+
+`LOk 0 W` な `W`（`nil` / `two nil nil` / `YX n`）について
+`GOK (one nil (two nil (one W (FLr Bs))))` が緑。
+
+### 3. シートは進まない（bms で実測）
+
+    R341 ++ jk1 2 T ∈ W 0   ←  GOK T      （rowJ_mem_genF Aok_R338 の形）
+
+なので `GOK (one nil (two nil X))` は `R373 ++ jk1 4 X ∈ W 0` を与える。
+`R375m = R373 (5,2,0)` に届くには `jk1 4 X` が `(5,2,0)` で始まる必要があり、
+それは `X = two nil Y`。`LOk 0 (two nil Y)` は `Y = nil` だけ緑（`TwoOk_twoNil`）で、
+`Y ≠ nil` が**走り**の壁。だから今回出た行列は
+
+    R375m (5,1,0)(6,2,0)(7,0,0)…      標準形だが `R600_351` より小さい（bms -c = -1）
+
+で、証明済み欄は更新しない。
+
+### 4. 残るのは `LOk` の深さ 0（走り）
+
+    LOk (k+1) （1 の枠が 1 枚以上）: 鎖も塔も緑
+    LOk 0     （2 の枠の直上）      : `two nil nil` だけ緑、それ以外が壁
+
+深さ 0 を上げるには `GCtx`（`Rq` つき）の下で `APd_twoTwoWGen` / `nstN2` を回す
+必要があり、`Rq (false::ks) U = TopOk U` が鎖（`two` 頭）を弾く。
+`WPd` は `Rq` を外した族だが今度は予算が足りない。**`Rq` も予算も無い深さ 0 の
+族**を作るのが次の一手。
