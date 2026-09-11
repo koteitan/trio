@@ -73083,5 +73083,196 @@ theorem FLnilStep_of_FLnilStepG (h : FLnilStepG) : FLnilStep :=
 
 #print axioms PFLg_cons
 
+/-! ### ★★★★★★ 文脈の族 `GBase` と、壁を `QFL []` 1 個にする
+
+塔の文脈は「良い枠木 `A` のブロックを積んだもの」。`GBase` でそれを表すと、
+`B = []`（階段）の場合が**塔の文脈で `QFL Bs` を使って閉じる**。
+結果、残るのは `QFL []`（空木が塔の文脈で良い）1 個だけ。 -/
+
+inductive GBase : List Frm → Prop
+  | base : GBase ctxFL
+  | ext {ctx : List Frm} {A : Jk1} : GBase ctx → JkA A → GOK (plug ctx A) →
+      GBase (ctx ++ [Frm.fone A, Frm.ftwo Jk1.nil])
+
+theorem GBase_CtxJT {ctx : List Frm} (h : GBase ctx) : CtxJT ctx := by
+  induction h with
+  | base => exact CtxJT_ctxFL
+  | ext _ hA _ ih => exact CtxJT_ext ih hA
+
+/-- 塔の中身。`appJ B' (UtwP [nil] B' m)` は `GBase` の文脈を `m` 段伸ばすだけ。 -/
+theorem GOK_appJ_tow {B' : Jk1} (hJB : JkA B')
+    (hQ : ∀ ctx : List Frm, GBase ctx → GOK (plug ctx B')) :
+    ∀ (m : ℕ) (ctx : List Frm), GBase ctx →
+      GOK (plug ctx (appJ B' (UtwP [Jk1.nil] B' m)))
+  | 0, ctx, hc => hQ ctx hc
+  | (m + 1), ctx, hc => by
+      show GOK (plug ctx (Jk1.one B'
+        (Jk1.two Jk1.nil (appJ B' (UtwP [Jk1.nil] B' m)))))
+      rw [← plug_oneTwoBlk]
+      exact GOK_appJ_tow hJB hQ m (ctx ++ [Frm.fone B', Frm.ftwo Jk1.nil])
+        (GBase.ext hc hJB (hQ ctx hc))
+
+def QFL (Bs : List TrioSeq) : Prop := ∀ ctx : List Frm, GBase ctx → PFLg ctx Bs
+
+/-- ★★★★★★ `B = []`（鎖の右端に裸の 2 の記録）が閉じる。 -/
+theorem QFL_nilcons (Bs : List TrioSeq) (hBs : ∀ C ∈ Bs, Bok C) (hQ : QFL Bs) :
+    QFL (([] : TrioSeq) :: Bs) := by
+  intro ctx hc
+  have hJB : JkA (FLr Bs) := JkA_FLr Bs hBs
+  have hQ' : ∀ ctx' : List Frm, GBase ctx' → GOK (plug ctx' (FLr Bs)) := fun c h => hQ c h
+  have hsplit : ∃ (ctx₀ : List Frm) (A : Jk1), JkA A ∧ GOK (plug ctx₀ A)
+      ∧ ctx = ctx₀ ++ [Frm.fone A, Frm.ftwo Jk1.nil] := by
+    cases hc with
+    | base => exact ⟨[], Jk1.nil, trivial, GOK_nil, rfl⟩
+    | ext _ hA hG => exact ⟨_, _, hA, hG, rfl⟩
+  obtain ⟨ctx₀, A, hA, hGA, rfl⟩ := hsplit
+  have hJT : JkT (plug ctx₀ (Jk1.one A (RunS ([Jk1.nil] ++ [FLr Bs])))) := by
+    show JkT (plug ctx₀ (Jk1.one A (Jk1.two Jk1.nil (Jk1.two (FLr Bs) Jk1.nil))))
+    rw [← plug_oneTwoBlk]
+    exact GBase_CtxJT hc _ ⟨hJB, trivial⟩
+  have hbase : GOK (plug ctx₀ (Jk1.one A (RunS ([Jk1.nil] ++ [FLr Bs])))) := by
+    refine GOK_oneUV_RunSB ctx₀ [Jk1.nil] (FLr Bs) A ?_ hJB hJT hGA ?_
+    · intro X hX
+      have he : X = Jk1.nil := by simpa using hX
+      subst he
+      exact trivial
+    · intro n
+      cases n with
+      | zero => exact hGA
+      | succ m =>
+          show GOK (plug ctx₀ (Jk1.one A (Jk1.two Jk1.nil
+            (appJ (FLr Bs) (UtwP [Jk1.nil] (FLr Bs) m)))))
+          rw [← plug_oneTwoBlk]
+          exact GOK_appJ_tow hJB hQ' m _ hc
+  show GOK (plug (ctx₀ ++ [Frm.fone A, Frm.ftwo Jk1.nil]) (FLr (([] : TrioSeq) :: Bs)))
+  rw [plug_oneTwoBlk]
+  have hcg : ∀ l : ℕ,
+      jk1 l (Jk1.one A (Jk1.two Jk1.nil (Jk1.two (FLr Bs) Jk1.nil)))
+        = jk1 l (Jk1.one A (Jk1.two Jk1.nil
+            (Jk1.two (FLr Bs) (Jk1.pay Jk1.nil ([] : TrioSeq))))) := by
+    intro l
+    simp [jk1, shiftr01]
+  exact GOK_congr (fun l => jk1_plug_congr ctx₀ hcg l) hbase
+
+theorem QFL_rep {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hIH : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → QFL Bs → QFL (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (hQ : QFL Bs) :
+    ∀ n : ℕ, QFL (List.replicate n B₀ ++ Bs)
+      ∧ (∀ C ∈ List.replicate n B₀ ++ Bs, Bok C) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hQ, hBs⟩
+  | succ n ih =>
+      have e : List.replicate (n + 1) B₀ ++ Bs = B₀ :: (List.replicate n B₀ ++ Bs) := by
+        simp [List.replicate_succ]
+      rw [e]
+      refine ⟨hIH _ ih.2 ih.1, ?_⟩
+      intro C hC
+      rcases List.mem_cons.mp hC with rfl | hC'
+      · exact hB₀
+      · exact ih.2 C hC'
+
+theorem QFL_dup {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hB : Bok (B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+    (hIH : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → QFL Bs → QFL (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (hQ : QFL Bs) :
+    QFL ((B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) :: Bs) := by
+  have hrep := QFL_rep hB₀ hIH hBs hQ
+  intro ctx hc ws hw hG
+  refine GoodFb_snoc_dupJt0 hw
+    (GBase_CtxJT hc _ ⟨JkA_FLr Bs hBs, trivial, hB⟩) ?_
+  intro n hn
+  have h2 := (hrep n).1 ctx hc ws hw hG
+  rw [← twoIt_FLr n B₀ Bs] at h2
+  exact h2
+
+/-- ★★★★★★ 入れ子帰納法。**仮定なし**。残るのは `QFL []` だけ。 -/
+theorem QFL_cons : ∀ (B : TrioSeq), Bok B → ∀ Bs : List TrioSeq,
+    (∀ C ∈ Bs, Bok C) → QFL Bs → QFL (B :: Bs) := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ Bs : List TrioSeq,
+      (∀ C ∈ Bs, Bok C) → QFL Bs → QFL (B :: Bs)} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb Bs hBs hQ
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact QFL_nilcons Bs hBs hQ
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e2]
+        exact QFL_dup Bok_nil (by rw [← e2]; exact hBb)
+          (fun Bs' hBs' hQ' => QFL_nilcons Bs' hBs' hQ') hBs hQ
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        rw [hsplit]
+        exact QFL_dup hdb (by rw [← hsplit]; exact hBb) (hdl hdb) hBs hQ
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ctx hc ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (GBase_CtxJT hc _ ⟨JkA_FLr Bs hBs, trivial, hBb⟩) hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) Bs hBs hQ ctx hc ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb Bs hBs hQ
+  exact key hBb.mem hBb Bs hBs hQ
+
+theorem QFL_all (h0 : QFL ([] : List TrioSeq)) : ∀ Bs : List TrioSeq,
+    (∀ C ∈ Bs, Bok C) → QFL Bs
+  | [], _ => h0
+  | (B :: Bs), h => QFL_cons B (h B List.mem_cons_self) Bs
+      (fun C hC => h C (List.mem_cons_of_mem B hC))
+      (QFL_all h0 Bs (fun C hC => h C (List.mem_cons_of_mem B hC)))
+
+/-- ★★★★★★ 壁は `QFL []` 1 個。 -/
+theorem Pay2_of_QFL0 (h0 : QFL ([] : List TrioSeq)) : Pay2 := by
+  intro B hB
+  have hB1 : ∀ C ∈ [B], Bok C := by
+    intro C hC
+    have he : C = B := by simpa using hC
+    subst he
+    exact hB
+  exact QFL_all h0 [B] hB1 ctxFL GBase.base
+
+theorem R375m61_of_QFL0 (h0 : QFL ([] : List TrioSeq)) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_QFL0 h0)
+
+#print axioms QFL_cons
+#print axioms R375m61_of_QFL0
+
 end Small
 end TRIO
