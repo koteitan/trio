@@ -70858,5 +70858,83 @@ theorem WFd_nilF' (k i : ℕ) (hik : i + 1 ≤ k) (ks : List (ℕ × ℕ)) :
 
 #print axioms R376_of_WFd_nilAll
 
+/-! ### ★★★★★★ 族 `WGd`。予算を形から外して大域パラメータにする
+
+追記272 の 6「族の木の仮定を全部『どの予算でも置ける』形にする」を実装する。
+
+* 形は**幅の列**だけ。予算 `b` は形の外の大域パラメータ。
+* スラック `r`（ブロックを剥がすとき下に入る完成ブロック）の幅は `≤ i`
+  （測度の幅の多重集合を減らすため）。
+* 兄弟と 1 の枠の木は**予算を下げて**差し直せる（`b' < b`）。予算が下がるので
+  幅の条件は要らない。だから**ブロックの幅に依存しない**。
+* 測度は lex(予算, 幅の多重集合の DM)。 -/
+
+def FrmG : List ℕ → Jk1 → Prop
+  | [], U => JkT U
+  | (_ :: _), U => JkA U
+
+theorem FrmG_JkA : ∀ (ks : List ℕ) (U : Jk1), FrmG ks U → JkA U
+  | [], _, h => h.1
+  | (_ :: _), _, h => h
+
+theorem FrmG_one (ks : List ℕ) (U X : Jk1) (hU : FrmG ks U) (hX : JkA X) :
+    FrmG ks (Jk1.one U X) := by
+  cases ks with
+  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
+  | cons b bs => exact ⟨hU, hX⟩
+
+theorem FrmG_nilA (ks : List ℕ) : FrmG ks Jk1.nil := by
+  cases ks with
+  | nil => exact JkT_nil
+  | cons b bs => exact trivial
+
+def WGd : ℕ → List ℕ → Jk1 → Prop
+  | _, [], V => GOK V
+  | b, (0 :: ks), V => ∀ U : Jk1, FrmG ks U → WGd b ks U →
+      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      WGd b ks (Jk1.one U V)
+  | b, ((i + 1) :: ks), V => ∀ r : List ℕ, (∀ x ∈ r, x ≤ i) →
+      ∀ U : Jk1, FrmG (r ++ ks) U → WGd b (r ++ ks) U →
+      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      ∀ Ns : List Jk1, Ns.length = i + 1 → (∀ N ∈ Ns, JkA N) →
+      (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N) →
+      WGd b (r ++ ks) (Jk1.one U (RunP Ns V))
+termination_by b s _ => (b, ((s : List ℕ) : Multiset ℕ))
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.left _ _ (by assumption)
+      | exact Prod.Lex.right _ (dm_ws 0 ks [] (by simp))
+      | exact Prod.Lex.right _ (dm_ws (i + 1) ks r
+          (by
+            intro x hx
+            have := (by assumption : ∀ x ∈ r, x ≤ i) x hx
+            omega))
+
+theorem WGd_bnil (b : ℕ) (V : Jk1) : WGd b [] V ↔ GOK V := by rw [WGd]
+
+theorem WGd_c0 (b : ℕ) (ks : List ℕ) (V : Jk1) :
+    WGd b (0 :: ks) V ↔ ∀ U : Jk1, FrmG ks U → WGd b ks U →
+      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      WGd b ks (Jk1.one U V) := by
+  rw [WGd]
+
+theorem WGd_ck (b i : ℕ) (ks : List ℕ) (V : Jk1) :
+    WGd b ((i + 1) :: ks) V ↔ ∀ r : List ℕ, (∀ x ∈ r, x ≤ i) →
+      ∀ U : Jk1, FrmG (r ++ ks) U → WGd b (r ++ ks) U →
+      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) →
+      ∀ Ns : List Jk1, Ns.length = i + 1 → (∀ N ∈ Ns, JkA N) →
+      (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N) →
+      WGd b (r ++ ks) (Jk1.one U (RunP Ns V)) := by
+  rw [WGd]
+
+#print axioms WGd_ck
+
 end Small
 end TRIO
