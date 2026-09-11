@@ -75080,5 +75080,124 @@ theorem GOK_oneTwoOneFLr {W : Jk1} (hJW : JkA W) (hW : LOk 0 W)
 #print axioms TwoOk_oneFLr
 #print axioms GOK_oneTwoOneFLr
 
+/-! ### ★★★★★★ `Rq` も予算も無い族 `ECtx` / `EOk`
+
+文脈の形を `(k, ks)` で持つ。内側から「1 の枠 `k` 枚」「2 の枠」
+「1 の枠 `ks.head` 枚」「2 の枠」… 一番外は `fone nil`。
+
+- **1 の枠**の木の側条件は `EOk k ks U`（同じ形について全称）。
+- **2 の枠**の木の側条件は `∀ j, EOk j ks N`（**梯子の深さについて全称**）。
+  塔 `D ++ (fone N)^m` が形 `(k+m, ks)` になるので、これが要る。
+
+停止性は `(ks.length, k)` の辞書式。2 の枠の場合はリストが 1 短くなるので
+`∀ j` を入れても回る。`WPd` の予算（`∀ x ∈ r, x ≤ k`）も
+`APd` の `Rq` も要らない。 -/
+
+def ECtx : ℕ → List ℕ → List Frm → Prop
+  | 0, [], D => D = [Frm.fone Jk1.nil]
+  | (k + 1), ks, D => ∃ (D' : List Frm) (U : Jk1), D = D' ++ [Frm.fone U] ∧
+      ECtx k ks D' ∧ JkA U ∧ (∀ D'' : List Frm, ECtx k ks D'' → GOK (plug D'' U))
+  | 0, (k' :: ks), D => ∃ (D' : List Frm) (N : Jk1), D = D' ++ [Frm.ftwo N] ∧
+      ECtx k' ks D' ∧ JkA N ∧
+      (∀ (j : ℕ) (D'' : List Frm), ECtx j ks D'' → GOK (plug D'' N))
+termination_by k ks _ => (ks.length, k)
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by simp only [List.length_cons]; omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+def EOk (k : ℕ) (ks : List ℕ) (X : Jk1) : Prop :=
+  ∀ D : List Frm, ECtx k ks D → GOK (plug D X)
+
+theorem ECtx_base (D : List Frm) : ECtx 0 [] D ↔ D = [Frm.fone Jk1.nil] := by rw [ECtx]
+
+theorem ECtx_succ (k : ℕ) (ks : List ℕ) (D : List Frm) :
+    ECtx (k + 1) ks D ↔ ∃ (D' : List Frm) (U : Jk1), D = D' ++ [Frm.fone U] ∧
+      ECtx k ks D' ∧ JkA U ∧ (∀ D'' : List Frm, ECtx k ks D'' → GOK (plug D'' U)) := by
+  rw [ECtx]
+
+theorem ECtx_cons (k' : ℕ) (ks : List ℕ) (D : List Frm) :
+    ECtx 0 (k' :: ks) D ↔ ∃ (D' : List Frm) (N : Jk1), D = D' ++ [Frm.ftwo N] ∧
+      ECtx k' ks D' ∧ JkA N ∧
+      (∀ (j : ℕ) (D'' : List Frm), ECtx j ks D'' → GOK (plug D'' N)) := by
+  rw [ECtx]
+
+theorem ECtx_JkT : ∀ (k : ℕ) (ks : List ℕ) (D : List Frm), ECtx k ks D →
+    ∀ X : Jk1, JkA X → JkT (plug D X)
+  | 0, [], D, h, X, hX => by
+      rw [ECtx_base] at h
+      subst h
+      exact ⟨⟨trivial, hX⟩, trivial⟩
+  | (k + 1), ks, D, h, X, hX => by
+      rw [ECtx_succ] at h
+      obtain ⟨D', U, rfl, hD', hJU, -⟩ := h
+      rw [plug_snoc]
+      exact ECtx_JkT k ks D' hD' _ ⟨hJU, hX⟩
+  | 0, (k' :: ks), D, h, X, hX => by
+      rw [ECtx_cons] at h
+      obtain ⟨D', N, rfl, hD', hJN, -⟩ := h
+      rw [plug_snoc2]
+      exact ECtx_JkT k' ks D' hD' _ ⟨hJN, hX⟩
+termination_by k ks _ _ _ _ => (ks.length, k)
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.right _ (by omega)
+      | exact Prod.Lex.left _ _ (by simp only [List.length_cons]; omega)
+      | exact Prod.Lex.left _ _ (by omega)
+
+theorem ECtx_fone {k : ℕ} {ks : List ℕ} {D : List Frm} (hD : ECtx k ks D)
+    {U : Jk1} (hJU : JkA U) (hU : EOk k ks U) : ECtx (k + 1) ks (D ++ [Frm.fone U]) :=
+  (ECtx_succ k ks _).mpr ⟨D, U, rfl, hD, hJU, hU⟩
+
+theorem ECtx_ftwo {k : ℕ} {ks : List ℕ} {D : List Frm} (hD : ECtx k ks D)
+    {N : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, EOk j ks N) :
+    ECtx 0 (k :: ks) (D ++ [Frm.ftwo N]) :=
+  (ECtx_cons k ks _).mpr ⟨D, N, rfl, hD, hJN, fun j D'' hD'' => hN j D'' hD''⟩
+
+/-- 1 の記録は形を `k → k+1` にするだけ。 -/
+theorem EOk_one {k : ℕ} {ks : List ℕ} {U X : Jk1} (hJU : JkA U) (hU : EOk k ks U)
+    (hX : EOk (k + 1) ks X) : EOk k ks (Jk1.one U X) := by
+  intro D hD
+  rw [← plug_snoc]
+  exact hX _ (ECtx_fone hD hJU hU)
+
+/-- 2 の記録は形を `(k, ks) → (0, k :: ks)` にするだけ。**予算を使わない**。 -/
+theorem EOk_two {k : ℕ} {ks : List ℕ} {N X : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, EOk j ks N)
+    (hX : EOk 0 (k :: ks) X) : EOk k ks (Jk1.two N X) := by
+  intro D hD
+  rw [← plug_snoc2]
+  exact hX _ (ECtx_ftwo hD hJN hN)
+
+theorem ECtx_rep_fone {ks : List ℕ} {N : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, EOk j ks N) :
+    ∀ (m k : ℕ) (D : List Frm), ECtx k ks D →
+      ECtx (k + m) ks (D ++ List.replicate m (Frm.fone N))
+  | 0, k, D, hD => by simpa using hD
+  | (m + 1), k, D, hD => by
+      have e : D ++ List.replicate (m + 1) (Frm.fone N)
+          = (D ++ [Frm.fone N]) ++ List.replicate m (Frm.fone N) := by
+        simp [List.replicate_succ, List.append_assoc]
+      rw [e, show k + (m + 1) = (k + 1) + m from by omega]
+      exact ECtx_rep_fone hJN hN m (k + 1) _ (ECtx_fone hD hJN (hN k))
+
+/-- ★★★★★ 裸の 2 の記録。塔の条件が「深さについて全称」なのでそのまま出る。 -/
+theorem EOk_twoNil {ks : List ℕ} {N : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, EOk j ks N) :
+    ∀ k : ℕ, EOk (k + 1) ks (Jk1.two N Jk1.nil) := by
+  intro k D hD
+  have hD0 := hD
+  rw [ECtx_succ] at hD
+  obtain ⟨D', U, rfl, hD', hJU, hU⟩ := hD
+  refine GOK_twoNil_gen D' U hJN
+    (ECtx_JkT (k + 1) ks _ hD0 _ ⟨hJN, trivial⟩) (hU D' hD') ?_
+  intro m
+  rw [← plug_append]
+  exact hN (k + 1 + m) _ (ECtx_rep_fone hJN hN m (k + 1) _ hD0)
+
+#print axioms ECtx_JkT
+#print axioms EOk_two
+#print axioms EOk_twoNil
+
 end Small
 end TRIO
