@@ -72521,5 +72521,58 @@ theorem WFd_oneNilAll (U : Jk1) (hU : JkT U) (hUall : ∀ s : List (ℕ × ℕ),
 
 #print axioms WFd_oneNilAll
 
+/-! ### ★★★★★★ 残りは「枠の予算下げ」1 点
+
+`WFd_ck_shift` で `k₂ = k` は足りる。`k₂ < k` だけが出ていない。 -/
+
+theorem PayShp_of_lower {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1}
+    (h0 : WFd ((k, i + 1) :: ks) Z)
+    (hlt : ∀ k₂ : ℕ, k₂ < k → ∀ p : List (ℕ × ℕ), (∀ x ∈ p, x.1 < k) →
+      WFd ((k₂, i + 1) :: (p ++ ks)) Z) :
+    PayShp k i ks Z := by
+  intro k₂ hk₂ p hp
+  rcases Nat.lt_or_ge k₂ k with h | h
+  · exact hlt k₂ h p hp
+  · have he : k₂ = k := by omega
+    subst he
+    exact WFd_ck_shift h0 p hp
+
+/-- 幅 ≥ 1 の入り目で `one U nil`。要るのは枠 `U` の予算下げだけ。 -/
+theorem WFd_oneNilF {k i : ℕ} {ks : List (ℕ × ℕ)} (U : Jk1) (hJU : JkA U)
+    (hU : WFd ((k, i + 1) :: ks) U)
+    (hlt : ∀ k₂ : ℕ, k₂ < k → ∀ p : List (ℕ × ℕ), (∀ x ∈ p, x.1 < k) →
+      WFd ((k₂, i + 1) :: (p ++ ks)) U) :
+    WFd ((k, i + 1) :: ks) (Jk1.one U Jk1.nil) := by
+  rw [WFd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx U
+    (WFtx_JkT ((k, i + 1) :: ks) ctx hc (Jk1.one U Jk1.nil)
+      (show FrmF ((k, i + 1) :: ks) (Jk1.one U Jk1.nil) from ⟨hJU, trivial⟩))
+    ((WFd_iff ((k, i + 1) :: ks) U).mp hU ctx hc) ?_
+  intro C hC
+  exact (WFd_iff ((k, i + 1) :: ks) _).mp
+    (WFd_payF C hC U hJU k i ks (PayShp_of_lower hU hlt)) ctx hc
+
+/-- ★ 枠の予算下げ。これ 1 本が残っている壁。 -/
+def FrLow : Prop := ∀ (k' i : ℕ) (ks : List (ℕ × ℕ)) (U : Jk1), JkA U →
+    WFd ((k', i + 1) :: ks) U →
+    ∀ k₂ : ℕ, k₂ < k' → ∀ p : List (ℕ × ℕ), (∀ x ∈ p, x.1 < k') →
+      WFd ((k₂, i + 1) :: (p ++ ks)) U
+
+theorem WFd_nilT_f (hlow : FrLow) (k k' i : ℕ) (ks : List (ℕ × ℕ)) :
+    WFd ((k, 0) :: ((k', i + 1) :: ks)) Jk1.nil :=
+  (WFd_c0 k ((k', i + 1) :: ks) _).mpr
+    (fun U hU hUk => WFd_oneNilF U hU hUk (hlow k' i ks U hU hUk))
+
+/-- 幅 0 の入り目の空木は、枠の予算下げだけで全部出る。 -/
+theorem WFd_nilT (hlow : FrLow) : ∀ (k : ℕ) (ks : List (ℕ × ℕ)),
+    WFd ((k, 0) :: ks) Jk1.nil
+  | k, [] => WFd_nilT_e k
+  | k, ((k', 0) :: ks) => WFd_nilT_c k k' ks
+  | k, ((k', i + 1) :: ks) => WFd_nilT_f hlow k k' i ks
+
+#print axioms WFd_oneNilF
+#print axioms WFd_nilT
+
 end Small
 end TRIO
