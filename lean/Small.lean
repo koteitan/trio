@@ -72178,5 +72178,278 @@ theorem GOK_bdA_two : GOK (Jk1.one Jk1.nil (stk 2)) := by
 #print axioms R376_of_FoneB
 #print axioms GOK_bdA_two
 
+/-! ### ★★★★★★ 幅 ≥ 1 の入り目の荷（`AYdTW` の `WFd` 版）
+
+`GoodFb_snoc_dupJt0` の平らな鎖 `twoIt C (pay Z Y₀) n` を、走りの添字 `i` の
+兄弟として入れる。兄弟の予算が `k₂ ≤ k`（等号込み）になったので、鎖の各段を
+予算 `k` のまま作れる。`T = pay Z Y₀` は W 帰納の内側の仮定から**全部の形で**
+取れるので、`k₂ < k` の段は `T` を形 `(k₂,i+1) :: S` で使えば通る。 -/
+
+theorem WFd_chainF {k i : ℕ} {ks r : List (ℕ × ℕ)}
+    (hr : ∀ x ∈ r, x.1 < k) {N T : Jk1} (hJN : JkA N) (hJT : JkA T)
+    (hT : ∀ s : List (ℕ × ℕ), WFd s T)
+    (hNt : ∀ k₂ : ℕ, i ≤ k₂ → k₂ ≤ k → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
+      WFd ((k₂, i) :: (q ++ (r ++ ks))) N) :
+    ∀ m : ℕ, ∀ k₂ : ℕ, i ≤ k₂ → k₂ ≤ k → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
+      WFd ((k₂, i) :: (q ++ (r ++ ks))) (twoIt N T m) := by
+  cases i with
+  | zero =>
+      intro m
+      induction m with
+      | zero => exact hNt
+      | succ m ih =>
+          intro k₂ _ hk q hq
+          show WFd ((k₂, 0) :: (q ++ (r ++ ks))) (Jk1.two (twoIt N T m) T)
+          rw [WFd_c0]
+          intro U' hU' hUk'
+          have hsib : ∀ j : ℕ, j ≤ 0 → ∀ N' : Jk1, AtIx [twoIt N T m] j N' →
+              ∀ k₃ : ℕ, j ≤ k₃ → k₃ ≤ k₂ → ∀ q' : List (ℕ × ℕ), (∀ x ∈ q', x.1 < k₂) →
+                WFd ((k₃, j) :: (q' ++ ([] ++ (q ++ (r ++ ks))))) N' := by
+            intro j hj N' hN' k₃ h1 h2 q' hq'
+            have hj0 : j = 0 := by omega
+            subst hj0
+            have hNe : N' = twoIt N T m := AtIx_zero.mp hN'
+            subst hNe
+            have hb : ∀ x ∈ q' ++ q, x.1 < k := by
+              intro x hx
+              rcases List.mem_append.mp hx with h3 | h3
+              · have := hq' x h3; omega
+              · exact hq x h3
+            have h4 := ih k₃ (by omega) (by omega) (q' ++ q) hb
+            show WFd ((k₃, 0) :: (q' ++ (q ++ (r ++ ks)))) _
+            rw [← List.append_assoc]
+            exact h4
+          exact (WFd_ck k₂ 0 (q ++ (r ++ ks)) T).mp (hT _) [] (by simp) U' hU' hUk'
+            [twoIt N T m] (by simp)
+            (by
+              intro N' hN'
+              have he : N' = twoIt N T m := by simpa using hN'
+              subst he
+              exact JkA_twoItP hJN hJT m)
+            hsib
+  | succ i' =>
+      intro m
+      induction m with
+      | zero => exact hNt
+      | succ m ih =>
+          intro k₂ hik hk q hq
+          show WFd ((k₂, i' + 1) :: (q ++ (r ++ ks))) (Jk1.two (twoIt N T m) T)
+          rw [WFd_ck]
+          intro r' hr' U' hU' hUk' Ns' hlen' hJNs' hNt'
+          have hsib : ∀ j : ℕ, j ≤ i' + 1 → ∀ N' : Jk1,
+              AtIx (Ns' ++ [twoIt N T m]) j N' → ∀ k₃ : ℕ, j ≤ k₃ → k₃ ≤ k₂ →
+              ∀ q' : List (ℕ × ℕ), (∀ x ∈ q', x.1 < k₂) →
+                WFd ((k₃, j) :: (q' ++ (r' ++ (q ++ (r ++ ks))))) N' := by
+            intro j hj N' hN' k₃ h1 h2 q' hq'
+            rcases AtIx_snoc Ns' _ N' j hN' with h5 | ⟨h5, h6⟩
+            · have hjl : j ≤ i' := by
+                have := AtIx_lt h5; omega
+              exact hNt' j hjl N' h5 k₃ h1 h2 q' hq'
+            · subst h6
+              have hji : j = i' + 1 := by rw [h5, hlen']
+              subst hji
+              have hb : ∀ x ∈ (q' ++ r') ++ q, x.1 < k := by
+                intro x hx
+                rcases List.mem_append.mp hx with h7 | h7
+                · rcases List.mem_append.mp h7 with h8 | h8
+                  · have := hq' x h8; omega
+                  · have := hr' x h8; omega
+                · exact hq x h7
+              have h4 := ih k₃ (by omega) (by omega) ((q' ++ r') ++ q) hb
+              show WFd ((k₃, i' + 1) :: (q' ++ (r' ++ (q ++ (r ++ ks))))) _
+              rw [show q' ++ (r' ++ (q ++ (r ++ ks))) = ((q' ++ r') ++ q) ++ (r ++ ks) from by
+                simp [List.append_assoc]]
+              exact h4
+          have h := (WFd_ck k₂ (i' + 1) (q ++ (r ++ ks)) T).mp (hT _) r' hr' U' hU' hUk'
+            (Ns' ++ [twoIt N T m]) (by simp [hlen'])
+            (by
+              intro N' hN'
+              rcases List.mem_append.mp hN' with h7 | h7
+              · exact hJNs' N' h7
+              · have he : N' = twoIt N T m := by simpa using h7
+                subst he
+                exact JkA_twoItP hJN hJT m)
+            hsib
+          rw [RunP_append] at h
+          exact h
+
+/-- 荷の最後の列が根（`(0,0,0)`）のとき。平らな鎖で受ける。 -/
+theorem WFd_dupF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
+    {Y₀ : TrioSeq} (hY₀ : Bok Y₀)
+    (hY : Bok (Y₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+    (hprev : ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z Y₀)) :
+    WFd ((k, i + 1) :: ks) (Jk1.pay Z (Y₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) := by
+  rw [WFd_ck]
+  intro r hr U hU hUk Ns hlen hJNs hNt
+  have hne : Ns ≠ [] := by
+    intro h; rw [h] at hlen; simp at hlen
+  have hrne : Ns.reverse ≠ [] := by simpa using hne
+  obtain ⟨C, L, hL⟩ := List.exists_cons_of_ne_nil hrne
+  have hNs : Ns = L.reverse ++ [C] := by
+    have h2 := congrArg List.reverse hL
+    rwa [List.reverse_reverse, List.reverse_cons] at h2
+  subst hNs
+  set Ns' : List Jk1 := L.reverse with hNs'
+  have hlen' : Ns'.length = i := by
+    have h3 : Ns'.length + 1 = i + 1 := by simpa using hlen
+    omega
+  have hJC : JkA C := hJNs C (by simp)
+  have hJTp : JkA (Jk1.pay Z Y₀) := ⟨hZ, hY₀⟩
+  have hNl : ∀ k₂ : ℕ, i ≤ k₂ → k₂ ≤ k → ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
+      WFd ((k₂, i) :: (q ++ (r ++ ks))) C := by
+    intro k₂ h1 h2 q hq
+    refine hNt i (le_refl i) C ?_ k₂ h1 h2 q hq
+    rw [← hlen']
+    exact AtIx_concat_last Ns' C
+  have hchain := WFd_chainF hr hJC hJTp hprev hNl
+  rw [WFd_iff]
+  intro ctx hc
+  have hrun : ∀ W X : Jk1, RunP (Ns' ++ [W]) X = RunP Ns' (Jk1.two W X) := by
+    intro W X; rw [RunP_append]; rfl
+  have hplug : ∀ X : Jk1, plug ctx (Jk1.one U (RunP Ns' X)) = plug (ctx ++ PBlk Ns' U) X :=
+    fun X => (plug_PBlk ctx Ns' U X).symm
+  rw [hrun, hplug]
+  intro ws hw hG
+  refine GoodFb_snoc_dupJt0 hw ?_ ?_
+  · rw [← hplug, ← hrun]
+    exact WFtx_JkT (r ++ ks) ctx hc _
+      (FrmF_one (r ++ ks) U _ hU (JkA_RunP _ hJNs ⟨hZ, hY⟩))
+  · intro n hn
+    obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+    have hJM : JkA (twoIt C (Jk1.pay Z Y₀) n') := JkA_twoItP hJC hJTp n'
+    have hsib : ∀ j : ℕ, j ≤ i → ∀ N : Jk1,
+        AtIx (Ns' ++ [twoIt C (Jk1.pay Z Y₀) n']) j N → ∀ k₂ : ℕ, j ≤ k₂ → k₂ ≤ k →
+        ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
+          WFd ((k₂, j) :: (q ++ (r ++ ks))) N := by
+      intro j hj N hN k₂ h1 h2 q hq
+      rcases AtIx_snoc Ns' _ N j hN with h5 | ⟨h5, h6⟩
+      · exact hNt j hj N (AtIx_of_prefix C h5) k₂ h1 h2 q hq
+      · subst h6
+        have hji : j = i := by rw [h5, hlen']
+        subst hji
+        exact hchain n' k₂ h1 h2 q hq
+    have h2 := (WFd_ck k i ks (Jk1.pay Z Y₀)).mp (hprev _) r hr U hU hUk
+      (Ns' ++ [twoIt C (Jk1.pay Z Y₀) n']) (by simp [hlen'])
+      (by
+        intro N hN
+        rcases List.mem_append.mp hN with h7 | h7
+        · exact hJNs N (List.mem_append_left _ h7)
+        · have he : N = twoIt C (Jk1.pay Z Y₀) n' := by simpa using h7
+          subst he
+          exact hJM)
+      hsib
+    have h3 := (WFd_iff (r ++ ks) _).mp h2 ctx hc
+    rw [hrun, hplug] at h3
+    exact h3 ws hw hG
+
+/-- 荷の最後の列が根でないとき。荷の展開に潜る。 -/
+theorem WFd_innerF {k i : ℕ} {ks : List (ℕ × ℕ)} {Z : Jk1} (hZ : JkA Z)
+    {Y : TrioSeq} (hYb : Bok Y) (hlen2 : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hIH : ∀ n : ℕ, 1 ≤ n → ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z (Y⟦n⟧))) :
+    WFd ((k, i + 1) :: ks) (Jk1.pay Z Y) := by
+  rw [WFd_ck]
+  intro r hr U hU hUk Ns hlen hJNs hNt
+  have hne : Ns ≠ [] := by
+    intro h; rw [h] at hlen; simp at hlen
+  have hrne : Ns.reverse ≠ [] := by simpa using hne
+  obtain ⟨C, L, hL⟩ := List.exists_cons_of_ne_nil hrne
+  have hNs : Ns = L.reverse ++ [C] := by
+    have h2 := congrArg List.reverse hL
+    rwa [List.reverse_reverse, List.reverse_cons] at h2
+  subst hNs
+  set Ns' : List Jk1 := L.reverse with hNs'
+  rw [WFd_iff]
+  intro ctx hc
+  have hrun : ∀ W X : Jk1, RunP (Ns' ++ [W]) X = RunP Ns' (Jk1.two W X) := by
+    intro W X; rw [RunP_append]; rfl
+  have hplug : ∀ X : Jk1, plug ctx (Jk1.one U (RunP Ns' X)) = plug (ctx ++ PBlk Ns' U) X :=
+    fun X => (plug_PBlk ctx Ns' U X).symm
+  rw [hrun, hplug]
+  intro ws hw hG
+  refine GoodFb_snoc_innerJt0 hw ?_ hlen2 hp ?_
+  · rw [← hplug, ← hrun]
+    exact WFtx_JkT (r ++ ks) ctx hc _
+      (FrmF_one (r ++ ks) U _ hU (JkA_RunP _ hJNs ⟨hZ, hYb⟩))
+  · intro n hn
+    have h2 := (WFd_ck k i ks (Jk1.pay Z (Y⟦n⟧))).mp (hIH n hn _) r hr U hU hUk
+      (Ns' ++ [C]) hlen hJNs hNt
+    have h3 := (WFd_iff (r ++ ks) _).mp h2 ctx hc
+    rw [hrun, hplug] at h3
+    exact h3 ws hw hG
+
+/-- ★★★★★★ 荷はどの形でも通る（`Z` が全部の形で通るなら）。 -/
+theorem WFd_payAll : ∀ (Y : TrioSeq), Bok Y → ∀ (Z : Jk1), JkT Z →
+    (∀ s : List (ℕ × ℕ), WFd s Z) → ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z Y) := by
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (Z : Jk1), JkT Z →
+      (∀ s : List (ℕ × ℕ), WFd s Z) → ∀ s : List (ℕ × ℕ), WFd s (Jk1.pay Z Y)} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb Z hZT hZk s
+    rcases s with _ | ⟨e, ks⟩
+    · exact (WFd_bnil _).mpr (AY0 Y hYb Z hZT ((WFd_bnil Z).mp (hZk [])))
+    obtain ⟨k, w⟩ := e
+    rcases w with _ | i
+    · exact WFd_payT k ks Z hZT.1 (hZk _) Y hYb
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact WFd_congr _ (fun l => (jk1_pay_nil l Z).symm) (hZk _)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e2]
+        refine WFd_dupF hZT.1 Bok_nil (by rw [← e2]; exact hYb) ?_
+        intro s'
+        exact WFd_congr _ (fun l => (jk1_pay_nil l Z).symm) (hZk s')
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hprev : ∀ s' : List (ℕ × ℕ), WFd s' (Jk1.pay Z Y.dropLast) :=
+          hdl hdb Z hZT hZk
+        rw [hsplit]
+        exact WFd_dupF hZT.1 hdb (by rw [← hsplit]; exact hYb) hprev
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        refine WFd_innerF hZT.1 hYb hlen2 hp ?_
+        intro n hn s'
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hYb hn) Z hZT hZk s'
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb Z hZT hZk s
+  exact key hYb.mem hYb Z hZT hZk s
+
+#print axioms WFd_chainF
+#print axioms WFd_payAll
+
 end Small
 end TRIO
