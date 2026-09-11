@@ -9,76 +9,62 @@
 
 木では `bdA [2,0]`（幅 2 のブロックの上に裸の 1 の枠）を台座 `R341` の上に置いたもの。
 
-## 文脈の族
+## 壁は 1 文
 
-    ctxFL = [fone nil, ftwo nil]
+    OSib D X := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (one M X))
+    TSib D X := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (two M X))
 
-    HCx ctxFL
-    HCx ctx → JkA A → GOK (plug ctx A) → HCx (ctx ++ [fone A, ftwo nil])   -- 幅 1 のブロック
-    HCx ctx → JkA A → GOK (plug ctx A) → HCx (ctx ++ [fone A])             -- 幅 0 のブロック
+    HEx [fone nil]
+    HEx ctx → JkA A → HEx (ctx ++ [fone A])
+    HEx ctx → JkA A → HEx (ctx ++ [ftwo A])
 
-    HDx [fone nil]
-    HCx ctx → JkA A → GOK (plug ctx A) → HDx (ctx ++ [fone A])
+    NilO := ∀ D, HEx D → OSib D nil      ★これ 1 本
+    NilT := ∀ D, HEx D → TSib D nil
 
-側条件が `GOK (plug ctx A)` だけなのが要点。族（`APd` / `WPd` / `WFd` / `WGd`）は
-文脈の中の木にも族の述語を要求するので満たせなくなる。
+    NilO → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
 
-## 壁の還元（全部緑・族を使わない）
+`HEx` には**側条件が 1 つもない**（枠の木は `JkA` なだけ）。族
+（`APd` / `WPd` / `WFd` / `WGd`）が文脈の中の木にも族の述語を要求して
+満たせなくなっていたのが、これで消えた。
 
-    ZAppend D Z := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (two M Z))
-    SAppend D Z := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (one M Z))
+## 緑の部品
 
-    ZSibF := ∀ D A, HDx D → JkA A → GOK (plug D (two nil A)) →
-               ∀ M, TChain nil A M → JkA M → GOK (plug D M) →
-                 GOK (plug D (two M A))
-    SSibF := ∀ D A' A, HCx D → JkA A' → GOK (plug D A') → JkA A →
-               GOK (plug D (one A' A)) →
-               ∀ M, OChain A' A M → JkA M → GOK (plug D M) →
-                 GOK (plug D (one M A))
-
-    TChain nil A M : M = nil | two M' (pay A Y)      （= FLrZ A Bs、平らな鎖）
-    OChain A' A M  : M = A'  | one M' (pay A Y)
-
-    HFone := ∀ ctx A, HCx ctx → JkA A → GOK (plug ctx A) → GOK (plug ctx (one A nil))
-
-    ZSibF ∧ SSibF → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
-
-緑の部品:
-
-    HFone_of_SibsF / R375m61_of_SibsF（兄弟は鎖だけでよい）
-    PS_consF（1 の記録版の鎖）/ TSibF_pay（2 の記録版の鎖、既存）
-    TowHCx（幅 0 のブロックの塔は HFone 1 本で立つ）/ QH0 / QFL0_of_HFone
-    PZ_cons（荷の W 帰納、2 の記録版）/ PS_cons（同、1 の記録版）
+    HFone_of_NilO / R375m61_of_NilO
+    Sib_tree : NilO → NilT → ∀ T, JkA T → ∀ D, HEx D → OSib D T ∧ TSib D T
+    NilO_of_hang（APnil_gen0 の包み直し）
+    OSib_one / OSib_two / TSib_one / TSib_two（plug の付け替えだけ）
+    PS_cons / PZ_cons（荷の W 帰納、CtxJT だけで回る）
+    PS_consF / TSibF_pay（兄弟を鎖 OChain / TChain に制限した版）
+    HCx / HDx（GOK 側条件つきの塔の文脈）/ TowHCx / QH0 / QFL0_of_HFone
     QFL_cons（鎖の入れ子帰納法、無条件）/ QFL_all / Pay2_of_QFL0
-    APnil_gen0（荷さえ吊れれば裸の 1 の記録は継げる）
     GOK_oneUV_RunSB（階段）/ GOK_appJ_tow（塔は文脈を伸ばすだけ）
     W0_acc（荷の展開 1 手は `W 0` の上で整礎）
 
-## 残り 2 手の中身
+## `NilO` の中身と、残る測度の問題
 
-どちらも「記録の左の兄弟を、手元にある 1 つから一般の良い木へ広げる」。
+`NilO D` は `APnil_gen0` で荷に落ちる:
 
-- `ZSibF`: `GOK (plug D (two nil A))` から `GOK (plug D (two M A))`。
-  `M` は平らな鎖 `FLrZ A Bs` だけ。木で書くと「2 の記録 + `A` + 荷」を横に
-  `k` 個並べたものの右にもう 1 個（荷は空）足す 1 手。
-- `SSibF`: `GOK (plug D (one A' A))` から `GOK (plug D (one M A))`。
-  `M` は `one` の鎖だけ。
+    NilO D ⟸ ∀ M 良い, ∀ C Bok, GOK (plug D (pay M C))
 
-`A = nil` なら `two M nil` は語の末尾が裸の 2 の記録なので `GOK_twoNil_gen`
-（階段＝`SelfW`）に乗る。`A ≠ nil` だと末尾が `A` の語になるので
-`GOK_oneUV_genM` の `hVs`（末尾が裸の 2 の記録）を満たさず、階段に乗らない。
-`A` の構造帰納で `pay` は `TSibF_pay`、`one` / `two` は文脈を `ftwo M` で
-伸ばして中身へ、`nil` で `SelfW`。文脈が伸びるのはここ。
+`D` の最後の枠で分けると
 
-既存の `TSib` / `OSib` の還元表（notes 追記参照）だと
+    D = D' ++ [fone V] : plug D' (one V (pay M C)) → PS_cons → OSib D' M
+    D = D' ++ [ftwo V] : plug D' (two V (pay M C)) → PZ_cons → TSib D' M
+    D = [fone nil]     : one nil (pay M C) → AYs（深さ 0）→ APz M
 
-    TSib D (one A B) ⟸ TSib D A, ∀W OSib (D ++ [ftwo W]) B
-    TSib D (two A B) ⟸ TSib D A, ∀W TSib (D ++ [ftwo W]) B
-    TSib D (pay A Y) ⟸ TSib D A                  （TSib_pay、緑）
-    TSib D nil       ⟸ SelfW D W（自分の上に積み続けられる）
+そして `OSib D' M` / `TSib D' M` は `Sib_tree` で `M` の構造帰納:
 
-で木は縮むが文脈が伸び、`nil` のところで文脈が 1 縮んで木が任意に戻る。
-`（木の大きさ, 文脈の長さ）` のどちらの辞書式順序でも割れる。ここが測度の問題。
+    OSib D (pay Z Y) ⟸ OSib D Z                        （PS_cons）
+    OSib D (one N T) ⟸ OSib D N, ∀W OSib (D ++ [fone W]) T
+    OSib D (two N T) ⟸ OSib D N, ∀W TSib (D ++ [fone W]) T
+    TSib D (one N T) ⟸ TSib D N, ∀W OSib (D ++ [ftwo W]) T
+    TSib D (two N T) ⟸ TSib D N, ∀W TSib (D ++ [ftwo W]) T
+    OSib D nil / TSib D nil = 壁
+
+**木は縮むが文脈が伸びる。`nil` のところで文脈が 1 縮んで木が任意に戻る。**
+`（木の大きさ, 文脈の長さ）` のどちらの辞書式順序でも割れる。これが最後の
+測度の問題で、`TSib D nil` は `SelfW D M`（`M` を自分の上に積み続けられる）
+＝ `GOK_twoNil_gen` の階段に対応する。
 
 ## 死んだ道（族）
 

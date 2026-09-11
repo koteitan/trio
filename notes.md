@@ -21747,3 +21747,48 @@ Acc（DM）帰納でほどける:
 
 という**移送**。これは族の述語を一切使わない形の壁で、`GBase`/`HCx` を
 `GOK` 側条件だけで作れたから初めて言える形になった。
+
+## 追記295 (2026-09-11): 壁は「裸の 1 の記録」1 文になった
+
+### 1. `HEx`：側条件が 1 つもない文脈の族
+
+    HEx [fone nil]
+    HEx ctx → JkA A → HEx (ctx ++ [fone A])
+    HEx ctx → JkA A → HEx (ctx ++ [ftwo A])
+
+枠の木は `JkA` なだけ。`GOK` すら要らない。`CtxJT` は頭が `fone nil` なので
+自動で付く（`HEx_CtxJT`）。
+
+### 2. 壁 1 文
+
+    NilO := ∀ D, HEx D → OSib D nil   -- ∀M 良い, GOK (plug D (one M nil))
+
+`HFone` は `NilO` のそのままの例（`HEx_of_HCx` を挟むだけ）。だから
+
+    NilO → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0   ★緑
+
+`SAppend` / `ZAppend` として書いていたものは、既存の `OSib` / `TSib` と
+**同じ定義**だった（63781 / 63556 行）。今回の新しい部分は
+
+- 荷の追加が `CtxOk` / `CtxX` なしで（`CtxJT` だけで）回るようにしたこと
+  （`PS_cons` / `PZ_cons`）。`AYs` は `CtxX` を要求するので、`JkJ` 由来の
+  「2 の記録の直上に 2 の記録を置けない」制約が付いて `HEx` に乗らなかった。
+- 文脈の族から側条件を全部落としたこと（`HEx`）。
+
+### 3. `Sib_tree`
+
+    Sib_tree : NilO → NilT → ∀ T, JkA T → ∀ D, HEx D → OSib D T ∧ TSib D T
+
+木の構造帰納。`one` / `two` は既存の `OSib_one` などで文脈を 1 伸ばして
+中身へ、`pay` は `PS_cons` / `PZ_cons` で荷を消して下の木へ、`nil` が壁。
+
+### 4. 残る測度の問題（変わっていない）
+
+`NilO D` → 荷 → `OSib D' M`（`D'` は 1 短い、`M` は任意）→ 構造帰納で
+文脈が伸びて木が縮む → `nil` でまた `D''` が 1 短くなって木が任意。
+
+`（木, 文脈）`のどちらの辞書式順序でも割れる。`TSib D nil` は `SelfW D M`
+（`M` を自分の上に積み続けられる）＝ `GOK_twoNil_gen` の階段。ここが本丸。
+
+今回の収穫は「壁の**言い方**が 1 文になった」こと。族の充足可能性の問題は
+`HEx` で完全に消えたので、残るのは純粋に測度だけになった。
