@@ -22819,3 +22819,60 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 `AYdT` で緑、`APd (true::ks) (two nil (pay nil C))` も緑。1 つ深いだけで割れる。
 
 **結論: 行列を大きくする安い道はここで尽きた。次は壁（`SHtow`）しかない。**
+
+## 追記320 (2026-09-12): 「字」は「文脈」より易しい。壁が 3 つ閉じた
+
+### 1. `GOK T6`：走り 2 連の直上の荷が**字としては**通る
+
+    T6 = one nil (two nil (two nil (pay nil [(0,0,0)])))
+    jk1 l T6 = (l+1,1,0)(l+2,2,0)(l+3,2,0)(l+4,0,0)
+    U375a6 = (1,1,0) :: wordJ 1 1 [T6]、R600 = R338 ++ U375a6
+
+`SegA_U375a6`（緑）は `GoodFb (wordJ · · [T6])` の `seg` の段そのもので、
+証明は「塔 `TowOkM n 0` の語 `(l+4,2,0)^n` を `flat_mem''` で平らにして
+`(l+5,0,0)` を出す」。**同じ議論が `pk`（`JkGU`）と `pu`（`JkU`）でも回る**。
+どちらも `prefix ++ shiftr01 t 0 J ∈ W 0` の形で、`J` の末尾が `(·,0,0)` なので
+`flat_mem''` の結論とぴったり合う。1 回目のビルドで緑。
+
+`T6` は `JkOk` でない（`TopOk (two _ _) = False`）ので `GOK_all` では出ない。
+追記319 で「`R600 (2,2,1)` は壁」と書いたのは**誤り**だった。
+`APd (false::ks) (two nil (pay nil [(0,0,0)]))`（文脈）と
+`GOK T6`（字）を混同していた。
+
+### 2. 出たもの
+
+    R600_221_mem : R600 (2,2,1) ∈ W 0                    無条件
+    R6221_RunA0  : RunA 0 1 (R600 (2,2,1))               新しい台座
+    Rz1 ws       : R338 (1,1,0) ++ wordJ 1 1 ws ++ (2,2,1) が RunA 0 1（任意の良い語）
+    T6w k        : T6 を k 個 → 台座が k 方向に無限
+    Rz1j k ws / LadZk : その上に PkGA 2 と PU の梯子
+
+シートの証明済みを `Rz1 (T6w k)` (k=6..10) とその junk 1 段に更新。
+
+### 3. `TowOk`（#14 の壁）は既に緑だった
+
+    TowOkM m : ∀ n, GOK (one nil (two nil (TWm m n)))     WPd 層で無条件に緑
+    TWm_one  : TWm 1 n = TW n
+    ⟹ TowOk_green : TowOk、R14_mem_green : R375m (5,2,0) ∈ W 0 が無条件
+
+`TWm_one` はファイルにあったのに、`TowOk` と繋がれていなかった。
+**壁を立てたら、既にある一般形に `m = 1` を代入していないか確かめる。**
+
+### 4. 行376 の壁は「字」1 文になった
+
+`tw_R344_42R` が `RunAll` から使っているのは `GOK (one nil (stk n))` だけで、
+文脈の量化（`∀ ks, APd (true::ks) ...`）は要らなかった。さらに
+`GOK_runNil_gen` の階段がブロック列なので
+
+    R376_of_StkL  : StkL → 行376,   StkL  := ∀ n, GOK (one nil (stk n))
+    R376_of_BdAll : BdAll → 行376,  BdAll := ∀ j m, GOK (bdA (replicate m j))
+
+`j = 0, 1` は緑（`GOK_bdA1`）。`j ≥ 2` が最後の 1 本。
+
+### 5. 教訓
+
+**`GOK T`（字）と `APd ks X` / `SG ks X`（文脈）は難しさが違う。**
+字は `flat_mem''` / `snocY_mem` の塔で直接押せる。文脈は族の側条件が要り、
+階段が形のリストを伸ばすところで割れる。同じ「走り 2 連」でも
+字なら通り（`GOK T6`）、文脈なら通らない（`BdAll` の `j ≥ 2`）。
+**新しい壁を立てるときは、まず「字の主張に落ちないか」を見る。**
