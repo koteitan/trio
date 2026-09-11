@@ -77762,9 +77762,32 @@ theorem RzQ_RunA0 (m p r j : ℕ) : RunA 0 1 (Rz1 [ItQ m p r j]) :=
 theorem RzQ_mem (m p r j : ℕ) : Rz1 [ItQ m p r j] ∈ W 0 :=
   ((BaseOk_RunA 0).aok _ _ (RzQ_RunA0 m p r j)).mem
 
+/-- 台座の右に junk（行 2 の語）を継ぐ。junk の字は `WJ`（`JkOk`）でよい。 -/
+theorem RzQj_PkGA (m p r j : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    PkGA 2 (Rz1 [ItQ m p r j] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, Rz1 [ItQ m p r j], wordJ 2 2 ws, rfl, RzQ_RunA0 m p r j, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩
+
+theorem RzQj_mem (m p r j : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    Rz1 [ItQ m p r j] ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws) ∈ W 0 :=
+  (PkGA_Aok (RzQj_PkGA m p r j hw)).mem
+
+/-- ★★★★★★ シートに使う形。junk は `(3,3,1)` 1 個（`ws = [nil]`）。
+同じ検証長なら台座の幅を 1 上げるより大きい（`bms -c` で実測）。 -/
+theorem RzQ1_mem (m p r j : ℕ) :
+    Rz1 [ItQ m p r j] ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := RzQj_mem m p r j (ws := [Jk1.nil]) (WJ_singleton JkOk_nil)
+  have e : wordJ 2 2 [Jk1.nil] = [((3, 3, 1) : ℕ × ℕ × ℕ)] := by
+    rw [wordJ_singleton]
+    show ((2 + 1, 2 + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (2 + 1) Jk1.nil = _
+    simp [jk1]
+  rw [e] at h
+  simpa using h
+
 #print axioms WPd_NstQ
 #print axioms GOK_ItQ
 #print axioms RzQ_mem
+#print axioms RzQ1_mem
 
 /-! ### ★★★★★ 最弱形 `FoneB` を `bdA` の言葉で書き直す
 
