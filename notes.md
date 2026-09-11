@@ -22103,3 +22103,44 @@ Acc（DM）帰納でほどける:
 ただし `X = bdA js` なら `bdA` の語の末尾は**裸の記録**（`j₀ ≥ 1` なら
 2 の記録、`j₀ = 0` なら 1 の記録）なので、階段に乗る見込みがある。
 次の一手はここ。
+
+## 追記303 (2026-09-11): 最小未証明は「`stk 2` を 2 の枠の直上に差す」
+
+### 1. `RunP2` を `bdA` と `j ≥ 1` に絞った
+
+    RunBdA := ∀ j k ks js, 1 ≤ j → j ≤ k → (∀ ks', WPd ks' (bdA js)) →
+                WPd ((k+1) :: ks) (stkP j (bdA js))
+
+    RunBdA → WPd_bdA_all2 → GOK_bdA_all2 → R375m (6,2,0) ∈ W 0   ★緑
+
+`j = 0` は `stkP 0 X = X` なので `WPd_bdA_all2` の再帰でまかなえる。
+
+### 2. 位置の違いが全て
+
+    WPd_stk2 : WPd (0 :: ks) (stk 2)             ★緑（1 の枠の直上）
+    WPd_run  : 1 ≤ k → WPd ((k+1)::ks) (stk 1)   ★緑（2 の枠の直上、長さ 1）
+    StkBlk2  : 2 ≤ k → WPd ((k+1)::ks) (stk 2)   ← **未**
+
+`stk 2` を **2 の枠の直上**に差すのが最小の未証明。語で見ると
+`(l,1,0)(l+1,2,0)` の上に `(l+2,2,0)(l+3,2,0)`、つまり 2 の記録が 3 連。
+
+### 3. `GOK_stkW_gen` はあるが階段が閉じない
+
+    GOK_stkW_gen ctx0 V p hJN hJT hGV
+      (hstair : ∀ k, GOK (plug (ctx0++[fone V]) (two N (stkP p (nstQ N p k)))))
+      : GOK (plug (ctx0++[fone V]) (two N (stkP p (two nil nil))))
+
+走り `p+2` 連の一般ステップ補題は**既にある**（緑）。ところが階段の木
+`two N (stkP p (nstQ N p k))` はまた「2 の枠の直上に走り `stkP p`」なので、
+`WPd_twoOf` で剥がそうとすると同じ形に戻る。`p = 0` のときだけ
+`stkP 0 = id` で閉じ、それが `WPd_run`（`WPd_nstN_run` + `WPd_twoTwoGen_run`）。
+
+つまり**走りの長さ 1 は閉じるが 2 以上は自己参照になる**。これが
+「幅 2 のブロック」が出ない理由。`WPd_bdA_le1` が幅 ≤ 1 で止まっていたのも同じ。
+
+### 4. 次の一手の候補
+
+- `nstQ N p k` の階段を `WPd` ではなく `GOK` の言葉のまま（文脈を明示して）
+  組む。`GBase` / `HCx` 流に「側条件は `GOK` だけ」の族で `nstQ` の塔を回す。
+- `GOK_stkW_gen` の階段を `stkP p` ではなく別の分解（`GOK_oneUV_genM` の
+  `hVs` が「末尾が裸の 2 の記録」であることを使って `bdA` の末尾で切る）で作る。
