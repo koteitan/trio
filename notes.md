@@ -22962,3 +22962,30 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 「`TWm` の同じ高さの 2 の記録に荷 `Y` を付けた族」。`WPd` 層で言えば
 `WPd_twoA_runB`（右の子が `nil` 限定）と `GOK_oneUV_RunSB`（`RunS`、荷なし）の
 荷つき一般化。**これが次の一手。**
+
+### 3. 次の一手の設計（`GOK_oneUV_genM` の適用可能性を実測）
+
+残った「荷つきの鎖」`N = twoIt nil (pay nil Y) k` の目標
+
+    GOK (one nil (two nil (two N nil)))
+
+は `GOK_oneUV_genM` にそのまま当てはまる:
+
+    D = []、U = nil、dl = 2
+    V  = two nil (two N nil)     jk1 d V  = (d+1,2,0) :: jk1 (d+1) N ++ [(d+2,2,0)]
+    Vd = two nil N               jk1 d Vd = (d+1,2,0) :: jk1 (d+1) N
+    hVs : jk1 d V = jk1 d Vd ++ [(d+2,2,0)]   ✓（**語が裸の 2 の記録で終わる**）
+
+残るのは `hstair`、つまり階段の木 `T n`（ブロック
+`(l+1,1,0)(l+2,2,0)((l+3,2,0) Y↑(l+4))^k` を `Mtwd 2` で `n` 個積んだ木）。
+これは `TWm` の同じ高さの 2 の記録に荷 `Y` を付けた族で、`TowOkM` の荷つき版。
+
+**`T n` 自身には `GOK_oneUV_genM` は使えない**（語が `Y↑(...)` で終わり、
+裸の 2 の記録で終わらないので `hVs` が成り立たない）。`TowOkM` と同じく
+`WPd` 層で作ることになり、そのためには
+
+    WPd_twoA_runB : WPd ((k+1)::ks) (two A nil)        ← 右の子が nil 限定
+                  → WPd ((k+1)::ks) (two A (pay nil Y))  ← これが要る
+
+の一般化、すなわち `GOK_oneUV_RunSB`（`RunS`、荷なし）の荷つき版が要る。
+`RunS As = RunP As nil` を `RunP As (pay nil Y)` に広げるのが具体的な作業。
