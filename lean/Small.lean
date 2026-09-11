@@ -70020,5 +70020,24 @@ theorem R600_350_mem : R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms R600_349_mem
 #print axioms R600_350_mem
 
+/-! ### ★★★★★ `R600_349` の上の対角と z=1（`PU_DiaV`） -/
+
+theorem R600_349_DiaV (k : ℕ) : R600_349 ++ DiaV 2 2 (k + 1) ∈ W 0 :=
+  ((BaseOk_PU (2 + k)).aok _ _
+    (PU_DiaV (le_refl 2) (Ifc3_toIfcV Ifc3_PkGA) R600_349_PkGA k)).mem
+
+/-- ★★★★★★ `P(6,0,0)(2,2,0)(3,3,1)(4,1,0)(3,3,0)(4,4,1)`。 -/
+theorem R600_351_mem :
+    R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine z1_mem (a := 3) (b := 3) ?_
+  intro n
+  cases n with
+  | zero => simpa [Dtw] using R600_349_mem
+  | succ k =>
+      rw [Dtw_eq_DiaV 2 2 (k + 1)]
+      exact R600_349_DiaV k
+
+#print axioms R600_351_mem
+
 end Small
 end TRIO
