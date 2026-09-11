@@ -74151,5 +74151,171 @@ theorem NilO_of_hang
 #print axioms Sib_tree
 #print axioms R375m61_of_NilO
 
+/-! ### ★★★★★★ 荷の還元に要る「枠の木が 1 段外で良い」を族に入れる
+
+`NilO D` を `APnil_gen0` で荷に落とすと `PS_cons` / `PZ_cons` を使うが、
+そのとき `D` の最後の枠の木 `V` について `GOK (plug D' V)`（1 段外で良い）が要る。
+`HEx` には側条件が無いので出ない。そこで `GOK` を戻した `HGx` を使う。
+
+`HGx` の `ftwo nil` は `HCx` の幅 1 のブロックから来るので、その側条件
+`GOK (plug (ctx ++ [fone A]) nil)` はちょうど `GNilO`（証明したいもの）。
+だから `HGx_of_HCx` は `GNilO` を仮定して回す。 -/
+
+inductive HGx : List Frm → Prop
+  | base : HGx [Frm.fone Jk1.nil]
+  | fone {ctx : List Frm} {A : Jk1} : HGx ctx → JkA A → GOK (plug ctx A) →
+      HGx (ctx ++ [Frm.fone A])
+  | ftwo {ctx : List Frm} {A : Jk1} : HGx ctx → JkA A → GOK (plug ctx A) →
+      HGx (ctx ++ [Frm.ftwo A])
+
+theorem HGx_CtxJT {ctx : List Frm} (h : HGx ctx) : CtxJT ctx := by
+  induction h with
+  | base => exact CtxJT_foneNil
+  | fone _ hA _ ih => exact CtxJT_fone ih hA
+  | ftwo _ hA _ ih =>
+      intro X hX
+      rw [plug_snoc2]
+      exact ih _ ⟨hA, hX⟩
+
+/-- ★ 裸の 1 の記録（側条件つきの族で）。 -/
+def GNilO : Prop := ∀ D : List Frm, HGx D → OSib D Jk1.nil
+
+/-- ★ 裸の 2 の記録（側条件つきの族で）。 -/
+def GNilT : Prop := ∀ D : List Frm, HGx D → TSib D Jk1.nil
+
+theorem HGx_of_HCx (hO : GNilO) : ∀ {ctx : List Frm}, HCx ctx → HGx ctx := by
+  intro ctx hc
+  induction hc with
+  | base => exact HGx.ftwo HGx.base trivial GOK_oneNilNil
+  | @ext ctx A _ hA hGA ih =>
+      have e : ctx ++ [Frm.fone A, Frm.ftwo Jk1.nil]
+          = (ctx ++ [Frm.fone A]) ++ [Frm.ftwo Jk1.nil] := by simp
+      rw [e]
+      refine HGx.ftwo (HGx.fone ih hA hGA) trivial ?_
+      rw [plug_snoc]
+      exact hO ctx ih A hA hGA
+  | fone _ hA hGA ih => exact HGx.fone ih hA hGA
+
+theorem HFone_of_GNilO (hO : GNilO) : HFone :=
+  fun ctx A hc hA hGA => hO ctx (HGx_of_HCx hO hc) A hA hGA
+
+/-- ★★★★★★ 壁 1 文からいま開いている最小の行列まで。 -/
+theorem R375m61_of_GNilO (hO : GNilO) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_HFone (HFone_of_GNilO hO)
+
+/-- 木の構造帰納（側条件つきの族で）。 -/
+theorem GSib_tree (hO : GNilO) (hT : GNilT) :
+    ∀ T : Jk1, JkA T → ∀ D : List Frm, HGx D → OSib D T ∧ TSib D T := by
+  intro T
+  induction T with
+  | nil => intro _ D hD; exact ⟨hO D hD, hT D hD⟩
+  | pay Z Y ihZ =>
+      intro hTk D hD
+      obtain ⟨hOZ, hTZ⟩ := ihZ hTk.1 D hD
+      exact ⟨fun M hM hGM => PS_cons Y hTk.2 D (HGx_CtxJT hD) Z hTk.1 hOZ M hM hGM,
+        fun M hM hGM => PZ_cons Y hTk.2 D (HGx_CtxJT hD) Z hTk.1 hTZ M hM hGM⟩
+  | one N M ihN ihM =>
+      intro hTk D hD
+      refine ⟨OSib_one D N M hTk.1 (ihN hTk.1 D hD).1 ?_,
+        TSib_one D N M hTk.1 (ihN hTk.1 D hD).2 ?_⟩
+      · intro W hW hGW
+        exact (ihM hTk.2 (D ++ [Frm.fone W]) (HGx.fone hD hW hGW)).1
+      · intro W hW hGW
+        exact (ihM hTk.2 (D ++ [Frm.ftwo W]) (HGx.ftwo hD hW hGW)).1
+  | two N M ihN ihM =>
+      intro hTk D hD
+      refine ⟨OSib_two D N M hTk.1 (ihN hTk.1 D hD).1 ?_,
+        TSib_two D N M hTk.1 (ihN hTk.1 D hD).2 ?_⟩
+      · intro W hW hGW
+        exact (ihM hTk.2 (D ++ [Frm.fone W]) (HGx.fone hD hW hGW)).2
+      · intro W hW hGW
+        exact (ihM hTk.2 (D ++ [Frm.ftwo W]) (HGx.ftwo hD hW hGW)).2
+
+/-- ★★★★ 荷は還元できる（`D` の最後が 1 の枠）。 -/
+theorem hangG_fone (hO : GNilO) (hT : GNilT) (D : List Frm) (hD : HGx D)
+    (V : Jk1) (hJV : JkA V) (hGV : GOK (plug D V)) (M : Jk1) (hM : JkA M)
+    (C : TrioSeq) (hC : Bok C) :
+    GOK (plug (D ++ [Frm.fone V]) (Jk1.pay M C)) := by
+  rw [plug_snoc]
+  exact PS_cons C hC D (HGx_CtxJT hD) M hM (GSib_tree hO hT M hM D hD).1 V hJV hGV
+
+/-- ★★★★ 荷は還元できる（`D` の最後が 2 の枠）。 -/
+theorem hangG_ftwo (hO : GNilO) (hT : GNilT) (D : List Frm) (hD : HGx D)
+    (V : Jk1) (hJV : JkA V) (hGV : GOK (plug D V)) (M : Jk1) (hM : JkA M)
+    (C : TrioSeq) (hC : Bok C) :
+    GOK (plug (D ++ [Frm.ftwo V]) (Jk1.pay M C)) := by
+  rw [plug_snoc2]
+  exact PZ_cons C hC D (HGx_CtxJT hD) M hM (GSib_tree hO hT M hM D hD).2 V hJV hGV
+
+/-- ★★★★★ 自分の上に積み続けられる（`SelfW`）は構造帰納から出る。 -/
+theorem SelfW_HGx (hO : GNilO) (hT : GNilT) (D : List Frm) (hD : HGx D)
+    (W : Jk1) (hJW : JkA W) (hGW : GOK (plug D W)) : SelfW D W := by
+  have key : ∀ k : ℕ, HGx (D ++ List.replicate k (Frm.fone W))
+      ∧ GOK (plug (D ++ List.replicate k (Frm.fone W)) W) := by
+    intro k
+    induction k with
+    | zero => simpa using ⟨hD, hGW⟩
+    | succ k ih =>
+        have e : D ++ List.replicate (k + 1) (Frm.fone W)
+            = (D ++ List.replicate k (Frm.fone W)) ++ [Frm.fone W] := by
+          simp [List.replicate_succ', ← List.append_assoc]
+        rw [e]
+        refine ⟨HGx.fone ih.1 hJW ih.2, ?_⟩
+        rw [plug_snoc]
+        exact (GSib_tree hO hT W hJW _ ih.1).1 W hJW ih.2
+  exact fun k => (key k).2
+
+/-- ★★★★★ `GNilT` の 1 の枠止まりの場合は、構造帰納から出る（新しい内容は無い）。
+残るのは `D` が 2 の枠で終わる場合、つまり**走り**だけ。 -/
+theorem GNilT_fone (hO : GNilO) (hT : GNilT) (ctx0 : List Frm) (hc : HGx ctx0)
+    (V : Jk1) (hJV : JkA V) (hGV : GOK (plug ctx0 V)) :
+    TSib (ctx0 ++ [Frm.fone V]) Jk1.nil :=
+  TSib_nil_of_SelfW ctx0 V hGV (HGx_CtxJT (HGx.fone hc hJV hGV))
+    (fun W hJW hGW => SelfW_HGx hO hT _ (HGx.fone hc hJV hGV) W hJW hGW)
+
+#print axioms GSib_tree
+#print axioms SelfW_HGx
+#print axioms GNilT_fone
+#print axioms R375m61_of_GNilO
+
+/-! ### ★★★★★ `GNilO` はどの枠止まりでも還元できる。残るのは底と走り
+
+`APnil_gen0` + `hangG_fone` / `hangG_ftwo` で、`GNilO` は `D` の最後の枠が
+1 の枠でも 2 の枠でも閉じる。`GNilT` も 1 の枠止まりなら `SelfW` から閉じる。
+新しい内容が残るのは
+
+- 底 `D = [fone nil]`（深さ 0 の兄弟の全称 = `APz`）
+- `GNilT` の 2 の枠止まり（＝**走り** `(l+1,2,0)(l+2,2,0)`）
+
+の 2 つだけ。 -/
+
+theorem GNilO_fone (hO : GNilO) (hT : GNilT) (D : List Frm) (hD : HGx D)
+    (V : Jk1) (hJV : JkA V) (hGV : GOK (plug D V)) :
+    OSib (D ++ [Frm.fone V]) Jk1.nil := by
+  intro M hM hGM
+  exact APnil_gen0 (D ++ [Frm.fone V]) M
+    (HGx_CtxJT (HGx.fone hD hJV hGV) _ ⟨hM, trivial⟩) hGM
+    (fun C hC => hangG_fone hO hT D hD V hJV hGV M hM C hC)
+
+theorem GNilO_ftwo (hO : GNilO) (hT : GNilT) (D : List Frm) (hD : HGx D)
+    (V : Jk1) (hJV : JkA V) (hGV : GOK (plug D V)) :
+    OSib (D ++ [Frm.ftwo V]) Jk1.nil := by
+  intro M hM hGM
+  exact APnil_gen0 (D ++ [Frm.ftwo V]) M
+    (HGx_CtxJT (HGx.ftwo hD hJV hGV) _ ⟨hM, trivial⟩) hGM
+    (fun C hC => hangG_ftwo hO hT D hD V hJV hGV M hM C hC)
+
+/-- 底は深さ 0 の兄弟の全称 `APz` そのもの。 -/
+theorem GNilO_base (h : ∀ M : Jk1, JkA M → GOK (Jk1.one Jk1.nil M) → APz M) :
+    OSib [Frm.fone Jk1.nil] Jk1.nil := by
+  intro M hM hGM
+  show GOK (Jk1.one Jk1.nil (Jk1.one M Jk1.nil))
+  exact GOK_oneOneNil JkT_nil hM GOK_nil (h M hM hGM)
+
+#print axioms GNilO_fone
+#print axioms GNilO_ftwo
+#print axioms GNilO_base
+
 end Small
 end TRIO
