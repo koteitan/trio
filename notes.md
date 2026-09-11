@@ -22401,3 +22401,47 @@ Acc（DM）帰納でほどける:
 `EOk_twoNil`（1 の枠止まり）の塔は `(fone N)^m` で形が `(k+m, ks)` に
 伸びるだけなので `∀ j, EOk j ks N` で覆えた。走りの塔は覆えない。
 これが 2 の枠止まりだけ残る理由。
+
+## 追記310 (2026-09-12): 壁は 1 文 `ENil`（空木がどの形でも良い）
+
+### 1. 荷が両側とも閉じた
+
+    EOk_pay      : (k+1, ks) 1 の枠止まり           ★緑（PS_consE）
+    EOk_pay_base : (0, [])   底                     ★緑（APz_pay）
+    EOk_payT     : (0, k'::ks) 2 の枠止まり         ★緑（PZ_consE）
+
+`PZ_consE` は `PS_consE` の 2 の記録版。鎖 `twoIt M (pay Z B₀) n` の要素の
+強さ `∀ j', EOk j' ks ·` は `EOk_two` から出る:
+
+    EOk_two : (∀ j', EOk j' ks M') → EOk 0 (j::ks) (pay Z B₀)
+                → EOk j ks (two M' (pay Z B₀))
+
+`EOk 0 (j::ks) (pay Z B₀)` は**荷が 1 つ小さい**ので W 帰納の IH。
+仮定は「`Z` が `∀ j, EOk 0 (j::ks) Z`」だけ。木の構造帰納では IH が
+`EAll Z`（全部の形）なので、この強い仮定がそのまま使える。
+
+### 2. 壁 1 文
+
+    EAll X := ∀ k ks, EOk k ks X
+    ENil   := ∀ k ks, EOk k ks nil
+
+    EAll_of_ENil : ENil → ∀ X, JkA X → EAll X        ★緑
+    → APzAll → GOKall → R375m (6,1,0) / (6,2,0) ∈ W 0
+
+木の構造帰納で `one` / `two` は形を伸ばすだけ（`EOk_one` / `EOk_two`）、
+`pay` は `EAll_pay`。残るのは `nil` だけ。
+
+### 3. `ENil` の中で残っている 2 つ
+
+    (0, [])                              : EOk_nil_base            ★緑
+    (k+1, ks)、下が 1 の枠止まりか底     : ENil_fone_ok            ★緑
+    (k+1, ks)、下が 2 の枠止まり         : 枠の木の荷が「∀ 形」で要る
+    (0, k'::ks)                          : 走り
+
+3 番目: `EOk_nil_fone` の荷は枠の木 `U` についてで、族は `EOk k ks U`
+（1 つの形）しかくれない。下が 2 の枠止まりのときだけ `EOk_payT` の
+「∀ 形」に届かない。族の 1 の枠の条件に「荷も込み」で入れれば消せる見込み
+（`EPay k ks U := ∀ C Bok, EOk k ks (pay U C)` は `ECtx k ks` を参照するので
+停止性は保たれる）。
+
+4 番目: 走りの塔が形のリストを伸ばす（追記309）。これが本丸。
