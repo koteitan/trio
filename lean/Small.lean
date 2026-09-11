@@ -76347,5 +76347,151 @@ theorem LadAlt_flat_mem (i m n : ℕ) :
 #print axioms R600alt_mem
 #print axioms LadAlt_mem
 
+/-! ### ★★★★★★ `GOK T6`：走り 2 連の直上に荷 `(0,0,0)` を置いた木
+
+`R600 = R338 ++ U375a6` の `U375a6 = (1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)` は
+`(1,1,0) :: wordJ 1 1 [T6]` そのもの。`SegA_U375a6`（緑）はこの語の `seg` の段で、
+`TowOkM n 0` の塔 `(l+4,2,0)^n` を `flat_mem''` で平らにして `(l+5,0,0)` を出している。
+同じ形が `pk` と `pu` の段でも回るので、`GOK T6` が取れる。
+
+`T6` は `JkOk` ではない（走り 2 連なので `TopOk` が偽）から `GOK_all` では出ない。 -/
+
+def T6 : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil
+    (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+
+/-- 塔の段。`jk1 l (T6m n) = UBlk n l`。 -/
+def T6m (n : ℕ) : Jk1 := Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm n 0))
+
+theorem JkT_T6 : JkT T6 := ⟨⟨trivial, trivial, trivial, trivial, Bok_zero⟩, trivial⟩
+
+theorem jk1_T6 (l : ℕ) :
+    jk1 l T6 = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [T6, jk1, shiftr01] <;> omega
+
+theorem jk1_T6m (n l : ℕ) : jk1 l (T6m n) = UBlk n l := by
+  have h2 := twm_word n 0 l
+  have e : (List.range (0 + 1)).flatMap (fun i => shiftr01 (2 * i) 0 (UBlk n l))
+      = UBlk n l := by simp [shiftr01]
+  rw [e] at h2
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (l + 1) (Jk1.two Jk1.nil (TWm n 0))) = _
+  simpa using h2
+
+theorem wordJ_snoc_T6 (a b : ℕ) (ws : List Jk1) :
+    wordJ a b (ws ++ [T6])
+      = (wordJ a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ), ((a + 2, 1, 0) : ℕ × ℕ × ℕ),
+          ((a + 3, 2, 0) : ℕ × ℕ × ℕ)])
+        ++ [((a + 4, 2, 0) : ℕ × ℕ × ℕ)] ++ [((a + 5, 0, 0) : ℕ × ℕ × ℕ)] := by
+  rw [wordJ_append, wordJ_singleton]
+  show wordJ a b ws ++ (((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + 1) T6) = _
+  rw [jk1_T6, show a + 1 + 1 = a + 2 from by omega, show a + 1 + 2 = a + 3 from by omega,
+    show a + 1 + 3 = a + 4 from by omega, show a + 1 + 4 = a + 5 from by omega]
+  simp [List.append_assoc]
+
+theorem wordJ_snoc_T6m (a b n : ℕ) (ws : List Jk1) :
+    wordJ a b (ws ++ [T6m n])
+      = (wordJ a b ws ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ), ((a + 2, 1, 0) : ℕ × ℕ × ℕ),
+          ((a + 3, 2, 0) : ℕ × ℕ × ℕ)])
+        ++ (List.range n).flatMap (fun _ => [((a + 4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+  rw [wordJ_append, wordJ_singleton]
+  show wordJ a b ws ++ (((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) :: jk1 (a + 1) (T6m n)) = _
+  rw [jk1_T6m, UBlk, show a + 1 + 1 = a + 2 from by omega,
+    show a + 1 + 2 = a + 3 from by omega, show a + 1 + 3 = a + 4 from by omega,
+    show ((List.range n).flatMap (fun _ => [((a + 4, 2, 0) : ℕ × ℕ × ℕ)]))
+      = List.replicate n ((a + 4, 2, 0) : ℕ × ℕ × ℕ) from copies_single _ n]
+  simp [List.append_assoc]
+
+theorem GOK_T6 : GOK T6 := by
+  intro ws hw hG
+  have hwO : WOk (ws ++ [T6]) := WOk_append hw (WOk_singletonT JkT_T6)
+  have hGn : ∀ n : ℕ, GoodFb (fun a b => wordJ a b (ws ++ [T6m n])) :=
+    fun n => TowOkM n 0 ws hw hG
+  refine ⟨fun a b => wordJ_ge a b _, fun a b => wordJ_mono hwO,
+    fun a b s => wordJ_shift a b s _, ?_, ?_, ?_⟩
+  · -- pu
+    intro y c hy
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) (y + 1) _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [wordJ_shift, wordJ_snoc_T6]
+    have htw : ∀ n : ℕ,
+        (Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+          (wordJ (c + 1 + t) (y + 1) ws ++
+            [((c + 1 + t + 1, y + 1 + 1, 1) : ℕ × ℕ × ℕ),
+             ((c + 1 + t + 2, 1, 0) : ℕ × ℕ × ℕ), ((c + 1 + t + 3, 2, 0) : ℕ × ℕ × ℕ)])))
+          ++ (List.range n).flatMap
+              (fun _ => [((c + 1 + t + 4, 2, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+      intro n
+      have h1 := ((hGn n).pu y c hy).2.2 E hE t Z hZ
+      rw [wordJ_shift, wordJ_snoc_T6m] at h1
+      simpa [List.append_assoc] using h1
+    have h := flat_mem''
+      (Y0 := Z ++ ([((c + 1 + t, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        (wordJ (c + 1 + t) (y + 1) ws ++
+          [((c + 1 + t + 1, y + 1 + 1, 1) : ℕ × ℕ × ℕ),
+           ((c + 1 + t + 2, 1, 0) : ℕ × ℕ × ℕ), ((c + 1 + t + 3, 2, 0) : ℕ × ℕ × ℕ)])))
+      (M := [((c + 1 + t + 4, 2, 0) : ℕ × ℕ × ℕ)]) (d := c + 1 + t + 5)
+      (by simp) (by simp [entry]) (by intro r hr1 hr2; simp at hr2; omega) htw
+    simpa [List.append_assoc] using h
+  · -- pk
+    intro c E hI
+    refine ⟨fun x hx => by have := wordJ_ge (c + 1) 2 _ x hx; omega, wordJ_mono hwO, ?_⟩
+    intro j t Z hZ
+    rw [wordJ_shift, wordJ_snoc_T6]
+    have htw : ∀ n : ℕ,
+        (Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+          (wordJ (c + 1 + t) 2 ws ++
+            [((c + 1 + t + 1, 2 + 1, 1) : ℕ × ℕ × ℕ),
+             ((c + 1 + t + 2, 1, 0) : ℕ × ℕ × ℕ), ((c + 1 + t + 3, 2, 0) : ℕ × ℕ × ℕ)])))
+          ++ (List.range n).flatMap
+              (fun _ => [((c + 1 + t + 4, 2, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+      intro n
+      have h1 := ((hGn n).pk c E hI).2.2 j t Z hZ
+      rw [wordJ_shift, wordJ_snoc_T6m] at h1
+      simpa [List.append_assoc] using h1
+    have h := flat_mem''
+      (Y0 := Z ++ ([((c + 1 + t, 2, 0) : ℕ × ℕ × ℕ)] ++
+        (wordJ (c + 1 + t) 2 ws ++
+          [((c + 1 + t + 1, 2 + 1, 1) : ℕ × ℕ × ℕ),
+           ((c + 1 + t + 2, 1, 0) : ℕ × ℕ × ℕ), ((c + 1 + t + 3, 2, 0) : ℕ × ℕ × ℕ)])))
+      (M := [((c + 1 + t + 4, 2, 0) : ℕ × ℕ × ℕ)]) (d := c + 1 + t + 5)
+      (by simp) (by simp [entry]) (by intro r hr1 hr2; simp at hr2; omega) htw
+    simpa [List.append_assoc] using h
+  · -- seg
+    intro h
+    have hmid : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        wordJ (h + 1) 1 (ws ++ [T6])) := by
+      have h1 := MidD_wordJ (h + 1) 1 (by omega) (by omega) hwO
+      simpa [show h + 1 + 1 = h + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 (ws ++ [T6])
+        = [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + 1) 1 (ws ++ [T6]) from rfl,
+      shiftr01_append0, shift_col, wordJ_shift, wordJ_snoc_T6]
+    have htw : ∀ n : ℕ,
+        (A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+          (wordJ (h + 1 + s) 1 ws ++
+            [((h + 1 + s + 1, 1 + 1, 1) : ℕ × ℕ × ℕ),
+             ((h + 1 + s + 2, 1, 0) : ℕ × ℕ × ℕ), ((h + 1 + s + 3, 2, 0) : ℕ × ℕ × ℕ)])))
+          ++ (List.range n).flatMap
+              (fun _ => [((h + 1 + s + 4, 2, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+      intro n
+      have h1 := ((hGn n).seg (h + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((h + s + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + s + 1) 1 (ws ++ [T6m n])
+          = [((h + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ wordJ (h + s + 1) 1 (ws ++ [T6m n])
+          from rfl, wordJ_snoc_T6m] at h1
+      simpa [show h + s + 1 = h + 1 + s from by omega, shiftr01, List.append_assoc] using h1
+    have hh := flat_mem''
+      (Y0 := A' ++ ([((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ)] ++
+        (wordJ (h + 1 + s) 1 ws ++
+          [((h + 1 + s + 1, 1 + 1, 1) : ℕ × ℕ × ℕ),
+           ((h + 1 + s + 2, 1, 0) : ℕ × ℕ × ℕ), ((h + 1 + s + 3, 2, 0) : ℕ × ℕ × ℕ)])))
+      (M := [((h + 1 + s + 4, 2, 0) : ℕ × ℕ × ℕ)]) (d := h + 1 + s + 5)
+      (by simp) (by simp [entry]) (by intro r hr1 hr2; simp at hr2; omega) htw
+    simpa [List.append_assoc] using hh
+
+#print axioms GOK_T6
+
 end Small
 end TRIO
