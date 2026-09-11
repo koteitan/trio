@@ -73861,5 +73861,195 @@ theorem R375m61_of_Sibs (hZs : ZSib) (hSs : SSib) :
 #print axioms HFone_of_Sibs
 #print axioms R375m61_of_Sibs
 
+/-! ### ★★★★★★ 兄弟を鎖に制限する（仮定を弱める）
+
+`PZ_cons` / `PS_cons` が実際に使う兄弟 `M` は、出発点から
+`M ↦ two M (pay Z Y)` / `M ↦ one M (pay Z Y)` で作れるものだけ。
+2 の記録側は既存の `TSibF` / `TChain` / `TSibF_pay` がそのまま使える。
+1 の記録側の鎖版 `PS_consF` をここで書く（`AYsF` の `CtxOk` なし版）。 -/
+
+theorem PS_chainF {ctx : List Frm} {Xb Z : Jk1} (hZ : JkA Z)
+    {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hIH : ∀ M : Jk1, OChain Xb Z M → JkA M → GOK (plug ctx M) →
+      GOK (plug ctx (Jk1.one M (Jk1.pay Z B₀))))
+    {M : Jk1} (hMc : OChain Xb Z M) (hM : JkA M) (hGM : GOK (plug ctx M)) :
+    ∀ n : ℕ, GOK (plug ctx (itJ (Jk1.pay Z B₀) n M))
+      ∧ JkA (itJ (Jk1.pay Z B₀) n M)
+      ∧ OChain Xb Z (itJ (Jk1.pay Z B₀) n M) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hGM, hM, hMc⟩
+  | succ n ih =>
+      exact ⟨hIH _ ih.2.2 ih.2.1 ih.1, ⟨ih.2.1, hZ, hB₀⟩, OChain.step ih.2.2 hB₀⟩
+
+/-- ★★★★★★ 荷 `B` の W 帰納（1 の記録版、兄弟を `OChain` に制限）。 -/
+theorem PS_consF (Xb : Jk1) : ∀ (B : TrioSeq), Bok B →
+    ∀ (ctx : List Frm), CtxJT ctx → ∀ (Z : Jk1), JkA Z →
+    (∀ M : Jk1, OChain Xb Z M → JkA M → GOK (plug ctx M) →
+      GOK (plug ctx (Jk1.one M Z))) →
+    ∀ M : Jk1, OChain Xb Z M → JkA M →
+      GOK (plug ctx M) → GOK (plug ctx (Jk1.one M (Jk1.pay Z B))) := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ (ctx : List Frm), CtxJT ctx →
+      ∀ (Z : Jk1), JkA Z →
+      (∀ M : Jk1, OChain Xb Z M → JkA M → GOK (plug ctx M) →
+        GOK (plug ctx (Jk1.one M Z))) →
+      ∀ M : Jk1, OChain Xb Z M → JkA M →
+        GOK (plug ctx M) → GOK (plug ctx (Jk1.one M (Jk1.pay Z B)))} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb ctx hc Z hZ h M hMc hM hGM
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact GOK_congr (fun l => jk1_plug_congr ctx
+          (fun l' => (jk1_one_pay_nil M Z l').symm) l) (h M hMc hM hGM)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hIH0 : ∀ M' : Jk1, OChain Xb Z M' → JkA M' → GOK (plug ctx M') →
+            GOK (plug ctx (Jk1.one M' (Jk1.pay Z ([] : TrioSeq)))) := by
+          intro M' hMc' hM' hGM'
+          exact GOK_congr (fun l => jk1_plug_congr ctx
+            (fun l' => (jk1_one_pay_nil M' Z l').symm) l) (h M' hMc' hM' hGM')
+        have hch := PS_chainF hZ Bok_nil hIH0 hMc hM hGM
+        rw [e2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw (hc _ ⟨hM, hZ, by rw [← e2]; exact hBb⟩)
+          (by rw [← e2]; exact hBb) Bok_nil ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        have hIH0 : ∀ M' : Jk1, OChain Xb Z M' → JkA M' → GOK (plug ctx M') →
+            GOK (plug ctx (Jk1.one M' (Jk1.pay Z B.dropLast))) :=
+          fun M' hMc' hM' hGM' => hdl hdb ctx hc Z hZ h M' hMc' hM' hGM'
+        have hch := PS_chainF hZ hdb hIH0 hMc hM hGM
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (hc _ ⟨hM, hZ, by rw [← hsplit]; exact hBb⟩)
+          (by rw [← hsplit]; exact hBb) hdb ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs0 hw (hc _ ⟨hM, hZ, hBb⟩) hBb hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) ctx hc Z hZ h M hMc hM hGM ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb ctx hc Z hZ h M hMc hM hGM
+  exact key hBb.mem hBb ctx hc Z hZ h M hMc hM hGM
+
+#print axioms PS_consF
+
+/-- ★ 2 の記録の左の兄弟を `nil` から鎖（`TChain`）へ広げる 1 手。 -/
+def ZSibF : Prop := ∀ (D : List Frm) (A : Jk1), HDx D → JkA A →
+  GOK (plug D (Jk1.two Jk1.nil A)) →
+  ∀ M : Jk1, TChain Jk1.nil A M → JkA M → GOK (plug D M) →
+    GOK (plug D (Jk1.two M A))
+
+/-- ★ 1 の記録の左の兄弟を `A'` から鎖（`OChain`）へ広げる 1 手。 -/
+def SSibF : Prop := ∀ (D : List Frm) (A' A : Jk1), HCx D → JkA A' → GOK (plug D A') →
+  JkA A → GOK (plug D (Jk1.one A' A)) →
+  ∀ M : Jk1, OChain A' A M → JkA M → GOK (plug D M) →
+    GOK (plug D (Jk1.one M A))
+
+/-- ★★★★★★ 壁 `HFone` は「兄弟を鎖へ広げる」2 本から出る。 -/
+theorem HFone_of_SibsF (hZs : ZSibF) (hSs : SSibF) : HFone := by
+  intro ctx A hc
+  induction hc generalizing A with
+  | base =>
+      intro hA hGA
+      have hTwoNil : GOK (plug [Frm.fone Jk1.nil] (Jk1.two Jk1.nil A)) := by
+        rw [← plug_snoc2]
+        exact hGA
+      have hT : TSibF [Frm.fone Jk1.nil] A A Jk1.nil :=
+        fun V hV hJV hGV => hZs _ A HDx.base hA hTwoNil V hV hJV hGV
+      show GOK (plug ctxFL (Jk1.one A Jk1.nil))
+      refine APnil_gen0 ctxFL A (CtxJT_ctxFL _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      have e : plug ctxFL (Jk1.pay A C)
+          = plug [Frm.fone Jk1.nil] (Jk1.two Jk1.nil (Jk1.pay A C)) := by
+        show plug ([Frm.fone Jk1.nil] ++ [Frm.ftwo Jk1.nil]) (Jk1.pay A C) = _
+        rw [plug_snoc2]
+      rw [e]
+      exact TSibF_pay [Frm.fone Jk1.nil] CtxJT_foneNil A hA Jk1.nil hT C hC
+        Jk1.nil TChain.base trivial GOK_oneNilNil
+  | @ext ctx₀ A₀ hc₀ hA₀ hG₀ ih =>
+      intro hA hGA
+      have hD : HDx (ctx₀ ++ [Frm.fone A₀]) := HDx.step hc₀ hA₀ hG₀
+      have hGnil : GOK (plug (ctx₀ ++ [Frm.fone A₀]) Jk1.nil) := by
+        rw [plug_snoc]
+        exact ih A₀ hA₀ hG₀
+      have hTwoNil : GOK (plug (ctx₀ ++ [Frm.fone A₀]) (Jk1.two Jk1.nil A)) := by
+        rw [plug_ftwoNil]
+        exact hGA
+      have hT : TSibF (ctx₀ ++ [Frm.fone A₀]) A A Jk1.nil :=
+        fun V hV hJV hGV => hZs _ A hD hA hTwoNil V hV hJV hGV
+      show GOK (plug (ctx₀ ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]) (Jk1.one A Jk1.nil))
+      refine APnil_gen0 _ A
+        (HCx_CtxJT (HCx.ext hc₀ hA₀ hG₀) _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      have e : plug (ctx₀ ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]) (Jk1.pay A C)
+          = plug (ctx₀ ++ [Frm.fone A₀]) (Jk1.two Jk1.nil (Jk1.pay A C)) := by
+        rw [show ctx₀ ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]
+            = (ctx₀ ++ [Frm.fone A₀]) ++ [Frm.ftwo Jk1.nil] from by simp, plug_snoc2]
+      rw [e]
+      exact TSibF_pay _ (HDx_CtxJT hD) A hA Jk1.nil hT C hC
+        Jk1.nil TChain.base trivial hGnil
+  | @fone ctx₀ A₀ hc₀ hA₀ hG₀ _ih =>
+      intro hA hGA
+      have hOne : GOK (plug ctx₀ (Jk1.one A₀ A)) := by
+        rw [← plug_snoc]
+        exact hGA
+      show GOK (plug (ctx₀ ++ [Frm.fone A₀]) (Jk1.one A Jk1.nil))
+      refine APnil_gen0 _ A
+        (HCx_CtxJT (HCx.fone hc₀ hA₀ hG₀) _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      rw [plug_snoc]
+      exact PS_consF A₀ C hC ctx₀ (HCx_CtxJT hc₀) A hA
+        (fun M hMc hM hGM => hSs ctx₀ A₀ A hc₀ hA₀ hG₀ hA hOne M hMc hM hGM)
+        A₀ OChain.base hA₀ hG₀
+
+/-- ★★★★★★ 鎖版の兄弟 2 本からいま開いている最小の行列まで。 -/
+theorem R375m61_of_SibsF (hZs : ZSibF) (hSs : SSibF) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_HFone (HFone_of_SibsF hZs hSs)
+
+#print axioms HFone_of_SibsF
+#print axioms R375m61_of_SibsF
+
 end Small
 end TRIO
