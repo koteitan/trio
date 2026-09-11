@@ -70727,5 +70727,44 @@ theorem WFd_payE (V : Jk1) (hV : JkT V) (hVk : WFd [] V) (C : TrioSeq) (hC : Bok
 
 #print axioms AYdWF
 
+/-! ### 形の尻尾は自由に伸ばせる -/
+
+theorem WFd_ck_shift {k i : ℕ} {ks : List (ℕ × ℕ)} {V : Jk1}
+    (h : WFd ((k, i + 1) :: ks) V) (r : List (ℕ × ℕ)) (hr : ∀ x ∈ r, x.1 < k) :
+    WFd ((k, i + 1) :: (r ++ ks)) V := by
+  rw [WFd_ck]
+  intro r₂ hr₂ U hU hUk Ns hlen hJNs hNt
+  have hb : ∀ x ∈ r₂ ++ r, x.1 < k := by
+    intro x hx
+    rcases List.mem_append.mp hx with h1 | h1
+    · exact hr₂ x h1
+    · exact hr x h1
+  have hsib : ∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ k₂ : ℕ, j ≤ k₂ → k₂ < k →
+      ∀ q : List (ℕ × ℕ), (∀ x ∈ q, x.1 < k) →
+        WFd ((k₂, j) :: (q ++ ((r₂ ++ r) ++ ks))) N := by
+    intro j hj N hN k₂ h3 h4 q hq
+    rw [List.append_assoc]
+    exact hNt j hj N hN k₂ h3 h4 q hq
+  have hU' : FrmF ((r₂ ++ r) ++ ks) U := by rw [List.append_assoc]; exact hU
+  have hUk' : WFd ((r₂ ++ r) ++ ks) U := by rw [List.append_assoc]; exact hUk
+  have h2 := (WFd_ck k i ks V).mp h (r₂ ++ r) hb U hU' hUk' Ns hlen hJNs hsib
+  rw [← List.append_assoc]
+  exact h2
+
+/-- 荷が幅 0 の入り目で通るので、`one V nil` も幅 0 では無条件。 -/
+theorem WFd_oneNilT (k : ℕ) (ks : List (ℕ × ℕ)) (V : Jk1) (hV : JkA V)
+    (hVk : WFd ((k, 0) :: ks) V) : WFd ((k, 0) :: ks) (Jk1.one V Jk1.nil) := by
+  rw [WFd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (WFtx_JkT ((k, 0) :: ks) ctx hc (Jk1.one V Jk1.nil)
+      (show FrmF ((k, 0) :: ks) (Jk1.one V Jk1.nil) from ⟨hV, trivial⟩))
+    ((WFd_iff ((k, 0) :: ks) V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (WFd_iff ((k, 0) :: ks) _).mp (WFd_payT k ks V hV hVk C hC) ctx hc
+
+#print axioms WFd_ck_shift
+#print axioms WFd_oneNilT
+
 end Small
 end TRIO
