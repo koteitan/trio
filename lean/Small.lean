@@ -75434,5 +75434,197 @@ theorem R375m62_of_E (hT : EPayT) (hR : ERunNil) :
 #print axioms R375m61_of_E
 #print axioms R375m62_of_E
 
+/-! ### ★★★★★★ 2 の枠止まりの荷（`EPayT`）を「∀ 形」の仮定で閉じる
+
+`PS_consE` の 2 の記録版。鎖 `twoIt M (pay Z B₀) n` の要素の強さ
+（`∀ j, EOk j ks ·`）は `EOk_two` から出る:
+
+    EOk_two : (∀ j', EOk j' ks M') → EOk 0 (j::ks) (pay Z B₀) → EOk j ks (two M' (pay Z B₀))
+
+`EOk 0 (j::ks) (pay Z B₀)` は荷が 1 つ小さいので W 帰納の IH。 -/
+
+def PayT2 (ks : List ℕ) (Z : Jk1) (B : TrioSeq) : Prop :=
+  ∀ (j : ℕ) (ctx : List Frm), ECtx j ks ctx → ∀ M : Jk1, JkA M → (∀ j' : ℕ, EOk j' ks M) →
+    GOK (plug ctx M) → GOK (plug ctx (Jk1.two M (Jk1.pay Z B)))
+
+theorem EOk_payT_of_PayT2 {ks : List ℕ} {Z : Jk1} {B : TrioSeq} (h : PayT2 ks Z B) :
+    ∀ j : ℕ, EOk 0 (j :: ks) (Jk1.pay Z B) := by
+  intro j D hD
+  rw [ECtx_cons] at hD
+  obtain ⟨D', N, rfl, hD', hJN, hN⟩ := hD
+  rw [plug_snoc2]
+  exact h j D' hD' N hJN (fun j' D'' hD'' => hN j' D'' hD'') (hN j D' hD')
+
+theorem PZ_chainE {ks : List ℕ} {j : ℕ} {ctx : List Frm} {Z : Jk1} (hZ : JkA Z)
+    {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hEpay : ∀ j' : ℕ, EOk 0 (j' :: ks) (Jk1.pay Z B₀))
+    (hIH : PayT2 ks Z B₀) (hctx : ECtx j ks ctx)
+    {M : Jk1} (hM : JkA M) (hEM : ∀ j' : ℕ, EOk j' ks M) (hGM : GOK (plug ctx M)) :
+    ∀ n : ℕ, GOK (plug ctx (twoIt M (Jk1.pay Z B₀) n))
+      ∧ JkA (twoIt M (Jk1.pay Z B₀) n)
+      ∧ (∀ j' : ℕ, EOk j' ks (twoIt M (Jk1.pay Z B₀) n)) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hGM, hM, hEM⟩
+  | succ n ih =>
+      exact ⟨hIH j ctx hctx _ ih.2.1 ih.2.2 ih.1, ⟨ih.2.1, hZ, hB₀⟩,
+        fun j' => EOk_two ih.2.1 ih.2.2 (hEpay j')⟩
+
+/-- ★★★★★★ 2 の枠止まりの荷。仮定は `∀ j, EOk 0 (j::ks) Z` だけ。 -/
+theorem PZ_consE {ks : List ℕ} : ∀ (B : TrioSeq), Bok B →
+    ∀ Z : Jk1, JkA Z → (∀ j : ℕ, EOk 0 (j :: ks) Z) → PayT2 ks Z B := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ Z : Jk1, JkA Z →
+      (∀ j : ℕ, EOk 0 (j :: ks) Z) → PayT2 ks Z B} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb Z hZ hZE j ctx hctx M hM hEM hGM
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        refine GOK_congr (fun l => jk1_plug_congr ctx
+          (fun l' => (jk1_two_payZnil M Z l').symm) l) ?_
+        rw [← plug_snoc2]
+        exact hZE j _ (ECtx_ftwo hctx hM hEM)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hIH0 : PayT2 ks Z ([] : TrioSeq) := by
+          intro j' ctx' hctx' M' hM' hEM' hGM'
+          refine GOK_congr (fun l => jk1_plug_congr ctx'
+            (fun l' => (jk1_two_payZnil M' Z l').symm) l) ?_
+          rw [← plug_snoc2]
+          exact hZE j' _ (ECtx_ftwo hctx' hM' hEM')
+        have hch := PZ_chainE hZ Bok_nil (EOk_payT_of_PayT2 hIH0) hIH0 hctx hM hEM hGM
+        rw [e2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (ECtx_JkT j ks ctx hctx _ ⟨hM, hZ, by rw [← e2]; exact hBb⟩) ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        have hIH0 : PayT2 ks Z B.dropLast := hdl hdb Z hZ hZE
+        have hch := PZ_chainE hZ hdb (EOk_payT_of_PayT2 hIH0) hIH0 hctx hM hEM hGM
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (ECtx_JkT j ks ctx hctx _ ⟨hM, hZ, by rw [← hsplit]; exact hBb⟩) ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (ECtx_JkT j ks ctx hctx _ ⟨hM, hZ, hBb⟩) hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) Z hZ hZE j ctx hctx M hM hEM hGM ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb Z hZ hZE
+  exact key hBb.mem hBb Z hZ hZE
+
+/-- ★★★★★ 2 の枠止まりの荷が閉じた。 -/
+theorem EOk_payT {ks : List ℕ} {Z : Jk1} (hJZ : JkA Z) (hZ : ∀ j : ℕ, EOk 0 (j :: ks) Z)
+    {B : TrioSeq} (hB : Bok B) : ∀ j : ℕ, EOk 0 (j :: ks) (Jk1.pay Z B) :=
+  EOk_payT_of_PayT2 (PZ_consE B hB Z hJZ hZ)
+
+#print axioms PZ_consE
+#print axioms EOk_payT
+
+/-! ### ★★★★★★ 壁は 1 文: 空木がどの形でも良い（`ENil`）
+
+荷は両側とも閉じた（`EOk_pay` / `EOk_pay_base` / `EOk_payT`）。
+`one` / `two` は形を伸ばすだけ。だから木の構造帰納で残るのは `nil` だけ。 -/
+
+def EAll (X : Jk1) : Prop := ∀ (k : ℕ) (ks : List ℕ), EOk k ks X
+
+theorem EAll_pay {Z : Jk1} (hJZ : JkA Z) (hZ : EAll Z) {C : TrioSeq} (hC : Bok C) :
+    EAll (Jk1.pay Z C) := by
+  intro k ks
+  match k, ks with
+  | 0, [] => exact EOk_pay_base hJZ (hZ 0 []) hC
+  | 0, (k' :: ks') => exact EOk_payT hJZ (fun j => hZ 0 (j :: ks')) hC k'
+  | (k + 1), ks' => exact EOk_pay hJZ (hZ (k + 1) ks') hC
+
+/-- ★ 残っている壁 1 文。 -/
+def ENil : Prop := ∀ (k : ℕ) (ks : List ℕ), EOk k ks Jk1.nil
+
+/-- ★★★★★★ 空木 1 文から全部の木。 -/
+theorem EAll_of_ENil (h : ENil) : ∀ X : Jk1, JkA X → EAll X := by
+  intro X
+  induction X with
+  | nil => intro _; exact h
+  | pay Z C ih => intro hX; exact EAll_pay hX.1 (ih hX.1) hX.2
+  | one U Y ihU ihY =>
+      intro hX k ks
+      exact EOk_one hX.1 (ihU hX.1 k ks) (ihY hX.2 (k + 1) ks)
+  | two N Y ihN ihY =>
+      intro hX k ks
+      exact EOk_two hX.1 (fun j => ihN hX.1 j ks) (ihY hX.2 0 (k :: ks))
+
+theorem APzAll_of_ENil (h : ENil) : APzAll :=
+  fun M hM => (EOk_base_APz M).mp (EAll_of_ENil h M hM 0 [])
+
+/-- ★★★★★★ 壁 1 文から目標の行列。 -/
+theorem R375m61_of_ENil (h : ENil) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_GOKall (GOKall_of_APzAll (APzAll_of_ENil h))
+
+theorem R375m62_of_ENil (h : ENil) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m62_of_APzAll (APzAll_of_ENil h)
+
+/-! ### `ENil` の中で残っている 2 つの場合
+
+    (0, [])        : `EOk_nil_base`（緑）
+    (k+1, ks) で `(k,ks)` が 1 の枠止まりか底 : `EOk_nil_fone` + `EOk_pay`（緑）
+    (k+1, ks) で `(k,ks)` が 2 の枠止まり     : 枠の木の荷が「∀ 形」で要る（未）
+    (0, k'::ks)                              : 走り（未）
+
+`EOk_nil_fone` の荷は枠の木 `U` についてで、族は `EOk k ks U`（1 つの形）しか
+くれない。`(k,ks)` が 2 の枠止まりのときだけ `EOk_payT` の「∀ 形」に届かない。 -/
+
+theorem ENil_fone_ok {k : ℕ} {ks : List ℕ}
+    (hk : (∃ j, k = j + 1) ∨ (k = 0 ∧ ks = [])) : EOk (k + 1) ks Jk1.nil := by
+  refine EOk_nil_fone ?_
+  intro U hJU hEU C hC
+  rcases hk with ⟨j, rfl⟩ | ⟨rfl, rfl⟩
+  · exact EOk_pay hJU hEU hC
+  · exact EOk_pay_base hJU hEU hC
+
+#print axioms EAll_of_ENil
+#print axioms R375m61_of_ENil
+#print axioms ENil_fone_ok
+
 end Small
 end TRIO
