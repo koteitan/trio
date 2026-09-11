@@ -21699,3 +21699,51 @@ Acc（DM）帰納でほどける:
 `AYsF` / `TSibF_pay` があるので、兄弟 `M` は鎖（`OChain A' A` / `TChain nil A`）
 に限ってよい。`ZSib` の `M` は `FLrZ A Bs`、つまり「2 の記録 + `A` + 荷」を
 横に並べた平らな鎖に限られる。
+
+## 追記294 (2026-09-11): 兄弟は鎖だけでよい。残るのは `A ≠ nil` の 2 の記録
+
+### 1. 仮定を弱めた
+
+`PZ_cons` / `PS_cons` が実際に使う兄弟 `M` は、出発点から
+`M ↦ two M (pay Z Y)` / `M ↦ one M (pay Z Y)` で作れるものだけ。
+2 の記録側は既存の `TSibF` / `TChain` / `TSibF_pay` がそのまま使えた。
+1 の記録側は `CtxOk` を要求しない鎖版 `PS_consF` を書いた。結果
+
+    ZSibF ∧ SSibF → HFone → … → R375m (6,1,0) ∈ W 0   ★緑
+
+`ZSibF` の `M` は `FLrZ A Bs`、つまり「2 の記録 + `A` + 荷」を横に並べた
+平らな鎖に限られる。
+
+### 2. なぜ `A = nil` だけ既に道具があるのか
+
+`GOK_oneUV_genM` の仮定 `hVs : jk1 d V = jk1 d Vd ++ [(d+dl, 2, 0)]` は
+**語の末尾が裸の 2 の記録**であることを要求する。
+
+    two M nil : 末尾は (l+1,2,0) 裸 → 階段（塔）に乗る  ← GOK_twoNil_gen / SelfW
+    two M A   : 末尾は A の語      → 乗らない
+
+だから `A` の構造帰納が要る:
+
+    two M (pay A₁ Y) → 荷の W 帰納（TSibF_pay、緑）→ two M A₁
+    two M (one A₁ B) = plug (D ++ [ftwo M]) (one A₁ B) → 文脈を ftwo M で伸ばす
+    two M (two A₁ B) → 同上
+    two M nil        → SelfW（自分の上に積み続けられる）
+
+**文脈が伸びるのはここだけ**で、木は縮む。`nil` に着いたら `SelfW` で
+文脈がまた伸びる。`SelfW D M = ∀k, GOK (plug (D ++ (fone M)^k) M)`。
+
+### 3. `HCx` は `fone M` で閉じているので `SelfW` は「族の中の話」になった
+
+`HCx ctx → JkA M → GOK (plug ctx M) → HCx (ctx ++ [fone M])` なので、
+`SelfW D M` は「`M` が `HCx` の文脈すべてで良い」＝ `UOK M` から出る:
+
+    UOK Z := ∀ D, HCx D → GOK (plug D Z)
+    UOK Z → ∀ ctx, HCx ctx → SAppend ctx Z     （plug_snoc でそのまま）
+
+つまり `SSibF` は「木が文脈によらず良い」なら**ただ**。`ZSibF` も
+`HCx` を `ftwo M` でも閉じれば同じくただになる。残る本当の内容は
+
+    「ある `HCx` の文脈で良い木は、どの `HCx` の文脈でも良い」
+
+という**移送**。これは族の述語を一切使わない形の壁で、`GBase`/`HCx` を
+`GOK` 側条件だけで作れたから初めて言える形になった。

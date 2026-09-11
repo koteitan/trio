@@ -28,17 +28,25 @@
     ZAppend D Z := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (two M Z))
     SAppend D Z := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (one M Z))
 
-    ZSib := ∀ D A, HDx D → JkA A → GOK (plug D (two nil A)) → ZAppend D A
-    SSib := ∀ D A' A, HCx D → JkA A' → GOK (plug D A') → JkA A →
-              GOK (plug D (one A' A)) → SAppend D A
+    ZSibF := ∀ D A, HDx D → JkA A → GOK (plug D (two nil A)) →
+               ∀ M, TChain nil A M → JkA M → GOK (plug D M) →
+                 GOK (plug D (two M A))
+    SSibF := ∀ D A' A, HCx D → JkA A' → GOK (plug D A') → JkA A →
+               GOK (plug D (one A' A)) →
+               ∀ M, OChain A' A M → JkA M → GOK (plug D M) →
+                 GOK (plug D (one M A))
+
+    TChain nil A M : M = nil | two M' (pay A Y)      （= FLrZ A Bs、平らな鎖）
+    OChain A' A M  : M = A'  | one M' (pay A Y)
 
     HFone := ∀ ctx A, HCx ctx → JkA A → GOK (plug ctx A) → GOK (plug ctx (one A nil))
 
-    ZSib ∧ SSib → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
+    ZSibF ∧ SSibF → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
 
 緑の部品:
 
-    HFone_of_Sibs / R375m61_of_Sibs
+    HFone_of_SibsF / R375m61_of_SibsF（兄弟は鎖だけでよい）
+    PS_consF（1 の記録版の鎖）/ TSibF_pay（2 の記録版の鎖、既存）
     TowHCx（幅 0 のブロックの塔は HFone 1 本で立つ）/ QH0 / QFL0_of_HFone
     PZ_cons（荷の W 帰納、2 の記録版）/ PS_cons（同、1 の記録版）
     QFL_cons（鎖の入れ子帰納法、無条件）/ QFL_all / Pay2_of_QFL0
@@ -50,10 +58,17 @@
 
 どちらも「記録の左の兄弟を、手元にある 1 つから一般の良い木へ広げる」。
 
-- `ZSib`: `GOK (plug D (two nil A))` から `GOK (plug D (two M A))`。
-  `M` は実際には `PZ_cons` の作る鎖 `FLrZ A Bs`（＝ `TChain nil A`）に限ってよい。
-- `SSib`: `GOK (plug D (one A' A))` から `GOK (plug D (one M A))`。
-  `M` は `OChain A' A`（`AYsF` の鎖）に限ってよい。
+- `ZSibF`: `GOK (plug D (two nil A))` から `GOK (plug D (two M A))`。
+  `M` は平らな鎖 `FLrZ A Bs` だけ。木で書くと「2 の記録 + `A` + 荷」を横に
+  `k` 個並べたものの右にもう 1 個（荷は空）足す 1 手。
+- `SSibF`: `GOK (plug D (one A' A))` から `GOK (plug D (one M A))`。
+  `M` は `one` の鎖だけ。
+
+`A = nil` なら `two M nil` は語の末尾が裸の 2 の記録なので `GOK_twoNil_gen`
+（階段＝`SelfW`）に乗る。`A ≠ nil` だと末尾が `A` の語になるので
+`GOK_oneUV_genM` の `hVs`（末尾が裸の 2 の記録）を満たさず、階段に乗らない。
+`A` の構造帰納で `pay` は `TSibF_pay`、`one` / `two` は文脈を `ftwo M` で
+伸ばして中身へ、`nil` で `SelfW`。文脈が伸びるのはここ。
 
 既存の `TSib` / `OSib` の還元表（notes 追記参照）だと
 
