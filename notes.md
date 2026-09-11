@@ -21027,3 +21027,89 @@ A2' の結論を**素の `WGd`** にして（`∀ b ks` で全称）、`GOk` 版
 
 **族（`WPd`/`WBd`/`WRd`/`WFd`/`WGd`）はもう要らない。**残りは `HangB` 1 文だけ。
 `GOK` は前置語すべてについての主張なので `PayB` より弱く、いちばん攻めやすい形。
+
+## 追記280 (2026-09-11): 壁を `FoneB` に弱め、`WFd` の測度を辞書式にして荷が通った
+
+### 1. 壁のいちばん弱い形は「1 の枠を 1 段積む」
+
+    FoneB : ∀ ws, GOK (plug (BCtx ws) (one nil nil))
+    R376_of_FoneB : FoneB → R373 ++ [(5,3,0)]          ★緑
+    FoneB_of_PayB : PayB → FoneB                        ★緑（逆は不明）
+
+`plug (BCtx ws) X = bdX X (reverse ws)` なので、木の言葉では
+
+    FoneB ⟺ ∀ js, GOK (bdA (js ++ [0]))
+    目標   ⟺ ∀ js, GOK (bdA js)
+
+`bdA (js ++ [0])` は「ブロックの塔の上に裸の `(h,1,0)` を 1 本置く」。
+行列では `BM js ++ [(h+1,1,0)]` で、展開は `BM js` 自身の縦塔 `TwD d (BM js) n`。
+`bdA (js ++ [j+1])` の側（幅 ≥ 1）は `GOK_oneUV_RunSB` の階段で無条件に
+`bdA (js ++ replicate n j)` に落ちる（`GOK_BCtx_nilF` の `(j+1)::ws` の枝、緑）。
+つまり**幅 0 の入り目だけが壁**。
+
+幅 2 の最小例は緑になった:
+
+    UtwP [nil] nil n = bdA (replicate n 1)             ★緑
+    GOK_bdA_two : GOK (bdA [2])                        ★緑（WPd の幅 ≤ 1 の上に 1 段）
+
+### 2. `WFd` の測度を入り目 (予算, 幅) の辞書式にした
+
+`WFd` の測度は予算の多重集合 `bdg` だけだったので、兄弟の予算は `k₂ < k` に
+絞るしかなかった。入り目を
+
+    EntL = ℕ ×ₗ ℕ         （予算が主、幅が従の辞書式）
+    encL s = (s.map toLex : Multiset EntL)
+
+にして `Multiset EntL` の DM を測度にすると、「予算そのまま・幅 1 下げ」が減少に
+なるので `k₂ ≤ k` が許せる。Mathlib の
+`Multiset.instWellFoundedIsDershowitzMannaLT` は任意の `WellFoundedLT α` で効くので
+`ℕ ×ₗ ℕ` でそのまま使える（測定済み）。階段 `WFd_nilF` は兄弟条件を消費するだけ
+なので、仮定が強くなっても通る。
+
+### 3. 幅 ≥ 1 の入り目の荷が通った
+
+    WFd_chainF : 平らな鎖 twoIt N T m を走りの添字 i の兄弟に入れる  ★緑
+    WFd_dupF   : 荷の最後の列が根のとき（GoodFb_snoc_dupJt0）        ★緑
+    WFd_innerF : そうでないとき（GoodFb_snoc_innerJt0）              ★緑
+    WFd_payAll : ∀Y Bok Y → ∀Z JkT Z → (∀s, WFd s Z) → ∀s, WFd s (pay Z Y)  ★緑
+
+鎖が要求するのは「`T = pay Z Y'` を予算 `k₂ ≤ k` の展開の中で使う」こと。
+`k₂ = k` は `WFd_ck_shift` で足りるが、`k₂ < k` は `T` を形 `(k₂,i+1) :: S` で
+使う必要がある。W 帰納の内側なら `T` は**全部の形で**取れるので通る。
+それが `WFd_payAll` の `(∀s, WFd s Z)` という形の理由。
+
+### 4. 残り: 枠を nil に固定した族
+
+    WFd ((k,0)::ks) nil = ∀U, FrmF ks U → WFd ks U → WFd ks (one U nil)
+
+を `APnil_gen0` で出すには `WFd ks (pay U C)` が要る。`WFd_payAll` に渡すには
+`∀s, WFd s U` が要るが、枠 `U` は「その形 `ks` でだけ良い」としか言えない。
+`WFd_bdA` が使う枠はすべて `nil` なので、**枠を `nil` に固定した族**にすれば
+`Z = nil` になり、`∀s, WFd s nil` は目標そのものになる。循環は次の 2 本立ての
+Acc（DM）帰納でほどける:
+
+    motive s := WEd s nil ∧ ∀ C, Bok C → WEd s (pay nil C)
+
+- 荷の部分（形 s）: `C` の W 帰納。鎖の `k₂ = k` は `WEd_ck_shift`（同じ形）、
+  `k₂ < k` は形 `(k₂,i+1)::(q++(r++ks))` が DM で真に小さいので IH から取れる。
+- 空木の部分（形 s）:
+  - `s = []` は `GOK_nil`
+  - `s = (k,0)::ks` は `APnil_gen0` + 荷の部分を `ks`（DM で小さい）で
+  - `s = (k,i+1)::ks` は階段 `WEd_nilF`（無条件）
+
+推移律は要らない（Acc 帰納の motive に荷の部分を入れておくだけでよい）。
+`r`, `q` の入り目に `x.2 ≤ x.1` を課しておくと、どの形も階段の
+`i+1 ≤ k` を満たすので `WEd s nil` が幅 ≥ 1 で無条件になる。
+
+### 5. 測った設計のダメな組み合わせ（記録）
+
+| 兄弟条件の頭の予算 | q の上限 | 階段 | 鎖 |
+|---|---|---|---|
+| `k₂ < k`（元の `WFd`） | 予算 < k | ○ | × |
+| `k₂ = k` 固定 | 予算 < k | × | ○ |
+| `k₂ ≤ k` | 予算 < k | ○ | ○（`T` が全形で要る）|
+| `k₂ = k` 固定 | `<ₗ (k,i+1)` | ○ | × |
+| `k₂ = k` 固定 | `<ₗ (k,j+1)` | × | ○ |
+
+「階段は予算を 1 下げた塔を兄弟の下に入れる」「鎖は同じ予算のまま幅を 1 下げる」の
+2 つが逆を向いている。辞書式の測度 + `k₂ ≤ k` + `T` を全形で取る、で両立した。
