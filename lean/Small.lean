@@ -76009,6 +76009,10 @@ theorem R375m62_of_Q (hp : QPayAll) (hn : QNil) :
 
 /-! ### ★★★★★★ 走りの長さの帰納法。目標行376 が「空木 1 文」に落ちる
 
+注意（2026-09-12）: ここは `SCtx` / `SG_stkS`（`SNilT → ∀ q ks, SG ks (stk q)`）の
+独立な再導出。`RNil` ≒ `SNilT`、`RHang` ≒ `SPayF`。最前線は `SHtow`。
+新しい族を作る前に `wall.md` の族の表を見ること。
+
 `R376_of_RunAll` は目標行を `RunAll := ∀ q ks, APd (true::ks) (stk q)`
 （全部 `nil` の走り `stk q` が 1 の枠の直上で良い）1 本に落としている。
 `GOK_stkW_gen` の階段
@@ -76174,6 +76178,46 @@ theorem R376_of_RHang (h : RHang) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] �
 #print axioms GOK_stk_RCx
 #print axioms R376_of_RNil
 #print axioms R376_of_RHang
+
+/-! ### ★★★★★★ `P(6,0,0)` の上の `PU` の梯子（行313〜315 の写し。無限に伸びる）
+
+`R313` → `R314` → `R315` は `PU` の台座を 1 段ずつ上げながら
+`(h,h,0)` と `(h+1,h+1,1)` を交互に積む梯子。台座を `R310` から `R600_349`
+に取り替えるだけで同じ梯子が回り、証明済みの一番大きい行列
+`R600_349 (3,3,0)(4,4,1)` の上に無限に伸びる。 -/
+
+def Lad : ℕ → TrioSeq
+  | 0 => R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)]
+  | (n + 1) => Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ), ((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)]
+
+theorem Lad_PU : ∀ n : ℕ, PU (n + 2) (n + 3) (Lad n)
+  | 0 => ⟨PkGA, 2, R600_349, [((4, 4, 1) : ℕ × ℕ × ℕ)], Ifc3_toIfcV Ifc3_PkGA, rfl,
+      R600_349_PkGA, by simp [Lad], JkU_z1 (le_refl 2) 2⟩
+  | (n + 1) => ⟨PU (n + 2), n + 3, Lad n, [((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)],
+      IfcV_PU (by omega) (n + 4) (by omega), by omega, Lad_PU n,
+      by simp [Lad], JkU_z1 (by omega) (n + 3)⟩
+
+/-- ★★★★★★ 梯子の段（`(n+5,n+5,1)` で終わる形）。 -/
+theorem Lad_mem (n : ℕ) : Lad n ∈ W 0 := ((BaseOk_PU (n + 2)).aok _ _ (Lad_PU n)).mem
+
+theorem Lad_flat_PU (n : ℕ) :
+    PU (n + 3) (n + 4) (Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨PU (n + 2), n + 3, Lad n, [], IfcV_PU (by omega) (n + 4) (by omega), by omega,
+    Lad_PU n, by simp, JkU_nil' (by omega) (n + 3)⟩
+
+/-- ★★★★★★ 梯子の段（`(n+4,n+4,0)` で終わる形）。 -/
+theorem Lad_flat_mem (n : ℕ) : Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  ((BaseOk_PU (n + 3)).aok _ _ (Lad_flat_PU n)).mem
+
+theorem Lad_zero_eq :
+    Lad 0 = R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)] := rfl
+
+theorem Lad_succ_eq (n : ℕ) :
+    Lad (n + 1)
+      = Lad n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ), ((n + 5, n + 5, 1) : ℕ × ℕ × ℕ)] := rfl
+
+#print axioms Lad_mem
+#print axioms Lad_flat_mem
 
 end Small
 end TRIO
