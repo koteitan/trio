@@ -21518,3 +21518,44 @@ Acc（DM）帰納でほどける:
 `A2'` / `GoodFb_snoc_dupJt0` / `GoodFb_snoc_innerJt0` / `GOK_oneUV_RunSB` /
 `APnil_gen0` / `plug_oneTwoBlk` / `appJ_nil_UtwP`。
 `WPd` は `GOK_bdA1`（幅 ≤ 1 の塔）と `WPd_FLr` のためだけに使っている。
+
+## 追記290 (2026-09-11): 壁を「幅 0 のブロックの塔」に。`Z` 一般の鎖
+
+### 1. 還元の鎖（全部緑）
+
+    OneTow → W0Tow → Q0Step → QFL [] → QFL_all → Pay2 → hang6_R375m
+      → R375m ++ [(6,1,0)] ∈ W 0
+
+    W0Tow  := ∀ ctx A, GBase ctx → JkA A → GOK (plug ctx A) →
+                ∀ m, GOK (plug ctx (appJ A (UtwP [] nil m)))
+    OneTow := ∀ ctx A, …→ ∀ m, GOK (plug (ctx ++ [fone A]) (UtwP [] nil m))
+
+`Q0Step` に `GOK_oneUV_RunSB ctx [] nil A` を当てると、階段がちょうど
+`appJ A (UtwP [] nil m)`＝**良い枠木 `A` の上に幅 0 のブロックを m 枚積んだ木**。
+`appJ_UtwP0 : appJ A (UtwP [] nil (m+1)) = one A (UtwP [] nil m)`（緑）。
+`OneTow` の `m = 0` はちょうど `FoneB`（`GOK (plug ctx (one A nil))`）。
+
+### 2. `pay A C` の展開は `Z = A` を固定した平らな鎖（bms 実測）
+
+    R375m (6,0,0)(5,0,0) [2] = R344 [(4,2,0)(5,2,0)(6,0,0)]^3
+
+`(6,0,0)` の親は**行 0 で**探すので `(4,2,0)`（走りの最初の記録）。
+悪い部分は「2 の記録 + `pay A []`」で、これが平らに 3 本並ぶ。
+つまり `FoneB` を `APnil_gen0` で荷に落とすと、`Z = nil` の鎖 `FLr` ではなく
+**`Z = A` を固定した鎖**が出る。そのための道具を用意した:
+
+    FLrZ Z [] = nil / FLrZ Z (B :: Bs) = two (FLrZ Z Bs) (pay Z B)
+    FLrZ_nil : FLrZ nil Bs = FLr Bs
+    JkA_FLrZ / twoIt_FLrZ : twoIt (FLrZ Z Bs) (pay Z B) n = FLrZ Z (replicate n B ++ Bs)
+
+`QFL` の入れ子帰納法は `Z` について一般化できる（dup / inner は `Z` 一般）。
+ただし `B = []` の場合は `two (FLrZ Z Bs) (pay Z [])` ≅ `two (FLrZ Z Bs) Z` で、
+`Z ≠ nil` なら階段ではなく **`Z` の中に潜る**（`Z` の構造についての帰納が要る）。
+
+### 3. 証明済みの行列（測定）
+
+`R600_351`（= `P(6,0,0)(2,2,0)(3,3,1)(4,1,0)(3,3,0)(4,4,1)`）が
+いま証明できている中でいちばん大きい。無限族 `R600_349_DiaV k`
+（`R600_349 ++ DiaV 2 2 (k+1)`、全部緑）も `bms -c` で `R600_351` より小さい
+（対角は z=0、`R600_351` の末尾は z=1）。
+今回のセッションで無条件に証明できた**行列**はまだ無い（全部条件つきの還元）。
