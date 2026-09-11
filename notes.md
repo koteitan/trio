@@ -23259,3 +23259,37 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
   でないと `(l+1,1,0)` が背の高い語の直後に来て非標準になる。
 - `two (NstT …) nil`（`WPd_twoA_runB`）→ 非標準。同じ理由。
 - 荷を大きくする（`[(0,0,0)]` を `R600` に）→ 標準だが小さい。
+
+## 追記329 (2026-09-12): 壁が `TwoBud` 1 文になった。文脈も `GOK` も使わない
+
+`WPd` の層で木の構造帰納を回す。
+
+    PA M := ∀ ks, FrmN ks M → WPd ks M
+
+- `PA nil`         : `WPd_nilAll`（緑）
+- `PA (pay N C)`   : `WPd_payA`（緑）
+- `PA (one V W)`   : `WPd_step`。上の木は `0 :: ks` なので帰納の仮定そのまま（緑）
+- `PA (two V W)` の `[]`     : `TopOk (two _ _)` が偽なので空虚（緑）
+- `PA (two V W)` の `0 :: ks`: `WPd_twoOf (k := 0)`。兄弟条件 `∀q(≤0), WPd ((0::q)++ks) V`
+  も上の木 `WPd (1::ks) W` も帰納の仮定そのまま（緑）
+- `PA (two V W)` の `(k+1) :: ks`: **これだけが壁**
+
+    TwoBud := ∀ V W, JkA V → JkA W → PA V → PA W → ∀ k ks, WPd ((k+1)::ks) (two V W)
+
+    PA_all           : TwoBud → ∀ M, JkA M → PA M
+    GOKall_of_TwoBud : TwoBud → ∀ T, JkT T → GOK T
+    R376_of_TwoBud   : TwoBud → 行376 ∈ W 0
+    R375m61_of_TwoBud
+
+これで壁から文脈（`HGx` / `GBase` / `APd`）が完全に消えた。`APzOne` / `APzTwo`
+（追記の古い最小形）と比べると、`APzOne` に当たる `one` の場合が**緑になっている**。
+理由は帰納の仮定を `APz M`（＝`WPd [0] M`）でなく `PA M`（＝全部の `ks`）に
+取ったから。1 個強めると `one` が自明に通る。
+
+### 残っている穴はちょうど 2 つ
+
+    (a) 予算 1     : WPd (1 :: ks) (two V W)
+    (b) 予算 2 以上 かつ 上の木が空でない（W ≠ nil）
+
+`TwoBud_nilW`（緑）: `W = nil` かつ予算 2 以上は `WPd_twoA_runB` の `b = 0` で出る。
+つまり壁は「**2 の記録の上に何か置いたまま予算の位置に差す**」1 点。

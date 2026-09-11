@@ -77389,5 +77389,94 @@ theorem LadN_mem (m r j : ℕ) {ws : List Jk1} (hw : WJ ws) (p : ℕ) :
 #print axioms RzN_mem
 #print axioms LadN_mem
 
+/-! ### ★★★★★★ 壁の最終形：文脈も `GOK` も使わない 1 文
+
+`WPd` の層で木の構造帰納を回すと、`nil` / `pay` / `one` と、`two` の `0 ::` 形は
+**全部無条件で閉じる**。`two` の `0 ::` 形が閉じるのは `WPd_twoOf` の予算 `k` を
+`0` に取れるからで、兄弟条件も上の木の条件も帰納の仮定そのままで足りる。
+
+    PA M    := ∀ ks, FrmN ks M → WPd ks M
+    TwoBud  := ∀ V W, JkA V → JkA W → PA V → PA W → ∀ k ks, WPd ((k+1)::ks) (two V W)
+
+残るのは `TwoBud` だけ。これは「**2 の記録を予算の位置に置く**」1 文で、
+`WPd_twoA_runB` は上の木が `nil` のとき（`two A nil`）だけを埋めている。
+`TwoBud` から `∀ T, JkT T → GOK T`（z < 2 の停止性そのもの）が出る。 -/
+
+def PA (M : Jk1) : Prop := ∀ ks : List ℕ, FrmN ks M → WPd ks M
+
+def TwoBud : Prop := ∀ V W : Jk1, JkA V → JkA W → PA V → PA W →
+    ∀ (k : ℕ) (ks : List ℕ), WPd ((k + 1) :: ks) (Jk1.two V W)
+
+theorem FrmN_pay_inv : ∀ (ks : List ℕ) {N : Jk1} {C : TrioSeq},
+    FrmN ks (Jk1.pay N C) → FrmN ks N
+  | [], _, _, h => ⟨h.1.1, h.2⟩
+  | (_ :: _), _, _, h => h.1
+
+theorem FrmN_one_inv : ∀ (ks : List ℕ) {V W : Jk1},
+    FrmN ks (Jk1.one V W) → FrmN ks V
+  | [], _, _, h => ⟨h.1.1, h.2⟩
+  | (_ :: _), _, _, h => h.1
+
+theorem PA_nilA : PA Jk1.nil := fun ks _ => WPd_nilAll ks
+
+theorem PA_payA {N : Jk1} {C : TrioSeq} (hN : PA N) (hC : Bok C) : PA (Jk1.pay N C) :=
+  fun ks hks =>
+    WPd_payA ks N (FrmN_pay_inv ks hks) (hN ks (FrmN_pay_inv ks hks)) C hC
+
+theorem PA_oneA {V W : Jk1} (hJW : JkA W) (hV : PA V) (hW : PA W) : PA (Jk1.one V W) :=
+  fun ks hks =>
+    WPd_step ks (FrmN_one_inv ks hks) (hV ks (FrmN_one_inv ks hks))
+      (hW (0 :: ks) (hJW : FrmN (0 :: ks) W))
+
+/-- ★★★★★★ `two` の `0 ::` 形は無条件（予算を `0` に取れる）。 -/
+theorem PA_twoC0 {V W : Jk1} (hJV : JkA V) (hJW : JkA W) (hV : PA V) (hW : PA W)
+    (ks : List ℕ) : WPd (0 :: ks) (Jk1.two V W) :=
+  WPd_twoOf (k := 0) hJV
+    (fun q _ => hV ((0 :: q) ++ ks) (hJV : FrmN ((0 :: q) ++ ks) V))
+    (hW ((0 + 1) :: ks) (hJW : FrmN ((0 + 1) :: ks) W))
+
+theorem PA_twoA (h : TwoBud) {V W : Jk1} (hJV : JkA V) (hJW : JkA W)
+    (hV : PA V) (hW : PA W) : PA (Jk1.two V W)
+  | [], hks => hks.2.elim
+  | (0 :: ks), _ => PA_twoC0 hJV hJW hV hW ks
+  | ((k + 1) :: ks), _ => h V W hJV hJW hV hW k ks
+
+/-- ★★★★★★ 壁 1 文からすべての木が良くなる。 -/
+theorem PA_all (h : TwoBud) : ∀ M : Jk1, JkA M → PA M
+  | Jk1.nil, _ => PA_nilA
+  | Jk1.pay N C, hM => PA_payA (PA_all h N hM.1) hM.2
+  | Jk1.one V W, hM => PA_oneA hM.2 (PA_all h V hM.1) (PA_all h W hM.2)
+  | Jk1.two V W, hM => PA_twoA h hM.1 hM.2 (PA_all h V hM.1) (PA_all h W hM.2)
+
+theorem GOKall_of_TwoBud (h : TwoBud) : ∀ T : Jk1, JkT T → GOK T :=
+  fun T hT => (WPd_bnil T).mp (PA_all h T hT.1 [] hT)
+
+theorem StkL_of_TwoBud (h : TwoBud) : StkL :=
+  fun n => GOKall_of_TwoBud h _ ⟨⟨trivial, JkA_stk n⟩, trivial⟩
+
+/-- ★★★★★★ 壁 1 文から目標（シート行376）まで。 -/
+theorem R376_of_TwoBud (h : TwoBud) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_StkL (StkL_of_TwoBud h)
+
+theorem R375m61_of_TwoBud (h : TwoBud) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_APzAll (APzAll_of_GOKall (GOKall_of_TwoBud h))
+
+/-- ★ `TwoBud` のうち「上の木が空・予算 2 以上」は緑（`WPd_twoA_runB` の `b = 0`）。
+残っている穴はちょうど 2 つ:
+
+    (a) 予算 1（`WPd (1 :: ks) (two V W)`）
+    (b) 予算 2 以上で上の木が空でない（`W ≠ nil`）
+-/
+theorem TwoBud_nilW {V : Jk1} (hJV : JkA V) (hV : PA V) (k : ℕ) (ks : List ℕ) :
+    WPd ((k + 2) :: ks) (Jk1.two V Jk1.nil) :=
+  WPd_twoA_runB (k := k + 1) (b := 0) (by omega) hJV
+    (fun ks' => hV (1 :: ks') (hJV : FrmN (1 :: ks') V)) ks
+
+#print axioms PA_all
+#print axioms TwoBud_nilW
+#print axioms R376_of_TwoBud
+#print axioms R375m61_of_TwoBud
+
 end Small
 end TRIO

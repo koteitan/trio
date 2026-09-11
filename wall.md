@@ -8,12 +8,26 @@
 
 ## 目標までの緑の還元（いちばん短い道）
 
-    R376_of_BdAll : BdAll → 行376
-      StkL  := ∀ n, GOK (one nil (stk n))          ← 文脈の量化は要らない
-      BdAll := ∀ j m, GOK (bdA (replicate m j))    ← j = 0,1 は緑、j ≥ 2 が壁
+    R376_of_TwoBud : TwoBud → 行376        ★2026-09-12 に緑
+      PA M   := ∀ ks, FrmN ks M → WPd ks M
+      TwoBud := ∀ V W, JkA V → JkA W → PA V → PA W → ∀ k ks, WPd ((k+1)::ks) (two V W)
 
-`tw_R344_42R` が `RunAll` から使うのは `GOK (one nil (stk n))` だけ。
-`GOK_runNil_gen` の階段がブロック列なので `BdAll` に落ちる。
+`PA` の木の構造帰納は `nil` / `pay` / `one` と、`two` の `0 ::` 形が**全部無条件**。
+`two` の `0 ::` 形が閉じるのは `WPd_twoOf` の予算を `0` に取れるからで、兄弟条件も
+上の木の条件も帰納の仮定そのままで足りる（`PA_twoC0`）。だから残るのは
+`TwoBud` 1 文だけで、そこから `∀ T, JkT T → GOK T`（z < 2 の停止性そのもの）が出る。
+
+`TwoBud` に残っている穴はちょうど 2 つ。
+
+    (a) 予算 1     : WPd (1 :: ks) (two V W)
+    (b) 予算 2 以上 かつ 上の木が空でない : W ≠ nil
+    上の木が空・予算 2 以上（`two V nil`）は `TwoBud_nilW` で緑。
+
+古い還元（`StkL` / `BdAll` 経由）も残っている:
+
+    R376_of_BdAll : BdAll → 行376
+      StkL  := ∀ n, GOK (one nil (stk n))
+      BdAll := ∀ j m, GOK (bdA (replicate m j))    ← j = 0,1 は緑、j ≥ 2 が壁
 
 ## 壁の言い方（全部同値、どれも 1 手）
 
