@@ -74926,5 +74926,131 @@ theorem R375m62_of_APzAll (h : APzAll) :
 #print axioms R375m61_of_GOKall
 #print axioms R375m62_of_GOKall
 
+/-! ### ★★★★★★ 平らな鎖は `LOk` の梯子で**無条件に**良い
+
+`QFL`（`GBase` の文脈）では `B = []` の場合（階段）が閉じず `QFL []` が残った。
+`LOk` の梯子なら `LOk_twoN`（緑）がちょうどその場合をくれる:
+
+    LOk_twoN : JkA N → (∀ j, LOk (j+1) N) → ∀ k, LOk (k+1) (two N nil)
+
+塔の条件が「梯子の深さについて全称」なので、`QL Bs` の帰納法の仮定が
+そのまま入る。`Rq` も予算も要らない。 -/
+
+def QL (Bs : List TrioSeq) : Prop := ∀ k : ℕ, LOk (k + 1) (FLr Bs)
+
+theorem QL_nil : QL ([] : List TrioSeq) := fun k => LOk_nil (k + 1)
+
+/-- ★★★★★★ `B = []`（鎖の右端に裸の 2 の記録）。`LOk_twoN` そのもの。 -/
+theorem QL_nilcons {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (h : QL Bs) :
+    QL (([] : TrioSeq) :: Bs) := fun k =>
+  LOk_congr (fun l => (jk1_two_payZnil (FLr Bs) Jk1.nil l).symm)
+    (LOk_twoN (JkA_FLr Bs hBs) (fun j => h j) k)
+
+theorem QL_rep {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hIH : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → QL Bs → QL (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (h : QL Bs) :
+    ∀ n : ℕ, QL (List.replicate n B₀ ++ Bs)
+      ∧ (∀ C ∈ List.replicate n B₀ ++ Bs, Bok C) := by
+  intro n
+  induction n with
+  | zero => exact ⟨h, hBs⟩
+  | succ n ih =>
+      have e : List.replicate (n + 1) B₀ ++ Bs = B₀ :: (List.replicate n B₀ ++ Bs) := by
+        simp [List.replicate_succ]
+      rw [e]
+      refine ⟨hIH _ ih.2 ih.1, ?_⟩
+      intro C hC
+      rcases List.mem_cons.mp hC with rfl | hC'
+      · exact hB₀
+      · exact ih.2 C hC'
+
+theorem QL_dup {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hB : Bok (B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+    (hIH : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → QL Bs → QL (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (h : QL Bs) :
+    QL ((B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) :: Bs) := by
+  have hrep := QL_rep hB₀ hIH hBs h
+  intro k D hD ws hw hG
+  refine GoodFb_snoc_dupJt0 hw
+    (StkOk_JkT (k + 1) D hD _ ⟨JkA_FLr Bs hBs, trivial, hB⟩) ?_
+  intro n hn
+  have h2 := (hrep n).1 k D hD ws hw hG
+  rw [← twoIt_FLr n B₀ Bs] at h2
+  exact h2
+
+/-- ★★★★★★ 入れ子帰納法。**仮定なし**。`QFL_cons` と違い `QL []` も要らない。 -/
+theorem QL_cons : ∀ (B : TrioSeq), Bok B → ∀ Bs : List TrioSeq,
+    (∀ C ∈ Bs, Bok C) → QL Bs → QL (B :: Bs) := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ Bs : List TrioSeq,
+      (∀ C ∈ Bs, Bok C) → QL Bs → QL (B :: Bs)} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb Bs hBs hQ
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact QL_nilcons hBs hQ
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e2]
+        exact QL_dup Bok_nil (by rw [← e2]; exact hBb)
+          (fun Bs' hBs' hQ' => QL_nilcons hBs' hQ') hBs hQ
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        rw [hsplit]
+        exact QL_dup hdb (by rw [← hsplit]; exact hBb) (hdl hdb) hBs hQ
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro k D hD ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (StkOk_JkT (k + 1) D hD _ ⟨JkA_FLr Bs hBs, trivial, hBb⟩) hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) Bs hBs hQ k D hD ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb Bs hBs hQ
+  exact key hBb.mem hBb Bs hBs hQ
+
+/-- ★★★★★★ 平らな鎖はどの長さでも `LOk` の梯子で良い（無条件）。 -/
+theorem QL_all : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → QL Bs
+  | [], _ => QL_nil
+  | (B :: Bs), h => QL_cons B (h B List.mem_cons_self) Bs
+      (fun C hC => h C (List.mem_cons_of_mem B hC))
+      (QL_all Bs (fun C hC => h C (List.mem_cons_of_mem B hC)))
+
+#print axioms QL_nilcons
+#print axioms QL_all
+
 end Small
 end TRIO
