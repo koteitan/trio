@@ -22186,3 +22186,35 @@ Acc（DM）帰納でほどける:
 
     RunBdA（WPd 層、bdA に絞った形）→ R375m (6,2,0)   ★緑の還元
     StkBlk2（最小未証明）= `stk 2` を 2 の枠の直上に差す
+
+## 追記305 (2026-09-11): 2 つの道を繋いだ。壁の地図の全体像
+
+    WPd_of_GOKall : GOKall → ∀ ks Z, FrmN ks Z → WPd ks Z
+
+`WPd ks Z` は `WPd_iff` で「`WCtx ks` のどの文脈でも `plug ctx Z` が良い」で、
+`WCtx_JkT` がその `JkT` をくれる。だから `GOKall` から `WPd` 層は全部出る。
+
+### 壁の地図（全部緑の還元）
+
+    APzAll ⟺ GOKall := ∀ T, JkT T → GOK T          （この符号化の z<2 停止性）
+      ⟺ GNilO ∧ GNilT ∧ 底（HGx 文脈）
+      ⟸ APzO2One ∧ APzO2Two ∧ APzT2One ∧ APzT2Two   （文脈なしの 4 文）
+
+    GOKall → WPd 層全部 → RunP2 → RunBdA → bdA 全幅
+    GOKall → Pay2 → R375m (6,1,0) ∈ W 0
+    GOKall → R375m (6,2,0) ∈ W 0
+
+    的を絞った壁: RunBdA（WPd 層）、最小未証明 StkBlk2 = `stk 2` を 2 の枠の直上に
+
+### 残る問題は測度 1 つ
+
+どの言い方でも、還元の輪は
+
+    (D, nil) --荷--> (D-1 枠, pay W C) --W 帰納--> (D-1 枠 + 1 枠, W)
+                                                   （W は外した枠の木）
+
+で、文脈の長さは戻るが木が `nil` から `W`（任意）に増える。鎖の要素は
+塔になるので、`W` が**どの文脈でも良い**（`UOK W`）でないと閉じない。
+`UOK` を族の側条件にすると全部の場合が閉じるが、`UOK` の定義に族が要るので
+循環する。深さで階数を付けても、`nil` の場合に「外した枠の木」が要るせいで
+階数が減らない。ここが最後の 1 点。
