@@ -74752,5 +74752,70 @@ theorem APzO2_twoNil (h1 : APzO2One) {Z : Jk1} (hJZ : JkA Z) (hZ : APzO2 Z) :
 
 #print axioms APzO2_twoNil
 
+/-! ### ★★★★★★ `bdA` 経由の壁: 走りの塊を 2 の枠の直上に差す 1 文
+
+`bdA (j :: js) = one nil (stkP j (bdA js))`。`WPd_step` で 1 の記録を外すと
+`WPd (0 :: ks) (stkP j (bdA js))` になり、`WPd_twoOf (k := j)` で
+`WPd ((j+1) :: ks) (stkP (j-1) …)` に落ちる。つまり要るのは
+
+    RunP2 := ∀ j k ks X, JkA X → (∀ ks', WPd ks' X) → j ≤ k →
+               WPd ((k+1) :: ks) (stkP j X)
+
+の 1 文だけ。`j = 0` は仮定そのもの。`j = 1` が「走り + `X`」。
+`WPd_bdA_le1` は `j ≤ 1` のとき `j = 1` でも `stkP 0` しか要らないので通っていた。
+
+これが出ると `bdA` も `bdAC` も**幅の制限なし**で緑になり、
+`Pay2` と「幅 2 のブロックの塔」の両方が出る。 -/
+
+def RunP2 : Prop := ∀ (j k : ℕ) (ks : List ℕ) (X : Jk1), JkA X →
+  (∀ ks' : List ℕ, WPd ks' X) → j ≤ k → WPd ((k + 1) :: ks) (stkP j X)
+
+theorem WPd_bdA_all (h : RunP2) : ∀ (js ks : List ℕ), WPd ks (bdA js)
+  | [], ks => WPd_nilAll ks
+  | (j :: js), ks => by
+      refine WPd_step ks (FrmN_nilA ks) (WPd_nilAll ks) ?_
+      show WPd (0 :: ks) (stkP j (bdA js))
+      cases j with
+      | zero => exact WPd_bdA_all h js (0 :: ks)
+      | succ j =>
+          exact WPd_twoOf (k := j) trivial (fun q _ => WPd_nilAll _)
+            (h j j ks (bdA js) (JkA_bdA js)
+              (fun ks' => WPd_bdA_all h js ks') (le_refl j))
+
+theorem WPd_bdAC_all (h : RunP2) {C : TrioSeq} (hC : Bok C) :
+    ∀ (js ks : List ℕ), WPd ks (bdAC C js)
+  | [], ks => WPd_payA ks Jk1.nil (FrmN_nilA ks) (WPd_nilAll ks) C hC
+  | (j :: js), ks => by
+      refine WPd_step ks (FrmN_nilA ks) (WPd_nilAll ks) ?_
+      show WPd (0 :: ks) (stkP j (bdAC C js))
+      cases j with
+      | zero => exact WPd_bdAC_all h hC js (0 :: ks)
+      | succ j =>
+          exact WPd_twoOf (k := j) trivial (fun q _ => WPd_nilAll _)
+            (h j j ks (bdAC C js) (JkA_bdAC hC js)
+              (fun ks' => WPd_bdAC_all h hC js ks') (le_refl j))
+
+theorem GOK_bdA_all (h : RunP2) (js : List ℕ) : GOK (bdA js) :=
+  (WPd_bnil _).mp (WPd_bdA_all h js [])
+
+theorem Pay2_of_RunP2 (h : RunP2) : Pay2 := by
+  intro B hB
+  show GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))))
+  exact (WPd_bnil _).mp (WPd_bdAC_all h hB [2] [])
+
+/-- ★★★★★★ 1 文からいま開いている最小の行列。 -/
+theorem R375m61_of_RunP2 (h : RunP2) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_RunP2 h)
+
+/-- ★★★★★★ 同じ 1 文から「幅 2 のブロックの塔」の行列も。 -/
+theorem R375m62_of_RunP2 (h : RunP2) :
+    R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m_62_of_bdA2 (fun n => GOK_bdA_all h (List.replicate n 2))
+
+#print axioms WPd_bdA_all
+#print axioms R375m61_of_RunP2
+#print axioms R375m62_of_RunP2
+
 end Small
 end TRIO
