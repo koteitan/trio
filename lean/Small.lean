@@ -76599,5 +76599,101 @@ theorem R6221alt_mem (i m : ℕ) : R6221j (List.replicate m (AltT i)) ∈ W 0 :=
 #print axioms R6221j_mem
 #print axioms LadR_mem
 
+/-! ### ★★★★★★ 一般形: どの良い語 `ws` でも
+`R338 (1,1,0) ++ wordJ 1 1 ws ++ (2,2,1)` は `RunA 0 1` の元
+
+`R6221`（`ws = [T6]`）はこの特別な場合。`T6` を `k` 個並べると
+台座がどんどん大きくなる（`bms -c` の実測では `k` が一番強い）。 -/
+
+theorem MidD_wz1 {ws : List Jk1} (hw : WOk ws) (h : ℕ) :
+    MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 ws
+      ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)]) := by
+  have h1 : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 ws) := by
+    have hh := MidD_wordJ (h + 1) 1 (by omega) (by omega) hw
+    simpa [show h + 1 + 1 = h + 2 from by omega] using hh
+  exact MidD_append h1
+    (by intro c hc; simp only [List.mem_singleton] at hc; subst hc; omega)
+    (by intro c hc; simp only [List.mem_singleton] at hc; subst hc; show (1 : ℕ) ≤ 2; omega)
+
+theorem SegA_wz1 {ws : List Jk1} (hw : WOk ws)
+    (hG : GoodFb (fun a b => wordJ a b ws)) (h : ℕ) :
+    SegA h (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 ws
+      ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)]) where
+  mid := MidD_wz1 hw h
+  head1 := by simp [entry]
+  reapp := by
+    intro P hP s A' hA'
+    have e : shiftr01 s 0 (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 ws
+        ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)])
+        = ((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1 + s) 1 ws
+          ++ [((h + 1 + s + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)] := by
+      show shiftr01 s 0 ([((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ (wordJ (h + 1) 1 ws
+        ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)])) = _
+      rw [shiftr01_append0, shiftr01_append0, wordJ_shift, shift_col]
+      simp [shiftr01] <;> omega
+    rw [e]
+    refine z1wJ_mem (by omega) hw (fun n => ?_)
+    have hh := Dzf_W_LwA hG (⟨P, hP, hA'⟩ : LwA (h + s) A') n
+    rwa [show h + s + 1 = h + 1 + s from by omega] at hh
+
+def Rz1 (ws : List Jk1) : TrioSeq :=
+  R338 ++ (((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (0 + 1) 1 ws
+    ++ [((0 + 2, 2, 1) : ℕ × ℕ × ℕ)])
+
+theorem Rz1_RunA0 {ws : List Jk1} (hw : WOk ws)
+    (hG : GoodFb (fun a b => wordJ a b ws)) : RunA 0 1 (Rz1 ws) :=
+  ⟨0, R338, _, rfl, rfl, LwA_of_Aok Aok_R338, SegA_wz1 hw hG 0⟩
+
+/-- `T6` を `k` 個並べた語。 -/
+def T6w (k : ℕ) : List Jk1 := List.replicate k T6
+
+theorem WOk_T6w (k : ℕ) : WOk (T6w k) := by
+  intro N hN
+  rw [List.eq_of_mem_replicate hN]
+  exact JkT_T6
+
+theorem GoodFb_T6w : ∀ k : ℕ, GoodFb (fun a b => wordJ a b (T6w k))
+  | 0 => by simpa [T6w] using GoodFb_wordJ_nil
+  | (k + 1) => by
+      have h := GOK_T6 (T6w k) (WOk_T6w k) (GoodFb_T6w k)
+      have e : T6w k ++ [T6] = T6w (k + 1) := by
+        simp [T6w, List.replicate_succ']
+      rwa [e] at h
+
+/-- ★★★★★★ `T6` を `k` 個並べた台座（`RunA 0 1`）。 -/
+theorem R6zk_RunA0 (k : ℕ) : RunA 0 1 (Rz1 (T6w k)) :=
+  Rz1_RunA0 (WOk_T6w k) (GoodFb_T6w k)
+
+theorem R6zk_mem (k : ℕ) : Rz1 (T6w k) ∈ W 0 :=
+  ((BaseOk_RunA 0).aok _ _ (R6zk_RunA0 k)).mem
+
+def Rz1j (k : ℕ) (ws : List Jk1) : TrioSeq :=
+  Rz1 (T6w k) ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)
+
+theorem Rz1j_PkGA (k : ℕ) {ws : List Jk1} (hw : WJ ws) : PkGA 2 (Rz1j k ws) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, Rz1 (T6w k), wordJ 2 2 ws, rfl, R6zk_RunA0 k, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩
+
+/-- ★★★★★★ 台座 `k`・junk の語 `ws`・梯子 `n` の 3 重の無限族。全部無条件。 -/
+theorem Rz1j_mem (k : ℕ) {ws : List Jk1} (hw : WJ ws) : Rz1j k ws ∈ W 0 :=
+  (PkGA_Aok (Rz1j_PkGA k hw)).mem
+
+theorem LadZk_mem (k : ℕ) {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (Rz1j k ws) n ∈ W 0 := LadB_mem (Rz1j_PkGA k hw) n
+
+theorem LadZk_flat_mem (k : ℕ) {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (Rz1j k ws) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LadB_flat_mem (Rz1j_PkGA k hw) n
+
+theorem Rz1alt_mem (k i m : ℕ) : Rz1j k (List.replicate m (AltT i)) ∈ W 0 :=
+  Rz1j_mem k (WJ_rep_AltT i m)
+
+theorem LadZkAlt_mem (k i m n : ℕ) :
+    LadB (Rz1j k (List.replicate m (AltT i))) n ∈ W 0 := LadZk_mem k (WJ_rep_AltT i m) n
+
+#print axioms R6zk_mem
+#print axioms Rz1j_mem
+#print axioms LadZkAlt_mem
+
 end Small
 end TRIO
