@@ -76787,5 +76787,51 @@ theorem BdAll_one (m : ℕ) : GOK (bdA (List.replicate m 1)) := GOK_bdA1 m
 #print axioms R376_of_StkL
 #print axioms R376_of_BdAll
 
+/-! ### ★★★★★★ 壁の最小形：`ZApp2`（文脈 `one nil (two nil ·)` の 2 の記録の兄弟）
+
+`Pay2`（幅 2 の走りの上に任意の荷）は `PZ_cons` で
+「文脈 `[fone nil, ftwo nil]` の `ZAppend`（2 の記録の左の兄弟を `nil` から
+一般の良い木に広げる）」1 手に落ちる。荷の W 帰納は `PZ_cons` が済ませている。
+
+底は緑:
+  `Wall2 [] ≡ one nil (stk 2)`（語が同じ、`GOK_oneStk2`）
+  `Wall2 [(0,0,0)] = T6`（`GOK_T6`、2026-09-12） -/
+
+def ZApp2 : Prop := ZAppend [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil] Jk1.nil
+
+theorem CtxJT_fone_ftwo_nil : CtxJT [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil] := by
+  intro X hX
+  exact ⟨⟨trivial, trivial, hX⟩, trivial⟩
+
+theorem Pay2_of_ZApp2 (h : ZApp2) : Pay2 := fun B hB =>
+  PZ_cons B hB _ CtxJT_fone_ftwo_nil Jk1.nil trivial h Jk1.nil trivial GOK_oneStk1
+
+/-- ★★★★★★ いま開いている最小の行列は `ZApp2` 1 手。 -/
+theorem R375m61_of_ZApp2 (h : ZApp2) : R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_ZApp2 h)
+
+theorem GOK_bdA20_of_ZApp2 (h : ZApp2) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.two Jk1.nil (Jk1.one Jk1.nil Jk1.nil)))) :=
+  GOK_bdA20_of_Pay2 (Pay2_of_ZApp2 h)
+
+/-- `Pay2` の底: 荷が空。語は `one nil (stk 2)` と同じ。 -/
+theorem Pay2_nil : GOK (Wall2 ([] : TrioSeq)) := by
+  refine GOK_congr (fun l => ?_) GOK_oneStk2
+  show jk1 l (Jk1.one Jk1.nil (stk 2)) = jk1 l (Wall2 [])
+  rw [jk1_Wall2]
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1 + 1) Jk1.nil ++ (((l + 1 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (l + 1 + 1 + 1) Jk1.nil))))) = _
+  simp [jk1, shiftr01] <;> omega
+
+/-- `Pay2` の底: 荷が `[(0,0,0)]`。これが `GOK_T6`。 -/
+theorem Pay2_zero : GOK (Wall2 [((0, 0, 0) : ℕ × ℕ × ℕ)]) := GOK_T6
+
+#print axioms Pay2_nil
+#print axioms Pay2_zero
+#print axioms R375m61_of_ZApp2
+
 end Small
 end TRIO

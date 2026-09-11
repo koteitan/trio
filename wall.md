@@ -41,6 +41,22 @@
 文脈なら通らない（`BdAll` の `j ≥ 2`）。**
 新しい壁を立てるときは、まず「字の主張に落ちないか」を見る。
 
+## もう 1 つの壁の最小形：`ZApp2`（いま開いている最小の行列）
+
+    Pay2 := ∀ B, Bok B → GOK (Wall2 B)
+      Wall2 B = one nil (two nil (two nil (pay nil B)))   （幅 2 の走りの上に荷）
+    Pay2_of_ZApp2 : ZApp2 → Pay2                          （`PZ_cons`。荷の W 帰納は済み）
+      ZApp2 := ZAppend [fone nil, ftwo nil] nil
+             = ∀ M, JkA M → GOK (one nil (two nil M)) → GOK (one nil (two nil (two M nil)))
+    R375m61_of_ZApp2 : ZApp2 → R375m (6,1,0) ∈ W 0
+
+底は緑: `Wall2 []`（語が `one nil (stk 2)` と同じ）、`Wall2 [(0,0,0)] = T6`（`GOK_T6`）。
+残るのは「2 の記録の左の兄弟を `nil` から一般の良い木 `M` に広げる」1 手。
+`PZ_cons` の中で `M` は水平鎖 `twoIt nil (pay nil B') n` の元として現れる。
+
+`Pay2` が出れば `Wall2 B` が**いまで一番強い字**になり（`T6 = Wall2 [(0,0,0)]` が
+既に一番強い）、証明済みも一気に大きくなる。
+
 ## 台座と junk の差し替え（証明済みを増やす安い道）
 
     Rz1 ws  = R338 (1,1,0) ++ wordJ 1 1 ws ++ (2,2,1)      RunA 0 1（緑、ws は任意の良い語）
