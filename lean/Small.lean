@@ -71774,5 +71774,93 @@ theorem WGd_zero_bad (V : Jk1) :
 
 #print axioms WGd_zero_bad
 
+/-! ### ★★★★★★ 行列の言葉でのブロック列 `BM`
+
+    BM []        = R341
+    BM (j :: js) = BM js ++ blkM (2 + hgtB js) j      （`j` が最上段のブロック）
+
+展開規則（bms 実測、追記278）
+
+    BM (j+1 :: js)[k] = BM (replicate (k+1) j ++ js)      → `snocYd_mem`
+    BM (0 :: js)[k]   = TwD (3 + hgtB js) (BM js) (k+1)   → `snocd_mem`
+
+どちらも幅の多重集合の DM 降下。族は要らない。 -/
+
+def blkM (h j : ℕ) : TrioSeq :=
+  ((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: (List.range j).map (fun t => ((h + 2 + t, 2, 0) : ℕ × ℕ × ℕ))
+
+def BM : List ℕ → TrioSeq
+  | [] => R341
+  | (j :: js) => BM js ++ blkM (2 + hgtB js) j
+
+theorem blkM_len (h j : ℕ) : (blkM h j).length = j + 1 := by simp [blkM]
+
+theorem blkM_succ (h j : ℕ) :
+    blkM h (j + 1) = blkM h j ++ [((h + 2 + j, 2, 0) : ℕ × ℕ × ℕ)] := by
+  show _ :: _ = (_ :: _) ++ _
+  rw [List.range_succ, List.map_append]
+  simp
+
+theorem blkM_getS? (h j t : ℕ) (ht : t < j) :
+    (blkM h j)[t + 1]? = some ((h + 2 + t, 2, 0) : ℕ × ℕ × ℕ) := by
+  simp only [blkM, List.getElem?_cons_succ, List.getElem?_map,
+    List.getElem?_eq_getElem (show t < (List.range j).length by simpa using ht)]
+  simp
+
+theorem entry_blkM00 (h j : ℕ) : entry (blkM h j) 0 0 = h + 1 := by simp [entry, blkM]
+
+theorem entry_blkM10 (h j : ℕ) : entry (blkM h j) 1 0 = 1 := by simp [entry, blkM]
+
+theorem entry_blkMS0 (h j t : ℕ) (ht : t < j) : entry (blkM h j) 0 (t + 1) = h + 2 + t := by
+  simp [entry, blkM_getS? h j t ht]
+
+theorem entry_blkMS1 (h j t : ℕ) (ht : t < j) : entry (blkM h j) 1 (t + 1) = 2 := by
+  simp [entry, blkM_getS? h j t ht]
+
+theorem blkM_mem (h j : ℕ) : ∀ c ∈ blkM h j, 1 ≤ c.1 := by
+  intro c hc
+  simp only [blkM, List.mem_cons, List.mem_map, List.mem_range] at hc
+  rcases hc with rfl | ⟨t, ht, rfl⟩
+  · simp
+  · simp
+    omega
+
+theorem MidD_blkM (h j : ℕ) : MidD (h + 2) (blkM h j) where
+  ne := by simp [blkM]
+  col := blkM_mem h j
+  head := by rw [entry_blkM00]
+  head1 := by rw [entry_blkM10]
+  tail := by
+    intro t ht1 htl
+    rw [blkM_len] at htl
+    obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
+    rw [entry_blkMS0 h j t' (by omega)]
+    omega
+  mono := by
+    intro c hc
+    simp only [blkM, List.mem_cons, List.mem_map, List.mem_range] at hc
+    rcases hc with rfl | ⟨t, ht, rfl⟩ <;> simp
+
+theorem BM_succ (j : ℕ) (js : List ℕ) :
+    BM ((j + 1) :: js) = BM (j :: js) ++ [((2 + hgtB js + 2 + j, 2, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [BM]
+  rw [blkM_succ, List.append_assoc]
+
+theorem BM_zero (js : List ℕ) :
+    BM (0 :: js) = BM js ++ [((2 + hgtB js + 1, 1, 0) : ℕ × ℕ × ℕ)] := by
+  simp only [BM, blkM]
+  simp
+
+theorem BM_ne : ∀ js : List ℕ, BM js ≠ []
+  | [] => by
+      show R341 ≠ []
+      simp [R341]
+  | (j :: js) => by
+      show BM js ++ blkM (2 + hgtB js) j ≠ []
+      simp [blkM]
+
+#print axioms MidD_blkM
+#print axioms BM_succ
+
 end Small
 end TRIO
