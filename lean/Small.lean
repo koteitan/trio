@@ -74689,5 +74689,35 @@ theorem R375m61_of_APz4 (o1 : APzO2One) (o2 : APzO2Two) (t1 : APzT2One) (t2 : AP
 #print axioms APzO2_pay
 #print axioms R375m61_of_APz4
 
+/-! ### ★★★★ 残り 4 文の `T = nil` は緑（深さの帰納の底は通る）
+
+`APzO2 (one Z nil)` / `APzT2 (one Z nil)` は `APnil_gen0` の荷が
+`APzO2_pay` / `APzT2_pay` で出るので閉じる。 -/
+
+theorem APzO2_oneNil {Z : Jk1} (hJZ : JkA Z) (hZ : APzO2 Z) :
+    APzO2 (Jk1.one Z Jk1.nil) := by
+  intro M hJM hAM U hU hGU
+  show GOK (plug [Frm.fone U, Frm.fone M] (Jk1.one Z Jk1.nil))
+  refine APnil_gen0 [Frm.fone U, Frm.fone M] Z ⟨⟨hU.1, hJM, hJZ, trivial⟩, hU.2⟩ ?_ ?_
+  · show GOK (Jk1.one U (Jk1.one M Z))
+    exact hZ M hJM hAM U hU hGU
+  · intro C hC
+    show GOK (Jk1.one U (Jk1.one M (Jk1.pay Z C)))
+    exact APzO2_pay Z hJZ hZ C hC M hJM hAM U hU hGU
+
+theorem APzT2_oneNil {Z : Jk1} (hJZ : JkA Z) (hZ : APzT2 Z) :
+    APzT2 (Jk1.one Z Jk1.nil) := by
+  intro M hJM hAM U hU hGU
+  show GOK (plug [Frm.fone U, Frm.ftwo M] (Jk1.one Z Jk1.nil))
+  refine APnil_gen0 [Frm.fone U, Frm.ftwo M] Z ⟨⟨hU.1, hJM, hJZ, trivial⟩, hU.2⟩ ?_ ?_
+  · show GOK (Jk1.one U (Jk1.two M Z))
+    exact hZ M hJM hAM U hU hGU
+  · intro C hC
+    show GOK (Jk1.one U (Jk1.two M (Jk1.pay Z C)))
+    exact APzT2_pay Z hJZ hZ C hC M hJM hAM U hU hGU
+
+#print axioms APzO2_oneNil
+#print axioms APzT2_oneNil
+
 end Small
 end TRIO
