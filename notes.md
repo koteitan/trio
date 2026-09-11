@@ -21437,3 +21437,51 @@ Acc（DM）帰納でほどける:
 
 「平らな荷の鎖の右端に裸の 2 の記録を 1 本足す」。`Bs = []` は緑
 （`PFL_single_nil`）。`Bs ≠ []` が残り。
+
+## 追記288 (2026-09-11): 入れ子帰納法が仮定なしになった。壁は `QFL []` 1 個
+
+### 1. 文脈の族 `GBase`
+
+    inductive GBase : List Frm → Prop
+      | base : GBase [fone nil, ftwo nil]
+      | ext  : GBase ctx → JkA A → GOK (plug ctx A) → GBase (ctx ++ [fone A, ftwo nil])
+
+    QFL Bs := ∀ ctx, GBase ctx → GOK (plug ctx (FLr Bs))
+
+`GBase` の `ext` が `GOK (plug ctx A)` を持っているのが効く。
+
+### 2. `B = []` が閉じた
+
+`PFL ([] :: Bs)` の展開は階段で、`GOK_oneUV_RunSB ctx₀ [nil] (FLr Bs) A` を使う。
+その階段は
+
+    appJ A (UtwP [nil] (FLr Bs) (m+1)) = one A (two nil (appJ (FLr Bs) (UtwP [nil] (FLr Bs) m)))
+
+なので、`plug` で見ると**文脈が `[fone (FLr Bs), ftwo nil]` で 1 段伸びるだけ**。
+伸ばすのに要るのは `GOK (plug ctx (FLr Bs))` = `QFL Bs` そのもの。
+だから `QFL Bs → QFL ([] :: Bs)` が出る（`QFL_nilcons`、緑）。
+
+### 3. 残りは `QFL []` 1 個
+
+    QFL_cons : ∀B Bok B, ∀Bs, QFL Bs → QFL (B :: Bs)      ★緑・仮定なし
+    QFL_all  : QFL [] → ∀Bs, QFL Bs
+    Pay2_of_QFL0 : QFL [] → Pay2
+    R375m61_of_QFL0 : QFL [] → R375m ++ [(6,1,0)] ∈ W 0
+
+    QFL [] = ∀ ctx, GBase ctx → GOK (plug ctx nil)
+
+`ctx = ctxFL` なら `GOK (one nil (two nil nil))` = `GOK (bdA [1])` で緑。
+`ext` の場合は `GOK (plug ctx' (one A (two nil nil)))` で、その階段は
+
+    appJ A (UtwP [] nil (m+1)) = one A (UtwP [] nil m)
+    UtwP [] nil m = one nil (one nil (… nil))          幅 0 のブロックの塔
+
+つまり**幅 0 のブロックの塔**が要る。その展開は（bms 実測、追記285）
+全体の縦塔になり、荷が要る。ここが残りの円。
+
+### 4. いまの還元の全体
+
+    QFL []  →  QFL_all  →  Pay2  →  hang6_R375m  →  R375m (6,1,0) ∈ W 0
+
+族（`WPd` / `WFd`）は一切使っていない。使っているのは
+`GoodFb_snoc_dupJt0` / `innerJt0` / `GOK_oneUV_RunSB` / `A2'` だけ。
