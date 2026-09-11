@@ -10,7 +10,7 @@
 
 ## ★★★★★★ いまの最小形（2026-09-11 更新）。残りは**幅 2 以上の位置の荷**
 
-道が 2 本あり、どちらも同じ 1 文に落ちる。
+生きている道は 2 本。どちらも「**幅 2 以上の位置に荷を 1 個吊るす**」1 文に落ちる。
 
 ### 道1: 族の外（`BCtx`、兄弟が全部 `nil` の文脈）
 
@@ -21,20 +21,30 @@
 
 幅 ≤ 1 は `GOK_bdAC_le1`（`WPd` 族）で既に緑。残りは幅 2 以上。
 
-### 道2: 融合族 `WFd`（入り目 = (予算 k, ブロックの幅 i)）
+### 道2: 融合族 `WFd`（入り目 =（予算 k, ブロックの幅 i））
 
     R376_of_WFd_nilAll : (∀ ks, WFd ks nil) → 行376    （緑）
 
     WFd_nilF' (k i) (hik : i+1 ≤ k) ks : WFd ((k,i+1) :: ks) nil   ★ 幅 2 以上は緑・無条件
     WFd_nilE                            : WFd [] nil               緑
+    AYdWF / WFd_payT / WFd_oneNilT      幅 0 の入り目の荷            緑
     WFd_nilT  : ∀ k ks, WFd ((k,0) :: ks) nil                      ← 残り
 
 `WFd_nilT` は `WFd_c0` で `∀U, FrmF ks U → WFd ks U → WFd ks (one U nil)`
 ＝ `WFd_oneNil`。`APnil_gen0` でさらに `WFd_payA`（荷）に落ちる。
-幅 0 の入り目までは `AYdWF` / `WFd_payT` / `WFd_oneNilT` で緑。
 
-**つまりどちらの道でも残りは「幅 2 以上の位置に荷を吊るす」1 文。**
-理由は追記272（階段と横鎖が逆を要求する）。
+**`WFd` は充足可能**（1 の枠の木の条件が素の `WFd ks U` だけなので
+`WFtx ((k,0)::[]) [fone nil]` が成り立つ）。
+
+### 死んだ道: 族 `WGd`（予算を大域パラメータにしたもの）
+
+    WGd_zero_bad : WGd 0 [0] V ↔ ∀ U, JkT U → GOK U → GOK (one U V)   （緑）
+
+右辺は相対化されていない `RStep0`。族の条件を `∀ b' < b` と書いたので
+`b' = 0` で相対化が消え、`WGtx` を満たす文脈がほぼ無い＝**空虚**。
+階段 `WGd_nilF` も横鎖 `WGd_chainStep` も緑だが使えない（追記277）。
+ただし `WGd_chainStep` の**書き方**（横鎖を外側の予算の不変量で回す）は
+`WFd` に移せる可能性がある。
 
 ## 旧: 族の外の最小形（2026-09-11）
 
