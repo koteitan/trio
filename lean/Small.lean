@@ -73511,5 +73511,78 @@ theorem PZ_cons : ∀ (B : TrioSeq), Bok B →
 
 #print axioms PZ_cons
 
+/-! ### ★★★★★★ 壁を「2 の記録の左の兄弟の一般化」1 本に
+
+`FoneOK ctx A := GOK (plug ctx (one A nil))` を `GBase` の帰納で回す。
+`PZ_cons` を `M = nil` で使うと、要るのは**1 ブロック浅い文脈の `FoneOK`**。
+底は `GOK (one nil nil)` で緑。 -/
+
+def FoneOK (ctx : List Frm) (A : Jk1) : Prop := GOK (plug ctx (Jk1.one A Jk1.nil))
+
+theorem GOK_oneNilNil : GOK (Jk1.one Jk1.nil Jk1.nil) := by
+  have h := WPd_bdA_le1 [0] (by intro x hx; simp at hx; omega) ([] : List ℕ)
+  exact (WPd_bnil _).mp h
+
+theorem CtxJT_foneNil : CtxJT [Frm.fone Jk1.nil] := by
+  intro X hX
+  exact ⟨⟨trivial, hX⟩, trivial⟩
+
+theorem CtxJT_fone {ctx : List Frm} (h : CtxJT ctx) {A : Jk1} (hA : JkA A) :
+    CtxJT (ctx ++ [Frm.fone A]) := by
+  intro X hX
+  rw [plug_snoc]
+  exact h _ ⟨hA, hX⟩
+
+/-- ★ 兄弟の一般化。`M = nil` の場合（＝元のブロックそのもの）を仮定に入れてあるので、
+「どんな `JkA` の木も良い」には落ちない。 -/
+def ZAppSib : Prop := ∀ (D : List Frm) (A' A : Jk1), CtxJT (D ++ [Frm.fone A']) → JkA A →
+  GOK (plug (D ++ [Frm.fone A']) (Jk1.two Jk1.nil A)) →
+  ZAppend (D ++ [Frm.fone A']) A
+
+theorem plug_ftwoNil (D : List Frm) (A' A : Jk1) :
+    plug (D ++ [Frm.fone A']) (Jk1.two Jk1.nil A)
+      = plug (D ++ [Frm.fone A', Frm.ftwo Jk1.nil]) A := by
+  rw [show D ++ [Frm.fone A', Frm.ftwo Jk1.nil]
+      = (D ++ [Frm.fone A']) ++ [Frm.ftwo Jk1.nil] from by simp, plug_snoc2]
+
+/-- ★★★★★★ `FoneOK`（幅 0 のブロック 1 枚）は兄弟の一般化 1 本から出る。 -/
+theorem FoneOK_of_ZAppSib (h : ZAppSib) :
+    ∀ {ctx : List Frm}, GBase ctx → ∀ A : Jk1, JkA A → GOK (plug ctx A) → FoneOK ctx A := by
+  intro ctx hc
+  induction hc with
+  | base =>
+      intro A hA hGA
+      show GOK (plug ctxFL (Jk1.one A Jk1.nil))
+      refine APnil_gen0 ctxFL A (CtxJT_ctxFL _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      have e : plug ctxFL (Jk1.pay A C)
+          = plug [Frm.fone Jk1.nil] (Jk1.two Jk1.nil (Jk1.pay A C)) := by
+        show plug ([Frm.fone Jk1.nil] ++ [Frm.ftwo Jk1.nil]) (Jk1.pay A C) = _
+        rw [plug_snoc2]
+      rw [e]
+      refine PZ_cons C hC [Frm.fone Jk1.nil] CtxJT_foneNil A hA
+        (h [] Jk1.nil A CtxJT_foneNil hA ?_) Jk1.nil trivial GOK_oneNilNil
+      rw [plug_ftwoNil]
+      exact hGA
+  | @ext ctx' A₀ hc' hA₀ hG₀ ih =>
+      intro A hA hGA
+      have hD : CtxJT (ctx' ++ [Frm.fone A₀]) := CtxJT_fone (GBase_CtxJT hc') hA₀
+      show GOK (plug (ctx' ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]) (Jk1.one A Jk1.nil))
+      refine APnil_gen0 _ A
+        (GBase_CtxJT (GBase.ext hc' hA₀ hG₀) _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      have e : plug (ctx' ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]) (Jk1.pay A C)
+          = plug (ctx' ++ [Frm.fone A₀]) (Jk1.two Jk1.nil (Jk1.pay A C)) := by
+        rw [show ctx' ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]
+            = (ctx' ++ [Frm.fone A₀]) ++ [Frm.ftwo Jk1.nil] from by simp, plug_snoc2]
+      rw [e]
+      refine PZ_cons C hC _ hD A hA (h ctx' A₀ A hD hA ?_) Jk1.nil trivial ?_
+      · rw [plug_ftwoNil]
+        exact hGA
+      · rw [plug_snoc]
+        exact ih A₀ hA₀ hG₀
+
+#print axioms FoneOK_of_ZAppSib
+
 end Small
 end TRIO
