@@ -72900,5 +72900,52 @@ theorem Pay2_of_FLnilStep (h : FLnilStep) : Pay2 := by
 #print axioms PFL_cons
 #print axioms Pay2_of_FLnilStep
 
+/-! ### `FLnilStep` をさらに割る
+
+`Bs = []` の場合は緑（`GOK_bdA_two`）。一般の `Bs` は階段になり、
+塔 `UtwP [nil] (FLr Bs) n`（`PFL Bs` のブロックを n 段積んだもの）が要る。 -/
+
+theorem PFL_single_nil : PFL [([] : TrioSeq)] := by
+  refine GOK_congr ?_ GOK_bdA_two
+  intro l
+  show jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two Jk1.nil Jk1.nil)))
+    = jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.two Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)))))
+  simp [jk1, shiftr01]
+
+/-- `PFL Bs` のブロックの塔。`n = 1` が `PFL Bs` そのもの。 -/
+def PFLtow : Prop := ∀ (Bs : List TrioSeq), (∀ C ∈ Bs, Bok C) →
+  ∀ n : ℕ, GOK (UtwP [Jk1.nil] (FLr Bs) n)
+
+theorem FLnilStep_of_PFLtow (h : PFLtow) : FLnilStep := by
+  intro Bs hBs _
+  have hJ : ∀ A ∈ [Jk1.nil], JkA A := by
+    intro A hA
+    have he : A = Jk1.nil := by simpa using hA
+    subst he
+    exact trivial
+  have hJB : JkA (FLr Bs) := JkA_FLr Bs hBs
+  have hbase : GOK (Jk1.one Jk1.nil (RunS ([Jk1.nil] ++ [FLr Bs]))) := by
+    refine GOK_oneUV_RunSB [] [Jk1.nil] (FLr Bs) Jk1.nil hJ hJB
+      ⟨⟨trivial, JkA_RunS_snocB [Jk1.nil] (FLr Bs) hJ hJB⟩, trivial⟩ GOK_nil ?_
+    intro n
+    show GOK (appJ Jk1.nil (UtwP [Jk1.nil] (FLr Bs) n))
+    rw [appJ_nil_UtwP]
+    exact h Bs hBs n
+  refine GOK_congr ?_ hbase
+  intro l
+  show jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two (FLr Bs) Jk1.nil)))
+    = jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+        (Jk1.two (FLr Bs) (Jk1.pay Jk1.nil ([] : TrioSeq)))))
+  simp [jk1, shiftr01]
+
+/-- ★★★★★★ いちばん外側の還元のまとめ。 -/
+theorem R375m61_of_PFLtow (h : PFLtow) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_FLnilStep (FLnilStep_of_PFLtow h))
+
+#print axioms PFL_single_nil
+#print axioms R375m61_of_PFLtow
+
 end Small
 end TRIO
