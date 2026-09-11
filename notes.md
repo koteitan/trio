@@ -22144,3 +22144,45 @@ Acc（DM）帰納でほどける:
   組む。`GBase` / `HCx` 流に「側条件は `GOK` だけ」の族で `nstQ` の塔を回す。
 - `GOK_stkW_gen` の階段を `stkP p` ではなく別の分解（`GOK_oneUV_genM` の
   `hVs` が「末尾が裸の 2 の記録」であることを使って `bdA` の末尾で切る）で作る。
+
+## 追記304 (2026-09-11): `StkBlk2` は `RunS ([N,nil] ++ [nil])` で、塔は 3 枠ずつ伸びる
+
+`StkBlk2` を `WPd_ck` で開くと、要るのは
+
+    GOK (plug ctx0 (one V (two N (stk 2))))
+
+`two N (stk 2) = two N (two nil (two nil nil)) = RunS ([N, nil] ++ [nil])` なので
+**`GOK_oneUV_RunSB ctx0 [N, nil] nil V` がそのまま嵌まる**。階段は
+
+    appJ V (UtwP [N,nil] nil (n+1)) = one V (two N (two nil (UtwP [N,nil] nil n)))
+
+つまり `plug (ctx0 ++ [fone V, ftwo N, ftwo nil]) (UtwP [N,nil] nil n)`。
+塔は 1 段ごとに **`[fone ·, ftwo N, ftwo nil]` の 3 枠**伸び、`n = 0` で
+`UtwP [N,nil] nil 0 = nil` になる。だから要るのは
+
+    GOK (plug E nil)     （`E` は 3 枠ずつ伸びた塔の文脈）
+
+### `WPd` では言えないが `HGx` では言える
+
+`WCtx` は `[fone U]` か `[fone U, ftwo N]` の 2 種類でしか伸びない。
+`[fone U, ftwo N, ftwo nil]`（2 の枠が連続）は **`WCtx` の外**。
+これが `WPd` 層で `stk 2` が 2 の枠の直上に差せない正体。
+
+一方 `HGx`（側条件が `GOK` だけ）は `ftwo A` を任意の良い `A` で許すので、
+この塔の文脈がそのまま入る。側条件は
+
+    GOK (plug ctx V)                      ✓ 手元にある
+    GOK (plug (ctx ++ [fone V]) N)        ← GSib_tree（OSib ctx N を V に当てる）
+    GOK (plug (ctx ++ [fone V, ftwo N]) nil)  ← GNilO
+
+だから **`R375m (6,2,0)` も `GNilO` から出る**見込み。`bdA` 経由（`WPd`）と
+裸の記録経由（`HGx`）は同じ壁の別の言い方で、`HGx` の方が文脈が広い分強い。
+
+### まとめ（今の壁の地図）
+
+    GNilO（裸の 1 の記録、HGx 文脈）
+      → HFone → QFL [] → Pay2 → R375m (6,1,0)
+      → StkBlk2 → RunBdA → bdA 全幅 → R375m (6,2,0)（見込み）
+
+    RunBdA（WPd 層、bdA に絞った形）→ R375m (6,2,0)   ★緑の還元
+    StkBlk2（最小未証明）= `stk 2` を 2 の枠の直上に差す

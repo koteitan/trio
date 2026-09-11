@@ -26,6 +26,24 @@
 `WPd_bdA_le1`（幅 ≤ 1）が通っていたのは `j = 1` のとき `stkP 0 X = X` で
 2 の枠の直上に走りが来なかったから。**幅 2 で初めて `stkP 1` が来る。**
 
+`bdA` に絞ると
+
+    RunBdA := ∀ j k ks js, 1 ≤ j → j ≤ k → (∀ ks', WPd ks' (bdA js)) →
+                WPd ((k+1) :: ks) (stkP j (bdA js))
+    RunBdA → R375m (6,2,0) ∈ W 0
+
+まで弱められ、いちばん小さい未証明は
+
+    StkBlk2 := ∀ k ks, 2 ≤ k → WPd ((k+1) :: ks) (stk 2)
+
+    WPd_stk2 : WPd (0 :: ks) (stk 2)            ★緑（1 の枠の直上）
+    WPd_run  : 1 ≤ k → WPd ((k+1)::ks) (stk 1)  ★緑（2 の枠の直上、長さ 1）
+
+`StkBlk2` を開くと `two N (stk 2) = RunS ([N, nil] ++ [nil])` で
+`GOK_oneUV_RunSB ctx0 [N, nil] nil V` に嵌まる。階段の塔は 1 段ごとに
+`[fone ·, ftwo N, ftwo nil]` の **3 枠**伸びる。`WCtx` は 2 の枠が連続する
+文脈を持てないのでここで詰まる。`HGx` なら持てるので、`GNilO` から出る見込み。
+
 ## 一般の停止性としての壁（文脈なしの 4 文）
 
     APz M   := ∀ U, JkT U → GOK U → GOK (one U M)
