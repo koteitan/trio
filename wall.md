@@ -18,6 +18,13 @@
 
   `TwoOk_pay`（荷の W 帰納）が回るのは鎖が最上段のときだけ。1 段上げると
   鎖 `twoIt nil (pay nil Y) n` も 1 段上がって `TwoStep` に化ける（追記344）。
+- **荷を外した形**（追記345）: 入れ子帰納で `TwoStepP` は次の 1 本に落ちる。
+
+      ChBase : ∀ X, JkA X → TwoOk X → TwoOk (two X nil)
+
+  `TwoOk_twoWlNil`（緑）は兄弟に `Rq ks Wl`（＝`TopOk Wl`）を課すので
+  2 頭の兄弟（鎖）に使えない。これは古い状態メモの **(c)「`Rq (false::ks) U = TopOk U`
+  を 2 の枠の直下の 1 の枠から外す」** そのもの。
 - **量化子ゼロの壁**（いちばん具体的な形、2026-09-13 に緑）:
 
       Bd20 = bdA [2,0] = one nil (two nil (two nil (one nil nil)))
