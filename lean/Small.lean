@@ -72007,5 +72007,115 @@ theorem R376_of_HangB (hang : HangB) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)]
 #print axioms BM_memAok
 #print axioms R376_of_HangB
 
+/-! ### ★★★★★★ 壁をもっと弱い形に: 1 の枠を 1 個積む（荷は要らない）
+
+`PayB`（荷）から `APnil_gen0` で出るが、逆は言えないので `FoneB` の方が弱い。 -/
+
+def FoneB : Prop := ∀ ws : List ℕ, GOK (plug (BCtx ws) (Jk1.one Jk1.nil Jk1.nil))
+
+theorem FoneB_of_PayB (hp : PayB) : FoneB := by
+  intro ws
+  exact APnil_gen0 (BCtx ws) Jk1.nil
+    (JkT_plug_BCtx ws _ ⟨trivial, trivial⟩ trivial)
+    (GOK_BCtx_nil hp ws) (fun C hC => hp ws C hC)
+
+theorem GOK_BCtx_nilF (hf : FoneB) : ∀ ws : List ℕ, GOK (plug (BCtx ws) Jk1.nil)
+  | [] => GOK_nil
+  | (0 :: ws) => by
+      have e : plug (BCtx (0 :: ws)) Jk1.nil
+          = plug (BCtx ws) (Jk1.one Jk1.nil Jk1.nil) := by
+        rw [plug_BCtx_cons]; rfl
+      rw [e]
+      exact hf ws
+  | ((j + 1) :: ws) => by
+      have hJBs : ∀ A ∈ List.replicate j Jk1.nil, JkA A := JkA_rep_nil j
+      have hGU : GOK (plug (BCtx ws) Jk1.nil) := GOK_BCtx_nilF hf ws
+      have hB : GOK (plug (BCtx ws ++ Bblk j) Jk1.nil) := GOK_BCtx_nilF hf (j :: ws)
+      have e : plug (BCtx ((j + 1) :: ws)) Jk1.nil
+          = plug (BCtx ws)
+              (Jk1.one Jk1.nil (RunS (List.replicate j Jk1.nil ++ [Jk1.nil]))) := by
+        rw [plug_BCtx_cons]
+        show _ = plug (BCtx ws)
+          (Jk1.one Jk1.nil (RunP (List.replicate j Jk1.nil ++ [Jk1.nil]) Jk1.nil))
+        rw [← List.replicate_succ']
+      rw [e]
+      refine GOK_oneUV_RunSB (BCtx ws) (List.replicate j Jk1.nil) Jk1.nil Jk1.nil
+        hJBs trivial
+        (JkT_plug_BCtx ws (Jk1.one Jk1.nil (RunS (List.replicate j Jk1.nil ++ [Jk1.nil])))
+          ⟨trivial, JkA_RunS_snocB (List.replicate j Jk1.nil) Jk1.nil hJBs trivial⟩
+          trivial) hGU ?_
+      refine GOK_appJ_UtwP (BCtx ws) (List.replicate j Jk1.nil) Jk1.nil Jk1.nil hGU hB ?_
+      intro D' hD' _
+      obtain ⟨t, rfl⟩ := RFam_BCtx j ws D' hD'
+      have e2 : plug (BCtx (List.replicate t j ++ (j :: ws)))
+            (Jk1.one Jk1.nil (RunP (List.replicate j Jk1.nil) Jk1.nil))
+          = plug (BCtx (j :: (List.replicate t j ++ (j :: ws)))) Jk1.nil :=
+        (plug_BCtx_cons j (List.replicate t j ++ (j :: ws)) Jk1.nil).symm
+      rw [e2]
+      exact GOK_BCtx_nilF hf (j :: (List.replicate t j ++ (j :: ws)))
+termination_by ws => ((ws : List ℕ) : Multiset ℕ)
+decreasing_by
+  · exact dm_ws (j + 1) ws [] (by simp)
+  · exact dm_ws (j + 1) ws [j] (by intro x hx; simp at hx; omega)
+  · have hlt : ∀ x ∈ (j :: (List.replicate t j ++ [j])), x < j + 1 := by
+      intro x hx
+      rcases List.mem_cons.mp hx with h0 | hx1
+      · omega
+      · rcases List.mem_append.mp hx1 with hx2 | hx2
+        · have h2 := List.eq_of_mem_replicate hx2
+          omega
+        · have h2 : x = j := by simpa using hx2
+          omega
+    have h := dm_ws (j + 1) ws (j :: (List.replicate t j ++ [j])) hlt
+    have e : (j :: (List.replicate t j ++ [j])) ++ ws
+        = j :: (List.replicate t j ++ (j :: ws)) := by
+      simp [List.append_assoc]
+    rw [e] at h
+    exact h
+
+theorem GOK_oneStk_ofFoneB (hf : FoneB) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) := by
+  have h := GOK_BCtx_nilF hf [q]
+  rw [plug_BCtx_cons, RunP_rep_nil] at h
+  exact h
+
+/-- ★★★★★★ 行376 は「1 の枠を 1 個積む」1 文から出る。 -/
+theorem R376_of_FoneB (hf : FoneB) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_stk (GOK_oneStk_ofFoneB hf)
+
+/-! ### 幅 2 の最小例。`WPd`（幅 ≤ 1）の上に `GOK_oneUV_RunSB` を 1 段 -/
+
+theorem appJ_nil_UtwP (Bs : List Jk1) (B : Jk1) :
+    ∀ n : ℕ, appJ Jk1.nil (UtwP Bs B n) = UtwP Bs B n
+  | 0 => rfl
+  | (_ + 1) => rfl
+
+theorem UtwP_nil_bdA : ∀ n : ℕ,
+    UtwP [Jk1.nil] Jk1.nil n = bdA (List.replicate n 1)
+  | 0 => rfl
+  | (n + 1) => by
+      show Jk1.one Jk1.nil (RunP [Jk1.nil] (appJ Jk1.nil (UtwP [Jk1.nil] Jk1.nil n)))
+        = bdA (1 :: List.replicate n 1)
+      rw [appJ_nil_UtwP, UtwP_nil_bdA n]
+      rfl
+
+/-- ★★★★★ 幅 2 の走りの上の空木。`WPd`（幅 ≤ 1）だけから出る。 -/
+theorem GOK_bdA_two : GOK (Jk1.one Jk1.nil (stk 2)) := by
+  have hJ : ∀ A ∈ [Jk1.nil], JkA A := by
+    intro A hA
+    have : A = Jk1.nil := by simpa using hA
+    subst this; exact trivial
+  have e : Jk1.one Jk1.nil (stk 2)
+      = Jk1.one Jk1.nil (RunS ([Jk1.nil] ++ [Jk1.nil])) := rfl
+  rw [e]
+  refine GOK_oneUV_RunSB [] [Jk1.nil] Jk1.nil Jk1.nil hJ trivial
+    ⟨⟨trivial, JkA_RunS_snocB [Jk1.nil] Jk1.nil hJ trivial⟩, trivial⟩ GOK_nil ?_
+  intro n
+  show GOK (appJ Jk1.nil (UtwP [Jk1.nil] Jk1.nil n))
+  rw [appJ_nil_UtwP, UtwP_nil_bdA]
+  exact GOK_bdA_le1 _ (by intro x hx; rw [List.eq_of_mem_replicate hx])
+
+#print axioms R376_of_FoneB
+#print axioms GOK_bdA_two
+
 end Small
 end TRIO
