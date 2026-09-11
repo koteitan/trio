@@ -69997,5 +69997,28 @@ theorem R6009_mem :
 #print axioms DgR6_z1
 #print axioms R6009_mem
 
+/-! ### ★★★★★ `R349` / `R350` を `P(6,0,0)` に写す（`PkGA` / `PU`） -/
+
+def R600_349 : TrioSeq :=
+  R600 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ), ((4, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem R600_349_PkGA : PkGA 2 R600_349 :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, R600, Jz1c 2 2, rfl, R600_RunA0,
+    by simp [R600_349, Jz1c], GoodF_z1c.pk 1⟩
+
+/-- ★★★★★★ `P(6,0,0)(2,2,0)(3,3,1)(4,1,0)`。 -/
+theorem R600_349_mem : R600_349 ∈ W 0 := (PkGA_Aok R600_349_PkGA).mem
+
+theorem R600_350_PU : PU 2 3 (R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨PkGA, 2, R600_349, [], Ifc3_toIfcV Ifc3_PkGA, rfl, R600_349_PkGA, by simp,
+    JkU_nil' (le_refl 2) 2⟩
+
+/-- ★★★★★★ `P(6,0,0)(2,2,0)(3,3,1)(4,1,0)(3,3,0)`。 -/
+theorem R600_350_mem : R600_349 ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  ((BaseOk_PU 2).aok _ _ R600_350_PU).mem
+
+#print axioms R600_349_mem
+#print axioms R600_350_mem
+
 end Small
 end TRIO
