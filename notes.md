@@ -21921,3 +21921,58 @@ Acc（DM）帰納でほどける:
 と兄弟と木が入れ替わる。`(木, 兄弟)` の大きさの和は
 `(nil, M)` → `(M, V')` で増える（`V'` は 1 段外の枠の木）。
 `(|F|, |木|)` のどちらの辞書式順序でも割れるのと同じ理由。
+
+## 追記299 (2026-09-11): 壁は文脈なしの 2 文（APzOne / APzTwo）
+
+### 1. `GOK` の木の構造帰納は `APz` だけで閉じる
+
+`JkT T = JkA T ∧ TopOk T` で `TopOk (two _ _) = False` だから、**字の先頭段に
+2 の記録は来られない**。残る 3 つは
+
+    T = nil     : GOK_nil                         緑
+    T = pay N Y : AY0 Y hY N (JkT N) (GOK N)      緑
+    T = one N M : APz M を U = N に当てるだけ
+
+だから
+
+    APz M  := ∀ U, JkT U → GOK U → GOK (one U M)
+    APzAll := ∀ M, JkA M → APz M
+
+    GOKall_of_APzAll : APzAll → ∀ T, JkT T → GOK T      ★緑
+    APzAll_of_GOKall : 逆も（同値）
+    GAll_of_GOKall / R375m61_of_APzAll
+
+**文脈も族も出てこない**形になった。`plug` / `HGx` / `OSib` / `TSib` は
+全部この 1 文に吸収される。
+
+### 2. さらに `M` の構造帰納で 2 文
+
+`nil` は `APz_nil`、`pay` は `APz_pay` が既に緑なので
+
+    APzOne := ∀ V W, JkA V → JkA W → APz V → APz W → APz (one V W)
+    APzTwo := ∀ V W, JkA V → JkA W → APz V → APz W → APz (two V W)
+    APzAll_of_steps : APzOne → APzTwo → APzAll          ★緑
+    R375m61_of_APzSteps
+
+### 3. `APzTwo` の `W = nil` は `APzOne` から
+
+`two V nil = RunS ([] ++ [V])` なので `GOK_oneUV_RunSB [] [] V U`。
+階段の `n = m+1` 段目は `one U (ABt [] V m)` で、`ABt [] V m` は `V` の塔
+`one V (one V (… V))`。その `APz` は `APzOne` を `m` 回当てるだけ。
+
+    APz_twoNil : APzOne → JkA V → APz V → APz (two V nil)   ★緑
+
+### 4. 残り
+
+`APzTwo` の第 2 引数が `pay` / `one` / `two` の 3 つ、と `APzOne`。
+
+- `APz (two M (pay Z Y))` は `PZ_cons` と同じ荷の W 帰納で `APz (two M Z)` に
+  落ちる。鎖の要素は**小さい荷**を使うので `APz` が IH から出る（書けるはず）。
+- `APz (two M (one Z T))` / `APz (two M (two Z T))` は
+  `plug [fone U, ftwo M, fone Z] T` の形で、**文脈が深くなる**。
+  文脈なしの言い方では書けないので、`GSib_tree` 側の道具に戻ることになる。
+- `APzOne` も同じ。`one U (one V W)` は `plug [fone U, fone V] W`。
+
+つまり「文脈なしの 2 文」は**壁の最短の言い方**であって、証明には結局
+文脈版（`GAll` ⟺ `GNilO ∧ GNilT ∧ 底`）が要る。両者は同値なので、
+どちらで攻めてもよい。測度が最後の問題なのは変わらない。
