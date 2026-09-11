@@ -21600,3 +21600,39 @@ Acc（DM）帰納でほどける:
 
 つまり本当に要るのは「鎖の前置き `M` について `two M Z` が良い」だけ。
 次はこの形で `ZnilStep` を絞り直す。
+
+## 追記292 (2026-09-11): `FoneOK` が「兄弟の一般化」1 本から出た
+
+### 1. 緑になったもの
+
+    FoneOK ctx A  := GOK (plug ctx (one A nil))
+    ZAppend ctx Z := ∀ M, JkA M → GOK (plug ctx M) → GOK (plug ctx (two M Z))
+    ZAppSib := ∀ D A' A, CtxJT (D ++ [fone A']) → JkA A →
+                 GOK (plug (D ++ [fone A']) (two nil A)) → ZAppend (D ++ [fone A']) A
+
+    FoneOK_of_ZAppSib : ZAppSib → ∀ ctx, GBase ctx → ∀A, JkA A → GOK (plug ctx A) → FoneOK ctx A
+
+`GBase` の帰納:
+
+- `base`（ctx = ctxFL）: `PZ_cons` を `M = nil` で使う。要るのは
+  `GOK (plug [fone nil] nil)` = `GOK (one nil nil)` = `GOK (bdA [0])` ★緑
+- `ext`（ctx = ctx' ++ [fone A₀, ftwo nil]）: 要るのは
+  `GOK (plug (ctx' ++ [fone A₀]) nil)` = `GOK (plug ctx' (one A₀ nil))`
+  ＝**1 ブロック浅い文脈の `FoneOK`** ＝ IH ✓
+
+**文脈の深さで回る**のが決め手だった。
+
+### 2. 仮定の強さを 2 回測り直した
+
+- 最初の `ZnilStep` は `∀ Z`（`JkA` だけ）。→「どんな `JkA` の木も良い」に近い。捨てた。
+- 次の `ZAppFr` は `ctx`, `Z` を固定したが `A` の条件が `JkA` だけ。→ 同じく強すぎた。
+- いまの `ZAppSib` は `M = nil` の場合（＝元のブロックそのもの）を仮定に入れた。
+  これは両方の使いどころで**手元にある**ので、含意として意味がある。
+
+### 3. 残り
+
+- `ZAppSib`（2 の記録の左の兄弟を `nil` から一般の良い木に広げる）
+- `Q0Step`（幅 1 のブロック 1 枚）。`GOK_oneUV_RunSB` の階段が `W0Tow` で、
+  その `m = 0` は `FoneOK`（済）だが `m ≥ 1` は文脈が
+  `ctx ++ [fone A] ++ [fone nil]^k` になり `GBase` の外。
+  そこは `pay` が `one` の下に来るので `dupJs0` / `innerJs0`（`Js` 版）が要る。
