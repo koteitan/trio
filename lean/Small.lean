@@ -77699,5 +77699,72 @@ theorem QD_bnil (s : ℕ) (V : Jk1) : QD s [] V ↔ GOK V := by
 #print axioms QDP_iff
 #print axioms QDP_twoOf
 
+/-! ### ★★★★★★ 幅 `m` と反復数 `p` を分ける `NstQ`
+
+`NstT m r` は反復数を幅 `m` と同じにしていたが、`bms -c` で実測すると
+**反復数は 1 が最強**。同じ語の長さなら幅 `m` に全部振る方が大きい。
+
+    Rz1 [ItN 24 1 1]（4795 文字） < Rz1 [ItQ 346 1 1 1]（4956 文字）
+
+`WPd_NstQ` の証明は `WPd_NstT` と同じで、`p` はどこにも効かない
+（`WPd_ItV` が反復数について一様だから）。 -/
+
+def NstQ (m p : ℕ) : ℕ → Jk1
+  | 0 => twoIt Jk1.nil Jk1.nil m
+  | (r + 1) => ItV (Vlet (NstQ m p r)) (twoIt Jk1.nil Jk1.nil m) p
+
+theorem JkA_NstQ (m p : ℕ) : ∀ r : ℕ, JkA (NstQ m p r)
+  | 0 => JkA_twoIt_nil m
+  | (r + 1) => JkA_ItV (JkA_Vlet (JkA_NstQ m p r)) (JkA_twoIt_nil m) p
+
+theorem WPd_NstQ (m p : ℕ) : ∀ (r k : ℕ), m ≤ k → ∀ ks : List ℕ,
+    WPd ((k + 1) :: ks) (NstQ m p r)
+  | 0, k, hk, ks => WPd_twoIt_nil m k hk ks
+  | (r + 1), k, hk, ks =>
+      WPd_ItV ((k + 1) :: ks) (JkA_Vlet (JkA_NstQ m p r))
+        (WPd_Vlet (b := m) (JkA_NstQ m p r)
+          (fun ks' => WPd_NstQ m p r m (le_refl m) ks') ((k + 1) :: ks))
+        (JkA_twoIt_nil m : FrmN ((k + 1) :: ks) (twoIt Jk1.nil Jk1.nil m))
+        (WPd_twoIt_nil m k hk ks) p
+
+theorem NstQ_eq_NstT (m : ℕ) : ∀ r : ℕ, NstQ m m r = NstT m r
+  | 0 => rfl
+  | (r + 1) => by
+      show ItV (Vlet (NstQ m m r)) (twoIt Jk1.nil Jk1.nil m) m
+        = ItV (Vlet (NstT m r)) (twoIt Jk1.nil Jk1.nil m) m
+      rw [NstQ_eq_NstT m r]
+
+def NLetQ (m p r : ℕ) : Jk1 := Vlet (NstQ m p r)
+
+theorem JkA_NLetQ (m p r : ℕ) : JkA (NLetQ m p r) := JkA_Vlet (JkA_NstQ m p r)
+
+theorem WPd_NLetQ (m p r : ℕ) (ks : List ℕ) : WPd (0 :: ks) (NLetQ m p r) :=
+  WPd_Vlet (b := m) (JkA_NstQ m p r) (fun ks' => WPd_NstQ m p r m (le_refl m) ks') ks
+
+def ItQ (m p r j : ℕ) : Jk1 := ItV (NLetQ m p r) T6 j
+
+theorem JkT_ItQ (m p r j : ℕ) : JkT (ItQ m p r j) := JkT_ItV (JkA_NLetQ m p r) JkT_T6 j
+
+/-- ★★★★★★ 無条件で良い字（幅と反復数を分けた版）。 -/
+theorem GOK_ItQ (m p r j : ℕ) : GOK (ItQ m p r j) :=
+  (WPd_bnil _).mp
+    (WPd_ItV [] (JkA_NLetQ m p r) (WPd_NLetQ m p r []) (JkT_T6 : FrmN [] T6)
+      ((WPd_bnil _).mpr GOK_T6) j)
+
+theorem GoodFb_ItQ (m p r j : ℕ) : GoodFb (fun a b => wordJ a b [ItQ m p r j]) := by
+  have h := GOK_ItQ m p r j [] WOk_nil GoodFb_wordJ_nil
+  simpa using h
+
+theorem RzQ_RunA0 (m p r j : ℕ) : RunA 0 1 (Rz1 [ItQ m p r j]) :=
+  Rz1_RunA0 (WOk_singletonT (JkT_ItQ m p r j)) (GoodFb_ItQ m p r j)
+
+/-- ★★★★★★ いま証明できている最大の行列の族。 -/
+theorem RzQ_mem (m p r j : ℕ) : Rz1 [ItQ m p r j] ∈ W 0 :=
+  ((BaseOk_RunA 0).aok _ _ (RzQ_RunA0 m p r j)).mem
+
+#print axioms WPd_NstQ
+#print axioms GOK_ItQ
+#print axioms RzQ_mem
+
 end Small
 end TRIO
