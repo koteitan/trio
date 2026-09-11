@@ -76521,5 +76521,83 @@ theorem R600_221_mem : R600 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R600_221_mem
 
+/-! ### ★★★★★★ `P(6,0,0)(2,2,1)` を新しい `RunA 0 1` の台座にする
+
+行351 `R344 (2,2,1)` が `SegA_z1c` で `RunA 0 1` になったのと同じ形。
+junk を `Jz1c` から `wordJ · · [T6]` に取り替えるだけ。 -/
+
+theorem MidD_T6z1 (h : ℕ) :
+    MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 [T6]
+      ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)]) := by
+  have h1 : MidD (h + 2) (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 [T6]) := by
+    have hh := MidD_wordJ (h + 1) 1 (by omega) (by omega) (WOk_singletonT JkT_T6)
+    simpa [show h + 1 + 1 = h + 2 from by omega] using hh
+  exact MidD_append h1
+    (by intro c hc; simp only [List.mem_singleton] at hc; subst hc; omega)
+    (by intro c hc; simp only [List.mem_singleton] at hc; subst hc; show (1 : ℕ) ≤ 2; omega)
+
+theorem SegA_T6z1 (h : ℕ) :
+    SegA h (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 [T6]
+      ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)]) where
+  mid := MidD_T6z1 h
+  head1 := by simp [entry]
+  reapp := by
+    intro P hP s A' hA'
+    have e : shiftr01 s 0 (((h + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1) 1 [T6]
+        ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)])
+        = ((h + 1 + s, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (h + 1 + s) 1 [T6]
+          ++ [((h + 1 + s + 1, 1 + 1, 1) : ℕ × ℕ × ℕ)] := by
+      show shiftr01 s 0 ([((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ++ (wordJ (h + 1) 1 [T6]
+        ++ [((h + 2, 2, 1) : ℕ × ℕ × ℕ)])) = _
+      rw [shiftr01_append0, shiftr01_append0, wordJ_shift, shift_col]
+      simp [shiftr01] <;> omega
+    rw [e]
+    refine z1wJ_mem (by omega) (WOk_singletonT JkT_T6) (fun n => ?_)
+    have hh := Dzf_W_LwA GoodFb_T6 (⟨P, hP, hA'⟩ : LwA (h + s) A') n
+    rwa [show h + s + 1 = h + 1 + s from by omega] at hh
+
+def R6221 : TrioSeq := R600 ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]
+
+theorem R6221_eq : R6221 = R338 ++ (((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (0 + 1) 1 [T6]
+    ++ [((0 + 2, 2, 1) : ℕ × ℕ × ℕ)]) := by
+  show R600 ++ _ = _
+  rw [R600_eq_wordJ]
+  simp [List.append_assoc]
+
+/-- ★★★★★★ `P(6,0,0)(2,2,1)` は走りの底の元（`RunA 0 1`）。 -/
+theorem R6221_RunA0 : RunA 0 1 R6221 :=
+  ⟨0, R338, _, rfl, R6221_eq, LwA_of_Aok Aok_R338, SegA_T6z1 0⟩
+
+theorem Aok_R6221 : Aok R6221 := (BaseOk_RunA 0).aok _ _ R6221_RunA0
+
+theorem R6221_220_mem : R6221 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunG_snoc2 Iface_RunA0 0 1 R6221 R6221_RunA0
+
+/-- ★★★★★★ 新しい台座の上に `PkGA 2`（junk は木の語）。 -/
+def R6221j (ws : List Jk1) : TrioSeq :=
+  R6221 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)
+
+theorem R6221j_PkGA {ws : List Jk1} (hw : WJ ws) : PkGA 2 (R6221j ws) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, R6221, wordJ 2 2 ws, rfl, R6221_RunA0, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩
+
+theorem R6221j_mem {ws : List Jk1} (hw : WJ ws) : R6221j ws ∈ W 0 :=
+  (PkGA_Aok (R6221j_PkGA hw)).mem
+
+/-- ★★★★★★ その上に `PU` の梯子。 -/
+theorem LadR_mem {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (R6221j ws) n ∈ W 0 := LadB_mem (R6221j_PkGA hw) n
+
+theorem LadR_flat_mem {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (R6221j ws) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LadB_flat_mem (R6221j_PkGA hw) n
+
+theorem R6221alt_mem (i m : ℕ) : R6221j (List.replicate m (AltT i)) ∈ W 0 :=
+  R6221j_mem (WJ_rep_AltT i m)
+
+#print axioms R6221_RunA0
+#print axioms R6221j_mem
+#print axioms LadR_mem
+
 end Small
 end TRIO
