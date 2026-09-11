@@ -69872,5 +69872,77 @@ theorem R6005_mem : R600 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R6005_mem
 
+/-! ### ★★★★★ `P(6,0,0)(2,2,0)`（`Q(2,2,0)` と同型、シフト不変なセグメント） -/
+
+theorem copies_single (c : ℕ × ℕ × ℕ) : ∀ n : ℕ, copies [c] n = List.replicate n c
+  | 0 => rfl
+  | (n + 1) => by
+      rw [copies_succ, copies_single c n, List.replicate_succ]
+      rfl
+
+theorem jk1_oneTWm0 (n : ℕ) :
+    jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm n 0))) = UBlk n 2 := by
+  have h2 := twm_word n 0 2
+  have e : (List.range (0 + 1)).flatMap (fun i => shiftr01 (2 * i) 0 (UBlk n 2))
+      = UBlk n 2 := by simp [shiftr01_zero]
+  rw [e] at h2
+  show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    jk1 (2 + 1) (Jk1.two Jk1.nil (TWm n 0))) = _
+  simpa using h2
+
+theorem SegA_U375a6 : SegA 0 U375a6 where
+  mid := MidD_U375a6
+  head1 := by show (1 : ℕ) < 2; omega
+  reapp := by
+    intro P hP s A' hA'
+    have htw : ∀ n : ℕ,
+        (A' ++ shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+          ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)])
+          ++ copies (shiftr01 s 0 [((5, 2, 0) : ℕ × ℕ × ℕ)]) n ∈ W 0 := by
+      intro n
+      have hG : GoodFb (fun a b => wordJ a b
+          ([] ++ [Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm n 0))])) := by
+        simpa using TowOkM n 0 [] WOk_nil GoodFb_wordJ_nil
+      have hG' : GoodFb (fun a b => wordJ a b
+          [Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm n 0))]) := by simpa using hG
+      have h := (hG'.seg 0).reapp P hP s A' (by simpa using hA')
+      rw [show ((0 + 1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ (0 + 1) 1
+              [Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm n 0))]
+          = [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+              ((4, 2, 0) : ℕ × ℕ × ℕ)] ++ copies [((5, 2, 0) : ℕ × ℕ × ℕ)] n from by
+        rw [wordJ_singleton, colJ, jk1_oneTWm0, copies_single]
+        simp [UBlk],
+        shiftr01_append0, shift_copies] at h
+      simpa [List.append_assoc] using h
+    have hMs : MidD (6 + s) (shiftr01 s 0 [((5, 2, 0) : ℕ × ℕ × ℕ)]) :=
+      MidD_shift MidD_col52 s
+    have h := flat_mem''
+      (Y0 := A' ++ shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+        ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)])
+      (M := shiftr01 s 0 [((5, 2, 0) : ℕ × ℕ × ℕ)]) (d := 6 + s) hMs.ne
+      (by have := hMs.head; omega) hMs.tail htw
+    have e : shiftr01 s 0 U375a6
+        = (shiftr01 s 0 [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+            ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]
+            ++ shiftr01 s 0 [((5, 2, 0) : ℕ × ℕ × ℕ)])
+          ++ [((6 + s, 0, 0) : ℕ × ℕ × ℕ)] := by
+      rw [U375a6, shiftr01_append0, shift_col,
+        show U375a = [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+          ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)]
+          ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] from by simp [U375a],
+        shiftr01_append0]
+    rw [e]
+    simpa [List.append_assoc] using h
+
+/-- ★★★★★★ `P(6,0,0)(2,2,0)`。 -/
+theorem R6006_mem : R600 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := R338) (M := U375a6)
+    (SegA_toSegB SegA_U375a6 BaseOk_P0) (LwB_of_base ⟨Aok_R338, rfl⟩)
+  rw [← R600_eq2] at h
+  simpa using h
+
+#print axioms SegA_U375a6
+#print axioms R6006_mem
+
 end Small
 end TRIO
