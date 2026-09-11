@@ -20988,3 +20988,42 @@ A2' の結論を**素の `WGd`** にして（`∀ b ks` で全称）、`GOk` 版
 
 **結論: 3 つの道（BCtx の `PayB`、`WFd` の `WFd_nilT`、行列の `HangB`）は
 全部同じ 1 文。`HangB` がいちばん弱いので、次はそこを攻める。**
+
+## 追記279: ★★★★★★ 族を使わない道が緑。行376 は行列の言葉 1 文に落ちた
+
+2026-09-11。追記278 の道3 を実装して緑にした。
+
+    blkM h j = (h+1,1,0)(h+2,2,0)…(h+1+j,2,0)
+    BM []        = R341
+    BM (j :: js) = BM js ++ blkM (2 + hgtB js) j
+
+    HangB : ∀ js B, Bok B → BM js ++ shiftr01 (2 + hgtB js + 1) 0 B ∈ W 0
+    R376_of_HangB : HangB → R373 ++ [(5,3,0)]        ★緑
+
+緑の部品:
+
+    blkM / BM / blkM_len / blkM_succ / blkM_getS? / entry_blkM00 / entry_blkM10
+    entry_blkMS0 / entry_blkMS1 / blkM_mem / MidD_blkM / BM_succ / BM_zero / BM_ne
+    shiftr01_blkM / hgtB_replicate / Mtwd_BM
+    BM_row1 / BM_memAok / BM_mem / flatten_map_singleton / Mtw_R344_BM
+
+### 回り方
+
+幅の多重集合の DM 帰納 1 本（`termination_by js => (js : Multiset ℕ)`）。
+
+    BM ((j+1)::js) = BM (j::js) ++ [(2+hgtB js+2+j, 2, 0)]
+      → snocYd_mem (Y0 := BM js, M := blkM (2+hgtB js) j, L := 2+hgtB js+1,
+                    y := 2, dl := 1+j)
+      塔は Mtwd_BM で BM (replicate n j ++ js) に一致 → IH（DM 降下）
+
+    BM (0::js) = BM js ++ [(2+hgtB js+1, 1, 0)]
+      → snocd_mem + TwD_mem_of_hang（自己対角塔）
+      ここだけ HangB を使う
+
+`Aok (BM js)` は `Aok_append_Mid` で membership と一緒に回す
+（`BM_memAok : ∀ js, BM js ∈ W 0 ∧ Aok (BM js)`）。
+
+### 意味
+
+**族（`WPd`/`WBd`/`WRd`/`WFd`/`WGd`）はもう要らない。**残りは `HangB` 1 文だけ。
+`GOK` は前置語すべてについての主張なので `PayB` より弱く、いちばん攻めやすい形。

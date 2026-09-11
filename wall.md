@@ -36,19 +36,26 @@
 **`WFd` は充足可能**（1 の枠の木の条件が素の `WFd ks U` だけなので
 `WFtx ((k,0)::[]) [fone nil]` が成り立つ）。
 
-### 道3: 行列の言葉（いちばん弱い）
+### ★ 道3: 行列の言葉（いちばん弱い。**帰着は緑**）
 
-    B([]) = R341,  B(js ++ [j]) = B(js) ++ (h+1,1,0)(h+2,2,0)…(h+j,2,0)
+    blkM h j = (h+1,1,0)(h+2,2,0)…(h+1+j,2,0)
+    BM []        = R341
+    BM (j :: js) = BM js ++ blkM (2 + hgtB js) j      （j が最上段のブロック）
 
-    HangB : ∀ js B, Bok B → B(js) ++ shiftr01 (h(js)+1) 0 B ∈ W 0
+    HangB : ∀ js B, Bok B → BM js ++ shiftr01 (2 + hgtB js + 1) 0 B ∈ W 0
 
-「ブロック列の先に、任意の良い行列を吊るせる」。展開規則（bms 実測）
+    R376_of_HangB : HangB → 行376                     ★緑
 
-    B(js ++ [j])[k] = B(js ++ [j-1]^(k+1))   j ≥ 1   → snocYd_mem
-    B(js ++ [0])[k] = TwD d (B(js)) (k+1)            → snocd_mem（TwD に HangB が要る）
+**族を一切使わない。**幅の多重集合の DM 帰納 1 本で回る（`BM_memAok`）。
 
-が両方 DM 降下なので、`HangB` さえあれば幅の多重集合の DM で行376 まで行く。
-`PayB` から出るが、GOK は前置語すべてについての主張なので `HangB` の方が弱い。
+    BM ((j+1)::js)[k] = BM (replicate (k+1) j ++ js)  → snocYd_mem（Mtwd_BM で照合）
+    BM (0::js)[k]     = TwD (2+hgtB js+1) (BM js) (k+1)
+                        → snocd_mem + TwD_mem_of_hang（ここだけ HangB を使う）
+
+`Aok` は `Aok_append_Mid` で membership と一緒に回す。
+`GOK` は前置語すべてについての主張なので、`PayB` より `HangB` の方が弱い。
+幅 ≤ 1 は `GOK_bdAC_le1` で既に緑。`hangU11one` / `hangU11two` は
+`HangB` の js = [0] / [0,0] にあたる。
 
 ### 死んだ道: 族 `WGd`（予算を大域パラメータにしたもの）
 
