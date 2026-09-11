@@ -20,24 +20,31 @@
 停止性は `(ks.length, k)` の辞書式。2 の枠でリストが 1 短くなるので、その木の
 条件を「梯子の深さ `j` について全称」にしても回る。
 
-    EPayT   := ∀ k' ks Z, JkA Z → EOk 0 (k'::ks) Z →
-                 ∀ B Bok, EOk 0 (k'::ks) (pay Z B)
-    ERunNil := ∀ k' ks N, JkA N → (∀ j, EOk j (k'::ks) N) →
-                 EOk 0 (k'::ks) (two N nil)
+    EAll X := ∀ k ks, EOk k ks X
+    ENil   := ∀ k ks, EOk k ks nil          ★これ 1 本
 
-    EOk_all : EPayT → ERunNil → ∀ X, JkA X → ∀ k ks, EOk k ks X
-    APzAll_of_E → GOKall → R375m (6,1,0) / (6,2,0) ∈ W 0
+    EAll_of_ENil : ENil → ∀ X, JkA X → EAll X
+    APzAll_of_ENil → GOKall → R375m (6,1,0) / (6,2,0) ∈ W 0
 
-どちらも「木が 2 の記録の直上に来る場合」だけ。
+木の構造帰納で `one` / `two` は形を伸ばすだけ、`pay` は両側とも緑。
+だから残るのは**空木**だけ。
 
 ## 緑になっている還元
 
-    底 (0, [])      : `EOk 0 [] X ↔ APz X`（`EOk_base_APz`）
-    荷 (k+1, ks)    : `PS_consE` / `EOk_pay`（鎖に `EOk` を持ち回る W 帰納）
-    裸の 2 (k+1,ks) : `EOk_twoNil` / `EOk_twoNil_base`
-    空木 (k+1, ks)  : `EOk_nil_fone`
-    one / two       : `EOk_one` / `EOk_two`（`plug` の付け替えだけ、予算なし）
-    `EOk_payAll` / `EOk_twoNilAll` / `EOk_nilAll` / `EOk_all`
+    底 (0, [])       : `EOk 0 [] X ↔ APz X`（`EOk_base_APz`）
+    荷 (k+1, ks)     : `PS_consE` / `EOk_pay`
+    荷 (0, [])       : `EOk_pay_base`
+    荷 (0, k'::ks)   : `PZ_consE` / `EOk_payT`（鎖の強さは `EOk_two` から）
+    裸の 2 (k+1,ks)  : `EOk_twoNil` / `EOk_twoNil_base`
+    one / two        : `EOk_one` / `EOk_two`（`plug` の付け替えだけ、予算なし）
+    `EAll_pay` / `EAll_of_ENil`
+
+## `ENil` の中で残っている 2 つ
+
+    (0, [])                          : `EOk_nil_base`   ★緑
+    (k+1, ks)、下が 1 の枠止まりか底 : `ENil_fone_ok`   ★緑
+    (k+1, ks)、下が 2 の枠止まり     : 枠の木の荷が「∀ 形」で要る
+    (0, k'::ks)                      : 走り ← 本丸
 
 ## なぜ 2 の枠止まりだけ残るか
 
