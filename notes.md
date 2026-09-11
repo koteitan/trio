@@ -22351,3 +22351,53 @@ Acc（DM）帰納でほどける:
 4. 底 `(0, [])` は `ECtx 0 [] D := ∃ V, D = [fone V] ∧ JkT V ∧ GOK V` にして
    `EOk 0 [] X = APz X` にすると、既存の `APz_nil` / `APz_pay` がそのまま使える。
 5. 残るのは 2 の枠止まりの荷（`ZAppend`）と、走り `(0, 0::ks)` の空木。
+
+## 追記309 (2026-09-12): 壁が 2 文になった（`EPayT` ∧ `ERunNil`）
+
+### 1. 結果
+
+    EPayT   := ∀ k' ks Z, JkA Z → EOk 0 (k'::ks) Z →
+                 ∀ B Bok, EOk 0 (k'::ks) (pay Z B)
+    ERunNil := ∀ k' ks N, JkA N → (∀ j, EOk j (k'::ks) N) →
+                 EOk 0 (k'::ks) (two N nil)
+
+    EOk_all : EPayT → ERunNil → ∀ X, JkA X → ∀ k ks, EOk k ks X    ★緑
+    APzAll_of_E / R375m61_of_E / R375m62_of_E
+
+どちらも**2 の枠止まりの形**（木が 2 の記録の直上に来る場合）だけ。
+1 の枠止まりと底は全部緑:
+
+    底 (0, [])      : `EOk 0 [] X ↔ APz X`。`APz_nil` / `APz_pay` がそのまま
+    荷 (k+1, ks)    : `PS_consE`（鎖に `EOk` を持ち回る W 帰納）
+    裸の 2 (k+1,ks) : `EOk_twoNil`（`GOK_twoNil_gen` の階段が族の `∀ j` の条件）
+    空木 (k+1, ks)  : `EOk_nil_fone`（`APnil_gen0` + 上の荷）
+    one / two       : `plug` の付け替えだけ。**予算を使わない**
+
+`EOk_all` は木の構造帰納。`one` / `two` は形を伸ばすだけなので、
+`pay` と `nil` の 2 つが本体。
+
+### 2. `PS_consE` の要点
+
+`PS_cons` の `SAppend ctx Z` が要るのは鎖 `itJ (pay Z B₀) n M` のところ。
+`PS_chainE` が鎖を `JkA` と一緒に `EOk k ks` も運ぶ:
+
+    EOk_one : JkA M' → EOk k ks M' → EOk (k+1) ks (pay Z B₀) → EOk k ks (one M' (pay Z B₀))
+
+`EOk (k+1) ks (pay Z B₀)` は荷が 1 つ小さいので W 帰納の IH。
+仮定は `EOk (k+1) ks Z` 1 つだけになった。
+
+### 3. `ERunNil` を `GOK_twoTwoNilW_gen` で攻めると何が起きるか
+
+`EOk 0 (k'::ks) (two N nil)` は `D = D' ++ [ftwo N']`、`D' = D'' ++ [fone V]` で
+
+    GOK (plug (D'' ++ [fone V]) (two N' (two N nil)))
+      ⟸ GOK_twoTwoNilW_gen（階段 `two N' (nstN2 N' N k)`）
+
+階段の段は `plug (D ++ [fone N, ftwo N']) (nstN2 N' N (k-1))` で、形が
+`(0, k'::ks)` → `(0, 1::k'::ks)` → `(0, 1::1::k'::ks)` … と**リストが伸びる**。
+`N` / `N'` はその伸びた形でも良くなければならないが、族が保証するのは
+`(·, ks)` の形だけ。**塔が形のリストを伸ばすので、族の条件が届かない**。
+
+`EOk_twoNil`（1 の枠止まり）の塔は `(fone N)^m` で形が `(k+m, ks)` に
+伸びるだけなので `∀ j, EOk j ks N` で覆えた。走りの塔は覆えない。
+これが 2 の枠止まりだけ残る理由。
