@@ -74719,5 +74719,38 @@ theorem APzT2_oneNil {Z : Jk1} (hJZ : JkA Z) (hZ : APzT2 Z) :
 #print axioms APzO2_oneNil
 #print axioms APzT2_oneNil
 
+/-! ### ★★★★ `APzO2 (two Z nil)` も `APzO2One` から出る
+
+`one M (two Z nil)` の語は裸の 2 の記録で終わるので
+`GOK_oneUV_RunSB [fone U] [] Z M` が使える。階段は `Z` の塔。 -/
+
+theorem APzO2_ABt0 (h1 : APzO2One) {Z : Jk1} (hJZ : JkA Z) (hZ : APzO2 Z) :
+    ∀ n : ℕ, JkA (ABt ([] : List Jk1) Z n) ∧ APzO2 (ABt ([] : List Jk1) Z n) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hJZ, hZ⟩
+  | succ n ih =>
+      show JkA (Jk1.one Z (ABt ([] : List Jk1) Z n))
+        ∧ APzO2 (Jk1.one Z (ABt ([] : List Jk1) Z n))
+      exact ⟨⟨hJZ, ih.1⟩, h1 Z _ hJZ ih.1 hZ ih.2⟩
+
+theorem APzO2_twoNil (h1 : APzO2One) {Z : Jk1} (hJZ : JkA Z) (hZ : APzO2 Z) :
+    APzO2 (Jk1.two Z Jk1.nil) := by
+  intro M hJM hAM U hU hGU
+  have hGM : GOK (plug [Frm.fone U] M) := hAM U hU hGU
+  have hJT : JkT (plug [Frm.fone U] (Jk1.one M (RunS (([] : List Jk1) ++ [Z])))) :=
+    ⟨⟨hU.1, hJM, hJZ, trivial⟩, hU.2⟩
+  have hst : ∀ n : ℕ,
+      GOK (plug [Frm.fone U] (appJ M (UtwP ([] : List Jk1) Z n))) := by
+    intro n
+    cases n with
+    | zero => exact hGM
+    | succ m =>
+        show GOK (Jk1.one U (Jk1.one M (ABt ([] : List Jk1) Z m)))
+        exact (APzO2_ABt0 h1 hJZ hZ m).2 M hJM hAM U hU hGU
+  exact GOK_oneUV_RunSB [Frm.fone U] [] Z M (by simp) hJZ hJT hGM hst
+
+#print axioms APzO2_twoNil
+
 end Small
 end TRIO
