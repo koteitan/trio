@@ -76288,5 +76288,64 @@ theorem LadK_flat_mem (k n : ℕ) :
 #print axioms R600k_mem
 #print axioms LadK_mem
 
+/-! ### ★★★★★★ 台座の junk を木の語 `wordJ` にする（`wordC` より大きい）
+
+`GOK_all : ∀ T, JkOk T → GOK T`（緑）と
+`GoodFb_wordJ : ∀ ws, WJ ws → GoodFb (wordJ · · ws)`（緑）で、
+**走りの無い木を並べた語**の junk は 3 段すべてで普遍。`PkGA` の `pk` に
+そのまま入るので、台座 `R600 (2,2,0) ++ wordJ 2 2 ws` がどの `WJ ws` でも
+`PkGA 2` になる。`bms -c` の実測では `wordC` 版（`R600k`）よりずっと大きい。 -/
+
+def R600j (ws : List Jk1) : TrioSeq :=
+  R600 ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)
+
+theorem R600j_PkGA {ws : List Jk1} (hw : WJ ws) : PkGA 2 (R600j ws) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, R600, wordJ 2 2 ws, rfl, R600_RunA0, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩
+
+/-- ★★★★★★ 木の語の台座。全部無条件。 -/
+theorem R600j_mem {ws : List Jk1} (hw : WJ ws) : R600j ws ∈ W 0 :=
+  (PkGA_Aok (R600j_PkGA hw)).mem
+
+theorem LadJ_mem {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (R600j ws) n ∈ W 0 := LadB_mem (R600j_PkGA hw) n
+
+theorem LadJ_flat_mem {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (R600j ws) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LadB_flat_mem (R600j_PkGA hw) n
+
+/-- 1 の記録と 2 の記録が交互に並ぶ木（走りが無いので `JkOk`）。 -/
+def AltT : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (i + 1) => Jk1.one Jk1.nil (Jk1.two Jk1.nil (AltT i))
+
+theorem JkJTop_AltT : ∀ i : ℕ, JkJ (AltT i) ∧ TopOk (AltT i)
+  | 0 => ⟨trivial, trivial⟩
+  | (i + 1) => ⟨⟨trivial, trivial, (JkJTop_AltT i).1, (JkJTop_AltT i).2⟩, trivial⟩
+
+theorem JkOk_AltT : ∀ i : ℕ, JkOk (AltT i)
+  | 0 => trivial
+  | (i + 1) => ⟨trivial, trivial, (JkJTop_AltT i).1, (JkJTop_AltT i).2⟩
+
+theorem WJ_rep_AltT (i m : ℕ) : WJ (List.replicate m (AltT i)) := by
+  intro N hN
+  rw [List.eq_of_mem_replicate hN]
+  exact JkOk_AltT i
+
+/-- ★★★★★★ 交互の木を `m` 本並べた台座。`i` を増やす方が `m` より強い（実測）。 -/
+theorem R600alt_mem (i m : ℕ) : R600j (List.replicate m (AltT i)) ∈ W 0 :=
+  R600j_mem (WJ_rep_AltT i m)
+
+theorem LadAlt_mem (i m n : ℕ) :
+    LadB (R600j (List.replicate m (AltT i))) n ∈ W 0 := LadJ_mem (WJ_rep_AltT i m) n
+
+theorem LadAlt_flat_mem (i m n : ℕ) :
+    LadB (R600j (List.replicate m (AltT i))) n
+      ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := LadJ_flat_mem (WJ_rep_AltT i m) n
+
+#print axioms R600j_mem
+#print axioms R600alt_mem
+#print axioms LadAlt_mem
+
 end Small
 end TRIO
