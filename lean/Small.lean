@@ -77003,5 +77003,39 @@ theorem GOK_oneChainP {Y : TrioSeq} (hY : Bok Y) (n : ℕ) :
 #print axioms R375m61_of_ChainW
 #print axioms GOK_oneChainP
 
+/-! ### ★★★★★★ 壁の最終形：`WPd_twoA_runB` の右の子を荷にする 1 文
+
+    WPd_twoA_runB : b+1 ≤ k → JkA A → (∀ks, WPd ((b+1)::ks) A)
+                  → WPd ((k+1)::ks) (two A nil)              ★緑
+
+の `nil` を `pay nil Y` に取り替えるだけ。語で見ると
+`two A nil` の語 `jk1 l A ++ [(l+1,2,0)]` の後ろに `Y↑(l+2)` を吊るす、
+つまり「走りの直上の荷」そのもの。 -/
+
+def ChainStep : Prop := ∀ (k b : ℕ), b + 1 ≤ k → ∀ A : Jk1, JkA A →
+  (∀ ks : List ℕ, WPd ((b + 1) :: ks) A) → ∀ Y : TrioSeq, Bok Y → ∀ ks : List ℕ,
+    WPd ((k + 1) :: ks) (Jk1.two A (Jk1.pay Jk1.nil Y))
+
+theorem ChainW_of_ChainStep (h : ChainStep) : ChainW := by
+  intro N hN
+  induction hN with
+  | nil => exact ⟨0, fun k _ ks => WPd_nilAll _⟩
+  | @step N' Y hN' hY ih =>
+      obtain ⟨b, hb⟩ := ih
+      refine ⟨b + 1, fun k hk ks => ?_⟩
+      exact h k b (by omega) N' (JkA_of_VCh (V := Jk1.nil) trivial hN')
+        (hb b (le_refl b)) Y hY ks
+
+/-- ★★★★★★ いま開いている最小の行列は `ChainStep` 1 文。 -/
+theorem R375m61_of_ChainStep (h : ChainStep) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_ChainW (ChainW_of_ChainStep h)
+
+theorem Pay2_of_ChainStep (h : ChainStep) : Pay2 :=
+  Pay2_of_ZApp2c (ZApp2c_of_ChainW (ChainW_of_ChainStep h))
+
+#print axioms ChainW_of_ChainStep
+#print axioms R375m61_of_ChainStep
+
 end Small
 end TRIO

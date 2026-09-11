@@ -22989,3 +22989,53 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 
 の一般化、すなわち `GOK_oneUV_RunSB`（`RunS`、荷なし）の荷つき版が要る。
 `RunS As = RunP As nil` を `RunP As (pay nil Y)` に広げるのが具体的な作業。
+
+## 追記323 (2026-09-12): 壁が「緑の補題 1 つの `nil` を荷に替える」1 文になった
+
+### 1. `TWm` → `TWB`（塔の単位を任意の木に）
+
+    TWB N 0 = N ,  TWB N (n+1) = one N (two nil (TWB N n))
+    TWB_twoIt : TWB (twoIt nil nil m) n = TWm m n
+    WPd_TWB : JkA N → (∀ k ≥ b, ∀ ks, WPd ((k+1)::ks) N)
+            → ∀ n k ≥ b, ∀ ks, WPd ((k+1)::ks) (TWB N n)     ★緑
+    TowOkB  : 同じ仮定で ∀ n, GOK (one nil (two nil (TWB N n)))  ★緑
+
+`WPd_TWm` / `TowOkM` の証明をそのまま写すだけで通った（単位が `twoIt nil nil m`
+であることはどこにも使われていなかった）。
+
+### 2. `ZApp2c` が鎖の `WPd` 予算 1 文になる
+
+`UtwP [nil] N (n+1) = one nil (two nil (TWB N n))`（`appJ_UtwP_TWB` で証明）なので、
+`GOK_oneUV_RunSB [] [nil] N nil` の階段がちょうど `TowOkB` になる:
+
+    ZApp2c_of_chain : (∀ k ≥ b, ∀ ks, WPd ((k+1)::ks) N)
+                    → GOK (one nil (two nil (two N nil)))      ★緑
+    ChainW := ∀ N, VCh nil N → ∃ b, ∀ k ≥ b, ∀ ks, WPd ((k+1)::ks) N
+    R375m61_of_ChainW : ChainW → R375m (6,1,0) ∈ W 0           ★緑
+
+### 3. さらに 1 つの補題に
+
+`VCh nil` の帰納で `ChainW` は 1 手に落ちる:
+
+    ChainStep := ∀ k b, b+1 ≤ k → ∀ A, JkA A → (∀ks, WPd ((b+1)::ks) A)
+               → ∀ Y, Bok Y → ∀ ks, WPd ((k+1)::ks) (two A (pay nil Y))
+    ChainW_of_ChainStep / Pay2_of_ChainStep / R375m61_of_ChainStep   ★全部緑
+
+これは**緑の `WPd_twoA_runB` の結論 `two A nil` を `two A (pay nil Y)` に
+替えただけ**。語では `jk1 l A ++ [(l+1,2,0)]` の後ろに `Y↑(l+2)` を吊るす。
+
+### 4. 荷つきの鎖は `0 ::` の形なら緑
+
+    WPd_twoP   : WPd_twoOf + WPd_payA で two N' (pay nil Y) が 0::ks で出る
+    WPd_chainP : ∀ n q(≤k), WPd ((0::q)++B) (twoIt nil (pay nil Y) n)   ★緑
+    GOK_oneChainP : GOK (one nil (twoIt nil (pay nil Y) n))             ★緑
+
+`0 ::` の形（1 の枠の直上）は通るのに `(k+1) ::` の形（2 の枠の直上）が通らない。
+**これが走りの壁の正体。**
+
+### 5. 実測
+
+`GOK_oneChainP` の字を `Rz1` に入れて測ると `chZ10x3 < T6` で、シートは動かない。
+`WPd_twoA_runB` の証明は `GOK_oneUV_RunSB`（`RunS` = 末尾が裸の 2 の記録）を使う。
+荷が付くと `GOK_oneUV_genM` の `hVs`（語が裸の 2 の記録で終わる）が壊れるので、
+**次は `GOK_oneUV_genM` の「末尾に荷を吊るす」版を書く**ことになる。

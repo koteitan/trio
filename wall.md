@@ -41,6 +41,36 @@
 文脈なら通らない（`BdAll` の `j ≥ 2`）。**
 新しい壁を立てるときは、まず「字の主張に落ちないか」を見る。
 
+## ★ 壁の最終形：`ChainStep`（緑の補題 1 つの `nil` を荷に替えるだけ）
+
+    WPd_twoA_runB : b+1 ≤ k → JkA A → (∀ ks, WPd ((b+1)::ks) A)
+                  → ∀ ks, WPd ((k+1)::ks) (two A nil)                    ★緑
+
+    ChainStep := 同じ仮定で ∀ Y, Bok Y →
+                   ∀ ks, WPd ((k+1)::ks) (two A (pay nil Y))             ★残り 1 本
+
+    ChainW_of_ChainStep  : ChainStep → ChainW
+    Pay2_of_ChainStep    : ChainStep → Pay2
+    R375m61_of_ChainStep : ChainStep → R375m (6,1,0) ∈ W 0
+
+語で見ると `two A nil` の語 `jk1 l A ++ [(l+1,2,0)]` の後ろに `Y↑(l+2)` を
+吊るすだけ、つまり「走りの直上の荷」。`WPd_twoA_runB` の証明は
+`GOK_oneUV_RunSB`（`RunS`、末尾が裸の 2 の記録）を使うが、荷が付くと
+`GOK_oneUV_genM` の条件 `hVs`（語が裸の 2 の記録で終わる）が壊れる。
+そこが唯一の穴。
+
+### 途中の緑の還元（2026-09-12）
+
+    ZApp2c_of_chain : (∀ k ≥ b, ∀ ks, WPd ((k+1)::ks) N) →
+                      GOK (one nil (two nil (two N nil)))
+      （`GOK_oneUV_RunSB [] [nil] N nil` の階段が
+        `UtwP [nil] N (n+1) = one nil (two nil (TWB N n))` で `TowOkB` になる）
+    TWB N n / WPd_TWB / TowOkB : `TWm` / `WPd_TWm` / `TowOkM` の単位を任意の木に一般化
+    WPd_chainP : 荷つきの鎖は `0 :: q ++ B` の形なら緑（`WPd_twoOf` + `WPd_payA`）
+    GOK_oneChainP : `one nil (twoIt nil (pay nil Y) n)` は字として良い
+
+**`(k+1) ::` の形だけが壁。** `0 ::` は緑。
+
 ## もう 1 つの壁の最小形：`ZApp2`（いま開いている最小の行列）
 
     Pay2 := ∀ B, Bok B → GOK (Wall2 B)
