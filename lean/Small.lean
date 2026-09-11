@@ -69729,5 +69729,127 @@ theorem R6003_mem :
 #print axioms R6002_mem
 #print axioms R6003_mem
 
+/-! ### ★★★★★ 土台を一般の `Aok A` にした「一様な一歩」
+
+`R375q3_mem`（`Q(2,0,0)`）と同型。単位は `U375a6 = U375a ++ (6,0,0)`。 -/
+
+theorem Abase_mem_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.nil])) := by
+    simpa using GOK_nil [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.nil]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  simpa [wordJ_singleton, colJ, jk1] using h
+
+theorem A373_mem_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+      ((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk 1)])) := by
+    simpa using GOK_oneStk1 [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk 1)]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk 1))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk 1)) = _
+    simp [stk, stkP, jk1]
+  simpa [wordJ_singleton, colJ, e] using h
+
+theorem towerM_mem_gen {A : TrioSeq} (hA : Aok A) (m : ℕ) : ∀ n : ℕ,
+    Mtwd 2 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) (UBlk m 2) n ∈ W 0
+  | 0 => by simpa [Mtwd] using Abase_mem_gen hA
+  | (k + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b
+          [Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm m k))]) := by
+        simpa using TowOkM m k [] WOk_nil GoodFb_wordJ_nil
+      have h := rowJ_mem_genF hA hG
+      rw [wordJ_singleton, colJ] at h
+      have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (TWm m k)))
+          = (List.range (k + 1)).flatMap (fun i => shiftr01 (2 * i) 0 (UBlk m 2)) := by
+        show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (2 + 1) (Jk1.two Jk1.nil (TWm m k))) = _
+        have h2 := twm_word m k 2
+        simpa [jk1] using h2
+      rw [e] at h
+      simpa [Mtwd, List.append_assoc] using h
+
+theorem Abase_UBlk_eq (A : TrioSeq) (m : ℕ) :
+    (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) ++ UBlk m 2
+      = (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+          ((4, 2, 0) : ℕ × ℕ × ℕ)]) ++ List.replicate m ((5, 2, 0) : ℕ × ℕ × ℕ) := by
+  show (A ++ _) ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) ::
+    List.replicate m ((5, 2, 0) : ℕ × ℕ × ℕ)) = _
+  simp [List.append_assoc]
+
+theorem A373_copies52_gen {A : TrioSeq} (hA : Aok A) (m : ℕ) :
+    (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+      ((4, 2, 0) : ℕ × ℕ × ℕ)]) ++ List.replicate (m + 1) ((5, 2, 0) : ℕ × ℕ × ℕ) ∈ W 0 := by
+  have h := snocYd_mem (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (M := UBlk m 2) (L := 3) (y := 2) (dl := 2)
+    (by simp) (MidD_UBlk2 m) (by simp [entry, UBlk])
+    (by
+      intro t h1 h2 h3 _
+      rw [UBlk_length] at h2
+      rcases t with _ | t
+      · omega
+      rcases t with _ | t
+      · simp [entry, UBlk]
+      · exfalso
+        rw [UBlk_entry0_ge2 m 2 t (by omega)] at h3
+        omega)
+    (by omega) (by omega) (towerM_mem_gen hA m)
+  rw [Abase_UBlk_eq A m] at h
+  rw [List.replicate_succ']
+  simpa [List.append_assoc] using h
+
+/-- `P(6,0,0)` の単位。`U375a` の右に平坦な `(6,0,0)`。 -/
+def U375a6 : TrioSeq := U375a ++ [((6, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375a6 : MidD 2 U375a6 where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375a6, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375a6, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375a6, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- ★★ 一様な一歩: どんな `Aok A` にも `U375a ++ (6,0,0)` が継げる。 -/
+theorem U375a6_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375a6 ∈ W 0 := by
+  have htw : ∀ n : ℕ,
+      (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+        ((4, 2, 0) : ℕ × ℕ × ℕ)]) ++ (List.range n).flatMap
+        (fun _ => [((5, 2, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_const_52 n]
+    cases n with
+    | zero => simpa using A373_mem_gen hA
+    | succ n => exact A373_copies52_gen hA n
+  have h := flat_mem''
+    (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+      ((4, 2, 0) : ℕ × ℕ × ℕ)])
+    (M := [((5, 2, 0) : ℕ × ℕ × ℕ)]) (d := 6)
+    (by simp) (by simp [entry]) (by intro r h1 h2; simp at h2; omega) htw
+  simpa [U375a6, U375a, List.append_assoc] using h
+
+/-- ★★★★★★ `P(6,0,0)(2,0,0)`。 -/
+theorem R6004_mem : R600 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R338) (M := U375a6) (d := 2) (by omega) MidD_U375a6
+    Aok_R338 (fun n hAn => U375a6_mem_gen hAn)
+  simpa [R600, R375m, R373, R344, R341, U375a6, U375a, List.append_assoc] using h
+
+#print axioms U375a6_mem_gen
+#print axioms R6004_mem
+
 end Small
 end TRIO
