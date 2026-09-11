@@ -69662,5 +69662,72 @@ theorem R375m_600_mem : R375m ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R375m_600_mem
 
+/-! ### ★★★★★ `P(6,0,0)` は `Aok`。そこから低い高さの継ぎ足しが出る
+
+`R375m_600_mem` で membership が取れたので、`Aok` の残り 4 条件（`ne` / `deep` /
+`zroot` / `mono`）は列を見るだけ。`Aok` になれば `Lv_snoc` / `flat_mem''` が使える。 -/
+
+def R600 : TrioSeq := R375m ++ [((6, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R600_eq : R600 = [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ), ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((6, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [R600, R375m, R373, R344, R341, R338]
+
+theorem R600_ne : R600 ≠ [] := by simp [R600, R375m, R373, R344, R341, R338]
+
+theorem R600_head : entry R600 0 0 = 0 := by
+  simp [R600, R375m, R373, R344, R341, R338, entry]
+
+theorem R600_tail : ∀ r, 1 ≤ r → r < R600.length → 1 ≤ entry R600 0 r := by
+  intro r hr1 hrl
+  simp only [R600, R375m, R373, R344, R341, R338, List.length_append, List.length_cons,
+    List.length_nil] at hrl
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+    first
+      | omega
+      | simp [R600, R375m, R373, R344, R341, R338, entry]
+
+theorem Aok_R600 : Aok R600 where
+  mem := R375m_600_mem
+  ne := R600_ne
+  deep := ⟨R600_head, R600_tail⟩
+  zroot := by
+    rw [R600_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  mono := by
+    rw [R600_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem R600_copies_mem (n : ℕ) : copies R600 n ∈ W 0 := (Aok_R600.copies_Bok n).mem
+
+/-- ★★★★★★ `P(6,0,0)(1,0,0)`（平坦）。 -/
+theorem R6001_mem : R600 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have htw : ∀ n : ℕ, ([] : TrioSeq) ++ (List.range n).flatMap (fun _ => R600) ∈ W 0 := by
+    intro n
+    simpa [copies] using R600_copies_mem n
+  have h := flat_mem'' (Y0 := ([] : TrioSeq)) (M := R600) (d := 1) R600_ne
+    (by rw [R600_head]; omega) R600_tail htw
+  simpa using h
+
+/-- ★★★★★★ `P(6,0,0)(1,1,0)`（対角、歩幅 1）。 -/
+theorem R6002_mem : R600 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 R600 Aok_R600
+
+/-- ★★★★★★ `P(6,0,0)(1,1,0)(2,2,0)`。 -/
+theorem R6003_mem :
+    R600 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc2 1 0 R600 Aok_R600
+
+#print axioms Aok_R600
+#print axioms R6001_mem
+#print axioms R6002_mem
+#print axioms R6003_mem
+
 end Small
 end TRIO
