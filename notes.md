@@ -20542,3 +20542,62 @@ A2' の帰納法の仮定がそのまま使える）。ただし `AYdB0` の横�
 行列は、証明できていても `sheet/README.md` には書かない（notes に書く）。
 
 証明済みは行 366–375 の 10 個に直した（`R366_mem`…`R375m_mem`、全部緑）。
+
+## 追記269: ★★★★★★ 族をやめたら走りの壁が消えた。残るは荷 1 本
+
+2026-09-11。追記267 の「次は族の外を探すしかない」をやった。緑:
+
+    Bblk / BCtx / plug_BCtx_cons / JkA_plug_BCtx / TopOk_plug_BCtx / JkT_plug_BCtx
+    RFam_BCtx / dm_ws / PayB
+    GOK_BCtx_nil      : PayB → ∀ ws, GOK (plug (BCtx ws) nil)
+    GOK_oneStk_ofPayB : PayB → ∀ q, GOK (one nil (stk q))
+    tw_R344_42_ofPayB / R376_of_PayB : PayB → 行376
+
+### やったこと
+
+族（`WPd` / `WQd` / `WRd` / `WBd`）は「どんな文脈に差せるか」を**入り目の形**で
+帳簿にしていた。その帳簿の整礎性が、追記264 の
+
+    A（階段）  ∀e, ∃ e' < e, g(e') ≥ g(e) - 1
+    B（荷）    ∀e（g(e) ≥ 2）, ∃ e'' ≤ e, g(e'') ≥ g(e) + 1
+
+を両立させられない原因だった。帳簿をやめて、**文脈を実際に出てくる形だけに限る**。
+
+    Bblk w = PBlk (replicate w nil) nil    幅 w のブロック（1 の枠の木も兄弟も nil）
+    BCtx (w :: ws) = BCtx ws ++ Bblk w     w が最上段
+
+`bdA js`（ブロック列）の文脈はこの形しか出てこない。兄弟が全部 `nil` なので
+**兄弟の条件がそもそも要らない**。帳簿が消えるので A/B の綱引きも消える。
+
+### 測度はブロック幅の多重集合の DM
+
+`bms` で測った展開規則（追記268 の照合ツールで確認）
+
+    B(js ++ [j])[k] = B(js ++ [j-1]^(k+1))      j ≥ 1
+
+は、幅の多重集合で見ると「`j` を 1 個取って `j-1` を k+1 個入れる」＝ DM 降下。
+木の側でも同じで、`GOK_oneUV_RunSB` の階段 `UtwP` の 1 単位がちょうど
+`Bblk (j-1)` 1 枚。だから
+
+    GOK (plug (BCtx ((j+1) :: ws)) nil)
+      ← GOK (plug (BCtx ws) nil)                              {j+1} → {}
+      ← GOK (plug (BCtx (j :: ws)) nil)                       {j+1} → {j}
+      ← ∀t, GOK (plug (BCtx (j :: (replicate t j ++ j :: ws))) nil)   {j+1} → {j}^(t+2)
+
+の 3 本だけで閉じる（`GOK_BCtx_nil`、`termination_by ws => (ws : Multiset ℕ)`）。
+
+### 残る 1 文
+
+    PayB : ∀ ws C, Bok C → GOK (plug (BCtx ws) (pay nil C))
+
+`j = 0` の底 `bdA [0] = one nil nil` で `APnil_gen0` を使うところの第 3 引数。
+「`nil` のブロック文脈の上に荷を 1 個吊るせる」だけ。
+
+`A2'` の帰納（`AYdR` / `WRd_payA` と同じ形）で回すはずだが、横鎖
+`itJ T k U` の木が `BCtx` の文脈から外れるので、そこを `BCtx` で閉じた形に
+書き直すのが次の一手。
+
+### 教訓
+
+族は「文脈を全部書く」ための道具だったが、**目標の行に必要な文脈は狭い**。
+狭い文脈に限れば整礎性は幅の多重集合だけで足り、族の帳簿が要らない。

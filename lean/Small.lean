@@ -69213,7 +69213,7 @@ theorem R376_of_RunNil2 (h : RunNil2) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)
 順序は `encE (m,i) = m*m + i` で ℕ に埋める。測度は `encE` を通した多重集合の DM。 -/
 
 def encE : ℕ × ℕ → ℕ
-  | (m, i) => m * m + i
+  | (_, i) => i
 
 def encS (s : List (ℕ × ℕ)) : Multiset ℕ := ((s.map encE : List ℕ) : Multiset ℕ)
 
@@ -69275,7 +69275,7 @@ decreasing_by
            (by
              intro x hx
              rcases List.mem_cons.mp hx with rfl | hx1
-             · show m * m + i < m * m + (i + 1)
+             · show i < i + 1
                omega
              · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
       | (rw [show (m₂, i) :: (q' ++ (q ++ ks)) = ((m₂, i) :: (q' ++ q)) ++ ks from by simp]
@@ -69331,7 +69331,7 @@ decreasing_by
            (by
              intro x hx
              rcases List.mem_cons.mp hx with rfl | hx1
-             · show m * m + i < m * m + (i + 1)
+             · show i < i + 1
                omega
              · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
 
@@ -69380,7 +69380,7 @@ decreasing_by
            (by
              intro x hx
              rcases List.mem_cons.mp hx with rfl | hx1
-             · show m * m + i < m * m + (i + 1)
+             · show i < i + 1
                omega
              · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
 
@@ -69431,7 +69431,7 @@ decreasing_by
            (by
              intro x hx
              rcases List.mem_cons.mp hx with rfl | hx1
-             · show m * m + i < m * m + (i + 1)
+             · show i < i + 1
                omega
              · exact (by assumption : ∀ x ∈ q, encE x < encE (m, i + 1)) x hx1))
 
@@ -69545,10 +69545,10 @@ theorem WBd_nilF1 (m : ℕ) (ks : List (ℕ × ℕ)) : WBd ((m, 1) :: ks) Jk1.ni
     intro j x hx
     have hx0 : x = ((m, 0) : ℕ × ℕ) := List.eq_of_mem_replicate hx
     subst hx0
-    show m * m + 0 < m * m + (0 + 1)
+    show 0 < 0 + 1
     omega
   have hm0 : encE ((m, 0) : ℕ × ℕ) < encE ((m, 0 + 1) : ℕ × ℕ) := by
-    show m * m + 0 < m * m + (0 + 1)
+    show 0 < 0 + 1
     omega
   refine WBd_twoNilGen hJN (q ++ ks) ?_ ?_
   · intro j
@@ -70038,6 +70038,176 @@ theorem R600_351_mem :
       exact R600_349_DiaV k
 
 #print axioms R600_351_mem
+
+/-! ### ★★★★★★ 族の外へ。兄弟が全部 `nil` のブロック文脈だけを見る
+
+`bdA js`（ブロック列）の文脈は「1 の枠の木も 2 の枠の木も全部 `nil`」の
+ブロックだけからできている。この文脈だけに話を限ると、`GOK_oneUV_RunSB` の
+階段が作るのは
+
+    幅 j+1 のブロック 1 枚 ⟹ 幅 j のブロック t+2 枚
+
+だけになるので、**ブロック幅の多重集合の DM** で帰納できる。`WBd` のような
+族の入り目の帳簿が要らない（追記261–267 の A/B の綱引きが起きない）。
+残るのは荷 `PayB` 1 本。 -/
+
+def Bblk (w : ℕ) : List Frm := PBlk (List.replicate w Jk1.nil) Jk1.nil
+
+def BCtx : List ℕ → List Frm
+  | [] => []
+  | (w :: ws) => BCtx ws ++ Bblk w
+
+theorem JkA_rep_nil (w : ℕ) : ∀ A ∈ List.replicate w Jk1.nil, JkA A := by
+  intro A hA
+  rw [List.eq_of_mem_replicate hA]
+  exact trivial
+
+theorem plug_BCtx_cons (w : ℕ) (ws : List ℕ) (X : Jk1) :
+    plug (BCtx (w :: ws)) X
+      = plug (BCtx ws) (Jk1.one Jk1.nil (RunP (List.replicate w Jk1.nil) X)) :=
+  plug_PBlk (BCtx ws) (List.replicate w Jk1.nil) Jk1.nil X
+
+theorem JkA_plug_BCtx : ∀ (ws : List ℕ) (X : Jk1), JkA X → JkA (plug (BCtx ws) X)
+  | [], _, hX => hX
+  | (w :: ws), X, hX => by
+      rw [plug_BCtx_cons]
+      exact JkA_plug_BCtx ws _ ⟨trivial, JkA_RunP _ (JkA_rep_nil w) hX⟩
+
+theorem TopOk_plug_BCtx : ∀ (ws : List ℕ) (X : Jk1), TopOk X → TopOk (plug (BCtx ws) X)
+  | [], _, hX => hX
+  | (w :: ws), X, _ => by
+      rw [plug_BCtx_cons]
+      exact TopOk_plug_BCtx ws _ trivial
+
+theorem JkT_plug_BCtx (ws : List ℕ) (X : Jk1) (hA : JkA X) (hT : TopOk X) :
+    JkT (plug (BCtx ws) X) := ⟨JkA_plug_BCtx ws X hA, TopOk_plug_BCtx ws X hT⟩
+
+theorem BCtx_cons (w : ℕ) (ws : List ℕ) : BCtx (w :: ws) = BCtx ws ++ Bblk w := rfl
+
+theorem RFam_BCtx (w : ℕ) (ws : List ℕ) : ∀ D' : List Frm,
+    RFam [Bblk w] (BCtx (w :: ws)) D' →
+    ∃ t : ℕ, D' = BCtx (List.replicate t w ++ (w :: ws)) := by
+  intro D' hD'
+  induction hD' with
+  | base => exact ⟨0, rfl⟩
+  | step hB _ ih =>
+      obtain ⟨t, rfl⟩ := ih
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hB
+      subst hB
+      refine ⟨t + 1, ?_⟩
+      rw [show List.replicate (t + 1) w ++ (w :: ws)
+          = w :: (List.replicate t w ++ (w :: ws)) from by rw [List.replicate_succ]; rfl,
+        BCtx_cons]
+
+/-- 幅の多重集合の DM。`p` の幅が全部 `j` 未満なら `p ++ ws` は `j :: ws` より小さい。 -/
+theorem dm_ws (j : ℕ) (ws p : List ℕ) (hp : ∀ x ∈ p, x < j) :
+    Multiset.IsDershowitzMannaLT ((p ++ ws : List ℕ) : Multiset ℕ)
+      (((j :: ws) : List ℕ) : Multiset ℕ) := by
+  have e1 : ((p ++ ws : List ℕ) : Multiset ℕ)
+      = ((ws : List ℕ) : Multiset ℕ) + ((p : List ℕ) : Multiset ℕ) := by
+    rw [← Multiset.coe_add]
+    exact Multiset.coe_eq_coe.mpr List.perm_append_comm
+  have e2 : (((j :: ws) : List ℕ) : Multiset ℕ)
+      = ((ws : List ℕ) : Multiset ℕ) + (([j] : List ℕ) : Multiset ℕ) :=
+    Multiset.coe_eq_coe.mpr
+      (show List.Perm ((j :: ws) : List ℕ) (ws ++ [j]) from by
+        simpa using List.perm_append_comm (l₁ := [j]) (l₂ := ws))
+  rw [e1, e2]
+  refine dm_gen (by simp) ?_
+  intro y hy
+  exact ⟨j, by simp, hp y (by simpa using hy)⟩
+
+/-- 残る 1 文: `nil` のブロック文脈の上に荷を 1 個吊るせる。 -/
+def PayB : Prop := ∀ (ws : List ℕ) (C : TrioSeq), Bok C →
+    GOK (plug (BCtx ws) (Jk1.pay Jk1.nil C))
+
+/-- ★★★★★★ 幅の多重集合の DM 帰納。族の入り目が要らない。 -/
+theorem GOK_BCtx_nil (hp : PayB) : ∀ ws : List ℕ, GOK (plug (BCtx ws) Jk1.nil)
+  | [] => GOK_nil
+  | (0 :: ws) => by
+      have h1 : GOK (plug (BCtx ws) Jk1.nil) := GOK_BCtx_nil hp ws
+      have e : plug (BCtx (0 :: ws)) Jk1.nil
+          = plug (BCtx ws) (Jk1.one Jk1.nil Jk1.nil) := by
+        rw [plug_BCtx_cons]; rfl
+      rw [e]
+      exact APnil_gen0 (BCtx ws) Jk1.nil
+        (JkT_plug_BCtx ws _ ⟨trivial, trivial⟩ trivial) h1 (fun C hC => hp ws C hC)
+  | ((j + 1) :: ws) => by
+      have hJBs : ∀ A ∈ List.replicate j Jk1.nil, JkA A := JkA_rep_nil j
+      have hGU : GOK (plug (BCtx ws) Jk1.nil) := GOK_BCtx_nil hp ws
+      have hB : GOK (plug (BCtx ws ++ Bblk j) Jk1.nil) := GOK_BCtx_nil hp (j :: ws)
+      have e : plug (BCtx ((j + 1) :: ws)) Jk1.nil
+          = plug (BCtx ws)
+              (Jk1.one Jk1.nil (RunS (List.replicate j Jk1.nil ++ [Jk1.nil]))) := by
+        rw [plug_BCtx_cons]
+        show _ = plug (BCtx ws)
+          (Jk1.one Jk1.nil (RunP (List.replicate j Jk1.nil ++ [Jk1.nil]) Jk1.nil))
+        rw [← List.replicate_succ']
+      rw [e]
+      refine GOK_oneUV_RunSB (BCtx ws) (List.replicate j Jk1.nil) Jk1.nil Jk1.nil
+        hJBs trivial
+        (JkT_plug_BCtx ws (Jk1.one Jk1.nil (RunS (List.replicate j Jk1.nil ++ [Jk1.nil])))
+          ⟨trivial, JkA_RunS_snocB (List.replicate j Jk1.nil) Jk1.nil hJBs trivial⟩
+          trivial) hGU ?_
+      refine GOK_appJ_UtwP (BCtx ws) (List.replicate j Jk1.nil) Jk1.nil Jk1.nil hGU hB ?_
+      intro D' hD' _
+      obtain ⟨t, rfl⟩ := RFam_BCtx j ws D' hD'
+      have e2 : plug (BCtx (List.replicate t j ++ (j :: ws)))
+            (Jk1.one Jk1.nil (RunP (List.replicate j Jk1.nil) Jk1.nil))
+          = plug (BCtx (j :: (List.replicate t j ++ (j :: ws)))) Jk1.nil :=
+        (plug_BCtx_cons j (List.replicate t j ++ (j :: ws)) Jk1.nil).symm
+      rw [e2]
+      exact GOK_BCtx_nil hp (j :: (List.replicate t j ++ (j :: ws)))
+termination_by ws => ((ws : List ℕ) : Multiset ℕ)
+decreasing_by
+  · exact dm_ws 0 ws [] (by simp)
+  · exact dm_ws (j + 1) ws [] (by simp)
+  · exact dm_ws (j + 1) ws [j] (by intro x hx; simp at hx; omega)
+  · have hlt : ∀ x ∈ (j :: (List.replicate t j ++ [j])), x < j + 1 := by
+      intro x hx
+      rcases List.mem_cons.mp hx with h0 | hx1
+      · omega
+      · rcases List.mem_append.mp hx1 with hx2 | hx2
+        · have h2 := List.eq_of_mem_replicate hx2
+          omega
+        · have h2 : x = j := by simpa using hx2
+          omega
+    have h := dm_ws (j + 1) ws (j :: (List.replicate t j ++ [j])) hlt
+    have e : (j :: (List.replicate t j ++ [j])) ++ ws
+        = j :: (List.replicate t j ++ (j :: ws)) := by
+      simp [List.append_assoc]
+    rw [e] at h
+    exact h
+
+#print axioms GOK_BCtx_nil
+
+/-- `bdA [q] = one nil (stk q)` が `PayB` から出る。 -/
+theorem GOK_oneStk_ofPayB (hp : PayB) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) := by
+  have h := GOK_BCtx_nil hp [q]
+  rw [plug_BCtx_cons, RunP_rep_nil] at h
+  exact h
+
+theorem tw_R344_42_ofPayB (hp : PayB) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    GOK_oneStk_ofPayB hp n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ 目標の行376 が `PayB` 1 本から出る（走りの壁が消えた）。 -/
+theorem R376_of_PayB (hp : PayB) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42_ofPayB hp)
+
+#print axioms R376_of_PayB
 
 end Small
 end TRIO

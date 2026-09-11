@@ -8,6 +8,51 @@
 
 いまの壁は次の行（行376）の 1 文。
 
+## ★★★★★★ いまの最小形（族の外、2026-09-11 更新）
+
+    PayB : ∀ ws (C : TrioSeq), Bok C → GOK (plug (BCtx ws) (pay nil C))
+
+「**兄弟が全部 `nil` のブロック文脈の上に、荷を 1 個吊るせる**」。これだけ。
+
+    R376_of_PayB : PayB → 目標の行376 …(4,2,0)(5,3,0)
+    GOK_oneStk_ofPayB : PayB → ∀ q, GOK (one nil (stk q))
+
+**走りの壁（`RunNilB` / `RunNil2` / `ZeroStep` / `MixTow`）は消えた。**
+
+### 消えた理由: 族をやめて、文脈を `nil` のブロックだけに限った
+
+    Bblk w   = PBlk (replicate w nil) nil     幅 w のブロック（1 の枠の木も兄弟も nil）
+    BCtx []  = []
+    BCtx (w :: ws) = BCtx ws ++ Bblk w        w が最上段
+
+`bdA js` の文脈はこの形しか出てこない。この文脈だけに限ると
+`GOK_oneUV_RunSB` の階段が作るのは
+
+    幅 j+1 のブロック 1 枚 ⟹ 幅 j のブロック t+2 枚
+
+だけなので、**ブロック幅の多重集合の DM** で帰納が閉じる（`GOK_BCtx_nil`、緑）。
+
+    GOK (plug (BCtx ((j+1) :: ws)) nil)
+      ← GOK (plug (BCtx ws) nil)                          幅 {j+1} → {}
+      ← GOK (plug (BCtx (j :: ws)) nil)                   幅 {j+1} → {j}
+      ← ∀t, GOK (plug (BCtx (j :: (replicate t j ++ (j :: ws)))) nil)
+                                                          幅 {j+1} → {j}^(t+2)
+
+追記261–267 の A/B の綱引き（荷は容量固定、階段は容量可変）は
+**族の入り目の帳簿があるから起きていた**。兄弟が `nil` なら兄弟の条件が要らず、
+帳簿ごと消える。
+
+### 残る 1 文が要る場所
+
+`j = 0` の底（`bdA [0] = one nil nil`）で `APnil_gen0` を使うところ。
+
+    APnil_gen0 ctx V : JkT … → GOK (plug ctx V) → (∀C, Bok C → GOK (plug ctx (pay V C)))
+                      → GOK (plug ctx (one V nil))
+
+の第 3 引数が `PayB`。
+
+## 旧: 族 `WBd` の最小形（2026-09-11、いまは不要）
+
 ## ★★★★★★ いまの最小形（族 `WBd`、2026-09-11）
 
     RunNilB : ∀ m i ks, WBd ((m, i + 1) :: ks) nil
