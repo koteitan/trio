@@ -17,11 +17,19 @@
 上の木の条件も帰納の仮定そのままで足りる（`PA_twoC0`）。だから残るのは
 `TwoBud` 1 文だけで、そこから `∀ T, JkT T → GOK T`（z < 2 の停止性そのもの）が出る。
 
-`TwoBud` に残っている穴はちょうど 2 つ。
+さらに `TwoBud` は**予算 1 の 1 文**に落ちる（`TwoBud_of_TwoBud1`、緑）。
+`WPd_ck` を開いたあと `WPd_twoOf` の予算を `0` に取れば、上の木に要るのは
+`WPd (1 :: …) (two V W)` だけで、兄弟条件は `x ≤ 0 → x ≤ k` で足りる。
 
-    (a) 予算 1     : WPd (1 :: ks) (two V W)
-    (b) 予算 2 以上 かつ 上の木が空でない : W ≠ nil
-    上の木が空・予算 2 以上（`two V nil`）は `TwoBud_nilW` で緑。
+    TwoBud1 := ∀ V W, JkA V → JkA W → PA V → PA W → ∀ ks, WPd (1 :: ks) (two V W)
+    R376_of_TwoBud1 : TwoBud1 → 行376        ★これが最短
+
+`TwoBud1` が硬い理由: `WPd_ck 0 ks` を開くと、兄弟 `N` について貰えるのは
+`∀ q(全部 0), WPd ((0::q)++B) N` だけ。`WPd_twoTwoGen_run`（走り 2 連、緑）の
+階段 `nstN N i` は `replicate t 1` を前に付けるので **1 が要る**。予算 1 では
+その 1 が出ない。これが [[budget-off-by-one]] の 1 ずれそのもの。
+
+上の木が空・予算 2 以上（`two V nil`）は `TwoBud_nilW` で緑。
 
 古い還元（`StkL` / `BdAll` 経由）も残っている:
 

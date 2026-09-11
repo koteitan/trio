@@ -77473,7 +77473,37 @@ theorem TwoBud_nilW {V : Jk1} (hJV : JkA V) (hV : PA V) (k : ℕ) (ks : List ℕ
   WPd_twoA_runB (k := k + 1) (b := 0) (by omega) hJV
     (fun ks' => hV (1 :: ks') (hJV : FrmN (1 :: ks') V)) ks
 
+/-! ### ★★★★★★ 壁は予算 1 の 1 文まで落ちる
+
+`WPd_ck` を開いたあと `WPd_twoOf` の予算を `0` に取れば、上の木に必要なのは
+`WPd (1 :: …) (two V W)` だけ。兄弟条件は `x ≤ 0 → x ≤ k` で足りる。
+だから予算がいくつでも、**予算 1 の場合 1 つ**に落ちる。 -/
+
+def TwoBud1 : Prop := ∀ V W : Jk1, JkA V → JkA W → PA V → PA W →
+    ∀ ks : List ℕ, WPd (1 :: ks) (Jk1.two V W)
+
+theorem TwoBud_of_TwoBud1 (h : TwoBud1) : TwoBud := by
+  intro V W hJV hJW hV hW k ks
+  refine (WPd_ck k ks _).mpr (fun r hr U N hU hUk hJN hNt => ?_)
+  refine WPd_step (r ++ ks) hU hUk ?_
+  refine WPd_twoOf (k := 0) hJN
+    (fun q hq => hNt q (fun x hx => by have := hq x hx; omega)) ?_
+  exact h V W hJV hJW hV hW (r ++ ks)
+
+theorem GOKall_of_TwoBud1 (h : TwoBud1) : ∀ T : Jk1, JkT T → GOK T :=
+  GOKall_of_TwoBud (TwoBud_of_TwoBud1 h)
+
+/-- ★★★★★★ 予算 1 の 1 文から目標（シート行376）まで。 -/
+theorem R376_of_TwoBud1 (h : TwoBud1) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_TwoBud (TwoBud_of_TwoBud1 h)
+
+theorem R375m61_of_TwoBud1 (h : TwoBud1) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_TwoBud (TwoBud_of_TwoBud1 h)
+
 #print axioms PA_all
+#print axioms TwoBud_of_TwoBud1
+#print axioms R376_of_TwoBud1
 #print axioms TwoBud_nilW
 #print axioms R376_of_TwoBud
 #print axioms R375m61_of_TwoBud

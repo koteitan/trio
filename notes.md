@@ -23293,3 +23293,31 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 
 `TwoBud_nilW`（緑）: `W = nil` かつ予算 2 以上は `WPd_twoA_runB` の `b = 0` で出る。
 つまり壁は「**2 の記録の上に何か置いたまま予算の位置に差す**」1 点。
+
+## 追記330 (2026-09-12): 壁は予算 1 の 1 文 `TwoBud1` まで落ちる
+
+`WPd_ck k ks` を開くと、各 `r`（成分 ≤ k）について
+
+    WPd (r++ks) (one U (two N (two V W)))
+
+を出せばよい。`WPd_step` のあと `WPd_twoOf` の**予算を `0` に取る**と、
+兄弟条件は `∀q(≤0)` で足り（貰っている `∀q(≤k)` から出る）、上の木に要るのは
+
+    WPd (1 :: (r++ks)) (two V W)
+
+だけ。だから予算がいくつでも予算 1 の場合 1 つに落ちる。
+
+    TwoBud1 := ∀ V W, JkA V → JkA W → PA V → PA W → ∀ ks, WPd (1 :: ks) (two V W)
+    TwoBud_of_TwoBud1 : TwoBud1 → TwoBud     ★緑
+    R376_of_TwoBud1   : TwoBud1 → 行376      ★緑（最短の道）
+
+### `TwoBud1` が硬い理由（1 ずれの正体、いちばん短い形）
+
+`WPd_ck 0 ks` を開くと `r` は全部 0 で、兄弟 `N` について貰えるのは
+
+    ∀ q（成分が全部 0）, WPd ((0::q)++B) N
+
+だけ。`N` の前に**0 しか足せない**。ところが走り 2 連の緑の証明
+（`WPd_twoTwoGen_run` → `WPd_nstN_run`）の階段 `nstN N i` は
+`hsib (q ++ replicate (t+1) 1)` と **1 を足す**。予算 1 ではその 1 が出ない。
+[[budget-off-by-one]] の 1 ずれはここに集約された。
