@@ -70209,5 +70209,47 @@ theorem R376_of_PayB (hp : PayB) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈
 
 #print axioms R376_of_PayB
 
+/-! ### `PayB` を `bdAC`（先端に荷を吊るしたブロック列）で言い直す
+
+`plug (BCtx ws) X = bdX X (reverse ws)` なので
+
+    PayB ↔ ∀ js C, Bok C → GOK (bdAC C js)
+
+幅 ≤ 1 は `GOK_bdAC_le1`（`WPd` 族、緑）で既に出ている。 -/
+
+theorem bdX_snoc : ∀ (js : List ℕ) (w : ℕ) (X : Jk1),
+    bdX X (js ++ [w]) = bdX (Jk1.one Jk1.nil (stkP w X)) js
+  | [], _, _ => rfl
+  | (j :: js), w, X => by
+      show Jk1.one Jk1.nil (stkP j (bdX X (js ++ [w]))) = _
+      rw [bdX_snoc js w X]
+      rfl
+
+theorem plug_BCtx_eq : ∀ (ws : List ℕ) (X : Jk1),
+    plug (BCtx ws) X = bdX X (List.reverse ws)
+  | [], _ => rfl
+  | (w :: ws), X => by
+      rw [plug_BCtx_cons, RunP_rep_nil, plug_BCtx_eq ws _, List.reverse_cons,
+        bdX_snoc (List.reverse ws) w X]
+
+theorem PayB_iff_bdAC : PayB ↔ ∀ (js : List ℕ) (C : TrioSeq), Bok C → GOK (bdAC C js) := by
+  constructor
+  · intro h js C hC
+    have h1 := h (List.reverse js) C hC
+    rw [plug_BCtx_eq, List.reverse_reverse, bdX_pay] at h1
+    exact h1
+  · intro h ws C hC
+    rw [plug_BCtx_eq, bdX_pay]
+    exact h (List.reverse ws) C hC
+
+/-- `bdA js` も同じ。`PayB` から全部出る（走りの壁は消えている）。 -/
+theorem GOK_bdA_ofPayB (hp : PayB) (js : List ℕ) : GOK (bdA js) := by
+  have h := GOK_BCtx_nil hp (List.reverse js)
+  rw [plug_BCtx_eq, List.reverse_reverse, bdX_nil] at h
+  exact h
+
+#print axioms PayB_iff_bdAC
+#print axioms GOK_bdA_ofPayB
+
 end Small
 end TRIO

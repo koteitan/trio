@@ -13,6 +13,12 @@
     PayB : ∀ ws (C : TrioSeq), Bok C → GOK (plug (BCtx ws) (pay nil C))
 
 「**兄弟が全部 `nil` のブロック文脈の上に、荷を 1 個吊るせる**」。これだけ。
+言い直すと（`PayB_iff_bdAC`、緑）
+
+    PayB ↔ ∀ js (C : TrioSeq), Bok C → GOK (bdAC C js)
+
+`bdAC C js` = ブロック列 `bdA js` の先端に荷 `C` を吊るした木。
+**幅 ≤ 1 は `GOK_bdAC_le1`（`WPd` 族）で既に緑。**残りは幅 2 以上。
 
     R376_of_PayB : PayB → 目標の行376 …(4,2,0)(5,3,0)
     GOK_oneStk_ofPayB : PayB → ∀ q, GOK (one nil (stk q))
