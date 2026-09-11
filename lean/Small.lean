@@ -69851,5 +69851,26 @@ theorem R6004_mem : R600 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms U375a6_mem_gen
 #print axioms R6004_mem
 
+/-! ### ★★★★★ `P(6,0,0)(2,1,0)`（`Q(2,1,0)` と同型、梯子 `LvB`） -/
+
+theorem R600_eq2 : R600 = R338 ++ U375a6 := by
+  simp [R600, R375m, R373, R344, R341, U375a6, U375a, List.append_assoc]
+
+theorem LvB_R600_1 : LvB P0 1 1 R600 := by
+  refine ⟨Aok_R600, Or.inr ⟨0, R338, U375a6, rfl, R600_eq2, ⟨Aok_R338, rfl⟩,
+    MidD_U375a6, ?_⟩⟩
+  intro s A' hA'
+  have hA'' : Aok A' ∧ 0 + s = 0 := hA'
+  obtain ⟨hAok, hs⟩ := hA''
+  have hs0 : s = 0 := by omega
+  subst hs0
+  simpa [shiftr01_zero] using U375a6_mem_gen hAok
+
+/-- ★★★★★★ `P(6,0,0)(2,1,0)`。 -/
+theorem R6005_mem : R600 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using LvB_snoc BaseOk_P0 1 1 R600 LvB_R600_1
+
+#print axioms R6005_mem
+
 end Small
 end TRIO
