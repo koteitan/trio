@@ -73312,5 +73312,88 @@ theorem R375m61_of_Q0Step (h : Q0Step) :
 #print axioms GOK_oneTwoNil
 #print axioms R375m61_of_Q0Step
 
+/-! ### `Q0Step` を「幅 0 のブロックの塔」に落とす
+
+`GOK_oneUV_RunSB ctx [] nil A` の階段は `appJ A (UtwP [] nil m)`、つまり
+**良い枠木 `A` の上に幅 0 のブロックを `m` 枚積んだ木**。 -/
+
+theorem appJ_UtwP0 (A : Jk1) : ∀ m : ℕ,
+    appJ A (UtwP ([] : List Jk1) Jk1.nil (m + 1))
+      = Jk1.one A (UtwP ([] : List Jk1) Jk1.nil m) := by
+  intro m
+  show Jk1.one (appJ A Jk1.nil) (appJ Jk1.nil (UtwP ([] : List Jk1) Jk1.nil m)) = _
+  rw [appJ_nil_UtwP]
+  rfl
+
+def W0Tow : Prop := ∀ (ctx : List Frm) (A : Jk1), GBase ctx → JkA A → GOK (plug ctx A) →
+  ∀ m : ℕ, GOK (plug ctx (appJ A (UtwP ([] : List Jk1) Jk1.nil m)))
+
+theorem Q0Step_of_W0Tow (h : W0Tow) : Q0Step := by
+  intro ctx A hc hA hGA
+  have hJT : JkT (plug ctx (Jk1.one A (RunS (([] : List Jk1) ++ [Jk1.nil])))) := by
+    show JkT (plug ctx (Jk1.one A (Jk1.two Jk1.nil Jk1.nil)))
+    exact GBase_CtxJT hc _ ⟨hA, trivial, trivial⟩
+  have hb := GOK_oneUV_RunSB ctx [] Jk1.nil A (by simp) trivial hJT hGA
+    (h ctx A hc hA hGA)
+  exact hb
+
+/-- 幅 0 のブロックの塔。`m = 0` がちょうど `FoneB`（`one A nil`）。 -/
+def OneTow : Prop := ∀ (ctx : List Frm) (A : Jk1), GBase ctx → JkA A → GOK (plug ctx A) →
+  ∀ m : ℕ, GOK (plug (ctx ++ [Frm.fone A]) (UtwP ([] : List Jk1) Jk1.nil m))
+
+theorem W0Tow_of_OneTow (h : OneTow) : W0Tow := by
+  intro ctx A hc hA hGA m
+  cases m with
+  | zero => exact hGA
+  | succ m =>
+      rw [appJ_UtwP0, ← plug_snoc]
+      exact h ctx A hc hA hGA m
+
+theorem R375m61_of_OneTow (h : OneTow) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Q0Step (Q0Step_of_W0Tow (W0Tow_of_OneTow h))
+
+/-! ### 荷つきの平らな鎖（`Z` 一般）
+
+`plug ctx (pay A C)`（`FoneB` を `APnil_gen0` で荷に落とした形）の展開は、
+`bms` 実測で `Z = A` を固定した平らな鎖になる:
+
+    R375m (6,0,0)(5,0,0) [2] = R344 [(4,2,0)(5,2,0)(6,0,0)]^3
+
+`(4,2,0)(5,2,0)(6,0,0)` = 「2 の記録 + `pay A []`」。だから `FLr`（`Z = nil`）を
+`Z` 一般にしたものが要る。 -/
+
+def FLrZ (Z : Jk1) : List TrioSeq → Jk1
+  | [] => Jk1.nil
+  | (B :: Bs) => Jk1.two (FLrZ Z Bs) (Jk1.pay Z B)
+
+theorem FLrZ_nil : ∀ Bs : List TrioSeq, FLrZ Jk1.nil Bs = FLr Bs
+  | [] => rfl
+  | (B :: Bs) => by
+      show Jk1.two (FLrZ Jk1.nil Bs) (Jk1.pay Jk1.nil B)
+        = Jk1.two (FLr Bs) (Jk1.pay Jk1.nil B)
+      rw [FLrZ_nil Bs]
+
+theorem JkA_FLrZ {Z : Jk1} (hZ : JkA Z) : ∀ (Bs : List TrioSeq), (∀ C ∈ Bs, Bok C) →
+    JkA (FLrZ Z Bs)
+  | [], _ => trivial
+  | (B :: Bs), h =>
+      ⟨JkA_FLrZ hZ Bs (fun C hC => h C (List.mem_cons_of_mem B hC)),
+        hZ, h B List.mem_cons_self⟩
+
+theorem twoIt_FLrZ (Z : Jk1) : ∀ (n : ℕ) (B : TrioSeq) (Bs : List TrioSeq),
+    twoIt (FLrZ Z Bs) (Jk1.pay Z B) n = FLrZ Z (List.replicate n B ++ Bs)
+  | 0, _, _ => rfl
+  | (n + 1), B, Bs => by
+      have e : List.replicate (n + 1) B ++ Bs = B :: (List.replicate n B ++ Bs) := by
+        simp [List.replicate_succ]
+      rw [e]
+      show Jk1.two (twoIt (FLrZ Z Bs) (Jk1.pay Z B) n) (Jk1.pay Z B)
+        = Jk1.two (FLrZ Z (List.replicate n B ++ Bs)) (Jk1.pay Z B)
+      rw [twoIt_FLrZ Z n B Bs]
+
+#print axioms R375m61_of_OneTow
+#print axioms twoIt_FLrZ
+
 end Small
 end TRIO
