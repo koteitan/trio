@@ -76007,5 +76007,173 @@ theorem R375m62_of_Q (hp : QPayAll) (hn : QNil) :
 #print axioms QAll_of_Q
 #print axioms R375m61_of_Q
 
+/-! ### ★★★★★★ 走りの長さの帰納法。目標行376 が「空木 1 文」に落ちる
+
+`R376_of_RunAll` は目標行を `RunAll := ∀ q ks, APd (true::ks) (stk q)`
+（全部 `nil` の走り `stk q` が 1 の枠の直上で良い）1 本に落としている。
+`GOK_stkW_gen` の階段
+
+    hstair : ∀ k, GOK (plug (ctx0++[fone V]) (two N (stkP p (nstQ N p k))))
+
+は `N = nil` にすると `nstQ nil p (k+1) = one nil (two nil (stkP p (nstQ nil p k)))`
+なので、階段の 1 段は**文脈を `replicate (p+1) (ftwo nil) ++ [fone nil]` だけ
+伸ばして同じ木に戻る**。つまり
+
+- `k` の帰納法: 文脈を伸ばすだけ（同じ `q`）
+- `k = 0`: `two nil (stkP p nil) = stk (p+1)`、走りが 1 短い
+- 文脈を伸ばす側条件: `GOK (plug D (stk (p+1)))`、やはり 1 短い
+
+の 3 つで閉じる。**走りの長さ `q` の帰納法が回る。**
+底に残るのは `q = 0`、すなわち「空木がこの族の文脈で良い」だけ。 -/
+
+/-- 走りの階段で出てくる文脈。`GCtx (true::ks)` から出発し、
+`replicate j (ftwo nil) ++ [fone nil]`（全部 `nil` の枠）で閉じる。 -/
+inductive RCx : List Frm → Prop
+  | base {ks : List Bool} {ctx : List Frm} : GCtx (true :: ks) ctx → RCx ctx
+  | step {D : List Frm} {j : ℕ} : RCx D → GOK (plug D (stk j)) →
+      RCx (D ++ List.replicate j (Frm.ftwo Jk1.nil) ++ [Frm.fone Jk1.nil])
+
+theorem CtxJT_repF {ctx : List Frm} (h : CtxJT ctx) (j : ℕ) :
+    CtxJT (ctx ++ List.replicate j (Frm.ftwo Jk1.nil)) := by
+  induction j with
+  | zero => simpa using h
+  | succ j ih =>
+      have e : ctx ++ List.replicate (j + 1) (Frm.ftwo Jk1.nil)
+          = (ctx ++ List.replicate j (Frm.ftwo Jk1.nil)) ++ [Frm.ftwo Jk1.nil] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e]
+      intro X hX
+      rw [plug_snoc2]
+      exact ih _ ⟨trivial, hX⟩
+
+theorem plug_stkP_one (D : List Frm) (j : ℕ) (X : Jk1) :
+    plug (D ++ List.replicate j (Frm.ftwo Jk1.nil) ++ [Frm.fone Jk1.nil]) X
+      = plug D (stkP j (Jk1.one Jk1.nil X)) := by
+  rw [plug_snoc, plug_append, plug_repF]
+
+theorem plug_stkP_gen (D : List Frm) (j : ℕ) (X : Jk1) :
+    plug D (stkP j X) = plug (D ++ List.replicate j (Frm.ftwo Jk1.nil)) X := by
+  rw [plug_append, plug_repF]
+
+theorem RCx_CtxJT : ∀ {D : List Frm}, RCx D → CtxJT D := by
+  intro D h
+  induction h with
+  | @base ks ctx hc =>
+      obtain ⟨ctx0, V, rfl, -⟩ := GCtx_split ks ctx hc
+      intro X hX
+      exact JkT_plug _ (GCtx_CtxOk (true :: ks) _ hc) X ((CtxX_snoc1 ctx0 V X).mpr hX)
+  | @step D j _ _ ih => exact CtxJT_fone (CtxJT_repF ih j) trivial
+
+theorem RCx_split : ∀ {D : List Frm}, RCx D →
+    ∃ (ctx0 : List Frm) (V : Jk1), D = ctx0 ++ [Frm.fone V] ∧ GOK (plug ctx0 V) := by
+  intro D h
+  cases h with
+  | base hc => exact GCtx_split _ _ hc
+  | @step D j _ hG =>
+      refine ⟨D ++ List.replicate j (Frm.ftwo Jk1.nil), Jk1.nil, rfl, ?_⟩
+      rw [← plug_stkP_gen]
+      exact hG
+
+theorem RCx_fone0 {D : List Frm} (hD : RCx D) (hG : GOK (plug D Jk1.nil)) :
+    RCx (D ++ [Frm.fone Jk1.nil]) := by
+  have h := RCx.step (j := 0) hD (show GOK (plug D (stk 0)) from hG)
+  simpa using h
+
+/-- ★ 残る 1 文。「空木がこの族のどの文脈でも良い」。 -/
+def RNil : Prop := ∀ D : List Frm, RCx D → GOK (plug D Jk1.nil)
+
+/-- 底（`GCtx` そのもの）は緑。 -/
+theorem RNil_base {ks : List Bool} {ctx : List Frm} (hc : GCtx (true :: ks) ctx) :
+    GOK (plug ctx Jk1.nil) :=
+  (APd_iff (true :: ks) Jk1.nil).mp (APd_nil (true :: ks)) ctx hc
+
+theorem GOK_towNil (h : RNil) (m : ℕ) : ∀ D : List Frm, RCx D →
+    GOK (plug D (plug (List.replicate m (Frm.fone Jk1.nil)) Jk1.nil)) := by
+  induction m with
+  | zero => intro D hD; exact h D hD
+  | succ m ih =>
+      intro D hD
+      have e : plug (List.replicate (m + 1) (Frm.fone Jk1.nil)) Jk1.nil
+          = Jk1.one Jk1.nil (plug (List.replicate m (Frm.fone Jk1.nil)) Jk1.nil) := by
+        rw [List.replicate_succ]
+        rfl
+      rw [e, ← plug_snoc]
+      exact ih _ (RCx_fone0 hD (h D hD))
+
+theorem GOK_stk_one (h : RNil) : ∀ D : List Frm, RCx D → GOK (plug D (stk 1)) := by
+  intro D hD
+  obtain ⟨ctx0, V, rfl, hGV⟩ := RCx_split hD
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two Jk1.nil Jk1.nil)) :=
+    RCx_CtxJT hD _ ⟨trivial, trivial⟩
+  exact GOK_twoNilW_gen (N := Jk1.nil) ctx0 V trivial hJT hGV
+    (fun m => GOK_towNil h m _ hD)
+
+/-- ★★★★★ 走りの長さの 1 段（`q+1` から `q+2`）。`RNil` すら要らない。 -/
+theorem GOK_stk_step (p : ℕ) (hp : ∀ D : List Frm, RCx D → GOK (plug D (stk (p + 1)))) :
+    ∀ D : List Frm, RCx D → GOK (plug D (stk (p + 2))) := by
+  have hst : ∀ (k : ℕ) (D : List Frm), RCx D →
+      GOK (plug D (Jk1.two Jk1.nil (stkP p (nstQ Jk1.nil p k)))) := by
+    intro k
+    induction k with
+    | zero => intro D hD; exact hp D hD
+    | succ k ih =>
+        intro D hD
+        have hD2 : RCx (D ++ List.replicate (p + 1) (Frm.ftwo Jk1.nil)
+            ++ [Frm.fone Jk1.nil]) := RCx.step hD (hp D hD)
+        have h3 := ih _ hD2
+        rw [plug_stkP_one] at h3
+        exact h3
+  intro D hD
+  obtain ⟨ctx0, V, rfl, hGV⟩ := RCx_split hD
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V])
+      (Jk1.two Jk1.nil (stkP p (Jk1.two Jk1.nil Jk1.nil)))) :=
+    RCx_CtxJT hD _ ⟨trivial, JkA_stkP p ⟨trivial, trivial⟩⟩
+  have e2 : Jk1.two Jk1.nil (stkP p (Jk1.two Jk1.nil Jk1.nil)) = stk (p + 2) :=
+    stkP_two_nil_nil (p + 1)
+  rw [← e2]
+  exact GOK_stkW_gen (N := Jk1.nil) ctx0 V p trivial hJT hGV (fun k => hst k _ hD)
+
+/-- ★★★★★★ 全部 `nil` の走りは、長さの帰納法で全部出る。 -/
+theorem GOK_stk_RCx (h : RNil) : ∀ (q : ℕ) (D : List Frm), RCx D → GOK (plug D (stk q))
+  | 0 => fun D hD => h D hD
+  | 1 => GOK_stk_one h
+  | (p + 2) => GOK_stk_step p (GOK_stk_RCx h (p + 1))
+
+theorem RunAll_of_RNil (h : RNil) : RunAll := by
+  intro q ks
+  rw [APd_iff]
+  intro ctx hc
+  exact GOK_stk_RCx h q ctx (RCx.base hc)
+
+/-- ★★★★★★ 目標（シート行376）が空木 1 文に落ちた。 -/
+theorem R376_of_RNil (h : RNil) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RunAll (RunAll_of_RNil h)
+
+/-- 空木の残りは「走りの上の荷」1 文。 -/
+def RHang : Prop := ∀ (D : List Frm) (j : ℕ) (C : TrioSeq), RCx D → Bok C →
+    GOK (plug D (stkP j (Jk1.pay Jk1.nil C)))
+
+theorem RNil_of_RHang (h : RHang) : RNil := by
+  intro D hD
+  induction hD with
+  | @base ks ctx hc => exact RNil_base hc
+  | @step D j hD hG _ =>
+      rw [plug_stkP_one]
+      rw [plug_stkP_gen]
+      refine APnil_gen0 (D ++ List.replicate j (Frm.ftwo Jk1.nil)) Jk1.nil
+        (CtxJT_repF (RCx_CtxJT hD) j _ ⟨trivial, trivial⟩) ?_ ?_
+      · rw [← plug_stkP_gen]; exact hG
+      · intro C hC
+        rw [← plug_stkP_gen]
+        exact h D j C hD hC
+
+theorem R376_of_RHang (h : RHang) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RNil (RNil_of_RHang h)
+
+#print axioms GOK_stk_RCx
+#print axioms R376_of_RNil
+#print axioms R376_of_RHang
+
 end Small
 end TRIO
