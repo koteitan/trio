@@ -72759,5 +72759,146 @@ theorem GOK_FLr_rep_nil (m : ℕ) :
 #print axioms GOK_flat2
 #print axioms GOK_FLr_rep_nil
 
+/-! ### ★★★★★★ 平らな鎖の入れ子帰納法（荷の W 帰納 × 鎖のリスト）
+
+    PFL Bs := GOK (one nil (two nil (FLr Bs)))
+    Pay2 ⟺ ∀ B, Bok B → PFL [B]
+
+`B`（右端の荷）の W 帰納で、`B` に親があれば `innerJt0`、`B` が根で終われば
+`dupJt0` の平らな鎖 `twoIt (FLr Bs) (pay nil B₀) n = FLr (replicate n B₀ ++ Bs)`。
+**残るのは `B = []`（右端が裸の 2 の記録）の 1 手だけ。** -/
+
+def ctxFL : List Frm := [Frm.fone Jk1.nil, Frm.ftwo Jk1.nil]
+
+theorem plug_ctxFL (X : Jk1) :
+    plug ctxFL X = Jk1.one Jk1.nil (Jk1.two Jk1.nil X) := rfl
+
+def PFL (Bs : List TrioSeq) : Prop := GOK (plug ctxFL (FLr Bs))
+
+theorem twoIt_FLr : ∀ (n : ℕ) (B : TrioSeq) (Bs : List TrioSeq),
+    twoIt (FLr Bs) (Jk1.pay Jk1.nil B) n = FLr (List.replicate n B ++ Bs)
+  | 0, _, _ => rfl
+  | (n + 1), B, Bs => by
+      have e : List.replicate (n + 1) B ++ Bs = B :: (List.replicate n B ++ Bs) := by
+        simp [List.replicate_succ]
+      rw [e]
+      show Jk1.two (twoIt (FLr Bs) (Jk1.pay Jk1.nil B) n) (Jk1.pay Jk1.nil B)
+        = Jk1.two (FLr (List.replicate n B ++ Bs)) (Jk1.pay Jk1.nil B)
+      rw [twoIt_FLr n B Bs]
+
+theorem JkT_PFL {B : TrioSeq} (hB : Bok B) {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) :
+    JkT (plug ctxFL (FLr (B :: Bs))) :=
+  ⟨⟨trivial, trivial, JkA_FLr Bs hBs, trivial, hB⟩, trivial⟩
+
+/-- 右端の荷が空のときの 1 手。**これだけが残っている壁。** -/
+def FLnilStep : Prop := ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → PFL Bs →
+  PFL (([] : TrioSeq) :: Bs)
+
+theorem PFL_rep (h : FLnilStep) {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hIH : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → PFL Bs → PFL (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (hP : PFL Bs) :
+    ∀ n : ℕ, PFL (List.replicate n B₀ ++ Bs)
+      ∧ (∀ C ∈ List.replicate n B₀ ++ Bs, Bok C) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hP, hBs⟩
+  | succ n ih =>
+      have e : List.replicate (n + 1) B₀ ++ Bs = B₀ :: (List.replicate n B₀ ++ Bs) := by
+        simp [List.replicate_succ]
+      rw [e]
+      refine ⟨hIH _ ih.2 ih.1, ?_⟩
+      intro C hC
+      rcases List.mem_cons.mp hC with rfl | hC'
+      · exact hB₀
+      · exact ih.2 C hC'
+
+theorem PFL_dup (h : FLnilStep) {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hB : Bok (B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+    (hIH : ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → PFL Bs → PFL (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (hP : PFL Bs) :
+    PFL ((B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) :: Bs) := by
+  have hrep := PFL_rep h hB₀ hIH hBs hP
+  intro ws hw hG
+  refine GoodFb_snoc_dupJt0 hw (JkT_PFL hB hBs) ?_
+  intro n hn
+  have h2 := (hrep n).1 ws hw hG
+  rw [← twoIt_FLr n B₀ Bs] at h2
+  exact h2
+
+/-- ★★★★★★ 入れ子帰納法の本体。残り 1 手 `FLnilStep` だけ。 -/
+theorem PFL_cons (h : FLnilStep) : ∀ (B : TrioSeq), Bok B →
+    ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → PFL Bs → PFL (B :: Bs) := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ Bs : List TrioSeq,
+      (∀ C ∈ Bs, Bok C) → PFL Bs → PFL (B :: Bs)} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb Bs hBs hP
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact h Bs hBs hP
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e2]
+        exact PFL_dup h Bok_nil (by rw [← e2]; exact hBb)
+          (fun Bs' hBs' hP' => h Bs' hBs' hP') hBs hP
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        rw [hsplit]
+        exact PFL_dup h hdb (by rw [← hsplit]; exact hBb) (hdl hdb) hBs hP
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 hw (JkT_PFL hBb hBs) hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) Bs hBs hP ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb Bs hBs hP
+  exact key hBb.mem hBb Bs hBs hP
+
+/-- ★★★★★★ `FLnilStep` 1 本から壁 `Pay2` が出る。 -/
+theorem Pay2_of_FLnilStep (h : FLnilStep) : Pay2 := by
+  intro B hB
+  have h0 : PFL ([] : List TrioSeq) := by
+    show GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil Jk1.nil))
+    exact GOK_flat2 0
+  have h1 := PFL_cons h B hB [] (by simp) h0
+  exact h1
+
+#print axioms PFL_cons
+#print axioms Pay2_of_FLnilStep
+
 end Small
 end TRIO
