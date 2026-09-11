@@ -72947,5 +72947,141 @@ theorem R375m61_of_PFLtow (h : PFLtow) :
 #print axioms PFL_single_nil
 #print axioms R375m61_of_PFLtow
 
+/-! ### ★★★★★★ 入れ子帰納法を文脈一般に
+
+`GoodFb_snoc_dupJt0` / `innerJt0` はもともと文脈一般なので、`PFL` の文脈を
+`ctxFL` に固定する必要はない。文脈を一般にすると `B = []` の場合（階段）が
+**塔の文脈で `PFLg` を使えるようになり、閉じる**。 -/
+
+def CtxJT (ctx : List Frm) : Prop := ∀ X : Jk1, JkA X → JkT (plug ctx X)
+
+theorem CtxJT_ctxFL : CtxJT ctxFL := by
+  intro X hX
+  exact ⟨⟨trivial, trivial, hX⟩, trivial⟩
+
+theorem plug_oneTwoBlk (ctx : List Frm) (A X : Jk1) :
+    plug (ctx ++ [Frm.fone A, Frm.ftwo Jk1.nil]) X
+      = plug ctx (Jk1.one A (Jk1.two Jk1.nil X)) := by
+  rw [show ctx ++ [Frm.fone A, Frm.ftwo Jk1.nil]
+      = (ctx ++ [Frm.fone A]) ++ [Frm.ftwo Jk1.nil] from by simp,
+    plug_snoc2, plug_snoc]
+
+theorem CtxJT_ext {ctx : List Frm} (h : CtxJT ctx) {A : Jk1} (hA : JkA A) :
+    CtxJT (ctx ++ [Frm.fone A, Frm.ftwo Jk1.nil]) := by
+  intro X hX
+  rw [plug_oneTwoBlk]
+  exact h _ ⟨hA, trivial, hX⟩
+
+def PFLg (ctx : List Frm) (Bs : List TrioSeq) : Prop := GOK (plug ctx (FLr Bs))
+
+/-- 文脈一般の残り 1 手。 -/
+def FLnilStepG : Prop := ∀ (ctx : List Frm), CtxJT ctx → ∀ Bs : List TrioSeq,
+  (∀ C ∈ Bs, Bok C) → PFLg ctx Bs → PFLg ctx (([] : TrioSeq) :: Bs)
+
+theorem PFLg_rep (h : FLnilStepG) {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    {ctx : List Frm} (hc : CtxJT ctx)
+    (hIH : ∀ (ctx' : List Frm), CtxJT ctx' → ∀ Bs : List TrioSeq,
+      (∀ C ∈ Bs, Bok C) → PFLg ctx' Bs → PFLg ctx' (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (hP : PFLg ctx Bs) :
+    ∀ n : ℕ, PFLg ctx (List.replicate n B₀ ++ Bs)
+      ∧ (∀ C ∈ List.replicate n B₀ ++ Bs, Bok C) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hP, hBs⟩
+  | succ n ih =>
+      have e : List.replicate (n + 1) B₀ ++ Bs = B₀ :: (List.replicate n B₀ ++ Bs) := by
+        simp [List.replicate_succ]
+      rw [e]
+      refine ⟨hIH ctx hc _ ih.2 ih.1, ?_⟩
+      intro C hC
+      rcases List.mem_cons.mp hC with rfl | hC'
+      · exact hB₀
+      · exact ih.2 C hC'
+
+theorem PFLg_dup (h : FLnilStepG) {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hB : Bok (B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+    {ctx : List Frm} (hc : CtxJT ctx)
+    (hIH : ∀ (ctx' : List Frm), CtxJT ctx' → ∀ Bs : List TrioSeq,
+      (∀ C ∈ Bs, Bok C) → PFLg ctx' Bs → PFLg ctx' (B₀ :: Bs))
+    {Bs : List TrioSeq} (hBs : ∀ C ∈ Bs, Bok C) (hP : PFLg ctx Bs) :
+    PFLg ctx ((B₀ ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) :: Bs) := by
+  have hrep := PFLg_rep h hB₀ hc hIH hBs hP
+  intro ws hw hG
+  refine GoodFb_snoc_dupJt0 hw (hc _ ⟨JkA_FLr Bs hBs, trivial, hB⟩) ?_
+  intro n hn
+  have h2 := (hrep n).1 ws hw hG
+  rw [← twoIt_FLr n B₀ Bs] at h2
+  exact h2
+
+/-- ★★★★★★ 文脈一般の入れ子帰納法。残り 1 手 `FLnilStepG` だけ。 -/
+theorem PFLg_cons (h : FLnilStepG) : ∀ (B : TrioSeq), Bok B →
+    ∀ (ctx : List Frm), CtxJT ctx → ∀ Bs : List TrioSeq,
+      (∀ C ∈ Bs, Bok C) → PFLg ctx Bs → PFLg ctx (B :: Bs) := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ (ctx : List Frm), CtxJT ctx →
+      ∀ Bs : List TrioSeq, (∀ C ∈ Bs, Bok C) → PFLg ctx Bs → PFLg ctx (B :: Bs)} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb ctx hc Bs hBs hP
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact h ctx hc Bs hBs hP
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e2]
+        exact PFLg_dup h Bok_nil (by rw [← e2]; exact hBb) hc
+          (fun ctx' hc' Bs' hBs' hP' => h ctx' hc' Bs' hBs' hP') hBs hP
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        rw [hsplit]
+        exact PFLg_dup h hdb (by rw [← hsplit]; exact hBb) hc (hdl hdb) hBs hP
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 hw
+          (hc _ ⟨JkA_FLr Bs hBs, trivial, hBb⟩) hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) ctx hc Bs hBs hP ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb ctx hc Bs hBs hP
+  exact key hBb.mem hBb ctx hc Bs hBs hP
+
+theorem FLnilStep_of_FLnilStepG (h : FLnilStepG) : FLnilStep :=
+  fun Bs hBs hP => h ctxFL CtxJT_ctxFL Bs hBs hP
+
+#print axioms PFLg_cons
+
 end Small
 end TRIO
