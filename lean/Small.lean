@@ -77037,5 +77037,35 @@ theorem Pay2_of_ChainStep (h : ChainStep) : Pay2 :=
 #print axioms ChainW_of_ChainStep
 #print axioms R375m61_of_ChainStep
 
+/-! ### ★★★★★★ 壁の 3 つ目の最小形：`TwoStepP`（`TwoStep` の荷への制限）
+
+`TwoOk_pay : TwoOk Z → Bok B → TwoOk (pay Z B)` は緑なので `TwoOk (pay nil B)` は緑。
+残るのは「その上に 2 の記録を 1 本足す」、すなわち古い壁 `TwoStep` の
+`Z = pay nil B` への制限だけ。 -/
+
+theorem TwoOk_payNil {B : TrioSeq} (hB : Bok B) : TwoOk (Jk1.pay Jk1.nil B) :=
+  TwoOk_pay B hB Jk1.nil trivial TwoOk_nil
+
+def TwoStepP : Prop := ∀ B : TrioSeq, Bok B → TwoOk (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B))
+
+theorem TwoStepP_of_TwoStep (h : TwoStep) : TwoStepP :=
+  fun B hB => h (Jk1.pay Jk1.nil B) ⟨trivial, hB⟩ (TwoOk_payNil hB)
+
+theorem Pay2_of_TwoStepP (h : TwoStepP) : Pay2 := by
+  intro B hB
+  refine (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil) ?_)
+  have hh := h B hB Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+  simpa using hh
+
+/-- ★★★★★★ いま開いている最小の行列は `TwoStepP` 1 文でも出る。 -/
+theorem R375m61_of_TwoStepP (h : TwoStepP) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_TwoStepP h)
+
+#print axioms TwoOk_payNil
+#print axioms Pay2_of_TwoStepP
+#print axioms R375m61_of_TwoStepP
+
 end Small
 end TRIO

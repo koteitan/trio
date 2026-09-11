@@ -23039,3 +23039,46 @@ Lean では `R600c` / `R600k` / `R600j` / `AltT` / `LadC` / `LadK` / `LadAlt` �
 `WPd_twoA_runB` の証明は `GOK_oneUV_RunSB`（`RunS` = 末尾が裸の 2 の記録）を使う。
 荷が付くと `GOK_oneUV_genM` の `hVs`（語が裸の 2 の記録で終わる）が壊れるので、
 **次は `GOK_oneUV_genM` の「末尾に荷を吊るす」版を書く**ことになる。
+
+## 追記324 (2026-09-12): 壁の最小形が 3 つ揃った。荷の高さ 4/5/6 の境目も確定
+
+### 1. `TwoOk_pay` は緑。壁は `TwoStep` の荷への制限だけ
+
+    TwoOk_pay   : TwoOk Z → Bok B → TwoOk (pay Z B)      ★既に緑（W 帰納）
+    TwoOk_payNil: TwoOk (pay nil B)                       ★緑（新）
+    TwoStepP    := ∀ B, Bok B → TwoOk (two nil (pay nil B))
+    TwoStepP_of_TwoStep / Pay2_of_TwoStepP / R375m61_of_TwoStepP   ★全部緑
+
+つまり「荷を付ける」のは緑で、「その上に 2 の記録を 1 本足す」だけが壁。
+これで壁の最小形は 3 つ（`ChainStep` / `ZApp2c` / `TwoStepP`）揃った。全部同じ 1 手。
+
+### 2. 荷の高さ 4 / 5 / 6 の境目（同じ語の形で並ぶ）
+
+    payL4 B = one nil (pay (two nil (two nil nil)) B)
+      jk1 l = (l+1,1,0)(l+2,2,0)(l+3,2,0) ++ B↑(l+2)       ★緑（hang4）
+    NQB B   = one nil (two nil (pay (two nil nil) B))
+      jk1 l = (l+1,1,0)(l+2,2,0)(l+3,2,0) ++ B↑(l+3)       ★緑（hang5）
+    Wall2 B = one nil (two nil (two nil (pay nil B)))
+      jk1 l = (l+1,1,0)(l+2,2,0)(l+3,2,0) ++ B↑(l+4)       ★壁（hang6）
+
+**語の 2 の記録の並びは 3 つとも同じで、荷の高さだけが 1 ずつ違う。**
+`payL4` は `APpayJ`、`NQB` は `TwoOk_pay` + `APd_twoTwoPay` で出る。
+`Wall2` は荷が走りの「上」に来るので、どちらの道具も届かない。
+
+### 3. 予算が本当に効く場所（`flat_mem''` が使えない理由）
+
+`ChainStep` を `GOK_T6` と同じ `flat_mem''` で攻めると、塔が
+**平らな鎖** `twoIt A nil n`（同じ高さの 2 の記録 n 本）になる。これは
+`WPd_twoA_runB` を n 回使うので予算を n 消費し、`ChainStep` の固定予算 `k` を
+超える（`n ≤ k - b` しか取れない）。`GOK_T6` では結論が `GOK`（予算なし）
+だったので n ごとに予算を変えられた。**これが `budget-off-by-one` の実際の効き方。**
+
+`WPd_twoA_runB` が使う `GOK_oneUV_RunSB` の塔（`UtwP`、1 の記録で区切る）は
+予算を増やさないが、こちらは `GOK_oneUV_genM` の `hVs`（語が裸の 2 の記録で
+終わる）を壊すので荷が付けられない。**2 つの塔のどちらも使えないのが壁の正体。**
+
+### 4. 字の在庫（続き）
+
+語に `nil` の字を混ぜると `(2,2,1)` が増える（`colJ a b nil = [(a+1,b+1,1)]`）。
+`Rz1 (T6w 5 ++ nil^20)` は `Rz1 (T6w 5)` より大きいが `Rz1 (T6w 6)` より小さい。
+`nil` を先頭や交互に置くと非標準になる。シートは据え置き。

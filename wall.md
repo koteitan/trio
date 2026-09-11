@@ -71,6 +71,21 @@
 
 **`(k+1) ::` の形だけが壁。** `0 ::` は緑。
 
+## 壁の最小形は 3 つ（全部同じ 1 手、言い換えが違うだけ）
+
+    (1) ChainStep : WPd_twoA_runB（緑）の結論 two A nil を two A (pay nil Y) に
+    (2) ZApp2c    : ∀ N ∈ VCh nil, GOK (one nil (two nil (two N nil)))
+    (3) TwoStepP  : ∀ B, Bok B → TwoOk (two nil (pay nil B))
+                    （古い壁 TwoStep の Z = pay nil B への制限）
+
+    ChainStep → ChainW → ZApp2c → Pay2 → R375m (6,1,0)       全部緑
+    TwoStepP  → Pay2 → R375m (6,1,0)                          全部緑
+    TwoStep → TwoStepP                                        緑
+
+底はどれも緑:
+`TwoOk_pay : TwoOk Z → Bok B → TwoOk (pay Z B)`、`TwoOk_payNil`、
+`ZApp2c_nil`、`ZApp2c_twoItNil`、`Wall2 []`、`Wall2 [(0,0,0)] = T6`。
+
 ## もう 1 つの壁の最小形：`ZApp2`（いま開いている最小の行列）
 
     Pay2 := ∀ B, Bok B → GOK (Wall2 B)
