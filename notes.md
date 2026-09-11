@@ -22270,3 +22270,48 @@ Acc（DM）帰納でほどける:
 必要があり、`Rq (false::ks) U = TopOk U` が鎖（`two` 頭）を弾く。
 `WPd` は `Rq` を外した族だが今度は予算が足りない。**`Rq` も予算も無い深さ 0 の
 族**を作るのが次の一手。
+
+## 追記307 (2026-09-12): `Rq` も予算も無い族 `ECtx` / `EOk`（2 の記録が無料）
+
+### 1. 設計
+
+文脈の形を `(k, ks)` で持つ。内側から「1 の枠 `k` 枚」「2 の枠」
+「1 の枠 `ks.head` 枚」「2 の枠」…、一番外は `fone nil`。
+
+    ECtx 0 []        D := D = [fone nil]
+    ECtx (k+1) ks    D := D = D' ++ [fone U] ∧ ECtx k ks D' ∧ JkA U ∧ EOk k ks U
+    ECtx 0 (k'::ks)  D := D = D' ++ [ftwo N] ∧ ECtx k' ks D' ∧ JkA N ∧ ∀ j, EOk j ks N
+    EOk k ks X := ∀ D, ECtx k ks D → GOK (plug D X)
+
+停止性は `(ks.length, k)` の辞書式。**2 の枠の場合はリストが 1 短くなる**ので、
+その木の条件を「梯子の深さ `j` について全称」にしても回る。
+`WPd` の予算は「`∀ j` を入れると DM 順序が壊れる」から付いていた。
+リスト長を第 1 成分にすると要らなくなる。
+
+### 2. 緑になったこと
+
+    EOk_one : JkA U → EOk k ks U → EOk (k+1) ks X → EOk k ks (one U X)
+    EOk_two : JkA N → (∀ j, EOk j ks N) → EOk 0 (k::ks) X → EOk k ks (two N X)
+    EOk_twoNil : (∀ j, EOk j ks N) → ∀ k, EOk (k+1) ks (two N nil)
+
+`EOk_two` は `plug_snoc2` だけ。**2 の記録が予算を使わない**のが要点。
+`EOk_twoNil` は `GOK_twoNil_gen` の階段が族の `∀ j` の条件そのもの。
+
+### 3. 残り: 荷（`pay`）と空木（`nil`）
+
+    EOk k ks nil, k = j+1（1 の枠止まり）: APnil_gen0 + 荷
+    EOk 0 (k'::ks) nil（2 の枠止まり）   : EOk_twoNil（k' ≥ 1 なら）★出る
+    EOk k ks (pay Y C)                  : PS_cons / PZ_cons の W 帰納
+
+荷のところで `SAppend D' Y`（∀M 良い → `GOK (plug (D'++[fone M]) Y)`）が要る。
+`D' ++ [fone M]` が族に入るには `EOk` が要るが、`M` は `GOK (plug D' M)` しか
+持たない。**1 の枠の側条件を `GOK (plug D' U)` に弱めれば `SAppend` は無料**。
+弱めても `EOk_one` / `EOk_twoNil` / `ECtx_JkT` は通る（確認済み）。
+
+2 の枠側の `ZAppend` は同じ手が使えない。2 の枠の条件は塔のために
+`∀ j, EOk j ks N`（強い）でなければならず、弱めると `EOk_twoNil` が死ぬ。
+鎖に制限（`TSibF_pay`）しても、鎖の要素 `two V' (pay Y B)` の強さに
+「任意の荷 `B` についての `pay`」が要って循環する。
+
+**次の一手**: 1 の枠の条件を弱めて、荷と空木の「1 の枠止まり」側を全部緑にする。
+残るのは 2 の枠止まりの荷（`ZAppend`）1 つになる見込み。
