@@ -70936,5 +70936,139 @@ theorem WGd_ck (b i : ℕ) (ks : List ℕ) (V : Jk1) :
 
 #print axioms WGd_ck
 
+/-! ### `WGd` の文脈版 -/
+
+def WGtx : ℕ → List ℕ → List Frm → Prop
+  | _, [], ctx => ctx = []
+  | b, (0 :: ks), ctx => ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WGtx b ks ctx' ∧ FrmG ks U ∧ WGd b ks U ∧
+      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U)
+  | b, ((i + 1) :: ks), ctx => ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ i) (ctx' : List Frm)
+      (U : Jk1) (Ns : List Jk1),
+      ctx = ctx' ++ PBlk Ns U ∧ Ns.length = i + 1 ∧ WGtx b (r ++ ks) ctx' ∧
+      FrmG (r ++ ks) U ∧ WGd b (r ++ ks) U ∧
+      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) ∧
+      (∀ N ∈ Ns, JkA N) ∧
+      (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N)
+termination_by b s _ => (b, ((s : List ℕ) : Multiset ℕ))
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.right _ (dm_ws 0 ks [] (by simp))
+      | exact Prod.Lex.right _ (dm_ws (i + 1) ks r
+          (by
+            intro x hx
+            have := (by assumption : ∀ x ∈ r, x ≤ i) x hx
+            omega))
+
+theorem WGtx_bnil (b : ℕ) (ctx : List Frm) : WGtx b [] ctx ↔ ctx = [] := by rw [WGtx]
+
+theorem WGtx_c0 (b : ℕ) (ks : List ℕ) (ctx : List Frm) :
+    WGtx b (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      WGtx b ks ctx' ∧ FrmG ks U ∧ WGd b ks U ∧
+      (∀ (e : ℕ) (ks' : List ℕ), ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) := by
+  rw [WGtx]
+
+theorem WGtx_ck (b i : ℕ) (ks : List ℕ) (ctx : List Frm) :
+    WGtx b ((i + 1) :: ks) ctx ↔ ∃ (r : List ℕ) (_ : ∀ x ∈ r, x ≤ i) (ctx' : List Frm)
+      (U : Jk1) (Ns : List Jk1),
+      ctx = ctx' ++ PBlk Ns U ∧ Ns.length = i + 1 ∧ WGtx b (r ++ ks) ctx' ∧
+      FrmG (r ++ ks) U ∧ WGd b (r ++ ks) U ∧
+      (∀ (e : ℕ) (ks' : List ℕ), r ++ ks = e :: ks' → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (e :: (q ++ ks')) U) ∧
+      (∀ N ∈ Ns, JkA N) ∧
+      (∀ j : ℕ, j ≤ i → ∀ N : Jk1, AtIx Ns j N → ∀ b' : ℕ, b' < b →
+        ∀ q : List ℕ, (∀ x ∈ q, x < b) → WGd b' (j :: (q ++ (r ++ ks))) N) := by
+  rw [WGtx]
+
+theorem WGd_iff : ∀ (b : ℕ) (ks : List ℕ) (V : Jk1),
+    WGd b ks V ↔ ∀ ctx : List Frm, WGtx b ks ctx → GOK (plug ctx V)
+  | b, [], V => by
+      rw [WGd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WGtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WGtx_bnil b []).mpr rfl)
+  | b, (0 :: ks), V => by
+      rw [WGd_c0]
+      constructor
+      · intro h ctx hc
+        rw [WGtx_c0] at hc
+        obtain ⟨ctx', U, rfl, hc', hU, hUk, hUs⟩ := hc
+        rw [plug_snoc]
+        exact (WGd_iff b ks (Jk1.one U V)).mp (h U hU hUk hUs) ctx' hc'
+      · intro h U hU hUk hUs
+        refine (WGd_iff b ks (Jk1.one U V)).mpr ?_
+        intro ctx' hc'
+        rw [← plug_snoc]
+        exact h (ctx' ++ [Frm.fone U])
+          ((WGtx_c0 b ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk, hUs⟩)
+  | b, ((i + 1) :: ks), V => by
+      rw [WGd_ck]
+      constructor
+      · intro h ctx hc
+        rw [WGtx_ck] at hc
+        obtain ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hUs, hJNs, hNt⟩ := hc
+        rw [plug_PBlk]
+        exact (WGd_iff b (r ++ ks) _).mp (h r hr U hU hUk hUs Ns hlen hJNs hNt) ctx' hc'
+      · intro h r hr U hU hUk hUs Ns hlen hJNs hNt
+        refine (WGd_iff b (r ++ ks) _).mpr ?_
+        intro ctx' hc'
+        rw [← plug_PBlk]
+        exact h (ctx' ++ PBlk Ns U)
+          ((WGtx_ck b i ks _).mpr
+            ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hUs, hJNs, hNt⟩)
+termination_by b s _ => (b, ((s : List ℕ) : Multiset ℕ))
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.right _ (dm_ws 0 ks [] (by simp))
+      | exact Prod.Lex.right _ (dm_ws (i + 1) ks r
+          (by
+            intro x hx
+            have := (by assumption : ∀ x ∈ r, x ≤ i) x hx
+            omega))
+
+theorem WGtx_JkT : ∀ (b : ℕ) (ks : List ℕ) (ctx : List Frm), WGtx b ks ctx → ∀ X : Jk1,
+    FrmG ks X → JkT (plug ctx X)
+  | b, [], ctx, h, X, hX => by
+      rw [WGtx_bnil] at h; subst h; exact hX
+  | b, (0 :: ks), ctx, h, X, hX => by
+      rw [WGtx_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, -, -⟩ := h
+      rw [plug_snoc]
+      exact WGtx_JkT b ks ctx' hc' (Jk1.one U X) (FrmG_one ks U X hU hX)
+  | b, ((i + 1) :: ks), ctx, h, X, hX => by
+      rw [WGtx_ck] at h
+      obtain ⟨r, hr, ctx', U, Ns, rfl, hlen, hc', hU, hUk, hUs, hJNs, -⟩ := h
+      rw [plug_PBlk]
+      exact WGtx_JkT b (r ++ ks) ctx' hc' (Jk1.one U (RunP Ns X))
+        (FrmG_one (r ++ ks) U (RunP Ns X) hU (JkA_RunP Ns hJNs hX))
+termination_by b s _ => (b, ((s : List ℕ) : Multiset ℕ))
+decreasing_by
+  all_goals
+    first
+      | exact Prod.Lex.right _ (dm_ws 0 ks [] (by simp))
+      | exact Prod.Lex.right _ (dm_ws (i + 1) ks r
+          (by
+            intro x hx
+            have := (by assumption : ∀ x ∈ r, x ≤ i) x hx
+            omega))
+
+theorem WGd_congr : ∀ (b : ℕ) (ks : List ℕ) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    WGd b ks V1 → WGd b ks V2 := by
+  intro b ks V1 V2 h hA
+  rw [WGd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+#print axioms WGd_iff
+#print axioms WGtx_JkT
+
 end Small
 end TRIO
