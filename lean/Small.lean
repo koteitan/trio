@@ -76695,5 +76695,97 @@ theorem LadZkAlt_mem (k i m n : ℕ) :
 #print axioms Rz1j_mem
 #print axioms LadZkAlt_mem
 
+/-! ### ★★★★★★ `TowOk`（#14 の壁）は既に緑だった：`TWm 1 n = TW n`
+
+`TowOkM m : ∀ n, GOK (one nil (two nil (TWm m n)))` は `WPd` 層で無条件に緑。
+`TWm_one : TWm 1 n = TW n` なので `m = 1` がそのまま `TowOk`。 -/
+
+theorem TowOk_green : TowOk := by
+  intro n
+  rw [← TWm_one n]
+  exact TowOkM 1 n
+
+/-- ★★★★★★ #14 `R375m (5,2,0)` は無条件に `W 0` の元。 -/
+theorem R14_mem_green : R375m ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := R14_mem TowOk_green
+
+#print axioms TowOk_green
+#print axioms R14_mem_green
+
+/-! ### ★★★★★★ 行376 は「字」1 文に落ちる（`RunAll` より弱い）
+
+`tw_R344_42R` が `RunAll` から使っているのは `GOK (one nil (stk n))` だけ。
+文脈の量化は要らない。さらに `GOK_runNil_gen` でブロック列の字に落ちる。 -/
+
+def StkL : Prop := ∀ n : ℕ, GOK (Jk1.one Jk1.nil (stk n))
+
+theorem StkL_of_RunAll (h : RunAll) : StkL := GOK_oneStk_R h
+
+theorem tw_R344_42S (h : StkL) : ∀ n : ℕ,
+    Mtw R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n ∈ W 0 := by
+  intro n
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (stk n)])) :=
+    h n [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (stk n)]) := by simpa using hG
+  have hh := rowJ_mem_genF Aok_R338 hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (stk n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).flatMap
+          (fun k => shiftr01 k 0 [((4, 2, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (stk n)) = _
+    rw [jk1_stk n 3]
+    simp [jk1]
+  rw [Mtw]
+  simpa [wordJ_singleton, colJ, e, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ シート行376 は `StkL` 1 文に落ちる。 -/
+theorem R376_of_StkL (h : StkL) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_tower (tw_R344_42S h)
+
+/-- ブロック列の字。`j = 1` は `GOK_bdA1`（緑）。 -/
+def BdAll : Prop := ∀ j m : ℕ, GOK (bdA (List.replicate m j))
+
+theorem Trm_repj : ∀ (j m : ℕ),
+    Trm Jk1.nil (List.replicate m ((Jk1.nil, j) : Jk1 × ℕ)) = bdA (List.replicate m j)
+  | _, 0 => rfl
+  | j, (m + 1) => by
+      show Jk1.one Jk1.nil (stkP j
+          (Trm Jk1.nil (List.replicate m ((Jk1.nil, j) : Jk1 × ℕ))))
+        = Jk1.one Jk1.nil (stkP j (bdA (List.replicate m j)))
+      rw [Trm_repj j m]
+
+theorem StkL_of_BdAll (h : BdAll) : StkL := by
+  intro n
+  cases n with
+  | zero => exact GOK_oneNilNil
+  | succ p =>
+      have hJT : JkT (plug ([] : List Frm)
+          (Jk1.one Jk1.nil (stkP p (Jk1.two Jk1.nil Jk1.nil)))) :=
+        ⟨⟨trivial, JkA_stkP p ⟨trivial, trivial⟩⟩, trivial⟩
+      have hstair : ∀ i : ℕ, GOK (plug ([] : List Frm)
+          (Trm Jk1.nil ([((Jk1.nil, p) : Jk1 × ℕ)] ++
+            List.replicate i ((Jk1.nil, p) : Jk1 × ℕ)))) := by
+        intro i
+        have e : ([((Jk1.nil, p) : Jk1 × ℕ)] ++ List.replicate i ((Jk1.nil, p) : Jk1 × ℕ))
+            = List.replicate (i + 1) ((Jk1.nil, p) : Jk1 × ℕ) := by
+          rw [List.replicate_succ]
+          rfl
+        show GOK (Trm Jk1.nil ([((Jk1.nil, p) : Jk1 × ℕ)] ++
+          List.replicate i ((Jk1.nil, p) : Jk1 × ℕ)))
+        rw [e, Trm_repj p (i + 1)]
+        exact h p (i + 1)
+      have hh := GOK_runNil_gen (V := Jk1.nil) (A := Jk1.nil) trivial [] p hJT GOK_nil hstair
+      have e2 : Jk1.one Jk1.nil (stkP p (Jk1.two Jk1.nil Jk1.nil))
+          = Jk1.one Jk1.nil (stk (p + 1)) := by rw [stkP_two_nil_nil p]
+      rwa [e2] at hh
+
+/-- ★★★★★★ シート行376 はブロック列の字 1 文に落ちる。 -/
+theorem R376_of_BdAll (h : BdAll) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_StkL (StkL_of_BdAll h)
+
+/-- `j = 1` は緑。 -/
+theorem BdAll_one (m : ℕ) : GOK (bdA (List.replicate m 1)) := GOK_bdA1 m
+
+#print axioms R376_of_StkL
+#print axioms R376_of_BdAll
+
 end Small
 end TRIO
