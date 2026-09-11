@@ -34,19 +34,21 @@
 | `GNilO`（`D` が 2 の枠止まり） | `APnil_gen0` + `PZ_cons` + `GSib_tree` | 緑 `GNilO_ftwo` |
 | `GNilO`（`D = [fone nil]`） | `GOK_oneOneNil` | `APz M` に落ちる `GNilO_base` |
 | `GNilT`（`D` が 1 の枠止まり） | `TSib_nil_of_SelfW` + `SelfW_HGx` | 緑 `GNilT_fone` |
-| `GNilT`（`D` が 2 の枠止まり） | — | **走り。道具が無い** |
+| `GNilT`（`D` が 2 の枠止まり） | `GAll_of_GNils` | 緑（走りも含めて出る） |
 
-## 残っている新しい内容は 2 つ
+## 還元はもう終わっている
 
-1. **底**: `∀ M, JkA M → GOK (one nil M) → APz M`
-   （`APz M := ∀ U, JkT U → GOK U → GOK (one U M)`、深さ 0 の兄弟の全称）。
-   既存の道具は `APz_nil` / `APz_pay` / `APz_onePayOnly` / `AYz` / `APz_of_Bk00`。
-   `one` / `two` を含む `M` が未。
-2. **走り**: `GNilT` の 2 の枠止まり。
-   `plug (D ++ [ftwo V]) (two M nil)` ＝ `plug D (two V (two M nil))`。
-   `GOK_twoNil_gen` は文脈が 1 の枠止まりのときしか使えない。
-   走りの道具は `RunP` / `RunS` / `GOK_oneUV_RunSB` / `hMy_RunP` にあるので、
-   そこへ繋ぐのが次の一手。
+    GAll := ∀ F, HGx F → ∀ Z, JkA Z → GOK (plug F Z)
+
+    GAll_of_GNils : GNilO → GNilT → (∀ Z, JkA Z → GOK (one nil Z)) → GAll
+    GNilO_of_GAll / GNilT_of_GAll / GAllBase_of_GAll
+
+つまり
+
+    GAll ⟺ GNilO ∧ GNilT ∧ (∀ Z, JkA Z → GOK (one nil Z))
+
+で、`GAll` はこの符号化での z < 2 の停止性そのもの。どの場合も他の場合へ
+還元できるので、**これ以上還元することは無い**。残っているのは整礎な測度だけ。
 
 ## 緑の部品
 
