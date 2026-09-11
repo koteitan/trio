@@ -71696,5 +71696,83 @@ theorem WGd_chainG {b i : ℕ} (hib : i < b) {B : List ℕ} {N T : Jk1} (hJN : J
 #print axioms WGd_chainStep
 #print axioms WGd_chainG
 
+/-! ### ★★★★★★ `WGd` の空木が全部の形・全部の予算で出れば、行376 が出る -/
+
+theorem WGd_bdA (h : ∀ (b : ℕ) (ks : List ℕ), WGd b ks Jk1.nil) :
+    ∀ (js : List ℕ) (b : ℕ) (ks : List ℕ), WGd b ks (bdA js)
+  | [], b, ks => h b ks
+  | (j :: js), b, ks => by
+      have hrec : WGd b (j :: ks) (bdA js) := WGd_bdA h js b (j :: ks)
+      have hJ : ∀ N ∈ List.replicate j Jk1.nil, JkA N := by
+        intro N hN
+        rw [List.eq_of_mem_replicate hN]
+        exact trivial
+      have hUs : ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b ks ks₂ → WGd b' ks₂ Jk1.nil :=
+        fun b' _ ks₂ _ => h b' ks₂
+      have hNt : ∀ j' : ℕ, j' < j → ∀ N : Jk1, AtIx (List.replicate j Jk1.nil) j' N →
+          ∀ b' : ℕ, b' < b → ∀ ks₂ : List ℕ, InsT b (j' :: ks) ks₂ → WGd b' ks₂ N := by
+        intro j' hj' N hN b' hb' ks₂ hins
+        obtain ⟨Bs, Cs, he, hl⟩ := hN
+        have hmem : N ∈ List.replicate j Jk1.nil := by rw [he]; simp
+        rw [List.eq_of_mem_replicate hmem]
+        exact h b' ks₂
+      have h2 := WGd_blk b j ks (V := bdA js) hrec (FrmG_nilA ks) (h b ks) hUs
+        (List.replicate j Jk1.nil) (by simp) hJ hNt
+      show WGd b ks (Jk1.one Jk1.nil (stkP j (bdA js)))
+      rw [← RunP_rep_nil]
+      exact h2
+
+theorem GOK_bdA_of_WGd_nilAll (h : ∀ (b : ℕ) (ks : List ℕ), WGd b ks Jk1.nil)
+    (js : List ℕ) : GOK (bdA js) :=
+  (WGd_bnil 0 _).mp (WGd_bdA h js 0 [])
+
+/-- ★★★★★★ `WGd` の空木が全部出れば行376。幅 2 以上の入り目は `WGd_nilF` で緑。 -/
+theorem R376_of_WGd_nilAll (h : ∀ (b : ℕ) (ks : List ℕ), WGd b ks Jk1.nil) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine R376_of_stk ?_
+  intro q
+  have h1 := GOK_bdA_of_WGd_nilAll h [q]
+  show GOK (Jk1.one Jk1.nil (stkP q Jk1.nil))
+  exact h1
+
+/-- 空木は「幅 0 の入り目」だけが残り。幅 2 以上は `WGd_nilF` で緑。 -/
+theorem WGd_nilF' (b i : ℕ) (hib : i + 2 ≤ b) (ks : List ℕ) :
+    WGd b ((i + 1) :: ks) Jk1.nil := by
+  obtain ⟨m, rfl⟩ : ∃ m : ℕ, b = m + 1 := ⟨b - 1, by omega⟩
+  exact WGd_nilF m i (by omega) ks
+
+theorem WGd_nilE (b : ℕ) : WGd b [] Jk1.nil := (WGd_bnil b _).mpr GOK_nil
+
+#print axioms R376_of_WGd_nilAll
+#print axioms WGd_nilF'
+
+/-! ### `WGd` の文脈述語が充足可能かを測る
+
+`WGtx b [0] ctx` は、1 の枠の木 `U` について
+`∀ b' < b, ∀ ks₂, InsT b [] ks₂ → WGd b' ks₂ U` を要求する。`b' = 0` では族の
+条件が空になるので、`WGd 0 [0] U = ∀ U', JkT U' → GOK U' → GOK (one U' U)`
+（相対化されていない `RStep0`）になる。つまり **`WGtx` は相対化になっていない**。 -/
+
+theorem WGd_zero_c0 (ks : List ℕ) (V : Jk1) :
+    WGd 0 (0 :: ks) V ↔ ∀ U : Jk1, FrmG ks U → WGd 0 ks U → WGd 0 ks (Jk1.one U V) := by
+  rw [WGd_c0]
+  constructor
+  · intro h U hU hUk
+    exact h U hU hUk (fun b' hb' => absurd hb' (by omega))
+  · intro h U hU hUk _
+    exact h U hU hUk
+
+/-- 予算 0・形 `[0]` では、相対化が消えて素の「1 の枠を 1 個積む」になる。 -/
+theorem WGd_zero_bad (V : Jk1) :
+    WGd 0 [0] V ↔ ∀ U : Jk1, JkT U → GOK U → GOK (Jk1.one U V) := by
+  rw [WGd_zero_c0]
+  constructor
+  · intro h U hU hUk
+    exact (WGd_bnil 0 _).mp (h U hU ((WGd_bnil 0 U).mpr hUk))
+  · intro h U hU hUk
+    exact (WGd_bnil 0 _).mpr (h U hU ((WGd_bnil 0 U).mp hUk))
+
+#print axioms WGd_zero_bad
+
 end Small
 end TRIO
