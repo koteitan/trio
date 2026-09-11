@@ -21636,3 +21636,66 @@ Acc（DM）帰納でほどける:
   その `m = 0` は `FoneOK`（済）だが `m ≥ 1` は文脈が
   `ctx ++ [fone A] ++ [fone nil]^k` になり `GBase` の外。
   そこは `pay` が `one` の下に来るので `dupJs0` / `innerJs0`（`Js` 版）が要る。
+
+## 追記293 (2026-09-11): 文脈の族を `fone` 拡張まで広げると、壁が 1 本になる
+
+### 1. `GBase` の穴
+
+`GBase` は `[fone A, ftwo nil]`（幅 1 のブロック）でしか伸びない。ところが
+`Q0Step`（= `GOK (plug ctx (one A (two nil nil)))`）の階段は
+
+    appJ A (UtwP [] nil n) = one A (one nil (one nil ... nil))
+
+つまり `[fone A] ++ [fone nil]^n`（幅 0 のブロックの塔）で、`GBase` の外に出る。
+
+### 2. `HCx`：`fone` 1 枚の拡張も許す
+
+    HCx ctxFL
+    HCx ctx → JkA A → GOK (plug ctx A) → HCx (ctx ++ [fone A, ftwo nil])
+    HCx ctx → JkA A → GOK (plug ctx A) → HCx (ctx ++ [fone A])
+
+    HFone := ∀ ctx A, HCx ctx → JkA A → GOK (plug ctx A) → GOK (plug ctx (one A nil))
+
+塔の 1 段を伸ばすのに要る側条件は `GOK (plug D nil)`。`D` が `fone` で終わるなら
+これは `GOK (plug D' (one A nil))`＝**幅 0 のブロック 1 枚**＝ `HFone`。だから
+
+    TowHCx : HFone → ∀ n D, HCx D → GOK (plug D nil) → GOK (plug D (UtwP [] nil n))
+    QH0    : HFone → ∀ ctx, HCx ctx → GOK (plug ctx nil)
+
+`QH0` の帰納には **IH が 1 つも要らない**（3 つの場合が全部 `HFone` で閉じる）。
+`Q0Step`（幅 1）と塔の 2 つだった壁が `HFone`（幅 0）1 つになった。
+
+### 3. `HFone` を兄弟の一般化 2 本に
+
+`HFone` を `APnil_gen0` で荷に落とすと、文脈の最後の枠で 2 つに分かれる:
+
+    ctx = D ++ [ftwo nil] : plug ctx (pay A C) = plug D (two nil (pay A C))
+    ctx = D ++ [fone A']  : plug ctx (pay A C) = plug D (one A' (pay A C))
+
+前者は `PZ_cons`（荷 `C` の W 帰納、2 の記録版）、後者は今回書いた `PS_cons`
+（同、1 の記録版。`GoodFb_snoc_dupJs0` / `innerJs0`、鎖は `itJ`）。残るのは
+
+    ZSib := ∀ D A, HDx D → JkA A → GOK (plug D (two nil A)) → ZAppend D A
+    SSib := ∀ D A' A, HCx D → JkA A' → GOK (plug D A') → JkA A →
+              GOK (plug D (one A' A)) → SAppend D A
+    HFone_of_Sibs : ZSib → SSib → HFone   ★緑
+
+どちらも「手元にある 1 つの兄弟から、一般の良い木へ広げる」形。手元にある分
+（`M = nil`、`M = A'`）を仮定に入れてあるので、「どんな `JkA` の木も良い」には
+落ちない。前に `ZAppFr` で 2 回やった強すぎの失敗はこれで避けている。
+
+### 4. 既存の `OSib` / `TSib` との対応
+
+`ZAppend` = `TSib`、`SAppend` = `OSib`（どちらも 2019 行目台にある既存の定義）。
+既存の還元表（`OSib_one` / `TSib_two` など、全部緑）は
+
+    TSib D (one A B) ⟸ TSib D A, ∀W OSib (D ++ [ftwo W]) B
+    TSib D (pay A Y) ⟸ TSib D A
+    TSib D nil       ⟸ SelfW D W
+
+で、木は縮むが文脈が伸び、`nil` のところで文脈が 1 縮んで木が任意に戻る。
+`（木, 文脈）` のどちらの辞書式順序でも割れる。**これが最後の測度の問題**。
+
+`AYsF` / `TSibF_pay` があるので、兄弟 `M` は鎖（`OChain A' A` / `TChain nil A`）
+に限ってよい。`ZSib` の `M` は `FLrZ A Bs`、つまり「2 の記録 + `A` + 荷」を
+横に並べた平らな鎖に限られる。

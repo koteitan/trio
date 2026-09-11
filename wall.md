@@ -9,47 +9,61 @@
 
 木では `bdA [2,0]`（幅 2 のブロックの上に裸の 1 の枠）を台座 `R341` の上に置いたもの。
 
+## 文脈の族
+
+    ctxFL = [fone nil, ftwo nil]
+
+    HCx ctxFL
+    HCx ctx → JkA A → GOK (plug ctx A) → HCx (ctx ++ [fone A, ftwo nil])   -- 幅 1 のブロック
+    HCx ctx → JkA A → GOK (plug ctx A) → HCx (ctx ++ [fone A])             -- 幅 0 のブロック
+
+    HDx [fone nil]
+    HCx ctx → JkA A → GOK (plug ctx A) → HDx (ctx ++ [fone A])
+
+側条件が `GOK (plug ctx A)` だけなのが要点。族（`APd` / `WPd` / `WFd` / `WGd`）は
+文脈の中の木にも族の述語を要求するので満たせなくなる。
+
 ## 壁の還元（全部緑・族を使わない）
 
-    FLr []        = nil
-    FLr (B :: Bs) = two (FLr Bs) (pay nil B)        平らな荷の鎖（頭が右端）
-    PFL Bs        = GOK (one nil (two nil (FLr Bs)))
+    ZAppend D Z := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (two M Z))
+    SAppend D Z := ∀ M, JkA M → GOK (plug D M) → GOK (plug D (one M Z))
 
-    FLnilStep := ∀ Bs (全部 Bok), PFL Bs → PFL ([] :: Bs)      ← いちばん弱い形
-    PFLtow    := ∀ Bs, ∀ n, GOK (UtwP [nil] (FLr Bs) n)        ← 十分条件
+    ZSib := ∀ D A, HDx D → JkA A → GOK (plug D (two nil A)) → ZAppend D A
+    SSib := ∀ D A' A, HCx D → JkA A' → GOK (plug D A') → JkA A →
+              GOK (plug D (one A' A)) → SAppend D A
 
-    PFLtow → FLnilStep → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
+    HFone := ∀ ctx A, HCx ctx → JkA A → GOK (plug ctx A) → GOK (plug ctx (one A nil))
 
-    Pay2 := ∀ B, Bok B → GOK (one nil (two nil (two nil (pay nil B))))
+    ZSib ∧ SSib → HFone → QFL [] → Pay2 → hang6_R375m → R375m (6,1,0) ∈ W 0
 
 緑の部品:
 
-    twoIt_FLr / JkT_PFL / PFL_rep / PFL_dup / PFL_cons / Pay2_of_FLnilStep
-    PFL_single_nil（`Bs = []` の場合は無条件で緑）
-    FLnilStep_of_PFLtow / R375m61_of_PFLtow
-    GOK_flat2 / GOK_FLr_rep_nil（荷が全部空の鎖は緑）
-    WPd_FLr（平らな鎖は**枠の位置**なら緑。2 の枠の直下＝走りだけが壁）
+    HFone_of_Sibs / R375m61_of_Sibs
+    TowHCx（幅 0 のブロックの塔は HFone 1 本で立つ）/ QH0 / QFL0_of_HFone
+    PZ_cons（荷の W 帰納、2 の記録版）/ PS_cons（同、1 の記録版）
+    QFL_cons（鎖の入れ子帰納法、無条件）/ QFL_all / Pay2_of_QFL0
+    APnil_gen0（荷さえ吊れれば裸の 1 の記録は継げる）
+    GOK_oneUV_RunSB（階段）/ GOK_appJ_tow（塔は文脈を伸ばすだけ）
     W0_acc（荷の展開 1 手は `W 0` の上で整礎）
 
-## 入れ子帰納法（荷の W 帰納 × 鎖のリスト）
+## 残り 2 手の中身
 
-`PFL_cons` の中身。右端の荷 `B` について `A2'`:
+どちらも「記録の左の兄弟を、手元にある 1 つから一般の良い木へ広げる」。
 
-- `B` に親あり → `GoodFb_snoc_innerJt0` → `PFL (B⟦n⟧ :: Bs)`（IH）
-- `B = B₀ ++ [(0,0,0)]` → `GoodFb_snoc_dupJt0` の平らな鎖
-  `twoIt (FLr Bs) (pay nil B₀) n = FLr (replicate n B₀ ++ Bs)` → IH（`B₀` は小さい）
-- **`B = []`** → 階段になる。ここだけ残っている（= `FLnilStep`）。
+- `ZSib`: `GOK (plug D (two nil A))` から `GOK (plug D (two M A))`。
+  `M` は実際には `PZ_cons` の作る鎖 `FLrZ A Bs`（＝ `TChain nil A`）に限ってよい。
+- `SSib`: `GOK (plug D (one A' A))` から `GOK (plug D (one M A))`。
+  `M` は `OChain A' A`（`AYsF` の鎖）に限ってよい。
 
-## 残り 1 手の中身
+既存の `TSib` / `OSib` の還元表（notes 追記参照）だと
 
-`PFL ([] :: Bs)` の展開は階段で、悪い部分は `PFL Bs` のブロックまるごと
-（bms 実測、シフト 2）。塔を追うと
+    TSib D (one A B) ⟸ TSib D A, ∀W OSib (D ++ [ftwo W]) B
+    TSib D (two A B) ⟸ TSib D A, ∀W TSib (D ++ [ftwo W]) B
+    TSib D (pay A Y) ⟸ TSib D A                  （TSib_pay、緑）
+    TSib D nil       ⟸ SelfW D W（自分の上に積み続けられる）
 
-    塔の上のブロックの右端の荷 → 空 → 鎖の長さ m が 1 減る → m = 0 で幅 1
-    → その階段が幅 0 のブロックを作る → 幅 0 の展開は全体の縦塔（荷が要る）
-
-で `FoneB`（幅 2 の上の幅 0）に戻る。円が閉じるかは
-「ブロックごとの (荷の多重集合, 鎖の長さ)」の測度次第。
+で木は縮むが文脈が伸び、`nil` のところで文脈が 1 縮んで木が任意に戻る。
+`（木の大きさ, 文脈の長さ）` のどちらの辞書式順序でも割れる。ここが測度の問題。
 
 ## 死んだ道（族）
 
