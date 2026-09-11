@@ -71,7 +71,22 @@
 
 **`(k+1) ::` の形だけが壁。** `0 ::` は緑。
 
-## ★ いちばん鋭い言い方：水平鎖は緑、走り（縦）だけが壁（2026-09-12）
+## ★★ いちばん鋭い言い方：走りは通る。壁は「鎖が走りの**上**」だけ（2026-09-12）
+
+    緑 GOK_oneTwoVChRun : GOK (one nil (two N (two A nil)))
+         N は水平鎖（VCh nil、2 の記録の**兄弟**の位置）、A は予算つき
+         語: (l+1,1,0) ++ jk1 (l+1) N ++ (l+2,2,0)(l+3,2,0)   ← 走りを含む！
+
+    壁 ZApp2c          : GOK (one nil (two nil (two N nil)))
+         N が走りの**上**（`WPd_twoOf` が予算 (k+1):: を要求する位置）
+
+`WPd_ck` の枠木（兄弟）の条件は `∀q(≤k), WPd ((0::q)++ks) N` で、水平鎖はこれを
+満たす（`WPd_VCh`）。だから `WPd_twoA_runB`（緑）を `WPd_ck` で開くだけで
+走りつきの緑が出る。`A` の候補: `nil` / `twoIt nil nil m` / `TWm m n`。
+
+**走り自体は壁ではない。鎖を予算の位置に置けないことだけが壁。**
+
+## ★ その次に鋭い言い方：水平鎖は緑、走り（縦）だけが壁
 
     GOK_oneTwoVChNil : ∀ N ∈ VCh nil, GOK (one nil (two N nil))          ★緑
     GOK_oneTwoVChPay : ∀ Y Bok Y, ∀ N ∈ VCh nil,

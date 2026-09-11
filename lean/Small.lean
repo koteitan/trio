@@ -77173,5 +77173,50 @@ theorem GOK_oneTwoVChPay : ∀ Y : TrioSeq, Bok Y → ∀ N : Jk1, VCh Jk1.nil N
 #print axioms GOK_oneTwoVChNil
 #print axioms GOK_oneTwoVChPay
 
+/-! ### ★★★★★★ 走りは通る。壁は「鎖が走りの**上**にある」ときだけ
+
+`WPd_ck` の枠木（2 の記録の兄弟）の条件は `∀ q(≤k), WPd ((0::q)++ks) N` で、
+これは水平鎖が満たす（`WPd_VCh`）。だから `WPd_twoA_runB`（緑）をそのまま開くと
+
+    GOK (one nil (two N (two A nil)))      N は水平鎖、A は予算つき     ★緑
+
+が出る。語は `(l+1,1,0) ++ jk1 (l+1) N ++ (l+2,2,0)(l+3,2,0) ++ …` で
+**走り `(l+2,2,0)(l+3,2,0)` を含む**。
+
+一方、壁 `ZApp2c` は `one nil (two nil (two N nil))` で、鎖 `N` が走りの
+**上**（予算の要る位置）に来る。**位置の違いだけが壁。** -/
+
+theorem GOK_oneTwoVChRun {N : Jk1} (hN : VCh Jk1.nil N) {A : Jk1} (hJA : JkA A) {b : ℕ}
+    (hAall : ∀ ks : List ℕ, WPd ((b + 1) :: ks) A) :
+    GOK (Jk1.one Jk1.nil (Jk1.two N (Jk1.two A Jk1.nil))) := by
+  have h := WPd_twoA_runB (k := b + 1) (b := b) (by omega) hJA hAall ([] : List ℕ)
+  rw [WPd_ck] at h
+  have h2 := h ([] : List ℕ) (by simp) Jk1.nil N
+    (JkT_nil : FrmN (([] : List ℕ) ++ ([] : List ℕ)) Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil) (JkA_of_VCh (V := Jk1.nil) trivial hN)
+    (fun q hq => WPd_VCh (k := b + 1) (B := ([] : List ℕ)) hN q hq)
+  exact (WPd_bnil _).mp h2
+
+/-- 上が `nil`（走り 1 本）。 -/
+theorem GOK_oneTwoVChRunNil {N : Jk1} (hN : VCh Jk1.nil N) :
+    GOK (Jk1.one Jk1.nil (Jk1.two N (Jk1.two Jk1.nil Jk1.nil))) :=
+  GOK_oneTwoVChRun hN (b := 0) trivial (fun ks => WPd_nilAll _)
+
+/-- 上が平らな鎖 `twoIt nil nil m`（予算 `m`）。 -/
+theorem GOK_oneTwoVChRunFlat {N : Jk1} (hN : VCh Jk1.nil N) (m : ℕ) :
+    GOK (Jk1.one Jk1.nil
+      (Jk1.two N (Jk1.two (twoIt Jk1.nil Jk1.nil m) Jk1.nil))) :=
+  GOK_oneTwoVChRun hN (b := m) (JkA_twoIt_nil m)
+    (fun ks => WPd_twoIt_nil m m (le_refl m) ks)
+
+/-- 上が塔 `TWm m n`。 -/
+theorem GOK_oneTwoVChRunTW {N : Jk1} (hN : VCh Jk1.nil N) (m n : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two N (Jk1.two (TWm m n) Jk1.nil))) :=
+  GOK_oneTwoVChRun hN (b := m) (JkA_TWm m n) (fun ks => WPd_TWm m n m (le_refl m) ks)
+
+#print axioms GOK_oneTwoVChRun
+#print axioms GOK_oneTwoVChRunFlat
+#print axioms GOK_oneTwoVChRunTW
+
 end Small
 end TRIO
