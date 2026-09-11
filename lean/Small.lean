@@ -73675,5 +73675,191 @@ theorem R375m61_of_HFone (hF : HFone) :
 #print axioms QH0
 #print axioms R375m61_of_HFone
 
+/-! ### ★★★★★★ 壁 `HFone` を「兄弟の一般化」2 本に分ける
+
+`HFone` を `APnil_gen0` で荷に落とすと、文脈の最後の枠で 2 つに分かれる。
+
+    ctx = D ++ [ftwo nil]  : plug ctx (pay A C) = plug D (two nil (pay A C))
+                             → `PZ_cons`（荷 `C` の W 帰納、緑）→ `ZAppend D A`
+    ctx = D ++ [fone A']   : plug ctx (pay A C) = plug D (one A' (pay A C))
+                             → `PS_cons`（同、1 の記録版）→ `SAppend D A`
+
+どちらも「記録の左の兄弟を、手元にある 1 つから一般の良い木へ広げる」1 手。 -/
+
+/-- 1 の記録の左の兄弟を一般化する（`ZAppend` の 1 の記録版）。 -/
+def SAppend (ctx : List Frm) (Z : Jk1) : Prop :=
+  ∀ M : Jk1, JkA M → GOK (plug ctx M) → GOK (plug ctx (Jk1.one M Z))
+
+theorem PS_chain {ctx : List Frm} {Z : Jk1} (hZ : JkA Z)
+    {B₀ : TrioSeq} (hB₀ : Bok B₀)
+    (hIH : ∀ M : Jk1, JkA M → GOK (plug ctx M) →
+      GOK (plug ctx (Jk1.one M (Jk1.pay Z B₀))))
+    {M : Jk1} (hM : JkA M) (hGM : GOK (plug ctx M)) :
+    ∀ n : ℕ, GOK (plug ctx (itJ (Jk1.pay Z B₀) n M))
+      ∧ JkA (itJ (Jk1.pay Z B₀) n M) := by
+  intro n
+  induction n with
+  | zero => exact ⟨hGM, hM⟩
+  | succ n ih => exact ⟨hIH _ ih.2 ih.1, ⟨ih.2, hZ, hB₀⟩⟩
+
+/-- ★★★★★★ 荷 `B` の W 帰納（1 の記録版）。残り 1 手は `SAppend ctx Z` だけ。 -/
+theorem PS_cons : ∀ (B : TrioSeq), Bok B →
+    ∀ (ctx : List Frm), CtxJT ctx → ∀ (Z : Jk1), JkA Z → SAppend ctx Z →
+    ∀ M : Jk1, JkA M →
+      GOK (plug ctx M) → GOK (plug ctx (Jk1.one M (Jk1.pay Z B))) := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ (ctx : List Frm), CtxJT ctx →
+      ∀ (Z : Jk1), JkA Z → SAppend ctx Z → ∀ M : Jk1, JkA M →
+        GOK (plug ctx M) → GOK (plug ctx (Jk1.one M (Jk1.pay Z B)))} := by
+    refine A2' ?_
+    intro B hBw
+    simp only [Set.mem_setOf_eq]
+    intro hBb ctx hc Z hZ h M hM hGM
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact GOK_congr (fun l => jk1_plug_congr ctx
+          (fun l' => (jk1_one_pay_nil M Z l').symm) l) (h M hM hGM)
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e2 : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        have hIH0 : ∀ M' : Jk1, JkA M' → GOK (plug ctx M') →
+            GOK (plug ctx (Jk1.one M' (Jk1.pay Z ([] : TrioSeq)))) := by
+          intro M' hM' hGM'
+          exact GOK_congr (fun l => jk1_plug_congr ctx
+            (fun l' => (jk1_one_pay_nil M' Z l').symm) l) (h M' hM' hGM')
+        have hch := PS_chain hZ Bok_nil hIH0 hM hGM
+        rw [e2]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw (hc _ ⟨hM, hZ, by rw [← e2]; exact hBb⟩)
+          (by rw [← e2]; exact hBb) Bok_nil ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    rcases hBw with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry B 0 (B.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+        have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((0, 0, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+        have hop : B⟦1⟧ = B.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok B.dropLast := Bok_dropLast hBb
+        have hIH0 : ∀ M' : Jk1, JkA M' → GOK (plug ctx M') →
+            GOK (plug ctx (Jk1.one M' (Jk1.pay Z B.dropLast))) :=
+          fun M' hM' hGM' => hdl hdb ctx hc Z hZ h M' hM' hGM'
+        have hch := PS_chain hZ hdb hIH0 hM hGM
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJs0 hw
+          (hc _ ⟨hM, hZ, by rw [← hsplit]; exact hBb⟩)
+          (by rw [← hsplit]; exact hBb) hdb ?_
+        intro n hn
+        exact (hch n).1 ws hw hG
+      · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+            entry B 2 (B.length - 1) = 0) := fun hq => hlast hq.1
+        have hpar := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJs0 hw (hc _ ⟨hM, hZ, hBb⟩) hBb hlen2 hpar ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        exact hh (Bok_oper hBb hn) ctx hc Z hZ h M hM hGM ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb ctx hc Z hZ h M hM hGM
+  exact key hBb.mem hBb ctx hc Z hZ h M hM hGM
+
+#print axioms PS_cons
+
+/-- `HCx` の文脈に 1 の枠を 1 枚足した文脈（`HFone` の荷の行き先）。 -/
+inductive HDx : List Frm → Prop
+  | base : HDx [Frm.fone Jk1.nil]
+  | step {ctx : List Frm} {A : Jk1} : HCx ctx → JkA A → GOK (plug ctx A) →
+      HDx (ctx ++ [Frm.fone A])
+
+theorem HDx_CtxJT {D : List Frm} (h : HDx D) : CtxJT D := by
+  cases h with
+  | base => exact CtxJT_foneNil
+  | step hc hA _ => exact CtxJT_fone (HCx_CtxJT hc) hA
+
+/-- ★ 2 の記録の左の兄弟を `nil` から一般の良い木へ広げる 1 手。 -/
+def ZSib : Prop := ∀ (D : List Frm) (A : Jk1), HDx D → JkA A →
+  GOK (plug D (Jk1.two Jk1.nil A)) → ZAppend D A
+
+/-- ★ 1 の記録の左の兄弟を `A'` から一般の良い木へ広げる 1 手。 -/
+def SSib : Prop := ∀ (D : List Frm) (A' A : Jk1), HCx D → JkA A' → GOK (plug D A') →
+  JkA A → GOK (plug D (Jk1.one A' A)) → SAppend D A
+
+/-- ★★★★★★ 壁 `HFone` は兄弟の一般化 2 本から出る。 -/
+theorem HFone_of_Sibs (hZs : ZSib) (hSs : SSib) : HFone := by
+  intro ctx A hc
+  induction hc generalizing A with
+  | base =>
+      intro hA hGA
+      show GOK (plug ctxFL (Jk1.one A Jk1.nil))
+      refine APnil_gen0 ctxFL A (CtxJT_ctxFL _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      have e : plug ctxFL (Jk1.pay A C)
+          = plug [Frm.fone Jk1.nil] (Jk1.two Jk1.nil (Jk1.pay A C)) := by
+        show plug ([Frm.fone Jk1.nil] ++ [Frm.ftwo Jk1.nil]) (Jk1.pay A C) = _
+        rw [plug_snoc2]
+      rw [e]
+      refine PZ_cons C hC [Frm.fone Jk1.nil] CtxJT_foneNil A hA
+        (hZs [Frm.fone Jk1.nil] A HDx.base hA ?_) Jk1.nil trivial GOK_oneNilNil
+      rw [← plug_snoc2]
+      exact hGA
+  | @ext ctx₀ A₀ hc₀ hA₀ hG₀ ih =>
+      intro hA hGA
+      have hD : HDx (ctx₀ ++ [Frm.fone A₀]) := HDx.step hc₀ hA₀ hG₀
+      show GOK (plug (ctx₀ ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]) (Jk1.one A Jk1.nil))
+      refine APnil_gen0 _ A
+        (HCx_CtxJT (HCx.ext hc₀ hA₀ hG₀) _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      have e : plug (ctx₀ ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]) (Jk1.pay A C)
+          = plug (ctx₀ ++ [Frm.fone A₀]) (Jk1.two Jk1.nil (Jk1.pay A C)) := by
+        rw [show ctx₀ ++ [Frm.fone A₀, Frm.ftwo Jk1.nil]
+            = (ctx₀ ++ [Frm.fone A₀]) ++ [Frm.ftwo Jk1.nil] from by simp, plug_snoc2]
+      rw [e]
+      refine PZ_cons C hC _ (HDx_CtxJT hD) A hA (hZs _ A hD hA ?_) Jk1.nil trivial ?_
+      · rw [plug_ftwoNil]
+        exact hGA
+      · rw [plug_snoc]
+        exact ih A₀ hA₀ hG₀
+  | @fone ctx₀ A₀ hc₀ hA₀ hG₀ _ih =>
+      intro hA hGA
+      show GOK (plug (ctx₀ ++ [Frm.fone A₀]) (Jk1.one A Jk1.nil))
+      refine APnil_gen0 _ A
+        (HCx_CtxJT (HCx.fone hc₀ hA₀ hG₀) _ ⟨hA, trivial⟩) hGA ?_
+      intro C hC
+      rw [plug_snoc]
+      exact PS_cons C hC ctx₀ (HCx_CtxJT hc₀) A hA
+        (hSs ctx₀ A₀ A hc₀ hA₀ hG₀ hA (by rw [← plug_snoc]; exact hGA)) A₀ hA₀ hG₀
+
+/-- ★★★★★★ 兄弟の一般化 2 本からいま開いている最小の行列まで。 -/
+theorem R375m61_of_Sibs (hZs : ZSib) (hSs : SSib) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_HFone (HFone_of_Sibs hZs hSs)
+
+#print axioms HFone_of_Sibs
+#print axioms R375m61_of_Sibs
+
 end Small
 end TRIO
