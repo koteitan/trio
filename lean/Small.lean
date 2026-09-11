@@ -74051,5 +74051,105 @@ theorem R375m61_of_SibsF (hZs : ZSibF) (hSs : SSibF) :
 #print axioms HFone_of_SibsF
 #print axioms R375m61_of_SibsF
 
+/-! ### ★★★★★★ 壁を「裸の 1 の記録」1 文に
+
+`SAppend` / `ZAppend` は既存の `OSib` / `TSib` と同じ定義。既存の還元表
+
+    OSib_one / OSib_two / TSib_one / TSib_two   （全部緑、plug の付け替えだけ）
+
+に、`CtxJT` だけで回る荷の追加（`PS_cons` / `PZ_cons`）を足すと、木の構造帰納が
+そのまま回る。文脈は `fone W` / `ftwo W` で伸びるだけなので、側条件のない
+**純粋に構文的な**文脈の族 `HEx` で閉じる。
+
+結果、残るのは木が `nil` の 2 つ:
+
+    NilO := ∀ D, HEx D → OSib D nil   -- ∀M 良い, GOK (plug D (one M nil))
+    NilT := ∀ D, HEx D → TSib D nil   -- ∀M 良い, GOK (plug D (two M nil))
+
+しかも `HFone` は `NilO` の**そのままの例**なので、目標までは `NilO` 1 本で足りる。 -/
+
+/-- 側条件のない文脈の族。頭が `fone nil` で、枠の木は `JkA` なだけ。 -/
+inductive HEx : List Frm → Prop
+  | base : HEx [Frm.fone Jk1.nil]
+  | fone {ctx : List Frm} {A : Jk1} : HEx ctx → JkA A → HEx (ctx ++ [Frm.fone A])
+  | ftwo {ctx : List Frm} {A : Jk1} : HEx ctx → JkA A → HEx (ctx ++ [Frm.ftwo A])
+
+theorem HEx_CtxJT {ctx : List Frm} (h : HEx ctx) : CtxJT ctx := by
+  induction h with
+  | base => exact CtxJT_foneNil
+  | fone _ hA ih => exact CtxJT_fone ih hA
+  | ftwo _ hA ih =>
+      intro X hX
+      rw [plug_snoc2]
+      exact ih _ ⟨hA, hX⟩
+
+theorem HEx_of_HCx {ctx : List Frm} (h : HCx ctx) : HEx ctx := by
+  induction h with
+  | base => exact HEx.ftwo HEx.base trivial
+  | @ext ctx A _ hA _ ih =>
+      have e : ctx ++ [Frm.fone A, Frm.ftwo Jk1.nil]
+          = (ctx ++ [Frm.fone A]) ++ [Frm.ftwo Jk1.nil] := by simp
+      rw [e]
+      exact HEx.ftwo (HEx.fone ih hA) trivial
+  | fone _ hA _ ih => exact HEx.fone ih hA
+
+theorem HEx_of_HDx {D : List Frm} (h : HDx D) : HEx D := by
+  cases h with
+  | base => exact HEx.base
+  | step hc hA _ => exact HEx.fone (HEx_of_HCx hc) hA
+
+/-- ★ 裸の 1 の記録。良い木の上なら、どの文脈でも継げる。 -/
+def NilO : Prop := ∀ D : List Frm, HEx D → OSib D Jk1.nil
+
+/-- ★ 裸の 2 の記録。 -/
+def NilT : Prop := ∀ D : List Frm, HEx D → TSib D Jk1.nil
+
+/-- ★★★★★★ `HFone` は `NilO` のそのままの例。 -/
+theorem HFone_of_NilO (hO : NilO) : HFone :=
+  fun ctx A hc hA hGA => hO ctx (HEx_of_HCx hc) A hA hGA
+
+/-- ★★★★★★ 壁 1 文からいま開いている最小の行列まで。 -/
+theorem R375m61_of_NilO (hO : NilO) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_HFone (HFone_of_NilO hO)
+
+/-- ★★★★★★ 木の構造帰納。`nil` の 2 本があれば、どの木も兄弟として一般化できる。 -/
+theorem Sib_tree (hO : NilO) (hT : NilT) :
+    ∀ T : Jk1, JkA T → ∀ D : List Frm, HEx D → OSib D T ∧ TSib D T := by
+  intro T
+  induction T with
+  | nil => intro _ D hD; exact ⟨hO D hD, hT D hD⟩
+  | pay Z Y ihZ =>
+      intro hTk D hD
+      obtain ⟨hOZ, hTZ⟩ := ihZ hTk.1 D hD
+      exact ⟨fun M hM hGM => PS_cons Y hTk.2 D (HEx_CtxJT hD) Z hTk.1 hOZ M hM hGM,
+        fun M hM hGM => PZ_cons Y hTk.2 D (HEx_CtxJT hD) Z hTk.1 hTZ M hM hGM⟩
+  | one N M ihN ihM =>
+      intro hTk D hD
+      refine ⟨OSib_one D N M hTk.1 (ihN hTk.1 D hD).1 ?_,
+        TSib_one D N M hTk.1 (ihN hTk.1 D hD).2 ?_⟩
+      · intro W hW _
+        exact (ihM hTk.2 (D ++ [Frm.fone W]) (HEx.fone hD hW)).1
+      · intro W hW _
+        exact (ihM hTk.2 (D ++ [Frm.ftwo W]) (HEx.ftwo hD hW)).1
+  | two N M ihN ihM =>
+      intro hTk D hD
+      refine ⟨OSib_two D N M hTk.1 (ihN hTk.1 D hD).1 ?_,
+        TSib_two D N M hTk.1 (ihN hTk.1 D hD).2 ?_⟩
+      · intro W hW _
+        exact (ihM hTk.2 (D ++ [Frm.fone W]) (HEx.fone hD hW)).2
+      · intro W hW _
+        exact (ihM hTk.2 (D ++ [Frm.ftwo W]) (HEx.ftwo hD hW)).2
+
+/-- `NilO` は「良い木の下にどんな良い荷も吊るせる」1 文から。 -/
+theorem NilO_of_hang
+    (h : ∀ D : List Frm, HEx D → ∀ M : Jk1, JkA M → GOK (plug D M) →
+      ∀ C : TrioSeq, Bok C → GOK (plug D (Jk1.pay M C))) : NilO := by
+  intro D hD M hM hGM
+  exact APnil_gen0 D M (HEx_CtxJT hD _ ⟨hM, trivial⟩) hGM (fun C hC => h D hD M hM hGM C hC)
+
+#print axioms Sib_tree
+#print axioms R375m61_of_NilO
+
 end Small
 end TRIO
