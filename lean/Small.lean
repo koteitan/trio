@@ -75576,5 +75576,102 @@ theorem R375m62_of_ERun (h : ERun) :
 #print axioms ENil_of_ERun
 #print axioms R375m61_of_ERun
 
+/-! ### ★★★★★★ 2 の枠の枚数だけで階数を付けた族 `FCtx` / `FOk`
+
+`ECtx` は 1 の枠の枚数も形に入れていたので、塔（`(fone N)^m`）が形を動かした。
+`FCtx` は**2 の枠の枚数 `n` だけ**を階数にし、1 の枠は帰納的な閉包にする。
+1 の枠の側条件は点ごとの `GOK (plug D A)` だけ。2 の枠の側条件は
+`∀ D', FCtx n D' → GOK (plug D' A)`（1 段下の族について全称）。
+
+これで
+
+- 1 の枠の塔は階数を動かさない → `GOK_twoNil_gen` の階段がそのまま入る
+- `SAppend`（1 の記録の兄弟の一般化）は無料
+- `FOk_one` は階数を動かさず、`FOk_two` は階数を 1 上げるだけ
+
+`FCtxS` は `P` を**パラメータ**に取るので、`P` が矢印の左に来ても定義できる。 -/
+
+inductive FCtx0 : List Frm → Prop
+  | base {V : Jk1} : JkT V → GOK V → FCtx0 [Frm.fone V]
+  | fone {D : List Frm} {A : Jk1} : FCtx0 D → JkA A → GOK (plug D A) →
+      FCtx0 (D ++ [Frm.fone A])
+
+inductive FCtxS (P : List Frm → Prop) : List Frm → Prop
+  | ftwo {D : List Frm} {A : Jk1} : P D → JkA A →
+      (∀ D' : List Frm, P D' → GOK (plug D' A)) → FCtxS P (D ++ [Frm.ftwo A])
+  | fone {D : List Frm} {A : Jk1} : FCtxS P D → JkA A → GOK (plug D A) →
+      FCtxS P (D ++ [Frm.fone A])
+
+def FCtx : ℕ → List Frm → Prop
+  | 0 => FCtx0
+  | (n + 1) => FCtxS (FCtx n)
+
+def FOk (n : ℕ) (X : Jk1) : Prop := ∀ D : List Frm, FCtx n D → GOK (plug D X)
+
+theorem FCtx_zero (D : List Frm) : FCtx 0 D ↔ FCtx0 D := Iff.rfl
+
+theorem FCtx_succ (n : ℕ) (D : List Frm) : FCtx (n + 1) D ↔ FCtxS (FCtx n) D := Iff.rfl
+
+theorem FCtx0_JkT : ∀ {D : List Frm}, FCtx0 D → ∀ X : Jk1, JkA X → JkT (plug D X) := by
+  intro D h
+  induction h with
+  | base hV _ => intro X hX; exact ⟨⟨hV.1, hX⟩, hV.2⟩
+  | fone _ hA _ ih => intro X hX; rw [plug_snoc]; exact ih _ ⟨hA, hX⟩
+
+theorem FCtxS_JkT {P : List Frm → Prop}
+    (hP : ∀ D : List Frm, P D → ∀ X : Jk1, JkA X → JkT (plug D X)) :
+    ∀ {D : List Frm}, FCtxS P D → ∀ X : Jk1, JkA X → JkT (plug D X) := by
+  intro D h
+  induction h with
+  | ftwo hPD hA _ => intro X hX; rw [plug_snoc2]; exact hP _ hPD _ ⟨hA, hX⟩
+  | fone _ hA _ ih => intro X hX; rw [plug_snoc]; exact ih _ ⟨hA, hX⟩
+
+theorem FCtx_JkT : ∀ (n : ℕ) (D : List Frm), FCtx n D → ∀ X : Jk1, JkA X → JkT (plug D X)
+  | 0, _, h, X, hX => FCtx0_JkT h X hX
+  | (n + 1), _, h, X, hX => FCtxS_JkT (FCtx_JkT n) h X hX
+
+theorem FCtx_fone {n : ℕ} {D : List Frm} (hD : FCtx n D) {A : Jk1} (hJA : JkA A)
+    (hGA : GOK (plug D A)) : FCtx n (D ++ [Frm.fone A]) := by
+  cases n with
+  | zero => exact FCtx0.fone hD hJA hGA
+  | succ n => exact FCtxS.fone hD hJA hGA
+
+theorem FCtx_ftwo {n : ℕ} {D : List Frm} (hD : FCtx n D) {A : Jk1} (hJA : JkA A)
+    (hA : FOk n A) : FCtx (n + 1) (D ++ [Frm.ftwo A]) :=
+  FCtxS.ftwo hD hJA (fun D' hD' => hA D' hD')
+
+/-- 1 の記録は階数を動かさない。 -/
+theorem FOk_one {n : ℕ} {U X : Jk1} (hJU : JkA U) (hU : FOk n U) (hX : FOk n X) :
+    FOk n (Jk1.one U X) := by
+  intro D hD
+  rw [← plug_snoc]
+  exact hX _ (FCtx_fone hD hJU (hU D hD))
+
+/-- 2 の記録は階数を 1 上げるだけ。 -/
+theorem FOk_two {n : ℕ} {N X : Jk1} (hJN : JkA N) (hN : FOk n N) (hX : FOk (n + 1) X) :
+    FOk n (Jk1.two N X) := by
+  intro D hD
+  rw [← plug_snoc2]
+  exact hX _ (FCtx_ftwo hD hJN hN)
+
+theorem FCtx_rep_fone {n : ℕ} {N : Jk1} (hJN : JkA N) (hN : FOk n N) :
+    ∀ (m : ℕ) (D : List Frm), FCtx n D → FCtx n (D ++ List.replicate m (Frm.fone N))
+  | 0, D, hD => by simpa using hD
+  | (m + 1), D, hD => by
+      have e : D ++ List.replicate (m + 1) (Frm.fone N)
+          = (D ++ [Frm.fone N]) ++ List.replicate m (Frm.fone N) := by
+        simp [List.replicate_succ, List.append_assoc]
+      rw [e]
+      exact FCtx_rep_fone hJN hN m _ (FCtx_fone hD hJN (hN D hD))
+
+/-- 底では `APz` が出る。 -/
+theorem APz_of_FOk0 {X : Jk1} (h : FOk 0 X) : APz X :=
+  fun U hU hGU => h [Frm.fone U] (FCtx0.base hU hGU)
+
+#print axioms FCtx_JkT
+#print axioms FOk_one
+#print axioms FOk_two
+#print axioms FCtx_rep_fone
+
 end Small
 end TRIO
