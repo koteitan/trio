@@ -5,125 +5,62 @@
 ## いま開いている最小の行列（bms で実測）
 
     R375m (6,1,0) = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,1,0)
-    標準形。展開は TwD 6 R375m (n+1)（R375m 自身の縦塔）。
+    R375m (6,2,0) も同じ壁から出る。
 
-木では `bdA [2,0]`（幅 2 のブロックの上に裸の 1 の枠）を台座 `R341` の上に置いたもの。
+## 壁は 2 文（族 `ECtx` / `EOk`、`Rq` も予算も無い）
 
-## いちばん的を絞った壁（1 文、`WPd` 層）
+文脈の形を `(k, ks)` で持つ。内側から「1 の枠 `k` 枚」「2 の枠」
+「1 の枠 `ks.head` 枚」「2 の枠」…、一番外は `fone V`（`JkT V`、`GOK V`）。
 
-    bdA (j :: js)  = one nil (stkP j (bdA js))
-    stkP 0 X = X,  stkP (q+1) X = two nil (stkP q X)
+    ECtx 0 []        D := ∃ V, D = [fone V] ∧ JkT V ∧ GOK V
+    ECtx (k+1) ks    D := D = D' ++ [fone U] ∧ ECtx k ks D' ∧ JkA U ∧ EOk k ks U
+    ECtx 0 (k'::ks)  D := D = D' ++ [ftwo N] ∧ ECtx k' ks D' ∧ JkA N ∧ ∀ j, EOk j ks N
+    EOk k ks X := ∀ D, ECtx k ks D → GOK (plug D X)
 
-    RunP2 := ∀ j k ks X, JkA X → (∀ ks', WPd ks' X) → j ≤ k →
-               WPd ((k+1) :: ks) (stkP j X)
+停止性は `(ks.length, k)` の辞書式。2 の枠でリストが 1 短くなるので、その木の
+条件を「梯子の深さ `j` について全称」にしても回る。
 
-    RunP2 → WPd_bdA_all / WPd_bdAC_all（幅の制限なし）
-          → Pay2 → R375m (6,1,0) ∈ W 0
-          → ∀n GOK (bdA (replicate n 2)) → R375m (6,2,0) ∈ W 0
+    EPayT   := ∀ k' ks Z, JkA Z → EOk 0 (k'::ks) Z →
+                 ∀ B Bok, EOk 0 (k'::ks) (pay Z B)
+    ERunNil := ∀ k' ks N, JkA N → (∀ j, EOk j (k'::ks) N) →
+                 EOk 0 (k'::ks) (two N nil)
 
-**`j = 1`, `X = nil` はちょうど既存の `WPd_run`（緑）。** `RunP2` はそれを
-「`X = nil` → どこでも良い `X`」「`j = 1` → 一般の `j`」に広げたもの。
-`WPd_bdA_le1`（幅 ≤ 1）が通っていたのは `j = 1` のとき `stkP 0 X = X` で
-2 の枠の直上に走りが来なかったから。**幅 2 で初めて `stkP 1` が来る。**
+    EOk_all : EPayT → ERunNil → ∀ X, JkA X → ∀ k ks, EOk k ks X
+    APzAll_of_E → GOKall → R375m (6,1,0) / (6,2,0) ∈ W 0
 
-`bdA` に絞ると
-
-    RunBdA := ∀ j k ks js, 1 ≤ j → j ≤ k → (∀ ks', WPd ks' (bdA js)) →
-                WPd ((k+1) :: ks) (stkP j (bdA js))
-    RunBdA → R375m (6,2,0) ∈ W 0
-
-まで弱められ、いちばん小さい未証明は
-
-    StkBlk2 := ∀ k ks, 2 ≤ k → WPd ((k+1) :: ks) (stk 2)
-
-    WPd_stk2 : WPd (0 :: ks) (stk 2)            ★緑（1 の枠の直上）
-    WPd_run  : 1 ≤ k → WPd ((k+1)::ks) (stk 1)  ★緑（2 の枠の直上、長さ 1）
-
-`StkBlk2` を開くと `two N (stk 2) = RunS ([N, nil] ++ [nil])` で
-`GOK_oneUV_RunSB ctx0 [N, nil] nil V` に嵌まる。階段の塔は 1 段ごとに
-`[fone ·, ftwo N, ftwo nil]` の **3 枠**伸びる。`WCtx` は 2 の枠が連続する
-文脈を持てないのでここで詰まる。`HGx` なら持てるので、`GNilO` から出る見込み。
-
-## `LOk` の梯子では鎖の階段が閉じる（緑・無条件）
-
-    LOk k X := ∀ D, StkOk k D → GOK (plug D X)
-    StkOk : `GCtx` の上に `ftwo N` が 1 枚、その上に 1 の枠が `k` 枚
-
-    QL Bs := ∀ k, LOk (k+1) (FLr Bs)
-    QL_all : ∀ Bs, (∀ C ∈ Bs, Bok C) → QL Bs      ★仮定なし
-
-`QFL`（`GBase` の文脈）で残っていた `B = []`（鎖の右端に裸の 2 の記録）が、
-`LOk_twoN`（既存の緑）でそのまま閉じる。**塔の条件が梯子の深さについて
-全称**だからで、これが `SelfW`（自分の上に積み続ける）を解く唯一の既存の型。
-
-    LOk (k+1)（1 の枠が 1 枚以上）: 鎖も塔も緑
-    LOk 0    （2 の枠の直上）     : `two nil nil` だけ緑 ← **ここが走りの壁**
-
-`GOK T → R341 ++ jk1 2 T ∈ W 0` なので `GOK (one nil (two nil X))` は
-`R373 ++ jk1 4 X`。`R375m = R373 (5,2,0)` に届くには `X = two nil Y`
-（`Y ≠ nil`）が要り、それが `LOk 0` の壁。今回出た行列
-（`R375m (5,1,0)(6,2,0)…`）は `bms -c` で証明済みの最大より小さい。
-
-## 2 つの道は同じ壁（緑）
-
-    WPd_of_GOKall : GOKall → ∀ ks Z, FrmN ks Z → WPd ks Z
-    R375m61_of_GOKall / R375m62_of_GOKall / R375m62_of_APzAll
-
-`GOKall := ∀ T, JkT T → GOK T` から `WPd` 層は全部出る（`WPd_iff` + `WCtx_JkT`）。
-だから `bdA` 経由（`RunBdA` / `StkBlk2`）と裸の記録経由（`GNilO` / `APz…`）は
-同じ壁の別の言い方。開いている 2 つの行列はどちらからでも出る。
-
-## 一般の停止性としての壁（文脈なしの 4 文）
-
-    APz M   := ∀ U, JkT U → GOK U → GOK (one U M)
-    APzO2 W := ∀ M, JkA M → APz M → APz (one M W)
-    APzT2 W := ∀ M, JkA M → APz M → APz (two M W)
-
-    APzO2One := ∀ Z T, JkA Z → JkA T → APzO2 Z → APzO2 T → APzO2 (one Z T)
-    APzO2Two := ∀ Z T, JkA Z → JkA T → APzO2 Z → APzO2 T → APzO2 (two Z T)
-    APzT2One := ∀ Z T, JkA Z → JkA T → APzT2 Z → APzT2 T → APzT2 (one Z T)
-    APzT2Two := ∀ Z T, JkA Z → JkA T → APzT2 Z → APzT2 T → APzT2 (two Z T)
-
-    R375m61_of_APz4 : 4 つから R375m (6,1,0) ∈ W 0
-
-どれも「記録の直上にまた記録がある」形。語で見ると `(l+1,r,0) … (l+2,r',0)` で
-高さが 1 ずつ上がる列、つまり塔。
-
-## 同値な言い方
-
-    APzAll := ∀ M, JkA M → APz M
-    GOKall := ∀ T, JkT T → GOK T                （= この符号化での z<2 の停止性）
-    GAll   := ∀ F, HGx F → ∀ Z, JkA Z → GOK (plug F Z)
-    GNilO  := ∀ D, HGx D → OSib D nil     GNilT := ∀ D, HGx D → TSib D nil
-
-    APzAll ⟺ GOKall,  GAll ⟺ GNilO ∧ GNilT ∧ 底,  GOKall → GAll
+どちらも「木が 2 の記録の直上に来る場合」だけ。
 
 ## 緑になっている還元
 
-    GOKall_of_APzAll : 木の構造帰納。TopOk があるので `two` は字の先頭段に来られず、
-                       nil（GOK_nil）/ pay（AY0）/ one（APz を U = N に当てる）の 3 つ
-    APzAll_of_steps  : APzOne ∧ APzTwo → APzAll
-    APzO2_nil        : 無条件で緑（APz_oneNil ← GOK_oneOneNil）
-    APzO2_pay        : 荷の W 帰納（dupJs0 / innerJs0、鎖は itJ）
-    APzT2_pay        : 荷の W 帰納（dupJt0 / innerJt0、鎖は twoIt）
-    APz_twoNil       : APzT2 nil ⟸ APzOne（two V nil = RunS [V] の階段、塔は APzOne）
-    APzO2_oneNil     : APzO2 (one Z nil) ⟸ APzO2 Z
-    APzT2_oneNil     : APzT2 (one Z nil) ⟸ APzT2 Z
-    GSib_tree / SelfW_HGx / hangG_fone / hangG_ftwo / GNilO_fone / GNilO_ftwo / GNilT_fone
-    PS_cons / PZ_cons / PS_consF / TSibF_pay
-    QFL_cons / QFL_all / Pay2_of_QFL0 / TowHCx / QH0
-    GOK_oneUV_RunSB（階段）/ APnil_gen0（裸の 1 の記録）/ W0_acc
+    底 (0, [])      : `EOk 0 [] X ↔ APz X`（`EOk_base_APz`）
+    荷 (k+1, ks)    : `PS_consE` / `EOk_pay`（鎖に `EOk` を持ち回る W 帰納）
+    裸の 2 (k+1,ks) : `EOk_twoNil` / `EOk_twoNil_base`
+    空木 (k+1, ks)  : `EOk_nil_fone`
+    one / two       : `EOk_one` / `EOk_two`（`plug` の付け替えだけ、予算なし）
+    `EOk_payAll` / `EOk_twoNilAll` / `EOk_nilAll` / `EOk_all`
 
-## 測度（未解決）
+## なぜ 2 の枠止まりだけ残るか
 
-4 文はどれも「記録を 1 枚剥がして深さ 1 の文脈へ」進む。`T = nil` なら
-`APnil_gen0` で閉じる（緑）。`T ≠ nil` だと文脈が深くなり、荷のところで
-文脈が 1 縮んで木が任意に戻る。`（木の大きさ, 文脈の長さ）`のどちらの
-辞書式順序でも割れる。
+`EOk_twoNil`（1 の枠止まり）の塔は `(fone N)^m` で形が `(k+m, ks)` に伸びるだけ。
+族の条件 `∀ j, EOk j ks N` でちょうど覆える。
+
+走りの塔（`GOK_twoTwoNilW_gen` の `nstN2 N' N k`）は `[fone N, ftwo N']` を
+1 段ずつ足すので、形が `(0, k'::ks) → (0, 1::k'::ks) → (0, 1::1::k'::ks) → …` と
+**リストごと伸びる**。族が保証するのは `(·, ks)` の形だけなので届かない。
+
+## 他の言い方（全部同値、緑の還元あり）
+
+    APzAll ⟺ GOKall := ∀ T, JkT T → GOK T
+      ⟺ GNilO ∧ GNilT ∧ 底（HGx 文脈）
+      ⟸ APzO2One ∧ APzO2Two ∧ APzT2One ∧ APzT2Two（文脈なしの 4 文）
+      ⟸ EPayT ∧ ERunNil（族 `ECtx`、いちばん細かい）
+
+    GOKall → WPd 層全部 → RunP2 → RunBdA → bdA 全幅
+    QL_all : 平らな鎖は `LOk` の梯子で無条件に良い（緑）
 
 ## 死んだ道（族）
 
-族 `WPd` / `WFd` / `WGd` は構造的に塞がっている。
-**階段は塔を「予算 1 下げ・幅 1 下げ」で積み、鎖は兄弟を開いて「幅だけ 1 上げ」る。**
-鎖は幅の余裕を 1 消費するのに補充できないので、兄弟条件の下限で必ず割れる。
-詳細は notes 追記282〜287。
+`WPd` / `WFd` / `WGd` は予算が鎖の長さに追いつかない。
+`APd` は `Rq (false::ks) U = TopOk U` が 2 頭の木を弾く。
+`ECtx` はどちらも無いが、走りの塔が形のリストを伸ばすところが残っている。
+詳細は notes 追記282〜287、301、309。
