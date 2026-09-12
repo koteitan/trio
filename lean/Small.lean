@@ -10205,6 +10205,180 @@ theorem Acc_Rex_of_Bok {Y : TrioSeq} (hY : Bok Y) : Acc Rex Y := Acc_Rex hY.mem
 
 #print axioms Acc_Rex
 
+/-- `[]` を最小元として足した展開関係。`GOK_twoPayZ_of` の底の場合
+（`Y = [(0,0,0)]` から `Y' = []` に落ちる）を含めるために要る。 -/
+def Rex' (M' M : TrioSeq) : Prop := Rex M' M ∨ (M' = [] ∧ M ≠ [])
+
+theorem short_nil : (([] : TrioSeq).length ≤ 1 ∧ lev ([] : TrioSeq) 0 = 0) :=
+  ⟨by simp, by simp [lev, entry]⟩
+
+theorem Acc_Rex'_nil : Acc Rex' ([] : TrioSeq) := by
+  refine Acc.intro _ ?_
+  intro M' hM'
+  rcases hM' with h | ⟨-, hne⟩
+  · exact absurd short_nil h.1
+  · exact absurd rfl hne
+
+theorem Acc_Rex' : W 0 ⊆ {M : TrioSeq | Acc Rex' M} := by
+  refine A2' ?_
+  intro M hM
+  simp only [Set.mem_setOf_eq]
+  rcases hM with hshort | hnat | ⟨m, hm, -, -⟩
+  · refine Acc.intro M ?_
+    intro M' hM'
+    rcases hM' with h | ⟨rfl, -⟩
+    · exact absurd hshort h.1
+    · exact Acc_Rex'_nil
+  · refine Acc.intro M ?_
+    intro M' hM'
+    rcases hM' with ⟨-, n, hn, rfl⟩ | ⟨rfl, -⟩
+    · exact hnat n hn
+    · exact Acc_Rex'_nil
+  · exact absurd hm (Nat.not_lt_zero m)
+
+theorem Acc_Rex'_of_Bok {Y : TrioSeq} (hY : Bok Y) : Acc Rex' Y := Acc_Rex' hY.mem
+
+/-- 全体で整礎な関係。`Acc Rex' b` を条件に付けると `W 0` の外は前者を持たない。 -/
+def LdLt (a b : TrioSeq) : Prop := Acc Rex' b ∧ Relation.TransGen Rex' a b
+
+theorem Acc_LdLt_of_AccT {a : TrioSeq} (h : Acc (Relation.TransGen Rex') a) :
+    Acc LdLt a := by
+  induction h with
+  | intro x hx ih => exact Acc.intro x (fun y hy => ih y hy.2)
+
+theorem wf_LdLt : WellFounded LdLt := by
+  refine ⟨fun a => ?_⟩
+  by_cases ha : Acc Rex' a
+  · exact Acc_LdLt_of_AccT ha.transGen
+  · exact Acc.intro a (fun y hy => absurd hy.1 ha)
+
+#print axioms Acc_Rex'
+#print axioms wf_LdLt
+
+theorem Acc_not_self {α : Type} {r : α → α → Prop} {a : α} (h : Acc r a) : ¬ r a a := by
+  induction h with
+  | intro x hx ih => intro hxx; exact ih x hxx hxx
+
+theorem LdLt_irrefl {a : TrioSeq} : ¬ LdLt a a := by
+  intro h
+  exact Acc_not_self h.1.transGen h.2
+
+theorem LdLt_trans {a b c : TrioSeq} (h1 : LdLt a b) (h2 : LdLt b c) : LdLt a c :=
+  ⟨h2.1, h1.2.trans h2.2⟩
+
+/-- 荷の型（順序を付けるための同型）。`Multiset Ld` の DM 順序を使う。 -/
+def Ld : Type := TrioSeq
+
+def mkLd (Y : TrioSeq) : Ld := Y
+
+def unLd (a : Ld) : TrioSeq := a
+
+@[simp] theorem unLd_mkLd (Y : TrioSeq) : unLd (mkLd Y) = Y := rfl
+
+instance : LE Ld := ⟨fun a b => unLd a = unLd b ∨ LdLt (unLd a) (unLd b)⟩
+
+instance : Preorder Ld where
+  le_refl a := Or.inl rfl
+  le_trans a b c hab hbc := by
+    rcases hab with h1 | h1
+    · rcases hbc with h2 | h2
+      · exact Or.inl (h1.trans h2)
+      · exact Or.inr (by rw [show unLd a = unLd b from h1]; exact h2)
+    · rcases hbc with h2 | h2
+      · exact Or.inr (by rw [show unLd c = unLd b from h2.symm]; exact h1)
+      · exact Or.inr (LdLt_trans h1 h2)
+
+theorem Ld_lt_iff {a b : Ld} : a < b ↔ LdLt (unLd a) (unLd b) := by
+  constructor
+  · intro h
+    obtain ⟨hle, hnle⟩ := h
+    rcases hle with h1 | h1
+    · exact absurd (Or.inl h1.symm) hnle
+    · exact h1
+  · intro h
+    refine ⟨Or.inr h, ?_⟩
+    intro hba
+    rcases hba with h2 | h2
+    · exact LdLt_irrefl (by rw [show unLd b = unLd a from h2] at h; exact h)
+    · exact LdLt_irrefl (LdLt_trans h h2)
+
+instance : WellFoundedLT Ld :=
+  ⟨Subrelation.wf (fun {a b} h => (Ld_lt_iff.mp h)) (InvImage.wf unLd wf_LdLt)⟩
+
+/-- ★★★★★★★★★★ 荷の多重集合の DM 順序は整礎。 -/
+theorem wf_LdDM : WellFounded (Multiset.IsDershowitzMannaLT (α := Ld)) :=
+  Multiset.wellFounded_isDershowitzMannaLT
+
+#print axioms wf_LdDM
+
+/-! ### 水平鎖を荷のリストで表す -/
+
+/-- 荷のリストから水平鎖を作る。先頭が一番外の荷。 -/
+def ChL : List TrioSeq → Jk1
+  | [] => Jk1.nil
+  | (Y :: Ys) => Jk1.two (ChL Ys) (Jk1.pay Jk1.nil Y)
+
+theorem JkA_ChL : ∀ (L : List TrioSeq), (∀ Y ∈ L, Bok Y) → JkA (ChL L)
+  | [], _ => trivial
+  | (Y :: Ys), h => ⟨JkA_ChL Ys (fun Z hZ => h Z (by simp [hZ])), trivial,
+      h Y (by simp)⟩
+
+theorem VCh_ChL : ∀ (L : List TrioSeq), (∀ Y ∈ L, Bok Y) → VCh Jk1.nil (ChL L)
+  | [], _ => VCh.nil
+  | (Y :: Ys), h =>
+      VCh.step (VCh_ChL Ys (fun Z hZ => h Z (by simp [hZ]))) (h Y (by simp))
+
+/-- どの水平鎖も荷のリストで書ける。 -/
+theorem VCh_exists_ChL : ∀ {N : Jk1}, VCh Jk1.nil N →
+    ∃ L : List TrioSeq, (∀ Y ∈ L, Bok Y) ∧ N = ChL L
+  | _, VCh.nil => ⟨[], by simp, rfl⟩
+  | _, VCh.step hN hY => by
+      obtain ⟨L, hL, rfl⟩ := VCh_exists_ChL hN
+      exact ⟨_ :: L, by
+        intro Z hZ
+        rcases List.mem_cons.mp hZ with rfl | hZ'
+        · exact hY
+        · exact hL Z hZ', rfl⟩
+
+theorem twoIt_ChL (Y : TrioSeq) : ∀ (m : ℕ) (L : List TrioSeq),
+    twoIt (ChL L) (Jk1.pay Jk1.nil Y) m = ChL (List.replicate m Y ++ L)
+  | 0, L => rfl
+  | (m + 1), L => by
+      show Jk1.two (twoIt (ChL L) (Jk1.pay Jk1.nil Y) m) (Jk1.pay Jk1.nil Y) = _
+      rw [twoIt_ChL Y m L]
+      rfl
+
+/-- 鎖の荷の多重集合。 -/
+def LdMS (L : List TrioSeq) : Multiset Ld := (L.map mkLd : List Ld)
+
+theorem LdMS_cons (Y : TrioSeq) (L : List TrioSeq) :
+    LdMS (Y :: L) = LdMS L + {mkLd Y} := by
+  show ((Y :: L).map mkLd : Multiset Ld) = ((L.map mkLd : List Ld) : Multiset Ld) + {mkLd Y}
+  rw [List.map_cons, add_comm, ← Multiset.cons_coe, Multiset.singleton_add]
+
+theorem LdMS_rep_append (Y : TrioSeq) (m : ℕ) (L : List TrioSeq) :
+    LdMS (List.replicate m Y ++ L)
+      = LdMS L + Multiset.replicate m (mkLd Y) := by
+  show ((List.replicate m Y ++ L).map mkLd : Multiset Ld) = _
+  rw [List.map_append, List.map_replicate]
+  show ((List.replicate m (mkLd Y) : List Ld) + (L.map mkLd : List Ld) : Multiset Ld) = _
+  rw [Multiset.coe_replicate]
+  exact add_comm _ _
+
+/-- ★★★★★★★★★★ DM の減少: 一番外の荷 `Y` を、より小さい `Y'` の `m` 本に置き換える。 -/
+theorem LdDM_step {Y Y' : TrioSeq} (hY : Bok Y) (hlt : Rex' Y' Y) (m : ℕ)
+    (L : List TrioSeq) :
+    Multiset.IsDershowitzMannaLT (LdMS (List.replicate m Y' ++ L)) (LdMS (Y :: L)) := by
+  refine ⟨LdMS L, Multiset.replicate m (mkLd Y'), {mkLd Y}, by simp, ?_, ?_, ?_⟩
+  · rw [LdMS_rep_append]
+  · rw [LdMS_cons]
+  · intro y hy
+    rw [Multiset.eq_of_mem_replicate hy]
+    exact ⟨mkLd Y, by simp,
+      Ld_lt_iff.mpr ⟨Acc_Rex'_of_Bok hY, Relation.TransGen.single hlt⟩⟩
+
+#print axioms LdDM_step
+
 
 end Small
 end TRIO

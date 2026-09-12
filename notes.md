@@ -26731,3 +26731,26 @@ wall.md が「整礎な理由が要る」と書いていた所の土台がこれ
 DM が減る理由: 上の荷 `W` を `W' ≺ W` に落として鎖を `m` 本伸ばすので
 多重集合は `{W}` を `{W'}*(m+1)` に置き換える。`htow` は `{W}` を
 `{W'}*m + {[]}` に置き換える（`[]` を最小元にしておく必要がある）。
+
+## 追記437: DM 帰納の土台が全部緑になった
+
+    Rex' M' M := Rex M' M ∨ (M' = [] ∧ M ≠ [])          （[] を最小元に足す）
+    Acc_Rex'   : W 0 ⊆ {M | Acc Rex' M}                                  ★緑
+    LdLt a b   := Acc Rex' b ∧ Relation.TransGen Rex' a b
+    wf_LdLt    : WellFounded LdLt                                        ★緑
+      （`Acc Rex' b` を条件に付けると W 0 の外の元は前者を持たないので全体で整礎）
+    Ld := TrioSeq（同型）、Preorder Ld、WellFoundedLT Ld
+    wf_LdDM    : WellFounded (Multiset.IsDershowitzMannaLT (α := Ld))    ★緑
+
+鎖を荷のリストで表す部品:
+
+    ChL [] = nil、ChL (Y :: Ys) = two (ChL Ys) (pay nil Y)
+    JkA_ChL / VCh_ChL / VCh_exists_ChL                                   ★緑
+    twoIt_ChL : twoIt (ChL L) (pay nil Y) m = ChL (replicate m Y ++ L)   ★緑
+    LdMS L := (L.map mkLd : Multiset Ld)
+    LdMS_cons / LdMS_rep_append                                          ★緑
+    LdDM_step : Bok Y → Rex' Y' Y →
+      IsDershowitzMannaLT (LdMS (replicate m Y' ++ L)) (LdMS (Y :: L))   ★緑
+
+次: `GOK_twoPayZ_of` を「荷 `Y` で添字づけた族」で再証明し、`htow`（底が nil の鎖）を
+同じ DM 帰納に入れる。`htow` は DM で小さい鎖の `Pc` から `WPd_twoA_runB` で出る。
