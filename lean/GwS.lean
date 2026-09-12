@@ -637,5 +637,304 @@ theorem GoodFb_snoczR {l : List TrioSeq} (hw : WOkR l)
 
 #print axioms GoodFb_snoczR
 
+/-! ## 1 の列の孤児（`APnil_gen0` の写し）と、深さ x の平らな最上位列 -/
+
+theorem Mono_oper {B : TrioSeq} (hmo : Mono B) (n : ℕ) : Mono (B⟦n⟧) := by
+  by_cases hL : B.length - 1 = 0
+  · rw [oper_eq_self_of_short n hL]; exact hmo
+  by_cases hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+      entry B 2 (B.length - 1) = 0
+  · rw [oper_eq_pred_of_zero n hL hz]
+    exact fun c hc => hmo c (mem_of_mem_Pred hc)
+  by_cases hp : hasParent B (srow B (B.length - 1)) (B.length - 1)
+  · rw [L53.oper_unfold rfl hL hz rfl hp rfl rfl rfl n]
+    intro c hc
+    rcases List.mem_append.mp hc with hm | hm
+    · exact hmo c (List.mem_of_mem_take hm)
+    · rw [List.mem_flatMap] at hm
+      obtain ⟨k, -, hm2⟩ := hm
+      rw [List.mem_map] at hm2
+      obtain ⟨j, -, rfl⟩ := hm2
+      dsimp only
+      have := Mono_entry hmo j
+      omega
+  · rw [oper_eq_pred_of_noParent n hL hz hp]
+    exact fun c hc => hmo c (mem_of_mem_Pred hc)
+
+/-- 後ろに列を足すとき、見える列（後ろが全部深い列）の条件は足した側だけ見ればよい。 -/
+theorem Ancd_append_spine {d : ℕ} {P Q : TrioSeq} (hP : Ancd d P)
+    (hQ : ∀ j, j < Q.length → entry Q 0 j < d →
+      (∀ i, j < i → i < Q.length → entry Q 0 j < entry Q 0 i) → 1 ≤ entry Q 1 j) :
+    Ancd d (P ++ Q) := by
+  intro j hj0 hjl hlt hvis
+  rcases Nat.lt_or_ge j P.length with hjP | hjP
+  · have hlt' : entry P 0 j < d := by rwa [Small.entry_append_left hjP] at hlt
+    rw [Small.entry_append_left hjP]
+    refine hP j hj0 hjP hlt' ?_
+    intro i hi hil
+    have := hvis i hi (by simp; omega)
+    rwa [Small.entry_append_left hjP, Small.entry_append_left hil] at this
+  · obtain ⟨t, rfl⟩ : ∃ t, j = P.length + t := ⟨j - P.length, by omega⟩
+    have htQ : t < Q.length := by simp at hjl; omega
+    have hlt' : entry Q 0 t < d := by rwa [entry_append_right] at hlt
+    rw [entry_append_right]
+    refine hQ t htQ hlt' ?_
+    intro i hi hil
+    have := hvis (P.length + i) (by omega) (by simp; omega)
+    rwa [entry_append_right, entry_append_right] at this
+
+theorem rcol_content_ge {a : ℕ} {T : TrioSeq} (hT : ∀ x ∈ T, 1 ≤ x.1) :
+    ∀ x ∈ shiftr01 (a + 1) 0 T, a + 1 + 1 ≤ x.1 := by
+  intro x hx
+  simp only [shiftr01, List.mem_map] at hx
+  obtain ⟨p, hp, rfl⟩ := hx
+  have := hT p hp
+  dsimp only; omega
+
+/-- 語の後ろに低い列を置くと、語の字の中身は見えない。 -/
+theorem Ancd_rword_pre : ∀ (l : List TrioSeq), (∀ T ∈ l, ∀ x ∈ T, 1 ≤ x.1) →
+    ∀ (a b d : ℕ) (P : TrioSeq) (c : ℕ × ℕ × ℕ),
+    1 ≤ b → c.1 ≤ a + 2 → 1 ≤ c.2.1 → Ancd d P → Ancd d ((P ++ rword a b l) ++ [c]) := by
+  intro l
+  induction l using List.reverseRecOn with
+  | nil =>
+      intro _ a b d P c hb hc0 hc1 hP
+      simpa [rword_nil] using Ancd_snoc_one1 hP hc1
+  | append_singleton l' T ih =>
+      intro hl a b d P c hb hc0 hc1 hP
+      have hl' : ∀ U ∈ l', ∀ x ∈ U, 1 ≤ x.1 := fun U hU => hl U (by simp [hU])
+      have hT : ∀ x ∈ T, 1 ≤ x.1 := hl T (by simp)
+      have hprev := ih hl' a b d P ((a + 1, b + 1, 1) : ℕ × ℕ × ℕ) hb
+        (by show a + 1 ≤ a + 2; omega) (by show 1 ≤ b + 1; omega) hP
+      have h2 : Ancd d ((((P ++ rword a b l') ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+          ++ shiftr01 (a + 1) 0 T) ++ [c]) :=
+        Ancd_append_low hprev (rcol_content_ge hT) (by omega) hc1
+      have e : (((P ++ rword a b l') ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)])
+          ++ shiftr01 (a + 1) 0 T) = P ++ rword a b (l' ++ [T]) := by
+        rw [rword_append, rword_singleton, rcol]
+        simp [List.append_assoc]
+      rwa [e] at h2
+
+/-- 記録 + 語 + 字の中身 の祖先条件（字の中身は背骨の条件を持つ）。 -/
+theorem Ancd_recrword {a b h : ℕ} (hb : 1 ≤ b) {Z0 : TrioSeq} (hZ : Ancd a Z0)
+    (l : List TrioSeq) (hl : ∀ T ∈ l, ∀ x ∈ T, 1 ≤ x.1) (T0 : TrioSeq)
+    (hsp : ∀ j, j < T0.length → entry T0 0 j < h →
+      (∀ i, j < i → i < T0.length → entry T0 0 j < entry T0 0 i) → 1 ≤ entry T0 1 j) :
+    Ancd (a + 1 + h) (Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: (rword a b l ++ rcol a b T0))) := by
+  have h1 : Ancd (a + 1 + h) (Z0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)]) :=
+    Ancd_snoc_pivot hZ rfl (by simpa using hb)
+  have h2 : Ancd (a + 1 + h) (((Z0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)]) ++ rword a b l)
+      ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) :=
+    Ancd_rword_pre l hl a b _ _ _ hb (by show a + 1 ≤ a + 2; omega)
+      (by show 1 ≤ b + 1; omega) h1
+  have h3 := Ancd_append_spine h2 (Q := shiftr01 (a + 1) 0 T0) (by
+    intro j hj hlt hvis
+    have hjT : j < T0.length := by simpa [shiftr01] using hj
+    rw [entry0_shiftr01 hjT] at hlt
+    rw [entry1_shiftr01]
+    refine hsp j hjT (by omega) ?_
+    intro i hi hil
+    have := hvis i hi (by simpa [shiftr01] using hil)
+    rw [entry0_shiftr01 hjT, entry0_shiftr01 hil] at this
+    omega)
+  have e : (((Z0 ++ [((a, b, 0) : ℕ × ℕ × ℕ)]) ++ rword a b l)
+      ++ [((a + 1, b + 1, 1) : ℕ × ℕ × ℕ)]) ++ shiftr01 (a + 1) 0 T0
+      = Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: (rword a b l ++ rcol a b T0)) := by
+    rw [rcol]
+    simp [List.append_assoc]
+  rwa [e] at h3
+
+theorem rword_snoc_orph (a b : ℕ) (l : List TrioSeq) (T0 : TrioSeq) (h : ℕ) :
+    rword a b (l ++ [T0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)]])
+      = rword a b (l ++ [T0]) ++ [((a + 1 + h, 1, 0) : ℕ × ℕ × ℕ)] := by
+  have e1 : shiftr01 (a + 1) 0 [((h, 1, 0) : ℕ × ℕ × ℕ)]
+      = [((a + 1 + h, 1, 0) : ℕ × ℕ × ℕ)] := by
+    simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, and_true]
+    exact Prod.ext (by first | (dsimp only; omega) | dsimp only | omega | rfl) (Prod.ext (by first | (dsimp only; omega) | dsimp only | omega | rfl) rfl)
+  rw [rword_append, rword_append, rword_singleton, rword_singleton, rcol, rcol,
+    shiftr01_append0, e1]
+  simp [List.append_assoc]
+
+theorem rword_snoc_load (a b : ℕ) (l : List TrioSeq) (T0 B : TrioSeq) (h : ℕ) :
+    rword a b (l ++ [T0 ++ shiftr01 h 0 B])
+      = rword a b (l ++ [T0]) ++ shiftr01 (a + 1 + h) 0 B := by
+  rw [rword_append, rword_append, rword_singleton, rword_singleton, rcol, rcol,
+    shiftr01_append0, shiftr01_add0, show h + (a + 1) = a + 1 + h by omega]
+  simp [List.append_assoc]
+
+/-- ★★ (G2) 字の中身の最後が 1 の列の孤児 `(h,1,0)`（字の中で行 1 の親なし）。
+各欄を `snocd_gen` で閉じる（荷は `T0 ++ B↑h`）。 -/
+theorem GoodFb_orphR {l : List TrioSeq} (hw : WOkR l) {T0 : TrioSeq} {h : ℕ} (hh : 1 ≤ h)
+    (hT : RawOk (T0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)]))
+    (hsp : ∀ j, j < T0.length → entry T0 0 j < h →
+      (∀ i, j < i → i < T0.length → entry T0 0 j < entry T0 0 i) → 1 ≤ entry T0 1 j)
+    (hbase : GoodFb (fun a b => rword a b (l ++ [T0])))
+    (hprev : ∀ B : TrioSeq, Bok B →
+      GoodFb (fun a b => rword a b (l ++ [T0 ++ shiftr01 h 0 B]))) :
+    GoodFb (fun a b => rword a b (l ++ [T0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)]])) := by
+  have hwO : WOkR (l ++ [T0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)]]) :=
+    WOkR_append hw (WOkR_singleton hT)
+  have hlge : ∀ T ∈ l, ∀ x ∈ T, 1 ≤ x.1 := fun T hT' => (hw T hT').1
+  refine ⟨fun a b => rword_ge a b _, fun a b => rword_mono hwO,
+    fun a b s => rword_shift a b s _, ?_, ?_, ?_⟩
+  · intro y c hy
+    refine ⟨fun x hx => by have := rword_ge (c + 1) (y + 1) _ x hx; omega, rword_mono hwO, ?_⟩
+    intro E hE t Z hZ
+    rw [rword_shift, rword_snoc_orph]
+    set a := c + 1 + t with ha
+    have hbaseP : PU y a (Z ++ ([((a, y + 1, 0) : ℕ × ℕ × ℕ)] ++
+        rword a (y + 1) (l ++ [T0]))) :=
+      ⟨E, c + t, Z, _, hE, by omega, hZ, by rw [ha, show c + t + 1 = c + 1 + t from by omega],
+        hbase.pu y (c + t) hy⟩
+    have hAok := (BaseOk_PU y).aok _ _ hbaseP
+    have hancZ : Ancd a Z := by
+      have := (IfcV_iface (y + 1) hE).bok.ancd (c + t) Z hZ
+      rwa [show c + t + 1 = a from by omega] at this
+    have hanc : Ancd (a + 1 + h)
+        (Z ++ (((a, y + 1, 0) : ℕ × ℕ × ℕ) :: rword a (y + 1) (l ++ [T0]))) := by
+      have h1 := Ancd_recrword (a := a) (b := y + 1) (h := h) (by omega) hancZ l hlge T0 hsp
+      rwa [← rword_singleton a (y + 1) T0, ← rword_append] at h1
+    have hsn := snocd_gen (Y := Z ++ (((a, y + 1, 0) : ℕ × ℕ × ℕ) ::
+        rword a (y + 1) (l ++ [T0]))) (d := a + 1 + h) (by omega)
+      (by simpa using hAok) hanc ?_
+    · simpa [List.append_assoc] using hsn
+    · intro B hB
+      have h2 := (hprev B hB).pu y c hy
+      have h3 := h2.2.2 E hE t Z hZ
+      rw [rword_shift, rword_snoc_load] at h3
+      simpa [ha, List.append_assoc] using h3
+  · intro c E hI
+    refine ⟨fun x hx => by have := rword_ge (c + 1) 2 _ x hx; omega, rword_mono hwO, ?_⟩
+    intro j t X hX
+    rw [rword_shift, rword_snoc_orph]
+    set a := c + 1 + t with ha
+    have hbaseP : PkGA a (X ++ ([((a, 2, 0) : ℕ × ℕ × ℕ)] ++ rword a 2 (l ++ [T0]))) :=
+      ⟨E, hI, j, c + t, X, _, by omega, hX,
+        by rw [ha, show c + t + 1 = c + 1 + t from by omega], hbase.pk (c + t)⟩
+    have hAok := PkGA_Aok hbaseP
+    have hancX : Ancd a X := by
+      have := (BaseOk_RunG hI.bok j).ancd (c + t) X hX
+      rwa [show c + t + 1 = a from by omega] at this
+    have hanc : Ancd (a + 1 + h)
+        (X ++ (((a, 2, 0) : ℕ × ℕ × ℕ) :: rword a 2 (l ++ [T0]))) := by
+      have h1 := Ancd_recrword (a := a) (b := 2) (h := h) (by omega) hancX l hlge T0 hsp
+      rwa [← rword_singleton a 2 T0, ← rword_append] at h1
+    have hsn := snocd_gen (Y := X ++ (((a, 2, 0) : ℕ × ℕ × ℕ) :: rword a 2 (l ++ [T0])))
+      (d := a + 1 + h) (by omega) (by simpa using hAok) hanc ?_
+    · simpa [List.append_assoc] using hsn
+    · intro B hB
+      have h2 := (hprev B hB).pk c E hI
+      have h3 := h2.2.2 j t X hX
+      rw [rword_shift, rword_snoc_load] at h3
+      simpa [ha, List.append_assoc] using h3
+  · intro g
+    have hmid : MidD (g + 2) (((g + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        rword (g + 1) 1 (l ++ [T0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)]])) := by
+      have h1 := MidD_rword (g + 1) 1 (by omega) (by omega) hwO
+      simpa [show g + 1 + 1 = g + 2 from by omega] using h1
+    refine ⟨hmid, by simp [entry], ?_⟩
+    intro P hP s A' hA'
+    rw [show ((g + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+          rword (g + 1) 1 (l ++ [T0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)]])
+        = [((g + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+          rword (g + 1) 1 (l ++ [T0 ++ [((h, 1, 0) : ℕ × ℕ × ℕ)]]) from rfl,
+      shiftr01_append0, shift_col, rword_shift, rword_snoc_orph]
+    set a := g + 1 + s with ha
+    have hLw : LwA (g + s) A' := ⟨P, hP, hA'⟩
+    have hbaseR : RunA 0 a (A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: rword a 1 (l ++ [T0]))) :=
+      ⟨g + s, A', _, by omega, rfl, hLw, by
+        have := hbase.seg (g + s)
+        simpa [ha, show g + s + 1 = g + 1 + s from by omega] using this⟩
+    have hAok := (BaseOk_RunA 0).aok _ _ hbaseR
+    have hancA : Ancd a A' := by
+      have := LwB_Ancd hP hA'
+      rwa [show g + s + 1 = a from by omega] at this
+    have hanc : Ancd (a + 1 + h)
+        (A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: rword a 1 (l ++ [T0]))) := by
+      have h1 := Ancd_recrword (a := a) (b := 1) (h := h) (by omega) hancA l hlge T0 hsp
+      rwa [← rword_singleton a 1 T0, ← rword_append] at h1
+    have hsn := snocd_gen (Y := A' ++ (((a, 1, 0) : ℕ × ℕ × ℕ) :: rword a 1 (l ++ [T0])))
+      (d := a + 1 + h) (by omega) hAok hanc ?_
+    · simpa [List.append_assoc] using hsn
+    · intro B hB
+      have h2 := ((hprev B hB).seg (g + s)).reapp P hP 0 A' (by simpa using hA')
+      rw [show ((g + s + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+            rword (g + s + 1) 1 (l ++ [T0 ++ shiftr01 h 0 B])
+          = [((g + s + 1, 1, 0) : ℕ × ℕ × ℕ)] ++
+            rword (g + s + 1) 1 (l ++ [T0 ++ shiftr01 h 0 B]) from rfl] at h2
+      rw [rword_snoc_load] at h2
+      simpa [ha, show g + s + 1 = g + 1 + s from by omega, List.append_assoc] using h2
+
+/-- 字の中身の最後が最上位の平らな列 `(x,0,0)`（中身は全部深さ ≥ x）なら、字 `T` が複製される。 -/
+theorem GoodFb_snoc_dupRx {l : List TrioSeq} (hw : WOkR l) {T : TrioSeq} (hT : RawOk T)
+    {x : ℕ} (hx : 1 ≤ x) (hTx : ∀ y ∈ T, x ≤ y.1)
+    (hIH : ∀ n, 1 ≤ n → GoodFb (fun a b => rword a b (l ++ List.replicate n T))) :
+    GoodFb (fun a b => rword a b (l ++ [T ++ [((x, 0, 0) : ℕ × ℕ × ℕ)]])) := by
+  have hT' : RawOk (T ++ [((x, 0, 0) : ℕ × ℕ × ℕ)]) := by
+    refine ⟨fun y hy => ?_, fun y hy => ?_, ?_⟩
+    · rcases List.mem_append.mp hy with h | h
+      · exact hT.1 y h
+      · rw [List.mem_singleton.mp h]; exact hx
+    · rcases List.mem_append.mp hy with h | h
+      · exact hT.2.1 y h
+      · rw [List.mem_singleton.mp h]
+    · intro u hu h2
+      rcases Nat.lt_or_ge u T.length with huT | huT
+      · rw [Small.entry_append_left huT] at h2
+        obtain ⟨k, hku, hch, hk1⟩ := hT.2.2 u huT h2
+        refine ⟨k, hku, rtg0_append_left hch huT, ?_⟩
+        rwa [Small.entry_append_left (by omega)]
+      · have hu' : u = T.length := by simp at hu; omega
+        subst hu'
+        rw [show T.length = T.length + 0 from rfl, entry_append_right] at h2
+        simp [entry] at h2
+  refine GoodFb_of_keyR (WOkR_append hw (WOkR_singleton hT')) hIH ?_
+  intro Z0 a b hb hn
+  have hhead : entry (rcol a b T) 0 0 < a + 1 + x := by
+    show a + 1 < a + 1 + x; omega
+  have htail : ∀ r, 1 ≤ r → r < (rcol a b T).length → a + 1 + x ≤ entry (rcol a b T) 0 r := by
+    intro r hr1 hrl
+    obtain ⟨u, rfl⟩ : ∃ u, r = u + 1 := ⟨r - 1, by omega⟩
+    have hu : u < T.length := by rw [rcol_length] at hrl; omega
+    rw [entry_rcol_succ, entry0_shiftr01 hu]
+    have hmem : T.getD u (0, 0, 0) ∈ T := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hu]
+      exact List.getElem_mem hu
+    have := hTx _ hmem
+    show a + 1 + x ≤ (T.getD u (0, 0, 0)).1 + (a + 1)
+    omega
+  have h := flat_mem'' (Y0 := Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: rword a b l))
+    (M := rcol a b T) (d := a + 1 + x) (rcol_ne a b T) hhead htail
+    (fun n => by
+      match n with
+      | 0 =>
+          have h1 := hn 1 (le_refl 1)
+          rw [rword_append, rword_replicate] at h1
+          simp only [List.range_one, List.flatMap_cons, List.flatMap_nil,
+            List.append_nil] at h1
+          have h2 := W_take (by
+            rw [show Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: (rword a b l ++ rcol a b T))
+                = (Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: rword a b l)) ++ rcol a b T from by
+                  simp [List.append_assoc]] at h1
+            exact h1) (Z0 ++ (((a, b, 0) : ℕ × ℕ × ℕ) :: rword a b l)).length
+          rw [List.take_left] at h2
+          simpa using h2
+      | (n + 1) =>
+          have h1 := hn (n + 1) (by omega)
+          rw [rword_append, rword_replicate] at h1
+          simpa [List.append_assoc] using h1)
+  have e : rcol a b (T ++ [((x, 0, 0) : ℕ × ℕ × ℕ)])
+      = rcol a b T ++ [((a + 1 + x, 0, 0) : ℕ × ℕ × ℕ)] := by
+    have e1 : shiftr01 (a + 1) 0 [((x, 0, 0) : ℕ × ℕ × ℕ)]
+        = [((a + 1 + x, 0, 0) : ℕ × ℕ × ℕ)] := by
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, and_true]
+      exact Prod.ext (by first | (dsimp only; omega) | dsimp only | omega | rfl) (Prod.ext (by first | (dsimp only; omega) | dsimp only | omega | rfl) rfl)
+    simp only [rcol, shiftr01_append0, e1, List.cons_append]
+  rw [rword_append, rword_singleton, e]
+  simpa [List.append_assoc] using h
+
+#print axioms GoodFb_orphR
+#print axioms GoodFb_snoc_dupRx
+
 end GwS
 end TRIO
