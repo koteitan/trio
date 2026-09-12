@@ -25584,3 +25584,45 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
 古い壁 `TwoStep : ∀ Z, JkA Z → TwoOk Z → TwoOk (two nil Z)` と比べると、
 `TwoNilStep` は兄弟 `N` を `nil` に固定し、仮定を `TwoOk Z` でなく
 「普遍的に差せる」に替えた版。
+
+## 追記401: `APd` だけで閉じる形に整理。壁の最小例は `stk 3`
+
+### 緑になったもの
+
+    APd_stk1 (ks) : APd (true::ks) (stk 1)                      ★無条件
+    APd_stk2 (ks) : APd (true::ks) (stk 2)                      ★無条件
+    APd_twoStkGen (hJN) (hNall) (p ks)
+      (hst : ∀ k, APd (false::ks) (stkP p (nstQ N p k)))
+      : APd (true::ks) (two N (stkP p (two nil nil)))           ★緑
+    StQ : ∀ N（普遍）, ∀ p k ks, APd (false::ks) (stkP p (nstQ N p k))
+    R376_of_StQ (h : StQ) : R373 ++ [(5,3,0)] ∈ W 0             ★緑
+
+`APd_twoStkGen` は `APd_twoTwoGen`（`stk 2` 版、緑）の `p` 一般化。`GOK_stkW_gen`
+（緑）を使うだけ。階段はどれも**同じ文脈** `ctx0 ++ [fone V]` に置くので
+`APd (true::ks)` の文で書け、`APd_cf` を `m = 0` で使うと `APd (false::ks)` に落ちる。
+
+`p = 0` は `nstQ N 0 k = nstN N k` で階段が `APd_nstN`（緑）。だから `stk 2` は無条件。
+
+### 壁の最小例
+
+    stk 0, stk 1, stk 2  … 無条件で緑
+    stk 3                … 開いている
+
+`stk 3` に要るのは `APd (false::ks) (stkP 1 (nstQ N 1 k))`。
+`k = 0` は `stk 1` で、`APd_twoTwoGen` から出る（緑）。
+`k = 1` は `two nil (one nil (two N (stk 1)))` で、ここで詰まる。
+
+### 詰まる理由（`APd` の語彙の問題）
+
+`APd (false::ks)` の節が作るのは `one U (two N V)`、つまり **2 の記録の直下は
+必ず 1 の枠**。`two N' (two nil W)`（2 の記録が 2 つ続く）は `APd` の節では作れない。
+`GOK_stkW_gen` は語のレベルでそれを作るが、**先端が `two nil nil` のときだけ**。
+
+    stk 3 に要るのは「先端が一般の `W` の `two N (stkP p W)`」。
+    語のレベルの新補題（`snocYd_mem` + `Mtwd (p+2)` + `unQ` の一般先端版）が要る。
+
+### `OneRunA` との関係
+
+`OneRunA`（追記399）は同じ壁を層 `WPdR` の底の言葉で書いたもの。
+`StQ` は `APd (false::ks)`（1 の枠の兄弟が弱い）を要求するので `OneRunA` より強い。
+**弱い方（`OneRunA`）を主目標にする。** `StQ` は「`APd` だけで書ける」利点がある。

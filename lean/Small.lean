@@ -4007,6 +4007,76 @@ theorem R376_of_HtowR (h : HtowR) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] �
 
 #print axioms R376_of_HtowR
 
+/-! ### ★★★ `APd` だけで閉じる形：`APd_twoTwoGen` を `stk q` に一般化する
+
+`GOK_stkW_gen`（緑）は `two N (stkP p (two nil nil))` を、階段
+`∀ k, GOK (plug (ctx0 ++ [fone V]) (two N (stkP p (nstQ N p k))))` から出す。
+階段はどれも**同じ文脈** `ctx0 ++ [fone V]` に置くので `APd (true::ks)` の文で書ける。
+`APd_cf` を `m = 0` で使えば `APd (false::ks) (stkP p (nstQ N p k))` に落ちる。
+
+`p = 0` のときは `nstQ N 0 k = nstN N k` で、階段は `APd_nstN`（緑）そのもの。
+つまり `p = 0`（= `stk 2`）は無条件。`p ≥ 1` だけが壁。 -/
+
+/-- 走り 1 本は無条件（`APd (false::ks) nil` を `m = 0`, `N = nil` で使うだけ）。 -/
+theorem APd_stk1 (ks : List Bool) : APd (true :: ks) (stk 1) :=
+  (APd_ct ks _).mpr (fun U hU hR hUk =>
+    (APd_cf ks Jk1.nil).mp (APd_nil (false :: ks)) 0 U Jk1.nil
+      (by simpa using hU) (by simpa using hR) (by simpa using hUk) trivial
+      (fun j => APd_nil _))
+
+/-- ★★★ 階段さえあれば `two N (stk (p+1))` が出る（`APd_twoTwoGen` の `p` 一般化）。 -/
+theorem APd_twoStkGen {N : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    (p : ℕ) (ks : List Bool)
+    (hst : ∀ k : ℕ, APd (false :: ks) (stkP p (nstQ N p k))) :
+    APd (true :: ks) (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil))) := by
+  rw [APd_iff]
+  intro ctx hc
+  have hcO : CtxOk ctx := GCtx_CtxOk (true :: ks) ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split ks ctx hc
+  refine GOK_stkW_gen ctx0 V p hJN ?_ hGV ?_
+  · exact JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr
+      ⟨hJN, JkA_stkP p (⟨trivial, trivial⟩ : JkA (Jk1.two Jk1.nil Jk1.nil))⟩)
+  · intro k
+    refine (APd_iff (true :: ks) _).mp ((APd_ct ks _).mpr (fun U hU hR hUk => ?_)) _ hc
+    exact (APd_cf ks _).mp (hst k) 0 U N (by simpa using hU) (by simpa using hR)
+      (by simpa using hUk) hJN (fun j => by simpa using hNall j ks)
+
+/-- `p = 0` の階段は `APd_nstN`（緑）。だから `stk 2` は無条件。 -/
+theorem APd_stk2 (ks : List Bool) : APd (true :: ks) (stk 2) := by
+  have hh := APd_twoStkGen (N := Jk1.nil) trivial (fun j kk => APd_nil _) 0 ks
+    (fun k => by
+      rw [show stkP 0 (nstQ Jk1.nil 0 k) = nstN Jk1.nil k from nstQ_zero Jk1.nil k]
+      exact APd_nstN (N := Jk1.nil) trivial (fun j kk => APd_nil _) k ks)
+  rw [stkP_two_nil_nil] at hh
+  exact hh
+
+#print axioms APd_stk2
+
+/-- ★ 残る 1 文（`APd` だけ）: 走りの塔 `stkP p (nstQ N p k)` が予算の節に差せる。 -/
+def StQ : Prop := ∀ (N : Jk1), JkA N →
+  (∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) →
+  ∀ (p k : ℕ) (ks : List Bool), APd (false :: ks) (stkP p (nstQ N p k))
+
+theorem RunAll_of_StQ (h : StQ) : RunAll := by
+  intro q ks
+  match q with
+  | 0 => exact APd_nilT ks
+  | 1 => exact APd_stk1 ks
+  | (p + 2) =>
+      have hh := APd_twoStkGen (N := Jk1.nil) trivial (fun j kk => APd_nil _) p ks
+        (fun k => h Jk1.nil trivial (fun j kk => APd_nil _) p k ks)
+      rw [stkP_two_nil_nil] at hh
+      exact hh
+
+/-- ★★★★★★★★ 行376 は `APd` だけの 1 文 `StQ` から出る。 -/
+theorem R376_of_StQ (h : StQ) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RunAll (RunAll_of_StQ h)
+
+#print axioms APd_stk1
+#print axioms APd_twoStkGen
+#print axioms R376_of_StQ
+
 
 end Small
 end TRIO
