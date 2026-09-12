@@ -5019,6 +5019,67 @@ termination_by k _ _ _ _ m _ _ _ => (k, m)
 
 #print axioms WPdw_runW
 
+theorem owG_pos {α : Type} [LinearOrder α] (e : α) : (⊥ : BwG α) < owG e 1 := by
+  rw [← owG_zero e]
+  exact owG_ltR e (by omega)
+
+theorem WPdw_twoZy : ∀ (k : ℕ) (ks : List Bw2),
+    WPdT (owG (ex2 1 (k + 1)) 1 :: ks) (Jk1.two Jk1.nil (Zy k))
+  | 0, ks => by
+      refine WPdT_twoAY1_top (A := Jk1.nil) trivial ⊥
+        (fun n m c hc ks' => WPdw_run2 n ⊥ Jk1.nil trivial
+          (fun c' _ ks'' => WPdT_nilAll _) m c hc ks') ?_ ks
+      rw [bot_BwG, zero_add]
+      exact owG_ltL (ex2_lt_r 1 (by omega)) 1 (by omega)
+  | (k + 1), ks => by
+      refine WPdT_twoAZ_top (S := ⟨fun i => owG (ex2 1 k) i,
+          fun _ _ hij => owG_ltR (ex2 1 k) hij⟩)
+        (t := owG (ex2 1 (k + 2)) 1) (A := Jk1.nil) ?_ trivial (JkA_Zy k) ?_ ks
+      · intro m
+        exact owG_ltL (ex2_lt_r 1 (by omega)) m (by omega)
+      · intro m c hc ks'
+        exact WPdw_runW k ⊥ Jk1.nil trivial (fun c' _ ks'' => WPdT_nilAll _) m c
+          (by rwa [bot_BwG, zero_add]) ks'
+
+def Xy (k : ℕ) : Jk1 := Jk1.two Jk1.nil (Jk1.two Jk1.nil (Zy k))
+
+theorem WPdw_Xy (k : ℕ) (ks : List Bw2) : WPdT ((⊥ : Bw2) :: ks) (Xy k) :=
+  WPdT_twoOf (b := owG (ex2 1 (k + 1)) 1) (ne_bot_of_gt (owG_pos (ex2 1 (k + 1)))) trivial
+    (fun q _ => WPdT_nilAll _) (WPdw_twoZy k ks)
+
+theorem GOK_oneXy (k : ℕ) : GOK (Jk1.one Jk1.nil (Xy k)) :=
+  (WPdT_bnil (Bud := Bw2) _).mp
+    (WPdT_step ([] : List Bw2) (JkT_nil : FrmNT ([] : List Bw2) Jk1.nil)
+      ((WPdT_bnil (Bud := Bw2) _).mpr GOK_nil) (WPdw_Xy k []))
+
+theorem jk1_Xy (k l : ℕ) : jk1 l (Xy k)
+    = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+      :: ((l + 3, 0, 0) : ℕ × ℕ × ℕ) :: ((l + 4, 0, 0) : ℕ × ℕ × ℕ)
+      :: List.replicate k ((l + 3, 0, 0) : ℕ × ℕ × ℕ) := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) Jk1.nil ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) (Zy k)))) = _
+  rw [jk1_Zy k (l + 2), show l + 2 + 1 = l + 3 from by omega,
+    show l + 2 + 2 = l + 4 from by omega]
+  simp [jk1]
+
+/-- ★★★★★★★ `R600 (7,0,0)(6,0,0)^k`（どの `k` でも）。 -/
+theorem R600_7_600rep_mem (k : ℕ) :
+    R600 ++ ((7, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((6, 0, 0) : ℕ × ℕ × ℕ) ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Xy k)]) := by
+    simpa using GOK_oneXy k [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  have e : jk1 2 (Jk1.one Jk1.nil (Xy k))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) :: ((5, 2, 0) : ℕ × ℕ × ℕ)
+        :: ((6, 0, 0) : ℕ × ℕ × ℕ) :: ((7, 0, 0) : ℕ × ℕ × ℕ)
+        :: List.replicate k ((6, 0, 0) : ℕ × ℕ × ℕ) := by
+    show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (2 + 1) (Xy k)) = _
+    rw [jk1_Xy k 3]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+#print axioms R600_7_600rep_mem
+
 
 end Small
 end TRIO
