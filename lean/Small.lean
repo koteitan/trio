@@ -78374,5 +78374,68 @@ theorem R6006_of_WRunPay (h : WRunPay) : R600 ++ [((6, 0, 0) : ℕ × ℕ × ℕ
 #print axioms jk1_FLz
 #print axioms R6006_of_WRunPay
 
+/-! ### ★ いま開いている最小の 1 列追加: `R600 (4,0,0)`
+
+    R600 (4,0,0)
+      = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)(4,0,0)
+
+`bms -c` の実測で、`R600` の 1 列追加のうち「証明できたどれよりも大きい」
+最小のもの。展開は `R341 ++ ((3,1,0)(4,2,0)(5,2,0)(6,0,0))^(n+1)`、
+つまり `T6` の語の平らな塔。これも `WRunPay` 1 文から出る。 -/
+
+def Tb60 : Jk1 :=
+  Jk1.two Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+
+theorem JkA_Tb60 : JkA Tb60 := ⟨trivial, trivial, trivial, Bok_zero⟩
+
+theorem WPd_Tb60 (h : WRunPay) (ks : List ℕ) : WPd (0 :: ks) Tb60 :=
+  WPd_twoOf (k := 1) trivial (fun q _ => WPd_nilAll _)
+    (h 1 0 (by omega) Jk1.nil trivial (fun ks' => WPd_nilF 0 ks')
+      [((0, 0, 0) : ℕ × ℕ × ℕ)] Bok_zero ks)
+
+def T6blk : TrioSeq :=
+  [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ),
+   ((5, 2, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem jk1_ItV_Tb60 : ∀ n : ℕ, jk1 2 (ItV Tb60 Jk1.nil n) = copies T6blk n
+  | 0 => by simp [ItV, jk1, copies]
+  | (n + 1) => by
+      show jk1 2 (ItV Tb60 Jk1.nil n) ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+        jk1 (2 + 1) Tb60) = _
+      rw [jk1_ItV_Tb60 n, copies_snoc]
+      simp [Tb60, jk1, shiftr01, T6blk]
+
+theorem tw_R341_T6blk (h : WRunPay) (n : ℕ) : R341 ++ copies T6blk n ∈ W 0 := by
+  have hGok : GOK (ItV Tb60 Jk1.nil n) :=
+    (WPd_bnil _).mp (WPd_ItV [] JkA_Tb60 (WPd_Tb60 h []) (JkT_nil : FrmN [] Jk1.nil)
+      ((WPd_bnil _).mpr GOK_nil) n)
+  have hG : GoodFb (fun a b => wordJ a b [ItV Tb60 Jk1.nil n]) := by
+    simpa using hGok [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ, jk1_ItV_Tb60 n] at hh
+  simpa [R341, R338, List.append_assoc] using hh
+
+/-- ★ いま開いている最小の 1 列追加も `WRunPay` 1 文から出る。 -/
+theorem R600400_of_WRunPay (h : WRunPay) :
+    R600 ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : T6blk ≠ [] := by simp [T6blk]
+  have hhead : entry T6blk 0 0 < 4 := by simp [T6blk, entry]
+  have htail : ∀ r, 1 ≤ r → r < T6blk.length → 4 ≤ entry T6blk 0 r := by
+    intro r hr1 hr2
+    simp only [T6blk, List.length_cons, List.length_nil] at hr2
+    rcases r with _ | _ | _ | _ | r <;>
+      first
+        | omega
+        | simp [T6blk, entry]
+  have hmem := flat_mem'' (Y0 := R341) (M := T6blk) (d := 4) hne hhead htail
+    (by intro n; simpa [copies] using tw_R341_T6blk h n)
+  have e : R341 ++ T6blk = R600 := by
+    simp [R600, R375m, R373, R344, R341, T6blk, List.append_assoc]
+  rw [← e]
+  simpa [List.append_assoc] using hmem
+
+#print axioms tw_R341_T6blk
+#print axioms R600400_of_WRunPay
+
 end Small
 end TRIO
