@@ -2406,6 +2406,130 @@ theorem WPdS_congr : ∀ (ks : List Ent) {V1 V2 : Jk1},
 #print axioms WPdS
 #print axioms WPdS_iff
 
+/-! ### 形の妥当性 `SqOk`
+
+一番外の枠が裸の `ftwo` だと行が 2 の記録で始まってしまう。
+形の**末尾**（＝一番外）は `⊥` でなければならない。 -/
+
+def SqOk : List Ent → Prop
+  | [] => True
+  | (e :: ks) => (ks = [] → e = ⊥) ∧ SqOk ks
+
+theorem SqOk_nil : SqOk ([] : List Ent) := trivial
+
+theorem SqOk_tail {e : Ent} {ks : List Ent} (h : SqOk (e :: ks)) : SqOk ks := h.2
+
+theorem SqOk_ne {e : Ent} (he : e ≠ ⊥) {ks : List Ent} (h : SqOk (e :: ks)) : ks ≠ [] :=
+  fun hnil => he (h.1 hnil)
+
+theorem SqOk_cons_bot {ks : List Ent} (h : SqOk ks) : SqOk ((⊥ : Ent) :: ks) :=
+  ⟨fun _ => rfl, h⟩
+
+theorem SqOk_cons {e : Ent} {ks : List Ent} (hne : ks ≠ []) (h : SqOk ks) :
+    SqOk (e :: ks) := ⟨fun hnil => absurd hnil hne, h⟩
+
+theorem SqOk_append : ∀ (r ks : List Ent), ks ≠ [] → SqOk ks → SqOk (r ++ ks)
+  | [], _, _, h => h
+  | (a :: r), ks, hne, h => by
+      refine SqOk_cons ?_ (SqOk_append r ks hne h)
+      intro hc
+      rcases List.append_eq_nil_iff.mp hc with ⟨-, h2⟩
+      exact hne h2
+
+#print axioms SqOk_append
+
+/-! ### `WPdS` 層の小さい補題 -/
+
+theorem FrmS_ne {ks : List Ent} (h : ks ≠ []) (X : Jk1) : FrmS ks X ↔ JkA X := by
+  cases ks with
+  | nil => exact absurd rfl h
+  | cons a l => exact Iff.rfl
+
+theorem FrmS_JkA : ∀ (ks : List Ent) (U : Jk1), FrmS ks U → JkA U
+  | [], _, h => h.1
+  | (_ :: _), _, h => h
+
+theorem FrmS_nilA : ∀ ks : List Ent, FrmS ks Jk1.nil
+  | [] => JkT_nil
+  | (_ :: _) => trivial
+
+theorem FrmS_one (ks : List Ent) (U X : Jk1) (hU : FrmS ks U) (hX : JkA X) :
+    FrmS ks (Jk1.one U X) := by
+  cases ks with
+  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
+  | cons b bs => exact ⟨hU, hX⟩
+
+/-- `⊥` の節から `one` を継ぐ。 -/
+theorem WPdS_step (ks : List Ent) {V W : Jk1} (hV : FrmS ks V) (hVk : WPdS ks V)
+    (hW : WPdS ((⊥ : Ent) :: ks) W) : WPdS ks (Jk1.one V W) :=
+  (WPdS_c1 ks W).mp hW V hV hVk
+
+theorem WCtxS_fone {ks : List Ent} {ctx : List Frm} {U : Jk1}
+    (hc : WCtxS ks ctx) (hU : FrmS ks U) (hUk : WPdS ks U) :
+    WCtxS ((⊥ : Ent) :: ks) (ctx ++ [Frm.fone U]) :=
+  (WCtxS_c1 ks _).mpr ⟨ctx, U, rfl, hc, hU, hUk⟩
+
+theorem WCtxS_ftwo {e : Ent} (he : e ≠ ⊥) {ks : List Ent} {ctx : List Frm} {N : Jk1}
+    (hc : WCtxS ks ctx) (hJN : JkA N)
+    (hNt : ∀ q : List Ent, (∀ x ∈ q, x < e) → WPdS (q ++ ks) N) :
+    WCtxS (e :: ks) (ctx ++ [Frm.ftwo N]) :=
+  (WCtxS_c2 he ks _).mpr ⟨[], by simp, ctx, N, rfl, by simpa using hc, hJN,
+    by simpa using hNt⟩
+
+theorem WCtxS_JkT : ∀ (ks : List Ent), SqOk ks → ∀ ctx : List Frm, WCtxS ks ctx →
+    ∀ X : Jk1, FrmS ks X → JkT (plug ctx X)
+  | [], _, ctx, h, X, hX => by
+      rw [WCtxS_bnil] at h
+      subst h
+      exact hX
+  | (e :: ks), hs, ctx, h, X, hX => by
+      by_cases he : e = ⊥
+      · subst he
+        rw [WCtxS_c1] at h
+        obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+        rw [plug_snoc]
+        exact WCtxS_JkT ks (SqOk_tail hs) ctx' hc' (Jk1.one U X) (FrmS_one ks U X hU hX)
+      · have hkne : ks ≠ [] := SqOk_ne he hs
+        rw [WCtxS_c2 he] at h
+        obtain ⟨r, hr, ctx', N, rfl, hc', hJN, -⟩ := h
+        have hrk : r ++ ks ≠ [] := by
+          intro hc
+          exact hkne (List.append_eq_nil_iff.mp hc).2
+        rw [plug_snoc2]
+        exact WCtxS_JkT (r ++ ks) (SqOk_append r ks hkne (SqOk_tail hs)) ctx' hc'
+          (Jk1.two N X) ((FrmS_ne hrk _).mpr ⟨hJN, hX⟩)
+termination_by ks _ => ((ks : List Ent) : Multiset Ent)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+
+theorem WCtxS_split (ks : List Ent) (ctx : List Frm)
+    (h : WCtxS ((⊥ : Ent) :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WCtxS ks ctx0 ∧
+      FrmS ks V ∧ GOK (plug ctx0 V) := by
+  rw [WCtxS_c1] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (WPdS_iff ks U).mp hUk ctx' hc'⟩
+
+/-- 形の付け足し。 -/
+theorem WPdS_shift {e : Ent} (he : e ≠ ⊥) {ks : List Ent} {T : Jk1}
+    (h : WPdS (e :: ks) T) (a : List Ent) (ha : ∀ x ∈ a, x < e) :
+    WPdS (e :: (a ++ ks)) T := by
+  rw [WPdS_c2 he]
+  intro r hr N hJN hNt
+  have e2 : r ++ (a ++ ks) = (r ++ a) ++ ks := (List.append_assoc r a ks).symm
+  rw [e2] at hNt ⊢
+  refine (WPdS_c2 he ks T).mp h (r ++ a) ?_ N hJN hNt
+  intro x hx
+  rcases List.mem_append.mp hx with h1 | h1
+  · exact hr x h1
+  · exact ha x h1
+
+#print axioms WCtxS_JkT
+#print axioms WPdS_shift
+
 end EntS
 
 end Small
