@@ -2751,5 +2751,31 @@ theorem R600_600rep_mem (k : ℕ) :
 
 #print axioms R600_600rep_mem
 
+/-- ★★★★★★★ `R600 (7,0,0)`:
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)(7,0,0)` -/
+theorem R600700_mem : R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((6, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((6, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 7 := by simp [entry]
+  have htail : ∀ r, 1 ≤ r → r < ([((6, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      7 ≤ entry [((6, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r hr1 hr2
+    simp only [List.length_singleton] at hr2
+    omega
+  have htw : ∀ n : ℕ, R375m ++ (List.range n).flatMap
+      (fun _ => [((6, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_singleton_range]
+    cases n with
+    | zero => simpa using R375m_mem
+    | succ n =>
+        have h := R600_600rep_mem n
+        rw [R600] at h
+        simpa [List.replicate_succ, List.append_assoc] using h
+  have hmem := flat_mem'' (Y0 := R375m) (M := [((6, 0, 0) : ℕ × ℕ × ℕ)]) (d := 7)
+    hne hhead htail htw
+  simpa [R600, List.append_assoc] using hmem
+
+#print axioms R600700_mem
+
 end Small
 end TRIO
