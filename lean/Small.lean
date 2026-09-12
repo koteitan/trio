@@ -3891,6 +3891,24 @@ theorem RunAll_of_OneRunA (hOR : OneRunA) : RunAll :=
 #print axioms WPdR_stkO
 #print axioms RunAll_of_OneRunA
 
+/-- ★★ 残る 1 文（これが一番小さい）: どの `true::bs` にも差せる木は、
+2 の記録（兄弟は空木）1 段の上にも差せる。 -/
+def TwoNilStep : Prop := ∀ Z : Jk1, JkA Z → (∀ bs : List Bool, APd (true :: bs) Z) →
+  ∀ bs : List Bool, APd (true :: bs) (Jk1.two Jk1.nil Z)
+
+theorem OneRunA_of_TwoNilStep (h : TwoNilStep) : OneRunA := by
+  intro q Y hJY hY
+  induction q with
+  | zero =>
+      intro bs
+      exact (APd_ct (true :: bs) Y).mp (hY (true :: bs)) Jk1.nil (FrmJ_nilA _) trivial
+        (APd_nilT bs)
+  | succ q ih =>
+      intro bs
+      exact h (stkP q (Jk1.one Jk1.nil Y)) (JkA_stkP q ⟨trivial, hJY⟩) ih bs
+
+#print axioms OneRunA_of_TwoNilStep
+
 /-- ★★★★★★★★ 行376 が `RunPay`（走りの上の荷）1 文から出る。 -/
 theorem RunAll_of_RunPay (hRP : RunPay (Bud := Bud)) : RunAll := by
   intro q ks
@@ -3976,7 +3994,12 @@ end EkeyR
 theorem R376_of_OneRunA (h : OneRunA) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R376_of_RunAll (RunAll_of_OneRunA h)
 
+/-- ★★★★★★★★ 行376 は「どの形にも差せる木の上に `two nil` を 1 段」だけで出る。 -/
+theorem R376_of_TwoNilStep (h : TwoNilStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_OneRunA (OneRunA_of_TwoNilStep h)
+
 #print axioms R376_of_OneRunA
+#print axioms R376_of_TwoNilStep
 
 /-- ★★★★★★★★ 行376 は純粋な `GOK` の 1 文 `HtowR` から出る。 -/
 theorem R376_of_HtowR (h : HtowR) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=

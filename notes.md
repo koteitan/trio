@@ -25553,3 +25553,34 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
 なので、`WPdR_stkG` の形（`stkP p (two N nil)`）ではなく
 「`two nil Z` の上に走り」の形。`GOK_runGNil_gen` は先端が `nil` のときだけなので、
 先端が `one nil Y` の版が要る ―― あるいは `Y` の普遍性をもっと使う。
+
+## 追記400: ★★ 行376 が `TwoNilStep` 1 文に落ちた（これが一番小さい）
+
+    TwoNilStep : ∀ Z, JkA Z → (∀ bs, APd (true :: bs) Z) →
+                   ∀ bs, APd (true :: bs) (two nil Z)
+
+    R376_of_TwoNilStep (h : TwoNilStep) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
+
+「どの `true::bs` の形にも差せる木の上に、2 の記録（兄弟は空木）を 1 段積める」。
+
+### 落とし方（全部緑）
+
+    R376_of_TwoNilStep ← R376_of_OneRunA ← RunAll_of_OneRunA ← WPdR_stkO ← WPdR_stkG
+
+`OneRunA_of_TwoNilStep` は `q` の帰納。`stkP (q+1) X = two nil (stkP q X)` なので
+1 段が `TwoNilStep` そのもの。`q = 0`（`one nil Y`）は
+`APd (true::(true::bs)) Y` に `U = nil` を入れるだけ（`APd_nilT` / `FrmJ_nilA` / `Rq_true`）。
+
+### `TwoNilStep` の位置
+
+`APd (false::bs) Z`（予算の節）を `m = 0`, `N = nil` で使うと
+`APd bs (one U (two nil Z))` が出るので
+
+    TwoNilStep ⟸ FalseOk : ∀ Z, JkA Z → (∀ bs, APd (true::bs) Z) → ∀ bs, APd (false::bs) Z
+
+`FalseOk` は「普遍的に差せる木は予算の節にも差せる」。`TwoNilStep` はその
+`m = 0`, `N = nil` の場合だけなので真に弱い。
+
+古い壁 `TwoStep : ∀ Z, JkA Z → TwoOk Z → TwoOk (two nil Z)` と比べると、
+`TwoNilStep` は兄弟 `N` を `nil` に固定し、仮定を `TwoOk Z` でなく
+「普遍的に差せる」に替えた版。
