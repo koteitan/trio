@@ -10175,6 +10175,36 @@ theorem Pc_twoItNil (m : ℕ) : ∀ ks : List ℕ,
 #print axioms R375m61_of_Pc
 #print axioms Pc_twoItNil
 
+/-! ### ★★★★★★★★★★ 荷の展開関係の整礎性（`A2'` から取り出す）
+
+`Pc`（水平鎖を予算つきで置く）は、`GOK_twoPayZ_of` の A2' が
+「上の荷 `Y` を小さくするかわりに鎖を `twoIt N (pay Z Y') m` に伸ばす」形なので、
+**鎖の荷の多重集合の DM 帰納**で閉じる見込み。その土台がこの整礎性。
+
+`u = 0` では `Aop` の第 3 の場合（`m < 0`）は起きないので、
+`Aop W 0 X M` は「`M` が底」か「`M` の展開が全部 `X`」の 2 択。 -/
+
+/-- 荷の展開関係。底（`Aop` の第 1 の場合）は除くので自己ループが無い。 -/
+def Rex (M' M : TrioSeq) : Prop :=
+  ¬(M.length ≤ 1 ∧ lev M 0 = 0) ∧ ∃ n : ℕ, 1 ≤ n ∧ M' = M⟦n⟧
+
+/-- ★★★★★★★★★★ `W 0` の元は展開関係で到達可能。 -/
+theorem Acc_Rex : W 0 ⊆ {M : TrioSeq | Acc Rex M} := by
+  refine A2' ?_
+  intro M hM
+  simp only [Set.mem_setOf_eq]
+  rcases hM with hshort | hnat | ⟨m, hm, -, -⟩
+  · exact Acc.intro M (fun M' hM' => absurd hshort hM'.1)
+  · refine Acc.intro M ?_
+    intro M' hM'
+    obtain ⟨-, n, hn, rfl⟩ := hM'
+    exact hnat n hn
+  · exact absurd hm (Nat.not_lt_zero m)
+
+theorem Acc_Rex_of_Bok {Y : TrioSeq} (hY : Bok Y) : Acc Rex Y := Acc_Rex hY.mem
+
+#print axioms Acc_Rex
+
 
 end Small
 end TRIO
