@@ -24797,3 +24797,53 @@ W 帰納の内側の場合（最後の列が根でない）は予算を消費し
                                         （LinearOrder / OrderBot / WellFoundedLT 全部通る）
 
 `Lex (ℕ →₀ ℕ)` は整礎でない（添字側に `WellFoundedGT` が要る）。`Colex` を使う。
+
+## 追記383: 走りを文脈に持てる層 `WPdS` を作る
+
+### なぜ
+
+追記382 の結論「残る壁は縦の走り」を、層の側から直す。
+
+- `WPd` / `WPdT`: 兄弟の族を**予算**で抑えるので DM 測度が効く。
+  しかし文脈 `WCtx` / `WCtxU` は 2 の枠を必ず `[fone U, ftwo N]` の**対**で持つので、
+  `ftwo` が 2 つ続く形（縦の走り）を表せない。
+- `SCtx`（S 族）: `false` の節が `D' ++ [ftwo nil]` なので `ftwo` の連続を表せる。
+  しかし予算が無いので、塔の階段（`SCtx_blkRN`）が兄弟の「**どの形でも良い**」
+  （`SNo N = ∀ s, SG s N`）を要求し、`nil` について循環する（`SNil ← SPayF ← SHtow ← SNil`）。
+
+**両方を持つ層を作る**。枠を 1 つずつに分ける:
+
+    ⊥      … `fone U`（U は下の形で良い）
+    e ≠ ⊥  … 裸の `ftwo N`（N は「入り目 `< e` の形」で良い）
+
+    WPdS : List Ent → Jk1 → Prop
+      | [], V => GOK V
+      | (e :: ks), V =>
+          (e = ⊥ → ∀ U, FrmS ks U → WPdS ks U → WPdS ks (one U V)) ∧
+          (e ≠ ⊥ → ∀ r, (∀x∈r, x < e) → ∀ N, JkA N →
+            (∀ q, (∀x∈q, x < e) → WPdS (q ++ (r ++ ks)) N) →
+            WPdS (r ++ ks) (two N V))
+
+`Ent` は整礎全順序（`LinearOrder` + `OrderBot` + `WellFoundedLT`）。
+DM 測度 `(ks : Multiset Ent)` はそのまま効く。
+`WPdT` の 2 の節は `[e, ⊥] ++ ks` に対応する。
+
+### 効く見込み（測った）
+
+S 族の塔の階段は文脈を `[fone N] ++ replicate p (ftwo nil)` で伸ばす。
+`WPdS` の形では `⊥` と `p` 個の非 `⊥` 入り目。これを全部 `< e` に取れば、
+`e` の節の兄弟条件 `∀ q (∀x∈q, x < e), WPdS (q ++ ...) N` にそのまま収まる。
+`e` の下に非 `⊥` の値が要る（＝ `WPd_run` の `1 ≤ k` に対応）。
+
+### いま緑
+
+    WPdS / WCtxS / WPdS_iff / WPdS_congr
+    SqOk（形の末尾は ⊥。裸の ftwo が一番外に来ると行が 2 の記録で始まる）
+    FrmS_* / WPdS_step / WCtxS_fone / WCtxS_ftwo / WCtxS_JkT / WCtxS_split / WPdS_shift
+
+### 次
+
+    WPdS_twoNilGen（`⊥` の節の塔。`WPdT` 版の移植でよい）
+    WPdS_tow（`STow_all` / `STow_stk` の移植。裸の `ftwo` を含む形でも
+              `stkP j (two N nil)` を差せる ← ここが本丸）
+    → WPdS_nil（どの妥当な形でも空木）→ `stk q` → 行376
