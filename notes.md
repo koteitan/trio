@@ -24062,3 +24062,29 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
 
 緑にしたもの: `WRunPay` / `WPd_FLr_bud` / `WPd_twoNilFLr` / `FLz` / `jk1_FLz` /
 `GOK_oneNilTwoFLz` / `jk1_oneTwoFLz` / `tw_R373_Blk60` / `R6006_of_WRunPay`。
+
+## 追記355: `WRunPay` を `AYdTW` の型で証明しようとしたときの詰まり所
+
+`AYdTW`（緑, 荷を予算 k+1 の木に付ける）の証明をそのまま真似ると:
+
+- `WPd_ck` で開く → 目標は `WPd (r++ks) (one U (two N (two A (pay nil Y))))`
+- `plug_snoc2` で文脈を `ctx ++ [ftwo N]` に伸ばすと、節は `two A (pay nil Y)`
+  になり `GoodFb_snoc_dupJt0` の形にぴったり合う
+- その `hIH` は `∀n≥1, GOK (plug (ctx ++ [ftwo N]) (twoIt A (pay nil Y') n))`
+  = `∀n, GOK (plug ctx (two N (twoIt A (pay nil Y') n)))`
+
+ここで詰まる。`WPd_twoOf (k := k)` で作ろうとすると鎖を**予算 k+1** で要求されるが、
+`twoIt A P n` は幅が n で伸びる横の走りなので `WPd_twoIt_nil` と同じ理由で
+予算 ≥ n が要る。n は上に有界でないので予算では作れない。
+
+`AYdTW` が通るのは、鎖 `twoIt N (pay Z Y') n` が**予算 0**（`WPd_chainT` +
+`AYdTW_hstep`）で済むから。`WPd_twoOf` の結論はいつも予算 0 なので、
+2 の記録を横に何本足しても予算は 0 のまま。文脈を `ftwo N` で 1 段伸ばすと、
+その分だけ予算が 1 段上がってしまうのが違い。
+
+つまり `WRunPay` は「2 の記録の直上に、横に無限に伸びる走り」を作る必要があり、
+これは予算の仕組みの外。`WPd_twoA_runB` が階段 `UtwP`（各段に `one nil` が入る）
+で逃げているのと同じ手が要る。次はこの階段の荷つき版を作る。
+
+なお `WRunPay` の仮定に `∀ks, WPd (0::ks) A`（予算 0 でも良い）を足すのは無料
+（応用先の `A = FLr Bs` は `WPd_FLr` で緑）。鎖の底には効くが、上の詰まりは残る。
