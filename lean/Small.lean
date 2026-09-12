@@ -1970,5 +1970,30 @@ theorem R600520_mem : R600 ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R600520_mem
 
+/-! ### ★ 新しい行 `R600 (5,2,0)` の `Aok` を取って、族の台座を差し替える -/
+
+def Z520 : TrioSeq := R600 ++ [((5, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem Aok_Z520 : Aok Z520 :=
+  Aok_append_Mid (d := 6) (by omega) Aok_R600 MidD_col52 R600520_mem
+
+theorem Z520_110_mem : Z520 ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 _ (Aok_Z520 : Lv 1 0 Z520)
+
+theorem Z520_1122_mem :
+    Z520 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc2 1 0 _ (Aok_Z520 : Lv 1 0 Z520)
+
+/-- ★★★★★★ `R600 (5,2,0)` の上、輪を `n` 周した 4 パラメータの無限族。 -/
+theorem LoopIt_Z520_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    LoopIt Z520 m ws j n ∈ W 0 := (Aok_LoopIt Aok_Z520 m hw j n).mem
+
+theorem LoopIt_Z520_nil_mem (m p j n : ℕ) :
+    LoopIt Z520 m (List.replicate p (AltT 0)) j n ∈ W 0 :=
+  LoopIt_Z520_mem m (WJ_rep_AltT 0 p) j n
+
+#print axioms Aok_Z520
+#print axioms LoopIt_Z520_nil_mem
+
 end Small
 end TRIO
