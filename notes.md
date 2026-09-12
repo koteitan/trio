@@ -24892,3 +24892,50 @@ S 族の塔の階段は文脈を `[fone N] ++ replicate p (ftwo nil)` で伸ば�
    `SHtow`（兄弟が鎖）が出ないので、荷の W 帰納が閉じない。
 
 いまのところ 1 が本命。
+
+## 追記385: ω^ω の予算型で `R600 (6,0,0)^k` と、その極限 `R600 (7,0,0)`
+
+### 予算型 `Bw = Colex (ℕ →₀ ℕ)`（順序型 ω^ω）
+
+`import Mathlib.Data.Finsupp.WellFounded` で `LinearOrder` / `OrderBot` /
+`WellFoundedLT` が全部揃う（`Lex` 版は整礎でない。`Colex` を使う）。
+`ow k m = toColex (Finsupp.single k m)` が `ω^k · m`。比較は
+`Finsupp.Colex.lt_iff` を開いて `Finsupp.single_apply` で潰す。
+
+    ow_ltR k (m < m') : ow k m < ow k m'
+    ow_ltL (k < k') m (0 < m') : ow k m < ow k' m'
+    ow_add_lt (j < k) m m' : ow k m + ow j m' < ow k (m+1)
+    Bw_add_lt_left b (x < y) : b + x < b + y      （Colex は AddLeftStrictMono）
+
+### 何が通ったか
+
+    Zk 0 = nil, Zk (k+1) = pay (Zk k) [(0,0,0)]      （荷を k 段入れ子）
+    jk1 l (Zk k) = replicate k (l+1,0,0)
+
+    WPdw_run : JkA A → (∀ c > β, ∀ ks, WPdT (c::ks) A) →
+               ∀ m c, β + ω^k·m < c → ∀ ks, WPdT (c::ks) (twoIt A (Zk k) m)
+
+`k` と `m` の二重帰納。`k = 0` は `WPdT_twoA_runB`（上が空）、
+`k+1` は `WPdT_twoAZ_top`（追記382 の一般形）で、鎖の 1 段ごとに 1 段下の
+`Zk (k-1)` の走りが要るので予算が `ω^k` になる。
+
+    WPdw_twoZk : WPdT (ω^(k+1) :: ks) (two nil (Zk (k+1)))
+    R600_600rep_mem (k) : R600 ++ (6,0,0)^k ∈ W 0            ★無条件
+
+木は `one nil (two nil (two nil (Zk (k+1))))`。
+
+### 極限
+
+`flat_mem''` に `Y0 = R375m`, `M = [(6,0,0)]`, `d = 7` を入れると
+
+    R600700_mem : R600 ++ [(7,0,0)] ∈ W 0                    ★無条件
+
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)(7,0,0)`。
+標準形（`bms -s` = 1）で、それまでの証明済みより大きい。
+`Aok_Z700` を取って `LoopIt` の台座を差し替え、シートの証明済み 10 行を入れ替えた。
+
+### 測ったこと
+
+`R600 (7,0,0)` は木でも書ける（`two nil (two nil (pay nil ((0,0,0)(1,0,0))))`）が、
+その荷の W 帰納は `(0,0,0)^n` まで降りるので**段数が非有界**、直接は通らない。
+`flat_mem''`（族の極限）が段数の壁を迂回する。**族が作れたら極限を取る**のが安い。
