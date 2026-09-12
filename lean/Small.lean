@@ -1661,5 +1661,104 @@ theorem WPdT_payA : ∀ (ks : List (WithTop ℕ)) (V : Jk1), FrmNT ks V → WPdT
 #print axioms AYdTWT
 #print axioms WPdT_payA
 
+/-! ### `WPdT` 層の空木 -/
+
+theorem FrmNT_repB (m : ℕ) (b : WithTop ℕ) (ks : List (WithTop ℕ)) (N : Jk1) :
+    FrmNT (List.replicate m (⊥ : WithTop ℕ) ++ (b :: ks)) N ↔ JkA N := by
+  cases m with
+  | zero => exact Iff.rfl
+  | succ m => exact Iff.rfl
+
+theorem repB_succ_cons (m : ℕ) (ks : List (WithTop ℕ)) :
+    List.replicate (m + 1) (⊥ : WithTop ℕ) ++ ks
+      = (⊥ : WithTop ℕ) :: (List.replicate m (⊥ : WithTop ℕ) ++ ks) := rfl
+
+theorem lt_of_mem_repB {b : WithTop ℕ} (hb : b ≠ ⊥) (j : ℕ) :
+    ∀ x ∈ List.replicate j (⊥ : WithTop ℕ), x < b := by
+  intro x hx
+  have hx0 : x = (⊥ : WithTop ℕ) := List.eq_of_mem_replicate hx
+  subst hx0
+  exact Ne.bot_lt' (Ne.symm hb)
+
+theorem repB_mid : ∀ (j : ℕ) (B : List (WithTop ℕ)),
+    List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: B)
+      = ((⊥ : WithTop ℕ) :: List.replicate j (⊥ : WithTop ℕ)) ++ B
+  | 0, B => rfl
+  | (j + 1), B => by
+      show (⊥ : WithTop ℕ) :: (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: B))
+        = (⊥ : WithTop ℕ) :: ((⊥ : WithTop ℕ) :: (List.replicate j (⊥ : WithTop ℕ) ++ B))
+      rw [repB_mid j B]
+      rfl
+
+theorem WCtxU_rep {N : Jk1} (hJN : JkA N) (ks : List (WithTop ℕ))
+    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), WCtxU ((⊥ : WithTop ℕ) :: ks) ctx →
+      WCtxU (List.replicate m (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks))
+        (ctx ++ List.replicate m (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (m + 1), ctx, hc => by
+      have h1 := WCtxU_rep hJN ks hNall m ctx hc
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
+          = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, repB_succ_cons, WCtxU_c0]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
+        (FrmNT_repB m (⊥ : WithTop ℕ) ks N).mpr hJN, hNall m⟩
+
+theorem WPdT_plug_rep (N : Jk1) (hJN : JkA N) (ks : List (WithTop ℕ))
+    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks)) N)
+    (m : ℕ) :
+    WPdT ((⊥ : WithTop ℕ) :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (WPdT_iff _ N).mp (hNall m) _ (WCtxU_rep hJN ks hNall m ctx hc)
+
+theorem WPdT_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List (WithTop ℕ))
+    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks)) N) :
+    WPdT ((⊥ : WithTop ℕ) :: ks) (Jk1.two N Jk1.nil) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtxU_split ks ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (WCtxU_JkT ((⊥ : WithTop ℕ) :: ks) _ hc (Jk1.two N Jk1.nil)
+      (⟨hJN, trivial⟩ : FrmNT ((⊥ : WithTop ℕ) :: ks) (Jk1.two N Jk1.nil)))
+    hGV
+    (fun m => (WPdT_iff ((⊥ : WithTop ℕ) :: ks) _).mp (WPdT_plug_rep N hJN ks hNall m) _ hc)
+
+theorem WPdT_nilF {b : WithTop ℕ} (hb : b ≠ ⊥) (ks : List (WithTop ℕ)) :
+    WPdT (b :: ks) Jk1.nil :=
+  (WPdT_cb hb ks _).mpr (fun r hr U N hU hUk hJN hNt =>
+    (WPdT_c0 _ _).mp
+      (WPdT_twoNilGen hJN (r ++ ks)
+        (fun j => by
+          rw [repB_mid j (r ++ ks)]
+          exact hNt (List.replicate j (⊥ : WithTop ℕ)) (lt_of_mem_repB hb j))) U hU hUk)
+
+theorem WPdT_oneNil (ks : List (WithTop ℕ)) (V : Jk1) (hV : FrmNT ks V) (hVk : WPdT ks V) :
+    WPdT ks (Jk1.one V Jk1.nil) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (WCtxU_JkT ks ctx hc (Jk1.one V Jk1.nil) (FrmNT_one ks V Jk1.nil hV trivial))
+    ((WPdT_iff ks V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (WPdT_iff ks _).mp (WPdT_payA ks V hV hVk C hC) ctx hc
+
+theorem WPdT_nilT (ks : List (WithTop ℕ)) : WPdT ((⊥ : WithTop ℕ) :: ks) Jk1.nil :=
+  (WPdT_c0 ks _).mpr (fun U hU hUk => WPdT_oneNil ks U hU hUk)
+
+/-- ★★★★★ 空木はどの形でも差せる（`WPdT` 層、無条件）。 -/
+theorem WPdT_nilAll : ∀ ks : List (WithTop ℕ), WPdT ks Jk1.nil
+  | [] => (WPdT_bnil _).mpr GOK_nil
+  | (b :: ks) => by
+      by_cases hb : b = ⊥
+      · subst hb
+        exact WPdT_nilT ks
+      · exact WPdT_nilF hb ks
+
+#print axioms WPdT_nilAll
+
 end Small
 end TRIO
