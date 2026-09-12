@@ -4841,6 +4841,45 @@ termination_by k _ _ _ _ m _ _ _ => (k, m)
 
 #print axioms WPdw_run2
 
+/-! ### ★★★ 荷 `Y1 = (0,0,0)(1,0,0)` とその展開
+
+`R600(7,0,0)(6,0,0)^k = R375m ++ shiftr01 6 0 ((0,0,0)(1,0,0)(0,0,0)^k)` なので、
+この荷が要る。`Y1⟦n⟧ = (0,0,0)^n` なので予算は `ω^n` の上限＝`ω^ω` が要る。 -/
+
+def Y1 : TrioSeq := [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem Y1_len : Y1.length = 2 := by simp [Y1]
+
+theorem Flat_Y1 : Flat Y1 := by
+  intro c hc
+  simp only [Y1, List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl <;> exact ⟨rfl, rfl⟩
+
+theorem Bok_Y1 : Bok Y1 := Bok_flat Flat_Y1 (by simp [Y1, entry])
+
+theorem Y1_srow : srow Y1 1 = 0 := by simp [srow, Y1, entry]
+
+theorem Y1_hasParent : hasParent Y1 0 1 := by
+  rw [hasParent_zero_iff (by rw [Y1_len]; omega)]
+  exact ⟨0, by omega, by simp [Y1, entry]⟩
+
+theorem Y1_parent : parent Y1 0 1 = 0 := by
+  have h := parent_nextR Y1_hasParent
+  rw [nextR, if_pos rfl] at h
+  obtain ⟨-, -, hlt, hval, -⟩ := h
+  omega
+
+theorem oper_Y1 (n : ℕ) :
+    Y1⟦n⟧ = (List.range n).flatMap fun _ => [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+  have h1 : Y1.length - 1 = 1 := by rw [Y1_len]
+  simp only [oper, h1, Y1_srow, Y1_parent]
+  rw [if_neg (by omega), if_neg (by simp [Y1, entry]),
+    if_neg (by rw [h1, Y1_srow]; exact not_not_intro Y1_hasParent)]
+  simp [Y1, entry, List.range']
+
+#print axioms Bok_Y1
+#print axioms oper_Y1
+
 
 end Small
 end TRIO
