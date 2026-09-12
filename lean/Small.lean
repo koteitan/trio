@@ -4412,6 +4412,50 @@ theorem GOK_twoNW_gen (ctx0 : List Frm) (V : Jk1) {N Wt : Jk1} (hJN : JkA N)
 
 #print axioms GOK_twoNW_gen
 
+/-! ### ★★★ `ChBase` は階段 `∀ k, LOk 1 (nstW N Wt k)` 1 本に落ちる
+
+`GOK_twoNW_gen` の階段は `nstW N Wt k` で、
+
+    nstW N Wt 0     = two N Wt              ← `TwoOk Wt` そのもの
+    nstW N Wt (k+1) = two N (one Wt (nstW N Wt k))
+                                            ← `TwoOk_one`（緑）で `LOk 1 (nstW N Wt k)` に落ちる
+
+だから `ChBase` に残るのは `LOk 1 (nstW N Wt k)` だけ。 -/
+
+def ChStair : Prop := ∀ (N Wt : Jk1), JkA N →
+  (∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) →
+  JkA Wt → TwoOk Wt → ∀ k : ℕ, LOk 1 (nstW N Wt k)
+
+theorem ChBase_of_ChStair (h : ChStair) : ChBase := by
+  intro X hJX hXk N hJN hNall j kk
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  have hcO : CtxOk ctx := GCtx_CtxOk _ ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split (List.replicate j true ++ kk) ctx hc
+  refine GOK_twoNW_gen ctx0 V hJN hJX ?_ hGV ?_
+  · exact JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, hJX, trivial⟩)
+  · intro k
+    refine (APd_iff (true :: (List.replicate j true ++ kk)) _).mp ?_ _ hc
+    match k with
+    | 0 =>
+        have hh := hXk N hJN hNall j kk
+        rw [rep_true_cons] at hh
+        exact hh
+    | (k + 1) =>
+        have hone : TwoOk (Jk1.one X (nstW N X k)) :=
+          TwoOk_one hJX hXk (h N X hJN hNall hJX hXk k)
+        have hh := hone N hJN hNall j kk
+        rw [rep_true_cons] at hh
+        exact hh
+
+/-- ★★★★★★ いま開いている最小の行列は `ChStair` 1 本から出る。 -/
+theorem R375m61_of_ChStair (h : ChStair) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_ChBase (ChBase_of_ChStair h)
+
+#print axioms ChBase_of_ChStair
+#print axioms R375m61_of_ChStair
+
 
 end Small
 end TRIO

@@ -25821,3 +25821,46 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 2. 階段 `∀ k, APd (true::ks) (T k)` を `TwoOk_one` で回す。残るのは `LOk 1 (T k)`。
 3. `LOk 1 (T k)` は `LOk_one`（`one` について閉じる、緑）で `LOk 1 (two N Z)` に落ちる。
    深さ 1 の 2 の記録（荷が一般）が最後に残る。`ChBase_ge1` は荷が `nil` の版。
+
+## 追記407: ★★★ 新しい語の道具 `GOK_twoNW_gen`（内側の兄弟が一般）を作った。緑
+
+追記406 の計算どおりに実装した。全部緑・`sorryAx` なし。
+
+    unQW N Wt D = (D,1,0) :: jk1 D (two N Wt)
+    nstW N Wt 0 = two N Wt,  nstW N Wt (k+1) = two N (one Wt (nstW N Wt k))
+
+    jk1_nstW : (l,1,0) :: jk1 l (nstW N Wt k)
+                 = (range (k+1)).flatMap (fun j => shiftr01 (2*j) 0 (unQW N Wt l))
+    MidD_unQW / hMy_unQW
+    snocW_of_tower : X ∈ W 0 → (∀k, Mtwd 2 X (unQW N Wt D) (k+1) ∈ W 0)
+                       → (X ++ unQW N Wt D) ++ [(D+2,2,0)] ∈ W 0
+    wordJ_snoc_twoNWT / wordJ_snoc_nstW
+    GOK_twoNW_gen (ctx0 V) {N Wt} (hJN) (hJW) (hJT) (hGV : GOK (plug ctx0 V))
+      (hstair : ∀ k, GOK (plug (ctx0 ++ [fone V]) (nstW N Wt k)))
+      : GOK (plug (ctx0 ++ [fone V]) (two N (two Wt nil)))          ★★★緑
+
+`GOK_stkW_gen`（先端が `two nil nil` に固定）の**内側の兄弟を一般にした版**。
+`SmallA` に無かった道具。証明は `GOK_stkW_gen` をそのまま写した（`Mtwd (p+2)` →
+`Mtwd 2`、`unQ N p` → `unQW N Wt`、階段 `nstQ` → `nstW`）。
+
+### `ChBase` が階段 1 本に落ちた
+
+    ChStair : ∀ N Wt, JkA N → (N は普遍) → JkA Wt → TwoOk Wt →
+                ∀ k, LOk 1 (nstW N Wt k)
+    ChBase_of_ChStair / R375m61_of_ChStair                          ★緑
+
+階段の `k = 0` は `two N Wt` で `TwoOk Wt` そのもの、`k+1` は
+`two N (one Wt (nstW N Wt k))` で `TwoOk_one`（緑）が使えるので、残るのは
+**`LOk 1 (nstW N Wt k)`** だけ。壁の形が「2 の記録の走り」から
+**「深さ 1 で 2 の記録を置く」**に変わった。
+
+### 次
+
+`LOk 1 (two N Y)` は `LTwo Y`（`SmallA` 31212、`LTwo_nil` / `LTwo_pay` /
+`LTwo_one` / `LTwo_oneNil` は緑）から出る。だから
+
+    ChStair ⟸ LTwo Wt ∧ ∀ k, TwM 1 (nstW N Wt k)
+
+`LTwo_one hJV (hV : LTwo V) (hZ : TwM 1 Z) : LTwo (one V Z)` があるので、
+`TwM` の階層（`TwStk` / `TwM` / `TwSt` / `TwOk` / `NTw`、`SmallA` 31387〜32900）を
+1 段ずつ上がる形になる。**`Wt` に `TwoOk` しか無いのが効くかどうかが次の焦点。**
