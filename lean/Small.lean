@@ -12411,6 +12411,79 @@ theorem WEd_nilT (ks : List ℕ) : WEd (0 :: ks) Jk1.nil :=
 
 #print axioms WEd_nilT
 
+/-! #### 深さ 1 の空木。階段は `fone N` の積み上げで、入り目は `hNt` の詰め物
+`replicate m 0` でちょうど合う。 -/
+
+theorem rep0_cons : ∀ (m : ℕ) (L : List ℕ),
+    (List.replicate m 0 ++ (0 :: L) : List ℕ) = 0 :: (List.replicate m 0 ++ L)
+  | 0, _ => rfl
+  | (m + 1), L => by
+      rw [List.replicate_succ, List.cons_append, rep0_cons m L]
+      rfl
+
+theorem FrmN_rep0 (m : ℕ) (L : List ℕ) {N : Jk1} (hJN : JkA N) (hFN : FrmN L N) :
+    FrmN (List.replicate m 0 ++ L) N := by
+  cases m with
+  | zero => simpa using hFN
+  | succ m => rw [List.replicate_succ]; exact hJN
+
+theorem WEd_rep0 (m : ℕ) (L : List ℕ) {N : Jk1} (hN0 : WEd L N)
+    (hNt : ∀ q' : List ℕ, (∀ x ∈ q', x ≤ 0) → WEd (0 :: (q' ++ L)) N) :
+    WEd (List.replicate m 0 ++ L) N := by
+  cases m with
+  | zero => simpa using hN0
+  | succ m =>
+      rw [List.replicate_succ]
+      exact hNt (List.replicate m 0) (by intro x hx; rw [List.eq_of_mem_replicate hx])
+
+theorem WEtx_fone_rep : ∀ (m : ℕ) (L : List ℕ) (ctx : List Frm) (N : Jk1),
+    WEtx L ctx → JkA N → FrmN L N → WEd L N →
+    (∀ q' : List ℕ, (∀ x ∈ q', x ≤ 0) → WEd (0 :: (q' ++ L)) N) →
+    WEtx (List.replicate m 0 ++ L) (ctx ++ List.replicate m (Frm.fone N))
+  | 0, L, ctx, N, hc, hJN, hFN, hN0, hNt => by simpa using hc
+  | (m + 1), L, ctx, N, hc, hJN, hFN, hN0, hNt => by
+      have ih := WEtx_fone_rep m L ctx N hc hJN hFN hN0 hNt
+      have e1 : List.replicate (m + 1) (Frm.fone N)
+          = List.replicate m (Frm.fone N) ++ [Frm.fone N] := by
+        rw [← List.replicate_succ']
+      have e2 : (List.replicate (m + 1) 0 ++ L : List ℕ)
+          = 0 :: (List.replicate m 0 ++ L) := by
+        rw [List.replicate_succ]; rfl
+      rw [e1, ← List.append_assoc, e2, WEtx_c0]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, ih,
+        FrmN_rep0 m L hJN hFN, WEd_rep0 m L hN0 hNt⟩
+
+theorem WEd_nilF0 (ks : List ℕ) : WEd (1 :: ks) Jk1.nil := by
+  rw [show (1 : ℕ) = 0 + 1 from rfl, WEd_ck]
+  intro q hq N hJN hNt
+  rw [WEd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hVk⟩ := (WEtx_c0 (q ++ ks) ctx).mp hc
+  have hN0 : WEd (0 :: (q ++ ks)) N := by
+    have h := hNt [] (by simp)
+    simpa using h
+  have hNt' : ∀ q' : List ℕ, (∀ x ∈ q', x ≤ 0) →
+      WEd (0 :: (q' ++ (0 :: (q ++ ks)))) N := by
+    intro q' hq'
+    have h := hNt (q' ++ [0]) (by
+      intro x hx
+      rcases List.mem_append.mp hx with h1 | h1
+      · exact hq' x h1
+      · simp at h1; omega)
+    rw [show (q' ++ [0]) ++ (q ++ ks) = q' ++ (0 :: (q ++ ks)) from by simp] at h
+    exact h
+  refine GOK_twoNilW_gen ctx0 V hJN ?_ ((WEd_iff (q ++ ks) V).mp hVk ctx0 hc0) ?_
+  · exact WEtx_JkT (0 :: (q ++ ks)) _ hc (Jk1.two N Jk1.nil)
+      (⟨hJN, trivial⟩ : FrmN (0 :: (q ++ ks)) (Jk1.two N Jk1.nil))
+  · intro m
+    rw [← plug_append]
+    have hcx : WEtx (List.replicate m 0 ++ (0 :: (q ++ ks)))
+        ((ctx0 ++ [Frm.fone V]) ++ List.replicate m (Frm.fone N)) :=
+      WEtx_fone_rep m (0 :: (q ++ ks)) _ N hc hJN hJN hN0 hNt'
+    exact (WEd_iff _ N).mp (WEd_rep0 m (0 :: (q ++ ks)) hN0 hNt') _ hcx
+
+#print axioms WEd_nilF0
+
 
 end Small
 end TRIO
