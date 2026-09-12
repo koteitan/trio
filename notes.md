@@ -26813,3 +26813,23 @@ DM が減る理由: 上の荷 `W` を `W' ≺ W` に落として鎖を `m` 本�
 `QS` では鎖の層 `LdOf (twoIt N T n) = LdOf N + n * LdOf T` が `S` より DM で
 小さいことを要求する。荷 `T = pay Z Y` の `Y` が A2' で小さくなるので、
 `S` の取り方（十分大きく取る）で帳尻が合う見込みだが、ここが一番細かい。
+
+## 追記441: 層の条件は `DMlt` でなく `Dom`（支配）にする
+
+`AYdTQ`（荷の `(k+1)::`）を書こうとして分かったこと: A2' の複製鎖
+`twoIt N (pay Z Y') j` の荷は `LdOf N + j * (LdOf Z + {Y'})` で、`j` が非有界。
+`DMlt ... S` を `j` ごとに示すのは面倒だが、
+
+    Dom M S := ∀ y ∈ M, ∃ z ∈ S, y < z
+    DMlt_of_Dom : Dom M S → S ≠ 0 → DMlt M S        （X = 0, Y = M, Z = S）
+
+にすると **小さい元を何個足しても `Dom` は保たれる**（`Dom_add` / `Dom_replicate`）。
+`Y' < Y` と `∃ z ∈ S, Y < z` から `∃ z ∈ S, Y' < z` が推移律で出るので、
+A2' の再帰で `Dom` は壊れない。
+
+だから `QS` の層の条件（`QDP` の `S` パラメータ）を `Dom (LdOf N) S` にした。
+再帰の停止に要る `DMlt (LdOf N) S` は `DMlt_of_Dom` で出す（`S ≠ 0` が要る）。
+`QS_twoOf` は `hS0 : S ≠ 0` と `hSN : Dom (LdOf N) S` を取る形になった。
+
+緑: `Dom` / `DMlt_of_Dom` / `Dom_zero` / `Dom_add` / `Dom_replicate` と
+`QS` 一式の書き直し（`AYdQ` もそのまま通った）。

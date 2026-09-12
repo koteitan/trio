@@ -10428,14 +10428,35 @@ DM で小さくなるので帰納法が閉じる見込み。 -/
 
 def DMlt (S' S : Multiset Ld) : Prop := Multiset.IsDershowitzMannaLT S' S
 
+/-- 層 `S` が多重集合 `M` を支配する。`Dom` は「小さい元を何個足しても保たれる」ので
+A2' の複製鎖で壊れない。`S ≠ 0` なら `DMlt` が出る。 -/
+def Dom (M S : Multiset Ld) : Prop := ∀ y ∈ M, ∃ z ∈ S, y < z
+
+theorem DMlt_of_Dom {M S : Multiset Ld} (h : Dom M S) (hS : S ≠ 0) : DMlt M S :=
+  ⟨0, M, S, hS, by simp, by simp, h⟩
+
+theorem Dom_zero (S : Multiset Ld) : Dom 0 S := by intro y hy; simp at hy
+
+theorem Dom_add {M M' S : Multiset Ld} (h : Dom M S) (h' : Dom M' S) : Dom (M + M') S := by
+  intro y hy
+  rcases Multiset.mem_add.mp hy with h1 | h1
+  · exact h y h1
+  · exact h' y h1
+
+theorem Dom_replicate {y : Ld} {S : Multiset Ld} (h : ∃ z ∈ S, y < z) (m : ℕ) :
+    Dom (Multiset.replicate m y) S := by
+  intro y' hy'
+  rw [Multiset.eq_of_mem_replicate hy']
+  exact h
+
 def QS : Multiset Ld → List ℕ → Jk1 → Prop :=
   wf_LdDM.fix (fun S ih =>
     QDP (fun ks' N => ∃ h : DMlt (LdOf N) S, ih (LdOf N) h ks' N)
-        (fun N => DMlt (LdOf N) S))
+        (fun N => Dom (LdOf N) S))
 
 theorem QS_eq (S : Multiset Ld) :
     QS S = QDP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N)
-        (fun N => DMlt (LdOf N) S) :=
+        (fun N => Dom (LdOf N) S) :=
   wf_LdDM.fix_eq _ S
 
 theorem QS_bnil (S : Multiset Ld) (V : Jk1) : QS S [] V ↔ GOK V := by
@@ -10447,7 +10468,7 @@ theorem QS_c0 (S : Multiset Ld) (ks : List ℕ) (V : Jk1) :
 
 theorem QS_ck (S : Multiset Ld) (k : ℕ) (ks : List ℕ) (V : Jk1) :
     QS S ((k + 1) :: ks) V ↔ ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) → ∀ (U N : Jk1),
-      FrmN (r ++ ks) U → QS S (r ++ ks) U → JkA N → DMlt (LdOf N) S →
+      FrmN (r ++ ks) U → QS S (r ++ ks) U → JkA N → Dom (LdOf N) S →
       (∀ ks' : List ℕ, FrmN ks' N → ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) →
       QS S (r ++ ks) (Jk1.one U (Jk1.two N V)) := by
   rw [QS_eq]; exact QDP_ck _ _ k ks V
@@ -10462,17 +10483,18 @@ theorem QS_step (S : Multiset Ld) (ks : List ℕ) {V W : Jk1}
 
 /-- ★★★★★★ 予算 `k` が**自由**。これが `WPd_twoOf` との差で、走りの長さが縛られない。 -/
 theorem QS_twoOf (S : Multiset Ld) {k : ℕ} {ks : List ℕ} {V N : Jk1} (hJN : JkA N)
-    (hSN : DMlt (LdOf N) S) (hPN : ∀ ks' : List ℕ, FrmN ks' N → QS (LdOf N) ks' N)
+    (hS0 : S ≠ 0) (hSN : Dom (LdOf N) S)
+    (hPN : ∀ ks' : List ℕ, FrmN ks' N → QS (LdOf N) ks' N)
     (hV : QS S ((k + 1) :: ks) V) : QS S (0 :: ks) (Jk1.two N V) := by
   rw [QS_ck] at hV
   rw [QS_c0]
   intro U hU hUk
   exact hV [] (by simp) U N (by simpa using hU) (by simpa using hUk) hJN hSN
-    (fun ks' h => ⟨hSN, hPN ks' h⟩)
+    (fun ks' h => ⟨DMlt_of_Dom hSN hS0, hPN ks' h⟩)
 
 /-- `QS` の文脈の族。 -/
 def QSCtx (S : Multiset Ld) : List ℕ → List Frm → Prop :=
-  QCtxP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) (fun N => DMlt (LdOf N) S)
+  QCtxP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) (fun N => Dom (LdOf N) S)
 
 theorem QS_iff (S : Multiset Ld) (ks : List ℕ) (V : Jk1) :
     QS S ks V ↔ ∀ ctx : List Frm, QSCtx S ks ctx → GOK (plug ctx V) := by
