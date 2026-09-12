@@ -43,6 +43,39 @@
 `WPdT_twoOf` が `⊥ ::` しか作れない「1 ずれ」が残る。
 同じ手（予算を荷の多重集合に）が縦にも効くかを次に見る。
 
+### 次の一手: `RunNilB` を `GOK_runGNil_gen` で（予算の一般化は要らないかも）
+
+`SmallA` の `WBd`（予算 `List (ℕ × ℕ)`、順序は深さだけ）で残る 1 文は
+
+    RunNilB : ∀ m i ks, WBd ((m, i + 1) :: ks) Jk1.nil
+    PayNilB : ∀ ks C, Bok C → WBd ks (Jk1.pay Jk1.nil C)
+    RunNilB + PayNilB → WBd_nilAllB → GOK_bdA_ofB → MixTow → 行376   ★全部緑
+
+`WBd_nilF1`（`i = 0`、つまり深さ 1）は緑で、`GOK_twoNilW_gen`（底が `fone`）を使う。
+深さ `i+1 ≥ 2` では文脈が `ftwo` で終わるのでその機構が当たらない——**が**
+`GOK_runGNil_gen`（`ctx ++ blkC V Bs`、つまり `fone V` のあとに `ftwo` が何枚でも）
+が当たる形になっている。実際 `WBtx ((m,i)::ks) ctx` を `i` で開くと
+
+    ctx = ctx0 ++ [Frm.fone V] ++ ftw Bs,  Bs.length = i   （`blkC V Bs`）
+
+の形になる（`i = 1` で `ctx'' ++ [fone U, ftwo N]` を確認した）。
+`GOK_runGNil_gen` の階段 `blkR N Bs j`（ブロックを `j` 個足す）に要るのは
+`hNt m₂ q'`（`q'` は深さ `< i+1` の**長さ無制限**のリスト）で、
+ブロック 1 個ぶんの予算は深さ `i, i-1, …, 1, 0` なので全部 `< i+1` ✓。
+**つまり `hNt` の「長さ無制限」でちょうど足りる。予算型の一般化は要らない。**
+
+要る補題（この順に作る）:
+1. `WBtx_decomp : WBtx ((m,i)::ks) ctx → ∃ ctx0 V Bs ks', Bs.length = i ∧
+     ctx = ctx0 ++ blkC V Bs ∧ (∀ B ∈ Bs, JkA B) ∧ GOK (plug ctx0 V) ∧ …`
+   （`i` の帰納。`WBtx_c0` / `WBtx_ck` を開くだけ）
+2. `WBtx_blkR : 階段の文脈 ctx0 ++ blkC V Bs ++ blkR N Bs j` が
+   `WBtx ((m₂,i) :: q' ++ (q ++ ks))` の形（`q'` はブロック `j` 個ぶんの予算）
+3. `RunNilB` を `GOK_runGNil_gen` で
+4. `PayNilB` を `PcB` と同じ DM 帰納で（複製鎖はブロックの幅に出るので上限が無い）
+
+なお、深さを一般の整礎な型に持ち上げた `WNd`（`Small.lean` 末尾、核は緑）も
+用意してある。1〜4 が `ℕ` の深さで通らなければそちらに移す。
+
 ### 次の標的: `PayB`（ブロック文脈の荷）。これで行 376 が出る
 
     PayB : ∀ ws : List ℕ, ∀ C, Bok C → GOK (plug (BCtx ws) (pay nil C))
