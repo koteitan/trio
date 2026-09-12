@@ -1,5 +1,33 @@
 # 壁
 
+## ★★★★ 壁は `TwOk` 階層の `Fter` 1 箇所（2026-09-12 深夜）
+
+`SmallA` の `TwOk r m` 階層（`TwSt`/`TwOk`/`NTw`、33000〜33240）は閉性がほぼ全部緑:
+
+    TwOk_nil / TwOk_one / TwOk_pay（**m = 0 も**）/ TwOk_oneNil / TwOk_repN /
+    TwOk_itJ / TwOk_twoIt / TwOk_twoNilE / NTw_nil / TwSt_split / TwOk_two
+
+**穴は 1 箇所だけ**:
+
+    TwOk (r+1) 0 (two W Z)   ＝ 2 の記録の直上に 2 の記録（`Fter r m` が弾く）
+
+**荷は壁ではない**（`TwOk_pay_e` が `m = 0` でも緑）。走りだけが壁。
+
+### 今回の新しい道具はその穴を「荷が `nil`」の形で破る
+
+    GOK_twoNW_gen … TwSt (r+1) 0 D = D' ++ [ftwo N] に当てると
+                    TwOk (r+1) 0 (two W nil) が出る（階段は TwOk_nstW）
+
+    TwOk_nstW (hN : ∀ r, NTw r N) (hW : ∀ r, TwOk (r+1) 0 W)
+      : ∀ k r m, Fter r m → TwOk r m (nstW N W k)                  ★緑
+    LOk1_nstW / TwoOk_twoWnil / TwSt_fone                          ★緑
+
+**残る食い違い**: 階段 `nstW N W k` は毎段同じ `N` を使うので `∀ r, NTw r N` が要る。
+`TwSt (r+1) 0` の節が与えるのは `NTw r N`（その段だけ）。
+直すには兄弟の条件を「全段で良い」に強めた階層 `TwStA` を作る（`TwOk` 階層の写し、
+400〜600 行）。ただし `W` にも `∀ r, TwOkA (r+1) 0 W` が要り、鎖
+`twoIt W (pay Z Y) m` は荷が `pay` なので `two · nil` の形に入らない。
+
 ## ★★★ いま一番先の形（2026-09-12 夜）
 
 新しい語の道具（`SmallA` に無かった）:
