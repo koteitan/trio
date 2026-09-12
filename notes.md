@@ -26140,3 +26140,39 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 要るのは `WPdT_twoAY1_at` の **`Z` 一般化**（いまは `Z = nil` 固定）。
 `Y1⟦n⟧` の側は `pay Z ((0,0,0)^n)` ＝ `Z` の上に `Zk` を `n` 段なので、
 `WPdw_run2` を「底が `Z`」に一般化すればよい。
+
+## 追記415: R600(7,0,0)(7,0,0)（緑、シート更新）
+
+`ZkO Z n`（底 `Z` の上に `[(0,0,0)]` を `n` 段）と `WPdw_runO`（指数 `ex2 i n`）で
+`WPdT_twoAY1_at` の底を一般化した（`WPdT_twoAY1Z_at` / `_top`）。これで
+
+- `Zq n = pay^n Y1`、`jk1 l (Zq n) = ((l+1,0,0)(l+2,0,0))^n`
+- `WPdw_chainZn`: 指数 `ex2 n 0 = ω·n`、二重帰納 `(n, m)`
+- `Xq n = two nil (two nil (Zq n))`、`GOK (one nil (Xq n))`
+- `R375m_pair_rep_mem n : R375m ++ ((6,0,0)(7,0,0))^n ∈ W 0`
+- `flat_mem''` で極限 → `R600_77_mem : R600(7,0,0)(7,0,0) ∈ W 0`
+
+`Aok_Z77` / `LoopIt_Z77_mem` まで緑。シートの 10 行を新台座に差し替えた
+（`bms -s` で全部標準形、`bms -c` で単調増加、新 1 行目 > 旧 10 行目）。
+
+### 名前の衝突
+
+`Zn` は SmallA に既にある（`TrioSeq` の塔）。木のほうは `Zq` にした。
+`Xn` も `Xq` に。**新しい定義を書く前に `grep -n "\bZn\b" lean/SmallA.lean`。**
+
+### 次: 荷の階 `Yv j = (0,0,0)(1,0,0)^j` を一様に扱う
+
+`Yv j ⟦n⟧ = (Yv (j-1))^n`（悪い部分が `Yv (j-1)` になる）。指数は `ω^j·n`。
+だから指数の型は `ℕ ×ₗ ℕ` では足りず、**`Bw = Colex (ℕ →₀ ℕ)`（順序型 ω^ω）**
+そのものが要る。予算型は `Bwx = BwG Bw = Colex (Bw →₀ ℕ)`（順序型 ω^(ω^ω)）。
+
+これが通ると `R375m ++ ((6,0,0)(7,0,0)^j)^n ∈ W 0` が全部の `j,n` で出て、
+`flat_mem''` の極限で **`R600 (7,0,0)^k`（全部の `k`）**が出る。
+`bms` 実測: `R600(7,0,0)^k` の上限は `R600(7,1,0)`。
+
+必要な部品:
+- `PayIt Z Y n`（`Y` を `n` 段 pay）と `jk1_PayIt`。
+- 汎用 `WPdT_twoAY_at`: 荷 `Y` の `⟦n+1⟧` 段が全部置けるなら `pay Z Y` が置ける
+  （`GoodFb_snoc_innerJt0` を包むだけ。荷に依存しない）。
+- `Atv j`（階 `j` の「_at」）を `j` の帰納で作る。`Atv 0` は既存の `WPdT_twoAZ_at`。
+  `Atv (j+1)` は汎用 `_at` ＋ `hstep q` = `Atv j`（底 `PayIt Z (Yv j) q`）。
