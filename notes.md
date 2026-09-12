@@ -25080,3 +25080,47 @@ S 族の塔の階段は文脈を `[fone N] ++ replicate p (ftwo nil)` で伸ば�
    `SCtx` と同じく底を `∃ ks, GCtx (true::ks) ctx` にすれば
    `RNil` / `RHang2` と直接つながる。
 2. `RunPay` を落とす。これが最後の 1 点。
+
+## 追記390: 底を `GCtx` にした。入り目にもう 1 種類（裸の走り）が要る
+
+### 通った
+
+`WPdR` の底を差し替えた:
+
+    WPdR [] V     = ∀ bs ctx, GCtx (true::bs) ctx → GOK (plug ctx V)   （= ∀bs, APd (true::bs) V）
+    WCtxR [] ctx  = ∃ bs, GCtx (true::bs) ctx
+    FrmR ks U     = JkA U（全部の形で同じ。底が `fone` の下なので `JkT` は要らない）
+
+`WPdR_payE` は `APd_payT` で置き換え。全部緑。
+これで `RunAll = ∀ q, WPdR [] (stk q)` と書ける（`APd_iff` でそのまま）。
+
+### 分かった不足
+
+`SG_stkS`（S 族の走りの塔）は、底の文脈 `D`（`GCtx (true::ks)`）を
+`D = ctx ++ [fone V]` と割って、**`D` 自身の `fone` を使って**
+`D ++ replicate q (ftwo nil)` を作る（`SCtx_rep_ftwo`）。
+
+いまの `WPdR` の入り目 `(b,p)` は `[fone U, ftwo N] ++ replicate p (ftwo nil)`、
+つまり**必ず `fone` を 1 つ足してから**走りを足す。だから
+「既存の文脈に裸の `ftwo` だけを足す」が表せず、`WPdR [] (stk q)` が出ない
+（`fone` が 1 つ余分になる）。
+
+### 直し方
+
+入り目をもう 1 種類増やす。`(b,p) : Bud ×ₗ ℕ` の読み方を 3 通りにする:
+
+    (⊥, 0) = ⊥      … [fone U]
+    (⊥, p) (p>0)    … replicate p (ftwo nil)        ← 新（裸の走り。`SCtx` の false^p）
+    (b, p) (b ≠ ⊥)  … [fone U, ftwo N] ++ replicate p (ftwo nil)
+
+`WPdR ((⊥,p)::ks) V = WPdR ks (stkP p V)`（走りを木に押し込むだけ。`SG_cf_iff` と同じ）。
+DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（`b ≠ ⊥`）なので
+兄弟の条件にも収まる。
+
+これで
+- 塔の階段のブロックは `(b,p)` 1 節（追記387、`WPdR_nilRun` が通った理由）
+- 底に走りを足すのは `(⊥,q)` 1 節（`SG_stkS` が要求するもの）
+の両方が表せる。
+
+**次**: `WPdR` の定義に `(⊥,p)` の節を足し、`WPdR [] (stk q)` を出す。
+残る仮定は `RunPay`（走りの上の荷）1 点。
