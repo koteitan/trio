@@ -24591,3 +24591,34 @@ methodology.md にも「`Aok` の輪を回す」を書いた。
 兄弟に要る条件（任意の形）が定義の供給する条件（true 接頭辞のみ）を超える。
 
 **どちらの層でも「兄弟が 2 の枠の下にどれだけ深く入れるか」で詰まる。**
+
+## 追記377: ★★★ 予算を `WithTop ℕ` に広げた層 `WPdT` が定義できた（整礎性 OK）
+
+追記376 の「1 段のずれ」は、予算に `⊤` を足せば消える:
+
+    WPd  ((k+1)::ks) : 兄弟は予算 ≤ k まで        → 鎖の幅 m > k で足りない
+    WPdT (⊤::ks)     : 兄弟は予算 < ⊤ = 全自然数  → どの幅の鎖でも足りる ★
+
+整礎性: Mathlib の `wellFounded_isDershowitzMannaLT` は
+`[Preorder α] [WellFoundedLT α]` で成り立つ。`WellFoundedLT (WithTop ℕ)` は
+`inferInstance` で出る（`⊤` から下は必ず自然数に落ちるので有限鎖）。
+
+**今回緑にしたもの**:
+
+    dmT_step / dmT_cons / dmT_app        WithTop ℕ 版の DM 補題
+    FrmNT                                形の型を List (WithTop ℕ) に
+    WPdT : List (WithTop ℕ) → Jk1 → Prop  ★定義が通った（termination OK）
+      ⊥ が 1 の枠、⊥ < b が 2 の枠（兄弟は予算 < b）
+    WPdT_bnil / WPdT_cons / WPdT_c0 / WPdT_cb / WPdT_step / WPdT_twoOf
+
+### 狙い（見取り図）
+
+    WPdT_twoIt_nil : ∀ m, WPdT (⊤::ks) (twoIt nil nil m)     幅に上限が要らない
+    WPdT (⊤::ks) M0t                                          ★壁の 1 文
+    WPdT (⊤::ks) (TowT n)   （TowT (n+1) = one M0t (two nil (TowT n))）
+    WPdT (⊥::ks) (two nil (TowT n))   （WPdT_twoOf、兄弟 nil）
+    → R600 (5,2,0)（シート証明中）
+
+`WPd ((k+1)::ks)` は今後使わず、全部 `⊤` で回す。移植が要るのは
+`WPdT_iff` / `WCtxT` / `WPdT_payA` / `WPdT_nilAll` / `WPdT_twoIt_nil` /
+`WPdT_twoA_runB` あたり。
