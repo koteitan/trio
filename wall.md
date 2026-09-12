@@ -1,5 +1,77 @@
 # 壁
 
+## ★★★★★★★★★★★★★★ 壁の正体が確定した（2026-09-13）: 「幅の 1 ずれ」
+
+### 今日緑にしたもの
+
+    WQt / WQxt … `WQd`（ブロック族）を一般の予算型へ。幅は `Scale`（`S.nb w < b`）
+      WQt_iff / WQt_step / WQt_congr / WQt_runStair / WQt_nilF / WQt_oneNil /
+      WQt_nilT / WQt_nilAll / WQt_stk_succ / WQt_Utw / R376_of_QtPnil
+      → 行376 は `QtPnil : ∀ ks C, Bok C → WQt S ks (pay nil C)` 1 本
+
+    WNd … 枠 1 枚に予算 1 個（一般予算）。荷閉包を外し、兄弟に `p' = []` を許した
+      WNd_payE / GOK_chainJdWN / AYdWN / WNd_payT / WNd_chainT /
+      AYdTWN_hstep / AYdTWN / WNd_payA / WNd_oneNil / WNd_nilT
+
+    WEd / WEtx … 予算を深さのリスト `List ℕ` に（`WBd` の `m` は順序に出ないので落とす）
+      WEd_iff / WEd_step / WEd_congr / WEtx_JkT / WEd_payE / GOK_chainJdWE /
+      AYdWE / WEd_payT / WEd_chainT / AYdTWE_hstep / AYdTWE / WEd_payA /
+      WEd_oneNil / WEd_nilT
+
+**`WNd_payA` / `WEd_payA` は「隣接 `ftwo`（走り）を表せる族で、荷がどの位置でも
+無条件」という初めての結果。** `QRunPay` / `PayNilB` / `QtPnil` 型の壁
+（走りの直上の荷）は、族の定義から荷閉包を外せば消える。
+`WQd` / `WBd` で壁だったのは、族の定義に荷閉包が入っていて、
+A2' の複製鎖の兄弟の荷閉包が**任意の荷**について要り帰納法が回らなかったから。
+
+鍵（`AYdTWE_hstep` / `AYdTWN_hstep`）: 複製鎖の各段は
+
+    WEd_ck i ks T |>.mp hTk (q := q' ++ q) … : WEd (i :: ((q' ++ q) ++ ks)) (two N' T)
+
+で出る。**予算（深さ `i`）は動かず、詰め物 `q'` が積まれるだけ。**
+鎖の元は同じ階に並ぶので深さが減らない。だから鎖の長さに上限が付かない。
+
+### 残っている 1 点と、その正体
+
+    WEd_nilF : ∀ i ks, WEd ((i+1) :: ks) Jk1.nil     （走りの直下の空木）
+
+`i = 0`（文脈が `fone` で終わる）は `GOK_twoNilW_gen` で通る（階段は
+`replicate m (fone N)`、予算は `hNt` の詰め物 `replicate m 0` でちょうど合う）。
+`i ≥ 1` は `GOK_runGNil_gen`（階段 `blkR N Bs j`）が要るが、**文脈の走りの兄弟
+`Bs[k]`（深さ `k+1`）の条件の詰め物の上限が `k` しかなく、階段のブロックが
+外側に持つ深さ `i` の入り目（`i > k`）を覆えない**。上限を「走りの先頭の深さ」に
+すると `dm_app` の測度が下がらない（停止性が壊れる）。
+
+逆に `WQt`（ブロック 1 個が予算 1 個、走りの兄弟は全部同じ上限 `b`）は
+階段が通る（`WQt_nilF` は緑）。しかし荷の複製鎖を兄弟として置くとき、
+文脈の走り `Ns₂` に 1 本足すので幅が `|Ns₂|+1` になり、節の予算 `b₂` が許す幅は
+`|Ns₂|` まで。**ちょうど 1 足りない。** `b₃ > b₂` で開き直すと兄弟 `Ns₂` の条件
+（`< b₂`）が届かない。
+
+    WEd … 荷 ✓ / 階段 ✗（兄弟の上限が局所的で階段の外側を覆えない）
+    WQt … 階段 ✓ / 荷 ✗（幅が 1 足りない）
+
+**この 2 つは同じ 1 ずれの別の面。** 直すには
+「族が幅 `w` を許すなら同じ節で幅 `w+1` も許す」が要る（= 幅の上限を外す）が、
+走りの階段は「幅 `w` の走りには長さ `w` の降下列」を要求するので外せない。
+
+### 次に試す形（この順）
+
+1. 予算を対 `(b, w)`（`b` は兄弟の上限、`w` は幅）にして**順序は `b` だけ**で
+   測る（`WBd` の `encE` と同じ仕掛け）。幅 `w` が順序に出ないので
+   `(b₂, w₂+1)` で開き直せる。ただし「入り目の妥当性 `w ≤ height b`」を
+   課すと 1 ずれが戻るので、そこを空木の補題がどう耐えるかを見る。
+2. 族の節に**水平鎖そのもの**を入れる
+   （`WQt (r++ks) (one U (RunP Ns (twoIt Nl V (m+1))))`）。
+   `WQt_iff`（文脈との同値）は壊れるので、文脈族の側に
+   「鎖の枠」を入れる形（`Mtwd` に近い）で作り直す必要がある。
+3. `DCtx` / `NNo`（`SmallA` 54490、ブロック文脈の族）は
+   `Tow_of_NNo` / `NNo_step` / `NNo_one` / `NNo_payU` / `NNo_pay` が緑。
+   穴は `NNo nil`（`DCtx` の 2 の枠の兄弟が `JkA` しか課さないので、
+   走りの先端の `two Bl nil` が出ない）。`DCtx` の兄弟条件を
+   「`NNo` 自身」にすると循環するが、**予算つきの族で同じことをすれば
+   循環しない**（それが `WQt` / `WEd`）。
+
 ## ★★★★★★★★★★★★ 壁 `Pay2` は落ちた（2026-09-13）
 
     Pay2_true   : Pay2 = ∀ B, Bok B → GOK (one nil (two nil (two nil (pay nil B))))  ★緑
