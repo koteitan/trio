@@ -8928,6 +8928,360 @@ theorem Z789_UH_snoc21_mem :
 
 #print axioms Z789_UH_snoc21_mem
 
+/-! ### ★★★★★★★★★★★★★★ `SegA U375aH` の梯子
+
+`SegA 0 U375aH` があるので、`SegA_shift` で段を 1 つずつ上げられる:
+
+    LwA b Y0 → SegA b M → LwA (b+1) (Y0 ++ M)     （`RunA0_LwA`）
+    LwA h A → A ++ [(h+1,1,0)] ∈ W 0              （`LvB_snoc`）
+
+したがって `A ++ U375aH ++ shiftr01 1 0 U375aH ++ … ++ shiftr01 (n-1) 0 U375aH`
+（＝ `A ++ TwD 1 U375aH n`）はレベル `n` の梯子の頭で、その上に `(n+1,1,0)` が継げる。 -/
+
+theorem LwA_step {b : ℕ} {Y0 M : TrioSeq} (hY0 : LwA b Y0) (hM : SegA b M) :
+    LwA (b + 1) (Y0 ++ M) :=
+  RunA0_LwA ⟨b, Y0, M, rfl, rfl, hY0, hM⟩
+
+theorem LwA_snoc {h : ℕ} {A : TrioSeq} (hA : LwA h A) :
+    A ++ [((h + 1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  obtain ⟨P, hP, r, hr⟩ := hA
+  exact LvB_snoc hP r h A hr
+
+def UHTw (A : TrioSeq) (n : ℕ) : TrioSeq := A ++ TwD 1 U375aH n
+
+theorem UHTw_succ (A : TrioSeq) (n : ℕ) :
+    UHTw A (n + 1) = UHTw A n ++ shiftr01 n 0 U375aH := by
+  show A ++ TwD 1 U375aH (n + 1) = (A ++ TwD 1 U375aH n) ++ _
+  rw [TwD, TwD, List.range_succ, List.flatMap_append, ← List.append_assoc]
+  simp
+
+theorem LwA_UHTw {A : TrioSeq} (hA : Aok A) : ∀ n : ℕ, LwA n (UHTw A n)
+  | 0 => by
+      show LwA 0 (A ++ TwD 1 U375aH 0)
+      simpa [TwD] using LwA_of_Aok hA
+  | (n + 1) => by
+      rw [UHTw_succ]
+      exact LwA_step (LwA_UHTw hA n) (by simpa using SegA_shift SegA_U375aH n)
+
+theorem Aok_UHTw {A : TrioSeq} (hA : Aok A) (n : ℕ) : Aok (UHTw A n) :=
+  LwA_Aok (LwA_UHTw hA n)
+
+/-- ★★★★★★★★★★★★★★ `A ++ (U375aH の 1 ずらし塔 n 段) ++ (n+1,1,0)`。 -/
+theorem UHTw_snoc_mem {A : TrioSeq} (hA : Aok A) (n : ℕ) :
+    UHTw A n ++ [((n + 1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LwA_snoc (LwA_UHTw hA n)
+
+theorem Z789_UHTw_mem (n : ℕ) : UHTw Z789 n ∈ W 0 := (Aok_UHTw Aok_Z789 n).mem
+
+theorem Z789_UHTw_snoc_mem (n : ℕ) :
+    UHTw Z789 n ++ [((n + 1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UHTw_snoc_mem Aok_Z789 n
+
+#print axioms Z789_UHTw_mem
+#print axioms Z789_UHTw_snoc_mem
+
+/-! ### ★★★★★★★★★★★★★★ `U375aH` の上の列を台座一般に（`H` 族の移植）
+
+`SmallA` の `R375h5_mem` / `R375h6_mem` は台座が `R338` 固定だが、中身は
+`SegB_snoc2` と `rowJ_mem_genF` なので台座は任意の `Aok` でよい。 -/
+
+theorem UH_snoc22 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := A) (M := U375aH)
+    (SegA_toSegB SegA_U375aH BaseOk_P0) (LwB_of_base ⟨hA, rfl⟩)
+  simpa [List.append_assoc] using h
+
+theorem UH_snoc221 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 : GoodFb (fun a b => wordJ a b ([] ++ [NH])) :=
+    GOK_NH [] WOk_nil GoodFb_wordJ_nil
+  have h1' : GoodFb (fun a b => wordJ a b [NH]) := by simpa using h1
+  have h2 := GOK_nil [NH] (WOk_singletonT JkT_NH) h1'
+  have h := rowJ_mem_genF hA h2
+  simpa [wordJ_append, wordJ_singleton, colJ, jk1_NH, jk1, U375aH, U375aI, U375aJ,
+    U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    List.append_assoc] using h
+
+theorem Z789_UH_snoc22_mem :
+    Z789 ++ U375aH ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := UH_snoc22 Aok_Z789
+
+theorem Z789_UH_snoc221_mem :
+    Z789 ++ U375aH ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := UH_snoc221 Aok_Z789
+
+#print axioms Z789_UH_snoc22_mem
+#print axioms Z789_UH_snoc221_mem
+
+theorem UH_snoc30 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hstep : ∀ n : ℕ,
+      Aok (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375bH n) →
+      (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375bH n) ++ U375bH ∈ W 0 := by
+    intro n _
+    have h := rowJ_mem_genF hA (GoodFb_repl_NH (n + 1))
+    rw [wordJ_repl_NH (n + 1), copies_snoc] at h
+    simpa [List.append_assoc] using h
+  have h := flat_of_chain (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) (M := U375bH) (d := 3)
+    (by omega) MidD_U375bH (Aok.append_row1 hA (le_refl 1)) hstep
+  simpa [U375aH, U375aI, U375aJ, U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    U375bH, U375bI, U375bJ, U375bK, U375bR, U375bP, U375bZ, U375bX, U375b1, U375b,
+    List.append_assoc] using h
+
+theorem Z789_UH_snoc30_mem :
+    Z789 ++ U375aH ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := UH_snoc30 Aok_Z789
+
+#print axioms Z789_UH_snoc30_mem
+
+/-! ### ★★★★★★★★★★★★★★ `H` 族の残りを台座一般に（`(3,1,0)` / `(4,1,0)` / `(5,1,0)`） -/
+
+theorem UaH_cons : U375aH = ((1, 1, 0) : ℕ × ℕ × ℕ) :: U375bH := by
+  simp [U375aH, U375aI, U375aJ, U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    U375bH, U375bI, U375bJ, U375bK, U375bR, U375bP, U375bZ, U375bX, U375b1, U375b]
+
+theorem UaH_eqc (A : TrioSeq) :
+    A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ++ U375cH
+      = A ++ U375aH := by
+  simp [U375aH, U375aI, U375aJ, U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX, U375c1, U375c,
+    List.append_assoc]
+
+theorem UaH_eqd (A : TrioSeq) :
+    A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+      ((3, 1, 0) : ℕ × ℕ × ℕ)] ++ U375dH = A ++ U375aH := by
+  simp [U375aH, U375aI, U375aJ, U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    U375dH, U375dI, U375dJ, U375dK, U375dR, U375dP, U375dZ, U375dX, U375d1, U375d,
+    List.append_assoc]
+
+theorem hang3H_gen {A B : TrioSeq} (hA : Aok A) (hB : Bok B) :
+    A ++ U375aH ++ shiftr01 3 0 B ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.pay NH B])) :=
+    GOK_payNH hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.pay NH B]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  rw [wordJ_singleton, colJ_pay, colJ_NH_one] at h
+  rw [UaH_cons]
+  simpa [List.append_assoc] using h
+
+theorem hang4H_gen {A B : TrioSeq} (hA : Aok A) (hB : Bok B) :
+    A ++ U375aH ++ shiftr01 4 0 B ∈ W 0 := by
+  have hG := GOK_payL4H hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.pay WttH B)]) := by
+    simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  rw [wordJ_singleton, colJ, jk1_payL4H 2 B] at h
+  simpa [U375aH, U375aI, U375aJ, U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    List.append_assoc] using h
+
+theorem hang5H_gen {A B : TrioSeq} (hA : Aok A) (hB : Bok B) :
+    A ++ U375aH ++ shiftr01 5 0 B ∈ W 0 := by
+  have hG := GOK_hang5H hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b
+      [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay (TW 3) B))]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  rw [wordJ_singleton, colJ, jk1_hang5H 2 B] at h
+  simpa [U375aH, U375aI, U375aJ, U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    List.append_assoc] using h
+
+theorem Ancd2_gen {A : TrioSeq} (hA : Aok A) :
+    Ancd 2 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  Ancd_append_Mid hA.ne (Lv_Ancd 0 0 A ⟨hA, rfl⟩) (MidD_one 1 (by omega))
+
+theorem Ancd3H_gen {A : TrioSeq} (hA : Aok A) : Ancd 3 (A ++ U375aH) := by
+  have h3 : Ancd 3 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ U375bH) :=
+    Ancd_append_Mid (by simp [hA.ne]) (Ancd2_gen hA) MidD_U375bH
+  rw [UaH_cons]
+  simpa [List.append_assoc] using h3
+
+theorem Ancd3A1_gen {A : TrioSeq} (hA : Aok A) :
+    Ancd 3 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) := by
+  have h3 : Ancd 3 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ++ [((2, 2, 1) : ℕ × ℕ × ℕ)]) :=
+    Ancd_append_Mid (by simp [hA.ne]) (Ancd2_gen hA) MidD_c221
+  simpa [List.append_assoc] using h3
+
+theorem Ancd4H_gen {A : TrioSeq} (hA : Aok A) : Ancd 4 (A ++ U375aH) := by
+  have h4 : Ancd 4 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ++ U375cH) :=
+    Ancd_append_Mid (by simp [hA.ne]) (Ancd3A1_gen hA) MidD_U375cH
+  rwa [UaH_eqc] at h4
+
+theorem Ancd4A2_gen {A : TrioSeq} (hA : Aok A) :
+    Ancd 4 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+      ((3, 1, 0) : ℕ × ℕ × ℕ)]) := by
+  have h4 : Ancd 4 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+      ++ [((3, 1, 0) : ℕ × ℕ × ℕ)]) :=
+    Ancd_append_Mid (by simp [hA.ne]) (Ancd3A1_gen hA) (MidD_one 3 (by omega))
+  simpa [List.append_assoc] using h4
+
+theorem Ancd5H_gen {A : TrioSeq} (hA : Aok A) : Ancd 5 (A ++ U375aH) := by
+  have h5 : Ancd 5 (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+      ((3, 1, 0) : ℕ × ℕ × ℕ)] ++ U375dH) :=
+    Ancd_append_Mid (by simp [hA.ne]) (Ancd4A2_gen hA) MidD_U375dH
+  rwa [UaH_eqd] at h5
+
+theorem twH_gen {A : TrioSeq} (hA : Aok A) {d : ℕ} (hd : 1 ≤ d)
+    (hang : ∀ B : TrioSeq, Bok B → A ++ U375aH ++ shiftr01 d 0 B ∈ W 0) :
+    ∀ n : ℕ, TwD d (A ++ U375aH) n ∈ W 0 :=
+  TwD_mem_of_hang hd (Aok_append_U375aH hA) hang
+
+theorem UH_snoc31 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) (Aok_append_U375aH hA).ne (Aok_append_U375aH hA).deep
+    (Aok_append_U375aH hA).zroot (Ancd3H_gen hA)
+    (twH_gen hA (by omega) (fun B hB => hang3H_gen hA hB))
+
+theorem UH_snoc41 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) (Aok_append_U375aH hA).ne (Aok_append_U375aH hA).deep
+    (Aok_append_U375aH hA).zroot (Ancd4H_gen hA)
+    (twH_gen hA (by omega) (fun B hB => hang4H_gen hA hB))
+
+theorem UH_snoc51 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_mem (by omega) (Aok_append_U375aH hA).ne (Aok_append_U375aH hA).deep
+    (Aok_append_U375aH hA).zroot (Ancd5H_gen hA)
+    (twH_gen hA (by omega) (fun B hB => hang5H_gen hA hB))
+
+#print axioms UH_snoc31
+#print axioms UH_snoc41
+#print axioms UH_snoc51
+
+theorem Aok_A1_gen {A : TrioSeq} (hA : Aok A) :
+    Aok (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) :=
+  LvB_Aok BaseOk_P0 1 1 _
+    (LvB_unit11 BaseOk_P0 (show LvB P0 0 0 A from ⟨hA, rfl⟩))
+
+theorem A1_copiesH_gen {A : TrioSeq} (hA : Aok A) (m : ℕ) :
+    A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)] ++ copies U375cH m
+      ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [TLH m])) :=
+    GOK_TLH m [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [TLH m]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  rw [wordJ_singleton, colJ, jk1_TLH m 2] at h
+  simpa [U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX, U375c1,
+    U375c, List.append_assoc] using h
+
+theorem UH_snoc40 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hstep : ∀ n : ℕ,
+      Aok (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+        ++ copies U375cH n) →
+      (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+        ++ copies U375cH n) ++ U375cH ∈ W 0 := by
+    intro n _
+    have h := A1_copiesH_gen hA (n + 1)
+    rw [copies_snoc] at h
+    simpa [List.append_assoc] using h
+  have h := flat_of_chain
+    (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (M := U375cH) (d := 4) (by omega) MidD_U375cH (Aok_A1_gen hA) hstep
+  rw [UaH_eqc A] at h
+  exact h
+
+#print axioms UH_snoc40
+
+theorem VVnH_tower_gen (A : TrioSeq) (n : ℕ) :
+    A ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: wordJ 1 1 [VVnH n])
+      = Mtw (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) U375cH n := by
+  rw [wordJ_singleton, colJ, jk1_VVnH n 2, Mtw, U375cH, U375cI, U375cJ, U375cK,
+    U375cR, U375cP, U375cZ, U375cX, U375c1, U375c]
+  simp [List.append_assoc]
+
+theorem VVnH_tower_mem_gen {A : TrioSeq} (hA : Aok A) (n : ℕ) :
+    Mtw (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]) U375cH n ∈ W 0 := by
+  rw [← VVnH_tower_gen A n]
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [VVnH n])) :=
+    GOK_VVnH n [] WOk_nil GoodFb_wordJ_nil
+  exact rowJ_mem_genF hA (by simpa using hG)
+
+theorem UH_snoc42 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocY_mem (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (M := U375cH) (L := 3) (y := 2) (by simp) MidD_U375cH
+    (by simp [U375cH, U375cI, U375cJ, U375cK, U375cR, U375cP, U375cZ, U375cX, U375c1,
+      U375c, entry])
+    (by omega) (VVnH_tower_mem_gen hA)
+  rw [UaH_eqc A] at h
+  exact h
+
+theorem A2_mem_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)]
+      ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine snocd_gen (Y := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ)])
+    (d := 3) (by omega) (Aok_A1_gen hA) (Ancd3A1_gen hA) ?_
+  intro B hB
+  have h := hangU11 (h := 0) (LwA_of_Aok hA) hB
+  simpa [List.append_assoc] using h
+
+theorem Aok_A2_gen {A : TrioSeq} (hA : Aok A) :
+    Aok (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+      ((3, 1, 0) : ℕ × ℕ × ℕ)]) := by
+  have h := Aok_append_Mid (d := 4) (by omega) (Aok_A1_gen hA) (MidD_one 3 (by omega))
+    (A2_mem_gen hA)
+  simpa [List.append_assoc] using h
+
+theorem A2_copiesH_gen {A : TrioSeq} (hA : Aok A) (m : ℕ) :
+    A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+      ((3, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375dH m ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (XXH m)])) :=
+    GOK_oneXXH m [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (XXH m)]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (XXH m))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: copies U375dH m := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) :: jk1 3 (XXH m)) = _
+    rw [jk1_XXH m 3]
+    simp [U375dH, U375dI, U375dJ, U375dK, U375dR, U375dP, U375dZ, U375dX, U375d1,
+      U375d, jk1]
+  rw [wordJ_singleton, colJ, e] at h
+  simpa [List.append_assoc] using h
+
+theorem UH_snoc50 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((5, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hstep : ∀ n : ℕ,
+      Aok (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+        ((3, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375dH n) →
+      (A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+        ((3, 1, 0) : ℕ × ℕ × ℕ)] ++ copies U375dH n) ++ U375dH ∈ W 0 := by
+    intro n _
+    have h := A2_copiesH_gen hA (n + 1)
+    rw [copies_snoc] at h
+    simpa [List.append_assoc] using h
+  have h := flat_of_chain
+    (Y0 := A ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ),
+      ((3, 1, 0) : ℕ × ℕ × ℕ)])
+    (M := U375dH) (d := 5) (by omega) MidD_U375dH (Aok_A2_gen hA) hstep
+  rw [UaH_eqd A] at h
+  exact h
+
+#print axioms UH_snoc42
+#print axioms UH_snoc50
+
+/-! ### ★★★★★★★★★★★★★★ 新台座 `Z789` の上の `H` 族 11 本 -/
+
+theorem Z789_H_20 : Z789 ++ U375aH ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UHIt_lim_mem Aok_Z789
+theorem Z789_H_21 : Z789 ++ U375aH ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc21 Aok_Z789
+theorem Z789_H_22 : Z789 ++ U375aH ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc22 Aok_Z789
+theorem Z789_H_221 : Z789 ++ U375aH ++ [((2, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc221 Aok_Z789
+theorem Z789_H_30 : Z789 ++ U375aH ++ [((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc30 Aok_Z789
+theorem Z789_H_31 : Z789 ++ U375aH ++ [((3, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc31 Aok_Z789
+theorem Z789_H_40 : Z789 ++ U375aH ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc40 Aok_Z789
+theorem Z789_H_41 : Z789 ++ U375aH ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc41 Aok_Z789
+theorem Z789_H_42 : Z789 ++ U375aH ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc42 Aok_Z789
+theorem Z789_H_50 : Z789 ++ U375aH ++ [((5, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc50 Aok_Z789
+theorem Z789_H_51 : Z789 ++ U375aH ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc51 Aok_Z789
+
+#print axioms Z789_H_51
+
 
 end Small
 end TRIO

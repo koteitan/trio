@@ -26501,3 +26501,46 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 3. `flat_of_chain` で積み上げの極限（`++ [(2,0,0)]`）。
 4. `LvB P0 1 1` を作って `LvB_snoc` で `++ [(2,1,0)]`。
 5. それ以上は `SmallA` の `T`/`U`/`V`/`W`/`X`/`H` 族の工事を台座一般に書き直す。
+
+## 追記426: `H` 族 11 本を台座一般に移植 → シートが大きく伸びた
+
+`SmallA` の `R375h3_mem` … `R375h13_mem`（台座 `R338` 固定）は、中身が全部
+
+    rowJ_mem_genF hA hG'        （`hG'` は台座に依らない）
+    flat_of_chain / SegB_snoc2 / snocd_gen / snocY_mem
+
+なので **`Aok_R338` を任意の `hA : Aok A` に置き換えるだけ**で台座一般になる。
+移植したもの（全部緑、`A ++ U375aH ++ [c]` の形）:
+
+    c = (2,0,0) UHIt_lim_mem   (2,1,0) UH_snoc21   (2,2,0) UH_snoc22
+        (2,2,1) UH_snoc221     (3,0,0) UH_snoc30   (3,1,0) UH_snoc31
+        (4,0,0) UH_snoc40      (4,1,0) UH_snoc41   (4,2,0) UH_snoc42
+        (5,0,0) UH_snoc50      (5,1,0) UH_snoc51
+
+支えの補題も台座一般に: `UaH_cons` / `UaH_eqc` / `UaH_eqd` /
+`hang3H_gen` / `hang4H_gen` / `hang5H_gen` / `Ancd2_gen` / `Ancd3H_gen` /
+`Ancd3A1_gen` / `Ancd4H_gen` / `Ancd4A2_gen` / `Ancd5H_gen` / `twH_gen` /
+`Aok_A1_gen` / `Aok_A2_gen` / `A1_copiesH_gen` / `A2_copiesH_gen` /
+`A2_mem_gen` / `VVnH_tower_gen` / `VVnH_tower_mem_gen`。
+
+`bms` 実測で `(2,0,0) < (2,1,0) < (2,2,0) < (2,2,1) < (3,0,0) < (3,1,0)
+< (4,0,0) < (4,1,0) < (4,2,0) < (5,0,0) < (5,1,0)`（全部標準形）。
+シートは上位 10 本。次の 証明中 は `(6,0,0)`（`H` 族の続きで、`SmallA` では
+`WallP` の節に入る＝壁のすぐ手前）。
+
+### `SegA` の梯子も入れた
+
+`SegA 0 U375aH` と `SegA_shift` から
+
+    LwA_step : LwA b Y0 → SegA b M → LwA (b+1) (Y0 ++ M)
+    LwA_snoc : LwA h A → A ++ [(h+1,1,0)] ∈ W 0
+    UHTw A n = A ++ TwD 1 U375aH n、`LwA n (UHTw A n)`、`UHTw_snoc_mem`
+
+（`H` 族のほうが大きいのでシートには使わなかったが、部品として残した。）
+
+### 荷の梯子（`Wgv`）は `a ≥ 2` で止まる
+
+`Wgv a b k Y0 = Y0 (a,0,0)(b,0,0)^k` と `WgvOkQ`（指数の型を `Pws β` で
+パラメータ化）は緑。`a = 1` は全部の `b` で回る。**`a ≥ 2` は回らない**:
+`Pws` の `pw k m` は `m` について加法的だが、`(a,0,0)` を `m` 個足す梯子の
+指数は `ω^m` で加法的でない。過大評価すれば通るが記帳が壊れる。
