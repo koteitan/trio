@@ -4649,6 +4649,77 @@ theorem GOK_twoNW_self (ctx0 : List Frm) (V : Jk1) {N W : Jk1} (hJN : JkA N) (hJ
 #print axioms GOK_nstW_of
 #print axioms GOK_twoNW_self
 
+/-! ### ★★★ 自己塔は「ブロックを 1 個差し込む」1 歩に落ちる
+
+`blkNW` のブロックは全部同じなので後ろにも足せる。すると自己塔は
+
+    GOK (plug D' (two N W)) → GOK (plug (D' ++ [ftwo N, fone W]) (two N W))
+
+の 1 歩の反復。`plug (D' ++ [ftwo N, fone W]) (two N W)
+= plug D' (two N (one W (two N W)))` なので、語で見ると
+**ブロック `(l+2,1,0) [N↑] (l+3,2,0) [W↑]` を 1 個差し込む**だけ。 -/
+
+theorem blkNW_snoc (N W : Jk1) : ∀ i : ℕ,
+    blkNW N W (i + 1) = blkNW N W i ++ [Frm.ftwo N, Frm.fone W]
+  | 0 => by simp [blkNW]
+  | (i + 1) => by
+      show [Frm.ftwo N, Frm.fone W] ++ blkNW N W (i + 1)
+        = ([Frm.ftwo N, Frm.fone W] ++ blkNW N W i) ++ [Frm.ftwo N, Frm.fone W]
+      rw [blkNW_snoc N W i, List.append_assoc]
+
+theorem GOK_selfNW {N W : Jk1} (D : List Frm)
+    (hbase : GOK (plug D (Jk1.two N W)))
+    (hstep : ∀ D' : List Frm, GOK (plug D' (Jk1.two N W)) →
+      GOK (plug (D' ++ [Frm.ftwo N, Frm.fone W]) (Jk1.two N W))) :
+    ∀ i : ℕ, GOK (plug (D ++ blkNW N W i) (Jk1.two N W))
+  | 0 => by simpa [blkNW] using hbase
+  | (i + 1) => by
+      rw [blkNW_snoc, ← List.append_assoc]
+      exact hstep _ (GOK_selfNW D hbase hstep i)
+
+/-- ★ 残る 1 文（`GOK` だけ）: 「`two N W` が良い**1 の枠で終わる**文脈には、
+ブロック `[ftwo N, fone W]` を 1 枚足しても良い」。 -/
+def SelfNW : Prop := ∀ (ctx : List Frm) (V N W : Jk1), JkA N → JkA W →
+  GOK (plug (ctx ++ [Frm.fone V]) (Jk1.two N W)) →
+  GOK (plug ((ctx ++ [Frm.fone V]) ++ [Frm.ftwo N, Frm.fone W]) (Jk1.two N W))
+
+theorem GOK_selfNWf (h : SelfNW) {N W : Jk1} (hJN : JkA N) (hJW : JkA W) :
+    ∀ (i : ℕ) (ctx : List Frm) (V : Jk1),
+      GOK (plug (ctx ++ [Frm.fone V]) (Jk1.two N W)) →
+      GOK (plug ((ctx ++ [Frm.fone V]) ++ blkNW N W i) (Jk1.two N W))
+  | 0, ctx, V, hb => by simpa [blkNW] using hb
+  | (i + 1), ctx, V, hb => by
+      have hb2 : GOK (plug ((ctx ++ [Frm.fone V, Frm.ftwo N]) ++ [Frm.fone W])
+          (Jk1.two N W)) := by
+        have hh := h ctx V N W hJN hJW hb
+        simpa [List.append_assoc] using hh
+      have hh := GOK_selfNWf h hJN hJW i (ctx ++ [Frm.fone V, Frm.ftwo N]) W hb2
+      simpa [blkNW, List.append_assoc] using hh
+
+theorem ChBase_of_SelfNW (h : SelfNW) : ChBase := by
+  intro X hJX hXk N hJN hNall j kk
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  have hcO : CtxOk ctx := GCtx_CtxOk _ ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split (List.replicate j true ++ kk) ctx hc
+  have hb : GOK (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N X)) := by
+    have hh := hXk N hJN hNall j kk
+    rw [rep_true_cons] at hh
+    exact (APd_iff (true :: (List.replicate j true ++ kk)) _).mp hh _ hc
+  refine GOK_twoNW_self ctx0 V hJN hJX ?_ hGV ?_
+  · exact JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, hJX, trivial⟩)
+  · exact fun i => GOK_selfNWf h hJN hJX i ctx0 V hb
+
+/-- ★★★★★★ いま開いている最小の行列は `SelfNW` 1 文から出る。 -/
+theorem R375m61_of_SelfNW (h : SelfNW) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_ChBase (ChBase_of_SelfNW h)
+
+#print axioms GOK_selfNWf
+
+#print axioms ChBase_of_SelfNW
+#print axioms R375m61_of_SelfNW
+
 
 end Small
 end TRIO

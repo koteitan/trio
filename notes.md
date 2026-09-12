@@ -25979,3 +25979,30 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 
 `SelfW D W = ∀ k, GOK (plug (D ++ replicate k (fone W)) W)`（`SelfW_of_OSib` が緑）と
 同じ形。**次はこの自己塔を鎖 `W` について作る。**
+
+## 追記411: ★★ いま開いている最小の行列が `SelfNW` 1 文に落ちた
+
+    SelfNW : ∀ ctx V N W, JkA N → JkA W →
+               GOK (plug (ctx ++ [fone V]) (two N W)) →
+               GOK (plug ((ctx ++ [fone V]) ++ [ftwo N, fone W]) (two N W))
+
+    ChBase_of_SelfNW / R375m61_of_SelfNW : R375m ++ [(6,1,0)] ∈ W 0        ★緑
+
+「`two N W` が良い（1 の枠で終わる）文脈には、ブロック `[ftwo N, fone W]` を
+1 枚足しても良い」。`plug (D ++ [ftwo N, fone W]) (two N W)
+= plug D (two N (one W (two N W)))` なので、語で見ると
+
+    Y0 ++ unQW N W D  →  Y0 ++ unQW N W D ++ unQW N W (D+2)
+
+**単位 `unQW N W D = (D,1,0) [N] (D+1,2,0) [W]` の写しを 1 個足す**だけ。
+`snocW_of_tower`（塔が全段良ければ末尾に 2 の記録を継げる）と組み合わせると
+`GOK_twoNW_self` → `ChBase` → `TwoStepP` → `Pay2` → `R375m ++ (6,1,0)`。
+
+### 落とし方（全部緑）
+
+    R375m61_of_SelfNW ← ChBase_of_SelfNW ← GOK_twoNW_self ← GOK_twoNW_gen（前日）
+                                        ← GOK_selfNWf ← blkNW_snoc
+
+`TopOk W` を要求しないのが要点。`ChBase` が要るのは 2 頭の `W`
+（`TwoOk_twoPayG` の鎖 `twoIt X (pay Z Y) m`）なので、`APd` の世界の階段
+（`TwoOk_twoWnilF`、`TopOk` 付き、緑）では届かない。`SelfNW` は届く形。
