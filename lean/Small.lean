@@ -13737,6 +13737,32 @@ theorem R375m61_diag7_mem :
 #print axioms R375m61_203030_mem
 #print axioms R375m61_diag7_mem
 
+theorem StepOk_snoc_last : ∀ (l : TrioSeq) (a c : ℕ × ℕ × ℕ),
+    StepOk (l ++ [a]) → c.1 ≤ a.1 + 1 → StepOk (l ++ [a, c])
+  | [], _, _, _, hc => ⟨hc, trivial⟩
+  | [_], _, _, h, hc => ⟨h.1, hc, trivial⟩
+  | (_ :: y :: l), a, c, h, hc => ⟨h.1, StepOk_snoc_last (y :: l) a c h.2 hc⟩
+
+theorem StepOk_Chain : ∀ k : ℕ, StepOk (Chain k)
+  | 0 => by simp [Chain, StepOk]
+  | (k + 1) => by
+      have ih := StepOk_Chain k
+      have e1 : Chain k = (List.range k).map (fun i => ((i, 0, 0) : ℕ × ℕ × ℕ))
+          ++ [((k, 0, 0) : ℕ × ℕ × ℕ)] := by
+        simp [Chain, List.range_succ]
+      have e2 : Chain (k + 1) = (List.range k).map (fun i => ((i, 0, 0) : ℕ × ℕ × ℕ))
+          ++ [((k, 0, 0) : ℕ × ℕ × ℕ), ((k + 1, 0, 0) : ℕ × ℕ × ℕ)] := by
+        simp [Chain, List.range_succ]
+      rw [e2]
+      rw [e1] at ih
+      exact StepOk_snoc_last _ _ _ ih (by simp)
+
+/-- ★ 対角の行 `R375m (6,1,0)(2,0,0)(3,0,0)…(k+1,0,0)`（すべての `k`）。 -/
+theorem R338_bumpU61_Chain_mem (k : ℕ) : R338 ++ bumpU U375a61 (Chain k) ∈ W 0 :=
+  R338_bumpU61_mem (Chain_flat k) (Chain_root k) (StepOk_Chain k)
+
+#print axioms R338_bumpU61_Chain_mem
+
 
 end Small
 end TRIO
