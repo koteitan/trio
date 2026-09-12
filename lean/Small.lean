@@ -5080,6 +5080,85 @@ theorem R600_7_600rep_mem (k : ℕ) :
 
 #print axioms R600_7_600rep_mem
 
+/-- ★★★★★★★ `R600 (7,0,0)(6,0,0)(7,0,0)`（`(6,0,0)^k` の極限）。 -/
+theorem R600_7_600_700_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ),
+      ((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((6, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((6, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 7 := by simp [entry]
+  have htail : ∀ r, 1 ≤ r → r < ([((6, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      7 ≤ entry [((6, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r hr1 hr2
+    simp only [List.length_singleton] at hr2
+    omega
+  have htw : ∀ n : ℕ, (R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)]) ++ (List.range n).flatMap
+      (fun _ => [((6, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_singleton_range]
+    simpa [List.append_assoc] using R600_7_600rep_mem n
+  have hmem := flat_mem'' (Y0 := R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)])
+    (M := [((6, 0, 0) : ℕ × ℕ × ℕ)]) (d := 7) hne hhead htail htw
+  simpa [List.append_assoc] using hmem
+
+/-- 新しい台座 `R600 (7,0,0)(6,0,0)(7,0,0)`。 -/
+def Z767 : TrioSeq :=
+  R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem Z767_eq : Z767 = [((0, 0, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 0) : ℕ × ℕ × ℕ),
+    ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ),
+    ((4, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((6, 0, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ),
+    ((6, 0, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Z767, R600, R375m, R373, R344, R341, R338]
+
+theorem Z767_ne : Z767 ≠ [] := by rw [Z767_eq]; simp
+
+theorem Z767_head : entry Z767 0 0 = 0 := by rw [Z767_eq]; simp [entry]
+
+theorem Z767_tail : ∀ r, 1 ≤ r → r < Z767.length → 1 ≤ entry Z767 0 r := by
+  intro r hr1 hrl
+  rw [Z767_eq] at hrl ⊢
+  simp only [List.length_cons, List.length_nil] at hrl
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+    first
+      | omega
+      | simp [entry]
+
+theorem Aok_Z767 : Aok Z767 where
+  mem := R600_7_600_700_mem
+  ne := Z767_ne
+  deep := ⟨Z767_head, Z767_tail⟩
+  zroot := by
+    rw [Z767_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      decide
+  mono := by
+    rw [Z767_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      decide
+
+/-- ★★★★★★★ 新しい台座の上、輪を `n` 周した 4 パラメータの無限族。 -/
+theorem LoopIt_Z767_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    LoopIt Z767 m ws j n ∈ W 0 := (Aok_LoopIt Aok_Z767 m hw j n).mem
+
+theorem LoopIt_Z767_nil_mem (m p j n : ℕ) :
+    LoopIt Z767 m (List.replicate p (AltT 0)) j n ∈ W 0 :=
+  LoopIt_Z767_mem m (WJ_rep_AltT 0 p) j n
+
+#print axioms R600_7_600_700_mem
+#print axioms LoopIt_Z767_nil_mem
+
 
 end Small
 end TRIO

@@ -26103,3 +26103,40 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 2. 予算の型を `Colex ((ℕ ×ₗ ℕ) →₀ ℕ)`（`< ω^(ω²)`）に伸ばす。
    `Finsupp.Colex.wellFoundedLT` は `[LT α] [Std.Trichotomous α (·<·)] [WellFoundedLT α]`
    だけ要求するので `ℕ ×ₗ ℕ` で通る。
+
+## 追記414: ★★★★ シートが進んだ。`R600 (7,0,0)(6,0,0)^k` と極限 `(7,0,0)(6,0,0)(7,0,0)`
+
+壁を通らずにシートを進めた。作ったもの（全部緑）:
+
+    BwG α := Colex (α →₀ ℕ)、owG (k : α) (m) := toColex (single k m)
+    owG_zero / owG_ltR / owG_ltL / owG_add_lt / BwG_add_lt_left / owG_add_same
+    Bw2 := BwG (ℕ ×ₗ ℕ)（`< ω^(ω²)`）、ex2 i j := toLex (i,j)（`ω^(ω·i+j)`）
+    WPdw_run2 : Zk の鎖（予算 ω^k、Bw2 版）
+    Y1 := (0,0,0)(1,0,0)、Bok_Y1（`Bok_flat`）、oper_Y1 : Y1⟦n⟧ = (0,0,0)^n
+    WPdT_twoAY1_at / _top : two A (pay nil Y1) を予算 `> β + ω^ω` に置ける
+    Zy 0 = pay nil Y1, Zy (k+1) = pay (Zy k) [(0,0,0)]
+    WPdw_runW : twoIt A (Zy k) m を `β + ω^(ω+k)·m` を超える予算に
+    Xy k = two nil (two nil (Zy k))、jk1 3 (Xy k) = (4,2,0)(5,2,0)(6,0,0)(7,0,0)(6,0,0)^k
+    R600_7_600rep_mem (k) : R600 (7,0,0)(6,0,0)^k ∈ W 0          ★★
+    R600_7_600_700_mem  : R600 (7,0,0)(6,0,0)(7,0,0) ∈ W 0       ★★（flat_mem'' で極限）
+    Z767 / Aok_Z767 / LoopIt_Z767_mem                            ★★（台座の差し替え）
+
+`bms` で実測: `R600(7,0,0)(6,0,0)` は標準形で、**旧シートの最上行より大きい**。
+新しい 10 行（`LoopIt Z767`）は全部標準形で単調増加、かつ証明中の行
+`R600(7,0,0)(7,0,0)` より小さい。シートを差し替えた。
+
+### 効いた点
+
+- 予算の指数の型を `ℕ` から `ℕ ×ₗ ℕ` にした（`ω^ω` 以上が表せる）。
+  `Finsupp.Colex.wellFoundedLT` は `[LT α] [Std.Trichotomous] [WellFoundedLT α]` だけ要求。
+- 荷 `(0,0,0)(1,0,0)` は `Bok_flat` で即 `Bok`（行 1・行 2 が 0 だから）。
+- `Y1⟦n⟧ = (0,0,0)^n` は `oper_M` と同じ型で計算できた（`srow`/`parent`/`hasParent`）。
+- `pay nil (Y1⟦n⟧)` は `Zk n` と `jk1` が同じなので `WPdT_congr` で移せる。
+
+### 次
+
+`R600(7,0,0)(7,0,0)` は塔 `R375m ++ ((6,0,0)(7,0,0))^n` の極限。木は
+`Zn 0 = nil, Zn (n+1) = pay (Zn n) Y1` で `jk1 l (Zn n) = ((l+1,0,0)(l+2,0,0))^n`。
+要るのは `WPdT_twoAY1_at` の **`Z` 一般化**（いまは `Z = nil` 固定）。
+`Y1⟦n⟧` の側は `pay Z ((0,0,0)^n)` ＝ `Z` の上に `Zk` を `n` 段なので、
+`WPdw_run2` を「底が `Z`」に一般化すればよい。
