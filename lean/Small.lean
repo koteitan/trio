@@ -1905,5 +1905,70 @@ theorem WPdT_M0t_top (S : Scale Bud) {t : Bud} (ht : ∀ m : ℕ, S.nb m < t)
 
 end Bud
 
+/-! ### 予算型の実体化: `Bud2 = ℕ ×ₗ ℕ`（順序型 ω²）
+
+`nb m = (0, m)` が ω 段、その上の `(1, 0)` に `M0t` が乗り、
+さらにその上の `(1, 1)` に `two M0t nil`（M0t の直上の 2 の記録）が乗る。 -/
+
+abbrev Bud2 : Type := ℕ ×ₗ ℕ
+
+def Sc2 : Scale Bud2 where
+  nb := fun m => toLex (0, m)
+  nb0 := rfl
+  nbmono := fun _ _ h => Prod.Lex.right _ h
+
+theorem Sc2_lt_w (m : ℕ) : Sc2.nb m < (toLex (1, 0) : Bud2) := Prod.Lex.left _ _ (by omega)
+
+theorem Bud2_ne_bot (i j : ℕ) (h : 0 < i) : (toLex (i, j) : Bud2) ≠ ⊥ :=
+  ne_bot_of_gt (show (⊥ : Bud2) < toLex (i, j) from Prod.Lex.left _ _ h)
+
+/-- `M0t` は予算 `(1,0) = ω` の節に差せる。 -/
+theorem WPdT2_M0t (ks : List Bud2) : WPdT ((toLex (1, 0) : Bud2) :: ks) M0t :=
+  WPdT_M0t_top Sc2 Sc2_lt_w ks
+
+/-- ★ `two M0t nil`（`M0t` の直上にもう 1 本 2 の記録）は予算 `(1,1) = ω+1` で差せる。 -/
+theorem WPdT2_twoM0nil (ks : List Bud2) :
+    WPdT ((toLex (1, 1) : Bud2) :: ks) (Jk1.two M0t Jk1.nil) :=
+  WPdT_twoA_runB (a := (toLex (1, 0) : Bud2)) (Bud2_ne_bot 1 0 (by omega))
+    (Prod.Lex.right _ (by omega)) JkA_M0t WPdT2_M0t ks
+
+def X52 : Jk1 := Jk1.two Jk1.nil (Jk1.two M0t Jk1.nil)
+
+theorem JkA_X52 : JkA X52 := ⟨trivial, JkA_M0t, trivial⟩
+
+theorem WPdT2_X52 (ks : List Bud2) : WPdT ((⊥ : Bud2) :: ks) X52 :=
+  WPdT_twoOf (b := (toLex (1, 1) : Bud2)) (Bud2_ne_bot 1 1 (by omega)) trivial
+    (fun q _ => WPdT_nilAll _) (WPdT2_twoM0nil ks)
+
+theorem GOK_oneX52 : GOK (Jk1.one Jk1.nil X52) :=
+  (WPdT_bnil (Bud := Bud2) _).mp
+    (WPdT_step ([] : List Bud2) (JkT_nil : FrmNT ([] : List Bud2) Jk1.nil)
+      ((WPdT_bnil (Bud := Bud2) _).mpr GOK_nil) (WPdT2_X52 []))
+
+theorem jk1_X52 (l : ℕ) : jk1 l X52
+    = [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+       ((l + 3, 0, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) M0t ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) Jk1.nil))) = _
+  rw [jk1_M0t (l + 1)]
+  simp [jk1, show l + 1 + 1 = l + 2 from by omega, show l + 1 + 2 = l + 3 from by omega]
+
+/-- ★★★★★★★ シート「証明中」の行:
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)(5,2,0)` -/
+theorem R600520_mem : R600 ++ [((5, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil X52]) := by
+    simpa using GOK_oneX52 [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  have e : jk1 2 (Jk1.one Jk1.nil X52)
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+         ((6, 0, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ)] := by
+    show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (2 + 1) X52) = _
+    rw [jk1_X52 3]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+#print axioms R600520_mem
+
 end Small
 end TRIO
