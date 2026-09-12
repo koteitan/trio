@@ -4938,6 +4938,87 @@ theorem WPdT_twoAY1_at {A : Jk1} (hJA : JkA A) (β : Bw2)
 
 #print axioms WPdT_twoAY1_at
 
+theorem owG_add_same {α : Type} [LinearOrder α] (e : α) (m : ℕ) :
+    owG e m + owG e 1 = owG e (m + 1) := by
+  show toColex (Finsupp.single e m) + toColex (Finsupp.single e 1) = toColex _
+  rw [show (toColex (Finsupp.single e m) + toColex (Finsupp.single e 1) : BwG α)
+      = toColex (Finsupp.single e m + Finsupp.single e 1) from rfl,
+    ← Finsupp.single_add]
+
+theorem WPdT_twoAY1_top {A : Jk1} (hJA : JkA A) (β : Bw2)
+    (hchain : ∀ (n m : ℕ) (c : Bw2), β + owG (ex2 0 n) m < c → ∀ ks : List Bw2,
+      WPdT (c :: ks) (twoIt A (Zk n) m))
+    {t : Bw2} (ht : β + owG (ex2 1 0) 1 < t) (ks : List Bw2) :
+    WPdT (t :: ks) (Jk1.two A (Jk1.pay Jk1.nil Y1)) :=
+  have htb : t ≠ ⊥ := ne_bot_of_gt (lt_of_le_of_lt bot_le ht)
+  (WPdT_cb htb ks _).mpr (fun r hr U N hU hUk hJN hNt =>
+    WPdT_two_of_ctx hU hUk
+      (fun ctx hc => (WPdT_iff ((⊥ : Bw2) :: (r ++ ks)) _).mp
+        (WPdT_twoAY1_at hJA β hchain (le_of_lt ht) hJN hNt) ctx hc))
+
+/-! ### 荷 `Y1` を底にした入れ子 `Zy k` -/
+
+def Zy : ℕ → Jk1
+  | 0 => Jk1.pay Jk1.nil Y1
+  | (k + 1) => Jk1.pay (Zy k) [((0, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem JkA_Zy : ∀ k : ℕ, JkA (Zy k)
+  | 0 => ⟨trivial, Bok_Y1⟩
+  | (k + 1) => ⟨JkA_Zy k, Bok_zero⟩
+
+theorem jk1_Zy : ∀ (k l : ℕ), jk1 l (Zy k)
+    = ((l + 1, 0, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 0, 0) : ℕ × ℕ × ℕ)
+      :: List.replicate k ((l + 1, 0, 0) : ℕ × ℕ × ℕ)
+  | 0, l => by
+      show jk1 l Jk1.nil ++ shiftr01 (l + 1) 0 Y1 = _
+      simp [jk1, Y1, shiftr01]
+      omega
+  | (k + 1), l => by
+      show jk1 l (Zy k) ++ shiftr01 (l + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)] = _
+      rw [jk1_Zy k l, List.replicate_succ']
+      simp [shiftr01]
+
+/-- ★★★ `Zy k` を上に乗せた走り `twoIt A (Zy k) m` は `β + ω^(ω+k)·m` を超える予算に置ける。 -/
+theorem WPdw_runW : ∀ (k : ℕ) (β : Bw2) (A : Jk1), JkA A →
+    (∀ c : Bw2, β < c → ∀ ks : List Bw2, WPdT (c :: ks) A) →
+    ∀ (m : ℕ) (c : Bw2), β + owG (ex2 1 k) m < c → ∀ ks : List Bw2,
+      WPdT (c :: ks) (twoIt A (Zy k) m)
+  | 0, β, A, _, hA, 0, c, hc, ks => hA c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+  | (k + 1), β, A, _, hA, 0, c, hc, ks => hA c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+  | 0, β, A, hJA, hA, (m + 1), c, hc, ks => by
+      have hJA' : JkA (twoIt A (Zy 0) m) := JkA_twoItP hJA (JkA_Zy 0) m
+      have hA' : ∀ c' : Bw2, β + owG (ex2 1 0) m < c' → ∀ ks' : List Bw2,
+          WPdT (c' :: ks') (twoIt A (Zy 0) m) :=
+        fun c' hc' ks' => WPdw_runW 0 β A hJA hA m c' hc' ks'
+      have hlt : (β + owG (ex2 1 0) m) + owG (ex2 1 0) 1 < c := by
+        rw [add_assoc, owG_add_same]
+        exact hc
+      exact WPdT_twoAY1_top hJA' (β + owG (ex2 1 0) m)
+        (fun n m' c' hc' ks' => WPdw_run2 n (β + owG (ex2 1 0) m) _ hJA' hA' m' c' hc' ks')
+        hlt ks
+  | (k + 1), β, A, hJA, hA, (m + 1), c, hc, ks => by
+      have hstep : β + owG (ex2 1 (k + 1)) m < β + owG (ex2 1 (k + 1)) (m + 1) :=
+        BwG_add_lt_left β (owG_ltR (ex2 1 (k + 1)) (by omega))
+      have hJA' : JkA (twoIt A (Zy (k + 1)) m) := JkA_twoItP hJA (JkA_Zy (k + 1)) m
+      have hA' : ∀ c' : Bw2, β + owG (ex2 1 (k + 1)) m < c' → ∀ ks' : List Bw2,
+          WPdT (c' :: ks') (twoIt A (Zy (k + 1)) m) :=
+        fun c' hc' ks' => WPdw_runW (k + 1) β A hJA hA m c' hc' ks'
+      refine WPdT_twoAZ_top
+        (S := ⟨fun i => (β + owG (ex2 1 (k + 1)) m) + owG (ex2 1 k) i,
+          fun _ _ hij => BwG_add_lt_left _ (owG_ltR (ex2 1 k) hij)⟩)
+        (t := c) ?_ hJA' (JkA_Zy k) ?_ ks
+      · intro i
+        show (β + owG (ex2 1 (k + 1)) m) + owG (ex2 1 k) i < c
+        rw [add_assoc]
+        exact lt_trans (BwG_add_lt_left β
+          (owG_add_lt (ex2_lt_r 1 (by omega : k < k + 1)) m i)) hc
+      · intro m' c' hc' ks'
+        exact WPdw_runW k (β + owG (ex2 1 (k + 1)) m) (twoIt A (Zy (k + 1)) m)
+          hJA' hA' m' c' hc' ks'
+termination_by k _ _ _ _ m _ _ _ => (k, m)
+
+#print axioms WPdw_runW
+
 
 end Small
 end TRIO
