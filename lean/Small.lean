@@ -13155,6 +13155,113 @@ theorem WVd_nilE (S : Scale Bud) : WVd S ([] : List Bud) Jk1.nil :=
 
 end BudV4
 
+/-! #### `WVd` のブロックの節の空木（`WQt_nilF` の移植）
+
+節が走り `Ns` と兄弟の条件（尻尾 `r ++ ks`、上限 `b`）をくれるので、
+階段の入り目 `j < b` が兄弟の詰め物に入る。 -/
+
+section BudV5
+
+variable {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+
+theorem WVd_runStair (S : Scale Bud) {b : Bud} {Bs : List Jk1} {Bl : Jk1} (hJBl : JkA Bl)
+    (j : Bud) (hj : j < b)
+    (hjrun : ∀ (B'' : List Bud) (X : Jk1),
+      (∀ N ∈ Bs, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) → WVd S (q ++ B'') N) →
+      WVd S (j :: B'') X → WVd S ((⊥ : Bud) :: B'') (RunP Bs X)) :
+    ∀ (n : ℕ) (B'' : List Bud),
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        WVd S (q ++ B'') N) →
+      WVd S ((⊥ : Bud) :: B'') (RunP Bs (appJ Bl (UtwP Bs Bl n)))
+  | 0, B'', hs => by
+      refine hjrun B'' Bl (fun N hN => hs N (List.mem_append_left _ hN)) ?_
+      have h := hs Bl (List.mem_append_right _ (by simp)) [j] (by simp) (by simpa using hj)
+      simpa using h
+  | (n + 1), B'', hs => by
+      refine hjrun B'' _ (fun N hN => hs N (List.mem_append_left _ hN)) ?_
+      show WVd S (j :: B'') (Jk1.one Bl (RunP Bs (appJ Bl (UtwP Bs Bl n))))
+      refine WVd_step S (j :: B'') (hJBl : FrmNT (j :: B'') Bl) ?_ ?_
+      · have h := hs Bl (List.mem_append_right _ (by simp)) [j] (by simp) (by simpa using hj)
+        simpa using h
+      · refine WVd_runStair S hJBl j hj hjrun n (j :: B'') ?_
+        intro N hN q hq hqk
+        rw [show q ++ (j :: B'') = (q ++ [j]) ++ B'' from by simp]
+        refine hs N hN (q ++ [j]) (by simp) ?_
+        intro x hx
+        rcases List.mem_append.mp hx with h1 | h1
+        · exact hqk x h1
+        · rw [show x = j from by simpa using h1]; exact hj
+
+/-- ★★★★★★ `WVd` のブロックの節の空木（走りが節から来る場合）。 -/
+theorem WVd_nilBlk (S : Scale Bud) {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) :
+    ∀ (r : List Bud), (∀ x ∈ r, x < b) →
+      ∀ (U : Jk1) (Ns : List Jk1), Ns ≠ [] → S.nb (Ns.length + 1) < b →
+      FrmNT (r ++ ks) U → WVd S (r ++ ks) U →
+      (∀ N ∈ Ns, JkA N) →
+      (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        WVd S (q ++ (r ++ ks)) N) →
+      WVd S (r ++ ks) (Jk1.one U (RunP Ns Jk1.nil)) := by
+  intro r hr U Ns hNe hNl hU hUk hJNs hNs
+  obtain ⟨Bs, Bl, rfl⟩ : ∃ Bs Bl, Ns = Bs ++ [Bl] :=
+    ⟨Ns.dropLast, Ns.getLast hNe, (List.dropLast_append_getLast hNe).symm⟩
+  set B : List Bud := r ++ ks with hB
+  have hlen : (Bs ++ [Bl]).length = Bs.length + 1 := by simp
+  have hJBl : JkA Bl := hJNs Bl (List.mem_append_right _ (by simp))
+  have hbot : (⊥ : Bud) < b := bot_lt_iff_ne_bot.mpr hb
+  have key : ∀ (B'' : List Bud),
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        WVd S (q ++ B'') N) →
+      ∀ n : ℕ, WVd S ((⊥ : Bud) :: B'') (RunP Bs (appJ Bl (UtwP Bs Bl n))) := by
+    cases Bs with
+    | nil =>
+        intro B'' hs n
+        exact WVd_runStair S (Bs := []) hJBl (⊥ : Bud) hbot (fun _ _ _ h => h) n B'' hs
+    | cons C Cs =>
+        intro B'' hs n
+        have hjb : S.nb (Cs.length + 1 + 1 + 1) < b := by
+          rw [hlen] at hNl
+          simpa using hNl
+        have hjne : S.nb (Cs.length + 1 + 1 + 1) ≠ (⊥ : Bud) :=
+          Scale.nb_ne_bot S (Cs.length + 1 + 1)
+        refine WVd_runStair S hJBl (S.nb (Cs.length + 1 + 1 + 1)) hjb ?_ n B'' hs
+        intro B3 X hsib hX
+        rw [WVd_c0]
+        intro U3 hU3 hU3k
+        have h2 := WVd_ck S hjne B3 X hX [] (by simp) U3 (C :: Cs) (by simp) ?_
+          (by simpa using hU3) (by simpa using hU3k) ?_ ?_
+        · simpa using h2
+        · show S.nb ((C :: Cs).length + 1) < S.nb (Cs.length + 1 + 1 + 1)
+          exact S.nbmono (by simp)
+        · intro N hN
+          exact hJNs N (List.mem_append_left _ hN)
+        · intro N hN q hq hqk
+          have := hsib N hN q hq (fun x hx => lt_trans (hqk x hx) hjb)
+          simpa using this
+  refine (WVd_c0 S B _).mp ?_ U hU hUk
+  rw [WVd_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hVk⟩ := (WVtx_c0 S B ctx).mp hc
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (RunP (Bs ++ [Bl]) Jk1.nil)) :=
+    WVtx_JkT S ((⊥ : Bud) :: B) _ hc (RunP (Bs ++ [Bl]) Jk1.nil)
+      (JkA_RunP (Bs ++ [Bl]) hJNs trivial : FrmNT ((⊥ : Bud) :: B) (RunP (Bs ++ [Bl]) Jk1.nil))
+  have hGV : GOK (plug ctx0 V) := (WVd_iff S B V).mp hVk ctx0 hc0
+  rw [plug_snoc] at hJT ⊢
+  refine GOK_oneUV_RunSB ctx0 Bs Bl V
+    (fun A hA => hJNs A (List.mem_append_left _ hA)) hJBl hJT hGV ?_
+  intro n
+  cases n with
+  | zero =>
+      show GOK (plug ctx0 V)
+      exact hGV
+  | succ n =>
+      show GOK (plug ctx0 (Jk1.one V (RunP Bs (appJ Bl (UtwP Bs Bl n)))))
+      rw [← plug_snoc]
+      exact (WVd_iff S ((⊥ : Bud) :: B) _).mp (key B hNs n) _ hc
+
+#print axioms WVd_nilBlk
+
+end BudV5
+
 
 end Small
 end TRIO
