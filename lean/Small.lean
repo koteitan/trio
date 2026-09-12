@@ -78153,5 +78153,49 @@ theorem R376_of_StkStep (h : StkStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)
 #print axioms R376_of_StkStep
 #print axioms ChBaseG_oneNil
 
+/-! ### ★ シート証明中の行（2026-09-12）
+
+    RB = R375m ++ shiftr01 6 0 R375m
+       = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)
+         (6,0,0)(7,1,1)(8,1,0)(7,1,0)(8,2,1)(9,1,0)(10,2,0)(11,2,0)
+
+`bms` の実測で `RB < R375m(6,1,0) < R375m(6,2,0) < 行376`。
+目標の行376 へ向かう途中でいちばん小さい未証明の行列。
+`R375m` 自身を高さ 6 に吊るしただけなので、`Pay2` 1 文から出る。
+`Pay2` は `ChBase`（荷の無い壁）からも出る。間を詰めても壁は同じ 1 点。 -/
+
+theorem Pay2_of_ChBase (h : ChBase) : Pay2 := by
+  intro B hB
+  have hk : TwoOk (Jk1.two Jk1.nil (Jk1.pay Jk1.nil B)) :=
+    TwoOk_twoPayG (Z := Jk1.nil) trivial (ChBase_iff.mp h) B hB Jk1.nil trivial TwoOk_nil
+  exact (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hh := hk Jk1.nil trivial (fun _ _ => APd_nil _) 0 []
+      simpa using hh))
+
+/-- ★ シート証明中の行は `Pay2` 1 文から出る（`R375m` の高さ 6 の縦塔の 2 段目）。 -/
+theorem RB_of_Pay2 (h : Pay2) :
+    [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ), ((2, 1, 0) : ℕ × ℕ × ℕ),
+     ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+     ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ),
+     ((7, 1, 1) : ℕ × ℕ × ℕ), ((8, 1, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ),
+     ((8, 2, 1) : ℕ × ℕ × ℕ), ((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ),
+     ((11, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h1 := hang6_R375m_of_Pay2 h Aok_R375m.toBok
+  simpa [R375m, R373, R344, R341, R338, shiftr01] using h1
+
+/-- ★ 同じ行が `ChBase` からも出る。 -/
+theorem RB_of_ChBase (h : ChBase) :
+    [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ), ((2, 1, 0) : ℕ × ℕ × ℕ),
+     ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+     ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ),
+     ((7, 1, 1) : ℕ × ℕ × ℕ), ((8, 1, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ),
+     ((8, 2, 1) : ℕ × ℕ × ℕ), ((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ),
+     ((11, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := RB_of_Pay2 (Pay2_of_ChBase h)
+
+#print axioms Pay2_of_ChBase
+#print axioms RB_of_Pay2
+
 end Small
 end TRIO
