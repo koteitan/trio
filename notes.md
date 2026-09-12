@@ -23793,3 +23793,36 @@ junk の字を大きくするのも損（`b709_jT6 < b711_jnil`）。
 `ChBase` から出るのは `R375m (6,1,0)`（いま開いている最小の行列）まで。
 行376 には `PayB` / `FoneB` が要る（ブロック文脈は走りを含むので `APd` の族では
 表現できない）。
+
+## 追記348 (2026-09-13): 深さで見ると壁は「深さ 0 の 2 頭」だけ
+
+`LOk k X := ∀D, StkOk k D → GOK (plug D X)`（`X` を 2 の記録の **`k` 段上**に置く）。
+`StkOk k D` は「`ftwo N` の上に 1 の枠が `k` 枚」。`LOk 0 ↔ TwoOk`（`LOk0_of_TwoOk`）。
+
+### 深さ 1 以上は緑
+
+    LOk_twoN {N} (JkA N) (∀j, LOk (j+1) N) : ∀k, LOk (k+1) (two N nil)     ★緑
+    LOk_WWX : ∀ n k, LOk (k+1) (WWX n)      WWX n = twoIt nil nil n（水平鎖）★緑
+
+**兄弟が一般（2 頭でも）でも、深さ 1 以上なら「上に何も無い 2 の記録」を置ける。**
+深さ 0 だけが壁（`ChBase`）。
+
+### 深さ 0 でも `one` は通る（走りを含むのに！）
+
+    TwoOk_oneNil {V} (JkA V) (TwoOk V) (∀C, TwoOk (pay V C)) : TwoOk (one V nil)   ★緑
+    TwoOk_oneTwoNil : TwoOk (one (two nil nil) nil)                                 ★緑
+
+`two N (one V nil)` の語は `[N](h,2,0)[V](h+1,1,0)` で、`V` が 2 頭なら
+`(h,2,0)(h+1,2,0)` ＝**走り**。それでも緑。だから「走りが壁」ではない。
+
+    深さ 0 で one V Z   → 緑（`TwoOk_one`、上の木が `LOk 1` でよい）
+    深さ 0 で two X nil → 壁（`ChBase`、`X` が 2 頭のとき）
+
+違いは**先端の記録**。`one V nil` は `(h+1,1,0)` で終わり、`two X nil` は
+`X` の先頭と同じ高さの `(h+1,2,0)` で終わる。
+
+### 今回足した緑
+
+    TwoOk_one      : TwoOk W → LOk 1 Z → TwoOk (one W Z)
+    TwoOk_oneNilA  : TwoOk V → TwoOk (one V nil)        （荷の義務は TwoOk_pay で消える）
+    ChBase_ge1     : ChBase の深さ 1 以上の版（= LOk_twoN）

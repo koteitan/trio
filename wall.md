@@ -31,6 +31,14 @@
   2 頭の兄弟（鎖）に使えない。`ChBase` はそれを外しただけで、古い状態メモの
   **(c)「`Rq (false::ks) U = TopOk U` を 2 の枠の直下の 1 の枠から外す」** そのもの。
   （`ChBase` から出るのは `R375m (6,1,0)` まで。行376 には `PayB` / `FoneB` が要る。）
+- **深さで見る**（追記348）: `LOk k X` = `X` を 2 の記録の `k` 段上に置く。`LOk 0 ↔ TwoOk`。
+
+      深さ ≥ 1 : LOk_twoN（兄弟一般の `two N nil`）/ LOk_WWX（水平鎖）  ★緑
+      深さ 0   : one V Z は緑（`TwoOk_one`、`V` が 2 頭＝走りでも通る）
+                 two X nil が壁（`ChBase`、`X` が 2 頭のとき）
+
+  **「走りが壁」ではない。**`TwoOk (one (two nil nil) nil)` は走りを含むのに緑。
+  違いは先端の記録が `(h+1,1,0)` か `(h+1,2,0)` か。
 - **量化子ゼロの壁**（いちばん具体的な形、2026-09-13 に緑）:
 
       Bd20 = bdA [2,0] = one nil (two nil (two nil (one nil nil)))

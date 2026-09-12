@@ -77998,6 +77998,29 @@ theorem R375m61_of_ChBase (hCB : ChBase) :
     R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R375m61_of_TwoStepP (TwoStepP_of_ChBase hCB)
 
+/-! ### `TwoOk` が閉じている操作（`LOk` の深さで見る）
+
+`LOk k X := ∀ D, StkOk k D → GOK (plug D X)`（`X` を 2 の記録の `k` 段上に置く）で
+`LOk 0 ↔ TwoOk`。**深さ 1 以上なら兄弟が一般でも「上に何も無い 2 の記録」を
+置ける**（`LOk_twoN`、緑）。深さ 0 だけが壁（`ChBase`）。 -/
+
+/-- `TwoOk` は `one` で閉じている（上の木が深さ 1 で良ければよい）。`LOk_one` の言い換え。 -/
+theorem TwoOk_one {W Z : Jk1} (hJW : JkA W) (hW : TwoOk W) (hZ : LOk 1 Z) :
+    TwoOk (Jk1.one W Z) :=
+  TwoOk_of_LOk0 (LOk_one hJW (LOk0_of_TwoOk hW) hZ)
+
+/-- `TwoOk` は「上に何も無い 1 の記録」で閉じている。荷の義務は `TwoOk_pay` で消える。
+`V` が 2 頭（＝走りを作る）でも通ることに注意。 -/
+theorem TwoOk_oneNilA {V : Jk1} (hJV : JkA V) (hVk : TwoOk V) :
+    TwoOk (Jk1.one V Jk1.nil) :=
+  TwoOk_oneNil hJV hVk (fun C hC => TwoOk_pay C hC V hJV hVk)
+
+/-- `ChBase` の深さ 1 以上の版は緑（`LOk_twoN`）。壁は深さ 0 だけ。 -/
+theorem ChBase_ge1 {N : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, LOk (j + 1) N) (k : ℕ) :
+    LOk (k + 1) (Jk1.two N Jk1.nil) := LOk_twoN hJN hN k
+
+#print axioms TwoOk_one
+#print axioms TwoOk_oneNilA
 #print axioms TwoOk_twoPay
 #print axioms R375m61_of_ChBase
 
