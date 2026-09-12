@@ -26029,3 +26029,53 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 **荷が `two N W`（先端が一般の `W`）の版が要る。** ここが最後。
 
 `SelfNW` には呼び出し側で使える仮定（`N` の普遍性、`TwoOk W`）を付けてある。
+
+## 追記413: `GOK_twoNW_gen` は既存の再導出だった。シート側に別の道がある
+
+### 再導出だった（メモリの教訓がまた出た）
+
+`GOK_oneUV_RunSB D Bs B U … : GOK (plug D (one U (RunS (Bs ++ [B]))))` を
+`Bs = [N]`, `B = W` で使うと `RunS ([N] ++ [W]) = two N (two W nil)` で、
+**前日作った `GOK_twoNW_gen` と同じ結論**。階段も
+`appJ V (UtwP [N] W (n+1)) = one V (nstW N W n)` で一致する。さらに
+
+    GOK_appJ_UtwP (D) (Bs) (B U) (hbase : GOK (plug D U)) (hB : GOK (plug (D ++ PBlk Bs U) B))
+      (hstep : ∀ D', RFam [PBlk Bs B] (D ++ PBlk Bs U) D' →
+                 GOK (plug D' B) → GOK (plug D' (one B (RunP Bs B))))
+      : ∀ n, GOK (plug D (appJ U (UtwP Bs B n)))                       ★緑（既存）
+
+の `hstep` が **`SelfNW` そのもの**（`Bs = [N]`, `B = W`, `PBlk [N] W = [fone W, ftwo N]`）。
+`ChBase_of_SelfNW` は新しいが、道具は全部既にあった。
+
+### 行376 の既知の最小形は `RPayN0`
+
+    RPayN0 : ∀ D, (∀ X, JkA X → JkT (plug D (one nil X))) → GOK (plug D nil) →
+               ∀ C, Bok C → GOK (plug D (pay nil C))
+    RStepN0_of_RPayN0 / R376_of_RPayN0                                 ★緑（既存）
+
+「`nil` が差せる文脈には `nil` の上に荷を吊るせる」。`D` が任意なのが効く
+（`D` が `ftwo` で終わると鎖が要る＝壁、`fone` で終わると `APd` の話で緑）。
+
+### ★ シート側の別の道（壁を通らない）
+
+`bms` で実測:
+
+    R600(7,0,0) < R600(7,0,0)(6,0,0) < R600(7,0,0)(6,0,0)(6,0,0) < … < R600(7,0,0)(7,0,0)
+
+どれも標準形。`R600(7,0,0)(6,0,0)^k = R375m ++ shiftr01 6 0 ((0,0,0)(1,0,0)(0,0,0)^k)`
+なので、木は
+
+    Xw2 k := two nil (two nil (pay nil ((0,0,0)(1,0,0) ++ replicate k (0,0,0))))
+
+で、`R600 (6,0,0)^k`（`Xw k = two nil (two nil (Zk (k+1)))`）と同じ形。
+**`flat_mem''` で極限を取れば証明中の行 `R600(7,0,0)(7,0,0)` が出る。**
+
+要るもの:
+1. `Bok ((0,0,0)(1,0,0) ++ replicate k (0,0,0))`（`mem` は `(0,0,0)(1,0,0)(0,0,0)^k ∈ W 0`）。
+2. 予算の型を伸ばす。荷の階数が `ω + k` なので予算は `ω^(ω+k)`。
+   いまの `Bw = Colex (ℕ →₀ ℕ)` は `< ω^ω` までなので足りない。
+   `Colex ((ℕ ×ₗ ℕ) →₀ ℕ)`（`< ω^(ω²)`）にすればよい
+   （`Finsupp.Colex.wellFoundedLT` は `[LT α] [Trichotomous] [WellFoundedLT α]` だけ要求）。
+3. `WPdw_run` / `WPdw_twoZk` / `WPdw_Xw` の写し。
+
+**壁を通らずにシートの証明中の行が埋まる。次はこれ。**
