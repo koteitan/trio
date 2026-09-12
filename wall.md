@@ -1,5 +1,93 @@
 # 壁
 
+## いまの状況（2026-09-12 更新。先にここを読む）
+
+### 大小の梯子（`bms -c` 実測、下ほど大きい）
+
+    シート証明済みの一番上  U(4,4,1) = R600(5,1,0)((1,1,0)(2,2,1)^4(2,2,0)(3,3,1)^4)
+    R600 (5,2,0)            ← いまの証明中（1 列追加で最小の未証明）
+    R600 (6,0,0)
+    R600 (7,1,1)
+    RB = R375m ++ R375m↑6
+    R375m (6,1,0)
+    R375m (6,2,0)
+    行376 = R373 (5,3,0)    ← 最終目標
+
+`R600 = R375m ++ [(6,0,0)]`、`R375m = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)`。
+
+### 壁（1 文）
+
+    WPd ((k+1) :: ks) M0t          M0t = two nil (pay nil [(0,0,0)])
+
+「2 の記録 1 本＋荷」を**別の 2 の記録の直上**に置くこと。
+同値・同根の言い方（どれも同じ 1 点）:
+
+    ChBase   : ∀X, JkA X → TwoOk X → TwoOk (two X nil)
+    StkBlk2  : ∀k ks, 2 ≤ k → WPd ((k+1)::ks) (stk 2)
+    RunBdA / RunNilR / RHang（`RCx` 版）/ WRunPay / Pay2 / TtwoZ
+
+### なぜ止まるか（測った、追記365 / 371）
+
+**兄弟の側は自由、先端の側が壁**という非対称。
+
+    APd_FLr  : ∀Bs(Bok), APd (rep j true ++ (true::kk)) (FLr Bs)      ★緑
+    WPd_FLr  : ∀Bs(Bok), WPd (0::ks) (FLr Bs)                          ★緑
+      → 荷つきの横の走り `FLr` を**兄弟**に積むのはいくらでも自由
+    TwoOk (FLr Bs)（= 先端に置く）は |Bs| = 1 でも壁
+
+先端に置こうとすると、荷の展開で**幅に上限のない鎖** `twoIt · (pay nil C) m`
+が出る。それを扱うのに要る側条件が、どの層でも 1 つ足りない:
+
+    APd / NPd : 兄弟の条件は「任意の形」だが、走りは**幅 2 まで**
+                （`APd_twoTwoGen` / `NPd_true_twoTwoB_lift`。階段 `nstN2 N Wl k`
+                  の底が `Wl`＝two になると `Rq (false::ks) U = TopOk U` で落ちる）
+    WPd       : 走りは幅自由（`WPd_twoIt_nil m k`, `m ≤ k`）だが、
+                兄弟の族が**予算 k で有界**
+
+空いているのは「**一般の兄弟 × 幅 3 以上の走り**」1 マスだけ。
+
+### いま緑になっている主力（再導出しないこと）
+
+    WPd_Tb60u   : ∀ks, WPd (0::ks) Tb60            Tb60 = two nil M0t
+    WPd_twoM0   : JkA N → (∀ks, WPd (0::ks) N) → ∀ks, WPd (0::ks) (two N M0t)
+    WPd_twoPayM0: ∀B Bok B, ∀N（予算 0 族）, ∀ks, WPd (0::ks) (two N (pay M0t B))
+      鍵: 荷 `(0,0,0)` の鎖は `twoIt · (pay nil []) m`＝**空荷**なので
+          平らな走り `twoIt nil nil m` と語が同じ（`jk1_pay_nil`）。
+          兄弟が「予算 0 の族（全予算）」なら `WPd_twoOf (k := m)` の側条件が
+          そのまま出るので、幅 m に上限が要らない。
+
+    hang4_R600 / hang5_R600 : Bok B → R600 ++ B↑4 / B↑5 ∈ W 0
+    R600400 / R600410 / R600420 / R600500 / R600510 _mem
+    Aok_R600510, Y510*, UJit*, UJitW*   （下の「Aok を取る」参照）
+
+### ★ 1 行証明したら、次は `Aok` を取る（2026-09-12 の教訓）
+
+新しい行 `X ∈ W 0` が緑になったら、まず
+
+    Aok_append_Mid (d := ...) _ hAok_prev (MidD_one ...) hX  : Aok X
+
+を作る。`Aok X` があれば既存の道具が全部乗り、**族がまとめて出る**:
+
+    LwA_of_Aok → LwA_U11 → RunA 0 1 (X ++ U11 0 m) → Aok
+      → RunG_snoc2（`(2,2,0)`）/ PkGA + `wordJ 2 2 ws`（junk の語）
+      → PkGA_Aok（**また Aok。反復できる** = `UJit` / `UJitW`）
+      → LadB_mem（PU の梯子）
+    Lv_snoc / Lv_snoc2（`Lv 1 0 A = Aok A`）: `(1,1,0)` / `(1,1,0)(2,2,0)`
+
+実測: 1 段 `(1,1,0)(2,2,1)^m(2,2,0)(3,3,1)^p` は **`p ≤ m` のとき標準形**で、
+`(m,p,n)` の 3 パラメータで単調に増える。junk に `AltT i`（i ≥ 1）を入れると
+非標準になるので使わない。
+
+### ビルド
+
+`lean/Small.lean` は `lean/SmallA.lean`（安定部分, 78k 行）を import する
+小さいファイル。`leanman check Small.lean` は **1 秒**。新しい定理は
+`Small.lean` にだけ足す。大きくなったら `SmallB.lean` を作って同じように分ける。
+
+---
+
+## 以下は古い記述（履歴。上と食い違うときは上が正しい）
+
 ## いまの状況（先にここを読む）
 
 - **いちばん短い形（2026-09-13）**: `StkStep : ∀q, TwoOk (stk q) → TwoOk (stk (q+1))`。
