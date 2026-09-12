@@ -4880,6 +4880,64 @@ theorem oper_Y1 (n : ℕ) :
 #print axioms Bok_Y1
 #print axioms oper_Y1
 
+theorem jk1_payY1oper (n l : ℕ) :
+    jk1 l (Jk1.pay Jk1.nil (Y1⟦n⟧)) = jk1 l (Zk n) := by
+  show jk1 l Jk1.nil ++ shiftr01 (l + 1) 0 (Y1⟦n⟧) = _
+  rw [oper_Y1 n, flatMap_singleton_range, jk1_Zk n l]
+  simp [jk1, shiftr01]
+
+/-- ★★★ 荷 `Y1` を乗せた 2 の記録。`Y1⟦n⟧ = (0,0,0)^n` なので
+`Zk n` の鎖（予算 `ω^n`）を全部超える `ω^ω = owG (ex2 1 0) 1` が要る。 -/
+theorem WPdT_twoAY1_at {A : Jk1} (hJA : JkA A) (β : Bw2)
+    (hchain : ∀ (n m : ℕ) (c : Bw2), β + owG (ex2 0 n) m < c → ∀ ks : List Bw2,
+      WPdT (c :: ks) (twoIt A (Zk n) m))
+    {t : Bw2} (ht : β + owG (ex2 1 0) 1 ≤ t)
+    {B : List Bw2} {N : Jk1} (hJN : JkA N)
+    (hNt : ∀ q : List Bw2, (∀ x ∈ q, x < t) → WPdT ((⊥ : Bw2) :: q ++ B) N) :
+    WPdT ((⊥ : Bw2) :: B) (Jk1.two N (Jk1.two A (Jk1.pay Jk1.nil Y1))) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N]) (Jk1.two A (Jk1.pay Jk1.nil Y1))) := by
+    rw [plug_snoc2]
+    exact WCtxU_JkT ((⊥ : Bw2) :: B) ctx hc
+      (Jk1.two N (Jk1.two A (Jk1.pay Jk1.nil Y1)))
+      (⟨hJN, hJA, trivial, Bok_Y1⟩ : FrmNT ((⊥ : Bw2) :: B)
+        (Jk1.two N (Jk1.two A (Jk1.pay Jk1.nil Y1))))
+  intro ws hw hG
+  rw [← plug_snoc2]
+  have hlen2 : 2 ≤ Y1.length := by rw [Y1_len]
+  have hp : hasParent Y1 (srow Y1 (Y1.length - 1)) (Y1.length - 1) := by
+    rw [Y1_len]
+    simpa [Y1_srow] using Y1_hasParent
+  refine GoodFb_snoc_innerJt0 hw hJT hlen2 hp ?_
+  intro n hn
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+  have hstep : ∀ m : ℕ, β + owG (ex2 0 n') m < β + owG (ex2 0 (n' + 1)) 1 :=
+    fun m => BwG_add_lt_left β (owG_ltL (ex2_lt_r 0 (by omega)) m (by omega))
+  have hle : β + owG (ex2 0 (n' + 1)) 1 ≤ t :=
+    le_of_lt (lt_of_lt_of_le
+      (BwG_add_lt_left β (owG_ltL (ex2_lt_l (by omega) (n' + 1) 0) 1 (by omega))) ht)
+  have hw2 : WPdT ((⊥ : Bw2) :: B) (Jk1.two N (Jk1.two A (Zk (n' + 1)))) :=
+    WPdT_twoAZ_at (S := ⟨fun i => β + owG (ex2 0 n') i,
+        fun _ _ hij => BwG_add_lt_left β (owG_ltR (ex2 0 n') hij)⟩)
+      (t := β + owG (ex2 0 (n' + 1)) 1) hstep hJA (JkA_Zk n')
+      (fun m c hc' ks' => hchain n' m c hc' ks') hJN
+      (fun q hq => hNt q (fun x hx => lt_of_lt_of_le (hq x hx) hle))
+  have hw3 : WPdT ((⊥ : Bw2) :: B)
+      (Jk1.two N (Jk1.two A (Jk1.pay Jk1.nil (Y1⟦n' + 1⟧)))) := by
+    refine WPdT_congr ((⊥ : Bw2) :: B) (fun l => ?_) hw2
+    show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) A ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) (Zk (n' + 1)))))
+      = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) A ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 2) (Jk1.pay Jk1.nil (Y1⟦n' + 1⟧)))))
+    rw [jk1_payY1oper]
+  have hh := (WPdT_iff ((⊥ : Bw2) :: B) _).mp hw3 ctx hc ws hw hG
+  rw [← plug_snoc2] at hh
+  exact hh
+
+#print axioms WPdT_twoAY1_at
+
 
 end Small
 end TRIO
