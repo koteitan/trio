@@ -922,5 +922,34 @@ theorem UJit_X510_mem (m n : ℕ) : UJit X510 m n ∈ W 0 :=
 
 #print axioms UJit_X510_mem
 
+/-! ### ★ junk の語を一般化（`WJ ws` なら何でも） -/
+
+def UJitW (A : TrioSeq) (m : ℕ) (ws : List Jk1) : ℕ → TrioSeq
+  | 0 => A
+  | (n + 1) => (UJitW A m ws n ++ U11 0 m) ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)
+
+theorem Aok_UJitW {A : TrioSeq} (hA : Aok A) (m : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    ∀ n : ℕ, Aok (UJitW A m ws n)
+  | 0 => hA
+  | (n + 1) => Aok_junk (Aok_UJitW hA m hw n) m hw
+
+/-- ★★★★★★ `R600 (5,1,0)` の上の 4 パラメータの無限族。 -/
+theorem UJitW_X510_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    UJitW X510 m ws n ∈ W 0 := (Aok_UJitW Aok_R600510 m hw n).mem
+
+theorem UJitW_alt_mem (m i p n : ℕ) :
+    UJitW X510 m (List.replicate p (AltT i)) n ∈ W 0 :=
+  UJitW_X510_mem m (WJ_rep_AltT i p) n
+
+theorem Y510alt_mem (m i p : ℕ) : Y510j m (List.replicate p (AltT i)) ∈ W 0 :=
+  Y510j_mem m (WJ_rep_AltT i p)
+
+theorem Y510altLad_mem (m i p n : ℕ) :
+    LadB (Y510j m (List.replicate p (AltT i))) n ∈ W 0 :=
+  Y510Lad_mem m (WJ_rep_AltT i p) n
+
+#print axioms UJitW_alt_mem
+#print axioms Y510altLad_mem
+
 end Small
 end TRIO
