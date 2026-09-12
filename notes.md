@@ -25290,3 +25290,41 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
 候補: `RunPay` の仮定を「`V` は予算 `≤ e` のどの入り目でも良い」に強める。
 `WPdR_payA` を使う側（`WPdR_oneNil`）で、文脈の枠の `U` について
 その強い性質が取れるかを次に確認する（`WCtxR` の枠の条件を強めればよい）。
+
+## 追記395: ★★ 行376 が純粋な `GOK` の 1 文 `HtowR` に落ちた
+
+    HtowR : ∀ (ctx : List Frm) (V : Jk1), JkA V →
+      (∀ N T, JkA N → JkA T → JkT (plug ctx (two N T))) →
+      GOK (plug ctx (two nil V)) →
+      ∀ N, VCh V N → GOK (plug ctx (two N V))
+
+    R376_of_HtowR (h : HtowR) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
+
+`RunPay_of_HtowR` は `GOK_twoPayZ_of`（鎖の族で荷の W 帰納を回す一般補題）を
+`ctx ++ replicate p (ftwo nil)`（`ebud e = ⊥` の場合）と
+`(ctx ++ [ftwo N₀]) ++ replicate p (ftwo nil)`（`ebud e ≠ ⊥` の場合）に当てるだけ。
+
+**予算も形も層も出てこない**。`SHtow` の最小形そのもの。
+
+### なぜ層の一般化では閉じなかったか（追記392〜394 の結論）
+
+「走りの兄弟を全部自由にする」方向を詰めたが、塔の階段（`nstQ` / `nstR` /
+`UtwP` のどれでも）で**走りの一番内側の兄弟が、階段の `fone` の兄弟を兼ねる**。
+だから一番内側の兄弟には「どの形でも良い」（強い条件）が要る。
+`RunPay` の鎖は弱い条件しか満たさないので、そこで詰まる。
+
+これは層の設計の問題ではなく、`SHtow` の数学的な中身そのもの。
+だから層を作り直すより、`HtowR` を直接攻めるのが正しい。
+
+### `HtowR` の中身
+
+`VCh V N` の帰納:
+- `N = nil`: 仮定そのもの ✓
+- `N = two N' (pay V Y)`: 語で見ると
+
+      jk1 l (two N' V)            = [N'] (l+1,2,0) [V]
+      jk1 l (two (two N' (pay V Y)) V) = [N'] (l+1,2,0) [V] [Y↑(l+2)] (l+1,2,0) [V]
+
+  つまり**ブロック `(l+1,2,0) [V] [Y↑]` を 1 つ差し込む**。
+  塔の道具（`snocYd_mem` / `Mtwd`）はこの形の反復を扱えるので、
+  そちら（語のレベル）から攻めるのが次の手。
