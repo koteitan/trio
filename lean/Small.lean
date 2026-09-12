@@ -9531,6 +9531,70 @@ theorem Z789_H_61_70 :
 
 #print axioms Z789_H_61_70
 
+/-! ### ★★★★★★★★★★★★★★★ `H(6,1,0)(7,1,0)`: 高さ 7 の吊るし -/
+
+theorem Aok_UH61 {A : TrioSeq} (hA : Aok A) :
+    Aok (A ++ U375aH ++ [((6, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  Aok_append_Mid (d := 7) (by omega) (Aok_append_U375aH hA) (MidD_one 6 (by omega))
+    (UH_snoc61 hA)
+
+theorem Ancd7H_gen {A : TrioSeq} (hA : Aok A) :
+    Ancd 7 (A ++ U375aH ++ [((6, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  Ancd_append_Mid (Aok_append_U375aH hA).ne (Ancd6H_gen hA) (MidD_one 6 (by omega))
+
+def HgC (B : TrioSeq) : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+    (Jk1.one (Jk1.two Jk1.nil (TW 2)) (Jk1.pay Jk1.nil B))))
+
+theorem GOK_hang7H {B : TrioSeq} (hB : Bok B) : GOK (HgC B) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hL2 : LOk 2 (Jk1.pay Jk1.nil B) :=
+        LOk_pay 2 (X := Jk1.nil) trivial (LOk_nil 2) B hB
+      have hL1 : LOk 1 (Jk1.one (Jk1.two Jk1.nil (TW 2)) (Jk1.pay Jk1.nil B)) :=
+        LOk_one (W := Jk1.two Jk1.nil (TW 2)) ⟨trivial, JkA_TW 2⟩ LOk1_twoTW2 hL2
+      have hT : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+          (Jk1.one (Jk1.two Jk1.nil (TW 2)) (Jk1.pay Jk1.nil B))) :=
+        TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk_twoNilAll 0) hL1)
+      simpa using hT Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem jk1_hang7H (l : ℕ) (B : TrioSeq) : jk1 l (HgC B)
+    = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 3, 1, 0) : ℕ × ℕ × ℕ),
+        ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 5, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 5, 1, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 7, 2, 0) : ℕ × ℕ × ℕ), ((l + 7, 1, 0) : ℕ × ℕ × ℕ),
+        ((l + 8, 2, 0) : ℕ × ℕ × ℕ), ((l + 9, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 4, 1, 0) : ℕ × ℕ × ℕ)]
+      ++ shiftr01 (l + 5) 0 B := by
+  simp only [HgC, TW, jk1, List.nil_append, List.cons_append, List.append_nil,
+    List.singleton_append, List.append_assoc, List.cons.injEq, Prod.mk.injEq,
+    and_true, true_and] <;> omega
+
+theorem hang7H_gen {A B : TrioSeq} (hA : Aok A) (hB : Bok B) :
+    A ++ U375aH ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ++ shiftr01 7 0 B ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [HgC B])) :=
+    GOK_hang7H hB [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [HgC B]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  rw [wordJ_singleton, colJ, jk1_hang7H 2 B] at h
+  simpa [U375aH, U375aI, U375aJ, U375aK, U375aR, U375aP, U375aZ, U375aX, U375a1, U375a,
+    List.append_assoc] using h
+
+/-- ★★★★★★★★★★★★★★★ `A ++ U375aH ++ (6,1,0)(7,1,0)`。 -/
+theorem UH_snoc61_71 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := snocd_gen (Y := A ++ U375aH ++ [((6, 1, 0) : ℕ × ℕ × ℕ)]) (d := 7)
+    (by omega) (Aok_UH61 hA) (Ancd7H_gen hA) (fun B hB => hang7H_gen hA hB)
+  simpa [List.append_assoc] using h
+
+theorem Z789_H_61_71 :
+    Z789 ++ U375aH ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc61_71 Aok_Z789
+
+#print axioms Z789_H_61_71
+
 
 end Small
 end TRIO
