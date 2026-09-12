@@ -4724,6 +4724,88 @@ theorem R375m61_of_SelfNW (h : SelfNW) :
 #print axioms ChBase_of_SelfNW
 #print axioms R375m61_of_SelfNW
 
+/-! ### ★★★ 予算の指数の型を一般にする（`ω^(ω+k)` を使うため）
+
+`Bw = Colex (ℕ →₀ ℕ)` は `< ω^ω` までしか表せない。荷 `(0,0,0)(1,0,0)` は
+`Y⟦n⟧ = (0,0,0)^n` に落ちて予算 `ω^n` を要求するので、その親には `ω^ω` が要る。
+指数を `ℕ ×ₗ ℕ`（順序型 ω²）にすれば `ω^(ω+k) = owG (1,k) 1` が使える。 -/
+
+section OwGen
+
+variable {α : Type} [LinearOrder α]
+
+abbrev BwG (α : Type) [LinearOrder α] : Type := Colex (α →₀ ℕ)
+
+noncomputable def owG (k : α) (m : ℕ) : BwG α := toColex (Finsupp.single k m)
+
+theorem bot_BwG : (⊥ : BwG α) = 0 := rfl
+
+theorem owG_zero (k : α) : owG k 0 = (⊥ : BwG α) := by
+  show toColex (Finsupp.single k 0) = toColex (0 : α →₀ ℕ)
+  rw [Finsupp.single_zero]
+
+theorem owG_ltR (k : α) {m m' : ℕ} (h : m < m') : owG k m < owG k m' := by
+  rw [owG, owG, Finsupp.Colex.lt_iff]
+  refine ⟨k, ?_, ?_⟩
+  · intro j hj
+    show (Finsupp.single k m : α →₀ ℕ) j = (Finsupp.single k m' : α →₀ ℕ) j
+    rw [Finsupp.single_apply, Finsupp.single_apply, if_neg (ne_of_lt hj),
+      if_neg (ne_of_lt hj)]
+  · show (Finsupp.single k m : α →₀ ℕ) k < (Finsupp.single k m' : α →₀ ℕ) k
+    rw [Finsupp.single_eq_same, Finsupp.single_eq_same]
+    exact h
+
+theorem owG_ltL {k k' : α} (h : k < k') (m : ℕ) {m' : ℕ} (hm : 0 < m') :
+    owG k m < owG k' m' := by
+  rw [owG, owG, Finsupp.Colex.lt_iff]
+  refine ⟨k', ?_, ?_⟩
+  · intro j hj
+    show (Finsupp.single k m : α →₀ ℕ) j = (Finsupp.single k' m' : α →₀ ℕ) j
+    rw [Finsupp.single_apply, Finsupp.single_apply, if_neg (ne_of_lt (lt_trans h hj)),
+      if_neg (ne_of_lt hj)]
+  · show (Finsupp.single k m : α →₀ ℕ) k' < (Finsupp.single k' m' : α →₀ ℕ) k'
+    rw [Finsupp.single_apply, Finsupp.single_eq_same, if_neg (ne_of_lt h)]
+    exact hm
+
+theorem owG_add_lt {j k : α} (h : j < k) (m m' : ℕ) :
+    owG k m + owG j m' < owG k (m + 1) := by
+  rw [Finsupp.Colex.lt_iff]
+  refine ⟨k, ?_, ?_⟩
+  · intro i hi
+    show (Finsupp.single k m + Finsupp.single j m' : α →₀ ℕ) i
+        = (Finsupp.single k (m + 1) : α →₀ ℕ) i
+    rw [Finsupp.add_apply, Finsupp.single_apply, Finsupp.single_apply, Finsupp.single_apply,
+      if_neg (ne_of_lt hi), if_neg (ne_of_lt (lt_trans h hi)), if_neg (ne_of_lt hi)]
+    rfl
+  · show (Finsupp.single k m + Finsupp.single j m' : α →₀ ℕ) k
+        < (Finsupp.single k (m + 1) : α →₀ ℕ) k
+    rw [Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.single_apply,
+      Finsupp.single_eq_same, if_neg (ne_of_lt h)]
+    omega
+
+theorem BwG_add_lt_left (b : BwG α) {x y : BwG α} (h : x < y) : b + x < b + y := by
+  rw [add_comm b x, add_comm b y]
+  exact add_lt_add_left h b
+
+end OwGen
+
+/-- 指数が `ℕ ×ₗ ℕ`（順序型 ω²）の予算。`ω^(ω·i + j) = owG (toLex (i,j)) 1`。 -/
+abbrev Bw2 : Type := BwG (ℕ ×ₗ ℕ)
+
+noncomputable def ex2 (i j : ℕ) : (ℕ ×ₗ ℕ) := toLex (i, j)
+
+theorem ex2_lt_r (i : ℕ) {j j' : ℕ} (h : j < j') : ex2 i j < ex2 i j' :=
+  Prod.Lex.right i h
+
+theorem ex2_lt_l {i i' : ℕ} (h : i < i') (j j' : ℕ) : ex2 i j < ex2 i' j' :=
+  Prod.Lex.left j j' h
+
+example : WellFoundedLT Bw2 := inferInstance
+example : OrderBot Bw2 := inferInstance
+example : LinearOrder Bw2 := inferInstance
+
+#print axioms owG_add_lt
+
 
 end Small
 end TRIO
