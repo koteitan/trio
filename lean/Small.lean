@@ -78197,5 +78197,59 @@ theorem RB_of_ChBase (h : ChBase) :
 #print axioms Pay2_of_ChBase
 #print axioms RB_of_Pay2
 
+/-! ### ★ 壁を `SbT` の文法の 1 本の欠けに絞る
+
+`SbT` / `SbF` は「安全な兄弟」の文法で、走り 2 は既に入っている:
+
+    SbT.ttwoB : SbT A → SbF B → SbT (two A (two B nil))
+
+つまり **走り 2 そのものは無条件で緑**（`NPd_true_twoTwoB_lift`、階段は `nstN2`）。
+足りないのは走り 2 の**先端に荷**を載せる構成子だけ:
+
+    ttwoZ : SbT A → SbF B → SbF Z → SbT (two A (two B Z))
+
+`Z = nil` が `ttwoB`。`SbF` には `two` の構成子が無いので、`ttwoZ` を足しても
+`stk 3`（2 の記録 3 連）は出ない。行376 には届かず、シート証明中の行だけが出る。 -/
+
+def TtwoZ : Prop := ∀ (A B Z : Jk1), SbT A → SbF B → SbF Z →
+  ∀ ks : List Bool, NPd (true :: ks) (Jk1.two A (Jk1.two B Z))
+
+/-- `TtwoZ` の `Z = nil` の場合は緑（`SbT.ttwoB`）。 -/
+theorem TtwoZ_nilTop {A B : Jk1} (hA : SbT A) (hB : SbF B) (ks : List Bool) :
+    NPd (true :: ks) (Jk1.two A (Jk1.two B Jk1.nil)) :=
+  NPd_true_of_SbT (SbT.ttwoB hA hB) ks
+
+/-- `TtwoZ` の `Z = pay nil C` の場合がちょうど壁 `Pay2`。 -/
+theorem Pay2_of_TtwoZ (h : TtwoZ) : Pay2 := fun C hC =>
+  (NPd_bnil _).mp (NPd_step [] (JkT_nil : FrmJ [] Jk1.nil)
+    ((NPd_bnil _).mpr GOK_nil)
+    (h Jk1.nil Jk1.nil (Jk1.pay Jk1.nil C) SbT.nil SbF.nil (SbF.pay SbF.nil hC) []))
+
+/-- ★ シート証明中の行は `TtwoZ` 1 文から出る。 -/
+theorem RB_of_TtwoZ (h : TtwoZ) :
+    [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ), ((2, 1, 0) : ℕ × ℕ × ℕ),
+     ((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+     ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ),
+     ((7, 1, 1) : ℕ × ℕ × ℕ), ((8, 1, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ),
+     ((8, 2, 1) : ℕ × ℕ × ℕ), ((9, 1, 0) : ℕ × ℕ × ℕ), ((10, 2, 0) : ℕ × ℕ × ℕ),
+     ((11, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := RB_of_Pay2 (Pay2_of_TtwoZ h)
+
+/-- ★ いま開いている最小の行列も同じ 1 文から出る。 -/
+theorem R375m61_of_TtwoZ (h : TtwoZ) :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 (Pay2_of_TtwoZ h)
+
+/-- 連鎖の兄弟 `twoIt nil (pay nil Y) n` は `SbT`（`SbF` の先端を横に積むだけ）。
+だから `ChBase` のうち連鎖で要る分は文法の中に入っている。 -/
+theorem SbT_twoItPay {Y : TrioSeq} (hY : Bok Y) :
+    ∀ n : ℕ, SbT (twoIt Jk1.nil (Jk1.pay Jk1.nil Y) n)
+  | 0 => SbT.nil
+  | (n + 1) => SbT.two (SbT_twoItPay hY n) (SbF.pay SbF.nil hY)
+
+#print axioms TtwoZ_nilTop
+#print axioms Pay2_of_TtwoZ
+#print axioms RB_of_TtwoZ
+#print axioms SbT_twoItPay
+
 end Small
 end TRIO
