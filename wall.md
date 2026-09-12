@@ -29,6 +29,19 @@
 （`1` の記録を `n` 本重ねた木）で、それを作るのが `GOK_chainJ` の `hstep`
 ＝「`1` の記録をもう 1 本」＝ `RStepN0`。**そこだけが循環している。**
 
+### 鎖は `WPdT` の世界では無料
+
+    WPdT_step ks (FrmNT ks U) (WPdT ks U) (WPdT (⊥::ks) V) : WPdT ks (one U V)
+
+なので `WPdT (⊥::ks) T` と `WPdT ks X` があれば `WPdT ks (itJ T n X)` は
+`n` の帰納で全部出る。**鎖そのものは壁ではない。**
+
+残る差は **「文脈 `D` が予算リストで書けるか」** の 1 点:
+`WCtxU ks D` は「兄弟の木が全部置ける」ことを要求するが、`RStepN0` の仮定は
+`GOK (plug D nil)` だけ。**`GOK (plug D nil)` から兄弟の可置性を取り出せれば終わる。**
+（取り出せない反例があるのか、取り出せるのに補題が無いだけなのかは未調査。
+まずそこを見ること。）
+
 ## ★★★★★★ 荷は無料（`WPdT_payA`）。再導出しないこと
 
     WPdT_payA ks V (FrmNT ks V) (WPdT ks V) C (Bok C) : WPdT ks (pay V C)   ★既存
