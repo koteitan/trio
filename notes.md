@@ -25124,3 +25124,39 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
 
 **次**: `WPdR` の定義に `(⊥,p)` の節を足し、`WPdR [] (stk q)` を出す。
 残る仮定は `RunPay`（走りの上の荷）1 点。
+
+## 追記391: ★★ 行376 が `RunPay` 1 文から出た
+
+### 積み上げ
+
+    WPdR の入り目は 3 種類（追記390）:
+      ⊥ = (⊥,0)      [fone U]
+      (⊥,p) (p>0)    replicate p (ftwo nil)
+      (b,p) (b ≠ ⊥)  [fone U, ftwo N] ++ replicate p (ftwo nil)
+
+    底: WPdR [] V = ∀ bs, APd (true::bs) V
+    FrmR は全部 JkA
+
+    WPdR_nilRun  … 縦の走り（追記388、無条件）
+    AYdWR/AYdTWR … 荷（⊥ と erun=0 の節）
+    WPdR_payA (RunPay) → WPdR_oneNil → WPdR_nilT
+    SOkR ks（文脈が fone で終わり空木が差せる）: `[]` と `⊥::ks` で成立
+    preRun q ks / shRq q ks i（塔の階段の形）
+    WPdR_stkS (RunPay) : ∀ q ks, SOkR ks → WPdR ks (stk q)      ← `SG_stkS` の移植
+    RunAll_of_RunPay : WPdR [] (stk q) = RunAll
+    R376_of_RunPay : RunPay → 行376 ∈ W 0                        ★緑
+
+### 残る 1 文
+
+    RunPay : ∀ e, erun e ≠ 0 → ∀ ks V, JkA V → WPdR (e::ks) V →
+               ∀ C, Bok C → WPdR (e::ks) (pay V C)
+
+`ebud e = ⊥`（裸の走り）の場合は `WPdR ks (stkP p V) → WPdR ks (stkP p (pay V C))`、
+つまり**縦の走りの上に荷**。`RHang2` そのもの。
+
+`C` の W 帰納で
+- `C = []`: `pay V [] ≅ V`（`jk1_pay_nil`）で仮定そのもの ✓
+- 内側の場合（最後の列が根でない）: 同じ形の IH ✓ 予算も形も動かない
+- 重複の場合（`C = C' ++ [(0,0,0)]`）: 鎖 `stkP (p-1) (twoIt nil (pay V C') m)` が要る。
+  形は `preRun (p-1) ks` なので、`WPdR (preRun (p-1) ks) (twoIt nil (pay V C') m)`
+  ＝「荷つきの平らな走りを走りの下に置く」。ここが最後の 1 点。
