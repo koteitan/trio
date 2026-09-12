@@ -11003,7 +11003,86 @@ theorem ZZ_U375a_61_mem :
 
 #print axioms A375m61_gen
 #print axioms ZZ_U375a_61_mem
+/-! ### ★★★★★★★★★★★★ `WBd` の深さを一般の整礎な型に持ち上げる（`WNd`）
 
+`SmallA` の `WBd` は予算が `List (ℕ × ℕ)` で、順序は `encE (m, i) = i`（深さだけ）。
+幅 `m` は順序に出てこないので**走りの長さに上限が無い**。残るのは深さ `i` が
+自然数なので、A2' の複製鎖が要求する非有界な深さに届かない点。
+深さを一般の型 `Bud` にして `Bml = Multiset Ld` を入れれば届く。
+幅は順序に出てこないので落とし、予算は `List Bud` にする。 -/
+
+section BudG
+
+variable {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+
+theorem dmT_app2 {b : Bud} (ks a c : List Bud) (h : ∀ x ∈ a, x < b)
+    (h2 : ∀ x ∈ c, x < b) :
+    Multiset.IsDershowitzMannaLT ((a ++ (c ++ ks) : List Bud) : Multiset Bud)
+      ((b :: ks : List Bud) : Multiset Bud) := by
+  rw [← List.append_assoc]
+  refine dmT_app ks (a ++ c) ?_
+  intro x hx
+  rcases List.mem_append.mp hx with h1 | h1
+  · exact h x h1
+  · exact h2 x h1
+
+def WNd {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
+    List Bud → Jk1 → Prop
+  | [], V => GOK V
+  | (i :: ks), V =>
+      (i = ⊥ → ∀ U : Jk1, FrmNT ks U → WNd ks U →
+        (∀ C : TrioSeq, Bok C → WNd ks (Jk1.pay U C)) → WNd ks (Jk1.one U V)) ∧
+      (i ≠ ⊥ → ∀ (p : List Bud), p ≠ [] → (∀ x ∈ p, x < i) →
+        ∀ N : Jk1, JkA N →
+        (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) → WNd (p' ++ (p ++ ks)) N) →
+        (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) →
+          ∀ C : TrioSeq, Bok C → WNd (p' ++ (p ++ ks)) (Jk1.pay N C)) →
+        WNd (p ++ ks) (Jk1.two N V))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+      | exact dmT_app2 _ _ _ (by assumption) (by assumption)
+
+theorem WNd_cons (i : Bud) (ks : List Bud) (V : Jk1) :
+    WNd (i :: ks) V ↔
+      ((i = ⊥ → ∀ U : Jk1, FrmNT ks U → WNd ks U →
+        (∀ C : TrioSeq, Bok C → WNd ks (Jk1.pay U C)) → WNd ks (Jk1.one U V)) ∧
+      (i ≠ ⊥ → ∀ (p : List Bud), p ≠ [] → (∀ x ∈ p, x < i) →
+        ∀ N : Jk1, JkA N →
+        (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) → WNd (p' ++ (p ++ ks)) N) →
+        (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) →
+          ∀ C : TrioSeq, Bok C → WNd (p' ++ (p ++ ks)) (Jk1.pay N C)) →
+        WNd (p ++ ks) (Jk1.two N V))) := by
+  rw [WNd]
+
+theorem WNd_bnil (V : Jk1) : WNd ([] : List Bud) V ↔ GOK V := by rw [WNd]
+
+theorem WNd_c0 (ks : List Bud) (V : Jk1) :
+    WNd ((⊥ : Bud) :: ks) V ↔ ∀ U : Jk1, FrmNT ks U → WNd ks U →
+      (∀ C : TrioSeq, Bok C → WNd ks (Jk1.pay U C)) → WNd ks (Jk1.one U V) := by
+  rw [WNd_cons]
+  constructor
+  · exact fun h => h.1 rfl
+  · exact fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩
+
+theorem WNd_ck {i : Bud} (hi : i ≠ ⊥) (ks : List Bud) (V : Jk1) :
+    WNd (i :: ks) V ↔ ∀ (p : List Bud), p ≠ [] → (∀ x ∈ p, x < i) →
+      ∀ N : Jk1, JkA N →
+      (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) → WNd (p' ++ (p ++ ks)) N) →
+      (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) →
+        ∀ C : TrioSeq, Bok C → WNd (p' ++ (p ++ ks)) (Jk1.pay N C)) →
+      WNd (p ++ ks) (Jk1.two N V) := by
+  rw [WNd_cons]
+  constructor
+  · exact fun h => h.2 hi
+  · exact fun h => ⟨fun he => absurd he hi, fun _ => h⟩
+
+end BudG
+
+#print axioms WNd_ck
 
 end Small
 end TRIO

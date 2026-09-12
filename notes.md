@@ -26926,3 +26926,30 @@ DM では閉じているが、**`htow` は `WPd` の展開から来る任意の�
 手順: (1) `WQd` を `[PartialOrder Bud]` の一般予算型に持ち上げる
 （幅の条件は `Scale` で `S.nb Ns.length < b`）、(2) 予算を `Bml = Multiset Ld` に、
 (3) `QRunPay` を DM 帰納で出す、(4) `R376_of_QRunPay` で行 376。
+
+## 追記447: 行 376 に残るのは `VPay`（または `RunNilB`+`PayNilB`）。`WBd` の深さを一般化する
+
+帰着（全部既に緑）:
+
+    VPay → VStep1 → VOkk → R376_of_VOkk                （SmallA 61003-61140）
+    RunNilB + PayNilB → WBd_nilAllB → GOK_bdA_ofB → MixTow → 行376
+    QPnil → WQd_Utw → R376_of_UtwAll → 行376
+
+`VPay : ∀ D, VCtx D → GOK (plug D nil) → ∀ C, Bok C → GOK (plug D (pay nil C))`
+が一番具体的（`GOK (plug D nil)` は**仮定**なのでそこは要らない）。
+
+`SmallA` の `WBd`（予算 `List (ℕ × ℕ)`）は `encE (m, i) = i` で**幅 `m` が順序に
+出てこない**ので走りの長さに上限が無い。残るのは深さ `i` が自然数という点で、
+A2' の複製鎖が要求する非有界な深さに届かない。
+
+そこで深さを一般の整礎な型に持ち上げた（今回、緑）:
+
+    WNd : List Bud → Jk1 → Prop        （`[PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]`）
+    WNd_cons / WNd_bnil / WNd_c0 / WNd_ck / dmT_app2
+
+`⊥` の節は 1 の枠（荷閉包つき）、`i ≠ ⊥` の節は「兄弟 `N` が `i` より小さい
+どの予算リストにも置ける」なら `two N V` を `p ++ ks`（`p` の元は全部 `< i`）に置ける。
+幅は落とした（順序に出てこないので）。
+
+次: `WNtx`（文脈の族）→ `WNd_iff` → `WNd_nilAll` → 荷（`PcB` と同じ DM 帰納）
+→ `Bml` を入れて `VPay` → 行 376。
