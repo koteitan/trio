@@ -1,49 +1,58 @@
 # 壁
 
-## ★★★★★★ いま一番先（2026-09-13 夜）: 荷は無料。壁は「2 の直上の 2」だけ
+## ★★★★★★★ 壁の一番きれいな形（2026-09-13 夜、今日の調査）
 
-**再導出しないこと（今日ほぼ再導出しかけた）**:
+    RStepN0 : ∀ D : List Frm,
+      (∀ X, JkA X → JkT (plug D (one nil X))) →
+      GOK (plug D nil) → GOK (plug D (one nil nil))
+    R376_of_RStepN0                                                        ★緑
+
+**「穴に `1` の記録をもう 1 本足してよい」だけ。** `D = []` の場合は `AP0nil`（★緑）。
+
+`RPayN0`（穴に任意の `Bok` の荷を吊るす）とはほぼ同値:
+
+- `RStepN0_of_RPayN0`（★緑）
+- 逆向きは `AYs` / `APpayJ`（★緑）。`APpayJ Z Y hZ hY (hAP) : ∀ V, JkT V → GOK V →
+  GOK (one V (pay Z Y))` の `hAP : ∀ V, JkT V → GOK V → GOK (one V Z)` が
+  ちょうど「`1` の記録をもう 1 本」。`Z = nil` なら `AP0nil` なので
+  `GOK_oneB : GOK (one nil (pay nil B))` は**全部の `Bok B` で緑**。
+
+### 今日わかった訂正
+
+**`fone` の位置の snoc 補題は既にある**（`snocYd_mem` の `y ≤ 2` は関係ない）:
+
+    GoodFb_snoc_innerJs0 / GoodFb_snoc_dupJs0   （`plug ctx (one X (pay Z Y))`）★緑
+    GoodFb_snoc_innerJt0 / GoodFb_snoc_dupJt0   （`plug ctx (two N (pay Z Y))`）★緑
+    flat_mem'' は行 0 しか見ないので y=1 でも y=2 でも通る。
+
+足りないのは `dupJs0` の帰納法の仮定に出てくる**鎖** `itJ (pay Z Y) n X`
+（`1` の記録を `n` 本重ねた木）で、それを作るのが `GOK_chainJ` の `hstep`
+＝「`1` の記録をもう 1 本」＝ `RStepN0`。**そこだけが循環している。**
+
+## ★★★★★★ 荷は無料（`WPdT_payA`）。再導出しないこと
 
     WPdT_payA ks V (FrmNT ks V) (WPdT ks V) C (Bok C) : WPdT ks (pay V C)   ★既存
-    AYdT' / AYdWT / AYdTWT                                                   ★既存
-    TwoOk_pay : Bok Y → JkA Z → TwoOk Z → TwoOk (pay Z Y)（W 0 上の帰納）   ★既存
-    hang5_gen hA hB : A ++ U375a  ++ shiftr01 5 0 B ∈ W 0                    ★既存
-    hang6_gen hA hB : A ++ U375a1 ++ shiftr01 6 0 B ∈ W 0                    ★既存
+    AY0 / AYs / APpayJ / AYdT' / AYdWT / AYdTWT                             ★既存
+    TwoOk_pay : Bok Y → JkA Z → TwoOk Z → TwoOk (pay Z Y)                   ★既存
+    hang5_gen / hang6_gen hA hB : A ++ U375a1 ++ shiftr01 6 0 B ∈ W 0       ★既存
 
-つまり **予算リスト（`WPdT`）や `APd` で書ける文脈の中では、`Bok` の荷は完全に無料**。
-荷は壁ではない。`hang6_gen` が `U375a1 = U375a ++ [(5,1,0)]` を要求するのは、
-末尾の `(5,1,0)` が `one` の枠を作るから。**`(5,2,0)` の直下（`two` の直上）に
-荷を吊るすところだけが壁**。
+予算リスト（`WPdT`）や `APd` で書ける文脈の中では `Bok` の荷は完全に無料。
+`hang6_gen` が `U375a1 = U375a ++ [(5,1,0)]` を要求するのは、末尾の `(5,1,0)` が
+`one` の枠を作るから。**`(5,2,0)` の直下（`two` の直上）だけが壁。**
 
-### 最小の帰着は `RPayN0`（`SmallA:63985`）
+## ★★★★★ 平らな荷の天井は `R600(7,1,0)`
 
-    RPayN0 : ∀ D, (∀ X, JkA X → JkT (plug D (one nil X))) →
-                  GOK (plug D nil) → ∀ C, Bok C → GOK (plug D (pay nil C))
-    R376_of_RPayN0                                                           ★緑
+平らな荷は原始数列（PrSS, `ε_0`）。段を 1 つ上げて得られるのは
+`R600(7,0,0)(8,0,0)…(6+k,0,0)` の 1 行ずつで、全部やっても `(7,1,0)` の 1 列分。
+2026-09-13 に `Wg k`（`= Y0 (1,0,0)(2,0,0)^k`、`Wg 0 = Ap·1`、`Wg 1 = Vs`、`Wg 2 = Ws`）
+まで一般化して `R600(7,0,0)(8,0,0)(9,0,0)` まで来た。汎用部品:
 
-これは `AY0`（`D = []` の場合、★緑）の文脈版。`WPdT_payA` との差は
-**文脈が予算リストで書けること**（`WCtxU ks D` は兄弟の木が全部置けることを要求する）。
-`RPayN0` の仮定は `GOK (plug D nil)` だけ。
+    WPdT_twoAY_at / TopLd_of_AtLd / RunLd_of_TopLd / AtLd_iter / AtLd_fam
+    LadYv / LadAp / AtLd_Vs / AtLd_Ws / AtLd_VsIt / AtLd_WgS / WgOk_all
+    Pws α（指数の型はパラメータ）/ R375m_tower_gen / R600_limit_gen
 
-**残っているのは 1 点: `GOK (plug D nil)` から兄弟の可置性を取り出す。**
-
-## ★★★★★ 荷の世界は原始数列（PrSS, ε_0）
-
-平らな荷 `(0,a_1,…,a_k)` の `⟦n⟧` は「悪い部分の繰り返し」＝原始数列の展開。
-展開で行 0 の最大値は増えない（`i1 = 0` なので `d0 = 0`）。順序型は `ε_0`。
-
-`(5,2,0)` の直下に荷を吊るす（＝`two nil (two nil (pay nil Y))`）のは
-荷ごとに予算を積んで破れる（2026-09-13 に `Yv`/`Ys`/`Ap`/`Vs`/`Vk` で実施）。
-汎用部品（荷に依存しない）:
-
-    WPdT_twoAY_at   荷 Y の ⟦n+1⟧ が全部置ければ pay Z Y が置ける
-    TopLd_of_AtLd / RunLd_of_TopLd / RunLd_zero / AtLd_one
-    AtLd_iter（Y⟦n+1⟧ = Y'^(n+1)）/ AtLd_fam（Y⟦n+1⟧ = F n）
-    LadAp（底一般の階の梯子）/ AtLd_Vs（段を 1 つ上げる）
-    Pws α（指数の型はパラメータ。足りなくなったら α := BwG α）
-
-**一様化には「平らな荷 → ε_0 未満の順序数表記」が要る。** それが無い限り
-荷 1 個 = シート 1 行（約 150 行の Lean）で、収束しない。
+段 `k` を上げるには指数の型を `BwG` で 1 段足して族を書き直す（約 300 行）。
+**天井が低いので割に合わない。**
 
 ## ★★★★ 壁は `TwOk` 階層の `Fter` 1 箇所（2026-09-12 深夜）
 
