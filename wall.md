@@ -2,62 +2,60 @@
 
 ## いまの状況（2026-09-12 更新。先にここを読む）
 
-### 大小の梯子（`bms -c` 実測、下ほど大きい）
+### ★★ 目標（行376）は `RunPay` 1 文に落ちた
 
-    R600 (5,2,0)                 ★済（予算 ω）
-    R600 (6,0,0)                 ★済（予算 ω²）
-    R600 (6,0,0)^k               ★済（予算 ω^ω）
-    R600 (7,0,0)                 ★済（(6,0,0)^k の極限）
-    R600 (7,0,0) の輪の族        ★済 ← いまのシート証明済み
-    R600 (7,1,1)                 ← いまの証明中
-    RB = R375m ++ R375m↑6
-    R375m (6,1,0)
-    R375m (6,2,0) = R373 (5,2,0)(6,2,0)（= 縦の走り `stk 3`）
-    行376 = R373 (5,3,0)                  ← 最終目標
+    R376_of_RunPay (hRP : RunPay) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
 
-### 使える手（この順に試す）
+    RunPay : ∀ (e : Ekey Bud), erun e ≠ 0 →
+               ∀ ks V, JkA V → WPdR (e :: ks) V →
+               ∀ C, Bok C → WPdR (e :: ks) (pay V C)
 
-1. **予算の型を上に伸ばす**。`WPdT` の予算 `Bud` は整礎全順序なら何でもよい。
-   在庫: `ℕ`(ω) / `ℕ ×ₗ ℕ`(ω²) / `ℕ ×ₗ (ℕ ×ₗ ℕ)`(ω³) /
-   `Colex (ℕ →₀ ℕ)`(ω^ω、`import Mathlib.Data.Finsupp.WellFounded`)。
-   主力は
+「**縦の走りの上に荷**」。`RHang2` / `SHtow` に対応する 1 点。
 
-       WPdT_twoAZ_top (S : Scale Bud) (ht : ∀ m, S.nb m < t) (hJA) (hJZ)
-         (hchain : ∀ m c, S.nb m < c → ∀ ks, WPdT (c::ks) (twoIt A Z m)) :
-         ∀ ks, WPdT (t::ks) (two A (pay Z [(0,0,0)]))
+### 層 `WPdR`（走りを文脈に持てる層）
 
-   荷 `[(0,0,0)]` を 1 段乗せるのに予算 `ω` 消費。`k` 段の入れ子で `ω^k`。
+入り目は `(b, p) : Bud ×ₗ ℕ` の 3 種類:
 
-2. **族が作れたら極限を取る**。`flat_mem''` は `∀n, Y0 ++ M^n ∈ W 0` から
-   `Y0 ++ M ++ [(d,0,0)]` を出す。段数の壁（下記）を**迂回できる**。
-   `R600 (7,0,0)` は木で書くと荷の段数が非有界で直接は通らないが、
-   `R600 (6,0,0)^k` の極限としては 1 行で出る。
+    ⊥ = (⊥,0)      … `[fone U]`
+    (⊥,p) (p>0)    … `replicate p (ftwo nil)`（裸の走り）
+    (b,p) (b ≠ ⊥)  … `[fone U, ftwo N] ++ replicate p (ftwo nil)`（N は予算 `< (b,p)`）
 
-3. **1 行証明したら `Aok` を取り、`LoopIt` の台座を差し替える**。
-   証明済み 10 行がまとめて入れ替わる。
+底は `WPdR [] V = ∀ bs, APd (true::bs) V`（APd/GCtx 層につながる）。
+DM 測度は `(ks : Multiset (Ekey Bud))`。
 
-### 予算では直らない壁
+**設計の要点**（追記387）: 塔の階段が文脈に足すブロック
+`[fone nil, ftwo N] ++ replicate p (ftwo nil)` が**ちょうど 1 入り目ぶん**。
+だから兄弟の条件 `∀q (< e), WPdR (⊥::q++kk) N` の `q` にブロックがそのまま入り、
+尻 `kk` が動かない。枠を 1 つずつに分けた `WPdS` はここで失敗した（追記384）。
 
-**荷の W 帰納は 1 段ごとに `ω` 消費し、段数は `W 0` の階数**（追記382）。
-一様な予算では `∀ Bok C` の荷は扱えない。したがって
+### 緑の主力（再導出しないこと）
 
-    hang6_R375m : Bok B → R375m ++ B↑6 ∈ W 0     （= WRunPay）
+    WPdR_nilRun  … `WPdR ((b,p)::ks) nil`（長さ `p+1` の縦の走り、無条件）
+    AYdWR / AYdTWR / WPdR_payA (RunPay)   … 荷
+    WPdR_oneNil / WPdR_nilT / WPdR_nilB   … 空木
+    WPdR_stkS (RunPay) : ∀ q ks, SOkR ks → WPdR ks (stk q)   … 走りの塔
+    RunAll_of_RunPay / R376_of_RunPay
 
-は予算では出ない。`R600 (7,1,1) = R375m ++ ((0,0,0)(1,1,1))↑6` はここ。
+### `RunPay` の中身（追記391）
 
-もう 1 つの壁は**縦の走り**（2 の記録の直上に 2 の記録）。
-`WPdT` の文脈 `WCtxU` は `[fone U, ftwo N]` の対しか持てないので表せない。
-`WPdS`（枠を 1 つずつに分けた層、追記383）を作ったが、
-兄弟の条件が形の付け替えで移らない（追記384）。
+`C` の W 帰納:
+- `C = []`: `pay V [] ≅ V` ✓
+- 内側の場合: 同じ形の IH ✓（予算も形も動かない）
+- 重複の場合 `C = C' ++ [(0,0,0)]`: 鎖 `stkP (p-1) (twoIt nil (pay V C') m)` が要る。
+  形は `preRun (p-1) ks`。**ここが最後の 1 点**。
 
-### いまの壁（1 文、S 族の言い方）
+`GOK_twoPayZ_of`（族 `NN` の鎖で W 帰納を回す一般補題）を使うと、
+要るのは `htow : ∀ N ∈ VCh V, GOK (plug ctx' (two N V))` だけになる。
 
-    SHtow : ∀ ks V, JkA V → SG (false::ks) V →
-              ∀ D0, SCtx ks D0 → ∀ N, VCh V N → GOK (plug D0 (two N V))
+### 行列の梯子（`bms -c` 実測、下ほど大きい）
 
-`RunAll_of_SHtow` / `R376_of_RNil` / `R376_of_RHang2` はどれも緑なので、
-この 1 文から行376 が出る。同値・同根: `SNil` / `SNilT` / `SPayF` / `SNilF` /
-`RNil` / `RHang2` / `StkBlk2` / `RunBdA` / `RunNilR`。
+    R600 (7,0,0) の輪の族   ← いまのシート証明済み
+    R600 (7,0,0)(7,0,0)     ← いまの証明中
+    R600 (7,1,1) / RB / R375m (6,1,0) / R375m (6,2,0)
+    行376 = R373 (5,3,0)    ← 最終目標（`RunPay` 1 文）
+
+予算型の在庫: `ℕ`(ω) / `ℕ ×ₗ ℕ`(ω²) / `ℕ ×ₗ (ℕ ×ₗ ℕ)`(ω³) /
+`Colex (ℕ →₀ ℕ)`(ω^ω、`import Mathlib.Data.Finsupp.WellFounded`)。
 
 ### いま緑になっている主力（再導出しないこと）
 
