@@ -2530,6 +2530,52 @@ theorem WPdS_shift {e : Ent} (he : e ≠ ⊥) {ks : List Ent} {T : Jk1}
 #print axioms WCtxS_JkT
 #print axioms WPdS_shift
 
+/-! ### `⊥` の節の塔（`WPdT_twoNilGen` の移植） -/
+
+theorem FrmS_repB (m : ℕ) (e : Ent) (ks : List Ent) (N : Jk1) :
+    FrmS (List.replicate m (⊥ : Ent) ++ (e :: ks)) N ↔ JkA N := by
+  cases m with
+  | zero => exact Iff.rfl
+  | succ m => exact Iff.rfl
+
+theorem WCtxS_rep {N : Jk1} (hJN : JkA N) (ks : List Ent)
+    (hNall : ∀ j : ℕ, WPdS (List.replicate j (⊥ : Ent) ++ ((⊥ : Ent) :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), WCtxS ((⊥ : Ent) :: ks) ctx →
+      WCtxS (List.replicate m (⊥ : Ent) ++ ((⊥ : Ent) :: ks))
+        (ctx ++ List.replicate m (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (m + 1), ctx, hc => by
+      have h1 := WCtxS_rep hJN ks hNall m ctx hc
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
+          = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, repB_succ_cons, WCtxS_c1]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
+        (FrmS_repB m (⊥ : Ent) ks N).mpr hJN, hNall m⟩
+
+theorem WPdS_plug_rep (N : Jk1) (hJN : JkA N) (ks : List Ent)
+    (hNall : ∀ j : ℕ, WPdS (List.replicate j (⊥ : Ent) ++ ((⊥ : Ent) :: ks)) N) (m : ℕ) :
+    WPdS ((⊥ : Ent) :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
+  rw [WPdS_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (WPdS_iff _ N).mp (hNall m) _ (WCtxS_rep hJN ks hNall m ctx hc)
+
+theorem WPdS_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List Ent) (hs : SqOk ks)
+    (hNall : ∀ j : ℕ, WPdS (List.replicate j (⊥ : Ent) ++ ((⊥ : Ent) :: ks)) N) :
+    WPdS ((⊥ : Ent) :: ks) (Jk1.two N Jk1.nil) := by
+  rw [WPdS_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtxS_split ks ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (WCtxS_JkT ((⊥ : Ent) :: ks) (SqOk_cons_bot hs) _ hc (Jk1.two N Jk1.nil)
+      (⟨hJN, trivial⟩ : FrmS ((⊥ : Ent) :: ks) (Jk1.two N Jk1.nil)))
+    hGV
+    (fun m => (WPdS_iff ((⊥ : Ent) :: ks) _).mp (WPdS_plug_rep N hJN ks hNall m) _ hc)
+
+#print axioms WPdS_twoNilGen
+
 end EntS
 
 end Small
