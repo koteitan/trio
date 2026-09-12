@@ -2,31 +2,69 @@
 
 ## いまの状況（2026-09-12 更新。先にここを読む）
 
-### ★★ 目標（行376）は `RunPay` 1 文に落ちた
+### ★★ 目標（行376）は純粋な `GOK` の 1 文に落ちた
 
-    R376_of_RunPay (hRP : RunPay) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
+    HtowR : ∀ (ctx : List Frm) (V : Jk1), JkA V →
+      (∀ N T, JkA N → JkA T → JkT (plug ctx (two N T))) →
+      GOK (plug ctx (two nil V)) →
+      ∀ N, VCh V N → GOK (plug ctx (two N V))
 
-    RunPay : ∀ (e : Ekey Bud), erun e ≠ 0 →
-               ∀ ks V, JkA V → WPdR (e :: ks) V →
-               ∀ C, Bok C → WPdR (e :: ks) (pay V C)
+    R376_of_HtowR (h : HtowR) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
 
-「**縦の走りの上に荷**」。`RHang2` / `SHtow` に対応する 1 点。
+「`two nil V` が良いなら、2 の記録の**兄弟**を荷の鎖 `VCh V` に取り替えても良い」。
+予算も形も層も出てこない。`SHtow` の最小形。
 
-### 層 `WPdR`（走りを文脈に持てる層）
+    VCh V nil
+    VCh V N → Bok Y → VCh V (two N (pay V Y))
 
-入り目は `(b, p) : Bud ×ₗ ℕ` の 3 種類:
+### 落とし方（全部緑）
 
-    ⊥ = (⊥,0)      … `[fone U]`
-    (⊥,p) (p>0)    … `replicate p (ftwo nil)`（裸の走り）
-    (b,p) (b ≠ ⊥)  … `[fone U, ftwo N] ++ replicate p (ftwo nil)`（N は予算 `< (b,p)`）
+    R376_of_HtowR ← R376_of_RunPay ← RunAll_of_RunPay ← WPdR_stkS
+    RunPay_of_HtowR は `GOK_twoPayZ_of` を
+      ctx ++ replicate p (ftwo nil)                （裸の走りの節）
+      (ctx ++ [ftwo N₀]) ++ replicate p (ftwo nil) （fone+ftwo の節）
+    に当てるだけ。
 
-底は `WPdR [] V = ∀ bs, APd (true::bs) V`（APd/GCtx 層につながる）。
-DM 測度は `(ks : Multiset (Ekey Bud))`。
+### 層 `WPdR`（走りを文脈に持てる層。ここまでで役目を果たした）
 
-**設計の要点**（追記387）: 塔の階段が文脈に足すブロック
-`[fone nil, ftwo N] ++ replicate p (ftwo nil)` が**ちょうど 1 入り目ぶん**。
-だから兄弟の条件 `∀q (< e), WPdR (⊥::q++kk) N` の `q` にブロックがそのまま入り、
-尻 `kk` が動かない。枠を 1 つずつに分けた `WPdS` はここで失敗した（追記384）。
+入り目 `(b,p) : Bud ×ₗ ℕ` の 3 種類:
+
+    ⊥ = (⊥,0)      `[fone U]`
+    (⊥,p) (p>0)    `replicate p (ftwo nil)`
+    (b,p) (b ≠ ⊥)  `[fone U, ftwo N] ++ replicate p (ftwo nil)`
+
+底 `WPdR [] V = ∀ bs, APd (true::bs) V`。DM 測度は `(ks : Multiset (Ekey Bud))`。
+主力: `WPdR_nilRun`（縦の走り、無条件）/ `AYdWR` / `AYdTWR` / `WPdR_payA` /
+`WPdR_oneNil` / `WPdR_stkS`。
+
+### なぜ層をさらに一般化しても閉じないか（追記392〜395）
+
+「走りの兄弟を全部自由にする」方向を詰めたが、塔の階段（`nstQ` / `nstR` /
+`UtwP` のどれでも）で**走りの一番内側の兄弟が階段の `fone` の兄弟を兼ねる**。
+だから一番内側には「どの形でも良い」（強い条件）が要り、鎖は弱い条件しか
+満たさない。これは層の設計ではなく `SHtow` の数学的な中身。
+**層を作り直すより `HtowR` を直接攻める**のが正しい。
+
+### `HtowR` の中身
+
+`VCh V N` の帰納の 1 段は、語で見ると
+
+    jk1 l (two N' V)                 = [N'] (l+1,2,0) [V]
+    jk1 l (two (two N' (pay V Y)) V) = [N'] (l+1,2,0) [V] [Y↑(l+2)] (l+1,2,0) [V]
+
+つまり**ブロック `(l+1,2,0) [V] [Y↑]` を 1 つ差し込む**。塔の道具
+（`snocYd_mem` / `Mtwd` / `snocR_of_tower`）はこの形の反復を扱えるので、
+語のレベルから攻めるのが次の手。
+
+### 行列の梯子（`bms -c` 実測、下ほど大きい）
+
+    R600 (7,0,0) の輪の族   ← いまのシート証明済み
+    R600 (7,0,0)(7,0,0)     ← いまの証明中
+    R600 (7,1,1) / RB / R375m (6,1,0) / R375m (6,2,0)
+    行376 = R373 (5,3,0)    ← 最終目標（`HtowR` 1 文）
+
+予算型の在庫: `ℕ`(ω) / `ℕ ×ₗ ℕ`(ω²) / `ℕ ×ₗ (ℕ ×ₗ ℕ)`(ω³) /
+`Colex (ℕ →₀ ℕ)`(ω^ω、`import Mathlib.Data.Finsupp.WellFounded`)。
 
 ### 緑の主力（再導出しないこと）
 
