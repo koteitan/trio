@@ -348,5 +348,168 @@ theorem R600400_mem : R600 ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 #print axioms R600_T6blk2_mem
 #print axioms R600400_mem
 
+/-! ### ★ `R600 (4,1,0)`（シート証明中）
+
+展開は `TwD 4 R600 (n+1)`（`R600` 自身を高さ 4 で積む塔）。高さ 4 の吊るしの字は
+
+    one nil (pay Tb60 B)      jk1 l = (l+1,1,0)(l+2,2,0)(l+3,2,0)(l+4,0,0) ++ B↑(l+2)
+
+で、`WPd_Tb60u`（無条件）+ `WPd_payA` から出る。 -/
+
+theorem jk1_Tb60 (l : ℕ) :
+    jk1 l Tb60 = [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+      ((l + 3, 0, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1 + 1) Jk1.nil ++
+        shiftr01 (l + 1 + 1 + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)])))) = _
+  rw [show l + 1 + 1 = l + 2 from by omega, show l + 2 + 1 = l + 3 from by omega]
+  simp [jk1, shiftr01]
+
+theorem WPd_payTb60 (ks : List ℕ) (B : TrioSeq) (hB : Bok B) :
+    WPd (0 :: ks) (Jk1.pay Tb60 B) :=
+  WPd_payA (0 :: ks) Tb60 (JkA_Tb60 : FrmN (0 :: ks) Tb60) (WPd_Tb60u ks) B hB
+
+theorem GOK_onePayTb60 (B : TrioSeq) (hB : Bok B) :
+    GOK (Jk1.one Jk1.nil (Jk1.pay Tb60 B)) :=
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil) (WPd_payTb60 [] B hB))
+
+theorem jk1_onePayTb60 (l : ℕ) (B : TrioSeq) :
+    jk1 l (Jk1.one Jk1.nil (Jk1.pay Tb60 B))
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 0, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 (l + 2) 0 B := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Tb60 ++ shiftr01 (l + 1 + 1) 0 B)) = _
+  rw [jk1_Tb60 (l + 1), show l + 1 + 1 = l + 2 from by omega,
+    show l + 1 + 2 = l + 3 from by omega, show l + 1 + 3 = l + 4 from by omega]
+  simp [jk1]
+
+theorem hang4_R600 {B : TrioSeq} (hB : Bok B) : R600 ++ shiftr01 4 0 B ∈ W 0 := by
+  have hG0 := GOK_onePayTb60 B hB [] WOk_nil GoodFb_wordJ_nil
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.pay Tb60 B)]) := by
+    simpa using hG0
+  have hh := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ, jk1_onePayTb60 2 B] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+theorem Ancd4_R600 : Ancd 4 R600 := by
+  intro j hj0 hjl hlt hmin
+  have hlen : R600.length = 9 := by
+    simp [R600, R375m, R373, R344, R341, R338]
+  rw [hlen] at hjl
+  have h3 : (3 : ℕ) < R600.length := by rw [hlen]; omega
+  rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | j
+  · omega
+  · exact absurd (hmin 3 (by omega) h3) (by simp [R600, R375m, R373, R344, R341, R338, entry])
+  · exact absurd (hmin 3 (by omega) h3) (by simp [R600, R375m, R373, R344, R341, R338, entry])
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry] at hlt
+  · simp [R600, R375m, R373, R344, R341, R338, entry] at hlt
+  · simp [R600, R375m, R373, R344, R341, R338, entry] at hlt
+  · omega
+
+/-- ★★★★★★ シート証明中の行。 -/
+theorem R600410_mem : R600 ++ [((4, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R600 Ancd4_R600 (fun B hB => hang4_R600 hB)
+
+#print axioms R600410_mem
+
+/-! ### ★ `R600 (4,2,0)`
+
+字は `one nil (two Tb60 nil)`:
+`jk1 3 (two Tb60 nil) = (4,2,0)(5,2,0)(6,0,0)(4,2,0)`。
+`Tb60` は予算 0 の族（`WPd_Tb60u`）なので兄弟に置ける。先端は `nil`。 -/
+
+theorem WPd_twoTb60Nil (ks : List ℕ) : WPd (0 :: ks) (Jk1.two Tb60 Jk1.nil) :=
+  WPd_twoOf (k := 0) JkA_Tb60
+    (fun q _ => by
+      have h := WPd_Tb60u (q ++ ks)
+      simpa using h)
+    (WPd_nilF 0 ks)
+
+theorem GOK_oneTwoTb60Nil : GOK (Jk1.one Jk1.nil (Jk1.two Tb60 Jk1.nil)) :=
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil) (WPd_twoTb60Nil []))
+
+theorem jk1_oneTwoTb60Nil (l : ℕ) :
+    jk1 l (Jk1.one Jk1.nil (Jk1.two Tb60 Jk1.nil))
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 0, 0) : ℕ × ℕ × ℕ),
+          ((l + 2, 2, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Tb60 ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1 + 1) Jk1.nil))) = _
+  rw [jk1_Tb60 (l + 1), show l + 1 + 1 = l + 2 from by omega,
+    show l + 1 + 2 = l + 3 from by omega, show l + 1 + 3 = l + 4 from by omega]
+  simp [jk1]
+
+/-- ★★★★★★ `R600 (4,2,0)`。 -/
+theorem R600420_mem : R600 ++ [((4, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG0 := GOK_oneTwoTb60Nil [] WOk_nil GoodFb_wordJ_nil
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Tb60 Jk1.nil)]) := by
+    simpa using hG0
+  have hh := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ, jk1_oneTwoTb60Nil 2] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+#print axioms R600420_mem
+
+/-! ### ★ `R600 (4,2,0)(5,2,0)^m` と `R600 (4,2,0)(5,0,0)`
+
+`Tb60` は予算 0 の族なので `two Tb60 T` の兄弟に置ける。先端 `T` は
+予算 `c+1` の族（`nil` / `pay nil Y` / 平らな走り `twoIt nil nil m`）。 -/
+
+theorem WPd_twoTb60 {T : Jk1} (c : ℕ) (ks : List ℕ) (hT : WPd ((c + 1) :: ks) T) :
+    WPd (0 :: ks) (Jk1.two Tb60 T) :=
+  WPd_twoOf (k := c) JkA_Tb60
+    (fun q _ => by
+      have h := WPd_Tb60u (q ++ ks)
+      simpa using h)
+    hT
+
+theorem jk1_oneTwoTb60 (l : ℕ) (T : Jk1) :
+    jk1 l (Jk1.one Jk1.nil (Jk1.two Tb60 T))
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 0, 0) : ℕ × ℕ × ℕ),
+          ((l + 2, 2, 0) : ℕ × ℕ × ℕ)] ++ jk1 (l + 2) T := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Tb60 ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1 + 1) T))) = _
+  rw [jk1_Tb60 (l + 1), show l + 1 + 1 = l + 2 from by omega,
+    show l + 1 + 2 = l + 3 from by omega, show l + 1 + 3 = l + 4 from by omega]
+  simp [jk1]
+
+theorem R600_42_gen {T : Jk1} (c : ℕ) (hT : ∀ ks : List ℕ, WPd ((c + 1) :: ks) T) :
+    R600 ++ (((4, 2, 0) : ℕ × ℕ × ℕ) :: jk1 4 T) ∈ W 0 := by
+  have hGok : GOK (Jk1.one Jk1.nil (Jk1.two Tb60 T)) :=
+    (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+      ((WPd_bnil _).mpr GOK_nil) (WPd_twoTb60 c [] (hT [])))
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Tb60 T)]) := by
+    simpa using hGok [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ, jk1_oneTwoTb60 2 T] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ `R600 (4,2,0)(5,2,0)^m`（どの `m` でも）。 -/
+theorem R600_42_run_mem (m : ℕ) :
+    R600 ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+      List.replicate m ((5, 2, 0) : ℕ × ℕ × ℕ)) ∈ W 0 := by
+  have h := R600_42_gen (T := twoIt Jk1.nil Jk1.nil m) m
+    (fun ks => WPd_twoIt_nil m m (le_refl m) ks)
+  rwa [jk1_twoIt_nil m 4] at h
+
+/-- ★★★★★★ `R600 (4,2,0)(5,0,0)`。 -/
+theorem R600_42_50_mem :
+    R600 ++ [((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := R600_42_gen (T := Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]) 0
+    (fun ks => WPd_payA ((0 + 1) :: ks) Jk1.nil (trivial : FrmN ((0 + 1) :: ks) Jk1.nil)
+      (WPd_nilAll _) _ Bok_zero)
+  simpa [jk1, shiftr01] using h
+
+#print axioms R600_42_run_mem
+#print axioms R600_42_50_mem
+
 end Small
 end TRIO
