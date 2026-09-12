@@ -24,6 +24,15 @@
       TwoStepP_of_ChBase : ChBase → TwoStepP                  ★緑
       R375m61_of_ChBase  : ChBase → R375m ++ [(6,1,0)] ∈ W 0  ★緑
 
+  さらに先端 `Z` を一般化すると（追記350）**荷の場合が木の構造帰納から消える**:
+
+      ChBaseG Z := ∀W, JkA W → TwoOk W → TwoOk (two W Z)     （`ChBase` は Z = nil）
+      ChBaseG_pay : ChBaseG Z → Bok Y → ChBaseG (pay Z Y)     ★緑
+      TwoTwo_of (ChBase) (ChBaseOne) (ChBaseTwo) : TwoTwo     ★緑
+      R376_of_TwoTwo : TwoTwo → 行376                         ★緑
+
+  **残るのは荷の無い 3 文 `ChBase` / `ChBaseOne` / `ChBaseTwo` だけ。**
+
   `TwoOk_pay`（荷の W 帰納）を 1 段上げたもの。鍵は
   `plug (ctx ++ [ftwo N]) T = plug ctx (two N T)` で**文脈を 1 段伸ばして**
   `GoodFb_snoc_dupJt0` / `GoodFb_snoc_innerJt0` をそのまま使うこと。
@@ -172,7 +181,8 @@ DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を
 
 | 定理 | 仮定 | 形 |
 |---|---|---|
-| `R376_of_FoneB` | `∀ws, GOK (plug (BCtx ws) (one nil nil))` | **裸の 1 の記録を 1 個足す（荷すら要らない、最弱）** |
+| `R376_of_TwoTwo` | `∀Z, JkA Z → ∀W, TwoOk W → TwoOk (two W Z)` | **荷の無い 3 文（`ChBase` / `ChBaseOne` / `ChBaseTwo`）に分かれる。2026-09-13 に緑** |
+| `R376_of_FoneB` | `∀ws, GOK (plug (BCtx ws) (one nil nil))` | 裸の 1 の記録を 1 個足す（荷すら要らない） |
 | `R376_of_StkG` | `∀n, GoodFb (wordJ · · [one nil (stk n)])` | 単字の語 1 本 |
 | `R376_of_StkL` | `∀n, GOK (one nil (stk n))` | 字 |
 | `R376_of_BdAll` | `∀j m, GOK (bdA (replicate m j))` | ブロック列の字 |

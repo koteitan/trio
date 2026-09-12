@@ -23863,3 +23863,36 @@ junk の字を大きくするのも損（`b709_jT6 < b711_jnil`）。
 **段は上に無限に作れるが、底が `APd` で走りを許さない。**行376 には段が
 無制限に要る（`bdA (replicate m 2)` は 2 の記録 `m` 本）ので、底を 1 段
 緩めない限り届かない。
+
+## 追記350 (2026-09-13): ★ 行376 が `TwoTwo`（荷の無い 3 文）に落ちた
+
+追記347 の `TwoOk_twoPay` を先端 `Z` について一般化したら、荷の場合が
+**木の構造帰納から消えた**。
+
+    ChBaseG Z := ∀ W, JkA W → TwoOk W → TwoOk (two W Z)      （`ChBase` は Z = nil）
+    ChBaseG_pay : JkA Z → ChBaseG Z → Bok Y → ChBaseG (pay Z Y)    ★緑
+
+    TwoTwo := ∀ Z, JkA Z → ChBaseG Z
+    TwoTwo_of (hCB : ChBase) (h1 : ChBaseOne) (h2 : ChBaseTwo) : TwoTwo   ★緑
+      ChBaseOne := ∀ Z1 Z2, … → ChBaseG Z1 → ChBaseG Z2 → ChBaseG (one Z1 Z2)
+      ChBaseTwo := ∀ Z1 Z2, … → ChBaseG Z1 → ChBaseG Z2 → ChBaseG (two Z1 Z2)
+
+    TwoStep_of_TwoTwo : TwoTwo → TwoStep       （W = nil、`TwoOk_nil` は緑）
+    R376_of_TwoTwo    : TwoTwo → 行376 ∈ W 0   ★緑
+
+**`ChBase` 単体では `R375m (6,1,0)` までだったが、`TwoTwo` なら行376 まで届く。**
+`TwoStep → TwoOk_stk → GOK_oneStk = StkL → R376_of_StkL` の道。
+
+### 残っているのは荷の無い 3 文だけ
+
+    ChBase    : ChBaseG nil        （`two W nil`）
+    ChBaseOne : ChBaseG (one Z1 Z2)
+    ChBaseTwo : ChBaseG (two Z1 Z2)
+
+`pay` は消えた。`TwoOk_twoWlNil`（緑）は `ChBase` を兄弟が `TopOk` のときだけ出す。
+
+### 一般化の中身
+
+`TwoOk_twoPayG {Z} (hJZ) (hbase : ChBaseG Z)` は追記347 の証明の
+`pay nil Y` を `pay Z Y` に置き換えただけ。`GoodFb_snoc_dupJt0` は `Z` が
+一般なのでそのまま通る。鎖は `twoIt X (pay Z Y') n`。
