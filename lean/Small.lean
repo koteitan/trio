@@ -13262,6 +13262,48 @@ theorem WVd_nilBlk (S : Scale Bud) {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) :
 
 end BudV5
 
+/-! ### ★ `R375m (6,1,0)` の上の平らな積み上げ。極限は `R375m (6,1,0)(2,0,0)`
+
+`R375m (6,1,0)(2,0,0)[n] = R338 ++ (U375a ++ (6,1,0))^(n+1)`（平坦）。
+一歩は台座一般の `A375m61_gen`、極限は `flat_of_chain`。 -/
+
+def U375a61 : TrioSeq := U375a ++ [((6, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375a61 : MidD 2 U375a61 where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375a61, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375a61, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375a61, U375a, List.append_assoc, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem U375a61_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375a61 ∈ W 0 := by
+  simpa [U375a61, List.append_assoc] using A375m61_gen hA
+
+theorem Aok_append_U375a61 {A : TrioSeq} (hA : Aok A) : Aok (A ++ U375a61) :=
+  Aok_append_Mid (d := 2) (by omega) hA MidD_U375a61 (U375a61_mem_gen hA)
+
+/-- ★★★★★★★★★★★★★★★★★★★ 行 `R375m (6,1,0)(2,0,0)`。 -/
+theorem R375m61_20_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_of_chain (Y0 := R338) (M := U375a61) (d := 2) (by omega) MidD_U375a61
+    Aok_R338 (fun n hA => U375a61_mem_gen hA)
+  simpa [U375a61, U375a, R375m, R373, R344, R341, List.append_assoc] using h
+
+#print axioms R375m61_20_mem
+
 
 end Small
 end TRIO
