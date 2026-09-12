@@ -24324,3 +24324,39 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
 拾えたもの（`Aok` からの継ぎ足し、シート証明済みを 2 行更新）:
 - `Aok_R600510 : Aok (R600 ++ [(5,1,0)])`
 - `R600510_110_mem` / `R600510_1122_mem`
+
+## 追記365: 3 つの層とも「一般の兄弟 × 幅 3 以上の走り」で止まる（測った）
+
+`APd` / `NPd` / `WPd` の定義を並べて確かめた。
+
+**兄弟の側条件**（定義が供給するもの）:
+
+    APd (false::ks) : ∀j, APd (replicate j true ++ (true :: (replicate m true ++ ks))) N
+    NPd (false::ks) : 同上
+    WPd ((k+1)::ks) : ∀q(入り目 ≤ k), WPd ((0::q) ++ ks) N
+
+**エンジンが要求するもの**:
+
+    APd_twoTwoGen        : ∀ j kk, APd (replicate j true ++ (true::kk)) N   （kk は任意）
+    NPd_true_twoTwoB_lift: ∀ kk, NPd (true::kk) A                            （kk は任意）
+    WPd_twoOf (k := m)   : ∀q(入り目 ≤ m), WPd ((0::q) ++ ks) N
+
+`TwoOk Z` の定義は APd の強い方（任意の kk）を持ち回るので `APd_twoTwoGen` が
+使える。だから**幅 2 の走りは一般の兄弟で緑**（`TwoOk_twoNil`）。
+
+幅 3 以上（`twoIt nil nil w`, `w ≥ 2`）にすると、エンジン
+`GOK_twoTwoNilW_gen` の階段 `nstN2 N Wl k` の底が `Wl`（＝ two）になり、
+`APd (false::ks) Wl` が `Rq (false::ks) U = TopOk U` で落ちる。
+`Wl = nil` のときだけ通る（`APd_nstN`）。
+
+`WPd` は `Wl = nil` でなくても通る道（`WPd_twoIt_nil`）を持つが、
+そのかわり兄弟が予算で有界になる。
+
+**まとめ**: 空いている 1 マスは
+
+    一般の兄弟 N × 幅 3 以上の平らな走り（または荷つきの走り）
+
+で、これは `ChBase`（= `∀X, JkA X → TwoOk X → TwoOk (two X nil)`）とも
+`WPd ((k+1)::ks) M0t` とも同じもの。次に作るなら
+`snocN_of_tower` の m 本版（`(X ++ unN N D) ++ (D+2,2,0)^m`）＋
+それに合う階段。
