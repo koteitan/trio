@@ -10134,6 +10134,47 @@ theorem R375m62_of_Tw3 (h : Tw3) : R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] �
 
 #print axioms R375m62_of_Tw3
 
+/-! ### ★★★★★★★★★★ 壁を `Pc`（水平鎖を予算つきで置く）1 本に落とす
+
+`ZApp2c` の結論は `GOK`（予算なし）なので、`WPd_twoOf (k := b)` の `b` は
+鎖ごとに選べる。だから「鎖 `N` をある予算 `b+1` で置ける」だけで足りる。
+平らな鎖は `WPd_twoIt_nil m m (le_refl m)` で緑（`b = m` = 鎖の長さ）。 -/
+
+def Pc : Prop := ∀ N : Jk1, VCh Jk1.nil N → ∃ b : ℕ, ∀ ks : List ℕ,
+  WPd ((b + 1) :: ks) N
+
+/-- ★★★★★★★★★★ `Pc` から `ZApp2c`（壁の最小形）が出る。 -/
+theorem ZApp2c_of_Pc (h : Pc) : ZApp2c := by
+  intro N hN
+  obtain ⟨b, hb⟩ := h N hN
+  have hJN : JkA N := JkA_of_VCh (V := Jk1.nil) trivial hN
+  have h1 : WPd ((b + 1 + 1) :: ([] : List ℕ)) (Jk1.two N Jk1.nil) :=
+    WPd_twoA_runB (k := b + 1) (b := b) (by omega) hJN hb ([] : List ℕ)
+  have h2 : WPd (0 :: ([] : List ℕ)) (Jk1.two Jk1.nil (Jk1.two N Jk1.nil)) :=
+    WPd_twoOf (k := b + 1) trivial (fun q _ => WPd_nilAll _) h1
+  have h3 : WPd ([] : List ℕ)
+      (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two N Jk1.nil))) :=
+    WPd_step ([] : List ℕ) (JkT_nil : FrmN ([] : List ℕ) Jk1.nil)
+      ((WPd_bnil _).mpr GOK_nil) h2
+  exact (WPd_bnil _).mp h3
+
+/-- ★★★★★★★★★★ 行 `R375m (6,1,0)`（いまのシートの頭より大きい）は `Pc` 1 本。 -/
+theorem R375m61_of_Pc (h : Pc) : R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_ZApp2c (ZApp2c_of_Pc h)
+
+/-- `Pc` の底: 鎖が空。 -/
+theorem Pc_nil : ∃ b : ℕ, ∀ ks : List ℕ, WPd ((b + 1) :: ks) Jk1.nil :=
+  ⟨0, fun ks => WPd_nilAll _⟩
+
+/-- `Pc` の底: 荷が空の鎖。予算は鎖の長さ。 -/
+theorem Pc_twoItNil (m : ℕ) : ∀ ks : List ℕ,
+    WPd ((m + 1) :: ks) (twoIt Jk1.nil Jk1.nil m) :=
+  fun ks => WPd_twoIt_nil m m (le_refl m) ks
+
+#print axioms ZApp2c_of_Pc
+#print axioms R375m61_of_Pc
+#print axioms Pc_twoItNil
+
 
 end Small
 end TRIO
