@@ -1311,5 +1311,82 @@ theorem WPdT_congr : ∀ (ks : List (WithTop ℕ)) {V1 V2 : Jk1},
 #print axioms WPdT_iff
 #print axioms WPdT_congr
 
+theorem FrmNT_JkA : ∀ (ks : List (WithTop ℕ)) (U : Jk1), FrmNT ks U → JkA U
+  | [], _, h => h.1
+  | (_ :: _), _, h => h
+
+theorem FrmNT_nilA : ∀ ks : List (WithTop ℕ), FrmNT ks Jk1.nil
+  | [] => JkT_nil
+  | (_ :: _) => trivial
+
+theorem FrmNT_one (ks : List (WithTop ℕ)) (U X : Jk1) (hU : FrmNT ks U) (hX : JkA X) :
+    FrmNT ks (Jk1.one U X) := by
+  cases ks with
+  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
+  | cons b bs => exact ⟨hU, hX⟩
+
+theorem WCtxU_split (ks : List (WithTop ℕ)) (ctx : List Frm)
+    (h : WCtxU ((⊥ : WithTop ℕ) :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WCtxU ks ctx0 ∧
+      FrmNT ks V ∧ GOK (plug ctx0 V) := by
+  rw [WCtxU_c0] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (WPdT_iff ks U).mp hUk ctx' hc'⟩
+
+theorem WCtxU_JkT : ∀ (ks : List (WithTop ℕ)) (ctx : List Frm), WCtxU ks ctx →
+    ∀ X : Jk1, FrmNT ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WCtxU_bnil] at h
+      subst h
+      exact hX
+  | (b :: ks), ctx, h, X, hX => by
+      by_cases hb : b = ⊥
+      · subst hb
+        rw [WCtxU_c0] at h
+        obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+        rw [plug_snoc]
+        exact WCtxU_JkT ks ctx' hc' (Jk1.one U X) (FrmNT_one ks U X hU hX)
+      · rw [WCtxU_cb hb] at h
+        obtain ⟨r, hr, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩ := h
+        rw [plug_snoc12]
+        exact WCtxU_JkT (r ++ ks) ctx' hc' (Jk1.one U (Jk1.two N X))
+          (FrmNT_one (r ++ ks) U _ hU ⟨hJN, hX⟩)
+termination_by ks _ => ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+
+theorem WPdT_two_of_ctx {kk : List (WithTop ℕ)} {U N V : Jk1}
+    (hU : FrmNT kk U) (hUk : WPdT kk U)
+    (h : ∀ ctx : List Frm, WCtxU ((⊥ : WithTop ℕ) :: kk) ctx →
+      GOK (plug ctx (Jk1.two N V))) :
+    WPdT kk (Jk1.one U (Jk1.two N V)) := by
+  rw [WPdT_iff]
+  intro ctx0 hc0
+  rw [← plug_snoc]
+  exact h (ctx0 ++ [Frm.fone U]) ((WCtxU_c0 kk _).mpr ⟨ctx0, U, rfl, hc0, hU, hUk⟩)
+
+theorem WPdT_payE (V : Jk1) (hV : JkT V) (hVk : WPdT [] V) (C : TrioSeq) (hC : Bok C) :
+    WPdT [] (Jk1.pay V C) :=
+  (WPdT_bnil _).mpr (AY0 C hC V hV ((WPdT_bnil V).mp hVk))
+
+theorem WPdT_ck_shift {b : WithTop ℕ} (hb : b ≠ ⊥) {ks : List (WithTop ℕ)} {T : Jk1}
+    (h : WPdT (b :: ks) T) (a : List (WithTop ℕ)) (ha : ∀ x ∈ a, x < b) :
+    WPdT (b :: (a ++ ks)) T := by
+  rw [WPdT_cb hb]
+  intro r hr U N hU hUk hJN hNt
+  have e : r ++ (a ++ ks) = (r ++ a) ++ ks := (List.append_assoc r a ks).symm
+  rw [e] at hU hUk hNt ⊢
+  refine (WPdT_cb hb ks T).mp h (r ++ a) ?_ U N hU hUk hJN hNt
+  intro x hx
+  rcases List.mem_append.mp hx with h1 | h1
+  · exact hr x h1
+  · exact ha x h1
+
+#print axioms WCtxU_JkT
+#print axioms WPdT_ck_shift
+
 end Small
 end TRIO
