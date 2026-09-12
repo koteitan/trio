@@ -25768,3 +25768,56 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
 継ぎ足し補題（アンカーの行 1 が 3 以上、あるいは行 1 が同じときの規則）が要る。
 z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上限。
 **`snocYd_mem` の枠組みでは原理的に無理**で、別の展開の見方が要る。
+
+## 追記406: ★ `ChBase`（`two N (two W nil)`）の塔を語で分解した。階段の単位は `one W ·`
+
+`GOK_stkW_gen` は先端が `two nil nil` に限るが、**内側の兄弟 `W` を一般にした版は
+`snocYd_mem` の仮定を全部満たす**。計算:
+
+    plug (ctx0 ++ [fone V]) (two N (two W nil)) の語
+      = Y0 ++ [ (D,1,0) ] ++ jk1 D N ++ [(D+1,2,0)] ++ jk1 (D+1) W ++ [(D+2,2,0)]
+      = Y0 ++ M ++ [(D+2,2,0)],   M = (D,1,0) :: jk1 D (two N W)
+
+`snocYd_mem` を `L = D`, `y = 2`, `dl = 2`, `M` で使う:
+
+- `hMhead`: `entry M 0 0 = D` ✓
+- `hMtail`: `M` の頭以外の列は行 0 が `D+1` 以上 ✓（`jk1 (D+1) W` は `D+2` 以上）
+- `hMe`: `entry M 1 0 = 1 < 2` ✓
+- `hMy`: 行 0 が `D+2` 未満なのは行 0 = `D+1` の列だけ。そのうち「右に自分より
+  行 0 が大きい列しか無い」のは**明示の `(D+1,2,0)` だけ**（`jk1 D N` の
+  行 0 = `D+1` の列はその後ろに `(D+1,2,0)` が来るので条件を満たさない）。
+  行 1 = 2 ≥ 2 ✓
+
+**`W` に依らず成立する。** つまり `GOK_stkW_gen` の `W` 一般版が作れる。
+
+### 階段（塔の `k` 個の写し）を木で書くと
+
+    T 1     = two N W
+    T (k+1) = two N (one W (T k))
+
+（写しの歩幅は 2。`jk1 (D+1) (one W Z) = jk1 (D+1) W ++ (D+2,1,0) :: jk1 (D+2) Z` で
+次の写しの頭 `(D+2,1,0)` が出る。）
+
+**単位が `one W ·`（1 の記録、兄弟が `W`）であることが重要。** `TwoOk` は
+
+    TwoOk_one {W Z} (hJW) (hW : TwoOk W) (hZ : LOk 1 Z) : TwoOk (one W Z)   ★緑
+
+で `one` について閉じているので、階段は
+
+    T 1 : TwoOk W から直接（`two N W` は `TwoOk W` の定義そのもの）
+    T (k+1) : TwoOk (one W (T k)) ⟸ TwoOk W ∧ LOk 1 (T k)
+
+に落ちる。残るのは **`LOk 1 (T k)`**（深さ 1 で `T k` が差せる）。
+
+`LOk 1 X` は形で言うと `APd (true::false::ks) X` に対応する
+（`StkOk 0 D = GCtx ++ [ftwo N]`、`StkOk 1 D = StkOk 0 ++ [fone U]`）。
+
+### 次にやること
+
+1. `GOK_twoNWnil_gen`（`GOK_stkW_gen` の `W` 一般版）を書く。
+   要る補題: `unQW N W D := (D,1,0) :: jk1 D (two N W)`、`MidD_unQW`、`hMy_unQW`、
+   `shift_unQW`、`nstW`、`jk1_nstW`、`Mtwd_unQW`、`wordJ_snoc_twoNW*`。
+   `GOK_stkW_gen`（57529〜57625）をそのまま写す。約250〜350行。
+2. 階段 `∀ k, APd (true::ks) (T k)` を `TwoOk_one` で回す。残るのは `LOk 1 (T k)`。
+3. `LOk 1 (T k)` は `LOk_one`（`one` について閉じる、緑）で `LOk 1 (two N Z)` に落ちる。
+   深さ 1 の 2 の記録（荷が一般）が最後に残る。`ChBase_ge1` は荷が `nil` の版。
