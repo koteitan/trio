@@ -13799,6 +13799,72 @@ theorem R375m61_2031_mem :
 
 #print axioms R375m61_2031_mem
 
+/-! ### 単位の上に `(2,0,0)(3,1,0)` を足す一歩と、その平らな積み上げ -/
+
+def X2031 : TrioSeq := [((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem X2031_col : ∀ c ∈ X2031, 2 ≤ c.1 := by
+  intro c hc; simp only [X2031, List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl <;> simp
+
+theorem X2031_mono : Mono X2031 := by
+  intro c hc; simp only [X2031, List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl <;> simp
+
+/-- 台座一般の一歩: 単位 `V` の上に `(2,0,0)(3,1,0)`（対角の極限）。 -/
+theorem GS_X2031 {V : TrioSeq} (hV : MidD 2 V) (hVs : ∀ A : TrioSeq, Aok A → A ++ V ∈ W 0) :
+    ∀ A : TrioSeq, Aok A → A ++ V ++ X2031 ∈ W 0 := by
+  intro A hA
+  have h := snocYd_mem0 (Y0 := A ++ V) (M := [((2, 0, 0) : ℕ × ℕ × ℕ)]) (L := 2) (y := 1)
+    (dl := 1) (by simp [List.append_eq_nil_iff, hA.ne]) (by simp) (by simp [entry])
+    (by intro j hj1 hj2; simp at hj2; omega) (by simp [entry])
+    (by intro t ht1 ht2; simp at ht2; omega) le_rfl le_rfl
+    (fun n => by
+      rw [Mtwd_20, List.append_assoc, ← bumpU_Chain]
+      exact (Aok_bumpU hV hVs (Chain n) (Flat_mem_W (Chain_flat n)) (Chain_flat n)
+        (Chain_root n) (StepOk_Chain n) A hA).mem)
+  simpa [X2031, List.append_assoc] using h
+
+theorem MidD_U61_X (n : ℕ) :
+    MidD 2 (U375a61 ++ (List.range n).flatMap (fun _ => X2031)) :=
+  MidD_append MidD_U375a61
+    (by intro c hc; obtain ⟨_, _, hc'⟩ := List.mem_flatMap.mp hc; exact X2031_col c hc')
+    (by intro c hc; obtain ⟨_, _, hc'⟩ := List.mem_flatMap.mp hc; exact X2031_mono c hc')
+
+theorem GS_U61_X : ∀ (n : ℕ) (A : TrioSeq), Aok A →
+    A ++ (U375a61 ++ (List.range n).flatMap (fun _ => X2031)) ∈ W 0
+  | 0, A, hA => by simpa using U375a61_mem_gen hA
+  | (n + 1), A, hA => by
+      have h := GS_X2031 (MidD_U61_X n) (GS_U61_X n) A hA
+      rw [List.range_succ, List.flatMap_append]
+      simpa [List.append_assoc] using h
+
+/-- ★ 行 `R375m (6,1,0)(2,0,0)(3,1,0)(2,0,0)`。 -/
+theorem R375m61_203120_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+      ((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hM : MidD 2 (U375a61 ++ X2031) := by simpa [List.range_succ] using MidD_U61_X 1
+  have h := flat_of_chain (Y0 := R338) (M := U375a61 ++ X2031) (d := 2) (by omega) hM
+    Aok_R338 (fun n hA => by simpa [List.range_succ] using GS_U61_X 1 _ hA)
+  simpa [X2031, U375a61, U375a, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+/-- ★★ 行 `R375m (6,1,0)(2,0,0)(3,1,0)(3,0,0)`（`(2,0,0)(3,1,0)` の平らな積み上げの極限）。 -/
+theorem R375m61_203130_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ),
+      ((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := R338 ++ U375a61) (M := X2031) (d := 3) (by simp [X2031])
+    (by simp [X2031, entry])
+    (by
+      intro r hr1 hr2
+      simp only [X2031, List.length_cons, List.length_nil] at hr2
+      obtain rfl : r = 1 := by omega
+      simp [X2031, entry])
+    (fun n => by simpa [List.append_assoc] using GS_U61_X n R338 Aok_R338)
+  simpa [X2031, U375a61, U375a, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms R375m61_203120_mem
+#print axioms R375m61_203130_mem
+
 
 end Small
 end TRIO
