@@ -14025,6 +14025,289 @@ theorem R375m61_diag2_mem :
 #print axioms Aok_shift2U
 #print axioms R375m61_diag2_mem
 
+/-! ### ★★★ 汎用: 行 2 も許す版 `Aok_shift3U`（`bump_mem3` の単位版）と行 `B (2,1,0)`
+
+`Aok_shift2U` の `Z2` を `Mono` に弱めた。親の存在は `hasParent_of_ZrootMono`、
+展開後の保存は `ZM_oper`。`B = R338 ++ U375a61 = R375m (6,1,0)` とおくと
+`B (2,1,0)[n]` は `B ++ B↑2 ++ … ++ B↑2n` で、`B ++ (C↑2)` の形を繰り返すだけで出る。 -/
+
+theorem Aok_shift3U {U : TrioSeq} (hMid : MidD 2 U)
+    (hU : ∀ A : TrioSeq, Aok A → A ++ U ∈ W 0) :
+    ∀ C ∈ W 0, Zroot C → Mono C → entry C 0 0 = 0 →
+      ∀ A : TrioSeq, Aok A → Aok (A ++ U ++ shiftr01 2 0 C) := by
+  have hUc : ∀ c ∈ U, 1 ≤ c.1 := hMid.col
+  have hUm : Mono U := hMid.mono
+  have hsh2c : ∀ (C : TrioSeq), ∀ c ∈ shiftr01 2 0 C, 2 ≤ c.1 := by
+    intro C c hc
+    simp only [shiftr01, List.mem_map] at hc
+    obtain ⟨x, -, rfl⟩ := hc; simp
+  have hsh2m : ∀ (C : TrioSeq), Mono C → Mono (shiftr01 2 0 C) := by
+    intro C hm c hc
+    simp only [shiftr01, List.mem_map] at hc
+    obtain ⟨x, hx, rfl⟩ := hc; simpa using hm x hx
+  have hcol : ∀ C : TrioSeq, ∀ c ∈ U ++ shiftr01 2 0 C, 1 ≤ c.1 := by
+    intro C c hc
+    rcases List.mem_append.mp hc with h1 | h1
+    · exact hUc c h1
+    · have := hsh2c C c h1; omega
+  have hmono : ∀ C : TrioSeq, Mono C → Mono (U ++ shiftr01 2 0 C) := by
+    intro C hm c hc
+    rcases List.mem_append.mp hc with h1 | h1
+    · exact hUm c h1
+    · exact hsh2m C hm c h1
+  have key : W 0 ⊆ {C : TrioSeq | Zroot C → Mono C → entry C 0 0 = 0 →
+      ∀ A : TrioSeq, Aok A → Aok (A ++ U ++ shiftr01 2 0 C)} := by
+    refine A2' ?_
+    intro C hC
+    simp only [Set.mem_setOf_eq]
+    intro hzr hmo hroot A hA
+    have hfin : A ++ U ++ shiftr01 2 0 C ∈ W 0 → Aok (A ++ U ++ shiftr01 2 0 C) := by
+      intro h
+      rw [List.append_assoc] at h ⊢
+      exact Aok_of_mem_col hA (hcol C) (hmono C hmo) h
+    have hflat2 : ∀ C' : TrioSeq, Mono C' →
+        (∀ A' : TrioSeq, Aok A' → Aok (A' ++ U ++ shiftr01 2 0 C')) →
+        A ++ U ++ shiftr01 2 0 C' ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+      intro C' hm' hIH'
+      have hM : MidD 2 (U ++ shiftr01 2 0 C') :=
+        MidD_append hMid (hsh2c C') (hsh2m C' hm')
+      have h := flat_of_chain (Y0 := A) (M := U ++ shiftr01 2 0 C') (d := 2) (by omega) hM hA
+        (fun n hA' => by simpa [List.append_assoc] using (hIH' _ hA').mem)
+      simpa [List.append_assoc] using h
+    by_cases hshort : C.length ≤ 1
+    · rcases (by omega : C.length = 0 ∨ C.length = 1) with h0 | h1
+      · have hnil : C = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        apply hfin
+        simpa [shiftr01] using hU A hA
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := by simpa [entry] using hroot
+        obtain ⟨hc1, hc2⟩ := hzr c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        apply hfin
+        have hIH0 : ∀ A' : TrioSeq, Aok A' → Aok (A' ++ U ++ shiftr01 2 0 ([] : TrioSeq)) := by
+          intro A' hA'
+          have h0 := Aok_append_Mid (d := 2) (by omega) hA' hMid (hU A' hA')
+          simpa [shiftr01] using h0
+        have h := hflat2 [] (by intro x hx; simp at hx) hIH0
+        simpa [shiftr01] using h
+    have hlen2 : 2 ≤ C.length := by omega
+    have hCne : C ≠ [] := by intro hc; rw [hc] at hlen2; simp at hlen2
+    rcases hC with ⟨hl, -⟩ | hnat | ⟨m, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry C 0 (C.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hzr hlast
+        have hz : entry C 0 (C.length - 1) = 0 ∧ entry C 1 (C.length - 1) = 0 ∧
+            entry C 2 (C.length - 1) = 0 := ⟨hlast, he1, he2⟩
+        have hcol0 : C.getD (C.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : C.getLast hCne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : C.getLast hCne = C.getD (C.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show C.length - 1 < C.length by omega)]
+            rfl
+          rw [h1, hcol0]
+        have hsplit : C = C.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]
+          exact (List.dropLast_append_getLast hCne).symm
+        have hop : C⟦1⟧ = C.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) hz]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdl0 : entry C.dropLast 0 0 = 0 := by
+          rw [List.dropLast_eq_take,
+            Wset.entry_take (show (0 : ℕ) < C.length - 1 by omega)]
+          exact hroot
+        have hmo' : Mono C.dropLast := fun c hc => hmo c (List.dropLast_subset _ hc)
+        have hIH' : ∀ A' : TrioSeq, Aok A' → Aok (A' ++ U ++ shiftr01 2 0 C.dropLast) :=
+          fun A' hA' => hdl (fun c hc => hzr c (List.dropLast_subset _ hc)) hmo' hdl0 A' hA'
+        apply hfin
+        have hbs : shiftr01 2 0 C = shiftr01 2 0 C.dropLast ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] := by
+          conv_lhs => rw [hsplit]
+          simp [shiftr01]
+        rw [hbs, ← List.append_assoc]
+        exact hflat2 C.dropLast hmo' hIH'
+      · have hnz : ¬ (entry C 0 (C.length - 1) = 0 ∧ entry C 1 (C.length - 1) = 0 ∧
+            entry C 2 (C.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hzr hmo hroot hlen2 hnz
+        apply hfin
+        refine A1_intro (Or.inr (Or.inl ?_))
+        intro n hn
+        have hlenT : (shiftr01 2 0 C).length = C.length := by simp [shiftr01]
+        have hT2 : 2 ≤ (shiftr01 2 0 C).length := by rw [hlenT]; exact hlen2
+        have hpT : hasParent (shiftr01 2 0 C) (srow (shiftr01 2 0 C) ((shiftr01 2 0 C).length - 1))
+            ((shiftr01 2 0 C).length - 1) := by
+          rw [hlenT, Wset.srow_shiftr01, Wset.hasParent_shiftr01]; exact hp
+        rw [oper_append_right_of (A ++ U) _ n hT2 hpT, Wset.oper_shiftr01]
+        obtain ⟨hzr'', hmo''⟩ := ZM_oper hzr hmo n
+        exact (hnat n hn hzr'' hmo'' (by rw [Wset.oper_head_eq hn]; exact hroot) A hA).mem
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro C hC hzr hmo hroot A hA
+  exact key hC hzr hmo hroot A hA
+
+/-- `oper_snocYd0` の `Y0 ≠ []` を外した版（bad root が先頭の列でもよい）。 -/
+theorem oper_snocYd0_any {Y0 M : TrioSeq} {L y dl : ℕ}
+    (hMne : M ≠ []) (hMhead : entry M 0 0 + 1 = L + 1)
+    (hMtail : ∀ j, 1 ≤ j → j < M.length → L + 1 ≤ entry M 0 j) (hMe : entry M 1 0 < y)
+    (hMy : ∀ t, 1 ≤ t → t < M.length → entry M 0 t < L + dl →
+      (∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i) → y ≤ entry M 1 t)
+    (hy : 1 ≤ y) (hdl : 1 ≤ dl) (n : ℕ) :
+    ((Y0 ++ M) ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)])⟦n⟧ = Mtwd dl Y0 M n := by
+  have hMlen : 0 < M.length := List.length_pos_iff.mpr hMne
+  set Y : TrioSeq := Y0 ++ M with hY
+  set T : TrioSeq := Y ++ [((L + dl, y, 0) : ℕ × ℕ × ℕ)] with hT
+  have hYlen : Y.length = Y0.length + M.length := by rw [hY]; simp
+  have hTlen : T.length = Y.length + 1 := by rw [hT]; simp
+  have hpreY : ∀ i j, j < Y.length → entry T i j = entry Y i j :=
+    fun i j hj => entry_append_lt hj
+  have hpreM : ∀ i t, t < M.length → entry Y i (Y0.length + t) = entry M i t := by
+    intro i t _
+    rw [hY, entry_append_right]
+  have hlast := entry_append_last (P := Y) (c := ((L + dl, y, 0) : ℕ × ℕ × ℕ))
+  have hl0 : entry T 0 Y.length = L + dl := hlast.1
+  have hl1 : entry T 1 Y.length = y := hlast.2.1
+  have hl2 : entry T 2 Y.length = 0 := hlast.2.2
+  have hanchor0 : entry T 0 Y0.length = L := by
+    rw [hpreY 0 Y0.length (by omega),
+      show Y0.length = Y0.length + 0 from rfl, hpreM 0 0 hMlen]
+    have := hMhead; omega
+  have hanchor1 : entry T 1 Y0.length = entry M 1 0 := by
+    rw [hpreY 1 Y0.length (by omega),
+      show Y0.length = Y0.length + 0 from rfl, hpreM 1 0 hMlen]
+  have hdeeper : ∀ x, Y0.length < x → x < T.length → L + 1 ≤ entry T 0 x := by
+    intro x h1 h2
+    rcases Nat.lt_or_ge x Y.length with h | h
+    · obtain ⟨t, rfl⟩ : ∃ t, x = Y0.length + t := ⟨x - Y0.length, by omega⟩
+      rw [hpreY 0 _ h, hpreM 0 t (by omega)]
+      exact hMtail t (by omega) (by omega)
+    · have : x = Y.length := by omega
+      rw [this, hl0]; omega
+  have hsh : ∀ x, Y0.length < x → x < T.length → entry T 0 Y0.length < entry T 0 x := by
+    intro x h1 h2
+    have := hdeeper x h1 h2
+    rw [hanchor0]; omega
+  have hle0 : ∀ j, Y0.length ≤ j → j < T.length → le0 T Y0.length j := by
+    intro j h1 h2
+    rcases Nat.eq_or_lt_of_le h1 with rfl | h
+    · exact ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+    · exact H12Export.le0_root_of_shallow (by omega) hsh j h h2
+  have hsrow : srow T Y.length = 1 := by
+    unfold srow
+    rw [if_neg (by rw [hl2]; omega), if_pos (by rw [hl1]; omega)]
+  have hpar : hasParent T 1 Y.length :=
+    H12Export.hasParent1_of_le0_witness (by omega)
+      (hle0 Y.length (by omega) (by omega)).2.2
+      (by rw [hanchor1, hl1]; exact hMe)
+  have hnr1 : nextrel1 T Y0.length Y.length := by
+    refine ⟨by omega, by omega, by omega, by rw [hanchor1, hl1]; exact hMe,
+      hle0 Y.length (by omega) (by omega), ?_⟩
+    rintro j ⟨hj0, hjle⟩
+    rw [hl1]
+    rcases Nat.lt_or_ge j Y.length with h | h
+    · obtain ⟨t, rfl⟩ : ∃ t, j = Y0.length + t := ⟨j - Y0.length, by omega⟩
+      have hlow : entry M 0 t < L + dl := by
+        have hlt := rtg0_rec hjle.2.2 Y.length (by omega) (le_refl _)
+        rw [hl0] at hlt
+        rwa [hpreY 0 _ h, hpreM 0 t (by omega)] at hlt
+      have hrec : ∀ i, t < i → i < M.length → entry M 0 t < entry M 0 i := by
+        intro i hti hiM
+        have hlt := rtg0_rec hjle.2.2 (Y0.length + i) (by omega) (by omega)
+        rwa [hpreY 0 _ h, hpreM 0 t (by omega),
+          hpreY 0 _ (by omega), hpreM 0 i hiM] at hlt
+      rw [hpreY 1 _ h, hpreM 1 t (by omega)]
+      exact hMy t (by omega) (by omega) hlow hrec
+    · have : j = Y.length := by
+        have := H12Export.rtg0_index_le hjle.2.2
+        omega
+      rw [this, hl1]
+  have hj0 : parent T 1 Y.length = Y0.length :=
+    hpar.unique (parent_nextR hpar) hnr1
+  rw [L53.oper_unfold (j1 := Y.length) (i1 := 1) (j0 := Y0.length) (d0 := dl) (d1 := 0)
+      (by omega) (by omega) (by rintro ⟨h, -, -⟩; rw [hl0] at h; omega)
+      hsrow.symm hpar hj0.symm (by rw [if_pos (by omega), hl0, hanchor0]; omega)
+      (by simp) n, Mtwd]
+  have htk : T.take Y0.length = Y0 := by
+    rw [hT, hY, List.append_assoc]
+    exact List.take_left
+  have hrlen : Y.length - Y0.length = M.length := by omega
+  rw [htk, hrlen]
+  simp only [Nat.mul_zero, ite_self, Nat.add_zero]
+  congr 1
+  apply List.flatMap_congr
+  intro k _
+  rw [← map_range'_shift_at (T := T) (M := M) (q := Y0.length) (k := dl * k)
+    (fun i t ht => by
+      rw [hpreY i _ (by omega), hpreM i t ht])]
+  apply List.map_congr_left
+  intro j hj
+  have hjr := List.mem_range'_1.1 hj
+  rw [if_pos (hle0 j (by omega) (by omega)), Nat.mul_comm k dl]
+
+theorem Mtwd2_nil_succ (M : TrioSeq) (n : ℕ) :
+    Mtwd 2 [] M (n + 1) = M ++ shiftr01 2 0 (Mtwd 2 [] M n) := by
+  induction n with
+  | zero => simp [Mtwd]
+  | succ n ih =>
+      conv_lhs => rw [Mtwd_succ 2 [] M (n + 1), ih]
+      rw [Mtwd_succ 2 [] M n, List.append_assoc]
+      congr 1
+      have e : shiftr01 2 0 (Mtwd 2 [] M n ++ shiftr01 (2 * n) 0 M)
+          = shiftr01 2 0 (Mtwd 2 [] M n) ++ shiftr01 2 0 (shiftr01 (2 * n) 0 M) := by
+        simp [shiftr01]
+      rw [e, Wset.shiftr01_comp, show 2 + 2 * n = 2 * (n + 1) by omega]
+
+def Bm61 : TrioSeq := R338 ++ U375a61
+
+theorem Aok_Bm61 : Aok Bm61 := Aok_append_U375a61 Aok_R338
+
+/-- `B (2,1,0)` の展開の各段 `B ++ B↑2 ++ … ` はすべて `Aok`。 -/
+theorem Aok_Bm61_tw : ∀ n : ℕ, Aok (Mtwd 2 [] Bm61 (n + 1))
+  | 0 => by rw [Mtwd_one, List.nil_append]; exact Aok_Bm61
+  | (n + 1) => by
+      have ih := Aok_Bm61_tw n
+      rw [Mtwd2_nil_succ]
+      have h := Aok_shift3U MidD_U375a61 (fun A hA => U375a61_mem_gen hA) _ ih.mem ih.zroot
+        ih.mono ih.deep.1 R338 Aok_R338
+      unfold Bm61
+      rw [List.append_assoc]
+      exact h
+
+theorem Bm61_21_mem : Bm61 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hlen : Bm61.length = 9 := by decide
+  refine A1_intro (Or.inr (Or.inl ?_))
+  intro n _
+  have e := oper_snocYd0_any (Y0 := []) (M := Bm61) (L := 0) (y := 1) (dl := 2) Aok_Bm61.ne
+    (by rw [Aok_Bm61.deep.1])
+    (fun j h1 h2 => by simpa using Aok_Bm61.deep.2 j h1 h2) (by decide)
+    (by
+      intro t h1 h2 h3 h4
+      rw [hlen] at h2
+      rcases t with _ | _ | _ | _ | _ | _ | _ | _ | _ | t
+      · omega
+      · exact absurd (h4 3 (by omega) (by rw [hlen]; omega)) (by decide)
+      · exact absurd h3 (by decide)
+      · decide
+      all_goals first | omega | exact absurd h3 (by decide))
+    le_rfl (by omega) n
+  simp only [List.nil_append, Nat.zero_add] at e
+  rw [e]
+  rcases n with _ | n
+  · rw [Mtwd_zero]; exact W_nil 0
+  · exact (Aok_Bm61_tw n).mem
+
+/-- ★★★ 行 `R375m (6,1,0)(2,1,0)`。 -/
+theorem R375m61_21_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa [Bm61, U375a61, U375a, R375m, R373, R344, R341, R338, List.append_assoc]
+    using Bm61_21_mem
+
+#print axioms Aok_shift3U
+#print axioms R375m61_21_mem
+
 
 end Small
 end TRIO
