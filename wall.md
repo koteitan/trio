@@ -1,5 +1,32 @@
 # 壁
 
+## ★★★★★ いま一番先（2026-09-13）: 階段は「`two N W` の自己塔」1 本
+
+新しい語の道具（前日作った `GOK_twoNW_gen` の使い方を整理した形）:
+
+    blkNW N W (i+1) = [ftwo N, fone W] ++ blkNW N W i
+    plug D (nstW N W (k+1)) = plug (D ++ [ftwo N, fone W]) (nstW N W k)
+
+    GOK_nstW_of  : (∀ i, GOK (plug (D ++ blkNW N W i) (two N W)))
+                     → ∀ k, GOK (plug D (nstW N W k))                      ★緑
+    GOK_twoNW_self (ctx0 V) (hJN) (hJW) (hJT) (hGV)
+      (hself : ∀ i, GOK (plug ((ctx0 ++ [fone V]) ++ blkNW N W i) (two N W)))
+      : GOK (plug (ctx0 ++ [fone V]) (two N (two W nil)))                  ★緑
+
+    plug (D ++ blkNW N W i) (two N W) = plug (D ++ blkNW N W i ++ [ftwo N]) W
+
+なので要るのは **「`W` がブロック `[ftwo N, fone W]` を何個足した文脈の上でも良い」**
+（`SelfW` 型の自己塔）1 本だけ。`APd` の形を経由しないので `TopOk W` が要らない。
+
+`TopOk W` を付けてよいなら `APd` の世界で階段が回って緑:
+
+    TwoOkF W := ∀ ks, APd (false::ks) W                （`TwoOk` より強い）
+    TwoOkF_nil / TwoOkF_pay（`AYdT'`）/ TwoOkF_oneNil / TwoOk_of_TwoOkF     ★緑
+    APd_nstW / TwoOk_twoWnilF : JkA W → TopOk W → TwoOkF W → TwoOk (two W nil)  ★緑
+
+`ChBase` が要るのは 2 頭の `W`（鎖 `twoIt W (pay Z Y) m`）なので `TopOk` が落ちる。
+**そこは (b) の自己塔で行く。**
+
 ## ★★★★ 壁は `TwOk` 階層の `Fter` 1 箇所（2026-09-12 深夜）
 
 `SmallA` の `TwOk r m` 階層（`TwSt`/`TwOk`/`NTw`、33000〜33240）は閉性がほぼ全部緑:
