@@ -1760,5 +1760,78 @@ theorem WPdT_nilAll : ∀ ks : List (WithTop ℕ), WPdT ks Jk1.nil
 
 #print axioms WPdT_nilAll
 
+/-! ### `WPdT` 層の走り（`WPd_stairB` / `WPd_twoA_runB` / `WPd_twoIt_nil` の移植）
+
+予算が `WithTop ℕ` になったので、外側の予算 `c` と兄弟 `A` の予算 `a` の関係は
+`a < c` の 1 本だけ。`c = ⊤` を取れば `a` は任意の自然数でよい。 -/
+
+theorem WPdT_stairB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {N A : Jk1}
+    (hJN : JkA N) (hJA : JkA A) (hAall : ∀ ks : List (WithTop ℕ), WPdT (a :: ks) A) :
+    ∀ (n : ℕ) (B' : List (WithTop ℕ)),
+      (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < c) →
+        WPdT ((⊥ : WithTop ℕ) :: q ++ B') N) →
+      WPdT ((⊥ : WithTop ℕ) :: B') (Jk1.two N (appJ A (UtwP [N] A n)))
+  | 0, B', hsib =>
+      WPdT_twoOf ha hJN
+        (fun q hq => hsib q (fun x hx => lt_trans (hq x hx) hac))
+        (hAall B')
+  | (n + 1), B', hsib => by
+      refine WPdT_twoOf ha hJN
+        (fun q hq => hsib q (fun x hx => lt_trans (hq x hx) hac)) ?_
+      show WPdT (a :: B') (Jk1.one A (Jk1.two N (appJ A (UtwP [N] A n))))
+      refine WPdT_step (a :: B') (hJA : FrmNT (a :: B') A) (hAall B') ?_
+      refine WPdT_stairB ha hac hJN hJA hAall n (a :: B') ?_
+      intro q hq
+      have e : (⊥ : WithTop ℕ) :: q ++ (a :: B') = ((⊥ : WithTop ℕ) :: (q ++ [a])) ++ B' := by
+        simp
+      rw [e]
+      refine hsib (q ++ [a]) ?_
+      intro x hx
+      rcases List.mem_append.mp hx with h1 | h1
+      · exact hq x h1
+      · simp only [List.mem_singleton] at h1
+        subst h1
+        exact hac
+
+theorem WPdT_twoA_runB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {A : Jk1}
+    (hJA : JkA A) (hAall : ∀ ks : List (WithTop ℕ), WPdT (a :: ks) A)
+    (ks : List (WithTop ℕ)) :
+    WPdT (c :: ks) (Jk1.two A Jk1.nil) := by
+  have hcb : c ≠ ⊥ := ne_bot_of_gt hac
+  refine (WPdT_cb hcb ks _).mpr (fun r hr U N hU hUk hJN hNt => ?_)
+  refine (WPdT_c0 (r ++ ks) _).mp ?_ U hU hUk
+  rw [WPdT_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtxU_split (r ++ ks) ctx hc
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (Jk1.two A Jk1.nil))) :=
+    WCtxU_JkT ((⊥ : WithTop ℕ) :: (r ++ ks)) _ hc (Jk1.two N (Jk1.two A Jk1.nil))
+      (⟨hJN, hJA, trivial⟩ :
+        FrmNT ((⊥ : WithTop ℕ) :: (r ++ ks)) (Jk1.two N (Jk1.two A Jk1.nil)))
+  have erun : Jk1.two N (Jk1.two A Jk1.nil) = RunS ([N] ++ [A]) := rfl
+  rw [plug_snoc] at hJT ⊢
+  rw [erun] at hJT ⊢
+  refine GOK_oneUV_RunSB ctx0 [N] A V (by simpa using hJN) hJA hJT hGV ?_
+  intro n
+  cases n with
+  | zero =>
+      show GOK (plug ctx0 V)
+      exact hGV
+  | succ n =>
+      show GOK (plug ctx0 (Jk1.one V (Jk1.two N (appJ A (UtwP [N] A n)))))
+      rw [← plug_snoc]
+      exact (WPdT_iff ((⊥ : WithTop ℕ) :: (r ++ ks)) _).mp
+        (WPdT_stairB ha hac hJN hJA hAall n (r ++ ks) hNt) _ hc
+
+/-- 平らな走り `twoIt nil nil m` は、予算 `c > ↑m` のどの形にも差せる。 -/
+theorem WPdT_twoIt_nil : ∀ (m : ℕ) (c : WithTop ℕ), ((m : ℕ) : WithTop ℕ) < c →
+    ∀ ks : List (WithTop ℕ), WPdT (c :: ks) (twoIt Jk1.nil Jk1.nil m)
+  | 0, c, hc, ks => WPdT_nilF (ne_bot_of_gt (lt_of_le_of_lt bot_le hc)) ks
+  | (m + 1), c, hc, ks =>
+      WPdT_twoA_runB (a := ((m + 1 : ℕ) : WithTop ℕ)) (by simp) hc
+        (JkA_twoIt_nil m)
+        (fun ks' => WPdT_twoIt_nil m ((m + 1 : ℕ) : WithTop ℕ) (by simp) ks') ks
+
+#print axioms WPdT_twoIt_nil
+
 end Small
 end TRIO
