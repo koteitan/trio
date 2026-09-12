@@ -13344,6 +13344,49 @@ theorem Aok_R375m61_20 :
 
 #print axioms Aok_R375m61_20
 
+/-! ### `R375m (6,1,0)(2,0,0)` の上: `(2,0,0)` の平らな積み上げと極限 `(3,0,0)` -/
+
+theorem MidD_U375a61_rep20 (k : ℕ) :
+    MidD 2 (U375a61 ++ List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ)) :=
+  MidD_append MidD_U375a61
+    (by intro c hc; rw [List.eq_of_mem_replicate hc])
+    (by intro c hc; rw [List.eq_of_mem_replicate hc])
+
+/-- 台座一般: `A ++ U375a ++ (6,1,0) ++ (2,0,0)^k` は `Aok`。 -/
+theorem Aok_U375a61_rep20 : ∀ (k : ℕ) {A : TrioSeq}, Aok A →
+    Aok (A ++ (U375a61 ++ List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ)))
+  | 0, A, hA => by simpa using Aok_append_U375a61 hA
+  | (k + 1), A, hA => by
+      have hmem : A ++ (U375a61 ++ List.replicate (k + 1) ((2, 0, 0) : ℕ × ℕ × ℕ)) ∈ W 0 := by
+        have h := flat_of_chain (Y0 := A)
+          (M := U375a61 ++ List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ)) (d := 2) (by omega)
+          (MidD_U375a61_rep20 k) hA (fun n hA' => (Aok_U375a61_rep20 k hA').mem)
+        simpa [List.replicate_succ', List.append_assoc] using h
+      exact Aok_append_Mid (d := 2) (by omega) hA (MidD_U375a61_rep20 (k + 1)) hmem
+
+/-- ★ 行 `R375m (6,1,0)(2,0,0)(2,0,0)`。 -/
+theorem R375m61_2020_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  have h := (Aok_U375a61_rep20 2 Aok_R338).mem
+  simpa [U375a61, U375a, R375m, R373, R344, R341, List.append_assoc] using h
+
+/-- ★ 行 `R375m (6,1,0)(2,0,0)(3,0,0)`（`(2,0,0)` の平らな積み上げの極限）。 -/
+theorem R375m61_2030_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  have htw : ∀ n : ℕ, (R338 ++ U375a61)
+      ++ (List.range n).flatMap (fun _ => [((2, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_singleton_range]
+    simpa [List.append_assoc] using (Aok_U375a61_rep20 n Aok_R338).mem
+  have h := flat_mem'' (Y0 := R338 ++ U375a61) (M := [((2, 0, 0) : ℕ × ℕ × ℕ)]) (d := 3)
+    (by simp) (by simp [entry])
+    (by intro r hr1 hr2; simp only [List.length_singleton] at hr2; omega) htw
+  simpa [U375a61, U375a, R375m, R373, R344, R341, List.append_assoc] using h
+
+#print axioms R375m61_2030_mem
+
 
 end Small
 end TRIO
