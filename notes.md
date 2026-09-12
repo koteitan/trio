@@ -24033,3 +24033,32 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
     ttwoBT : SbT A → SbT B → SbF Z → SbT (two A (two B Z))   （もっと強い）
 
 `SbF` に `two` の構成子が無いのが壁の本体。
+
+## 追記354: 壁は `WPd_twoA_runB` の先端 nil を荷にするだけになった
+
+証明中の行 `R600 (6,0,0)` を追って `WPd` 層まで下ろした。
+
+    R600 (6,0,0)
+      ⟸ R6006_flat          （flat_mem''、緑）
+      ⟸ ∀n, R373 ++ copies Blk60 n ∈ W 0        Blk60 = (5,2,0)(6,0,0)
+      ⟸ ∀n, GOK (one nil (two nil (FLz n)))     FLz n = FLr ([(0,0,0)] を n 個)
+      ⟸ ∀n ks, WPd (0::ks) (two nil (FLz n))    （WPd_twoOf、k = n）
+      ⟸ ∀ Bs k, |Bs| ≤ k → WPd ((k+1)::ks) (FLr Bs)
+      ⟸ WRunPay
+
+    WRunPay : b+1 ≤ k → JkA A → (∀ks, WPd ((b+1)::ks) A) → Bok B →
+              WPd ((k+1)::ks) (two A (pay nil B))
+
+比べる相手（緑）:
+
+    WPd_twoA_runB : b+1 ≤ k → JkA A → (∀ks, WPd ((b+1)::ks) A) →
+                    WPd ((k+1)::ks) (two A nil)
+
+**違いは先端の `nil` を `pay nil B` にするだけ**。`WPd_FLr`（緑）は同じ木
+`FLr Bs` を予算 0 で作るので、足りないのは予算 `k+1` の版だけ。
+
+`WPd_twoA_runB` のエンジンは `GOK_oneUV_RunSB`（`RunS`、先端 nil、階段 `UtwP`）。
+荷つきの `RunS` を作れば通る。
+
+緑にしたもの: `WRunPay` / `WPd_FLr_bud` / `WPd_twoNilFLr` / `FLz` / `jk1_FLz` /
+`GOK_oneNilTwoFLz` / `jk1_oneTwoFLz` / `tw_R373_Blk60` / `R6006_of_WRunPay`。

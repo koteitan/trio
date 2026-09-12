@@ -78286,5 +78286,93 @@ theorem R6006_flat (htw : ∀ n : ℕ, R373 ++ copies Blk60 n ∈ W 0) :
 
 #print axioms R6006_flat
 
+/-! ### ★ 壁の最小形（`WPd` 層）: 平らな走りの先端に荷
+
+`WPd_twoA_runB`（緑）は
+
+    b + 1 ≤ k → JkA A → (∀ ks, WPd ((b+1)::ks) A) → WPd ((k+1)::ks) (two A nil)
+
+で、先端が `nil` の場合。先端に荷 `pay nil B` を許すのが `WRunPay`。
+`WPd_FLr`（緑）は同じ木を予算 `0` で作るので、足りないのは予算 `k+1` の版だけ。 -/
+
+def WRunPay : Prop := ∀ (k b : ℕ), b + 1 ≤ k → ∀ A : Jk1, JkA A →
+  (∀ ks : List ℕ, WPd ((b + 1) :: ks) A) → ∀ B : TrioSeq, Bok B →
+  ∀ ks : List ℕ, WPd ((k + 1) :: ks) (Jk1.two A (Jk1.pay Jk1.nil B))
+
+theorem WPd_FLr_bud (h : WRunPay) : ∀ (Bs : List TrioSeq), (∀ C ∈ Bs, Bok C) →
+    ∀ k : ℕ, Bs.length ≤ k → ∀ ks : List ℕ, WPd ((k + 1) :: ks) (FLr Bs)
+  | [], _, k, _, ks => WPd_nilF k ks
+  | (B :: Bs), hB, k, hk, ks => by
+      have hsub : ∀ C ∈ Bs, Bok C := fun C hC => hB C (List.mem_cons_of_mem B hC)
+      have hlen : Bs.length + 1 ≤ k := by simpa using hk
+      have hA : ∀ ks' : List ℕ, WPd ((Bs.length + 1) :: ks') (FLr Bs) :=
+        fun ks' => WPd_FLr_bud h Bs hsub Bs.length (le_refl _) ks'
+      exact h k Bs.length hlen (FLr Bs) (JkA_FLr Bs hsub) hA B (hB B List.mem_cons_self) ks
+
+theorem WPd_twoNilFLr (h : WRunPay) (Bs : List TrioSeq) (hB : ∀ C ∈ Bs, Bok C)
+    (ks : List ℕ) : WPd (0 :: ks) (Jk1.two Jk1.nil (FLr Bs)) :=
+  WPd_twoOf (k := Bs.length) trivial (fun q _ => WPd_nilAll _)
+    (WPd_FLr_bud h Bs hB Bs.length (le_refl _) ks)
+
+/-- 荷が全部 `[(0,0,0)]` の平らな走り。`jk1 l (FLz n) = ((l+1,2,0)(l+2,0,0))^n`。 -/
+def FLz (n : ℕ) : Jk1 := FLr (List.replicate n [((0, 0, 0) : ℕ × ℕ × ℕ)])
+
+theorem Bok_FLz_mem (n : ℕ) :
+    ∀ C ∈ List.replicate n [((0, 0, 0) : ℕ × ℕ × ℕ)], Bok C := by
+  intro C hC
+  rw [List.eq_of_mem_replicate hC]
+  exact Bok_zero
+
+theorem FLz_succ (n : ℕ) :
+    FLz (n + 1) = Jk1.two (FLz n) (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by
+  show FLr (List.replicate (n + 1) [((0, 0, 0) : ℕ × ℕ × ℕ)]) = _
+  rw [List.replicate_succ]
+  rfl
+
+theorem jk1_FLz (l : ℕ) : ∀ n : ℕ,
+    jk1 l (FLz n)
+      = copies [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 0, 0) : ℕ × ℕ × ℕ)] n
+  | 0 => by simp [FLz, FLr, jk1, copies]
+  | (n + 1) => by
+      rw [FLz_succ]
+      show jk1 l (FLz n) ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) Jk1.nil ++ shiftr01 (l + 1 + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)])) = _
+      rw [jk1_FLz l n, copies_snoc, show l + 1 + 1 = l + 2 from by omega]
+      simp [jk1, shiftr01]
+
+theorem GOK_oneNilTwoFLz (h : WRunPay) (n : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (FLz n))) :=
+  (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+    ((WPd_bnil _).mpr GOK_nil)
+    (WPd_twoNilFLr h (List.replicate n [((0, 0, 0) : ℕ × ℕ × ℕ)]) (Bok_FLz_mem n) []))
+
+theorem jk1_oneTwoFLz (n : ℕ) :
+    jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil (FLz n)))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ)] ++ copies Blk60 n := by
+  have e : jk1 4 (FLz n) = copies Blk60 n := by
+    have h := jk1_FLz 4 n
+    simpa [Blk60] using h
+  show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (2 + 1) Jk1.nil ++ (((2 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (2 + 1 + 1) (FLz n)))) = _
+  rw [show (2 : ℕ) + 1 + 1 = 4 from by omega, e]
+  simp [jk1]
+
+/-- ★ シート証明中の行は `WRunPay` 1 文から出る。 -/
+theorem tw_R373_Blk60 (h : WRunPay) (n : ℕ) : R373 ++ copies Blk60 n ∈ W 0 := by
+  have hG0 := GOK_oneNilTwoFLz h n [] WOk_nil GoodFb_wordJ_nil
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Jk1.nil (FLz n))]) := by
+    simpa using hG0
+  have hh := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ, jk1_oneTwoFLz n] at hh
+  simpa [R373, R344, R341, R338, List.append_assoc] using hh
+
+theorem R6006_of_WRunPay (h : WRunPay) : R600 ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R6006_flat (tw_R373_Blk60 h)
+
+#print axioms WPd_FLr_bud
+#print axioms jk1_FLz
+#print axioms R6006_of_WRunPay
+
 end Small
 end TRIO
