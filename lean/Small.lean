@@ -3701,6 +3701,92 @@ theorem WCtxR_preRun : ∀ (q : ℕ) {ks : List (Ekey Bud)} {D : List Frm}, WCtx
 #print axioms SOkR_bot
 #print axioms WPdR_preRun
 
+/-! ### ★★★ 走りの塔 `WPdR_stkS`（`SG_stkS` の移植） -/
+
+def shRq (q : ℕ) (ks : List (Ekey Bud)) : ℕ → List (Ekey Bud)
+  | 0 => preRun q ks
+  | (i + 1) => preRun q ((⊥ : Ekey Bud) :: shRq q ks i)
+
+theorem WCtxR_fone {ks : List (Ekey Bud)} {ctx : List Frm} {U : Jk1}
+    (hc : WCtxR ks ctx) (hU : FrmR ks U) (hUk : WPdR ks U) :
+    WCtxR ((⊥ : Ekey Bud) :: ks) (ctx ++ [Frm.fone U]) :=
+  (WCtxR_c0 ks _).mpr ⟨ctx, U, rfl, hc, hU, hUk⟩
+
+theorem WPdR_shR (hRP : RunPay (Bud := Bud)) (q : ℕ)
+    (hq : ∀ ks' : List (Ekey Bud), SOkR ks' → WPdR ks' (stk q))
+    (ks : List (Ekey Bud)) (hk : SOkR ks) :
+    ∀ i : ℕ, WPdR (shRq q ks i) Jk1.nil
+  | 0 => WPdR_preRun q ks Jk1.nil (hq ks hk)
+  | (i + 1) => WPdR_preRun q _ Jk1.nil
+      (hq ((⊥ : Ekey Bud) :: shRq q ks i) (SOkR_bot hRP _))
+
+theorem WCtxR_blkR (hRP : RunPay (Bud := Bud)) (q : ℕ)
+    (hq : ∀ ks' : List (Ekey Bud), SOkR ks' → WPdR ks' (stk q))
+    {ks : List (Ekey Bud)} (hk : SOkR ks) {D : List Frm} (hD : WCtxR ks D) :
+    ∀ i : ℕ, WCtxR (shRq q ks i)
+      (D ++ List.replicate q (Frm.ftwo Jk1.nil)
+        ++ blkR Jk1.nil (List.replicate q Jk1.nil) i)
+  | 0 => by
+      rw [blkR_zero, List.append_nil]
+      exact WCtxR_preRun q hD
+  | (i + 1) => by
+      rw [blkR_snoc]
+      have e : D ++ List.replicate q (Frm.ftwo Jk1.nil)
+            ++ (blkR Jk1.nil (List.replicate q Jk1.nil) i
+              ++ blkC Jk1.nil (List.replicate q Jk1.nil))
+          = ((D ++ List.replicate q (Frm.ftwo Jk1.nil)
+              ++ blkR Jk1.nil (List.replicate q Jk1.nil) i) ++ [Frm.fone Jk1.nil])
+            ++ List.replicate q (Frm.ftwo Jk1.nil) := by
+        rw [blkC_eq, ftw_rep]
+        simp [List.append_assoc]
+      rw [e]
+      exact WCtxR_preRun q (WCtxR_fone (WCtxR_blkR hRP q hq hk hD i) (FrmR_nilA _)
+        (WPdR_shR hRP q hq ks hk i))
+
+/-- ★★★★★★★ 走りの塔。`SOkR` の形なら `stk q` はどの長さでも差せる。 -/
+theorem WPdR_stkS (hRP : RunPay (Bud := Bud)) :
+    ∀ (q : ℕ) (ks : List (Ekey Bud)), SOkR ks → WPdR ks (stk q)
+  | 0, ks, hk => hk.2
+  | (q + 1), ks, hk => by
+      rw [WPdR_iff]
+      intro D hD
+      have hq : ∀ ks' : List (Ekey Bud), SOkR ks' → WPdR ks' (stk q) :=
+        fun ks' hk' => WPdR_stkS hRP q ks' hk'
+      obtain ⟨ctx, V, hDe, hGV⟩ := hk.1 D hD
+      subst hDe
+      have ec : ctx ++ blkC V (List.replicate q Jk1.nil)
+          = (ctx ++ [Frm.fone V]) ++ List.replicate q (Frm.ftwo Jk1.nil) := by
+        rw [blkC_eq, ftw_rep]
+      have egoal : plug (ctx ++ blkC V (List.replicate q Jk1.nil))
+            (Jk1.two Jk1.nil Jk1.nil)
+          = plug (ctx ++ [Frm.fone V]) (stk (q + 1)) := by
+        rw [ec, plug_append, plug_repF, stkP_two_nil_nil]
+      rw [← egoal]
+      refine GOK_runGNil_gen (V := V) (A := Jk1.nil) trivial
+        (fun B hB => by rw [List.eq_of_mem_replicate hB]; trivial) ctx ?_ hGV ?_
+      · rw [ec]
+        exact WCtxR_JkT _ _ (WCtxR_preRun q hD) _ ⟨trivial, trivial⟩
+      · intro i
+        have hc := WCtxR_blkR hRP q hq hk hD i
+        have hh := (WPdR_iff _ _).mp (WPdR_shR hRP q hq ks hk i) _ hc
+        rw [ec]
+        simpa [List.append_assoc] using hh
+
+#print axioms WPdR_stkS
+
+/-- ★★★★★★★★ 行376 が `RunPay`（走りの上の荷）1 文から出る。 -/
+theorem RunAll_of_RunPay (hRP : RunPay (Bud := Bud)) : RunAll := by
+  intro q ks
+  rw [APd_iff]
+  intro ctx hc
+  exact (WPdR_bnil0 (stk q)).mp (WPdR_stkS hRP q [] SOkR_bnil) ks ctx hc
+
+theorem R376_of_RunPay (hRP : RunPay (Bud := Bud)) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RunAll (RunAll_of_RunPay hRP)
+
+#print axioms R376_of_RunPay
+
 end EkeyR
 
 end Small
