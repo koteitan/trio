@@ -2,33 +2,40 @@
 
 ## ★★ 残る 1 文（2026-09-12。まずここ）
 
-    OneRunA : ∀ (q : ℕ) (Y : Jk1), JkA Y →
-                (∀ bs, APd (true :: bs) Y) →
-                ∀ bs, APd (true :: bs) (stkP q (one nil Y))
+`APd` だけで書ける版（一番読みやすい）:
 
-    R376_of_OneRunA (h : OneRunA) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
+    StQ : ∀ p k ks, APd (true :: ks) (two nil (stkP p (nstQ nil p k)))
+    R376_of_StQ (h : StQ) : R373 ++ [(5,3,0)] ∈ W 0                    ★緑
 
-これで**必要十分の形**。さらに強い（が形は一番小さい）十分条件:
+    nstQ N p 0 = nil,  nstQ N p (k+1) = one nil (two N (stkP p (nstQ N p k)))
 
-    TwoNilStep : ∀ Z, JkA Z → (∀ bs, APd (true :: bs) Z) →
-                   ∀ bs, APd (true :: bs) (two nil Z)
+`k = 0` は `stk (p+1)` なので `p` の帰納で前の段。中身は `k` の段だけ。
+`p = 0` は `nstQ N 0 k = nstN N k` で `APd_nstN`（緑）→ **`stk 2` は無条件**。
+**最小の壁は `stk 3`**（`APd_stk3_of` が待っている形）。
 
-    OneRunA_of_TwoNilStep / R376_of_TwoNilStep                     ★緑
+層の言葉で書いた同値な版:
 
-`TwoNilStep` は「普遍的に差せる木の上に 2 の記録（兄弟は空木）を 1 段」。
-`Z` を全称しているので `OneRunA` より強い。**偽の可能性があるので、詰まったら
-`OneRunA`（`Z = stkP q (one nil Y)` の形だけ）に戻ること。**
+    OneRunA : ∀ q Y, JkA Y → (∀ bs, APd (true::bs) Y) →
+                ∀ bs, APd (true::bs) (stkP q (one nil Y))
+    TwoNilStep : ∀ Z, JkA Z → (∀ bs, APd (true::bs) Z) →
+                   ∀ bs, APd (true::bs) (two nil Z)          （`Z` 全称なので強すぎるかも）
 
-`q = 0` は易しい: `APd (true::(true::bs)) Y` に `U = nil` を入れるだけ
-（`APd_nilT` / `FrmJ_nilA` / `Rq_true`）。`q ≥ 1` が壁。
+## いま無条件で緑な走り
 
-なぜ自明でないか: `APd` の形は `true`（1 の枠）と `false`（1 の枠＋2 の枠の対）
-だけで、**裸の `ftwo nil` の枠に当たる形が無い**。
-`APd (false::bs) Z` を `m = 0`, `N = nil` で使えば `TwoNilStep` は出るので
+    APd_stk1 / APd_stk2 : ∀ ks, APd (true::ks) (stk 1) / (stk 2)
+    APd_twoStkGen (hJN) (p ks) (hst : ∀ k, APd (true::ks) (two N (stkP p (nstQ N p k))))
+      : APd (true::ks) (two N (stkP p (two nil nil)))
 
-    TwoNilStep ⟸ FalseOk : (∀ bs, APd (true::bs) Z) → ∀ bs, APd (false::bs) Z
+## 詰まる理由
 
-（`FalseOk` は「予算が要らない」と言っているので、たぶん強すぎる。）
+`APd (false::ks)` の節が作るのは `one U (two N V)`、つまり **2 の記録の直下は必ず
+1 の枠**。`two N' (two nil W)`（2 の記録が 2 つ続く）は `APd` の節では作れない。
+語のレベルで作るのが `GOK_stkW_gen` だが、**先端が `two nil nil` のときだけ**。
+`stk 3` に要るのは先端が一般の `W` の版で、`snocQ_of_tower` / `unQ` / `Mtwd (p+2)` の
+一般先端版という新しい語の補題が要る。
+
+注意: 階段を `APd_cf` で `APd (false::ks)` に落としてはいけない。`APd_cf` の `N` の
+条件はその `L` だけなので、`APd_twoTwoGen` が要る「`kk` について普遍」より弱い。
 
 ## 落とし方（全部緑）
 

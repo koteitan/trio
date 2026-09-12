@@ -25594,12 +25594,16 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
     APd_twoStkGen (hJN) (hNall) (p ks)
       (hst : ∀ k, APd (false::ks) (stkP p (nstQ N p k)))
       : APd (true::ks) (two N (stkP p (two nil nil)))           ★緑
-    StQ : ∀ N（普遍）, ∀ p k ks, APd (false::ks) (stkP p (nstQ N p k))
+    StQ : ∀ p k ks, APd (true::ks) (two nil (stkP p (nstQ nil p k)))
     R376_of_StQ (h : StQ) : R373 ++ [(5,3,0)] ∈ W 0             ★緑
 
 `APd_twoStkGen` は `APd_twoTwoGen`（`stk 2` 版、緑）の `p` 一般化。`GOK_stkW_gen`
 （緑）を使うだけ。階段はどれも**同じ文脈** `ctx0 ++ [fone V]` に置くので
-`APd (true::ks)` の文で書け、`APd_cf` を `m = 0` で使うと `APd (false::ks)` に落ちる。
+`APd (true::ks)` の 1 文で書ける。
+
+注意: これを `APd_cf` で `APd (false::ks)` に落としてはいけない。`APd_cf` が与える
+`N` の条件は `∀ j, APd (replicate j true ++ (true::L)) N`（その `L` だけ）で、
+`APd_twoTwoGen` が要る「`kk` について普遍」より弱い。`APd (true::ks)` の形が正しい。
 
 `p = 0` は `nstQ N 0 k = nstN N k` で階段が `APd_nstN`（緑）。だから `stk 2` は無条件。
 
@@ -25609,8 +25613,8 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
     stk 3                … 開いている
 
 `stk 3` に要るのは `APd (false::ks) (stkP 1 (nstQ N 1 k))`。
-`k = 0` は `stk 1` で、`APd_twoTwoGen` から出る（緑）。
-`k = 1` は `two nil (one nil (two N (stk 1)))` で、ここで詰まる。
+`k = 0` は `two nil (stkP 1 nil) = stk 2` で緑（`APd_stk2`）。
+`k = 1` は `two nil (stkP 1 (one nil (two nil (stk 1))))` で、ここで詰まる。
 
 ### 詰まる理由（`APd` の語彙の問題）
 
@@ -25624,5 +25628,5 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
 ### `OneRunA` との関係
 
 `OneRunA`（追記399）は同じ壁を層 `WPdR` の底の言葉で書いたもの。
-`StQ` は `APd (false::ks)`（1 の枠の兄弟が弱い）を要求するので `OneRunA` より強い。
-**弱い方（`OneRunA`）を主目標にする。** `StQ` は「`APd` だけで書ける」利点がある。
+どちらも「走りの塔が差せる」で、`StQ` は `APd` だけで書ける版。
+`StQ` の `k = 0` は `stk (p+1)`（`p` の帰納で前の段）なので、中身は `k` の段だけ。
