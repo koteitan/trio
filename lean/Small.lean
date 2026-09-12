@@ -10379,6 +10379,47 @@ theorem LdDM_step {Y Y' : TrioSeq} (hY : Bok Y) (hlt : Rex' Y' Y) (m : ℕ)
 
 #print axioms LdDM_step
 
+/-- 木に入っている荷の多重集合。 -/
+def LdOf : Jk1 → Multiset Ld
+  | Jk1.nil => 0
+  | Jk1.pay N Y => LdOf N + {mkLd Y}
+  | Jk1.one N M => LdOf N + LdOf M
+  | Jk1.two N M => LdOf N + LdOf M
+
+theorem LdOf_ChL : ∀ L : List TrioSeq, LdOf (ChL L) = LdMS L
+  | [] => by simp [ChL, LdOf, LdMS]
+  | (Y :: Ys) => by
+      show LdOf (ChL Ys) + (LdOf Jk1.nil + {mkLd Y}) = _
+      rw [LdOf_ChL Ys, LdMS_cons]
+      simp [LdOf]
+
+theorem LdOf_twoIt_pay (N : Jk1) (Y : TrioSeq) : ∀ m : ℕ,
+    LdOf (twoIt N (Jk1.pay Jk1.nil Y) m) = LdOf N + Multiset.replicate m (mkLd Y)
+  | 0 => by simp [twoIt]
+  | (m + 1) => by
+      show LdOf (twoIt N (Jk1.pay Jk1.nil Y) m) + (LdOf Jk1.nil + {mkLd Y}) = _
+      rw [LdOf_twoIt_pay N Y m]
+      rw [Multiset.replicate_succ]
+      show LdOf N + Multiset.replicate m (mkLd Y) + (0 + {mkLd Y}) = _
+      rw [zero_add, ← Multiset.singleton_add, add_assoc]
+      exact congrArg _ (add_comm _ _)
+
+/-- ★★★★★★★★★★ 一番外の荷を小さい荷の `m` 本に置き換えると木の荷は DM で減る。 -/
+theorem LdDM_tree {Y Y' : TrioSeq} (hY : Bok Y) (hlt : Rex' Y' Y) (m : ℕ) (N : Jk1) :
+    Multiset.IsDershowitzMannaLT (LdOf (twoIt N (Jk1.pay Jk1.nil Y') m))
+      (LdOf (Jk1.two N (Jk1.pay Jk1.nil Y))) := by
+  refine ⟨LdOf N, Multiset.replicate m (mkLd Y'), {mkLd Y}, by simp, ?_, ?_, ?_⟩
+  · rw [LdOf_twoIt_pay]
+  · show LdOf N + (LdOf Jk1.nil + {mkLd Y}) = _
+    simp [LdOf]
+  · intro y hy
+    rw [Multiset.eq_of_mem_replicate hy]
+    exact ⟨mkLd Y, by simp,
+      Ld_lt_iff.mpr ⟨Acc_Rex'_of_Bok hY, Relation.TransGen.single hlt⟩⟩
+
+#print axioms LdOf_ChL
+#print axioms LdDM_tree
+
 
 end Small
 end TRIO
