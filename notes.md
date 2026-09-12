@@ -24252,3 +24252,27 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
 で、`WPd_twoA_runB`（先端 `nil`）は緑、違いは荷 `[(0,0,0)]` だけ。
 次に試すのは「兄弟の族を予算で切らない層」（WPd と NPd の融合）。
 `WQd` が過去の試みで、その壁は `QRunPay` だった。
+
+## 追記362: ★★★ 荷の W 帰納が `WPd` 層で回った。`R600 (5,1,0)` まで
+
+追記361 で「兄弟が一般だと予算で切られる」と書いたが、**荷の帰納を
+兄弟 `N` を全称した形で回せば底に落ちる**。底は `WPd_twoM0`（緑）。
+
+    WPd_twoPayM0 : ∀ B, Bok B → ∀ N, JkA N → (∀ks, WPd (0::ks) N) →
+                   ∀ks, WPd (0::ks) (two N (pay M0t B))
+
+`TwoOk_twoPayG` と同じ形（`ChBaseG` に相当する底が、こちらは緑）。
+- `B = []`: `WPd_twoPayNilM0`（`WPd_twoM0` + 語の congr）
+- `(0,0,0)` を足す段: `WPd_dupM0`。鎖 `twoIt N (pay M0t Y) m` は
+  **兄弟を全称した帰納法**（`WPd_chainM0`）で予算 0 のまま伸びる。
+- 親を持つ段: `WPd_innerM0`（`GoodFb_snoc_innerJt0`）。
+
+出たもの:
+- `hang5_R600 : Bok B → R600 ++ shiftr01 5 0 B ∈ W 0`（どの荷でも）
+- `Ancd_R600 (d) (d ≤ 6) : Ancd d R600`
+- `R600510_mem : R600 ++ (5,1,0) ∈ W 0`
+
+止まった所: `R600 (5,2,0)`。展開は `Mtwd 2 R600 (jk1 4 T6) n`。
+字は `one nil (two nil (two M0t nil))` で、要るのは
+`WPd ((c+1)::ks) (two M0t nil)`。`WPd_twoA_runB` は兄弟 A に
+`∀ks, WPd ((b+1)::ks) A` を要求するが、`M0t` は予算 0 でしか無い。

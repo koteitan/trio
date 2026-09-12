@@ -656,5 +656,187 @@ theorem R344_blk_run_mem (k m : ℕ) :
 
 #print axioms R344_blk_run_mem
 
+/-! ### ★ `two N (pay M0t B)` の荷の W 帰納
+
+底（`B = []`）は `WPd_twoM0`（緑）。`(0,0,0)` を足す段の鎖
+`twoIt N (pay M0t Y) m` は、兄弟 `N` を全称した帰納法で回る
+（`TwoOk_twoPayG` と同じ形だが、底がこちらは緑）。 -/
+
+theorem WPd_twoPayNilM0 {N : Jk1} (hJN : JkA N) (hN : ∀ ks : List ℕ, WPd (0 :: ks) N)
+    (ks : List ℕ) : WPd (0 :: ks) (Jk1.two N (Jk1.pay M0t ([] : TrioSeq))) := by
+  refine WPd_congr (0 :: ks) (fun l => ?_) (WPd_twoM0 hJN hN ks)
+  show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M0t)
+    = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (Jk1.pay M0t ([] : TrioSeq)))
+  rw [jk1_pay_nil]
+
+theorem WPd_chainM0 {N : Jk1} (hJN : JkA N) (hN : ∀ ks : List ℕ, WPd (0 :: ks) N)
+    {Y : TrioSeq} (hYb : Bok Y)
+    (hprev : ∀ N' : Jk1, JkA N' → (∀ ks' : List ℕ, WPd (0 :: ks') N') →
+      ∀ ks' : List ℕ, WPd (0 :: ks') (Jk1.two N' (Jk1.pay M0t Y))) :
+    ∀ m : ℕ, JkA (twoIt N (Jk1.pay M0t Y) m) ∧
+      ∀ ks' : List ℕ, WPd (0 :: ks') (twoIt N (Jk1.pay M0t Y) m)
+  | 0 => ⟨hJN, hN⟩
+  | (m + 1) => by
+      obtain ⟨h1, h2⟩ := WPd_chainM0 hJN hN hYb hprev m
+      exact ⟨⟨h1, JkA_M0t, hYb⟩, hprev _ h1 h2⟩
+
+theorem WPd_dupM0 {N : Jk1} (hJN : JkA N) (hN : ∀ ks : List ℕ, WPd (0 :: ks) N)
+    {Y : TrioSeq} (hYb : Bok Y) (hY0 : Bok (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+    (hprev : ∀ N' : Jk1, JkA N' → (∀ ks' : List ℕ, WPd (0 :: ks') N') →
+      ∀ ks' : List ℕ, WPd (0 :: ks') (Jk1.two N' (Jk1.pay M0t Y)))
+    (ks : List ℕ) :
+    WPd (0 :: ks) (Jk1.two N (Jk1.pay M0t (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))) := by
+  rw [WPd_iff]
+  intro ctx hc
+  have hJT : JkT (plug ctx (Jk1.two N (Jk1.pay M0t (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) :=
+    WCtx_JkT (0 :: ks) ctx hc _
+      (⟨hJN, JkA_M0t, hY0⟩ :
+        FrmN (0 :: ks) (Jk1.two N (Jk1.pay M0t (Y ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))))
+  intro ws hw hG
+  refine GoodFb_snoc_dupJt0 hw hJT ?_
+  intro m _
+  exact (WPd_iff (0 :: ks) _).mp
+    ((WPd_chainM0 hJN hN hYb hprev m).2 ks) ctx hc ws hw hG
+
+theorem WPd_innerM0 {N : Jk1} (hJN : JkA N)
+    {Y : TrioSeq} (hYb : Bok Y) (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hIH : ∀ n : ℕ, 1 ≤ n → ∀ ks' : List ℕ,
+      WPd (0 :: ks') (Jk1.two N (Jk1.pay M0t (Y⟦n⟧))))
+    (ks : List ℕ) : WPd (0 :: ks) (Jk1.two N (Jk1.pay M0t Y)) := by
+  rw [WPd_iff]
+  intro ctx hc
+  have hJT : JkT (plug ctx (Jk1.two N (Jk1.pay M0t Y))) :=
+    WCtx_JkT (0 :: ks) ctx hc _
+      (⟨hJN, JkA_M0t, hYb⟩ : FrmN (0 :: ks) (Jk1.two N (Jk1.pay M0t Y)))
+  intro ws hw hG
+  refine GoodFb_snoc_innerJt0 hw hJT hlen hp ?_
+  intro n hn
+  exact (WPd_iff (0 :: ks) _).mp (hIH n hn ks) ctx hc ws hw hG
+
+/-- ★★★★★★ `two N (pay M0t B)` はどの `Bok B` でも予算 0 の族。 -/
+theorem WPd_twoPayM0 : ∀ (B : TrioSeq), Bok B → ∀ N : Jk1, JkA N →
+    (∀ ks : List ℕ, WPd (0 :: ks) N) →
+    ∀ ks : List ℕ, WPd (0 :: ks) (Jk1.two N (Jk1.pay M0t B)) := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → ∀ N : Jk1, JkA N →
+      (∀ ks : List ℕ, WPd (0 :: ks) N) →
+      ∀ ks : List ℕ, WPd (0 :: ks) (Jk1.two N (Jk1.pay M0t B))} := by
+    refine A2' ?_
+    intro B hB
+    simp only [Set.mem_setOf_eq]
+    intro hBb N hJN hN ks
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil0 : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact WPd_twoPayNilM0 hJN hN ks
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hBb.root
+        obtain ⟨hc1, hc2⟩ := hBb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        exact WPd_dupM0 hJN hN Bok_nil (by rw [← e]; exact hBb)
+          (fun N' hJN' hN' ks' => WPd_twoPayNilM0 hJN' hN' ks') ks
+    · have hlen2 : 2 ≤ B.length := by omega
+      have hBne : B ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+      rcases hB with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+      · exact absurd hl hshort
+      · by_cases hlast : entry B 0 (B.length - 1) = 0
+        · obtain ⟨he1, he2⟩ := Zroot_entry hBb.zroot hlast
+          have hcol : B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+              = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+          have hgl : B.getLast hBne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            have h1 : B.getLast hBne = B.getD (B.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+              rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+                List.getElem?_eq_getElem (show B.length - 1 < B.length by omega)]
+              rfl
+            rw [h1, hcol]
+          have hsplit : B = B.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+            rw [← hgl]; exact (List.dropLast_append_getLast hBne).symm
+          have hop : B⟦1⟧ = B.dropLast := by
+            rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+            unfold Pred
+            rw [if_neg (by omega)]
+          have hdl := hnat 1 le_rfl
+          rw [hop] at hdl
+          simp only [Set.mem_setOf_eq] at hdl
+          have hdb : Bok B.dropLast := Bok_dropLast hBb
+          rw [hsplit]
+          exact WPd_dupM0 hJN hN hdb (by rw [← hsplit]; exact hBb)
+            (fun N' hJN' hN' ks' => hdl hdb N' hJN' hN' ks') ks
+        · have hnz : ¬ (entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+              entry B 2 (B.length - 1) = 0) := fun h => hlast h.1
+          have hp := hasParent_of_ZrootMono hBb.zroot hBb.mono hBb.root hlen2 hnz
+          refine WPd_innerM0 hJN hBb hlen2 hp ?_ ks
+          intro n hn ks'
+          have hh := hnat n hn
+          simp only [Set.mem_setOf_eq] at hh
+          exact hh (Bok_oper hBb hn) N hJN hN ks'
+      · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hBb N hJN hN ks
+  exact key hBb.mem hBb N hJN hN ks
+
+#print axioms WPd_twoPayM0
+
+/-! ### ★ `R600 (5,1,0)`（シート証明中）
+
+高さ 5 の吊るしの字は `one nil (two nil (pay M0t B))`:
+`jk1 l = (l+1,1,0)(l+2,2,0)(l+3,2,0)(l+4,0,0) ++ B↑(l+3)`。
+`WPd_twoPayM0` から予算 0 で出るので、荷 `B` はどの `Bok B` でも良い。 -/
+
+theorem jk1_hang5M0 (l : ℕ) (B : TrioSeq) :
+    jk1 l (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay M0t B)))
+      = [((l + 1, 1, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+          ((l + 3, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 0, 0) : ℕ × ℕ × ℕ)]
+        ++ shiftr01 (l + 3) 0 B := by
+  show jk1 l Jk1.nil ++ (((l + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1 + 1) M0t ++ shiftr01 (l + 1 + 1 + 1) 0 B)))) = _
+  rw [show l + 1 + 1 = l + 2 from by omega, jk1_M0t (l + 2),
+    show l + 2 + 1 = l + 3 from by omega, show l + 2 + 2 = l + 4 from by omega]
+  simp [jk1]
+
+theorem hang5_R600 {B : TrioSeq} (hB : Bok B) : R600 ++ shiftr01 5 0 B ∈ W 0 := by
+  have hGok : GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay M0t B))) :=
+    (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+      ((WPd_bnil _).mpr GOK_nil)
+      (WPd_twoPayM0 B hB Jk1.nil trivial (fun ks => WPd_nilT ks) []))
+  have hG : GoodFb (fun a b =>
+      wordJ a b [Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.pay M0t B))]) := by
+    simpa using hGok [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ, jk1_hang5M0 2 B] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+theorem Ancd_R600 (d : ℕ) (hd : d ≤ 6) : Ancd d R600 := by
+  intro j hj0 hjl hlt hmin
+  have hlen : R600.length = 9 := by
+    simp [R600, R375m, R373, R344, R341, R338]
+  rw [hlen] at hjl
+  have h3 : (3 : ℕ) < R600.length := by rw [hlen]; omega
+  rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | j
+  · omega
+  · exact absurd (hmin 3 (by omega) h3)
+      (by simp [R600, R375m, R373, R344, R341, R338, entry])
+  · exact absurd (hmin 3 (by omega) h3)
+      (by simp [R600, R375m, R373, R344, R341, R338, entry])
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry]
+  · simp [R600, R375m, R373, R344, R341, R338, entry] at hlt
+    omega
+  · omega
+
+/-- ★★★★★★ `R600 (5,1,0)`。 -/
+theorem R600510_mem : R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  snocd_gen (by omega) Aok_R600 (Ancd_R600 5 (by omega)) (fun B hB => hang5_R600 hB)
+
+#print axioms R600510_mem
+
 end Small
 end TRIO
