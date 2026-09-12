@@ -7821,6 +7821,296 @@ theorem R600_788788_mem :
 #print axioms AtLd_Vt
 #print axioms R600_788788_mem
 
+/-! ### ★★★★★★★★★★ 汎用の `VsIt`（`Vs` の反復）と `Ws`（その極限） -/
+
+def VsIt (Y0 : TrioSeq) : ℕ → TrioSeq
+  | 0 => Y0
+  | (k + 1) => Vs (VsIt Y0 k)
+
+theorem Flat_VsIt {Y0 : TrioSeq} (hf : Flat Y0) : ∀ k : ℕ, Flat (VsIt Y0 k)
+  | 0 => hf
+  | (k + 1) => Flat_Vs (Flat_VsIt hf k)
+
+theorem VsIt_ne {Y0 : TrioSeq} (hne : Y0 ≠ []) : ∀ k : ℕ, VsIt Y0 k ≠ []
+  | 0 => hne
+  | (k + 1) => by show Vs (VsIt Y0 k) ≠ []; rw [Vs_eq]; simp
+
+theorem VsIt_root {Y0 : TrioSeq} (hne : Y0 ≠ []) (hr : entry Y0 0 0 = 0) :
+    ∀ k : ℕ, entry (VsIt Y0 k) 0 0 = 0
+  | 0 => hr
+  | (k + 1) => Vs_root (VsIt_ne hne k) (VsIt_root hne hr k)
+
+theorem VsIt_pos {Y0 : TrioSeq} (hne : Y0 ≠ [])
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) :
+    ∀ k : ℕ, ∀ i, 1 ≤ i → i < (VsIt Y0 k).length → 1 ≤ entry (VsIt Y0 k) 0 i
+  | 0 => hpos
+  | (k + 1) => Vs_pos (VsIt_ne hne k) (VsIt_pos hne hpos k)
+
+theorem VsIt_eq {Y0 : TrioSeq} : ∀ k : ℕ, VsIt Y0 k
+    = Y0 ++ (List.range k).flatMap
+        (fun _ => [((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)])
+  | 0 => by simp [VsIt]
+  | (k + 1) => by
+      show Vs (VsIt Y0 k) = _
+      rw [Vs_eq, VsIt_eq k, List.range_succ, List.flatMap_append, List.append_assoc]
+      rfl
+
+theorem AtLd_VsIt {Y0 : TrioSeq} (hf : Flat Y0) (hne : Y0 ≠ [])
+    (hr : entry Y0 0 0 = 0)
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) (b : Bw)
+    (hA0 : AtLd (α := Bwx) Y0 (owG b 1)) :
+    ∀ k : ℕ, AtLd (α := Bwx) (VsIt Y0 k) (owG (b + ow 1 k) 1)
+  | 0 => by
+      rw [show b + ow 1 0 = b from by rw [ow_zero, bot_Bw, add_zero]]
+      exact hA0
+  | (k + 1) => by
+      have hAk : AtLd (VsIt Y0 k) ((PwsB (b + ow 1 k)).pw 0 1) := by
+        rw [show (PwsB (b + ow 1 k)).pw 0 1 = owG (b + ow 1 k) 1 from
+          congrFun (pwB_zero_eq (b + ow 1 k)) 1]
+        exact AtLd_VsIt hf hne hr hpos b hA0 k
+      have hRk : RunLd (VsIt Y0 k) ((PwsB (b + ow 1 k)).pw 0) :=
+        RunLd_of_TopLd (Bok_flat (Flat_VsIt hf k) (VsIt_root hne hr k))
+          ((PwsB (b + ow 1 k)).pw_zero 0) ((PwsB (b + ow 1 k)).pw_add 0)
+          (TopLd_of_AtLd hAk)
+      refine AtLd_Vs (PwsB (b + ow 1 k)) (Flat_VsIt hf k) (VsIt_ne hne k)
+        (VsIt_root hne hr k) (VsIt_pos hne hpos k) hRk hAk (fun j => ?_)
+      show owG ((b + ow 1 k) + ow 0 (j + 1)) 1 < owG (b + ow 1 (k + 1)) 1
+      refine owG_ltL ?_ 1 (by omega)
+      rw [add_assoc]
+      exact Bw_add_lt_left b (owG_add_lt (show (0 : ℕ) < 1 by omega) k (j + 1))
+
+/-- `Ws Y0 = Y0 (1,0,0)(2,0,0)(2,0,0)`。`(Ws Y0)⟦n⟧ = VsIt Y0 n`。 -/
+def Ws (Y0 : TrioSeq) : TrioSeq := Vs Y0 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem Ws_len (Y0 : TrioSeq) : (Ws Y0).length = Y0.length + 3 := by
+  show (Vs Y0 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]).length = _
+  rw [List.length_append, Vs_len]
+  simp
+
+theorem Flat_Ws {Y0 : TrioSeq} (hf : Flat Y0) : Flat (Ws Y0) := by
+  intro c hc
+  rw [Ws, List.mem_append] at hc
+  rcases hc with hc | hc
+  · exact Flat_Vs hf c hc
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rw [hc]
+    exact ⟨rfl, rfl⟩
+
+theorem entry_Ws_lt {Y0 : TrioSeq} {i : ℕ} (h : i < Y0.length + 2) (r : ℕ) :
+    entry (Ws Y0) r i = entry (Vs Y0) r i :=
+  entry_append_lt (by rw [Vs_len]; omega)
+
+theorem entry_Ws_last (Y0 : TrioSeq) : entry (Ws Y0) 0 (Y0.length + 2) = 2 := by
+  have h := (entry_append_last (P := Vs Y0) (c := ((2, 0, 0) : ℕ × ℕ × ℕ))).1
+  rw [Vs_len] at h
+  exact h
+
+theorem Ws_ne (Y0 : TrioSeq) : Ws Y0 ≠ [] := by
+  intro hc
+  have := Ws_len Y0
+  rw [hc] at this
+  simp at this
+
+theorem Ws_root {Y0 : TrioSeq} (hne : Y0 ≠ []) (hr : entry Y0 0 0 = 0) :
+    entry (Ws Y0) 0 0 = 0 := by
+  have h0 : 0 < Y0.length := List.length_pos_iff.mpr hne
+  rw [entry_Ws_lt (by omega), Vs_root hne hr]
+
+theorem Ws_pos {Y0 : TrioSeq} (hne : Y0 ≠ [])
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) :
+    ∀ i, 1 ≤ i → i < (Ws Y0).length → 1 ≤ entry (Ws Y0) 0 i := by
+  intro i h1 h2
+  rw [Ws_len] at h2
+  rcases Nat.lt_or_ge i (Y0.length + 2) with hi | hi
+  · rw [entry_Ws_lt hi]
+    exact Vs_pos hne hpos i h1 (by rw [Vs_len]; omega)
+  · rw [show i = Y0.length + 2 from by omega, entry_Ws_last]
+    omega
+
+theorem Ws_srow {Y0 : TrioSeq} (hf : Flat Y0) (i : ℕ) : srow (Ws Y0) i = 0 := by
+  simp [srow, (Flat_entry (Flat_Ws hf) i).1, (Flat_entry (Flat_Ws hf) i).2]
+
+theorem Ws_hasParent {Y0 : TrioSeq} (hne : Y0 ≠ []) :
+    hasParent (Ws Y0) 0 (Y0.length + 2) := by
+  rw [hasParent_zero_iff (by rw [Ws_len]; omega)]
+  refine ⟨Y0.length, by omega, ?_⟩
+  rw [entry_Ws_lt (by omega), entry_Vs_mid hne, entry_Ws_last]
+  omega
+
+theorem Ws_parent {Y0 : TrioSeq} (hne : Y0 ≠ []) :
+    parent (Ws Y0) 0 (Y0.length + 2) = Y0.length := by
+  have h := parent_nextR (Ws_hasParent hne)
+  rw [nextR, if_pos rfl] at h
+  obtain ⟨-, -, hlt, hval, hmid⟩ := h
+  by_contra hneq
+  rcases Nat.lt_or_ge (parent (Ws Y0) 0 (Y0.length + 2)) Y0.length with hp | hp
+  · have hmidL := hmid Y0.length ⟨hp, by omega⟩
+    rw [entry_Ws_last, entry_Ws_lt (i := Y0.length) (by omega) 0,
+      entry_Vs_mid hne] at hmidL
+    omega
+  · rw [show parent (Ws Y0) 0 (Y0.length + 2) = Y0.length + 1 from by omega] at hval
+    rw [entry_Ws_last, entry_Ws_lt (i := Y0.length + 1) (by omega) 0,
+      entry_Vs_last] at hval
+    omega
+
+theorem Ws_take {Y0 : TrioSeq} : (Ws Y0).take Y0.length = Y0 := by
+  show (Vs Y0 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]).take Y0.length = _
+  rw [List.take_append_of_le_length (by rw [Vs_len]; omega), Vs_take]
+
+theorem oper_Ws {Y0 : TrioSeq} (hf : Flat Y0) (hne : Y0 ≠ []) (n : ℕ) :
+    (Ws Y0)⟦n⟧ = VsIt Y0 n := by
+  have h0 : 0 < Y0.length := List.length_pos_iff.mpr hne
+  have h2 : (Ws Y0).length - 1 = Y0.length + 2 := by rw [Ws_len]; omega
+  simp only [oper, h2, Ws_srow hf, Ws_parent hne]
+  rw [if_neg (by omega), if_neg (by rw [entry_Ws_last]; simp),
+    if_neg (by rw [h2, Ws_srow hf]; exact not_not_intro (Ws_hasParent hne))]
+  simp only [Nat.lt_irrefl, show ¬ ((1 : ℕ) < 0) from by omega, if_false,
+    Nat.mul_zero, Nat.add_zero, ite_self]
+  have e1 : (List.range' Y0.length (Y0.length + 2 - Y0.length)).map
+      (fun j => ((entry (Ws Y0) 0 j, entry (Ws Y0) 1 j, entry (Ws Y0) 2 j)
+        : ℕ × ℕ × ℕ))
+      = [((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)] := by
+    rw [show Y0.length + 2 - Y0.length = 2 from by omega,
+      show List.range' Y0.length 2 = [Y0.length, Y0.length + 1] from by
+        simp [List.range']]
+    rw [List.map_cons, List.map_cons, List.map_nil,
+      entry_Ws_lt (by omega) 0, entry_Vs_mid hne,
+      entry_Ws_lt (by omega) 0, entry_Vs_last,
+      (Flat_entry (Flat_Ws hf) Y0.length).1,
+      (Flat_entry (Flat_Ws hf) Y0.length).2,
+      (Flat_entry (Flat_Ws hf) (Y0.length + 1)).1,
+      (Flat_entry (Flat_Ws hf) (Y0.length + 1)).2]
+  rw [Ws_take, e1, VsIt_eq]
+
+theorem AtLd_Ws {Y0 : TrioSeq} (hf : Flat Y0) (hne : Y0 ≠ [])
+    (hr : entry Y0 0 0 = 0)
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) (b : Bw)
+    (hA0 : AtLd (α := Bwx) Y0 (owG b 1)) :
+    AtLd (α := Bwx) (Ws Y0) (owG (b + ow 2 1) 1) := by
+  have h0 : 0 < Y0.length := List.length_pos_iff.mpr hne
+  refine AtLd_fam (F := fun n => VsIt Y0 (n + 1))
+    (qf := fun n => owG (b + ow 1 (n + 1)) 1)
+    (Bok_flat (Flat_Ws hf) (Ws_root hne hr)) (by rw [Ws_len]; omega) ?_
+    (fun n l Z => by rw [oper_Ws hf hne])
+    (fun n => AtLd_VsIt hf hne hr hpos b hA0 (n + 1)) ?_ (PwsB b).add_lt
+  · rw [show (Ws Y0).length - 1 = Y0.length + 2 from by rw [Ws_len]; omega,
+      Ws_srow hf]
+    exact Ws_hasParent hne
+  · intro n
+    exact owG_ltL (Bw_add_lt_left b (ow_ltL (by omega : 1 < 2) (n + 1) (by omega)))
+      1 (by omega)
+
+#print axioms oper_Ws
+#print axioms AtLd_Ws
+
+/-! ### ★★★★★★★★★★★ `Ws` の反復 `WsIt Ls m` → `R600 …(8,0,0)(8,0,0)(8,0,0)` -/
+
+theorem Ws_eq (Y0 : TrioSeq) : Ws Y0 = Y0 ++ [((1, 0, 0) : ℕ × ℕ × ℕ),
+    ((2, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  show Vs Y0 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] = _
+  rw [Vs_eq, List.append_assoc]
+  rfl
+
+def WsIt (Y0 : TrioSeq) : ℕ → TrioSeq
+  | 0 => Y0
+  | (m + 1) => Ws (WsIt Y0 m)
+
+theorem Flat_WsIt {Y0 : TrioSeq} (hf : Flat Y0) : ∀ m : ℕ, Flat (WsIt Y0 m)
+  | 0 => hf
+  | (m + 1) => Flat_Ws (Flat_WsIt hf m)
+
+theorem WsIt_ne {Y0 : TrioSeq} (hne : Y0 ≠ []) : ∀ m : ℕ, WsIt Y0 m ≠ []
+  | 0 => hne
+  | (m + 1) => Ws_ne (WsIt Y0 m)
+
+theorem WsIt_root {Y0 : TrioSeq} (hne : Y0 ≠ []) (hr : entry Y0 0 0 = 0) :
+    ∀ m : ℕ, entry (WsIt Y0 m) 0 0 = 0
+  | 0 => hr
+  | (m + 1) => Ws_root (WsIt_ne hne m) (WsIt_root hne hr m)
+
+theorem WsIt_pos {Y0 : TrioSeq} (hne : Y0 ≠ [])
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) :
+    ∀ m : ℕ, ∀ i, 1 ≤ i → i < (WsIt Y0 m).length → 1 ≤ entry (WsIt Y0 m) 0 i
+  | 0 => hpos
+  | (m + 1) => Ws_pos (WsIt_ne hne m) (WsIt_pos hne hpos m)
+
+theorem AtLd_WsIt : ∀ m : ℕ, AtLd (α := Bwx) (WsIt Ls m) (owG (ow 2 (m + 1)) 1)
+  | 0 => AtLd_Ls
+  | (m + 1) => by
+      have h := AtLd_Ws (Flat_WsIt Flat_Ls m) (WsIt_ne Ls_ne m)
+        (WsIt_root Ls_ne Ls_root m) (WsIt_pos Ls_ne Ls_pos m)
+        (ow 2 (m + 1)) (AtLd_WsIt m)
+      rwa [ow_add_same] at h
+
+theorem RunLd_WsIt (m : ℕ) :
+    RunLd (WsIt Ls m) (fun n => owG (ow 2 (m + 1)) n) :=
+  RunLd_of_TopLd (Bok_flat (Flat_WsIt Flat_Ls m) (WsIt_root Ls_ne Ls_root m))
+    (by rw [owG_zero, bot_BwG]) (fun n => owG_add_same (ow 2 (m + 1)) n)
+    (TopLd_of_AtLd (AtLd_WsIt m))
+
+theorem shift6_WsIt : ∀ m : ℕ, shiftr01 6 0 (WsIt Ls m)
+    = Mc ++ (List.range m).flatMap (fun _ => [((7, 0, 0) : ℕ × ℕ × ℕ),
+        ((8, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)])
+  | 0 => by
+      show shiftr01 6 0 Ls = _
+      rw [shift_Ls 5]
+      simp [Mc]
+  | (m + 1) => by
+      show shiftr01 6 0 (Ws (WsIt Ls m)) = _
+      rw [Ws_eq]
+      show List.map _ (WsIt Ls m ++ _) = _
+      rw [List.map_append,
+        show List.map (fun p : ℕ × ℕ × ℕ => (p.1 + 6, p.2.1 + 0, p.2.2))
+          (WsIt Ls m) = shiftr01 6 0 (WsIt Ls m) from rfl, shift6_WsIt m,
+        List.range_succ, List.flatMap_append, List.append_assoc]
+      rfl
+
+/-- ★★★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(8,0,0)((7,0,0)(8,0,0)(8,0,0))^m`。 -/
+theorem R600_788_788rep_mem (m : ℕ) :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)]
+      ++ (List.range m).flatMap (fun _ => [((7, 0, 0) : ℕ × ℕ × ℕ),
+          ((8, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  have h := R375m_tower_gen
+    (Bok_flat (Flat_WsIt Flat_Ls m) (WsIt_root Ls_ne Ls_root m))
+    (by rw [owG_zero, bot_BwG]) (fun n => owG_add_same (ow 2 (m + 1)) n)
+    (RunLd_WsIt m) (TopLd_of_AtLd (AtLd_WsIt m)) 1
+  rw [show (List.range 1).flatMap (fun _ => shiftr01 6 0 (WsIt Ls m))
+      = shiftr01 6 0 (WsIt Ls m) from by simp, shift6_WsIt m] at h
+  simpa [Mc, R600, List.append_assoc] using h
+
+/-- ★★★★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(8,0,0)(7,0,0)(8,0,0)(8,0,0)(8,0,0)`。 -/
+theorem R600_7888788_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 8 := by simp [entry]
+  have htail : ∀ r, 1 ≤ r →
+      r < ([((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+        ((8, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      8 ≤ entry [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+        ((8, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r h1 h2
+    simp only [List.length_cons, List.length_nil] at h2
+    rcases r with _ | _ | _ | r
+    · omega
+    · simp [entry]
+    · simp [entry]
+    · omega
+  have hmem := flat_mem''
+    (Y0 := R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)])
+    (M := [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)]) (d := 8) hne hhead htail R600_788_788rep_mem
+  simpa [List.append_assoc] using hmem
+
+#print axioms AtLd_WsIt
+#print axioms R600_7888788_mem
+
 
 end Small
 end TRIO
