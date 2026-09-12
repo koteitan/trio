@@ -26861,3 +26861,23 @@ DM では閉じているが、**`htow` は `WPd` の展開から来る任意の�
       — `WPd_stairA` の兄弟は固定の `N`（伸びる鎖ではない）ので `QS_twoOf` で回る。
         `QS_twoOf` の `k` が自由なので長さの縛りが無い。
     それらと `GOK_twoPayZ_DM` を組んで、DM 帰納で ZApp2c ∧ Pc を同時に出す
+
+## 追記443: `QS` の層は単調でない。兄弟は「自分の層」でだけ良い
+
+`QS S ks V ↔ ∀ ctx, QSCtx S ks ctx → GOK (plug ctx V)` で、`QSCtx S` の
+2 の枠の条件は `DMlt (LdOf N) S`。`S` が大きいほど条件が緩い＝文脈が多い＝
+`QS S ks V` は**強い**。だから `S' <DM S` のとき `QS S' ks V → QS S ks V` は**偽**。
+
+`QDP` の兄弟条件は `∀ ks', P ks' N`（`P` = 1 つ下の層）なので、兄弟は
+**自分の層でだけ良い**（弱い情報）。`QS_chainT` のように兄弟の良さを使う所では
+この弱い情報しか無い。だから鎖 `twoIt N T n` を作るときは層の梯子
+
+    S_j = LdOf N + j * LdOf T,   DMlt S_j S_{j+1}（`DMlt_of_add`）
+
+を自分で組む必要がある。`T = pay Z Y'` を層 `S_{j+1}` に置くのに
+`AYdTQ` を層 `S_{j+1}`・荷 `Y'` で使う（`Y'` は `Rex'` で小さいので A2' の IH）。
+つまり `AYdTQ` は `∀ S` を A2' の中に入れた形で書く必要がある。
+
+また、`QSI` を帰納的述語として定義する道は閉じている（`c0` の前提
+`∀ U, FrmN ks U → QSI ks U → QSI ks (one U V)` で `QSI` が負の位置に出る）。
+層で刻むのは必須。
