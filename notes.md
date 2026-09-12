@@ -23896,3 +23896,31 @@ junk の字を大きくするのも損（`b709_jT6 < b711_jnil`）。
 `TwoOk_twoPayG {Z} (hJZ) (hbase : ChBaseG Z)` は追記347 の証明の
 `pay nil Y` を `pay Z Y` に置き換えただけ。`GoodFb_snoc_dupJt0` は `Z` が
 一般なのでそのまま通る。鎖は `twoIt X (pay Z Y') n`。
+
+## 追記351 (2026-09-13): ★ 行376 は `StkStep` 1 文に落ちた
+
+`GOK_oneStk` が `TwoStep` から使うのは `TwoOk_stk h q`（＝ `TwoOk (stk q)`）だけで、
+`TwoStep` の全称（どの `Z` でも）は要らなかった。
+
+    StkTwo  := ∀ q, TwoOk (stk q)
+    StkStep := ∀ q, TwoOk (stk q) → TwoOk (stk (q+1))
+
+    StkTwo_of_StkStep / StkStep_of_TwoStep / StkTwo_of_TwoStep
+    APd_stkT / GOK_oneStkT
+    R376_of_StkTwo  : StkTwo  → 行376 ∈ W 0     ★緑
+    R376_of_StkStep : StkStep → 行376 ∈ W 0     ★緑
+
+`q = 0`（`TwoOk_nil`）と `q = 1`（`TwoOk_twoNil`）は緑なので、**壁は `q = 1 → 2`**、
+つまり `TwoOk (stk 2)`。語で言うと
+
+    two N (stk 2) の語 = [N](h,2,0)(h+1,2,0)(h+2,2,0)     走り 3 連
+
+「走り 2 連（`TwoOk (stk 1)`）は緑、3 連が壁」。`StkBlk2`（`WPd` 版）と同じ 1 点。
+
+### `ChBaseG` も 1 つ進んだ
+
+    ChBaseG_oneNil : JkA Z → ChBaseG Z → ChBaseG (one Z nil)     ★緑
+
+文脈を **2 段**伸ばして（`ctx ++ [ftwo N, ftwo W]`）`APnil_gen0` を使うだけ。
+荷の義務は `ChBaseG_pay` で消える。`ChBaseG` は `nil` を除いて
+`pay` と `one · nil` で閉じた。残るのは `one Z1 Z2`（`Z2 ≠ nil`）と `two Z1 Z2`。

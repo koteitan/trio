@@ -2,6 +2,9 @@
 
 ## いまの状況（先にここを読む）
 
+- **いちばん短い形（2026-09-13）**: `StkStep : ∀q, TwoOk (stk q) → TwoOk (stk (q+1))`。
+  `q = 0`（`TwoOk_nil`）と `q = 1`（`TwoOk_twoNil`）は緑なので**壁は `q = 1 → 2`**、
+  つまり `TwoOk (stk 2)`＝「走り 3 連を 2 の記録の直上に置く」。`R376_of_StkStep` は緑。
 - 壁は 1 本。**走りを 1 本伸ばす**こと。行列で言うと
       R375m ++ [(6,1,0)]   いま開いている最小の行列
       R375m ++ [(6,2,0)]   走り 3 連（`R375m_62_of_bdA2`、条件つき）
@@ -181,7 +184,9 @@ DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を
 
 | 定理 | 仮定 | 形 |
 |---|---|---|
-| `R376_of_TwoTwo` | `∀Z, JkA Z → ∀W, TwoOk W → TwoOk (two W Z)` | **荷の無い 3 文（`ChBase` / `ChBaseOne` / `ChBaseTwo`）に分かれる。2026-09-13 に緑** |
+| `R376_of_StkStep` | `∀q, TwoOk (stk q) → TwoOk (stk (q+1))` | **いちばん短い。`q = 0,1` は緑、`q = 1 → 2` が壁。2026-09-13** |
+| `R376_of_StkTwo` | `∀q, TwoOk (stk q)` | 同上（`q = 2` が壁） |
+| `R376_of_TwoTwo` | `∀Z, JkA Z → ∀W, TwoOk W → TwoOk (two W Z)` | 荷の無い 3 文（`ChBase` / `ChBaseOne` / `ChBaseTwo`）に分かれる |
 | `R376_of_FoneB` | `∀ws, GOK (plug (BCtx ws) (one nil nil))` | 裸の 1 の記録を 1 個足す（荷すら要らない） |
 | `R376_of_StkG` | `∀n, GoodFb (wordJ · · [one nil (stk n)])` | 単字の語 1 本 |
 | `R376_of_StkL` | `∀n, GOK (one nil (stk n))` | 字 |

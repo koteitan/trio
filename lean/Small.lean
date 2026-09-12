@@ -78072,5 +78072,86 @@ theorem ChBase_ge1 {N : Jk1} (hJN : JkA N) (hN : ∀ j : ℕ, LOk (j + 1) N) (k 
 #print axioms TwoOk_twoPay
 #print axioms R375m61_of_ChBase
 
+/-! ### ★★★★★★ 行376 に要るのは `∀q, TwoOk (stk q)` だけ
+
+`GOK_oneStk` が `TwoStep` から使うのは `TwoOk_stk h q`（＝ `TwoOk (stk q)`）だけ。
+`TwoStep` の全称（どの `Z` でも）は要らない。 -/
+
+def StkTwo : Prop := ∀ q : ℕ, TwoOk (stk q)
+
+theorem StkTwo_of_TwoStep (h : TwoStep) : StkTwo := TwoOk_stk h
+
+theorem APd_stkT (h : StkTwo) : ∀ (q : ℕ) (ks : List Bool), APd (true :: ks) (stk q)
+  | 0, ks => APd_nilT ks
+  | (q + 1), ks => by
+      have hh := h q Jk1.nil trivial (fun _ _ => APd_nil _) 0 ks
+      simpa using hh
+
+theorem GOK_oneStkT (h : StkTwo) (q : ℕ) : GOK (Jk1.one Jk1.nil (stk q)) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil) (APd_stkT h q []))
+
+/-- ★★★★★★ シート行376 は `∀q, TwoOk (stk q)` 1 文から出る。
+`q = 0` は `TwoOk_nil`、`q = 1` は `TwoOk_twoNil`（どちらも緑）。`q = 2` が壁。 -/
+theorem R376_of_StkTwo (h : StkTwo) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_StkL (GOK_oneStkT h)
+
+theorem StkTwo_zero : TwoOk (stk 0) := TwoOk_nil
+
+theorem StkTwo_one : TwoOk (stk 1) := by
+  have h : TwoOk (Jk1.two Jk1.nil Jk1.nil) := TwoOk_twoNil
+  exact h
+
+/-- ★★★★★ `ChBaseG` は「上に何も無い 1 の記録」で閉じている。
+荷の義務は `ChBaseG_pay` で消える。文脈を 2 段伸ばして `APnil_gen0` を使うだけ。 -/
+theorem ChBaseG_oneNil {Z : Jk1} (hJZ : JkA Z) (h : ChBaseG Z) :
+    ChBaseG (Jk1.one Z Jk1.nil) := by
+  intro W hW hWk N hN hNall j kk
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  have e2 : ∀ T : Jk1, plug (ctx ++ [Frm.ftwo N, Frm.ftwo W]) T
+      = plug ctx (Jk1.two N (Jk1.two W T)) := by
+    intro T
+    rw [show ctx ++ [Frm.ftwo N, Frm.ftwo W]
+        = (ctx ++ [Frm.ftwo N]) ++ [Frm.ftwo W] from by simp,
+      plug_snoc2, plug_snoc2]
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N, Frm.ftwo W]) (Jk1.one Z Jk1.nil)) := by
+    rw [e2]
+    exact JkT_plug ctx (GCtx_CtxOk _ ctx hc) _
+      (GCtx_CtxX _ ctx hc _ (FrmJ_of_neA _ (by simp) _ ⟨hN, hW, hJZ, trivial⟩) trivial)
+  have hGV : GOK (plug (ctx ++ [Frm.ftwo N, Frm.ftwo W]) Z) := by
+    rw [e2]
+    exact (APd_iff _ _).mp
+      (by simpa using h W hW hWk N hN hNall 0 (List.replicate j true ++ kk)) ctx hc
+  have hang : ∀ C : TrioSeq, Bok C →
+      GOK (plug (ctx ++ [Frm.ftwo N, Frm.ftwo W]) (Jk1.pay Z C)) := by
+    intro C hC
+    rw [e2]
+    exact (APd_iff _ _).mp
+      (by simpa using
+        ChBaseG_pay hJZ h hC W hW hWk N hN hNall 0 (List.replicate j true ++ kk)) ctx hc
+  have hh := APnil_gen0 (ctx ++ [Frm.ftwo N, Frm.ftwo W]) Z hJT hGV hang
+  rw [e2] at hh
+  exact hh
+
+/-- ★★★★★★ いちばん短い形。`stk q` を 2 の記録の直上に置ける、を 1 段伸ばす。
+`q = 0`（`TwoOk_nil` → `TwoOk_twoNil`）は緑。`q = 1 → 2` が壁。 -/
+def StkStep : Prop := ∀ q : ℕ, TwoOk (stk q) → TwoOk (stk (q + 1))
+
+theorem StkTwo_of_StkStep (h : StkStep) : StkTwo
+  | 0 => TwoOk_nil
+  | (q + 1) => h q (StkTwo_of_StkStep h q)
+
+theorem StkStep_of_TwoStep (h : TwoStep) : StkStep :=
+  fun q hq => h (stk q) (JkA_stk q) hq
+
+/-- ★★★★★★ シート行376 は `StkStep` 1 文から出る。 -/
+theorem R376_of_StkStep (h : StkStep) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_StkTwo (StkTwo_of_StkStep h)
+
+#print axioms R376_of_StkTwo
+#print axioms R376_of_StkStep
+#print axioms ChBaseG_oneNil
+
 end Small
 end TRIO
