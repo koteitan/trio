@@ -3627,6 +3627,80 @@ theorem WPdR_payA (hRP : RunPay (Bud := Bud)) :
 
 #print axioms AYdTWR
 
+/-! ### `WPdR` の空木と、走りの塔の準備 -/
+
+theorem WPdR_oneNil (hRP : RunPay (Bud := Bud)) (ks : List (Ekey Bud)) (V : Jk1)
+    (hV : FrmR ks V) (hVk : WPdR ks V) : WPdR ks (Jk1.one V Jk1.nil) := by
+  rw [WPdR_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (WCtxR_JkT ks ctx hc (Jk1.one V Jk1.nil) (FrmR_one ks V Jk1.nil hV trivial))
+    ((WPdR_iff ks V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (WPdR_iff ks _).mp (WPdR_payA hRP ks V hV hVk C hC) ctx hc
+
+theorem WPdR_nilT (hRP : RunPay (Bud := Bud)) (ks : List (Ekey Bud)) :
+    WPdR ((⊥ : Ekey Bud) :: ks) Jk1.nil :=
+  (WPdR_c0 ks _).mpr (fun U hU hUk => WPdR_oneNil hRP ks U hU hUk)
+
+theorem WPdR_nilB : WPdR ([] : List (Ekey Bud)) Jk1.nil := by
+  rw [WPdR_bnil0]
+  intro bs ctx hb
+  exact RNil_base hb
+
+/-- 底の形の性質（`SBs` の `WPdR` 版）: 文脈が `fone` で終わり、空木が差せる。 -/
+def SOkR (ks : List (Ekey Bud)) : Prop :=
+  (∀ ctx : List Frm, WCtxR ks ctx →
+      ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ GOK (plug ctx0 V)) ∧
+    WPdR ks Jk1.nil
+
+theorem SOkR_bnil : SOkR ([] : List (Ekey Bud)) := by
+  refine ⟨?_, WPdR_nilB⟩
+  intro ctx hc
+  rw [WCtxR_bnil] at hc
+  obtain ⟨bs, hb⟩ := hc
+  exact GCtx_split bs ctx hb
+
+theorem SOkR_bot (hRP : RunPay (Bud := Bud)) (ks : List (Ekey Bud)) :
+    SOkR ((⊥ : Ekey Bud) :: ks) := by
+  refine ⟨?_, WPdR_nilT hRP ks⟩
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtxR_split ks ctx hc
+  exact ⟨ctx0, V, rfl, hGV⟩
+
+/-- 形の前に「裸の走り `q` 本」を足す（`q = 0` なら何も足さない）。 -/
+def preRun : ℕ → List (Ekey Bud) → List (Ekey Bud)
+  | 0, ks => ks
+  | (q + 1), ks => (toLex ((⊥ : Bud), q + 1) : Ekey Bud) :: ks
+
+theorem WPdR_preRun : ∀ (q : ℕ) (ks : List (Ekey Bud)) (V : Jk1),
+    WPdR ks (stkP q V) → WPdR (preRun q ks) V
+  | 0, ks, V, h => h
+  | (q + 1), ks, V, h => by
+      have hne : (toLex ((⊥ : Bud), q + 1) : Ekey Bud) ≠ ⊥ := by
+        intro hc
+        have : (0 : ℕ) = q + 1 := congrArg (fun x => erun x) hc.symm
+        omega
+      show WPdR ((toLex ((⊥ : Bud), q + 1) : Ekey Bud) :: ks) V
+      rw [WPdR_cf (show ebud (toLex ((⊥ : Bud), q + 1) : Ekey Bud) = ⊥ from rfl) hne]
+      exact h
+
+theorem WCtxR_preRun : ∀ (q : ℕ) {ks : List (Ekey Bud)} {D : List Frm}, WCtxR ks D →
+    WCtxR (preRun q ks) (D ++ List.replicate q (Frm.ftwo Jk1.nil))
+  | 0, ks, D, h => by simpa using h
+  | (q + 1), ks, D, h => by
+      have hne : (toLex ((⊥ : Bud), q + 1) : Ekey Bud) ≠ ⊥ := by
+        intro hc
+        have : (0 : ℕ) = q + 1 := congrArg (fun x => erun x) hc.symm
+        omega
+      show WCtxR ((toLex ((⊥ : Bud), q + 1) : Ekey Bud) :: ks)
+        (D ++ List.replicate (q + 1) (Frm.ftwo Jk1.nil))
+      rw [WCtxR_cf (show ebud (toLex ((⊥ : Bud), q + 1) : Ekey Bud) = ⊥ from rfl) hne]
+      exact ⟨D, rfl, h⟩
+
+#print axioms SOkR_bot
+#print axioms WPdR_preRun
+
 end EkeyR
 
 end Small
