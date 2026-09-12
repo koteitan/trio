@@ -988,5 +988,19 @@ theorem UJitLad_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n j : ℕ) :
 #print axioms Y510Lad_flat_mem
 #print axioms UJitLad_mem
 
+/-- 梯子＋平らな段も `Aok`。ここからまた `Aok` の機構が乗る。 -/
+theorem Aok_Y510Ladf (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    Aok (LadB (Y510j m ws) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)]) :=
+  (BaseOk_PU (n + 3)).aok _ _ (LadB_flat_PU (Y510j_PkGA m hw) n)
+
+/-- ★★★★★★ 梯子＋平らな段の上に、また `U11` と junk の語。 -/
+theorem Y510Ladf_UJ_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n m' : ℕ)
+    {ws' : List Jk1} (hw' : WJ ws') (j : ℕ) :
+    UJitW (LadB (Y510j m ws) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)]) m' ws' j ∈ W 0 :=
+  (Aok_UJitW (Aok_Y510Ladf m hw n) m' hw' j).mem
+
+#print axioms Aok_Y510Ladf
+#print axioms Y510Ladf_UJ_mem
+
 end Small
 end TRIO
