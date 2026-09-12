@@ -78251,5 +78251,40 @@ theorem SbT_twoItPay {Y : TrioSeq} (hY : Bok Y) :
 #print axioms RB_of_TtwoZ
 #print axioms SbT_twoItPay
 
+/-! ### ★ いま開いている最小の行列（`bms` 実測, 2026-09-12）
+
+    R600 (6,0,0)
+      = (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)(6,0,0)
+
+これは今まで証明できた一番大きい行列より大きく、`R600 (7,0,0)`,
+`R600 (7,1,0)`, `R600 (7,1,1)`, …, `RB` のどれよりも小さい（全部標準形）。
+展開は
+
+    R600 (6,0,0) [n] = R373 ++ ((5,2,0)(6,0,0))^(n+1)
+
+というシフト無しの平らな塔なので、`flat_mem''` でこの塔 1 本に落ちる。 -/
+
+def Blk60 : TrioSeq := [((5, 2, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem R600_eq_R373blk : R600 = R373 ++ Blk60 := by
+  simp [R600, R375m, Blk60, List.append_assoc]
+
+/-- ★ シート証明中の行は「平らな塔」1 本に落ちる。 -/
+theorem R6006_flat (htw : ∀ n : ℕ, R373 ++ copies Blk60 n ∈ W 0) :
+    R600 ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : Blk60 ≠ [] := by simp [Blk60]
+  have hhead : entry Blk60 0 0 < 6 := by simp [Blk60, entry]
+  have htail : ∀ r, 1 ≤ r → r < Blk60.length → 6 ≤ entry Blk60 0 r := by
+    intro r hr1 hr2
+    have hr : r = 1 := by simp [Blk60] at hr2; omega
+    subst hr
+    simp [Blk60, entry]
+  have h := flat_mem'' (Y0 := R373) (M := Blk60) (d := 6) hne hhead htail
+    (by intro n; simpa [copies] using htw n)
+  rw [R600_eq_R373blk]
+  simpa [List.append_assoc] using h
+
+#print axioms R6006_flat
+
 end Small
 end TRIO
