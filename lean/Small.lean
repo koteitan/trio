@@ -1833,5 +1833,56 @@ theorem WPdT_twoIt_nil : ∀ (m : ℕ) (c : WithTop ℕ), ((m : ℕ) : WithTop �
 
 #print axioms WPdT_twoIt_nil
 
+/-! ### ★★★★★★★ 壁: `M0t` を予算 `⊤` の節に差す
+
+`WPd` 層では `WPd ((k+1)::ks) M0t` が通らなかった。荷の重複鎖が
+`twoIt nil (pay nil []) m` という「幅 m の横の走り」を作り、兄弟の予算 `k` が
+その幅を止めていたため。予算を `⊤` にすると兄弟は全部の自然数予算で使えるので、
+どの幅 `m` にも届く。 -/
+
+theorem WPdT_twoM0_at {B : List (WithTop ℕ)} {N : Jk1} (hJN : JkA N)
+    (hNt : ∀ q : List (WithTop ℕ), (∀ x ∈ q, x < (⊤ : WithTop ℕ)) →
+      WPdT ((⊥ : WithTop ℕ) :: q ++ B) N) :
+    WPdT ((⊥ : WithTop ℕ) :: B) (Jk1.two N M0t) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  have eT : Jk1.two Jk1.nil (Jk1.pay Jk1.nil
+      (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) = M0t := by simp [M0t]
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N])
+      (Jk1.two Jk1.nil (Jk1.pay Jk1.nil (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) := by
+    rw [plug_snoc2, eT]
+    exact WCtxU_JkT ((⊥ : WithTop ℕ) :: B) ctx hc (Jk1.two N M0t)
+      (⟨hJN, JkA_M0t⟩ : FrmNT ((⊥ : WithTop ℕ) :: B) (Jk1.two N M0t))
+  intro ws hw hG
+  have hIH : ∀ m : ℕ, 1 ≤ m → GoodFb (fun a b => wordJ a b
+      (ws ++ [plug (ctx ++ [Frm.ftwo N])
+        (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m)])) := by
+    intro m _
+    rw [plug_snoc2]
+    have hw2 : WPdT ((⊥ : WithTop ℕ) :: B)
+        (Jk1.two N (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m)) := by
+      refine WPdT_congr ((⊥ : WithTop ℕ) :: B) (fun l => ?_)
+        (WPdT_twoOf (b := ((m + 1 : ℕ) : WithTop ℕ)) (by simp) hJN
+          (fun q hq => hNt q (fun x hx => lt_of_lt_of_le (hq x hx) le_top))
+          (WPdT_twoIt_nil m ((m + 1 : ℕ) : WithTop ℕ) (by simp) B))
+      show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (twoIt Jk1.nil Jk1.nil m))
+        = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m))
+      rw [jk1_twoIt_payNil m (l + 1)]
+    exact (WPdT_iff ((⊥ : WithTop ℕ) :: B) _).mp hw2 ctx hc ws hw hG
+  have h := GoodFb_snoc_dupJt0 hw hJT hIH
+  rw [plug_snoc2, eT] at h
+  exact h
+
+/-- ★★★★★★★ 壁が抜けた。`M0t` は予算 `⊤` の節に差せる。 -/
+theorem WPdT_M0t_top (ks : List (WithTop ℕ)) : WPdT ((⊤ : WithTop ℕ) :: ks) M0t :=
+  (WPdT_cb (by simp) ks _).mpr (fun r hr U N hU hUk hJN hNt =>
+    WPdT_two_of_ctx hU hUk
+      (fun ctx hc => (WPdT_iff ((⊥ : WithTop ℕ) :: (r ++ ks)) _).mp
+        (WPdT_twoM0_at hJN hNt) ctx hc))
+
+#print axioms WPdT_M0t_top
+
 end Small
 end TRIO
