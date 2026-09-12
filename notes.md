@@ -25462,3 +25462,56 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
 
 `lean/Small.lean` は追記396 の設計で 3/4 ほど書き換えたが、上の未解決点があるので
 **元に戻した**（緑を保つ）。書きかけは残していない。設計は追記396＋この項に全部ある。
+
+## 追記398: 壁は 1 文 ——「一般の荷を持つ 2 の記録は、1 の枠の**直上**にしか置けない」
+
+### 緑になったもの（今回）
+
+    WPdR_stkG (p ks) (hk : SOkR ks) (hJN : JkA N)
+      (htw : ∀ i, WPdR ks (TwG N p i N)) : WPdR ks (stkP p (two N nil))     ★緑・無条件
+
+    TwG N p 0 X = stkP p X,  TwG N p (i+1) X = TwG N p i (one N (stkP p X))
+    plug (ctx ++ blkC V (replicate p nil) ++ blkR N (replicate p nil) i) X
+      = plug (ctx ++ [fone V]) (TwG N p i X)
+
+`GOK_runGNil_gen` の階段は繰り返しブロックの 1 の枠の兄弟が `A` そのものなので
+`WCtxR` を通すと循環する（追記397）。**階段を木 `TwG` で書けば入り目が増えない**ので
+循環しない。これで追記397 の障害は消えた。
+
+### 走りの長さは 1 に落とせる
+
+    WPdR ((⊥,p+1) :: ks) V  =  WPdR ks (stkP (p+1) V)  =  WPdR ((⊥,1) :: (⊥,p) :: ks) V
+
+なので走りの長さは常に 1 と思ってよい（追記394 の中身）。ただし尾は走りのまま。
+
+### 壁の 1 文
+
+2 の記録 `two N V` を層に置く道具は 3 つしかない：
+
+    GOK_twoNilW_gen / GOK_stkW_gen / GOK_runGNil_gen … 荷（先端）が `nil` のときだけ
+    GOK_twoPayZ_of                                  … 荷が `pay Z Y` のとき（鎖が要る）
+    WPdR_twoOf                                      … 荷を予算の節に置く
+
+`WPdR_twoOf` の結論は `WPdR (⊥ :: ks) (two N V)`、つまり **1 の枠が直下にある**位置。
+予算の節の文脈が `[fone U, ftwo N]`（1 の枠つき）だからそうなる。
+
+`RunPay` が要求するのは `WPdR ks (stkP p (two N V))`、つまり**走りのてっぺん**の
+2 の記録。その直下は `ftwo nil` であって 1 の枠ではない。荷 `V` が `nil` なら
+`WPdR_stkG` で通るが、一般の `V` では通らない。**これが壁の全て。**
+
+### 逃げ道は 2 つ
+
+(a) 先端が `nil` でない `GOK_runG` を作る（語の側の新規開発）。
+(b) 走りの節に載る木を `nil` だけにする ＝ 1 の枠の兄弟 `U` を
+    「どの予算の節 `(0,b)` にも置ける」木に制限する。
+
+(b) の不変量は保てそうに見える：
+
+    nil        … `WPdR_nilF`
+    pay U C    … `AYdTWR`（`erun = 0` なので無条件）
+    one U T    … `WPdR_step`（どの入り目の列でも使える）
+
+ただし `AYdWR` の鎖 `itJ (pay Z []) n X` に使うには `pay Z []` を
+`⊥ :: (0,b) :: ks` に置く必要があり、`Z` 側にも同じ不変量を足すことになる。
+well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長さが主）が要る。
+**(b) を層全体に通すのが次の大仕事。**
