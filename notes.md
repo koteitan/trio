@@ -24360,3 +24360,31 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
 `WPd ((k+1)::ks) M0t` とも同じもの。次に作るなら
 `snocN_of_tower` の m 本版（`(X ++ unN N D) ++ (D+2,2,0)^m`）＋
 それに合う階段。
+
+## 追記366: 目標行376 の既存ルート（`RNil` / `RHang`）も同じ壁
+
+`SmallA.lean` 76010 付近に、目標行を空木 1 文に落とすルートが既にある:
+
+    R376_of_RunAll ← RunAll_of_RNil ← GOK_stk_RCx
+    GOK_stk_step (p) : 走りの長さの 1 段（q+1 → q+2）。**RNil すら要らない緑**
+    RNil : ∀ D, RCx D → GOK (plug D nil)
+    RHang : ∀ D j C, RCx D → Bok C → GOK (plug D (stkP j (pay nil C)))
+    RNil_of_RHang / R376_of_RHang
+
+`RCx` の文脈は `GCtx (true::ks)` から `D ++ replicate j (ftwo nil) ++ [fone nil]`
+（**枠の兄弟は全部 nil**）で閉じたもの。`plug_stkP_gen` で
+`plug D (stkP j X) = plug (D ++ replicate j (ftwo nil)) X` なので、
+走りの部分の兄弟は常に `nil`。ここは今回の `WPd_twoM0` が効く形。
+
+`RHang` を `j` で見ると:
+- `j = 0`: `pay nil C` — 緑
+- `j = 1`: `two nil (pay nil C)` — 緑（`WPd_twoOf` + `WPd_payA` + `WPd_nilF`、
+  `APd` 層なら `APd_twoNilPay`）
+- `j = 2`, `C = [(0,0,0)]`: `Tb60` — **今回緑にした**（`WPd_Tb60u`）
+- `j = 2`, 一般の `C`: 荷の展開の鎖が `twoIt nil (pay nil C') m`（荷つき）に
+  なり、`C' ≠ []` だと平らな走りに落ちない
+- `j ≥ 3`: `WPd ((k+1)::ks) (stk 2)`（= `StkBlk2`、74868 行）に当たる
+
+つまり `WPd_Tb60u` / `WPd_twoM0` / `WPd_twoPayM0` は `RHang` の
+`j ≤ 2` かつ荷が小さい部分を埋めたことになる。残りは
+「**縦の走り 2 段以上の上に一般の荷**」だけ。
