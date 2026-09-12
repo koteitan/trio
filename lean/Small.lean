@@ -511,5 +511,150 @@ theorem R600_42_50_mem :
 #print axioms R600_42_run_mem
 #print axioms R600_42_50_mem
 
+/-! ### ★ `WPd_Tb60u` の兄弟を一般化: `two N M0t`
+
+`M0t = two nil (pay nil [(0,0,0)])`、`Tb60 = two nil M0t`。
+兄弟 `N` が**予算 0 の族**（`∀ks, WPd (0::ks) N`）なら `two N M0t` も予算 0 の族。
+証明は `WPd_Tb60u` と同じ: 荷 `(0,0,0)` を `GoodFb_snoc_dupJt0` で展開すると
+鎖は `twoIt nil (pay nil []) m`（空荷）で、語が平らな走りと同じ。
+兄弟の側条件は「予算 0 の族」だけなので `hN` がそのまま効く。 -/
+
+def M0t : Jk1 := Jk1.two Jk1.nil (Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)])
+
+theorem JkA_M0t : JkA M0t := ⟨trivial, trivial, Bok_zero⟩
+
+theorem jk1_M0t (l : ℕ) :
+    jk1 l M0t = [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+    (jk1 (l + 1) Jk1.nil ++ shiftr01 (l + 1 + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)])) = _
+  rw [show l + 1 + 1 = l + 2 from by omega]
+  simp [jk1, shiftr01]
+
+theorem WPd_twoM0 {N : Jk1} (hJN : JkA N) (hN : ∀ ks : List ℕ, WPd (0 :: ks) N) :
+    ∀ ks : List ℕ, WPd (0 :: ks) (Jk1.two N M0t) := by
+  intro ks
+  rw [WPd_iff]
+  intro ctx hc
+  have eT : Jk1.two Jk1.nil (Jk1.pay Jk1.nil
+      (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])) = M0t := by simp [M0t]
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N])
+      (Jk1.two Jk1.nil (Jk1.pay Jk1.nil (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) := by
+    rw [plug_snoc2, eT]
+    exact WCtx_JkT (0 :: ks) ctx hc (Jk1.two N M0t)
+      (⟨hJN, JkA_M0t⟩ : FrmN (0 :: ks) (Jk1.two N M0t))
+  intro ws hw hG
+  have hIH : ∀ m : ℕ, 1 ≤ m → GoodFb (fun a b => wordJ a b
+      (ws ++ [plug (ctx ++ [Frm.ftwo N])
+        (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m)])) := by
+    intro m _
+    rw [plug_snoc2]
+    have hw2 : WPd (0 :: ks)
+        (Jk1.two N (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m)) := by
+      refine WPd_congr (0 :: ks) (fun l => ?_)
+        (WPd_twoOf (k := m) hJN (fun q _ => by simpa using hN (q ++ ks))
+          (WPd_twoIt_nil m m (le_refl m) ks))
+      show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (twoIt Jk1.nil Jk1.nil m))
+        = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m))
+      rw [jk1_twoIt_payNil m (l + 1)]
+    exact (WPd_iff (0 :: ks) _).mp hw2 ctx hc ws hw hG
+  have h := GoodFb_snoc_dupJt0 hw hJT hIH
+  rw [plug_snoc2, eT] at h
+  exact h
+
+theorem JkA_twoItM0 : ∀ n : ℕ, JkA (twoIt Jk1.nil M0t n)
+  | 0 => trivial
+  | (n + 1) => ⟨JkA_twoItM0 n, JkA_M0t⟩
+
+theorem WPd_twoItM0 : ∀ (n : ℕ) (ks : List ℕ), WPd (0 :: ks) (twoIt Jk1.nil M0t n)
+  | 0, ks => WPd_nilT ks
+  | (n + 1), ks =>
+      WPd_twoM0 (JkA_twoItM0 n) (fun ks' => WPd_twoItM0 n ks') ks
+
+def Blk420 : TrioSeq :=
+  [((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem jk1_twoItM0 : ∀ (n : ℕ),
+    jk1 3 (twoIt Jk1.nil M0t n) = copies Blk420 n
+  | 0 => rfl
+  | (n + 1) => by
+      show jk1 3 (twoIt Jk1.nil M0t n) ++
+        (((3 + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (3 + 1) M0t) = _
+      rw [jk1_twoItM0 n, jk1_M0t 4, copies_snoc]
+      simp [Blk420]
+
+theorem tw_R344_Blk420 (n : ℕ) : R344 ++ copies Blk420 n ∈ W 0 := by
+  have hGok : GOK (Jk1.one Jk1.nil (twoIt Jk1.nil M0t n)) :=
+    (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+      ((WPd_bnil _).mpr GOK_nil) (WPd_twoItM0 n []))
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (twoIt Jk1.nil M0t n)]) := by
+    simpa using hGok [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  have e : jk1 2 (Jk1.one Jk1.nil (twoIt Jk1.nil M0t n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: copies Blk420 n := by
+    show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (2 + 1) (twoIt Jk1.nil M0t n)) = _
+    rw [jk1_twoItM0 n]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at hh
+  simpa [R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ `R600 (5,0,0)`（シート証明中）。 -/
+theorem R600500_mem : R600 ++ [((5, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : Blk420 ≠ [] := by simp [Blk420]
+  have hhead : entry Blk420 0 0 < 5 := by simp [Blk420, entry]
+  have htail : ∀ r, 1 ≤ r → r < Blk420.length → 5 ≤ entry Blk420 0 r := by
+    intro r hr1 hr2
+    simp only [Blk420, List.length_cons, List.length_nil] at hr2
+    rcases r with _ | _ | _ | r <;>
+      first
+        | omega
+        | simp [Blk420, entry]
+  have hmem := flat_mem'' (Y0 := R344) (M := Blk420) (d := 5) hne hhead htail
+    (by intro n; simpa [copies] using tw_R344_Blk420 n)
+  have e : R344 ++ Blk420 = R600 := by
+    simp [R600, R375m, R373, R344, Blk420, List.append_assoc]
+  rw [← e]
+  simpa [List.append_assoc] using hmem
+
+#print axioms WPd_twoM0
+#print axioms R600500_mem
+
+/-! ### ★ `R344 ++ Blk420^k ++ (4,2,0) ++ jk1 4 T` の一般形
+
+兄弟に `twoIt nil M0t k`（予算 0 の族）、先端に予算 `c+1` の族 `T`。 -/
+
+theorem R344_blk_gen (k : ℕ) {T : Jk1} (c : ℕ) (hT : ∀ ks : List ℕ, WPd ((c + 1) :: ks) T) :
+    R344 ++ copies Blk420 k ++ (((4, 2, 0) : ℕ × ℕ × ℕ) :: jk1 4 T) ∈ W 0 := by
+  have hGok : GOK (Jk1.one Jk1.nil (Jk1.two (twoIt Jk1.nil M0t k) T)) :=
+    (WPd_bnil _).mp (WPd_step [] (JkT_nil : FrmN [] Jk1.nil)
+      ((WPd_bnil _).mpr GOK_nil)
+      (WPd_twoOf (k := c) (JkA_twoItM0 k)
+        (fun q _ => by simpa using WPd_twoItM0 k q) (hT [])))
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two (twoIt Jk1.nil M0t k) T)]) := by
+    simpa using hGok [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two (twoIt Jk1.nil M0t k) T))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) ::
+        (copies Blk420 k ++ (((4, 2, 0) : ℕ × ℕ × ℕ) :: jk1 4 T)) := by
+    show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (2 + 1) (twoIt Jk1.nil M0t k) ++
+        (((2 + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (2 + 1 + 1) T))) = _
+    rw [jk1_twoItM0 k]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at hh
+  simpa [R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★ `R344 ++ Blk420^k ++ (4,2,0)(5,2,0)^m`（どの `k`, `m` でも）。 -/
+theorem R344_blk_run_mem (k m : ℕ) :
+    R344 ++ copies Blk420 k ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+      List.replicate m ((5, 2, 0) : ℕ × ℕ × ℕ)) ∈ W 0 := by
+  have h := R344_blk_gen k (T := twoIt Jk1.nil Jk1.nil m) m
+    (fun ks => WPd_twoIt_nil m m (le_refl m) ks)
+  rwa [jk1_twoIt_nil m 4] at h
+
+#print axioms R344_blk_run_mem
+
 end Small
 end TRIO
