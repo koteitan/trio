@@ -24503,3 +24503,18 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
 
 シート証明済みを更新（最大 231 文字）。証明中 `R600 (5,2,0)` は変わらず。
 壁（`WPd ((k+1)::ks) M0t`）はこの輪の外にある。
+
+## 追記374: `Aok` の輪を演算子 `Loop` にまとめ、反復を 1 文にした
+
+    Loop A m ws j = LadB ((A ++ U11 0 m) ++ ((2,2,0) ++ wordJ 2 2 ws)) j ++ [(j+4,j+4,0)]
+    Aok_Loop      : Aok A → WJ ws → Aok (Loop A m ws j)        ★輪が閉じている
+    LoopIt A m ws j (n+1) = Loop (LoopIt A m ws j n) m ws j
+    Aok_LoopIt    : Aok A → WJ ws → ∀n, Aok (LoopIt A m ws j n)
+    LoopIt_X510_mem / LoopIt_X510_nil_mem
+
+1 周 = `(1,1,0)(2,2,1)^m (2,2,0) (3,3,1)^p (3,3,0)(4,4,1) …(j 対)… (j+4,j+4,0)`。
+`(m,p,j,n)` の 4 パラメータで、実測では全部標準形（`p ≤ m` は不要になった）。
+シート証明済みを更新（最大 308 文字）。
+
+これで `UJit` / `UJitW` / `Y510Ladf_UJ_mem` は `LoopIt` の特別な場合になった。
+methodology.md にも「`Aok` の輪を回す」を書いた。

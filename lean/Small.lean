@@ -1002,5 +1002,44 @@ theorem Y510Ladf_UJ_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n m' : ℕ)
 #print axioms Aok_Y510Ladf
 #print axioms Y510Ladf_UJ_mem
 
+/-! ### ★ `Aok` の輪を 1 つの演算子に: `Loop` と `LoopIt`
+
+1 周 = `U11 0 m`（`(1,1,0)(2,2,1)^m`）+ `(2,2,0)` + junk の語 `wordJ 2 2 ws`
+     + `PU` の梯子 `LadB ... j` + 平らな段 `(j+4,j+4,0)`。
+結論がまた `Aok` なので何周でも回せる。 -/
+
+def Loop (A : TrioSeq) (m : ℕ) (ws : List Jk1) (j : ℕ) : TrioSeq :=
+  LadB ((A ++ U11 0 m) ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) j
+    ++ [((j + 4, j + 4, 0) : ℕ × ℕ × ℕ)]
+
+theorem PkGA_Loopbase {A : TrioSeq} (hA : Aok A) (m : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    PkGA 2 ((A ++ U11 0 m) ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, A ++ U11 0 m, wordJ 2 2 ws, rfl,
+    LwA_U11 (LwA_of_Aok hA) m, rfl, (GoodFb_wordJ ws hw).pk 1⟩
+
+theorem Aok_Loop {A : TrioSeq} (hA : Aok A) (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j : ℕ) :
+    Aok (Loop A m ws j) :=
+  (BaseOk_PU (j + 3)).aok _ _ (LadB_flat_PU (PkGA_Loopbase hA m hw) j)
+
+def LoopIt (A : TrioSeq) (m : ℕ) (ws : List Jk1) (j : ℕ) : ℕ → TrioSeq
+  | 0 => A
+  | (n + 1) => Loop (LoopIt A m ws j n) m ws j
+
+theorem Aok_LoopIt {A : TrioSeq} (hA : Aok A) (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j : ℕ) :
+    ∀ n : ℕ, Aok (LoopIt A m ws j n)
+  | 0 => hA
+  | (n + 1) => Aok_Loop (Aok_LoopIt hA m hw j n) m hw j
+
+/-- ★★★★★★ `R600 (5,1,0)` の上、輪を `n` 周した 4 パラメータの無限族。 -/
+theorem LoopIt_X510_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    LoopIt X510 m ws j n ∈ W 0 := (Aok_LoopIt Aok_R600510 m hw j n).mem
+
+theorem LoopIt_X510_nil_mem (m p j n : ℕ) :
+    LoopIt X510 m (List.replicate p (AltT 0)) j n ∈ W 0 :=
+  LoopIt_X510_mem m (WJ_rep_AltT 0 p) j n
+
+#print axioms Aok_Loop
+#print axioms LoopIt_X510_nil_mem
+
 end Small
 end TRIO
