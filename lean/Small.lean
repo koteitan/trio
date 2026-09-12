@@ -4806,6 +4806,41 @@ example : LinearOrder Bw2 := inferInstance
 
 #print axioms owG_add_lt
 
+theorem WPdw_run2 : ∀ (k : ℕ) (β : Bw2) (A : Jk1), JkA A →
+    (∀ c : Bw2, β < c → ∀ ks : List Bw2, WPdT (c :: ks) A) →
+    ∀ (m : ℕ) (c : Bw2), β + owG (ex2 0 k) m < c → ∀ ks : List Bw2,
+      WPdT (c :: ks) (twoIt A (Zk k) m)
+  | 0, β, A, _, hA, 0, c, hc, ks => hA c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+  | (k + 1), β, A, _, hA, 0, c, hc, ks => hA c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+  | 0, β, A, hJA, hA, (m + 1), c, hc, ks => by
+      have hstep : β + owG (ex2 0 0) m < β + owG (ex2 0 0) (m + 1) := BwG_add_lt_left β (owG_ltR (ex2 0 0) (by omega))
+      refine WPdT_twoA_runB (a := β + owG (ex2 0 0) (m + 1))
+        (ne_bot_of_gt (lt_of_le_of_lt bot_le hstep)) hc
+        (JkA_twoItP hJA (JkA_Zk 0) m) ?_ ks
+      intro ks'
+      exact WPdw_run2 0 β A hJA hA m (β + owG (ex2 0 0) (m + 1)) hstep ks'
+  | (k + 1), β, A, hJA, hA, (m + 1), c, hc, ks => by
+      have hstep : β + owG (ex2 0 (k + 1)) m < β + owG (ex2 0 (k + 1)) (m + 1) :=
+        BwG_add_lt_left β (owG_ltR (ex2 0 (k + 1)) (by omega))
+      have hJA' : JkA (twoIt A (Zk (k + 1)) m) := JkA_twoItP hJA (JkA_Zk (k + 1)) m
+      have hA' : ∀ c' : Bw2, β + owG (ex2 0 (k + 1)) m < c' → ∀ ks' : List Bw2,
+          WPdT (c' :: ks') (twoIt A (Zk (k + 1)) m) :=
+        fun c' hc' ks' => WPdw_run2 (k + 1) β A hJA hA m c' hc' ks'
+      refine WPdT_twoAZ_top
+        (S := ⟨fun i => (β + owG (ex2 0 (k + 1)) m) + owG (ex2 0 k) i,
+          fun _ _ hij => BwG_add_lt_left _ (owG_ltR (ex2 0 k) hij)⟩)
+        (t := c) ?_ hJA' (JkA_Zk k) ?_ ks
+      · intro i
+        show (β + owG (ex2 0 (k + 1)) m) + owG (ex2 0 k) i < c
+        rw [add_assoc]
+        exact lt_trans (BwG_add_lt_left β (owG_add_lt (ex2_lt_r 0 (by omega : k < k + 1)) m i)) hc
+      · intro m' c' hc' ks'
+        exact WPdw_run2 k (β + owG (ex2 0 (k + 1)) m) (twoIt A (Zk (k + 1)) m) hJA' hA' m' c' hc' ks'
+termination_by k _ _ _ _ m _ _ _ => (k, m)
+
+
+#print axioms WPdw_run2
+
 
 end Small
 end TRIO
