@@ -3774,6 +3774,68 @@ theorem WPdR_stkS (hRP : RunPay (Bud := Bud)) :
 
 #print axioms WPdR_stkS
 
+/-! ### ★★★ 走りのてっぺんの兄弟を鎖にする（`WPdR_stkS` の一般化）
+
+`GOK_runGNil_gen` を `A := N` で使うと、階段の文脈は
+
+    plug (ctx ++ blkC V Bs ++ blkR N Bs i) X = plug (ctx ++ [fone V]) (TwG N p i X)
+
+    TwG N p 0 X = stkP p X,   TwG N p (i+1) X = TwG N p i (one N (stkP p X))
+
+と書ける（`Bs = replicate p nil`）。だから階段の条件は
+「`N` の塔 `TwG N p i N` が**同じ `ks`** に差せる」1 本で済む。
+文脈の入り目が増えないので、鎖 `N` について循環しない。 -/
+
+def TwG (N : Jk1) (p : ℕ) : ℕ → Jk1 → Jk1
+  | 0, X => stkP p X
+  | (i + 1), X => TwG N p i (Jk1.one N (stkP p X))
+
+theorem JkA_TwG {N : Jk1} (hJN : JkA N) (p : ℕ) :
+    ∀ (i : ℕ) {X : Jk1}, JkA X → JkA (TwG N p i X)
+  | 0, _, hX => JkA_stkP p hX
+  | (i + 1), _, hX => JkA_TwG hJN p i ⟨hJN, JkA_stkP p hX⟩
+
+theorem plug_TwG (D : List Frm) (V N : Jk1) (p : ℕ) :
+    ∀ (i : ℕ) (X : Jk1),
+      plug (D ++ blkC V (List.replicate p Jk1.nil)
+          ++ blkR N (List.replicate p Jk1.nil) i) X
+        = plug (D ++ [Frm.fone V]) (TwG N p i X)
+  | 0, X => by
+      rw [blkR_zero, List.append_nil, blkC_eq, ftw_rep, plug_append, plug_repF]
+      rfl
+  | (i + 1), X => by
+      have e1 : D ++ blkC V (List.replicate p Jk1.nil)
+            ++ blkR N (List.replicate p Jk1.nil) (i + 1)
+          = ((D ++ blkC V (List.replicate p Jk1.nil)
+              ++ blkR N (List.replicate p Jk1.nil) i) ++ [Frm.fone N])
+            ++ List.replicate p (Frm.ftwo Jk1.nil) := by
+        rw [blkR_snoc, blkC_eq, ftw_rep]
+        simp [blkC, ftw_rep, List.append_assoc]
+      rw [e1, plug_append, plug_repF, plug_snoc, plug_TwG D V N p i]
+      rfl
+
+/-- ★★★★★★★ 走りのてっぺんの 2 の記録の兄弟を `N` にできる（階段は `N` の塔）。 -/
+theorem WPdR_stkG (p : ℕ) (ks : List (Ekey Bud)) (hk : SOkR ks) {N : Jk1} (hJN : JkA N)
+    (htw : ∀ i : ℕ, WPdR ks (TwG N p i N)) :
+    WPdR ks (stkP p (Jk1.two N Jk1.nil)) := by
+  rw [WPdR_iff]
+  intro D hD
+  obtain ⟨ctx, V, hDe, hGV⟩ := hk.1 D hD
+  have egoal : plug (ctx ++ blkC V (List.replicate p Jk1.nil)) (Jk1.two N Jk1.nil)
+      = plug D (stkP p (Jk1.two N Jk1.nil)) := by
+    rw [blkC_eq, ftw_rep, hDe, plug_append, plug_repF]
+  rw [← egoal]
+  refine GOK_runGNil_gen (V := V) (A := N) hJN
+    (fun B hB => by rw [List.eq_of_mem_replicate hB]; trivial) ctx ?_ hGV ?_
+  · rw [egoal]
+    exact WCtxR_JkT ks D hD (stkP p (Jk1.two N Jk1.nil))
+      (JkA_stkP p (⟨hJN, trivial⟩ : JkA (Jk1.two N Jk1.nil)))
+  · intro i
+    rw [plug_TwG ctx V N p i N, ← hDe]
+    exact (WPdR_iff ks _).mp (htw i) D hD
+
+#print axioms WPdR_stkG
+
 /-- ★★★★★★★★ 行376 が `RunPay`（走りの上の荷）1 文から出る。 -/
 theorem RunAll_of_RunPay (hRP : RunPay (Bud := Bud)) : RunAll := by
   intro q ks
