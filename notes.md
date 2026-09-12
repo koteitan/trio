@@ -26833,3 +26833,31 @@ A2' の再帰で `Dom` は壊れない。
 
 緑: `Dom` / `DMlt_of_Dom` / `Dom_zero` / `Dom_add` / `Dom_replicate` と
 `QS` 一式の書き直し（`AYdQ` もそのまま通った）。
+
+## 追記442: `GOK_twoPayZ_DM`（緑）と、循環の構造
+
+    GOK_twoPayZ_DM (NN : TrioSeq → Jk1 → Prop) (hJZ) (hJN) 
+      (hcl : ∀ Y N, NN Y N → ∀ Y', Bok Y' → Rex' Y' Y → ∀ k, NN Y' (twoIt N (pay Z Y') k))
+      (hJTg) (htow : ∀ Y N, NN Y N → GOK (plug ctx (two N Z))) :
+      ∀ Y, Bok Y → ∀ N, NN Y N → GOK (plug ctx (two N (pay Z Y)))        ★緑
+
+元の `GOK_twoPayZ_of` は `hcl` を `Y' = []` と `Y' = Y⟦n⟧` にしか使っていないので、
+族を荷で添字づけて `hcl` を `Rex' Y' Y` に制限できた。`ctx` は引数なので
+どの族の文脈にも使える（`QS` でもそのまま使える）。
+
+### 循環の構造（測り直した）
+
+    ZApp2c(L)  ← Pc(L)          （TowOkB / WPd_twoA_runB。同じ DM の高さ）
+    Pc(L)      ← htow(L')       （GOK_twoPayZ_DM。L' は荷が DM で小さい）
+
+DM では閉じているが、**`htow` は `WPd` の展開から来る任意の文脈で要る**
+（固定文脈の `ZApp2c` では足りない）。`WPd` の任意文脈版は予算で鎖の長さを縛るので
+ここで止まる。`QS`（予算なし）に移すと止まらない。
+
+### `QS` で要る残り
+
+    AYdTQ（荷の (k+1)::）→ QS_payA → QS_nilAll
+    QS_stairA / QS_twoA_run（走り、底 nil）
+      — `WPd_stairA` の兄弟は固定の `N`（伸びる鎖ではない）ので `QS_twoOf` で回る。
+        `QS_twoOf` の `k` が自由なので長さの縛りが無い。
+    それらと `GOK_twoPayZ_DM` を組んで、DM 帰納で ZApp2c ∧ Pc を同時に出す

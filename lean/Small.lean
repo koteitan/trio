@@ -10452,11 +10452,11 @@ theorem Dom_replicate {y : Ld} {S : Multiset Ld} (h : ∃ z ∈ S, y < z) (m : �
 def QS : Multiset Ld → List ℕ → Jk1 → Prop :=
   wf_LdDM.fix (fun S ih =>
     QDP (fun ks' N => ∃ h : DMlt (LdOf N) S, ih (LdOf N) h ks' N)
-        (fun N => Dom (LdOf N) S))
+        (fun N => DMlt (LdOf N) S))
 
 theorem QS_eq (S : Multiset Ld) :
     QS S = QDP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N)
-        (fun N => Dom (LdOf N) S) :=
+        (fun N => DMlt (LdOf N) S) :=
   wf_LdDM.fix_eq _ S
 
 theorem QS_bnil (S : Multiset Ld) (V : Jk1) : QS S [] V ↔ GOK V := by
@@ -10468,7 +10468,7 @@ theorem QS_c0 (S : Multiset Ld) (ks : List ℕ) (V : Jk1) :
 
 theorem QS_ck (S : Multiset Ld) (k : ℕ) (ks : List ℕ) (V : Jk1) :
     QS S ((k + 1) :: ks) V ↔ ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) → ∀ (U N : Jk1),
-      FrmN (r ++ ks) U → QS S (r ++ ks) U → JkA N → Dom (LdOf N) S →
+      FrmN (r ++ ks) U → QS S (r ++ ks) U → JkA N → DMlt (LdOf N) S →
       (∀ ks' : List ℕ, FrmN ks' N → ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) →
       QS S (r ++ ks) (Jk1.one U (Jk1.two N V)) := by
   rw [QS_eq]; exact QDP_ck _ _ k ks V
@@ -10483,18 +10483,18 @@ theorem QS_step (S : Multiset Ld) (ks : List ℕ) {V W : Jk1}
 
 /-- ★★★★★★ 予算 `k` が**自由**。これが `WPd_twoOf` との差で、走りの長さが縛られない。 -/
 theorem QS_twoOf (S : Multiset Ld) {k : ℕ} {ks : List ℕ} {V N : Jk1} (hJN : JkA N)
-    (hS0 : S ≠ 0) (hSN : Dom (LdOf N) S)
+    (hSN : DMlt (LdOf N) S)
     (hPN : ∀ ks' : List ℕ, FrmN ks' N → QS (LdOf N) ks' N)
     (hV : QS S ((k + 1) :: ks) V) : QS S (0 :: ks) (Jk1.two N V) := by
   rw [QS_ck] at hV
   rw [QS_c0]
   intro U hU hUk
   exact hV [] (by simp) U N (by simpa using hU) (by simpa using hUk) hJN hSN
-    (fun ks' h => ⟨DMlt_of_Dom hSN hS0, hPN ks' h⟩)
+    (fun ks' h => ⟨hSN, hPN ks' h⟩)
 
 /-- `QS` の文脈の族。 -/
 def QSCtx (S : Multiset Ld) : List ℕ → List Frm → Prop :=
-  QCtxP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) (fun N => Dom (LdOf N) S)
+  QCtxP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) (fun N => DMlt (LdOf N) S)
 
 theorem QS_iff (S : Multiset Ld) (ks : List ℕ) (V : Jk1) :
     QS S ks V ↔ ∀ ctx : List Frm, QSCtx S ks ctx → GOK (plug ctx V) := by
@@ -10633,6 +10633,142 @@ theorem AYdQ (S : Multiset Ld) : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List ℕ
   exact key hYb.mem hYb ks Z hZ hRZ X hX hXk
 
 #print axioms AYdQ
+
+/-- 元を取り除くと DM で小さくなる。鎖の内部構造（`twoIt` の 1 段）で使う。 -/
+theorem DMlt_of_add {M R : Multiset Ld} (hR : R ≠ 0) : DMlt M (M + R) :=
+  ⟨M, 0, R, hR, by simp, rfl, by simp⟩
+
+theorem QS_two_of_ctx (S : Multiset Ld) {kk : List ℕ} {U N V : Jk1}
+    (hU : FrmN kk U) (hUk : QS S kk U)
+    (h : ∀ ctx : List Frm, QSCtx S (0 :: kk) ctx → GOK (plug ctx (Jk1.two N V))) :
+    QS S kk (Jk1.one U (Jk1.two N V)) := by
+  rw [QS_iff]
+  intro ctx0 hc0
+  rw [← plug_snoc]
+  exact h (ctx0 ++ [Frm.fone U]) ((QSCtx_c0 S kk _).mpr ⟨ctx0, U, rfl, hc0, hU, hUk⟩)
+
+/-- `QS` の鎖（`twoIt N T n`）。予算の縛りが無いので条件が `WPd_chainT` より軽い。 -/
+theorem QS_chainT (S : Multiset Ld) {B : List ℕ} {ctx : List Frm}
+    (hc : QSCtx S (0 :: B) ctx) {N T : Jk1} (hN : JkA N)
+    (hNall : ∀ q : List ℕ, QS S ((0 :: q) ++ B) N) (hT : JkA T)
+    (hstep : ∀ N' : Jk1, JkA N' → (∀ q : List ℕ, QS S ((0 :: q) ++ B) N') →
+      ∀ q : List ℕ, QS S ((0 :: q) ++ B) (Jk1.two N' T)) :
+    ∀ n, GOK (plug ctx (twoIt N T n)) ∧ JkA (twoIt N T n) ∧
+      (∀ q : List ℕ, QS S ((0 :: q) ++ B) (twoIt N T n))
+  | 0 => ⟨(QS_iff S (0 :: B) N).mp (by simpa using hNall []) ctx hc, hN, hNall⟩
+  | (n + 1) => by
+      obtain ⟨-, h2, h3⟩ := QS_chainT S hc hN hNall hT hstep n
+      have h4 := hstep (twoIt N T n) h2 h3
+      exact ⟨(QS_iff S (0 :: B) _).mp (by simpa using h4 []) ctx hc, ⟨h2, hT⟩, h4⟩
+
+#print axioms DMlt_of_add
+#print axioms QS_two_of_ctx
+#print axioms QS_chainT
+
+/-! ### ★★★★★★★★★★★ `GOK_twoPayZ_of` の DM 版
+
+元の証明は `hcl`（鎖の族の閉性）を `Y' = []` と `Y' = Y⟦n⟧` にしか使っていない。
+どちらも `Rex' Y' Y` なので、族を荷で添字づけて `hcl` を `Rex' Y' Y` に制限できる。
+これで「族が長さ無制限に閉じている」代わりに「荷が DM で小さくなる」形になる。 -/
+
+theorem GOK_twoPayZ_DM {ctx : List Frm} (NN : TrioSeq → Jk1 → Prop) {Z : Jk1} (hJZ : JkA Z)
+    (hJN : ∀ (Y : TrioSeq) (N : Jk1), NN Y N → JkA N)
+    (hcl : ∀ (Y : TrioSeq) (N : Jk1), NN Y N → ∀ Y' : TrioSeq, Bok Y' → Rex' Y' Y →
+      ∀ k : ℕ, NN Y' (twoIt N (Jk1.pay Z Y') k))
+    (hJTg : ∀ N T : Jk1, JkA N → JkA T → JkT (plug ctx (Jk1.two N T)))
+    (htow : ∀ (Y : TrioSeq) (N : Jk1), NN Y N → GOK (plug ctx (Jk1.two N Z))) :
+    ∀ Y : TrioSeq, Bok Y → ∀ N : Jk1, NN Y N →
+      GOK (plug ctx (Jk1.two N (Jk1.pay Z Y))) := by
+  have hnilc : ∀ (Y : TrioSeq) (N : Jk1), NN Y N →
+      GOK (plug ctx (Jk1.two N (Jk1.pay Z ([] : TrioSeq)))) := by
+    intro Y N hN
+    refine GOK_congr (jk1_plug_congr ctx ?_) (htow Y N hN)
+    intro l
+    show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Z)
+      = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (Jk1.pay Z ([] : TrioSeq)))
+    rw [jk1_pay_nil]
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ N : Jk1, NN Y N →
+      GOK (plug ctx (Jk1.two N (Jk1.pay Z Y)))} := by
+    refine A2' ?_
+    intro Y hY
+    simp only [Set.mem_setOf_eq]
+    intro hYb N hN
+    by_cases hshort : Y.length ≤ 1
+    · rcases (by omega : Y.length = 0 ∨ Y.length = 1) with h0 | h1
+      · have hnil0 : Y = [] := List.length_eq_zero_iff.mp h0
+        subst hnil0
+        exact hnilc [] N hN
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := hYb.root
+        obtain ⟨hc1, hc2⟩ := hYb.zroot c (by simp) hc0
+        have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hc1 hc2)
+        subst hcz
+        have hrex : Rex' ([] : TrioSeq) [((0, 0, 0) : ℕ × ℕ × ℕ)] :=
+          Or.inr ⟨rfl, by simp⟩
+        have e : ([((0, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq)
+            = ([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        rw [e]
+        have hYn : Bok (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by simpa using hYb
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (hJTg N _ (hJN _ N hN) ⟨hJZ, hYn⟩) ?_
+        intro n hn
+        obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+        exact hnilc ([] : TrioSeq) (twoIt N (Jk1.pay Z ([] : TrioSeq)) m)
+          (hcl _ N hN ([] : TrioSeq) Bok_nil hrex m) ws hw hG
+    have hlen2 : 2 ≤ Y.length := by omega
+    have hYne : Y ≠ [] := by intro hcc; rw [hcc] at hlen2; simp at hlen2
+    have hns : ¬ (Y.length ≤ 1 ∧ lev Y 0 = 0) := by
+      intro h; have := h.1; omega
+    rcases hY with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · by_cases hlast : entry Y 0 (Y.length - 1) = 0
+      · obtain ⟨he1, he2⟩ := Zroot_entry hYb.zroot hlast
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ)
+            = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hlast (Prod.ext he1 he2)
+        have hgl : Y.getLast hYne = ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hsplit : Y = Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hop : Y⟦1⟧ = Y.dropLast := by
+          rw [oper_eq_pred_of_zero 1 (by omega) ⟨hlast, he1, he2⟩]
+          unfold Pred
+          rw [if_neg (by omega)]
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hdb : Bok Y.dropLast := Bok_dropLast hYb
+        have hrex : Rex' Y.dropLast Y := Or.inl ⟨hns, 1, le_rfl, hop.symm⟩
+        have hprev := hdl hdb
+        rw [hsplit]
+        intro ws hw hG
+        refine GoodFb_snoc_dupJt0 hw
+          (hJTg N _ (hJN _ N hN) ⟨hJZ, by rw [← hsplit]; exact hYb⟩) ?_
+        intro n hn
+        obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+        exact hprev (twoIt N (Jk1.pay Z Y.dropLast) m)
+          (hcl _ N hN Y.dropLast hdb hrex m) ws hw hG
+      · have hnz : ¬ (entry Y 0 (Y.length - 1) = 0 ∧ entry Y 1 (Y.length - 1) = 0 ∧
+            entry Y 2 (Y.length - 1) = 0) := fun h => hlast h.1
+        have hp := hasParent_of_ZrootMono hYb.zroot hYb.mono hYb.root hlen2 hnz
+        intro ws hw hG
+        refine GoodFb_snoc_innerJt0 hw (hJTg N _ (hJN _ N hN) ⟨hJZ, hYb⟩) hlen2 hp ?_
+        intro n hn
+        have hh := hnat n hn
+        simp only [Set.mem_setOf_eq] at hh
+        have hrexn : Rex' (Y⟦n⟧) Y := Or.inl ⟨hns, n, hn, rfl⟩
+        exact hh (Bok_oper hYb hn) N
+          (hcl _ N hN (Y⟦n⟧) (Bok_oper hYb hn) hrexn 0) ws hw hG
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro Y hYb N hN
+  exact key hYb.mem hYb N hN
+
+#print axioms GOK_twoPayZ_DM
 
 
 end Small
