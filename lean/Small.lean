@@ -1090,67 +1090,77 @@ theorem R376_of_RHang2 (h : RHang2) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] 
 #print axioms RHang2_nil
 #print axioms R376_of_RHang2
 
-/-! ### ★ 実験: 予算を `WithTop ℕ`（⊤ 付き）に広げる
+/-! ### ★ 予算の型を一般化する
 
-壁 `WPd ((k+1)::ks) M0t` は「兄弟 `N` が予算 `≤ k` までしか無い」のが原因。
-予算に `⊤` を足すと `⊤` の節の兄弟は「全ての自然数の予算」で来るので、
-鎖（幅に上限が無い平らな走り）が作れる。DM 順序は `⊤` を自然数で
-置き換えるので整礎のまま。 -/
+壁 `WPd ((k+1)::ks) M0t` は「兄弟 `N` の予算が `≤ k` までしか無い」のが原因。
+予算を「整礎な全順序 `Bud`」にして、自然数の段 `nb 0 < nb 1 < ...` の上に
+予算 `t` を置くと、`t` の節では兄弟が全ての `nb m` の予算で来るので、
+幅に上限の無い鎖が作れる。DM 順序は `Bud` が整礎なら整礎のまま。 -/
 
-example : WellFoundedLT (WithTop ℕ) := inferInstance
+/-- 予算の「ω 段」。`nb : ℕ → Bud` は下から `⊥` で始まる真に増える列。 -/
+structure Scale (B : Type) [Preorder B] [OrderBot B] where
+  nb : ℕ → B
+  nb0 : nb 0 = ⊥
+  nbmono : StrictMono nb
 
-theorem dmT_step {b : WithTop ℕ} {X Y : Multiset (WithTop ℕ)} (h : ∀ y ∈ Y, y < b) :
+section Bud
+
+variable {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+
+
+theorem dmT_step {b : Bud} {X Y : Multiset Bud} (h : ∀ y ∈ Y, y < b) :
     Multiset.IsDershowitzMannaLT (X + Y) (b ::ₘ X) := by
   refine ⟨X, Y, {b}, by simp, rfl, ?_, ?_⟩
   · rw [← Multiset.singleton_add, add_comm]
   · intro y hy
     exact ⟨b, by simp, h y hy⟩
 
-theorem dmT_cons (b : WithTop ℕ) (ks : List (WithTop ℕ)) :
-    Multiset.IsDershowitzMannaLT ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
-      ((b :: ks : List (WithTop ℕ)) : Multiset (WithTop ℕ)) := by
-  simpa using dmT_step (b := b) (X := ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ)))
+theorem dmT_cons (b : Bud) (ks : List Bud) :
+    Multiset.IsDershowitzMannaLT ((ks : List Bud) : Multiset Bud)
+      ((b :: ks : List Bud) : Multiset Bud) := by
+  simpa using dmT_step (b := b) (X := ((ks : List Bud) : Multiset Bud))
     (Y := 0) (by simp)
 
-theorem dmT_app {b : WithTop ℕ} (ks a : List (WithTop ℕ)) (h : ∀ x ∈ a, x < b) :
-    Multiset.IsDershowitzMannaLT ((a ++ ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
-      ((b :: ks : List (WithTop ℕ)) : Multiset (WithTop ℕ)) := by
-  have e : ((a ++ ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
-      = ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
-        + ((a : List (WithTop ℕ)) : Multiset (WithTop ℕ)) := by
+theorem dmT_app {b : Bud} (ks a : List Bud) (h : ∀ x ∈ a, x < b) :
+    Multiset.IsDershowitzMannaLT ((a ++ ks : List Bud) : Multiset Bud)
+      ((b :: ks : List Bud) : Multiset Bud) := by
+  have e : ((a ++ ks : List Bud) : Multiset Bud)
+      = ((ks : List Bud) : Multiset Bud)
+        + ((a : List Bud) : Multiset Bud) := by
     rw [← Multiset.coe_add]
     exact Multiset.coe_eq_coe.mpr List.perm_append_comm
   rw [e]
-  exact dmT_step (b := b) (X := ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ)))
-    (Y := ((a : List (WithTop ℕ)) : Multiset (WithTop ℕ)))
+  exact dmT_step (b := b) (X := ((ks : List Bud) : Multiset Bud))
+    (Y := ((a : List Bud) : Multiset Bud))
     (fun y hy => h y (by simpa using hy))
 
 #print axioms dmT_app
 
-def FrmNT : List (WithTop ℕ) → Jk1 → Prop
+def FrmNT : List Bud → Jk1 → Prop
   | [], U => JkT U
   | (_ :: _), U => JkA U
 
-/-- `WPd` の予算を `WithTop ℕ` にしたもの。`⊥` が 1 の枠、`⊥ < b` が 2 の枠で、
+/-- `WPd` の予算を `Bud` にしたもの。`⊥` が 1 の枠、`⊥ < b` が 2 の枠で、
 兄弟は「予算 `< b`」。`b = ⊤` の節では兄弟が**全ての自然数の予算**で来る。 -/
-def WPdT : List (WithTop ℕ) → Jk1 → Prop
+def WPdT {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
+    List Bud → Jk1 → Prop
   | [], V => GOK V
   | (b :: ks), V =>
       (b = ⊥ → ∀ U : Jk1, FrmNT ks U → WPdT ks U → WPdT ks (Jk1.one U V)) ∧
-      (b ≠ ⊥ → ∀ (r : List (WithTop ℕ)), (∀ x ∈ r, x < b) → ∀ (U N : Jk1),
+      (b ≠ ⊥ → ∀ (r : List Bud), (∀ x ∈ r, x < b) → ∀ (U N : Jk1),
         FrmNT (r ++ ks) U → WPdT (r ++ ks) U → JkA N →
-        (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-          WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N) →
+        (∀ q : List Bud, (∀ x ∈ q, x < b) →
+          WPdT ((⊥ : Bud) :: q ++ (r ++ ks)) N) →
         WPdT (r ++ ks) (Jk1.one U (Jk1.two N V)))
-termination_by ks _ => ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
 decreasing_by
   all_goals
     first
       | exact dmT_cons _ _
       | exact dmT_app ks _ (by assumption)
-      | (rw [show (⊥ : WithTop ℕ) :: q ++ (r ++ ks)
-              = ((⊥ : WithTop ℕ) :: (q ++ r)) ++ ks from by simp]
-         refine dmT_app ks ((⊥ : WithTop ℕ) :: (q ++ r)) ?_
+      | (rw [show (⊥ : Bud) :: q ++ (r ++ ks)
+              = ((⊥ : Bud) :: (q ++ r)) ++ ks from by simp]
+         refine dmT_app ks ((⊥ : Bud) :: (q ++ r)) ?_
          intro x hx
          simp only [List.mem_cons, List.mem_append] at hx
          rcases hx with h1 | h1 | h1
@@ -1161,21 +1171,21 @@ decreasing_by
 
 #print axioms WPdT
 
-theorem WPdT_bnil (V : Jk1) : WPdT [] V ↔ GOK V := by rw [WPdT]
+theorem WPdT_bnil (V : Jk1) : WPdT ([] : List Bud) V ↔ GOK V := by rw [WPdT]
 
-theorem WPdT_cons (b : WithTop ℕ) (ks : List (WithTop ℕ)) (V : Jk1) :
+theorem WPdT_cons (b : Bud) (ks : List Bud) (V : Jk1) :
     WPdT (b :: ks) V ↔
       (b = ⊥ → ∀ U : Jk1, FrmNT ks U → WPdT ks U → WPdT ks (Jk1.one U V)) ∧
-      (b ≠ ⊥ → ∀ (r : List (WithTop ℕ)), (∀ x ∈ r, x < b) → ∀ (U N : Jk1),
+      (b ≠ ⊥ → ∀ (r : List Bud), (∀ x ∈ r, x < b) → ∀ (U N : Jk1),
         FrmNT (r ++ ks) U → WPdT (r ++ ks) U → JkA N →
-        (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-          WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N) →
+        (∀ q : List Bud, (∀ x ∈ q, x < b) →
+          WPdT ((⊥ : Bud) :: q ++ (r ++ ks)) N) →
         WPdT (r ++ ks) (Jk1.one U (Jk1.two N V))) := by
   rw [WPdT]
 
 /-- `⊥` の節（1 の枠）。 -/
-theorem WPdT_c0 (ks : List (WithTop ℕ)) (V : Jk1) :
-    WPdT ((⊥ : WithTop ℕ) :: ks) V ↔
+theorem WPdT_c0 (ks : List Bud) (V : Jk1) :
+    WPdT ((⊥ : Bud) :: ks) V ↔
       ∀ U : Jk1, FrmNT ks U → WPdT ks U → WPdT ks (Jk1.one U V) := by
   rw [WPdT_cons]
   constructor
@@ -1183,12 +1193,12 @@ theorem WPdT_c0 (ks : List (WithTop ℕ)) (V : Jk1) :
   · exact fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩
 
 /-- `b ≠ ⊥` の節（2 の枠）。 -/
-theorem WPdT_cb {b : WithTop ℕ} (hb : b ≠ ⊥) (ks : List (WithTop ℕ)) (V : Jk1) :
+theorem WPdT_cb {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) (V : Jk1) :
     WPdT (b :: ks) V ↔
-      ∀ (r : List (WithTop ℕ)), (∀ x ∈ r, x < b) → ∀ (U N : Jk1),
+      ∀ (r : List Bud), (∀ x ∈ r, x < b) → ∀ (U N : Jk1),
         FrmNT (r ++ ks) U → WPdT (r ++ ks) U → JkA N →
-        (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-          WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N) →
+        (∀ q : List Bud, (∀ x ∈ q, x < b) →
+          WPdT ((⊥ : Bud) :: q ++ (r ++ ks)) N) →
         WPdT (r ++ ks) (Jk1.one U (Jk1.two N V)) := by
   rw [WPdT_cons]
   constructor
@@ -1196,16 +1206,16 @@ theorem WPdT_cb {b : WithTop ℕ} (hb : b ≠ ⊥) (ks : List (WithTop ℕ)) (V 
   · exact fun h => ⟨fun he => absurd he hb, fun _ => h⟩
 
 /-- `⊥` の節から `one` を継ぐ（`WPd_step` の `WPdT` 版）。 -/
-theorem WPdT_step (ks : List (WithTop ℕ)) {V W : Jk1} (hV : FrmNT ks V) (hVk : WPdT ks V)
-    (hW : WPdT ((⊥ : WithTop ℕ) :: ks) W) : WPdT ks (Jk1.one V W) :=
+theorem WPdT_step (ks : List Bud) {V W : Jk1} (hV : FrmNT ks V) (hVk : WPdT ks V)
+    (hW : WPdT ((⊥ : Bud) :: ks) W) : WPdT ks (Jk1.one V W) :=
   (WPdT_c0 ks W).mp hW V hV hVk
 
 /-- `2 の枠`（`WPd_twoOf` の `WPdT` 版）。予算 `b` は自由に選べる。 -/
-theorem WPdT_twoOf {b : WithTop ℕ} (hb : b ≠ ⊥) {ks : List (WithTop ℕ)} {V N : Jk1}
+theorem WPdT_twoOf {b : Bud} (hb : b ≠ ⊥) {ks : List Bud} {V N : Jk1}
     (hJN : JkA N)
-    (hNt : ∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-      WPdT ((⊥ : WithTop ℕ) :: q ++ ks) N)
-    (hV : WPdT (b :: ks) V) : WPdT ((⊥ : WithTop ℕ) :: ks) (Jk1.two N V) :=
+    (hNt : ∀ q : List Bud, (∀ x ∈ q, x < b) →
+      WPdT ((⊥ : Bud) :: q ++ ks) N)
+    (hV : WPdT (b :: ks) V) : WPdT ((⊥ : Bud) :: ks) (Jk1.two N V) :=
   (WPdT_c0 ks _).mpr (fun U hU hUk => by
     have h := (WPdT_cb hb ks V).mp hV [] (by simp) U N (by simpa using hU)
       (by simpa using hUk) hJN (fun q hq => by simpa using hNt q hq)
@@ -1213,49 +1223,51 @@ theorem WPdT_twoOf {b : WithTop ℕ} (hb : b ≠ ⊥) {ks : List (WithTop ℕ)} 
 
 #print axioms WPdT_twoOf
 
-def WCtxU : List (WithTop ℕ) → List Frm → Prop
+def WCtxU {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
+    List Bud → List Frm → Prop
   | [], ctx => ctx = []
   | (b :: ks), ctx =>
       (b = ⊥ → ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
         WCtxU ks ctx' ∧ FrmNT ks U ∧ WPdT ks U) ∧
-      (b ≠ ⊥ → ∃ (r : List (WithTop ℕ)) (_ : ∀ x ∈ r, x < b)
+      (b ≠ ⊥ → ∃ (r : List Bud) (_ : ∀ x ∈ r, x < b)
         (ctx' : List Frm) (U N : Jk1),
         ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
         WCtxU (r ++ ks) ctx' ∧
         FrmNT (r ++ ks) U ∧ WPdT (r ++ ks) U ∧ JkA N ∧
-        (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-          WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N))
-termination_by ks _ => ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
+        (∀ q : List Bud, (∀ x ∈ q, x < b) →
+          WPdT ((⊥ : Bud) :: q ++ (r ++ ks)) N))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
 decreasing_by
   all_goals
     first
       | exact dmT_cons _ _
       | exact dmT_app ks _ (by assumption)
 
-theorem WCtxU_bnil (ctx : List Frm) : WCtxU [] ctx ↔ ctx = [] := by rw [WCtxU]
+theorem WCtxU_bnil (ctx : List Frm) : WCtxU ([] : List Bud) ctx ↔ ctx = [] := by
+  rw [WCtxU]
 
-theorem WCtxU_c0 (ks : List (WithTop ℕ)) (ctx : List Frm) :
-    WCtxU ((⊥ : WithTop ℕ) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1),
+theorem WCtxU_c0 (ks : List Bud) (ctx : List Frm) :
+    WCtxU ((⊥ : Bud) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1),
       ctx = ctx' ++ [Frm.fone U] ∧ WCtxU ks ctx' ∧ FrmNT ks U ∧ WPdT ks U := by
   rw [WCtxU]
   constructor
   · exact fun h => h.1 rfl
   · exact fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩
 
-theorem WCtxU_cb {b : WithTop ℕ} (hb : b ≠ ⊥) (ks : List (WithTop ℕ)) (ctx : List Frm) :
-    WCtxU (b :: ks) ctx ↔ ∃ (r : List (WithTop ℕ)) (_ : ∀ x ∈ r, x < b)
+theorem WCtxU_cb {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) (ctx : List Frm) :
+    WCtxU (b :: ks) ctx ↔ ∃ (r : List Bud) (_ : ∀ x ∈ r, x < b)
       (ctx' : List Frm) (U N : Jk1),
       ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
       WCtxU (r ++ ks) ctx' ∧
       FrmNT (r ++ ks) U ∧ WPdT (r ++ ks) U ∧ JkA N ∧
-      (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-        WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N) := by
+      (∀ q : List Bud, (∀ x ∈ q, x < b) →
+        WPdT ((⊥ : Bud) :: q ++ (r ++ ks)) N) := by
   rw [WCtxU]
   constructor
   · exact fun h => h.2 hb
   · exact fun h => ⟨fun he => absurd he hb, fun _ => h⟩
 
-theorem WPdT_iff : ∀ (ks : List (WithTop ℕ)) (V : Jk1),
+theorem WPdT_iff : ∀ (ks : List Bud) (V : Jk1),
     WPdT ks V ↔ ∀ ctx : List Frm, WCtxU ks ctx → GOK (plug ctx V)
   | [], V => by
       rw [WPdT_bnil]
@@ -1294,14 +1306,14 @@ theorem WPdT_iff : ∀ (ks : List (WithTop ℕ)) (V : Jk1),
           rw [← plug_snoc12]
           exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
             ((WCtxU_cb hb ks _).mpr ⟨r, hr, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩)
-termination_by ks _ => ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
 decreasing_by
   all_goals
     first
       | exact dmT_cons _ _
       | exact dmT_app ks _ (by assumption)
 
-theorem WPdT_congr : ∀ (ks : List (WithTop ℕ)) {V1 V2 : Jk1},
+theorem WPdT_congr : ∀ (ks : List Bud) {V1 V2 : Jk1},
     (∀ l, jk1 l V1 = jk1 l V2) → WPdT ks V1 → WPdT ks V2 := by
   intro ks V1 V2 h hA
   rw [WPdT_iff] at hA ⊢
@@ -1311,29 +1323,29 @@ theorem WPdT_congr : ∀ (ks : List (WithTop ℕ)) {V1 V2 : Jk1},
 #print axioms WPdT_iff
 #print axioms WPdT_congr
 
-theorem FrmNT_JkA : ∀ (ks : List (WithTop ℕ)) (U : Jk1), FrmNT ks U → JkA U
+theorem FrmNT_JkA : ∀ (ks : List Bud) (U : Jk1), FrmNT ks U → JkA U
   | [], _, h => h.1
   | (_ :: _), _, h => h
 
-theorem FrmNT_nilA : ∀ ks : List (WithTop ℕ), FrmNT ks Jk1.nil
+theorem FrmNT_nilA : ∀ ks : List Bud, FrmNT ks Jk1.nil
   | [] => JkT_nil
   | (_ :: _) => trivial
 
-theorem FrmNT_one (ks : List (WithTop ℕ)) (U X : Jk1) (hU : FrmNT ks U) (hX : JkA X) :
+theorem FrmNT_one (ks : List Bud) (U X : Jk1) (hU : FrmNT ks U) (hX : JkA X) :
     FrmNT ks (Jk1.one U X) := by
   cases ks with
   | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
   | cons b bs => exact ⟨hU, hX⟩
 
-theorem WCtxU_split (ks : List (WithTop ℕ)) (ctx : List Frm)
-    (h : WCtxU ((⊥ : WithTop ℕ) :: ks) ctx) :
+theorem WCtxU_split (ks : List Bud) (ctx : List Frm)
+    (h : WCtxU ((⊥ : Bud) :: ks) ctx) :
     ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WCtxU ks ctx0 ∧
       FrmNT ks V ∧ GOK (plug ctx0 V) := by
   rw [WCtxU_c0] at h
   obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
   exact ⟨ctx', U, rfl, hc', hU, (WPdT_iff ks U).mp hUk ctx' hc'⟩
 
-theorem WCtxU_JkT : ∀ (ks : List (WithTop ℕ)) (ctx : List Frm), WCtxU ks ctx →
+theorem WCtxU_JkT : ∀ (ks : List Bud) (ctx : List Frm), WCtxU ks ctx →
     ∀ X : Jk1, FrmNT ks X → JkT (plug ctx X)
   | [], ctx, h, X, hX => by
       rw [WCtxU_bnil] at h
@@ -1351,16 +1363,16 @@ theorem WCtxU_JkT : ∀ (ks : List (WithTop ℕ)) (ctx : List Frm), WCtxU ks ctx
         rw [plug_snoc12]
         exact WCtxU_JkT (r ++ ks) ctx' hc' (Jk1.one U (Jk1.two N X))
           (FrmNT_one (r ++ ks) U _ hU ⟨hJN, hX⟩)
-termination_by ks _ => ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
 decreasing_by
   all_goals
     first
       | exact dmT_cons _ _
       | exact dmT_app ks _ (by assumption)
 
-theorem WPdT_two_of_ctx {kk : List (WithTop ℕ)} {U N V : Jk1}
+theorem WPdT_two_of_ctx {kk : List Bud} {U N V : Jk1}
     (hU : FrmNT kk U) (hUk : WPdT kk U)
-    (h : ∀ ctx : List Frm, WCtxU ((⊥ : WithTop ℕ) :: kk) ctx →
+    (h : ∀ ctx : List Frm, WCtxU ((⊥ : Bud) :: kk) ctx →
       GOK (plug ctx (Jk1.two N V))) :
     WPdT kk (Jk1.one U (Jk1.two N V)) := by
   rw [WPdT_iff]
@@ -1368,12 +1380,12 @@ theorem WPdT_two_of_ctx {kk : List (WithTop ℕ)} {U N V : Jk1}
   rw [← plug_snoc]
   exact h (ctx0 ++ [Frm.fone U]) ((WCtxU_c0 kk _).mpr ⟨ctx0, U, rfl, hc0, hU, hUk⟩)
 
-theorem WPdT_payE (V : Jk1) (hV : JkT V) (hVk : WPdT [] V) (C : TrioSeq) (hC : Bok C) :
-    WPdT [] (Jk1.pay V C) :=
+theorem WPdT_payE (V : Jk1) (hV : JkT V) (hVk : WPdT ([] : List Bud) V)
+    (C : TrioSeq) (hC : Bok C) : WPdT ([] : List Bud) (Jk1.pay V C) :=
   (WPdT_bnil _).mpr (AY0 C hC V hV ((WPdT_bnil V).mp hVk))
 
-theorem WPdT_ck_shift {b : WithTop ℕ} (hb : b ≠ ⊥) {ks : List (WithTop ℕ)} {T : Jk1}
-    (h : WPdT (b :: ks) T) (a : List (WithTop ℕ)) (ha : ∀ x ∈ a, x < b) :
+theorem WPdT_ck_shift {b : Bud} (hb : b ≠ ⊥) {ks : List Bud} {T : Jk1}
+    (h : WPdT (b :: ks) T) (a : List Bud) (ha : ∀ x ∈ a, x < b) :
     WPdT (b :: (a ++ ks)) T := by
   rw [WPdT_cb hb]
   intro r hr U N hU hUk hJN hNt
@@ -1390,12 +1402,12 @@ theorem WPdT_ck_shift {b : WithTop ℕ} (hb : b ≠ ⊥) {ks : List (WithTop ℕ
 
 /-! ### `WPdT` 層の荷（pay） -/
 
-theorem FrmNT_itJ : ∀ (ks : List (WithTop ℕ)) {T : Jk1}, JkA T → ∀ (n : ℕ) {X : Jk1},
+theorem FrmNT_itJ : ∀ (ks : List Bud) {T : Jk1}, JkA T → ∀ (n : ℕ) {X : Jk1},
     FrmNT ks X → FrmNT ks (itJ T n X)
   | [], _, hT, n, _, h => JkT_itJ hT n h
   | (_ :: _), _, hT, n, _, h => JkA_itJ hT n h
 
-theorem GOK_chainJdWT {ks : List (WithTop ℕ)} {ctx : List Frm} (hc : WCtxU ks ctx) {X T : Jk1}
+theorem GOK_chainJdWT {ks : List Bud} {ctx : List Frm} (hc : WCtxU ks ctx) {X T : Jk1}
     (hXok : FrmNT ks X) (hXk : WPdT ks X) (hTok : JkA T)
     (hstep : ∀ V : Jk1, FrmNT ks V → WPdT ks V → WPdT ks (Jk1.one V T)) :
     ∀ n, GOK (plug ctx (itJ T n X)) ∧ WPdT ks (itJ T n X)
@@ -1407,11 +1419,11 @@ theorem GOK_chainJdWT {ks : List (WithTop ℕ)} {ctx : List Frm} (hc : WCtxU ks 
       exact ⟨(WPdT_iff ks _).mp h3 ctx hc, h3⟩
 
 /-- 予算 `⊥` の荷（`AYdW` の `WPdT` 版）。 -/
-theorem AYdWT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List (WithTop ℕ)) (Z : Jk1), JkA Z →
-    WPdT ((⊥ : WithTop ℕ) :: ks) Z →
+theorem AYdWT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List Bud) (Z : Jk1), JkA Z →
+    WPdT ((⊥ : Bud) :: ks) Z →
     ∀ (X : Jk1), FrmNT ks X → WPdT ks X → WPdT ks (Jk1.one X (Jk1.pay Z Y)) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List (WithTop ℕ)) (Z : Jk1), JkA Z →
-      WPdT ((⊥ : WithTop ℕ) :: ks) Z →
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (ks : List Bud) (Z : Jk1), JkA Z →
+      WPdT ((⊥ : Bud) :: ks) Z →
       ∀ (X : Jk1), FrmNT ks X → WPdT ks X → WPdT ks (Jk1.one X (Jk1.pay Z Y))} := by
     refine A2' ?_
     intro Y hY
@@ -1494,48 +1506,48 @@ theorem AYdWT : ∀ (Y : TrioSeq), Bok Y → ∀ (ks : List (WithTop ℕ)) (Z : 
   intro Y hYb ks Z hZ hRZ X hX hXk
   exact key hYb.mem hYb ks Z hZ hRZ X hX hXk
 
-theorem WPdT_payT (ks : List (WithTop ℕ)) (V : Jk1) (hV : JkA V)
-    (hVk : WPdT ((⊥ : WithTop ℕ) :: ks) V) (C : TrioSeq) (hC : Bok C) :
-    WPdT ((⊥ : WithTop ℕ) :: ks) (Jk1.pay V C) :=
+theorem WPdT_payT (ks : List Bud) (V : Jk1) (hV : JkA V)
+    (hVk : WPdT ((⊥ : Bud) :: ks) V) (C : TrioSeq) (hC : Bok C) :
+    WPdT ((⊥ : Bud) :: ks) (Jk1.pay V C) :=
   (WPdT_c0 ks _).mpr (fun U hU hUk => AYdWT C hC ks V hV hVk U hU hUk)
 
 #print axioms AYdWT
 
-theorem WPdT_chainT {b : WithTop ℕ} {B : List (WithTop ℕ)} {ctx : List Frm}
-    (hc : WCtxU ((⊥ : WithTop ℕ) :: B) ctx) {N T : Jk1}
+theorem WPdT_chainT {b : Bud} {B : List Bud} {ctx : List Frm}
+    (hc : WCtxU ((⊥ : Bud) :: B) ctx) {N T : Jk1}
     (hN : JkA N)
-    (hNall : ∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-      WPdT ((⊥ : WithTop ℕ) :: q ++ B) N)
+    (hNall : ∀ q : List Bud, (∀ x ∈ q, x < b) →
+      WPdT ((⊥ : Bud) :: q ++ B) N)
     (hT : JkA T)
     (hstep : ∀ N' : Jk1, JkA N' →
-      (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) → WPdT ((⊥ : WithTop ℕ) :: q ++ B) N') →
-      ∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-        WPdT ((⊥ : WithTop ℕ) :: q ++ B) (Jk1.two N' T)) :
+      (∀ q : List Bud, (∀ x ∈ q, x < b) → WPdT ((⊥ : Bud) :: q ++ B) N') →
+      ∀ q : List Bud, (∀ x ∈ q, x < b) →
+        WPdT ((⊥ : Bud) :: q ++ B) (Jk1.two N' T)) :
     ∀ n, GOK (plug ctx (twoIt N T n)) ∧ JkA (twoIt N T n) ∧
-      (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-        WPdT ((⊥ : WithTop ℕ) :: q ++ B) (twoIt N T n))
-  | 0 => ⟨(WPdT_iff ((⊥ : WithTop ℕ) :: B) N).mp (by simpa using hNall [] (by simp)) ctx hc,
+      (∀ q : List Bud, (∀ x ∈ q, x < b) →
+        WPdT ((⊥ : Bud) :: q ++ B) (twoIt N T n))
+  | 0 => ⟨(WPdT_iff ((⊥ : Bud) :: B) N).mp (by simpa using hNall [] (by simp)) ctx hc,
       hN, hNall⟩
   | (n + 1) => by
       obtain ⟨-, h2, h3⟩ := WPdT_chainT hc hN hNall hT hstep n
       have h4 := hstep (twoIt N T n) h2 h3
-      exact ⟨(WPdT_iff ((⊥ : WithTop ℕ) :: B) _).mp (by simpa using h4 [] (by simp)) ctx hc,
+      exact ⟨(WPdT_iff ((⊥ : Bud) :: B) _).mp (by simpa using h4 [] (by simp)) ctx hc,
         ⟨h2, hT⟩, h4⟩
 
-theorem AYdTWT_hstep {b : WithTop ℕ} (hb : b ≠ ⊥) {ks r : List (WithTop ℕ)}
+theorem AYdTWT_hstep {b : Bud} (hb : b ≠ ⊥) {ks r : List Bud}
     (hr : ∀ x ∈ r, x < b) {T : Jk1} (hTk : WPdT (b :: ks) T) :
     ∀ N' : Jk1, JkA N' →
-      (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-        WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N') →
-      ∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
-        WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) (Jk1.two N' T) := by
+      (∀ q : List Bud, (∀ x ∈ q, x < b) →
+        WPdT ((⊥ : Bud) :: q ++ (r ++ ks)) N') →
+      ∀ q : List Bud, (∀ x ∈ q, x < b) →
+        WPdT ((⊥ : Bud) :: q ++ (r ++ ks)) (Jk1.two N' T) := by
   intro N' hN' hN'all q hq
-  have e : (⊥ : WithTop ℕ) :: q ++ (r ++ ks) = (⊥ : WithTop ℕ) :: (q ++ r ++ ks) := by simp
+  have e : (⊥ : Bud) :: q ++ (r ++ ks) = (⊥ : Bud) :: (q ++ r ++ ks) := by simp
   rw [e]
   refine WPdT_twoOf hb hN' ?_ ?_
   · intro q' hq'
-    have e2 : (⊥ : WithTop ℕ) :: q' ++ (q ++ r ++ ks)
-        = ((⊥ : WithTop ℕ) :: (q' ++ q)) ++ (r ++ ks) := by simp
+    have e2 : (⊥ : Bud) :: q' ++ (q ++ r ++ ks)
+        = ((⊥ : Bud) :: (q' ++ q)) ++ (r ++ ks) := by simp
     rw [e2]
     refine hN'all (q' ++ q) ?_
     intro x hx
@@ -1551,11 +1563,11 @@ theorem AYdTWT_hstep {b : WithTop ℕ} (hb : b ≠ ⊥) {ks r : List (WithTop �
     simpa using hsh
 
 /-- 予算 `b ≠ ⊥` の荷（`AYdTW` の `WPdT` 版）。 -/
-theorem AYdTWT : ∀ (Y : TrioSeq), Bok Y → ∀ (b : WithTop ℕ), b ≠ ⊥ →
-    ∀ (ks : List (WithTop ℕ)) (Z : Jk1), JkA Z →
+theorem AYdTWT : ∀ (Y : TrioSeq), Bok Y → ∀ (b : Bud), b ≠ ⊥ →
+    ∀ (ks : List Bud) (Z : Jk1), JkA Z →
     WPdT (b :: ks) Z → WPdT (b :: ks) (Jk1.pay Z Y) := by
-  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (b : WithTop ℕ), b ≠ ⊥ →
-      ∀ (ks : List (WithTop ℕ)) (Z : Jk1), JkA Z →
+  have key : W 0 ⊆ {Y : TrioSeq | Bok Y → ∀ (b : Bud), b ≠ ⊥ →
+      ∀ (ks : List Bud) (Z : Jk1), JkA Z →
       WPdT (b :: ks) Z → WPdT (b :: ks) (Jk1.pay Z Y)} := by
     refine A2' ?_
     intro Y hY
@@ -1580,7 +1592,7 @@ theorem AYdTWT : ∀ (Y : TrioSeq), Bok Y → ∀ (b : WithTop ℕ), b ≠ ⊥ �
         refine WPdT_two_of_ctx hU hUk ?_
         intro ctx hc ws hw hG
         refine GoodFb_snoc_dupJt0 hw
-          (WCtxU_JkT ((⊥ : WithTop ℕ) :: (r ++ ks)) ctx hc
+          (WCtxU_JkT ((⊥ : Bud) :: (r ++ ks)) ctx hc
             (Jk1.two N (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
             ⟨hN, hZ, by simpa using hYb⟩) ?_
         intro n hn
@@ -1616,7 +1628,7 @@ theorem AYdTWT : ∀ (Y : TrioSeq), Bok Y → ∀ (b : WithTop ℕ), b ≠ ⊥ �
         refine WPdT_two_of_ctx hU hUk ?_
         intro ctx hc ws hw hG
         refine GoodFb_snoc_dupJt0 hw
-          (WCtxU_JkT ((⊥ : WithTop ℕ) :: (r ++ ks)) ctx hc
+          (WCtxU_JkT ((⊥ : Bud) :: (r ++ ks)) ctx hc
             (Jk1.two N (Jk1.pay Z (Y.dropLast ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))
             ⟨hN, hZ, by rw [← hsplit]; exact hYb⟩) ?_
         intro n hn
@@ -1630,7 +1642,7 @@ theorem AYdTWT : ∀ (Y : TrioSeq), Bok Y → ∀ (b : WithTop ℕ), b ≠ ⊥ �
         refine WPdT_two_of_ctx hU hUk ?_
         intro ctx hc ws hw hG
         refine GoodFb_snoc_innerJt0 hw
-          (WCtxU_JkT ((⊥ : WithTop ℕ) :: (r ++ ks)) ctx hc
+          (WCtxU_JkT ((⊥ : Bud) :: (r ++ ks)) ctx hc
             (Jk1.two N (Jk1.pay Z Y)) ⟨hN, hZ, hYb⟩)
           hlen2 hp ?_
         intro n hn
@@ -1649,7 +1661,7 @@ theorem AYdTWT : ∀ (Y : TrioSeq), Bok Y → ∀ (b : WithTop ℕ), b ≠ ⊥ �
   exact key hYb.mem hYb b hb ks Z hZ hZk
 
 /-- ★★★★★ `WPdT` 層の荷（どの形でも）。 -/
-theorem WPdT_payA : ∀ (ks : List (WithTop ℕ)) (V : Jk1), FrmNT ks V → WPdT ks V →
+theorem WPdT_payA : ∀ (ks : List Bud) (V : Jk1), FrmNT ks V → WPdT ks V →
     ∀ C : TrioSeq, Bok C → WPdT ks (Jk1.pay V C)
   | [], V, hV, hVk, C, hC => WPdT_payE V hV hVk C hC
   | (b :: ks), V, hV, hVk, C, hC => by
@@ -1663,37 +1675,37 @@ theorem WPdT_payA : ∀ (ks : List (WithTop ℕ)) (V : Jk1), FrmNT ks V → WPdT
 
 /-! ### `WPdT` 層の空木 -/
 
-theorem FrmNT_repB (m : ℕ) (b : WithTop ℕ) (ks : List (WithTop ℕ)) (N : Jk1) :
-    FrmNT (List.replicate m (⊥ : WithTop ℕ) ++ (b :: ks)) N ↔ JkA N := by
+theorem FrmNT_repB (m : ℕ) (b : Bud) (ks : List Bud) (N : Jk1) :
+    FrmNT (List.replicate m (⊥ : Bud) ++ (b :: ks)) N ↔ JkA N := by
   cases m with
   | zero => exact Iff.rfl
   | succ m => exact Iff.rfl
 
-theorem repB_succ_cons (m : ℕ) (ks : List (WithTop ℕ)) :
-    List.replicate (m + 1) (⊥ : WithTop ℕ) ++ ks
-      = (⊥ : WithTop ℕ) :: (List.replicate m (⊥ : WithTop ℕ) ++ ks) := rfl
+theorem repB_succ_cons (m : ℕ) (ks : List Bud) :
+    List.replicate (m + 1) (⊥ : Bud) ++ ks
+      = (⊥ : Bud) :: (List.replicate m (⊥ : Bud) ++ ks) := rfl
 
-theorem lt_of_mem_repB {b : WithTop ℕ} (hb : b ≠ ⊥) (j : ℕ) :
-    ∀ x ∈ List.replicate j (⊥ : WithTop ℕ), x < b := by
+theorem lt_of_mem_repB {b : Bud} (hb : b ≠ ⊥) (j : ℕ) :
+    ∀ x ∈ List.replicate j (⊥ : Bud), x < b := by
   intro x hx
-  have hx0 : x = (⊥ : WithTop ℕ) := List.eq_of_mem_replicate hx
+  have hx0 : x = (⊥ : Bud) := List.eq_of_mem_replicate hx
   subst hx0
   exact Ne.bot_lt' (Ne.symm hb)
 
-theorem repB_mid : ∀ (j : ℕ) (B : List (WithTop ℕ)),
-    List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: B)
-      = ((⊥ : WithTop ℕ) :: List.replicate j (⊥ : WithTop ℕ)) ++ B
+theorem repB_mid : ∀ (j : ℕ) (B : List Bud),
+    List.replicate j (⊥ : Bud) ++ ((⊥ : Bud) :: B)
+      = ((⊥ : Bud) :: List.replicate j (⊥ : Bud)) ++ B
   | 0, B => rfl
   | (j + 1), B => by
-      show (⊥ : WithTop ℕ) :: (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: B))
-        = (⊥ : WithTop ℕ) :: ((⊥ : WithTop ℕ) :: (List.replicate j (⊥ : WithTop ℕ) ++ B))
+      show (⊥ : Bud) :: (List.replicate j (⊥ : Bud) ++ ((⊥ : Bud) :: B))
+        = (⊥ : Bud) :: ((⊥ : Bud) :: (List.replicate j (⊥ : Bud) ++ B))
       rw [repB_mid j B]
       rfl
 
-theorem WCtxU_rep {N : Jk1} (hJN : JkA N) (ks : List (WithTop ℕ))
-    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks)) N) :
-    ∀ (m : ℕ) (ctx : List Frm), WCtxU ((⊥ : WithTop ℕ) :: ks) ctx →
-      WCtxU (List.replicate m (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks))
+theorem WCtxU_rep {N : Jk1} (hJN : JkA N) (ks : List Bud)
+    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : Bud) ++ ((⊥ : Bud) :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), WCtxU ((⊥ : Bud) :: ks) ctx →
+      WCtxU (List.replicate m (⊥ : Bud) ++ ((⊥ : Bud) :: ks))
         (ctx ++ List.replicate m (Frm.fone N))
   | 0, ctx, hc => by simpa using hc
   | (m + 1), ctx, hc => by
@@ -1704,39 +1716,39 @@ theorem WCtxU_rep {N : Jk1} (hJN : JkA N) (ks : List (WithTop ℕ))
         simp
       rw [e, repB_succ_cons, WCtxU_c0]
       exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
-        (FrmNT_repB m (⊥ : WithTop ℕ) ks N).mpr hJN, hNall m⟩
+        (FrmNT_repB m (⊥ : Bud) ks N).mpr hJN, hNall m⟩
 
-theorem WPdT_plug_rep (N : Jk1) (hJN : JkA N) (ks : List (WithTop ℕ))
-    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks)) N)
+theorem WPdT_plug_rep (N : Jk1) (hJN : JkA N) (ks : List Bud)
+    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : Bud) ++ ((⊥ : Bud) :: ks)) N)
     (m : ℕ) :
-    WPdT ((⊥ : WithTop ℕ) :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
+    WPdT ((⊥ : Bud) :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
   rw [WPdT_iff]
   intro ctx hc
   rw [← plug_append]
   exact (WPdT_iff _ N).mp (hNall m) _ (WCtxU_rep hJN ks hNall m ctx hc)
 
-theorem WPdT_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List (WithTop ℕ))
-    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : WithTop ℕ) ++ ((⊥ : WithTop ℕ) :: ks)) N) :
-    WPdT ((⊥ : WithTop ℕ) :: ks) (Jk1.two N Jk1.nil) := by
+theorem WPdT_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List Bud)
+    (hNall : ∀ j : ℕ, WPdT (List.replicate j (⊥ : Bud) ++ ((⊥ : Bud) :: ks)) N) :
+    WPdT ((⊥ : Bud) :: ks) (Jk1.two N Jk1.nil) := by
   rw [WPdT_iff]
   intro ctx hc
   obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtxU_split ks ctx hc
   exact GOK_twoNilW_gen ctx0 V hJN
-    (WCtxU_JkT ((⊥ : WithTop ℕ) :: ks) _ hc (Jk1.two N Jk1.nil)
-      (⟨hJN, trivial⟩ : FrmNT ((⊥ : WithTop ℕ) :: ks) (Jk1.two N Jk1.nil)))
+    (WCtxU_JkT ((⊥ : Bud) :: ks) _ hc (Jk1.two N Jk1.nil)
+      (⟨hJN, trivial⟩ : FrmNT ((⊥ : Bud) :: ks) (Jk1.two N Jk1.nil)))
     hGV
-    (fun m => (WPdT_iff ((⊥ : WithTop ℕ) :: ks) _).mp (WPdT_plug_rep N hJN ks hNall m) _ hc)
+    (fun m => (WPdT_iff ((⊥ : Bud) :: ks) _).mp (WPdT_plug_rep N hJN ks hNall m) _ hc)
 
-theorem WPdT_nilF {b : WithTop ℕ} (hb : b ≠ ⊥) (ks : List (WithTop ℕ)) :
+theorem WPdT_nilF {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) :
     WPdT (b :: ks) Jk1.nil :=
   (WPdT_cb hb ks _).mpr (fun r hr U N hU hUk hJN hNt =>
     (WPdT_c0 _ _).mp
       (WPdT_twoNilGen hJN (r ++ ks)
         (fun j => by
           rw [repB_mid j (r ++ ks)]
-          exact hNt (List.replicate j (⊥ : WithTop ℕ)) (lt_of_mem_repB hb j))) U hU hUk)
+          exact hNt (List.replicate j (⊥ : Bud)) (lt_of_mem_repB hb j))) U hU hUk)
 
-theorem WPdT_oneNil (ks : List (WithTop ℕ)) (V : Jk1) (hV : FrmNT ks V) (hVk : WPdT ks V) :
+theorem WPdT_oneNil (ks : List Bud) (V : Jk1) (hV : FrmNT ks V) (hVk : WPdT ks V) :
     WPdT ks (Jk1.one V Jk1.nil) := by
   rw [WPdT_iff]
   intro ctx hc
@@ -1746,11 +1758,11 @@ theorem WPdT_oneNil (ks : List (WithTop ℕ)) (V : Jk1) (hV : FrmNT ks V) (hVk :
   intro C hC
   exact (WPdT_iff ks _).mp (WPdT_payA ks V hV hVk C hC) ctx hc
 
-theorem WPdT_nilT (ks : List (WithTop ℕ)) : WPdT ((⊥ : WithTop ℕ) :: ks) Jk1.nil :=
+theorem WPdT_nilT (ks : List Bud) : WPdT ((⊥ : Bud) :: ks) Jk1.nil :=
   (WPdT_c0 ks _).mpr (fun U hU hUk => WPdT_oneNil ks U hU hUk)
 
 /-- ★★★★★ 空木はどの形でも差せる（`WPdT` 層、無条件）。 -/
-theorem WPdT_nilAll : ∀ ks : List (WithTop ℕ), WPdT ks Jk1.nil
+theorem WPdT_nilAll : ∀ ks : List Bud, WPdT ks Jk1.nil
   | [] => (WPdT_bnil _).mpr GOK_nil
   | (b :: ks) => by
       by_cases hb : b = ⊥
@@ -1762,15 +1774,15 @@ theorem WPdT_nilAll : ∀ ks : List (WithTop ℕ), WPdT ks Jk1.nil
 
 /-! ### `WPdT` 層の走り（`WPd_stairB` / `WPd_twoA_runB` / `WPd_twoIt_nil` の移植）
 
-予算が `WithTop ℕ` になったので、外側の予算 `c` と兄弟 `A` の予算 `a` の関係は
+予算が `Bud` になったので、外側の予算 `c` と兄弟 `A` の予算 `a` の関係は
 `a < c` の 1 本だけ。`c = ⊤` を取れば `a` は任意の自然数でよい。 -/
 
-theorem WPdT_stairB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {N A : Jk1}
-    (hJN : JkA N) (hJA : JkA A) (hAall : ∀ ks : List (WithTop ℕ), WPdT (a :: ks) A) :
-    ∀ (n : ℕ) (B' : List (WithTop ℕ)),
-      (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < c) →
-        WPdT ((⊥ : WithTop ℕ) :: q ++ B') N) →
-      WPdT ((⊥ : WithTop ℕ) :: B') (Jk1.two N (appJ A (UtwP [N] A n)))
+theorem WPdT_stairB {c a : Bud} (ha : a ≠ ⊥) (hac : a < c) {N A : Jk1}
+    (hJN : JkA N) (hJA : JkA A) (hAall : ∀ ks : List Bud, WPdT (a :: ks) A) :
+    ∀ (n : ℕ) (B' : List Bud),
+      (∀ q : List Bud, (∀ x ∈ q, x < c) →
+        WPdT ((⊥ : Bud) :: q ++ B') N) →
+      WPdT ((⊥ : Bud) :: B') (Jk1.two N (appJ A (UtwP [N] A n)))
   | 0, B', hsib =>
       WPdT_twoOf ha hJN
         (fun q hq => hsib q (fun x hx => lt_trans (hq x hx) hac))
@@ -1782,7 +1794,7 @@ theorem WPdT_stairB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {N A : Jk
       refine WPdT_step (a :: B') (hJA : FrmNT (a :: B') A) (hAall B') ?_
       refine WPdT_stairB ha hac hJN hJA hAall n (a :: B') ?_
       intro q hq
-      have e : (⊥ : WithTop ℕ) :: q ++ (a :: B') = ((⊥ : WithTop ℕ) :: (q ++ [a])) ++ B' := by
+      have e : (⊥ : Bud) :: q ++ (a :: B') = ((⊥ : Bud) :: (q ++ [a])) ++ B' := by
         simp
       rw [e]
       refine hsib (q ++ [a]) ?_
@@ -1793,9 +1805,9 @@ theorem WPdT_stairB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {N A : Jk
         subst h1
         exact hac
 
-theorem WPdT_twoA_runB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {A : Jk1}
-    (hJA : JkA A) (hAall : ∀ ks : List (WithTop ℕ), WPdT (a :: ks) A)
-    (ks : List (WithTop ℕ)) :
+theorem WPdT_twoA_runB {c a : Bud} (ha : a ≠ ⊥) (hac : a < c) {A : Jk1}
+    (hJA : JkA A) (hAall : ∀ ks : List Bud, WPdT (a :: ks) A)
+    (ks : List Bud) :
     WPdT (c :: ks) (Jk1.two A Jk1.nil) := by
   have hcb : c ≠ ⊥ := ne_bot_of_gt hac
   refine (WPdT_cb hcb ks _).mpr (fun r hr U N hU hUk hJN hNt => ?_)
@@ -1804,9 +1816,9 @@ theorem WPdT_twoA_runB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {A : J
   intro ctx hc
   obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtxU_split (r ++ ks) ctx hc
   have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (Jk1.two A Jk1.nil))) :=
-    WCtxU_JkT ((⊥ : WithTop ℕ) :: (r ++ ks)) _ hc (Jk1.two N (Jk1.two A Jk1.nil))
+    WCtxU_JkT ((⊥ : Bud) :: (r ++ ks)) _ hc (Jk1.two N (Jk1.two A Jk1.nil))
       (⟨hJN, hJA, trivial⟩ :
-        FrmNT ((⊥ : WithTop ℕ) :: (r ++ ks)) (Jk1.two N (Jk1.two A Jk1.nil)))
+        FrmNT ((⊥ : Bud) :: (r ++ ks)) (Jk1.two N (Jk1.two A Jk1.nil)))
   have erun : Jk1.two N (Jk1.two A Jk1.nil) = RunS ([N] ++ [A]) := rfl
   rw [plug_snoc] at hJT ⊢
   rw [erun] at hJT ⊢
@@ -1819,17 +1831,21 @@ theorem WPdT_twoA_runB {c a : WithTop ℕ} (ha : a ≠ ⊥) (hac : a < c) {A : J
   | succ n =>
       show GOK (plug ctx0 (Jk1.one V (Jk1.two N (appJ A (UtwP [N] A n)))))
       rw [← plug_snoc]
-      exact (WPdT_iff ((⊥ : WithTop ℕ) :: (r ++ ks)) _).mp
+      exact (WPdT_iff ((⊥ : Bud) :: (r ++ ks)) _).mp
         (WPdT_stairB ha hac hJN hJA hAall n (r ++ ks) hNt) _ hc
 
-/-- 平らな走り `twoIt nil nil m` は、予算 `c > ↑m` のどの形にも差せる。 -/
-theorem WPdT_twoIt_nil : ∀ (m : ℕ) (c : WithTop ℕ), ((m : ℕ) : WithTop ℕ) < c →
-    ∀ ks : List (WithTop ℕ), WPdT (c :: ks) (twoIt Jk1.nil Jk1.nil m)
+theorem Scale.nb_ne_bot (S : Scale Bud) (m : ℕ) : S.nb (m + 1) ≠ ⊥ := by
+  rw [← S.nb0]
+  exact (S.nbmono (Nat.succ_pos m)).ne'
+
+/-- 平らな走り `twoIt nil nil m` は、予算 `c > nb m` のどの形にも差せる。 -/
+theorem WPdT_twoIt_nil (S : Scale Bud) : ∀ (m : ℕ) (c : Bud), S.nb m < c →
+    ∀ ks : List Bud, WPdT (c :: ks) (twoIt Jk1.nil Jk1.nil m)
   | 0, c, hc, ks => WPdT_nilF (ne_bot_of_gt (lt_of_le_of_lt bot_le hc)) ks
   | (m + 1), c, hc, ks =>
-      WPdT_twoA_runB (a := ((m + 1 : ℕ) : WithTop ℕ)) (by simp) hc
+      WPdT_twoA_runB (a := S.nb (m + 1)) (S.nb_ne_bot m) hc
         (JkA_twoIt_nil m)
-        (fun ks' => WPdT_twoIt_nil m ((m + 1 : ℕ) : WithTop ℕ) (by simp) ks') ks
+        (fun ks' => WPdT_twoIt_nil S m (S.nb (m + 1)) (S.nbmono (by omega)) ks') ks
 
 #print axioms WPdT_twoIt_nil
 
@@ -1840,10 +1856,11 @@ theorem WPdT_twoIt_nil : ∀ (m : ℕ) (c : WithTop ℕ), ((m : ℕ) : WithTop �
 その幅を止めていたため。予算を `⊤` にすると兄弟は全部の自然数予算で使えるので、
 どの幅 `m` にも届く。 -/
 
-theorem WPdT_twoM0_at {B : List (WithTop ℕ)} {N : Jk1} (hJN : JkA N)
-    (hNt : ∀ q : List (WithTop ℕ), (∀ x ∈ q, x < (⊤ : WithTop ℕ)) →
-      WPdT ((⊥ : WithTop ℕ) :: q ++ B) N) :
-    WPdT ((⊥ : WithTop ℕ) :: B) (Jk1.two N M0t) := by
+theorem WPdT_twoM0_at (S : Scale Bud) {t : Bud} (ht : ∀ m : ℕ, S.nb m < t)
+    {B : List Bud} {N : Jk1} (hJN : JkA N)
+    (hNt : ∀ q : List Bud, (∀ x ∈ q, x < t) →
+      WPdT ((⊥ : Bud) :: q ++ B) N) :
+    WPdT ((⊥ : Bud) :: B) (Jk1.two N M0t) := by
   rw [WPdT_iff]
   intro ctx hc
   have eT : Jk1.two Jk1.nil (Jk1.pay Jk1.nil
@@ -1851,38 +1868,42 @@ theorem WPdT_twoM0_at {B : List (WithTop ℕ)} {N : Jk1} (hJN : JkA N)
   have hJT : JkT (plug (ctx ++ [Frm.ftwo N])
       (Jk1.two Jk1.nil (Jk1.pay Jk1.nil (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) := by
     rw [plug_snoc2, eT]
-    exact WCtxU_JkT ((⊥ : WithTop ℕ) :: B) ctx hc (Jk1.two N M0t)
-      (⟨hJN, JkA_M0t⟩ : FrmNT ((⊥ : WithTop ℕ) :: B) (Jk1.two N M0t))
+    exact WCtxU_JkT ((⊥ : Bud) :: B) ctx hc (Jk1.two N M0t)
+      (⟨hJN, JkA_M0t⟩ : FrmNT ((⊥ : Bud) :: B) (Jk1.two N M0t))
   intro ws hw hG
   have hIH : ∀ m : ℕ, 1 ≤ m → GoodFb (fun a b => wordJ a b
       (ws ++ [plug (ctx ++ [Frm.ftwo N])
         (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m)])) := by
     intro m _
     rw [plug_snoc2]
-    have hw2 : WPdT ((⊥ : WithTop ℕ) :: B)
+    have hw2 : WPdT ((⊥ : Bud) :: B)
         (Jk1.two N (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m)) := by
-      refine WPdT_congr ((⊥ : WithTop ℕ) :: B) (fun l => ?_)
-        (WPdT_twoOf (b := ((m + 1 : ℕ) : WithTop ℕ)) (by simp) hJN
-          (fun q hq => hNt q (fun x hx => lt_of_lt_of_le (hq x hx) le_top))
-          (WPdT_twoIt_nil m ((m + 1 : ℕ) : WithTop ℕ) (by simp) B))
+      refine WPdT_congr ((⊥ : Bud) :: B) (fun l => ?_)
+        (WPdT_twoOf (b := S.nb (m + 1)) (S.nb_ne_bot m) hJN
+          (fun q hq => hNt q (fun x hx => lt_trans (hq x hx) (ht (m + 1))))
+          (WPdT_twoIt_nil S m (S.nb (m + 1)) (S.nbmono (by omega)) B))
       show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
           jk1 (l + 1) (twoIt Jk1.nil Jk1.nil m))
         = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
           jk1 (l + 1) (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) m))
       rw [jk1_twoIt_payNil m (l + 1)]
-    exact (WPdT_iff ((⊥ : WithTop ℕ) :: B) _).mp hw2 ctx hc ws hw hG
+    exact (WPdT_iff ((⊥ : Bud) :: B) _).mp hw2 ctx hc ws hw hG
   have h := GoodFb_snoc_dupJt0 hw hJT hIH
   rw [plug_snoc2, eT] at h
   exact h
 
-/-- ★★★★★★★ 壁が抜けた。`M0t` は予算 `⊤` の節に差せる。 -/
-theorem WPdT_M0t_top (ks : List (WithTop ℕ)) : WPdT ((⊤ : WithTop ℕ) :: ks) M0t :=
-  (WPdT_cb (by simp) ks _).mpr (fun r hr U N hU hUk hJN hNt =>
+/-- ★★★★★★★ 壁が抜けた。`M0t` は「ω 段の上」の予算 `t` の節に差せる。 -/
+theorem WPdT_M0t_top (S : Scale Bud) {t : Bud} (ht : ∀ m : ℕ, S.nb m < t)
+    (ks : List Bud) : WPdT (t :: ks) M0t :=
+  have htb : t ≠ ⊥ := ne_bot_of_gt (lt_of_le_of_lt bot_le (ht 0))
+  (WPdT_cb htb ks _).mpr (fun r hr U N hU hUk hJN hNt =>
     WPdT_two_of_ctx hU hUk
-      (fun ctx hc => (WPdT_iff ((⊥ : WithTop ℕ) :: (r ++ ks)) _).mp
-        (WPdT_twoM0_at hJN hNt) ctx hc))
+      (fun ctx hc => (WPdT_iff ((⊥ : Bud) :: (r ++ ks)) _).mp
+        (WPdT_twoM0_at S ht hJN hNt) ctx hc))
 
 #print axioms WPdT_M0t_top
+
+end Bud
 
 end Small
 end TRIO
