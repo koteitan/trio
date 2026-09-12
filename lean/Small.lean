@@ -8750,6 +8750,110 @@ theorem WgvIt_pos {Y0 : TrioSeq} (hne : Y0 ≠ [])
 
 #print axioms oper_Wgv
 
+/-! ### ★★★★★★★★★★★★ 指数の型をパラメータにした `Wgv` の梯子
+
+指数の型は `BwG β`、`β` 側の「`ω^k·m` の役」は `Q : Pws β`。
+`β = Bw`, `Q = PwsNat` が段 2、`β = Bwx`, `Q = PwsX` が段 3 の土台。 -/
+
+noncomputable def PwsNat : Pws Bw where
+  pw := ow
+  pw_zero k := by rw [ow_zero, bot_Bw]
+  pw_add := ow_add_same
+  pw_ltR := fun j {_ _} h => ow_ltR j h
+  pw_ltL := fun {_ _} h m {_} hm => ow_ltL h m hm
+  add_lt := fun b {_ _} h => Bw_add_lt_left b h
+
+section WgvG
+
+variable {β : Type} [LinearOrder β] [WellFoundedLT β] [AddCommMonoid β]
+
+/-- `PwsB` の一般版。指数 `e : β` の上に `Q.pw 0 j` を足す族。 -/
+noncomputable def PwsBQ (Q : Pws β) (e : β) : Pws (BwG β) where
+  pw j m := owG (e + Q.pw 0 j) m
+  pw_zero j := by rw [owG_zero, bot_BwG]
+  pw_add := fun j m => owG_add_same (e + Q.pw 0 j) m
+  pw_ltR := fun j {_ _} h => owG_ltR (e + Q.pw 0 j) h
+  pw_ltL := fun {_ _} h m {_} hm => owG_ltL (Q.add_lt e (Q.pw_ltR 0 h)) m hm
+  add_lt := fun c {_ _} h => BwG_add_lt_left c h
+
+theorem pwBQ_zero_eq (Q : Pws β) (e : β) :
+    (PwsBQ Q e).pw 0 = (fun m => owG e m) := by
+  funext m
+  show owG (e + Q.pw 0 0) m = _
+  rw [Q.pw_zero, add_zero]
+
+def WgvOkQ (Q : Pws β) (a b k : ℕ) : Prop :=
+  ∀ Y0 : TrioSeq, Flat Y0 → Y0 ≠ [] → entry Y0 0 0 = 0 →
+    (∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) → ∀ e : β,
+    AtLd (α := BwG β) Y0 (owG e 1) → ∀ m : ℕ,
+    AtLd (α := BwG β) (WgvIt a b k Y0 m) (owG (e + Q.pw k m) 1)
+
+theorem AtLd_WgvS {Q : Pws β} {a b k : ℕ} (ha : 1 ≤ a) (hab : a < b)
+    (hk : WgvOkQ Q a b k) {Z : TrioSeq} (hf : Flat Z) (hne : Z ≠ [])
+    (hr : entry Z 0 0 = 0)
+    (hpos : ∀ i, 1 ≤ i → i < Z.length → 1 ≤ entry Z 0 i) (e : β)
+    (hA : AtLd (α := BwG β) Z (owG e 1)) :
+    AtLd (α := BwG β) (Wgv a b (k + 1) Z) (owG (e + Q.pw (k + 1) 1) 1) := by
+  have h0 : 0 < Z.length := List.length_pos_iff.mpr hne
+  refine AtLd_fam (F := fun n => WgvIt a b k Z (n + 1))
+    (qf := fun n => owG (e + Q.pw k (n + 1)) 1)
+    (Bok_flat (Flat_Wgv hf a b (k + 1)) (Wgv_root hne hr a b (k + 1)))
+    (by rw [Wgv_len]; omega) ?_
+    (fun n l Z' => by rw [oper_Wgv hf hne hab])
+    (fun n => hk Z hf hne hr hpos e hA (n + 1)) ?_ (PwsBQ Q e).add_lt
+  · rw [show (Wgv a b (k + 1) Z).length - 1 = Z.length + k + 1 from by
+      rw [Wgv_len]; omega, Wgv_srow hf]
+    exact Wgv_hasParent hne hab k
+  · intro n
+    exact owG_ltL (Q.add_lt e (Q.pw_ltL (by omega : k < k + 1) (n + 1) (by omega)))
+      1 (by omega)
+
+theorem WgvOkQ_succ {Q : Pws β} {a b k : ℕ} (ha : 1 ≤ a) (hab : a < b)
+    (hk : WgvOkQ Q a b k) : WgvOkQ Q a b (k + 1) := by
+  intro Y0 hf hne hr hpos e hA0 m
+  induction m with
+  | zero =>
+      show AtLd Y0 (owG (e + Q.pw (k + 1) 0) 1)
+      rw [show e + Q.pw (k + 1) 0 = e from by rw [Q.pw_zero, add_zero]]
+      exact hA0
+  | succ m ih =>
+      have h := AtLd_WgvS ha hab hk (Flat_WgvIt hf a b (k + 1) m)
+        (WgvIt_ne hne a b (k + 1) m) (WgvIt_root hne hr a b (k + 1) m)
+        (WgvIt_pos hne hpos ha hab (k + 1) m) (e + Q.pw (k + 1) m) ih
+      rw [add_assoc, Q.pw_add] at h
+      exact h
+
+theorem WgvIt_zero_Ap {Y0 : TrioSeq} (b : ℕ) : ∀ m : ℕ,
+    WgvIt 1 b 0 Y0 m = Ap Y0 m := by
+  intro m
+  rw [WgvIt_eq, Ap]
+  simp only [List.replicate, flatMap_singleton_range]
+
+/-- `(a,b) = (1,2)` の底（`k = 0`）は `LadAp` から出る。 -/
+theorem WgvOkQ_one_zero (Q : Pws β) (b : ℕ) : WgvOkQ Q 1 b 0 := by
+  intro Y0 hf hne hr hpos e hA0 m
+  rw [WgvIt_zero_Ap b m]
+  match m with
+  | 0 =>
+      rw [Ap_zero, show e + Q.pw 0 0 = e from by rw [Q.pw_zero, add_zero]]
+      exact hA0
+  | (j + 1) =>
+      have hA0' : AtLd Y0 ((PwsBQ Q e).pw 0 1) := by
+        rw [show (PwsBQ Q e).pw 0 1 = owG e 1 from congrFun (pwBQ_zero_eq Q e) 1]
+        exact hA0
+      have hR0 : RunLd Y0 ((PwsBQ Q e).pw 0) :=
+        RunLd_of_TopLd (Bok_flat hf hr) ((PwsBQ Q e).pw_zero 0)
+          ((PwsBQ Q e).pw_add 0) (TopLd_of_AtLd hA0')
+      exact (LadAp (PwsBQ Q e) hf hne hr hpos hR0 hA0' j).2
+
+theorem WgvOkQ_one (Q : Pws β) (b : ℕ) (hb : 1 < b) : ∀ k : ℕ, WgvOkQ Q 1 b k
+  | 0 => WgvOkQ_one_zero Q b
+  | (k + 1) => WgvOkQ_succ (by omega) hb (WgvOkQ_one Q b hb k)
+
+end WgvG
+
+#print axioms WgvOkQ_one
+
 
 end Small
 end TRIO
