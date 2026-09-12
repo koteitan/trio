@@ -27311,3 +27311,26 @@ A2' の基底 `Y = [(0,0,0)]`（`Z = nil`）で出る**平らな鎖**
 文脈のクラスは `GoodFb` の持ち上げ（pu / pk / seg）を含む必要がある。
 
 ⟹ (A') は既存の語の枠組み（`GOK` / `GoodFb`）に「`Wg` の木を字として使う」形でつなぐ。
+
+## 追記461: 方針: 生の列を字にした `GOKs` を作り、`Wg 2` の帰納で閉じる
+
+`GoodFb J` の欄（ge / mono / shift / pu / pk / seg）は `J : ℕ → ℕ → TrioSeq` について
+定義されていて、`Jk1` の木には依存しない。`APnil_gen0`（1 の列の孤児）は各欄を
+`snocd_gen`（Aok な接頭辞 ＋ Ancd ＋ Bok の荷を全部吊るせる ⟹ `(d,1,0)` を継げる）で閉じている。
+
+    colS a b T := (a+1, b+1, 1) :: shiftr01 (a+1) 0 T         （T は深さ ≥ 1）
+    GOKs T     := ∀ J, GoodFb J → GoodFb (fun a b => J a b ++ colS a b T)
+
+`T ∈ Wg 2`（argOK・Mono）の `A2g'` 帰納で、分岐ごとに次を示す:
+
+- (G1) 分岐 2 で末尾の親が `T` の中: 各欄の展開は `oper_append_right_of` で `T⟦n⟧` の欄に移る。
+- (G2) 分岐 3（1 の列の孤児、深さ h）: `APnil_gen0` と同じく `snocd_gen`。
+  荷は `graft T B = T.dropLast ++ B↑h`。任意の Bok `B` に graft の節を使うので
+  `Bok ⊆ Wg 1` が要る。
+- (G3) 分岐 1: `[]` と `[(x,0,0)]`（頭の平らな後者、頭の複製になる）。
+- (G4) 分岐 2 で末尾が最上位の平らな列（親は字の頭）: 語 `J ++ [T0]^n` になるので、
+  `GOKs T0` を繰り返し当てる（`J` が任意なので合成できる）。
+
+目標: `T_n := ((1,1,0) (2,2,0) … (n+1,2,0))`（字の中身、深さ ≥ 1）は `tree_mem_Wg` と
+`Wg_shift` で `Wg 2`。`GOKs T_n` を空の語に当て、`rowJ_mem_genF` の生版で
+`R338 (1,1,0) (2,2,1) ++ T_n↑2 = R373 (5,3,0)[n] ∈ W 0`。
