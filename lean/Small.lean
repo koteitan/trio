@@ -5159,6 +5159,249 @@ theorem LoopIt_Z767_nil_mem (m p j n : ℕ) :
 #print axioms R600_7_600_700_mem
 #print axioms LoopIt_Z767_nil_mem
 
+/-! ### ★★★ 底を一般にした入れ子 `ZkO Z n` と、その走りの予算
+
+`Zk n = ZkO nil n`。指数は `ex2 i j`（`i` は底 `Z` の段、`j` は `[(0,0,0)]` の段数）。 -/
+
+def ZkO (Z : Jk1) : ℕ → Jk1
+  | 0 => Z
+  | (n + 1) => Jk1.pay (ZkO Z n) [((0, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem JkA_ZkO {Z : Jk1} (hJZ : JkA Z) : ∀ n : ℕ, JkA (ZkO Z n)
+  | 0 => hJZ
+  | (n + 1) => ⟨JkA_ZkO hJZ n, Bok_zero⟩
+
+theorem jk1_ZkO (Z : Jk1) : ∀ (n l : ℕ),
+    jk1 l (ZkO Z n) = jk1 l Z ++ List.replicate n ((l + 1, 0, 0) : ℕ × ℕ × ℕ)
+  | 0, l => by simp [ZkO]
+  | (n + 1), l => by
+      show jk1 l (ZkO Z n) ++ shiftr01 (l + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)] = _
+      rw [jk1_ZkO Z n l, List.replicate_succ', List.append_assoc]
+      simp [shiftr01]
+
+theorem jk1_payZoper (Z : Jk1) (n l : ℕ) :
+    jk1 l (Jk1.pay Z (Y1⟦n⟧)) = jk1 l (ZkO Z n) := by
+  show jk1 l Z ++ shiftr01 (l + 1) 0 (Y1⟦n⟧) = _
+  rw [oper_Y1 n, flatMap_singleton_range, jk1_ZkO Z n l]
+  simp [shiftr01]
+
+/-- 底 `Z` の走りが段 `ex2 i 0` で置けるなら、`ZkO Z n` の走りは段 `ex2 i n` で置ける。 -/
+theorem WPdw_runO {Z : Jk1} (hJZ : JkA Z) (i : ℕ)
+    (hZ : ∀ (A : Jk1), JkA A → ∀ (β : Bw2),
+      (∀ c : Bw2, β < c → ∀ ks : List Bw2, WPdT (c :: ks) A) →
+      ∀ (m : ℕ) (c : Bw2), β + owG (ex2 i 0) m < c → ∀ ks : List Bw2,
+        WPdT (c :: ks) (twoIt A Z m)) :
+    ∀ (n : ℕ) (β : Bw2) (A : Jk1), JkA A →
+      (∀ c : Bw2, β < c → ∀ ks : List Bw2, WPdT (c :: ks) A) →
+      ∀ (m : ℕ) (c : Bw2), β + owG (ex2 i n) m < c → ∀ ks : List Bw2,
+        WPdT (c :: ks) (twoIt A (ZkO Z n) m)
+  | 0, β, A, hJA, hA, m, c, hc, ks => hZ A hJA β hA m c hc ks
+  | (n + 1), β, A, _, hA, 0, c, hc, ks =>
+      hA c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+  | (n + 1), β, A, hJA, hA, (m + 1), c, hc, ks => by
+      have hJA' : JkA (twoIt A (ZkO Z (n + 1)) m) :=
+        JkA_twoItP hJA (JkA_ZkO hJZ (n + 1)) m
+      have hA' : ∀ c' : Bw2, β + owG (ex2 i (n + 1)) m < c' → ∀ ks' : List Bw2,
+          WPdT (c' :: ks') (twoIt A (ZkO Z (n + 1)) m) :=
+        fun c' hc' ks' => WPdw_runO hJZ i hZ (n + 1) β A hJA hA m c' hc' ks'
+      refine WPdT_twoAZ_top
+        (S := ⟨fun j => (β + owG (ex2 i (n + 1)) m) + owG (ex2 i n) j,
+          fun _ _ hij => BwG_add_lt_left _ (owG_ltR (ex2 i n) hij)⟩)
+        (t := c) ?_ hJA' (JkA_ZkO hJZ n) ?_ ks
+      · intro j
+        show (β + owG (ex2 i (n + 1)) m) + owG (ex2 i n) j < c
+        rw [add_assoc]
+        exact lt_trans (BwG_add_lt_left β
+          (owG_add_lt (ex2_lt_r i (by omega : n < n + 1)) m j)) hc
+      · intro m' c' hc' ks'
+        exact WPdw_runO hJZ i hZ n (β + owG (ex2 i (n + 1)) m)
+          (twoIt A (ZkO Z (n + 1)) m) hJA' hA' m' c' hc' ks'
+termination_by n _ _ _ _ m _ _ _ => (n, m)
+
+#print axioms WPdw_runO
+
+theorem WPdT_twoAY1Z_at {A Z : Jk1} (hJA : JkA A) (hJZ : JkA Z) (i : ℕ) (β : Bw2)
+    (hchain : ∀ (n m : ℕ) (c : Bw2), β + owG (ex2 i n) m < c → ∀ ks : List Bw2,
+      WPdT (c :: ks) (twoIt A (ZkO Z n) m))
+    {t : Bw2} (ht : β + owG (ex2 (i + 1) 0) 1 ≤ t)
+    {B : List Bw2} {N : Jk1} (hJN : JkA N)
+    (hNt : ∀ q : List Bw2, (∀ x ∈ q, x < t) → WPdT ((⊥ : Bw2) :: q ++ B) N) :
+    WPdT ((⊥ : Bw2) :: B) (Jk1.two N (Jk1.two A (Jk1.pay Z Y1))) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N]) (Jk1.two A (Jk1.pay Z Y1))) := by
+    rw [plug_snoc2]
+    exact WCtxU_JkT ((⊥ : Bw2) :: B) ctx hc
+      (Jk1.two N (Jk1.two A (Jk1.pay Z Y1)))
+      (⟨hJN, hJA, hJZ, Bok_Y1⟩ : FrmNT ((⊥ : Bw2) :: B)
+        (Jk1.two N (Jk1.two A (Jk1.pay Z Y1))))
+  intro ws hw hG
+  rw [← plug_snoc2]
+  have hlen2 : 2 ≤ Y1.length := by rw [Y1_len]
+  have hp : hasParent Y1 (srow Y1 (Y1.length - 1)) (Y1.length - 1) := by
+    rw [Y1_len]
+    simpa [Y1_srow] using Y1_hasParent
+  refine GoodFb_snoc_innerJt0 hw hJT hlen2 hp ?_
+  intro n hn
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+  have hstep : ∀ m : ℕ, β + owG (ex2 i n') m < β + owG (ex2 i (n' + 1)) 1 :=
+    fun m => BwG_add_lt_left β (owG_ltL (ex2_lt_r i (by omega)) m (by omega))
+  have hle : β + owG (ex2 i (n' + 1)) 1 ≤ t :=
+    le_of_lt (lt_of_lt_of_le
+      (BwG_add_lt_left β (owG_ltL (ex2_lt_l (by omega : i < i + 1) (n' + 1) 0) 1 (by omega))) ht)
+  have hw2 : WPdT ((⊥ : Bw2) :: B) (Jk1.two N (Jk1.two A (ZkO Z (n' + 1)))) :=
+    WPdT_twoAZ_at (S := ⟨fun j => β + owG (ex2 i n') j,
+        fun _ _ hij => BwG_add_lt_left β (owG_ltR (ex2 i n') hij)⟩)
+      (t := β + owG (ex2 i (n' + 1)) 1) hstep hJA (JkA_ZkO hJZ n')
+      (fun m c hc' ks' => hchain n' m c hc' ks') hJN
+      (fun q hq => hNt q (fun x hx => lt_of_lt_of_le (hq x hx) hle))
+  have hw3 : WPdT ((⊥ : Bw2) :: B)
+      (Jk1.two N (Jk1.two A (Jk1.pay Z (Y1⟦n' + 1⟧)))) := by
+    refine WPdT_congr ((⊥ : Bw2) :: B) (fun l => ?_) hw2
+    show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) A ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) (ZkO Z (n' + 1)))))
+      = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 (l + 1) A ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 2) (Jk1.pay Z (Y1⟦n' + 1⟧)))))
+    rw [jk1_payZoper Z]
+  have hh := (WPdT_iff ((⊥ : Bw2) :: B) _).mp hw3 ctx hc ws hw hG
+  rw [← plug_snoc2] at hh
+  exact hh
+
+
+/-- ★★★ 底が一般の `two A (pay Z Y1)`。段 `ex2 (i+1) 0` を超える予算に置ける。 -/
+theorem WPdT_twoAY1Z_top {A Z : Jk1} (hJA : JkA A) (hJZ : JkA Z) (i : ℕ) (β : Bw2)
+    (hchain : ∀ (n m : ℕ) (c : Bw2), β + owG (ex2 i n) m < c → ∀ ks : List Bw2,
+      WPdT (c :: ks) (twoIt A (ZkO Z n) m))
+    {t : Bw2} (ht : β + owG (ex2 (i + 1) 0) 1 < t) (ks : List Bw2) :
+    WPdT (t :: ks) (Jk1.two A (Jk1.pay Z Y1)) :=
+  have htb : t ≠ ⊥ := ne_bot_of_gt (lt_of_le_of_lt bot_le ht)
+  (WPdT_cb htb ks _).mpr (fun r hr U N hU hUk hJN hNt =>
+    WPdT_two_of_ctx hU hUk
+      (fun ctx hc => (WPdT_iff ((⊥ : Bw2) :: (r ++ ks)) _).mp
+        (WPdT_twoAY1Z_at hJA hJZ i β hchain (le_of_lt ht) hJN hNt) ctx hc))
+
+#print axioms WPdT_twoAY1Z_at
+#print axioms WPdT_twoAY1Z_top
+
+/-! ### ★★★★ 荷 `Y1` を `n` 段入れ子にした `Zq n` と `R600 (7,0,0)(7,0,0)` -/
+
+def Zq : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (n + 1) => Jk1.pay (Zq n) Y1
+
+theorem JkA_Zn : ∀ n : ℕ, JkA (Zq n)
+  | 0 => trivial
+  | (n + 1) => ⟨JkA_Zn n, Bok_Y1⟩
+
+theorem jk1_Zn : ∀ (n l : ℕ), jk1 l (Zq n)
+    = (List.range n).flatMap
+        (fun _ => [((l + 1, 0, 0) : ℕ × ℕ × ℕ), ((l + 2, 0, 0) : ℕ × ℕ × ℕ)])
+  | 0, l => by simp [Zq, jk1]
+  | (n + 1), l => by
+      show jk1 l (Zq n) ++ shiftr01 (l + 1) 0 Y1 = _
+      rw [jk1_Zn n l, List.range_succ, List.flatMap_append]
+      simp [Y1, shiftr01]
+      omega
+
+theorem WPdw_chainZn : ∀ (n : ℕ) (A : Jk1), JkA A → ∀ (β : Bw2),
+    (∀ c : Bw2, β < c → ∀ ks : List Bw2, WPdT (c :: ks) A) →
+    ∀ (m : ℕ) (c : Bw2), β + owG (ex2 n 0) m < c → ∀ ks : List Bw2,
+      WPdT (c :: ks) (twoIt A (Zq n) m)
+  | 0, A, hJA, β, hA, m, c, hc, ks => WPdw_run2 0 β A hJA hA m c hc ks
+  | (n + 1), A, _, β, hA, 0, c, hc, ks =>
+      hA c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+  | (n + 1), A, hJA, β, hA, (m + 1), c, hc, ks => by
+      have hJA' : JkA (twoIt A (Zq (n + 1)) m) := JkA_twoItP hJA (JkA_Zn (n + 1)) m
+      have hA' : ∀ c' : Bw2, β + owG (ex2 (n + 1) 0) m < c' → ∀ ks' : List Bw2,
+          WPdT (c' :: ks') (twoIt A (Zq (n + 1)) m) :=
+        fun c' hc' ks' => WPdw_chainZn (n + 1) A hJA β hA m c' hc' ks'
+      have hlt : (β + owG (ex2 (n + 1) 0) m) + owG (ex2 (n + 1) 0) 1 < c := by
+        rw [add_assoc, owG_add_same]
+        exact hc
+      exact WPdT_twoAY1Z_top hJA' (JkA_Zn n) n (β + owG (ex2 (n + 1) 0) m)
+        (fun j m' c' hc' ks' => WPdw_runO (JkA_Zn n) n
+          (fun A2 hJA2 β2 hA2 m2 c2 hc2 ks2 => WPdw_chainZn n A2 hJA2 β2 hA2 m2 c2 hc2 ks2)
+          j (β + owG (ex2 (n + 1) 0) m) _ hJA' hA' m' c' hc' ks')
+        hlt ks
+termination_by n _ _ _ _ m _ _ _ => (n, m)
+
+theorem WPdw_twoZn : ∀ (n : ℕ) (ks : List Bw2),
+    WPdT (owG (ex2 (n + 1) 0) 1 :: ks) (Jk1.two Jk1.nil (Zq n))
+  | 0, ks =>
+      WPdT_twoA_runB (a := owG (ex2 0 0) 1) (A := Jk1.nil)
+        (ne_bot_of_gt (owG_pos (ex2 0 0)))
+        (owG_ltL (ex2_lt_l (by omega : 0 < 1) 0 0) 1 (by omega))
+        trivial (fun ks' => WPdT_nilAll _) ks
+  | (n + 1), ks => by
+      refine WPdT_twoAY1Z_top (A := Jk1.nil) trivial (JkA_Zn n) n ⊥ ?_ ?_ ks
+      · intro j m c hc ks'
+        exact WPdw_runO (JkA_Zn n) n
+          (fun A2 hJA2 β2 hA2 m2 c2 hc2 ks2 => WPdw_chainZn n A2 hJA2 β2 hA2 m2 c2 hc2 ks2)
+          j ⊥ Jk1.nil trivial (fun c' _ ks'' => WPdT_nilAll _) m c hc ks'
+      · rw [bot_BwG, zero_add]
+        exact owG_ltL (ex2_lt_l (by omega) 0 0) 1 (by omega)
+
+def Xq (n : ℕ) : Jk1 := Jk1.two Jk1.nil (Jk1.two Jk1.nil (Zq n))
+
+theorem WPdw_Xn (n : ℕ) (ks : List Bw2) : WPdT ((⊥ : Bw2) :: ks) (Xq n) :=
+  WPdT_twoOf (b := owG (ex2 (n + 1) 0) 1) (ne_bot_of_gt (owG_pos (ex2 (n + 1) 0))) trivial
+    (fun q _ => WPdT_nilAll _) (WPdw_twoZn n ks)
+
+theorem GOK_oneXn (n : ℕ) : GOK (Jk1.one Jk1.nil (Xq n)) :=
+  (WPdT_bnil (Bud := Bw2) _).mp
+    (WPdT_step ([] : List Bw2) (JkT_nil : FrmNT ([] : List Bw2) Jk1.nil)
+      ((WPdT_bnil (Bud := Bw2) _).mpr GOK_nil) (WPdw_Xn n []))
+
+theorem jk1_Xn (n l : ℕ) : jk1 l (Xq n)
+    = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+      :: (List.range n).flatMap
+        (fun _ => [((l + 3, 0, 0) : ℕ × ℕ × ℕ), ((l + 4, 0, 0) : ℕ × ℕ × ℕ)]) := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) Jk1.nil ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) (Zq n)))) = _
+  rw [jk1_Zn n (l + 2), show l + 2 + 1 = l + 3 from by omega,
+    show l + 2 + 2 = l + 4 from by omega]
+  simp [jk1]
+
+/-- ★★★★★★★ `R375m ++ ((6,0,0)(7,0,0))^n`（どの `n` でも）。 -/
+theorem R375m_pair_rep_mem (n : ℕ) :
+    R375m ++ (List.range n).flatMap
+      (fun _ => [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Xq n)]) := by
+    simpa using GOK_oneXn n [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  have e : jk1 2 (Jk1.one Jk1.nil (Xq n))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) :: ((5, 2, 0) : ℕ × ℕ × ℕ)
+        :: (List.range n).flatMap
+            (fun _ => [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)]) := by
+    show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (2 + 1) (Xq n)) = _
+    rw [jk1_Xn n 3]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at hh
+  simpa [R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★★★ 証明中の行 `R600 (7,0,0)(7,0,0)`。 -/
+theorem R600_77_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 7 := by
+    simp [entry]
+  have htail : ∀ r, 1 ≤ r →
+      r < ([((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      7 ≤ entry [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r hr1 hr2
+    simp only [List.length_cons, List.length_nil] at hr2
+    have : r = 1 := by omega
+    subst this
+    simp [entry]
+  have hmem := flat_mem'' (Y0 := R375m)
+    (M := [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)]) (d := 7)
+    hne hhead htail R375m_pair_rep_mem
+  simpa [R600, List.append_assoc] using hmem
+
+#print axioms R375m_pair_rep_mem
+#print axioms R600_77_mem
+
 
 end Small
 end TRIO
