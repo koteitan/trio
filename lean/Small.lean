@@ -3787,7 +3787,78 @@ theorem R376_of_RunPay (hRP : RunPay (Bud := Bud)) :
 
 #print axioms R376_of_RunPay
 
+/-! ### ★ `RunPay` を純粋な `GOK` の 1 文 `HtowR` に落とす
+
+`GOK_twoPayZ_of`（鎖の族で荷の W 帰納を回す一般補題）を使うと、残るのは
+「2 の記録の兄弟に荷の鎖 `VCh V` を置ける」1 点だけになる。 -/
+
+def HtowR : Prop := ∀ (ctx : List Frm) (V : Jk1), JkA V →
+  (∀ (N T : Jk1), JkA N → JkA T → JkT (plug ctx (Jk1.two N T))) →
+  GOK (plug ctx (Jk1.two Jk1.nil V)) →
+  ∀ N : Jk1, VCh V N → GOK (plug ctx (Jk1.two N V))
+
+theorem RunPay_of_HtowR (h : HtowR) : RunPay (Bud := Bud) := by
+  intro e he ks V hJV hVk C hC
+  obtain ⟨p, hp⟩ : ∃ p, erun e = p + 1 := ⟨erun e - 1, by omega⟩
+  by_cases hb : ebud e = ⊥
+  · have hne : e ≠ ⊥ := fun hc => he (by rw [hc]; rfl)
+    rw [WPdR_cf hb hne] at hVk ⊢
+    rw [hp] at hVk ⊢
+    rw [WPdR_iff]
+    intro ctx hc
+    have hJTg : ∀ N T : Jk1, JkA N → JkA T →
+        JkT (plug (ctx ++ List.replicate p (Frm.ftwo Jk1.nil)) (Jk1.two N T)) := by
+      intro N T hN hT
+      rw [← plug_stkP_gen]
+      exact WCtxR_JkT ks ctx hc (stkP p (Jk1.two N T)) (JkA_stkP p ⟨hN, hT⟩)
+    have hbase : GOK (plug (ctx ++ List.replicate p (Frm.ftwo Jk1.nil))
+        (Jk1.two Jk1.nil V)) := by
+      rw [← plug_stkP_gen, stkP_comm]
+      exact (WPdR_iff ks _).mp hVk ctx hc
+    have hh := GOK_twoPayZ_of (ctx := ctx ++ List.replicate p (Frm.ftwo Jk1.nil))
+      (VCh V) hJV (fun N hN => JkA_of_VCh hJV hN)
+      (fun N hN Y hY k => VCh_twoIt hN hY k) hJTg
+      (fun N hN => h _ V hJV hJTg hbase N hN) C hC Jk1.nil VCh.nil
+    rw [← plug_stkP_gen, stkP_comm] at hh
+    exact hh
+  · rw [WPdR_cb hb] at hVk ⊢
+    intro r hr U N0 hU hUk hJN0 hNt
+    rw [hp]
+    refine WPdR_two_of_ctx hU hUk ?_
+    intro ctx hc
+    have hJTg : ∀ N T : Jk1, JkA N → JkA T →
+        JkT (plug ((ctx ++ [Frm.ftwo N0]) ++ List.replicate p (Frm.ftwo Jk1.nil))
+          (Jk1.two N T)) := by
+      intro N T hN hT
+      rw [← plug_stkP_gen, plug_snoc2]
+      exact WCtxR_JkT ((⊥ : Ekey Bud) :: (r ++ ks)) ctx hc
+        (Jk1.two N0 (stkP p (Jk1.two N T))) ⟨hJN0, JkA_stkP p ⟨hN, hT⟩⟩
+    have hbase : GOK (plug ((ctx ++ [Frm.ftwo N0])
+        ++ List.replicate p (Frm.ftwo Jk1.nil)) (Jk1.two Jk1.nil V)) := by
+      rw [← plug_stkP_gen, stkP_comm, plug_snoc2]
+      have hbase' : WPdR ((⊥ : Ekey Bud) :: (r ++ ks))
+          (Jk1.two N0 (stkP (p + 1) V)) := by
+        refine (WPdR_c0 (r ++ ks) _).mpr (fun U2 hU2 hU2k => ?_)
+        have hv := hVk r hr U2 N0 hU2 hU2k hJN0 hNt
+        rw [hp] at hv
+        exact hv
+      exact (WPdR_iff ((⊥ : Ekey Bud) :: (r ++ ks)) _).mp hbase' ctx hc
+    have hh := GOK_twoPayZ_of
+      (ctx := (ctx ++ [Frm.ftwo N0]) ++ List.replicate p (Frm.ftwo Jk1.nil))
+      (VCh V) hJV (fun N hN => JkA_of_VCh hJV hN)
+      (fun N hN Y hY k => VCh_twoIt hN hY k) hJTg
+      (fun N hN => h _ V hJV hJTg hbase N hN) C hC Jk1.nil VCh.nil
+    rw [← plug_stkP_gen, stkP_comm, plug_snoc2] at hh
+    exact hh
+
 end EkeyR
+
+/-- ★★★★★★★★ 行376 は純粋な `GOK` の 1 文 `HtowR` から出る。 -/
+theorem R376_of_HtowR (h : HtowR) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RunPay (Bud := ℕ) (RunPay_of_HtowR (Bud := ℕ) h)
+
+#print axioms R376_of_HtowR
+
 
 end Small
 end TRIO
