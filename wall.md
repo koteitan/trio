@@ -18,13 +18,19 @@
 
   `TwoOk_pay`（荷の W 帰納）が回るのは鎖が最上段のときだけ。1 段上げると
   鎖 `twoIt nil (pay nil Y) n` も 1 段上がって `TwoStep` に化ける（追記344）。
-- **荷を外した形**（追記345）: 入れ子帰納で `TwoStepP` は次の 1 本に落ちる。
+- **★ 荷を外した形**（追記347、2026-09-13 に緑）:
 
       ChBase : ∀ X, JkA X → TwoOk X → TwoOk (two X nil)
+      TwoStepP_of_ChBase : ChBase → TwoStepP                  ★緑
+      R375m61_of_ChBase  : ChBase → R375m ++ [(6,1,0)] ∈ W 0  ★緑
 
+  `TwoOk_pay`（荷の W 帰納）を 1 段上げたもの。鍵は
+  `plug (ctx ++ [ftwo N]) T = plug ctx (two N T)` で**文脈を 1 段伸ばして**
+  `GoodFb_snoc_dupJt0` / `GoodFb_snoc_innerJt0` をそのまま使うこと。
   `TwoOk_twoWlNil`（緑）は兄弟に `Rq ks Wl`（＝`TopOk Wl`）を課すので
-  2 頭の兄弟（鎖）に使えない。これは古い状態メモの **(c)「`Rq (false::ks) U = TopOk U`
-  を 2 の枠の直下の 1 の枠から外す」** そのもの。
+  2 頭の兄弟（鎖）に使えない。`ChBase` はそれを外しただけで、古い状態メモの
+  **(c)「`Rq (false::ks) U = TopOk U` を 2 の枠の直下の 1 の枠から外す」** そのもの。
+  （`ChBase` から出るのは `R375m (6,1,0)` まで。行376 には `PayB` / `FoneB` が要る。）
 - **量化子ゼロの壁**（いちばん具体的な形、2026-09-13 に緑）:
 
       Bd20 = bdA [2,0] = one nil (two nil (two nil (one nil nil)))

@@ -23761,3 +23761,35 @@ junk の字を大きくするのも損（`b709_jT6 < b711_jnil`）。
 `bms` が落ちる。長さだけでなく中身にもよる。
 
 シートの証明済みは `Rz1 [ItQ M 1 0 1]`（M = 705..713）＋ `Rz1 [ItQ 713 1 0 1] ++ (2,2,0)(3,3,1)`。
+
+## 追記347 (2026-09-13): ★ 荷を外した壁 `ChBase` が緑で通った
+
+追記345 の計画をそのまま Lean に落とせた（一発で緑）。
+
+    ChBase : ∀ X, JkA X → TwoOk X → TwoOk (two X nil)          ← 荷が無い
+
+    TwoOk_twoPayNil    : TwoOk (two X nil) → TwoOk (two X (pay nil []))
+    ChainTwoG          : 鎖 twoIt X (pay nil Y') n の TwoOk と文脈での GOK
+    TwoOk_dupStep      : 荷の末尾が (0,0,0) の 1 手
+    TwoOk_twoPay (hCB) : ∀ Y, Bok Y → ∀ X, JkA X → TwoOk X → TwoOk (two X (pay nil Y))
+    TwoStepP_of_ChBase : ChBase → TwoStepP
+    R375m61_of_ChBase  : ChBase → R375m ++ [(6,1,0)] ∈ W 0     ★全部緑
+
+### 鍵は「文脈を 1 段伸ばして既存の補題を使い回す」
+
+`GoodFb_snoc_dupJt0` / `GoodFb_snoc_innerJt0` は形 `two N (pay Z Y)` に固定されて
+いるが、`plug (ctx ++ [ftwo N]) T = plug ctx (two N T)`（`plug_snoc2`）なので、
+**文脈を `ctx ++ [ftwo N]` にして `N := X`, `Z := nil` で呼ぶ**だけで
+`two N (two X (pay nil Y))` に使える。新しい補題は要らなかった。
+
+追記345 で「指数の帳簿が重い」と書いたのは誤りで、`plug_snoc2` 1 本で済んだ。
+
+### これで壁は荷の無い 1 文
+
+`TwoOk_twoWlNil`（緑）は `ChBase` を出すが、兄弟に `Rq ks Wl`（＝`TopOk Wl`）を
+課すので 2 頭の兄弟（鎖）に使えない。`ChBase` はそれを外しただけ。
+古い状態メモの (c) そのもの。
+
+`ChBase` から出るのは `R375m (6,1,0)`（いま開いている最小の行列）まで。
+行376 には `PayB` / `FoneB` が要る（ブロック文脈は走りを含むので `APd` の族では
+表現できない）。
