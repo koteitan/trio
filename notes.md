@@ -25048,3 +25048,35 @@ S 族の塔の階段は文脈を `[fone N] ++ replicate p (ftwo nil)` で伸ば�
 
 **次**: `WPdR` の荷 `p = 0`（`AYdWT` / `AYdTWT` の移植）をまず入れて、
 残りを `p ≥ 1` の 1 点に絞る。
+
+## 追記389: `WPdR` の荷。残りは `RunPay` 1 点＋底の差し替え
+
+### 通った
+
+    AYdWR   … `⊥` の節の荷（`AYdWT` の移植、そのまま通る）
+    AYdTWR  … `erun e = 0` の節の荷（`AYdTWT` の移植）
+    WPdR_payA (hRP : RunPay) … どの形でも荷（`RunPay` だけ仮定）
+
+    RunPay : ∀ e, e ≠ ⊥ → erun e ≠ 0 → ∀ ks V, JkA V → WPdR (e::ks) V →
+               ∀ C, Bok C → WPdR (e::ks) (pay V C)
+
+`erun e ≠ 0` の節の結論は `one U (two N (stkP (erun e) (pay V C)))`、
+つまり「縦の走りの上に荷」＝ `RHang2` そのもの。
+
+### `GOK (one nil (stk q))` は `RunPay` から出る（見取り図）
+
+`WPdR_nilRun hb p []` の節を `r = []`, `U = nil`, `N = nil` で実体化すると
+
+    ∀ q (< (b,p)), WPdR (⊥::q) nil        ← `WPdR_nilT hRP q`（頭が `⊥`）
+    → WPdR [] (one nil (two nil (stkP p nil))) = GOK (one nil (stk (p+1)))
+
+`q` に `(⊥,p')` のような入り目が入っても、`WPdR_nilT` → `WPdR_oneNil` →
+`WPdR_payA` の場合分けで `RunPay` が拾うので問題ない。
+
+### 残る作業（次のハートビート）
+
+1. **底を差し替える**。いまの `WPdR [] V = GOK V` / `WCtxR [] ctx = (ctx = [])` は
+   空文脈しか表せないので、行376 に要る `RCx` / `GCtx` の文脈につながらない。
+   `SCtx` と同じく底を `∃ ks, GCtx (true::ks) ctx` にすれば
+   `RNil` / `RHang2` と直接つながる。
+2. `RunPay` を落とす。これが最後の 1 点。
