@@ -8512,6 +8512,71 @@ theorem R600_789_mem :
 #print axioms AtLd_Gk
 #print axioms R600_789_mem
 
+/-- 新しい台座 `R600 (7,0,0)(8,0,0)(9,0,0)`（`R600(7,0,0)(8,0,0)^k` の極限）。 -/
+def Z789 : TrioSeq :=
+  R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+    ((9, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem Z789_eq : Z789 = [((0, 0, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 0) : ℕ × ℕ × ℕ),
+    ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ),
+    ((4, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((6, 0, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ),
+    ((9, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Z789, R600, R375m, R373, R344, R341, R338]
+
+theorem Z789_ne : Z789 ≠ [] := by rw [Z789_eq]; simp
+
+theorem Z789_head : entry Z789 0 0 = 0 := by rw [Z789_eq]; simp [entry]
+
+theorem Z789_tail : ∀ r, 1 ≤ r → r < Z789.length → 1 ≤ entry Z789 0 r := by
+  intro r hr1 hrl
+  rw [Z789_eq] at hrl ⊢
+  simp only [List.length_cons, List.length_nil] at hrl
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+    first
+      | omega
+      | simp [entry]
+
+theorem Aok_Z789 : Aok Z789 where
+  mem := R600_789_mem
+  ne := Z789_ne
+  deep := ⟨Z789_head, Z789_tail⟩
+  zroot := by
+    rw [Z789_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl <;> decide
+  mono := by
+    rw [Z789_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl <;> decide
+
+theorem LoopIt_Z789_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    LoopIt Z789 m ws j n ∈ W 0 := (Aok_LoopIt Aok_Z789 m hw j n).mem
+
+/-- ★★★★★★★★★★★★★★★★★★ 新しい台座の上に `hang6_gen` で `LoopIt` を吊るす。 -/
+theorem Z789_hang6_LoopIt (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    Z789 ++ U375a1 ++ shiftr01 6 0 (LoopIt Z789 m ws j n) ∈ W 0 :=
+  hang6_gen Aok_Z789 (Aok_LoopIt Aok_Z789 m hw j n).toBok
+
+theorem Z789_hang6_LoopIt_nil (m p j n : ℕ) :
+    Z789 ++ U375a1 ++ shiftr01 6 0 (LoopIt Z789 m (List.replicate p (AltT 0)) j n)
+      ∈ W 0 :=
+  Z789_hang6_LoopIt m (WJ_rep_AltT 0 p) j n
+
+#print axioms Aok_Z789
+#print axioms Z789_hang6_LoopIt_nil
+
 
 end Small
 end TRIO
