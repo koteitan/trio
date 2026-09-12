@@ -11290,6 +11290,427 @@ theorem WBtx_decomp : ∀ (i m : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm),
 
 #print axioms WBtx_decomp
 
+/-! ### ★★★★★★★★★★★★ `WQd` を一般の予算型に持ち上げる（`WQt`）
+
+`SmallA` の `WQd` は節の入り目 `k+1` が「幅 `Ns.length ≤ k+1` のブロック
+`RunP Ns V`」を一度に張る。幅が予算で縛られているのが `Pay2` で外したのと同じ形。
+予算型を一般にして `Bml = Multiset Ld` を入れれば幅の上限が消える。
+幅は `Scale` で測る（`S.nb Ns.length < b`）。 -/
+
+section BudQ
+
+variable {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+
+def WQt {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+    (S : Scale Bud) : List Bud → Jk1 → Prop
+  | [], V => GOK V
+  | (b :: ks), V =>
+      (b = ⊥ → ∀ U : Jk1, FrmNT ks U → WQt S ks U →
+        (∀ C : TrioSeq, Bok C → WQt S ks (Jk1.pay U C)) →
+        WQt S ks (Jk1.one U V)) ∧
+      (b ≠ ⊥ → ∀ (r : List Bud), (∀ x ∈ r, x < b) →
+        ∀ (U : Jk1) (Ns : List Jk1), Ns ≠ [] → S.nb Ns.length < b →
+        FrmNT (r ++ ks) U → WQt S (r ++ ks) U →
+        (∀ C : TrioSeq, Bok C → WQt S (r ++ ks) (Jk1.pay U C)) →
+        (∀ N ∈ Ns, JkA N) →
+        (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+          WQt S (q ++ (r ++ ks)) N) →
+        (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+          ∀ C : TrioSeq, Bok C → WQt S (q ++ (r ++ ks)) (Jk1.pay N C)) →
+        WQt S (r ++ ks) (Jk1.one U (RunP Ns V)))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+      | exact dmT_app2 _ _ _ (by assumption) (by assumption)
+
+theorem WQt_cons (S : Scale Bud) (b : Bud) (ks : List Bud) (V : Jk1) :
+    WQt S (b :: ks) V ↔
+      ((b = ⊥ → ∀ U : Jk1, FrmNT ks U → WQt S ks U →
+        (∀ C : TrioSeq, Bok C → WQt S ks (Jk1.pay U C)) →
+        WQt S ks (Jk1.one U V)) ∧
+      (b ≠ ⊥ → ∀ (r : List Bud), (∀ x ∈ r, x < b) →
+        ∀ (U : Jk1) (Ns : List Jk1), Ns ≠ [] → S.nb Ns.length < b →
+        FrmNT (r ++ ks) U → WQt S (r ++ ks) U →
+        (∀ C : TrioSeq, Bok C → WQt S (r ++ ks) (Jk1.pay U C)) →
+        (∀ N ∈ Ns, JkA N) →
+        (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+          WQt S (q ++ (r ++ ks)) N) →
+        (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+          ∀ C : TrioSeq, Bok C → WQt S (q ++ (r ++ ks)) (Jk1.pay N C)) →
+        WQt S (r ++ ks) (Jk1.one U (RunP Ns V)))) := by
+  rw [WQt]
+
+theorem WQt_bnil (S : Scale Bud) (V : Jk1) : WQt S ([] : List Bud) V ↔ GOK V := by
+  rw [WQt]
+
+theorem WQt_c0 (S : Scale Bud) (ks : List Bud) (V : Jk1) :
+    WQt S ((⊥ : Bud) :: ks) V ↔ ∀ U : Jk1, FrmNT ks U → WQt S ks U →
+      (∀ C : TrioSeq, Bok C → WQt S ks (Jk1.pay U C)) →
+      WQt S ks (Jk1.one U V) := by
+  rw [WQt_cons]
+  constructor
+  · exact fun h => h.1 rfl
+  · exact fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩
+
+theorem WQt_ck (S : Scale Bud) {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) (V : Jk1) :
+    WQt S (b :: ks) V ↔ ∀ (r : List Bud), (∀ x ∈ r, x < b) →
+      ∀ (U : Jk1) (Ns : List Jk1), Ns ≠ [] → S.nb Ns.length < b →
+      FrmNT (r ++ ks) U → WQt S (r ++ ks) U →
+      (∀ C : TrioSeq, Bok C → WQt S (r ++ ks) (Jk1.pay U C)) →
+      (∀ N ∈ Ns, JkA N) →
+      (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        WQt S (q ++ (r ++ ks)) N) →
+      (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        ∀ C : TrioSeq, Bok C → WQt S (q ++ (r ++ ks)) (Jk1.pay N C)) →
+      WQt S (r ++ ks) (Jk1.one U (RunP Ns V)) := by
+  rw [WQt_cons]
+  constructor
+  · exact fun h => h.2 hb
+  · exact fun h => ⟨fun he => absurd he hb, fun _ => h⟩
+
+end BudQ
+
+#print axioms WQt_ck
+
+/-- `WQt` の文脈族。 -/
+def WQxt {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+    (S : Scale Bud) : List Bud → List Frm → Prop
+  | [], ctx => ctx = []
+  | (b :: ks), ctx =>
+      (b = ⊥ → ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+        WQxt S ks ctx' ∧ FrmNT ks U ∧ WQt S ks U ∧
+        (∀ C : TrioSeq, Bok C → WQt S ks (Jk1.pay U C))) ∧
+      (b ≠ ⊥ → ∃ (r : List Bud) (_ : ∀ x ∈ r, x < b) (ctx' : List Frm)
+        (U : Jk1) (Ns : List Jk1),
+        Ns ≠ [] ∧ S.nb Ns.length < b ∧
+        ctx = ctx' ++ ([Frm.fone U] ++ Ns.map Frm.ftwo) ∧
+        WQxt S (r ++ ks) ctx' ∧ FrmNT (r ++ ks) U ∧ WQt S (r ++ ks) U ∧
+        (∀ C : TrioSeq, Bok C → WQt S (r ++ ks) (Jk1.pay U C)) ∧
+        (∀ N ∈ Ns, JkA N) ∧
+        (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+          WQt S (q ++ (r ++ ks)) N) ∧
+        (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+          ∀ C : TrioSeq, Bok C → WQt S (q ++ (r ++ ks)) (Jk1.pay N C)))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+      | exact dmT_app2 _ _ _ (by assumption) (by assumption)
+
+section BudQ2
+
+variable {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+
+theorem WQxt_bnil (S : Scale Bud) (ctx : List Frm) :
+    WQxt S ([] : List Bud) ctx ↔ ctx = [] := by rw [WQxt]
+
+theorem WQxt_c0 (S : Scale Bud) (ks : List Bud) (ctx : List Frm) :
+    WQxt S ((⊥ : Bud) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1),
+      ctx = ctx' ++ [Frm.fone U] ∧ WQxt S ks ctx' ∧ FrmNT ks U ∧ WQt S ks U ∧
+      (∀ C : TrioSeq, Bok C → WQt S ks (Jk1.pay U C)) := by
+  rw [WQxt]
+  constructor
+  · exact fun h => h.1 rfl
+  · exact fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩
+
+theorem WQxt_cb (S : Scale Bud) {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) (ctx : List Frm) :
+    WQxt S (b :: ks) ctx ↔ ∃ (r : List Bud) (_ : ∀ x ∈ r, x < b) (ctx' : List Frm)
+      (U : Jk1) (Ns : List Jk1),
+      Ns ≠ [] ∧ S.nb Ns.length < b ∧
+      ctx = ctx' ++ ([Frm.fone U] ++ Ns.map Frm.ftwo) ∧
+      WQxt S (r ++ ks) ctx' ∧ FrmNT (r ++ ks) U ∧ WQt S (r ++ ks) U ∧
+      (∀ C : TrioSeq, Bok C → WQt S (r ++ ks) (Jk1.pay U C)) ∧
+      (∀ N ∈ Ns, JkA N) ∧
+      (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        WQt S (q ++ (r ++ ks)) N) ∧
+      (∀ N ∈ Ns, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        ∀ C : TrioSeq, Bok C → WQt S (q ++ (r ++ ks)) (Jk1.pay N C)) := by
+  rw [WQxt]
+  constructor
+  · exact fun h => h.2 hb
+  · exact fun h => ⟨fun he => absurd he hb, fun _ => h⟩
+
+theorem WQxt_JkT (S : Scale Bud) : ∀ (ks : List Bud) (ctx : List Frm),
+    WQxt S ks ctx → ∀ X : Jk1, FrmNT ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WQxt_bnil] at h; subst h; exact hX
+  | (b :: ks), ctx, h, X, hX => by
+      by_cases hb : b = ⊥
+      · subst hb
+        rw [WQxt_c0] at h
+        obtain ⟨ctx', U, rfl, hc', hU, -, -⟩ := h
+        rw [plug_snoc]
+        exact WQxt_JkT S ks ctx' hc' (Jk1.one U X) (FrmNT_one ks U X hU hX)
+      · rw [WQxt_cb S hb] at h
+        obtain ⟨r, hr, ctx', U, Ns, -, -, rfl, hc', hU, -, -, hJNs, -, -⟩ := h
+        rw [plug_blk]
+        exact WQxt_JkT S (r ++ ks) ctx' hc' (Jk1.one U (RunP Ns X))
+          (FrmNT_one _ U (RunP Ns X) hU (JkA_RunP Ns hJNs hX))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+
+theorem WQt_iff (S : Scale Bud) : ∀ (ks : List Bud) (V : Jk1),
+    WQt S ks V ↔ ∀ ctx : List Frm, WQxt S ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WQt_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WQxt_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WQxt_bnil S []).mpr rfl)
+  | (b :: ks), V => by
+      by_cases hb : b = ⊥
+      · subst hb
+        rw [WQt_c0]
+        constructor
+        · intro h ctx hc
+          rw [WQxt_c0] at hc
+          obtain ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩ := hc
+          rw [plug_snoc]
+          exact (WQt_iff S ks (Jk1.one U V)).mp (h U hU hUk hUp) ctx' hc'
+        · intro h U hU hUk hUp
+          refine (WQt_iff S ks (Jk1.one U V)).mpr ?_
+          intro ctx' hc'
+          rw [← plug_snoc]
+          exact h (ctx' ++ [Frm.fone U])
+            ((WQxt_c0 S ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩)
+      · rw [WQt_ck S hb]
+        constructor
+        · intro h ctx hc
+          rw [WQxt_cb S hb] at hc
+          obtain ⟨r, hr, ctx', U, Ns, hNe, hNl, rfl, hc', hU, hUk, hUp, hJNs, hNs, hNp⟩ := hc
+          rw [plug_blk]
+          exact (WQt_iff S (r ++ ks) _).mp
+            (h r hr U Ns hNe hNl hU hUk hUp hJNs hNs hNp) ctx' hc'
+        · intro h r hr U Ns hNe hNl hU hUk hUp hJNs hNs hNp
+          refine (WQt_iff S (r ++ ks) _).mpr ?_
+          intro ctx' hc'
+          rw [← plug_blk]
+          exact h (ctx' ++ ([Frm.fone U] ++ Ns.map Frm.ftwo))
+            ((WQxt_cb S hb ks _).mpr ⟨r, hr, ctx', U, Ns, hNe, hNl, rfl, hc', hU, hUk, hUp,
+              hJNs, hNs, hNp⟩)
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+
+theorem WQt_step (S : Scale Bud) (ks : List Bud) {V W : Jk1} (hV : FrmNT ks V)
+    (hVk : WQt S ks V) (hVp : ∀ C : TrioSeq, Bok C → WQt S ks (Jk1.pay V C))
+    (hW : WQt S ((⊥ : Bud) :: ks) W) : WQt S ks (Jk1.one V W) :=
+  (WQt_c0 S ks W).mp hW V hV hVk hVp
+
+theorem WQt_congr (S : Scale Bud) : ∀ (ks : List Bud) {V1 V2 : Jk1},
+    (∀ l, jk1 l V1 = jk1 l V2) → WQt S ks V1 → WQt S ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WQt_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+end BudQ2
+
+#print axioms WQt_iff
+
+section BudQ3
+
+variable {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+
+/-- ブロックの階段（一般予算）。`j` は「`Bs` を差すのに要る入り目」。 -/
+theorem WQt_runStair (S : Scale Bud) {b : Bud} {Bs : List Jk1} {Bl : Jk1} (hJBl : JkA Bl)
+    (j : Bud) (hj : j < b)
+    (hjrun : ∀ (B'' : List Bud) (X : Jk1),
+      (∀ N ∈ Bs, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) → WQt S (q ++ B'') N) →
+      (∀ N ∈ Bs, ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        ∀ C : TrioSeq, Bok C → WQt S (q ++ B'') (Jk1.pay N C)) →
+      WQt S (j :: B'') X → WQt S ((⊥ : Bud) :: B'') (RunP Bs X)) :
+    ∀ (n : ℕ) (B'' : List Bud),
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        WQt S (q ++ B'') N) →
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        ∀ C : TrioSeq, Bok C → WQt S (q ++ B'') (Jk1.pay N C)) →
+      WQt S ((⊥ : Bud) :: B'') (RunP Bs (appJ Bl (UtwP Bs Bl n)))
+  | 0, B'', hs, hp => by
+      refine hjrun B'' Bl (fun N hN => hs N (List.mem_append_left _ hN))
+        (fun N hN => hp N (List.mem_append_left _ hN)) ?_
+      have h := hs Bl (List.mem_append_right _ (by simp)) [j] (by simp) (by simpa using hj)
+      simpa using h
+  | (n + 1), B'', hs, hp => by
+      refine hjrun B'' _ (fun N hN => hs N (List.mem_append_left _ hN))
+        (fun N hN => hp N (List.mem_append_left _ hN)) ?_
+      show WQt S (j :: B'') (Jk1.one Bl (RunP Bs (appJ Bl (UtwP Bs Bl n))))
+      refine WQt_step S (j :: B'') (hJBl : FrmNT (j :: B'') Bl) ?_ ?_ ?_
+      · have h := hs Bl (List.mem_append_right _ (by simp)) [j] (by simp) (by simpa using hj)
+        simpa using h
+      · intro C hC
+        have h := hp Bl (List.mem_append_right _ (by simp)) [j] (by simp)
+          (by simpa using hj) C hC
+        simpa using h
+      · refine WQt_runStair S hJBl j hj hjrun n (j :: B'') ?_ ?_
+        · intro N hN q hq hqk
+          rw [show q ++ (j :: B'') = (q ++ [j]) ++ B'' from by simp]
+          refine hs N hN (q ++ [j]) (by simp) ?_
+          intro x hx
+          rcases List.mem_append.mp hx with h1 | h1
+          · exact hqk x h1
+          · rw [show x = j from by simpa using h1]; exact hj
+        · intro N hN q hq hqk C hC
+          rw [show q ++ (j :: B'') = (q ++ [j]) ++ B'' from by simp]
+          refine hp N hN (q ++ [j]) (by simp) ?_ C hC
+          intro x hx
+          rcases List.mem_append.mp hx with h1 | h1
+          · exact hqk x h1
+          · rw [show x = j from by simpa using h1]; exact hj
+
+/-- ★★★★★★ `nil` はどの予算の枠でも差せる（一般予算、幅の上限なし）。 -/
+theorem WQt_nilF (S : Scale Bud) {b : Bud} (hb : b ≠ ⊥) (ks : List Bud) :
+    WQt S (b :: ks) Jk1.nil := by
+  rw [WQt_ck S hb]
+  intro r hr U Ns hNe hNl hU hUk hUp hJNs hNs hNp
+  obtain ⟨Bs, Bl, rfl⟩ : ∃ Bs Bl, Ns = Bs ++ [Bl] :=
+    ⟨Ns.dropLast, Ns.getLast hNe, (List.dropLast_append_getLast hNe).symm⟩
+  set B : List Bud := r ++ ks with hB
+  have hlen : (Bs ++ [Bl]).length = Bs.length + 1 := by simp
+  have hJBl : JkA Bl := hJNs Bl (List.mem_append_right _ (by simp))
+  have hbot : (⊥ : Bud) < b := bot_lt_iff_ne_bot.mpr hb
+  have key : ∀ (B'' : List Bud),
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        WQt S (q ++ B'') N) →
+      (∀ N ∈ Bs ++ [Bl], ∀ q : List Bud, q ≠ [] → (∀ x ∈ q, x < b) →
+        ∀ C : TrioSeq, Bok C → WQt S (q ++ B'') (Jk1.pay N C)) →
+      ∀ n : ℕ, WQt S ((⊥ : Bud) :: B'') (RunP Bs (appJ Bl (UtwP Bs Bl n))) := by
+    cases Bs with
+    | nil =>
+        intro B'' hs hp n
+        exact WQt_runStair S (Bs := []) hJBl (⊥ : Bud) hbot (fun _ _ _ _ h => h) n B'' hs hp
+    | cons C Cs =>
+        intro B'' hs hp n
+        have hjb : S.nb (Cs.length + 1 + 1) < b := by
+          rw [hlen] at hNl
+          simpa using hNl
+        have hjne : S.nb (Cs.length + 1 + 1) ≠ (⊥ : Bud) := Scale.nb_ne_bot S (Cs.length + 1)
+        refine WQt_runStair S hJBl (S.nb (Cs.length + 1 + 1)) hjb ?_ n B'' hs hp
+        intro B3 X hsib hsibp hX
+        rw [WQt_c0]
+        intro U3 hU3 hU3k hU3p
+        have h2 := (WQt_ck S hjne B3 X).mp hX [] (by simp) U3 (C :: Cs) (by simp) ?_
+          (by simpa using hU3) (by simpa using hU3k) (by simpa using hU3p) ?_ ?_ ?_
+        · simpa using h2
+        · show S.nb (C :: Cs).length < S.nb (Cs.length + 1 + 1)
+          exact S.nbmono (by simp)
+        · intro N hN
+          exact hJNs N (List.mem_append_left _ hN)
+        · intro N hN q hq hqk
+          have := hsib N hN q hq (fun x hx => lt_trans (hqk x hx) hjb)
+          simpa using this
+        · intro N hN q hq hqk C0 hC0
+          have := hsibp N hN q hq (fun x hx => lt_trans (hqk x hx) hjb) C0 hC0
+          simpa using this
+  refine (WQt_c0 S B _).mp ?_ U hU hUk hUp
+  rw [WQt_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hVk, hVp⟩ := (WQxt_c0 S B ctx).mp hc
+  have hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (RunP (Bs ++ [Bl]) Jk1.nil)) :=
+    WQxt_JkT S ((⊥ : Bud) :: B) _ hc (RunP (Bs ++ [Bl]) Jk1.nil)
+      (JkA_RunP (Bs ++ [Bl]) hJNs trivial : FrmNT ((⊥ : Bud) :: B) (RunP (Bs ++ [Bl]) Jk1.nil))
+  have hGV : GOK (plug ctx0 V) := (WQt_iff S B V).mp hVk ctx0 hc0
+  rw [plug_snoc] at hJT ⊢
+  refine GOK_oneUV_RunSB ctx0 Bs Bl V
+    (fun A hA => hJNs A (List.mem_append_left _ hA)) hJBl hJT hGV ?_
+  intro n
+  cases n with
+  | zero =>
+      show GOK (plug ctx0 V)
+      exact hGV
+  | succ n =>
+      show GOK (plug ctx0 (Jk1.one V (RunP Bs (appJ Bl (UtwP Bs Bl n)))))
+      rw [← plug_snoc]
+      exact (WQt_iff S ((⊥ : Bud) :: B) _).mp (key B hNs hNp n) _ hc
+
+theorem WQt_oneNil (S : Scale Bud) (ks : List Bud) (V : Jk1) (hV : FrmNT ks V)
+    (hVk : WQt S ks V) (hVp : ∀ C : TrioSeq, Bok C → WQt S ks (Jk1.pay V C)) :
+    WQt S ks (Jk1.one V Jk1.nil) := by
+  rw [WQt_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (WQxt_JkT S ks ctx hc (Jk1.one V Jk1.nil) (FrmNT_one ks V Jk1.nil hV trivial))
+    ((WQt_iff S ks V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (WQt_iff S ks _).mp (hVp C hC) ctx hc
+
+theorem WQt_nilT (S : Scale Bud) (ks : List Bud) : WQt S ((⊥ : Bud) :: ks) Jk1.nil :=
+  (WQt_c0 S ks _).mpr (fun U hU hUk hUp => WQt_oneNil S ks U hU hUk hUp)
+
+/-- ★★★★★★ 空木はどの形でも差せる（`WQt` 層、無条件）。 -/
+theorem WQt_nilAll (S : Scale Bud) : ∀ ks : List Bud, WQt S ks Jk1.nil
+  | [] => (WQt_bnil S _).mpr GOK_nil
+  | (b :: ks) => by
+      by_cases hb : b = ⊥
+      · subst hb; exact WQt_nilT S ks
+      · exact WQt_nilF S hb ks
+
+end BudQ3
+
+#print axioms WQt_nilAll
+
+section BudQ4
+
+variable {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+
+/-- `nil` に荷を吊るせれば、走りのブロックが差せる（一般予算）。 -/
+theorem WQt_stk_succ (S : Scale Bud)
+    (hpay : ∀ (ks : List Bud) (C : TrioSeq), Bok C → WQt S ks (Jk1.pay Jk1.nil C))
+    (p : ℕ) (ks : List Bud) (Y : Jk1) (hY : WQt S (S.nb (p + 1 + 1) :: ks) Y) :
+    WQt S ((⊥ : Bud) :: ks) (stkP (p + 1) Y) := by
+  rw [WQt_c0]
+  intro U hU hUk hUp
+  rw [← RunP_rep_nil (p + 1) Y]
+  have h := (WQt_ck S (Scale.nb_ne_bot S (p + 1)) ks Y).mp hY [] (by simp) U
+    (List.replicate (p + 1) Jk1.nil) (by simp) ?_
+    (by simpa using hU) (by simpa using hUk) (by simpa using hUp)
+    (fun N hN => by rw [List.eq_of_mem_replicate hN]; trivial)
+    (fun N hN q hq hqk => by
+      rw [List.eq_of_mem_replicate hN]
+      exact WQt_nilAll S _)
+    (fun N hN q hq hqk C hC => by
+      rw [List.eq_of_mem_replicate hN]
+      exact hpay _ C hC)
+  · simpa using h
+  · show S.nb (List.replicate (p + 1) Jk1.nil).length < S.nb (p + 1 + 1)
+    rw [List.length_replicate]
+    exact S.nbmono (by omega)
+
+theorem WQt_Utw (S : Scale Bud)
+    (hpay : ∀ (ks : List Bud) (C : TrioSeq), Bok C → WQt S ks (Jk1.pay Jk1.nil C)) :
+    ∀ (i p : ℕ) (ks : List Bud), WQt S ks (Utw p i)
+  | 0, _, ks => WQt_nilAll S ks
+  | (i + 1), 0, ks => by
+      refine WQt_step S ks (FrmNT_nilA ks) (WQt_nilAll S ks) (fun C hC => hpay ks C hC) ?_
+      exact WQt_Utw S hpay i 0 ((⊥ : Bud) :: ks)
+  | (i + 1), (p + 1), ks => by
+      refine WQt_step S ks (FrmNT_nilA ks) (WQt_nilAll S ks) (fun C hC => hpay ks C hC) ?_
+      exact WQt_stk_succ S hpay p ks (Utw (p + 1) i)
+        (WQt_Utw S hpay i (p + 1) (S.nb (p + 1 + 1) :: ks))
+
+/-- ★★★★★★ 行376 は「`nil` に荷を吊るす」1 本から出る（`WQt` 版、一般予算）。 -/
+theorem R376_of_QtPnil (S : Scale Bud)
+    (hpay : ∀ (ks : List Bud) (C : TrioSeq), Bok C → WQt S ks (Jk1.pay Jk1.nil C)) :
+    R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_UtwAll (fun p n => (WQt_bnil S _).mp (WQt_Utw S hpay n p []))
+
+end BudQ4
+
+#print axioms R376_of_QtPnil
+
 
 end Small
 end TRIO
