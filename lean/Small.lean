@@ -10420,6 +10420,83 @@ theorem LdDM_tree {Y Y' : TrioSeq} (hY : Bok Y) (hlt : Rex' Y' Y) (m : ℕ) (N :
 #print axioms LdOf_ChL
 #print axioms LdDM_tree
 
+/-! ### ★★★★★★★★★★★ 荷の多重集合で刻んだ層 `QS`
+
+`QDP P S` は兄弟条件が予算に依存しない（`QDP_twoOf` の `k` が自由）。
+層を**荷の多重集合の DM** で刻むと、兄弟に要る「もっと長い鎖」が
+DM で小さくなるので帰納法が閉じる見込み。 -/
+
+def DMlt (S' S : Multiset Ld) : Prop := Multiset.IsDershowitzMannaLT S' S
+
+def QS : Multiset Ld → List ℕ → Jk1 → Prop :=
+  wf_LdDM.fix (fun S ih =>
+    QDP (fun ks' N => ∃ h : DMlt (LdOf N) S, ih (LdOf N) h ks' N)
+        (fun N => DMlt (LdOf N) S))
+
+theorem QS_eq (S : Multiset Ld) :
+    QS S = QDP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N)
+        (fun N => DMlt (LdOf N) S) :=
+  wf_LdDM.fix_eq _ S
+
+theorem QS_bnil (S : Multiset Ld) (V : Jk1) : QS S [] V ↔ GOK V := by
+  rw [QS_eq]; exact QDP_bnil _ _ V
+
+theorem QS_c0 (S : Multiset Ld) (ks : List ℕ) (V : Jk1) :
+    QS S (0 :: ks) V ↔ ∀ U : Jk1, FrmN ks U → QS S ks U → QS S ks (Jk1.one U V) := by
+  rw [QS_eq]; exact QDP_c0 _ _ ks V
+
+theorem QS_ck (S : Multiset Ld) (k : ℕ) (ks : List ℕ) (V : Jk1) :
+    QS S ((k + 1) :: ks) V ↔ ∀ (r : List ℕ), (∀ x ∈ r, x ≤ k) → ∀ (U N : Jk1),
+      FrmN (r ++ ks) U → QS S (r ++ ks) U → JkA N → DMlt (LdOf N) S →
+      (∀ ks' : List ℕ, FrmN ks' N → ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) →
+      QS S (r ++ ks) (Jk1.one U (Jk1.two N V)) := by
+  rw [QS_eq]; exact QDP_ck _ _ k ks V
+
+#print axioms QS_eq
+#print axioms QS_ck
+
+theorem QS_step (S : Multiset Ld) (ks : List ℕ) {V W : Jk1}
+    (hV : FrmN ks V) (hVk : QS S ks V) (hW : QS S (0 :: ks) W) :
+    QS S ks (Jk1.one V W) :=
+  (QS_c0 S ks W).mp hW V hV hVk
+
+/-- ★★★★★★ 予算 `k` が**自由**。これが `WPd_twoOf` との差で、走りの長さが縛られない。 -/
+theorem QS_twoOf (S : Multiset Ld) {k : ℕ} {ks : List ℕ} {V N : Jk1} (hJN : JkA N)
+    (hSN : DMlt (LdOf N) S) (hPN : ∀ ks' : List ℕ, FrmN ks' N → QS (LdOf N) ks' N)
+    (hV : QS S ((k + 1) :: ks) V) : QS S (0 :: ks) (Jk1.two N V) := by
+  rw [QS_ck] at hV
+  rw [QS_c0]
+  intro U hU hUk
+  exact hV [] (by simp) U N (by simpa using hU) (by simpa using hUk) hJN hSN
+    (fun ks' h => ⟨hSN, hPN ks' h⟩)
+
+/-- `QS` の文脈の族。 -/
+def QSCtx (S : Multiset Ld) : List ℕ → List Frm → Prop :=
+  QCtxP (fun ks' N => ∃ _ : DMlt (LdOf N) S, QS (LdOf N) ks' N) (fun N => DMlt (LdOf N) S)
+
+theorem QS_iff (S : Multiset Ld) (ks : List ℕ) (V : Jk1) :
+    QS S ks V ↔ ∀ ctx : List Frm, QSCtx S ks ctx → GOK (plug ctx V) := by
+  rw [QS_eq]; exact QDP_iff _ _ ks V
+
+theorem QSCtx_JkT (S : Multiset Ld) (ks : List ℕ) (ctx : List Frm)
+    (h : QSCtx S ks ctx) (X : Jk1) (hX : FrmN ks X) : JkT (plug ctx X) :=
+  QCtxP_JkT _ _ ks ctx h X hX
+
+theorem QSCtx_c0 (S : Multiset Ld) (ks : List ℕ) (ctx : List Frm) :
+    QSCtx S (0 :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+      QSCtx S ks ctx' ∧ FrmN ks U ∧ QS S ks U := by
+  show QCtxP _ _ (0 :: ks) ctx ↔ _
+  rw [QCtxP_c0]
+  constructor
+  · rintro ⟨ctx', U, rfl, hc', hU, hUk⟩
+    exact ⟨ctx', U, rfl, hc', hU, by rw [QS_eq]; exact hUk⟩
+  · rintro ⟨ctx', U, rfl, hc', hU, hUk⟩
+    exact ⟨ctx', U, rfl, hc', hU, by rw [QS_eq] at hUk; exact hUk⟩
+
+#print axioms QS_twoOf
+#print axioms QS_iff
+#print axioms QSCtx_c0
+
 
 end Small
 end TRIO

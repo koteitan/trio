@@ -26765,3 +26765,38 @@ DM が減る理由: 上の荷 `W` を `W' ≺ W` に落として鎖を `m` 本�
 `QDP P S`（兄弟条件が予算なし、`QDP_twoOf` の `k` が自由）に移して、
 層を荷の多重集合の DM で刻むのが次の手（wall.md の「次の計画」）。
 追記332 の「`PA N`（定理そのもの）に戻る」は、DM で刻めば整礎になる。
+
+## 追記439: `QS` の骨組みが緑。`WPd_twoA_run` の `PA` 形は使えない
+
+緑になったもの:
+
+    DMlt S' S := Multiset.IsDershowitzMannaLT S' S
+    QS : Multiset Ld → List ℕ → Jk1 → Prop        （wf_LdDM.fix で定義）
+    QS_eq / QS_bnil / QS_c0 / QS_ck / QS_step / QS_twoOf / QS_iff
+    QSCtx / QSCtx_JkT / QSCtx_c0
+
+`QS_twoOf` は `QDP_twoOf` 由来で**予算 `k` が自由**。これが `WPd_twoOf` との差。
+
+### 今回わかったこと: `WPd` では走りの長さが予算で縛られる
+
+`WPd_twoA_run {k} (hk : 1 ≤ k) (hAall : ∀ ks, WPd ks A) : WPd ((k+1)::ks) (two A nil)`
+は長さの縛りが無いように見えるが、`hAall`（= `PA A`）が長い鎖には成り立たない
+（`WPd_twoIt_nil m k` は `m ≤ k` を要求するので、平らな鎖の長さ `m` は
+予算 `m+1` 以上でしか置けない）。
+
+さらに `WPd_stairA` は `hsib (q ++ [1])` を使うので兄弟が予算 `1` を許す必要があり、
+`WPd ((k+1)::ks)` の外側の展開は兄弟を `q ≤ k` にしか与えない。
+つまり **`1::` の形（`k = 0`）では階段が回らない**。
+
+    WPd ((k+1)::ks) は k が違うと比較不能（r は広がるが兄弟の要求も強くなる）
+
+だから `WPd` の中で「長さ無制限の鎖」は扱えない。`QS` に移すのが必須。
+
+### `QS` に移す必要がある補題（次の作業）
+
+    QS_payA（荷）← WPd_payE / WPd_payT / WPd_payA
+    QS_oneNil / QS_nilT / QS_nilF / QS_nilAll ← WPd_oneNil / WPd_twoNilGen / WPd_plug_rep
+    QS_stairA / QS_twoA_run（走り、底が nil）
+    GOK_twoPayZ_DM（`hcl` を `Rex' Y' Y` に制限した版。元の証明は
+      `hcl` を `Y' = []` と `Y' = Y.dropLast` にしか使っていないので通る）
+    それらを組んで PA2 相当を DM 帰納で出す
