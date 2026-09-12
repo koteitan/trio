@@ -8181,6 +8181,337 @@ theorem Z7_hang6_LoopIt_nil (m p j n : ℕ) :
 #print axioms Aok_Z7
 #print axioms Z7_hang6_LoopIt_nil
 
+/-! ### ★★★★★★★★★★★ 荷の一般族 `Wg k Y0 = Y0 (1,0,0)(2,0,0)^k`
+
+`Wg 0 = Ap · 1`、`Wg 1 = Vs`、`Wg 2 = Ws`。
+`(Wg (k+1) Y0)⟦n⟧ = (Wg k を n 回反復)`、指数は `b + ω^k`。 -/
+
+theorem map_range'_entry_gen {M : TrioSeq} {p k : ℕ} (hk : p + k ≤ M.length) :
+    (List.range' p k).map
+        (fun j => ((entry M 0 j, entry M 1 j, entry M 2 j) : ℕ × ℕ × ℕ))
+      = (M.drop p).take k := by
+  apply List.ext_getElem
+  · simp
+    omega
+  · intro i h1 h2
+    have hik : i < k := by simpa using h1
+    simp only [List.getElem_map, List.getElem_range', List.getElem_take,
+      List.getElem_drop, Nat.one_mul]
+    exact triple_entry M (by omega)
+
+def Wg (k : ℕ) (Y0 : TrioSeq) : TrioSeq :=
+  Y0 ++ (((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ))
+
+def WgIt (k : ℕ) (Y0 : TrioSeq) : ℕ → TrioSeq
+  | 0 => Y0
+  | (m + 1) => Wg k (WgIt k Y0 m)
+
+theorem Wg_len (k : ℕ) (Y0 : TrioSeq) : (Wg k Y0).length = Y0.length + k + 1 := by
+  simp [Wg]
+  omega
+
+theorem Wg_zero (Y0 : TrioSeq) : Wg 0 Y0 = Ap Y0 1 := by
+  show Y0 ++ (((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate 0 _) = _
+  show Y0 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)] = Y0 ++ List.replicate 1 _
+  rfl
+
+theorem Flat_Wg {Y0 : TrioSeq} (hf : Flat Y0) (k : ℕ) : Flat (Wg k Y0) := by
+  intro c hc
+  rw [Wg, List.mem_append] at hc
+  rcases hc with hc | hc
+  · exact hf c hc
+  · simp only [List.mem_cons, List.mem_replicate] at hc
+    rcases hc with rfl | ⟨-, rfl⟩ <;> exact ⟨rfl, rfl⟩
+
+theorem entry_Wg_lt {Y0 : TrioSeq} {i : ℕ} (h : i < Y0.length) (k r : ℕ) :
+    entry (Wg k Y0) r i = entry Y0 r i := by
+  have hg : (Wg k Y0).getD i ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = Y0.getD i ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+    rw [Wg, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+      List.getElem?_append_left h]
+  simp only [entry, hg]
+
+theorem entry_Wg_mid {Y0 : TrioSeq} (k : ℕ) : entry (Wg k Y0) 0 Y0.length = 1 := by
+  have hg : (Wg k Y0).getD Y0.length ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = ((1, 0, 0) : ℕ × ℕ × ℕ) := by
+    rw [Wg, List.getD_eq_getElem?_getD, List.getElem?_append_right (le_refl _)]
+    simp
+  show ((Wg k Y0).getD Y0.length ((0, 0, 0) : ℕ × ℕ × ℕ)).1 = 1
+  rw [hg]
+
+theorem entry_Wg_hi {Y0 : TrioSeq} {k i : ℕ} (h1 : Y0.length < i)
+    (h2 : i < Y0.length + k + 1) : entry (Wg k Y0) 0 i = 2 := by
+  have hg : (Wg k Y0).getD i ((0, 0, 0) : ℕ × ℕ × ℕ)
+      = ((2, 0, 0) : ℕ × ℕ × ℕ) := by
+    rw [Wg, List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega),
+      ← List.getD_eq_getElem?_getD,
+      show i - Y0.length = (i - Y0.length - 1) + 1 from by omega,
+      List.getD_cons_succ, getD_rep, if_pos (by omega)]
+  show ((Wg k Y0).getD i ((0, 0, 0) : ℕ × ℕ × ℕ)).1 = 2
+  rw [hg]
+
+theorem Wg_ne (k : ℕ) (Y0 : TrioSeq) : Wg k Y0 ≠ [] := by
+  intro hc
+  have := Wg_len k Y0
+  rw [hc] at this
+  simp at this
+
+theorem Wg_root {Y0 : TrioSeq} (hne : Y0 ≠ []) (hr : entry Y0 0 0 = 0) (k : ℕ) :
+    entry (Wg k Y0) 0 0 = 0 := by
+  rw [entry_Wg_lt (List.length_pos_iff.mpr hne) k 0, hr]
+
+theorem Wg_pos {Y0 : TrioSeq} (hne : Y0 ≠ [])
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) (k : ℕ) :
+    ∀ i, 1 ≤ i → i < (Wg k Y0).length → 1 ≤ entry (Wg k Y0) 0 i := by
+  intro i h1 h2
+  rw [Wg_len] at h2
+  rcases Nat.lt_or_ge i Y0.length with hi | hi
+  · rw [entry_Wg_lt hi]
+    exact hpos i h1 hi
+  · rcases Nat.lt_or_ge Y0.length i with hi2 | hi2
+    · rw [entry_Wg_hi hi2 (by omega)]; omega
+    · rw [show i = Y0.length from by omega, entry_Wg_mid]
+
+theorem Wg_srow {Y0 : TrioSeq} (hf : Flat Y0) (k i : ℕ) : srow (Wg k Y0) i = 0 := by
+  simp [srow, (Flat_entry (Flat_Wg hf k) i).1, (Flat_entry (Flat_Wg hf k) i).2]
+
+theorem Wg_hasParent {Y0 : TrioSeq} (hne : Y0 ≠ []) (k : ℕ) :
+    hasParent (Wg (k + 1) Y0) 0 (Y0.length + k + 1) := by
+  rw [hasParent_zero_iff (by rw [Wg_len]; omega)]
+  refine ⟨Y0.length, by omega, ?_⟩
+  rw [entry_Wg_mid, entry_Wg_hi (by omega) (by omega)]
+  omega
+
+theorem Wg_parent {Y0 : TrioSeq} (hne : Y0 ≠ []) (k : ℕ) :
+    parent (Wg (k + 1) Y0) 0 (Y0.length + k + 1) = Y0.length := by
+  have h := parent_nextR (Wg_hasParent hne k)
+  rw [nextR, if_pos rfl] at h
+  obtain ⟨-, -, hlt, hval, hmid⟩ := h
+  by_contra hneq
+  rcases Nat.lt_or_ge (parent (Wg (k + 1) Y0) 0 (Y0.length + k + 1)) Y0.length
+    with hp | hp
+  · have hmidL := hmid Y0.length ⟨hp, by omega⟩
+    rw [entry_Wg_hi (by omega) (by omega), entry_Wg_mid] at hmidL
+    omega
+  · rw [entry_Wg_hi (by omega : Y0.length < parent (Wg (k + 1) Y0) 0
+        (Y0.length + k + 1)) (by omega),
+      entry_Wg_hi (by omega) (by omega)] at hval
+    omega
+
+theorem Wg_take {Y0 : TrioSeq} (k : ℕ) : (Wg k Y0).take Y0.length = Y0 := by
+  show (Y0 ++ _).take Y0.length = _
+  exact List.take_left
+
+theorem Wg_drop {Y0 : TrioSeq} (k : ℕ) : (Wg k Y0).drop Y0.length
+    = ((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ) := by
+  show (Y0 ++ _).drop Y0.length = _
+  exact List.drop_left
+
+theorem WgIt_eq {Y0 : TrioSeq} (k : ℕ) : ∀ m : ℕ, WgIt k Y0 m
+    = Y0 ++ (List.range m).flatMap
+        (fun _ => ((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ))
+  | 0 => by simp [WgIt]
+  | (m + 1) => by
+      show Wg k (WgIt k Y0 m) = _
+      rw [Wg, WgIt_eq k m, List.range_succ, List.flatMap_append, List.append_assoc]
+      simp
+
+theorem oper_Wg {Y0 : TrioSeq} (hf : Flat Y0) (hne : Y0 ≠ []) (k n : ℕ) :
+    (Wg (k + 1) Y0)⟦n⟧ = WgIt k Y0 n := by
+  have h0 : 0 < Y0.length := List.length_pos_iff.mpr hne
+  have h2 : (Wg (k + 1) Y0).length - 1 = Y0.length + k + 1 := by rw [Wg_len]; omega
+  simp only [oper, h2, Wg_srow hf, Wg_parent hne]
+  rw [if_neg (by omega),
+    if_neg (by rw [entry_Wg_hi (by omega) (by omega)]; simp),
+    if_neg (by rw [h2, Wg_srow hf]; exact not_not_intro (Wg_hasParent hne k))]
+  simp only [Nat.lt_irrefl, show ¬ ((1 : ℕ) < 0) from by omega, if_false,
+    Nat.mul_zero, Nat.add_zero, ite_self]
+  have e1 : (List.range' Y0.length (Y0.length + k + 1 - Y0.length)).map
+      (fun j => ((entry (Wg (k + 1) Y0) 0 j, entry (Wg (k + 1) Y0) 1 j,
+        entry (Wg (k + 1) Y0) 2 j) : ℕ × ℕ × ℕ))
+      = ((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ) := by
+    rw [show Y0.length + k + 1 - Y0.length = k + 1 from by omega,
+      map_range'_entry_gen (M := Wg (k + 1) Y0) (p := Y0.length) (k := k + 1)
+        (by rw [Wg_len]; omega), Wg_drop]
+    show (((1, 0, 0) : ℕ × ℕ × ℕ) ::
+      List.replicate (k + 1) ((2, 0, 0) : ℕ × ℕ × ℕ)).take (k + 1) = _
+    rw [List.take_succ_cons, List.take_replicate]
+    simp
+  rw [Wg_take, e1, WgIt_eq]
+
+#print axioms oper_Wg
+
+theorem Flat_WgIt {Y0 : TrioSeq} (hf : Flat Y0) (k : ℕ) : ∀ m : ℕ, Flat (WgIt k Y0 m)
+  | 0 => hf
+  | (m + 1) => Flat_Wg (Flat_WgIt hf k m) k
+
+theorem WgIt_ne {Y0 : TrioSeq} (hne : Y0 ≠ []) (k : ℕ) : ∀ m : ℕ, WgIt k Y0 m ≠ []
+  | 0 => hne
+  | (m + 1) => Wg_ne k (WgIt k Y0 m)
+
+theorem WgIt_root {Y0 : TrioSeq} (hne : Y0 ≠ []) (hr : entry Y0 0 0 = 0) (k : ℕ) :
+    ∀ m : ℕ, entry (WgIt k Y0 m) 0 0 = 0
+  | 0 => hr
+  | (m + 1) => Wg_root (WgIt_ne hne k m) (WgIt_root hne hr k m) k
+
+theorem WgIt_pos {Y0 : TrioSeq} (hne : Y0 ≠ [])
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) (k : ℕ) :
+    ∀ m : ℕ, ∀ i, 1 ≤ i → i < (WgIt k Y0 m).length → 1 ≤ entry (WgIt k Y0 m) 0 i
+  | 0 => hpos
+  | (m + 1) => Wg_pos (WgIt_ne hne k m) (WgIt_pos hne hpos k m) k
+
+def WgOk (k : ℕ) : Prop := ∀ Y0 : TrioSeq, Flat Y0 → Y0 ≠ [] → entry Y0 0 0 = 0 →
+  (∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i) → ∀ b : Bw,
+  AtLd (α := Bwx) Y0 (owG b 1) → ∀ m : ℕ,
+  AtLd (α := Bwx) (WgIt k Y0 m) (owG (b + ow k m) 1)
+
+/-- 階 `k` の「_at」から、`Wg (k+1)` の「_at」。 -/
+theorem AtLd_WgS {k : ℕ} (hk : WgOk k) {Z : TrioSeq} (hf : Flat Z) (hne : Z ≠ [])
+    (hr : entry Z 0 0 = 0)
+    (hpos : ∀ i, 1 ≤ i → i < Z.length → 1 ≤ entry Z 0 i) (b : Bw)
+    (hA : AtLd (α := Bwx) Z (owG b 1)) :
+    AtLd (α := Bwx) (Wg (k + 1) Z) (owG (b + ow (k + 1) 1) 1) := by
+  have h0 : 0 < Z.length := List.length_pos_iff.mpr hne
+  refine AtLd_fam (F := fun n => WgIt k Z (n + 1))
+    (qf := fun n => owG (b + ow k (n + 1)) 1)
+    (Bok_flat (Flat_Wg hf (k + 1)) (Wg_root hne hr (k + 1)))
+    (by rw [Wg_len]; omega) ?_
+    (fun n l Z' => by rw [oper_Wg hf hne])
+    (fun n => hk Z hf hne hr hpos b hA (n + 1)) ?_ (PwsB b).add_lt
+  · rw [show (Wg (k + 1) Z).length - 1 = Z.length + k + 1 from by rw [Wg_len]; omega,
+      Wg_srow hf]
+    exact Wg_hasParent hne k
+  · intro n
+    exact owG_ltL (Bw_add_lt_left b
+      (ow_ltL (by omega : k < k + 1) (n + 1) (by omega))) 1 (by omega)
+
+theorem WgOk_zero : WgOk 0 := by
+  intro Y0 hf hne hr hpos b hA0 m
+  have e : WgIt 0 Y0 m = Ap Y0 m := by
+    rw [WgIt_eq, Ap]
+    simp only [List.replicate, flatMap_singleton_range]
+  rw [e]
+  match m with
+  | 0 =>
+      rw [Ap_zero, show b + ow 0 0 = b from by rw [ow_zero, bot_Bw, add_zero]]
+      exact hA0
+  | (j + 1) =>
+      have hA0' : AtLd Y0 ((PwsB b).pw 0 1) := by
+        rw [show (PwsB b).pw 0 1 = owG b 1 from congrFun (pwB_zero_eq b) 1]
+        exact hA0
+      have hR0 : RunLd Y0 ((PwsB b).pw 0) :=
+        RunLd_of_TopLd (Bok_flat hf hr) ((PwsB b).pw_zero 0) ((PwsB b).pw_add 0)
+          (TopLd_of_AtLd hA0')
+      exact (LadAp (PwsB b) hf hne hr hpos hR0 hA0' j).2
+
+theorem WgOk_succ {k : ℕ} (hk : WgOk k) : WgOk (k + 1) := by
+  intro Y0 hf hne hr hpos b hA0 m
+  induction m with
+  | zero =>
+      show AtLd Y0 (owG (b + ow (k + 1) 0) 1)
+      rw [show b + ow (k + 1) 0 = b from by rw [ow_zero, bot_Bw, add_zero]]
+      exact hA0
+  | succ m ih =>
+      have h := AtLd_WgS hk (Flat_WgIt hf (k + 1) m) (WgIt_ne hne (k + 1) m)
+        (WgIt_root hne hr (k + 1) m) (WgIt_pos hne hpos (k + 1) m)
+        (b + ow (k + 1) m) ih
+      rw [add_assoc, ow_add_same] at h
+      exact h
+
+theorem WgOk_all : ∀ k : ℕ, WgOk k
+  | 0 => WgOk_zero
+  | (k + 1) => WgOk_succ (WgOk_all k)
+
+/-! ### `Gk k m = ((0,0,0)(1,0,0)(2,0,0)^k)` を `m` 回（底は `[(0,0,0)]`） -/
+
+def Gk (k m : ℕ) : TrioSeq := WgIt k (Yv 0) m
+
+theorem Flat_Gk (k m : ℕ) : Flat (Gk k m) := Flat_WgIt (Flat_Yv 0) k m
+theorem Gk_ne (k m : ℕ) : Gk k m ≠ [] := WgIt_ne (by simp [Yv]) k m
+theorem Gk_root (k m : ℕ) : entry (Gk k m) 0 0 = 0 :=
+  WgIt_root (by simp [Yv]) (by simp [Yv, entry]) k m
+theorem Gk_pos (k m : ℕ) : ∀ i, 1 ≤ i → i < (Gk k m).length → 1 ≤ entry (Gk k m) 0 i :=
+  WgIt_pos (by simp [Yv]) (by intro i h1 h2; rw [Yv_len] at h2; omega) k m
+
+theorem AtLd_Gk : ∀ k m : ℕ, AtLd (α := Bwx) (Gk k (m + 1)) (owG (ow k (m + 1)) 1)
+  | 0, m => by
+      have e : Gk 0 (m + 1) = Yv (m + 1) := by
+        show WgIt 0 (Yv 0) (m + 1) = _
+        rw [WgIt_eq]
+        simp only [List.replicate, flatMap_singleton_range]
+        rfl
+      rw [e, show owG (ow 0 (m + 1)) 1 = PwsX.pw (m + 1) 1 from rfl]
+      exact (LadYv PwsX m).2
+  | (k + 1), 0 => by
+      have e : Gk (k + 1) 1 = Wg (k + 1) (Yv 0) := rfl
+      rw [e]
+      refine AtLd_fam (F := fun n => Gk k (n + 1))
+        (qf := fun n => owG (ow k (n + 1)) 1)
+        (Bok_flat (Flat_Wg (Flat_Yv 0) (k + 1))
+          (Wg_root (by simp [Yv]) (by simp [Yv, entry]) (k + 1)))
+        (by rw [Wg_len, Yv_len]; omega) ?_
+        (fun n l Z' => by rw [oper_Wg (Flat_Yv 0) (by simp [Yv])]; rfl)
+        (fun n => AtLd_Gk k n)
+        ?_ PwsX.add_lt
+      · rw [show (Wg (k + 1) (Yv 0)).length - 1 = (Yv 0).length + k + 1 from by
+          rw [Wg_len]; omega, Wg_srow (Flat_Yv 0)]
+        exact Wg_hasParent (by simp [Yv]) k
+      · intro n
+        exact owG_ltL (ow_ltL (by omega : k < k + 1) (n + 1) (by omega)) 1 (by omega)
+  | (k + 1), (m + 1) => by
+      have h := AtLd_WgS (WgOk_all k) (Flat_Gk (k + 1) (m + 1)) (Gk_ne (k + 1) (m + 1))
+        (Gk_root (k + 1) (m + 1)) (Gk_pos (k + 1) (m + 1))
+        (ow (k + 1) (m + 1)) (AtLd_Gk (k + 1) m)
+      rw [ow_add_same] at h
+      exact h
+
+theorem RunLd_Gk (k : ℕ) : RunLd (Gk k 1) (fun n => owG (ow k 1) n) :=
+  RunLd_of_TopLd (Bok_flat (Flat_Gk k 1) (Gk_root k 1)) (by rw [owG_zero, bot_BwG])
+    (fun n => owG_add_same (ow k 1) n) (TopLd_of_AtLd (AtLd_Gk k 0))
+
+theorem shift6_Gk (k : ℕ) : shiftr01 6 0 (Gk k 1)
+    = ((6, 0, 0) : ℕ × ℕ × ℕ) :: ((7, 0, 0) : ℕ × ℕ × ℕ)
+      :: List.replicate k ((8, 0, 0) : ℕ × ℕ × ℕ) := by
+  show List.map _ ([((0, 0, 0) : ℕ × ℕ × ℕ)] ++
+    (((1, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((2, 0, 0) : ℕ × ℕ × ℕ))) = _
+  rw [List.map_append, List.map_cons, List.map_cons, List.map_nil,
+    List.map_replicate]
+  rfl
+
+/-- ★★★★★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)^k`（どの `k` でも）。 -/
+theorem R600_7_8rep_mem (k : ℕ) :
+    R600 ++ ((7, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((8, 0, 0) : ℕ × ℕ × ℕ)
+      ∈ W 0 := by
+  have h := R375m_tower_gen (Bok_flat (Flat_Gk k 1) (Gk_root k 1))
+    (by rw [owG_zero, bot_BwG]) (fun n => owG_add_same (ow k 1) n)
+    (RunLd_Gk k) (TopLd_of_AtLd (AtLd_Gk k 0)) 1
+  rw [show (List.range 1).flatMap (fun _ => shiftr01 6 0 (Gk k 1))
+      = shiftr01 6 0 (Gk k 1) from by simp, shift6_Gk k] at h
+  simpa [R600, List.append_assoc] using h
+
+/-- ★★★★★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(9,0,0)`。 -/
+theorem R600_789_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((9, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((8, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((8, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 9 := by simp [entry]
+  have htail : ∀ r, 1 ≤ r → r < ([((8, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      9 ≤ entry [((8, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r hr1 hr2
+    simp only [List.length_singleton] at hr2
+    omega
+  have htw : ∀ n : ℕ, (R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)])
+      ++ (List.range n).flatMap (fun _ => [((8, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_singleton_range]
+    simpa [List.append_assoc] using R600_7_8rep_mem n
+  have hmem := flat_mem'' (Y0 := R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)])
+    (M := [((8, 0, 0) : ℕ × ℕ × ℕ)]) (d := 9) hne hhead htail htw
+  simpa [List.append_assoc] using hmem
+
+#print axioms AtLd_Gk
+#print axioms R600_789_mem
+
 
 end Small
 end TRIO
