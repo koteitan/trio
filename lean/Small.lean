@@ -1105,7 +1105,7 @@ structure Scale (B : Type) [Preorder B] [OrderBot B] where
 
 section Bud
 
-variable {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+variable {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
 
 
 theorem dmT_step {b : Bud} {X Y : Multiset Bud} (h : ∀ y ∈ Y, y < b) :
@@ -1142,7 +1142,7 @@ def FrmNT : List Bud → Jk1 → Prop
 
 /-- `WPd` の予算を `Bud` にしたもの。`⊥` が 1 の枠、`⊥ < b` が 2 の枠で、
 兄弟は「予算 `< b`」。`b = ⊤` の節では兄弟が**全ての自然数の予算**で来る。 -/
-def WPdT {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
+def WPdT {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
     List Bud → Jk1 → Prop
   | [], V => GOK V
   | (b :: ks), V =>
@@ -1223,7 +1223,7 @@ theorem WPdT_twoOf {b : Bud} (hb : b ≠ ⊥) {ks : List Bud} {V N : Jk1}
 
 #print axioms WPdT_twoOf
 
-def WCtxU {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
+def WCtxU {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
     List Bud → List Frm → Prop
   | [], ctx => ctx = []
   | (b :: ks), ctx =>

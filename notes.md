@@ -26881,3 +26881,21 @@ DM では閉じているが、**`htow` は `WPd` の展開から来る任意の�
 また、`QSI` を帰納的述語として定義する道は閉じている（`c0` の前提
 `∀ U, FrmN ks U → QSI ks U → QSI ks (one U V)` で `QSI` が負の位置に出る）。
 層で刻むのは必須。
+
+## 追記444: `WPdT` の `LinearOrder` を `PartialOrder` に弱めた（エラー 0）
+
+`WPdT` / `WCtxU` と `section Bud` の `variable` の `[LinearOrder Bud]` を
+`[PartialOrder Bud]` にしても**エラー 0**。線形性はどこにも使っていなかった。
+
+これで予算型に **`Multiset Ld`（荷の多重集合、DM 順序）** が使える。DM 順序は
+線形でないので `LinearOrder` では入らなかった。
+
+狙い: `WPdT_twoM0_at` のコメントが書いている通り、予算を `⊤` にすると
+「兄弟が全部の自然数予算で使える」ので横の走りの幅 `m` が止まらない。
+これまではその予算型が `Bw = ω^ω` などの固定の順序数だったので、
+荷の階数が足りなかった（平らな荷の天井 `R600(7,1,0)`）。
+`Multiset Ld` なら荷の階数がそのまま予算になり、循環しない
+（整礎性は `Acc_Rex'` = `A2'` から出ているので、証明したい停止性を仮定しない）。
+
+次: `Bud2 := Multiset Ld` に `PartialOrder` / `OrderBot` / `WellFoundedLT` を入れ、
+`Scale Bud2`（`nb m = replicate m (mkLd Y₀)`）と `t = {z}`（`Dom` で上に取る）を作る。
