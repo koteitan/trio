@@ -24388,3 +24388,28 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
 つまり `WPd_Tb60u` / `WPd_twoM0` / `WPd_twoPayM0` は `RHang` の
 `j ≤ 2` かつ荷が小さい部分を埋めたことになる。残りは
 「**縦の走り 2 段以上の上に一般の荷**」だけ。
+
+## 追記367: 次の 1 手は「予算 0 族どうしの走り 2」
+
+追記366 の `RHang` の `j = 2` を一般の荷 `C` で回すには、荷の W 帰納の**底**
+
+    WPdChBase : ∀ N X, JkA N → (∀ks, WPd (0::ks) N) → JkA X → (∀ks, WPd (0::ks) X) →
+                ∀ ks, WPd (0 :: ks) (Jk1.two N (Jk1.two X Jk1.nil))
+
+だけが要る（「予算 0 の族どうしで走り 2」）。これがあれば
+
+    Q(C) := ∀ N X (予算 0 族), ∀ks, WPd (0::ks) (two N (two X (pay nil C)))
+
+が A2' で回る:
+- `C = []`  → `WPdChBase`
+- `C = C' ++ [(0,0,0)]` → 鎖 `twoIt X (pay nil C') m` は `two N (two X' (pay nil C'))`
+  の形なので `Q(C')`（鎖の各段は `WPd_FLr` 型で予算 0 族 ✓）
+- 親を持つ段 → `GoodFb_snoc_innerJt0`
+
+いま緑なのは `X = nil` の場合（`WPd_twoIt_nil 1 1` + `WPd_twoOf (k := 1)`）と
+`X` が平らな走りの場合（`WPd_twoIt_nil w w`）。足りないのは
+**`X` が予算 0 族の一般の木**（例: `X = M0t`, `X = FLr Bs`）のとき。
+
+`WPd_twoA_runB` は `X` に「予算 `b+1` でも良い」を要求するので使えない。
+`GOK_twoTwoNilW_gen` の階段 `nstN2 N X k` は底が `X`（two）なので
+`APd (false::ks) X` が `TopOk` で落ちる。ここが最後の 1 マス。
