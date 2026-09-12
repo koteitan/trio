@@ -1100,7 +1100,6 @@ theorem R376_of_RHang2 (h : RHang2) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] 
 /-- 予算の「ω 段」。`nb : ℕ → Bud` は下から `⊥` で始まる真に増える列。 -/
 structure Scale (B : Type) [Preorder B] [OrderBot B] where
   nb : ℕ → B
-  nb0 : nb 0 = ⊥
   nbmono : StrictMono nb
 
 section Bud
@@ -1834,9 +1833,8 @@ theorem WPdT_twoA_runB {c a : Bud} (ha : a ≠ ⊥) (hac : a < c) {A : Jk1}
       exact (WPdT_iff ((⊥ : Bud) :: (r ++ ks)) _).mp
         (WPdT_stairB ha hac hJN hJA hAall n (r ++ ks) hNt) _ hc
 
-theorem Scale.nb_ne_bot (S : Scale Bud) (m : ℕ) : S.nb (m + 1) ≠ ⊥ := by
-  rw [← S.nb0]
-  exact (S.nbmono (Nat.succ_pos m)).ne'
+theorem Scale.nb_ne_bot (S : Scale Bud) (m : ℕ) : S.nb (m + 1) ≠ ⊥ :=
+  ne_bot_of_gt (lt_of_le_of_lt bot_le (S.nbmono (Nat.succ_pos m)))
 
 /-- 平らな走り `twoIt nil nil m` は、予算 `c > nb m` のどの形にも差せる。 -/
 theorem WPdT_twoIt_nil (S : Scale Bud) : ∀ (m : ℕ) (c : Bud), S.nb m < c →
@@ -1903,6 +1901,88 @@ theorem WPdT_M0t_top (S : Scale Bud) {t : Bud} (ht : ∀ m : ℕ, S.nb m < t)
 
 #print axioms WPdT_M0t_top
 
+/-! ### ★ `WPdT_M0t_top` の一般形: 荷つきの平らな走りを予算の節に置く
+
+`two A (pay Z [(0,0,0)])` の最後の列を重複させると鎖は
+`twoIt A (pay Z []) m`、語は `twoIt A Z m` と同じ（`jk1_pay_nil`）。
+だから「`twoIt A Z m` を段 `nb m` の上の予算に置ける」ことさえ言えれば、
+`two A (pay Z [(0,0,0)])` は段の上の予算 `t` に置ける。 -/
+
+theorem jk1_twoIt_payZ (A Z : Jk1) : ∀ (n l : ℕ),
+    jk1 l (twoIt A (Jk1.pay Z ([] : TrioSeq)) n) = jk1 l (twoIt A Z n)
+  | 0, _ => rfl
+  | (n + 1), l => by
+      show jk1 l (twoIt A (Jk1.pay Z ([] : TrioSeq)) n) ++
+          (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (Jk1.pay Z ([] : TrioSeq)))
+        = jk1 l (twoIt A Z n) ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Z)
+      rw [jk1_twoIt_payZ A Z n l, jk1_pay_nil]
+
+/-- 上が空の平らな走り。底 `A` は「段 `nb 0` より上の予算ならどこでも」でよい。 -/
+theorem WPdT_twoItA_nil (S : Scale Bud) {A : Jk1} (hJA : JkA A)
+    (hA : ∀ c : Bud, S.nb 0 < c → ∀ ks : List Bud, WPdT (c :: ks) A) :
+    ∀ (m : ℕ) (c : Bud), S.nb m < c → ∀ ks : List Bud,
+      WPdT (c :: ks) (twoIt A Jk1.nil m)
+  | 0, c, hc, ks => hA c hc ks
+  | (m + 1), c, hc, ks =>
+      WPdT_twoA_runB (a := S.nb (m + 1)) (S.nb_ne_bot m) hc
+        (JkA_twoItP (Wl := A) (T := Jk1.nil) hJA trivial m)
+        (fun ks' => WPdT_twoItA_nil S hJA hA m (S.nb (m + 1)) (S.nbmono (by omega)) ks') ks
+
+theorem WPdT_twoAZ_at (S : Scale Bud) {t : Bud} (ht : ∀ m : ℕ, S.nb m < t)
+    {A Z : Jk1} (hJA : JkA A) (hJZ : JkA Z)
+    (hchain : ∀ (m : ℕ) (c : Bud), S.nb m < c → ∀ ks : List Bud,
+      WPdT (c :: ks) (twoIt A Z m))
+    {B : List Bud} {N : Jk1} (hJN : JkA N)
+    (hNt : ∀ q : List Bud, (∀ x ∈ q, x < t) → WPdT ((⊥ : Bud) :: q ++ B) N) :
+    WPdT ((⊥ : Bud) :: B)
+      (Jk1.two N (Jk1.two A (Jk1.pay Z [((0, 0, 0) : ℕ × ℕ × ℕ)]))) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  have eT : Jk1.two A (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+      = Jk1.two A (Jk1.pay Z [((0, 0, 0) : ℕ × ℕ × ℕ)]) := by simp
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N])
+      (Jk1.two A (Jk1.pay Z (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) := by
+    rw [plug_snoc2, eT]
+    exact WCtxU_JkT ((⊥ : Bud) :: B) ctx hc
+      (Jk1.two N (Jk1.two A (Jk1.pay Z [((0, 0, 0) : ℕ × ℕ × ℕ)])))
+      (⟨hJN, hJA, hJZ, Bok_zero⟩ : FrmNT ((⊥ : Bud) :: B)
+        (Jk1.two N (Jk1.two A (Jk1.pay Z [((0, 0, 0) : ℕ × ℕ × ℕ)]))))
+  intro ws hw hG
+  have hIH : ∀ m : ℕ, 1 ≤ m → GoodFb (fun a b => wordJ a b
+      (ws ++ [plug (ctx ++ [Frm.ftwo N]) (twoIt A (Jk1.pay Z ([] : TrioSeq)) m)])) := by
+    intro m _
+    rw [plug_snoc2]
+    have hw2 : WPdT ((⊥ : Bud) :: B)
+        (Jk1.two N (twoIt A (Jk1.pay Z ([] : TrioSeq)) m)) := by
+      refine WPdT_congr ((⊥ : Bud) :: B) (fun l => ?_)
+        (WPdT_twoOf (b := S.nb (m + 1)) (S.nb_ne_bot m) hJN
+          (fun q hq => hNt q (fun x hx => lt_trans (hq x hx) (ht (m + 1))))
+          (hchain m (S.nb (m + 1)) (S.nbmono (by omega)) B))
+      show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (twoIt A Z m))
+        = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (twoIt A (Jk1.pay Z ([] : TrioSeq)) m))
+      rw [jk1_twoIt_payZ A Z m (l + 1)]
+    exact (WPdT_iff ((⊥ : Bud) :: B) _).mp hw2 ctx hc ws hw hG
+  have h := GoodFb_snoc_dupJt0 hw hJT hIH
+  rw [plug_snoc2, eT] at h
+  exact h
+
+/-- ★★★★★★★ 荷 `[(0,0,0)]` を乗せた 2 の記録は、鎖が段の上に置ければ
+段の上の予算 `t` に置ける。`A = Z = nil` が `WPdT_M0t_top`。 -/
+theorem WPdT_twoAZ_top (S : Scale Bud) {t : Bud} (ht : ∀ m : ℕ, S.nb m < t)
+    {A Z : Jk1} (hJA : JkA A) (hJZ : JkA Z)
+    (hchain : ∀ (m : ℕ) (c : Bud), S.nb m < c → ∀ ks : List Bud,
+      WPdT (c :: ks) (twoIt A Z m))
+    (ks : List Bud) :
+    WPdT (t :: ks) (Jk1.two A (Jk1.pay Z [((0, 0, 0) : ℕ × ℕ × ℕ)])) :=
+  have htb : t ≠ ⊥ := ne_bot_of_gt (lt_of_le_of_lt bot_le (ht 0))
+  (WPdT_cb htb ks _).mpr (fun r hr U N hU hUk hJN hNt =>
+    WPdT_two_of_ctx hU hUk
+      (fun ctx hc => (WPdT_iff ((⊥ : Bud) :: (r ++ ks)) _).mp
+        (WPdT_twoAZ_at S ht hJA hJZ hchain hJN hNt) ctx hc))
+
+#print axioms WPdT_twoAZ_top
+
 end Bud
 
 /-! ### 予算型の実体化: `Bud2 = ℕ ×ₗ ℕ`（順序型 ω²）
@@ -1914,7 +1994,6 @@ abbrev Bud2 : Type := ℕ ×ₗ ℕ
 
 def Sc2 : Scale Bud2 where
   nb := fun m => toLex (0, m)
-  nb0 := rfl
   nbmono := fun _ _ h => Prod.Lex.right _ h
 
 theorem Sc2_lt_w (m : ℕ) : Sc2.nb m < (toLex (1, 0) : Bud2) := Prod.Lex.left _ _ (by omega)
@@ -1994,6 +2073,123 @@ theorem LoopIt_Z520_nil_mem (m p j n : ℕ) :
 
 #print axioms Aok_Z520
 #print axioms LoopIt_Z520_nil_mem
+
+/-! ### 予算型 `Bud3 = ℕ ×ₗ (ℕ ×ₗ ℕ)`（順序型 ω³）と `R600 (6,0,0)`
+
+荷が入れ子になると（`pay (pay nil [(0,0,0)]) [(0,0,0)]`）、鎖は荷つきの平らな
+走り `FLz m` になる。`FLz m` を置くには `ω·m` の予算が要るので、
+その上の `ω²` が要る。 -/
+
+abbrev Bud3 : Type := ℕ ×ₗ (ℕ ×ₗ ℕ)
+
+def b3 (a b c : ℕ) : Bud3 := toLex (a, toLex (b, c))
+
+theorem b3_lt1 {a a' : ℕ} (h : a < a') (b c b' c' : ℕ) : b3 a b c < b3 a' b' c' :=
+  Prod.Lex.left _ _ h
+
+theorem b3_lt2 (a : ℕ) {b b' : ℕ} (h : b < b') (c c' : ℕ) : b3 a b c < b3 a b' c' :=
+  Prod.Lex.right _ (Prod.Lex.left _ _ h)
+
+theorem b3_lt3 (a b : ℕ) {c c' : ℕ} (h : c < c') : b3 a b c < b3 a b c' :=
+  Prod.Lex.right _ (Prod.Lex.right _ h)
+
+/-- `ω·k` の上の段 `ω·k + i`。 -/
+def Sc3 (k : ℕ) : Scale Bud3 where
+  nb := fun i => b3 0 k i
+  nbmono := fun _ _ h => b3_lt3 0 k h
+
+/-- `ω·m` の段。 -/
+def Scw : Scale Bud3 where
+  nb := fun m => b3 0 m 0
+  nbmono := fun _ _ h => b3_lt2 0 h 0 0
+
+def M1t : Jk1 := Jk1.pay Jk1.nil [((0, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem JkA_M1t : JkA M1t := ⟨trivial, Bok_zero⟩
+
+theorem JkA_FLz (n : ℕ) : JkA (FLz n) := JkA_FLr _ (Bok_FLz_mem n)
+
+theorem FLz_eq_twoIt : ∀ n : ℕ, FLz n = twoIt Jk1.nil M1t n
+  | 0 => rfl
+  | (n + 1) => by
+      rw [FLz_succ n, FLz_eq_twoIt n]
+      rfl
+
+/-- 荷が全部 `[(0,0,0)]` の平らな走り `FLz k` は、予算 `> ω·k` のどの節にも置ける。 -/
+theorem WPdT3_FLz : ∀ (k : ℕ) (c : Bud3), b3 0 k 0 < c → ∀ ks : List Bud3,
+    WPdT (c :: ks) (FLz k)
+  | 0, c, hc, ks => WPdT_nilF (ne_bot_of_gt (lt_of_le_of_lt bot_le hc)) ks
+  | (k + 1), c, hc, ks => by
+      rw [FLz_succ k]
+      refine WPdT_twoAZ_top (Sc3 k) (A := FLz k) (Z := Jk1.nil) ?_ (JkA_FLz k)
+        trivial ?_ ks
+      · intro m
+        exact lt_trans (b3_lt2 0 (by omega : k < k + 1) m 0) hc
+      · intro m c' hc' ks'
+        exact WPdT_twoItA_nil (Sc3 k) (JkA_FLz k)
+          (fun c'' hc'' ks'' => WPdT3_FLz k c'' hc'' ks'') m c' hc' ks'
+
+def M0u : Jk1 := Jk1.two Jk1.nil (Jk1.pay M1t [((0, 0, 0) : ℕ × ℕ × ℕ)])
+
+theorem JkA_M0u : JkA M0u := ⟨trivial, JkA_M1t, Bok_zero⟩
+
+/-- ★★★★★★★ 荷が 2 段の `M0u` は予算 `ω²` の節に置ける。 -/
+theorem WPdT3_M0u (ks : List Bud3) : WPdT (b3 1 0 0 :: ks) M0u := by
+  refine WPdT_twoAZ_top Scw (A := Jk1.nil) (Z := M1t) ?_ trivial JkA_M1t ?_ ks
+  · intro m
+    exact b3_lt1 (show (0 : ℕ) < 1 by omega) m 0 0 0
+  · intro m c hc ks'
+    have h := WPdT3_FLz m c hc ks'
+    rw [FLz_eq_twoIt m] at h
+    exact h
+
+def Xu : Jk1 := Jk1.two Jk1.nil M0u
+
+theorem WPdT3_Xu (ks : List Bud3) : WPdT ((⊥ : Bud3) :: ks) Xu :=
+  WPdT_twoOf (b := b3 1 0 0)
+    (ne_bot_of_gt (b3_lt1 (show (0 : ℕ) < 1 by omega) 0 0 0 0)) trivial
+    (fun q _ => WPdT_nilAll _) (WPdT3_M0u ks)
+
+theorem GOK_oneXu : GOK (Jk1.one Jk1.nil Xu) :=
+  (WPdT_bnil (Bud := Bud3) _).mp
+    (WPdT_step ([] : List Bud3) (JkT_nil : FrmNT ([] : List Bud3) Jk1.nil)
+      ((WPdT_bnil (Bud := Bud3) _).mpr GOK_nil) (WPdT3_Xu []))
+
+theorem jk1_M1t (l : ℕ) : jk1 l M1t = [((l + 1, 0, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ shiftr01 (l + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)] = _
+  simp [jk1, shiftr01]
+
+theorem jk1_M0u (l : ℕ) : jk1 l M0u
+    = [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 0, 0) : ℕ × ℕ × ℕ),
+       ((l + 2, 0, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) M1t ++ shiftr01 (l + 1 + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)])) = _
+  rw [jk1_M1t (l + 1)]
+  simp [jk1, shiftr01, show l + 1 + 1 = l + 2 from by omega]
+
+theorem jk1_Xu (l : ℕ) : jk1 l Xu
+    = [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+       ((l + 3, 0, 0) : ℕ × ℕ × ℕ), ((l + 3, 0, 0) : ℕ × ℕ × ℕ)] := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) M0u) = _
+  rw [jk1_M0u (l + 1)]
+  simp [jk1, show l + 1 + 1 = l + 2 from by omega, show l + 1 + 2 = l + 3 from by omega]
+
+/-- ★★★★★★★ `R600 (6,0,0)`:
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(6,0,0)(6,0,0)` -/
+theorem R600600_mem : R600 ++ [((6, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil Xu]) := by
+    simpa using GOK_oneXu [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  have e : jk1 2 (Jk1.one Jk1.nil Xu)
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+         ((6, 0, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ)] := by
+    show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (2 + 1) Xu) = _
+    rw [jk1_Xu 3]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+#print axioms R600600_mem
 
 end Small
 end TRIO
