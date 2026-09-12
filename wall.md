@@ -43,6 +43,29 @@
 `WPdT_twoOf` が `⊥ ::` しか作れない「1 ずれ」が残る。
 同じ手（予算を荷の多重集合に）が縦にも効くかを次に見る。
 
+### 次の標的: `PayB`（ブロック文脈の荷）。これで行 376 が出る
+
+    PayB : ∀ ws : List ℕ, ∀ C, Bok C → GOK (plug (BCtx ws) (pay nil C))
+    FoneB_of_PayB / GOK_BCtx_nil / R376_of_PayB                           ★既に緑
+
+`Pay2` は `ws = [2]` の場合。`BCtx ws` はブロック `[fone nil] ++ (ftwo nil)^w` の列で、
+`Tw3`（縦の鎖）に要るのはちょうどこの文脈（`nstQ nil 1 n` を割ると
+`fone nil, ftwo nil, ftwo nil, fone nil, …` が出る）。
+
+`Pay2` と同じ手で行ける見込み: A2' の複製鎖が `htow`
+（`GOK (plug (BCtx ws) (two M nil))`）に落ちるので、鎖をブロック文脈に置く
+予算族が要る。それが `WQd`（`SmallA` 67307、補題 15 本だけ）。
+
+    WQd ((k+1)::ks) は「幅 Ns.length ≤ k+1 のブロック」を張る
+      → 幅が予算で縛られている。まさに `Pay2` で外した形。
+
+手順:
+1. `WQd` を一般の予算型に持ち上げる（`WPd → WPdT` と同じ、`[PartialOrder Bud]`）。
+   幅の条件 `Ns.length ≤ k+1` は `Scale` を使って `S.nb Ns.length < b` にする。
+2. 予算型を `Bml = Multiset Ld` にする。
+3. `QRunPay`（`WQd` 層の荷）を荷の多重集合の DM 帰納で出す（`PcB` と同じ形）。
+4. `R376_of_QRunPay`（★緑）で行 376。
+
 **以下は `Pay2` が落ちる前の調査。歴史として残す。**
 
 ## ★★★★★★★★ 壁は「目標行の展開 [2]」1 行。シート登りはそこに届かない（2026-09-12）
