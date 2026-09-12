@@ -26675,3 +26675,24 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 つまり**どの階を見ても同じ形に戻る**。`GOK_stkW_gen` は底が `two nil nil` の場合だけで、
 底を `nstN nil n` や `nstQ nil 1 i` にした版が無い。
 底を一般の `X` にした階段の機構が 1 本あれば、`i`（階段の番号）の帰納で閉じる見込み。
+
+## 追記434: 壁の一本道をたどり直した。最小の欠けは `WPd_twoA_runPay` 1 本
+
+    Tw3 ⟸ ∀ n, GOK (nstQ nil 1 n) ⟸ ZApp2c ⟸ Pc ⟸ WPd_twoA_runPay
+
+- `ZApp2c : ∀ N, VCh nil N → GOK (one nil (two nil (two N nil)))`
+  （`ZApp2c_nil` / `ZApp2c_twoItNil` は緑。残るのは荷つきの水平鎖だけ）
+- `Pc : ∀ N, VCh nil N → ∀ ks, WPd ((lenC N + 1)::ks) N`
+  （`ZApp2c` の結論は `GOK` なので `WPd_twoOf (k := b)` の `b` を鎖ごとに選べる。
+    平らな鎖は `WPd_twoIt_nil m m (le_refl m)` で緑）
+- `WPd_twoA_runPay : WPd ((k+1)::ks) (two A (pay nil Y))`
+  （`WPd_twoA_runB` の子を nil から荷に変えた版）
+
+閉じない理由: `GOK_oneUV_RunSB` の字は `RunS`（底が nil）なので、子を荷にすると
+最後の列が荷になり `hMy_RunP` / `hVs` が壊れる。A2' で荷を割ると複製鎖が
+長さ無制限で兄弟に出て、`Pc` の帰納法の順序が逆になる。
+
+新しい負の結果: 2 の枠の本数（`cntF`）を測度にする族（`APd` の `false` の節から
+`fone` を外した `XPd`）は、走りの階段 `blkR A Bs i` が 2 の枠を `i*|Bs|` 枚足すので
+測度が増えて閉じない。`SCtx` が「走りの長さ `q` の帰納」に変えられるのは
+兄弟を `nil` に固定して `SNilT` を別に仮定したからで、`SNilT` は荷に戻る。
