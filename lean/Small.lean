@@ -974,5 +974,19 @@ theorem GOK_oneFLr (Bs : List TrioSeq) (h : ∀ C ∈ Bs, Bok C) :
 #print axioms APd_FLr
 #print axioms GOK_oneFLr
 
+theorem Y510Lad_flat_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (Y510j m ws) n ++ [((n + 4, n + 4, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  LadB_flat_mem (Y510j_PkGA m hw) n
+
+theorem UJitLad_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n j : ℕ) :
+    LadB ((UJitW X510 m ws n ++ U11 0 m)
+      ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) j ∈ W 0 :=
+  LadB_mem ⟨RunA 0, Iface_RunA0, 0, 1, UJitW X510 m ws n ++ U11 0 m, wordJ 2 2 ws, rfl,
+    LwA_U11 (LwA_of_Aok (Aok_UJitW Aok_R600510 m hw n)) m, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩ j
+
+#print axioms Y510Lad_flat_mem
+#print axioms UJitLad_mem
+
 end Small
 end TRIO
