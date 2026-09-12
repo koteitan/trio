@@ -2860,13 +2860,11 @@ abbrev Ekey (Bud : Type) [LinearOrder Bud] : Type := Bud ×ₗ ℕ
 
 def erun (e : Ekey Bud) : ℕ := (ofLex e).2
 
-def FrmR : List (Ekey Bud) → Jk1 → Prop
-  | [], U => JkT U
-  | (_ :: _), U => JkA U
+def FrmR : List (Ekey Bud) → Jk1 → Prop := fun _ U => JkA U
 
 def WPdR {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
     List (Ekey Bud) → Jk1 → Prop
-  | [], V => GOK V
+  | [], V => ∀ (bs : List Bool) (ctx : List Frm), GCtx (true :: bs) ctx → GOK (plug ctx V)
   | (e :: ks), V =>
       (e = ⊥ → ∀ U : Jk1, FrmR ks U → WPdR ks U → WPdR ks (Jk1.one U V)) ∧
       (e ≠ ⊥ → ∀ (r : List (Ekey Bud)), (∀ x ∈ r, x < e) → ∀ (U N : Jk1),
@@ -2891,7 +2889,10 @@ decreasing_by
          · exact (by assumption : ∀ x ∈ q, x < e) x h1
          · exact (by assumption : ∀ x ∈ r, x < e) x h1)
 
-theorem WPdR_bnil (V : Jk1) : WPdR ([] : List (Ekey Bud)) V ↔ GOK V := by rw [WPdR]
+theorem WPdR_bnil0 (V : Jk1) :
+    WPdR ([] : List (Ekey Bud)) V ↔
+      ∀ (bs : List Bool) (ctx : List Frm), GCtx (true :: bs) ctx → GOK (plug ctx V) := by
+  rw [WPdR]
 
 theorem WPdR_cons (e : Ekey Bud) (ks : List (Ekey Bud)) (V : Jk1) :
     WPdR (e :: ks) V ↔
@@ -2923,7 +2924,7 @@ theorem WPdR_cb {e : Ekey Bud} (he : e ≠ ⊥) (ks : List (Ekey Bud)) (V : Jk1)
 
 def WCtxR {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
     List (Ekey Bud) → List Frm → Prop
-  | [], ctx => ctx = []
+  | [], ctx => ∃ bs : List Bool, GCtx (true :: bs) ctx
   | (e :: ks), ctx =>
       (e = ⊥ → ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
         WCtxR ks ctx' ∧ FrmR ks U ∧ WPdR ks U) ∧
@@ -2941,8 +2942,21 @@ decreasing_by
       | exact dmT_cons _ _
       | exact dmT_app ks _ (by assumption)
 
-theorem WCtxR_bnil (ctx : List Frm) : WCtxR ([] : List (Ekey Bud)) ctx ↔ ctx = [] := by
+theorem WCtxR_bnil (ctx : List Frm) :
+    WCtxR ([] : List (Ekey Bud)) ctx ↔ ∃ bs : List Bool, GCtx (true :: bs) ctx := by
   rw [WCtxR]
+
+theorem WPdR_bnil (V : Jk1) :
+    WPdR ([] : List (Ekey Bud)) V ↔
+      ∀ ctx : List Frm, WCtxR ([] : List (Ekey Bud)) ctx → GOK (plug ctx V) := by
+  rw [WPdR_bnil0]
+  constructor
+  · intro h ctx hc
+    rw [WCtxR_bnil] at hc
+    obtain ⟨bs, hb⟩ := hc
+    exact h bs ctx hb
+  · intro h bs ctx hb
+    exact h ctx ((WCtxR_bnil ctx).mpr ⟨bs, hb⟩)
 
 theorem WCtxR_c0 (ks : List (Ekey Bud)) (ctx : List Frm) :
     WCtxR ((⊥ : Ekey Bud) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1),
@@ -2968,15 +2982,7 @@ theorem plug_frameR (ctx : List Frm) (U N : Jk1) (p : ℕ) (V : Jk1) :
 
 theorem WPdR_iff : ∀ (ks : List (Ekey Bud)) (V : Jk1),
     WPdR ks V ↔ ∀ ctx : List Frm, WCtxR ks ctx → GOK (plug ctx V)
-  | [], V => by
-      rw [WPdR_bnil]
-      constructor
-      · intro h ctx hc
-        rw [WCtxR_bnil] at hc
-        subst hc
-        exact h
-      · intro h
-        exact h [] ((WCtxR_bnil ([] : List Frm)).mpr rfl)
+  | [], V => WPdR_bnil V
   | (e :: ks), V => by
       by_cases he : e = ⊥
       · subst he
@@ -3022,19 +3028,12 @@ theorem WPdR_congr : ∀ (ks : List (Ekey Bud)) {V1 V2 : Jk1},
 
 /-! ### `WPdR` 層の小さい補題 -/
 
-theorem FrmR_JkA : ∀ (ks : List (Ekey Bud)) (U : Jk1), FrmR ks U → JkA U
-  | [], _, h => h.1
-  | (_ :: _), _, h => h
+theorem FrmR_JkA (ks : List (Ekey Bud)) (U : Jk1) (h : FrmR ks U) : JkA U := h
 
-theorem FrmR_nilA : ∀ ks : List (Ekey Bud), FrmR ks Jk1.nil
-  | [] => JkT_nil
-  | (_ :: _) => trivial
+theorem FrmR_nilA (ks : List (Ekey Bud)) : FrmR ks Jk1.nil := trivial
 
 theorem FrmR_one (ks : List (Ekey Bud)) (U X : Jk1) (hU : FrmR ks U) (hX : JkA X) :
-    FrmR ks (Jk1.one U X) := by
-  cases ks with
-  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
-  | cons b bs => exact ⟨hU, hX⟩
+    FrmR ks (Jk1.one U X) := ⟨hU, hX⟩
 
 theorem WPdR_step (ks : List (Ekey Bud)) {V W : Jk1} (hV : FrmR ks V) (hVk : WPdR ks V)
     (hW : WPdR ((⊥ : Ekey Bud) :: ks) W) : WPdR ks (Jk1.one V W) :=
@@ -3044,8 +3043,9 @@ theorem WCtxR_JkT : ∀ (ks : List (Ekey Bud)) (ctx : List Frm), WCtxR ks ctx �
     ∀ X : Jk1, FrmR ks X → JkT (plug ctx X)
   | [], ctx, h, X, hX => by
       rw [WCtxR_bnil] at h
-      subst h
-      exact hX
+      obtain ⟨bs, hb⟩ := h
+      exact JkT_plug ctx (GCtx_CtxOk (true :: bs) ctx hb) X
+        (GCtx_CtxX (true :: bs) ctx hb X hX trivial)
   | (e :: ks), ctx, h, X, hX => by
       by_cases he : e = ⊥
       · subst he
@@ -3102,10 +3102,7 @@ theorem WPdR_ck_shift {e : Ekey Bud} (he : e ≠ ⊥) {ks : List (Ekey Bud)} {T 
 /-! ### `WPdR` の `p = 0` の塔（`WPdT_twoNilGen` の移植） -/
 
 theorem FrmR_repB (m : ℕ) (e : Ekey Bud) (ks : List (Ekey Bud)) (N : Jk1) :
-    FrmR (List.replicate m (⊥ : Ekey Bud) ++ (e :: ks)) N ↔ JkA N := by
-  cases m with
-  | zero => exact Iff.rfl
-  | succ m => exact Iff.rfl
+    FrmR (List.replicate m (⊥ : Ekey Bud) ++ (e :: ks)) N ↔ JkA N := Iff.rfl
 
 theorem WCtxR_rep {N : Jk1} (hJN : JkA N) (ks : List (Ekey Bud))
     (hNall : ∀ j : ℕ, WPdR (List.replicate j (⊥ : Ekey Bud) ++ ((⊥ : Ekey Bud) :: ks)) N) :
@@ -3260,14 +3257,17 @@ theorem WPdR_nilRun {b : Bud} (hb : b ≠ ⊥) : ∀ (p : ℕ) (ks : List (Ekey 
 
 /-! ### `WPdR` 層の荷（`⊥` の節）。`AYdWT` の移植 -/
 
-theorem WPdR_payE (V : Jk1) (hV : JkT V) (hVk : WPdR ([] : List (Ekey Bud)) V)
-    (C : TrioSeq) (hC : Bok C) : WPdR ([] : List (Ekey Bud)) (Jk1.pay V C) :=
-  (WPdR_bnil _).mpr (AY0 C hC V hV ((WPdR_bnil V).mp hVk))
+theorem WPdR_payE (V : Jk1) (hV : FrmR ([] : List (Ekey Bud)) V)
+    (hVk : WPdR ([] : List (Ekey Bud)) V)
+    (C : TrioSeq) (hC : Bok C) : WPdR ([] : List (Ekey Bud)) (Jk1.pay V C) := by
+  rw [WPdR_bnil0]
+  intro bs ctx hb
+  refine (APd_iff (true :: bs) _).mp (APd_payT bs V hV ?_ C hC) ctx hb
+  refine (APd_iff (true :: bs) V).mpr (fun ctx' hc' => ?_)
+  exact (WPdR_bnil0 V).mp hVk bs ctx' hc'
 
-theorem FrmR_itJ : ∀ (ks : List (Ekey Bud)) {T : Jk1}, JkA T → ∀ (n : ℕ) {X : Jk1},
-    FrmR ks X → FrmR ks (itJ T n X)
-  | [], _, hT, n, _, h => JkT_itJ hT n h
-  | (_ :: _), _, hT, n, _, h => JkA_itJ hT n h
+theorem FrmR_itJ (ks : List (Ekey Bud)) {T : Jk1} (hT : JkA T) (n : ℕ) {X : Jk1}
+    (h : FrmR ks X) : FrmR ks (itJ T n X) := JkA_itJ hT n h
 
 theorem GOK_chainJdWR {ks : List (Ekey Bud)} {ctx : List Frm} (hc : WCtxR ks ctx) {X T : Jk1}
     (hXok : FrmR ks X) (hXk : WPdR ks X) (hTok : JkA T)
