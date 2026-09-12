@@ -8,16 +8,31 @@
 
     R376_of_OneRunA (h : OneRunA) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
 
-「どの `true::bs` の形にも差せる木 `Y` は、走り `q` 本＋1 の記録の上にも差せる」。
-鎖も荷も予算も層も出てこない。`q = 0` は易しい（`APd (true::true::bs) Y` に
-`U = nil` を入れる）。`q ≥ 1` が壁。
+これで**必要十分の形**。さらに強い（が形は一番小さい）十分条件:
+
+    TwoNilStep : ∀ Z, JkA Z → (∀ bs, APd (true :: bs) Z) →
+                   ∀ bs, APd (true :: bs) (two nil Z)
+
+    OneRunA_of_TwoNilStep / R376_of_TwoNilStep                     ★緑
+
+`TwoNilStep` は「普遍的に差せる木の上に 2 の記録（兄弟は空木）を 1 段」。
+`Z` を全称しているので `OneRunA` より強い。**偽の可能性があるので、詰まったら
+`OneRunA`（`Z = stkP q (one nil Y)` の形だけ）に戻ること。**
+
+`q = 0` は易しい: `APd (true::(true::bs)) Y` に `U = nil` を入れるだけ
+（`APd_nilT` / `FrmJ_nilA` / `Rq_true`）。`q ≥ 1` が壁。
 
 なぜ自明でないか: `APd` の形は `true`（1 の枠）と `false`（1 の枠＋2 の枠の対）
 だけで、**裸の `ftwo nil` の枠に当たる形が無い**。
+`APd (false::bs) Z` を `m = 0`, `N = nil` で使えば `TwoNilStep` は出るので
+
+    TwoNilStep ⟸ FalseOk : (∀ bs, APd (true::bs) Z) → ∀ bs, APd (false::bs) Z
+
+（`FalseOk` は「予算が要らない」と言っているので、たぶん強すぎる。）
 
 ## 落とし方（全部緑）
 
-    R376_of_OneRunA ← RunAll_of_OneRunA ← WPdR_stkO ← WPdR_stkG
+    R376_of_TwoNilStep ← R376_of_OneRunA ← RunAll_of_OneRunA ← WPdR_stkO ← WPdR_stkG
 
     WPdR_stkG (p ks) (hk : SOkR ks) (hJN : JkA N)
       (htw : ∀ i, WPdR ks (TwG N p i N)) : WPdR ks (stkP p (two N nil))   ★無条件
