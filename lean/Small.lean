@@ -4079,6 +4079,35 @@ theorem APd_stk3_of
 
 #print axioms APd_stk3_of
 
+/-! ### 既知の最短形 `StkStep` との接続
+
+`SmallA` の `StkStep : ∀ q, TwoOk (stk q) → TwoOk (stk (q+1))` が今までの最短形。
+`APd_twoStkGen` を使うと、その中身は**階段の `k` の段だけ**になる
+（`k = 0` はちょうど `TwoOk (stk q)`）。 -/
+
+def StkStair : Prop := ∀ (N : Jk1), JkA N →
+  (∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) →
+  ∀ q : ℕ, (∀ ks : List Bool, APd (true :: ks) (Jk1.two N (stk q))) →
+  ∀ (k : ℕ) (ks : List Bool), APd (true :: ks) (Jk1.two N (stkP q (nstQ N q k)))
+
+theorem StkStep_of_StkStair (h : StkStair) : StkStep := by
+  intro q hq N hJN hNall j kk
+  rw [rep_true_cons]
+  have hbase : ∀ ks : List Bool, APd (true :: ks) (Jk1.two N (stk q)) := by
+    intro ks
+    simpa using hq N hJN hNall 0 ks
+  have hh := APd_twoStkGen hJN q (List.replicate j true ++ kk)
+    (fun k => h N hJN hNall q hbase k (List.replicate j true ++ kk))
+  rw [stkP_two_nil_nil] at hh
+  exact hh
+
+/-- ★★★★★★★★ 行376 は階段の 1 文 `StkStair` から出る。 -/
+theorem R376_of_StkStair (h : StkStair) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_StkStep (StkStep_of_StkStair h)
+
+#print axioms StkStep_of_StkStair
+#print axioms R376_of_StkStair
+
 /-- ★★★★★★★★ 行376 は `APd` だけの 1 文 `StQ` から出る。 -/
 theorem R376_of_StQ (h : StQ) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
   R376_of_RunAll (RunAll_of_StQ h)

@@ -25662,3 +25662,39 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
 こちらの階段は `UtwP`（ブロックが `(l+1,1,0) :: jk1 (l+1) (RunP Bs B)`、歩幅
 `Bs.length + 1`）。**次はこの階段を調べる。** `p = 0`（`Bs = []`）は `TW1` で緑
 （`GOK_oneTwoNilOf` / `GOK_oneTW1`）、`Bs = [nil]` は `TWB` が要る（`ZApp2c_of_chain`）。
+
+## 追記403: 既存の帰着は約40通り。今回は最短形 `StkStep` の中身を階段に絞った
+
+`R376_of_*` は `SmallA` に既に約40個ある（`TwoStep` / `ZeroStep` / `PayStep` /
+`BLoad` / `UtwAll` / `VOkk` / `VPay` / `RStep0` / `RStepN0` / `RPayN0` / `OneNil` /
+`RunNilR` / `PayB` / `FoneB` / `RNil` / `RHang` / `StkG` / `StkL` / `BdAll` /
+`TwoBud` / `TwoTwo` / `StkTwo` / `StkStep` …）。**新しい帰着を増やす価値は薄い。**
+
+`SmallA` の最短形は
+
+    StkTwo : ∀ q, TwoOk (stk q)                       （`q = 0,1` は緑、`q = 2` が壁）
+    StkStep : ∀ q, TwoOk (stk q) → TwoOk (stk (q+1))  （`q = 0 → 1` は緑）
+
+今回の `APd_twoStkGen` を使うと `StkStep` の中身は**階段の `k` の段**だけになる:
+
+    StkStair : ∀ N（普遍）, ∀ q, (∀ ks, APd (true::ks) (two N (stk q))) →
+                 ∀ k ks, APd (true::ks) (two N (stkP q (nstQ N q k)))
+    StkStep_of_StkStair / R376_of_StkStair                     ★緑
+
+`k = 0` はちょうど仮定（`nstQ N q 0 = nil`, `stkP q nil = stk q`）。だから残るのは
+
+    APd (true::ks) (two N (stkP q (nstQ N q k)))
+      → APd (true::ks) (two N (stkP q (one nil (two N (stkP q (nstQ N q k))))))
+
+の 1 段。**「走りの上に `one nil` を 1 個載せて、また走りを積む」**。
+追記402 の通り、語の塔（`snocQ_of_tower`）は先端が `(·,2,0)` の列でないと使えず、
+ここは先端が `(·,1,0)` なので、そのままでは当たらない。
+
+### 次に試すこと
+
+1. `GOK_oneUV_RunSB` の階段（`UtwP`、ブロックが `(l+1,1,0) :: jk1 (l+1) (RunP Bs B)`、
+   歩幅 `Bs.length + 1`）。こちらはブロックの頭が `(·,1,0)` なので、先端が
+   `one nil …` の形と相性が良いかもしれない。`Bs = []` は `TW1` で緑、
+   `Bs = [nil]` は `TWB`（`TowOkB`、緑）まで来ている。`Bs = [nil,nil]` が次。
+2. `RStepN0 : ∀ D, (typing) → GOK (plug D nil) → GOK (plug D (one nil nil))`
+   （`R376_of_RStepN0` は緑）。`APnil_gen0` で「`nil` の上の荷」に落ちる。
