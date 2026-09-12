@@ -25210,3 +25210,46 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
 **次**: `stkP (erun e)` を `RunP Ns` に置き換えた形で層を作り直す。
 既存の補題（`nilRun` / `stairRun` / `payA` / `stkS` / `R376_of_RunPay`）は
 `Ns` を全部 `nil` にすれば同じ証明が通るはず。そのうえで `RunPay` を落とす。
+
+## 追記393: `RunPay` に要る GOK 側の道具（棚卸し）
+
+追記392 の方針（走りの兄弟を全部自由にする）を GOK 側から詰めた。
+
+### 使える既存の道具（`bms` でなく Lean の棚卸し）
+
+    GOK_runGNil_gen {V A} (hJA) {Bs} (hB : ∀B∈Bs, JkA B) (ctx)
+      (hJT) (hbase : GOK (plug ctx V))
+      (hstair : ∀ i, GOK (plug (ctx ++ blkC V Bs ++ blkR A Bs i) A)) :
+      GOK (plug (ctx ++ blkC V Bs) (two A nil))            ★緑・兄弟 `Bs` は一般
+
+      blkC V Bs = [fone V] ++ ftw Bs
+      blkR A Bs i = ([fone A] ++ ftw Bs)^i
+
+    GOK_stkW_gen …… 兄弟が「1 本だけ一般＋残り nil」（いま `WPdR_nilRun` が使っている）
+    GOK_oneUV_RunSB … `one U (RunS (Bs ++ [B]))`。兄弟一般だが階段が `UtwP`（`appJ` 入り）
+    snocR_of_tower / unR / nstR … 兄弟が一般の塔の**語レベル**の道具（緑、未使用）
+
+### 分かったこと
+
+`GOK_runGNil_gen` の結論は `plug ctx (one V (RunP (Bs ++ [A]) nil))`。
+つまり**一番内側の兄弟 `A` は木の側から来る**。階段のブロックは
+`[fone A] ++ ftw Bs` で、`A` は**`fone` の兄弟**に回る。だから
+
+- `Bs`（`ftwo` の兄弟）の条件は `∀q (<e), WPdR (⊥::q++tail) B`（先頭が `⊥`）
+- `A`（一番内側）の条件は `∀q (<e), WPdR (q++tail) A`（先頭に `⊥` が付かない）
+
+と**位置で条件が違う**。`⊥` 無しの方が強いので、全部を強い方
+`∀q (<e), WPdR (q ++ tail) N` に揃えれば一様にできる。
+
+もう 1 つ: `GOK_runGNil_gen` の木は `two A nil`（上が空）。`RunPay` の
+`htow` は `two A V`（上が `V`）なので、そのままでは使えない。
+`nstR`（兄弟一般の階段）と `snocR_of_tower` から
+「上が一般の `V`」版の塔（`GOK_stkR_gen` に相当）を作る必要がある。
+
+### 次の順序
+
+1. `GOK_stkR_gen`（兄弟一般・上が一般）を `snocR_of_tower` / `nstR` から作る。
+   `GOK_stkW_gen`（57529–57625、約 100 行）を `stkP p` → `runJ Ns` で写す。
+2. `WPdR` の枠を `[fone U] ++ ftw Ns` にする（兄弟の条件は `∀q (<e), WPdR (q++tail) N`）。
+3. 既存の補題を写す（`Ns` を全部 `nil` にすれば同じ証明）。
+4. `RunPay` を落とす（鎖は `Ns` の一番内側に入る、追記392）。
