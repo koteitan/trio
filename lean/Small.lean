@@ -893,5 +893,34 @@ theorem Y510Lad_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
 #print axioms Y510j_mem
 #print axioms Y510Lad_mem
 
+/-! ### ★ 一般形: `Aok` を取るたびに `RunA` の機構が乗る（反復できる）
+
+`Aok A → Aok (A ++ U11 0 m)` と `Aok A → Aok (A ++ U11 0 m ++ (2,2,0) ++ wordJ 2 2 ws)`。
+後者を反復すると 2 パラメータの無限族になる。 -/
+
+theorem Aok_addU11 {A : TrioSeq} (hA : Aok A) (m : ℕ) : Aok (A ++ U11 0 m) :=
+  (BaseOk_RunA 0).aok _ _ (LwA_U11 (LwA_of_Aok hA) m)
+
+theorem Aok_junk {A : TrioSeq} (hA : Aok A) (m : ℕ) {ws : List Jk1} (hw : WJ ws) :
+    Aok ((A ++ U11 0 m) ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)) :=
+  PkGA_Aok ⟨RunA 0, Iface_RunA0, 0, 1, A ++ U11 0 m, wordJ 2 2 ws, rfl,
+    LwA_U11 (LwA_of_Aok hA) m, rfl, (GoodFb_wordJ ws hw).pk 1⟩
+
+/-- 1 段 = `(1,1,0)(2,2,1)^m(2,2,0)(3,3,1)`。 -/
+def UJit (A : TrioSeq) (m : ℕ) : ℕ → TrioSeq
+  | 0 => A
+  | (n + 1) => (UJit A m n ++ U11 0 m)
+      ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 [Jk1.nil])
+
+theorem Aok_UJit {A : TrioSeq} (hA : Aok A) (m : ℕ) : ∀ n : ℕ, Aok (UJit A m n)
+  | 0 => hA
+  | (n + 1) => Aok_junk (Aok_UJit hA m n) m (WJ_singleton JkOk_nil)
+
+/-- ★★★★★★ `R600 (5,1,0)` の上の 2 パラメータの無限族。 -/
+theorem UJit_X510_mem (m n : ℕ) : UJit X510 m n ∈ W 0 :=
+  (Aok_UJit Aok_R600510 m n).mem
+
+#print axioms UJit_X510_mem
+
 end Small
 end TRIO
