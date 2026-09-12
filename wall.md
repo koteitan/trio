@@ -1,31 +1,49 @@
 # 壁
 
-## ★★★★★ いま一番先（2026-09-13）: 階段は「`two N W` の自己塔」1 本
+## ★★★★★★ いま一番先（2026-09-13 夜）: 荷は無料。壁は「2 の直上の 2」だけ
 
-新しい語の道具（前日作った `GOK_twoNW_gen` の使い方を整理した形）:
+**再導出しないこと（今日ほぼ再導出しかけた）**:
 
-    blkNW N W (i+1) = [ftwo N, fone W] ++ blkNW N W i
-    plug D (nstW N W (k+1)) = plug (D ++ [ftwo N, fone W]) (nstW N W k)
+    WPdT_payA ks V (FrmNT ks V) (WPdT ks V) C (Bok C) : WPdT ks (pay V C)   ★既存
+    AYdT' / AYdWT / AYdTWT                                                   ★既存
+    TwoOk_pay : Bok Y → JkA Z → TwoOk Z → TwoOk (pay Z Y)（W 0 上の帰納）   ★既存
+    hang5_gen hA hB : A ++ U375a  ++ shiftr01 5 0 B ∈ W 0                    ★既存
+    hang6_gen hA hB : A ++ U375a1 ++ shiftr01 6 0 B ∈ W 0                    ★既存
 
-    GOK_nstW_of  : (∀ i, GOK (plug (D ++ blkNW N W i) (two N W)))
-                     → ∀ k, GOK (plug D (nstW N W k))                      ★緑
-    GOK_twoNW_self (ctx0 V) (hJN) (hJW) (hJT) (hGV)
-      (hself : ∀ i, GOK (plug ((ctx0 ++ [fone V]) ++ blkNW N W i) (two N W)))
-      : GOK (plug (ctx0 ++ [fone V]) (two N (two W nil)))                  ★緑
+つまり **予算リスト（`WPdT`）や `APd` で書ける文脈の中では、`Bok` の荷は完全に無料**。
+荷は壁ではない。`hang6_gen` が `U375a1 = U375a ++ [(5,1,0)]` を要求するのは、
+末尾の `(5,1,0)` が `one` の枠を作るから。**`(5,2,0)` の直下（`two` の直上）に
+荷を吊るすところだけが壁**。
 
-    plug (D ++ blkNW N W i) (two N W) = plug (D ++ blkNW N W i ++ [ftwo N]) W
+### 最小の帰着は `RPayN0`（`SmallA:63985`）
 
-なので要るのは **「`W` がブロック `[ftwo N, fone W]` を何個足した文脈の上でも良い」**
-（`SelfW` 型の自己塔）1 本だけ。`APd` の形を経由しないので `TopOk W` が要らない。
+    RPayN0 : ∀ D, (∀ X, JkA X → JkT (plug D (one nil X))) →
+                  GOK (plug D nil) → ∀ C, Bok C → GOK (plug D (pay nil C))
+    R376_of_RPayN0                                                           ★緑
 
-`TopOk W` を付けてよいなら `APd` の世界で階段が回って緑:
+これは `AY0`（`D = []` の場合、★緑）の文脈版。`WPdT_payA` との差は
+**文脈が予算リストで書けること**（`WCtxU ks D` は兄弟の木が全部置けることを要求する）。
+`RPayN0` の仮定は `GOK (plug D nil)` だけ。
 
-    TwoOkF W := ∀ ks, APd (false::ks) W                （`TwoOk` より強い）
-    TwoOkF_nil / TwoOkF_pay（`AYdT'`）/ TwoOkF_oneNil / TwoOk_of_TwoOkF     ★緑
-    APd_nstW / TwoOk_twoWnilF : JkA W → TopOk W → TwoOkF W → TwoOk (two W nil)  ★緑
+**残っているのは 1 点: `GOK (plug D nil)` から兄弟の可置性を取り出す。**
 
-`ChBase` が要るのは 2 頭の `W`（鎖 `twoIt W (pay Z Y) m`）なので `TopOk` が落ちる。
-**そこは (b) の自己塔で行く。**
+## ★★★★★ 荷の世界は原始数列（PrSS, ε_0）
+
+平らな荷 `(0,a_1,…,a_k)` の `⟦n⟧` は「悪い部分の繰り返し」＝原始数列の展開。
+展開で行 0 の最大値は増えない（`i1 = 0` なので `d0 = 0`）。順序型は `ε_0`。
+
+`(5,2,0)` の直下に荷を吊るす（＝`two nil (two nil (pay nil Y))`）のは
+荷ごとに予算を積んで破れる（2026-09-13 に `Yv`/`Ys`/`Ap`/`Vs`/`Vk` で実施）。
+汎用部品（荷に依存しない）:
+
+    WPdT_twoAY_at   荷 Y の ⟦n+1⟧ が全部置ければ pay Z Y が置ける
+    TopLd_of_AtLd / RunLd_of_TopLd / RunLd_zero / AtLd_one
+    AtLd_iter（Y⟦n+1⟧ = Y'^(n+1)）/ AtLd_fam（Y⟦n+1⟧ = F n）
+    LadAp（底一般の階の梯子）/ AtLd_Vs（段を 1 つ上げる）
+    Pws α（指数の型はパラメータ。足りなくなったら α := BwG α）
+
+**一様化には「平らな荷 → ε_0 未満の順序数表記」が要る。** それが無い限り
+荷 1 個 = シート 1 行（約 150 行の Lean）で、収束しない。
 
 ## ★★★★ 壁は `TwOk` 階層の `Fter` 1 箇所（2026-09-12 深夜）
 
