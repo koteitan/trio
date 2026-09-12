@@ -6218,6 +6218,180 @@ theorem LadYv {α : Type} [LinearOrder α] [WellFoundedLT α] [AddCommMonoid α]
 
 #print axioms LadYv
 
+/-! ### ★★★★★★★ 荷 `Ys = (0,0,0)(1,0,0)(2,0,0)`（`Ys⟦n⟧ = Yv n`）
+
+階の**上限**の荷。指数 `ω^ω` を要求するので、指数の型を `Bwx = BwG Bw` にする。
+`ω^ω = owG (ow 1 1) 1 ∈ Bwx`。予算は `Bwy = BwG Bwx`（順序型 ω^(ω^(ω^ω))）。 -/
+
+abbrev Bwy : Type := BwG Bwx
+
+noncomputable def PwsX : Pws Bwx where
+  pw j m := owG (ow 0 j) m
+  pw_zero j := by rw [owG_zero, bot_BwG]
+  pw_add j m := owG_add_same (ow 0 j) m
+  pw_ltR := fun j {_ _} h => owG_ltR (ow 0 j) h
+  pw_ltL := fun {_ _} h m {_} hm => owG_ltL (ow_ltR 0 h) m hm
+  add_lt := fun b {_ _} h => BwG_add_lt_left b h
+
+def Ys : TrioSeq :=
+  [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem Ys_len : Ys.length = 3 := by simp [Ys]
+
+theorem Flat_Ys : Flat Ys := by
+  intro c hc
+  simp only [Ys, List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl | rfl <;> exact ⟨rfl, rfl⟩
+
+theorem Bok_Ys : Bok Ys := Bok_flat Flat_Ys (by simp [Ys, entry])
+
+theorem Ys_srow (i : ℕ) : srow Ys i = 0 := by
+  simp [srow, (Flat_entry Flat_Ys i).1, (Flat_entry Flat_Ys i).2]
+
+theorem Ys_hasParent : hasParent Ys 0 2 := by
+  rw [hasParent_zero_iff (by rw [Ys_len]; omega)]
+  exact ⟨1, by omega, by simp [Ys, entry]⟩
+
+theorem Ys_parent : parent Ys 0 2 = 1 := by
+  have h := parent_nextR Ys_hasParent
+  rw [nextR, if_pos rfl] at h
+  obtain ⟨-, -, hlt, hval, hmid⟩ := h
+  rcases Nat.lt_or_ge (parent Ys 0 2) 1 with hp | hp
+  · have hp0 : parent Ys 0 2 = 0 := by omega
+    have := hmid 1 ⟨by omega, by omega⟩
+    simp [Ys, entry] at this
+  · omega
+
+theorem oper_Ys (n : ℕ) : Ys⟦n⟧ = Yv n := by
+  have h2 : Ys.length - 1 = 2 := by rw [Ys_len]
+  simp only [oper, h2, Ys_srow, Ys_parent]
+  rw [if_neg (by omega), if_neg (by simp [Ys, entry]),
+    if_neg (by rw [h2, Ys_srow]; exact not_not_intro Ys_hasParent)]
+  simp only [Nat.lt_irrefl, show ¬ ((1 : ℕ) < 0) from by omega, if_false,
+    Nat.mul_zero, Nat.add_zero, ite_self]
+  have e1 : (List.range' 1 (2 - 1)).map
+      (fun j => ((entry Ys 0 j, entry Ys 1 j, entry Ys 2 j) : ℕ × ℕ × ℕ))
+      = [((1, 0, 0) : ℕ × ℕ × ℕ)] := by
+    simp [Ys, entry, List.range']
+  rw [show (Ys.take 1 : TrioSeq) = [((0, 0, 0) : ℕ × ℕ × ℕ)] from rfl, e1,
+    flatMap_singleton_range]
+  rfl
+
+theorem hasParent_Ys_last :
+    hasParent Ys (srow Ys (Ys.length - 1)) (Ys.length - 1) := by
+  rw [Ys_len, Ys_srow]
+  exact Ys_hasParent
+
+theorem AtLd_Ys : AtLd (α := Bwx) Ys (owG (ow 1 1) 1) := by
+  refine AtLd_fam (F := fun n => Yv (n + 1)) (qf := fun n => PwsX.pw (n + 1) 1)
+    Bok_Ys (by rw [Ys_len]; omega) hasParent_Ys_last
+    (fun n l Z => by rw [oper_Ys]) (fun n => (LadYv PwsX n).2) ?_ PwsX.add_lt
+  intro n
+  have h1 : ow 0 (n + 1) < ow 1 1 := ow_ltL (by omega) (n + 1) (by omega)
+  show owG (ow 0 (n + 1)) 1 < owG (ow 1 1) 1
+  exact owG_ltL h1 1 (by omega)
+
+theorem TopLd_Ys : TopLd (α := Bwx) Ys (owG (ow 1 1) 1) := TopLd_of_AtLd AtLd_Ys
+
+theorem RunLd_Ys : RunLd (α := Bwx) Ys (fun n => owG (ow 1 1) n) :=
+  RunLd_of_TopLd Bok_Ys (by rw [owG_zero, bot_BwG])
+    (fun n => owG_add_same (ow 1 1) n) TopLd_Ys
+
+theorem WPdw_twoPs (n : ℕ) (ks : List Bwy) :
+    WPdT (owG (owG (ow 1 1) (n + 1)) 2 :: ks)
+      (Jk1.two Jk1.nil (PayIt Jk1.nil Ys (n + 1))) := by
+  have hR : RnG (PayIt Jk1.nil Ys n) (owG (ow 1 1) n) := by
+    have h := RunLd_Ys n Jk1.nil trivial 0 (RunG_nil (0 : Bwx))
+    rwa [zero_add] at h
+  refine TopLd_Ys (PayIt Jk1.nil Ys n) (JkA_PayIt (Z := Jk1.nil) trivial Bok_Ys n)
+    (owG (ow 1 1) n) hR Jk1.nil trivial ⊥ (fun c _ ks' => WPdT_nilAll _) _ ?_ ks
+  rw [bot_BwG, zero_add, owG_add_same]
+  exact owG_ltR (owG (ow 1 1) (n + 1)) (by omega)
+
+def Xt (n : ℕ) : Jk1 :=
+  Jk1.two Jk1.nil (Jk1.two Jk1.nil (PayIt Jk1.nil Ys (n + 1)))
+
+theorem WPdw_Xs (n : ℕ) (ks : List Bwy) : WPdT ((⊥ : Bwy) :: ks) (Xt n) :=
+  WPdT_twoOf (b := owG (owG (ow 1 1) (n + 1)) 2)
+    (ne_bot_of_gt (owG_pos_succ (owG (ow 1 1) (n + 1)) 1)) trivial
+    (fun q _ => WPdT_nilAll _) (WPdw_twoPs n ks)
+
+theorem GOK_oneXs (n : ℕ) : GOK (Jk1.one Jk1.nil (Xt n)) :=
+  (WPdT_bnil (Bud := Bwy) _).mp
+    (WPdT_step ([] : List Bwy) (JkT_nil : FrmNT ([] : List Bwy) Jk1.nil)
+      ((WPdT_bnil (Bud := Bwy) _).mpr GOK_nil) (WPdw_Xs n []))
+
+theorem jk1_PayNilYs (n l : ℕ) :
+    jk1 l (PayIt Jk1.nil Ys n)
+      = (List.range n).flatMap (fun _ => [((l + 1, 0, 0) : ℕ × ℕ × ℕ),
+          ((l + 2, 0, 0) : ℕ × ℕ × ℕ), ((l + 3, 0, 0) : ℕ × ℕ × ℕ)]) := by
+  rw [jk1_PayIt]
+  have e : shiftr01 (l + 1) 0 Ys = [((l + 1, 0, 0) : ℕ × ℕ × ℕ),
+      ((l + 2, 0, 0) : ℕ × ℕ × ℕ), ((l + 3, 0, 0) : ℕ × ℕ × ℕ)] := by
+    show [((0 + (l + 1) : ℕ), (0 + 0 : ℕ), (0 : ℕ)),
+        ((1 + (l + 1) : ℕ), (0 + 0 : ℕ), (0 : ℕ)),
+        ((2 + (l + 1) : ℕ), (0 + 0 : ℕ), (0 : ℕ))] = _
+    simp only [Nat.zero_add, show (1 : ℕ) + (l + 1) = l + 2 from by omega,
+      show (2 : ℕ) + (l + 1) = l + 3 from by omega]
+  simp only [e, jk1, List.nil_append]
+
+theorem jk1_Xs (n l : ℕ) : jk1 l (Xt n)
+    = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+      :: (List.range (n + 1)).flatMap (fun _ => [((l + 3, 0, 0) : ℕ × ℕ × ℕ),
+          ((l + 4, 0, 0) : ℕ × ℕ × ℕ), ((l + 5, 0, 0) : ℕ × ℕ × ℕ)]) := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) Jk1.nil ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+        :: jk1 (l + 2) (PayIt Jk1.nil Ys (n + 1))))) = _
+  rw [jk1_PayNilYs (n + 1) (l + 2), show l + 2 + 1 = l + 3 from by omega,
+    show l + 2 + 2 = l + 4 from by omega, show l + 2 + 3 = l + 5 from by omega]
+  simp [jk1]
+
+theorem R375m_tri_rep_mem : ∀ n : ℕ,
+    R375m ++ (List.range n).flatMap (fun _ => [((6, 0, 0) : ℕ × ℕ × ℕ),
+      ((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0
+  | 0 => by simpa [R375m] using R375m_mem
+  | (n + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Xt n)]) := by
+        simpa using GOK_oneXs n [] WOk_nil GoodFb_wordJ_nil
+      have hh := rowJ_mem_genF Aok_R338 hG
+      have e : jk1 2 (Jk1.one Jk1.nil (Xt n))
+          = ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) :: ((5, 2, 0) : ℕ × ℕ × ℕ)
+            :: (List.range (n + 1)).flatMap (fun _ => [((6, 0, 0) : ℕ × ℕ × ℕ),
+                ((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)]) := by
+        show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (2 + 1) (Xt n)) = _
+        rw [jk1_Xs n 3]
+        simp [jk1]
+      rw [wordJ_singleton, colJ, e] at hh
+      simpa [R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+/-- ★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(7,0,0)`。 -/
+theorem R600_787_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 7 := by simp [entry]
+  have htail : ∀ r, 1 ≤ r →
+      r < ([((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+        ((8, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      7 ≤ entry [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+        ((8, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r h1 h2
+    simp only [List.length_cons, List.length_nil] at h2
+    rcases r with _ | _ | _ | r
+    · omega
+    · simp [entry]
+    · simp [entry]
+    · omega
+  have hmem := flat_mem'' (Y0 := R375m)
+    (M := [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)]) (d := 7) hne hhead htail R375m_tri_rep_mem
+  simpa [R600, List.append_assoc] using hmem
+
+#print axioms oper_Ys
+#print axioms R600_787_mem
+
 
 end Small
 end TRIO
