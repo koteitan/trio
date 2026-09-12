@@ -2251,5 +2251,162 @@ theorem LoopIt_Z600_nil_mem (m p j n : ℕ) :
 #print axioms Aok_Z600
 #print axioms LoopIt_Z600_nil_mem
 
+/-! ### ★★ 走りを文脈に持てる層 `WPdS`
+
+`WPdT` の文脈 `WCtxU` は 2 の枠を必ず `[fone U, ftwo N]` の対で持つので、
+`ftwo` が 2 つ続く形（縦の走り）を表せない。そこで枠を 1 つずつに分ける:
+
+    ⊥      … `fone U`（U は下の形で良い）
+    e ≠ ⊥  … `ftwo N`（N は「入り目 `< e` の形」で良い）
+
+`ftwo` だけの枠が取れるので `SCtx` の `false` の節（`ftwo nil` の連続）が入る。
+しかも兄弟の条件は予算 `e` で抑えられているので DM 測度が効く。
+`WPdT` の 2 の節は `[e, ⊥] ++ ks`（`ftwo` の下に `fone`）に対応する。 -/
+
+section EntS
+
+variable {Ent : Type} [LinearOrder Ent] [OrderBot Ent] [WellFoundedLT Ent]
+
+def FrmS : List Ent → Jk1 → Prop
+  | [], U => JkT U
+  | (_ :: _), U => JkA U
+
+def WPdS {Ent : Type} [LinearOrder Ent] [OrderBot Ent] [WellFoundedLT Ent] :
+    List Ent → Jk1 → Prop
+  | [], V => GOK V
+  | (e :: ks), V =>
+      (e = ⊥ → ∀ U : Jk1, FrmS ks U → WPdS ks U → WPdS ks (Jk1.one U V)) ∧
+      (e ≠ ⊥ → ∀ (r : List Ent), (∀ x ∈ r, x < e) → ∀ N : Jk1, JkA N →
+        (∀ q : List Ent, (∀ x ∈ q, x < e) → WPdS (q ++ (r ++ ks)) N) →
+        WPdS (r ++ ks) (Jk1.two N V))
+termination_by ks _ => ((ks : List Ent) : Multiset Ent)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+      | (rw [show q ++ (r ++ ks) = (q ++ r) ++ ks from by simp]
+         refine dmT_app ks (q ++ r) ?_
+         intro x hx
+         rcases List.mem_append.mp hx with h1 | h1
+         · exact (by assumption : ∀ x ∈ q, x < e) x h1
+         · exact (by assumption : ∀ x ∈ r, x < e) x h1)
+
+theorem WPdS_bnil (V : Jk1) : WPdS ([] : List Ent) V ↔ GOK V := by rw [WPdS]
+
+theorem WPdS_cons (e : Ent) (ks : List Ent) (V : Jk1) :
+    WPdS (e :: ks) V ↔
+      (e = ⊥ → ∀ U : Jk1, FrmS ks U → WPdS ks U → WPdS ks (Jk1.one U V)) ∧
+      (e ≠ ⊥ → ∀ (r : List Ent), (∀ x ∈ r, x < e) → ∀ N : Jk1, JkA N →
+        (∀ q : List Ent, (∀ x ∈ q, x < e) → WPdS (q ++ (r ++ ks)) N) →
+        WPdS (r ++ ks) (Jk1.two N V)) := by
+  rw [WPdS]
+
+/-- `⊥` の節（1 の枠）。 -/
+theorem WPdS_c1 (ks : List Ent) (V : Jk1) :
+    WPdS ((⊥ : Ent) :: ks) V ↔
+      ∀ U : Jk1, FrmS ks U → WPdS ks U → WPdS ks (Jk1.one U V) := by
+  rw [WPdS_cons]
+  exact ⟨fun h => h.1 rfl, fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩⟩
+
+/-- `e ≠ ⊥` の節（裸の 2 の枠）。 -/
+theorem WPdS_c2 {e : Ent} (he : e ≠ ⊥) (ks : List Ent) (V : Jk1) :
+    WPdS (e :: ks) V ↔
+      ∀ (r : List Ent), (∀ x ∈ r, x < e) → ∀ N : Jk1, JkA N →
+        (∀ q : List Ent, (∀ x ∈ q, x < e) → WPdS (q ++ (r ++ ks)) N) →
+        WPdS (r ++ ks) (Jk1.two N V) := by
+  rw [WPdS_cons]
+  exact ⟨fun h => h.2 he, fun h => ⟨fun hb => absurd hb he, fun _ => h⟩⟩
+
+def WCtxS {Ent : Type} [LinearOrder Ent] [OrderBot Ent] [WellFoundedLT Ent] :
+    List Ent → List Frm → Prop
+  | [], ctx => ctx = []
+  | (e :: ks), ctx =>
+      (e = ⊥ → ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+        WCtxS ks ctx' ∧ FrmS ks U ∧ WPdS ks U) ∧
+      (e ≠ ⊥ → ∃ (r : List Ent) (_ : ∀ x ∈ r, x < e) (ctx' : List Frm) (N : Jk1),
+        ctx = ctx' ++ [Frm.ftwo N] ∧ WCtxS (r ++ ks) ctx' ∧ JkA N ∧
+        (∀ q : List Ent, (∀ x ∈ q, x < e) → WPdS (q ++ (r ++ ks)) N))
+termination_by ks _ => ((ks : List Ent) : Multiset Ent)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+
+theorem WCtxS_bnil (ctx : List Frm) : WCtxS ([] : List Ent) ctx ↔ ctx = [] := by
+  rw [WCtxS]
+
+theorem WCtxS_c1 (ks : List Ent) (ctx : List Frm) :
+    WCtxS ((⊥ : Ent) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1),
+      ctx = ctx' ++ [Frm.fone U] ∧ WCtxS ks ctx' ∧ FrmS ks U ∧ WPdS ks U := by
+  rw [WCtxS]
+  exact ⟨fun h => h.1 rfl, fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩⟩
+
+theorem WCtxS_c2 {e : Ent} (he : e ≠ ⊥) (ks : List Ent) (ctx : List Frm) :
+    WCtxS (e :: ks) ctx ↔ ∃ (r : List Ent) (_ : ∀ x ∈ r, x < e) (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧ WCtxS (r ++ ks) ctx' ∧ JkA N ∧
+      (∀ q : List Ent, (∀ x ∈ q, x < e) → WPdS (q ++ (r ++ ks)) N) := by
+  rw [WCtxS]
+  exact ⟨fun h => h.2 he, fun h => ⟨fun hb => absurd hb he, fun _ => h⟩⟩
+
+theorem WPdS_iff : ∀ (ks : List Ent) (V : Jk1),
+    WPdS ks V ↔ ∀ ctx : List Frm, WCtxS ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WPdS_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WCtxS_bnil] at hc
+        subst hc
+        exact h
+      · intro h
+        exact h [] ((WCtxS_bnil ([] : List Frm)).mpr rfl)
+  | (e :: ks), V => by
+      by_cases he : e = ⊥
+      · subst he
+        rw [WPdS_c1]
+        constructor
+        · intro h ctx hc
+          rw [WCtxS_c1] at hc
+          obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+          rw [plug_snoc]
+          exact (WPdS_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+        · intro h U hU hUk
+          refine (WPdS_iff ks (Jk1.one U V)).mpr ?_
+          intro ctx' hc'
+          rw [← plug_snoc]
+          exact h (ctx' ++ [Frm.fone U]) ((WCtxS_c1 ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+      · rw [WPdS_c2 he]
+        constructor
+        · intro h ctx hc
+          rw [WCtxS_c2 he] at hc
+          obtain ⟨r, hr, ctx', N, rfl, hc', hJN, hNt⟩ := hc
+          rw [plug_snoc2]
+          exact (WPdS_iff (r ++ ks) _).mp (h r hr N hJN hNt) ctx' hc'
+        · intro h r hr N hJN hNt
+          refine (WPdS_iff (r ++ ks) _).mpr ?_
+          intro ctx' hc'
+          rw [← plug_snoc2]
+          exact h (ctx' ++ [Frm.ftwo N])
+            ((WCtxS_c2 he ks _).mpr ⟨r, hr, ctx', N, rfl, hc', hJN, hNt⟩)
+termination_by ks _ => ((ks : List Ent) : Multiset Ent)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+
+theorem WPdS_congr : ∀ (ks : List Ent) {V1 V2 : Jk1},
+    (∀ l, jk1 l V1 = jk1 l V2) → WPdS ks V1 → WPdS ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WPdS_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+#print axioms WPdS
+#print axioms WPdS_iff
+
+end EntS
+
 end Small
 end TRIO
