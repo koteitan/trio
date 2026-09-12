@@ -9953,6 +9953,161 @@ theorem A6_351_mem {A : TrioSeq} (hA : Aok A) :
 #print axioms A6_350_mem
 #print axioms A6_351_mem
 
+/-! ### ★★★★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(9,0,0)` の登りを台座一般に
+
+`R375m_tower_gen` / `R600_7_8rep_mem` / `R600_789_mem` が台座を見るのは
+`Aok_R338` と `R375m_mem` だけ。`hA : Aok A` に差し替える。 -/
+
+theorem A375m_tower_gen {α : Type} [LinearOrder α] [WellFoundedLT α]
+    [AddCommMonoid α] {A : TrioSeq} (hA : Aok A) {Y : TrioSeq} (hBY : Bok Y)
+    {q : ℕ → α} (hq0 : q 0 = 0) (hqa : ∀ n : ℕ, q n + q 1 = q (n + 1))
+    (hR : RunLd Y q) (hT : TopLd Y (q 1)) : ∀ n : ℕ,
+    A ++ U375a ++ (List.range n).flatMap (fun _ => shiftr01 6 0 Y) ∈ W 0
+  | 0 => by simpa using U375a_mem_gen hA
+  | (n + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b
+          [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+            (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1))))]) := by
+        simpa using GOK_oneXgen hBY hq0 hqa hR hT n [] WOk_nil GoodFb_wordJ_nil
+      have hh := rowJ_mem_genF hA hG
+      have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+            (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1)))))
+          = ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ)
+            :: ((5, 2, 0) : ℕ × ℕ × ℕ)
+            :: (List.range (n + 1)).flatMap (fun _ => shiftr01 6 0 Y) := by
+        show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ)
+          :: jk1 (2 + 1) (Jk1.two Jk1.nil
+              (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1))))) = _
+        rw [jk1_Xgen Y n 3]
+        simp [jk1]
+      rw [wordJ_singleton, colJ, e] at hh
+      simpa [U375a, List.append_assoc] using hh
+
+/-- ★★★★★★★★★★★★★★★★★ 台座一般の `A ++ U375a6 ++ (7,0,0)(8,0,0)^k`。 -/
+theorem A600_7_8rep_mem {A : TrioSeq} (hA : Aok A) (k : ℕ) :
+    A ++ U375a6 ++ ((7, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate k ((8, 0, 0) : ℕ × ℕ × ℕ)
+      ∈ W 0 := by
+  have h := A375m_tower_gen hA (Bok_flat (Flat_Gk k 1) (Gk_root k 1))
+    (by rw [owG_zero, bot_BwG]) (fun n => owG_add_same (ow k 1) n)
+    (RunLd_Gk k) (TopLd_of_AtLd (AtLd_Gk k 0)) 1
+  rw [show (List.range 1).flatMap (fun _ => shiftr01 6 0 (Gk k 1))
+      = shiftr01 6 0 (Gk k 1) from by simp, shift6_Gk k] at h
+  simpa [U375a6, U375a, List.append_assoc] using h
+
+/-- ★★★★★★★★★★★★★★★★★ 台座一般の `A ++ U375a6 ++ (7,0,0)(8,0,0)(9,0,0)`。 -/
+theorem A600_789_mem {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a6 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((9, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((8, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((8, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 9 := by simp [entry]
+  have htail : ∀ r, 1 ≤ r → r < ([((8, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      9 ≤ entry [((8, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r hr1 hr2
+    simp only [List.length_singleton] at hr2
+    omega
+  have htw : ∀ n : ℕ, (A ++ U375a6 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)])
+      ++ (List.range n).flatMap (fun _ => [((8, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_singleton_range]
+    simpa [List.append_assoc] using A600_7_8rep_mem hA n
+  have hmem := flat_mem'' (Y0 := A ++ U375a6 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)])
+    (M := [((8, 0, 0) : ℕ × ℕ × ℕ)]) (d := 9) hne hhead htail htw
+  simpa [List.append_assoc] using hmem
+
+/-- 台座を 1 段上げる単位 `U375a6 (7,0,0)(8,0,0)(9,0,0)`。`Z789 = R338 ++ U375aG`。 -/
+def U375aG : TrioSeq :=
+  U375a6 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+    ((9, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375aG : MidD 2 U375aG where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375aG, U375a6, U375a, List.append_assoc, List.cons_append,
+      List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375aG, U375a6, U375a, List.append_assoc, List.cons_append,
+      List.nil_append, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375aG, U375a6, U375a, List.append_assoc, List.cons_append,
+      List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem U375aG_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375aG ∈ W 0 := by
+  simpa [U375aG, List.append_assoc] using A600_789_mem hA
+
+theorem Aok_append_U375aG {A : TrioSeq} (hA : Aok A) : Aok (A ++ U375aG) :=
+  Aok_append_Mid (d := 2) (by omega) hA MidD_U375aG (U375aG_mem_gen hA)
+
+/-- ★★★★★★★★★★★★★★★★★ 台座の反復。`ZGit A k` は `A` の上に `U375aG` を `k` 個。 -/
+def ZGit (A : TrioSeq) : ℕ → TrioSeq
+  | 0 => A
+  | (k + 1) => ZGit A k ++ U375aG
+
+theorem Aok_ZGit {A : TrioSeq} (hA : Aok A) : ∀ k : ℕ, Aok (ZGit A k)
+  | 0 => hA
+  | (k + 1) => Aok_append_U375aG (Aok_ZGit hA k)
+
+/-- ★★★★★★★★★★★★★★★★★ `U375aG` の積み上げの極限。 -/
+theorem ZG_lim_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aG ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  flat_of_chain (Y0 := A) (M := U375aG) (d := 2) (by omega) MidD_U375aG hA
+    (fun n hAn => U375aG_mem_gen hAn)
+
+theorem Z789_eq_G : Z789 = R338 ++ U375aG := by
+  simp [Z789, R600, R375m, R373, R344, R341, U375aG, U375a6, U375a, List.append_assoc]
+
+#print axioms A600_789_mem
+#print axioms Aok_append_U375aG
+#print axioms ZG_lim_gen
+
+/-! ### ★★★★★★★★★★★★★★★★★ 新台座 `ZZ = Z789 ++ U375aG` の上の 10 行 -/
+
+def ZZ : TrioSeq := Z789 ++ U375aG
+
+theorem Aok_ZZ : Aok ZZ := Aok_append_U375aG Aok_Z789
+
+theorem ZZ_mem : ZZ ∈ W 0 := Aok_ZZ.mem
+
+theorem ZZ_21_mem : ZZ ++ U375a6 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  U6_snoc21_gen Aok_ZZ
+
+theorem ZZ_Dg_mem (k : ℕ) : DgA6 ZZ k ∈ W 0 := DgA6_mem Aok_ZZ k
+
+theorem ZZ_2132b_mem :
+    ZZ ++ U375a6 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  A6_2132b_gen Aok_ZZ
+
+theorem ZZ_2132_mem :
+    ZZ ++ U375a6 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  A6_2132_gen Aok_ZZ
+
+theorem ZZ_22_mem : ZZ ++ U375a6 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  U6_snoc22_gen Aok_ZZ
+
+theorem ZZ_2231_mem :
+    ZZ ++ U375a6 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  A6_2231_gen Aok_ZZ
+
+theorem ZZ_349_mem : A6_349 ZZ ∈ W 0 := A6_349_mem Aok_ZZ
+
+theorem ZZ_350_mem : A6_349 ZZ ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  A6_350_mem Aok_ZZ
+
+theorem ZZ_351_mem :
+    A6_349 ZZ ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  A6_351_mem Aok_ZZ
+
+#print axioms ZZ_mem
+#print axioms ZZ_Dg_mem
+#print axioms ZZ_351_mem
+
 
 end Small
 end TRIO
