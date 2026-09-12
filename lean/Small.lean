@@ -951,5 +951,28 @@ theorem Y510altLad_mem (m i p n : ℕ) :
 #print axioms UJitW_alt_mem
 #print axioms Y510altLad_mem
 
+/-! ### ★ `APd` 層でも「兄弟の側は自由」: `FLr Bs` は良い兄弟
+
+`WPd_FLr`（`WPd` 層）の `APd` 版。`TwoOk (pay nil B)`（緑）を
+兄弟について帰納すればそのまま出る。**先端**に置くのが壁であって、
+**兄弟**に置くのは荷つきの走りでも自由、というのがはっきりする。 -/
+
+theorem APd_FLr : ∀ (Bs : List TrioSeq), (∀ C ∈ Bs, Bok C) →
+    ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) (FLr Bs)
+  | [], _, j, kk => APd_nil _
+  | (B :: Bs), h, j, kk => by
+      have hsub : ∀ C ∈ Bs, Bok C := fun C hC => h C (List.mem_cons_of_mem B hC)
+      have hpay : TwoOk (Jk1.pay Jk1.nil B) :=
+        TwoOk_pay B (h B List.mem_cons_self) Jk1.nil trivial TwoOk_nil
+      exact hpay (FLr Bs) (JkA_FLr Bs hsub) (fun j' kk' => APd_FLr Bs hsub j' kk') j kk
+
+theorem GOK_oneFLr (Bs : List TrioSeq) (h : ∀ C ∈ Bs, Bok C) :
+    GOK (Jk1.one Jk1.nil (FLr Bs)) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil) (by simpa using APd_FLr Bs h 0 []))
+
+#print axioms APd_FLr
+#print axioms GOK_oneFLr
+
 end Small
 end TRIO
