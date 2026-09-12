@@ -25160,3 +25160,53 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
 - 重複の場合（`C = C' ++ [(0,0,0)]`）: 鎖 `stkP (p-1) (twoIt nil (pay V C') m)` が要る。
   形は `preRun (p-1) ks` なので、`WPdR (preRun (p-1) ks) (twoIt nil (pay V C') m)`
   ＝「荷つきの平らな走りを走りの下に置く」。ここが最後の 1 点。
+
+## 追記392: `RunPay` を詰めた。走りの兄弟を全部自由にすれば閉じる
+
+`RunPay`（`ebud e ≠ ⊥`、`erun e = p ≥ 1` の場合）を `C` の W 帰納で追った。
+
+### 重複の場合の鎖
+
+節の結論は `one U (two N (stkP p (pay V C)))`。荷の最後の列（根）の親は
+`stkP p` の**一番内側**の `two nil`。重複させると鎖は
+
+    RunP [N, nil^(p-1)] (twoIt nil (pay V C') m)
+      = RunP [N, nil^(p-1), twoIt nil (pay V C') (m-1)] (pay V C')
+
+つまり **`p+1` 本の兄弟のうち一番内側が鎖**になる（他は元のまま）。
+`pay V C'` は W 帰納の IH で**同じ入り目 `e`** に置ける（`AYdTWT` と同じ）。
+鎖の兄弟も `AYdTWT_hstep` と同じく予算を増やさずに伸びる。
+
+### 何が足りないか
+
+いまの入り目 `(b,p)` は枠を
+
+    [fone U, ftwo N] ++ replicate p (ftwo nil)
+
+と決め打ちしていて、走りの部分の兄弟が **`nil` 固定**。だから
+「一番内側の兄弟だけ鎖」が表せない。
+
+### 直し方: 走りの兄弟を全部自由にする
+
+枠を `[fone U] ++ ftw Ns`（`Ns.length = erun e + 1`、各 `N ∈ Ns` は予算 `< e`）にする:
+
+    WPdR (e::ks) V （ebud e ≠ ⊥）=
+      ∀ r (<e) U, FrmR (r++ks) U → WPdR (r++ks) U →
+      ∀ Ns, Ns.length = erun e + 1 → (∀N∈Ns, JkA N) →
+        (∀N∈Ns, ∀q (<e), WPdR (⊥::q++(r++ks)) N) →
+        WPdR (r++ks) (one U (RunP Ns V))
+
+    WCtxR (e::ks) ctx = ctx = ctx' ++ [fone U] ++ ftw Ns ∧ …
+
+`(⊥,p)`（裸の走り）も同様に `ftw Ns`（`|Ns| = p`）にする:
+`WPdR ((⊥,p)::ks) V = ∀ Ns …, WPdR ks (RunP Ns V)`。
+
+これで
+- 塔の階段のブロック `[fone nil, ftwo N] ++ replicate p (ftwo nil)`
+  ＝ `Ns = [N, nil^p]` ✓（`WPdR_nilRun` はそのまま通るはず）
+- `RunPay` の鎖 ＝ `Ns = [N, nil^(p-1), 鎖]` ✓
+- `WPdR_stkS` の階段も `Ns` 全部 `nil` ✓
+
+**次**: `stkP (erun e)` を `RunP Ns` に置き換えた形で層を作り直す。
+既存の補題（`nilRun` / `stairRun` / `payA` / `stkS` / `R376_of_RunPay`）は
+`Ns` を全部 `nil` にすれば同じ証明が通るはず。そのうえで `RunPay` を落とす。
