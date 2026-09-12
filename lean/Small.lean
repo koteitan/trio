@@ -4536,6 +4536,119 @@ theorem TwSt_fone_note : True := trivial
 
 #print axioms TwSt_fone
 
+/-! ### ★★★ 階段を `APd` の世界で回す（形が伸びるので `N` の普遍性がそのまま効く）
+
+`APd_cf` を `m = 0` で使うと
+
+    APd (false::ks) V → (N は普遍) → APd (true::ks) (two N V)
+
+`nstW N W (k+1) = two N (one W (nstW N W k))` なので、`APd_step` で
+`one W ·` を剥がすと形が `false::ks` に伸びる。`N` は普遍なので伸びても効く。
+**`LOk 1` の梯子を登る必要が無い。** 代わりに `W` に
+「どの `false::ks` にも差せる」（`TwoOkF`）と `TopOk W` が要る。 -/
+
+theorem APd_twoN_of_cf {ks : List Bool} {N V : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    (h : APd (false :: ks) V) : APd (true :: ks) (Jk1.two N V) := by
+  rw [APd_ct]
+  intro U hU hR hUk
+  exact (APd_cf ks V).mp h 0 U N (by simpa using hU) (by simpa using hR)
+    (by simpa using hUk) hJN (fun j => by simpa using hNall j ks)
+
+/-- 「どの予算の節 `false::ks` にも差せる」。`TwoOk` より強い。 -/
+def TwoOkF (W : Jk1) : Prop := ∀ ks : List Bool, APd (false :: ks) W
+
+theorem TwoOkF_nil : TwoOkF Jk1.nil := fun ks => APd_nil (false :: ks)
+
+theorem TwoOkF_pay {W : Jk1} (hJW : JkA W) (h : TwoOkF W) {Y : TrioSeq} (hY : Bok Y) :
+    TwoOkF (Jk1.pay W Y) := fun ks => AYdT' Y hY ks W hJW (h ks)
+
+theorem TwoOkF_oneNil {W : Jk1} (hJW : JkA W) (hTW : TopOk W) (h : TwoOkF W) :
+    TwoOkF (Jk1.one W Jk1.nil) := fun ks =>
+  APd_step (false :: ks) (hJW : FrmJ (false :: ks) W) (hTW : Rq (false :: ks) W)
+    (h ks) (APd_nilT (false :: ks))
+
+theorem TwoOk_of_TwoOkF {W : Jk1} (h : TwoOkF W) : TwoOk W := by
+  intro N hJN hNall j kk
+  rw [rep_true_cons]
+  exact APd_twoN_of_cf hJN hNall (h (List.replicate j true ++ kk))
+
+/-- 階段。形が `false::ks` に伸びるだけで `N` の条件は普遍なので効き続ける。 -/
+theorem APd_nstW {N W : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    (hJW : JkA W) (hTW : TopOk W) (hWF : TwoOkF W) :
+    ∀ (k : ℕ) (ks : List Bool), APd (true :: ks) (nstW N W k)
+  | 0, ks => APd_twoN_of_cf hJN hNall (hWF ks)
+  | (k + 1), ks =>
+      APd_twoN_of_cf hJN hNall
+        (APd_step (false :: ks) (hJW : FrmJ (false :: ks) W) (hTW : Rq (false :: ks) W)
+          (hWF ks) (APd_nstW hJN hNall hJW hTW hWF k (false :: ks)))
+
+/-- ★★★★★★ `TopOk` かつ「どの予算の節にも差せる」木は `two W nil` にできる。
+`ChBase` の（兄弟を制限した）版。 -/
+theorem TwoOk_twoWnilF {W : Jk1} (hJW : JkA W) (hTW : TopOk W) (hWF : TwoOkF W) :
+    TwoOk (Jk1.two W Jk1.nil) := by
+  intro N hJN hNall j kk
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  have hcO : CtxOk ctx := GCtx_CtxOk _ ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split (List.replicate j true ++ kk) ctx hc
+  refine GOK_twoNW_gen ctx0 V hJN hJW ?_ hGV ?_
+  · exact JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, hJW, trivial⟩)
+  · intro k
+    exact (APd_iff (true :: (List.replicate j true ++ kk)) _).mp
+      (APd_nstW hJN hNall hJW hTW hWF k _) _ hc
+
+#print axioms APd_nstW
+#print axioms TwoOk_twoWnilF
+
+/-! ### ★★★ 階段を文脈の族で書く（`TopOk` も `APd` の形も要らない）
+
+`nstW N W (k+1) = two N (one W (nstW N W k))` は文脈でいうと枠 2 枚
+`[ftwo N, fone W]` を足すだけ:
+
+    plug D (nstW N W (k+1)) = plug (D ++ [ftwo N, fone W]) (nstW N W k)
+
+だから階段は「`two N W` がブロック `[ftwo N, fone W]` を何個足した文脈でも良い」
+（`SelfW` 型の自己塔）1 本になる。`APd` の形を経由しないので `Rq`（＝ `TopOk W`）が
+要らない。 -/
+
+def blkNW (N W : Jk1) : ℕ → List Frm
+  | 0 => []
+  | (i + 1) => [Frm.ftwo N, Frm.fone W] ++ blkNW N W i
+
+theorem plug_blkNW_step (N W : Jk1) (D : List Frm) (Z : Jk1) :
+    plug (D ++ [Frm.ftwo N, Frm.fone W]) Z = plug D (Jk1.two N (Jk1.one W Z)) := by
+  rw [show D ++ [Frm.ftwo N, Frm.fone W] = (D ++ [Frm.ftwo N]) ++ [Frm.fone W] from by simp,
+    plug_snoc, plug_snoc2]
+
+theorem GOK_nstW_of {N W : Jk1} : ∀ (k : ℕ) (D : List Frm),
+    (∀ i : ℕ, GOK (plug (D ++ blkNW N W i) (Jk1.two N W))) →
+    GOK (plug D (nstW N W k))
+  | 0, D, hbase => by simpa [blkNW] using hbase 0
+  | (k + 1), D, hbase => by
+      have e : plug D (nstW N W (k + 1))
+          = plug (D ++ [Frm.ftwo N, Frm.fone W]) (nstW N W k) := by
+        rw [plug_blkNW_step]
+        rfl
+      rw [e]
+      refine GOK_nstW_of k (D ++ [Frm.ftwo N, Frm.fone W]) (fun i => ?_)
+      have hh := hbase (i + 1)
+      simpa [blkNW, List.append_assoc] using hh
+
+/-- ★★★★★★ `two N (two W nil)` は「`two N W` の自己塔」1 本から出る。 -/
+theorem GOK_twoNW_self (ctx0 : List Frm) (V : Jk1) {N W : Jk1} (hJN : JkA N) (hJW : JkA W)
+    (hJT : JkT (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (Jk1.two W Jk1.nil))))
+    (hGV : GOK (plug ctx0 V))
+    (hself : ∀ i : ℕ,
+      GOK (plug ((ctx0 ++ [Frm.fone V]) ++ blkNW N W i) (Jk1.two N W))) :
+    GOK (plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (Jk1.two W Jk1.nil))) :=
+  GOK_twoNW_gen ctx0 V hJN hJW hJT hGV
+    (fun k => GOK_nstW_of k (ctx0 ++ [Frm.fone V]) hself)
+
+#print axioms GOK_nstW_of
+#print axioms GOK_twoNW_self
+
 
 end Small
 end TRIO

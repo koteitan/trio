@@ -25944,3 +25944,38 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 
 ので、`TwoOk_twoPayG` の A2' をそのまま回すにはまだ足りない。
 **「2 の記録の直上の 2 の記録」で荷が `nil` でない場合が最後に残る。**
+
+## 追記410: 階段を 2 通りに書けた。`TopOk` 付きは緑、`TopOk` 無しは自己塔 1 本
+
+### (a) `APd` の世界で回す版（`TopOk W` が要る。緑）
+
+    APd_twoN_of_cf : APd (false::ks) V → (N は普遍) → APd (true::ks) (two N V)
+    TwoOkF W := ∀ ks, APd (false::ks) W        （`TwoOk` より強い）
+    TwoOkF_nil / TwoOkF_pay（`AYdT'`）/ TwoOkF_oneNil / TwoOk_of_TwoOkF   ★緑
+    APd_nstW : (N 普遍) → JkA W → TopOk W → TwoOkF W → ∀ k ks, APd (true::ks) (nstW N W k)
+    TwoOk_twoWnilF : JkA W → TopOk W → TwoOkF W → TwoOk (two W nil)      ★緑
+
+階段の 1 段は `APd_step` で `one W ·` を剥がす。形が `false::ks` に伸びるが
+`N` は普遍なので効き続ける（`LOk 1` の梯子を登る必要が無い）。
+`APd_step` の `Rq (false::ks) W = TopOk W` が要るのが弱点。
+**`ChBase` が `hbase` を当てる相手は鎖 `twoIt W (pay Z Y) m`（2 頭）なので
+`TopOk` が落ちる。**
+
+### (b) 文脈の族で書く版（`TopOk` が要らない。緑）
+
+    blkNW N W (i+1) = [ftwo N, fone W] ++ blkNW N W i
+    plug D (nstW N W (k+1)) = plug (D ++ [ftwo N, fone W]) (nstW N W k)
+
+    GOK_nstW_of : (∀ i, GOK (plug (D ++ blkNW N W i) (two N W))) → ∀ k, GOK (plug D (nstW N W k))
+    GOK_twoNW_self (ctx0 V) (hJN) (hJW) (hJT) (hGV)
+      (hself : ∀ i, GOK (plug ((ctx0 ++ [fone V]) ++ blkNW N W i) (two N W)))
+      : GOK (plug (ctx0 ++ [fone V]) (two N (two W nil)))                ★緑
+
+**階段が「`two N W` の自己塔」1 本になった。** `APd` の形を経由しないので
+`Rq`（`TopOk W`）が出てこない。`plug (D ++ blkNW N W i) (two N W)
+= plug (D ++ blkNW N W i ++ [ftwo N]) W` なので、要るのは
+
+    W がブロック `[ftwo N, fone W]` を何個足した文脈の上でも良い（`SelfW` 型）
+
+`SelfW D W = ∀ k, GOK (plug (D ++ replicate k (fone W)) W)`（`SelfW_of_OSib` が緑）と
+同じ形。**次はこの自己塔を鎖 `W` について作る。**
