@@ -10981,6 +10981,29 @@ theorem R375m61_mem : R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 #print axioms Pay2_true
 #print axioms R375m61_mem
 
+/-- ★★★★★★★★★★★★★★★★★★★ `A ++ U375a ++ (6,1,0)`（台座一般）。 -/
+theorem A375m61_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.two Jk1.nil (Jk1.one Jk1.nil Jk1.nil)))])) :=
+    GOK_bdA20_of_Pay2 Pay2_true [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.two Jk1.nil (Jk1.one Jk1.nil Jk1.nil)))]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.two Jk1.nil (Jk1.one Jk1.nil Jk1.nil))))
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ),
+          ((5, 2, 0) : ℕ × ℕ × ℕ), ((6, 1, 0) : ℕ × ℕ × ℕ)] := by
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at h
+  simpa [U375a, List.append_assoc] using h
+
+theorem ZZ_U375a_61_mem :
+    ZZ ++ U375a ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := A375m61_gen Aok_ZZ
+
+#print axioms A375m61_gen
+#print axioms ZZ_U375a_61_mem
+
 
 end Small
 end TRIO

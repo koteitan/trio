@@ -26899,3 +26899,16 @@ DM では閉じているが、**`htow` は `WPd` の展開から来る任意の�
 
 次: `Bud2 := Multiset Ld` に `PartialOrder` / `OrderBot` / `WellFoundedLT` を入れ、
 `Scale Bud2`（`nb m = replicate m (mkLd Y₀)`）と `t = {z}`（`Dom` で上に取る）を作る。
+
+## 追記445: 壁 `Pay2` が落ちた
+
+    PcB / ZApp2c_true / Pay2_true / R375m61_mem / A375m61_gen      ★全部緑
+
+効いたのは 2 点（wall.md 先頭に詳しく書いた）:
+1. `WPdT` の `LinearOrder` → `PartialOrder`（エラー 0）で、予算型に
+   `Bml = Multiset Ld`（DM 順序、線形でない）が使えるようになった。
+2. 命題を「鎖の荷の多重集合より上のどの予算にも置ける」にすると、
+   A2' の複製鎖（長さ無制限、荷は `Rex'` で小さい）が DM 帰納の IH で出る。
+
+シート: 証明済みの頭を `R375m (6,1,0)` にした。証明中は `R375m (6,1,0)(7,1,0)`。
+残りは縦の鎖（`R375m (6,2,0)` = 目標[2]）。
