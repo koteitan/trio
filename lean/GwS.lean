@@ -936,5 +936,389 @@ theorem GoodFb_snoc_dupRx {l : List TrioSeq} (hw : WOkR l) {T : TrioSeq} (hT : R
 #print axioms GoodFb_orphR
 #print axioms GoodFb_snoc_dupRx
 
+/-! ## 荷は `Wg 0`、`Wg` の接頭辞閉包、`Wg 2` の木の `RiseOk` -/
+
+theorem Bok_mem_Wg0 : ∀ B : TrioSeq, Bok B → B ∈ Gw.Wg 0 := by
+  have key : W 0 ⊆ {B : TrioSeq | Bok B → B ∈ Gw.Wg 0} := by
+    refine A2' ?_
+    intro B hB
+    simp only [Set.mem_setOf_eq]
+    intro hBok
+    rcases hB with ⟨hl, hw⟩ | hop | ⟨m, hm, -, -⟩
+    · exact Gw.A1g_intro (Or.inl ⟨hl, hw⟩)
+    · have hnat : natDom B := by
+        refine natDom_iff.mpr ?_
+        by_cases hlen : 2 ≤ B.length
+        · by_cases hz : entry B 0 (B.length - 1) = 0 ∧ entry B 1 (B.length - 1) = 0 ∧
+              entry B 2 (B.length - 1) = 0
+          · left; unfold lev; rw [hz.2.1, hz.2.2]
+          · right; exact hasParent_of_ZrootMono hBok.zroot hBok.mono hBok.root hlen hz
+        · left
+          rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+          · rw [List.length_eq_zero_iff.mp h0]; simp [lev, entry]
+          · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+            have hc0 : c.1 = 0 := by simpa [entry] using hBok.root
+            obtain ⟨e1, e2⟩ := hBok.zroot c (by simp) hc0
+            simp [lev, entry, e1, e2]
+      refine Gw.A1g_intro (Or.inr (Or.inl ⟨hnat, fun n hn => ?_⟩))
+      have := hop n hn
+      simp only [Set.mem_setOf_eq] at this
+      exact this (Bok_oper hBok hn)
+    · exact absurd hm (Nat.not_lt_zero m)
+  intro B hB
+  exact key hB.mem hB
+
+theorem Wg_dropLast {u : ℕ} {M : TrioSeq} (h : M ∈ Gw.Wg u) : M.dropLast ∈ Gw.Wg u := by
+  have hA : Gw.Aopg Gw.Wg u (Gw.Wg u) M := by
+    have h' := h
+    rw [← Gw.A1g u] at h'
+    exact h'
+  by_cases hL : 1 < M.length
+  · rcases hA with ⟨hl, -⟩ | ⟨-, hop⟩ | ⟨m, -, -, -, hgr⟩
+    · omega
+    · have := hop 1 le_rfl
+      rwa [oper_one_eq_dropLast hL] at this
+    · have := hgr [] (Gw.Wg_nil m) based_nil
+      rwa [graft_nil] at this
+  · have : M.dropLast = [] := List.eq_nil_of_length_eq_zero (by simp; omega)
+    rw [this]; exact Gw.Wg_nil u
+
+theorem Wg_take {u : ℕ} : ∀ (N : ℕ) (M : TrioSeq), M.length ≤ N → M ∈ Gw.Wg u →
+    ∀ k, M.take k ∈ Gw.Wg u := by
+  intro N
+  induction N with
+  | zero =>
+      intro M hM h k
+      have : M = [] := List.eq_nil_of_length_eq_zero (by omega)
+      subst this; simpa using h
+  | succ N ih =>
+      intro M hM h k
+      by_cases hk : M.length ≤ k
+      · rw [List.take_of_length_le hk]; exact h
+      · have e : M.take k = M.dropLast.take k := by
+          rw [List.dropLast_eq_take, List.take_take]
+          congr 1; omega
+        rw [e]
+        exact ih M.dropLast (by simp; omega) (Wg_dropLast h) k
+
+/-- `Wg 2` の木では、行 1 ≥ 2 の列は必ず行 1 ≤ 1 の行 0 祖先を持つ。 -/
+theorem Wg2_RiseOk {T : TrioSeq} (h : T ∈ Gw.Wg 2) : RiseOk T := by
+  intro u
+  induction u using Nat.strong_induction_on with
+  | _ u ih =>
+    intro hu h2
+    set S := T.take (u + 1) with hS
+    have hSW : S ∈ Gw.Wg 2 := Wg_take T.length T le_rfl h (u + 1)
+    have hSlen : S.length = u + 1 := by simp [hS]; omega
+    have eT : T = S ++ T.drop (u + 1) := (List.take_append_drop (u + 1) T).symm
+    have hSe : ∀ r j, j < u + 1 → entry S r j = entry T r j := by
+      intro r j hj
+      conv_rhs => rw [eT]
+      rw [Small.entry_append_left (by rw [hSlen]; exact hj)]
+    have hA : Gw.Aopg Gw.Wg 2 (Gw.Wg 2) S := by
+      have h' := hSW
+      rw [← Gw.A1g 2] at h'
+      exact h'
+    have hlast : S.length - 1 = u := by omega
+    have hS1 : 2 ≤ entry S 1 u := by rw [hSe 1 u (by omega)]; exact h2
+    have hanc : ∃ e, e < u ∧ Relation.ReflTransGen (nextrel0 S) e u ∧
+        entry S 1 e < entry S 1 u := by
+      rcases hA with ⟨hl, hw⟩ | ⟨hn, -⟩ | ⟨m, hm, hd, -, -⟩
+      · exfalso
+        have hu0 : u = 0 := by omega
+        subst hu0
+        unfold lev at hw
+        omega
+      · rcases natDom_iff.mp hn with hz | hp
+        · exfalso; rw [hlast] at hz; unfold lev at hz; omega
+        · rw [hlast] at hp
+          by_cases h2pos : 0 < entry S 2 u
+          · have hsr : srow S u = 2 := by unfold srow; rw [if_pos h2pos]
+            rw [hsr] at hp
+            have hn2 := parent_nextR hp
+            unfold nextR at hn2
+            rw [if_neg (by omega), if_neg (by omega)] at hn2
+            obtain ⟨-, -, hpu, -, hle1, -⟩ := hn2
+            obtain ⟨-, -, hch⟩ := hle1
+            rcases Relation.ReflTransGen.cases_tail hch with heq | ⟨e, -, hen⟩
+            · omega
+            · exact ⟨e, hen.2.2.1, hen.2.2.2.2.1.2.2, hen.2.2.2.1⟩
+          · have hsr : srow S u = 1 := by
+              unfold srow; rw [if_neg h2pos, if_pos (by omega)]
+            rw [hsr] at hp
+            have hn1 := parent_nextR hp
+            unfold nextR at hn1
+            rw [if_neg (by omega), if_pos rfl] at hn1
+            exact ⟨_, hn1.2.2.1, hn1.2.2.2.2.1.2.2, hn1.2.2.2.1⟩
+      · exfalso
+        have := hd.1
+        rw [hlast] at this
+        unfold lev at this
+        omega
+    obtain ⟨e, heu, hch, he1⟩ := hanc
+    have hchT : Relation.ReflTransGen (nextrel0 T) e u := by
+      rw [eT]
+      exact rtg0_append_left hch (by omega)
+    rw [hSe 1 e (by omega), hSe 1 u (by omega)] at he1
+    by_cases he2 : entry T 1 e ≤ 1
+    · exact ⟨e, heu, hchT, he2⟩
+    · obtain ⟨k, hke, hkch, hk1⟩ := ih e heu (by omega) (by omega)
+      exact ⟨k, by omega, hkch.trans hchT, hk1⟩
+
+/-! ## ★★★★★ 本体: `Wg 2` の木は語の最後に字として継げる -/
+
+def GOKR (T : TrioSeq) : Prop :=
+  ∀ l : List TrioSeq, WOkR l → GoodFb (fun a b => rword a b l) →
+    GoodFb (fun a b => rword a b (l ++ [T]))
+
+theorem GOKR_of_Wg2 : ∀ T ∈ Gw.Wg 2, (∀ x ∈ T, 1 ≤ x.1) → Mono T → GOKR T := by
+  have key : Gw.Wg 2 ⊆ {T : TrioSeq | T ∈ Gw.Wg 2 ∧
+      ((∀ x ∈ T, 1 ≤ x.1) → Mono T → GOKR T)} := by
+    refine Gw.A2g' ?_
+    intro T hA
+    have hTW : T ∈ Gw.Wg 2 := Gw.A1g_intro (Gw.Aopg_mono_X hA (fun U hU => hU.1))
+    refine ⟨hTW, ?_⟩
+    intro hge hmo l hw hG
+    have hRaw : RawOk T := ⟨hge, hmo, Wg2_RiseOk hTW⟩
+    by_cases hTnil : T = []
+    · subst hTnil; exact GoodFb_snoczR hw hG
+    have hTlen : 0 < T.length := List.length_pos_iff.mpr hTnil
+    have hdlW : T.dropLast ∈ Gw.Wg 2 := Wg_dropLast hTW
+    have hdlRaw : RawOk T.dropLast := ⟨fun x hx => hge x (List.dropLast_subset _ hx),
+      fun x hx => hmo x (List.dropLast_subset _ hx), Wg2_RiseOk hdlW⟩
+    set c := T.getLast hTnil with hc
+    have hsplit : T = T.dropLast ++ [c] := (List.dropLast_append_getLast hTnil).symm
+    have hclast : ∀ r, entry T r (T.length - 1) = entry [c] r 0 := by
+      intro r
+      have h := entry_append_right T.dropLast [c] r 0
+      rw [← hsplit] at h
+      rw [show T.length - 1 = T.dropLast.length + 0 by simp]
+      exact h
+    have eT : ∀ r i, i < T.dropLast.length → entry T r i = entry T.dropLast r i := by
+      intro r i hi
+      have h := Small.entry_append_left (P := T.dropLast) (B := [c]) (i := r) hi
+      rw [← hsplit] at h
+      exact h
+    have hcmem : c ∈ T := List.getLast_mem hTnil
+    have hc1 : 1 ≤ c.1 := hge c hcmem
+    have hflat : c.2.1 = 0 → c.2.2 = 0 → (∀ y ∈ T.dropLast, c.1 ≤ y.1) →
+        GOKR T.dropLast → GoodFb (fun a b => rword a b (l ++ [T])) := by
+      intro hc10 hc20 hTx hGdl
+      have hceq : c = ((c.1, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext rfl (Prod.ext hc10 hc20)
+      rw [hsplit, hceq]
+      exact GoodFb_snoc_dupRx hw hdlRaw hc1 hTx (fun n hn =>
+        GoodFb_repR hw hdlRaw (fun l' hw' hG' => hGdl l' hw' hG') hG n)
+    have hflat1 : T.length = 1 → c.2.1 = 0 → c.2.2 = 0 →
+        GoodFb (fun a b => rword a b (l ++ [T])) := by
+      intro hT1 hc10 hc20
+      have hdl : T.dropLast = [] := List.eq_nil_of_length_eq_zero (by simp; omega)
+      refine hflat hc10 hc20 (by rw [hdl]; simp) ?_
+      rw [hdl]; exact fun l' hw' hG' => GoodFb_snoczR hw' hG'
+    have hlev0 : lev T (T.length - 1) = 0 → c.2.1 = 0 ∧ c.2.2 = 0 := by
+      intro hz
+      unfold lev at hz
+      rw [hclast 1, hclast 2] at hz
+      have e1 : entry [c] 1 0 = c.2.1 := rfl
+      have e2 : entry [c] 2 0 = c.2.2 := rfl
+      rw [e1, e2] at hz
+      omega
+    rcases hA with ⟨hl, hw0⟩ | ⟨hnat, hop⟩ | ⟨m, hm, hd, h20, hgr⟩
+    · -- 分岐 1
+      have hT1 : T.length = 1 := by omega
+      have hz : lev T (T.length - 1) = 0 := by rw [hT1]; exact hw0
+      exact hflat1 hT1 (hlev0 hz).1 (hlev0 hz).2
+    · by_cases hlen2 : 2 ≤ T.length
+      · by_cases hp : hasParent T (srow T (T.length - 1)) (T.length - 1)
+        · -- (G1)
+          exact GoodFb_snoc_operR hw hRaw hlen2 hp (fun n hn =>
+            (hop n hn).2 (fun x hx => oper_mem_ge (c := 1) hge x hx) (Mono_oper hmo n) l hw hG)
+        · -- 最上位の平らな末尾
+          have hz : lev T (T.length - 1) = 0 := by
+            rcases natDom_iff.mp hnat with h | h
+            · exact h
+            · exact absurd h hp
+          have hsr : srow T (T.length - 1) = 0 := by
+            have := hz
+            unfold srow
+            unfold lev at this
+            rw [if_neg (by omega), if_neg (by omega)]
+          rw [hsr] at hp
+          have hTx : ∀ y ∈ T.dropLast, c.1 ≤ y.1 := by
+            intro y hy
+            by_contra hlt
+            push_neg at hlt
+            obtain ⟨k, hk, hky⟩ := List.getElem_of_mem hy
+            apply hp
+            refine (Wset.hasParent_zero_iff (by omega)).mpr ⟨k, by simp at hk; omega, ?_⟩
+            have e1 : entry T 0 k = y.1 := by
+              rw [eT 0 k hk]
+              show (T.dropLast.getD k (0, 0, 0)).1 = y.1
+              rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hk, Option.getD_some, hky]
+            rw [e1, hclast 0]
+            exact hlt
+          have hGdl : GOKR T.dropLast := by
+            have h1 := (hop 1 le_rfl).2 (fun x hx => oper_mem_ge (c := 1) hge x hx)
+              (Mono_oper hmo 1)
+            rwa [oper_one_eq_dropLast (by omega)] at h1
+          exact hflat (hlev0 hz).1 (hlev0 hz).2 hTx hGdl
+      · have hT1 : T.length = 1 := by omega
+        have hz : lev T (T.length - 1) = 0 := by
+          rcases natDom_iff.mp hnat with h | h
+          · exact h
+          · exfalso
+            rw [hT1] at h
+            obtain ⟨j0, hj0, -⟩ := h
+            exact absurd (nextR_index_lt hj0) (Nat.not_lt_zero j0)
+        exact hflat1 hT1 (hlev0 hz).1 (hlev0 hz).2
+    · -- 分岐 3: 1 の列の孤児 (G2)
+      have hlev := hd.1
+      unfold lev at hlev
+      have h20' : entry T 2 (T.length - 1) = 0 := h20
+      have hw1 : entry T 1 (T.length - 1) = 1 := by omega
+      have hsr : srow T (T.length - 1) = 1 := by
+        unfold srow; rw [if_neg (by omega), if_pos (by omega)]
+      have hnp : ¬ hasParent T 1 (T.length - 1) := fun hh => hd.2 (by rw [hsr]; exact hh)
+      have hc11 : c.2.1 = 1 := by
+        have := hclast 1; rw [hw1] at this; exact this.symm
+      have hc20 : c.2.2 = 0 := by
+        have := hclast 2; rw [h20'] at this; exact this.symm
+      have hceq : c = ((c.1, 1, 0) : ℕ × ℕ × ℕ) := Prod.ext rfl (Prod.ext hc11 hc20)
+      have hTeq : T = T.dropLast ++ [((c.1, 1, 0) : ℕ × ℕ × ℕ)] := by
+        rw [← hceq]; exact hsplit
+      have hsp : ∀ j, j < T.dropLast.length → entry T.dropLast 0 j < c.1 →
+          (∀ i, j < i → i < T.dropLast.length → entry T.dropLast 0 j < entry T.dropLast 0 i) →
+          1 ≤ entry T.dropLast 1 j := by
+        intro j hj hjh hvis
+        by_contra h0
+        push_neg at h0
+        apply hnp
+        have hjT : j < T.length - 1 := by simpa using hj
+        have hle : le0 T j (T.length - 1) := by
+          refine le0_of_between (a := entry T 0 j) rfl (T.length - 1) (by omega) (by omega) ?_
+          intro j' h1 h2
+          rcases Nat.lt_or_ge j' (T.length - 1) with h3 | h3
+          · have hj' : j' < T.dropLast.length := by simpa using h3
+            rw [eT 0 j hj, eT 0 j' hj']
+            have := hvis j' h1 hj'
+            omega
+          · have : j' = T.length - 1 := by omega
+            subst this
+            rw [hclast 0, eT 0 j hj]
+            show entry T.dropLast 0 j + 1 ≤ c.1
+            omega
+        refine H12Export.hasParent1_of_le0_witness (by omega) hle.2.2 ?_
+        rw [eT 1 j hj, hw1]; omega
+      rw [hTeq]
+      have hT' : RawOk (T.dropLast ++ [((c.1, 1, 0) : ℕ × ℕ × ℕ)]) := by
+        rw [← hTeq]; exact hRaw
+      refine GoodFb_orphR hw hc1 hT' hsp ?_ ?_
+      · have h1 := (hgr [] (Gw.Wg_nil m) based_nil).2
+        rw [graft_nil] at h1
+        exact h1 (fun x hx => hge x (List.dropLast_subset _ hx))
+          (fun x hx => hmo x (List.dropLast_subset _ hx)) l hw hG
+      · intro B hB
+        have hBW : B ∈ Gw.Wg m := Gw.Wg_mono (Nat.zero_le m) (Bok_mem_Wg0 B hB)
+        have h1 := (hgr B hBW hB.root).2
+        have e : graft T B = T.dropLast ++ shiftr01 c.1 0 B := by
+          rw [graft_eq_shift, hclast 0]
+          rfl
+        rw [e] at h1
+        refine h1 ?_ ?_ l hw hG
+        · intro x hx
+          rcases List.mem_append.mp hx with hx | hx
+          · exact hge x (List.dropLast_subset _ hx)
+          · simp only [shiftr01, List.mem_map] at hx
+            obtain ⟨p, -, rfl⟩ := hx
+            dsimp only; omega
+        · intro x hx
+          rcases List.mem_append.mp hx with hx | hx
+          · exact hmo x (List.dropLast_subset _ hx)
+          · simp only [shiftr01, List.mem_map] at hx
+            obtain ⟨p, hp, rfl⟩ := hx
+            have := hB.mono p hp
+            dsimp only; omega
+  intro T hT hge hmo
+  exact (key hT).2 hge hmo
+
+#print axioms GOKR_of_Wg2
+
+/-! ## ★★★★★★★★★★★★★★★★★★★★ 目標行 `R373 (5,3,0) ∈ W 0` -/
+
+def TnR (n : ℕ) : TrioSeq :=
+  ((1, 1, 0) : ℕ × ℕ × ℕ) :: (List.range n).map (fun i => ((i + 2, 2, 0) : ℕ × ℕ × ℕ))
+
+theorem TnR_Wg (n : ℕ) : TnR n ∈ Gw.Wg 2 := by
+  have h := Gw.tree_mem_Wg (p0 := ((1, 1, 0) : ℕ × ℕ × ℕ))
+    (R := (List.range n).map (fun i => ((i + 2, 2, 0) : ℕ × ℕ × ℕ)))
+    (by
+      intro p hp
+      simp only [List.mem_cons, List.mem_map, List.mem_range] at hp
+      rcases hp with rfl | ⟨i, -, rfl⟩ <;> rfl)
+    (by
+      intro q hq
+      simp only [List.mem_map, List.mem_range] at hq
+      obtain ⟨i, -, rfl⟩ := hq
+      show 1 < i + 2; omega)
+  simpa [TnR] using h
+
+theorem TnR_ge (n : ℕ) : ∀ x ∈ TnR n, 1 ≤ x.1 := by
+  intro x hx
+  simp only [TnR, List.mem_cons, List.mem_map, List.mem_range] at hx
+  rcases hx with rfl | ⟨i, -, rfl⟩
+  · show 1 ≤ 1; omega
+  · show 1 ≤ i + 2; omega
+
+theorem TnR_mono (n : ℕ) : Mono (TnR n) := by
+  intro x hx
+  simp only [TnR, List.mem_cons, List.mem_map, List.mem_range] at hx
+  rcases hx with rfl | ⟨i, -, rfl⟩
+  · show (0 : ℕ) ≤ 1; omega
+  · show (0 : ℕ) ≤ 2; omega
+
+theorem rword_TnR (n : ℕ) :
+    rword 1 1 [TnR n] = [((2, 2, 1) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)] ++
+      (List.range n).map (fun i => ((i + 4, 2, 0) : ℕ × ℕ × ℕ)) := by
+  rw [rword_singleton, rcol, TnR, shiftr01, List.map_cons, List.map_map]
+  simp only [List.cons_append, List.nil_append, List.cons.injEq]
+  refine ⟨?_, ?_, ?_⟩
+  · first | trivial | rfl
+  · first | trivial | rfl | exact Prod.ext (by first | (simp only [Function.comp_apply]; omega) | (simp [Function.comp_apply]; omega) | simp [Function.comp_apply] | (dsimp only; omega) | dsimp only | omega | rfl) (Prod.ext (by first | (simp only [Function.comp_apply]; omega) | (simp [Function.comp_apply]; omega) | simp [Function.comp_apply] | (dsimp only; omega) | dsimp only | omega | rfl) rfl)
+  · apply List.map_congr_left
+    intro i _
+    exact Prod.ext (by first | (simp only [Function.comp_apply]; omega) | (simp [Function.comp_apply]; omega) | simp [Function.comp_apply] | (dsimp only; omega) | dsimp only | omega | rfl) (Prod.ext (by first | (simp only [Function.comp_apply]; omega) | (simp [Function.comp_apply]; omega) | simp [Function.comp_apply] | (dsimp only; omega) | dsimp only | omega | rfl) (by first | (simp only [Function.comp_apply]; omega) | (simp [Function.comp_apply]; omega) | simp [Function.comp_apply] | (dsimp only; omega) | dsimp only | omega | rfl))
+
+theorem Mtwd_R344_42 (n : ℕ) :
+    Mtwd 1 R344 [((4, 2, 0) : ℕ × ℕ × ℕ)] n
+      = R344 ++ (List.range n).map (fun i => ((i + 4, 2, 0) : ℕ × ℕ × ℕ)) := by
+  induction n with
+  | zero => simp [Mtwd]
+  | succ n ih =>
+      rw [Mtwd_succ, ih, List.range_succ, List.map_append, List.append_assoc]
+      congr 2
+      simp only [shiftr01, List.map_cons, List.map_nil, List.cons.injEq, and_true]
+      exact Prod.ext (by first | (dsimp only; omega) | dsimp only | omega | rfl) (Prod.ext (by first | (dsimp only; omega) | dsimp only | omega | rfl) rfl)
+
+/-- ★★★★★★★★★★★★★★★★★★★★ 最終目標
+`(0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,3,0) ∈ W 0`（仮定なし）。 -/
+theorem R376_of_Gw : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hrow : ∀ n, R344 ++ (List.range n).map (fun i => ((i + 4, 2, 0) : ℕ × ℕ × ℕ)) ∈ W 0 := by
+    intro n
+    have hG := GOKR_of_Wg2 (TnR n) (TnR_Wg n) (TnR_ge n) (TnR_mono n) []
+      (by intro T hT; simp at hT) GoodFb_rword_nil
+    have h := row_mem_of_GoodFb Aok_R338 hG
+    have e : R338 ++ (((1, 1, 0) : ℕ × ℕ × ℕ) :: rword 1 1 ([] ++ [TnR n]))
+        = R344 ++ (List.range n).map (fun i => ((i + 4, 2, 0) : ℕ × ℕ × ℕ)) := by
+      rw [List.nil_append, rword_TnR]
+      simp [R344, R341, List.append_assoc]
+    rw [← e]; exact h
+  have h := snocYd_mem0 (Y0 := R344) (M := [((4, 2, 0) : ℕ × ℕ × ℕ)]) (L := 4) (y := 3)
+    (dl := 1) (by simp [R344, R341, R338]) (by simp) (by simp [entry])
+    (by intro j hj1 hj2; simp at hj2; omega) (by simp [entry])
+    (by intro t ht1 ht2; simp at ht2; omega) (by omega) le_rfl
+    (fun n => by rw [Mtwd_R344_42]; exact hrow n)
+  simpa [R373, List.append_assoc] using h
+
+#print axioms R376_of_Gw
+
 end GwS
 end TRIO

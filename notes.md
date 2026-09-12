@@ -27334,3 +27334,26 @@ A2' の基底 `Y = [(0,0,0)]`（`Z = nil`）で出る**平らな鎖**
 目標: `T_n := ((1,1,0) (2,2,0) … (n+1,2,0))`（字の中身、深さ ≥ 1）は `tree_mem_Wg` と
 `Wg_shift` で `Wg 2`。`GOKs T_n` を空の語に当て、`rowJ_mem_genF` の生版で
 `R338 (1,1,0) (2,2,1) ++ T_n↑2 = R373 (5,3,0)[n] ∈ W 0`。
+
+## 追記462: ★★★★★★★★★★★★★★★★★★★★ 最終目標 `R373 (5,3,0) ∈ W 0` が無条件で緑
+
+    GwS.R376_of_Gw : R373 ++ [(5,3,0)] ∈ W 0     axioms = [propext, Classical.choice, Quot.sound]
+    （lake build GwS: 802 jobs 成功）
+
+組み立て（`lean/Gw.lean` ＋ `lean/GwS.lean`）:
+
+1. `Gw.Wg`: 分岐 2 に natDom ガード、分岐 3 を行 2 = 0 の孤児に限った族。`Wstarg_closed` が無条件、
+   `tree_mem_Wg` で行 2 ≡ 0 の木は根のレベルの `Wg`。
+2. `GwS.rword`: 字の中身を任意の列 `T`（深さ ≥ 1・Mono・RiseOk）にした語。
+   - `GoodFb_of_keyR`（鍵の補題の写し）
+   - `GoodFb_snoc_operR`（字の中の展開）
+   - `GoodFb_snoczR`（空の字、頭の潰れ。`not_le1_blocked` と RiseOk で中身は持ち上がらない）
+   - `GoodFb_orphR`（1 の列の孤児、`APnil_gen0` の写し、荷は任意の Bok）
+   - `GoodFb_snoc_dupRx`（最上位の平らな列による字の複製）
+3. `Bok_mem_Wg0`、`Wg_take`、`Wg2_RiseOk`（Wg 2 の接頭辞で行 1 ≥ 2 の列は親を持つ）。
+4. `GOKR_of_Wg2`: `T ∈ Wg 2` の A2g' の帰納で、分岐 1〜3 を上の閉包補題で閉じる。
+5. `R376_of_Gw`: `R373 (5,3,0)⟦n⟧ = R338 (1,1,0) (2,2,1) ++ ((1,1,0)(2,2,0)…)↑2` の字
+   `TnR n ∈ Wg 2`（`tree_mem_Wg`）に 4 を当て、`row_mem_of_GoodFb` と `snocYd_mem0`。
+
+予算族（WVd など）の壁「文脈側の走りの直下の空木」は、骨格を Wg の帰納で扱うと起きない
+（2 の列の階段は Wg の展開そのもの、荷の平らな複製は GoodFb の複製補題で閉じる）。
