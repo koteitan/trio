@@ -26967,3 +26967,20 @@ A2' の複製鎖が要求する非有界な深さに届かない。
 
 だから `WBd`（予算 `ℕ × ℕ`）のままで行ける見込み。要る補題は wall.md に 4 段で書いた。
 通らなければ `WNd`（深さを一般の整礎な型にした版、核は緑）に移す。
+
+## 追記449: `WBtx_decomp`（文脈をブロックに分解）が緑
+
+    WBtx_decomp : WBtx ((m,i)::ks) ctx →
+      ∃ ctx0 V Bs, Bs.length = i ∧ ctx = ctx0 ++ blkC V Bs ∧
+        (∀ B ∈ Bs, JkA B) ∧ GOK (plug ctx0 V)                        ★緑
+
+`i` の帰納で `WBtx_c0` / `WBtx_ck` を開くだけ（既存の `blkC_snoc` が効いた）。
+これで `GOK_runGNil_gen` の `ctx ++ blkC V Bs` の形が作れる。
+
+残る作業（階段）: `hstair : ∀ j, GOK (plug (ctx0 ++ blkC V Bs ++ blkR N Bs j) N)`。
+`blkR N Bs (j+1) = blkR N Bs j ++ blkC N Bs`（要証明）にして `j` の帰納で
+`WBtx ((m,i) :: (q'_j ++ (q ++ ks))) (ctx0 ++ blkC V Bs ++ blkR N Bs j)` を作る。
+ブロック 1 個を足すのに要るのは
+- `fone N` の枠: `WBd L_j N` と荷閉包 ← `hNt` / `hNp`（`L_j` の形が保たれる）
+- `ftw Bs` の枠: 各 `B ∈ Bs` が「深さ `d`・任意の詰め物」で置けること
+  ← これは `WBtx_decomp` が返していないので、分解を強めて `Bs` の条件も返す必要がある

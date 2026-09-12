@@ -11261,6 +11261,35 @@ theorem WNd_nilE : WNd ([] : List Bud) Jk1.nil := (WNd_bnil _).mpr GOK_nil
 end BudG
 
 #print axioms WNd_ck
+/-! ### ★★★★★★★★★★★★ `WBtx` の文脈はブロック `blkC V Bs` で終わる
+
+`WBtx ((m,i)::ks) ctx` を `i` で開くと `ctx = ctx0 ++ blkC V Bs`（`Bs.length = i`）。
+これで `GOK_runGNil_gen`（`fone V` のあとに `ftwo` が何枚でも）が当たる形になる。 -/
+
+theorem WBtx_decomp : ∀ (i m : ℕ) (ks : List (ℕ × ℕ)) (ctx : List Frm),
+    WBtx ((m, i) :: ks) ctx →
+    ∃ (ctx0 : List Frm) (V : Jk1) (Bs : List Jk1),
+      Bs.length = i ∧ ctx = ctx0 ++ blkC V Bs ∧ (∀ B ∈ Bs, JkA B) ∧
+      GOK (plug ctx0 V)
+  | 0, m, ks, ctx, h => by
+      rw [WBtx_c0] at h
+      obtain ⟨ctx', U, rfl, hc', hU, hUk, -⟩ := h
+      exact ⟨ctx', U, [], rfl, by simp [blkC, ftw], by simp,
+        (WBd_iff ks U).mp hUk ctx' hc'⟩
+  | (i + 1), m, ks, ctx, h => by
+      rw [WBtx_ck] at h
+      obtain ⟨q, hq, ctx', N, rfl, hc', hJN, -, -⟩ := h
+      obtain ⟨ctx0, V, Bs, hlen, rfl, hB, hbase⟩ :=
+        WBtx_decomp i m (q ++ ks) ctx' hc'
+      refine ⟨ctx0, V, Bs ++ [N], by simp [hlen], ?_, ?_, hbase⟩
+      · rw [List.append_assoc, blkC_snoc]
+      · intro B hB'
+        rcases List.mem_append.mp hB' with h1 | h1
+        · exact hB B h1
+        · rw [show B = N from by simpa using h1]; exact hJN
+
+#print axioms WBtx_decomp
+
 
 end Small
 end TRIO
