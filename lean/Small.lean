@@ -2777,5 +2777,65 @@ theorem R600700_mem : R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
 
 #print axioms R600700_mem
 
+/-! ### `R600 (7,0,0)` の `Aok` を取って、族の台座をもう一段上げる -/
+
+def Z700 : TrioSeq := R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem Z700_eq : Z700 = [((0, 0, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 0) : ℕ × ℕ × ℕ),
+    ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ),
+    ((4, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((6, 0, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Z700, R600, R375m, R373, R344, R341, R338]
+
+theorem Z700_ne : Z700 ≠ [] := by simp [Z700, R600, R375m, R373, R344, R341, R338]
+
+theorem Z700_head : entry Z700 0 0 = 0 := by
+  simp [Z700, R600, R375m, R373, R344, R341, R338, entry]
+
+theorem Z700_tail : ∀ r, 1 ≤ r → r < Z700.length → 1 ≤ entry Z700 0 r := by
+  intro r hr1 hrl
+  simp only [Z700, R600, R375m, R373, R344, R341, R338, List.length_append,
+    List.length_cons, List.length_nil] at hrl
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+    first
+      | omega
+      | simp [Z700, R600, R375m, R373, R344, R341, R338, entry]
+
+theorem Aok_Z700 : Aok Z700 where
+  mem := R600700_mem
+  ne := Z700_ne
+  deep := ⟨Z700_head, Z700_tail⟩
+  zroot := by
+    rw [Z700_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  mono := by
+    rw [Z700_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem Z700_1122_mem :
+    Z700 ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc2 1 0 _ (Aok_Z700 : Lv 1 0 Z700)
+
+/-- ★★★★★★ `R600 (7,0,0)` の上、輪を `n` 周した 4 パラメータの無限族。 -/
+theorem LoopIt_Z700_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    LoopIt Z700 m ws j n ∈ W 0 := (Aok_LoopIt Aok_Z700 m hw j n).mem
+
+theorem LoopIt_Z700_nil_mem (m p j n : ℕ) :
+    LoopIt Z700 m (List.replicate p (AltT 0)) j n ∈ W 0 :=
+  LoopIt_Z700_mem m (WJ_rep_AltT 0 p) j n
+
+#print axioms Aok_Z700
+#print axioms LoopIt_Z700_nil_mem
+
 end Small
 end TRIO
