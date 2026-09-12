@@ -7296,6 +7296,193 @@ theorem R600_7887_mem :
 #print axioms AtLd_Ls
 #print axioms R600_7887_mem
 
+/-! ### ★★★★★★★★ 荷から行列への汎用の橋
+
+荷 `Y` の鎖と「_top」があれば、塔 `R375m ++ (shiftr01 6 0 Y)^n` が全部の `n` で出る。
+これまで `Yv`/`Ys`/`Ap Ys`/`Vk`/`Ls` で 5 回書いた部分をまとめたもの。 -/
+
+theorem GOK_oneXgen {α : Type} [LinearOrder α] [WellFoundedLT α] [AddCommMonoid α]
+    {Y : TrioSeq} (hBY : Bok Y) {q : ℕ → α}
+    (hq0 : q 0 = 0) (hqa : ∀ n : ℕ, q n + q 1 = q (n + 1))
+    (hR : RunLd Y q) (hT : TopLd Y (q 1)) (n : ℕ) :
+    GOK (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+      (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1))))) := by
+  have hRn : RnG (PayIt Jk1.nil Y n) (q n) := by
+    have h := hR n Jk1.nil trivial 0 (RunG_nil (0 : α))
+    rwa [zero_add] at h
+  have hin : ∀ ks : List (BwG α), WPdT (owG (q (n + 1)) 2 :: ks)
+      (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1))) := by
+    intro ks
+    refine hT (PayIt Jk1.nil Y n) (JkA_PayIt (Z := Jk1.nil) trivial hBY n) (q n) hRn
+      Jk1.nil trivial ⊥ (fun c _ ks' => WPdT_nilAll _) _ ?_ ks
+    rw [bot_BwG, zero_add, hqa]
+    exact owG_ltR (q (n + 1)) (by omega)
+  have hX : ∀ ks : List (BwG α), WPdT ((⊥ : BwG α) :: ks)
+      (Jk1.two Jk1.nil (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1)))) := fun ks =>
+    WPdT_twoOf (b := owG (q (n + 1)) 2)
+      (ne_bot_of_gt (owG_pos_succ (q (n + 1)) 1)) trivial
+      (fun r _ => WPdT_nilAll _) (hin ks)
+  exact (WPdT_bnil (Bud := BwG α) _).mp
+    (WPdT_step ([] : List (BwG α)) (JkT_nil : FrmNT ([] : List (BwG α)) Jk1.nil)
+      ((WPdT_bnil (Bud := BwG α) _).mpr GOK_nil) (hX []))
+
+theorem jk1_Xgen (Y : TrioSeq) (n l : ℕ) :
+    jk1 l (Jk1.two Jk1.nil (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1))))
+      = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+        :: (List.range (n + 1)).flatMap (fun _ => shiftr01 (l + 3) 0 Y) := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) Jk1.nil ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+        :: jk1 (l + 2) (PayIt Jk1.nil Y (n + 1))))) = _
+  rw [jk1_PayNilG Y (n + 1) (l + 2), show l + 2 + 1 = l + 3 from by omega]
+  simp [jk1]
+
+/-- ★★★★★★★★ 塔 `R375m ++ (shiftr01 6 0 Y)^n`（どの `n` でも）。 -/
+theorem R375m_tower_gen {α : Type} [LinearOrder α] [WellFoundedLT α]
+    [AddCommMonoid α] {Y : TrioSeq} (hBY : Bok Y) {q : ℕ → α}
+    (hq0 : q 0 = 0) (hqa : ∀ n : ℕ, q n + q 1 = q (n + 1))
+    (hR : RunLd Y q) (hT : TopLd Y (q 1)) : ∀ n : ℕ,
+    R375m ++ (List.range n).flatMap (fun _ => shiftr01 6 0 Y) ∈ W 0
+  | 0 => by simpa [R375m] using R375m_mem
+  | (n + 1) => by
+      have hG : GoodFb (fun a b => wordJ a b
+          [Jk1.one Jk1.nil (Jk1.two Jk1.nil
+            (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1))))]) := by
+        simpa using GOK_oneXgen hBY hq0 hqa hR hT n [] WOk_nil GoodFb_wordJ_nil
+      have hh := rowJ_mem_genF Aok_R338 hG
+      have e : jk1 2 (Jk1.one Jk1.nil (Jk1.two Jk1.nil
+            (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1)))))
+          = ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ)
+            :: ((5, 2, 0) : ℕ × ℕ × ℕ)
+            :: (List.range (n + 1)).flatMap (fun _ => shiftr01 6 0 Y) := by
+        show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ)
+          :: jk1 (2 + 1) (Jk1.two Jk1.nil
+              (Jk1.two Jk1.nil (PayIt Jk1.nil Y (n + 1))))) = _
+        rw [jk1_Xgen Y n 3]
+        simp [jk1]
+      rw [wordJ_singleton, colJ, e] at hh
+      simpa [R375m, R373, R344, R341, R338, List.append_assoc] using hh
+
+#print axioms R375m_tower_gen
+
+/-! ### ★★★★★★★★★★ 底 `Ls` の階の梯子 → `R600(7,0,0)(8,0,0)(8,0,0)(7,0,0)^k` -/
+
+noncomputable def PwsL : Pws Bwx where
+  pw j m := owG (ow 2 1 + ow 0 j) m
+  pw_zero j := by rw [owG_zero, bot_BwG]
+  pw_add := fun j m => owG_add_same (ow 2 1 + ow 0 j) m
+  pw_ltR := fun j {_ _} h => owG_ltR (ow 2 1 + ow 0 j) h
+  pw_ltL := fun {_ _} h m {_} hm =>
+    owG_ltL (Bw_add_lt_left (ow 2 1) (ow_ltR 0 h)) m hm
+  add_lt := fun b {_ _} h => BwG_add_lt_left b h
+
+theorem pwL_zero_eq : (PwsL.pw 0) = (fun m => owG (ow 2 1) m) := by
+  funext m
+  show owG (ow 2 1 + ow 0 0) m = _
+  rw [ow_zero, bot_Bw, add_zero]
+
+theorem Ls_ne : Ls ≠ [] := by simp [Ls]
+
+theorem Ls_root : entry Ls 0 0 = 0 := by simp [Ls, entry]
+
+theorem Ls_pos : ∀ i, 1 ≤ i → i < Ls.length → 1 ≤ entry Ls 0 i := by
+  intro i h1 h2
+  rw [Ls_len] at h2
+  rcases i with _ | _ | _ | _ | i <;> first | omega | simp [Ls, entry]
+
+theorem LadL : ∀ j : ℕ,
+    RunLd (Ap Ls j) (PwsL.pw j) ∧ AtLd (Ap Ls (j + 1)) (PwsL.pw (j + 1) 1) :=
+  LadAp PwsL Flat_Ls Ls_ne Ls_root Ls_pos
+    (by rw [pwL_zero_eq]; exact RunLd_Ls)
+    (by rw [show PwsL.pw 0 1 = owG (ow 2 1) 1 from congrFun pwL_zero_eq 1];
+        exact AtLd_Ls)
+
+theorem shift_ApLs (j l : ℕ) : shiftr01 (l + 1) 0 (Ap Ls j)
+    = [((l + 1, 0, 0) : ℕ × ℕ × ℕ), ((l + 2, 0, 0) : ℕ × ℕ × ℕ),
+        ((l + 3, 0, 0) : ℕ × ℕ × ℕ), ((l + 3, 0, 0) : ℕ × ℕ × ℕ)]
+      ++ List.replicate j ((l + 2, 0, 0) : ℕ × ℕ × ℕ) := by
+  show List.map _ (Ls ++ List.replicate j ((1, 0, 0) : ℕ × ℕ × ℕ)) = _
+  rw [List.map_append, List.map_replicate]
+  refine congrArg₂ (· ++ ·) (shift_Ls l) ?_
+  show List.replicate j ((1 + (l + 1) : ℕ), (0 + 0 : ℕ), (0 : ℕ)) = _
+  simp only [Nat.zero_add, show (1 : ℕ) + (l + 1) = l + 2 from by omega]
+
+/-- 塊 `Md j = (6,0,0)(7,0,0)(8,0,0)(8,0,0)(7,0,0)^j`。 -/
+def Md (j : ℕ) : TrioSeq := Mc ++ List.replicate j ((7, 0, 0) : ℕ × ℕ × ℕ)
+
+theorem shift6_ApLs (j : ℕ) : shiftr01 6 0 (Ap Ls j) = Md j := by
+  have h := shift_ApLs j 5
+  simpa [Md, Mc] using h
+
+theorem R375m_Md_rep_mem (j : ℕ) : ∀ n : ℕ,
+    R375m ++ (List.range n).flatMap (fun _ => Md (j + 1)) ∈ W 0 := by
+  intro n
+  have h := R375m_tower_gen (Bok_Ap Flat_Ls Ls_ne Ls_root (j + 1))
+    (PwsL.pw_zero (j + 1)) (PwsL.pw_add (j + 1)) (LadL (j + 1)).1
+    (TopLd_of_AtLd (LadL j).2) n
+  rwa [shift6_ApLs (j + 1)] at h
+
+theorem Md_len (j : ℕ) : (Md j).length = 4 + j := by simp [Md, Mc]; omega
+
+theorem Md_tail (j : ℕ) : ∀ r, 1 ≤ r → r < (Md j).length → 7 ≤ entry (Md j) 0 r := by
+  intro r h1 h2
+  rw [Md_len] at h2
+  rcases r with _ | _ | _ | _ | r
+  · omega
+  · show 7 ≤ entry (Md j) 0 1
+    simp [Md, Mc, entry]
+  · show 7 ≤ entry (Md j) 0 2
+    simp [Md, Mc, entry]
+  · show 7 ≤ entry (Md j) 0 3
+    simp [Md, Mc, entry]
+  · rw [Md, entry_appRep_ge _ _ (by simp [Mc])
+      (by simp only [Mc, List.length_cons, List.length_nil]; omega)]
+
+/-- ★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(8,0,0)(7,0,0)^(j+2)`。 -/
+theorem R600_788_7rep_mem (j : ℕ) :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)]
+      ++ List.replicate (j + 2) ((7, 0, 0) : ℕ × ℕ × ℕ) ∈ W 0 := by
+  have hmem := flat_mem'' (Y0 := R375m) (M := Md (j + 1)) (d := 7)
+    (by simp [Md, Mc]) (by show entry (Md (j + 1)) 0 0 < 7; simp [Md, Mc, entry])
+    (Md_tail (j + 1)) (R375m_Md_rep_mem j)
+  have e : Md (j + 1) ++ [((7, 0, 0) : ℕ × ℕ × ℕ)]
+      = Mc ++ List.replicate (j + 2) ((7, 0, 0) : ℕ × ℕ × ℕ) := by
+    rw [Md, List.append_assoc]
+    congr 1
+    conv_rhs => rw [show j + 2 = (j + 1) + 1 from rfl, List.replicate_succ']
+  rw [List.append_assoc, e] at hmem
+  simpa [Mc, R600, List.append_assoc] using hmem
+
+/-- ★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(8,0,0)(7,0,0)(8,0,0)`。 -/
+theorem R600_78878_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((7, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((7, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 8 := by simp [entry]
+  have htail : ∀ r, 1 ≤ r → r < ([((7, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      8 ≤ entry [((7, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r hr1 hr2
+    simp only [List.length_singleton] at hr2
+    omega
+  have htw : ∀ n : ℕ, (R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)])
+      ++ (List.range n).flatMap (fun _ => [((7, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+    intro n
+    rw [flatMap_singleton_range]
+    match n with
+    | 0 => simpa using R600_788_mem
+    | 1 => simpa [List.replicate, List.append_assoc] using R600_7887_mem
+    | (k + 2) => exact R600_788_7rep_mem k
+  have hmem := flat_mem''
+    (Y0 := R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)])
+    (M := [((7, 0, 0) : ℕ × ℕ × ℕ)]) (d := 8) hne hhead htail htw
+  simpa [List.append_assoc] using hmem
+
+#print axioms R600_788_7rep_mem
+#print axioms R600_78878_mem
+
 
 end Small
 end TRIO
