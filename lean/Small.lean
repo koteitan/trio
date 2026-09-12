@@ -5,6 +5,7 @@ Small.lean: `SmallA.lean` の続き。
 このファイルには新しく足す定理だけを書く。大きくなったらまた分ける。
 -/
 import SmallA
+import Mathlib.Data.Finsupp.WellFounded
 
 namespace TRIO
 namespace Small
@@ -2577,6 +2578,178 @@ theorem WPdS_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List Ent) (hs : SqOk ks)
 #print axioms WPdS_twoNilGen
 
 end EntS
+
+/-! ### 予算型 `Bw = Colex (ℕ →₀ ℕ)`（順序型 ω^ω）
+
+`ow k m` が `ω^k · m`。荷が `k` 段入れ子になると走りの入れ子も `k` 段になり、
+予算が `ω^k` 要る。全部の `k` を一様に扱うには `ω^ω` が要る。 -/
+
+abbrev Bw : Type := Colex (ℕ →₀ ℕ)
+
+noncomputable def ow (k m : ℕ) : Bw := toColex (Finsupp.single k m)
+
+theorem bot_Bw : (⊥ : Bw) = 0 := rfl
+
+theorem ow_zero (k : ℕ) : ow k 0 = (⊥ : Bw) := by
+  show toColex (Finsupp.single k 0) = toColex (0 : ℕ →₀ ℕ)
+  rw [Finsupp.single_zero]
+
+theorem ow_ltR (k : ℕ) {m m' : ℕ} (h : m < m') : ow k m < ow k m' := by
+  rw [ow, ow, Finsupp.Colex.lt_iff]
+  refine ⟨k, ?_, ?_⟩
+  · intro j hj
+    show (Finsupp.single k m : ℕ →₀ ℕ) j = (Finsupp.single k m' : ℕ →₀ ℕ) j
+    rw [Finsupp.single_apply, Finsupp.single_apply, if_neg (by omega : ¬ k = j),
+      if_neg (by omega : ¬ k = j)]
+  · show (Finsupp.single k m : ℕ →₀ ℕ) k < (Finsupp.single k m' : ℕ →₀ ℕ) k
+    rw [Finsupp.single_eq_same, Finsupp.single_eq_same]
+    exact h
+
+theorem ow_ltL {k k' : ℕ} (h : k < k') (m : ℕ) {m' : ℕ} (hm : 0 < m') :
+    ow k m < ow k' m' := by
+  rw [ow, ow, Finsupp.Colex.lt_iff]
+  refine ⟨k', ?_, ?_⟩
+  · intro j hj
+    show (Finsupp.single k m : ℕ →₀ ℕ) j = (Finsupp.single k' m' : ℕ →₀ ℕ) j
+    rw [Finsupp.single_apply, Finsupp.single_apply, if_neg (by omega : ¬ k = j),
+      if_neg (by omega : ¬ k' = j)]
+  · show (Finsupp.single k m : ℕ →₀ ℕ) k' < (Finsupp.single k' m' : ℕ →₀ ℕ) k'
+    rw [Finsupp.single_apply, Finsupp.single_eq_same, if_neg (by omega : ¬ k = k')]
+    exact hm
+
+theorem ow_add_lt {j k : ℕ} (h : j < k) (m m' : ℕ) :
+    ow k m + ow j m' < ow k (m + 1) := by
+  rw [Finsupp.Colex.lt_iff]
+  refine ⟨k, ?_, ?_⟩
+  · intro i hi
+    show (Finsupp.single k m + Finsupp.single j m' : ℕ →₀ ℕ) i
+        = (Finsupp.single k (m + 1) : ℕ →₀ ℕ) i
+    rw [Finsupp.add_apply, Finsupp.single_apply, Finsupp.single_apply, Finsupp.single_apply,
+      if_neg (by omega : ¬ k = i), if_neg (by omega : ¬ j = i), if_neg (by omega : ¬ k = i)]
+    rfl
+  · show (Finsupp.single k m + Finsupp.single j m' : ℕ →₀ ℕ) k
+        < (Finsupp.single k (m + 1) : ℕ →₀ ℕ) k
+    rw [Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.single_apply,
+      Finsupp.single_eq_same, if_neg (by omega : ¬ j = k)]
+    omega
+
+theorem Bw_add_lt_left (b : Bw) {x y : Bw} (h : x < y) : b + x < b + y := by
+  rw [add_comm b x, add_comm b y]
+  exact add_lt_add_left h b
+
+#print axioms ow_add_lt
+
+/-! ### 荷を `k` 段入れ子にした木 `Zk k` -/
+
+def Zk : ℕ → Jk1
+  | 0 => Jk1.nil
+  | (k + 1) => Jk1.pay (Zk k) [((0, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem JkA_Zk : ∀ k : ℕ, JkA (Zk k)
+  | 0 => trivial
+  | (k + 1) => ⟨JkA_Zk k, Bok_zero⟩
+
+theorem jk1_Zk : ∀ (k l : ℕ), jk1 l (Zk k) = List.replicate k ((l + 1, 0, 0) : ℕ × ℕ × ℕ)
+  | 0, _ => rfl
+  | (k + 1), l => by
+      show jk1 l (Zk k) ++ shiftr01 (l + 1) 0 [((0, 0, 0) : ℕ × ℕ × ℕ)] = _
+      rw [jk1_Zk k l, List.replicate_succ']
+      simp [shiftr01]
+
+theorem WPdT_Zk {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
+    ∀ (k : ℕ) (c : Bud) (ks : List Bud), WPdT (c :: ks) (Zk k)
+  | 0, c, ks => WPdT_nilAll _
+  | (k + 1), c, ks =>
+      WPdT_payA (c :: ks) (Zk k) (JkA_Zk k) (WPdT_Zk k c ks) _ Bok_zero
+
+/-- ★★★ `Zk k` を上に乗せた平らな走り `twoIt A (Zk k) m` は、
+底 `A` の閾値 `β` の上 `β + ω^k·m` を超える予算に置ける。 -/
+theorem WPdw_run : ∀ (k : ℕ) (β : Bw) (A : Jk1), JkA A →
+    (∀ c : Bw, β < c → ∀ ks : List Bw, WPdT (c :: ks) A) →
+    ∀ (m : ℕ) (c : Bw), β + ow k m < c → ∀ ks : List Bw,
+      WPdT (c :: ks) (twoIt A (Zk k) m)
+  | 0, β, A, _, hA, 0, c, hc, ks => hA c (by rwa [ow_zero, bot_Bw, add_zero] at hc) ks
+  | (k + 1), β, A, _, hA, 0, c, hc, ks => hA c (by rwa [ow_zero, bot_Bw, add_zero] at hc) ks
+  | 0, β, A, hJA, hA, (m + 1), c, hc, ks => by
+      have hstep : β + ow 0 m < β + ow 0 (m + 1) := Bw_add_lt_left β (ow_ltR 0 (by omega))
+      refine WPdT_twoA_runB (a := β + ow 0 (m + 1))
+        (ne_bot_of_gt (lt_of_le_of_lt bot_le hstep)) hc
+        (JkA_twoItP hJA (JkA_Zk 0) m) ?_ ks
+      intro ks'
+      exact WPdw_run 0 β A hJA hA m (β + ow 0 (m + 1)) hstep ks'
+  | (k + 1), β, A, hJA, hA, (m + 1), c, hc, ks => by
+      have hstep : β + ow (k + 1) m < β + ow (k + 1) (m + 1) :=
+        Bw_add_lt_left β (ow_ltR (k + 1) (by omega))
+      have hJA' : JkA (twoIt A (Zk (k + 1)) m) := JkA_twoItP hJA (JkA_Zk (k + 1)) m
+      have hA' : ∀ c' : Bw, β + ow (k + 1) m < c' → ∀ ks' : List Bw,
+          WPdT (c' :: ks') (twoIt A (Zk (k + 1)) m) :=
+        fun c' hc' ks' => WPdw_run (k + 1) β A hJA hA m c' hc' ks'
+      refine WPdT_twoAZ_top
+        (S := ⟨fun i => (β + ow (k + 1) m) + ow k i,
+          fun _ _ hij => Bw_add_lt_left _ (ow_ltR k hij)⟩)
+        (t := c) ?_ hJA' (JkA_Zk k) ?_ ks
+      · intro i
+        show (β + ow (k + 1) m) + ow k i < c
+        rw [add_assoc]
+        exact lt_trans (Bw_add_lt_left β (ow_add_lt (by omega : k < k + 1) m i)) hc
+      · intro m' c' hc' ks'
+        exact WPdw_run k (β + ow (k + 1) m) (twoIt A (Zk (k + 1)) m) hJA' hA' m' c' hc' ks'
+termination_by k _ _ _ _ m _ _ _ => (k, m)
+
+#print axioms WPdw_run
+
+/-! ### ★★★★★★★ `R600 ++ (6,0,0)^k`（全部の `k`） -/
+
+def Xw (k : ℕ) : Jk1 := Jk1.two Jk1.nil (Jk1.two Jk1.nil (Zk (k + 1)))
+
+theorem ow_pos_ne_bot (k m : ℕ) (hm : 0 < m) : ow (k + 1) m ≠ (⊥ : Bw) :=
+  ne_bot_of_gt (show (⊥ : Bw) < ow (k + 1) m by
+    rw [← ow_zero 0]
+    exact ow_ltL (by omega) 0 hm)
+
+theorem WPdw_twoZk (k : ℕ) (ks : List Bw) :
+    WPdT (ow (k + 1) 1 :: ks) (Jk1.two Jk1.nil (Zk (k + 1))) := by
+  refine WPdT_twoAZ_top (S := ⟨fun i => ow k i, fun _ _ hij => ow_ltR k hij⟩)
+    (t := ow (k + 1) 1) (A := Jk1.nil) (Z := Zk k) ?_ trivial (JkA_Zk k) ?_ ks
+  · intro i
+    exact ow_ltL (by omega) i (by omega)
+  · intro m c hc ks'
+    exact WPdw_run k ⊥ Jk1.nil trivial (fun c' _ ks'' => WPdT_nilAll _) m c
+      (by rwa [bot_Bw, zero_add]) ks'
+
+theorem WPdw_Xw (k : ℕ) (ks : List Bw) : WPdT ((⊥ : Bw) :: ks) (Xw k) :=
+  WPdT_twoOf (b := ow (k + 1) 1) (ow_pos_ne_bot k 1 (by omega)) trivial
+    (fun q _ => WPdT_nilAll _) (WPdw_twoZk k ks)
+
+theorem GOK_oneXw (k : ℕ) : GOK (Jk1.one Jk1.nil (Xw k)) :=
+  (WPdT_bnil (Bud := Bw) _).mp
+    (WPdT_step ([] : List Bw) (JkT_nil : FrmNT ([] : List Bw) Jk1.nil)
+      ((WPdT_bnil (Bud := Bw) _).mpr GOK_nil) (WPdw_Xw k []))
+
+theorem jk1_Xw (k l : ℕ) : jk1 l (Xw k)
+    = ((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: ((l + 2, 2, 0) : ℕ × ℕ × ℕ)
+      :: List.replicate (k + 1) ((l + 3, 0, 0) : ℕ × ℕ × ℕ) := by
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) Jk1.nil ++ (((l + 2, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) (Zk (k + 1))))) = _
+  rw [jk1_Zk (k + 1) (l + 2), show l + 2 + 1 = l + 3 from by omega]
+  simp [jk1]
+
+theorem R600_600rep_mem (k : ℕ) :
+    R600 ++ List.replicate k ((6, 0, 0) : ℕ × ℕ × ℕ) ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b [Jk1.one Jk1.nil (Xw k)]) := by
+    simpa using GOK_oneXw k [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  have e : jk1 2 (Jk1.one Jk1.nil (Xw k))
+      = ((3, 1, 0) : ℕ × ℕ × ℕ) :: ((4, 2, 0) : ℕ × ℕ × ℕ) :: ((5, 2, 0) : ℕ × ℕ × ℕ)
+        :: List.replicate (k + 1) ((6, 0, 0) : ℕ × ℕ × ℕ) := by
+    show jk1 2 Jk1.nil ++ (((2 + 1, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (2 + 1) (Xw k)) = _
+    rw [jk1_Xw k 3]
+    simp [jk1]
+  rw [wordJ_singleton, colJ, e] at hh
+  simpa [R600, R375m, R373, R344, R341, R338, List.replicate_succ,
+    List.append_assoc] using hh
+
+#print axioms R600_600rep_mem
 
 end Small
 end TRIO
