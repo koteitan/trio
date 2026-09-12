@@ -26,6 +26,19 @@
     APd_twoStkGen (hJN) (p ks) (hst : ∀ k, APd (true::ks) (two N (stkP p (nstQ N p k))))
       : APd (true::ks) (two N (stkP p (two nil nil)))
 
+## 既知の最短形との接続
+
+`SmallA` の最短形 `StkStep : ∀ q, TwoOk (stk q) → TwoOk (stk (q+1))` の中身は
+`APd_twoStkGen` で**階段の `k` の段**だけになる:
+
+    StkStair : ∀ N（普遍）, ∀ q, (∀ ks, APd (true::ks) (two N (stk q))) →
+                 ∀ k ks, APd (true::ks) (two N (stkP q (nstQ N q k)))
+    StkStep_of_StkStair / R376_of_StkStair                     ★緑
+
+`k = 0` はちょうど仮定。残るのは「走りの上に `one nil` を 1 個載せてまた走りを積む」1 段。
+
+**注意: `R376_of_*` は既に約40個ある。新しい帰着を増やす価値は薄い。**
+
 ## 詰まる理由
 
 `APd (false::ks)` の節が作るのは `one U (two N V)`、つまり **2 の記録の直下は必ず
