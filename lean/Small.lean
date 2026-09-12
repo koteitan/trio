@@ -78437,5 +78437,102 @@ theorem R600400_of_WRunPay (h : WRunPay) :
 #print axioms tw_R341_T6blk
 #print axioms R600400_of_WRunPay
 
+/-! ### ★ `WPd (0::ks) Tb60` は無条件（`WRunPay` は要らなかった）
+
+`Tb60 = two nil (two nil (pay nil [(0,0,0)]))` の荷 `(0,0,0)` を
+`GoodFb_snoc_dupJt0` で展開すると、鎖は `twoIt nil (pay nil []) n`。
+荷が空なので語は `twoIt nil nil n`（平らな走り）と同じで、
+`WPd_twoIt_nil n n` + `WPd_twoOf (k := n)` で緑。兄弟が `nil` なので
+`WPd_nilAll` がどの予算でも効き、幅 `n` に上限が要らない。 -/
+
+theorem jk1_twoIt_payNil : ∀ (n l : ℕ),
+    jk1 l (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) n)
+      = jk1 l (twoIt Jk1.nil Jk1.nil n)
+  | 0, _ => rfl
+  | (n + 1), l => by
+      show jk1 l (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) n) ++
+          (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (Jk1.pay Jk1.nil ([] : TrioSeq)))
+        = jk1 l (twoIt Jk1.nil Jk1.nil n) ++
+          (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) Jk1.nil)
+      rw [jk1_twoIt_payNil n l, jk1_pay_nil]
+
+theorem WPd_twoNil_twoItPayNil (n : ℕ) (ks : List ℕ) :
+    WPd (0 :: ks) (Jk1.two Jk1.nil (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) n)) := by
+  refine WPd_congr (0 :: ks) (fun l => ?_)
+    (WPd_twoOf (k := n) (N := Jk1.nil) trivial (fun q _ => WPd_nilAll _)
+      (WPd_twoIt_nil n n (le_refl n) ks))
+  show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (l + 1) (twoIt Jk1.nil Jk1.nil n))
+    = jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      jk1 (l + 1) (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) n))
+  rw [jk1_twoIt_payNil n (l + 1)]
+
+/-- ★★★★★★ 無条件。 -/
+theorem WPd_Tb60u (ks : List ℕ) : WPd (0 :: ks) Tb60 := by
+  rw [WPd_iff]
+  intro ctx hc
+  have eT : Jk1.two Jk1.nil (Jk1.two Jk1.nil (Jk1.pay Jk1.nil
+      (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))) = Tb60 := by simp [Tb60]
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo Jk1.nil])
+      (Jk1.two Jk1.nil (Jk1.pay Jk1.nil (([] : TrioSeq) ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])))) := by
+    rw [plug_snoc2, eT]
+    exact WCtx_JkT (0 :: ks) ctx hc Tb60 (JkA_Tb60 : FrmN (0 :: ks) Tb60)
+  intro ws hw hG
+  have hIH : ∀ n : ℕ, 1 ≤ n → GoodFb (fun a b => wordJ a b
+      (ws ++ [plug (ctx ++ [Frm.ftwo Jk1.nil])
+        (twoIt Jk1.nil (Jk1.pay Jk1.nil ([] : TrioSeq)) n)])) := by
+    intro n _
+    rw [plug_snoc2]
+    exact (WPd_iff (0 :: ks) _).mp (WPd_twoNil_twoItPayNil n ks) ctx hc ws hw hG
+  have h := GoodFb_snoc_dupJt0 hw hJT hIH
+  rw [plug_snoc2, eT] at h
+  exact h
+
+#print axioms WPd_Tb60u
+
+/-! ### ★★★★★★ 無条件で緑になった行列 -/
+
+theorem tw_R341_T6blk_u (n : ℕ) : R341 ++ copies T6blk n ∈ W 0 := by
+  have hGok : GOK (ItV Tb60 Jk1.nil n) :=
+    (WPd_bnil _).mp (WPd_ItV [] JkA_Tb60 (WPd_Tb60u []) (JkT_nil : FrmN [] Jk1.nil)
+      ((WPd_bnil _).mpr GOK_nil) n)
+  have hG : GoodFb (fun a b => wordJ a b [ItV Tb60 Jk1.nil n]) := by
+    simpa using hGok [] WOk_nil GoodFb_wordJ_nil
+  have hh := rowJ_mem_genF Aok_R338 hG
+  rw [wordJ_singleton, colJ, jk1_ItV_Tb60 n] at hh
+  simpa [R341, R338, List.append_assoc] using hh
+
+theorem R341_T6blk_eq_R600 : R341 ++ T6blk = R600 := by
+  simp [R600, R375m, R373, R344, R341, T6blk, List.append_assoc]
+
+/-- ★★★★★★ `R600 (3,1,0)(4,2,0)(5,2,0)(6,0,0)`（塔の 2 段目）。 -/
+theorem R600_T6blk2_mem : R600 ++ T6blk ∈ W 0 := by
+  have h := tw_R341_T6blk_u 2
+  have ec : copies T6blk 2 = T6blk ++ T6blk := by
+    rw [copies_succ, copies_succ]
+    simp [copies]
+  rw [ec, ← List.append_assoc, R341_T6blk_eq_R600] at h
+  exact h
+
+/-- ★★★★★★ シート証明中の行が無条件で緑。 -/
+theorem R600400_mem : R600 ++ [((4, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : T6blk ≠ [] := by simp [T6blk]
+  have hhead : entry T6blk 0 0 < 4 := by simp [T6blk, entry]
+  have htail : ∀ r, 1 ≤ r → r < T6blk.length → 4 ≤ entry T6blk 0 r := by
+    intro r hr1 hr2
+    simp only [T6blk, List.length_cons, List.length_nil] at hr2
+    rcases r with _ | _ | _ | _ | r <;>
+      first
+        | omega
+        | simp [T6blk, entry]
+  have hmem := flat_mem'' (Y0 := R341) (M := T6blk) (d := 4) hne hhead htail
+    (by intro n; simpa [copies] using tw_R341_T6blk_u n)
+  rw [← R341_T6blk_eq_R600]
+  simpa [List.append_assoc] using hmem
+
+#print axioms tw_R341_T6blk_u
+#print axioms R600_T6blk2_mem
+#print axioms R600400_mem
+
 end Small
 end TRIO
