@@ -10770,6 +10770,217 @@ theorem GOK_twoPayZ_DM {ctx : List Frm} (NN : TrioSeq → Jk1 → Prop) {Z : Jk1
 
 #print axioms GOK_twoPayZ_DM
 
+/-! ### ★★★★★★★★★★★★ 予算型 `Bml = Multiset Ld`（荷の多重集合、DM 順序）
+
+`WPdT` は `PartialOrder` で足りるので、線形でない DM 順序を予算に使える。
+荷の階数がそのまま予算になるので、`Bw = ω^ω` のような固定の順序数では
+足りなかった「荷の階数」が入る。整礎性は `Acc_Rex'`（`A2'` から）なので循環しない。 -/
+
+def Bml : Type := Multiset Ld
+
+def mkB (S : Multiset Ld) : Bml := S
+
+def unB (b : Bml) : Multiset Ld := b
+
+@[simp] theorem unB_mkB (S : Multiset Ld) : unB (mkB S) = S := rfl
+
+theorem DMlt_irrefl {S : Multiset Ld} : ¬ DMlt S S :=
+  fun h => Acc_not_self (wf_LdDM.apply S) h
+
+instance : LE Bml := ⟨fun a b => unB a = unB b ∨ DMlt (unB a) (unB b)⟩
+
+instance : PartialOrder Bml where
+  le_refl a := Or.inl rfl
+  le_trans a b c hab hbc := by
+    rcases hab with h1 | h1
+    · rcases hbc with h2 | h2
+      · exact Or.inl (h1.trans h2)
+      · exact Or.inr (by rw [show unB a = unB b from h1]; exact h2)
+    · rcases hbc with h2 | h2
+      · exact Or.inr (by rw [show unB c = unB b from h2.symm]; exact h1)
+      · exact Or.inr (h1.trans h2)
+  le_antisymm a b hab hba := by
+    rcases hab with h1 | h1
+    · exact h1
+    · rcases hba with h2 | h2
+      · exact h2.symm
+      · exact absurd (h1.trans h2) DMlt_irrefl
+
+instance : OrderBot Bml where
+  bot := mkB 0
+  bot_le a := by
+    by_cases h : unB a = 0
+    · exact Or.inl (by simpa using h.symm)
+    · exact Or.inr ⟨0, 0, unB a, h, by simp, by simp, by simp⟩
+
+theorem Bml_lt_iff {a b : Bml} : a < b ↔ DMlt (unB a) (unB b) := by
+  constructor
+  · intro h
+    obtain ⟨hle, hnle⟩ := h
+    rcases hle with h1 | h1
+    · exact absurd (Or.inl h1.symm) hnle
+    · exact h1
+  · intro h
+    refine ⟨Or.inr h, ?_⟩
+    intro hba
+    rcases hba with h2 | h2
+    · exact DMlt_irrefl (by rw [show unB b = unB a from h2] at h; exact h)
+    · exact DMlt_irrefl (h.trans h2)
+
+instance : WellFoundedLT Bml :=
+  ⟨Subrelation.wf (fun {_ _} h => Bml_lt_iff.mp h) (InvImage.wf unB wf_LdDM)⟩
+
+theorem Bml_bot_eq : (⊥ : Bml) = mkB 0 := rfl
+
+theorem Bml_ne_bot {S : Multiset Ld} (h : S ≠ 0) : mkB S ≠ (⊥ : Bml) := by
+  intro hc
+  exact h (by simpa [Bml_bot_eq] using congrArg unB hc)
+
+#print axioms Bml_lt_iff
+
+theorem DMlt_ne_zero {M S : Multiset Ld} (h : DMlt M S) : S ≠ 0 := by
+  obtain ⟨X, Y, Z, hZ, -, he, -⟩ := h
+  intro hc
+  rw [hc] at he
+  exact hZ (by simpa using (add_eq_zero.mp he.symm).2)
+
+/-- 鎖の族（荷で添字づけ、荷の多重集合が `Sm` 以下に制限）。 -/
+def ChNN (Sm : Multiset Ld) (Y : TrioSeq) (M : Jk1) : Prop :=
+  ∃ L' : List TrioSeq, M = ChL L' ∧ (∀ Z ∈ L', Bok Z) ∧ Bok Y ∧
+    (LdMS L' + {mkLd Y} = Sm ∨ DMlt (LdMS L' + {mkLd Y}) Sm)
+
+theorem ChNN_lt {Sm : Multiset Ld} {Y : TrioSeq} {M : Jk1} (h : ChNN Sm Y M) :
+    ∃ L' : List TrioSeq, M = ChL L' ∧ (∀ Z ∈ L', Bok Z) ∧ DMlt (LdMS L') Sm := by
+  obtain ⟨L', rfl, hL', hBY, hmeas⟩ := h
+  refine ⟨L', rfl, hL', ?_⟩
+  have h1 : DMlt (LdMS L') (LdMS L' + {mkLd Y}) := DMlt_of_add (by simp)
+  rcases hmeas with he | hlt
+  · rw [← he]; exact h1
+  · exact h1.trans hlt
+
+theorem LdMS_rep_succ (Y : TrioSeq) (k : ℕ) (L : List TrioSeq) :
+    LdMS (List.replicate k Y ++ L) + {mkLd Y}
+      = LdMS (List.replicate (k + 1) Y ++ L) := by
+  rw [LdMS_rep_append, LdMS_rep_append, Multiset.replicate_succ,
+    ← Multiset.singleton_add]
+  rw [add_assoc]
+  exact congrArg _ (add_comm _ _)
+
+/-- ★★★★★★★★★★★★ 荷つきの水平鎖は、荷の多重集合より上のどの予算にも置ける。 -/
+theorem PcB : ∀ (Sm : Multiset Ld) (L : List TrioSeq), LdMS L = Sm →
+    (∀ Y ∈ L, Bok Y) → ∀ b : Bml, DMlt (LdMS L) (unB b) →
+    ∀ ks : List Bml, WPdT (b :: ks) (ChL L) := by
+  intro Sm
+  induction Sm using wf_LdDM.induction with
+  | _ Sm ih =>
+    intro L hLS hLb b hb ks
+    match L with
+    | [] => exact WPdT_nilAll _
+    | (Y :: L₀) =>
+      subst hLS
+      have hBY : Bok Y := hLb Y (by simp)
+      have hL0 : ∀ Z ∈ L₀, Bok Z := fun Z hZ => hLb Z (by simp [hZ])
+      have hSne : LdMS (Y :: L₀) ≠ 0 := DMlt_ne_zero (by
+        rw [LdMS_cons]; exact DMlt_of_add (by simp))
+      have hbne : b ≠ (⊥ : Bml) := by
+        intro hc
+        exact DMlt_ne_zero hb (by simpa [Bml_bot_eq] using congrArg unB hc)
+      show WPdT (b :: ks) (Jk1.two (ChL L₀) (Jk1.pay Jk1.nil Y))
+      rw [WPdT_cb hbne ks]
+      intro r hr U N hU hUk hJN hNt
+      refine WPdT_two_of_ctx hU hUk ?_
+      intro ctx hc
+      obtain ⟨ctx0, V, hce, hc0, hV, hVk⟩ := (WCtxU_c0 (r ++ ks) ctx).mp hc
+      have hctx2 : WCtxU (b :: (r ++ ks)) (ctx ++ [Frm.ftwo N]) := by
+        rw [WCtxU_cb hbne]
+        refine ⟨[], by simp, ctx0, V, N, ?_, by simpa using hc0, by simpa using hV,
+          by simpa using hVk, hJN, ?_⟩
+        · rw [hce]; simp
+        · intro q hq
+          simpa using hNt q hq
+      have hJTg : ∀ M T : Jk1, JkA M → JkA T →
+          JkT (plug (ctx ++ [Frm.ftwo N]) (Jk1.two M T)) := by
+        intro M T hM hT
+        rw [plug_snoc2]
+        exact WCtxU_JkT ((⊥ : Bml) :: (r ++ ks)) ctx hc (Jk1.two N (Jk1.two M T))
+          (⟨hJN, hM, hT⟩ : FrmNT ((⊥ : Bml) :: (r ++ ks)) (Jk1.two N (Jk1.two M T)))
+      have htow : ∀ (Y'' : TrioSeq) (M : Jk1), ChNN (LdMS (Y :: L₀)) Y'' M →
+          GOK (plug (ctx ++ [Frm.ftwo N]) (Jk1.two M Jk1.nil)) := by
+        intro Y'' M hM
+        obtain ⟨L', rfl, hL', hlt⟩ := ChNN_lt hM
+        have hAall : ∀ ks' : List Bml,
+            WPdT (mkB (LdMS (Y :: L₀)) :: ks') (ChL L') :=
+          fun ks' => ih (LdMS L') hlt L' rfl hL' (mkB (LdMS (Y :: L₀)))
+            (by simpa using hlt) ks'
+        have hrun := WPdT_twoA_runB (c := b) (a := mkB (LdMS (Y :: L₀)))
+          (Bml_ne_bot hSne) (Bml_lt_iff.mpr (by simpa using hb))
+          (JkA_ChL L' hL') hAall (r ++ ks)
+        exact (WPdT_iff (b :: (r ++ ks)) _).mp hrun _ hctx2
+      have hcl : ∀ (Y'' : TrioSeq) (M : Jk1), ChNN (LdMS (Y :: L₀)) Y'' M →
+          ∀ Y₃ : TrioSeq, Bok Y₃ → Rex' Y₃ Y'' →
+          ∀ k : ℕ, ChNN (LdMS (Y :: L₀)) Y₃ (twoIt M (Jk1.pay Jk1.nil Y₃) k) := by
+        intro Y'' M hM Y₃ hBY₃ hrex k
+        obtain ⟨L', rfl, hL', hBY'', hmeas⟩ := hM
+        refine ⟨List.replicate k Y₃ ++ L', twoIt_ChL Y₃ k L', ?_, hBY₃, Or.inr ?_⟩
+        · intro Z hZ
+          rcases List.mem_append.mp hZ with h1 | h1
+          · rw [List.eq_of_mem_replicate h1]; exact hBY₃
+          · exact hL' Z h1
+        · have hstep : DMlt (LdMS (List.replicate (k + 1) Y₃ ++ L'))
+              (LdMS L' + {mkLd Y''}) := by
+            have h0 := LdDM_step hBY'' hrex (k + 1) L'
+            rwa [LdMS_cons] at h0
+          rw [LdMS_rep_succ]
+          rcases hmeas with hq | hq
+          · rw [← hq]; exact hstep
+          · exact hstep.trans hq
+      have hmain := GOK_twoPayZ_DM (ctx := ctx ++ [Frm.ftwo N])
+        (ChNN (LdMS (Y :: L₀))) (Z := Jk1.nil) trivial
+        (fun Y'' M hM => by obtain ⟨L', rfl, hL', -⟩ := ChNN_lt hM; exact JkA_ChL L' hL')
+        hcl hJTg htow Y hBY (ChL L₀)
+        ⟨L₀, rfl, hL0, hBY, Or.inl (LdMS_cons Y L₀).symm⟩
+      rw [plug_snoc2] at hmain
+      exact hmain
+
+#print axioms PcB
+/-- ★★★★★★★★★★★★★★★★★★★ 壁 `ZApp2c` が無条件で出た。 -/
+theorem ZApp2c_true : ZApp2c := by
+  intro N hN
+  obtain ⟨L, hLb, rfl⟩ := VCh_exists_ChL hN
+  have hb0ne : mkB (LdMS L + {mkLd ([] : TrioSeq)}) ≠ (⊥ : Bml) :=
+    Bml_ne_bot (by simp)
+  have hbc : mkB (LdMS L + {mkLd ([] : TrioSeq)})
+      < mkB (LdMS L + {mkLd ([] : TrioSeq)} + {mkLd ([] : TrioSeq)}) :=
+    Bml_lt_iff.mpr (by simpa using DMlt_of_add (by simp))
+  have hAall : ∀ ks : List Bml,
+      WPdT (mkB (LdMS L + {mkLd ([] : TrioSeq)}) :: ks) (ChL L) :=
+    fun ks => PcB (LdMS L) L rfl hLb (mkB (LdMS L + {mkLd ([] : TrioSeq)}))
+      (by simpa using DMlt_of_add (by simp)) ks
+  have hrun : WPdT (mkB (LdMS L + {mkLd ([] : TrioSeq)} + {mkLd ([] : TrioSeq)})
+      :: ([] : List Bml)) (Jk1.two (ChL L) Jk1.nil) :=
+    WPdT_twoA_runB hb0ne hbc (JkA_ChL L hLb) hAall []
+  have hc0ne : mkB (LdMS L + {mkLd ([] : TrioSeq)} + {mkLd ([] : TrioSeq)})
+      ≠ (⊥ : Bml) := Bml_ne_bot (by simp)
+  have h2 : WPdT ((⊥ : Bml) :: ([] : List Bml))
+      (Jk1.two Jk1.nil (Jk1.two (ChL L) Jk1.nil)) :=
+    WPdT_twoOf hc0ne trivial (fun q _ => WPdT_nilAll _) hrun
+  have h3 : WPdT ([] : List Bml)
+      (Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.two (ChL L) Jk1.nil))) :=
+    WPdT_step ([] : List Bml) (JkT_nil : FrmNT ([] : List Bml) Jk1.nil)
+      ((WPdT_bnil _).mpr GOK_nil) h2
+  exact (WPdT_bnil _).mp h3
+
+/-- ★★★★★★★★★★★★★★★★★★★ 壁 `Pay2`（走り 2 連の直上の荷）が無条件で出た。 -/
+theorem Pay2_true : Pay2 := Pay2_of_ZApp2c ZApp2c_true
+
+/-- ★★★★★★★★★★★★★★★★★★★ 行 `R375m (6,1,0)`。 -/
+theorem R375m61_mem : R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R375m61_of_Pay2 Pay2_true
+
+#print axioms ZApp2c_true
+#print axioms Pay2_true
+#print axioms R375m61_mem
+
 
 end Small
 end TRIO
