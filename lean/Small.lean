@@ -13763,6 +13763,42 @@ theorem R338_bumpU61_Chain_mem (k : ℕ) : R338 ++ bumpU U375a61 (Chain k) ∈ W
 
 #print axioms R338_bumpU61_Chain_mem
 
+theorem bumpU_Chain (U : TrioSeq) : ∀ n : ℕ,
+    bumpU U (Chain n) = U ++ (List.range n).map (fun i => ((i + 2, 0, 0) : ℕ × ℕ × ℕ))
+  | 0 => by simp [Chain, bumpU]
+  | (n + 1) => by
+      have ih := bumpU_Chain U n
+      have e : Chain (n + 1) = Chain n ++ [((n + 1, 0, 0) : ℕ × ℕ × ℕ)] := by
+        simp [Chain, List.range_succ]
+      rw [e, bumpU_append, ih]
+      simp [bumpU, List.range_succ]
+
+theorem Mtwd_20 (Y0 : TrioSeq) : ∀ n : ℕ,
+    Mtwd 1 Y0 [((2, 0, 0) : ℕ × ℕ × ℕ)] n
+      = Y0 ++ (List.range n).map (fun i => ((i + 2, 0, 0) : ℕ × ℕ × ℕ))
+  | 0 => by simp [Mtwd]
+  | (n + 1) => by
+      have ih := Mtwd_20 Y0 n
+      simp only [Mtwd] at ih ⊢
+      rw [List.range_succ, List.flatMap_append, ← List.append_assoc, ih]
+      simp [shiftr01, List.range_succ]
+      omega
+
+/-- ★★★ 行 `R375m (6,1,0)(2,0,0)(3,1,0)`（対角 `(2,0,0)(3,0,0)…` の極限）。 -/
+theorem R375m61_2031_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 1, 0) : ℕ × ℕ × ℕ)]
+      ∈ W 0 := by
+  have h := snocYd_mem0 (Y0 := R338 ++ U375a61) (M := [((2, 0, 0) : ℕ × ℕ × ℕ)])
+    (L := 2) (y := 1) (dl := 1) (by simp [R338]) (by simp) (by simp [entry])
+    (by intro j hj1 hj2; simp at hj2; omega) (by simp [entry])
+    (by intro t ht1 ht2; simp at ht2; omega) le_rfl le_rfl
+    (fun n => by
+      rw [Mtwd_20, List.append_assoc, ← bumpU_Chain]
+      exact R338_bumpU61_Chain_mem n)
+  simpa [U375a61, U375a, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms R375m61_2031_mem
+
 
 end Small
 end TRIO
