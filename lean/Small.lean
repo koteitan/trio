@@ -9809,6 +9809,150 @@ theorem Z789_H_70 : Z789 ++ U375aH ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 
 
 #print axioms Z789_H_70
 
+/-! ### ★★★★★★★★★★★★★★★★ 台座一般の単位 `U375a6`
+
+`SmallA` の `U375a6_mem_gen`（無条件・台座一般・緑）はこれまで使っていた `U375aH` より
+**大きい**。`bms` の測定: `Z789 U375aH (7,0,0) < Z789 (1,1,0)(2,2,1)(3,1,0)(4,2,0)(5,2,0)(5,2,0)
+< Z789 U375a6`。`SmallA` の `R600` 系の行（台座 `R338`）をそのまま台座一般に移す。 -/
+
+theorem Aok_append_U375a6 {A : TrioSeq} (hA : Aok A) : Aok (A ++ U375a6) :=
+  Aok_append_Mid (d := 2) (by omega) hA MidD_U375a6 (U375a6_mem_gen hA)
+
+/-- ★★★★★★★★★★★★★★★★ `Z789 ++ U375a6`。 -/
+theorem Zu6_mem : Z789 ++ U375a6 ∈ W 0 := U375a6_mem_gen Aok_Z789
+
+theorem Aok_Zu6 : Aok (Z789 ++ U375a6) := Aok_append_U375a6 Aok_Z789
+
+/-- `U375a6` の積み上げの極限。 -/
+theorem U6_lim_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a6 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  flat_of_chain (Y0 := A) (M := U375a6) (d := 2) (by omega) MidD_U375a6 hA
+    (fun n hAn => U375a6_mem_gen hAn)
+
+theorem LvB_A6_1 {A : TrioSeq} (hA : Aok A) : LvB P0 1 1 (A ++ U375a6) := by
+  refine ⟨Aok_append_U375a6 hA, Or.inr ⟨0, A, U375a6, rfl, rfl, ⟨hA, rfl⟩,
+    MidD_U375a6, ?_⟩⟩
+  intro s A' hA'
+  have hA'' : Aok A' ∧ 0 + s = 0 := hA'
+  obtain ⟨hAok, hs⟩ := hA''
+  have hs0 : s = 0 := by omega
+  subst hs0
+  simpa [shiftr01_zero] using U375a6_mem_gen hAok
+
+theorem U6_snoc21_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a6 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using LvB_snoc BaseOk_P0 1 1 (A ++ U375a6) (LvB_A6_1 hA)
+
+theorem U6_snoc22_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a6 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := SegB_snoc2 BaseOk_P0 (A0 := A) (M := U375a6)
+    (SegA_toSegB SegA_U375a6 BaseOk_P0) (LwB_of_base ⟨hA, rfl⟩)
+  simpa [List.append_assoc] using h
+
+/-- ★★★★★ 台座一般の `U375a6` は走りの底の元。対角が全部乗る。 -/
+theorem RunA0_A6 {A : TrioSeq} (hA : Aok A) : RunA 0 1 (A ++ U375a6) :=
+  ⟨0, A, U375a6, rfl, rfl, LwA_of_Aok hA, SegA_U375a6⟩
+
+theorem Zu6_20_mem : Z789 ++ U375a6 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  U6_lim_gen Aok_Z789
+
+theorem Zu6_21_mem : Z789 ++ U375a6 ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  U6_snoc21_gen Aok_Z789
+
+theorem Zu6_22_mem : Z789 ++ U375a6 ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  U6_snoc22_gen Aok_Z789
+
+#print axioms Zu6_mem
+#print axioms Zu6_20_mem
+#print axioms Zu6_21_mem
+#print axioms Zu6_22_mem
+/-! ### ★★★★★★★★★★★★★★★★ `R600` 系の行を台座一般に移植
+
+`SmallA` の `R6007` / `DgR6` / `R600_349` / `R600_350` / `R600_351` は
+`R600_RunA0` と `Aok_R600` しか台座を見ない。`RunA0_A6` / `Aok_append_U375a6` に
+差し替えるだけで台座一般になる。 -/
+
+theorem A6_2231_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a6 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine z1_mem (a := 2) (b := 2) ?_
+  intro n
+  cases n with
+  | zero => simpa [Dtw] using (Aok_append_U375a6 hA).mem
+  | succ n =>
+      rw [Dtw_eq_DiaV 1 1 (n + 1)]
+      exact RunA0_DiaV (RunA0_A6 hA) (n + 1)
+
+def DgA6 (A : TrioSeq) : ℕ → TrioSeq
+  | 0 => A ++ U375a6
+  | (k + 1) => DgA6 A k ++ [((k + 2, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem RunA_DgA6 {A : TrioSeq} (hA : Aok A) : ∀ k : ℕ, RunA 0 (k + 1) (DgA6 A k)
+  | 0 => RunA0_A6 hA
+  | (k + 1) => ⟨k + 1, DgA6 A k, [((k + 2, 1, 0) : ℕ × ℕ × ℕ)], rfl, rfl,
+      RunA0_LwA (RunA_DgA6 hA k), by simpa using SegA_one (k + 1)⟩
+
+/-- ★★★★★★★★★★★★★★★★ `A ++ U375a6 ++ (2,1,0)(3,1,0)…(k+1,1,0)`。 -/
+theorem DgA6_mem {A : TrioSeq} (hA : Aok A) (k : ℕ) : DgA6 A k ∈ W 0 :=
+  ((BaseOk_RunA 0).aok _ _ (RunA_DgA6 hA k)).mem
+
+theorem DgA6_z1 {A : TrioSeq} (hA : Aok A) (k : ℕ) :
+    DgA6 A k ++ [((k + 2, 1, 0) : ℕ × ℕ × ℕ), ((k + 3, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunA0_z1 (h := k + 2) (Y0 := DgA6 A k) (RunA_DgA6 hA (k + 1))
+
+theorem A6_2132_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a6 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 1) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  DgA6_z1 hA 0
+
+theorem A6_2132b_gen {A : TrioSeq} (hA : Aok A) :
+    A ++ U375a6 ++ [((2, 1, 0) : ℕ × ℕ × ℕ), ((3, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := RunG_snoc2 Iface_RunA0 0 2 (DgA6 A 1) (RunA_DgA6 hA 1)
+  simpa [DgA6, List.append_assoc] using h
+
+def A6_349 (A : TrioSeq) : TrioSeq :=
+  A ++ U375a6 ++ [((2, 2, 0) : ℕ × ℕ × ℕ), ((3, 3, 1) : ℕ × ℕ × ℕ),
+    ((4, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem A6_349_PkGA {A : TrioSeq} (hA : Aok A) : PkGA 2 (A6_349 A) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, A ++ U375a6, Jz1c 2 2, rfl, RunA0_A6 hA,
+    by simp [A6_349, Jz1c, List.append_assoc], GoodF_z1c.pk 1⟩
+
+/-- ★★★★★★★★★★★★★★★★ `A ++ U375a6 ++ (2,2,0)(3,3,1)(4,1,0)`。 -/
+theorem A6_349_mem {A : TrioSeq} (hA : Aok A) : A6_349 A ∈ W 0 :=
+  (PkGA_Aok (A6_349_PkGA hA)).mem
+
+theorem A6_350_PU {A : TrioSeq} (hA : Aok A) :
+    PU 2 3 (A6_349 A ++ [((3, 3, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨PkGA, 2, A6_349 A, [], Ifc3_toIfcV Ifc3_PkGA, rfl, A6_349_PkGA hA, by simp,
+    JkU_nil' (le_refl 2) 2⟩
+
+/-- ★★★★★★★★★★★★★★★★ `A ++ U375a6 ++ (2,2,0)(3,3,1)(4,1,0)(3,3,0)`。 -/
+theorem A6_350_mem {A : TrioSeq} (hA : Aok A) :
+    A6_349 A ++ [((3, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  ((BaseOk_PU 2).aok _ _ (A6_350_PU hA)).mem
+
+theorem A6_349_DiaV {A : TrioSeq} (hA : Aok A) (k : ℕ) :
+    A6_349 A ++ DiaV 2 2 (k + 1) ∈ W 0 :=
+  ((BaseOk_PU (2 + k)).aok _ _
+    (PU_DiaV (le_refl 2) (Ifc3_toIfcV Ifc3_PkGA) (A6_349_PkGA hA) k)).mem
+
+/-- ★★★★★★★★★★★★★★★★ `A ++ U375a6 ++ (2,2,0)(3,3,1)(4,1,0)(3,3,0)(4,4,1)`。 -/
+theorem A6_351_mem {A : TrioSeq} (hA : Aok A) :
+    A6_349 A ++ [((3, 3, 0) : ℕ × ℕ × ℕ), ((4, 4, 1) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine z1_mem (a := 3) (b := 3) ?_
+  intro n
+  cases n with
+  | zero => simpa [Dtw] using A6_349_mem hA
+  | succ k =>
+      rw [Dtw_eq_DiaV 2 2 (k + 1)]
+      exact A6_349_DiaV hA k
+
+#print axioms A6_2231_gen
+#print axioms DgA6_mem
+#print axioms A6_2132b_gen
+#print axioms A6_349_mem
+#print axioms A6_350_mem
+#print axioms A6_351_mem
+
 
 end Small
 end TRIO
