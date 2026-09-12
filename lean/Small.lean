@@ -13304,6 +13304,46 @@ theorem R375m61_20_mem :
 
 #print axioms R375m61_20_mem
 
+/-! ### 台座一般の平らな一歩 `A ++ U375a61 ++ (2,0,0)` と `R375m (6,1,0)(2,0,0)` の `Aok` -/
+
+def U375a6120 : TrioSeq := U375a61 ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem MidD_U375a6120 : MidD 2 U375a6120 where
+  ne := by decide
+  col := by
+    intro c hc
+    simp only [U375a6120, U375a61, U375a, List.append_assoc, List.cons_append,
+      List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  head := rfl
+  head1 := by decide
+  tail := by
+    intro j h1 h2
+    simp only [U375a6120, U375a61, U375a, List.append_assoc, List.cons_append,
+      List.nil_append, List.length_cons, List.length_nil] at h2
+    rcases j with _ | _ | _ | _ | _ | _ | _ | j <;> first | omega | decide
+  mono := by
+    intro c hc
+    simp only [U375a6120, U375a61, U375a, List.append_assoc, List.cons_append,
+      List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- 台座一般の平らな一歩: どんな `Aok A` にも `U375a ++ (6,1,0) ++ (2,0,0)` が継げる。 -/
+theorem U375a6120_mem_gen {A : TrioSeq} (hA : Aok A) : A ++ U375a6120 ∈ W 0 := by
+  have h := flat_of_chain (Y0 := A) (M := U375a61) (d := 2) (by omega) MidD_U375a61
+    hA (fun n hA' => U375a61_mem_gen hA')
+  simpa [U375a6120, List.append_assoc] using h
+
+theorem Aok_append_U375a6120 {A : TrioSeq} (hA : Aok A) : Aok (A ++ U375a6120) :=
+  Aok_append_Mid (d := 2) (by omega) hA MidD_U375a6120 (U375a6120_mem_gen hA)
+
+theorem Aok_R375m61_20 :
+    Aok (R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)]) := by
+  have h := Aok_append_U375a6120 Aok_R338
+  simpa [U375a6120, U375a61, U375a, R375m, R373, R344, R341, List.append_assoc] using h
+
+#print axioms Aok_R375m61_20
+
 
 end Small
 end TRIO
