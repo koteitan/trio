@@ -5995,6 +5995,229 @@ theorem LoopIt_Z78_nil_mem (m p j n : ℕ) :
 #print axioms R600_78_mem
 #print axioms LoopIt_Z78_nil_mem
 
+/-! ### ★★★★★★ 指数の型をパラメータにした階の梯子
+
+指数の型 `α`、予算は `BwG α`。荷 `Y` ごとに 3 つの述語を持つ:
+
+- `RunLd Y q`: `RnG Z e → RnG (PayIt Z Y n) (e + q n)`（鎖）
+- `AtLd Y q1`: `two N (two A (pay Z Y))` を枠の中に置ける（_at）
+- `TopLd Y q1`: 同じものを予算 `t` の上に置ける（_top）
+
+`Bwx = BwG Bw` を指数にすると `ω^ω = owG (ow 1 1) 1` が使えて、
+荷 `Ys = (0,0,0)(1,0,0)(2,0,0)`（`Ys⟦n⟧ = Yv n`）が入る。 -/
+
+section LadG
+
+variable {α : Type} [LinearOrder α] [WellFoundedLT α] [AddCommMonoid α]
+
+def RnG (Z : Jk1) (e : α) : Prop := ∀ (m : ℕ) (A : Jk1), JkA A → ∀ β : BwG α,
+  (∀ c : BwG α, β < c → ∀ ks : List (BwG α), WPdT (c :: ks) A) →
+  ∀ c : BwG α, β + owG e m < c → ∀ ks : List (BwG α),
+    WPdT (c :: ks) (twoIt A Z m)
+
+def RunLd (Y : TrioSeq) (q : ℕ → α) : Prop :=
+  ∀ (n : ℕ) (Z : Jk1), JkA Z → ∀ e : α, RnG Z e → RnG (PayIt Z Y n) (e + q n)
+
+def AtLd (Y : TrioSeq) (q1 : α) : Prop :=
+  ∀ Z : Jk1, JkA Z → ∀ e : α, RnG Z e → ∀ A : Jk1, JkA A → ∀ β : BwG α,
+    (∀ c : BwG α, β < c → ∀ ks : List (BwG α), WPdT (c :: ks) A) →
+    ∀ t : BwG α, β + owG (e + q1) 1 ≤ t →
+    ∀ (B : List (BwG α)) (N : Jk1), JkA N →
+      (∀ r : List (BwG α), (∀ x ∈ r, x < t) → WPdT ((⊥ : BwG α) :: r ++ B) N) →
+      WPdT ((⊥ : BwG α) :: B) (Jk1.two N (Jk1.two A (Jk1.pay Z Y)))
+
+def TopLd (Y : TrioSeq) (q1 : α) : Prop :=
+  ∀ Z : Jk1, JkA Z → ∀ e : α, RnG Z e → ∀ A : Jk1, JkA A → ∀ β : BwG α,
+    (∀ c : BwG α, β < c → ∀ ks : List (BwG α), WPdT (c :: ks) A) →
+    ∀ t : BwG α, β + owG (e + q1) 1 < t →
+    ∀ ks : List (BwG α), WPdT (t :: ks) (Jk1.two A (Jk1.pay Z Y))
+
+theorem RunG_nil (e : α) : RnG Jk1.nil e := by
+  intro m
+  induction m with
+  | zero =>
+      intro A hJA β hβ c hc ks
+      exact hβ c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+  | succ m ih =>
+      intro A hJA β hβ c hc ks
+      have hstep : β + owG e m < β + owG e (m + 1) :=
+        BwG_add_lt_left β (owG_ltR e (by omega))
+      refine WPdT_twoA_runB (a := β + owG e (m + 1))
+        (ne_bot_of_gt (lt_of_le_of_lt bot_le hstep)) hc
+        (JkA_twoItP (T := Jk1.nil) hJA trivial m) ?_ ks
+      intro ks'
+      exact ih A hJA β hβ (β + owG e (m + 1)) hstep ks'
+
+theorem TopLd_of_AtLd {Y : TrioSeq} {q1 : α} (hB : AtLd Y q1) : TopLd Y q1 := by
+  intro Z hJZ e hR A hJA β hβ t ht ks
+  have htb : t ≠ ⊥ := ne_bot_of_gt (lt_of_le_of_lt bot_le ht)
+  refine (WPdT_cb htb ks _).mpr (fun r hr U N hU hUk hJN hNt => ?_)
+  refine WPdT_two_of_ctx hU hUk (fun ctx hc => ?_)
+  exact (WPdT_iff ((⊥ : BwG α) :: (r ++ ks)) _).mp
+    (hB Z hJZ e hR A hJA β hβ t (le_of_lt ht) (r ++ ks) N hJN hNt) ctx hc
+
+/-- 荷 `[(0,0,0)]` の鎖。段は `WPdT_twoAZ_top` が直に作る。 -/
+theorem RunLd_zero {q : ℕ → α} (hq0 : q 0 = 0)
+    (hqm : ∀ n : ℕ, q n < q (n + 1))
+    (hadd : ∀ (b : α) {x y : α}, x < y → b + x < b + y) :
+    RunLd (Yv 0) q := by
+  intro n
+  induction n with
+  | zero =>
+      intro Z hJZ e hR m A hJA β hβ c hc ks
+      exact hR m A hJA β hβ c (by rwa [hq0, add_zero] at hc) ks
+  | succ n ih =>
+      intro Z hJZ e hR m
+      induction m with
+      | zero =>
+          intro A hJA β hβ c hc ks
+          exact hβ c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+      | succ m ihm =>
+          intro A hJA β hβ c hc ks
+          have hJW : JkA (PayIt Z (Yv 0) (n + 1)) := JkA_PayIt hJZ (Bok_Yv 0) (n + 1)
+          have hJA' : JkA (twoIt A (PayIt Z (Yv 0) (n + 1)) m) := JkA_twoItP hJA hJW m
+          have hA' : ∀ c' : BwG α, β + owG (e + q (n + 1)) m < c' →
+              ∀ ks' : List (BwG α),
+              WPdT (c' :: ks') (twoIt A (PayIt Z (Yv 0) (n + 1)) m) :=
+            fun c' hc' ks' => ihm A hJA β hβ c' hc' ks'
+          show WPdT (c :: ks) (Jk1.two (twoIt A (PayIt Z (Yv 0) (n + 1)) m)
+            (Jk1.pay (PayIt Z (Yv 0) n) (Yv 0)))
+          refine WPdT_twoAZ_top
+            (S := ⟨fun i => (β + owG (e + q (n + 1)) m) + owG (e + q n) i,
+              fun _ _ hij => BwG_add_lt_left _ (owG_ltR (e + q n) hij)⟩)
+            (t := c) ?_ hJA' (JkA_PayIt hJZ (Bok_Yv 0) n) ?_ ks
+          · intro i
+            show (β + owG (e + q (n + 1)) m) + owG (e + q n) i < c
+            rw [add_assoc]
+            exact lt_trans (BwG_add_lt_left β
+              (owG_add_lt (hadd e (hqm n)) m i)) hc
+          · intro m' c' hc' ks'
+            exact ih Z hJZ e hR m' _ hJA' (β + owG (e + q (n + 1)) m) hA' c' hc' ks'
+
+/-- 荷 `Y` の「_top」があれば `Y` の鎖ができる。 -/
+theorem RunLd_of_TopLd {Y : TrioSeq} (hBY : Bok Y) {q : ℕ → α}
+    (hq0 : q 0 = 0) (hqa : ∀ n : ℕ, q n + q 1 = q (n + 1))
+    (hC : TopLd Y (q 1)) : RunLd Y q := by
+  intro n
+  induction n with
+  | zero =>
+      intro Z hJZ e hR m A hJA β hβ c hc ks
+      exact hR m A hJA β hβ c (by rwa [hq0, add_zero] at hc) ks
+  | succ n ih =>
+      intro Z hJZ e hR m
+      induction m with
+      | zero =>
+          intro A hJA β hβ c hc ks
+          exact hβ c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+      | succ m ihm =>
+          intro A hJA β hβ c hc ks
+          have hJW : JkA (PayIt Z Y (n + 1)) := JkA_PayIt hJZ hBY (n + 1)
+          have hJA' : JkA (twoIt A (PayIt Z Y (n + 1)) m) := JkA_twoItP hJA hJW m
+          have hA' : ∀ c' : BwG α, β + owG (e + q (n + 1)) m < c' →
+              ∀ ks' : List (BwG α),
+              WPdT (c' :: ks') (twoIt A (PayIt Z Y (n + 1)) m) :=
+            fun c' hc' ks' => ihm A hJA β hβ c' hc' ks'
+          show WPdT (c :: ks) (Jk1.two (twoIt A (PayIt Z Y (n + 1)) m)
+            (Jk1.pay (PayIt Z Y n) Y))
+          refine hC (PayIt Z Y n) (JkA_PayIt hJZ hBY n) (e + q n) (ih Z hJZ e hR)
+            _ hJA' (β + owG (e + q (n + 1)) m) hA' c ?_ ks
+          have he : (e + q n) + q 1 = e + q (n + 1) := by rw [add_assoc, hqa]
+          rw [he, add_assoc, owG_add_same]
+          exact hc
+
+/-- 荷 `Yv 1 = (0,0,0)(1,0,0)` の「_at」。段は荷 `[(0,0,0)]` の鎖。 -/
+theorem AtLd_one {q0 : ℕ → α} {q1 : α} (hR0 : RunLd (Yv 0) q0)
+    (hlt : ∀ n : ℕ, q0 n < q1)
+    (hadd : ∀ (b : α) {x y : α}, x < y → b + x < b + y) :
+    AtLd (Yv 1) q1 := by
+  intro Z hJZ e hR A hJA β hβ t ht B N hJN hNt
+  refine WPdT_twoAY_at hJA hJZ (Bok_Yv 1) (by rw [Yv_len]) (hasParent_Yv_last 0) hJN ?_
+  intro n'
+  refine WPdT_congr ((⊥ : BwG α) :: B)
+    (fun l => jk1_twotwo_congr (fun l' => (jk1_payYvOper Z 0 (n' + 1) l').symm) l) ?_
+  refine WPdT_twoAZ_at
+    (S := ⟨fun i => β + owG (e + q0 n') i,
+      fun _ _ hij => BwG_add_lt_left β (owG_ltR (e + q0 n') hij)⟩)
+    (t := t) ?_ hJA (JkA_PayIt hJZ (Bok_Yv 0) n') ?_ hJN hNt
+  · intro i
+    exact lt_of_lt_of_le
+      (BwG_add_lt_left β (owG_ltL (hadd e (hlt n')) i (by omega))) ht
+  · intro m' c' hc' ks'
+    exact hR0 n' Z hJZ e hR m' A hJA β hβ c' hc' ks'
+
+/-- `Y⟦n+1⟧` が下の荷 `Y'` の `n+1` 段なら、`Y` の「_at」は `Y'` の鎖と「_at」から出る。 -/
+theorem AtLd_iter {Y Y' : TrioSeq} (hBY : Bok Y) (hBY' : Bok Y')
+    (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hop : ∀ (n l : ℕ) (Z : Jk1),
+      jk1 l (Jk1.pay Z (Y⟦n + 1⟧)) = jk1 l (PayIt Z Y' (n + 1)))
+    {q' : ℕ → α} {q'1 q1 : α}
+    (hR' : RunLd Y' q') (hA' : AtLd Y' q'1)
+    (hlt : ∀ n : ℕ, q' n + q'1 < q1)
+    (hadd : ∀ (b : α) {x y : α}, x < y → b + x < b + y) :
+    AtLd Y q1 := by
+  intro Z hJZ e hR A hJA β hβ t ht B N hJN hNt
+  refine WPdT_twoAY_at hJA hJZ hBY hlen hp hJN ?_
+  intro n'
+  refine WPdT_congr ((⊥ : BwG α) :: B)
+    (fun l => jk1_twotwo_congr (fun l' => (hop n' l' Z).symm) l) ?_
+  refine hA' (PayIt Z Y' n') (JkA_PayIt hJZ hBY' n') (e + q' n') (hR' n' Z hJZ e hR)
+    A hJA β hβ t ?_ B N hJN hNt
+  refine le_of_lt (lt_of_lt_of_le (BwG_add_lt_left β (owG_ltL ?_ 1 (by omega))) ht)
+  rw [add_assoc]
+  exact hadd e (hlt n')
+
+/-- `Y⟦n+1⟧` が荷の族 `F n` なら、`Y` の「_at」は `F n` の「_at」たちから出る。 -/
+theorem AtLd_fam {Y : TrioSeq} {F : ℕ → TrioSeq} (hBY : Bok Y)
+    (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    (hop : ∀ (n l : ℕ) (Z : Jk1),
+      jk1 l (Jk1.pay Z (Y⟦n + 1⟧)) = jk1 l (Jk1.pay Z (F n)))
+    {qf : ℕ → α} {q1 : α}
+    (hAf : ∀ n : ℕ, AtLd (F n) (qf n))
+    (hlt : ∀ n : ℕ, qf n < q1)
+    (hadd : ∀ (b : α) {x y : α}, x < y → b + x < b + y) :
+    AtLd Y q1 := by
+  intro Z hJZ e hR A hJA β hβ t ht B N hJN hNt
+  refine WPdT_twoAY_at hJA hJZ hBY hlen hp hJN ?_
+  intro n'
+  refine WPdT_congr ((⊥ : BwG α) :: B)
+    (fun l => jk1_twotwo_congr (fun l' => (hop n' l' Z).symm) l) ?_
+  refine hAf n' Z hJZ e hR A hJA β hβ t ?_ B N hJN hNt
+  exact le_of_lt (lt_of_lt_of_le
+    (BwG_add_lt_left β (owG_ltL (hadd e (hlt n')) 1 (by omega))) ht)
+
+end LadG
+
+/-- 指数の型 `α` の中の「`ω^j·m` の役をする族」。 -/
+structure Pws (α : Type) [LinearOrder α] [AddCommMonoid α] where
+  pw : ℕ → ℕ → α
+  pw_zero : ∀ j : ℕ, pw j 0 = 0
+  pw_add : ∀ j m : ℕ, pw j m + pw j 1 = pw j (m + 1)
+  pw_ltR : ∀ (j : ℕ) {m m' : ℕ}, m < m' → pw j m < pw j m'
+  pw_ltL : ∀ {j j' : ℕ}, j < j' → ∀ (m : ℕ) {m' : ℕ}, 0 < m' → pw j m < pw j' m'
+  add_lt : ∀ (b : α) {x y : α}, x < y → b + x < b + y
+
+/-- ★★★★★★ 階の梯子（指数の型が何でも回る）。 -/
+theorem LadYv {α : Type} [LinearOrder α] [WellFoundedLT α] [AddCommMonoid α]
+    (P : Pws α) : ∀ j : ℕ, RunLd (Yv j) (P.pw j) ∧ AtLd (Yv (j + 1)) (P.pw (j + 1) 1)
+  | 0 =>
+      have hR0 : RunLd (Yv 0) (P.pw 0) :=
+        RunLd_zero (P.pw_zero 0) (fun n => P.pw_ltR 0 (by omega)) P.add_lt
+      ⟨hR0, AtLd_one hR0 (fun n => P.pw_ltL (by omega) n (by omega)) P.add_lt⟩
+  | (j + 1) =>
+      have hA : AtLd (Yv (j + 1)) (P.pw (j + 1) 1) := (LadYv P j).2
+      have hR : RunLd (Yv (j + 1)) (P.pw (j + 1)) :=
+        RunLd_of_TopLd (Bok_Yv (j + 1)) (P.pw_zero (j + 1)) (P.pw_add (j + 1))
+          (TopLd_of_AtLd hA)
+      ⟨hR, AtLd_iter (Bok_Yv (j + 2)) (Bok_Yv (j + 1)) (by rw [Yv_len]; omega)
+        (hasParent_Yv_last (j + 1))
+        (fun n l Z => jk1_payYvOper Z (j + 1) (n + 1) l) hR hA
+        (fun n => by rw [P.pw_add]; exact P.pw_ltL (by omega) (n + 1) (by omega))
+        P.add_lt⟩
+
+#print axioms LadYv
+
 
 end Small
 end TRIO
