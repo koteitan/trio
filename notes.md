@@ -25630,3 +25630,35 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
 `OneRunA`（追記399）は同じ壁を層 `WPdR` の底の言葉で書いたもの。
 どちらも「走りの塔が差せる」で、`StQ` は `APd` だけで書ける版。
 `StQ` の `k = 0` は `stk (p+1)`（`p` の帰納で前の段）なので、中身は `k` の段だけ。
+
+## 追記402: なぜ先端が `two nil nil` に限るのか（語の理由）
+
+`GOK_stkW_gen` は最後に `snocQ_of_tower` ＝ `snocYd_mem` を
+
+    Y0 = X,  M = unQ N p D,  L = D,  y = 2,  dl = p + 2
+
+で使う。`unQ N p D = (D,1,0) :: jk1 D (two N (stkP p nil))` なので、階段のブロックの
+**頭の行 1 は 1**。`snocYd_mem` の仮定 `entry M 1 0 < y` は「継ぐアンカーの行 1 が
+ブロックの頭より大きい」で、`y ≥ 2` が要る。
+
+    → 先端として継げるのは `(·,2,0)` の列だけ。`two nil nil` はちょうどそれ。
+    → 先端が `one nil Z`（`(·,1,0)` で始まる）だと、その列は**アンカーではなく
+      新しい階段の頭**になってしまい、同じ塔では扱えない。
+
+これが「先端は `nil` / `two nil nil` だけ」の正体。`stk 3` に要る
+`two nil (stkP 1 (one nil Z))` はまさに先端が `one nil Z` の形。
+
+### 別ルート: `GOK_oneUV_RunSB`
+
+    GOK_oneUV_RunSB D Bs B U (hJBs) (hJB) (hJT) (hGU : GOK (plug D U))
+      (hstair : ∀ n, GOK (plug D (appJ U (UtwP Bs B n))))
+      : GOK (plug D (one U (RunS (Bs ++ [B]))))
+
+`Bs = replicate p nil`, `B = nil` なら `RunS (Bs ++ [nil]) = stk (p+1)` で、
+`U` は `GOK (plug D U)` だけでよい（弱い）。だから
+
+    APd (true::ks) (stk (p+1)) ⟸ ∀ U (弱), ∀ n, GOK (plug ctx (appJ U (UtwP Bs nil n)))
+
+こちらの階段は `UtwP`（ブロックが `(l+1,1,0) :: jk1 (l+1) (RunP Bs B)`、歩幅
+`Bs.length + 1`）。**次はこの階段を調べる。** `p = 0`（`Bs = []`）は `TW1` で緑
+（`GOK_oneTwoNilOf` / `GOK_oneTW1`）、`Bs = [nil]` は `TWB` が要る（`ZApp2c_of_chain`）。
