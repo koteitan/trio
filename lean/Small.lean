@@ -10108,6 +10108,32 @@ theorem ZZ_351_mem :
 #print axioms ZZ_Dg_mem
 #print axioms ZZ_351_mem
 
+/-! ### ★★★★★★★★★★★★★★★★★★ 壁の一番具体的な形: 歩幅 3 の塔 `Tw3`
+
+目標行 `R373 (5,3,0)` の展開 [2] は `R375m (6,2,0)`。`bms -d` で測ると
+バッドルートは `(3,1,0)`、悪い部分は `U375c = (3,1,0)(4,2,0)(5,2,0)`、delta = 3。
+つまり要るのは**歩幅 3 の塔**だけ。歩幅 2 の塔は `towerM_mem`（`TWm`、緑）。 -/
+
+def Tw3 : Prop := ∀ n : ℕ, Mtwd 3 R341 U375c n ∈ W 0
+
+theorem R341_U375c : R341 ++ U375c = R375m := by
+  simp [R341, R338, U375c, R375m, R373, R344, List.append_assoc]
+
+/-- ★★★★★★★★★★★★★★★★★★ 歩幅 3 の塔から目標行の展開 [2] が出る。 -/
+theorem R375m62_of_Tw3 (h : Tw3) : R375m ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hh := snocYd_mem (Y0 := R341) (M := U375c) (L := 3) (y := 2) (dl := 3)
+    (by simp [R341, R338]) (by simpa [UBlk_one_two] using MidD_UBlk2 1)
+    (by simp [entry, U375c])
+    (by
+      intro t h1 h2 h3 _
+      simp only [U375c, List.length_cons, List.length_nil] at h2
+      rcases t with _ | _ | _ | t <;> first | omega | simp [entry, U375c])
+    (by omega) (by omega) h
+  rw [R341_U375c] at hh
+  exact hh
+
+#print axioms R375m62_of_Tw3
+
 
 end Small
 end TRIO
