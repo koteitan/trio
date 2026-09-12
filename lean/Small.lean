@@ -854,5 +854,44 @@ theorem R600510_1122_mem :
 
 #print axioms R600510_1122_mem
 
+/-! ### ★ `R600 (5,1,0)` の上に `RunA` の機構をまるごと乗せる
+
+`Aok_R600510` から `LwA_of_Aok` → `LwA_U11` で `RunA 0 1` が出るので、
+`RunG_snoc2` / `PkGA` / `LadB`（junk の語・梯子）が全部使える。 -/
+
+def X510 : TrioSeq := R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)]
+
+def Y510 (m : ℕ) : TrioSeq := X510 ++ U11 0 m
+
+theorem Y510_RunA0 (m : ℕ) : RunA 0 1 (Y510 m) :=
+  LwA_U11 (LwA_of_Aok Aok_R600510) m
+
+theorem Aok_Y510 (m : ℕ) : Aok (Y510 m) := (BaseOk_RunA 0).aok _ _ (Y510_RunA0 m)
+
+theorem Y510_mem (m : ℕ) : Y510 m ∈ W 0 := (Aok_Y510 m).mem
+
+/-- ★★★★★★ `R600 (5,1,0)(1,1,0)(2,2,1)^m (2,2,0)`。 -/
+theorem Y510_220_mem (m : ℕ) : Y510 m ++ [((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  RunG_snoc2 Iface_RunA0 0 1 (Y510 m) (Y510_RunA0 m)
+
+def Y510j (m : ℕ) (ws : List Jk1) : TrioSeq :=
+  Y510 m ++ ([((2, 2, 0) : ℕ × ℕ × ℕ)] ++ wordJ 2 2 ws)
+
+theorem Y510j_PkGA (m : ℕ) {ws : List Jk1} (hw : WJ ws) : PkGA 2 (Y510j m ws) :=
+  ⟨RunA 0, Iface_RunA0, 0, 1, Y510 m, wordJ 2 2 ws, rfl, Y510_RunA0 m, rfl,
+    (GoodFb_wordJ ws hw).pk 1⟩
+
+/-- ★★★★★★ その上に junk の語（どの `WJ ws` でも）。 -/
+theorem Y510j_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) : Y510j m ws ∈ W 0 :=
+  (PkGA_Aok (Y510j_PkGA m hw)).mem
+
+/-- ★★★★★★ さらにその上に `PU` の梯子。 -/
+theorem Y510Lad_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (n : ℕ) :
+    LadB (Y510j m ws) n ∈ W 0 := LadB_mem (Y510j_PkGA m hw) n
+
+#print axioms Y510_220_mem
+#print axioms Y510j_mem
+#print axioms Y510Lad_mem
+
 end Small
 end TRIO
