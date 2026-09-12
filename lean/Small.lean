@@ -838,5 +838,21 @@ theorem R600510_mem : R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
 
 #print axioms R600510_mem
 
+/-! ### `R600 (5,1,0)` の上（`Aok` からの継ぎ足し） -/
+
+theorem Aok_R600510 : Aok (R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)]) :=
+  Aok_append_Mid (d := 6) (by omega) Aok_R600 (MidD_one 5 (by omega)) R600510_mem
+
+theorem R600510_110_mem :
+    (R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)]) ++ [((1, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc 1 0 _ (Aok_R600510 : Lv 1 0 (R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)]))
+
+theorem R600510_1122_mem :
+    (R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)])
+      ++ [((1, 1, 0) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using Lv_snoc2 1 0 _ (Aok_R600510 : Lv 1 0 (R600 ++ [((5, 1, 0) : ℕ × ℕ × ℕ)]))
+
+#print axioms R600510_1122_mem
+
 end Small
 end TRIO
