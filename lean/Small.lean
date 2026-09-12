@@ -13387,6 +13387,356 @@ theorem R375m61_2030_mem :
 
 #print axioms R375m61_2030_mem
 
+/-! ### ★ 汎用: 単位 `U` の上の原始数列（`bump_mem` の単位を差し替えた版）
+
+`bumpU U B` は平らな `B` の `(0,0,0)` を単位 `U` に、`(h,0,0)`（`h ≥ 1`）を
+`(h+1,0,0)` に写す。`U = U375a61` なら `R338 ++ bumpU U375a61 B` が
+`R375m (6,1,0)` の上の `(d,0,0)` の積み上げ全体になる。 -/
+
+def bumpU (U B : TrioSeq) : TrioSeq :=
+  B.flatMap (fun c => if c.1 = 0 then U else [((c.1 + 1, 0, 0) : ℕ × ℕ × ℕ)])
+
+theorem bumpU_append (U A B : TrioSeq) : bumpU U (A ++ B) = bumpU U A ++ bumpU U B := by
+  simp [bumpU, List.flatMap_append]
+
+@[simp] theorem bumpU_nil (U : TrioSeq) : bumpU U [] = [] := by simp [bumpU]
+
+theorem bumpU_cons (U : TrioSeq) (c : ℕ × ℕ × ℕ) (B : TrioSeq) :
+    bumpU U (c :: B)
+      = (if c.1 = 0 then U else [((c.1 + 1, 0, 0) : ℕ × ℕ × ℕ)]) ++ bumpU U B := by
+  simp [bumpU]
+
+theorem bumpU_rep (U M : TrioSeq) : ∀ n : ℕ,
+    bumpU U ((List.range n).flatMap (fun _ => M))
+      = (List.range n).flatMap (fun _ => bumpU U M)
+  | 0 => by simp
+  | (n + 1) => by
+      rw [List.range_succ, List.flatMap_append, List.flatMap_append, bumpU_append,
+        bumpU_rep U M n]
+      simp
+
+theorem bumpU_col {U : TrioSeq} (hU : ∀ c ∈ U, 1 ≤ c.1) (B : TrioSeq) :
+    ∀ c ∈ bumpU U B, 1 ≤ c.1 := by
+  intro c hc
+  simp only [bumpU, List.mem_flatMap] at hc
+  obtain ⟨x, -, hx⟩ := hc
+  by_cases h0 : x.1 = 0
+  · rw [if_pos h0] at hx; exact hU c hx
+  · rw [if_neg h0] at hx
+    simp only [List.mem_singleton] at hx
+    rw [hx]; simp
+
+theorem bumpU_mono {U : TrioSeq} (hU : Mono U) (B : TrioSeq) : Mono (bumpU U B) := by
+  intro c hc
+  simp only [bumpU, List.mem_flatMap] at hc
+  obtain ⟨x, -, hx⟩ := hc
+  by_cases h0 : x.1 = 0
+  · rw [if_pos h0] at hx; exact hU c hx
+  · rw [if_neg h0] at hx
+    simp only [List.mem_singleton] at hx
+    rw [hx]
+
+theorem Aok_of_mem_col {A X : TrioSeq} (hA : Aok A) (hX : ∀ c ∈ X, 1 ≤ c.1)
+    (hXm : Mono X) (hmem : A ++ X ∈ W 0) : Aok (A ++ X) := by
+  refine ⟨hmem, by simp [List.append_eq_nil_iff, hA.ne], Deep_append hA.deep hA.ne hX, ?_, ?_⟩
+  · intro c hc h0
+    rcases List.mem_append.mp hc with h1 | h1
+    · exact hA.zroot c h1 h0
+    · have := hX c h1; omega
+  · intro c hc
+    rcases List.mem_append.mp hc with h1 | h1
+    · exact hA.mono c h1
+    · exact hXm c h1
+
+/-- `h` 未満の元があれば、最も右のものの位置で割る。 -/
+theorem split_nearest (h : ℕ) : ∀ (L : TrioSeq), (∃ x ∈ L, x.1 < h) →
+    ∃ (pre : TrioSeq) (m : ℕ × ℕ × ℕ) (ms : TrioSeq),
+      L = pre ++ m :: ms ∧ m.1 < h ∧ ∀ x ∈ ms, h ≤ x.1
+  | [], ⟨x, hx, _⟩ => by simp at hx
+  | (c :: L'), hex => by
+      by_cases hL' : ∃ x ∈ L', x.1 < h
+      · obtain ⟨pre, m, ms, rfl, hm, hms⟩ := split_nearest h L' hL'
+        exact ⟨c :: pre, m, ms, by simp, hm, hms⟩
+      · push_neg at hL'
+        have hc : c.1 < h := by
+          obtain ⟨x, hx, hxh⟩ := hex
+          rcases List.mem_cons.mp hx with rfl | hx'
+          · exact hxh
+          · exact absurd hxh (not_lt.mpr (hL' x hx'))
+        exact ⟨[], c, L', by simp, hc, hL'⟩
+
+theorem entry_cons_zero' (m : ℕ × ℕ × ℕ) (ms : TrioSeq) : entry (m :: ms) 0 0 = m.1 := by
+  simp [entry]
+
+theorem entry_tail_ge {m : ℕ × ℕ × ℕ} {ms : TrioSeq} {d : ℕ} (h : ∀ x ∈ ms, d ≤ x.1) :
+    ∀ r, 1 ≤ r → r < (m :: ms).length → d ≤ entry (m :: ms) 0 r := by
+  intro r hr1 hr2
+  obtain ⟨r', rfl⟩ : ∃ r', r = r' + 1 := ⟨r - 1, by omega⟩
+  simp only [List.length_cons] at hr2
+  have hr' : r' < ms.length := by omega
+  have e : entry (m :: ms) 0 (r' + 1) = (ms[r']).1 := by
+    simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hr']
+  rw [e]
+  exact h _ (List.getElem_mem hr')
+
+theorem mem_tail_ge_of_entry {u : ℕ × ℕ × ℕ} {us : TrioSeq} {d : ℕ}
+    (h : ∀ r, 1 ≤ r → r < (u :: us).length → d ≤ entry (u :: us) 0 r) :
+    ∀ x ∈ us, d ≤ x.1 := by
+  intro x hx
+  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
+  have := h (i + 1) (by omega) (by simp; omega)
+  simpa [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi] using this
+
+#print axioms split_nearest
+
+/-- 原始数列の段の条件（各項は直前の項 +1 以下）。 -/
+def StepOk : TrioSeq → Prop
+  | [] => True
+  | [_] => True
+  | (a :: b :: l) => b.1 ≤ a.1 + 1 ∧ StepOk (b :: l)
+
+theorem StepOk_tail : ∀ {a : ℕ × ℕ × ℕ} {l : TrioSeq}, StepOk (a :: l) → StepOk l
+  | _, [], _ => trivial
+  | _, (_ :: _), h => h.2
+
+theorem StepOk_append_left : ∀ (l₁ l₂ : TrioSeq), StepOk (l₁ ++ l₂) → StepOk l₁
+  | [], _, _ => trivial
+  | [_], _, _ => trivial
+  | (_ :: b :: l), l₂, h => ⟨h.1, StepOk_append_left (b :: l) l₂ h.2⟩
+
+theorem StepOk_append_right : ∀ (l₁ l₂ : TrioSeq), StepOk (l₁ ++ l₂) → StepOk l₂
+  | [], _, h => h
+  | (_ :: l), l₂, h => StepOk_append_right l l₂ (StepOk_tail h)
+
+/-- 継ぎ目の条件を `StepOk (l₁ ++ [b])` で持って連結する。 -/
+theorem StepOk_append_cons : ∀ (l₁ : TrioSeq) (b : ℕ × ℕ × ℕ) (l₂ : TrioSeq),
+    StepOk (l₁ ++ [b]) → StepOk (b :: l₂) → StepOk (l₁ ++ b :: l₂)
+  | [], _, _, _, h2 => h2
+  | [_], _, _, h1, h2 => ⟨h1.1, h2⟩
+  | (_ :: y :: l), b, l₂, h1, h2 => ⟨h1.1, StepOk_append_cons (y :: l) b l₂ h1.2 h2⟩
+
+theorem StepOk_snoc_mono : ∀ (l : TrioSeq) {c m : ℕ × ℕ × ℕ},
+    StepOk (l ++ [c]) → m.1 ≤ c.1 → StepOk (l ++ [m])
+  | [], _, _, _, _ => trivial
+  | [_], _, _, h, hm => ⟨le_trans hm h.1, trivial⟩
+  | (_ :: y :: l), c, m, h, hm => ⟨h.1, StepOk_snoc_mono (y :: l) h.2 hm⟩
+
+/-- 平らなコピーの積み上げは段の条件を保つ。 -/
+theorem StepOk_rep {pre : TrioSeq} {m : ℕ × ℕ × ℕ} {ms : TrioSeq}
+    (h1 : StepOk (pre ++ [m])) (h2 : StepOk ((m :: ms) ++ [m])) : ∀ n : ℕ,
+    StepOk (pre ++ (List.range n).flatMap (fun _ => m :: ms) ++ [m])
+  | 0 => by simpa using h1
+  | (n + 1) => by
+      have ih := StepOk_rep h1 h2 n
+      rw [List.range_succ, List.flatMap_append]
+      have e2 : pre ++ ((List.range n).flatMap (fun _ => m :: ms) ++ [n].flatMap (fun _ => m :: ms))
+            ++ [m]
+          = (pre ++ (List.range n).flatMap (fun _ => m :: ms)) ++ (m :: (ms ++ [m])) := by
+        simp
+      rw [e2]
+      exact StepOk_append_cons _ m _ (by simpa using ih) (by simpa using h2)
+
+theorem bumpU_ge {U : TrioSeq} {d : ℕ} (hd : 1 ≤ d) : ∀ (ms : TrioSeq),
+    (∀ y ∈ ms, d ≤ y.1) → ∀ x ∈ bumpU U ms, d + 1 ≤ x.1 := by
+  intro ms hms x hx
+  simp only [bumpU, List.mem_flatMap] at hx
+  obtain ⟨y, hy, hx⟩ := hx
+  have hy1 := hms y hy
+  rw [if_neg (by omega)] at hx
+  simp only [List.mem_singleton] at hx
+  rw [hx]; simp; omega
+
+/-- ★★★ 単位 `U` の上の原始数列（`bump_mem` の単位差し替え版）。 -/
+theorem Aok_bumpU {U : TrioSeq} (hMid : MidD 2 U) (hU : ∀ A : TrioSeq, Aok A → A ++ U ∈ W 0) :
+    ∀ B ∈ W 0, Flat B → entry B 0 0 = 0 → StepOk B →
+      ∀ A : TrioSeq, Aok A → Aok (A ++ bumpU U B) := by
+  have hUc : ∀ c ∈ U, 1 ≤ c.1 := hMid.col
+  have hUm : Mono U := hMid.mono
+  obtain ⟨u, us, hUe⟩ : ∃ u us, U = u :: us := by
+    cases hU' : U with
+    | nil => exact absurd hU' hMid.ne
+    | cons u us => exact ⟨u, us, rfl⟩
+  have hu1 : u.1 = 1 := by
+    have := hMid.head; rw [hUe] at this; simp [entry] at this; omega
+  have hus : ∀ x ∈ us, 2 ≤ x.1 := by
+    have := hMid.tail; rw [hUe] at this; exact mem_tail_ge_of_entry this
+  have key : W 0 ⊆ {B : TrioSeq | Flat B → entry B 0 0 = 0 → StepOk B →
+      ∀ A : TrioSeq, Aok A → Aok (A ++ bumpU U B)} := by
+    refine A2' ?_
+    intro B hB
+    simp only [Set.mem_setOf_eq]
+    intro hflat hroot hstep A hA
+    have hfin : A ++ bumpU U B ∈ W 0 → Aok (A ++ bumpU U B) :=
+      Aok_of_mem_col hA (bumpU_col hUc B) (bumpU_mono hUm B)
+    by_cases hshort : B.length ≤ 1
+    · rcases (by omega : B.length = 0 ∨ B.length = 1) with h0 | h1
+      · have hnil : B = [] := List.length_eq_zero_iff.mp h0
+        subst hnil
+        simpa using hA
+      · obtain ⟨c, rfl⟩ := List.length_eq_one_iff.mp h1
+        have hc0 : c.1 = 0 := by simpa [entry] using hroot
+        apply hfin
+        simpa [bumpU, hc0] using hU A hA
+    have hlen2 : 2 ≤ B.length := by omega
+    have hBne : B ≠ [] := by intro hc; rw [hc] at hlen2; simp at hlen2
+    rcases hB with ⟨hl, -⟩ | hnat | ⟨mm, hm, -, -⟩
+    · exact absurd hl hshort
+    · obtain ⟨L, c, rfl⟩ : ∃ L c, B = L ++ [c] :=
+        ⟨B.dropLast, B.getLast hBne, (List.dropLast_append_getLast hBne).symm⟩
+      have hcf := hflat c (by simp)
+      have hLne : L ≠ [] := by intro h; subst h; simp at hlen2
+      have hLlen : 1 ≤ L.length := List.length_pos_iff.mpr hLne
+      have hLroot : entry L 0 0 = 0 := by
+        rw [← entry_append_left (B := [c]) (show 0 < L.length by omega)]; exact hroot
+      by_cases hc0 : c.1 = 0
+      · have hcz : c = ((0, 0, 0) : ℕ × ℕ × ℕ) := Prod.ext hc0 (Prod.ext hcf.1 hcf.2)
+        subst hcz
+        have hop : (L ++ [((0, 0, 0) : ℕ × ℕ × ℕ)])⟦1⟧ = L := by
+          have hlast : (L ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]).length - 1 = L.length := by simp
+          rw [oper_eq_pred_of_zero 1 (by rw [hlast]; omega)
+            (by rw [hlast]; simp [entry, List.getD_eq_getElem?_getD])]
+          unfold Pred
+          rw [if_neg (by simp; omega)]
+          simp
+        have hdl := hnat 1 le_rfl
+        rw [hop] at hdl
+        simp only [Set.mem_setOf_eq] at hdl
+        have hIH := hdl (fun x hx => hflat x (by simp [hx])) hLroot
+          (StepOk_append_left _ _ hstep) A hA
+        apply hfin
+        rw [bumpU_append, show bumpU U [((0, 0, 0) : ℕ × ℕ × ℕ)] = U by simp [bumpU],
+          ← List.append_assoc]
+        exact hU _ hIH
+      · obtain ⟨h, rfl⟩ : ∃ h, c = ((h, 0, 0) : ℕ × ℕ × ℕ) :=
+          ⟨c.1, Prod.ext rfl (Prod.ext hcf.1 hcf.2)⟩
+        have hh1 : 1 ≤ h := by simp at hc0; omega
+        have hex : ∃ x ∈ L, x.1 < h := by
+          refine ⟨L.head hLne, List.head_mem hLne, ?_⟩
+          have : (L.head hLne).1 = entry L 0 0 := by
+            cases L with
+            | nil => exact absurd rfl hLne
+            | cons l0 L' => simp [entry]
+          omega
+        obtain ⟨pre, m, ms, rfl, hmh, hms⟩ := split_nearest h L hex
+        have hB : (pre ++ m :: ms) ++ [((h, 0, 0) : ℕ × ℕ × ℕ)]
+            = pre ++ (m :: ms) ++ [((h, 0, 0) : ℕ × ℕ × ℕ)] := by simp
+        -- 展開
+        have hopB : ∀ n, ((pre ++ m :: ms) ++ [((h, 0, 0) : ℕ × ℕ × ℕ)])⟦n⟧
+            = pre ++ (List.range n).flatMap (fun _ => m :: ms) := by
+          intro n
+          rw [hB]
+          exact oper_snoc00'' pre (by simp) (by rw [entry_cons_zero']; exact hmh)
+            (entry_tail_ge hms) n
+        -- 段の条件
+        have hsM : StepOk (m :: ms ++ [((h, 0, 0) : ℕ × ℕ × ℕ)]) :=
+          StepOk_append_right pre _ (by simpa [List.append_assoc] using hstep)
+        have hsPre : StepOk (pre ++ [m]) :=
+          StepOk_append_left (pre ++ [m]) ms (by
+            have := StepOk_append_left (pre ++ m :: ms) [((h, 0, 0) : ℕ × ℕ × ℕ)] hstep
+            simpa [List.append_assoc] using this)
+        have hsMm : StepOk ((m :: ms) ++ [m]) :=
+          StepOk_snoc_mono (m :: ms) (by simpa using hsM) (by simp; omega)
+        -- `m` が根なら `h = 1`
+        have hroot1 : m.1 = 0 → h ≤ 1 := by
+          intro hm0
+          cases ms with
+          | nil =>
+              have := hsM.1; simp at this; omega
+          | cons y ys =>
+              have h1' := hsM.1
+              have h2' := hms y (by simp)
+              simp at h1'; omega
+        -- 各展開の帰納法の仮定
+        have hIH : ∀ n, 1 ≤ n →
+            Aok (A ++ bumpU U (pre ++ (List.range n).flatMap (fun _ => m :: ms))) := by
+          intro n hn
+          have hdl := hnat n hn
+          simp only [Set.mem_setOf_eq] at hdl
+          have hflat' := Flat_oper hflat n
+          have hroot' : entry (((pre ++ m :: ms) ++ [((h, 0, 0) : ℕ × ℕ × ℕ)])⟦n⟧) 0 0 = 0 := by
+            rw [Wset.oper_head_eq hn]; exact hroot
+          rw [hopB n] at hdl hflat' hroot'
+          exact hdl hflat' hroot'
+            (StepOk_append_left _ [m] (StepOk_rep hsPre hsMm n)) A hA
+        apply hfin
+        -- 右辺の形
+        have hbM : bumpU U (m :: ms)
+            = (if m.1 = 0 then u else ((m.1 + 1, 0, 0) : ℕ × ℕ × ℕ))
+              :: ((if m.1 = 0 then us else []) ++ bumpU U ms) := by
+          rw [bumpU_cons]
+          by_cases hm0 : m.1 = 0
+          · rw [if_pos hm0, if_pos hm0, if_pos hm0, hUe]; rfl
+          · rw [if_neg hm0, if_neg hm0, if_neg hm0]; rfl
+        have hbB : bumpU U ((pre ++ m :: ms) ++ [((h, 0, 0) : ℕ × ℕ × ℕ)])
+            = bumpU U pre ++ bumpU U (m :: ms) ++ [((h + 1, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [bumpU_append, bumpU_append]
+          simp [bumpU, show h ≠ 0 by omega]
+        have hgoal : A ++ bumpU U ((pre ++ m :: ms) ++ [((h, 0, 0) : ℕ × ℕ × ℕ)])
+            = (A ++ bumpU U pre) ++ bumpU U (m :: ms) ++ [((h + 1, 0, 0) : ℕ × ℕ × ℕ)] := by
+          rw [hbB]; simp [List.append_assoc]
+        rw [hgoal]
+        refine A1_intro (Or.inr (Or.inl ?_))
+        intro n hn
+        have hne' : bumpU U (m :: ms) ≠ [] := by rw [hbM]; simp
+        have hhead' : entry (bumpU U (m :: ms)) 0 0 < h + 1 := by
+          rw [hbM, entry_cons_zero']
+          by_cases hm0 : m.1 = 0
+          · rw [if_pos hm0]; omega
+          · rw [if_neg hm0]; simp; omega
+        have htail' : ∀ r, 1 ≤ r → r < (bumpU U (m :: ms)).length →
+            h + 1 ≤ entry (bumpU U (m :: ms)) 0 r := by
+          rw [hbM]
+          apply entry_tail_ge
+          intro x hx
+          rcases List.mem_append.mp hx with hx1 | hx1
+          · by_cases hm0 : m.1 = 0
+            · rw [if_pos hm0] at hx1
+              have := hus x hx1; have := hroot1 hm0; omega
+            · rw [if_neg hm0] at hx1; simp at hx1
+          · exact bumpU_ge hh1 ms hms x hx1
+        rw [oper_snoc00'' (A ++ bumpU U pre) hne' hhead' htail' n]
+        rw [← bumpU_rep, List.append_assoc, ← bumpU_append]
+        exact (hIH n hn).mem
+    · exact absurd hm (Nat.not_lt_zero mm)
+  intro B hB hflat hroot hstep A hA
+  exact key hB hflat hroot hstep A hA
+
+#print axioms Aok_bumpU
+
+
+/-- 単位 `U375a61` の上の原始数列の行（台座 `R338`）。 -/
+theorem R338_bumpU61_mem {B : TrioSeq} (hflat : Flat B) (hroot : entry B 0 0 = 0)
+    (hstep : StepOk B) : R338 ++ bumpU U375a61 B ∈ W 0 :=
+  (Aok_bumpU MidD_U375a61 (fun A hA => U375a61_mem_gen hA) B (Flat_mem_W hflat) hflat
+    hroot hstep R338 Aok_R338).mem
+
+/-- ★ 行 `R375m (6,1,0)(2,0,0)(3,0,0)(3,0,0)`。 -/
+theorem R375m61_203030_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ),
+      ((3, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := R338_bumpU61_mem (B := [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 0, 0) : ℕ × ℕ × ℕ),
+      ((2, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)])
+    (by intro c hc; simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+        rcases hc with rfl | rfl | rfl | rfl <;> exact ⟨rfl, rfl⟩)
+    (by simp [entry]) (by simp [StepOk])
+  simpa [bumpU, U375a61, U375a, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+/-- ★ 行 `R375m (6,1,0)(2,0,0)(3,0,0)(4,0,0)(5,0,0)(6,0,0)(7,0,0)`。 -/
+theorem R375m61_diag7_mem :
+    R375m ++ [((6, 1, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ),
+      ((4, 0, 0) : ℕ × ℕ × ℕ), ((5, 0, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ),
+      ((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := R338_bumpU61_mem (B := [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 0, 0) : ℕ × ℕ × ℕ),
+      ((2, 0, 0) : ℕ × ℕ × ℕ), ((3, 0, 0) : ℕ × ℕ × ℕ), ((4, 0, 0) : ℕ × ℕ × ℕ),
+      ((5, 0, 0) : ℕ × ℕ × ℕ), ((6, 0, 0) : ℕ × ℕ × ℕ)])
+    (by intro c hc; simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+        rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨rfl, rfl⟩)
+    (by simp [entry]) (by simp [StepOk])
+  simpa [bumpU, U375a61, U375a, R375m, R373, R344, R341, R338, List.append_assoc] using h
+
+#print axioms R375m61_203030_mem
+#print axioms R375m61_diag7_mem
+
 
 end Small
 end TRIO
