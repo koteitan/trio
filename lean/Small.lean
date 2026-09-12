@@ -7702,6 +7702,125 @@ theorem Z6_hang6_LoopIt_nil (m p j n : ℕ) :
 #print axioms Aok_Z6
 #print axioms Z6_hang6_LoopIt_nil
 
+/-! ### ★★★★★★★★★★ `Vs` を `k` 回反復した荷 `Vt k = Vs^k Ls`
+
+`PwsB b` は `PwsW` / `PwsV` / `PwsL` の共通形（底の指数 `b` に `ω^0·j` を足す族）。 -/
+
+noncomputable def PwsB (b : Bw) : Pws Bwx where
+  pw j m := owG (b + ow 0 j) m
+  pw_zero j := by rw [owG_zero, bot_BwG]
+  pw_add := fun j m => owG_add_same (b + ow 0 j) m
+  pw_ltR := fun j {_ _} h => owG_ltR (b + ow 0 j) h
+  pw_ltL := fun {_ _} h m {_} hm => owG_ltL (Bw_add_lt_left b (ow_ltR 0 h)) m hm
+  add_lt := fun c {_ _} h => BwG_add_lt_left c h
+
+theorem pwB_zero_eq (b : Bw) : (PwsB b).pw 0 = (fun m => owG b m) := by
+  funext m
+  show owG (b + ow 0 0) m = _
+  rw [ow_zero, bot_Bw, add_zero]
+
+def Vt : ℕ → TrioSeq
+  | 0 => Ls
+  | (k + 1) => Vs (Vt k)
+
+theorem Flat_Vt : ∀ k : ℕ, Flat (Vt k)
+  | 0 => Flat_Ls
+  | (k + 1) => Flat_Vs (Flat_Vt k)
+
+theorem Vt_ne : ∀ k : ℕ, Vt k ≠ []
+  | 0 => Ls_ne
+  | (k + 1) => by show Vs (Vt k) ≠ []; rw [Vs_eq]; simp
+
+theorem Vt_root : ∀ k : ℕ, entry (Vt k) 0 0 = 0
+  | 0 => Ls_root
+  | (k + 1) => Vs_root (Vt_ne k) (Vt_root k)
+
+theorem Vt_pos : ∀ k : ℕ, ∀ i, 1 ≤ i → i < (Vt k).length → 1 ≤ entry (Vt k) 0 i
+  | 0 => Ls_pos
+  | (k + 1) => Vs_pos (Vt_ne k) (Vt_pos k)
+
+theorem Bok_Vt (k : ℕ) : Bok (Vt k) := Bok_flat (Flat_Vt k) (Vt_root k)
+
+theorem AtLd_Vt : ∀ k : ℕ, AtLd (Vt k) (owG (ow 2 1 + ow 1 k) 1)
+  | 0 => by
+      rw [show ow 2 1 + ow 1 0 = ow 2 1 from by rw [ow_zero, bot_Bw, add_zero]]
+      exact AtLd_Ls
+  | (k + 1) => by
+      have hA0 : AtLd (Vt k) ((PwsB (ow 2 1 + ow 1 k)).pw 0 1) := by
+        rw [show (PwsB (ow 2 1 + ow 1 k)).pw 0 1 = owG (ow 2 1 + ow 1 k) 1 from
+          congrFun (pwB_zero_eq (ow 2 1 + ow 1 k)) 1]
+        exact AtLd_Vt k
+      have hR0 : RunLd (Vt k) ((PwsB (ow 2 1 + ow 1 k)).pw 0) :=
+        RunLd_of_TopLd (Bok_Vt k) ((PwsB (ow 2 1 + ow 1 k)).pw_zero 0)
+          ((PwsB (ow 2 1 + ow 1 k)).pw_add 0) (TopLd_of_AtLd hA0)
+      refine AtLd_Vs (PwsB (ow 2 1 + ow 1 k)) (Flat_Vt k) (Vt_ne k) (Vt_root k)
+        (Vt_pos k) hR0 hA0 (fun j => ?_)
+      show owG ((ow 2 1 + ow 1 k) + ow 0 (j + 1)) 1 < owG (ow 2 1 + ow 1 (k + 1)) 1
+      refine owG_ltL ?_ 1 (by omega)
+      rw [add_assoc]
+      exact Bw_add_lt_left (ow 2 1) (owG_add_lt (show (0 : ℕ) < 1 by omega) k (j + 1))
+
+theorem RunLd_Vt (k : ℕ) : RunLd (Vt k) (fun m => owG (ow 2 1 + ow 1 k) m) :=
+  RunLd_of_TopLd (Bok_Vt k) (by rw [owG_zero, bot_BwG])
+    (fun n => owG_add_same (ow 2 1 + ow 1 k) n) (TopLd_of_AtLd (AtLd_Vt k))
+
+theorem shift6_Vt : ∀ k : ℕ, shiftr01 6 0 (Vt k)
+    = Mc ++ (List.range k).flatMap
+        (fun _ => [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)])
+  | 0 => by
+      show shiftr01 6 0 Ls = _
+      rw [shift_Ls 5]
+      simp [Mc]
+  | (k + 1) => by
+      show shiftr01 6 0 (Vs (Vt k)) = _
+      rw [Vs_eq]
+      show List.map _ (Vt k ++ [((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)]) = _
+      rw [List.map_append,
+        show List.map (fun p : ℕ × ℕ × ℕ => (p.1 + 6, p.2.1 + 0, p.2.2)) (Vt k)
+          = shiftr01 6 0 (Vt k) from rfl, shift6_Vt k, List.range_succ,
+        List.flatMap_append, List.append_assoc]
+      rfl
+
+/-- ★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(8,0,0)((7,0,0)(8,0,0))^k`。 -/
+theorem R600_788_78rep_mem (k : ℕ) :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)]
+      ++ (List.range k).flatMap
+          (fun _ => [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)]) ∈ W 0 := by
+  have h := R375m_tower_gen (Bok_Vt k) (by rw [owG_zero, bot_BwG])
+    (fun n => owG_add_same (ow 2 1 + ow 1 k) n) (RunLd_Vt k)
+    (TopLd_of_AtLd (AtLd_Vt k)) 1
+  rw [show (List.range 1).flatMap (fun _ => shiftr01 6 0 (Vt k))
+      = shiftr01 6 0 (Vt k) from by simp, shift6_Vt k] at h
+  simpa [Mc, R600, List.append_assoc] using h
+
+/-- ★★★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(8,0,0)(7,0,0)(8,0,0)(8,0,0)`。 -/
+theorem R600_788788_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have hne : [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)] ≠ [] := by simp
+  have hhead : entry [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)] 0 0 < 8 := by
+    simp [entry]
+  have htail : ∀ r, 1 ≤ r →
+      r < ([((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)] : TrioSeq).length →
+      8 ≤ entry [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)] 0 r := by
+    intro r h1 h2
+    simp only [List.length_cons, List.length_nil] at h2
+    rcases r with _ | _ | r
+    · omega
+    · simp [entry]
+    · omega
+  have hmem := flat_mem''
+    (Y0 := R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ)])
+    (M := [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)]) (d := 8)
+    hne hhead htail R600_788_78rep_mem
+  simpa [List.append_assoc] using hmem
+
+#print axioms AtLd_Vt
+#print axioms R600_788788_mem
+
 
 end Small
 end TRIO
