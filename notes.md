@@ -26623,3 +26623,19 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 `R375m(6,2,0)` の展開は `Mtwd 3 R375m [(6,1,0),(7,2,0),(8,2,0)] n`、木は `nstQ nil 1 n`。
 要るのは `∀ k, APd [true] (two nil (two nil (nstQ nil 1 k)))`
 （= `APd_twoStkGen (p := 1)` の階段）。`two nil (two nil X)` の `X ≠ nil` が壁。
+
+## 追記431: 壁は「階段の機構が `fone` の枠を要求する」1 点
+
+`GOK_twoNilW_gen` / `GOK_twoTwoNilW_gen` / `GOK_stkW_gen` / `GOK_runGNil_gen` /
+`GOK_oneUV_RunSB` は全部、文脈を `ctx0 ++ [Frm.fone V]` の形で要求する。
+`plug (ctx0 ++ [fone V]) X = plug ctx0 (one V X)` で字の境目が取れるからで、
+2 の記録の直上（下の枠が `ftwo N`）だと境目が無い。
+
+族の側は `RCtx`/`RG` で全部揃っている（2 の枠の隣接も書ける、兄弟一般、
+荷は `RP_of_RG` で無条件に緑、`RG (true::ks) nil` も緑）。残るのは
+`RG (false::false::ks) nil` で、`RG_nil_false` が要求する `RSp ks`
+（「文脈は必ず `fone V` で終わる」）が `ks` が `false` で始まると偽になるところ。
+`m ≥ 1` は `RSp_ct` で緑なので、穴は「1 の枠を挟まない」m = 0 だけ。
+
+`GOK (plug D nil)` から兄弟の可置性を取り出す道は閉じた（`W 0` の下方閉性が要るが、
+コードベースに単調性の補題は 1 つも無く、それ自体が目標と同程度に難しい）。

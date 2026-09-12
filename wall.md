@@ -33,6 +33,59 @@
 `stk 2` は底が `nil` のときだけ無条件。`nstQ nil 1 k` を底に置くと壁に戻る。
 `p = 0`（`stk 2`）は `APd_nstN` が階段をくれるので無条件、`p ≥ 1` が壁（Small.lean:4018）。
 
+## ★★★★★★★★ 壁の正体は「階段の機構が `fone` の枠を要求する」（2026-09-12 夜）
+
+`GOK_*_gen` の階段の機構は**全部** 文脈を `ctx0 ++ [Frm.fone V]` の形で要求する:
+
+    GOK_twoNilW_gen    : two N nil                    ← 塔 (fone N)^m N
+    GOK_twoTwoNilW_gen : two N (two Wl nil)           ← 階段 nstN2
+    GOK_stkW_gen       : two N (stkP p (two nil nil)) ← 階段 nstQ
+    GOK_runGNil_gen    : one V (stkP j (two A nil))
+    GOK_oneUV_RunSB    : one U (RunS (Bs ++ [B]))
+
+`plug (ctx0 ++ [fone V]) X = plug ctx0 (one V X)` で「字の境目」が取れるからで、
+**2 の記録の直上（下の枠が `ftwo N`）だと字の境目が無い**。
+だから族をどう作っても同じ所で止まる。
+
+### 族の側の確認（2026-09-12 に測った）
+
+| 族 | 2 の枠の隣接 | 兄弟 | 荷 | `nil` を差す |
+|---|---|---|---|---|
+| `GCtx`/`APd` | 書けない | 一般 | 緑 | — |
+| `WCtx`/`WPd` | 書けない（`0`/`k+1` の節） | 一般 | 緑 | — |
+| `TwSt`/`TwOk` | 書けない（`Fter` が弾く） | 一般 | 緑 | — |
+| `SCtx`/`SG` | **書ける**（`ftwo nil` 何枚でも） | `nil` 固定 | ★壁 `SPayF` | `SNilT`→`stk q` 全部 |
+| `RCtx`/`RG` | **書ける** | 一般（`RFt`） | **★緑 `RP_of_RG`** | `RG (true::ks) nil` ★緑 |
+
+`RCtx` は 2 の枠の隣接も兄弟一般も荷も全部通る。残るのは
+
+    RG (false :: false :: ks) Jk1.nil        ← `RG_nil_false` は `RSp ks` を要求し、
+                                               `ks` が `false` で始まると `RSp` は偽
+
+`RSp ks` = 「`RCtx ks` の文脈は必ず `fone V` で終わる」。`m ≥ 1` の場合は
+`RSp_ct` で緑なので、**穴は `m = 0`（1 の枠を挟まない）だけ**。
+
+### 次にやること
+
+`ctx0 ++ [Frm.ftwo N]` を底にした階段の機構を 1 本作る。
+`GOK_twoNilW_gen` の証明で `fone V` をどこに使っているかを見て、
+`ftwo N` 版（字の境目を 1 つ外側に取る）に書き換えられるか調べる。
+
+### 閉じた道（再挑戦しない）
+
+`GOK (plug D nil)` から兄弟の可置性を取り出す道は **閉じた**。
+それには `W 0` の下方閉性（`A ≤ B`, `B ∈ W 0` ⟹ `A ∈ W 0`）が要るが、
+`Cnf.lean` / `SmallX.lean` / `SmallA.lean` に単調性の補題は 1 つも無く、
+これ自体が目標と同程度に難しい。
+
+### 予算の言葉での穴（`WPd`）
+
+    WPd ((k+1) :: ks) (two N Jk1.nil)        ★緑（`WPd_twoA_runB`）
+    WPd (0 :: ks) (two N (two nil nil))      ★緑（`WPd_twoOf` + `WPd_run`）
+    WPd ((k+1) :: ks) (two N (two nil nil))  ★壁 ← これ 1 本で `stk q` 全部
+
+`WPd_twoOf` の結論は必ず `0 :: ks` なので、鎖を 1 段伸ばすと予算が 0 に落ちる。
+
 ## ★★★★★★★ 壁の一番きれいな形（2026-09-13 夜、今日の調査）
 
     RStepN0 : ∀ D : List Frm,
