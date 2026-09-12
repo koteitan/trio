@@ -11080,6 +11080,184 @@ theorem WNd_ck {i : Bud} (hi : i ≠ ⊥) (ks : List Bud) (V : Jk1) :
   · exact fun h => h.2 hi
   · exact fun h => ⟨fun he => absurd he hi, fun _ => h⟩
 
+
+def WNtx {Bud : Type} [PartialOrder Bud] [OrderBot Bud] [WellFoundedLT Bud] :
+    List Bud → List Frm → Prop
+  | [], ctx => ctx = []
+  | (i :: ks), ctx =>
+      (i = ⊥ → ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+        WNtx ks ctx' ∧ FrmNT ks U ∧ WNd ks U ∧
+        (∀ C : TrioSeq, Bok C → WNd ks (Jk1.pay U C))) ∧
+      (i ≠ ⊥ → ∃ (p : List Bud) (_ : p ≠ []) (_ : ∀ x ∈ p, x < i)
+        (ctx' : List Frm) (N : Jk1),
+        ctx = ctx' ++ [Frm.ftwo N] ∧ WNtx (p ++ ks) ctx' ∧ JkA N ∧
+        (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) → WNd (p' ++ (p ++ ks)) N) ∧
+        (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) →
+          ∀ C : TrioSeq, Bok C → WNd (p' ++ (p ++ ks)) (Jk1.pay N C)))
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+
+theorem WNtx_bnil (ctx : List Frm) : WNtx ([] : List Bud) ctx ↔ ctx = [] := by rw [WNtx]
+
+theorem WNtx_c0 (ks : List Bud) (ctx : List Frm) :
+    WNtx ((⊥ : Bud) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1),
+      ctx = ctx' ++ [Frm.fone U] ∧ WNtx ks ctx' ∧ FrmNT ks U ∧ WNd ks U ∧
+      (∀ C : TrioSeq, Bok C → WNd ks (Jk1.pay U C)) := by
+  rw [WNtx]
+  constructor
+  · exact fun h => h.1 rfl
+  · exact fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩
+
+theorem WNtx_cb {i : Bud} (hi : i ≠ ⊥) (ks : List Bud) (ctx : List Frm) :
+    WNtx (i :: ks) ctx ↔ ∃ (p : List Bud) (_ : p ≠ []) (_ : ∀ x ∈ p, x < i)
+      (ctx' : List Frm) (N : Jk1),
+      ctx = ctx' ++ [Frm.ftwo N] ∧ WNtx (p ++ ks) ctx' ∧ JkA N ∧
+      (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) → WNd (p' ++ (p ++ ks)) N) ∧
+      (∀ (p' : List Bud), p' ≠ [] → (∀ x ∈ p', x < i) →
+        ∀ C : TrioSeq, Bok C → WNd (p' ++ (p ++ ks)) (Jk1.pay N C)) := by
+  rw [WNtx]
+  constructor
+  · exact fun h => h.2 hi
+  · exact fun h => ⟨fun he => absurd he hi, fun _ => h⟩
+
+theorem FrmNT_ne (a : Bud) (l : List Bud) {X : Jk1} (h : JkA X) : FrmNT (a :: l) X := h
+
+theorem FrmNT_app_ne {p ks : List Bud} (hp : p ≠ []) {X : Jk1} (h : JkA X) :
+    FrmNT (p ++ ks) X := by
+  obtain ⟨a, p₀, rfl⟩ : ∃ a p₀, p = a :: p₀ := by
+    cases p with
+    | nil => exact absurd rfl hp
+    | cons a p₀ => exact ⟨a, p₀, rfl⟩
+  exact h
+
+theorem WNtx_JkT : ∀ (ks : List Bud) (ctx : List Frm), WNtx ks ctx → ∀ X : Jk1,
+    FrmNT ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WNtx_bnil] at h; subst h; exact hX
+  | (i :: ks), ctx, h, X, hX => by
+      by_cases hi : i = ⊥
+      · subst hi
+        rw [WNtx_c0] at h
+        obtain ⟨ctx', U, rfl, hc', hU, -, -⟩ := h
+        rw [plug_snoc]
+        exact WNtx_JkT ks ctx' hc' (Jk1.one U X) (FrmNT_one ks U X hU hX)
+      · rw [WNtx_cb hi] at h
+        obtain ⟨p, hpne, hp, ctx', N, rfl, hc', hJN, -, -⟩ := h
+        rw [plug_snoc2]
+        exact WNtx_JkT (p ++ ks) ctx' hc' (Jk1.two N X)
+          (FrmNT_app_ne hpne ⟨hJN, FrmNT_JkA (i :: ks) X hX⟩)
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+
+theorem WNd_iff : ∀ (ks : List Bud) (V : Jk1),
+    WNd ks V ↔ ∀ ctx : List Frm, WNtx ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WNd_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WNtx_bnil] at hc; subst hc; exact h
+      · intro h
+        exact h [] ((WNtx_bnil []).mpr rfl)
+  | (i :: ks), V => by
+      by_cases hi : i = ⊥
+      · subst hi
+        rw [WNd_c0]
+        constructor
+        · intro h ctx hc
+          rw [WNtx_c0] at hc
+          obtain ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩ := hc
+          rw [plug_snoc]
+          exact (WNd_iff ks (Jk1.one U V)).mp (h U hU hUk hUp) ctx' hc'
+        · intro h U hU hUk hUp
+          refine (WNd_iff ks (Jk1.one U V)).mpr ?_
+          intro ctx' hc'
+          rw [← plug_snoc]
+          exact h (ctx' ++ [Frm.fone U])
+            ((WNtx_c0 ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk, hUp⟩)
+      · rw [WNd_ck hi]
+        constructor
+        · intro h ctx hc
+          rw [WNtx_cb hi] at hc
+          obtain ⟨p, hpne, hp, ctx', N, rfl, hc', hJN, hNt, hNp⟩ := hc
+          rw [plug_snoc2]
+          exact (WNd_iff (p ++ ks) _).mp (h p hpne hp N hJN hNt hNp) ctx' hc'
+        · intro h p hpne hp N hJN hNt hNp
+          refine (WNd_iff (p ++ ks) _).mpr ?_
+          intro ctx' hc'
+          rw [← plug_snoc2]
+          exact h (ctx' ++ [Frm.ftwo N])
+            ((WNtx_cb hi ks _).mpr ⟨p, hpne, hp, ctx', N, rfl, hc', hJN, hNt, hNp⟩)
+termination_by ks _ => ((ks : List Bud) : Multiset Bud)
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app _ _ (by assumption)
+
+#print axioms WNtx_JkT
+#print axioms WNd_iff
+
+
+theorem WNd_step (ks : List Bud) {V W : Jk1} (hV : FrmNT ks V) (hVk : WNd ks V)
+    (hVp : ∀ C : TrioSeq, Bok C → WNd ks (Jk1.pay V C))
+    (hW : WNd ((⊥ : Bud) :: ks) W) : WNd ks (Jk1.one V W) :=
+  (WNd_c0 ks W).mp hW V hV hVk hVp
+
+/-- ブロックの 2 の枠。走りの長さは `p` の長さに現れるので上限が無い。 -/
+theorem WNd_twoOf {i i' : Bud} (hi : i ≠ ⊥) (hlt : i' < i) {ks : List Bud}
+    {V N : Jk1} (hJN : JkA N)
+    (hNt : ∀ p' : List Bud, p' ≠ [] → (∀ x ∈ p', x < i) → WNd (p' ++ (i' :: ks)) N)
+    (hNp : ∀ p' : List Bud, p' ≠ [] → (∀ x ∈ p', x < i) →
+      ∀ C : TrioSeq, Bok C → WNd (p' ++ (i' :: ks)) (Jk1.pay N C))
+    (hV : WNd (i :: ks) V) : WNd (i' :: ks) (Jk1.two N V) := by
+  have h := (WNd_ck hi ks V).mp hV [i'] (by simp)
+    (by intro x hx; simp at hx; subst hx; exact hlt) N hJN
+    (by simpa using hNt) (by simpa using hNp)
+  simpa using h
+
+theorem WNd_congr : ∀ (ks : List Bud) {V1 V2 : Jk1}, (∀ l, jk1 l V1 = jk1 l V2) →
+    WNd ks V1 → WNd ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WNd_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+theorem WNtx_split (ks : List Bud) (ctx : List Frm)
+    (h : WNtx ((⊥ : Bud) :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WNtx ks ctx0 ∧
+      FrmNT ks V ∧ GOK (plug ctx0 V) := by
+  rw [WNtx_c0] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk, -⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (WNd_iff ks U).mp hUk ctx' hc'⟩
+
+/-- 枠木の条件に荷閉包が入っているので `one V nil` は無条件。 -/
+theorem WNd_oneNil (ks : List Bud) (V : Jk1) (hV : FrmNT ks V) (hVk : WNd ks V)
+    (hVp : ∀ C : TrioSeq, Bok C → WNd ks (Jk1.pay V C)) :
+    WNd ks (Jk1.one V Jk1.nil) := by
+  rw [WNd_iff]
+  intro ctx hc
+  refine APnil_gen0 ctx V
+    (WNtx_JkT ks ctx hc (Jk1.one V Jk1.nil) (FrmNT_one ks V Jk1.nil hV trivial))
+    ((WNd_iff ks V).mp hVk ctx hc) ?_
+  intro C hC
+  exact (WNd_iff ks _).mp (hVp C hC) ctx hc
+
+theorem WNd_nilT (ks : List Bud) : WNd ((⊥ : Bud) :: ks) Jk1.nil :=
+  (WNd_c0 ks _).mpr (fun U hU hUk hUp => WNd_oneNil ks U hU hUk hUp)
+
+theorem WNd_nilE : WNd ([] : List Bud) Jk1.nil := (WNd_bnil _).mpr GOK_nil
+
+#print axioms WNd_twoOf
+#print axioms WNd_nilT
+
 end BudG
 
 #print axioms WNd_ck
