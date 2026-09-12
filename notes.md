@@ -24961,3 +24961,51 @@ S 族の塔の階段は文脈を `[fone N] ++ replicate p (ftwo nil)` で伸ば�
 
 **通るのは荷が `[(0,0,0)]` 1 本の入れ子だけ**（`Zk k`）。そこから作った族の
 極限を `flat_mem''` で取るのが、いまの唯一の前進手段。
+
+## 追記387: 枠の単位は「`fone` ＋ 走り」。層 `WPdR`
+
+追記384 の詰まり（兄弟の条件が形の付け替えで移らない）の原因が分かった。
+
+### 原因
+
+`WPd` の節が `[fone U, ftwo N]` の**対**なのは偶然ではない。塔の階段
+（`WPd_stairB` / `GOK_oneUV_RunSB` の `UtwP` / `GOK_stkW_gen` の `nstQ`）が
+文脈に足すブロックが
+
+    nstQ N p (k+1) = one nil (two N (stkP p (nstQ N p k)))
+    → ブロック = [fone nil, ftwo N] ++ replicate p (ftwo nil)
+
+の形で、**ちょうど 1 つの節ぶん**だからである。だから
+
+    hsib : ∀ q（入り目 ≤ k）, WPd ((0::q) ++ B') N     （尻 `B'` は固定）
+
+の `q` にブロックがそのまま入り、尻 `B'` が動かない。
+
+`WPdS`（枠を 1 つずつに分けた層）ではブロックが 3 つの入り目にまたがるので、
+兄弟の条件の尻（`B'` に当たる部分）が階段のたびにずれる。これが詰まりの正体。
+
+### 直し方: 入り目 = `(b, p) : Bud ×ₗ ℕ`
+
+    ⊥ = (⊥, 0)   … `[fone U]`
+    (b, p)       … `[fone U, ftwo N] ++ replicate p (ftwo nil)`
+
+    WPdR ((b,p) :: ks) V の 2 の節の結論は
+      WPdR (r ++ ks) (one U (two N (stkP p V)))
+
+`p = 0` が `WPdT`。`p ≥ 1` で**縦の走り**が入る。とくに
+
+    WPdR ((b,p) :: ks) nil  →  one U (two N (stk p))   （走り `p+1`）
+
+階段のブロックは入り目 `(b', p)`（`b' < b`、`p` は同じ）なので
+辞書式順序で `(b',p) < (b,p)` ✓、DM 測度が減り、尻も揃う。
+
+### いま緑
+
+    WPdR / WCtxR / WPdR_iff / WPdR_congr / plug_frameR
+
+### 次
+
+    WPdR の小さい補題（FrmR_* / WCtxR_JkT / WCtxR_split / WPdR_step / WPdR_ck_shift）
+    WPdR_stair（`WPd_stairB` の `stkP p` つき版）
+    WPdR_run（`GOK_stkW_gen` を使って `WPdR ((b,p)::ks) nil`）
+    → `stk q` → `RunAll` → 行376
