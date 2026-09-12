@@ -4190,6 +4190,84 @@ theorem jk1_nstW (N W : Jk1) : ∀ (k l : ℕ),
 
 #print axioms jk1_nstW
 
+/-! #### `unQW` の `MidD` / `hMy` と、塔から末尾の 2 の記録を継ぐ補題 -/
+
+theorem MidD_unQW {N W : Jk1} (hJN : JkA N) (hJW : JkA W) {D : ℕ} (hD : 1 ≤ D) :
+    MidD (D + 1) (unQW N W D) := by
+  rw [unQW_eq N W D]
+  refine MidD_append (MidD_unN hJN hD) ?_ (jk1_mono W hJW (D + 1))
+  intro c hc
+  have := jk1_ge W (D + 1) c hc
+  omega
+
+theorem length_unQW (N W : Jk1) (D : ℕ) :
+    (unQW N W D).length = (jk1 D N).length + 1 + ((jk1 (D + 1) W).length + 1) := by
+  rw [unQW_eq3]
+  simp
+  omega
+
+theorem entry_unQW_mid0 (N W : Jk1) (D : ℕ) :
+    entry (unQW N W D) 0 ((jk1 D N).length + 1) = D + 1 := by
+  rw [unQW_eq3, show (jk1 D N).length + 1
+      = (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N).length from by simp, entry_append_at]
+  rfl
+
+theorem entry_unQW_mid1 (N W : Jk1) (D : ℕ) :
+    entry (unQW N W D) 1 ((jk1 D N).length + 1) = 2 := by
+  rw [unQW_eq3, show (jk1 D N).length + 1
+      = (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N).length from by simp, entry_append_at]
+  rfl
+
+theorem entry_unQW_right (N W : Jk1) (D : ℕ) : ∀ t, (jk1 D N).length + 1 < t →
+    t < (unQW N W D).length → D + 2 ≤ entry (unQW N W D) 0 t := by
+  intro t ht1 ht2
+  rw [length_unQW] at ht2
+  obtain ⟨i, rfl⟩ : ∃ i, t = (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N).length + (i + 1) :=
+    ⟨t - ((jk1 D N).length + 2), by simp; omega⟩
+  have hi : i < (jk1 (D + 1) W).length := by simp at ht2; omega
+  rw [unQW_eq3, entry_append_right]
+  show D + 2 ≤ ((((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (D + 1) W).getD (i + 1)
+    ((0, 0, 0) : ℕ × ℕ × ℕ)).1
+  rw [List.getD_cons_succ, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi,
+    Option.getD_some]
+  have := jk1_ge W (D + 1) _ (List.getElem_mem hi)
+  omega
+
+theorem hMy_unQW {N W : Jk1} (hJN : JkA N) (hJW : JkA W) {D : ℕ} (hD : 1 ≤ D) :
+    ∀ t, 1 ≤ t → t < (unQW N W D).length → entry (unQW N W D) 0 t < D + 2 →
+      (∀ i, t < i → i < (unQW N W D).length →
+        entry (unQW N W D) 0 t < entry (unQW N W D) 0 i) →
+      2 ≤ entry (unQW N W D) 1 t := by
+  intro t ht1 htl hlt hrec
+  rcases Nat.lt_trichotomy t ((jk1 D N).length + 1) with h | h | h
+  · exfalso
+    have hmidlen : (jk1 D N).length + 1 < (unQW N W D).length := by
+      rw [length_unQW]; omega
+    have h2 := hrec ((jk1 D N).length + 1) h hmidlen
+    rw [entry_unQW_mid0] at h2
+    have hge : D + 1 ≤ entry (unQW N W D) 0 t := (MidD_unQW hJN hJW hD).tail t ht1 htl
+    omega
+  · rw [h, entry_unQW_mid1]
+  · exfalso
+    have := entry_unQW_right N W D t h htl
+    omega
+
+/-- 塔（`k+1` 段）と底から、`unQW N W D` の末尾に 2 の記録を継ぐ。 -/
+theorem snocW_of_tower {N Wt : Jk1} (hJN : JkA N) (hJW : JkA Wt) {D : ℕ} (hD : 1 ≤ D)
+    {X : TrioSeq} (hne : X ≠ []) (h0 : X ∈ W 0)
+    (htw : ∀ k : ℕ, Mtwd 2 X (unQW N Wt D) (k + 1) ∈ W 0) :
+    (X ++ unQW N Wt D) ++ [((D + 2, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  refine snocYd_mem (Y0 := X) (M := unQW N Wt D) (L := D) (y := 2) (dl := 2) hne
+    (MidD_unQW hJN hJW hD) ?_ (hMy_unQW hJN hJW hD) (by omega) (by omega) ?_
+  · have he : entry (unQW N Wt D) 1 0 = 1 := rfl
+    omega
+  · intro n
+    match n with
+    | 0 => simpa [Mtwd] using h0
+    | (k + 1) => exact htw k
+
+#print axioms snocW_of_tower
+
 
 end Small
 end TRIO
