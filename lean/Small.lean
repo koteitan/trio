@@ -4116,6 +4116,80 @@ theorem R376_of_StQ (h : StQ) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 
 #print axioms APd_twoStkGen
 #print axioms R376_of_StQ
 
+/-! ### ★★★ `GOK_stkW_gen` の「内側の兄弟が一般」版の準備
+
+`two N (two W nil)` の語は
+
+    Y0 ++ unQW N W D ++ [(D+2, 2, 0)],   unQW N W D = (D,1,0) :: jk1 D (two N W)
+
+で、`snocYd_mem` を `L = D`, `y = 2`, `dl = 2` で使える（`W` に依らない）。
+階段は `nstW N W 0 = two N W`, `nstW N W (k+1) = two N (one W (nstW N W k))`。 -/
+
+/-- 階段の単位（内側の兄弟が `W`）。`unQW N (stkP p nil) D` は `unQ N p D` ではない
+（あちらは縦の走り、こちらは `W` を 2 の記録の荷に置く）。 -/
+def unQW (N W : Jk1) (D : ℕ) : TrioSeq :=
+  ((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D (Jk1.two N W)
+
+/-- 階段（`k+1` 個の写し）。 -/
+def nstW (N W : Jk1) : ℕ → Jk1
+  | 0 => Jk1.two N W
+  | (k + 1) => Jk1.two N (Jk1.one W (nstW N W k))
+
+theorem unQW_eq3 (N W : Jk1) (D : ℕ) :
+    unQW N W D = (((D, 1, 0) : ℕ × ℕ × ℕ) :: jk1 D N)
+      ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (D + 1) W) := by
+  show ((D, 1, 0) : ℕ × ℕ × ℕ) :: (jk1 D N ++ (((D + 1, 2, 0) : ℕ × ℕ × ℕ)
+      :: jk1 (D + 1) W)) = _
+  simp
+
+theorem unQW_eq (N W : Jk1) (D : ℕ) :
+    unQW N W D = unN N D ++ jk1 (D + 1) W := by
+  rw [unQW_eq3]
+  simp [unN, List.append_assoc]
+
+theorem shift_unQW (N W : Jk1) (D s : ℕ) :
+    shiftr01 s 0 (unQW N W D) = unQW N W (D + s) := by
+  show shiftr01 s 0 ([((D, 1, 0) : ℕ × ℕ × ℕ)] ++ jk1 D (Jk1.two N W)) = _
+  rw [shiftr01_append0, shift_col, jk1_shift]
+  rfl
+
+theorem JkA_nstW {N W : Jk1} (hJN : JkA N) (hJW : JkA W) : ∀ k : ℕ, JkA (nstW N W k)
+  | 0 => ⟨hJN, hJW⟩
+  | (k + 1) => ⟨hJN, hJW, JkA_nstW hJN hJW k⟩
+
+theorem jk1_nstW (N W : Jk1) : ∀ (k l : ℕ),
+    ((l, 1, 0) : ℕ × ℕ × ℕ) :: jk1 l (nstW N W k)
+      = (List.range (k + 1)).flatMap (fun j => shiftr01 (2 * j) 0 (unQW N W l))
+  | 0, l => by
+      show ((l, 1, 0) : ℕ × ℕ × ℕ) :: jk1 l (Jk1.two N W) = _
+      simp [unQW]
+  | (k + 1), l => by
+      have hstep : ((l, 1, 0) : ℕ × ℕ × ℕ) :: jk1 l (nstW N W (k + 1))
+          = unQW N W l ++
+            (((l + 2, 1, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 2) (nstW N W k)) := by
+        show ((l, 1, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+              jk1 (l + 1) (Jk1.one W (nstW N W k)))) = _
+        show ((l, 1, 0) : ℕ × ℕ × ℕ) ::
+            (jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+              (jk1 (l + 1) W ++ (((l + 1 + 1, 2 - 1, 0) : ℕ × ℕ × ℕ) ::
+                jk1 (l + 1 + 1) (nstW N W k))))) = _
+        rw [unQW_eq3]
+        simp [List.append_assoc, show l + 1 + 1 = l + 2 from rfl]
+      rw [hstep, jk1_nstW N W k (l + 2),
+        show List.range (k + 1 + 1) = 0 :: (List.range (k + 1)).map Nat.succ from
+          List.range_succ_eq_map,
+        List.flatMap_cons, List.flatMap_map]
+      simp only [Nat.mul_zero, shiftr01_zero, Function.comp_def]
+      refine congrArg _ ?_
+      apply List.flatMap_congr
+      intro j _
+      rw [shift_unQW, shift_unQW, Nat.mul_succ]
+      congr 1
+      omega
+
+#print axioms jk1_nstW
+
 
 end Small
 end TRIO
