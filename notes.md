@@ -26079,3 +26079,27 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 3. `WPdw_run` / `WPdw_twoZk` / `WPdw_Xw` の写し。
 
 **壁を通らずにシートの証明中の行が埋まる。次はこれ。**
+
+### 追記413 の続き: 何が足りないか（道具の棚卸し）
+
+- `Bok_flat (hf : Flat B) (hroot : entry B 0 0 = 0) : Bok B`（緑）。
+  `Flat` は行 1・行 2 が全部 0。だから `B_k = (0,0,0)(1,0,0)(0,0,0)^k` は
+  **`Bok_flat` で即 `Bok`**（`Flat_mem_W` が `B ∈ W 0` をくれる）。ここは楽。
+- 木は `Zw 0 = pay nil [(0,0,0),(1,0,0)]`, `Zw (k+1) = pay (Zw k) [(0,0,0)]`。
+  `jk1 l (Zw k) = (l+1,0,0)(l+2,0,0) ++ replicate k (l+1,0,0)`。
+  `[(0,0,0),(1,0,0)]` は `[(0,0,0)]` と `[(1,0,0)]` に割れない（後者は root が 1 で `Bok` でない）。
+- 予算側: `WPdT_twoAZ_top` は **荷が `[(0,0,0)]` 固定**
+
+      WPdT_twoAZ_top (S : Scale Bud) (ht : ∀ m, S.nb m < t) (hJA) (hJZ)
+        (hchain : ∀ m c, S.nb m < c → ∀ ks, WPdT (c::ks) (twoIt A Z m))
+        : WPdT (t::ks) (two A (pay Z [(0,0,0)]))
+
+  なので `two A (pay Z [(0,0,0),(1,0,0)])`（一般の `Bok` 荷）の版が要る。
+  `AYdTWT`（節の上の荷、無条件）とは位置が違う。
+
+**次の 2 手**:
+1. `WPdT_twoAZ_top` の「荷が一般の `Bok Y`」版を作る（`Y` について A2'）。
+   予算がどれだけ要るかはそこで分かる。`Y⟦n⟧` が伸びるので `ω^ω` を超えるなら
+2. 予算の型を `Colex ((ℕ ×ₗ ℕ) →₀ ℕ)`（`< ω^(ω²)`）に伸ばす。
+   `Finsupp.Colex.wellFoundedLT` は `[LT α] [Std.Trichotomous α (·<·)] [WellFoundedLT α]`
+   だけ要求するので `ℕ ×ₗ ℕ` で通る。
