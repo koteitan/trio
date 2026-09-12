@@ -25515,3 +25515,41 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
 `⊥ :: (0,b) :: ks` に置く必要があり、`Z` 側にも同じ不変量を足すことになる。
 well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長さが主）が要る。
 **(b) を層全体に通すのが次の大仕事。**
+
+## 追記399: ★★ 行376 が `APd` だけの 1 文 `OneRunA` に落ちた
+
+    OneRunA : ∀ (q : ℕ) (Y : Jk1), JkA Y →
+                (∀ bs, APd (true :: bs) Y) →
+                ∀ bs, APd (true :: bs) (stkP q (one nil Y))
+
+    R376_of_OneRunA (h : OneRunA) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
+
+「どの `true::bs` の形にも差せる木 `Y` は、走り `q` 本＋1 の記録の上にも差せる」。
+**鎖も荷も予算も層も出てこない。** `HtowR`（追記395）より遥かに小さい。
+
+### 落とし方
+
+    R376_of_OneRunA ← RunAll_of_OneRunA ← WPdR_stkO ← WPdR_stkG（追記398）
+
+`WPdR_stkO` は `q` の帰納。`stk (q+1) = stkP q (two nil nil)` を `WPdR_stkG` で出し、
+階段の条件 `∀ i, WPdR [] (TwG nil q i nil)` を `i` の帰納で作る。1 段は
+
+    TwG nil q (i+1) nil = stkP q (one nil (TwG nil q i nil))
+
+なので `OneRunA` そのもの。**入り目の列は `[]` のまま一段も伸びない**（`SOkR_bot` も
+`WPdR_nilT` も `RunPay` も要らない）。これが今までとの決定的な違い。
+
+### なぜ自明でないか
+
+`APd` の形は `true`（1 の枠）と `false`（1 の枠＋2 の枠の対）しか無く、
+**裸の `ftwo nil` の枠に対応する形が無い**。`stkP q (one nil Y)` の文脈
+`ctx ++ (ftwo nil)^q ++ [fone nil]` はどの `GCtx (true::bs)` にも当たらない。
+`q = 0` は易しい（`APd (true::true::bs) Y` に `U = nil` を入れるだけ）。
+`q ≥ 1` が壁。
+
+### 次
+
+`OneRunA` を `q` の帰納で攻める。`stkP (q+1) (one nil Y) = stkP q (two nil (one nil Y))`
+なので、`WPdR_stkG` の形（`stkP p (two N nil)`）ではなく
+「`two nil Z` の上に走り」の形。`GOK_runGNil_gen` は先端が `nil` のときだけなので、
+先端が `one nil Y` の版が要る ―― あるいは `Y` の普遍性をもっと使う。

@@ -1,46 +1,47 @@
 # 壁
 
-## 壁の 1 文（2026-09-12。まずここ）
+## ★★ 残る 1 文（2026-09-12。まずここ）
 
-    一般の荷を持つ 2 の記録 `two N V`（`V` が `nil` でも `pay` でもない）は、
-    1 の枠の**直上**にしか置けない。走りのてっぺんには置けない。
+    OneRunA : ∀ (q : ℕ) (Y : Jk1), JkA Y →
+                (∀ bs, APd (true :: bs) Y) →
+                ∀ bs, APd (true :: bs) (stkP q (one nil Y))
 
-道具は 3 つしかない：
+    R376_of_OneRunA (h : OneRunA) : R373 ++ [(5,3,0)] ∈ W 0        ★緑
 
-    GOK_twoNilW_gen / GOK_stkW_gen / GOK_runGNil_gen … 先端が `nil` のときだけ
-    GOK_twoPayZ_of                                  … 先端が `pay Z Y`（鎖が要る）
-    WPdR_twoOf                                      … 荷を予算の節に置く
-                                                       → 結論は `WPdR (⊥::ks) (two N V)`
+「どの `true::bs` の形にも差せる木 `Y` は、走り `q` 本＋1 の記録の上にも差せる」。
+鎖も荷も予算も層も出てこない。`q = 0` は易しい（`APd (true::true::bs) Y` に
+`U = nil` を入れる）。`q ≥ 1` が壁。
 
-`RunPay`（走りの上の荷）は `WPdR ks (stkP p (two N V))` を要求する。直下が
-`ftwo nil` なので `WPdR_twoOf` が使えない。`V = nil` なら `WPdR_stkG` で通る。
+なぜ自明でないか: `APd` の形は `true`（1 の枠）と `false`（1 の枠＋2 の枠の対）
+だけで、**裸の `ftwo nil` の枠に当たる形が無い**。
 
-## 目標（行376）の落とし方（全部緑）
+## 落とし方（全部緑）
 
-    R376_of_HtowR ← R376_of_RunPay ← RunAll_of_RunPay ← WPdR_stkS
-    HtowR : ∀ ctx V, JkA V → (typing) → GOK (plug ctx (two nil V)) →
-              ∀ N, VCh V N → GOK (plug ctx (two N V))
-
-`HtowR` は素の `GOK` なので語の道具（`snocYd_mem` 等）では攻められない
-（悪い部分の根が任意の `V` の中にある。追記396）。攻めるのは層の側。
-
-## 今回緑になったもの
+    R376_of_OneRunA ← RunAll_of_OneRunA ← WPdR_stkO ← WPdR_stkG
 
     WPdR_stkG (p ks) (hk : SOkR ks) (hJN : JkA N)
       (htw : ∀ i, WPdR ks (TwG N p i N)) : WPdR ks (stkP p (two N nil))   ★無条件
 
     TwG N p 0 X = stkP p X,  TwG N p (i+1) X = TwG N p i (one N (stkP p X))
+    TwG N p (i+1) X = stkP p (one N (TwG N p i X))
+    plug (ctx ++ blkC V (replicate p nil) ++ blkR N (replicate p nil) i) X
+      = plug (ctx ++ [fone V]) (TwG N p i X)
 
-`GOK_runGNil_gen` の階段を**木**で書いたので入り目が増えず、鎖について循環しない。
+`GOK_runGNil_gen` の階段を**木**で書いたので入り目の列が伸びない。
+`WPdR_stkO` は入り目 `[]` のまま回るので `SOkR_bot` / `WPdR_nilT` / `RunPay` が要らない。
 
-## 次の大仕事（追記396〜398）
+## もう 1 本の（古い、より大きい）落とし方
 
-1. `Ekey = ℕ ×ₗ Bud`（走りの長さを主に）に組み替える。`(0,b) < (p,·)`（`p ≥ 1`）が
-   どの `b` でも成り立つので、走りの節の下に予算の節を置ける。
-2. 1 の枠の兄弟 `U` に「どの予算の節にも置ける」を課す。`nil` / `pay U C` /
-   `one U T` は保たれる。`AYdWR` の `Z` にも同じ条件が要る。
-3. これで走りの節に載る木が `nil` だけになり、`RunPay` が `WPdR_stkG` と
-   `GOK_twoPayZ_of` で閉じる。
+    R376_of_HtowR ← R376_of_RunPay ← RunAll_of_RunPay ← WPdR_stkS
+    HtowR : ∀ ctx V, JkA V → (typing) → GOK (plug ctx (two nil V)) →
+              ∀ N, VCh V N → GOK (plug ctx (two N V))
+
+こちらは「一般の荷を持つ 2 の記録は 1 の枠の**直上**にしか置けない」という壁に当たる
+（追記398）。道具は 3 つだけ:
+
+    GOK_twoNilW_gen / GOK_stkW_gen / GOK_runGNil_gen … 先端が `nil` のときだけ
+    GOK_twoPayZ_of                                  … 先端が `pay Z Y`（鎖が要る）
+    WPdR_twoOf                                      … 荷を予算の節に置く（1 の枠が直下）
 
 ## 層 `WPdR`（いま緑の版）
 

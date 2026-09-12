@@ -3836,6 +3836,61 @@ theorem WPdR_stkG (p : ℕ) (ks : List (Ekey Bud)) (hk : SOkR ks) {N : Jk1} (hJN
 
 #print axioms WPdR_stkG
 
+/-! ### ★★★★★★★★ `RunAll` は「走りの上に 1 の記録を載せる」1 文に落ちる
+
+`WPdR_stkG` の階段の条件は `TwG nil q i nil` の族で、
+
+    TwG N p (i+1) X = stkP p (one N (TwG N p i X))
+
+だから、`i` の帰納の 1 段は「`stkP q (one nil Y)` を差す」だけ。入り目の列 `ks` は
+**一段も伸びない**（`SOkR_bot` が要らない）。荷も鎖も出てこない。 -/
+
+theorem TwG_succ (N : Jk1) (p : ℕ) : ∀ (i : ℕ) (X : Jk1),
+    TwG N p (i + 1) X = stkP p (Jk1.one N (TwG N p i X))
+  | 0, _ => rfl
+  | (i + 1), X => by
+      show TwG N p (i + 1) (Jk1.one N (stkP p X)) = _
+      rw [TwG_succ N p i (Jk1.one N (stkP p X))]
+      rfl
+
+theorem WPdR_bnilA (V : Jk1) :
+    WPdR ([] : List (Ekey Bud)) V ↔ ∀ bs : List Bool, APd (true :: bs) V := by
+  rw [WPdR_bnil0]
+  constructor
+  · intro h bs
+    exact (APd_iff (true :: bs) V).mpr (fun ctx hc => h bs ctx hc)
+  · intro h bs ctx hc
+    exact (APd_iff (true :: bs) V).mp (h bs) ctx hc
+
+/-- ★ 残る 1 文: 走りのてっぺんに 1 の記録（兄弟は空木）を載せられる。
+層も予算も鎖も荷も出てこない、`APd` だけの文。 -/
+def OneRunA : Prop := ∀ (q : ℕ) (Y : Jk1), JkA Y →
+  (∀ bs : List Bool, APd (true :: bs) Y) →
+  ∀ bs : List Bool, APd (true :: bs) (stkP q (Jk1.one Jk1.nil Y))
+
+theorem WPdR_stkO (hOR : OneRunA) :
+    ∀ q : ℕ, WPdR ([] : List (Ekey Bud)) (stk q)
+  | 0 => (SOkR_bnil (Bud := Bud)).2
+  | (q + 1) => by
+      have htw : ∀ i : ℕ, WPdR ([] : List (Ekey Bud)) (TwG Jk1.nil q i Jk1.nil) := by
+        intro i
+        induction i with
+        | zero => exact WPdR_stkO hOR q
+        | succ i ih =>
+            rw [TwG_succ]
+            refine (WPdR_bnilA _).mpr (hOR q _ (JkA_TwG (N := Jk1.nil) trivial q i trivial)
+              ((WPdR_bnilA _).mp ih))
+      have h := WPdR_stkG q ([] : List (Ekey Bud)) SOkR_bnil (N := Jk1.nil) trivial htw
+      rw [stkP_two_nil_nil] at h
+      exact h
+
+/-- ★★★★★★★★ 行376 が `OneRunA` 1 文から出る。 -/
+theorem RunAll_of_OneRunA (hOR : OneRunA) : RunAll :=
+  fun q ks => (WPdR_bnilA (Bud := ℕ) (stk q)).mp (WPdR_stkO (Bud := ℕ) hOR q) ks
+
+#print axioms WPdR_stkO
+#print axioms RunAll_of_OneRunA
+
 /-- ★★★★★★★★ 行376 が `RunPay`（走りの上の荷）1 文から出る。 -/
 theorem RunAll_of_RunPay (hRP : RunPay (Bud := Bud)) : RunAll := by
   intro q ks
@@ -3914,6 +3969,14 @@ theorem RunPay_of_HtowR (h : HtowR) : RunPay (Bud := Bud) := by
     exact hh
 
 end EkeyR
+
+/-- ★★★★★★★★ 行376 は `APd` だけの 1 文 `OneRunA` から出る。
+「`Y` がどの `true::bs` の形にも差せるなら、`stkP q (one nil Y)`（走り `q` 本の上に
+1 の記録）も差せる」。鎖も荷も予算も出てこない。 -/
+theorem R376_of_OneRunA (h : OneRunA) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RunAll (RunAll_of_OneRunA h)
+
+#print axioms R376_of_OneRunA
 
 /-- ★★★★★★★★ 行376 は純粋な `GOK` の 1 文 `HtowR` から出る。 -/
 theorem R376_of_HtowR (h : HtowR) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
