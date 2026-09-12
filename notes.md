@@ -25009,3 +25009,42 @@ S 族の塔の階段は文脈を `[fone N] ++ replicate p (ftwo nil)` で伸ば�
     WPdR_stair（`WPd_stairB` の `stkP p` つき版）
     WPdR_run（`GOK_stkW_gen` を使って `WPdR ((b,p)::ks) nil`）
     → `stk q` → `RunAll` → 行376
+
+## 追記388: ★ 縦の走りが層の中で通った（`WPdR_nilRun`）
+
+    WPdR_nilRun {b : Bud} (hb : b ≠ ⊥) : ∀ p ks, WPdR ((toLex (b,p)) :: ks) Jk1.nil
+
+`WPdR ((b,p)::ks) nil` の 2 の節の結論は `one U (two N (stkP p nil))`、
+つまり**長さ `p+1` の縦の走り**。無条件で通った。
+
+### なぜ通ったか
+
+`GOK_stkW_gen` の階段が足すブロック
+
+    nstQ N p (k+1) = one nil (two N (stkP p (nstQ N p k)))
+      → 文脈に [fone nil, ftwo N] ++ replicate p (ftwo nil)
+
+が**入り目 `(b,p)` ちょうど 1 節ぶん**なので、
+- 兄弟 `N` の条件 `∀q (< (b,p+1)), WPdR (⊥::q++kk) N` の `q` にブロックがそのまま入り、
+  尻 `kk` が動かない（追記387 の設計）。
+- 階段の底（`k=0`）は `two N (stk p)`、つまり走りが 1 短い ← `p` の帰納法。
+- ブロックの入り目 `(b,p)` は節の入り目 `(b,p+1)` より辞書式で小さい ← DM 測度が減る。
+
+`WPd_stairB`（走り 2 本）が `Bs = [N]` 固定だったのを、`stkP p` を節に組み込む
+ことで任意の長さに一般化したことになる。
+
+### 残るのは「走りの上の荷」1 点
+
+`GOK (one nil (stk q))`（＝ `RunAll` ＝ 行376）を出すには、節を実体化するときに
+兄弟の条件 `∀ q (< (b,p)), WPdR (⊥::q++ks) nil` が要る。`q` は走りの入り目を
+含みうるので、`WPdR (⊥::q) nil` → `WPdR_oneNil` → **`WPdR_payA`（荷）** が要る。
+
+荷を走りの節に置くのは
+
+    WPdR ((b,p)::ks) (pay V C)  →  one U (two N (stkP p (pay V C)))
+
+で、`p ≥ 1` は「縦の走りの上に荷」＝ `RHang2` そのもの。
+`p = 0` は `AYdTWT` の移植（鎖が兄弟の側に伸びるので予算は増えない）で通るはず。
+
+**次**: `WPdR` の荷 `p = 0`（`AYdWT` / `AYdTWT` の移植）をまず入れて、
+残りを `p ≥ 1` の 1 点に絞る。
