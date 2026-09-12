@@ -3020,6 +3020,85 @@ theorem WPdR_congr : ∀ (ks : List (Ekey Bud)) {V1 V2 : Jk1},
 
 #print axioms WPdR_iff
 
+/-! ### `WPdR` 層の小さい補題 -/
+
+theorem FrmR_JkA : ∀ (ks : List (Ekey Bud)) (U : Jk1), FrmR ks U → JkA U
+  | [], _, h => h.1
+  | (_ :: _), _, h => h
+
+theorem FrmR_nilA : ∀ ks : List (Ekey Bud), FrmR ks Jk1.nil
+  | [] => JkT_nil
+  | (_ :: _) => trivial
+
+theorem FrmR_one (ks : List (Ekey Bud)) (U X : Jk1) (hU : FrmR ks U) (hX : JkA X) :
+    FrmR ks (Jk1.one U X) := by
+  cases ks with
+  | nil => exact ⟨⟨hU.1, hX⟩, hU.2⟩
+  | cons b bs => exact ⟨hU, hX⟩
+
+theorem WPdR_step (ks : List (Ekey Bud)) {V W : Jk1} (hV : FrmR ks V) (hVk : WPdR ks V)
+    (hW : WPdR ((⊥ : Ekey Bud) :: ks) W) : WPdR ks (Jk1.one V W) :=
+  (WPdR_c0 ks W).mp hW V hV hVk
+
+theorem WCtxR_JkT : ∀ (ks : List (Ekey Bud)) (ctx : List Frm), WCtxR ks ctx →
+    ∀ X : Jk1, FrmR ks X → JkT (plug ctx X)
+  | [], ctx, h, X, hX => by
+      rw [WCtxR_bnil] at h
+      subst h
+      exact hX
+  | (e :: ks), ctx, h, X, hX => by
+      by_cases he : e = ⊥
+      · subst he
+        rw [WCtxR_c0] at h
+        obtain ⟨ctx', U, rfl, hc', hU, -⟩ := h
+        rw [plug_snoc]
+        exact WCtxR_JkT ks ctx' hc' (Jk1.one U X) (FrmR_one ks U X hU hX)
+      · rw [WCtxR_cb he] at h
+        obtain ⟨r, hr, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩ := h
+        rw [plug_frameR]
+        exact WCtxR_JkT (r ++ ks) ctx' hc'
+          (Jk1.one U (Jk1.two N (stkP (erun e) X)))
+          (FrmR_one (r ++ ks) U _ hU ⟨hJN, JkA_stkP (erun e) hX⟩)
+termination_by ks _ => ((ks : List (Ekey Bud)) : Multiset (Ekey Bud))
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+
+theorem WCtxR_split (ks : List (Ekey Bud)) (ctx : List Frm)
+    (h : WCtxR ((⊥ : Ekey Bud) :: ks) ctx) :
+    ∃ (ctx0 : List Frm) (V : Jk1), ctx = ctx0 ++ [Frm.fone V] ∧ WCtxR ks ctx0 ∧
+      FrmR ks V ∧ GOK (plug ctx0 V) := by
+  rw [WCtxR_c0] at h
+  obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := h
+  exact ⟨ctx', U, rfl, hc', hU, (WPdR_iff ks U).mp hUk ctx' hc'⟩
+
+theorem WPdR_two_of_ctx {kk : List (Ekey Bud)} {U W : Jk1}
+    (hU : FrmR kk U) (hUk : WPdR kk U)
+    (h : ∀ ctx : List Frm, WCtxR ((⊥ : Ekey Bud) :: kk) ctx → GOK (plug ctx W)) :
+    WPdR kk (Jk1.one U W) := by
+  rw [WPdR_iff]
+  intro ctx0 hc0
+  rw [← plug_snoc]
+  exact h (ctx0 ++ [Frm.fone U]) ((WCtxR_c0 kk _).mpr ⟨ctx0, U, rfl, hc0, hU, hUk⟩)
+
+theorem WPdR_ck_shift {e : Ekey Bud} (he : e ≠ ⊥) {ks : List (Ekey Bud)} {T : Jk1}
+    (h : WPdR (e :: ks) T) (a : List (Ekey Bud)) (ha : ∀ x ∈ a, x < e) :
+    WPdR (e :: (a ++ ks)) T := by
+  rw [WPdR_cb he]
+  intro r hr U N hU hUk hJN hNt
+  have e2 : r ++ (a ++ ks) = (r ++ a) ++ ks := (List.append_assoc r a ks).symm
+  rw [e2] at hU hUk hNt ⊢
+  refine (WPdR_cb he ks T).mp h (r ++ a) ?_ U N hU hUk hJN hNt
+  intro x hx
+  rcases List.mem_append.mp hx with h1 | h1
+  · exact hr x h1
+  · exact ha x h1
+
+#print axioms WCtxR_JkT
+#print axioms WPdR_ck_shift
+
 end EkeyR
 
 end Small
