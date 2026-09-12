@@ -4456,6 +4456,86 @@ theorem R375m61_of_ChStair (h : ChStair) :
 #print axioms ChBase_of_ChStair
 #print axioms R375m61_of_ChStair
 
+/-! ### ★★★ 階段 `nstW` は `TwOk` の梯子でそのまま登れる
+
+`TwOk_two`（緑）は「直下が 1 の列の枠なら 2 の記録の枠を 1 枚足せる」で、
+段 `r` が 1 上がる。`nstW N W (k+1) = two N (one W (nstW N W k))` は
+2 の記録 1 枚と 1 の列の枠 1 枚なので、`TwOk_two` と `TwOk_one` を交互に使えば
+`k` の帰納がそのまま回る（`r`, `m` は全称のまま）。 -/
+
+theorem TwOk_nstW {N W : Jk1} (hJN : JkA N) (hJW : JkA W)
+    (hN : ∀ r : ℕ, NTw r N) (hW : ∀ r : ℕ, TwOk (r + 1) 0 W) :
+    ∀ (k r m : ℕ), Fter r m → TwOk r m (nstW N W k)
+  | 0, r, m, hf => TwOk_two hJN (hN r) hf (hW r)
+  | (k + 1), r, m, hf =>
+      TwOk_two hJN (hN r) hf
+        (TwOk_one (r + 1) 0 hJW (hW r)
+          (TwOk_nstW hJN hJW hN hW k (r + 1) 1 (Fter_succ (r + 1) 0)))
+
+/-- 階段の `LOk 1`（`ChStair` が要る形）。 -/
+theorem LOk1_nstW {N W : Jk1} (hJN : JkA N) (hJW : JkA W)
+    (hN : ∀ r : ℕ, NTw r N) (hW : ∀ r : ℕ, TwOk (r + 1) 0 W) (k : ℕ) :
+    LOk 1 (nstW N W k) :=
+  LOk_of_TwOk0 (TwOk_nstW hJN hJW hN hW k 0 0 (Fter_zero 0))
+
+#print axioms TwOk_nstW
+#print axioms LOk1_nstW
+
+/-- ★★★ `ChBase` の「兄弟が梯子を登れる」版。`GOK_twoNW_gen` + `LOk1_nstW`。 -/
+theorem TwoOk_twoWnil {N W : Jk1} (hJN : JkA N)
+    (hNapd : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    (hNtw : ∀ r : ℕ, NTw r N) (hJW : JkA W) (hWok : TwoOk W)
+    (hWtw : ∀ r : ℕ, TwOk (r + 1) 0 W) (j : ℕ) (kk : List Bool) :
+    APd (List.replicate j true ++ (true :: kk)) (Jk1.two N (Jk1.two W Jk1.nil)) := by
+  rw [rep_true_cons, APd_iff]
+  intro ctx hc
+  have hcO : CtxOk ctx := GCtx_CtxOk _ ctx hc
+  obtain ⟨ctx0, V, rfl, hGV⟩ := GCtx_split (List.replicate j true ++ kk) ctx hc
+  refine GOK_twoNW_gen ctx0 V hJN hJW ?_ hGV ?_
+  · exact JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, hJW, trivial⟩)
+  · intro k
+    refine (APd_iff (true :: (List.replicate j true ++ kk)) _).mp ?_ _ hc
+    match k with
+    | 0 =>
+        have hh := hWok N hJN hNapd j kk
+        rw [rep_true_cons] at hh
+        exact hh
+    | (k + 1) =>
+        have hone : TwoOk (Jk1.one W (nstW N W k)) :=
+          TwoOk_one hJW hWok (LOk1_nstW hJN hJW hNtw hWtw k)
+        have hh := hone N hJN hNapd j kk
+        rw [rep_true_cons] at hh
+        exact hh
+
+#print axioms TwoOk_twoWnil
+
+/-! ### ★★★ 梯子の条件は `W ↦ two W nil` で閉じている
+
+`TwSt (r+1) 0` の文脈は `TwSt r m'`（`Fter r m'` つき、＝ 1 の枠で終わる）の上に
+2 の枠を 1 枚。だから `plug D (two W nil) = plug D' (two N (two W nil))` で
+`GOK_twoNW_gen` がそのまま当たる。階段は `TwOk_nstW`。
+**`Fter` は「2 の記録の直上に 2 の記録は置けない」だが、荷が `nil` のこの形は通る。** -/
+
+theorem TwSt_fone : ∀ (r m : ℕ), Fter r m → ∀ D : List Frm, TwSt r m D →
+    ∃ (ctx0 : List Frm) (V : Jk1), D = ctx0 ++ [Frm.fone V] ∧ GOK (plug ctx0 V)
+  | 0, m, _, D, hD => by
+      obtain ⟨D', U, rfl, hD', hJU, hU⟩ := (TwSt_z m D).mp hD
+      exact ⟨D', U, rfl, hU D' hD'⟩
+  | (r + 1), 0, hf, D, hD => by
+      rcases hf with h | h
+      · exact absurd h (by omega)
+      · exact absurd h (by omega)
+  | (r + 1), (m + 1), _, D, hD => by
+      obtain ⟨D', U, rfl, hD', hJU, hU⟩ := (TwSt_f r m D).mp hD
+      exact ⟨D', U, rfl, hU D' hD'⟩
+
+/-- ★ 梯子を登れない理由: `TwSt (r+1) 0` の 2 の枠の兄弟 `N` に付く条件は
+`NTw r N`（その段だけ）。ところが階段 `nstW N W k` は**同じ `N` を毎段使う**ので
+`TwOk_nstW` は `∀ r, NTw r N` を要求する。ここが合わない。 -/
+theorem TwSt_fone_note : True := trivial
+
+#print axioms TwSt_fone
+
 
 end Small
 end TRIO

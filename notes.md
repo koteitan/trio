@@ -25864,3 +25864,43 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 `LTwo_one hJV (hV : LTwo V) (hZ : TwM 1 Z) : LTwo (one V Z)` があるので、
 `TwM` の階層（`TwStk` / `TwM` / `TwSt` / `TwOk` / `NTw`、`SmallA` 31387〜32900）を
 1 段ずつ上がる形になる。**`Wt` に `TwoOk` しか無いのが効くかどうかが次の焦点。**
+
+## 追記408: 階段は `TwOk` の梯子で登れる。ただし兄弟が「全段で良い」ことが要る
+
+### 緑になったもの
+
+    TwOk_nstW (hJN) (hJW) (hN : ∀ r, NTw r N) (hW : ∀ r, TwOk (r+1) 0 W)
+      : ∀ k r m, Fter r m → TwOk r m (nstW N W k)                    ★緑
+    LOk1_nstW … : LOk 1 (nstW N W k)                                 ★緑
+    TwoOk_twoWnil (hJN) (hNapd) (hNtw : ∀ r, NTw r N) (hJW) (hWok : TwoOk W)
+      (hWtw : ∀ r, TwOk (r+1) 0 W) : APd (rep j true ++ (true::kk)) (two N (two W nil))  ★緑
+    TwSt_fone : Fter r m → TwSt r m D → ∃ ctx0 V, D = ctx0 ++ [fone V] ∧ GOK (plug ctx0 V)  ★緑
+
+`TwOk_two`（緑、`SmallA`）は「直下が 1 の列の枠（`Fter`）なら 2 の記録の枠を 1 枚
+足せる」で段 `r` が 1 上がる。`nstW N W (k+1) = two N (one W (nstW N W k))` は
+2 の枠 1 枚＋1 の枠 1 枚なので、`TwOk_two` と `TwOk_one` を交互に使えば
+`k` の帰納が `r`, `m` 全称のまま回る。
+
+### 登れない理由（今回はっきりした）
+
+`nstW N W k` は**同じ `N` を毎段使う**ので、`TwOk_nstW` は `∀ r, NTw r N` を要求する。
+ところが文脈の節
+
+    TwSt (r+1) 0 D = D' ++ [ftwo N] ∧ TwSt r m' D' ∧ Fter r m' ∧ NTw r N
+
+が与えるのは **その段の `NTw r N` だけ**。だから
+`TwOk (r+1) 0 (two W nil)`（＝ 梯子の条件が `W ↦ two W nil` で閉じる）を
+`GOK_twoNW_gen` で出そうとしても、階段の `N` の条件が足りない。
+
+同じことが `W` にも起きる: `∀ r, TwOk (r+1) 0 W` が要る。
+`TwoOk W`（深さ 0 だけ）では足りない。
+
+### 全段で良いと分かっている木
+
+    nil          … `TwOk_nil` / `NTw_nil` / `TwOk_twoNilE`
+    one の塔     … `TwOk_one`（`Fter` 不要）
+    横鎖（兄弟） … `TwOk_twoIt`（荷が全段で良ければ）
+    荷 `pay`     … `TwOk_pay_f` は `m+1` のときだけ。`m = 0`（2 の枠の直上）は開いている
+
+**`m = 0` の荷（2 の記録の直上の荷）が、梯子のどの段でも同じ壁として残る。**
+これは `AYd` 系の壁と同じもの。
