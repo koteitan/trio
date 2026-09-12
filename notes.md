@@ -25328,3 +25328,88 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
   つまり**ブロック `(l+1,2,0) [V] [Y↑]` を 1 つ差し込む**。
   塔の道具（`snocYd_mem` / `Mtwd`）はこの形の反復を扱えるので、
   そちら（語のレベル）から攻めるのが次の手。
+
+## 追記396: `HtowR` は語では攻められない。入り目を「走りの長さが主」に組み替えると `RunPay` が無条件で出る
+
+### 1. `HtowR`（素の `GOK` の 1 文）は語の道具では落ちない
+
+    HtowR : ∀ ctx V, JkA V → (typing) → GOK (plug ctx (two nil V)) →
+              ∀ N, VCh V N → GOK (plug ctx (two N V))
+
+語で見ると差は「ブロック `(l+1,2,0) [V] [Y↑]` を 1 つ差し込む」だけだが、
+`snocYd_mem` / `Mtwd` / `snocR_of_tower` はどれも**継ぎ足す字が語の末尾に来る**
+形（`Y0 ++ M ++ [(L+dl,y,0)]` の展開が `Mtwd dl Y0 M n`）でしか使えない。
+`plug ctx (two N V)` の末尾は `jk1 (l+1) V` で、`V` は任意なので悪い部分の根が
+`V` の中にある。`GoodFb_snoc_*` のどの入口にも合わない。
+**`V` について何の層の条件も無い形では証明できない。** `GOK` に落とした
+`R376_of_HtowR` は正しいが、`HtowR` 自体は攻める先ではない。
+
+### 2. なぜ層でも閉じなかったか
+
+`RunPay`（走りの上の荷）で `GOK_twoPayZ_of` を使うと、族 `NN` の閉性
+
+    NN N' → NN (two N' (pay V Y))
+
+に `WPdR (⊥ :: q ++ ks) (two N' (pay V Y))` が要る。これは `WPdR_twoOf` で
+
+    予算の節 `(b,0)`（`b ≠ ⊥`）に `pay V Y` を置く → `AYdTWR` → `V` を `(b,0)` に置く
+
+に落ちる。つまり **`V` が予算の節に置けること**が要る。ところが走りの入り目を
+`(⊥,p)`（`Ekey = Bud ×ₗ ℕ`、予算が主）にしていたので、`e = (⊥,p+1)` より小さい
+入り目は `(⊥,j)`（`j ≤ p`）だけで、**`b ≠ ⊥` の予算の節を置く余地が無かった**。
+これが壁の正体。層の設計の問題であって数学の壁ではない。
+
+### 3. 直し方: `Ekey = ℕ ×ₗ Bud`（走りの長さを主にする）
+
+    ⊥ = (0, ⊥)          1 の枠 `[fone U]`
+    (0, b), b ≠ ⊥        予算の節 `[fone U, ftwo N]`（いまの `cb` の節そのまま）
+    (p, ·), p ≥ 1        走りの節（長さ `p`）
+
+`(0, b) < (p, ·)`（`p ≥ 1`）が**どの `b` でも**成り立つので、走りの節の下に
+予算の節をいくらでも置ける。さらに `(p-1, ·) < (p, ·)` なので、走りの階段
+（`GOK_runGNil_gen` の `Bs = replicate (p-1) nil`）が作る入り目も自動で小さい。
+**走りの節に予算成分は要らない**（`(p, ⊥)` でよい）。
+
+### 4. 走りの節の意味（強めた 2 本の連言）
+
+`e` が走りの節（`erun e = p+1`）のとき
+
+    (1) ∀ b : Bud, ∀ q (∀x∈q, x<e), WPdR ((0,b) :: q ++ ks) V
+    (2) ∀ N, JkA N → (∀ q (∀x∈q, x<e), WPdR (q ++ ks) N) → WPdR ks (stkP p (two N V))
+
+(1) は「`V` はどの予算の節にも置ける」、(2) は「走りの**てっぺん**の 2 の記録の
+兄弟に、条件を満たす木 `N` を置ける」。`N = nil` を入れると (2) は今までの
+`WPdR ks (stkP (p+1) V)` に戻る。
+
+どちらも「文脈の族についての `GOK`」なので、`WCtxR` の走りの節を
+
+    (A) ∃ b, ∃ q (<e), WCtxR ((0,b) :: q ++ ks) ctx
+    (B) ∃ D N (条件), ctx = D ++ replicate p (ftwo nil) ++ [ftwo N] ∧ WCtxR ks D
+
+の**選言**にすれば `WPdR_iff` はそのまま成り立つ。DM 測度も全部減る。
+
+### 5. これで `RunPay` は無条件に出る
+
+`e` を走りの節、`WPdR (e::ks) V`（= (1) ∧ (2)）から `WPdR (e::ks) (pay V C)`:
+
+- (1) は `AYdTWR`（`b ≠ ⊥`）と `WPdR_payT`（`b = ⊥`）で `pay V C` に移る。
+- (2) は `GOK_twoPayZ_of` を `ctx' = ctx0 ++ replicate p (ftwo nil)`, `Z = V`,
+  `NN N := JkA N ∧ ∀ q(<e), WPdR (q++ks) N` で回す。
+  - `hcl`: `WPdR_twoOf` を予算の節 `(0,b)` で使う。`(0,b) < e` なので `N'` の
+    条件がそのまま使え、`pay V Y` は (1) から出る。★ここが今まで詰まっていた点。
+  - `htow`: (2) そのもの。
+  - 結論が `∀ N ∈ NN, GOK (plug ctx' (two N (pay V Y)))` ＝ `pay V C` の (2)。
+
+### 6. 残る作業（構成側）
+
+走りの節を作るのは `WPdR_preRun` / `WPdR_shR` / `WPdR_stkS` で、いつも `V = nil`。
+
+- (1) は `WPdR_nilF`（`b ≠ ⊥`）と `WPdR_nilT`（`b = ⊥`、`RunPay` が要るが 5 で緑）。
+- (2) は `WPdR_stkS` の**一般化**：`stk (p+1) = stkP p (two nil nil)` を
+  `stkP p (two N nil)`（兄弟が条件つきの `N`）に広げる。`GOK_runGNil_gen` は
+  `A` について既に一般なので、階段 `∀ i, GOK (plug (ctx ++ blkC V Bs ++ blkR N Bs i) N)`
+  は `N` の条件（入り目は全部 `(p-1,·)` と `⊥` で `< e`）からそのまま出る。
+
+「走りの入り目の木は予算の節にも置ける」という不変量は保たれる：
+`nil` は `WPdR_nilF`、`pay U C` は `AYdTWR`、`one U nil` は `WPdR_oneNil` を
+予算の節で使えばよい（どれも `erun = 0` なので無条件）。
