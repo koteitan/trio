@@ -3099,6 +3099,165 @@ theorem WPdR_ck_shift {e : Ekey Bud} (he : e ≠ ⊥) {ks : List (Ekey Bud)} {T 
 #print axioms WCtxR_JkT
 #print axioms WPdR_ck_shift
 
+/-! ### `WPdR` の `p = 0` の塔（`WPdT_twoNilGen` の移植） -/
+
+theorem FrmR_repB (m : ℕ) (e : Ekey Bud) (ks : List (Ekey Bud)) (N : Jk1) :
+    FrmR (List.replicate m (⊥ : Ekey Bud) ++ (e :: ks)) N ↔ JkA N := by
+  cases m with
+  | zero => exact Iff.rfl
+  | succ m => exact Iff.rfl
+
+theorem WCtxR_rep {N : Jk1} (hJN : JkA N) (ks : List (Ekey Bud))
+    (hNall : ∀ j : ℕ, WPdR (List.replicate j (⊥ : Ekey Bud) ++ ((⊥ : Ekey Bud) :: ks)) N) :
+    ∀ (m : ℕ) (ctx : List Frm), WCtxR ((⊥ : Ekey Bud) :: ks) ctx →
+      WCtxR (List.replicate m (⊥ : Ekey Bud) ++ ((⊥ : Ekey Bud) :: ks))
+        (ctx ++ List.replicate m (Frm.fone N))
+  | 0, ctx, hc => by simpa using hc
+  | (m + 1), ctx, hc => by
+      have h1 := WCtxR_rep hJN ks hNall m ctx hc
+      have e : ctx ++ List.replicate (m + 1) (Frm.fone N)
+          = (ctx ++ List.replicate m (Frm.fone N)) ++ [Frm.fone N] := by
+        rw [List.replicate_succ']
+        simp
+      rw [e, repB_succ_cons, WCtxR_c0]
+      exact ⟨ctx ++ List.replicate m (Frm.fone N), N, rfl, h1,
+        (FrmR_repB m (⊥ : Ekey Bud) ks N).mpr hJN, hNall m⟩
+
+theorem WPdR_plug_rep (N : Jk1) (hJN : JkA N) (ks : List (Ekey Bud))
+    (hNall : ∀ j : ℕ, WPdR (List.replicate j (⊥ : Ekey Bud) ++ ((⊥ : Ekey Bud) :: ks)) N)
+    (m : ℕ) :
+    WPdR ((⊥ : Ekey Bud) :: ks) (plug (List.replicate m (Frm.fone N)) N) := by
+  rw [WPdR_iff]
+  intro ctx hc
+  rw [← plug_append]
+  exact (WPdR_iff _ N).mp (hNall m) _ (WCtxR_rep hJN ks hNall m ctx hc)
+
+theorem WPdR_twoNilGen {N : Jk1} (hJN : JkA N) (ks : List (Ekey Bud))
+    (hNall : ∀ j : ℕ, WPdR (List.replicate j (⊥ : Ekey Bud) ++ ((⊥ : Ekey Bud) :: ks)) N) :
+    WPdR ((⊥ : Ekey Bud) :: ks) (Jk1.two N Jk1.nil) := by
+  rw [WPdR_iff]
+  intro ctx hc
+  obtain ⟨ctx0, V, rfl, hc0, hV, hGV⟩ := WCtxR_split ks ctx hc
+  exact GOK_twoNilW_gen ctx0 V hJN
+    (WCtxR_JkT ((⊥ : Ekey Bud) :: ks) _ hc (Jk1.two N Jk1.nil)
+      (⟨hJN, trivial⟩ : FrmR ((⊥ : Ekey Bud) :: ks) (Jk1.two N Jk1.nil)))
+    hGV
+    (fun m => (WPdR_iff ((⊥ : Ekey Bud) :: ks) _).mp (WPdR_plug_rep N hJN ks hNall m) _ hc)
+
+theorem bot_lt_key {b : Bud} (hb : b ≠ ⊥) (p : ℕ) :
+    (⊥ : Ekey Bud) < (toLex (b, p) : Ekey Bud) :=
+  Prod.Lex.left _ _ (Ne.bot_lt' (Ne.symm hb))
+
+theorem erun_key (b : Bud) (p : ℕ) : erun (toLex (b, p) : Ekey Bud) = p := rfl
+
+/-- `p = 0` の場合: 空木はどの `(b,0)` の節にも差せる。 -/
+theorem WPdR_nilF {b : Bud} (hb : b ≠ ⊥) (ks : List (Ekey Bud)) :
+    WPdR ((toLex (b, 0) : Ekey Bud) :: ks) Jk1.nil := by
+  refine (WPdR_cb (fun h => absurd (h ▸ bot_lt_key hb 0) (lt_irrefl _)) ks _).mpr ?_
+  intro r hr U N hU hUk hJN hNt
+  rw [erun_key]
+  refine (WPdR_c0 (r ++ ks) _).mp ?_ U hU hUk
+  refine WPdR_twoNilGen hJN (r ++ ks) (fun j => ?_)
+  rw [repB_mid j (r ++ ks)]
+  exact hNt (List.replicate j (⊥ : Ekey Bud)) (fun x hx => by
+    rw [List.eq_of_mem_replicate hx]
+    exact bot_lt_key hb 0)
+
+#print axioms WPdR_nilF
+
+/-! ### ★★★ 走り: `WPdR ((b,p)::ks) nil`（`p+1` 本の縦の走り） -/
+
+theorem key_ne_bot {b : Bud} (hb : b ≠ ⊥) (p : ℕ) : (toLex (b, p) : Ekey Bud) ≠ ⊥ :=
+  ne_bot_of_gt (bot_lt_key hb p)
+
+theorem key_lt (b : Bud) {p p' : ℕ} (h : p < p') :
+    (toLex (b, p) : Ekey Bud) < (toLex (b, p') : Ekey Bud) :=
+  Prod.Lex.right _ h
+
+/-- `GOK_stkW_gen` の階段。文脈を 1 節（`(b,p)` の枠）ずつ伸ばして同じ形に戻る。 -/
+theorem WPdR_stairRun {b : Bud} (hb : b ≠ ⊥) {p : ℕ}
+    (hIH : ∀ ks' : List (Ekey Bud), WPdR ((toLex (b, p) : Ekey Bud) :: ks') Jk1.nil)
+    {N : Jk1} (hJN : JkA N) :
+    ∀ (k : ℕ) (kk : List (Ekey Bud)),
+      (∀ q : List (Ekey Bud), (∀ x ∈ q, x < (toLex (b, p + 1) : Ekey Bud)) →
+        WPdR ((⊥ : Ekey Bud) :: q ++ kk) N) →
+      ∀ ctx : List Frm, WCtxR ((⊥ : Ekey Bud) :: kk) ctx →
+        GOK (plug ctx (Jk1.two N (stkP p (nstQ N p k))))
+  | 0, kk, hNt, ctx, hc => by
+      have hc' := hc
+      rw [WCtxR_c0] at hc'
+      obtain ⟨ctx0, V, rfl, hc0, hV, hVk⟩ := hc'
+      have hkey : WPdR kk (Jk1.one V (Jk1.two N (stkP p (nstQ N p 0)))) := by
+        have h := (WPdR_cb (key_ne_bot hb p) kk Jk1.nil).mp (hIH kk) [] (by simp) V N
+          (by simpa using hV) (by simpa using hVk) hJN
+          (fun q hq => by
+            simpa using hNt q (fun x hx => lt_trans (hq x hx) (key_lt b (by omega))))
+        rw [erun_key] at h
+        simpa using h
+      rw [plug_snoc]
+      exact (WPdR_iff kk _).mp hkey ctx0 hc0
+  | (k + 1), kk, hNt, ctx, hc => by
+      have hc' := hc
+      rw [WCtxR_c0] at hc'
+      obtain ⟨ctx0, V, rfl, hc0, hV, hVk⟩ := hc'
+      have hnew : WCtxR ((⊥ : Ekey Bud) :: (toLex (b, p) : Ekey Bud) :: kk)
+          (((ctx0 ++ [Frm.fone V, Frm.ftwo N]) ++ List.replicate p (Frm.ftwo Jk1.nil))
+            ++ [Frm.fone Jk1.nil]) := by
+        rw [WCtxR_c0]
+        refine ⟨_, Jk1.nil, rfl, ?_, FrmR_nilA _, hIH kk⟩
+        rw [WCtxR_cb (key_ne_bot hb p)]
+        refine ⟨[], by simp, ctx0, V, N, ?_, by simpa using hc0, by simpa using hV,
+          by simpa using hVk, hJN, ?_⟩
+        · rw [erun_key]
+        · intro q hq
+          simpa using hNt q (fun x hx => lt_trans (hq x hx) (key_lt b (by omega)))
+      have hstep := WPdR_stairRun hb hIH hJN k ((toLex (b, p) : Ekey Bud) :: kk)
+        (fun q hq => by
+          have h := hNt (q ++ [(toLex (b, p) : Ekey Bud)]) (fun x hx => by
+            rcases List.mem_append.mp hx with h1 | h1
+            · exact hq x h1
+            · rw [List.eq_of_mem_singleton h1]
+              exact key_lt b (by omega))
+          simpa using h) _ hnew
+      have hplug : plug (ctx0 ++ [Frm.fone V]) (Jk1.two N (stkP p (nstQ N p (k + 1))))
+          = plug (((ctx0 ++ [Frm.fone V, Frm.ftwo N])
+              ++ List.replicate p (Frm.ftwo Jk1.nil)) ++ [Frm.fone Jk1.nil])
+            (Jk1.two N (stkP p (nstQ N p k))) := by
+        rw [show ((ctx0 ++ [Frm.fone V, Frm.ftwo N])
+              ++ List.replicate p (Frm.ftwo Jk1.nil)) ++ [Frm.fone Jk1.nil]
+            = (ctx0 ++ [Frm.fone V]) ++ ([Frm.ftwo N]
+              ++ (List.replicate p (Frm.ftwo Jk1.nil) ++ [Frm.fone Jk1.nil])) from by simp]
+        simp only [plug_append, plug_repF]
+        rfl
+      rw [hplug]
+      exact hstep
+
+/-- ★★★★★★★ 空木は `(b,p)` の節に差せる ＝ 長さ `p+1` の縦の走りが出る。 -/
+theorem WPdR_nilRun {b : Bud} (hb : b ≠ ⊥) : ∀ (p : ℕ) (ks : List (Ekey Bud)),
+    WPdR ((toLex (b, p) : Ekey Bud) :: ks) Jk1.nil
+  | 0, ks => WPdR_nilF hb ks
+  | (p + 1), ks => by
+      refine (WPdR_cb (key_ne_bot hb (p + 1)) ks _).mpr ?_
+      intro r hr U N hU hUk hJN hNt
+      rw [erun_key]
+      refine WPdR_two_of_ctx hU hUk ?_
+      intro ctx hc
+      have hc' := hc
+      rw [WCtxR_c0] at hc'
+      obtain ⟨ctx0, V, rfl, hc0, hV, hVk⟩ := hc'
+      rw [show stkP (p + 1) Jk1.nil = stkP p (Jk1.two Jk1.nil Jk1.nil)
+        from (stkP_comm p Jk1.nil).symm]
+      refine GOK_stkW_gen ctx0 V p hJN ?_ ((WPdR_iff (r ++ ks) V).mp hVk ctx0 hc0) ?_
+      · exact WCtxR_JkT ((⊥ : Ekey Bud) :: (r ++ ks)) _ hc
+          (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil)))
+          (⟨hJN, JkA_stkP p (⟨trivial, trivial⟩ : JkA (Jk1.two Jk1.nil Jk1.nil))⟩ :
+            FrmR ((⊥ : Ekey Bud) :: (r ++ ks))
+              (Jk1.two N (stkP p (Jk1.two Jk1.nil Jk1.nil))))
+      · intro k
+        exact WPdR_stairRun hb (fun ks' => WPdR_nilRun hb p ks') hJN k (r ++ ks) hNt _ hc
+
+#print axioms WPdR_nilRun
+
 end EkeyR
 
 end Small
