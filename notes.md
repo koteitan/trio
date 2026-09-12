@@ -24518,3 +24518,34 @@ R373 ++ ((5,2,0)(6,0,0))^n は `rowJ_mem_genF Aok_R338` の字
 
 これで `UJit` / `UJitW` / `Y510Ladf_UJ_mem` は `LoopIt` の特別な場合になった。
 methodology.md にも「`Aok` の輪を回す」を書いた。
+
+## 追記375: ★ 壁の底を外した `RHang2`。残るのは「縦 j + 横 m」の走り
+
+`RNil_of_RHang` の `step` は `hG : GOK (plug D (stk j))` を `RCx.step` から
+もらっている。だから `RHang` の側にも `hG` を仮定に入れてよい:
+
+    RHang2 : ∀ D j C, RCx D → GOK (plug D (stk j)) → Bok C →
+             GOK (plug D (stkP j (pay nil C)))
+    RNil_of_RHang2 / R376_of_RHang2                        ★緑
+    RHang2_nil : hG → GOK (plug D (stkP j (pay nil [])))   ★緑（底が消えた）
+
+`stkP j (pay nil []) ≡ stk j`（`jk1_stkP_pay_nil`）なので **荷の W 帰納の底が
+仮定そのもの**になる。`RHang` より真に弱い。
+
+### 残っているのは 1 つ
+
+`C = C' ++ [(0,0,0)]` の段で `GoodFb_snoc_dupJt0` が要求する鎖は
+
+    ∀ m ≥ 1, GOK (plug D (stkP (j-1) (twoIt nil (pay nil C') m)))
+
+- `m = 1`: `stkP j (pay nil C')` ＝ `RHang2` の IH（同じ `j`, 小さい `C'`）✓
+- `m ≥ 2`: 一般化が要る。その `C' = []` の場合が
+
+      GOK (plug D (stkP j (twoIt nil nil m)))      「縦 j + 横 m」の走り
+
+  で、これが今のところ無い。`m = 1` は `stk (j+1)`、`j = 0` は横の走りだけ。
+  エンジン `GOK_twoTwoNilW_gen` の階段は文脈を `[ftwo nil, fone W]`
+  （`W` = 平らな走り）で伸ばす形になり、`RCx` はその枠を許していない。
+
+**次の一手**: `RCx` に `fone W`（`W` = 平らな走り）の枠を許す拡張を作り、
+「縦 j + 横 m」を `m` の帰納で出す。

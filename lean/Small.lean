@@ -1041,5 +1041,54 @@ theorem LoopIt_X510_nil_mem (m p j n : ℕ) :
 #print axioms Aok_Loop
 #print axioms LoopIt_X510_nil_mem
 
+/-! ### ★ `RHang` の底（`C = []`）を仮定から外す: `RHang2`
+
+`RNil_of_RHang` の `step` は `hG : GOK (plug D (stk j))` を `RCx.step` から
+**もらっている**。だから `RHang` の側にも `hG` を仮定として入れてよい。
+すると `C = []` の場合（`stkP j (pay nil []) ≡ stk j`）が仮定そのものになり、
+荷の W 帰納の**底が消える**。 -/
+
+theorem jk1_stkP_pay_nil : ∀ (j l : ℕ),
+    jk1 l (stkP j (Jk1.pay Jk1.nil ([] : TrioSeq))) = jk1 l (stk j)
+  | 0, l => by
+      show jk1 l (Jk1.pay Jk1.nil ([] : TrioSeq)) = jk1 l Jk1.nil
+      rw [jk1_pay_nil]
+  | (j + 1), l => by
+      show jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+          jk1 (l + 1) (stkP j (Jk1.pay Jk1.nil ([] : TrioSeq))))
+        = jk1 l Jk1.nil ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1) (stkP j Jk1.nil))
+      rw [jk1_stkP_pay_nil j (l + 1)]
+      rfl
+
+/-- `C = []` の場合は `hG` そのもの。 -/
+theorem RHang2_nil {D : List Frm} {j : ℕ} (hG : GOK (plug D (stk j))) :
+    GOK (plug D (stkP j (Jk1.pay Jk1.nil ([] : TrioSeq)))) :=
+  GOK_congr (jk1_plug_congr D (fun l => (jk1_stkP_pay_nil j l).symm)) hG
+
+def RHang2 : Prop := ∀ (D : List Frm) (j : ℕ) (C : TrioSeq), RCx D →
+    GOK (plug D (stk j)) → Bok C → GOK (plug D (stkP j (Jk1.pay Jk1.nil C)))
+
+theorem RHang2_of_RHang (h : RHang) : RHang2 := fun D j C hD _ hC => h D j C hD hC
+
+theorem RNil_of_RHang2 (h : RHang2) : RNil := by
+  intro D hD
+  induction hD with
+  | @base ks ctx hc => exact RNil_base hc
+  | @step D j hD hG _ =>
+      rw [plug_stkP_one, plug_stkP_gen]
+      refine APnil_gen0 (D ++ List.replicate j (Frm.ftwo Jk1.nil)) Jk1.nil
+        (CtxJT_repF (RCx_CtxJT hD) j _ ⟨trivial, trivial⟩) ?_ ?_
+      · rw [← plug_stkP_gen]; exact hG
+      · intro C hC
+        rw [← plug_stkP_gen]
+        exact h D j C hD hG hC
+
+/-- ★★★★★★ 目標行376 は `RHang2` 1 文から出る（`RHang` より真に弱い）。 -/
+theorem R376_of_RHang2 (h : RHang2) : R373 ++ [((5, 3, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  R376_of_RNil (RNil_of_RHang2 h)
+
+#print axioms RHang2_nil
+#print axioms R376_of_RHang2
+
 end Small
 end TRIO
