@@ -26,6 +26,42 @@
     APd_twoStkGen (hJN) (p ks) (hst : ∀ k, APd (true::ks) (two N (stkP p (nstQ N p k))))
       : APd (true::ks) (two N (stkP p (two nil nil)))
 
+## 同じ壁の 4 つの顔（2026-09-12 に突き合わせた。どれも中身は同じ）
+
+| 族 | 残る 1 文 | 形 |
+|---|---|---|
+| `APd` | `StkStep : ∀ q, TwoOk (stk q) → TwoOk (stk (q+1))` | `q=0→1` 緑、`q=1→2` が壁 |
+| `APd`（階段版） | `StkStair`（`StkStep` の中身を階段の `k` の段に） | 本ファイル、緑の帰着 |
+| `TwoOk` | `ChBase : ∀ X, TwoOk X → TwoOk (two X nil)` | `X=nil` は `TwoOk_twoNil` 緑 |
+| `SCtx`/`SG` | `SNilF : ∀ ks, SG (true::false::ks) nil` | `SNilT` の残り 1 形だけ |
+| `WPdR` | `OneRunA` / `RunPay` / `HtowR` | 予算つきの層での言い換え |
+
+`SNilF` を開くと: `SCtx ks D₂`、`SG (false::ks) U` に対して
+
+    GOK (plug D₂ (two nil (one U nil)))
+
+`APnil_gen0` で `GOK (plug (D₂ ++ [ftwo nil]) (pay U C))` に落ち、
+`GOK_twoPayZ_of` で `∀ N ∈ VCh U, GOK (plug D₂ (two N U))`（＝ `SHtow`）に落ちる。
+
+### `SCtx`/`SG` は「走りの枠を持ち、1 の枠の兄弟が弱い」族（＝ 何度も再発明した族）
+
+    SCtx []            D = ∃ ks, GCtx (true::ks) D
+    SCtx (true :: ks)  D = ∃ D' U, SCtx ks D' ∧ (JkA U ∧ SG ks U) ∧ D = D' ++ [fone U]
+    SCtx (false :: ks) D = ∃ D', SCtx ks D' ∧ D = D' ++ [ftwo nil]     ← 裸の走りの枠
+
+`RCtx`（2 の枠の兄弟が一般）は階段が回らない。`SCtx` は兄弟を `nil` に固定して
+**走り長の帰納**を回す代わりに、2 の枠の直上の荷（`SPayF`）だけを仮定にする。
+**`WPdR` の予算つき層はこの再発明。** 新しい族を作らないこと。
+
+### `TwoOk` が閉じている操作（緑）
+
+    TwoOk_nil / TwoOk_twoNil（= `stk 1`） / TwoOk_pay / TwoOk_oneNilA（`one V nil`）
+    TwoOk_one（`one W Z`、`Z` は `LOk 1`）
+    ChBaseG_pay / ChBaseG_oneNil
+
+閉じていないのは `two W Z` の 1 つだけ（`ChBase` / `ChBaseOne` / `ChBaseTwo`、
+`TwoTwo_of` がこの 3 つを合成する）。
+
 ## 既知の最短形との接続
 
 `SmallA` の最短形 `StkStep : ∀ q, TwoOk (stk q) → TwoOk (stk (q+1))` の中身は

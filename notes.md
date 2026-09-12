@@ -25698,3 +25698,37 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
    `Bs = [nil]` は `TWB`（`TowOkB`、緑）まで来ている。`Bs = [nil,nil]` が次。
 2. `RStepN0 : ∀ D, (typing) → GOK (plug D nil) → GOK (plug D (one nil nil))`
    （`R376_of_RStepN0` は緑）。`APnil_gen0` で「`nil` の上の荷」に落ちる。
+
+## 追記404: 壁の 4 つの顔を突き合わせた。`SCtx` が「走り＋弱い 1 の枠の兄弟」の族だった
+
+`WPdR` の予算つき層は `SCtx`/`SG`（`SmallA` 58000 行台）の**再発明**だった。
+
+    SCtx (false :: ks) D = ∃ D', SCtx ks D' ∧ D = D' ++ [ftwo nil]
+
+が裸の走りの枠で、1 の枠の兄弟の条件は `SG ks U`（弱い＝その形での良さ）。
+`APd` には無い走りの形を持ち、しかも兄弟が弱い。**探していた族はこれ。**
+`SmallA` のコメントにも「`RCtx` は 2 の枠の兄弟を一般に取るので階段が回らない。
+兄弟を `nil` に固定すると走り長の帰納が回る」と書いてある。
+
+### `SCtx` 族での残り 1 文
+
+    SNilT : ∀ ks, SG (true::ks) nil          ← RunAll_of_SNilT（緑）
+    SNilT_of_SNilF は ks = [] と true::_ を緑で処理する。残るのは
+    SNilF : ∀ ks, SG (true::false::ks) nil   ← **形が 1 つだけ**
+
+開くと `SCtx ks D₂`, `SG (false::ks) U` に対して `GOK (plug D₂ (two nil (one U nil)))`。
+`APnil_gen0` → `SPy (false::ks) U` → `GOK_twoPayZ_of` → `SHtow`。
+
+### `TwoOk` 側で閉じていないのは `two W Z` だけ
+
+`TwoOk_nil` / `TwoOk_twoNil` / `TwoOk_pay` / `TwoOk_oneNilA` / `TwoOk_one` /
+`ChBaseG_pay` / `ChBaseG_oneNil` はどれも緑。`ChBase`（`two X nil`）と
+`ChBaseOne`（`two W (one Z1 Z2)`）と `ChBaseTwo`（`two W (two Z1 Z2)`）だけが開いている。
+`TwoTwo_of` がこの 3 つを合成して `TwoStep` を出す。
+
+### 試して駄目だったこと
+
+- `TwoOk` を「兄弟 `nil` だけ」に弱めた `TwoOkN` は `pay` で閉じない。
+  `TwoOk_pay` の鎖 `twoIt nil (pay Z Y) m` の兄弟が `nil` でなくなるため。
+- `APd (false::ks)` の `N` の条件はその `L` だけなので `APd_twoTwoGen` に渡せない
+  （追記401）。`SG (false::ks) U` からも `TwoOk U` は出ない（`N = nil` の場合しか無い）。
