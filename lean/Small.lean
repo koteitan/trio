@@ -8111,6 +8111,76 @@ theorem R600_7888788_mem :
 #print axioms AtLd_WsIt
 #print axioms R600_7888788_mem
 
+/-- 新しい台座 `R600 (7,0,0)(8,0,0)(8,0,0)(7,0,0)(8,0,0)(8,0,0)`。
+（もう一段の極限 `R600_7888788_mem` は `bms -s` で非標準なので台座にしない。） -/
+def Z7 : TrioSeq :=
+  R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ)]
+
+theorem Z7_eq : Z7 = [((0, 0, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 1) : ℕ × ℕ × ℕ),
+    ((2, 1, 0) : ℕ × ℕ × ℕ),
+    ((1, 1, 0) : ℕ × ℕ × ℕ),
+    ((2, 2, 1) : ℕ × ℕ × ℕ),
+    ((3, 1, 0) : ℕ × ℕ × ℕ),
+    ((4, 2, 0) : ℕ × ℕ × ℕ),
+    ((5, 2, 0) : ℕ × ℕ × ℕ),
+    ((6, 0, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ),
+    ((7, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ),
+    ((8, 0, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Z7, R600, R375m, R373, R344, R341, R338]
+
+theorem Z7_ne : Z7 ≠ [] := by rw [Z7_eq]; simp
+
+theorem Z7_head : entry Z7 0 0 = 0 := by rw [Z7_eq]; simp [entry]
+
+theorem Z7_tail : ∀ r, 1 ≤ r → r < Z7.length → 1 ≤ entry Z7 0 r := by
+  intro r hr1 hrl
+  rw [Z7_eq] at hrl ⊢
+  simp only [List.length_cons, List.length_nil] at hrl
+  rcases r with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+    first
+      | omega
+      | simp [entry]
+
+theorem Aok_Z7 : Aok Z7 where
+  mem := R600_788788_mem
+  ne := Z7_ne
+  deep := ⟨Z7_head, Z7_tail⟩
+  zroot := by
+    rw [Z7_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl <;> decide
+  mono := by
+    rw [Z7_eq]
+    intro c hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+    rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl <;> decide
+
+theorem LoopIt_Z7_mem (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    LoopIt Z7 m ws j n ∈ W 0 := (Aok_LoopIt Aok_Z7 m hw j n).mem
+
+/-- ★★★★★★★★★★★★★★★★ 新しい台座の上に `hang6_gen` で `LoopIt` を吊るす。 -/
+theorem Z7_hang6_LoopIt (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    Z7 ++ U375a1 ++ shiftr01 6 0 (LoopIt Z7 m ws j n) ∈ W 0 :=
+  hang6_gen Aok_Z7 (Aok_LoopIt Aok_Z7 m hw j n).toBok
+
+theorem Z7_hang6_LoopIt_nil (m p j n : ℕ) :
+    Z7 ++ U375a1 ++ shiftr01 6 0 (LoopIt Z7 m (List.replicate p (AltT 0)) j n)
+      ∈ W 0 :=
+  Z7_hang6_LoopIt m (WJ_rep_AltT 0 p) j n
+
+#print axioms Aok_Z7
+#print axioms Z7_hang6_LoopIt_nil
+
 
 end Small
 end TRIO
