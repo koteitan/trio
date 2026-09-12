@@ -8907,6 +8907,27 @@ theorem Z789_UHIt_lim_mem (m : ℕ) :
 #print axioms Z789_UH_lim_mem
 #print axioms Z789_UHIt_lim_mem
 
+/-- `A ++ U375aH` は梯子の段 1（`LvB P0 1 1`）。 -/
+theorem LvB_UH_gen {A : TrioSeq} (hA : Aok A) : LvB P0 1 1 (A ++ U375aH) := by
+  refine ⟨Aok_append_U375aH hA, Or.inr ⟨0, A, U375aH, rfl, rfl, ⟨hA, rfl⟩,
+    MidD_U375aH, ?_⟩⟩
+  intro s A' hA'
+  have hA'' : Aok A' ∧ 0 + s = 0 := hA'
+  obtain ⟨hAok, hs⟩ := hA''
+  have hs0 : s = 0 := by omega
+  subst hs0
+  simpa [shiftr01_zero] using U375aH_mem_gen hAok
+
+/-- ★★★★★★★★★★★★★ `A ++ U375aH ++ (2,1,0)`（`flat_of_chain` の極限より 1 つ上）。 -/
+theorem UH_snoc21 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  simpa using LvB_snoc BaseOk_P0 1 1 (A ++ U375aH) (LvB_UH_gen hA)
+
+theorem Z789_UH_snoc21_mem :
+    Z789 ++ U375aH ++ [((2, 1, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := UH_snoc21 Aok_Z789
+
+#print axioms Z789_UH_snoc21_mem
+
 
 end Small
 end TRIO
