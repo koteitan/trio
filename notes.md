@@ -26006,3 +26006,26 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 `TopOk W` を要求しないのが要点。`ChBase` が要るのは 2 頭の `W`
 （`TwoOk_twoPayG` の鎖 `twoIt X (pay Z Y) m`）なので、`APd` の世界の階段
 （`TwoOk_twoWnilF`、`TopOk` 付き、緑）では届かない。`SelfNW` は届く形。
+
+## 追記412: `SelfNW` は `SelfW` 型の自己伝播（ブロックが `[fone W, ftwo N]`）
+
+`plug X (two N W) = plug (X ++ [ftwo N]) W` で書き直すと、`E := ctx ++ [fone V, ftwo N]`
+として
+
+    仮定: GOK (plug E W)
+    結論: GOK (plug (E ++ [fone W, ftwo N]) W)
+
+つまり **「`W` が良い文脈には、ブロック `[fone W, ftwo N]` を 1 枚足しても `W` は良い」**。
+`SelfW D W = ∀ k, GOK (plug (D ++ replicate k (fone W)) W)`（ブロックが `[fone W]`）の
+2 の枠つき版。`SelfW_of_OSib`（緑）は `OSib`（1 歩）から `SelfW` を出す形なので、
+こちらも 1 歩の形になっている。
+
+さらに `plug E (one W (two N W)) = plug (E ++ [fone W, ftwo N]) W` なので、
+
+    SelfNW ⟺ ∀ V（良い）, GOK (plug E (one V (two N W)))   を V = W で使う形
+
+＝ `OSib`（「良い兄弟の上に木を載せる」）の荷が `two N W` の版。
+`APnil_gen0` は荷が `nil`、`GOK_oneUV_RunSB` は荷が先端 `nil` の走り。
+**荷が `two N W`（先端が一般の `W`）の版が要る。** ここが最後。
+
+`SelfNW` には呼び出し側で使える仮定（`N` の普遍性、`TwoOk W`）を付けてある。

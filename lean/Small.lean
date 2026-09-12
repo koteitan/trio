@@ -4679,11 +4679,15 @@ theorem GOK_selfNW {N W : Jk1} (D : List Frm)
 
 /-- ★ 残る 1 文（`GOK` だけ）: 「`two N W` が良い**1 の枠で終わる**文脈には、
 ブロック `[ftwo N, fone W]` を 1 枚足しても良い」。 -/
-def SelfNW : Prop := ∀ (ctx : List Frm) (V N W : Jk1), JkA N → JkA W →
+def SelfNW : Prop := ∀ (ctx : List Frm) (V N W : Jk1), JkA N →
+  (∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N) →
+  JkA W → TwoOk W →
   GOK (plug (ctx ++ [Frm.fone V]) (Jk1.two N W)) →
   GOK (plug ((ctx ++ [Frm.fone V]) ++ [Frm.ftwo N, Frm.fone W]) (Jk1.two N W))
 
-theorem GOK_selfNWf (h : SelfNW) {N W : Jk1} (hJN : JkA N) (hJW : JkA W) :
+theorem GOK_selfNWf (h : SelfNW) {N W : Jk1} (hJN : JkA N)
+    (hNall : ∀ (j : ℕ) (kk : List Bool), APd (List.replicate j true ++ (true :: kk)) N)
+    (hJW : JkA W) (hWk : TwoOk W) :
     ∀ (i : ℕ) (ctx : List Frm) (V : Jk1),
       GOK (plug (ctx ++ [Frm.fone V]) (Jk1.two N W)) →
       GOK (plug ((ctx ++ [Frm.fone V]) ++ blkNW N W i) (Jk1.two N W))
@@ -4691,9 +4695,9 @@ theorem GOK_selfNWf (h : SelfNW) {N W : Jk1} (hJN : JkA N) (hJW : JkA W) :
   | (i + 1), ctx, V, hb => by
       have hb2 : GOK (plug ((ctx ++ [Frm.fone V, Frm.ftwo N]) ++ [Frm.fone W])
           (Jk1.two N W)) := by
-        have hh := h ctx V N W hJN hJW hb
+        have hh := h ctx V N W hJN hNall hJW hWk hb
         simpa [List.append_assoc] using hh
-      have hh := GOK_selfNWf h hJN hJW i (ctx ++ [Frm.fone V, Frm.ftwo N]) W hb2
+      have hh := GOK_selfNWf h hJN hNall hJW hWk i (ctx ++ [Frm.fone V, Frm.ftwo N]) W hb2
       simpa [blkNW, List.append_assoc] using hh
 
 theorem ChBase_of_SelfNW (h : SelfNW) : ChBase := by
@@ -4708,7 +4712,7 @@ theorem ChBase_of_SelfNW (h : SelfNW) : ChBase := by
     exact (APd_iff (true :: (List.replicate j true ++ kk)) _).mp hh _ hc
   refine GOK_twoNW_self ctx0 V hJN hJX ?_ hGV ?_
   · exact JkT_plug _ hcO _ ((CtxX_snoc1 ctx0 V _).mpr ⟨hJN, hJX, trivial⟩)
-  · exact fun i => GOK_selfNWf h hJN hJX i ctx0 V hb
+  · exact fun i => GOK_selfNWf h hJN hNall hJX hXk i ctx0 V hb
 
 /-- ★★★★★★ いま開いている最小の行列は `SelfNW` 1 文から出る。 -/
 theorem R375m61_of_SelfNW (h : SelfNW) :
