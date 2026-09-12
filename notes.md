@@ -25413,3 +25413,52 @@ DM 測度は `(⊥,p)::ks → ks` で減る。辞書式で `(⊥,p) < (b,p')`（
 「走りの入り目の木は予算の節にも置ける」という不変量は保たれる：
 `nil` は `WPdR_nilF`、`pay U C` は `AYdTWR`、`one U nil` は `WPdR_oneNil` を
 予算の節で使えばよい（どれも `erun = 0` なので無条件）。
+
+## 追記397: 組み替えの続き。`RunPay` 側は通るが、階段の 1 の枠の兄弟が鎖になる
+
+追記396 の設計（`Ekey = ℕ ×ₗ Bud`、走りの節に 3 本の連言）を書き下して詰めた。
+`RunPay` 側（使う側）は確かに通る。詰まるのは**作る側**。
+
+### 作る側で要るもの
+
+走りの節 `e`（`erun e = p+1`）の連言 (2)
+
+    ∀ N (条件), WPdR ks (stkP p (two N nil))
+
+を作るには `GOK_runGNil_gen` を `A := N`, `Bs := replicate p nil` で使う。ところが
+その階段は
+
+    ∀ i, GOK (plug (ctx ++ blkC V Bs ++ blkR N Bs i) N),   blkC A Bs = fone A :: ftw Bs
+
+で、**繰り返すブロックの 1 の枠の兄弟が `A`（＝鎖 `N`）そのもの**。だから
+`WCtxR` の `⊥` の節を通そうとすると `WPdR (走りの節 :: L) N` が要る。つまり
+「鎖 `N` が走りの節に置ける」＝ (2) をまた鎖について要求することになる。循環。
+
+一方 `GOK_stkW_gen`（`nstQ N p (k+1) = one nil (two N (stkP p (nstQ N p k)))`）は
+1 の枠の兄弟が `nil` で都合が良いが、兄弟 `N` が走りの**底**（`two N (stkP p ...)`）
+に来る。荷の鎖が要るのは走りの**てっぺん**なので位置が合わない。
+**追記395 で書いた「一番内側の兄弟が階段の 1 の枠の兄弟を兼ねる」がここでも効く。**
+
+### 例外: 走りの長さ 1 なら通る
+
+`p = 0`（`Bs = []`）なら `blkC A [] = [fone A]`、`blkR A [] i = replicate i (fone A)`
+で走りが無く、これは既に緑の `WPdR_twoNilGen` / `WPdR_plug_rep`（`hNall` は
+`∀ j, WPdR (replicate j ⊥ ++ (⊥::ks)) N`）そのもの。だから
+
+    走りの長さ 1 の節（= `stk 2` まで）は今の道具で閉じる。長さ 2 以上が壁。
+
+### 階段を語で書き直すと
+
+`plug (ctx ++ blkC V Bs ++ blkR N Bs i) N = plug (ctx ++ [fone V]) (TwrN i)`,
+
+    TwrN 0 = stkP p N,  TwrN (i+1) = stkP p (one N (TwrN i))
+
+なので、階段の条件は「`N` の塔 `TwrN i` が全部 `⊥` の節に置ける」と書ける。
+`WCtxR` を経由せずこの `GOK` を直接与えればよいので、鎖の条件を
+`∀ i, WPdR (⊥ :: ks) (TwrN p i)` にすれば循環は切れる。**次はこれを詰める。**
+（`WPdT_stairB` / `nstQ` の条件と同じ形。）
+
+### いまの状態
+
+`lean/Small.lean` は追記396 の設計で 3/4 ほど書き換えたが、上の未解決点があるので
+**元に戻した**（緑を保つ）。書きかけは残していない。設計は追記396＋この項に全部ある。
