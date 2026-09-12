@@ -7550,6 +7550,89 @@ theorem Z5_hang6_LoopIt_nil (m p j n : ℕ) :
 #print axioms Aok_Z5
 #print axioms Z5_hang6_LoopIt_nil
 
+/-! ### ★★★★★★★★★ 荷 1 個 → 行列 1 個の汎用生成器 -/
+
+theorem shiftr01_len (d0 d1 : ℕ) (Y : TrioSeq) : (shiftr01 d0 d1 Y).length = Y.length := by
+  simp [shiftr01]
+
+theorem entry_shiftr01 (d0 : ℕ) {Y : TrioSeq} {i : ℕ} (h : i < Y.length) :
+    entry (shiftr01 d0 0 Y) 0 i = entry Y 0 i + d0 := by
+  have hi : i < (shiftr01 d0 0 Y).length := by rw [shiftr01_len]; exact h
+  have hg : (shiftr01 d0 0 Y)[i] = ((Y[i].1 + d0, Y[i].2.1 + 0, Y[i].2.2) : ℕ × ℕ × ℕ) := by
+    show (List.map (fun p : ℕ × ℕ × ℕ => (p.1 + d0, p.2.1 + 0, p.2.2)) Y)[i] = _
+    rw [List.getElem_map]
+  have e1 := triple_entry (shiftr01 d0 0 Y) hi
+  have e2 := triple_entry Y h
+  rw [hg] at e1
+  have : entry (shiftr01 d0 0 Y) 0 i = Y[i].1 + d0 := congrArg Prod.fst e1
+  rw [this, ← congrArg Prod.fst e2]
+
+/-- ★★★★★★★★★ 荷 `Y0` の鎖と `_top` から `R600 …` の 1 行が出る。 -/
+theorem R600_limit_gen {α : Type} [LinearOrder α] [WellFoundedLT α] [AddCommMonoid α]
+    {Y0 : TrioSeq} (hf : Flat Y0) (hne : Y0 ≠ []) (hr : entry Y0 0 0 = 0)
+    (hpos : ∀ i, 1 ≤ i → i < Y0.length → 1 ≤ entry Y0 0 i)
+    {q : ℕ → α} (hq0 : q 0 = 0) (hqa : ∀ n : ℕ, q n + q 1 = q (n + 1))
+    (hR : RunLd Y0 q) (hT : TopLd Y0 (q 1)) :
+    R375m ++ shiftr01 6 0 Y0 ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h0 : 0 < Y0.length := List.length_pos_iff.mpr hne
+  have hM : shiftr01 6 0 Y0 ≠ [] := by
+    intro hc
+    have := shiftr01_len 6 0 Y0
+    rw [hc] at this
+    simp at this
+    omega
+  have hhead : entry (shiftr01 6 0 Y0) 0 0 < 7 := by
+    rw [entry_shiftr01 6 h0, hr]; omega
+  have htail : ∀ r, 1 ≤ r → r < (shiftr01 6 0 Y0).length →
+      7 ≤ entry (shiftr01 6 0 Y0) 0 r := by
+    intro r h1 h2
+    rw [shiftr01_len] at h2
+    rw [entry_shiftr01 6 h2]
+    have := hpos r h1 h2
+    omega
+  exact flat_mem'' hM hhead htail
+    (R375m_tower_gen (Bok_flat hf hr) hq0 hqa hR hT)
+
+/-! ### ★★★★★★★★★★ 荷 `Vs Ls = (0,0,0)(1,0,0)(2,0,0)(2,0,0)(1,0,0)(2,0,0)` -/
+
+theorem AtLd_VsLs : AtLd (α := Bwx) (Vs Ls) (owG (ow 2 1 + ow 1 1) 1) := by
+  refine AtLd_Vs PwsL Flat_Ls Ls_ne Ls_root Ls_pos
+    (by rw [pwL_zero_eq]; exact RunLd_Ls)
+    (by rw [show PwsL.pw 0 1 = owG (ow 2 1) 1 from congrFun pwL_zero_eq 1];
+        exact AtLd_Ls) (fun j => ?_)
+  show owG (ow 2 1 + ow 0 (j + 1)) 1 < owG (ow 2 1 + ow 1 1) 1
+  exact owG_ltL (Bw_add_lt_left (ow 2 1) (ow_ltL (by omega : 0 < 1) (j + 1) (by omega)))
+    1 (by omega)
+
+theorem RunLd_VsLs : RunLd (α := Bwx) (Vs Ls) (fun n => owG (ow 2 1 + ow 1 1) n) :=
+  RunLd_of_TopLd (Bok_Vs Flat_Ls Ls_ne Ls_root) (by rw [owG_zero, bot_BwG])
+    (fun n => owG_add_same (ow 2 1 + ow 1 1) n) (TopLd_of_AtLd AtLd_VsLs)
+
+theorem shift6_VsLs : shiftr01 6 0 (Vs Ls)
+    = [((6, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+        ((8, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+        ((8, 0, 0) : ℕ × ℕ × ℕ)] := by
+  rw [Vs_eq]
+  show List.map _ (Ls ++ [((1, 0, 0) : ℕ × ℕ × ℕ), ((2, 0, 0) : ℕ × ℕ × ℕ)]) = _
+  rw [List.map_append]
+  refine congrArg₂ (· ++ ·) (shift_Ls 5) ?_
+  rfl
+
+/-- ★★★★★★★★★★★★★★★ `R600 (7,0,0)(8,0,0)(8,0,0)(7,0,0)(8,0,0)(7,0,0)`。 -/
+theorem R600_788787_mem :
+    R600 ++ [((7, 0, 0) : ℕ × ℕ × ℕ), ((8, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ),
+      ((8, 0, 0) : ℕ × ℕ × ℕ), ((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := R600_limit_gen (Flat_Vs Flat_Ls) (by rw [Vs_eq]; simp)
+    (Vs_root Ls_ne Ls_root) (Vs_pos Ls_ne Ls_pos)
+    (by rw [owG_zero, bot_BwG]) (fun n => owG_add_same (ow 2 1 + ow 1 1) n)
+    RunLd_VsLs (TopLd_of_AtLd AtLd_VsLs)
+  rw [shift6_VsLs] at h
+  simpa [R600, List.append_assoc] using h
+
+#print axioms R600_limit_gen
+#print axioms R600_788787_mem
+
 
 end Small
 end TRIO
