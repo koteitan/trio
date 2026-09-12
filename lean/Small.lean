@@ -7118,6 +7118,25 @@ theorem LoopIt_Z788_nil_mem (m p j n : ℕ) :
 
 #print axioms LoopIt_Z788_nil_mem
 
+/-! ### 台座 `Z788` の上に `hang6_gen` で任意の `Bok` 荷を高さ 6 に吊るす
+
+`hang6_gen` は `A ++ U375a1 ++ shiftr01 6 0 B`（`U375a1` の末尾 `(5,1,0)` が
+`one` の枠を作るので荷が自由）。`A` に `LoopIt Z788 …` を入れても効く。 -/
+
+theorem Z788_hang6 {B : TrioSeq} (hB : Bok B) :
+    Z788 ++ U375a1 ++ shiftr01 6 0 B ∈ W 0 := hang6_gen Aok_Z788 hB
+
+theorem Z788_hang6_LoopIt (m : ℕ) {ws : List Jk1} (hw : WJ ws) (j n : ℕ) :
+    Z788 ++ U375a1 ++ shiftr01 6 0 (LoopIt Z788 m ws j n) ∈ W 0 :=
+  hang6_gen Aok_Z788 (Aok_LoopIt Aok_Z788 m hw j n).toBok
+
+theorem Z788_hang6_LoopIt_nil (m p j n : ℕ) :
+    Z788 ++ U375a1 ++ shiftr01 6 0 (LoopIt Z788 m (List.replicate p (AltT 0)) j n)
+      ∈ W 0 :=
+  Z788_hang6_LoopIt m (WJ_rep_AltT 0 p) j n
+
+#print axioms Z788_hang6_LoopIt_nil
+
 
 end Small
 end TRIO
