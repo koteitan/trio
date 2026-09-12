@@ -25904,3 +25904,43 @@ z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上�
 
 **`m = 0` の荷（2 の記録の直上の荷）が、梯子のどの段でも同じ壁として残る。**
 これは `AYd` 系の壁と同じもの。
+
+## 追記409: `TwOk` 階層の穴は `Fter` の 1 箇所だけ。`GOK_twoNW_gen` はそれを荷 `nil` で破る
+
+`SmallA` の `TwOk` 階層（33000〜33240）を数えたら、閉性はほぼ全部緑だった:
+
+    TwOk_nil    : ∀ r m, TwOk r m nil                              ★緑
+    TwOk_one    : TwOk r m U → TwOk r (m+1) Z → TwOk r m (one U Z)  ★緑（Fter 不要）
+    TwOk_pay    : ∀ r m, TwOk r m X → TwOk r m (pay X Y)            ★緑（**m = 0 も**、TwOk_pay_e）
+    TwOk_oneNil / TwOk_repN / TwOk_itJ / TwOk_twoIt / TwSt_split     ★緑
+    TwOk_twoNilE (r) : TwOk (r+1) 0 nil                             ★緑
+    NTw_nil                                                          ★緑
+    TwOk_two    : NTw r N → Fter r m → TwOk (r+1) 0 Z → TwOk r m (two N Z)  ★緑
+
+**穴は 1 箇所だけ**: `Fter r m = (r = 0 ∨ 0 < m)` が `TwOk_two` を弾く場合、つまり
+
+    TwOk (r+1) 0 (two W Z)   ＝ 2 の記録の直上に 2 の記録
+
+`SmallA` のコメントも「2 の記録の直上に 2 の記録は置けない（`Fter` で弾く）。
+そこは本当の壁のまま」と書いている。
+
+### 今回の `GOK_twoNW_gen` はその穴を「荷が `nil`」の形で破れる
+
+`TwSt (r+1) 0 D = D' ++ [ftwo N]`（`TwSt r m' D'`, `Fter r m'`, `NTw r N`）なので
+`plug D (two W nil) = plug D' (two N (two W nil))` で `GOK_twoNW_gen` がぴたり当たる
+（`TwSt_split` で `D' = ctx0 ++ [fone V]`）。階段は `TwOk_nstW`。
+
+**ただし階段は `nstW N W k` が毎段同じ `N` を使うので `∀ r', NTw r' N` を要求する。
+`TwSt` が与えるのは `NTw r N`（その段だけ）。ここが合わない。**
+
+### 直すなら
+
+`TwSt` の 2 の枠の兄弟の条件を「全段で良い」に強めた階層（`TwStA` / `TwOkA` /
+`NTwA`）を `Small.lean` に作れば `TwOkA (r+1) 0 (two W nil)` が出る。
+`TwOk` 階層（33000〜33240）の写しで 400〜600 行。ただし
+
+- `W` にも `∀ r, TwOkA (r+1) 0 W` が要る（`two W nil` の形でしか閉じない）
+- 鎖 `twoIt W (pay Z Y) m` は荷が `pay` なので `two · nil` の形に入らない
+
+ので、`TwoOk_twoPayG` の A2' をそのまま回すにはまだ足りない。
+**「2 の記録の直上の 2 の記録」で荷が `nil` でない場合が最後に残る。**
