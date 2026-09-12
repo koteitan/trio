@@ -24622,3 +24622,25 @@ methodology.md にも「`Aok` の輪を回す」を書いた。
 `WPd ((k+1)::ks)` は今後使わず、全部 `⊤` で回す。移植が要るのは
 `WPdT_iff` / `WCtxT` / `WPdT_payA` / `WPdT_nilAll` / `WPdT_twoIt_nil` /
 `WPdT_twoA_runB` あたり。
+
+## 追記378: `WPdT` の移植 その 1（文脈と `iff`）
+
+    WCtxU : List (WithTop ℕ) → List Frm → Prop      （`WCtxT` は別物が既にある）
+    WCtxU_bnil / WCtxU_c0 / WCtxU_cb
+    WPdT_iff : WPdT ks V ↔ ∀ctx, WCtxU ks ctx → GOK (plug ctx V)
+    WPdT_congr
+
+全部緑。定義も `iff` も `WPd` 版をそのまま写せた（`b = ⊥` / `b ≠ ⊥` の
+場合分けを `by_cases` にするだけ）。
+
+### 残りの移植（見積り）
+
+    WCtxU_split / WCtxU_JkT        小
+    WPdT_payA（荷）                 大。`AYdTW` の移植で ~130 行
+    WPdT_nilAll                     `WPdT_oneNil`（= `APnil_gen0` + 荷）に依存
+    WPdT_twoIt_nil / WPdT_twoA_runB / WPdT_stairB   中（~150 行）
+    WPdT_twoM0 → WPdT (⊤::ks) M0t → TowT → R600(5,2,0)
+
+「全部自然数の形なら `WPd` と同値」という橋を作れば `nilAll` などを
+そのまま使えるが、`TowT` の帰納では `⊥::⊤::ks` や `⊤::⊤::ks` のように
+⊤ が形の中に入るので、橋だけでは足りない。荷の移植は避けられない。

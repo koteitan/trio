@@ -1213,5 +1213,103 @@ theorem WPdT_twoOf {b : WithTop ℕ} (hb : b ≠ ⊥) {ks : List (WithTop ℕ)} 
 
 #print axioms WPdT_twoOf
 
+def WCtxU : List (WithTop ℕ) → List Frm → Prop
+  | [], ctx => ctx = []
+  | (b :: ks), ctx =>
+      (b = ⊥ → ∃ (ctx' : List Frm) (U : Jk1), ctx = ctx' ++ [Frm.fone U] ∧
+        WCtxU ks ctx' ∧ FrmNT ks U ∧ WPdT ks U) ∧
+      (b ≠ ⊥ → ∃ (r : List (WithTop ℕ)) (_ : ∀ x ∈ r, x < b)
+        (ctx' : List Frm) (U N : Jk1),
+        ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+        WCtxU (r ++ ks) ctx' ∧
+        FrmNT (r ++ ks) U ∧ WPdT (r ++ ks) U ∧ JkA N ∧
+        (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
+          WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N))
+termination_by ks _ => ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+
+theorem WCtxU_bnil (ctx : List Frm) : WCtxU [] ctx ↔ ctx = [] := by rw [WCtxU]
+
+theorem WCtxU_c0 (ks : List (WithTop ℕ)) (ctx : List Frm) :
+    WCtxU ((⊥ : WithTop ℕ) :: ks) ctx ↔ ∃ (ctx' : List Frm) (U : Jk1),
+      ctx = ctx' ++ [Frm.fone U] ∧ WCtxU ks ctx' ∧ FrmNT ks U ∧ WPdT ks U := by
+  rw [WCtxU]
+  constructor
+  · exact fun h => h.1 rfl
+  · exact fun h => ⟨fun _ => h, fun hne => absurd rfl hne⟩
+
+theorem WCtxU_cb {b : WithTop ℕ} (hb : b ≠ ⊥) (ks : List (WithTop ℕ)) (ctx : List Frm) :
+    WCtxU (b :: ks) ctx ↔ ∃ (r : List (WithTop ℕ)) (_ : ∀ x ∈ r, x < b)
+      (ctx' : List Frm) (U N : Jk1),
+      ctx = ctx' ++ [Frm.fone U, Frm.ftwo N] ∧
+      WCtxU (r ++ ks) ctx' ∧
+      FrmNT (r ++ ks) U ∧ WPdT (r ++ ks) U ∧ JkA N ∧
+      (∀ q : List (WithTop ℕ), (∀ x ∈ q, x < b) →
+        WPdT ((⊥ : WithTop ℕ) :: q ++ (r ++ ks)) N) := by
+  rw [WCtxU]
+  constructor
+  · exact fun h => h.2 hb
+  · exact fun h => ⟨fun he => absurd he hb, fun _ => h⟩
+
+theorem WPdT_iff : ∀ (ks : List (WithTop ℕ)) (V : Jk1),
+    WPdT ks V ↔ ∀ ctx : List Frm, WCtxU ks ctx → GOK (plug ctx V)
+  | [], V => by
+      rw [WPdT_bnil]
+      constructor
+      · intro h ctx hc
+        rw [WCtxU_bnil] at hc
+        subst hc
+        exact h
+      · intro h
+        exact h [] ((WCtxU_bnil []).mpr rfl)
+  | (b :: ks), V => by
+      by_cases hb : b = ⊥
+      · subst hb
+        rw [WPdT_c0]
+        constructor
+        · intro h ctx hc
+          rw [WCtxU_c0] at hc
+          obtain ⟨ctx', U, rfl, hc', hU, hUk⟩ := hc
+          rw [plug_snoc]
+          exact (WPdT_iff ks (Jk1.one U V)).mp (h U hU hUk) ctx' hc'
+        · intro h U hU hUk
+          refine (WPdT_iff ks (Jk1.one U V)).mpr ?_
+          intro ctx' hc'
+          rw [← plug_snoc]
+          exact h (ctx' ++ [Frm.fone U]) ((WCtxU_c0 ks _).mpr ⟨ctx', U, rfl, hc', hU, hUk⟩)
+      · rw [WPdT_cb hb]
+        constructor
+        · intro h ctx hc
+          rw [WCtxU_cb hb] at hc
+          obtain ⟨r, hr, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩ := hc
+          rw [plug_snoc12]
+          exact (WPdT_iff (r ++ ks) _).mp (h r hr U N hU hUk hJN hNt) ctx' hc'
+        · intro h r hr U N hU hUk hJN hNt
+          refine (WPdT_iff (r ++ ks) _).mpr ?_
+          intro ctx' hc'
+          rw [← plug_snoc12]
+          exact h (ctx' ++ [Frm.fone U, Frm.ftwo N])
+            ((WCtxU_cb hb ks _).mpr ⟨r, hr, ctx', U, N, rfl, hc', hU, hUk, hJN, hNt⟩)
+termination_by ks _ => ((ks : List (WithTop ℕ)) : Multiset (WithTop ℕ))
+decreasing_by
+  all_goals
+    first
+      | exact dmT_cons _ _
+      | exact dmT_app ks _ (by assumption)
+
+theorem WPdT_congr : ∀ (ks : List (WithTop ℕ)) {V1 V2 : Jk1},
+    (∀ l, jk1 l V1 = jk1 l V2) → WPdT ks V1 → WPdT ks V2 := by
+  intro ks V1 V2 h hA
+  rw [WPdT_iff] at hA ⊢
+  intro ctx hc
+  exact GOK_congr (jk1_plug_congr ctx h) (hA ctx hc)
+
+#print axioms WPdT_iff
+#print axioms WPdT_congr
+
 end Small
 end TRIO
