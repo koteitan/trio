@@ -5461,6 +5461,324 @@ theorem LoopIt_Z77_nil_mem (m p j n : ℕ) :
 #print axioms LoopIt_Z77_nil_mem
 
 
+/-! ### ★★★★ 荷の階 `Yv j = (0,0,0)(1,0,0)^j`
+
+`Yv 0 = [(0,0,0)]`、`Yv 1 = Y1`。`(Yv (j+1))⟦n⟧ = (Yv j)^n` なので、
+階 `j` の荷は予算の指数 `ω^j` を要求する。 -/
+
+def Yv (j : ℕ) : TrioSeq :=
+  ((0, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate j ((1, 0, 0) : ℕ × ℕ × ℕ)
+
+theorem Yv_zero : Yv 0 = [((0, 0, 0) : ℕ × ℕ × ℕ)] := rfl
+
+theorem Yv_one : Yv 1 = Y1 := rfl
+
+theorem Yv_len (j : ℕ) : (Yv j).length = j + 1 := by simp [Yv]
+
+theorem Flat_Yv (j : ℕ) : Flat (Yv j) := by
+  intro c hc
+  simp only [Yv, List.mem_cons, List.mem_replicate] at hc
+  rcases hc with rfl | ⟨-, rfl⟩ <;> exact ⟨rfl, rfl⟩
+
+theorem Bok_Yv (j : ℕ) : Bok (Yv j) := Bok_flat (Flat_Yv j) (by simp [Yv, entry])
+
+theorem getD_rep (a d : ℕ × ℕ × ℕ) : ∀ (j i : ℕ),
+    (List.replicate j a).getD i d = if i < j then a else d
+  | 0, i => by simp
+  | (j + 1), 0 => by simp [List.replicate_succ]
+  | (j + 1), (i + 1) => by
+      rw [List.replicate_succ, List.getD_cons_succ, getD_rep a d j i]
+      by_cases h : i < j
+      · rw [if_pos h, if_pos (by omega)]
+      · rw [if_neg h, if_neg (by omega)]
+
+theorem entry_Yv0 (j i : ℕ) :
+    entry (Yv j) 0 i = if 1 ≤ i ∧ i ≤ j then 1 else 0 := by
+  rcases i with _ | i
+  · simp [entry, Yv]
+  · show (((Yv j).getD (i + 1) ((0, 0, 0) : ℕ × ℕ × ℕ)).1) = _
+    rw [show Yv j = ((0, 0, 0) : ℕ × ℕ × ℕ) :: List.replicate j ((1, 0, 0) : ℕ × ℕ × ℕ)
+        from rfl, List.getD_cons_succ, getD_rep]
+    by_cases h : i < j
+    · rw [if_pos h, if_pos ⟨by omega, by omega⟩]
+    · rw [if_neg h, if_neg (by omega)]
+
+theorem entry_Yv12 (j i : ℕ) : entry (Yv j) 1 i = 0 ∧ entry (Yv j) 2 i = 0 :=
+  Flat_entry (Flat_Yv j) i
+
+theorem Yv_srow (j i : ℕ) : srow (Yv j) i = 0 := by
+  simp [srow, (entry_Yv12 j i).1, (entry_Yv12 j i).2]
+
+theorem Yv_hasParent (j : ℕ) : hasParent (Yv (j + 1)) 0 (j + 1) := by
+  rw [hasParent_zero_iff (by rw [Yv_len]; omega)]
+  refine ⟨0, by omega, ?_⟩
+  rw [entry_Yv0, entry_Yv0, if_neg (by omega), if_pos ⟨by omega, by omega⟩]
+  omega
+
+theorem Yv_parent (j : ℕ) : parent (Yv (j + 1)) 0 (j + 1) = 0 := by
+  have h := parent_nextR (Yv_hasParent j)
+  rw [nextR, if_pos rfl] at h
+  obtain ⟨-, -, hlt, hval, -⟩ := h
+  by_contra hne
+  rw [entry_Yv0, entry_Yv0, if_pos ⟨by omega, by omega⟩,
+    if_pos ⟨by omega, by omega⟩] at hval
+  omega
+
+theorem Yv_take (j : ℕ) : (Yv (j + 1)).take (j + 1) = Yv j := by
+  show (((0, 0, 0) : ℕ × ℕ × ℕ) ::
+    List.replicate (j + 1) ((1, 0, 0) : ℕ × ℕ × ℕ)).take (j + 1) = _
+  rw [List.take_succ_cons, List.take_replicate]
+  simp [Yv]
+
+theorem oper_Yv (j n : ℕ) :
+    (Yv (j + 1))⟦n⟧ = (List.range n).flatMap (fun _ => Yv j) := by
+  have h1 : (Yv (j + 1)).length - 1 = j + 1 := by rw [Yv_len]; omega
+  simp only [oper, h1, Yv_srow, Yv_parent]
+  rw [if_neg (by omega),
+    if_neg (by rw [entry_Yv0, if_pos ⟨by omega, by omega⟩]; simp),
+    if_neg (by rw [h1, Yv_srow]; exact not_not_intro (Yv_hasParent j))]
+  simp only [Nat.lt_irrefl, show ¬ ((1 : ℕ) < 0) from by omega, if_false,
+    Nat.sub_zero, Nat.mul_zero, Nat.add_zero, ite_self, List.take_zero,
+    List.nil_append,
+    map_range'_entry (M := Yv (j + 1)) (k := j + 1) (by rw [Yv_len]; omega),
+    Yv_take]
+
+#print axioms oper_Yv
+
+/-- 予算型 `Bwx = BwG Bw`（順序型 `ω^(ω^ω)`）。指数が `Bw`（順序型 `ω^ω`）なので
+階 `j` の荷が要求する指数 `ω^j·n = ow j n` が全部入る。 -/
+abbrev Bwx : Type := BwG Bw
+
+example : WellFoundedLT Bwx := inferInstance
+example : OrderBot Bwx := inferInstance
+example : LinearOrder Bwx := inferInstance
+
+/-- 荷 `Y` を `n` 段 pay した木。`ZkO Z n = PayIt Z [(0,0,0)] n`。 -/
+def PayIt (Z : Jk1) (Y : TrioSeq) : ℕ → Jk1
+  | 0 => Z
+  | (n + 1) => Jk1.pay (PayIt Z Y n) Y
+
+theorem JkA_PayIt {Z : Jk1} {Y : TrioSeq} (hJZ : JkA Z) (hBY : Bok Y) :
+    ∀ n : ℕ, JkA (PayIt Z Y n)
+  | 0 => hJZ
+  | (n + 1) => ⟨JkA_PayIt hJZ hBY n, hBY⟩
+
+theorem jk1_PayIt (Z : Jk1) (Y : TrioSeq) : ∀ (n l : ℕ),
+    jk1 l (PayIt Z Y n)
+      = jk1 l Z ++ (List.range n).flatMap (fun _ => shiftr01 (l + 1) 0 Y)
+  | 0, l => by simp [PayIt]
+  | (n + 1), l => by
+      show jk1 l (PayIt Z Y n) ++ shiftr01 (l + 1) 0 Y = _
+      rw [jk1_PayIt Z Y n l, List.range_succ, List.flatMap_append,
+        List.append_assoc]
+      simp
+
+theorem shiftr01_flatMap (k n : ℕ) (Y : TrioSeq) :
+    shiftr01 k 0 ((List.range n).flatMap (fun _ => Y))
+      = (List.range n).flatMap (fun _ => shiftr01 k 0 Y) := by
+  show List.map _ (List.flatMap _ _) = _
+  rw [List.map_flatMap]
+  rfl
+
+/-- 荷 `Yv (j+1)` の展開は `Yv j` を `n` 段 pay したのと同じ列を作る。 -/
+theorem jk1_payYvOper (Z : Jk1) (j n l : ℕ) :
+    jk1 l (Jk1.pay Z ((Yv (j + 1))⟦n⟧)) = jk1 l (PayIt Z (Yv j) n) := by
+  show jk1 l Z ++ shiftr01 (l + 1) 0 ((Yv (j + 1))⟦n⟧) = _
+  rw [oper_Yv j n, shiftr01_flatMap, jk1_PayIt Z (Yv j) n l]
+
+/-- ★★★ 荷に依存しない「_at」。`Y⟦n+1⟧` の段が全部置けるなら `pay Z Y` も置ける。 -/
+theorem WPdT_twoAY_at {Bud : Type} [LinearOrder Bud] [OrderBot Bud] [WellFoundedLT Bud]
+    {A Z : Jk1} {Y : TrioSeq} (hJA : JkA A) (hJZ : JkA Z) (hBY : Bok Y)
+    (hlen : 2 ≤ Y.length)
+    (hp : hasParent Y (srow Y (Y.length - 1)) (Y.length - 1))
+    {B : List Bud} {N : Jk1} (hJN : JkA N)
+    (hstep : ∀ n : ℕ,
+      WPdT ((⊥ : Bud) :: B) (Jk1.two N (Jk1.two A (Jk1.pay Z (Y⟦n + 1⟧))))) :
+    WPdT ((⊥ : Bud) :: B) (Jk1.two N (Jk1.two A (Jk1.pay Z Y))) := by
+  rw [WPdT_iff]
+  intro ctx hc
+  have hJT : JkT (plug (ctx ++ [Frm.ftwo N]) (Jk1.two A (Jk1.pay Z Y))) := by
+    rw [plug_snoc2]
+    exact WCtxU_JkT ((⊥ : Bud) :: B) ctx hc (Jk1.two N (Jk1.two A (Jk1.pay Z Y)))
+      (⟨hJN, hJA, hJZ, hBY⟩ : FrmNT ((⊥ : Bud) :: B)
+        (Jk1.two N (Jk1.two A (Jk1.pay Z Y))))
+  intro ws hw hG
+  rw [← plug_snoc2]
+  refine GoodFb_snoc_innerJt0 hw hJT hlen hp ?_
+  intro n hn
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+  have hh := (WPdT_iff ((⊥ : Bud) :: B) _).mp (hstep n') ctx hc ws hw hG
+  rw [← plug_snoc2] at hh
+  exact hh
+
+#print axioms WPdT_twoAY_at
+#print axioms jk1_payYvOper
+
+/-! ### ★★★★★ 階の梯子
+
+`RunJ Z e`: 底 `Z` の走り `twoIt A Z m` が `A` の閾値 `β` の上 `β + ω^e·m` を
+超える予算に置ける。指数 `e : Bw`（順序型 ω^ω）なので階 `j` の `ω^j` が全部入る。
+
+- `AStat j`: `RunJ Z e → RunJ (PayIt Z (Yv j) n) (e + ω^j·n)`（鎖）
+- `BStat j`: `pay Z (Yv (j+1))` を `2` の記録の中に置ける（_at）
+- `CStat j`: 同じものを予算 `t` の上に置ける（_top）
+
+依存は `A(0) → B(0) → A(1) → B(1) → …` の一本道。 -/
+
+theorem ow_add_same (k m : ℕ) : ow k m + ow k 1 = ow k (m + 1) := owG_add_same k m
+
+def RunJ (Z : Jk1) (e : Bw) : Prop := ∀ (m : ℕ) (A : Jk1), JkA A → ∀ β : Bwx,
+  (∀ c : Bwx, β < c → ∀ ks : List Bwx, WPdT (c :: ks) A) →
+  ∀ c : Bwx, β + owG e m < c → ∀ ks : List Bwx,
+    WPdT (c :: ks) (twoIt A Z m)
+
+def AStat (j : ℕ) : Prop := ∀ (n : ℕ) (Z : Jk1), JkA Z → ∀ e : Bw, RunJ Z e →
+  RunJ (PayIt Z (Yv j) n) (e + ow j n)
+
+def BStat (j : ℕ) : Prop := ∀ Z : Jk1, JkA Z → ∀ e : Bw, RunJ Z e →
+  ∀ A : Jk1, JkA A → ∀ β : Bwx,
+    (∀ c : Bwx, β < c → ∀ ks : List Bwx, WPdT (c :: ks) A) →
+    ∀ t : Bwx, β + owG (e + ow (j + 1) 1) 1 ≤ t →
+    ∀ (B : List Bwx) (N : Jk1), JkA N →
+      (∀ q : List Bwx, (∀ x ∈ q, x < t) → WPdT ((⊥ : Bwx) :: q ++ B) N) →
+      WPdT ((⊥ : Bwx) :: B) (Jk1.two N (Jk1.two A (Jk1.pay Z (Yv (j + 1)))))
+
+def CStat (j : ℕ) : Prop := ∀ Z : Jk1, JkA Z → ∀ e : Bw, RunJ Z e →
+  ∀ A : Jk1, JkA A → ∀ β : Bwx,
+    (∀ c : Bwx, β < c → ∀ ks : List Bwx, WPdT (c :: ks) A) →
+    ∀ t : Bwx, β + owG (e + ow (j + 1) 1) 1 < t →
+    ∀ ks : List Bwx, WPdT (t :: ks) (Jk1.two A (Jk1.pay Z (Yv (j + 1))))
+
+theorem jk1_twotwo_congr {N A P1 P2 : Jk1} (h : ∀ l, jk1 l P1 = jk1 l P2) (l : ℕ) :
+    jk1 l (Jk1.two N (Jk1.two A P1)) = jk1 l (Jk1.two N (Jk1.two A P2)) := by
+  show jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) A ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1 + 1) P1)))
+    = jk1 l N ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 (l + 1) A ++ (((l + 1 + 1, 2, 0) : ℕ × ℕ × ℕ) :: jk1 (l + 1 + 1) P2)))
+  rw [h]
+
+theorem hasParent_Yv_last (j : ℕ) :
+    hasParent (Yv (j + 1)) (srow (Yv (j + 1)) ((Yv (j + 1)).length - 1))
+      ((Yv (j + 1)).length - 1) := by
+  rw [Yv_len, Yv_srow, show j + 1 + 1 - 1 = j + 1 from by omega]
+  exact Yv_hasParent j
+
+theorem AStat_zero : AStat 0 := by
+  intro n
+  induction n with
+  | zero =>
+      intro Z hJZ e hR m A hJA β hβ c hc ks
+      exact hR m A hJA β hβ c (by rwa [ow_zero, bot_Bw, add_zero] at hc) ks
+  | succ n ih =>
+      intro Z hJZ e hR m
+      induction m with
+      | zero =>
+          intro A hJA β hβ c hc ks
+          exact hβ c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+      | succ m ihm =>
+          intro A hJA β hβ c hc ks
+          have hJW : JkA (PayIt Z (Yv 0) (n + 1)) := JkA_PayIt hJZ (Bok_Yv 0) (n + 1)
+          have hJA' : JkA (twoIt A (PayIt Z (Yv 0) (n + 1)) m) := JkA_twoItP hJA hJW m
+          have hA' : ∀ c' : Bwx, β + owG (e + ow 0 (n + 1)) m < c' → ∀ ks' : List Bwx,
+              WPdT (c' :: ks') (twoIt A (PayIt Z (Yv 0) (n + 1)) m) :=
+            fun c' hc' ks' => ihm A hJA β hβ c' hc' ks'
+          show WPdT (c :: ks) (Jk1.two (twoIt A (PayIt Z (Yv 0) (n + 1)) m)
+            (Jk1.pay (PayIt Z (Yv 0) n) (Yv 0)))
+          refine WPdT_twoAZ_top
+            (S := ⟨fun i => (β + owG (e + ow 0 (n + 1)) m) + owG (e + ow 0 n) i,
+              fun _ _ hij => BwG_add_lt_left _ (owG_ltR (e + ow 0 n) hij)⟩)
+            (t := c) ?_ hJA' (JkA_PayIt hJZ (Bok_Yv 0) n) ?_ ks
+          · intro i
+            show (β + owG (e + ow 0 (n + 1)) m) + owG (e + ow 0 n) i < c
+            rw [add_assoc]
+            exact lt_trans (BwG_add_lt_left β
+              (owG_add_lt (Bw_add_lt_left e (ow_ltR 0 (by omega : n < n + 1))) m i)) hc
+          · intro m' c' hc' ks'
+            exact ih Z hJZ e hR m' _ hJA' (β + owG (e + ow 0 (n + 1)) m) hA' c' hc' ks'
+
+theorem CStat_of_BStat {j : ℕ} (hB : BStat j) : CStat j := by
+  intro Z hJZ e hR A hJA β hβ t ht ks
+  have htb : t ≠ ⊥ := ne_bot_of_gt (lt_of_le_of_lt bot_le ht)
+  refine (WPdT_cb htb ks _).mpr (fun r hr U N hU hUk hJN hNt => ?_)
+  refine WPdT_two_of_ctx hU hUk (fun ctx hc => ?_)
+  exact (WPdT_iff ((⊥ : Bwx) :: (r ++ ks)) _).mp
+    (hB Z hJZ e hR A hJA β hβ t (le_of_lt ht) (r ++ ks) N hJN hNt) ctx hc
+
+theorem AStat_succ {j : ℕ} (hC : CStat j) : AStat (j + 1) := by
+  intro n
+  induction n with
+  | zero =>
+      intro Z hJZ e hR m A hJA β hβ c hc ks
+      exact hR m A hJA β hβ c (by rwa [ow_zero, bot_Bw, add_zero] at hc) ks
+  | succ n ih =>
+      intro Z hJZ e hR m
+      induction m with
+      | zero =>
+          intro A hJA β hβ c hc ks
+          exact hβ c (by rwa [owG_zero, bot_BwG, add_zero] at hc) ks
+      | succ m ihm =>
+          intro A hJA β hβ c hc ks
+          have hJW : JkA (PayIt Z (Yv (j + 1)) (n + 1)) :=
+            JkA_PayIt hJZ (Bok_Yv (j + 1)) (n + 1)
+          have hJA' : JkA (twoIt A (PayIt Z (Yv (j + 1)) (n + 1)) m) :=
+            JkA_twoItP hJA hJW m
+          have hA' : ∀ c' : Bwx, β + owG (e + ow (j + 1) (n + 1)) m < c' →
+              ∀ ks' : List Bwx,
+              WPdT (c' :: ks') (twoIt A (PayIt Z (Yv (j + 1)) (n + 1)) m) :=
+            fun c' hc' ks' => ihm A hJA β hβ c' hc' ks'
+          show WPdT (c :: ks) (Jk1.two (twoIt A (PayIt Z (Yv (j + 1)) (n + 1)) m)
+            (Jk1.pay (PayIt Z (Yv (j + 1)) n) (Yv (j + 1))))
+          refine hC (PayIt Z (Yv (j + 1)) n) (JkA_PayIt hJZ (Bok_Yv (j + 1)) n)
+            (e + ow (j + 1) n) (ih Z hJZ e hR) _ hJA'
+            (β + owG (e + ow (j + 1) (n + 1)) m) hA' c ?_ ks
+          have he : (e + ow (j + 1) n) + ow (j + 1) 1 = e + ow (j + 1) (n + 1) := by
+            rw [add_assoc, ow_add_same]
+          rw [he, add_assoc, owG_add_same]
+          exact hc
+
+theorem BStat_zero (hA : AStat 0) : BStat 0 := by
+  intro Z hJZ e hR A hJA β hβ t ht B N hJN hNt
+  refine WPdT_twoAY_at hJA hJZ (Bok_Yv 1) (by rw [Yv_len]) (hasParent_Yv_last 0) hJN ?_
+  intro n'
+  refine WPdT_congr ((⊥ : Bwx) :: B)
+    (fun l => jk1_twotwo_congr (fun l' => (jk1_payYvOper Z 0 (n' + 1) l').symm) l) ?_
+  refine WPdT_twoAZ_at
+    (S := ⟨fun i => β + owG (e + ow 0 n') i,
+      fun _ _ hij => BwG_add_lt_left β (owG_ltR (e + ow 0 n') hij)⟩)
+    (t := t) ?_ hJA (JkA_PayIt hJZ (Bok_Yv 0) n') ?_ hJN hNt
+  · intro i
+    show β + owG (e + ow 0 n') i < t
+    refine lt_of_lt_of_le (BwG_add_lt_left β (owG_ltL ?_ i (by omega))) ht
+    exact Bw_add_lt_left e (ow_ltL (by omega : 0 < 1) n' (by omega))
+  · intro m' c' hc' ks'
+    exact hA n' Z hJZ e hR m' A hJA β hβ c' hc' ks'
+
+theorem BStat_succ {j : ℕ} (hA : AStat (j + 1)) (hB : BStat j) : BStat (j + 1) := by
+  intro Z hJZ e hR A hJA β hβ t ht B N hJN hNt
+  refine WPdT_twoAY_at hJA hJZ (Bok_Yv (j + 2)) (by rw [Yv_len]; omega)
+    (hasParent_Yv_last (j + 1)) hJN ?_
+  intro n'
+  refine WPdT_congr ((⊥ : Bwx) :: B)
+    (fun l => jk1_twotwo_congr (fun l' => (jk1_payYvOper Z (j + 1) (n' + 1) l').symm) l) ?_
+  refine hB (PayIt Z (Yv (j + 1)) n') (JkA_PayIt hJZ (Bok_Yv (j + 1)) n')
+    (e + ow (j + 1) n') (hA n' Z hJZ e hR) A hJA β hβ t ?_ B N hJN hNt
+  have he : (e + ow (j + 1) n') + ow (j + 1) 1 = e + ow (j + 1) (n' + 1) := by
+    rw [add_assoc, ow_add_same]
+  rw [he]
+  refine le_of_lt (lt_of_lt_of_le (BwG_add_lt_left β (owG_ltL ?_ 1 (by omega))) ht)
+  exact Bw_add_lt_left e (ow_ltL (by omega : j + 1 < j + 1 + 1) (n' + 1) (by omega))
+
+theorem BStat_all : ∀ j : ℕ, BStat j
+  | 0 => BStat_zero AStat_zero
+  | (j + 1) => BStat_succ (AStat_succ (CStat_of_BStat (BStat_all j))) (BStat_all j)
+
+theorem AStat_all : ∀ j : ℕ, AStat j
+  | 0 => AStat_zero
+  | (j + 1) => AStat_succ (CStat_of_BStat (BStat_all j))
+
+#print axioms AStat_all
+#print axioms BStat_all
+
 
 end Small
 end TRIO
