@@ -23826,3 +23826,40 @@ junk の字を大きくするのも損（`b709_jT6 < b711_jnil`）。
     TwoOk_one      : TwoOk W → LOk 1 Z → TwoOk (one W Z)
     TwoOk_oneNilA  : TwoOk V → TwoOk (one V nil)        （荷の義務は TwoOk_pay で消える）
     ChBase_ge1     : ChBase の深さ 1 以上の版（= LOk_twoN）
+
+## 追記349 (2026-09-13): 族の梯子の地図。段は「入れ子になった 2 の記録の本数」
+
+文脈の族を全部並べると、**段は入れ子になった 2 の記録の本数**で刻まれている。
+
+    StkOk k D  = (GCtx 文脈) ++ [ftwo N] ++ (fone U)^k        2 の記録 1 本の k 段上
+       N の条件: APd で良い（＝走り無し。`GCtx (true::ks)` + `hNall`）
+    LOk k X    = ∀D, StkOk k D → GOK (plug D X)               LOk 0 ↔ TwoOk
+
+    TwStk m D  = (StkOk (k+1) 文脈) ++ [ftwo N] ++ (fone U)^m  2 の記録 2 本の m 段上
+       N の条件: ∀j, LOk (j+1) N（1 本目の世界で深さ 1 以上）
+    TwM m X    = ∀D, TwStk m D → GOK (plug D X)
+    LTwo Z     = ∀N(JkA, ∀j LOk (j+1) N), ∀k, LOk (k+1) (two N Z)
+       LTwo_of_TwM0 : TwM 0 X → LTwo X
+
+    TwSt r m D = 2 の記録 r+1 本（`Fter r m` つき）
+    TwOk r m X / NTw r N / TTwA Z : その世界
+
+### 各段の中身は同じ形で全部緑
+
+    _nil / _pay / _one / _oneNil / _itJ / _chn      LOk, TwM, TwOk のどれでも緑
+
+**2 の記録を 1 本置くと段が 1 上がる**（`LTwo_of_TwM0`、`LOk_twoN` の `∀j, LOk (j+1) N`）。
+上には無限に伸びるが、**下は `APd`（走り無し）で止まる**。`StkOk 0` の兄弟 `N` に
+課される条件がそれ。これが `Rq (false::ks) U = TopOk U` と同じもの。
+
+### だから全部の攻め方が同じ 1 点に戻る
+
+    予算（WPd の k）        = 段の本数
+    梯子の準位（Stk）       = 段の本数
+    荷の高さ / 鎖の位置      = 段の本数
+    深さ（LOk k の k）      = 同じ 2 の記録の中での 1 の枠の枚数
+    JkJ の TopOk / Rq       = 段の底（走り無し）
+
+**段は上に無限に作れるが、底が `APd` で走りを許さない。**行376 には段が
+無制限に要る（`bdA (replicate m 2)` は 2 の記録 `m` 本）ので、底を 1 段
+緩めない限り届かない。

@@ -146,6 +146,25 @@ DM 順序では直せない: `(k+1)::ks` から降りられるのは「`k+1` を
 階段 `two nil (otwJ m)` が走りを含まないから。走り 3 連の階段 `bdA (replicate k 2)`
 は走り 2 連を含むので出ない。`WPd` の予算は「階段の走りの長さ」を数えているだけ。
 
+## 族の梯子の地図（追記349）。段 = 入れ子になった 2 の記録の本数
+
+    StkOk k D  = (GCtx 文脈) ++ [ftwo N] ++ (fone U)^k     2 の記録 1 本の k 段上
+                 N の条件: APd で良い（＝走り無し）
+    LOk k X    = ∀D, StkOk k D → GOK (plug D X)            LOk 0 ↔ TwoOk
+    TwStk m D  = (StkOk (k+1) 文脈) ++ [ftwo N] ++ (fone U)^m   2 の記録 2 本
+                 N の条件: ∀j, LOk (j+1) N
+    TwM m X    = ∀D, TwStk m D → GOK (plug D X)
+    LTwo Z     = ∀N(…), ∀k, LOk (k+1) (two N Z)     LTwo_of_TwM0 : TwM 0 X → LTwo X
+    TwSt r m / TwOk r m / NTw r / TTwA              2 の記録 r+1 本
+
+各段の `_nil` / `_pay` / `_one` / `_oneNil` / `_itJ` / `_chn` は**全部緑**。
+**2 の記録を 1 本置くと段が 1 上がる。上には無限に伸びるが、下は `APd`
+（走り無し）で止まる。** `StkOk 0` の兄弟の条件がそれで、`Rq (false::ks) U = TopOk U`
+と同じもの。予算・準位・荷の高さ・鎖の位置は全部この「段の本数」の言い換え。
+
+行376 には段が無制限に要る（`bdA (replicate m 2)` は 2 の記録 `m` 本）ので、
+**底を 1 段緩めない限り届かない。**
+
 ## 行376 への還元の一覧（`R376_of_*`、全部緑。新しく作る前にここを見る）
 
 `Small.lean` には行376 への還元が **30 本以上**ある。同じ壁の言い換えなので、
