@@ -9713,6 +9713,102 @@ theorem Z789_H_62 : Z789 ++ U375aH ++ [((6, 2, 0) : ℕ × ℕ × ℕ)] ∈ W 0 
 
 #print axioms Z789_H_62
 
+/-! ### ★★★★★★★★★★★★★★★ `H(7,0,0)`: 尻尾 `TailJ` の 2 の走り -/
+
+/-- `U375aH` の末尾 8 本。`TailH` から先頭の `(5,1,0)` を外したもの。 -/
+def TailJ : TrioSeq :=
+  [((6, 2, 0) : ℕ × ℕ × ℕ), ((7, 2, 0) : ℕ × ℕ × ℕ), ((7, 1, 0) : ℕ × ℕ × ℕ),
+    ((8, 2, 0) : ℕ × ℕ × ℕ), ((9, 2, 0) : ℕ × ℕ × ℕ), ((9, 1, 0) : ℕ × ℕ × ℕ),
+    ((10, 2, 0) : ℕ × ℕ × ℕ), ((11, 2, 0) : ℕ × ℕ × ℕ)]
+
+theorem TailH_cons : TailH = ((5, 1, 0) : ℕ × ℕ × ℕ) :: TailJ := rfl
+
+theorem JkA_twoItTW2 : ∀ k : ℕ, JkA (twoIt Jk1.nil (TW 2) k)
+  | 0 => trivial
+  | (k + 1) => ⟨JkA_twoItTW2 k, JkA_TW 2⟩
+
+/-- 同じ階の 2 の記録の走り（子は `TW 2`）は、どの `TwSt` 文脈にも差せる。 -/
+theorem NTw_twoItTW2 : ∀ (k q : ℕ), NTw q (twoIt Jk1.nil (TW 2) k)
+  | 0, q => NTw_nil q
+  | (k + 1), q => fun j D hD hf =>
+      TTwA_TW2 q j (twoIt Jk1.nil (TW 2) k) (JkA_twoItTW2 k) (NTw_twoItTW2 k) hf D hD
+
+theorem LOk_twoItTW2 : ∀ (k m : ℕ), LOk (m + 1) (twoIt Jk1.nil (TW 2) k)
+  | 0, m => LOk_nil (m + 1)
+  | (k + 1), m =>
+      LOk_of_TwOk0 (TTwA_TW2 0 m (twoIt Jk1.nil (TW 2) k) (JkA_twoItTW2 k)
+        (NTw_twoItTW2 k) (Fter_zero m))
+
+theorem jk1_twoItTW2 : ∀ (k l : ℕ), jk1 l (twoIt Jk1.nil (TW 2) k)
+    = copies [((l + 1, 2, 0) : ℕ × ℕ × ℕ), ((l + 2, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 2, 1, 0) : ℕ × ℕ × ℕ), ((l + 3, 2, 0) : ℕ × ℕ × ℕ),
+        ((l + 4, 2, 0) : ℕ × ℕ × ℕ), ((l + 4, 1, 0) : ℕ × ℕ × ℕ),
+        ((l + 5, 2, 0) : ℕ × ℕ × ℕ), ((l + 6, 2, 0) : ℕ × ℕ × ℕ)] k
+  | 0, l => by simp [twoIt, jk1, copies]
+  | (k + 1), l => by
+      show jk1 l (twoIt Jk1.nil (TW 2) k) ++ (((l + 1, 2, 0) : ℕ × ℕ × ℕ)
+        :: jk1 (l + 1) (TW 2)) = _
+      rw [jk1_twoItTW2 k l, copies_snoc, jk1_TW2 (l + 1),
+        show l + 1 + 1 = l + 2 from by omega, show l + 1 + 2 = l + 3 from by omega,
+        show l + 1 + 3 = l + 4 from by omega, show l + 1 + 4 = l + 5 from by omega,
+        show l + 1 + 5 = l + 6 from by omega]
+
+def HgE (m : ℕ) : Jk1 :=
+  Jk1.one Jk1.nil (Jk1.two Jk1.nil (Jk1.one (Jk1.two Jk1.nil Jk1.nil)
+    (twoIt Jk1.nil (TW 2) m)))
+
+theorem GOK_HgE (m : ℕ) : GOK (HgE m) :=
+  (APd_bnil _).mp (APd_step [] (JkT_nil : FrmJ [] Jk1.nil) trivial
+    ((APd_bnil _).mpr GOK_nil)
+    (by
+      have hT : TwoOk (Jk1.one (Jk1.two Jk1.nil Jk1.nil) (twoIt Jk1.nil (TW 2) m)) :=
+        TwoOk_of_LOk0 (LOk_one (k := 0) ⟨trivial, trivial⟩ (LOk_twoNilAll 0)
+          (LOk_twoItTW2 m 0))
+      simpa using hT Jk1.nil trivial (fun _ _ => APd_nil _) 0 []))
+
+theorem A_copiesTailJ_gen {A : TrioSeq} (hA : Aok A) (m : ℕ) :
+    A ++ U375a ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ++ copies TailJ m ∈ W 0 := by
+  have hG : GoodFb (fun a b => wordJ a b ([] ++ [HgE m])) :=
+    GOK_HgE m [] WOk_nil GoodFb_wordJ_nil
+  have hG' : GoodFb (fun a b => wordJ a b [HgE m]) := by simpa using hG
+  have h := rowJ_mem_genF hA hG'
+  have e : jk1 2 (HgE m)
+      = [((3, 1, 0) : ℕ × ℕ × ℕ), ((4, 2, 0) : ℕ × ℕ × ℕ), ((5, 2, 0) : ℕ × ℕ × ℕ),
+          ((5, 1, 0) : ℕ × ℕ × ℕ)] ++ copies TailJ m := by
+    show jk1 2 Jk1.nil ++ (((3, 1, 0) : ℕ × ℕ × ℕ) ::
+      (jk1 3 Jk1.nil ++ (((4, 2, 0) : ℕ × ℕ × ℕ) ::
+        (jk1 4 (Jk1.two Jk1.nil Jk1.nil) ++ (((5, 1, 0) : ℕ × ℕ × ℕ)
+          :: jk1 5 (twoIt Jk1.nil (TW 2) m)))))) = _
+    rw [jk1_twoItTW2 m 5]
+    simp [jk1, TailJ]
+  simpa [wordJ_singleton, colJ, e, U375a, List.append_assoc] using h
+
+theorem Ua51_TailJ (A : TrioSeq) :
+    A ++ U375a ++ [((5, 1, 0) : ℕ × ℕ × ℕ)] ++ TailJ = A ++ U375aH := by
+  rw [List.append_assoc (A ++ U375a),
+    show [((5, 1, 0) : ℕ × ℕ × ℕ)] ++ TailJ = TailH from rfl,
+    List.append_assoc A, Ua_TailH]
+
+/-- ★★★★★★★★★★★★★★★ `A ++ U375aH ++ (7,0,0)`。 -/
+theorem UH_snoc70 {A : TrioSeq} (hA : Aok A) :
+    A ++ U375aH ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 := by
+  have h := flat_mem'' (Y0 := A ++ U375a ++ [((5, 1, 0) : ℕ × ℕ × ℕ)])
+    (M := TailJ) (d := 7)
+    (by simp [TailJ]) (by simp [TailJ, entry])
+    (by
+      intro r h1 h2
+      simp only [TailJ, List.length_cons, List.length_nil] at h2
+      rcases r with _ | _ | _ | _ | _ | _ | _ | _ | r <;>
+        first | omega | simp [TailJ, entry])
+    (fun n => by simpa [copies] using A_copiesTailJ_gen hA n)
+  rw [Ua51_TailJ A] at h
+  exact h
+
+theorem Z789_H_70 : Z789 ++ U375aH ++ [((7, 0, 0) : ℕ × ℕ × ℕ)] ∈ W 0 :=
+  UH_snoc70 Aok_Z789
+
+#print axioms Z789_H_70
+
 
 end Small
 end TRIO
