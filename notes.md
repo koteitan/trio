@@ -25732,3 +25732,39 @@ well-founded にするには追記396 の `Ekey = ℕ ×ₗ Bud`（走りの長�
   `TwoOk_pay` の鎖 `twoIt nil (pay Z Y) m` の兄弟が `nil` でなくなるため。
 - `APd (false::ks)` の `N` の条件はその `L` だけなので `APd_twoTwoGen` に渡せない
   （追記401）。`SG (false::ks) U` からも `TwoOk U` は出ない（`N = nil` の場合しか無い）。
+
+## 追記405: 壁の一番短い言い方 ——「2 の記録を置くには、その直下に 1 の枠が要る」
+
+`GOK` を出す道具を全部並べると、文脈の形の要求はこうなっている:
+
+| 道具 | 出る木 | 文脈の要求 |
+|---|---|---|
+| `APnil_gen0` | `one V nil` | **任意**（荷 `pay V C` があれば） |
+| `GOK_twoPayZ_of` | `two N (pay Z Y)` | **任意**（鎖 `htow` があれば） |
+| `GOK_twoNil_gen` / `GOK_twoNilW_gen` | `two N nil` | `ctx0 ++ [fone V]` |
+| `GOK_stkW_gen` | `two N (stkP p (two nil nil))` | `ctx0 ++ [fone V]` |
+| `GOK_runGNil_gen` | `two A nil` | `ctx ++ blkC V Bs`（先頭が `fone V`） |
+| `GOK_oneUV_RunSB` | `one U (RunS (Bs++[B]))` | 任意（階段があれば） |
+| `TSib_nil_of_SelfW` | `two W nil` | `ctx0 ++ [fone V]` |
+
+**2 の記録を作る道具は例外なく「文脈が `fone` の枠で終わっている」ことを要求する。**
+語で見ると、塔の繰り返しブロックが `(D,1,0)`（1 の記録の列）で始まるからで、
+`snocYd_mem` の `entry M 1 0 < y` がその `1` を使っている（追記402）。
+
+走り（2 の記録が 2 つ続く）では、内側の 2 の記録の直下が `ftwo` の枠なので
+この要求が満たせない。**これが壁の全て。** `LOk` の言葉だと
+
+    StkOk 0 D = ctx ++ [ftwo N]（`GCtx` の上に 2 の枠 1 枚）  ← 深さ 0
+    StkOk (k+1) D = D' ++ [fone U]（`StkOk k` の上に 1 の枠） ← 深さ ≥ 1
+
+で、`LOk_twoN`（深さ ≥ 1 で `two N nil`）は緑、深さ 0 だけが開いている
+（`ChBase_ge1`）。`GOK_twoNil_gen` が `fone` で終わる文脈しか取れないから。
+
+### つまり要るもの
+
+**文脈が `ftwo` の枠で終わっているときに 2 の記録を置く語の道具**（塔のブロックが
+`(D,2,0)` で始まる版）。`snocYd_mem` の `hMe : entry M 1 0 < y` は
+`y = 2`, `entry M 1 0 = 2` となって満たせないので、`snocYd_mem` とは別の
+継ぎ足し補題（アンカーの行 1 が 3 以上、あるいは行 1 が同じときの規則）が要る。
+z < 2 の断片では行 1 の値は 0/1/2 しか無いので、`y = 2` が上限。
+**`snocYd_mem` の枠組みでは原理的に無理**で、別の展開の見方が要る。
