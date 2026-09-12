@@ -1,5 +1,28 @@
 # 壁
 
+## ★★★ いま一番先の形（2026-09-12 夜）
+
+新しい語の道具（`SmallA` に無かった）:
+
+    GOK_twoNW_gen (ctx0 V) {N Wt} (hJN) (hJW) (hJT) (hGV : GOK (plug ctx0 V))
+      (hstair : ∀ k, GOK (plug (ctx0 ++ [fone V]) (nstW N Wt k)))
+      : GOK (plug (ctx0 ++ [fone V]) (two N (two Wt nil)))          ★緑
+
+    nstW N Wt 0 = two N Wt,  nstW N Wt (k+1) = two N (one Wt (nstW N Wt k))
+    unQW N Wt D = (D,1,0) :: jk1 D (two N Wt)（歩幅 2、`snocW_of_tower`）
+
+これで `ChBase`（＝ `TwoOk X → TwoOk (two X nil)`）が階段 1 本に落ちた:
+
+    ChStair : ∀ N Wt, JkA N → (N は普遍) → JkA Wt → TwoOk Wt →
+                ∀ k, LOk 1 (nstW N Wt k)
+    ChBase_of_ChStair / R375m61_of_ChStair                          ★緑
+
+階段の `k = 0` は `TwoOk Wt` そのもの、`k+1` は `TwoOk_one`（緑）で落ちる。
+残るのは **`LOk 1 (nstW N Wt k)`** ＝「深さ 1 で 2 の記録を置く」。
+`LOk 1 (two N Y) ⟸ LTwo Y`（`LTwo_nil`/`LTwo_pay`/`LTwo_one`/`LTwo_oneNil` は緑）
+なので、`LTwo Wt` と `TwM 1 (nstW N Wt k)` に落ちる。`Wt` には `TwoOk` しか
+無いのが効くかどうかが焦点。
+
 ## ★★ 残る 1 文（2026-09-12。まずここ）
 
 `APd` だけで書ける版（一番読みやすい）:
