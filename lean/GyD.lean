@@ -248,5 +248,151 @@ theorem FarP_GpT_ge {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : �
       simp [List.append_assoc]
     rwa [eU] at this
 
+/-! ## lt: 根が差し込み口の節点そのもの（塔の写し） -/
+
+theorem reOff_strict (f g : ℕ → ℕ) (A : List ℕ) {m n : ℕ} (h : m < n) :
+    reOff f g A m < reOff f g A n := by
+  unfold reOff; have := reStep_mono 0 f g A (le_of_lt h) A; omega
+
+theorem FarP_GpT_lt {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (ho : 1 ≤ o)
+    {f : ℕ → ℕ} {s : ℕ} (hs : liftOff f A o < s) :
+    FarP (GC A) (fun h => GpT A o h) A f s := by
+  intro b P d hP hd hbot h1 h2
+  refine GpT_intro hA (fun R hR g0 => ?_)
+  rw [reliftX_snoc_bottom hd b hbot f g0 A]
+  have hk1 : 1 ≤ liftOff (addF f g0) A o := by unfold liftOff; omega
+  have hks : liftOff (addF f g0) A o < reOff f g0 A s := by
+    rw [← reOff_liftOff]; exact reOff_strict f g0 A hs
+  intro u' hu X hX hRX
+  have hQ0 : Fr (reliftX b f g0 A P) := Fr_reliftX hP _ _ _ _
+  have hbotQ : BotGe (reliftX b f g0 A P) d (b + reOff f g0 A s) := by
+    have := BotGe_slift hbot (reStair_stair b f g0 A)
+    rwa [reStair_base] at this
+  have hbotQu : BotGe (mlift (reliftX b f g0 A P) b (u' - b)) d (u' + reOff f g0 A s) := by
+    have := BotGe_slift hbotQ (stair_step b (u' - b))
+    rw [← mlift_eq_slift] at this
+    rwa [if_pos (by omega), show b + reOff f g0 A s + (u' - b) = u' + reOff f g0 A s by omega]
+      at this
+  have eB : mlift (reliftX b f g0 A P ++ [((d, b + reOff f g0 A s, 0) : ℕ × ℕ × ℕ)]) b (u' - b)
+      = mlift (reliftX b f g0 A P) b (u' - b) ++ [((d, u' + reOff f g0 A s, 0) : ℕ × ℕ × ℕ)] := by
+    rw [mlift_snoc_cone _ _ (coneV_of_BotGe hbotQ (by omega))]
+    show _ ++ [((d, b + reOff f g0 A s + (u' - b), 0) : ℕ × ℕ × ℕ)] = _
+    rw [show b + reOff f g0 A s + (u' - b) = u' + reOff f g0 A s by omega]
+  rw [eB]
+  -- 記号を置く
+  obtain ⟨Q, hQdef⟩ : ∃ Q, Q = mlift (reliftX b f g0 A P) b (u' - b) := ⟨_, rfl⟩
+  obtain ⟨k, hkdef⟩ : ∃ k, k = liftOff (addF f g0) A o := ⟨_, rfl⟩
+  obtain ⟨s', hs'def⟩ : ∃ s', s' = reOff f g0 A s := ⟨_, rfl⟩
+  rw [← hQdef, ← hkdef, ← hs'def]
+  rw [← hQdef, ← hs'def] at hbotQu
+  rw [← hkdef, ← hs'def] at hks
+  rw [← hkdef] at hk1
+  have hQ : Fr Q := by rw [hQdef]; exact Fr_mlift hQ0 _ _
+  have hQeq : Q = reliftX u' f g0 A (mlift P b (u' - b)) := by
+    rw [hQdef, mlift_reliftX, show b + (u' - b) = u' by omega]
+  obtain ⟨R', hR'⟩ : ∃ R', R' = Q ++ [((d, u' + s', 0) : ℕ × ℕ × ℕ)] := ⟨_, rfl⟩
+  have hRFr : Fr R' := by
+    rw [hR']
+    exact Fr_append hQ (fun y hy => by simp at hy; subst hy; show 1 ≤ d; omega)
+  have hRok : argOK R' := fun p hp => by have := hRFr p hp; omega
+  have hRne : R' ≠ [] := by rw [hR']; simp
+  have hlast : R'.length - 1 = Q.length + 0 := by rw [hR']; simp
+  have eL : ∀ r, entry R' r (R'.length - 1) = entry [((d, u' + s', 0) : ℕ × ℕ × ℕ)] r 0 := by
+    intro r; rw [hlast, hR', entry_append_right]
+  have e0 : entry R' 0 (R'.length - 1) = d := by rw [eL]; rfl
+  have e1 : entry R' 1 (R'.length - 1) = u' + s' := by rw [eL]; rfl
+  have e2 : entry R' 2 (R'.length - 1) = 0 := by rw [eL]; rfl
+  have hsr : srow R' (R'.length - 1) = 1 := by unfold srow; rw [e2, e1]; simp; omega
+  have hnpR : ¬ hasParent R' 1 (R'.length - 1) := by
+    rintro ⟨j, hj, -⟩
+    unfold nextR at hj
+    rw [if_neg (by omega), if_pos rfl] at hj
+    obtain ⟨-, -, hjlt, hj1, hle0, -⟩ := hj
+    rw [hlast] at hjlt hle0
+    rw [e1] at hj1
+    have hjQ : j < Q.length := by omega
+    rw [hR', Small.entry_append_left hjQ] at hj1
+    have hr := hle0.2.2
+    rw [hR'] at hr
+    have := hbotQu _ j rfl hjQ (by simpa using hr)
+    omega
+  have hd' : domT R' (2 * (u' + s') - 1) := by
+    refine ⟨?_, ?_⟩
+    · unfold lev; rw [e1, e2]; omega
+    · rw [hsr]; exact hnpR
+  have hRl : 0 < R'.length := List.length_pos_iff.mpr hRne
+  have hpM : hasParent (((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R') (srow R' (R'.length - 1)) R'.length := by
+    rw [hsr]
+    refine hasParent_one_of (b := R'.length) (k := 0) (by simp) hRl
+      ⟨by simp, by simp, rtg0_zero (fun l hl0 hl => ?_) (by simp)⟩ ?_
+    · obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+      rw [entry_cons]
+      have hl' : l' < R'.length := by simp at hl; omega
+      have hmem : R'.getD l' (0, 0, 0) ∈ R' := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl']; exact List.getElem_mem hl'
+      have := hRok _ hmem
+      show 0 < (R'.getD l' (0, 0, 0)).1
+      omega
+    · rw [entry_cons_last hRne 1, e1]; show u' + k < u' + s'; omega
+  have hdl : R'.dropLast = Q := by rw [hR', List.dropLast_concat]
+  have htow : ∀ j, shiftr01 1 0 (tow (u' + k) 0 R' (j + 1))
+      = ((1, u' + k, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (Q ++ shiftr01 d 0 (tow (u' + k) 0 R' j)) := by
+    intro j
+    rw [tow, graft_eq_shift, e0, hdl]
+    simp [shiftr01]
+  have hFrL : ∀ j, Fr (Q ++ shiftr01 d 0 (tow (u' + k) 0 R' j)) := fun j =>
+    Fr_append hQ (fun y hy => by
+      simp only [shiftr01, List.mem_map] at hy
+      obtain ⟨p, -, rfl⟩ := hy
+      dsimp only; omega)
+  have hG : ∀ j, GpT A o (addF f g0) u' (Q ++ shiftr01 d 0 (tow (u' + k) 0 R' j)) := by
+    intro j
+    induction j with
+    | zero =>
+        simp only [tow, shiftr01, List.map_nil, List.append_nil]
+        rw [hQeq]; exact h1 g0 u' hu
+    | succ j ih =>
+        have e : Q ++ shiftr01 d 0 (tow (u' + k) 0 R' (j + 1))
+            = Q ++ shiftr01 (d - 1) 0 (((1, u' + k, 0) : ℕ × ℕ × ℕ) ::
+                shiftr01 1 0 (Q ++ shiftr01 d 0 (tow (u' + k) 0 R' j))) := by
+          rw [← htow, shiftr01_add0, show 1 + (d - 1) = d by omega]
+        rw [e]
+        have hGC : GC A (addF f g0) k u' (Q ++ shiftr01 d 0 (tow (u' + k) 0 R' j)) := by
+          have e2 := GC_slot hA (addF f g0) u' (Q ++ shiftr01 d 0 (tow (u' + k) 0 R' j))
+          rw [← hkdef] at e2
+          rw [e2]; exact ih
+        have := h2 g0 u' hu k _ hk1 (by rw [← hs'def]; exact hks) (hFrL j) hGC
+        rwa [← hQeq] at this
+  have eV : ((1, u' + k, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 R'
+      = shiftr01 1 0 (((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R') := by simp [shiftr01]
+  rw [← hR', eV]
+  have hlen2 : 2 ≤ (((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R').length := by simp; omega
+  have hpM' : hasParent (((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R')
+      (srow (((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R') ((((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R').length - 1))
+      ((((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R').length - 1) := by
+    have hl : ((((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R').length - 1) = R'.length := by simp
+    rw [hl, srow_cons_last hRne]; exact hpM
+  refine (hR (addF f g0)).1.oper u' X _ hX (Fr_shift1 _) (fun _ => ?_)
+    (by rw [shiftr01_length]; exact hlen2)
+    (by rw [shiftr01_length, srow_shiftr01, hasParent_shiftr01]; exact hpM') (fun m hm => ?_)
+  · rw [entry0_shiftr01 (by simp)]; rfl
+  · have eO := oper_shift [] (((0, u' + k, 0) : ℕ × ℕ × ℕ) :: R') 1 m hlen2 hpM'
+    simp only [List.nil_append] at eO
+    rw [eO, oper_cons_tower1 hRok hRne hd' hsr hpM]
+    obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
+    rw [htow]
+    have := GpT_elim0 (hG j) hR u' le_rfl X hX hRX
+    rwa [Nat.sub_self, mlift_zero, ← hkdef] at this
+
+/-- ★ GpT の族は、任意の上限 o' の文脈の公理を満たす。 -/
+theorem CtxP_GpT {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a) (ho : 1 ≤ o)
+    (o' : ℕ) : CtxP (GC A) A o' (fun h => GpT A o h) := by
+  intro f
+  refine ⟨GpT_ax hA hA1 ho f, fun f' b X hff h => GpT_congr hA hff h,
+    fun g b X _ h => GpT_lift hA h g, fun s hs2 _ => ?_⟩
+  by_cases hs : s ≤ liftOff f A o
+  · exact FarP_GpT_ge hA hA1 ho hs2 hs
+  · exact FarP_GpT_lt hA ho (by omega)
+
 end GyD
 end TRIO
