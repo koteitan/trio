@@ -1133,5 +1133,64 @@ theorem LCF_farC {σ b : ℕ} (hσ : 1 ≤ σ) {K E : TrioSeq} (h : LCF σ b K) 
     LCF σ b (K ++ ((1, b + σ + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) :=
   ⟨LCall_farC hσ h.2 hE.2 h.1 hE.1, Fr_append h.2 (Fr_node _ _)⟩
 
+
+/-! ## 節点の子の差し込み口に対する遠い塔の公理 -/
+
+theorem FarA_nslot {P : ℕ → TrioSeq → Prop} (hP : SlotAx P) {k s : ℕ} (hs2 : 2 ≤ s) (hsk : s ≤ k)
+    (hFs : FarA Gof s P) : FarA Gof s (nslot P k) := by
+  intro u rest C hr hC h1 h2
+  have hr1 : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1 :=
+    fun p hp => ⟨(hr p hp).1, by have := (hr p hp).2; omega⟩
+  intro u' hu X hX hPX
+  have eT : mlift (nestN u rest (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)])) u (u' - u)
+      = nestN u' (liftRest u (u' - u) rest)
+          (mlift C u (u' - u) ++ [((1, u' + s, 0) : ℕ × ℕ × ℕ)]) := by
+    rw [mlift_nestN u (u' - u) rest _ hr1 (Fr_append hC (Fr_single_node _)),
+      mlift_snoc_node hC (by omega), show u + (u' - u) = u' by omega]
+  rw [eT]
+  have hrl : ∀ p ∈ (X, k, 0) :: liftRest u (u' - u) rest, Fr p.1 ∧ s ≤ p.2.1 := by
+    intro p hp
+    simp only [List.mem_cons] at hp
+    rcases hp with rfl | hp
+    · exact ⟨hX, hsk⟩
+    · exact liftRest_cond hr p hp
+  have hrl1 : ∀ p ∈ (X, k, 0) :: liftRest u (u' - u) rest, Fr p.1 ∧ 1 ≤ p.2.1 :=
+    fun p hp => ⟨(hrl p hp).1, by have := (hrl p hp).2; omega⟩
+  refine hFs u' ((X, k, 0) :: liftRest u (u' - u) rest) (mlift C u (u' - u)) hrl
+    (Fr_mlift hC _ _) (fun u'' hu'' => ?_) (fun u'' hu'' τ L h1τ hτ hL hGL => ?_)
+  · have hh := h1 u'' (le_trans hu hu'') u'' le_rfl (mlift X u' (u'' - u')) (Fr_mlift hX _ _)
+      (hP.lift u' X hX hPX u'' hu'')
+    rw [Nat.sub_self, mlift_zero] at hh
+    rw [mlift_nestN u' (u'' - u') _ _ hrl1 (Fr_mlift hC _ _)]
+    simp only [nestN, liftRest, List.map_cons]
+    have e := mlift_nestN_twice hu hu'' hr1 hC
+    rw [mlift_nestN u' (u'' - u') _ _ (liftRest_cond hr1) (Fr_mlift hC _ _)] at e
+    simp only [liftRest] at e
+    rw [e, show u' + (u'' - u') = u'' by omega]
+    exact hh
+  · have hh := h2 u'' (le_trans hu hu'') τ L h1τ hτ hL hGL u'' le_rfl (mlift X u' (u'' - u'))
+      (Fr_mlift hX _ _) (hP.lift u' X hX hPX u'' hu'')
+    rw [Nat.sub_self, mlift_zero, shiftr01_append0, shiftr01_add0] at hh
+    rw [mlift_nestN u' (u'' - u') _ _ hrl1 (Fr_mlift hC _ _)]
+    simp only [nestN, liftRest, List.map_cons, List.length_cons, List.length_map]
+    have e := mlift_nestN_twice hu hu'' hr1 hC
+    rw [mlift_nestN u' (u'' - u') _ _ (liftRest_cond hr1) (Fr_mlift hC _ _)] at e
+    simp only [liftRest] at e
+    rw [e, show u' + (u'' - u') = u'' by omega]
+    simpa [List.append_assoc] using hh
+
+#print axioms FarA_nslot
+
+/-- 節点の子の差し込み口に、τ ≤ k の節点と Gof τ の子を足す。 -/
+theorem nslot_node {P : ℕ → TrioSeq → Prop} (hP : SlotAx P) {k τ b : ℕ} (hk : 1 ≤ k)
+    (hτk : τ ≤ k) (hFP : ∀ s, 2 ≤ s → s ≤ τ → FarA Gof s P) {E L : TrioSeq} (hE : Fr E)
+    (hL : Gof τ b L) (h : nslot P k b E) :
+    nslot P k b (E ++ ((1, b + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) := by
+  have := (Gof_eq τ b L).mp hL (nslot P k) (nslot_ax hP hk)
+    (fun s h2 hs => FarA_nslot hP h2 (le_trans hs hτk) (hFP s h2 hs)) b le_rfl E hE h
+  rwa [Nat.sub_self, mlift_zero] at this
+
+#print axioms nslot_node
+
 end GxY
 end TRIO
