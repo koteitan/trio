@@ -28600,3 +28600,23 @@ L の親子不変、klift_oper）から作る。
 - A: klift の定義と、L の親子不変、klift_oper（κ' の作り方は追記508）、合成、mlift / reliftX との関係。
 - B: PVK / C / UK と SlotAx、FarP_low、FarP_eq、FarP_lt、CtxP_UK。
 - C: 遠い字の規則、生成器、行 1450 以降。
+
+## 追記510: ★ 段 A の土台: klift の定義・親子関係の保存・展開との可換（KlA / KlB、緑）
+
+    KlA: lamK / Lk / klift、Lk_parent・Lk_between（行 1 の親子で Lk が等しい）、
+         Lk_eq_of_nextrel1_klift（持ち上げた側の親子でも Lk が等しい）、
+         nextrel1_klift・le1_klift・srow_klift（o ≥ 1）・nextrel2_klift・hasParent_klift・parent_klift
+    KlB: Lk_congrK・Lk_le1・Lk_take・Lk_oper_prefix、Lk_gexp_mir（上昇コピー相）・Lk_gexp_mir_flat（平坦相）・Lk_oper_mir、
+         operK（写しの位置 j0 + (k·Lb + q) に κ(j0 + q)）、klift_take・klift_dropLast・klift_oper_main、
+         klift_oper : ∃ K', klift (A⟦n⟧) o j K' = (klift A o j K)⟦n⟧
+    axioms = [propext, Classical.choice, Quot.sound]
+
+- κ に条件は要らなかった（Lk は道の最小なので、印なしの段 o の祖先の下の κ は効かない）。
+- 上昇コピー相の要点: 段 j0 < o なら写しも元も Lk = 0。段 j0 ≥ o なら上昇する列は段 > o で λ = j のまま。
+  前の写しの列が祖先のときは、amin の hrow1 の代わりに Lk_le1（行 1 の鎖で Lk 一定）で Lk j0 = Lk (j0+Lb)。
+- slift の証明の形がほぼそのまま使えた（KlA 約 290 行、KlB 約 480 行）。
+
+次（段 A の残り）:
+- klift A o j (κ ≡ 0) = mlift A o j（λ は段 ≤ o で 0、段 > o で j、なので Lk = j ⇔ coneV A o c）。
+- 合成: 閾値 o の klift のあとの閾値 o+1 の klift を、閾値 o の 1 回の klift で書く（tools/probe_kappa_comp.py）。
+- 状態の持ち上げ reliftX（錨の列 A、段 < o の階段）との可換、W ++ ℓ :: Y↑1 と節点の形での分配。
