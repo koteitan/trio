@@ -28,52 +28,72 @@ open GxN
 open GxP
 open GxR
 
+
+theorem Fr_nodez (r z : ℕ) (W : TrioSeq) : Fr (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 W) := by
+  intro x hx
+  simp only [List.mem_cons, shiftr01, List.mem_map] at hx
+  rcases hx with rfl | ⟨p, -, rfl⟩
+  · show 1 ≤ 1; omega
+  · dsimp only; omega
+
+theorem Hd_nodez (r z : ℕ) (W : TrioSeq) : Hd (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 W) :=
+  fun _ => rfl
+
+theorem mlift_nodez {u r : ℕ} (hr : u < r) {V : TrioSeq} (hV : Fr V) (z t : ℕ) :
+    mlift (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V) u t
+      = ((1, r + t, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift V u t) := by
+  have e1 : ((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V
+      = shiftr01 1 0 (((0, r, z) : ℕ × ℕ × ℕ) :: V) := by simp [shiftr01]
+  have e2 : ((1, r + t, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift V u t)
+      = shiftr01 1 0 (((0, r + t, z) : ℕ × ℕ × ℕ) :: mlift V u t) := by simp [shiftr01]
+  rw [e1, e2, mlift_shift0, mlift_cons_root hV hr]
+
 /-! ## 入れ子 -/
 
-def nestN (u : ℕ) : List (TrioSeq × ℕ) → TrioSeq → TrioSeq
+def nestN (u : ℕ) : List (TrioSeq × ℕ × ℕ) → TrioSeq → TrioSeq
   | [], C => C
-  | ((X, ρ) :: rest), C => X ++ ((1, u + ρ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (nestN u rest C)
+  | ((X, ρ, z) :: rest), C => X ++ ((1, u + ρ, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (nestN u rest C)
 
-theorem nestN_app (u : ℕ) : ∀ (rest : List (TrioSeq × ℕ)) (C Z : TrioSeq),
+theorem nestN_app (u : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C Z : TrioSeq),
     nestN u rest (C ++ Z) = nestN u rest C ++ shiftr01 rest.length 0 Z
   | [], C, Z => by simp [nestN, shiftr01_zero']
-  | ((X, ρ) :: rest), C, Z => by
+  | ((X, ρ, z) :: rest), C, Z => by
       simp only [nestN, List.length_cons]
       rw [nestN_app u rest C Z, shiftr01_append0, shiftr01_add0]
       simp [List.append_assoc]
 
-theorem Fr_nestN (u : ℕ) : ∀ (rest : List (TrioSeq × ℕ)) (C : TrioSeq),
+theorem Fr_nestN (u : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C : TrioSeq),
     (∀ p ∈ rest, Fr p.1) → Fr C → Fr (nestN u rest C)
   | [], C, _, hC => hC
-  | ((X, ρ) :: rest), C, hr, hC => by
+  | ((X, ρ, z) :: rest), C, hr, hC => by
       simp only [nestN]
-      refine Fr_append (hr (X, ρ) (by simp)) (Fr_node _ _)
+      refine Fr_append (hr (X, ρ, z) (by simp)) (Fr_nodez _ _ _)
 
-noncomputable def liftRest (u t : ℕ) (rest : List (TrioSeq × ℕ)) : List (TrioSeq × ℕ) :=
+noncomputable def liftRest (u t : ℕ) (rest : List (TrioSeq × ℕ × ℕ)) : List (TrioSeq × ℕ × ℕ) :=
   rest.map (fun p => (mlift p.1 u t, p.2))
 
-theorem mlift_nestN (u t : ℕ) : ∀ (rest : List (TrioSeq × ℕ)) (C : TrioSeq),
-    (∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2) → Fr C →
+theorem mlift_nestN (u t : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C : TrioSeq),
+    (∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1) → Fr C →
     mlift (nestN u rest C) u t = nestN (u + t) (liftRest u t rest) (mlift C u t)
   | [], C, _, _ => by simp [nestN, liftRest]
-  | ((X, ρ) :: rest), C, hr, hC => by
-      have hX := (hr (X, ρ) (by simp)).1
-      have hρ := (hr (X, ρ) (by simp)).2
-      have hr' : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2 := fun p hp => hr p (by simp [hp])
+  | ((X, ρ, z) :: rest), C, hr, hC => by
+      have hX : Fr X := (hr (X, ρ, z) (by simp)).1
+      have hρ : 1 ≤ ρ := (hr (X, ρ, z) (by simp)).2
+      have hr' : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1 := fun p hp => hr p (by simp [hp])
       simp only [nestN, liftRest, List.map_cons]
-      rw [mlift_app hX (Hd_node _ _), mlift_node (by omega) (Fr_nestN u rest C
+      rw [mlift_app hX (Hd_nodez _ _ _), mlift_nodez (by omega) (Fr_nestN u rest C
         (fun p hp => (hr' p hp).1) hC), mlift_nestN u t rest C hr' hC]
       simp only [liftRest]
       rw [show u + ρ + t = u + t + ρ by omega]
 
-theorem liftRest_length (u t : ℕ) (rest : List (TrioSeq × ℕ)) :
+theorem liftRest_length (u t : ℕ) (rest : List (TrioSeq × ℕ × ℕ)) :
     (liftRest u t rest).length = rest.length := by simp [liftRest]
 
 /-! ## 遠い塔の公理と Gof -/
 
 def FarA (G : ℕ → ℕ → TrioSeq → Prop) (s : ℕ) (Q : ℕ → TrioSeq → Prop) : Prop :=
-  ∀ u (rest : List (TrioSeq × ℕ)) (C : TrioSeq),
-    (∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2) → Fr C →
+  ∀ u (rest : List (TrioSeq × ℕ × ℕ)) (C : TrioSeq),
+    (∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2.1) → Fr C →
     (∀ u', u ≤ u' → Q u' (mlift (nestN u rest C) u (u' - u))) →
     (∀ u', u ≤ u' → ∀ τ L, 1 ≤ τ → τ < s → Fr L → G τ u' L →
       Q u' (mlift (nestN u rest C) u (u' - u) ++
@@ -146,8 +166,8 @@ theorem Gof_ax {σ : ℕ} (hσ : 1 ≤ σ) : SlotAx (Gof σ) where
 
 /-! ## 入れ子の一番下の列の親 -/
 
-theorem nestN_noParent (u s : ℕ) : ∀ (rest : List (TrioSeq × ℕ)) (C : TrioSeq),
-    (∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2) → Fr C →
+theorem nestN_noParent (u s : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C : TrioSeq),
+    (∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2.1) → Fr C →
     ¬ hasParent (nestN u rest (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)])) 1
       ((nestN u rest (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)])).length - 1)
   | [], C, _, hC => by
@@ -165,30 +185,30 @@ theorem nestN_noParent (u s : ℕ) : ∀ (rest : List (TrioSeq × ℕ)) (C : Tri
       have e : entry [((1, u + s, 0) : ℕ × ℕ × ℕ)] 0 0 = 1 := rfl
       rw [e] at hrec
       omega
-  | ((X, ρ) :: rest), C, hr, hC => by
-      have hX : Fr X := (hr (X, ρ) (by simp)).1
-      have hρ : s ≤ ρ := (hr (X, ρ) (by simp)).2
-      have hr' : ∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2 := fun p hp => hr p (by simp [hp])
+  | ((X, ρ, z) :: rest), C, hr, hC => by
+      have hX : Fr X := (hr (X, ρ, z) (by simp)).1
+      have hρ : s ≤ ρ := (hr (X, ρ, z) (by simp)).2
+      have hr' : ∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2.1 := fun p hp => hr p (by simp [hp])
       have ih := nestN_noParent u s rest C hr' hC
       set N' := nestN u rest (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)]) with hN'
       have hN'ne : N' ≠ [] := by
         rw [hN', nestN_app]; simp [shiftr01]
       have hN'l : 0 < N'.length := List.length_pos_iff.mpr hN'ne
-      have eN : nestN u ((X, ρ) :: rest) (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)])
-          = (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N' := by
+      have eN : nestN u ((X, ρ, z) :: rest) (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)])
+          = (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N' := by
         simp only [nestN]; rw [hN']; simp [List.append_assoc]
       rw [eN]
       rintro ⟨k, hk, -⟩
-      have hlen : ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N').length - 1
-          = (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length + (N'.length - 1) := by
+      have hlen : ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N').length - 1
+          = (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length + (N'.length - 1) := by
         simp [shiftr01]; omega
       rw [hlen] at hk
-      have hk' : nextrel1 ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') k
-          ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length + (N'.length - 1)) := by
+      have hk' : nextrel1 ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') k
+          ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length + (N'.length - 1)) := by
         unfold nextR at hk; rwa [if_neg (by omega), if_pos rfl] at hk
       obtain ⟨-, -, hkl, hk1, hle0, -⟩ := hk'
-      have eL1 : entry ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 1
-          ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length + (N'.length - 1))
+      have eL1 : entry ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 1
+          ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length + (N'.length - 1))
           = entry N' 1 (N'.length - 1) := by rw [entry_append_right, entry1_shiftr01]
       rw [eL1] at hk1
       have hlast : entry N' 1 (N'.length - 1) = u + s := by
@@ -199,41 +219,41 @@ theorem nestN_noParent (u s : ℕ) : ∀ (rest : List (TrioSeq × ℕ)) (C : Tri
         rw [entry_append_right]
         simp [shiftr01, entry]
       rw [hlast] at hk1
-      rcases Nat.lt_or_ge k (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length with hlt | hge
+      rcases Nat.lt_or_ge k (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length with hlt | hge
       · have hkX : k ≤ X.length := by simp at hlt; omega
         rcases Nat.lt_or_ge k X.length with hlt' | hge'
         · have hrec := rtg0_rec hle0.2.2 X.length hlt' (by simp; omega)
-          have e1 : entry ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 0 k
+          have e1 : entry ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 0 k
               = entry X 0 k := by
-            rw [Small.entry_append_left (show k < (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length
+            rw [Small.entry_append_left (show k < (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length
               by simp; omega), Small.entry_append_left hlt']
-          have e2 : entry ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 0 X.length
+          have e2 : entry ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 0 X.length
               = 1 := by
-            rw [Small.entry_append_left (show X.length < (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length
+            rw [Small.entry_append_left (show X.length < (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length
               by simp), show X.length = X.length + 0 from rfl, entry_append_right]; rfl
           rw [e1, e2] at hrec
           have := getD_row0_ge hX hlt'
           omega
         · have hkeq : k = X.length := by omega
           subst hkeq
-          have e3 : entry ((X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 1 X.length
+          have e3 : entry ((X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]) ++ shiftr01 1 0 N') 1 X.length
               = u + ρ := by
-            rw [Small.entry_append_left (show X.length < (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length
+            rw [Small.entry_append_left (show X.length < (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length
               by simp), show X.length = X.length + 0 from rfl, entry_append_right]; rfl
           rw [e3] at hk1
           omega
-      · obtain ⟨q, rfl⟩ : ∃ q, k = (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length + q :=
-          ⟨k - (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length, by omega⟩
+      · obtain ⟨q, rfl⟩ : ∃ q, k = (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length + q :=
+          ⟨k - (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length, by omega⟩
         have h1 := rtg0_append_unlift (Nat.le_add_right _ _) hle0.2.2 (N'.length - 1) rfl
-        rw [show (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length + q -
-          (X ++ [((1, u + ρ, 0) : ℕ × ℕ × ℕ)]).length = q by omega] at h1
+        rw [show (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length + q -
+          (X ++ [((1, u + ρ, z) : ℕ × ℕ × ℕ)]).length = q by omega] at h1
         have h2 := rtg0_shiftr01.mp h1
         rw [entry_append_right, entry1_shiftr01] at hk1
         exact ih (H12Export.hasParent1_of_le0_witness (by omega) h2 (by rw [hlast]; exact hk1))
 
 #print axioms nestN_noParent
 
-theorem liftRest_comp (u t t' : ℕ) (rest : List (TrioSeq × ℕ)) :
+theorem liftRest_comp (u t t' : ℕ) (rest : List (TrioSeq × ℕ × ℕ)) :
     liftRest (u + t) t' (liftRest u t rest) = liftRest u (t + t') rest := by
   simp only [liftRest, List.map_map]
   apply List.map_congr_left
@@ -249,8 +269,8 @@ theorem mlift_snoc_node {C : TrioSeq} (hC : Fr C) {u s : ℕ} (hs : 1 ≤ s) (t 
   show _ ++ [((1, u + s + t, 0) : ℕ × ℕ × ℕ)] = _
   rw [show u + s + t = u + t + s by omega]
 
-theorem liftRest_cond {u t s : ℕ} {rest : List (TrioSeq × ℕ)}
-    (hr : ∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2) : ∀ p ∈ liftRest u t rest, Fr p.1 ∧ s ≤ p.2 := by
+theorem liftRest_cond {u t s : ℕ} {rest : List (TrioSeq × ℕ × ℕ)}
+    (hr : ∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2.1) : ∀ p ∈ liftRest u t rest, Fr p.1 ∧ s ≤ p.2.1 := by
   intro p hp
   simp only [liftRest, List.mem_map] at hp
   obtain ⟨q, hq, rfl⟩ := hp
@@ -261,10 +281,10 @@ theorem Fr_single_node (r : ℕ) : Fr [((1, r, 0) : ℕ × ℕ × ℕ)] := by
 
 /-- 入れ子を段 u から u'' へ持ち上げたもの（2 段階で持ち上げても同じ）。 -/
 theorem mlift_nestN_twice {u u' u'' : ℕ} (hu : u ≤ u') (hu' : u' ≤ u'')
-    {rest : List (TrioSeq × ℕ)} {C : TrioSeq} (hr : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2) (hC : Fr C) :
+    {rest : List (TrioSeq × ℕ × ℕ)} {C : TrioSeq} (hr : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1) (hC : Fr C) :
     mlift (nestN u' (liftRest u (u' - u) rest) (mlift C u (u' - u))) u' (u'' - u')
       = mlift (nestN u rest C) u (u'' - u) := by
-  have hrl : ∀ p ∈ liftRest u (u' - u) rest, Fr p.1 ∧ 1 ≤ p.2 := liftRest_cond hr
+  have hrl : ∀ p ∈ liftRest u (u' - u) rest, Fr p.1 ∧ 1 ≤ p.2.1 := liftRest_cond hr
   rw [mlift_nestN u' (u'' - u') _ _ hrl (Fr_mlift hC _ _), mlift_nestN u (u'' - u) rest C hr hC]
   have e := liftRest_comp u (u' - u) (u'' - u') rest
   rw [show u + (u' - u) = u' by omega, show u' - u + (u'' - u') = u'' - u by omega] at e
@@ -275,7 +295,7 @@ theorem mlift_nestN_twice {u u' u'' : ℕ} (hu : u ≤ u') (hu' : u' ≤ u'')
 theorem FarA_Gof_ge {ρ s : ℕ} (hρ1 : 1 ≤ ρ) (hs2 : 2 ≤ s) (hsρ : s ≤ ρ) :
     FarA Gof s (Gof ρ) := by
   intro u rest C hr hC h1 h2
-  have hr1 : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2 :=
+  have hr1 : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1 :=
     fun p hp => ⟨(hr p hp).1, by have := (hr p hp).2; omega⟩
   rw [Gof_eq]
   intro Q hQ hF u' hu X hX hQX
@@ -285,15 +305,15 @@ theorem FarA_Gof_ge {ρ s : ℕ} (hρ1 : 1 ≤ ρ) (hs2 : 2 ≤ s) (hsρ : s ≤
     rw [mlift_nestN u (u' - u) rest _ hr1 (Fr_append hC (Fr_single_node _)),
       mlift_snoc_node hC (by omega), show u + (u' - u) = u' by omega]
   rw [eT]
-  have hrl : ∀ p ∈ (X, ρ) :: liftRest u (u' - u) rest, Fr p.1 ∧ s ≤ p.2 := by
+  have hrl : ∀ p ∈ (X, ρ, 0) :: liftRest u (u' - u) rest, Fr p.1 ∧ s ≤ p.2.1 := by
     intro p hp
     simp only [List.mem_cons] at hp
     rcases hp with rfl | hp
     · exact ⟨hX, hsρ⟩
     · exact liftRest_cond hr p hp
-  have hrl1 : ∀ p ∈ (X, ρ) :: liftRest u (u' - u) rest, Fr p.1 ∧ 1 ≤ p.2 :=
+  have hrl1 : ∀ p ∈ (X, ρ, 0) :: liftRest u (u' - u) rest, Fr p.1 ∧ 1 ≤ p.2.1 :=
     fun p hp => ⟨(hrl p hp).1, by have := (hrl p hp).2; omega⟩
-  refine hF s hs2 hsρ u' ((X, ρ) :: liftRest u (u' - u) rest) (mlift C u (u' - u)) hrl
+  refine hF s hs2 hsρ u' ((X, ρ, 0) :: liftRest u (u' - u) rest) (mlift C u (u' - u)) hrl
     (Fr_mlift hC _ _) (fun u'' hu'' => ?_) (fun u'' hu'' τ L h1τ hτ hL hGL => ?_)
   · have hh := (Gof_eq ρ u'' _).mp (h1 u'' (le_trans hu hu'')) Q hQ hF u'' le_rfl
       (mlift X u' (u'' - u')) (Fr_mlift hX _ _) (hQ.lift u' X hX hQX u'' hu'')
@@ -321,7 +341,7 @@ theorem FarA_Gof_ge {ρ s : ℕ} (hρ1 : 1 ≤ ρ) (hs2 : 2 ≤ s) (hsρ : s ≤
 theorem FarA_Gof_lt {ρ s : ℕ} (hρ1 : 1 ≤ ρ) (hs2 : 2 ≤ s) (hρs : ρ < s) :
     FarA Gof s (Gof ρ) := by
   intro u rest C hr hC h1 h2
-  have hr1 : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2 :=
+  have hr1 : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1 :=
     fun p hp => ⟨(hr p hp).1, by have := (hr p hp).2; omega⟩
   rw [Gof_eq]
   intro Q hQ hF u' hu X hX hQX
@@ -331,8 +351,8 @@ theorem FarA_Gof_lt {ρ s : ℕ} (hρ1 : 1 ≤ ρ) (hs2 : 2 ≤ s) (hρs : ρ < 
     rw [mlift_nestN u (u' - u) rest _ hr1 (Fr_append hC (Fr_single_node _)),
       mlift_snoc_node hC (by omega), show u + (u' - u) = u' by omega]
   rw [eT]
-  have hrl : ∀ p ∈ liftRest u (u' - u) rest, Fr p.1 ∧ s ≤ p.2 := liftRest_cond hr
-  have hrl1 : ∀ p ∈ liftRest u (u' - u) rest, Fr p.1 ∧ 1 ≤ p.2 :=
+  have hrl : ∀ p ∈ liftRest u (u' - u) rest, Fr p.1 ∧ s ≤ p.2.1 := liftRest_cond hr
+  have hrl1 : ∀ p ∈ liftRest u (u' - u) rest, Fr p.1 ∧ 1 ≤ p.2.1 :=
     fun p hp => ⟨(hrl p hp).1, by have := (hrl p hp).2; omega⟩
   have hCl : Fr (mlift C u (u' - u)) := Fr_mlift hC _ _
   have h1' : Gof ρ u' (nestN u' (liftRest u (u' - u) rest) (mlift C u (u' - u))) := by
