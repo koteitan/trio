@@ -908,5 +908,135 @@ theorem FarA_LCall {σ s : ℕ} (hσ : 1 ≤ σ) (hs2 : 2 ≤ s) (hsσ : s ≤ �
 
 #print axioms FarA_LCall
 
+
+/-! ## 字の中身の節点と遠い節点 -/
+
+theorem PV_nil {b σ : ℕ} (hσ : 1 ≤ σ) : PV b σ [] := by
+  intro t
+  rw [mlift_nil]
+  rcases Nat.eq_or_lt_of_le (show 1 ≤ σ + t by omega) with h | h
+  · rw [← h]; exact (Gof_one_iff b []).mpr (GTs_nil b)
+  · exact Gof_nil (by omega) b
+
+theorem PV_to_Gof {b σ : ℕ} {W : TrioSeq} (h : PV b σ W) : Gof σ b W := by
+  have := h 0
+  rwa [Nat.add_zero, mlift_zero] at this
+
+theorem PV_shift {b σ : ℕ} {W : TrioSeq} (h : PV b σ W) (T : ℕ) :
+    PV b (σ + T) (mlift W (b + σ) T) := by
+  intro t
+  have := h (T + t)
+  rw [show σ + (T + t) = σ + T + t by omega] at this
+  rw [show b + (σ + T) = b + σ + T by omega, mlift_mlift]
+  exact this
+
+theorem LC_of_LCall {σ b : ℕ} {Y : TrioSeq} (h : LCall σ b Y) : LC b σ Y := by
+  have := h b le_rfl 0
+  rwa [Nat.sub_self, mlift_zero, Nat.add_zero, mlift_zero] at this
+
+theorem LCall_shift {σ b : ℕ} {K : TrioSeq} (h : LCall σ b K) (T : ℕ) :
+    LCall (σ + T) b (mlift K (b + σ) T) := by
+  intro b' hb' t
+  have := h b' hb' (T + t)
+  rw [show σ + (T + t) = σ + T + t by omega] at this
+  rw [mlift_commk, show b + σ + (b' - b) = b' + σ by omega,
+    show b' + (σ + T) = b' + σ + T by omega, mlift_mlift]
+  exact this
+
+theorem LCall_node {σ τ b : ℕ} (hσ : 1 ≤ σ) (hτ : τ ≤ σ) {K P : TrioSeq} (hK : Fr K)
+    (hP : Gof τ b P) (h : LCall σ b K) :
+    LCall σ b (K ++ ((1, b + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 P) := by
+  have := (Gof_eq τ b P).mp hP (LCall σ) (LCall_ax hσ)
+    (fun s h2 hs => FarA_LCall hσ h2 (le_trans hs hτ)) b le_rfl K hK h
+  rwa [Nat.sub_self, mlift_zero] at this
+
+/-- ★ 字の中身の高さ 1 の遠い節点（行 1 の親は差し込み口の節点）。 -/
+theorem LCall_far {σ b : ℕ} (hσ : 1 ≤ σ) {K : TrioSeq} (hK : Fr K) (h : LCall σ b K) :
+    LCall σ b (K ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) := by
+  intro b' hb' t W hW hPV t'
+  have hKF : Fr (K ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) := Fr_append hK (Fr_single_node _)
+  have eF : mlift (mlift (K ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) b (b' - b)) (b' + σ) (t + t')
+      = mlift (mlift K b (b' - b)) (b' + σ) (t + t') ++
+          [((1, b' + σ + (t + t') + 1, 0) : ℕ × ℕ × ℕ)] := by
+    rw [show b + σ + 1 = b + (σ + 1) by omega, mlift_snoc_node hK (by omega) (b' - b),
+      show b + (b' - b) + (σ + 1) = b' + σ + 1 by omega,
+      mlift_snoc_node (Fr_mlift hK _ _) (le_refl 1) (t + t')]
+  have hFr1 : Fr (mlift (mlift (K ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) b (b' - b)) (b' + σ) t) :=
+    Fr_mlift (Fr_mlift hKF _ _) _ _
+  rw [mlift_letterU hW hFr1 (show b' + (σ + t) < b' + (σ + t) + 1 by omega),
+    show b' + (σ + t) = b' + σ + t by omega, mlift_mlift, eF]
+  have eG : mlift W (b' + σ + t) t' ++ ((1, b' + σ + t + 1 + t', 1) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (mlift (mlift K b (b' - b)) (b' + σ) (t + t') ++
+          [((1, b' + σ + (t + t') + 1, 0) : ℕ × ℕ × ℕ)])
+      = nestN b' [(mlift W (b' + σ + t) t', σ + t + t' + 1, 1)]
+          (mlift (mlift K b (b' - b)) (b' + σ) (t + t') ++
+            [((1, b' + (σ + t + t' + 1), 0) : ℕ × ℕ × ℕ)]) := by
+    simp only [nestN]
+    rw [show b' + σ + t + 1 + t' = b' + (σ + t + t' + 1) by omega,
+      show b' + σ + (t + t') + 1 = b' + (σ + t + t' + 1) by omega]
+  rw [eG]
+  have hr : ∀ p ∈ [(mlift W (b' + σ + t) t', σ + t + t' + 1, 1)], Fr p.1 ∧ σ + t + t' + 1 ≤ p.2.1 := by
+    intro p hp; simp only [List.mem_singleton] at hp; subst hp
+    exact ⟨Fr_mlift hW _ _, le_rfl⟩
+  have hr1 : ∀ p ∈ [(mlift W (b' + σ + t) t', σ + t + t' + 1, 1)], Fr p.1 ∧ 1 ≤ p.2.1 :=
+    fun p hp => ⟨(hr p hp).1, by have := (hr p hp).2; omega⟩
+  have hKT : Fr (mlift (mlift K b (b' - b)) (b' + σ) (t + t')) := Fr_mlift (Fr_mlift hK _ _) _ _
+  -- 段 b3 での形
+  have hlift : ∀ b3, b' ≤ b3 →
+      mlift (nestN b' [(mlift W (b' + σ + t) t', σ + t + t' + 1, 1)]
+        (mlift (mlift K b (b' - b)) (b' + σ) (t + t'))) b' (b3 - b')
+      = mlift (mlift W b' (b3 - b')) (b3 + σ + t) t' ++ ((1, b3 + (σ + t + t' + 1), 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift (mlift K b (b3 - b)) (b3 + σ) (t + t')) := by
+    intro b3 hb3
+    rw [mlift_nestN b' (b3 - b') _ _ hr1 hKT]
+    simp only [nestN, liftRest, List.map_cons, List.map_nil]
+    rw [show b' + σ + t = b' + (σ + t) by omega, mlift_commk,
+      show b' + (σ + t) + (b3 - b') = b3 + σ + t by omega, mlift_commk,
+      show b' + σ + (b3 - b') = b3 + σ by omega]
+    have e := mlift_mlift K b (b' - b) (b3 - b')
+    rw [show b + (b' - b) = b' by omega, show b' - b + (b3 - b') = b3 - b by omega] at e
+    rw [e, show b' + (b3 - b') = b3 by omega]
+  refine FarA_Gof (ρ := σ + t + t') (s := σ + t + t' + 1) (by omega) (by omega) b' _ _ hr hKT
+    (fun b3 hb3 => ?_) (fun b3 hb3 τ L h1τ hτ hL hGL => ?_)
+  · rw [hlift b3 hb3]
+    have H := h b3 (le_trans hb' hb3) t (mlift W b' (b3 - b')) (Fr_mlift hW _ _)
+      (PV_lift (by omega) hW hPV hb3) t'
+    have hFr3 : Fr (mlift (mlift K b (b3 - b)) (b3 + σ) t) := Fr_mlift (Fr_mlift hK _ _) _ _
+    rw [mlift_letterU (Fr_mlift hW _ _) hFr3 (show b3 + (σ + t) < b3 + (σ + t) + 1 by omega),
+      show b3 + (σ + t) = b3 + σ + t by omega, mlift_mlift] at H
+    rw [show b3 + (σ + t + t' + 1) = b3 + σ + t + 1 + t' by omega]
+    exact H
+  · rw [hlift b3 hb3]
+    have hK3 : LCall (σ + (t + t')) b3 (mlift (mlift K b (b3 - b)) (b3 + σ) (t + t')) :=
+      LCall_shift ((LCall_ax hσ).lift b K hK h b3 (le_trans hb' hb3)) (t + t')
+    have hN := LCall_node (τ := τ) (by omega) (by omega) (Fr_mlift (Fr_mlift hK _ _) _ _) hGL hK3
+    have hPV3 : PV b3 (σ + (t + t')) (mlift (mlift W b' (b3 - b')) (b3 + σ + t) t') := by
+      have := PV_shift (PV_lift (by omega) hW hPV hb3) t'
+      rwa [show σ + t + t' = σ + (t + t') by omega, show b3 + (σ + t) = b3 + σ + t by omega] at this
+    have H := PV_to_Gof (LC_of_LCall hN _ (Fr_mlift (Fr_mlift hW _ _) _ _) hPV3)
+    rw [show σ + (t + t') = σ + t + t' by omega] at H
+    rw [show b3 + (σ + t + t' + 1) = b3 + (σ + t + t') + 1 by omega]
+    simpa [shiftr01_append0, List.append_assoc] using H
+
+#print axioms LCall_far
+
+/-- 行 1107 の試し。 -/
+theorem R1107_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have hF : LCall 1 0 [((1, 2, 0) : ℕ × ℕ × ℕ)] := by
+    have := LCall_far (b := 0) (σ := 1) le_rfl Fr_nil (LCall_nil le_rfl 0)
+    simpa using this
+  have hPV := LC_of_LCall hF [] Fr_nil (PV_nil le_rfl)
+  have hG := PV_to_Gof hPV
+  have hD : GTs 0 [((1, 2, 1) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)] := by
+    simp [shiftr01] at hG
+    exact (Gof_one_iff 0 _).mp hG
+  have hDF : Fr [((1, 2, 1) : ℕ × ℕ × ℕ), ((2, 2, 0) : ℕ × ℕ × ℕ)] := by
+    intro x hx; simp at hx; rcases hx with rfl | rfl <;> simp
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0)
+    (WordsG_consT (TF_tie (TF_nil 0) ⟨hD, hDF⟩) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+#print axioms R1107_mem
+
 end GxY
 end TRIO
