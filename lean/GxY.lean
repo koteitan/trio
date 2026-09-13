@@ -1038,5 +1038,34 @@ theorem R1107_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0)] : T
 
 #print axioms R1107_mem
 
+
+/-! ## 森の条件つきの組み立て（錨つき） -/
+
+def LCF (σ b : ℕ) (K : TrioSeq) : Prop := LCall σ b K ∧ Fr K
+
+theorem LCF_nil {σ : ℕ} (hσ : 1 ≤ σ) (b : ℕ) : LCF σ b [] := ⟨LCall_nil hσ b, Fr_nil⟩
+
+theorem LCF_load {σ b : ℕ} (hσ : 1 ≤ σ) {K Z : TrioSeq} (h : LCF σ b K) (hZ : Z ∈ Wg (2 * b))
+    (hb : based Z) : LCF σ b (K ++ shiftr01 1 0 Z) :=
+  ⟨slot_load (LCall_ax hσ) h.2 h.1 Z hZ hb, Fr_append h.2 (Fr_shift1 Z)⟩
+
+theorem LCF_node {σ τ b : ℕ} (hσ : 1 ≤ σ) (hτ : τ ≤ σ) {K P : TrioSeq} (h : LCF σ b K)
+    (hP : GF τ b P) : LCF σ b (K ++ ((1, b + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 P) :=
+  ⟨LCall_node hσ hτ h.2 hP.1 h.1, Fr_append h.2 (Fr_node _ _)⟩
+
+theorem LCF_far {σ b : ℕ} (hσ : 1 ≤ σ) {K : TrioSeq} (h : LCF σ b K) :
+    LCF σ b (K ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨LCall_far hσ h.2 h.1, Fr_append h.2 (Fr_single_node _)⟩
+
+def PVF (b σ : ℕ) (W : TrioSeq) : Prop := PV b σ W ∧ Fr W
+
+theorem PVF_nil {σ : ℕ} (hσ : 1 ≤ σ) (b : ℕ) : PVF b σ [] := ⟨PV_nil hσ, Fr_nil⟩
+
+theorem PVF_snoc {b σ : ℕ} {W K : TrioSeq} (h : PVF b σ W) (hK : LCF σ b K) :
+    PVF b σ (W ++ ((1, b + σ + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 K) :=
+  ⟨LC_of_LCall hK.1 W h.2 h.1, Fr_append h.2 (Fr_letter _ _)⟩
+
+theorem GF_of_PVF {b σ : ℕ} {W : TrioSeq} (h : PVF b σ W) : GF σ b W := ⟨PV_to_Gof h.1, h.2⟩
+
 end GxY
 end TRIO
