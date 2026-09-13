@@ -24,6 +24,11 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
+def is_far(M, s, e, r):
+    """遠い語: 行 1 が r の字で、中身が同じ行 1 の中身のない字 1 個だけ。"""
+    return e - s == 2 and M[s][1] == r and M[s][2] == 1 and M[s + 1] == (M[s][0] + 1, r, 1)
+
+
 def gp(M, kids, v, A, o):
     k = 0
     nl = 0
@@ -31,6 +36,14 @@ def gp(M, kids, v, A, o):
         w = f'(PVF_nil1 {v})'
     else:
         w = f'(PVF_nil (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) {v})'
+    nf = 0
+    while nf < len(kids) and is_far(M, kids[nf][0], kids[nf][1], v + o + 1):
+        nf += 1
+    if nf > 0:
+        # 先頭に続く遠い語（GzF.PVF_farR）
+        w = f'(PVF_farR {side(A, o)} {v} {nf})'
+        k = nf
+        nl = nf
     while k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
         s, e = kids[k]
         w = (f'(PVF_snoc (A := {lean_list(A)}) (o := {o}) (by decide) {w} '
@@ -94,19 +107,19 @@ def tree(M, i):
     ch = children(M, i, end)
     k = 0
     words = []
-    far = False
+    nf = 0
     while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
         s, e = ch[k]
-        if k == 0 and e - s == 2 and M[s + 1] == (a + 2, v + 1, 1):
-            far = True  # 遠い語: 中身が遠い字 1 個だけの最初の語（GzD.starOK_farwords）
+        if nf == k and is_far(M, s, e, v + 1):
+            nf += 1  # 先頭に続く遠い語（GzF.starOK_farN）
         else:
             words.append(top_forest(M, children(M, s, e), v))
         k += 1
     w = f'(WordsG_nil {v})'
     for f in reversed(words):
         w = f'(WordsG_consT (v := {v}) {f} {w})'
-    if far:
-        st = f'(starOK_farwords (v := {v}) {w})'
+    if nf > 0:
+        st = f'(starOK_farN (v := {v}) {nf} {w})'
     else:
         st = f'(starOK_wordsG (v := {v}) {w})'
     for (s2, e2) in ch[k:]:
@@ -138,7 +151,7 @@ if __name__ == '__main__':
             continue
         ok.append(r)
         body.append(f'/-- ★ シート行 {r}。 -/\ntheorem R{r}_mem : ({lit(M)} : TrioSeq) ∈ W 0 := by\n'
-                    f'  have h := {p}\n  simpa [shiftr01, rword, rcol] using h\n')
+                    f'  have h := {p}\n  simpa [shiftr01, rword, rcol, farR] using h\n')
     print('ok', len(ok), 'bad', len(bad))
     runs = []
     for r in ok:
@@ -152,7 +165,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzD\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzF\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
