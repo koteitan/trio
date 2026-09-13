@@ -28666,3 +28666,15 @@ L の親子不変、klift_oper）から作る。
 - eq（閾値ちょうど、κ = k ≥ 1）と lt（閾値 + 1 より上）: 要る h2 のうち世界の挿入した段の τ を、
   ずらした座標の族への R_child で出す。そのための「上限 < 節点の段の CtxP」（SlotAx・relift・congr・FarP_low だけ）を先に作る。
 - o = 1 のタイ（閾値ちょうどのタイ）も eq と同じ扱いにする（UK_ax の tie の 2 ≤ o を外す）。
+
+## 追記514: FarP の準備で要る補題（挿入した錨の状態の持ち上げと klift、測定）
+
+FarP_low を FarP_RLC の形で追うと、語の段の文脈の h1 / h2 は挿入した錨 S の状態の持ち上げ（reliftX の S の部分）も要る。
+S の錨の本当の段は κ の持ち上げの帯 [v, v+J) にあるので、KlD の klift_slift_comm（段差が閾値より下）は使えない。
+
+    主張（tools/probe_kappa_band.py）: φ が m ≤ v で動かず、m ≥ v + J で φ m − m = C のとき
+      slift (klift X v J K) φ = klift X v (J + C) K'、K'(y) = mK + (φ(v + mK) − (v + mK))、mK = min(K y, J)
+    乱数の列 60000 例で違反 0（最初の検査は κ を J で頭打ちにしていなかったので違反が出た。検査の誤り）。
+
+理由: 持ち上げた列の amin は、Lk = 0 なら v 以下、0 < Lk < J なら v + Lk（最小を与える祖先は段 v の印つきの列）、
+Lk = J なら v + J 以上。どの場合も φ の持ち上げ量は Lk だけで決まり、x ↦ x + step(v + x) は単調なので道の最小と可換。
