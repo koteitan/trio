@@ -155,5 +155,293 @@ theorem PV_snocz {b σ : ℕ} (hσ : 1 ≤ σ) {W : TrioSeq} (hW : Fr W) (h : PV
 
 #print axioms PV_snocz
 
+
+/-! ## 錨つきの字の中身 -/
+
+/-- 段 b、錨 σ の字の中身: どの錨つきの接頭辞の後ろにも、中身 Y の字を足せる。 -/
+def LC (b σ : ℕ) (Y : TrioSeq) : Prop :=
+  ∀ W, Fr W → PV b σ W → PV b σ (W ++ ((1, b + σ + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y)
+
+def LCall (σ b : ℕ) (Y : TrioSeq) : Prop := ∀ b', b ≤ b' → LC b' σ (mlift Y b (b' - b))
+
+theorem mlift_letterU {W Y : TrioSeq} (hW : Fr W) (hY : Fr Y) {a r : ℕ} (hr : a < r) (t : ℕ) :
+    mlift (W ++ ((1, r, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y) a t
+      = mlift W a t ++ ((1, r + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y a t) := by
+  rw [mlift_app hW (Hd_letter _ _), mlift_letter hr hY]
+
+theorem PV_lift {b σ : ℕ} (hσ : 1 ≤ σ) {W : TrioSeq} (hW : Fr W) (h : PV b σ W) {b' : ℕ}
+    (hb : b ≤ b') : PV b' σ (mlift W b (b' - b)) := by
+  intro t
+  have h1 := (Gof_ax (by omega : 1 ≤ σ + t)).lift b _ (Fr_mlift hW _ _) (h t) b' hb
+  rw [mlift_commk, show b + σ + (b' - b) = b' + σ by omega] at h1
+  exact h1
+
+theorem LC_nil {b σ : ℕ} (hσ : 1 ≤ σ) : LC b σ [] := by
+  intro W hW hPV
+  have := PV_snocz hσ hW hPV
+  simpa [shiftr01] using this
+
+theorem LCall_nil {σ : ℕ} (hσ : 1 ≤ σ) (b : ℕ) : LCall σ b [] := by
+  intro b' _
+  rw [mlift_nil]; exact LC_nil hσ
+
+theorem LC_oper {b σ : ℕ} (hσ : 1 ≤ σ) {Y U : TrioSeq} (hY : Fr Y) (hU : Fr U) (hH : Hd U)
+    (hlen : 2 ≤ U.length) (hp : hasParent U (srow U (U.length - 1)) (U.length - 1))
+    (hIH : ∀ m, 1 ≤ m → LC b σ (Y ++ U⟦m⟧)) : LC b σ (Y ++ U) := by
+  intro W hW hPV t
+  have hUne : U ≠ [] := by intro h; rw [h] at hlen; simp at hlen
+  rw [mlift_letterU hW (Fr_append hY hU) (show b + σ < b + σ + 1 by omega), mlift_app hY hH]
+  have hlen' : 2 ≤ (mlift U (b + σ) t).length := by rw [mlift_length]; exact hlen
+  have hUlne : mlift U (b + σ) t ≠ [] := by
+    intro h; have := congrArg List.length h; rw [mlift_length, List.length_nil] at this; omega
+  have hp' := (hasParent_mlift_iff (b + σ) t hUne).mpr hp
+  refine (Gof_ax (by omega : 1 ≤ σ + t)).oper b _ _ (Fr_mlift hW _ _) (Fr_letter _ _) (Hd_letter _ _)
+    (by simp only [List.length_cons, List.length_append, shiftr01_length]; omega)
+    (node_hasParent _ _ _ hp' hUlne) (fun m hm => ?_)
+  rw [node_oper _ _ _ hlen' hp' m, mlift_oper', ← mlift_app hY (Hd_oper hH hUne hm)]
+  have h := hIH m hm W hW hPV t
+  rwa [mlift_letterU hW (Fr_append hY (Fr_oper hU m)) (show b + σ < b + σ + 1 by omega)] at h
+
+theorem mlift_rep {W L : TrioSeq} (hW : Fr W) (hL : Fr L) (hH : Hd L) (a t : ℕ) :
+    ∀ m, mlift (W ++ (List.range m).flatMap (fun _ => L)) a t
+      = mlift W a t ++ (List.range m).flatMap (fun _ => mlift L a t)
+  | 0 => by simp
+  | (m + 1) => by
+      have hFr : Fr (W ++ (List.range m).flatMap (fun _ => L)) := by
+        refine Fr_append hW (fun y hy => ?_)
+        simp only [List.mem_flatMap] at hy
+        obtain ⟨-, -, hy⟩ := hy
+        exact hL y hy
+      rw [List.range_succ, List.flatMap_append, List.flatMap_append]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+      rw [← List.append_assoc, mlift_app hFr hH, mlift_rep hW hL hH a t m, List.append_assoc]
+
+theorem LC_flat {b σ : ℕ} (hσ : 1 ≤ σ) {Y : TrioSeq} (hY : Fr Y) (h : LC b σ Y) :
+    LC b σ (Y ++ [((1, 0, 0) : ℕ × ℕ × ℕ)]) := by
+  intro W hW hPV t
+  have hrep : ∀ m, PV b σ (W ++ (List.range m).flatMap
+      (fun _ => ((1, b + σ + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y)) ∧
+      Fr (W ++ (List.range m).flatMap (fun _ => ((1, b + σ + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y)) := by
+    intro m
+    induction m with
+    | zero => simpa using And.intro hPV hW
+    | succ m ih =>
+        rw [List.range_succ, List.flatMap_append]
+        simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+        rw [← List.append_assoc]
+        exact ⟨h _ ih.2 ih.1, Fr_append ih.2 (Fr_letter _ _)⟩
+  have hY1 : Fr (Y ++ [((1, 0, 0) : ℕ × ℕ × ℕ)]) :=
+    Fr_append hY (by intro y hy; simp at hy; subst hy; show 1 ≤ 1; omega)
+  rw [mlift_letterU hW hY1 (show b + σ < b + σ + 1 by omega), mlift_snoc_flat Y 1 (b + σ) t hY]
+  obtain ⟨M, hM⟩ : ∃ M : TrioSeq,
+      M = ((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y (b + σ) t) := ⟨_, rfl⟩
+  have eV : ((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+      shiftr01 1 0 (mlift Y (b + σ) t ++ [((1, 0, 0) : ℕ × ℕ × ℕ)])
+      = M ++ [((2, 0, 0) : ℕ × ℕ × ℕ)] := by
+    rw [hM, node_split, shift_col]
+  rw [eV]
+  have hMne : M ≠ [] := by rw [hM]; simp
+  have hMl : 1 ≤ M.length := by rw [hM]; simp
+  have hhead : entry M 0 0 < 2 := by rw [hM]; show 1 < 2; omega
+  have htail : ∀ r, 1 ≤ r → r < M.length → 2 ≤ entry M 0 r := by
+    intro r hr1 hr2
+    obtain ⟨r', rfl⟩ : ∃ r', r = r' + 1 := ⟨r - 1, by omega⟩
+    have hr' : r' < (mlift Y (b + σ) t).length := by
+      rw [hM] at hr2; simp only [List.length_cons, shiftr01_length] at hr2; omega
+    rw [hM, entry_cons, entry0_shiftr01 hr']
+    have := getD_row0_ge (Fr_mlift hY (b + σ) t) hr'
+    omega
+  have hpV : hasParent (M ++ [((2, 0, 0) : ℕ × ℕ × ℕ)])
+      (srow (M ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]) ((M ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]).length - 1))
+      ((M ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]).length - 1) := by
+    have hidx : (M ++ [((2, 0, 0) : ℕ × ℕ × ℕ)]).length - 1 = M.length + 0 := by simp
+    rw [hidx, srow_append_right]
+    have hs : srow [((2, 0, 0) : ℕ × ℕ × ℕ)] 0 = 0 := rfl
+    rw [hs]
+    refine (hasParent_zero_iff (by first | omega | (simp; omega) | simp)).mpr
+      ⟨0, by first | omega | (simp; omega) | simp, ?_⟩
+    rw [Small.entry_append_left (by omega), entry_append_right]
+    exact hhead
+  refine (Gof_ax (by omega : 1 ≤ σ + t)).oper b _ (M ++ [((2, 0, 0) : ℕ × ℕ × ℕ)])
+    (Fr_mlift hW _ _)
+    (Fr_append (by rw [hM]; exact Fr_letter _ _)
+      (by intro y hy; simp at hy; subst hy; show 1 ≤ 2; omega))
+    (fun _ => by rw [hM]; rfl) (by simp only [List.length_append, List.length_singleton]; omega)
+    hpV (fun m _ => ?_)
+  have eO := oper_snoc00'' [] hMne hhead htail m
+  simp only [List.nil_append] at eO
+  rw [eO]
+  have h2 := (hrep m).1 t
+  rw [mlift_rep hW (Fr_letter _ _) (Hd_letter _ _),
+    mlift_letter (show b + σ < b + σ + 1 by omega) hY, ← hM] at h2
+  exact h2
+
+#print axioms LC_flat
+
+
+theorem LC_orph {b σ : ℕ} (hσ : 1 ≤ σ) {Y U : TrioSeq} {h j : ℕ} (hY : Fr Y)
+    (hU : Fr (U ++ [((h, j, 0) : ℕ × ℕ × ℕ)])) (hH : Hd (U ++ [((h, j, 0) : ℕ × ℕ × ℕ)]))
+    (hj1 : 1 ≤ j) (hj : j ≤ b)
+    (hnp : ¬ hasParent (U ++ [((h, j, 0) : ℕ × ℕ × ℕ)]) 1 U.length)
+    (hz : ∀ z ∈ Wg (2 * j - 1), based z → LC b σ (Y ++ (U ++ shiftr01 h 0 z))) :
+    LC b σ (Y ++ (U ++ [((h, j, 0) : ℕ × ℕ × ℕ)])) := by
+  intro W hW hPV t
+  have hc : (((h, j, 0) : ℕ × ℕ × ℕ)).2.1 ≤ b + σ := by show j ≤ b + σ; omega
+  have hUc : Fr U := fun y hy => hU y (List.mem_append_left _ hy)
+  have hh1 : 1 ≤ h := hU _ (List.mem_append_right _ (List.mem_singleton_self _))
+  have eL : mlift (Y ++ (U ++ [((h, j, 0) : ℕ × ℕ × ℕ)])) (b + σ) t
+      = mlift Y (b + σ) t ++ (mlift U (b + σ) t ++ [((h, j, 0) : ℕ × ℕ × ℕ)]) := by
+    rw [mlift_app hY hH, mlift_snoc_low U _ hc]
+  rw [mlift_letterU hW (Fr_append hY hU) (show b + σ < b + σ + 1 by omega), eL]
+  have eV : ((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (mlift Y (b + σ) t ++ (mlift U (b + σ) t ++ [((h, j, 0) : ℕ × ℕ × ℕ)]))
+      = (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift Y (b + σ) t ++ mlift U (b + σ) t))
+        ++ [((h + 1, j, 0) : ℕ × ℕ × ℕ)] := by
+    rw [← List.append_assoc, shiftr01_append0, shift_col]; rfl
+  rw [eV]
+  refine (Gof_ax (by omega : 1 ≤ σ + t)).orph b _ _ (h + 1) j (Fr_mlift hW _ _)
+    (by rw [← eV]; exact Fr_letter _ _) (by rw [← eV]; exact Hd_letter _ _) hj1 hj ?_
+    (fun z hz' hbz => ?_)
+  · have eAB : (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift Y (b + σ) t ++ mlift U (b + σ) t))
+          ++ [((h + 1, j, 0) : ℕ × ℕ × ℕ)]
+        = (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y (b + σ) t)) ++
+          shiftr01 1 0 (mlift U (b + σ) t ++ [((h, j, 0) : ℕ × ℕ × ℕ)]) := by
+      rw [← eV, node_split]
+    have eidx : (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift Y (b + σ) t ++ mlift U (b + σ) t)).length
+        = (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y (b + σ) t)).length +
+          (mlift U (b + σ) t).length := by simp [shiftr01]; omega
+    rw [eAB, eidx]
+    have hBH : Hd (mlift U (b + σ) t ++ [((h, j, 0) : ℕ × ℕ × ℕ)]) := by
+      rw [← mlift_snoc_low U _ hc]; exact Hd_mlift hH _ _
+    refine noParent_ctx (j := j) (by simp [shiftr01]) (fun k' hk' hrt => ?_) ?_ ?_
+    · have := letter_anc_row1 (Fr_mlift hY (b + σ) t) hBH (by simp) hk' (by simp [shiftr01]) hrt
+      subst this
+      show j ≤ b + σ + 1 + t
+      omega
+    · rw [entry1_shiftr01, show (mlift U (b + σ) t).length = (mlift U (b + σ) t).length + 0
+        from rfl, entry_append_right]; rfl
+    · intro hh
+      apply hnp
+      rw [hasParent_shiftr01, ← mlift_snoc_low U _ hc, mlift_eq_slift,
+        hasParent_slift (stair_step (b + σ) t), mlift_length] at hh
+      exact hh
+  · have hzW : z ∈ Wg (2 * j) := Wg_mono (by omega) hz'
+    have hHz : Hd (U ++ shiftr01 h 0 z) := by
+      intro hne
+      by_cases hUn : U = []
+      · subst hUn
+        have hh1' : h = 1 := by have := hH (by simp); simpa [entry] using this
+        have hzne : z ≠ [] := by intro hz0; apply hne; subst hz0; rfl
+        simp only [List.nil_append]
+        rw [entry0_shiftr01 (List.length_pos_iff.mpr hzne), show entry z 0 0 = 0 from hbz, hh1']
+      · rw [Small.entry_append_left (List.length_pos_iff.mpr hUn)]
+        have := hH (by simp)
+        rwa [Small.entry_append_left (List.length_pos_iff.mpr hUn)] at this
+    have hFrz : Fr (U ++ shiftr01 h 0 z) := by
+      refine Fr_append hUc (fun y hy => ?_)
+      simp only [shiftr01, List.mem_map] at hy
+      obtain ⟨p, -, rfl⟩ := hy
+      dsimp only; omega
+    have hzz := hz z hz' hbz W hW hPV t
+    rw [mlift_letterU hW (Fr_append hY hFrz) (show b + σ < b + σ + 1 by omega), mlift_app hY hHz,
+      mlift_append_low (low_of_Wg hzW h (by omega))] at hzz
+    rw [show (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift Y (b + σ) t ++ mlift U (b + σ) t)) ++ shiftr01 (h + 1) 0 z
+        = ((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y (b + σ) t ++
+            (mlift U (b + σ) t ++ shiftr01 h 0 z)) by
+      rw [← List.append_assoc, shiftr01_append0 _ (mlift Y (b + σ) t ++ mlift U (b + σ) t),
+        shiftr01_add0]; rfl]
+    exact hzz
+
+#print axioms LC_orph
+
+theorem LC_tie {b σ : ℕ} (hσ : 1 ≤ σ) {Y U : TrioSeq} {x : ℕ} (hY : Fr Y)
+    (hU : Fr (U ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)])) (hH : Hd (U ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)]))
+    (hc : coneV (U ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)]) b U.length)
+    (hload : ∀ b', b ≤ b' → ∀ Z ∈ Wg (2 * b'), based Z →
+      LC b' σ (mlift (Y ++ U) b (b' - b) ++ shiftr01 x 0 Z)) :
+    LC b σ (Y ++ (U ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)])) := by
+  intro W hW hPV t
+  have hcl : (((x, b + 1, 0) : ℕ × ℕ × ℕ)).2.1 ≤ b + σ := by show b + 1 ≤ b + σ; omega
+  have hUc : Fr U := fun y hy => hU y (List.mem_append_left _ hy)
+  have eL : mlift (Y ++ (U ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)])) (b + σ) t
+      = mlift Y (b + σ) t ++ (mlift U (b + σ) t ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)]) := by
+    rw [mlift_app hY hH, mlift_snoc_low U _ hcl]
+  rw [mlift_letterU hW (Fr_append hY hU) (show b + σ < b + σ + 1 by omega), eL]
+  have eV : ((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (mlift Y (b + σ) t ++ (mlift U (b + σ) t ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)]))
+      = (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift Y (b + σ) t ++ mlift U (b + σ) t))
+        ++ [((x + 1, b + 1, 0) : ℕ × ℕ × ℕ)] := by
+    rw [← List.append_assoc, shiftr01_append0, shift_col]; rfl
+  rw [eV]
+  have hHU : Hd U := by
+    intro hne
+    have := hH (by simp)
+    rwa [Small.entry_append_left (List.length_pos_iff.mpr hne)] at this
+  refine (Gof_ax (by omega : 1 ≤ σ + t)).tie b _ _ (x + 1) (Fr_mlift hW _ _)
+    (by rw [← eV]; exact Fr_letter _ _) (by rw [← eV]; exact Hd_letter _ _) ?_
+    (fun b'' hb'' Z hZ hbZ => ?_)
+  · have eAB : (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift Y (b + σ) t ++ mlift U (b + σ) t))
+          ++ [((x + 1, b + 1, 0) : ℕ × ℕ × ℕ)]
+        = (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y (b + σ) t)) ++
+          shiftr01 1 0 (mlift U (b + σ) t ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)]) := by
+      rw [← eV, node_split]
+    have eidx : (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift Y (b + σ) t ++ mlift U (b + σ) t)).length
+        = (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y (b + σ) t)).length +
+          (mlift U (b + σ) t).length := by simp [shiftr01]; omega
+    rw [eAB, eidx]
+    have hPCA : PathCone b 1 (((1, b + σ + 1 + t, 1) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (mlift Y (b + σ) t)) := by
+      intro y hy _ hd
+      rcases y with _ | y
+      · show b < b + σ + 1 + t; omega
+      · exfalso
+        rw [entry_cons] at hd
+        have hy' : y < (mlift Y (b + σ) t).length := by
+          rw [mlift_length]; simp [shiftr01] at hy; omega
+        rw [entry0_shiftr01 hy'] at hd
+        have := getD_row0_ge (Fr_mlift hY (b + σ) t) hy'
+        omega
+    have hB0 : shiftr01 1 0 (mlift U (b + σ) t ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)]) ≠ [] →
+        entry (shiftr01 1 0 (mlift U (b + σ) t ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)])) 0 0 = 1 + 1 := by
+      intro _
+      have hBH : Hd (mlift U (b + σ) t ++ [((x, b + 1, 0) : ℕ × ℕ × ℕ)]) := by
+        have := Hd_mlift hH (b + σ) t
+        rwa [mlift_snoc_low U _ hcl] at this
+      rw [entry0_shiftr01 (by simp), hBH (by simp)]
+    rw [coneV_pathB hPCA hB0 (by simp [shiftr01]), coneV_shift0]
+    have := coneV_mlift_up (by simp) hc (b + σ) t
+    rwa [mlift_snoc_low U _ hcl, ← mlift_length U (b + σ) t] at this
+  · have hFrYU : Fr (Y ++ U) := Fr_append hY hUc
+    have hFrZ : Fr (mlift (Y ++ U) b (b'' - b) ++ shiftr01 x 0 Z) := by
+      have hx1 : 1 ≤ x := hU _ (List.mem_append_right _ (List.mem_singleton_self _))
+      refine Fr_append (Fr_mlift hFrYU _ _) (fun y hy => ?_)
+      simp only [shiftr01, List.mem_map] at hy
+      obtain ⟨p, -, rfl⟩ := hy
+      dsimp only; omega
+    have h1 := hload b'' hb'' Z hZ hbZ (mlift W b (b'' - b)) (Fr_mlift hW _ _)
+      (PV_lift hσ hW hPV hb'') t
+    rw [mlift_letterU (Fr_mlift hW _ _) hFrZ (show b'' + σ < b'' + σ + 1 by omega),
+      mlift_append_low (low_of_Wg hZ x (by omega))] at h1
+    have hWU : Fr (mlift Y (b + σ) t ++ mlift U (b + σ) t) :=
+      Fr_append (Fr_mlift hY _ _) (Fr_mlift hUc _ _)
+    have eW : mlift (mlift W (b + σ) t) b (b'' - b) = mlift (mlift W b (b'' - b)) (b'' + σ) t := by
+      rw [mlift_commk, show b + σ + (b'' - b) = b'' + σ by omega]
+    have eKU : mlift (mlift Y (b + σ) t ++ mlift U (b + σ) t) b (b'' - b)
+        = mlift (mlift (Y ++ U) b (b'' - b)) (b'' + σ) t := by
+      rw [← mlift_app hY hHU, mlift_commk, show b + σ + (b'' - b) = b'' + σ by omega]
+    rw [mlift_app (Fr_mlift hW _ _) (Hd_letter _ _), eW, mlift_letter (by omega) hWU, eKU,
+      show b + σ + 1 + t + (b'' - b) = b'' + σ + 1 + t by omega, List.append_assoc]
+    rw [shiftr01_append0, shiftr01_add0] at h1
+    simpa [List.append_assoc] using h1
+
+#print axioms LC_tie
+
 end GxY
 end TRIO
