@@ -698,5 +698,215 @@ theorem mlift_nest_bottom (u a t : ℕ) : ∀ (rest : List (TrioSeq × ℕ × �
 
 #print axioms mlift_nest_bottom
 
+
+theorem nestLift_liftRest (b d σ t : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C : TrioSeq),
+    liftRest b d (nestLift b (b + σ) t rest C).1
+        = (nestLift (b + d) (b + d + σ) t (liftRest b d rest) (mlift C b d)).1 ∧
+      mlift (nestLift b (b + σ) t rest C).2 b d
+        = (nestLift (b + d) (b + d + σ) t (liftRest b d rest) (mlift C b d)).2
+  | [], C => by
+      constructor
+      · simp [nestLift, liftRest]
+      · simp only [nestLift, liftRest, List.map_nil]
+        rw [mlift_commk, show b + σ + d = b + d + σ by omega]
+  | ((X, ρ, z) :: rest), C => by
+      have ih := nestLift_liftRest b d σ t rest C
+      have hl : liftRest b d ((X, ρ, z) :: rest) = (mlift X b d, ρ, z) :: liftRest b d rest := by
+        simp [liftRest]
+      rw [hl]
+      by_cases hlt : σ < ρ
+      · have e1 : nestLift b (b + σ) t ((X, ρ, z) :: rest) C
+            = ((mlift X (b + σ) t, ρ + t, z) :: (nestLift b (b + σ) t rest C).1,
+                (nestLift b (b + σ) t rest C).2) := by
+          simp only [nestLift]; rw [if_pos (by omega)]
+        have e2 : nestLift (b + d) (b + d + σ) t ((mlift X b d, ρ, z) :: liftRest b d rest) (mlift C b d)
+            = ((mlift (mlift X b d) (b + d + σ) t, ρ + t, z) ::
+                (nestLift (b + d) (b + d + σ) t (liftRest b d rest) (mlift C b d)).1,
+                (nestLift (b + d) (b + d + σ) t (liftRest b d rest) (mlift C b d)).2) := by
+          simp only [nestLift]; rw [if_pos (by omega)]
+        rw [e1, e2]
+        refine ⟨?_, ih.2⟩
+        have hl2 : liftRest b d ((mlift X (b + σ) t, ρ + t, z) :: (nestLift b (b + σ) t rest C).1)
+            = (mlift (mlift X (b + σ) t) b d, ρ + t, z) :: liftRest b d (nestLift b (b + σ) t rest C).1 := by
+          simp [liftRest]
+        rw [hl2, ih.1, mlift_commk, show b + σ + d = b + d + σ by omega]
+      · have e1 : nestLift b (b + σ) t ((X, ρ, z) :: rest) C
+            = ((mlift X (b + σ) t, ρ, z) :: rest, C) := by
+          simp only [nestLift]; rw [if_neg (by omega)]
+        have e2 : nestLift (b + d) (b + d + σ) t ((mlift X b d, ρ, z) :: liftRest b d rest) (mlift C b d)
+            = ((mlift (mlift X b d) (b + d + σ) t, ρ, z) :: liftRest b d rest, mlift C b d) := by
+          simp only [nestLift]; rw [if_neg (by omega)]
+        rw [e1, e2]
+        refine ⟨?_, rfl⟩
+        have hl2 : liftRest b d ((mlift X (b + σ) t, ρ, z) :: rest)
+            = (mlift (mlift X (b + σ) t) b d, ρ, z) :: liftRest b d rest := by
+          simp [liftRest]
+        rw [hl2, mlift_commk, show b + σ + d = b + d + σ by omega]
+
+/-- 段 u の入れ子を段 b に持ち上げ、錨 b+σ で T 持ち上げたもの。 -/
+theorem inst_eq {u b σ T : ℕ} (hb : u ≤ b) {rest : List (TrioSeq × ℕ × ℕ)} {C B : TrioSeq}
+    (hr1 : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1) (hC : Fr C) (hB : Fr B) (hHB : Hd B)
+    (hBb : mlift B u (b - u) = B) (hBa : mlift B (b + σ) T = B) :
+    mlift (mlift (nestN u rest (C ++ B)) u (b - u)) (b + σ) T
+      = nestN b (nestLift b (b + σ) T (liftRest u (b - u) rest) (mlift C u (b - u))).1
+          ((nestLift b (b + σ) T (liftRest u (b - u) rest) (mlift C u (b - u))).2 ++ B) := by
+  rw [mlift_nestN u (b - u) rest _ hr1 (Fr_append hC hB), mlift_app hC hHB, hBb,
+    show u + (b - u) = b by omega]
+  exact mlift_nest_bottom b (b + σ) T _ _ B (liftRest_cond hr1) (Fr_mlift hC _ _) hB hHB hBa
+
+theorem inst_lift {u b b3 σ T : ℕ} (hb : u ≤ b) (hb3 : b ≤ b3) {rest : List (TrioSeq × ℕ × ℕ)}
+    {C : TrioSeq} :
+    liftRest b (b3 - b) (nestLift b (b + σ) T (liftRest u (b - u) rest) (mlift C u (b - u))).1
+        = (nestLift b3 (b3 + σ) T (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).1 ∧
+      mlift (nestLift b (b + σ) T (liftRest u (b - u) rest) (mlift C u (b - u))).2 b (b3 - b)
+        = (nestLift b3 (b3 + σ) T (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).2 := by
+  have h := nestLift_liftRest b (b3 - b) σ T (liftRest u (b - u) rest) (mlift C u (b - u))
+  have e1 := liftRest_comp u (b - u) (b3 - b) rest
+  rw [show u + (b - u) = b by omega, show b - u + (b3 - b) = b3 - u by omega] at e1
+  have e2 := mlift_mlift C u (b - u) (b3 - b)
+  rw [show u + (b - u) = b by omega, show b - u + (b3 - b) = b3 - u by omega] at e2
+  rw [e1, e2, show b + (b3 - b) = b3 by omega] at h
+  exact h
+
+theorem mlift_single_node_low {a r : ℕ} (hr : r ≤ a) (t : ℕ) :
+    mlift [((1, r, 0) : ℕ × ℕ × ℕ)] a t = [((1, r, 0) : ℕ × ℕ × ℕ)] := by
+  have := mlift_node_low (z := 0) hr (V := []) Fr_nil t
+  simpa [shiftr01] using this
+
+theorem Hd_single_node (r : ℕ) : Hd [((1, r, 0) : ℕ × ℕ × ℕ)] := fun _ => rfl
+
+/-- ★ 錨つきの字の中身に対する遠い塔の公理（s ≤ σ）。 -/
+theorem FarA_LCall {σ s : ℕ} (hσ : 1 ≤ σ) (hs2 : 2 ≤ s) (hsσ : s ≤ σ) : FarA Gof s (LCall σ) := by
+  intro u rest C hr hC h1 h2
+  have hr1 : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1 :=
+    fun p hp => ⟨(hr p hp).1, by have := (hr p hp).2; omega⟩
+  intro b hb t W hW hPV t'
+  have hBb : mlift [((1, u + s, 0) : ℕ × ℕ × ℕ)] u (b - u) = [((1, b + s, 0) : ℕ × ℕ × ℕ)] := by
+    have := mlift_snoc_node (C := []) Fr_nil (u := u) (s := s) (by omega) (b - u)
+    simpa [show u + (b - u) = b by omega] using this
+  -- 段 b の入れ子（裸の節点つき）
+  have eN : mlift (mlift (nestN u rest (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)])) u (b - u)) (b + σ) (t + t')
+      = nestN b (nestLift b (b + σ) (t + t') (liftRest u (b - u) rest) (mlift C u (b - u))).1
+          ((nestLift b (b + σ) (t + t') (liftRest u (b - u) rest) (mlift C u (b - u))).2 ++
+            [((1, b + s, 0) : ℕ × ℕ × ℕ)]) := by
+    rw [mlift_nestN u (b - u) rest _ hr1 (Fr_append hC (Fr_single_node _)),
+      mlift_snoc_node hC (by omega), show u + (b - u) = b by omega]
+    exact mlift_nest_bottom b (b + σ) (t + t') _ _ _ (liftRest_cond hr1) (Fr_mlift hC _ _)
+      (Fr_single_node _) (Hd_single_node _) (mlift_single_node_low (by omega) _)
+  obtain ⟨rT, CT, hRC⟩ : ∃ rT CT, (rT, CT) =
+      nestLift b (b + σ) (t + t') (liftRest u (b - u) rest) (mlift C u (b - u)) := ⟨_, _, rfl⟩
+  have hrT : ∀ p ∈ rT, Fr p.1 ∧ s ≤ p.2.1 := by
+    have := (nestLift_cond b (b + σ) (t + t') s _ _ (liftRest_cond (u := u) (t := b - u) hr) (Fr_mlift hC u (b - u))).1
+    rwa [← hRC] at this
+  have hCT : Fr CT := by
+    have := (nestLift_cond b (b + σ) (t + t') s _ _ (liftRest_cond (u := u) (t := b - u) hr) (Fr_mlift hC u (b - u))).2
+    rwa [← hRC] at this
+  rw [← hRC] at eN
+  have hFrN : Fr (mlift (nestN u rest (C ++ [((1, u + s, 0) : ℕ × ℕ × ℕ)])) u (b - u)) :=
+    Fr_mlift (Fr_nestN u rest _ (fun p hp => (hr p hp).1) (Fr_append hC (Fr_single_node _))) _ _
+  rw [mlift_letterU hW (Fr_mlift hFrN _ _) (show b + (σ + t) < b + (σ + t) + 1 by omega)]
+  have eNN : ∀ N : TrioSeq, mlift (mlift N (b + σ) t) (b + (σ + t)) t' = mlift N (b + σ) (t + t') := by
+    intro N; rw [show b + (σ + t) = b + σ + t by omega, mlift_mlift]
+  rw [eNN, eN]
+  have eG : mlift W (b + (σ + t)) t' ++ ((1, b + (σ + t) + 1 + t', 1) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (nestN b rT (CT ++ [((1, b + s, 0) : ℕ × ℕ × ℕ)]))
+      = nestN b ((mlift W (b + (σ + t)) t', σ + t + t' + 1, 1) :: rT)
+          (CT ++ [((1, b + s, 0) : ℕ × ℕ × ℕ)]) := by
+    simp only [nestN]
+    rw [show b + (σ + t) + 1 + t' = b + (σ + t + t' + 1) by omega]
+  rw [eG]
+  have hr'' : ∀ p ∈ (mlift W (b + (σ + t)) t', σ + t + t' + 1, 1) :: rT, Fr p.1 ∧ s ≤ p.2.1 := by
+    intro p hp
+    simp only [List.mem_cons] at hp
+    rcases hp with rfl | hp
+    · exact ⟨Fr_mlift hW _ _, by show s ≤ σ + t + t' + 1; omega⟩
+    · exact hrT p hp
+  have hr''1 : ∀ p ∈ (mlift W (b + (σ + t)) t', σ + t + t' + 1, 1) :: rT, Fr p.1 ∧ 1 ≤ p.2.1 :=
+    fun p hp => ⟨(hr'' p hp).1, by have := (hr'' p hp).2; omega⟩
+  -- 段 b3 での同じ形
+  have hlift : ∀ b3, b ≤ b3 →
+      mlift (nestN b ((mlift W (b + (σ + t)) t', σ + t + t' + 1, 1) :: rT) CT) b (b3 - b)
+        = nestN b3 ((mlift (mlift W b (b3 - b)) (b3 + (σ + t)) t', σ + t + t' + 1, 1) ::
+            (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).1)
+            (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).2 := by
+    intro b3 hb3
+    have hL := inst_lift (T := t + t') (σ := σ) (C := C) (rest := rest) hb hb3
+    rw [← hRC] at hL
+    rw [mlift_nestN b (b3 - b) _ CT hr''1 hCT]
+    simp only [liftRest, List.map_cons]
+    simp only [liftRest] at hL
+    rw [hL.1, hL.2, mlift_commk, show b + (σ + t) + (b3 - b) = b3 + (σ + t) by omega,
+      show b + (b3 - b) = b3 by omega]
+  refine FarA_Gof (ρ := σ + t + t') (s := s) (by omega) hs2 b _ CT hr'' hCT (fun b3 hb3 => ?_)
+    (fun b3 hb3 τ L h1τ hτ hL hGL => ?_)
+  · rw [hlift b3 hb3]
+    have H := h1 b3 (le_trans hb hb3) b3 le_rfl t (mlift W b (b3 - b)) (Fr_mlift hW _ _)
+      (PV_lift (by omega) hW hPV hb3) t'
+    have hFr3 : Fr (mlift (mlift (nestN u rest C) u (b3 - u)) b3 (b3 - b3)) :=
+      Fr_mlift (Fr_mlift (Fr_nestN u rest C (fun p hp => (hr p hp).1) hC) _ _) _ _
+    rw [mlift_letterU (Fr_mlift hW _ _) (Fr_mlift hFr3 _ _) (show b3 + (σ + t) < b3 + (σ + t) + 1 by omega),
+      Nat.sub_self, mlift_zero, show b3 + (σ + t) = b3 + σ + t by omega, mlift_mlift] at H
+    have eN3 : mlift (mlift (nestN u rest C) u (b3 - u)) (b3 + σ) (t + t')
+        = nestN b3 (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).1
+            (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).2 := by
+      have := mlift_nest_bottom b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u)) []
+        (liftRest_cond hr1) (Fr_mlift hC _ _) Fr_nil (fun h => absurd rfl h) (mlift_nil _ _)
+      rw [List.append_nil, List.append_nil] at this
+      rw [mlift_nestN u (b3 - u) rest C hr1 hC, show u + (b3 - u) = b3 by omega]
+      exact this
+    rw [eN3] at H
+    simp only [nestN]
+    rw [show b3 + (σ + t + t' + 1) = b3 + σ + t + 1 + t' by omega,
+      show b3 + (σ + t) = b3 + σ + t by omega]
+    exact H
+  · rw [hlift b3 hb3]
+    have H := h2 b3 (le_trans hb hb3) τ L h1τ (by omega) hL hGL b3 le_rfl t (mlift W b (b3 - b))
+      (Fr_mlift hW _ _) (PV_lift (by omega) hW hPV hb3) t'
+    have hunit : Fr (((1, b3 + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) := Fr_nodez _ _ _
+    have hFr3 : Fr (mlift (mlift (nestN u rest C) u (b3 - u) ++
+        shiftr01 rest.length 0 (((1, b3 + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L)) b3 (b3 - b3)) := by
+      refine Fr_mlift (Fr_append (Fr_mlift (Fr_nestN u rest C (fun p hp => (hr p hp).1) hC) _ _) ?_) _ _
+      intro y hy
+      simp only [shiftr01, List.mem_map] at hy
+      obtain ⟨q, hq, rfl⟩ := hy
+      have := hunit q hq
+      dsimp only; omega
+    rw [mlift_letterU (Fr_mlift hW _ _) (Fr_mlift hFr3 _ _) (show b3 + (σ + t) < b3 + (σ + t) + 1 by omega),
+      Nat.sub_self, mlift_zero, show b3 + (σ + t) = b3 + σ + t by omega, mlift_mlift] at H
+    have eN3 : mlift (mlift (nestN u rest C) u (b3 - u) ++
+          shiftr01 rest.length 0 (((1, b3 + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L)) (b3 + σ) (t + t')
+        = nestN b3 (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).1
+            (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).2 ++
+          shiftr01 rest.length 0 (((1, b3 + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) := by
+      have := mlift_nest_bottom b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))
+        (((1, b3 + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L)
+        (liftRest_cond hr1) (Fr_mlift hC _ _) hunit (Hd_nodez _ _ _)
+        (mlift_node_low (by omega) hL _)
+      rw [nestN_app, nestN_app, nestLift_length, liftRest_length] at this
+      rw [mlift_nestN u (b3 - u) rest C hr1 hC, show u + (b3 - u) = b3 by omega]
+      exact this
+    rw [eN3] at H
+    have hrTlen : rT.length = rest.length := by
+      have := congrArg (fun p => p.1.length) hRC
+      simp only [nestLift_length, liftRest_length] at this
+      exact this
+    simp only [nestN, List.length_cons]
+    rw [hrTlen]
+    have e3 : ((1, b3 + σ + t + 1 + t', 1) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (nestN b3 (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).1
+            (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).2 ++
+          shiftr01 rest.length 0 (((1, b3 + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L))
+        = (((1, b3 + σ + t + 1 + t', 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (nestN b3 (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).1
+            (nestLift b3 (b3 + σ) (t + t') (liftRest u (b3 - u) rest) (mlift C u (b3 - u))).2)) ++
+          shiftr01 (rest.length + 1) 0 (((1, b3 + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) := by
+      simp only [shiftr01_append0, shiftr01_add0, List.cons_append]
+    rw [e3] at H
+    rw [show b3 + (σ + t + t' + 1) = b3 + σ + t + 1 + t' by omega,
+      show b3 + (σ + t) = b3 + σ + t by omega]
+    simpa [List.append_assoc] using H
+
+#print axioms FarA_LCall
+
 end GxY
 end TRIO
