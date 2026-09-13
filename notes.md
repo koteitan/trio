@@ -29130,3 +29130,33 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   高さ j' での FarP は、根が古い鎖の段なら UKE_j の h2（印なし）、新しい鎖の段 [o+j, o+j') なら段 o+j の節点に印をつけた h2 の像で出す。
 - 次: Lean で (1) 段ごとのデータと段ごとの持ち上げつきの明示した塔 TW、(2) Good^s、(3) UKE_j（∀ g、∀ j' ≥ j、∀ κ、∀ データ、Good^s V → Good^s (V ++ ℓ :: Y)）
   の定義を書き、UKE_j の flat と、FarP の low の場合（R.FarP に低い段の h2 を渡すだけ）から始める。
+
+## 追記534: UKE = 「世界 (S, j) を明示した高さ m の塔に置き換えた UK」（紙の整理）と実装の段取り
+
+### 定義（案）
+
+    ETW_0 d V := V
+    ETW_(m+1) ((W, K, t) :: d) V := W ++ ℓ :: (K ++ F_(+t) :: (ETW_m d V)↑)↑     （節点の上に明示した塔、段ごとの語 W・中身 K・持ち上げ t）
+    Good^s A n F b m d V := 各段 i から上の部分塔 ETW_(m−i) d_(≥i) V が、添字 (A, 節点 n の上の段 i) で PVP
+    LCE A n F b Y := ∀ m d V, Good^s m d V → ∀ K（印）, Good^s m d (V ++ ℓ :: klift Y v m K)     （v = b + liftOff F A n = 節点の位置）
+    UKE A o H b Y := ∀ g b', LCE A (o + (H+g) o) (H+g) b' (reliftX b' H g (o :: A) (mlift Y b (b' − b)))
+
+- m = 0 では V は任意の PVP で、LCE は LC1 と同じ。UK（追記509〜516）の LCK を LCE に替えたもの。
+- klift の閾値は節点の位置 v（状態 t で持ち上げた N の段）。v 以下（低い段・状態の隙間・段 o の節点）は動かない。印は段 v の節点を鎖の段 v+κ に上げる。
+  KlA〜KlH（klift の定義、親子関係、展開との可換 klift_oper、合成 klift_comp、klift_node_*、帯の階段）はそのまま使える。KxA〜KxH（抽象的な S の族）を置き換える。
+
+### FarP の場合分け（状態 t、明示した高さ m）
+
+- s ≤ v（低い段・状態の隙間・印なしの段 v）: 根は N より下（文脈 X）→ R.FarP。h2（τ < s）は UKE の h2（隙間の段も o の持ち上げの状態の h2 で入っている、FarP_RLC と同じ）を
+  klift で最内の中身に置いたもの（τ < v なので節点も子も動かない、klift_append_low）。
+- 底が段 v で印 κ ≥ 1（段 v+κ）: 根は明示した鎖の F(v+κ−1)（κ = 1 なら N）で U の中 → R.oper。写しは段 v の節点（印 κ−1）で子は部分塔を κ−1 下げたもの
+  = UKE の h2（τ = v、級 GC (o :: A) v = PVP の t 成分の級）の像。部分塔の良さは Good^s から。
+- s > v（F の段、段ごとの持ち上げの隙間）: 根は明示した鎖の節点 → R.oper、写しは同じく h2 の像。
+- 遠い字の規則（UKE Y → UKE (Y ++ FL)）: 潰れの塔は明示した高さを m から m + m' に上げ、新しい段の中身は Y の写し（klift_oper の印の付け替え）。定義の ∀ m で受ける。
+
+### 段取り
+
+1. ETW と Good^s の定義、mlift / reliftX / klift との交換（段ごとの持ち上げつきの towF の補題の一般化）。
+2. 明示した塔の中の底の展開の等式（写しが部分塔の節点になる、probe_uke_roots.py の形）。
+3. LCE の nil / oper / flat / orph / tie（LC1k の写し、flat は V を伸ばす）、UKE の SlotAx・congr・relift。
+4. FarP_UKE（上の 3 つの場合）、CtxP_UKE、UKE_F（F の子を置く）、遠い字の規則。
