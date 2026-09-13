@@ -254,7 +254,7 @@ theorem LC1x_congr {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) {H1 H2 : �
     (hH : ∀ a ∈ A, H1 a = H2 a) {b : ℕ} {Y : TrioSeq} (h : LC1x A o H1 b Y) : LC1x A o H2 b Y := by
   intro W hW hPV
   have e : liftOff H1 A o = liftOff H2 A o := by unfold liftOff; rw [stepSum_congr 0 o hH]
-  have := h W hW (PVX_congr hA (fun a ha => (hH a ha).symm) hPV)
+  have := h W hW (PVX_congr (fun a ha => (hH a ha).symm) hPV)
   rw [e] at this
   exact PVP_congr hA hH this
 
