@@ -577,5 +577,255 @@ theorem nslot_ax {P : ℕ → TrioSeq → Prop} (hP : SlotAx P) {k : ℕ} (hk : 
 
 #print axioms nslot_ax
 
+
+/-! ## タイの子の並び（差し込み口によらない） -/
+
+def GTs (u : ℕ) (D : TrioSeq) : Prop := ∀ ok, SlotAx ok → nslot ok 1 u D
+
+theorem GTs_ax : SlotAx GTs where
+  lift := fun u W hW h u' hu ok hA => (nslot_ax hA le_rfl).lift u W hW (h ok hA) u' hu
+  oper := fun u W U hW hU hH hlen hp hIH ok hA =>
+    (nslot_ax hA le_rfl).oper u W U hW hU hH hlen hp (fun m hm => hIH m hm ok hA)
+  orph := fun u W U h j hW hU hH hj1 hj hnp hz ok hA =>
+    (nslot_ax hA le_rfl).orph u W U h j hW hU hH hj1 hj hnp (fun z hz' hbz => hz z hz' hbz ok hA)
+  tie := fun u W U x hW hU hH hc hload ok hA =>
+    (nslot_ax hA le_rfl).tie u W U x hW hU hH hc
+      (fun u' hu Z hZ hbZ => hload u' hu Z hZ hbZ ok hA)
+  flat := fun u W hW h ok hA => (nslot_ax hA le_rfl).flat u W hW (h ok hA)
+
+theorem GTs_nil (u : ℕ) : GTs u [] := by
+  intro ok hA u' _ X hX hPX
+  have hc : coneV ([] ++ [((1, u' + 1, 0) : ℕ × ℕ × ℕ)]) u' ([] : TrioSeq).length := by
+    intro y hy
+    have := rtg0_le hy
+    have hy0 : y = 0 := by simp at this; omega
+    subst hy0; show u' < u' + 1; omega
+  have h := hA.tie u' X [] 1 hX (by intro y hy; simp at hy; subst hy; show 1 ≤ 1; omega)
+    (fun _ => rfl) hc (fun u'' hu'' Z hZ hbZ => by
+      have := slot_load hA (Fr_mlift hX u' (u'' - u')) (hA.lift u' X hX hPX u'' hu'') Z hZ hbZ
+      simpa using this)
+  simpa [mlift_nil, shiftr01] using h
+
+theorem GTs_load {u : ℕ} {D : TrioSeq} (hD : Fr D) (h : GTs u D) {Z : TrioSeq}
+    (hZ : Z ∈ Wg (2 * u)) (hb : based Z) : GTs u (D ++ shiftr01 1 0 Z) :=
+  fun ok hA => slot_load (nslot_ax hA le_rfl) hD (h ok hA) Z hZ hb
+
+theorem GTs_child {u : ℕ} {D E : TrioSeq} (hD : Fr D) (h : GTs u D) (hE : GTs u E) :
+    GTs u (D ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) := by
+  intro ok hA
+  have := hE (nslot ok 1) (nslot_ax hA le_rfl) u le_rfl D hD (h ok hA)
+  rwa [Nat.sub_self, mlift_zero] at this
+
+theorem coneV_top' {K : TrioSeq} (hK : Fr K) {u r : ℕ} (hr : u < r) :
+    coneV (K ++ [((1, r, 0) : ℕ × ℕ × ℕ)]) u K.length := by
+  intro y hy
+  have hyle := rtg0_le hy
+  rcases Nat.lt_or_ge y K.length with hlt | hge
+  · exfalso
+    have hrec := rtg0_rec hy K.length hlt le_rfl
+    rw [Small.entry_append_left hlt, show K.length = K.length + 0 from rfl,
+      entry_append_right] at hrec
+    have h1 := getD_row0_ge hK hlt
+    have e : entry [((1, r, 0) : ℕ × ℕ × ℕ)] 0 0 = 1 := rfl
+    rw [e] at hrec
+    omega
+  · have hy' : y = K.length := by simp at hyle; omega
+    subst hy'
+    rw [show K.length = K.length + 0 from rfl, entry_append_right]
+    show u < r; exact hr
+
+/-- ★ タイの子に 2 段上の錐（そのタイからの塔）。 -/
+theorem GTs_C2 {u : ℕ} {D : TrioSeq} (hD : Fr D) (h : GTs u D) :
+    GTs u (D ++ [((1, u + 2, 0) : ℕ × ℕ × ℕ)]) := by
+  intro ok hA u' hu X hX hPX
+  have hc := coneV_top' hD (show u < u + 2 by omega)
+  rw [mlift_snoc_cone D _ hc (u' - u)]
+  have e2 : (((((1, u + 2, 0) : ℕ × ℕ × ℕ)).1, (((1, u + 2, 0) : ℕ × ℕ × ℕ)).2.1 + (u' - u),
+      (((1, u + 2, 0) : ℕ × ℕ × ℕ)).2.2) : ℕ × ℕ × ℕ) = ((1, u' + 2, 0) : ℕ × ℕ × ℕ) := by
+    show ((1, u + 2 + (u' - u), 0) : ℕ × ℕ × ℕ) = _
+    rw [show u + 2 + (u' - u) = u' + 2 by omega]
+  rw [e2]
+  have hDl : Fr (mlift D u (u' - u)) := Fr_mlift hD u (u' - u)
+  have hGDl : GTs u' (mlift D u (u' - u)) := GTs_ax.lift u D hD h u' hu
+  obtain ⟨Dl, hDleq⟩ : ∃ Dl, Dl = mlift D u (u' - u) := ⟨_, rfl⟩
+  rw [← hDleq] at hDl hGDl ⊢
+  obtain ⟨R, hR⟩ : ∃ R : TrioSeq, R = Dl ++ [((1, u' + 2, 0) : ℕ × ℕ × ℕ)] := ⟨_, rfl⟩
+  rw [← hR]
+  have hRok : argOK R := by
+    intro p hp
+    rw [hR] at hp
+    rcases List.mem_append.mp hp with hp | hp
+    · have := hDl p hp; omega
+    · simp at hp; subst hp; show 0 < 1; omega
+  have hRne : R ≠ [] := by simp [hR]
+  have hRlen : R.length - 1 = Dl.length + 0 := by simp [hR]
+  have eL : ∀ r, entry R r (R.length - 1) = entry [((1, u' + 2, 0) : ℕ × ℕ × ℕ)] r 0 := by
+    intro r; rw [hRlen, hR, entry_append_right]
+  have e0 : entry R 0 (R.length - 1) = 1 := by rw [eL]; rfl
+  have e1 : entry R 1 (R.length - 1) = u' + 2 := by rw [eL]; rfl
+  have e2' : entry R 2 (R.length - 1) = 0 := by rw [eL]; rfl
+  have hsr : srow R (R.length - 1) = 1 := by unfold srow; rw [e2', e1]; simp
+  have hnpR : ¬ hasParent R 1 (R.length - 1) := by
+    rintro ⟨k, hk, -⟩
+    have hk' : nextrel1 R k (R.length - 1) := by
+      unfold nextR at hk; rwa [if_neg (by omega), if_pos rfl] at hk
+    obtain ⟨-, -, hkl, -, hle0, -⟩ := hk'
+    have hrec := rtg0_rec hle0.2.2 (R.length - 1) hkl le_rfl
+    rw [e0] at hrec
+    have hkD : k < Dl.length := by omega
+    rw [hR, Small.entry_append_left hkD] at hrec
+    have := getD_row0_ge hDl hkD
+    omega
+  have hd : domT R (2 * (u' + 1) + 1) := by
+    refine ⟨?_, ?_⟩
+    · unfold lev; rw [e1, e2']; omega
+    · rw [hsr]; exact hnpR
+  have hRl : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hpM : hasParent (((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length := by
+    rw [hsr]
+    refine hasParent_one_of (b := R.length) (k := 0) (by simp) hRl
+      ⟨by simp, by simp, rtg0_zero (fun l hl0 hl => ?_) (by simp)⟩ ?_
+    · obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+      rw [entry_cons]
+      have hl' : l' < R.length := by simp at hl; omega
+      have hmem : R.getD l' (0, 0, 0) ∈ R := by
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl']; exact List.getElem_mem hl'
+      have := hRok _ hmem
+      show 0 < (R.getD l' (0, 0, 0)).1
+      omega
+    · rw [entry_cons_last hRne 1, e1]; show u' + 1 < u' + 2; omega
+  have hdl : R.dropLast = Dl := by rw [hR, List.dropLast_concat]
+  have htow : ∀ j, shiftr01 1 0 (tow (u' + 1) 0 R (j + 1))
+      = ((1, u' + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (Dl ++ shiftr01 1 0 (tow (u' + 1) 0 R j)) := by
+    intro j
+    rw [tow, graft_eq_shift, e0, hdl]
+    simp [shiftr01]
+  have hG : ∀ j, GTs u' (Dl ++ shiftr01 1 0 (tow (u' + 1) 0 R j)) := by
+    intro j
+    induction j with
+    | zero => simpa [tow, shiftr01] using hGDl
+    | succ j ih =>
+        rw [htow]
+        exact GTs_child hDl hGDl ih
+  have eV : ((1, u' + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 R
+      = shiftr01 1 0 (((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R) := by simp [shiftr01]
+  rw [eV]
+  have hlen2 : 2 ≤ (((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R).length := by simp; omega
+  have hpM' : hasParent (((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R)
+      (srow (((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R) ((((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R).length - 1))
+      ((((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R).length - 1) := by
+    have hl : ((((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R).length - 1) = R.length := by simp
+    rw [hl, srow_cons_last hRne]; exact hpM
+  refine hA.oper u' X _ hX (fun y hy => ?_) (fun _ => ?_) (by rw [shiftr01_length]; exact hlen2)
+    (by rw [shiftr01_length, srow_shiftr01, hasParent_shiftr01]; exact hpM') (fun m hm => ?_)
+  · simp only [shiftr01, List.mem_map] at hy
+    obtain ⟨p, -, rfl⟩ := hy
+    dsimp only; omega
+  · rw [entry0_shiftr01 (by simp)]; rfl
+  · have eO := oper_shift [] (((0, u' + 1, 0) : ℕ × ℕ × ℕ) :: R) 1 m hlen2 hpM'
+    simp only [List.nil_append] at eO
+    rw [eO, oper_cons_tower1 hRok hRne hd hsr hpM]
+    obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
+    rw [htow]
+    have := hG j ok hA u' le_rfl X hX hPX
+    rwa [Nat.sub_self, mlift_zero] at this
+
+#print axioms GTs_C2
+
+/-! ## 2 段上の錐の子の差し込み口 -/
+
+def GHs : ℕ → TrioSeq → Prop := nslot GTs 2
+
+theorem GHs_ax : SlotAx GHs := nslot_ax GTs_ax (by omega)
+
+theorem GHs_nil (u : ℕ) : GHs u [] := by
+  intro u' _ X hX hGX
+  have := GTs_C2 hX hGX
+  simpa [mlift_nil, shiftr01] using this
+
+theorem GHs_load {u : ℕ} {C : TrioSeq} (hC : Fr C) (h : GHs u C) {Z : TrioSeq}
+    (hZ : Z ∈ Wg (2 * u)) (hb : based Z) : GHs u (C ++ shiftr01 1 0 Z) :=
+  slot_load GHs_ax hC h Z hZ hb
+
+theorem GHs_child {u : ℕ} {C E : TrioSeq} (hC : Fr C) (h : GHs u C) (hE : GTs u E) :
+    GHs u (C ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) := by
+  have := hE GHs GHs_ax u le_rfl C hC h
+  rwa [Nat.sub_self, mlift_zero] at this
+
+theorem GTs_h {u : ℕ} {D C : TrioSeq} (hD : Fr D) (h : GTs u D) (hC : GHs u C) :
+    GTs u (D ++ ((1, u + 2, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 C) := by
+  have := hC u le_rfl D hD h
+  rwa [Nat.sub_self, mlift_zero] at this
+
+/-! ## 最上段と、森の条件つきの組み立て -/
+
+theorem top_load {u : ℕ} {K : TrioSeq} (hK : Fr K) (h : GTall u K) {Z : TrioSeq}
+    (hZ : Z ∈ Wg (2 * u)) (hb : based Z) : GTall u (K ++ shiftr01 1 0 Z) :=
+  slot_load topSlot_ax hK h Z hZ hb
+
+theorem top_tie {u : ℕ} {K D : TrioSeq} (hK : Fr K) (h : GTall u K) (hD : GTs u D) :
+    GTall u (K ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 D) := by
+  have := hD (fun u W => GTall u W) topSlot_ax u le_rfl K hK h
+  rwa [Nat.sub_self, mlift_zero] at this
+
+theorem Fr_nil : Fr [] := fun _ h => by simp at h
+
+theorem Fr_shift1 (Z : TrioSeq) : Fr (shiftr01 1 0 Z) := by
+  intro x hx
+  simp only [shiftr01, List.mem_map] at hx
+  obtain ⟨p, -, rfl⟩ := hx
+  dsimp only; omega
+
+def TF (u : ℕ) (K : TrioSeq) : Prop := GTall u K ∧ Fr K
+def GTF (u : ℕ) (D : TrioSeq) : Prop := GTs u D ∧ Fr D
+def GHF (u : ℕ) (C : TrioSeq) : Prop := GHs u C ∧ Fr C
+
+theorem TF_nil (u : ℕ) : TF u [] := ⟨GTall_nil u, Fr_nil⟩
+
+theorem TF_load {u : ℕ} {K Z : TrioSeq} (h : TF u K) (hZ : Z ∈ Wg (2 * u)) (hb : based Z) :
+    TF u (K ++ shiftr01 1 0 Z) := ⟨top_load h.2 h.1 hZ hb, Fr_append h.2 (Fr_shift1 Z)⟩
+
+theorem TF_tie {u : ℕ} {K D : TrioSeq} (h : TF u K) (hD : GTF u D) :
+    TF u (K ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 D) :=
+  ⟨top_tie h.2 h.1 hD.1, Fr_append h.2 (Fr_node _ _)⟩
+
+theorem GTF_nil (u : ℕ) : GTF u [] := ⟨GTs_nil u, Fr_nil⟩
+
+theorem GTF_load {u : ℕ} {D Z : TrioSeq} (h : GTF u D) (hZ : Z ∈ Wg (2 * u)) (hb : based Z) :
+    GTF u (D ++ shiftr01 1 0 Z) := ⟨GTs_load h.2 h.1 hZ hb, Fr_append h.2 (Fr_shift1 Z)⟩
+
+theorem GTF_tie {u : ℕ} {D E : TrioSeq} (h : GTF u D) (hE : GTF u E) :
+    GTF u (D ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) :=
+  ⟨GTs_child h.2 h.1 hE.1, Fr_append h.2 (Fr_node _ _)⟩
+
+theorem GTF_h {u : ℕ} {D C : TrioSeq} (h : GTF u D) (hC : GHF u C) :
+    GTF u (D ++ ((1, u + 2, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 C) :=
+  ⟨GTs_h h.2 h.1 hC.1, Fr_append h.2 (Fr_node _ _)⟩
+
+theorem GHF_nil (u : ℕ) : GHF u [] := ⟨GHs_nil u, Fr_nil⟩
+
+theorem GHF_load {u : ℕ} {C Z : TrioSeq} (h : GHF u C) (hZ : Z ∈ Wg (2 * u)) (hb : based Z) :
+    GHF u (C ++ shiftr01 1 0 Z) := ⟨GHs_load h.2 h.1 hZ hb, Fr_append h.2 (Fr_shift1 Z)⟩
+
+theorem GHF_tie {u : ℕ} {C E : TrioSeq} (h : GHF u C) (hE : GTF u E) :
+    GHF u (C ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) :=
+  ⟨GHs_child h.2 h.1 hE.1, Fr_append h.2 (Fr_node _ _)⟩
+
+theorem WordsG_consT {v : ℕ} {K : TrioSeq} {Ls : List TrioSeq} (h1 : TF v K)
+    (h2 : WordsG v Ls) : WordsG v (K :: Ls) := by
+  intro K' h
+  simp only [List.mem_cons] at h
+  rcases h with rfl | h
+  · exact ⟨GT_of_GTall h1.1, h1.2⟩
+  · exact h2 K' h
+
+/-- 行 780 の試し。 -/
+theorem R780_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0)
+    (WordsG_consT (TF_tie (TF_nil 0) (GTF_h (GTF_nil 0) (GHF_nil 0))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+#print axioms R780_mem
+
 end GxP
 end TRIO
