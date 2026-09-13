@@ -510,5 +510,93 @@ theorem GTall_zlet {v : ℕ} {K : TrioSeq} {x : ℕ} (hK : Fr K) (hx : 1 ≤ x)
 
 #print axioms GTall_zlet
 
+
+/-! ## 根 1 本の行の展開 -/
+
+open Classical in
+/-- 根 (0,b,0) の行の展開は、根の直上の平らな複写でなければ、根 1 本のまま。 -/
+theorem oper_single_root {b : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hp : hasParent (((0, b, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length)
+    (hnf : ¬ (srow R (R.length - 1) = 0 ∧
+      parent (((0, b, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length = 0))
+    {n : ℕ} (hn : 1 ≤ n) :
+    ∃ R', argOK R' ∧ (((0, b, 0) : ℕ × ℕ × ℕ) :: R)⟦n⟧ = ((0, b, 0) : ℕ × ℕ × ℕ) :: R' := by
+  have hRl : 0 < R.length := List.length_pos_iff.mpr hRne
+  have hlast : 0 < entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 R.length := by
+    rw [entry_cons_last hRne]; exact hR _ (entry_pair_mem (B := R) (by omega))
+  have hge : ∀ j, 1 ≤ j → j < R.length + 1 → 0 < entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 j := by
+    intro j hj1 hj2
+    obtain ⟨j', rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+    rw [entry_cons]; exact hR _ (entry_pair_mem (B := R) (by omega))
+  obtain ⟨j0, hj0⟩ : ∃ j0, j0 = parent (((0, b, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length :=
+    ⟨_, rfl⟩
+  obtain ⟨d0, hd0⟩ : ∃ d0, d0 = if 0 < srow R (R.length - 1) then
+      entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 R.length - entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 j0
+      else 0 := ⟨_, rfl⟩
+  obtain ⟨d1, hd1⟩ : ∃ d1, d1 = if 1 < srow R (R.length - 1) then
+      entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 1 R.length - entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 1 j0
+      else 0 := ⟨_, rfl⟩
+  have hj0lt : j0 < R.length := by
+    have := nextR_index_lt (parent_nextR hp); rw [← hj0] at this; exact this
+  rw [L53.oper_unfold (j1 := R.length) (i1 := srow R (R.length - 1)) (j0 := j0) (d0 := d0) (d1 := d1)
+    (by simp) (by omega) (by omega) (srow_cons_last hRne).symm hp hj0 hd0 hd1 n]
+  rcases j0 with _ | j'
+  · have hsr : 0 < srow R (R.length - 1) := by
+      rcases Nat.eq_zero_or_pos (srow R (R.length - 1)) with h | h
+      · exact absurd ⟨h, hj0.symm⟩ hnf
+      · exact h
+    have hd0pos : 1 ≤ d0 := by
+      rw [hd0, if_pos hsr]
+      have : entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 0 = 0 := rfl
+      omega
+    obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+    rw [List.take_zero, List.nil_append, List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map,
+      show R.length - 0 = (R.length - 1) + 1 by omega, List.range'_succ, List.map_cons,
+      List.cons_append]
+    refine ⟨_, ?_, List.cons_eq_cons.mpr ⟨?_, rfl⟩⟩
+    · intro q hq
+      rcases List.mem_append.mp hq with hq | hq
+      · simp only [List.mem_map] at hq
+        obtain ⟨j, hj, rfl⟩ := hq
+        obtain ⟨hj1, hj2⟩ := List.mem_range'_1.1 hj
+        have := hge j (by omega) (by omega)
+        show 0 < entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 j + _
+        omega
+      · simp only [List.mem_flatMap, List.mem_range, List.mem_map] at hq
+        obtain ⟨k, -, j, hj, rfl⟩ := hq
+        show 0 < entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 j + _
+        rcases List.mem_cons.mp hj with hj | hj
+        · subst hj
+          have hl0 : le0 (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 0 :=
+            ⟨by simp, by simp, Relation.ReflTransGen.refl⟩
+          rw [if_pos hl0]
+          have : 1 ≤ k.succ * d0 := Nat.one_le_iff_ne_zero.mpr (Nat.mul_ne_zero (Nat.succ_ne_zero k) (by omega))
+          omega
+        · obtain ⟨hj1, hj2⟩ := List.mem_range'_1.1 hj
+          have := hge j (by omega) (by omega)
+          omega
+    · have hl0 : le0 (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 0 :=
+        ⟨by simp, by simp, Relation.ReflTransGen.refl⟩
+      have hl1 : le1 (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 0 :=
+        ⟨by simp, by simp, Relation.ReflTransGen.refl⟩
+      rw [if_pos hl0, if_pos hl1]
+      show ((0 + 0 * d0, b + 0 * d1, 0) : ℕ × ℕ × ℕ) = _
+      simp
+  · have et : (((0, b, 0) : ℕ × ℕ × ℕ) :: R).take (j' + 1) = ((0, b, 0) : ℕ × ℕ × ℕ) :: R.take j' := by
+      simp
+    rw [et, List.cons_append]
+    refine ⟨_, ?_, rfl⟩
+    intro q hq
+    rcases List.mem_append.mp hq with hq | hq
+    · exact hR q (List.mem_of_mem_take hq)
+    · simp only [List.mem_flatMap, List.mem_range, List.mem_map] at hq
+      obtain ⟨k, -, j, hj, rfl⟩ := hq
+      obtain ⟨hj1, hj2⟩ := List.mem_range'_1.1 hj
+      have := hge j (by omega) (by omega)
+      show 0 < entry (((0, b, 0) : ℕ × ℕ × ℕ) :: R) 0 j + _
+      omega
+
+#print axioms oper_single_root
+
 end GxV
 end TRIO
