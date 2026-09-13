@@ -27544,3 +27544,20 @@ Aok (A ++ T0) は構造体の欄を直接（Deep / Zroot / Mono）、Ancd は T 
 必要なのは `S_v(1) ∈ Wg 2v`（全ての v ≥ 1）だけ。塔 `tow (k+1) = (0,v,0) :: rword 0 v [(tow k)↑1]` の中身
 `(tow k)↑1 = (1,v,0)(2,v+1,1)…` は根とタイで、v ≥ 2 では RiseOk でない ⟹ `GOKW` を段 v0 に一般化する（GwZ）。
 最後に `G⟦n⟧` の等式（`oper_z1_mask`、根の錐は `(1,1,1)(2,1,0)` の両方）で G ∈ W 0。
+
+## 追記471: ★★★★★★★★★★★★★★★★★★★★ 最終目標 `(0,0,0)(1,1,1)(2,1,0)(1,1,1) ∈ W 0` が無条件で緑
+
+    GwZ.goal_mem : Gm ∈ W 0,  Gm = (0,0,0)(1,1,1)(2,1,0)(1,1,1)
+    axioms = [propext, Classical.choice, Quot.sound]
+
+組み立て（`lean/GwZ.lean`）:
+
+1. `GOKWv_of_Wg`（`GwU.GOKW_of_Wg2` の段 v0 版）: 中身 `T ∈ Wg (2 v0)` は、根の行 1 が v ≥ v0 の語の
+   最後に字として継げる。中身の条件は `RiseOkv v0`（行 1 > v0 は行 1 ≤ v0 の祖先）。孤児 `(h, j, 0)`（j ≤ v0）
+   が全体で親を持たないことは、親が中身の中なら `nextR_append_right` で T 自身の親に戻す（`noParent_letter`）。
+2. `G2cv_Wg v`: `(0,v,0)(1,v+1,1)(2,v+1,0) ∈ Wg 2v`。末尾は根が生き返らせる行 1 の孤児、
+   `oper_cons_tower1` で展開は塔、`tow (k+1) = (0,v,0) :: rword 0 v [(tow k)↑1]` を 1. で。
+3. `S_Wg`: `S v (k+1) = (0,v,0) :: (R12v v ++ (S (v+1) k)↑1) ∈ Wg 2v`（`hang_Wg`、語 `R12v v ∈ Wstarv v`）。
+4. `Gn_mem`: `TG n = (S 1 n)↑1 ∈ Wg 2`、BH（`GwY.base_hang`）で `R338 ++ TG n ∈ W 0`。
+5. `oper_Gm`: `Gm⟦n⟧ = Σ_k (k,k,0)(k+1,k+1,1)(k+2,k+1,0)`（`oper_z1_mask`、根の錐は 2 列とも）
+   `= R338 ++ TG (n-1)`（`flat_Blk`）。W 0 の分岐 2 で `goal_mem`。
