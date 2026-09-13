@@ -24,9 +24,67 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-def is_far(M, s, e, r):
-    """遠い語: 行 1 が r の字で、中身が同じ行 1 の中身のない字 1 個だけ。"""
-    return e - s == 2 and M[s][1] == r and M[s][2] == 1 and M[s + 1] == (M[s][0] + 1, r, 1)
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop'
+
+
+def far_units(M, s, e, r, v, top):
+    """遠い字の語: 字 (a,r,1)、中身の最初が中身のない遠い字 (a+1,r,1)、残りは単位。
+    単位 = 荷（行 1 ≤ v の z=0 の木）か、行 1 が v+1 の子のないタイ（節点の下だけ）。
+    最上段では最後の子のないタイを 1 個だけ許す（返り値の 2 つ目）。"""
+    if M[s][1] != r or M[s][2] != 1:
+        return None
+    ch = children(M, s, e)
+    if not ch or M[ch[0][0]] != (M[s][0] + 1, r, 1) or ch[0][1] - ch[0][0] != 1:
+        return None
+    rest = ch[1:]
+    tie_last = False
+    if top and rest and M[rest[-1][0]] == (M[s][0] + 1, v + 1, 0) and rest[-1][1] - rest[-1][0] == 1:
+        tie_last = True
+        rest = rest[:-1]
+    us = []
+    for (a, b) in rest:
+        c = M[a]
+        if c[2] == 0 and c[1] <= v:
+            us.append(('some', a, b))
+        elif (not top) and c == (M[s][0] + 1, v + 1, 0) and b - a == 1:
+            us.append(('none',))
+        else:
+            return None
+    return (us, tie_last)
+
+
+def load_lit(M, a, b):
+    base = M[a][0]
+    return lit([(x - base, y, z) for (x, y, z) in M[a:b]])
+
+
+def load_mem(M, a, b, v):
+    return (f'(show ({load_lit(M, a, b)} : TrioSeq) ∈ Wg (2 * {v}) by '
+            f'have h := Wg_up (w := 2 * {v}) {tree(M, a)} (by omega); simpa [{SIMP}] using h)')
+
+
+def units_lean(M, us, v):
+    items = []
+    proof = f'(RawU_nil {v})'
+    for u in reversed(us):
+        if u[0] == 'some':
+            _, a, b = u
+            items.insert(0, f'some ({load_lit(M, a, b)} : TrioSeq)')
+            proof = f'(RawU_cons_some {load_mem(M, a, b, v)} rfl {proof})'
+        else:
+            items.insert(0, 'none')
+            proof = f'(RawU_cons_none {proof})'
+    return '([' + ', '.join(items) + '] : List (Option TrioSeq))', proof
+
+
+def uss_lean(M, uss, v):
+    lits = []
+    proof = f'(RawUs_nil {v})'
+    for us in reversed(uss):
+        l, p = units_lean(M, us, v)
+        lits.insert(0, l)
+        proof = f'(RawUs_cons {p} {proof})'
+    return '([' + ', '.join(lits) + '] : List (List (Option TrioSeq)))', proof
 
 
 def gp(M, kids, v, A, o):
@@ -37,11 +95,17 @@ def gp(M, kids, v, A, o):
     else:
         w = f'(PVF_nil (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) {v})'
     nf = 0
-    while nf < len(kids) and is_far(M, kids[nf][0], kids[nf][1], v + o + 1):
+    uss = []
+    while nf < len(kids):
+        fu = far_units(M, kids[nf][0], kids[nf][1], v + o + 1, v, False)
+        if fu is None:
+            break
+        uss.append(fu[0])
         nf += 1
     if nf > 0:
-        # 先頭に続く遠い語（GzF.PVF_farR）
-        w = f'(PVF_farR {side(A, o)} {v} {nf})'
+        # 先頭に続く遠い字と単位の語（GzI.PVF_farU）
+        L, P = uss_lean(M, uss, v)
+        w = f'(PVF_farU {side(A, o)} {v} {L} {P})'
         k = nf
         nl = nf
     while k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
@@ -107,19 +171,35 @@ def tree(M, i):
     ch = children(M, i, end)
     k = 0
     words = []
-    nf = 0
+    uss = []
+    tie_us = None
     while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
         s, e = ch[k]
-        if nf == k and is_far(M, s, e, v + 1):
-            nf += 1  # 先頭に続く遠い語（GzF.starOK_farN）
-        else:
-            words.append(top_forest(M, children(M, s, e), v))
+        fu = far_units(M, s, e, v + 1, v, True)
+        if fu is None:
+            break
+        k += 1
+        if fu[1]:
+            tie_us = fu[0]
+            break
+        uss.append(fu[0])
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        words.append(top_forest(M, children(M, s, e), v))
         k += 1
     w = f'(WordsG_nil {v})'
     for f in reversed(words):
         w = f'(WordsG_consT (v := {v}) {f} {w})'
-    if nf > 0:
-        st = f'(starOK_farN (v := {v}) {nf} {w})'
+    if tie_us is not None:
+        # 先頭に続く遠い字と荷の語、最後の語は最後に子のないタイ（GzJ.starOK_topFarTie）
+        L, P = uss_lean(M, uss, v)
+        U, PU = units_lean(M, tie_us, v)
+        st = (f'(starOK_topFarTie (v := {v}) {L} {P} (by simp [NoTie]) {U} {PU} '
+              f'(by simp [NoTie]) {w})')
+    elif uss:
+        # 先頭に続く遠い字と荷の語（GzJ.starOK_topFar）
+        L, P = uss_lean(M, uss, v)
+        st = f'(starOK_topFar (v := {v}) {L} {P} (by simp [NoTie]) {w})'
     else:
         st = f'(starOK_wordsG (v := {v}) {w})'
     for (s2, e2) in ch[k:]:
@@ -151,7 +231,7 @@ if __name__ == '__main__':
             continue
         ok.append(r)
         body.append(f'/-- ★ シート行 {r}。 -/\ntheorem R{r}_mem : ({lit(M)} : TrioSeq) ∈ W 0 := by\n'
-                    f'  have h := {p}\n  simpa [shiftr01, rword, rcol, farR] using h\n')
+                    f'  have h := {p}\n  simpa [{SIMP}] using h\n')
     print('ok', len(ok), 'bad', len(bad))
     runs = []
     for r in ok:
@@ -165,7 +245,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzF\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')

@@ -28264,3 +28264,36 @@ F の段の底（根が語の節点 N）で、挿入した成分 (S, j) では�
   遠い字のあとの F の子を置く族が要る。よって +45 行も同じ壁。+8 行（遠い字 1 個 ++ 荷）は GzF の型で出る見込み。
 - 目標の塔の節点の下の語 K の写し（字 :: 遠い字 :: F（子なし））の F は、潰れが z=0 なので低い子の塔
   （FarP_GpT_lt 型）で置ける可能性がある。F の子に子が入る段が出るかは未測定。
+
+## 追記495: ★ 行 1386〜1449 の標準形 64 行（GzH〜GzK: 遠い字のあとの単位）
+
+    GzH: fwU b r us = (1,r,1) :: ((1,r,1) :: unitsC b us)↑1   （字、中身 = 遠い字 ++ 単位）
+         farU b r uss = uss.flatMap (fwU b r)
+         単位 = 荷（行 1 ≤ b の Wg の元）か、行 1 が b+1 の子のないタイ（GxL.unitC b）
+         mlift_units_high / mlift_units_base / reliftX_units:
+           単位は閾値 ≥ b+1 の持ち上げでも再持ち上げ（reStair_tie）でも動かない
+         FarCU b0 uss := ∀ A o f b, b0 ≤ b → RawUs b uss → GpT A o f b (farU b (b + liftOff f A o + 1) uss)
+         towU（潰れの塔）、farU_collapse（GzF の塔の接頭辞を farU にしたもの）
+    GzI: GTU b0 us := ∀ uss, FarCU b0 uss → FarCU b0 (uss ++ [us])
+         GTU_tie : 語の並びの族 GpT_ax の tie 公理で、タイを荷に置き換える
+         GTU_load: 荷 Z の Wg の帰納（slot_load と同じ場合分けを、語の中の深さ 2 で GpT_ax の oper / orph に直接）。
+                   flat（Z の最後が (0,0,0)）は語の複写 W ++ U^m になるので GTU の繰り返しで出す。
+                   孤児の行 1 の親が無いことは noParent_ctx と letter_anc_row1
+         GTU_units / FarCU_all / PVF_farU
+    GzJ: GTC C v K := 接頭辞を組 C に限った GT。GxK の GT_oper / GT_orph / GT_flat / GT_tie / GT_loadTop を
+         接頭辞 L ごとの形のまま C つきに写した（GTC_tie は C の持ち上げ閉包、GTC_flat は C の語の追加閉包を仮定）
+         fwTop v us = (1,v+1,1) :: unitsC v us、TopC v L（荷だけの語の並び）
+         GTC_top_nil（最上段の潰れ: 最後の語のタイの子が towU、FarCU_all で GpT [] 1）、GTC_top_load、
+         BwT_topFar、BwT_topFarTie（最後の語の最後の子のないタイ: GTC_tie で荷へ）、starOK_topFar / starOK_topFarTie
+    GzK: tools/gen_gyk.py（far_units: 節点の下は単位、最上段は荷 + 最後のタイ 1 個）で 64 行
+    axioms = [propext, Classical.choice, Quot.sound]
+
+- 最上段の潰れの写しは閾値が根の段 v なので、行 1 が v+1 のタイは写しで持ち上がって F の子になる。
+  よって最上段の接頭辞の単位は荷だけ。節点の下は閾値が節点の段 ≥ b+1 なのでタイも単位のまま。
+  （これに気づく前の測定は 172 行、直した規則で 130 行 = 1317〜1449。）
+- FarCU に段 b0 が要った: 荷の Wg の帰納は段 b1 を固定するので、帰納の中の flat（語の繰り返し）には
+  段 b1 以上の命題しか使えない。
+- 次の壁: 行 1450
+    (0,0,0)(1,1,1)(2,1,1)(2,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(4,1,0)(5,1,0)(1,1,1)
+  節点の下の遠い字のあとのタイ (4,1,0) に子 (5,1,0)（行 1 が b+1 の横の子）。木の行 1 が全て b+1 以下なら
+  写しでも再持ち上げでも動かないので、単位を「行 1 ≤ b+1 の木」に広げられる見込み（タイの子の置き方は未設計）。
