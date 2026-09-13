@@ -28678,3 +28678,19 @@ S の錨の本当の段は κ の持ち上げの帯 [v, v+J) にあるので、K
 
 理由: 持ち上げた列の amin は、Lk = 0 なら v 以下、0 < Lk < J なら v + Lk（最小を与える祖先は段 v の印つきの列）、
 Lk = J なら v + J 以上。どの場合も φ の持ち上げ量は Lk だけで決まり、x ↦ x + step(v + x) は単調なので道の最小と可換。
+
+## 追記515: FarP の準備（KlH / KxE / KxF、緑）
+
+    KlH: klift_slift_band（帯 [v, v+J) の中にしか段差のない階段リフトと klift の可換、bandK）
+    KxE: BotGe_klift・reliftX_split（S ++ A の持ち上げを A の部分 maskF と S の部分 upperF に分ける）・
+         band_reStair（S の部分の階段は帯の条件を満たす）・mlift_klift_top
+    KxF: content_transport:
+         reliftX b3 F G (S ++ A) (mlift (mlift (klift P1 (b'+k) J K) (b'+k+J) t) b' (b3 − b'))
+           = klift (reliftX b3 H (g + maskF A G) (o :: A) (mlift P b (b3 − b))) (b3 + liftOff (F + maskF A G) A o') ((j + t) + Σ_S (F + G)) K2
+         （P1 = reliftX b' H g (o :: A) (mlift P b (b' − b))、K2 は存在）
+
+- 語の段の PVP の t（節点の段の持ち上げ）は、RLC では o の状態に吸収したが、UK では世界の挿入 j に吸収する（j + t）。
+  mlift (klift X v J K) (v + J) t = klift X v (J + t) (compK J t K 0)。
+- FarP_low の段取り（次）: 底の段 s1 < k（閾値より下）。語 W と t について、語の段の CtxP_GpT (S ++ A) (o' + j + t) の FarP を
+  s1 で呼ぶ。h1 は UK の h1 を持ち上げ g + maskF A G で使い、成分 (S, j + t, F + G, K2) と content_transport で合わせる。
+  語の部分は PVK_refine（t、κ ≡ 0）・PVK_lift・PVK_relift。h2 は τ < 閾値なので級は GC A で共通、足した節点の列は klift_append_low で動かない。
