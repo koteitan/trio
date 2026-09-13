@@ -27466,3 +27466,21 @@ B(l ++ [T])（T ∈ Wg 2 の中身、v ≥ 1）は T の A2g' 帰納:
 `SegA 0 M3` の reapp は、任意の `LwB P s` 文脈で `A' ++ M3↑s` を示すこと。R385 の証明の
 `row_mem_of_GoodFb` を `(hG.seg s).reapp` に替えれば同じ形で通る見込み。目標 G = R338 (1,1,1) は
 `G⟦n⟧ = R338 ++ Σ_k (k,k,0)(k+1,k+1,1)(k+2,k+1,0)` の極限で、各段は pu / pk 文脈の R338 型の塊。
+
+## 追記467: ★★★★ シート行 386〜394 が無条件で緑（`GwW.lean`）
+
+    GwW.SegA_M3 h : SegA h [(h+1,1,0),(h+2,2,1),(h+3,2,0)]      （台座一般のセグメント）
+    GwW.R386_mem 〜 R394_mem                                      axioms = [propext, Classical.choice, Quot.sound]
+
+- `SegA_M3` の reapp: 任意の `LwB P g` 文脈 `A` で `snocYd_mem0`（L = g+1, y = 2, dl = 2）。
+  族 `A ++ (Tc n)↑g` は `(GoodFb (rword [Tc n])).seg g` の reapp で出る（`Tcrow_LwB`）。
+- `G2 = R338 ++ M3 0`、`RunA 0 1 G2 := ⟨0, R338, M3 0, rfl, rfl, LwA_of_Aok Aok_R338, SegA_M3 0⟩`。
+  - 386〜388: `row_mem_of_GoodFb Aok_G2`（語 `rword []` / `rword [[]]` / `rword [[(1,1,0)]]`）
+  - 389: `(SegA_M3 0).reapp P0`
+  - 390: `flat_mem''` と `Aok (R338 ++ M3^n)`（RunA 0 1 の輪）
+  - 391: `snocd_gen`（ancd / hang は `BaseOk_RunA 0`）
+  - 392: `RunG_snoc2 Iface_RunA0`
+  - 393〜394: `PkGA_Aok`（`GoodFb` の pk 欄、`pk_G2`）
+
+次の行 395 = `G2 (2,2,0)(3,3,1)(4,2,0)`: 字 `(3,3,1)` の中身 `(4,2,0)` は頭 `(2,2,0)` と行 1 が同じ
+（タイ）。`rword` の中身は `RiseOk`（行 1 ≥ 2 は中身の中に行 1 ≤ 1 の祖先）を要るので、そのままでは入らない。
