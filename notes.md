@@ -28694,3 +28694,19 @@ Lk = J なら v + J 以上。どの場合も φ の持ち上げ量は Lk だけ�
 - FarP_low の段取り（次）: 底の段 s1 < k（閾値より下）。語 W と t について、語の段の CtxP_GpT (S ++ A) (o' + j + t) の FarP を
   s1 で呼ぶ。h1 は UK の h1 を持ち上げ g + maskF A G で使い、成分 (S, j + t, F + G, K2) と content_transport で合わせる。
   語の部分は PVK_refine（t、κ ≡ 0）・PVK_lift・PVK_relift。h2 は τ < 閾値なので級は GC A で共通、足した節点の列は klift_append_low で動かない。
+
+## 追記516: ★ UK の FarP の low の場合（KxG、緑）
+
+    FarP_UK_low : 2 ≤ s → s < liftVal H (o :: A) o → FarP (GC (o :: A)) (UK A o) (o :: A) H s
+    reOff_low_eq : 底 s1 が閾値より下なら reOff F G (S ++ A) s1 = reOff (H+g) (maskF A G) (o :: A) s1
+    lowP_ins_low / GC_ins_low : τ が S の錨より下なら GC (S ++ A) = GC A
+
+証明の形（FarP_RLC との違い）:
+- 成分 (S, j, F, K) と語 W、t について、語の段の CtxP_GpT (S ++ A) (o' + j + t) の FarP を s1 で呼ぶ（ge の場合）。
+- 語の t は世界の挿入 j + t に吸収（PVK_refine の κ ≡ 0）。h1 は族の h1 を持ち上げ g + maskF A G・段 b3 で使い、
+  成分 (S, j + t, F + G, K2) の中身を content_transport で合わせる。
+- h2 の τ は閾値より下なので、級は GC_ins_low → GC_congr → GC_cons_low で移り、τ の範囲は reOff_low_eq と reOff_comp で移る。
+  足した節点の列は klift_append_low で動かない。
+
+次: eq（底 = o の本当の段、κ の印）と lt（底 = 本当の段 + 1）。どちらも、世界の挿入した段の τ の h2 を、ずらした座標の族への R_child で出す。
+そのための「上限つきの CtxP」と CtxP_restrict / R_child の上限つきの版、UK の世界の合成（UK A o Y → UK (S ++ A) (o' + j) (klift Y …)）が要る。
