@@ -1192,5 +1192,141 @@ theorem nslot_node {P : ℕ → TrioSeq → Prop} (hP : SlotAx P) {k τ b : ℕ}
 
 #print axioms nslot_node
 
+
+/-! ## F の子の遠い節点（入れ子 2 段） -/
+
+theorem LCall_far2 {ρ b : ℕ} (hρ : 1 ≤ ρ) {K E : TrioSeq} (hK : Fr K) (hE : Fr E) (h : LCall ρ b K)
+    (hES : ∀ T, nslot (LCall (ρ + T)) (ρ + T + 1) b (mlift E (b + ρ) T)) :
+    LCall ρ b (K ++ ((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ) ::
+      shiftr01 1 0 (E ++ [((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ)])) := by
+  intro b3 hb3 t W hW hPV t'
+  have hN0 : LCall ρ b (K ++ ((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) := by
+    have := hES 0 b le_rfl K hK h
+    simpa [mlift_zero, show b + (ρ + 0 + 1) = b + ρ + 1 by omega] using this
+  -- 段 b3、錨 b3+ρ で T = t + t' 持ち上げた形
+  have hFY : Fr (K ++ ((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ) ::
+      shiftr01 1 0 (E ++ [((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ)])) := Fr_append hK (Fr_node _ _)
+  have eY0 : ∀ b4 T, b ≤ b4 →
+      mlift (mlift (K ++ ((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) b (b4 - b)) (b4 + ρ) T
+      = mlift (mlift K b (b4 - b)) (b4 + ρ) T ++ ((1, b4 + (ρ + T + 1), 0) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift (mlift E b (b4 - b)) (b4 + ρ) T) := by
+    intro b4 T hb4
+    rw [mlift_app hK (Hd_nodez _ _ _), mlift_nodez (show b < b + ρ + 1 by omega) hE,
+      show b + ρ + 1 + (b4 - b) = b4 + ρ + 1 by omega,
+      mlift_app (Fr_mlift hK _ _) (Hd_nodez _ _ _),
+      mlift_nodez (show b4 + ρ < b4 + ρ + 1 by omega) (Fr_mlift hE _ _),
+      show b4 + ρ + 1 + T = b4 + (ρ + T + 1) by omega]
+  have eY : ∀ b4 T, b ≤ b4 →
+      mlift (mlift (K ++ ((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (E ++ [((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ)])) b (b4 - b)) (b4 + ρ) T
+      = mlift (mlift K b (b4 - b)) (b4 + ρ) T ++ ((1, b4 + (ρ + T + 1), 0) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift (mlift E b (b4 - b)) (b4 + ρ) T ++
+            [((1, b4 + (ρ + T + 1), 0) : ℕ × ℕ × ℕ)]) := by
+    intro b4 T hb4
+    have eEn : mlift (E ++ [((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ)]) b (b4 - b)
+        = mlift E b (b4 - b) ++ [((1, b4 + ρ + 1, 0) : ℕ × ℕ × ℕ)] := by
+      have := mlift_snoc_node hE (u := b) (s := ρ + 1) (by omega) (b4 - b)
+      rw [show b + (ρ + 1) = b + ρ + 1 by omega, show b + (b4 - b) + (ρ + 1) = b4 + ρ + 1 by omega] at this
+      exact this
+    rw [mlift_app hK (Hd_nodez _ _ _), mlift_nodez (show b < b + ρ + 1 by omega)
+        (Fr_append hE (Fr_single_node _)), eEn,
+      show b + ρ + 1 + (b4 - b) = b4 + ρ + 1 by omega,
+      mlift_app (Fr_mlift hK _ _) (Hd_nodez _ _ _),
+      mlift_nodez (show b4 + ρ < b4 + ρ + 1 by omega) (Fr_append (Fr_mlift hE _ _) (Fr_single_node _)),
+      mlift_snoc_node (Fr_mlift hE _ _) (le_refl 1), show b4 + ρ + 1 + T = b4 + (ρ + T + 1) by omega,
+      show b4 + ρ + T + 1 = b4 + (ρ + T + 1) by omega]
+  have hFr1 : Fr (mlift (mlift (K ++ ((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ) ::
+      shiftr01 1 0 (E ++ [((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ)])) b (b3 - b)) (b3 + ρ) t) :=
+    Fr_mlift (Fr_mlift hFY _ _) _ _
+  rw [mlift_letterU hW hFr1 (show b3 + (ρ + t) < b3 + (ρ + t) + 1 by omega),
+    show b3 + (ρ + t) = b3 + ρ + t by omega, mlift_mlift, eY b3 (t + t') hb3]
+  have eG : mlift W (b3 + ρ + t) t' ++ ((1, b3 + ρ + t + 1 + t', 1) : ℕ × ℕ × ℕ) ::
+        shiftr01 1 0 (mlift (mlift K b (b3 - b)) (b3 + ρ) (t + t') ++
+          ((1, b3 + (ρ + (t + t') + 1), 0) : ℕ × ℕ × ℕ) ::
+            shiftr01 1 0 (mlift (mlift E b (b3 - b)) (b3 + ρ) (t + t') ++
+              [((1, b3 + (ρ + (t + t') + 1), 0) : ℕ × ℕ × ℕ)]))
+      = nestN b3 [(mlift W (b3 + ρ + t) t', ρ + t + t' + 1, 1),
+          (mlift (mlift K b (b3 - b)) (b3 + ρ) (t + t'), ρ + t + t' + 1, 0)]
+          (mlift (mlift E b (b3 - b)) (b3 + ρ) (t + t') ++
+            [((1, b3 + (ρ + t + t' + 1), 0) : ℕ × ℕ × ℕ)]) := by
+    simp only [nestN]
+    rw [show b3 + ρ + t + 1 + t' = b3 + (ρ + t + t' + 1) by omega,
+      show b3 + (ρ + (t + t') + 1) = b3 + (ρ + t + t' + 1) by omega]
+  rw [eG]
+  have hKT : Fr (mlift (mlift K b (b3 - b)) (b3 + ρ) (t + t')) := Fr_mlift (Fr_mlift hK _ _) _ _
+  have hET : Fr (mlift (mlift E b (b3 - b)) (b3 + ρ) (t + t')) := Fr_mlift (Fr_mlift hE _ _) _ _
+  have hr : ∀ p ∈ [(mlift W (b3 + ρ + t) t', ρ + t + t' + 1, 1),
+      (mlift (mlift K b (b3 - b)) (b3 + ρ) (t + t'), ρ + t + t' + 1, 0)],
+      Fr p.1 ∧ ρ + t + t' + 1 ≤ p.2.1 := by
+    intro p hp
+    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl
+    · exact ⟨Fr_mlift hW _ _, le_rfl⟩
+    · exact ⟨hKT, le_rfl⟩
+  have hr1 : ∀ p ∈ [(mlift W (b3 + ρ + t) t', ρ + t + t' + 1, 1),
+      (mlift (mlift K b (b3 - b)) (b3 + ρ) (t + t'), ρ + t + t' + 1, 0)], Fr p.1 ∧ 1 ≤ p.2.1 :=
+    fun p hp => ⟨(hr p hp).1, by have := (hr p hp).2; omega⟩
+  have hlift : ∀ b4, b3 ≤ b4 →
+      mlift (nestN b3 [(mlift W (b3 + ρ + t) t', ρ + t + t' + 1, 1),
+        (mlift (mlift K b (b3 - b)) (b3 + ρ) (t + t'), ρ + t + t' + 1, 0)]
+        (mlift (mlift E b (b3 - b)) (b3 + ρ) (t + t'))) b3 (b4 - b3)
+      = mlift (mlift W b3 (b4 - b3)) (b4 + ρ + t) t' ++ ((1, b4 + (ρ + t + t' + 1), 1) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift (mlift K b (b4 - b)) (b4 + ρ) (t + t') ++
+            ((1, b4 + (ρ + t + t' + 1), 0) : ℕ × ℕ × ℕ) ::
+              shiftr01 1 0 (mlift (mlift E b (b4 - b)) (b4 + ρ) (t + t'))) := by
+    intro b4 hb4
+    rw [mlift_nestN b3 (b4 - b3) _ _ hr1 hET]
+    simp only [nestN, liftRest, List.map_cons, List.map_nil]
+    have eK := mlift_mlift K b (b3 - b) (b4 - b3)
+    rw [show b + (b3 - b) = b3 by omega, show b3 - b + (b4 - b3) = b4 - b by omega] at eK
+    have eE := mlift_mlift E b (b3 - b) (b4 - b3)
+    rw [show b + (b3 - b) = b3 by omega, show b3 - b + (b4 - b3) = b4 - b by omega] at eE
+    rw [show b3 + ρ + t = b3 + (ρ + t) by omega, mlift_commk,
+      show b3 + (ρ + t) + (b4 - b3) = b4 + ρ + t by omega,
+      mlift_commk, show b3 + ρ + (b4 - b3) = b4 + ρ by omega, eK,
+      mlift_commk, eE, show b3 + ρ + (b4 - b3) = b4 + ρ by omega, show b3 + (b4 - b3) = b4 by omega]
+  refine FarA_Gof (ρ := ρ + t + t') (s := ρ + t + t' + 1) (by omega) (by omega) b3 _ _ hr hET
+    (fun b4 hb4 => ?_) (fun b4 hb4 τ L h1τ hτ hL hGL => ?_)
+  · rw [hlift b4 hb4]
+    have H := hN0 b4 (le_trans hb3 hb4) t (mlift W b3 (b4 - b3)) (Fr_mlift hW _ _)
+      (PV_lift (by omega) hW hPV hb4) t'
+    have hFr4 : Fr (mlift (mlift (K ++ ((1, b + ρ + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) b (b4 - b))
+        (b4 + ρ) t) := Fr_mlift (Fr_mlift (Fr_append hK (Fr_node _ _)) _ _) _ _
+    rw [mlift_letterU (Fr_mlift hW _ _) hFr4 (show b4 + (ρ + t) < b4 + (ρ + t) + 1 by omega),
+      show b4 + (ρ + t) = b4 + ρ + t by omega, mlift_mlift] at H
+    rw [eY0 b4 (t + t') (le_trans hb3 hb4)] at H
+    rw [show b4 + ρ + t + 1 + t' = b4 + (ρ + t + t' + 1) by omega,
+      show ρ + (t + t') + 1 = ρ + t + t' + 1 by omega] at H
+    exact H
+  · rw [hlift b4 hb4]
+    have hK4 : LCall (ρ + (t + t')) b4 (mlift (mlift K b (b4 - b)) (b4 + ρ) (t + t')) :=
+      LCall_shift ((LCall_ax hρ).lift b K hK h b4 (le_trans hb3 hb4)) (t + t')
+    have hES4 : nslot (LCall (ρ + (t + t'))) (ρ + (t + t') + 1) b4
+        (mlift (mlift E b (b4 - b)) (b4 + ρ) (t + t')) := by
+      have := (nslot_ax (LCall_ax (show 1 ≤ ρ + (t + t') by omega)) (show 1 ≤ ρ + (t + t') + 1 by omega)).lift
+        b _ (Fr_mlift hE _ _) (hES (t + t')) b4 (le_trans hb3 hb4)
+      rwa [mlift_commk, show b + ρ + (b4 - b) = b4 + ρ by omega] at this
+    have hNS := nslot_node (LCall_ax (show 1 ≤ ρ + (t + t') by omega)) (k := ρ + (t + t') + 1)
+      (τ := τ) (by omega) (by omega) (fun s h2 hs => FarA_LCall (by omega) h2 (by omega))
+      (Fr_mlift (Fr_mlift hE _ _) _ _) hGL hES4
+    have hL4 := hNS b4 le_rfl _ (Fr_mlift (Fr_mlift hK _ _) _ _) hK4
+    rw [Nat.sub_self, mlift_zero] at hL4
+    have hPV4 : PV b4 (ρ + (t + t')) (mlift (mlift W b3 (b4 - b3)) (b4 + ρ + t) t') := by
+      have := PV_shift (PV_lift (by omega) hW hPV hb4) t'
+      rwa [show ρ + t + t' = ρ + (t + t') by omega, show b4 + (ρ + t) = b4 + ρ + t by omega] at this
+    have H := PV_to_Gof (LC_of_LCall hL4 _ (Fr_mlift (Fr_mlift hW _ _) _ _) hPV4)
+    rw [show ρ + (t + t') = ρ + t + t' by omega] at H
+    rw [show b4 + (ρ + t + t' + 1) = b4 + (ρ + t + t') + 1 by omega]
+    rw [show b4 + (ρ + t + t' + 1) = b4 + (ρ + t + t') + 1 by omega] at H
+    have e5 : ∀ (c : ℕ × ℕ × ℕ) (A B : TrioSeq),
+        shiftr01 1 0 (c :: (A ++ shiftr01 1 0 B)) = shiftr01 1 0 (c :: A) ++ shiftr01 2 0 B := by
+      intro c A B
+      rw [← List.cons_append, shiftr01_append0, shiftr01_add0]
+    simp only [shiftr01_append0] at H
+    rw [e5] at H
+    simpa [shiftr01_append0, List.append_assoc] using H
+
+#print axioms LCall_far2
+
 end GxY
 end TRIO
