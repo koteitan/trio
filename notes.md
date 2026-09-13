@@ -28620,3 +28620,15 @@ L の親子不変、klift_oper）から作る。
 - klift A o j (κ ≡ 0) = mlift A o j（λ は段 ≤ o で 0、段 > o で j、なので Lk = j ⇔ coneV A o c）。
 - 合成: 閾値 o の klift のあとの閾値 o+1 の klift を、閾値 o の 1 回の klift で書く（tools/probe_kappa_comp.py）。
 - 状態の持ち上げ reliftX（錨の列 A、段 < o の階段）との可換、W ++ ℓ :: Y↑1 と節点の形での分配。
+
+## 追記511: 段 A の続き（KlC / KlD / KlE、緑）
+
+    KlC: klift_zero_eq_mlift（κ ≡ 0 の klift = 閾値 o のマスクリフト）
+    KlD: klift_slift_comm（m ≥ o で φ m − m 一定の階段リフトと可換、閾値は φ o へ）、
+         klift_reliftX（錨の位置が全て節点の段より下なら、状態の持ち上げと可換）、klift_mlift_low（段 b < o の基準の持ち上げ）
+    KlE: klift_shift0・klift_append・klift_app（κ の添字をずらす）、Fr_klift・Hd_klift、Lk_cons_root、Lk_cap、klift_zero_j、
+         klift_node_high（段 > o の節点の下は同じ κ）、klift_node_low（段 < o の節点の下は動かない）、
+         klift_node_mid（段 = o・z = 0 の節点は κ(0) で上がり、子の並びは上限 min (K 0) j）
+
+- 可換の要点（KlD）: amin < o の列は klift で Lk = 0 かつ amin も変わらない。amin ≥ o の列は階段の持ち上げ量が一定。
+- 節点の 3 つの場合（KlE）は、段 B の語・字の中身・F の子・横の節点の κ の成分をそれぞれ書くのに使う。
