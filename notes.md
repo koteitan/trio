@@ -29160,3 +29160,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 2. 明示した塔の中の底の展開の等式（写しが部分塔の節点になる、probe_uke_roots.py の形）。
 3. LCE の nil / oper / flat / orph / tie（LC1k の写し、flat は V を伸ばす）、UKE の SlotAx・congr・relift。
 4. FarP_UKE（上の 3 つの場合）、CtxP_UKE、UKE_F（F の子を置く）、遠い字の規則。
+
+## 追記535: KyA（緑）: 明示した塔 ETW と、次に書く定義
+
+    KyA: ETW c d V（段ごとの (W, K)、最内の子の並び V）、FrD、Fr_ETW、
+         ETW_append : ETW c d (V ++ X) = ETW c d V ++ X↑(2·|d|)（最内に足した列は塔の末尾に付く）
+
+次に書く定義（KyB、案）:
+
+    Sj i o                := [o, o+1, …, o+i−1]（段 i までの鎖の錨）
+    GoodS A n f b d V     := ∀ i ≤ |d|, PVP (Sj i n ++ A) (n + i) (maskF A f) b (ETW (b + liftOff f A n + i) (d.drop i) V)
+    LCE A n f b Y         := ∀ d V, FrD d → Fr V → GoodS A n f b d V → ∀ K,
+                               GoodS A n f b d (V ++ (1, c+|d|+1, 1) :: (klift Y c |d| K)↑1)      （c = b + liftOff f A n）
+    UKE A o H b Y         := ∀ g b', b ≤ b' → LCE A (o + (H+g) o) (H+g) b' (reliftX b' H g (o :: A) (mlift Y b (b' − b)))
+
+- |d| = 0 では LCE = LC1（klift_zero_j）。UKE は RLC の LC1 を LCE に替えたもの。
+- 最初に示すもの: LCE_nil（最内の空の字、GpT_snocz_core を各段で）、UKE の congr / lift、LCE_oper、LCE_flat（V を伸ばす）。
