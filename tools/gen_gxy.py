@@ -13,6 +13,18 @@ def load_item(M, s, v):
 def gf_nil(sig, v):
     return f'(GF_nil1 {v})' if sig == 1 else f'(GF_nil (σ := {sig}) (by omega) {v})'
 
+def far_children(M, kids, v, sig):
+    t = f'(FSF_nil (σ := {sig}) (by omega) {v})'
+    for (s, e) in kids:
+        c = M[s]
+        if c[2] == 0 and c[1] <= v:
+            t = f'(FSF_load (σ := {sig}) (b := {v}) (by omega) {t} {load_item(M, s, v)})'
+        elif c[2] == 0 and c[1] == v + 1:
+            t = f'(FSF_tie (σ := {sig}) (b := {v}) (by omega) {t} {node_children(M, children(M, s, e), v, 1)})'
+        else:
+            raise Fail('fchild %s' % (c,))
+    return t
+
 def letter_content(M, kids, v, sig):
     t = f'(LCF_nil (σ := {sig}) (by omega) {v})'
     for (s, e) in kids:
@@ -25,6 +37,8 @@ def letter_content(M, kids, v, sig):
                  f'{node_children(M, children(M, s, e), v, tau)})')
         elif c[2] == 0 and c[1] == v + sig + 1 and e == s + 1:
             t = f'(LCF_far (σ := {sig}) (b := {v}) (by omega) {t})'
+        elif c[2] == 0 and c[1] == v + sig + 1:
+            t = f'(LCF_farC (σ := {sig}) (b := {v}) (by omega) {t} {far_children(M, children(M, s, e), v, sig)})'
         else:
             raise Fail('content %s' % (c,))
     return t

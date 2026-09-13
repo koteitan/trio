@@ -1067,5 +1067,71 @@ theorem PVF_snoc {b σ : ℕ} {W K : TrioSeq} (h : PVF b σ W) (hK : LCF σ b K)
 
 theorem GF_of_PVF {b σ : ℕ} {W : TrioSeq} (h : PVF b σ W) : GF σ b W := ⟨PV_to_Gof h.1, h.2⟩
 
+
+/-! ## 遠い節点の子（全ての錨で） -/
+
+def FSall (σ b : ℕ) (E : TrioSeq) : Prop :=
+  ∀ T, nslot (LCall (σ + T)) (σ + T + 1) b (mlift E (b + σ) T)
+
+theorem FSall_ax {σ T : ℕ} (hσ : 1 ≤ σ) : SlotAx (nslot (LCall (σ + T)) (σ + T + 1)) :=
+  nslot_ax (LCall_ax (by omega)) (by omega)
+
+theorem FSall_nil {σ : ℕ} (hσ : 1 ≤ σ) (b : ℕ) : FSall σ b [] := by
+  intro T b'' _ K hK hLK
+  rw [mlift_nil, mlift_nil]
+  have := LCall_far (σ := σ + T) (b := b'') (by omega) hK hLK
+  rw [show b'' + (σ + T + 1) = b'' + (σ + T) + 1 by omega]
+  simpa [shiftr01] using this
+
+theorem FSall_load {σ b : ℕ} (hσ : 1 ≤ σ) {E Z : TrioSeq} (hE : Fr E) (h : FSall σ b E)
+    (hZ : Z ∈ Wg (2 * b)) (hb : based Z) : FSall σ b (E ++ shiftr01 1 0 Z) := by
+  intro T
+  rw [mlift_append_low (low_of_Wg hZ 1 (show b ≤ b + σ by omega))]
+  exact slot_load (FSall_ax hσ) (Fr_mlift hE _ _) (h T) Z hZ hb
+
+theorem FSall_tie {σ b : ℕ} (hσ : 1 ≤ σ) {E P : TrioSeq} (hE : Fr E) (h : FSall σ b E)
+    (hP : GTs b P) (hPF : Fr P) : FSall σ b (E ++ ((1, b + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 P) := by
+  intro T
+  rw [mlift_app hE (Hd_node _ _), mlift_node_low (z := 0) (show b + 1 ≤ b + σ by omega) hPF]
+  have := hP (nslot (LCall (σ + T)) (σ + T + 1)) (FSall_ax hσ) b le_rfl (mlift E (b + σ) T)
+    (Fr_mlift hE _ _) (h T)
+  rwa [Nat.sub_self, mlift_zero] at this
+
+theorem LCall_farC {σ b : ℕ} (hσ : 1 ≤ σ) {K E : TrioSeq} (hK : Fr K) (hE : Fr E)
+    (h : LCall σ b K) (hFS : FSall σ b E) :
+    LCall σ b (K ++ ((1, b + σ + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) := by
+  intro b' hb' t
+  have eE : mlift (mlift E b (b' - b)) (b' + σ) t = mlift (mlift E (b + σ) t) b (b' - b) := by
+    rw [mlift_commk, show b + σ + (b' - b) = b' + σ by omega]
+  have eY : mlift (mlift (K ++ ((1, b + σ + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) b (b' - b)) (b' + σ) t
+      = mlift (mlift K b (b' - b)) (b' + σ) t ++ ((1, b' + (σ + t + 1), 0) : ℕ × ℕ × ℕ) ::
+          shiftr01 1 0 (mlift (mlift E (b + σ) t) b (b' - b)) := by
+    rw [mlift_app hK (Hd_nodez _ _ _), mlift_nodez (show b < b + σ + 1 by omega) hE,
+      mlift_app (Fr_mlift hK _ _) (Hd_nodez _ _ _),
+      mlift_nodez (show b' + σ < b + σ + 1 + (b' - b) by omega) (Fr_mlift hE _ _), eE,
+      show b + σ + 1 + (b' - b) + t = b' + (σ + t + 1) by omega]
+  rw [eY]
+  have hLK := LCall_shift ((LCall_ax hσ).lift b K hK h b' hb') t
+  have hN := hFS t b' hb' _ (Fr_mlift (Fr_mlift hK _ _) _ _) hLK
+  exact LC_of_LCall hN
+
+#print axioms LCall_farC
+
+def FSF (σ b : ℕ) (E : TrioSeq) : Prop := FSall σ b E ∧ Fr E
+
+theorem FSF_nil {σ : ℕ} (hσ : 1 ≤ σ) (b : ℕ) : FSF σ b [] := ⟨FSall_nil hσ b, Fr_nil⟩
+
+theorem FSF_load {σ b : ℕ} (hσ : 1 ≤ σ) {E Z : TrioSeq} (h : FSF σ b E) (hZ : Z ∈ Wg (2 * b))
+    (hb : based Z) : FSF σ b (E ++ shiftr01 1 0 Z) :=
+  ⟨FSall_load hσ h.2 h.1 hZ hb, Fr_append h.2 (Fr_shift1 Z)⟩
+
+theorem FSF_tie {σ b : ℕ} (hσ : 1 ≤ σ) {E P : TrioSeq} (h : FSF σ b E) (hP : GF 1 b P) :
+    FSF σ b (E ++ ((1, b + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 P) :=
+  ⟨FSall_tie hσ h.2 h.1 ((Gof_one_iff b P).mp hP.1) hP.2, Fr_append h.2 (Fr_node _ _)⟩
+
+theorem LCF_farC {σ b : ℕ} (hσ : 1 ≤ σ) {K E : TrioSeq} (h : LCF σ b K) (hE : FSF σ b E) :
+    LCF σ b (K ++ ((1, b + σ + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 E) :=
+  ⟨LCall_farC hσ h.2 hE.2 h.1 hE.1, Fr_append h.2 (Fr_node _ _)⟩
+
 end GxY
 end TRIO
