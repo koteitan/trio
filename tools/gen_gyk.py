@@ -94,14 +94,21 @@ def tree(M, i):
     ch = children(M, i, end)
     k = 0
     words = []
+    far = False
     while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
         s, e = ch[k]
-        words.append(top_forest(M, children(M, s, e), v))
+        if k == 0 and e - s == 2 and M[s + 1] == (a + 2, v + 1, 1):
+            far = True  # 遠い語: 中身が遠い字 1 個だけの最初の語（GzD.starOK_farwords）
+        else:
+            words.append(top_forest(M, children(M, s, e), v))
         k += 1
     w = f'(WordsG_nil {v})'
     for f in reversed(words):
         w = f'(WordsG_consT (v := {v}) {f} {w})'
-    st = f'(starOK_wordsG (v := {v}) {w})'
+    if far:
+        st = f'(starOK_farwords (v := {v}) {w})'
+    else:
+        st = f'(starOK_wordsG (v := {v}) {w})'
     for (s2, e2) in ch[k:]:
         c = M[s2]
         if c[2] != 0:
@@ -141,7 +148,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GyK\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzD\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
