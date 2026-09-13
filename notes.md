@@ -28632,3 +28632,18 @@ L の親子不変、klift_oper）から作る。
 
 - 可換の要点（KlD）: amin < o の列は klift で Lk = 0 かつ amin も変わらない。amin ≥ o の列は階段の持ち上げ量が一定。
 - 節点の 3 つの場合（KlE）は、段 B の語・字の中身・F の子・横の節点の κ の成分をそれぞれ書くのに使う。
+
+## 追記512: 段 A の完了（KlF）と段 B の始まり（KxA / KxB、緑）
+
+    KlF: compK、klift_comp（閾値 o の klift のあとの閾値 o+j1 の klift = 閾値 o の 1 回の klift）
+         Lk3 = Lk1 + Lk2。L1 < j1 なら L2 = 0（最小を与える祖先は持ち上げたあとも閾値より下）、L1 = j1 なら道の全ての列で λ3 = j1 + λ2。
+    KxA: PVK A o f b W := ∀ S j F K, S ⊆ [o, o+j) → F = f（A の上）→
+           PVP (S ++ A) (o + j) F b (klift W (b + liftOff f A o) (j + Σ_S F) K)
+         PVK_to_PVP・PVK_refine（合成、klift_comp）・PVK_lift（klift_mlift_low）・PVK_relift（klift_reliftX）・PVK_nil・PVK_nil1
+    KxB: LC1k（語を PVK に限った字の中身）の nil・oper・orph・tie。GzB の LC1x の証明が接頭辞の組に使うのは
+         PVX_to_PVP と PVX_lift だけだったので、名前の置き換えだけで通った。
+
+次（KxC）: 成分の族 LCK A o H S j F K b Y := LC1k (S ++ A) (o + j) F b (klift Y (b + liftOff H A o) (j + Σ_S F) K) と
+その nil・oper（klift_oper の κ' を joinK で Y の κ とつなぐ）・orph・tie、族 UK（GzC の U の LCI を LCK にしたもの）の SlotAx。
+- o = 1 のとき、タイ（段 b+1）が閾値 b + liftOff と等しくなりうる（A = []、状態 0）。印つきのタイは FarP_eq と同じ扱いが要るので、
+  最初の版の tie は 2 ≤ liftOff を仮定にし、o = 1 は後で足す。
