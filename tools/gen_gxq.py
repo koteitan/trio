@@ -39,8 +39,20 @@ def h_children(M, kids, v):
         c = M[s]
         if c[1] == v + 1 and c[2] == 0:
             t = f'(GHF_tie (u := {v}) {t} {tie_children(M, children(M, s, e), v)})'
+        elif c[1] == v + 2 and c[2] == 0:
+            t = f'(GHF_hh (u := {v}) {t} {hh_children(M, children(M, s, e), v)})'
         else:
             t = f'(GHF_load (u := {v}) {t} {load_item(M, s, v)})'
+    return t
+
+def hh_children(M, kids, v):
+    t = f'(GHHF_nil {v})'
+    for (s, e) in kids:
+        c = M[s]
+        if c[1] == v + 1 and c[2] == 0:
+            t = f'(GHHF_tie (u := {v}) {t} {tie_children(M, children(M, s, e), v)})'
+        else:
+            t = f'(GHHF_load (u := {v}) {t} {load_item(M, s, v)})'
     return t
 
 def tree(M, i):
@@ -95,6 +107,6 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gxq.py が生成。タイ・2 段上の錐・荷の中身を持つシート行。\n-/\n'
-               f'import GxP\n\nnamespace TRIO\nnamespace {name}\n\n'
-               'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP\n\n')
+               f'import GxR\n\nnamespace TRIO\nnamespace {name}\n\n'
+               'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
