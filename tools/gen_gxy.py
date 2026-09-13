@@ -21,6 +21,12 @@ def far_children(M, kids, v, sig):
             t = f'(FSF_load (σ := {sig}) (b := {v}) (by omega) {t} {load_item(M, s, v)})'
         elif c[2] == 0 and c[1] == v + 1:
             t = f'(FSF_tie (σ := {sig}) (b := {v}) (by omega) {t} {node_children(M, children(M, s, e), v, 1)})'
+        elif c[2] == 0 and v + 1 < c[1] <= v + sig:
+            tau = c[1] - v
+            t = (f'(FSF_node (σ := {sig}) (τ := {tau}) (b := {v}) (by omega) (by omega) (by omega) {t} '
+                 f'{node_children(M, children(M, s, e), v, tau)})')
+        elif c[2] == 0 and c[1] == v + sig + 1 and e == s + 1:
+            t = f'(FSF_far (σ := {sig}) (b := {v}) (by omega) {t})'
         else:
             raise Fail('fchild %s' % (c,))
     return t

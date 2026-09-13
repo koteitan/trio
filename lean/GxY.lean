@@ -1328,5 +1328,44 @@ theorem LCall_far2 {ρ b : ℕ} (hρ : 1 ≤ ρ) {K E : TrioSeq} (hK : Fr K) (hE
 
 #print axioms LCall_far2
 
+
+theorem FSall_far {σ b : ℕ} (hσ : 1 ≤ σ) {E : TrioSeq} (hE : Fr E) (h : FSall σ b E) :
+    FSall σ b (E ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) := by
+  intro T b'' hb'' K hK hLK
+  have eI : mlift (mlift (E ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) (b + σ) T) b (b'' - b)
+      = mlift (mlift E (b + σ) T) b (b'' - b) ++ [((1, b'' + (σ + T) + 1, 0) : ℕ × ℕ × ℕ)] := by
+    rw [mlift_snoc_node hE (u := b + σ) (s := 1) le_rfl T,
+      show b + σ + T + 1 = b + (σ + T + 1) by omega,
+      mlift_snoc_node (Fr_mlift hE _ _) (u := b) (s := σ + T + 1) (by omega) (b'' - b),
+      show b + (b'' - b) + (σ + T + 1) = b'' + (σ + T) + 1 by omega]
+  rw [eI, show b'' + (σ + T + 1) = b'' + (σ + T) + 1 by omega]
+  refine LCall_far2 (ρ := σ + T) (b := b'') (by omega) hK (Fr_mlift (Fr_mlift hE _ _) _ _) hLK
+    (fun T' => ?_)
+  have h1 := (FSall_ax (σ := σ) (T := T + T') hσ).lift b _ (Fr_mlift hE _ _) (h (T + T')) b'' hb''
+  have e : mlift (mlift (mlift E (b + σ) T) b (b'' - b)) (b'' + (σ + T)) T'
+      = mlift (mlift E (b + σ) (T + T')) b (b'' - b) := by
+    rw [show b'' + (σ + T) = b + (σ + T) + (b'' - b) by omega, ← mlift_commk,
+      show b + (σ + T) = b + σ + T by omega, mlift_mlift]
+  rw [e, show σ + T + T' = σ + (T + T') by omega]
+  exact h1
+
+#print axioms FSall_far
+
+theorem FSall_node {σ τ b : ℕ} (hσ : 1 ≤ σ) (hτ1 : 1 ≤ τ) (hτ : τ ≤ σ) {E L : TrioSeq}
+    (hE : Fr E) (hLF : Fr L) (h : FSall σ b E) (hL : Gof τ b L) :
+    FSall σ b (E ++ ((1, b + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) := by
+  intro T
+  rw [mlift_app hE (Hd_node _ _), mlift_node_low (z := 0) (show b + τ ≤ b + σ by omega) hLF]
+  exact nslot_node (LCall_ax (by omega)) (k := σ + T + 1) (τ := τ) (by omega) (by omega)
+    (fun s h2 hs => FarA_LCall (by omega) h2 (by omega)) (Fr_mlift hE _ _) hL (h T)
+
+theorem FSF_far {σ b : ℕ} (hσ : 1 ≤ σ) {E : TrioSeq} (h : FSF σ b E) :
+    FSF σ b (E ++ [((1, b + σ + 1, 0) : ℕ × ℕ × ℕ)]) :=
+  ⟨FSall_far hσ h.2 h.1, Fr_append h.2 (Fr_single_node _)⟩
+
+theorem FSF_node {σ τ b : ℕ} (hσ : 1 ≤ σ) (hτ1 : 1 ≤ τ) (hτ : τ ≤ σ) {E L : TrioSeq}
+    (h : FSF σ b E) (hL : GF τ b L) : FSF σ b (E ++ ((1, b + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) :=
+  ⟨FSall_node hσ hτ1 hτ h.2 hL.2 h.1 hL.1, Fr_append h.2 (Fr_node _ _)⟩
+
 end GxY
 end TRIO

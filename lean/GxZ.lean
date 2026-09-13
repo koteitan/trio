@@ -1023,5 +1023,105 @@ theorem R1192_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5,
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_tie (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_far (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0))))))))) (WordsG_nil 0))))
   simpa [shiftr01, rword, rcol] using h
 
+/-- ★ シート行 1193。 -/
+theorem R1193_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1194。 -/
+theorem R1194_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 0), (4, 3, 1), (5, 3, 0), (6, 2, 0), (5, 3, 0), (4, 3, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_node (ρ := 1) (σ := 2) (u := 0) (by omega) (by omega) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))) (GF_of_PVF (PVF_snoc (b := 0) (σ := 2) (PVF_snoc (b := 0) (σ := 2) (PVF_nil (σ := 2) (by omega) 0) (LCF_far (σ := 2) (b := 0) (by omega) (LCF_farC (σ := 2) (b := 0) (by omega) (LCF_nil (σ := 2) (by omega) 0) (FSF_node (σ := 2) (τ := 2) (b := 0) (by omega) (by omega) (by omega) (FSF_nil (σ := 2) (by omega) 0) (GF_nil (σ := 2) (by omega) 0))))) (LCF_nil (σ := 2) (by omega) 0))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1195。 -/
+theorem R1195_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 0), (4, 3, 1), (5, 3, 0), (6, 2, 0), (6, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_node (ρ := 1) (σ := 2) (u := 0) (by omega) (by omega) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))) (GF_of_PVF (PVF_snoc (b := 0) (σ := 2) (PVF_nil (σ := 2) (by omega) 0) (LCF_farC (σ := 2) (b := 0) (by omega) (LCF_nil (σ := 2) (by omega) 0) (FSF_node (σ := 2) (τ := 2) (b := 0) (by omega) (by omega) (by omega) (FSF_node (σ := 2) (τ := 2) (b := 0) (by omega) (by omega) (by omega) (FSF_nil (σ := 2) (by omega) 0) (GF_nil (σ := 2) (by omega) 0)) (GF_nil (σ := 2) (by omega) 0))))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1196。 -/
+theorem R1196_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 0), (4, 3, 1), (5, 3, 0), (6, 3, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_node (ρ := 1) (σ := 2) (u := 0) (by omega) (by omega) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))) (GF_of_PVF (PVF_snoc (b := 0) (σ := 2) (PVF_nil (σ := 2) (by omega) 0) (LCF_farC (σ := 2) (b := 0) (by omega) (LCF_nil (σ := 2) (by omega) 0) (FSF_far (σ := 2) (b := 0) (by omega) (FSF_nil (σ := 2) (by omega) 0))))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1197。 -/
+theorem R1197_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 0), (4, 3, 1), (5, 3, 0), (6, 3, 0), (4, 3, 0), (5, 4, 1), (6, 4, 0), (7, 4, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_node (ρ := 1) (σ := 2) (u := 0) (by omega) (by omega) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))) (GF_node (ρ := 2) (σ := 3) (u := 0) (by omega) (by omega) (GF_of_PVF (PVF_snoc (b := 0) (σ := 2) (PVF_nil (σ := 2) (by omega) 0) (LCF_farC (σ := 2) (b := 0) (by omega) (LCF_nil (σ := 2) (by omega) 0) (FSF_far (σ := 2) (b := 0) (by omega) (FSF_nil (σ := 2) (by omega) 0))))) (GF_of_PVF (PVF_snoc (b := 0) (σ := 3) (PVF_nil (σ := 3) (by omega) 0) (LCF_farC (σ := 3) (b := 0) (by omega) (LCF_nil (σ := 3) (by omega) 0) (FSF_far (σ := 3) (b := 0) (by omega) (FSF_nil (σ := 3) (by omega) 0)))))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1198。 -/
+theorem R1198_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1199。 -/
+theorem R1199_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 1), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))) (LCF_nil (σ := 1) (by omega) 0)) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1200。 -/
+theorem R1200_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 1), (4, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))) (LCF_far (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1201。 -/
+theorem R1201_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1202。 -/
+theorem R1202_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (4, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_far (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1203。 -/
+theorem R1203_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (4, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_far (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1204。 -/
+theorem R1204_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (4, 2, 0), (4, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_far (σ := 1) (b := 0) (by omega) (LCF_far (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1205。 -/
+theorem R1205_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (4, 2, 0), (5, 1, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))) (FSF_tie (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0) (GF_nil1 0)))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1206。 -/
+theorem R1206_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (4, 2, 0), (5, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1207。 -/
+theorem R1207_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (4, 2, 0), (5, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1208。 -/
+theorem R1208_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (4, 2, 0), (5, 2, 0), (4, 2, 0), (5, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1209。 -/
+theorem R1209_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (5, 1, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_tie (σ := 1) (b := 0) (by omega) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)) (GF_nil1 0)))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1210。 -/
+theorem R1210_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (5, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1211。 -/
+theorem R1211_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (5, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0))))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1212。 -/
+theorem R1212_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 0), (5, 2, 0), (5, 2, 0), (5, 2, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_PVF (PVF_snoc (b := 0) (σ := 1) (PVF_snoc (b := 0) (σ := 1) (PVF_nil (σ := 1) (by omega) 0) (LCF_farC (σ := 1) (b := 0) (by omega) (LCF_nil (σ := 1) (by omega) 0) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_far (σ := 1) (b := 0) (by omega) (FSF_nil (σ := 1) (by omega) 0)))))) (LCF_nil (σ := 1) (by omega) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol] using h
+
 end GxZ
 end TRIO
