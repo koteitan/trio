@@ -612,5 +612,91 @@ theorem LCall_ax {σ : ℕ} (hσ : 1 ≤ σ) : SlotAx (LCall σ) where
 
 #print axioms LCall_ax
 
+
+/-! ## 錨での入れ子の持ち上げ -/
+
+theorem mlift_node_low {a r z : ℕ} (hr : r ≤ a) {V : TrioSeq} (hV : Fr V) (t : ℕ) :
+    mlift (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V) a t
+      = ((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V := by
+  have hB : ∀ i, i < (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V).length →
+      ∃ k, Relation.ReflTransGen (nextrel0 (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V)) k i ∧
+        entry (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V) 1 k ≤ a := by
+    intro i hi
+    refine ⟨0, rtg0_zero (fun l hl0 hl => ?_) hi, ?_⟩
+    · obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+      have hl' : l' < V.length := by simp [shiftr01] at hl; omega
+      rw [entry_cons, entry0_shiftr01 hl']
+      have := getD_row0_ge hV hl'
+      show 1 < _
+      omega
+    · show r ≤ a; exact hr
+  have h := mlift_append_low (A := []) hB t
+  simpa [mlift_nil] using h
+
+noncomputable def nestLift (u a t : ℕ) :
+    List (TrioSeq × ℕ × ℕ) → TrioSeq → List (TrioSeq × ℕ × ℕ) × TrioSeq
+  | [], C => ([], mlift C a t)
+  | ((X, ρ, z) :: rest), C =>
+      if a < u + ρ then
+        ((mlift X a t, ρ + t, z) :: (nestLift u a t rest C).1, (nestLift u a t rest C).2)
+      else ((mlift X a t, ρ, z) :: rest, C)
+
+theorem nestLift_length (u a t : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C : TrioSeq),
+    (nestLift u a t rest C).1.length = rest.length
+  | [], C => by simp [nestLift]
+  | ((X, ρ, z) :: rest), C => by
+      simp only [nestLift]
+      split_ifs
+      · simp [nestLift_length u a t rest C]
+      · simp
+
+theorem nestLift_cond (u a t s : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C : TrioSeq),
+    (∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2.1) → Fr C →
+    (∀ p ∈ (nestLift u a t rest C).1, Fr p.1 ∧ s ≤ p.2.1) ∧ Fr (nestLift u a t rest C).2
+  | [], C, _, hC => by simp [nestLift]; exact Fr_mlift hC a t
+  | ((X, ρ, z) :: rest), C, hr, hC => by
+      have hX : Fr X := (hr (X, ρ, z) (by simp)).1
+      have hρ : s ≤ ρ := (hr (X, ρ, z) (by simp)).2
+      have hr' : ∀ p ∈ rest, Fr p.1 ∧ s ≤ p.2.1 := fun p hp => hr p (by simp [hp])
+      have ih := nestLift_cond u a t s rest C hr' hC
+      simp only [nestLift]
+      split_ifs
+      · refine ⟨fun p hp => ?_, ih.2⟩
+        simp only [List.mem_cons] at hp
+        rcases hp with rfl | hp
+        · exact ⟨Fr_mlift hX a t, by show s ≤ ρ + t; omega⟩
+        · exact ih.1 p hp
+      · refine ⟨fun p hp => ?_, hC⟩
+        simp only [List.mem_cons] at hp
+        rcases hp with rfl | hp
+        · exact ⟨Fr_mlift hX a t, hρ⟩
+        · exact hr' p hp
+
+theorem mlift_nest_bottom (u a t : ℕ) : ∀ (rest : List (TrioSeq × ℕ × ℕ)) (C B : TrioSeq),
+    (∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1) → Fr C → Fr B → Hd B → mlift B a t = B →
+    mlift (nestN u rest (C ++ B)) a t
+      = nestN u (nestLift u a t rest C).1 ((nestLift u a t rest C).2 ++ B)
+  | [], C, B, _, hC, hB, hHB, hBl => by
+      simp only [nestN, nestLift]
+      rw [mlift_app hC hHB, hBl]
+  | ((X, ρ, z) :: rest), C, B, hr, hC, hB, hHB, hBl => by
+      have hX : Fr X := (hr (X, ρ, z) (by simp)).1
+      have hρ : 1 ≤ ρ := (hr (X, ρ, z) (by simp)).2
+      have hr' : ∀ p ∈ rest, Fr p.1 ∧ 1 ≤ p.2.1 := fun p hp => hr p (by simp [hp])
+      have hFrN : Fr (nestN u rest (C ++ B)) :=
+        Fr_nestN u rest _ (fun p hp => (hr' p hp).1) (Fr_append hC hB)
+      simp only [nestN, nestLift]
+      rw [mlift_app hX (Hd_nodez _ _ _)]
+      by_cases hlt : a < u + ρ
+      · rw [if_pos hlt]
+        simp only [nestN]
+        rw [mlift_nodez hlt hFrN, mlift_nest_bottom u a t rest C B hr' hC hB hHB hBl,
+          show u + ρ + t = u + (ρ + t) by omega]
+      · rw [if_neg hlt]
+        simp only [nestN]
+        rw [mlift_node_low (by omega) hFrN]
+
+#print axioms mlift_nest_bottom
+
 end GxY
 end TRIO
