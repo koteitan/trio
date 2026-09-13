@@ -14,6 +14,16 @@ theorem R1317_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 1)] : TrioSeq) ∈ W 0 := by
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_farwords (v := 0) (WordsG_nil 0)))
   simpa [shiftr01, rword, rcol] using h
 
+/-- ★ シート行 1319。 -/
+theorem R1319_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (0, 0, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_app (Wg_of_starOK (starOK_farwords (v := 0) (WordsG_nil 0))) (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_nil 0))) (by omega) (by intro p _; simp [entry]))
+  simpa [shiftr01, rword, rcol] using h
+
+/-- ★ シート行 1320。 -/
+theorem R1320_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (0, 0, 0), (1, 1, 1), (2, 1, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_app (Wg_of_starOK (starOK_farwords (v := 0) (WordsG_nil 0))) (Wg_of_starOK (starOK_farwords (v := 0) (WordsG_nil 0))) (by omega) (by intro p _; simp [entry]))
+  simpa [shiftr01, rword, rcol] using h
+
 /-- ★ シート行 1321。 -/
 theorem R1321_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (1, 0, 0)] : TrioSeq) ∈ W 0 := by
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_hang (starOK_farwords (v := 0) (WordsG_nil 0)) (Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_nil 0))) rfl))

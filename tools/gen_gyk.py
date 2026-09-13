@@ -128,7 +128,11 @@ if __name__ == '__main__':
             continue
         M = rows[r]
         try:
-            p = 'GxB.Wg0_sub_W0 ' + tree(M, 0)
+            roots = [i for i in range(len(M)) if M[i][0] == 0]
+            p = tree(M, roots[0])
+            for r0 in roots[1:]:
+                p = f'(Wg_app {p} {tree(M, r0)} (by omega) (by intro p _; simp [entry]))'
+            p = 'GxB.Wg0_sub_W0 ' + p
         except Fail as ex:
             bad.append((r, str(ex)))
             continue

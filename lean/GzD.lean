@@ -173,6 +173,11 @@ theorem starOK_farwords {v : ℕ} {Ls : List TrioSeq} (h : WordsG v Ls) :
   rw [Nat.sub_self] at hB
   simpa only [mlift_zero, List.map_id'] using hB
 
+/-- 根の並び: Wg の元の後ろに、行 0 の最小が先頭の Wg の元を継ぐ。 -/
+theorem Wg_app {a u : ℕ} {A R : TrioSeq} (hA : A ∈ Wg a) (hR : R ∈ Wg u) (hua : u ≤ a)
+    (hrs : rsum A R) : A ++ R ∈ Wg a :=
+  A2g' (XAg_closed (u := u) (X := Wg a) (fun M hM => A1g_intro (Aopg_mono_level hua hM)) hA) hR hrs
+
 /-- ★ シート行 1317。 -/
 theorem R1317_mem : ([(0, 0, 0), (1, 1, 1), (2, 1, 1)] : TrioSeq) ∈ W 0 := by
   have h := W0_of_starOK (starOK_farwords (v := 0) (WordsG_nil 0))
