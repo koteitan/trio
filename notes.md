@@ -27387,3 +27387,54 @@ A2' の基底 `Y = [(0,0,0)]`（`Z = nil`）で出る**平らな鎖**
 G の展開 `G⟦n⟧` は `R338 ++ (1,1,0) :: J_n 1 1`、
 `J_2 a b = (a+1,b+1,1)(a+2,b+1,0)`、`J_{n+1} a b = J_2 a b ++ (a+1,b+1,0) :: J_n (a+1) (b+1)`。
 中身 `(a+2,b+1,0)` は頭と一緒に持ち上がる（`RiseOk` でない）ので、`rword` の字ではない。
+
+## 追記464: 分析と方針: 語を根に吊るす `Wstar_v` で、字を含む中身を `Wg 2` に入れる
+
+### 分かったこと
+
+- 根の行 1 の子孫だけを持ち上げるリフト（添字の錐）は、親を変えない（ランダム 20 万本で違反 0）。
+  しかし展開と交換しない。悪い根が根自身だと、根の複製が根と同じ行 1（タイ）になり錐から外れる。
+  これは `Wtower2` の注釈の壁と同じ。一般の `TowerGraft2` を攻めるのはやめる。
+- 既存の `BaseOk` 族（PU / RunA / RunG / Pk* / Lk / Stk / P3U / P0）はどれも頭の行 2 が 0。
+  字の頭 `(·,·,1)` で終わる文脈の台座は無い。字の中身を意味論的な述語にすると
+  `close`（任意のブロック）と `hang`（荷）が両立しない（close は構造を知らない、hang は構造が要る）。
+
+### 方針（`Wstarg_closed` は v を固定したまま証明されている点を使う）
+
+    Wstar_v    := {R | argOK R → ∀ a, 2v ≤ a → (0,v,0) :: R ∈ Wg a}     （v 固定。閉包は Wstarg_closed の写し）
+    A          := rword 0 v l                                            （根の語、先頭の高さ 1）
+    B(l)       := ∀ a ≥ 2v, (0,v,0) :: rword 0 v l ∈ Wg a                （= A ∈ Wstar_v）
+    HL（吊るし）: B(l) → R ∈ Wg u → rsum A R → (0,v,0) :: (A ++ R) ∈ Wg a
+                 （XAg_closed を X = Wstar_v に使う。R の親は語を通らない: R の先頭の高さ 1 ≤ 語の列）
+
+B(l ++ [T])（T ∈ Wg 2 の中身、v ≥ 1）は T の A2g' 帰納:
+
+- (G1) 末尾の親が T の中: 展開は中身の展開。
+- (G2) 1 の列の孤児: v ≥ 1 なので根でも生き返らない。graft の分岐（荷は T の graft）。
+- (G3) 最上位の平らな列: 字の複製。
+- (G4) T = []: 頭の潰れ `Dzf (rword l) 0 v n = (0,v,0) :: (A ++ Dzf (rword l) 1 (v+1) (n-1))`。
+  後ろは n の帰納で `Wg (2v+2)`、HL で全体が `Wg a`。
+
+帰結: 中身 `(1,1,0) :: rword 1 1 l'` は `B(l')`（v = 1）のずらしで `Wg 2`。入れ子も帰納で回る。
+行 378〜384 は `GOKR_of_Wg2` で、行 385 = `G⟦2⟧` は `T_{n+1} = (1,1,0) :: rword 1 1 [T_n]` の極限で届く見込み。
+
+## 追記465: ★★★ シート行 378 が無条件で緑。入れ子の字の中身が `Wg 2` に入る（`GwU.lean`）
+
+    GwU.hang_Wg      : A ∈ Wstarv v → R ∈ Wg u → rsum A R → A ++ R ∈ Wstarv v
+    GwU.GOKW_of_Wg2  : T ∈ Wg 2 → (深さ ≥ 1) → ∀ l, WOkW l → Bw l → Bw (l ++ [T])
+    GwU.content_mem  : Bw l → (1,1,0) :: rword 1 1 l ∈ Wg 2
+    GwU.R378_mem     : (0,0,0)(1,1,1)(2,1,0)(1,1,0)(2,2,1)(3,1,0)(4,2,1)(4,2,1) ∈ W 0
+    axioms = [propext, Classical.choice, Quot.sound]
+
+追記464 の方針どおり:
+
+1. `Wstarv v`（根の行 1 を固定した W*）の閉包は `Wstarg_closed` の写しでそのまま通った。
+2. `hang_Wg` は `XAg_closed` を `X = Wstarv v`、`A = rword 0 v l` に使うだけ（3 行）。
+3. `Bw l := ∀ v ≥ 1, rword 0 v l ∈ Wstarv v`。`GOKW_of_Wg2` は `GOKR_of_Wg2` と同じ場合分けで、
+   W 0 の文脈（pu/pk/seg）の代わりに `Wg` の分岐を直接示す:
+   - (G1) `oper_shift`、(G3) `oper_snoc00''`、(G2) graft の分岐（根の行 1 ≥ 1 なので孤児は死んだまま。
+     親が無いことは `Ancd_recrword` から `noParent1_snoc`）、
+   - (G4) 頭の潰れ `Dzf (rword l) 0 v (n+1) = (0,v,0) :: (rword 0 v l ++ Dzf (rword l) 1 (v+1) n)`
+     を n の帰納と `hang_Wg` で。
+4. 注意: `Wg` の graft の分岐は Mono でない森も受け取るので、中身の条件から Mono を外した
+   （`RawW = 深さ ≥ 1 ∧ RiseOk`）。頭の潰れの計算（`rise_rword`）は RiseOk しか使っていなかった。
