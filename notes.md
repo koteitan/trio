@@ -28647,3 +28647,22 @@ L の親子不変、klift_oper）から作る。
 その nil・oper（klift_oper の κ' を joinK で Y の κ とつなぐ）・orph・tie、族 UK（GzC の U の LCI を LCK にしたもの）の SlotAx。
 - o = 1 のとき、タイ（段 b+1）が閾値 b + liftOff と等しくなりうる（A = []、状態 0）。印つきのタイは FarP_eq と同じ扱いが要るので、
   最初の版の tie は 2 ≤ liftOff を仮定にし、o = 1 は後で足す。
+
+## 追記513: 段 B の続き（KlG / KxC / KxD、緑）と FarP の段取り
+
+    KlG: klift_congrK・klift_append_low（末尾の各列が行 1 < o の祖先を持つ）・klift_snoc_low・coneV_klift_up・
+         klift_letter（W ++ ℓ :: Y↑1）・joinK / klift_app_join（κ の連結）
+    KxC: LCK A o H S j F K b Y := LC1k (S ++ A) (o + j) F b (klift Y (b + liftOff H A o) (j + Σ_S F) K)
+         LCK_nil・LCK_oper（仮定は全ての κ'、klift_oper の κ' を joinK でつなぐ）・LCK_orph（荷は klift_append_low で動かない）・
+         LCK_tie（2 ≤ liftOff）・LCK_congr
+    KxD: UK A o H b Y := ∀ g b', b ≤ b' → ∀ S j F K, … → LCK A (o + (H+g) o) (H+g) S j F K b' (reliftX … (mlift Y b (b' − b)))
+         UK_congr・UK_lift・UK_nil・UK_ax（SlotAx0、2 ≤ o）・LCK_flat_of（複写した語が PVK であることを PVK_refine と
+         klift_comp で合成した κ の成分から出す）・UK_flat・UK_slot
+    どれも GzA〜GzC の証明の mlift を klift に置き換えた写しで、多くが一度で通った。
+
+次（KxE 以降）: CtxP (GC (o::A)) (o::A) (o+1) (UK A o) の FarP（追記509 の low / eq / lt）。
+- 成分 (S, j, F, K) で、内容の底 (d, b+s, 0) の世界での段は、s が閾値より上なら +J、閾値ちょうど（z = 0）なら +min(κ, J)、下なら動かない。
+- low（底が閾値より下）: FarP_RLC と同じく語の段の CtxP_GpT の FarP に h1 / h2 を渡す（κ の像は h2 の κ の成分）。
+- eq（閾値ちょうど、κ = k ≥ 1）と lt（閾値 + 1 より上）: 要る h2 のうち世界の挿入した段の τ を、
+  ずらした座標の族への R_child で出す。そのための「上限 < 節点の段の CtxP」（SlotAx・relift・congr・FarP_low だけ）を先に作る。
+- o = 1 のタイ（閾値ちょうどのタイ）も eq と同じ扱いにする（UK_ax の tie の 2 ≤ o を外す）。
