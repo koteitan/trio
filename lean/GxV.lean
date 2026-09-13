@@ -310,5 +310,205 @@ theorem GT1_tie {v : ℕ} {K : TrioSeq} {x : ℕ}
 
 #print axioms GT1_tie
 
+
+/-! ## 語の中の z の字 -/
+
+theorem zcone_natDom {u h : ℕ} {P : TrioSeq} (hP : Fr P) (hh : 1 ≤ h)
+    (hc : coneV (P ++ [((h, u + 1, 1) : ℕ × ℕ × ℕ)]) u P.length) :
+    natDom (((0, u, 0) : ℕ × ℕ × ℕ) :: (P ++ [((h, u + 1, 1) : ℕ × ℕ × ℕ)])) := by
+  obtain ⟨A, hA⟩ : ∃ A : TrioSeq, A = P ++ [((h, u + 1, 1) : ℕ × ℕ × ℕ)] := ⟨_, rfl⟩
+  rw [← hA] at hc ⊢
+  have hAok : argOK A := by
+    intro p hp
+    rw [hA] at hp
+    rcases List.mem_append.mp hp with hp | hp
+    · have := hP p hp; omega
+    · simp at hp; subst hp; show 0 < h; omega
+  have hAl : A.length = P.length + 1 := by rw [hA]; simp
+  have eM : ∀ r, entry (((0, u, 0) : ℕ × ℕ × ℕ) :: A) r (P.length + 1)
+      = entry [((h, u + 1, 1) : ℕ × ℕ × ℕ)] r 0 := by
+    intro r; rw [entry_cons, hA]; simpa using entry_append_right P [((h, u + 1, 1) : ℕ × ℕ × ℕ)] r 0
+  have ez2 : entry (((0, u, 0) : ℕ × ℕ × ℕ) :: A) 2 (P.length + 1) = 1 := by rw [eM]; rfl
+  have hle1 : le1 (((0, u, 0) : ℕ × ℕ × ℕ) :: A) 0 (P.length + 1) := by
+    have := (le1_cons_iff_coneV (z := 0) hAok (show P.length < A.length by omega)).mpr hc
+    rwa [Nat.add_comm 1] at this
+  have hpar : hasParent (((0, u, 0) : ℕ × ℕ × ℕ) :: A) 2 (P.length + 1) :=
+    hasParent2_of_le1_witness (by simp [hAl]) hle1.2.2 (by rw [ez2]; show 0 < 1; omega)
+  have hsrow : srow (((0, u, 0) : ℕ × ℕ × ℕ) :: A) (P.length + 1) = 2 := by
+    unfold srow; rw [ez2]; rfl
+  refine natDom_iff.mpr (Or.inr ?_)
+  have hl : (((0, u, 0) : ℕ × ℕ × ℕ) :: A).length - 1 = P.length + 1 := by simp [hAl]
+  rw [hl, hsrow]; exact hpar
+
+theorem rword_zlet (w : ℕ) (l : List TrioSeq) (T : TrioSeq) (x : ℕ) :
+    rword 0 w (l ++ [T ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]])
+      = (rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T) ++
+        [((x + 1, w + 1, 1) : ℕ × ℕ × ℕ)] := by
+  rw [rword_append, rword_singleton]
+  simp [rcol, shiftr01, List.append_assoc]
+
+theorem rword_zhang (w : ℕ) (l : List TrioSeq) (T Y : TrioSeq) (x : ℕ) :
+    (rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T) ++ shiftr01 (x + 1) 0 Y
+      = rword 0 w (l ++ [T ++ shiftr01 x 0 Y]) := by
+  rw [rword_append, rword_singleton]
+  simp only [rcol, Nat.zero_add, shiftr01_append0, shiftr01_add0, List.append_assoc, List.cons_append]
+
+theorem Fr_letterC (w : ℕ) (l : List TrioSeq) (T : TrioSeq) :
+    Fr (rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T) := by
+  intro y hy
+  rcases List.mem_append.mp hy with hy | hy
+  · exact rword_ge 0 w l y hy
+  · simp only [List.mem_cons, shiftr01, List.mem_map] at hy
+    rcases hy with rfl | ⟨p, -, rfl⟩
+    · show 1 ≤ 1; omega
+    · dsimp only; omega
+
+theorem coneV_rword_last {w x : ℕ} (l : List TrioSeq) {T : TrioSeq} (hT : Fr T) (hx : 1 ≤ x)
+    (hc : coneV (T ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]) w T.length) :
+    coneV ((rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T) ++
+        [((x + 1, w + 1, 1) : ℕ × ℕ × ℕ)]) w
+      (rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T).length := by
+  have e : (rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T) ++
+        [((x + 1, w + 1, 1) : ℕ × ℕ × ℕ)]
+      = rword 0 w l ++ shiftr01 1 0 (((0, w + 1, 1) : ℕ × ℕ × ℕ) ::
+          (T ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)])) := by
+    simp [shiftr01, List.append_assoc]
+  have hlen : (rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T).length
+      = (rword 0 w l).length + (1 + T.length) := by simp [shiftr01]; omega
+  have hS : argOK (T ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]) := by
+    intro p hp
+    rcases List.mem_append.mp hp with hp | hp
+    · have := hT p hp; omega
+    · simp at hp; subst hp; show 0 < x; omega
+  rw [e, hlen, coneV_append_right (by rw [shiftr01_length]; simp only [List.length_cons,
+      List.length_append, List.length_singleton]; omega) (fun y hy => by
+        rw [entry0_shiftr01 (by simp)]
+        have := rword_ge 0 w l y hy
+        show 0 + 1 ≤ y.1; omega), coneV_shift0,
+    coneV_cons_iff hS (by simp)]
+  exact ⟨by omega, hc⟩
+
+theorem oper_zword_in {w x : ℕ} (hx : 1 ≤ x) {l : List TrioSeq}
+    (hl : ∀ X ∈ l, ∀ y ∈ X, 1 ≤ y.1) {T : TrioSeq} (hT : Fr T)
+    (hc : coneV (T ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]) w T.length) (n : ℕ) :
+    (((0, w, 0) : ℕ × ℕ × ℕ) :: rword 0 w (l ++ [T ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]]))⟦n + 1⟧
+      = ((0, w, 0) : ℕ × ℕ × ℕ) :: rword 0 w (l ++ [T ++ shiftr01 x 0
+          ((((0, w + 1, 0) : ℕ × ℕ × ℕ) :: rword 0 (w + 1) (l.map (fun X => mlift X w 1) ++
+            [mlift T w 1 ++ [((x, w + 1 + 1, 1) : ℕ × ℕ × ℕ)]]))⟦n⟧)]) := by
+  have hcP := coneV_rword_last l hT hx hc
+  have hlz : ∀ X ∈ l ++ [T ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]], ∀ y ∈ X, 1 ≤ y.1 := by
+    intro X hX
+    rcases List.mem_append.mp hX with hX | hX
+    · exact hl X hX
+    · simp only [List.mem_singleton] at hX; subst hX
+      intro y hy
+      rcases List.mem_append.mp hy with hy | hy
+      · exact hT y hy
+      · simp at hy; subst hy; exact hx
+  have hM : mlift (rword 0 w l ++ ((1, w + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 T) w 1 ++
+        [((x + 1, w + 1 + 1, 1) : ℕ × ℕ × ℕ)]
+      = rword 0 (w + 1) (l.map (fun X => mlift X w 1) ++
+          [mlift T w 1 ++ [((x, w + 1 + 1, 1) : ℕ × ℕ × ℕ)]]) := by
+    have h1 := mlift_snoc_cone _ ((x + 1, w + 1, 1) : ℕ × ℕ × ℕ) hcP 1
+    rw [← rword_zlet w l T x, mlift_rword w 1 _ hlz, List.map_append, List.map_singleton,
+      mlift_snoc_cone T _ hc 1] at h1
+    exact h1.symm
+  rw [rword_zlet w l T x, oper_zcone_succ (Fr_letterC w l T) (by omega : 1 ≤ x + 1) hcP n, hM,
+    rword_zhang]
+
+#print axioms oper_zword_in
+
+
+/-- 全段の 1 段だけの閉包から GTall。 -/
+theorem GTall_of_GT1s {v : ℕ} {Y : TrioSeq} (h : ∀ u, v ≤ u → GT1 u (mlift Y v (u - v))) :
+    GTall v Y := by
+  intro u hu L hL hB u' hu'
+  have e : mlift (mlift Y v (u - v)) u (u' - u) = mlift Y v (u' - v) := by
+    have := mlift_mlift Y v (u - v) (u' - u)
+    rw [show v + (u - v) = u by omega, show u - v + (u' - u) = u' - v by omega] at this
+    exact this
+  rw [List.map_append, List.map_singleton, e]
+  exact h u' (le_trans hu hu') _ (mlift_map_ge hL u (u' - u)) (BwT_lift hB hu')
+
+/-- ★ 中身の中の z の字（行 2 の親が頭）。荷は段ごとに根 (0,w+1,0) の Wg (2(w+1)) の元。 -/
+theorem GTall_zlet {v : ℕ} {K : TrioSeq} {x : ℕ} (hK : Fr K) (hx : 1 ≤ x)
+    (hcone : coneV (K ++ [((x, v + 1, 1) : ℕ × ℕ × ℕ)]) v K.length)
+    (hload0 : ∀ w, v ≤ w → GT1 w (mlift K v (w - v)))
+    (hload : ∀ w, v ≤ w → ∀ R, argOK R → (((0, w + 1, 0) : ℕ × ℕ × ℕ) :: R) ∈ Wg (2 * (w + 1)) →
+      GT1 w (mlift K v (w - v) ++ shiftr01 x 0 (((0, w + 1, 0) : ℕ × ℕ × ℕ) :: R))) :
+    GTall v (K ++ [((x, v + 1, 1) : ℕ × ℕ × ℕ)]) := by
+  have hcw : ∀ w, v ≤ w → coneV (mlift K v (w - v) ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]) w
+      (mlift K v (w - v)).length := by
+    intro w hw
+    rw [mlift_length]
+    have h2 : coneV (mlift K v (w - v) ++ [((x, v + 1 + (w - v), 1) : ℕ × ℕ × ℕ)])
+        (v + (w - v)) K.length := by
+      have := coneV_mlift (by simp) hcone (w - v)
+      rw [mlift_snoc_cone K _ hcone (w - v)] at this
+      exact this
+    rw [show v + 1 + (w - v) = w + 1 by omega, show v + (w - v) = w by omega] at h2
+    exact h2
+  have hmK : ∀ w, v ≤ w → mlift (K ++ [((x, v + 1, 1) : ℕ × ℕ × ℕ)]) v (w - v)
+      = mlift K v (w - v) ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)] := by
+    intro w hw
+    rw [mlift_snoc_cone K _ hcone (w - v)]
+    show _ ++ [((x, v + 1 + (w - v), 1) : ℕ × ℕ × ℕ)] = _
+    rw [show v + 1 + (w - v) = w + 1 by omega]
+  intro u hu
+  rw [hmK u hu]
+  intro L hL hB
+  have key : ∀ n w, u ≤ w →
+      (((0, w, 0) : ℕ × ℕ × ℕ) :: rword 0 w (L.map (fun X => mlift X u (w - u)) ++
+        [mlift K v (w - v) ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]]))⟦n⟧ ∈ Wg (2 * w) ∧
+      ((((0, w, 0) : ℕ × ℕ × ℕ) :: rword 0 w (L.map (fun X => mlift X u (w - u)) ++
+        [mlift K v (w - v) ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]]))⟦n⟧ = [] ∨
+        ∃ R, argOK R ∧ (((0, w, 0) : ℕ × ℕ × ℕ) :: rword 0 w (L.map (fun X => mlift X u (w - u)) ++
+          [mlift K v (w - v) ++ [((x, w + 1, 1) : ℕ × ℕ × ℕ)]]))⟦n⟧ = ((0, w, 0) : ℕ × ℕ × ℕ) :: R) := by
+    intro n
+    induction n with
+    | zero =>
+        intro w hw
+        rw [rword_zlet, oper_zcone (Fr_letterC _ _ _) (by omega)
+          (coneV_rword_last _ (Fr_mlift hK _ _) hx (hcw w (le_trans hu hw))) 0]
+        simp only [List.range_zero, List.flatMap_nil]
+        exact ⟨Wg_nil _, Or.inl trivial⟩
+    | succ n ih =>
+        intro w hw
+        have hvw : v ≤ w := le_trans hu hw
+        have hLw : ∀ X ∈ L.map (fun X => mlift X u (w - u)), ∀ y ∈ X, 1 ≤ y.1 :=
+          mlift_map_ge hL u (w - u)
+        rw [oper_zword_in hx hLw (Fr_mlift hK _ _) (hcw w hvw) n]
+        have eL : (L.map (fun X => mlift X u (w - u))).map (fun X => mlift X w 1)
+            = L.map (fun X => mlift X u (w + 1 - u)) := map_mlift_step hw
+        have eK : mlift (mlift K v (w - v)) w 1 = mlift K v (w + 1 - v) := by
+          have := mlift_mlift K v (w - v) 1
+          rw [show v + (w - v) = w by omega, show w - v + 1 = w + 1 - v by omega] at this
+          exact this
+        rw [eL, eK]
+        obtain ⟨hW, hsh⟩ := ih (w + 1) (by omega)
+        refine ⟨?_, Or.inr ⟨_, argOK_rword w _, rfl⟩⟩
+        rcases hsh with h0 | ⟨R, hR, hRe⟩
+        · rw [h0]
+          have := hload0 w hvw _ hLw (BwT_lift hB hw) (argOK_rword w _) (2 * w) le_rfl
+          simpa [shiftr01] using this
+        · rw [hRe] at hW ⊢
+          exact hload w hvw R hR hW _ hLw (BwT_lift hB hw) (argOK_rword w _) (2 * w) le_rfl
+  intro u' hu' _ a ha
+  rw [List.map_append, List.map_singleton]
+  have eK' : mlift (mlift K v (u - v) ++ [((x, u + 1, 1) : ℕ × ℕ × ℕ)]) u (u' - u)
+      = mlift K v (u' - v) ++ [((x, u' + 1, 1) : ℕ × ℕ × ℕ)] := by
+    rw [mlift_snoc_cone _ _ (hcw u hu) (u' - u)]
+    show mlift (mlift K v (u - v)) u (u' - u) ++ [((x, u + 1 + (u' - u), 1) : ℕ × ℕ × ℕ)] = _
+    have := mlift_mlift K v (u - v) (u' - u)
+    rw [show v + (u - v) = u by omega, show u - v + (u' - u) = u' - v by omega] at this
+    rw [this, show u + 1 + (u' - u) = u' + 1 by omega]
+  rw [eK']
+  refine A1g_intro (Or.inr (Or.inl ⟨?_, fun n _ => Wg_mono ha (key n u' hu').1⟩))
+  rw [rword_zlet]
+  exact zcone_natDom (Fr_letterC _ _ _) (by omega)
+    (coneV_rword_last _ (Fr_mlift hK _ _) hx (hcw u' (le_trans hu hu')))
+
+#print axioms GTall_zlet
+
 end GxV
 end TRIO
