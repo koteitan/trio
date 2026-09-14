@@ -10,6 +10,7 @@ HcX.lean: 一般の接頭辞 PVE の上の字の中身の族 FLC（遠い字を�
 - FLC_far（遠い字だけ、HcV.PVE_collapse）、FLC_oper / FLC_orph / FLC_tie / FLC_flat（HcW の LC1R の規則）。
 -/
 import HcW
+import HaT
 
 namespace TRIO
 namespace HcX
@@ -199,7 +200,29 @@ theorem Zemb_rebase (A : List ℕ) (k : ℕ) (H g : ℕ → ℕ) (S : List ℕ) 
 
 def PZ (A : List ℕ) (k : ℕ) (H g : ℕ → ℕ) (S : List ℕ) (o : ℕ) (f g' : ℕ → ℕ) (b0 : ℕ) :
     ℕ → TrioSeq → Prop :=
-  fun b X => ∃ W, Fr W ∧ PVE A k H b0 W ∧ X = Zemb A k H g S o f g' b0 b W
+  fun b X => ∃ W, Fr W ∧ LowC (b0 + liftOff H A k + 1) W ∧ PVE A k H b0 W ∧
+    X = Zemb A k H g S o f g' b0 b W
+
+theorem LowC_node {m r z : ℕ} (hr : r ≤ m) {V : TrioSeq} (hV : Fr V) :
+    LowC m (((1, r, z) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V) := by
+  intro i hi
+  refine ⟨0, rtg0_zero (fun l hl0 hl => ?_) hi, ?_⟩
+  · obtain ⟨l', rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
+    rw [entry_cons]
+    have hl' : l' < V.length := by simp [shiftr01] at hl; omega
+    rw [entry0_shiftr01 hl']
+    have := getD_row0_ge hV hl'
+    show 1 < entry V 0 l' + 1; omega
+  · show r ≤ m; exact hr
+
+theorem LowC_word {m : ℕ} {W V : TrioSeq} (hW : LowC m W) (hV : Fr V) :
+    LowC m (W ++ ((1, m, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V) :=
+  HaT.LowC_append hW (LowC_node le_rfl hV)
+
+theorem LowC_rebase {m b0 b1 : ℕ} (hb : b0 ≤ b1) {W : TrioSeq} (h : LowC (b0 + m + 1) W) :
+    LowC (b1 + m + 1) (mlift W b0 (b1 - b0)) := by
+  have := LowC_mliftk (c := b0) (k := m + 1) (by rw [← Nat.add_assoc]; exact h) (b1 - b0)
+  rwa [show b0 + (m + 1) + (b1 - b0) = b1 + m + 1 by omega] at this
 
 theorem LC1R_mono {P P' : ℕ → TrioSeq → Prop} {A : List ℕ} {o : ℕ} {H : ℕ → ℕ} {b : ℕ} {Y : TrioSeq}
     (hP : ∀ W, P' b W → P b W) (h : LC1R P A o H b Y) : LC1R P' A o H b Y :=
@@ -208,14 +231,14 @@ theorem LC1R_mono {P P' : ℕ → TrioSeq → Prop} {A : List ℕ} {o : ℕ} {H 
 theorem PZ_rebase {A : List ℕ} {k : ℕ} {H g : ℕ → ℕ} {S : List ℕ} {o : ℕ} {f g' : ℕ → ℕ}
     {b0 b1 b : ℕ} (hb01 : b0 ≤ b1) (hb1 : b1 ≤ b) {X : TrioSeq}
     (h : PZ A k H g S o f g' b0 b X) : PZ A k H g S o f g' b1 b X := by
-  obtain ⟨W0, hW0, hP0, rfl⟩ := h
-  exact ⟨mlift W0 b0 (b1 - b0), Fr_mlift hW0 _ _, PVE_lift hP0 hb01,
+  obtain ⟨W0, hW0, hL0, hP0, rfl⟩ := h
+  exact ⟨mlift W0 b0 (b1 - b0), Fr_mlift hW0 _ _, LowC_rebase hb01 hL0, PVE_lift hP0 hb01,
     (Zemb_rebase _ _ _ _ _ _ _ _ hb01 hb1 W0).symm⟩
 
 /-! ## 字の中身の族 -/
 
 def FLC (A : List ℕ) (k : ℕ) (H : ℕ → ℕ) (b0 : ℕ) (V : TrioSeq) : Prop :=
-  ∀ W, Fr W → PVE A k H b0 W →
+  ∀ W, Fr W → LowC (b0 + liftOff H A k + 1) W → PVE A k H b0 W →
     PVE A k H b0 (W ++ ((1, b0 + liftOff H A k + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V)
 
 theorem FLC_iff {A : List ℕ} {k : ℕ} (hAk : ∀ a ∈ A, a < k) {H : ℕ → ℕ} {b0 : ℕ} {V : TrioSeq}
@@ -225,20 +248,20 @@ theorem FLC_iff {A : List ℕ} {k : ℕ} (hAk : ∀ a ∈ A, a < k) {H : ℕ →
         (Zemb A k H g S o f g' b0 b V) := by
   constructor
   · intro h g S o f g' hE b hb W hW hPW hPV
-    obtain ⟨W0, hW0, hP0, rfl⟩ := hPW
-    have := h W0 hW0 hP0 g S o f g' b hE hb
+    obtain ⟨W0, hW0, hL0, hP0, rfl⟩ := hPW
+    have := h W0 hW0 hL0 hP0 g S o f g' b hE hb
     rw [Zemb_slift, Zemb_letter hAk hE hb hW0 hV] at this
     exact this
-  · intro h W0 hW0 hP0 g S o f g' b hE hb
+  · intro h W0 hW0 hL0 hP0 g S o f g' b hE hb
     rw [Zemb_slift, Zemb_letter hAk hE hb hW0 hV]
-    refine h g S o f g' hE b hb _ (Fr_Zemb hW0) ⟨W0, hW0, hP0, rfl⟩ ?_
+    refine h g S o f g' hE b hb _ (Fr_Zemb hW0) ⟨W0, hW0, hL0, hP0, rfl⟩ ?_
     have := hP0 g S o f g' b hE hb
     rwa [Zemb_slift] at this
 
 /-- ★ 遠い字だけの中身。 -/
 theorem FLC_far {A : List ℕ} {k : ℕ} (hAk : ∀ a ∈ A, a < k) (H : ℕ → ℕ) (b0 : ℕ) :
     FLC A k H b0 [((1, b0 + liftOff H A k + 1, 1) : ℕ × ℕ × ℕ)] := by
-  intro W hW hP
+  intro W hW _ hP
   rw [← col_eq]
   exact PVE_collapse hAk hW hP
 
@@ -303,8 +326,8 @@ theorem FLC_tie {A : List ℕ} {k : ℕ} (hAk : ∀ a ∈ A, a < k) (hk1 : 1 ≤
     (by rw [← Zemb_snoc_tie hb hA1 hKg hc]; exact Fr_Zemb hU)
     (by rw [← Zemb_snoc_tie hb hA1 hKg hc]; exact Hd_Zemb hH) (coneV_Zemb_tie hb hA1 hKg hc) ?_
     (fun b' hb' Z hZ hbZ => ?_)
-  · rintro W ⟨W0, hW0, hP0, rfl⟩ b'' hb''
-    exact ⟨W0, hW0, hP0, Zemb_lift_base _ _ _ _ _ _ _ _ hb hb'' W0⟩
+  · rintro W ⟨W0, hW0, hL0, hP0, rfl⟩ b'' hb''
+    exact ⟨W0, hW0, hL0, hP0, Zemb_lift_base _ _ _ _ _ _ _ _ hb hb'' W0⟩
   · have hx1 : 1 ≤ x := hU _ (List.mem_append_right _ (List.mem_singleton_self _))
     have hFrZ : Fr (mlift (V ++ U) b0 (b' - b0) ++ shiftr01 x 0 Z) := by
       refine Fr_append (Fr_mlift (Fr_append hV hUc) _ _) (fun y hy => ?_)
@@ -324,9 +347,9 @@ theorem FLC_flat {A : List ℕ} {k : ℕ} (hAk : ∀ a ∈ A, a < k) {H : ℕ �
   rw [Zemb_snoc_low hb (show 0 ≤ b0 by omega)]
   refine LC1R_flat hE.2.2.1 hE.2.2.2.1 hE.2.2.2.2.1 (Fr_Zemb hV)
     ((FLC_iff hAk hV).mp h g S o f g' hE b hb) ?_
-  rintro W hW ⟨W0, hW0, hP0, rfl⟩ hPV
+  rintro W hW ⟨W0, hW0, hL0, hP0, rfl⟩ hPV
   refine ⟨W0 ++ ((1, b0 + liftOff H A k + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 V,
-    Fr_append hW0 (Fr_letter _ _), h W0 hW0 hP0, ?_⟩
+    Fr_append hW0 (Fr_letter _ _), LowC_word hL0 hV, h W0 hW0 hL0 hP0, ?_⟩
   rw [Zemb_letter hAk hE hb hW0 hV]
 
 end HcX
