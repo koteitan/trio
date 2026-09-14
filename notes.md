@@ -30317,3 +30317,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   GPF 版は GPF_node で BotT を直接組む。
 - 正直な現状: 深い葉は最終目標までの必須の関門で、GPF で可能だが collapse 接続は大きな新枠組み。緑の新シート行はまだ。
   この枠組みを段階的に作る（1 補題ずつ緑に）。まず GoodCht の far-word 拡張を GPF_node で組む試作から。
+
+## 追記599: GoodChtX(深い葉) の正確な目標を Lean で確認（scratchpad/gcx.lean）
+
+- scratchpad/gcx.lean で GoodChtX [] 1 (fun _ => 0) u [[tie1[tie1[]]]] を立て、2 つ目の成分の目標を trace:
+  ⊢ GpT (S++[]) o f b (farWt b r ws ++ HbM.fwH b r (FTLt b r u [relTs [] 0 g u [tie1[tie1[]]]]) u [])、r = b+liftOff f (S++[]) o+1。
+  = far-word（ws の GpT に、新しい far 字 fwH（F 字 + F のタイの節点 + 鎖）を足す）。lake env lean で setup 確認（--chdir=…/lean）。
+- GoodChtX_bot（HeB 269）は GoodChtX から far-word GpT を出すが、これは GoodChtX の 2 成分そのものなので循環。
+  木は Gd_treeP0 → Gd_P0_good → Gd の BotT（tree 規則 Gd_tie/Gd_load/Gd_upleaf が NXs/RNs/oper で構成）。
+  GPF 版は fwH（far 字 + F のタイの節点 + 鎖）を GPF_node と 字規則で直接組む。
+- 標的（次）: GpT(farWt ws) + GPF(鎖) → GpT(farWt ws ++ fwH(FTLt [鎖]))。far 字の追加（PVP/farWAt_PVP・字規則）と
+  F のタイの節点 + 鎖（GPF_node）の合成。far 字（row2=1）を GpT/PVP に足す機構（farWAt_PVP、PVF_snoc、towWt_GpT）を
+  読んで、GPF_node で BotT を組む。大きい実装（複数ハートビート）。
+- 正直な状況: ~10 回のハートビートで深い葉を精査し、GPF で可能・目標を Lean で確認したが、far-word GpT の構成が
+  大きな残作業。新シート行はまだ。次は far 字の追加機構（PVP・farWAt_PVP）を読んで GoodChtX_snocGPF を組む。
