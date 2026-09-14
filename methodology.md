@@ -1084,3 +1084,19 @@ DM 測度は `Bud` が整礎なら整礎のままなので、整礎性は失わ�
 - 生成器は木の文字列と TreeTs の証明（構成子の並び）を出すだけになり、29 行が 1 回の生成で全て通った。
 - 木の定理の再帰は、位置の集合（TP0 / tchS0 / tchU）を節点の段ごとに作り替えて回した。位置の性質（閉包・最後の段・分解）を
   集合の作り方の補題として先に示しておくと、定理の各場合は規則を 1 つ呼ぶだけで済んだ。
+
+## 追記27: 深い葉（同段の入れ子）は「悪い根 q=1 の生の GTC の展開」で割る。展開は段0挿入で木になる（行 1687→深い葉）
+
+- 深い葉 = F のタイの子の中身が同段の入れ子（tie 1 [tie 1 []]）。木の述語 TreeTs は同段の入れ子を弾く（tie の中で cl=false になり
+  次の同段 tie が通らない）ので、GdT（TreeTs 必須）では書けない。多数のハートビートで「GPF の族が要る」「FarCAt→GTC の橋が要る」
+  と迷走したが、いずれも不要だった。
+- 鍵は**悪い根の段**の取り方: 深い葉の葉の支配親（hasParent）は、同段の中間の節点を**飛ばした下位の祖先**（F の位置, q=1）。
+  q を同段（q=2）と取ると展開（tow）が同段の深い鎖のままで木に落ちないが、**q=1（支配親）**で取ると
+  展開 tow 1 0 R m' が段0の節点を挿入した**木**になる（行1が 1,2,1,2 の交互 = dtree、BM4 の上昇 A 行列と一致）。
+- 生の GTC の核（HeS）: upleaf_deep_coreDT（HeQ.upleaf_deep_coreD の GTC 版, gtc_oper + oper_cons_tower1）。
+  q<m の深い節点の GTC を、展開 tow q 0 R m' の GTC（hrep）に落とす。GpT 版（tstep_oper）でなく gtc_oper を使うだけの差。
+- hrep（展開の GTC）は木なので既存の木の機構で出せる: tow_dtree（tow 1 0 R (j+1) = (0,1,0)::topTs [dtree j]）で
+  展開を木 dtree j に同定し、TreeTs_dtree（dtree は TreeTs）+ GTC_wLTL（HeN）で GTC CLTL を出す。
+- 上位の単一の語は、GTC を空文脈 [] に当てて BwT [K] → StarOK → W0_of_starOK で W に包む（collapse の PsLTL を経由しない）。
+- 教訓: 深い葉は新枠組み（GPF の橋）でなく、**既存の生の GTC（gtc_oper）を悪い根 q=1 で使う**だけで割れた。
+  展開の形（tow）を Lean で先に同定し、それが木（dtree）だと確かめてから hrep を木の機構に流すのが早い。

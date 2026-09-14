@@ -30549,3 +30549,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   starOK_lastT [] (PsLT_nil) で 証明中行 ∈ W。緑になれば**初の深い葉**、シート前進。
 - 進捗（このハートビート）: 追記609 の誤り（q=2）を訂正し q=1 で展開が木と判明。HeS に GTC 版の核
   （upleaf_deep_coreT_gen, upleaf_deep_coreDT）を緑で追加。証明中行への適用も実測で確認。残りは hrep の組み立て。
+
+## 追記613: ★★★ 突破達成 — 初の深い葉 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0) ∈ W 0（HeT.lean 緑, 標準公理のみ）
+
+- 追記611-612 の道を完遂。HeT.lean（緑, commit 済み, #print axioms = propext/Classical.choice/Quot.sound のみ）:
+  - dtree（展開の木の族, tie1/tie0 交互）, tow_dtree（tow 1 0 R (j+1) = (0,1,0)::topTs [dtree j]）, TreeTs_dtree。
+  - hK_pm: GTC CLTL 0 (wLT 0 ([[tie 1 [tie 1 []]]], [])) = upleaf_deep_coreDT(q=1,d0=2,m=2,D=[(1,2,0)]) + hrep(GTC_wLTL(dtree)).
+  - R_pm: 上を空文脈に当てて BwT [K] → StarOK → W0_of_starOK。
+- **深い葉の壁を突破**。核は「悪い根 q=1（葉の支配親、同段の中間を飛ばす）で生の GTC(gtc_oper)を使う」だけ。
+  GPF の橋も FarCAt→GTC も不要だった（追記603-610 の迷走を解消）。展開が段0挿入で木になるのが鍵（追記611）。
+- 更新: sheet/README.md（証明中→証明済み、新証明中 = ...(4,2,0)(1,1,1)）、methodology.md 追記27。
+- 残り: (1) 一般化 — 他の深い葉の行（幅 k の深い鎖 tie 1 [tie 1[],...]）は展開が幅 (k-1) の深い葉に落ちる帰納。
+  dtree/tow_dtree を一般の R に一般化する。(2) 生成器 gen_gyk.py を upleaf_deep_coreDT 対応にして範囲を自動証明。
+  (3) それで 1688 以降の 93+ 行が開ける見込み。最終目標へ前進。
