@@ -30222,3 +30222,25 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 唯一の道（要・大きな新規研究）: F のタイの子を GpT の族（GTs/GF/GPF）にして、collapse（topCLT_WgL）の埋め込みが
   純節点（字/flat なし）の深い葉で閉じるかを精査・実装する。追記568 の壁は字の族 RLC（級 k::A, k+1）で確認されたが、
   純節点の鎖（級 [] 1 の上の節点）で同じ壁が発火するかは未検証。ここが突破口の候補。
+
+## 追記594: 生成器で失敗点を特定 — 1688 は treelit_top（TreeTs）で失敗、解は「collapse に GPF の F のタイの子」
+
+- gen_gyk.py を 1688〜1710 に走らせた: 全 23 行 bad、理由は 'top ltl'（treelit_top が Fail）。
+- 追跡: 1688 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(4,2,0)。top_ltl が (1,1,1) の子を CLTL の語として処理し、
+  F のタイ (2,1,0) の子 (3,2,0)(4,2,0)(4,2,0) を treelit_top（段つき木 TreeTs）で作ろうとして失敗（同段の入れ子 = deep chain は
+  TreeTs の p < l+1 で弾かれる）。
+- 構造の要点: 1688 は z=1 字 (2,1,1) を含む ⇒ CLTL（collapse）の語。CLTL の F のタイの子は treelit_top（TreeTs）で作る必要があり、
+  GPF の道（top_forest の TF_tieG + gp）は TF の語（collapse でない）だけ。よって deep chain を collapse で扱うには
+  「CLTL に GPF の F のタイの子」が要る = 追記568 の壁。
+- 生成器の既存の GPF の道: top_forest（TF_tieG (GF_of_GPF (gp ...)))は F のタイの子を GPF [] 1 で作る（TF の語）。
+  gp は gp_old/gp_ra/gp_n/gp_c/gp_u/gp_t を試す。deep chain（純節点の鎖、節点 τ > o）が gp のどれかで通るかは未確認
+  （top_forest まで到達しない。CLTL で弾かれるため）。
+- 解の方向（actionable）:
+  (A) CLTL（starOK_CLTL / topCLT_WgL）を GPF の F のタイの子でも通るように拡張する。鍵は GoodChtX（F のタイの子の良さ）を
+     GPF の鎖について示すこと（FarCAt → collapse）。GPF は埋め込みで保たれる（GpT_lift/congr）ので、字の族 RLC（追記568）と
+     違って collapse の埋め込みが閉じる見込みがある（未検証）。
+  (B) まず top_forest の gp が deep chain（純節点の鎖）を GPF として作れるかを、CLTL 抜きで単体テストする
+     （gp(M, [(3,2,0)-subtree with (4,2,0)(4,2,0)], v, [], 1) が Fail せず proof を出すか）。出れば GPF 側は OK で、
+     残りは collapse への接続（GoodChtX from GPF）だけ。
+- 次: (B) の単体テスト（gp が deep chain を GPF で作れるか）を最初にやる。gp が通れば collapse 接続の設計へ。通らなければ
+  gp（GPF）自体の deep chain 対応が要る。
