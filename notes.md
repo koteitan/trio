@@ -30690,3 +30690,24 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **残りの山**: 帰納の本体を farWt/GoodChtX 文脈に通して組む。IH を dtreeQ の内側（入れ子の段 q-1 葉）に
   当てる形の GpT 主張（文脈 Pre/Yp 一般）を定式化 → step で upleaf_deep_coreD + tow_dtreeQ、base で木。
   緑になれば GoodChtX_deep → OkWsAt → FarCAt → topCLT_WgL → CLGL 文脈 → 証明中/1688 以降。
+
+## 追記621: GoodChtX_deep の farWt 手回し + upleaf_deep_coreD 適用が緑（scratch）。残りは hrep=塔の GpT のみ
+
+- scratch goodchtx_deep_plumbing.lean（緑, 末尾 sorry=hrep のみ）: **要石 `GoodChtX A0 o (fun_=>0) u [[tie 1 [tie 1 []]]]`
+  の Part1（RawTs）と Part2 の手回しが全て通った**。
+  - Part2: farWt_snoc + fwH/FTLt/chT 展開（key 補題, simp 一発）で
+    `farWt b R (ws++[深い葉]) = farWt b R ws ++ [(1,R,1),(2,R,1)] ++ shiftr01 1 0 (shiftr01 1 0 ((0,R,0)::[(1,R+1,0)]++[(2,R+1,0)]))`
+    （R = b + liftOff f (S++A0) o' + 1）。
+  - upleaf_deep_coreD を Pre=farWt ws, Yp=[(1,R,1),(2,R,1)], d=1, q=R, D=[(1,R+1,0)], d0=2, m=R+1 で適用。
+    行列条件（hD/hD1/hd0/hqm:R<R+1/hm）と Fr/Hd（Fr_letter/Hd_letter, Fr_farWt）は全て通った。
+    段条件 hA/hA1/ho は hE.2.2.1 / hE.2.2.2.1 / hE.2.2.2.2.1（EmbU）から。
+- **残り 1 個 = hrep**: `∀m', 1≤m' → GpT (S++A0) o' f b (farWt b R ws ++ ([(1,R,1),(2,R,1)] ++
+    shiftr01 1 0 (shiftr01 1 0 (tow R 0 [(1,R+1,0),(2,R+1,0)] m'))))`。
+  tow_dtreeQ（m'=j+1）で = GpT of ... `(0,R,0)::topTs 0 [dtreeQ (R-1) j]`（段 R-1 の深い葉を持つ塔）。
+- **hrep の証明方針**: 段 R の整礎帰納。塔の深い葉（段 R-1）に upleaf_deep_core を再適用 → 段 R-2 → … → 段 0 = 木。
+  木の底では GpT を木の機構で出す。ただし木の GpT を生で出す補題の所在が要確認（tree の hrep は
+  HeN.GdT_upleaf で GTC 級で処理＝GTC 級。深い方は upleaf_deep_core が GpT 級なので生 GpT が要る）。
+- 手回し（最も面倒な部分）が済んだのが大きい。scratch は
+  /tmp/.../scratchpad/goodchtx_deep_plumbing.lean に保存。
+- **次**: hrep（段 R の帰納で塔の GpT）。まず木の底（段 0）の生 GpT の出し方を確定（GoodChtX_snocT を
+  farWt に展開した形か、Gd_good 系か）。
