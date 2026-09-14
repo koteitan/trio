@@ -30741,3 +30741,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   FTL0 1 [Ld] だと 2 列目が (1,1,0)≠(2,1,0)）。∴ 目標も新機構が要る（"top ltl" 失敗と整合）。
 - ∴ 深い葉（シート frontier 1688）も目標（summit 4784）も新 collapse 機構が要る。深い葉が現 frontier
   なので深い葉を続けるのが正道（fill-the-gaps）。目標への近道は無い。
+
+## 追記624: HeR は不一致（空葉の塔）。深い塔の葉は正常(交互段)→upleaf_core。tow=towR(htR)
+
+- **HeR は使えない**: chT_Xtow の base = chT(plugQ Q (us++[tie l []])) は **tie l []（空の子）**。
+  私の深い葉 tie 1 [tie 1 []] は**子つき**。∴ HeR の Xtow（空葉の再下降塔）と形が違う。HeR 未使用の理由。
+- **深い塔の葉は正常**: 元の深い葉 tie 1 [tie 1 []] は**同段入れ子**（1 の中に 1）で DEEP（upleaf_deep_core）。
+  だがその展開 dtreeQ は段が**交互**（q'+1, q', q'+1,…）で同段入れ子が無い → 各葉の bad root は直前（正常）
+  → **upleaf_core（正常、HeH:52）で処理できる**見込み。深い step は最初の1回だけ、あとは正常。
+- **tow=towR**: HeS:65 の htR: `D ++ shiftr01 1 0 (tow q 0 R j) = towR q D j`（R = D++[(1,m,0)]）。
+  hrep の tow (q'+1) 0 [(1,q'+2,0),(2,q'+2,0)] は R=[(1,q'+2,0)]++[(1,q'+2,0)]（D=[(1,q'+2,0)], m=q'+2）で
+  towR (q'+1) [(1,q'+2,0)] に化ける。towR は upleaf_core の hrep の形。
+- **次の一手**: hrep を upleaf_core（正常）+ htR で処理する道を Lean で試す。tow を towR に書き換え、
+  upleaf_core の hrep 供給（塔の各段）を段/j の帰納で。底は flat run（段が 1 下がった走り）→ 木。
+  段が有界（追記619）なので有限。HeR/dtreeQ(topTs) は使わず、chT/raw 側の towR で通す。
