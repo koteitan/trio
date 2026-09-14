@@ -29524,3 +29524,24 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
       子の flat は F のタイの複製（Lds ++ Y^m）になるので、族を「全ての Lds について」で定義すれば閉じる。
   (3) 最上段の文脈 CN を、タイの子が荷の語に広げる（行 1577〜1582）。
   (4) F の位置の子（y = r）: FarP_GpT_lt（d = 3）と埋め込みで。次の段の遠い字（y = r+1）は内容の級の族の再帰が要る。
+
+## 追記556: 行 1577〜1582（HbP〜HbW、緑）
+
+- 追記555 の (2) の頭 FTL（子を語の段から持ち上げる形）は、中身の族の lift の場で、低い段での子の低さが出ず閉じなかった。
+  子を級の段 b で低い列に固定した頭 FTL0 r Lds := (1,r,1) :: Lds.flatMap (fun Ld => (1,r,0) :: Ld↑1) に替えた。
+  子は持ち上げ（v ≥ b）でも再持ち上げでも動かない。
+- HbP: FTL0 と並び farW0、持ち上げ・再持ち上げの補題。HbQ: 族 FarCA0 の核（塔 towW0、潰れ）。
+  HbR: 最後の語の中身の族 okWA0 と差し込み口の公理。HbS: 状態の層 RA0、文脈 RA0_ctx、節点 RA0_node。
+- HbT: 空の F のタイを足す規則 GTWA0_Fsucc（FarP_GpT_lt、級 (S ++ A0, o) への埋め込み FarCA0_embed）。語の段 c0 の下限 v つき。
+- HbU: 最後の F のタイの子に荷を足す規則 ChildG_load。
+  子の差し込み口の族は lift の場が出ない（子は級の段で固定なので、語の段を上げると別の語になる）。
+  GxP.slot_load は差し込み口の公理のうち oper・orph・flat しか使わないので、その骨組みを based な Wg の列の帰納法 based_Wg_ind として切り出した。
+  子の flat は最後の F のタイの複製（X ++ D^m）になるので、主張を ChildG v D := ∀ X, GoodL v X → GoodL v (X ++ [D]) にした。
+  GoodL_units: F のタイの子が荷だけの並びは全ての級で良い。
+- HbV: 最上段の文脈 CL。語 wL v (Ds, us) := FTL0 (v+1) Ds ++ unitsC v us（Ds は荷だけの子、us は荷だけ）。
+  潰れ（GTC_far_CL）は FarCA0（GoodL と RA0）の塔。空の F のタイは GTC_tie、子の荷は based_Wg_ind と GTC_oper / GTC_orph（flat は F のタイの複製なので GTC_oper）。
+- HbW: 生成。生成器 tools/gen_gyk.py に道 top_l（HbV.starOK_CL）。
+- 次の壁（行 1583 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,1,0)）: 最上段の F のタイの子に行 1 が v+1（F の位置）のタイ。
+  最上段だけなら GTC_tie（x = 2）と ChildT_load で置ける見込み。しかし文脈 CL の潰れでは前の語の子にこのタイが入り、
+  遠い語の族の子が級の段 b で低い列でなくなる（F の位置 r = b + liftOff + 1 は級で動く）。
+  子を「単位の並び（タイは行 1 が r、荷は低い列）」にして FTL0 を一般にする必要がある。先に行 1583 以降の子の形を測る。
