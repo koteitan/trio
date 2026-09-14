@@ -24,10 +24,10 @@ open HaA HaC HaE HaF HbD HbM HbP HbS HcA HcI HcM HdA HdB HdC HdD HdE HdF HdG HdH
 
 def plugQ : List (List UT) → List UT → List UT
   | [], T => T
-  | us :: q, T => us ++ [UT.tie (plugQ q T)]
+  | us :: q, T => us ++ [UT.tie 0 (plugQ q T)]
 
 theorem plugQ_snoc : ∀ (Q : List (List UT)) (us T : List UT),
-    plugQ (Q ++ [us]) T = plugQ Q (us ++ [UT.tie T])
+    plugQ (Q ++ [us]) T = plugQ Q (us ++ [UT.tie 0 T])
   | [], us, T => by simp [plugQ]
   | q :: Q, us, T => by simp only [List.cons_append, plugQ, plugQ_snoc Q us T]
 
@@ -43,7 +43,7 @@ theorem imgT_append (A : List ℕ) (H G : ℕ → ℕ) (c u : ℕ) (x y : List U
   unfold imgT; rw [mlTs_append, relTs_append]
 
 theorem imgT_tie (A : List ℕ) (H G : ℕ → ℕ) (c u : ℕ) (x : List UT) :
-    imgT A H G c u [UT.tie x] = [UT.tie (imgT A H G c u x)] := by
+    imgT A H G c u [UT.tie 0 x] = [UT.tie 0 (imgT A H G c u x)] := by
   simp [imgT, mlTs, mlT, relTs, relT]
 
 theorem imgT_ch (A : List ℕ) (H G : ℕ → ℕ) (c u : ℕ) (X : TrioSeq) :
@@ -60,7 +60,7 @@ theorem relT_plugQ_aux (A : List ℕ) (H G : ℕ → ℕ) (u : ℕ) :
   | [], T => by simp [plugQ]
   | q :: Q, T => by
       simp only [plugQ, List.map_cons, relTs_append]
-      rw [show relTs A H G u [UT.tie (plugQ Q T)] = [UT.tie (relTs A H G u (plugQ Q T))] by
+      rw [show relTs A H G u [UT.tie 0 (plugQ Q T)] = [UT.tie 0 (relTs A H G u (plugQ Q T))] by
         simp [relTs, relT], relT_plugQ_aux A H G u Q T]
 end
 
@@ -73,7 +73,7 @@ theorem mlTs_plugQ (c t : ℕ) : ∀ (Q : List (List UT)) (T : List UT),
   | [], T => by simp [plugQ]
   | q :: Q, T => by
       simp only [plugQ, List.map_cons, mlTs_append]
-      rw [show mlTs c t [UT.tie (plugQ Q T)] = [UT.tie (mlTs c t (plugQ Q T))] by
+      rw [show mlTs c t [UT.tie 0 (plugQ Q T)] = [UT.tie 0 (mlTs c t (plugQ Q T))] by
         simp [mlTs, mlT], mlTs_plugQ c t Q T]
 
 theorem RawTs_plugQ {K : ℕ} : ∀ (Q : List (List UT)) (T : List UT), (∀ us ∈ Q, RawTs K us) →
@@ -110,7 +110,7 @@ def BotT (C : List ℕ) (o : ℕ) (f : ℕ → ℕ) (u : ℕ) (Lds Q : List (Lis
     GpT C o f b (farWt b (b + liftOff f C o + 1) (ws ++ [(Lds ++ [plugQ Q T], u, [])]))
 
 theorem BotT_snoc_eq (C : List ℕ) (o : ℕ) (f : ℕ → ℕ) (u : ℕ) (Lds Q : List (List UT)) (us T : List UT) :
-    BotT C o f u Lds (Q ++ [us]) T = BotT C o f u Lds Q (us ++ [UT.tie T]) := by
+    BotT C o f u Lds (Q ++ [us]) T = BotT C o f u Lds Q (us ++ [UT.tie 0 T]) := by
   unfold BotT; rw [plugQ_snoc]
 
 def GTdef (P : List ℕ → ℕ → (ℕ → ℕ) → ℕ → List (List UT) → Prop)
@@ -209,7 +209,7 @@ theorem GT_jump {t : ℕ} {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ} {
     (h : GT (t + 1) A k H c cs) {G1 : ℕ → ℕ} {S1 : List ℕ} {o1 : ℕ} {f1 : ℕ → ℕ}
     (hE1 : EmbU A k H G1 S1 o1 f1) {u : ℕ} (hcu : c ≤ u) {us0 : List UT}
     (hus : GT t (S1 ++ A) o1 f1 u us0) :
-    GT t (S1 ++ A) o1 f1 u (us0 ++ [UT.tie (imgT A H G1 c u cs)]) := by
+    GT t (S1 ++ A) o1 f1 u (us0 ++ [UT.tie 0 (imgT A H G1 c u cs)]) := by
   refine ⟨RawTs_snoc.mpr ⟨hus.1, RawT_tie.mpr (RawTs_imgT hE1 hcu h.1)⟩,
     fun G2 S2 o2 f2 hE2 u' huu Lds hL Q hQ => ?_⟩
   rw [imgT_append, imgT_tie, imgT_comp hE1 G2 hcu huu h.1, ← BotT_snoc_eq]
@@ -226,7 +226,7 @@ theorem GT_of_jump {t : ℕ} {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ
     (hraw : RawTs (c + reOff (fun _ => 0) H A k) cs)
     (hJ : ∀ (G1 : ℕ → ℕ) (S1 : List ℕ) (o1 : ℕ) (f1 : ℕ → ℕ), EmbU A k H G1 S1 o1 f1 →
       ∀ u, c ≤ u → ∀ us0, GT t (S1 ++ A) o1 f1 u us0 →
-        GT t (S1 ++ A) o1 f1 u (us0 ++ [UT.tie (imgT A H G1 c u cs)])) :
+        GT t (S1 ++ A) o1 f1 u (us0 ++ [UT.tie 0 (imgT A H G1 c u cs)])) :
     GT (t + 1) A k H c cs := by
   refine ⟨hraw, fun G S o f hE u hcu Lds hL Q hQ => ?_⟩
   obtain ⟨Q', us0, rfl, hQ', hus0⟩ := hQ
@@ -238,7 +238,7 @@ theorem GT_of_jump {t : ℕ} {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ
 /-- ★ 高さ t の並びに、子の並び cs（高さ t+1 で良い）を持つタイを足す。 -/
 theorem GT_tie {t : ℕ} {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) (hk : 1 ≤ k)
     (hAk : ∀ a ∈ A, a < k) {c : ℕ} {us cs : List UT}
-    (hus : GT t A k H c us) (hcs : GT (t + 1) A k H c cs) : GT t A k H c (us ++ [UT.tie cs]) := by
+    (hus : GT t A k H c us) (hcs : GT (t + 1) A k H c cs) : GT t A k H c (us ++ [UT.tie 0 cs]) := by
   have := GT_jump hcs (EmbU_triv hAk hA01 hk H) le_rfl (S1 := []) hus
   rwa [imgT_zero] at this
 
@@ -253,7 +253,7 @@ theorem chT_plugQ (b r u : ℕ) : ∀ (Q : List (List UT)) (T : List UT),
   | [], T => by simp [plugQ, chTQ, shiftr01]
   | q :: Q, T => by
       simp only [plugQ, chTQ, chT_append, List.length_cons]
-      rw [show chT b r u [UT.tie (plugQ Q T)]
+      rw [show chT b r u [UT.tie 0 (plugQ Q T)]
           = ((1, r, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b r u (plugQ Q T)) by simp [chT, unitT],
         chT_plugQ b r u Q T, shiftr01_append0, shiftr01_add0]
       simp

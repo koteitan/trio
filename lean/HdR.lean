@@ -130,7 +130,7 @@ theorem farTs_plugQ : ∀ (Q : List (List UT)) (T : List UT),
   | [], T => by simp [plugQ]
   | q :: Q, T => by
       simp only [plugQ, List.map_cons, farTs_append]
-      rw [show farTs [UT.tie (plugQ Q T)] = [UT.tie (farTs (plugQ Q T))] by simp [farTs, farT],
+      rw [show farTs [UT.tie 0 (plugQ Q T)] = [UT.tie 0 (farTs (plugQ Q T))] by simp [farTs, farT],
         farTs_plugQ Q T]
 
 theorem topTs_plugQ (u : ℕ) (Q : List (List UT)) (T : List UT) :
@@ -173,7 +173,7 @@ theorem TRaws_plugQ {u : ℕ} : ∀ (Q : List (List UT)) (T : List UT), (∀ us 
   | [], T, _, hT => hT
   | q :: Q, T, hQ, hT => by
       simp only [plugQ]
-      exact TRaws_snoc.mpr ⟨hQ q (by simp), TRaws_plugQ Q T (fun us h => hQ us (by simp [h])) hT⟩
+      exact TRaws_snoc.mpr ⟨hQ q (by simp), rfl, TRaws_plugQ Q T (fun us h => hQ us (by simp [h])) hT⟩
 
 theorem Fr_Ytop (u : ℕ) (Uss Q : List (List UT)) : Fr (wLT u (Uss ++ [plugQ Q []], [])) :=
   fun x hx => Fr_wLT u _ x hx
@@ -194,7 +194,7 @@ def BotC (u : ℕ) (Uss Q : List (List UT)) (T : List UT) : Prop :=
   GTC CLT u (wLT u (Uss ++ [plugQ Q T], []))
 
 theorem BotC_snoc_eq (u : ℕ) (Uss Q : List (List UT)) (us T : List UT) :
-    BotC u Uss (Q ++ [us]) T = BotC u Uss Q (us ++ [UT.tie T]) := by
+    BotC u Uss (Q ++ [us]) T = BotC u Uss Q (us ++ [UT.tie 0 T]) := by
   unfold BotC; rw [plugQ_snoc]
 
 def DTdef (P : ℕ → List (List UT) → Prop) (v : ℕ) (x : List UT) : Prop :=
@@ -241,20 +241,20 @@ theorem DT_good {t v : ℕ} {x : List UT} (h : DT t v x) {u : ℕ} (hvu : v ≤ 
     exact this
 
 theorem DT_jump {t v : ℕ} {cs : List UT} (h : DT (t + 1) v cs) {u : ℕ} (hvu : v ≤ u) {us0 : List UT}
-    (hus : DT t u us0) : DT t u (us0 ++ [UT.tie cs]) := by
-  refine ⟨TRaws_snoc.mpr ⟨hus.1, TRaws_mono hvu cs h.1⟩, fun u' hu' Uss hU hG Q hQ => ?_⟩
+    (hus : DT t u us0) : DT t u (us0 ++ [UT.tie 0 cs]) := by
+  refine ⟨TRaws_snoc.mpr ⟨hus.1, rfl, TRaws_mono hvu cs h.1⟩, fun u' hu' Uss hU hG Q hQ => ?_⟩
   rw [← BotC_snoc_eq]
   exact h.2 u' (le_trans hvu hu') Uss hU hG (Q ++ [us0]) ⟨Q, us0, rfl, hQ, DT_mono hus hu'⟩
 
 theorem DT_of_jump {t v : ℕ} {cs : List UT} (hraw : TRaws v cs)
-    (hJ : ∀ u, v ≤ u → ∀ us0, DT t u us0 → DT t u (us0 ++ [UT.tie cs])) : DT (t + 1) v cs := by
+    (hJ : ∀ u, v ≤ u → ∀ us0, DT t u us0 → DT t u (us0 ++ [UT.tie 0 cs])) : DT (t + 1) v cs := by
   refine ⟨hraw, fun u hu Uss hU hG Q hQ => ?_⟩
   obtain ⟨Q', us0, rfl, hQ', hus0⟩ := hQ
   rw [BotC_snoc_eq]
   exact (hJ u hu us0 hus0).2 u le_rfl Uss hU hG Q' hQ'
 
 theorem DT_tie {t v : ℕ} {us cs : List UT} (hus : DT t v us) (hcs : DT (t + 1) v cs) :
-    DT t v (us ++ [UT.tie cs]) := DT_jump hcs le_rfl hus
+    DT t v (us ++ [UT.tie 0 cs]) := DT_jump hcs le_rfl hus
 
 /-- ★ 最上段の新しい F のタイ（子の並びは空）。 -/
 theorem DT_nil0 (v : ℕ) : DT 0 v [] := by

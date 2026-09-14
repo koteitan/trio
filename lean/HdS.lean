@@ -24,11 +24,11 @@ theorem topTs_snoc_ch (u : ℕ) (us : List UT) (Z : TrioSeq) :
   simp [topTs_append, topTs, topT]
 
 theorem topTs_snoc_tie (u : ℕ) (us cs : List UT) :
-    topTs u (us ++ [UT.tie cs]) = topTs u us ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs u cs) := by
+    topTs u (us ++ [UT.tie 0 cs]) = topTs u us ++ ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs u cs) := by
   simp [topTs_append, topTs, topT]
 
 theorem topTs_rep_tie (u : ℕ) (us0 y : List UT) : ∀ n,
-    topTs u (us0 ++ List.replicate n (UT.tie y))
+    topTs u (us0 ++ List.replicate n (UT.tie 0 y))
       = topTs u us0 ++ (List.range n).flatMap (fun _ => ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs u y))
   | 0 => by simp
   | n + 1 => by
@@ -130,7 +130,7 @@ theorem DT_load {v : ℕ} : ∀ Z ∈ Wg (2 * v), based Z →
           rw [hM, entry0_shiftr01 hr2', entry_cons, entry0_shiftr01 hw]
           have := getD_row0_ge hVF hw
           omega
-        · have hrep : DT t' u (us0 ++ List.replicate n (UT.tie (us ++ [UT.ch Z]))) := by
+        · have hrep : DT t' u (us0 ++ List.replicate n (UT.tie 0 (us ++ [UT.ch Z]))) := by
             induction n with
             | zero => simpa using hus0
             | succ n ih => rw [List.replicate_succ', ← List.append_assoc]; exact DT_jump hDZ hu ih
@@ -175,10 +175,10 @@ theorem DT_load {v : ℕ} : ∀ Z ∈ Wg (2 * v), based Z →
 /-! ## 空のタイ -/
 
 /-- ★ 最上段の高さ t の並びの最後に空のタイを足す規則。 -/
-theorem DT_tieE {t u : ℕ} {us0 : List UT} (hus : DT t u us0) : DT t u (us0 ++ [UT.tie []]) := by
-  refine ⟨TRaws_snoc.mpr ⟨hus.1, trivial⟩, fun u' hu' Uss hU hG Q hQ => ?_⟩
+theorem DT_tieE {t u : ℕ} {us0 : List UT} (hus : DT t u us0) : DT t u (us0 ++ [UT.tie 0 []]) := by
+  refine ⟨TRaws_snoc.mpr ⟨hus.1, rfl, trivial⟩, fun u' hu' Uss hU hG Q hQ => ?_⟩
   rw [BotC_word]
-  have eT : topTs u' (us0 ++ [UT.tie []]) = topTs u' us0 ++ [((1, u' + 1, 0) : ℕ × ℕ × ℕ)] := by
+  have eT : topTs u' (us0 ++ [UT.tie 0 []]) = topTs u' us0 ++ [((1, u' + 1, 0) : ℕ × ℕ × ℕ)] := by
     simp [topTs_append, topTs, topT, shiftr01]
   rw [eT]
   have hQr := PT_raw hQ
@@ -204,7 +204,8 @@ mutual
 theorem DT_allU {v : ℕ} : ∀ (x : UT) (t : ℕ) (pre : List UT), TRaw v x → DT t v pre →
     DT t v (pre ++ [x])
   | .ch Z, t, pre, hx, hpre => DT_load Z hx.1 hx.2 t pre hpre
-  | .tie cs, t, pre, hx, hpre => by
+  | .tie l cs, t, pre, hx, hpre => by
+      obtain ⟨rfl, hx⟩ := hx
       have hcs := DT_allL (v := v) cs (t + 1) [] hx (DT_nil (t + 1) v)
       rw [List.nil_append] at hcs
       exact DT_tie hpre hcs

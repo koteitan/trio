@@ -1,7 +1,7 @@
 /-
 HdH.lean: 木の単位の F のタイの子の F の位置のタイの規則 GoodLowT_none と、生成器の部品。
 
-- GoodLowT_none: GoodLowT c us → GoodLowT c (us ++ [UT.tie []])。F の位置のタイ (3, r, 0) は FarP_GpT_lt
+- GoodLowT_none: GoodLowT c us → GoodLowT c (us ++ [UT.tie 0 []])。F の位置のタイ (3, r, 0) は FarP_GpT_lt
   （s = liftOff + 1）。h1 は us の語、h2 の子の節点は埋め込み先の族で HcO.RNt_node と NXt を使って置く。
 - 低い塊の族 ChLowT c X := LowC (c+1) X ∧ ∀ 族, NXt（HcN.NXt_ax から差し込み口の公理）。GoodLowT_some。
 - 生成器: okLow（塊）、okRAt（中身）、OkWsAt、FarCAt_of_OkWsAt、PVF_farWAt。
@@ -32,12 +32,12 @@ theorem farWt_lastE {A : List ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) (H g : ℕ → 
 theorem farWt_lastN {A : List ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) (H g : ℕ → ℕ) {b r c' : ℕ}
     (ws : List (List (List UT) × ℕ × TrioSeq))
     (Lds : List (List UT)) {us : List UT} (hus : RawTs (c' + 1) us) :
-    farWt b r (ws ++ [((Lds ++ [us ++ [(UT.tie [])]]).map
+    farWt b r (ws ++ [((Lds ++ [us ++ [(UT.tie 0 [])]]).map
         (relTs A H g c'),
         c', [])])
       = (farWt b r ws ++ fwH b r (FTLt b r c' (Lds.map (relTs A H g c'))) b
           (((1, r, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b r c' us))) ++ [((3, r, 0) : ℕ × ℕ × ℕ)] := by
-  have hus' : RawTs (c' + 1) (us ++ [UT.tie []]) := RawTs_snoc.mpr ⟨hus, by simp [RawT, RawTs]⟩
+  have hus' : RawTs (c' + 1) (us ++ [UT.tie 0 []]) := RawTs_snoc.mpr ⟨hus, by simp [RawT, RawTs]⟩
   rw [farWt_lastE hA01 H g ws Lds hus', chT_snoc]
   simp [fwH, unitT, chT, shiftr01, mlift_nil, mlift_zero]
 
@@ -54,10 +54,10 @@ theorem fwH_child_app1 (b r : ℕ) (H0 C N : TrioSeq) :
 
 /-- ★ F のタイの子の並びの最後に F の位置のタイを足す規則。 -/
 theorem GoodLowT_none {c : ℕ} {us : List UT} (h : GoodLowT c us) :
-    GoodLowT c (us ++ [UT.tie []]) := by
-  have hraw : RawTs (c + 1) (us ++ [UT.tie []]) := RawTs_snoc.mpr ⟨h.1, by simp [RawT, RawTs]⟩
+    GoodLowT c (us ++ [UT.tie 0 []]) := by
+  have hraw : RawTs (c + 1) (us ++ [UT.tie 0 []]) := RawTs_snoc.mpr ⟨h.1, by simp [RawT, RawTs]⟩
   refine ⟨hraw, fun A k hA01 hk hAk H u hcu Lds hL => ?_⟩
-  have e1 : mlTs c (u - c) (us ++ [UT.tie []]) = mlTs c (u - c) us ++ [UT.tie []] := by
+  have e1 : mlTs c (u - c) (us ++ [UT.tie 0 []]) = mlTs c (u - c) us ++ [UT.tie 0 []] := by
     rw [mlTs_append]; simp [mlTs, mlT]
   rw [e1]
   obtain ⟨us', hus'def⟩ : ∃ us', us' = mlTs c (u - c) us := ⟨_, rfl⟩
@@ -72,7 +72,7 @@ theorem GoodLowT_none {c : ℕ} {us : List UT} (h : GoodLowT c us) :
     · exact hL.1 us2 hus2
     · rw [List.mem_singleton] at hus2; rw [hus2]
       exact RawTs_mono' (by omega) hus'.1
-  have hraw2 : ∀ us2 ∈ Lds ++ [us' ++ [(UT.tie [])]],
+  have hraw2 : ∀ us2 ∈ Lds ++ [us' ++ [(UT.tie 0 [])]],
       RawTs (u + reOff (fun _ => 0) H A k) us2 := by
     intro us2 hus2
     rcases List.mem_append.mp hus2 with hus2 | hus2

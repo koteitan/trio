@@ -19,7 +19,7 @@ open HaA HaC HaE HaF HaG HbD HbM HbP HbS HcA HcE HcF HcI HcM HdA HdB HdC HdD HdE
 
 /-- ★ 高さ t の並びの最後に空のタイを足す規則。 -/
 theorem GT_tieE {t : ℕ} {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ} {us : List UT}
-    (h : GT t A k H c us) : GT t A k H c (us ++ [UT.tie []]) := by
+    (h : GT t A k H c us) : GT t A k H c (us ++ [UT.tie 0 []]) := by
   refine ⟨RawTs_snoc.mpr ⟨h.1, by simp [RawT, RawTs]⟩, fun G S o f hE u hcu Lds hL Q hQ => ?_⟩
   intro b hub ws hC hR
   have hA := hE.2.2.1
@@ -30,7 +30,7 @@ theorem GT_tieE {t : ℕ} {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ} {
   have hRaw := RawTs_imgT hE hcu h.1
   obtain ⟨V0, hV0⟩ : ∃ V0, V0 = chT b r u (imgT A H G c u us) := ⟨_, rfl⟩
   have hV0F : Fr V0 := by rw [hV0]; exact Fr_chT _ hRaw
-  have eT : chT b r u (imgT A H G c u us ++ [UT.tie []]) = V0 ++ [((1, r, 0) : ℕ × ℕ × ℕ)] := by
+  have eT : chT b r u (imgT A H G c u us ++ [UT.tie 0 []]) = V0 ++ [((1, r, 0) : ℕ × ℕ × ℕ)] := by
     rw [hV0]; simp [chT_append, chT, unitT, shiftr01]
   have eW : farWt b r ws ++ (fwH b r (FTLt b r u (Lds ++ [plugQ Q []])) u [] ++
         shiftr01 (Q.length + 2) 0 (V0 ++ [((1, r, 0) : ℕ × ℕ × ℕ)]))
@@ -209,7 +209,7 @@ theorem okLowS_tie {c : ℕ} {X : TrioSeq} (h : okLowS c X) {E : TrioSeq} (hE : 
 mutual
 def LRawT (c : ℕ) : UT → Prop
   | .ch X => okLowS c X
-  | .tie us => LRawTs c us
+  | .tie l us => l = 0 ∧ LRawTs c us
 def LRawTs (c : ℕ) : List UT → Prop
   | [] => True
   | x :: us => LRawT c x ∧ LRawTs c us
@@ -225,7 +225,8 @@ theorem GT_allU {c : ℕ} : ∀ (x : UT) (t : ℕ) (pre : List UT), LRawT c x �
   | .ch X, t, pre, hx, hpre => by
       have := (hx.2.2 t A k hA01 hk H).2.2 c le_rfl pre hpre
       rwa [Nat.sub_self, mlift_zero] at this
-  | .tie cs, t, pre, hx, hpre => by
+  | .tie l cs, t, pre, hx, hpre => by
+      obtain ⟨rfl, hx⟩ := hx
       have hcs := GT_allL (c := c) cs (t + 1) [] hx GT_nilS
       rw [List.nil_append] at hcs
       exact GT_tie hA01 hk hAk hpre hcs

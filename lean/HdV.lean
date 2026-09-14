@@ -21,7 +21,7 @@ theorem TRaws_cons_ch {v : ℕ} {Z : TrioSeq} (hZ : Z ∈ Wg (2 * v)) (hb : base
     (h : TRaws v us) : TRaws v (UT.ch Z :: us) := ⟨⟨hZ, hb⟩, h⟩
 
 theorem TRaws_cons_tie {v : ℕ} {cs : List UT} (hc : TRaws v cs) {us : List UT} (h : TRaws v us) :
-    TRaws v (UT.tie cs :: us) := ⟨hc, h⟩
+    TRaws v (UT.tie 0 cs :: us) := ⟨⟨rfl, hc⟩, h⟩
 
 theorem RawssT_nil (v : ℕ) : ∀ us ∈ ([] : List (List UT)), TRaws v us := fun _ h => by simp at h
 

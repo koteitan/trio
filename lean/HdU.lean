@@ -82,7 +82,7 @@ theorem GTC_N2 {v : ℕ} {Uss : List (List UT)} (hU : ∀ us ∈ Uss, TRaws v us
     | zero => exact ⟨us, hus, by simp [tow, shiftr01, hD]⟩
     | succ j ih =>
         obtain ⟨T, hTr, hTe⟩ := ih
-        refine ⟨us ++ [UT.tie T], TRaws_snoc.mpr ⟨hus, hTr⟩, ?_⟩
+        refine ⟨us ++ [UT.tie 0 T], TRaws_snoc.mpr ⟨hus, rfl, hTr⟩, ?_⟩
         rw [topTs_append, htow, ← hTe, hD]
         simp [topTs, topT]
   have hlen2 : 2 ≤ (((0, v + 1, 0) : ℕ × ℕ × ℕ) :: R).length := by simp; omega

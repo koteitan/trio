@@ -25,7 +25,7 @@ theorem chT_snoc_ch (b r u : ℕ) (x : List UT) (Y : TrioSeq) :
   simp [chT_append, chT, unitT]
 
 theorem chT_rep_tie (b r u : ℕ) (us0 y : List UT) : ∀ m,
-    chT b r u (us0 ++ List.replicate m (UT.tie y))
+    chT b r u (us0 ++ List.replicate m (UT.tie 0 y))
       = chT b r u us0 ++ (List.range m).flatMap
           (fun _ => ((1, r, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b r u y))
   | 0 => by simp
@@ -181,18 +181,18 @@ theorem BotT_Fflat {C : List ℕ} {o : ℕ} {f : ℕ → ℕ} (hC : ∀ a ∈ C,
 theorem BotT_tieflat {C : List ℕ} {o : ℕ} {f : ℕ → ℕ} (hC : ∀ a ∈ C, a < o) (hC1 : ∀ a ∈ C, 1 ≤ a)
     (ho : 1 ≤ o) {u K : ℕ} {Lds Q : List (List UT)} {us0 x : List UT}
     (hus0 : RawTs K us0) (hx : RawTs K x) {W1 : TrioSeq} (hW1 : Fr W1)
-    (hrep : ∀ m, BotT C o f u Lds Q (us0 ++ List.replicate m (UT.tie (x ++ [UT.ch W1])))) :
-    BotT C o f u Lds Q (us0 ++ [UT.tie (x ++ [UT.ch (W1 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)])])]) := by
+    (hrep : ∀ m, BotT C o f u Lds Q (us0 ++ List.replicate m (UT.tie 0 (x ++ [UT.ch W1])))) :
+    BotT C o f u Lds Q (us0 ++ [UT.tie 0 (x ++ [UT.ch (W1 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)])])]) := by
   intro b hub ws hFC hR
   obtain ⟨R, hRd⟩ : ∃ R, R = b + liftOff f C o + 1 := ⟨_, rfl⟩
   obtain ⟨D, hD⟩ : ∃ D, D = chT b R u x ++ mlift W1 u (b - u) := ⟨_, rfl⟩
   have hDF : Fr D := by rw [hD]; exact Fr_append (Fr_chT _ hx) (Fr_mlift hW1 _ _)
   obtain ⟨Yfw, hYfw⟩ : ∃ Y, Y = fwH b R (FTLt b R u (Lds ++ [plugQ Q []])) u [] := ⟨_, rfl⟩
   obtain ⟨d, hd⟩ : ∃ d, d = Q.length + 2 := ⟨_, rfl⟩
-  have eT : chT b R u (us0 ++ [UT.tie (x ++ [UT.ch (W1 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)])])])
+  have eT : chT b R u (us0 ++ [UT.tie 0 (x ++ [UT.ch (W1 ++ [((1, 0, 0) : ℕ × ℕ × ℕ)])])])
       = chT b R u us0 ++ ((1, R, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (D ++ [((1, 0, 0) : ℕ × ℕ × ℕ)]) := by
     rw [chT_append, hD]
-    simp only [chT, unitT, List.append_nil]
+    simp only [chT, unitT, List.append_nil, Nat.add_zero]
     rw [chT_snoc_ch, mlift_snoc_flat W1 1 u (b - u) hW1, List.append_assoc]
   have eG : Yfw ++ shiftr01 d 0 (chT b R u us0 ++ ((1, R, 0) : ℕ × ℕ × ℕ) ::
         shiftr01 1 0 (D ++ [((1, 0, 0) : ℕ × ℕ × ℕ)]))
@@ -261,7 +261,7 @@ theorem NXs_flat {s : ℕ} {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} (c : ℕ) 
       rw [BotT_snoc_eq]
       refine BotT_tieflat hE.2.2.1 hE.2.2.2.1 hE.2.2.2.2.1 hus0.1 hRaw hW1F (fun m => ?_)
       have hrep : GT s' (S ++ A) o f u (us0 ++ List.replicate m
-          (UT.tie (imgT A H G c' u (us ++ [UT.ch (mlift W c (c' - c))])))) := by
+          (UT.tie 0 (imgT A H G c' u (us ++ [UT.ch (mlift W c (c' - c))])))) := by
         induction m with
         | zero => simpa using hus0
         | succ m ih => rw [List.replicate_succ', ← List.append_assoc]; exact GT_jump hW1gt hE hcu ih

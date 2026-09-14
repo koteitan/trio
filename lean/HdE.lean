@@ -27,7 +27,7 @@ theorem EmbU_relT {A : List ℕ} {k : ℕ} {H g : ℕ → ℕ} {S : List ℕ} {o
     ∀ x : UT, RawT (c + reOff (fun _ => 0) H A k) x →
       relT (S ++ A) f g2 c (relT A H g c x) = relT A H (addF g g2) c x
   | .ch X, h => by simp only [relT]; rw [EmbU_reliftX hE c g2 h.2.2]
-  | .tie us, h => by simp only [relT]; rw [EmbU_relTs hE c g2 us h]
+  | .tie _ us, h => by simp only [relT]; rw [EmbU_relTs hE c g2 us h]
 theorem EmbU_relTs {A : List ℕ} {k : ℕ} {H g : ℕ → ℕ} {S : List ℕ} {o : ℕ} {f : ℕ → ℕ}
     (hE : EmbU A k H g S o f) (c : ℕ) (g2 : ℕ → ℕ) :
     ∀ us : List UT, RawTs (c + reOff (fun _ => 0) H A k) us →

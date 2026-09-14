@@ -23,7 +23,7 @@ open HdA HdB HdC HdD HdE HdF HdG HdH HdI HdJ HdL HdM HdN HdO HdP
 mutual
 def topT (v : ℕ) : UT → TrioSeq
   | .ch Z => shiftr01 1 0 Z
-  | .tie us => ((1, v + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs v us)
+  | .tie l us => ((1, v + 1 + l, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs v us)
 def topTs (v : ℕ) : List UT → TrioSeq
   | [] => []
   | x :: us => topT v x ++ topTs v us
@@ -32,7 +32,7 @@ end
 mutual
 def TRaw (v : ℕ) : UT → Prop
   | .ch Z => Z ∈ Wg (2 * v) ∧ based Z
-  | .tie us => TRaws v us
+  | .tie l us => l = 0 ∧ TRaws v us
 def TRaws (v : ℕ) : List UT → Prop
   | [] => True
   | x :: us => TRaw v x ∧ TRaws v us
@@ -52,7 +52,7 @@ theorem TRaws_snoc {v : ℕ} {us : List UT} {x : UT} : TRaws v (us ++ [x]) ↔ T
 mutual
 theorem TRaw_mono {v u : ℕ} (hvu : v ≤ u) : ∀ x : UT, TRaw v x → TRaw u x
   | .ch Z, h => ⟨Wg_mono (by omega) h.1, h.2⟩
-  | .tie us, h => TRaws_mono hvu us h
+  | .tie _ us, h => ⟨h.1, TRaws_mono hvu us h.2⟩
 theorem TRaws_mono {v u : ℕ} (hvu : v ≤ u) : ∀ us : List UT, TRaws v us → TRaws u us
   | [], _ => trivial
   | x :: us, h => ⟨TRaw_mono hvu x h.1, TRaws_mono hvu us h.2⟩
@@ -61,7 +61,7 @@ end
 mutual
 theorem Fr_topT (v : ℕ) : ∀ x : UT, Fr (topT v x)
   | .ch Z => Fr_shift1 Z
-  | .tie us => Fr_node _ _
+  | .tie _ _ => Fr_node _ _
 theorem Fr_topTs (v : ℕ) : ∀ us : List UT, Fr (topTs v us)
   | [] => Fr_nil
   | x :: us => Fr_append (Fr_topT v x) (Fr_topTs v us)
@@ -70,7 +70,7 @@ end
 mutual
 theorem Hd_topT {v0 : ℕ} (v : ℕ) : ∀ x : UT, TRaw v0 x → Hd (topT v x)
   | .ch _, h => HcS.Hd_shift1_based h.2
-  | .tie _, _ => Hd_node _ _
+  | .tie _ _, _ => Hd_node _ _
 theorem Hd_topTs {v0 : ℕ} (v : ℕ) : ∀ us : List UT, TRaws v0 us → Hd (topTs v us)
   | [], _ => fun h => absurd rfl h
   | x :: us, h => Hd_app (Hd_topT v x h.1) (Hd_topTs v us h.2)
@@ -83,10 +83,10 @@ theorem mlift_topT {v0 : ℕ} : ∀ x : UT, TRaw v0 x → ∀ v, v0 ≤ v → �
       simp only [topT]
       have := mlift_append_low (A := []) (low_of_Wg h.1 1 hv) t
       simpa [mlift_nil] using this
-  | .tie us, h, v, hv, t => by
+  | .tie l us, h, v, hv, t => by
       simp only [topT]
-      rw [mlift_node (show v < v + 1 by omega) (Fr_topTs v us), mlift_topTs us h v hv t,
-        show v + 1 + t = v + t + 1 by omega]
+      rw [mlift_node (show v < v + 1 + l by omega) (Fr_topTs v us), mlift_topTs us h.2 v hv t,
+        show v + 1 + l + t = v + t + 1 + l by omega]
 theorem mlift_topTs {v0 : ℕ} : ∀ us : List UT, TRaws v0 us → ∀ v, v0 ≤ v → ∀ t,
     mlift (topTs v us) v t = topTs (v + t) us
   | [], _, v, _, t => by simp [topTs, mlift_nil]
@@ -101,7 +101,7 @@ end
 mutual
 def farT : UT → UT
   | .ch Z => .ch (shiftr01 1 0 Z)
-  | .tie us => .tie (farTs us)
+  | .tie l us => .tie l (farTs us)
 def farTs : List UT → List UT
   | [] => []
   | x :: us => farT x :: farTs us
@@ -110,7 +110,7 @@ end
 mutual
 theorem unitT_farT (u : ℕ) : ∀ x : UT, unitT u (u + 1) u (farT x) = topT u x
   | .ch Z => by simp only [farT, unitT, topT, Nat.sub_self, mlift_zero]
-  | .tie us => by simp only [farT, unitT, topT, chT_farTs u us]
+  | .tie _ us => by simp only [farT, unitT, topT, chT_farTs u us]
 theorem chT_farTs (u : ℕ) : ∀ us : List UT, chT u (u + 1) u (farTs us) = topTs u us
   | [] => by simp [farTs, chT, topTs]
   | x :: us => by simp only [farTs, chT, topTs, unitT_farT u x, chT_farTs u us]
@@ -130,7 +130,7 @@ theorem LRawT_farT {u : ℕ} : ∀ x : UT, TRaw u x → LRawT u (farT x)
       simp only [farT, LRawT]
       have := okLowS_load (okLowS_nil u) h.1 h.2
       simpa using this
-  | .tie us, h => by simp only [farT, LRawT]; exact LRawTs_farTs us h
+  | .tie _ us, h => by simp only [farT, LRawT]; exact ⟨h.1, LRawTs_farTs us h.2⟩
 theorem LRawTs_farTs {u : ℕ} : ∀ us : List UT, TRaws u us → LRawTs u (farTs us)
   | [], _ => by simp [farTs, LRawTs]
   | x :: us, h => by simp only [farTs, LRawTs]; exact ⟨LRawT_farT x h.1, LRawTs_farTs us h.2⟩
@@ -142,7 +142,7 @@ theorem RawT_farT {u : ℕ} : ∀ x : UT, TRaw u x → RawT (u + 0) (farT x)
       simp only [farT, RawT]
       exact ⟨Fr_shift1 Z, HcS.Hd_shift1_based h.2,
         LowC_mono (show u ≤ u + 0 by omega) (low_of_Wg h.1 1 le_rfl)⟩
-  | .tie us, h => by simp only [farT, RawT]; exact RawTs_farTs us h
+  | .tie _ us, h => by simp only [farT, RawT]; exact RawTs_farTs us h.2
 theorem RawTs_farTs {u : ℕ} : ∀ us : List UT, TRaws u us → RawTs (u + 0) (farTs us)
   | [], _ => by simp [farTs, RawTs]
   | x :: us, h => by simp only [farTs, RawTs]; exact ⟨RawT_farT x h.1, RawTs_farTs us h.2⟩

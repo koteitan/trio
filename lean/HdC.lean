@@ -41,7 +41,7 @@ theorem GTWAt_rep {A0 : List ℕ} {k0 : ℕ} {H : ℕ → ℕ} {b0 : ℕ} {Lds :
 mutual
 noncomputable def mlT (c t : ℕ) : UT → UT
   | .ch X => .ch (mlift X c t)
-  | .tie us => .tie (mlTs c t us)
+  | .tie l us => .tie l (mlTs c t us)
 noncomputable def mlTs (c t : ℕ) : List UT → List UT
   | [] => []
   | u :: us => mlT c t u :: mlTs c t us
@@ -62,7 +62,7 @@ theorem unitT_rebase {b r c c' : ℕ} (hcc : c ≤ c') (hcb : c' ≤ b) :
       have e := mlift_mlift X c (c' - c) (b - c')
       rw [show c + (c' - c) = c' by omega, show c' - c + (b - c') = b - c by omega] at e
       exact e
-  | .tie us => by simp only [mlT, unitT, chT_rebase hcc hcb us]
+  | .tie _ us => by simp only [mlT, unitT, chT_rebase hcc hcb us]
 theorem chT_rebase {b r c c' : ℕ} (hcc : c ≤ c') (hcb : c' ≤ b) :
     ∀ us : List UT, chT b r c' (mlTs c (c' - c) us) = chT b r c us
   | [] => by simp [mlTs, chT]
@@ -85,7 +85,7 @@ theorem relT_mlT (A0 : List ℕ) (H g : ℕ → ℕ) {u u' : ℕ} (hu : u ≤ u'
   | .ch X => by
       simp only [mlT, relT]
       rw [mlift_reliftX, show u + (u' - u) = u' by omega]
-  | .tie us => by simp only [mlT, relT, relTs_mlTs A0 H g hu us]
+  | .tie _ us => by simp only [mlT, relT, relTs_mlTs A0 H g hu us]
 theorem relTs_mlTs (A0 : List ℕ) (H g : ℕ → ℕ) {u u' : ℕ} (hu : u ≤ u') :
     ∀ us : List UT, relTs A0 H g u' (mlTs u (u' - u) us) = mlTs u (u' - u) (relTs A0 H g u us)
   | [] => by simp [mlTs, relTs]
@@ -107,7 +107,7 @@ theorem RawT_lift {K u u' : ℕ} (hu : u ≤ u') :
       refine ⟨Fr_mlift h.1 _ _, Hd_mlift h.2.1 _ _, ?_⟩
       have := LowC_mliftk h.2.2 (u' - u)
       rwa [show u + K + (u' - u) = u' + K by omega] at this
-  | .tie us, h => by simp only [mlT, RawT]; exact RawTs_lift' hu us h
+  | .tie _ us, h => by simp only [mlT, RawT]; exact RawTs_lift' hu us h
 theorem RawTs_lift' {K u u' : ℕ} (hu : u ≤ u') :
     ∀ us : List UT, RawTs (u + K) us → RawTs (u' + K) (mlTs u (u' - u) us)
   | [], _ => by simp [mlTs, RawTs]

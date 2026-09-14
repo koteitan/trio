@@ -1286,7 +1286,7 @@ def tlist_lean(M, kids, r0, v):
             proof = f'(HdV.TRaws_cons_ch {load_mem(M, x, y, v)} rfl {proof})'
         elif c == (r0, v + 1, 0):
             l, p = tlist_lean(M, children(M, x, y), r0 + 1, v)
-            items.insert(0, f'HdA.UT.tie {l}')
+            items.insert(0, f'HdA.UT.tie 0 {l}')
             proof = f'(HdV.TRaws_cons_tie {p} {proof})'
         else:
             raise Fail('tree child %s' % (c,))

@@ -25,7 +25,7 @@ open HaA HaC HaE HaF HbD HbM HbP HbS HcA HcE HcF HcI HcM HdA HdB HdC HdD HdE
 mutual
 theorem mlT_zero (c : ℕ) : ∀ x : UT, mlT c 0 x = x
   | .ch X => by simp only [mlT, mlift_zero]
-  | .tie us => by simp only [mlT, mlTs_zero c us]
+  | .tie _ us => by simp only [mlT, mlTs_zero c us]
 theorem mlTs_zero (c : ℕ) : ∀ us : List UT, mlTs c 0 us = us
   | [] => by simp [mlTs]
   | x :: us => by simp only [mlTs, mlT_zero c x, mlTs_zero c us]
@@ -35,7 +35,7 @@ mutual
 theorem mlT_comp {c c' u : ℕ} (hcc : c ≤ c') (hu : c' ≤ u) :
     ∀ x : UT, mlT c' (u - c') (mlT c (c' - c) x) = mlT c (u - c) x
   | .ch X => by simp only [mlT, mlift_comp_vub hcc hu]
-  | .tie us => by simp only [mlT, mlTs_comp hcc hu us]
+  | .tie _ us => by simp only [mlT, mlTs_comp hcc hu us]
 theorem mlTs_comp {c c' u : ℕ} (hcc : c ≤ c') (hu : c' ≤ u) :
     ∀ us : List UT, mlTs c' (u - c') (mlTs c (c' - c) us) = mlTs c (u - c) us
   | [] => by simp [mlTs]
@@ -53,7 +53,7 @@ mutual
 theorem relT_tie_inv {A : List ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) {c : ℕ} (H g : ℕ → ℕ) :
     ∀ x : UT, RawT (c + 1) x → relT A H g c x = x
   | .ch X, h => by simp only [relT]; rw [reliftX_tie_inv hA01 h.2.2 H g]
-  | .tie us, h => by simp only [relT]; rw [relTs_tie_inv hA01 H g us h]
+  | .tie _ us, h => by simp only [relT]; rw [relTs_tie_inv hA01 H g us h]
 theorem relTs_tie_inv {A : List ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) {c : ℕ} (H g : ℕ → ℕ) :
     ∀ us : List UT, RawTs (c + 1) us → relTs A H g c us = us
   | [], _ => by simp [relTs]

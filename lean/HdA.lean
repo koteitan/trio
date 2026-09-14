@@ -22,12 +22,12 @@ open HaA HaC HaE HaF HbD HbM HbP HcA HcI
 
 inductive UT : Type where
   | ch : TrioSeq → UT
-  | tie : List UT → UT
+  | tie : ℕ → List UT → UT
 
 mutual
 noncomputable def unitT (b r c : ℕ) : UT → TrioSeq
   | .ch X => mlift X c (b - c)
-  | .tie us => ((1, r, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b r c us)
+  | .tie l us => ((1, r + l, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b r c us)
 noncomputable def chT (b r c : ℕ) : List UT → TrioSeq
   | [] => []
   | u :: us => unitT b r c u ++ chT b r c us
@@ -45,7 +45,7 @@ theorem chT_snoc (b r c : ℕ) (us : List UT) (u : UT) :
 mutual
 def RawT (k : ℕ) : UT → Prop
   | .ch X => Fr X ∧ Hd X ∧ LowC k X
-  | .tie us => RawTs k us
+  | .tie _ us => RawTs k us
 def RawTs (k : ℕ) : List UT → Prop
   | [] => True
   | u :: us => RawT k u ∧ RawTs k us
@@ -67,12 +67,12 @@ theorem RawTs_append {k : ℕ} {us vs : List UT} : RawTs k (us ++ vs) ↔ RawTs 
 theorem RawTs_snoc {k : ℕ} {us : List UT} {u : UT} : RawTs k (us ++ [u]) ↔ RawTs k us ∧ RawT k u := by
   rw [RawTs_append]; simp [RawTs]
 
-theorem RawT_tie {k : ℕ} {us : List UT} : RawT k (.tie us) ↔ RawTs k us := by simp [RawT]
+theorem RawT_tie {k l : ℕ} {us : List UT} : RawT k (.tie l us) ↔ RawTs k us := by simp [RawT]
 
 mutual
 theorem RawT_mono {k k' : ℕ} (hk : k ≤ k') : ∀ u : UT, RawT k u → RawT k' u
   | .ch X, h => ⟨h.1, h.2.1, LowC_mono hk h.2.2⟩
-  | .tie us, h => RawTs_mono hk us h
+  | .tie _ us, h => RawTs_mono hk us h
 theorem RawTs_mono {k k' : ℕ} (hk : k ≤ k') : ∀ us : List UT, RawTs k us → RawTs k' us
   | [], _ => trivial
   | u :: us, h => ⟨RawT_mono hk u h.1, RawTs_mono hk us h.2⟩
@@ -81,7 +81,7 @@ end
 mutual
 theorem Fr_unitT {b r c k : ℕ} : ∀ u : UT, RawT k u → Fr (unitT b r c u)
   | .ch X, h => by simp only [unitT]; exact Fr_mlift h.1 _ _
-  | .tie us, _ => by simp only [unitT]; exact Fr_node _ _
+  | .tie _ _, _ => by simp only [unitT]; exact Fr_node _ _
 theorem Fr_chT {b r c k : ℕ} : ∀ us : List UT, RawTs k us → Fr (chT b r c us)
   | [], _ => by simp only [chT]; exact Fr_nil
   | u :: us, h => by
@@ -99,7 +99,7 @@ theorem Hd_app {A B : TrioSeq} (hA : Hd A) (hB : Hd B) : Hd (A ++ B) := by
 
 theorem Hd_unitT {b r c k : ℕ} : ∀ u : UT, RawT k u → Hd (unitT b r c u)
   | .ch X, h => by simp only [unitT]; exact Hd_mlift h.2.1 _ _
-  | .tie us, _ => by simp only [unitT]; exact Hd_node _ _
+  | .tie _ _, _ => by simp only [unitT]; exact Hd_node _ _
 
 theorem Hd_chT {b r c k : ℕ} : ∀ us : List UT, RawTs k us → Hd (chT b r c us)
   | [], _ => fun h => absurd rfl h
@@ -117,9 +117,10 @@ theorem mlift_unitT_base {b r c k : ℕ} (hbr : b < r) (hcb : c ≤ b) (t : ℕ)
       have e2 := mlift_mlift X c (b - c) t
       rw [show c + (b - c) = b by omega] at e2
       rw [e2, show b - c + t = b + t - c by omega]
-  | .tie us, h => by
+  | .tie l us, h => by
       simp only [unitT]
-      rw [mlift_node hbr (Fr_chT us h), mlift_chT_base hbr hcb t us h]
+      rw [mlift_node (show b < r + l by omega) (Fr_chT us h), mlift_chT_base hbr hcb t us h,
+        show r + l + t = r + t + l by omega]
 theorem mlift_chT_base {b r c k : ℕ} (hbr : b < r) (hcb : c ≤ b) (t : ℕ) :
     ∀ us : List UT, RawTs k us → mlift (chT b r c us) b t = chT (b + t) (r + t) c us
   | [], _ => by simp [chT, mlift_nil]
@@ -138,9 +139,10 @@ theorem mlift_unitT_high {b v r c K : ℕ} (hv : b + K ≤ v) (hvr : v < r) (hcb
         LowC_mono (by omega) (LowC_mliftk h.2.2 (b - c))
       have e := mlift_append_low (A := []) hLv t
       simpa [mlift_nil] using e
-  | .tie us, h => by
+  | .tie l us, h => by
       simp only [unitT]
-      rw [mlift_node hvr (Fr_chT us h), mlift_chT_high hv hvr hcb t us h]
+      rw [mlift_node (show v < r + l by omega) (Fr_chT us h), mlift_chT_high hv hvr hcb t us h,
+        show r + l + t = r + t + l by omega]
 theorem mlift_chT_high {b v r c K : ℕ} (hv : b + K ≤ v) (hvr : v < r) (hcb : c ≤ b) (t : ℕ) :
     ∀ us : List UT, RawTs (c + K) us → mlift (chT b r c us) v t = chT b (r + t) c us
   | [], _ => by simp [chT, mlift_nil]
@@ -155,7 +157,7 @@ end
 mutual
 noncomputable def relT (A0 : List ℕ) (h g : ℕ → ℕ) (c : ℕ) : UT → UT
   | .ch X => .ch (reliftX c h g A0 X)
-  | .tie us => .tie (relTs A0 h g c us)
+  | .tie l us => .tie l (relTs A0 h g c us)
 noncomputable def relTs (A0 : List ℕ) (h g : ℕ → ℕ) (c : ℕ) : List UT → List UT
   | [] => []
   | u :: us => relT A0 h g c u :: relTs A0 h g c us
@@ -174,7 +176,7 @@ mutual
 theorem relT_comp (A0 : List ℕ) (H g g' : ℕ → ℕ) (c : ℕ) :
     ∀ u : UT, relT A0 (addF H g) g' c (relT A0 H g c u) = relT A0 H (addF g g') c u
   | .ch X => by simp only [relT, reliftX_comp]
-  | .tie us => by simp only [relT, relTs_comp A0 H g g' c us]
+  | .tie _ us => by simp only [relT, relTs_comp A0 H g g' c us]
 theorem relTs_comp (A0 : List ℕ) (H g g' : ℕ → ℕ) (c : ℕ) :
     ∀ us : List UT, relTs A0 (addF H g) g' c (relTs A0 H g c us) = relTs A0 H (addF g g') c us
   | [] => by simp [relTs]
@@ -184,7 +186,7 @@ end
 mutual
 theorem relT_zero (A0 : List ℕ) (H : ℕ → ℕ) (c : ℕ) : ∀ u : UT, relT A0 H (fun _ => 0) c u = u
   | .ch X => by simp only [relT, reliftX_zero]
-  | .tie us => by simp only [relT, relTs_zero A0 H c us]
+  | .tie _ us => by simp only [relT, relTs_zero A0 H c us]
 theorem relTs_zero (A0 : List ℕ) (H : ℕ → ℕ) (c : ℕ) : ∀ us : List UT, relTs A0 H (fun _ => 0) c us = us
   | [] => by simp [relTs]
   | u :: us => by simp only [relTs, relT_zero A0 H c u, relTs_zero A0 H c us]
@@ -194,7 +196,7 @@ mutual
 theorem relT_congr {H H' : ℕ → ℕ} {A0 : List ℕ} (hH : ∀ a ∈ A0, H a = H' a) (g : ℕ → ℕ) (c : ℕ) :
     ∀ u : UT, relT A0 H g c u = relT A0 H' g c u
   | .ch X => by simp only [relT, reliftX_congr c hH (fun _ _ => rfl) X]
-  | .tie us => by simp only [relT, relTs_congr hH g c us]
+  | .tie _ us => by simp only [relT, relTs_congr hH g c us]
 theorem relTs_congr {H H' : ℕ → ℕ} {A0 : List ℕ} (hH : ∀ a ∈ A0, H a = H' a) (g : ℕ → ℕ) (c : ℕ) :
     ∀ us : List UT, relTs A0 H g c us = relTs A0 H' g c us
   | [] => by simp [relTs]
@@ -210,7 +212,7 @@ theorem RawT_relT {A0 : List ℕ} {k0 : ℕ} {h : ℕ → ℕ} {c : ℕ} (g : �
       refine ⟨Fr_reliftX hX.1 _ _ _ _, Hd_reliftX hX.2.1 _ _ _ _, ?_⟩
       have := LowC_reliftX hX.2.2 h g A0
       rwa [reOff_zero_comp] at this
-  | .tie us, hu => by
+  | .tie _ us, hu => by
       simp only [relT, RawT]
       exact RawTs_relTs g us hu
 theorem RawTs_relTs {A0 : List ℕ} {k0 : ℕ} {h : ℕ → ℕ} {c : ℕ} (g : ℕ → ℕ) :
@@ -238,14 +240,15 @@ theorem reliftX_unitTA {S A0 : List ℕ} {o : ℕ} (hA : ∀ a ∈ S ++ A0, a < 
       have em := mlift_reliftX c (b - c) f0 g A0 X
       rw [show c + (b - c) = b by omega] at em
       rw [em]
-  | .tie us, h => by
+  | .tie l us, h => by
       simp only [unitT, relT]
-      have hlow : lowP f (S ++ A0) (liftOff f (S ++ A0) o + 1) = S ++ A0 :=
+      have hlow : lowP f (S ++ A0) (liftOff f (S ++ A0) o + (1 + l)) = S ++ A0 :=
         lowP_all (fun a ha => by have := liftVal_lt_liftOff (f := f) hA ha; omega)
       have e1 := reliftX_node (Fr_chT (b := b) (r := b + liftOff f (S ++ A0) o + 1) (c := c) us h) b
-        (liftOff f (S ++ A0) o + 1) 0 f g (S ++ A0)
-      rw [hlow, reOff_above hA f g 1, show b + (liftOff f (S ++ A0) o + 1) = b + liftOff f (S ++ A0) o + 1 by omega,
-        show b + (liftOff (addF f g) (S ++ A0) o + 1) = b + liftOff (addF f g) (S ++ A0) o + 1 by omega] at e1
+        (liftOff f (S ++ A0) o + (1 + l)) 0 f g (S ++ A0)
+      rw [hlow, reOff_above hA f g (1 + l),
+        show b + (liftOff f (S ++ A0) o + (1 + l)) = b + liftOff f (S ++ A0) o + 1 + l by omega,
+        show b + (liftOff (addF f g) (S ++ A0) o + (1 + l)) = b + liftOff (addF f g) (S ++ A0) o + 1 + l by omega] at e1
       rw [e1, reliftX_chTA hA hSA b hf g hK hcb us h]
 theorem reliftX_chTA {S A0 : List ℕ} {o : ℕ} (hA : ∀ a ∈ S ++ A0, a < o)
     (hSA : ∀ s ∈ S, ∀ a ∈ A0, a < s) (b : ℕ) {f f0 : ℕ → ℕ} (hf : ∀ a ∈ A0, f a = f0 a)
