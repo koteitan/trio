@@ -30102,3 +30102,45 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 結び: hrep m' = Gd_deep_towers を Gd_mono で道 Q に降ろし、chT_Xtow + imgT_plugQ_spine で tow の形に合わせる。
 - 次: (1) 深い R の行列条件の補題（hpM/hd/hsr、chT(plugQ spine (W++[tie l[]])) の行 1 構造、W は段 l の木）、
   (2) 2 場合の描画補題、(3) Gd_deepleaf を組む。まず (1) の hsr/hd（易しい）から。
+
+## 追記588: HeQ に upleaf_deep_coreD（緑）。深い葉の残りの本当の壁＝空の深い葉の整礎性
+
+- HeQ 緑（commit 済み）: upleaf_deep_core の hd_ を domT R (2*row1-1) に修正、upleaf_deep_coreD（悪い根が段 0、
+  descent D が Fr かつ全列 row1 ≥ m のとき、hRok/hsr/hnpR/hd/hpM を D から証明）。深い葉の行列条件は解決。
+- HeG の Gd_nil_of / clE_ext_dec / Gd_nil_chS0 を読んで分かった、残りの本当の壁:
+  - 木の再帰の底は Gd P [] で、これは Gd_nil_of で「非空の道は全て段 0 の延長（Q'++[(us,0)]、Gd P' us）」に分解し、
+    空のタイ0を Gd_tieE で置く。Gd_tieE は「Gd P us → Gd P (us++[tie 0 []])」を自前で（FarP_GpT_lt の塔）出す完結補題で、
+    塔は「供給された兄弟 us」を入れ子にする（道を再下降しない）。だから循環しない。
+  - 深い葉の空版 Gd clD [] は、snocNil の道（末尾 ([],l)）で「空 = tie l [] の深い葉」になる。この深い葉の塔は
+    「道の spine を再下降」する（供給された兄弟でなく）。spine は空前置なので良さの供給がなく、塔の底は Gd clD [] 自身。
+    → 段 0 の Gd_tieE と違い、供給された兄弟で底に着かず、順序数（operator）の整礎性でしか底に着かない。有限に展開できない。
+  - つまり空の深い葉 Gd clD [] は「非自明な順序数」で、木の再帰の底に置けない（浅い上の葉と本質的に違う）。
+- 見込みのある方針（次に検討）:
+  - (a) spine に良さを持たせる: 段 l の延長を「空前置」でなく「良い成分つき」にして、塔が供給された成分を再下降する形にする。
+    ただし antitonicity（追記583）が戻るので、成分を stage でなく閉包で良いようにする工夫が要る。
+  - (b) 深い葉を「道」でなく「内容」で持つ: 深い葉 = plugQ spine [tie l []] を内容 x として P0（段 0）で証明。
+    塔は内容 x（供給）を再下降。x は有限の木なので、spine の長さの帰納で底に着く可能性（要検討。塔は x を大きくするので、
+    operator の整礎性が要るかもしれない）。
+  - (c) 深い葉の族を GpT の非叙述的定義（GpT [] 1 の子）で扱い、明示の閉包を避ける（追記580 案3。位置 0 の壁）。
+- 現状の緑の資産: HeQ（upleaf_deep_core・upleaf_deep_coreD・Xtow・chT_Xtow）、HeR（clD・Gd_redescend・Gd_deep_towers・
+  clD_seg・split_exists）。深い葉の flat・塔・行列条件・閉包・分解は全て緑。残りは空の深い葉の整礎性（本質的な壁）。
+- 次: 方針 (b)（内容で持つ深い葉）を、spine 長さの帰納で Gd P0 (plugQ spine [tie l []]) が出るか検討。
+  出なければ (a)（spine に閉包の良さ）を設計する。
+
+## 追記589: 訂正 — 空の深い葉は spine 長さの帰納で整礎（塔は spine を短くする）
+
+- 追記588 の悲観は誤り。塔 tow r 0 R m' を再計算した:
+  R = chT(plugQ spine [tie l []])（spine 長さ n）とすると R.dropLast = chT(plugQ spine []) = 「spine を [] で下った木」
+  = spine 長さ n−1 の深い葉（内側の tie l [] が葉）。tow r 0 R 1 = R.dropLast なので、塔は spine を 1 短くする。
+  spine 0（tie0 か F で終わる道の直下の tie l []）は R = [(1,r+l,0)]、R.dropLast = []、tow 1 = [] → GoodChtX_bot で底に着く。
+- よって空の深い葉は spine 長さ n の帰納で出る（循環でない）。n+1 の塔（hrep m'）は spine 長さ n の深い葉の
+  m' 個の複製で、n の良さ（帰納法の仮定）と far の複製機構（GTWAt_rep 相当）で出る。
+- 修正した設計:
+  1. Gd_nil_deep（空の深い葉 Gd (clD l PNil) []）を spine 長さの帰納で証明。各道 Q を split で Qbase ++ spine に分け、
+     spine 長さで帰納。底（spine 0）は tie0/F 直下の tie l []（塔が空）。段は upleaf_deep_coreD + 短い spine の hrep。
+  2. Gd_deepleaf（非空 us）は Gd_deep_towers（Gd clD us から、us 供給で循環なし）+ upleaf_deep_coreD。
+     底の us=[] は Gd_nil_deep。
+- 塔 hrep m'（spine n）= tow m' = spine-(n−1) 葉の m' 複製。これを spine-(n−1) の良さから出すのは、
+  Gd_deep_towers（Xtow）でなく、spine を 1 段浅くした深い葉の Gd を far の複製で m' 回並べる形。要検討（GTWAt_rep or NXs）。
+- 現状: 深い葉の flat・塔・行列条件・閉包・分解は全て緑。残りは Gd_nil_deep（spine 帰納）と Gd_deepleaf の組み立て。
+- 次: Gd_nil_deep の spine 0（底）を先に書いて緑にし、次に spine 帰納の段（hrep を短い spine から）を組む。
