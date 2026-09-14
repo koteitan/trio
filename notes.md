@@ -29357,3 +29357,24 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
    段 b+2 の節点に子（1483、1484）、字と同じ行 1 の F（1485〜1488）。
 2. 最上段（1489〜4784）: 子のないタイで終わる遠い語のあとの遠い語。潰れの塔の写し j の中でタイは字と同じ行 1（F）になり、
    塔の 2 段目は錨 [1]・段 2 の級の F になる。1 と同じ「錨つきの級の中身の族」が要る。
+
+## 追記546: 錨つきの中身の遠い語の族（設計、紙）
+
+残りの壁（1479〜、最上段）はどちらも「錨の列 A の級の遠い字の中身に、錨つきの子を持つ節点（F を含む）」が要る。
+手本: 字の中身の族 RLC A o H b Y := ∀ g b', LC1 … (reliftX b' H g (o :: A) (mlift Y b (b' − b)))
+（族の中に再持ち上げの層があるので relift の場は reliftX_comp で出る。RLC_ax は mlift・reliftX を公理の各場に通す）。
+
+設計:
+- 中身は錨の列 A0 と状態 H で持ち上げた形で持つ。遠い語の並び ws の状態 g での形 = 各中身に reliftX (段) H g A0。
+- FarCA A0 H k0 b0 ws := ∀ g S o f b,（f は A0 上で H+g）→ b0 ≤ b → 並びの形 → S の錨は全て A0 の錨より上、S ++ A0 < o →
+      中身の上限 reOff 0 (H+g) A0 k0 ≤ liftVal f (S ++ A0) a（a ∈ S）、≤ liftOff f (S ++ A0) o →
+      GpT (S ++ A0) o f b (farW b (b + liftOff f (S ++ A0) o + 1) (ws を g で持ち上げた形))
+  - 再持ち上げ: S の錨は中身より上なので動かさず、A0 の部分は状態 H+g の A0 の再持ち上げと一致（reStep_congrA0）。reliftX_comp で状態 H+g+g'。
+  - t の持ち上げ: 中身は節点の段以下で動かない。
+  - 塔: F の子の添字 (o :: S ++ A0, o+1, upF o 0 f) は S に o を足すだけ。f は A0 上で変わらない。
+- 中身の族 okWA A0 k0 H u X := Hd X ∧ LowC (u + reOff 0 H A0 k0) X ∧ ∀ b0, GTWA（FarCA の snoc で閉じる）。
+  - SlotAx: okWk_ax の各場に RLC_ax の再持ち上げの押し込みを重ねる。
+  - CtxP (GC A0) A0 k0 (okWA A0 k0): relift の場は定義から、FarP の場は遠い語の中で FarP_GpT_ge（状態 f）と FarP_RLC の再持ち上げの計算。
+  - すると R_child で、錨つきの子の級 GC A0 H τ の並びを持つ節点（τ ≤ liftOff H A0 k0）を中身に置ける。
+- A0 = [] が GzU〜GzW の k 族。錨つきの F（字と同じ行 1）は GzY と同じく FarP_GpT_lt で、h2 の子を R_child（A0 = 級の錨の列）で置く。
+- 規模: FarCA の核（持ち上げ・再持ち上げ・PVP・塔・潰れ）、okWA の公理、CtxP、語の補題の 4 ファイル程度。
