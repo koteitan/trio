@@ -30468,3 +30468,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **次**: upleaf_deep_coreT で証明中行の GTC を組む。hrep = 展開（木）の GTC を GoodTTL_all/GdT で供給、
   hpM0 を証明中の深い鎖について確立。組めれば証明中行 ∈ W → シート前進。その後 1688 は width 帰納。
 - 道 B は「包みの循環」を回避: gtc_oper が展開（木）に落とすので、hFar の FarCAt→GTC の橋は不要。
+
+## 追記608: upleaf_deep_coreT が証明中行の F のタイの子に適用可能（枠一致を実測確認）
+
+- 実測（scratchpad/match.lean）: wLT 0 ([[tie 1 [tie 1 []]]], []) = (1,1,1)(1,1,0)(2,2,0)(3,2,0)。
+  rcol 0 0 でこれを包むと (1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0) = **証明中行の遠い語（(0,0,0) 以降）と一致**。
+  ⇒ 証明中行の F のタイの子 = [tie 1 [tie 1 []]]（1 個、中身が深い鎖）。
+- upleaf_deep_coreT の枠に一致: Y = (1,1,1)(1,1,0)、d=1、q=m=2、D=[]。
+  深い節点 (2,2,0)(3,2,0) = shiftr01 1 0 ((1,2,0)::shiftr01 1 0 ([]++[(1,2,0)]))。q=m=2（同段）。
+- 残りの2つ:
+  - **hm** = 1≤2 ✓。
+  - **hpM0** : hasParent ((0,2,0)::[(1,2,0)]) (srow) 1 — 証明中の深い鎖について確立が要る（悪い根の道）。
+  - **hrep** : ∀j, GTC CLTL 0 (Y ++ shiftr01 1 0 ((1,2,0)::shiftr01 1 0 (towR 2 [] j)))。展開は木。
+    GdT_upleaf が木の塔を GdT_towT で供給する型紙。towR 2 [] j が木の塔（topTs_towT 経由）である事を使う。
+- **次**: HeS を build して、(1) hrep を GdT_towT/GoodTTL 経由で供給、(2) hpM0 を確立、
+  (3) GTC CLTL 0 (wLT 深い鎖) を組み、starOK_lastT で 証明中行 ∈ W。緑になれば深い葉が初めて割れる。
+- 大局: upleaf_deep_coreT（核, 緑）+ 枠一致（確認）。残りは hrep（木の塔）と hpM0 の plumbing。
