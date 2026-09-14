@@ -29810,3 +29810,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - HdP: 空のタイ GT_tieE（FarP_GpT_lt、h2 は埋め込み先の級の RNs t の塊を道の同じ位置に置く）、GT_nil、低い塊 ChLowS、
   GT_all（低い木は全ての高さ・級で良い）、GoodChtX_snocL（最後の語の F のタイの子に低い木の並び）。
 - 次: 最上段の文脈を木の単位の語にする（HdQ: 語 wLT・文脈 CLT・潰れ topCLT_Wg。HdR: 最上段の跳びの階層と荷・空のタイの規則）、生成器、行 1642〜1646。
+
+## 追記573: HdQ〜HdT（緑、シート行 1642〜1646）
+
+- HdQ: 最上段の木の単位の語 topT（荷 Z↑1、タイ (1, v+1, 0) :: 子↑1）、語 wLT、文脈 CLT、遠い段の木 farT
+  （chT u (u+1) u (farTs us) = topTs u us）、潰れ topCLT_Wg（GoodChtX_snocL で OkWsAt、towWt_GpT）、GTC_far_CLT / GTC_load_CLT。
+- HdR: BotC u Uss Q T := GTC CLT u (wLT u (Uss ++ [plugQ Q T], []))、DT t v x := 全ての段 u ≥ v、良い Uss、高さ t の良い道 Q（PT t）で BotC。
+  語は wLT u (Uss ++ [plugQ Q []], []) ++ (T の語)↑(|Q|+1)、接頭辞は行 1 が u+1 の道で PathCone（PathCone_Ytop）。
+  gtc_oper / gtc_orph / gtc_tie / gtc_flat（HdJ の GTC 版）、DT_jump、DT_nil0（新しい F のタイ、GTC_tie と GTC_load_CLT）。
+- HdS: DT_load（based_Wg_ind。帰納の述語に Wg の元であることを前提として入れた。flat は高さ 0 で F のタイ、高さ t+1 で道の最後のタイの複製）、
+  DT_tieE（gtc_tie、荷は上の段で DT_load）、DT_allL、GoodTT_all、starOK_CLT。
+- HdT: シート行 1642〜1646（F のタイの子の木 [tie [tie []]]・[tie [tie [], tie []]]・[tie [tie [tie []]]]）。
+- 次: 行 1647 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)。F のタイの子に段 v+2 の節点 (3,2,0)。[n] は入れ子のタイの鎖（追記569）。
+  最上段の木の単位に段 v+2 の節点（子の並びは GF の列）を入れる設計を調べる。
