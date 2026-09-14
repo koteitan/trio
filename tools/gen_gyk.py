@@ -181,10 +181,16 @@ def gp(M, kids, v, A, o):
             P = f'(OkWs_nil {v})'
             for fc in reversed(fcs):
                 P = f'(OkWs_cons le_rfl {okwf_lean(M, fc, v)} {P})'
-            tF = f'(GPF_farW_bot2 (o := {o}) (by decide) le_rfl {P} {okwf_lean(M, fF, v)})'
             k = nf + 1
             if k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
-                raise Fail('letter after F word')
+                if o >= 2:
+                    # 節点の段以下の空の節点は t の持ち上げで動かないので語の述語（GzP.PVF_farW_bot2）
+                    w = f'(PVF_farW_bot2 (o := {o}) (by decide) le_rfl {P} {okwf_lean(M, fF, v)})'
+                    nl = nf + 1
+                else:
+                    raise Fail('letter after F word')
+            else:
+                tF = f'(GPF_farW_bot2 (o := {o}) (by decide) le_rfl {P} {okwf_lean(M, fF, v)})'
     while tF is None and k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
         s, e = kids[k]
         w = (f'(PVF_snoc (A := {lean_list(A)}) (o := {o}) (by decide) {w} '
