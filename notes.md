@@ -30453,3 +30453,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **次**: (1) HeQ.upleaf_deep_core を読み直し、深い鎖 tie 1 [tie 1 [], tie 1 []] の GTC を gtc_oper+木 で
   組めるか試す。(2) 効けば hFar の包み（FarCAt→GTC の循環）を回避できる。生成器の treelit_top を upleaf 対応に。
 - 注意: 2つの道 — (A) hFar+okRAt（緑だが包みが循環）、(B) gtc_oper+木（展開が木、包み不要かも）。B を優先で試す。
+
+## 追記607: ★ HeS.lean 緑 — upleaf_deep_coreT（深い葉 q=m の GTC 版の核）。B 案が動く
+
+- 実測の精査:
+  - 証明中行 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)（単一 inner の深い鎖 tie 1 [tie 1 []]）の
+    oper 展開は**全て木**（n=2..5 で generator が OK）: (4,1,0)(5,2,0)(6,1,0)(7,2,0)... = tie 0/tie 1 交互。
+  - 1688（(4,2,0) が2つ = tie 1 [tie 1 [], tie 1 []]）の展開は**深い鎖が残る**（width の階層）。
+    → width-1（証明中）から潰す。width-k は width-(k-1) に落ちる帰納の見込み。
+- **HeS.lean（緑, commit 済み）**: `upleaf_deep_coreT`。HeN.upleafT_core（q<m）を q=m に一般化:
+  hqm を除き hm(1≤m)・hpM0（悪い根、下位祖先）を仮定に。gtc_oper + oper_cons_tower1 で深い節点を
+  展開 towR に落とす GTC 版。GpT 版 HeQ.upleaf_deep_core の GTC 対応。
+  型: (hD)(hm)(hpM0)(hrep: ∀j, GTC C u (Y ++ (1,q,0)::(towR q D j)↑ )) → GTC C u (Y ++ (1,q,0)::(D++[(1,m,0)])↑)。
+- **次**: upleaf_deep_coreT で証明中行の GTC を組む。hrep = 展開（木）の GTC を GoodTTL_all/GdT で供給、
+  hpM0 を証明中の深い鎖について確立。組めれば証明中行 ∈ W → シート前進。その後 1688 は width 帰納。
+- 道 B は「包みの循環」を回避: gtc_oper が展開（木）に落とすので、hFar の FarCAt→GTC の橋は不要。
