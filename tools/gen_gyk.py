@@ -174,7 +174,7 @@ def gp(M, kids, v, A, o):
         k = nf
         nl = nf
     tF = None
-    if A == [] and nf < len(kids):
+    if all(a >= 2 for a in A) and nf < len(kids):
         fF = far_contents_F(M, kids[nf][0], kids[nf][1], v + o + 1, v)
         if fF is not None:
             # 遠い字と低い列のあとの空の F（GzP.GPF_farW_F）。あとに字が続くと PVF が要るので不可
@@ -185,12 +185,12 @@ def gp(M, kids, v, A, o):
             if k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
                 if o >= 2:
                     # 節点の段以下の空の節点は t の持ち上げで動かないので語の述語（GzP.PVF_farW_bot2）
-                    w = f'(PVF_farW_bot2 (o := {o}) (by decide) le_rfl {P} {okwf_lean(M, fF, v)})'
+                    w = f'(PVF_farW_bot2A (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) (by decide) le_rfl {P} {okwf_lean(M, fF, v)})'
                     nl = nf + 1
                 else:
                     raise Fail('letter after F word')
             else:
-                tF = f'(GPF_farW_bot2 (o := {o}) (by decide) le_rfl {P} {okwf_lean(M, fF, v)})'
+                tF = f'(GPF_farW_bot2A (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) (by decide) le_rfl {P} {okwf_lean(M, fF, v)})'
     while tF is None and k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
         s, e = kids[k]
         w = (f'(PVF_snoc (A := {lean_list(A)}) (o := {o}) (by decide) {w} '
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzP\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
