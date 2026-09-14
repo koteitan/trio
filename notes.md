@@ -30279,3 +30279,23 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 見積もり: GoodChtX_snocGPF + FarCAt_of_GPF + collapse の書き直し + 生成器。大きいが actionable（不動点・壁でない）。
 - 次: GoodChtX_snocGPF を Lean で試作。まず far-word に GPF の F のタイの子（F のタイの節点 + 鎖）を足す
   GpT の構成（PVF/GPF_node の高い節点）を、既存の far-word の規則（HdA〜HdP の PVF/farWAt）で組めるか確かめる。
+
+## 追記597: 具体的な失敗点と Lean の標的（GoodChtX_snocGPF）— 大きい far-word 実装が残る
+
+- 生成器で確認（scratchpad/toptest.py, gpwhich.py）:
+  - deep chain (3,2,0)(4,2,0)(4,2,0) は gp_old / gp_ra が GPF として作れる（gp_n/c/u/t は 'no word' で失敗）。
+  - 1688 で全 top 関数が失敗。top_old は z=1 字 (2,1,1) で失敗、top_ltl が最も進む（z=1 字を語頭に処理し、
+    F のタイの子を treelit_top（TreeTs）で作って失敗＝同段の入れ子）。よって修正は top_ltl（collapse）に GPF の F のタイの子。
+- 既存の関連機構:
+  - HdI.okRNt_tie: 塊（okRNt）に F 位置のタイ (1,u+1,0) + GF の子（GF_of_GPF）を足せる。okRNt_node は τ ≤ o の節点。
+    深い葉の節点は τ=2 > o=1 なので okRNt では足りない（塊は τ ≤ o）。
+  - GoodChtX_snocT（木 TreeOKs → GoodChtX、τ > o を木で扱う、同段不可）、GoodChtX_snocN（塊 ch X、τ ≤ o）。
+  - RLF_child（字-content）は τ ≤ o+1 の節点 + gp の子。級 [] 1 では τ=2 ≤ o+1=2 なので F のタイの節点を扱える。
+- Lean の標的: GoodChtX_snocGPF（GPF 鎖の F のタイの子 → GoodChtX）。GoodChtX = ∀ 埋め込み, GpT(farWt(ws ++ [([chain], u, [])]))。
+  farWt の 1 個の F のタイの子 = (1,r,1)(2,r,1)(2,r,0) :: chT(chain)↑2（far 字 + F のタイの節点 + 鎖）。
+  GpT(farWt ws)（FarCAt から）に、far 字（字/slot_load 規則）+ F のタイの節点 + 鎖（GPF_node）を足す。
+  Gd_P0_good は Gd P0（path-set）経由で deep chain は不動点。GPF → GoodChtX を直接作る新規補題が要る。
+- 規模の正直な見積もり: GoodChtX_snocGPF は far-word の状態機構（RNt/RAt/PVF/farWAt、HdC〜HdI）の深い拡張で、
+  複数回の build を要する大きな実装。突破口（deep chain = GPF）は確定したが、collapse への接続は大仕事。
+- 現状: 8 回以上のハートビートで、深い葉の壁を「明示の木では不可能」から「GPF で可能、接続が残る」に転換。
+  緑の新シート行はまだ。次は GoodChtX_snocGPF の Lean 試作（far-word の GpT 構成）に着手する。
