@@ -30262,3 +30262,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - collapse（topCLT_WgL / FarCAt_of_PsLTL）を GPF の F のタイの子で書き直す（PsLTL の TreeTs を GPF に）。
 - 次: GoodChtX_snocGPF（GPF 鎖 → GoodChtX）を Lean で証明する。まず GoodChtX の定義と farWt の 1 個の F のタイの子の
   描画を見て、GPF_node で far-word に足せるか（GpT(farWt with chain) が GPF(chain) から出るか）を確かめる。
+
+## 追記596: 追記568 の壁は純節点の鎖には効かない見込み（h2 の子が級 (S++A) で一致）
+
+- 追記568 の壁の core を再検討: 字の族 RLC を collapse の 字-content にすると、FarP_GpT_lt の h2 の子が族の錨 GC (k::A) で、
+  埋め込み先の GC (S++A) と食い違う（S の錨を含まない）。これが壁。RLC は字（flat・荷）を持つのでこの錨で作られる。
+- 純節点の鎖（deep chain）を、埋め込み先の級 (S++A) o で GPF として直接作る（gp は級ごとに GPF を作る）と、
+  FarP_GpT_lt の h2 の子は鎖の内側の節点 = GPF (S++A)（埋め込み先の級）になり、GC (S++A) と一致する。錆の差がない。
+  ⇒ 追記568 の壁は純節点の鎖には効かない見込み。GoodChtX（全ての埋め込みで GpT）が GPF 鎖について閉じる。
+- ただし 1688 の F のタイの子は collapse の 字-content（z=1 字を含むので CLTL の語）。gp の GPF は今 TF の語
+  （top_forest）でしか使われていない。collapse の 字-content で GPF 鎖を扱う道を作る必要がある:
+  - GoodChtX（F のタイの子の良さ）を GPF 鎖について示す（GoodChtX_snocGPF）。GoodChtX は全ての埋め込みで GpT(farWt)。
+    F のタイの子を足す = far-word に F のタイの節点 (row0 2, row1 r) + 鎖↑ を足す = 字-content の高い節点。
+    埋め込み先で GPF (S++A) o として作れば h2 が一致（上）。
+  - collapse（topCLT_WgL / FarCAt_of_PsLTL / PsLTL）を GPF の F のタイの子で書き直す。
+- 見積もり: GoodChtX_snocGPF + FarCAt_of_GPF + collapse の書き直し + 生成器。大きいが actionable（不動点・壁でない）。
+- 次: GoodChtX_snocGPF を Lean で試作。まず far-word に GPF の F のタイの子（F のタイの節点 + 鎖）を足す
+  GpT の構成（PVF/GPF_node の高い節点）を、既存の far-word の規則（HdA〜HdP の PVF/farWAt）で組めるか確かめる。
