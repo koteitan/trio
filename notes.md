@@ -29662,3 +29662,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 残り（行 1615〜）: 最上段の語で F の位置のタイ（最上段では (3, v+1, 0) が語の段 v の単位のタイと同じ段）が最後の F のタイの末尾以外にある形。
   - 1615〜1623: F の位置のタイで終わる語のあとに遠い語 (1,1,1)(2,1,1)。
   - 1624〜1640: F の位置のタイのあとに同じ語の F のタイ (2,1,0) が続く。
+
+## 追記564: HcS（緑）、行 1615〜1640（HcT）
+
+- HcS: 最上段の語 wLU v (Uss, us) := FTL0 (v+1) (Uss.map (unitsC v)) ++ unitsC v us。
+  F のタイの子は単位の並び（none = F の位置のタイ (1, v+1, 0)、some Z = 荷）で、段 v に依存して unitsC v で並べる（持ち上げで F の位置と一緒に動く）。
+  - 潰れ GTC_far_CLU: rword は farWu u (u+1) (psLU u ps)。塔の中の写しは級 [] 1 の単位の語で、HcP の OkWsAu（GoodLow_none・okLow_load・okRAu_load）と HcJ.towWu_GpT / farWu_flat。
+  - F のタイの子: 空 ChildTU_nil（GTC_tie x = 1）、荷 ChildTU_load（based_Wg_ind、HbV.ChildT_load の写し）、
+    F の位置のタイ ChildTU_none（GTC_tie x = 2。展開の荷 Z は同じ F のタイの子の荷 some Z になり、一つ上の段 u' の ChildTU (us ++ [some Z]) で出る）。
+  - ChildTU_all は単位の並びの帰納で、段 v を量化した形で回す（none の場で上の段の荷の規則を使うため）。
+- 生成器 top_lu（HcS.starOK_CLU）。行 1615〜1640 は全てこの道。
+- 残り（行 1641〜）:
+  - 1641〜1646: F の位置のタイが子を持つ（(3,1,0)(4,0,0)、(3,1,0)(4,1,0) など）。最上段では子つきの単位のタイ、塔の写しでは子つきの F の位置のタイ。
+  - 1647〜: 最上段の F のタイの子に段 v+2 の節点 (3,2,0)。
