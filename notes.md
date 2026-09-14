@@ -30532,3 +30532,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **残り**: hrep（tow の木の塔を wLT の木として GTC_wLTL で出す）の plumbing。GdT_upleaf が topTs_towT + GdT_towT で
   木の塔を出す型紙。これを一般 D 版に。組めれば **証明中行 ∈ W（初の深い葉）** → シート前進。
 - 大局: 深い葉は「q=1 の upleaf_deep_coreDT + 木の塔の hrep」で割れる見込み。核（HeS）は緑。残りは hrep の plumbing。
+
+## 追記612: hrep の木の族の正体と接続経路（tow→towR→topTs(towT)→GdT_towT）
+
+- hrep 展開を UT で同定（実測）:
+  - m'=1: F のタイの子 = tie 1 []。 m'=2: tie 1 [tie 0 [tie 1 []]]。 m'=3: tie 1 [tie 0 [tie 1 [tie 0 [tie 1 []]]]]。
+  - = tie 1 / tie 0 の交互の入れ子。**全て valid TreeTs**（tie 0 が cl を true に戻す）。
+- 接続経路（既存補題の連鎖）:
+  - htR（HeN 内）: towR q D j = D ++ shiftr01 1 0 (tow q 0 R j)、R=D++[leaf]。⇒ 私の tow 1 0 R m' は towR 1 D と関係。
+  - topTs_towT（HeN 21）: topTs u (towT p Y j) = towR (u+1+p) (topTs u Y) j。⇒ towR 1 [(1,2,0)] j = topTs 0 (towT 0 [tie 1 []] j)。
+  - GdT_towT（HeN 109）: GdT P 0 true v us → GdT P 0 true v (towT 0 us j)。⇒ 木の塔は GdT。
+  - GdT の .2 → BotCL = GTC CLTL u (wLT ...)。⇒ hrep(m') の GTC。
+- つまり hrep = GdT_upleaf（GdT [tie 1 []]）→ GdT_towT（塔）→ .2（BotCL/GTC）を、私の tow 形に
+  topTs_towT + htR で合わせる。全部品は既存。組み立てが残りの具体作業。
+- **次**: hrep を上記経路で組み、upleaf_deep_coreDT に渡して GTC CLTL 0 (wLT 深い鎖) を得る。
+  starOK_lastT [] (PsLT_nil) で 証明中行 ∈ W。緑になれば**初の深い葉**、シート前進。
+- 進捗（このハートビート）: 追記609 の誤り（q=2）を訂正し q=1 で展開が木と判明。HeS に GTC 版の核
+  （upleaf_deep_coreT_gen, upleaf_deep_coreDT）を緑で追加。証明中行への適用も実測で確認。残りは hrep の組み立て。
