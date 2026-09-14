@@ -30610,3 +30610,35 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   upleaf_deep_core（HeQ、GpT 版）で各段を展開して塔の good さを建てるのが本丸。
 - **次**: HeQ.upleaf_deep_core / towWt_GpT / GoodChtX_snocT を読み、「深い葉の塔 GoodChtX」を作る。
   これ1本で 証明中(深い葉+collapse)と 1688(幅2)が同時に開く。
+
+## 追記617: 深い葉の keystone = GoodChtX_deep。ただし遠い段 q での**段の整礎帰納**が要る（検証済み）
+
+### 検証済みの計算（scratch で緑）
+- 深い葉の子 `[tie 1 [tie 1 []]]` の chT 像: `chT b r u [tie 1 [tie 1 []]] = (1,r+1,0)(2,r+1,0)`
+  （unitT の tie 規則。段 `_` 無視で RawTs = True も緑）。
+- FTLt/fwH で最後の遠い語に積むと: `farWt b R (ws ++ [深い葉]) = farWt b R ws ++ (1,R,1)(2,R,1)(2,R,0)(3,R+1,0)(4,R+1,0)`。
+- upleaf_deep_core（HeQ, GpT 版）の形 `Pre ++ Yp ++ shiftr01 d 0 (shiftr01 1 0 ((0,q,0)::R'))` に一致:
+  Pre = farWt b R ws、Yp = (1,R,1)(2,R,1)、d=1、**q = R（遠い段そのもの）**、R' = (1,R+1,0)(2,R+1,0)。
+  = upleaf_deep_coreDT の D=[(1,R+1,0)], d0=2, m=R+1, q=R（q<m ✓）。
+
+### keystone
+- 単一の要は **`GoodChtX A0 o (fun _=>0) u [tie 1 [tie 1 []]]`**。これが出れば下流
+  （OkWsAt_cons → FarCAt_of_OkWsAt → towWt_GpT → topCLT_WgL → GTC_far → BwT_CLGL）は全て既存で回る。
+  ⇒ 深い葉のあとの collapse 語(a) も 幅/深さ k(b) も同時に開く。
+
+### 重要な訂正（HeT の一段木化は最上段専用）
+- 深い葉の悪い根の段 q は、子として遠い段 r に積むと **q = r**（大きい）。
+- 展開 `tow q 0 [(1,q+1,0),(2,q+1,0)] m'` の内側の再下降は **段 q−1**（段 0 でない）。
+  ∴ 展開は「段 q−1 の深い葉」であって木でない（q≥2）。木になるのは段 0 に達したときだけ。
+- hK_pm/R_pm が一段で木(dtree, tow_dtree)に落ちたのは **最上段 u=0 で r=q=1** だったから。
+  一般の行（深い葉が遠い語の子）は q=r が大きく、一段では落ちない。
+- ⇒ GoodChtX_deep は **段 q の整礎帰納**: 段 q の深い葉の GpT を upleaf_deep_core で展開 →
+  hrep = 段 q−1 の深い葉の塔の GpT（IH）。段 0 で木（GoodChtX_snocT）。深さ q の有限帰納。
+- 速い訂正: 追記616 の「両軸は木の塔 GoodChtX の1本」は不正確。正しくは「段の整礎帰納つき深い塔」。
+- HeR（clD/Gd_deep_towers, 未使用）は Xtow の入れ子（段 0 再下降）で、この段 q−1 再下降と形が違う。
+  段 q の帰納には HeR でなく upleaf_deep_core を各段で回すのが素直（HeQ は q=m 版・q<m 版とも既にある）。
+
+### 次の一手
+- 段 q の帰納で `GpT_deep_tower q`（段 q の深い葉の塔が良い）を建てる。base 段 0 = 木。
+  step: upleaf_deep_core（HeQ, general R）+ 展開像（段 q−1 の塔）で IH。
+- これを GoodChtX_deep に包んで keystone 完成 → CLGL 文脈 → 証明中/1688 以降。
