@@ -30331,3 +30331,27 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   読んで、GPF_node で BotT を組む。大きい実装（複数ハートビート）。
 - 正直な状況: ~10 回のハートビートで深い葉を精査し、GPF で可能・目標を Lean で確認したが、far-word GpT の構成が
   大きな残作業。新シート行はまだ。次は far 字の追加機構（PVP・farWAt_PVP）を読んで GoodChtX_snocGPF を組む。
+
+## 追記600: 深い葉の機構は RLF_child（既存）。far-word の F のタイの子 = RLC の中身。壁は collapse の描画だけ
+
+- 既存機構の全体像を精査して、深い葉に必要な部品はほぼ全部あることを確認:
+  - **RLF_child (GyK 126)**: 字の中身 RLF に、τ ≤ o+1 の**純節点** (1, b+τ, 0)（row2=0）と、級を上げた子 GPF A' τ
+    （A' = (o::A).filter(<τ)、τ=o+1 では A'=o::A）を足す。**これがまさに深い葉（同段の入れ子）の機構**。
+    HeJ R1658 / GzE R1337 が RLF_child + ネスト PVF_snoc で深い鎖を実際に緑で作っている。
+  - **PVF_snoc (GyK 107)**: PVF（節点の下の遠い語）に、字 (1, b+o+1, 1)（row2=1）+ RLF の中身を足す。
+  - **R_child (GyF 259)**: 文脈族 R（CtxP）ごとに「τ の節点 + GPF の子」を足す汎用規則。RA/RN/RAc/RLC が皆これで _node を得る。
+    RA_node（HaF 276）は τ ≤ liftOff（= o）。RLF は CtxP_RLC で τ ≤ o+1（F の位置）まで許す。
+- **重要な同型**: far-word の FTLt の頭 = `(1,r,1) :: [各 F のタイの子 (1,r,0)::shiftr01 1 0 (chT ...)]`、r = b+o+1。
+  これは PVF の字 (1,b+o+1,1) + RLF_child の中身とちょうど同じ形。つまり **far-word の F のタイの子は FTLt の字の RLC の中身**。
+  farWAt_PVP（HdB 37）が farWt を PVP に変換するのもこの対応。深い葉の F のタイの子 = RLC の中身 = RLF_child で作れる。
+- **1688 の構造の確定**: (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(4,2,0)。木:
+  (1,1,1) の子が (2,1,1)[z=1 字, 葉] と (2,1,0)[z=0, 深い鎖 (3,2,0)(4,2,0)(4,2,0) を持つ]。
+  = R1647 の collapse 語 K の末端 (3,2,0) に子 (4,2,0)(4,2,0) が付いた形。F のタイの子 = [tie 1 [tie 1 [], tie 1 []]]。
+- **壁の正確な所在**: collapse（top_lt/top_ltl の tlist_lean/treelit_top）は F のタイの子を木の枠組み
+  （TRaws=段0タイのみ / TreeTs=厳密増加）で描く。深い葉（同段の tie 1 in tie 1）を弾く。
+  一方 GPF/RLF の道（top_forest→gp）は深い鎖を作れるが z=0 の純遠い語専用で、z=1 字 (2,1,1) を直接の子に持てない。
+  1688 は z=1 字 (2,1,1) と 深い鎖 F のタイの子 (2,1,0) を**同じ遠い語 (1,1,1) 内に**持つ ⇒ collapse が要る。
+- **道**: collapse の F のタイの子を GoodChtX/RLF ベースにして RLF_child を通す。GoodChtX_snocGPF が核。
+  GoodTT_all（HdS、DT/Gd 経由 = 不動点の道）でなく、RLF_child/GPF から GoodChtX を出す。
+- 次: scratchpad で GoodChtX [深い鎖] の GpT 目標を trace し、farWt の 1 語追加を GPF_node/PVF_snoc/RLF_child で
+  直接組めるか（不動点を避けて）を実験する。
