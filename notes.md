@@ -29784,3 +29784,12 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   規則: 高さ t の空のタイ E_{t−1} ps → E_{t−1} (ps ++ [tie []])（FarP_GpT_lt、h2 の子の節点は埋め込み先の級の高さ t の塊の族へ文脈を運んで置く）、
   塊の族 NX_t（E_{t−1} ps → E_{t−1} (ps ++ [ch X])、flat は高さ t−1 の部分木の複製を E_{t−1} の全称で回す）。
   級によらない GoodLowT のままでは、高い塊を含む部分木の複製が文脈に入って運べない。
+
+## 追記571: HdJ（緑）・HdK（緑、行 1641）
+
+- HdJ: 右から見える道が錐（PathCone b d Y）の接頭辞 Y のあとの尾 U↑d の段 tstep_oper / tstep_orph / tstep_tie / tstep_flat と、
+  道が錐なら行 0 が d+1 の底の列の祖先の行 1 ≥ v（BotGe_pathcone）。入れ子の位置の差し込み口の一般形。
+- HdK: K = wLU v (Uss ++ [us ++ [none]], []) ++ [(3,0,0)] の K⟦n⟧ = wLU v (Uss ++ [us ++ none^n], [])（oper_snoc00''）。
+  GTC_oper と HcS.GoodTU_all で GTC CLU v K（GTC_noneFlat）。starOK_last（CLU の並びのあとに最後の語）で R1641_mem。
+- 次: 行 1642 (2,1,0)(3,1,0)(4,1,0)。GTC_tie（x = 3）の荷 Z は (4,1,0) の子で、展開の荷の下に語の写しが入る（追記569）。
+  最上段の F のタイの子を高さ 2 の入れ子にし、その荷の文脈と遠い段の単位（UT の tie の子）を追記570 の設計で作る。
