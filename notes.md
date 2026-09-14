@@ -29707,3 +29707,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - 前の語に一般の子の F のタイがあると、潰れの塔の写しに F の位置のタイの子が入り、遠い段の一般化（PVE）が要る。
 - 結論: 遠い段の PVE と「遠い字つきの字の中身」の族（RLC の写しに遠い字と PVE）を先に作り、最上段の文脈はその塔の良さを持つ意味の文脈にする。
   規模が大きいので、ファイルごとに緑で commit する。
+
+## 追記567: HcU〜HcX（緑）: 一般の接頭辞 PVE と遠い字つきの字の中身 FLC
+
+- HcU: embW A k H g S o f b W := mlift (reliftX b H g A W) (b + liftOff (H+g) A k) (liftOff f (S ++ A) o − liftOff (H+g) A k)。
+  PVE A k H b0 W := ∀ 埋め込み (g S o f)、埋め込み先の再持ち上げ g'、段 b ≥ b0、PVP (S ++ A) o (f+g') b (reliftX b f g' (S ++ A) (embW … (W を b へ)))。
+  付け替え（段・状態・上限 k → k+t・状態の取り替え）は合成の補題なしで出る。錨 o を挿入した埋め込み (o :: S, o+1, upF o 0 f) は F の段を 1 上げた形（embW_cons_top）。
+- HcV: 一般の塔 towG と towE_GpT（塔の内側は錨 o の挿入、HcJ.towWu_GpT の写し）、PVE_collapse（遠い字だけの語、HcJ.farWAu_collapse の写し）。
+  埋め込み先の再持ち上げ g' を PVE に入れておくと、潰れの GpT_intro の再持ち上げが reliftX_comp だけで済む。
+- HcW: 接頭辞を述語 P に限った字の中身 LC1R と oper / orph / tie / flat（GyH の写し。tie は P の段の持ち上げ、flat は P が語を足して閉じることを仮定）。
+- HcX: 埋め込みの 4 段の階段を 1 本にした zst と Zemb := slift X zst（Zemb_slift）。
+  FLC A k H b0 V := ∀ W, PVE W → PVE (W ++ (1, b0 + liftOff H A k + 1, 1) :: V↑1)（遠い字を中身 V に含める）。
+  FLC_iff: FLC V ↔ 全ての埋め込みで LC1R（接頭辞は PVE の像）。字の子の階段は F の段より上で定数なので zst と一致（zst_node_eq、slift_node）。
+  遠い字と後ろの列を分けて持ち上げる補題が要らないように、遠い字を中身に含めた。
+  FLC_far（PVE_collapse）、FLC_oper / orph / tie / flat（LC1R の規則）。
+- 次: 状態の層 FRLC A k H b V := ∀ g b', FLC A (k + (H+g) k) (H+g) b' (reliftX b' H g (k :: A) (V を b' へ))、遠い字は b + liftOff H A (k + H k) + 1。
+  差し込み口の公理は GyI.RLC_ax の写し。FarP の場（級 (k :: A, k+1)）の h2 は、埋め込み先の節点を族の状態 H+G の像として読むので、
+  内容の範囲（≤ F の段）に限った埋め込みの合成（slift_congr_amin）が要る見込み。
