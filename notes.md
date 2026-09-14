@@ -30642,3 +30642,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 段 q の帰納で `GpT_deep_tower q`（段 q の深い葉の塔が良い）を建てる。base 段 0 = 木。
   step: upleaf_deep_core（HeQ, general R）+ 展開像（段 q−1 の塔）で IH。
 - これを GoodChtX_deep に包んで keystone 完成 → CLGL 文脈 → 証明中/1688 以降。
+
+## 追記618: HeU.lean 緑 — 一般段の深い葉の展開像 tow_dtreeQ。段の整礎帰納の背骨が立った
+
+- HeU.dtreeQ q' j: 外段 q'+1・内側再下降 段 q' の深い葉の塔。dtreeQ_zero: dtreeQ 0 = HeT.dtree（木）。
+- HeU.tow_dtreeQ: `tow (q'+1) 0 [(1,q'+2,0),(2,q'+2,0)] (j+1) = (0,q'+1,0) :: topTs 0 [dtreeQ q' j]`（緑）。
+  追記617 の訂正を反映（内側 段 q'、段 0 でない）。HeT.tow_dtree（r=1 専用）の一般 q 版。
+- **帰納の設計（確定）**: GoodChtX_deep（keystone `GoodChtX ... [tie 1 [tie 1 []]]`）を **段 q' の帰納**で:
+  - base q'=0: dtreeQ 0 = 木（HeT.dtree, TreeTs_dtree）。既存の木の機構（GoodChtX_snocT / GTC_wLTL）。
+  - step q'→ (q'+1): 段 q'+1 の深い葉の GpT を upleaf_deep_core（HeQ, general R）で展開 →
+    hrep = GpT of `Pre ++ Yp ++ shiftr01 d 0 (shiftr01 1 0 (tow (q'+1) 0 R' m'))`
+         = （tow_dtreeQ で）GpT of `... (0,q'+1,0)::topTs 0 [dtreeQ q' j]`。
+    dtreeQ q' j は内側に段 q' の深い葉を持つ → IH（段 q' の GpT）を入れ子位置で適用。
+- **未解決の設計点**: IH を「入れ子位置」で使うため、帰納の主張を文脈一般（Pre/Yp 任意、あるいは Gd 抽象）で
+  立てる必要がある。upleaf_deep_core は Pre/Yp を取るので文脈は通るが、dtreeQ の中の段 q' 葉に IH を
+  当てる形（topTs 0 [tie(q'+1)[tie q'[...]]] の内側）を GpT 補題として定式化するのが次の山。
+- **次**: 段 q' 帰納の GpT 主張を定式化（`GpT_deepnode q'` 的な、文脈 Pre つき）。step で upleaf_deep_core +
+  tow_dtreeQ、内側の段 q' 葉に IH。緑になれば OkWsAt→FarCAt→topCLT_WgL→CLGL→証明中/1688。
