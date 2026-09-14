@@ -524,6 +524,15 @@ def tree(M, i):
                 k += 1
             else:
                 break
+    tie_flat = False
+    if tie_us == [] and uss == [] and k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if (len(cc) == 2 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1
+                and M[cc[1][0]] == (a + 2, 0, 0) and cc[1][1] - cc[1][0] == 1):
+            # [W_tie] ++ (W_far)^n のあとに遠い字と零列の語（HaP.starOK_tieFarFlat）
+            tie_flat = True
+            k += 1
     while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
         s, e = ch[k]
         words.append(top_forest(M, children(M, s, e), v))
@@ -531,7 +540,9 @@ def tree(M, i):
     w = f'(WordsG_nil {v})'
     for f in reversed(words):
         w = f'(WordsG_consT (v := {v}) {f} {w})'
-    if tie_n > 0:
+    if tie_flat:
+        st = f'(starOK_tieFarFlat {tie_n} (v := {v}) {w})'
+    elif tie_n > 0:
         st = f'(starOK_tieFarN {tie_n} (v := {v}) {w})'
     elif tie_us is not None:
         # 先頭に続く遠い字と荷の語、最後の語は最後に子のないタイ（GzJ.starOK_topFarTie）
@@ -588,7 +599,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaN\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
