@@ -30380,3 +30380,8 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   fwH_tie_step（HbM 120）は段0の F 位置タイ (x,u+1,0) のみ（深い鎖=段1 は不可）。gp は深い鎖の中身を GPF で作れる（実測 OK）。
 - 残り: step2〜5（深い鎖の中身の GC 化 + F 字 + 合成）。towWt_GpT を写経して 1 語版に。次のハートビートで step2 から。
   その後 PsLTL/CLTL に GPF の F のタイの子を通し、生成器を更新して 1688 以降を証明する。
+- **step2 の確認（scratchpad/gpfgen.lean）**: GPF_node は一般の級 A o で使える（gp の `by decide` を一般証明に置換すれば良い）。
+  ただし空の中身 GPF A o b [] は o で場合分け: o=1 は A=[] 強制で GPF_nil1、o≥2 は GPF_nil（2≤o）。埋め込みで o が上がるので両方要る。
+- **gp の深い鎖の項**（実測、b=0, [] 1）:
+  GPF_node (o:=1)(τ:=2) [] (GPF_nil1 0) (GPF_node (o:=2)(τ:=2) [] (GPF_node (o:=2)(τ:=2) [] (GPF_nil [] 2)(GPF_nil [] 2))(GPF_nil [] 2))。
+  = 外節点 τ=2 中身空、FarP 継続が級 [] 2 の内鎖。一般級版は級を o::A に上げて同型に組む。
