@@ -30299,3 +30299,21 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   複数回の build を要する大きな実装。突破口（deep chain = GPF）は確定したが、collapse への接続は大仕事。
 - 現状: 8 回以上のハートビートで、深い葉の壁を「明示の木では不可能」から「GPF で可能、接続が残る」に転換。
   緑の新シート行はまだ。次は GoodChtX_snocGPF の Lean 試作（far-word の GpT 構成）に着手する。
+
+## 追記598: far-word の機構を精査 — 深い葉は「同段の GPF（τ > o）」で新枠組みが要る
+
+- 精査した far-word の F のタイの子の機構:
+  - okRA_node / okRNt_node（HaG/HdI）: 遠い語の中身に GPF の子を τ ≤ o で足す。深い葉の節点は τ=2 > o=1 なので不適。
+  - okRNt_tie: 塊に F 位置のタイ (1,u+1,0) + GF 1 の子。同段（u+1）のみ。深い葉の外側 (3,2,0) は u+2 なので不適。
+  - GoodChtX_snocT（木 TreeOKs）: τ > o を木で扱うが厳密増加のみ（同段不可）。GoodChtX_snocN（塊、τ ≤ o）。
+  - RLF（字-content, HcU-HcS）: RLF_child は τ ≤ o+1 だが 字（row2=1）の中身用。深い葉は純節点（row2=0）なので不適。
+- 結論: 深い葉 = 「同段の GPF 節点の鎖（τ=2 > o=1）」。既存の全機構（okRA/okRNt τ≤o、tree 厳密増加、RLF 字）の
+  対応範囲外。gp（gp_old/gp_ra）は GPF として作れるが、collapse の F のタイの子（GoodChtX）に接続する機構がない。
+- 必要な新枠組み: GoodChtX_snocGPF（同段 GPF 節点の F のタイの子 → GoodChtX = far-word GpT）。
+  far-word の GpT 構成（far 字 + F のタイの節点 + 鎖）を GPF_node で組む。既存の tree 枠組み（HdA〜HeP、
+  τ > o 厳密増加）の「同段 GPF」版で、規模は大きい（複数のハートビート）。
+- GoodCht/GTWAt/okWAt（HdC）が far-word 拡張の核: GoodCht(Lds) = ∀ g b0, GTWAt (Lds を足すと FarCAt が延びる)。
+  深い葉の GoodCht を GPF から出すのが標的。tree は Gd_treeP0 → Gd_good（BotT = far-word GpT、tree 規則）。
+  GPF 版は GPF_node で BotT を直接組む。
+- 正直な現状: 深い葉は最終目標までの必須の関門で、GPF で可能だが collapse 接続は大きな新枠組み。緑の新シート行はまだ。
+  この枠組みを段階的に作る（1 補題ずつ緑に）。まず GoodCht の far-word 拡張を GPF_node で組む試作から。
