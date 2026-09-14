@@ -272,6 +272,17 @@ def okra_lean(M, items, v, A, o, ks=None):
     return proof
 
 
+def okwff_lean(M, items, v):
+    proof = f'(okWFkF_nil 1 {v})'
+    for it in items:
+        kind, a, b = it[0], it[1], it[2]
+        if kind == 'load':
+            proof = f'(okWFkF_load le_rfl {proof} {load_mem(M, a, b, v)} rfl)'
+        else:
+            proof = f'(okWFkF_tie {proof} (GF_of_GPF {gp(M, children(M, a, b), v, [], 1)}))'
+    return proof
+
+
 def gp_ra(M, kids, v, A, o):
     """錨つきの中身の一様な経路（HaG）。gp_old が失敗したときに使う。"""
     k = 0
@@ -291,7 +302,25 @@ def gp_ra(M, kids, v, A, o):
         cc = children(M, s0, e0)
         exp = [(M[s0][0] + 1, r0, 1)] + ([(M[s0][0] + 1, r0, 0)] if want_F else [])
         return len(cc) == len(exp) and all(M[a0] == x and b0 - a0 == 1 for (a0, b0), x in zip(cc, exp))
-    if len(kids) >= 2 and is_word(0, True) and is_word(1, False):
+    fcsF = []
+    jF = 1
+    if len(kids) >= 2 and is_word(0, True):
+        while jF < len(kids):
+            fcF = far_contents(M, kids[jF][0], kids[jF][1], r0, v)
+            if fcF is None:
+                break
+            fcsF.append(fcF)
+            jF += 1
+    if fcsF and any(fcsF):
+        # F の語（中身なし）のあとに、中身が荷と子つきのタイの遠い語（HaV.PVF_farWF）
+        P = f'(OkWsFk_nil {v})'
+        for fc in reversed(fcsF):
+            P = f'(OkWsFk_cons le_rfl {okwff_lean(M, fc, v)} {P})'
+        w = f'(PVF_farWF (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) (by decide) {v} _ {P})'
+        k = jF
+        nl = jF
+        nf = len(kids)
+    elif len(kids) >= 2 and is_word(0, True) and is_word(1, False):
         # F の語（中身なし）のあとに n 個の中身なしの遠い語（HaN.PVF_QFn）
         nq = 1
         while nq + 1 < len(kids) and is_word(nq + 1, False):
@@ -524,8 +553,17 @@ def tree(M, i):
                 k += 1
             else:
                 break
+    tie_tie = False
+    if tie_us == [] and uss == [] and tie_n == 0 and k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if (len(cc) == 2 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1
+                and M[cc[1][0]] == (a + 2, v + 1, 0) and cc[1][1] - cc[1][0] == 1):
+            # [W_tie, W_tie]（HaT.starOK_tieTie）
+            tie_tie = True
+            k += 1
     tie_flat = False
-    if tie_us == [] and uss == [] and k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+    if tie_us == [] and uss == [] and not tie_tie and k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
         s, e = ch[k]
         cc = children(M, s, e)
         if (len(cc) == 2 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1
@@ -540,7 +578,9 @@ def tree(M, i):
     w = f'(WordsG_nil {v})'
     for f in reversed(words):
         w = f'(WordsG_consT (v := {v}) {f} {w})'
-    if tie_flat:
+    if tie_tie:
+        st = f'(starOK_tieTie (v := {v}) {w})'
+    elif tie_flat:
         st = f'(starOK_tieFarFlat {tie_n} (v := {v}) {w})'
     elif tie_n > 0:
         st = f'(starOK_tieFarN {tie_n} (v := {v}) {w})'
@@ -599,7 +639,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
