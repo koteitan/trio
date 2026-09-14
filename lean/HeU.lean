@@ -14,7 +14,7 @@ import HeT
 namespace TRIO
 namespace HeU
 
-open Wset Small HdA HdQ HeK
+open Wset Small HdA HdE HdQ HeI HeK
 open GwS GxL GxP
 
 /-- 外段 q'+1、内側再下降 段 q' の深い葉の塔（段 0 に達すると HeT.dtree = 木）。 -/
@@ -52,6 +52,24 @@ theorem dtreeQ_zero (j : ℕ) : dtreeQ 0 j = HeT.dtree j := by
   induction j with
   | zero => rfl
   | succ j ih => simp only [dtreeQ, HeT.dtree, ih]
+
+/-! ## 段の帰納の底（L=1）: 木の塔 dtree は GpT 側でも木（TreeOKs）で良い子並び -/
+
+/-- ★ HeT.dtree は GpT 側の木条件 TreeOKs（段 0 の再下降）を満たす。TreeTs_dtree の TreeOKs 版。 -/
+theorem TreeOKs_dtree (c j : ℕ) : HeI.TreeOKs c 0 true [HeT.dtree j] := by
+  induction j with
+  | zero =>
+      exact HeI.TreeOKs_cons_up (l := 0) rfl (by decide)
+        (HeI.TreeOKs_nil c 1 false) (HeI.TreeOKs_nil c 0 true)
+  | succ j ih =>
+      exact HeI.TreeOKs_cons_up (l := 0) rfl (by decide)
+        (HeI.TreeOKs_cons_tie0 ih (HeI.TreeOKs_nil c 1 false)) (HeI.TreeOKs_nil c 0 true)
+
+/-- ★ 段の帰納の底: 木の塔 dtree j は良い子並び（GoodChtX）。GoodChtX_snocT + TreeOKs_dtree。 -/
+theorem GoodChtX_dtree {A0 : List ℕ} {o u : ℕ} (hAo : ∀ a ∈ A0, a < o) (hA01 : ∀ a ∈ A0, 1 ≤ a)
+    (ho : 1 ≤ o) (j : ℕ) : GoodChtX A0 o (fun _ => 0) u [[HeT.dtree j]] := by
+  have := HeI.GoodChtX_snocT hAo hA01 ho (GoodChtX_nil A0 o (fun _ => 0) u) (TreeOKs_dtree u j)
+  simpa using this
 
 end HeU
 end TRIO

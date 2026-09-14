@@ -30768,3 +30768,11 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **残る唯一の道**: upleaf_deep_core を段ごとに回す段 L の帰納を自前で建てる（一般の深い葉補題）。
   塔は複数の深い葉を持つので、塔の高さ j の内側帰納 + 段 L の外側帰納の二重帰納。
 - これは実質「幅/深さ k の一般深い葉補題」（ずっと前から本丸と分かっていたもの）。大きい。
+
+## 追記626: HeU に段帰納の底（L=1）を緑で追加。TreeOKs_dtree / GoodChtX_dtree
+
+- HeU.TreeOKs_dtree（c j）: HeT.dtree は GpT 側の木条件 TreeOKs も満たす（TreeTs_dtree の TreeOKs 版）。
+- HeU.GoodChtX_dtree（j）: 木の塔 dtree j は良い子並び GoodChtX（GoodChtX_snocT + TreeOKs_dtree + GoodChtX_nil）。
+  = 段 L の帰納の**底（L=1）が緑**。base L=1 は dtree（木）→ GoodChtX_dtree で供給できる。
+- 残り: step（L≥2, dtreeQ 深い塔）を段 L の整礎帰納で。塔は dtreeQ (L-1) で IH。
+  一般深い葉補題（q,j の整礎測度）。底が固まったので次は step の測度と upleaf の反復。
