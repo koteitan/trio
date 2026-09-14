@@ -30515,3 +30515,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   部品（hFar, upleaf_deep_coreT）は緑・再利用可。核（collapse 同段健全性）は未達で、複数セッション級の大仕事。
 - 次善策の検討: 深い鎖が「別の TF 語」に分離できる標準形の行があるか（HeJ 型）を bms -s で調べる。
   あれば段上げで包めて進める。1688 自体は同居型で不可。
+
+## 追記611: ★★ 訂正と突破 — q=1（悪い根）で展開は木。upleaf_deep_coreDT が証明中行に適用でき、B 案が動く
+
+- 追記609 の誤り: 深い節点を q=2（同段）と取ると towR は深い鎖。しかし**正しくは q=1**（葉の支配親＝
+  同段の中間を飛ばした下位の F の節点）。深い葉の悪い根は下位祖先なので q=1。
+- HeS.lean に GTC 版を追加（緑, commit 済み）:
+  - upleaf_deep_coreT_gen（HeQ.upleaf_deep_core の GTC 版、一般 R、gtc_oper）。
+  - upleaf_deep_coreDT（HeQ.upleaf_deep_coreD の GTC 版、q<m, descent D は row1≥m, 葉 d0）。
+- 証明中行 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0) の F のタイの子 = wLT 0 ([[tie 1 [tie 1 []]]], [])
+  = (1,1,1)(1,1,0)(2,2,0)(3,2,0)。upleaf_deep_coreDT を Y=[(1,1,1)], d=0, q=1, D=[(1,2,0)], d0=2, m=2 で適用（実測で
+  型一致・適用成功）。q<m = 1<2 ✓。
+- **hrep 展開 = tow 1 0 [(1,2,0),(2,2,0)] m'**（q=1）:
+  m'=1: (0,1,0)(1,2,0)。m'=2: (0,1,0)(1,2,0)(2,1,0)(3,2,0)。**行1が 1,2,1,2 の交互 = 木**（BM4 展開と一致）。
+  ⇒ hrep は木の塔で、GoodTTL_all（TreeTs）+ GTC_wLTL で GTC が出せる。**深い鎖の壁は木に帰着**。
+- **残り**: hrep（tow の木の塔を wLT の木として GTC_wLTL で出す）の plumbing。GdT_upleaf が topTs_towT + GdT_towT で
+  木の塔を出す型紙。これを一般 D 版に。組めれば **証明中行 ∈ W（初の深い葉）** → シート前進。
+- 大局: 深い葉は「q=1 の upleaf_deep_coreDT + 木の塔の hrep」で割れる見込み。核（HeS）は緑。残りは hrep の plumbing。
