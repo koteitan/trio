@@ -31,9 +31,9 @@ def main():
         body.append(f'/-- ★ {mat} -/\ntheorem {tag}_mem : ({g.lit(M)} : TrioSeq) ∈ W 0 := by\n'
                     f'  have h := GxB.Wg0_sub_W0 {p}\n  simpa [{g.SIMP}] using h\n')
     hdr = (f'/-\n{name}.lean: tools/gen_given.py が生成。シートの行の間の行列。\n-/\n'
-           'import GzJ\nimport GzS\nimport HaJ\nimport HaL\n\nnamespace TRIO\n' f'namespace {name}\n\n'
+           'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaN\n\nnamespace TRIO\n' f'namespace {name}\n\n'
            'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-           'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL\n\n')
+           'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN\n\n')
     open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
 
 

@@ -24,7 +24,7 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf'
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate'
 
 
 def far_units(M, s, e, r, v, top):
@@ -292,10 +292,13 @@ def gp_ra(M, kids, v, A, o):
         exp = [(M[s0][0] + 1, r0, 1)] + ([(M[s0][0] + 1, r0, 0)] if want_F else [])
         return len(cc) == len(exp) and all(M[a0] == x and b0 - a0 == 1 for (a0, b0), x in zip(cc, exp))
     if len(kids) >= 2 and is_word(0, True) and is_word(1, False):
-        # F の語（中身なし）のあとに中身なしの遠い語（HaL.PVF_PfF）
-        w = f'(PVF_PfF (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) (by decide) {v})'
-        k = 2
-        nl = 2
+        # F の語（中身なし）のあとに n 個の中身なしの遠い語（HaN.PVF_QFn）
+        nq = 1
+        while nq + 1 < len(kids) and is_word(nq + 1, False):
+            nq += 1
+        w = f'(PVF_QFn {nq} (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) (by decide) {v})'
+        k = nq + 1
+        nl = nq + 1
         nf = len(kids)
     while nf < len(kids):
         fi = far_items_A(M, kids[nf][0], kids[nf][1], v + o + 1, v, A, o)
@@ -510,14 +513,17 @@ def tree(M, i):
             tie_us = fu[0]
             break
         uss.append(fu[0])
-    tie_far = False
-    if tie_us == [] and uss == [] and k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
-        s, e = ch[k]
-        cc = children(M, s, e)
-        if len(cc) == 1 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1:
-            # 子のないタイで終わる遠い語のあとに中身なしの遠い語（HaJ.starOK_tieFar）
-            tie_far = True
-            k += 1
+    tie_n = 0
+    if tie_us == [] and uss == []:
+        # 子のないタイで終わる遠い語のあとに n 個の中身なしの遠い語（HaN.starOK_tieFarN）
+        while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+            s, e = ch[k]
+            cc = children(M, s, e)
+            if len(cc) == 1 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1:
+                tie_n += 1
+                k += 1
+            else:
+                break
     while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
         s, e = ch[k]
         words.append(top_forest(M, children(M, s, e), v))
@@ -525,8 +531,8 @@ def tree(M, i):
     w = f'(WordsG_nil {v})'
     for f in reversed(words):
         w = f'(WordsG_consT (v := {v}) {f} {w})'
-    if tie_far:
-        st = f'(starOK_tieFar (v := {v}) {w})'
+    if tie_n > 0:
+        st = f'(starOK_tieFarN {tie_n} (v := {v}) {w})'
     elif tie_us is not None:
         # 先頭に続く遠い字と荷の語、最後の語は最後に子のないタイ（GzJ.starOK_topFarTie）
         L, P = uss_lean(M, uss, v)
@@ -582,7 +588,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaN\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
