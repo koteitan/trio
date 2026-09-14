@@ -30437,3 +30437,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   次: GpT/FarCAt が GTC/Wstarv をどう出すか（GpT_elim 等）を読み、FarCAt→GTC を作る。
   もしくは gtc_oper の callback を towWt_GpT hFar の各段から供給できるか調べる。
 - scratchpad: tailtest.lean（hD/hXok/hOk/hFar/hRaw 緑）、wrap.lean（topCLT_Wg_sep、前置き問題で未完）。
+
+## 追記606: ★ 重要 — 深い鎖の oper 展開は「木」。tree+upleaf の gtc_oper で行けるかも（hFar 不要の可能性）
+
+- trio.py で 証明中行 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0) を展開:
+  - n=2: ...(3,2,0)(4,1,0)(5,2,0)。n=3: ...(4,1,0)(5,2,0)(6,1,0)(7,2,0)。
+  - **末端 (4,2,0)[tie 1 []] が (4,1,0)(5,2,0)[= tie 0 [tie 1 []]] に展開**。段0のタイが入って「木」になる。
+- 効果: 段0のタイ (·,1,0) が cl を true に戻すので、その中の段1タイ (·,2,0) は TreeTs_cons_up で通る。
+  ⇒ **深い鎖の oper 展開は valid TreeTs（木）**。静的な深い鎖は同段で TreeTs に弾かれるが、展開は木。
+- つまり GTC を gtc_oper で出せる可能性: 深い鎖の語の GTC ⟸ 各 oper 展開の GTC（木、GoodTT_all）。
+  GTC_N2（HdU）と同型で、hFar/GPF の包みは要らないかもしれない。追記590 の「GPF 必須」は静的な木の話で、
+  oper 展開を使えば tree で閉じるかも。
+- 関連: 以前作った HeQ.upleaf_deep_core / HeR.clD（深い葉の upleaf・閉包）。upleafT_core（HeN 29）は
+  深い節点 (1,q,0)+中身 D の oper 展開 towR を扱う。これらが深い鎖に効くか再検討。
+- **次**: (1) HeQ.upleaf_deep_core を読み直し、深い鎖 tie 1 [tie 1 [], tie 1 []] の GTC を gtc_oper+木 で
+  組めるか試す。(2) 効けば hFar の包み（FarCAt→GTC の循環）を回避できる。生成器の treelit_top を upleaf 対応に。
+- 注意: 2つの道 — (A) hFar+okRAt（緑だが包みが循環）、(B) gtc_oper+木（展開が木、包み不要かも）。B を優先で試す。
