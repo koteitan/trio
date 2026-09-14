@@ -30385,3 +30385,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **gp の深い鎖の項**（実測、b=0, [] 1）:
   GPF_node (o:=1)(τ:=2) [] (GPF_nil1 0) (GPF_node (o:=2)(τ:=2) [] (GPF_node (o:=2)(τ:=2) [] (GPF_nil [] 2)(GPF_nil [] 2))(GPF_nil [] 2))。
   = 外節点 τ=2 中身空、FarP 継続が級 [] 2 の内鎖。一般級版は級を o::A に上げて同型に組む。
+
+## 追記603: ★★ 突破 — 深い鎖は okRAt の「尾」で作れる（既存機構）。GoodChtX_snocGPF は不要
+
+- **決定的な観測**: collapse の基底（級 []、o=1）では liftOff (fun_=>0) [] 1 = 0 なので r = b+liftOff+1 = u+1。
+  topCLT_WgL も towWt を r=u+1 で描く。よって F のタイの節点（行1=r=u+1）と、okRAt_tie が足す節点（行1=u+1）が**同じ位置**。
+  ⇒ 深い鎖を F のタイの子（Lds）でなく**語の尾 X（okRAt）**に置ける。okRAt_tie（HdH 262）が F 位置のタイ (1,u+1,0)+GF の子を足す既存規則。
+- **実測で緑（scratchpad/tailtest.lean）**:
+  - farWt 0 1 [([], 0, X)]（X = okRAt_tie の尾）= (1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(4,2,0) = **1688 の (0,0,0) 以降と一致**。
+  - hD: GPF [] 1 0 (深い鎖) = gp の項をそのまま。hXok: okRAt_tie (okRAt_nil) (GF_of_GPF hD)。
+  - hOk: OkWsAt_cons le_rfl (GoodChtX_nil) hXok (OkWsAt_nil)。hFar: FarCAt_of_OkWsAt。hRaw: RawWsAt_of_OkWsAt。全部緑。
+- つまり深い葉の語は既存の OkWsAt/okRAt/gp で作れる。**GoodChtX_snocGPF（一般埋め込みの難補題）は要らなかった**。
+  尾 X は f=fun_=>0 の okRAt で、埋め込みは FarCAt_of_OkWsAt が処理（塔で upF）。埋め込み先で尾は F 位置でなく τ≤o に落ちるが、
+  展開が valid（okRAt が保証）で基底が 1688 なら 1688 ∈ W 0。
+- **残り = collapse の包み**: FarCAt+RawWsAt → 1688 ∈ W 0。topCLT_WgL は PsLTL 専用（wLT/rword_psLT/BwT）。
+  一般 OkWsAt 版が要る。鍵は BwT（bad word）を深い鎖の語について出すこと。次はここ。
+- 注意: これで深い葉の壁は「難補題」から「collapse の包みの一般化」に下がった。大きく前進。
