@@ -30421,3 +30421,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   (B) FarCAt→GTC を単体補題で作り、GTC_N2/GTC_far の型で組む。
 - scratchpad/tailtest.lean に hD/hXok/hOk/hFar/hRaw（緑）。scratchpad/wrap.lean に包みの骨組み（要 open 修正）。
 - 大局: 深い葉は「okRAt の尾 + hFar（緑）」で作れ、残りは FarCAt→GTC の橋 1 本。次はこれ。
+
+## 追記605: 包みの循環を特定 — topCLT_Wg は「語の前置きが bad」を要求。最初の語には gtc_oper が要る
+
+- topCLT_Wg_sep（scratchpad/wrap.lean）を試作: 塔を ws（hFar）で作り空文脈で包もうとした。
+  ほぼ通るが、`key` の列 `rword 0 u ([] ++ [K])` に **farWt ws の前置きが無い**（型不一致）。
+  塔 towWt u ws = farWt ws ++ 塔尾。列に farWt ws を入れるには文脈 = [私の語] が要り、その BwT（= 私の語が bad）が要る = **循環**。
+- 原因: topCLT_Wg の `key` は `BwT (文脈)` を要求。文脈 = 塔の語 = 私の語。よって私の語の BwT を先に要る。
+  fwTop [] の GTC_far_CLTL が循環しないのは、空語を **既に bad な文脈** に足すから（文脈の BwT は GTC の仮定）。
+  私の語は「中身のある最初の語」なので前置きが無く、topCLT_Wg では BwT を出せない。
+- 正しい道 = **gtc_oper（oper 帰納）**。GTC_N2（HdU）は gtc_oper で GTC を出す:
+  各 oper 展開 K⟦n⟧ を直接 GTC にする（GoodTT_all=tree）。私の語は tree でないので、
+  各展開の GTC を **FarCAt/hFar から一様に**出す補題が要る（GdT_good の FarCAt 版）。
+- つまり必要なのは「FarCAt（または GpT/PVF）→ GTC」の橋。GdT_good（HeL 139, tree→GTC）が型紙。
+  次: GpT/FarCAt が GTC/Wstarv をどう出すか（GpT_elim 等）を読み、FarCAt→GTC を作る。
+  もしくは gtc_oper の callback を towWt_GpT hFar の各段から供給できるか調べる。
+- scratchpad: tailtest.lean（hD/hXok/hOk/hFar/hRaw 緑）、wrap.lean（topCLT_Wg_sep、前置き問題で未完）。
