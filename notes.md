@@ -29378,3 +29378,22 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - すると R_child で、錨つきの子の級 GC A0 H τ の並びを持つ節点（τ ≤ liftOff H A0 k0）を中身に置ける。
 - A0 = [] が GzU〜GzW の k 族。錨つきの F（字と同じ行 1）は GzY と同じく FarP_GpT_lt で、h2 の子を R_child（A0 = 級の錨の列）で置く。
 - 規模: FarCA の核（持ち上げ・再持ち上げ・PVP・塔・潰れ）、okWA の公理、CtxP、語の補題の 4 ファイル程度。
+
+## 追記547: 錨つきの中身の族（HaC〜HaF、緑）
+
+    HaC: reliftX_ins_low（中身が上の錨 S の持ち上げ後の位置以下なら S ++ A0 の再持ち上げは A0 の再持ち上げ）、
+         relWs（中身を状態で持ち上げた並び）、FarCA A0 k0 H b0 ws（∀ g S o f、f は A0 上で H+g、S の錨は A0 より上）、
+         farWA_PVP、towWA_GpT（塔の子で S に o を足す）、farWA_collapse。
+    HaD: GzV.okWk_ax の遠い語の中の段を一般の補題（fwW_oper_step / orph / tie / flat）に切り出し、
+         okWA A0 k0 H u X := Hd X ∧ LowC (u + reOff 0 H A0 k0) X ∧ ∀ b0, GTWA と okWA_ax（再持ち上げを中身に押し込む）。
+    HaE: FarCA_congr / okWA_congr / FarCA_relift、RA A0 k0 H b X := ∀ g b', okWA A0 k0 (H+g) b' (reliftX b' H g A0 (mlift X b (b'−b)))、
+         RA_lift / RA_congr / RA_ax（GyI.RLC_ax の写しで okWA_ax の場を呼ぶ）。
+    HaF: FarP_RA（遠い語の中で FarP_GpT_ge。h1 は okWA の続き、h2 は外側の h2 と FarCA_relift、子の級は GC_ins_low）、
+         RA_ctx : CtxP (GC A0) A0 k0 (RA A0 k0)、RA_node（R_child）。
+
+- 設計（追記546）の通りに 4 ファイルで閉じた。HaE・HaF は一度の確認で緑。
+- 設計の要点: 中身を「状態 H で持ち上げた形」で持ち、族の中に再持ち上げの層（∀ g）を置く。
+  上に足す錨 S は中身より上なので、S ++ A0 の再持ち上げは中身には A0 の再持ち上げとして働く。
+  前の記録（追記526〜538）で止まった「中身の族の ∀ W」は、接頭辞を遠い語の並びに限った FarCA で避けている。
+- 次: 級 (A, o) の遠い語の中身を RA A o 0 で一様に作る生成器の経路。節点 τ ≤ o は中身の項目（RA_node、子の級 GC A 0 τ = GPF (A の τ 未満) τ）。
+  字と同じ行 1 の F（τ = o+1）だけ別補題（FarP_GpT_lt、h2 は RA_node）。GzU〜GzZ・HaA・HaB の経路はこれに含まれる。
