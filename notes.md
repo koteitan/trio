@@ -30484,3 +30484,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **次**: HeS を build して、(1) hrep を GdT_towT/GoodTTL 経由で供給、(2) hpM0 を確立、
   (3) GTC CLTL 0 (wLT 深い鎖) を組み、starOK_lastT で 証明中行 ∈ W。緑になれば深い葉が初めて割れる。
 - 大局: upleaf_deep_coreT（核, 緑）+ 枠一致（確認）。残りは hrep（木の塔）と hpM0 の plumbing。
+
+## 追記609: ★ 訂正 — 枠組みの oper（towR）は同段の塔。B 案の hrep は「木」でなく「深い鎖」。核の壁は FarCAt→GTC のまま
+
+- upleaf_deep_coreT の hrep 展開を実測: q=m=2, D=[] で towR 2 [] j = [(1,2,0),(2,2,0),(3,2,0),...]（全 row1=2）。
+  よって hrep 展開 `(1,2,0)::shiftr01 1 0 (towR 2 [] j)` = `(1,2,0)(2,2,0)(3,2,0)...` = **同段の深い鎖**（木でない）。
+- 一方 trio.py の BM4 expand は (4,2,0)→(4,1,0)(5,2,0)（段0を挿入 = 木）。**枠組みの oper（towR, 同段成長）と
+  BM4 expand（段0挿入 = 上昇 A 行列）が食い違う**。枠組みは同段の塔を FarP/GpT（hFar）で扱うモデル。
+- ⇒ 追記606 の「展開は木」は BM4 の話で、枠組みの証明（towR）では成り立たない。**B 案の hrep は深い鎖で、
+  GoodTT_all（木）で閉じない**。upleaf_deep_coreT の hrep は深い鎖の GTC を要求し、それは hFar（GpT）からしか出ない。
+- **核の壁は依然 FarCAt→GTC**（追記605）。深い鎖は hFar（FarP, 不動点なし）で GpT になるが、collapse の GTC/Wstarv に
+  橋渡す所が循環（topCLT_Wg は語の前置きの BwT を要求、単一の語では自分の BwT = 循環）。
+- 正直な状況: 多数のハートビートで深い葉を精査。hFar（緑）・upleaf_deep_coreT（緑）を得たが、
+  FarCAt→GTC の橋（深い鎖の BwT を hFar の FarP 帰納から出す）が未解決の核。新シート行はまだ。
+- **次の戦略**: (1) FarCAt→BwT を FarP の帰納（級/段）で直接作る新補題を検討（GpT→Wstarv の橋）。
+  または (2) 一歩下がって、深い鎖を含まないシート行（もしあれば）や別ルートを探す。(1) が本命だが大きい。
