@@ -29255,3 +29255,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - tools/gen_given.py（シートにない行列を gen_gyk の規則で証明する）で lean/GzL.lean を作成。Q1・Q2 は既存の単位（FL のあとの子のないタイ）で緑。
 - Q3・Q4 は content (4, 2, 1) で止まる: 字 (3,2,1) の中身の FL (4,2,1) のあとが子つきのタイ (4,1,0)[…]。
   Q4 の子は (5,1,0)（タイ）、Q3 の子は荷 (5,0,0) とその下の語（接ぎ木の形）。追記539 の「単位に子つきのタイを加える」がそのまま要る。
+
+## 追記541: ★ 遠い字のあとの子つきのタイ（GzM・GzN、緑）で Q3・Q4 とシート行 1450〜1453 が緑（GzL・GzO）
+
+    GzM: LowC、fwW b r c Y（遠い字のあとの低い列 Y を段 c で与えた語）、farW、RawW、持ち上げ・再持ち上げの等式、
+         FarCW（全ての錨の列で GpT）、towW、farW_collapse（GzH の単位を任意の低い列に一般化、機械的な置き換えで緑）
+    GzN: GTW b0 w := ∀ ws, FarCW b0 ws → FarCW b0 (ws ++ [w])
+         okW u X := Hd X ∧ LowC (u+1) X ∧ ∀ b0, GTW b0 (u, X)
+         okW_ax : SlotAx okW（lift / oper / orph / tie / flat）
+         okW_load（slot_load）、okW_tieD（GTs の nslot）、PVF_farWs、生成器の部品 okWF / OkWs
+
+- okW の定義に Hd と LowC を入れたので、oper の仮定（展開した形の okW）が展開した形の低さを運び、展開の構造の補題が要らなかった。
+  結論の低さは U⟦1⟧ = U.dropLast と、末尾の列の親（hasParent → nextR → rtg0）から出る。
+- flat は同じ語の繰り返し（GTW_rep）、orph / tie は LC1_orph / LC1_tie の証明の写し（noParent_ctx、letter_anc_row1、PathCone、coneV_pathB）。
+- 生成器: far_contents（遠い字のあとが荷と行 1 が v+1 の子つきのタイ）で PVF_farWs の経路。gen_gyk 1400〜1700 の緑は 1400〜1453 に伸びた。
+- 次: シート行 1454 = …(3,2,1)(4,2,1)(4,2,0)（遠い字のあとに F）。F は節点 + 1 の段で低い列でない。
