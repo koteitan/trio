@@ -9,7 +9,7 @@ namespace TRIO
 namespace HeT
 
 open Wset Small HdA HdB HdE HdQ HeI HeK HeL
-open GwS GxL GxJ GzJ GxP HbP
+open GwS GxL GxJ GzJ GxP GxN HbP
 open HeN
 
 noncomputable def dtree : ℕ → HdA.UT
@@ -67,6 +67,27 @@ theorem R_pm : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0
     rw [Nat.sub_self] at h2
     simpa only [mlift_zero, List.map_id', List.nil_append] using h2
   have h := W0_of_starOK hS
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+/-- 深い葉の語 K のあと、遠い語の並び Ls を足す（深い葉 + 後ろの遠い語）。 -/
+theorem deepleaf1_words {Ls : List TrioSeq} (hW : WordsG 0 Ls) :
+    (((0, 0, 0) : ℕ×ℕ×ℕ) :: rword 0 0
+      ([wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))] ++ Ls)) ∈ W 0 := by
+  have hBK : BwT 0 [wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))] := by
+    have := hK_pm [] ⟨[], PsLTL_nil 0, rfl⟩ (by simp) (BwT_nil 0)
+    simpa using this
+  have hB2 := BwT_append_words (v := 0)
+    (L := [wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))])
+    (by intro X hX; simp only [List.mem_singleton] at hX; subst hX; exact Fr_wLT 0 _)
+    hBK Ls hW
+  refine W0_of_starOK ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+  have := hB2 0 le_rfl
+  rw [Nat.sub_self] at this
+  simpa only [mlift_zero, List.map_id', List.map_cons, List.map_nil] using this
+
+/-- ★ シート行 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)。 -/
+theorem R_pm2 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(1,1,1)] : TrioSeq) ∈ W 0 := by
+  have h := deepleaf1_words (Ls := [([] : TrioSeq)]) (WordsG_consT (TF_nil 0) (WordsG_nil 0))
   simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
 
 end HeT
