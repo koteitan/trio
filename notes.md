@@ -29286,3 +29286,33 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 2. letter after F word（1472〜1475 ほか 17 行）: タイの子の並び（o = 1）で F の語のあとに字。F は t の持ち上げで動くので
    PVF にならない（段 1+t で h2 に中間の段 2..1+t の節点が要る）。
 3. content (7, 4, 1)（1462）: 錨 [2] の F の子の並び（GpT [2] 3）の中で遠い字のあとに b+2 の空の節点。GPF_farW_bot2 は錨なしだけ。
+
+## 追記543: 行 1462〜1466（GzS・GzT・GzU〜GzX、緑）。族が CtxP であることを 1 回示して節点の規則を R_child で出す
+
+    GzS: 錨が全て 2 以上の節点の子の並びで、遠い字と低い列のあとの b+2 の空の節点（GPF_farW_bot2A / PVF_farW_bot2A）。
+         錨 ≥ 2 なら reOff 2 = 2、lowP A 1 = [] なので h2 は子つきのタイだけ。
+    GzT: シート行 1462。
+    GzU: GzM の低さの閾値を b+1 から b+k に上げた版。
+         RawWk k b w := w.1 ≤ b ∧ Fr w.2 ∧ Hd w.2 ∧ LowC (w.1 + k) w.2
+         FarCWk k b0 ws := 錨 ≥ k、o ≥ k の全ての錨の列 A, o で GpT A o f b (farW b (b + liftOff f A o + 1) ws)
+         reStair_k（錨 ≥ k なら段 ≤ b+k は再持ち上げで動かない）、towWk_GpT（塔の子の添字 (o :: A, o+1) も条件を保つ）、farWk_collapse。
+    GzV: okWk k u X := Hd X ∧ LowC (u+k) X ∧ ∀ b0, GTWk k b0 (u, X)
+         okWk_ax : SlotAx (okWk k)（1 ≤ k、GzN.okW_ax の写し）、PVF_farWsk。
+    GzW: okWk_ctx : CtxP (GC []) [] k (fun _ => okWk k)
+         FarP の場（段 b+s の子のない節点、2 ≤ s ≤ k）: 遠い語の中で FarP_GpT_ge を使う。
+         錨 ≥ k なので reOff s = s（reOff_k）、h2 の子の級は GpT [] τ（lowP_k）。
+         FarP_GpT_ge の h1 / h2 は、外側の FarP の h1 / h2 が与える okWk の GTWk から出る。先頭は h2 の τ = 1, L = [] から出る。
+         okWkF_node : okWkF k u X → GPF [] τ u L → okWkF k u (X ++ (1, u+τ, 0) :: L↑)   （1 ≤ τ ≤ k、R_child）
+    GzX: シート行 1463〜1466（生成器 far_contents_k、k = min(A ∪ {o})）。
+
+- 節点の規則を族の上で直接証明せず、族が錨なし・段 k の文脈の族（CtxP）であることを示して R_child に渡した。
+  R_child は τ = 1（子つきのタイ）も同じ形で出すので、GzN の okW_tieD の経路は k 版では要らない。
+- leanman の緑が 0〜2 秒だったので、誤りを入れた写しを lake env lean で走らせ、誤りが報告されることを確かめた。
+- gen_gyk 1400〜1520 の緑は 1400〜1466。
+
+次の壁:
+1. content (5,3,1)（1467〜1471）: 段 2 の節点の子の並び（錨なし、o = 2）で、遠い字の中身に行 1 が字と同じ r の節点（F）。
+   行 1467 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(4,2,0)(3,2,0)(4,3,1)(5,3,1)(5,3,0)
+   F の行 1 は τ = o+1 > k なので低い列に入らない。F は t の持ち上げでも再持ち上げでも字と同じだけ動く。
+2. letter after F word（1472〜1488）: タイの子の並び（o = 1）で F の語のあとに字。
+3. top (2,1,1)（1489〜）。
