@@ -29911,3 +29911,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 残り（1659〜1700）: 1659〜1665 は N2 の語のあとに F の字の語（最上段の文脈 CLT に N2 の語）、1666〜1700 は最上段の F のタイの子の形
   （N2 の兄弟・子つきの N2・N2 の下の N2（1688〜））。いずれも最上段（HdQ〜HdV）の木に段を入れ、道の集合で DT を書き直す必要がある。
 - 次: 最上段の枠組み（BotC・DT を段つきの道と道の集合で）を HdR〜HdV の写しとして作る。遠い段の像（topCLT_Wg）は HeI の木で出す。
+
+## 追記579: HeK〜HeP（緑）: 最上段の道の集合の枠組みと、シート行 1659〜1687
+
+- HeK: 最上段の段つきの木 TreeTs v p cl（HeI.TreeOKs と同じ段の条件）、文脈 CLTL、遠い段の像 TreeOKs_farTs、
+  潰れの塔 topCLT_WgL（GoodChtX_topL は HeI.GoodChtX_snocT）、GTC_far_CLTL / GTC_load_CLTL（HdQ の写し）。
+- HeL: 最上段の段つきの道の語の形（wLT_plugQL・PathCone_YtopL）、BotCL、道の集合 TPS の良さ GdT P p cl、
+  TExt と TieOK（節点の段と子の位置の木の条件）、GdT_jump、集合 TP0 / tchS0 / tchU と TPSOK・TPSDec・閉包・最後の段。
+- HeM: 荷 GdT_load（HdS.DT_load の写し。flat は TPSDec の分解）、空のタイ GdT_tieE、空の並び（TP0・tchS0）。
+- HeN: 上の葉 GdT_upleaf（gtc_oper と塔 towT、HdU.GTC_N2 の一般化。親の段は 0 に限る）、Gd_nil_tchU、
+  木の定理 GdT_treeL（閉じた位置では段 0）、GoodTTL_all・GTC_wLTL・BwT_CLTL・starOK_CLTL。
+- HeO: 生成器のための TreeTss_nil / TreeTss_cons。生成器 top_ltl（F のタイの子を段つきの木にした語の並びと TF の語、HeN.starOK_CLTL）。
+- HeP（生成、緑）: シート行 1659〜1687（N2 の語が文脈に入る、N2 の兄弟、子つきの N2、N2 の下のタイの下の N2 など）。
+  1666 (2,1,0)(3,2,0)(2,0,0) の (2,0,0) は語の中身の荷として GTC_load_CLTL で出た。
+- 残り: 1688 (2,1,0)(3,2,0)(4,2,0) から、段 1 の葉の親が段 1（深い葉。悪い根は N2 の親の F のタイ）。
+  1703 (3,2,0)(4,3,0) は段 2 の葉の親が段 1（上の葉だが親の集合 tchU が段 1 の延長で閉じていない）。
+  いずれも、親の親までの 2 段の塊の複製（深い葉）か、段 l ≥ 1 の延長の閉包（tchU の閉包）が要る。
+- 次: 段 l ≥ 1 の節点の子の位置を段 l の延長で閉じる（1703 の形）と、深い葉の規則（1688 の形）の設計。

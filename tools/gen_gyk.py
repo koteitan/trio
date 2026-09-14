@@ -1490,6 +1490,96 @@ def top_lt(M, ch, a, v):
     return f'(HdV.starOK_N2 (v := {v}) {L} {proof} (Uss := {U}) {up} (us := {lus}) {pus} {w})', k
 
 
+def treelit_top(M, kids, depth, v, p, cl):
+    """最上段の F のタイの子（行 0 が depth）を段つきの木 HdA.UT の並びにする（HeK.TreeTs）。
+    荷は ch、行 1 が v+1+l の z=0 の節点は段 l（l ≥ 1 は親の段 p < l、閉じた位置 cl）。"""
+    items = []
+    b = 'true' if cl else 'false'
+    proof = f'(HeK.TreeTs_nil {v} {p} {b})'
+    for (x, y) in reversed(kids):
+        c = M[x]
+        if c[0] != depth:
+            raise Fail('treelit depth')
+        if c[2] == 0 and c[1] <= v:
+            items.insert(0, f'HdA.UT.ch ({load_lit(M, x, y)} : TrioSeq)')
+            proof = f'(HeK.TreeTs_cons_ch {load_mem(M, x, y, v)} rfl {proof})'
+        elif c[2] == 0 and c[1] >= v + 1:
+            l = c[1] - v - 1
+            if l == 0:
+                sl, sp = treelit_top(M, children(M, x, y), depth + 1, v, 0, True)
+                items.insert(0, f'HdA.UT.tie 0 {sl}')
+                proof = f'(HeK.TreeTs_cons_tie0 {sp} {proof})'
+            else:
+                if not cl or not (p < l):
+                    raise Fail('treelit deep')
+                sl, sp = treelit_top(M, children(M, x, y), depth + 1, v, l, False)
+                items.insert(0, f'HdA.UT.tie {l} {sl}')
+                proof = f'(HeK.TreeTs_cons_up (l := {l - 1}) rfl (by decide) {sp} {proof})'
+        else:
+            raise Fail('treelit child %s' % (c,))
+    return '([' + ', '.join(items) + '] : List HdA.UT)', proof
+
+
+def top_ltl(M, ch, a, v):
+    """F のタイの子に段つきの木を持つ語の並びと TF の語の並び（HeN.starOK_CLTL）。"""
+    k = 0
+    ps = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if not cc or M[cc[0][0]] != (a + 2, v + 1, 1) or cc[0][1] - cc[0][0] != 1:
+            break
+        rest = cc[1:]
+        n = 0
+        while n < len(rest) and M[rest[n][0]] == (a + 2, v + 1, 0):
+            n += 1
+        ties = rest[:n]
+        units = rest[n:]
+        uss = []
+        ok = True
+        for (x, y) in ties:
+            try:
+                uss.append(treelit_top(M, children(M, x, y), a + 3, v, 0, True))
+            except Fail:
+                ok = False
+                break
+        if not ok:
+            break
+        us = []
+        for (x, y) in units:
+            c = M[x]
+            if c[2] == 0 and c[1] <= v:
+                us.append(('some', x, y))
+            else:
+                ok = False
+                break
+        if not ok:
+            break
+        k += 1
+        ps.append((uss, us))
+    if not ps:
+        raise Fail('top ltl')
+    words = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        words.append(top_forest(M, children(M, s, e), v))
+        k += 1
+    w = f'(WordsG_nil {v})'
+    for f in reversed(words):
+        w = f'(WordsG_consT (v := {v}) {f} {w})'
+    lits = []
+    proof = f'(HeK.PsLTL_nil {v})'
+    for (uss, us) in reversed(ps):
+        up = f'(HeO.TreeTss_nil {v})'
+        for (l, pr) in reversed(uss):
+            up = f'(HeO.TreeTss_cons {pr} {up})'
+        l, pu = units_lean(M, us, v)
+        lits.insert(0, '(([' + ', '.join(x for (x, _) in uss) + '] : List (List HdA.UT)), ' + l + ')')
+        proof = f'(HeK.PsLTL_cons {up} (by simp [NoTie]) {pu} {proof})'
+    L = '([' + ', '.join(lits) + '] : List (List (List HdA.UT) × List (Option TrioSeq)))'
+    return f'(HeN.starOK_CLTL (v := {v}) {L} {proof} {w})', k
+
+
 def tree(M, i):
     a, v, z = M[i]
     if z != 0:
@@ -1497,7 +1587,7 @@ def tree(M, i):
     end = subtree_end(M, i)
     ch = children(M, i, end)
     st = None
-    for top in (top_old, top_qb, top_n, top_l, top_lf, top_lu, top_lt):
+    for top in (top_old, top_qb, top_n, top_l, top_lf, top_lu, top_lt, top_ltl):
         try:
             st, k = top(M, ch, a, v)
             break
@@ -1548,7 +1638,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\nimport HcS\nimport HdV\nimport HeI\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\nimport HcS\nimport HdV\nimport HeI\nimport HeO\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
                'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB HbJ HbK\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
