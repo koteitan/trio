@@ -221,5 +221,17 @@ theorem Gd_redescend {l : ℕ} {B : PS} {Q : Path} (hQ : SpineL l Q) {A : List �
   have := h.2 G S o f hE u hcu Lds hL (Qp ++ Q) hQpQ b hub ws hC hR
   rwa [plugQ_append] at this
 
+/-! ## 深い葉の塔の良さ -/
+
+/-- ★ 深い葉の塔の各段が clD-good（tie0 = 段 0 の延長、再下降 = Gd_redescend）。 -/
+theorem Gd_deep_towers {l : ℕ} {B : PS} {Q : Path} (hQ : SpineL l Q) {A : List ℕ} {k : ℕ} {H : ℕ → ℕ}
+    (hA01 : ∀ a ∈ A, 1 ≤ a) (hk : 1 ≤ k) (hAk : ∀ a ∈ A, a < k) {c : ℕ} {us : List UT}
+    (hus : Gd (clD l B) A k H c us) : ∀ j, Gd (clD l B) A k H c (Xtow Q us j)
+  | 0 => hus
+  | j + 1 => by
+      rw [show Xtow Q us (j + 1) = us ++ [UT.tie 0 (plugQ Q (Xtow Q us j))] from rfl]
+      exact Gd_tie (clD_closed_0 l B) hA01 hk hAk hus
+        (Gd_redescend hQ (Gd_deep_towers hQ hA01 hk hAk hus j))
+
 end HeR
 end TRIO

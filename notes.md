@@ -30045,3 +30045,23 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - Gd_deepleaf: Gd clD us → Gd clD (us ++ [tie l []])（upleaf_deep_core + chT_Xtow + Gd_deep_towers、imgT の可換）。
 - baked-in の descent Q = 位置の悪い根の下の部分 = 空前置（clD なので）。chT_Xtow の Q と一致する。
 - 次: HeR に clD（snocNil 版の閉包）と上の補題を実装。まず clD の閉包と Gd_tie_nil から緑に。
+
+## 追記585: HeR（緑）に clD・Gd_redescend・Gd_deep_towers。残りは Gd_deepleaf（farWt の setup）
+
+- HeR 緑（commit 済み）:
+  - clD l B（段 0 full・段 l 空前置）、clD_closed_0・clD_closed_l・PSOK_clD。
+  - SpineL・clD_append_spine・imgT_plugQ_spine・plugQ_append・RawTs_plugQ_spine。
+  - Gd_redescend（空前置 spine の再下降が clD-good を保つ。Gd P [] を要らない＝深い葉の循環を回避）。
+  - Gd_deep_towers（∀ j, Gd clD (Xtow Q us j)。tie0 = Gd_tie + clD_closed_0、再下降 = Gd_redescend、底 = Gd clD us）。
+- 残り Gd_deepleaf: Gd clD us → Gd clD (us ++ [tie l []])（l = spine の段）。
+  - 各 clD の道 Q で BotT ... Q (imgT (us ++ [tie l []])) を示す。悪い根の行 1 は常に r（F でも tie0 でも段 0 = 行 1 r）。
+  - Q を Qbase ++ spine に分ける（spine = 末尾の段 l の空前置の run、Qbase = [] か tie0 で終わる）。悪い根 = Qbase の最後の tie0（or F）。
+    R = chT(plugQ spine (imgT us ++ [leaf]))（悪い根の下の descent、全列 row1 ≥ r+l）。upleaf_deep_core を q=r, R で使う。
+    hrep m' = tow r 0 R m' の GpT = chT_Xtow で plugQ spine (Xtow spine (imgT us) (m'-1)) の像 = Gd_deep_towers を
+    Gd_mono で道 Q に降ろした BotT。imgT が Xtow/plugQ と可換する補題（imgT_plugQ_spine は空前置 spine で済む）。
+  - farWt の setup（Pre = 悪い根まで、Yp = 中間、block = (1,r,0)::R↑1）が upleaf_snoc / upleaf_nil の写しで要る。
+    tie0 の道での分解（末尾 spine の抽出）が新しい。upleaf_snoc は「悪い根 = 最後の成分」なので使えない（悪い根は Qbase の tie0）。
+- 現状: 深い葉の基盤（flat core・閉包・再下降・塔の良さ）は全て緑。残りは Gd_deepleaf の farWt setup（tie0 の道の分解）1 本。
+- 次: Gd_deepleaf を、まず spine のみの道（tie0 なし、悪い根 F）で書いて緑にし、次に tie0 の道の分解を足す。
+  もしくは clD の道の setup を、末尾 spine を明示に持つ形（道 = Qbase ++ spine、Qbase ∈ 段 0 閉包、spine 空前置）で
+  分解する補題を先に作る。
