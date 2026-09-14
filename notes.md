@@ -30244,3 +30244,21 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
      残りは collapse への接続（GoodChtX from GPF）だけ。
 - 次: (B) の単体テスト（gp が deep chain を GPF で作れるか）を最初にやる。gp が通れば collapse 接続の設計へ。通らなければ
   gp（GPF）自体の deep chain 対応が要る。
+
+## 追記595: ★ 突破口 — deep chain は GPF の元（gp が作れる）。残りは collapse への接続だけ
+
+- scratchpad/gptest.py で確認: F のタイの子 (3,2,0)(4,2,0)(4,2,0)（deep chain）を gp(M, kids, v=0, [], 1) に渡すと
+  **成功**。GPF_node の入れ子（τ=2 > o=1、級を [] 1 → [] 2 → … と上げる）で作れる。塔は GPF_node の FarP が内部処理。
+  つまり deep chain は GpT の族（GPF）の正当な元で、不動点も壁もない（明示の閉包が間違った道具だった）。
+- 唯一の残りの壁: 1688 は z=1 字を含むので collapse（CLTL）の語 ⇒ top_ltl が F のタイの子を treelit_top（TreeTs）で作る。
+  TreeTs は同段の入れ子を弾く。GPF の道（gp）は TF の語（top_forest）だけで、collapse では使われていない。
+  ⇒ collapse（starOK_CLTL / topCLT_WgL / GoodChtX）を GPF の F のタイの子でも通るようにするだけ。
+- 接続の設計（actionable、不動点でない）:
+  - GoodChtX（F のタイの子の良さ = GpT(farWt)）を GPF の鎖について示す。F のタイの子 = fwH の (1,r,0)（F のタイの節点）
+    :: chT(chain)↑1。これは GPF_node（F のタイの節点 τ = liftOff+1 > o、子 = 鎖）で、far-word の GpT に GPF_node で足せる。
+  - 既存: GoodChtX_snocT（TreeOKs 木 → GoodChtX、Gd_treeP0 経由）、GoodChtX_snocN（塊 ch X、τ ≤ o）。
+    新規: GoodChtX_snocGPF（GPF [] 1 の鎖 → GoodChtX）。GPF は埋め込みで保たれる（GpT_lift/congr）ので、
+    追記568 の字の族 RLC の壁（flat・錨の差）は純節点の鎖では起きない見込み。
+  - collapse（topCLT_WgL / FarCAt_of_PsLTL）を GPF の F のタイの子で書き直す（PsLTL の TreeTs を GPF に）。
+- 次: GoodChtX_snocGPF（GPF 鎖 → GoodChtX）を Lean で証明する。まず GoodChtX の定義と farWt の 1 個の F のタイの子の
+  描画を見て、GPF_node で far-word に足せるか（GpT(farWt with chain) が GPF(chain) から出るか）を確かめる。
