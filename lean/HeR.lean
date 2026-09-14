@@ -233,5 +233,43 @@ theorem Gd_deep_towers {l : ℕ} {B : PS} {Q : Path} (hQ : SpineL l Q) {A : List
       exact Gd_tie (clD_closed_0 l B) hA01 hk hAk hus
         (Gd_redescend hQ (Gd_deep_towers hQ hA01 hk hAk hus j))
 
+/-! ## 道の分解（末尾 spine の抽出） -/
+
+theorem extD_seg {l : ℕ} {B : PS} (hBseg : ∀ C o f u Q, B C o f u Q → ∀ s ∈ Q, s.2 = 0) :
+    ∀ (i : ℕ) C o f u Q, extD l B i C o f u Q → ∀ s ∈ Q, s.2 = 0 ∨ s = ([], l)
+  | 0, C, o, f, u, Q, h, s, hs => Or.inl (hBseg C o f u Q h s hs)
+  | i + 1, C, o, f, u, Q, h, s, hs => by
+      rcases h with h | ⟨Q', us, rfl, hQ', _⟩ | ⟨Q', rfl, hQ'⟩
+      · exact extD_seg hBseg i C o f u Q h s hs
+      · rcases List.mem_append.mp hs with hs | hs
+        · exact extD_seg hBseg i C o f u Q' hQ' s hs
+        · simp at hs; subst hs; exact Or.inl rfl
+      · rcases List.mem_append.mp hs with hs | hs
+        · exact extD_seg hBseg i C o f u Q' hQ' s hs
+        · simp at hs; subst hs; exact Or.inr rfl
+
+theorem clD_seg {l : ℕ} {B : PS} (hBseg : ∀ C o f u Q, B C o f u Q → ∀ s ∈ Q, s.2 = 0)
+    {C o f u Q} (hQ : clD l B C o f u Q) : ∀ s ∈ Q, s.2 = 0 ∨ s = ([], l) := by
+  obtain ⟨i, hi⟩ := hQ
+  exact extD_seg hBseg i C o f u Q hi
+
+theorem split_exists {l : ℕ} {Q : Path} (hseg : ∀ s ∈ Q, s.2 = 0 ∨ s = ([], l)) :
+    ∃ Qbase spine, Q = Qbase ++ spine ∧ SpineL l spine ∧
+      (Qbase = [] ∨ ∃ Q'' us0, Qbase = Q'' ++ [(us0, 0)]) := by
+  induction Q using List.reverseRecOn with
+  | nil => exact ⟨[], [], rfl, SpineL_nil l, Or.inl rfl⟩
+  | append_singleton Q' s ih =>
+      obtain ⟨sa, sl⟩ := s
+      rcases hseg (sa, sl) (by simp) with hs0 | hsl
+      · simp only at hs0; subst hs0
+        exact ⟨Q' ++ [(sa, 0)], [], by simp, SpineL_nil l, Or.inr ⟨Q', sa, rfl⟩⟩
+      · obtain ⟨Qbase, spine, rfl, hsp, hqb⟩ :=
+          ih (fun s' hs' => hseg s' (List.mem_append_left _ hs'))
+        refine ⟨Qbase, spine ++ [(sa, sl)], by rw [List.append_assoc], ?_, hqb⟩
+        intro s' hs'
+        rcases List.mem_append.mp hs' with hs' | hs'
+        · exact hsp s' hs'
+        · simp at hs'; subst hs'; exact hsl
+
 end HeR
 end TRIO
