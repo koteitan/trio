@@ -24,7 +24,7 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate'
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT'
 
 
 def far_units(M, s, e, r, v, top):
@@ -311,7 +311,28 @@ def gp_ra(M, kids, v, A, o):
                 break
             fcsF.append(fcF)
             jF += 1
-    if fcsF and any(fcsF):
+    bsW = []
+    if len(kids) >= 2 and is_word(0, True):
+        bsW = [True]
+        while len(bsW) < len(kids) and (is_word(len(bsW), True) or is_word(len(bsW), False)):
+            bsW.append(is_word(len(bsW), True))
+    if any(bsW[1:]):
+        # F の語と中身なしの遠い語の並び（HaZ.TowP_QP / HaN.TowP_QF の塔、HaZ.PVF_TowP）
+        tp = 'TowP_QP TowP_nil'
+        qt = 'HaZ.QP HaZ.QNil'
+        for bw in bsW[1:]:
+            if bw:
+                tp = f'TowP_QP ({tp})'
+                qt = f'HaZ.QP ({qt})'
+            else:
+                tp = f'TowP_QF ({tp})'
+                qt = f'HaN.QF ({qt})'
+        w = (f'(PVF_TowP (Q := {qt}) ({tp}) (A := {lean_list(A)}) (o := {o}) '
+             f'(by decide) (by decide) (by decide) {v})')
+        k = len(bsW)
+        nl = len(bsW)
+        nf = len(kids)
+    elif fcsF and any(fcsF):
         # F の語（中身なし）のあとに、中身が荷と子つきのタイの遠い語（HaV.PVF_farWF）
         P = f'(OkWsFk_nil {v})'
         for fc in reversed(fcsF):
@@ -522,12 +543,7 @@ def top_forest(M, kids, v):
     return t
 
 
-def tree(M, i):
-    a, v, z = M[i]
-    if z != 0:
-        raise Fail('root z')
-    end = subtree_end(M, i)
-    ch = children(M, i, end)
+def top_old(M, ch, a, v):
     k = 0
     words = []
     uss = []
@@ -596,6 +612,58 @@ def tree(M, i):
         st = f'(starOK_topFar (v := {v}) {L} {P} (by simp [NoTie]) {w})'
     else:
         st = f'(starOK_wordsG (v := {v}) {w})'
+    return st, k
+
+
+def top_qb(M, ch, a, v):
+    """W_tie と W_far の並び、荷だけの遠い語の並び、TF の語の並び（HbB.starOK_CQ）。"""
+    k = 0
+    bs = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if (len(cc) == 2 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1
+                and M[cc[1][0]] == (a + 2, v + 1, 0) and cc[1][1] - cc[1][0] == 1):
+            bs.append(True)
+        elif len(cc) == 1 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1:
+            bs.append(False)
+        else:
+            break
+        k += 1
+    if not bs:
+        raise Fail('top qb')
+    uss = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        fu = far_units(M, s, e, v + 1, v, True)
+        if fu is None or fu[1] or any(u[0] != 'some' for u in fu[0]):
+            break
+        uss.append(fu[0])
+        k += 1
+    words = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        words.append(top_forest(M, children(M, s, e), v))
+        k += 1
+    w = f'(WordsG_nil {v})'
+    for f in reversed(words):
+        w = f'(WordsG_consT (v := {v}) {f} {w})'
+    L, P = uss_lean(M, uss, v)
+    bl = '([' + ', '.join('true' if b else 'false' for b in bs) + '] : List Bool)'
+    st = f'(starOK_CQ (v := {v}) {bl} {L} {P} (by simp [NoTie]) {w})'
+    return st, k
+
+
+def tree(M, i):
+    a, v, z = M[i]
+    if z != 0:
+        raise Fail('root z')
+    end = subtree_end(M, i)
+    ch = children(M, i, end)
+    try:
+        st, k = top_old(M, ch, a, v)
+    except Fail:
+        st, k = top_qb(M, ch, a, v)
     for (s2, e2) in ch[k:]:
         c = M[s2]
         if c[2] != 0:
@@ -639,7 +707,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
