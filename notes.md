@@ -30065,3 +30065,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 次: Gd_deepleaf を、まず spine のみの道（tie0 なし、悪い根 F）で書いて緑にし、次に tie0 の道の分解を足す。
   もしくは clD の道の setup を、末尾 spine を明示に持つ形（道 = Qbase ++ spine、Qbase ∈ 段 0 閉包、spine 空前置）で
   分解する補題を先に作る。
+
+## 追記586: antitonicity の完全な解決（clD l P0 = 底 P0・段 l 空前置）と Gd_deepleaf の残り
+
+- 底を P0（段 0 の閉包）にして clD l P0 を使うと、道の成分は全て「段 0（任意の前置）」か「([], l)（空前置の段 l）」だけ。
+  よって「最も深い tie0 の下の descent」は必ず空前置の段 l の spine + supply された us + leaf。どこにも非空前置の段 l が現れず、
+  antitonicity は完全に消える（段 0 の tie0 の前置は Pre に入り raw だけでよい。descent の再下降は空前置）。
+- 外側の tie1（1688 は兄弟なし＝ us0 = []）は Gd_tie_nil（us0 = [] の跳び、ExtNil P0 1 (clD 1 P0)、底 = Gd_nil_P0）で
+  P0 から clD 1 P0 へ下りる。ExtNil P0 1 (clD 1 P0) は B_sub_clD + clD_closed_l で出る。
+- Gd_deepleaf の実装手順（残り、約 200 行）:
+  1. clD_seg: clD l P0 の道の各成分は s.2 = 0 か s = ([], l)（extD の段帰納、底 P0 は段 0）。
+  2. clD_split: 道 Q = Qbase ++ spine（spine = 末尾の ([],l) の run、Qbase = [] か tie0 で終わる。takeWhile/dropWhile on reverse + clD_seg）。
+  3. 描画: farWt(... plugQ Q (imgT us ++ [leaf]) ...) = Pre ++ shiftr01 d 0 ((1,r,0) :: R↑1)、R = chT(plugQ spine (imgT us ++ [leaf]))。
+     Qbase = [] は F（FTLt の (1,r,0)、upleaf_nil の写し）、Qbase = Q'++[(us0,0)] は tie0（chT_plugQ_snoc で (1,r,0) を露出）。
+  4. upleaf_deep_core（q=r, R）+ chT_Xtow + Gd_deep_towers（Gd_mono で道 Q に降ろす）+ imgT_plugQ_spine で hrep。
+- Gd_tie_nil（us0 = [] の Gd_tie。ExtNil だけ要る）も要る（Gd_jump は hX を us0 の像でしか使わない＝空なら ExtNil で足りる）。
+- 現状の緑の資産（commit 済み）: HeQ（upleaf_deep_core・Xtow・chT_Xtow）、HeR（clD・Gd_redescend・Gd_deep_towers）。
+  深い葉の基盤は完成。残りは Gd_deepleaf（上の 1〜4）と、Gd_tie_nil。その後、木の述語の拡張・最上段の分離・生成器。
