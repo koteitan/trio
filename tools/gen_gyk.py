@@ -24,7 +24,7 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self'
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf'
 
 
 def far_units(M, s, e, r, v, top):
@@ -282,20 +282,35 @@ def gp_ra(M, kids, v, A, o):
         w = f'(PVF_nil (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) {v})'
     nf = 0
     fcs = []
+    r0 = v + o + 1
+
+    def is_word(i, want_F):
+        s0, e0 = kids[i]
+        if M[s0][1] != r0 or M[s0][2] != 1:
+            return False
+        cc = children(M, s0, e0)
+        exp = [(M[s0][0] + 1, r0, 1)] + ([(M[s0][0] + 1, r0, 0)] if want_F else [])
+        return len(cc) == len(exp) and all(M[a0] == x and b0 - a0 == 1 for (a0, b0), x in zip(cc, exp))
+    if len(kids) >= 2 and is_word(0, True) and is_word(1, False):
+        # F の語（中身なし）のあとに中身なしの遠い語（HaL.PVF_PfF）
+        w = f'(PVF_PfF (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) (by decide) {v})'
+        k = 2
+        nl = 2
+        nf = len(kids)
     while nf < len(kids):
         fi = far_items_A(M, kids[nf][0], kids[nf][1], v + o + 1, v, A, o)
         if fi is None:
             break
         fcs.append(fi[0])
         nf += 1
-    if nf > 0:
+    if 0 < nf and fcs:
         P = f'(OkWsA_nil {lean_list(A)} {o} {v})'
         for fc in reversed(fcs):
             P = f'(OkWsA_cons le_rfl {okra_lean(M, fc, v, A, o)} {P})'
         w = f'(PVF_farWA {side0(A, o)} {v} _ {P})'
         k = nf
         nl = nf
-    if nf < len(kids):
+    if nf < len(kids) and k == 0:
         fF = far_items_A(M, kids[nf][0], kids[nf][1], v + o + 1, v, A, o, allow_F=True)
         if fF is not None and fF[1]:
             Pp = f'(OkWsA_nil {lean_list(A)} k {v})'
@@ -567,7 +582,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaI HaJ\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
