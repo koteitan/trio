@@ -495,6 +495,14 @@ def tree(M, i):
             tie_us = fu[0]
             break
         uss.append(fu[0])
+    tie_far = False
+    if tie_us == [] and uss == [] and k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if len(cc) == 1 and M[cc[0][0]] == (a + 2, v + 1, 1) and cc[0][1] - cc[0][0] == 1:
+            # 子のないタイで終わる遠い語のあとに中身なしの遠い語（HaJ.starOK_tieFar）
+            tie_far = True
+            k += 1
     while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
         s, e = ch[k]
         words.append(top_forest(M, children(M, s, e), v))
@@ -502,7 +510,9 @@ def tree(M, i):
     w = f'(WordsG_nil {v})'
     for f in reversed(words):
         w = f'(WordsG_consT (v := {v}) {f} {w})'
-    if tie_us is not None:
+    if tie_far:
+        st = f'(starOK_tieFar (v := {v}) {w})'
+    elif tie_us is not None:
         # 先頭に続く遠い字と荷の語、最後の語は最後に子のないタイ（GzJ.starOK_topFarTie）
         L, P = uss_lean(M, uss, v)
         U, PU = units_lean(M, tie_us, v)
@@ -557,7 +567,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaG\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaI HaJ\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
