@@ -29769,3 +29769,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 最上段: F のタイの子を語で持つ（tieW v E := (1, v+1, 0) :: E↑1、荷 Z↑1）。高さ t の空のタイは GTC_tie（x = t+2）、
   荷は based_Wg_ind（flat は親のタイの複製）。文脈 CLU を入れ子の語に広げ、潰れは上の遠い段の単位で出す。
 - 規模: HcI〜HcS の一般化（約 4000 行）と生成器。まず遠い段の土台（単位の語・持ち上げ・FarCA・塔）から。
+
+## 追記570: HdA〜HdI（緑）: F のタイの子を木の単位にした遠い語の枠組み（HcI〜HcR の写し）
+
+- 単位を木にした: UT := ch X（塊）| tie us（F の位置のタイと、その子の単位の並び）。語は unitT b r c / chT b r c
+  （tie us ↦ (1, r, 0) :: (chT us)↑1）。持ち上げ・再持ち上げは mlift_node / reliftX_node で子へ再帰する（相互再帰の定理）。
+  高さ付きの平らな並びより、BotGe・持ち上げの補題がそのまま使える。Lean の入れ子の帰納型（v4.30）で構造的な相互再帰が通る。
+- HdA（土台 chT・FTLt・farWt・relTs・mlTs）、HdB（FarCAt と潰れの塔）、HdC（中身の族 okWAt）、HdD（RAt と FarP）、
+  HdE（GoodChtX と空の F のタイ、EmbU は HcM を使う）、HdF（GoodLowT・NXt）、HdG（RNt と FarP）、HdH（GoodLowT_none・生成器の部品）、
+  HdI（GoodChtX_snocN）。いずれも旧版の none を tie []、some X を ch X に置き換えた写しで、入れ子の規則はまだない。
+- 入れ子の規則の設計（次）: 文脈の良さを埋め込みで閉じた形にする。
+  GE fam c us := ∀ 埋め込み e と段 u ≥ c、∀ 埋め込み先の良い F のタイの並び Lds、GoodChtX (Lds ++ [us の像])。
+  E_0 cs := ∀ e u、∀ us'（GE）、GE (us' ++ [tie cs の像])、E_{t+1} ps := ∀ e u、∀ ps'（E_t）、E_t (ps' ++ [tie ps の像])。
+  規則: 高さ t の空のタイ E_{t−1} ps → E_{t−1} (ps ++ [tie []])（FarP_GpT_lt、h2 の子の節点は埋め込み先の級の高さ t の塊の族へ文脈を運んで置く）、
+  塊の族 NX_t（E_{t−1} ps → E_{t−1} (ps ++ [ch X])、flat は高さ t−1 の部分木の複製を E_{t−1} の全称で回す）。
+  級によらない GoodLowT のままでは、高い塊を含む部分木の複製が文脈に入って運べない。
