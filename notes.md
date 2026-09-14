@@ -30594,3 +30594,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   D=(1,2,0)(2,2,0)（幅1深い鎖）の塔。tow 1 0 (D++[leaf]) = (0,1,0)::D::(shifted 前の塔) の帰納。
 - 大局: 深い葉の壁は突破済み（3 行証明）。残りは一般化の2軸。最終目標 psi(I) は (1,1,1)(2,1,1)(3,1,0) の反復
   ((2,0,0) が trigger)で、これ自体は深い葉でない（F 字+段0の F タイ子）が、別の collapse 構造で未対応。
+
+## 追記616: 決定的発見 — RawTs はタイの段を無視。両軸は「深い葉の塔が良い(GpT)」の1本に帰着
+
+- **RawT k (tie _ us) = RawTs k us**（HdA:46-48、段 `_` を捨てる）。ゆえに深い葉 `[tie 1 [tie 1 []]]` は
+  RawTs = True。深い葉の遠い像は「生(raw)」として妥当。lemma が TreeTs 経由で書かれているだけ。
+- しかし OkWsAt_psLTL（HeK:222）は GoodChtX_topL → TreeOKs_farTs で**「良い木(TreeOKs)」**を要求。深い葉は
+  raw だが good でない。good さ（順序数の降下）が塔を Wg にする本体。深い葉の good さは「木」からでなく
+  **自分の展開(upleaf_deep_coreDT)**から来る別機構。
+- **帰結**: collapse 語 K2 を文脈 L の後ろに足すと、K2 は L の遠い像の m コピーの塔に展開され、
+  塔が Wg であるには L が good でなければならない（topCLT_WgL → towWt_GpT → FarCAt → OkWsAt → GoodChtX）。
+  よって「深い葉のあとに collapse 語(a)」も「幅 k の深い葉(b)」も、**核は同一**:
+  **深い葉の遠い語の塔（m コピー）が良い(GpT/GoodChtX)**。
+- 単一の深い葉の展開は木(dtree)に落ちる（HeT.tow_dtree）。塔（m コピー積み）が何に落ちるかを同定し、
+  upleaf_deep_core（HeQ、GpT 版）で各段を展開して塔の good さを建てるのが本丸。
+- **次**: HeQ.upleaf_deep_core / towWt_GpT / GoodChtX_snocT を読み、「深い葉の塔 GoodChtX」を作る。
+  これ1本で 証明中(深い葉+collapse)と 1688(幅2)が同時に開く。
