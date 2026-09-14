@@ -30401,3 +30401,23 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **残り = collapse の包み**: FarCAt+RawWsAt → 1688 ∈ W 0。topCLT_WgL は PsLTL 専用（wLT/rword_psLT/BwT）。
   一般 OkWsAt 版が要る。鍵は BwT（bad word）を深い鎖の語について出すこと。次はここ。
 - 注意: これで深い葉の壁は「難補題」から「collapse の包みの一般化」に下がった。大きく前進。
+
+## 追記604: 包みの精査 — 残りは「okRAt の語の GTC を hFar から出す」。既存は tree（GdT）専用
+
+- collapse を W に包む鎖: starOK_lastT [] (PsLT_nil) (GTC K') hKF → StarOK → Wg → W（R1647 と同型）。
+  つまり単一の遠い語の行は **GTC CLT 0 K'（自分の語が bad）** が要る。K' = 私の深い鎖の語。
+- topCLT_Wg / topCLT_WgL（HdQ 294 / HeK 248）は `(0,u,0)::towWt u (psLT ps) (u+1) m ∈ Wg`。
+  内部 `key` が `BwT u (ps.map wLT)`（文脈の bad さ）を要求 ⇒ 各語の GTC が要る（BwT_CLT/BwT_CLTL）。
+  塔 towWt_GpT hC（hC=FarCAt）が展開を出すが、包みは psLT 専用（rword_psLT）。
+- BwT_CLTL（HeN 226）は各語の GTC を GTC_wLTL（HeN 212）→ GdT_good（tree）で出す。**tree 専用**。
+  深い鎖の語は tree でない（同段入れ子）ので GdT_good が使えない。**FarCAt → GTC の橋が要る**（新規）。
+- GTC の2つの型:
+  - GTC_far_CLTL（HeK 277, 空の遠い語 fwTop []）: oper_zcone + farWt_flat + topCLT_WgL。塔で全展開を一様に。
+  - GTC_N2（HdU 19, tree の F タイ子 + 2上の節点）: gtc_oper + GoodTT_all（展開ごと、tree）。
+  深い鎖は前者（塔=towWt_GpT hFar）が自然。ただし GTC_far_CLTL は空の語専用。
+- **次の標的**: `GTC CLT 0 K'`（私の okRAt/深い鎖の語）を hFar から。案:
+  (A) PsLT を一般化（語の尾 X を okRAt 一般に）して psLT/OkWsAt_psLT/FarCAt_of_PsLT/BwT_CLT/topCLT_Wg/starOK を拡張。
+      核は BwT_CLT の各語 GTC を hFar 経由にすること = FarCAt→GTC の橋。
+  (B) FarCAt→GTC を単体補題で作り、GTC_N2/GTC_far の型で組む。
+- scratchpad/tailtest.lean に hD/hXok/hOk/hFar/hRaw（緑）。scratchpad/wrap.lean に包みの骨組み（要 open 修正）。
+- 大局: 深い葉は「okRAt の尾 + hFar（緑）」で作れ、残りは FarCAt→GTC の橋 1 本。次はこれ。
