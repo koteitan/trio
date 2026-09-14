@@ -29987,3 +29987,45 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   3. 最上段: GdT を TRawLs 束ねに分離し、段 p 一般の上の葉・深い葉を写す。
   4. 生成器: 木の形を段つき一般に広げ、深い葉と段の鎖を扱う。
   - まず 1（遠い段の深い葉の flat core）から。緑ごとに commit。
+
+## 追記582: HeQ（緑）と、深い葉の良さの規則の設計（2 段の閉包 clB2 で antitonicity を回避）
+
+- HeQ 緑（commit 済み）: upleaf_deep_core（葉の深さ d0 の graft、oper_cons_tower1）、Xtow（深い葉の塔の木）、
+  chT_Xtow（Xtow の像 = 葉なしの descent ++ 深さ Q.length+1 の tow）。深い葉の flat 基盤。
+- 良さの規則の設計（悪い根 = F = 段 0、descent が段 l、葉が段 l の場合。1688〜1695 は l=1）:
+  - 塔の位置の累積: BotT Qp (Xtow Qp us (j+1)) = BotT (Qp++[(us,0)]) (plugQ Qp (Xtow Qp us j))（plugQ_snoc）。
+    plugQ (A++B) W = plugQ A (plugQ B W)（plugQ_append）なので位置は Qp ++ [(us,0)] ++ Qp と伸びる。
+    毎段 [(us,0)]（段 0 の tie0）++ Qp（descent の再下降）を足す。
+  - 必要な閉包 clB2 p l B: 段 p と段 l の両方の延長で閉じる（p=0 tie0、l=descent）。
+    stage 再帰は HeC.clS と同じ（extB (i+1) = extB i ∪ ext1(extB i) p ∪ ext1(extB i) l）。
+    Ext (clB2) p (clB2)、Ext (clB2) l (clB2)、PSOK、PSDec を HeC の写しで出す。
+    成分 us の良さは Gd_mono (clE_sub) で clB2 に持ち上がる（HeC.clS_closed と同じ。追記580 案1 の antitonicity は起きない）。
+  - Gd_redescend: Gd (clB2) W → Gd (clB2) (plugQ Q W)（Q の各成分が clB2-good。空前置なら自明。Gd_tie の繰り返し）。
+  - Gd_deep_towers: ∀ j, Gd (clB2) (Xtow Q us j)（j の帰納。tie0 = Ext clB2 0、再下降 = Gd_redescend、底は Gd clB2 us）。
+  - Gd_deepleaf: Gd (clB2) us → Gd (clB2) (us ++ [tie l []])（upleaf_deep_core + chT_Xtow + Gd_deep_towers、
+    imgT が Xtow/plugQ と可換する補題が要る）。
+  - 木は全て clB2 で良さを取る（成分 us も clB2-good に作る）ので、antitonicity（成分が大きい集合で良い必要）が閉じる。
+- 次: HeR に clB2 と閉包の補題（HeC の写し）、Gd_redescend、Gd_deep_towers、Gd_deepleaf。まず clB2 の閉包から緑に。
+
+## 追記583: HeR（緑、clB2 の閉包）と、深い葉の良さの残りの壁（悪い根の道依存 × antitonicity）
+
+- HeR 緑（commit 済み）: clB2 p l B（段 p と段 l の両方の延長で閉じた閉包）、clB2_closed_p / clB2_closed_l、
+  PSOK_clB2、PSDec_clB2。HeC.clS の 2 段版。
+- 深い葉の良さの規則の実装で当たった壁（追記580 案1 の antitonicity が具体化した）:
+  - 悪い根が道依存: Gd clB2 (us ++ [tie l []]) は全ての clB2 の道 Q で BotT を要る。tie0（段 0）を含む道 Q では、
+    葉の悪い根は「最も深い段 0 の節点（tie0 か F）」で、F と限らない。ただし tie0 も段 0 = 行 1 が r なので、
+    悪い根の行 1 は常に r（q = r）で upleaf_deep_core は使える。R（悪い根の下の descent）が道ごとに変わる。
+  - 塔の再下降が閉包の強い良さを要る: 塔 Xtow の tie0 の子は plugQ Q（位置 Q の再下降）。その前置（Q の段の並び）は
+    clB2-good が要るが、clB2 の membership から取れるのは clE-i-good（弱い）だけ（Gd は集合について反変。
+    clS_closed が Gd_mono (clE_sub) で「強い→弱い」に落とすのはよいが、逆は出ない）。空前置なら自明だが、
+    塔の段 0 の延長は葉の兄弟 us（非空）を前置に持つので、非空前置の clB2 の道が必ず現れる。
+  - HeC で antitonicity が起きないのは、閉包を「子の位置」だけに使い、塔（Gd_towT / Gd_upleaf）は親の段で兄弟 us を
+    再入れ子にする（位置 Q を再下降しない）から。前置は木の再帰が供給する。深い葉は位置 Q を再下降するのでこの供給が切れる。
+- 見込みのある方針（次に検討）:
+  - (a) 深い葉の規則を「位置の集合の道」でなく、descent を明示の良い構造として渡す形にする（木全体の良さを直接、
+    descent を threading して証明）。位置の集合に深い構造を入れない。
+  - (b) 塔の tie0 の子を、位置の再下降でなく「供給された良い descent 木」にできないか（模型では tie0 の子 = 位置の再下降
+    なので、descent 木を us と一緒に供給する形に組み替える）。
+- 現状の緑の資産: HeQ（flat core・Xtow・chT_Xtow）、HeR（clB2 閉包）。深い葉の flat と閉包は揃った。残りは良さの threading。
+- 次: 方針 (a)（descent を明示に渡す深い葉の規則）を設計する。位置の集合は段 0 の閉包だけにして、descent は
+  「Gd で良い木の並び」として Gd_deepleaf の引数にする。
