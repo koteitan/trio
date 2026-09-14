@@ -30711,3 +30711,33 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   /tmp/.../scratchpad/goodchtx_deep_plumbing.lean に保存。
 - **次**: hrep（段 R の帰納で塔の GpT）。まず木の底（段 0）の生 GpT の出し方を確定（GoodChtX_snocT を
   farWt に展開した形か、Gd_good 系か）。
+
+## 追記622: 探索エージェント報告 — 木の塔の hrep は抽象 Gd(Gd_towT, BotT=生GpT)で処理。深い塔は HeR.Gd_deep_towers
+
+- **重要な構造（エージェント確認）**:
+  - 木の塔の upleaf_core の hrep（∀j towR の GpT）は **Gd_towT（HeH:43）** で処理: 各段 towT p us j が
+    Gd_tie の反復で Gd-good、各段の `.2`（BotT = 生 GpT of farWt(...plugQ...)）が hrep j を供給。
+  - **BotT（HeB:135）は定義的に生 GpT**。Gd_good（HeB:278）Gd→GoodChtX、GoodChtX_bot（HeB:269）
+    GoodChtX→生 GpT of farWt(ws++[(L,u,[])])。
+  - topTs 描画は GTC/Wg 側、chT/farWt 描画は Gd 側（別トラック）。**私の DL は upleaf(chT側)+tow_dtreeQ(topTs側)
+    を混ぜていたのが摩擦**。
+  - towWt_GpT（HdB:66）は FarCAt→生 GpT of towWt（ただし r が毎段 +1 の単線、交互段でない）。
+  - **GoodChtX_deep はどこにも未定義・未証明**（HeU header の散文目標のみ）。段 q の帰納も未組立。
+  - HeR.Gd_deep_towers（HeR:227）: Xtow Q us l j の各段が clD-good（Gd_tie + clD_closed_0 + Gd_redescend）。
+    chT_Xtow（HeQ:32）: chT(plugQ Q (Xtow Q us l j)) = chT(plugQ Q us) ++ shiftr01(Q.len+1) 0 (tow r 0 (base) j)。
+- **組立の道（確定）**:
+  1. DL 骨格: 深い葉の子 GpT ⟸ (upleaf_deep_coreD) hrep = ∀m', GpT of ...(tow q 0 [(1,q'+2,0),(2,q'+2,0)] m')。
+     **tow_dtreeQ で topTs に書き換えず、tow のまま chT 側で処理する**。
+  2. hrep の tow は chT_Xtow の tow（base = chT(plugQ Q (us++[tie l []])) = [(1,q'+2,0),(2,q'+2,0)], r=q'+1）。
+  3. HeR.Gd_deep_towers で Xtow が clD-good → その BotT（=生 GpT）で hrep を供給。
+- **次の一手**: (a) chT_Xtow の base/us/Q/l を [(1,q'+2,0),(2,q'+2,0)] に合わせて同定、
+  (b) Gd_deep_towers の BotT payload の文脈（farWt(ws++[...])）を hrep の文脈（Pre++Yp++shiftr01²）に一致させる。
+  これが最後の組立。HeU（dtreeQ/tow_dtreeQ, 緑）は topTs 側なので、chT 側でやるなら使わないかもしれない。
+
+## 追記623: 目標 psi(I) の語 W=(1,1,1)(2,1,1)(3,1,0) も標準 collapse 語でない（T=(1,1,1)(2,1,0) は wLT でない）
+
+- 目標の展開 = (0,0,0) + W^n（(2,0,0) が trigger）。W = rcol の語 T = (1,1,1)(2,1,0)。
+- T は wLT でない（FTL0 1 [] ++ unitsC で (2,1,0) を出すには荷 (1,1,0) が based でない、
+  FTL0 1 [Ld] だと 2 列目が (1,1,0)≠(2,1,0)）。∴ 目標も新機構が要る（"top ltl" 失敗と整合）。
+- ∴ 深い葉（シート frontier 1688）も目標（summit 4784）も新 collapse 機構が要る。深い葉が現 frontier
+  なので深い葉を続けるのが正道（fill-the-gaps）。目標への近道は無い。
