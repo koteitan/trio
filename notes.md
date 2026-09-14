@@ -30674,3 +30674,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   farWt 形の GpT ゴールに実際に当てて hrep が何を要求するか見る**。farWt(ws++[深い葉])
   = farWt ws ++ (1,R,1)(2,R,1)(2,R,0)(3,R+1,0)(4,R+1,0)（検証済み）を Pre/Yp/(0,q,0)::R に割って
   upleaf_deep_core を適用 → hrep のゴールを Lean に出させる。これで帰納が段か j か平坦かが確定する。
+
+## 追記620: upleaf_deep_coreD が深い葉の子の形に適用可（緑検証）。段の有限降下が確定
+
+- scratch で検証（緑）: `upleaf_deep_coreD hA hA1 ho f hPre hYp hYpH hYpne (hD)(hD1)(hd0)(hqm)(hm) hrep` が
+  R = [(1,q+1,0),(2,q+1,0)]（= 深い葉の子の chT 像の悪い根 (0,q,0) つき）にそのまま通る。
+  引数: D=[(1,q+1,0)], d0=2, m=q+1, 悪い根 q。条件 hD1: q+1 ≤ (1,q+1,0).2.1 は le_refl、hqm: q<q+1、hm: 1≤q+1。
+- ∴ 反応の連鎖が全て緑で揃った:
+  1. 深い葉の子 → chT 像 (1,q+1,0)(2,q+1,0)（DeepTow 検証）
+  2. farWt(ws++[深い葉]) = ... (2,q,0)(3,q+1,0)(4,q+1,0)（fwH/FTLt 検証）
+  3. upleaf_deep_coreD で悪い根 (0,q,0) を展開 → hrep = tow q 0 [...]（今回検証）
+  4. tow_dtreeQ で tow = (0,q,0)::topTs 0 [dtreeQ (q-1) j]（HeU 緑）
+  5. dtreeQ (q-1) は段 q-1 の深い葉を持つ → **段 q の有限降下帰納**（base q=0 = 木 dtreeQ_zero）
+- 段は初期の遠い段 q で頭打ち（有界、追記619 の実測と整合）。∴ q に関する通常の Nat 帰納で回る。
+- **残りの山**: 帰納の本体を farWt/GoodChtX 文脈に通して組む。IH を dtreeQ の内側（入れ子の段 q-1 葉）に
+  当てる形の GpT 主張（文脈 Pre/Yp 一般）を定式化 → step で upleaf_deep_coreD + tow_dtreeQ、base で木。
+  緑になれば GoodChtX_deep → OkWsAt → FarCAt → topCLT_WgL → CLGL 文脈 → 証明中/1688 以降。
