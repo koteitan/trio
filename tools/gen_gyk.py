@@ -72,6 +72,28 @@ def far_contents(M, s, e, r, v):
     return items
 
 
+def far_contents_F(M, s, e, r, v):
+    """遠い字のあとが低い列で、最後が空の F（行 1 が r の子のない節点）の語。GzP.GPF_farW_F。"""
+    if M[s][1] != r or M[s][2] != 1:
+        return None
+    ch = children(M, s, e)
+    if len(ch) < 2 or M[ch[0][0]] != (M[s][0] + 1, r, 1) or ch[0][1] - ch[0][0] != 1:
+        return None
+    last = ch[-1]
+    if M[last[0]] != (M[s][0] + 1, r, 0) or last[1] - last[0] != 1:
+        return None
+    items = []
+    for (a, b) in ch[1:-1]:
+        c = M[a]
+        if c[2] == 0 and c[1] <= v:
+            items.append(('load', a, b))
+        elif c == (M[s][0] + 1, v + 1, 0):
+            items.append(('tie', a, b))
+        else:
+            return None
+    return items
+
+
 def okwf_lean(M, items, v):
     proof = f'(okWF_nil {v})'
     for kind, a, b in items:
@@ -151,13 +173,27 @@ def gp(M, kids, v, A, o):
             w = f'(PVF_farU {side(A, o)} {v} {L} {P})'
         k = nf
         nl = nf
-    while k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
+    tF = None
+    if A == [] and o == 1 and nf < len(kids):
+        fF = far_contents_F(M, kids[nf][0], kids[nf][1], v + o + 1, v)
+        if fF is not None:
+            # 遠い字と低い列のあとの空の F（GzP.GPF_farW_F）。あとに字が続くと PVF が要るので不可
+            P = f'(OkWs_nil {v})'
+            for fc in reversed(fcs):
+                P = f'(OkWs_cons le_rfl {okwf_lean(M, fc, v)} {P})'
+            tF = f'(GPF_farW_F le_rfl {P} {okwf_lean(M, fF, v)})'
+            k = nf + 1
+            if k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
+                raise Fail('letter after F word')
+    while tF is None and k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
         s, e = kids[k]
         w = (f'(PVF_snoc (A := {lean_list(A)}) (o := {o}) (by decide) {w} '
              f'{rl(M, children(M, s, e), v, A, o)})')
         k += 1
         nl += 1
-    if nl > 0:
+    if tF is not None:
+        t = tF
+    elif nl > 0:
         t = f'(GPF_of_PVF {w})'
     elif A == [] and o == 1:
         t = f'(GPF_nil1 {v})'
@@ -288,7 +324,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzN\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzP\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
