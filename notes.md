@@ -29629,3 +29629,36 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - 全ての良い接頭辞で量化した形（HbU の ChildG）は flat で閉じるが、埋め込み先の族での良さが要る（族をまたぐ）。
   - 候補: 接頭辞の世界を「元の族の良い接頭辞の埋め込みの像」に限る。flat で増える接頭辞 Lds ++ D^m も像の中にあるので閉じる見込み。
     子の差し込み口の族を、元の族 (A0, k0) と埋め込みの引数 (S, o, F, G) で添字づけ、埋め込み先の状態 F について CtxP にする。
+
+## 追記562: F の位置の子のタイの設計（まとめ、未実装）
+
+- 族 = (錨の列 A、上限 o、状態 F)。子の単位の並び us（none = F の位置のタイ、some X = 塊）。
+- ChildG_{族} u us := ∀ u' ≥ u, ∀ ws Lds b0, FarCAu 族 b0 (ws ++ [(Lds, u', [])]) → FarCAu 族 b0 (ws ++ [(Lds ++ [us を u' へ], u', [])])
+  （全ての良い接頭辞のあとに足せる子）。
+- ChildGX A0 k0 H u us := 全ての拡大 (S, o, F, G)（F = H + G（A0 の上）、S の錨は A0 より上、子の上限 ≤ liftVal）で ChildG_{(S ++ A0, o, F)} u（us を G で持ち上げた形）。
+- 子の差し込み口の族（族ごと、CtxP）: R_{族} H u X := ∀ g u' ≥ u, ∀ us, ChildG_{H+g} u' us → ChildG_{H+g} u' (us ++ [some（X を u'・g で持ち上げた形）])。
+  - flat（F のタイの複製）: us ++ [some X] の良さを ChildG の反復で並べるので閉じる。oper / orph / tie は子の段（us は同じ）、lift / relift は定義から。
+  - FarP の場（子の中の底の列 s ≤ liftOff）: 外の級で FarP_GpT_ge、h2 の節点は族の上限の中（GC_ins_low）で族の元。
+- 規則:
+  - ChildGX []（空の F のタイ）: FarP_GpT_lt（d = 2）。h2 の中身の節点は、接頭辞と語を級 (S ++ A0, o) の族に埋め込み、RAu_node と中身の族（子の並びの良さは拡大の合成）。
+  - ChildGX (us ++ [some X]): 各拡大の R に X があれば。R は slot_load（荷）、R_child（節点、GC_ins_low で子の級を移す）、nslot（子つきの単位のタイ）で閉じる。
+  - ChildGX (us ++ [none])（F の位置のタイ、d = 3）: 各拡大の各級で FarP_GpT_lt。h1 は ChildG us。h2 の子の節点は、接頭辞と語（子 us）を
+    級 (S'' ++ …, o'') の族に埋め込み、その族で R_{埋め込み先} [] から R_child で R [節点] を作り、ChildGX us の拡大の成分（ChildG_{埋め込み先} us）に使う。
+    埋め込み先での接頭辞の良さは、元の FarCAu (ws ++ [(Lds, u, [])]) の埋め込み（FarCAu_embed）で出る。
+- 子の並び: GoodChu（HcK）は ChildGX の S = [] の成分から作る。中身の族 HcK / HcL はそのまま使える。
+
+## 追記563: HcM〜HcR（緑）、行 1607〜1610, 1612〜1614（HcQ）
+
+- 追記562 の設計から次のように簡単にした。
+  - HcM: 埋め込み EmbU A k H g S o f と合成 EmbU_comp、FarCAu_embed（HcE の写し）。
+    GoodChuX A k H u Lds := ∀ 埋め込みと段 b ≥ u、埋め込み先の良い接頭辞 ws、GpT (S ++ A) o f b (farWu (ws ++ [(Lds を g で, u, [])]))。
+    移し替え GoodChuX_emb、段 GoodChuX_lift、HcK の GoodChu へ GoodChuX_GoodChu、空の F のタイ GoodChuX_Fsucc。
+  - HcN: 低い子の並び GoodLow c us := ∀ 族、∀ Lds, GoodChuX Lds → GoodChuX (Lds ++ [us])（塊は段 c+1 以下で族によらない）。
+    子の位置の節点の族 NX A k H c X := ∀ c' ≥ c, ∀ us 低い, ∀ Lds, GoodChuX Lds → GoodChuX (Lds ++ [us ++ [some X]])。差し込み口の公理 NX_ax（HcF の cstep_* と HbU.child_flat_step）。
+  - HcO: 状態の層 RN、FarP の場（FarP_RN_core は HcL.FarP_RAu_core の写し、h2 は族 H+g+g' の NX と GoodChuX_emb）、RN_ctx、RN_node。
+  - HcP: GoodLow_none（F の位置のタイ、FarP_GpT_lt で d = 3。h2 は埋め込み先の族で RN_node と NX）。低い塊の族 ChLowU（NX_ax から）、GoodLow_some。生成器の部品 okLow / okRAu / OkWsAu / PVF_farWAu。
+  - HcR: F のタイの子の最後の高い塊 GoodChuX_snocN（行 1608 の (6,2,0)）。
+- 生成器: gp_u（gp_c が失敗したとき）。F のタイの子を F の位置のタイで区切り、低い塊は okLow、最後の高い塊は okRN。
+- 残り（行 1615〜）: 最上段の語で F の位置のタイ（最上段では (3, v+1, 0) が語の段 v の単位のタイと同じ段）が最後の F のタイの末尾以外にある形。
+  - 1615〜1623: F の位置のタイで終わる語のあとに遠い語 (1,1,1)(2,1,1)。
+  - 1624〜1640: F の位置のタイのあとに同じ語の F のタイ (2,1,0) が続く。
