@@ -30144,3 +30144,29 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   Gd_deep_towers（Xtow）でなく、spine を 1 段浅くした深い葉の Gd を far の複製で m' 回並べる形。要検討（GTWAt_rep or NXs）。
 - 現状: 深い葉の flat・塔・行列条件・閉包・分解は全て緑。残りは Gd_nil_deep（spine 帰納）と Gd_deepleaf の組み立て。
 - 次: Gd_nil_deep の spine 0（底）を先に書いて緑にし、次に spine 帰納の段（hrep を短い spine から）を組む。
+
+## 追記590: 深い葉の空の場合は順序数の不動点 — 明示の閉包では解けない（GpT の族が要る）
+
+- 追記589 の「spine 長さの帰納で出る」は誤り。塔の m' 個の複製を精査した結果:
+  - 空の深い葉 Gd clD [] を snocNil の道 Q = Q'++[([],l)] で示すと、tree = tie l [] at Q'。upleaf_deep_coreD の hrep m' は
+    tow m' = m' 個の R.dropLast のコピー（tie0 で入れ子）。hrep 1 = 空 at Q'（短い道、帰納法の仮定）だが、
+    hrep m'（m'≥2）は tie0+spine の m' 段の入れ子で、位置が Q より深い（長い道／深い stage）。
+  - つまり塔は「浅い方」でなく「深い方」へ行く。道の長さや閉包の stage の帰納では底に着かない（順序数の整礎性でしか着かない）。
+- 浅い上の葉（Gd_nil_chU / Gd_tieE）が不動点にならない理由: chU は前置 us を保存し（ext1 full）、塔は保存された us を
+  入れ子にする（Gd_towT、Gd P us 供給）。塔は同じ stage に留まる。空 us=[] の場合も、親 P は clD でなく小さい stage で、
+  stage 帰納（clE_ext_dec）で底（PNil→GoodChtX_bot）に着く。
+- 深い葉が不動点になる理由: clD は閉包（自己参照）で、Gd clD [] の塔は clD 自身のより深い道を参照する。
+  塔が悪い根（F/tie0）から複製するので、供給された兄弟でなく閉包の中身を再下降する。
+- 決定的な結論: 空の深い葉は順序数の不動点で、明示の閉包（upleaf_deep_core + Gd_deep_towers）では解けない
+  （塔を供給された前置から作れず、閉包の底 Gd clD [] を要る）。
+  順序数を内部で扱うのは GpT の族の FarP_GpT_lt（節点を上限より上に置き、塔を供給された接頭辞から作り、
+  operator の整礎性で閉じる。1 本の補題で完結）。よって深い葉は GpT_node / FarP_GpT_lt（非叙述的な族）で扱うしかない。
+  ただし F のタイの子を GpT の族にすると追記568 の壁（F のタイの複製の flat、埋め込みで閉じた F のタイの並び）に当たる。
+- HeQ/HeR の緑の資産（upleaf_deep_core・upleaf_deep_coreD・Xtow・chT_Xtow・clD・Gd_redescend・Gd_deep_towers・
+  clD_seg・split_exists）は、非空 us（供給あり）の深い葉には使えるが、空 us（木の再帰の底）の不動点には使えない。
+- 次の方針の候補:
+  (a) 追記568 の壁を、深い葉の形（同段の入れ子の鎖）に限って越える方法を探す。GpT_node で鎖を作り、
+     最内の葉の塔は FarP_GpT_lt が内部で処理（接頭辞 = 外側の鎖、供給）。F のタイの子を「文脈によらない GPF の元」に
+     できるかが鍵（flat が F のタイの複製になる点をどう回避するか）。
+  - (b) 空の深い葉を避ける木の再帰: 最内の葉から作らず、GPF の族で F のタイの子全体を一度に置く。
+  - まず追記568 を読み直し、深い葉（(3,2,0)(4,2,0)(4,2,0) 型）が GPF_node の鎖で置けるか、flat の壁が発火するかを確認する。
