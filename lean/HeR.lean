@@ -91,5 +91,135 @@ theorem PSDec_clB2 {p l : ℕ} {B : PS} (hB : PSDec B) : PSDec (clB2 p l B) := b
         intro C' o' f' u' Q'' us' hQ'' hus'
         exact ⟨i + 1, Or.inr (Or.inr ⟨Q'', us', rfl, hQ'', hus'⟩)⟩
 
+/-! ## clD: 段 0 は full、段 l は空前置のみ -/
+
+/-- 空前置の段 l の延長。 -/
+def snocNil (l : ℕ) (P : PS) : PS := fun C o f u Q => ∃ Q', Q = Q' ++ [([], l)] ∧ P C o f u Q'
+
+/-- 空前置の延長で閉じることを表す述語。 -/
+def ExtNil (P : PS) (l : ℕ) (Pc : PS) : Prop := ∀ C o f u Q, P C o f u Q → Pc C o f u (Q ++ [([], l)])
+
+def extD (l : ℕ) (B : PS) : ℕ → PS
+  | 0 => B
+  | i + 1 => fun C o f u Q =>
+      extD l B i C o f u Q ∨ ext1 (extD l B i) 0 C o f u Q ∨ snocNil l (extD l B i) C o f u Q
+
+def clD (l : ℕ) (B : PS) : PS := fun C o f u Q => ∃ i, extD l B i C o f u Q
+
+theorem extD_sub (l : ℕ) (B : PS) (i : ℕ) : ∀ C o f u Q, extD l B i C o f u Q → clD l B C o f u Q :=
+  fun _ _ _ _ _ h => ⟨i, h⟩
+
+theorem B_sub_clD (l : ℕ) (B : PS) : ∀ C o f u Q, B C o f u Q → clD l B C o f u Q :=
+  fun _ _ _ _ _ h => ⟨0, h⟩
+
+/-- ★ 段 0 の（full の）延長で閉じる。 -/
+theorem clD_closed_0 (l : ℕ) (B : PS) : Ext (clD l B) 0 (clD l B) := by
+  intro C o f u Q us hQ hus
+  obtain ⟨i, hi⟩ := hQ
+  exact ⟨i + 1, Or.inr (Or.inl ⟨Q, us, rfl, hi, Gd_mono (extD_sub l B i) hus⟩)⟩
+
+/-- ★ 段 l の空前置の延長で閉じる。 -/
+theorem clD_closed_l (l : ℕ) (B : PS) : ExtNil (clD l B) l (clD l B) := by
+  intro C o f u Q hQ
+  obtain ⟨i, hi⟩ := hQ
+  exact ⟨i + 1, Or.inr (Or.inr ⟨Q, rfl, hi⟩)⟩
+
+theorem PSOK_snocNil {P : PS} (hP : PSOK P) (l : ℕ) : PSOK (snocNil l P) where
+  raw := by
+    rintro C o f u Q ⟨Q', rfl, hQ'⟩ p hp
+    rcases List.mem_append.mp hp with hp | hp
+    · exact hP.raw _ _ _ _ _ hQ' p hp
+    · simp at hp; subst hp; simp [RawTs]
+  emb := by
+    rintro C o f u Q ⟨Q', rfl, hQ'⟩ G S o2 f2 hE
+    refine ⟨mapQ (relTs C f G u) Q', ?_, hP.emb _ _ _ _ _ hQ' _ _ _ _ hE⟩
+    rw [mapQ_snoc]; simp [relTs]
+  lift := by
+    rintro C o f u Q ⟨Q', rfl, hQ'⟩ u' hu
+    refine ⟨mapQ (mlTs u (u' - u)) Q', ?_, hP.lift _ _ _ _ _ hQ' u' hu⟩
+    rw [mapQ_snoc]; simp [mlTs]
+
+theorem PSOK_extD {l : ℕ} {B : PS} (hB : PSOK B) : ∀ i, PSOK (extD l B i)
+  | 0 => hB
+  | i + 1 => by
+      have ih := PSOK_extD (l := l) hB i
+      have hx0 := PSOK_ext1 ih 0
+      have hxl := PSOK_snocNil ih l
+      refine ⟨fun C o f u Q h => ?_, fun C o f u Q h => ?_, fun C o f u Q h => ?_⟩
+      · rcases h with h | h | h
+        · exact ih.raw _ _ _ _ _ h
+        · exact hx0.raw _ _ _ _ _ h
+        · exact hxl.raw _ _ _ _ _ h
+      · intro G S o2 f2 hE
+        rcases h with h | h | h
+        · exact Or.inl (ih.emb _ _ _ _ _ h _ _ _ _ hE)
+        · exact Or.inr (Or.inl (hx0.emb _ _ _ _ _ h _ _ _ _ hE))
+        · exact Or.inr (Or.inr (hxl.emb _ _ _ _ _ h _ _ _ _ hE))
+      · intro u' hu
+        rcases h with h | h | h
+        · exact Or.inl (ih.lift _ _ _ _ _ h u' hu)
+        · exact Or.inr (Or.inl (hx0.lift _ _ _ _ _ h u' hu))
+        · exact Or.inr (Or.inr (hxl.lift _ _ _ _ _ h u' hu))
+
+theorem PSOK_clD {l : ℕ} {B : PS} (hB : PSOK B) : PSOK (clD l B) where
+  raw := fun C o f u Q ⟨i, h⟩ => (PSOK_extD hB i).raw _ _ _ _ _ h
+  emb := fun C o f u Q ⟨i, h⟩ G S o2 f2 hE => ⟨i, (PSOK_extD hB i).emb _ _ _ _ _ h _ _ _ _ hE⟩
+  lift := fun C o f u Q ⟨i, h⟩ u' hu => ⟨i, (PSOK_extD hB i).lift _ _ _ _ _ h u' hu⟩
+
+/-! ## 空前置の spine の再下降 -/
+
+/-- 空前置の段 l の spine（全成分が ([], l)）。 -/
+def SpineL (l : ℕ) (Q : Path) : Prop := ∀ s ∈ Q, s = ([], l)
+
+theorem SpineL_nil (l : ℕ) : SpineL l [] := fun _ h => by simp at h
+
+theorem clD_append_spine {l : ℕ} {B : PS} {Q : Path} (hQ : SpineL l Q) :
+    ∀ C o f u Qp, clD l B C o f u Qp → clD l B C o f u (Qp ++ Q) := by
+  induction Q using List.reverseRecOn with
+  | nil => intro C o f u Qp h; simpa using h
+  | append_singleton Q s ih =>
+      intro C o f u Qp h
+      have hs : s = ([], l) := hQ s (by simp)
+      subst hs
+      have hQ' : SpineL l Q := fun s' hs' => hQ s' (List.mem_append_left _ hs')
+      rw [← List.append_assoc]
+      exact clD_closed_l l B C o f u (Qp ++ Q) (ih hQ' C o f u Qp h)
+
+theorem imgT_plugQ_spine {A : List ℕ} {H G : ℕ → ℕ} {c u : ℕ} {l : ℕ} {Q : Path} (hQ : SpineL l Q) :
+    ∀ W : List UT, imgT A H G c u (plugQ Q W) = plugQ Q (imgT A H G c u W) := by
+  induction Q with
+  | nil => intro W; simp [plugQ]
+  | cons s Q ih =>
+      intro W
+      have hs : s = ([], l) := hQ s (by simp)
+      subst hs
+      have hQ' : SpineL l Q := fun s' hs' => hQ s' (by simp [hs'])
+      simp only [plugQ, List.nil_append, imgT_append, imgT_tie, ih hQ' W, imgT_nil, List.nil_append]
+
+theorem plugQ_append : ∀ (Q Q' : Path) (T : List UT), plugQ (Q ++ Q') T = plugQ Q (plugQ Q' T)
+  | [], Q', T => by simp [plugQ]
+  | (us, l) :: Q, Q', T => by simp only [List.cons_append, plugQ, plugQ_append Q Q' T]
+
+theorem RawTs_plugQ_spine {l : ℕ} {Q : Path} (hQ : SpineL l Q) {k : ℕ} {W : List UT} (hW : RawTs k W) :
+    RawTs k (plugQ Q W) := by
+  induction Q with
+  | nil => simpa [plugQ] using hW
+  | cons s Q ih =>
+      have hs : s = ([], l) := hQ s (by simp)
+      subst hs
+      have hQ' : SpineL l Q := fun s' hs' => hQ s' (by simp [hs'])
+      simp only [plugQ, List.nil_append, RawTs]
+      exact ⟨RawT_tie.mpr (ih hQ'), trivial⟩
+
+/-- ★ 空前置の spine の再下降は clD-good を保つ。 -/
+theorem Gd_redescend {l : ℕ} {B : PS} {Q : Path} (hQ : SpineL l Q) {A : List ℕ} {k : ℕ} {H : ℕ → ℕ}
+    {c : ℕ} {W : List UT} (h : Gd (clD l B) A k H c W) : Gd (clD l B) A k H c (plugQ Q W) := by
+  refine ⟨RawTs_plugQ_spine hQ h.1, fun G S o f hE u hcu Lds hL Qp hQp => ?_⟩
+  rw [imgT_plugQ_spine hQ]
+  intro b hub ws hC hR
+  have hQpQ : clD l B (S ++ A) o f u (Qp ++ Q) := clD_append_spine hQ _ _ _ _ _ hQp
+  have := h.2 G S o f hE u hcu Lds hL (Qp ++ Q) hQpQ b hub ws hC hR
+  rwa [plugQ_append] at this
+
 end HeR
 end TRIO

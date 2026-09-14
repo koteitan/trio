@@ -30029,3 +30029,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 現状の緑の資産: HeQ（flat core・Xtow・chT_Xtow）、HeR（clB2 閉包）。深い葉の flat と閉包は揃った。残りは良さの threading。
 - 次: 方針 (a)（descent を明示に渡す深い葉の規則）を設計する。位置の集合は段 0 の閉包だけにして、descent は
   「Gd で良い木の並び」として Gd_deepleaf の引数にする。
+
+## 追記584: 深い葉の antitonicity の解決（clD = 段 l の延長は空前置のみ）
+
+- 壁の正体（追記583）は「塔の再下降が位置 Q の前置の clD-good を要るが membership は clE-i-good しか出せない」。
+- 解決: 位置の集合を clD = 「段 0 の延長（前置は任意の good）と、段 l の延長（前置は空 [] のみ）」の閉包にする。
+  - clD の道は、どの tie0（段 0）より下では段 l の空前置の節点だけ。よって「悪い根（最も深い段 0 = tie0 か F、
+    行 1 = r）の下の descent」は必ず空前置。塔の再下降は空前置なので Gd P [] （自明）だけで回り、antitonicity が起きない。
+  - tie0 の前置 us（葉の兄弟）は木の再帰が supply する（Gd clD us を仮定に持つ）ので membership から取り出さない。
+- 必要な補題:
+  - clD の閉包: Ext (clD) 0 (clD)（full）、snocNil: Q ∈ clD → Q ++ [([], l)] ∈ clD。PSOK・PSDec。
+  - Gd_tie_nil: us0 = [] の Gd_tie（空前置の段 l の延長だけを使う。Ext の full 版を要らない）。
+  - Gd_redescend: baked-in の空前置 descent Q について Gd clD W → Gd clD (plugQ Q W)（Gd_tie_nil の繰り返し）。
+  - Gd_deep_towers: ∀ j, Gd clD (Xtow Q us j)（j 帰納。tie0 = Ext clD 0、再下降 = Gd_redescend、底 = Gd clD us）。
+  - Gd_deepleaf: Gd clD us → Gd clD (us ++ [tie l []])（upleaf_deep_core + chT_Xtow + Gd_deep_towers、imgT の可換）。
+- baked-in の descent Q = 位置の悪い根の下の部分 = 空前置（clD なので）。chT_Xtow の Q と一致する。
+- 次: HeR に clD（snocNil 版の閉包）と上の補題を実装。まず clD の閉包と Gd_tie_nil から緑に。
