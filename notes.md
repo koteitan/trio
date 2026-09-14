@@ -29440,3 +29440,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 最上段の潰れで写しの中のタイが F になる形は、塔の各段の接頭辞が「状態 0 の級で良い語を再持ち上げで状態 f に移したもの」なので、
   錨を足さずに閉じる。潰れを 1 回足すごとに接頭辞の性質 TowP が保たれるので、中身なしの遠い語の個数について帰納できる。
 - 次: 行 1499〜1500（[W_tie, W_far, W_far] 以降）は starOK_tieFarN で出る見込み。1501（W_far に荷）、1502（[W_tie, W_tie]）は別の形。
+
+## 追記551: 行 1502, 1504〜1514（HaR〜HaV、緑）
+
+    HaR: F の語で始まる遠い語の族 FarCFk k b0 ws（Pf r ++ farW b r ws が全ての級で良い）。farWFk_PVP、塔 towWF、潰れ farWFk_collapse。
+    HaS: 接頭辞 P を一般にした 1 歩の補題 fwWP_oper/orph/tie/flat_step。中身の族 okWFk（okWFk_ax、okWFkF_load、FarCFk_of）。
+    HaT: 最上段 [W_tie, W_tie] の BwT（BwT_tieTie、starOK_tieTie）。中身が荷とタイの単位の並び CT。
+    HaU: 生成。シート行 1502, 1504〜1514。
+    HaV: 中身の族にタイを足す okWFkF_tie。F の語のあとに中身つきの遠い語の並び PVF_farWF。
+
+- 生成器: TF の語のタイの子の並びが「F の語、中身が荷とタイの遠い語…」なら PVF_farWF を使う。
+- 行 1503 は非標準（bms -s = 0）。最上段の (1,1,0)[(2,2,1)[(3,2,1)[(4,2,0)]] …] で止まる。
+- 次の壁:
+  1515〜1519: タイの子の並びが Pf r ++ Pf r（2 つ目の F の語は、中身に遠い字 (2,r,1) を持つ遠い語）。
+  1520〜1524: 最上段 [W_tie, W_tie, W_far]、[W_tie, W_tie, W_tie] など。
+  1525 以降（3256 行）: 最上段の語 (1,1,1)[(2,1,1) (2,1,0) (2,0,0)] のように、1 つの語の中にタイと荷が並ぶ。
