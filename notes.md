@@ -30755,3 +30755,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **次の一手**: hrep を upleaf_core（正常）+ htR で処理する道を Lean で試す。tow を towR に書き換え、
   upleaf_core の hrep 供給（塔の各段）を段/j の帰納で。底は flat run（段が 1 下がった走り）→ 木。
   段が有界（追記619）なので有限。HeR/dtreeQ(topTs) は使わず、chT/raw 側の towR で通す。
+
+## 追記625: 木の道は死んだ（実測）。tow(d0=2)は真に深い dtreeQ。段の整礎帰納が確定的に必要
+
+- 実測: tow 2 0 [(1,3,0),(2,3,0)] j の row0 は 0,1,2,3,4,5…（きれいな鎖）= topTs[dtreeQ 1 j]（深い）。
+  一方 chT L (towT 0 [tie1[]] j) は row0 が対（1,1,2,2,3,3…）。**形が違う** → tow は chT の木でない。
+- ∴ 「深い塔は遠い段では木」という前回の望みは**否定**。tow(d0=2)は真に深い dtreeQ 構造。
+- dtreeQ 1 = tie 2 [tie 1 […]] は TreeTs でない（tie 1 が cl=false で弾かれる）。行列も木の topTs でない
+  （段2の列が段3の列に挟まれ、木の下降規則に反する）。
+- **確定**: 深い塔の GpT は段 L の整礎帰納が必要。base L=1（tow_dtree で dtree=木）、step L→L-1
+  （dtreeQ(L-1) の深い葉を IH で）。段は有界（追記619）で有限。木の道・HeR・upleaf_core(正常)は全て不一致。
+- **残る唯一の道**: upleaf_deep_core を段ごとに回す段 L の帰納を自前で建てる（一般の深い葉補題）。
+  塔は複数の深い葉を持つので、塔の高さ j の内側帰納 + 段 L の外側帰納の二重帰納。
+- これは実質「幅/深さ k の一般深い葉補題」（ずっと前から本丸と分かっていたもの）。大きい。
