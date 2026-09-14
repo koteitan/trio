@@ -70,11 +70,21 @@ theorem FarCA0_embed {A0 : List ℕ} {k0 : ℕ} {h : ℕ → ℕ} {b0 : ℕ}
   rw [eW]
   exact this
 
-/-- ★ 空の F のタイを足す規則。 -/
-theorem GTWA0_Fsucc {Lds : List TrioSeq}
+theorem RA0_nilv {A0 : List ℕ} {k0 : ℕ} {Lds : List TrioSeq} {v b : ℕ} (hvb : v ≤ b)
+    (hnil : ∀ (H' : ℕ → ℕ) (b0 c0 : ℕ), v ≤ c0 → GTWA0 A0 k0 H' b0 Lds c0 []) (H : ℕ → ℕ) :
+    RA0 A0 k0 H Lds b [] := by
+  intro g b' hb'
+  rw [mlift_nil]
+  have e : reliftX b' H g A0 [] = [] := by unfold reliftX; exact slift_nil _
+  rw [e]
+  exact ⟨fun h => absurd rfl h, LowC_nil _, fun b0 => hnil _ b0 b' (by omega)⟩
+
+/-- ★ 空の F のタイを足す規則（語の段 c0 は v 以上）。 -/
+theorem GTWA0_Fsucc {v : ℕ} {Lds : List TrioSeq}
     (hnil : ∀ (A0 : List ℕ) (k0 : ℕ), (∀ a ∈ A0, 1 ≤ a) → 1 ≤ k0 →
-      ∀ (H : ℕ → ℕ) (b0 c0 : ℕ), GTWA0 A0 k0 H b0 Lds c0 [])
-    {A0 : List ℕ} {k0 : ℕ} (hA01 : ∀ a ∈ A0, 1 ≤ a) (hk1 : 1 ≤ k0) (H : ℕ → ℕ) (b0 c0 : ℕ) :
+      ∀ (H : ℕ → ℕ) (b0 c0 : ℕ), v ≤ c0 → GTWA0 A0 k0 H b0 Lds c0 [])
+    {A0 : List ℕ} {k0 : ℕ} (hA01 : ∀ a ∈ A0, 1 ≤ a) (hk1 : 1 ≤ k0) (H : ℕ → ℕ) (b0 c0 : ℕ)
+    (hv : v ≤ c0) :
     GTWA0 A0 k0 H b0 (Lds ++ [[]]) c0 [] := by
   intro ws hC g S o f b hf hb hR hSA hA hA1 ho hK hKo
   have hR0 : RawWsA0 A0 k0 H b ws := fun w hw => hR w (List.mem_append_left _ hw)
@@ -91,7 +101,7 @@ theorem GTWA0_Fsucc {Lds : List TrioSeq}
   rw [eF, ← List.append_assoc]
   have hRn : RawWsA0 A0 k0 H b (ws ++ [(Lds, c0, [])]) :=
     RawWsA0_snoc hR0 ⟨hc0, hLds, Fr_nil, fun h => absurd rfl h, LowC_nil _⟩
-  have hCn := hnil A0 k0 hA01 hk1 H b0 c0 ws hC
+  have hCn := hnil A0 k0 hA01 hk1 H b0 c0 hv ws hC
   have eP0 : farW0 b r (relWs0 A0 H g ws) ++ fwH b r (FTL0 r Lds) c0 []
       = farW0 b r (relWs0 A0 H g (ws ++ [(Lds, c0, [])])) := by
     simp only [relWs0_snoc, farW0_snoc]
@@ -132,7 +142,8 @@ theorem GTWA0_Fsucc {Lds : List TrioSeq}
       (by omega) (RawWsA0_mono hb' hR0) hSA hA hKG hKoG
     have hRX : RA0 (S ++ A0) o (addF f g') Lds b'
         ([] ++ ((1, b' + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) :=
-      RA0_node hA1 ho hA Fr_nil (RA0_nil (hnil (S ++ A0) o hA1 ho) (addF f g') b') hGL hτo
+      RA0_node hA1 ho hA Fr_nil
+        (RA0_nilv (show v ≤ b' by omega) (hnil (S ++ A0) o hA1 ho) (addF f g')) hGL hτo
     have hokY := RA0_okWA hRX
     have hC4 := hokY.2.2 b' (relWs0 A0 H (addF g g') ws) hE
     have hRw := RawWsA0_relWs0 (RawWsA0_mono hb' hR0) (addF g g')
