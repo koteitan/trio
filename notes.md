@@ -30355,3 +30355,28 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   GoodTT_all（HdS、DT/Gd 経由 = 不動点の道）でなく、RLF_child/GPF から GoodChtX を出す。
 - 次: scratchpad で GoodChtX [深い鎖] の GpT 目標を trace し、farWt の 1 語追加を GPF_node/PVF_snoc/RLF_child で
   直接組めるか（不動点を避けて）を実験する。
+
+## 追記601: GoodChtX_snocGPF の正確な目標と構成の型紙（towWt_GpT）。step1（farWt ws の PVP）緑
+
+- **1688 = 単一の深い葉の遠い語**であることを実測で確定（scratchpad/compute.lean, gsg.lean）:
+  - chT 0 2 0 [tie 1 [tie 1 [], tie 1 []]] = [(1,3,0),(2,3,0),(2,3,0)]（深い鎖の中身）。
+  - fwH 0 r (FTLt 0 r u [dc]) u [] を一般 r で展開 = (1,r,1),(2,r,1),(2,r,0),(3,r+1,0),(4,r+1,0),(4,r+1,0)。
+  - **r=1 でこれは 1688 の (0,0,0) 以降とちょうど一致** ⇒ 1688 は fwH マーカー (1,1,1) + FTLt の F 字 (2,1,1)
+    + F のタイの節点 (2,1,0) + 深い鎖 (3,2,0)(4,2,0)(4,2,0) を持つ 1 個の GoodChtX 遠い語。
+  - 比較: R913 (0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,3,0) は純 TF 遠い語（F 字なし）で深い鎖を TF_tieG+GF_node で既に緑。
+    1688 は F 字 (2,1,1) を持つ ⇒ GoodChtX の枠組みが要る（TF でなく）。
+- **標的の正確な目標**（gsg.lean で trace 確認）:
+  GoodChtX [] 1 (fun _=>0) u [dc]、dc = [tie 1 [tie 1 [], tie 1 []]]。2 成分目の GpT:
+  ⊢ GpT (S++[]) o f b (farWt b r ws ++ fwH b r (FTLt b r u [dc]) u [])、r = b+liftOff f (S++[]) o +1、
+  仮定 hC: FarCAt (S++[]) o f b ws, hR: RawWsAt。relTs (純タイ) dc = dc。
+- **構成の型紙 = HdB.towWt_GpT の step**（塔を足すのと同型）:
+  1. farWt ws を PVP に: farWAt_PVP（trivial 埋め込み g=fun_=>0, S'=[]）。**step1 緑（gsg.lean）**。
+     鍵: liftOff_eq_reOff0 で hKo=le_rfl、relWst_zero で ws 不変。
+  2. 深い鎖の中身 chT b r u dc を GC (o::(S++[])) H (o+1) b として組む（H=upF o 0 f）。GPF_node の級上げの鎖。
+  3. F の位置の節点 (1,r,0)（τ=o+1）を R_child (CtxP_RLC hA hA1 ho) で足す → RLC。
+  4. F 字 (1,r,1) を足す（PVF_snoc/RLC の字規則の一般 f 版）＝ 1688 が R913 と違う所（F 字がある）。
+  5. LC1_congr + PVP_to_GpT で farWt ws と合成。
+- **既存の関連**: TF_tieG（GxT 490）は TF に F のタイ (1,u+1,0)+GF の子を足す（純 TF・F 字なし）。
+  fwH_tie_step（HbM 120）は段0の F 位置タイ (x,u+1,0) のみ（深い鎖=段1 は不可）。gp は深い鎖の中身を GPF で作れる（実測 OK）。
+- 残り: step2〜5（深い鎖の中身の GC 化 + F 字 + 合成）。towWt_GpT を写経して 1 語版に。次のハートビートで step2 から。
+  その後 PsLTL/CLTL に GPF の F のタイの子を通し、生成器を更新して 1688 以降を証明する。
