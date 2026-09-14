@@ -29895,3 +29895,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - 跳び: G (chS 𝒫 l) cs → G 𝒫 us0 → G 𝒫 (us0 ++ [tie l cs])。
   - 塊の族 NXs / RNs と空のタイ GT_tieE は、延長の複製で閉じた集合（chS・clS はそう）について HdM〜HdP と同じ証明。
   - 深い葉（1688〜）は 2 段の延長の閉包で扱う見込み（成分ごとの延長にすれば G の包含が合う）。
+
+## 追記578: HeB〜HeJ（緑）: 道の集合の枠組み、上の葉の規則、シート行 1654〜1658
+
+- HeB: 段つきの道 Path、plugQ、BotT、道の集合 P の良さ Gd P、延長 Ext、Gd_jump、Gd_good。
+- HeC: ext1・段 l の閉包 clS・P0 / chS0 / chU と、PSOK（生の条件・埋め込み・段の持ち上げ）、PSDec（flat の分解）、閉包、最後の段。
+- HeD〜HeF: 塊の族 NXs P と状態の層 RNs P（HdM〜HdO の写し）。道の成分の節点は行 1 が r + l ≥ r なので BotGe / PathCone がそのまま通った。
+  flat は PSDec の分解（空の道は F のタイの複製、空でない道は親の集合の段 l の節点の複製）で書き、高さの場合分けが消えた。
+- HeG: Gd_tieE（HdP の写し）、空の並び（chS0・P0）、低い塊 ChLowP、低い木 Gd_allL。
+- HeH: 上の葉 Gd_upleaf。展開は tstep_oper と oper_cons_tower1（HdU.GTC_N2 の遠い段の写し）で、写しは親の段 p の節点の塊の入れ子 towT p us j。
+  塔の各段の良さは、集合が段 p の延長で閉じること（Ext P p P）と Gd_tie の繰り返しで出る。Gd_nil_chU（段 l の節点の子の空の並び）。
+- HeI: 段つきの木の述語 TreeOKs c p cl（塊 okLowP・段 0 のタイ・段 l+1 の節点は閉じた集合で p < l+1）と Gd_treeL、GoodChtX_snocT。
+- 生成器 gp_t（gp_u のあと）: 遠い語の F のタイの子を段つきの木にし、HdH.OkWsAt / PVF_farWAt と HeI.GoodChtX_snocT で証明項を作る。
+- HeJ（生成、緑）: シート行 1654〜1658（TF の語のタイの子の遠い語で、遠い F のタイの子が 2 段上の節点の葉 (5,3,0)）。
+- 残り（1659〜1700）: 1659〜1665 は N2 の語のあとに F の字の語（最上段の文脈 CLT に N2 の語）、1666〜1700 は最上段の F のタイの子の形
+  （N2 の兄弟・子つきの N2・N2 の下の N2（1688〜））。いずれも最上段（HdQ〜HdV）の木に段を入れ、道の集合で DT を書き直す必要がある。
+- 次: 最上段の枠組み（BotC・DT を段つきの道と道の集合で）を HdR〜HdV の写しとして作る。遠い段の像（topCLT_Wg）は HeI の木で出す。

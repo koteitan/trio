@@ -24,7 +24,7 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT'
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT'
 
 
 def far_units(M, s, e, r, v, top):
@@ -587,12 +587,12 @@ def gp_c(M, kids, v, A, o):
 
 
 def gp(M, kids, v, A, o):
-    for fn in (gp_old, gp_ra, gp_n, gp_c):
+    for fn in (gp_old, gp_ra, gp_n, gp_c, gp_u):
         try:
             return fn(M, kids, v, A, o)
         except Fail:
             pass
-    return gp_u(M, kids, v, A, o)
+    return gp_t(M, kids, v, A, o)
 
 
 def far_items_u(M, s, e, r, v, A, o):
@@ -726,6 +726,126 @@ def gp_u(M, kids, v, A, o):
                 G = f'(HcR.GoodChuX_snocN {G} {goodlow_lean(M, us, v)} {okrn_lean(M, last, v, A, o)})'
         P = f'(HcP.OkWsAu_cons le_rfl {G} {okrau_lean(M, items, v, A, o)} {P})'
     w = (f'(HcP.PVF_farWAu (A0 := {Al}) (o := {o}) (by decide) (by decide) (by decide) '
+         f'{v} _ {P})')
+    k = nf
+    while k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == r0:
+        s, e = kids[k]
+        w = (f'(PVF_snoc (A := {Al}) (o := {o}) (by decide) {w} '
+             f'{rl(M, children(M, s, e), v, A, o)})')
+        k += 1
+    t = f'(GPF_of_PVF {w})'
+    for (s, e) in kids[k:]:
+        c = M[s]
+        if c[2] == 0 and c[1] > v:
+            tau = c[1] - v
+            A2 = [a for a in A if a < tau]
+            t = (f'(GPF_node {side(A, o)} (b := {v}) (τ := {tau}) {lean_list(A2)} (by decide) {t} '
+                 f'{gp(M, children(M, s, e), v, A2, tau)})')
+        elif c[2] == 0:
+            t = f'(GPF_load {side(A, o)} (b := {v}) {t} {load_item(M, s, v)})'
+        else:
+            raise Fail('child z %s' % (c,))
+    return t
+
+
+def treeoks_t(M, kids, depth, r, v, p, cl):
+    """F のタイの子（行 0 が depth）を段つきの木 HdA.UT の並びの TreeOKs の証明にする（HeI）。
+    荷と行 1 が v+1 のタイは塊 okLowP、行 1 が r + l の z=0 の節点は段 l の節点（l ≥ 1 は親の段 p < l で閉じた集合）。"""
+    b = 'true' if cl else 'false'
+    proof = f'(HeI.TreeOKs_nil {v} {p} {b})'
+    for (a, e) in reversed(kids):
+        c = M[a]
+        if c[0] != depth:
+            raise Fail('tree_t depth')
+        if c[2] == 0 and c[1] <= v:
+            X = f'(HeG.okLowP_load (HeG.okLowP_nil {v}) {load_mem(M, a, e, v)} rfl)'
+            proof = f'(HeI.TreeOKs_cons_ch {X} {proof})'
+        elif c == (depth, v + 1, 0):
+            X = f'(HeG.okLowP_tie (HeG.okLowP_nil {v}) (GF_of_GPF {gp(M, children(M, a, e), v, [], 1)}))'
+            proof = f'(HeI.TreeOKs_cons_ch {X} {proof})'
+        elif c[2] == 0 and c[1] >= r:
+            l = c[1] - r
+            if l == 0:
+                sub = treeoks_t(M, children(M, a, e), depth + 1, r, v, 0, True)
+                proof = f'(HeI.TreeOKs_cons_tie0 {sub} {proof})'
+            else:
+                if not cl or not (p < l):
+                    raise Fail('tree_t deep')
+                sub = treeoks_t(M, children(M, a, e), depth + 1, r, v, l, False)
+                proof = f'(HeI.TreeOKs_cons_up (l := {l - 1}) rfl (by decide) {sub} {proof})'
+        else:
+            raise Fail('tree_t child %s' % (c,))
+    return proof
+
+
+def far_items_t(M, s, e, r, v, A, o):
+    """F のタイの子を段つきの木にした遠い語（HeI）: 字、頭、F のタイ（子は木）、中身（荷と段 v+τ の節点）。"""
+    if M[s][1] != r or M[s][2] != 1:
+        return None
+    ch = children(M, s, e)
+    x = M[s][0]
+    if not ch or M[ch[0][0]] != (x + 1, r, 1) or ch[0][1] - ch[0][0] != 1:
+        return None
+    rest = ch[1:]
+    ds = []
+    n = 0
+    while n < len(rest) and M[rest[n][0]] == (x + 1, r, 0):
+        a, b = rest[n]
+        try:
+            ds.append(treeoks_t(M, children(M, a, b), x + 2, r, v, 0, True))
+        except Fail:
+            return None
+        n += 1
+    items = []
+    for (a, b) in rest[n:]:
+        c = M[a]
+        if c[2] == 0 and c[1] <= v:
+            items.append(('load', a, b))
+        elif c[2] == 0 and 1 <= c[1] - v <= o:
+            items.append(('node', a, b, c[1] - v))
+        else:
+            return None
+    return (ds, items)
+
+
+def okrat_lean(M, items, v, A, o):
+    Al = lean_list(A)
+    proof = f'(HdH.okRAt_nil {Al} {o} {v})'
+    for it in items:
+        if it[0] == 'load':
+            _, a, b = it
+            proof = (f'(HdH.okRAt_load (A0 := {Al}) (o := {o}) (by decide) (by decide) {proof} '
+                     f'{load_mem(M, a, b, v)} rfl)')
+        else:
+            _, a, b, tau = it
+            A2 = [x for x in A if x < tau]
+            proof = (f'(HdH.okRAt_node (A0 := {Al}) (o := {o}) (τ := {tau}) (by decide) (by decide) '
+                     f'(by decide) (by decide) {lean_list(A2)} (by decide) {proof} '
+                     f'{gp(M, children(M, a, b), v, A2, tau)})')
+    return proof
+
+
+def gp_t(M, kids, v, A, o):
+    """F のタイの子を段つきの木にした遠い語の並び（HdH.PVF_farWAt と HeI.GoodChtX_snocT）。"""
+    r0 = v + o + 1
+    fis = []
+    nf = 0
+    while nf < len(kids):
+        fi = far_items_t(M, kids[nf][0], kids[nf][1], r0, v, A, o)
+        if fi is None:
+            break
+        fis.append(fi)
+        nf += 1
+    if nf == 0:
+        raise Fail('gp_t no word')
+    Al = lean_list(A)
+    P = f'(HdH.OkWsAt_nil {Al} {o} {v})'
+    for (ds, items) in reversed(fis):
+        G = f'(HdE.GoodChtX_nil {Al} {o} (fun _ => 0) {v})'
+        for d in ds:
+            G = f'(HeI.GoodChtX_snocT (A0 := {Al}) (o := {o}) (by decide) (by decide) (by decide) {G} {d})'
+        P = f'(HdH.OkWsAt_cons le_rfl {G} {okrat_lean(M, items, v, A, o)} {P})'
+    w = (f'(HdH.PVF_farWAt (A0 := {Al}) (o := {o}) (by decide) (by decide) (by decide) '
          f'{v} _ {P})')
     k = nf
     while k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == r0:
@@ -1428,7 +1548,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\nimport HcS\nimport HdV\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\nimport HcS\nimport HdV\nimport HeI\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
                'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB HbJ HbK\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
