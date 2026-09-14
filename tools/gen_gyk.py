@@ -24,7 +24,7 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc'
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF'
 
 
 def far_units(M, s, e, r, v, top):
@@ -587,12 +587,165 @@ def gp_c(M, kids, v, A, o):
 
 
 def gp(M, kids, v, A, o):
-    for fn in (gp_old, gp_ra, gp_n):
+    for fn in (gp_old, gp_ra, gp_n, gp_c):
         try:
             return fn(M, kids, v, A, o)
         except Fail:
             pass
-    return gp_c(M, kids, v, A, o)
+    return gp_u(M, kids, v, A, o)
+
+
+def far_items_u(M, s, e, r, v, A, o):
+    """F のタイの子に F の位置のタイ (x+2, r, 0) を含む遠い語（HcP）: 子は F の位置のタイと低い塊（荷と単位のタイ）の並び。"""
+    if M[s][1] != r or M[s][2] != 1:
+        return None
+    ch = children(M, s, e)
+    x = M[s][0]
+    if not ch or M[ch[0][0]] != (x + 1, r, 1) or ch[0][1] - ch[0][0] != 1:
+        return None
+    rest = ch[1:]
+    ds = []
+    n = 0
+    while n < len(rest) and M[rest[n][0]] == (x + 1, r, 0):
+        a, b = rest[n]
+        us = []
+        cur = None
+        high = False
+        for (a2, b2) in children(M, a, b):
+            c2 = M[a2]
+            if c2 == (x + 2, r, 0) and b2 - a2 == 1:
+                if cur is not None:
+                    if high:
+                        return None
+                    us.append(('some', cur))
+                    cur = None
+                us.append(('none',))
+            elif c2[2] == 0 and c2[1] <= v:
+                cur = (cur or []) + [('load', a2, b2)]
+            elif c2 == (x + 2, v + 1, 0):
+                cur = (cur or []) + [('tie', a2, b2)]
+            elif c2[2] == 0 and 2 <= c2[1] - v <= o:
+                cur = (cur or []) + [('node', a2, b2, c2[1] - v)]
+                high = True
+            else:
+                return None
+        last = None
+        if cur is not None:
+            if high:
+                last = cur
+            else:
+                us.append(('some', cur))
+        ds.append((us, last))
+        n += 1
+    items = []
+    for (a, b) in rest[n:]:
+        c = M[a]
+        if c[2] == 0 and c[1] <= v:
+            items.append(('load', a, b))
+        elif c[2] == 0 and 1 <= c[1] - v <= o:
+            items.append(('node', a, b, c[1] - v))
+        else:
+            return None
+    return (ds, items)
+
+
+def goodlow_lean(M, us, v):
+    proof = f'(HcN.GoodLow_nil {v})'
+    for u in us:
+        if u[0] == 'none':
+            proof = f'(HcP.GoodLow_none {proof})'
+        else:
+            X = f'(HcP.okLow_nil {v})'
+            for (kind, a, b) in u[1]:
+                if kind == 'load':
+                    X = f'(HcP.okLow_load {X} {load_mem(M, a, b, v)} rfl)'
+                else:
+                    X = f'(HcP.okLow_tie {X} (GF_of_GPF {gp(M, children(M, a, b), v, [], 1)}))'
+            proof = f'(HcP.GoodLow_some {proof} {X})'
+    return proof
+
+
+def okrau_lean(M, items, v, A, o):
+    Al = lean_list(A)
+    proof = f'(HcP.okRAu_nil {Al} {o} {v})'
+    for it in items:
+        if it[0] == 'load':
+            _, a, b = it
+            proof = (f'(HcP.okRAu_load (A0 := {Al}) (o := {o}) (by decide) (by decide) {proof} '
+                     f'{load_mem(M, a, b, v)} rfl)')
+        else:
+            _, a, b, tau = it
+            A2 = [x for x in A if x < tau]
+            proof = (f'(HcP.okRAu_node (A0 := {Al}) (o := {o}) (τ := {tau}) (by decide) (by decide) '
+                     f'(by decide) (by decide) {lean_list(A2)} (by decide) {proof} '
+                     f'{gp(M, children(M, a, b), v, A2, tau)})')
+    return proof
+
+
+def okrn_lean(M, items, v, A, o):
+    Al = lean_list(A)
+    proof = f'(HcR.okRN_nil (A0 := {Al}) (o := {o}) (by decide) (by decide) (by decide) {v})'
+    for it in items:
+        if it[0] == 'load':
+            proof = (f'(HcR.okRN_load (A0 := {Al}) (o := {o}) (by decide) (by decide) {proof} '
+                     f'{load_mem(M, it[1], it[2], v)} rfl)')
+        elif it[0] == 'tie':
+            proof = (f'(HcR.okRN_tie (A0 := {Al}) (o := {o}) (by decide) (by decide) {proof} '
+                     f'(GF_of_GPF {gp(M, children(M, it[1], it[2]), v, [], 1)}))')
+        else:
+            _, a, b, tau = it
+            A2 = [x for x in A if x < tau]
+            proof = (f'(HcR.okRN_node (A0 := {Al}) (o := {o}) (τ := {tau}) (by decide) (by decide) '
+                     f'(by decide) (by decide) {lean_list(A2)} (by decide) {proof} '
+                     f'{gp(M, children(M, a, b), v, A2, tau)})')
+    return proof
+
+
+def gp_u(M, kids, v, A, o):
+    """F のタイの子に F の位置のタイを含む遠い語の並び（HcP.PVF_farWAu）。"""
+    r0 = v + o + 1
+    fis = []
+    nf = 0
+    while nf < len(kids):
+        fi = far_items_u(M, kids[nf][0], kids[nf][1], r0, v, A, o)
+        if fi is None:
+            break
+        fis.append(fi)
+        nf += 1
+    if nf == 0:
+        raise Fail('gp_u no word')
+    Al = lean_list(A)
+    P = f'(HcP.OkWsAu_nil {Al} {o} {v})'
+    for (ds, items) in reversed(fis):
+        G = f'(HcM.GoodChuX_nil {Al} {o} (fun _ => 0) {v})'
+        for (us, last) in ds:
+            if last is None:
+                G = (f'(HcP.GoodChuX_snocU (A0 := {Al}) (o := {o}) (by decide) (by decide) (by decide) '
+                     f'{G} {goodlow_lean(M, us, v)})')
+            else:
+                G = f'(HcR.GoodChuX_snocN {G} {goodlow_lean(M, us, v)} {okrn_lean(M, last, v, A, o)})'
+        P = f'(HcP.OkWsAu_cons le_rfl {G} {okrau_lean(M, items, v, A, o)} {P})'
+    w = (f'(HcP.PVF_farWAu (A0 := {Al}) (o := {o}) (by decide) (by decide) (by decide) '
+         f'{v} _ {P})')
+    k = nf
+    while k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == r0:
+        s, e = kids[k]
+        w = (f'(PVF_snoc (A := {Al}) (o := {o}) (by decide) {w} '
+             f'{rl(M, children(M, s, e), v, A, o)})')
+        k += 1
+    t = f'(GPF_of_PVF {w})'
+    for (s, e) in kids[k:]:
+        c = M[s]
+        if c[2] == 0 and c[1] > v:
+            tau = c[1] - v
+            A2 = [a for a in A if a < tau]
+            t = (f'(GPF_node {side(A, o)} (b := {v}) (τ := {tau}) {lean_list(A2)} (by decide) {t} '
+                 f'{gp(M, children(M, s, e), v, A2, tau)})')
+        elif c[2] == 0:
+            t = f'(GPF_load {side(A, o)} (b := {v}) {t} {load_item(M, s, v)})'
+        else:
+            raise Fail('child z %s' % (c,))
+    return t
 
 
 def gp_old(M, kids, v, A, o):
@@ -1109,7 +1262,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\nimport HcR\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
                'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB HbJ HbK\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
