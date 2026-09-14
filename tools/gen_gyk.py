@@ -24,7 +24,7 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT'
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0'
 
 
 def far_units(M, s, e, r, v, top):
@@ -785,19 +785,90 @@ def top_qb(M, ch, a, v):
     return st, k
 
 
+def top_l(M, ch, a, v):
+    """F のタイが荷の子を持つ語の並び、TF の語の並び（HbV.starOK_CL）。"""
+    k = 0
+    ps = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if not cc or M[cc[0][0]] != (a + 2, v + 1, 1) or cc[0][1] - cc[0][0] != 1:
+            break
+        rest = cc[1:]
+        ds = []
+        n = 0
+        ok = True
+        while n < len(rest) and M[rest[n][0]] == (a + 2, v + 1, 0):
+            x, y = rest[n]
+            d = []
+            for (x2, y2) in children(M, x, y):
+                c2 = M[x2]
+                if c2[2] == 0 and c2[1] <= v:
+                    d.append(('some', x2, y2))
+                else:
+                    ok = False
+                    break
+            if not ok:
+                break
+            ds.append(d)
+            n += 1
+        if not ok:
+            break
+        us = []
+        for (x, y) in rest[n:]:
+            c = M[x]
+            if c[2] == 0 and c[1] <= v:
+                us.append(('some', x, y))
+            else:
+                ok = False
+                break
+        if not ok:
+            break
+        ps.append((ds, us))
+        k += 1
+    if not ps:
+        raise Fail('top l')
+    words = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        words.append(top_forest(M, children(M, s, e), v))
+        k += 1
+    w = f'(WordsG_nil {v})'
+    for f in reversed(words):
+        w = f'(WordsG_consT (v := {v}) {f} {w})'
+    lits = []
+    proof = f'(HbV.PsL_nil {v})'
+    for (ds, us) in reversed(ps):
+        dl = []
+        dp = f'(HbV.DsOK_nil {v})'
+        for d in reversed(ds):
+            l, pu = units_lean(M, d, v)
+            dl.insert(0, f'unitsC {v} {l}')
+            dp = f'(HbV.DsOK_cons (HbV.LoadSeq_of (by simp [NoTie]) {pu}) {dp})'
+        Dl = '([' + ', '.join(dl) + '] : List TrioSeq)'
+        l, pu = units_lean(M, us, v)
+        lits.insert(0, f'({Dl}, {l})')
+        proof = f'(HbV.PsL_cons {dp} (by simp [NoTie]) {pu} {proof})'
+    L = '([' + ', '.join(lits) + '] : List (List TrioSeq × List (Option TrioSeq)))'
+    st = f'(HbV.starOK_CL (v := {v}) {L} {proof} {w})'
+    return st, k
+
+
 def tree(M, i):
     a, v, z = M[i]
     if z != 0:
         raise Fail('root z')
     end = subtree_end(M, i)
     ch = children(M, i, end)
-    try:
-        st, k = top_old(M, ch, a, v)
-    except Fail:
+    st = None
+    for top in (top_old, top_qb, top_n, top_l):
         try:
-            st, k = top_qb(M, ch, a, v)
-        except Fail:
-            st, k = top_n(M, ch, a, v)
+            st, k = top(M, ch, a, v)
+            break
+        except Fail as ex:
+            last = ex
+    if st is None:
+        raise last
     for (s2, e2) in ch[k:]:
         c = M[s2]
         if c[2] != 0:
@@ -841,7 +912,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
                'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB HbJ HbK\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
