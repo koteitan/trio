@@ -221,7 +221,124 @@ def uss_lean(M, uss, v):
     return '([' + ', '.join(lits) + '] : List (List (Option TrioSeq)))', proof
 
 
+def side0(A, o):
+    return f'(A0 := {lean_list(A)}) (o := {o}) (by decide) (by decide) (by decide)'
+
+
+def far_items_A(M, s, e, r, v, A, o, allow_F=False):
+    """級 (A, o) の遠い語の中身（HaG の okRA）: 荷と段 v+τ（1 ≤ τ ≤ o）の節点。
+    allow_F なら最後に行 1 が字と同じ r の子のない節点（F）を許す（返り値の 2 つ目）。"""
+    if M[s][1] != r or M[s][2] != 1:
+        return None
+    ch = children(M, s, e)
+    if not ch or M[ch[0][0]] != (M[s][0] + 1, r, 1) or ch[0][1] - ch[0][0] != 1:
+        return None
+    rest = ch[1:]
+    hasF = False
+    if allow_F and rest and M[rest[-1][0]] == (M[s][0] + 1, r, 0) and rest[-1][1] - rest[-1][0] == 1:
+        hasF = True
+        rest = rest[:-1]
+    items = []
+    for (a, b) in rest:
+        c = M[a]
+        if c[2] == 0 and c[1] <= v:
+            items.append(('load', a, b))
+        elif c[2] == 0 and 1 <= c[1] - v <= o:
+            items.append(('node', a, b, c[1] - v))
+        else:
+            return None
+    return (items, hasF)
+
+
+def okra_lean(M, items, v, A, o, ks=None):
+    """中身の okRA の証明。ks=None なら上限は o、ks='k' なら fun k hk の中（側条件は omega）。"""
+    kk = o if ks is None else ks
+    Al = lean_list(A)
+    proof = f'(okRA_nil {Al} {kk} {v})'
+    for it in items:
+        if it[0] == 'load':
+            _, a, b = it
+            ho = '(by decide)' if ks is None else '(by omega)'
+            proof = f'(okRA_load (A0 := {Al}) (o := {kk}) (by decide) {ho} {proof} {load_mem(M, a, b, v)} rfl)'
+        else:
+            _, a, b, tau = it
+            A2 = [x for x in A if x < tau]
+            if ks is None:
+                sd = '(by decide) (by decide) (by decide) (by decide)'
+            else:
+                sd = '(by decide) (by omega) (fun a ha => by simp at ha <;> omega) (by omega)'
+            proof = (f'(okRA_node (A0 := {Al}) (o := {kk}) (τ := {tau}) {sd} {lean_list(A2)} (by decide) '
+                     f'{proof} {gp(M, children(M, a, b), v, A2, tau)})')
+    return proof
+
+
+def gp_ra(M, kids, v, A, o):
+    """錨つきの中身の一様な経路（HaG）。gp_old が失敗したときに使う。"""
+    k = 0
+    nl = 0
+    if A == [] and o == 1:
+        w = f'(PVF_nil1 {v})'
+    else:
+        w = f'(PVF_nil (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) {v})'
+    nf = 0
+    fcs = []
+    while nf < len(kids):
+        fi = far_items_A(M, kids[nf][0], kids[nf][1], v + o + 1, v, A, o)
+        if fi is None:
+            break
+        fcs.append(fi[0])
+        nf += 1
+    if nf > 0:
+        P = f'(OkWsA_nil {lean_list(A)} {o} {v})'
+        for fc in reversed(fcs):
+            P = f'(OkWsA_cons le_rfl {okra_lean(M, fc, v, A, o)} {P})'
+        w = f'(PVF_farWA {side0(A, o)} {v} _ {P})'
+        k = nf
+        nl = nf
+    if nf < len(kids):
+        fF = far_items_A(M, kids[nf][0], kids[nf][1], v + o + 1, v, A, o, allow_F=True)
+        if fF is not None and fF[1]:
+            Pp = f'(OkWsA_nil {lean_list(A)} k {v})'
+            for fc in reversed(fcs):
+                Pp = f'(OkWsA_cons le_rfl {okra_lean(M, fc, v, A, o, "k")} {Pp})'
+            w = (f'(PVF_farWA_F {side0(A, o)} le_rfl (fun k hk => {Pp}) '
+                 f'(fun k hk => {okra_lean(M, fF[0], v, A, o, "k")}))')
+            k = nf + 1
+            nl = nf + 1
+    while k < len(kids) and M[kids[k][0]][2] == 1 and M[kids[k][0]][1] == v + o + 1:
+        s, e = kids[k]
+        w = (f'(PVF_snoc (A := {lean_list(A)}) (o := {o}) (by decide) {w} '
+             f'{rl(M, children(M, s, e), v, A, o)})')
+        k += 1
+        nl += 1
+    if nl > 0:
+        t = f'(GPF_of_PVF {w})'
+    elif A == [] and o == 1:
+        t = f'(GPF_nil1 {v})'
+    else:
+        t = f'(GPF_nil (A := {lean_list(A)}) (o := {o}) (by decide) (by decide) {v})'
+    for (s, e) in kids[k:]:
+        c = M[s]
+        if c[2] == 0 and c[1] > v:
+            tau = c[1] - v
+            A2 = [a for a in A if a < tau]
+            t = (f'(GPF_node {side(A, o)} (b := {v}) (τ := {tau}) {lean_list(A2)} (by decide) {t} '
+                 f'{gp(M, children(M, s, e), v, A2, tau)})')
+        elif c[2] == 0:
+            t = f'(GPF_load {side(A, o)} (b := {v}) {t} {load_item(M, s, v)})'
+        else:
+            raise Fail('child z %s' % (c,))
+    return t
+
+
 def gp(M, kids, v, A, o):
+    try:
+        return gp_old(M, kids, v, A, o)
+    except Fail:
+        return gp_ra(M, kids, v, A, o)
+
+
+def gp_old(M, kids, v, A, o):
     k = 0
     nl = 0
     if A == [] and o == 1:
@@ -440,7 +557,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaA\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaG\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
