@@ -24,7 +24,7 @@ def load_item(M, s, v):
     raise Fail('item %s' % (c,))
 
 
-SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU'
+SIMP = 'shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT'
 
 
 def far_units(M, s, e, r, v, top):
@@ -1275,6 +1275,101 @@ def top_lu(M, ch, a, v):
     return f'(HcS.starOK_CLU (v := {v}) {L} {proof} {w})', k
 
 
+def tlist_lean(M, kids, r0, v):
+    """タイの子の並び（行 0 が r0）を木の単位 HdA.UT の並びにする（荷と、行 1 が v+1 のタイ）。"""
+    items = []
+    proof = f'(HdV.TRaws_nil {v})'
+    for (x, y) in reversed(kids):
+        c = M[x]
+        if c[2] == 0 and c[1] <= v:
+            items.insert(0, f'HdA.UT.ch ({load_lit(M, x, y)} : TrioSeq)')
+            proof = f'(HdV.TRaws_cons_ch {load_mem(M, x, y, v)} rfl {proof})'
+        elif c == (r0, v + 1, 0):
+            l, p = tlist_lean(M, children(M, x, y), r0 + 1, v)
+            items.insert(0, f'HdA.UT.tie {l}')
+            proof = f'(HdV.TRaws_cons_tie {p} {proof})'
+        else:
+            raise Fail('tree child %s' % (c,))
+    return '([' + ', '.join(items) + '] : List HdA.UT)', proof
+
+
+def top_lt(M, ch, a, v):
+    """F のタイの子に木（入れ子のタイと荷）を持つ語の並び、最後に 2 段上の節点の語、TF の語の並び（HdS.starOK_CLT / HdV.starOK_N2）。"""
+    k = 0
+    ps = []
+    n2 = None
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if not cc or M[cc[0][0]] != (a + 2, v + 1, 1) or cc[0][1] - cc[0][0] != 1:
+            break
+        rest = cc[1:]
+        n = 0
+        while n < len(rest) and M[rest[n][0]] == (a + 2, v + 1, 0):
+            n += 1
+        ties = rest[:n]
+        units = rest[n:]
+        uss = []
+        ok = True
+        last_n2 = False
+        for ti, (x, y) in enumerate(ties):
+            kids = children(M, x, y)
+            if (ti == len(ties) - 1 and not units and kids and M[kids[-1][0]] == (a + 3, v + 2, 0)
+                    and kids[-1][1] - kids[-1][0] == 1):
+                kids = kids[:-1]
+                last_n2 = True
+            try:
+                uss.append(tlist_lean(M, kids, a + 3, v))
+            except Fail:
+                ok = False
+                break
+        if not ok:
+            break
+        us = []
+        for (x, y) in units:
+            c = M[x]
+            if c[2] == 0 and c[1] <= v:
+                us.append(('some', x, y))
+            else:
+                ok = False
+                break
+        if not ok:
+            break
+        k += 1
+        if last_n2:
+            n2 = uss
+            break
+        ps.append((uss, us))
+    if not ps and n2 is None:
+        raise Fail('top lt')
+    words = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        words.append(top_forest(M, children(M, s, e), v))
+        k += 1
+    w = f'(WordsG_nil {v})'
+    for f in reversed(words):
+        w = f'(WordsG_consT (v := {v}) {f} {w})'
+    lits = []
+    proof = f'(HdQ.PsLT_nil {v})'
+    for (uss, us) in reversed(ps):
+        up = f'(HdV.RawssT_nil {v})'
+        for (l, pr) in reversed(uss):
+            up = f'(HdV.RawssT_cons {pr} {up})'
+        l, pu = units_lean(M, us, v)
+        lits.insert(0, '(([' + ', '.join(x for (x, _) in uss) + '] : List (List HdA.UT)), ' + l + ')')
+        proof = f'(HdQ.PsLT_cons {up} (by simp [NoTie]) {pu} {proof})'
+    L = '([' + ', '.join(lits) + '] : List (List (List HdA.UT) × List (Option TrioSeq)))'
+    if n2 is None:
+        return f'(HdS.starOK_CLT (v := {v}) {L} {proof} {w})', k
+    up = f'(HdV.RawssT_nil {v})'
+    for (l, pr) in reversed(n2[:-1]):
+        up = f'(HdV.RawssT_cons {pr} {up})'
+    U = '([' + ', '.join(x for (x, _) in n2[:-1]) + '] : List (List HdA.UT))'
+    lus, pus = n2[-1]
+    return f'(HdV.starOK_N2 (v := {v}) {L} {proof} (Uss := {U}) {up} (us := {lus}) {pus} {w})', k
+
+
 def tree(M, i):
     a, v, z = M[i]
     if z != 0:
@@ -1282,7 +1377,7 @@ def tree(M, i):
     end = subtree_end(M, i)
     ch = children(M, i, end)
     st = None
-    for top in (top_old, top_qb, top_n, top_l, top_lf, top_lu):
+    for top in (top_old, top_qb, top_n, top_l, top_lf, top_lu, top_lt):
         try:
             st, k = top(M, ch, a, v)
             break
@@ -1333,7 +1428,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\nimport HcS\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\nimport HcG\nimport HcS\nimport HdV\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
                'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB HbJ HbK\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
