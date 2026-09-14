@@ -1,12 +1,13 @@
 /-
-GzU.lean: GzM の閾値を b+1 から b+k に上げた版（錨が全て k 以上、節点が k 以上の添字に限る）。
+GzU.lean: GzM の閾値を b+1 から b+k に上げた版（錨の持ち上げ後の位置が全て k 以上、節点の持ち上げ後の段が k 以上に限る）。
 
     RawWk k b w    := w.1 ≤ b ∧ Fr w.2 ∧ Hd w.2 ∧ LowC (w.1 + k) w.2
-    FarCWk k b0 ws := ∀ A o f b, b0 ≤ b → RawWsk k b ws → A < o → 1 ≤ A → 1 ≤ o → k ≤ A → k ≤ o →
+    FarCWk k b0 ws := ∀ A o f b, b0 ≤ b → RawWsk k b ws → A < o → 1 ≤ A → 1 ≤ o →
+                        (∀ a ∈ A, k ≤ liftVal f A a) → k ≤ liftOff f A o →
                         GpT A o f b (farW b (b + liftOff f A o + 1) ws)
 
-錨が k 以上なら再持ち上げは段 b+k 以下を動かさず（reStair_k）、節点が k 以上なら t の持ち上げも動かさない。
-潰れの塔の F の子の添字 (o :: A, o+1) も同じ条件を満たす。
+錨の持ち上げ後の位置が k 以上なら再持ち上げは段 b+k 以下を動かさず（reStair_k）、節点の段が k 以上なら t の持ち上げも動かさない。
+条件は t の持ち上げ（o+t）、再持ち上げ（f+g）、潰れの塔の F の子の添字（upF o 0 f、o :: A、o+1）で保たれる。
 -/
 import GzM
 
@@ -26,16 +27,15 @@ theorem LowC_mliftk {c k : ℕ} {Y : TrioSeq} (hY : LowC (c + k) Y) (t : ℕ) :
   · rw [mlift_eq_slift]; exact rtg0_slift'.mpr hj
   · rw [entry1_mlift hjY]; split_ifs <;> omega
 
-theorem reStair_k (b : ℕ) (f g : ℕ → ℕ) {A : List ℕ} {k : ℕ} (hAk : ∀ a ∈ A, k ≤ a) {m : ℕ}
-    (hm : m ≤ b + k) : reStair b f g A m = m := by
-  have key : ∀ A' : List ℕ, (∀ a ∈ A', k ≤ a) → reStep b f g A A' m = 0 := by
+theorem reStair_k (b : ℕ) (f g : ℕ → ℕ) {A : List ℕ} {k : ℕ}
+    (hAk : ∀ a ∈ A, k ≤ liftVal f A a) {m : ℕ} (hm : m ≤ b + k) : reStair b f g A m = m := by
+  have key : ∀ A' : List ℕ, (∀ a ∈ A', k ≤ liftVal f A a) → reStep b f g A A' m = 0 := by
     intro A' hA'
     induction A' with
     | nil => rfl
     | cons a A' ih =>
         simp only [reStep]
         have h1 := hA' a (by simp)
-        have h2 : a ≤ liftVal f A a := by unfold liftVal; omega
         rw [if_neg (by omega), ih (fun x hx => hA' x (List.mem_cons_of_mem a hx))]
   simp [reStair, key A hAk]
 
@@ -49,8 +49,9 @@ theorem mlift_fwW_highk {b v r c k : ℕ} (hv : b + k ≤ v) (hvr : v < r) (hcb 
   rw [e, mlift_one hvr]
   rfl
 
-theorem reliftX_fwWk {A : List ℕ} {o k : ℕ} (hA : ∀ a ∈ A, a < o) (hAk : ∀ a ∈ A, k ≤ a)
-    (b : ℕ) (f g : ℕ → ℕ) {c : ℕ} (hcb : c ≤ b) {Y : TrioSeq} (hY : Fr Y) (hL : LowC (c + k) Y) :
+theorem reliftX_fwWk {A : List ℕ} {o k : ℕ} (hA : ∀ a ∈ A, a < o) (b : ℕ) (f g : ℕ → ℕ)
+    (hAk : ∀ a ∈ A, k ≤ liftVal f A a) {c : ℕ} (hcb : c ≤ b) {Y : TrioSeq} (hY : Fr Y)
+    (hL : LowC (c + k) Y) :
     reliftX b f g A (fwW b (b + liftOff f A o + 1) c Y)
       = fwW b (b + liftOff (addF f g) A o + 1) c Y := by
   unfold fwW
@@ -107,21 +108,31 @@ theorem mlift_farW_basek {k b r : ℕ} (hbr : b < r) (t : ℕ) :
       rw [farW_cons, farW_cons, mlift_app (Fr_fwW b r _ _) (Hd_farW b r ws),
         mlift_fwW_base hbr hw.1 hw.2.1 hw.2.2.1 t, mlift_farW_basek hbr t ws (RawWsk_tail hR)]
 
-theorem reliftX_farWk {A : List ℕ} {o k : ℕ} (hA : ∀ a ∈ A, a < o) (hAk : ∀ a ∈ A, k ≤ a)
-    (b : ℕ) (f g : ℕ → ℕ) : ∀ ws, RawWsk k b ws →
+theorem reliftX_farWk {A : List ℕ} {o k : ℕ} (hA : ∀ a ∈ A, a < o) (b : ℕ) (f g : ℕ → ℕ)
+    (hAk : ∀ a ∈ A, k ≤ liftVal f A a) : ∀ ws, RawWsk k b ws →
     reliftX b f g A (farW b (b + liftOff f A o + 1) ws)
       = farW b (b + liftOff (addF f g) A o + 1) ws
   | [] => fun _ => by simp [farW, reliftX, slift_nil]
   | w :: ws => fun hR => by
       have hw := hR w (by simp)
       rw [farW_cons, farW_cons, reliftX_app (Fr_fwW _ _ _ _) (Hd_farW _ _ ws),
-        reliftX_fwWk hA hAk b f g hw.1 hw.2.1 hw.2.2.2, reliftX_farWk hA hAk b f g ws (RawWsk_tail hR)]
+        reliftX_fwWk hA b f g hAk hw.1 hw.2.1 hw.2.2.2, reliftX_farWk hA b f g hAk ws (RawWsk_tail hR)]
 
-/-! ## 全ての錨の列（k 以上）で GpT -/
+/-! ## 条件の保存 -/
+
+theorem liftVal_ge_addF {f : ℕ → ℕ} {A : List ℕ} {k : ℕ} (hAk : ∀ a ∈ A, k ≤ liftVal f A a)
+    (g : ℕ → ℕ) : ∀ a ∈ A, k ≤ liftVal (addF f g) A a := fun a ha => by
+  rw [liftVal_add]; have := hAk a ha; omega
+
+theorem liftOff_ge_addF {f : ℕ → ℕ} {A : List ℕ} {o k : ℕ} (hA : ∀ a ∈ A, a < o)
+    (hko : k ≤ liftOff f A o) (g : ℕ → ℕ) : k ≤ liftOff (addF f g) A o := by
+  rw [liftOff_addF hA]; omega
+
+/-! ## 全ての錨の列（条件つき）で GpT -/
 
 def FarCWk (k b0 : ℕ) (ws : List (ℕ × TrioSeq)) : Prop :=
   ∀ (A : List ℕ) (o : ℕ) (f : ℕ → ℕ) (b : ℕ), b0 ≤ b → RawWsk k b ws → (∀ a ∈ A, a < o) →
-    (∀ a ∈ A, 1 ≤ a) → 1 ≤ o → (∀ a ∈ A, k ≤ a) → k ≤ o →
+    (∀ a ∈ A, 1 ≤ a) → 1 ≤ o → (∀ a ∈ A, k ≤ liftVal f A a) → k ≤ liftOff f A o →
     GpT A o f b (farW b (b + liftOff f A o + 1) ws)
 
 theorem FarCWk_nil (k b0 : ℕ) : FarCWk k b0 [] := by
@@ -137,15 +148,15 @@ theorem FarCWk_nil (k b0 : ℕ) : FarCWk k b0 [] := by
   · exact GpT_nil hA h f b
 
 theorem farWk_PVP {k b0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk k b0 ws) {A : List ℕ}
-    {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a) (ho : 1 ≤ o) (hAk : ∀ a ∈ A, k ≤ a)
-    (hko : k ≤ o) (f : ℕ → ℕ) (b : ℕ) (hb : b0 ≤ b) (hR : RawWsk k b ws) :
+    {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a) (ho : 1 ≤ o) (f : ℕ → ℕ)
+    (hAk : ∀ a ∈ A, k ≤ liftVal f A a) (hko : k ≤ liftOff f A o) (b : ℕ) (hb : b0 ≤ b)
+    (hR : RawWsk k b ws) :
     PVP A o f b (farW b (b + liftOff f A o + 1) ws) := by
   intro t
-  have hk : o ≤ liftOff f A o := by unfold liftOff; omega
   rw [mlift_farW_highk (show b + k ≤ b + liftOff f A o by omega)
     (show b + liftOff f A o < b + liftOff f A o + 1 by omega) t ws hR]
   have := hC A (o + t) f b hb hR (fun a ha => by have := hA a ha; omega) hA1 (by omega) hAk
-    (by omega)
+    (by rw [liftOff_add_t hA]; omega)
   rwa [liftOff_add_t hA, show b + (liftOff f A o + t) + 1 = b + liftOff f A o + 1 + t by omega]
     at this
 
@@ -153,12 +164,12 @@ theorem farWk_PVP {k b0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk k b0 ws
 
 theorem towWk_GpT {k b0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk k b0 ws) :
     ∀ (m : ℕ) (A : List ℕ) (o : ℕ) (f : ℕ → ℕ) (b : ℕ), b0 ≤ b → RawWsk k b ws →
-    (∀ a ∈ A, a < o) → (∀ a ∈ A, 1 ≤ a) → 1 ≤ o → (∀ a ∈ A, k ≤ a) → k ≤ o →
-    GpT A o f b (towW b ws (b + liftOff f A o + 1) m)
+    (∀ a ∈ A, a < o) → (∀ a ∈ A, 1 ≤ a) → 1 ≤ o → (∀ a ∈ A, k ≤ liftVal f A a) →
+    k ≤ liftOff f A o → GpT A o f b (towW b ws (b + liftOff f A o + 1) m)
   | 0, A, o, f, b, hb, hR, hA, hA1, ho, hAk, hko => by
       rw [towW]
       exact PVP_to_GpT (PVP_snocz hA hA1 ho (Fr_farW _ _ ws)
-        (farWk_PVP hC hA hA1 ho hAk hko f b hb hR))
+        (farWk_PVP hC hA hA1 ho f hAk hko b hb hR))
   | m + 1, A, o, f, b, hb, hR, hA, hA1, ho, hAk, hko => by
       have hAo' : ∀ a ∈ o :: A, a < o + 1 := by
         intro a ha; simp only [List.mem_cons] at ha
@@ -170,11 +181,6 @@ theorem towWk_GpT {k b0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk k b0 ws
         rcases ha with rfl | ha
         · exact ho
         · exact hA1 a ha
-      have hAk' : ∀ a ∈ o :: A, k ≤ a := by
-        intro a ha; simp only [List.mem_cons] at ha
-        rcases ha with rfl | ha
-        · exact hko
-        · exact hAk a ha
       obtain ⟨H, hH⟩ : ∃ H : ℕ → ℕ, H = upF o 0 f := ⟨_, rfl⟩
       have hHo : H o = 0 := by rw [hH]; simp [upF]
       have hHA : ∀ a ∈ A, H a = f a := by rw [hH]; exact upF_low hA 0 f
@@ -182,7 +188,19 @@ theorem towWk_GpT {k b0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk k b0 ws
         rw [sumOn_liftOff hAo', sumOn_liftOff hA]
         simp only [sumOn, hHo, sumOn_congr hHA]
         omega
-      have hL := towWk_GpT hC m (o :: A) (o + 1) H b hb hR hAo' hA1' (by omega) hAk' (by omega)
+      have eo : liftOff H A o = liftOff f A o := by
+        rw [sumOn_liftOff hA, sumOn_liftOff hA, sumOn_congr hHA]
+      have hAk' : ∀ a ∈ o :: A, k ≤ liftVal H (o :: A) a := by
+        intro a ha
+        simp only [List.mem_cons] at ha
+        rcases ha with ha | ha
+        · rw [ha, liftVal_cons_top hA, hHo, Nat.add_zero, eo]; exact hko
+        · rw [liftVal_cons_low hA ha]
+          have e : liftVal H A a = liftVal f A a := by
+            unfold liftVal; rw [stepSum_congr 0 (a + 1) hHA]
+          rw [e]; exact hAk a ha
+      have hL := towWk_GpT hC m (o :: A) (o + 1) H b hb hR hAo' hA1' (by omega) hAk'
+        (by rw [e1]; omega)
       rw [e1, show b + (liftOff f A o + 1) + 1 = b + liftOff f A o + 1 + 1 by omega] at hL
       have hGC : GC (o :: A) H (liftOff f A o + 1) b
           (towW b ws (b + liftOff f A o + 1 + 1) m) := by
@@ -193,7 +211,7 @@ theorem towWk_GpT {k b0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk k b0 ws
       rw [addF_zero, Nat.sub_self, mlift_zero, reliftX_zero, hHo, Nat.add_zero,
         List.nil_append] at h1
       have hLC := LC1_congr hA hHA h1
-      have := hLC _ (Fr_farW _ _ ws) (farWk_PVP hC hA hA1 ho hAk hko f b hb hR)
+      have := hLC _ (Fr_farW _ _ ws) (farWk_PVP hC hA hA1 ho f hAk hko b hb hR)
       rw [show b + (liftOff f A o + 1) = b + liftOff f A o + 1 by omega] at this
       rw [towW]
       exact PVP_to_GpT this
@@ -240,11 +258,14 @@ theorem farWk_collapse {k b0 c0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk
   intro A o f b hb hR hA hA1 ho hAk hko
   have hR0 : RawWsk k b ws := fun w h => hR w (List.mem_append_left _ h)
   refine GpT_intro hA (fun R hR' g => ?_)
-  rw [reliftX_farWk hA hAk b f g _ hR]
+  rw [reliftX_farWk hA b f g hAk _ hR]
   obtain ⟨F, hF⟩ : ∃ F, F = addF f g := ⟨_, rfl⟩
+  have hAkF : ∀ a ∈ A, k ≤ liftVal F A a := by rw [hF]; exact liftVal_ge_addF hAk g
+  have hkoF : k ≤ liftOff F A o := by rw [hF]; exact liftOff_ge_addF hA hko g
   obtain ⟨kk, hkk⟩ : ∃ kk, kk = liftOff F A o := ⟨_, rfl⟩
   rw [← hF, ← hkk]
   have hk1 : o ≤ kk := by rw [hkk]; unfold liftOff; omega
+  have hkkk : k ≤ kk := by rw [hkk]; exact hkoF
   intro u' hu X hX hRX
   rw [mlift_farW_basek (show b < b + kk + 1 by omega) (u' - b) _ hR,
     show b + kk + 1 + (u' - b) = u' + kk + 1 by omega, show b + (u' - b) = u' by omega, farW_snoc]
@@ -290,7 +311,7 @@ theorem farWk_collapse {k b0 c0 : ℕ} {ws : List (ℕ × TrioSeq)} (hC : FarCWk
       = ((1, c, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (towW u' ws (c + 1) m') := by
     simp [shiftr01]
   rw [eS]
-  have hD := towWk_GpT hC m' A o F u' (by omega) hRu hA hA1 ho hAk hko
+  have hD := towWk_GpT hC m' A o F u' (by omega) hRu hA hA1 ho hAkF hkoF
   rw [← hkk, ← hc] at hD
   have h := GpT_elim0 hD hR'
   rw [← hkk] at h

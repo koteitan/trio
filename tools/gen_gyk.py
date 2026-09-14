@@ -126,6 +126,32 @@ def far_contents_Fr(M, s, e, r, v, kk):
     return items
 
 
+def far_contents_bot(M, s, e, r, v, kk, A, o):
+    """遠い字のあとが低い列で、最後が行 1 が v+σ（2 ≤ σ ≤ o、全ての錨 a で σ ≤ a+1）の子のない節点の語。HaA.PVF_farW_bot。"""
+    if M[s][1] != r or M[s][2] != 1:
+        return None
+    ch = children(M, s, e)
+    if len(ch) < 2 or M[ch[0][0]] != (M[s][0] + 1, r, 1) or ch[0][1] - ch[0][0] != 1:
+        return None
+    last = ch[-1]
+    c = M[last[0]]
+    sig = c[1] - v
+    if c[2] != 0 or last[1] - last[0] != 1:
+        return None
+    if not (2 <= sig <= o and all(sig <= a + 1 for a in A)):
+        return None
+    items = []
+    for (a, b) in ch[1:-1]:
+        c = M[a]
+        if c[2] == 0 and c[1] <= v:
+            items.append(('load', a, b))
+        elif c[2] == 0 and 1 <= c[1] - v <= kk:
+            items.append(('node', a, b, c[1] - v))
+        else:
+            return None
+    return (items, sig)
+
+
 def far_contents_F(M, s, e, r, v):
     """遠い字のあとが低い列で、最後が行 1 が v+2 の子のない節点の語（o = 1 なら F）。GzP.GPF_farW_bot2。"""
     if M[s][1] != r or M[s][2] != 1:
@@ -235,7 +261,21 @@ def gp(M, kids, v, A, o):
     fr = None
     if A == [] and nf < len(kids):
         fr = far_contents_Fr(M, kids[nf][0], kids[nf][1], v + o + 1, v, o)
-    if fr is not None:
+    fb = None
+    if fr is None and nf < len(kids):
+        fb = far_contents_bot(M, kids[nf][0], kids[nf][1], v + o + 1, v, kk, A, o)
+    if fr is None and fb is not None:
+        # 遠い字と低い列のあとの段 v+σ（σ ≤ 錨+1）の子のない節点（HaA.PVF_farW_bot）。中身は全ての k ≥ kk で okWk k
+        items_b, sig = fb
+        Pp = f'(OkWsk_nil k {v})'
+        for fc in reversed(fcs):
+            Pp = f'(OkWsk_cons le_rfl {okwfk_lean(M, fc, v, "k", "omega")} {Pp})'
+        w = (f'(PVF_farW_bot (A := {lean_list(A)}) (o := {o}) (s := {sig}) (k0 := {kk}) '
+             + '(by decide) ' * 9 + f'le_rfl (fun k hk => {Pp}) '
+             + f'(fun k hk => {okwfk_lean(M, items_b, v, "k", "omega")}))')
+        k = nf + 1
+        nl = nf + 1
+    elif fr is not None:
         # 遠い字と低い列のあとの、行 1 が字と同じ F（GzY.PVF_farW_Fr）。中身は全ての k ≥ o で okWk k
         Pp = f'(OkWsk_nil k {v})'
         for fc in reversed(fcs):
@@ -400,7 +440,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport GzY\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaA\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')

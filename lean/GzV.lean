@@ -393,16 +393,26 @@ theorem OkWsk_mono {k b b' : ℕ} (h : b ≤ b') {ws : List (ℕ × TrioSeq)} (h
     OkWsk k b' ws :=
   ⟨RawWsk_mono h hs.1, hs.2⟩
 
+/-- 状態 f の錨の位置で条件を与えた版。 -/
+theorem GpT_farWskL {k : ℕ} {A : List ℕ} {o b : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a)
+    (ho : 1 ≤ o) {f : ℕ → ℕ} (hAk : ∀ a ∈ A, k ≤ liftVal f A a) (hko : k ≤ liftOff f A o)
+    {ws : List (ℕ × TrioSeq)} (hs : OkWsk k b ws) :
+    GpT A o f b (farW b (b + liftOff f A o + 1) ws) :=
+  FarCWk_of k b ws hs.2 A o f b le_rfl hs.1 hA hA1 ho hAk hko
+
 theorem GpT_farWsk {k : ℕ} {A : List ℕ} {o b : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a)
     (ho : 1 ≤ o) (hAk : ∀ a ∈ A, k ≤ a) (hko : k ≤ o) {ws : List (ℕ × TrioSeq)} (hs : OkWsk k b ws)
     (f : ℕ → ℕ) : GpT A o f b (farW b (b + liftOff f A o + 1) ws) :=
-  FarCWk_of k b ws hs.2 A o f b le_rfl hs.1 hA hA1 ho hAk hko
+  GpT_farWskL hA hA1 ho (fun a ha => le_trans (hAk a ha) (by unfold liftVal; omega))
+    (le_trans hko (by unfold liftOff; omega)) hs
 
 /-- ★ 遠い字のあとが okWk の列の遠い語の並びは、節点の子の並び（語の述語）。 -/
 theorem PVF_farWsk {k : ℕ} {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a)
     (ho : 1 ≤ o) (hAk : ∀ a ∈ A, k ≤ a) (hko : k ≤ o) (b : ℕ) (ws : List (ℕ × TrioSeq))
     (hs : OkWsk k b ws) : PVF A o b (farW b (b + o + 1) ws) := by
-  have := farWk_PVP (FarCWk_of k b ws hs.2) hA hA1 ho hAk hko (fun _ => 0) b le_rfl hs.1
+  have := farWk_PVP (FarCWk_of k b ws hs.2) hA hA1 ho (fun _ => 0)
+    (fun a ha => by rw [liftVal_zeroF]; exact hAk a ha) (by rw [liftOff_zeroF]; exact hko) b le_rfl
+    hs.1
   rw [liftOff_zeroF] at this
   exact ⟨this, Fr_farW _ _ ws⟩
 

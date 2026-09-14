@@ -27,16 +27,15 @@ theorem BotGe_cons {Q : TrioSeq} {d v r z : ℕ} (hvr : v ≤ r) (hbot : BotGe Q
     simp only [List.length_cons] at hy
     exact hbot c y' hc (by omega) (by simpa using h2)
 
-theorem reOff_k {f g : ℕ → ℕ} {A : List ℕ} {k s : ℕ} (hAk : ∀ a ∈ A, k ≤ a) (hs : s ≤ k) :
+theorem reOff_k {f g : ℕ → ℕ} {A : List ℕ} {k s : ℕ} (hAk : ∀ a ∈ A, k ≤ liftVal f A a) (hs : s ≤ k) :
     reOff f g A s = s :=
   reStair_k 0 f g hAk (m := s) (by omega)
 
-theorem lowP_k {f : ℕ → ℕ} {A : List ℕ} {k τ : ℕ} (hAk : ∀ a ∈ A, k ≤ a) (hτ : τ ≤ k) :
+theorem lowP_k {f : ℕ → ℕ} {A : List ℕ} {k τ : ℕ} (hAk : ∀ a ∈ A, k ≤ liftVal f A a) (hτ : τ ≤ k) :
     lowP f A τ = [] := by
   unfold lowP
   apply List.filter_eq_nil_iff.mpr
   intro a ha
-  have h1 : a ≤ liftVal f A a := by unfold liftVal; omega
   have h2 := hAk a ha
   simp only [decide_eq_true_eq]
   omega
@@ -77,7 +76,9 @@ theorem okWk_ctx {k : ℕ} (hk1 : 1 ≤ k) : CtxP (GC []) [] k (fun _ => okWk k)
   · -- 遠い語の中
     have hwb : b ≤ bb := (hR _ (List.mem_append_right _ (List.mem_singleton_self _))).1
     have hR0 : RawWsk k bb ws := fun w' h' => hR w' (List.mem_append_left _ h')
-    have hso : s ≤ liftOff f' A o := by unfold liftOff; omega
+    have hso : s ≤ liftOff f' A o := le_trans hsk' hko
+    have hGk : ∀ g : ℕ → ℕ, (∀ a ∈ A, k ≤ liftVal (addF f' g) A a) ∧ k ≤ liftOff (addF f' g) A o :=
+      fun g => ⟨liftVal_ge_addF hAk g, liftOff_ge_addF hA hko g⟩
     have hbotP : BotGe (mlift P b (bb - b)) d (bb + s) := by
       have := BotGe_slift hbot (stair_step b (bb - b))
       rw [← mlift_eq_slift] at this
@@ -110,19 +111,19 @@ theorem okWk_ctx {k : ℕ} (hk1 : 1 ≤ k) : CtxP (GC []) [] k (fun _ => okWk k)
       (fun g b' hb' τ L h1τ hτ hL hGL => ?_)
     · unfold fwW
       exact BotGe_node (Fr_farW _ _ _) (by omega) (BotGe_cons (by omega) hbotP)
-    · rw [eP b' hb', reliftX_farWk hA hAk b' f' g _ (hRP b' hb')]
-      exact hP0.2.2 b0 ws hC A o (addF f' g) b' (by omega) (hRP b' hb') hA hA1 ho hAk hko
-    · rw [eP b' hb', reliftX_farWk hA hAk b' f' g _ (hRP b' hb')]
+    · rw [eP b' hb', reliftX_farWk hA b' f' g hAk _ (hRP b' hb')]
+      exact hP0.2.2 b0 ws hC A o (addF f' g) b' (by omega) (hRP b' hb') hA hA1 ho (hGk g).1 (hGk g).2
+    · rw [eP b' hb', reliftX_farWk hA b' f' g hAk _ (hRP b' hb')]
       have hτs : τ < s := by rw [reOff_k hAk hsk'] at hτ; exact hτ
       have hGL' : GpT [] τ (addF f' g) b' L := by
-        simpa [GC, lowP_k hAk (show τ ≤ k by omega), sumOn] using hGL
+        simpa [GC, lowP_k (hGk g).1 (show τ ≤ k by omega), sumOn] using hGL
       obtain ⟨Y2, hY2⟩ : ∃ Y2 : TrioSeq, Y2 = mlift P b (b' - b) ++
           shiftr01 (d - 1) 0 (((1, b' + τ, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 L) := ⟨_, rfl⟩
       have hY : okWk k b' Y2 := by rw [hY2]; exact h2' _ b' (by omega) τ L h1τ hτs hL hGL'
       have hFrY : Fr Y2 := by rw [hY2]; exact Fr_append (Fr_mlift hP _ _) (Fr_shift_node _ _ _)
       have hs2' : RawWsk k b' (ws ++ [(b', Y2)]) :=
         RawWsk_snoc (RawWsk_mono (by omega) hR0) ⟨le_rfl, hFrY, hY.1, hY.2.1⟩
-      have := hY.2.2 b0 ws hC A o (addF f' g) b' (by omega) hs2' hA hA1 ho hAk hko
+      have := hY.2.2 b0 ws hC A o (addF f' g) b' (by omega) hs2' hA hA1 ho (hGk g).1 (hGk g).2
       rw [farW_snoc] at this
       dsimp only at this
       have eY : fwW b' (b' + liftOff (addF f' g) A o + 1) b' Y2
