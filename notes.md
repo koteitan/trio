@@ -30499,3 +30499,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   FarCAt→GTC の橋（深い鎖の BwT を hFar の FarP 帰納から出す）が未解決の核。新シート行はまだ。
 - **次の戦略**: (1) FarCAt→BwT を FarP の帰納（級/段）で直接作る新補題を検討（GpT→Wstarv の橋）。
   または (2) 一歩下がって、深い鎖を含まないシート行（もしあれば）や別ルートを探す。(1) が本命だが大きい。
+
+## 追記610: 壁の確定的な特徴づけ — 2つの並行系。上位の F 字の語には GTs→GT の橋が無い（TF_tieG は段を足す）
+
+- 枠組みは2つの並行系:
+  - **具体側**（実際の悪い列）: SCF → GTall → GT → BwT →（WordsG）→ StarOK → Wg → W。GT = 追記付け足しで BwT 保存。
+  - **抽象側**（節点の中身）: GpT/GPF/GTs/PVF。GTs_of_GpT: GpT[]1→GTs。GF_of_GPF: GPF[]1→GF(=Gof=GTs)。
+- 橋: 抽象→具体は **TF_tieG のみ**（GF を節点 (1,u+1,0) の子として包む = **段を足す**）。同段の GTs→GT は無い。
+- 意味: 深い鎖は抽象側（hFar/GPF）で緑。GT にするには TF_tieG で包む（段が上がる）。
+  HeJ の深い鎖は TF 語の F タイの子（包まれた = 段が上）。**1688 の深い鎖は上位（collapse の語）で F 字と同居**し、
+  包めない（上位のまま）。よって collapse の具体側の健全性（BwT_CLTL, tree の GdT）を同段に拡張するしかない。
+- collapse の語の GTC は GdT（tree, TreeTs 必須）由来。深い鎖は TreeTs を弾く。gtc_oper の展開（towR）も同段の深い鎖で
+  木に落ちない。⇒ **collapse の健全性を同段構造に拡張** = FarP を具体 BwT 世界で再導出する大仕事。
+- 正直な結論: 深い葉は「上位の F 字の語に同居する同段の鎖」で、既存の2系の橋（TF_tieG=段上げ）では届かない。
+  部品（hFar, upleaf_deep_coreT）は緑・再利用可。核（collapse 同段健全性）は未達で、複数セッション級の大仕事。
+- 次善策の検討: 深い鎖が「別の TF 語」に分離できる標準形の行があるか（HeJ 型）を bms -s で調べる。
+  あれば段上げで包めて進める。1688 自体は同居型で不可。
