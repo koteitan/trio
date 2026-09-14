@@ -91,17 +91,39 @@ def far_contents_k(M, s, e, r, v, kk):
     return items
 
 
-def okwfk_lean(M, items, v, kk):
+def okwfk_lean(M, items, v, kk, tac='decide'):
     proof = f'(okWkF_nil {kk} {v})'
     for it in items:
         if it[0] == 'load':
             _, a, b = it
-            proof = f'(okWkF_load (k := {kk}) (by decide) {proof} {load_mem(M, a, b, v)} rfl)'
+            proof = f'(okWkF_load (k := {kk}) (by {tac}) {proof} {load_mem(M, a, b, v)} rfl)'
         else:
             _, a, b, tau = it
-            proof = (f'(okWkF_node (k := {kk}) (τ := {tau}) (by decide) (by decide) {proof} '
+            proof = (f'(okWkF_node (k := {kk}) (τ := {tau}) (by {tac}) (by {tac}) {proof} '
                      f'{gp(M, children(M, a, b), v, [], tau)})')
     return proof
+
+
+def far_contents_Fr(M, s, e, r, v, kk):
+    """遠い字のあとが低い列（荷と段 v+τ（τ ≤ kk）の節点）で、最後が行 1 が字と同じ r の子のない節点（F）の語。GzY.PVF_farW_Fr。"""
+    if M[s][1] != r or M[s][2] != 1:
+        return None
+    ch = children(M, s, e)
+    if len(ch) < 2 or M[ch[0][0]] != (M[s][0] + 1, r, 1) or ch[0][1] - ch[0][0] != 1:
+        return None
+    last = ch[-1]
+    if M[last[0]] != (M[s][0] + 1, r, 0) or last[1] - last[0] != 1:
+        return None
+    items = []
+    for (a, b) in ch[1:-1]:
+        c = M[a]
+        if c[2] == 0 and c[1] <= v:
+            items.append(('load', a, b))
+        elif c[2] == 0 and 1 <= c[1] - v <= kk:
+            items.append(('node', a, b, c[1] - v))
+        else:
+            return None
+    return items
 
 
 def far_contents_F(M, s, e, r, v):
@@ -210,7 +232,19 @@ def gp(M, kids, v, A, o):
         k = nf
         nl = nf
     tF = None
-    if all(a >= 2 for a in A) and nf < len(kids):
+    fr = None
+    if A == [] and nf < len(kids):
+        fr = far_contents_Fr(M, kids[nf][0], kids[nf][1], v + o + 1, v, o)
+    if fr is not None:
+        # 遠い字と低い列のあとの、行 1 が字と同じ F（GzY.PVF_farW_Fr）。中身は全ての k ≥ o で okWk k
+        Pp = f'(OkWsk_nil k {v})'
+        for fc in reversed(fcs):
+            Pp = f'(OkWsk_cons le_rfl {okwfk_lean(M, fc, v, "k", "omega")} {Pp})'
+        w = (f'(PVF_farW_Fr (o := {o}) (by decide) le_rfl (fun k hk => {Pp}) '
+             f'(fun k hk => {okwfk_lean(M, fr, v, "k", "omega")}))')
+        k = nf + 1
+        nl = nf + 1
+    elif all(a >= 2 for a in A) and nf < len(kids):
         fF = far_contents_F(M, kids[nf][0], kids[nf][1], v + o + 1, v)
         if fF is not None:
             # 遠い字と低い列のあとの空の F（GzP.GPF_farW_F）。あとに字が続くと PVF が要るので不可
@@ -366,7 +400,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport GzW\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport GzY\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
-               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW\n\n')
+               'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
