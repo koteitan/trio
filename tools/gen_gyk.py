@@ -854,6 +854,98 @@ def top_l(M, ch, a, v):
     return st, k
 
 
+def ds_lean(M, ds, v):
+    dl = []
+    dp = f'(HbV.DsOK_nil {v})'
+    for d in reversed(ds):
+        l, pu = units_lean(M, d, v)
+        dl.insert(0, f'unitsC {v} {l}')
+        dp = f'(HbV.DsOK_cons (HbV.LoadSeq_of (by simp [NoTie]) {pu}) {dp})'
+    return '([' + ', '.join(dl) + '] : List TrioSeq)', dp
+
+
+def ps_lean(M, ps, v):
+    lits = []
+    proof = f'(HbV.PsL_nil {v})'
+    for (ds, us) in reversed(ps):
+        Dl, dp = ds_lean(M, ds, v)
+        l, pu = units_lean(M, us, v)
+        lits.insert(0, f'({Dl}, {l})')
+        proof = f'(HbV.PsL_cons {dp} (by simp [NoTie]) {pu} {proof})'
+    return '([' + ', '.join(lits) + '] : List (List TrioSeq × List (Option TrioSeq)))', proof
+
+
+def top_lf(M, ch, a, v):
+    """荷の子の語の並び、最後の F のタイの子の末尾が F の位置の子のないタイの語、TF の語の並び（HbX.starOK_CLF）。"""
+    k = 0
+    ps = []
+    last = None
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        cc = children(M, s, e)
+        if not cc or M[cc[0][0]] != (a + 2, v + 1, 1) or cc[0][1] - cc[0][0] != 1:
+            break
+        rest = cc[1:]
+        n = 0
+        while n < len(rest) and M[rest[n][0]] == (a + 2, v + 1, 0):
+            n += 1
+        ties = rest[:n]
+        units = rest[n:]
+        ds = []
+        fleaf = False
+        ok = True
+        for ti, (x, y) in enumerate(ties):
+            gcs = children(M, x, y)
+            d = []
+            for gi, (x2, y2) in enumerate(gcs):
+                c2 = M[x2]
+                if c2[2] == 0 and c2[1] <= v:
+                    d.append(('some', x2, y2))
+                elif (c2 == (a + 3, v + 1, 0) and y2 - x2 == 1 and ti == len(ties) - 1
+                      and gi == len(gcs) - 1 and not units):
+                    fleaf = True
+                else:
+                    ok = False
+                    break
+            if not ok:
+                break
+            ds.append(d)
+        if not ok:
+            break
+        if fleaf:
+            last = (ds[:-1], ds[-1])
+            k += 1
+            break
+        us = []
+        for (x, y) in units:
+            c = M[x]
+            if c[2] == 0 and c[1] <= v:
+                us.append(('some', x, y))
+            else:
+                ok = False
+                break
+        if not ok:
+            break
+        ps.append((ds, us))
+        k += 1
+    if last is None:
+        raise Fail('top lf')
+    words = []
+    while k < len(ch) and M[ch[k][0]] == (a + 1, v + 1, 1):
+        s, e = ch[k]
+        words.append(top_forest(M, children(M, s, e), v))
+        k += 1
+    w = f'(WordsG_nil {v})'
+    for f in reversed(words):
+        w = f'(WordsG_consT (v := {v}) {f} {w})'
+    L, proof = ps_lean(M, ps, v)
+    Dl, dp = ds_lean(M, last[0], v)
+    l, pu = units_lean(M, last[1], v)
+    st = (f'(HbX.starOK_CLF (v := {v}) {L} {proof} {Dl} {dp} (unitsC {v} {l}) '
+          f'(HbV.LoadSeq_of (by simp [NoTie]) {pu}) {w})')
+    return st, k
+
+
 def tree(M, i):
     a, v, z = M[i]
     if z != 0:
@@ -861,7 +953,7 @@ def tree(M, i):
     end = subtree_end(M, i)
     ch = children(M, i, end)
     st = None
-    for top in (top_old, top_qb, top_n, top_l):
+    for top in (top_old, top_qb, top_n, top_l, top_lf):
         try:
             st, k = top(M, ch, a, v)
             break
@@ -912,7 +1004,7 @@ if __name__ == '__main__':
     if out:
         name = out.split('/')[-1].replace('.lean', '')
         hdr = (f'/-\n{name}.lean: tools/gen_gyk.py が生成。錨の列つきの子の述語で証明するシート行。\n-/\n'
-               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\n\nnamespace TRIO\nnamespace {name}\n\n'
+               f'import GzJ\nimport GzS\nimport HaJ\nimport HaL\nimport HaP\nimport HaT\nimport HaV\nimport HaZ\nimport HbB\nimport HbK\nimport HbV\nimport HbX\n\nnamespace TRIO\nnamespace {name}\n\n'
                'open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY\n'
                'open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD GzF GzH GzI GzJ GzM GzN GzP GzS GzU GzV GzW GzY HaA HaC HaD HaE HaF HaG HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB HbJ HbK\n\n')
         open(out, 'w').write(hdr + '\n'.join(body) + f'\nend {name}\nend TRIO\n')
