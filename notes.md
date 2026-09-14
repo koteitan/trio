@@ -30080,5 +30080,25 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
      Qbase = [] は F（FTLt の (1,r,0)、upleaf_nil の写し）、Qbase = Q'++[(us0,0)] は tie0（chT_plugQ_snoc で (1,r,0) を露出）。
   4. upleaf_deep_core（q=r, R）+ chT_Xtow + Gd_deep_towers（Gd_mono で道 Q に降ろす）+ imgT_plugQ_spine で hrep。
 - Gd_tie_nil（us0 = [] の Gd_tie。ExtNil だけ要る）も要る（Gd_jump は hX を us0 の像でしか使わない＝空なら ExtNil で足りる）。
-- 現状の緑の資産（commit 済み）: HeQ（upleaf_deep_core・Xtow・chT_Xtow）、HeR（clD・Gd_redescend・Gd_deep_towers）。
-  深い葉の基盤は完成。残りは Gd_deepleaf（上の 1〜4）と、Gd_tie_nil。その後、木の述語の拡張・最上段の分離・生成器。
+- 現状の緑の資産（commit 済み）: HeQ（upleaf_deep_core・Xtow・chT_Xtow）、HeR（clD・Gd_redescend・Gd_deep_towers・
+  clD_seg・split_exists）。深い葉の基盤は完成。残りは Gd_deepleaf（上の 1〜4）と、Gd_tie_nil。
+
+## 追記587: Gd_deepleaf の残りの詳細（R の行列条件と 2 場合の描画）
+
+- HeR に clD_seg・split_exists 追加（緑、commit 済み）。道 Q を Qbase ++ spine に分けられる。
+- Gd_deepleaf を書くのに、upleaf_deep_core の仮定（R = chT(plugQ spine (imgT us ++ [tie l []])) について）を証明する必要:
+  - hsr: srow R (末尾) = 1（葉 (・, r+l, 0) は行 2 = 0、行 1 = r+l > 0）。
+  - hd: domT R (r+l)。
+  - hpM: hasParent ((0,r,0)::R) 1 R.length（悪い根 F = 行 1 r が葉 (行 1 r+l) の行 1 の親）。
+    これには descent の全列の行 1 が r+l 以上（＝ r より真に大きく、l=1 では r+1）であることが要る。
+    spine は段 l（行 1 r+l）、us（葉の兄弟）は段 l の木なら行 1 ≥ r+1。塊（ch Z）が混じると行 1 が r 以下になり得るので、
+    us は段 l の節点だけ（1688〜1695 は tie1 だけ）と仮定するか、行 1 > r の補題を課す。
+  - これは HeH.upleaf_core が R = D ++ [(1,m,0)]（D は Fr）から hpM/hnpR を導くのと同じ論法だが、
+    深い R（chT(plugQ spine ...)）の行 1 の構造の補題が新しい。chTQ spine の列は行 1 r+l、chT us の列は us に依存。
+- 描画の 2 場合:
+  - Qbase = []: 悪い根 F。farWt = farWt ws ++ (Yp ++ shiftr01 1 0 ((1,r,0)::(chT Tinner)↑1))、
+    Yp = (1,r,1)::(FTLt Lds)↑1（HeH.upleaf_nil の写しだが upleaf_core → upleaf_deep_core）。
+  - Qbase = Q''++[(us0,0)]: 悪い根 tie0。chT_plugQ_snoc で tie0 の (1,r,0) を露出。Pre に Q'' と us0 と F が入る。
+- 結び: hrep m' = Gd_deep_towers を Gd_mono で道 Q に降ろし、chT_Xtow + imgT_plugQ_spine で tow の形に合わせる。
+- 次: (1) 深い R の行列条件の補題（hpM/hd/hsr、chT(plugQ spine (W++[tie l[]])) の行 1 構造、W は段 l の木）、
+  (2) 2 場合の描画補題、(3) Gd_deepleaf を組む。まず (1) の hsr/hd（易しい）から。
