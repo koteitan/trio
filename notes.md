@@ -29793,3 +29793,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   GTC_oper と HcS.GoodTU_all で GTC CLU v K（GTC_noneFlat）。starOK_last（CLU の並びのあとに最後の語）で R1641_mem。
 - 次: 行 1642 (2,1,0)(3,1,0)(4,1,0)。GTC_tie（x = 3）の荷 Z は (4,1,0) の子で、展開の荷の下に語の写しが入る（追記569）。
   最上段の F のタイの子を高さ 2 の入れ子にし、その荷の文脈と遠い段の単位（UT の tie の子）を追記570 の設計で作る。
+
+## 追記572: HdL〜HdP（緑）: 遠い段の入れ子の子の並び（高さの跳びの階層）
+
+- 行 1642 (2,1,0)(3,1,0)(4,1,0) を最後の語だけで示す場合も、展開で入れ子の子の並びのあとに新しい F のタイと中身の荷が出て、
+  GTC_loadTop で文脈に入れ子の語が入る。遠い段の入れ子が要る（追記569 のとおり）。
+- HdL: GT t A k H c x := 全ての埋め込み (G, S, o, f)、段 u ≥ c、良い Lds（GoodChtX）、高さ t の良い道 Q について、
+  最後の語の F のタイの子の並び Lds ++ [plugQ Q (x の像)] が、全ての段 b ≥ u と良い接頭辞で GpT。
+  道は最終の級で書く: PG 0 Q := Q = []、PG (t+1) (Q ++ [us0]) := PG t Q ∧ GT t us0。GT_emb / GT_lift は定義の合成だけで出る。
+  GT_jump: GT (t+1) cs → (GT t us0 → GT t (us0 ++ [tie cs]))、GT_of_jump はその逆。
+- HdM・HdN: 低い塊の族 NXs s（GT s の並びの最後に塊を足す）の差し込み口の公理。
+  最後の語は farWt ws ++ (fwH (FTLt (Lds ++ [plugQ Q []])) u [] ++ (塊までの語)↑(|Q|+2)) で、道のタイの頭と F のタイは行 1 が r
+  （PathCone_fwQ）なので HdJ の tstep_* で段が出る。flat は、高さ 0 は F のタイの複製、高さ s+1 は道の最後のタイの複製（GT_jump の繰り返し）。
+  道を最終の級で書いたので、oper / orph / tie / flat の規則に高さについての帰納は要らなかった。
+- HdO: 節点の族 RNs s と FarP（HdG の写し。底の祖先は BotGe_path）。
+- HdP: 空のタイ GT_tieE（FarP_GpT_lt、h2 は埋め込み先の級の RNs t の塊を道の同じ位置に置く）、GT_nil、低い塊 ChLowS、
+  GT_all（低い木は全ての高さ・級で良い）、GoodChtX_snocL（最後の語の F のタイの子に低い木の並び）。
+- 次: 最上段の文脈を木の単位の語にする（HdQ: 語 wLT・文脈 CLT・潰れ topCLT_Wg。HdR: 最上段の跳びの階層と荷・空のタイの規則）、生成器、行 1642〜1646。
