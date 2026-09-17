@@ -31316,3 +31316,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   3. **不変量 + 消費側**: `W5.factB` 拡張(oper 窓 z'=0∨e'=0)+ L106 の tower_of_measure_step2 を restricted MeasOK2 で流す。
 - **次段**: restricted MeasOK2 の e=0(src_ge_block で窓<|Q|)を Lean 化。着手。
 - commit: notes。scratchpad: invariant.py(108961/0)。cron 残置。
+
+## 追記666: ★★★★★★★★ 私の z=0∨e=0 不変量が team の §275 assembly を unblock。hsnoc_gen は P 汎用
+
+- **L106 は 13s で green ビルド**(0-sorry)。`hsnoc_gen`(L106:8817)は **P 汎用**(`{P : TrioSeq→ℕ→ℕ→Prop}`, hIH/hPV が P)。
+  `tower_of_measure_step2`(5433)も P,meas でパラメータ化。∴ P を自由に選べる。
+- **★ team は §275.1 で 2 義務に詰まっていた**: (O-A) 窓への述語遺伝 — **hz0 は §263 で偽**(HeredZ0)⟹ 詰まり。(O-B) |V|<|Q|(208/208 未証明)。
+- **★★ 私の `z=0 ∨ e=0` は妥当な不変量**(hz0 と違い、oper 窓で 108961/0 保存)。これで両義務が解ける:
+  - **(O-A)**: 窓は `z'=0 ∨ e'=0` を継ぐ(`W5.oper_window_row2_zero`: srow=2→z'=0、srow≤1→e'=0=d1)。TowerR は §276 `hr0_wnd`(緑)。
+  - **(O-B)**: `z=0∨e=0 → 窓<|Q|`(restricted MeasOK、e=0 は src_ge_block、z=0 は hz0)。
+- **∴ 実装計画**: `P Q d e := TowerR Q d e ∧ (entry Q 2 0=0 ∨ e=0)`。`tower_of_measure_step2 P towerMeas` + `hsnoc_gen`(P 汎用)で
+  restricted towerClosed → MTowerClosedS(消費側は z=0∨e=0 のみ渡す)→ goal。**team が hz0 で詰まった所を z=0∨e=0 で抜ける**。
+- **残 Lean**: (1) restricted MeasOK((O-B) 窓<|Q| for z=0∨e=0)。(2) P 遺伝((O-A) 不変量、道具は揃)。(3) 消費側接続。
+- **次段**: (O-B) restricted MeasOK を Lean 化(e=0=src_ge_block, z=0=hz0)。import L106。
+- commit: notes。cron 残置。
