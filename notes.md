@@ -31538,6 +31538,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **壁の正体を精密化**: srow=2 窓根 c は row-2 親で `le1 T c last`(末尾の行1祖先)だが、窓の**中間列** c+i の行1祖先性(`le1 T c (c+i)`)は nextrel2 から出ない。= **bad-part 窓で行1が単調(窓根が行1最小)= BM4 subtree 構造**。反例的には row1 が窓内で減る列 p は「p が孤児 or 非根親」で処理されうるが、根経由の h2_cone は使えず、一般証明は subtree 補題待ち。
 - **∴ trio 停止性 = {全 positive 機械 green} + {窓遺伝 4/5 green} + {行1最浅の窓遺伝(唯一の hard core = BM4 subtree 補題)} + {j=0 機械的組立}**。
 - commit: notes + lean/L106.lean。cron 残置。
+
+## 追記684: ★★★ 測定確定 + 戦略的発見 —— 窓遺伝は reachable で成立、真の不変量は ST_TS
+
+- **測定(le1c_window.py, faithful, 教訓2 準拠)**: reachable 21384 列の srow=2 bad-part 窓 7841 個で **le1c FAIL=0, row1-shallow FAIL=0**。⟹ **窓遺伝(行1最浅/le1連結)は reachable 域で常に成立**。前回の反例(行1 dip: (3,3,0)(4,4,1)(5,2,1)(6,5,1))は **非reachable**。
+- **∴ StdInv は不十分**(非reachable を許す)。**真の不変量 = `ST_TS`**(Trio.lean:124): reachable 標準形 = `diag v` + `M⟦n⟧`(展開)の帰納閉包。ST_TS は**展開で閉じている**(oper 構成子)。
+- **既存の標準形/CNF 理論を発見**:
+  - `ST_TS`(Trio:124), `cnf : Three → Prop`(Cnf:41), `Goper:278`「展開一歩での CNF 保存(無条件)」。
+  - **`translate_oper_bad`(Decrease:310, 証明済!)**: `translate(M⟦n⟧) <o translate M`(**順序数測度の減少**、hasParent があれば無条件)。⟹ 順序数割当は既にある。
+  - `Decrease:268`: standard forms で window bound は `le1_window_desc` で discharge。`Term.le1_window_desc/le1_iff_chain_window/le1_of_le1_subtree`(Gcopy)= le1 木の機械。
+- **Final.lean は多 route**: 順序数(olt, `TRIO_terminates` 残差 TowerExp/TowerGraft2)も W(MTowerClosedRow2)も、みな W-tower/graft 閉包に帰着。MTowerClosedRow2 が最clean(graft/W全称なし)。
+- **戦略的パス**: 塔基底の不変量を **ST_TS に制限**(reachable、窓遺伝が実測成立)。窓遺伝を **ST_TS 帰納(diag 基底 + oper ステップ、CNF 保存経由)** で証明。ad-hoc StdInv でなく既存標準形理論に接続。
+- ★教訓7: **測度が壊れる反例が非reachable なら、不変量を reachable 集合(ST_TS)に取れば良い**。ST_TS は展開閉で、既存の translate/CNF 理論がある。私の StdInv 再発明でなく ST_TS に乗るべき。
+- commit: notes(scratchpad: le1c_window.py)。cron 残置。
 - **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
 - **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。
