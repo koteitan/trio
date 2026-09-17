@@ -31181,3 +31181,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **premise 遺伝の残り = Lean (1)(2)**: e=0 塔の confinement とその block 0 還元。`H2cone(Q) ∧ zle1 Q → H2cone(mTower Q d 0 n)`。
   機構は確定(54400/0): e=0 でブロック根は row1=Q[0].1 一定 → in-cone row2>0 は block 0 限局 → block 0=Q で H2cone(Q) に帰着。le1 の e=0 解析が要る。
 - commit: notes + lean/W5.lean。cron 残置。
+
+## 追記657: ★★★★★★ premise 遺伝 ((w5)) 完全 Lean 化。survey で residual=MTowerClosedRow2 確認、confinement 含む全部品 GREEN
+
+- **survey(教訓「作る前にトップ定理を見る」)**: built/0-sorry は L105Cap/Final/H12Export/R2LT。H12A2(0)/H12H2(0)/L106(1 sorry)は tracked だが**未ビルド**作業ファイル。
+  真の built residual = `MTowerClosedRow2`(Final が仮定, `TRIO_terminates_of_mTowerClosedRow2`)。H12A2 が hcl2 に還元。私の W5 は正しい residual 向き。
+  ★重要ツールは全て **H12Export(built)にコピーがある**: `nextrel1_mTower_src_ge_block_of_witness`(6456), `le0_root_of_shallow`(2725), `entry1_lt_of_le1_ne`(2393), `entry1_mTower_block_e_zero`(1166), `le1_append_left`(5979)。H12H2 をビルドせず組めた。
+- **消費側 2 枝の確認**: `liftTowerExp2`(srow=2)→ **fact B で z=0 強制**(root が末尾の行2親)→ hz0 半分。`liftTower1`(srow=1)→ **e=0 塔**(shTower)、root row2=z∈{0,1} → confinement。
+- **★ confinement の orphan gap を解消**: `hr0`(根が狭義最浅)⟹ `le0_root_of_shallow` で根 0 は全列の le0 祖先。`le1 T 0 j` は `entry Q 1 0 < entry Q 1 i` を強制 ⟹ i は根 0 を候補に持ち **必ず行1親を持つ**(孤児不可)⟹ `nextrel1_mTower_src_ge_block_of_witness` で block 内 ⟹ 限局。任意窓で偽なのは hr0 が無いから。
+- **lean/W5.lean(全 GREEN, 0 sorry)** に追加:
+  - `confinement`: `le1 (mTower Q d 0 n) 0 j → j < |Q|`(強帰納 + src_ge_block + le0_root_of_shallow)。
+  - `H2cone_mTower_e0`: `H2cone(Q) ∧ hr0 → H2cone(mTower Q d 0 n)`(confinement + mTower_cons で block 0=Q に還元)。
+  - `H2cone_mTower`(**CLAIM 1**): `H2cone(Q) ∧ hr0 ∧ (e=0 ∨ entry Q 2 0=0) → H2cone(mTower Q d e n)`。既存 hz0 半分 + e=0 半分を統合。
+- **∴ premise 遺伝 ((w5)) は完全に Lean 化**(§197 の懸念は解消)。H2cone は「Q の不変量 + hr0 + 側条件(oper では fact B が供給)」で塔に遺伝。
+- **R2 誘導の残り 2 部**: (2) rank 減少合成(§199、接続 blockRoot_window_eq_iff/src_ge_block は green)、(3) Prod.Lex(|V|,rank) の WF 誘導 skeleton(未着手)。
+- commit: notes + lean/W5.lean。scratchpad: w5_conf.lean/w5_e0red.lean。cron 残置。

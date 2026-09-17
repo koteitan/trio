@@ -9,15 +9,16 @@ W5.lean: R2 測度誘導の「前提 h2cone(V) の遺伝」((w5), L105Cap §197)
 - 構造分解: `oper_eq_mTower`（悪根=根）で oper 結果は full mTower。その根の行 2 で場合分け:
     root 行2 = 0 → hz0 で `h2_cone`（下 `H2cone_mTower_of_hz0`, 無条件で ∀ d e）。
     root 行2 = 1 → fact B（下 `factB`）で srow(末尾)≤1 ⟹ oper の行1リフト e' = 0
-                  ⟹ e=0 塔では in-cone 行2>0 列が block 0 に限局（confinement, 実測 54400/0）
-                  ⟹ `H2cone(mTower Q d 0 n) ⟸ H2cone(Q)`（未 Lean、残り）。
+                  ⟹ e=0 塔では in-cone 行2>0 列が block 0 に限局（下 `confinement`, GREEN）
+                  ⟹ `H2cone(mTower Q d 0 n) ⟸ H2cone(Q)`（残り: block 0 還元の plumbing）。
 
 本ファイルは非 root の作業ファイル（L106/H12H2 と同様）。全定理 0 sorry。
 -/
 import L105Cap
+import H12Export
 namespace TRIO
 namespace W5
-open Wset L105
+open Wset L105 H12Export
 
 /-- The h2cone premise (§197.3): `h2` restricted to the cone. Fed to the R2-measure IH. -/
 def H2cone (V : TrioSeq) : Prop :=
@@ -63,6 +64,92 @@ theorem factB {M : TrioSeq} (hMne : M ≠ [])
   have hlt : entry M 2 0 < entry M 2 (M.length - 1) := hn2.2.2.2.1
   have hb : entry M 2 (M.length - 1) ≤ 1 := hz _ hlast
   omega
+
+/-- **★ confinement (e=0)**: `e = 0` の塔で、根の行 1 錐に入る列は block 0 の中だけ。
+    le1 の chain の各段は同ブロック内（`nextrel1_mTower_src_ge_block_of_witness`）。
+    孤児ケースは `hr0`（根が le0 で全列の祖先, `le0_root_of_shallow`）で排除:
+    `le1 T 0 j` は `entry Q 1 0 < entry Q 1 i` を強制し、根 0 が候補になるので i は必ず行1親を持つ。 -/
+theorem confinement {Q : TrioSeq} {d n : ℕ} (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) :
+    ∀ j, Relation.ReflTransGen (nextrel1 (mTower Q d 0 n)) 0 j → j < Q.length := by
+  have hTlen : (mTower Q d 0 n).length = n * Q.length := mTower_length Q d 0 n
+  have hT0 : 0 < (mTower Q d 0 n).length := by rw [hTlen]; exact Nat.mul_pos hn hQ1
+  intro j
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    intro hrt
+    rcases Relation.ReflTransGen.cases_tail hrt with heq | ⟨c, hrtc, hcj⟩
+    · omega
+    · have hcjlt : c < j := hcj.2.2.1
+      have hjT : j < (mTower Q d 0 n).length := hcj.2.1
+      have hcQ : c < Q.length := ih c hcjlt hrtc
+      by_contra hjge
+      rw [Nat.not_lt] at hjge
+      have hi : j % Q.length < Q.length := Nat.mod_lt _ hQ1
+      have hji : j = (j / Q.length) * Q.length + j % Q.length := by
+        rw [Nat.mul_comm]; exact (Nat.div_add_mod j Q.length).symm
+      have hk1 : 1 ≤ j / Q.length := (Nat.one_le_div_iff hQ1).mpr hjge
+      have hkn : j / Q.length < n := by
+        refine Nat.div_lt_of_lt_mul ?_
+        rw [Nat.mul_comm]; rw [hTlen] at hjT; exact hjT
+      have hle1 : le1 (mTower Q d 0 n) 0 j := ⟨hT0, hjT, hrt⟩
+      have hlt1 : entry (mTower Q d 0 n) 1 0 < entry (mTower Q d 0 n) 1 j :=
+        entry1_lt_of_le1_ne hle1 (by omega)
+      have he0 : entry (mTower Q d 0 n) 1 0 = entry Q 1 0 := by
+        have := entry1_mTower_block_e_zero Q d n 0 0 hn hQ1
+        simpa using this
+      have hej : entry (mTower Q d 0 n) 1 j = entry Q 1 (j % Q.length) := by
+        conv_lhs => rw [hji]
+        exact entry1_mTower_block_e_zero Q d n (j / Q.length) (j % Q.length) hkn hi
+      rw [he0, hej] at hlt1
+      have hipos : 0 < j % Q.length := by
+        by_contra hi0
+        have : j % Q.length = 0 := by omega
+        rw [this] at hlt1; omega
+      have hle0 : le0 Q 0 (j % Q.length) := le0_root_of_shallow hQ1 hr0 (j % Q.length) hipos hi
+      have hpar : hasParent Q 1 (j % Q.length) := hasParent_one_of hi hipos hle0 hlt1
+      obtain ⟨y, hy, -⟩ := hpar
+      have hyn : nextrel1 Q y (j % Q.length) := by
+        rw [nextR, if_neg (by decide), if_pos rfl] at hy; exact hy
+      have hcj' : nextrel1 (mTower Q d 0 n) c ((j / Q.length) * Q.length + j % Q.length) := by
+        rw [← hji]; exact hcj
+      have hge : (j / Q.length) * Q.length ≤ c :=
+        nextrel1_mTower_src_ge_block_of_witness Q hkn hi hyn hcj'
+      have hkQ : Q.length ≤ (j / Q.length) * Q.length := by
+        calc Q.length = 1 * Q.length := (one_mul _).symm
+          _ ≤ (j / Q.length) * Q.length := Nat.mul_le_mul_right _ hk1
+      omega
+
+/-- **★ e=0 半分**: `H2cone(Q)` ∧ 根が狭義最浅 ⟹ `H2cone(mTower Q d 0 n)`。
+    confinement で in-cone 列は block 0(=Q)に限局 → H2cone(Q) に帰着。 -/
+theorem H2cone_mTower_e0 {Q : TrioSeq} {d n : ℕ} (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hQcone : H2cone Q) : H2cone (mTower Q d 0 n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  intro j hj1 hjl hcone hpos
+  have hjQ : j < Q.length := confinement hQ1 hn hr0 j hcone.2.2
+  have hdecomp : mTower Q d 0 (m + 1) = Q ++ (List.range m).flatMap fun k =>
+      Lift1 (shiftr01 (d * (k + 1)) 0 Q) (0 * (k + 1)) := mTower_cons Q d 0 m
+  have htake : (mTower Q d 0 (m + 1)).take (j + 1) = Q.take (j + 1) := by
+    rw [hdecomp]; exact List.take_append_of_le_length (by omega)
+  have hcQ : le1 Q 0 j := by
+    have h := hcone; rw [hdecomp] at h; exact (le1_append_left hjQ).mp h
+  have hposQ : 0 < entry Q 2 j := by
+    have h := hpos; rw [hdecomp, entry_append_left _ _ hjQ] at h; exact h
+  rw [htake]
+  exact hQcone j hj1 hjQ hcQ hposQ
+
+/-- **★★ premise 遺伝（CLAIM 1）**: `H2cone(Q)` を担いでいれば、
+    `e = 0` または根の行 2 が 0 のとき `H2cone(mTower Q d e n)`。
+    R2 測度誘導で IH に渡す oper 由来の塔はこの条件を満たす
+    （根 row2=0 → 直接、根 row2=1 → `factB` で oper の行1リフト e=0）。 -/
+theorem H2cone_mTower {Q : TrioSeq} {d e n : ℕ} (hQ1 : 0 < Q.length) (hn : 0 < n)
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hQcone : H2cone Q) (hcase : e = 0 ∨ entry Q 2 0 = 0) :
+    H2cone (mTower Q d e n) := by
+  rcases hcase with rfl | hz0
+  · exact H2cone_mTower_e0 hQ1 hn hr0 hQcone
+  · exact H2cone_mTower_of_hz0 hQ1 hz0 d e n
 
 end W5
 end TRIO
