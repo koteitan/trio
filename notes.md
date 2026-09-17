@@ -31386,3 +31386,15 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **正直な評価**: これは trio project の **hard open な研究課題**(team の 30000+ 行が MTowerClosedRow2 を仮定のまま残す理由)。heartbeat で閉じるのは非現実的。
 - **次段候補**: (a) 正規化(標準形に限れば prefix-parent が消えるか)を faithful に測る。(b) 別の proof 構造(n の帰納 / ordinal 割当、lean-yapss 類推)。(c) W row0-shift 不変性を green 化(re-base 部品)。
 - commit: notes。cron 残置。
+
+## 追記671: ★★★★★★ 測度の反例は全て非標準/非到達。標準形限定なら測度は成立(追記670 の悲観を訂正)
+
+- **reachable set(298024, psi(I)+diagonals から faithful に生成)で反例を検査**:
+  - **M0ce=[(0,0,0),(2,1,0),(3,0,0),(3,1,0)]: 非到達 + row0 ジャンプ**(0→2)。Q0ce=[(2,1,0),(3,0,0)]: 非到達, row0 ジャンプ。
+  - **row5_a=[(0,0,1),(1,1,0),(2,1,1)], row5_b, nonh2=[(0,1,1),(1,2,1)]: 全て非到達**(row0 は連続だが別条件で非標準)。
+  - **psi(I), D3z1(=diagonals, 目標対象): 到達 ✓**。
+- **∴ measOK/lex 測度が破れるのは非標準形のみ**。§278.2 の食い違い(R2「A無関係/j=0のみ」vs team「A影響」)= **正規化の罠**の正体: R2 は標準形で測定(prefix-parent なし)、team は非標準込みで測定。
+- **追記670 の「hard open」は非標準込みの悲観だった**。**標準形限定なら測度は成立する見込み**。frontier は「標準形」を syntactic に特徴づけ、再帰で保存を示すこと。
+- **⚠ 残る subtlety**: 再帰の窓 V は sub-part で「到達」ではない。窓が「標準(shift 込み)」を保つか、re-base で標準化するか、が要検証。M0ce の非標準性は row0 ジャンプ、row5/nonh2 は行2 構造(z=1 の不整合)。
+- **次段**: (a) 標準形の syntactic 述語(argOK+? / bms -s の条件)を特定。(b) 窓が標準を保つか faithful に測る(reachable な塔の窓を標準性で検査)。(c) 標準限定 MTowerClosedRow2 で goal に届くか。
+- commit: notes。scratchpad: standard.py。cron 残置。
