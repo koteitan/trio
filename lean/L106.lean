@@ -11140,5 +11140,122 @@ theorem mTowerClosedBased_of_lexStep (u : ℕ)
     ∀ Q e d, MTowerClosedAt u Q e d :=
   mTowerClosedBased_of_lex (fun Q e d => MTowerClosedAt u Q e d) hstep
 
+/-! ### §318 ★★★★★ **prefixed lex WF 帰納** —— `tower_of_measure_step2` の lex 版
+
+`tower_of_measure_step2`（§220.3）は codomain ℕ 固定で `induction s`（`meas Q d e ≤ s`）だった。
+lex 測度 `(|Q|, e, d) : ℕ×ℕ×ℕ` は ℕ に埋められない（成分が非有界）ので、⟹ ★
+`WellFounded.induction (r := LexLt) lexLt_wf` で **prefixed** な帰納を直接立てる。
+`snocStep_gen` の lex 版（`towerClosed_gen` の lex 版）が乗せる枠。
+
+⟹ ★★ これは `tower_of_measure_step2` の機械的移植（証明本体は測度の性質を使わない）。 -/
+
+theorem tower_of_measure_step2_lex {u : ℕ}
+    (P : TrioSeq → ℕ → ℕ → Prop) (meas : TrioSeq → ℕ → ℕ → ℕ × ℕ × ℕ)
+    (hstep : ∀ Q d e, P Q d e →
+      (∀ V d0 d1, P V d0 d1 → LexLt (meas V d0 d1) (meas Q d e) →
+        ∀ A, A ∈ W u → A ++ V ∈ W u → ∀ m, A ++ mTower V d0 d1 m ∈ W u) →
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u) :
+    ∀ Q d e, P Q d e → ∀ A, A ∈ W u → A ++ Q ∈ W u →
+      ∀ n, A ++ mTower Q d e n ∈ W u := by
+  have hwf := lexLt_wf
+  have key : ∀ m : ℕ × ℕ × ℕ, ∀ Q d e, meas Q d e = m → P Q d e →
+      ∀ A, A ∈ W u → A ++ Q ∈ W u → ∀ n, A ++ mTower Q d e n ∈ W u := by
+    intro m
+    induction m using WellFounded.induction (r := LexLt) hwf with
+    | _ m ih =>
+      intro Q d e hm hP A hA hAQ n
+      refine hstep Q d e hP (fun V d0 d1 hPV hlt A' hA' hAV m' => ?_) A hA hAQ n
+      exact ih (meas V d0 d1) (by rw [hm] at hlt; exact hlt) V d0 d1 rfl hPV A' hA' hAV m'
+  intro Q d e hP A hA hAQ n
+  exact key (meas Q d e) Q d e rfl hP A hA hAQ n
+
+/-! ### §319 ★★★★★ **per-instance lex snoc** —— `hsnoc_gen` の lex 版
+
+`hsnoc_gen`（§275）は `towerMeas V d0 d1 < towerMeas Q d e`（サイズ）を要求した。
+⟹ ⛔ 全称版 `MeasOK2`（およびその lex 版）は §262 の反例 `M0ce`/`Q0ce`（**非based**）で偽。
+⟹ ★ ですが `hsnoc_gen` は測度減少を **per-instance の仮定**として受けるだけ（証明本体は
+測度の性質を使わない）。⟹ ⟹ ★★ 基底 + 錐（`H2cone` 等）の域で **各 snoc の減少を私の
+`window_lt_*` から供給する**枠がこれ。⟹ 全称 `MeasOK2_lex` は要らない。
+
+`lexMeas Q e d = (|Q|, e, d)`。窓の parameter は `(d0, d1)`（`mTower V d0 d1` の d-slot・e-slot）
+なので、⟹ 窓の lex 測度は `lexMeas V d1 d0 = (|V|, d1, d0)`（e-slot=d1, d-slot=d0）。 -/
+
+theorem hsnoc_gen_lex {u : ℕ} {Q T : TrioSeq} {d e c : ℕ}
+    {P : TrioSeq → ℕ → ℕ → Prop}
+    (hIH : ∀ V d0 d1, P V d0 d1 → LexLt (lexMeas V d1 d0) (lexMeas Q e d) →
+      ∀ A', A' ∈ W u → A' ++ V ∈ W u → ∀ m, A' ++ mTower V d0 d1 m ∈ W u)
+    (hL : T.length - 1 ≠ 0)
+    (hz : ¬ (entry T 0 (T.length - 1) = 0 ∧ entry T 1 (T.length - 1) = 0 ∧
+      entry T 2 (T.length - 1) = 0))
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (hpe : parent T (srow T (T.length - 1)) (T.length - 1) = c)
+    (hpre : T.dropLast ∈ W u)
+    (hPV : P ((T.drop c).take (T.length - 1 - c))
+      (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0)
+      (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0))
+    (hmeas : LexLt (lexMeas ((T.drop c).take (T.length - 1 - c))
+        (if 1 < srow T (T.length - 1) then entry T 1 (T.length - 1) - entry T 1 c else 0)
+        (if 0 < srow T (T.length - 1) then entry T 0 (T.length - 1) - entry T 0 c else 0))
+      (lexMeas Q e d)) :
+    T ∈ W u := by
+  have hclt : c < T.length := by
+    rw [← hpe]
+    exact (nextR_index_lt (parent_nextR hpar)).trans_le (by omega)
+  have hc1 : c ≤ T.length - 1 := by omega
+  have hTc : T.take c ∈ W u := by
+    have := Wset.W_take (u := u) (M := T.dropLast) hpre c
+    rwa [List.dropLast_eq_take, List.take_take, Nat.min_eq_left (by omega)] at this
+  have hcat : T.take c ++ (T.drop c).take (T.length - 1 - c) ∈ W u := by
+    rw [take_append_window hc1]; exact hpre
+  refine mem_of_oper_mem ?_
+  intro m _
+  rw [snocStep_oper_gen_eq m hL hz hpar hpe]
+  exact hIH _ _ _ hPV hmeas (T.take c) hTc hcat m
+
+/-! ### §320 ★★★★★ **srow = 2 の測度減少 supplier** —— `window_lt_of_row2_parent'` を `hsnoc_gen_lex` へ
+
+`hsnoc_gen_lex` の `hmeas`（窓の lex 測度が減る）は、⟹ ★ **`Q` の中の行 2 の親 `hasParent Q 2 j`**
+から出る。⟹ 親 `c` は最後のブロック内（`|A|+n|Q|+y` 以降）に強制され（`prefixTake_nextrel2_src_ge`）、
+⟹ ⟹ ★★ **窓 `< |Q|`**（`window_lt_of_row2_parent'`）⟹ 第 1 成分が減る（`lexLt_of_window`）。
+⟹ ⟹ ⟹ ★ **prefix に親が飛ぶ問題（§262 反例）は `hasParent Q 2 j` が排除する**。
+（反例 `Q0ce` は行 2 の in-block 祖先を持たない＝この仮定を満たさない。） -/
+
+theorem snoc_lex_decrease_row2 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
+    (hj : j < Q.length) (hpar_Q : hasParent Q 2 j)
+    (hnr : nextrel2 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    LexLt (lexMeas (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)) e' d')
+      (lexMeas Q e d) := by
+  have hwin := H12Export.window_lt_of_row2_parent' hj hpar_Q hnr
+  have hTlen : (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
+      = (A ++ mTower Q d e n).length + (j + 1) := by
+    rw [List.length_append, List.length_take, Lift1_length, shiftr01_length, Nat.min_eq_left (by omega)]
+  refine lexLt_of_window ?_
+  have hle : (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+      ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)).length
+      ≤ (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c := by
+    rw [List.length_take]; exact Nat.min_le_left _ _
+  omega
+
+/-- ★★★★★ **srow = 1 の測度減少 supplier**（`hasParent Q 1 j` から）。§320 の行 1 版。 -/
+theorem snoc_lex_decrease_row1 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
+    (hj : j < Q.length) (hpar_Q : hasParent Q 1 j)
+    (hnr : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    LexLt (lexMeas (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)) e' d')
+      (lexMeas Q e d) := by
+  have hwin := H12Export.window_lt_of_row1_parent' hj hpar_Q hnr
+  have hTlen : (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
+      = (A ++ mTower Q d e n).length + (j + 1) := by
+    rw [List.length_append, List.length_take, Lift1_length, shiftr01_length, Nat.min_eq_left (by omega)]
+  refine lexLt_of_window ?_
+  have hle : (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+      ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)).length
+      ≤ (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c := by
+    rw [List.length_take]; exact Nat.min_le_left _ _
+  omega
+
 end L106
 end TRIO

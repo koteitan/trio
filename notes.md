@@ -31486,3 +31486,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **∴ lex hstep は z=0 域で部品が揃う**: window_lt(srow別)+ lexLt pieces + snoc_orphan_W + 私の H2cone(srow=2)。組立 + 標準保存が残り。
 - **残**: (a) lex hstep の組立(mTowerClosedBased_of_lexStep の hstep, hsnoc_gen_lex)。(b) H2cone(Q) の確保(consumer/reachable で成立)。(c) z=0∨e=0 保存(oper_window_invariant)。(d) 非標準 W-member の扱い。
 - commit: notes + lean/W5.lean。cron 残置。
+
+## 追記679: ★ lex frame を L106 に構築 —— per-instance snoc + srow=2/1 測度減少 supplier(全 GREEN)
+
+- **設計の確定**(L106 §275-320 を精読して):
+  - `snocStep_gen`/`hsnoc_gen`(§275)は `towerMeas`(サイズ)固定で全称 `MeasOK2` を要求 = **`measOK2_false` で偽**。lex 全称版も M0ce で偽(|V|=3>|Q|=2 で第1成分増)。
+  - **だが frame は per-instance に測度減少を受けるだけ**。`MTowerClosedAt`(§317)は based+shallowest 制限で、反例 Q0ce=[(2,1,0),(3,0,0)] は**非based かつ行2 in-block 祖先なし**なので除外される。
+  - 核心(H12Export:3962 `prefixTake_nextrel2_src_ge`): **`hasParent Q 2 j` ⟹ 親 c ≥ block_start+y(最後のブロック内に強制)⟹ 窓<|Q|**。prefix-parent 問題(§262/§278.1)は cone 条件が排除する。
+- **L106 に追加(全 GREEN, 7s)**:
+  - `tower_of_measure_step2_lex`(§318): prefixed lex WF 帰納(codomain ℕ×ℕ×ℕ, LexLt)。`tower_of_measure_step2` の ℕ 版を lex に移植。
+  - `hsnoc_gen_lex`(§319): per-instance lex snoc。測度減少を仮定として受ける(全称 MeasOK2_lex 不要)。
+  - `snoc_lex_decrease_row2`(§320): **srow=2 の測度減少 supplier**。`hasParent Q 2 j` + `nextrel2` ⟹ `LexLt (lexMeas 窓 e' d') (lexMeas Q e d)`。window_lt_of_row2_parent' → lexLt_of_window。
+  - `snoc_lex_decrease_row1`: **srow=1 版**(window_lt_of_row1_parent')。
+- **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
+- **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
+- commit: notes + lean/L106.lean。cron 残置(目標未証明)。
