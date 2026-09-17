@@ -31344,3 +31344,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **教訓**: L106 の `_false` 補題を先に grep すべきだった(survey-before-building の再発)。empirical は「実際に現れる対象(prefix つき、非 based 窓)」で測るべきだった。
 - **次段**: 真の frontier = 「接頭辞-親/非 based 窓」を扱う別測度(team-lead (M2))。または別アプローチ(Subst reduction 等)。窓測度は放棄。
 - commit: notes。cron 残置。
+
+## 追記668: ★★★★★★★ team は既に lexicographic 測度にピボット済(L106 §314-317)= LIVE frontier。ほぼ完成
+
+- **窓測度(size)は dead だが、L106 は §314-317 で lex 測度 `(|Q|,e,d)` にピボット済**(= team-lead の M2)。これが現在の frontier。
+  `mTowerClosedBased_of_lex`(11019, WF 帰納 green)、`mTowerClosedBased_of_lexStep`(11136)、`MTowerClosedAt`(11124)。
+- **6 行表(§315)の lex 減少**(green 部品):
+  - row0 `d=0`→孤児 free。row1 `srow=0`→d'=0<d(`lexLt_of_srow_zero` ✓)。row2 `srow=1∧e>0`→e'=0<e(`lexLt_of_srow_one` ✓)。
+  - row3 `srow=1∧e=0`→窓<|Q|(`lexLt_of_offset_pos`/`window_lt_of_offset_pos` ✓ 算術)。row4 `srow=2`→孤児 free。
+  - **row5 `srow=2∧e>0∧d>段差` = ⛔ 唯一の残りケース**。
+- **★ lex が prefix 問題を回避する理由**: 窓が短くない時は e/d を減らす。そして **`MTowerClosedAt` は based Q(entry Q 0 0=0)限定** ⟹ M0ce(非based, 窓測度の反例)は除外される。
+- **§317 の残り 2 本**: 親下界 `(n-1)|Q| ≤ c`(e=0∧srow=1 / srow=2)。R2 で 100%(R-C15 714/387, R-C18 8667, R-C5/7 188933)。**私の confinement/src_ge_block(H12Export)が効く**。
+- **∴ 私の H2cone/confinement は無駄でなかった** — 窓測度でなく **lex 測度の親下界**に効く。ただし基準を lex に切替える。
+- **残 Lean(lex 版)**: (1) hstep 組立(6 行表を mTowerClosedBased_of_lexStep に)。(2) row5。(3) 親下界 2 本。(4) 窓の re-base(非based 窓→based で IH)。
+- **次段**: 親下界 `(n-1)|Q| ≤ c` を H12Export の src_ge_blockRoot 系で Lean 化。lex hstep の組立に着手。
+- commit: notes。cron 残置。
