@@ -30860,3 +30860,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 目標 psi(I) は summit なので幅k を含む全機構が要る見込み（回避不可）。
 - **次**: 幅k を段 q 整礎帰納で。まず森 [深い葉, tie 1[]]（幅2）の GoodChtX を GoodChtX_deep の証明を
   拡張して建てる（key/upleaf を 3列 chT に、hrep=幅2 tow を段帰納で）。GoodChtX_deep が最重要の底。
+
+## 追記633: 幅2 = 深い葉の塔（towT 0 [深い葉]）。GoodChtX_deep を底に GoodChtX 級の塔補題が要る
+
+- **確定（実測）**: 幅2の tow は `towR q [(1,q+1,0),(2,q+1,0)] j = chT q (towT 0 [深い葉] j)`（chT_towT + htR）。
+  = **単一の深い葉を tie 0 で入れ子にした塔**。各深い葉は GoodChtX_deep（済）で扱える。
+- 連鎖: 幅2 GoodChtX ⟸ upleaf_deep_coreD ⟸ hrep（tow）= (htow/htR で) upleaf_core の hrep_core（towR）
+  = GoodChtX of towT 0 [深い葉] j（文脈つき）。∴ **「深い葉の塔の GoodChtX」**が要石。
+- towT 0 [深い葉] j = [深い葉, tie 0 [深い葉, tie 0 […]]]。深い葉=GoodChtX_deep、tie 0 入れ子=木。
+- **Gd_towT（HeH:43, Gd 級の塔）は使えない**: 深い葉の Gd（Gd_deep）が要るが、Gd_tie は段1の FULL Ext を
+  要求し（tie 1 の子 [tie 1[]] が非空）、clD は段l で ExtNil のみ。段1 FULL Ext は PSOK でない見込み。
+  ∴ Gd_deep は詰まり、GoodChtX_deep（証明済み、弱い方）が正しい水準。
+- **要**: GoodChtX 級の塔補題「towT 0 [X] の GoodChtX ⟸ X の GoodChtX（+ tie 0 入れ子）」を j 帰納で。
+  base j=0: GoodChtX_deep。step: tie 0 で深い子を包む GoodChtX（GoodChtX_snocT の深い版 / Gd_treeU tie0 の
+  GoodChtX 版）。これが幅k の底。
+- **次**: GoodChtX 級の「深い葉の塔」補題を建てる（GoodChtX_deep + tie 0 入れ子の帰納）。これで幅2→幅k。
