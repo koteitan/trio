@@ -1100,3 +1100,30 @@ DM 測度は `Bud` が整礎なら整礎のままなので、整礎性は失わ�
 - 上位の単一の語は、GTC を空文脈 [] に当てて BwT [K] → StarOK → W0_of_starOK で W に包む（collapse の PsLTL を経由しない）。
 - 教訓: 深い葉は新枠組み（GPF の橋）でなく、**既存の生の GTC（gtc_oper）を悪い根 q=1 で使う**だけで割れた。
   展開の形（tow）を Lean で先に同定し、それが木（dtree）だと確かめてから hrep を木の機構に流すのが早い。
+
+## 追記28: ★深い塔は遠い段では木★ — 深い葉のあとに collapse 語を足す壁の突破法
+
+行が進んだときの教訓（証明中 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1) ∈ W 0 を証明）。
+
+### 壁
+深い葉の語 K のあとに collapse 語 K2 を足す（K2 が K の遠い像を m 個複製 → 深い塔 ∈ Wg が要る）。
+K は CLTL（TreeTs 木の文脈）でないので、既存の topCLT_WgL / GTC_far_CLTL がそのまま使えなかった。
+
+### 決定的な鍵（誤解の訂正つき）
+深い葉の展開 tow を段 0 の topTs で見ると深い（dtreeQ、TreeTs でない）ので「段の無限整礎帰納が要る」と
+一度は誤結論した（fork も同じ結論）。**正しくは: 同じ行列を遠い段 q の topTs で見ると木 dtree**。
+- `topTs 0 [dtreeQ q j] = topTs q [HeT.dtree j]`（HeU.topTs0_dtreeQ_eq）。段 0 の深い構造 = 段 q の木。
+- `chT b (q+1) u [dtree j] = topTs q [dtree j]`（HeU.chT_dtree_eq、純タイ木は chT=topTs の段ずれ）。
+- ∴ 深い葉の展開は遠い段では**木の塔**。整礎帰納は不要、既存の木の機構（GoodChtX_snocT）で出る。
+
+### 部品（既存機構の一般化のみ）
+- GoodChtX_deep（HeU）: 深い葉 tie 1 [tie 1 []] は良い子並び。upleaf_deep_coreD + tow_eq_chT_dtree + GoodChtX_dtree。
+- FarCAt_deep/RawWsAt_deep（HeV）: GoodChtX_deep → OkWsAt_cons → FarCAt_of_OkWsAt。
+- topCLT_WgL_gen（HeV）/ GTC_far_gen（HeW）: topCLT_WgL / GTC_far_CLTL を「文脈 = PsLTL」から
+  「文脈 = TRawLs(段無視)+FarCAt+RawWsAt」に一般化（GLctx）。深い葉は TRawLs/RawTs を段無視で満たす。
+- bwt_KK2（HeW）: hK_pm(BwT[K]) + GTC_far_gen で BwT[K,K2]。→ StarOK → W0_of_starOK。
+
+### 教訓
+「深い」構造が非木に見えても、**描画の段(base level)を変えると木になる**ことがある。段 0 で TreeTs を
+確かめて「深い・整礎帰納」と即断せず、遠い段での像（chT/topTs の段ずれ）を疑う。既存の CLTL 機構は
+TreeTs でなく TRawLs（段無視）と GoodChtX さえあれば回るので、文脈述語を一般化（GLctx）して流用できる。

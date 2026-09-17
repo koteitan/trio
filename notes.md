@@ -30814,3 +30814,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 補助: relT_dtree, key_dtree, tow_eq_chT_dtree（全緑）。
 - **これで下流が開いた**: GoodChtX_deep → OkWsAt → FarCAt → topCLT_WgL_deep → GTC_far_deep → 証明中の行。
 - 次: 下流を組んで証明中 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1) ∈ W 0 を出す。
+
+## 追記630: ★★★ 行進捗 — 証明中 R_pm3 緑（深い葉+collapse語）。下流完成★★★
+
+- 追記628 の突破（深い塔=遠い段の木）で下流が全部緑になり、**証明中の行が証明済みに**:
+  (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1) ∈ W 0（HeW.R_pm3, axioms 標準3個, sorry 0）。
+- 下流の部品（全緑）:
+  - HeV: FarCAt_deep/RawWsAt_deep（GoodChtX_deep→OkWsAt_cons→FarCAt_of_OkWsAt）、topCLT_WgL_gen。
+  - HeW: GLctx（TRawLs 段無視+FarCAt+RawWsAt の文脈）、GTC_far_gen（GTC_far_CLTL の一般版）、
+    RawWskt0_gen、GLctx_deep、bwt_KK2（BwT[K,K2]）、R_pm3。
+- fork の「段の無限整礎帰納が要る」結論は前提の誤り（段0の topTs だけ見た）。段を変えると木。
+- sheet 更新: 証明済みに ...(4,2,0)(1,1,1)(2,1,1)、証明中 = ...(4,2,0)(3,2,0)、シートから除去。
+- methodology 追記28（深い塔は遠い段では木）、memory 訂正済み。
+- **次**: 新機構（GLctx/GTC_far_gen）で次の証明中 ...(4,2,0)(3,2,0) 他、深い葉のあとの語を持つ行を進める。
+  GLctx は一般文脈なので、深い葉+複数 collapse 語、深い葉+far 語などに拡張できる見込み。
