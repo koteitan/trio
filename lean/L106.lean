@@ -11425,5 +11425,19 @@ theorem snocWindow_row2_root_zero {T : TrioSeq}
   rw [Wset.entry_take (show (0 : ℕ) < T.length - 1 - c by omega), entry_drop_head]
   omega
 
+/-! ### §325 ★★★★★ **窓の遺伝(2): H2cone(行 2 錐)** —— z=0 から `h2_cone` で自動
+
+`h2_cone`（L105Cap:11320）は **`entry V 2 0 = 0` だけ**で錐内の行 2 親を出す。⟹ ★ 窓の z=0
+（§324、`snocWindow_row2_root_zero`）から **窓の H2cone（行 2 の well-formedness）が自動で遺伝**する。
+⟹ ⟹ ★★ ですから窓遺伝の残りの壁は **行 1 最浅（`le1 V 0 j` = 根が行 1 祖先）だけ**に絞られる。 -/
+
+theorem snocWindow_H2cone_of_srow2 {T : TrioSeq}
+    (hfrag : ∀ i, i < T.length → entry T 2 i ≤ 1)
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (h2 : 0 < entry T 2 (T.length - 1)) :
+    ∀ i, 1 ≤ i → i < (snocWindow T).length → 0 < entry (snocWindow T) 2 i → le1 (snocWindow T) 0 i →
+      hasParent ((snocWindow T).take (i + 1)) 2 i :=
+  h2_cone (snocWindow_row2_root_zero hfrag hpar h2)
+
 end L106
 end TRIO

@@ -31528,6 +31528,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - **行1最浅 + le1連結 = 真の壁**: 窓根 c(=行2/行1親)が全窓列を行1で支配 = BM4 bad-part の subtree 構造。window_root_row1/row2_min(局所)はあるが全域支配は未証明。研究レベル。
 - **∴ 窓遺伝 5 成分中 3 つ(0<|V|, hr0, z=0/孤児)は tractable/green。残る壁は「窓の le1連結性/行1最浅」= subtree 定理**。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。
+
+## 追記683: ★ H2cone(行2錐)も窓へ自動遺伝(`snocWindow_H2cone_of_srow2` GREEN) — 壁は行1最浅のみ
+
+- **`snocWindow_H2cone_of_srow2`(GREEN, L106 §325)**: srow=2 窓は **H2cone(行2の well-formedness)を自動遺伝**。証明 = `h2_cone`(z=0 だけで錐内行2親)を窓の z=0(§324)に適用するだけ(1行)。
+- **窓遺伝の成分 4/5 が green に**:
+  - 0<|V|: 自明。 / hr0 V: hr0_wnd_gen。 / z=0 V: snocWindow_row2_root_zero。 / **H2cone V: 今回 GREEN**。
+  - **残る唯一の壁 = 行1最浅(`le1 V 0 j` = 窓根が snoc される srow=2 列 j の行1祖先)**。
+- **壁の正体を精密化**: srow=2 窓根 c は row-2 親で `le1 T c last`(末尾の行1祖先)だが、窓の**中間列** c+i の行1祖先性(`le1 T c (c+i)`)は nextrel2 から出ない。= **bad-part 窓で行1が単調(窓根が行1最小)= BM4 subtree 構造**。反例的には row1 が窓内で減る列 p は「p が孤児 or 非根親」で処理されうるが、根経由の h2_cone は使えず、一般証明は subtree 補題待ち。
+- **∴ trio 停止性 = {全 positive 機械 green} + {窓遺伝 4/5 green} + {行1最浅の窓遺伝(唯一の hard core = BM4 subtree 補題)} + {j=0 機械的組立}**。
+- commit: notes + lean/L106.lean。cron 残置。
 - **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
 - **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。
