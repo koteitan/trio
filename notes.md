@@ -31171,3 +31171,13 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   ⟹ premise 遺伝は「root row2=0: hz0 半分(green, ∀d,e)」+「root row2=1: e=0 半分(confinement)」で尽きる。
 - **残 Lean 3 本**: (1) confinement: e=0 塔で in-cone row2>0 ⟹ block 0(le1 の e=0 解析)。(2) block 0 還元: H2cone(mTower Q d 0 n)⟸H2cone(Q)。(3) fact B: root row2=1⟹oper e'=0(rankDE_oper §198 から)。
 - commit: notes のみ。scratchpad 追加: w5_e0.py(10464/0), w5_e0_adv.py(54400/0)。cron 残置。
+
+## 追記656: lean/W5.lean 新規(tracked, 0 sorry, green)。hz0 半分 + fact B を Lean 化
+
+- **lean/W5.lean**(非 root 作業ファイル、L106/H12H2 と同様、`import L105Cap`, 全 0 sorry, leanman green 1s):
+  - `W5.H2cone`: 前提の定義 `∀ j≥1, le1 V 0 j → 0<entry V 2 j → hasParent (V.take(j+1)) 2 j`。
+  - `W5.H2cone_mTower_of_hz0`: **root row2=0 半分**。`entry Q 2 0=0 → H2cone(mTower Q d e n)`(無条件 ∀d,e)。`mTower_entry2_root`+`h2_cone`。
+  - `W5.factB`: **root row2=1 → srow(末尾)≤1**(∴ oper 行1リフト d1=0)。`parent_nextR`+`nextrel2`(fragment で親の行2=0)。上の残 Lean(3)を close。
+- **premise 遺伝の残り = Lean (1)(2)**: e=0 塔の confinement とその block 0 還元。`H2cone(Q) ∧ zle1 Q → H2cone(mTower Q d 0 n)`。
+  機構は確定(54400/0): e=0 でブロック根は row1=Q[0].1 一定 → in-cone row2>0 は block 0 限局 → block 0=Q で H2cone(Q) に帰着。le1 の e=0 解析が要る。
+- commit: notes + lean/W5.lean。cron 残置。
