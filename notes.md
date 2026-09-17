@@ -31229,3 +31229,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   (A) 復活排除: H2cone+F1+F2a で「tower-parented ⟹ same-block」(既存補題の合成)。
   (B) (ii) 窓測度の強帰納(§138、窓長 j-p で減る)で parented snoc の W 保存。
 - これで hcl2/MTowerClosedRow2 が閉じる見通し。cron 残置。commit: notes。
+
+## 追記660: ★★★★★ assembly 判明 — 私の H2cone 遺伝 = §168.2 の (H2)。残り (H3) 錐遺伝 + 外側|Q|強帰納
+
+- **§169.1 の訂正と私の W5 の正しさ**: ∀j(j=0 含む)版 `h2` は `hasParent (Q.take 1) 2 0`(不可能)を要求 ⟹ **hz0 を含意**。
+  だが **`W5.H2cone` は `1≤j`** なので hz0 を含意しない = z=1 対応の正しい弱め(§169.2 が目指した形)。
+  既存 `prefixTowerClosed_final`(L105Cap:12122)は**まだ hz0 前提を持つ** → 私の `mTowerClosed_of_snocStepCone_h2cone` はそれより先(hz0 除去済)。
+- **§168.2 の assembly 骨は全 green**(`prefixTowerClosed_of_snocStepStrong` 12031): 外=|Q| 強帰納、内=j 強帰納。
+  `T_{j+1}⟦m⟧ = T_p ++ mTower V d0' d1' m`(V=窓, |V|=j-p<|Q|, `snocStep_oper_prefix` §138 green)。T_p は強帰納が渡す、|V|<|Q| は外側帰納が受ける。
+  残りは **V が外側帰納の前提を満たすこと(Q→V 遺伝)**:
+  - **(H1)** V 根が V 内で狭義最浅 … `Lcone.window_of_rtg0`(無条件緑)から出る。
+  - **(H2)** V の行2列が V 内に行2親 … = **H2cone(V)** = **私の premise 遺伝(W5.lean)そのもの**。
+  - **(H3)** V の非根列が V 根の錐に入る … R2 の (y2) の穴。**本当の残り**。
+- **∴ 私の H2cone 遺伝が (H2) を埋めた**。frontier は **(H3) 錐遺伝 + 上記の Q→V 遺伝を assembly に配線**。
+- **次段**: (H3)「窓 V の非根列が V 根の le1 錐に入る」の Q→V 遺伝(confinement 類似の窓解析)。+ 外側|Q|強帰納で全体を組む。
+- commit: notes。cron 残置。
