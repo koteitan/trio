@@ -11257,5 +11257,27 @@ theorem snoc_lex_decrease_row1 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
     rw [List.length_take]; exact Nat.min_le_left _ _
   omega
 
+/-- ★★★★★ **srow = 0 の測度減少 supplier**（行 0 の親から）。§320 の行 0 版。
+⟹ ★ 行 0 は `hasParent Q 0 j` すら要らない: `hr0`（基底の根が最浅）だけで
+親がブロックの前に飛べない（`no_row0_parent_from_before_block`）。 -/
+theorem snoc_lex_decrease_row0 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j)
+    (hnr : nextrel0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    LexLt (lexMeas (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)) e' d')
+      (lexMeas Q e d) := by
+  have hwin := H12Export.window_lt_of_row0_parent hr0 hj hj0 hnr
+  have hTlen : (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
+      = (A ++ mTower Q d e n).length + (j + 1) := by
+    rw [List.length_append, List.length_take, Lift1_length, shiftr01_length, Nat.min_eq_left (by omega)]
+  refine lexLt_of_window ?_
+  have hle : (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+      ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)).length
+      ≤ (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c := by
+    rw [List.length_take]; exact Nat.min_le_left _ _
+  omega
+
 end L106
 end TRIO
