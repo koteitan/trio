@@ -10,12 +10,13 @@ HeU.lean: 深い葉の keystone (GoodChtX_deep) への背骨 — 一般段 q の
   これが帰納の各段で「生の展開 tow」を「段 q' の深い葉を持つ topTs」に橋渡しする。
 -/
 import HeT
+import HeQ
 
 namespace TRIO
 namespace HeU
 
-open Wset Small HdA HdE HdQ HeI HeK
-open GwS GxL GxP
+open Wset Small HdA HdB HdE HdF HdG HdH HdI HdJ HdQ HeI HeK HeQ
+open GwS GxJ GxL GxP GxW GyB HbM
 
 /-- 外段 q'+1、内側再下降 段 q' の深い葉の塔（段 0 に達すると HeT.dtree = 木）。 -/
 noncomputable def dtreeQ (q' : ℕ) : ℕ → HdA.UT
@@ -96,6 +97,62 @@ theorem chT_dtree_eq (b u q : ℕ) : ∀ j, chT b (q+1) u [HeT.dtree j] = topTs 
       simp only [HeT.dtree, chT, unitT, topTs, topT, shiftr01, List.map_cons, List.map_nil,
         List.append_nil, List.cons_append, List.nil_append, Nat.add_zero] at ih ⊢
       rw [ih]
+
+/-! ## ★★★ 深い葉の keystone: GoodChtX_deep（既存機構で、整礎帰納なし） -/
+
+/-- relT は純タイ木 dtree を変えない（ch 荷が無いので relift しない）。 -/
+theorem relT_dtree (A0 : List ℕ) (h g : ℕ → ℕ) (u : ℕ) :
+    ∀ j, relT A0 h g u (HeT.dtree j) = HeT.dtree j
+  | 0 => by simp [HeT.dtree, relT, relTs]
+  | j + 1 => by simp only [HeT.dtree, relT, relTs, relT_dtree A0 h g u j]
+
+/-- 木の子 dtree の遠い語での描画は、深い葉の展開 tow の形にちょうど一致。 -/
+theorem key_dtree (b u q0 : ℕ) (j : ℕ) :
+    fwH b (q0+1) (FTLt b (q0+1) u [[HeT.dtree j]]) u []
+      = [((1,q0+1,1):ℕ×ℕ×ℕ), ((2,q0+1,1):ℕ×ℕ×ℕ)]
+        ++ shiftr01 1 0 (shiftr01 1 0 (((0,q0+1,0):ℕ×ℕ×ℕ) :: chT b (q0+1) u [HeT.dtree j])) := by
+  simp [fwH, FTLt, shiftr01, mlift_nil]
+
+/-- ★★ 深い葉の展開 tow は、遠い段 q0+1 で描画した木の塔 chT[dtree] に等しい。 -/
+theorem tow_eq_chT_dtree (b u q0 : ℕ) (j : ℕ) :
+    (tow (q0+1) 0 [((1,q0+2,0):ℕ×ℕ×ℕ),((2,q0+2,0):ℕ×ℕ×ℕ)] (j+1) : TrioSeq)
+      = ((0,q0+1,0):ℕ×ℕ×ℕ) :: chT b (q0+1) u [HeT.dtree j] := by
+  rw [tow_dtreeQ, topTs0_dtreeQ_eq, ← chT_dtree_eq b u q0]
+
+/-- ★★★ 深い葉 tie 1 [tie 1 []] は良い子並び（GoodChtX）。深い塔が遠い段では木であることを使い、
+    整礎帰納なしで upleaf_deep_coreD + GoodChtX_dtree（木の塔）で出る。 -/
+theorem GoodChtX_deep {A0 : List ℕ} {o u : ℕ} (hAo : ∀ a ∈ A0, a < o) (hA01 : ∀ a ∈ A0, 1 ≤ a)
+    (ho : 1 ≤ o) : GoodChtX A0 o (fun _ => 0) u [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]] := by
+  refine ⟨?_, ?_⟩
+  · intro us hus; simp only [List.mem_singleton] at hus; subst hus; simp [RawTs, RawT]
+  · intro g S o' f b hE hub ws hC hR
+    have hrel : [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]].map (relTs A0 (fun _ => 0) g u)
+        = [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]] := by simp [relTs, relT]
+    rw [hrel, farWt_snoc]
+    obtain ⟨q0, hq0⟩ : ∃ q0, b + liftOff f (S ++ A0) o' + 1 = q0 + 1 :=
+      ⟨b + liftOff f (S ++ A0) o', rfl⟩
+    rw [hq0]
+    have key : fwH b (q0+1) (FTLt b (q0+1) u [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]]) u []
+        = [((1,q0+1,1):ℕ×ℕ×ℕ), ((2,q0+1,1):ℕ×ℕ×ℕ)]
+          ++ shiftr01 1 0 (shiftr01 1 0 (((0,q0+1,0):ℕ×ℕ×ℕ) :: ([((1,q0+2,0):ℕ×ℕ×ℕ)] ++ [((2,q0+2,0):ℕ×ℕ×ℕ)]))) := by
+      simp [fwH, FTLt, chT, unitT, shiftr01, mlift_nil]
+    rw [key]
+    refine upleaf_deep_coreD hE.2.2.1 hE.2.2.2.1 hE.2.2.2.2.1 f
+      (Fr_farWt _ _ _) (Fr_letter (q0+1) [((1,q0+1,1):ℕ×ℕ×ℕ)])
+      (Hd_letter (q0+1) [((1,q0+1,1):ℕ×ℕ×ℕ)]) (by simp)
+      (D := [((1,q0+2,0):ℕ×ℕ×ℕ)]) (d0 := 2) (m := q0+2) (q := q0+1) (d := 1)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; omega)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; exact le_refl _)
+      (by omega) (by omega) (by omega) ?_
+    intro m' hm'
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    rw [show ([((1,q0+2,0):ℕ×ℕ×ℕ)] ++ [((2,q0+2,0):ℕ×ℕ×ℕ)])
+        = [((1,q0+2,0):ℕ×ℕ×ℕ),((2,q0+2,0):ℕ×ℕ×ℕ)] from rfl, tow_eq_chT_dtree b u q0]
+    have hgd := (GoodChtX_dtree hAo hA01 ho j).2 g S o' f b hE hub ws hC hR
+    have hreldt : [[HeT.dtree j]].map (relTs A0 (fun _ => 0) g u) = [[HeT.dtree j]] := by
+      simp only [List.map_cons, List.map_nil, relTs, relT_dtree A0 (fun _ => 0) g u j]
+    rw [hreldt, hq0, farWt_snoc, key_dtree] at hgd
+    exact hgd
 
 end HeU
 end TRIO

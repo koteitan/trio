@@ -30801,3 +30801,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   段の整礎帰納・新機構は不要。GoodChtX_deep が既存機構で組める。
 - **次**: tow (q+1) 0 [(1,q+2,0),(2,q+2,0)] (j+1) = (0,q+1,0)::chT b (q+1) u [dtree j] を合成、
   GoodChtX_deep を plumbing + upleaf_deep_coreD + hrep(=GoodChtX_dtree の Part2) で完成。
+
+## 追記629: ★★★ GoodChtX_deep 緑（keystone 突破）★★★
+
+- HeU に GoodChtX_deep（深い葉 tie 1 [tie 1 []] は良い子並び）を緑で追加（lake build HeU 922 jobs, sorry 0）。
+- 証明の骨子（整礎帰納なし・既存機構のみ）:
+  - 手回し: farWt_snoc + key（fwH/FTLt/chT 展開）で GoodChtX Part2 を upleaf_deep_coreD の形に。
+  - upleaf_deep_coreD で悪い根 (0,q0+1,0) を展開 → hrep = ∀m', GpT of tow。
+  - tow_eq_chT_dtree: tow (q0+1) 0 [(1,q0+2,0),(2,q0+2,0)] (j+1) = (0,q0+1,0)::chT b (q0+1) u [dtree j]
+    （tow_dtreeQ + topTs0_dtreeQ_eq + chT_dtree_eq）。深い塔 = 遠い段の木 dtree。
+  - hrep = GoodChtX_dtree（木の塔）の Part2（key_dtree で farWt 形を一致、relT_dtree で relift 不変）。
+- 補助: relT_dtree, key_dtree, tow_eq_chT_dtree（全緑）。
+- **これで下流が開いた**: GoodChtX_deep → OkWsAt → FarCAt → topCLT_WgL_deep → GTC_far_deep → 証明中の行。
+- 次: 下流を組んで証明中 (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1) ∈ W 0 を出す。
