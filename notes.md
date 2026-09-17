@@ -31398,3 +31398,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **⚠ 残る subtlety**: 再帰の窓 V は sub-part で「到達」ではない。窓が「標準(shift 込み)」を保つか、re-base で標準化するか、が要検証。M0ce の非標準性は row0 ジャンプ、row5/nonh2 は行2 構造(z=1 の不整合)。
 - **次段**: (a) 標準形の syntactic 述語(argOK+? / bms -s の条件)を特定。(b) 窓が標準を保つか faithful に測る(reachable な塔の窓を標準性で検査)。(c) 標準限定 MTowerClosedRow2 で goal に届くか。
 - commit: notes。scratchpad: standard.py。cron 残置。
+
+## 追記672: 測度再帰の core を定義的に確認 — ℕ-測度では不可避に詰まる。順序数測度(研究レベル)が要る
+
+- **exhaustive な結論(定義的)**: 塔 `mTower Q d e n` の停止を測度再帰で示す道の core:
+  1. **tower の oper は clean な smaller tower を生まない**: 末尾列の bad root は最終ブロック内(≠ tower root, lexmeas.py)⟹ `oper_eq_mTower`(悪根=根)は塔に適用不可 ⟹ oper 結果は `mTower[:c] ++ 窓copies`(prefix つき)。
+  2. **prefix-aware IH(A'++V)で re-base 不可**: 非based 窓 V を re-base すると A'-V の row0 差が変わり **suffix だけの shift は W 不変でない**(oper_shiftr01 は uniform のみ)⟹ A'++mTower V の W 所属が壊れる。
+  3. **非based 窓で測度が破れる**(measOK_false, M0ce)。再帰は非based 窓を必ず生む。
+- ∴ **size/lex 測度(全変種)は同じ obstruction**で詰まる。§9366「減るのは順序数型=証明したい命題そのもの」の通り **ℕ-測度では閉じない**。
+- **追記671 の緩和は不十分**: 非based 窓(M0ce 型)は reachable な based 塔からも再帰で生じる(bad root が block 内 ⟹ 窓 root row0>0)。標準限定しても窓は非based。
+- **真の resolution = 順序数割当(Ψ)** on 標準形(BM 停止の標準手法、lean-yapss が 2 行で実施)。trio の証明全体の再構築 = **研究レベル**、heartbeat 単位では非現実的。
+- **私の寄与(部分・正しい・保存)**: 構造の完全 mapping、W5.lean の green 補題群、z=0∨e=0 不変量、反例=非標準の特定、oper_shiftr01 の re-base 限界。
+- **正直な評価**: psi(I)∈W0 は trio project の **hard open な研究課題**。測度再帰は ℕ-測度では不可避に詰まる(team の 30000+ 行が `MTowerClosedRow2` を仮定に残す core)。閉じるには順序数割当(別の大規模構築)が要る。
+- commit: notes。cron 残置。
