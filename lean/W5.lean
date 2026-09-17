@@ -205,5 +205,37 @@ theorem mTowerClosed_of_snocStepCone_h2cone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
   rw [hClen, hsrow]
   exact hres
 
+/-- 塔に 1 列足す step（`mTowerClosed_of_snocStepCone_h2cone` の hstep 前提）。 -/
+def HstepFor (u : ℕ) (Q : TrioSeq) (d e : ℕ) : Prop :=
+  ∀ (n j : ℕ), j < Q.length →
+    (hasParent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+        (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+      ∨ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
+    (0 < j → le1 Q 0 j → n * Q.length ≤
+      parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+        (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+    mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u
+
+/-- **★★★★ 残余を明示化**: `MTowerClosedRow2`(Final の残核)は
+    **(A) H2cone 不変量** ＋ **(B) hstep** の 2 本に帰着する。
+    (A) は well-formed Q で成り立ち塔で遺伝（`H2cone_mTower`）、
+    (B) は §138 窓測度（復活は H2cone が排除、追記659）で閉じる見通し。 -/
+theorem mTowerClosedRow2_of_h2cone_hstep
+    (hH2 : ∀ (u d e : ℕ) (Q : TrioSeq), Q ∈ W u →
+      (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+      (∃ p ∈ Q, 0 < p.2.2) → H2cone Q)
+    (hHstep : ∀ (u d e : ℕ) (Q : TrioSeq), Q ∈ W u →
+      (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →
+      (∃ p ∈ Q, 0 < p.2.2) → HstepFor u Q d e) :
+    L105.MTowerClosedRow2 := by
+  intro u d e n Q hQ hs hz2
+  exact mTowerClosed_of_snocStepCone_h2cone hs (hH2 u d e Q hQ hs hz2)
+    (hHstep u d e Q hQ hs hz2) n
+
 end W5
 end TRIO

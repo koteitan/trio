@@ -31244,3 +31244,14 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **∴ 私の H2cone 遺伝が (H2) を埋めた**。frontier は **(H3) 錐遺伝 + 上記の Q→V 遺伝を assembly に配線**。
 - **次段**: (H3)「窓 V の非根列が V 根の le1 錐に入る」の Q→V 遺伝(confinement 類似の窓解析)。+ 外側|Q|強帰納で全体を組む。
 - commit: notes。cron 残置。
+
+## 追記661: ★★★★★ MTowerClosedRow2 を (A)H2cone不変量 + (B)hstep に明示還元(GREEN)
+
+- **`W5.mTowerClosedRow2_of_h2cone_hstep`(GREEN, 0 sorry)**: Final の残核 `MTowerClosedRow2` を 2 本に還元:
+  - **(A)** `∀ Q∈W u(根最浅, ∃row2>0), H2cone Q`(H2cone 不変量)。
+  - **(B)** `∀ Q∈W u(...), HstepFor u Q d e`(hstep = 塔に 1 列足す step)。
+  `mTowerClosed_of_snocStepCone_h2cone` を量化子の下で適用。`W5.HstepFor` で hstep を def 化。
+- **残余が razor-sharp に**: psi(I)∈W0 ⟸ MTowerClosedRow2 ⟸ (A) ∧ (B)。
+  - (A): well-formed Q で成立・塔で遺伝(`H2cone_mTower`)。W-所属から出るか要検証(z=0 は h2_cone で free、z=1 は carried か構造条件)。
+  - (B): §138 窓測度。復活は H2cone が排除済(追記659)⟹ (ii) 同ブロック親の窓帰納で閉じる見通し。
+- commit: notes + lean/W5.lean。cron 残置。
