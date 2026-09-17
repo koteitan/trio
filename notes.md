@@ -30776,3 +30776,15 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   = 段 L の帰納の**底（L=1）が緑**。base L=1 は dtree（木）→ GoodChtX_dtree で供給できる。
 - 残り: step（L≥2, dtreeQ 深い塔）を段 L の整礎帰納で。塔は dtreeQ (L-1) で IH。
   一般深い葉補題（q,j の整礎測度）。底が固まったので次は step の測度と upleaf の反復。
+
+## 追記627: 目標の語 W は深い葉と別機構（自己参照リフト）。fork が深い塔を並行で
+
+- fork エージェント（deep tower の hrep = 段帰納 step）を並行起動。鍵の洞察「塔の葉は正常（段交互・
+  bad root 直前）→ upleaf_core」を試させている。重複回避で私は HeU/深い塔に触れない。
+- **目標 W=(1,1,1)(2,1,1)(3,1,0) の分類（実測、独立）**:
+  - (3,1,0) の row1-親は**基底 (0,0,0)**（deep leaf は row1=2 の鎖が row1=1 列を指す、別物）。
+  - W を行列として (3,1,0) を展開 → (3,0,0)(4,1,1)(5,1,1)：**row2 が 0→1 にリフト**し F 字 (1,1,1)(2,1,1) を再生。
+  - = 自己参照的リフト（psi(I) の弱コンパクト性の特徴）。深い葉とは別の collapse 機構が要る。
+- ∴ 壁は 2 つ: (1) 深い葉（現 frontier 1688, fork）、(2) W の自己参照リフト（目標 4784）。
+  シートは大きさ順なので、深い葉を越えて登る過程で (2) の機構も積み上がる。fill-the-gaps 通り深い葉が先。
+- 下流組立の計画は scratchpad/downstream_plan.md（GoodChtX_deep→OkWsAt→FarCAt→topCLT_WgL_deep→GTC_far_deep→証明中）。
