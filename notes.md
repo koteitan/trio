@@ -31462,3 +31462,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **DEFINITIVE 結論(追記672)は不変・確定**: 測度再帰(size/lex 全変種)は prefix-parent(§278.1, measOK_false で証明済)で詰まる。ℕ-測度では閉じない。順序数割当が要る。psi(I)∈W0 は hard open。
 - **教訓6: proven な `_false` 定理を ground truth とし、oscillating な empirical で覆さない**。empirical が定理と食い違う時は empirical が不faithful。
 - commit: notes。cron 残置。**測度再帰の再検証はこれで打ち止め**(教訓5/6)。
+
+## 追記677: ★ 追記676 の refinement — measOK_false は非based 特有。based/標準では prefix-parent が起きない
+
+- **genuinely 新しい faithful テスト(measok_prefix.py, 初めて prefix A つき)**: prefix A(reachable W-member)+ mTower Q(**based**, root (0,0,0), z=0)、104232 例:
+  - **parent が prefix A に飛ぶ(jumpA)= 0**。**window > |Q| = 0**。
+  - 「window ≥ |Q| 失敗」36980 は**全て win = |Q|**(p_rel=0, 親=ブロック根)。これは strict window 測度では失敗だが **lex 測度では e/d 減少(rows 1,2)で処理**される正常ケース。
+- **∴ based/標準域では prefix-parent は起きない**。`measOK_false` の反例 M0ce(Q0ce=非based, root row0=2, **row0 ジャンプ 0→2**)は **非based 特有**。
+- **追記676 の訂正**: 「`measOK_false` → 測度再帰 hard-open」は **非based(∀版)を standard/based に過度一般化**していた。measOK_false は ∀(非based 含む)を殺すだけ。**based/標準では prefix-parent なし、lex 測度は機能する**(win≤|Q|, win=|Q| は e/d)。
+- ∴ §278.1 の prefix-parent は **非標準(row0 ジャンプ)でのみ**。標準形(row0 連続)では起きない。追記671(反例=非標準)と整合。
+- **⚠ oscillation 履歴の自覚**: 私は楽観↔悲観を 7 回繰り返した。empirical が misleading だった(prefix なし/非faithful)。今回は **prefix A つきで faithful**、かつ measOK_false(非based)と矛盾しない refinement。だが **DEFINITIVE な確定は Lean 検証が要る**(empirical だけで「解けた」とは言わない)。
+- **精緻化された理解**: lex 測度は **based/標準域で機能**(prefix-parent なし)。crux = 「標準形(row0 連続 + row2 整合)」の syntactic 特徴づけ + 再帰での保存。これは正規化プログラムで **viable**(hard-open ではない)。team の lex WIP の方向。
+- **次段**: (a) 「row0 連続(no-jump)」が prefix-parent を排除することを Lean で(nextrel0 の le0 祖先性から)。(b) 標準形の保存。(c) lex hstep。
+- commit: notes。scratchpad: measok_prefix.py。cron 残置。
