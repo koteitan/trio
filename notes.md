@@ -31208,4 +31208,7 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   (`H2cone_mTower` で塔に遺伝、base は well-formed Q)。hr0 は消費側が供給。
 - **hstep の中身(§163.1)**: (C1) 錐内(le1 Q 0 j)→ 親同ブロック → 窓<|Q| → §138 測度あり。(C2) 錐外 → 孤児 or 復活。
   = R2 測度(rank 減少 §199)の本体。ここが最後の山。
+- **hstep の helper(既存)**: `snocStep_of_orphan`(L105Cap:9854, srow=1 孤児), `snoc_orphan_W`(:144), `snoc_zeroRow2`(Wtower2:3127),
+  `snoc_flat_root`(L53Subst:43, srow=0 根), `wsnoc_srow0_of_prefixCopies`(srow=0 非根)。free ケースは揃う。
+  **残 residual = srow≥1 錐+親**(窓測度 §138 + rank §199 + Prod.Lex WF 誘導)。複数 heartbeat 規模の核。
 - commit: notes + lean/W5.lean。cron 残置。
