@@ -31012,3 +31012,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   fwH-Y 機構と噛み合わず、深い葉が全文法を破る。→ **GoodChtX_deep 級の from-scratch keystone**（深い葉 upleaf 特殊処理 +
   tie-0 スパイン再レベル化の融合）が必要。tstep_oper 展開 = tower(j)++dtree(dtree は TreeOKs)だが IH(GpT)文脈への森内部追加補題が無い。
 - memory: tower-keystone-bridge.md に全排除記録。commit なし(scratchpad, sorry=1), cron 残置。
+
+## 追記644: ★戦略転換 — 行証明主線は BwT/GTC(tracked)、GoodChtX_tower(GpT)は scratchpad 側道
+
+- **due-diligence 確定**: `grep GoodChtX_tower|"towT 0 ["` は tracked lean/ でゼロ件。GoodChtX_tower は完全に
+  scratchpad/tower_full.lean(未追跡)。8+ ターン grind したが tracked critical path 外だった。
+- **主線 = GTC/CLTL/BwT/StarOK**（tracked）: `hK_pm`(HeT:41, GTC for 深い葉)→ R_pm/R_pm2(HeT)/R_pm3(HeW) ∈ W 0。
+  機構: `upleaf_deep_coreDT`→tow→dtree(木)→`GTC_wLTL`。行の締めは `BwT`(GxJ:286)+`StarOK`+`W0_of_starOK`。
+- **frontier**(sheet 証明中): `(0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)` = R_pm(深い葉)+`(3,2,0)`(collapse)。
+  展開で幅2 深い葉(tow が shift-1 graft で木でない, 946a620)。単一葉の tow→dtree(木)→GTC_wLTL が効かない。
+- **★次の道具 = BwT_rep(GxK:100)/GT(GxK:29)**: 「語の塔」をネイティブに扱う（GT 語を n 回反復 → BwT）。
+  幅2 tow = 塔(木でない)だが BwT は Bad Word Tower なので、木ベース GTC_wLTL の代わりに BwT_rep で塔を刻めるか。
+- **次段**: frontier/幅2 tow を rword で語に分解し、BwT_rep/GT/BwT_append_words で BwT を出す。塔(GpT scratchpad)は保留。
+- memory: frontier-via-bwt-not-goodchtx.md 新規。commit なし(行未証明), cron 残置。
