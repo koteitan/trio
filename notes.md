@@ -31475,3 +31475,14 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **精緻化された理解**: lex 測度は **based/標準域で機能**(prefix-parent なし)。crux = 「標準形(row0 連続 + row2 整合)」の syntactic 特徴づけ + 再帰での保存。これは正規化プログラムで **viable**(hard-open ではない)。team の lex WIP の方向。
 - **次段**: (a) 「row0 連続(no-jump)」が prefix-parent を排除することを Lean で(nextrel0 の le0 祖先性から)。(b) 標準形の保存。(c) lex hstep。
 - commit: notes。scratchpad: measok_prefix.py。cron 残置。
+
+## 追記678: ★ concrete Lean に切替 — `window_lt_of_H2cone`(GREEN)で H2cone を lex 測度に接続
+
+- empirical oscillation を止め concrete Lean へ。**私の H2cone が lex hstep の srow=2 分枝を埋める**ことを green で確立。
+- **`W5.window_lt_of_H2cone`(GREEN, 0 sorry)**: `H2cone Q` + (in-cone, 行2>0 の列 j)⟹ 塔 `A++mTower Q d e n++B.take(j+1)` の nextrel2 の窓が `< |Q|`。
+  証明: H2cone で `hasParent (Q.take(j+1)) 2 j` → `hasParent_two_take`(H12Export:47)で `hasParent Q 2 j` → `window_lt_of_row2_parent'`(H12Export:3992)で 窓<|Q|。
+- **意義**: lex hstep の case 分析で **srow=2 in-cone は「窓<|Q| ⟹ lexLt_of_window(第1成分減)」**が、私の H2cone を使って green で埋まる。
+  他の分枝: srow=1 in-cone は `window_lt_of_row1_parent'`(hasParent Q 1 j), srow=0 は `window_lt_of_row0_parent`(d>0), 孤児は snoc_orphan_W(F1/F2a), j=0 ブロック根は lexLt_of_srow(e/d, z=0 で srow≤1)。
+- **∴ lex hstep は z=0 域で部品が揃う**: window_lt(srow別)+ lexLt pieces + snoc_orphan_W + 私の H2cone(srow=2)。組立 + 標準保存が残り。
+- **残**: (a) lex hstep の組立(mTowerClosedBased_of_lexStep の hstep, hsnoc_gen_lex)。(b) H2cone(Q) の確保(consumer/reachable で成立)。(c) z=0∨e=0 保存(oper_window_invariant)。(d) 非標準 W-member の扱い。
+- commit: notes + lean/W5.lean。cron 残置。

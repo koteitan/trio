@@ -272,5 +272,19 @@ theorem mTowerClosedRow2_of_h2cone_hstep
   exact mTowerClosed_of_snocStepCone_h2cone hs (hH2 u d e Q hQ hs hz2)
     (hHstep u d e Q hQ hs hz2) n
 
+/-- **★ H2cone → lex 測度の減少(srow=2 in-cone)**: `H2cone Q` の下で、錐内で行2が正の列 j の
+    snoc は行2親を Q 内に持ち(`hasParent_two_take` で `Q.take` から Q へ)、
+    塔での窓が `< |Q|`(`window_lt_of_row2_parent'`)。⟹ lex 測度の第1成分が減る。
+    これが lex hstep の srow=2 分枝を私の H2cone に繋ぐ。 -/
+theorem window_lt_of_H2cone {A Q : TrioSeq} {d e n j c : ℕ}
+    (hQcone : H2cone Q) (hj1 : 1 ≤ j) (hj : j < Q.length)
+    (hcone : le1 Q 0 j) (hpos : 0 < entry Q 2 j)
+    (h : nextrel2 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    (A ++ mTower Q d e n).length + j - c < Q.length := by
+  have hpar_take : hasParent (Q.take (j + 1)) 2 j := hQcone j hj1 hj hcone hpos
+  have hpar : hasParent Q 2 j := (hasParent_two_take (by omega) (by omega)).mp hpar_take
+  exact window_lt_of_row2_parent' hj hpar h
+
 end W5
 end TRIO
