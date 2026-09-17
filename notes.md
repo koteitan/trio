@@ -31047,3 +31047,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 素材: GTC_tie(GzJ:179), GT_loadTop(GxK:478), GTC_oper(GzJ:26), coneV_top, hK_pm(HeT:41), tow_dtree, GTC_wLTL(HeN:212)。
 - **次段**: 幅2 深い葉の GTC を hK_pm 類推で構築（GTC_wLTL の木の代わりに GTC_tie スパイン+GT_loadTop）。GoodChtX_tower(scratchpad)放棄。
 - memory: frontier-via-bwt-not-goodchtx.md 更新。commit なし(行未証明), cron 残置。
+
+## 追記647: hK_w2 setup 緑(幅2→tow GTC 還元)。tow GTC=Ub(m'-1) が keystone、全ルート詰まり確認
+
+- **hK_w2 緑(scratchpad/hK_w2.lean, 0 error, sorry=1)**: 幅2 深い葉 [DL, tie 1 []] の GTC を upleaf_deep_coreDT で還元。
+  残 sorry = `GTC CLTL 0 ([(1,1,1)] ++ shiftr01 1 0 (tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] m'))`, m'≥1。
+- **tow 1 0 R m' = Ub(m'-1)**（tower body, 数値確認 w2tow.py）。∴ tow GTC = tower body GTC が keystone。
+- **goal = wLT 0 ([], [some (Ub(m'-1))]) 形**（FTL0 1 []=[(1,1,1)], unitC v (some Z)=shiftr01 1 0 Z 確認）。
+- **全ルート詰まり確認**:
+  - 木 `GTC_wLTL`(HeN:212): DL(tie 1)は TreeTs でない → ✗（hK_pm の dtree は木だが幅2 tow は非木）。
+  - load `GTC_load_CLTL`(HeK:301): v=0 で Wg(2*0)=Wg(0) をロード。tow=Ub∈Wg(2)。Wg_mono(Gw:123)は u≤v→Wg u⊆Wg v で Wg(2)⊄Wg(0) → ✗（level 問題は GpT と同じ）。
+  - upleaf 再適用: 塔の descent chT[tower] に marker(level 1<m=2)があり hD1 失敗 → ✗。
+  - GTC_oper: word⟦n⟧ が非 bottoming(DL→dtree だが tie-0 spine 残る) → 単純再帰で底打たず。
+- **crux(不変)**: tower body は level 1(Wg budget 2)、遠い語 v=0。DL(tie1)が木文法を破り、level が load を阻む。
+  幅2 = GoodChtX_deep 級の from-scratch keystone（tie-0 spine + DL 葉 + level 再レベル化の融合）。GpT でも GTC でも同じ壁。
+- **次段候補**: (a) tow GTC を tower 高さの帰納で（各 DL→dtree, spine を GTC_tie/GTC_oper で刻む）。(b) 再レベル化 load(GTC_tie の u≥v で Ub∈Wg(2) を u=1 でロード)。(c) 戦略再考。
+- commit なし(行未証明), cron 残置。
