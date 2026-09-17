@@ -30996,3 +30996,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **新候補**: dtree(純 tie-0 塔)は GoodChtX_dtree(TreeOKs+GoodChtX_snocT)で処理済み。塔 = tie-0 スパイン + 深い葉(DL)装飾。
   TreeOKs は tie1-in-tie1(DL)を拒否するが、tie-0 スパインの機構に深い葉を graft する道を次段で検討。
 - commit なし(scratchpad, sorry=1), cron 残置。
+
+## 追記643: 塔 load の全ルート排除完了。深い葉が全文法(TreeOKs/Gd)を破る = from-scratch keystone 必須
+
+- **現状 GREEN(tower_full.lean, 0 error, sorry=1, 23 緑補題)**: succ を直接ルートで分解、残 sorry = `GpT(K' ++ shift³(Ub j))`,
+  hDeep:GpT(K'=深い葉遠い語=GoodChtX_deep.2), hUbWg: Ub j ∈ Wg(2(q0+1))。U0_split/Z2s_chT_tower/Ub_mem_Wg/hDeep 全緑。
+- **load を全候補で排除(確定)**:
+  - GpT_node(row0=1 固定, 塔 shift² 後 row0=3)✗。GpT_load(level 2*b 固定)✗。
+  - based_Wg_ind(HbU:23)+tstep_orph: orphan level j≤q0+1 を tstep_orph(j≤b)不可(level 壁)✗。
+  - slot_load(GpT_ax GyC:186, ok=GpT A o f 各 stage): stage q0+1 で Wg ロード可だが GpT(q0+1)局所、goal は GpT(b)大域 → stage 不一致 ✗。
+  - fwH_tie_step(HbM:120)/cstep_tie: tie を Y 末尾で処理、塔 tie は FTLt(H)内 ✗。
+  - **深い葉 DL=tie1[tie1[]] は TreeOKs/Gd 文法を全破壊**(Gd_treeU HeI:54 の tie-(l+1) が内側 cl=false 要求 = 追記635 Gd_deep 詰まり)。
+    Gd_treeL(TreeOKs 森を Gd 文脈へ)で dtree 尾は載るが、塔(j)を Gd 文脈にする段で深い葉が詰まる。GoodChtX_snocT は新森追加で森内部拡張でない。
+- **crux**: 大域 GpT(stage b, 遠い語) ⟷ 局所 Wg-load(stage q0+1) の橋 = 遠い語 rendering。塔の FTLt-H 構造が
+  fwH-Y 機構と噛み合わず、深い葉が全文法を破る。→ **GoodChtX_deep 級の from-scratch keystone**（深い葉 upleaf 特殊処理 +
+  tie-0 スパイン再レベル化の融合）が必要。tstep_oper 展開 = tower(j)++dtree(dtree は TreeOKs)だが IH(GpT)文脈への森内部追加補題が無い。
+- memory: tower-keystone-bridge.md に全排除記録。commit なし(scratchpad, sorry=1), cron 残置。
