@@ -31160,3 +31160,14 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **含意**: 追記653 の「ConeRow2Vanish は素性依存で局所補題不可」は、`H2cone(Q) → H2cone(mTower Q d e n)`(側条件 e=0∨root row2=0 つき)という **clean な塔補題**に精密化された。H2cone は「Q の不変量 + 塔で保存」で担げる。
 - **次段**: e=0 半分 `H2cone(Q) ∧ zle1 Q → H2cone(mTower Q d 0 n)` を Lean 化(hasParent2_mTower_iff(L106:10643)+ 周期性 entry2_mTower + le1 の e=0 解析)。+ fact B を rankDE_oper(§198, green)から Lean 化。
 - commit: notes のみ。scratchpad: w5_key.py(CLAIM1 32280/0, factB 6704/0), w5_h2cone.lean(H2cone_mTower_of_hz0 green)。cron 残置。
+
+## 追記655: e=0 半分の機構 = confinement(in-cone row2>0 は block 0 限局)。(d,e)任意との整合を整理
+
+- **confinement 実証(robust)**: e=0 塔 mTower Q d 0 n(root row2=1, H2cone(Q))で in-cone row2>0 列は **block 0 に限局**。
+  adversarial 54400 例(うち root 非 row1-min 33280)で **failures 0**、H2cone(mTower) も 0。∴ **H2cone(mTower Q d 0 n) ⟸ H2cone(Q)**(block 0=Q、shiftr0 は le1/row2 不変)。
+- **(d,e)任意との整合(重要)**: Y u の定義は「∀ d e n, mTower Q d e n∈W u」で **(d,e)任意**。root row2=1 ∧ e>0 は H2cone が破れうる(Q=[(0,1,1)]→[(0,1,1),(1,2,1),...])。
+  一見矛盾だが: そういう Q は mTower Q d e n∉W u なので **Q∉Y u**(IH が除外)。H2cone 前提が実際に要るのは **oper で生成される対象**で、そこは `oper_eq_mTower` の出力 (d',e')。
+  fact B: **oper 出力の e'(=d1)は srow=2 の時のみ非零、root row2=1⟹srow≤1⟹e'=0**。∴ oper-derived な root row2=1 窓は必ず e=0 → confinement → H2cone。
+  ⟹ premise 遺伝は「root row2=0: hz0 半分(green, ∀d,e)」+「root row2=1: e=0 半分(confinement)」で尽きる。
+- **残 Lean 3 本**: (1) confinement: e=0 塔で in-cone row2>0 ⟹ block 0(le1 の e=0 解析)。(2) block 0 還元: H2cone(mTower Q d 0 n)⟸H2cone(Q)。(3) fact B: root row2=1⟹oper e'=0(rankDE_oper §198 から)。
+- commit: notes のみ。scratchpad 追加: w5_e0.py(10464/0), w5_e0_adv.py(54400/0)。cron 残置。
