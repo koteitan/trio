@@ -31037,3 +31037,13 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **次段**: 幅2 深い葉を GT 機構で構築。GT_oper→幅2 tow→GT_tie(tie0 が sub∈Wg ロード)+GT_oper(DL)→dtree→GTall。
   まず単一深い葉の GT/GTC 経路(hK_pm=upleaf_deep_coreDT→dtree→GTC_wLTL)を確認し、幅2 で tie0 を GT_tie に置換。
 - memory: frontier-via-bwt-not-goodchtx.md 更新。commit なし(行未証明), cron 残置。
+
+## 追記646: 幅2 の viable path 確定 — GTC_tie(再レベル化)+GT_loadTop(Wg ロード)、tracked のみ
+
+- **GTC(GzJ:23)構成子**: GTC_oper(GzJ:26)/GTC_tie(GzJ:179,再レベル化)/GTC_orph(GzJ:118)/GTC_flat(GzJ:67)。GpT の GoodChtX_tower(level 壁)不要。
+- **GT_tie/GTC_tie の hload discharge pattern**(GxL:125-127 GT_unitsC): `GT_loadTop`(GxK:478)で Wg メンバ Z を prefix の GT(再帰 ih)に載せる。再レベル化は tie が処理。
+- **幅2 塔の GT/GTC**: 塔=K++[(x,q0+2,0)](最深葉=trigger,v=q0+1)→ GTC_tie → hload=GT_loadTop(sub∈Wg)+prefix GTC(再帰)。底=単一深い葉(hK_pm)。
+- **frontier** = (0,0,0)::rword[Kfront], Kfront=Kdeep++[(3,2,0)]。GTC Kfront→GTC_oper(peel)→∀n GTC(幅2 tow)→GTC_tie スパイン→ BwT→StarOK→W。
+- 素材: GTC_tie(GzJ:179), GT_loadTop(GxK:478), GTC_oper(GzJ:26), coneV_top, hK_pm(HeT:41), tow_dtree, GTC_wLTL(HeN:212)。
+- **次段**: 幅2 深い葉の GTC を hK_pm 類推で構築（GTC_wLTL の木の代わりに GTC_tie スパイン+GT_loadTop）。GoodChtX_tower(scratchpad)放棄。
+- memory: frontier-via-bwt-not-goodchtx.md 更新。commit なし(行未証明), cron 残置。
