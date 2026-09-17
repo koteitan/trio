@@ -30844,3 +30844,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   深い葉+複数 collapse 語は現機構で可）ので、幅2でなく別の並びの行を先に埋める手もある。
 - **注**: GLctx は [K,K2] も満たす（p2=空 collapse 語の子は GoodChtX_nil）→ 深い葉+N collapse 語は現機構で出る。
 - 次: 幅2の tow の構造を Lean で同定（dtree2 の形）。または深い葉+collapse 語の並びで埋まる行を探す。
+
+## 追記632: 幅2は幅k一般（段q整礎帰納が要る）。ただし塔の中は「単一の深い葉」= GoodChtX_deep で扱える
+
+- 幅2の tow は**q=1 でも木でない**（実測）: tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] = (0,1,0)(1,2,0)(2,2,0)(1,1,0)…
+  で、shifted 段で見ると**単一の深い葉 tie 1[tie 1[]]** を含む。単一深い葉の「遠い段=木」の近道は効かない。
+- upleaf_deep_coreD は幅2の descent R=[(1,q+2,0),(2,q+2,0),(1,q+2,0)]（D=[..2列..], d0=1, m=q+2）に**適用可**
+  （frame 確認、条件は tuple 射影の omega のみ要調整）。壁は hrep=幅2 tow の GpT。
+- **鍵**: 幅2 tow の中の深い構造は**単一の深い葉**（GoodChtX_deep 済）。∴ 幅k は
+  「単一深い葉 unit + 木 unit の森」の GoodChtX を段 q で整礎帰納すれば出る見込み。
+  base 段0=木（GoodChtX_snocT）、step=upleaf で段 q→q-1、単一深い葉は GoodChtX_deep。
+- ただし幅2は**1つの F タイの子の中の森** [深い葉, tie 1[]]（(1,1,0) マーカー1個）なので、
+  森内（within-forest）の深い葉+木を扱う必要。GoodChtX_snocT は Lds リストへの追加（別 F タイの子）で、
+  森内追加と別。森内の深い葉+木を GoodChtX_deep の farWt 展開で直に扱うのが筋。
+- 目標 psi(I) は summit なので幅k を含む全機構が要る見込み（回避不可）。
+- **次**: 幅k を段 q 整礎帰納で。まず森 [深い葉, tie 1[]]（幅2）の GoodChtX を GoodChtX_deep の証明を
+  拡張して建てる（key/upleaf を 3列 chT に、hrep=幅2 tow を段帰納で）。GoodChtX_deep が最重要の底。
