@@ -31373,3 +31373,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **状況**: lex 測度の減少は z=0∨e=0 で OK(私の不変量つき)。残るは hstep の prefix/re-base 機構。size 測度より有望(based 限定で M0ce 除外)。
 - **次段**: lex hstep の機構を詰める。oper_eq_mTower(悪根=根)の場面と、悪根≠根(窓)の場面の扱い。W の row0-shift 不変性(re-base)を確認。
 - commit: notes。scratchpad: lexmeas.py(z0/e0: 0 fail)。cron 残置。
+
+## 追記670: 測度再帰の core は hard open(非based 窓/prefix-parent、team が §278.2 で正規化の罠として未解決)
+
+- **exhaustive に探った結論**: MTowerClosedRow2/MTowerClosedS を測度再帰で示す道は、**再帰が非based 窓を生み、その oper の親が接頭辞を指しうる(prefix-parent)**ため詰まる。
+  - size 測度: `measOK_false`/`measOK2_false`(反例 M0ce=非based)。
+  - lex 測度: based+z=0∨e=0 で減少(私の不変量つき)だが、hstep で非based 窓の re-base が prefix 根と衝突。
+  - §278.2: team 自身が「R2 は A 無関係/j=0 のみ破れ、私の実測は A 影響」の食い違いを **正規化の罠**として未解決とした。
+- **全アプローチが同じ core に収束**: Subst1g(graft)= clause3 → clause2(oper)= 測度再帰。GraftAll も同。∴ 迂回できない hard core。
+- **building block(green)**: `oper_shiftr01`(Wset:434): `(shiftr01 d 0 W)⟦n⟧ = shiftr01 d 0 (W⟦n⟧)` = oper は row0-shift と可換 ⟹ **W の row0-shift 不変性(re-base)の基**。ただし単独では core を閉じない。
+- **私の寄与(部分、正しい)**: 構造理解、W5.lean の green 補題(H2cone/confinement/factB/oper_window_invariant)、**z=0∨e=0 不変量**(based 再帰を良測度域に保つ)。core(非based/prefix-parent の正規化)は未解決。
+- **正直な評価**: これは trio project の **hard open な研究課題**(team の 30000+ 行が MTowerClosedRow2 を仮定のまま残す理由)。heartbeat で閉じるのは非現実的。
+- **次段候補**: (a) 正規化(標準形に限れば prefix-parent が消えるか)を faithful に測る。(b) 別の proof 構造(n の帰納 / ordinal 割当、lean-yapss 類推)。(c) W row0-shift 不変性を green 化(re-base 部品)。
+- commit: notes。cron 残置。
