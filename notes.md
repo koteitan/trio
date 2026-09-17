@@ -31452,3 +31452,13 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   3. Lean の `MTowerClosedAt` は based 要件。非based 窓に IH を当てるには based 落とすか re-base(lex は base-indep なので based 落とせる見込み)。
 - **次段**: (a) Lean で lex hstep を書き、window の lex 減少を実証(step モデルの faithful 化)。(b) MTowerClosedAt の based 要件を落とせるか。(c) 非reachable W-member の扱い(正規化 or 別節)。
 - commit: notes。scratchpad: recursion.py(9000/9000 STOP)。cron 残置。
+
+## 追記676: ★ oscillation を止める — ground truth (`measOK_false` 証明済) に anchor。追記675 は不faithful
+
+- **私は 6+ 回 oscillate した**(追記664 楽観→667 悲観→671 楽観→672 悲観→675 楽観)。原因: empirical テストが微妙に不faithful で prefix を見逃す(教訓5 の pattern)。
+- **anchor すべき ground truth**: `L106.measOK_false`/`measOK2_false` は **証明済み Lean 定理**(反例 M0ce)。∴ **測度再帰は詰まる**(私の empirical より確実)。
+- **追記675 の訂正**: recursion.py の「prefix-free 再帰 9000/9000 停止」は **prefix(mTower[:c])を含まない**テスト。実際の還元 `(mTower Q d e n)⟦m⟧ = mTower[:c] ++ 窓copies`(oper_mTower, 悪根は最終ブロック内 ≠ tower root)は **prefix-aware**。
+  prefix mTower[:c](根 (0,0,0)浅)+ 窓 V(shift で深)⟹ V の列の le0 親が prefix を指す(§278.1)⟹ prefix-parent ⟹ 測度破れ。∴ recursion.py は実還元を捉えていない。
+- **DEFINITIVE 結論(追記672)は不変・確定**: 測度再帰(size/lex 全変種)は prefix-parent(§278.1, measOK_false で証明済)で詰まる。ℕ-測度では閉じない。順序数割当が要る。psi(I)∈W0 は hard open。
+- **教訓6: proven な `_false` 定理を ground truth とし、oscillating な empirical で覆さない**。empirical が定理と食い違う時は empirical が不faithful。
+- commit: notes。cron 残置。**測度再帰の再検証はこれで打ち止め**(教訓5/6)。
