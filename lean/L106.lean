@@ -11279,5 +11279,25 @@ theorem snoc_lex_decrease_row0 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
     rw [List.length_take]; exact Nat.min_le_left _ _
   omega
 
+/-! ### §321 ★★★★★ **srow = 2 supplier の z=0 版** —— 錐条件を `entry Q 2 0 = 0` ∧ `le1 Q 0 j` に還元
+
+`snoc_lex_decrease_row2` は `hasParent Q 2 j` を要求した。⟹ ★ `h2_cone`（L105Cap:11320）は
+**`entry Q 2 0 = 0`（z=0）だけで**錐の中の行 2 の親を出す（`Q ∈ W u` すら不要）。
+⟹ ⟹ ★★ ですから srow=2 の測度減少に本当に要る錐条件は **`le1 Q 0 j`（根が列 j の行 1 祖先）だけ**。
+fact B が消費側で z=0 を与える。⟹ 残差が `le1 Q 0 j`（＝ H1based/行 1 連結性）1 本に絞られる。 -/
+
+theorem snoc_lex_decrease_row2_of_z0 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
+    (hz0 : entry Q 2 0 = 0) (hj1 : 1 ≤ j) (hj : j < Q.length)
+    (hcone : le1 Q 0 j) (hpos : 0 < entry Q 2 j)
+    (hnr : nextrel2 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    LexLt (lexMeas (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)) e' d')
+      (lexMeas Q e d) := by
+  have hpar_take := h2_cone hz0 j hj1 hj hpos hcone
+  have hpar_Q : hasParent Q 2 j :=
+    (H12Export.hasParent_two_take (show j + 1 ≤ Q.length by omega) (by omega)).mp hpar_take
+  exact snoc_lex_decrease_row2 hj hpar_Q hnr
+
 end L106
 end TRIO
