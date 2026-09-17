@@ -31286,3 +31286,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   または失敗 Q(z=1,d≥2,e≥2)が derivation で現れないなら restricted MeasOK2 で足りる(要確認: 消費側が渡す d,e)。
 - **次段**: (a) 失敗 Q(z=1,d≥2,e≥2)が消費側で現れるか。(b) natMeasure を smarter に(窓>|Q| を rank/ブロック数で補償)。tower_of_measure_step2 の infra は再利用可。
 - commit: notes。scratchpad: measok2.py/measok3.py(faithful Lift1)。cron 残置。
+
+## 追記664: ★★★★★★★ restricted MeasOK2(z=0 ∨ e=0)は真、かつ両消費側を覆う。私の confinement/H2cone がその証明道具
+
+- **faithful 検証(masked Lift1)でバケツ別**: **z=0: 62538/0**, **e=0: 13242/0**, z=1∧e≥1: 76 失敗(全て d=e=2)。
+  ∴ **MeasOK2 は `z=0 ∨ e=0` で完全に成立**(75780/0)。失敗は z=1∧d≥2∧e≥2 のみ。
+- **★ 両消費側は安全域に入る**:
+  - `liftTowerExp2`(srow=2): **fact B で z=0 強制**(根が末尾の行2親 ⟹ entry Q 2 0=0)⟹ z=0 バケツ。
+  - `liftTower1`(srow=1): `shiftTowerClosedS`(shTower)経由で **e=0**(oper d1 = 0 since srow=1)⟹ e=0 バケツ。
+  ∴ **失敗 Q(z=1,d≥2,e≥2)は derivation で決して現れない**。
+- **∴ 残差 = restricted MeasOK2(z=0 ∨ e=0)、これは真**。証明道具:
+  - **e=0**: `W5.confinement`(green)+ H12Export の intra-block(`nextrel1_mTower_src_ge_block_of_witness` 等)⟹ 窓 < |Q|。
+  - **z=0(hz0)**: h2cone で行2親が in-block、行0/1 も in-block ⟹ 窓 < |Q|(z=0 で 62538/0 が裏付け)。
+- **残 Lean**: (1) restricted MeasOK2(z=0∨e=0 → 窓<|Q| → natMeasure 減)を証明。(2) L106 の `tower_of_measure_step2`/`mTowerClosedS_of_measOK` を
+  restricted 版に(消費側が z=0∨e=0 のみ渡すので、再帰が z=0∨e=0 を保つ不変量を確認 or 消費側限定で流す)。
+- **要確認**: oper の再帰が z=0∨e=0 を保つか(window V の z',e')。保てば restricted MeasOK2 で goal が閉じる。
+- commit: notes。scratchpad: measok4.py(バケツ別 75780/0)。cron 残置。
