@@ -30875,3 +30875,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   base j=0: GoodChtX_deep。step: tie 0 で深い子を包む GoodChtX（GoodChtX_snocT の深い版 / Gd_treeU tie0 の
   GoodChtX 版）。これが幅k の底。
 - **次**: GoodChtX 級の「深い葉の塔」補題を建てる（GoodChtX_deep + tie 0 入れ子の帰納）。これで幅2→幅k。
+
+## 追記634: 幅2 GoodChtX の frame 緑（hrep=深い葉の塔 GpT のみ残る）。scratch 保存
+
+- scratch w2_frame.lean（緑, 末尾 sorry=hrep のみ）: 幅2の森 [tie 1[tie 1[]], tie 1[]] の GoodChtX が
+  GoodChtX_deep と同じ手順（Part1 RawTs、3列 key、upleaf_deep_coreD で D=[(1,q0+2,0),(2,q0+2,0)], d0=1, m=q0+2, q=q0+1）
+  で **hrep まで通った**。残りは hrep = ∀m' GpT of (Pre ++ Yp ++ shiftr01²(tow (q0+1) 0 [(1,q0+2,0),(2,q0+2,0),(1,q0+2,0)] m'))。
+- この tow = 深い葉の塔 chT(towT 0 [深い葉])（追記633、backbone 恒等式は緑）。
+- **hrep の設計**: GoodChtX of 深い葉の塔（Lds=[towT 0 [DL] j]）を j 帰納。
+  - base j=0: [DL] → GoodChtX_deep。
+  - step: F(j+1)=[DL, tie 0 (F(j))]（DL prepend + F(j) を tie 0 で包む）。GoodChtX [[DL, tie0(F(j))]] を
+    GoodChtX [[F(j)]]（IH）から。この step が幅k の核（DL は GoodChtX_deep、tie0 包みは木）。
+- 単一深い葉（GoodChtX_deep）が底、tie0 の入れ子で塔を積む。これが緑になれば幅2→幅k→シート 1688 以降。
+- **次**: hrep（深い葉の塔 GoodChtX）を建てる。step（DL prepend + tie0 wrap）が要。
