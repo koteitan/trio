@@ -31100,3 +31100,14 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   幅2 barrier は Clause3 の特殊例、一般証明が閉じる。
 - **次段**: L105Cap/H12 の最深残余を特定し、Clause2/Clause3/mTowerClosedRow2 の core に迫る。幅2 シート climb は保留。
 - memory: subst-reduction-supersedes-sheet.md 新規。commit なし(残余未証明), cron 残置。
+
+## 追記651: ★★★★★ 最終 frontier 特定 = clause2(hcl2)の R2 測度証明(hstep 残り)。節3 は吸収済で FREE
+
+- **reduction 完全に辿った(全 0 sorry)**: psi(I)∈W0 ⟸ Clause2∧Clause3 ⟸ ... ⟸ **MTowerClosedRow2 ⟸ hcl2(clause2 1本)**。
+  `mTowerClosedRow2_of_clause2'`(H12A2:201): hcl2 = `∀u M, (∀n≥1 M⟦n⟧∈Y u)→M∈Y u`、Y u={Q|mTower Q d e n∈W u(根最浅,row2>0)}。
+- **★節3(一般 graft, 幅2 subsume)は clause3_to_clause2(aop_clause3_to_clause2)で節2に吸収 → FREE**。節1 空虚、|M|=1 は hone_holds。
+  ∴ **唯一の残余 = clause2(oper case)**。幅2 barrier は不要になった。
+- **L105Cap §196-199 が hcl2 を R2 測度 `(|V|, rank(d,e))` で active 証明中**: 6 行中 **4 行完成**(§199.1)、残り=`hstep`(rank 非減少段で減る, §196.1「Lean 未着手」)。"team-lead"/R2 の協調作業。
+- **戦略的結論**: シート climb(幅2)は完全に redundant。psi(I)∈W0 は「clause2 の R2 測度証明(hstep 残り)」に帰着。
+- **次段**: hstep(R2 測度の rank 減少)を理解し contribute。§196.1 の未着手部分 + §197-199 の done 部分を確認。幅2 は放棄。
+- commit なし(hcl2 未証明), cron 残置。
