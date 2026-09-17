@@ -11319,5 +11319,88 @@ theorem snoc_lex_decrease_row1_of_hr0 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
   have hpar_Q : hasParent Q 1 j := H12Export.hasParent1_of_le0 hj hle0 h1
   exact snoc_lex_decrease_row1 hj hpar_Q hnr
 
+/-! ### §323 ★★★★★ **標準不変量 `StdInv` と測度減少ディスパッチ** —— 供給の統一 -/
+
+/-- **標準不変量**: 塔の基底 `Q` が満たすべき「根の浅さ／連結性」の束。
+`hr0`（行 0 最浅）＋ 行 1 最浅 ＋ 行 2 の列は行 1 錐内 ＋ z=0。 -/
+def StdInv (Q : TrioSeq) (_d _e : ℕ) : Prop :=
+  0 < Q.length ∧
+  (∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l) ∧
+  (∀ i, 1 ≤ i → i < Q.length → entry Q 1 0 < entry Q 1 i) ∧
+  (∀ i, 1 ≤ i → i < Q.length → 0 < entry Q 2 i → le1 Q 0 i) ∧
+  entry Q 2 0 = 0
+
+/-- snoc の窓 `V = (T.drop c).take (|T|-1-c)`（`c` = 末尾列の親）。 -/
+noncomputable def snocWindow (T : TrioSeq) : TrioSeq :=
+  (T.drop (parent T (srow T (T.length - 1)) (T.length - 1))).take
+    (T.length - 1 - parent T (srow T (T.length - 1)) (T.length - 1))
+
+/-- 窓の d-slot（行 0 差、`0 < srow` のとき）。 -/
+noncomputable def snocD0 (T : TrioSeq) : ℕ :=
+  if 0 < srow T (T.length - 1)
+    then entry T 0 (T.length - 1) - entry T 0 (parent T (srow T (T.length - 1)) (T.length - 1)) else 0
+
+/-- 窓の e-slot（行 1 差、`1 < srow` のとき）。 -/
+noncomputable def snocD1 (T : TrioSeq) : ℕ :=
+  if 1 < srow T (T.length - 1)
+    then entry T 1 (T.length - 1) - entry T 1 (parent T (srow T (T.length - 1)) (T.length - 1)) else 0
+
+/-- ★★★★★★★ **測度減少ディスパッチ**: `StdInv Q` の下で、末尾列の親があれば
+窓の lex 測度が減る（srow=0/1/2 を各 supplier へ配線）。⟹ **`measOK2_false` の positive 対応物**
+（標準域では測度が減る）。 -/
+theorem snoc_measDispatch_std {A Q : TrioSeq} {d e n j : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hz0 : entry Q 2 0 = 0)
+    (hrow1 : ∀ i, 1 ≤ i → i < Q.length → entry Q 1 0 < entry Q 1 i)
+    (hle1c : ∀ i, 1 ≤ i → i < Q.length → 0 < entry Q 2 i → le1 Q 0 i)
+    (hj1 : 1 ≤ j) (hj : j < Q.length)
+    (hpar : hasParent (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        (srow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)) :
+    LexLt (lexMeas (snocWindow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)))
+        (snocD1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)))
+        (snocD0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))))
+      (lexMeas Q e d) := by
+  have hBlen : (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).length = Q.length := by
+    rw [Lift1_length, shiftr01_length]
+  have hTlen : (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length
+      = (A ++ mTower Q d e n).length + (j + 1) := by
+    rw [List.length_append, List.length_take, hBlen, Nat.min_eq_left (by omega)]
+  have hlast : (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1
+      = (A ++ mTower Q d e n).length + j := by rw [hTlen]; omega
+  unfold snocWindow snocD0 snocD1
+  set c := parent (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+    (srow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+      ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1))
+    ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) with hc
+  have hnR := parent_nextR hpar
+  rw [← hc] at hnR
+  by_cases h2 : 0 < entry (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 2
+      ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+  · have hsr : srow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 2 := by
+      unfold srow; rw [if_pos h2]
+    rw [hsr, nextR_two, hlast] at hnR
+    have hpos : 0 < entry Q 2 j := by
+      have he := H12Export.entry2_prefixTake (d := d) (e := e) (n := n) A Q (i := j) (show j < j + 1 by omega)
+      rw [← hlast] at he; rw [he] at h2; exact h2
+    exact snoc_lex_decrease_row2_of_z0 hz0 (by omega) hj (hle1c j (by omega) hj hpos) hpos hnR
+  · by_cases h1 : 0 < entry (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)) 1
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1)
+    · have hsr : srow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 1 := by
+        unfold srow; rw [if_neg (by omega), if_pos h1]
+      rw [hsr, nextR_one_iff, hlast] at hnR
+      exact snoc_lex_decrease_row1_of_hr0 hr0 hj (by omega) (hrow1 j (by omega) hj) hnR
+    · have hsr : srow (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1) = 0 := by
+        unfold srow; rw [if_neg (by omega), if_neg (by omega)]
+      rw [hsr] at hnR
+      have hnr0 : nextrel0 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          c ((A ++ mTower Q d e n).length + j) := by
+        rw [← hlast]; simpa [nextR] using hnR
+      exact snoc_lex_decrease_row0 hr0 hj (by omega) hnr0
+
 end L106
 end TRIO

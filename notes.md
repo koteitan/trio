@@ -31507,6 +31507,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - srow=1: `hr0` + `entry Q 1 0 < entry Q 1 j`(行1最浅)。
   - srow=2: `le1 Q 0 j`(行1連結)+ z=0(fact B)。
   ⟹ **残差 = (i) これらの根の浅さ/連結性を不変量 P に入れる + (ii) 窓 V への遺伝**。(ii) が真の hard core。
+
+## 追記681: ★★ `StdInv` + `snoc_measDispatch_std`(GREEN) — measOK2_false の positive 対応物
+
+- **`StdInv Q` を定義**(L106 §323): 0<|Q| ∧ hr0(行0最浅) ∧ 行1最浅(∀i≥1 entry Q 1 0<entry Q 1 i) ∧ 行2錐内(∀i≥1, 0<entry Q 2 i→le1 Q 0 i) ∧ z=0(entry Q 2 0=0)。
+- 窓の部品 `snocWindow T`(=(T.drop c).take(|T|-1-c), c=末尾列の親)、`snocD0/D1 T`(行0/1差)。
+- **`snoc_measDispatch_std`(GREEN)**: `StdInv Q` + 末尾列に親 ⟹ `LexLt (lexMeas (snocWindow T)(snocD1 T)(snocD0 T)) (lexMeas Q e d)`。
+  - srow を場合分け(entry T 2/1 の正負)し、各 supplier へ配線: srow=2→row2_of_z0(hle1c 供給)、srow=1→row1_of_hr0(hrow1 供給)、srow=0→row0(hr0)。
+  - nextR の index だけ rw する為に **c を set**(親内の srow を隠す)。entry2_prefixTake で entry T 2 last=entry Q 2 j。
+- **意義**: **標準域(StdInv)では lex 測度が確実に減る**ことを green で確立。measOK2_false(非based で偽)の positive 版。⟹ hsnoc_gen_lex の hmeas 義務が StdInv から機械的に埋まる。
+- **残**: (1) snocStep_std_lex(dispatch + hsnoc_gen_lex + 孤児 + j=0 ブロック根 + last-zero の組立)。(2) **窓 V が StdInv を遺伝**(真の hard core、hr0 は hr0_wnd_gen で済、行1最浅/le1連結が subtree 性)。
+- commit: notes + lean/L106.lean。cron 残置。
 - **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
 - **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。
