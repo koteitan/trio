@@ -30979,3 +30979,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - ★重要: `towT 0 [DL] (j+1) = [DL, tie0(tower j)]`（右ネスト, DL + tower j を包む tie0 ノード1個）。∴ tie0 ノードは Ub j ∈ Wg を load = **IH 不要の可能性**（Ub_mem_Wg は独立に全 j 成立）。塔は帰納なしで閉じるかも。
 - **残る唯一の壁 = Wg メンバ Ub j を遠い段 tie0 ノードとして load**。fwH_tie_step は u=q0+1 で葉 level q0+2=(u+1)・Wg(2(q0+1)) が一致するが、森が chT(H=FTLt 内)vs Y 末尾 で引数位置が噛み合わない。cstep_tie は level b+1 vs q0+2 不一致。次: callers の tie0-load パターン特定 or 専用 load 補題を SlotAx.tie で構成。
 - commit なし（scratchpad, sorry=1）, cron 残置。
+
+## 追記642: K' 充填(hDeep 緑)で残 sorry を純 load 化。load 手段を fwH_tie_step に絞込
+
+- **tower_full.lean GREEN(0 error, sorry=1, 23 緑補題)**: 直接ルートの残 sorry を純化。
+  - `hDeep` 緑: K'=深い葉の遠い語 = `(GoodChtX_deep ...).2` + simp relTs + farWt_snoc + hq0 + key_forest + chT_DL。
+  - `Z2s_chT_tower`, `Ub_mem_Wg` を tower_full に移植(緑)。
+  - 残 sorry = `GpT(farWt ws ++ Y ++ shift²(DL3) ++ shift³(Ub j))`, hDeep:GpT(K'), hUbWg: Ub j ∈ Wg(2(q0+1))。
+- **load 手段を全候補精査して決定的に絞込**:
+  - `based_Wg_ind`(HbU:23): horph の orphan level j≤u=q0+1 を tstep_orph(j≤b)で処理不可(q0+1>b の level 壁)→ 不可。
+  - `GpT_node`(GyF:341): marker row0=1 固定、塔の tie0 marker は shift² 後 row0=3 → 不可。
+  - `slot_load(GpT_ax)`=GpT_load: base b 固定 → 不可。
+  - **∴ 再レベル化できる唯一 = `fwH_tie_step`(HbM:120, GpT_ax.tie, far level Wg(2*b'') ロード)**。
+    但し塔の tie0 は chT(H=FTLt)内、fwH_tie_step は Y 末尾の tie を処理 → 構造合わせが keystone。
+    `farWt_lastE`(HdH:21)は forest を H→Y へ移すが多要素 Lds 必要、塔は単一森 [DL,tie0(tower j)] で不適。
+- **新候補**: dtree(純 tie-0 塔)は GoodChtX_dtree(TreeOKs+GoodChtX_snocT)で処理済み。塔 = tie-0 スパイン + 深い葉(DL)装飾。
+  TreeOKs は tie1-in-tie1(DL)を拒否するが、tie-0 スパインの機構に深い葉を graft する道を次段で検討。
+- commit なし(scratchpad, sorry=1), cron 残置。
