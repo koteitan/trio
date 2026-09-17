@@ -31330,3 +31330,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **残 Lean**: (1) restricted MeasOK((O-B) 窓<|Q| for z=0∨e=0)。(2) P 遺伝((O-A) 不変量、道具は揃)。(3) 消費側接続。
 - **次段**: (O-B) restricted MeasOK を Lean 化(e=0=src_ge_block, z=0=hz0)。import L106。
 - commit: notes。cron 残置。
+
+## 追記667: ★★★ 痛い訂正 — 窓測度帰納は team が偽と証明済(measOK_false/measOK2_false)。私の追記664-666 は不完全分析
+
+- **L106 に `measOK_false`(9087)と `measOK2_false`(9140)が証明済**。∴ `mTowerClosedS_of_measOK (hmeas:MeasOK2)` は vacuous(MeasOK2 は偽)。
+  反例 M0ce = [(0,0,0),(2,1,0),(3,0,0),(3,1,0)]、Q=[(2,1,0),(3,0,0)]、**A=[(0,0,0)]、e=0**、親=0(接頭辞 A の中)⟹ 窓 |V|=3 > |Q|=2。
+- **§278.1 根本原因**: **塔を作ると前ブロックの根(row0=entry Q 0 0)が接頭辞に残る**。窓 V の根は row0=entry Q 0 p + d·n(より深い)。
+  ∴ 接頭辞が V の根より浅くなり、親が接頭辞を指しうる ⟹ **窓 V が非 based で |V|>|Q|** ⟹ 測度が減らない。「今日死んだ 10 本」全部この構造。
+- **★ 私の追記664-666 の誤り**: measok3/4/invariant.py は **root row0=0(based)かつ prefix A 無し**で測った。
+  ∴ **接頭辞-親問題(親が A を指す/非 based 窓)を見逃した**。「restricted MeasOK(z=0∨e=0)成立」「z=0∨e=0 が team を unblock」は **prefix を無視した不完全分析**。実際は e=0 でも反例あり(M0ce)。
+- **∴ 窓測度アプローチ(私の H2cone/confinement/restricted MeasOK 方向)は team が偽と確定済の道**。§277.7「測度そのものを変えるしかない(team-lead の (M2))」。順序数型の測度が要る(§9366)。
+- **W5.lean の green 補題は正しい**(実 Lift1 使用)が、**窓測度アプローチ向けなので goal には直結しない**。confinement/factB/oper_window_* は e=0 の局所事実として正しいが、prefix 問題は解かない。
+- **教訓**: L106 の `_false` 補題を先に grep すべきだった(survey-before-building の再発)。empirical は「実際に現れる対象(prefix つき、非 based 窓)」で測るべきだった。
+- **次段**: 真の frontier = 「接頭辞-親/非 based 窓」を扱う別測度(team-lead (M2))。または別アプローチ(Subst reduction 等)。窓測度は放棄。
+- commit: notes。cron 残置。
