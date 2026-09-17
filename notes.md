@@ -30916,3 +30916,52 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - ∴ endgame は row2-lift 機構が要る（深い葉・幅k とは別）。ただしシートは大きさ順で、目標の展開は
   幅k/深い葉を含む（回避不可）。順序: 深い葉(済)→幅k(fork)→…→row2-lift W→目標。
 - 次: fork の幅k 結果を待つ。来たら下流（シート 1688 以降）を進める。endgame の row2-lift は最後。
+
+## 追記637: 塔の要石 GoodChtX_tower の succ を厳密ブリッジに還元(緑部品+壁確定)。新補題が要る
+
+- GoodChtX_tower = GoodChtX [towT 0 [DL] j] を j 帰納。底 j=0 = GoodChtX_deep(緑)。succ を **Lean で end-to-end 還元**:
+  - C := chT b (q0+1) u (towT 0 [DL] j)、Pre := farWt b (q0+1) ws ++ [(1,q0+1,1),(2,q0+1,1)]。
+  - IH  : GpT (Pre ++ shiftr01² ((0,q0+1,0)::C))
+  - 目標: GpT (Pre ++ shiftr01² ((0,q0+1,0)::(1,q0+2,0)::(2,q0+2,0):: shiftr01 1 0 ((0,q0+1,0)::C)))
+  - = 悪い根 (0,q0+1,0) の直後に深い葉 DL2=[(1,q0+2,0),(2,q0+2,0)] を挿入し、元の部分木を shiftr01 1 0 で 1 段深く。
+- **壁確定**(Explore 全 *.lean + 解析): この「挿入+shift の GpT 保存」補題は**存在しない**(新規, GoodChtX_deep 級)。
+  - upleaf_deep_core/coreD(HeQ) 不可: 塔の chT の途中に tie0 マーカー (1,q0+1,0)(row1=q0+1=悪い根の段 q) があり
+    hpM(最終列の親=悪い根) と hD1(降下は row1≥m>q) を両方破る。最終列は深部。
+  - 「塔=遠い段の木」の近道は塔では不可(塔は DL=tie1-in-tie1 を含み非 TreeTs)。
+- 緑部品(lean/HeXtest.lean, 未追跡, sorry=ブリッジ1個): chT_DL, chT_tow_rec, key_forest, Sq_rec, RawTs_towT, relTs_towT。
+- memory: tower-keystone-bridge.md。次: 新補題(挿入+shift)を建てる。案: tie0 wrap + 深い葉兄弟前置の 2 分割 / GpT.oper を悪い根に。
+
+## 追記638: 塔 succ の直接ルート確定（tstep_oper 当たる, U⟦m⟧ 木で底打ち, oper_gcopies が道具）
+
+- コーディネータ訂正が正しい: tstep_oper（HdJ:57）の hp は「最終列が親を持つ」だけ（親=悪い根 不要）。塔body に **tstep_oper が当たる**（Lean 形一致確認, scratchpad/tstep_exp.lean）。破れるのは oper_cons_tower1（親=根 要求）のみ。
+- **U⟦m⟧ を確定**（trio.py 全 j,m）: U_{j+1}⟦m⟧ = U_j ++ shiftr01 (j+1) 0 (tow (q0+1) 0 D2 m)。
+  tow D2 m = 単一深い葉の展開 = **木 dtree**（HeU.tow_eq_chT_dtree）。∴ 再帰が木で底を打つ（深い塔がさらに深い塔を生まない）= bridge が可能な理由。
+- oper 恒等式の道具 = **oper_gcopies**（Goper.lean:35, 一般 oper, 親=中間位置OK）。cons_tower1/2・root_tower・append_gen は全て親=根 or 非based を要求し不可。
+- 完全マップ（scratchpad/CHECKPOINT_tstep.md）: hIH = ∀m GpT(P++Y++shift²(U_j ++ shift^(j+1)(tow D2 m)))。
+  前半 U_j = IH、後半 = shift された木 dtree を HeU 木機構で。補助補題(i)parent位置=|U_j| (ii)hp (iii)gcopies計算。
+- 残工数 GoodChtX_deep 級（多補題, j/m 帰納）。次: (ii)hp→(i)parent→(iii)gcopies→hIH連結。commit なし, cron 残置。
+
+## 追記639: hp-core 完全 green — GoodChtX_tower は残り hIH 1 sorry（機械化大幅前進）
+
+- scratchpad/tower_full.lean: 構造補題 + hp-core を全て green で機械化（leanman lean backend）。残り sorry は hIH のみ。
+  - green: chT_DL, chT_tow_rec, chT_tower1, chT_tower_len, RawTs_towT, relTs_towT, key_forest,
+    hp_base（hasParent_one_of + le0 鎖）, hp_tower（j 帰納 hasParent_shiftr01/append_right_of）,
+    srow_tower（j 帰納 srow_append_right/cons_last/shiftr01）。
+  - GoodChtX_tower succ: tstep_oper（U_tstep=shiftr01 1 0 U0, d=1, Fr_shift1）+ hp を hasParent_cons_of で wire, green。
+- 技術修正（この turn）: (1)tstep_oper の hU は shiftr01 で（based root 回避） (2)親=最内 tie0 マーカー（DL でない）
+  (3)oper 特徴づけは oper_gcopies（親=中間位置; cons/append/root_tower は親=根 要求で不可）。
+- 残り hIH: parent 値補題(parent U0=|U_j|, 親抽出は ∃! 一意性から; 既存 parent_cons/parent_eq 補題なし)
+  + oper_gcopies の gcopies 計算 + GpT 連結(案A m 帰納/案B ws 畳込)。GoodChtX_deep 級の最終ピース。次で構築。
+
+## 追記640: step2 = oper_Ub_eq green + sorry を「深い葉ラン load」に還元。測度=Prod.Lex(lvl2,lvl1)
+
+- **緑追加**（scratchpad/tower_full.lean, oper_lvl2_dec.lean, leanman check 緑, sorry=1）:
+  - oper_lvl2_dec: oper が「最終=q0+2, 直前 marker=q0+1, parent=|M|-2」の lvl2 を厳密 -1（n 一様）。付随 lvl2_gcopies_marker/lvl2_take_pred/entry1_eq 緑。
+  - **oper_Ub_eq**: `((0,q0+1,0)::chT[tower(j+1)])⟦m⟧ = (0,q0+1,0)::chT[tower j] ++ gcopies(...)`（oper_gcopies+parent_Ub(3(j+1))+take_Ub+srow_Ub, hz=entry_pair_mem）。
+  - hIH の sorry を還元（trace_state 確認）: `GpT(farWt ws ++ Y ++ (shift²(Ub j) ++ shift²(gcopies-tail)))`, hIH=左半分。残り=深い葉ラン shift²(gcopies-tail) を hIH 文脈に追加する load 1個。
+- **★訂正: 塔本体は level 2種のみ**（shiftr01 1 0 は row0 のみ +1, row1 不変）: q0+2(葉)/q0+1(marker/根)。「深い葉が level 成長」は誤り。
+- **測度 = Prod.Lex(lvl2, lvl1)**（2 level なので DM 多重集合 = この lex, q0+2 が q0+1 支配）: oper 段で lvl2↓, orph 段で lvl1↓。gcopies-tail = level q0+2 深い葉ペアの m コピー（d1=0 同 level）。
+- **★level 不一致の壁を破る鍵 = GpT_node(GyF:341)**: level b+τ（τ 任意）でロード可。GpT の定義(GyB:404)は termination_by 整礎再帰でロード再帰組込 → 新規 WF 不要, stepping 素(tstep_oper/orph/GpT_node)を当てる問題。
+- **n(コピー数)帰納は不可**: 追加ペア展開時 parent が run 全体を遡り最初の marker まで届く（間は皆 q0+2 等値）→ 非局所。全体 shift²(gcopies) を1オブジェクトとして Prod.Lex 強帰納が要る。
+- 全ショートカット再確認排除: upleaf_deep_core(oper_cons_tower1 が親=根要求, 塔 domT 偽), TreeOKs(DL=tie1-in-tie1 不可), GpT_load(Wg 2*b 固定), tow=木(単一葉専用)。
+- commit なし（scratchpad, sorry=1）, cron 残置。次: Prod.Lex(lvl2,lvl1) 族強帰納 or GpT_node/tstep_tie の高 level ロードで gcopies-tail を閉じる。
