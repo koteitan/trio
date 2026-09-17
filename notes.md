@@ -31131,3 +31131,32 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   残余は (i) ConeRow2Vanish の Lean 証明(bad window/W-構造依存、任意窓では偽なので局所補題では不可)、(ii) rank 減少合成(§199、接続 blockRoot_window_eq_iff は green)、(iii) WF 誘導 assembly。
 - **次段**: ConeRow2Vanish を bad window(mTower 窓)の構造から Lean 証明。V の列は Q の row2 パターン由来(entry2_block)なので、根 row2>0 のとき in-cone 列の row2=0 を Q の構造で出す。
 - commit なし(hcl2 未証明), cron 残置。scratchpad: w5_h2cone.py/w5_actual.py/w5_robust.py/w5_fragment.py/w5_mechanism.py/w5_h2cone.lean。
+
+## 追記653: ★★★ 追記652 の訂正 — ConeRow2Vanish は standalone では偽。真の残余は「H2cone が oper 不変量(W 構造依存)」
+
+- **訂正**: 追記652 は ConeRow2Vanish を「fragment で成立する構造補題」と書いたが、**任意 fragment mTower では偽**。
+  full mTower で検査すると **215/450 で破れる**(例 Q=[(0,1,1)] → mTower=[(0,1,1),(1,2,1),(2,3,1),...] は全列 row2=1 で全て in-cone)。
+  追記652 の 0 違反は「実際の bad window(素性つき)」限定の結果。**ConeRow2Vanish は素性(bad window / W-所属 / reachable)に依存し、局所補題ではない**。
+- **機構**: bad root は必ず有効な親を選ぶ。srow=2 の target は親=row2=0 列(fragment)、srow≤1 は tail が row2=0。
+  [(1,1,1),(2,2,1)] のような反例窓は「(2,2,1) の行2親 (0,0,0) を落とした単なる drop」で、実 bad root(P_2 は必ず row2=0 列)ではない。
+- **正確な残余(実証済)**: `H2cone`(= 錐内の row2>0 列が行2親を持つ = 行2 の well-formedness)は **oper 不変量**。
+  40887 到達 fragment 列すべてで H2cone 成立(fails 0)、かつ **oper で保存**(S が H2cone → oper(S) も H2cone、fails 0)。base(top Q は hz0)→ h2_cone で成立。∴ 誘導で担げる。
+- **鍵となる次の判定**: `H2cone` は **W-所属(または argOK)から自動で出るか**?
+  出る → h2cone 懸念は完全消滅(前提を担ぐ必要なし)。出ない → oper 不変量として担ぐ(保存は実証済、行2証人の窓内生存 = window_witness_in_window(H12H2:4385, 行0版 green)の行2版が要る)。
+- 追記652 の green reduction `h2cone_of_coneRow2Vanish` は文としては正しい(ConeRow2Vanish → H2cone)が、ConeRow2Vanish を素性つきでしか証明できないので、直接は使わない。**H2cone を W から出す/不変量で担ぐ**方が正しい形。
+- **次段**: (a) `M ∈ W u → H2cone M`(または argOK 版)が既存かを確認。(b) 無ければ H2cone の oper 保存を window_witness の行2版で Lean 化。
+- commit: notes のみ。scratchpad 追加: w5_fulltower.py(215/450 反例), w5_invariant.py(不変量 40887/保存 実証)。cron 残置。
+
+## 追記654: ★★★★★ H2cone(mTower) の構造分解確定 — root row2=1⟹e=0 が壁を回避。hz0 半分 Lean GREEN
+
+- **鍵の構造事実(2 点、実証)**:
+  - **CLAIM 1**: `H2cone(Q) ∧ (e=0 ∨ entry Q 2 0=0) → H2cone(mTower Q d e n)`。fragment 32280 例で **failures 0**。
+  - **fact B(= CLAIM 2)**: bad-window の根 row2=1 ⟹ srow(last)≤1。6704 例で **failures 0**。fragment で parent(P_2)は row2=0 列だから、srow=2 なら根 row2=0。
+  - `oper_eq_mTower` の出力 d1(=e, row1 リフト)は **srow=2 の時のみ非零**。∴ **root row2=1 ⟹ srow≤1 ⟹ e=0**。
+- **∴ H2cone(mTower Q d e n) の完全な場合分け**:
+  - root row2=0 → `h2_cone`(hz0 半分)。**Lean GREEN**: `W5.H2cone_mTower_of_hz0`(scratchpad/w5_h2cone.lean, import L105Cap, 0 sorry, 1s green)。`mTower_entry2_root`(L105Cap:13825)で entry(mTower)2 0 = entry Q 2 0=0 → h2_cone。
+  - root row2=1 → fact B で e=0 → CLAIM 1(e=0 枝)で H2cone。**残り(e=0 半分の Lean)**。
+- **なぜ e=0 が壁を回避**: e>0 だと塔のブロック根が row1 リフトされ row-1 鎖を作る → 追記653 の反例(Q=[(0,1,1)]→[(0,1,1),(1,2,1),...] 全 row2=1 in-cone)が発生。e=0 ならブロック根は全て同じ row1 で le1 鎖を作らず、新 row2=1 in-cone 対が出ない。∴ 追記653 の「215/450 反例」は **e>0 由来で、実対象では起きない**(root row2=1⟹e=0)。
+- **含意**: 追記653 の「ConeRow2Vanish は素性依存で局所補題不可」は、`H2cone(Q) → H2cone(mTower Q d e n)`(側条件 e=0∨root row2=0 つき)という **clean な塔補題**に精密化された。H2cone は「Q の不変量 + 塔で保存」で担げる。
+- **次段**: e=0 半分 `H2cone(Q) ∧ zle1 Q → H2cone(mTower Q d 0 n)` を Lean 化(hasParent2_mTower_iff(L106:10643)+ 周期性 entry2_mTower + le1 の e=0 解析)。+ fact B を rankDE_oper(§198, green)から Lean 化。
+- commit: notes のみ。scratchpad: w5_key.py(CLAIM1 32280/0, factB 6704/0), w5_h2cone.lean(H2cone_mTower_of_hz0 green)。cron 残置。
