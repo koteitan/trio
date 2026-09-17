@@ -31359,3 +31359,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **残 Lean(lex 版)**: (1) hstep 組立(6 行表を mTowerClosedBased_of_lexStep に)。(2) row5。(3) 親下界 2 本。(4) 窓の re-base(非based 窓→based で IH)。
 - **次段**: 親下界 `(n-1)|Q| ≤ c` を H12Export の src_ge_blockRoot 系で Lean 化。lex hstep の組立に着手。
 - commit: notes。cron 残置。
+
+## 追記669: ★★★★★ lex 測度は z=0∨e=0 で減少(faithful 75780/0)。row5 は不変量で回避。追記667 を部分訂正
+
+- **faithful 検証(masked Lift1, based shallowest Q)で lex 測度**: **z=0: 62538/0、e=0: 13242/0**。失敗は z=1∧e>0 の 76 のみ(全て srow=2∧d=2∧e=2 = **row5**)。
+- **★ row5 は再帰で回避される**: `W5.oper_window_invariant`(oper 窓は z'=0∨e'=0)⟹ 消費側(z=0 via factB / e=0)から始めると **再帰は z=0∨e=0 に留まる** ⟹ row5(z=1∧e>0)は現れない。
+- **★ 追記667 の部分訂正**: `MTowerClosedAt` は **based Q 限定**(entry Q 0 0=0)。size 測度の反例 **M0ce=[(0,0,0),(2,1,0),(3,0,0),(3,1,0)] の Q0ce=[(2,1,0),(3,0,0)] は非based** ⟹ lex(based 限定)では除外される。
+  ∴ 追記667 の「lex も M0ce で死ぬ」は誤り(M0ce は size 測度/非based 特有)。**lex は based+z=0∨e=0 で減少する**。
+- **⚠ ただし真の crux(未解決)= lex hstep の機構**: MTowerClosedAt は **prefix 無し**。だが mTower Q d e n の oper は `mTower[:c] ++ mTower V`(prefix つき、V 非based)を生む。
+  - 悪根=根(c=0)なら `oper_eq_mTower` で prefix 無しの mTower dropLast(IH 直接)。
+  - 悪根≠根(c>0)なら prefix mTower[:c](根 row0=0)と窓 V(根 row0>0)⟹ §278.1 の prefix-shallower。re-base で V'(根 row0=0)にすると prefix 根と衝突。
+  ∴ hstep は「oper 結果を prefix 無し MTowerClosedAt(または再帰)に落とす」機構が要る。ここが residual。
+- **状況**: lex 測度の減少は z=0∨e=0 で OK(私の不変量つき)。残るは hstep の prefix/re-base 機構。size 測度より有望(based 限定で M0ce 除外)。
+- **次段**: lex hstep の機構を詰める。oper_eq_mTower(悪根=根)の場面と、悪根≠根(窓)の場面の扱い。W の row0-shift 不変性(re-base)を確認。
+- commit: notes。scratchpad: lexmeas.py(z0/e0: 0 fail)。cron 残置。
