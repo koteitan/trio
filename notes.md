@@ -30888,3 +30888,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
     GoodChtX [[F(j)]]（IH）から。この step が幅k の核（DL は GoodChtX_deep、tie0 包みは木）。
 - 単一深い葉（GoodChtX_deep）が底、tie0 の入れ子で塔を積む。これが緑になれば幅2→幅k→シート 1688 以降。
 - **次**: hrep（深い葉の塔 GoodChtX）を建てる。step（DL prepend + tie0 wrap）が要。
+
+## 追記635: 統一 — 幅k・深さk は全て towT 0 [DL]（深い葉 DL の tie 0 塔）に帰着。Gd_deep は真に詰まり
+
+- **実測の統一**: 深さ3の深い葉 tie 1[tie 1[tie 1[]]] の tow = towT 0 [DL] 2（= 幅2の塔と同一！）。
+  深さ k の tow = 深さ (k-1) の DL の tie 0 塔。∴ 幅k も深さk も **単一の要石 GoodChtX of towT 0 [DL]** に帰着。
+  （DL = 深さ2の深い葉 tie 1[tie 1[]]、GoodChtX_deep 済）。
+- **Gd_deep は真に詰まり（訂正）**: clS 1 は段1の FULL Ext を持ち PSOK（clS_closed/PSOK_clS）。だが Gd P0 [DL] を
+  Gd_tie で分解すると **深い葉の内側 tie 1 が cl=false**（外の tie に入った後）で、tree 機構（Gd_treeU tie(l+1)
+  は cl=true 要求）が弾く。これが「深い」の本質。∴ Gd 級でなく GoodChtX 級（upleaf）で建てるのが正しい。
+- **要石**: GoodChtX [towT 0 [DL] j]（DL の tie 0 塔）を j 帰納。
+  - base j=0: [DL] → GoodChtX_deep。
+  - step: [DL, tie 0 (F(j))] を GoodChtX [[F(j)]]（IH）から（DL prepend + tie 0 wrap）。
+  - これが緑になれば幅k・深さk 全て開く（統一の要石）。
+- 次: GoodChtX [towT 0 [DL] j] の step（DL prepend + tie 0 wrap）を Lean で。upleaf を最後の列に当てて
+  F(j) の深い部分（DL, GoodChtX_deep）に落とす入れ子帰納。
