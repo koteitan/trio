@@ -83,6 +83,22 @@ theorem oper_window_row2_zero {M : TrioSeq} (hMne : M ≠ [])
   have hb : entry M 2 (M.length - 1) ≤ 1 := hz _ hlast
   rw [hsr2]; omega
 
+/-- **★ 再帰不変量(完全形, z'=0 ∨ e'=0)**: fragment で末尾が親を持つなら、
+    `srow ≤ 1`（⟹ oper の行1リフト `d1' = 0` ⟹ `e' = 0`）または
+    親（窓の根）の行 2 が 0（⟹ `z' = 0`）。⟹ **oper の窓は常に `z' = 0 ∨ e' = 0`**。
+    これが `P Q d e := ... ∧ (entry Q 2 0 = 0 ∨ e = 0)` の窓への遺伝を与える。 -/
+theorem oper_window_invariant {M : TrioSeq} (hMne : M ≠ [])
+    (hz : ∀ j, j < M.length → entry M 2 j ≤ 1)
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1)) :
+    srow M (M.length - 1) ≤ 1 ∨
+      entry M 2 (parent M (srow M (M.length - 1)) (M.length - 1)) = 0 := by
+  rcases Nat.lt_or_ge (srow M (M.length - 1)) 2 with hlt | hge
+  · exact Or.inl (by omega)
+  · have hsr2 : srow M (M.length - 1) = 2 := by
+      have hle : srow M (M.length - 1) ≤ 2 := by unfold srow; split_ifs <;> omega
+      omega
+    exact Or.inr (oper_window_row2_zero hMne hz hsr2 hp)
+
 /-- **★ confinement (e=0)**: `e = 0` の塔で、根の行 1 錐に入る列は block 0 の中だけ。
     le1 の chain の各段は同ブロック内（`nextrel1_mTower_src_ge_block_of_witness`）。
     孤児ケースは `hr0`（根が le0 で全列の祖先, `le0_root_of_shallow`）で排除:
