@@ -31411,3 +31411,14 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **私の寄与(部分・正しい・保存)**: 構造の完全 mapping、W5.lean の green 補題群、z=0∨e=0 不変量、反例=非標準の特定、oper_shiftr01 の re-base 限界。
 - **正直な評価**: psi(I)∈W0 は trio project の **hard open な研究課題**。測度再帰は ℕ-測度では不可避に詰まる(team の 30000+ 行が `MTowerClosedRow2` を仮定に残す core)。閉じるには順序数割当(別の大規模構築)が要る。
 - commit: notes。cron 残置。
+
+## 追記673: 「oper_shiftr01 で re-base 不要」角度も同じ core に収束(core 不変の確認)
+
+- 検討: 窓 V は非based だが `oper_shiftr01`(oper は row0-shift 可換)で「基準に依らず oper が振る舞う」なら re-base 不要では?
+- **結論: 同じ graft/prefix + lift-commute core に収束**:
+  - 塔の oper は `oper_mTower`(5364)で **prefix-aware**: `(mTower Q d e(n+1))⟦m⟧ = mTower Q d e n ++ (最終ブロック)⟦m⟧`。
+  - 最終ブロック oper = shift/lift(mTower Q.dropLast)(oper_eq_mTower, 悪根=根)。⟹ **graft `A'(=n-1 ブロック)++ shift/lift(mTower Q.dropLast)`**。
+  - row0-shift は oper_shiftr01 で OK だが、**row1-lift の oper commute(`LiftOperComm`)は L106 §62 で反例あり/問題**。graft(prefix-aware)も残る。
+- ∴ 二重再帰(|Q| で Q.dropLast、n で n-1 ブロック)+ graft + lift-commute = **同一の hard core**。angle を変えても core は不変。
+- ★教訓5: hard-open な core は複数 angle から「promising に見えて同じ壁に収束」する。oscillation(楽観/悲観)は core の intricacy の兆候。core を一度 definitive に確定したら再探索しない。
+- commit: notes。cron 残置。DEFINITIVE 結論(追記672 + memory)は不変: 測度再帰は ℕ-測度で hard-open、順序数割当が要る。
