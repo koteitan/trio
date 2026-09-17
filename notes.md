@@ -30788,3 +30788,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - ∴ 壁は 2 つ: (1) 深い葉（現 frontier 1688, fork）、(2) W の自己参照リフト（目標 4784）。
   シートは大きさ順なので、深い葉を越えて登る過程で (2) の機構も積み上がる。fill-the-gaps 通り深い葉が先。
 - 下流組立の計画は scratchpad/downstream_plan.md（GoodChtX_deep→OkWsAt→FarCAt→topCLT_WgL_deep→GTC_far_deep→証明中）。
+
+## 追記628: ★突破★ 深い塔は「段 q の木 dtree」の像。深くない！整礎帰納は不要
+
+- fork は BLOCKED（段の無限整礎帰納が要ると結論）だったが、その前提が誤り。
+- **実測＋Lean 緑**: `topTs 0 [dtreeQ q j] = topTs q [HeT.dtree j]`（HeU.topTs0_dtreeQ_eq）。
+  段 0 の深い構造 dtreeQ = 段 q の**木** dtree の像。fork は topTs 0（段 0 で dtreeQ は非木）だけ見て
+  「深い」と誤判定。段 q では同じ行列が木 dtree。∴ **深い塔は遠い段では木**。整礎帰納は要らない。
+- `chT b (q+1) u [dtree j] = topTs q [dtree j]`（HeU.chT_dtree_eq）: 純タイ木は chT(段 r+l)=topTs(段 v+1+l), r=v+1。
+  → GoodChtX の chT 描画に橋渡し。
+- **帰結**: hrep（深い塔の GpT）= GoodChtX_snocT（dtree は TreeOKs、HeU.GoodChtX_dtree 済）+ 手回し で出る。
+  段の整礎帰納・新機構は不要。GoodChtX_deep が既存機構で組める。
+- **次**: tow (q+1) 0 [(1,q+2,0),(2,q+2,0)] (j+1) = (0,q+1,0)::chT b (q+1) u [dtree j] を合成、
+  GoodChtX_deep を plumbing + upleaf_deep_coreD + hrep(=GoodChtX_dtree の Part2) で完成。

@@ -71,5 +71,31 @@ theorem GoodChtX_dtree {A0 : List ℕ} {o u : ℕ} (hAo : ∀ a ∈ A0, a < o) (
   have := HeI.GoodChtX_snocT hAo hA01 ho (GoodChtX_nil A0 o (fun _ => 0) u) (TreeOKs_dtree u j)
   simpa using this
 
+/-! ## ★★ 突破: 深い塔は「段 q の木 dtree」の像に等しい（深くない！） -/
+
+/-- ★★ topTs 0 [dtreeQ q j] = topTs q [dtree j]。段 0 の深い構造 = 段 q の木。
+    深い塔は遠い段では**木**（dtree）であり、整礎帰納は不要。 -/
+theorem topTs0_dtreeQ_eq (q : ℕ) : ∀ j, topTs 0 [dtreeQ q j] = topTs q [HeT.dtree j]
+  | 0 => by
+      simp only [dtreeQ, HeT.dtree, topTs, topT, shiftr01, List.map_nil, List.append_nil,
+        Nat.add_zero, Nat.zero_add]
+      refine congrArg (fun z => [z]) (Prod.ext rfl (Prod.ext ?_ rfl))
+      simp; omega
+  | j + 1 => by
+      simp only [dtreeQ, HeT.dtree, topTs, topT, shiftr01, List.map_cons, List.map_nil,
+        List.append_nil, List.cons_append, List.nil_append, Nat.add_zero, Nat.zero_add]
+      have ih := topTs0_dtreeQ_eq q j
+      simp only [topTs, List.append_nil] at ih
+      rw [show (1:ℕ) + (q + 1) = q + 1 + 1 from by omega, show (1:ℕ) + q = q + 1 from by omega, ih]
+
+/-- ★★ 純タイの木 dtree では chT b (q+1) u = topTs q（chT の段は r+l、topTs は v+1+l、r=v+1 で一致）。 -/
+theorem chT_dtree_eq (b u q : ℕ) : ∀ j, chT b (q+1) u [HeT.dtree j] = topTs q [HeT.dtree j]
+  | 0 => by simp [HeT.dtree, chT, unitT, topTs, topT, shiftr01]
+  | j + 1 => by
+      have ih := chT_dtree_eq b u q j
+      simp only [HeT.dtree, chT, unitT, topTs, topT, shiftr01, List.map_cons, List.map_nil,
+        List.append_nil, List.cons_append, List.nil_append, Nat.add_zero] at ih ⊢
+      rw [ih]
+
 end HeU
 end TRIO
