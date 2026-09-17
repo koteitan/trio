@@ -30828,3 +30828,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - methodology 追記28（深い塔は遠い段では木）、memory 訂正済み。
 - **次**: 新機構（GLctx/GTC_far_gen）で次の証明中 ...(4,2,0)(3,2,0) 他、深い葉のあとの語を持つ行を進める。
   GLctx は一般文脈なので、深い葉+複数 collapse 語、深い葉+far 語などに拡張できる見込み。
+
+## 追記631: 新証明中 ...(4,2,0)(3,2,0) は幅2の深い葉（1688 領域）。単一深い葉より難
+
+- 分析: ...(4,2,0)(3,2,0) = **単一の collapse 語** K' = wLT 0 ([[tie 1[tie 1[]], tie 1[]]], [])。
+  F タイの子の森 = [深い葉 tie 1[tie 1[]], tie 1[]（兄弟）]。幅2（子が深い葉 + 木の兄弟）。
+- (3,2,0) は (1,1,1) で始まらないので別の rcol 語でない → 同じ collapse 語の幅拡張。deepleaf1_words 不可。
+- **幅2の tow は単一深い葉と違い木でない**（実測）:
+  - 単一: graft が shift-2（R 2列, dropLast 1列）→ tow = topTs 0 [dtreeQ] = topTs q [dtree]（木）。
+  - 幅2: graft が shift-1（R 3列 [(1,q+1,0),(2,q+1,0),(1,q+1,0)], dropLast 2列）→ tow が自己相似で
+    row0 が重なる（ブロック (·,2,0)(·,3,0)(·,3,0) が重畳）。単純な topTs [tree] にならない（候補で確認）。
+- ∴ 幅2は GoodChtX の森 [深い葉, 木] を要し、単一深い葉の技法（遠い段の木）が直には効かない。設計要。
+- 案: (a) 幅2の dtree（重なりを表す木/森）を同定し bridge 補題。(b) 森を「深い葉 unit + 木 unit」で
+  upleaf_deep_core（一般 R）を当て、hrep=幅2 tow の good さを別に。(c) GLctx が [K,K2] も満たす（実は
+  深い葉+複数 collapse 語は現機構で可）ので、幅2でなく別の並びの行を先に埋める手もある。
+- **注**: GLctx は [K,K2] も満たす（p2=空 collapse 語の子は GoodChtX_nil）→ 深い葉+N collapse 語は現機構で出る。
+- 次: 幅2の tow の構造を Lean で同定（dtree2 の形）。または深い葉+collapse 語の並びで埋まる行を探す。
