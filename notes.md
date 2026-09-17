@@ -31212,3 +31212,20 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   `snoc_flat_root`(L53Subst:43, srow=0 根), `wsnoc_srow0_of_prefixCopies`(srow=0 非根)。free ケースは揃う。
   **残 residual = srow≥1 錐+親**(窓測度 §138 + rank §199 + Prod.Lex WF 誘導)。複数 heartbeat 規模の核。
 - commit: notes + lean/W5.lean。cron 残置。
+
+## 追記659: ★★★★★★★ 決定的 reframe — H2cone(Q) が hstep の核「(iii) 復活」を排除。hstep = (ii) 窓測度で閉じる
+
+- **§139.2/§140/§141 の構造**: `mTowerClosed_of_snocStepPar`(10044)は孤児を `snoc_orphan_W`(free)で処理、parented のみ hstep。
+  parented は §138 で `T_{j+1}⟦m⟧ = T_p ++ (窓[p,j] の m コピー)`、測度=窓長 `j-p`。3 分岐:
+  - **(i) 孤児** → free。
+  - **(ii) 親が同ブロック**(p=0 含む、§10104 訂正)→ 窓 `j-p ≤ j < |Q|` で **測度が厳密に減る**。
+  - **(iii) 親が手前ブロック(復活)** → 窓 > |Q| → 測度なし = **核**。§140「(ii) は (iii) を解けば同時に閉じる」。
+- **§141: 復活は「ブロック内孤児」でのみ起きる**。F1(§102 gexp_orphan_row1, 錐内 row1 孤児 stays orphan)/
+  F2a(§109 mTower_orphan_row2, 錐外孤児 stays orphan)は done。残 = **F2b(z=1, srow=2, 錐内孤児)** = 復活。
+- **★★★ 鍵**: **H2cone(Q) は F2b を排除する**。H2cone(Q)=「錐内 row2>0 列は Q.take 内に行2親を持つ」
+  ⟹ ブロック内に親 ⟹ **ブロック内孤児でない** ⟹ F2b(復活)が起きない。
+  ∴ H2cone(Q)+F1+F2a の下で **(iii) 復活が完全に消える** ⟹ 全 parented 列は同ブロック親(ii)⟹ **§138 窓測度で hstep が閉じる**。
+- **∴ premise 遺伝(W5.lean)が hstep の核を unlock した**。残り Lean:
+  (A) 復活排除: H2cone+F1+F2a で「tower-parented ⟹ same-block」(既存補題の合成)。
+  (B) (ii) 窓測度の強帰納(§138、窓長 j-p で減る)で parented snoc の W 保存。
+- これで hcl2/MTowerClosedRow2 が閉じる見通し。cron 残置。commit: notes。
