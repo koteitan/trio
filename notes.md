@@ -31072,3 +31072,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **hK_w2.lean 緑(sorry=1)**: upleaf_deep_coreDT で `GTC CLTL 0 ([(1,1,1)]++shiftr01 1 0(tow 1 0[(1,2,0),(2,2,0),(1,2,0)]m'))` に還元。tow=Ub(m'-1)。
 - fork a4bb6b が tow GTC を grind 中((a)高さ帰納 (b)letter 再レベル (c)dtree 森, 再レベル化 GTC_tie/GT_loadTop)。
 - commit なし(行未証明), cron 残置。
+
+## 追記649: fork 完了(818K tok, sorry 未 close)。幅2 は framework 非依存の hard barrier 確定
+
+- **fork a4bb6b 結果**: tow GTC の sorry は閉じず。**`tow_w2_rec` 緑追加**(scratchpad/hK_w2.lean):
+  `tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] (m'+1) = [(0,1,0),(1,2,0),(2,2,0)] ++ shiftr01 1 0 (tow ... m')`。
+  = 幅2 tow は **shift-1 graft tower**、base tow 1 = 単一深い葉。
+- **crux 確定(framework 非依存)**: 単一深い葉は shift-2 graft で dtree(TreeTs, level 非依存)に flatten → GTC_wLTL で v=0 で閉じる。
+  幅2 は shift-1 graft で**永遠に flatten しない** → level-1 の genuine 深い塔が v=0 に残る。
+  = GpT の GoodChtX_tower(放棄)と全く同じ壁が GTC/BwT でも persist。
+- **全ルート排除**: GTC_wLTL(DL は tie 1 で TRaw 不可)/GTC_load_CLTL(Wg(2)⊄Wg(0), Wg_mono 増加)/upleaf 再適用(marker で hD1)/
+  naive m' 帰納(shift wall)/Y 強化(base の GTC_wLTL が letter 強制で崩れる)/再レベル化 gtc_tie(trigger level 不一致)。
+- notes 追記636 より **psi(I) 展開は深い葉/幅k を含む(回避不可)** → 幅2 は goal に必要。∴ 幅2 = goal 必須かつ framework 非依存の hard barrier。
+- **次段候補(genuinely new が要る)**: (a) shift d 一般化帰納で base を hK_pm でなく別closerで。(b) 深い葉 GTC の合成補題(tie-0 spine に単一深い葉を graft)を新規構築 = GoodChtX_deep 級。(c) 幅2 tow を「単一深い葉の shifted run」と見て BwT_rep 類似で(但し shift graft)。
+- fork 完了、scratchpad/hK_w2.lean は tow_w2_rec 緑 + tow GTC sorry。commit なし, cron 残置。
