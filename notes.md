@@ -31302,3 +31302,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   restricted 版に(消費側が z=0∨e=0 のみ渡すので、再帰が z=0∨e=0 を保つ不変量を確認 or 消費側限定で流す)。
 - **要確認**: oper の再帰が z=0∨e=0 を保つか(window V の z',e')。保てば restricted MeasOK2 で goal が閉じる。
 - commit: notes。scratchpad: measok4.py(バケツ別 75780/0)。cron 残置。
+
+## 追記665: ★★★★★★★ 不変量確認(oper 窓は常に z'=0∨e'=0)= fact B。clean な道が確定
+
+- **不変量(faithful, 108961/0)**: 任意の塔で oper の窓 V は **z'=0 ∨ e'=0**。理由 = **fact B**:
+  - oper srow=2 → 窓根 = 行2親 → `entry V 2 0 = 0`(row2_parent_zero_of_zle1)→ **z'=0**。
+  - oper srow≤1 → d1'=0 → **e'=0**。
+- **∴ 道が確定**: 消費側の初期塔(z=0∨e=0)+ 不変量(oper 窓は常に z=0∨e=0)⟹ **restricted MeasOK2 が全再帰レベルで成立** ⟹ restricted MTowerClosedS ⟹ goal。
+  失敗域 z=1∧d≥2∧e≥2 は初期にも再帰にも現れない。
+- **残 Lean(3 本、全て私の W5 道具圏内)**:
+  1. **restricted MeasOK2 の e=0**: `nextR_mTower_src_ge_block_of_hasParent`(H12Export:6477, built)⟹ 親 ≥ ブロック根 ⟹ 窓 = (k|Q|+j)-c ≤ j < |Q|。孤児は free。
+  2. **restricted MeasOK2 の z=0(hz0)**: h2cone(行2親 in-block)+ 行0/1 の src_ge_block ⟹ 窓 < |Q|。
+  3. **不変量 + 消費側**: `W5.factB` 拡張(oper 窓 z'=0∨e'=0)+ L106 の tower_of_measure_step2 を restricted MeasOK2 で流す。
+- **次段**: restricted MeasOK2 の e=0(src_ge_block で窓<|Q|)を Lean 化。着手。
+- commit: notes。scratchpad: invariant.py(108961/0)。cron 残置。
