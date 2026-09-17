@@ -65,6 +65,24 @@ theorem factB {M : TrioSeq} (hMne : M ≠ [])
   have hb : entry M 2 (M.length - 1) ≤ 1 := hz _ hlast
   omega
 
+/-- **★ 再帰不変量の核(z'=0)**: fragment で末尾 `srow = 2` かつ親を持つなら、
+    その親（＝ oper の窓の根）の行 2 は 0。⟹ oper の窓は `z' = 0`。
+    （`srow ≤ 1` の側は oper の行1リフト `d1 = 0` なので `e' = 0`。両側で `z'=0 ∨ e'=0`。） -/
+theorem oper_window_row2_zero {M : TrioSeq} (hMne : M ≠ [])
+    (hz : ∀ j, j < M.length → entry M 2 j ≤ 1)
+    (hsr2 : srow M (M.length - 1) = 2)
+    (hp : hasParent M (srow M (M.length - 1)) (M.length - 1)) :
+    entry M 2 (parent M (srow M (M.length - 1)) (M.length - 1)) = 0 := by
+  have hlen : 0 < M.length := List.length_pos_of_ne_nil hMne
+  have hlast : M.length - 1 < M.length := by omega
+  have hnr : nextR M 2 (parent M 2 (M.length - 1)) (M.length - 1) := by
+    have h := parent_nextR hp; rwa [hsr2] at h
+  have hn2 : nextrel2 M (parent M 2 (M.length - 1)) (M.length - 1) := by
+    rwa [nextR, if_neg (by decide), if_neg (by decide)] at hnr
+  have hlt : entry M 2 (parent M 2 (M.length - 1)) < entry M 2 (M.length - 1) := hn2.2.2.2.1
+  have hb : entry M 2 (M.length - 1) ≤ 1 := hz _ hlast
+  rw [hsr2]; omega
+
 /-- **★ confinement (e=0)**: `e = 0` の塔で、根の行 1 錐に入る列は block 0 の中だけ。
     le1 の chain の各段は同ブロック内（`nextrel1_mTower_src_ge_block_of_witness`）。
     孤児ケースは `hr0`（根が le0 で全列の祖先, `le0_root_of_shallow`）で排除:
