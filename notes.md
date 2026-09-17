@@ -31111,3 +31111,23 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **戦略的結論**: シート climb(幅2)は完全に redundant。psi(I)∈W0 は「clause2 の R2 測度証明(hstep 残り)」に帰着。
 - **次段**: hstep(R2 測度の rank 減少)を理解し contribute。§196.1 の未着手部分 + §197-199 の done 部分を確認。幅2 は放棄。
 - commit なし(hcl2 未証明), cron 残置。
+
+## 追記652: ★★★★★★ (w5) 解決 — R2 測度誘導の唯一の未解決点(§197)が「経験的に成立する構造補題1本」に落ちた
+
+- **§197 の唯一の open point**: R2 測度誘導で IH に渡す窓 V の前提 `h2cone(V)`(錐内の row2>0 列が行2親を持つ)が
+  減少段で遺伝するか **未測定**、と team が明記(§197.4 (w5)、「これが破れるなら本当の残差」)。hz0(V)(entry V 2 0=0)版は減少段で 17.5-20.3% 破れる。
+- **faithful 測定(trio.py の parent/is_ancestor=Lean の nextrel/le1 と同一 P_y 連鎖)**:
+  - 任意 drop 窓: 1075 in-cone row2>0 列中 **170 違反**(例 V=[(1,1,1),(2,2,1)])→ 任意窓では破れる。
+  - **実際の oper 窓のみ**(V=S[bad root:], bad root=parent(S,srow(last),last)): **z<2 fragment 65128 到達列で違反 0**。
+    root row2=1 の bad window 7129 個中、in-cone row2>0 列を含むもの **0 個**(delicate ケース皆無)。
+- **構造的理由(fragment)**: bad window の根が row2=1 ⟹ その窓に in-cone(le1 根 j)な row2>0 列は存在しない。
+  ∴ hz0(V) が破れる場面では h2cone(V) は **空虚に真**。hz0(V) が成る場面は既存 `h2_cone`(L105Cap:11320)が行2親を与える。⟹ **h2cone(V) は常に成立**。
+  補助事実(B): 根 row2=1 ⟹ srow(last)≠2(100%、fragment で entry≤1 より parent の行2は 0)。(A)「全 tail row2=0」は psi(I) 自身で1回破れる((2,1,1)は cone 外)→ in-cone 制限が本質。
+- **Lean 形式化(GREEN)**: `W5.h2cone_of_coneRow2Vanish : ConeRow2Vanish V → H2cone V`(scratchpad/w5_h2cone.lean, import L105Cap, 0 sorry, 2s green)。
+  `H2cone V := ∀ j≥1, le1 V 0 j → 0<entry V 2 j → hasParent (V.take(j+1)) 2 j`。
+  `ConeRow2Vanish V := 0<entry V 2 0 → ∀ j≥1, le1 V 0 j → entry V 2 j=0`(=(w5)、fragment で 7129/7129)。
+  case split: root row2=0 → `h2_cone`、root row2>0 → ConeRow2Vanish で空虚。
+- **含意**: §197 の「(w5) が破れたら approach 死」の懸念は**否定**された。R2 測度誘導は前提遺伝の面で閉じる。
+  残余は (i) ConeRow2Vanish の Lean 証明(bad window/W-構造依存、任意窓では偽なので局所補題では不可)、(ii) rank 減少合成(§199、接続 blockRoot_window_eq_iff は green)、(iii) WF 誘導 assembly。
+- **次段**: ConeRow2Vanish を bad window(mTower 窓)の構造から Lean 証明。V の列は Q の row2 パターン由来(entry2_block)なので、根 row2>0 のとき in-cone 列の row2=0 を Q の構造で出す。
+- commit なし(hcl2 未証明), cron 残置。scratchpad: w5_h2cone.py/w5_actual.py/w5_robust.py/w5_fragment.py/w5_mechanism.py/w5_h2cone.lean。
