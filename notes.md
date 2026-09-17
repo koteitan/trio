@@ -31270,3 +31270,19 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   H2cone は hz0 を除去し reachable 線を handle するが、∀Q 版の revive core は残る。
 - **次段の選択肢**: (a) ¬H2cone Q の revive を §93-141 の既存機構で処理(hard)。(b) MTowerClosedRow2 が H2cone-Q だけで足りる restricted 版で goal に届くか再検討。
 - commit: notes + lean/W5.lean(docstring 訂正)。cron 残置。
+
+## 追記663: ★★★★★★ L106 の assembly 発見(MTowerClosedS⟸MeasOK2, 0-sorry)+ MeasOK2 は偽 + Lift1 マスク発見
+
+- **★ L106 は 0-sorry**(唯一の "sorry" はコメント)で、**MTowerClosedS を MeasOK2 1 本に還元済**:
+  `L106.mTowerClosedS_of_measOK (hmeas : MeasOK2) : MTowerClosedS`(:9045)。`tower_of_measure_step2`+`snocStep_gen`+`prefixTowerClosed_of_snocStepStrong1` で組み、
+  **OrphOK/HeredZ0 等は全消去**(§277.3)。∴ §196.5 の WF assembly(3)は L106 で完成していた(私が見落としていた)。
+  `towerMeas Q d e = natMeasure |Q| (rankDE d e) = 3|Q| + rank`(rank∈{0,1,2})。MeasOK2 = oper で `towerMeas(窓) < towerMeas(Q)` ⟺ 窓<|Q| or (窓=|Q| ∧ rank減)。
+- **★ しかし MeasOK2 は偽**(faithful 検証 93406 中 **76 失敗**、全て **z=1 ∧ d≥2 ∧ e≥2**、窓>|Q|。例 [(0,0,1),(1,1,0),(2,1,1)] d=2e=2 win=4>|Q|=3)。
+  §277.3 の「208/208」は小箱(|Q|≤5,n≤2, d,e 小)で d≥2,e≥2 を見逃していた。∴ **単純測度 3|Q|+rank は不十分**、窓が |Q| を超える(revive/塔の塔)。
+- **★ Lift1 はマスク付き**(`Wset:927`): `row1 += d を le1 X 0 i の列のみ`。∴ 私の以前の python `mt()`(uniform lift1, e>0)は**不faithful**。
+  影響: measok(uniform)の「psi(I) 失敗 win=9」は artifact(faithful では win=3<5 で成立)。a_fast.py の「revive 7/42」も uniform 由来で要再検証。
+  **e=0 の confinement テスト(w5_e0)は Lift1 by 0=id で faithful、Lean 証明も green** ⟹ confinement は正しい。reachable(trio.expand)テストも faithful。
+- **含意**: 残差 = MeasOK2 を真にする **smarter 測度**(窓が |Q| を超える z=1,d≥2,e≥2 を扱う多ブロック/辞書式)、
+  または失敗 Q(z=1,d≥2,e≥2)が derivation で現れないなら restricted MeasOK2 で足りる(要確認: 消費側が渡す d,e)。
+- **次段**: (a) 失敗 Q(z=1,d≥2,e≥2)が消費側で現れるか。(b) natMeasure を smarter に(窓>|Q| を rank/ブロック数で補償)。tower_of_measure_step2 の infra は再利用可。
+- commit: notes。scratchpad: measok2.py/measok3.py(faithful Lift1)。cron 残置。
