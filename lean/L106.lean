@@ -11299,5 +11299,25 @@ theorem snoc_lex_decrease_row2_of_z0 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
     (H12Export.hasParent_two_take (show j + 1 ≤ Q.length by omega) (by omega)).mp hpar_take
   exact snoc_lex_decrease_row2 hj hpar_Q hnr
 
+/-! ### §322 ★★★★★ **srow = 1 supplier の hr0 版** —— 錐条件を `hr0` ∧ `entry Q 1 0 < entry Q 1 j` に還元
+
+`snoc_lex_decrease_row1` は `hasParent Q 1 j` を要求した。⟹ ★ `hasParent1_of_le0`（H12Export）は
+**行 0 の祖先 y と `entry Q 1 y < entry Q 1 j`** から行 1 の親を出す。⟹ 根 y=0 では
+`le0 Q 0 j`（`le0_root_of_shallow`、`hr0` から無料）＋ `entry Q 1 0 < entry Q 1 j`（根の行 1 が最小）。
+⟹ ⟹ ★★ ですから srow=1 に本当に要る錐条件は **`entry Q 1 0 < entry Q 1 j`（行 1 の最浅性）だけ**。
+（srow=0 は `hr0` だけ、srow=2 は `le1 Q 0 j`＋z=0。⟹ 3 ケースとも残差が根の浅さ/連結性に絞られた。） -/
+
+theorem snoc_lex_decrease_row1_of_hr0 {A Q : TrioSeq} {d e n j c e' d' : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hj : j < Q.length) (hj0 : 0 < j) (h1 : entry Q 1 0 < entry Q 1 j)
+    (hnr : nextrel1 (A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+        c ((A ++ mTower Q d e n).length + j)) :
+    LexLt (lexMeas (((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).drop c).take
+        ((A ++ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1)).length - 1 - c)) e' d')
+      (lexMeas Q e d) := by
+  have hle0 := H12Export.le0_root_of_shallow (show 0 < Q.length by omega) hr0 j hj0 hj
+  have hpar_Q : hasParent Q 1 j := H12Export.hasParent1_of_le0 hj hle0 h1
+  exact snoc_lex_decrease_row1 hj hpar_Q hnr
+
 end L106
 end TRIO

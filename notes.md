@@ -31501,6 +31501,12 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - `snoc_lex_decrease_row0`: **srow=0 版**(window_lt_of_row0_parent)。行0 は `hasParent Q 0 j` 不要、`hr0` だけで親がブロック前に飛べない(no_row0_parent_from_before_block)。
 - **∴ srow=0/1/2 の測度減少 supplier が3つとも GREEN**。ブロック根(lexLt_of_srow_zero/one)・孤児(snoc_orphan_W)は既存。⟹ hstep の case-split の各枝の部品が揃った。
 - **★ srow=2 錐条件の還元(§321, GREEN)**: `snoc_lex_decrease_row2_of_z0` — `h2_cone`(L105Cap:11320)は **`entry Q 2 0 = 0`(z=0)だけ**で錐内の行2親を出す(Q∈W u 不要)。∴ srow=2 に本当に要る錐条件は **`le1 Q 0 j`(根が列 j の行1祖先=H1based)だけ**。fact B が消費側で z=0 を供給。⟹ srow=2 の残差が `le1 Q 0 j` 1本に絞られた。
+- **★ srow=1 錐条件の還元(§322, GREEN)**: `snoc_lex_decrease_row1_of_hr0` — `hasParent1_of_le0`(H12Export)は行0祖先+row1 witness で行1親を出す。根 y=0 では `le0 Q 0 j`(`le0_root_of_shallow`, hr0 から無料)+ `entry Q 1 0 < entry Q 1 j`。∴ srow=1 の残差は **`entry Q 1 0 < entry Q 1 j`(行1の最浅性)だけ**。
+- **∴ 3 ケース全て根の浅さ/連結性に還元**:
+  - srow=0: `hr0` だけ(錐不要)。
+  - srow=1: `hr0` + `entry Q 1 0 < entry Q 1 j`(行1最浅)。
+  - srow=2: `le1 Q 0 j`(行1連結)+ z=0(fact B)。
+  ⟹ **残差 = (i) これらの根の浅さ/連結性を不変量 P に入れる + (ii) 窓 V への遺伝**。(ii) が真の hard core。
 - **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
 - **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。
