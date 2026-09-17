@@ -30903,3 +30903,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - これが緑になれば幅k・深さk 全て開く（統一の要石）。
 - 次: GoodChtX [towT 0 [DL] j] の step（DL prepend + tie 0 wrap）を Lean で。upleaf を最後の列に当てて
   F(j) の深い部分（DL, GoodChtX_deep）に落とす入れ子帰納。
+
+## 追記636: 目標 W の自己参照は row2-lift 機構（深い葉と別）。endgame の性質
+
+- fork（GoodChtX 深い葉の塔 = 幅k の要石）をバックグラウンドで grind 中。重複回避で HeU/HeV/HeW/塔に触れない。
+- **目標 W=(1,1,1)(2,1,1)(3,1,0) の自己参照（実測、独立、endgame 用）**:
+  - W 単独展開: (0,0,0)(1,1,1)(2,1,1) + n×(·,0,0)(·,1,1)(·,1,1)。
+  - (3,1,0) の展開 = (3,0,0)(4,1,1)(5,1,1)：**新しい段0 trigger (3,0,0) + F 字が row2=1 にリフト**。
+  - ∴ W は「F 字と同段(row1=1)の F タイの子が、展開で row2 をリフトし trigger+F字 を再生」= 自己参照的
+    reflection（psi(I) の弱コンパクト性）。**深い葉（row2=0 維持）とは別の機構**。
+- 目標 = (2,0,0) trigger が W を複製、各 W の (3,1,0) が trigger+F字 を再生 = 入れ子の自己参照。summit。
+- ∴ endgame は row2-lift 機構が要る（深い葉・幅k とは別）。ただしシートは大きさ順で、目標の展開は
+  幅k/深い葉を含む（回避不可）。順序: 深い葉(済)→幅k(fork)→…→row2-lift W→目標。
+- 次: fork の幅k 結果を待つ。来たら下流（シート 1688 以降）を進める。endgame の row2-lift は最後。
