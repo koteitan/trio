@@ -31086,3 +31086,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - notes 追記636 より **psi(I) 展開は深い葉/幅k を含む(回避不可)** → 幅2 は goal に必要。∴ 幅2 = goal 必須かつ framework 非依存の hard barrier。
 - **次段候補(genuinely new が要る)**: (a) shift d 一般化帰納で base を hK_pm でなく別closerで。(b) 深い葉 GTC の合成補題(tie-0 spine に単一深い葉を graft)を新規構築 = GoodChtX_deep 級。(c) 幅2 tow を「単一深い葉の shifted run」と見て BwT_rep 類似で(但し shift graft)。
 - fork 完了、scratchpad/hK_w2.lean は tow_w2_rec 緑 + tow GTC sorry。commit なし, cron 残置。
+
+## 追記650: ★★★ 巨大 reframe — psi(I)∈W0 は単一残余 Clause2∧Clause3 に帰着(Subst/tower reduction)
+
+- **Final.lean/L5-L8/Wtower2/L105Cap を発見**: トリオ停止性全体が**単一残余に帰着**（全 reduction 証明済み）:
+  `WellFounded stepRel ⟸ Subst1gRevive ⟸ Subst1gReviveSelf ⟸ SubstFree ⟸ Clause2∧Clause3`(or SubstMulti or mTowerClosedRow2)。
+- **bridge 確定**: Wself={M|M∈W(lev M 0)}, root lev 0 なら Wself↔W 0(L51Lift:96)。psi(I)は lev 0 → psi(I)∈W0 ⟺ ∈Wself。
+  mem_Wself_of_diag(L47W:227): diagonals∈Wself → 全 ST_TS∈Wself。∴ **psi(I)∈W0 ⟸ Clause2∧Clause3**（完全に閉じる）。
+- **残余**: Clause2(L7Subst:99, oper case)/Clause3(L7Subst:108, 一般 graft 閉包)/mTowerClosedRow2(L105Cap:5798, tower 閉包)。
+  **Clause3=一般の graft(W-block を列に接ぎ木)閉包 → 深い葉/幅2 の graft を subsume する master keystone**。
+- L105Cap(14000+行)/H12 が active に mTowerClosedRow2→clause2 を reduce 中(`mTowerClosedRow2_of_clause2'`, §199「R2 の測度」)。
+- **戦略的結論**: シート climb(深い葉/幅2, 幅2 で stuck)は **redundant**。Subst/tower reduction が幅2 を subsume する clean な主線。
+  幅2 barrier は Clause3 の特殊例、一般証明が閉じる。
+- **次段**: L105Cap/H12 の最深残余を特定し、Clause2/Clause3/mTowerClosedRow2 の core に迫る。幅2 シート climb は保留。
+- memory: subst-reduction-supersedes-sheet.md 新規。commit なし(残余未証明), cron 残置。
