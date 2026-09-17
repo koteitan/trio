@@ -31518,6 +31518,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **意義**: **標準域(StdInv)では lex 測度が確実に減る**ことを green で確立。measOK2_false(非based で偽)の positive 版。⟹ hsnoc_gen_lex の hmeas 義務が StdInv から機械的に埋まる。
 - **残**: (1) snocStep_std_lex(dispatch + hsnoc_gen_lex + 孤児 + j=0 ブロック根 + last-zero の組立)。(2) **窓 V が StdInv を遺伝**(真の hard core、hr0 は hr0_wnd_gen で済、行1最浅/le1連結が subtree 性)。
 - commit: notes + lean/L106.lean。cron 残置。
+
+## 追記682: ★ 窓遺伝の精緻化 —— z=0 は fragment で easy(`snocWindow_row2_root_zero` GREEN)、真の壁は le1/行1
+
+- **窓の StdInv 遺伝を成分ごとに分析**(z<2 fragment の構造を活用):
+  - **z=0 成分(srow=2 窓)= EASY**: `snocWindow_row2_root_zero`(GREEN, L106 §324)。srow=2(末尾行2=1)⟹ nextrel2 で親 row2 < 末尾 row2 ≤ 1 ⟹ **親 row2=0 = 窓根 row2=0**。fragment なので自動。
+  - **z=1 + srow=2 = 孤児**: 窓根 row2=1(z=1)なら row2=0 の le1 祖先が無い ⟹ 行2親なし ⟹ hasParent(srow=2)偽 ⟹ snoc_orphan_W(無料)。∴ **z=1 域で srow=2 は measure 供給を要さない**。⟹ 不変量に z=0 を強制せず fragment だけで良い(z=0 は srow=2 供給時に導出/自動)。
+  - **hr0 成分 = EASY**: hr0_wnd_gen(L106 §276, GREEN)。
+  - **行1最浅 + le1連結 = 真の壁**: 窓根 c(=行2/行1親)が全窓列を行1で支配 = BM4 bad-part の subtree 構造。window_root_row1/row2_min(局所)はあるが全域支配は未証明。研究レベル。
+- **∴ 窓遺伝 5 成分中 3 つ(0<|V|, hr0, z=0/孤児)は tractable/green。残る壁は「窓の le1連結性/行1最浅」= subtree 定理**。
+- commit: notes + lean/L106.lean。cron 残置(目標未証明)。
 - **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
 - **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。

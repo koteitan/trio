@@ -11402,5 +11402,28 @@ theorem snoc_measDispatch_std {A Q : TrioSeq} {d e n j : ℕ}
         rw [← hlast]; simpa [nextR] using hnR
       exact snoc_lex_decrease_row0 hr0 hj (by omega) hnr0
 
+/-! ### §324 ★★★★★ **窓の遺伝(1): z=0** —— fragment では srow=2 窓の根は行 2 が 0
+
+`z < 2` fragment（行 2 の値 ≤ 1）では、⟹ ★ 末尾列が srow=2（行 2 = 1）のとき、その親 `c` は
+`nextrel2` で `entry T 2 c < entry T 2 (末尾) ≤ 1` ⟹ **`entry T 2 c = 0`**。⟹ ⟹ ★★
+窓の根 = `T[c]` なので **窓は z=0 を満たす**（`StdInv` の z=0 成分が srow=2 窓へ遺伝）。 -/
+
+theorem snocWindow_row2_root_zero {T : TrioSeq}
+    (hfrag : ∀ i, i < T.length → entry T 2 i ≤ 1)
+    (hpar : hasParent T (srow T (T.length - 1)) (T.length - 1))
+    (h2 : 0 < entry T 2 (T.length - 1)) :
+    entry (snocWindow T) 2 0 = 0 := by
+  unfold snocWindow
+  set c := parent T (srow T (T.length - 1)) (T.length - 1) with hc
+  have hnR := parent_nextR hpar
+  rw [← hc] at hnR
+  have hsr : srow T (T.length - 1) = 2 := by unfold srow; rw [if_pos h2]
+  rw [hsr, nextR_two] at hnR
+  have hclt : c < T.length - 1 := hnR.2.2.1
+  have hlt : entry T 2 c < entry T 2 (T.length - 1) := hnR.2.2.2.1
+  have hfr : entry T 2 (T.length - 1) ≤ 1 := hfrag _ (by omega)
+  rw [Wset.entry_take (show (0 : ℕ) < T.length - 1 - c by omega), entry_drop_head]
+  omega
+
 end L106
 end TRIO
