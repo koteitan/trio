@@ -30965,3 +30965,17 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **n(コピー数)帰納は不可**: 追加ペア展開時 parent が run 全体を遡り最初の marker まで届く（間は皆 q0+2 等値）→ 非局所。全体 shift²(gcopies) を1オブジェクトとして Prod.Lex 強帰納が要る。
 - 全ショートカット再確認排除: upleaf_deep_core(oper_cons_tower1 が親=根要求, 塔 domT 偽), TreeOKs(DL=tie1-in-tie1 不可), GpT_load(Wg 2*b 固定), tow=木(単一葉専用)。
 - commit なし（scratchpad, sorry=1）, cron 残置。次: Prod.Lex(lvl2,lvl1) 族強帰納 or GpT_node/tstep_tie の高 level ロードで gcopies-tail を閉じる。
+
+## 追記641: Explore 在庫 → tstep_oper 撤去、直接ルートで succ 分解（尾が Wg メンバに）。残 load 1個
+
+- **Explore agent(aaf45f6b, 全 far-word 補題マップ)の結論**:
+  - GpT レベルに任意 depth の Wg ロードは無い（GpT_load/slot_load は depth1, level b 固定）→ **tstep_oper ルートは死んでいた**（尾 gcopies が深い depth ロードを要求）。
+  - 正しい機構 = 遠い語 tie ステップ（cstep_tie HcF:75 / fwH_tie_step HbM:120, SlotAx.tie GxP:52 が再レベル化 Wg(2*u') ロード）。
+  - 森内部拡張補題も無い（GoodChtX(Lds++[F])→(Lds++[F++[tree]]) は非存在, 森は GoodLowT/TreeOKs で完成させ atomic 追加。塔は非 TreeOKs）。
+- **直接ルートに転換（tstep_oper 撤去, tower_full.lean GREEN, 0 error, sorry=1）**:
+  - `U0_split` GREEN: `(0,q0+1,0)::chT[tower(j+1)] = [(0,q0+1,0),(1,q0+2,0),(2,q0+2,0)] ++ shiftr01 1 0 (Ub j)`（chT_tow_rec）。
+  - succ を `rw [hU0, U0_split, shiftr01_append×2, ←append_assoc×2]` で分解 → **残 sorry = `GpT(K' ++ shift³(Ub j))`**
+    K'=深い葉の遠い語(=GoodChtX_deep.2), shift³(Ub j)=shiftr01 3回, **Ub j ∈ Wg(2(q0+1))(Ub_mem_Wg 緑)= クリーンな Wg メンバ**（gcopies の泥沼と違う）。
+  - ★重要: `towT 0 [DL] (j+1) = [DL, tie0(tower j)]`（右ネスト, DL + tower j を包む tie0 ノード1個）。∴ tie0 ノードは Ub j ∈ Wg を load = **IH 不要の可能性**（Ub_mem_Wg は独立に全 j 成立）。塔は帰納なしで閉じるかも。
+- **残る唯一の壁 = Wg メンバ Ub j を遠い段 tie0 ノードとして load**。fwH_tie_step は u=q0+1 で葉 level q0+2=(u+1)・Wg(2(q0+1)) が一致するが、森が chT(H=FTLt 内)vs Y 末尾 で引数位置が噛み合わない。cstep_tie は level b+1 vs q0+2 不一致。次: callers の tie0-load パターン特定 or 専用 load 補題を SlotAx.tie で構成。
+- commit なし（scratchpad, sorry=1）, cron 残置。
