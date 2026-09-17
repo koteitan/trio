@@ -221,10 +221,11 @@ def HstepFor (u : ℕ) (Q : TrioSeq) (d e : ℕ) : Prop :=
     mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
     mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u
 
-/-- **★★★★ 残余を明示化**: `MTowerClosedRow2`(Final の残核)は
-    **(A) H2cone 不変量** ＋ **(B) hstep** の 2 本に帰着する。
-    (A) は well-formed Q で成り立ち塔で遺伝（`H2cone_mTower`）、
-    (B) は §138 窓測度（復活は H2cone が排除、追記659）で閉じる見通し。 -/
+/-- **残余の H2cone 分枝を明示化**: `MTowerClosedRow2`(Final の残核)は、前提 (A)(B) の下で出る:
+    **(A) H2cone 不変量**（全 Q）＋ **(B) hstep**。
+    ⚠ **(A) は全 Q では偽**（例 `[(0,1,1),(1,2,1)]`∈W は shallowest だが H2cone 失敗）。
+    ∴ この補題は「H2cone が成る Q」（reachable/consumer Q は全て該当、実測 40887/0）の分枝を捉えるだけで、
+    `¬H2cone`（z=1 で行2孤児）の Q の revive 分枝（実測 42 中 7 が hard）は**別途要**。追記662。 -/
 theorem mTowerClosedRow2_of_h2cone_hstep
     (hH2 : ∀ (u d e : ℕ) (Q : TrioSeq), Q ∈ W u →
       (∀ j, 1 ≤ j → j < Q.length → entry Q 0 0 < entry Q 0 j) →

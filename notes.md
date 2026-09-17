@@ -31255,3 +31255,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   - (A): well-formed Q で成立・塔で遺伝(`H2cone_mTower`)。W-所属から出るか要検証(z=0 は h2_cone で free、z=1 は carried か構造条件)。
   - (B): §138 窓測度。復活は H2cone が排除済(追記659)⟹ (ii) 同ブロック親の窓帰納で閉じる見通し。
 - commit: notes + lean/W5.lean。cron 残置。
+
+## 追記662: ★★★ 重要な訂正 — (A)「∀Q H2cone」は偽。H2cone は revive を ∀Q では排除しない(追記659 の射程を限定)
+
+- **反例**: `[(0,1,1),(1,2,1)]` は shallowest・row2>0・**∈W**(全 d,e,n で mTower 停止, 2n steps)だが **H2cone 失敗**
+  ((1,2,1) は in-cone row2=1 で行2親なし=行2孤児)。∴ MTowerClosedRow2(∀Q∈W u)は H2cone を満たさない Q も含む。
+- **∴ 追記661 の packaging (A)「∀Q H2cone Q」は偽**(充足不能)。`mTowerClosedRow2_of_h2cone_hstep` は
+  **H2cone が成る Q の分枝のみ**を捉える(green だが (A) が偽なので単独では閉じない)。docstring を訂正済。
+- **追記659 の「H2cone が revive を排除」の射程**: **H2cone が成る Q に限る**。¬H2cone Q(z=1 で行2孤児)は revive しうる:
+  root(0,1,1) の ¬H2cone shallowest W-member 42 個中 **7 個が hard**(塔 steps 29-34 vs len 9 = 復活)。例 [(0,1,1),(1,1,0),(1,2,1)]。
+- **救い**: **reachable/consumer Q は全て H2cone**(w5_invariant 40887/0)。∴ 実際に derivation で現れる Q は私の approach で handled。
+  ¬H2cone Q は非 reachable な degenerate(35/42 は全孤児 drop で trivial、7/42 は revive)。
+- **正しい残余**: MTowerClosedRow2 ⟸ (H2cone-Q: 私の approach + hstep(revive なし)) ∧ (**¬H2cone-Q: revive/orphan 処理** = 従来の §93-141 の hard core、未解決)。
+  H2cone は hz0 を除去し reachable 線を handle するが、∀Q 版の revive core は残る。
+- **次段の選択肢**: (a) ¬H2cone Q の revive を §93-141 の既存機構で処理(hard)。(b) MTowerClosedRow2 が H2cone-Q だけで足りる restricted 版で goal に届くか再検討。
+- commit: notes + lean/W5.lean(docstring 訂正)。cron 残置。
