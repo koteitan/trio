@@ -31025,3 +31025,15 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   幅2 tow = 塔(木でない)だが BwT は Bad Word Tower なので、木ベース GTC_wLTL の代わりに BwT_rep で塔を刻めるか。
 - **次段**: frontier/幅2 tow を rword で語に分解し、BwT_rep/GT/BwT_append_words で BwT を出す。塔(GpT scratchpad)は保留。
 - memory: frontier-via-bwt-not-goodchtx.md 新規。commit なし(行未証明), cron 残置。
+
+## 追記645: framework 整理。GoodChtX_deep は tracked 主線、GT_tie(GxK)再レベル化が幅2 の鍵候補
+
+- 訂正: GoodChtX_deep(GpT)は **tracked**(HeU:124)で主線に使用（HeV step1→GLctx→R_pm3）。GoodChtX_tower は
+  その幅2 一般化（私の scratchpad, load 詰まり）。frontier は幅2 深い葉が必須（(3,2,0) 展開で幅2 tow に到達）。
+- **framework 3層**: GpT(GoodChtX, 遠い語構造) / GTC(GzJ:23, 文脈制限 GT) / GT・BwT(GxK, 語の塔)。
+  GTC の upleaf(upleaf_deep_coreT_gen HeS:89)は domT(親=根)要求で塔失敗。GpT の GoodChtX_tower も load 詰まり。
+- **★GT 機構(GxK)は domT 不要 + GT_tie 再レベル化**: GT_oper(hasParent のみ)/GT_tie(∀u≥v Wg(2u)ロード, 再レベル化)/
+  GT_orph(j≤v)/GT_flat。GpT で詰まった level 壁を GT_tie が解決する候補。GTC = GT の文脈版で GxK の構成子を使う。
+- **次段**: 幅2 深い葉を GT 機構で構築。GT_oper→幅2 tow→GT_tie(tie0 が sub∈Wg ロード)+GT_oper(DL)→dtree→GTall。
+  まず単一深い葉の GT/GTC 経路(hK_pm=upleaf_deep_coreDT→dtree→GTC_wLTL)を確認し、幅2 で tie0 を GT_tie に置換。
+- memory: frontier-via-bwt-not-goodchtx.md 更新。commit なし(行未証明), cron 残置。
