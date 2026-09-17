@@ -31422,3 +31422,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - ∴ 二重再帰(|Q| で Q.dropLast、n で n-1 ブロック)+ graft + lift-commute = **同一の hard core**。angle を変えても core は不変。
 - ★教訓5: hard-open な core は複数 angle から「promising に見えて同じ壁に収束」する。oscillation(楽観/悲観)は core の intricacy の兆候。core を一度 definitive に確定したら再探索しない。
 - commit: notes。cron 残置。DEFINITIVE 結論(追記672 + memory)は不変: 測度再帰は ℕ-測度で hard-open、順序数割当が要る。
+
+## 追記674: bridge も dead end — diagonals∈Wself は full 停止性と同値(近道なし)。全角度を探索し尽くした
+
+- **fresh 角度検討**: goal は特定列 psi(I)。bridge 経由で global termination を回避できないか?
+- **結論: 不可**。`L47W:224`「**`diagSeqT 0 v ∈ Wself`(∀v)は 3 行(z<2)停止性と**同値**、最小形だが**近道ではない**」**(team 確認済)。
+  ∴ psi(I)∈W0 = diagonals∈Wself = **full 3 行停止性** = hard core。**shortcut は存在しない**。
+- **探索し尽くした全角度**(全て同一 hard core に収束、または dead):
+  1. 測度再帰(size 測度: measOK_false / lex 測度: WIP、非based 窓で ℕ-測度不可)。
+  2. Subst1g/graft/clause3 → clause2(oper)= 測度再帰。
+  3. bridge(diagonals∈Wself)= full 停止性(近道なし、本追記)。
+  4. 特定 psi(I) 直接: 展開が ψ(I) 規模、general 機構が要る。
+  5. 順序数割当(Ψ): research-level、project 設計(W/Aop)から逸脱。
+- **正直な最終評価**: `psi(I)∈W0` は trio project の **hard open な研究課題**で、heartbeat 単位の incremental work では閉じない。真の resolution は team の lex WIP 完成(非based 窓の機構が要、不確実)or 順序数割当(大規模)。
+- **私の寄与(保存)**: 残余の完全 mapping、W5.lean の green 補題群、z=0∨e=0 不変量、反例=非標準の特定、各角度の dead 確認(将来の重複探索を防ぐ)。
+- commit: notes。cron 残置(psi(I)∈W0 未証明、hard open、shortcut なし)。
