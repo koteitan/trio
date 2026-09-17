@@ -31551,6 +31551,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **戦略的パス**: 塔基底の不変量を **ST_TS に制限**(reachable、窓遺伝が実測成立)。窓遺伝を **ST_TS 帰納(diag 基底 + oper ステップ、CNF 保存経由)** で証明。ad-hoc StdInv でなく既存標準形理論に接続。
 - ★教訓7: **測度が壊れる反例が非reachable なら、不変量を reachable 集合(ST_TS)に取れば良い**。ST_TS は展開閉で、既存の translate/CNF 理論がある。私の StdInv 再発明でなく ST_TS に乗るべき。
 - commit: notes(scratchpad: le1c_window.py)。cron 残置。
+
+## 追記685: ★★ アーキテクチャ確定 + 反例は非標準(bms -s=0) + W ⊇ 標準形
+
+- **停止性 = MTowerClosedRow2 = tower closure だけ**(Final.lean:875 chain 精読): `TRIO_terminates_of_mTowerClosedRow2` → mTowerClosedS_of_row2 → `wf_olt_ST_TS_of_mTowerClosedS` → `wf_olt_ST_TS_of_cofinality`。後者は **`trio_cofinality`(無条件)+ `Wstar_closed`(tower closure)** から WF。∴ 残余は tower closure 1本。
+- **`translate_oper_bad`(Decrease:310)= 順序数減少(WF 測度)は証明済**。但し残りは W-membership の**構成**(mTower Q∈W u)であり測度でなく閉包。
+- **反例(行1 dip)は bms -s = 0(非標準)**。diagonal/psi(I) は 1(標準)。⟹ 窓遺伝を壊す列は非標準形。
+- **⚠ W ⊇ 標準形**(`Wset:4745` `ST_TS M → ∃u, M∈W u`)。W は標準形の superset で**非標準を含みうる**。⟹ MTowerClosedRow2(∀Q∈W u)は非標準 Q も量化。私の窓/lex 測度は標準形でのみ窓遺伝が効く(反例で破れる)ので、**非標準 Q∈W u をカバーしない**恐れ。
+  - 但し MTowerClosedRow2 は W-closure なので**成立自体は真**(W は oper/graft で閉じる)。非標準 Q には team の graft(clause3)構成が要る。私の lex は標準形 route の一角度。
+- **検査中(std_implies_window.py, bms -s)**: 「標準形 ⟹ 窓 row1-shallow」を全標準形で。成立すれば標準形 route は私の機械で閉じる(残 = 非標準 Q の扱い or W∩(hr0 tower base)⊆標準形 か)。
+- commit: notes。cron 残置。
 - **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
 - **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。
