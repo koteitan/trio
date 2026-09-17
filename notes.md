@@ -31063,3 +31063,12 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
   幅2 = GoodChtX_deep 級の from-scratch keystone（tie-0 spine + DL 葉 + level 再レベル化の融合）。GpT でも GTC でも同じ壁。
 - **次段候補**: (a) tow GTC を tower 高さの帰納で（各 DL→dtree, spine を GTC_tie/GTC_oper で刻む）。(b) 再レベル化 load(GTC_tie の u≥v で Ub∈Wg(2) を u=1 でロード)。(c) 戦略再考。
 - commit なし(行未証明), cron 残置。
+
+## 追記648: frontier_wf 検証済み — hK_w2 → frontier ∈ W の連結完成(残 sorry=tow GTC のみ)
+
+- **frontier_wf.lean 緑(scratchpad, sorry=hK_w2 スタブのみ)**: `hK_w2`(width-2 深い葉 GTC)→ BwT[Kw2] → StarOK → W0_of_starOK
+  → **frontier `(0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)` ∈ W 0**。simpa が frontier 行を閉じた(R_pm 流)。
+- ∴ 幅2 深い葉の行 = frontier。**残るは hK_w2 の tow GTC 1個のみ**。
+- **hK_w2.lean 緑(sorry=1)**: upleaf_deep_coreDT で `GTC CLTL 0 ([(1,1,1)]++shiftr01 1 0(tow 1 0[(1,2,0),(2,2,0),(1,2,0)]m'))` に還元。tow=Ub(m'-1)。
+- fork a4bb6b が tow GTC を grind 中((a)高さ帰納 (b)letter 再レベル (c)dtree 森, 再レベル化 GTC_tie/GT_loadTop)。
+- commit なし(行未証明), cron 残置。
