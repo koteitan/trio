@@ -31437,3 +31437,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **正直な最終評価**: `psi(I)∈W0` は trio project の **hard open な研究課題**で、heartbeat 単位の incremental work では閉じない。真の resolution は team の lex WIP 完成(非based 窓の機構が要、不確実)or 順序数割当(大規模)。
 - **私の寄与(保存)**: 残余の完全 mapping、W5.lean の green 補題群、z=0∨e=0 不変量、反例=非標準の特定、各角度の dead 確認(将来の重複探索を防ぐ)。
 - commit: notes。cron 残置(psi(I)∈W0 未証明、hard open、shortcut なし)。
+
+## 追記675: ★★★★★★ 窓再帰は reachable 域で 9000/9000 停止(lex 測度は標準域で機能する。悲観を再訂正)
+
+- **faithful な full 再帰 trace(初めて実施)**: reachable な tower 底 3000 個 × (d,e)3 通り = 9000 trace。各 trace: 底 Q→塔 oper→窓 V=T[r:x]→V を新底に再帰、lex 測度(|V|,e',d')の減少と |V|≤|Q| を確認。
+- **結果: 9000/9000 が STOP(停止)**。**WINDOW_GROW(|V|>|Q|)=0、LEX_NOT_DEC=0、LOOP=0**。
+- ∴ **lex 測度は reachable/標準域で機能する**: |V|≤|Q| 保存、lex 厳密減少、有限停止。
+- **悲観(追記670-674)の再訂正**: 「非based 窓で ℕ-測度が詰まる」は **非reachable(M0ce型, |V|>|Q|)入力**に対して。**reachable 再帰では M0ce は生じない**(9000/9000)。
+  lex 測度は **base-independent**(|V|=長さ, e, d)なので非based は無関係。re-base 不要。
+- **∴ team の lex WIP(L106 §314-317)は正しい方向**。reachable/標準域で closeable の強い証拠。
+- **⚠ 残る open question(over-claim しない)**:
+  1. 私の step モデル(V=T[r:x])が Lean 再帰と exact に一致するか(faithful 性)。
+  2. **∀量化**: MTowerClosedRow2 は ∀Q∈W u で非reachable(M0ce)含む。それらは lex で詰まる ⟹ 正規化(非標準→標準)or 別 Aop 節(orphan/short)で処理が要る。
+  3. Lean の `MTowerClosedAt` は based 要件。非based 窓に IH を当てるには based 落とすか re-base(lex は base-indep なので based 落とせる見込み)。
+- **次段**: (a) Lean で lex hstep を書き、window の lex 減少を実証(step モデルの faithful 化)。(b) MTowerClosedAt の based 要件を落とせるか。(c) 非reachable W-member の扱い(正規化 or 別節)。
+- commit: notes。scratchpad: recursion.py(9000/9000 STOP)。cron 残置。
