@@ -31196,3 +31196,16 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **∴ premise 遺伝 ((w5)) は完全に Lean 化**(§197 の懸念は解消)。H2cone は「Q の不変量 + hr0 + 側条件(oper では fact B が供給)」で塔に遺伝。
 - **R2 誘導の残り 2 部**: (2) rank 減少合成(§199、接続 blockRoot_window_eq_iff/src_ge_block は green)、(3) Prod.Lex(|V|,rank) の WF 誘導 skeleton(未着手)。
 - commit: notes + lean/W5.lean。scratchpad: w5_conf.lean/w5_e0red.lean。cron 残置。
+
+## 追記658: ★★★★★ 統合 — 塔閉包の hz0 を H2cone(Q) に置換(GREEN)。z=1 でも塔が閉じる
+
+- **発見**: `mTowerClosed_of_snocStepCone`(L105Cap:11624)は hz0 を **1 箇所だけ**使用(11661):
+  `block_blockParent_all_cone` の h2 引数 `0<entry Q 2 j → hasParent (Q.take(j+1)) 2 j` を `h2_cone hz0` で供給。これは **H2cone Q そのもの**。
+- **`W5.mTowerClosed_of_snocStepCone_h2cone`(GREEN, 0 sorry)**: 上の証明を同一コピーし、hz0 使用を
+  `fun hpos => hQcone j hj1 hj hcone hpos`(H2cone Q)に差し替え。前提は `hr0 + H2cone Q + hstep`。
+  ⟹ **`entry Q 2 0` が 0 でも 1 でも塔が閉じる**(z=1 対応)。これが premise 遺伝と hcl2 本体の統合点。
+- **∴ 塔閉包 `∀n, mTower Q d e n∈W u` の残り**: `hstep`(snoc step, §163.1)のみ。H2cone(Q) は誘導不変量
+  (`H2cone_mTower` で塔に遺伝、base は well-formed Q)。hr0 は消費側が供給。
+- **hstep の中身(§163.1)**: (C1) 錐内(le1 Q 0 j)→ 親同ブロック → 窓<|Q| → §138 測度あり。(C2) 錐外 → 孤児 or 復活。
+  = R2 測度(rank 減少 §199)の本体。ここが最後の山。
+- commit: notes + lean/W5.lean。cron 残置。

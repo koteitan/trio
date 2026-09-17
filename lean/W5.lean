@@ -151,5 +151,59 @@ theorem H2cone_mTower {Q : TrioSeq} {d e n : ℕ} (hQ1 : 0 < Q.length) (hn : 0 <
   · exact H2cone_mTower_e0 hQ1 hn hr0 hQcone
   · exact H2cone_mTower_of_hz0 hQ1 hz0 d e n
 
+/-- **★★★ hz0 を H2cone(Q) に置換した塔閉包**。
+    `mTowerClosed_of_snocStepCone`(L105Cap:11624)の証明と同一で、唯一の hz0 使用
+    （Q-level h2cone を作る 1 箇所）を `H2cone Q` で差し替えたもの。
+    ⟹ `z = 1`（根の行 2 が正）でも塔が閉じる。前提遺伝の統合点。 -/
+theorem mTowerClosed_of_snocStepCone_h2cone {u : ℕ} {Q : TrioSeq} {d e : ℕ}
+    (hr0 : ∀ l, 0 < l → l < Q.length → entry Q 0 0 < entry Q 0 l)
+    (hQcone : H2cone Q)
+    (hstep : ∀ (n j : ℕ), j < Q.length →
+      (hasParent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length
+        ∨ mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j = []) →
+      (0 < j → le1 Q 0 j → n * Q.length ≤
+        parent (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+          (srow (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1))
+            (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length)
+          (mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j).length) →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take j ∈ W u →
+      mTower Q d e n ++ (Lift1 (shiftr01 (d * n) 0 Q) (e * n)).take (j + 1) ∈ W u) :
+    ∀ n, mTower Q d e n ∈ W u := by
+  refine mTowerClosed_of_snocStepPar ?_
+  intro n j hj hpar0 hC
+  set B := Lift1 (shiftr01 (d * n) 0 Q) (e * n) with hB
+  have hBlen : B.length = Q.length := by rw [hB, Lift1_length, shiftr01_length]
+  have hTlen : (mTower Q d e n).length = n * Q.length := mTower_length Q d e n
+  have hClen : (mTower Q d e n ++ B.take j).length = n * Q.length + j := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hC1len : (mTower Q d e n ++ B.take (j + 1)).length
+      = n * Q.length + (j + 1) := by
+    rw [List.length_append, hTlen, List.length_take, hBlen,
+      Nat.min_eq_left (by omega)]
+  have hsrow : srow (mTower Q d e n ++ B.take (j + 1))
+      (n * Q.length + j) = srow (B.take (j + 1)) j := by
+    unfold srow
+    rw [show n * Q.length + j = (mTower Q d e n).length + j from by rw [hTlen],
+      entry_append_right _ _ 2 j, entry_append_right _ _ 1 j]
+  refine hstep n j hj hpar0 (fun hj1 hcone => ?_) hC
+  have hloc : hasParent (B.take (j + 1)) (srow (B.take (j + 1)) j) j :=
+    block_blockParent_all_cone hj hj1 hr0 hcone
+      (fun hpos => hQcone j hj1 hj hcone hpos)
+  have hpar : hasParent (mTower Q d e n ++ B.take (j + 1))
+      (srow (B.take (j + 1)) j)
+      ((mTower Q d e n ++ B.take (j + 1)).length - 1) := by
+    rw [hC1len, show n * Q.length + (j + 1) - 1 = (mTower Q d e n).length + j from by
+      rw [hTlen]; omega]
+    exact hasParent_append_right_of _ _ hloc
+  have hres := snocStep_parent_sameBlock (d := d) (e := e) (n := n)
+    (i := srow (B.take (j + 1)) j) hj hloc hpar
+  rw [hC1len, show n * Q.length + (j + 1) - 1 = n * Q.length + j from by omega] at hres
+  rw [hClen, hsrow]
+  exact hres
+
 end W5
 end TRIO
