@@ -31564,3 +31564,12 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **意義**: lex hstep の frame(WF 帰納 + snoc + srow=2/1 の減少)が green で乗った。全称 MeasOK2_lex(偽)を回避し、per-instance に私の window_lt を供給する形。
 - **残(hard core)**: (a) srow=0 supplier + ブロック根の e/d 減少(lexLt_of_srow_zero/one)+ 孤児(snoc_orphan_W)。(b) **cone 不変量(le1 Q 0 j 等)の窓への遺伝**(supplier の仮定を賄う、真の難所)。(c) based+cone を P とした hstep の組立。
 - commit: notes + lean/L106.lean。cron 残置(目標未証明)。
+
+## 追記686: ★★ 順序数側は全証明済 / 停止性の残余 = tower closure 1本 / cnf→窓 が未探索路
+
+- **測定(std_implies_window.py, bms -s)**: 標準形 srow=2 の 299 個で窓遺伝違反 0(reachable 7841/0 と整合)。⟹ **標準形 ⟹ 窓 row1-shallow を裏付け**。
+- **順序数側は全部証明済**: `translate_oper_bad`(順序数減少), `cnf_ST_TS`(ST_TS→cnf, Goper:371), `cnf_oper`(CNF 保存), `trio_cofinality`(共終性)。
+- **停止性の唯一の残余 = W_membership(ST_TS⊆W)= tower closure = MTowerClosedRow2**。`wf_olt_ST_TS_of_cofinality` は共終性(済)+ W-membership を要し、後者が tower closure。順序数減少単独では閉じない(WF の witness は W-構造)。
+- **有望な未探索路**: `cnf(translate M) → M 窓 row1-shallow` が示せれば、**cnf_ST_TS(済)経由で標準形の窓遺伝が追加帰納なしで出る**。cnf は Three(順序数)上、row1-shallow は sequence 上で translate の構造理解を要する(非自明・dedicated)。
+- **正直な評価**: hard-open core(= full 停止性同値)は heartbeat 増分では閉じない。順序数側完備・core=標準形の窓遺伝(実測成立)まで mapping 完了。次の実質前進は cnf→窓 接続 or W⊆標準形 で、専念が要る。
+- commit: notes。cron 残置(目標未証明)。
