@@ -31589,3 +31589,12 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **∴ 残余 = 非標準含む W-member の tower closure = W-構造的 graft/catenation(clause3/WCat)= hard-open core**。測度は translate で処理済(私の測度機械は冗長)。
 - **セッション成果(全 green, commit 9eeda64〜)**: lex frame + 測度 supplier + 窓遺伝 4/5 + StdInv = standard-form route の再利用可能部品。単独で目標を閉じない。
 - ★教訓10: heartbeat 増分では hard-open core は閉じない。measure/窓 route を build+除外し core を graft と特定。次の実質前進は graft(clause3)専念の dedicated effort。
+
+## 追記689: ★★★ route 除外の完全マップ — heartbeat-accessible な全 route 全滅
+
+- **測度/窓 route**: ✗(W⊄cnf 実証、追記688)。非標準 W-member((0,0,0)(1,1,1)(3,0,1) 等)を扱えない。
+- **標準形限定 route(S=標準形閉集合)**: ✗。`wf_olt_ST_TS_of_cofinality` の S は Aop-closed 必須、oper 節が非標準 R(全展開標準)を S に強制 ⟹ 標準形限定不可。
+- **順序数 route**: 測度完備だが残余は同じ W_membership=tower closure。
+- **specific psi(I)**: ✗ 展開木が非有界 ⟹ 一般閉包が要る(近道なし)。Gw 個別行(小)は流用不可。
+- **∴ 唯一残る = graft(clause3=MTowerClosedRow2 for 非標準 Q)一般閉包 = hard-open 研究課題**。全 route が同一 core に帰着。
+- ★教訓11: trio 停止性は heartbeat 増分では閉じない研究レベル課題。13 heartbeat で全 route を系統的除外し core 確定。実質前進は graft 一般証明の dedicated off-heartbeat effort のみ。
