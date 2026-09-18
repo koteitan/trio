@@ -31573,3 +31573,12 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **有望な未探索路**: `cnf(translate M) → M 窓 row1-shallow` が示せれば、**cnf_ST_TS(済)経由で標準形の窓遺伝が追加帰納なしで出る**。cnf は Three(順序数)上、row1-shallow は sequence 上で translate の構造理解を要する(非自明・dedicated)。
 - **正直な評価**: hard-open core(= full 停止性同値)は heartbeat 増分では閉じない。順序数側完備・core=標準形の窓遺伝(実測成立)まで mapping 完了。次の実質前進は cnf→窓 接続 or W⊆標準形 で、専念が要る。
 - commit: notes。cron 残置(目標未証明)。
+
+## 追記687: ★★★ 決定的結論 —— 私の lex/窓 route は standard-form 限定、一般 MTowerClosedRow2 を閉じない
+
+- `translate`(Term:138): 行0を深さ優先の森、列 p の lead 対=(row1,row2)。`cnf`=兄弟の lead 対が単調減少。
+- **致命的ギャップ**: (1) `M∈W u → cnf(translate M)` の補題は無い(**W⊆標準形 は未確立**)。(2) tower base の effective Q(Wstar2s={R|∀k R.take k∈Wstar2})は W-set ベースで構文的標準形に非制限。
+- **∴ 私の lex/窓機械(frame+supplier+窓遺伝 4/5, 全 green)は standard-form route の部品**。MTowerClosedRow2 は ∀Q∈W u(非標準含む)で、非標準 Q には **W-構造的な graft(clause3)閉包**が要る = team の路線 = hard-open core。
+- **私の green 機械は再利用可能だが単独では目標を閉じない**。真の core = graft/clause3。
+- ★教訓9: 測度(lex/順序数)route は「W-member が標準形性を持つ」を暗黙要求。W⊄標準形ゆえ測度 route は一般に効かず、**W-構造的閉包(graft)が本質**。測度 route を再発明しないこと。
+- commit: notes。cron 残置(目標未証明)。
