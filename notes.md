@@ -31582,3 +31582,10 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **私の green 機械は再利用可能だが単独では目標を閉じない**。真の core = graft/clause3。
 - ★教訓9: 測度(lex/順序数)route は「W-member が標準形性を持つ」を暗黙要求。W⊄標準形ゆえ測度 route は一般に効かず、**W-構造的閉包(graft)が本質**。測度 route を再発明しないこと。
 - commit: notes。cron 残置(目標未証明)。
+## 追記688: ★★★ 決定的 — W ⊄ cnf(標準形)を確定、測度 route を general case で除外
+
+- W = lfp Aop、oper 節 =「∀n≥1 M⟦n⟧∈W → M∈W」。W⊆cnf には cnf が Aop-closed、即ち **「∀n cnf(M⟦n⟧)→cnf(M)」= `cnf_oper` の逆**が要る。成り立たない(非cnf M でも全展開が cnf/W なら M∈W; BM 的にも W は非標準=冗長 終了行列を含む)。
+- **∴ W ⊄ cnf 確定。測度/窓 route(cnf/標準形依存)は一般 Q∈W u を原理的にカバーしない**。順序数 route も translate の WF が W-membership 経由ゆえ同じ壁。
+- **∴ 残余 = 非標準含む W-member の tower closure = W-構造的 graft/catenation(clause3/WCat)= hard-open core**。測度は translate で処理済(私の測度機械は冗長)。
+- **セッション成果(全 green, commit 9eeda64〜)**: lex frame + 測度 supplier + 窓遺伝 4/5 + StdInv = standard-form route の再利用可能部品。単独で目標を閉じない。
+- ★教訓10: heartbeat 増分では hard-open core は閉じない。measure/窓 route を build+除外し core を graft と特定。次の実質前進は graft(clause3)専念の dedicated effort。
