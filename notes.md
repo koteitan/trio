@@ -32032,3 +32032,25 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
   ∴ psiI に必要なのは **W 平坦の GT_nest のみ**（M 平坦、入れ子深さ1）。一般 W（任意深さ）不要。
   flat-M 版の content-荷補題（fwU の荷スロットに平坦 content を差す）で psiI は閉じる可能性。
   → まず flat-M 版を狙い、psiI を先に取る（一般 GT_nest は後で）。
+
+## 追記723: ★★ R_pm3(HeW:97)が gt_trc4_direct の worked template。gap = fwTop(素二重頭) vs Trc4(頭+平坦子)
+
+（coordinator。fork の gt_trc4_direct を deep-tie chain へ接続。fork は farhead_base_oper を commit 後この経路へ pivot 中。）
+
+**deep-tie chain（実名、_deep は非実在）**:
+- GTC_far_gen(HeW:21): GTC GLctx v (fwTop v []) → GLctx v L, Fr L, BwT v L ⟹ BwT v (L++[fwTop v []])。
+- topCLT_WgL_gen(HeV:37)、GoodChtX_deep(HeU:124, 入れ子タイ tie 1 [tie 1 []])。
+- GLctx(HeW:13): ∃ps, L = ps.map (wLT v)（全語が wLT-描画の深いタイ語の文脈）。
+
+**worked template = R_pm3(HeW:97)**: (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1) ∈ W0。
+  bwt_KK2: BwT 0 [Kdeep, fwTop 0 []] を GTC_far_gen で作り、rword→StarOK→W0_of_starOK。
+  → gt_trc4_direct の設計図。
+
+**gap**: GTC_far_gen は fwTop v [] = 素の二重頭 (1,v+1,1)(2,v+1,1) を append。
+  だが Trc4 = (1,1,1)(2,1,0) = 頭 + **平坦子** (2,1,0)（rcol で Rc4=(1,1,1)(2,1,1)(3,1,0)、子 (3,1,0)）。
+  → 必要 = 「平坦荷子つき deep-tie append」= fwU v (v+1) [some flatload] を足す GTC_far_gen 変種。
+  要確認: Trc4 = wLT 0 p か（荷子を持つ UT-tree p）。なら family = replicate n Trc4 は GLctx 文脈。
+
+**戦略オプション**: gt_trc4 は universal GT（任意 L に append）だが、Cpsi は Trc4 を Trc4-list にしか
+  append しない。∴ Cpsi を GTC-文脈閉包（GLctx 版）に緩め、wordsG_replicate/starOK_wordsG を
+  rewire すれば、既存 deep-tie 機構の文脈制限に合致し universal GT を回避できる。
