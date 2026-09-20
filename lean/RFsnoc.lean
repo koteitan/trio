@@ -18,6 +18,11 @@ theorem GpT_snocz_content {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA
     (hPV : ∀ t, GpT A (o + t) f b (mlift W (b + liftOff f A o) t))
     (hY : RLC A o (fun _ => 0) b Y) :
     GpT A o f b (W ++ ((1, b + liftOff f A o + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y) := by
+  refine GpT_intro hA (fun R hR g => ?_)
+  rw [reliftX_app hW (Hd_letter _ _) b f g,
+    show ((1, b + liftOff f A o + 1, 1) : ℕ × ℕ × ℕ) = ((1, b + (liftOff f A o + 1), 1) : ℕ × ℕ × ℕ)
+      from by rw [Nat.add_assoc],
+    reliftX_node hYfr b (liftOff f A o + 1) 1 f g A]
   sorry
 
 /-- RLC の段シフト（o → o+t、Y → mlift Y u t）。wrapper が o+t で GpT_snocz_content を使うため。 -/
