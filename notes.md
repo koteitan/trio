@@ -32931,3 +32931,30 @@ RFarword helpers, RLC_levelshift削除。W 世界には towerGraft2_lift_fam(sro
 
 **結論**: 一般 WCat の無条件化 = 開問題（Zroot/Mono/bump を外す = Subst1 と同じ核）。増分は relocate になるので追加せず。
   psiI 専用路の再検討価値: bump/Aok 機構は Mono∧Zroot を扱う成熟機構で、psiI 断片はその中。次はこの路で psiI の塊を bump 構成に載せる gap を精査。
+
+## 追記752: psiI 特化 fitting の検証 — 成熟機構は「対角」を証明済み(GoodF_z1c/Dzf)、だが psiI は「平坦コピー」で別物=Subst1 の壁 (2026-09-21)
+
+（Fitcat fork: psiI の平坦族を bump/Aok/RunA/GoodF/Dzf 成熟機構に載せる可否を検証。）
+
+**★ 発見: z=1 遠い語 junk は成熟機構で普遍 junk として証明済み。**
+- `Jz1c a b := [(a+1,b+1,1),(a+2,1,0)]`（SmallX:15636）。**Jz1c 0 0 = Trc4** そのもの（Rc4 = rcol 0 0 (Jz1c 0 0)）。
+- `GoodF_z1c : GoodF Jz1c`（SmallX、緑）= 4 段すべてで普遍な junk（ge/mono/shift/pu/pk/seg/root）。
+- `Dzf J a b n := flatMap k (a+k,b+k,0)::J(a+k)(b+k)`（対角: 記録 (k,k,0) が増加）。
+- `Dzf_W_root : GoodF J → ∀n, Dzf J 0 0 n ∈ W0`（SmallX:15589、緑）。
+  ∴ **`Dzf Jz1c 0 0 n ∈ W0`（z=1 junk の対角塔）は証明済み**。= 対角生成元系（[[climb-reduces-to-diagonal]]）。
+
+**★ だが psiI の標的は「対角」でなく「平坦コピー」で別物:**
+- psiI⟦n⟧ = (0,0,0)::Rc4^n（Cpsi 緑 + model 一致）= 根 + n 個の**同一** Rc4 コピー（row0 リセット、記録列なし）。
+  Rc4=(1,1,1)(2,1,1)(3,1,0)、頭 (1,1,1) は z=1 遠い語頭（rcol 頭、固定）。**全列 row1≤1**（対角は row1=k 増加）。
+- Dzf Jz1c（対角）= 記録 (k,k,0) 増加 + junk。psiI 平坦族 = z=1 頭 (1,1,1) 固定 + junk。**構造が違う**。
+- GoodF→W0 の consumer は `Dzf_W_root`（対角）**1 つのみ**。平坦コピーの consumer は存在しない。
+- **C4scratch が n=1 平坦族(C4f)を既に Subst1 に還元済み** → n=1 でさえ壁。成熟機構に C4f/Rc4 の構造を出す補題は無い。
+
+**verdict（到達可否）:** psiI の平坦族は成熟 GoodF/Dzf/RunA 機構の**射程外**。機構が証明するのは**対角** Dzf（強い対象、緑）。
+psiI の平坦・同一・z=1-遠い語コピー（row1 有界、記録なし）= 置換/revive 残余 = **Subst1**（開）。
+**欠けている構成子** = 「根 + n 個の同一 z=1-遠い語コピー（対角記録なし）」。機構は対角 Dzf しか持たない。
+
+**注目（次への含意）:** psiI 平坦族は row1≤1 有界 = 証明済み対角より**小さい**。なのに対角は緑で psiI は壁。
+∴ 有望路 = (i) psiI∈W0 を平坦族でなく**証明済み対角経由**で再導出できるか、または
+(ii) row1 有界の平坦-遠い語-コピー補題（= Subst1 の制限版、成熟 GoodF フィールドを使う）を 1 本足す。
+どちらも「対角は緑・junk は GoodF」を足場にできる。ゼロからでない。GoodF/Dzf/Jz1c が最有望の起点。
