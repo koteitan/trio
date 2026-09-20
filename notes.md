@@ -32006,3 +32006,29 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
   topCQ_Wg(HbB:140)/towWAQ_GpT は同じ塔だが CQ context 固定・WordsG 経由（一般 BwT 接頭辞に非可）。
   → 必要 = 「(0,r,1) 根の遠い語（row2=1 根）が Wg」or「行0=1 節点下 graft」primitive。
   次 resume: この 1 本を狙う（tower_Wg/topCQ_Wg の一般 BwT 接頭辞版）。
+
+## 追記722: ★★ 構造同定 — GT_nest の還元目標の中身 = fwU u (u+1) [some M]（FarCU の荷スロット、ただし content 荷で 1 段深い）
+
+（coordinator による構造解析。fork の linchpin を FarCU 機構に接続。）
+
+**同定**: 追記721 の還元目標の中身 (1,u+1,1)(2,u+1,1)(shiftr01 2 0 M) は
+  fwU u (u+1) [some M]   （fwU_some: fwU b r (us++[some Z]) = fwU b r us ++ shiftr01 2 0 Z、
+                          fwU b (u+1) [] = (1,u+1,1)(2,u+1,1)）
+に**完全一致**（M = mlift W v (u-v)）。
+∴ GT_nest の目標 = (0,u,0)::(P ++ fwU u (u+1) [some M])。これは FarCU/farU の描画そのもの。
+
+**ギャップ（child vs sibling の 1 段ずれ）**:
+- GTU_load(GzI:107)/GTU_some(GzI:314) の `some Z` は Z ∈ Wg(2b) ∧ based を RawUs から取り出す。
+  based Z（行0=0）→ shiftr01 2 0 Z は行0=2 始まり = 内側頭 (2,r,1) の**兄弟**。
+- fork の M は content（行0≥1、W=shiftr01 1 0 Z 由来）→ shiftr01 2 0 M は行0=3 始まり = 内側頭の**子**。
+- ∴ FarCU は「二重頭 + 行0=2 の兄弟荷」（深さ2）まで。psiI の Rc4=(1,1,1)(2,1,1)(3,1,0) は
+  (3,1,0) が内側頭の子（行0=3）で **FarCU より 1 段深い**（psi(I) は主脈、既存機構の端）。
+- 必要 primitive = GTU_load/GTU_some を **content 荷**（M が GT-good content）へ一般化 = 入れ子 fwU。
+  荷スロットが leaf(PVP terminal) から far-word 頭（自前の塔）に変わるので、fork の nested tower が必要。
+  この同定は「どこに差し込むか」= fwU の荷スロット、を確定する。
+
+**psiI 特化の単純化（深さ1）**: psiI の innermost 語は W=[(1,1,0)]（平坦, row2=0）。
+  Trc4 = rcol 0 0 [(1,1,0)]（検証: rcol 0 0 [(1,1,0)] = (1,1,1)::[(2,1,0)] = Trc4）。
+  ∴ psiI に必要なのは **W 平坦の GT_nest のみ**（M 平坦、入れ子深さ1）。一般 W（任意深さ）不要。
+  flat-M 版の content-荷補題（fwU の荷スロットに平坦 content を差す）で psiI は閉じる可能性。
+  → まず flat-M 版を狙い、psiI を先に取る（一般 GT_nest は後で）。
