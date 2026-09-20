@@ -32745,3 +32745,25 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **次**: fork が (1) tower1_mem_v_fam(~5 行 copy)、(2) deep-tie tow∈Wg(+自己相似 fam hgr via hangv on tow levels)、
   (3) dh1 を BwT_snocz で prefix 化。→ core → gt_trc4' → GT 0 Trc4 → Cpsi.psiI_mem → 最終目標。
+
+## 追記746: tower1_mem_v_fam GREEN。深い child(rsum 偽 both hangv/Wg_app)→ nested。core は循環的な nested head の可能性(要注意)
+
+（fork が tower1_mem_v_fam green 化 + 深い child 発見。coordinator 精査。）
+
+**tower1_mem_v_fam GREEN**(commit 60e2cdfc): Wg 世界 fam 制限 deep-tie 塔、tower1_mem_v の 5 行 restate。
+
+**深い child(rsum 偽)**: fam hgr の child shift3(tow k) は根 row0=3、prefix は (0,v,0) 根(row0=0)含む
+  → rsum(`∀p, entry P 0 0 ≤ p.1`)が 3≤0 で偽 → **hangv も Wg_app も不可**。child は dh2 の行0-child(深い)。
+
+**coordinator 精査の caveat（要検証）**:
+- INNER(rword L ++ 二重頭、子なし)は farword_Wg/tower_Wg(green、tower_Wg GzD:121)を prefix 一般化 → tractable。
+- だが外側 tie 塔の fam hgr の k≥1 = 「二重頭 + dh2 の子 shift3(tow k)」= **nested head**。
+- 内側 dh2 は **row2=1 頭**(srow=2)で tower1_mem_v_fam(srow=1 tie 用)不可、oper_zcone(→ farhead_base_oper の Wrap 領域)。
+- ∴ 「nested double tower 両方 tower1_mem_v_fam」は inner-head で不正確な可能性。fam hgr k≥1 が nested head に循環。
+
+**現状の honest 評価**: core = 二重入れ子 far-word = nested head(dh2 が row0-child を持つ marker-free 構造)。
+  全ルート(Wrap/ch-Z/GpT_snocz_content/tower1_mem_v_fam/Wg_app/hangv)が nested head に循環。~60 heartbeat・~20M token。
+  psiI∈W0 は真(model)で構成は原理的に存在するが、既存機構が marker-free nested head を素で持たず難航。
+
+**次**: fork が nested tower を試行 → inner dh2 が頭(tie でない)を発見するはず。fam hgr k≥1 の nested head を
+  どう閉じるか(dh2 の oper が bare-head 塔に還元するか=oper_headtie 型、or Wrap 循環か)が核心。
