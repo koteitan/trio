@@ -32701,3 +32701,25 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
   二重頭+tie の類似（oper_zword2 + PzW2_Wg 相当、~2 補題）が要る。GTnestBase.lean は前セッションの GT_nest base 着手。
 
 **次**: PzW_Wg/oper_zword/BwT_snocz を二重頭+tie に一般化（or 既存の far 塔 lemma で二重頭前置版があれば流用）。
+
+## 追記744: ★★ 単一頭を任意 L 末尾に継ぐ機構は既に green(oper_zword/PzW_Wg/BwT_snocz)。core = その double-head+tie 一般化
+
+（fork が single-head 機構を発見 + coordinator が double-head+tie 一般化を確定。finish line。）
+
+**単一頭機構（GREEN、GxJ）**:
+- `PzW v L n = flatMap k<n [(k,v+k,0)::rword k (v+k) (L↑k)]`（単一頭塔）。
+- `oper_zword`(GxJ:200): `((0,v,0)::rword 0 v L ++ [(1,v+1,1)])⟦n⟧ = PzW v L n`（単一頭 append の oper）。
+- `PzW_Wg`(GxJ:300): `BwT w L → PzW w L n ∈ Wg`（**hangv 帰納で証明、各段は rooted far-word segment を hang、
+  bare head 露出なし → Wrap なし**）。
+- `BwT_snocz`(GxJ:320): `BwT L → BwT(L++[[]])`（空語=rcol で単一頭を L 末尾に継ぐ、green）。
+
+**core = これの Trc4(double-head+tie)版**（Trc4=rcol[(1,1,0)] は 2 列 → rcol が (1,v+1,1)(2,v+1,1)(3,v+1,0)）:
+- Trc4 版補題は無い（= GT 0 Trc4 そのもの）。**oper_zword + PzW_Wg を double-head+tie に一般化**（~2-3 補題）。
+- `oper_zword_dh`: `((0,v,0)::rword 0 v L ++ [(1,v+1,1),(2,v+1,1),(3,v+1,0)])⟦n⟧ = PzW_dh`
+  （oper_headtie green + oper_cons_tower1、tie 親=根）。
+- `PzW_Wg_dh`: `BwT L → PzW_dh ∈ Wg`（PzW_Wg と同じ hangv 帰納、各段の double head は rooted segment 内、
+  bare head なし → Wrap なし）。
+- core = mem_of_oper_mem/A1g + oper_zword_dh + PzW_Wg_dh（BwT_snocz が oper_zword+PzW_Wg を使うのと同様）。
+
+**finish**: oper_zword/PzW_Wg の証明を copy し、append を [単一頭] → [二重頭,tie] に拡張、hangv 帰納を維持。
+  green → gt_trc4' → GT 0 Trc4 → Cpsi.psiI_mem → 最終目標。**証明済み機構を頭 1 個+tie 1 個 拡張するだけ**。
