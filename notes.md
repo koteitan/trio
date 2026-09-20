@@ -32801,3 +32801,25 @@ Lift1-closure(W)が使える可能性。どちらも大きい。
 
 **green 部品（全て）**: oper_headtie, tower1_mem_v_fam, tower_mem_fam, gt_trc4'直接scaffold(核isolate,hQ green),
 RFarword helpers, RLC_levelshift削除。W 世界には towerGraft2_lift_fam(srow=2 fam), Final:264(Lift1-closure)。
+
+## 追記747: ★★★ 根本原因判明(検証済み) — 遠い語頭+子ネストは Lift1-closure を要し、それは W 世界のみ。Wg 経路は全て循環。解決=(b)W 世界ルート
+
+（fork が session の循環の根本原因を検証・特定。）
+
+**根本原因**: core の中段 dh2(遠い語頭, srow=2)の oper = **Lift1-graft 塔**(行1 昇る、oper_cons_tower2)。
+  **`Lift1 ∈ Wg` は存在しない**(grep 0)。Lift1-closure は **W 世界のみ**:
+  - `towerGraft2_lift_fam`(Wset:3459): W srow=2 fam 塔、`Lift1((0,v,z)::R⟦n⟧) s ∈ W`(hgrF: fam graft-closure W 版)。
+  - `towerGraft2_lift`(Wset:3512)、`Final:264`(∀p∈X row2=0 → X∈W → Lift1 X d ∈ W(m+2d)、based 版)。
+  ∴ **遠い語頭+子ネスト(= childLoad graft = 普遍的障害)は本質的に W 世界に棲む**。raw Wg 直接路
+  (Wstarv/BwT/GT)は必ず Lift1 の壁。**全 Wg 経路(Wrap/ch-Z/GpT_snocz/tower1_mem_v_fam/gt_trc4')循環の根本原因**。
+  tower1_mem_v(Wg srow=1)は tie に効くが srow=2 頭に効かない。
+
+**解決 = (b) W 世界ルート**（最終目標 psiI ∈ **W0**、Wg でなく。Wg⊆W）:
+  - nested head(srow=2 dh2)は `towerGraft2_lift_fam`(W)で閉じる。marker 壁(wLT/GTC)も回避。
+  - **fam_far_mem(Cpsi)を W 直接に**: (0,0,0)::Rc4^n ∈ W0 を mem_of_oper_mem(W)+ towerGraft2_lift_fam で。
+    double-head 列(Rc4^n の oper)は末尾 srow=2(dh2)で towerGraft2_lift_fam 適合。GT 0 Trc4 を bypass できる可能性。
+  - (a) childLoad/GTC は GTC が srow=2 を吸収するが CQ→族の marker 壁 → (b) を優先。
+
+**green 部品**: oper_headtie, tower1_mem_v_fam, tower_mem_fam, gt_trc4' scaffold。W 世界: towerGraft2_lift_fam + Final:264。
+
+**次**: (b) W 世界で (0,0,0)::Rc4^n ∈ W0 を towerGraft2_lift_fam で直接(GT/BwT/Wg/marker を bypass)。
