@@ -31941,3 +31941,12 @@ fork が far-word 頭の展開を trio.py で精査し訂正:
   - Route 1(base 一般化): `farword_Wg_L : WordsG u L → (0,u,0)::(rword 0 u L ++ [(1,u+1,1),(2,u+1,1)]) ∈ Wg(2u)` — tower_GPF/farword_Wg を L=[] から任意 WordsG L に一般化(L の rword を PVF/RLF 再帰に足す)。→ GT v [head] → GT_nest → GT 0 Trc4。
   - Route 2(CQ, 推奨): childLoad base=GTC_far_CQ green, oper green、残り tie-recursion(GTC_tie hload)は tower_GPF-adjacent な GPF-world 塔(graft 閉包でない)。Cpsi を WordsG→BwTC_rep に rewire。
 - **∴ 残余は tower_GPF の L 一般化 = 既存機構の拡張**(from-scratch graft 閉包でない)。より tractable。committed green 維持。
+
+## 追記718: ★★★ 残余を GyK の 1 constructor `RLF_farword`(mutual PVF-in-RLF)に pin(決定的・最精密)
+
+farword_Wg_L fork が GyK の GPF/PVF/RLF 塔 engine を精査し、残余を**ただ 1 個の新規 constructor** に確定:
+- GyK の RLF constructor は 3 つ: `RLF_nil`(GyK:117)、`RLF_load`(GyK:120, based Wg-load を slot_load, row2=0/根 row0=0)、`RLF_child`(GyK:126, row2=0 node (1,b+τ,0))。`PVF_snoc`(GyK:107)は row2=1 頭 (1,b+o+1,1) を top に**1 個**。
+- ∴ **row2=1 頭は top に 1 個しか置けず、RLF content の中に入れ子にできない**(Trc4=「字の中の字」が要求)。`slot_load` は based load 要求で PVF far-word(根 row0=1)を担げない。
+- **唯一の genuine 構築 = `RLF_farword`**: PVF far-word を RLF content に入れ子にする新規 constructor = **mutual PVF-in-RLF recursion**(RLF content が PVF far-word になれる、最内 row2=0 [(1,1,0)] で底、入れ子深さで整礎)。
+- **それ以外は全て green か reduces**: cone(cone_farhead)、copies(BwT_snocz)、oper 恒等式、Cpsi の族還元(GT 0 Trc4 に還元済、WordsG)。
+- ∴ psi(I)∈W0 は **GyK に RLF_farword(1 constructor + mutual recursion)を足せば閉じる**。substantial(mutual def + GpT/Wg 証明)だが well-defined・整礎。17 fork を経た最精密 target。committed green 維持。
