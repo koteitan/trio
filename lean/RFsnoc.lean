@@ -75,11 +75,12 @@ theorem oper_headtie (u n : ℕ) :
     Nat.mul_zero, Nat.add_zero, List.cons.injEq, Prod.mk.injEq, and_true, List.nil_eq]
   refine ⟨⟨by omega, rfl, rfl⟩, by omega, rfl, rfl⟩
 
-/-- GpT レベルの 遠い語頭+内容（general f）。GpT_snocz_core に内容 Y を通す（core surgery）。 -/
+/-- GpT レベルの 遠い語頭+内容（general f）。内容 Y は具体的な Wg-load（based）。
+    Y の末尾 tie が graft し (根, 遠い語頭) を複写する（oper_cons_tower1, モデル検証済み）。 -/
 theorem GpT_snocz_content {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a)
     (ho : 1 ≤ o) {f : ℕ → ℕ} {b : ℕ} {W Y : TrioSeq} (hW : Fr W) (hYfr : Fr Y)
     (hPV : ∀ t, GpT A (o + t) f b (mlift W (b + liftOff f A o) t))
-    (hY : RLC A o (fun _ => 0) b Y) :
+    (hbY : based Y) (hYW : Y ∈ Wg (2 * b)) :
     GpT A o f b (W ++ ((1, b + liftOff f A o + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y) := by
   refine GpT_intro hA (fun R hR g => ?_)
   rw [reliftX_app hW (Hd_letter _ _) b f g,
@@ -148,38 +149,31 @@ theorem GpT_snocz_content {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA
     -- 残余 = 内容 oper 補題 (0,u,0)(1,u+1,1)(2,u+1,0)⟦m⟧ = flatMap k<m [(2k,u,0),(2k+1,u+1,1)]。
     sorry
 
-/-- RLC の段シフト（o → o+t、Y → mlift Y u t）。wrapper が o+t で GpT_snocz_content を使うため。 -/
-theorem RLC_levelshift {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) {f : ℕ → ℕ} {b : ℕ} {Y : TrioSeq}
-    (hY : RLC A o (fun _ => 0) b Y) (t : ℕ) :
-    RLC A (o + t) (fun _ => 0) b (mlift Y (b + liftOff f A o) t) := by
-  -- FALSE as reindex: `hY g b'` gives LC1 at offset o+g·o, anchor (o::A);
-  -- goal needs offset o+t+g·(o+t), anchor ((o+t)::A). The anchor shift o→o+t is the blocker.
-  -- ∴ the ∀t-wrapper-at-offset-o framing is wrong; R_farword uses RLC's LC1 at the
-  -- shifted offset (o+g·o) directly. Core = LC1_farword at GENERAL offset (like RLF_child/R_child).
-  sorry
-
-/-- **PVP_snoc_gen**: general-f の PVF_snoc。∀t で GpT_snocz_content を回す（PVP_snocz に倣う、wrapper 完成）。 -/
+/-- **PVP_snoc_gen**: general-f の PVF_snoc。∀t で GpT_snocz_content を回す。
+    内容 Y は具体 Wg-load。based Wg-load は row1 ≤ b ≤ u なので mlift Y u t = Y（mlift-closed）。 -/
 theorem PVP_snoc_gen {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : ∀ a ∈ A, 1 ≤ a) (ho : 1 ≤ o)
     {f : ℕ → ℕ} {b : ℕ} {W Y : TrioSeq} (hW : Fr W) (hYfr : Fr Y)
-    (h : PVP A o f b W) (hY : RLC A o (fun _ => 0) b Y) :
+    (h : PVP A o f b W) (hbY : based Y) (hYW : Y ∈ Wg (2 * b))
+    (hYlow : ∀ y ∈ Y, y.2.1 ≤ b) :
     PVP A o f b (W ++ ((1, b + liftOff f A o + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y) := by
   intro t
   set u := b + liftOff f A o with hu
+  have hYfix : mlift Y u t = Y := by
+    -- based Wg-load: 全列 row1 ≤ b ≤ u なので coneV Y u j は偽 → mlift 恒等
+    sorry
   have eML : mlift (W ++ ((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y) u t
-      = mlift W u t ++ ((1, u + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (mlift Y u t) := by
-    rw [mlift_app hW (Hd_letter _ _), mlift_letter (show u < u + 1 by omega) hYfr t]
+      = mlift W u t ++ ((1, u + 1 + t, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 Y := by
+    rw [mlift_app hW (Hd_letter _ _), mlift_letter (show u < u + 1 by omega) hYfr t, hYfix]
   rw [eML]
   have ehead : u + 1 + t = b + liftOff f A (o + t) + 1 := by rw [hu, liftOff_add_t hA]; omega
   rw [ehead]
   have huteq : b + liftOff f A (o + t) = u + t := by rw [hu, liftOff_add_t hA]; omega
   refine GpT_snocz_content (o := o + t) (fun a ha => by have := hA a ha; omega) hA1 (by omega)
-    (Fr_mlift hW _ _) (Fr_mlift hYfr _ _) (fun t' => ?_) ?_
-  · -- hPV': GpT A (o+t+t') f b (mlift (mlift W u t) (b+liftOff f A (o+t)) t')
-    rw [huteq, mlift_mlift W u t t']
-    have := h (t + t')
-    rwa [show o + (t + t') = o + t + t' by omega, ← hu] at this
-  · -- hY': RLC A (o+t) (fun_=>0) b (mlift Y u t)  = RLC_levelshift
-    rw [hu]; exact RLC_levelshift hA hY t
+    (Fr_mlift hW _ _) hYfr (fun t' => ?_) hbY hYW
+  -- hPV': GpT A (o+t+t') f b (mlift (mlift W u t) (b+liftOff f A (o+t)) t')
+  rw [huteq, mlift_mlift W u t t']
+  have := h (t + t')
+  rwa [show o + (t + t') = o + t + t' by omega, ← hu] at this
 
 end RFsnoc
 end TRIO
