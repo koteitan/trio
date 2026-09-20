@@ -129,5 +129,43 @@ theorem C4_mem_of_subst1 (hs : Subst1)
     C4f ∈ W 0 :=
   C4_mem_of_step (TowStepC4_of_subst1 hs hsub)
 
-end TRIO
+/-! Step 4: レベル v の族 famC4 と ZBr 構造条件(argOK/srow/domT)を v で一般化(族構成の第一歩)。
+    co-recursive graft 閉包(ZBr case4 の残り)が frontier。 -/
 
+def famC4 : ℕ → TrioSeq :=
+  fun v => [((1,v+1,1):ℕ×ℕ×ℕ), ((2,v+1,1):ℕ×ℕ×ℕ), ((3,v+1,0):ℕ×ℕ×ℕ)]
+
+theorem famC4_len (v : ℕ) : (famC4 v).length = 3 := rfl
+
+theorem famC4_argOK (v : ℕ) : argOK (famC4 v) := by
+  intro p hp
+  simp only [famC4, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl <;> · simp only []; omega
+
+theorem famC4_srow (v : ℕ) : srow (famC4 v) ((famC4 v).length - 1) = 1 := by
+  unfold srow
+  rw [famC4_len]
+  rw [show entry (famC4 v) 2 2 = 0 from rfl, if_neg (by omega)]
+  rw [show entry (famC4 v) 1 2 = v + 1 from rfl, if_pos (by omega)]
+
+theorem famC4_domT (v : ℕ) : domT (famC4 v) (2 * v + 1) := by
+  refine ⟨?_, ?_⟩
+  · unfold lev
+    rw [famC4_len, show entry (famC4 v) 1 2 = v + 1 from rfl,
+      show entry (famC4 v) 2 2 = 0 from rfl]
+    omega
+  · rw [famC4_srow, famC4_len]
+    rintro ⟨j0, hj0, -⟩
+    unfold nextR at hj0
+    rw [if_neg (by decide), if_pos rfl] at hj0
+    have hlt := hj0.2.2.1
+    have hent := hj0.2.2.2.1
+    rw [show entry (famC4 v) 1 2 = v + 1 from rfl] at hent
+    have hj02 : j0 = 0 ∨ j0 = 1 := by omega
+    rcases hj02 with rfl | rfl
+    · rw [show entry (famC4 v) 1 0 = v + 1 from rfl] at hent; omega
+    · rw [show entry (famC4 v) 1 1 = v + 1 from rfl] at hent; omega
+
+theorem famC4_zero : famC4 0 = Rc4 := rfl
+
+end TRIO
