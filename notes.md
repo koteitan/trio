@@ -32641,3 +32641,23 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **次**: fork が (1) GpT_snocz_content(Om) 具体（oper_cons_tower1 + tower1_mem2_fam、A2g' なし）、
   (2) GT 0 Trc4 へ直接接続（GT_tie/GTC_tie bypass）、(3) Cpsi close。これが flat-content Trc4 の finish line。
+
+## 追記742: ★ gt_trc4' 直接路 — GT 0 Trc4 を GT_tie 迂回で unfold、核 = Q++二重頭+tie ∈ Wg（Q∈Wg green）
+
+座長の指示（Om は flat、bare-head 塔、GT_tie/GTC_tie 迂回、GpT_snocz_content を Wg-load 化）を実装。
+
+**restate 済み（commit）**: GpT_snocz_content/PVP_snoc_gen を `Y∈Wg(2b)∧based Y` に。RLC_levelshift(偽)削除。
+
+**gt_trc4'（RFsnoc.lean, 核 sorry 1本）**: GT 0 Trc4 を直接。unfold:
+  - GT → ∀L hB, BwT 0 (L++[Trc4]); BwT → ∀u, rword ∈ Wstarv u; Wstarv → ∀a≥2u, (0,u,0)::… ∈ Wg a。
+  - rword_append + render_Trc4(RFarword): rcol 0 u (mlift Trc4 0 u) = [(1,u+1,1),(2,u+1,1),(3,u+1,0)]。
+  - **hQ green**: Q = (0,u,0)::rword 0 u (mapped L) ∈ Wg a（hB u hu (argOK_rword) a ha）。
+  - **核**: `Q ++ [(1,u+1,1),(2,u+1,1),(3,u+1,0)] ∈ Wg a`（Q∈Wg a）。
+
+**核の構造（解析）**: tie (3,u+1,0, 行2=0) の行1親 = 根 (0,u,0)（二重頭は行1=u+1 で親でない）。
+  ∴ oper (oper_cons_tower1) は (根..tie) = Q+二重頭 を複写 = bare-head 塔 over Q。
+  Aopg case-b（natDom ∧ ∀n oper∈Wg）+ 塔機構で閉じる。tower1_mem_v(GwU:24, ∀y∈Wg の graft-closure)
+  は一般荷を量化 → fam 制限版（tower1_mem2_fam GwU 系, 塔自身の元のみ）が要るか要確認。
+
+**次**: 核 Q++二重頭+tie ∈ Wg を閉じる。oper_cons_tower1 で ⟦n⟧=tow → tower1_mem_v/fam。
+  green → gt_trc4' → Cpsi.psiI_mem → 目標。GpT_snocz_content 経由は不要になった（直接路が優る）。

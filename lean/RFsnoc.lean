@@ -5,6 +5,7 @@ PVP_snoc_gen の ∀t wrapper は完成（hPV' を mlift_mlift で埋め、PVP_s
 残余 = GpT_snocz_content（塔+内容の core）+ RLC level-shift（hY'）。
 -/
 import GzD
+import RFarword
 
 namespace TRIO
 namespace RFsnoc
@@ -174,6 +175,23 @@ theorem PVP_snoc_gen {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA1 : �
   rw [huteq, mlift_mlift W u t t']
   have := h (t + t')
   rwa [show o + (t + t') = o + t + t' by omega, ← hu] at this
+
+/-- **GT 0 Trc4 を直接証明**（GT_tie/GTC_tie を迂回、Om は flat なので ∀荷でなく bare-head 塔）。 -/
+theorem gt_trc4' : GT 0 RFarword.Trc4 := by
+  intro L hL hB u hu
+  refine fun harg a ha => ?_
+  rw [List.map_append, List.map_singleton, rword_append, rword_singleton, Nat.sub_zero,
+    RFarword.render_Trc4]
+  -- 核: Q ++ [dh1,dh2,tie] ∈ Wg a, ただし Q = (0,u,0)::rword 0 u (mapped L) ∈ Wg a（hB より）。
+  -- tie (3,u+1,0) の親 = 根 (0,u,0)。oper は根→tie を複写（bare double-head の塔）。
+  have hQ : ((0, u, 0) : ℕ × ℕ × ℕ) :: rword 0 u (L.map (fun X => mlift X 0 u)) ∈ Wg a := by
+    have hargL : argOK (rword 0 u (L.map (fun X => mlift X 0 (u - 0)))) := argOK_rword u _
+    have h := hB u hu hargL a ha
+    rwa [Nat.sub_zero] at h
+  -- 核: Q ++ [(1,u+1,1),(2,u+1,1),(3,u+1,0)] ∈ Wg a （Q=hQ ∈ Wg a）。
+  -- tie (3,u+1,0) の行1親 = 根 (0,u,0)。oper は (根..tie) = Q+二重頭 を複写（bare-head 塔 over Q）。
+  -- Aopg case-b（natDom ∧ ∀n oper∈Wg）+ 塔機構（tower1_mem_v / oper_headtie 系）で閉じる。
+  sorry
 
 end RFsnoc
 end TRIO
