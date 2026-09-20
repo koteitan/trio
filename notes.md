@@ -31625,3 +31625,15 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 
 ### ★教訓12(追記689 教訓11 を精密化)
 「非標準を含める」pivot の正体 = 非標準をガードで**除外**(Wstarg_closed 無条件)。これで幽霊障害は消え、閉性 route(未解決コアあり)を membership route(ClimbAll=対角線1本)に置換できた(green)。だが残る core は srow=2 コピー塔で、ガードはこれを楽にしない。停止性の真の壁 = **対角生成元 diagSeqT 0 v の srow=2 コピー塔 membership(課題 L50)** に確定。off-heartbeat の dedicated effort が要る点は不変。
+
+## 追記691: ★ 訂正 — D_v は natDom(最終列は row-2 親=root を持つ)。ガードは対角線を塞がない
+
+追記690 の「ガード graft は srow=2 を除外、oper は natDom を要求するが srow=2 最終列は hasParent で ¬natDom ⟹ D_v ∉ Wg」は**誤り**。natDom_iff(Wset:121)を精査:
+`natDom M ↔ (lev M last = 0 ∨ hasParent M (srow last) last)`、`domT M m := lev last = m+1 ∧ ¬hasParent`(=支配=orphan)。
+つまり **hasParent は natDom を成立させる**(排除しない)。
+
+計算確認(trio.parent):
+- D_v = (0,0,0)(1,1,1)...(v,v,1): 最終列 (v,v,1) は **row-2 親 = index 0(root)を持つ** ⟹ hasParent ⟹ **natDom D_v 成立** ⟹ ガード **oper 分岐が使える**。
+- 対比 diag1 = (0,0,1)(1,1,1)...(v,v,1)(root row2=1): 最終列は row-2 親なし(None)⟹ domT(orphan)⟹ 展開=dropLast で易しい(diag1_mem_W)。差は先頭 row2(0 vs 1)の1点。
+
+∴ 正しい結論: **ガードは対角線を構造的に塞がない**。D_v ∈ Wg a ⟸ (natDom D_v ✓) ∧ (∀n≥1 D_v[n] ∈ Wg a)[ガード oper]。残る仕事 = 展開塔 D_v[n](good part + n copies)を Wg で構成すること。ガード側の汎用エンジンは `Bw l := ∀v≥1 rword 0 v l ∈ Wstarv v`(GwU:353)+ `Bw_snoc_mem`(Bw l→T∈Wg2→Bw(l++[T]))+ `content_mem` + `W0_of_starOK`(GxL)。対角線をこの rword/Bw 符号化に嵌めるのが次の課題。
