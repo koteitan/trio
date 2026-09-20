@@ -31960,3 +31960,12 @@ RLF_farword fork が GyH→GyI→GyK を LC1 まで trace し、残余を確定:
 - **唯一の欠落 constructor = `LC1_farword`**(= RLF_farword / PVP→RLC bridge):
   `RLF A o b K → PVF A' τ b Y → RLF A o b (K ++ (1,b+τ,1)::shiftr01 1 0 Y)`。row2=1 sub-head に入れ子 far-word content Y。RLF_child(row2=0)の mirror ではなく、**sub-head の oper(入れ子 far-word 展開)**の処理が必要。tower_GPF との mutual recursion(有限、RLF_child で底)。
 - それ以外(cone_farhead, copies, oper 恒等式, Cpsi の GT 0 Trc4 族還元)は全て green。∴ psi(I)∈W0 は **LC1_farword 1 個で閉じる**。substantial LC1 拡張だが exact・有限・整礎。本プロジェクトの「字の中の字」open frontier(前セッション類似 keystone も未 close)。committed green 維持。
+
+## 追記720: ★★★ 残余を LC1 の 5 constructor レベルで確定 = R_farword(PVF_snoc 塔機構を nested RLC へ)。sustained build へ
+
+LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を exact に確定:
+- `RLF Y = RLC ∧ Fr Y`(GyK:105)、`RLC = ∀ LC1 (reliftX Y)`(GyI:15)、`LC1 A o H b Y = ∀W Fr, PVP W → PVP (W ++ (1,b+liftOff H A o+1,1)::shiftr01 1 0 Y)`(GyH:16)。
+- **LC1 の 5 constructor(nil GyH:29/oper 35/flat 56/orph 118/tie 196)は全て追加列が row2=0**(tie も (x,b+1,0))。`R_child`(GyF:259)も row2=0 child(CtxP_restrict+GpT_elim0)。
+- row2=1 頭の oper = shift-2 昇順塔(bad root parent=ROOT, d0=2/d1=1)= top の `PVF_snoc`(GyK:107)/`PVP_snocz`(GyG:230)のみ。∴ R_child の row2=0 機構は非適用。
+- **唯一の欠落 = `R_farword`/`LC1_farword`**: `RLF A o b K → PVF A' τ b Y → RLF A o b (K ++ (1,b+τ,1)::shiftr01 1 0 Y)` = PVF_snoc の row2=1-頭-塔機構を nested RLC content に持ち込む(mutual recursion RLC↔PVF、入れ子深さ整礎)。substantial GpT-closure 拡張、one-shot 非可。
+- それ以外(Cpsi の GT 0 Trc4 族還元、cone_farhead、copies)は全 green。**方針**: one-shot でなく sustained build(fork resume で context 維持、green helper 逐次 commit)。20 fork 収束の「字の中の字」open frontier。
