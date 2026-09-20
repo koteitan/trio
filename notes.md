@@ -32074,3 +32074,28 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 
 **現状**: 残余 = GT 0 Trc4（Gtrc4test の 1 sorry）。fork は marker-free RFbase/Wrap 経路を維持し
   upleaf_deep_core を塔エンジンとして graft に差す方針。
+
+## 追記723: gt_trc4 の分析確定 — W=[] は zcone、Trc4(W=[(1,1,0)]) は graft。両者別エンジン
+
+**この resume の成果**:
+- RFbase.lean commit（green, roots）: `farhead_base_oper`（linchpin `Wrap` 仮定下）= GT_nest 底 W=[] の
+  二重遠い語頭塔が一般 BwT 接頭辞上で Wg。n 帰納 + oper_zcone_succ + hangv + Wrap + based_double_oper。
+  Wrap := ∀w X, X∈Wg(2(w+1))→based X→(1,w+1,1)::shiftr01 2 0 X ∈ Wg(2(w+1))。
+
+**重要な構造判明（W=[] と Trc4 は別の塔）**:
+- W=[]: 内容 = (1,u+1,1)(2,u+1,1)、最終列 = (2,u+1,1) 遠い語頭(row2=1) → oper = **zcone 塔**。RFbase が扱う。
+- Trc4 = rcol 0 0 [(1,1,0)]、内容 = (1,u+1,1)(2,u+1,1)(3,u+1,0)、最終列 = (3,u+1,0) 深いタイ(row2=0, row1=u+1 で根に graft) → oper = **graft 塔**。
+- ∴ **RFbase(zcone) は Trc4 に非適用**。Trc4 の graft 塔は GT_tie の機構（Gtrc4test が使用）。gap = GT_tie の hload = GT_nest。
+
+**Trc4 ≠ wLT p 確定（marker 壁、WltCheck が証明）**:
+- FTL0 r Lds = (1,r,1)::Lds.flatMap(Ld => (1,r,0)::shiftr01 1 0 Ld)。Lds=[] なら [(1,r,1)]、Lds≠[] なら (1,r,0) marker を必ず含む。
+- wLT 0 ([], [some Z]) = (1,1,1) ++ shiftr01 1 0 Z、= Trc4 には Z=[(1,1,0)] だが RawU は based 必須で [(1,1,0)] は row0=1 非based。
+- ∴ Trc4(marker-free, 子 row0=2)は wLT/GLctx(marker 世界, 荷 row0=1 兄弟)に非表現。GLctx 緩和は marker 壁。
+
+**upleaf_deep_core（HeQ:83, marker-free graft エンジン）を使う統合案の blocking**:
+- upleaf_deep_core 結論 = **GpT**(world-2): GpT A o f b (Pre ++ Yp ++ shiftr01 d 0 (shiftr01 1 0 ((0,q,0)::R)))。
+- gt_trc4 目標 = **Wg**(world-1) + BwT 接頭辞 P。Pre=P にすると hrep が GpT(P++...) を要求、P=rword of BwT L は GpT でない（BwT≠GpT）→ **世界不一致で blocking**。
+- 解消路: Pre=[]（または遠い語頭のみ）で「遠い語 letter 内容の GpT」を upleaf_deep_core で示す → GF_of_GPF → WordsG letter → BwT_append_words で家系 L に追加（接頭辞一般）。
+  要: (a) Trc4 の letter 内容を upleaf_deep_core の形 (Pre++Yp++shiftr01 d 0(shiftr01 1 0((0,q,0)::R))) に一致させる、
+      (b) 遠い語頭 (1,u+1,1)(2,u+1,1) を Yp(Fr+Hd)、深いタイ (3,u+1,0) を R として、hrep を self-similar から供給。
+  次: この具体 instantiate（upleaf_deep_coreD, HeQ:108 の方が (d0,m,0) 末尾で近い）。
