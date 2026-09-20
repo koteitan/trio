@@ -33080,3 +33080,22 @@ Subst1 の帰納を collapse 再帰に沿って subscript 減少で回す = ル�
 **2 ルート**: (A) translate ≅ ψ 記法を Lean 化し ψ の WF を輸入（強力だが巨大、Mathlib に ψ なし、41 mismatch）。
 (B) collapse 再帰を Subst1 の帰納構造に（subscript 減少を測度に）。C4scratch/W 機構の上で現実的。次は (B) の検証。
 関連: [[wworld-route-tools-exist]]
+
+## 追記760: ★★ route(B) — collapse の X∈W0 帰納で psiI を素の頭コピー塔に還元（Subst1 回避の候補）(2026-09-21)
+
+（ebp2bms の collapse 再帰から。model で oper 恒等式を検証。）
+
+**oper 恒等式（model 検証）**: collapse(X) := (0,0,0)(1,1,1)(2,1,1)::shiftr01 3 0 X について、
+X が実質的な尾を持つ間 `collapse(X)⟦n⟧ = collapse(X⟦n⟧)`（head (2,1,1) は保存、oper は X 部分に作用）。
+X=[(0,0,0)]（自明）で崩れ、head が自己コピー: `collapse([(0,0,0)])⟦n⟧ = (0,0,0)(1,1,1)(2,1,1)^n`。
+
+**route(B) の還元連鎖**:
+```
+psiI∈W0 ⟸ [X∈W0 上の A2' 帰納(W-lfp,olt 非循環) + oper 恒等式] ⟸ 基底 (0,0,0)(1,1,1)(2,1,1)^n ∈ W0
+```
+基底 = 素の遠い語頭コピー塔。general Subst1（任意 C の置換）と違い、**特定・単純**（子 X 無し）。
+TowStepC4/C4scratch は Subst1 経由だったが、この X 帰納は **Subst1 を経由しない**（oper 恒等式 + A2'）。
+
+**基底の性質**: base(1)=(0,0,0)(1,1,1)(2,1,1) の oper は対角を生成（(2,1,0)(3,2,1)(4,2,0)(5,3,1)…、record 上昇）。
+base(1) = 対角の sup（∴ Dzf 0 0 m のどれより上、m=None）。row1 は依然無界だが、Dzf/GoodF で証明できる可能性。
+next: 基底 (0,0,0)(1,1,1)(2,1,1)^n ∈ W0 を Dzf/GoodF/tower で証明（route(B) を閉じる鍵）。関連 [[wworld-route-tools-exist]]
