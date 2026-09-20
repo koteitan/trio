@@ -31808,3 +31808,16 @@ coordinator の指摘: He 系は入れ子構造を**必ず GTC(文脈)**で証�
 - GTC_loadTop(GzJ:296)も K ++ shiftr01 **1** 0 T(兄弟)。shiftr01 2 = shiftr01 1∘shiftr01 1 だが内側 shiftr01 1 0 Z は非 based で食えない。
 - **∴ 必要な新補題 = 「far-word 頭の子(subtree, row0=2)に based load を吊るす GTC-load」= pure-rcol 入れ子**(He 系 wLT/FTL0 は (1,r,0) marker 入りの別入れ子で Trc4 を表せない、fork Q2 確認済)。GoodChtX_deep 級。
 - 攻め筋: base = GTC_far_CQ(green)、Z の A2g' 帰納で子 load を GTC 規則で消費(GTC_loadTop の子版を自作)。測度 = Z の構造。
+
+## 追記705: ★ keystone の壁を精密確認 = GTC_loadTop の shiftr01 s 一般化が GTC_flat(深い flat)で破れる
+
+fork が keystone `GTC C u (fwTop u [] ++ shiftr01 2 0 Z)` を GTC_loadTop の A2g'(Z 帰納)で攻めた結果:
+- **壁**: load を子(shiftr01 2)にすると、Z の flat 末尾列が (c.1+2, 0, 0)(row0≥2)になり、head (1,u+1,1)(row0=1)より**深い**。
+  GTC_flat(GzJ:67)は `hKx : ∀y∈K, x ≤ y.1`(flat 列は K より浅い=祖先)を要求 ⟹ x=c.1+2 > 1 で破れる。
+  最小の Z=[(0,0,0)] でも content=(1,u+1,1)(2,0,0) で即破れる。GTC_oper/GTC_orph の子版も同様に要る。
+- **正体**: 「支配する浅いタイ head の下の深い flat/tower 列」= 新規 `GTC_deepflat`/`GTC_deeporph` 規則(GoodChtX_deep 級)。
+- **He 系 wLT も不可**: wLT 0 ([[ch Z]], []) = (1,1,1)**(1,1,0)**::shiftr01 2 0 Z で FTL0 marker (1,1,0) が入る。keystone は marker 無しの pure-rcol。∴ GTC_wLT/GTC_wLTL 適用不可。
+- **候補の clean 抽象(将来)**:
+  (A) 新規 `GTC_deepflat/oper/orph`(浅いタイ支配下の深い列3規則)を建てて GTC_loadTop_s を完成。
+  (B) 深さ補題 `BwT (u+1) [W'] → GTC C u (rcol 0 u W')`(level-crossing、mlift_rcol GxJ:144 が鍵)。W' は level u+1 で処理され深い flat を回避。
+- 現状: 接続は全 green(Cpsi.psiI_mem 経由)、残りこの keystone 1本。GoodChtX_deep 級の dedicated 構築が必要。
