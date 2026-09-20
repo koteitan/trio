@@ -31797,3 +31797,14 @@ coordinator の指摘: He 系は入れ子構造を**必ず GTC(文脈)**で証�
 - **唯一の残余 = `GTC C 0 Trc4`**(C = 例えば「L は Trc4 の反復」or 適切な文脈)= 文脈つき入れ子遠い語の追加。
   これは依然として入れ子行1 letter の追加(研究キーストーン)だが、正しい枠(GTC)に載った。次: 文脈 C の設計と GTC C 0 Trc4 の構成(He 系 GTC_load/GTC_tie を GT荷対応に拡張、or 新 keystone)。
 - Cpsi.psiI_mem(plain GT 版)は条件付き定理として有効なまま(GT 0 Trc4 ⟹ psi(I)∈W0)。族の実装だけ GTC に差し替える。
+
+## 追記704: ★★ keystone を level-crossing 子 load として精密特定(GTC_load_CQ の拡張が要る)
+
+追記703 の残余 GTC C 0 Trc4 を GTC_tie で分解した hload の正体を確定:
+- hload = `GTC C u ([(1,u+1,1)] ++ shiftr01 2 0 Z)`(Z∈Wg(2u) based)。
+- = `GTC C u (fwTop u [] の頭 (1,u+1,1) の子(row0=2)に Z を吊るす)`。頭は level u+1、GTC は level u = **level-crossing**。
+- 具体例: Z=[(0,0,0)] で content = (1,u+1,1)(2,0,0)。(2,0,0) の row0親 = 頭(row0=1<2)⟹ **子** load。
+- **既存 GTC_load_CQ(HbB:194)は兄弟 load のみ**: fwTop v (us++[some T]) = fwTop v us ++ **shiftr01 1** 0 T(T の root row0=1 = 頭と同じ = 兄弟 unit)。keystone は **shiftr01 2**(子)。
+- GTC_loadTop(GzJ:296)も K ++ shiftr01 **1** 0 T(兄弟)。shiftr01 2 = shiftr01 1∘shiftr01 1 だが内側 shiftr01 1 0 Z は非 based で食えない。
+- **∴ 必要な新補題 = 「far-word 頭の子(subtree, row0=2)に based load を吊るす GTC-load」= pure-rcol 入れ子**(He 系 wLT/FTL0 は (1,r,0) marker 入りの別入れ子で Trc4 を表せない、fork Q2 確認済)。GoodChtX_deep 級。
+- 攻め筋: base = GTC_far_CQ(green)、Z の A2g' 帰納で子 load を GTC 規則で消費(GTC_loadTop の子版を自作)。測度 = Z の構造。
